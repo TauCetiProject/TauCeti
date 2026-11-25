@@ -13,10 +13,10 @@ import TauCeti.Logic.Function.Extend
 
 Mathlib's `Function.ExtendByZero.linearMap` along an injective index map `e` evaluates at `e i`
 to the `i`-th coordinate. Along `Fin.castSucc` it views `M^N` as the coordinate hyperplane of
-`M^(N + 1)` with vanishing last coordinate, and `Fin.init` inverts it. Along `Fin.succ` it is
-the coordinate shift `e_i ↦ e_(i + 1)`, which together with the first basis vector
-`e₀ = Pi.single 0 1` splits `R^(N + 1)`: every vector is its first coordinate times `e₀` plus
-the shift of its tail.
+`M^(N + 1)` with vanishing last coordinate, `v ↦ Fin.snoc v 0`, and `Fin.init` inverts it.
+Along `Fin.succ` it is the coordinate shift `e_i ↦ e_(i + 1)`, which together with the first
+basis vector `e₀ = Pi.single 0 1` splits `R^(N + 1)`: every vector is its first coordinate times
+`e₀` plus the shift of its tail.
 -/
 
 public section
@@ -68,6 +68,12 @@ theorem init_linearMap_castSucc (v : Fin N → M) :
 theorem linearMap_castSucc_last (v : Fin N → M) :
     linearMap R M Fin.castSucc v (Fin.last N) = 0 := by
   simp
+
+/-- The extension by zero along `Fin.castSucc` appends a zero last coordinate. -/
+theorem linearMap_castSucc_apply (v : Fin N → M) :
+    linearMap R M Fin.castSucc v = Fin.snoc v 0 := by
+  rw [← Fin.snoc_init_self (linearMap R M Fin.castSucc v), init_linearMap_castSucc,
+    linearMap_castSucc_last]
 
 variable {R} in
 /-- Every vector of `R^(N + 1)` is its first coordinate times `e₀` plus the shift of its tail. -/

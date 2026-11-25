@@ -312,6 +312,7 @@ theorem gelfandRadius_le_spectralValue_of_aeval_eq_zero {B A : Type*} [Seminorme
   · rw [Subsingleton.elim a 0, gelfandRadius_zero]
     exact spectralValue_nonneg p
   have hroot := (hp.map (algebraMap B A)).apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero
+    (map_zero _) (apply_nonneg _) (map_mul_le_mul _)
     isPowMul_gelfandRadiusRingSeminorm isNonarchimedean_gelfandRadiusRingSeminorm
     (x := a) (by rw [eval_map_algebraMap, ha])
   have hdeg : (p.map (algebraMap B A)).natDegree = p.natDegree :=

@@ -169,9 +169,7 @@ theorem isHurewiczFibration_mappingSpaceEval_one :
 theorem isHurewiczFibration_basepointContractibleLoop :
     IsHurewiczFibration.{w} (basepointContractibleLoop (Q := Q)) := by
   have h := (isHurewiczFibration_mappingSpaceEval_one.{w} (Q := Q)).comp_subtypeVal
-    (S := contractibleLoops Q) fun _ _ hγ h ↦ by
-      obtain ⟨q, hq⟩ := mem_contractibleLoops_iff.1 hγ
-      exact mem_contractibleLoops_iff.2 ⟨q, h.symm.trans hq⟩
+    (S := contractibleLoops Q) fun _ _ hγ h ↦ pathComponent_subset_contractibleLoops hγ h
   convert h using 1
   funext γ
   rw [basepointContractibleLoop_apply, Function.comp_apply, mappingSpaceEval_apply]

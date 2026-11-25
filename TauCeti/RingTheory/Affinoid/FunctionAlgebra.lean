@@ -9,20 +9,26 @@ public import Mathlib.Algebra.Algebra.TransferInstance
 public import TauCeti.Analysis.Normed.Algebra.FunctionAlgebra
 public import TauCeti.RingTheory.Affinoid.QuotientNorm
 public import TauCeti.RingTheory.Affinoid.SpectralRadius
+public import TauCeti.RingTheory.Affinoid.SupSeminorm
+public import TauCeti.RingTheory.Huber.Uniform
 
 import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Topology.UniformSpace.Equiv
-import TauCeti.Analysis.Normed.Operator.Embedding
-import TauCeti.RingTheory.Affinoid.Integral.Basic
+import TauCeti.Algebra.Module.LocalizedModule.Lift
+import TauCeti.Analysis.Normed.Group.Quotient
+import TauCeti.Analysis.Normed.Module.Finite.Basic
+import TauCeti.Analysis.Normed.Unbundled.CoordinateNorm
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
 import TauCeti.RingTheory.Affinoid.MaximumModulus
+import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.StrictMorphism
 import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
-import TauCeti.RingTheory.Localization.TensorProduct
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeaklyStable
 
@@ -222,93 +228,172 @@ end SupNormModel
 
 end SupNormModel
 
+section UltrametricCase
+
+open _root_.MvPowerSeries Polynomial
+
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "Tate " σ:max =>
   _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
 
-section BanachFunctionAlgebra
+section Domain
 
-/-- Domain case of [BGR, §6.2.4, Theorem 1]: an affinoid domain embeds finitely and torsion-freely
-over a Tate algebra via Noether normalization, and the fraction field of that Tate algebra is
-weakly stable in arbitrary characteristic. -/
-private theorem exists_norm_le_mul_supSeminorm_of_isDomain {B : Type*} [NormedCommRing B]
-    [IsDomain B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
-    (hB : IsAffinoidAlgebra K B) :
-    ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖b‖ ≤ C * supSeminorm K b := by
-  obtain ⟨d, g, hg_inj, hg_fin⟩ := hB.exists_finite_injective
-  have : IsNoetherianRing (Tate (Fin d)) :=
-    (isAffinoidAlgebra_tate (K := K) (σ := Fin d)).isNoetherianRing
-  have hg_cont : Continuous g := hB.continuous_algHom g
-  have hg_tf : ∀ ⦃t : Tate (Fin d)⦄ ⦃b : B⦄, t ≠ 0 → g t * b = 0 → b = 0 := by
-    intro t b ht hmul
-    have hgt : g t ≠ 0 := (map_ne_zero_iff g hg_inj).mpr ht
-    exact (mul_eq_zero.mp hmul).resolve_left hgt
-  obtain ⟨C, hC, hbound⟩ := g.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable hg_cont hg_fin
-    hg_tf (MvPowerSeries.norm_algebraMap_gaussFractionField (Fin d) K (fun _ ↦ 1))
-    (MvPowerSeries.isWeaklyStable_gaussFractionField (Fin d) K (fun _ ↦ 1))
-  refine ⟨C, hC, fun b ↦ ?_⟩
-  rw [hB.supSeminorm_eq_smoothingFun]
-  exact (hbound b).2
+variable {n : ℕ} {A : Type*} [CommRing A] [IsDomain A] [Algebra K A]
+  [Algebra (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) A]
+  [IsScalarTower K (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) A]
+  [Module.Finite (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) A]
+  [FaithfulSMul (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) A]
+
+local notation "Frac " n:max => MvPowerSeries.GaussFractionField (Fin n) K (fun _ ↦ 1)
+
+/-- Let `A` be an affinoid domain that is a finite faithful algebra over a Tate algebra `T`, and
+let `L` be a field that is an algebra over `A` and over the Gauss-normed fraction field of `T`,
+with both actions extending that of `T`. The spectral norm of `f : A` in `L` over the fraction
+field of `T` is at most the supremum seminorm of `f`. -/
+private theorem spectralNorm_algebraMap_le_supSeminorm (hA : IsAffinoidAlgebra K A)
+    {L : Type*} [Field L] [Algebra A L] [Algebra (Tate (Fin n)) L]
+    [IsScalarTower (Tate (Fin n)) A L] [Algebra (Frac n) L]
+    [IsScalarTower (Tate (Fin n)) (Frac n) L]
+    (f : A) : spectralNorm (Frac n) L (algebraMap A L f) ≤ supSeminorm K f := by
+  have : Algebra.IsIntegral (Tate (Fin n)) A := Algebra.IsIntegral.of_finite (Tate (Fin n)) A
+  have hf := Algebra.IsIntegral.isIntegral (R := Tate (Fin n)) f
+  rw [spectralNorm, minpoly.isIntegrallyClosed_eq_field_fractions _ L hf, spectralValue]
+  refine ciSup_le fun i ↦ ?_
+  rw [spectralValueTerms, (minpoly.monic hf).natDegree_map]
+  split_ifs with hi
+  · rw [Polynomial.coeff_map, MvPowerSeries.norm_algebraMap_gaussFractionField,
+      ← MvPowerSeries.supSeminorm_eq_norm,
+      hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := Tate (Fin n)) f]
+    exact le_ciSup (f := fun j : Fin (minpoly (Tate (Fin n)) f).natDegree ↦
+      supSeminorm K ((minpoly (Tate (Fin n)) f).coeff j) ^
+        (1 / ((minpoly (Tate (Fin n)) f).natDegree - j : ℝ)))
+      (Set.finite_range _).bddAbove ⟨i, hi⟩
+  · exact supSeminorm_nonneg f
+
+/-- An affinoid domain `A` that is a finite faithful algebra over a Tate algebra `T` admits an
+injective `T`-linear map into a finite free `T`-module whose Gauss norm is bounded by a multiple
+of the supremum seminorm. -/
+private theorem exists_linearMap_injective_norm_le_mul_supSeminorm
+    (hA : IsAffinoidAlgebra K A) :
+    ∃ (m : ℕ) (Φ : A →ₗ[Tate (Fin n)] (Fin m → Tate (Fin n))), Function.Injective Φ ∧
+      ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖Φ f‖ ≤ C * supSeminorm K f := by
+  let T := Tate (Fin n)
+  -- The fraction field `L` of `A` is a finite extension of the Gauss-normed fraction field.
+  let L := FractionRing A
+  have hTL : Function.Injective (algebraMap T L) := by
+    rw [IsScalarTower.algebraMap_eq T A L]
+    exact (IsFractionRing.injective A L).comp (FaithfulSMul.algebraMap_injective T A)
+  let : Algebra (Frac n) L := (IsFractionRing.lift hTL).toAlgebra
+  have : IsScalarTower T (Frac n) L := IsScalarTower.of_algebraMap_eq (R := T) (S := Frac n)
+    (A := L) fun t ↦ (IsFractionRing.lift_algebraMap hTL t).symm
+  have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
+  have : FiniteDimensional (Frac n) L := Module.Finite.of_isLocalization T A (nonZeroDivisors T)
+  let m := Module.finrank (Frac n) L
+  let b := Module.finBasis (Frac n) L
+  have : Nonempty (Fin m) := ⟨⟨0, Module.finrank_pos⟩⟩
+  -- Weak stability bounds the coordinates by the spectral norm.
+  obtain ⟨C, hC, hb⟩ := (b.forall_exists_bound_iff spectralNorm_nonneg).mp fun φ ↦
+    (MvPowerSeries.isWeaklyStable_gaussFractionField (Fin n) K _).exists_bound_spectralNorm φ
+  -- Clearing denominators, the coordinates of `s f` lie in `T` for some nonzero `s : T`.
+  let θ : (Fin m → T) →ₗ[T] (Fin m → Frac n) :=
+    LinearMap.piMap fun _ ↦ Algebra.linearMap T (Frac n)
+  have hθ : Function.Injective θ :=
+    Pi.map_injective.mpr fun _ ↦ IsFractionRing.injective T (Frac n)
+  have : IsLocalizedModule (nonZeroDivisors T) (θ.restrictScalars T) := by
+    rw [LinearMap.restrictScalars_self]
+    exact IsLocalizedModule.pi _ fun _ ↦ Algebra.linearMap T (Frac n)
+  obtain ⟨Φ, s, hΦ⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective
+    (nonZeroDivisors T) hθ ((b.equivFun : L →ₗ[Frac n] (Fin m → Frac n)).restrictScalars T ∘ₗ
+      (IsScalarTower.toAlgHom T A L).toLinearMap)
+  have hΦ (f : A) (j : Fin m) : algebraMap T (Frac n) (Φ f j) =
+      algebraMap T (Frac n) s * b.repr (algebraMap A L f) j := by
+    simpa [θ, Submonoid.smul_def, Algebra.smul_def] using congr_fun (LinearMap.congr_fun hΦ f) j
+  have hs : (s : T) ≠ 0 := nonZeroDivisors.coe_ne_zero s
+  have hs' : algebraMap T (Frac n) s ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective T (Frac n))).mpr hs
+  refine ⟨m, Φ, fun f₁ f₂ h ↦ ?_, ‖(s : T)‖ * C, mul_pos (norm_pos_iff.mpr hs) hC, fun f ↦ ?_⟩
+  · -- Equal coordinates of `s f₁` and `s f₂` force `f₁ = f₂`.
+    refine IsFractionRing.injective A L (b.repr.injective (Finsupp.ext fun j ↦ ?_))
+    have := congrArg (algebraMap T (Frac n)) (congr_fun h j)
+    rwa [hΦ, hΦ, mul_right_inj' hs'] at this
+  · refine (pi_norm_le_iff_of_nonneg (mul_nonneg (mul_nonneg (norm_nonneg _) hC.le)
+      (supSeminorm_nonneg f))).mpr fun j ↦ ?_
+    rw [← MvPowerSeries.norm_algebraMap_gaussFractionField, hΦ, norm_mul,
+      MvPowerSeries.norm_algebraMap_gaussFractionField, mul_assoc]
+    gcongr
+    exact (b.norm_repr_le_norm j).trans ((hb _).trans
+      (mul_le_mul_of_nonneg_left (spectralNorm_algebraMap_le_supSeminorm hA f) hC.le))
+
+end Domain
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
+  [CompleteSpace A]
+
+/-- The norm of an affinoid domain is bounded by a multiple of its supremum seminorm. -/
+private theorem exists_norm_le_mul_supSeminorm_of_isDomain [IsDomain A]
+    (hA : IsAffinoidAlgebra K A) :
+    ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖f‖ ≤ C * supSeminorm K f := by
+  obtain ⟨d, g, hg, hfin⟩ := hA.exists_finite_injective
+  let := g.toRingHom.toAlgebra
+  have : IsScalarTower K (Tate (Fin d)) A :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (g.commutes c).symm
+  have : Module.Finite (Tate (Fin d)) A := hfin
+  have : FaithfulSMul (Tate (Fin d)) A :=
+    (faithfulSMul_iff_algebraMap_injective (Tate (Fin d)) A).mpr hg
+  have : IsNoetherianRing (Tate (Fin d)) := MvPowerSeries.isNoetherianRing_isRestricted_subring
+  have : ContinuousSMul (Tate (Fin d)) A :=
+    continuousSMul_of_algebraMap _ A (hA.continuous_algHom g)
+  have := Huber.IsTateRing.of_normedAlgebra K (Tate (Fin d))
+  obtain ⟨m, Φ, hΦ, C₁, hC₁, hΦC⟩ :=
+    exists_linearMap_injective_norm_le_mul_supSeminorm (n := d) hA
+  -- Since `A` is a finite module, the injective map `Φ` is bounded below.
+  obtain ⟨C₂, hC₂⟩ := Φ.antilipschitz_of_injective_of_isNoetherian K hΦ
+  refine ⟨(C₂ + 1) * C₁, by positivity, fun f ↦ (hC₂.le_mul_norm (map_zero Φ) f).trans ?_⟩
+  rw [mul_assoc]
+  exact mul_le_mul (by simp) (hΦC f) (norm_nonneg _) (by positivity)
 
 /-- Ultrametric case of [BGR, §6.2.4, Theorem 1]: used internally to establish completeness of
 `SupNormModel` on reduced affinoids via `residueNormedCommRing`. -/
-private theorem exists_norm_le_mul_supSeminorm_of_isUltrametricDist {A : Type*} [NormedCommRing A]
-    [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A] [IsReduced A]
+private theorem exists_norm_le_mul_supSeminorm_of_isUltrametricDist [IsReduced A]
     (hA : IsAffinoidAlgebra K A) :
     ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖f‖ ≤ C * supSeminorm K f := by
-  rcases subsingleton_or_nontrivial A with _ | _
-  · refine ⟨1, zero_lt_one, fun f ↦ ?_⟩
-    simp [Subsingleton.elim f 0]
-  have : IsNoetherianRing A := hA.isNoetherianRing
-  have : Finite (minimalPrimes A) := (minimalPrimes.finite_of_isNoetherianRing A).to_subtype
-  let _ : Fintype (minimalPrimes A) := Fintype.ofFinite (minimalPrimes A)
-  have : Nonempty (minimalPrimes A) := Ideal.nonempty_minimalPrimes bot_ne_top
-  -- Each minimal prime `𝔭` is closed, so `A ⧸ 𝔭` is a completely normed affinoid domain.
-  have hclosed (𝔭 : minimalPrimes A) : IsClosed (𝔭.val : Set A) := hA.isClosed_ideal 𝔭.val
-  have hprime (𝔭 : minimalPrimes A) : 𝔭.val.IsPrime := 𝔭.property.1.1
-  have hdom_bound (𝔭 : minimalPrimes A) :
-      ∃ C : ℝ, 0 < C ∧ ∀ q : A ⧸ 𝔭.val, ‖q‖ ≤ C * supSeminorm K q := by
-    have := hclosed 𝔭
-    have := hprime 𝔭
-    exact exists_norm_le_mul_supSeminorm_of_isDomain (hA.quotient 𝔭.val)
-  choose C𝔭 hC𝔭_pos hC𝔭 using hdom_bound
-  -- Glue across the finitely many irreducible components via the strict injective diagonal map.
-  let δ : A →ₗ[A] ∀ 𝔭 : minimalPrimes A, A ⧸ 𝔭.val :=
+  classical
+  have := hA.isNoetherianRing
+  let := (minimalPrimes.finite_of_isNoetherianRing A).fintype
+  have (I : Ideal A) : IsClosed (I : Set A) := hA.isClosed_ideal I
+  -- The bound holds on each quotient by a minimal prime.
+  have hcomp (𝔭 : minimalPrimes A) :
+      ∃ C : ℝ, 0 < C ∧ ∀ f : A ⧸ 𝔭.val, ‖f‖ ≤ C * supSeminorm K f := by
+    have : 𝔭.val.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔭.property
+    exact (hA.quotient 𝔭.val).exists_norm_le_mul_supSeminorm_of_isDomain
+  choose C hC hCf using hcomp
+  -- `A` embeds in the product of these quotients.
+  let Ψ : A →ₗ[A] ((𝔭 : minimalPrimes A) → A ⧸ 𝔭.val) :=
     LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.val).toLinearMap
-  have hδ_inj : Function.Injective δ := by
-    intro x y hxy
-    refine Ideal.injective_pi_quotient_mk_minimalPrimes A ?_
-    ext 𝔭
-    have h𝔭 := congrFun hxy 𝔭
-    simpa only [RingHom.pi_apply, δ, LinearMap.pi_apply, AlgHom.toLinearMap_apply,
-      Ideal.Quotient.mkₐ_eq_mk] using h𝔭
-  have : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
-  have hδ_strict : Topology.IsStrictMap δ := δ.isStrictMap_of_module_finite
-  obtain ⟨D, hD, hδ_bound⟩ :=
-    (δ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective hδ_strict hδ_inj
-  let M : ℝ := Finset.univ.sup' Finset.univ_nonempty C𝔭
-  have hM_pos : 0 < M :=
-    let ⟨𝔭₀⟩ := ‹Nonempty (minimalPrimes A)›
-    (hC𝔭_pos 𝔭₀).trans_le (Finset.le_sup' C𝔭 (Finset.mem_univ 𝔭₀))
-  refine ⟨D * M, mul_pos hD hM_pos, fun f ↦ ?_⟩
-  have hδ_le : ‖δ f‖ ≤ M * supSeminorm K f := by
-    refine (pi_norm_le_iff_of_nonneg (mul_nonneg hM_pos.le (supSeminorm_nonneg f))).mpr fun 𝔭 ↦ ?_
-    have := hclosed 𝔭
-    calc
-      ‖δ f 𝔭‖ = ‖Ideal.Quotient.mk 𝔭.val f‖ := by
-        rw [LinearMap.pi_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
-      _ ≤ C𝔭 𝔭 * supSeminorm K (Ideal.Quotient.mk 𝔭.val f) := hC𝔭 𝔭 _
-      _ ≤ M * supSeminorm K f :=
-        mul_le_mul (Finset.le_sup' C𝔭 (Finset.mem_univ 𝔭))
-          (hA.supSeminorm_map_le (hA.quotient 𝔭.val) (Ideal.Quotient.mkₐ K 𝔭.val) f)
-          (supSeminorm_nonneg _) hM_pos.le
-  calc
-    ‖f‖ ≤ D * ‖δ f‖ := hδ_bound f
-    _ ≤ D * (M * supSeminorm K f) := mul_le_mul_of_nonneg_left hδ_le hD.le
-    _ = (D * M) * supSeminorm K f := (mul_assoc D M _).symm
+  have hΨf (f : A) (𝔭 : minimalPrimes A) : Ψ f 𝔭 = Ideal.Quotient.mk 𝔭.val f := by simp [Ψ]
+  have hΨ : Function.Injective Ψ := Ideal.injective_pi_quotient_mk_minimalPrimes A
+  have := Huber.IsTateRing.of_normedAlgebra K A
+  obtain ⟨C₀, hC₀⟩ := Ψ.antilipschitz_of_injective_of_isNoetherian K hΨ
+  -- A single constant dominates the constants of all quotients.
+  let D := 1 + ∑ 𝔭, C 𝔭
+  have hD : 0 < D := add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun 𝔭 _ ↦ (hC 𝔭).le)
+  refine ⟨(C₀ + 1) * D, by positivity, fun f ↦ (hC₀.le_mul_norm (map_zero Ψ) f).trans ?_⟩
+  rw [mul_assoc]
+  refine mul_le_mul (by simp) ((pi_norm_le_iff_of_nonneg
+    (mul_nonneg hD.le (supSeminorm_nonneg f))).mpr fun 𝔭 ↦ (hCf 𝔭 _).trans ?_) (norm_nonneg _)
+    (by positivity)
+  have hle : C 𝔭 ≤ D := by
+    have := Finset.single_le_sum (fun 𝔮 _ ↦ (hC 𝔮).le) (Finset.mem_univ 𝔭)
+    linarith
+  have hsup := hA.supSeminorm_map_le (hA.quotient 𝔭.val) (Ideal.Quotient.mkₐ K 𝔭.val) f
+  rw [Ideal.Quotient.mkₐ_eq_mk] at hsup
+  rw [hΨf]
+  exact mul_le_mul hle hsup (supSeminorm_nonneg _) hD.le
 
-end BanachFunctionAlgebra
+end UltrametricCase
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 section SupNormBanach
 

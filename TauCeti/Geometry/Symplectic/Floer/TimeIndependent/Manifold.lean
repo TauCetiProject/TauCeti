@@ -19,7 +19,9 @@ symplectic manifold, and `H : M → ℝ` an autonomous Hamiltonian. For the cyli
 `K = H dt`, the Floer equation for a map `u` of the cylinder reads
 `∂_s u + J (∂_t u - X_H(u)) = 0`, with the convention `ι_{X_H} ω = dH`. A map that does not depend
 on `t`, `u(s, t) = γ(s)`, therefore solves it exactly when `γ' = J X_H(γ)`
-(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff`). If the Riemannian
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff`). This equivalence holds
+for every curve `γ`, with Mathlib's totalized derivatives, which are `0` where `γ` is not
+differentiable; it describes classical solutions only where `γ` is differentiable. If the Riemannian
 metric of `M` is `g = ω(·, J ·)` at `γ(s)`, then `J X_H` is the gradient `∇H` for `g`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.apply_hamiltonianVectorField_eq_mgradient`), so the
 time-independent Floer cylinders are exactly the upward gradient lines `γ' = ∇H(γ)` of `H`
@@ -48,7 +50,8 @@ counterpart of this file is `TauCeti.Geometry.Symplectic.Floer.TimeIndependent.B
 ## Main results
 
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff`: a time-independent
-  map solves the Floer equation for `K = H dt` exactly when `γ' = J X_H(γ)`.
+  map solves the Floer equation for `K = H dt` exactly when `γ' = J X_H(γ)`, an identity of
+  totalized derivatives.
 * `IsNondegenerate.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient`:
   for `g = ω(·, J ·)`, exactly when `γ' = ∇H(γ)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_mgradient_iff`: the integral curves of
@@ -86,35 +89,35 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 
 /-- The `∂_s` component of the perturbed derivative of `(s, t) ↦ γ(s)` for `K = H dt` is the
 velocity of `γ`. -/
-private theorem perturbedMFDeriv_comp_fst_apply_stdComplexLineReal
-    (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :
+private theorem perturbedMFDeriv_comp_fst_apply_stdComplexLineReal :
     ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z stdComplexLineReal =
       Manifold.curveVelocity I γ z.1 := by
   rw [perturbedMFDeriv_apply_stdComplexLineReal, stdComplexLineReal_eq,
-    Manifold.mfderiv_comp_fst_apply_one_zero hγ, hamiltonianVectorField_const, Pi.zero_apply,
+    Manifold.mfderiv_comp_fst_apply_one_zero, hamiltonianVectorField_const, Pi.zero_apply,
     sub_zero]
 
 /-- The `∂_t` component of the perturbed derivative of `(s, t) ↦ γ(s)` for `K = H dt` is
 `-X_H(γ(s))`. -/
-private theorem perturbedMFDeriv_comp_fst_apply_stdComplexLineImag
-    (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :
+private theorem perturbedMFDeriv_comp_fst_apply_stdComplexLineImag :
     ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z stdComplexLineImag =
       -ω.hamiltonianVectorField H (γ z.1) := by
   rw [perturbedMFDeriv_apply_stdComplexLineImag, stdComplexLineImag_eq,
-    Manifold.mfderiv_comp_fst_apply_zero_one hγ, zero_sub]
+    Manifold.mfderiv_comp_fst_apply_zero_one, zero_sub]
 
 /-- **Time-independent Floer cylinders.** For the cylindrical perturbation `K = H dt` of an
 autonomous Hamiltonian and any almost complex structure `J` on the tangent space, the map
 `(s, t) ↦ γ(s)` solves the Floer equation at `z` exactly when `γ'(s) = J X_H(γ(s))`, where
-`s = z.1`. -/
+`s = z.1`. Both derivatives are Mathlib's totalized ones, which vanish where `γ` is not
+differentiable, so for an arbitrary curve this is an identity of totalized derivatives: it says
+that `γ` solves `γ' = J X_H(γ)` classically at `s` only when `γ` is differentiable at `s`. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_fst_iff
-    {J : AlmostComplexStructure (TangentSpace I (γ z.1))} (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :
+    {J : AlmostComplexStructure (TangentSpace I (γ z.1))} :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z).toLinearMap ↔
       Manifold.curveVelocity I γ z.1 = J (ω.hamiltonianVectorField H (γ z.1)) := by
   rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe,
-    perturbedMFDeriv_comp_fst_apply_stdComplexLineReal hγ,
-    perturbedMFDeriv_comp_fst_apply_stdComplexLineImag hγ]
+    perturbedMFDeriv_comp_fst_apply_stdComplexLineReal,
+    perturbedMFDeriv_comp_fst_apply_stdComplexLineImag]
   -- `-X_H = J γ'` and `γ' = J X_H` are equivalent since `J² = -1`.
   constructor
   · intro h
@@ -129,14 +132,14 @@ section Nondegenerate
 variable [FiniteDimensional ℝ E]
 
 /-- **The energy density of a time-independent map.** For the perturbation `K = H dt`, the Floer
-energy density of `(s, t) ↦ γ(s)` at `z` is `dH(γ(s)) γ'(s)`, where `s = z.1`. When `H` is
-differentiable at `γ(s)`, this is the derivative of `H ∘ γ` at `s`. -/
-theorem IsNondegenerate.floerEnergyDensity_comp_fst (hω : ω.IsNondegenerate)
-    (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :
+energy density of `(s, t) ↦ γ(s)` at `z` is `dH(γ(s)) γ'(s)`, where `s = z.1`, with Mathlib's
+totalized velocity (both sides vanish where `γ` is not differentiable). When `H` is differentiable
+at `γ(s)` and `γ` at `s`, this is the derivative of `H ∘ γ` at `s`. -/
+theorem IsNondegenerate.floerEnergyDensity_comp_fst (hω : ω.IsNondegenerate) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z =
       mvfderiv I H (γ z.1) (Manifold.curveVelocity I γ z.1) := by
-  rw [floerEnergyDensity_def, perturbedMFDeriv_comp_fst_apply_stdComplexLineReal hγ,
-    perturbedMFDeriv_comp_fst_apply_stdComplexLineImag hγ, SmoothBundleForm.eval₂_neg_right,
+  rw [floerEnergyDensity_def, perturbedMFDeriv_comp_fst_apply_stdComplexLineReal,
+    perturbedMFDeriv_comp_fst_apply_stdComplexLineImag, SmoothBundleForm.eval₂_neg_right,
     SmoothBundleForm.eval₂_swap, neg_neg, hω.eval₂_hamiltonianVectorField]
 
 /-- **The energy of a time-independent map over a rectangle.** Let `H` and `γ` be `C¹`. For the
@@ -168,7 +171,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_comp_fst (hω : ω.IsNondeg
       (hγ.comp contDiff_fst.contMDiff)
   have hnonneg (z : ℝ × ℝ) :
       0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z := by
-    rw [hω.floerEnergyDensity_comp_fst ((hγ z.1).mdifferentiableAt one_ne_zero)]
+    rw [hω.floerEnergyDensity_comp_fst]
     exact hmono z.1
   -- On each rectangle `[-n, n] × [0, 1]` the energy is `H(γ(n)) - H(γ(-n))`.
   refine setLIntegral_univ_prod_eq_ofReal_of_tendsto (F := H ∘ γ) (fun n ↦ ?_)
@@ -189,15 +192,17 @@ variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace
 
 /-- **Time-independent Floer cylinders are gradient lines.** Let the Riemannian metric at `γ(s)`
 be `g(u, v) = ω(u, J v)`. For the perturbation `K = H dt`, the map `(s, t) ↦ γ(s)` solves the Floer
-equation for `J` at `z` exactly when `γ'(s)` is the gradient of `H` at `γ(s)`, where `s = z.1`. -/
+equation for `J` at `z` exactly when `γ'(s)` is the gradient of `H` at `γ(s)`, where `s = z.1`.
+As in `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff`, `γ'` is the
+totalized velocity, so this is a classical gradient-line equation only where `γ` is
+differentiable. -/
 theorem IsNondegenerate.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient
     (hω : ω.IsNondegenerate) {J : AlmostComplexStructure (TangentSpace I (γ z.1))}
-    (hJ : ∀ u v : TangentSpace I (γ z.1), ⟪u, v⟫ = ω.eval₂ (γ z.1) u (J v))
-    (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :
+    (hJ : ∀ u v : TangentSpace I (γ z.1), ⟪u, v⟫ = ω.eval₂ (γ z.1) u (J v)) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z).toLinearMap ↔
       Manifold.curveVelocity I γ z.1 = Manifold.mgradient I H (γ z.1) := by
-  rw [isComplexLinearMap_perturbedMFDeriv_comp_fst_iff hγ,
+  rw [isComplexLinearMap_perturbedMFDeriv_comp_fst_iff,
     hω.apply_hamiltonianVectorField_eq_mgradient hJ]
 
 /-- **The gradient lines of `H` are the time-independent Floer cylinders.** Let `J` be a family of
@@ -212,22 +217,22 @@ theorem IsNondegenerate.isMIntegralCurve_mgradient_iff (hω : ω.IsNondegenerate
       (∀ s, MDifferentiableAt 𝓘(ℝ) I γ s) ∧
         ∀ z : ℝ × ℝ, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (γ z.1))
           (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z).toLinearMap := by
-  have hiff (z : ℝ × ℝ) (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :=
+  have hiff (z : ℝ × ℝ) :=
     hω.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient (H := H)
-      (hJ z.1) hγ
+      (z := z) (hJ z.1)
   rw [Manifold.isMIntegralCurve_iff_curveVelocity_eq]
-  exact ⟨fun h ↦ ⟨fun s ↦ (h s).1, fun z ↦ (hiff z (h z.1).1).2 (h z.1).2⟩,
-    fun h s ↦ ⟨h.1 s, (hiff (s, 0) (h.1 s)).1 (h.2 (s, 0))⟩⟩
+  exact ⟨fun h ↦ ⟨fun s ↦ (h s).1, fun z ↦ (hiff z).2 (h z.1).2⟩,
+    fun h s ↦ ⟨h.1 s, (hiff (s, 0)).1 (h.2 (s, 0))⟩⟩
 
 /-- **The energy density of a gradient line.** If `γ'(s)` is the gradient of `H` at `γ(s)`, then
 the Floer energy density of `(s, t) ↦ γ(s)` for `K = H dt` at `z` is `|∇H(γ(s))|²`, where
 `s = z.1`. -/
 theorem IsNondegenerate.floerEnergyDensity_comp_fst_of_curveVelocity_eq_mgradient
-    (hω : ω.IsNondegenerate) (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1)
+    (hω : ω.IsNondegenerate)
     (hgrad : Manifold.curveVelocity I γ z.1 = Manifold.mgradient I H (γ z.1)) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z =
       ⟪Manifold.mgradient I H (γ z.1), Manifold.mgradient I H (γ z.1)⟫ := by
-  rw [hω.floerEnergyDensity_comp_fst hγ, hgrad, Manifold.mvfderiv_apply_mgradient]
+  rw [hω.floerEnergyDensity_comp_fst, hgrad, Manifold.mvfderiv_apply_mgradient]
 
 /-- **The energy of a gradient line.** Let `H` and `γ` be `C¹`, let `γ` be an integral curve of the
 gradient of `H`, and let `γ(s)` tend to `x` as `s → -∞` and to `y` as `s → ∞`. For the

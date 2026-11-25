@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effectivity
+public import TauCeti.AlgebraicGeometry.LineBundle.Affine.Picard
+public import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk.Basic
 
 /-!
 # Divisors on normal and locally factorial schemes
@@ -26,11 +28,13 @@ divisor `Finsupp.single η 1`, giving canonical equivalences
 `CartierDivisor.weilClassGroupAddEquivLineBundleClass : Cl(X) ≃+ Additive (LineBundleClass X)`
 via `CartierDivisor.weilToLineBundleClassHom` in arbitrary dimension. Open-immersion Picard
 excision built on this equivalence is in `TauCeti.AlgebraicGeometry.CartierDivisor.Excision`.
+Since the Picard group of a unique factorization domain is trivial, so is the divisor class group
+of its spectrum (`SchemeWeilDivisor.subsingleton_classGroup_of_uniqueFactorizationMonoid`).
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.3A, Proposition 6.11, and
-  Corollary 6.16.
+* R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.2, Proposition 6.3A,
+  Proposition 6.11, and Corollary 6.16.
 * [The Stacks Project, Tag 0BE9](https://stacks.math.columbia.edu/tag/0BE9).
 -/
 
@@ -536,6 +540,21 @@ theorem equivCartierDivisor_eq_equivCartierDivisorOfUniqueFactorizationMonoid
 end SchemeWeilDivisor
 
 end LocallyFactorial
+
+section UniqueFactorizationDomain
+
+variable {R : CommRingCat.{u}} [IsDomain R] [IsNoetherianRing R] [UniqueFactorizationMonoid R]
+
+/-- **The divisor class group of a unique factorization domain is trivial.** On the spectrum of a
+Noetherian unique factorization domain `R`, `Cl(Spec R) ≃ Pic(Spec R) ≃ Pic R` is trivial, as the
+Picard group of a unique factorization domain is. Hartshorne, Proposition II.6.2. -/
+instance SchemeWeilDivisor.subsingleton_classGroup_of_uniqueFactorizationMonoid :
+    Subsingleton (WeilDivisor.OrderSystem.ofScheme (Spec R)).ClassGroup :=
+  have : Subsingleton (LineBundleClass (Spec R)) := LineBundleClass.subsingleton_spec (R := R)
+  (SchemeWeilDivisor.classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid
+    (Spec R)).toEquiv.subsingleton
+
+end UniqueFactorizationDomain
 
 end
 

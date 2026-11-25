@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Complex.Module
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -163,12 +163,12 @@ theorem abs_le_mul_im_of_eq_zero_on_real {M : ℝ} {χ : ℂ → ℝ} (hχ : Dif
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- **Change of variables for a dilation of the normal coordinate** on a preimage. -/
-theorem setIntegral_comp_imDilation {c : ℝ} (hc : c ≠ 0) (f : ℂ → F) (s : Set ℂ) :
+/-- **Change of variables for a dilation of the normal coordinate** on a preimage: the case of
+`LinearMap.integral_preimage_affine` for `TauCeti.imDilation`. For `c = 0` both sides are `0`. -/
+theorem setIntegral_comp_imDilation (c : ℝ) (f : ℂ → F) (s : Set ℂ) :
     ∫ z in imDilation c ⁻¹' s, f (imDilation c z) = |c|⁻¹ • ∫ w in s, f w := by
-  have he := measurableEmbedding_imDilation hc
-  rw [← he.integral_map, ← he.restrict_map, map_imDilation_volume hc, Measure.restrict_smul,
-    integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+  simpa only [zero_add, ContinuousLinearMap.coe_coe, det_imDilation] using
+    (imDilation c : ℂ →ₗ[ℝ] ℂ).integral_preimage_affine 0 f s volume
 
 omit [NormedSpace ℝ F] in
 /-- Integrability transfers along a dilation of the normal coordinate. -/
@@ -313,7 +313,7 @@ theorem _root_.TopologicalSpace.Opens.coe_reflectionCore_inter_setOf_im_nonneg (
 
 /-- A compact subset `K` of the reflection core of `Ω` lies in the reflection core of an open
 subset `V` of `Ω` whose closure is compact and contained in `Ω`. -/
-theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_reflectionCore
+theorem _root_.TopologicalSpace.Opens.exists_subset_reflectionCore_and_isCompact_closure
     {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω.reflectionCore) :
     ∃ V : Opens ℂ, IsCompact (closure (V : Set ℂ)) ∧ closure (V : Set ℂ) ⊆ Ω ∧
       K ⊆ V.reflectionCore := by
@@ -330,14 +330,19 @@ theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_reflection
   · exact Or.inl ⟨hKV (Or.inl hz), h⟩
   · exact Or.inr fun c hc => hKV (Or.inr ⟨(c, z), ⟨hc, hz, h⟩, rfl⟩)
 
+/-- The closure of `U ∩ {0 ≤ im}` lies in the reflection core of `Ω` when the closure of `U` lies
+in `Ω`: it lies in `Ω ∩ {0 ≤ im}` (`TauCeti.closure_inter_setOf_im_nonneg_subset`). -/
+theorem _root_.TopologicalSpace.Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore
+    {Ω : Opens ℂ} {U : Set ℂ} (hUΩ : closure U ⊆ Ω) :
+    closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω.reflectionCore :=
+  (closure_inter_setOf_im_nonneg_subset hUΩ).trans Ω.inter_setOf_im_nonneg_subset_reflectionCore
+
 /-- The closure of the upper half of an open set whose closure lies in `Ω` lies in the reflection
 core of `Ω`. -/
 theorem _root_.TopologicalSpace.Opens.closure_upperHalf_subset_reflectionCore {Ω W : Opens ℂ}
     (hWΩ : closure (W : Set ℂ) ⊆ Ω) : closure (W.upperHalf : Set ℂ) ⊆ Ω.reflectionCore := by
   rw [Opens.coe_upperHalf]
-  refine (closure_minimal (t := closure (W : Set ℂ) ∩ {z | 0 ≤ z.im})
-    (inter_subset_inter subset_closure (ofPred_subset_ofPred.2 fun _ => le_of_lt))
-    (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))).trans ?_
-  exact (inter_subset_inter_left _ hWΩ).trans (Ω.inter_setOf_im_nonneg_subset_reflectionCore)
+  exact (closure_mono (inter_subset_inter_right _ (ofPred_subset_ofPred.2 fun _ => le_of_lt))).trans
+    (Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore (U := (W : Set ℂ)) hWΩ)
 
 end TauCeti
