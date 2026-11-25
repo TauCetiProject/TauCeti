@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Ergodic.UniquelyErgodic
 public import Mathlib.Dynamics.Ergodic.AddCircle
+public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Worked examples: unique ergodicity
@@ -23,10 +24,6 @@ public section
 open MeasureTheory Filter TauCeti
 
 namespace TauCeti.UniquelyErgodicExamples
-
-instance instIsProbabilityMeasureVolumeUnitAddCircle :
-    IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  ⟨by simp [AddCircle.measure_univ]⟩
 
 /-- The doubling map of the circle. -/
 noncomputable def doubling (x : UnitAddCircle) : UnitAddCircle := 2 • x
