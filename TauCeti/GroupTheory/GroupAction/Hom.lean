@@ -107,6 +107,20 @@ end MulActionHom
 
 namespace TauCeti
 
+/-- Iterating a map compatible with a twisted scalar action iterates the scalar twist as well. -/
+theorem iterate_map_smulₛₗ {R F M : Type*} {σ : R → R} [SMul R M] [FunLike F M M]
+    [MulActionSemiHomClass F σ M M] (f : F) (n : ℕ) (r : R) (x : M) :
+    f^[n] (r • x) = σ^[n] r • f^[n] x := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [Function.iterate_succ_apply', ih, map_smulₛₗ]
+
+/-- The iterates of an equivariant map preserve scalar multiplication. -/
+theorem iterate_map_smul {R F M : Type*} [SMul R M] [FunLike F M M]
+    [MulActionHomClass F R M M]
+    (f : F) (n : ℕ) (r : R) (x : M) : f^[n] (r • x) = r • f^[n] x := by
+  simpa only [Function.iterate_id, id_eq] using iterate_map_smulₛₗ (σ := id) f n r x
+
 open MulAction
 
 open scoped Pointwise

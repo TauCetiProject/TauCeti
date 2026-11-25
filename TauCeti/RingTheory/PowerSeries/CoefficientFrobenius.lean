@@ -30,6 +30,40 @@ open Finset Function Polynomial
 
 namespace TauCeti.PowerSeries
 
+/-- A finite sum of coefficientwise ring endomorphisms with power-series multipliers is
+surjective if its reduction on constant coefficients is surjective. -/
+theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [CommRing R]
+    (s : Finset ι) (a : ι → R⟦X⟧) (τ : ι → R →+* R)
+    (hlead : Surjective (fun x => ∑ i ∈ s, PowerSeries.constantCoeff (a i) * τ i x)) :
+    Surjective (fun x => ∑ i ∈ s, a i * PowerSeries.map (τ i) x) := by
+  classical
+  intro b
+  let lower (n : ℕ) (c : ℕ → R) : R :=
+    ∑ i ∈ s, ∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * τ i (c j)
+  let solve (n : ℕ) (c : ℕ → R) := surjInv hlead (PowerSeries.coeff n b - lower n c)
+  let step (n : ℕ) (prev : ∀ j < n, R) : R :=
+    solve n (fun j => if h : j < n then prev j h else 0)
+  let c : ℕ → R := fun n => Nat.strongRecOn n step
+  have hc_step (n : ℕ) : c n = solve n (fun j => if j < n then c j else 0) := by
+    simpa only [c, step, dite_eq_ite] using Nat.strongRecOn_eq step n
+  have hc (n : ℕ) : ∑ i ∈ s, PowerSeries.constantCoeff (a i) * τ i (c n) =
+      PowerSeries.coeff n b - lower n c := by
+    rw [hc_step]
+    have h : lower n (fun j => if j < n then c j else 0) = lower n c := by
+      refine sum_congr rfl fun i _ => sum_congr rfl fun j hj => ?_
+      simp [mem_range.mp hj]
+    simpa only [solve, h] using
+      rightInverse_surjInv hlead (PowerSeries.coeff n b - lower n c)
+  refine ⟨PowerSeries.mk c, PowerSeries.ext fun n => ?_⟩
+  have hmul (i : ι) :
+      PowerSeries.coeff n (a i * PowerSeries.map (τ i) (PowerSeries.mk c)) =
+        (∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * τ i (c j)) +
+          PowerSeries.constantCoeff (a i) * τ i (c n) := by
+    rw [mul_comm, PowerSeries.coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
+    simp [PowerSeries.coeff_zero_eq_constantCoeff, mul_comm]
+  simp only [map_sum, hmul, sum_add_distrib, hc, lower]
+  abel
+
 variable {p : ℕ} {k : Type*} [Field k] [Fact p.Prime] [CharP k p] [IsAlgClosed k]
 
 /-- A twisted polynomial in positive coefficient Frobenius with nonzero reduction modulo
@@ -49,36 +83,10 @@ theorem exists_sum_mul_map_iterateFrobenius_eq (s : Finset ℕ) (a : ℕ → k�
     have hcoeff : P.coeff (q ^ i) = PowerSeries.constantCoeff (a i) := by
       simp only [P, finsetSum_coeff, coeff_monomial_apply, he]
       simp [hi]
-    have hdegree : P.natDegree ≠ 0 := by
-      intro h
-      have hlt : P.natDegree < q ^ i := h.symm ▸ pow_pos (by omega) _
-      exact hai (hcoeff.symm.trans (coeff_eq_zero_of_natDegree_lt hlt))
+    have hdegree : P.natDegree ≠ 0 := ((pow_pos (by omega : 0 < q) i).trans_le
+      (Polynomial.le_natDegree_of_ne_zero (hcoeff.trans_ne hai))).ne'
     simpa only [lead, P, eval_finsetSum, eval_monomial] using IsAlgClosed.eval_surjective hdegree
-  let lower (n : ℕ) (c : ℕ → k) : k :=
-    ∑ i ∈ s, ∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * c j ^ (q ^ i)
-  let solve (n : ℕ) (c : ℕ → k) := surjInv hlead (PowerSeries.coeff n b - lower n c)
-  let step (n : ℕ) (prev : ∀ j < n, k) : k :=
-    solve n (fun j => if h : j < n then prev j h else 0)
-  let c : ℕ → k := fun n => Nat.strongRecOn n step
-  have hc_step (n : ℕ) : c n = solve n (fun j => if j < n then c j else 0) := by
-    simpa only [c, step, dite_eq_ite] using Nat.strongRecOn_eq step n
-  have hc (n : ℕ) : ∑ i ∈ s, PowerSeries.constantCoeff (a i) * c n ^ (q ^ i) =
-      PowerSeries.coeff n b - lower n c := by
-    rw [hc_step]
-    have h : lower n (fun j => if j < n then c j else 0) = lower n c := by
-      refine sum_congr rfl fun i _ => sum_congr rfl fun j hj => ?_
-      simp [mem_range.mp hj]
-    simpa only [solve, h] using
-      rightInverse_surjInv hlead (PowerSeries.coeff n b - lower n c)
-  refine ⟨PowerSeries.mk c, PowerSeries.ext fun n => ?_⟩
-  have hmul (i : ℕ) :
-      PowerSeries.coeff n (a i * PowerSeries.map (iterateFrobenius k p (f * i))
-          (PowerSeries.mk c)) =
-        (∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * c j ^ (q ^ i)) +
-          PowerSeries.constantCoeff (a i) * c n ^ (q ^ i) := by
-    rw [mul_comm, PowerSeries.coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
-    simp [PowerSeries.coeff_zero_eq_constantCoeff, iterateFrobenius_def, q, pow_mul, mul_comm]
-  simp only [map_sum, hmul, sum_add_distrib, hc, lower]
-  abel
+  apply surjective_sum_mul_map_of_surjective_constantCoeff s a _ _ b
+  simpa only [iterateFrobenius_def, pow_mul, lead, q] using hlead
 
 end TauCeti.PowerSeries

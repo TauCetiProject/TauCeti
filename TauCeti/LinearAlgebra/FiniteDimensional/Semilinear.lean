@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import TauCeti.Algebra.Module.LinearMap.Iterate
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Semilinear endomorphisms of finite-dimensional spaces
@@ -17,8 +18,9 @@ respect to a surjective ring endomorphism `σ` of the scalars: such a map carrie
 linearly independent family, so its range has full dimension. The main example is the Frobenius
 of an isocrystal, which is semilinear with respect to an automorphism of the coefficient field.
 
-If nonzero scalar difference operators are surjective, a linear dependence among iterates
-transfers this solvability to the equation `Φ x - x = v` for semilinear endomorphisms.
+If every scalar difference polynomial with at least one nonzero coefficient acts surjectively,
+a linear dependence among iterates transfers this solvability to the equation `Φ x - x = v`
+for semilinear endomorphisms.
 -/
 
 public section
@@ -43,8 +45,8 @@ theorem surjective_of_injectiveₛₗ {f : V →ₛₗ[σ] V} (hf : Function.Inj
 
 open Finset Function
 
-/-- If every nonzero scalar difference operator for `σ` is surjective, then `Φ - 1` is
-surjective for every finite-dimensional `σ`-semilinear endomorphism. -/
+/-- If every scalar difference polynomial in `σ` with at least one nonzero coefficient acts
+surjectively, then `Φ - 1` is surjective for each finite-dimensional `σ`-semilinear endomorphism. -/
 theorem surjective_sub_id_of_surjective_sum_mul_iterate {K V : Type*} [Field K]
     [AddCommGroup V] [Module K V] [FiniteDimensional K V] (σ : K ≃+* K)
     (hσ : ∀ (s : Finset ℕ) (a : ℕ → K), (∃ i ∈ s, a i ≠ 0) →
@@ -63,10 +65,10 @@ theorem surjective_sub_id_of_surjective_sum_mul_iterate {K V : Type*} [Field K]
   let c (i : Fin (n + 1)) := σ.symm^[n - i.val] (a i)
   have hinverse : LeftInverse σ σ.symm := σ.apply_symm_apply
   have hinv (i : Fin (n + 1)) : σ^[n - i.val] (c i) = a i := hinverse.iterate _ _
-  let d (i : ℕ) := if hi : i < n + 1 then c ⟨i, hi⟩ else 0
+  let d := Function.extend Fin.val c 0
   have hd : ∃ i ∈ Finset.range (n + 1), d i ≠ 0 := by
     refine ⟨i₀, Finset.mem_range.mpr i₀.isLt, ?_⟩
-    simp only [d, i₀.isLt, dite_true, Fin.eta]
+    simp only [d, Fin.val_injective.extend_apply]
     intro hi
     apply hi₀
     rw [← hinv i₀, hi]
@@ -75,24 +77,19 @@ theorem surjective_sub_id_of_surjective_sum_mul_iterate {K V : Type*} [Field K]
   let w (i : Fin (n + 1)) := (c i * σ^[i.val] z) • v
   have hsum : ∑ i, w i = -v := by
     have hz' : (∑ i : Fin (n + 1), c i * σ^[i.val] z) = -1 := by
-      rw [sum_fin_eq_sum_range]
-      refine (sum_congr rfl fun i hi => ?_).trans hz
-      have hil : i < n + 1 := Finset.mem_range.mp hi
-      simp only [d, dite_eq_left hil]
+      simpa only [← Fin.sum_univ_eq_sum_range, d, Fin.val_injective.extend_apply] using hz
     simp only [w, ← sum_smul, hz', neg_one_smul]
   have hiter (i : Fin (n + 1)) :
       Φ^[n - i.val] (w i) = σ^[n] z • (a i • u i) := by
-    rw [TauCeti.iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, iterate_map_mul, hinv,
-      ← iterate_add_apply, Nat.sub_add_cancel (by omega : i.val ≤ n), smul_smul, mul_comm]
+    have hindex : n - i.val + i.val = n := Nat.sub_add_cancel (by omega)
+    rw [TauCeti.iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, iterate_map_mul, hinv]
+    rw [← iterate_add_apply, hindex, smul_smul, mul_comm]
   -- The iterated terms sum to zero, and their starting terms sum to `-v`.
   refine ⟨∑ i : Fin (n + 1), ∑ j ∈ Finset.range (n - i.val), Φ^[j] (w i), ?_⟩
   dsimp only
   rw [map_sum, ← sum_sub_distrib]
-  have htel (n : ℕ) (x : V) :
-      Φ (∑ j ∈ Finset.range n, Φ^[j] x) - ∑ j ∈ Finset.range n, Φ^[j] x = Φ^[n] x - x := by
-    simp only [map_sum, ← sum_sub_distrib, ← iterate_succ_apply']
-    exact sum_range_sub (fun j => Φ^[j] x) n
-  simp_rw [htel, hiter]
-  rw [sum_sub_distrib, ← smul_sum, ha, smul_zero, hsum, zero_sub, neg_neg]
+  simp_rw [TauCeti.map_sum_iterate_sub, hiter]
+  rw [sum_sub_distrib, ← smul_sum]
+  simp [ha, hsum]
 
 end LinearMap

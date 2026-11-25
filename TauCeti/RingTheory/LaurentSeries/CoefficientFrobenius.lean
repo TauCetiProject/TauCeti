@@ -47,6 +47,20 @@ theorem coeff_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) (j : ℤ) :
       (iterateFrobeniusEquiv k p f).symm (x.coeff j) :=
   coeff_mapRingHom _ _ _
 
+/-- Coefficient Frobenius preserves Laurent-series order. -/
+@[simp]
+theorem order_coefficientFrobenius (f : ℕ) (x : k⸨X⸩) :
+    (coefficientFrobenius p f x).order = x.order :=
+  order_mapRingHom_of_injective x (f := (iterateFrobeniusEquiv k p f).toRingHom)
+    (iterateFrobeniusEquiv k p f).injective
+
+/-- Inverse coefficient Frobenius preserves Laurent-series order. -/
+@[simp]
+theorem order_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) :
+    ((coefficientFrobenius p f).symm x).order = x.order :=
+  order_mapRingHom_of_injective x (f := (iterateFrobeniusEquiv k p f).symm.toRingHom)
+    (iterateFrobeniusEquiv k p f).symm.injective
+
 /-- Coefficient Frobenius acts on a monomial without changing its exponent. -/
 @[simp]
 theorem coefficientFrobenius_single (f : ℕ) (j : ℤ) (a : k) :
