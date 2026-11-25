@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup.Arithmetic
+public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 

@@ -47,6 +47,8 @@ number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence eq
   `Γ_{g,U}` exactly when its diagonal image lies in `gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.map_Gamma_le_componentGroup`: `Γ(M) ⊆ Γ_{g,U}` when
   `K(M) ⊆ gUg⁻¹`.
+* `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`: at principal
+  level `N ≠ 0`, the integral matrices of `Γ_{1,K(N)}` form `Γ(N)`.
 * `TauCeti.AdelicExamples.GL2.isCongruenceSubgroup_comap_mapGL_componentGroup`: then, for
   `M ≠ 0`, `Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`, hence of finite index.
 
@@ -174,6 +176,27 @@ theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing �
     obtain ⟨h00, h01, h10, h11⟩ := CongruenceSubgroup.mem_Gamma_iff_dvd.mp hγ
     simp [Fin.forall_fin_two, Ideal.mem_span_singleton, h00, h01, h10, h11]
   exact mapGL_mem_componentGroup_iff.mpr (h (map_algebraMap_mem_principalLevel hmem))
+
+/-- **At principal level `N ≠ 0`, the elements of `SL₂(ℤ)` in `Γ_{1,K(N)}` are those of
+`Γ(N)`**: an element of `SL₂(ℤ)` lies in `Γ_{1,K(N)}` exactly when it lies in the principal
+congruence subgroup `Γ(N)`. -/
+theorem mapGL_mem_componentGroup_principalLevel_one_iff {N : ℕ} [NeZero N] {γ : SL(2, ℤ)} :
+    SpecialLinearGroup.mapGL ℚ γ ∈ componentGroup (principalLevel ℚ (Ideal.span {(N : ℤ)})) 1 ↔
+      γ ∈ CongruenceSubgroup.Gamma N := by
+  refine ⟨fun h ↦ ?_, fun h ↦ map_Gamma_le_componentGroup (fun x hx ↦ ⟨x, hx, by simp⟩)
+    ⟨γ, h, rfl⟩⟩
+  replace h : GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL ∈
+      principalLevel ℚ (Ideal.span {(N : ℤ)}) := by
+    simpa using mapGL_mem_componentGroup_iff.mp h
+  obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h
+  have hN : Ideal.span {(N : ℤ)} ≠ ⊥ := by simp [NeZero.ne N]
+  have hentry (i j : Fin 2) : (N : ℤ) ∣ γ i j - (1 : Matrix (Fin 2) (Fin 2) ℤ) i j := by
+    rw [← Ideal.mem_span_singleton, ← algebraMap_mem_completedIdeal_iff (K := ℚ) hN]
+    convert h i j using 1
+    refine Subtype.ext ?_
+    fin_cases i <;> fin_cases j <;> simp
+  simpa using CongruenceSubgroup.mem_Gamma_iff_dvd.mpr
+    ⟨hentry 0 0, by simpa using hentry 0 1, by simpa using hentry 1 0, hentry 1 1⟩
 
 /-- **`Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`** when the principal level
 `K(M)`, `M ≠ 0`, lies in `gUg⁻¹`: it contains `Γ(M)`. In particular it has finite index in

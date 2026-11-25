@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.ProperlyDiscontinuous
 public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup.Integral
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 import TauCeti.Topology.Algebra.Group.Subgroup
 
@@ -39,8 +38,6 @@ of finite index, and every element of `SL₂(ℤ)` has determinant `1 > 0`.
 
 * `TauCeti.AdelicExamples.GL2.relIndex_componentGroup_range_mapGL_ne_zero`: for open `U`,
   `Γ_{g,U} ∩ SL₂(ℤ)` has finite index in `SL₂(ℤ)`.
-* `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`: at principal
-  level `N ≠ 0`, the integral matrices of `Γ_{1,K(N)}` form `Γ(N)`.
 * `TauCeti.AdelicExamples.GL2.commensurable_componentGroup`: for compact open `U`, `Γ_{g,U}` is
   commensurable with `SL₂(ℤ)` in `GL₂(ℚ)`.
 * `TauCeti.AdelicExamples.GL2.isArithmetic_componentGroupReal`: its image in `GL₂(ℝ)` is
@@ -138,27 +135,6 @@ theorem relIndex_componentGroup_range_mapGL_ne_zero
     fun _ hγ ↦ mapGL_mem_componentGroup_iff.mpr hγ
   rw [← Subgroup.index_comap]
   exact fun h ↦ h3 (Nat.eq_zero_of_zero_dvd (h ▸ Subgroup.index_dvd_of_le h4))
-
-/-- **At principal level `N ≠ 0`, the elements of `SL₂(ℤ)` in `Γ_{1,K(N)}` are those of
-`Γ(N)`**: an element of `SL₂(ℤ)` lies in `Γ_{1,K(N)}` exactly when it lies in the principal
-congruence subgroup `Γ(N)`. -/
-theorem mapGL_mem_componentGroup_principalLevel_one_iff {N : ℕ} [NeZero N] {γ : SL(2, ℤ)} :
-    SpecialLinearGroup.mapGL ℚ γ ∈ componentGroup (principalLevel ℚ (Ideal.span {(N : ℤ)})) 1 ↔
-      γ ∈ CongruenceSubgroup.Gamma N := by
-  refine ⟨fun h ↦ ?_, fun h ↦ map_Gamma_le_componentGroup (fun x hx ↦ ⟨x, hx, by simp⟩)
-    ⟨γ, h, rfl⟩⟩
-  replace h : GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL ∈
-      principalLevel ℚ (Ideal.span {(N : ℤ)}) := by
-    simpa using mapGL_mem_componentGroup_iff.mp h
-  obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h
-  have hN : Ideal.span {(N : ℤ)} ≠ ⊥ := by simp [NeZero.ne N]
-  have hentry (i j : Fin 2) : (N : ℤ) ∣ γ i j - (1 : Matrix (Fin 2) (Fin 2) ℤ) i j := by
-    rw [← Ideal.mem_span_singleton, ← algebraMap_mem_completedIdeal_iff (K := ℚ) hN]
-    convert h i j using 1
-    refine Subtype.ext ?_
-    fin_cases i <;> fin_cases j <;> simp
-  simpa using CongruenceSubgroup.mem_Gamma_iff_dvd.mpr
-    ⟨hentry 0 0, by simpa using hentry 0 1, by simpa using hentry 1 0, hentry 1 1⟩
 
 /-- **`Γ_{g,U}` is commensurable with `SL₂(ℤ)`** inside `GL₂(ℚ)`, for compact open `U`. -/
 theorem commensurable_componentGroup
