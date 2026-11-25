@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.BlowUp
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Interfaces between the cells of a partition
@@ -30,13 +31,15 @@ Densities of almost disjoint sets add (`TauCeti.HasDensityAt.union`,
 other cells, the cells together having density `1`, add up to `1/2` as well. A sum of values in
 `{0, 1/2, 1}` equal to `1/2` has exactly one term `1/2`.
 
-This is the set-level form of the interface decomposition of §3.2 of the
-GaussianIsoperimetryAndClusters roadmap, before it is specialised to clusters.
+This is the set-level form of the interface decomposition of the boundary of a cluster, before it
+is specialised to clusters.
 
 ## References
 
 * E. Milman and J. Neeman, *The Gaussian double-bubble and multi-bubble conjectures*, Ann. of Math.
   195 (2022), equations (3.4)-(3.6).
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Cambridge University
+  Press (2012), Exercise 29.7.
 -/
 
 public section
@@ -45,46 +48,6 @@ open Filter MeasureTheory Metric Module Set TopologicalSpace
 open scoped ENNReal Topology
 
 namespace TauCeti
-
-section Density
-
-variable {α : Type*} [PseudoMetricSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
-  {μ : Measure α} {s t : Set α} {x : α} {a b : ℝ≥0∞}
-
-/-- **Densities of almost disjoint sets add.** If `s` and `t` have densities `a` and `b` at `x`,
-are almost disjoint and `t` is null-measurable, then `s ∪ t` has density `a + b` at `x`. -/
-theorem HasDensityAt.union (hs : HasDensityAt μ s x a) (ht : HasDensityAt μ t x b)
-    (hst : AEDisjoint μ s t) (htm : NullMeasurableSet t μ) :
-    HasDensityAt μ (s ∪ t) x (a + b) := by
-  have hm (r : ℝ) : μ ((s ∪ t) ∩ closedBall x r) =
-      μ (s ∩ closedBall x r) + μ (t ∩ closedBall x r) := by
-    rw [union_inter_distrib_right]
-    exact measure_union₀ (htm.inter measurableSet_closedBall.nullMeasurableSet)
-      (hst.mono inter_subset_left inter_subset_left)
-  simpa only [hasDensityAt_iff, hm, ENNReal.add_div] using
-    (hasDensityAt_iff.1 hs).add (hasDensityAt_iff.1 ht)
-
-/-- **Densities of finitely many almost disjoint sets add.** -/
-theorem HasDensityAt.biUnion_finset {ι : Type*} {s : ι → Set α} {d : ι → ℝ≥0∞} {S : Finset ι}
-    (hs : ∀ i ∈ S, HasDensityAt μ (s i) x (d i))
-    (hd : ∀ i ∈ S, ∀ j ∈ S, i ≠ j → AEDisjoint μ (s i) (s j))
-    (hm : ∀ i ∈ S, NullMeasurableSet (s i) μ) :
-    HasDensityAt μ (⋃ i ∈ S, s i) x (∑ i ∈ S, d i) := by
-  classical
-  induction S using Finset.induction_on with
-  | empty => simp [hasDensityAt_iff]
-  | insert j S hj ih =>
-    rw [Finset.set_biUnion_insert, Finset.sum_insert hj, union_comm, add_comm]
-    refine (ih (fun i hi => hs i (Finset.mem_insert_of_mem hi))
-      (fun i hi k hk => hd i (Finset.mem_insert_of_mem hi) k (Finset.mem_insert_of_mem hk))
-      fun i hi => hm i (Finset.mem_insert_of_mem hi)).union
-      (hs j (Finset.mem_insert_self j S)) ?_ (hm j (Finset.mem_insert_self j S))
-    change μ ((⋃ i ∈ S, s i) ∩ s j) = 0
-    rw [iUnion₂_inter]
-    exact (measure_biUnion_null_iff S.countable_toSet).2 fun i hi =>
-      hd i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_self j S) (ne_of_mem_of_not_mem hi hj)
-
-end Density
 
 /-- If values in `{0, 1/2, 1}` indexed by a finite set add up to `1/2`, exactly one of them is
 `1/2`. -/
@@ -147,7 +110,6 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
     (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
     (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
     (hcov : μ (⋃ i, s i)ᶜ = 0)
-    (hu : ∀ i, LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((s i).indicator 1) ≠ ∞)
     (S : Finset ι) :
@@ -156,6 +118,9 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
         x ∈ reducedBoundary μ Ω (s p.1) ∧ x ∈ reducedBoundary μ Ω (s p.2) := by
   classical
   have := Fintype.ofFinite ι
+  -- The indicator of a null-measurable set is locally integrable.
+  have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
+    locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
   filter_upwards [ae_forall_exists_hasDensityAt_of_locallyFinitePerimeter hn hu hfin] with x hx hxS
   choose d hd01 hdens hdhalf using hx (reducedBoundary_subset hxS)
   -- The cells in `S` have densities adding up to `1/2`, all cells densities adding up to `1`.
@@ -163,13 +128,9 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
     (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
       fun i _ => hm i).unique
       (hasDensityAt_of_mem_reducedBoundary hn hxS)
-  have huniv : HasDensityAt μ (⋃ i ∈ (Finset.univ : Finset ι), s i) x 1 := by
-    have hball : ∀ᶠ r in 𝓝[>] (0 : ℝ), μ (closedBall x r) / μ (closedBall x r) = 1 :=
-      eventually_mem_nhdsWithin.mono fun r hr => ENNReal.div_self
-        (measure_closedBall_pos μ x hr).ne' measure_closedBall_lt_top.ne
-    refine HasDensityAt.congr_ae (s := univ) ?_ ?_
-    · simpa [hasDensityAt_iff] using tendsto_const_nhds.congr' (hball.mono fun r h => h.symm)
-    · simpa using (ae_eq_univ.2 hcov).symm
+  have huniv : HasDensityAt μ (⋃ i ∈ (Finset.univ : Finset ι), s i) x 1 :=
+    hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
+      (by simpa using hcov)
   have hall : ∑ i, d i = 1 :=
     (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
       fun i _ => hm i).unique
