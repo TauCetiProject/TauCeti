@@ -14,8 +14,7 @@ import Mathlib.Tactic.Ring
 
 Fix a natural number `m`. Every natural number `n` is `s · t² · A`, where `s` is the product of
 the primes `p ∤ m` dividing `n` to an odd power and every prime factor of `A` divides `m`. The
-number `s` is the squarefree part of `n` with the primes dividing `m` removed; it is what a
-quadratic symbol `J(n | q)` sees once `q` is confined to a residue class modulo `m`.
+number `s` is, for `n ≠ 0`, the squarefree part of `n` with the primes dividing `m` removed.
 
 ## Main results
 
@@ -38,10 +37,11 @@ theorem exists_eq_prod_mul_sq_mul (m n : ℕ) :
   have key : ∀ p e : ℕ, p ^ e = (if Odd e then p else 1) * (p ^ (e / 2)) ^ 2 := by
     intro p e
     rcases Nat.even_or_odd' e with ⟨k, rfl | rfl⟩
-    · simp only [Nat.not_odd_iff_even.2 (even_two_mul k), ↓reduceIte,
-        show 2 * k / 2 = k by omega]
+    · have hk : 2 * k / 2 = k := by omega
+      simp only [Nat.not_odd_iff_even.2 (even_two_mul k), ↓reduceIte, hk]
       ring
-    · simp only [odd_two_mul_add_one k, ↓reduceIte, show (2 * k + 1) / 2 = k by omega]
+    · have hk : (2 * k + 1) / 2 = k := by omega
+      simp only [odd_two_mul_add_one k, ↓reduceIte, hk]
       ring
   refine ⟨∏ p ∈ n.primeFactors with ¬ p ∣ m, p ^ (n.factorization p / 2),
     ∏ p ∈ n.primeFactors with p ∣ m, p ^ n.factorization p, ?_, fun p hp hpA => ?_⟩

@@ -26,8 +26,8 @@ and `4p ∣ m₀`. Finally `J(s | q) J(q | s)` depends only on `q` modulo `8`, f
 
 ## Main statements
 
-* `TauCeti.jacobiSym_mul_jacobiSym_eq_of_modEq_eight`: `J(s | q) J(q | s)` depends only on the odd
-  number `q` modulo `8`.
+* `TauCeti.jacobiSym_mul_jacobiSym_eq_of_modEq_eight`: for `s` prime to `q`, `J(s | q) J(q | s)`
+  depends only on the odd number `q` modulo `8`.
 * `TauCeti.jacobiSym_eq_of_modEq_of_forall_prime_dvd`: if every prime factor of `A` divides `m₀`
   and `8 ∣ m₀`, then `J(A | q)` depends only on the odd number `q` modulo `m₀`.
 * `TauCeti.exists_jacobiSym_eq_mul_jacobiSym`: reciprocity on a residue class. For `8 ∣ m₀`, odd
@@ -52,6 +52,7 @@ and at `q'`, for every `s` prime to both. -/
 theorem jacobiSym_mul_jacobiSym_eq_of_modEq_eight {s q q' : ℕ} (hq : Odd q)
     (hqq' : q ≡ q' [MOD 8]) (hs : s.Coprime q) (hs' : s.Coprime q') :
     jacobiSym s q * jacobiSym q s = jacobiSym s q' * jacobiSym q' s := by
+  -- `q ≡ q' [MOD 8]` is by definition the equation `q % 8 = q' % 8`, which `▸` rewrites with.
   have hq' : Odd q' := (Odd.mod_even_iff (by decide)).1 (hqq' ▸ hq.mod_even (by decide))
   induction s using Nat.recOnMul with
   | zero => rw [(Nat.coprime_zero_left _).1 hs, (Nat.coprime_zero_left _).1 hs']
@@ -85,19 +86,19 @@ theorem jacobiSym_mul_jacobiSym_eq_of_modEq_eight {s q q' : ℕ} (hq : Odd q)
       (jacobiSym a q' * jacobiSym q' a) * ihb ha.2 ha'.2
 
 /-- If `8 ∣ m₀` and every prime factor of `A` divides `m₀`, then the Jacobi symbol `J(A | q)`
-depends only on the odd number `q` modulo `m₀`: for a prime `p ∣ m₀` the symbol `J(p | q)`
-depends only on `q` modulo `4p` (`jacobiSym.mod_right`), and `4p ∣ m₀`. -/
+depends only on the odd number `q` modulo `m₀`. -/
 theorem jacobiSym_eq_of_modEq_of_forall_prime_dvd {m₀ A q q' : ℕ} (h8 : 8 ∣ m₀)
     (hA : ∀ p, p.Prime → p ∣ A → p ∣ m₀) (hq : Odd q) (hqq' : q ≡ q' [MOD m₀]) :
     jacobiSym A q = jacobiSym A q' := by
   have he : Even m₀ := even_iff_two_dvd.2 (dvd_trans (by norm_num) h8)
+  -- `q ≡ q' [MOD m₀]` is by definition the equation `q % m₀ = q' % m₀`.
   have hq' : Odd q' := (Odd.mod_even_iff he).1 (hqq' ▸ hq.mod_even he)
   induction A using Nat.recOnMul with
   | zero =>
     -- Every prime divides `m₀`, so `m₀ = 0` and `q = q'`.
     obtain ⟨p, hp, hpp⟩ := Nat.exists_infinite_primes (m₀ + 1)
     obtain rfl : m₀ = 0 := Nat.eq_zero_of_dvd_of_lt (hA p hpp (dvd_zero p)) (by omega)
-    rw [show q = q' by simpa [Nat.ModEq] using hqq']
+    rw [Nat.modEq_zero_iff.mp hqq']
   | one => simp only [Nat.cast_one, jacobiSym.one_left]
   | prime p hp =>
     have h4p : 4 * p ∣ m₀ := by
@@ -111,8 +112,9 @@ theorem jacobiSym_eq_of_modEq_of_forall_prime_dvd {m₀ A q q' : ℕ} (h8 : 8 �
     rw [Nat.cast_mul, jacobiSym.mul_left, jacobiSym.mul_left,
       iha fun p hp h => hA p hp (h.mul_right b), ihb fun p hp h => hA p hp (h.mul_left a)]
 
-/-- For `8 ∣ m₀`, `n = s t² A` with every prime factor of `A` dividing `m₀`, and odd `q ≡ q'`
-modulo `m₀` prime to `n`, the product `J(n | q) J(q | s)` takes the same value at `q` and `q'`. -/
+/-- Let `8 ∣ m₀` and `n = s t² A` with every prime factor of `A` dividing `m₀`. For odd `q` and
+`q' ≡ q (mod m₀)`, both prime to `n`, the product `J(n | q) J(q | s)` takes the same value at `q`
+and at `q'`. -/
 theorem jacobiSym_mul_jacobiSym_eq_of_modEq {m₀ n s t A q q' : ℕ} (h8 : 8 ∣ m₀)
     (hn : n = s * t ^ 2 * A) (hA : ∀ p, p.Prime → p ∣ A → p ∣ m₀) (hq : Odd q)
     (hqq' : q ≡ q' [MOD m₀]) (hnq : n.Coprime q) (hnq' : n.Coprime q') :
@@ -153,6 +155,7 @@ theorem exists_jacobiSym_eq_mul_jacobiSym {m₀ a₀ n s t A : ℕ} (h8 : 8 ∣ 
   · rcases jacobiSym.eq_one_or_neg_one hn' with h1 | h1 <;>
       rcases jacobiSym.eq_one_or_neg_one (hs q₀ hnq₀) with h2 | h2 <;> simp [h1, h2]
   · have he : Even m₀ := even_iff_two_dvd.2 (dvd_trans (by norm_num) h8)
+    -- `q ≡ a₀ [MOD m₀]` is by definition the equation `q % m₀ = a₀ % m₀`.
     have hodd : Odd q := (Odd.mod_even_iff he).1 (hq ▸ ha₀.mod_even he)
     rw [← jacobiSym_mul_jacobiSym_eq_of_modEq h8 hn hA hodd (hq.trans hq₀.symm) hnq hnq₀]
     linear_combination (-jacobiSym n q) * jacobiSym.sq_one (hs q hnq)
