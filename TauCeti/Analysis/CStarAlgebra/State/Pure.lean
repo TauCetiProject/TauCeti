@@ -28,6 +28,8 @@ point of the state space.
 * `TauCeti.eq_of_mem_stateSpace_of_map_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
 * `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul`: `ω` is an extreme point of the state
   space.
+* `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace`: the pullback of a pure state along a
+  surjective star homomorphism is pure.
 
 ## References
 
@@ -89,5 +91,81 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
   have hψ0 := (mul_eq_zero.1 h₂).resolve_left (Complex.ofReal_ne_zero.2 ht.ne')
   exact ⟨eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hφ hφ0,
     eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hψ hψ0⟩
+
+section Pullback
+
+variable {B F : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+
+/-- A state of `A` that vanishes at `star k * k` for every `k` in the kernel of a surjective star
+homomorphism `f : A → B` is the pullback of a state of `B`. -/
+private theorem exists_mem_stateSpace_pullbackFunctional_eq (f : F) (hf : Function.Surjective f)
+    {ψ : WeakDual ℂ A} (hψ : ψ ∈ stateSpace A) (hker : ∀ k, f k = 0 → ψ (star k * k) = 0) :
+    ∃ χ ∈ stateSpace B, pullbackFunctional A f χ = ψ := by
+  let ω : A →P[ℂ] ℂ := .mk₀ (toStrongDual ψ) fun _ ↦ map_nonneg_of_mem_stateSpace hψ
+  let fₗ : A →ₗ[ℂ] B := (f : A →ₗ[ℂ] B)
+  have hle : LinearMap.ker fₗ ≤ LinearMap.ker (toStrongDual ψ : A →ₗ[ℂ] ℂ) := fun k hk ↦
+    ω.map_eq_zero_of_map_star_mul_self_eq_zero (hker k hk)
+  let g : B →ₗ[ℂ] ℂ := ((LinearMap.ker fₗ).liftQ (toStrongDual ψ : A →ₗ[ℂ] ℂ) hle).comp
+    (fₗ.quotKerEquivOfSurjective hf).symm.toLinearMap
+  have hg (a : A) : g (f a) = ψ a := by
+    have : (fₗ.quotKerEquivOfSurjective hf).symm (f a) = Submodule.Quotient.mk a :=
+      (LinearEquiv.symm_apply_eq _).mpr rfl
+    simp only [g, LinearMap.comp_apply, LinearEquiv.coe_coe, this, Submodule.liftQ_apply]
+    rfl
+  have hgpos (b : B) (hb : 0 ≤ b) : 0 ≤ g b := by
+    obtain ⟨c, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hb
+    obtain ⟨a, rfl⟩ := hf c
+    rw [← map_star, ← map_mul, hg]
+    exact map_nonneg_of_mem_stateSpace hψ (star_mul_self_nonneg a)
+  let σ : B →ₚ[ℂ] ℂ := .mk₀ g hgpos
+  let χ : WeakDual ℂ B := StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass σ)
+  have hχ (b : B) : χ b = g b := rfl
+  have hf1 : f 1 = 1 := by
+    obtain ⟨a, ha⟩ := hf 1
+    rw [← mul_one (f 1), ← ha, ← map_mul, one_mul]
+  refine ⟨χ, mem_stateSpace_iff_map_one.mpr ⟨fun b hb ↦ hgpos b hb, ?_⟩, ?_⟩
+  · rw [hχ, ← hf1, hg, map_one_of_mem_stateSpace hψ]
+  · exact DFunLike.ext _ _ fun a ↦ by rw [pullbackFunctional_apply, hχ, hg]
+
+/-- **Pullback of pure states along a surjective star homomorphism.** If `f : A → B` is a
+surjective star homomorphism of unital C⋆-algebras, the pullback `φ ∘ f` of a pure state `φ` of
+`B` is a pure state of `A`. A state in an open segment through `φ ∘ f` is dominated by a multiple
+of `φ ∘ f`, so it vanishes on the kernel of `f` and is itself a pullback; the segment then comes
+from one through `φ`. -/
+theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.Surjective f)
+    {φ : WeakDual ℂ B} (hφ : φ ∈ Set.extremePoints ℝ (stateSpace B)) :
+    pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) := by
+  refine mem_extremePoints.2 ⟨mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hφ.1,
+    fun ψ₁ hψ₁ ψ₂ hψ₂ ⟨s, t, hs, ht, hst, h⟩ ↦ ?_⟩
+  -- both states vanish on `star k * k` for `k` in the kernel, as their combination does
+  have hker : ∀ k, f k = 0 → ψ₁ (star k * k) = 0 ∧ ψ₂ (star k * k) = 0 := fun k hk ↦ by
+    have h₁ := map_nonneg_of_mem_stateSpace hψ₁ (star_mul_self_nonneg k)
+    have h₂ := map_nonneg_of_mem_stateSpace hψ₂ (star_mul_self_nonneg k)
+    have hsum : (s : ℂ) * ψ₁ (star k * k) + (t : ℂ) * ψ₂ (star k * k) = 0 := by
+      have h0 : pullbackFunctional A f φ (star k * k) = 0 := by simp [hk]
+      rw [← h0, ← h]
+      simp [Complex.real_smul]
+    obtain ⟨e₁, e₂⟩ := (add_eq_zero_iff_of_nonneg (mul_nonneg (Complex.zero_le_real.2 hs.le) h₁)
+      (mul_nonneg (Complex.zero_le_real.2 ht.le) h₂)).1 hsum
+    exact ⟨(mul_eq_zero.1 e₁).resolve_left (Complex.ofReal_ne_zero.2 hs.ne'),
+      (mul_eq_zero.1 e₂).resolve_left (Complex.ofReal_ne_zero.2 ht.ne')⟩
+  obtain ⟨χ₁, hχ₁, rfl⟩ :=
+    exists_mem_stateSpace_pullbackFunctional_eq f hf hψ₁ fun k hk ↦ (hker k hk).1
+  obtain ⟨χ₂, hχ₂, rfl⟩ :=
+    exists_mem_stateSpace_pullbackFunctional_eq f hf hψ₂ fun k hk ↦ (hker k hk).2
+  have hinj : Function.Injective (pullbackFunctional A f) := fun χ χ' hχ ↦
+    DFunLike.ext _ _ fun b ↦ by
+      obtain ⟨a, rfl⟩ := hf b
+      simpa using congrArg (fun χ'' : WeakDual ℂ A ↦ χ'' a) hχ
+  have hseg : φ ∈ openSegment ℝ χ₁ χ₂ :=
+    ⟨s, t, hs, ht, hst, hinj (by
+      rw [map_add, (pullbackFunctional A f).map_smul_of_tower,
+        (pullbackFunctional A f).map_smul_of_tower]
+      exact h)⟩
+  obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 hφ).2 χ₁ hχ₁ χ₂ hχ₂ hseg
+  exact ⟨congrArg _ e₁, congrArg _ e₂⟩
+
+end Pullback
 
 end TauCeti
