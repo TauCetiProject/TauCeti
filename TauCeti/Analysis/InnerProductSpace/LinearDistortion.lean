@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.OrientedJacobian
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
 # Outer and inner distortion of a linear map
@@ -47,7 +48,7 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
   `‖A‖ / ℓ(A)` when `J(A) > 0`.
 * `Orientation.one_le_outerDistortion`, `Orientation.one_le_innerDistortion`: both distortions are
   at least `1` when `J(A) > 0`.
-* `Orientation.outerDistortion_linearIsometryEquiv_comp`,
+* `Orientation.outerDistortion_linearIsometry_comp`,
   `Orientation.outerDistortion_comp_linearIsometryEquiv`, `Orientation.outerDistortion_smul`
   and their inner analogues: invariance under orientation-preserving isometries on either side and
   under scalars `c` with `cⁿ > 0`.
@@ -263,8 +264,8 @@ theorem ofReal_norm_div_minimalStretch_le_outerDistortion {A : V →ₗ[ℝ] W}
     ENNReal.ofReal (‖LinearMap.toContinuousLinearMap A‖ / A.minimalStretch) ≤
       oV.outerDistortion oW A := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp [LinearMap.minimalStretch_def, LinearMap.singularValues_of_finrank_le,
-      (Fact.out : finrank ℝ V = 0)]
+  · have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
+    simp
   rw [oV.outerDistortion_of_pos oW h]
   refine ENNReal.ofReal_le_ofReal ?_
   have hℓ := oV.minimalStretch_pos_of_orientedJacobian_ne_zero oW hn h.ne'
@@ -280,8 +281,8 @@ theorem norm_div_minimalStretch_le_innerDistortion {A : V →ₗ[ℝ] W}
     (h : 0 < oV.orientedJacobian oW A) :
     ‖LinearMap.toContinuousLinearMap A‖ / A.minimalStretch ≤ oV.innerDistortion oW A := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · simpa [LinearMap.minimalStretch_def, LinearMap.singularValues_of_finrank_le,
-      (Fact.out : finrank ℝ V = 0)] using oV.innerDistortion_nonneg oW A
+  · have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
+    simpa using oV.innerDistortion_nonneg oW A
   rw [oV.innerDistortion_of_pos oW h]
   have hℓ := oV.minimalStretch_pos_of_orientedJacobian_ne_zero oW hn h.ne'
   have hpow : A.minimalStretch ^ n = A.minimalStretch ^ (n - 1) * A.minimalStretch := by
@@ -313,19 +314,18 @@ theorem innerDistortion_pos_iff {A : V →ₗ[ℝ] W} :
 
 /-! ### Invariance under isometries and scalars -/
 
-/-- Postcomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
-changes no outer distortion. -/
-theorem outerDistortion_linearIsometryEquiv_comp (U : W ≃ₗᵢ[ℝ] X)
-    (hU : oW.orientedJacobian oX (U : W →ₗ[ℝ] X) = 1) (A : V →ₗ[ℝ] W) :
-    oV.outerDistortion oX ((U : W →ₗ[ℝ] X) ∘ₗ A) = oV.outerDistortion oW A := by
-  have hzero : (U : W →ₗ[ℝ] X) ∘ₗ A = 0 ↔ A = 0 := by
-    simp [LinearMap.ext_iff]
-  have hnorm : ‖LinearMap.toContinuousLinearMap ((U : W →ₗ[ℝ] X) ∘ₗ A)‖ =
-      ‖LinearMap.toContinuousLinearMap A‖ :=
-    LinearMap.norm_toContinuousLinearMap_linearIsometry_comp U.toLinearIsometry A
+omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] in
+/-- Postcomposing with a linear isometry of oriented Jacobian `1` (orientation-preserving) changes
+no outer distortion. -/
+theorem outerDistortion_linearIsometry_comp (U : W →ₗᵢ[ℝ] X)
+    (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
+    oV.outerDistortion oX (U.toLinearMap ∘ₗ A) = oV.outerDistortion oW A := by
+  have hzero : U.toLinearMap ∘ₗ A = 0 ↔ A = 0 := by
+    simp [LinearMap.ext_iff, map_eq_zero_iff U U.injective]
   rw [outerDistortion_def, outerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
-    hnorm, hzero]
+    LinearMap.norm_toContinuousLinearMap_linearIsometry_comp, hzero]
 
+omit [FiniteDimensional ℝ W] in
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no outer distortion. -/
 theorem outerDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
@@ -336,13 +336,13 @@ theorem outerDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
   rw [outerDistortion_def, outerDistortion_def, oX.orientedJacobian_comp_of_right_eq_one oV oW hU,
     LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv, hzero]
 
-/-- Postcomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
-changes no inner distortion. -/
-theorem innerDistortion_linearIsometryEquiv_comp (U : W ≃ₗᵢ[ℝ] X)
-    (hU : oW.orientedJacobian oX (U : W →ₗ[ℝ] X) = 1) (A : V →ₗ[ℝ] W) :
-    oV.innerDistortion oX ((U : W →ₗ[ℝ] X) ∘ₗ A) = oV.innerDistortion oW A := by
+/-- Postcomposing with a linear isometry of oriented Jacobian `1` (orientation-preserving) changes
+no inner distortion. -/
+theorem innerDistortion_linearIsometry_comp (U : W →ₗᵢ[ℝ] X)
+    (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
+    oV.innerDistortion oX (U.toLinearMap ∘ₗ A) = oV.innerDistortion oW A := by
   rw [innerDistortion_def, innerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
-    LinearMap.minimalStretch_linearIsometryEquiv_comp]
+    LinearMap.minimalStretch_linearIsometry_comp]
 
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no inner distortion. -/
@@ -396,12 +396,13 @@ theorem innerDistortion_smul_of_pow_neg {c : ℝ} (hc : c ^ n < 0) {A : V →ₗ
 
 /-! ### Isometries -/
 
+omit [FiniteDimensional ℝ W] in
 /-- An orientation-preserving isometric isomorphism has outer distortion `1`. -/
 theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
     oV.outerDistortion oW (U : V →ₗ[ℝ] W) = 1 := by
-  have hid := oV.outerDistortion_linearIsometryEquiv_comp oV oW U hU LinearMap.id
-  rw [LinearMap.comp_id] at hid
+  have hid : oV.outerDistortion oW (U : V →ₗ[ℝ] W) = oV.outerDistortion oV LinearMap.id :=
+    oV.outerDistortion_linearIsometry_comp oV oW U.toLinearIsometry hU LinearMap.id
   rw [hid, oV.outerDistortion_of_pos oV (by simp)]
   rcases n with - | m
   · simp
@@ -415,8 +416,8 @@ theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
 theorem innerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
     oV.innerDistortion oW (U : V →ₗ[ℝ] W) = 1 := by
-  have hid := oV.innerDistortion_linearIsometryEquiv_comp oV oW U hU LinearMap.id
-  rw [LinearMap.comp_id] at hid
+  have hid : oV.innerDistortion oW (U : V →ₗ[ℝ] W) = oV.innerDistortion oV LinearMap.id :=
+    oV.innerDistortion_linearIsometry_comp oV oW U.toLinearIsometry hU LinearMap.id
   rw [hid, oV.innerDistortion_of_pos oV (by simp)]
   rcases n with - | m
   · simp
