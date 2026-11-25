@@ -30,6 +30,8 @@ So `Γ(𝒪_X^I, U)` is a finite free `Γ(X, U)`-module, of rank `#I` when `Γ(X
 
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.freeSectionsLinearEquiv`: sections of `𝒪_X^I`
   over `U` are `I`-indexed families of sections of `𝒪_X` over `U`.
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.freeSectionsLinearEquiv_map`: this
+  identification is compatible with restriction to a smaller open.
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.free_freeSections`,
   `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.finite_freeSections`,
   `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.finrank_freeSections`,
@@ -128,6 +130,38 @@ lemma freeSectionsLinearEquiv_symm_apply (v : I → Γ(X, U)) :
   classical
   rw [LinearEquiv.symm_apply_eq, map_sum]
   simp only [freeSectionsLinearEquiv_freeSectionsι, Finset.univ_sum_single]
+
+/-- The inverse equivalence sends the family `Pi.single i r` to the `i`-th basis inclusion of `r`.
+-/
+@[simp]
+lemma freeSectionsLinearEquiv_symm_single [DecidableEq I] (i : I) (r : Γ(X, U)) :
+    (freeSectionsLinearEquiv I U).symm (Pi.single i r) = freeSectionsι I U i r := by
+  rw [LinearEquiv.symm_apply_eq, freeSectionsLinearEquiv_freeSectionsι]
+
+/-- The coordinates of sections of `𝒪_X^I` commute with restriction to a smaller open. -/
+@[simp]
+lemma freeSectionsπ_map {V : X.Opens} (f : V ⟶ U) (i : I) (s : Γ((free X I).obj, U)) :
+    freeSectionsπ I V i ((free X I).obj.presheaf.map f.op s) =
+      X.presheaf.map f.op (freeSectionsπ I U i s) :=
+  -- Naturality of the projection `π_i : 𝒪_X^I ⟶ 𝒪_X`; the restriction maps of the module `𝒪_X`
+  -- are those of the structure sheaf by definition (`Scheme.Modules.presheaf_unit_map_apply`).
+  PresheafOfModules.naturality_apply ((freeBicone X I).π i).val f.op s
+
+/-- The basis inclusions of sections of `𝒪_X^I` commute with restriction to a smaller open. -/
+@[simp]
+lemma map_freeSectionsι {V : X.Opens} (f : V ⟶ U) (i : I) (r : Γ(X, U)) :
+    (free X I).obj.presheaf.map f.op (freeSectionsι I U i r) =
+      freeSectionsι I V i (X.presheaf.map f.op r) :=
+  -- Naturality of the inclusion `ι_i : 𝒪_X ⟶ 𝒪_X^I`, as in `freeSectionsπ_map`.
+  (PresheafOfModules.naturality_apply ((freeBicone X I).ι i).val f.op r).symm
+
+/-- The equivalence is compatible with restriction: restricting a section of `𝒪_X^I` from `U` to a
+smaller open `V` restricts each of its coordinates. -/
+lemma freeSectionsLinearEquiv_map {V : X.Opens} (f : V ⟶ U) (s : Γ((free X I).obj, U)) :
+    freeSectionsLinearEquiv I V ((free X I).obj.presheaf.map f.op s) =
+      fun i ↦ X.presheaf.map f.op (freeSectionsLinearEquiv I U s i) := by
+  ext i
+  simp
 
 end Sections
 
