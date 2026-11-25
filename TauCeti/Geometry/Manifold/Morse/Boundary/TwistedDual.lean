@@ -67,7 +67,7 @@ public section
 open Set
 open scoped ContDiff Manifold
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -81,7 +81,7 @@ namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} (𝔬 : MorseOrientation f X) (hf : IsMorse 𝓘(ℝ, E) f)
   (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
-  (L : LocalCoefficientSystem.{u, v, u} R (TopCat.of M))
+  (L : LocalCoefficientSystem.{u, v, w} R (TopCat.of M))
 
 /-- **The twisted boundary components of the opposite function.** For the dual orientation data
 and the dual local system `L^∨`, the component of the twisted Morse boundary of `-f` from `q` to

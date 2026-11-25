@@ -20,8 +20,9 @@ reversed path:
 `transport L^∨ γ = ((transport L γ)⁻¹)^*` (`TauCeti.LocalCoefficientSystem.transport_dual`).
 
 Equivalently, transport in `L^∨` and in `L` preserve the evaluation pairing
-`Hom_R(L(x), R) × L(x) → R`. Since the fundamental groupoid is a groupoid, reversing paths turns
-the contravariant functor `x ↦ Hom_R(L(x), R)` back into a covariant one.
+`Hom_R(L(x), R) × L(x) → R` (`TauCeti.LocalCoefficientSystem.eval_transport_transport_dual`).
+Since the fundamental groupoid is a groupoid, reversing paths turns the contravariant functor
+`x ↦ Hom_R(L(x), R)` back into a covariant one.
 
 The dual system is the coefficient system of the cochains dual to the chains with coefficients in
 `L`. In Morse theory, the Morse complex of `-f` with coefficients in `L^∨` is the signed dual of the
@@ -39,6 +40,8 @@ Morse complex of `f` with coefficients in `L` on an oriented manifold
   the inverse of transport, that is, of transport along the reversed path.
 * `TauCeti.LocalCoefficientSystem.transport_dual_symm`: transport in the dual system along a
   reversed path is the dual map of transport along the path.
+* `TauCeti.LocalCoefficientSystem.eval_transport_transport_dual`: transport in the dual system and
+  in `L` preserve the evaluation pairing.
 
 ## References
 
@@ -47,7 +50,7 @@ Morse complex of `f` with coefficients in `L` on an oriented manifold
 
 public section
 
-universe u v
+universe u v w
 
 namespace TauCeti.LocalCoefficientSystem
 
@@ -58,8 +61,8 @@ variable {R : Type u} [CommRing R] {X : TopCat.{v}}
 path. -/
 -- The body is exposed: statements about the dual system read its fibres as the dual modules.
 @[expose]
-noncomputable def dual (L : LocalCoefficientSystem.{u, v, u} R X) :
-    LocalCoefficientSystem.{u, v, u} R X where
+noncomputable def dual (L : LocalCoefficientSystem.{u, v, w} R X) :
+    LocalCoefficientSystem.{u, v, max u w} R X where
   obj x := ModuleCat.of R (Module.Dual R (L.obj x))
   map γ := ModuleCat.ofHom (transport L γ.symm).toLinearMap.dualMap
   map_id x := by
@@ -71,12 +74,19 @@ noncomputable def dual (L : LocalCoefficientSystem.{u, v, u} R X) :
     rw [FundamentalGroupoid.comp_eq]
     simp
 
-variable (L : LocalCoefficientSystem.{u, v, u} R X)
+variable (L : LocalCoefficientSystem.{u, v, w} R X)
 
 /-- The fibre of the dual system at `x` is the dual of the fibre of `L` at `x`. -/
 theorem dual_obj (x : FundamentalGroupoid X) :
     L.dual.obj x = ModuleCat.of R (Module.Dual R (L.obj x)) :=
   (rfl)
+
+/-- A path class `γ` acts on the dual system by the dual map of the action of the reversed path
+`γ⁻¹` on `L`. -/
+@[simp]
+theorem dual_map {x y : X} (γ : Path.Homotopic.Quotient x y) :
+    L.dual.map γ = ModuleCat.ofHom (transport L γ.symm).toLinearMap.dualMap :=
+  rfl
 
 /-- **Transport in the dual system** along `γ` is the dual map of the inverse of transport in `L`
 along `γ`. -/
@@ -91,9 +101,17 @@ theorem transport_dual {x y : X} (γ : Path.Homotopic.Quotient x y) :
 along `γ`. -/
 theorem transport_dual_symm {x y : X} (γ : Path.Homotopic.Quotient x y) :
     transport L.dual γ.symm = (transport L γ).dualMap := by
-  refine LinearEquiv.ext fun φ ↦ LinearMap.ext fun a ↦ ?_
-  simp only [transport_dual, transport_symm]
-  -- Both sides evaluate `φ` on `(transport L γ).symm.symm a`, which is `transport L γ a`.
-  rfl
+  rw [transport_dual, transport_symm, LinearEquiv.symm_symm]
+
+/-- Transport in the dual system and in `L` preserve the evaluation pairing: transporting a linear
+form and a vector along the same path class does not change the value of the form. -/
+theorem eval_transport_transport_dual {x y : X} (γ : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (φ : L.dual.obj (FundamentalGroupoid.mk x)) :
+    Module.Dual.eval R (L.obj (FundamentalGroupoid.mk y)) (transport L γ a)
+        (transport L.dual γ φ) =
+      Module.Dual.eval R (L.obj (FundamentalGroupoid.mk x)) a φ := by
+  rw [transport_dual]
+  -- The transported form evaluates `φ` on transport of `transport L γ a` back along `γ`.
+  exact congrArg (Module.Dual.eval R _ · φ) ((transport L γ).symm_apply_apply a)
 
 end TauCeti.LocalCoefficientSystem
