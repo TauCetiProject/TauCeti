@@ -85,7 +85,16 @@ private theorem mfderiv_eq_mfderivWithin_comp_extChartAt_symm {x : X}
       (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
     rwa [(chartAt ClosedUpperHalfPlane x).extend_left_inv (mem_chart_source _ x)]
   rw [hu.mfderiv, hg.mfderivWithin]
-  simp [writtenInExtChartAt, (chartAt ClosedUpperHalfPlane x).left_inv (mem_chart_source _ x)]
+  simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend, PartialEquiv.coe_trans,
+    ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
+    OpenPartialHomeomorph.coe_toPartialHomeomorph, PartialEquiv.coe_trans_symm,
+    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
+    ModelWithCorners.toPartialEquiv_coe_symm, range_closedUpperHalfPlaneModel, Function.comp_apply,
+    closedUpperHalfPlaneModel_apply, closedUpperHalfPlaneModel_symm_coe, (chartAt
+    ClosedUpperHalfPlane x).left_inv (mem_chart_source _ x), chartAt_self_eq,
+    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
+    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
+    preimage_ofPred_eq, id_eq, modelWithCornersSelf_coe, range_id, subset_univ, inf_of_le_left]
   rfl
 
 omit [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M] in
@@ -114,9 +123,9 @@ private theorem contDiffOn_chart (hu : ContMDiffOn closedUpperHalfPlaneModel I 1
   exact inter_subset_left
 
 /-- **The equation reaches the real axis.** Let `f` be of class `C¹` and `A` continuous on the part
-`O ∩ ℍ̄` of an open set `O ⊆ ℂ` in the closed upper half-plane `ℍ̄`. If `∂ₛf + A ∂ₜf = 0` at the
-points of `O` of positive imaginary part, then it holds at every point of `O ∩ ℍ̄` for the
-derivatives within `ℍ̄`, which are continuous there. -/
+of an open set `O ⊆ ℂ` in the closed upper half-plane. If `∂ₛf + A ∂ₜf = 0` at the points of `O`
+of positive imaginary part, then it holds at every point of `O` in the closed upper half-plane for
+the derivatives within the closed upper half-plane, which are continuous there. -/
 private theorem fderivWithin_add_eq_zero_of_im_pos {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {f : ℂ → F} {A : ℂ → F →L[ℝ] F} {O : Set ℂ} (hO : IsOpen O)
     (hf : ContDiffOn ℝ 1 f (O ∩ range closedUpperHalfPlaneModel))
@@ -327,7 +336,14 @@ private theorem mfderiv_extend_symm_I_mul {φ : OpenPartialHomeomorph X ClosedUp
     rw [hτ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← smul_eq_mul,
       map_smul, smul_eq_mul]
   rw [hφs.mfderiv]
-  simp [writtenInExtChartAt]
+  simp only [OpenPartialHomeomorph.extend, PartialEquiv.coe_trans_symm,
+    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
+    ModelWithCorners.toPartialEquiv_coe_symm, Function.comp_apply, writtenInExtChartAt, extChartAt,
+    PartialEquiv.coe_trans, ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
+    OpenPartialHomeomorph.coe_toPartialHomeomorph, chartAt_self_eq,
+    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
+    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
+    modelWithCornersSelf_coe, range_id, id_eq, fderivWithin_univ]
   exact key w
 
 /-- **Pseudoholomorphic maps are weak solutions, in one pair of charts.** For a map `u` of class
