@@ -37,7 +37,8 @@ the product of its orthogonal hyperplane and the scalar line. The `L²` product 
 isometric; the ordinary product version is a continuous linear equivalence used for line
 sections and product integration. In dimension one, affine coordinates along a unit vector give an
 affine isometric equivalence `𝕜 ≃ᵃⁱ[𝕜] E` (`TauCeti.coordEquivOfFinrankEqOne`), and pairing against
-any nonzero vector is injective (`TauCeti.inner_left_inj_of_finrank_eq_one`).
+any nonzero vector is injective (`TauCeti.inner_left_inj_of_finrank_eq_one`,
+`TauCeti.setOf_inner_eq_eq_singleton_of_finrank_eq_one`).
 
 Along a smooth family of linear isometries of a finite-dimensional inner product space, the
 inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
@@ -410,11 +411,11 @@ theorem coordEquivOfFinrankEqOne_apply (hdim : Module.finrank 𝕜 F = 1) {ν : 
 theorem coordEquivOfFinrankEqOne_symm_apply (hdim : Module.finrank 𝕜 F = 1) {ν : F}
     (hν : ‖ν‖ = 1) (x y : F) :
     (coordEquivOfFinrankEqOne hdim hν x).symm y = ⟪ν, y - x⟫_𝕜 := by
-  let f := coordEquivOfFinrankEqOne hdim hν x
-  calc f.symm y = ⟪ν, f (f.symm y) - x⟫_𝕜 := by
-        rw [coordEquivOfFinrankEqOne_apply, add_sub_cancel_left, inner_smul_right,
-          inner_self_eq_norm_sq_to_K, hν, RCLike.ofReal_one, one_pow, mul_one]
-    _ = ⟪ν, y - x⟫_𝕜 := by rw [f.apply_symm_apply]
+  set t := (coordEquivOfFinrankEqOne hdim hν x).symm y
+  have hy : y = x + t • ν :=
+    ((coordEquivOfFinrankEqOne hdim hν x).apply_symm_apply y).symm.trans
+      (coordEquivOfFinrankEqOne_apply hdim hν x t)
+  simp [hy, inner_smul_right, inner_self_eq_norm_sq_to_K, hν]
 
 /-- Distance from the basepoint `x` in `coordEquivOfFinrankEqOne` coordinates is the norm of the
 coordinate. -/
@@ -434,9 +435,16 @@ theorem preimage_coordEquivOfFinrankEqOne_ball (hdim : Module.finrank 𝕜 F = 1
 /-- In a `1`-dimensional inner product space, pairing against a nonzero vector `ν` is injective. -/
 theorem inner_left_inj_of_finrank_eq_one (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ν ≠ 0)
     {x y : F} : ⟪x, ν⟫_𝕜 = ⟪y, ν⟫_𝕜 ↔ x = y := by
-  rw [← sub_eq_zero, ← inner_sub_left, ← Submodule.mem_orthogonal_singleton_iff_inner_left,
-    (finrank_eq_one_iff_of_ne_zero ν hν).mp hdim, Submodule.top_orthogonal_eq_bot,
-    Submodule.mem_bot, sub_eq_zero]
+  have horth : (𝕜 ∙ ν)ᗮ = ⊥ := by simp [(finrank_eq_one_iff_of_ne_zero ν hν).mp hdim]
+  simpa [sub_eq_zero, inner_sub_left, Submodule.mem_orthogonal_singleton_iff_inner_left] using
+    (show x - y ∈ (𝕜 ∙ ν)ᗮ ↔ x - y ∈ (⊥ : Submodule 𝕜 F) by rw [horth])
+
+/-- In a `1`-dimensional inner product space, the level set `{z | ⟪z, ν⟫_𝕜 = ⟪y, ν⟫_𝕜}` of pairing
+against a nonzero vector `ν` is `{y}`. -/
+theorem setOf_inner_eq_eq_singleton_of_finrank_eq_one (hdim : Module.finrank 𝕜 F = 1) {ν : F}
+    (hν : ν ≠ 0) (y : F) : {z : F | ⟪z, ν⟫_𝕜 = ⟪y, ν⟫_𝕜} = {y} := by
+  ext z
+  exact (inner_left_inj_of_finrank_eq_one hdim hν).trans Set.mem_singleton_iff.symm
 
 end OneDimCoord
 

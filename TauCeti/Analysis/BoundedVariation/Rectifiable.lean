@@ -106,15 +106,19 @@ theorem exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one [μ.IsA
   obtain ⟨r, hge, _, hrδ⟩ :=
     ((eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one hn hyB).and
       (Ioo_mem_nhdsGT hδ)).exists
-  have hpre : ((↑) : Ω → E) ⁻¹' closedBall y r ⊆ closedBall x₀ rk \ {x₀} := fun z hz => by
-    have hzy : dist (z : E) y < min (dist y x) (rk / 2) := (mem_closedBall.1 hz).trans_lt hrδ
-    refine ⟨mem_closedBall.2 ?_, fun hzx => (lt_irrefl (dist x y)) ?_⟩
-    · calc dist (z : E) x ≤ dist (z : E) y + dist y x := dist_triangle _ _ _
-        _ ≤ rk / 2 + rk / 2 := add_le_add (hzy.le.trans (min_le_right _ _)) (mem_ball.1 hyx).le
-        _ = rk := add_halves rk
-    · calc dist x y < min (dist y x) (rk / 2) := by simpa [mem_singleton_iff.1 hzx, x₀] using hzy
+  have hx_notMem : x ∉ closedBall y r := fun hxy =>
+    (lt_irrefl (dist y x)) <|
+      calc dist y x = dist x y := dist_comm y x
+        _ ≤ r := mem_closedBall.1 hxy
+        _ < min (dist y x) (rk / 2) := hrδ
         _ ≤ dist y x := min_le_left _ _
-        _ = dist x y := dist_comm y x
+  have hpre : ((↑) : Ω → E) ⁻¹' closedBall y r ⊆ closedBall x₀ rk \ {x₀} := fun z hz => by
+    refine ⟨mem_closedBall.2 ?_, by rintro rfl; exact hx_notMem hz⟩
+    calc dist (z : E) x ≤ dist (z : E) y + dist y x := dist_triangle _ _ _
+      _ ≤ rk / 2 + rk / 2 :=
+        add_le_add (((mem_closedBall.1 hz).trans_lt hrδ).le.trans (min_le_right _ _))
+          (mem_ball.1 hyx).le
+      _ = rk := add_halves rk
   exact hk.not_ge (hge.trans (measure_mono hpre))
 
 /-- **In dimension at most `1`, the reduced boundary is countable** for any additive Haar measure

@@ -17,7 +17,6 @@ import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Variation and perimeter on the real line

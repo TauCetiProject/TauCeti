@@ -14,9 +14,9 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 /-!
 # The Gauss–Green formula for fields without compact support
 
-Let `E` be a finite-dimensional real inner product space of dimension `n ≥ 2` and `s ⊆ E` a set of
-finite perimeter `P(s) = P(s; E)`. De Giorgi's theorem gives the Gauss–Green formula with surface
-measure, `∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`, for `C¹` fields `φ` with compact support
+Let `E` be a finite-dimensional real inner product space and `s ⊆ E` a set of finite perimeter
+`P(s) = P(s; E)`. De Giorgi's theorem gives the Gauss–Green formula with surface measure,
+`∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`, for `C¹` fields `φ` with compact support
 (`TauCeti.integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal`). This file
 removes the compact support: the formula holds for a bounded `C¹` field `φ` whose divergence is
 integrable on `s`, provided that `s` has finite volume or `‖φ‖` is integrable on `s`
@@ -93,7 +93,7 @@ private theorem integrable_and_tendsto_integral_apply_mul_indicator
 
 /-- The boundary integrals `∫_{∂*s} ⟪ρ_k φ, ν_s⟫ dHⁿ⁻¹` of the cutoffs converge to
 `∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`, by dominated convergence against the finite measure `Hⁿ⁻¹⌊∂*s`. -/
-private theorem tendsto_setIntegral_inner_smul_outerNormal (hn : 2 ≤ finrank ℝ E)
+private theorem tendsto_setIntegral_inner_smul_outerNormal
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) (⊤ : Opens E) volume)
     (hfin : ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
@@ -107,7 +107,7 @@ private theorem tendsto_setIntegral_inner_smul_outerNormal (hn : 2 ≤ finrank �
         ∂μHE[finrank ℝ E - 1])) := by
   set H := μHE[finrank ℝ E - 1].restrict (reducedBoundary volume ⊤ s)
   have hH : IsFiniteMeasure H := ⟨by
-    rw [Measure.restrict_apply_univ, ← perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
+    rw [Measure.restrict_apply_univ, ← perimeter_eq_euclideanHausdorffMeasure_reducedBoundary
       hu hfin]
     exact hP.lt_top⟩
   have hb : ∀ᵐ x ∂H, ‖⟪φ x, outerNormal volume ⊤ s x⟫‖ ≤ M := by
@@ -124,13 +124,13 @@ private theorem tendsto_setIntegral_inner_smul_outerNormal (hn : 2 ≤ finrank �
       (fun k ↦ (hρc k).aestronglyMeasurable)
       (fun k x hx ↦ hρ1 k x (mem_closedBall_zero_iff.2 hx.le)) hρ01 hi
 
-/-- **The Gauss–Green formula for bounded fields.** In dimension `n ≥ 2`, let `s` have finite
-perimeter `P(s)` and let `φ` be a bounded `C¹` vector field whose divergence is integrable on `s`.
-If `s` has finite volume or `‖φ‖` is integrable on `s`, then
+/-- **The Gauss–Green formula for bounded fields.** Let `s` have finite perimeter `P(s)` and let
+`φ` be a bounded `C¹` vector field whose divergence is integrable on `s`. If `s` has finite volume
+or `‖φ‖` is integrable on `s`, then
 
 `∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`. -/
 theorem integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal_of_bounded
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrable (s.indicator (1 : E → ℝ)))
+    (hu : LocallyIntegrable (s.indicator (1 : E → ℝ)))
     (hP : perimeter volume ⊤ s ≠ ∞) {φ : E → E} (hφ : ContDiff ℝ 1 φ) {M : ℝ}
     (hM : ∀ x, ‖φ x‖ ≤ M)
     (hdiv : Integrable fun x ↦ LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * s.indicator 1 x)
@@ -153,10 +153,10 @@ theorem integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal_of_
   have hρ'K (k : ℕ) : HasCompactSupport (ρ' k) := by
     simpa only [funext fun x ↦ (hρd k x).fderiv] using (hρK k).fderiv (𝕜 := ℝ)
   -- The compactly supported formula for `ρ_k φ`.
-  have hGG (k : ℕ) := integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn hu'
+  have hGG (k : ℕ) := integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hu'
     hfin ((hρs k 1).smul hφ) (hρK k).smul_right (by simp)
   -- The right sides converge, by dominated convergence against `Hⁿ⁻¹⌊∂*s`.
-  have hR := tendsto_setIntegral_inner_smul_outerNormal hn hu' hfin hP hφ.continuous hM
+  have hR := tendsto_setIntegral_inner_smul_outerNormal hu' hfin hP hφ.continuous hM
     (fun k ↦ (hρs k 0).continuous) hρ01 hρ1
   -- The left sides converge: `div (ρ_k φ) = ρ_k div φ + Dρ_k φ`.
   set D := fun x ↦ LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * s.indicator 1 x
