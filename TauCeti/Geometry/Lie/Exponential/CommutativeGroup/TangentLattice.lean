@@ -68,12 +68,11 @@ def mulInvariantExpAddMonoidHom : E →+ Additive G :=
 theorem mulInvariantExpAddMonoidHom_apply (v : E) :
     mulInvariantExpAddMonoidHom I G v =
       Additive.ofMul (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)) := by
-  rw [mulInvariantExpAddMonoidHom, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-    LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, lieExpAddMonoidHom_apply,
-    lieExp_eq_mulInvariantExp]
-  congr 2
-  exact (leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply (I := I) (G := G)
-    _).symm.trans (LinearIsometryEquiv.apply_symm_apply _ v)
+  -- The round-trip simp lemmas are stated for tangent vectors at `1`; instantiate them at
+  -- `v : E` so that simp can match them.
+  simp [mulInvariantExpAddMonoidHom, lieExp_eq_mulInvariantExp,
+    LeftInvariantDerivation.evalAt_one_tangentToLeftInvariantDerivation (I := I) (G := G) v,
+    pointDerivationEquivTangentSpace_tangentToPointDerivation (I := I) (1 : G) _ v]
 
 /-- `mulInvariantExp` is continuous. -/
 theorem continuous_mulInvariantExpAddMonoidHom :
