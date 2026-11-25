@@ -443,7 +443,7 @@ instance [NormOneClass R] : NormOneClass
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  obtain ⟨a, hg, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
+  obtain ⟨a, hg, _, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
     (fun t ↦ (prod_pow_pos t).le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R))
     (fun k ↦ (F k).property)
     (by

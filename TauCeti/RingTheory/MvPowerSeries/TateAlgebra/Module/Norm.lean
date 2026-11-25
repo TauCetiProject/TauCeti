@@ -280,7 +280,7 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 /-- Complete coefficient groups give complete restricted families for the Gauss norm. -/
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
-  obtain ⟨a, hres, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
+  obtain ⟨a, hres, _, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
     (fun t ↦ (prod_pow_pos t).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
     (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
       intro ε hε
@@ -334,19 +334,12 @@ at every positive polyradius. -/
 theorem hasSum_ofFinsupp_single (a : Gauss c E) :
     HasSum (fun t ↦ ofFinsupp R c (Finsupp.single t (a t))) a := by
   classical
-  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-  -- only finitely many weighted coefficient norms are at least `ε / 2`
-  have hF : {t | ε / 2 ≤ ‖a t‖ * t.prod (c · ^ ·)}.Finite := by
-    simpa [eventually_cofinite, not_lt] using
-      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).eventually
-        (gt_mem_nhds (half_pos hε))
-  refine (eventually_ge_atTop hF.toFinset).mono fun s hs ↦ ?_
-  rw [dist_eq_norm']
-  refine (norm_le_iff.mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
-  by_cases ht : t ∈ s
-  · simpa [← map_sum, Finsupp.single_apply, ht] using (half_pos hε).le
-  · simpa [← map_sum, Finsupp.single_apply, ht] using
-      (not_le.mp fun h ↦ ht (hs (hF.mem_toFinset.mpr h))).le
+  refine TauCeti.tendsto_finset_of_weighted_coeff
+    (fun (f : Gauss c E) t ↦ f t) (fun t ↦ t.prod (c · ^ ·))
+    (fun _ _ h ↦ norm_le_iff.mpr h)
+    (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)) ?_
+  intro s t
+  by_cases ht : t ∈ s <;> simp [← map_sum, Finsupp.single_apply, ht]
 
 variable (R) in
 /-- **Finite-support families are dense** in the restricted families for the Gauss norm, at every
