@@ -118,6 +118,18 @@ private theorem map_deriv_eq_zero_of_isLocalMax {f : ℂ →L[ℝ] ℝ} {s : ℝ
     (h : IsLocalMax (fun t => f (T t)) s) : f (deriv T s) = 0 :=
   h.hasDerivAt_eq_zero (f.hasFDerivAt.comp_hasDerivAt s (T.hasDerivAt s))
 
+/-- **A supporting line of the region is tangent to the table.** A continuous linear functional
+`f` attains its maximum on the region at a point `γ s` of the curve, and there it kills the unit
+tangent, so `f w = f (i τ(s)) · (τ(s) × w)`. -/
+private theorem exists_forall_mem_region_le_and_apply_eq (f : ℂ →L[ℝ] ℝ) :
+    ∃ s, (∀ w ∈ T.region, f w ≤ f (T s)) ∧
+      ∀ w, f w = f (I * deriv T s) * (conj (deriv T s) * w).im := by
+  obtain ⟨_, ⟨s, rfl⟩, hmax⟩ :=
+    T.isCompact_range.exists_isMaxOn (range_nonempty T) f.continuous.continuousOn
+  refine ⟨s, fun w hw => convexHull_min (fun w hw => hmax hw) (convex_halfSpace_le f.isLinear _)
+    hw, f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) ?_⟩
+  exact T.map_deriv_eq_zero_of_isLocalMax (Eventually.of_forall fun t => hmax (mem_range_self t))
+
 /-- **The region lies to the left of each tangent line.** Every point `z ≠ γ s` of the region
 satisfies `0 < τ(s) × (z − γ s)`. -/
 theorem im_conj_deriv_mul_sub_pos_of_mem_region {s : ℝ} {z : ℂ} (hz : z ∈ T.region)
@@ -217,15 +229,9 @@ theorem frontier_region : frontier T.region = range T := by
         ← (convex_region T).closure_interior_eq_closure_of_nonempty_interior
           T.interior_region_nonempty]
       exact closure_minimal (fun w hw => (hf w hw).le) (isClosed_le f.continuous continuous_const)
-    -- `f ∘ γ` attains its maximum at some `s`.
-    obtain ⟨_, ⟨s, rfl⟩, hmax⟩ :=
-      T.isCompact_range.exists_isMaxOn (range_nonempty T) f.continuous.continuousOn
-    have hzs : f z ≤ f (T s) :=
-      convexHull_min (fun w hw => hmax hw) (convex_halfSpace_le f.isLinear _) hz.1
-    have hτ : f (deriv T s) = 0 := T.map_deriv_eq_zero_of_isLocalMax
-      (Eventually.of_forall fun t => hmax (mem_range_self t))
-    have hlin (w : ℂ) : f w = f (I * deriv T s) * (conj (deriv T s) * w).im :=
-      f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) hτ w
+    -- `f` is maximal on the region at some `γ s`, where it is tangent to the curve.
+    obtain ⟨s, hmax, hlin⟩ := T.exists_forall_mem_region_le_and_apply_eq f
+    have hzs : f z ≤ f (T s) := hmax z hz.1
     have hfI : f (I * deriv T s) ≠ 0 := fun h0 => by
       obtain ⟨a, ha⟩ := T.interior_region_nonempty
       have := hf a ha
@@ -256,12 +262,7 @@ private theorem exists_im_conj_deriv_mul_sub_neg_of_notMem_region {z : ℂ}
     (hz : z ∉ T.region) : ∃ s, (conj (deriv T s) * (z - T s)).im < 0 := by
   -- A functional separating `z` from the region, maximal on the curve at `γ s`.
   obtain ⟨f, u, hfu, hzu⟩ := geometric_hahn_banach_closed_point T.convex_region T.isClosed_region hz
-  obtain ⟨_, ⟨s, rfl⟩, hmax⟩ :=
-    T.isCompact_range.exists_isMaxOn (range_nonempty T) f.continuous.continuousOn
-  have hτ : f (deriv T s) = 0 := T.map_deriv_eq_zero_of_isLocalMax
-    (Eventually.of_forall fun t => hmax (mem_range_self t))
-  have hlin (w : ℂ) : f w = f (I * deriv T s) * (conj (deriv T s) * w).im :=
-    f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) hτ w
+  obtain ⟨s, hmax, hlin⟩ := T.exists_forall_mem_region_le_and_apply_eq f
   -- `f (i τ(s))` is nonpositive, as an interior point `a` does not lie beyond `γ s`, while `z`
   -- does.
   have hz' : 0 < f (I * deriv T s) * (conj (deriv T s) * (z - T s)).im := by
@@ -271,7 +272,7 @@ private theorem exists_im_conj_deriv_mul_sub_neg_of_notMem_region {z : ℂ}
   rw [interior_region] at ha
   have ha' : f (I * deriv T s) * (conj (deriv T s) * (a - T s)).im ≤ 0 := by
     rw [← hlin, map_sub, sub_nonpos]
-    exact convexHull_min (fun w hw => hmax hw) (convex_halfSpace_le f.isLinear _) ha.1
+    exact hmax a ha.1
   exact ⟨s, neg_of_mul_pos_right hz' (nonpos_of_mul_nonpos_left ha'
     (T.im_conj_deriv_mul_sub_pos_of_mem_region ha.1 fun h => ha.2 ⟨s, h.symm⟩))⟩
 
