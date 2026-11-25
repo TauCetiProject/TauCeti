@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilization
 
 /-!
 # The compact real diagonal Spin lift `SO(k) →* Spin(k + k)`
 
-Specializing `CliffordAlgebra.spinDiagonalLift` to the positive-definite real form
+Specializing `CliffordAlgebra.diagSpinLift` to the positive-definite real form
 `realCliffordForm k 0` and transporting along `(realCliffordSplitIsometry k k 0 0).symm` produces
 the compact real diagonal Spin lift
 
@@ -74,16 +74,16 @@ embedding `g ↦ realCliffordSpecialOrthogonalBlockSum k k (g, g)`. -/
 def realCliffordSpinDiagonalLift (k : ℕ) :
     specialOrthogonalGroup (realCliffordForm k 0) →* realCliffordSpinGroupZero (k + k) :=
   (realCliffordSplitIsometry k k 0 0).symm.spinGroupEquiv.toMonoidHom.comp
-    (spinDiagonalLift (realCliffordForm k 0) (nondegenerate_realCliffordForm k 0)
+    (diagSpinLift (realCliffordForm k 0) (nondegenerate_realCliffordForm k 0)
       (spinToSpecialOrthogonal_surjective_of_posDef _ (posDef_realCliffordForm_zero k)))
 
-/-- `realCliffordSpinDiagonalLift` is `spinDiagonalLift` transported along
+/-- `realCliffordSpinDiagonalLift` is `diagSpinLift` transported along
 `(realCliffordSplitIsometry k k 0 0).symm`. -/
 theorem realCliffordSpinDiagonalLift_apply (k : ℕ)
     (g : specialOrthogonalGroup (realCliffordForm k 0)) :
     realCliffordSpinDiagonalLift k g =
       (realCliffordSplitIsometry k k 0 0).symm.spinGroupEquiv
-        (spinDiagonalLift (realCliffordForm k 0) (nondegenerate_realCliffordForm k 0)
+        (diagSpinLift (realCliffordForm k 0) (nondegenerate_realCliffordForm k 0)
           (spinToSpecialOrthogonal_surjective_of_posDef _ (posDef_realCliffordForm_zero k)) g) :=
   (rfl)
 
@@ -94,7 +94,7 @@ theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal (k : ℕ)
     (x : realCliffordSpinGroupZero k) :
     realCliffordSpinDiagonalLift k (spinToSpecialOrthogonal (realCliffordForm k 0) x) =
       realCliffordSpinBlockSum k k (x, x) := by
-  rw [realCliffordSpinDiagonalLift_apply, spinDiagonalLift_spinToSpecialOrthogonal,
+  rw [realCliffordSpinDiagonalLift_apply, diagSpinLift_spinToSpecialOrthogonal,
     realCliffordSpinBlockSum_apply]
 
 /-- **Algebraic descent uniqueness for `realCliffordSpinDiagonalLift`**: any homomorphism
@@ -129,7 +129,7 @@ theorem spinToSpecialOrthogonal_realCliffordSpinDiagonalLift (k : ℕ)
       realCliffordSpecialOrthogonalBlockSum k k (g, g) := by
   rw [realCliffordSpinDiagonalLift_apply,
     ← IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
-    spinToSpecialOrthogonal_spinDiagonalLift, realCliffordSpecialOrthogonalBlockSum_apply]
+    spinToSpecialOrthogonal_diagSpinLift, realCliffordSpecialOrthogonalBlockSum_apply]
 
 /-- **`realCliffordSpinDiagonalLift` acts diagonally on `Fin.append u v`.** -/
 @[simp]
@@ -149,7 +149,7 @@ theorem spinVectorAction_realCliffordSpinDiagonalLift_append (k : ℕ)
 theorem realCliffordSpinDiagonalLift_injective (k : ℕ) :
     Function.Injective (realCliffordSpinDiagonalLift k) :=
   (realCliffordSplitIsometry k k 0 0).symm.spinGroupEquiv.injective.comp
-    (spinDiagonalLift_injective _ _ _)
+    (diagSpinLift_injective _ _)
 
 /-! ### Low-rank checks -/
 
@@ -159,7 +159,7 @@ theorem realCliffordSpinDiagonalLift_zero
     (g : specialOrthogonalGroup (realCliffordForm 0 0)) :
     realCliffordSpinDiagonalLift 0 g = 1 := by
   rw [realCliffordSpinDiagonalLift_apply,
-    spinDiagonalLift_eq_one_of_finrank_le_one _ _ _ (by simp), map_one]
+    diagSpinLift_eq_one_of_finrank_le_one _ _ (by simp), map_one]
 
 /-- In rank one, `SO(1)` is trivial and `realCliffordSpinDiagonalLift 1` is constantly `1` in
 `Spin(2)`. -/
@@ -168,7 +168,7 @@ theorem realCliffordSpinDiagonalLift_one
     (g : specialOrthogonalGroup (realCliffordForm 1 0)) :
     realCliffordSpinDiagonalLift 1 g = 1 := by
   rw [realCliffordSpinDiagonalLift_apply,
-    spinDiagonalLift_eq_one_of_finrank_le_one _ _ _ (by simp), map_one]
+    diagSpinLift_eq_one_of_finrank_le_one _ _ (by simp), map_one]
 
 /-! ### Block-swap invariance and ordered direct-sum coherence -/
 

@@ -183,7 +183,7 @@ theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
 
 /-- The signature forms are nondegenerate. -/
 theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate :=
-  QuadraticMap.nondegenerate_weightedSumSquares fun i ↦
+  QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i ↦
     (realCliffordWeight_ne_zero p q i).isUnit.isRegular
 
 /-- The standard signature form with no negative coordinates is positive definite. -/

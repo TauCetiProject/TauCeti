@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Zero
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation

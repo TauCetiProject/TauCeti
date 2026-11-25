@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Regular
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Subrepresentation
+import TauCeti.Analysis.CStarAlgebra.Seminorm
 
 /-!
 # The full C⋆-seminorm of a C⋆-dynamical system
@@ -144,13 +145,13 @@ theorem fullSeminorm_le_iff {f : ConvolutionAlgebra α μ} {c : ℝ} :
         (P : CovariantRepresentation α H), ‖P.integratedStarAlgHom μ f‖ ≤ c :=
   ⟨fun h _ _ _ _ P => (norm_integratedStarAlgHom_le_fullSeminorm P f).trans h,
     fun h => by
-      rw [fullSeminorm, Seminorm.sSup_apply bddAbove_integratedSeminorms]
       have hc : 0 ≤ c := by
         let H := EuclideanSpace ℂ PEmpty.{max u v + 1}
         exact (norm_nonneg _).trans (h H
           ⟨0, ContRepresentation.trivial ℂ G H, ContRepresentation.isUnitary_trivial,
             fun _ => by simpa using continuous_const, fun _ _ _ => by simp⟩)
-      exact Real.iSup_le (fun ⟨_, H, _, _, _, P, hp⟩ => hp ▸ h H P) hc⟩
+      exact Seminorm.sSup_apply_le bddAbove_integratedSeminorms hc
+        fun _ ⟨H, _, _, _, P, hp⟩ => hp ▸ h H P⟩
 
 /-- The full seminorm is bounded by the L¹ norm. -/
 theorem fullSeminorm_le_norm (f : ConvolutionAlgebra α μ) : fullSeminorm α μ f ≤ ‖f‖ :=
@@ -158,36 +159,22 @@ theorem fullSeminorm_le_norm (f : ConvolutionAlgebra α μ) : fullSeminorm α μ
 
 /-- The full seminorm is submultiplicative for twisted convolution. -/
 theorem fullSeminorm_mul_le (f g : ConvolutionAlgebra α μ) :
-    fullSeminorm α μ (f * g) ≤ fullSeminorm α μ f * fullSeminorm α μ g := by
-  refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
-  rw [map_mul]
-  exact (norm_mul_le _ _).trans (mul_le_mul (norm_integratedStarAlgHom_le_fullSeminorm P f)
-    (norm_integratedStarAlgHom_le_fullSeminorm P g) (norm_nonneg _) (apply_nonneg _ f))
+    fullSeminorm α μ (f * g) ≤ fullSeminorm α μ f * fullSeminorm α μ g :=
+  Seminorm.sSup_mul_le bddAbove_integratedSeminorms (fun _ ⟨_, _, _, _, P, hp⟩ f g => by
+    simpa [hp] using norm_mul_le (P.integratedStarAlgHom μ f) (P.integratedStarAlgHom μ g)) f g
 
 /-- The full seminorm is invariant under the twisted involution. -/
 @[simp]
 theorem fullSeminorm_star (f : ConvolutionAlgebra α μ) :
-    fullSeminorm α μ (star f) = fullSeminorm α μ f := by
-  have key (g : ConvolutionAlgebra α μ) : fullSeminorm α μ (star g) ≤ fullSeminorm α μ g := by
-    refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
-    rw [map_star, _root_.norm_star]
-    exact norm_integratedStarAlgHom_le_fullSeminorm P g
-  exact le_antisymm (key f) (by simpa using key (star f))
+    fullSeminorm α μ (star f) = fullSeminorm α μ f :=
+  Seminorm.sSup_star bddAbove_integratedSeminorms (fun _ ⟨_, _, _, _, P, hp⟩ f => by
+    simp [hp, map_star]) f
 
 /-- The full seminorm satisfies the C⋆-identity `‖f⋆ * f‖ᵤ = ‖f‖ᵤ * ‖f‖ᵤ`. -/
 theorem fullSeminorm_star_mul_self (f : ConvolutionAlgebra α μ) :
-    fullSeminorm α μ (star f * f) = fullSeminorm α μ f * fullSeminorm α μ f := by
-  refine le_antisymm ((fullSeminorm_mul_le _ _).trans_eq (by rw [fullSeminorm_star])) ?_
-  -- Each `‖(π ⋊ U)(f)‖` is the square root of `‖(π ⋊ U)(f⋆ * f)‖ ≤ ‖f⋆ * f‖ᵤ`.
-  have hsqrt : fullSeminorm α μ f ≤ √(fullSeminorm α μ (star f * f)) := by
-    refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
-    refine Real.le_sqrt_of_sq_le ?_
-    rw [sq, ← CStarRing.norm_star_mul_self, ← map_star, ← map_mul]
-    exact norm_integratedStarAlgHom_le_fullSeminorm P _
-  calc fullSeminorm α μ f * fullSeminorm α μ f
-      ≤ √(fullSeminorm α μ (star f * f)) * √(fullSeminorm α μ (star f * f)) :=
-        mul_le_mul hsqrt hsqrt (apply_nonneg _ f) (Real.sqrt_nonneg _)
-    _ = fullSeminorm α μ (star f * f) := Real.mul_self_sqrt (apply_nonneg _ _)
+    fullSeminorm α μ (star f * f) = fullSeminorm α μ f * fullSeminorm α μ f :=
+  Seminorm.sSup_star_mul_self bddAbove_integratedSeminorms (fun _ ⟨_, _, _, _, P, hp⟩ f => by
+    simp [hp, CStarRing.norm_star_mul_self]) f
 
 /-- If `A` has a faithful representation `ρ` on a Hilbert space `H`, the full seminorm is a norm:
 the integrated regular representation on `L²(G, H)` induced by `ρ` is injective and bounded by the
