@@ -372,11 +372,6 @@ theorem callFeedbackDenominator_eq (hx : 0 < x) (hK : 0 < K) (hσ : σ ≠ 0) (h
   field_simp
   ring
 
-/-- For `x, K > 0` and `σ √τ ≠ 0`, `d₊ = σ √τ` exactly at the spot `K exp((σ² / 2 - r) τ)`. -/
-private theorem dPlus_eq_mul_sqrt_iff (hx : 0 < x) (hK : 0 < K) (hστ : σ * √τ ≠ 0) :
-    dPlus x r σ K τ = σ * √τ ↔ x = K * exp ((σ ^ 2 / 2 - r) * τ) := by
-  rw [← dMinus_eq_zero_iff hx hK hστ, dMinus_def, sub_eq_zero]
-
 /-- At the spot `K exp((σ² / 2 - r) τ)` the call feedback denominator equals `1 - ρ g(σ √τ)`. -/
 theorem callFeedbackDenominator_mul_exp (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
     callFeedbackDenominator ρ r σ K τ (K * exp ((σ ^ 2 / 2 - r) * τ)) =

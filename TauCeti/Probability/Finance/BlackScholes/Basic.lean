@@ -248,6 +248,11 @@ theorem dMinus_eq_zero_iff (hs : 0 < s) (hK : 0 < K) (hστ : σ * √τ ≠ 0) 
     rw [mul_div_cancel_left₀ _ hK.ne', log_exp]
     ring
 
+/-- For `s, K > 0` and `σ √τ ≠ 0`, `d₊ = σ √τ` exactly at the spot `K e^{(σ² / 2 - r) τ}`. -/
+theorem dPlus_eq_mul_sqrt_iff (hs : 0 < s) (hK : 0 < K) (hστ : σ * √τ ≠ 0) :
+    dPlus s r σ K τ = σ * √τ ↔ s = K * exp ((σ ^ 2 / 2 - r) * τ) := by
+  rw [← dMinus_eq_zero_iff hs hK hστ, dMinus_def, sub_eq_zero]
+
 /-! ### The density identity -/
 
 /-- The standard Gaussian density at `d₋` is `φ(d₊) (s / K) e^{rτ}`. -/
