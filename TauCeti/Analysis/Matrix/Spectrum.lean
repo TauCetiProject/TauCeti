@@ -96,6 +96,10 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
   matrix-indexed one;
+* `Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero` — at a simple sorted eigenvalue `λᵢ`,
+  the gaps `λᵢ - λₖ` to the other matrix-indexed eigenvalues have nonzero product;
+* `Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero` — every sorted eigenvalue `μ` is a root
+  of the characteristic polynomial, so `μ - A` is singular;
 * `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
   product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
   eigenvalues.
@@ -542,5 +546,24 @@ theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
   intro k hk
   have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
   simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+/-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
+matrix-indexed eigenvalues does not vanish. -/
+theorem prod_erase_sub_eigenvalues_ne_zero (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i),
+      (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) -
+        hA.eigenvalues j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
+    (hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi j (Finset.ne_of_mem_erase hj)).symm
+
+/-- Every ordered eigenvalue `μ` of a Hermitian matrix `A` is a root of its characteristic
+polynomial, so `μ - A` is singular. -/
+theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) : (scalar ι (hA.eigenvalues₀ i : 𝕜) - A).det = 0 := by
+  have hroot : (hA.eigenvalues₀ i : 𝕜) ∈ A.charpoly.roots := by
+    rw [hA.roots_charpoly_eq_eigenvalues₀]
+    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
+  rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
 
 end Matrix.IsHermitian

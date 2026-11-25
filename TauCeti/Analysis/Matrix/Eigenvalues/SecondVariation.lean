@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.Deriv.Matrix
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
-import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Spectrum
 
