@@ -455,8 +455,7 @@ private theorem setIntegral_imCutoff_identity {Ω : Opens ℂ} {g g' : ℂ → F
     have hz' : z.im ≤ 0 := not_lt.1 hz
     refine ⟨imCutoff_eq_zero ?_, ?_⟩
     · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
-    · simp [imCutoffLayer_def,
-        Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
+    · exact imCutoffLayer_of_im_nonpos hz'
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
       (f := fun z => (imCutoff n z * fderiv ℝ χ z v + χ z * imCutoffLayer n v.im z) • g z)
       fun z hz => by simp [hzero z hz],
@@ -1028,14 +1027,15 @@ theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :
   rw [Fin.fin_one_eq_zero j, imDilation_apply, higherReflectionNode_eq]
   apply Complex.ext <;> simp
 
-/-- On a conjugation-invariant set the node dilation of the order-one reflection, which is
-conjugation, maps the lower part into the set: the stability hypothesis of the
+/-- If conjugation maps the lower part of a set into the set, so does the node dilation of the
+order-one reflection, which is conjugation: the stability hypothesis of the
 `TauCeti.planarReflection` lemmas with a single weight. -/
-theorem imDilation_higherReflectionNode_fin_one_mem {Ω : Set ℂ} (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) :
+theorem imDilation_higherReflectionNode_fin_one_mem {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → conj z ∈ Ω) :
     ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
-  fun z hz _ j => by
+  fun z hz hneg j => by
     rw [imDilation_higherReflectionNode_fin_one]
-    exact hΩ z hz
+    exact hΩ z hz hneg
 
 /-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: it
 agrees with the one supplied by the definition off the axis, which is a null set. -/

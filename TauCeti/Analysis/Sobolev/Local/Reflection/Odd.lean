@@ -15,7 +15,8 @@ For an open `Ω ⊆ ℂ`, let `g` be weakly differentiable on the open upper par
 `g` continuous on `Ω ∩ {0 ≤ im}` and vanishing on `Ω ∩ ℝ`, and with derivative integrable on
 compact subsets of `Ω ∩ {0 ≤ im}`. This file proves that the boundary term of the integration by
 parts on the upper half-plane vanishes in every direction, against every smooth compactly supported
-test function `χ`, including those that do not vanish on the axis
+test function `χ` whose support meets `{0 ≤ im}` inside `Ω`, including those that do not vanish on
+the axis
 (`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn`):
 
 `∫_{0 < im} ∂_v χ • g = -∫_{0 < im} χ • ∂_v g`.
@@ -34,7 +35,8 @@ As consequences:
 
 * `TauCeti.HasWeakLineDerivOn.indicator_setOf_im_nonneg`: the extension of `g` by zero below the
   axis is weakly differentiable on all of `Ω`, with derivative the extension of `∂_v g` by zero.
-* `TauCeti.HasWeakFDerivOn.planarReflection_neg_one`: on a conjugation-invariant `Ω`, the odd
+* `TauCeti.HasWeakFDerivOn.planarReflection_neg_one`: when conjugation maps the lower part of `Ω`
+  into `Ω`, the odd
   reflection, equal to `g z` for `0 ≤ im z` and to `-g (conj z)` for `im z < 0`, which is
   `TauCeti.planarReflection` with the single weight `-1`, is weakly differentiable on `Ω`, with
   derivative `TauCeti.planarReflectionFDeriv`. The
@@ -204,31 +206,32 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg {Ω : Opens ℂ} {g g' : �
   exact hgW.setIntegral_fderiv_smul_eq_neg_of_continuousOn hgc hg0 hg' hφ hφc
     fun z hz => hφΩ hz.1
 
-/-- **Weak derivative of the odd reflection.** On a conjugation-invariant open set `Ω`, let `Dg`
+/-- **Weak derivative of the odd reflection.** On an open set `Ω` whose lower part conjugation
+maps into `Ω` (the node-dilation hypothesis of `TauCeti.HasWeakFDerivOn.planarReflection`), let `Dg`
 be the weak derivative of `g` on the upper part of `Ω`, with `g` continuous on `Ω ∩ {0 ≤ im}` and
 zero on `Ω ∩ ℝ` and `Dg` integrable on compact subsets of `Ω ∩ {0 ≤ im}`. Then the odd reflection
 `planarReflection (fun _ => -1) g`, equal to `-g(conj z)` below the axis, has weak derivative
 `planarReflectionFDeriv (fun _ => -1) Dg` on all of `Ω`. -/
 theorem HasWeakFDerivOn.planarReflection_neg_one {Ω : Opens ℂ}
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {g : ℂ → F} {Dg : ℂ → ℂ →L[ℝ] F}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω)
+    {g : ℂ → F} {Dg : ℂ → ℂ →L[ℝ] F}
     (hgW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g Dg)
     (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0)
     (hDg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg) :
     HasWeakFDerivOn volume Ω (TauCeti.planarReflection (fun _ : Fin 1 => (-1 : ℝ)) g)
       (planarReflectionFDeriv (fun _ : Fin 1 => (-1 : ℝ)) Dg) := by
   have := hgW.completeSpace
-  have hΩ' := imDilation_higherReflectionNode_fin_one_mem fun _ hz => hΩ hz
   have hg := hgc.memLpLoc (p := 1) (μ := volume)
   have hDgI := hDg.clm_comp (ContinuousLinearMap.apply ℝ F I)
   refine basisOneI.hasWeakFDerivOn_of_forall
-    ((hg.planarReflection hΩ' _).locallyIntegrableOn le_rfl Ω.isOpen.isLocallyClosed) fun i => ?_
+    ((hg.planarReflection hΩ _).locallyIntegrableOn le_rfl Ω.isOpen.isLocallyClosed) fun i => ?_
   fin_cases i
   · simpa [planarReflectionFDeriv_apply_one] using (hgW.hasWeakLineDerivOn 1).planarReflection_one
-      hΩ' hg (hDg.clm_comp (ContinuousLinearMap.apply ℝ F 1)) _
+      hΩ hg (hDg.clm_comp (ContinuousLinearMap.apply ℝ F 1)) _
   -- The odd reflection is twice the extension by zero minus the even reflection.
   have hZ := ((hgW.hasWeakLineDerivOn I).indicator_setOf_im_nonneg hgc hg0 hDgI).const_smul
     (2 : ℝ)
-  have hE := (hgW.hasWeakLineDerivOn I).planarReflection_I hΩ' hg hDgI
+  have hE := (hgW.hasWeakLineDerivOn I).planarReflection_I hΩ hg hDgI
     (d := fun _ : Fin 1 => (1 : ℝ)) (by simp)
   simp only [Complex.coe_basisOneI, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_fin_one,
     planarReflectionFDeriv_apply_I]
@@ -238,19 +241,20 @@ theorem HasWeakFDerivOn.planarReflection_neg_one {Ω : Opens ℂ}
   · simp [hz, two_smul]
   · simp [hz, planarReflection_of_neg _ _ (not_le.1 hz)]
 
-/-- **Odd reflection preserves `W^{1,p}`.** On a conjugation-invariant open set `Ω`, the odd
+/-- **Odd reflection preserves `W^{1,p}`.** On an open set `Ω` whose lower part conjugation maps
+into `Ω`, the odd
 reflection of a map in `W^{1,p}_loc(Ω ∩ {0 ≤ im})`, `1 ≤ p`, that is continuous on
 `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` is in `W^{1,p}_loc(Ω)`. -/
 theorem MemWkpLoc.planarReflection_neg_one {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens ℂ}
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {g : ℂ → F}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω)
+    {g : ℂ → F}
     (hg : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g)
     (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0) :
     MemWkpLoc p Ω 1 (TauCeti.planarReflection (fun _ : Fin 1 => (-1 : ℝ)) g) := by
-  have hΩ' := imDilation_higherReflectionNode_fin_one_mem fun _ hz => hΩ hz
   obtain ⟨hgp, Dg, hDg, hDgp⟩ := memWkpLoc_succ_iff.1 hg
   have hDgp' : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg := memWkpLoc_zero_iff.1 hDgp
-  refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hgp.planarReflection hΩ' _, _,
+  refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hgp.planarReflection hΩ _, _,
     hDg.planarReflection_neg_one hΩ hgc hg0 (hDgp'.mono_exponent hp), ?_⟩
-  exact memWkpLoc_zero_iff.2 (hDgp'.planarReflectionFDeriv hΩ' _)
+  exact memWkpLoc_zero_iff.2 (hDgp'.planarReflectionFDeriv hΩ _)
 
 end TauCeti
