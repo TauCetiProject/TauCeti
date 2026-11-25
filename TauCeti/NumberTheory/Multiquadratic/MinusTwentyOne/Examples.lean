@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Li
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.GaloisGroup
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Basic.Complex.Basic
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # The `ℚ(√-21)` genus-field worked example
@@ -46,19 +47,6 @@ open IntermediateField
 
 namespace TauCeti.Multiquadratic
 
-/-- The complex number `i√n` squares to `-n`. -/
-private theorem I_mul_real_sqrt_nat_sq (n : ℕ) :
-    (Complex.I * ((Real.sqrt n : ℝ) : ℂ)) ^ 2 = -(n : ℂ) := by
-  have hsqrt : (((Real.sqrt n : ℝ) : ℂ) ^ 2) = (n : ℂ) := by
-    rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-    norm_num
-  calc
-    (Complex.I * ((Real.sqrt n : ℝ) : ℂ)) ^ 2 =
-        Complex.I ^ 2 * (((Real.sqrt n : ℝ) : ℂ) ^ 2) := by
-      ring
-    _ = -(n : ℂ) := by
-      simp [Complex.I_sq, hsqrt]
-
 /-- The chosen complex square root of `-3`, namely `i√3`. -/
 noncomputable abbrev sqrtNegThree : ℂ :=
   Complex.I * ((Real.sqrt 3 : ℝ) : ℂ)
@@ -66,7 +54,7 @@ noncomputable abbrev sqrtNegThree : ℂ :=
 /-- The chosen root `sqrtNegThree` squares to `-3`. -/
 @[simp]
 theorem sqrtNegThree_sq : sqrtNegThree ^ 2 = (-3 : ℂ) := by
-  simpa [sqrtNegThree] using I_mul_real_sqrt_nat_sq 3
+  simpa [sqrtNegThree] using Complex.I_mul_ofReal_sqrt_sq (x := 3) (by norm_num)
 
 /-- The chosen complex square root of `-7`, namely `i√7`. -/
 noncomputable abbrev sqrtNegSeven : ℂ :=
@@ -75,7 +63,7 @@ noncomputable abbrev sqrtNegSeven : ℂ :=
 /-- The chosen root `sqrtNegSeven` squares to `-7`. -/
 @[simp]
 theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = (-7 : ℂ) := by
-  simpa [sqrtNegSeven] using I_mul_real_sqrt_nat_sq 7
+  simpa [sqrtNegSeven] using Complex.I_mul_ofReal_sqrt_sq (x := 7) (by norm_num)
 
 /-- The three radicands `-1`, `-3`, and `-7` associated to the prime discriminants in
 the `ℚ(√-21)` genus-field example. -/
