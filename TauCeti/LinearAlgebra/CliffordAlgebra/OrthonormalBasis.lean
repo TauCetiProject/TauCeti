@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+-- Private: the Clifford multiplication and ordered-product formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
+import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -167,6 +168,14 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
 
 end Module
+
+/-- Clifford multiplication by two orthonormal frame vectors preserves nonvanishing. -/
+theorem map_ι_apply_map_ι_apply_ne_zero {W : Type*} [AddCommGroup W] [Module ℂ W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (i j : ι) {ψ : W} (hψ : ψ ≠ 0) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) ψ) ≠ 0 := by
+  have hinj (k : ι) := CliffordAlgebra.map_ι_injective ρ (v := b k)
+    (by simp [hQ, b.orthonormal.1 k])
+  exact fun heq ↦ hψ <| ((hinj i).comp (hinj j)) (by simpa using heq)
 
 end OrthonormalBasis
 

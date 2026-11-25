@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.TorusCharacter
 import TauCeti.LinearAlgebra.Eigenspace.Involution
+import TauCeti.LinearAlgebra.End.Restrict
 
 /-!
 # The Clifford action of the Kähler form
@@ -492,11 +493,7 @@ theorem exists_ne_zero_bivectorExterior_apply [Nontrivial W] (hQ : ∀ v, Q v = 
     have hzω : ρ (bivectorExterior Q J.kahlerForm) z = (2 * Complex.I) • (z : W) := by
       simpa [mem_eigenspace_iff.1 hz] using hωS z
     refine ⟨⟨_, map_ι_apply_map_ι_apply_mem_eigenspace_chirality o z.property (e 0) (e 2)⟩, ?_, ?_⟩
-    · intro h₀
-      apply hz₀
-      apply Subtype.ext
-      simpa [e.map_ι_apply_map_ι_apply hQ ρ] using
-        congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h₀
+    · exact e.map_ι_apply_map_ι_apply_ne_zero hQ ρ 0 2 fun h ↦ hz₀ (Subtype.ext h)
     · simpa using bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply
         hQ h₀ h₂ hzω
 
@@ -585,24 +582,18 @@ theorem mapsTo_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
 noncomputable def canonicalSubmoduleAlgHom {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u) :
-    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (canonicalSubmodule (ρ := ρ) e u) where
-  toFun a := (ρ a).restrict (mapsTo_canonicalSubmodule hQ h₀ h₂ hu a)
-  map_one' := by ext ⟨w, hw⟩; simp
-  map_mul' a b := by ext ⟨w, hw⟩; simp
-  map_zero' := by ext ⟨w, hw⟩; simp
-  map_add' a b := by ext ⟨w, hw⟩; simp
-  commutes' r := by
-    ext ⟨w, hw⟩
-    simp [LinearMap.restrict_apply, Module.algebraMap_end_apply]
+    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (canonicalSubmodule (ρ := ρ) e u) :=
+  ρ.restrictEnd _ (mapsTo_canonicalSubmodule hQ h₀ h₂ hu)
 
 /-- The restricted Clifford action on `canonicalSubmodule e u` agrees with `ρ` on underlying
 vectors. -/
+@[simp]
 theorem coe_canonicalSubmoduleAlgHom_apply {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
     (a : CliffordAlgebra Q) (w : canonicalSubmodule (ρ := ρ) e u) :
     (canonicalSubmoduleAlgHom hQ h₀ h₂ hu a w : W) = ρ a w :=
-  (rfl)
+  AlgHom.coe_restrictEnd_apply ρ _ _ a w
 
 /-- Every positive half-spinor in `canonicalSubmodule e u` is a linear combination of `u` and
 `c(e₀) c(e₂) u`. -/
@@ -644,9 +635,7 @@ noncomputable def canonicalSubmodulePositiveBasis {e : OrthonormalBasis (Fin 4) 
   have hb₁ω : ρ (bivectorExterior Q J.kahlerForm) b₁ = (2 * Complex.I) • b₁ := by
     simpa using
       bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  have hb₁ne : b₁ ≠ 0 := fun h ↦ hu₀ <| by
-    have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
-    simpa [b₁, e.map_ι_apply_map_ι_apply hQ ρ] using this
+  have hb₁ne : b₁ ≠ 0 := e.map_ι_apply_map_ι_apply_ne_zero hQ ρ 0 2 hu₀
   let v₀ : eigenspace (ρM (chirality Q o)) 1 :=
     ⟨⟨u, Submodule.subset_span (by simp)⟩,
       mem_eigenspace_iff.2 (Subtype.ext (by
@@ -686,6 +675,7 @@ noncomputable def canonicalSubmodulePositiveBasis {e : OrthonormalBasis (Fin 4) 
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨1, rfl⟩))
 
 /-- The zeroth vector of `canonicalSubmodulePositiveBasis` has underlying vector `u`. -/
+@[simp]
 theorem coe_canonicalSubmodulePositiveBasis_zero {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
@@ -695,6 +685,7 @@ theorem coe_canonicalSubmodulePositiveBasis_zero {e : OrthonormalBasis (Fin 4) �
   simp [canonicalSubmodulePositiveBasis]
 
 /-- The first vector of `canonicalSubmodulePositiveBasis` has underlying vector `c(e₀) c(e₂) u`. -/
+@[simp]
 theorem coe_canonicalSubmodulePositiveBasis_one {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)

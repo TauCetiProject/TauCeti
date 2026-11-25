@@ -335,9 +335,7 @@ private theorem exists_smul_of_mem_unitaryGroup {e : OrthonormalBasis (Fin 4) �
       (2 * Complex.I) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
     simpa using
       bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  have hb₁ne : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ≠ 0 := fun h ↦ hu₀ <| by
-    have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
-    simpa [e.map_ι_apply_map_ι_apply hQ ρ] using this
+  have hb₁ne := e.map_ι_apply_map_ι_apply_ne_zero hQ ρ 0 2 hu₀
   rw [hxu_eq, map_add, map_smul, map_smul, hu, hb₁ω] at hxu_ω
   have hd : d = 0 := by
     have h2 : (4 * Complex.I * d) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) = 0 := by
@@ -470,9 +468,7 @@ theorem
     ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) β),
       map_ι_apply_map_ι_apply_mem_eigenspace_chirality o β.property _ _⟩
   have hu_coe : (u : W) = ρ (ι Q (e 0)) (ρ (ι Q (e 2)) β) := rfl
-  have hu₀ : (u : W) ≠ 0 := fun h ↦ hβ₀ <| by
-    have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
-    simpa [hu_coe, e.map_ι_apply_map_ι_apply hQ ρ] using this
+  have hu₀ : (u : W) ≠ 0 := e.map_ι_apply_map_ι_apply_ne_zero hQ ρ 0 2 hβ₀
   have hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W) := by
     simpa [hu_coe] using
       bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hβ
