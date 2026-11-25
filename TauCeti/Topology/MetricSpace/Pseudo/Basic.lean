@@ -18,8 +18,9 @@ pairwise distances `dist (F p.1 x) (F p.2 x)` along `l ×ˢ l` implies `UniformC
 whose uniform distance on `s` is eventually bounded by a quantity tending to `0`
 (`TendstoUniformlyOn.congr_dist_le`).
 
-A family of self-maps separates points through some entourage exactly when it separates them
-through some positive distance (`TauCeti.exists_separating_entourage_iff_exists_pos_dist`).
+A family of maps into a pseudometric space separates points through some entourage exactly when
+it separates them through some positive distance
+(`TauCeti.exists_separating_entourage_iff_exists_pos_dist`).
 -/
 
 public section
@@ -70,13 +71,13 @@ theorem _root_.TendstoUniformlyOn.congr_dist_le {G : ι → α → β}
     _ < ε / 2 + ε / 2 := add_lt_add (hiF x hx) ((hiFG x hx).trans_lt ((le_abs_self _).trans_lt hiu))
     _ = ε := add_halves ε
 
-/-- A family `f` of self-maps of a pseudometric space separates points through some entourage
-exactly when it separates them through some distance `δ > 0`: two points are equal as soon as
-all their images are `U`-close, if and only if distinct points have images more than `δ` apart. -/
-theorem exists_separating_entourage_iff_exists_pos_dist {X : Type*} [PseudoMetricSpace X]
-    (f : ι → X → X) :
-    (∃ U ∈ 𝓤 X, ∀ x y : X, (∀ i, (f i x, f i y) ∈ U) → x = y) ↔
-      ∃ δ > 0, ∀ x y : X, x ≠ y → ∃ i, δ < dist (f i x) (f i y) := by
+/-- A family `g` of maps from a type `α` into a pseudometric space `β` separates points through
+some entourage exactly when it separates them through some distance `δ > 0`: two points are equal
+as soon as all their images are `U`-close, if and only if distinct points have images more than `δ`
+apart. -/
+theorem exists_separating_entourage_iff_exists_pos_dist (g : ι → α → β) :
+    (∃ U ∈ 𝓤 β, ∀ x y : α, (∀ i, (g i x, g i y) ∈ U) → x = y) ↔
+      ∃ δ > 0, ∀ x y : α, x ≠ y → ∃ i, δ < dist (g i x) (g i y) := by
   constructor
   · rintro ⟨U, hU, hsep⟩
     obtain ⟨ε, hε, hεU⟩ := Metric.mem_uniformity_dist.1 hU

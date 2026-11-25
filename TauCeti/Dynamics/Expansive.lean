@@ -20,8 +20,9 @@ import Mathlib.Topology.Separation.Connected
 An action of a monoid `M` on a uniform space `X` is *expansive* (`TauCeti.IsExpansiveAction M X`)
 if there is an entourage `U` such that two points whose orbits stay `U`-close,
 `∀ m, (m • x, m • y) ∈ U`, are equal. Expansiveness pulls back along injective uniformly continuous
-equivariant maps (`TauCeti.IsExpansiveAction.of_injective`), so it passes to invariant subsets and
-is invariant under uniform conjugacy (`TauCeti.IsExpansiveAction.congr`).
+equivariant maps (`TauCeti.IsExpansiveAction.of_injective`), so it passes to invariant subsets
+(`TauCeti.IsExpansiveAction.subMulAction`) and is invariant under uniform conjugacy
+(`TauCeti.IsExpansiveAction.congr`).
 
 On a metric space the entourage can be replaced by a constant. A permutation `T` is *expansive
 with constant `δ`* (`TauCeti.IsExpansive T δ`) if distinct points are separated by more than `δ`
@@ -30,11 +31,14 @@ at some time `n : ℤ`, and a map `T` is *positively expansive with constant `δ
 expansive for some `δ > 0` exactly when the `ℕ`-action of its iterates, `IterateMulAct T`, is
 expansive (`TauCeti.isExpansiveAction_iterateMulAct_iff`), and a permutation is expansive for some
 `δ > 0` exactly when the action of the cyclic group `Subgroup.zpowers T` is
-(`TauCeti.isExpansiveAction_zpowers_iff`).
+(`TauCeti.isExpansiveAction_zpowers_iff`). Only constants `δ > 0` are meaningful: on a metric
+space every permutation is expansive with any constant `δ ≤ 0`. For a homeomorphism `T`,
+`Homeomorph.isExpansive_toEquiv_iff` states expansiveness of `T.toEquiv` through the powers of `T`
+in the group `X ≃ₜ X`.
 
 An isometry moves no pair of points apart, so an isometric permutation of a space with a
-non-isolated point is not expansive (`Isometry.not_isExpansive`); in particular no
-rotation of the circle is expansive (`TauCeti.not_isExpansive_addCircle_addRight`).
+non-isolated point is not expansive with any constant `δ > 0` (`Isometry.not_isExpansive`); in
+particular no rotation of the circle is (`AddCircle.not_isExpansive_addRight`).
 
 ## Main definitions
 
@@ -93,6 +97,12 @@ theorem IsExpansiveAction.congr {Y : Type*} [SMul M Y] [UniformSpace Y] (e : X �
   apply e.injective
   rw [he, e.apply_symm_apply, e.apply_symm_apply]
 
+/-- An expansive action restricts to an expansive action on every invariant subset. -/
+theorem IsExpansiveAction.subMulAction (h : IsExpansiveAction M X) (S : SubMulAction M X) :
+    IsExpansiveAction M S :=
+  h.of_injective uniformContinuous_subtypeVal Subtype.val_injective fun m x ↦
+    (SubMulAction.val_smul m x).symm
+
 /-- An expansive `M`-action stays expansive for any `N`-action through a map `f : M → N` with
 `f m • x = m • x`: every `M`-orbit lies in an `N`-orbit. -/
 theorem IsExpansiveAction.of_compHom {N : Type*} [SMul N X] (h : IsExpansiveAction M X)
@@ -108,12 +118,14 @@ section Metric
 variable {X : Type*} [PseudoMetricSpace X]
 
 /-- A permutation `T` of a metric space is *expansive with constant `δ`* if any two distinct points
-are more than `δ` apart at some time `n : ℤ`. -/
+are more than `δ` apart at some time `n : ℤ`. Only `δ > 0` is meaningful: on a metric space every
+permutation is expansive with any constant `δ ≤ 0`, taking `n = 0`. -/
 def IsExpansive (T : Equiv.Perm X) (δ : ℝ) : Prop :=
   ∀ x y : X, x ≠ y → ∃ n : ℤ, δ < dist ((T ^ n) x) ((T ^ n) y)
 
 /-- A map `T` of a metric space is *positively expansive with constant `δ`* if any two distinct
-points are more than `δ` apart at some time `n : ℕ`. -/
+points are more than `δ` apart at some time `n : ℕ`. Only `δ > 0` is meaningful: on a metric space
+every map is positively expansive with any constant `δ ≤ 0`, taking `n = 0`. -/
 def IsPositivelyExpansive (T : X → X) (δ : ℝ) : Prop :=
   ∀ x y : X, x ≠ y → ∃ n : ℕ, δ < dist (T^[n] x) (T^[n] y)
 
@@ -189,6 +201,26 @@ end Metric
 
 end TauCeti
 
+namespace Homeomorph
+
+open TauCeti
+
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- A homeomorphism `T` is expansive with constant `δ`, as a permutation, exactly when any two
+distinct points are more than `δ` apart under some power of `T` in the group `X ≃ₜ X`. -/
+theorem isExpansive_toEquiv_iff {T : X ≃ₜ X} {δ : ℝ} :
+    IsExpansive T.toEquiv δ ↔ ∀ x y : X, x ≠ y → ∃ n : ℤ, δ < dist ((T ^ n) x) ((T ^ n) y) := by
+  let φ : (X ≃ₜ X) →* Equiv.Perm X :=
+    { toFun := Homeomorph.toEquiv
+      map_one' := by ext; simp
+      map_mul' := fun _ _ ↦ by ext; simp }
+  -- `φ` is `Homeomorph.toEquiv`, so `φ S` and `S` have the same coercion by definition.
+  have hpow (n : ℤ) : ⇑(T.toEquiv ^ n) = ⇑(T ^ n) := congrArg DFunLike.coe (map_zpow φ T n).symm
+  simp only [TauCeti.isExpansive_iff, hpow]
+
+end Homeomorph
+
 namespace Isometry
 
 open TauCeti Set Filter
@@ -202,7 +234,8 @@ theorem isExpansive_iff {T : Equiv.Perm X} (hT : Isometry T) {δ : ℝ} :
     IsExpansive T δ ↔ ∀ x y : X, x ≠ y → δ < dist x y := by
   simp [TauCeti.isExpansive_iff, (hT.zpow _).dist_eq]
 
-/-- An isometric permutation of a space with a non-isolated point is not expansive. -/
+/-- An isometric permutation of a space with a non-isolated point is not expansive with any
+constant `δ > 0`. -/
 theorem not_isExpansive {T : Equiv.Perm X} (hT : Isometry T) {x : X}
     (hx : (𝓝[≠] x).NeBot) {δ : ℝ} (hδ : 0 < δ) : ¬ IsExpansive T δ := by
   rw [hT.isExpansive_iff]
@@ -213,10 +246,12 @@ theorem not_isExpansive {T : Equiv.Perm X} (hT : Isometry T) {x : X}
 
 end Isometry
 
-namespace TauCeti
+namespace AddCircle
 
-/-- No rotation of the circle `AddCircle p` is expansive. -/
-theorem not_isExpansive_addCircle_addRight {p : ℝ} (a : AddCircle p) {δ : ℝ} (hδ : 0 < δ) :
+open TauCeti
+
+/-- No rotation of the circle `AddCircle p` is expansive with any constant `δ > 0`. -/
+theorem not_isExpansive_addRight {p : ℝ} (a : AddCircle p) {δ : ℝ} (hδ : 0 < δ) :
     ¬ IsExpansive (Equiv.addRight a) δ := by
   -- `AddCircle p` is nontrivial: otherwise `ℝ` would be the countable set `ℤ • p`.
   have : Nontrivial (AddCircle p) := by
@@ -230,4 +265,4 @@ theorem not_isExpansive_addCircle_addRight {p : ℝ} (a : AddCircle p) {δ : ℝ
   -- `AddCircle p` is connected and T1, so its nontriviality leaves no point isolated.
   exact hT.not_isExpansive (x := 0) inferInstance hδ
 
-end TauCeti
+end AddCircle
