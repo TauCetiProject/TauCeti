@@ -23,8 +23,8 @@ summatory functions of the Liouville and Möbius functions.
 ## Main declarations
 
 * `ArithmeticFunction.dilateSq`: the dilation `f_□` of `f` by squares.
-* `ArithmeticFunction.dilateSq_mul`, `ArithmeticFunction.dilateSq_one`: dilation is a ring map for
-  the Dirichlet product.
+* `ArithmeticFunction.dilateSq_mul`, `ArithmeticFunction.dilateSq_one`: dilation respects the
+  Dirichlet product and fixes `1`.
 * `ArithmeticFunction.mul_dilateSq_apply`: `(f * g_□)(n) = ∑_{d² ∣ n} f(n / d²) g(d)`.
 * `ArithmeticFunction.sum_Ioc_dilateSq_mul`:
   `∑_{0 < n ≤ N} (g_□ * f)(n) = ∑_{0 < d ≤ √N} g(d) ∑_{0 < k ≤ N / d²} f(k)`.
@@ -82,6 +82,16 @@ theorem dilateSq_one : (1 : ArithmeticFunction R).dilateSq = 1 := by
     rintro rfl
     exact hn ⟨1, rfl⟩
 
+/-- A pair `x` with `x.1 * x.2 = n` on which `f_□(x.1) g_□(x.2) ≠ 0` is a pair of squares
+`(a², b²)`, and then `n = (ab)²`. -/
+private theorem exists_eq_sq_of_dilateSq_mul_ne_zero {f g : ArithmeticFunction R} {n : ℕ}
+    {x : ℕ × ℕ} (hx : x ∈ n.divisorsAntidiagonal) (hne : f.dilateSq x.1 * g.dilateSq x.2 ≠ 0) :
+    ∃ a b, x = (a ^ 2, b ^ 2) ∧ n = (a * b) ^ 2 := by
+  obtain ⟨a, ha⟩ := f.exists_eq_sq_of_dilateSq_apply_ne_zero (left_ne_zero_of_mul hne)
+  obtain ⟨b, hb⟩ := g.exists_eq_sq_of_dilateSq_apply_ne_zero (right_ne_zero_of_mul hne)
+  rw [Nat.mem_divisorsAntidiagonal, ha, hb, ← mul_pow] at hx
+  exact ⟨a, b, Prod.ext ha hb, hx.1.symm⟩
+
 /-- Dilation by squares is multiplicative for the Dirichlet product:
 `(f * g)_□ = f_□ * g_□`. -/
 theorem dilateSq_mul (f g : ArithmeticFunction R) :
@@ -100,22 +110,19 @@ theorem dilateSq_mul (f g : ArithmeticFunction R) :
       exact Prod.ext (Nat.pow_left_injective two_ne_zero h.1)
         (Nat.pow_left_injective two_ne_zero h.2)
     · intro y hy hne
-      obtain ⟨a, ha⟩ := f.exists_eq_sq_of_dilateSq_apply_ne_zero (left_ne_zero_of_mul hne)
-      obtain ⟨b, hb⟩ := g.exists_eq_sq_of_dilateSq_apply_ne_zero (right_ne_zero_of_mul hne)
-      rw [Nat.mem_divisorsAntidiagonal, ha, hb, ← mul_pow] at hy
-      refine ⟨(a, b), ?_, ?_, Prod.ext ha.symm hb.symm⟩
+      have hm := (Nat.mem_divisorsAntidiagonal.1 hy).2
+      obtain ⟨a, b, rfl, hab⟩ := exists_eq_sq_of_dilateSq_mul_ne_zero hy hne
+      refine ⟨(a, b), ?_, ?_, rfl⟩
       · rw [Nat.mem_divisorsAntidiagonal]
-        exact ⟨Nat.pow_left_injective two_ne_zero hy.1, by rintro rfl; simp at hy⟩
-      · rwa [ha, hb, dilateSq_apply_sq, dilateSq_apply_sq] at hne
+        exact ⟨Nat.pow_left_injective two_ne_zero hab.symm, by rintro rfl; simp at hm⟩
+      · rwa [dilateSq_apply_sq, dilateSq_apply_sq] at hne
     · intro x _ _
       rw [dilateSq_apply_sq, dilateSq_apply_sq]
   · rw [dilateSq_apply_of_not_isSquare _ hn]
     refine (sum_eq_zero fun x hx ↦ ?_).symm
     by_contra hne
-    obtain ⟨a, ha⟩ := f.exists_eq_sq_of_dilateSq_apply_ne_zero (left_ne_zero_of_mul hne)
-    obtain ⟨b, hb⟩ := g.exists_eq_sq_of_dilateSq_apply_ne_zero (right_ne_zero_of_mul hne)
-    rw [Nat.mem_divisorsAntidiagonal, ha, hb, ← mul_pow] at hx
-    exact hn ⟨a * b, by rw [← hx.1, sq]⟩
+    obtain ⟨a, b, -, hab⟩ := exists_eq_sq_of_dilateSq_mul_ne_zero hx hne
+    exact hn ⟨a * b, by rw [hab, sq]⟩
 
 /-- A convolution with a dilated function is a sum over the square divisors:
 `(f * g_□)(n) = ∑_{d² ∣ n} f(n / d²) g(d)`. -/

@@ -163,10 +163,8 @@ theorem moebiusSum_one : moebiusSum 1 = 1 := by
 
 /-- The trivial bound `|M(x)| ≤ x` for `x ≥ 0`, as `|μ(n)| ≤ 1`. -/
 theorem abs_moebiusSum_le (hx : 0 ≤ x) : |moebiusSum x| ≤ x := by
-  calc |moebiusSum x| ≤ ∑ n ∈ Icc 1 ⌊x⌋₊, |(μ n : ℝ)| := abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _n ∈ Icc 1 ⌊x⌋₊, (1 : ℝ) :=
-        sum_le_sum fun n _ ↦ by exact_mod_cast ArithmeticFunction.abs_moebius_le_one
-    _ ≤ x := by simpa using Nat.floor_le hx
+  rw [moebiusSum_def]
+  exact abs_sum_Icc_one_natFloor_le (fun _ ↦ mod_cast ArithmeticFunction.abs_moebius_le_one) hx
 
 /-- `m(1) = μ(1) = 1`. -/
 @[simp]

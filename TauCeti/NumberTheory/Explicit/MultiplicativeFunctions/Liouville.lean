@@ -42,6 +42,10 @@ adapted from `PrimeNumberTheoremAnd/Consequences.lean` (`sum_lambda_eq_sum_mu_di
 ## Main declarations
 
 * `TauCeti.liouvilleSum`: the Liouville summatory function `L_λ`.
+* `TauCeti.liouvilleSum_natCast`, `TauCeti.liouvilleSum_natFloor`,
+  `TauCeti.liouvilleSum_natCast_add_one`: agreement with the sum over `Finset.Icc 1 N`, constancy
+  on `[N, N + 1)` and the jump `λ(N + 1)`.
+* `TauCeti.abs_liouvilleSum_le`: the trivial bound `|L_λ(x)| ≤ x` for `x ≥ 0`.
 * `TauCeti.liouvilleSum_eq_sum_moebiusSum`: `L_λ(x) = ∑_{w ≤ √x} M(x / w²)`.
 * `TauCeti.moebiusSum_eq_sum_liouvilleSum`: `M(x) = ∑_{w ≤ √x} μ(w) L_λ(x / w²)`.
 * `TauCeti.abs_liouvilleSum_le_sum`, `TauCeti.abs_moebiusSum_le_sum`: the bounds
@@ -82,42 +86,63 @@ theorem liouvilleSum_natCast (N : ℕ) :
     liouvilleSum N = ∑ n ∈ Icc 1 N, (ArithmeticFunction.liouville n : ℝ) := by
   simp [liouvilleSum]
 
+/-- `L_λ` is constant on each interval `[N, N + 1)`: `L_λ(x) = L_λ(⌊x⌋₊)`. -/
+@[simp high]
+theorem liouvilleSum_natFloor (x : ℝ) : liouvilleSum ⌊x⌋₊ = liouvilleSum x := by
+  simp [liouvilleSum]
+
+/-- `L_λ` jumps by `λ(N + 1)` at `N + 1`. -/
+theorem liouvilleSum_natCast_add_one (N : ℕ) :
+    liouvilleSum (N + 1) = liouvilleSum N + ArithmeticFunction.liouville (N + 1) := by
+  rw [← Nat.cast_add_one, liouvilleSum_natCast, liouvilleSum_natCast,
+    sum_Icc_succ_top (Nat.le_add_left 1 N)]
+
+/-- `L_λ(1) = λ(1) = 1`. -/
+@[simp]
+theorem liouvilleSum_one : liouvilleSum 1 = 1 := by
+  simpa [ArithmeticFunction.liouville_apply_one] using liouvilleSum_natCast 1
+
 /-- The trivial bound `|L_λ(x)| ≤ x` for `x ≥ 0`, as `|λ(n)| ≤ 1`. -/
 theorem abs_liouvilleSum_le (hx : 0 ≤ x) : |liouvilleSum x| ≤ x := by
-  calc |liouvilleSum x|
-      ≤ ∑ n ∈ Icc 1 ⌊x⌋₊, |(ArithmeticFunction.liouville n : ℝ)| := abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _n ∈ Icc 1 ⌊x⌋₊, (1 : ℝ) := by
-        refine sum_le_sum fun n hn ↦ ?_
-        simp [ArithmeticFunction.liouville_apply (Nat.one_le_iff_ne_zero.1 (mem_Icc.1 hn).1)]
-    _ ≤ x := by simpa using Nat.floor_le hx
+  rw [liouvilleSum_def]
+  refine abs_sum_Icc_one_natFloor_le (fun n ↦ ?_) hx
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp [ArithmeticFunction.liouville_apply hn]
 
 /-! ### The summatory identities -/
+
+/-- Summing `f * g_□` over `n ≤ x` and grouping by the square divisor `w²`:
+`∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`. -/
+private theorem sum_Icc_natFloor_mul_dilateSq (f g : ArithmeticFunction ℤ) (x : ℝ) :
+    ∑ n ∈ Icc 1 ⌊x⌋₊, ((f * g.dilateSq) n : ℝ) =
+      ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (g w : ℝ) * ∑ k ∈ Icc 1 ⌊x / w ^ 2⌋₊, (f k : ℝ) := by
+  have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_dilateSq_mul f g ⌊x⌋₊)
+  rw [mul_comm g.dilateSq f] at h
+  push_cast at h
+  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  rw [h]
+  refine sum_congr rfl fun w _ ↦ ?_
+  rw [← Nat.cast_pow, Nat.floor_div_natCast]
 
 /-- `L_λ(x) = ∑_{w ≤ √x} M(x / w²)`, the sum running over the naturals `1 ≤ w ≤ √x`. -/
 theorem liouvilleSum_eq_sum_moebiusSum (x : ℝ) :
     liouvilleSum x = ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), moebiusSum (x / w ^ 2) := by
-  have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_dilateSq_mul μ
-    (ζ : ArithmeticFunction ℤ) ⌊x⌋₊)
-  rw [mul_comm, ← ArithmeticFunction.liouville_eq_moebius_mul_dilateSq] at h
-  push_cast at h
-  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  have h := sum_Icc_natFloor_mul_dilateSq μ (ζ : ArithmeticFunction ℤ) x
+  rw [← ArithmeticFunction.liouville_eq_moebius_mul_dilateSq] at h
   rw [liouvilleSum_def, h]
   refine sum_congr rfl fun w hw ↦ ?_
   rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply_ne
     (Nat.one_le_iff_ne_zero.1 (mem_Icc.1 hw).1),
-    Nat.cast_one, Int.cast_one, one_mul, moebiusSum_def, ← Nat.cast_pow, Nat.floor_div_natCast]
+    Nat.cast_one, Int.cast_one, one_mul, moebiusSum_def]
 
 /-- `M(x) = ∑_{w ≤ √x} μ(w) L_λ(x / w²)`, the sum running over the naturals `1 ≤ w ≤ √x`. -/
 theorem moebiusSum_eq_sum_liouvilleSum (x : ℝ) :
     moebiusSum x = ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (μ w : ℝ) * liouvilleSum (x / w ^ 2) := by
-  have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_dilateSq_mul
-    ArithmeticFunction.liouville μ ⌊x⌋₊)
-  rw [mul_comm, ArithmeticFunction.liouville_mul_dilateSq_moebius] at h
-  push_cast at h
-  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  have h := sum_Icc_natFloor_mul_dilateSq ArithmeticFunction.liouville μ x
+  rw [ArithmeticFunction.liouville_mul_dilateSq_moebius] at h
   rw [moebiusSum_def, h]
-  refine sum_congr rfl fun w _ ↦ ?_
-  rw [liouvilleSum_def, ← Nat.cast_pow, Nat.floor_div_natCast]
+  simp only [liouvilleSum_def]
 
 /-- `|L_λ(x)| ≤ ∑_{w ≤ √x} |M(x / w²)|`. -/
 theorem abs_liouvilleSum_le_sum (x : ℝ) :
