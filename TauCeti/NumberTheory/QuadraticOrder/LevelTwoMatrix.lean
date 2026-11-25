@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.QuadraticAlgebra.UnitMatrix
+import TauCeti.NumberTheory.QuadraticOrder.ExceptionalGenerators
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -38,8 +39,6 @@ theorem card_periodMatrixGroup_zmod_two (a b : ZMod 2) :
 theorem units_map_zmod_two_gaussian_surjective :
     Function.Surjective (Units.map
       (mapRingHom (Int.castRingHom (ZMod 2)) (-1) 0).toMonoidHom) := by
-  have hω : IsUnit (ω : QuadraticAlgebra ℤ (-1) 0) :=
-    isUnit_iff_norm_isUnit.mpr (by norm_num [norm_def])
   intro u
   have hu := (isUnit_iff_norm_isUnit.mp u.isUnit)
   have key : ∀ t s : ZMod 2, IsUnit (t ^ 2 + s ^ 2) →
@@ -49,7 +48,7 @@ theorem units_map_zmod_two_gaussian_surjective :
   rcases key _ _ hn with h | h
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
-  · refine ⟨hω.unit, Units.ext ?_⟩
+  · refine ⟨TauCeti.QuadraticAlgebra.gaussianUnit, Units.ext ?_⟩
     ext <;> simp [mapRingHom, h.1, h.2]
 
 /-- Every unit modulo `2` in the Eisenstein integer algebra lifts to an integral unit. The
@@ -57,8 +56,6 @@ three residues are represented by `1`, `ω`, and `ω² = ω - 1`. -/
 theorem units_map_zmod_two_eisenstein_surjective :
     Function.Surjective (Units.map
       (mapRingHom (Int.castRingHom (ZMod 2)) (-1) 1).toMonoidHom) := by
-  have hω : IsUnit (ω : QuadraticAlgebra ℤ (-1) 1) :=
-    isUnit_iff_norm_isUnit.mpr (by norm_num [norm_def])
   intro u
   have hu := (isUnit_iff_norm_isUnit.mp u.isUnit)
   have key : ∀ t s : ZMod 2, IsUnit (t ^ 2 + t * s + s ^ 2) →
@@ -68,9 +65,9 @@ theorem units_map_zmod_two_eisenstein_surjective :
   rcases key _ _ hn with h | h | h
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
-  · refine ⟨hω.unit, Units.ext ?_⟩
+  · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit, Units.ext ?_⟩
     ext <;> simp [mapRingHom, h.1, h.2]
-  · refine ⟨hω.unit ^ 2, Units.ext ?_⟩
+  · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit ^ 2, Units.ext ?_⟩
     ext <;> simp [mapRingHom, sq, h.1, h.2]
 
 end QuadraticAlgebra

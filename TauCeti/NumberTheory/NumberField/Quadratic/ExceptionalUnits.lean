@@ -5,15 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import TauCeti.NumberTheory.QuadraticOrder.ExceptionalGenerators
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.Algebra.Squarefree
 import TauCeti.NumberTheory.NumberField.Quadratic.Model
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
-import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
-import Mathlib.Algebra.Group.Subgroup.Finite
-import Mathlib.Algebra.QuadraticAlgebra.Int
 
 /-!
 # Explicit generators of the exceptional quadratic unit groups
@@ -22,76 +18,33 @@ The integral models of the Gaussian and Eisenstein integers have unit groups gen
 coordinate generator `ω`, of orders four and six. Their cardinalities are transported from the
 rings of integers through the canonical model equivalences. The named generators give the
 images of the full unit groups in congruence quotients of both orders.
+
+## Main results
+
+* `TauCeti.QuadraticAlgebra.card_units_gaussian` and
+  `TauCeti.QuadraticAlgebra.card_units_eisenstein`: the integral unit groups have orders four
+  and six, respectively.
+* `TauCeti.QuadraticAlgebra.gaussianUnit_zpowers_eq_top` and
+  `TauCeti.QuadraticAlgebra.eisensteinUnit_zpowers_eq_top`: the powers of `ω` exhaust each unit
+  group.
 -/
 
 public section
 
-open scoped NumberField QuadraticAlgebra
+open scoped NumberField
 
 namespace TauCeti.QuadraticAlgebra
-
-/-- The Gaussian generator `ω = √-1` as a unit, with inverse `-ω`. -/
-def gaussianUnit : (QuadraticAlgebra ℤ (-1) 0)ˣ :=
-  Units.mkOfMulEqOne ω (-ω) (by ext <;> simp)
-
-/-- The underlying Gaussian integer of the generator is `ω`. -/
-@[simp] theorem gaussianUnit_val :
-    (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) = ω := by simp [gaussianUnit]
-
-/-- The Eisenstein generator `ω = (1 + √-3)/2` as a unit, with inverse `1 - ω`. -/
-def eisensteinUnit : (QuadraticAlgebra ℤ (-1) 1)ˣ :=
-  Units.mkOfMulEqOne ω (1 - ω) (by ext <;> simp)
-
-/-- The underlying Eisenstein integer of the generator is `ω`. -/
-@[simp] theorem eisensteinUnit_val :
-    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) = ω := by simp [eisensteinUnit]
-
-/-- The Eisenstein generator is a root of the sixth cyclotomic polynomial `X² - X + 1`. -/
-theorem eisensteinUnit_sq_sub_add_one :
-    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) ^ 2 - eisensteinUnit + 1 = 0 := by
-  simp [QuadraticAlgebra.omega_pow_two_eq_add]
-
-/-- The Gaussian generator is a primitive fourth root of unity. -/
-theorem isPrimitiveRoot_gaussianUnit :
-    IsPrimitiveRoot (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) 4 := by
-  have : Fact (¬ IsSquare (QuadraticAlgebra.discr ((-1 : ℤ) : ℚ) (0 : ℤ))) :=
-    ⟨not_isSquare_of_neg (by norm_num [QuadraticAlgebra.discr_def])⟩
-  let f := algebraMap (QuadraticAlgebra ℤ (-1) 0)
-    (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) (0 : ℤ))
-  apply IsPrimitiveRoot.of_map_of_injective (f := f) _
-    (FaithfulSMul.algebraMap_injective _ _)
-  apply TauCeti.isPrimitiveRoot_four_of_sq_eq_neg_one
-  have hs : (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) ^ 2 = -1 := by
-    simp [QuadraticAlgebra.omega_pow_two_eq_add]
-  simpa only [map_pow, map_neg, map_one] using congrArg f hs
-
-/-- The Eisenstein generator is a primitive sixth root of unity. -/
-theorem isPrimitiveRoot_eisensteinUnit :
-    IsPrimitiveRoot (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) 6 := by
-  have : Fact (¬ IsSquare (QuadraticAlgebra.discr ((-1 : ℤ) : ℚ) (1 : ℤ))) :=
-    ⟨not_isSquare_of_neg (by norm_num [QuadraticAlgebra.discr_def])⟩
-  let f := algebraMap (QuadraticAlgebra ℤ (-1) 1)
-    (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) (1 : ℤ))
-  apply IsPrimitiveRoot.of_map_of_injective (f := f) _
-    (FaithfulSMul.algebraMap_injective _ _)
-  apply TauCeti.isPrimitiveRoot_six_iff.2
-  simpa only [map_pow, map_add, map_sub, map_one, map_zero] using
-    congrArg f eisensteinUnit_sq_sub_add_one
 
 /-- There are four units in the Gaussian integral model. -/
 theorem card_units_gaussian : Nat.card (QuadraticAlgebra ℤ (-1) 0)ˣ = 4 := by
   have : Fact (¬ IsSquare (-1 : ℤ)) := ⟨not_isSquare_of_neg (by norm_num)⟩
   let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -1) squarefree_one.neg (by decide)
-  calc
-    Nat.card (QuadraticAlgebra ℤ (-1) 0)ˣ = Nat.card (𝓞 (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0))ˣ :=
-      (Nat.card_congr (Units.mapEquiv e.toRingEquiv.toMulEquiv).toEquiv).symm
-    _ = 4 := by
-      have : NumberField.IsTotallyComplex (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0) :=
-        QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num)
-      rw [TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr
-        (QuadraticAlgebra.finrank_eq_two _ _)]
-      rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one squarefree_one.neg (by decide)]
-      norm_num
+  have : NumberField.IsTotallyComplex (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0) :=
+    QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num)
+  rw [TauCeti.NumberField.Units.card_units_of_ringOfIntegersMulEquiv e.toRingEquiv.toMulEquiv
+    (QuadraticAlgebra.finrank_eq_two _ _),
+    QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one squarefree_one.neg (by decide)]
+  norm_num
 
 /-- There are six units in the Eisenstein integral model. -/
 theorem card_units_eisenstein : Nat.card (QuadraticAlgebra ℤ (-1) 1)ˣ = 6 := by
@@ -101,32 +54,25 @@ theorem card_units_eisenstein : Nat.card (QuadraticAlgebra ℤ (-1) 1)ˣ = 6 := 
     convert QuadraticAlgebra.ringOfIntegersEquivHalf (d := -3)
       Int.prime_three.squarefree.neg (by decide) using 1
     norm_num
-  calc
-    Nat.card (QuadraticAlgebra ℤ (-1) 1)ˣ =
-        Nat.card (𝓞 (QuadraticAlgebra ℚ ((-3 : ℤ) : ℚ) 0))ˣ :=
-      (Nat.card_congr (Units.mapEquiv e.toRingEquiv.toMulEquiv).toEquiv).symm
-    _ = 6 := by
-      have : NumberField.IsTotallyComplex (QuadraticAlgebra ℚ ((-3 : ℤ) : ℚ) 0) :=
-        QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num)
-      rw [TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr
-        (QuadraticAlgebra.finrank_eq_two _ _)]
-      rw [QuadraticAlgebra.discr_eq_of_mod_four_eq_one Int.prime_three.squarefree.neg (by decide)]
-      norm_num
+  have : NumberField.IsTotallyComplex (QuadraticAlgebra ℚ ((-3 : ℤ) : ℚ) 0) :=
+    QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num)
+  rw [TauCeti.NumberField.Units.card_units_of_ringOfIntegersMulEquiv e.toRingEquiv.toMulEquiv
+    (QuadraticAlgebra.finrank_eq_two _ _),
+    QuadraticAlgebra.discr_eq_of_mod_four_eq_one Int.prime_three.squarefree.neg (by decide)]
+  norm_num
 
 /-- The Gaussian generator generates the entire unit group. -/
 theorem gaussianUnit_zpowers_eq_top : Subgroup.zpowers gaussianUnit = ⊤ := by
   have h := IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_gaussianUnit
   have : Finite (QuadraticAlgebra ℤ (-1) 0)ˣ :=
     Nat.finite_of_card_ne_zero (by rw [card_units_gaussian]; decide)
-  apply Subgroup.eq_top_of_card_eq
-  rw [Nat.card_zpowers, ← h.eq_orderOf, card_units_gaussian]
+  rw [Subgroup.zpowers_eq_top_iff_orderOf_eq_card, ← h.eq_orderOf, card_units_gaussian]
 
 /-- The Eisenstein generator generates the entire unit group. -/
 theorem eisensteinUnit_zpowers_eq_top : Subgroup.zpowers eisensteinUnit = ⊤ := by
   have h := IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_eisensteinUnit
   have : Finite (QuadraticAlgebra ℤ (-1) 1)ˣ :=
     Nat.finite_of_card_ne_zero (by rw [card_units_eisenstein]; decide)
-  apply Subgroup.eq_top_of_card_eq
-  rw [Nat.card_zpowers, ← h.eq_orderOf, card_units_eisenstein]
+  rw [Subgroup.zpowers_eq_top_iff_orderOf_eq_card, ← h.eq_orderOf, card_units_eisenstein]
 
 end TauCeti.QuadraticAlgebra
