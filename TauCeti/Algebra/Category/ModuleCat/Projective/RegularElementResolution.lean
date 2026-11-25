@@ -71,12 +71,11 @@ abbrev regularElementAugmentation :
 /-- The augmentation kills the image of the differential. -/
 theorem regularElementComplex_d_comp_augmentation :
     (regularElementComplex f).d 1 0 ≫ regularElementAugmentation f = 0 := by
-  rw [HomologicalComplex.double_d _ _ one_ne_zero, Category.assoc, Category.assoc,
-    Iso.inv_hom_id_assoc, ← ModuleCat.ofHom_comp,
-    (Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) f).linearMap_comp_eq_zero,
-    ModuleCat.ofHom_zero, comp_zero]
+  simp [HomologicalComplex.double_d _ _ one_ne_zero, ← ModuleCat.ofHom_comp,
+    (Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) f).linearMap_comp_eq_zero]
 
 /-- Reducing multiplication by `f` modulo `(f)` gives the zero map. -/
+@[simp]
 theorem extendScalars_map_regularElementMul :
     (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {f}))).map (regularElementMul f) =
       0 := by
@@ -90,9 +89,8 @@ theorem extendScalars_map_regularElementMul :
   erw [Ideal.extendScalarsMkEquivQuotSMul_mk_tmul]
   have h0 : (Submodule.Quotient.mk ((1 : A) • (regularElementMul f).hom m) :
       A ⧸ (Ideal.span {f} • ⊤ : Submodule A A)) = 0 := by
-    rw [ModuleCat.hom_ofHom, LinearMap.mulLeft_apply, one_smul, Submodule.Quotient.mk_eq_zero,
-      Ideal.smul_top_eq_map]
-    simpa using Ideal.mul_mem_right m _ (Ideal.mem_span_singleton_self f)
+    -- keep `mk (f * m)` together so that membership in `(f)` can be tested
+    simp [-map_mul, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
   exact h0.trans ((Ideal.extendScalarsMkEquivQuotSMul (Ideal.span {f}) A).map_zero).symm
 
 /-- **The two-term resolution of `A ⧸ (f)`.** For a nonzerodivisor `f`, the complex

@@ -77,10 +77,9 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
     IsZero.eq_of_src (F.map_isZero ((isZero_regularElementProjectiveResolution_complex_X f hf 2
       le_rfl).of_iso (R.cochainComplexXIso (-2) 2))) _ _
   have hout : B.d (-1) 0 = 0 := by
-    -- the differentials of `complexBaseChange φ` applied to `P` are `F.map` of those of `P`
-    change F.map (P.d (-1) 0) = 0
+    simp only [B, Functor.mapHomologicalComplex_obj_d]
     rw [R.cochainComplex_d (-1) 0 1 0, regularElementProjectiveResolution_complex_d f hf]
-    simp only [F, Functor.map_comp, extendScalars_map_regularElementMul, zero_comp, comp_zero]
+    simp
   have hB : IsZero (B.X (-1)) := hz.of_iso
     ((B.iCyclesIso (-1) 0 (by simp) hout).symm ≪≫ B.isoHomologyπ (-2) (-1) (by simp) hin ≪≫ e₂)
   exact Ideal.not_isZero_extendScalars_mk_of_ne_top hI (hB.of_iso (F.mapIso hX₁).symm)
@@ -95,9 +94,8 @@ theorem not_isCompletelyFlat_quotient (hf : f ∈ nonZeroDivisors A) (hI : Ideal
   obtain ⟨F, -, ⟨e⟩⟩ := isCompletelyFlat_iff.1 h
   refine not_isZero_homology_derivedReduction_quotient hf hI
     (IsZero.of_iso ?_ ((homologyFunctor _ (-1)).mapIso e))
-  exact (IsZero.of_iso (ShortComplex.isZero_homology_of_isZero_X₂ _
-    (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℤ) 0 F (-1) (by omega)))
-      ((homologyFunctor _ (-1)).mapIso ((singleFunctorIsoCompQ _ 0).app F) ≪≫
-        (homologyFunctorFactors _ (-1)).app _))
+  exact (HomologicalComplex.isZero_single_obj_homology _ _ F (-1) (by omega)).of_iso
+    ((homologyFunctor _ (-1)).mapIso ((singleFunctorIsoCompQ _ 0).app F) ≪≫
+      (homologyFunctorFactors _ (-1)).app _)
 
 end TauCeti.DerivedDeRham
