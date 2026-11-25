@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.FieldTheory.Finite.SepClosedSubfield
 public import TauCeti.FieldTheory.IsSepClosed
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
-import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
@@ -32,12 +31,9 @@ equivalence `TauCeti.zHat.liftContinuousMulEquiv` that both identifications shar
 
 ## Main results
 
-* `TauCeti.FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`: the fixed field of
-  Frobenius is `k`.
 * `TauCeti.FiniteField.topologicalClosure_zpowers_frobeniusAlgEquivOfAlgebraic`: Frobenius
-  generates `Gal(L/k)` topologically.
-* `TauCeti.FiniteField.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: Frobenius restricts to
-  the Frobenius of any normal subextension.
+  generates `Gal(L/k)` topologically, since its fixed field is `k`
+  (`TauCeti.FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`).
 * `TauCeti.FiniteField.galoisGroupEquivZHat`: `Gal(L/k) ≃ₜ* ℤ̂`, with
   `galoisGroupEquivZHat_apply_frobenius` and `galoisGroupEquivZHat_symm_apply_gen`.
 -/
@@ -55,32 +51,12 @@ universe u v
 variable (k : Type u) (L : Type v) [Field k] [Fintype k] [Field L] [Algebra k L]
   [Algebra.IsAlgebraic k L]
 
-/-- The fixed field of the arithmetic Frobenius of `L` is `k`. -/
-theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
-    fixedField (Subgroup.zpowers (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ ?_
-  rw [mem_fixedField_zpowers_iff, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic] at hx
-  rw [IntermediateField.mem_bot]
-  exact (pow_natCard_eq_self_iff_mem_range_algebraMap x).1 (by rwa [Nat.card_eq_fintype_card])
-
 /-- **Frobenius generates the absolute Galois group of a finite field topologically.** -/
 theorem topologicalClosure_zpowers_frobeniusAlgEquivOfAlgebraic [IsGalois k L] :
     (Subgroup.zpowers (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L)).topologicalClosure =
       ⊤ := by
   rw [← fixingSubgroup_fixedField_eq_topologicalClosure,
     fixedField_zpowers_frobeniusAlgEquivOfAlgebraic, fixingSubgroup_bot]
-
-/-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
-`L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
-`L` is the arithmetic Frobenius of `E`. -/
-@[simp]
-theorem restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E] [Algebra k E]
-    [Algebra E L] [IsScalarTower k E L] [Normal k E] :
-    AlgEquiv.restrictNormalHom E (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
-      _root_.FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
-  ext x
-  apply (algebraMap E L).injective
-  simp [AlgEquiv.restrictNormalHom]
 
 variable [IsSepClosed L]
 
