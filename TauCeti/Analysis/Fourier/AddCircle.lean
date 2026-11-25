@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -85,6 +86,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   circle takes values of modulus one.
 * `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
   multiplicative unit circle is a unique integer power.
+* `ContinuousMonoidHom.exists_eq_comp_id_pow_iff`: a character of the circle factors through
+  `z ↦ zⁿ` exactly when its exponent is divisible by `n`.
 * `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
@@ -741,6 +744,20 @@ theorem existsUnique_circle_eq_zpow (χ : Circle →ₜ* Circle) :
   ext x
   simp only [fourier_apply, AddCircle.toCircle_zsmul]
   exact congrArg (fun z : Circle ↦ (z : ℂ)) ((hm _).symm.trans (hn' _))
+
+/-- **Characters through a power map of the circle.** A continuous character `χ` of the circle
+factors through the power map `z ↦ zⁿ` exactly when it is `z ↦ z^(n k)` for some integer `k`:
+the characters of the target circle pull back to the characters whose exponent is divisible by
+`n`. -/
+theorem exists_eq_comp_id_pow_iff (χ : Circle →ₜ* Circle) (n : ℕ) :
+    (∃ ψ : Circle →ₜ* Circle, χ = ψ.comp (ContinuousMonoidHom.id Circle ^ n)) ↔
+      ∃ k : ℤ, ∀ z : Circle, χ z = z ^ ((n : ℤ) * k) := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    obtain ⟨k, hk, -⟩ := existsUnique_circle_eq_zpow ψ
+    exact ⟨k, fun z ↦ by simp [hk, zpow_mul]⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨ContinuousMonoidHom.id Circle ^ k, ext fun z ↦ by simp [hk, zpow_mul]⟩
 
 end ContinuousMonoidHom
 
