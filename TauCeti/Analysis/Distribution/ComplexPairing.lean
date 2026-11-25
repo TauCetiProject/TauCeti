@@ -156,7 +156,8 @@ theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
   -- `f` is integrable against a real test function supported in `U`.
   have hint (L : ℂ →L[ℝ] ℝ) :
       MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ :=
-    hf.integrable_smul_left_of_hasCompactSupport (postcompCLM (𝕜 := ℝ) L φ).continuous
+    hf.integrable_smul_left_of_hasCompactSupport
+      (postcompCLM (𝕜 := ℝ) L φ).continuous.continuousOn
       (postcompCLM (𝕜 := ℝ) L φ).hasCompactSupport (hpart L)
   rw [complexPairing_apply, hT _ (hpart reCLM), hT _ (hpart imCLM),
     ← MeasureTheory.integral_const_mul,

@@ -61,7 +61,10 @@ it is `S_R` cut short along a circle of that end
 `TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation_inter`). The truncations
 increase with `R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.truncation_mono`,
 `TauCeti.ThricePuncturedSphere.iUnion_truncation`), so integrals over `S` are their limits as
-`R → ∞`.
+`R → ∞`. Every compact subset of `S` already lies in the interior of one truncation
+(`TauCeti.ThricePuncturedSphere.exists_subset_interior_truncation`), so the interiors of the
+truncations form an exhaustion of `S` by open sets with compact closures, on which local statements
+about maps on `S` can be assembled.
 
 Moving the end at `0` by `w ↦ (w - c) / a` gives an input end with center `c` and scale `a`.
 For a family of such ends with separated discs, a point of one disc lies off the support discs of
@@ -359,6 +362,15 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · simpa using mul_nonneg hR Real.two_pi_pos.le
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
+
+/-- Away from `0`, the signed longitudinal coordinate `-s` of the end at `∞` exceeds `r` exactly
+off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
+theorem lt_neg_re_endCoord_inf_iff {r : ℝ} {w : ℂ} (hw : w ≠ 0) :
+    r < -(inf.endCoord w).re ↔ 2 * Real.exp (2 * π * r) < ‖w‖ := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
+    lt_div_iff₀ (by positivity), norm_div, Complex.norm_ofNat,
+    Real.lt_log_iff_exp_lt (by positivity), lt_div_iff₀ (by norm_num), mul_comm r]
+  constructor <;> intro h <;> linarith
 
 /-- On the punctured disc `0 < ‖w - c_q‖ ≤ exp (-2πr) / 2` about the center of a positive end `q`,
 the longitudinal coordinate of that end is at least `r`: the disc is bounded by the circle `s = r`
@@ -934,6 +946,29 @@ theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1
   · rintro ⟨h₀, h₁⟩
     obtain ⟨R, hR⟩ := Finite.bddAbove_range fun q : Puncture => q.endSign * (q.endCoord w).re
     exact ⟨R, h₀, h₁, fun q => hR ⟨q, rfl⟩⟩
+
+/-- A point of `S` whose three signed longitudinal coordinates are `< R` is an interior point of
+the truncation `S_R`. -/
+theorem mem_interior_truncation {R : ℝ} {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1)
+    (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re < R) : w ∈ interior (truncation R) := by
+  refine mem_interior_iff_mem_nhds.2 ?_
+  filter_upwards [isOpen_ne.mem_nhds hw.1, isOpen_ne.mem_nhds hw.2,
+    Filter.eventually_all.2 fun q : Puncture =>
+      ((q.contDiffAt_re_endCoord (ne_endCenter hw q) (n := 0)).continuousAt.const_mul
+        q.endSign).eventually (gt_mem_nhds (h q))] with w' h₀ h₁ hq
+  exact ⟨h₀, h₁, fun q => (hq q).le⟩
+
+/-- Every compact subset of the thrice-punctured sphere `S` lies in the interior of a
+truncation `S_R`. -/
+theorem exists_subset_interior_truncation {C : Set ℂ} (hC : IsCompact C)
+    (hCS : C ⊆ {w : ℂ | w ≠ 0 ∧ w ≠ 1}) : ∃ R : ℝ, C ⊆ interior (truncation R) := by
+  have hcover : C ⊆ ⋃ n : ℕ, interior (truncation n) := fun w hw => by
+    obtain ⟨R, hR⟩ := mem_iUnion.1 (iUnion_truncation.symm ▸ hCS hw : w ∈ ⋃ R, truncation R)
+    obtain ⟨n, hn⟩ := exists_nat_gt R
+    exact mem_iUnion.2 ⟨n, mem_interior_truncation (hCS hw) fun q => (hR.2.2 q).trans_lt hn⟩
+  obtain ⟨n, hn⟩ := hC.elim_directed_cover _ (fun _ => isOpen_interior) hcover
+    (Monotone.directed_le fun _ _ h => interior_mono (truncation_mono (Nat.cast_le.2 h)))
+  exact ⟨n, hn⟩
 
 /-! ### Moving input ends
 

@@ -89,6 +89,9 @@ vector-valued derivatives over the two fields.
   `TauCeti.mfderivWithin_extChartAt_symm_smul` states this for a manifold charted by `E` with the
   self models `𝓘(𝕜', E)` and `𝓘(𝕜, E)`, whose tangent spaces are `E`, without the model casts,
   as the commutation of the derivative with `c • ContinuousLinearMap.id 𝕜 E`.
+* `MDifferentiableAt.mfderiv_modelWithCornersSelf_restrictScalars_apply`: for the self models, at a
+  point where the map is differentiable over the larger field, its derivatives over the two fields
+  agree on every vector.
 * `MDifferentiableAt.mfderiv_restrictScalarsSelf_apply` and
   `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: for the self models, at a point where the
   map is differentiable over the larger field, its derivatives over the two fields agree through
@@ -384,6 +387,17 @@ variable (R : Type*) {A : Type*}
   [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
   [IsScalarTower R A F] {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+
+/-- At a point where `f` is differentiable over the larger field `A`, its derivatives for the self
+models over `R` and over `A` agree on every vector of `E`. For instance, the real derivative of a
+holomorphic map between complex manifolds charted by complex vector spaces is its complex
+derivative. -/
+theorem mfderiv_modelWithCornersSelf_restrictScalars_apply {f : M → N} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x) (v : E) :
+    mfderiv 𝓘(R, E) 𝓘(R, F) f x v = mfderiv 𝓘(A, E) 𝓘(A, F) f x v := by
+  have h := DFunLike.congr_fun (hf.mfderiv_restrictScalars R) v
+  rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at h
+  exact h.trans (ContinuousLinearMap.restrictScalarsTangent_apply _ _)
 
 /-- At a point where `f` is differentiable over the larger field `A`, the native self-model fibre
 comparison intertwines its derivatives over the two fields. -/

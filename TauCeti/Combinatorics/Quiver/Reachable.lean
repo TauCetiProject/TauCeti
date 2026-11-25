@@ -95,6 +95,15 @@ theorem nonempty_path_symmetrify_iff_reachable :
   exact ⟨fun hab ↦ Relation.TransGen.mono (fun x y ↦ (h x y).1) a b hab,
     fun hab ↦ Relation.TransGen.mono (fun x y ↦ (h x y).2) a b hab⟩
 
+/-- The symmetrized quiver is strongly connected exactly when its underlying graph is
+preconnected. -/
+theorem isStronglyConnected_symmetrify_iff_preconnected :
+    @IsStronglyConnected (Symmetrify V) (@symmetrifyQuiver V ‹_root_.Quiver V›) ↔
+      (underlyingGraph V).Preconnected := by
+  rw [isStronglyConnected_iff, SimpleGraph.Preconnected]
+  refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
+  exact @nonempty_path_symmetrify_iff_reachable V ‹_root_.Quiver V› x y
+
 /-- Two vertices lie in the same weakly connected component exactly when they are reachable in the
 underlying graph. -/
 theorem weaklyConnectedComponent_mk_eq_mk_iff :

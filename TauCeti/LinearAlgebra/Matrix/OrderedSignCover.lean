@@ -178,8 +178,8 @@ sign `x.left` and a lattice vector `x.right`, and
 projection to `Multiplicative Q` and the section `a ↦ ⟨1, a⟩` are `TauCeti.FactorSet.inl`,
 `TauCeti.FactorSet.rightHom` and `TauCeti.FactorSet.canonicalSection` of
 `Matrix.signFactorSet B`, and `(Matrix.signFactorSet B).groupExtension` packages them as a
-`GroupExtension`. The image of `ℤˣ` is central by `TauCeti.FactorSet.inl_range_le_center`, the
-action being trivial. -/
+`GroupExtension`. The image of `ℤˣ` is central by `TauCeti.FactorSet.range_inl_le_center_iff`,
+the action being trivial. -/
 abbrev SignCover : Type _ :=
   (signFactorSet B).Extension
 
@@ -206,13 +206,13 @@ theorem SignCover.tau_ne_one : SignCover.tau B ≠ 1 := by
   decide
 
 theorem SignCover.tau_mem_center : SignCover.tau B ∈ Subgroup.center (SignCover B) :=
-  FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨-1, rfl⟩
+  (FactorSet.range_inl_le_center_iff _).2 trivialMulDistribMulAction_smul ⟨-1, rfl⟩
 
 /-- The copy of `ℤˣ` in the ordered sign cover is central. -/
 theorem SignCover.inl_range_le_center :
     (signFactorSet B).groupExtension.inl.range ≤ Subgroup.center (SignCover B) := by
   rw [FactorSet.groupExtension_inl]
-  exact FactorSet.inl_range_le_center (signFactorSet B) trivialMulDistribMulAction_smul
+  exact (FactorSet.range_inl_le_center_iff (signFactorSet B)).2 trivialMulDistribMulAction_smul
 
 /-- **The inverse lift** in the ordered sign cover: the inverse of the section value `⟨1, a⟩` lies
 over `-a` with the sign `ε(a, a)`, that is, `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩`. -/
