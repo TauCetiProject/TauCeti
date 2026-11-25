@@ -215,18 +215,26 @@ variable {C : Type u} [Category.{v} C] {F G H : LocallyDiscrete Cᵒᵖ ⥤ᵖ C
 /-- For the identity transformation, the anchored bijection on isomorphisms is the identity. -/
 @[simp]
 theorem isomEquiv_id (p : x ≅ y) : isomEquiv bF bF (StrongTrans.id F) p = Equiv.refl (x ≅ y) :=
+  -- The component of `StrongTrans.id F` is `𝟙`, whose functor is `𝟭` (`Cat.Hom.id_toFunctor`), so
+  -- `isomEquiv_apply` gives `mapIso q = q` by `rfl`. The statement itself only type-checks
+  -- through this reduction, which is why it cannot be reached by rewriting.
   Equiv.ext fun _ ↦ rfl
 
 /-- For the identity transformation, the anchored inverse of `q` is `q`, for every anchor. -/
 @[simp]
 theorem preimageIso_id (p q : x ≅ y) : preimageIso bF bF (StrongTrans.id F) p q = q :=
+  -- `q` is its own image under the identity functor (`Cat.Hom.id_toFunctor`) by `rfl`, so this is
+  -- `preimageIso_map` at `q`.
   preimageIso_map bF bF (StrongTrans.id F) p q
 
 /-- For the identity transformation, the equivalence on automorphisms is the identity. -/
 @[simp]
 theorem autEquiv_id (x : F.obj (.mk (op U))) :
     autEquiv bF bF (StrongTrans.id F) x = MulEquiv.refl (Aut x) :=
-  MulEquiv.ext fun g ↦ (bF.mulEquiv U x).apply_symm_apply g
+  MulEquiv.ext fun g ↦ by
+    obtain ⟨a, rfl⟩ := (bF.mulEquiv U x).surjective g
+    -- The identity functor fixes `x` by `rfl` (`Cat.Hom.id_obj`).
+    exact autEquiv_mulEquiv bF bF (StrongTrans.id F) x a
 
 /-- **Composites, on isomorphisms.** The anchored bijection of `η ≫ θ` at `p` is that of `η` at
 `p` followed by that of `θ` at `η_U p`. -/
@@ -235,6 +243,9 @@ theorem isomEquiv_comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η] [
     haveI : BandPreserving bF bH (η ≫ θ) := BandPreserving.comp bG η θ
     isomEquiv bF bH (η ≫ θ) p =
       (isomEquiv bF bG η p).trans (isomEquiv bG bH θ ((η.app (.mk (op U))).toFunctor.mapIso p)) :=
+  -- The component of `η ≫ θ` is `η_U ≫ θ_U` (`StrongTrans.comp_app`), whose functor is
+  -- `η_U ⋙ θ_U` (`Cat.Hom.comp_toFunctor`), and both hold by `rfl`. The statement itself only
+  -- type-checks through these reductions, which is why it cannot be reached by rewriting.
   Equiv.ext fun _ ↦ rfl
 
 /-- **Composites, anchored inverse.** The anchored inverse of `η ≫ θ` at `p` is the anchored
@@ -248,15 +259,19 @@ theorem preimageIso_comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η]
         (preimageIso bG bH θ ((η.app (.mk (op U))).toFunctor.mapIso p) q) := by
   have : BandPreserving bF bH (η ≫ θ) := BandPreserving.comp bG η θ
   rw [← isomEquiv_symm_apply, isomEquiv_comp bF bG bH η θ p]
-  rfl
+  -- `rw [Equiv.symm_trans_apply]` fails: the codomains agree only up to `StrongTrans.comp_app`.
+  exact Equiv.symm_trans_apply _ _ q
 
 /-- **Composites, on automorphisms.** The equivalence on automorphisms of `η ≫ θ` is that of `η`
 followed by that of `θ`. -/
 theorem autEquiv_comp (η : F ⟶ G) (θ : G ⟶ H) (x : F.obj (.mk (op U))) :
     autEquiv bF bH (η ≫ θ) x =
       (autEquiv bF bG η x).trans (autEquiv bG bH θ ((η.app (.mk (op U))).toFunctor.obj x)) :=
-  MulEquiv.ext fun _ ↦
-    congrArg (bH.mulEquiv U _)
-      ((bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x)).symm_apply_apply _).symm
+  MulEquiv.ext fun g ↦ by
+    obtain ⟨a, rfl⟩ := (bF.mulEquiv U x).surjective g
+    -- `(η ≫ θ)_U x` is `θ_U (η_U x)` by `rfl` (`StrongTrans.comp_app`, `Cat.Hom.comp_obj`).
+    exact (autEquiv_mulEquiv bF bH (η ≫ θ) x a).trans
+      ((congrArg (autEquiv bG bH θ _) (autEquiv_mulEquiv bF bG η x a)).trans
+        (autEquiv_mulEquiv bG bH θ _ a)).symm
 
 end CategoryTheory.Pseudofunctor.BandedMorphism
