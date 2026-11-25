@@ -76,7 +76,7 @@ field-by-field assembly of the certificate follows
 `TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive.Basic`. The candidate
 is the classical `SL(2, 3)` table, the case `q = 3` of the character table of `SL₂(𝔽_q)` in
 W. Fulton and J. Harris, *Representation Theory: A First Course*, §5.2; its first four rows are
-the `A₄` table of J.-P. Serre, *Linear Representations of Finite Groups*, §5.2.
+the `A₄` table of J.-P. Serre, *Linear Representations of Finite Groups*, §5.7.
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
