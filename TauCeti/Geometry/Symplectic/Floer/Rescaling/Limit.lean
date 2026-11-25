@@ -62,9 +62,10 @@ this statement is
 `TauCeti.SymplecticForm.exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv`.
 
 The bubble is a plane. That it extends to a sphere needs removal of the singularity at infinity,
-which is not treated here; its area is bounded below by energy quantization
-(`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`) once it is
-smooth enough.
+which is not treated here. Energy quantization
+(`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`) bounds its area
+below only once `v` is `C³` and the frozen structure `J(z₀, ·)` is a smooth almost complex
+structure tamed by `ω`; this file gives only `C¹` regularity of `v` and of `J(z₀, ·)` in charts.
 
 ## References
 

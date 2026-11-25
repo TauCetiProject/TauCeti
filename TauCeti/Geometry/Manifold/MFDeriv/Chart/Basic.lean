@@ -102,6 +102,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`, and
     `ContinuousAt.symmL_fderiv_extChartAt_comp_apply`: chart-coordinate derivatives and compact-set
     bounds for maps out of or into a manifold.
+  - `TauCeti.tendsto_tangentBundle_mfderiv_of_tendsto_fderiv_extChartAt_comp`: convergence of
+    `mfderiv` in the tangent bundle follows from convergence of the coordinate derivatives in one
+    chart.
   - `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`,
     `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`,
     `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`, and
