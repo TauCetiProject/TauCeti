@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
 import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
-import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Primitive Dirichlet and ray class characters of ℚ
@@ -30,12 +29,6 @@ open scoped NumberField Topology
 open Filter NumberField TauCeti.GlobalNumberFields TauCeti.LFunctions
 
 namespace TauCeti.PrimitiveDirichletCharacter
-
-/-- The finite conductor of a primitive ray class character of `ℚ` has nonzero norm, so it is a
-Dirichlet level. -/
-instance (η : PrimitiveRayClassCharacter ℚ) :
-    NeZero (Ideal.absNorm η.conductor.finitePart) :=
-  ⟨Ideal.absNorm_eq_zero_iff.not.mpr η.conductor.finitePart_ne_bot⟩
 
 /-- Changing the Dirichlet level before passing to the rational ray class dictionary does not
 change the primitive ray class character. -/
