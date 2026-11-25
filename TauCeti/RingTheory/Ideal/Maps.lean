@@ -12,6 +12,7 @@ import Mathlib.Algebra.Algebra.Tower
 # Transport of ideals along ring homomorphisms
 
 Taking radicals before extending an ideal does not change the radical of its extension.
+Extension commutes with finite products of ideals.
 Powers of ideals commute with pullback along a ring equivalence, a ring homomorphism carrying `I`
 into `J` carries each power of `I` into the same power of `J`, and extension along a bijective
 ring homomorphism preserves and reflects primality. Extension preserves coprimality to an ideal
@@ -44,6 +45,12 @@ theorem radical_map_radical {R S F : Type*} [CommSemiring R] [CommSemiring S]
 theorem comap_pow_of_ringEquiv {R S : Type*} [CommSemiring R] [CommSemiring S]
     (I : Ideal R) (e : S ≃+* R) (n : ℕ) : (I ^ n).comap e = I.comap e ^ n := by
   rw [← map_symm, ← map_symm, Ideal.map_pow]
+
+/-- Extension along a ring homomorphism commutes with finite products of ideals. -/
+theorem map_finset_prod {R S F ι : Type*} [CommSemiring R] [CommSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (s : Finset ι) (J : ι → Ideal R) :
+    (∏ i ∈ s, J i).map f = ∏ i ∈ s, (J i).map f :=
+  map_prod (mapHom f) J s
 
 /-- Extension along a bijective ring homomorphism preserves and reflects primality; compare
 `Ideal.isMaximal_map_iff_of_bijective`. -/
