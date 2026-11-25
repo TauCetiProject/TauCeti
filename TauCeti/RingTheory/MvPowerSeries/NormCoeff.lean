@@ -35,6 +35,7 @@ families of automorphic forms.
 ## Main results
 
 * `MvPowerSeries.prod_pow_nonneg`: the rate `∏ i, s i ^ t i` is nonnegative.
+* `MvPowerSeries.prod_pow_add`: the rate is multiplicative in the exponent.
 * `MvPowerSeries.norm_coeff_monomial_le_prod_pow`: the bound of a monomial.
 * `MvPowerSeries.norm_coeff_mul_le_mul_prod_pow`: the bounds multiply under multiplication.
 * `MvPowerSeries.norm_coeff_pow_le_pow_mul_prod_pow` and
@@ -59,6 +60,11 @@ theorem prod_pow_nonneg {s : σ → ℝ} (hs : ∀ i, 0 ≤ s i) (t : σ →₀ 
   rw [Finsupp.prod]
   exact Finset.prod_nonneg fun i _ ↦ pow_nonneg (hs i) _
 
+/-- The weights of exponents are multiplicative. -/
+theorem prod_pow_add {c : σ → ℝ} (s t : σ →₀ ℕ) :
+    (s + t).prod (c · ^ ·) = s.prod (c · ^ ·) * t.prod (c · ^ ·) :=
+  Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _
+
 section Ring
 
 variable [SeminormedRing R] [IsUltrametricDist R] {s : σ → ℝ}
@@ -72,8 +78,7 @@ theorem norm_coeff_mul_le_mul_prod_pow {f g : MvPowerSeries σ R} {a b : ℝ}
   classical
   rw [coeff_mul]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonempty ⟨(0, t), by simp⟩ fun x hx ↦ ?_
-  rw [← mem_antidiagonal.mp hx, Finsupp.prod_add_index' (fun _ ↦ pow_zero _)
-    fun _ _ _ ↦ pow_add _ _ _, mul_mul_mul_comm]
+  rw [← mem_antidiagonal.mp hx, prod_pow_add, mul_mul_mul_comm]
   exact norm_mul_le_of_le (hf x.1) (hg x.2)
 
 /-- The unit case of `MvPowerSeries.norm_coeff_mul_le_mul_prod_pow`: if the coefficients of `f`
@@ -182,8 +187,7 @@ theorem norm_coeff_invOfUnit_le_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPow
       rintro h
       rw [← mem_antidiagonal.mp hx, h, zero_add] at hlt
       exact hlt.false
-    rw [← mem_antidiagonal.mp hx, Finsupp.prod_add_index' (fun _ ↦ pow_zero _)
-      fun _ _ _ ↦ pow_add _ _ _]
+    rw [← mem_antidiagonal.mp hx, prod_pow_add]
     calc ‖coeff x.1 φ * coeff x.2 (invOfUnit φ u)‖
         ≤ ‖coeff x.1 φ‖ * (‖(↑u⁻¹ : R)‖ * x.2.prod (s · ^ ·)) :=
           (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (ih x.2 hlt) (norm_nonneg _))
