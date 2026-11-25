@@ -41,6 +41,8 @@ Chevalley--Demazure construction.
   commutative-Hopf-algebra form, when the extension ring's universe contains the base ring's.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike`: scalar
   extension carries the generic determinant to the generic determinant.
+* `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix`: scalar
+  extension carries each generic matrix entry to the corresponding entry.
 * `TauCeti.GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso`: the corresponding
   isomorphism of finite-type commutative Hopf algebras.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X`: the value on a generic matrix
@@ -384,6 +386,18 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix
   simpa only [AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom, one_smul,
     MvPolynomial.map_X] using
     coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v} R K n 1 (MvPolynomial.X (i, j))
+
+/-- The general-linear base-change isomorphism sends the scalar extension of each entry of the
+bundled generic matrix to the corresponding entry over the new base. Unlike
+`coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix`, the statement needs no `R`-algebra
+structure on the coordinate algebra over `K`. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (i j : Fin n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] genericMatrix R n i j) =
+      genericMatrix K n i j := by
+  rw [genericMatrix_apply, genericMatrix_apply]
+  exact coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X R K n i j
 
 /-- The inverse categorical base-change isomorphism sends an extended polynomial coordinate back
 to its scalar pure tensor. -/

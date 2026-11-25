@@ -42,6 +42,8 @@ holds in characteristic two, where `q` is not determined by its polar form.
   to `q'_A` over every `R`-algebra `A`.
 * `QuadraticForm.baseChangeForm_add` and `QuadraticForm.baseChangeForm_proj`: `q ↦ q_A` is
   additive and sends the coordinate product `xᵢ xⱼ` to `xᵢ xⱼ`.
+* `QuadraticForm.coefficientMatrix_baseChangeForm`: the coefficient matrix of `q_A` is that of `q`
+  read in `A`.
 -/
 
 public section
@@ -173,6 +175,31 @@ theorem baseChangeForm_proj (i j : ι) (A : Type*) [CommRing A] [Algebra R A] :
   ext x
   rcases le_total i j with h | h <;>
     simp [h, Matrix.single_mulVec, dotProduct, Function.update_apply, mul_comm]
+
+/-- **The coefficients of `q_A` are those of `q`.** The coefficient matrix of the form `q_A` on
+`A^ι` with the coefficients of `q` is the coefficient matrix of `q` read in `A`, since the
+coefficient matrix is upper triangular. -/
+@[simp]
+theorem coefficientMatrix_baseChangeForm (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] :
+    coefficientMatrix (baseChangeForm q A) (Pi.basisFun A ι) =
+      (coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A) := by
+  classical
+  have hlow : ∀ i j, j < i → coefficientMatrix q (Pi.basisFun R ι) i j = 0 :=
+    fun i j hji ↦ by simp [coefficientMatrix_apply, ne_of_gt hji, not_lt.mpr hji.le]
+  have hsingle (i j : ι) : (Pi.single i 1 : ι → A) ⬝ᵥ
+      ((coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A) *ᵥ Pi.single j 1) =
+        algebraMap R A (coefficientMatrix q (Pi.basisFun R ι) i j) := by
+    simp
+  ext i j
+  rw [coefficientMatrix_apply]
+  split_ifs with hij hlt
+  · subst hij
+    rw [Pi.basisFun_apply, baseChangeForm_apply, hsingle, Matrix.map_apply]
+  · simp only [QuadraticMap.polar, Pi.basisFun_apply, baseChangeForm_apply, Matrix.mulVec_add,
+      dotProduct_add, add_dotProduct, hsingle, hlow j i hlt, map_zero, Matrix.map_apply]
+    ring
+  · rw [Matrix.map_apply, hlow i j (lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm hij)), map_zero]
 
 end Coefficients
 
