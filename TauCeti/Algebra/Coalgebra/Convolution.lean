@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
+public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -48,6 +49,8 @@ this controls the binomial expansion of the powers of `x`.
 * `LinearMap.ofConv_one_eq_counit`: the convolution dual's `1` is the counit.
 * `LinearMap.convMul_eq_comp_tensorComponent`: convolution-dual multiplication as contraction.
 * `LinearMap.tensorComponent_lTensor_comul`: successive contractions on the right tensor factor.
+* `IsGroupLikeElem.ofConv_convMul_apply`: at a group-like element, a convolution product is the
+  product of the values.
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
   convolution product of the two tensor inclusions.
 * `TauCeti.Bialgebra.comulPoint_eq_include_mul`: the corresponding identity for the
@@ -104,6 +107,13 @@ theorem tensorComponent_lTensor_comul {M : Type*} [AddCommMonoid M] [Module R M]
   simp [lTensor_def, convMul_eq_comp_tensorComponent, comp_assoc]
 
 end LinearMap
+
+/-- A convolution product evaluated at a group-like element is the product of the values. -/
+theorem IsGroupLikeElem.ofConv_convMul_apply {R C A : Type*} [CommSemiring R] [AddCommMonoid C]
+    [Module R C] [Coalgebra R C] [Semiring A] [Algebra R A] {c : C} (hc : IsGroupLikeElem R c)
+    (f g : WithConv (C →ₗ[R] A)) : (f * g).ofConv c = f.ofConv c * g.ofConv c := by
+  rw [LinearMap.convMul_apply, hc.comul_eq_tmul_self, TensorProduct.map_tmul,
+    LinearMap.mul'_apply]
 
 namespace TauCeti
 
