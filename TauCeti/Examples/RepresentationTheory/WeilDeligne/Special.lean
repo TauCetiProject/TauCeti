@@ -35,18 +35,13 @@ conjugation by `r(w)` would scale the shift by `q⁻¹`, not by `q`. -/
 example [CharZero E] (hq : 2 ≤ q) {w : W} (hw : (deg w).toAdd = 1)
     (D : WeilDeligneParameter E W (Fin 2 → E) deg q) (hN : D.N = finShift E 2)
     (hr : ∀ v, D.r w v = ![(q : E) * v 0, v 1]) : False := by
-  -- `r(w) r(w⁻¹) = 1` gives `q · (r(w⁻¹) e₀)₀ = 1`.
-  have hx0 := congr_fun (D.r.self_inv_apply w (Pi.single 0 1)) 0
-  rw [hr] at hx0
-  -- The second coordinate of `r(w) N r(w⁻¹) e₀ = q N e₀`.
-  have h := congr_fun (D.r_apply_N_apply_r_inv_apply w (Pi.single 0 1)) 1
-  rw [hN, hr, hw, zpow_one] at h
-  generalize (D.r w⁻¹) (Pi.single 0 1) = y at hx0 h
+  -- The second coordinate of `r(w) (N e₀) = q • N (r(w) e₀)`.
+  have h := congr_fun (D.r_apply_N_apply w (Pi.single 0 1)) 1
+  rw [hN, hr, hr, hw, zpow_one] at h
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.single_eq_same, finShift_apply,
-    Pi.smul_apply, smul_eq_mul] at hx0 h
+    Pi.smul_apply, smul_eq_mul] at h
   norm_num at h
-  rw [h] at hx0
-  have : q * q = 1 := by exact_mod_cast hx0
+  have : q * q = 1 := by exact_mod_cast h.symm
   nlinarith
 
 end TauCeti.WeilDeligneParameter.SpecialChecks
