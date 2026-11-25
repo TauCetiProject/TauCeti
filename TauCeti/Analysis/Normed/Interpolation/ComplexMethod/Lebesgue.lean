@@ -94,12 +94,8 @@ private theorem norm_coeff (v : E) (z : ℂ) :
 /-- On the closed strip, `‖v‖ ^ ((z - θ) s)` is bounded uniformly in `z`. -/
 private theorem norm_coeff_le (hθ : θ ∈ Icc (0 : ℝ) 1) (v : E) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) : ‖coeff θ s v z‖ ≤ Real.exp |s * Real.log ‖v‖| := by
-  rw [norm_coeff]
-  have hz' := mem_verticalClosedStrip_iff.1 hz
-  have h1 : |z.re - θ| ≤ 1 := abs_le.2 ⟨by linarith [hz'.1, hθ.2], by linarith [hz'.2, hθ.1]⟩
-  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
-  rw [abs_mul]
-  exact mul_le_of_le_one_left (abs_nonneg _) h1
+  rw [coeff]
+  exact norm_exp_sub_mul_le hθ _ hz
 
 variable [NormedSpace ℂ E]
 
