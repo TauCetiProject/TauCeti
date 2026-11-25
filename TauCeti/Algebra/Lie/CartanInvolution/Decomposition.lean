@@ -93,6 +93,13 @@ theorem cartanP_eq_eigenspace :
   (rfl)
 
 variable (θ) in
+/-- An automorphism and its inverse have the same `-1`-eigenspace. -/
+@[simp]
+theorem cartanP_symm : θ.symm.cartanP = θ.cartanP := by
+  ext x
+  rw [mem_cartanP, mem_cartanP, θ.symm_apply_eq, map_neg, ← neg_eq_iff_eq_neg, eq_comm]
+
+variable (θ) in
 /-- `𝔭` is the kernel of `θ + id`, viewed as linear endomorphisms of `L`. -/
 theorem cartanP_eq_ker :
     θ.cartanP = LinearMap.ker ((θ : L →ₗ[R] L) + LinearMap.id) := by

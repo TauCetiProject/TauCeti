@@ -15,6 +15,7 @@ import Mathlib.Data.Finsupp.Encodable
 import Mathlib.Topology.Bases
 import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.Sequences
+import TauCeti.Order.WellFounded.Set
 
 /-!
 # Lexicographic stabilization of counting functions of upper sets of exponents
@@ -75,13 +76,13 @@ theorem not_strictAnti_toLex_ncard_sdiff {D : ℕ → Set (σ →₀ ℕ)} (hD :
     rw [nhds_discrete, tendsto_pure] at this
     filter_upwards [this] with m hm
     simpa [E] using congrArg (· = true) hm
-  -- By Dickson's lemma, eventually every `D (φ m)` contains the minimal vertices of `E`, hence `E`.
+  -- By Dickson's lemma `E` lies above finitely many of its elements, and eventually every
+  -- `D (φ m)` contains these, hence `E`.
   have hsub : ∀ᶠ m in atTop, E ⊆ D (φ m) := by
-    have hfin : {α | Minimal (· ∈ E) α}.Finite :=
-      WellQuasiOrderedLE.finite_of_isAntichain (setOfPred_minimal_antichain _)
-    filter_upwards [hconv hfin] with m hm γ hγ
-    obtain ⟨α, hαγ, hα⟩ := exists_minimal_le_of_wellFoundedLT (· ∈ E) γ hγ
-    exact hD _ hαγ ((hm α hα).2 hα.prop)
+    obtain ⟨t, htE, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE E).exists_finset_subset_biUnion_Ici
+    filter_upwards [hconv t.finite_toSet] with m hm γ hγ
+    obtain ⟨α, hα, hαγ⟩ := Set.mem_iUnion₂.mp (hcov hγ)
+    exact hD _ hαγ ((hm α hα).2 (htE hα))
   obtain ⟨M, hM⟩ := eventually_atTop.1 hsub
   set c : Set (σ →₀ ℕ) → ℕ → ℕ := fun F ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ F).ncard
   have hle {m : ℕ} (hm : M ≤ m) (ℓ : ℕ) : c (D (φ m)) ℓ ≤ c E ℓ :=
