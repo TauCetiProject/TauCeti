@@ -27,7 +27,7 @@ self-adjoint idempotent of `C` has one.
 
 The envelope has the universal property of a completion for unitary splittings. A dagger functor
 `F : C ⥤ D` into a dagger category in which every self-adjoint idempotent has a unitary splitting
-extends, along chosen splittings, to a dagger functor `TauCeti.DaggerKaroubi.lift F h` on the
+extends, along chosen splittings, to a dagger functor `TauCeti.DaggerKaroubi.lift F` on the
 envelope, whose restriction to `C` is unitarily isomorphic to `F`. Every dagger functor on the
 envelope with this property is unitarily isomorphic to the extension, which is therefore
 independent of the chosen splittings up to unitary natural isomorphism. The extension is additive
@@ -43,10 +43,9 @@ equivalent to `Karoubi C`; see `TauCeti/Analysis/CStarAlgebra/Category/Karoubi.l
 * `TauCeti.toDaggerKaroubi`: the fully faithful dagger embedding of `C`.
 * `TauCeti.DaggerKaroubi.ι`: the isometry from an object `(X, p)` to `(X, 𝟙 X)`.
 * `TauCeti.DaggerKaroubi.exists_isometry`: every self-adjoint idempotent of `DaggerKaroubi C`
-  has a unitary splitting.
+  has a unitary splitting, so `DaggerKaroubi C` has unitary splittings.
 * `TauCeti.exists_isUnitary_toDaggerKaroubi_obj_iff`: the objects of `DaggerKaroubi C` are
-  unitarily isomorphic to objects of `C` exactly when every self-adjoint idempotent of `C` has a
-  unitary splitting.
+  unitarily isomorphic to objects of `C` exactly when `C` has unitary splittings.
 * `TauCeti.DaggerKaroubi.lift`: the extension of a dagger functor to the envelope, with
   `TauCeti.DaggerKaroubi.toDaggerKaroubiCompLiftIso` its unitary comparison with `F` on `C`.
 * `TauCeti.DaggerKaroubi.liftUnique`: the extension is unique up to unitary natural isomorphism.
@@ -234,15 +233,19 @@ theorem exists_isometry {P : DaggerKaroubi C} (q : P ⟶ P) (hq : dagger q = q) 
   · ext
     exact (congrArg (· ≫ q.hom.f) hq').trans hqq'
 
+/-- The dagger Karoubi envelope has unitary splittings. -/
+instance : HasUnitarySplittings (DaggerKaroubi C) :=
+  ⟨fun _ q hq hqq => exists_isometry q hq hqq⟩
+
 end DaggerKaroubi
 
 /-- Every object of the dagger Karoubi envelope is unitarily isomorphic to an object of `C` exactly
-when every self-adjoint idempotent `p : X ⟶ X` of `C` has a unitary splitting: an isometry
+when `C` has unitary splittings: every self-adjoint idempotent `p : X ⟶ X` of `C` has an isometry
 `v : Y ⟶ X`, with `v ≫ dagger v = 𝟙 Y`, such that `dagger v ≫ v = p`. -/
 theorem exists_isUnitary_toDaggerKaroubi_obj_iff :
     (∀ P : DaggerKaroubi C, ∃ (Y : C) (u : (toDaggerKaroubi C).obj Y ⟶ P), IsUnitary u) ↔
-      ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
-        ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p := by
+      HasUnitarySplittings C := by
+  rw [hasUnitarySplittings_iff]
   constructor
   · -- A unitary `u : (Y, 𝟙 Y) ⟶ (X, p)` has underlying arrow an isometry with range projection `p`.
     intro h X p hp hpp
@@ -253,9 +256,8 @@ theorem exists_isUnitary_toDaggerKaroubi_obj_iff :
     intro h P
     obtain ⟨Y, v, hv, hvp⟩ := h P.obj.X P.obj.p P.dagger_p P.obj.idem
     have hvp' : v ≫ P.obj.p = v := by rw [← hvp, reassoc_of% hv]
-    refine ⟨Y, ObjectProperty.homMk (X := (toDaggerKaroubi C).obj Y) ⟨v, by
-      dsimp
-      rw [Category.id_comp, hvp']⟩, (isUnitary_iff _).2 ⟨?_, ?_⟩⟩
+    refine ⟨Y, ObjectProperty.homMk (X := (toDaggerKaroubi C).obj Y) ⟨v, by simpa using hvp'⟩,
+      (isUnitary_iff _).2 ⟨?_, ?_⟩⟩
     · ext
       simpa using hv
     · ext
@@ -266,57 +268,55 @@ section Lift
 /-! ### The universal property
 
 A dagger functor `F : C ⥤ D` into a dagger category in which every self-adjoint idempotent has a
-unitary splitting extends along `toDaggerKaroubi C`: the extension `DaggerKaroubi.lift F h` sends
+unitary splitting extends along `toDaggerKaroubi C`: the extension `DaggerKaroubi.lift F` sends
 `(X, p)` to the source of a chosen isometry `v` with range projection `F.map p`. The extension
 restricts to `F` up to a unitary natural isomorphism, and any other dagger functor with this
 property is unitarily isomorphic to it; in particular the extension does not depend on the chosen
 splittings up to unitary natural isomorphism. -/
 
-variable {D : Type u₂} [Category.{v₂} D] [DaggerCategory D] (F : C ⥤ D) [F.PreservesDagger]
-  (h : ∀ (X : D) (p : X ⟶ X), dagger p = p → p ≫ p = p →
-    ∃ (Y : D) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p)
-
-include h
+variable {D : Type u₂} [Category.{v₂} D] [DaggerCategory D] [HasUnitarySplittings D] (F : C ⥤ D)
+  [F.PreservesDagger]
 
 namespace DaggerKaroubi
 
 /-- The image under `F` of the projection of an object of the envelope has a unitary splitting. -/
 private theorem exists_isometry_map (P : DaggerKaroubi C) :
     ∃ (Y : D) (v : Y ⟶ F.obj P.obj.X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = F.map P.obj.p :=
-  h _ _ (by rw [← F.map_dagger, P.dagger_p]) (by rw [← F.map_comp, P.obj.idem])
+  HasUnitarySplittings.exists_isometry _ _ (by rw [← F.map_dagger, P.dagger_p])
+    (by rw [← F.map_comp, P.obj.idem])
 
 /-- For an object `P = (X, p)` of the envelope, the source of the chosen unitary splitting of
 `F.map p`. -/
 def liftObj (P : DaggerKaroubi C) : D :=
-  (exists_isometry_map F h P).choose
+  (exists_isometry_map F P).choose
 
-/-- For an object `P = (X, p)` of the envelope, the chosen isometry `liftObj F h P ⟶ F.obj X`
+/-- For an object `P = (X, p)` of the envelope, the chosen isometry `liftObj F P ⟶ F.obj X`
 with range projection `F.map p`. -/
-def liftIsometry (P : DaggerKaroubi C) : liftObj F h P ⟶ F.obj P.obj.X :=
-  (exists_isometry_map F h P).choose_spec.choose
+def liftIsometry (P : DaggerKaroubi C) : liftObj F P ⟶ F.obj P.obj.X :=
+  (exists_isometry_map F P).choose_spec.choose
 
 /-- The chosen splitting of `F.map p` is an isometry. -/
 @[reassoc (attr := simp)]
 theorem liftIsometry_comp_dagger (P : DaggerKaroubi C) :
-    liftIsometry F h P ≫ dagger (liftIsometry F h P) = 𝟙 (liftObj F h P) :=
-  (exists_isometry_map F h P).choose_spec.choose_spec.1
+    liftIsometry F P ≫ dagger (liftIsometry F P) = 𝟙 (liftObj F P) :=
+  (exists_isometry_map F P).choose_spec.choose_spec.1
 
 /-- The range projection of the chosen splitting of `F.map p` is `F.map p`. -/
 @[reassoc (attr := simp)]
 theorem dagger_comp_liftIsometry (P : DaggerKaroubi C) :
-    dagger (liftIsometry F h P) ≫ liftIsometry F h P = F.map P.obj.p :=
-  (exists_isometry_map F h P).choose_spec.choose_spec.2
+    dagger (liftIsometry F P) ≫ liftIsometry F P = F.map P.obj.p :=
+  (exists_isometry_map F P).choose_spec.choose_spec.2
 
 /-- The chosen splitting of `F.map p` lies in the range of `F.map p`. -/
 @[reassoc (attr := simp)]
 theorem liftIsometry_comp_map_p (P : DaggerKaroubi C) :
-    liftIsometry F h P ≫ F.map P.obj.p = liftIsometry F h P := by
+    liftIsometry F P ≫ F.map P.obj.p = liftIsometry F P := by
   rw [← dagger_comp_liftIsometry, liftIsometry_comp_dagger_assoc]
 
 /-- The dagger of the chosen splitting of `F.map p` vanishes off the range of `F.map p`. -/
 @[reassoc (attr := simp)]
 theorem map_p_comp_dagger_liftIsometry (P : DaggerKaroubi C) :
-    F.map P.obj.p ≫ dagger (liftIsometry F h P) = dagger (liftIsometry F h P) := by
+    F.map P.obj.p ≫ dagger (liftIsometry F P) = dagger (liftIsometry F P) := by
   rw [← dagger_comp_liftIsometry, Category.assoc, liftIsometry_comp_dagger, Category.comp_id]
 
 /-- The extension of a dagger functor `F : C ⥤ D` to the dagger Karoubi envelope, along chosen
@@ -325,50 +325,57 @@ projection `F.map p`, and `f : (X, p) ⟶ (Y, q)` to `v ≫ F.map f ≫ dagger w
 chosen isometry for `(Y, q)`. -/
 @[expose, implicit_reducible]
 def lift : DaggerKaroubi C ⥤ D where
-  obj := liftObj F h
-  map {P Q} f := liftIsometry F h P ≫ F.map f.hom.f ≫ dagger (liftIsometry F h Q)
+  obj := liftObj F
+  map {P Q} f := liftIsometry F P ≫ F.map f.hom.f ≫ dagger (liftIsometry F Q)
   map_id P := by simp
   map_comp f g := by
     simp only [comp_hom_f, Category.assoc, dagger_comp_liftIsometry_assoc]
     rw [← F.map_comp_assoc f.hom.f, Karoubi.comp_p, F.map_comp_assoc]
 
 /-- The extension sends `P` to the source of its chosen splitting. -/
-@[simp] theorem lift_obj (P : DaggerKaroubi C) : (lift F h).obj P = liftObj F h P := (rfl)
+@[simp] theorem lift_obj (P : DaggerKaroubi C) : (lift F).obj P = liftObj F P := (rfl)
 
 /-- The extension sends `f : P ⟶ Q` to `v ≫ F.map f ≫ dagger w` for the chosen splittings `v` of
 `P` and `w` of `Q`. -/
 @[simp] theorem lift_map {P Q : DaggerKaroubi C} (f : P ⟶ Q) :
-    (lift F h).map f = liftIsometry F h P ≫ F.map f.hom.f ≫ dagger (liftIsometry F h Q) := (rfl)
+    (lift F).map f = liftIsometry F P ≫ F.map f.hom.f ≫ dagger (liftIsometry F Q) := (rfl)
 
 /-- The extension of a dagger functor is a dagger functor. -/
-instance : (lift F h).PreservesDagger where
+instance : (lift F).PreservesDagger where
   map_dagger f := by simp
 
 /-- The extension of an additive dagger functor is additive. -/
-instance [Preadditive C] [Preadditive D] [F.Additive] : (lift F h).Additive where
+instance [Preadditive C] [Preadditive D] [F.Additive] : (lift F).Additive where
   map_add := by simp
 
 /-- The extension of a linear dagger functor is linear. -/
 instance {R : Type w} [Semiring R] [Preadditive C] [Preadditive D] [Linear R C] [Linear R D]
-    [F.Linear R] : (lift F h).Linear R where
+    [F.Linear R] : (lift F).Linear R where
   map_smul f r := by simp
 
 /-- The chosen splittings of the objects `(X, 𝟙 X)` are unitary. -/
 theorem isUnitary_liftIsometry_toDaggerKaroubi_obj (X : C) :
-    IsUnitary (liftIsometry F h ((toDaggerKaroubi C).obj X)) :=
-  (isUnitary_iff _).2 ⟨liftIsometry_comp_dagger F h _, by simp⟩
+    IsUnitary (liftIsometry F ((toDaggerKaroubi C).obj X)) :=
+  (isUnitary_iff _).2 ⟨liftIsometry_comp_dagger F _, by simp⟩
 
 /-- The extension restricts to `F` along `toDaggerKaroubi C`, up to the unitary natural isomorphism
 given by the chosen splittings of the objects `(X, 𝟙 X)`. -/
-def toDaggerKaroubiCompLiftIso : toDaggerKaroubi C ⋙ lift F h ≅ F :=
+def toDaggerKaroubiCompLiftIso : toDaggerKaroubi C ⋙ lift F ≅ F :=
   NatTrans.unitaryIso
-    { app X := liftIsometry F h ((toDaggerKaroubi C).obj X)
+    { app X := liftIsometry F ((toDaggerKaroubi C).obj X)
       naturality X Y f := by simp }
-    (isUnitary_liftIsometry_toDaggerKaroubi_obj F h)
+    (isUnitary_liftIsometry_toDaggerKaroubi_obj F)
 
-/-- The components of `toDaggerKaroubiCompLiftIso F h` are the chosen splittings. -/
+/-- The components of `toDaggerKaroubiCompLiftIso F` are the chosen splittings. -/
 @[simp] theorem toDaggerKaroubiCompLiftIso_hom_app (X : C) :
-    (toDaggerKaroubiCompLiftIso F h).hom.app X = liftIsometry F h ((toDaggerKaroubi C).obj X) := by
+    (toDaggerKaroubiCompLiftIso F).hom.app X = liftIsometry F ((toDaggerKaroubi C).obj X) := by
+  simp [toDaggerKaroubiCompLiftIso]
+
+/-- The inverse components of `toDaggerKaroubiCompLiftIso F` are the daggers of the chosen
+splittings. -/
+@[simp] theorem toDaggerKaroubiCompLiftIso_inv_app (X : C) :
+    (toDaggerKaroubiCompLiftIso F).inv.app X =
+      dagger (liftIsometry F ((toDaggerKaroubi C).obj X)) := by
   simp [toDaggerKaroubiCompLiftIso]
 
 end DaggerKaroubi
@@ -377,18 +384,16 @@ end Lift
 
 section LiftUnique
 
-variable {D : Type u₂} [Category.{v₂} D] [DaggerCategory D] {F : C ⥤ D} [F.PreservesDagger]
-  (h : ∀ (X : D) (p : X ⟶ X), dagger p = p → p ≫ p = p →
-    ∃ (Y : D) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p)
-  {G : DaggerKaroubi C ⥤ D} [G.PreservesDagger]
+variable {D : Type u₂} [Category.{v₂} D] [DaggerCategory D] [HasUnitarySplittings D] {F : C ⥤ D}
+  [F.PreservesDagger] {G : DaggerKaroubi C ⥤ D} [G.PreservesDagger]
   {α : toDaggerKaroubi C ⋙ G ⟶ F} (hα : ∀ X, IsUnitary (α.app X))
 
 namespace DaggerKaroubi
 
 include hα in
-/-- The components of the comparison `G ≅ lift F h` are unitary. -/
+/-- The components of the comparison `G ≅ lift F` are unitary. -/
 private theorem isUnitary_liftUnique_app (P : DaggerKaroubi C) :
-    IsUnitary (G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F h P)) := by
+    IsUnitary (G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F P)) := by
   have hn := α.naturality P.obj.p
   simp only [Functor.comp_map] at hn
   refine (isUnitary_iff _).2 ⟨?_, ?_⟩
@@ -401,10 +406,10 @@ private theorem isUnitary_liftUnique_app (P : DaggerKaroubi C) :
     rw [← G.map_dagger, ← G.map_comp_assoc, dagger_ι_comp_ι, reassoc_of% hn,
       (hα _).dagger_hom_id_assoc, liftIsometry_comp_map_p_assoc, liftIsometry_comp_dagger]
 
-/-- The natural transformation `G ⟶ lift F h` with components
+/-- The natural transformation `G ⟶ lift F` with components
 `G.map (ι P) ≫ α.app X ≫ dagger v`, for `P = (X, p)` with chosen splitting `v`. -/
-private def liftUniqueHom : G ⟶ lift F h where
-  app P := G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F h P)
+private def liftUniqueHom : G ⟶ lift F where
+  app P := G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F P)
   naturality P Q f := by
     have hn := α.naturality f.hom.f
     simp only [Functor.comp_map] at hn
@@ -415,22 +420,28 @@ private def liftUniqueHom : G ⟶ lift F h where
 include hα in
 /-- **Uniqueness of the extension.** A dagger functor `G : DaggerKaroubi C ⥤ D` whose restriction
 along `toDaggerKaroubi C` is unitarily isomorphic to `F`, through `α` with unitary components, is
-unitarily isomorphic to the extension `lift F h`. The component at `P = (X, p)` is
+unitarily isomorphic to the extension `lift F`. The component at `P = (X, p)` is
 `G.map (ι P) ≫ α.app X ≫ dagger v`, for the chosen splitting `v` of `F.map p`. -/
-def liftUnique : G ≅ lift F h :=
-  NatTrans.unitaryIso (liftUniqueHom h (α := α)) (isUnitary_liftUnique_app h hα)
+def liftUnique : G ≅ lift F :=
+  NatTrans.unitaryIso (liftUniqueHom (α := α)) (isUnitary_liftUnique_app hα)
 
-/-- The components of the comparison `G ≅ lift F h`. -/
+/-- The components of the comparison `G ≅ lift F`. -/
 @[simp] theorem liftUnique_hom_app (P : DaggerKaroubi C) :
-    (liftUnique h hα).hom.app P =
-      G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F h P) := by
+    (liftUnique hα).hom.app P =
+      G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F P) := by
   simp [liftUnique, liftUniqueHom]
 
-/-- The components of the comparison `G ≅ lift F h` are unitary. -/
+/-- The inverse components of the comparison `G ≅ lift F` are the daggers of its components. -/
+@[simp] theorem liftUnique_inv_app (P : DaggerKaroubi C) :
+    (liftUnique hα).inv.app P =
+      liftIsometry F P ≫ dagger (α.app P.obj.X) ≫ dagger (G.map (ι P)) := by
+  simp [liftUnique, liftUniqueHom]
+
+/-- The components of the comparison `G ≅ lift F` are unitary. -/
 theorem isUnitary_liftUnique_hom_app (P : DaggerKaroubi C) :
-    IsUnitary ((liftUnique h hα).hom.app P) := by
+    IsUnitary ((liftUnique hα).hom.app P) := by
   rw [liftUnique_hom_app]
-  exact isUnitary_liftUnique_app h hα P
+  exact isUnitary_liftUnique_app hα P
 
 end DaggerKaroubi
 

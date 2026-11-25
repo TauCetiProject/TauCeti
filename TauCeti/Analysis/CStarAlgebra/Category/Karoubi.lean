@@ -30,8 +30,8 @@ unitarily isomorphic to an object of `C`.
 
 * `TauCeti.DaggerKaroubi.instCStarCategory`: the dagger Karoubi envelope of a C*-category is a
   C*-category, with the norms of the underlying arrows.
-* `TauCeti.CStarCategory.karoubiIsoRangeProjection`: an object `(X, e)` of `Karoubi C` is
-  isomorphic to `(X, p)` for the range projection `p` of `e`.
+* `CategoryTheory.Idempotents.Karoubi.isoRangeProjection`: in a C*-category, an object `(X, e)`
+  of `Karoubi C` is isomorphic to `(X, p)` for the range projection `p` of `e`.
 * `TauCeti.CStarCategory.daggerKaroubiEquivalence`: the equivalence `DaggerKaroubi C ≌ Karoubi C`
   given by the inclusion.
 * `TauCeti.CStarCategory.exists_isUnitary_toDaggerKaroubi_obj`: in an idempotent complete
@@ -111,6 +111,19 @@ private theorem completeSpace (P Q : DaggerKaroubi C) :
   rw [completeSpace_iff_isComplete_range hι.isUniformInducing, hrange]
   exact (isClosed_eq hφ continuous_id).isComplete
 
+/-- Corner algebra for a projection `p` of a star monoid: a self-adjoint `s` commuting with `p`,
+with `s * s = a` for some `a` in the corner `p * a = a = a * p`, gives `s * p` in that corner, with
+`star (s * p) * (s * p) = a`. -/
+private theorem mul_projection_corner {R : Type*} [Monoid R] [StarMul R] {p s a : R}
+    (hpp : p * p = p) (hp : star p = p) (hs : star s = s) (hsp : Commute s p) (hsa : s * s = a)
+    (hpa : p * a = a) (hap : a * p = a) :
+    p * (s * p) * p = s * p ∧ star (s * p) * (s * p) = a := by
+  have hl : p * (s * p) = s * p := by rw [← mul_assoc, ← hsp.eq, mul_assoc, hpp]
+  have hr : s * p * p = s * p := by rw [mul_assoc, hpp]
+  refine ⟨by rw [hl, hr], ?_⟩
+  -- `star (s * p) * (s * p) = p * (s * s) * p = p * a * p`.
+  rw [star_mul, hp, hs, mul_assoc, ← mul_assoc s, hsa, ← mul_assoc, hpa, hap]
+
 /-- Positivity of `f†f` in the dagger Karoubi envelope. For `f : (X, p) ⟶ (Y, q)` the positive
 endomorphism `a = f ≫ dagger f` of `X` commutes with `p`, hence so does its square root `s`, and
 `g = s ≫ p` is an endomorphism of `(X, p)` with `g ≫ dagger g = a`. -/
@@ -137,12 +150,7 @@ private theorem exists_self_comp_dagger_eq {P Q : DaggerKaroubi C} (f : P ⟶ Q)
     rw [ha]
     exact End.self_comp_dagger_nonneg _
   -- The endomorphism `g = s * p` of `End X` lies in the corner `p * End X * p`.
-  have hg : p * (CFC.sqrt a * p) * p = CFC.sqrt a * p := by
-    simp only [mul_assoc, hpp]
-    rw [← mul_assoc, ← hs.eq, mul_assoc, hpp]
-  have hgg : star (CFC.sqrt a * p) * (CFC.sqrt a * p) = a := by
-    rw [star_mul, hss, hps.star_eq, mul_assoc, ← mul_assoc (CFC.sqrt a), hsa, ← mul_assoc, hpa,
-      hap]
+  obtain ⟨hg, hgg⟩ := mul_projection_corner hpp hps.star_eq hss hs hsa hpa hap
   refine ⟨ObjectProperty.homMk ⟨(CFC.sqrt a * p).asHom, ?_⟩, ?_⟩
   · simpa only [End.mul_asHom, hp, Category.assoc] using congrArg End.asHom hg
   · ext
@@ -161,7 +169,9 @@ instance instCStarCategory : CStarCategory (DaggerKaroubi C) where
 
 end TauCeti.DaggerKaroubi
 
-namespace TauCeti.CStarCategory
+namespace CategoryTheory.Idempotents.Karoubi
+
+open TauCeti TauCeti.CStarCategory
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
   [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
@@ -169,7 +179,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
 
 /-- In a C*-category, an object `(X, e)` of `Karoubi C` is isomorphic to `(X, p)` for the range
 projection `p` of `e`: the arrows `e` and `p` are mutually inverse morphisms. -/
-def karoubiIsoRangeProjection (P : Karoubi C) :
+def isoRangeProjection (P : Karoubi C) :
     P ≅ ⟨P.X, idempotentRangeProjection P.p, idempotentRangeProjection_comp_self P.idem⟩ where
   hom := ⟨P.p, by simp [comp_idempotentRangeProjection P.idem]⟩
   inv := ⟨idempotentRangeProjection P.p, by simp [idempotentRangeProjection_comp P.idem]⟩
@@ -181,19 +191,27 @@ def karoubiIsoRangeProjection (P : Karoubi C) :
     exact idempotentRangeProjection_comp P.idem
 
 /-- The isomorphism `(X, e) ≅ (X, p)` has underlying arrow `e`. -/
-@[simp] theorem karoubiIsoRangeProjection_hom_f (P : Karoubi C) :
-    (karoubiIsoRangeProjection P).hom.f = P.p := (rfl)
+@[simp] theorem isoRangeProjection_hom_f (P : Karoubi C) :
+    (isoRangeProjection P).hom.f = P.p := (rfl)
 
 /-- The inverse isomorphism `(X, p) ≅ (X, e)` has underlying arrow `p`. -/
-@[simp] theorem karoubiIsoRangeProjection_inv_f (P : Karoubi C) :
-    (karoubiIsoRangeProjection P).inv.f = idempotentRangeProjection P.p := (rfl)
+@[simp] theorem isoRangeProjection_inv_f (P : Karoubi C) :
+    (isoRangeProjection P).inv.f = idempotentRangeProjection P.p := (rfl)
+
+end CategoryTheory.Idempotents.Karoubi
+
+namespace TauCeti.CStarCategory
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
+  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
 
 /-- In a C*-category, every object of `Karoubi C` is isomorphic to one with a self-adjoint
 idempotent. -/
 instance : (isSelfAdjointKaroubi C).ι.EssSurj where
   mem_essImage P :=
     ⟨⟨⟨P.X, idempotentRangeProjection P.p, idempotentRangeProjection_comp_self P.idem⟩,
-      dagger_idempotentRangeProjection P.idem⟩, ⟨(karoubiIsoRangeProjection P).symm⟩⟩
+      dagger_idempotentRangeProjection P.idem⟩, ⟨P.isoRangeProjection.symm⟩⟩
 
 /-- In a C*-category, the inclusion of the dagger Karoubi envelope into `Karoubi C` is an
 equivalence. -/
