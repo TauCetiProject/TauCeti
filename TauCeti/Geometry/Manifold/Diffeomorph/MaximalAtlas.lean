@@ -31,8 +31,9 @@ maximal atlas is invariant under structomorphisms and diffeomorphisms.
 * `Structomorph.symm_trans_trans_mem_of_mem_maximalAtlas`: read in a chart of `M` and a chart of
   the maximal atlas of `M'`, a structomorphism is in `G`.
 * `Structomorph.trans_mem_maximalAtlas`: the pullback `e ≫ φ` of a chart of the maximal atlas.
-* `Structomorph.writtenInExtChartAt_eq`: read in the preferred extended charts, a structomorphism
-  is a member of `G` read in the model.
+* `Homeomorph.writtenInExtChartAt_eq`: read in the preferred extended charts, a homeomorphism is
+  `(chartAt x)⁻¹ ≫ h ≫ chartAt (h x)` read in the model; for a structomorphism this is a member
+  of `G`.
 * `Structomorph.contMDiff`, `Structomorph.toDiffeomorph`: a structomorphism of a groupoid of `C^n`
   maps is a `C^n` diffeomorphism.
 * `Structomorph.exists_mem_maximalAtlas_symm_eq_comp`,
@@ -141,12 +142,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {M M' : Type*} [TopologicalSpace M] [TopologicalSpace M'] [ChartedSpace H M] [ChartedSpace H M']
   {n : WithTop ℕ∞}
 
-/-- Read in the extended preferred charts at `x` and `e x`, a `G`-structomorphism `e` is the member
-`(chartAt H x)⁻¹ ≫ e ≫ chartAt H (e x)` of `G` read in the model. -/
-theorem writtenInExtChartAt_eq (e : Structomorph G M M') (x : M) :
-    writtenInExtChartAt I I x e.toHomeomorph =
-      I ∘ ((chartAt H x).symm ≫ₕ e.toHomeomorph.toOpenPartialHomeomorph ≫ₕ
-        chartAt H (e.toHomeomorph x)) ∘ I.symm := by
+/-- Read in the extended preferred charts at `x` and `h x`, a homeomorphism `h` is the open partial
+homeomorphism `(chartAt H x)⁻¹ ≫ h ≫ chartAt H (h x)` of the model read in the model vector space.
+-/
+theorem _root_.Homeomorph.writtenInExtChartAt_eq (h : M ≃ₜ M') (x : M) :
+    writtenInExtChartAt I I x h =
+      I ∘ ((chartAt H x).symm ≫ₕ h.toOpenPartialHomeomorph ≫ₕ chartAt H (h x)) ∘ I.symm := by
   funext y
   simp [writtenInExtChartAt, extChartAt]
 
@@ -155,7 +156,7 @@ is a member of `G`. -/
 theorem contMDiff (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
     ContMDiff I I n e.toHomeomorph := by
   intro x
-  rw [contMDiffAt_iff, ← writtenInExtChartAt, e.writtenInExtChartAt_eq, extChartAt_coe,
+  rw [contMDiffAt_iff, ← writtenInExtChartAt, e.toHomeomorph.writtenInExtChartAt_eq, extChartAt_coe,
     Function.comp_apply]
   refine ⟨e.continuous.continuousAt, ?_⟩
   set c := chartAt H x

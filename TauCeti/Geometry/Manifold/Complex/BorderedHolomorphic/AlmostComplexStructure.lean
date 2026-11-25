@@ -130,7 +130,7 @@ theorem _root_.Structomorph.mfderiv_ofBorderedHolomorphic_apply {M' : Type*} [To
             chartAt ClosedUpperHalfPlane (e.toHomeomorph x)).source ∩
         range closedUpperHalfPlaneModel :=
       ⟨by simp [mem_chart_source], mem_range_self _⟩
-    rw [hd.mfderiv, e.writtenInExtChartAt_eq]
+    rw [hd.mfderiv, e.toHomeomorph.writtenInExtChartAt_eq]
     exact ClosedUpperHalfPlane.fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid
       (e.mem_groupoid _ _ (chart_mem_atlas _ x) (chart_mem_atlas _ _)) hz I v
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
