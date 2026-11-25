@@ -263,21 +263,6 @@ theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
     fun _ ↦ GL2K0.mem_iff]
   simp only [Matrix.of_apply]
 
-/-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
-the principal level `K(N)`. -/
-theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
-    (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
-    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
-  rw [mem_principalLevel_iff]
-  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-  · rw [Matrix.GeneralLinearGroup.map_apply]
-    exact (integralAdeles R K).algebraMap_mem _
-  · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
-    exact (integralAdeles R K).algebraMap_mem _
-  · convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
-    ext
-    simp [Matrix.one_apply, apply_ite]
-
 /-- The entries of the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` are integral. -/
 private theorem map_algebraMap_apply_mem_integralAdeles (g : GL (Fin 2) R) (i j : Fin 2) :
     (Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K])
@@ -292,6 +277,18 @@ private theorem map_algebraMap_inv_apply_mem_integralAdeles (g : GL (Fin 2) R) (
       Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K := by
   rw [← map_inv]
   exact map_algebraMap_apply_mem_integralAdeles (K := K) g⁻¹ i j
+
+/-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
+the principal level `K(N)`. -/
+theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
+    (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
+  rw [mem_principalLevel_iff]
+  refine ⟨map_algebraMap_apply_mem_integralAdeles g, map_algebraMap_inv_apply_mem_integralAdeles g,
+    fun i j ↦ ?_⟩
+  convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
+  ext
+  simp [Matrix.one_apply, apply_ite]
 
 /-- An entry of the diagonal image of a matrix of `GL₂(R)`, read in `Ô`, is the image of the
 entry. -/
