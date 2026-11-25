@@ -138,13 +138,6 @@ section Restricted
 
 variable [Countable (HeightOneSpectrum R)] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
 
-/-- The local integer rings are open, the standing hypothesis of the restricted products of Haar
-measures. -/
-local instance instFactIsOpenAdicCompletionIntegers :
-    Fact (∀ v : HeightOneSpectrum R,
-      IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
-  ⟨fun _ ↦ Valued.isOpen_valuationSubring _⟩
-
 /-- **The normalized Haar measure on the finite adeles is a restricted product.** The additive
 Haar measure on the finite adele ring giving the integral finite adeles `Ô` mass one is the
 restricted product of local additive Haar measures `μ v` with `μ v 𝒪_v = 1`. -/
