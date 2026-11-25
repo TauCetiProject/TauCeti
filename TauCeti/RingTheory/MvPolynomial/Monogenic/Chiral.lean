@@ -17,10 +17,13 @@ import TauCeti.LinearAlgebra.Eigenspace.Separation
 Extending a chirality endomorphism `γ : Module.End R M` via `γ.lTensor (MvPolynomial σ R)`
 preserves degree and defines `MvPolynomial.chiralHomogeneousSubmodule σ γ ε k` (isomorphic to
 `homogeneousTensorSubmodule σ R (γ.eigenspace ε) k`) and
-`MvPolynomial.chiralMonogenicSubmodule c γ ε k`. When `γ` anticommutes with every `cᵢ`, both
-`cliffordMul c` and `cliffordDirac c` reverse `ε ↦ -ε`, giving the **chiral Clifford Fischer
-decomposition**, `±1` chirality splittings when `γ ∘ₗ γ = 1` and `[Invertible (2 : R)]`, and
-the rank `(card σ - 1).multichoose k * finrank K (γ.eigenspace ε)`.
+`MvPolynomial.chiralMonogenicSubmodule c γ ε k` (`[Fintype σ]`). When `γ` anticommutes with every
+`cᵢ`, both `cliffordMul c` and `cliffordDirac c` reverse `ε ↦ -ε`, giving `±1` chirality
+splittings when `γ ∘ₗ γ = 1` and `[Invertible (2 : R)]`, directness under the Riemannian Clifford
+relations and `[HasUniqueDiv M]`, the **chiral Clifford Fischer decomposition** under those
+Clifford relations over any commutative `ℚ`-algebra, and—over a characteristic-zero field `K` for
+finite-dimensional `M` with some `c i₀` surjective—the rank
+`(card σ - 1).multichoose k * finrank K (γ.eigenspace ε)`.
 
 ## Main definitions
 

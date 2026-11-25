@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.TensorModule
 import Mathlib.Algebra.Algebra.Rat
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Monogenic multivariate polynomials and the Clifford Fischer decomposition
@@ -16,10 +17,11 @@ For an `R`-module `M` and `c : σ → Module.End R M` (`[Fintype σ]`), `MvPolyn
 (`p ⊗ₜ m ↦ ∑ᵢ (∂p/∂Xᵢ) ⊗ₜ cᵢ m`) act on `MvPolynomial σ R ⊗[R] M`, cutting out the degree-`k`
 **monogenic submodule** `MvPolynomial.monogenicSubmodule c k = P_k(M) ⊓ ker D`. Under the
 Riemannian Clifford relations `cᵢ ∘ₗ cᵢ = -1` and `cᵢ ∘ₗ cⱼ + cⱼ ∘ₗ cᵢ = 0` (`i ≠ j`), `X² = -r²`,
-`D² = -Δ`, and `D ∘ₗ X + X ∘ₗ D = -(2 • E + card σ • id)`, giving directness and (over any
-commutative `ℚ`-algebra) the **Clifford Fischer decomposition** and full monogenic expansion;
-polynomial Cauchy-Kowalewskaya along surjective `c i₀` gives the rank
-`(card σ - 1).multichoose k * finrank K M`.
+`D² = -Δ`, and `D ∘ₗ X + X ∘ₗ D = -(2 • E + card σ • id)`, giving directness under
+`[HasUniqueDiv M]` and (over any commutative `ℚ`-algebra) the **Clifford Fischer decomposition**
+and full monogenic expansion. Over a characteristic-zero field `K`, polynomial
+Cauchy-Kowalewskaya along a surjective `c i₀` for finite-dimensional `M` (or a bijective `c i₀`
+unconditionally) gives the rank `(card σ - 1).multichoose k * finrank K M`.
 
 ## Main definitions
 
@@ -48,25 +50,6 @@ public section
 open scoped TensorProduct
 
 namespace MvPolynomial
-
-private theorem degree_add_single_sub_single {σ : Type*} (s : σ →₀ ℕ) {i₀ j : σ}
-    (hne : j ≠ i₀) (hsj : s j ≠ 0) :
-    (s + Finsupp.single i₀ 1 - Finsupp.single j 1).degree = s.degree ∧
-      (s + Finsupp.single i₀ 1 - Finsupp.single j 1 : σ →₀ ℕ) i₀ = s i₀ + 1 ∧
-      s i₀ < s.degree := by
-  have hle₀ : (Finsupp.single j 1 : σ →₀ ℕ) ≤ s :=
-    Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hsj)
-  have hdeg := map_add Finsupp.degree (s + Finsupp.single i₀ 1 - Finsupp.single j 1)
-    (Finsupp.single j 1)
-  rw [tsub_add_cancel_of_le (hle₀.trans le_self_add), map_add Finsupp.degree,
-    Finsupp.degree_single, Finsupp.degree_single] at hdeg
-  have hdeg₀ := map_add Finsupp.degree (s - Finsupp.single j 1) (Finsupp.single j 1)
-  rw [tsub_add_cancel_of_le hle₀, Finsupp.degree_single] at hdeg₀
-  have hle_deg := Finsupp.le_degree i₀ (s - Finsupp.single j 1)
-  rw [Finsupp.tsub_apply, Finsupp.single_eq_of_ne' hne, tsub_zero] at hle_deg
-  refine ⟨by omega, ?_, by omega⟩
-  rw [Finsupp.tsub_apply, Finsupp.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne' hne, tsub_zero]
 
 section Semiring
 
@@ -158,7 +141,12 @@ theorem cliffordMul_injective [IsCancelAdd M] {c : σ → Module.End R M} {i₀ 
     have hti : t i ≠ 0 := by
       rwa [Finsupp.mem_support_iff, Finsupp.add_apply, Finsupp.single_eq_of_ne' hne.symm,
         add_zero] at hisupp
-    obtain ⟨hdeg, hi₀_val, _⟩ := degree_add_single_sub_single t hne hti
+    have hdeg : (t + Finsupp.single i₀ 1 - Finsupp.single i 1).degree = t.degree := by
+      rw [Finsupp.degree_tsub ((Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hti)).trans
+        le_self_add), map_add, Finsupp.degree_single, Finsupp.degree_single, add_tsub_cancel_right]
+    have hi₀_val : (t + Finsupp.single i₀ 1 - Finsupp.single i 1 : σ →₀ ℕ) i₀ = t i₀ + 1 := by
+      simp [Finsupp.single_eq_of_ne' hne]
+    have := Finsupp.lt_degree_of_ne_zero hne hti
     rw [ih _ (by omega) _ rfl]
   rw [Finset.sum_congr rfl hrest, add_right_cancel_iff, add_tsub_cancel_right] at hsum
   exact hc hsum
@@ -638,11 +626,14 @@ private theorem monomial_tmul_mem_diracPreimageSubmodule {c : σ → Module.End 
     · rw [pderiv_monomial, hs'j, hsj, Nat.cast_zero, mul_zero, monomial_zero,
         TensorProduct.zero_tmul]
       exact S.zero_mem
-    · obtain ⟨htdeg, hti₀, _⟩ := degree_add_single_sub_single s hne hsj
+    · have htdeg : (s' - Finsupp.single j 1).degree = k := by
+        rw [Finsupp.degree_tsub ((Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hsj)).trans
+          le_self_add), hs'deg, Finsupp.degree_single, Nat.add_sub_cancel]
+      have := Finsupp.lt_degree_of_ne_zero hne hsj
       rw [pderiv_monomial, one_mul, ← mul_one ((s' j : ℕ) : R), ← smul_eq_mul, ← smul_monomial,
         ← TensorProduct.smul_tmul']
       exact S.smul_mem _ (ih (k - (s i₀ + 1)) (by omega) (s' - Finsupp.single j 1) (c j m')
-        (hc j hm'P) (htdeg.trans hsdeg) (by rw [hti₀]))
+        (hc j hm'P) htdeg (by simp [s', Finsupp.single_eq_of_ne' hne]))
   obtain ⟨u_rest, hu_rest, hP_rest, h0_rest, heq_rest⟩ := hrest
   refine ⟨u₀ - u_rest, Submodule.sub_mem _ (Submodule.smul_mem _ _
       (tmul_mem_homogeneousTensorSubmodule (isHomogeneous_monomial (1 : R) hs'deg) m')) hu_rest,

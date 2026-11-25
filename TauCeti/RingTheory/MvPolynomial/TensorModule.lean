@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import TauCeti.RingTheory.MvPolynomial.Euler
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
@@ -241,31 +242,28 @@ theorem eq_zero_of_forall_homogeneousComponentTensor_eq_zero {u : MvPolynomial �
     (h : ∀ k : ℕ, homogeneousComponentTensor k u = 0) : u = 0 :=
   ext_homogeneousComponentTensor fun k ↦ by simp [h k]
 
-private theorem subtype_rTensor_mem (k : ℕ) (z : homogeneousSubmodule σ R k ⊗[R] M) :
-    ((homogeneousSubmodule σ R k).subtype.rTensor M) z ∈ homogeneousTensorSubmodule σ R M k :=
-  ⟨z, rfl⟩
+section HomogeneousTensorEquiv
+
+attribute [local instance] MvPolynomial.decomposition
+
+private theorem decomposeTensor_eq_homogeneousTensorSubmodule (k : ℕ) :
+    DirectSum.decomposeTensor (homogeneousSubmodule σ R) M k =
+      homogeneousTensorSubmodule σ R M k :=
+  DirectSum.decomposeTensor_apply (homogeneousSubmodule σ R) M
 
 variable (σ R M) in
 /-- Canonical equivalence `homogeneousSubmodule σ R k ⊗[R] M ≃ₗ[R] homogeneousTensorSubmodule`. -/
 noncomputable def homogeneousTensorEquiv (k : ℕ) :
     homogeneousSubmodule σ R k ⊗[R] M ≃ₗ[R] homogeneousTensorSubmodule σ R M k :=
-  LinearEquiv.ofLinearMap
-    (((homogeneousSubmodule σ R k).subtype.rTensor M).codRestrict
-      (homogeneousTensorSubmodule σ R M k) (subtype_rTensor_mem k))
-    ((homogeneousComponentRestrict k).rTensor M ∘ₗ (homogeneousTensorSubmodule σ R M k).subtype)
-    (LinearMap.ext fun ⟨_, hu⟩ ↦ Subtype.ext <| by
-      rw [LinearMap.comp_apply, LinearMap.codRestrict_apply, LinearMap.comp_apply,
-        Submodule.coe_subtype, ← LinearMap.rTensor_comp_apply,
-        subtype_comp_homogeneousComponentRestrict, ← homogeneousComponentTensor_def,
-        homogeneousComponentTensor_eq_self hu, LinearMap.id_apply])
-    (LinearMap.ext fun _ ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.coe_subtype,
-        LinearMap.codRestrict_apply, ← LinearMap.rTensor_comp_apply,
-        homogeneousComponentRestrict_comp_subtype, LinearMap.rTensor_id, LinearMap.id_apply])
+  (DirectSum.decomposeTensorEquiv (homogeneousSubmodule σ R) M k).trans
+    (LinearEquiv.ofEq _ _ (decomposeTensor_eq_homogeneousTensorSubmodule k))
 
 @[simp] theorem coe_homogeneousTensorEquiv_tmul (k : ℕ) (p : homogeneousSubmodule σ R k) (m : M) :
     (homogeneousTensorEquiv σ R M k (p ⊗ₜ[R] m) : MvPolynomial σ R ⊗[R] M) =
-      (p : MvPolynomial σ R) ⊗ₜ[R] m := (rfl)
+      (p : MvPolynomial σ R) ⊗ₜ[R] m := by
+  simp [homogeneousTensorEquiv]
+
+end HomogeneousTensorEquiv
 
 private theorem one_tmul_coeffTensor_zero {u : MvPolynomial σ R ⊗[R] M}
     (hu : u ∈ homogeneousTensorSubmodule σ R M 0) :
