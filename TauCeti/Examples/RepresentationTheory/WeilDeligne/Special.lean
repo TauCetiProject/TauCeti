@@ -60,10 +60,10 @@ instance instTopologicalSpaceIndiscreteInt : TopologicalSpace IndiscreteInt := �
 def indiscreteIntDeg : IndiscreteInt →* Multiplicative ℤ := MonoidHom.id (Multiplicative ℤ)
 
 /-- **The open degree kernel is necessary.** Give `W = ℤ` (written multiplicatively) the
-indiscrete topology and take the identity as degree. In characteristic zero no Weil–Deligne
+indiscrete topology and take the identity as degree. Over any field `E`, no Weil–Deligne
 parameter with `q = 2` has the `Sp(2)` Weil action `r(w) = diag(1, 2 ^ deg w)`: its kernel is
 trivial, and the only open subsets of an indiscrete space are `∅` and the whole space. -/
-example [CharZero E] :
+example :
     ¬ ∃ D : WeilDeligneParameter E IndiscreteInt (Fin 2 → E) indiscreteIntDeg 2,
       ∀ w v, D.r w v =
         fun i : Fin 2 ↦ (2 : E) ^ ((indiscreteIntDeg w).toAdd * ((i : ℕ) : ℤ)) * v i := by
@@ -75,9 +75,10 @@ example [CharZero E] :
   let w : IndiscreteInt := Multiplicative.ofAdd (1 : ℤ)
   have h1 : D.r w = 1 := MonoidHom.mem_ker.1 ((Set.ext_iff.1 hker w).2 trivial)
   have h := congr_fun (LinearMap.congr_fun h1 (Pi.single 1 1)) 1
-  rw [hD] at h
-  norm_num [indiscreteIntDeg] at h
-  change (2 : E) ^ (1 : ℤ) = 1 at h
-  norm_num at h
+  -- `IndiscreteInt` is a synonym for `Multiplicative ℤ` and `indiscreteIntDeg` is the identity.
+  have hdeg : (indiscreteIntDeg w).toAdd = 1 := rfl
+  have h2 : (2 : E) = 1 := by simpa [hD, hdeg] using h
+  -- `2 = 1` forces `1 = 0` in the field `E`.
+  exact one_ne_zero (by linear_combination h2)
 
 end TauCeti.WeilDeligneParameter.SpecialChecks
