@@ -83,7 +83,7 @@ theorem torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic {m : ℕ} [NeZ
     change ((restrictRootsOfUnity τ m ζ : Cˣ) : C) = ((ζ : Cˣ) : C)
     rw [restrictRootsOfUnity_coe_apply]
     simpa only [pow_one] using hηC.map_eq_pow (j := 1) τ (by rw [hcoe, hfix, pow_one])
-      ((mem_rootsOfUnity' m (ζ : Cˣ)).mp ζ.2)
+      ((mem_rootsOfUnity' m (ζ : Cˣ)).mp ζ.property)
   have heq : τ.comp ι = ι.comp σ := by
     ext x
     simp only [AlgHom.comp_apply, hι, hcoe]
