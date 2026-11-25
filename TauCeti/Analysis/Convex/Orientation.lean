@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Basic
 public import TauCeti.LinearAlgebra.Orientation.Basis
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Convexity of the positive vectors of an oriented line
@@ -35,7 +36,7 @@ theorem convex_setOf_exists_basis_orientation_eq (o : Orientation R E ι) :
   -- have the same orientation.
   have hc : 0 < β.det β' := (β.orientation_eq_iff_det_pos β').1 (hβ.trans hβ'.symm)
   have hβ' : β' default = β.det β' • β default := by
-    rw [Module.Basis.det_apply, Matrix.det_unique, Module.Basis.toMatrix_apply]
+    rw [Module.Basis.det_unique]
     simpa using (β.sum_repr (β' default)).symm
   have hk : 0 < a + b * β.det β' := by
     rcases ha.lt_or_eq with ha | rfl

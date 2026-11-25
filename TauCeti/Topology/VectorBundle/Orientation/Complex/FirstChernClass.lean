@@ -158,6 +158,7 @@ theorem firstChernClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
     (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     firstChernClass F E' =
       TopCat.singularCohomologyMap (TopCat.ofHom g) 2 (firstChernClass F E) := by
+  rw [firstChernClass_def, firstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
   -- `φ` is a fibrewise isomorphism `E' ≃ g^* E` over `B'`, continuous on total spaces.
   let φ' : ∀ b', E' b' ≃L[ℂ] ((⇑g) *ᵖ E) b' := φ
   have hφ' : Continuous fun v : TotalSpace F E' ↦
@@ -206,8 +207,9 @@ theorem firstChernClass_eq_of_fiberwise
 theorem firstChernClass_eq_zero_of_linearIndependent {s : Fin (finrank ℂ F) → ∀ b, E b}
     (hs : ∀ i, Continuous fun b ↦ TotalSpace.mk' F b (s i b))
     (hli : ∀ b, LinearIndependent ℂ fun i ↦ s i b) :
-    firstChernClass F E = 0 :=
-  complexEulerClass_eq_zero_of_forall_ne_zero ℂ (DetBundle ℂ F E) (finrank_self ℂ)
+    firstChernClass F E = 0 := by
+  rw [firstChernClass_def, lineFirstChernClass_def]
+  exact complexEulerClass_eq_zero_of_forall_ne_zero ℂ (DetBundle ℂ F E) (finrank_self ℂ)
     (DetBundle.continuous_ιMulti hs) fun b ↦
       ((DetBundle.linearEquiv ℂ F E b).symm.map_ne_zero_iff).2
         ((exteriorPower.ιMulti_ne_zero_iff _).2 (hli b))
@@ -245,8 +247,9 @@ variable {B : Type} [TopologicalSpace B]
 /-- **On a line, the two first Chern classes agree**: for a complex line bundle `L`,
 `c₁(det L) = c₁(L)`, through the isomorphism `det L ≃ L` (`TauCeti.DetBundle.lineEquiv`). -/
 theorem firstChernClass_eq_lineFirstChernClass (hF : finrank ℂ F = 1) :
-    firstChernClass F E = lineFirstChernClass F E hF :=
-  complexEulerClass_eq_of_fiberwise hF (finrank_self ℂ) (DetBundle.continuous_lineEquiv hF)
+    firstChernClass F E = lineFirstChernClass F E hF := by
+  rw [firstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
+  exact complexEulerClass_eq_of_fiberwise hF (finrank_self ℂ) (DetBundle.continuous_lineEquiv hF)
 
 end Line
 
