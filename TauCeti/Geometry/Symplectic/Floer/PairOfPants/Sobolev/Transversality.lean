@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
-import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # Hamiltonian variations on the core of the pair of pants detect the cokernel
@@ -22,7 +21,7 @@ pants is achieved by varying it. This file proves that these variations detect t
 of `D_u`: for any nonempty open set `O ⊆ S` and any neighbourhood `W` of the graph of `u` over `O`,
 the range of `D_u` and the Hamiltonian variations supported in `W`
 (`TauCeti.SymplecticForm.hamiltonianVariationsOn`) span a dense subspace of `L²(S, V)`
-(`topologicalClosure_range_floerConformalSobolevOperator_pairOfPants_sup_span_eq_top`, in the
+(`topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPants_eq_top`, in the
 namespace `TauCeti.SymplecticForm`). No hypothesis is placed on `u` over `O`, which may be constant
 there.
 
@@ -52,22 +51,6 @@ open scoped ENNReal NNReal Manifold
 
 namespace TauCeti
 
-namespace Floer
-
-/-- The pair of pants `S = ℂ ∖ {0, 1}` is connected in real coordinates: it is the complement of
-two points in the plane. -/
-theorem isPreconnected_thricePuncturedSphereReal : IsPreconnected thricePuncturedSphereReal := by
-  have hS : thricePuncturedSphereReal =
-      ({Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1} : Set (ℝ × ℝ))ᶜ := by
-    ext z
-    simp [ContinuousLinearEquiv.symm_apply_eq, Prod.mk_zero_zero]
-  rw [hS]
-  refine ((Set.toFinite _).countable.isConnected_compl_of_one_lt_rank ?_).isPreconnected
-  rw [rank_prod', Module.rank_self, one_add_one_eq_two]
-  exact Cardinal.one_lt_two
-
-end Floer
-
 namespace SymplecticForm
 
 open Floer ConformalSobolev
@@ -84,7 +67,7 @@ converging uniformly on `[0, 1]` to loops `x_q` continuous on `[0, 1]`, while th
 tend uniformly to zero. Then for every nonempty open set `O ⊆ S` and every neighbourhood `W` of the
 graph of `u` over `O`, the range of `D_u : W^{1,2}_0(S, V) → L²(S, V)` and the Hamiltonian
 variations supported in `W` span a dense subspace of `L²(S, V)`. -/
-theorem topologicalClosure_range_floerConformalSobolevOperator_pairOfPants_sup_span_eq_top
+theorem topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPants_eq_top
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {x : Puncture → ℝ → V}
     (hx : ∀ q, ContinuousOn (x q) (Icc 0 1)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
@@ -115,8 +98,8 @@ theorem topologicalClosure_range_floerConformalSobolevOperator_pairOfPants_sup_s
         (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariationsOn thricePuncturedSphereReal u W)).topologicalClosure
       = ⊤ :=
-  topologicalClosure_range_floerConformalSobolevOperator_sup_span_eq_top isWeight_cylindricalWeight
-    isPreconnected_thricePuncturedSphereReal hJ
+  topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top
+    isWeight_cylindricalWeight isPreconnected_thricePuncturedSphereReal hJ
     (fun z _ ↦ ContinuousLinearMap.ext fun v ↦ by simp) hKs hKt hu
     (ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs hx hJe hJeq hK
       (fun z hz ↦ (hJ z hz).of_le one_le_two) (fun z hz ↦ (hKs z hz).of_le (by norm_num))

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import Mathlib.RingTheory.Finiteness.Cofinite
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
@@ -45,9 +45,11 @@ Hamiltonian perturbation is free, the universal operator has dense range, and it
   unique continuation spreads the vanishing over the connected set `U`. No hypothesis is placed
   on `u` over `O`: in particular `u` may be constant there.
 * **Density.** Equivalently, the range of `D_u` and the span of the variations are dense in
-  `L²(U, V)` (`topologicalClosure_range_floerConformalSobolevOperator_sup_span_eq_top`, in the
-  namespace `TauCeti.SymplecticForm`).
-* **Surjectivity.** When `D_u` is Fredholm, the sum is closed, so the range of `D_u` and the
+  `L²(U, V)`
+  (`topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top`,
+  in the namespace `TauCeti.SymplecticForm`).
+* **Surjectivity.** When the range of `D_u` is closed and of finite codimension, for instance when
+  `D_u` is Fredholm, the sum is closed, so the range of `D_u` and the
   variations span `L²(U, V)`
   (`range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top`), and finitely many
   variations suffice (`exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top`, both in
@@ -79,14 +81,6 @@ namespace TauCeti.SymplecticForm
 section Variations
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- A Hamiltonian vector field `X_{δK z}(y)` vanishes at every point `(z, y)` outside the support of
-the family `δK`. -/
-private theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport_uncurry (ω : SymplecticForm V)
-    {δK : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} {y : V} (h : (z, y) ∉ tsupport (uncurry δK)) :
-    ω.hamiltonianVectorField (δK z) y = 0 :=
-  ω.hamiltonianVectorField_eq_zero_of_notMem_tsupport fun hy ↦
-    h (tsupport_comp_subset_preimage (uncurry δK) (continuous_const.prodMk continuous_id) hy)
 
 /-- **Hamiltonian variations along a map are in `Lᵖ`.** For a `C¹` family `δK` of Hamiltonians
 with compact support in `(ℝ × ℝ) × V`, and a map `u` continuous on a measurable set `U`, the field
@@ -239,7 +233,8 @@ theorem eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator (hρ : IsW
 `TauCeti.SymplecticForm.eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator`, the range
 of `D_u : W^{1,2}_0(U, V) → L²(U, V)` and the Hamiltonian variations supported in `W` together span
 a dense subspace of `L²(U, V)`. -/
-theorem topologicalClosure_range_floerConformalSobolevOperator_sup_span_eq_top
+theorem
+    topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top
     (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
     (hJ : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry J) (z, u z))
     (hJJ : ∀ z ∈ U, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
@@ -256,8 +251,8 @@ theorem topologicalClosure_range_floerConformalSobolevOperator_sup_span_eq_top
 
 /-- **The universal linearized operator is onto.** Under the hypotheses of
 `TauCeti.SymplecticForm.eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator`, if
-`D_u : W^{1,2}_0(U, V) → L²(U, V)` is Fredholm, then its range and the Hamiltonian variations
-supported in `W` span `L²(U, V)`. -/
+the range of `D_u : W^{1,2}_0(U, V) → L²(U, V)` is closed and of finite codimension, as when `D_u`
+is Fredholm, then this range and the Hamiltonian variations supported in `W` span `L²(U, V)`. -/
 theorem range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top
     (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
     (hJ : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry J) (z, u z))
@@ -267,22 +262,26 @@ theorem range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_
     (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
     {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
     {W : Set ((ℝ × ℝ) × V)} (hW : ∀ z ∈ O, W ∈ 𝓝 (z, u z))
-    (hF : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).IsFredholm) :
+    (hcl : IsClosed
+      ((ω.floerConformalSobolevOperator U ρ J Ks Kt u).range : Set (Lp V 2 (volume.restrict U))))
+    (hco : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range.CoFG) :
     (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariationsOn U u W) = ⊤ := by
-  have := hF.finite_coker
+  have := hco
   -- The sum contains the closed range, of finite codimension, so it is closed.
-  have hK := Submodule.isClosed_mono_of_finiteDimensional_quotient hF.isClosed_range
+  have hK := Submodule.isClosed_mono_of_finiteDimensional_quotient hcl
     (le_sup_left (b := Submodule.span ℝ (ω.hamiltonianVariationsOn U u W)))
   rw [← hK.submodule_topologicalClosure_eq]
-  exact topologicalClosure_range_floerConformalSobolevOperator_sup_span_eq_top hρ hUc hJ hJJ hKs
-    hKt hu hM hO hOne hOU hW
+  exact
+    topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top
+      hρ hUc hJ hJJ hKs hKt hu hM hO hOne hOU hW
 
 /-- **Finitely many Hamiltonian variations make the linearized operator onto.** Under the
 hypotheses of
 `TauCeti.SymplecticForm.eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator`, if
-`D_u : W^{1,2}_0(U, V) → L²(U, V)` is Fredholm, then finitely many Hamiltonian variations
-supported in `W` span `L²(U, V)` together with the range of `D_u`. -/
+the range of `D_u : W^{1,2}_0(U, V) → L²(U, V)` is closed and of finite codimension, as when `D_u`
+is Fredholm, then finitely many Hamiltonian variations supported in `W` span `L²(U, V)` together
+with the range of `D_u`. -/
 theorem exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top
     (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
     (hJ : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry J) (z, u z))
@@ -292,13 +291,15 @@ theorem exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top
     (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
     {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
     {W : Set ((ℝ × ℝ) × V)} (hW : ∀ z ∈ O, W ∈ 𝓝 (z, u z))
-    (hF : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).IsFredholm) :
+    (hcl : IsClosed
+      ((ω.floerConformalSobolevOperator U ρ J Ks Kt u).range : Set (Lp V 2 (volume.restrict U))))
+    (hco : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range.CoFG) :
     ∃ t : Finset (Lp V 2 (volume.restrict U)), (t : Set _) ⊆ ω.hamiltonianVariationsOn U u W ∧
       (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range ⊔ Submodule.span ℝ t = ⊤ := by
-  have := hF.finite_coker
+  have := hco
   exact Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top hρ hUc hJ hJJ hKs
-      hKt hu hM hO hOne hOU hW hF)
+      hKt hu hM hO hOne hOU hW hcl hco)
 
 end Cokernel
 
