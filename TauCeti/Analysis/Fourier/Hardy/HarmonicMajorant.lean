@@ -337,9 +337,11 @@ private theorem sum_range_norm_sq_taylorCoeff_mul_le (hF : DifferentiableOn ℂ 
     have hs' : |s| < 1 := abs_lt.2 hs
     have hrs : |r * s| < 1 := by
       rw [abs_mul, abs_of_pos hr₀]; nlinarith [abs_nonneg s]
+    have hsub : closedBall (0 : ℂ) |r * s| ⊆ ball 0 1 := closedBall_subset_ball hrs
     refine le_of_eq_of_le ?_
       (circleAverage_le_of_harmonic_majorant (g := fun w ↦ ‖F w‖ ^ 2)
-        (hF.continuousOn.norm.pow 2) hu hmajor hrs)
+        ((hF.continuousOn.norm.pow 2).mono (sphere_subset_closedBall.trans hsub)).circleIntegrable'
+        (hu.mono hsub) fun w hw ↦ hmajor w (hsub (sphere_subset_closedBall hw)))
     rw [Real.circleAverage_eq_circleAverage_zero_one,
       Real.circleAverage_eq_circleAverage_zero_one (c := 0) (R := r * s)]
     refine Real.circleAverage_congr_sphere fun z hz ↦ ?_

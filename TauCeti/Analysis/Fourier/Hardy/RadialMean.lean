@@ -49,8 +49,12 @@ theorem norm_sq_le_harmonic_majorant_zero
     ‖x‖ ^ 2 ≤ u 0 := by
   apply le_of_tendsto x.tendsto_circleAverage_norm_sq_diskFunction
   filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with r hr
-  exact circleAverage_le_of_harmonic_majorant (g := fun w ↦ ‖x.diskFunction w‖ ^ 2)
-    (x.analyticOnNhd_diskFunction.continuousOn.norm.pow 2) hu hmajor (abs_lt.mpr hr)
+  have hsub : Metric.closedBall (0 : ℂ) |r| ⊆ Metric.ball 0 1 :=
+    Metric.closedBall_subset_ball (abs_lt.mpr hr)
+  exact circleAverage_le_of_harmonic_majorant
+    ((x.analyticOnNhd_diskFunction.continuousOn.norm.pow 2).mono
+      (Metric.sphere_subset_closedBall.trans hsub)).circleIntegrable'
+    (hu.mono hsub) fun w hw ↦ hmajor w (hsub (Metric.sphere_subset_closedBall hw))
 
 end HardySpace
 
