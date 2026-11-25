@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
 public import TauCeti.Analysis.CStarAlgebra.SquareFunction
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
@@ -100,7 +101,7 @@ theorem trace_nnrpow_sqrt_star_mul_self [DecidableEq n] {p : ℝ≥0} (hp : 0 < 
   have hmap : CStarMatrix.toEuclideanCLM (CFC.nnrpow (CFC.sqrt (star x * x)) p) =
       cfc (fun t : ℝ => t ^ ((p / 2 : ℝ≥0) : ℝ)) (star T * T) := by
     rw [CFC.nnrpow_eq_pow, CFC.nnrpow_sqrt, CFC.nnrpow_eq_cfcₙ_real (star x * x) (p / 2),
-      NonUnitalStarAlgHomClass.map_cfcₙ (CStarMatrix.toEuclideanCLM (m := n)) _ (star x * x)
+      NonUnitalStarAlgHomClass.map_cfcₙ (CStarMatrix.toEuclideanCLM (n := n)) _ (star x * x)
         (Real.continuous_rpow_const hp2.le).continuousOn hf0 (StarAlgEquiv.isometry _).continuous
         (IsSelfAdjoint.star_mul_self x) ((IsSelfAdjoint.star_mul_self x).map _),
       cfcₙ_eq_cfc]
@@ -444,7 +445,7 @@ theorem operatorAbs_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m �
     (columnEuclideanLM b).operatorAbs =
       (CStarMatrix.toEuclideanCLM (columnSquare b)).toLinearMap := by
   set T := CStarMatrix.toEuclideanCLM (columnSquare b)
-  have hnonneg : 0 ≤ T := map_zero (CStarMatrix.toEuclideanCLM (m := m)) ▸
+  have hnonneg : 0 ≤ T := map_zero (CStarMatrix.toEuclideanCLM (n := m)) ▸
     OrderHomClass.mono CStarMatrix.toEuclideanCLM (columnSquare_nonneg b)
   have hsq : T * T = (columnEuclideanLM b).adjoint.toContinuousLinearMap ∘L
       (columnEuclideanLM b).toContinuousLinearMap := by
