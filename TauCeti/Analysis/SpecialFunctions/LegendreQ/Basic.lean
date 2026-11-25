@@ -175,6 +175,22 @@ theorem integrableOn_legendreQ_integrand {ν : ℂ} (hν : -1 < ν.re) (ht : 1 <
       (Ioi 0) :=
   integrableOn_cpow_neg ht (by simp; linarith)
 
+/-- The log-weighted integrand `log b · b ^ (-m)` is at most `(2 / m) b ^ (-(m / 2))`, where
+`b = t + √(t² - 1) cosh u`. -/
+private lemma log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m) (u : ℝ) :
+    Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤
+      2 / m * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(m / 2)) := by
+  have hc := one_lt_base ht u
+  calc Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)
+      ≤ (t + √(t ^ 2 - 1) * Real.cosh u) ^ (m / 2) / (m / 2) *
+        (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) :=
+        mul_le_mul_of_nonneg_right (Real.log_le_rpow_div (by linarith) (by linarith))
+          (Real.rpow_nonneg (by linarith) _)
+    _ = 2 / m * ((t + √(t ^ 2 - 1) * Real.cosh u) ^ (m / 2) *
+        (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) := by field_simp
+    _ = 2 / m * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(m / 2)) := by
+        rw [← Real.rpow_add (by linarith), show m / 2 + -m = -(m / 2) by ring]
+
 /-- The domination of the degree derivative of Heine's integrand used for `hasDerivAt_legendreQ`:
 `‖log c · c ^ (-(w + 1))‖ ≤ (2 / δ) c ^ (-(δ / 2))` for the base `c ≥ 1` and `δ ≤ re (w + 1)`. -/
 private lemma norm_log_mul_cpow_base_le (ht : 1 < t) {w : ℂ} {δ : ℝ} (hδ : 0 < δ)
@@ -185,18 +201,8 @@ private lemma norm_log_mul_cpow_base_le (ht : 1 < t) {w : ℂ} {δ : ℝ} (hδ :
   have hc := one_lt_base ht u
   rw [norm_neg, norm_mul, norm_cpow_base ht, norm_real,
     Real.norm_of_nonneg (Real.log_nonneg hc.le), neg_re]
-  calc Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
-        (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(w + 1).re)
-      ≤ (t + √(t ^ 2 - 1) * Real.cosh u) ^ (δ / 2) / (δ / 2) *
-        (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-δ) :=
-        mul_le_mul (Real.log_le_rpow_div (by linarith) (by linarith))
-          (Real.rpow_le_rpow_of_exponent_le hc.le (by linarith))
-          (Real.rpow_nonneg (by linarith) _) (by positivity)
-    _ = 2 / δ * ((t + √(t ^ 2 - 1) * Real.cosh u) ^ (δ / 2) *
-        (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-δ)) := by field_simp
-    _ = 2 / δ * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(δ / 2)) := by
-        rw [← Real.rpow_add (by linarith)]
-        ring_nf
+  exact (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hc.le (neg_le_neg hw))
+    (Real.log_nonneg hc.le)).trans (log_mul_base_rpow_neg_le ht hδ u)
 
 /-- The degree derivative of Heine's integral:
 `∂_ν Q_ν(t) = -∫₀^∞ log(t + √(t² - 1) cosh u) (t + √(t² - 1) cosh u) ^ (-(ν + 1)) du`
@@ -676,16 +682,6 @@ theorem tendsto_cpow_mul_legendreQ_atTop {ν : ℂ} (hν : -1 < ν.re) :
     ofReal_mul_cpow (by linarith)]
   ring
 
-/-- The log-weighted integrand `log b · b ^ (-m)` of the degree comparison is at most
-`(2 / m) b ^ (-(m / 2))`, where `b = t + √(t² - 1) cosh u`. -/
-private lemma log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m) (u : ℝ) :
-    Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤
-      2 / m * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(m / 2)) := by
-  have h := norm_log_mul_cpow_base_le ht (w := (m : ℂ) - 1) hm (by simp) u
-  rwa [norm_neg, norm_mul, norm_cpow_base ht, norm_real,
-    Real.norm_of_nonneg (Real.log_nonneg (one_lt_base ht u).le), sub_add_cancel, neg_re,
-    ofReal_re] at h
-
 private lemma log_mul_base_rpow_neg_nonneg (ht : 1 < t) (m u : ℝ) :
     0 ≤ Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) :=
   mul_nonneg (Real.log_nonneg (one_lt_base ht u).le) (Real.rpow_nonneg (base_pos ht u).le _)
@@ -793,12 +789,10 @@ private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2
   refine (setIntegral_mono_on
     ((integrableOn_log_mul_base_rpow_neg ht hm).mono_set (Ioi_subset_Ioi hU0)) hg
     measurableSet_Ioi fun u _ => hle u).trans_eq ?_
-  rw [integral_const_mul, integral_exp_mul_Ioi (by linarith)]
-  have he : Real.exp (m * U / 2) * Real.exp (-(m * U / 2)) = 1 := by
-    rw [← Real.exp_add]
-    simp
+  rw [integral_const_mul, integral_exp_mul_Ioi (by linarith), neg_div_neg_eq, mul_assoc,
+    ← mul_div_assoc, ← Real.exp_add, show m / 2 * U + -(m / 2) * U = 0 by ring, Real.exp_zero]
   field_simp
-  linear_combination 4 * he
+  ring
 
 /-- Near `t = 1` the difference `Q_ν(t) - Q₀(t)` stays bounded: for `1 < t < 2`,
 `‖Q_ν(t) - Q₀(t)‖ ≤ ‖ν‖ (4 + 4 / m²)` with `m = min (re ν + 1) 1`. -/
