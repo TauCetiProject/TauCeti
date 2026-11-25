@@ -214,6 +214,12 @@ theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure :
   obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
   exact memLp_jet_of_contDiff (hξ2.of_le (by norm_num)) hR
 
+/-- A test section is square integrable on the strip. -/
+theorem memLp_of_mem_testSection (hξ : ξ ∈ testSection V) : MemLp ξ 2 stripMeasure := by
+  obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  exact memLp_stripMeasure_of_continuous hξ2.continuous
+    (fun z hz ↦ by simpa using hR z.1 z.2 hz.le) 2
+
 /-- The test sections are differentiable with square integrable jets. -/
 instance : HasL2Jets (testSection V) :=
   ⟨fun _ hξ ↦ (mem_testSection_iff.1 hξ).1.differentiable (by norm_num), fun _ ↦ memLp_jet⟩
