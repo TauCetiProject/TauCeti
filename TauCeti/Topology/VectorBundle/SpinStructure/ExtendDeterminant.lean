@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
+import TauCeti.Topology.VectorBundle.Associated.Extension
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
 /-!
@@ -25,7 +26,7 @@ the first Chern class of `s.extendSpinC σ` is that of `P ×_{det ∘ σ} ℂ`
 
 For the unitary frames of a complex structure on a rank-four bundle and the canonical lift
 `U(2) → Spinᶜ(4)`, `det ∘ σ` is the complex determinant
-(`TauCeti.OrthonormalFrameBundle.toComplex_smul_canonicalDeterminantModel`).
+(`TauCeti.toComplex_smul_unitarySpinCContinuousLift`).
 
 ## Main definitions
 
@@ -36,7 +37,8 @@ For the unitary frames of a complex structure on a rank-four bundle and the cano
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameLift.determinantLineExtendSpinCEquiv_mk_inl`: the identification sends
+* `TauCeti.OrthonormalFrameLift.determinantLineExtendSpinCEquiv_mk_inl` and
+  `TauCeti.OrthonormalFrameLift.determinantLineExtendSpinCEquiv_symm_mk`: the identification sends
   `[[p, 1], w]` to `[p, w]`.
 * `TauCeti.OrthonormalFrameLift.continuous_determinantLineExtendSpinCEquiv`: it is continuous on
   total spaces.
@@ -106,6 +108,8 @@ instance instDistribMulAction : DistribMulAction G (LiftDeterminantModel σ) :=
   DistribMulAction.compHom _ σ.toMonoidHom
 
 instance instSMulCommClass : SMulCommClass G ℂ (LiftDeterminantModel σ) where
+  -- `g` acts as `σ g` (`smul_def`), and the scalars commute with `Spinᶜ(n)` on the underlying
+  -- `DeterminantModel n`, of which `LiftDeterminantModel σ` is a synonym.
   smul_comm g c w := smul_comm (σ g) c (show DeterminantModel n from w)
 
 instance instContinuousSMul : ContinuousSMul G (LiftDeterminantModel σ) :=
@@ -136,6 +140,11 @@ def ofDeterminantModel : DeterminantModel n ≃L[ℂ] LiftDeterminantModel σ :=
 @[simp]
 theorem toComplex_ofDeterminantModel (w : DeterminantModel n) :
     toComplex (ofDeterminantModel σ w) = DeterminantModel.toComplex w :=
+  (rfl)
+
+@[simp]
+theorem toComplex_ofDeterminantModel_symm (w : LiftDeterminantModel σ) :
+    DeterminantModel.toComplex ((ofDeterminantModel σ).symm w) = toComplex w :=
   (rfl)
 
 variable (σ) in
@@ -169,37 +178,15 @@ variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [Nor
 /-- **The determinant line of the `Spinᶜ` structure induced by a lift**, at a fibre: the
 determinant line `(P ×_σ Spinᶜ(n)) ×_{det} ℂ` of `s.extendSpinC σ` is identified with the line
 `P ×_{det ∘ σ} ℂ` associated to `P` by the character `det ∘ σ` of `G`, by `[[p, 1], w] ↦ [p, w]`
-(`TauCeti.OrthonormalFrameLift.determinantLineExtendSpinCEquiv_mk_inl`). -/
+(`TauCeti.OrthonormalFrameLift.determinantLineExtendSpinCEquiv_mk_inl`). It is
+`TauCeti.PrincipalBundle.Extend.associatedContinuousLinearEquiv`; the determinant line of
+`s.extendSpinC σ` is by definition the associated bundle of `P ×_σ Spinᶜ(n)` with model
+`TauCeti.SpinCStructure.DeterminantModel n`, of which `LiftDeterminantModel σ` is a synonym. -/
 def determinantLineExtendSpinCEquiv (x : X) :
     (s.extendSpinC σ.toMonoidHom σ.continuous hσρ).determinantLine x ≃L[ℂ]
       AssociatedBundle G s.P (SpinCStructure.LiftDeterminantModel σ) x :=
-  (AssociatedBundle.mkContinuousLinearEquiv ℂ SpinCn
-    (P := (s.extendSpinC σ.toMonoidHom σ.continuous hσρ).P)
-    (F := SpinCStructure.DeterminantModel n) (PrincipalBundle.Extend.inl σ.toMonoidHom σ.continuous
-      (Classical.arbitrary (s.P x)))).symm.trans
-    ((SpinCStructure.LiftDeterminantModel.ofDeterminantModel σ).trans
-      (AssociatedBundle.mkContinuousLinearEquiv ℂ G (F := SpinCStructure.LiftDeterminantModel σ)
-        (Classical.arbitrary (s.P x))))
-
-/-- The comparison of determinant lines is the identification
-`PrincipalBundle.Extend.associatedEquiv` of the associated bundles of the extension. -/
-private theorem determinantLineExtendSpinCEquiv_apply {x : X}
-    (z : (s.extendSpinC σ.toMonoidHom σ.continuous hσρ).determinantLine x) :
-    s.determinantLineExtendSpinCEquiv σ hσρ x z =
-      PrincipalBundle.Extend.associatedEquiv (P := s.P)
-        (F := SpinCStructure.LiftDeterminantModel σ) σ.toMonoidHom σ.continuous
-        (SpinCStructure.LiftDeterminantModel.smul_def σ) x z := by
-  obtain ⟨w, hw⟩ := (AssociatedBundle.mkContinuousLinearEquiv ℂ SpinCn
-    (P := (s.extendSpinC σ.toMonoidHom σ.continuous hσρ).P)
-    (F := SpinCStructure.DeterminantModel n) (PrincipalBundle.Extend.inl σ.toMonoidHom
-      σ.continuous (Classical.arbitrary (s.P x)))).surjective z
-  rw [← hw, determinantLineExtendSpinCEquiv, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply,
-    AssociatedBundle.mkContinuousLinearEquiv_apply]
-  erw [AssociatedBundle.mkContinuousLinearEquiv_apply]
-  exact (PrincipalBundle.Extend.associatedEquiv_inl (P := s.P)
-    (F := SpinCStructure.LiftDeterminantModel σ) σ.toMonoidHom σ.continuous
-    (SpinCStructure.LiftDeterminantModel.smul_def σ) (Classical.arbitrary (s.P x)) w).symm
+  PrincipalBundle.Extend.associatedContinuousLinearEquiv ℂ (P := s.P) σ.toMonoidHom σ.continuous
+    (SpinCStructure.LiftDeterminantModel.smul_def σ) x
 
 /-- The identification of determinant lines sends `[[p, 1], w]` to `[p, w]`. -/
 theorem determinantLineExtendSpinCEquiv_mk_inl {x : X} (p : s.P x)
@@ -207,10 +194,18 @@ theorem determinantLineExtendSpinCEquiv_mk_inl {x : X} (p : s.P x)
     s.determinantLineExtendSpinCEquiv σ hσρ x
         (AssociatedBundle.mk SpinCn
           (PrincipalBundle.Extend.inl σ.toMonoidHom σ.continuous p) w) =
-      AssociatedBundle.mk G p (SpinCStructure.LiftDeterminantModel.ofDeterminantModel σ w) := by
-  rw [determinantLineExtendSpinCEquiv_apply]
-  exact PrincipalBundle.Extend.associatedEquiv_inl (P := s.P)
-    (F := SpinCStructure.LiftDeterminantModel σ) σ.toMonoidHom σ.continuous
+      AssociatedBundle.mk G p (SpinCStructure.LiftDeterminantModel.ofDeterminantModel σ w) :=
+  -- `ofDeterminantModel σ` is the identity of the synonym `LiftDeterminantModel σ`.
+  PrincipalBundle.Extend.associatedContinuousLinearEquiv_inl σ.toMonoidHom σ.continuous
+    (SpinCStructure.LiftDeterminantModel.smul_def σ) p _
+
+/-- The inverse identification of determinant lines sends `[p, w]` to `[[p, 1], w]`. -/
+theorem determinantLineExtendSpinCEquiv_symm_mk {x : X} (p : s.P x)
+    (w : SpinCStructure.LiftDeterminantModel σ) :
+    (s.determinantLineExtendSpinCEquiv σ hσρ x).symm (AssociatedBundle.mk G p w) =
+      AssociatedBundle.mk SpinCn (PrincipalBundle.Extend.inl σ.toMonoidHom σ.continuous p)
+        ((SpinCStructure.LiftDeterminantModel.ofDeterminantModel σ).symm w) :=
+  PrincipalBundle.Extend.associatedContinuousLinearEquiv_symm_mk σ.toMonoidHom σ.continuous
     (SpinCStructure.LiftDeterminantModel.smul_def σ) p w
 
 /-- **The identification of determinant lines is continuous** on total spaces: it is the
@@ -221,10 +216,8 @@ theorem continuous_determinantLineExtendSpinCEquiv :
         (s.extendSpinC σ.toMonoidHom σ.continuous hσρ).determinantLine ↦
       TotalSpace.mk' (SpinCStructure.LiftDeterminantModel σ) v.proj
         (s.determinantLineExtendSpinCEquiv σ hσρ v.proj v.snd) :=
-  (PrincipalBundle.Extend.associatedHomeomorph (P := s.P)
-    (F := SpinCStructure.LiftDeterminantModel σ) σ.toMonoidHom σ.continuous
-    (SpinCStructure.LiftDeterminantModel.smul_def σ)).continuous.congr fun v ↦ by
-      rw [PrincipalBundle.Extend.associatedHomeomorph_apply, determinantLineExtendSpinCEquiv_apply]
+  PrincipalBundle.Extend.continuous_associatedContinuousLinearEquiv (P := s.P) σ.toMonoidHom
+    σ.continuous (SpinCStructure.LiftDeterminantModel.smul_def σ)
 
 /-- **The first Chern class of the `Spinᶜ` structure induced by a lift** `s` along `σ` is the
 first Chern class of the line bundle `P ×_{det ∘ σ} ℂ` associated to the lift by the character

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex
+public import TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.Basic
 public import TauCeti.Topology.VectorBundle.SpinStructure.ExtendDeterminant
 
 /-!
@@ -14,31 +14,30 @@ public import TauCeti.Topology.VectorBundle.SpinStructure.ExtendDeterminant
 Let `E → X` be a rank-four real vector bundle with fibre inner products and a continuous fibrewise
 orthogonal complex structure `J`, and let `𝔰` be its canonical `Spinᶜ` structure
 (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`), the extension of the unitary frame
-bundle `P` along the lift `σ : U(ℝ⁴, J₀) → Spinᶜ(4)` (`TauCeti.unitarySpinCLift`) for a unitary
-frame `e` of the model complex structure `J₀`.
+bundle `P` along the lift `σ : U(ℝ⁴, J₀) → Spinᶜ(4)` (`TauCeti.unitarySpinCLift`, bundled as the
+continuous homomorphism `TauCeti.unitarySpinCContinuousLift`) for a unitary frame `e` of the model
+complex structure `J₀`.
 
 The determinant character of `σ` is the complex determinant (`TauCeti.det_unitarySpinCLift`), so
 the determinant line of `𝔰` is the line bundle `P ×_{det_ℂ} ℂ` associated to the unitary frames by
 the complex determinant of the unitary matrix in the frame `e`
 (`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv`, with the action computed in
-`TauCeti.OrthonormalFrameBundle.toComplex_smul_canonicalDeterminantModel`), and the first Chern
-class of `𝔰` is that of this line bundle
+`TauCeti.toComplex_smul_unitarySpinCContinuousLift`), and the first Chern class of `𝔰` is that of
+this line bundle
 (`TauCeti.OrthonormalFrameBundle.firstChernClass_canonicalSpinCStructure`). The further
 identification of `P ×_{det_ℂ} ℂ` with the anticanonical line `Λ²_ℂ (E, J)` is not made here.
 
 ## Main definitions
 
-* `TauCeti.OrthonormalFrameBundle.unitarySpinCContinuousLift`: the lift `σ` as a continuous
-  homomorphism.
 * `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv`: the fibrewise identification of
   the determinant line of the canonical `Spinᶜ` structure with `P ×_{det_ℂ} ℂ`.
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.toComplex_smul_canonicalDeterminantModel`: a unitary
-  transformation `g` of `(ℝ⁴, J₀)` acts on the model of `P ×_{det_ℂ} ℂ` by the determinant of its
-  unitary matrix in the frame `e`.
-* `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv_mk`: the identification sends
+* `TauCeti.toComplex_smul_unitarySpinCContinuousLift`: a unitary transformation `g` of `(ℝ⁴, J₀)`
+  acts on the model of `P ×_{det_ℂ} ℂ` by the determinant of its unitary matrix in the frame `e`.
+* `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv_mk` and
+  `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv_symm_mk`: the identification sends
   `[[p, 1], w]` to `[p, w]`.
 * `TauCeti.OrthonormalFrameBundle.continuous_canonicalDeterminantLineEquiv`: it is continuous on
   total spaces.
@@ -58,6 +57,28 @@ open Bundle CliffordAlgebra Module
 
 namespace TauCeti
 
+section
+
+variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
+  (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+    ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
+  (e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
+  (h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1)
+  (h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3)
+
+/-- **The determinant character of the canonical lift is the complex determinant**: a unitary
+transformation `g` of `(ℝ⁴, J₀)` acts on the model of `P ×_{det_ℂ} ℂ` by the determinant of its
+unitary matrix in the frame `e`. -/
+theorem toComplex_smul_unitarySpinCContinuousLift (g : Subgroup.centralizer {J₀})
+    (w : SpinCStructure.LiftDeterminantModel (unitarySpinCContinuousLift hJ₀ e h₀ h₂)) :
+    SpinCStructure.LiftDeterminantModel.toComplex (g • w) =
+      (Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) : ℂ) *
+        SpinCStructure.LiftDeterminantModel.toComplex w := by
+  rw [SpinCStructure.LiftDeterminantModel.toComplex_smul, unitarySpinCContinuousLift_apply,
+    det_unitarySpinCLift]
+
+end
+
 namespace OrthonormalFrameBundle
 
 variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -72,29 +93,6 @@ variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [Nor
   (hF : finrank ℝ F = 4) (e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
   (h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1)
   (h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3)
-
-/-- The lift `TauCeti.unitarySpinCLift` of `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, as a continuous
-homomorphism. -/
-def unitarySpinCContinuousLift :
-    Subgroup.centralizer {J₀} →ₜ*
-      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
-  ⟨unitarySpinCLift hJ₀ e h₀ h₂, continuous_unitarySpinCLift hJ₀ e h₀ h₂⟩
-
-@[simp]
-theorem unitarySpinCContinuousLift_apply (g : Subgroup.centralizer {J₀}) :
-    unitarySpinCContinuousLift hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
-  (rfl)
-
-/-- **The determinant character of the canonical lift is the complex determinant**: a unitary
-transformation `g` of `(ℝ⁴, J₀)` acts on the model of `P ×_{det_ℂ} ℂ` by the determinant of its
-unitary matrix in the frame `e`. -/
-theorem toComplex_smul_canonicalDeterminantModel (g : Subgroup.centralizer {J₀})
-    (w : SpinCStructure.LiftDeterminantModel (unitarySpinCContinuousLift hJ₀ e h₀ h₂)) :
-    SpinCStructure.LiftDeterminantModel.toComplex (g • w) =
-      (Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) : ℂ) *
-        SpinCStructure.LiftDeterminantModel.toComplex w := by
-  rw [SpinCStructure.LiftDeterminantModel.toComplex_smul, unitarySpinCContinuousLift_apply,
-    det_unitarySpinCLift]
 
 /-- **The determinant line of the canonical `Spinᶜ` structure**, at a fibre: it is identified with
 the line `P ×_{det_ℂ} ℂ` associated to the unitary frames `P` by the complex determinant, by
@@ -116,6 +114,18 @@ theorem canonicalDeterminantLineEquiv_mk {x : X} (p : (unitaryFrameLift hJ hJ₂
       AssociatedBundle.mk _ p (SpinCStructure.LiftDeterminantModel.ofDeterminantModel
         (unitarySpinCContinuousLift hJ₀ e h₀ h₂) w) :=
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).determinantLineExtendSpinCEquiv_mk_inl
+    (unitarySpinCContinuousLift hJ₀ e h₀ h₂) (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂)
+    p w
+
+/-- The inverse identification of determinant lines sends `[p, w]` to `[[p, 1], w]`. -/
+@[simp]
+theorem canonicalDeterminantLineEquiv_symm_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
+    (w : SpinCStructure.LiftDeterminantModel (unitarySpinCContinuousLift hJ₀ e h₀ h₂)) :
+    (canonicalDeterminantLineEquiv hJ hJ₂ hJ₀ hF e h₀ h₂ x).symm (AssociatedBundle.mk _ p w) =
+      AssociatedBundle.mk _ (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
+        ((SpinCStructure.LiftDeterminantModel.ofDeterminantModel
+          (unitarySpinCContinuousLift hJ₀ e h₀ h₂)).symm w) :=
+  (unitaryFrameLift hJ hJ₂ hJ₀ hF).determinantLineExtendSpinCEquiv_symm_mk
     (unitarySpinCContinuousLift hJ₀ e h₀ h₂) (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂)
     p w
 
