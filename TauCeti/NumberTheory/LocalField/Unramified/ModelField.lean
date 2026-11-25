@@ -12,18 +12,15 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.ModelField
 # `Breve E` is a model field
 
 Let `E` be a nonarchimedean local field and `Breve E` the completion of its maximal unramified
-extension. The value group of `Breve E` is that of `E`
-(`TauCeti.MaxUnramifiedCompletion.mapValueGroupWithZero_breve_surjective`), so the valuation of
-`Breve E` is discrete of rank at most one; it is nontrivial, its valuation ring is Henselian, and
-its residue field is algebraically closed, hence perfect. So `Breve E` is a `TauCeti.ModelField`,
-the base field of Bruhat and Tits' theory of integral models, although it is not a local field: its
-residue field is infinite.
+extension. The valuation of `Breve E` is discrete of rank at most one, by instance search through
+`UniformSpace.Completion.isDiscrete` and `UniformSpace.Completion.isRankLeOne` applied to the
+unramified extension; it is nontrivial, its valuation ring is Henselian, and its residue field is
+algebraically closed, hence perfect. So `Breve E` is a `TauCeti.ModelField`, the base field of
+Bruhat and Tits' theory of integral models, although it is not a local field: its residue field is
+infinite.
 
 ## Main results
 
-* `TauCeti.MaxUnramifiedCompletion.breveIsDiscrete`,
-  `TauCeti.MaxUnramifiedCompletion.breveIsRankLeOne`: the valuation of `Breve E` is discrete of
-  rank at most one.
 * `TauCeti.MaxUnramifiedCompletion.breveModelField`: `Breve E` is a model field.
 -/
 
@@ -35,14 +32,6 @@ namespace TauCeti.MaxUnramifiedCompletion
 
 variable (E : Type*) [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E]
-
-/-- The valuation of `Breve E` is discrete. -/
-instance breveIsDiscrete : IsDiscrete (Breve E) :=
-  .of_surjective_mapValueGroupWithZero mapValueGroupWithZero_breve_surjective
-
-/-- The valuation of `Breve E` has rank at most one. -/
-instance breveIsRankLeOne : IsRankLeOne (Breve E) :=
-  .of_surjective_mapValueGroupWithZero mapValueGroupWithZero_breve_surjective
 
 /-- **`Breve E` is a model field**: its valuation is nontrivial, discrete and of rank at most one,
 its valuation ring is Henselian, and its residue field is algebraically closed, hence perfect. -/
