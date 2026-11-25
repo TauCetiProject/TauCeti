@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Lift
-import TauCeti.RingTheory.Artinian.Socle
+import TauCeti.RingTheory.Artinian.Socle.Basic
 import TauCeti.RingTheory.TensorProduct.CentralBaseChange
 
 /-!

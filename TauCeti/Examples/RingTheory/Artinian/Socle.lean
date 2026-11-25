@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Polynomial.AlgebraMap
-import TauCeti.RingTheory.Artinian.Socle
+import TauCeti.RingTheory.Artinian.Socle.Basic
 
 /-!
 # Checks for the occurrence of characters of Artinian algebras
