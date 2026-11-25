@@ -57,6 +57,10 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations, alongside rectangular `conjTranspose`, negation, subtraction, and identity
   laws.
+* `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
+  a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
+  `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
+  for self-adjoint and unitary matrices.
 * `CStarMatrix.mapₐ`: entrywise amplification of a unital `⋆`-algebra homomorphism `A →⋆ₐ[R] B`
   to `CStarMatrix n n A →⋆ₐ[R] CStarMatrix n n B`, with functoriality, injectivity, and isometric
   laws (`CStarMatrix.norm_mapₙₐ`, `CStarMatrix.norm_mapₐ`).
@@ -358,6 +362,47 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
+/-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
+@[simp]
+lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : CStarMatrix n n A} : IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
+  have h₁ : ofMatrix.symm M * ofMatrix.symm M = ofMatrix.symm M ↔ M * M = M := by
+    rw [← ofMatrix_symm_mul, ofMatrix.symm.injective.eq_iff]
+  have h₂ : star (ofMatrix.symm M) = ofMatrix.symm M ↔ star M = M := by
+    rw [Matrix.star_eq_conjTranspose, ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff]
+  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, h₁, h₂]
+
+/-- A matrix is a star projection exactly when it is one as a C⋆-matrix. -/
+@[simp]
+lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
+  rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_iff [Star A] {M : Matrix n n A} :
+    IsSelfAdjoint (ofMatrix M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A C⋆-matrix is self-adjoint exactly when the underlying matrix is. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_symm_iff [Star A] {M : CStarMatrix n n A} :
+    IsSelfAdjoint (ofMatrix.symm M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A matrix is unitary exactly when it is unitary as a C⋆-matrix. -/
+@[simp]
+lemma ofMatrix_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : Matrix n n A} : ofMatrix M ∈ unitary (CStarMatrix n n A) ↔ M ∈ unitary (Matrix n n A) :=
+  Iff.rfl
+
+/-- A C⋆-matrix is unitary exactly when the underlying matrix is. -/
+@[simp]
+lemma ofMatrix_symm_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : CStarMatrix n n A} :
+    ofMatrix.symm M ∈ unitary (Matrix n n A) ↔ M ∈ unitary (CStarMatrix n n A) :=
+  Iff.rfl
+
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/
 lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
@@ -393,6 +438,13 @@ states the entry directly, and `simp` tries it first. -/
 theorem reindexₐ_apply_apply {m : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A]
     [Mul A] [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) (i j : n) :
     reindexₐ R A e M i j = M (e.symm i) (e.symm j) :=
+  (rfl)
+
+/-- Reading a reindexed square `CStarMatrix` as an ordinary matrix gives `Matrix.reindex`. -/
+@[simp]
+theorem ofMatrix_symm_reindexₐ {m : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) :
+    ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) :=
   (rfl)
 
 variable (R) in

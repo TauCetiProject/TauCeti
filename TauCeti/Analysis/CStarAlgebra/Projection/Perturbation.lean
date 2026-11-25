@@ -5,68 +5,93 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Projection
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
-public import TauCeti.Algebra.Star.Projection.Intertwiner
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-import Mathlib.Analysis.Normed.Ring.Units
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
+import Mathlib.Analysis.CStarAlgebra.Projection
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
-import Mathlib.Tactic.NoncommRing
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Topology.Connected.Clopen
+import TauCeti.Algebra.Algebra.Unitization
+import TauCeti.Algebra.Star.Projection.Pair
 
 /-!
-# Perturbation, unitary conjugacy, and paths of star projections
+# Nearby and homotopic projections, exponential formulas, and stabilized rotation paths
 
-Two star projections `p` and `q` in a unital C⋆-algebra satisfying `‖p - q‖ < 1` are unitarily
-conjugate by a unitary close to `1` and hence in the identity path component of the unitary group.
-Explicitly, Sz.-Nagy's intertwiner `TauCeti.projectionIntertwiner p q = q * p + (1 - q) * (1 - p)`
-(from `TauCeti/Algebra/Star/Projection/Intertwiner.lean`) satisfies `z * p = q * z` and
-`star z * z = z * star z = 1 - (p - q) ^ 2`. When `‖p - q‖ < 1`, `z` is a unit whose polar unitary
-factor `u = hp.closeUnitary hq h` (`IsStarProjection.closeUnitary_def`) satisfies
-`CFC.sqrt (1 - (p - q) * (p - q)) * u = z`, conjugates `p` to `q` (`u * p * star u = q`), and obeys
-`‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ < 2` together with `Joined (1 : unitary A) u`.
+Two star projections `p` and `q` in a unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a
+unitary `u` with `‖u - 1‖ ≤ √2 * ‖p - q‖`. The unitary is the unitary part of the polar
+decomposition of the intertwiner `z = q * p + (1 - q) * (1 - p)`: since
+`star z * z = z * star z = 1 - (p - q) ^ 2` commutes with `p` and `q`, the element
+`u = z * (1 - (p - q) ^ 2) ^ (-1 / 2)` is a unitary with `u * p * star u = q`, and its real part
+`(1 - (p - q) ^ 2) ^ (1 / 2)` gives the norm estimate. Since `‖u - 1‖ < 2`, the unitary lies in
+the path component of the identity of the unitary group.
 
-By connectedness of the unit interval, endpoints of a norm-continuous path of star projections in a
-unital C⋆-algebra are conjugate by a unitary joined to `1`
-(`Path.exists_joined_one_unitary_conj_of_isStarProjection`). Passing to `Unitization ℂ B` transfers
-both the nearby-projection and path-lifting theorems to possibly non-unital C⋆-algebras `B`,
-producing a partial isometry in `B` with initial projection `p` and final projection `q`.
+Consequently the values of a norm-continuous family of projections over a preconnected space are
+mutually unitarily equivalent, through unitaries joined to `1`. In a C⋆-algebra without unit,
+applying this in the unitization shows that nearby projections, and the values of a continuous
+family of projections, are Murray–von Neumann equivalent. For matrices over a C⋆-algebra this says
+that matrix projections joined by a path of matrix projections are Murray–von Neumann equivalent,
+so they have the same class in the projection monoid `V(A)`.
 
-We also record `exp (z • p) = 1 + (exp z - 1) • p` and `expUnitary (π • p) = 1 - 2 • p`.
+Conversely, over any (possibly non-unital) C⋆-algebra `A`, equivalent matrix projections `p` and
+`q` are joined by an explicit rotation path `CStarMatrix.stabilizedPath p q v` from `p ⊕ 0` to
+`0 ⊕ q`. Using the projection exponential formula `exp (z • r) = 1 + (exp z - 1) • r`, this path
+equals unitary conjugation by `expUnitary ((t * π) • r)` in the unitization for
+`r = CStarMatrix.stabilizedProjection p q v` while remaining inside `CStarMatrix (m ⊕ n) (m ⊕ n) A`
+even when `A` has no unit, characterizing `CStarMatrix.MurrayVonNeumannEquiv` by stabilized
+projection homotopy (`CStarMatrix.murrayVonNeumannEquiv_iff_exists_stabilized_path`) and extending
+`Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks` to non-unital C⋆-algebras.
 
-## Main definitions and results
+## Main statements
 
-* `IsStarProjection.exp_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: exponential formulas.
-* `IsStarProjection.closeUnitary`, `IsStarProjection.closeUnitary_def`,
-  `IsStarProjection.coe_closeUnitary`,
-  `IsStarProjection.sqrt_one_sub_sub_mul_self_mul_closeUnitary`,
-  `IsStarProjection.closeUnitary_mul_sqrt_one_sub_sub_mul_self`: the canonical polar unitary and
-  its characterizing formulas.
-* `IsStarProjection.closeUnitary_mul_self_mul_star`,
-  `IsStarProjection.norm_closeUnitary_sub_one_le`,
-  `IsStarProjection.joined_one_closeUnitary`: conjugacy, sharp norm bound, and path connectedness.
-* `Path.exists_joined_one_unitary_conj_of_isStarProjection`,
-  `IsStarProjection.exists_isPartialIsometry_of_norm_sub_lt_one`,
-  `Path.exists_isPartialIsometry_of_isStarProjection`: path lifting and non-unital partial-isometry
-  transfer.
+* `IsStarProjection.exp_smul`, `IsStarProjection.coe_expUnitary_smul`,
+  `IsStarProjection.coe_expUnitary_pi_smul`: exponential of scalar multiples of a star projection,
+  with `expUnitary (π • p) = 1 - 2 • p`.
+* `IsStarProjection.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one`: projections `p` and
+  `q` of a unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary `u` with
+  `‖u - 1‖ ≤ √2 * ‖p - q‖`.
+* `IsStarProjection.exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one`: the conjugating
+  unitary can be chosen in the path component of `1`.
+* `IsStarProjection.exists_star_mul_self_eq_of_norm_sub_lt_one`,
+  `IsStarProjection.murrayVonNeumannEquiv_of_norm_sub_lt_one`: in a C⋆-algebra, possibly without
+  unit, projections with `‖p - q‖ < 1` are Murray–von Neumann equivalent.
+* `Continuous.exists_joined_one_mul_mul_star_eq`, `Continuous.exists_star_mul_self_eq`,
+  `Continuous.isMurrayVonNeumannEquivalent`, `Continuous.murrayVonNeumannEquiv`,
+  `Path.murrayVonNeumannEquiv_of_isStarProjection`: homotopy invariance of unitary and Murray–von
+  Neumann equivalence over preconnected spaces and paths.
+* `CStarMatrix.stabilizedProjection`, `CStarMatrix.stabilizedRotation`,
+  `CStarMatrix.stabilizedPath`, `CStarMatrix.inr_stabilizedRotation_eq_expUnitary_conj`: explicit
+  stabilized rotation path from `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q` and its unitization
+  exponential-conjugacy identity.
+* `CStarMatrix.MurrayVonNeumannEquiv.exists_stabilized_path`,
+  `CStarMatrix.murrayVonNeumannEquiv_iff_exists_stabilized_path`,
+  `Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks`: equivalence of matrix projections
+  over any (possibly non-unital) C⋆-algebra implies, and is characterized by, stabilized homotopy.
 
 ## References
 
-* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., MSRI Publications 5, Cambridge
-  University Press (1998), Proposition 4.6.6.
-* M. Rørdam, F. Larsen, and N. Laustsen, *An Introduction to K-Theory for C⋆-Algebras*, London
-  Mathematical Society Student Texts 49, Cambridge University Press (2000), Propositions 2.2.4 and
-  2.2.6.
+* M. Rørdam, F. Larsen and N. Laustsen, *An Introduction to K-Theory for C⋆-Algebras*,
+  Cambridge University Press (2000), Chapter 2.
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge University Press (1998),
+  Section 4.6.
 -/
 
 public section
 
-noncomputable section
-
-open NormedSpace Ring TauCeti
 open scoped Real unitInterval
+
+/-- For `|t| ≤ s < 1`, the defect `2 - 2 * √(1 - t)` is at most `2 * s` in absolute value. -/
+private theorem abs_two_sub_two_mul_sqrt_one_sub_le {t s : ℝ} (hts : |t| ≤ s) (hs : s < 1) :
+    |2 - 2 * √(1 - t)| ≤ 2 * s := by
+  have ht : 0 ≤ 1 - t := by linarith [le_abs_self t]
+  have hsq := Real.sq_sqrt ht
+  have hnn := Real.sqrt_nonneg (1 - t)
+  rw [abs_le] at hts ⊢
+  constructor <;> nlinarith
 
 namespace IsStarProjection
 
@@ -108,272 +133,597 @@ theorem coe_expUnitary_pi_smul {p : A} (hp : IsStarProjection p) :
 
 end Exponential
 
-section Perturbation
+section Unital
 
-variable {A : Type*} [CStarAlgebra A]
+variable {A : Type*} [CStarAlgebra A] {p q : A}
 
-private theorem isUnit_one_sub_sub_mul_self {p q : A} (h : ‖p - q‖ < 1) :
-    IsUnit (1 - (p - q) * (p - q)) := by
-  have hsq : ‖(p - q) * (p - q)‖ < 1 :=
-    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul'' h h (norm_nonneg _) (norm_nonneg _))
-  exact (Units.oneSub ((p - q) * (p - q)) hsq).isUnit
+section Defect
 
-/-- When star projections `p` and `q` satisfy `‖p - q‖ < 1`, Sz.-Nagy's intertwiner
-`projectionIntertwiner p q` is a unit in `A`. -/
-theorem isUnit_projectionIntertwiner {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    IsUnit (projectionIntertwiner p q) := by
-  have hc : Commute (projectionIntertwiner p q) (star (projectionIntertwiner p q)) :=
-    (projectionIntertwiner_mul_star_self hp hq).trans
-      (star_projectionIntertwiner_mul_self hp hq).symm
-  have hz : IsUnit (projectionIntertwiner p q * star (projectionIntertwiner p q)) := by
-    rw [projectionIntertwiner_mul_star_self hp hq]
-    exact isUnit_one_sub_sub_mul_self h
-  exact (hc.isUnit_mul_iff.mp hz).1
+/-! In this section `h` is a self-adjoint element with `‖h‖ < 1`, so that `1 - h` has the
+inverse square root `cfc (fun t ↦ (√(1 - t))⁻¹) h`. -/
 
-/-- The canonical unitary conjugating a star projection `p` to a nearby star projection `q`
-(`‖p - q‖ < 1`), defined as the polar unitary factor of `projectionIntertwiner p q`. -/
-def closeUnitary {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q)
-    (h : ‖p - q‖ < 1) : unitary A :=
-  letI : PartialOrder A := CStarAlgebra.spectralOrder A
-  letI : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  (hp.isUnit_projectionIntertwiner hq h).unit.polarUnitary
+variable {h : A}
 
-private theorem exists_star_mul_self_mul_closeUnitary {p q : A}
+private theorem one_sub_eq_cfc (hh : IsSelfAdjoint h) : 1 - h = cfc (fun t : ℝ ↦ 1 - t) h := by
+  rw [cfc_sub (fun _ : ℝ ↦ (1 : ℝ)) (fun t : ℝ ↦ t) h, cfc_const_one ℝ h, cfc_id' ℝ h]
+
+variable (hh : IsSelfAdjoint h) (h₁ : ‖h‖ < 1)
+include h₁
+
+private theorem one_sub_pos_of_mem_spectrum {t : ℝ} (ht : t ∈ spectrum ℝ h) : 0 < 1 - t := by
+  have := spectrum.norm_le_norm_of_mem ht
+  rw [Real.norm_eq_abs] at this
+  linarith [le_abs_self t]
+
+private theorem continuousOn_inv_sqrt_one_sub :
+    ContinuousOn (fun t : ℝ ↦ (√(1 - t))⁻¹) (spectrum ℝ h) :=
+  ContinuousOn.inv₀ (by fun_prop) fun _ ht ↦
+    (Real.sqrt_pos.2 (one_sub_pos_of_mem_spectrum h₁ ht)).ne'
+
+include hh
+
+/-- `(1 - h) ^ (-1 / 2) * (1 - h) = (1 - h) ^ (1 / 2)`. -/
+private theorem cfc_inv_sqrt_one_sub_mul_one_sub :
+    cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * (1 - h) = cfc (fun t : ℝ ↦ √(1 - t)) h := by
+  rw [one_sub_eq_cfc hh, ← cfc_mul _ _ h (continuousOn_inv_sqrt_one_sub h₁) (by fun_prop)]
+  refine cfc_congr fun t ht ↦ ?_
+  have h₀ := one_sub_pos_of_mem_spectrum h₁ ht
+  have := Real.sq_sqrt h₀.le
+  have := (Real.sqrt_pos.2 h₀).ne'
+  field_simp
+  linarith
+
+/-- `(1 - h) ^ (-1 / 2) * (1 - h) ^ (-1 / 2) * (1 - h) = 1`. -/
+private theorem cfc_inv_sqrt_one_sub_mul_self_mul_one_sub :
+    cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * (1 - h) = 1 := by
+  have hc := continuousOn_inv_sqrt_one_sub h₁
+  rw [mul_assoc, cfc_inv_sqrt_one_sub_mul_one_sub hh h₁, ← cfc_mul _ _ h hc (by fun_prop),
+    ← cfc_const_one ℝ h]
+  refine cfc_congr fun t ht ↦ ?_
+  exact inv_mul_cancel₀ (Real.sqrt_pos.2 (one_sub_pos_of_mem_spectrum h₁ ht)).ne'
+
+/-- `‖2 - 2 * (1 - h) ^ (1 / 2)‖ ≤ 2 * ‖h‖`. -/
+private theorem norm_two_sub_two_mul_cfc_sqrt_one_sub_le :
+    ‖2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h‖ ≤ 2 * ‖h‖ := by
+  have hcfc : 2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h = cfc (fun t : ℝ ↦ 2 - 2 * √(1 - t)) h := by
+    rw [cfc_sub (fun _ : ℝ ↦ (2 : ℝ)) (fun t : ℝ ↦ 2 * √(1 - t)) h, cfc_const_mul 2 _ h,
+      cfc_const (2 : ℝ) h, map_ofNat, two_smul, two_mul]
+  rw [hcfc]
+  refine norm_cfc_le (by positivity) fun t ht ↦ ?_
+  rw [Real.norm_eq_abs]
+  exact abs_two_sub_two_mul_sqrt_one_sub_le (spectrum.norm_le_norm_of_mem ht) h₁
+
+end Defect
+
+/-- **Nearby projections are unitarily equivalent.** Star projections `p` and `q` of a unital
+C⋆-algebra with `‖p - q‖ < 1` are conjugate, `u * p * star u = q`, by a unitary `u` with
+`‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
+theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
+    ∃ u ∈ unitary A, u * p * star u = q ∧ ‖u - 1‖ ≤ √2 * ‖p - q‖ := by
+  -- `h = (p - q) ^ 2` commutes with `p` and `q`, and `z` intertwines `p` with `q`.
+  set h := (p - q) ^ 2
+  set z := TauCeti.intertwiner p q with hz
+  have hp' := hp.isIdempotentElem
+  have hq' := hq.isIdempotentElem
+  have hh : IsSelfAdjoint h := (hp.isSelfAdjoint.sub hq.isSelfAdjoint).pow 2
+  have hnorm : ‖h‖ ≤ ‖p - q‖ ^ 2 := norm_pow_le' _ two_pos
+  have h₁ : ‖h‖ < 1 := hnorm.trans_lt (by nlinarith [norm_nonneg (p - q)])
+  have hzz : star z * z = 1 - h := hp.star_intertwiner_mul_intertwiner hq
+  have hzz' : z * star z = 1 - h := hp.intertwiner_mul_star_intertwiner hq
+  have hzp : z * p = q * z := hp'.intertwiner_mul hq'
+  -- `c = (1 - h) ^ (-1 / 2)` commutes with `p`, `q`, `h`, `z` and `star z`.
+  set c := cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h
+  have hc : star c = c := IsSelfAdjoint.cfc.star_eq
+  have hcc : c * c * (1 - h) = 1 := cfc_inv_sqrt_one_sub_mul_self_mul_one_sub hh h₁
+  have hcp : Commute c p := Commute.cfc_real (hp'.commute_sub_sq_left hq').symm _
+  have hcq : Commute c q := Commute.cfc_real (hp'.commute_sub_sq_right hq').symm _
+  have hc₁ : Commute c (1 - h) := (Commute.one_right c).sub_right (Commute.cfc_real (.refl h) _)
+  have hcz : Commute c z := by
+    rw [hz, TauCeti.intertwiner_def]
+    exact (hcq.mul_right hcp).add_right
+      (((Commute.one_right c).sub_right hcq).mul_right ((Commute.one_right c).sub_right hcp))
+  have hcz' : Commute c (star z) := hc ▸ hcz.star_star
+  -- The unitary `u = z * c`, the unitary part of the polar decomposition of `z`.
+  have hu₁ : star (z * c) * (z * c) = 1 := by
+    calc star (z * c) * (z * c) = c * (star z * z) * c := by simp only [star_mul, hc, mul_assoc]
+      _ = c * c * (1 - h) := by rw [hzz, mul_assoc, ← hc₁.eq, ← mul_assoc]
+      _ = 1 := hcc
+  have hu₂ : z * c * star (z * c) = 1 := by
+    calc z * c * star (z * c) = z * ((c * c) * star z) := by simp only [star_mul, hc, mul_assoc]
+      _ = (1 - h) * (c * c) := by rw [(hcz'.mul_left hcz').eq, ← mul_assoc, hzz']
+      _ = 1 := by rw [← (hc₁.mul_left hc₁).eq, hcc]
+  have hconj : z * c * p * star (z * c) = q := by
+    calc z * c * p * star (z * c) = z * p * (c * star (z * c)) := by
+          rw [mul_assoc z c p, hcp.eq, ← mul_assoc z p c, mul_assoc]
+      _ = q * (z * c * star (z * c)) := by rw [hzp, mul_assoc, mul_assoc, ← mul_assoc z c]
+      _ = q := by rw [hu₂, mul_one]
+  -- Its real part is `(1 - h) ^ (1 / 2)`, which gives the norm estimate.
+  have hdefect : star (z * c - 1) * (z * c - 1) = 2 - 2 * cfc (fun t : ℝ ↦ √(1 - t)) h := by
+    have hzs : z + star z = 2 * (1 - h) := hp.intertwiner_add_star_intertwiner hq
+    have hre : z * c + star (z * c) = 2 * cfc (fun t : ℝ ↦ √(1 - t)) h := by
+      rw [star_mul, hc, ← hcz.eq, ← mul_add, hzs, two_mul, mul_add, ← two_mul,
+        cfc_inv_sqrt_one_sub_mul_one_sub hh h₁]
+    rw [← hre, star_sub, star_one, sub_mul, mul_sub, mul_sub, hu₁, mul_one, one_mul, one_mul,
+      ← one_add_one_eq_two]
+    abel
+  have hbound : ‖z * c - 1‖ ^ 2 ≤ 2 * ‖p - q‖ ^ 2 := by
+    rw [sq, ← CStarRing.norm_star_mul_self, hdefect]
+    exact (norm_two_sub_two_mul_cfc_sqrt_one_sub_le hh h₁).trans (by gcongr)
+  refine ⟨z * c, ⟨hu₁, hu₂⟩, hconj, ?_⟩
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+  rwa [mul_pow, Real.sq_sqrt zero_le_two]
+
+/-- **Nearby projections are homotopic through unitaries.** Star projections `p` and `q` of a
+unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary in the path component of `1`. -/
+theorem exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
+    ∃ u : unitary A, Joined 1 u ∧ (u : A) * p * star (u : A) = q := by
+  obtain ⟨u, hu, hupq, hnorm⟩ := hp.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hq hpq
+  refine ⟨⟨u, hu⟩, Unitary.joined 1 ⟨u, hu⟩ ?_, hupq⟩
+  have hsqrt : √2 < 2 := by
+    rw [Real.sqrt_lt' two_pos]
+    norm_num
+  calc ‖u - ((1 : unitary A) : A)‖ = ‖u - 1‖ := by rw [OneMemClass.coe_one]
+    _ ≤ √2 * ‖p - q‖ := hnorm
+    _ ≤ √2 * 1 := by gcongr
+    _ < 2 := by rwa [mul_one]
+
+end Unital
+
+section NonUnital
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] {p q : A}
+
+/-- **Nearby projections are Murray–von Neumann equivalent.** Star projections `p` and `q` of a
+C⋆-algebra, possibly without unit, with `‖p - q‖ < 1` satisfy `star v * v = p` and
+`v * star v = q` for some `v`. -/
+theorem exists_star_mul_self_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) : ∃ v : A, star v * v = p ∧ v * star v = q := by
+  have hp' := hp.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  have hq' := hq.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  rw [Unitization.inrNonUnitalStarAlgHom_apply] at hp' hq'
+  obtain ⟨u, hu, hupq, -⟩ := hp'.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hq'
+    (by rwa [← Unitization.inr_sub, Unitization.norm_inr])
+  exact hp.exists_star_mul_self_eq_of_mem_unitary_unitization hu hupq
+
+/-- Nearby matrix projections (`‖p - q‖ < 1`) in `CStarMatrix n n A` are Murray–von Neumann
+equivalent, even when `A` is non-unital. -/
+theorem murrayVonNeumannEquiv_of_norm_sub_lt_one {n : Type*} [Fintype n]
+    [PartialOrder A] [StarOrderedRing A] {p q : CStarMatrix n n A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ∃ y : A, (star y * y) * (star y * y) = 1 - (p - q) * (p - q) ∧
-      (star y * y) * (hp.closeUnitary hq h : A) = projectionIntertwiner p q := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  set z := (hp.isUnit_projectionIntertwiner hq h).unit
-  have hz_coe : (z : A) = projectionIntertwiner p q := IsUnit.unit_spec _
-  obtain ⟨y, hy⟩ :=
-    CStarAlgebra.nonneg_iff_eq_star_mul_self.mp (CFC.sqrt_nonneg ((z : A) * star (z : A)))
-  refine ⟨y, ?_, ?_⟩
-  · rw [← hy, CFC.sqrt_mul_sqrt_self _ (mul_star_self_nonneg (z : A)), hz_coe,
-      projectionIntertwiner_mul_star_self hp hq]
-  · rw [← hy]; exact z.sqrt_mul_star_mul_polarUnitary.trans hz_coe
+    CStarMatrix.MurrayVonNeumannEquiv p q := by
+  rw [CStarMatrix.murrayVonNeumannEquiv_iff hp hq]
+  obtain ⟨v, hv₁, hv₂⟩ := hp.exists_star_mul_self_eq_of_norm_sub_lt_one hq h
+  exact ⟨v, by simpa only [← CStarMatrix.star_eq_conjTranspose] using hv₁,
+    by simpa only [← CStarMatrix.star_eq_conjTranspose] using hv₂⟩
 
-/-- Left polar-factor identity:
-`CFC.sqrt (1 - (p - q) ^ 2) * closeUnitary = projectionIntertwiner`. -/
-theorem sqrt_one_sub_sub_mul_self_mul_closeUnitary [PartialOrder A] [StarOrderedRing A]
-    {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    CFC.sqrt (1 - (p - q) * (p - q)) * (hp.closeUnitary hq h : A) =
-      projectionIntertwiner p q := by
-  obtain ⟨y, hy_sq, hy_mul⟩ := hp.exists_star_mul_self_mul_closeUnitary hq h
-  rwa [CFC.sqrt_unique hy_sq (star_mul_self_nonneg y)]
-
-/-- Characterizing formula for `closeUnitary` as `Units.polarUnitary` of the intertwiner unit. -/
-theorem closeUnitary_def [PartialOrder A] [StarOrderedRing A]
-    {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    hp.closeUnitary hq h = (hp.isUnit_projectionIntertwiner hq h).unit.polarUnitary :=
-  ((hp.isUnit_projectionIntertwiner hq h).unit.polarUnitary_eq_of_mul_eq (CFC.sqrt_nonneg _)
-    ((hp.sqrt_one_sub_sub_mul_self_mul_closeUnitary hq h).trans (IsUnit.unit_spec _).symm)).symm
-
-/-- Explicit formula for `(hp.closeUnitary hq h : A)` via `CFC.sqrt` and `projectionIntertwiner`. -/
-theorem coe_closeUnitary [PartialOrder A] [StarOrderedRing A]
-    {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    (hp.closeUnitary hq h : A) =
-      (CFC.sqrt (1 - (p - q) * (p - q)))⁻¹ʳ * projectionIntertwiner p q := by
-  rw [hp.closeUnitary_def hq h, Units.coe_polarUnitary, IsUnit.unit_spec,
-    projectionIntertwiner_mul_star_self hp hq]
-
-/-- Right polar-factor identity:
-`closeUnitary * CFC.sqrt (1 - (p - q) ^ 2) = projectionIntertwiner`. -/
-theorem closeUnitary_mul_sqrt_one_sub_sub_mul_self [PartialOrder A] [StarOrderedRing A]
-    {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    (hp.closeUnitary hq h : A) * CFC.sqrt (1 - (p - q) * (p - q)) =
-      projectionIntertwiner p q := by
-  have hr := (hp.isUnit_projectionIntertwiner hq h).unit.polarUnitary_mul_sqrt_star_mul
-  rwa [← hp.closeUnitary_def hq h, IsUnit.unit_spec,
-    star_projectionIntertwiner_mul_self hp hq] at hr
-
-/-- The unitary `hp.closeUnitary hq h` intertwines `p` and `q`: `u * p = q * u`. -/
-theorem closeUnitary_mul_self {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q)
-    (h : ‖p - q‖ < 1) :
-    (hp.closeUnitary hq h : A) * p = q * (hp.closeUnitary hq h : A) := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  set z := (hp.isUnit_projectionIntertwiner hq h).unit
-  set s := CFC.sqrt (1 - (p - q) * (p - q))
-  have hs_eq : (z : A) * star (z : A) = 1 - (p - q) * (p - q) := by
-    rw [IsUnit.unit_spec, projectionIntertwiner_mul_star_self hp hq]
-  have hs_unit : IsUnit s := by
-    dsimp only [s]; rw [← hs_eq]; exact z.isStrictlyPositive_sqrt_mul_star.isUnit
-  have hs_mul_u : s * (hp.closeUnitary hq h : A) = projectionIntertwiner p q :=
-    hp.sqrt_one_sub_sub_mul_self_mul_closeUnitary hq h
-  have hcomm_sq : Commute s q :=
-    Commute.cfcₙ_nnreal
-      (commute_one_sub_sub_mul_self_right hp.isIdempotentElem hq.isIdempotentElem) NNReal.sqrt
-  apply hs_unit.mul_left_cancel
-  calc s * ((hp.closeUnitary hq h : A) * p)
-      = (s * (hp.closeUnitary hq h : A)) * p := (mul_assoc _ _ _).symm
-    _ = q * projectionIntertwiner p q := by
-        rw [hs_mul_u, projectionIntertwiner_mul_eq_mul hp.isIdempotentElem hq.isIdempotentElem]
-    _ = (q * s) * (hp.closeUnitary hq h : A) := by rw [← hs_mul_u, mul_assoc]
-    _ = s * (q * (hp.closeUnitary hq h : A)) := by rw [← hcomm_sq.eq, mul_assoc]
-
-/-- Conjugating `p` by `hp.closeUnitary hq h` yields `q`: `u * p * star u = q`. -/
-@[simp]
-theorem closeUnitary_mul_self_mul_star {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    (hp.closeUnitary hq h : A) * p * star (hp.closeUnitary hq h : A) = q := by
-  rw [hp.closeUnitary_mul_self hq h, mul_assoc,
-    Unitary.mul_star_self_of_mem (hp.closeUnitary hq h).property, mul_one]
-
-/-- Sharp Sz.-Nagy norm bound: `‖(hp.closeUnitary hq h : A) - 1‖ ≤ √2 * ‖p - q‖`. -/
-theorem norm_closeUnitary_sub_one_le {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ‖(hp.closeUnitary hq h : A) - 1‖ ≤ √2 * ‖p - q‖ := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  set u := hp.closeUnitary hq h
-  set z := (hp.isUnit_projectionIntertwiner hq h).unit
-  set d := p - q
-  have hd_sa : IsSelfAdjoint d := hp.isSelfAdjoint.sub hq.isSelfAdjoint
-  have hdd_nonneg : 0 ≤ d * d := by simpa only [hd_sa.star_eq] using star_mul_self_nonneg d
-  have hzz : (z : A) * star (z : A) = 1 - d * d := by
-    rw [IsUnit.unit_spec, projectionIntertwiner_mul_star_self hp hq]
-  set s := CFC.sqrt (1 - d * d)
-  have hs_nonneg : 0 ≤ s := CFC.sqrt_nonneg _
-  have hs_unit : IsUnit s := by
-    dsimp only [s]; rw [← hzz]; exact z.isStrictlyPositive_sqrt_mul_star.isUnit
-  have hs_sq : s * s = 1 - d * d := by
-    dsimp only [s]; rw [← hzz, CFC.sqrt_mul_sqrt_self _ (mul_star_self_nonneg (z : A)), hzz]
-  have hs_le_one : s ≤ 1 := by
-    rw [← CFC.sqrt_one (A := A)]; exact CFC.sqrt_le_sqrt _ _ (sub_le_self 1 hdd_nonneg)
-  have hus : (u : A) * s = projectionIntertwiner p q :=
-    hp.closeUnitary_mul_sqrt_one_sub_sub_mul_self hq h
-  have hsu_star : s * star (u : A) = star (projectionIntertwiner p q) := by
-    simpa only [star_mul, hs_nonneg.isSelfAdjoint.star_eq] using congrArg star hus
-  have hu_add_star : (u : A) + star (u : A) = 2 * s := by
-    apply hs_unit.mul_left_cancel
-    calc s * ((u : A) + star (u : A))
-        = projectionIntertwiner p q + star (projectionIntertwiner p q) := by
-          rw [mul_add, hp.sqrt_one_sub_sub_mul_self_mul_closeUnitary hq h, hsu_star]
-      _ = 2 * (s * s) := by rw [projectionIntertwiner_add_star hp hq, hs_sq]
-      _ = s * (2 * s) := by noncomm_ring
-  have hu_sub_sq : star ((u : A) - 1) * ((u : A) - 1) = (2 : ℝ) • (1 - s) := by
-    have h1 : star ((u : A) - 1) * ((u : A) - 1) = 1 + 1 - ((u : A) + star (u : A)) := by
-      rw [star_sub, star_one, sub_mul, mul_sub, mul_sub,
-        Unitary.star_mul_self_of_mem u.property, mul_one, one_mul, one_mul]; abel
-    rw [h1, hu_add_star, two_mul, two_smul]; abel
-  have h_one_sub_s_nonneg : 0 ≤ 1 - s := sub_nonneg.mpr hs_le_one
-  have h_one_sub_s_le : 1 - s ≤ d * d := by
-    have hdiff : d * d - (1 - s) = (1 - s) * s := by
-      have hss : 1 - s * s = d * d := by rw [hs_sq, sub_sub_cancel]
-      rw [← hss]; noncomm_ring
-    rw [← sub_nonneg, hdiff]
-    exact Commute.mul_nonneg h_one_sub_s_nonneg hs_nonneg ((Commute.one_left s).sub_left rfl)
-  have hnorm_sq : ‖(u : A) - 1‖ ^ 2 ≤ (√2 * ‖d‖) ^ 2 := by
-    calc ‖(u : A) - 1‖ ^ 2
-        = ‖(2 : ℝ) • (1 - s)‖ := by rw [sq, ← CStarRing.norm_star_mul_self, hu_sub_sq]
-      _ ≤ ‖(2 : ℝ) • (d * d)‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg
-          (smul_le_smul_of_nonneg_left h_one_sub_s_le zero_le_two)
-          (smul_nonneg zero_le_two h_one_sub_s_nonneg)
-      _ = (√2 * ‖d‖) ^ 2 := by
-          rw [norm_smul, Real.norm_ofNat]; nth_rw 1 [← hd_sa.star_eq]
-          rw [CStarRing.norm_star_mul_self, ← sq, mul_pow, Real.sq_sqrt zero_le_two]
-  exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp hnorm_sq
-
-/-- Since `‖p - q‖ < 1` and `√2 < 2`, `hp.closeUnitary hq h` has distance `< 2` from `1`. -/
-theorem norm_closeUnitary_sub_one_lt_two {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ‖(hp.closeUnitary hq h : A) - 1‖ < 2 := by
-  have hsqrt2 : √2 < 2 := by rw [Real.sqrt_lt' zero_lt_two]; norm_num
-  exact (hp.norm_closeUnitary_sub_one_le hq h).trans_lt
-    ((mul_lt_mul_of_pos_left h (by positivity)).trans ((mul_one √2).trans_lt hsqrt2))
-
-/-- Nearby star projections (`‖p - q‖ < 1`) are conjugate by `hp.closeUnitary hq h`, which lies in
-the path component of `1`. -/
-theorem joined_one_closeUnitary {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    Joined (1 : unitary A) (hp.closeUnitary hq h) :=
-  Unitary.joined 1 (hp.closeUnitary hq h) (hp.norm_closeUnitary_sub_one_lt_two hq h)
-
-/-- Existential form of Sz.-Nagy's perturbation theorem. -/
-theorem exists_unitary_conj_of_norm_sub_lt_one {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ∃ u : unitary A, Joined (1 : unitary A) u ∧
-      (u : A) * p * star (u : A) = q ∧ ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ :=
-  ⟨hp.closeUnitary hq h, hp.joined_one_closeUnitary hq h,
-    hp.closeUnitary_mul_self_mul_star hq h, hp.norm_closeUnitary_sub_one_le hq h⟩
-
-end Perturbation
-
-section NonUnitalPerturbation
-
-variable {B : Type*} [NonUnitalCStarAlgebra B]
-
-/-- In a possibly non-unital C⋆-algebra `B`, star projections `p` and `q` with `‖p - q‖ < 1` are
-conjugate inside `Unitization ℂ B` by a unitary joined to `1` satisfying
-`‖(u : Unitization ℂ B) - 1‖ ≤ √2 * ‖p - q‖`. -/
-theorem exists_unitization_unitary_conj_of_norm_sub_lt_one {p q : B}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ∃ u : unitary (Unitization ℂ B), Joined (1 : unitary (Unitization ℂ B)) u ∧
-      (u : Unitization ℂ B) * (p : Unitization ℂ B) * star (u : Unitization ℂ B) =
-        (q : Unitization ℂ B) ∧
-      ‖(u : Unitization ℂ B) - 1‖ ≤ √2 * ‖p - q‖ := by
-  have hp' : IsStarProjection (p : Unitization ℂ B) :=
-    hp.map (Unitization.inrNonUnitalStarAlgHom ℂ B)
-  have hq' : IsStarProjection (q : Unitization ℂ B) :=
-    hq.map (Unitization.inrNonUnitalStarAlgHom ℂ B)
-  have hnorm_eq : ‖(p : Unitization ℂ B) - (q : Unitization ℂ B)‖ = ‖p - q‖ := by
-    rw [← Unitization.inr_sub, Unitization.norm_inr]
-  obtain ⟨u, hu_join, hu_conj, hu_norm⟩ :=
-    hp'.exists_unitary_conj_of_norm_sub_lt_one hq' (hnorm_eq.trans_lt h)
-  exact ⟨u, hu_join, hu_conj, hnorm_eq ▸ hu_norm⟩
-
-/-- Nearby star projections (`‖p - q‖ < 1`) in a possibly non-unital C⋆-algebra `B` are linked by
-a partial isometry `v : B` with `star v * v = p` and `v * star v = q`. -/
-theorem exists_isPartialIsometry_of_norm_sub_lt_one {p q : B}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ∃ v : B, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q := by
-  obtain ⟨u, -, hu_conj, -⟩ := hp.exists_unitization_unitary_conj_of_norm_sub_lt_one hq h
-  exact hp.exists_isPartialIsometry_of_unitization_unitary_conj u hu_conj
-
-end NonUnitalPerturbation
+end NonUnital
 
 end IsStarProjection
 
-namespace Path
+section Continuous
 
-/-- Any norm-continuous path of star projections in a unital C⋆-algebra has endpoints conjugate by
-a unitary in the identity path component of `unitary A`. -/
-theorem exists_joined_one_unitary_conj_of_isStarProjection {A : Type*} [CStarAlgebra A]
-    {p q : A} (γ : Path p q) (hγ : ∀ t : I, IsStarProjection (γ t)) :
-    ∃ u : unitary A, Joined (1 : unitary A) u ∧ (u : A) * p * star (u : A) = q := by
-  let P : I → I → Prop := fun s t ↦
-    ∃ u : unitary A, Joined (1 : unitary A) u ∧ (u : A) * γ s * star (u : A) = γ t
-  have hstar_cont : Continuous (star : unitary A → unitary A) :=
-    (continuous_star.comp continuous_subtypeVal).subtype_mk _
-  have hsymm : Std.Symm P := ⟨fun s t ⟨u, hu_join, hu_conj⟩ ↦
-    ⟨star u, by simpa only [star_one] using hu_join.map hstar_cont, by
-      rw [Unitary.coe_star, star_star, ← hu_conj, ← mul_assoc, ← mul_assoc,
-        Unitary.star_mul_self_of_mem u.property, one_mul, mul_assoc,
-        Unitary.star_mul_self_of_mem u.property, mul_one]⟩⟩
-  have htrans : IsTrans I P := ⟨fun r s t ⟨u, hu_join, hu_conj⟩ ⟨w, hw_join, hw_conj⟩ ↦
-    ⟨w * u, by simpa only [mul_one] using hw_join.mul hu_join, by
-      simp only [Submonoid.coe_mul, star_mul, mul_assoc]
-      rw [← mul_assoc (u : A), ← mul_assoc ((u : A) * γ r), hu_conj, ← mul_assoc, hw_conj]⟩⟩
-  have hloc : ∀ s : I, ∀ᶠ t in nhds s, P s t := fun s ↦ by
-    filter_upwards [γ.continuous.continuousAt.eventually (Metric.ball_mem_nhds (γ s) zero_lt_one)]
-      with t ht
-    have hnorm : ‖γ s - γ t‖ < 1 := by rwa [dist_comm, dist_eq_norm] at ht
-    exact ⟨(hγ s).closeUnitary (hγ t) hnorm, (hγ s).joined_one_closeUnitary (hγ t) hnorm,
-      (hγ s).closeUnitary_mul_self_mul_star (hγ t) hnorm⟩
-  simpa only [P, γ.source, γ.target] using PreconnectedSpace.induction₂ P hloc htrans 0 1
+/-! The statements below write `Star.star`: in a declaration named `Continuous.foo`, plain `star`
+resolves to `Continuous.star`. -/
 
-/-- Any norm-continuous path of star projections in a possibly non-unital C⋆-algebra `B` yields a
-partial isometry `v : B` with `star v * v = p` and `v * star v = q`. -/
-theorem exists_isPartialIsometry_of_isStarProjection {B : Type*} [NonUnitalCStarAlgebra B]
-    {p q : B} (γ : Path p q) (hγ : ∀ t : I, IsStarProjection (γ t)) :
-    ∃ v : B, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q := by
-  let γ' : Path (p : Unitization ℂ B) (q : Unitization ℂ B) :=
-    γ.map Unitization.isometry_inr.continuous
-  have hγ' : ∀ t : I, IsStarProjection (γ' t) := fun t ↦
-    (hγ t).map (Unitization.inrNonUnitalStarAlgHom ℂ B)
-  obtain ⟨u, -, hu_conj⟩ := γ'.exists_joined_one_unitary_conj_of_isStarProjection hγ'
-  exact (γ.source ▸ hγ 0).exists_isPartialIsometry_of_unitization_unitary_conj u hu_conj
+variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X]
 
-end Path
+/-- **Homotopic projections are unitarily equivalent.** For a continuous family `f` of star
+projections of a unital C⋆-algebra over a preconnected space, any two values `f x` and `f y` are
+conjugate by a unitary in the path component of `1`. For a path of projections this compares its
+endpoints. -/
+theorem Continuous.exists_joined_one_mul_mul_star_eq {A : Type*} [CStarAlgebra A] {f : X → A}
+    (hf : Continuous f) (hfp : ∀ x, IsStarProjection (f x)) (x y : X) :
+    ∃ u : unitary A, Joined 1 u ∧ (u : A) * f x * Star.star (u : A) = f y := by
+  refine PreconnectedSpace.induction₂'
+    (fun x y ↦ ∃ u : unitary A, Joined 1 u ∧ (u : A) * f x * Star.star (u : A) = f y)
+    (fun x ↦ ?_) ⟨fun a b c ⟨u, hu, hab⟩ ⟨v, hv, hbc⟩ ↦ ⟨v * u, ?_, ?_⟩⟩ x y
+  · filter_upwards [hf.continuousAt.eventually (Metric.ball_mem_nhds (f x) one_pos)] with y hy
+    rw [dist_eq_norm] at hy
+    exact ⟨(hfp x).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hfp y)
+      (by rwa [norm_sub_rev]), (hfp y).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one
+      (hfp x) hy⟩
+  · simpa using hv.mul hu
+  · rw [Submonoid.coe_mul, star_mul, ← hbc, ← hab]
+    simp only [mul_assoc]
+
+/-- **Homotopic projections are Murray–von Neumann equivalent.** For a continuous family `f` of
+star projections of a C⋆-algebra, possibly without unit, over a preconnected space, any two values
+satisfy `star v * v = f x` and `v * star v = f y` for some `v`. -/
+theorem Continuous.exists_star_mul_self_eq {A : Type*} [NonUnitalCStarAlgebra A] {f : X → A}
+    (hf : Continuous f) (hfp : ∀ x, IsStarProjection (f x)) (x y : X) :
+    ∃ v : A, Star.star v * v = f x ∧ v * Star.star v = f y := by
+  have hfp' (x : X) : IsStarProjection ((f x : A) : Unitization ℂ A) := by
+    simpa using (hfp x).map (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  obtain ⟨u, -, hu⟩ :=
+    ((Unitization.continuous_inr (𝕜 := ℂ)).comp hf).exists_joined_one_mul_mul_star_eq hfp' x y
+  exact (hfp x).exists_star_mul_self_eq_of_mem_unitary_unitization u.property hu
+
+/-- **Homotopic matrix projections are Murray–von Neumann equivalent.** For a continuous family `f`
+of matrix projections over a C⋆-algebra, possibly without unit, over a preconnected space, any two
+values `f x` and `f y` are Murray–von Neumann equivalent. The topology on matrices is the entrywise
+one, which is the norm topology of `CStarMatrix n n A`. -/
+theorem Continuous.isMurrayVonNeumannEquivalent {A : Type*} [NonUnitalCStarAlgebra A]
+    {n : Type*} [Fintype n] {f : X → Matrix n n A} (hf : Continuous f)
+    (hfp : ∀ x, IsStarProjection (f x)) (x y : X) :
+    Matrix.IsMurrayVonNeumannEquivalent (f x) (f y) := by
+  -- `CStarMatrix n n A` is a C⋆-algebra for the spectral order on `A`.
+  let _ := CStarAlgebra.spectralOrder A
+  let _ := CStarAlgebra.spectralOrderedRing A
+  have hfp' (x : X) : IsStarProjection (CStarMatrix.ofMatrix (f x)) :=
+    CStarMatrix.isStarProjection_ofMatrix_iff.2 (hfp x)
+  have hg : Continuous fun x ↦ CStarMatrix.ofMatrix (f x) := by
+    rw [CStarMatrix.ofMatrix_eq_ofMatrixL]
+    exact CStarMatrix.ofMatrixL.continuous.comp hf
+  obtain ⟨v, hv₁, hv₂⟩ := hg.exists_star_mul_self_eq hfp' x y
+  refine ⟨hfp x, hfp y, CStarMatrix.ofMatrix.symm v, ?_, ?_⟩
+  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₁,
+      Equiv.symm_apply_apply]
+  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₂,
+      Equiv.symm_apply_apply]
+
+/-- For a continuous family `f` of `CStarMatrix` projections over a preconnected space, any two
+values `f x` and `f y` satisfy `CStarMatrix.MurrayVonNeumannEquiv (f x) (f y)`. -/
+theorem Continuous.murrayVonNeumannEquiv {A n : Type*} [NonUnitalCStarAlgebra A] [Fintype n]
+    {f : X → CStarMatrix n n A} (hf : Continuous f) (hfp : ∀ x, IsStarProjection (f x))
+    (x y : X) : CStarMatrix.MurrayVonNeumannEquiv (f x) (f y) := by
+  rw [CStarMatrix.murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
+  exact (CStarMatrix.ofMatrixL.symm.continuous.comp hf).isMurrayVonNeumannEquivalent
+    (fun z ↦ CStarMatrix.isStarProjection_ofMatrix_symm_iff.2 (hfp z)) x y
+
+end Continuous
+
+/-- Endpoints of any norm-continuous path of star projections in `CStarMatrix n n A` are
+Murray–von Neumann equivalent. -/
+theorem Path.murrayVonNeumannEquiv_of_isStarProjection {A n : Type*} [NonUnitalCStarAlgebra A]
+    [Fintype n] {p q : CStarMatrix n n A} (γ : Path p q) (hγ : ∀ t : I, IsStarProjection (γ t)) :
+    CStarMatrix.MurrayVonNeumannEquiv p q := by
+  simpa only [γ.source, γ.target] using γ.continuous.murrayVonNeumannEquiv hγ 0 1
+
+noncomputable section
+
+namespace CStarMatrix
+
+section StabilizedHomotopy
+
+variable {m n A : Type*}
+
+/-- The block matrix `r = (1 / 2 : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q` in
+`CStarMatrix (m ⊕ n) (m ⊕ n) A`, which is a star projection when `v` implements a Murray–von
+Neumann equivalence over a C⋆-algebra, without requiring a unit in `A` or `DecidableEq` on the
+index types. -/
+def stabilizedProjection [Neg A] [SMul ℝ A] [Star A]
+    (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
+  (1 / 2 : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q
+
+/-- Unfold `CStarMatrix.stabilizedProjection`. -/
+theorem stabilizedProjection_def [Neg A] [SMul ℝ A] [Star A]
+    (p : CStarMatrix m m A) (q : CStarMatrix n n A) (v : CStarMatrix n m A) :
+    stabilizedProjection p q v = (1 / 2 : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q := (rfl)
+
+section RotationPath
+
+variable [NonUnitalCStarAlgebra A]
+
+/-- Explicit rotation family `stabilizedRotation p q v t` in `CStarMatrix (m ⊕ n) (m ⊕ n) A` joining
+`fromBlocks p 0 0 0` (at `t = 0`) to `fromBlocks 0 0 0 q` (at `t = 1`). When `p` and `q` are star
+projections with `v.conjTranspose * v = p` and `v * v.conjTranspose = q`, this equals the unitary
+conjugate `expUnitary ((t * π) • r) * fromBlocks p 0 0 0 * star (expUnitary ((t * π) • r))` in the
+unitization (`r = stabilizedProjection p q v`) while remaining inside
+`CStarMatrix (m ⊕ n) (m ⊕ n) A` even for non-unital `A`. -/
+def stabilizedRotation (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) (t : ℝ) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
+  fromBlocks ((Real.cos (π * t / 2) ^ 2 : ℝ) • p)
+    (((Complex.I / 2) * Real.sin (π * t)) • v.conjTranspose)
+    ((-(Complex.I / 2) * Real.sin (π * t)) • v)
+    ((Real.sin (π * t / 2) ^ 2 : ℝ) • q)
+
+/-- Unfold `CStarMatrix.stabilizedRotation`. -/
+theorem stabilizedRotation_def (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) (t : ℝ) :
+    stabilizedRotation p q v t =
+      fromBlocks ((Real.cos (π * t / 2) ^ 2 : ℝ) • p)
+        (((Complex.I / 2) * Real.sin (π * t)) • v.conjTranspose)
+        ((-(Complex.I / 2) * Real.sin (π * t)) • v)
+        ((Real.sin (π * t / 2) ^ 2 : ℝ) • q) := (rfl)
+
+/-- At `t = 0`, `stabilizedRotation p q v 0` is the top-left corner `fromBlocks p 0 0 0`. -/
+@[simp]
+theorem stabilizedRotation_zero (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) :
+    stabilizedRotation p q v 0 = fromBlocks p 0 0 0 := by simp [stabilizedRotation_def]
+
+/-- At `t = 1`, `stabilizedRotation p q v 1` is the bottom-right corner `fromBlocks 0 0 0 q`. -/
+@[simp]
+theorem stabilizedRotation_one (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) :
+    stabilizedRotation p q v 1 = fromBlocks 0 0 0 q := by simp [stabilizedRotation_def]
+
+/-- At the midpoint `t = 1 / 2`, `stabilizedRotation p q v (1 / 2)` equals the block matrix
+`fromBlocks ((1 / 2 : ℝ) • p) ((I / 2) • v.conjTranspose) (-(I / 2) • v) ((1 / 2 : ℝ) • q)`
+(which is a star projection under the hypotheses of `isStarProjection_stabilizedRotation`). -/
+theorem stabilizedRotation_half (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) :
+    stabilizedRotation p q v (1 / 2) =
+      fromBlocks ((1 / 2 : ℝ) • p) ((Complex.I / 2) • v.conjTranspose)
+        (-(Complex.I / 2) • v) ((1 / 2 : ℝ) • q) := by
+  have hangle : π * (1 / 2 : ℝ) / 2 = π / 4 := by ring
+  have hangle2 : π * (1 / 2 : ℝ) = π / 2 := by ring
+  have hcos : Real.cos (π / 4) ^ 2 = (1 / 2 : ℝ) := by
+    rw [Real.cos_pi_div_four, div_pow, Real.sq_sqrt zero_le_two]; norm_num
+  have hsin : Real.sin (π / 4) ^ 2 = (1 / 2 : ℝ) := by
+    rw [Real.sin_pi_div_four, div_pow, Real.sq_sqrt zero_le_two]; norm_num
+  rw [stabilizedRotation_def, hangle, hangle2, hcos, hsin, Real.sin_pi_div_two]
+  simp
+
+/-- Continuity of `t ↦ stabilizedRotation p q v t` in operator norm. -/
+theorem continuous_stabilizedRotation (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) : Continuous (stabilizedRotation p q v) := by
+  have hdecomp : stabilizedRotation p q v = fun t : ℝ ↦
+      (Real.cos (π * t / 2) ^ 2 : ℝ) • fromBlocks p (0 : CStarMatrix m n A) 0 0 +
+      (((Complex.I / 2) * Real.sin (π * t)) •
+        fromBlocks (0 : CStarMatrix m m A) v.conjTranspose 0 0 +
+      (((-(Complex.I / 2) * Real.sin (π * t)) •
+        fromBlocks (0 : CStarMatrix m m A) (0 : CStarMatrix m n A) v 0) +
+      (Real.sin (π * t / 2) ^ 2 : ℝ) • fromBlocks (0 : CStarMatrix m m A) 0 0 q)) :=
+    funext fun t ↦ by simp [stabilizedRotation_def]
+  rw [hdecomp]
+  fun_prop
+
+/-- Bundled norm-continuous `Path` in `CStarMatrix (m ⊕ n) (m ⊕ n) A` from `fromBlocks p 0 0 0` to
+`fromBlocks 0 0 0 q` defined by `stabilizedRotation p q v`. When `p` and `q` are star projections
+satisfying `v.conjTranspose * v = p` and `v * v.conjTranspose = q`, every point on this path is a
+star projection (`isStarProjection_stabilizedPath`). -/
+def stabilizedPath (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) :
+    Path (fromBlocks p (0 : CStarMatrix m n A) 0 0)
+      (fromBlocks (0 : CStarMatrix m m A) 0 0 q) where
+  toFun t := stabilizedRotation p q v t
+  continuous_toFun := (continuous_stabilizedRotation p q v).comp continuous_subtypeVal
+  source' := stabilizedRotation_zero p q v
+  target' := stabilizedRotation_one p q v
+
+/-- Evaluation of `stabilizedPath` at `t : I` gives `stabilizedRotation` at `(t : ℝ)`. -/
+@[simp]
+theorem stabilizedPath_apply (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) (t : I) :
+    stabilizedPath p q v t = stabilizedRotation p q v t := (rfl)
+
+private theorem exp_I_mul_pi_identities {ζ : ℂ} (t : ℝ)
+    (hζ_def : ζ = Complex.exp (Complex.I * (t * π))) :
+    1 + (ζ - 1) * (1 / 2 : ℂ) + (star ζ - 1) * (1 / 2 : ℂ) +
+        (ζ - 1) * (star ζ - 1) * (1 / 4 : ℂ) = ((Real.cos (π * t / 2) ^ 2 : ℝ) : ℂ) ∧
+      -((star ζ - 1) * (1 / 2 : ℂ)) - (ζ - 1) * (star ζ - 1) * (1 / 4 : ℂ) =
+        (Complex.I / 2) * (Real.sin (π * t) : ℂ) ∧
+      -((ζ - 1) * (1 / 2 : ℂ)) - (ζ - 1) * (star ζ - 1) * (1 / 4 : ℂ) =
+        -(Complex.I / 2) * (Real.sin (π * t) : ℂ) ∧
+      (ζ - 1) * (star ζ - 1) * (1 / 4 : ℂ) =
+        ((Real.sin (π * t / 2) ^ 2 : ℝ) : ℂ) := by
+  have hζ : ζ = (Real.cos (π * t) : ℂ) + (Real.sin (π * t) : ℂ) * Complex.I := by
+    have harg : Complex.I * (t * π : ℂ) = ((π * t : ℝ) : ℂ) * Complex.I := by push_cast; ring
+    rw [hζ_def, harg, Complex.exp_mul_I, Complex.ofReal_cos, Complex.ofReal_sin]
+  have hζ_star : star ζ = (Real.cos (π * t) : ℂ) - (Real.sin (π * t) : ℂ) * Complex.I := by
+    rw [hζ, star_add, star_mul, Complex.star_def, Complex.conj_ofReal, Complex.conj_ofReal,
+      Complex.conj_I]; ring
+  have hcos_sq : ((Real.cos (π * t / 2) ^ 2 : ℝ) : ℂ) = (1 + (Real.cos (π * t) : ℂ)) / 2 := by
+    have h := Real.cos_sq (π * t / 2)
+    have htwo_angle : 2 * (π * t / 2) = π * t := by ring
+    rw [htwo_angle] at h
+    rw [h]; push_cast; ring
+  have hsin_sq : ((Real.sin (π * t / 2) ^ 2 : ℝ) : ℂ) = (1 - (Real.cos (π * t) : ℂ)) / 2 := by
+    rw [Real.sin_sq, Complex.ofReal_sub, Complex.ofReal_one, hcos_sq]; ring
+  have hpyth : (Real.cos (π * t) : ℂ) ^ 2 + (Real.sin (π * t) : ℂ) ^ 2 = 1 := by
+    exact_mod_cast Real.cos_sq_add_sin_sq (π * t)
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hcos_sq, hζ_star, hζ]
+    linear_combination (1 / 4 : ℂ) * hpyth - (1 / 4 : ℂ) * (Real.sin (π * t) : ℂ) ^ 2 * Complex.I_sq
+  · rw [hζ_star, hζ]
+    linear_combination -(1 / 4 : ℂ) * hpyth +
+      (1 / 4 : ℂ) * (Real.sin (π * t) : ℂ) ^ 2 * Complex.I_sq
+  · rw [hζ_star, hζ]
+    linear_combination -(1 / 4 : ℂ) * hpyth +
+      (1 / 4 : ℂ) * (Real.sin (π * t) : ℂ) ^ 2 * Complex.I_sq
+  · rw [hsin_sq, hζ_star, hζ]
+    linear_combination (1 / 4 : ℂ) * hpyth - (1 / 4 : ℂ) * (Real.sin (π * t) : ℂ) ^ 2 * Complex.I_sq
+
+private theorem real_smul_cstarMatrix {m' n' : Type*} (c : ℝ) (M : CStarMatrix m' n' A) :
+    c • M = (c : ℂ) • M := by
+  rw [← algebraMap_smul ℂ c M, Complex.coe_algebraMap]
+
+section Fintype
+
+variable [Fintype m] [Fintype n] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+  {v : CStarMatrix n m A}
+
+private theorem mul_eq_of_conjTranspose_mul_self
+    (hp : IsStarProjection p) (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
+    v * p = v ∧ p * v.conjTranspose = v.conjTranspose ∧
+      q * v = v ∧ v.conjTranspose * q = v.conjTranspose := by
+  have hvvv : v * v.conjTranspose * v = v :=
+    mul_conjTranspose_mul_self_of_isIdempotentElem (hv₁.symm ▸ hp.isIdempotentElem)
+  have hvvv' : v.conjTranspose * v * v.conjTranspose = v.conjTranspose :=
+    conjTranspose_mul_self_mul_conjTranspose_of_isIdempotentElem (hv₁.symm ▸ hp.isIdempotentElem)
+  exact ⟨by rw [← hv₁, ← mul_assoc_rectangular, hvvv], by rw [← hv₁, hvvv'],
+    by rw [← hv₂, hvvv], by rw [← hv₂, ← mul_assoc_rectangular, hvvv']⟩
+
+/-- When `v` implements a Murray–von Neumann equivalence between `p` and `q`,
+`stabilizedProjection p q v` is a star projection in `CStarMatrix (m ⊕ n) (m ⊕ n) A`. -/
+theorem isStarProjection_stabilizedProjection (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
+    IsStarProjection (stabilizedProjection p q v) := by
+  obtain ⟨hvp, hpv, hqv, hvq⟩ := mul_eq_of_conjTranspose_mul_self hp hv₁ hv₂
+  refine ⟨?_, ?_⟩
+  · rw [IsIdempotentElem, stabilizedProjection_def, smul_mul, mul_smul, smul_smul, fromBlocks_mul]
+    simp only [CStarMatrix.neg_mul, CStarMatrix.mul_neg, neg_neg, hp.isIdempotentElem.eq,
+      hq.isIdempotentElem.eq, hv₁, hv₂, hvp, hpv, hqv, hvq, ← two_smul ℝ,
+      fromBlocks_smul, smul_neg, smul_smul]
+    norm_num
+  · rw [isSelfAdjoint_iff, stabilizedProjection_def, star_smul, star_trivial, star_fromBlocks,
+      hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq, conjTranspose_neg, conjTranspose_neg,
+      conjTranspose_conjTranspose]
+
+/-- Left product of `stabilizedProjection p q v` with `fromBlocks p 0 0 0`. -/
+theorem stabilizedProjection_mul_fromBlocks
+    (hp : IsStarProjection p) (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
+    stabilizedProjection p q v * fromBlocks p 0 0 0 = (1 / 2 : ℝ) • fromBlocks p 0 (-v) 0 := by
+  obtain ⟨hvp, -, -, -⟩ := mul_eq_of_conjTranspose_mul_self hp hv₁ hv₂
+  rw [stabilizedProjection_def, smul_mul, fromBlocks_mul]; simp [hp.isIdempotentElem.eq, hvp]
+
+/-- Right product of `fromBlocks p 0 0 0` with `stabilizedProjection p q v`. -/
+theorem fromBlocks_mul_stabilizedProjection
+    (hp : IsStarProjection p) (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
+    fromBlocks p 0 0 0 * stabilizedProjection p q v =
+      (1 / 2 : ℝ) • fromBlocks p (-v.conjTranspose) 0 0 := by
+  obtain ⟨-, hpv, -, -⟩ := mul_eq_of_conjTranspose_mul_self hp hv₁ hv₂
+  rw [stabilizedProjection_def, mul_smul, fromBlocks_mul]; simp [hp.isIdempotentElem.eq, hpv]
+
+/-- Two-sided compression of `fromBlocks p 0 0 0` by `stabilizedProjection p q v`. -/
+theorem stabilizedProjection_mul_fromBlocks_mul
+    (hp : IsStarProjection p) (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
+    stabilizedProjection p q v * fromBlocks p 0 0 0 * stabilizedProjection p q v =
+      (1 / 4 : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q := by
+  obtain ⟨hvp, hpv, -, -⟩ := mul_eq_of_conjTranspose_mul_self hp hv₁ hv₂
+  rw [stabilizedProjection_mul_fromBlocks hp hv₁ hv₂, stabilizedProjection_def, smul_mul, mul_smul,
+    smul_smul, fromBlocks_mul]
+  simp only [CStarMatrix.neg_mul, CStarMatrix.mul_neg, neg_neg, CStarMatrix.zero_mul, add_zero,
+    hp.isIdempotentElem.eq, hpv, hvp, hv₂]
+  norm_num
+
+/-- In `Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)`, `stabilizedRotation p q v t` is the
+unitary conjugate of `fromBlocks p 0 0 0` by `expUnitary ((t * π) • r)` for
+`r = stabilizedProjection p q v`. -/
+theorem inr_stabilizedRotation_eq_expUnitary_conj [PartialOrder A] [StarOrderedRing A]
+    (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) (t : ℝ) :
+    let u := selfAdjoint.expUnitary ((t * π) •
+      ⟨((stabilizedProjection p q v : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
+          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)),
+        selfAdjoint.mem_iff.mpr (((isStarProjection_stabilizedProjection hp hq hv₁ hv₂).map
+          (Unitization.inrNonUnitalStarAlgHom ℂ _)).isSelfAdjoint)⟩)
+    ((stabilizedRotation p q v t : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
+        Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
+      (u : Unitization ℂ _) *
+        ((fromBlocks p (0 : CStarMatrix m n A) 0 0 : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
+          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) * star (u : Unitization ℂ _) := by
+  set B := CStarMatrix (m ⊕ n) (m ⊕ n) A
+  set r : B := stabilizedProjection p q v
+  set x : B := fromBlocks p (0 : CStarMatrix m n A) 0 0
+  have hr_inr : IsStarProjection (r : Unitization ℂ B) :=
+    (isStarProjection_stabilizedProjection hp hq hv₁ hv₂).map
+      (Unitization.inrNonUnitalStarAlgHom ℂ B)
+  set ζ : ℂ := Complex.exp (Complex.I * (t * π))
+  have h_exp : (selfAdjoint.expUnitary ((t * π) •
+      ⟨(r : Unitization ℂ B), selfAdjoint.mem_iff.mpr hr_inr.isSelfAdjoint⟩) :
+      Unitization ℂ B) = 1 + (ζ - 1) • (r : Unitization ℂ B) := by
+    simpa [ζ] using hr_inr.coe_expUnitary_smul (t * π)
+  dsimp only
+  rw [h_exp, star_add, star_one, star_smul, star_sub, star_one, hr_inr.isSelfAdjoint.star_eq]
+  have hexpand :
+      (1 + (ζ - 1) • (r : Unitization ℂ B)) * (x : Unitization ℂ B) *
+          (1 + (star ζ - 1) • (r : Unitization ℂ B)) =
+        ((x + (ζ - 1) • (r * x) + (star ζ - 1) • (x * r) +
+          ((ζ - 1) * (star ζ - 1)) • (r * x * r) : B) : Unitization ℂ B) := by
+    push_cast
+    simp only [add_mul, mul_add, one_mul, mul_one, smul_add, smul_mul_assoc, mul_smul_comm,
+      smul_smul, mul_assoc, mul_comm (star ζ - 1) (ζ - 1)]; abel
+  rw [hexpand]; congr 1
+  obtain ⟨hc11, hc12, hc21, hc22⟩ := exp_I_mul_pi_identities (ζ := ζ) t rfl
+  dsimp only [B, r, x]
+  rw [stabilizedRotation_def, stabilizedProjection_mul_fromBlocks_mul hp hv₁ hv₂,
+    stabilizedProjection_mul_fromBlocks hp hv₁ hv₂,
+    fromBlocks_mul_stabilizedProjection hp hv₁ hv₂]
+  simp only [fromBlocks_smul, fromBlocks_add, smul_zero, smul_neg, add_zero, zero_add,
+    fromBlocks_inj, real_smul_cstarMatrix, Complex.ofReal_div, Complex.ofReal_one,
+    Complex.ofReal_ofNat, smul_smul]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · nth_rw 2 [← one_smul ℂ p]; rw [← add_smul, ← add_smul, ← add_smul, hc11]
+  · rw [← neg_smul, ← neg_smul, ← add_smul, ← sub_eq_add_neg, hc12]
+  · rw [← neg_smul, ← neg_smul, ← add_smul, ← sub_eq_add_neg, hc21]
+  · rw [hc22]
+
+/-- For every `t : ℝ`, `stabilizedRotation p q v t` is a star projection when `p` and `q` are star
+projections with `v.conjTranspose * v = p` and `v * v.conjTranspose = q`. -/
+theorem isStarProjection_stabilizedRotation (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) (t : ℝ) :
+    IsStarProjection (stabilizedRotation p q v t) := by
+  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
+  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
+  set B := CStarMatrix (m ⊕ n) (m ⊕ n) A
+  let u := selfAdjoint.expUnitary ((t * π) •
+    ⟨((stabilizedProjection p q v : B) : Unitization ℂ B),
+      selfAdjoint.mem_iff.mpr (((isStarProjection_stabilizedProjection hp hq hv₁ hv₂).map
+        (Unitization.inrNonUnitalStarAlgHom ℂ B)).isSelfAdjoint)⟩)
+  set x0 : Unitization ℂ B := ((fromBlocks p (0 : CStarMatrix m n A) 0 0 : B) : Unitization ℂ B)
+  have hx : IsStarProjection x0 :=
+    (isStarProjection_fromBlocks_zero₁₂_zero₂₁.mpr ⟨hp, .zero _⟩).map
+      (Unitization.inrNonUnitalStarAlgHom ℂ B)
+  have hconj_proj : IsStarProjection ((u : Unitization ℂ B) * x0 * star (u : Unitization ℂ B)) := by
+    simpa using hx.map (Unitary.conjStarAlgAut ℂ (Unitization ℂ B) u)
+  rw [← inr_stabilizedRotation_eq_expUnitary_conj hp hq hv₁ hv₂ t] at hconj_proj
+  exact ⟨Unitization.inr_injective (R := ℂ)
+      (by simpa only [Unitization.inr_mul] using hconj_proj.isIdempotentElem.eq),
+    Unitization.inr_injective (R := ℂ)
+      (by simpa only [Unitization.inr_star] using hconj_proj.isSelfAdjoint.star_eq)⟩
+
+/-- Every point on `stabilizedPath p q v` is a star projection when `v` implements `p ∼ q`. -/
+theorem isStarProjection_stabilizedPath (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) (t : I) :
+    IsStarProjection (stabilizedPath p q v t) :=
+  isStarProjection_stabilizedRotation hp hq hv₁ hv₂ t
+
+/-- **Stabilized homotopy of Murray–von Neumann equivalent projections**: if `p` and `q` are
+Murray–von Neumann equivalent over a possibly non-unital C⋆-algebra `A`, then `fromBlocks p 0 0 0`
+and `fromBlocks 0 0 0 q` are joined by a norm-continuous path of star projections. -/
+theorem MurrayVonNeumannEquiv.exists_stabilized_path (h : MurrayVonNeumannEquiv p q) :
+    ∃ γ : Path (CStarMatrix.fromBlocks p (0 : CStarMatrix m n A) 0 0)
+        (CStarMatrix.fromBlocks (0 : CStarMatrix m m A) 0 0 q),
+      ∀ t : I, IsStarProjection (γ t) := by
+  obtain ⟨v, hv₁, hv₂⟩ := h.exists_matrix
+  exact ⟨stabilizedPath p q v,
+    isStarProjection_stabilizedPath h.isStarProjection_left h.isStarProjection_right hv₁ hv₂⟩
+
+/-- **Characterization of Murray–von Neumann equivalence via stabilized homotopy**: star projections
+`p : CStarMatrix m m A` and `q : CStarMatrix n n A` over a C⋆-algebra `A` are Murray–von Neumann
+equivalent iff `fromBlocks p 0 0 0` and `fromBlocks 0 0 0 q` are joined by a norm-continuous path of
+star projections in `CStarMatrix (m ⊕ n) (m ⊕ n) A`. -/
+theorem murrayVonNeumannEquiv_iff_exists_stabilized_path
+    (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    MurrayVonNeumannEquiv p q ↔
+      ∃ γ : Path (fromBlocks p (0 : CStarMatrix m n A) 0 0)
+          (fromBlocks (0 : CStarMatrix m m A) 0 0 q),
+        ∀ t : I, IsStarProjection (γ t) :=
+  ⟨MurrayVonNeumannEquiv.exists_stabilized_path, fun ⟨γ, hγ⟩ ↦
+    (MurrayVonNeumannEquiv.pad_zero hp).trans
+      ((γ.murrayVonNeumannEquiv_of_isStarProjection hγ).trans
+        (hq.murrayVonNeumannEquiv_inrCorner (m := m)).symm)⟩
+
+end Fintype
+
+end RotationPath
+
+end StabilizedHomotopy
+
+end CStarMatrix
+
+end
+
+/-- **Equivalent projections are homotopic after stabilization.** Murray–von Neumann equivalent
+matrix projections `p` and `q` over any (possibly non-unital) C⋆-algebra are joined by a continuous
+path of projections from `p ⊕ 0` to `0 ⊕ q`. -/
+theorem Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks {A : Type*}
+    [NonUnitalCStarAlgebra A] {m n : Type*} [Fintype m] [Fintype n] {p : Matrix m m A}
+    {q : Matrix n n A} (h : Matrix.IsMurrayVonNeumannEquivalent p q) :
+    ∃ γ : Path (Matrix.fromBlocks p 0 0 0) (Matrix.fromBlocks 0 0 0 q),
+      ∀ t, IsStarProjection (γ t) := by
+  have h' : CStarMatrix.MurrayVonNeumannEquiv
+      (CStarMatrix.ofMatrix p) (CStarMatrix.ofMatrix q) := by
+    simpa [CStarMatrix.murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent] using h
+  obtain ⟨γ, hγ⟩ := h'.exists_stabilized_path
+  have hsymm (M : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
+      CStarMatrix.ofMatrixL.symm M = CStarMatrix.ofMatrix.symm M := rfl
+  refine ⟨(γ.map CStarMatrix.ofMatrixL.symm.continuous).cast ?_ ?_, fun t ↦
+    CStarMatrix.isStarProjection_ofMatrix_symm_iff.2 (hγ t)⟩
+  · simp [hsymm]
+  · simp [hsymm]
