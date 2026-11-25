@@ -10,11 +10,13 @@ public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 public import TauCeti.Order.RelCovBy
 
 /-!
-# Marked trees and the cover graph of a coded tree
+# Marked trees and the cover graph of a coded order
 
 Trees are presented in two ways in the proof that trees are Borel complete: as partial orders
 (`TauCeti.RelationalConfiguration.treeClass`), and as connected acyclic graphs with one marked
-vertex, the root. This file sets up the second presentation and the map between the two.
+vertex, the root. This file sets up the second presentation, and defines the cover-graph map
+from coded orders to codes of marked graphs. That this map sends `treeClass` into
+`markedTreeClass` is not proved here.
 
 The language `markedGraphLanguage` has a binary symbol `adj` and a unary symbol `mark`. A code
 `c` on a carrier `V` gives the relation `codeRel .adj c` and the predicate `IsMarked c`. The
@@ -27,8 +29,8 @@ a measurable set of graphs (`TauCeti.measurableSet_setOf_isTree`).
 The cover graph of a coded order `c` (`coverGraphCode c`) joins `u` and `v` when one covers the
 other, and marks the least elements. Each of its coordinates is the indicator of a closed set of
 codes (a cover relation is a countable intersection of conditions on finitely many coordinates),
-so the map is measurable; it is not continuous, even on coded trees. It commutes with relabelling,
-so it sends isomorphic codes to isomorphic codes.
+so the map is measurable. It commutes with relabelling, so it sends isomorphic codes to isomorphic
+codes.
 
 ## Main definitions
 
@@ -103,7 +105,15 @@ theorem isMarked_iff {c : RelationalConfiguration markedGraphLanguage V} {v : V}
     IsMarked c v ↔ c.eval (atom markSymb ![v]) = true :=
   Iff.rfl
 
+/-- The code of a structure marks the vertices that satisfy `mark` in that structure. -/
+@[simp]
+theorem isMarked_ofStructure [markedGraphLanguage.Structure V] (v : V) :
+    IsMarked (ofStructure markedGraphLanguage V) v ↔ Structure.RelMap markSymb ![v] := by
+  classical
+  rw [isMarked_iff, eval_ofStructure, decide_eq_true_iff]
+
 /-- Each instance of the marking predicate is a measurable condition on codes. -/
+@[measurability]
 theorem measurableSet_setOf_isMarked (v : V) :
     MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | IsMarked c v} := by
   simpa only [isMarked_iff] using measurableSet_setOf_eval (atom markSymb ![v]) true
@@ -318,9 +328,8 @@ theorem codeRel_coverGraphCode (c : RelationalConfiguration Language.order V) (u
 @[simp]
 theorem isMarked_coverGraphCode (c : RelationalConfiguration Language.order V) (v : V) :
     IsMarked (coverGraphCode c) v ↔ ∀ w, codeRel leSymb c v w := by
-  classical
-  rw [isMarked_iff, coverGraphCode, @eval_ofStructure _ _ (coverStructure _), decide_eq_true_iff,
-    coverStructure_relMap_mark, Matrix.cons_val_fin_one]
+  rw [coverGraphCode, @isMarked_ofStructure _ (coverStructure _), coverStructure_relMap_mark,
+    Matrix.cons_val_fin_one]
 
 /-- **The cover-graph map is measurable** on a countable carrier: each adjacency coordinate is
 the indicator of a closed set of codes, a countable intersection of conditions on finitely many

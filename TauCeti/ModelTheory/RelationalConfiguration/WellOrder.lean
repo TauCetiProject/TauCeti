@@ -121,6 +121,7 @@ theorem codeRel_perm_smul (lt : L.Relations 2) (σ : Equiv.Perm V)
 
 /-- Each instance `codeRel lt c x y` of the relation of a binary symbol is a measurable condition
 on the configuration `c`. -/
+@[measurability]
 theorem measurableSet_setOf_codeRel (lt : L.Relations 2) (x y : V) :
     MeasurableSet {c : RelationalConfiguration L V | codeRel lt c x y} := by
   simpa only [codeRel_iff] using measurableSet_setOf_eval (atom lt ![x, y]) true
