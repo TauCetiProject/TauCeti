@@ -363,6 +363,12 @@ theorem liftCharacter_ι (f : LieAlgebra.LieCharacter R L) {y : L}
   rw [liftCharacter, AlgHom.comp_apply, Subalgebra.coe_val,
     _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
 
+/-- The Lie character of an abelian Lie algebra built from a linear functional `ψ` takes the
+values of `ψ`. -/
+theorem _root_.LieAlgebra.lieCharacterEquivLinearDual_symm_apply_apply [IsLieAbelian L]
+    (ψ : Dual R L) (x : L) : LieAlgebra.lieCharacterEquivLinearDual.symm ψ x = ψ x :=
+  (rfl)
+
 /-- **Every linear functional on an abelian Lie algebra is the restriction of an infinitesimal
 character**: the character extending `f`, read as a Lie algebra homomorphism, takes the value
 `f y` on every generator. For `gl₁` it shows that every scalar is the value of an infinitesimal
@@ -371,8 +377,7 @@ theorem liftCharacter_lieCharacterEquivLinearDual_symm_ι [IsLieAbelian L] (f : 
     (y : L) :
     liftCharacter R L (LieAlgebra.lieCharacterEquivLinearDual.symm f)
         ⟨_, ι_mem_center R L y⟩ = f y := by
-  rw [liftCharacter_ι, ← LieHom.coe_toLinearMap, ← LieAlgebra.lieCharacterEquivLinearDual_apply,
-    Equiv.apply_symm_apply]
+  rw [liftCharacter_ι, LieAlgebra.lieCharacterEquivLinearDual_symm_apply_apply]
 
 end LiftCharacter
 
