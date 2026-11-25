@@ -110,6 +110,13 @@ section Homology
 variable {K₁ K₂ K₃ : Type*} [AddCommGroup K₁] [Module R K₁] [AddCommGroup K₂] [Module R K₂]
   [AddCommGroup K₃] [Module R K₃] {d₁ : K₁ →ₗ[R] K₂} {d₂ : K₂ →ₗ[R] K₃}
 
+/-- The right exactness isomorphism `(P ⊗ K₂) ⧸ range (P ⊗ d₁) ≃ P ⊗ K₃` of an exact sequence
+`K₁ → K₂ → K₃ → 0` sends the class of `y` to `(P ⊗ d₂) y`. -/
+theorem lTensor.equiv_mk (hd : Function.Exact d₁ d₂) (hd₂ : Function.Surjective d₂)
+    (y : P ⊗[R] K₂) : lTensor.equiv P hd hd₂ (Submodule.Quotient.mk y) = d₂.lTensor P y := by
+  rw [lTensor.equiv, lTensor.linearEquiv_of_rightInverse, LinearEquiv.coe_mk, lTensor.toFun,
+    Submodule.liftQ_apply]
+
 /-- Tensoring a complex `K₁ → K₂ → K₃` with `P` gives a complex. -/
 theorem range_lTensor_le_ker_lTensor (h : range d₁ ≤ ker d₂) :
     range (d₁.lTensor P) ≤ ker (d₂.lTensor P) := by
@@ -127,15 +134,10 @@ theorem map_ker_lTensor_liftQ (h : range d₁ ≤ ker d₂) :
         (lTensor.equiv P (exact_map_mkQ_range d₁) (range d₁).mkQ_surjective).symm.toLinearMap =
       ker ((range (d₁.lTensor P)).liftQ (d₂.lTensor P) (range_lTensor_le_ker_lTensor P h)) := by
   set e := lTensor.equiv P (exact_map_mkQ_range d₁) (range d₁).mkQ_surjective
-  -- `e` sends the class of `y` to `(P ⊗ mkQ) y`: its inverse is `lTensor.inverse`, which sends
-  -- `(P ⊗ mkQ) y` back to the class of `y`.
-  have he_mk (y : P ⊗[R] K₂) : e (Submodule.Quotient.mk y) = (range d₁).mkQ.lTensor P y := by
-    rw [← LinearEquiv.eq_symm_apply]
-    exact (lTensor.inverse_apply P (exact_map_mkQ_range d₁) (range d₁).mkQ_surjective y).symm
   have he : ((range d₁).liftQ d₂ h).lTensor P ∘ₗ e.toLinearMap =
       (range (d₁.lTensor P)).liftQ (d₂.lTensor P) (range_lTensor_le_ker_lTensor P h) := by
     ext p x
-    simp [he_mk]
+    simp [e, lTensor.equiv_mk]
   rw [Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm, ← ker_comp, he]
 
 end Homology
