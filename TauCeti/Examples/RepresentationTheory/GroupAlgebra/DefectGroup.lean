@@ -48,9 +48,8 @@ private theorem ne_zero_of_coeff_ne_zero {k G : Type*} [Semiring k] {x : MonoidA
   ne_of_apply_ne (·.coeff g) (by simpa using h)
 
 /-- An element of `S₃` commuting with some `q` with `q³ ≠ 1` is not a `3`-cycle. -/
-private theorem coeff_blockTwoS₃_eq_zero_of_commute :
-    ∀ c q : S₃, q * q * q ≠ 1 → c * q = q * c →
-      (if c ≠ 1 ∧ c * c * c = 1 then (1 : ZMod 2) else 0) = 0 := by
+private theorem not_ne_one_and_cube_eq_one_of_commute :
+    ∀ c q : S₃, q * q * q ≠ 1 → c * q = q * c → ¬(c ≠ 1 ∧ c * c * c = 1) := by
   decide +kernel
 
 /-- A `2`-subgroup of `S₃` has order `1` or `2`: its order is a power of `2` dividing `6`. -/
@@ -86,7 +85,7 @@ theorem isDefectGroup_blockTwoS₃_bot :
     have hcq : c * q = q * c :=
       (Subgroup.mem_centralizer_iff.1 hc q (SetLike.mem_coe.2 q.property)).symm
     rw [coeff_blockTwoS₃]
-    exact coeff_blockTwoS₃_eq_zero_of_commute c q h3 hcq
+    exact ite_eq_right (not_ne_one_and_cube_eq_one_of_commute c q h3 hcq)
 
 /-- `⟨(0 1)⟩` has order `2`. -/
 private theorem card_P : Nat.card BrauerProjectionS3.P = 2 := by
