@@ -20,9 +20,9 @@ import TauCeti.RingTheory.RootsOfUnity.LocalRing
 * The isomorphism on `e`-th roots of unity is the canonical map `F → F_v`.
 -/
 
-namespace TauCeti.Examples.CyclotomicCompletion
-
 open IsDedekindDomain NumberField IsLocalRing TauCeti.Cyclotomic
+
+namespace TauCeti.Examples.CyclotomicCompletion
 
 example : complexField 1 = ⊥ := by simp
 
