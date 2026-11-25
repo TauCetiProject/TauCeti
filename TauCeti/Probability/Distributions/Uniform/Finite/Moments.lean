@@ -25,7 +25,12 @@ The formulas hold for the empty sampling set, where the law is zero. Real observ
 full exponential-integrability domain even on arbitrary sampling sets: on infinite sets
 `uniformOn` is zero. The `HasLaw` corollaries start from a native uniform random element.
 Use `HasLaw.integral_comp_uniformOn_finset` for its labelled mean and raw moments,
-and `HasLaw.map_uniformOn` for its law after labelling.
+and `HasLaw.fun_comp_uniformOn` for its law after labelling.
+
+## Implementation notes
+
+The real-labelled moment and transform formulas follow the statements and proofs for
+labelled categorical laws in `TauCeti.Probability.Distributions.Categorical.Moments`.
 -/
 
 public section
@@ -130,7 +135,7 @@ theorem variance_comp_uniformOn_finset
     variance (fun ω ↦ label (Y ω)) P =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ 2 -
         ((s.card : ℝ)⁻¹ * ∑ i ∈ s, label i) ^ 2 := by
-  rw [(hY.map_uniformOn label).variance_eq, s.variance_id_map_uniformOn_finset]
+  rw [(hY.fun_comp_uniformOn label).variance_eq, s.variance_id_map_uniformOn_finset]
 
 /-- Every exponential moment of a labelled uniform random element is finite, including when
 an infinite sampling set makes its law zero. -/
@@ -163,6 +168,6 @@ theorem charFun_map_comp_uniformOn_finset
     (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (t : ℝ) :
     charFun (P.map fun ω ↦ label (Y ω)) t =
       (s.card : ℂ)⁻¹ * ∑ i ∈ s, Complex.exp (t * label i * Complex.I) := by
-  rw [(hY.map_uniformOn label).map_eq, s.charFun_map_uniformOn_finset]
+  rw [(hY.fun_comp_uniformOn label).map_eq, s.charFun_map_uniformOn_finset]
 
 end ProbabilityTheory.HasLaw

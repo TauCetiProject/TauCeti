@@ -369,7 +369,7 @@ theorem integral_comp_uniformOn_finset {s : Finset α} {X : Ω → α}
 
 /-- Assigning arbitrary labels to a native uniform random variable gives the mapped uniform
 law, without requiring the labels to be globally measurable. -/
-theorem map_uniformOn {s : Set α} [MeasurableSpace β] {X : Ω → α}
+theorem fun_comp_uniformOn {s : Set α} [MeasurableSpace β] {X : Ω → α}
     (hX : HasLaw X (uniformOn s) P) (f : α → β) :
     HasLaw (fun ω ↦ f (X ω)) ((uniformOn s).map f) P :=
   (hasLaw_map (s.aemeasurable_uniformOn f)).fun_comp hX
