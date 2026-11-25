@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 
 /-!
-# Examples: the contragredient of a character line
+# Examples: contragredients of character lines and the inverse transpose
 
 * The dual of `ofCharacter χ` is `ofCharacter χ⁻¹`.
 * It is not `ofCharacter χ` unless `χ = χ⁻¹`: a dual defined by the transpose without the inverse
