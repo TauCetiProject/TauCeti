@@ -8,8 +8,8 @@ module
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.Topology.Homotopy.LoopSpaceFibration
 public import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
-public import TauCeti.Topology.PathSpace.Moore.Truncate
 
 /-!
 # Moore loop maps of Hurewicz fibrations
@@ -239,16 +239,12 @@ theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x)
     ¬ IsHurewiczFibration.{w}
       (map (y := x) (.const Unit x) rfl : MooreLoopSpace Unit () → MooreLoopSpace X x) := by
   intro h
-  let γ := hxy.somePath.toMoorePath
-  have hγ : γ.source = x := Path.source_toMoorePath _
+  let γ : MoorePathBetween X x y := ⟨hxy.somePath.toMoorePath, by simp, by simp⟩
   -- `δ s` runs `γ` up to time `s` and back
-  let δ (s : ℝ≥0) : MooreLoopSpace X x :=
-    ⟨(γ.truncate s).trans (γ.truncate s).symm (by simp), by simp [hγ], by simp [hγ]⟩
-  have hδ : Continuous δ := isEmbedding_toMoorePath.continuous_iff.2 <|
-    continuous_const.moorePath_retrace continuous_id
-  have hδ₀ : δ 0 = 1 := eq_one_of_length_eq_zero <| by
-    rw [← length_toMoorePath]
-    simp [δ]
+  let δ := γ.retrace
+  have hδ : Continuous δ :=
+    MoorePathBetween.continuous_retrace.comp (continuous_const.prodMk continuous_id)
+  have hδ₀ : δ 0 = 1 := γ.retrace_zero
   -- so the loops `δ s`, `s ∈ [0, 1]`, join the image of the unit to `δ 1`
   have hjoined : Joined (map (y := x) (.const Unit x) rfl (1 : MooreLoopSpace Unit ())) (δ 1) :=
     ((map_one (map (y := x) (.const Unit x) rfl)).trans hδ₀.symm) ▸
@@ -262,8 +258,9 @@ theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x)
   have hval := congrArg (fun δ : MooreLoopSpace X x ↦ δ.toMoorePath 1)
     ((map_const_apply _ u).symm.trans hu)
   exact hy <| by
-    simpa [δ, MoorePath.truncate_trans_symm_apply_self _ (show 1 ≤ γ.length by simp [γ]), γ] using
-      hval.symm
+    simpa [δ, γ,
+      MoorePath.truncate_trans_symm_apply_self hxy.somePath.toMoorePath (s := 1) (by simp)]
+      using hval.symm
 
 /-- **For the inclusion of a point `z` of the circle, the Moore loop map `[0, ∞) → Ω_z S¹` is not
 a Hurewicz fibration**. The inclusion `Unit → S¹` of `z` is not one either, by
