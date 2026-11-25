@@ -292,14 +292,12 @@ def sheafificationForgetAdjunction :
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
 
-/-- The unit of `sheafificationForgetAdjunction` is the unit of the original sheafification
-adjunction along the identity of the sheaf of rings. -/
+/-- The unit of `sheafificationForgetAdjunction` is the original sheafification unit. -/
 lemma sheafificationForgetAdjunction_unit_app
-    (M : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    (sheafificationForgetAdjunction R).unit.app M =
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M := by
-  unfold sheafificationForgetAdjunction
-  rfl
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (sheafificationForgetAdjunction R).unit.app P =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P :=
+  (rfl)
 
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
@@ -378,6 +376,15 @@ lemma forget_μ_comp_map {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} (p
   -- The two sides differ only in how the source of the unit is written: as `M.val ⊗ N.val`, or
   -- as the tensor product of the images of `M` and `N` under `forget`.
   rfl
+
+/-- Under `tensorUnderlyingIso`, the tensor map of the forgetful functor is the
+sheafification unit on the sectionwise tensor product. -/
+lemma forget_μ_comp_tensorUnderlyingIso_hom (R : Sheaf J CommRingCat.{u})
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom =
+      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) := by
+  rw [forget_μ_comp_map, Iso.inv_hom_id, Adjunction.homEquiv_id]
 
 /-- Two morphisms out of a tensor product `M ⊗ N` of sheaves of modules agree as soon as they
 agree on the sectionwise tensor product `M.val ⊗ N.val` of the underlying presheaves of modules,
