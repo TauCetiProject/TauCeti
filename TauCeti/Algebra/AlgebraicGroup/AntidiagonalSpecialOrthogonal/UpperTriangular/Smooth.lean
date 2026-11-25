@@ -197,18 +197,8 @@ private instance instFormallySmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
 coordinate algebra is smooth. -/
 instance instSmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
     Algebra.Smooth R (coordinateHopfAlgebra R l) := by
-  have hfg : (definingHopfIdeal R l).toIdeal.FG := by
-    rw [definingHopfIdeal_def, HopfIdeal.sup_toIdeal,
-      AntidiagonalSpecialOrthogonal.definingHopfIdeal_toIdeal]
-    refine (Submodule.FG.sup (Submodule.FG.sup ?_ (Submodule.fg_span_singleton _))
-      (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _))
-    refine Submodule.fg_span ((Set.finite_range fun ij : Fin l × Fin l ↦
-      ConstantForm.relationMatrix R l (formMatrix R l) ij.1 ij.2).subset fun x hx ↦ ?_)
-    obtain ⟨i, j, hij⟩ :=
-      (ConstantForm.mem_relationSet_iff (R := R) (n := l) (C := formMatrix R l)).mp hx
-    exact ⟨(i, j), hij⟩
   let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R l) :=
-    Algebra.FinitePresentation.quotient hfg
+    Algebra.FinitePresentation.quotient (definingHopfIdeal_toIdeal_fg R l)
   exact ⟨inferInstance, inferInstance⟩
 
 /-- The coordinate Hopf algebra of the upper triangular subgroup of `SO_l^J` satisfies the
