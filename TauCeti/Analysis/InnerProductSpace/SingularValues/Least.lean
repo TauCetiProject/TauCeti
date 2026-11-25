@@ -52,6 +52,8 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometry_comp`,
   `LinearMap.minimalStretch_comp_linearIsometryEquiv`: `ℓ(c A) = ‖c‖ ℓ(A)`, and `ℓ` is unchanged
   by linear isometries on the left and isometric isomorphisms on the right.
+* `LinearMap.norm_toContinuousLinearMap_linearIsometryEquiv_comp`,
+  `LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv`: so is the operator norm `‖A‖`.
 * `LinearMap.lipschitzWith_minimalStretch`: `ℓ` is `1`-Lipschitz for the operator norm, by
   Weyl's perturbation bound `LinearMap.abs_singularValues_sub_singularValues_le`; hence it is
   continuous and Borel measurable.
@@ -275,6 +277,18 @@ theorem minimalStretch_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E
 theorem minimalStretch_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (U : G ≃ₗᵢ[𝕜] E) :
     (A ∘ₗ (U : G →ₗ[𝕜] E)).minimalStretch = A.minimalStretch := by
   simp [minimalStretch_def, U.toLinearEquiv.finrank_eq]
+
+/-- Composing on the left with an isometric isomorphism leaves the operator norm unchanged. -/
+theorem norm_toContinuousLinearMap_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    ‖toContinuousLinearMap ((U : F →ₗ[𝕜] G) ∘ₗ A)‖ = ‖toContinuousLinearMap A‖ := by
+  rw [norm_toContinuousLinearMap_eq_singularValues_zero,
+    norm_toContinuousLinearMap_eq_singularValues_zero, singularValues_linearIsometryEquiv_comp]
+
+/-- Composing on the right with an isometric isomorphism leaves the operator norm unchanged. -/
+theorem norm_toContinuousLinearMap_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (U : G ≃ₗᵢ[𝕜] E) :
+    ‖toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E))‖ = ‖toContinuousLinearMap A‖ := by
+  rw [norm_toContinuousLinearMap_eq_singularValues_zero,
+    norm_toContinuousLinearMap_eq_singularValues_zero, singularValues_comp_linearIsometryEquiv]
 
 /-- **Perturbation bound.** The minimal stretch is a `1`-Lipschitz function of a continuous
 linear map: `|ℓ(A) - ℓ(B)| ≤ ‖A - B‖`. -/
