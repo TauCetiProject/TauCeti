@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
+import TauCeti.Data.Matrix.Composition
 import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
@@ -95,13 +96,6 @@ theorem coe_compGL_symm (u : GL (m × ι) R) :
     ((compGL m ι R).symm u : Matrix m m (Matrix ι ι R)) = (comp m m ι ι R).symm u :=
   (rfl)
 
-omit [Fintype m] [Fintype ι] in
-/-- `Matrix.comp` flattens `1 + (r Eₐᵦ) Eᵢⱼ` to `1 + r E₍ᵢ,ₐ₎₍ⱼ,ᵦ₎`. -/
-theorem comp_one_add_single_single (i j : m) (a b : ι) (r : R) :
-    comp m m ι ι R (1 + single i j (single a b r)) = 1 + single (i, a) (j, b) r := by
-  rw [← compAddEquiv_apply, map_add, compAddEquiv_apply, compAddEquiv_apply, comp_one,
-    comp_single_single]
-
 variable (ι R) in
 /-- **Block flattening at a finite stage**: an invertible `k × k` matrix with entries in the
 `ι × ι` matrices over `R` is an invertible matrix of size `k * n` over `R`, where `n` is the
@@ -157,7 +151,7 @@ theorem compGL_transvectionUnit_single {i j : m} (hij : i ≠ j) (a b : ι) (r :
       transvectionUnit (fun h ↦ hij (congrArg Prod.fst h) : (i, a) ≠ (j, b)) r := by
   ext : 1
   rw [coe_compGL, coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single,
-    comp_one_add_single_single]
+    Matrix.comp_one_add_single_single]
 
 /-- Flattening carries elementary matrices over `Matrix ι ι R` to elementary matrices over `R`:
 `eᵢⱼ(X)` flattens to the product of the elementary matrices `e₍ᵢ,ₐ₎₍ⱼ,ᵦ₎(X a b)`. -/
@@ -195,7 +189,7 @@ theorem elementarySubgroup_le_map_compGL [Nontrivial m] :
     rw [MulEquiv.symm_apply_eq]
     ext : 1
     rw [coe_compGL, coe_commutatorElement_transvectionUnit_of_mul_eq_zero hik (by simp [hab.symm]),
-      single_mul_single_same, mul_one, comp_one_add_single_single,
+      single_mul_single_same, mul_one, Matrix.comp_one_add_single_single,
       coe_transvectionUnit_eq_one_add_single]
   · convert transvectionUnit_mem_elementarySubgroup hij (single a b r) using 1
     rw [MulEquiv.symm_apply_eq, compGL_transvectionUnit_single]
