@@ -543,14 +543,15 @@ continuous linear equivalence onto its range. -/
 noncomputable def orthogonalKerEquivRange (T : E →L[𝕜] G)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] G) : Set G)) :
     (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ ≃L[𝕜]
-      LinearMap.range (T : E →ₗ[𝕜] G) := by
-  let K := LinearMap.ker (T : E →ₗ[𝕜] G)
-  let R := LinearMap.range (T : E →ₗ[𝕜] G)
-  letI : CompleteSpace Kᗮ := K.isClosed_orthogonal.completeSpace_coe
-  letI : CompleteSpace R := hT.completeSpace_coe
-  exact (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] G)
-    K.isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
-      ((T.continuous.comp continuous_subtypeVal).subtype_mk _)
+      LinearMap.range (T : E →ₗ[𝕜] G) :=
+  let : CompleteSpace (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ :=
+    (LinearMap.ker (T : E →ₗ[𝕜] G)).isClosed_orthogonal.completeSpace_coe
+  let : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] G)) := hT.completeSpace_coe
+  (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] G)
+    (LinearMap.ker (T : E →ₗ[𝕜] G)).isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
+      (Topology.IsInducing.subtypeVal.continuous_iff.mpr <|
+        (T.continuous.comp continuous_subtypeVal).congr fun x ↦
+          (LinearMap.kerComplementEquivRange_apply_coe _ _ x).symm)
 
 /-- The closed-range restriction equivalence acts by the original operator. -/
 @[simp]
@@ -560,15 +561,8 @@ theorem orthogonalKerEquivRange_apply (T : E →L[𝕜] G)
     (T.orthogonalKerEquivRange hT x : G) = T x := by
   let : CompleteSpace (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ :=
     (LinearMap.ker (T : E →ₗ[𝕜] G)).isClosed_orthogonal.completeSpace_coe
-  let : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] G)) :=
-    hT.completeSpace_coe
-  let e := LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] G)
-    (LinearMap.ker (T : E →ₗ[𝕜] G)).isCompl_orthogonal.symm
-  let he : Continuous e :=
-    (T.continuous.comp continuous_subtypeVal).subtype_mk _
-  change ((e.toContinuousLinearEquivOfContinuous he x :
-    LinearMap.range (T : E →ₗ[𝕜] G)) : G) = T x
-  rw [LinearEquiv.coeFn_toContinuousLinearEquivOfContinuous]
+  let : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] G)) := hT.completeSpace_coe
+  rw [orthogonalKerEquivRange, LinearEquiv.coeFn_toContinuousLinearEquivOfContinuous]
   exact LinearMap.kerComplementEquivRange_apply_coe _ _ x
 
 /-- Applying a closed-range operator to the inverse of its orthogonal-kernel restriction

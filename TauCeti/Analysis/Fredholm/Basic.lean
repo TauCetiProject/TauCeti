@@ -65,12 +65,16 @@ intended throughout.
 * `FredholmDecomposition.proj₀`: the continuous projection onto the finite-dimensional summand
   `dec.X₀` along `dec.X₁`.
 * `ContinuousLinearMap.FredholmPackage.symm`,
+  `ContinuousLinearMap.FredholmPackage.decCodom_proj₀_comp_self`,
+  `ContinuousLinearMap.FredholmPackage.cokerEquiv`,
+  `ContinuousLinearMap.FredholmPackage.cokerEquiv_symm_trans_cokerEquiv_comp_decCodom_proj₀`,
   `ContinuousLinearMap.FredholmPackage.id_sub_quasiInverse_comp_self`,
   `ContinuousLinearMap.FredholmPackage.id_sub_self_comp_quasiInverse`,
   `ContinuousLinearMap.FredholmPackage.projectionL_decDom_eq_of_X₁_eq`,
   `ContinuousLinearMap.FredholmPackage.projectionL_decCodom_eq_of_X₀_eq`: package duality for
-  `pkg.quasiInverse`, finite-rank corner error projections, and ambient projection agreement for
-  packages sharing a complement.
+  `pkg.quasiInverse`, vanishing of `decCodom.proj₀` on `T`, cokernel identification with
+  `decCodom.X₀` and transported defect-projection comparison, finite-rank corner error projections,
+  and ambient projection agreement for packages sharing a complement.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -365,6 +369,74 @@ theorem projectionL_decDom_eq_of_X₁_eq {pkg' : T.FredholmPackage}
     pkg.decDom.X₁.projectionL pkg.decDom.X₀ pkg.decDom.isTopCompl =
       pkg'.decDom.X₁.projectionL pkg'.decDom.X₀ pkg'.decDom.isTopCompl :=
   Submodule.projectionL_congr hdom (pkg.ker_eq.symm.trans pkg'.ker_eq)
+
+/-- The projection onto the finite-dimensional codomain complement `decCodom.X₀` vanishes on the
+range of `T`, so `pkg.decCodom.proj₀ ∘L T = 0`. -/
+@[simp]
+theorem decCodom_proj₀_comp_self [ContinuousSub F] : pkg.decCodom.proj₀ ∘L T = 0 := by
+  ext x
+  have hx : T x ∈ pkg.decCodom.X₁ := pkg.range_eq ▸ LinearMap.mem_range_self (T : E →ₗ[𝕜] F) x
+  exact congrArg Subtype.val
+    (Submodule.projectionOntoL_apply_right pkg.decCodom.isTopCompl.symm ⟨T x, hx⟩)
+
+/-- For any `FredholmPackage` `pkg` of `T`, `pkg.decCodom.proj₀` descends to a continuous linear
+equivalence `(F ⧸ T.range) ≃L[𝕜] pkg.decCodom.X₀`, with inverse induced by the inclusion
+`pkg.decCodom.X₀ ↪ F`. -/
+def cokerEquiv [IsTopologicalAddGroup F] : (F ⧸ T.range) ≃L[𝕜] pkg.decCodom.X₀ :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    (T.range.liftQL pkg.decCodom.proj₀ (by rw [Submodule.ker_projectionOntoL, pkg.range_eq]))
+    (T.range.mkQL ∘L pkg.decCodom.X₀.subtypeL)
+    (ContinuousLinearMap.ext fun y₀ ↦ by simp)
+    (ContinuousLinearMap.ext fun z ↦ by
+      obtain ⟨y, rfl⟩ := T.range.mkQ_surjective z
+      symm
+      simp only [comp_apply, id_apply, Submodule.coe_liftQL, Submodule.coe_mkQL,
+        Submodule.mkQ_apply, Submodule.liftQ_apply, Submodule.subtypeL_apply, coe_coe,
+        Submodule.Quotient.eq]
+      have hy : (pkg.decCodom.proj y : F) + (pkg.decCodom.proj₀ y : F) = y :=
+        Submodule.projection_add_projection_eq_self pkg.decCodom.isTopCompl.isCompl y
+      rw [sub_eq_of_eq_add hy.symm, pkg.range_eq]
+      exact (pkg.decCodom.proj y).property)
+
+@[simp]
+theorem cokerEquiv_apply_mk [IsTopologicalAddGroup F] (y : F) :
+    pkg.cokerEquiv (Submodule.Quotient.mk y) = pkg.decCodom.proj₀ y :=
+  (rfl)
+
+@[simp]
+theorem cokerEquiv_symm_apply [IsTopologicalAddGroup F] (y₀ : pkg.decCodom.X₀) :
+    pkg.cokerEquiv.symm y₀ = Submodule.Quotient.mk (y₀ : F) :=
+  (rfl)
+
+/-- Composing `pkg.cokerEquiv` with the cokernel quotient map `T.range.mkQL` recovers the codomain
+defect projection `pkg.decCodom.proj₀`. -/
+@[simp]
+theorem cokerEquiv_comp_mkQL [IsTopologicalAddGroup F] :
+    (pkg.cokerEquiv : (F ⧸ T.range) →L[𝕜] pkg.decCodom.X₀) ∘L T.range.mkQL =
+      pkg.decCodom.proj₀ := by
+  ext y
+  simp
+
+/-- Composing `pkg.cokerEquiv.symm` with `pkg.decCodom.proj₀` gives the cokernel quotient map
+`T.range.mkQL`. -/
+@[simp]
+theorem cokerEquiv_symm_comp_decCodom_proj₀ [IsTopologicalAddGroup F] :
+    (pkg.cokerEquiv.symm : pkg.decCodom.X₀ →L[𝕜] F ⧸ T.range) ∘L pkg.decCodom.proj₀ =
+      T.range.mkQL := by
+  rw [← pkg.cokerEquiv_comp_mkQL, ← comp_assoc]
+  ext y
+  simp
+
+/-- For any two `FredholmPackage`s `pkg` and `pkg'` of `T`, transporting through the cokernel
+`F ⧸ T.range` via `pkg.cokerEquiv.symm.trans pkg'.cokerEquiv` carries `pkg.decCodom.proj₀` to
+`pkg'.decCodom.proj₀`. -/
+theorem cokerEquiv_symm_trans_cokerEquiv_comp_decCodom_proj₀ [IsTopologicalAddGroup F]
+    (pkg' : T.FredholmPackage) :
+    (pkg.cokerEquiv.symm.trans pkg'.cokerEquiv :
+        pkg.decCodom.X₀ →L[𝕜] pkg'.decCodom.X₀) ∘L pkg.decCodom.proj₀ =
+      pkg'.decCodom.proj₀ := by
+  rw [← ContinuousLinearEquiv.comp_coe, comp_assoc, pkg.cokerEquiv_symm_comp_decCodom_proj₀,
+    pkg'.cokerEquiv_comp_mkQL]
 
 /-- Two `FredholmPackage`s for `T` with the same codomain complement `decCodom.X₀` induce the same
 ambient codomain projection `F →L[𝕜] F` (and hence the same `T ∘L quasiInverse`). -/

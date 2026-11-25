@@ -48,8 +48,8 @@ This file develops the Fredholm and Banach transverse-subspace consequences:
    formula `T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W`, and — when `V` is closed in a
    topological vector space over a complete scalar field — `T.IsFredholm`.
 2. **Banach `IsTopCompl` characterization and neighborhood stability**: when `E` and `F` are Banach
-   spaces and `V ≤ E` is closed, `(T ∘L V.subtypeL).coprod W.subtypeL` is invertible if and only if
-   `Disjoint V T.ker` and `IsTopCompl (V.map T) W` (`isInvertible_comp_subtypeL_coprod_iff`), so
+   spaces and `V ≤ E` is closed, `(T.domRestrict V).coprod W.subtypeL` is invertible if and only if
+   `Disjoint V T.ker` and `IsTopCompl (V.map T) W` (`isInvertible_coprod_domRestrict_iff`), so
    both conditions, Fredholmness, defect bounds, and index equality persist in an operator-norm
    neighborhood of `T₀` (`eventually_disjoint_ker_and_isTopCompl_map`,
    `eventually_isFredholm_and_index_eq_of_isTopCompl_map`,
@@ -70,7 +70,7 @@ In `ContinuousLinearMap`:
   `index_eq_of_isInvertible_coprod_domRestrict`,
   `isFredholm_of_isInvertible_coprod_domRestrict`: defect bounds, index formula, and Fredholmness
   from an invertible finite-codimension transverse coproduct.
-* `isInvertible_comp_subtypeL_coprod_iff`,
+* `isInvertible_coprod_domRestrict_iff`,
   `eventually_disjoint_ker_and_isTopCompl_map`,
   `isFredholm_of_disjoint_ker_of_isTopCompl_map`,
   `index_eq_of_disjoint_ker_of_isTopCompl_map`,
@@ -104,14 +104,18 @@ variable {𝕜 E F : Type*} [DivisionRing 𝕜]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
   {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
 
+private theorem injective_mkQ_domRestrict_ker
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Injective (V.mkQ.domRestrict T.ker) := by
+  rw [LinearMap.injective_domRestrict_iff, Submodule.ker_mkQ]
+  exact (disjoint_ker_of_isInvertible_coprod_domRestrict hinv).symm
+
 /-- If `(T.domRestrict V).coprod W.subtypeL` is invertible and `V` has finite codimension, then
 `finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V)`. -/
 theorem finrank_ker_le_of_isInvertible_coprod_domRestrict [V.CoFG]
     (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
-    finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V) := by
-  refine (V.mkQ.domRestrict T.ker).finrank_le_finrank_of_injective ?_
-  rw [LinearMap.injective_domRestrict_iff, Submodule.ker_mkQ]
-  exact (disjoint_ker_of_isInvertible_coprod_domRestrict hinv).symm
+    finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V) :=
+  (V.mkQ.domRestrict T.ker).finrank_le_finrank_of_injective (injective_mkQ_domRestrict_ker hinv)
 
 /-- If `(T.domRestrict V).coprod W.subtypeL` is invertible and `W` is finite-dimensional, then
 `finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W`. -/
@@ -130,27 +134,22 @@ theorem finrank_quotient_range_le_of_isInvertible_coprod_domRestrict [FiniteDime
 theorem index_eq_of_isInvertible_coprod_domRestrict [V.CoFG] [FiniteDimensional 𝕜 W]
     (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
     T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W := by
-  have hdisj := disjoint_ker_of_isInvertible_coprod_domRestrict hinv
-  have hTop := isTopCompl_map_of_isInvertible_coprod_domRestrict hinv
-  let e := (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W hTop.isCompl
-  have : FiniteDimensional 𝕜 T.ker :=
-    Module.Finite.of_injective (V.mkQ.domRestrict T.ker)
-      (LinearMap.injective_domRestrict_iff.mpr (by simpa only [Submodule.ker_mkQ] using hdisj.symm))
-  have : FiniteDimensional 𝕜 (F ⧸ V.map (T : E →ₗ[𝕜] F)) := e.symm.finiteDimensional
-  have hle : V.map (T : E →ₗ[𝕜] F) ≤ T.range := LinearMap.map_le_range
+  let e := (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W
+    (isTopCompl_map_of_isInvertible_coprod_domRestrict hinv).isCompl
+  have : FiniteDimensional 𝕜 T.ker := .of_injective _ (injective_mkQ_domRestrict_ker hinv)
   have : FiniteDimensional 𝕜 (F ⧸ T.range) :=
-    Module.Finite.of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
-  have : FiniteDimensional 𝕜 V.subtype.ker := by
-    rw [Submodule.ker_subtype]
-    infer_instance
-  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := by
-    rw [Submodule.range_subtype]
-    infer_instance
-  have hcomp := LinearMap.index_comp (T : E →ₗ[𝕜] F) V.subtype
+    .of_surjective ((Submodule.factor LinearMap.map_le_range).comp e.symm.toLinearMap)
+      ((Submodule.factor_surjective LinearMap.map_le_range).comp e.symm.surjective)
+  have : FiniteDimensional 𝕜 V.subtype.ker := V.ker_subtype.symm ▸ inferInstance
+  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := V.range_subtype.symm ▸ ‹V.CoFG›
+  -- `T|_V` is injective with cokernel `F ⧸ T(V) ≃ₗ W`, so `index (T|_V) = -dim W`.
   have hinj : Injective ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype) :=
-    LinearMap.injective_domRestrict_iff.mpr hdisj
-  rw [LinearMap.index_of_injective hinj, LinearMap.range_comp, Submodule.range_subtype,
-    LinearMap.index_subtype, e.finrank_eq, ← T.index_def] at hcomp
+    LinearMap.injective_domRestrict_iff.mpr (disjoint_ker_of_isInvertible_coprod_domRestrict hinv)
+  have hres : ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).index = -(finrank 𝕜 W : ℤ) := by
+    rw [LinearMap.index_of_injective hinj, LinearMap.range_comp, Submodule.range_subtype,
+      e.finrank_eq]
+  have hcomp := LinearMap.index_comp (T : E →ₗ[𝕜] F) V.subtype
+  simp only [hres, LinearMap.index_subtype, ← T.index_def] at hcomp
   omega
 
 end DivisionRing
@@ -187,13 +186,13 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   {T T₀ : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
 
 /-- For a closed subspace `V` of a Banach space `E` and a subspace `W` of a Banach space `F`, the
-map `V × W → F`, `(v, w) ↦ T v + w`, is invertible exactly when `V` meets the kernel of `T`
-trivially and `W` is a topological complement of `T(V)`. -/
-theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F]
+restricted coproduct `(T.domRestrict V).coprod W.subtypeL : V × W →L[𝕜] F`, `(v, w) ↦ T v + w`, is
+invertible exactly when `V` meets the kernel of `T` trivially and `W` is a topological complement of
+`T(V)`. -/
+theorem isInvertible_coprod_domRestrict_iff [CompleteSpace E] [CompleteSpace F]
     (hV : IsClosed (V : Set E)) :
-    ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible ↔
+    ((T.domRestrict V).coprod W.subtypeL).IsInvertible ↔
       Disjoint V T.ker ∧ IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W := by
-  change ((T.domRestrict V).coprod W.subtypeL).IsInvertible ↔ _
   refine ⟨fun h ↦ ⟨disjoint_ker_of_isInvertible_coprod_domRestrict h,
       isTopCompl_map_of_isInvertible_coprod_domRestrict h⟩, fun ⟨hker, hW⟩ ↦ ?_⟩
   have : CompleteSpace V := hV.isComplete.completeSpace_coe
@@ -211,7 +210,7 @@ theorem eventually_disjoint_ker_and_isTopCompl_map [CompleteSpace E] [CompleteSp
   have : CompleteSpace V := hV.isComplete.completeSpace_coe
   have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
   filter_upwards [eventually_nhds_isInvertible_coprod_domRestrict hW.isCompl hker] with T hT
-  exact (isInvertible_comp_subtypeL_coprod_iff hV).mp hT
+  exact (isInvertible_coprod_domRestrict_iff hV).mp hT
 
 section BanachFredholm
 
@@ -224,7 +223,7 @@ theorem isFredholm_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E))
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.IsFredholm :=
   isFredholm_of_isInvertible_coprod_domRestrict hV
-    ((isInvertible_comp_subtypeL_coprod_iff hV).mpr ⟨hker, hW⟩)
+    ((isInvertible_coprod_domRestrict_iff hV).mpr ⟨hker, hW⟩)
 
 omit [CompleteSpace 𝕜] in
 /-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
@@ -234,7 +233,7 @@ theorem index_eq_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E)) [
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W :=
   index_eq_of_isInvertible_coprod_domRestrict
-    ((isInvertible_comp_subtypeL_coprod_iff hV).mpr ⟨hker, hW⟩)
+    ((isInvertible_coprod_domRestrict_iff hV).mpr ⟨hker, hW⟩)
 
 /-- **The transverse-subspace lemma, Fredholm form.** Let `V` be a closed finite-codimensional
 subspace of a Banach space `E` meeting the kernel of `T₀ : E →L[𝕜] F` trivially, and `W` a

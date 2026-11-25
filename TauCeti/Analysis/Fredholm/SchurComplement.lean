@@ -50,9 +50,11 @@ This file develops Schur-complement reductions for Fredholm operators in two set
      of `pkg.domTriangularEquiv S` and `pkg.codomTriangularEquiv S` are continuous in operator norm
      at every `T` where `pkg.blockA T` is invertible.
 
-   Specializing `pkg` to `hT₀.orthogonalFredholmPackage` from
-   `TauCeti.Analysis.Fredholm.Orthogonal.Package` places the Schur complement directly between
-   `ker T₀` and `ker T₀†`.
+   When `pkg` is taken to be `hT₀.orthogonalFredholmPackage` from
+   `TauCeti.Analysis.Fredholm.Orthogonal.Package`, the `rfl` lemmas
+   `IsFredholm.orthogonalFredholmPackage_decDom_X₀` and
+   `IsFredholm.orthogonalFredholmPackage_decCodom_X₀` identify `decDom.X₀` with `ker T₀` and
+   `decCodom.X₀` with `ker T₀†`.
 
 ## Main declarations
 
@@ -341,12 +343,6 @@ theorem blockD_sub (S T : E →L[𝕜] F) : pkg.blockD (S - T) = pkg.blockD S - 
 theorem blockD_smul [ContinuousConstSMul 𝕜 F] (c : 𝕜) (T : E →L[𝕜] F) :
     pkg.blockD (c • T) = c • pkg.blockD T := by
   ext; simp
-
-private theorem decCodom_proj₀_comp_self : pkg.decCodom.proj₀ ∘L T₀ = 0 := by
-  ext x
-  have hx : T₀ x ∈ pkg.decCodom.X₁ := pkg.range_eq ▸ LinearMap.mem_range_self (T₀ : E →ₗ[𝕜] F) x
-  exact congrArg Subtype.val
-    (Submodule.projectionOntoL_apply_right pkg.decCodom.isTopCompl.symm ⟨T₀ x, hx⟩)
 
 @[simp]
 theorem blockC_self : pkg.blockC T₀ = 0 := by

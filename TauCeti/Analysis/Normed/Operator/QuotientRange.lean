@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
+import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.QuotientRange
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -114,7 +115,8 @@ theorem continuous_coprod_domRestrict {𝕜 E F : Type*} [NontriviallyNormedFiel
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     (V : Submodule 𝕜 E) (W : Submodule 𝕜 F) :
     Continuous fun T : E →L[𝕜] F ↦ (T.domRestrict V).coprod W.subtypeL := by
-  simp only [domRestrict]
+  have h (T : E →L[𝕜] F) : T.domRestrict V = T ∘L V.subtypeL := by ext; simp
+  simp only [h]
   fun_prop
 
 section Banach
@@ -128,11 +130,11 @@ invertible. -/
 theorem isInvertible_coprod_domRestrict {T₀ : E →L[𝕜] F}
     {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [CompleteSpace V] [CompleteSpace W]
     (hW : IsCompl (V.map (T₀ : E →ₗ[𝕜] F)) W) (hdisj : Disjoint V T₀.ker) :
-    ((T₀.domRestrict V).coprod W.subtypeL).IsInvertible := by
-  refine ⟨(T₀.domRestrict V).coprodSubtypeLEquivOfIsCompl
+    ((T₀.domRestrict V).coprod W.subtypeL).IsInvertible :=
+  ⟨(T₀.domRestrict V).coprodSubtypeLEquivOfIsCompl
     (by simpa [LinearMap.range_domRestrict] using hW)
-    (by simpa [LinearMap.ker_domRestrict, Submodule.disjoint_iff_comap_eq_bot] using hdisj), ?_⟩
-  rw [coprodSubtypeLEquivOfIsCompl, ContinuousLinearEquiv.coe_ofBijective]
+    (by simpa [LinearMap.ker_domRestrict, Submodule.disjoint_iff_comap_eq_bot] using hdisj),
+    coe_coprodSubtypeLEquivOfIsCompl ..⟩
 
 /-- **Neighborhood invertibility of a transverse restricted coproduct.** Under the hypotheses of
 `isInvertible_coprod_domRestrict`, `(T.domRestrict V).coprod W.subtypeL` remains invertible for all
