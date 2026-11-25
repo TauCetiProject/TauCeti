@@ -40,8 +40,6 @@ finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and ot
 
 ## Main results
 
-* `Module.Basis.apply_eq_sum_coord_mul`: a functional is the sum of its values on the basis weighted
-  by the coordinates.
 * `Module.Basis.dualBasis_dualBasis`: the double dual basis is the evaluation image of the basis.
 * `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a free module
   `M`.
@@ -79,15 +77,6 @@ section DualBasis
 
 variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Finite ι]
   [DecidableEq ι]
-
-omit [Finite ι] [DecidableEq ι] in
-/-- **Expansion of a functional in a basis.** A linear functional is the sum of its values on the
-basis vectors weighted by the coordinates. -/
-theorem apply_eq_sum_coord_mul [Fintype ι] (b : Basis ι R M) (f : Module.Dual R M) (v : M) :
-    f v = ∑ i, b.coord i v * f (b i) := by
-  calc f v = f (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
-    _ = ∑ i, b.coord i v * f (b i) := by
-      simp only [map_sum, map_smul, smul_eq_mul, Basis.coord_apply]
 
 /-- The dual basis of the dual basis of a finite basis is its image in the double dual. -/
 @[simp]

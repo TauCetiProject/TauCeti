@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilat
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
-import TauCeti.LinearAlgebra.Dual.Basis
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The interior estimate for annihilators of real Cauchy–Riemann operators
@@ -117,7 +115,8 @@ private theorem integral_apply_crApply_eq_sum [Fintype ι] (hJ : ContinuousOn J 
       (memLp_coord_crApply b hJ hS c φ q.conjExponent))
   refine integral_congr_ae (.of_forall fun z ↦ ?_)
   -- The expansion of a covector in the coordinate functionals of `b`.
-  simpa [mul_comm] using b.apply_eq_sum_coord_mul ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ) (crApply J S φ z)
+  simpa [LinearMap.sum_apply, smul_eq_mul] using (LinearMap.congr_fun
+    (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) (crApply J S φ z)).symm
 
 /-- **Regularity of a tuple of components.** A tuple `θ` of `L^q` functions on `Ω` that satisfies
 the weak equation in components, `∑_c ∫ θ_c (D φ)_c = 0`, is the tuple of components of a weak
@@ -192,9 +191,15 @@ private theorem norm_toLp_apply_le [Fintype ι] {μ : Measure ℂ} {η : ℂ →
   refine le_trans ?_ (mul_le_mul_of_nonneg_right
     (Finset.single_le_sum (fun c _ ↦ norm_nonneg (b c)) (Finset.mem_univ c)) hE)
   -- Postcomposition with evaluation at `b c`, of norm at most `‖b c‖`.
-  exact (hη.norm_toLp_continuousLinearMap_comp_le _).trans (mul_le_mul_of_nonneg_right
-    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-      fun L ↦ by simpa [mul_comm] using L.le_opNorm (b c)) hE)
+  set L := ContinuousLinearMap.apply ℝ ℝ (b c)
+  have hL : (hη.continuousLinearMap_comp L).toLp _ = L.compLp (hη.toLp η) :=
+    Lp.ext ((MemLp.coeFn_toLp _).trans
+      ((hη.coeFn_toLp.fun_comp L).symm.trans (L.coeFn_compLp' _).symm))
+  rw [hL]
+  refine (L.norm_compLp_le _).trans ?_
+  rw [Lp.norm_toLp]
+  exact mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+    fun f ↦ by simpa [L, mul_comm] using f.le_opNorm (b c)) hE
 
 /-- **The interior estimate in components.** Let `Ω ⊆ ℂ` be
 open, `V` a finite-dimensional real normed space with a basis `b`, `J` a `C^{k+1}` field of
@@ -291,8 +296,9 @@ theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero {k : �
     filter_upwards [hsum,
       ae_all_iff.2 fun c ↦ Lp.coeFn_smul (b.coord c v) (Wkp.value (k + 1) (u c)),
       ae_all_iff.2 hu] with z h₁ h₂ h₃
-    have he := b.apply_eq_sum_coord_mul ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ) v
-    simp only [ContinuousLinearMap.coe_coe] at he
+    have he : η z v = ∑ c, b.coord c v * η z (b c) := by
+      simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using (LinearMap.congr_fun
+        (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) v).symm
     rw [h₁, Finset.sum_apply, he]
     refine Finset.sum_congr rfl fun c _ ↦ ?_
     rw [h₂ c, Pi.smul_apply, h₃ c, smul_eq_mul]
