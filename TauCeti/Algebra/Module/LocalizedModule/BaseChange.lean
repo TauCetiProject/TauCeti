@@ -46,6 +46,9 @@ of the two localized maps are equivalent, and the underlying localized modules a
   `LocalizedModule T P ≃ₗ[R] LocalizedModule (Algebra.algebraMapSubmonoid A T) P` for an
   `A`-module `P`, together with equivalences for injectivity, surjectivity, and bijectivity of
   localized maps.
+* `LocalizedModule.tensorProductEquivOfEquiv`, `LocalizedModule.tensorProductEquivOfEquiv_apply`:
+  an equivalence `T⁻¹M ≃ T⁻¹N` of localized modules
+  as the corresponding equivalence `T⁻¹R ⊗[R] M ≃ T⁻¹R ⊗[R] N` of scalar extensions.
 * `IsLocalization.baseChange_injective_iff`, `IsLocalization.baseChange_surjective_iff`,
   `IsLocalization.baseChange_bijective_iff`: when `A` is a localization of `R` at `T`,
   injectivity, surjectivity, and bijectivity of `f.baseChange A` coincide with those of
@@ -249,6 +252,47 @@ theorem map_algebraMapSubmonoid_bijective_iff (g : P₁ →ₗ[A] P₂) :
     map_algebraMapSubmonoid_surjective_iff]
 
 end RestrictScalars
+
+section TensorProduct
+
+variable {R : Type*} [CommSemiring R] {T : Submonoid R}
+  {M N : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- An equivalence of localized modules `T⁻¹M ≃ T⁻¹N`, transported along
+`LocalizedModule.equivTensorProduct` to an equivalence of the scalar extensions
+`T⁻¹R ⊗[R] M ≃ T⁻¹R ⊗[R] N`. -/
+noncomputable def tensorProductEquivOfEquiv
+    (e : LocalizedModule T M ≃ₗ[Localization T] LocalizedModule T N) :
+    Localization T ⊗[R] M ≃ₗ[Localization T] Localization T ⊗[R] N :=
+  (equivTensorProduct T M).symm ≪≫ₗ e ≪≫ₗ equivTensorProduct T N
+
+/-- `tensorProductEquivOfEquiv e` is `e` conjugated by `LocalizedModule.equivTensorProduct`. -/
+@[simp]
+theorem tensorProductEquivOfEquiv_apply
+    (e : LocalizedModule T M ≃ₗ[Localization T] LocalizedModule T N)
+    (x : Localization T ⊗[R] M) :
+    tensorProductEquivOfEquiv e x =
+      equivTensorProduct T N (e ((equivTensorProduct T M).symm x)) := by
+  simp [tensorProductEquivOfEquiv]
+
+/-- The inverse of `tensorProductEquivOfEquiv e` is `e.symm` conjugated by
+`LocalizedModule.equivTensorProduct`. -/
+@[simp]
+theorem tensorProductEquivOfEquiv_symm_apply
+    (e : LocalizedModule T M ≃ₗ[Localization T] LocalizedModule T N)
+    (x : Localization T ⊗[R] N) :
+    (tensorProductEquivOfEquiv e).symm x =
+      equivTensorProduct T M (e.symm ((equivTensorProduct T N).symm x)) := by
+  simp [tensorProductEquivOfEquiv]
+
+/-- On a pure tensor `1 ⊗ₜ m`, `tensorProductEquivOfEquiv e` applies `e` to `m / 1`. -/
+theorem tensorProductEquivOfEquiv_one_tmul
+    (e : LocalizedModule T M ≃ₗ[Localization T] LocalizedModule T N) (m : M) :
+    tensorProductEquivOfEquiv e (1 ⊗ₜ m) =
+      equivTensorProduct T N (e (LocalizedModule.mk m 1)) := by
+  simp
+
+end TensorProduct
 
 end LocalizedModule
 
