@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.SimplyConnected
 public import TauCeti.Geometry.Lie.Prod
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Perfect
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
