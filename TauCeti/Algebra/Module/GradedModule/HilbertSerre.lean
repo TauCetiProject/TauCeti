@@ -15,6 +15,7 @@ import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.Algebra.Module.GradedModule.Length
 import TauCeti.Algebra.Module.MvPolynomial
 import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # The Hilbert–Serre theorem over an Artinian coefficient ring
@@ -108,24 +109,6 @@ private theorem exists_lengthSeries_eq_of_forall_X_smul_eq_zero {M : Type*} [Add
     have := hB hne
     omega
   rw [coeff_mk, hbot, Module.length_bot, ENat.toNat_zero, Nat.cast_zero]
-
-/-- The identity of Hilbert series behind the induction step: if `b d + a (d + 1) = a d + c (d + 1)`
-for every `d`, and `a` and `b` vanish at `d₀ - 1`, then the series of `a`, `b` and `c` starting in
-degree `d₀` satisfy `(1 - T) H_a = H_c - T H_b`. -/
-private theorem mk_mul_one_sub_X_eq {a b c : ℤ → ℤ} {d₀ : ℤ}
-    (h : ∀ d, b d + a (d + 1) = a d + c (d + 1)) (ha : a (d₀ - 1) = 0) (hb : b (d₀ - 1) = 0) :
-    mk (fun n : ℕ ↦ a (d₀ + n)) * (1 - PowerSeries.X) =
-      mk (fun n : ℕ ↦ c (d₀ + n)) - PowerSeries.X * mk (fun n : ℕ ↦ b (d₀ + n)) := by
-  ext n
-  rw [mul_sub, mul_one, map_sub, map_sub]
-  rcases n with _ | n
-  · have h₀ := h (d₀ - 1)
-    rw [sub_add_cancel, ha, hb] at h₀
-    simp only [coeff_zero_mul_X, coeff_zero_X_mul, coeff_mk, Nat.cast_zero, add_zero]
-    linarith
-  · have hn := h (d₀ + n)
-    simp only [coeff_succ_mul_X, coeff_succ_X_mul, coeff_mk, Nat.cast_succ, ← add_assoc]
-    linarith
 
 variable [IsArtinianRing A] [Finite σ]
 
