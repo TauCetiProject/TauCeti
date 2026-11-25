@@ -165,12 +165,8 @@ variable {ι R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
 /-- The cone hull of the image of a set under a family lies in the cone hull of the image of
 one index together with the image of the other members of the set. -/
 theorem hull_image_le_hull_insert (v : ι → V) (T : Set ι) (i : ι) :
-    hull R (v '' T) ≤ hull R (insert (v i) (v '' (T \ {i}))) := by
-  refine Submodule.span_mono ?_
-  rintro - ⟨k, hk, rfl⟩
-  by_cases hki : k = i
-  · exact hki ▸ Set.mem_insert _ _
-  · exact Set.mem_insert_of_mem _ ⟨k, ⟨hk, hki⟩, rfl⟩
+    hull R (v '' T) ≤ hull R (insert (v i) (v '' (T \ {i}))) :=
+  Submodule.span_mono (Set.image_insert_eq ▸ Set.image_mono (Set.subset_insert_sdiff_singleton i T))
 
 end HullInsert
 
