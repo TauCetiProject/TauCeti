@@ -87,7 +87,9 @@ theorem exists_eq_sq_mul_discr_iff (b : Basis ι 𝒪[K] 𝒪[L]) (x : 𝒪[K]) 
       rw [div_pow, div_eq_iff (pow_ne_zero 2 hd0), sq, ← hr']
       ring
     -- A unit of the integrally closed ring `𝒪[K]` that is a square in `K` is a unit square.
-    obtain ⟨u, hu⟩ := IsIntegrallyClosedIn.exists_unit_pow_eq_of_pow_eq_algebraMap two_ne_zero ht
-    exact ⟨u, by rw [← Units.val_pow_eq_pow_val, hu, ← hw, mul_comm]⟩
+    obtain ⟨u, hu⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_pow_eq_algebraMap two_ne_zero ht
+    have hu2 : u ^ 2 = w := Units.ext <| FaithfulSMul.algebraMap_injective 𝒪[K] K <| by
+      rw [Units.val_pow_eq_pow_val, map_pow, hu, ht]
+    exact ⟨u, by rw [← Units.val_pow_eq_pow_val, hu2, ← hw, mul_comm]⟩
 
 end TauCeti

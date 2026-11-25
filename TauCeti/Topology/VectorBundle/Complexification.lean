@@ -195,6 +195,13 @@ instance memTrivializationAtlas_complexification : MemTrivializationAtlas e.comp
 
 @[simp] theorem baseSet_complexification : e.complexification.baseSet = e.baseSet := (rfl)
 
+/-- Complexifying a family of atlas frames preserves all prescribed frame domains. -/
+theorem subset_baseSet_complexification {ι : Type*}
+    (frames : ι → Trivialization F (π F E)) [∀ i, MemTrivializationAtlas (frames i)]
+    {U : ι → Set B} (hU : ∀ i, U i ⊆ (frames i).baseSet) :
+    ∀ i, U i ⊆ (frames i).complexification.baseSet := by
+  simpa only [baseSet_complexification] using hU
+
 theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     e.complexification p = (p.proj, ⟨e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd),
       e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd)⟩) := (rfl)

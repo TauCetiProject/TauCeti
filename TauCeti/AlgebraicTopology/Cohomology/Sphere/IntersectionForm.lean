@@ -39,12 +39,22 @@ when `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are finite dimensional both of its indic
   `TopCat.sigNeg_singularCupPairing_sphere_of_injective_flip`: if every nonzero `c ∈ Hᵖ(Y)` pairs
   nontrivially with some `b` under `ψ_z`, both indices are `dim Hᵖ(Y)`.
 
-For a closed oriented three-manifold `Y`, `d = 0`, `p = 1`, `k = ℝ` and `z` the fundamental class
-of `S¹ × Y`, the pairing `ψ_z` is, up to sign, the Poincaré duality pairing `(b, c) ↦ ⟨c ⌣ b, [Y]⟩`
-of `H²(Y; ℝ)` with `H¹(Y; ℝ)`. It is then perfect, and the theorems say
-`b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)`. The identification of `ψ_z` with the pairing on `Y` through
-the cross product `[S¹ × Y] = [S¹] × [Y]`, and Poincaré duality on `Y`, are not proved here: the
-injectivity of `ψ_z.flip` is a hypothesis.
+When `z = [Sᵈ⁺¹] × y` is the homology cross product of the standard generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)`
+with a class `y` of `Y`, read with coefficients `k`, the pairing `ψ_z` is the cup pairing
+`(b, c) ↦ ⟨b ⌣ c, y⟩` of `Y`, with no sign (`TopCat.sphereProdCupPairing_singularHomologyCross`).
+This follows from `⟨pr₁^* θ ⌣ pr₂^* β, [Sᵈ⁺¹] × y⟩ = ⟨θ, [Sᵈ⁺¹]⟩ ⟨β, y⟩ = ⟨β, y⟩`
+(`TopCat.singularKronecker_singularCup_fst_snd_singularHomologyCross`). So both indices of
+inertia against `[Sᵈ⁺¹] × y` are the rank of this pairing of `Y`, and they are `dim Hᵖ(Y)` when
+it is nondegenerate on `Hᵖ(Y)`
+(`TopCat.sigPos_singularCupPairing_sphere_singularHomologyCross_of_injective_flip`,
+`TopCat.sigNeg_singularCupPairing_sphere_singularHomologyCross_of_injective_flip`).
+
+For a closed oriented three-manifold `Y`, `d = 0`, `p = 1`, `k = ℝ` and `y = [Y]`, the pairing of
+`Y` is the Poincaré duality pairing `(b, c) ↦ ⟨b ⌣ c, [Y]⟩` of `H²(Y; ℝ)` with `H¹(Y; ℝ)`. It is
+then perfect, and once `[S¹] × [Y]` is known to be a fundamental class of `S¹ × Y` the theorems say
+`b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)`. Poincaré duality on `Y` is not proved here, so the
+nondegeneracy of the pairing of `Y` is a hypothesis; nor is it proved here that `[S¹] × [Y]` is a
+fundamental class of `S¹ × Y`.
 
 ## References
 
@@ -100,6 +110,29 @@ lemma sphereProdCupPairing_apply (Y : TopCat.{w}) (d p : ℕ)
           (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1)) (by omega)
             b c)) :=
   (rfl)
+
+/-- **`ψ_z` on a cross product with the sphere generator is the cup pairing of `Y`**: let
+`z = [Sᵈ⁺¹] × y` be the homology cross product of the standard generator `[Sᵈ⁺¹]` of
+`Hᵈ⁺¹(Sᵈ⁺¹; k)` with a class `y` of `Y`, read with coefficients `k` instead of `k ⊗ k`. Then
+`ψ_z(b, c) = ⟨b ⌣ c, y⟩`, with no sign. For `y` the fundamental class of a closed oriented
+three-manifold `Y`, `d = 0` and `p = 1`, this is the Poincaré duality pairing of `H²(Y)` with
+`H¹(Y)`. -/
+@[simp]
+theorem sphereProdCupPairing_singularHomologyCross (Y : TopCat.{w}) (d p : ℕ)
+    (y : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1))).obj
+      (𝟙_ (ModuleCat.{w} k))).obj Y) :
+    sphereProdCupPairing Y d p
+        (((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (sphere.{w} (d + 1) ⊗ Y)
+          (singularHomologyCross (sphere.{w} (d + 1)) Y (𝟙_ (ModuleCat.{w} k))
+            (𝟙_ (ModuleCat.{w} k)) (d + 1) (p + p + (d + 1)) (p + p + (d + 1) + (d + 1))
+            (by omega) (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ y))) =
+      Y.singularCupPairing k (p := p + (d + 1)) (q := p) (by omega) y := by
+  ext b c
+  rw [sphereProdCupPairing_apply, singularCupPairing_apply,
+    singularKronecker_singularCup_fst_snd_singularHomologyCross,
+    TauCeti.singularKronecker_singularCohomologyTopCatSphereGenerator, one_mul,
+    singularCupPairing_apply]
 
 variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] [CompactSpace M]
@@ -228,6 +261,64 @@ theorem sigNeg_singularCupPairing_sphere_of_injective_flip {d n p : ℕ} (hn : f
         (𝟙_ (ModuleCat.{w} k)) p) := by
   rw [sigNeg_singularCupPairing_sphere hn hnp hp z, ← LinearMap.finrank_range_flip,
     LinearMap.finrank_range_of_inj hz]
+
+/-- **Positive index `dim Hᵖ(Y)` against `[Sᵈ⁺¹] × y`**: under the hypotheses of
+`TopCat.sigPos_singularCupPairing_sphere`, if every nonzero `c ∈ Hᵖ(Y)` has some
+`b ∈ Hᵖ⁺ᵈ⁺¹(Y)` with `⟨b ⌣ c, y⟩ ≠ 0`, then the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` against
+`[Sᵈ⁺¹] × y` has positive index of inertia `dim Hᵖ(Y)`. For `y = [Y]` the fundamental class of a
+closed oriented three-manifold, `d = 0` and `p = 1`, the hypothesis is Poincaré duality on `Y`, and
+the conclusion is `b₂⁺(S¹ × Y) = b₁(Y)` once `[S¹] × [Y]` is known to be a fundamental class of
+`S¹ × Y`, which is not proved here. -/
+theorem sigPos_singularCupPairing_sphere_singularHomologyCross_of_injective_flip {d n p : ℕ}
+    (hn : finrank ℝ E = n)
+    (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
+    [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
+    [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) p)]
+    (y : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1))).obj
+      (𝟙_ (ModuleCat.{w} k))).obj (TopCat.of M))
+    (hy : Function.Injective
+      ((TopCat.of M).singularCupPairing k (p := p + (d + 1)) (q := p) (by omega) y).flip) :
+    sigPos (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega)
+        (((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (sphere.{w} (d + 1) ⊗ TopCat.of M)
+          (singularHomologyCross (sphere.{w} (d + 1)) (TopCat.of M) (𝟙_ (ModuleCat.{w} k))
+            (𝟙_ (ModuleCat.{w} k)) (d + 1) (p + p + (d + 1)) (p + p + (d + 1) + (d + 1))
+            (by omega) (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ y))))) =
+      finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k)) p) := by
+  rw [sigPos_singularCupPairing_sphere_of_injective_flip hn hnp hp _
+    (by rwa [sphereProdCupPairing_singularHomologyCross])]
+
+/-- **Negative index `dim Hᵖ(Y)` against `[Sᵈ⁺¹] × y`**: under the hypotheses of
+`TopCat.sigPos_singularCupPairing_sphere_singularHomologyCross_of_injective_flip`, the cup pairing
+on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` against `[Sᵈ⁺¹] × y` has negative index of inertia `dim Hᵖ(Y)`. -/
+theorem sigNeg_singularCupPairing_sphere_singularHomologyCross_of_injective_flip {d n p : ℕ}
+    (hn : finrank ℝ E = n)
+    (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
+    [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
+    [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) p)]
+    (y : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1))).obj
+      (𝟙_ (ModuleCat.{w} k))).obj (TopCat.of M))
+    (hy : Function.Injective
+      ((TopCat.of M).singularCupPairing k (p := p + (d + 1)) (q := p) (by omega) y).flip) :
+    sigNeg (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega)
+        (((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (sphere.{w} (d + 1) ⊗ TopCat.of M)
+          (singularHomologyCross (sphere.{w} (d + 1)) (TopCat.of M) (𝟙_ (ModuleCat.{w} k))
+            (𝟙_ (ModuleCat.{w} k)) (d + 1) (p + p + (d + 1)) (p + p + (d + 1) + (d + 1))
+            (by omega) (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ y))))) =
+      finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k)) p) := by
+  rw [sigNeg_singularCupPairing_sphere_of_injective_flip hn hnp hp _
+    (by rwa [sphereProdCupPairing_singularHomologyCross])]
 
 end Signature
 

@@ -422,6 +422,27 @@ theorem perturbation_const_target (p : PSSPlane) (c : ℝ → ℝ) (w : ℂ) (x 
     p.perturbation (fun t (_ : M) ↦ c t) w x = p.perturbation (fun t (_ : M) ↦ c t) w y := by
   simp only [perturbation_def]
 
+/-- **Every PSS plane is the positive plane for a reflected Hamiltonian.** The perturbation of a
+PSS plane `p` with end sign `ε` given by `H` is the perturbation of the positive plane given by the
+Hamiltonian `ε H(ε t)`: this is `H` for the positive plane, and `-H(-t)` for the negative plane
+(`TauCeti.Floer.PSSPlane.perturbation_negative`). -/
+theorem perturbation_eq_positive (p : PSSPlane) (H : ℝ → M → ℝ) :
+    p.perturbation H = positive.perturbation (fun t x ↦ p.endSign * H (p.endSign * t) x) := by
+  cases p
+  · simp only [endSign_positive, one_mul]
+  · simp only [endSign_negative, neg_one_mul, perturbation_negative]
+
+/-- The reflected Hamiltonian `ε H(ε t)` of a plane with end sign `ε`, for which the perturbation
+of the plane is that of the positive plane (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), is
+of period one when `H` is. -/
+theorem periodic_endSign_mul (p : PSSPlane) {H : ℝ → M → ℝ} (hH : Function.Periodic H 1) :
+    Function.Periodic (fun t x ↦ p.endSign * H (p.endSign * t) x) 1 := by
+  intro t
+  funext x
+  cases p
+  · simp only [endSign_positive, one_mul, hH t]
+  · simp only [endSign_negative, neg_one_mul, neg_add, ← sub_eq_add_neg, hH.sub_eq]
+
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
 /-- **The perturbation vanishes on the pole disc.** On the closed disc `‖w‖ ≤ exp (2π)` about the

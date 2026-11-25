@@ -51,7 +51,8 @@ theorem norm_planarNewtonianKernel_convolution_le
     ‖(planarNewtonianKernel ⋆ f) w‖ ≤
       (∫ z, ‖(closedBall (0 : ℂ) (r + R)).indicator planarNewtonianKernel z‖) * M := by
   rw [planarNewtonianKernel_convolution_eq_indicator hs hw]
-  exact norm_integral_kernel_smul_sub_le (integrable_indicator_planarNewtonianKernel _) hM w
+  exact norm_integral_kernel_smul_sub_le (integrable_indicator_planarNewtonianKernel _)
+    (ae_of_all _ fun _ ↦ hM _)
 
 /-- The Newtonian potential preserves the source Hölder exponent on every fixed output disc,
 with a constant depending only on the support and output radii. -/

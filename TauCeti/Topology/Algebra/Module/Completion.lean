@@ -39,20 +39,11 @@ variable (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 /-- The bilinear map `(m, â) ↦ â • m`: for each `m : M`, the completion of `a ↦ a • m`. -/
 private noncomputable def smulCompletion : M →ₗ[A] Completion A →ₗ[A] Completion M where
   toFun m := (ContinuousLinearMap.toSpanSingleton A m).completion.toLinearMap
-  map_add' m m' := by
-    ext a
-    induction a using Completion.induction_on with
-    | hp =>
-      exact isClosed_eq (ContinuousLinearMap.continuous _)
-        ((ContinuousLinearMap.continuous _).add (ContinuousLinearMap.continuous _))
-    | ih a => simp [coe_add, coe_smul]
-  map_smul' c m := by
-    ext a
-    induction a using Completion.induction_on with
-    | hp =>
-      exact isClosed_eq (ContinuousLinearMap.continuous _)
-        ((ContinuousLinearMap.continuous _).const_smul c)
-    | ih a => simp [← coe_smul, smul_comm a c m]
+  -- Both laws: the two sides are continuous on `Completion A` and agree on the dense image of `A`.
+  map_add' m m' := LinearMap.coe_injective <| Completion.ext (by fun_prop) (by fun_prop)
+    fun a ↦ by simp [coe_add, coe_smul]
+  map_smul' c m := LinearMap.coe_injective <| Completion.ext (by fun_prop) (by fun_prop)
+    fun a ↦ by simp [← coe_smul, smul_comm a c m]
 
 /-- The canonical map `Â ⊗[A] M → M̂` from the base change of `M` to the completion of `A` into
 the completion of `M`: it sends `â ⊗ m` to the value at `â` of the completion of `a ↦ a • m`. -/

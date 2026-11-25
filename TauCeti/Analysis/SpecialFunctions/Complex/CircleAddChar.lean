@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Data.ZMod.ValMinAbs
+public import Mathlib.NumberTheory.Harmonic.Defs
 
-import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -18,15 +19,21 @@ import TauCeti.Data.ZMod.Count
 Mathlib's `ZMod.toCircle` sends `j : ZMod N` to `exp (2πij/N)`. At level `2n` it sends `n`
 to `exp (πi) = -1`. The distance from `1` to a character value is bounded below using the distance
 of the corresponding residue to zero around the circle. The resulting reciprocal-chord and
-geometric-sum bounds give a logarithmic estimate after summing over nonzero frequencies.
+geometric-sum bounds give `N` times the harmonic number `H_{N-1}`, and hence a logarithmic
+estimate, after summing over nonzero frequencies.
 
 ## Main results
 
 * `ZMod.coe_toCircle_natCast_self`: `ZMod.toCircle (n : ZMod (2n)) = -1`.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
+* `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
+  `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
-* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound.
+* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le_harmonic`: the summed geometric-sum bound,
+  in terms of the harmonic number `H_{N-1}`.
+* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound, in terms of
+  the logarithm of the modulus.
 -/
 
 public section
@@ -79,6 +86,15 @@ theorem le_norm_stdAddChar_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
 
 variable {N : ℕ} [NeZero N]
 
+/-- A multiplicative map of `ℂ` sending the generator `ζ_N = stdAddChar 1` to
+`stdAddChar d = ζ_N^d` sends every value `stdAddChar j` to `stdAddChar (d * j)`. -/
+theorem map_stdAddChar_of_map_stdAddChar_one {F : Type*} [FunLike F ℂ ℂ]
+    [MonoidHomClass F ℂ ℂ] {σ : F} {d : ZMod N} (hσ : σ (stdAddChar (1 : ZMod N)) = stdAddChar d)
+    (j : ZMod N) : σ (stdAddChar j) = stdAddChar (d * j) := by
+  have hj : stdAddChar j = stdAddChar (1 : ZMod N) ^ j.val := by
+    rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one, natCast_zmod_val]
+  rw [hj, map_pow, hσ, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
+
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/
 theorem two_div_norm_stdAddChar_sub_one_le (k : ZMod N) (hk : k ≠ 0) :
@@ -126,19 +142,15 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
     congr 1
     simpa only [nsmul_eq_mul, mul_comm] using
       (stdAddChar (N := N)).map_nsmul_eq_pow j k
-  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul, geom_sum_eq hz, norm_div]
-  apply div_le_div_of_nonneg_right _ (norm_nonneg _)
-  calc ‖stdAddChar k ^ H - 1‖ ≤ ‖stdAddChar k ^ H‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-    _ = 2 := by
-      simp only [norm_pow, ZMod.stdAddChar_apply, Circle.norm_coe, one_pow, norm_one]
-      norm_num
+  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul]
+  exact TauCeti.norm_geom_sum_le (by simp [ZMod.stdAddChar_apply]) hz H
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
-frequencies is bounded by the modulus times one plus its logarithm. -/
-theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
+frequencies is bounded by the modulus times the harmonic number `H_{N-1}`. -/
+theorem sum_norm_sum_range_stdAddChar_mul_add_le_harmonic (a : ZMod N) (H : ℕ) :
     ∑ k ∈ univ.erase (0 : ZMod N),
         ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
-      N * (1 + Real.log N) := by
+      N * (harmonic (N - 1) : ℝ) := by
   have hneg : ∑ k ∈ univ.erase (0 : ZMod N), ((-k).val : ℝ)⁻¹ =
       ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
     apply sum_equiv (Equiv.neg (ZMod N))
@@ -156,6 +168,18 @@ theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
     _ = (N : ℝ) * ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
       rw [← mul_sum, sum_add_distrib, hneg]
       ring
-    _ ≤ _ := mul_le_mul_of_nonneg_left sum_inv_val_le_one_add_log (Nat.cast_nonneg N)
+    _ = _ := by rw [sum_erase _ (by simp), sum_inv_val_eq_harmonic]
+
+/-- Summing the norms of interval sums of the standard additive character over nonzero
+frequencies is bounded by the modulus times one plus its logarithm. -/
+theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
+    ∑ k ∈ univ.erase (0 : ZMod N),
+        ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      N * (1 + Real.log N) := by
+  refine (sum_norm_sum_range_stdAddChar_mul_add_le_harmonic a H).trans
+    (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg N))
+  rw [← sum_inv_val_eq_harmonic (n := N),
+    ← sum_erase (f := fun k : ZMod N ↦ (k.val : ℝ)⁻¹) (a := 0) _ (by simp)]
+  exact sum_inv_val_le_one_add_log
 
 end ZMod

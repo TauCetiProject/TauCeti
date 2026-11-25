@@ -35,6 +35,16 @@ On elements, `biprod.lift` and `biprod.desc` act componentwise
 (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
 which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
 
+Along `ModuleCat.biprodIsoProd`, exactness of a short complex of modules through a biproduct
+`A ⊞ B`, with maps `biprod.lift f₁ f₂` into or `biprod.desc g₁ g₂` out of it, is exactness
+(`Function.Exact`) of the pair map `f₁.hom.prod f₂.hom` into or the sum map
+`g₁.hom.coprod g₂.hom` out of the product module `A × B`
+(`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_desc_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_desc_iff`). This turns the homology sequences
+of `TauCeti.Algebra.Homology.HomologySequenceBiprod`, such as the Mayer–Vietoris sequences, into
+exact sequences of linear maps through `A × B`.
+
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 1.3.
@@ -45,6 +55,46 @@ public section
 open CategoryTheory Limits
 
 universe u v
+
+namespace CategoryTheory.ShortComplex
+
+variable {R : Type u} [Ring R] {X A B Z Y : ModuleCat.{v} R}
+
+/-- A short complex `X ⟶ A ⊞ B ⟶ Z` of modules with maps `biprod.lift f₁ f₂` and
+`biprod.desc g₁ g₂` is exact if and only if the pair map `X → A × B` and the sum map
+`A × B → Z` are exact. -/
+lemma moduleCat_exact_biprod_lift_desc_iff {f₁ : X ⟶ A} {f₂ : X ⟶ B} {g₁ : A ⟶ Z}
+    {g₂ : B ⟶ Z} (w : biprod.lift f₁ f₂ ≫ biprod.desc g₁ g₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔
+      Function.Exact (f₁.hom.prod f₂.hom) (g₁.hom.coprod g₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R X)
+    (e₂ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₃ := LinearEquiv.refl R Z)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂))).symm
+
+/-- A short complex `Y ⟶ X ⟶ A ⊞ B` of modules whose second map is `biprod.lift f₁ f₂` is exact
+if and only if its first map and the pair map `X → A × B` are exact. -/
+lemma moduleCat_exact_biprod_lift_iff {δ : Y ⟶ X} {f₁ : X ⟶ A} {f₂ : X ⟶ B}
+    (w : δ ≫ biprod.lift f₁ f₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact δ.hom (f₁.hom.prod f₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R Y)
+    (e₂ := LinearEquiv.refl R X) (e₃ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) rfl
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm).symm
+
+/-- A short complex `A ⊞ B ⟶ Z ⟶ Y` of modules whose first map is `biprod.desc g₁ g₂` is exact
+if and only if the sum map `A × B → Z` and its second map are exact. -/
+lemma moduleCat_exact_biprod_desc_iff {g₁ : A ⟶ Z} {g₂ : B ⟶ Z} {δ : Z ⟶ Y}
+    (w : biprod.desc g₁ g₂ ≫ δ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact (g₁.hom.coprod g₂.hom) δ.hom := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv
+    (e₁ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₂ := LinearEquiv.refl R Z)
+    (e₃ := LinearEquiv.refl R Y)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂)) rfl).symm
+
+end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
 

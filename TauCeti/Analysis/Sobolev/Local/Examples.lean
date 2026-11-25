@@ -375,7 +375,7 @@ theorem memWkpLoc_sqrt_im_iff :
     have hD'2 := (memLpLoc_iff.1 hL K hKU hKc).mono_exponent hp
     have haeK : D' =ᵐ[volume.restrict K] D := by
       rw [EventuallyEq, ae_restrict_iff' hKc.isClosed.measurableSet]
-      filter_upwards [hae, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)]
+      filter_upwards [hae, Complex.ae_im_ne_zero]
         with z hz hz0 hzK
       refine hz ?_
       rw [Opens.coe_interior, hint]

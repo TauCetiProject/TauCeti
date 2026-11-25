@@ -20,7 +20,8 @@ vacuum from powers of the translation operator `T` via `k! • a₍₋ₖ₋₁�
 `k!`, i.e. unique divisibility `[HasUniqueDiv V]` (satisfied in particular by every `ℚ`-module).
 
 Under `[HasUniqueDiv V]`, Dong's lemma (`VertexOperator.IsLocalOfOrder.nthProduct_left`) and
-Goddard's uniqueness theorem (`FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`) identify the
+Goddard's uniqueness theorem for translation covariant fields
+(`FormalVertexAxioms.eq_field_of_lie_translation`) identify the
 state–field map on every integer mode product `(a₍ₙ₎ b)` (`n : ℤ`) with the `n`-th field product
 `VertexOperator.nthProduct n (A.field a) (A.field b)`. From this we deduce the Borcherds commutator
 and iterate formulas, the full three-parameter Borcherds identity, and skew symmetry.
@@ -76,24 +77,17 @@ variable (A : FormalVertexAxioms R V)
 `n`-th field product `nthProduct n (Y(a, z)) (Y(b, z))`. -/
 theorem field_ncoeff_apply [HasUniqueDiv V] (a b : V) (n : ℤ) :
     A.field (((A.field a)[[n]]) b) = nthProduct n (A.field a) (A.field b) := by
-  symm
-  refine A.eq_field_of_ncoeff_apply_vacuum_eq (fun c ↦ ?_) fun m ↦ ?_
-  · obtain ⟨r₀, h₀⟩ := A.exists_isLocalOfOrder a b
-    obtain ⟨r₁, h₁⟩ := A.exists_isLocalOfOrder a c
-    obtain ⟨r₂, h₂⟩ := A.exists_isLocalOfOrder b c
-    exact ⟨_, h₀.nthProduct_left h₁ h₂ n⟩
-  · by_cases hm : 0 ≤ m
-    · rw [ncoeff_nthProduct_apply_of_nonneg (A.ncoeff_field_apply_vacuum_of_nonneg a)
-        (A.ncoeff_field_apply_vacuum_of_nonneg b) n hm,
-        A.ncoeff_field_apply_vacuum_of_nonneg _ m hm]
-    · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -(k : ℤ) - 1 := ⟨(-m - 1).toNat, by omega⟩
-      rw [← nsmul_right_inj k.factorial_ne_zero,
-        factorial_smul_ncoeff_apply A.translation_vacuum
-          (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n) k,
-        A.factorial_smul_ncoeff_field_apply_vacuum,
-        ncoeff_neg_one_nthProduct_apply (A.ncoeff_field_apply_vacuum_of_nonneg a)
-          (A.ncoeff_field_apply_vacuum_of_nonneg b) n,
-        A.ncoeff_neg_one_field_apply_vacuum]
+  have hA := A.ncoeff_field_apply_vacuum_of_nonneg a
+  have hB := A.ncoeff_field_apply_vacuum_of_nonneg b
+  have hvac := ncoeff_neg_one_nthProduct_apply hA hB n
+  rw [A.ncoeff_neg_one_field_apply_vacuum] at hvac
+  rw [← hvac]
+  refine (A.eq_field_of_lie_translation (fun c ↦ ?_)
+    (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n)).symm
+  obtain ⟨r₀, h₀⟩ := A.exists_isLocalOfOrder a b
+  obtain ⟨r₁, h₁⟩ := A.exists_isLocalOfOrder a c
+  obtain ⟨r₂, h₂⟩ := A.exists_isLocalOfOrder b c
+  exact ⟨_, h₀.nthProduct_left h₁ h₂ n⟩
 
 /-- The field of the `(-1)`-st product `a₍₋₁₎ b` is the normal-ordered product `:Y(a,z) Y(b,z):`. -/
 theorem field_ncoeff_neg_one_apply [HasUniqueDiv V] (a b : V) :

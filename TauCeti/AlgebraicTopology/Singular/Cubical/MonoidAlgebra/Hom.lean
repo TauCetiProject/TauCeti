@@ -34,8 +34,12 @@ the push-forward `TauCeti.cubicalChainSumMap` of the direct sums of chains.
 
 ## Main results
 
+* `TauCeti.cubicalChainDGAlgHom_apply`: the induced morphism is the push-forward of chains.
 * `TauCeti.cubicalChainDGAlgHom_id`, `TauCeti.cubicalChainDGAlgHom_comp`: functoriality.
 * `TauCeti.cubicalChainAugmentation_comp_dgAlgHom`: compatibility with the augmentations.
+* `TauCeti.cubicalChainDGAlgHom_cubicalChainPoint`,
+  `TauCeti.cubicalChainAugmentation_cubicalChainPoint`: the induced morphism sends `[g]` to
+  `[φ g]`, and `[g]` has augmentation one.
 
 ## References
 
@@ -118,6 +122,18 @@ theorem cubicalChainDGAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCu
     cubicalChainDGAlgHom R φ (cubicalChainLof G R n y) =
       cubicalChainLof G' R n (map R φ.toContinuousMap n y) :=
   cubicalChainAlgHom_lof φ n y
+
+/-- The induced DG algebra morphism is the push-forward of chains along `φ`. -/
+theorem cubicalChainDGAlgHom_apply (φ : G →ₜ* G') (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainDGAlgHom R φ a = cubicalChainSumMap R φ.toContinuousMap a :=
+  LinearMap.congr_fun (cubicalChainAlgHom_toLinearMap φ) a
+
+/-- The induced DG algebra morphism sends the point chain `[g]` to `[φ g]`. -/
+@[simp]
+theorem cubicalChainDGAlgHom_cubicalChainPoint (φ : G →ₜ* G') (g : G) :
+    cubicalChainDGAlgHom R φ (cubicalChainPoint G R g) = cubicalChainPoint G' R (φ g) := by
+  rw [cubicalChainDGAlgHom_apply, cubicalChainSumMap_cubicalChainPoint,
+    ContinuousMonoidHom.coe_toContinuousMap, ContinuousMap.coe_ofClass]
 
 /-- Two DG algebra morphisms out of `C^□_*(G; R)` agree if they agree on chains of each
 dimension. -/
@@ -242,6 +258,29 @@ def cubicalChainAugmentation : DGAlgAugmentation (cubicalChain_isDGAlgebra G R) 
 theorem cubicalChainAugmentation_lof (n : ℕ) (y : NormalizedCubicalChain G R n) :
     cubicalChainAugmentation G R (cubicalChainLof G R n y) = cubicalChainAugmentLof G R n y :=
   cubicalChainAugmentAlgHom_lof n y
+
+/-- The augmentation of the algebra of cubical chains is the augmentation of the component of
+dimension zero. -/
+theorem cubicalChainAugmentation_eq_augment (z : normalizedCubicalChainAlgebra G R) :
+    cubicalChainAugmentation G R z = augment G R (z 0) := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    have h := cubicalChainAugmentation_lof (G := G) (R := R) n y
+    rw [DirectSum.lof_eq_of] at h
+    rw [h]
+    rcases n with _ | i
+    · rw [cubicalChainAugmentLof_zero, DirectSum.of_eq_same]
+    · rw [cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero i),
+        DirectSum.of_eq_of_ne _ _ _ (Nat.succ_ne_zero i).symm, map_zero]
+  | add z z' hz hz' => simp [hz, hz']
+
+/-- The point chain `[g]` has augmentation one. -/
+@[simp]
+theorem cubicalChainAugmentation_cubicalChainPoint (g : G) :
+    cubicalChainAugmentation G R (cubicalChainPoint G R g) = 1 := by
+  rw [cubicalChainPoint_def, cubicalChainAugmentation_lof, cubicalChainAugmentLof_zero,
+    augment_ofCube]
 
 /-- The morphisms induced by continuous monoid homomorphisms are compatible with the
 augmentations. -/
