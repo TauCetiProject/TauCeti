@@ -29,7 +29,8 @@ theorem: for `2 < p < ∞`, if `J` and `η` are `C^ℓ` near the graph of `u`, t
 `u ∈ W^{ℓ+1,p}_loc(Ω)` (`TauCeti.IsWeakCauchyRiemannOn.memWkpLoc_succ`). By Morrey's embedding
 `u` is then `C^ℓ` on `Ω`, for every exponent `p > 2` including `p = ∞`, and smooth when `J` and
 `η` are (`TauCeti.IsWeakCauchyRiemannOn.contDiffOn`). In particular a `C¹` solution of the
-classical equation for smooth data is smooth (`TauCeti.contDiffOn_of_cauchyRiemann`).
+classical equation for smooth data is smooth: it is a weak solution by
+`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`.
 
 The finite exponent is needed for the Sobolev conclusion: the graph of
 `z ↦ z² log log (1 / |z|)` is a `W^{1,∞}` solution for a `C¹` structure that is not `W^{2,∞}`
@@ -54,7 +55,6 @@ normed `V` is first identified with a Euclidean space
 * `TauCeti.IsWeakCauchyRiemannOn.memWkpLoc_succ`: `C^ℓ` data give `u ∈ W^{ℓ+1,p}_loc`, `p < ∞`.
 * `TauCeti.IsWeakCauchyRiemannOn.contDiffOn`: `C^n` data give `u` of class `C^n` on `Ω`, for every
   `n ≤ ∞` and every `p > 2`.
-* `TauCeti.contDiffOn_of_cauchyRiemann`: the same for `C¹` solutions of the classical equation.
 
 ## References
 
@@ -182,24 +182,7 @@ theorem IsWeakCauchyRiemannOn.contDiffOn {p : ℝ≥0∞} {n : ℕ∞}
   -- pass to a finite exponent `2 < q ≤ p`, then apply Morrey's embedding `W^{m+1,q} ⊆ Cᵐ`
   have hq : 2 < min p 3 := lt_min hp (by norm_num)
   have hq_top : min p 3 ≠ ⊤ := ((min_le_right p 3).trans_lt (by norm_num)).ne
-  obtain ⟨g, hg, hug⟩ := ((h.mono_exponent (min_le_left p 3)).memWkpLoc_succ hq hq_top hW
-    (hJ.of_le hmn) (hη.of_le hmn) huW hJJ).exists_contDiffOn_ae_eq hq
-  refine hg.congr (Measure.eqOn_of_ae_eq hug h.continuousOn hg.continuousOn ?_)
-  rw [Ω.isOpen.interior_eq]
-  exact subset_closure
-
-/-- **Smoothness of classical solutions.** Let `u` be of class `C¹` on an open set `Ω`, with
-values in a finite-dimensional real normed space, and solve `∂ₛu + J(z, u) ∂ₜu = η(z, u)` at every
-point of `Ω`. If `J` and `η` are of class `C^n`, `n ≤ ∞`, on an open set `W` containing the graph
-of `u` over `Ω`, and `J(z, u(z))² = -1` on `Ω`, then `u` is of class `C^n` on `Ω`. -/
-theorem contDiffOn_of_cauchyRiemann {n : ℕ∞} (hu : ContDiffOn ℝ 1 u Ω)
-    (hCR : ∀ z ∈ Ω, fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z)) (hW : IsOpen W)
-    (hJ : ContDiffOn ℝ n (uncurry J) W) (hη : ContDiffOn ℝ n (uncurry η) W)
-    (huW : ∀ z ∈ Ω, (z, u z) ∈ W)
-    (hJJ : ∀ z ∈ Ω, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V) :
-    ContDiffOn ℝ n u Ω := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  exact (isWeakCauchyRiemannOn_of_contDiffOn (p := ⊤) hu hCR).contDiffOn
-    ENNReal.ofNat_ne_top.lt_top hW hJ hη huW hJJ
+  exact ((h.mono_exponent (min_le_left p 3)).memWkpLoc_succ hq hq_top hW (hJ.of_le hmn)
+    (hη.of_le hmn) huW hJJ).contDiffOn_of_continuousOn hq h.continuousOn (ae_eq_refl _)
 
 end TauCeti
