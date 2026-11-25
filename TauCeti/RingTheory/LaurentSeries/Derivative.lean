@@ -57,6 +57,10 @@ operation is introduced.
   `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
+* `LaurentSeries.derivative_map_addMonoidHom`: differentiation commutes with applying an additive
+  map to the coefficients.
+* `LaurentSeries.derivative_mapRingHom`: differentiation commutes with coefficient extension along
+  a ring homomorphism.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
@@ -334,6 +338,22 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   refine ⟨fun h ↦ ⟨_, by simpa only [C_apply] using h.symm⟩, ?_⟩
   rintro ⟨c, rfl⟩
   simp
+
+/-- **Coefficient maps commute with differentiation**: differentiation only multiplies
+coefficients by integers, so applying an additive map `g : V → W` to the coefficients of `f'`
+gives the derivative of the image of `f`, for any scalar rings of `V` and `W`. -/
+theorem derivative_map_addMonoidHom {R S V W F : Type*} [Semiring R] [Semiring S]
+    [AddCommGroup V] [AddCommGroup W] [Module R V] [Module S W] [FunLike F V W]
+    [AddMonoidHomClass F V W] (g : F) (f : LaurentSeries V) :
+    derivative S (f.map g) = (derivative R f).map g := by
+  ext n
+  simp only [coeff_derivative, map_coeff, map_zsmul]
+
+/-- **Coefficient extension commutes with differentiation**: for a ring homomorphism
+`φ : R →+* S`, applying `φ` to the coefficients of `f'` gives the derivative of the image of `f`. -/
+theorem derivative_mapRingHom {R S : Type*} [Ring R] [Ring S] (φ : R →+* S) (f : R⸨X⸩) :
+    derivative S (mapRingHom φ f) = mapRingHom φ (derivative R f) := by
+  simpa only [mapRingHom_apply] using derivative_map_addMonoidHom (R := R) φ f
 
 section Ramified
 

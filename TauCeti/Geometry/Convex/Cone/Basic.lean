@@ -32,6 +32,8 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
   unchanged.
 * `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
   cone into itself.
+* `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
+  maps it by each factor in turn.
 -/
 
 public section
@@ -119,6 +121,18 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
     (Submodule.span R (q : Set V'))).finrank_eq.symm
 
 end Prod
+
+section Map
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V]
+
+/-- Mapping a pointed cone by a product of linear automorphisms maps it by each factor in turn. -/
+theorem map_linearEquiv_mul (σ : PointedCone R V) (g h : V ≃ₗ[R] V) :
+    σ.map ((g * h : V ≃ₗ[R] V) : V →ₗ[R] V) = (σ.map (h : V →ₗ[R] V)).map (g : V →ₗ[R] V) := by
+  rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, map_map]
+
+end Map
 
 end PointedCone
 

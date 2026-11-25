@@ -25,7 +25,9 @@ This is the normalization of Anderson–Guionnet–Zeitouni, Theorem 2.5.2, resc
 off-diagonal entries have variance `1 / n`. Its logarithmic gradient is `β n` times the drift
 `n⁻¹ ∑_{j ≠ i} (xᵢ - xⱼ)⁻¹ - xᵢ / 2` of the Ornstein–Uhlenbeck version of Dyson Brownian motion
 with parameter `β`, which is why it is the candidate invariant law of that system. Neither
-identification is proved in this file.
+identification is proved in this file; the gradient identity and the resulting symmetry of the
+Ornstein–Uhlenbeck Dyson generator are in
+`TauCeti.Probability.DysonBrownianMotion.GeneratorSymmetry`.
 
 The weight is bounded by a product of one-dimensional Gaussians, because
 `|xᵢ - xⱼ| ^ β ≤ exp (β (|xᵢ| + |xⱼ|))`; so it is integrable, and it is continuous and positive off
@@ -51,6 +53,8 @@ ensemble is the centred Gaussian of variance `2 / β`.
 * `TauCeti.Probability.integrable_hermiteBetaWeight` and
   `TauCeti.Probability.hermiteBetaPartition_pos`: the partition function is finite and positive.
 * `TauCeti.Probability.isProbabilityMeasure_hermiteBetaEnsemble`.
+* `TauCeti.Probability.hermiteBetaEnsemble_zero_left`: for `β = 0` and `n ≠ 0` the ensemble is
+  the zero measure.
 * `TauCeti.Probability.integral_hermiteBetaEnsemble_eq_integral_smul`: integrals against the
   ensemble are integrals against its real density.
 * `TauCeti.Probability.measurePreserving_comp_perm_hermiteBetaEnsemble`: permutation invariance.
@@ -311,6 +315,16 @@ theorem isProbabilityMeasure_hermiteBetaEnsemble (hβ : 0 < β) (n : ℕ) :
     IsProbabilityMeasure (hermiteBetaEnsemble β n) :=
   ⟨by rw [hermiteBetaEnsemble_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     lintegral_hermiteBetaPDF hβ n]⟩
+
+/-- For `β = 0` and `n ≠ 0` the weight is the constant `1`, which is not integrable, so the
+partition function takes the value `0` and the Hermite beta ensemble is the zero measure. -/
+theorem hermiteBetaEnsemble_zero_left (hn : n ≠ 0) : hermiteBetaEnsemble 0 n = 0 := by
+  have hZ : hermiteBetaPartition 0 n = 0 := by
+    simp [hermiteBetaPartition_def, hermiteBetaWeight_def, Measure.real, volume_pi,
+      Measure.pi_univ, hn]
+  have hp : hermiteBetaPDF 0 n = 0 := funext fun x ↦ by
+    simp [hermiteBetaPDF_def, hermiteBetaPDFReal_def, hZ]
+  rw [hermiteBetaEnsemble_def, hp, withDensity_zero]
 
 /-- Integrating against the Hermite beta ensemble is integrating against its real density with
 respect to Lebesgue measure. -/
