@@ -62,6 +62,12 @@ private theorem radius_ofScalars_invSqCoeff : (ofScalars ℂ invSqCoeff).radius 
     ring
   simpa using ofScalars_radius_eq_inv_of_tendsto ℂ invSqCoeff one_ne_zero hc
 
+/-- The series `∑ zⁿ / (n + 1)²` represents its sum on the open unit disc. -/
+private theorem hasFPowerSeriesOnBall_invSqCoeff :
+    HasFPowerSeriesOnBall (ofScalarsSum invSqCoeff) (ofScalars ℂ invSqCoeff) 0 1 := by
+  have h := (ofScalars ℂ invSqCoeff).hasFPowerSeriesOnBall (by simp [radius_ofScalars_invSqCoeff])
+  rwa [radius_ofScalars_invSqCoeff] at h
+
 /-- The partial sums of `∑ zⁿ / (n + 1)²` converge uniformly on the closed unit disc. -/
 private theorem tendstoUniformlyOn_invSqCoeff :
     TendstoUniformlyOn (fun N z ↦ ∑ n ∈ Finset.range N, invSqCoeff n • z ^ n)
@@ -75,13 +81,10 @@ private theorem tendstoUniformlyOn_invSqCoeff :
 /-- The sum of `∑ zⁿ / (n + 1)²` is holomorphic on the open unit disc. -/
 private theorem differentiableOn_ofScalarsSum_invSqCoeff :
     DifferentiableOn ℂ (ofScalarsSum invSqCoeff) (ball (0 : ℂ) 1) := by
-  have h := (ofScalars ℂ invSqCoeff).hasFPowerSeriesOnBall
-    (by simp [radius_ofScalars_invSqCoeff])
-  rw [radius_ofScalars_invSqCoeff] at h
   intro z hz
-  refine (h.analyticAt_of_mem ?_).differentiableAt.differentiableWithinAt
-  rw [mem_eball, edist_dist, ENNReal.ofReal_lt_one]
-  exact hz
+  refine (hasFPowerSeriesOnBall_invSqCoeff.analyticAt_of_mem ?_).differentiableAt
+    |>.differentiableWithinAt
+  rwa [← ENNReal.ofReal_one, Metric.eball_ofReal]
 
 /-- The sum of `∑ zⁿ / (n + 1)²` is not the restriction to the closed unit disc of a function
 holomorphic on an open set containing it. -/
@@ -99,13 +102,12 @@ private theorem not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff :
     (by rw [← NNReal.coe_pos, hR]; positivity)
   -- Near `0` the function `g` is the sum of the example series, so it has that power series.
   have hp : HasFPowerSeriesAt g (ofScalars ℂ invSqCoeff) 0 := by
-    refine ((ofScalars ℂ invSqCoeff).hasFPowerSeriesOnBall
-      (by simp [radius_ofScalars_invSqCoeff])).hasFPowerSeriesAt.congr ?_
+    refine hasFPowerSeriesOnBall_invSqCoeff.hasFPowerSeriesAt.congr ?_
     filter_upwards [closedBall_mem_nhds (0 : ℂ) one_pos] with z hz
     exact (hgF z hz).symm
   have hr := hq.r_le
-  rw [← hp.eq_formalMultilinearSeries hq.hasFPowerSeriesAt, radius_ofScalars_invSqCoeff,
-    ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, hR] at hr
+  rw [← hp.eq_formalMultilinearSeries hq.hasFPowerSeriesAt, radius_ofScalars_invSqCoeff] at hr
+  have : (R : ℝ) ≤ 1 := by exact_mod_cast hr
   linarith
 
 /-- The polynomial partial sums of `∑ zⁿ / (n + 1)²` are entire. -/

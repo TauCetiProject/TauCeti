@@ -56,6 +56,5 @@ theorem polynomialFunctions.eq_top_of_finite {F : Type*} [Field F] [TopologicalS
   rw [← SetLike.mem_coe, polynomialFunctions_coe]
   refine ⟨Lagrange.interpolate Finset.univ Subtype.val φ, ?_⟩
   ext x
-  rw [Polynomial.toContinuousMapOnAlgHom_apply, Polynomial.toContinuousMapOn_apply,
-    Polynomial.toContinuousMap_apply]
-  exact Lagrange.eval_interpolate_at_node φ Subtype.val_injective.injOn (Finset.mem_univ x)
+  simpa [-Lagrange.interpolate_apply] using
+    Lagrange.eval_interpolate_at_node φ Subtype.val_injective.injOn (Finset.mem_univ x)
