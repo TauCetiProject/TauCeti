@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
@@ -34,8 +35,8 @@ operations that need them.
   the index.
 * `ContinuousLinearMap.index_equiv_comp` and `index_comp_equiv`: composition with a
   continuous linear equivalence preserves the index.
-* `ContinuousLinearMap.index_prodMap`: the index is additive under products with finite free
-  kernels and cokernels.
+* `ContinuousLinearMap.index_prodMap` and `index_piMap`: the index is additive under binary and
+  finite products with finite free kernels and cokernels.
 * `ContinuousLinearMap.finiteDimensional_ker_prodMap`: a product of operators with
   finite-dimensional kernels has finite-dimensional kernel.
 * `ContinuousLinearMap.index_of_surjective` and `index_of_injective`: the index in the one-sided
@@ -174,6 +175,23 @@ lemma index_prodMap (T : E₁ →L[𝕜] F₁) (S : E₂ →L[𝕜] F₂)
     (T : E₁ →ₗ[𝕜] F₁).index_prodMap (S : E₂ →ₗ[𝕜] F₂)
 
 end Prod
+
+section Pi
+
+variable {𝕜 ι : Type*} [Ring 𝕜] [StrongRankCondition 𝕜] [Fintype ι] {E F : ι → Type*}
+variable [∀ i, AddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, TopologicalSpace (E i)]
+variable [∀ i, AddCommGroup (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
+
+/-- The index is additive under finite products when the kernels and cokernels are finite free
+modules. In particular, this applies to Fredholm operators over a nontrivially normed field. -/
+@[simp]
+lemma index_piMap (T : ∀ i, E i →L[𝕜] F i) [∀ i, Module.Free 𝕜 (T i).ker]
+    [∀ i, Module.Finite 𝕜 (T i).ker] [∀ i, Module.Free 𝕜 (F i ⧸ (T i).range)]
+    [∀ i, Module.Finite 𝕜 (F i ⧸ (T i).range)] :
+    (piMap T).index = ∑ i, (T i).index := by
+  simpa only [index_def, coe_piMap] using LinearMap.index_piMap fun i ↦ (T i : E i →ₗ[𝕜] F i)
+
+end Pi
 
 section DivisionRing
 

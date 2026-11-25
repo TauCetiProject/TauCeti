@@ -13,6 +13,10 @@ public import Mathlib.Topology.Instances.NNReal.Lemmas
 A strict bound `c < a` persists for `c * C ^ n` when `C` is slightly greater than one. This
 absorbs a small multiplicative loss in estimates with a fixed natural power.
 
+The truncation `Real.toNNReal` maps `𝓝[>] 0` into `𝓝[≠] 0`
+(`Real.tendsto_toNNReal_nhdsGT_zero_nhdsNE`), so a limit as a nonnegative scale `γ → 0` with
+`γ ≠ 0` can be read off along a real parameter `y → 0⁺`.
+
 A continuous homomorphism from a topological group to `ℝ≥0` is trivial on every compact subgroup
 (`MonoidHom.eq_one_of_mem_of_isCompact`).
 
@@ -42,6 +46,12 @@ theorem exists_one_lt_mul_pow_lt (c : ℝ≥0) {a : ℝ≥0} (hca : c < a) (n : 
   exact ⟨C, hC, hCa⟩
 
 end NNReal
+
+/-- As `y → 0⁺` in `ℝ`, `y.toNNReal` tends to `0` in `ℝ≥0` while staying nonzero. -/
+theorem Real.tendsto_toNNReal_nhdsGT_zero_nhdsNE :
+    Tendsto Real.toNNReal (𝓝[>] 0) (𝓝[≠] 0) :=
+  tendsto_nhdsWithin_iff.2 ⟨(continuous_real_toNNReal.tendsto' 0 0 (by simp)).mono_left
+    nhdsWithin_le_nhds, eventually_nhdsWithin_of_forall fun _ hy ↦ (Real.toNNReal_pos.2 hy).ne'⟩
 
 /-- A continuous homomorphism `f : H →* ℝ≥0` is trivial on every compact subgroup: its image is
 compact, hence bounded, and a value `≠ 1` would have unbounded powers or unbounded inverse
