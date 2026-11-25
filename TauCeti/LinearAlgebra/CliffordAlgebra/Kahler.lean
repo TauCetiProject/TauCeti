@@ -416,7 +416,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
 /-- The rank-four hypothesis supplies finite dimensionality for the Kähler action. -/
-local instance finiteDimensionalKahlerHalfSpinors : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+local instance finiteDimensionalKahlerHalfSpinors : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
 
 /-- If `e` is a unitary frame of `J` with opposite orientation `o = -e.toBasis.orientation`, then
 `c₂(ω)` vanishes on `W⁺(o)`, so every eigenvector of `c₂(ω)` in `W⁺(o)` with nonzero eigenvalue is
