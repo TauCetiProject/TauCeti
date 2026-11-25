@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Change
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
@@ -100,17 +100,17 @@ the Levi-Civita connection in the tangent-bundle trivialization at `x`.  Both co
 in the tangent-bundle chart centred at the argument, in which the base direction is read in the
 extended chart of `M` at `x` and the fibre direction in the trivialization at `x`. -/
 def geodesicSpray (z : TangentBundle I M) : TangentSpace I.tangent z :=
-  (z.2, -christoffelMap (finBasis ℝ E)
+  (z.snd, -christoffelMap (finBasis ℝ E)
     ((leviCivitaConnection I M).isCovariantDerivativeOn
-      (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2)
+      (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.snd z.snd)
 
 /-- **The chart formula for the geodesic spray**, restating the definition, whose body is not
 exposed across the module boundary. -/
 theorem geodesicSpray_apply (z : TangentBundle I M) :
     geodesicSpray I M z =
-      (z.2, -christoffelMap (finBasis ℝ E)
+      (z.snd, -christoffelMap (finBasis ℝ E)
         ((leviCivitaConnection I M).isCovariantDerivativeOn
-          (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :=
+          (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.snd z.snd) :=
   (rfl)
 
 /-- The geodesic spray vanishes on the zero section of the tangent bundle. -/
@@ -191,7 +191,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
     accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hγd ht,
-    derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
+    derivWithin_extChartAt_comp_curve (hγd t ht).continuousWithinAt]
   -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
       (curveVelocityLiftWithin I γ s r)).2) =ᶠ[𝓝[s] t]
@@ -203,8 +203,8 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
   have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)
     hs.uniqueMDiffOn t ht
-  refine (hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (F := E) (V := fun x : M ↦ TangentSpace I x) hcont).trans ?_
+  refine ((hasMFDerivWithinAt_totalSpace_curve_iff (F := E)
+    (V := fun x : M ↦ TangentSpace I x)).trans (and_iff_right hcont)).trans ?_
   simp only [curveVelocityLiftWithin_proj]
   refine (and_iff_right (hasDerivWithinAt_extChartAt_comp_curve
     (hasMFDerivWithinAt_curveVelocityWithin (hγd t ht)))).trans <|

@@ -24,6 +24,10 @@ convergence to `0`, so only the behaviour of that map **at `0`** matters — glo
 not needed, and asking for it would exclude the topological modules that carry `ContinuousAdd`
 rather than `IsTopologicalAddGroup`.
 
+Along the top filter, `BoundedAtFilter ⊤ f` is uniform boundedness of `f` on the whole domain
+(`Filter.boundedAtFilter_top_iff`). The quotient of real functions by the bounded ones is how
+heights are compared up to bounded error, so this criterion is the one that quotient unfolds to.
+
 Functions vanishing along a filter also form an additive subgroup when their target has
 continuous negation. The subgroup below uses exactly the carrier of Mathlib's
 `Filter.zeroAtFilterAddSubmonoid` and `Filter.zeroAtFilterSubmodule`; it supplies additive
@@ -34,6 +38,8 @@ inverses independently of any scalar ring.
 * `Filter.zeroAtFilterAddSubgroup`: the additive subgroup of functions vanishing along a filter.
 * `Filter.ZeroAtFilter.sum`: a finite sum of functions vanishing along `l` vanishes along `l`.
 * `Filter.BoundedAtFilter.sum`: a finite sum of functions bounded along `l` is bounded along `l`.
+* `Filter.boundedAtFilter_top_iff`: a function is bounded along `⊤` exactly when it is uniformly
+  bounded.
 * `Filter.ZeroAtFilter.comp`: a function vanishing along `l`, composed with a zero-preserving map
   continuous at `0`, still vanishes along `l`.
 
@@ -86,6 +92,19 @@ theorem BoundedAtFilter.sum [SeminormedAddCommGroup β]
     (h : ∀ i ∈ s, BoundedAtFilter l (f i)) : BoundedAtFilter l (∑ i ∈ s, f i) :=
   Finset.sum_induction f (BoundedAtFilter l) (fun _ _ ↦ BoundedAtFilter.add)
     (const_boundedAtFilter l 0) h
+
+@[simp]
+theorem mem_boundedFilterSubmodule {𝕜 : Type*} [SeminormedRing 𝕜] [SeminormedAddCommGroup β]
+    [Module 𝕜 β] [IsBoundedSMul 𝕜 β] {g : α → β} :
+    g ∈ boundedFilterSubmodule 𝕜 l ↔ BoundedAtFilter l g := (Iff.rfl)
+
+/-- **Bounded along the top filter means uniformly bounded.** A function is bounded along `⊤`
+exactly when one constant bounds its norm at every point. On an empty domain every `C` works,
+including `C = 0`. -/
+@[simp]
+theorem boundedAtFilter_top_iff [Norm β] {g : α → β} :
+    BoundedAtFilter ⊤ g ↔ ∃ C, ∀ a, ‖g a‖ ≤ C := by
+  simp [BoundedAtFilter]
 
 /-- **A vanishing function stays vanishing under a zero-preserving map continuous at `0`.**
 

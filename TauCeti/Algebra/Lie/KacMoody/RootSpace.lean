@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Graded
-public import TauCeti.Algebra.Lie.KacMoody.CartanInjectivity
+public import TauCeti.Algebra.Lie.KacMoody.Triangular
 public import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
@@ -14,6 +14,7 @@ import TauCeti.Algebra.Lie.Graded.Supported
 import TauCeti.Algebra.Lie.Weights.Eigenvector
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.NonnegCombination
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Root-space grading of Kac–Moody Lie algebras
@@ -600,7 +601,7 @@ instance finiteDimensional_rootSpace [FiniteDimensional K H] (α : Module.Dual K
 
 section CartanInjective
 
-variable (hinj : Function.Injective (cartanElement R))
+variable {R} (hinj : Function.Injective (cartanElement R))
 include hinj
 
 /-- **Simple root multiplicity one.** Over a field of characteristic zero, whenever
@@ -608,13 +609,13 @@ include hinj
 `TauCeti.KacMoody.cartanElement_injective`), `dim 𝔤_{αᵢ} = 1`. -/
 theorem finrank_rootSpace_root (i : I) : Module.finrank K (rootSpace R (R.root i)) = 1 := by
   rw [rootSpace_root_eq_span_singleton,
-    finrank_span_singleton (positiveGenerator_ne_zero R hinj i)]
+    finrank_span_singleton (positiveGenerator_ne_zero_of_injective hinj i)]
 
 /-- **Negative simple root multiplicity one.** Over a field of characteristic zero, whenever
 `cartanElement R` is injective, `dim 𝔤_{-αᵢ} = 1`. -/
 theorem finrank_rootSpace_neg_root (i : I) : Module.finrank K (rootSpace R (-R.root i)) = 1 := by
   rw [rootSpace_neg_root_eq_span_singleton,
-    finrank_span_singleton (negativeGenerator_ne_zero R hinj i)]
+    finrank_span_singleton (negativeGenerator_ne_zero_of_injective hinj i)]
 
 /-- **Center of a Kac–Moody Lie algebra (Kac, Proposition 1.6).** Over a field of characteristic
 zero, whenever `cartanElement R` is injective (in particular for a generalized Cartan matrix), the
@@ -629,8 +630,8 @@ theorem center_toSubmodule_eq_map_cartanCenter :
       simp [(LieModule.mem_maxTrivSubmodule K _ _ z).1 hz (cartanElement R x)]
     rw [rootSpace_zero_eq, cartanSubalgebra_toSubmodule] at hz0
     obtain ⟨x, rfl⟩ := hz0
-    exact ⟨x, (cartanElement_mem_center_iff R hinj).1 hz, rfl⟩
-  · rintro _ ⟨x, hx, rfl⟩; exact cartanElement_mem_center_of_mem_cartanCenter R hx
+    exact ⟨x, (cartanElement_mem_center_iff hinj).1 hz, rfl⟩
+  · rintro _ ⟨x, hx, rfl⟩; exact cartanElement_mem_center R hx
 
 /-- The canonical linear isomorphism `R.cartanCenter ≃ₗ[K] LieAlgebra.center K 𝔤(R)` induced by
 `cartanElement R` whenever `cartanElement R` is injective over a field of characteristic zero (in
@@ -638,12 +639,12 @@ particular for a generalized Cartan matrix). -/
 noncomputable def cartanCenterEquiv :
     R.cartanCenter ≃ₗ[K] LieAlgebra.center K (PresentedLieAlgebra R) :=
   (Submodule.equivMapOfInjective (cartanElement R) hinj R.cartanCenter).trans
-    (LinearEquiv.ofEq _ _ (center_toSubmodule_eq_map_cartanCenter R hinj).symm)
+    (LinearEquiv.ofEq _ _ (center_toSubmodule_eq_map_cartanCenter hinj).symm)
 
 /-- Coercing `TauCeti.KacMoody.cartanCenterEquiv` to the ambient Lie algebra gives
 `TauCeti.KacMoody.cartanElement`. -/
 @[simp] theorem coe_cartanCenterEquiv_apply (x : R.cartanCenter) :
-    (cartanCenterEquiv R hinj x : PresentedLieAlgebra R) = cartanElement R x := by
+    (cartanCenterEquiv hinj x : PresentedLieAlgebra R) = cartanElement R x := by
   rw [cartanCenterEquiv, LinearEquiv.trans_apply]
   exact (LinearEquiv.coe_ofEq_apply _ _).trans
     (Submodule.coe_equivMapOfInjective_apply (cartanElement R) _ R.cartanCenter x)
@@ -652,23 +653,23 @@ noncomputable def cartanCenterEquiv :
 `TauCeti.KacMoody.cartanCenterEquiv` recovers the central Lie algebra element. -/
 @[simp] theorem cartanElement_cartanCenterEquiv_symm
     (z : LieAlgebra.center K (PresentedLieAlgebra R)) :
-    cartanElement R ((cartanCenterEquiv R hinj).symm z) = z := by
+    cartanElement R ((cartanCenterEquiv hinj).symm z) = z := by
   conv_rhs =>
-    rw [← (cartanCenterEquiv R hinj).apply_symm_apply z, coe_cartanCenterEquiv_apply]
+    rw [← (cartanCenterEquiv hinj).apply_symm_apply z, coe_cartanCenterEquiv_apply]
 
 /-- The inverse of `TauCeti.KacMoody.cartanCenterEquiv` recovers `x` from a central
 `cartanElement R x`. -/
 @[simp] theorem cartanCenterEquiv_symm_cartanElement {x : H}
     (hz : cartanElement R x ∈ LieAlgebra.center K (PresentedLieAlgebra R)) :
-    (cartanCenterEquiv R hinj).symm ⟨cartanElement R x, hz⟩ =
-      ⟨x, (cartanElement_mem_center_iff R hinj).1 hz⟩ := by
-  apply (cartanCenterEquiv R hinj).injective; ext; simp
+    (cartanCenterEquiv hinj).symm ⟨cartanElement R x, hz⟩ =
+      ⟨x, (cartanElement_mem_center_iff hinj).1 hz⟩ := by
+  apply (cartanCenterEquiv hinj).injective; ext; simp
 
 /-- Over a field of characteristic zero, whenever `cartanElement R` is injective, the center of
 `PresentedLieAlgebra R` is trivial if and only if `R.cartanCenter = ⊥`. -/
 theorem center_eq_bot_iff :
     LieAlgebra.center K (PresentedLieAlgebra R) = ⊥ ↔ R.cartanCenter = ⊥ := by
-  rw [← LieSubmodule.toSubmodule_eq_bot, center_toSubmodule_eq_map_cartanCenter R hinj]
+  rw [← LieSubmodule.toSubmodule_eq_bot, center_toSubmodule_eq_map_cartanCenter hinj]
   refine ⟨fun h => (Submodule.eq_bot_iff _).2 fun x hx => ?_, fun h => by simp [h]⟩
   exact hinj <| ((Submodule.eq_bot_iff _).1 h _ ⟨x, hx, rfl⟩).trans (map_zero _).symm
 

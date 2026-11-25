@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.Ring
@@ -19,12 +20,18 @@ The quotient-remainder equivalence identifies a natural number with a block numb
 position inside that block. This file records the induced block permutations and compatibility
 of nested blocks with the finite-product indexing equivalence.
 It also concatenates two finite blocks with the second block read in reverse order, and splits
-the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`.
+the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`, and
+splits `Fin n` as `Fin (n - r) ⊕ Fin r` with the initial block of `r` indices moved to the end.
 
 It also concatenates two finite blocks with the second block read in reverse order. For two
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
+Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fin.cons` to
+`Fin.snoc`) along `finCycle`, and `TauCeti.apply_comp_finCycle_of_anticyclic` specializes it to
+anticyclic functions.
+`TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
+superdiagonal pairs.
 -/
 
 public section
@@ -129,6 +136,108 @@ theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin
     simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
     rw [Nat.mod_eq_of_lt (by omega)]
     omega
+
+/-- Shifting a tuple of length `n + 1` cyclically by `r` steps applies `f` `r` times whenever
+moving the first entry to the end (`Fin.cons` to `Fin.snoc`) applies `f`. -/
+theorem apply_comp_finCycle {α β : Type*} {n : ℕ} {a : (Fin (n + 1) → α) → β} {f : β → β}
+    (hrot : ∀ (u : Fin n → α) (e : α), a (Fin.snoc u e) = f (a (Fin.cons e u)))
+    (r : Fin (n + 1)) (w : Fin (n + 1) → α) :
+    a (w ∘ finCycle r) = f^[r.val] (a w) := by
+  have h1 (v : Fin (n + 1) → α) : a (v ∘ finRotate (n + 1)) = f (a v) := by
+    have hv : v ∘ finRotate (n + 1) = Fin.snoc (Fin.tail v) (v 0) :=
+      funext fun i ↦ by rw [Function.comp_apply, Fin.snoc_eq_cons_rotate, Fin.cons_self_tail]
+    rw [hv, hrot, Fin.cons_self_tail]
+  have hiter : ∀ (m : ℕ) (v : Fin (n + 1) → α), a (v ∘ (finRotate (n + 1))^[m]) = f^[m] (a v) := by
+    intro m
+    induction m with
+    | zero => intro v; simp [Function.comp_id]
+    | succ m ih =>
+      intro v
+      rw [Function.iterate_succ', ← Function.comp_assoc, ih, h1, ← Function.iterate_succ_apply]
+  rw [finCycle_eq_finRotate_iterate]
+  exact hiter r.val w
+
+/-- Rotating an anticyclic function `a` on tuples by `finCycle r` multiplies it by
+`(-1) ^ r.val`. -/
+theorem apply_comp_finCycle_of_anticyclic {α β : Type*} [Monoid β] [HasDistribNeg β] {n : ℕ}
+    {a : (Fin (n + 1) → α) → β}
+    (hrot : ∀ (u : Fin n → α) (e : α), a (Fin.snoc u e) = -a (Fin.cons e u))
+    (r : Fin (n + 1)) (w : Fin (n + 1) → α) :
+    a (w ∘ finCycle r) = (-1 : β) ^ r.val * a w := by
+  simpa only [mul_left_iterate_apply] using
+    apply_comp_finCycle (f := ((-1 : β) * ·)) (fun u e ↦ by simpa using hrot u e) r w
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sending the first `r` indices to the second
+summand and the last `n - r` indices to the first summand, both in order. It moves an initial
+block of `r` indices to the end. -/
+def finSubSumEquiv {r n : ℕ} (h : r ≤ n) : Fin n ≃ Fin (n - r) ⊕ Fin r :=
+  (finCongr (Nat.add_sub_cancel' h).symm).trans (finSumFinEquiv.symm.trans (Equiv.sumComm _ _))
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `j < r` to `inr j`. -/
+@[simp]
+theorem finSubSumEquiv_symm_inr {r n : ℕ} (h : r ≤ n) (j : Fin r) :
+    (finSubSumEquiv h).symm (Sum.inr j) = Fin.castLE h j := by
+  ext
+  simp [finSubSumEquiv]
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `r + i` to `inl i`. -/
+@[simp]
+theorem coe_finSubSumEquiv_symm_inl {r n : ℕ} (h : r ≤ n) (i : Fin (n - r)) :
+    ((finSubSumEquiv h).symm (Sum.inl i) : ℕ) = r + i := by
+  simp [finSubSumEquiv]
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `j < r` to `inr j`. -/
+@[simp]
+theorem finSubSumEquiv_castLE {r n : ℕ} (h : r ≤ n) (j : Fin r) :
+    finSubSumEquiv h (Fin.castLE h j) = Sum.inr j :=
+  (finSubSumEquiv h).eq_symm_apply.1 (finSubSumEquiv_symm_inr h j).symm
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends an index `i ≥ r` to `inl (i - r)`. -/
+theorem finSubSumEquiv_apply_of_le {r n : ℕ} (h : r ≤ n) {i : Fin n} (hi : r ≤ i) :
+    finSubSumEquiv h i = Sum.inl ⟨i - r, by omega⟩ := by
+  rw [← Equiv.eq_symm_apply]
+  ext
+  simp only [coe_finSubSumEquiv_symm_inl]
+  omega
+
+/-- Reindexing equivalence splitting `Fin (n + 1) × Fin (n + 2)` into off-diagonal pairs
+`(m, k') ∈ Fin (n + 1) × Fin n` and the diagonal and superdiagonal copies of `Fin (n + 1)`. -/
+def homotopyIndexEquiv (n : ℕ) :
+    (Fin (n + 1) × Fin n) ⊕ (Fin (n + 1) ⊕ Fin (n + 1)) ≃ Fin (n + 1) × Fin (n + 2) where
+  toFun
+    | .inl (m, k') => if (m : ℕ) ≤ (k' : ℕ) then (k'.succ, m.castSucc) else (k'.castSucc, m.succ)
+    | .inr (.inl k) => (k, k.castSucc)
+    | .inr (.inr k) => (k, k.succ)
+  invFun x :=
+    if _ : (x.2 : ℕ) < (x.1 : ℕ) then .inl (⟨x.2, by omega⟩, ⟨x.1 - 1, by omega⟩)
+    else if _ : (x.2 : ℕ) = (x.1 : ℕ) then .inr (.inl x.1)
+    else if _ : (x.2 : ℕ) = (x.1 : ℕ) + 1 then .inr (.inr x.1)
+    else .inl (⟨x.2 - 1, by omega⟩, ⟨x.1, by omega⟩)
+  left_inv := by
+    rintro (⟨m, k'⟩ | k | k)
+    · by_cases hmk : (m : ℕ) ≤ (k' : ℕ)
+      · simp [hmk, show (m : ℕ) < (k' : ℕ) + 1 by omega]
+      · simp [hmk, show ¬(m : ℕ) + 1 < k' by omega, show ¬(m : ℕ) + 1 = k' by omega,
+          show ¬(m : ℕ) = k' by omega]
+    · simp
+    · simp [show ¬(k : ℕ) + 1 < k by omega]
+  right_inv := by
+    rintro ⟨k, i⟩; simp only; split_ifs with h1 h2 h3
+    · simp [show (i : ℕ) ≤ (k : ℕ) - 1 by omega, Fin.ext_iff]; omega
+    · ext <;> simp [h2]
+    · ext <;> simp [h3]
+    · simp [show ¬(i : ℕ) - 1 ≤ k by omega, Fin.ext_iff]; omega
+
+/-- Off-diagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inl (n : ℕ) (m : Fin (n + 1)) (k' : Fin n) :
+    homotopyIndexEquiv n (.inl (m, k')) =
+      if (m : ℕ) ≤ (k' : ℕ) then (k'.succ, m.castSucc) else (k'.castSucc, m.succ) := (rfl)
+/-- Diagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inr_inl (n : ℕ) (k : Fin (n + 1)) :
+    homotopyIndexEquiv n (.inr (.inl k)) = (k, k.castSucc) := (rfl)
+/-- Superdiagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inr_inr (n : ℕ) (k : Fin (n + 1)) :
+    homotopyIndexEquiv n (.inr (.inr k)) = (k, k.succ) := (rfl)
 
 end TauCeti
 

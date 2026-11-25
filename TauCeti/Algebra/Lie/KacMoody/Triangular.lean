@@ -37,7 +37,8 @@ the spanning triangular decomposition transport `engel_serreE_eq_top` from
 
 * `TauCeti.KacMoody.positiveSubalgebra`, `TauCeti.KacMoody.negativeSubalgebra`, and
   `TauCeti.KacMoody.cartanSubalgebra`: the Lie subalgebras `n⁺`, `n⁻`, and `𝔥` of
-  `TauCeti.KacMoody.PresentedLieAlgebra R`.
+  `TauCeti.KacMoody.PresentedLieAlgebra R`, together with the linear equivalence
+  `TauCeti.KacMoody.cartanEquiv : H ≃ₗ[K] cartanSubalgebra R` when `cartanElement R` is injective.
 * `TauCeti.KacMoody.chevalleyInvolution`: the involutive automorphism `x ↦ -x`, `eᵢ ↦ -fᵢ`,
   `fᵢ ↦ -eᵢ` of `TauCeti.KacMoody.PresentedLieAlgebra R`.
 * `TauCeti.KacMoody.triangularEquiv`: the direct-sum triangular linear equivalence
@@ -133,21 +134,51 @@ instance : IsLieAbelian (cartanSubalgebra R) where
     obtain ⟨x₂, rfl⟩ := (mem_cartanSubalgebra_iff R).1 hy₂
     exact Subtype.ext (by simp)
 
+section CartanEquiv
+
+variable {R} (hinj : Function.Injective (cartanElement R))
+
+/-- The linear equivalence between the realization `H` and `TauCeti.KacMoody.cartanSubalgebra R`
+induced by `TauCeti.KacMoody.cartanElement` whenever `cartanElement R` is injective (in particular
+for any generalized Cartan matrix via `TauCeti.KacMoody.cartanElement_injective`). -/
+noncomputable def cartanEquiv : H ≃ₗ[K] cartanSubalgebra R :=
+  (LinearEquiv.ofInjective (cartanElement R) hinj).trans
+    (LinearEquiv.ofEq _ _ (cartanSubalgebra_toSubmodule R).symm)
+
+/-- Coercing `TauCeti.KacMoody.cartanEquiv` to the ambient Lie algebra gives
+`TauCeti.KacMoody.cartanElement`. -/
+@[simp] theorem coe_cartanEquiv_apply (x : H) :
+    (cartanEquiv hinj x : PresentedLieAlgebra R) = cartanElement R x := by
+  rw [cartanEquiv, LinearEquiv.trans_apply]
+  exact (LinearEquiv.coe_ofEq_apply _ _).trans (LinearEquiv.ofInjective_apply (cartanElement R) x)
+
+/-- The inverse of `TauCeti.KacMoody.cartanEquiv` recovers `x` from `cartanElement R x`. -/
+@[simp] theorem cartanEquiv_symm_cartanElement (x : H) :
+    (cartanEquiv hinj).symm
+        ⟨cartanElement R x, cartanElement_mem_cartanSubalgebra R x⟩ = x :=
+  (cartanEquiv hinj).injective (Subtype.ext (by simp))
+
+/-- Applying `TauCeti.KacMoody.cartanElement` to `(cartanEquiv hinj).symm y` recovers
+`(y : PresentedLieAlgebra R)`. -/
+@[simp] theorem cartanElement_cartanEquiv_symm (y : cartanSubalgebra R) :
+    cartanElement R ((cartanEquiv hinj).symm y) = y := by
+  conv_rhs => rw [← (cartanEquiv hinj).apply_symm_apply y, coe_cartanEquiv_apply]
+
+end CartanEquiv
+
 /-- `TauCeti.KacMoody.serreHom` maps the positive part of Serre's presentation onto
 `TauCeti.KacMoody.positiveSubalgebra`. -/
 theorem map_serreHom_lieSpan_serreE [DecidableEq I] :
     (lieSpan K (Matrix.ToLieAlgebra K A) (Set.range (serreE K A))).map (serreHom R) =
-      positiveSubalgebra R := by
-  rw [positiveSubalgebra_def, LieSubalgebra.map_lieSpan, ← Set.range_comp]
-  congr 2; funext i; exact serreHom_serreE R i
+      positiveSubalgebra R :=
+  map_lieSpan_range_of_surjective (serreHom R) Function.surjective_id (serreHom_serreE R)
 
 /-- `TauCeti.KacMoody.serreHom` maps the negative part of Serre's presentation onto
 `TauCeti.KacMoody.negativeSubalgebra`. -/
 theorem map_serreHom_lieSpan_serreF [DecidableEq I] :
     (lieSpan K (Matrix.ToLieAlgebra K A) (Set.range (serreF K A))).map (serreHom R) =
-      negativeSubalgebra R := by
-  rw [negativeSubalgebra_def, LieSubalgebra.map_lieSpan, ← Set.range_comp]
-  congr 2; funext i; exact serreHom_serreF R i
+      negativeSubalgebra R :=
+  map_lieSpan_range_of_surjective (serreHom R) Function.surjective_id (serreHom_serreF R)
 
 /-! ## The Chevalley involution -/
 
@@ -470,7 +501,7 @@ private noncomputable def triangularLinearMap :
 
 private theorem triangularLinearMap_bijective : Function.Bijective (triangularLinearMap R) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun ⟨x, y, w⟩ h => ?_, fun z => ?_⟩
-  · obtain ⟨hx, hy, hw⟩ := eq_zero_of_add_add_eq_zero R x.2 y.2 w.2 h
+  · obtain ⟨hx, hy, hw⟩ := eq_zero_of_add_add_eq_zero R x.property y.property w.property h
     exact Prod.ext (Subtype.ext hx) (Prod.ext (Subtype.ext hy) (Subtype.ext hw))
   · have hz : z ∈ (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ⊔
         (positiveSubalgebra R).toSubmodule := by

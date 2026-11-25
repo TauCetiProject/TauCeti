@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.RunningMaximum
+public import TauCeti.Probability.Martingale.Local.UniformIntegrable
 public import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!
@@ -28,6 +29,16 @@ The times need not be
 stopping times or even measurable: only the sampled values must be almost everywhere strongly
 measurable. Continuity is required only at the terminal spot/time pair. No stochastic integral
 or martingale property is inferred from these moment and continuity assumptions.
+
+More generally, a strongly adapted local martingale bounded by `A (1 + S_(t ∧ T)^p)`
+for a geometric Brownian stock is a true martingale. Any real initial spot and exponent
+are allowed, with the same signed/zero real-power conventions as above. Neither path
+regularity of the local martingale, usual filtration conditions, nor deterministic Markov
+dependence are required. Apply this criterion to the discounted price stopped at maturity,
+absorbing the bounded deterministic discount factor into the growth constant. An Itô argument
+must first establish local martingality. Square integrability of measurable sampled values
+follows separately from `uniformIntegrable_polynomialGrowth_geometricBrownianMotion`
+with exponent `2` and a singleton index family.
 
 The maximal-moment input is
 `IsFilteredPreBrownianReal.lintegral_iSup_rpow_geometricBrownianMotion_lt_top`.
@@ -169,6 +180,33 @@ theorem tendsto_eLpNorm_polynomialGrowth_geometricBrownianMotion
         ⟨geometricBrownianMotion_pos hs μ σ W _ ω, hb n⟩
     exact hCt.tendsto.comp hp
   exact tendsto_Lp_finite_of_tendsto_ae hp hp_top hC
-    (hUI.memLp_of_ae_tendsto hlim) hUI.1 hlim
+    (hUI.memLp_of_ae_tendsto hlim) hUI.unifIntegrable hlim
+
+/-- A strongly adapted local martingale with a uniform polynomial bound in a geometric
+Brownian stock stopped at maturity is a true martingale. No path regularity of the local
+martingale is required. Any real initial spot is allowed, with the signed/zero `Real.rpow`
+conventions of `uniformIntegrable_polynomialGrowth_geometricBrownianMotion`. -/
+theorem martingale_of_locally_martingale_of_geometricBrownianMotion_bound
+    {X : ℝ≥0 → Ω → ℝ} {p : ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
+    (hX : StronglyAdapted ℱ X)
+    (hlocal : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P)
+    (hbound : ∀ᵐ ω ∂P, ∀ t,
+      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p)) :
+    Martingale X ℱ P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨τ, hτ, hM⟩ := hlocal
+  refine hX.martingale_of_uniformIntegrable_stoppedProcess hτ.toIsPreLocalizingSequence
+    hM le_rfl ENNReal.one_ne_top fun t ↦ ?_
+  refine hW.uniformIntegrable_polynomialGrowth_geometricBrownianMotion
+    (s := s) (μ := μ) (σ := σ) (A := A) (q := p) hcont le_rfl
+    ENNReal.one_ne_top (τ := fun n ω ↦ min (min (t : WithTop ℝ≥0) (τ n ω)).untopA T)
+    (fun n ↦ ((hM n).integrable t).aestronglyMeasurable)
+    (fun _ ↦ ae_of_all _ fun ω ↦ min_le_right _ _) fun n ↦ ?_
+  filter_upwards [hbound] with ω hω
+  rw [stoppedProcess_indicator_comm, ← Real.norm_eq_abs]
+  exact (norm_indicator_le_norm_self _ _).trans
+    (by simpa only [Real.norm_eq_abs, stoppedProcess] using hω _)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

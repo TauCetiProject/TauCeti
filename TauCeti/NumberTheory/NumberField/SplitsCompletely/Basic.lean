@@ -43,6 +43,8 @@ criteria connect complete splitting with the residue conditions used in prime-sp
   rational prime has that prime as its absolute norm.
 * `NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`: the relative
   orbit–stabilizer form of the splitting criterion.
+* `NumberField.ncard_primesOver_ringOfIntegers_rat`: every rational prime splits completely in
+  `ℚ`.
 
 ## Provenance
 
@@ -99,6 +101,17 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot {A : Type*} [CommRing 
   have : NumberField K := NumberField.of_tower ℚ L K
   rw [← IsGaloisGroup.card_eq_finrank Gal(L/K) K L,
     ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot _ _ Q]
+
+/-- Every rational prime splits completely in `ℚ`: there is exactly one prime of `𝓞 ℚ` above
+it. -/
+theorem ncard_primesOver_ringOfIntegers_rat (p : ℕ) [Fact p.Prime] :
+    ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).ncard = 1 := by
+  obtain ⟨Q, hQ⟩ : ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ.1
+  have := hQ.2
+  rw [← finrank_self ℚ]
+  exact (ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ ℚ _ Q).mpr (Subsingleton.elim _ _)
 
 end NumberField
 

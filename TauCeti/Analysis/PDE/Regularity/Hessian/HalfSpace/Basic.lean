@@ -176,10 +176,7 @@ private theorem eLpNorm_restrict_le_of_ae_eq_sub_comp_normalReflection
       D =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)] W := by
     filter_upwards [ae_restrict_of_ae hW, ae_restrict_mem hS] with x hx hxS
     -- `ρ` maps `H` off itself.
-    have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-      rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-      exact ((mem_normalHalfSpace a x).1 hxS).not_gt
-    rw [hx, indicator_of_mem hxS, indicator_of_notMem hρx]
+    rw [hx, indicator_of_mem hxS, indicator_of_notMem (normalReflection_notMem_normalHalfSpace hxS)]
     simp
   rw [eLpNorm_congr_ae heq]
   exact eLpNorm_mono_measure _ Measure.restrict_le_self
@@ -283,7 +280,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 /-- For `A` on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e`
 with `e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` that maps each half-space `{a / c < x.fst}`
 onto `{a < x.fst}`, for a fixed `c`. -/
-private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
+theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
     {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) :
     ∃ (e : WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E)) (c : ℝ),
@@ -293,21 +290,10 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
         ((normalHalfSpace (E := E) (a / c) : Opens (WithLp 2 (ℝ × E))) :
           Set (WithLp 2 (ℝ × E))) =
           e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-  -- the symmetric part of `A` has the same quadratic form
-  have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric := fun x y => by
-    simp [inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
-    ring
-  have hSA (ξ : WithLp 2 (ℝ × E)) :
-      ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) ξ, ξ⟫_ℝ = ⟪A ξ, ξ⟫_ℝ := by
-    simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-      real_inner_comm (A ξ) ξ]
-    ring
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => by rw [RCLike.re_to_real, hSA]; exact hA ξ)
+    A.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add hlam
+      (fun ξ => by rw [RCLike.re_to_real]; exact hA ξ) (ν := ν)
   -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
   rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
@@ -318,7 +304,8 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
       hcν, inner_smul_right, hinner]
   refine ⟨e, c, hee, he, fun a => ?_⟩
   ext y
-  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, hfst, div_lt_iff₀' hc]
+  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, ← WithLp.ofLp_fst, hfst,
+    div_lt_iff₀' hc]
 
 /-- **The Calderón–Zygmund estimate on a half-space, for constant coefficients.** Let
 `1 < p < ∞`. There is a constant `C` such that for every operator `A` on `ℝ × E` with
