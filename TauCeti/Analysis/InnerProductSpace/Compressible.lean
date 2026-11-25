@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Module.FiniteSpan
 import TauCeti.Analysis.Normed.Module.Normalize
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Prod
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import TauCeti.Topology.Algebra.Module.Equiv.Fin
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 

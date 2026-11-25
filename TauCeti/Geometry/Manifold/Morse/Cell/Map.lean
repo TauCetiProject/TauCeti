@@ -9,7 +9,7 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.AlgebraicTopology.Disk.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import TauCeti.Topology.Order.Sublevel
 
 /-!

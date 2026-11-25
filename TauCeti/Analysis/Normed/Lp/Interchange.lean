@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.lpSpace
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Interchange between sequence `lp` and finite `PiLp`
