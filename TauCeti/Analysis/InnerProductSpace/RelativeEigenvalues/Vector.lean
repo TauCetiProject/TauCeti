@@ -35,6 +35,8 @@ not of type (1,1) still has a meaning; the results take sesquilinear forms.
 * `TauCeti.IsRelEigenvalueVector.add_smul_self`, `TauCeti.IsRelEigenvalueVector.smul_right` and
   `TauCeti.IsRelEigenvalueVector.smul_left`: the eigenvalue vectors of `a + t·h`, of `s·a`, and
   of `a` relative to `s·h`.
+* `LinearMap.IsSymm.isRelEigenvalueVector_relEigenvalues`: relative to an inner product, `λ[a]` is
+  an eigenvalue vector of `a`.
 * `TauCeti.exists_isRelEigenvalueVector`: for `h` positive definite Hermitian and `a` Hermitian,
   there is a decreasingly sorted eigenvalue vector.
 * `TauCeti.IsRelEigenvalueVector.eq_of_antitone`: it is unique.
@@ -143,6 +145,21 @@ theorem IsRelEigenvalueVector.smul_left {μ : Fin (finrank 𝕜 E) → ℝ}
       simp [(hb i i).2, ← mul_assoc, ← hc]
     · simp [(hb i j).2, hij]
 
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- In a finite-dimensional inner product space, the relative eigenvalue vector `λ[a]` of a
+Hermitian form `a` is an eigenvalue vector of `a` relative to the inner product, through the
+basis `LinearMap.IsSymm.relEigenvectorBasis`. -/
+theorem _root_.LinearMap.IsSymm.isRelEigenvalueVector_relEigenvalues
+    {a : F →ₗ⋆[𝕜] F →ₗ[𝕜] 𝕜} (ha : a.IsSymm) :
+    IsRelEigenvalueVector (fun u v ↦ inner 𝕜 u v) (a · ·) (ha.relEigenvalues rfl) :=
+  ⟨ha.relEigenvectorBasis rfl, fun i j ↦
+    ⟨(ha.relEigenvectorBasis rfl).inner_eq_ite i j, ha.apply_relEigenvectorBasis rfl i j⟩⟩
+
+end InnerProductSpace
+
 /-- **Simultaneous diagonalization.** For a positive definite Hermitian `h` and a Hermitian `a`,
 there is, in finite dimension, an `h`-orthonormal basis diagonalizing `a` with decreasing diagonal
 entries. When `E` is infinite-dimensional, `finrank 𝕜 E = 0` and the statement is vacuous: the
@@ -152,10 +169,9 @@ theorem exists_isRelEigenvalueVector (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 
   by_cases hE : FiniteDimensional 𝕜 E
   · let : NormedAddCommGroup E := (hh.innerProductCore hpos).toNormedAddCommGroup
     let : InnerProductSpace 𝕜 E := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
-    refine ⟨ha.relEigenvalues rfl, ha.relEigenvalues_antitone rfl,
-      ha.relEigenvectorBasis rfl, fun i j ↦ ⟨?_, ha.apply_relEigenvectorBasis rfl i j⟩⟩
-    exact (hh.inner_ofCore_innerProductCore hpos _ _).symm.trans
-      ((ha.relEigenvectorBasis rfl).inner_eq_ite i j)
+    have hin : (fun u v ↦ inner 𝕜 u v) = (h · ·) :=
+      funext₂ (hh.inner_ofCore_innerProductCore hpos)
+    exact ⟨_, ha.relEigenvalues_antitone rfl, hin ▸ ha.isRelEigenvalueVector_relEigenvalues⟩
   · have : IsEmpty (Fin (finrank 𝕜 E)) :=
       Module.isEmpty_of_card_eq_finrank_of_not_finite (Fintype.card_fin _) hE
     exact ⟨isEmptyElim, fun i ↦ isEmptyElim i, isEmptyElim, fun i ↦ isEmptyElim i⟩
@@ -218,10 +234,10 @@ theorem IsRelEigenvalueVector.eq_of_antitone {μ ν : Fin (finrank 𝕜 E) → �
     obtain ⟨b, hb⟩ := hμ
     have hon : Orthonormal 𝕜 b := orthonormal_iff_ite.2 fun i j ↦
       (hh.inner_ofCore_innerProductCore hpos _ _).trans (hb i j).1
-    refine ha.relEigenvalues_eq_of_orthonormalBasis rfl
-      ((basisOfLinearIndependentOfCardEqFinrank' b hon.linearIndependent
-        (Fintype.card_fin _)).toOrthonormalBasis (by simpa using hon)) hμa fun i j ↦ ?_
-    simpa using (hb i j).2
+    obtain ⟨w, hw⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (s := Set.univ)
+      (Fintype.card_fin _).symm (hon.comp _ Subtype.val_injective)
+    obtain rfl : ⇑w = b := funext fun i ↦ hw i (Set.mem_univ i)
+    exact ha.relEigenvalues_eq_of_orthonormalBasis rfl w hμa fun i j ↦ (hb i j).2
   exact (key hμ hμa).symm.trans (key hν hνa)
 
 /-- **Eigenvalue vectors are unique up to reordering.** Any two eigenvalue vectors of `a`

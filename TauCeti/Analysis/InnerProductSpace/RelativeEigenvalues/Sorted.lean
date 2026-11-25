@@ -31,7 +31,7 @@ positive definite Hermitian `h` and a Hermitian `a` on a finite-dimensional spac
 * `TauCeti.relEigenvalueVector_self`, `TauCeti.relEigenvalueVector_zero`,
   `TauCeti.relEigenvalueVector_add_smul_self`, `TauCeti.relEigenvalueVector_smul_left`:
   `λ_h[h] = e`, `λ_h[0] = 0`, `λ_h[a + t·h] = λ_h[a] + t·e` and `λ_{s·h}[a] = s⁻¹·λ_h[a]` for
-  `s > 0`.
+  `s > 0`; the last two need no hypothesis on `h` beyond sesquilinearity, and `λ_h[0] = 0` none.
 * `TauCeti.sum_relEigenvalueVector_eq_sum_re_apply`: `Σ λ_i = Σ_j Re a(b_j, b_j)` for any
   `h`-orthonormal family `b`, the trace of `a` relative to `h`.
 -/
@@ -74,6 +74,15 @@ theorem isRelEigenvalueVector_relEigenvalueVector_of_exists {h a : E → E → �
   simp only [relEigenvalueVector_def, hμ, ↓reduceDIte]
   exact hμ.choose_spec.2
 
+/-- **`λ_h[0] = 0`** for any form `h`. -/
+theorem relEigenvalueVector_zero (h : E → E → 𝕜) : relEigenvalueVector h (fun _ _ ↦ 0) = 0 := by
+  rw [relEigenvalueVector_def]
+  split_ifs with hμ
+  · obtain ⟨b, hb⟩ := (isRelEigenvalueVector_def _ _ _).1 hμ.choose_spec.2
+    funext i
+    simpa using ((hb i i).2).symm
+  · rfl
+
 variable {h a : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
 
 /-- **The sorted eigenvalue vector is the antitone eigenvalue vector.** -/
@@ -97,13 +106,6 @@ theorem relEigenvalueVector_self (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < 
   rw [hμ.relEigenvalueVector_eq hμa, ← isRelEigenvalueVector_self_iff hh hpos]
   exact hμ
 
-/-- **`λ_h[0] = 0`** for a positive definite Hermitian form `h`. -/
-theorem relEigenvalueVector_zero (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) :
-    relEigenvalueVector (h · ·) ((0 : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) · ·) = 0 :=
-  IsRelEigenvalueVector.relEigenvalueVector_eq
-    (by simpa using (isRelEigenvalueVector_smul_self_iff hh hpos 0 (μ := 0)).2 Pi.zero_def)
-    antitone_const
-
 /-- **`λ_h[a + t·h] = λ_h[a] + t·e`** for a positive definite Hermitian `h` and a Hermitian `a`. -/
 theorem relEigenvalueVector_add_smul_self (hh : h.IsSymm)
     (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (ha : a.IsSymm) (t : ℝ) :
@@ -115,17 +117,26 @@ theorem relEigenvalueVector_add_smul_self (hh : h.IsSymm)
     (by simpa [RCLike.real_smul_eq_coe_mul] using hμ.add_smul_self t)
     (hμa.add_const t)
 
-/-- **`λ_{s·h}[a] = s⁻¹·λ_h[a]`** for `s > 0`, a positive definite Hermitian `h` and a Hermitian
-`a`. -/
-theorem relEigenvalueVector_smul_left (hh : h.IsSymm)
-    (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (ha : a.IsSymm) {s : ℝ} (hs : 0 < s) :
+/-- **`λ_{s·h}[a] = s⁻¹·λ_h[a]`** for `s > 0`. -/
+theorem relEigenvalueVector_smul_left {s : ℝ} (hs : 0 < s) :
     relEigenvalueVector (((s : 𝕜) • h) · ·) (a · ·) =
       s⁻¹ • relEigenvalueVector (h · ·) (a · ·) := by
-  obtain ⟨μ, hμa, hμ⟩ := exists_isRelEigenvalueVector hh hpos ha
-  rw [hμ.relEigenvalueVector_eq hμa]
-  exact IsRelEigenvalueVector.relEigenvalueVector_eq
-    (by simpa [RCLike.real_smul_eq_coe_mul] using hμ.smul_left hs)
-    fun i j hij ↦ smul_le_smul_of_nonneg_left (hμa hij) (inv_nonneg.2 hs.le)
+  by_cases hμ : ∃ μ, Antitone μ ∧ IsRelEigenvalueVector (h · ·) (a · ·) μ
+  · exact IsRelEigenvalueVector.relEigenvalueVector_eq
+      (by simpa [RCLike.real_smul_eq_coe_mul] using
+        (isRelEigenvalueVector_relEigenvalueVector_of_exists hμ).smul_left hs)
+      fun i j hij ↦ smul_le_smul_of_nonneg_left (antitone_relEigenvalueVector _ _ hij)
+        (inv_nonneg.2 hs.le)
+  · -- rescaling by `s⁻¹`, an eigenvalue vector relative to `s·h` would give one relative to `h`
+    have hν : ¬∃ ν, Antitone ν ∧ IsRelEigenvalueVector (((s : 𝕜) • h) · ·) (a · ·) ν := by
+      rintro ⟨ν, hνa, hν⟩
+      have hh : (fun u v ↦ ((s⁻¹ : ℝ) : 𝕜) * ((s : 𝕜) • h) u v) = (h · ·) := by
+        ext u v
+        simp only [LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, ← RCLike.ofReal_mul,
+          inv_mul_cancel₀ hs.ne', RCLike.ofReal_one, one_mul]
+      refine hμ ⟨s • ν, fun i j hij ↦ smul_le_smul_of_nonneg_left (hνa hij) hs.le, ?_⟩
+      simpa only [hh, inv_inv] using hν.smul_left (inv_pos.2 hs)
+    simp only [relEigenvalueVector_def, hν, hμ, ↓reduceDIte, smul_zero]
 
 /-- **The sum of the relative eigenvalues is the relative trace.** For a positive definite
 Hermitian `h`, a Hermitian `a` and any family `b` that is orthonormal for `h`, `Σ_i λ_i[a]` is
@@ -141,17 +152,15 @@ theorem sum_relEigenvalueVector_eq_sum_re_apply (hh : h.IsSymm)
     simp
   let : NormedAddCommGroup E := (hh.innerProductCore hpos).toNormedAddCommGroup
   let : InnerProductSpace 𝕜 E := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
+  have hin : (fun u v ↦ inner 𝕜 u v) = (h · ·) := funext₂ (hh.inner_ofCore_innerProductCore hpos)
   have hon : Orthonormal 𝕜 b := orthonormal_iff_ite.2 fun i j ↦
     (hh.inner_ofCore_innerProductCore hpos _ _).trans (hb i j)
-  set w := (basisOfLinearIndependentOfCardEqFinrank' b hon.linearIndependent
-    (Fintype.card_fin _)).toOrthonormalBasis (by simpa using hon)
-  have hw (j : Fin (finrank 𝕜 E)) : w j = b j := by simp [w]
+  obtain ⟨w, hw⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (s := Set.univ)
+    (Fintype.card_fin _).symm (hon.comp _ Subtype.val_injective)
+  obtain rfl : ⇑w = b := funext fun i ↦ hw i (Set.mem_univ i)
   have hlam : IsRelEigenvalueVector (h · ·) (a · ·) (ha.relEigenvalues rfl) :=
-    (isRelEigenvalueVector_def _ _ _).2 ⟨ha.relEigenvectorBasis rfl, fun i j ↦
-      ⟨(hh.inner_ofCore_innerProductCore hpos _ _).symm.trans
-        ((ha.relEigenvectorBasis rfl).inner_eq_ite i j), ha.apply_relEigenvectorBasis rfl i j⟩⟩
+    hin ▸ ha.isRelEigenvalueVector_relEigenvalues
   rw [hlam.relEigenvalueVector_eq (ha.relEigenvalues_antitone rfl),
     ha.sum_relEigenvalues_eq_sum_re_apply rfl w]
-  simp only [hw]
 
 end TauCeti
