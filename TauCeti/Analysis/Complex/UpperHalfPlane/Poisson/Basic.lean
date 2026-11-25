@@ -285,7 +285,7 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
 
 /-- **The far part of the Poisson kernel.** If `|Re z - x| ≤ δ / 2` and `|s - x| > δ`, then
 `P(z, s) ≤ K Im z / (1 + s ^ 2)` with `K = 4 (2 + (1 + 2 x ^ 2) / δ ^ 2) / π`. -/
-theorem upperHalfPlanePoissonKernel_le_of_lt_abs_sub {z : ℂ} {x s δ : ℝ} (hz : 0 < z.im)
+theorem upperHalfPlanePoissonKernel_le_of_lt_abs_sub {z : ℂ} {x s δ : ℝ} (hz : 0 ≤ z.im)
     (hδ : 0 < δ) (hzx : |z.re - x| ≤ δ / 2) (hs : δ < |s - x|) :
     upperHalfPlanePoissonKernel z s ≤
       z.im * (4 * (2 + (1 + 2 * x ^ 2) / δ ^ 2) / π) * (1 + s ^ 2)⁻¹ := by
@@ -308,7 +308,11 @@ theorem upperHalfPlanePoissonKernel_le_of_lt_abs_sub {z : ℂ} {x s δ : ℝ} (h
       _ ≤ M * (4 * (s - z.re) ^ 2) := by gcongr; linarith
       _ ≤ 4 * M * ((s - z.re) ^ 2 + z.im ^ 2) := by nlinarith [sq_nonneg z.im]
   have hM0 : 0 < M := by positivity
-  rw [upperHalfPlanePoissonKernel_eq, Complex.normSq_ofReal_sub, div_le_iff₀ (by positivity)]
+  have hden : 0 < (s - z.re) ^ 2 + z.im ^ 2 := by
+    have : 0 < (s - z.re) ^ 2 := by rw [← sq_abs]; exact pow_pos (by linarith) 2
+    linarith [sq_nonneg z.im]
+  rw [upperHalfPlanePoissonKernel_eq, Complex.normSq_ofReal_sub,
+    div_le_iff₀ (mul_pos Real.pi_pos hden)]
   calc z.im = z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * (1 + s ^ 2) / (4 * M)) := by
         field_simp
     _ ≤ z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * ((s - z.re) ^ 2 + z.im ^ 2)) := by
@@ -657,7 +661,7 @@ theorem upperHalfPlanePoissonLIntegral_withDensity {f : ℝ → ℝ≥0∞} (hf 
       ∫⁻ s, f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) := by
   rw [upperHalfPlanePoissonLIntegral_def, lintegral_withDensity_eq_lintegral_mul₀ hf
     (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
-  rfl
+  simp only [Pi.mul_apply]
 
 /-- On the upper half-plane, the extended Poisson integral of `ν` is infinite exactly when `ν` is
 not Poisson-finite. -/

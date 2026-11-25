@@ -131,7 +131,9 @@ theorem tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun_of_tendsto 
     exact ⟨u, hu, fun r hr => hsub hr⟩
   -- The far part tends to `0`; `K` is the constant of
   -- `TauCeti.upperHalfPlanePoissonKernel_le_of_lt_abs_sub`.
-  set K : ℝ := 4 * (2 + (1 + 2 * x ^ 2) / δ ^ 2) / π
+  obtain ⟨K, hK⟩ : ∃ K : ℝ, ∀ z : ℂ, 0 ≤ z.im → |z.re - x| ≤ δ / 2 → ∀ s, δ < |s - x| →
+      upperHalfPlanePoissonKernel z s ≤ z.im * K * (1 + s ^ 2)⁻¹ :=
+    ⟨_, fun _ hz hzx _ hs => upperHalfPlanePoissonKernel_le_of_lt_abs_sub hz hδ hzx hs⟩
   have hfar : Tendsto (fun z : ℂ => ENNReal.ofReal (z.im * K) *
       ∫⁻ s, ‖h s - h x‖ₑ ∂upperHalfPlanePoissonMeasure) (nontangentialFilter α x) (𝓝 0) := by
     have him : Tendsto (fun z : ℂ => z.im * K) (nontangentialFilter α x) (𝓝 0) := by
@@ -155,8 +157,7 @@ theorem tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun_of_tendsto 
     (mul_le_mul_right (maximalFunction_indicator_closedBall_le hδ hδc) C).trans_eq
       (ENNReal.mul_div_cancel hC0 ENNReal.ofReal_ne_top)
   rw [eDist_eq_eNorm_sub]
-  calc _ ≤ _ := enorm_upperHalfPlanePoissonIntegralFun_sub_le hh hz'
-        fun s hs => upperHalfPlanePoissonKernel_le_of_lt_abs_sub hz0 hδ hzx hs
+  calc _ ≤ _ := enorm_upperHalfPlanePoissonIntegralFun_sub_le hh hz' (hK z hz0.le hzx)
     _ < ε' / 2 + ε' / 2 := ENNReal.add_lt_add_of_le_of_lt (ne_top_of_le_ne_top
           (ENNReal.div_ne_top ENNReal.coe_ne_top two_ne_zero) hnear) hnear hzfar
     _ = ε' := ENNReal.add_halves _
