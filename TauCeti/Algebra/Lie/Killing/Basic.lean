@@ -42,6 +42,9 @@ its Killing form is zero, and a zero form is nondegenerate only on the zero modu
 * `LieIdeal.forall_killingForm_neg_iff`: on a Lie ideal of a finite-dimensional Lie algebra over
   an ordered field, the Killing form of the ambient algebra is negative definite exactly when the
   ideal's own Killing form is.
+* `LieEquiv.forall_killingForm_map_neg_iff`: an equivalence of Lie algebras over an ordered field
+  carries a Lie ideal on which the Killing form is negative definite to one on which the Killing
+  form of the target is negative definite, and conversely.
 
 ## References
 
@@ -156,3 +159,18 @@ theorem forall_killingForm_neg_iff {K L : Type*} [Field K] [LinearOrder K] [LieR
     fun h x hx hx₀ ↦ h ⟨x, hx⟩ (by simpa using hx₀)⟩
 
 end LieIdeal
+
+namespace LieEquiv
+
+open LieAlgebra LieModule
+
+/-- An equivalence of Lie algebras over an ordered field preserves negative definiteness of the
+Killing form on Lie ideals: the Killing form of `L'` is negative definite on the image of `I`
+exactly when the Killing form of `L` is negative definite on `I`. -/
+theorem forall_killingForm_map_neg_iff {K L L' : Type*} [Field K] [LinearOrder K] [LieRing L]
+    [LieAlgebra K L] [LieRing L'] [LieAlgebra K L'] (e : L ≃ₗ⁅K⁆ L') (I : LieIdeal K L) :
+    (∀ y ∈ I.map e.toLieHom, y ≠ 0 → killingForm K L' y y < 0) ↔
+      ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0 :=
+  e.surjective.forall.trans <| by simp [LieIdeal.mem_map_equiv]
+
+end LieEquiv

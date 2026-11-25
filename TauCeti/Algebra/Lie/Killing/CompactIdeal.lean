@@ -195,11 +195,6 @@ private theorem map_sSup_isAtom (e : L ≃ₗ⁅K⁆ L') {P : LieIdeal K L → P
   rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq, OrderIso.isAtom_iff, ← hPQ,
     ← LieIdeal.orderIsoMapComap_apply, OrderIso.apply_symm_apply]
 
-private theorem forall_killingForm_map_neg_iff (e : L ≃ₗ⁅K⁆ L') (I : LieIdeal K L) :
-    (∀ y ∈ I.map e.toLieHom, y ≠ 0 → killingForm K L' y y < 0) ↔
-      ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0 :=
-  e.surjective.forall.trans <| by simp [LieIdeal.mem_map_equiv]
-
 /-- An equivalence of Lie algebras carries the compact ideal to the compact ideal. -/
 @[simp]
 theorem map_compactIdeal (e : L ≃ₗ⁅K⁆ L') :
