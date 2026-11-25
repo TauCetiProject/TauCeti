@@ -37,10 +37,10 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 (`Complex.I_smul_smul_I_smul`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
-(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The non-instance
-`RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
-for use in constructions on real modules.
+linear (`LinearMap.map_smul_of_map_I_smul`, `LinearMap.complexOfMapISmul`), and one that
+anticommutes with it is conjugate-linear (`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The
+non-instance `RestrictScalars.realModule` normalizes the restricted real module at the
+additive-group parent for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -266,16 +266,21 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarT
 
 namespace LinearMap
 
+/-- A real-linear map between complex modules that commutes with multiplication by `I` is
+complex linear: `u (z • v) = z • u v`. -/
+theorem map_smul_of_map_I_smul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v)
+    (z : ℂ) (v : V) : u (z • v) = z • u v := by
+  -- Split `z • v` into real multiples of `v` and `I • v`.
+  rw [← Complex.re_smul_add_im_smul z v, map_add, map_smul, map_smul, h,
+    Complex.re_smul_add_im_smul]
+
 /-- A real-linear map between complex modules that commutes with multiplication by `I`, as a
 complex-linear map. -/
 def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     V →ₗ[ℂ] W where
   toFun := u
   map_add' := u.map_add
-  map_smul' c v := by
-    -- Split `c • v` into real multiples of `v` and `I • v`.
-    rw [← Complex.re_smul_add_im_smul c v, map_add, map_smul, map_smul, h, RingHom.id_apply,
-      Complex.re_smul_add_im_smul]
+  map_smul' := u.map_smul_of_map_I_smul h
 
 @[simp]
 theorem coe_complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :

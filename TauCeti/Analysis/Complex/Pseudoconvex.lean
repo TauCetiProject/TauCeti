@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.MetricSpace.ContinuousRadius
-public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.Complex.LeviForm.Basic
 
 /-!
 # Strict plurisubharmonicity, strong `q`-pseudoconvexity and the Morse index

@@ -293,11 +293,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   -- On `S_T` the family is the pair-of-pants datum with the fixed structure of neck length `T`.
-  have hKp (v : ℂ) : ContDiffOn ℝ 3
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
+  have hKp := contDiffOn_uncurry_pairOfPantsPerturbation hH hHs
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (J := fun z x ↦ cappedAlmostComplex h₀ J hJ 1 T (equivRealProdCLM.symm z) x)
     (isOpen_thricePuncturedSphereReal.prod isOpen_univ) (hKp 1) (hKp I)
@@ -581,11 +577,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedPert
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
-  have hP (v : ℂ) : ContDiffOn ℝ 3
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
+  have hP := contDiffOn_uncurry_pairOfPantsPerturbation hH hHs
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (hW.inter (isOpen_thricePuncturedSphereReal.prod isOpen_univ))
     ((hP 1).mono inter_subset_right) ((hP I).mono inter_subset_right) (hJ.mono inter_subset_left)

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.F
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Graph
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Gromov's structure of the Floer equation is a smooth almost complex structure

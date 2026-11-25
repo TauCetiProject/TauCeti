@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -36,6 +37,8 @@ Only the reconstruction needs `F` to be finite-dimensional.
   `TauCeti.WeakDerivStep.norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq`: test-function
   representative and squared `L²` norm formulas for scalar-mode fields.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
+* `TauCeti.WeakDerivStep.eq_zero_of_forall_inner_compLpL_prev_eq_zero`: for `T` with dense range,
+  the fields `T ∘ u` of the graph space over `ι` are dense in `L²`.
 * `smulRightComplexL`, `prev_smulRightComplexL`, `weakFDeriv_smulRightComplexL_ae`:
   rank-one reconstruction of complex scalar graphs in an arbitrary complex normed target.
 * `coordinatesL`: the native scalar projections, bundled into one continuous linear map.
@@ -199,6 +202,33 @@ theorem sum_smulRightW1pL_toW1pL [FiniteDimensional ℝ F] {ι : Type*} [Fintype
   exact (eq_sum_basis_compLpL b (prev _ u)).symm
 
 end CoordinateFields
+
+section Density
+
+variable {E F D : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup D] [NormedSpace ℝ D] {mu : Measure E} [mu.IsAddHaarMeasure]
+
+/-- **The fields `T ∘ u` are dense in `L²(E, F)`.** Let `T : D →L[ℝ] F` have dense range, such as
+`ι` itself when `D` is a dense domain in `F`. A field `h ∈ L²(E, F)` orthogonal to `T ∘ u` for every
+`u` in the graph space `L²(E, D) ∩ W^{1,2}(E, F)` over `ι : D →L[ℝ] F` vanishes. -/
+theorem eq_zero_of_forall_inner_compLpL_prev_eq_zero {ι T : D →L[ℝ] F} (hT : DenseRange T)
+    {h : Lp F 2 (mu.restrict (⊤ : Opens E))}
+    (hh : ∀ u : WeakDerivStep mu ⊤ 2 (ι.compLpL 2 (mu.restrict (⊤ : Opens E))),
+      ⟪T.compLpL 2 (mu.restrict (⊤ : Opens E)) (prev _ u), h⟫_ℝ = 0) :
+    h = 0 := by
+  -- Pair `h` with the fields `x ↦ φ x • T a` for test functions `φ` and vectors `a`.
+  refine Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero fun φ ↦
+    hT.eq_zero_of_inner_right ℝ fun a ↦ ?_
+  let u := smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ mu ⊤ 2 φ)
+  rw [← integral_inner (φ.integrable_smul_of_memLp (Lp.memLp h)), ← hh u, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq (p := 2) ι a φ,
+    T.coeFn_compLpL (prev _ u)] with x hx hTx
+  rw [hTx, hx, map_smul, inner_smul_left, inner_smul_right, conj_trivial]
+
+end Density
 
 section Coordinates
 

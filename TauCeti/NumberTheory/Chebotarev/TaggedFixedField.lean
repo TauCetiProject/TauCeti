@@ -69,7 +69,7 @@ theorem fixedField_zpowers_isCyclotomicExtension
   rw [Subgroup.map_inf _ _ _ e.injective, MonoidHom.map_zpowers,
     Subgroup.map_comap_eq_self_of_surjective e.surjective, Subgroup.map_bot,
     MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
-  exact Subgroup.zpowers_inf_top_prod_bot_eq_bot_of_orderOf_dvd σ τ hστ
+  exact Subgroup.zpowers_inf_top_prod_bot_eq_bot_iff.mpr hστ
 
 /-- **The automorphism group of `M` over the tagged fixed field has order `orderOf τ`.** Under the
 same divisibility, the cyclic group cut out by the tag has order `orderOf τ`.

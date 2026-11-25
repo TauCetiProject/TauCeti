@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass
+public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Puncture
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
 

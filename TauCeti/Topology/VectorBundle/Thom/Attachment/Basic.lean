@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Topology.VectorBundle.Thom.Attachment.Single
 import Mathlib.Logic.Equiv.Fin.Basic
 import TauCeti.AlgebraicTopology.Cohomology.Triple
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Attaching finite families of disc bundles and Thom-pair decompositions

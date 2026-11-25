@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -50,8 +50,9 @@ The symbol at the spectral parameter `λ` is `a(x, ξ, λ⁻¹)`. This is the cl
 * `TauCeti.WeakParameterSymbol.toSymbol`, `TauCeti.WeakParameterSymbol.iteratedDerivSymbol`: the
   value at `r ∈ R` is a symbol of order `m`, and its `j`-th derivative in `r` one of order
   `m + d j`, both `ℂ`-linear in the weakly parameter-dependent symbol;
-  `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` says that the seminorms of
-  the latter are bounded uniformly in `r`.
+  `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` and
+  `TauCeti.WeakParameterSymbol.exists_bound_iteratedDerivSymbol` say that the seminorms and the
+  estimates on compact sets of the latter are bounded uniformly in `r`.
 * `TauCeti.WeakParameterSymbol.inclusion`: the class grows with `m` and with `d`, and it is a
   complex vector space.
 * `TauCeti.WeakParameterSymbol.ofSymbol`: a symbol independent of the parameter is weakly
@@ -158,6 +159,11 @@ theorem contDiffAt_coefficient (a : WeakParameterSymbol n R V W d m) (p) {r : �
 theorem differentiableOn_coefficient (a : WeakParameterSymbol n R V W d m) (p) :
     DifferentiableOn ℂ (a.coefficient p) R :=
   (a.contDiffOn_coefficient p).differentiableOn (by simp)
+
+/-- At every parameter `r ∈ R`, the coefficient is smooth in the point `(x, ξ)`. -/
+theorem contDiff_coefficient_apply (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    ContDiff ℝ ∞ fun p ↦ a.coefficient p r := by
+  simpa using a.contDiff_iteratedDeriv 0 r hr
 
 section Module
 
@@ -267,6 +273,12 @@ instance : Module ℂ (WeakParameterSymbol n R V W d m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → WeakParameterSymbol n R V W d m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ :
+    WeakParameterSymbol n R V W d m →+ _) a s
+
 end Module
 
 /-! ### Values and parameter derivatives as ordinary symbols -/
@@ -315,7 +327,7 @@ theorem iteratedDerivSymbol_sub (a b : WeakParameterSymbol n R V W d m) (j : ℕ
 /-- The value at `r ∈ R`, a symbol of order `m`. -/
 def toSymbol (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) : Symbol n V W m where
   coefficient p := a.coefficient p r
-  contDiff_coefficient := by simpa using a.contDiff_iteratedDeriv 0 r hr
+  contDiff_coefficient := a.contDiff_coefficient_apply hr
   exists_bound K hK α β := (a.exists_bound K hK 0 α β).imp fun _ hC =>
     ⟨hC.1, fun x hx ξ => by simpa using hC.2 x hx ξ r hr⟩
 
@@ -346,6 +358,19 @@ theorem toSymbol_sub (a b : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r �
     (a - b).toSymbol hr = a.toSymbol hr - b.toSymbol hr := by
   rw [sub_eq_add_neg, toSymbol_add, toSymbol_neg, ← sub_eq_add_neg]
 
+@[simp]
+theorem iteratedDerivSymbol_sum {ι : Type*} (s : Finset ι)
+    (a : ι → WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (∑ i ∈ s, a i).iteratedDerivSymbol j hr = ∑ i ∈ s, (a i).iteratedDerivSymbol j hr :=
+  map_sum (⟨⟨fun a ↦ a.iteratedDerivSymbol j hr, iteratedDerivSymbol_zero j hr⟩,
+    fun a b ↦ iteratedDerivSymbol_add a b j hr⟩ : WeakParameterSymbol n R V W d m →+ _) a s
+
+@[simp]
+theorem toSymbol_sum {ι : Type*} (s : Finset ι) (a : ι → WeakParameterSymbol n R V W d m)
+    {r : ℂ} (hr : r ∈ R) : (∑ i ∈ s, a i).toSymbol hr = ∑ i ∈ s, (a i).toSymbol hr :=
+  map_sum (⟨⟨fun a ↦ a.toSymbol hr, toSymbol_zero hr⟩, fun a b ↦ toSymbol_add a b hr⟩ :
+    WeakParameterSymbol n R V W d m →+ _) a s
+
 /-- **Uniform estimates.** Every seminorm of the `j`-th parameter derivative is bounded uniformly
 in the parameter `r ∈ R`. -/
 theorem bddAbove_seminorm_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d m) (j : ℕ)
@@ -355,6 +380,18 @@ theorem bddAbove_seminorm_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d
   refine ⟨C, ?_⟩
   rintro _ ⟨r, rfl⟩
   exact Symbol.seminorm_le_bound K α β _ hC fun x hx ξ => hCb x hx ξ r r.property
+
+/-- **Uniform estimates on compact sets.** The `j`-th parameter derivatives
+`∂_r^j a(·, ·, r)`, `r ∈ R`, form a family of symbols of order `m + d j` whose estimates on a
+compact set `K` of positions hold with constants independent of `r`. -/
+theorem exists_bound_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d m) (j : ℕ)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ r : R, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (a.iteratedDerivSymbol j r.property).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m + d * j - β.length) / 2) :=
+  (a.exists_bound K hK j α β).imp fun _ hC => ⟨hC.1, fun r x hx ξ => by
+    simpa only [← funext (coefficient_iteratedDerivSymbol a j r.property)] using
+      hC.2 x hx ξ r r.property⟩
 
 /-- **Uniform estimates for the values.** Every seminorm of the value at `r` is bounded uniformly
 in the parameter `r ∈ R`. -/
@@ -626,6 +663,12 @@ def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W
 theorem coefficient_comp (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) (p : CoordinateSpace n × CoordinateSpace n) (r : ℂ) :
     (b.comp a).coefficient p r = (b.coefficient p r).comp (a.coefficient p r) := (rfl)
+
+/-- The value of a composition at a parameter is the composition of the values. -/
+@[simp]
+theorem toSymbol_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m)
+    {r : ℂ} (hr : r ∈ R) : (b.comp a).toSymbol hr = (b.toSymbol hr).comp (a.toSymbol hr) :=
+  Symbol.ext (funext fun _ ↦ by simp)
 
 /-- **Leibniz's rule for the parameter derivatives of a composition**, as symbols: the `j`-th
 parameter derivative of `b ∘ a` is the sum of the compositions
