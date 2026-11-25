@@ -31,8 +31,15 @@ Densities of almost disjoint sets add (`TauCeti.HasDensityAt.union`,
 other cells, the cells together having density `1`, add up to `1/2` as well. A sum of values in
 `{0, 1/2, 1}` equal to `1/2` has exactly one term `1/2`.
 
+Almost no point lies on the reduced boundaries of three distinct cells
+(`TauCeti.ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary`), and if the
+union `⋃_{i ∈ S} s i` also has locally finite perimeter, its reduced boundary is, up to an
+`Hⁿ⁻¹`-null set, the union of the interfaces `∂*s i ∩ ∂*s j` with `i ∈ S`, `j ∉ S`
+(`TauCeti.reducedBoundary_biUnion_ae_eq`): at a point of such an interface the cells `s i` and
+`s j` have density `1/2`, so all other cells have density `0` and the union has density `1/2`.
+
 This is the set-level form of the interface decomposition of the boundary of a cluster, before it
-is specialised to clusters.
+is specialised to clusters (`TauCeti.Cluster.weightedPerimeter_biUnion_cell_eq_sum_interfaceArea`).
 
 ## References
 
@@ -127,5 +134,97 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
   simp only [Prod.mk.injEq]
   exact ⟨hi' i' ⟨hi'S, (hdhalf i').2 hi'r⟩,
     hj' j' ⟨Finset.mem_filter.2 ⟨Finset.mem_univ _, hj'S⟩, (hdhalf j').2 hj'r⟩⟩
+
+/-- The densities of the cells of a partition at a point add up to `1`. -/
+private theorem sum_eq_one_of_hasDensityAt [Fintype ι] (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j)) (hcov : μ (⋃ i, s i)ᶜ = 0) {x : E}
+    {d : ι → ℝ≥0∞} (hdens : ∀ i, HasDensityAt μ (s i) x (d i)) : ∑ i, d i = 1 :=
+  (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
+    fun i _ => hm i).unique
+    (hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
+      (by simpa using hcov))
+
+/-- **No triple points.** Under the hypotheses of
+`TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion`, `Hⁿ⁻¹`-almost no
+point lies in the reduced boundaries of three distinct cells. -/
+theorem ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary [Finite ι]
+    (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
+    (hcov : μ (⋃ i, s i)ᶜ = 0)
+    (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((s i).indicator 1) ≠ ∞) :
+    ∀ᵐ x ∂μHE[finrank ℝ E - 1], ∀ i j k, i ≠ j → i ≠ k → j ≠ k →
+      x ∈ reducedBoundary μ Ω (s i) → x ∈ reducedBoundary μ Ω (s j) →
+        x ∉ reducedBoundary μ Ω (s k) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
+    locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
+  filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin] with x hx i j k hij hik hjk hi hj hk
+  choose d _ hdens hdhalf using hx (reducedBoundary_subset hi)
+  have h3 : ∑ l ∈ ({i, j, k} : Finset ι), d l ≤ ∑ l, d l :=
+    Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => bot_le
+  rw [Finset.sum_insert (by simp [hij, hik]), Finset.sum_pair hjk,
+    sum_eq_one_of_hasDensityAt hm hd hcov hdens, (hdhalf i).2 hi, (hdhalf j).2 hj,
+    (hdhalf k).2 hk, ENNReal.add_halves] at h3
+  rw [add_comm] at h3
+  exact absurd h3 (not_le.2 (ENNReal.lt_add_right ENNReal.one_ne_top (by simp)))
+
+/-- **The reduced boundary of a union of cells is the union of its interfaces.** Under the
+hypotheses of `TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion`, if
+the union `⋃_{i ∈ S} s i` also has locally finite perimeter in `Ω`, then up to an `Hⁿ⁻¹`-null set
+its reduced boundary is the union of the interfaces `∂*s i ∩ ∂*s j`, `i ∈ S`, `j ∉ S`. -/
+theorem reducedBoundary_biUnion_ae_eq [Fintype ι] [DecidableEq ι]
+    (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
+    (hcov : μ (⋃ i, s i)ᶜ = 0)
+    (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((s i).indicator 1) ≠ ∞)
+    (S : Finset ι)
+    (hfinS : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((⋃ i ∈ S, s i).indicator 1) ≠ ∞) :
+    reducedBoundary μ Ω (⋃ i ∈ S, s i) =ᵐ[μHE[finrank ℝ E - 1]]
+      ⋃ p ∈ S ×ˢ Sᶜ, reducedBoundary μ Ω (s p.1) ∩ reducedBoundary μ Ω (s p.2) := by
+  have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
+    locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
+  have hmS : NullMeasurableSet (⋃ i ∈ S, s i) μ :=
+    .biUnion (Finset.countable_toSet S) fun i _ => hm i
+  have huS : LocallyIntegrableOn ((⋃ i ∈ S, s i).indicator (1 : E → ℝ)) Ω μ :=
+    locallyIntegrableOn_indicator_const (hmS.mono Measure.restrict_le_self) 1
+  refine EventuallySubset.antisymm (eventuallySubset_iff.2 ?_) (eventuallySubset_iff.2 ?_)
+  · filter_upwards [ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion hn hm hd
+      hcov hfin S] with x hx hxS
+    obtain ⟨⟨i, j⟩, ⟨hi, hj, hxi, hxj⟩, -⟩ := hx hxS
+    exact mem_biUnion (x := (i, j)) (Finset.mem_product.2 ⟨hi, Finset.mem_compl.2 hj⟩) ⟨hxi, hxj⟩
+  · filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin,
+      essentialBoundary_inter_ae_eq_reducedBoundary hn huS hfinS] with x hx hess hxI
+    obtain ⟨⟨i, j⟩, hp, hxi, hxj⟩ := mem_iUnion₂.1 hxI
+    obtain ⟨hi, hj⟩ := Finset.mem_product.1 hp
+    rw [Finset.mem_compl] at hj
+    have hij : i ≠ j := fun h => hj (h ▸ hi)
+    choose d _ hdens hdhalf using hx (reducedBoundary_subset hxi)
+    -- the densities of `s i` and `s j` are `1/2`, so all other cells have density `0`
+    have hall := sum_eq_one_of_hasDensityAt hm hd hcov hdens
+    have hdi := (hdhalf i).2 hxi
+    have hdj := (hdhalf j).2 hxj
+    have hzero : ∀ k, k ≠ i → k ≠ j → d k = 0 := by
+      intro k hki hkj
+      have h3 : ∑ l ∈ ({k, i, j} : Finset ι), d l ≤ ∑ l, d l :=
+        Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => bot_le
+      rw [Finset.sum_insert (by simp [hki, hkj]), Finset.sum_pair hij, hall, hdi, hdj,
+        ENNReal.add_halves, add_comm] at h3
+      by_contra hk
+      exact absurd h3 (not_le.2 (ENNReal.lt_add_right ENNReal.one_ne_top hk))
+    have hsum : ∑ k ∈ S, d k = 1 / 2 := by
+      rw [Finset.sum_eq_single_of_mem i hi fun k hk hki => hzero k hki fun h => hj (h ▸ hk), hdi]
+    have hdensS : HasDensityAt μ (⋃ i ∈ S, s i) x (1 / 2) :=
+      hsum ▸ HasDensityAt.biUnion_finset (fun k _ => hdens k) (fun k _ l _ => hd k l)
+        fun k _ => hm k
+    have hmem : x ∈ essentialBoundary μ (⋃ i ∈ S, s i) ∩ Ω :=
+      ⟨mem_essentialBoundary.2 ⟨fun h => absurd (hdensS.unique (mem_essentialInterior.1 h))
+        (ENNReal.half_lt_self one_ne_zero ENNReal.one_ne_top).ne,
+        fun h => absurd (hdensS.unique (mem_essentialExterior.1 h)) (by simp)⟩,
+        reducedBoundary_subset hxi⟩
+    exact hess.1 hmem
 
 end TauCeti
