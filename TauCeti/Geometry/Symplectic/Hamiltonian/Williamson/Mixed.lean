@@ -103,20 +103,13 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {m k : ℕ}
 indexed by `Sum.inl i`, it is the elliptic block `Iᵢ = (xᵢ² + yᵢ²) / 2` if `i ∈ t` and the
 hyperbolic block `Hᵢ = xᵢ yᵢ` if `i ∉ t`. For `j < k`, indexed by `Sum.inr (j, 0)` and
 `Sum.inr (j, 1)`, it is the focus-focus pair `Q₁ⱼ = q p + q' p'` and `Q₂ⱼ = q p' - q' p` of the
-planes `(q, p) = (q_{m+2j}, p_{m+2j})` and `(q', p') = (q_{m+2j+1}, p_{m+2j+1})`. -/
+planes `(q, p) = (q_{m+2j}, p_{m+2j})` and `(q', p') = (q_{m+2j+1}, p_{m+2j+1})`
+(`TauCeti.SymplecticForm.focusFocusBlocksAt`). -/
 def williamsonBlocks (b : Basis (Fin (m + k * 2) × Fin 2) ℝ V) (t : Finset (Fin m)) :
     Fin m ⊕ Fin k × Fin 2 → QuadraticForm ℝ V :=
   Sum.elim
     (fun i ↦ if i ∈ t then elliptic b (Fin.castAdd _ i) else hyperbolic b (Fin.castAdd _ i))
-    fun l ↦
-      ![QuadraticMap.linMulLin (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 0)), 0))
-            (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 0)), 1)) +
-          QuadraticMap.linMulLin (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 1)), 0))
-            (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 1)), 1)),
-        QuadraticMap.linMulLin (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 0)), 0))
-            (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 1)), 1)) -
-          QuadraticMap.linMulLin (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 1)), 0))
-            (b.coord (Fin.natAdd m (finProdFinEquiv (l.1, 0)), 1))] l.2
+    (focusFocusBlocksAt b fun l ↦ Fin.natAdd m (finProdFinEquiv l))
 
 variable {b : Basis (Fin (m + k * 2) × Fin 2) ℝ V} {t : Finset (Fin m)}
 
@@ -131,22 +124,15 @@ theorem williamsonBlocks_inl_of_notMem {i : Fin m} (hi : i ∉ t) :
   simp [williamsonBlocks, hi]
 
 @[simp]
-theorem williamsonBlocks_inr_zero_apply (j : Fin k) (x : V) :
-    williamsonBlocks b t (Sum.inr (j, 0)) x =
-      b.coord (Fin.natAdd m (finProdFinEquiv (j, 0)), 0) x *
-          b.coord (Fin.natAdd m (finProdFinEquiv (j, 0)), 1) x +
-        b.coord (Fin.natAdd m (finProdFinEquiv (j, 1)), 0) x *
-          b.coord (Fin.natAdd m (finProdFinEquiv (j, 1)), 1) x := by
+theorem williamsonBlocks_inr (l : Fin k × Fin 2) :
+    williamsonBlocks b t (Sum.inr l) =
+      focusFocusBlocksAt b (fun l ↦ Fin.natAdd m (finProdFinEquiv l)) l := by
   simp [williamsonBlocks]
 
-@[simp]
-theorem williamsonBlocks_inr_one_apply (j : Fin k) (x : V) :
-    williamsonBlocks b t (Sum.inr (j, 1)) x =
-      b.coord (Fin.natAdd m (finProdFinEquiv (j, 0)), 0) x *
-          b.coord (Fin.natAdd m (finProdFinEquiv (j, 1)), 1) x -
-        b.coord (Fin.natAdd m (finProdFinEquiv (j, 1)), 0) x *
-          b.coord (Fin.natAdd m (finProdFinEquiv (j, 0)), 1) x := by
-  simp [williamsonBlocks]
+/-- The planes `m + 2j + i` of the focus-focus part of the Williamson blocks are distinct. -/
+theorem injective_natAdd_finProdFinEquiv :
+    Function.Injective fun l : Fin k × Fin 2 ↦ Fin.natAdd m (finProdFinEquiv l) :=
+  (Fin.natAdd_injective _ _).comp finProdFinEquiv.injective
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
@@ -174,85 +160,39 @@ theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inl_apply_snd (hb : ω.Is
   · simp [hi, hb.hamiltonianEnd_elliptic_apply_snd]
   · simp [hi, hb.hamiltonianEnd_hyperbolic_apply_snd]
 
-/-- In a Darboux basis, the Hamiltonian endomorphisms of the focus-focus blocks kill the first `m`
-planes. -/
-theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd
-    (hb : ω.IsDarbouxBasis b) (l : Fin k × Fin 2) (i : Fin m) (c : Fin 2) :
-    ω.hamiltonianEnd (williamsonBlocks b t (Sum.inr l)) (b (Fin.castAdd _ i, c)) = 0 := by
-  obtain ⟨j, l⟩ := l
-  have h (p : Fin (k * 2)) (c' : Fin 2) :
-      b.coord (Fin.natAdd m p, c') (b (Fin.castAdd _ i, c)) = 0 := by
-    simp
-  fin_cases l <;>
-    simp [williamsonBlocks, hb.hamiltonianEnd_linMulLin_coord_apply, h]
-
-/-- In a Darboux basis, the Hamiltonian endomorphism of the first form `Q₁ⱼ` of the `j`-th
-focus-focus block fixes the `q`'s of that block, negates its `p`'s and kills the other focus-focus
-blocks. -/
-theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd
-    (hb : ω.IsDarbouxBasis b) (j j' : Fin k) (i c : Fin 2) :
-    ω.hamiltonianEnd (williamsonBlocks b t (Sum.inr (j, 0)))
-        (b (Fin.natAdd m (finProdFinEquiv (j', i)), c)) =
-      if j' = j then (if c = 0 then b (Fin.natAdd m (finProdFinEquiv (j', i)), c)
-        else -b (Fin.natAdd m (finProdFinEquiv (j', i)), c)) else 0 := by
-  simp only [williamsonBlocks, Sum.elim_inr, Matrix.cons_val_zero, map_add,
-    hb.hamiltonianEnd_linMulLin_coord_apply, LinearMap.add_apply]
-  by_cases hj : j' = j
-  · subst hj
-    fin_cases i <;> fin_cases c <;> simp [Fin.natAdd_inj]
-  · simp [hj, Ne.symm hj, Fin.natAdd_inj]
-
-/-- In a Darboux basis, the Hamiltonian endomorphism of the second form `Q₂ⱼ` of the `j`-th
-focus-focus block sends `q ↦ q' ↦ -q` and `p ↦ p' ↦ -p` on the planes `(q, p)` and `(q', p')` of
-that block, and kills the other focus-focus blocks. -/
-theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd
-    (hb : ω.IsDarbouxBasis b) (j j' : Fin k) (i c : Fin 2) :
-    ω.hamiltonianEnd (williamsonBlocks b t (Sum.inr (j, 1)))
-        (b (Fin.natAdd m (finProdFinEquiv (j', i)), c)) =
-      if j' = j then (if i = 0 then b (Fin.natAdd m (finProdFinEquiv (j', 1)), c)
-        else -b (Fin.natAdd m (finProdFinEquiv (j', 0)), c)) else 0 := by
-  simp only [williamsonBlocks, Sum.elim_inr, Matrix.cons_val_one, Matrix.cons_val_zero, map_sub,
-    hb.hamiltonianEnd_linMulLin_coord_apply, LinearMap.sub_apply]
-  by_cases hj : j' = j
-  · subst hj
-    fin_cases i <;> fin_cases c <;> simp [Fin.natAdd_inj]
-  · simp [hj, Ne.symm hj, Fin.natAdd_inj]
-
 /-- In a Darboux basis, the Williamson blocks pairwise Poisson-commute. -/
 theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbouxBasis b)
     (x y : Fin m ⊕ Fin k × Fin 2) :
     ω.quadraticPoissonBracket (williamsonBlocks b t x) (williamsonBlocks b t y) = 0 := by
-  rw [quadraticPoissonBracket_eq_zero_iff, Commute, SemiconjBy]
-  refine b.ext fun ⟨n, c⟩ ↦ ?_
-  simp only [mul_apply_eq_comp]
-  induction n using Fin.addCases with
-  | left i =>
-    rcases x with i₁ | l₁ <;> rcases y with i₂ | l₂ <;> fin_cases c <;>
-      simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd] <;>
-      (try split_ifs) <;>
-      simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd]
-  | right p =>
-    obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
-    rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
-    · fin_cases c <;>
-        simp [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
-    all_goals
+  rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
+  pick_goal 4
+  · exact hb.quadraticPoissonBracket_focusFocusBlocksAt injective_natAdd_finProdFinEquiv _ _
+  all_goals
+    rw [quadraticPoissonBracket_eq_zero_iff, Commute, SemiconjBy]
+    refine b.ext fun ⟨n, c⟩ ↦ ?_
+    simp only [mul_apply_eq_comp]
+    induction n using Fin.addCases with
+    | left i =>
+      fin_cases c <;>
+        simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
+          williamsonBlocks_inr, hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne,
+          Fin.natAdd_ne_castAdd, ne_eq, not_false_eq_true, implies_true] <;>
+        split_ifs <;>
+        simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
+          hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
+    | right p =>
+      obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
       fin_cases i <;> fin_cases c <;> (try fin_cases l₁) <;> (try fin_cases l₂) <;>
-      simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd,
-        ite_false] <;>
-      split_ifs <;>
-      simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd]
+        simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, williamsonBlocks_inr,
+          hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply injective_natAdd_finProdFinEquiv,
+          hb.hamiltonianEnd_focusFocusBlocksAt_one_apply injective_natAdd_finProdFinEquiv,
+          Fin.natAdd_ne_castAdd, ite_false] <;>
+        (try split_ifs) <;>
+        simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
 
 /-! ### Dimension counts -/
 
@@ -398,7 +338,8 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
           hb₁.hamiltonianEnd_ellipticHyperbolic_apply_snd,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-          hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd] <;>
+          williamsonBlocks_inr, hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne,
+          Fin.natAdd_ne_castAdd, ne_eq, not_false_eq_true, implies_true] <;>
         by_cases hj : j' ∈ t <;> simp [hb1, hj, apply_ite, (Fin.castAdd_injective _ _).eq_iff]
     | right p =>
       obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective p
@@ -420,8 +361,10 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
           hb₂.hamiltonianEnd_focusFocusBlocks_one_apply,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-          hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-          hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd] <;>
+          williamsonBlocks_inr,
+          hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply injective_natAdd_finProdFinEquiv,
+          hb.hamiltonianEnd_focusFocusBlocksAt_one_apply injective_natAdd_finProdFinEquiv,
+          Fin.natAdd_ne_castAdd] <;>
         simp [hb2, apply_ite ((↑) : ω.orthogonal L → V), smul_ite, Finset.sum_add_distrib]
   rw [hR]
   exact add_mem (Submodule.sum_mem _ fun j _ ↦
@@ -529,7 +472,7 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_castAdd_fst
         (if i ∈ t then -b (Fin.castAdd _ i, 1) else b (Fin.castAdd _ i, 0)) := by
   simp [williamsonRegular, map_sum, LinearMap.sum_apply,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-    hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd, smul_ite,
+    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
     (Fin.castAdd_injective _ _).eq_iff]
 
 private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_castAdd_snd
@@ -539,7 +482,7 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_castAdd_snd
         (if i ∈ t then b (Fin.castAdd _ i, 0) else -b (Fin.castAdd _ i, 1)) := by
   simp [williamsonRegular, map_sum, LinearMap.sum_apply,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-    hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd, smul_ite,
+    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
     (Fin.castAdd_injective _ _).eq_iff]
 
 private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
@@ -550,8 +493,9 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
         else -b (Fin.natAdd m (finProdFinEquiv (j, 0)), 0) := by
   simp [williamsonRegular, map_sum, LinearMap.sum_apply,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-    hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-    hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, smul_ite, Finset.sum_add_distrib]
+    hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply injective_natAdd_finProdFinEquiv,
+    hb.hamiltonianEnd_focusFocusBlocksAt_one_apply injective_natAdd_finProdFinEquiv, smul_ite,
+    Finset.sum_add_distrib]
 
 /-- In a Darboux basis, the square of the Hamiltonian endomorphism of the regular element has the
 eigenvalue `-(i + 1)²` if the plane `i < m` is elliptic and `(i + 1)²` if it is hyperbolic. -/
