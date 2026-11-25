@@ -29,6 +29,8 @@ perfect complete Hausdorff Tate ring of characteristic `p`.
   a pseudouniformiser of the untilt.
 * Recovery: the untilt along `(p)` is `R⁺[1/ϖ]`, by an isomorphism sending `x♯` to `x`, and
   `A⁺ ⧸ (ϖ♯)` is `R⁺ ⧸ (ϖ)` through the zeroth Witt coordinate.
+* Computation: along `(p)`, `ϖ♯ ∣ x♯` in `A⁺` exactly when `ϖ ∣ x` in `R⁺`.
+* Compatibility: the untilt along the primitive ideal `(p)` is a perfectoid Tate ring.
 -/
 
 public section
@@ -189,5 +191,20 @@ example (ϖ : (pair p).plus) (a : WittVector p (pair p).plus) :
         (Ideal.Quotient.mk _ ⟨algebraMap _ _ a, untilt.algebraMap_mem_untiltPlus _ a⟩) =
       Ideal.Quotient.mk _ (a.coeff 0) :=
   untilt.quotientSharpEquiv_mk _ _ a
+
+-- Computation: along `(p)`, `ϖ♯ ∣ x♯` in `A⁺` exactly when `ϖ ∣ x` in `R⁺`.
+example (ϖ x : (pair p).plus) :
+    (⟨untilt.sharp p (pair p) _ ϖ, untilt.sharp_mem_untiltPlus ϖ⟩ :
+        untiltPlus p (pair p) (Ideal.span {(p : WittVector p (pair p).plus)})) ∣
+      ⟨untilt.sharp p (pair p) _ x, untilt.sharp_mem_untiltPlus x⟩ ↔ ϖ ∣ x := by
+  simpa [untilt.algebraMap_apply] using untilt.sharp_dvd_algebraMap_iff WittVector.isPrimitive_p
+    (ϖ := ϖ) (by simp) (WittVector.teichmuller p x)
+
+-- Compatibility: the untilt along the primitive ideal `(p)` is a perfectoid Tate ring.
+example :
+    haveI := untilt.completeSpace (P := pair p) WittVector.isPrimitive_p
+    haveI := untilt.t2Space (P := pair p) WittVector.isPrimitive_p
+    IsPerfectoidTateRing p (untilt p (pair p) (Ideal.span {(p : WittVector p (pair p).plus)})) :=
+  untilt.isPerfectoidTateRing WittVector.isPrimitive_p
 
 end TauCeti.Examples.PrimitiveUntilt

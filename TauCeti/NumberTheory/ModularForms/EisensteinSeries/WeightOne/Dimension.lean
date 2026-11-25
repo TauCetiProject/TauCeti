@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Bounds
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Gamma1
+import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm.Gamma1Four
 import TauCeti.NumberTheory.ModularForms.Cusps.Weight.One
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Parity
@@ -605,10 +606,8 @@ private theorem two_mul_finrank_le_card_of_disjoint
     simpa using TauCeti.ModularForm.two_mul_finrank_le_natCard_of_disjoint (Gamma1 4)
       ![1, ModularGroup.S]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr fun f ↦
-          constantTermAt_eq_zero_of_odd
-            (Subgroup.mem_map_of_mem _ (mul_neg_T_mul_inv_mem_Gamma1_four h))
-            (by simp [ModularGroup.coe_T]) (by simp [ModularGroup.coe_T]) odd_one f) hV
+        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦
+          .inr (constantTermAt_eq_zero_of_odd_of_Gamma1_four h odd_one)) hV
 
 /-- **The weight-one Eisenstein series span a complement of the cusp forms** in `M₁(Γ₁(N))`. -/
 theorem isCompl_span_range_weightOneForm_cuspFormSubmodule :

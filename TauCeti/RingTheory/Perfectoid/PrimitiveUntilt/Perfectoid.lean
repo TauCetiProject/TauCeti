@@ -31,9 +31,8 @@ tilt `A♭` is topologically isomorphic to `R`:
   `A⁺ ⧸ (sharp ϖ) ≃+* R⁺ ⧸ (ϖ)` and its `p`-th-power counterpart show that relative Frobenius
   `A₀ ⧸ (π) → A₀ ⧸ (π ^ p)` is bijective on `A₀ = 𝕎 R⁺ ⧸ (ξ)`. Consequently `A₀` and `A⁺` are
   integral perfectoid (`untilt.isIntegralPerfectoid_quotient`,
-  `untilt.isIntegralPerfectoid_untiltPlus`), `A` is uniform (`untilt.isUniform`), and `A` is a
-  perfectoid Tate ring (`untilt.isPerfectoidTateRing`) via
-  `TauCeti.Perfectoid.isPerfectoidTateRing_of_bijective_frobeniusModPow`.
+  `untilt.isIntegralPerfectoid_untiltPlus`) and `A` is uniform (`untilt.isUniform`), complementing
+  `untilt.isPerfectoidTateRing` in `TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Basic`.
 * An elementary induction using `quotientTeichmullerEquiv` proves that `sharp x ∈ A⁺ ↔ x ∈ R⁺`
   (`untilt.sharp_mem_untiltPlus_iff`).
 * The tilt `A♭` is a Tate ring (`untilt.isTateRing_uniformTilt`), and the map
@@ -56,8 +55,7 @@ almost vanishing of `A° ⧸ A⁺`, apply
 * `TauCeti.Perfectoid.untilt.isIntegralPerfectoid_quotient`,
   `TauCeti.Perfectoid.untilt.isIntegralPerfectoid_untiltPlus`: `𝕎 R⁺ ⧸ (ξ)` and `A⁺` are integral
   perfectoid rings.
-* `TauCeti.Perfectoid.untilt.isUniform`, `TauCeti.Perfectoid.untilt.isPerfectoidTateRing`:
-  the untilt `A` is a uniform perfectoid Tate ring.
+* `TauCeti.Perfectoid.untilt.isUniform`: the untilt `A` is a uniform Tate ring.
 * `TauCeti.Perfectoid.untilt.sharp_mem_untiltPlus_iff`: `sharp x ∈ A⁺ ↔ x ∈ R⁺`.
 * `TauCeti.Perfectoid.untilt.isTateRing_uniformTilt`,
   `TauCeti.Perfectoid.untilt.isHomeomorph_tiltEquiv`: `A♭` is Tate and `tiltEquiv : A♭ ≃+* R` is a
@@ -206,17 +204,6 @@ theorem isIntegralPerfectoid_untiltPlus (hξ : ξ.IsPrimitive) :
     IsIntegralPerfectoid p (untiltPlus p P (Ideal.span {ξ})) :=
   have := isIntegralPerfectoid_quotient hξ
   IsIntegralPerfectoid.of_ringEquiv p (quotientEquivUntiltPlus hξ)
-
-/-- **The untilt along a primitive element is a perfectoid Tate ring** (Scholze, *Étale cohomology
-of diamonds*, Theorem 3.17; Bhatt–Morrow–Scholze, Lemma 3.21). -/
-theorem isPerfectoidTateRing [hξ : Fact ξ.IsPrimitive] :
-    IsPerfectoidTateRing p (untilt p P (Ideal.span {ξ})) := by
-  let w := primitiveWitness hξ.out
-  have := isLocalizationAway (J := Ideal.span {ξ}) w.isPseudoUniformizer
-  have := isAdicComplete_quotient hξ.out w.isPseudoUniformizer
-  exact isPerfectoidTateRing_of_bijective_frobeniusModPow
-    (hasBasis_nhds_zero w.isPseudoUniformizer) w.nonZeroDivisor
-    (hξ.out.isDistinguished.bijective_frobeniusModPow_quotient w.pow_dvd)
 
 /-- The canonical map `R → uniformTilt p (untilt p P (Ideal.span {ξ}))`,
 `x ↦ (sharp (x ^ (1 / p ^ n)))_n`. -/

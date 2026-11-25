@@ -254,11 +254,11 @@ private theorem ker_theta_le_ker_thetaReductionPre [hξ : Fact ξ.IsPrimitive]
     hnilTilt.map (isHomeomorph_tiltEquiv (p := p) (P := P) (ξ := ξ)).continuous
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (mem_topologicallyNilpotentIdeal.mpr hnilR)
 
-private theorem surjective_theta [Fact ξ.IsPrimitive]
+private theorem surjective_theta [hξ : Fact ξ.IsPrimitive]
     [Nontrivial (untilt p P (Ideal.span {ξ}))] :
     Function.Surjective (uniformTilt.theta p
       (isRingOfIntegralElements_powerBoundedSubring (untilt p P (Ideal.span {ξ})))) :=
-  have := isPerfectoidTateRing (p := p) (P := P) (ξ := ξ)
+  have := isPerfectoidTateRing (p := p) (P := P) (ξ := ξ) hξ.out
   uniformTilt.surjective_theta
     (isRingOfIntegralElements_powerBoundedSubring (untilt p P (Ideal.span {ξ})))
     (IsPerfectoidTateRing.exists_natCast_dvd_sub_pow (p := p) (R := untilt p P (Ideal.span {ξ})))

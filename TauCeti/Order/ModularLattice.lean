@@ -10,7 +10,7 @@ public import TauCeti.Order.Catenary
 import TauCeti.Order.KrullDimension
 
 /-!
-# Krull dimension of modular lattices
+# Krull dimension of modular lattices, and complements adapted to a flag
 
 In a modular lattice Krull dimension is additive on intervals: for `a ≤ b ≤ c`,
 `dim [a, c] = dim [a, b] + dim [b, c]`, finite or not. Consequently every saturated chain from `a`
@@ -18,6 +18,11 @@ to `c`, that is every composition series of the interval `[a, c]`, has length `d
 modular lattice of finite Krull dimension is catenary. For the lattice of submodules of a module
 this is the additivity of length and the Jordan–Hölder theorem for lengths; the same statements
 hold for the lattice of subobjects of an object of an abelian category, which is modular.
+
+In a complemented modular lattice a flag `a ≤ b` has adapted complements: there are `m` and `q`
+with `a ⊔ m = b` and `q` complementary to `b`, so that `⊤` is the independent supremum of `a`, `m`
+and `q`. For the lattice of subrepresentations of a semisimple representation this is an
+invariant splitting `V = A ⊕ M ⊕ Q` with `A ⊕ M = B`.
 
 ## Main results
 
@@ -31,6 +36,8 @@ hold for the lattice of subobjects of an object of an abelian category, which is
   to `⊤` of length `n` has Krull dimension `n`, so that every strict chain has length at most `n`.
 * `TauCeti.Order.IsCatenary.of_isModularLattice`: a modular lattice of finite Krull dimension is
   catenary.
+* `TauCeti.exists_sup_eq_and_isCompl_of_le`: in a complemented modular lattice, complements
+  `⊤ = a ⊕ m ⊕ q` adapted to a flag `a ≤ b`, with `a ⊔ m = b`.
 
 ## Implementation notes
 
@@ -105,3 +112,18 @@ instance of_isModularLattice {α : Type*} [Lattice α] [IsModularLattice α]
     fun _ _ _ ↦ krullDim_Icc_eq_krullDim_Icc_add_krullDim_Icc⟩
 
 end TauCeti.Order.IsCatenary
+
+namespace TauCeti
+
+/-- **Complements adapted to a flag.** In a complemented modular lattice, for `a ≤ b` there are
+`m` and `q` with `a ⊔ m = b` and `q` complementary to `b`. Then `⊤` is the independent supremum
+of `a`, `m` and `q`: each of `a` and `m` is complementary to the supremum of the other two. -/
+theorem exists_sup_eq_and_isCompl_of_le {α : Type*} [Lattice α] [BoundedOrder α]
+    [IsModularLattice α] [ComplementedLattice α] {a b : α} (h : a ≤ b) :
+    ∃ m q : α, a ⊔ m = b ∧ IsCompl b q ∧ IsCompl a (m ⊔ q) ∧ IsCompl m (a ⊔ q) := by
+  obtain ⟨m, hm, hm'⟩ := IsModularLattice.exists_disjoint_and_sup_eq h
+  obtain ⟨q, hq⟩ := exists_isCompl b
+  exact ⟨m, q, hm', hq, hm.isCompl_sup_right_of_isCompl_sup_left (hm' ▸ hq),
+    hm.symm.isCompl_sup_right_of_isCompl_sup_left ((sup_comm m a ▸ hm') ▸ hq)⟩
+
+end TauCeti

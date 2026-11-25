@@ -36,6 +36,10 @@ arbitrary measurable additive monoid: the convolution powers satisfy
 
 * `TauCeti.Probability.compoundPoissonMeasure_conv_compoundPoissonMeasure` — rates add under
   convolution at a fixed jump law;
+* `ProbabilityTheory.HasLaw.map_compoundPoissonMeasure` — additive homomorphisms act on the jump
+  law of a compound Poisson random variable;
+* `ProbabilityTheory.HasLaw.neg_compoundPoissonMeasure` — negating a random variable negates its
+  compound Poisson jump law;
 * `TauCeti.Probability.charFun_compoundPoissonMeasure` — the characteristic function
   `exp (r * (φ_μ t - 1))`.
 
@@ -216,6 +220,26 @@ theorem map_neg_compoundPoissonMeasure {G : Type*} [MeasurableSpace G] [AddCommG
   have hmap := map_compoundPoissonMeasure r μ (negAddMonoidHom : G →+ G)
   rw [coe_negAddMonoidHom] at hmap
   exact hmap measurable_neg
+
+/-- Applying a measurable additive monoid homomorphism to a random variable with a compound
+Poisson law pushes its jump law forward and keeps its rate. -/
+theorem _root_.ProbabilityTheory.HasLaw.map_compoundPoissonMeasure
+    {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [AddMonoid β]
+    [MeasurableAdd₂ α] [MeasurableAdd₂ β] {P : Measure Ω} {X : Ω → α} {r : ℝ≥0}
+    {μ : Measure α} [SFinite μ] (hX : HasLaw X (compoundPoissonMeasure r μ) P) (f : α →+ β)
+    (hf : Measurable f) :
+    HasLaw (fun ω ↦ f (X ω)) (compoundPoissonMeasure r (μ.map f)) P :=
+  HasLaw.comp ⟨hf.aemeasurable, TauCeti.Probability.map_compoundPoissonMeasure r μ f hf⟩ hX
+
+/-- Negating a random variable with a compound Poisson law negates its jump law and keeps its
+rate. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_compoundPoissonMeasure
+    {Ω G : Type*} [MeasurableSpace Ω] [MeasurableSpace G] [AddCommGroup G]
+    [MeasurableAdd₂ G] [MeasurableNeg G] {P : Measure Ω} {X : Ω → G} {r : ℝ≥0}
+    {μ : Measure G} [SFinite μ] (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
+    HasLaw (fun ω ↦ -X ω) (compoundPoissonMeasure r (μ.map fun x ↦ -x)) P :=
+  by simpa only [coe_negAddMonoidHom] using
+    hX.map_compoundPoissonMeasure (negAddMonoidHom : G →+ G) measurable_neg
 
 /-- The sum of two independent random variables with compound Poisson laws of rates `r` and `s`
 and a common jump law `μ` is compound Poisson with rate `r + s` and jump law `μ`. -/

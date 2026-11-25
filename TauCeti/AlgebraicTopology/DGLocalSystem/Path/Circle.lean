@@ -28,9 +28,10 @@ This file constructs that comparison for the circle and proves that it is a quas
   (`TauCeti.loopCellPathChain`): minus the cone on the point chain `[γ]` along the contraction
   `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space. Its boundary is `[γ] - [b]`
   (`TauCeti.cubicalChainModuleDifferential_loopCellPathChain`, from
-  `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`), and since
-  loops act on point chains by concatenation in front (`TauCeti.point_smul_cubicalChainModulePoint`)
-  this is `([γ] - [1]) · [b]`, the image of the row of `e₁`.
+  `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`), and since loops act on
+  point chains by concatenation in front
+  (`TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`) this is `([γ] - [1]) · [b]`, the image
+  of the row of `e₁`.
 
 So the map `α e₀ + β e₁ ↦ α · [b] + β · c_γ` (`TauCeti.loopCellPathComparison`) commutes with the
 differentials (`TauCeti.loopCellPathComparison_differential`), for every Moore loop `γ` of every

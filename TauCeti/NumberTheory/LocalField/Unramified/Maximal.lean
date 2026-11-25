@@ -14,7 +14,7 @@ import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # The maximal unramified extension
@@ -523,15 +523,9 @@ variable {K Ω} in
 dense for the Krull topology. -/
 theorem topologicalClosure_zpowers_maximalUnramifiedFrobenius :
     (Subgroup.zpowers (maximalUnramifiedFrobenius K Ω)).topologicalClosure = ⊤ := by
-  set H := Subgroup.zpowers (maximalUnramifiedFrobenius K Ω)
-  -- The closure of `H` is the fixing subgroup of its fixed field, which is contained in that
-  -- of `H`, that is `K`.
-  have h : (fixedField H.topologicalClosure).fixingSubgroup = H.topologicalClosure :=
-    InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩
-  have hbot : fixedField H.topologicalClosure = ⊥ :=
-    eq_bot_iff.2 ((fixedField_antitone H.le_topologicalClosure).trans
-      fixedField_zpowers_maximalUnramifiedFrobenius.le)
-  rw [← h, hbot, fixingSubgroup_bot]
+  -- The closure of `H` is the fixing subgroup of its fixed field, which is `K`.
+  rw [← fixingSubgroup_fixedField_eq_topologicalClosure,
+    fixedField_zpowers_maximalUnramifiedFrobenius, fixingSubgroup_bot]
 
 variable {K Ω} in
 /-- **A uniformizer stays a uniformizer in `K_f`**, so it has no nontrivial root there: for a

@@ -63,7 +63,7 @@ example :
   have hp_ne : (p : untilt p (pair p) (span {xi p})) ≠ 0 := by
     rw [← sharp_varpi p]
     exact (untilt.isPseudoUniformizer_sharp (isPseudoUniformizer_varpi p)).isUnit.ne_zero
-  exact ⟨untilt.isPerfectoidTateRing,
+  exact ⟨untilt.isPerfectoidTateRing (isPrimitive_xi p),
     untilt.isRingOfIntegralElements_untiltPlus (isPrimitive_xi p),
     untilt.pair_plus (isPrimitive_xi p), hp_ne⟩
 
@@ -129,7 +129,7 @@ local instance : Nontrivial (untilt p (pair p) (span {xi p})) := nontrivial_unti
 local instance : Fact (1 < p) := ⟨hp.out.one_lt⟩
 
 local instance : IsPerfectoidTateRing p (untilt p (pair p) (span {xi p})) :=
-  untilt.isPerfectoidTateRing
+  untilt.isPerfectoidTateRing (isPrimitive_xi p)
 
 local instance : Nonempty (PseudoUniformizerRoots p (untilt p (pair p) (span {xi p}))) :=
   PseudoUniformizerRoots.nonempty
