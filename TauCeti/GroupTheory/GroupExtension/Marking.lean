@@ -127,6 +127,10 @@ instance : FunLike (p.Marking c) c E where
 theorem toFun_eq_coe (s : p.Marking c) : s.toFun = s :=
   rfl
 
+@[simp]
+theorem coe_mk (f : c → E) (h₁ h₂) : ⇑(⟨f, h₁, h₂⟩ : p.Marking c) = f :=
+  rfl
+
 @[ext]
 theorem ext {s t : p.Marking c} (h : ∀ x, s x = t x) : s = t :=
   DFunLike.ext _ _ h
