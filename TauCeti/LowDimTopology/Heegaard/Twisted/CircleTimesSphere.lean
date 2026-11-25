@@ -49,10 +49,13 @@ the `(1 + t)`-torsion `X[1 + t]`
 (`lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`), which is
 `Tor₁^R(X, R ⧸ (1 + t))` (`ModuleCat.torOneQuotientSpanSingletonIso`); its homology at `p₁` is
 `X ⧸ (1 + t) X = X ⊗_R R ⧸ (1 + t)` (not formalized here). For `X = 𝔽₂ = R ⧸ (1 + t)`, with `R`
-acting through the augmentation, `1 + t` acts by zero, the two classes `p₀` and `p₁` of the
-augmented complex survive, and `Tor₁^R(R ⧸ (1 + t), 𝔽₂) = 𝔽₂`
-(`TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`) accounts for the class `p₀` that
-the augmented twisted homology `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂` misses.
+acting through the augmentation, `1 + t` acts by zero and the two classes `p₀` and `p₁` of the
+augmented complex survive. What is formalized is that `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is
+abstractly `𝔽₂` (`TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`); this is
+`Tor₁^R(R ⧸ (1 + t), 𝔽₂)` via `R ⧸ (1 + t) ≃ 𝔽₂`
+(`TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`). Informally, and not formalized
+here, it accounts for the class `p₀` that the augmented twisted homology
+`R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂` misses.
 
 ## Main definitions
 
@@ -77,7 +80,7 @@ the augmented twisted homology `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂` misses.
 * `lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`: with coefficients
   in `X`, the chain `x ⊗ p₀` is a cycle exactly when `x ∈ X[1 + t]`.
 * `TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`:
-  `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t)) ≃ 𝔽₂`, the extra class of the augmented complex.
+  `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`.
 
 ## References
 
@@ -308,14 +311,15 @@ theorem lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff
     Submodule.mem_torsionBy_iff, add_smul, ite_add_ite]
 
 open CategoryTheory in
-/-- **The extra class of the augmented complex.** For the twisted hat complex of the genus-one
-diagram of `S¹ × S²`, with homology `R ⧸ (1 + t)`, the group `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))`
-is `𝔽₂`, where `R ⧸ (1 + t)` is also `𝔽₂` with `R` acting through the augmentation
-(`TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`).
+/-- **`Tor₁` of the twisted homology against itself is `𝔽₂`.** For the twisted hat complex of the
+genus-one diagram of `S¹ × S²`, with homology `R ⧸ (1 + t)`, the group
+`Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`, where `R ⧸ (1 + t)` is also `𝔽₂` with `R`
+acting through the augmentation (`TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`).
 
 The augmented complex `𝔽₂ ⊗_R CF` has zero differential
 (`TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`), so its homology has the two
-classes `p₀` and `p₁`. Informally, the class `p₁` is `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂`, the augmented
+classes `p₀` and `p₁`. Informally, and not formalized here (this equivalence is abstract, with no
+map to that homology), the class `p₁` is `R ⧸ (1 + t) ⊗_R 𝔽₂ = 𝔽₂`, the augmented
 twisted homology, and the class `p₀` is this `Tor₁`: the chains `x ⊗ p₀` that are cycles are those
 with `(1 + t) • x = 0` (`lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`),
 and `1 + t` acts by zero on `𝔽₂`. -/
