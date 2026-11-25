@@ -20,6 +20,9 @@ so the former is factorial whenever the latter is
 For an open immersion `j : U ⟶ X`, a function on an open `W` of `X` pulls back to zero along `j`
 exactly when it restricts to zero on the image `j ''ᵁ (j ⁻¹ᵁ W)`
 (`AlgebraicGeometry.Scheme.Hom.app_eq_zero_iff`).
+
+An open immersion out of an empty scheme has empty range
+(`AlgebraicGeometry.Scheme.Hom.opensRange_eq_bot_of_isEmpty`).
 -/
 
 public section
@@ -53,5 +56,12 @@ theorem Hom.app_eq_zero_iff {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
     map_zero, ← ConcreteCategory.comp_apply, Scheme.Hom.app_appIso_inv]
   -- both sides restrict along the inclusion `j ''ᵁ (j ⁻¹ᵁ W) ≤ W`, with different proofs
   rfl
+
+/-- An open immersion out of an empty scheme has empty range. -/
+@[simp]
+lemma Hom.opensRange_eq_bot_of_isEmpty {U X : Scheme.{u}} [IsEmpty U] (j : U ⟶ X)
+    [IsOpenImmersion j] : j.opensRange = ⊥ := by
+  ext
+  simp [Scheme.Hom.coe_opensRange]
 
 end AlgebraicGeometry.Scheme

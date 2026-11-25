@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 
 /-!
 # Elementary distinguished squares with empty open part
@@ -31,15 +32,6 @@ namespace TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare
 
 variable {X : AlgebraicGeometry.Scheme.{u}} (Q : ElementaryDistinguishedSquare X)
 
-/-- If the open part `U` of an elementary distinguished square is empty, the image of `j` is the
-empty open. -/
-@[simp]
-lemma opensRange_j_eq_bot [IsEmpty Q.U] : Q.j.opensRange = ⊥ := by
-  ext x
-  simp only [AlgebraicGeometry.Scheme.Hom.coe_opensRange, Set.mem_range, Opens.coe_bot,
-    Set.mem_empty_iff_false, iff_false, not_exists]
-  exact fun u ↦ isEmptyElim u
-
 /-- **The map `p` of an elementary distinguished square with empty open part over a reduced
 scheme is an isomorphism**: the reduced closed complement of `U = ∅` is `X`, over which `p` is an
 isomorphism. -/
@@ -48,7 +40,7 @@ theorem isIso_p_of_isEmpty [IsReduced X] [IsEmpty Q.U] : IsIso Q.p := by
   have hI : IsIso I.subschemeι := by
     rw [AlgebraicGeometry.Scheme.isIso_subschemeι_iff_eq_bot]
     have : Q.j.opensRange.compl = ⊤ := by
-      rw [Q.opensRange_j_eq_bot]
+      rw [AlgebraicGeometry.Scheme.Hom.opensRange_eq_bot_of_isEmpty]
       ext
       simp
     simp only [I, this, AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal_top,

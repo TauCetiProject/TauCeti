@@ -39,25 +39,25 @@ isomorphism. -/
 theorem isEmpty_iso_SpecMap_of_finrank_ne_one (K L : Type u) [CommRing K] [IsReduced K]
     [Nontrivial K] [CommRing L] [Algebra K L] (h : Module.finrank K L ≠ 1)
     (Q : ElementaryDistinguishedSquare (Spec (.of K))) [IsEmpty Q.U] :
-    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :=
+    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.algebraMap K L)) :=
   Q.isEmpty_iso_of_not_isIso _ fun hi ↦
     h (Module.finrank_of_bijective_algebraMap (isIso_SpecMap_iff.1 hi))
 
 /-- The degree-two case. -/
 example (K L : Type u) [Field K] [Field L] [Algebra K L] (h : Module.finrank K L = 2)
     (Q : ElementaryDistinguishedSquare (Spec (.of K))) [IsEmpty Q.U] :
-    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :=
+    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.algebraMap K L)) :=
   isEmpty_iso_SpecMap_of_finrank_ne_one K L (by omega) Q
 
 /-- The case `ℝ → ℂ`. -/
 example (Q : ElementaryDistinguishedSquare (Spec (.of ℝ))) [IsEmpty Q.U] :
-    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)))) :=
+    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.algebraMap ℝ ℂ)) :=
   isEmpty_iso_SpecMap_of_finrank_ne_one ℝ ℂ (by rw [Complex.finrank_real_complex]; omega) Q
 
 /-- The morphism `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`: the identity on `Spec ℝ` and `Spec ℂ ⟶ Spec ℝ`. -/
 noncomputable abbrev realComplexToReal :
     Spec (.of ℝ) ⨿ Spec (.of ℂ) ⟶ Spec (.of ℝ) :=
-  coprod.desc (𝟙 _) (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)))
+  coprod.desc (𝟙 _) (Spec.algebraMap ℝ ℂ)
 
 /-- `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ` is not an isomorphism: it identifies the points of the two
 components. -/
