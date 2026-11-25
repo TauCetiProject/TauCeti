@@ -20,7 +20,6 @@ import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
-import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange

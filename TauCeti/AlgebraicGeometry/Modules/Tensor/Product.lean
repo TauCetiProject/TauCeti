@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
+public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
@@ -42,10 +43,8 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive`: sections over an open as a lax
   braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsFunctorPreservesLimitsOfSize`: it preserves limits;
-* `AlgebraicGeometry.Scheme.Modules.hasFiniteBiproducts` and
-  `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: `X.Modules` has finite biproducts, and
-  tensoring a finite free module `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed biproduct of
-  copies of `L`.
+* `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: tensoring a finite free module
+  `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed biproduct of copies of `L`.
 
 -/
 
@@ -219,28 +218,12 @@ universe v
 
 noncomputable section FreeTensor
 
-/-- `𝒪ₓ`-modules have finite biproducts. -/
-instance hasFiniteBiproducts (X : Scheme.{v}) : HasFiniteBiproducts X.Modules :=
-  SheafOfModules.hasFiniteBiproducts X.ringCatSheaf
-
-variable {X : Scheme.{v}}
-
-private lemma preservesBiproduct_unit_tensorRight (I : Type v) [Finite I] (L : X.Modules) :
-    PreservesBiproduct (fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) (tensorRight L) := by
-  have := Fintype.ofFinite I
-  let F := tensorRight L
-  exact ⟨fun {b} hb ↦ ⟨isBilimitOfTotal _ (by
-    change (∑ i, F.map (b.π i) ≫ F.map (b.ι i)) = 𝟙 _
-    simpa only [← F.map_comp, ← F.map_sum, F.map_id] using
-      congrArg F.map (IsBilimit.total hb))⟩⟩
-
-variable (I : Type v) [Finite I] (L : X.Modules)
+variable {X : Scheme.{v}} (I : Type v) [Finite I] (L : X.Modules)
 
 /-- Tensoring a finite free `𝒪ₓ`-module `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed
 biproduct of copies of `L`. -/
 def freeTensorIsoBiproduct :
     ((_root_.SheafOfModules.free I : X.Modules) ⊗ L : X.Modules) ≅ (⨁ fun _ : I ↦ L : X.Modules) :=
-  have := preservesBiproduct_unit_tensorRight I L
   let e₀ : Iso (C := X.Modules) (_root_.SheafOfModules.free I)
       (⨁ fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) :=
     (SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm
@@ -255,7 +238,6 @@ the `i`-th basis section `ιFree i`. -/
 theorem biproduct_ι_freeTensorIsoBiproduct_inv (i : I) :
     biproduct.ι (fun _ : I ↦ L) i ≫ (freeTensorIsoBiproduct I L).inv =
       (λ_ L).inv ≫ (_root_.SheafOfModules.ιFree i : (𝟙_ X.Modules : X.Modules) ⟶ _) ▷ L := by
-  have := preservesBiproduct_unit_tensorRight I L
   let e₀ : Iso (C := X.Modules) (_root_.SheafOfModules.free I)
       (⨁ fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) :=
     (SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm

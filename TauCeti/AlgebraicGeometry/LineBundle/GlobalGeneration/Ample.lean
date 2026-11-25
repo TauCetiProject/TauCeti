@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+import Mathlib.Data.Fintype.Card
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
@@ -28,8 +30,8 @@ ample line bundle is automatically quasi-compact and quasi-separated.
 The proof reduces to Serre's theorem for an invertible sheaf whose affine nonvanishing loci cover
 `X` (`Scheme.Modules.eventually_exists_generatingSections_tensor_tensorPow`):
 
-1. By quasi-compactness (`IsAmple.compactSpace`), `X` is covered by finitely many affine
-   nonvanishing loci of global sections of positive powers `L^{dᵢ}`. Raising each section to the
+1. By `IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`, `X` is covered by finitely many affine
+   nonvanishing loci of global sections of positive powers `a^{dᵢ}`. Raising each section to the
    power `m / dᵢ` for `m = ∏ dᵢ` preserves its nonvanishing locus
    (`InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow`), producing finitely many global
    sections of a single positive power `Lᵐ` whose affine nonvanishing loci cover `X`
@@ -44,7 +46,9 @@ As consequences:
 * For any invertible sheaf `K`, the twists `K ⊗ M` are globally generated for `n ≥ n₀`
   (`LineBundleClass.IsAmple.exists_isGloballyGenerated_tensorProduct`).
 * Tensoring a surjection `𝒪_X^k ↠ F ⊗ M` with an inverse `K` (`M ⊗ K ≅ 𝒪_X`) gives an epimorphism
-  from a finite direct sum `K^⊕k ↠ F` (`LineBundleClass.IsAmple.exists_epi_biproduct`).
+  from a finite direct sum `K^⊕k ↠ F`
+  (`AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor`,
+  specialized to ample twists in `LineBundleClass.IsAmple.exists_epi_biproduct`).
 
 ## References
 
@@ -62,6 +66,34 @@ universe u
 
 noncomputable section
 
+namespace AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}}
+
+/-- From finite generating sections of `F ⊗ M` and a right inverse `K` (`M ⊗ K ≅ 𝒪_X`),
+tensoring with `K` produces an epimorphism from a finite direct sum of copies of `K` onto `F`. -/
+theorem exists_epi_biproduct_of_generatingSections_tensor
+    (F M K : X.Modules) (σ : (F ⊗ M).GeneratingSections) [σ.IsFiniteType]
+    (e : M ⊗ K ≅ 𝟙_ X.Modules) :
+    ∃ (k : ℕ) (π : (⨁ fun _ : Fin k ↦ K) ⟶ F), Epi π := by
+  have : Finite σ.I := _root_.SheafOfModules.GeneratingSections.IsFiniteType.finite (σ := σ)
+  have : Fintype σ.I := Fintype.ofFinite σ.I
+  let I : Type u := σ.I
+  let k := Fintype.card I
+  let eqv : I ≃ Fin k := Fintype.equivFin I
+  let freeI : X.Modules := _root_.SheafOfModules.free I
+  let sumIso : (⨁ fun _ : Fin k ↦ K : X.Modules) ≅ freeI ⊗ K :=
+    biproduct.whiskerEquiv (f := fun _ : Fin k ↦ K) (g := fun _ : I ↦ K)
+      eqv.symm (fun _ ↦ Iso.refl _) ≪≫ (freeTensorIsoBiproduct I K).symm
+  let cancelIso : (F ⊗ M) ⊗ K ≅ F :=
+    α_ F M K ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
+  let π₀ : freeI ⟶ F ⊗ M := σ.π
+  have : Epi π₀ := σ.epi
+  have : Epi (π₀ ▷ K) := (tensorRight K).map_epi π₀
+  exact ⟨k, sumIso.hom ≫ (π₀ ▷ K) ≫ cancelIso.hom, inferInstance⟩
+
+end AlgebraicGeometry.Scheme.Modules
+
 namespace TauCeti.AlgebraicGeometry.LineBundleClass
 
 open _root_.AlgebraicGeometry.Scheme.Modules
@@ -76,49 +108,37 @@ theorem IsAmple.exists_pow_iSup_nonvanishingLocus_eq_top {L : InvertibleSheaf X}
       (∀ i, IsAffineOpen ((tensorPow L.obj m).nonvanishingLocus (t i))) ∧
       (⨆ i, (tensorPow L.obj m).nonvanishingLocus (t i)) = ⊤ := by
   classical
-  have : CompactSpace X := hL.compactSpace
-  -- Cover `X` by affine nonvanishing loci of global sections of positive powers `L^{d x}`.
-  have hcov (x : X) : ∃ (d : ℕ) (_ : 0 < d) (s : Γ((tensorPow L d).obj, ⊤)),
-      x ∈ (tensorPow L d).obj.nonvanishingLocus s ∧
-        IsAffineOpen ((tensorPow L d).obj.nonvanishingLocus s) := by
-    obtain ⟨d, hd, hLd⟩ := hL.exists_pos_forall_mk_eq x
-    obtain ⟨s, hx, haff⟩ := hLd (tensorPow L d) (mk_tensorPow L d)
-    exact ⟨d, hd, s, hx, haff⟩
-  choose d hd s hx haff using hcov
-  obtain ⟨S, hS⟩ := isCompact_univ.elim_finite_subcover
-    (fun x : X ↦ ((tensorPow L (d x)).obj.nonvanishingLocus (s x) : Set X))
-    (fun x ↦ ((tensorPow L (d x)).obj.nonvanishingLocus (s x)).isOpen)
-    (fun x _ ↦ Set.mem_iUnion.mpr ⟨x, hx x⟩)
-  -- Raise every section to the common positive power `m = ∏_{x ∈ S} d x`.
-  let m : ℕ := ∏ x ∈ S, d x
-  have hm : 0 < m := Finset.prod_pos fun x _ ↦ hd x
-  have hpow (x : S) : ∃ tx : Γ((tensorPow L m).obj, ⊤),
-      (tensorPow L m).obj.nonvanishingLocus tx =
-        (tensorPow L (d x.val)).obj.nonvanishingLocus (s x.val) := by
-    have hq : 0 < m / d x.val :=
-      Nat.div_pos (Nat.le_of_dvd hm (Finset.dvd_prod_of_mem d x.property)) (hd x.val)
-    have hmk : LineBundleClass.mk (tensorPow L m) =
-        LineBundleClass.mk (tensorPow L (d x.val)) ^ (m / d x.val) := by
-      rw [mk_tensorPow, mk_tensorPow, ← pow_mul,
-        Nat.mul_div_cancel' (Finset.dvd_prod_of_mem d x.property)]
-    exact InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hq hmk (s x.val)
-  choose tx htx using hpow
+  obtain ⟨S, hS, hU⟩ := hL.exists_finset_isAffineOpen_nonvanishingLocus
+  choose d hd M hM s hs using fun U : S ↦ (hU U.val U.property).2
+  -- Raise every section to the common positive power `m = ∏_{U ∈ S} d U`.
+  let m : ℕ := ∏ U : S, d U
+  have hm : 0 < m := Finset.prod_pos fun U _ ↦ hd U
+  have hpow (U : S) : ∃ tU : Γ((tensorPow L m).obj, ⊤),
+      (tensorPow L m).obj.nonvanishingLocus tU = U.val := by
+    have hdvd : d U ∣ m := Finset.dvd_prod_of_mem d (Finset.mem_univ U)
+    have hq : 0 < m / d U := Nat.div_pos (Nat.le_of_dvd hm hdvd) (hd U)
+    have hmk : LineBundleClass.mk (tensorPow L m) = LineBundleClass.mk (M U) ^ (m / d U) := by
+      rw [mk_tensorPow, hM U, ← pow_mul, Nat.mul_div_cancel' hdvd]
+    obtain ⟨tU, htU⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hq hmk (s U)
+    exact ⟨tU, htU.trans (hs U)⟩
+  choose tU htU using hpow
   let eS := S.equivFin
   let eObj : Iso (C := X.Modules) (tensorPow L m).obj (tensorPow L.obj m) :=
     eqToIso (InvertibleSheaf.tensorPow_obj L m)
   let t (i : Fin S.card) : Γ(tensorPow L.obj m, ⊤) :=
-    eObj.hom.app ⊤ (tx (eS.symm i))
+    eObj.hom.app ⊤ (tU (eS.symm i))
   have ht_locus (i : Fin S.card) :
-      (tensorPow L.obj m).nonvanishingLocus (t i) =
-        (tensorPow L (d (eS.symm i).val)).obj.nonvanishingLocus (s (eS.symm i).val) := by
+      (tensorPow L.obj m).nonvanishingLocus (t i) = (eS.symm i).val := by
     dsimp only [t]
-    rw [nonvanishingLocus_hom_app eObj, htx (eS.symm i)]
-  refine ⟨m, hm, S.card, t, fun i ↦ by rw [ht_locus i]; exact haff (eS.symm i).val, ?_⟩
-  refine top_unique fun y _ ↦ ?_
-  obtain ⟨x, hxS, hyx⟩ := Set.mem_iUnion₂.mp (hS (Set.mem_univ y))
-  exact Opens.mem_iSup.mpr ⟨eS ⟨x, hxS⟩, by
-    rw [ht_locus (eS ⟨x, hxS⟩), Equiv.symm_apply_apply]
-    exact hyx⟩
+    rw [nonvanishingLocus_hom_app eObj, htU (eS.symm i)]
+  refine ⟨m, hm, S.card, t, fun i ↦ ?_, ?_⟩
+  · rw [ht_locus i]
+    exact (hU (eS.symm i).val (eS.symm i).property).1
+  · refine top_unique fun y _ ↦ ?_
+    obtain ⟨U, hUS, hyU⟩ := Opens.mem_sSup.mp (hS ▸ Opens.mem_top y)
+    exact Opens.mem_iSup.mpr ⟨eS ⟨U, hUS⟩, by
+      rw [ht_locus (eS ⟨U, hUS⟩), Equiv.symm_apply_apply]
+      exact hyU⟩
 
 /-- **Serre's global generation theorem** (Hartshorne, Theorem II.5.17; Stacks, Tag 01Q3).
 Let `a` be an ample line-bundle class on a scheme `X`, and `F` a quasi-coherent `𝒪_X`-module of
