@@ -115,8 +115,8 @@ theorem preservesDistribution_kerDistribution_iff_mfderiv_flowOf
   -- `L_X α = (R_α α(X)) α`, with a continuous coefficient since `α(X)` is `C¹`.
   have hH := (hα.preservesDistribution_kerDistribution_iff hXd).1 hpres
   have hg : Continuous fun y ↦ mvfderiv I (fun z ↦ α.val z ![X z]) y (α.reebVectorField y) :=
-    ((ContMDiff.contMDiff_mvfderiv_apply (α.contMDiff_apply_vectorField hX) (m := 0)
-      (by norm_num)).comp (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
+    (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp)
+      (α.contMDiff_apply_vectorField (n := 1) hX)).continuous
   exact mfderiv_flowOf_mem_kerDistribution_of_mlieDerivForm_eq_smul hX hg
     (hH.mlieDerivForm_eq hXd) hx hv
 

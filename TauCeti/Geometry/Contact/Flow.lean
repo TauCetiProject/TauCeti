@@ -115,8 +115,7 @@ theorem mpullback_flowOf_apply (hα : α.IsContactForm)
   have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (by norm_num [hf])
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
-    ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
-      (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
+    (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp) (hf.of_le (by norm_num))).continuous
   exact mpullback_flowOf_apply_eq_exp_integral_smul (hX2.of_le one_le_two) hRf α.mdifferentiable
     (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)) hx
 
@@ -146,8 +145,7 @@ theorem forall_mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
   set h : ℝ → ℝ := fun s ↦ mvfderiv I f (flowOf X s x) (α.reebVectorField (flowOf X s x))
   have hJ : IsOpen J := isOpen_setOf_mem_flowDomain hX1 continuous_id continuous_const
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
-    ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
-      (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
+    (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp) (hf.of_le (by norm_num))).continuous
   have hα₀ : (α.val x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
     (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
   -- By the rescaling formula, `(φₜ^* α)ₓ = αₓ` exactly when `∫₀ᵗ h = 0`.
