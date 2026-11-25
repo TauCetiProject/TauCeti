@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Limits.Cones
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Homotopy.Basic
@@ -24,8 +25,10 @@ on compact sets, up to homotopy, in the two senses of
   `gⱼ(K)`, there are `f : j ⟶ k` and a map `e : L → Fₖ` with `e ∘ gⱼ` homotopic on `K` to the map
   `F.map f` of the diagram.
 
-Then, for every compact space `T`, the free homotopy classes `[T, X]` of maps `T → X` are the
-colimit of the classes `[T, Fⱼ]`, in the two halves that define a filtered colimit of sets:
+Then, for every compact space `T`, the free homotopy classes `[T, X]` of maps `T → X` and the
+classes `[T, Fⱼ]` are related in the following two ways. When the index category is filtered, as
+for the sequences indexed by `ℕ` of the applications, these are the two halves that make `[T, X]`
+the colimit of the sets `[T, Fⱼ]`:
 
 * every map `φ : T → X` is homotopic to `gⱼ ∘ ψ` for some `j` and some `ψ : T → Fⱼ`
   (`TauCeti.exists_ι_app_comp_homotopic`), since the image of `φ` is a compact subset of `X`;
@@ -47,6 +50,8 @@ groups at a chosen basepoint, and no topology is put on a colimit of spaces.
   through the diagram up to homotopy.
 * `TauCeti.exists_map_comp_homotopic_map_comp`: two maps of a compact space into the diagram that
   become homotopic in the apex become homotopic further along the diagram.
+* `TauCeti.exists_map_homOfLE_comp_homotopic_map_homOfLE_comp`: the same for a diagram indexed by
+  a preorder, with the later index given by an inequality.
 
 ## References
 
@@ -65,8 +70,11 @@ universe w
 
 namespace TauCeti
 
+variable {T : Type*} [TopologicalSpace T] [CompactSpace T]
+
+section Category
+
 variable {J : Type*} [Category J] {F : J ⥤ TopCat.{w}} {c : Cocone F}
-  {T : Type*} [TopologicalSpace T] [CompactSpace T]
 
 /-- **Maps of a compact space into an approximated space factor through the approximations up
 to homotopy.** Let `c` be a cocone over a diagram of spaces such that every compact subset `K` of
@@ -132,5 +140,31 @@ theorem exists_map_comp_homotopic_map_comp
   exact (he.symm.comp (ContinuousMap.Homotopic.refl ψ₀')).trans
     (((ContinuousMap.Homotopic.refl e).comp hH).trans
       (he.comp (ContinuousMap.Homotopic.refl ψ₁')))
+
+end Category
+
+section Preorder
+
+variable {J : Type*} [Preorder J] {F : J ⥤ TopCat.{w}} {c : Cocone F}
+
+/-- **Maps of a compact space into a diagram indexed by a preorder which become homotopic in the
+approximated space are already homotopic at a later index.** This is
+`TauCeti.exists_map_comp_homotopic_map_comp` for a diagram indexed by a preorder, such as `ℕ`, with
+the morphism `j ⟶ k` of its conclusion given by an inequality `j ≤ k`. -/
+theorem exists_map_homOfLE_comp_homotopic_map_homOfLE_comp
+    (hcompat : ∀ (j : J) (K : Set (F.obj j)) (L : Set c.pt), IsCompact K → IsCompact L →
+      ∀ hKL : MapsTo (c.ι.app j) K L, ∃ (k : J) (f : j ⟶ k) (e : C(L, F.obj k)),
+        (e.comp ⟨hKL.restrict, (c.ι.app j).hom.continuous.restrict hKL⟩).Homotopic
+          ((F.map f).hom.comp (ContinuousMap.subtypeVal K)))
+    {j : J} {ψ₀ ψ₁ : C(T, F.obj j)}
+    (h : ((c.ι.app j).hom.comp ψ₀).Homotopic ((c.ι.app j).hom.comp ψ₁)) :
+    ∃ (k : J) (hjk : j ≤ k),
+      ((F.map (homOfLE hjk)).hom.comp ψ₀).Homotopic ((F.map (homOfLE hjk)).hom.comp ψ₁) := by
+  obtain ⟨k, f, hf⟩ := exists_map_comp_homotopic_map_comp hcompat h
+  -- Morphisms of a preorder are inequalities: `f` is `homOfLE (leOfHom f)`.
+  rw [← homOfLE_leOfHom f] at hf
+  exact ⟨k, leOfHom f, hf⟩
+
+end Preorder
 
 end TauCeti

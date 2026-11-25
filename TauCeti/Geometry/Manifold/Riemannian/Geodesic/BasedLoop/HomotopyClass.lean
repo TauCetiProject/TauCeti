@@ -76,9 +76,12 @@ theorem exists_basedCyclicDistanceCutBrokenGeodesic_comp_homotopic_of_compactSpa
     (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {x : M}
     (φ : C(T, MooreLoopSpace M x)) :
     ∃ (n : ℕ) (ψ : C(T, basedCyclicDistanceCut (X := M) (δ n) x)),
-      ((basedCyclicDistanceCutBrokenGeodesic hr (hlt n) x).comp ψ).Homotopic φ :=
-  exists_ι_app_comp_homotopic (c := basedCyclicDistanceCutCocone hr hlt hpos.le hδ x)
-    (fun _ hK ↦ exists_basedCyclicDistanceCutCocone_ι_app_comp_homotopic hr hpos hlt hδ hK) φ
+      ((basedCyclicDistanceCutBrokenGeodesic hr (hlt n) x).comp ψ).Homotopic φ := by
+  obtain ⟨n, ψ, h⟩ :=
+    exists_ι_app_comp_homotopic (c := basedCyclicDistanceCutCocone hr hlt hpos.le hδ x)
+      (fun _ hK ↦ exists_basedCyclicDistanceCutCocone_ι_app_comp_homotopic hr hpos hlt hδ hK) φ
+  rw [basedCyclicDistanceCutCocone_ι_app_hom] at h
+  exact ⟨n, ψ, h⟩
 
 /-- **Maps into a based distance cut whose broken geodesics are homotopic are homotopic in a later
 based distance cut.** Let the cut-offs `δ n i < r` grow from each stage to the next and start
@@ -93,14 +96,8 @@ theorem exists_basedCyclicDistanceCutFunctor_map_comp_homotopic (hpos : 0 < δ 0
     ∃ (k : ℕ) (hnk : n ≤ k),
       (((basedCyclicDistanceCutFunctor M hpos.le hδ x).map (homOfLE hnk)).hom.comp ψ₀).Homotopic
         (((basedCyclicDistanceCutFunctor M hpos.le hδ x).map (homOfLE hnk)).hom.comp ψ₁) := by
-  obtain ⟨k, f, hf⟩ := exists_map_comp_homotopic_map_comp
-    (c := basedCyclicDistanceCutCocone hr hlt hpos.le hδ x) (fun m K L _ hL hKL ↦ by
-      -- The leg of the cocone at `m` is `geoᵐ`.
-      have hKL' : MapsTo (basedCyclicDistanceCutBrokenGeodesic hr (hlt m) x) K L := hKL
-      obtain ⟨k, e, -, he⟩ :=
-        exists_comp_homotopic_basedCyclicDistanceCutFunctor_map hr hpos hlt hδ hL hKL'
-      exact ⟨m + k, homOfLE (Nat.le_add_right m k), e, he⟩) h
-  -- Morphisms of `ℕ` are inequalities.
-  exact ⟨k, leOfHom f, Subsingleton.elim f (homOfLE (leOfHom f)) ▸ hf⟩
+  rw [← basedCyclicDistanceCutCocone_ι_app_hom hr hlt hpos.le hδ x n] at h
+  exact exists_map_homOfLE_comp_homotopic_map_homOfLE_comp (fun _ _ _ _ hL hKL ↦
+    exists_comp_basedCyclicDistanceCutCocone_ι_app_homotopic_map hr hpos hlt hδ hL hKL) h
 
 end TauCeti.Manifold

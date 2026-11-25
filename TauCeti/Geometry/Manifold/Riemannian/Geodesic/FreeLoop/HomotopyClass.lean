@@ -92,9 +92,11 @@ theorem exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic_of_compactSpace (h
     (hlt : ∀ n i, δ n i < r) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j)
     (φ : C(T, MooreFreeLoopSpace M)) :
     ∃ (n : ℕ) (ψ : C(T, cyclicDistanceCut (X := M) (δ n))),
-      ((cyclicDistanceCutBrokenGeodesic hr (hlt n)).comp ψ).Homotopic φ :=
-  exists_ι_app_comp_homotopic (c := cyclicDistanceCutCocone hr hlt hpos.le hδ)
+      ((cyclicDistanceCutBrokenGeodesic hr (hlt n)).comp ψ).Homotopic φ := by
+  obtain ⟨n, ψ, h⟩ := exists_ι_app_comp_homotopic (c := cyclicDistanceCutCocone hr hlt hpos.le hδ)
     (fun _ hK ↦ exists_cyclicDistanceCutCocone_ι_app_comp_homotopic hr hpos hlt hδ hK) φ
+  rw [cyclicDistanceCutCocone_ι_app_hom] at h
+  exact ⟨n, ψ, h⟩
 
 /-- **Maps into a distance cut whose broken geodesics are homotopic are homotopic in a later
 distance cut.** Let the cut-offs `δ n i < r` grow from each stage to the next and start positive.
@@ -109,15 +111,9 @@ theorem exists_cyclicDistanceCutFunctor_map_comp_homotopic (hpos : 0 < δ 0 0)
     ∃ (k : ℕ) (hnk : n ≤ k),
       (((cyclicDistanceCutFunctor M hpos.le hδ).map (homOfLE hnk)).hom.comp ψ₀).Homotopic
         (((cyclicDistanceCutFunctor M hpos.le hδ).map (homOfLE hnk)).hom.comp ψ₁) := by
-  obtain ⟨k, f, hf⟩ := exists_map_comp_homotopic_map_comp
-    (c := cyclicDistanceCutCocone hr hlt hpos.le hδ) (fun m K L _ hL hKL ↦ by
-      -- The leg of the cocone at `m` is `geoᵐ`.
-      have hKL' : MapsTo (cyclicDistanceCutBrokenGeodesic hr (hlt m)) K L := hKL
-      obtain ⟨k, e, -, he⟩ := exists_comp_homotopic_cyclicDistanceCutFunctor_map hr hpos hlt hδ hL
-        hKL'
-      exact ⟨m + k, homOfLE (Nat.le_add_right m k), e, he⟩) h
-  -- Morphisms of `ℕ` are inequalities.
-  exact ⟨k, leOfHom f, Subsingleton.elim f (homOfLE (leOfHom f)) ▸ hf⟩
+  rw [← cyclicDistanceCutCocone_ι_app_hom hr hlt hpos.le hδ n] at h
+  exact exists_map_homOfLE_comp_homotopic_map_homOfLE_comp (fun _ _ _ _ hL hKL ↦
+    exists_comp_cyclicDistanceCutCocone_ι_app_homotopic_map hr hpos hlt hδ hL hKL) h
 
 section Component
 
@@ -132,11 +128,15 @@ theorem exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic_o
     (hS : ∀ γ ∈ S, pathComponent γ ⊆ S) (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r)
     (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (φ : C(T, S)) :
     ∃ (n : ℕ) (ψ : C(T, cyclicDistanceCutBrokenGeodesic hr (hlt n) ⁻¹' S)),
-      (((cyclicDistanceCutBrokenGeodesic hr (hlt n)).restrictPreimage S).comp ψ).Homotopic φ :=
-  exists_ι_app_comp_homotopic
+      (((cyclicDistanceCutBrokenGeodesic hr (hlt n)).restrictPreimage S).comp ψ).Homotopic φ := by
+  obtain ⟨n, ψ, h⟩ := exists_ι_app_comp_homotopic
     (c := (cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S)
     (fun _ hK ↦
       exists_restrictPreimage_cyclicDistanceCutCocone_ι_app_comp_homotopic hr hS hpos hlt hδ hK) φ
+  -- The leg of the cocone at `n` is the restriction of `geoⁿ` to `(geoⁿ)⁻¹(S)`, by definition
+  -- (`CategoryTheory.Limits.Cocone.restrictPreimage_ι_app_hom` and
+  -- `cyclicDistanceCutCocone_ι_app_hom`).
+  exact ⟨n, ψ, h⟩
 
 /-- **Maps into the parts of the distance cuts over a union of components whose broken geodesics
 are homotopic within it are homotopic in a later part.** Let `S` be a union of path components of
@@ -155,13 +155,12 @@ theorem exists_preimageFunctor_map_comp_homotopic (hS : ∀ γ ∈ S, pathCompon
           (homOfLE hnk)).hom.comp ψ₀).Homotopic
         ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).map
           (homOfLE hnk)).hom.comp ψ₁) := by
-  obtain ⟨k, f, hf⟩ := exists_map_comp_homotopic_map_comp
-    (c := (cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S)
-    (fun m K L _ hL hKL ↦ by
-      obtain ⟨k, e, -, he⟩ := exists_comp_homotopic_preimageFunctor_map hr hS hpos hlt hδ hL hKL
-      exact ⟨m + k, homOfLE (Nat.le_add_right m k), e, he⟩) h
-  -- Morphisms of `ℕ` are inequalities.
-  exact ⟨k, leOfHom f, Subsingleton.elim f (homOfLE (leOfHom f)) ▸ hf⟩
+  -- The leg of the cocone at `n` is the restriction of `geoⁿ` to `(geoⁿ)⁻¹(S)`, by definition
+  -- (`CategoryTheory.Limits.Cocone.restrictPreimage_ι_app_hom` and
+  -- `cyclicDistanceCutCocone_ι_app_hom`).
+  exact exists_map_homOfLE_comp_homotopic_map_homOfLE_comp (fun _ _ _ _ hL hKL ↦
+    exists_comp_restrictPreimage_cyclicDistanceCutCocone_ι_app_homotopic_map hr hS hpos hlt hδ hL
+      hKL) h
 
 end Component
 
