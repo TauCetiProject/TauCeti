@@ -7,15 +7,18 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.RepresentationTheory.AsModule
 import TauCeti.LinearAlgebra.Charpoly.Dual
 import TauCeti.LinearAlgebra.Charpoly.Inverse
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Characteristic polynomials of representations
 
 For a representation `ρ` of a monoid on a finite free module and an element `g`, the
 characteristic polynomial of `ρ g` is invariant under isomorphism of representations,
-multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation.
+multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation. The
+determinant of `ρ g` is invariant under isomorphism too, on any module.
 
 For a representation of a group, `g⁻¹` acts with the reverse of the characteristic polynomial of
 `g`, up to a unit, and so does `g` in the contragredient representation `ρ.dual`. Hence in any
@@ -25,11 +28,16 @@ eigenvalues of arithmetic and geometric Frobenius.
 
 ## Main results
 
-* `Representation.Equiv.charpoly_apply_eq`: invariance under isomorphism.
+* `Representation.Equiv.charpoly_apply_eq`, `Representation.Equiv.det_apply_eq`: invariance of
+  the characteristic polynomial and of the determinant under isomorphism.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
 * `Representation.eq_one_of_mem_roots_map_charpoly_trivial`: its roots in any domain are `1`.
+* `Representation.charpoly_apply_eq_subrepresentation_mul_quotient`: multiplicativity on an
+  invariant submodule and its quotient.
+* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `R[G]`-module `ρ.asModule` with the
+  characteristic polynomial of `ρ g`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -42,6 +50,12 @@ public section
 open Module Polynomial
 
 namespace Representation
+
+/-- Isomorphic representations have the same determinants. -/
+theorem Equiv.det_apply_eq {R G V W : Type*} [CommRing R] [Monoid G] [AddCommGroup V] [Module R V]
+    [AddCommGroup W] [Module R W] {ρ : Representation R G V} {σ : Representation R G W}
+    (φ : ρ.Equiv σ) (g : G) : (ρ g).det = (σ g).det := by
+  rw [← φ.conj_apply_self g, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj]
 
 variable {R G V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Module.Free R V]
   [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W]
@@ -78,6 +92,27 @@ theorem eq_one_of_mem_roots_map_charpoly_trivial {S : Type*} [CommRing S] [IsDom
   simp only [charpoly_trivial_apply, IsRoot.def, eval_map, eval₂_pow, eval₂_sub, eval₂_X,
     eval₂_one] at h
   exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero h)
+
+/-- **The characteristic polynomial on an invariant submodule and its quotient.** If `U` and
+`V ⧸ U` are free of finite rank, `g` acts on `V` with characteristic polynomial the product of
+those of its actions on `U` and on `V ⧸ U`. No complement of `U` is needed. -/
+theorem charpoly_apply_eq_subrepresentation_mul_quotient (ρ : Representation R G V)
+    (U : Submodule R V) (le_comap : ∀ g, U ≤ U.comap (ρ g)) [Module.Free R U] [Module.Finite R U]
+    [Module.Free R (V ⧸ U)] [Module.Finite R (V ⧸ U)] (g : G) :
+    (ρ g).charpoly =
+      (ρ.subrepresentation U le_comap g).charpoly * (ρ.quotient U le_comap g).charpoly :=
+  LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U (ρ g) (le_comap g)
+
+variable (ρ) in
+/-- The action of `g` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
+`ρ g`. -/
+theorem charpoly_lsmul_asModule_of (g : G) :
+    (Algebra.lsmul R R ρ.asModule (MonoidAlgebra.of R G g)).charpoly = (ρ g).charpoly := by
+  rw [← ρ.asModuleEquiv.charpoly_conj]
+  congr 1
+  ext x
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Algebra.lsmul_coe,
+    ← asModuleEquiv_symm_map_rho, LinearEquiv.apply_symm_apply]
 
 end Monoid
 

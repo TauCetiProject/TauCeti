@@ -169,7 +169,7 @@ theorem contDiffOn_chartZeroOrder_image (hD : IsRealCauchyRiemannOperator F j D)
     (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
     ContDiffOn ℝ n (A.chartZeroOrder D i) (A.image i) :=
   (A.contDiffOn_chartZeroOrder_of_univ hD hDs i).mono
-    ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+    (A.image_subset_target_inter_preimage_baseSet i)
 
 /-- **Boundedness of the zeroth-order term.** The zeroth-order term in chart `i` of a real
 Cauchy–Riemann operator which is `C^n` on `M` is bounded on the closure of the image of chart `i`,
