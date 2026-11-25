@@ -218,16 +218,6 @@ private def evalQuotient [Algebra (ZMod p) R]
     rintro _ ⟨k, rfl⟩
     exact RingHom.mem_ker.mpr ((aeval_detCoeff A _).trans (hA.1 _ k.is_lt)))
 
-private theorem evalQuotient_mk [Algebra (ZMod p) R]
-    {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A)
-    (x : MvPolynomial (ι × ι × Fin h) (ZMod p)) :
-    evalQuotient hN hA (Ideal.Quotient.mk (lowerIdeal p ι hN) x) =
-      aeval (fun v : ι × ι × Fin h ↦ (A v.1 v.2.1).coeff v.2.2) x := by
-  have hc : (evalQuotient hN hA).comp (Ideal.Quotient.mkₐ (ZMod p) (lowerIdeal p ι hN)) =
-      matrixEval A :=
-    Ideal.Quotient.liftₐ_comp (lowerIdeal p ι hN) (matrixEval A) _
-  exact AlgHom.congr_fun hc x
-
 /-- Evaluation at a matrix on the locus extends uniquely to its coordinate algebra. -/
 def homOfMatrix [Algebra (ZMod p) R]
     {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A) :
@@ -236,7 +226,8 @@ def homOfMatrix [Algebra (ZMod p) R]
     (Ideal.Quotient.mk (lowerIdeal p ι hN) (detCoeff p h ι ⟨N, hN⟩))
     (f := evalQuotient hN hA)
     (by
-      rw [evalQuotient_mk, aeval_detCoeff]
+      erw [evalQuotient, Ideal.Quotient.liftₐ_apply, Ideal.Quotient.lift_mk,
+        AlgHom.coe_toRingHom, matrixEval, aeval_detCoeff]
       exact hA.2)
 
 @[simp]
@@ -248,7 +239,8 @@ theorem homOfMatrix_coordinateMap [Algebra (ZMod p) R]
   simp only [homOfMatrix, coordinateMap, AlgHom.comp_apply, Algebra.algHom,
     IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk,
     IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift_eq]
-  exact evalQuotient_mk hN hA x
+  erw [evalQuotient, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    Ideal.Quotient.liftₐ_apply, Ideal.Quotient.lift_mk, AlgHom.coe_toRingHom, matrixEval]
 
 @[simp]
 theorem matrixOfHom_homOfMatrix [Algebra (ZMod p) R]
