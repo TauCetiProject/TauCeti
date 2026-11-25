@@ -264,10 +264,6 @@ instance : OrderBot (HopfIdeal R H) where
 theorem toIdeal_eq_bot_iff {I : HopfIdeal R H} : I.toIdeal = ⊥ ↔ I = ⊥ := by
   rw [← le_bot_iff, ← bot_toIdeal (R := R), toIdeal_le_toIdeal, le_bot_iff]
 
-/-- A Hopf ideal is zero exactly when its underlying ideal is contained in the zero ideal. -/
-theorem toIdeal_le_bot_iff {I : HopfIdeal R H} : I.toIdeal ≤ ⊥ ↔ I = ⊥ :=
-  le_bot_iff.trans toIdeal_eq_bot_iff
-
 /-- The sum of two Hopf ideals is a Hopf ideal. -/
 instance instMax : Max (HopfIdeal R H) where
   max I J :=
@@ -498,7 +494,7 @@ namespace HopfIdeal
 theorem toIdeal_le_ker_iff_of_injective {F A : Type*} [Semiring A] [FunLike F H A]
     [RingHomClass F H A] {f : F} (hf : Function.Injective f) {I : HopfIdeal R H} :
     I.toIdeal ≤ RingHom.ker f ↔ I = ⊥ := by
-  rw [(RingHom.injective_iff_ker_eq_bot f).mp hf, toIdeal_le_bot_iff]
+  rw [(RingHom.injective_iff_ker_eq_bot f).mp hf, le_bot_iff, toIdeal_eq_bot_iff]
 
 end HopfIdeal
 

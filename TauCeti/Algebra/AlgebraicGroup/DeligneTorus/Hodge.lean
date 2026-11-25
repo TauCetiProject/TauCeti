@@ -61,7 +61,7 @@ weight `n`.
 * `TauCeti.DeligneTorus.isHodgeDecomposition_hodgeComponent`: for a finite-dimensional
   representation pure of weight `n`, the family `p ↦ V^{p, n - p}` is a Hodge decomposition of
   weight `n`.
-* `Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent`: a real subspace
+* `Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent`: a real subspace
   `N` is a subrepresentation exactly when `ℂ ⊗[ℝ] N` is the sum of its intersections with the
   `V^{p,q}`.
 
@@ -334,7 +334,8 @@ theorem isHodgeDecomposition_hodgeComponent [Module.Finite ℝ V] {n : ℤ}
 A real subspace `N` of a representation `V` of the Deligne torus is a subrepresentation, its
 stabilizer being all of `S`, exactly when its complexification is the sum of its intersections
 with the Hodge components: `ℂ ⊗[ℝ] N = ⊕ (ℂ ⊗[ℝ] N ∩ V^{p,q})`. -/
-theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent (N : Submodule ℝ V) :
+theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent
+    (N : Submodule ℝ V) :
     N.stabilizerHopfIdeal S = ⊥ ↔
       N.baseChange ℂ = ⨆ pq : ℤ × ℤ, N.baseChange ℂ ⊓ hodgeComponent V pq.1 pq.2 := by
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ

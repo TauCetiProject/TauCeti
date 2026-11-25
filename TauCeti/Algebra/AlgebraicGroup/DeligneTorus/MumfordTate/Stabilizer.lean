@@ -16,14 +16,14 @@ of `G` (a right `H`-comodule), and let `h : S → G_ℝ` be a homomorphism from 
 Through `h`, the real representation `ℝ ⊗[ℚ] M` of `G_ℝ` becomes a representation of `S`
 (`TauCeti.DeligneTorus.realComodule`), whose complexification splits into the Hodge components
 `V^{p,q}` (`TauCeti.DeligneTorus.hodgeComponent`), the weight spaces of `S_ℂ`. No condition on
-`h` is imposed here. In the setting of ShimuraVarieties §P.3a, where `G = GL(V)` for a
-finite-dimensional `ℚ`-vector space `V`, `M = V`, and the weight cocharacter of `h` is defined over
-`ℚ`, this decomposition is the rational Hodge structure on `V` defined by `h`.
+`h` is imposed here. When `G = GL(V)` for a finite-dimensional `ℚ`-vector space `V`, `M = V`,
+and the weight cocharacter of `h` is defined over `ℚ`, this decomposition is the rational Hodge
+structure on `V` defined by `h`.
 
 This file proves that a rational subspace `W ≤ M` is stable under the Mumford–Tate group `MT(h)`
 (its stabilizer in `G` contains `MT(h)`, that is, its stabilizer Hopf ideal lies below the
 Mumford–Tate ideal) exactly when `ℂ ⊗ W` is the sum of its intersections with the `V^{p,q}`. In
-the setting of §P.3a the latter says that `W` is a sub-Hodge structure, so the sub-Hodge
+the `GL(V)` setting above the latter says that `W` is a sub-Hodge structure, so the sub-Hodge
 structures are exactly the subspaces stable under `MT(h)`.
 
 The proof goes through the real subrepresentations of `S`. If `W` is a sub-Hodge structure, then
@@ -36,9 +36,9 @@ stabilizes `W`, so does `h(S)`, which factors through the real extension of `MT(
 * `TauCeti.DeligneTorus.realComodule M h`: the representation of `S` on `ℝ ⊗[ℚ] M` through `h`.
 * `TauCeti.DeligneTorus.stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff`: `MT(h)` stabilizes `W`
   exactly when `W_ℝ` is a subrepresentation of `S`.
-* `TauCeti.DeligneTorus.stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_hodgeComponent`:
+* `TauCeti.DeligneTorus.stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_inf_hodgeComponent`:
   **`MT(h)` stabilizes `W` exactly when `ℂ ⊗ W` is the sum of its intersections with the
-  `V^{p,q}`**, that is, in the setting of §P.3a, when `W` is a sub-Hodge structure.
+  `V^{p,q}`**, that is, in the `GL(V)` setting above, when `W` is a sub-Hodge structure.
 
 ## References
 
@@ -111,7 +111,7 @@ sum of its intersections with the Hodge components `V^{p,q}` of the representati
 by `h`. When `G = GL(V)` with `V` finite-dimensional, `M = V`, and the weight cocharacter of `h` is
 defined over `ℚ`, so that `h` defines a rational Hodge structure on `V`, this says that the
 sub-Hodge structures of `V` are exactly the subspaces stable under `MT(h)`. -/
-theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_hodgeComponent
+theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_inf_hodgeComponent
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) (W : Submodule ℚ M) :
     letI := realComodule M h
     W.stabilizerHopfIdeal H ≤ mumfordTateHopfIdeal h ↔
@@ -119,6 +119,6 @@ theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_hodgeComponent
         ⨆ pq : ℤ × ℤ, (W.baseChange ℝ).baseChange ℂ ⊓ hodgeComponent (ℝ ⊗[ℚ] M) pq.1 pq.2 := by
   let _ := realComodule M h
   rw [stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff,
-    Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent]
+    Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent]
 
 end TauCeti.DeligneTorus
