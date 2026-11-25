@@ -36,7 +36,7 @@ In a Hausdorff pseudometric space, if `f → a` and `g → b` along a nontrivial
 (`Filter.Tendsto.eq_of_eventually_dist_le`).
 
 The metric entourages `{p | dist p.1 p.2 < ε}` and `{p | dist p.1 p.2 ≤ ε}` grow with `ε`
-(`Metric.monotone_setOf_dist_lt`, `Metric.monotone_setOf_dist_le`).
+(`Metric.monotone_ofPred_dist_lt`, `Metric.monotone_ofPred_dist_le`).
 -/
 
 public section
@@ -116,11 +116,11 @@ theorem Filter.Tendsto.eq_of_eventually_dist_le {α β : Type*} [PseudoMetricSpa
     hg
 
 /-- The metric entourages `{p | dist p.1 p.2 < ε}` grow with `ε`. -/
-theorem Metric.monotone_setOf_dist_lt {X : Type*} [PseudoMetricSpace X] :
+theorem Metric.monotone_ofPred_dist_lt {X : Type*} [PseudoMetricSpace X] :
     Monotone fun ε : ℝ ↦ {p : X × X | dist p.1 p.2 < ε} :=
   fun _ _ h _ hp ↦ lt_of_lt_of_le hp h
 
 /-- The metric entourages `{p | dist p.1 p.2 ≤ ε}` grow with `ε`. -/
-theorem Metric.monotone_setOf_dist_le {X : Type*} [PseudoMetricSpace X] :
+theorem Metric.monotone_ofPred_dist_le {X : Type*} [PseudoMetricSpace X] :
     Monotone fun ε : ℝ ↦ {p : X × X | dist p.1 p.2 ≤ ε} :=
   fun _ _ h _ hp ↦ le_trans hp h

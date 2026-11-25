@@ -51,7 +51,7 @@ theorem tendsto_netEntropyEntourage_dist_lt :
       (𝓝 (coverEntropy T F)) := by
   rw [coverEntropy_eq_iSup_basis_netEntropyEntourage Metric.uniformity_basis_dist]
   exact ((netEntropyEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The growth rates of maximal families of points of `F` with pairwise disjoint closed Bowen
 `(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the topological
@@ -61,7 +61,7 @@ theorem tendsto_netEntropyEntourage_dist_le :
       (𝓝 (coverEntropy T F)) := by
   rw [coverEntropy_eq_iSup_basis_netEntropyEntourage Metric.uniformity_basis_dist_le]
   exact ((netEntropyEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_le).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_le).tendsto_nhdsGT_iSup 0
 
 /-- The growth rates of minimal `(n, ε)`-spanning sets for open Bowen balls tend to the
 topological entropy as `ε → 0⁺`. -/
@@ -70,7 +70,7 @@ theorem tendsto_coverEntropyEntourage_dist_lt :
       (𝓝 (coverEntropy T F)) := by
   rw [coverEntropy_eq_iSup_basis Metric.uniformity_basis_dist]
   exact ((coverEntropyEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The growth rates of minimal `(n, ε)`-spanning sets for closed Bowen balls tend to the
 topological entropy as `ε → 0⁺`. -/
@@ -79,7 +79,7 @@ theorem tendsto_coverEntropyEntourage_dist_le :
       (𝓝 (coverEntropy T F)) := by
   rw [coverEntropy_eq_iSup_basis Metric.uniformity_basis_dist_le]
   exact ((coverEntropyEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_le).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_le).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of maximal families of points of `F` with pairwise disjoint open
 Bowen `(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the
@@ -89,7 +89,7 @@ theorem tendsto_netEntropyInfEntourage_dist_lt :
       (𝓝 (coverEntropyInf T F)) := by
   rw [coverEntropyInf_eq_iSup_basis_netEntropyInfEntourage Metric.uniformity_basis_dist]
   exact ((netEntropyInfEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of maximal families of points of `F` with pairwise disjoint closed
 Bowen `(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the
@@ -99,7 +99,7 @@ theorem tendsto_netEntropyInfEntourage_dist_le :
       (𝓝 (coverEntropyInf T F)) := by
   rw [coverEntropyInf_eq_iSup_basis_netEntropyInfEntourage Metric.uniformity_basis_dist_le]
   exact ((netEntropyInfEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_le).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_le).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of minimal `(n, ε)`-spanning sets for open Bowen balls tend to the
 `liminf` topological entropy as `ε → 0⁺`. -/
@@ -108,7 +108,7 @@ theorem tendsto_coverEntropyInfEntourage_dist_lt :
       (𝓝 (coverEntropyInf T F)) := by
   rw [coverEntropyInf_eq_iSup_basis Metric.uniformity_basis_dist]
   exact ((coverEntropyInfEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of minimal `(n, ε)`-spanning sets for closed Bowen balls tend to the
 `liminf` topological entropy as `ε → 0⁺`. -/
@@ -117,6 +117,6 @@ theorem tendsto_coverEntropyInfEntourage_dist_le :
       (𝓝 (coverEntropyInf T F)) := by
   rw [coverEntropyInf_eq_iSup_basis Metric.uniformity_basis_dist_le]
   exact ((coverEntropyInfEntourage_antitone T F).comp_monotone
-    Metric.monotone_setOf_dist_le).tendsto_nhdsGT_iSup 0
+    Metric.monotone_ofPred_dist_le).tendsto_nhdsGT_iSup 0
 
 end TauCeti
