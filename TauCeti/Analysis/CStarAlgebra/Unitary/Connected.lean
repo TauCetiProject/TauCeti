@@ -18,28 +18,32 @@ import Mathlib.Topology.Separation.Connected
 /-!
 # Unitary paths from spectral cuts
 
-A unitary with nonnegative real part, and any self-adjoint unitary, is joined to the identity.
-These continuous-functional-calculus paths supply the two factors of the reflection argument
-for Hilbert-space unitaries. They do not assert connectedness of the unitary group of a general
-C⋆-algebra.
+A unitary with nonnegative real part, and any self-adjoint unitary, is joined to the identity
+(`Unitary.joined_one_of_nonneg_realPart`, `Unitary.joined_one_of_isSelfAdjoint`). These
+continuous-functional-calculus paths supply the two factors of the reflection argument for
+Hilbert-space unitaries. They do not assert connectedness of the unitary group of a general
+C⋆-algebra. Their proofs are adapted from
+[AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer, and supply the
+source formalization's supplementary reflection argument for the invertible path connectedness
+used in *Spin Geometry*, III §7, Lemma 7.7, p. 203.
 
-Multiplying a unitary by a unimodular scalar other than `-1` stays in its path component
-(`Unitary.joined_smul`). Hence a unitary whose spectrum misses a point `z` of the unit circle is
-joined to the identity (`Unitary.joined_one_of_notMem_spectrum`): rotating, `-1` is not in the
-spectrum of `-z⋆ u`, so `‖-z⋆ u - 1‖ < 2` and Mathlib's exponential path `Unitary.joined` joins
-`-z⋆ u` to `1`, while scalar rotations join `u` to `-z⋆ u`. In particular every unitary with
-finite spectrum is joined to the identity (`Unitary.joined_one_of_finite_spectrum`).
-
-The proofs are adapted from
-[AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
-They supply the source formalization's supplementary reflection argument for the invertible
-path connectedness used in *Spin Geometry*, III §7, Lemma 7.7, p. 203.
+Separately, multiplying a unitary by a unimodular scalar other than `-1` stays in its path
+component (`Unitary.joined_smul`). Hence a unitary whose spectrum misses a point `z` of the unit
+circle is joined to the identity (`Unitary.joined_one_of_notMem_spectrum`): rotating, `-1` is not
+in the spectrum of `-z⋆ u`, so `‖-z⋆ u - 1‖ < 2` and Mathlib's exponential path
+`Unitary.joined` joins `-z⋆ u` to `1`, while scalar rotations join `u` to `-z⋆ u`. In particular
+every unitary with finite spectrum is joined to the identity
+(`Unitary.joined_one_of_finite_spectrum`). This scalar-rotation argument is the
+path-connectedness step behind the vanishing of `K₁` for finite-dimensional C⋆-algebras
+(Blackadar, §8.1).
 
 ## References
 
 * H. B. Lawson, Jr., and M.-L. Michelsohn, *Spin Geometry*, Princeton Mathematical Series 38,
   Princeton University Press, 1989, Chapter III, §7, Lemma 7.7, p. 203,
   [DOI](https://doi.org/10.1515/9781400883912).
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge University Press (1998),
+  §8.1.
 
 [fredholm-paths]: https://github.com/alpha-squared-labs/Lean-Atiyah-Singer/blob/09fc7bab3f9ff606901bde4b5a5580470da63a70/AtiyahSinger/Analysis/FredholmPaths.lean
 -/
@@ -110,8 +114,7 @@ theorem Unitary.joined_smul (v : unitary A) {w : ℂ} (hw : w ∈ unitary ℂ) (
     _ < 2 := by rwa [mul_one]
 
 /-- **Unitaries whose spectrum misses a point of the circle are joined to `1`.** If `z` is a
-unitary scalar (`‖z‖ = 1`) and `z ∉ σ(u)`, then `-1 ∉ σ(-z⋆ u)`, so `-z⋆ u` is joined to `1` by an
-exponential path, and `u` is joined to `-z⋆ u` by scalar rotations. -/
+unitary scalar and `z ∉ σ(u)`, then `u` lies in the path component of the identity. -/
 theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : z ∈ unitary ℂ)
     (hzu : z ∉ spectrum ℂ (u : A)) : Joined 1 u := by
   set c : ℂ := -star z
@@ -146,8 +149,7 @@ theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : z 
   · convert Unitary.joined_smul v (Unitary.star_mem hc) hc₁ using 1
     exact Subtype.ext hu
 
-/-- A unitary with finite spectrum is joined to `1` by a path of unitaries: its spectrum misses a
-point of the infinite unit circle. -/
+/-- A unitary with finite spectrum is joined to `1` by a path of unitaries. -/
 theorem Unitary.joined_one_of_finite_spectrum (u : unitary A)
     (h : (spectrum ℂ (u : A)).Finite) : Joined 1 u := by
   have hinf : (Metric.sphere (0 : ℂ) 1).Infinite :=

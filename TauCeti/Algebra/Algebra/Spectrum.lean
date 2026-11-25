@@ -12,7 +12,7 @@ import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
-# Spectra under unit-reflecting algebra homomorphisms, and of `1 + k a`
+# Spectra under unit-reflecting algebra homomorphisms, of `1 + k a`, and of integral elements
 
 Every algebra homomorphism `φ` satisfies `spectrum R (φ a) ⊆ spectrum R a`
 (`AlgHom.spectrum_apply_subset`). When `φ` also reflects units, the inclusion is an equality.
@@ -82,8 +82,7 @@ theorem apply_mem_spectrum_of_ker_le {R A B F G : Type*} [CommRing R] [Nontrivia
 end AlgHom
 
 open Polynomial in
-/-- An integral element of an algebra over a field has finite spectrum: its spectrum consists of
-roots of its monic annihilating polynomial. -/
+/-- An integral element of an algebra over a field has finite spectrum. -/
 theorem IsIntegral.finite_spectrum {𝕜 A : Type*} [Field 𝕜] [Ring A] [Algebra 𝕜 A] {a : A}
     (ha : IsIntegral 𝕜 a) : (spectrum 𝕜 a).Finite := by
   nontriviality A
@@ -112,8 +111,7 @@ theorem isUnit_one_add_smul_iff {R A : Type*} [Field R] [Ring A] [Algebra R A] {
   rw [← zero_notMem_iff R, hσ]
   simp
 
-/-- An element of a finite-dimensional algebra over a field has finite spectrum: it is
-integral. -/
+/-- An element of a finite-dimensional algebra over a field has finite spectrum. -/
 theorem finite_of_finiteDimensional {𝕜 A : Type*} [Field 𝕜] [Ring A] [Algebra 𝕜 A]
     [FiniteDimensional 𝕜 A] (a : A) : (spectrum 𝕜 a).Finite :=
   (IsIntegral.of_finite 𝕜 a).finite_spectrum

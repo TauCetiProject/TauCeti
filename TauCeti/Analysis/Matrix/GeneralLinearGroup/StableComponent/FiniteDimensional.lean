@@ -40,9 +40,8 @@ namespace TauCeti.StableComponentGroup
 
 variable {A : Type*} [CStarAlgebra A]
 
-/-- **`K₁` of a finite-dimensional C⋆-algebra vanishes**: its stable component group is trivial.
-Every class is that of a unitary matrix, which has finite spectrum in the finite-dimensional
-C⋆-algebra of matrices, so it is joined to `1`. -/
+/-- **`K₁` of a finite-dimensional C⋆-algebra vanishes**: its stable component group is
+trivial. -/
 instance subsingleton_of_finiteDimensional [FiniteDimensional ℂ A] :
     Subsingleton (StableComponentGroup A) := by
   -- Mathlib's C⋆-algebra structure on `CStarMatrix n n A` is stated for an ordered `A`.
