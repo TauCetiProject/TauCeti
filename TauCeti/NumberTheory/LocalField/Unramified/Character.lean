@@ -148,11 +148,11 @@ theorem unramifiedCharacter_injective :
 
 variable (K) in
 /-- The unramified character `μ_t` with values in a unit group `Aˣ` is smooth, whatever the topology
-on `Aˣ`: it is locally constant because the normalized valuation is. -/
+on `Aˣ`: its kernel contains the open subgroup `U(K,0)` of units of valuation one. -/
 theorem isSmoothCharacter_unramifiedCharacter {A : Type*} [Monoid A] [TopologicalSpace Aˣ]
-    (t : Aˣ) : IsSmoothCharacter (unramifiedCharacter K t : Kˣ →* Aˣ) :=
-  isSmoothCharacter_iff_isLocallyConstant.2 <|
-    ((IsLocallyConstant.iff_continuous _).2 (continuous_normalizedValuation K)).comp
-      (zpowersHom Aˣ t)
+    (t : Aˣ) : IsSmoothCharacter (unramifiedCharacter K t : Kˣ →* Aˣ) := by
+  refine isSmoothCharacter_iff.2 (Subgroup.isOpen_mono (fun u hu ↦ ?_) (isOpen_unitFiltration 0))
+  rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass]
+  exact unramifiedCharacter_apply_of_valuation_eq_one t ((mem_unitFiltration_zero u).1 hu)
 
 end TauCeti
