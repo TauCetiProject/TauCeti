@@ -85,9 +85,10 @@ propositionally equal arities.
   `TauCeti.AInfinity.stasheffSum_three` and `TauCeti.AInfinity.stasheffSum_four`: the four
   identities written out using the supplied degree family.
 * `TauCeti.AInfinity.stasheffSum_two_eq_zero_iff`,
-  `TauCeti.AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero` and
-  `TauCeti.AInfinity.stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero`: the
-  differential graded degeneration.
+  `TauCeti.AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero`,
+  `TauCeti.AInfinity.stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero` and
+  `TauCeti.AInfinity.stasheffSum_eq_zero_of_m_eq_zero_of_three_le`: the differential graded
+  degeneration.
 
 The unsuspended terms, sums, and low-arity formulas work over any ring. Commutativity of the
 ground ring is used for the signed multilinear maps in the suspension and one-slot substitution
@@ -335,6 +336,18 @@ theorem stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero
     stasheffSum m d x 4 = 0 := by
   simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top,
     stasheffTerm_eq_zero_of_inner_eq_zero, stasheffTerm_eq_zero_of_outer_eq_zero, h₃, h₄]
+
+/-- When the operations of arity at least three vanish, the Stasheff identities of arity at least
+four hold term by term: every term has an inner or an outer operation of arity at least three. -/
+theorem stasheffSum_eq_zero_of_m_eq_zero_of_three_le {n : ℕ} (hn : 4 ≤ n)
+    (hm : ∀ k, 3 ≤ k → m k = 0) : stasheffSum m d x n = 0 := by
+  rw [stasheffSum_def]
+  refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
+  rw [Finset.mem_range] at hp
+  rw [Finset.mem_Icc] at hs
+  rcases lt_or_ge s 3 with hs3 | hs3
+  · exact stasheffTerm_eq_zero_of_outer_eq_zero m d x (hm _ (by omega))
+  · exact stasheffTerm_eq_zero_of_inner_eq_zero m d x (hm s hs3)
 
 /-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
 operations intertwines their Stasheff sums. -/

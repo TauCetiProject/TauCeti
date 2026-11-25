@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 public import TauCeti.Combinatorics.PermutationTriple.Examples
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
 public import TauCeti.GroupTheory.TriangleGroup.CosetTriple
