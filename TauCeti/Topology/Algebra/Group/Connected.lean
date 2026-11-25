@@ -37,6 +37,8 @@ connected one.
   neighbourhood of `1` is the whole group.
 * `Joined.inv_mul_mem_connectedComponentOfOne`: elements joined by a path differ by an element of
   the identity component.
+* `Subgroup.mem_connectedComponentOfOne_iff_joined`: in a locally path-connected group, the
+  identity component consists of the elements joined to `1` by a path.
 * `Subgroup.map_connectedComponentOfOne_le`: a continuous homomorphism maps the identity
   component into the identity component.
 * `MonoidHom.range_eq_connectedComponentOfOne`: a continuous homomorphism with open range, whose
@@ -184,6 +186,13 @@ theorem _root_.Joined.inv_mul_mem_connectedComponentOfOne {x y : G} (h : Joined 
   have : Joined (1 : G) (x⁻¹ * y) := by
     simpa using h.map (continuous_const.mul continuous_id : Continuous fun z : G ↦ x⁻¹ * z)
   exact pathComponent_subset_component _ this
+
+/-- In a locally path-connected topological group, an element lies in the identity component
+exactly when it is joined to `1` by a path. -/
+theorem _root_.Subgroup.mem_connectedComponentOfOne_iff_joined [LocallyPathConnectedSpace G]
+    {x : G} : x ∈ Subgroup.connectedComponentOfOne G ↔ Joined 1 x := by
+  rw [Subgroup.mem_connectedComponentOfOne_iff, ← pathComponent_eq_connectedComponent,
+    mem_pathComponent_iff]
 
 /-- A continuous homomorphism maps the identity component into the identity component. -/
 theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']

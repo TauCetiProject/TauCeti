@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable.BlockSum
 public import TauCeti.Topology.Algebra.Star.Unitary
 
@@ -15,10 +16,11 @@ public import TauCeti.Topology.Algebra.Star.Unitary
 # Unitary representatives of the stable component group
 
 Let `A` be a unital C⋆-algebra. The polar unitary `x ↦ x.polarUnitary` of an invertible element
-depends continuously on it (`Units.continuous_polarUnitary`), fixes unitaries, and commutes with
-unital star homomorphisms (`Units.coe_polarUnitary_map`). So it retracts the group of invertible
-elements onto the unitary group, and two unitaries joined by a path of invertible elements are
-joined by a path of unitaries (`Unitary.joined_of_joined_toUnits`).
+depends continuously on it (`Units.continuous_polarUnitary`, from the Cartan decomposition), fixes
+unitaries, and commutes with unital star homomorphisms (`Units.coe_polarUnitary_map`). So it
+retracts the group of invertible elements onto the unitary group, and two unitaries joined by a
+path of invertible elements are joined by a path of unitaries
+(`Unitary.joined_of_joined_toUnits`).
 
 Applied to the C⋆-algebras of matrices over `A`, this gives the description of the stable
 component group `π₀ GL_∞(A)` through unitary matrices: two unitary matrices have the same class
@@ -32,8 +34,7 @@ joined by a path of unitaries after a stabilization
 
 ## Main results
 
-* `Units.continuous_polarUnitary`, `Units.coe_polarUnitary_map`: continuity and naturality of
-  the polar unitary.
+* `Units.coe_polarUnitary_map`: naturality of the polar unitary.
 * `Unitary.joined_of_joined_toUnits`, `Matrix.GeneralLinearGroup.joined_unitary_of_joined_toUnits`:
   unitaries joined through invertible elements are joined through unitaries.
 * `TauCeti.coe_stabilizeGL_mem_unitary`, `TauCeti.coe_blockSumGL_mem_unitary`: stabilization and
@@ -59,20 +60,6 @@ section Polar
 
 variable {A : Type*} [CStarAlgebra A]
 
-/-- The polar unitary `(√(x x⋆))⁻¹ x` of an invertible element of a unital C⋆-algebra depends
-continuously on it. -/
-theorem Units.continuous_polarUnitary [PartialOrder A] [StarOrderedRing A] :
-    Continuous (fun x : Aˣ ↦ x.polarUnitary) := by
-  refine Continuous.subtype_mk ?_ _
-  simp only [coe_polarUnitary]
-  have hs : Continuous (fun x : Aˣ ↦ CFC.sqrt ((x : A) * star (x : A))) :=
-    CFC.continuousOn_sqrt.comp_continuous (by fun_prop) fun x ↦ mul_star_self_nonneg (x : A)
-  refine Continuous.mul (continuous_iff_continuousAt.2 fun x ↦ ?_) Units.continuous_val
-  have hi := NormedRing.inverse_continuousAt (isStrictlyPositive_sqrt_mul_star x).isUnit.unit
-  rw [IsUnit.unit_spec] at hi
-  exact ContinuousAt.comp (g := Ring.inverse)
-    (f := fun y : Aˣ ↦ CFC.sqrt ((y : A) * star (y : A))) hi hs.continuousAt
-
 /-- In a unital C⋆-algebra, two unitaries joined by a path of invertible elements are joined by a
 path of unitaries: the polar unitary retracts the invertible elements onto the unitaries. -/
 theorem Unitary.joined_of_joined_toUnits {u v : unitary A}
@@ -80,7 +67,6 @@ theorem Unitary.joined_of_joined_toUnits {u v : unitary A}
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   simpa only [Units.polarUnitary_toUnits] using h.map Units.continuous_polarUnitary
-
 
 /-- In a unital C⋆-algebra, two unitaries are joined by a path of unitaries exactly when they are
 joined by a path of invertible elements. -/
@@ -143,13 +129,6 @@ theorem joined_unitary_of_joined_toUnits {u v : unitary (Matrix n n A)}
     convert h.map (map_continuous (toCStarMatrixUnits (n := n) (A := A))) using 1 <;>
       exact Units.ext (by simp; rfl)
   simpa using (Unitary.joined_of_joined_toUnits hj).map e.symm.continuous
-
-/-- An invertible matrix over a unital C⋆-algebra lies in the identity component of `GLₙ(A)`
-exactly when it is joined to `1` by a path of invertible matrices. -/
-theorem mem_connectedComponentOfOne_iff_joined {x : GL n A} :
-    x ∈ Subgroup.connectedComponentOfOne (GL n A) ↔ Joined 1 x := by
-  rw [← SetLike.mem_coe, Subgroup.coe_connectedComponentOfOne,
-    ← pathComponent_eq_connectedComponent, mem_pathComponent_iff]
 
 end Matrix.GeneralLinearGroup
 
@@ -215,12 +194,6 @@ theorem mk_blockSumGL {m n : ℕ} (u : GL (Fin m) A × GL (Fin n) A) :
   rw [← AlgebraicK1.toStableComponentGroup_mk, AlgebraicK1.mk_blockSumGL, map_mul,
     AlgebraicK1.toStableComponentGroup_mk, AlgebraicK1.toStableComponentGroup_mk]
 
-/-- Over a connected topological ring, `diag(u, v)` and `diag(uv, 1)` have the same class in the
-stable component group. -/
-theorem mk_blockSumGL_eq_mk_blockSumGL_mul_one {n : ℕ} (u v : GL (Fin n) A) :
-    mk A (n + n) (blockSumGL A (u, v)) = mk A (n + n) (blockSumGL A (u * v, 1)) := by
-  simp
-
 end BlockSum
 
 /-- The class of the adjoint of a unitary matrix is the inverse of its class. -/
@@ -242,7 +215,7 @@ theorem mk_eq_mk_iff_exists_path_unitary {n : ℕ} {u v : GL (Fin n) A}
       ∀ t, (γ t : Matrix (Fin k) (Fin k) A) ∈ unitary _ := by
   rw [mk_eq_mk_iff]
   refine exists_congr fun k ↦ exists_congr fun h ↦ ⟨fun hk ↦ ?_, fun ⟨γ, _⟩ ↦ ?_⟩
-  · rw [map_mul, map_inv, Matrix.GeneralLinearGroup.mem_connectedComponentOfOne_iff_joined] at hk
+  · rw [map_mul, map_inv, Subgroup.mem_connectedComponentOfOne_iff_joined] at hk
     have hj : Joined (stabilizeGL A h u) (stabilizeGL A h v) := by
       simpa using hk.map (continuous_const.mul continuous_id :
         Continuous fun z : GL (Fin k) A ↦ stabilizeGL A h u * z)
@@ -266,7 +239,7 @@ theorem exists_path_unitary_blockSumGL {n : ℕ} {u v : GL (Fin n) A}
       ∃ γ : Path (stabilizeGL A h (blockSumGL A (u, v)))
         (stabilizeGL A h (blockSumGL A (u * v, 1))),
         ∀ t, (γ t : Matrix (Fin k) (Fin k) A) ∈ unitary _ := by
-  refine (mk_eq_mk_iff_exists_path_unitary ?_ ?_).1 (mk_blockSumGL_eq_mk_blockSumGL_mul_one u v)
+  refine (mk_eq_mk_iff_exists_path_unitary ?_ ?_).1 (by simp)
   · exact coe_blockSumGL_mem_unitary hu hv
   · exact coe_blockSumGL_mem_unitary (mul_mem hu hv) (one_mem _)
 
