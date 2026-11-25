@@ -42,7 +42,8 @@ Morse–Bott function with the twisted homology of its critical submanifolds
 `TauCeti.IsMorseBottFamily`, in `TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The twisted Thom isomorphism needs the base, the model fibre `Fin (r j) → ℝ` of `ν⁻ j` and the
-coefficient ring in `Type`, so the manifolds and their model spaces live in `Type` too.
+coefficient ring in one universe. The model fibre lies in `Type`, so the manifolds, their model
+spaces and the ring live in `Type` too.
 
 ## Main results
 
