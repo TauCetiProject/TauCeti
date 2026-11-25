@@ -149,6 +149,12 @@ theorem range_subset_range (h : IsBicollar f b) : range f ⊆ range b := by
   rintro _ ⟨x, rfl⟩
   exact ⟨(x, 0), h.apply_zero x⟩
 
+/-- The complement of the image of a collared map and the open set its bicollar sweeps out
+cover the target. -/
+theorem compl_range_union_range (h : IsBicollar f b) : (range f)ᶜ ∪ range b = univ :=
+  univ_subset_iff.1 <| (compl_union_self _).symm.subset.trans
+    (union_subset_union_right _ h.range_subset_range)
+
 /-- Read in a bicollar, the collared image is exactly the zero slice. -/
 theorem image_prod_singleton_zero (h : IsBicollar f b) :
     b '' (univ ×ˢ ({0} : Set ℝ)) = range f := by
@@ -173,6 +179,11 @@ theorem apply_mem_range_iff (h : IsBicollar f b) {p : N × ℝ} :
     b p ∈ range f ↔ p.2 = 0 := by
   simpa only [mem_preimage, mem_prod, mem_univ, true_and, mem_singleton_iff] using
     Set.ext_iff.mp h.preimage_range p
+
+/-- A point of a bicollar at nonzero depth lies off the collared image. -/
+theorem apply_mem_compl_range (h : IsBicollar f b) (a : N) {t : ℝ} (ht : t ≠ 0) :
+    b (a, t) ∈ (range f)ᶜ :=
+  fun hf ↦ ht (h.apply_mem_range_iff.mp hf)
 
 /-- Inside a bicollar the complement of the collared image splits into the two sides `t > 0` and
 `t < 0` of the collar. This is what makes the collar two-sided, and it is exactly what fails for

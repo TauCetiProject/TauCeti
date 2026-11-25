@@ -23,6 +23,11 @@ every object (`TauCeti.isModHom_iff_map_smul`). A point `x : Z ⟶ X` of a pseud
 action for which `(g, x) ↦ (g • x, x)` is an isomorphism, trivialises it over `Z`
 (`TauCeti.isIso_lift_smul_snd_of_isIso_leftSMul`).
 
+A pseudo-torsor `X` under `G` has a **difference morphism** `TauCeti.ModObj.diff G X : X ⊗ X ⟶ G`,
+sending `(x, y)` to the unique `g` with `g • x = y` (`TauCeti.ModObj.lift_diff_smul`,
+`TauCeti.ModObj.eq_lift_diff_iff`). It needs no point of `X`; a point `β` of `X` over `T`
+identifies the points of `X` over `T` with those of `G` (`TauCeti.ModObj.diffEquiv`).
+
 These constructions apply in particular to group schemes acting on schemes over a
 base. All identities are identities of morphisms, rather than only of global points.
 They use Mathlib's `Hom.mulAction` and the existing group-object `TauCeti.leftTranslation`.
@@ -105,9 +110,94 @@ theorem isIso_lift_smul_snd_of_isIso_leftSMul [IsIso (ModObj.leftSMul G X)] {Z :
     dsimp only
     rw [key, Category.assoc, hg, lift_comp_fst_snd]
 
+namespace ModObj
+
+variable [IsIso (leftSMul G X)]
+
+/-- The inverse of `(g, x) ↦ (g • x, x)` keeps the second component. -/
+@[reassoc (attr := simp)]
+theorem inv_leftSMul_snd : inv (leftSMul G X) ≫ snd G X = snd X X := by
+  rw [IsIso.inv_comp_eq, leftSMul_snd]
+
+variable (X) in
+/-- The **difference morphism** of a pseudo-torsor `X` under `G`, an action for which
+`(g, x) ↦ (g • x, x)` is an isomorphism: it sends `(x, y)` to the unique `g` with `g • x = y`
+(`TauCeti.ModObj.eq_lift_diff_iff`). It is defined without a point of `X`, which need not
+exist. -/
+noncomputable def diff : X ⊗ X ⟶ G :=
+  lift (snd X X) (fst X X) ≫ inv (leftSMul G X) ≫ fst G X
+
+/-- The inverse of `(g, x) ↦ (g • x, x)` sends `(y, x)` to `(diff (x, y), x)`. -/
+theorem lift_comp_inv_leftSMul {T : C} (x y : T ⟶ X) :
+    lift y x ≫ inv (leftSMul G X) = lift (lift x y ≫ diff G X) x := by
+  ext
+  · simp only [diff, comp_lift_assoc, lift_snd, lift_fst, Category.assoc]
+  · simp
+
+/-- **The difference acts as a translation**: `diff (x, y) • x = y`. -/
+@[simp]
+theorem lift_diff_smul {T : C} (x y : T ⟶ X) : (lift x y ≫ diff G X) • x = y := by
+  rw [← lift_leftSMul_eq_lift_iff, ← lift_comp_inv_leftSMul, Category.assoc, IsIso.inv_hom_id,
+    Category.comp_id]
+
+/-- The difference `diff (x, y)` is the unique `m` with `m • x = y`. -/
+theorem eq_lift_diff_iff {T : C} (x y : T ⟶ X) (m : T ⟶ G) :
+    m = lift x y ≫ diff G X ↔ m • x = y :=
+  ⟨fun h ↦ h ▸ lift_diff_smul G x y, fun h ↦
+    ((isIso_leftSMul_iff (M := G) (X := X)).1 ‹_› T x y).unique h (lift_diff_smul G x y)⟩
+
+/-- The difference of a translate: `diff (x, m • x) = m`. -/
+@[simp]
+theorem lift_smul_diff {T : C} (x : T ⟶ X) (m : T ⟶ G) : lift x (m • x) ≫ diff G X = m :=
+  ((eq_lift_diff_iff G x _ m).2 rfl).symm
+
+/-- The difference of a point with itself is the unit: `diff (x, x) = 1`. -/
+@[simp]
+theorem lift_self_diff {T : C} (x : T ⟶ X) : lift x x ≫ diff G X = 1 :=
+  ((eq_lift_diff_iff G x x 1).2 (one_smul _ x)).symm
+
+/-- **A change of origin is a translation.** A point `β : T ⟶ X` of a pseudo-torsor identifies
+the points of `X` over `T` with those of `G`, by `x ↦ diff (β, x)`, with inverse `m ↦ m • β`.
+These bijections are compatible with base change along `g : T' ⟶ T` when `β` is replaced by
+`g ≫ β` (`TauCeti.ModObj.diffEquiv_comp`). -/
+@[expose, simps]
+noncomputable def diffEquiv {T : C} (β : T ⟶ X) : (T ⟶ X) ≃ (T ⟶ G) where
+  toFun x := lift β x ≫ diff G X
+  invFun m := m • β
+  left_inv x := lift_diff_smul G β x
+  right_inv m := lift_smul_diff G β m
+
+/-- The change of origin commutes with base change: `diffEquiv (g ≫ β) (g ≫ x)` is the base
+change `g ≫ diffEquiv β x`. -/
+theorem diffEquiv_comp {T T' : C} (g : T' ⟶ T) (β x : T ⟶ X) :
+    diffEquiv G (g ≫ β) (g ≫ x) = g ≫ diffEquiv G β x := by
+  rw [diffEquiv_apply, diffEquiv_apply, comp_lift_assoc]
+
+end ModObj
+
 end Monoid
 
 variable {G X Y : C} [GrpObj G] [ModObj G X] [ModObj G Y]
+
+namespace ModObj
+
+/-- The difference is antisymmetric: `diff (x, y)⁻¹ = diff (y, x)`. -/
+theorem inv_lift_diff [IsIso (leftSMul G X)] {T : C} (x y : T ⟶ X) :
+    (lift x y ≫ diff G X)⁻¹ = lift y x ≫ diff G X := by
+  refine (eq_lift_diff_iff G y x _).2 ?_
+  have h := lift_diff_smul G x y
+  calc (lift x y ≫ diff G X)⁻¹ • y = (lift x y ≫ diff G X)⁻¹ • (lift x y ≫ diff G X) • x := by
+        rw [h]
+    _ = x := inv_smul_smul _ _
+
+/-- For a group acting on itself by left multiplication, the difference of `x` and `y` is
+`y * x⁻¹`. The action is any `ModObj G G` whose action morphism is the multiplication, such as
+`ModObj.regular G`. -/
+theorem lift_diff_eq_mul_inv [ModObj G G] [IsIso (leftSMul G G)] (h : γ[G,G] = μ[G]) {T : C}
+    (x y : T ⟶ G) : lift x y ≫ diff G G = y * x⁻¹ :=
+  ((eq_lift_diff_iff G x y _).2 (by rw [Hom.smul_def, h, ← Hom.mul_def, inv_mul_cancel_right])).symm
+
+end ModObj
 
 /-- Translation of an acted-on object by a global group point. -/
 noncomputable def translation (X : C) [ModObj G X] (g : 𝟙_ C ⟶ G) : X ≅ X where

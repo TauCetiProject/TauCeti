@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms.Basic
 
 /-!
 # K3 surfaces over a field

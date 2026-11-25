@@ -77,28 +77,18 @@ theorem contDiffOn_coe_levelSetChartAt_symm
     ContDiffOn 𝕜 m
       (fun k ↦ (((levelSetChartAt hf hFred hsurj hindex z).symm k : ↥{x | f x = c}) : E))
       (levelSetChartAt hf hFred hsurj hindex z).target := by
-  set K := (D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
-      (hindex z.val z.property))
-  set chart := levelSetChart (hf z.val z.property) (LinearMap.range_eq_top.2
-      (hsurj z.val z.property))
-    (hFred z.val z.property).closedComplemented_ker z.property
-  have hpt : ∀ j : Fin n → 𝕜,
-      (((levelSetChartAt hf hFred hsurj hindex z).symm j : ↥{x | f x = c}) : E) =
-        ((chart.symm (K.symm j) : ↥{x | f x = c}) : E) := fun j ↦ by
-    rw [levelSetChartAt_symm_apply]
-  refine ContDiffOn.congr ?_ fun j _ ↦ hpt j
+  have hpt : ∀ j : Fin n → 𝕜, (levelSetChartAt hf hFred hsurj hindex z).symm j =
+      (levelSetChartModel (hf z.val z.property) (LinearMap.range_eq_top.2 (hsurj z.val z.property))
+        (hFred z.val z.property).closedComplemented_ker (hFred z.val z.property).finite_ker
+        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+          (hindex z.val z.property)) z.property).symm j := fun j ↦ by
+    rw [levelSetChartAt_symm_apply, levelSetChartModel_symm_apply]
+  refine ContDiffOn.congr ?_ fun j _ ↦ congrArg Subtype.val (hpt j)
   intro k hk
-  rw [levelSetChartAt_target] at hk
-  set u := (chart.symm (K.symm k) : ↥{x | f x = c})
-  have hinner : ContDiffAt 𝕜 m
-      (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E)) (K.symm k) := by
-    refine contDiffAt_coe_levelSetChart_symm_of_mem _ _ _ _ hk.1 ?_ (hsmooth u.val u.property)
-    have hmem := hk.2
-    rw [Set.mem_preimage, mem_levelSetImplicitCoordSource_iff, hpt k] at hmem
-    exact hmem
-  exact (hinner.comp k
-    ((K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.val).ker).contDiff.contDiffAt)).contDiffWithinAt
+  rw [levelSetChartAt_target, Set.mem_inter_iff, Set.mem_preimage, Set.mem_preimage, hpt k,
+    mem_levelSetImplicitCoordSource_iff, ← Set.mem_preimage, ← levelSetChartModel_target] at hk
+  exact (contDiffAt_coe_levelSetChartModel_symm_of_mem _ _ _ _ _ _ hk.1 hk.2
+    (hsmooth _ (Subtype.prop _))).contDiffWithinAt
 
 /-- **Two preferred charts of a regular level set are smoothly compatible.** The transition map is
 the inverse of one chart, followed by the linear reading of a vector of `E` in the model space

@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 import TauCeti.CategoryTheory.GradedObject.Monoidal
 import TauCeti.Geometry.Manifold.Instances.TopCatSphere
 
@@ -86,9 +87,20 @@ along `S ⊆ X` and `S' ⊆ X'` restricts at a point of `S × S'` to the Künnet
 restrictions
 (`TauCeti.tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular`), so it
 restricts to a generator wherever both factors do
-(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`). The integral relative
-fundamental classes have coefficients `ULift ℤ`, read in `ℤ` through
+(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`). When the first factor is
+the image of an open embedding of a manifold, the vanishing and projectivity of its local homology
+come from a chart, so the cross product of classes generating at interior points generates
+(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding`). The integral
+relative fundamental classes have coefficients `ULift ℤ`, read in `ℤ` through
 `TopPair.uliftIntSingularHomologyIso`.
+
+A face map `g : X × X' → Y` into a `T₁` space that is an open embedding on the interior of the
+product and carries its boundary off `g (ι x, ι' x')` induces an isomorphism of local homology at
+`(ι x, ι' x')` (`TauCeti.isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp`). So the cross
+product of relative classes generating at interior points, carried along `g`, generates the local
+cubical homology of `Y` at `g (ι x, ι' x')`
+(`TauCeti.span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top`), as for the
+faces of compactified trajectory spaces.
 
 The generator is not compared here with the local orientation of the product orientation
 `TauCeti.LocalOrientation.prod`; only the generator property is proved.
@@ -104,6 +116,9 @@ The generator is not compared here with the local orientation of the product ori
   generates the local homology of a product.
 * `TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`: the cubical cross product of
   classes restricting to local generators restricts to a local generator of the product.
+* `TauCeti.span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top`: the cross
+  product of relative classes generating at interior points, carried along a face map, generates
+  the local cubical homology at an interior point of the face.
 * `TauCeti.HomologicalOrientation.span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top`:
   the cross product of the relative fundamental classes of two compact manifolds with collared
   boundary restricts to a generator of the local homology at every interior point of the product.
@@ -308,6 +323,198 @@ theorem span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (hx : x ∈ S) (
 
 end ProdPair
 
+section FaceMap
+
+open HomologicalComplex TopPair
+
+variable {k : Type w} [CommRing k] {X₁ X₂ : TopCat.{w}} {N₁ N₂ : Type w} [TopologicalSpace N₁]
+  [TopologicalSpace N₂] {j₁ : N₁ → X₁} {j₂ : N₂ → X₂} {Y : Type w} [TopologicalSpace Y]
+
+omit [TopologicalSpace N₁] [TopologicalSpace N₂] in
+/-- A face map sending the boundary of the product off `f (j₁ r.1, j₂ r.2)` and injective on the
+interior sends every point other than `(j₁ r.1, j₂ r.2)` off it. -/
+private theorem mapsTo_compl_singleton_of_mapsTo_prodSubspace (f : X₁ ⊗ X₂ ⟶ TopCat.of Y)
+    (hf : Function.Injective fun r : N₁ × N₂ ↦ f (j₁ r.1, j₂ r.2)) (r : N₁ × N₂)
+    (h : MapsTo f ((TopPair.ofSubset (range j₁)ᶜ).prodSubspace (TopPair.ofSubset (range j₂)ᶜ))
+      {f (j₁ r.1, j₂ r.2)}ᶜ) :
+    MapsTo f (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({j₁ r.1}ᶜ : Set X₁) ∪
+      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) {f (j₁ r.1, j₂ r.2)}ᶜ := by
+  intro z hz hfz
+  by_cases hzP : z ∈ (TopPair.ofSubset (range j₁)ᶜ).prodSubspace (TopPair.ofSubset (range j₂)ᶜ)
+  · exact h hzP hfz
+  · -- Off the boundary of the product, both coordinates are interior points.
+    obtain ⟨s₁, hs₁⟩ : z.1 ∈ range j₁ := not_not.1 fun hc ↦ hzP (Or.inl
+      ((range_ofSubset_map (B := (range j₁)ᶜ)).symm ▸ hc))
+    obtain ⟨s₂, hs₂⟩ : z.2 ∈ range j₂ := not_not.1 fun hc ↦ hzP (Or.inr
+      ((range_ofSubset_map (B := (range j₂)ᶜ)).symm ▸ hc))
+    obtain rfl : (s₁, s₂) = r := hf (by
+      dsimp only
+      rw [hs₁, hs₂]
+      exact hfz)
+    exact hz.elim (fun h ↦ h hs₁.symm) (fun h ↦ h hs₂.symm)
+
+/-- A face map which is an open embedding on the interior of the product and sends every point
+other than `(j₁ r.1, j₂ r.2)` off its image induces an isomorphism from the local homology of the
+product there, written along `{j₁ r.1}ᶜ × X₂ ∪ X₁ × {j₂ r.2}ᶜ`, to the local homology of `Y`. -/
+private theorem isIso_singularHomologyMap_ofSubsetMap_preimage_union [T1Space X₁] [T1Space X₂]
+    [T1Space Y] (hj₁ : IsOpenEmbedding j₁) (hj₂ : IsOpenEmbedding j₂) (f : X₁ ⊗ X₂ ⟶ TopCat.of Y)
+    (hf : IsOpenEmbedding fun r : N₁ × N₂ ↦ f (j₁ r.1, j₂ r.2)) (r : N₁ × N₂)
+    (h : MapsTo f (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({j₁ r.1}ᶜ : Set X₁) ∪
+      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) {f (j₁ r.1, j₂ r.2)}ᶜ)
+    (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (ofSubsetMap f h) (ModuleCat.of k k) n) := by
+  -- The complement of `{j₁ r.1}ᶜ × X₂ ∪ X₁ × {j₂ r.2}ᶜ` is the point `(j₁ r.1, j₂ r.2)`.
+  have hS : (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({j₁ r.1}ᶜ : Set X₁) ∪
+      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) = {(j₁ r.1, j₂ r.2)}ᶜ := by
+    ext z
+    exact ⟨fun hz hzr ↦ hz.elim (fun h ↦ h (congrArg Prod.fst hzr : z.1 = j₁ r.1))
+        (fun h ↦ h (congrArg Prod.snd hzr : z.2 = j₂ r.2)),
+      fun hz ↦ by_contra fun hc ↦ hz (Prod.ext (not_not.1 fun h₁ ↦ hc (Or.inl h₁))
+        (not_not.1 fun h₂ ↦ hc (Or.inr h₂)))⟩
+  have hf' : f.hom ⁻¹' {f.hom (j₁ r.1, j₂ r.2)} ⊆ {(j₁ r.1, j₂ r.2)} := fun z hz ↦
+    not_not.1 fun hzr ↦ h (hS.symm ▸ hzr) hz
+  have hloc : IsIso (localHomologyMap (ModuleCat.of k k) f.hom hf' n) :=
+    isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp (ModuleCat.of k k)
+      (j := ContinuousMap.prodMap ⟨j₁, hj₁.continuous⟩ ⟨j₂, hj₂.continuous⟩) (hj₁.prodMap hj₂)
+      f.hom hf r hf' n
+  rw [localHomologyMap_def] at hloc
+  -- With the subspace written as the complement of the point, the map of pairs is the one
+  -- inducing `hloc`.
+  have key : ∀ (S : Set ↑(X₁ ⊗ X₂)) (_ : S = {(j₁ r.1, j₂ r.2)}ᶜ)
+      (hm : MapsTo f S {f (j₁ r.1, j₂ r.2)}ᶜ),
+      IsIso (TopPair.singularHomologyMap (ofSubsetMap f hm) (ModuleCat.of k k) n) := by
+    rintro S rfl _
+    exact hloc
+  exact key _ hS h
+
+omit [TopologicalSpace N₂] in
+/-- **The cross product of classes generating at interior points generates.** Let
+`j₁ : N₁ → X₁` be an open embedding of a manifold `N₁` of dimension `p` into a `T₁` space, let
+`j₂ : N₂ → X₂` be any map into a `T₁` space, and let `μ₁ ∈ Hₚ(X₁, X₁ ∖ j₁(N₁); k)` and
+`μ₂ ∈ H_q(X₂, X₂ ∖ j₂(N₂); k)` be relative cubical classes whose singular images restrict to
+generators of the local homology at `j₁ r₁` and at `j₂ r₂`. Then their cubical cross product
+restricts to a generator of the local homology of `X₁ × X₂` at `(j₁ r₁, j₂ r₂)`. -/
+theorem span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding
+    [T1Space X₁] [T1Space X₂] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [ChartedSpace F N₁] (hj₁ : IsOpenEmbedding j₁) {q : ℕ}
+    (μ₁ : ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplex k).homology (finrank ℝ F))
+    (μ₂ : ((TopPair.ofSubset (range j₂)ᶜ).cubicalChainComplex k).homology q) (r₁ : N₁) (r₂ : N₂)
+    (hμ₁ : (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r₁)) _
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (range j₁)ᶜ) _).inv.hom μ₁)) = ⊤)
+    (hμ₂ : (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r₂)) q
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (range j₂)ᶜ) q).inv.hom μ₂)) = ⊤) :
+    (k ∙ (homologyMap (cubicalChainComplexProdMap k _ _
+        (ofSubsetMap (𝟙 X₁) (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self r₁))))
+        (ofSubsetMap (𝟙 X₂) (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self r₂)))))
+          (finrank ℝ F + q) ≫
+      homologyMap (cubicalChainComplexProdToSingular k ({j₁ r₁}ᶜ : Set X₁) ({j₂ r₂}ᶜ : Set X₂))
+        (finrank ℝ F + q)).hom
+      ((GradedObject.Monoidal.ιTensorObj _ _ _ q _ rfl ≫
+        cubicalHomologyKunnethPair k (TopPair.ofSubset (range j₁)ᶜ) (TopPair.ofSubset (range j₂)ᶜ)
+          (finrank ℝ F + q)).hom (μ₁ ⊗ₜ μ₂))) = ⊤ := by
+  have := hj₁.isEmbedding.t1Space
+  -- At the interior point `j₁ r₁`, the local homology of `X₁` is that of `N₁`, computed by a
+  -- chart.
+  have hX (p' : ℕ) (hp' : p' ≠ finrank ℝ F) :
+      IsZero (localHomology (ModuleCat.of k k) ({j₁ r₁} : Set X₁) p') :=
+    (isZero_singularHomology_complSingleton_of_ne (ModuleCat.of k k) (chartAt F r₁)
+      (mem_chart_source F r₁) rfl hp').of_iso (localHomologyIsoOfIsOpenEmbedding _ hj₁ r₁ p').symm
+  have : Projective (localHomology (ModuleCat.of k k) ({j₁ r₁} : Set X₁) (finrank ℝ F)) :=
+    Projective.of_iso ((localHomologyIsoOfIsOpenEmbedding _ hj₁ r₁ _).symm ≪≫
+      singularHomologyComplSingletonFinrankIso (ModuleCat.of k k) (chartAt F r₁)
+        (mem_chart_source F r₁)).symm inferInstance
+  have hw := span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (X := X₁) (Y := X₂)
+    (mem_range_self r₁) (mem_range_self r₂) hX _ _ hμ₁ hμ₂
+  simp only [Iso.inv_hom_id_apply] at hw
+  exact hw
+
+/-- **The cross product of classes generating at interior points, carried along a face map,
+generates.** Let `j₁ : N₁ → X₁` and `j₂ : N₂ → X₂` be open embeddings into `T₁` spaces, with
+`N₁` a manifold of dimension `p`, and let `μ₁ ∈ Hₚ(X₁, X₁ ∖ j₁(N₁); k)` and
+`μ₂ ∈ H_q(X₂, X₂ ∖ j₂(N₂); k)` be relative cubical classes generating the local homology at
+`j₁ r.1` and at `j₂ r.2`. Let `g : X₁ × X₂ → Y` be a face map into a `T₁` space, an open embedding
+on `N₁ × N₂`, sending the boundary `∂X₁ × X₂ ∪ X₁ × ∂X₂` off `a = g (j₁ r.1, j₂ r.2)`. Then the
+cross product `μ₁ × μ₂`, carried by `g` to the local cubical homology `Hₚ₊_q(Y, Y ∖ {a}; k)`,
+generates it. -/
+theorem span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top
+    [T1Space X₁] [T1Space X₂] [T1Space Y]
+    {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [ChartedSpace F N₁] (hj₁ : IsOpenEmbedding j₁) (hj₂ : IsOpenEmbedding j₂) {p q n : ℕ}
+    (hp : finrank ℝ F = p) (hpq : p + q = n)
+    (μ₁ : ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplex k).homology p)
+    (μ₂ : ((TopPair.ofSubset (range j₂)ᶜ).cubicalChainComplex k).homology q)
+    (g : C(X₁ × X₂, Y)) (hg : IsOpenEmbedding fun r : N₁ × N₂ ↦ g (j₁ r.1, j₂ r.2))
+    (r : N₁ × N₂)
+    (hμ₁ : (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r.1)) p
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (range j₁)ᶜ) p).inv.hom μ₁)) = ⊤)
+    (hμ₂ : (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r.2)) q
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (range j₂)ᶜ) q).inv.hom μ₂)) = ⊤)
+    (h : MapsTo (TopCat.ofHom (X := ↑((TopPair.ofSubset (range j₁)ᶜ).fst ⊗
+        (TopPair.ofSubset (range j₂)ᶜ).fst)) g)
+      ((TopPair.ofSubset (range j₁)ᶜ).prodSubspace (TopPair.ofSubset (range j₂)ᶜ))
+      {g (j₁ r.1, j₂ r.2)}ᶜ) :
+    (k ∙ (homologyMap (cubicalChainComplexMap k (ofSubsetMap _ h)) n).hom
+      ((homologyMap ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplexProdComparison k
+        (TopPair.ofSubset (range j₂)ᶜ)) n).hom
+        ((GradedObject.Monoidal.ιTensorObj _ _ p q n hpq ≫
+          cubicalHomologyKunnethPair k _ _ n).hom (μ₁ ⊗ₜ μ₂)))) = ⊤ := by
+  subst hpq hp
+  set x := j₁ r.1
+  set y := j₂ r.2
+  -- The face map as a morphism out of `X₁ ⊗ X₂`, the ambient space of the product pairs.
+  let gt : X₁ ⊗ X₂ ⟶ TopCat.of Y := TopCat.ofHom g
+  -- The face map carries every point other than `(x, y)` off `g (x, y)`.
+  have h' : MapsTo gt (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({x}ᶜ : Set X₁) ∪
+      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({y}ᶜ : Set X₂)) {g (x, y)}ᶜ :=
+    mapsTo_compl_singleton_of_mapsTo_prodSubspace gt hg.injective r h
+  have hx : MapsTo (𝟙 X₁) (range j₁)ᶜ ({x}ᶜ : Set X₁) :=
+    compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self r.1))
+  have hy : MapsTo (𝟙 X₂) (range j₂)ᶜ ({y}ᶜ : Set X₂) :=
+    compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self r.2))
+  -- On chains, the face map factors through the product of the local pairs at `x` and `y`.
+  have key : (TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplexProdComparison k
+      (TopPair.ofSubset (range j₂)ᶜ) ≫ cubicalChainComplexMap k (ofSubsetMap _ h) ≫
+      cubicalToSingularRel k (TopPair.ofSubset (X := TopCat.of Y) {g (x, y)}ᶜ) =
+      cubicalChainComplexProdMap k _ _ (ofSubsetMap (𝟙 X₁) hx) (ofSubsetMap (𝟙 X₂) hy) ≫
+        cubicalChainComplexProdToSingular k ({x}ᶜ : Set X₁) ({y}ᶜ : Set X₂) ≫
+          TopPair.singularChainComplexMap (ofSubsetMap (X := X₁ ⊗ X₂) _ h') (ModuleCat.of k k) := by
+    have h'' : MapsTo gt (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' (range j₁)ᶜ ∪
+        CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' (range j₂)ᶜ) {g (x, y)}ᶜ :=
+      h'.mono_left (union_subset_union (preimage_mono hx) (preimage_mono hy))
+    rw [cubicalChainComplexProdComparison_comp_cubicalToSingularRel k g h'',
+      cubicalChainComplexProdToSingular_naturality_assoc k (𝟙 X₁) (𝟙 X₂) hx hy,
+      ← TopPair.singularChainComplexMap_comp,
+      ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ h''
+        (by rw [MonoidalCategory.id_tensorHom_id, Category.id_comp])]
+    -- The two singular chain maps differ only in their face map: `TopCat.ofHom g` typed on the
+    -- ambient space `(ofSubset (range j₁)ᶜ).fst ⊗ (ofSubset (range j₂)ᶜ).fst` of the product
+    -- subspace, against `gt`, the same map typed on `X₁ ⊗ X₂`. These spaces agree by unfolding.
+    rfl
+  -- The cross product restricts to a generator of the local homology of the product at `(x, y)`.
+  have hw := span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding hj₁ μ₁ μ₂ r.1 r.2
+    hμ₁ hμ₂
+  -- The face map is an isomorphism from the local homology at `(x, y)` to that at `g (x, y)`.
+  have hG := isIso_singularHomologyMap_ofSubsetMap_preimage_union (k := k) hj₁ hj₂ gt hg r h'
+    (finrank ℝ F + q)
+  have hkey := congr((homologyMap $key (finrank ℝ F + q)).hom
+    ((GradedObject.Monoidal.ιTensorObj _ _ _ q _ rfl ≫ cubicalHomologyKunnethPair k _ _ _).hom
+      (μ₁ ⊗ₜ μ₂)))
+  simp only [homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at hkey
+  refine (ModuleCat.span_singleton_apply_eq_top_iff (TopPair.singularCubicalHomologyIso k
+    (TopPair.ofSubset (X := TopCat.of Y) {g (x, y)}ᶜ) (finrank ℝ F + q)).inv).1 ?_
+  -- The two images of the cross product agree only up to unfolding the ambient spaces of the
+  -- pairs, so they are identified by a term rather than by `rw`.
+  refine (congrArg (k ∙ ·) ?_).trans ((ModuleCat.span_singleton_apply_eq_top_iff
+    (TopPair.singularHomologyMap (ofSubsetMap (X := X₁ ⊗ X₂) _ h') (ModuleCat.of k k) _)).2 hw)
+  rw [TopPair.singularCubicalHomologyIso_inv]
+  exact hkey
+
+end FaceMap
+
 namespace HomologicalOrientation
 
 variable {X M X' M' : Type} {N N' : Type*} [TopologicalSpace X] [TopologicalSpace M]
@@ -347,23 +554,15 @@ theorem span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top
             ((uliftIntSingularHomologyIso _ n).hom
               (o'.fundamentalClassRel hn hι' hιf' hf')))) = ⊤ := by
   subst hm hn
-  -- At the interior point `ι x`, the local homology of `X` is that of `M`, computed by a chart.
-  have hX (p : ℕ) (hp : p ≠ finrank ℝ E) :
-      IsZero (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) p) :=
-    (isZero_singularHomology_complSingleton_of_ne (ModuleCat.of ℤ ℤ) (chartAt E x)
-      (mem_chart_source E x) rfl hp).of_iso (localHomologyIsoOfIsOpenEmbedding _ hι x p).symm
-  have : Projective (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) (finrank ℝ E)) :=
-    Projective.of_iso ((localHomologyIsoOfIsOpenEmbedding _ hι x _).symm ≪≫
-      singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ ℤ) (chartAt E x)
-        (mem_chart_source E x)).symm inferInstance
-  exact span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (mem_range_self x)
-    (mem_range_self x') hX _ _
-    ((o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
-      (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
-        (mem_range_self x))
-    ((o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
-      (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
-        (mem_range_self x'))
+  refine span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding hι _ _ x x' ?_ ?_
+  · simpa only [Iso.hom_inv_id_apply] using
+      (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
+        (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+          (mem_range_self x)
+  · simpa only [Iso.hom_inv_id_apply] using
+      (o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
+        (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+          (mem_range_self x')
 
 end HomologicalOrientation
 
