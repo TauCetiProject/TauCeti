@@ -62,6 +62,26 @@ theorem smul_moduleRight (b : B) (m : M) :
     letI := moduleRight (k := k) (A := A) (B := B) M
     b • m = ((1 : A) ⊗ₜ[k] b) • m := rfl
 
+section
+
+variable {M} {N : Type*} [AddCommMonoid N] [Module (A ⊗[k] B) N]
+
+/-- A tensor-product-linear map commutes with the restricted first-factor action. -/
+theorem _root_.LinearMap.map_smul_moduleLeft (f : M →ₗ[A ⊗[k] B] N) (a : A) (m : M) :
+    letI := moduleLeft (k := k) (A := A) (B := B) M
+    letI := moduleLeft (k := k) (A := A) (B := B) N
+    f (a • m) = a • f m := by
+  simp only [smul_moduleLeft, map_smul]
+
+/-- A tensor-product-linear map commutes with the restricted second-factor action. -/
+theorem _root_.LinearMap.map_smul_moduleRight (f : M →ₗ[A ⊗[k] B] N) (b : B) (m : M) :
+    letI := moduleRight (k := k) (A := A) (B := B) M
+    letI := moduleRight (k := k) (A := A) (B := B) N
+    f (b • m) = b • f m := by
+  simp only [smul_moduleRight, map_smul]
+
+end
+
 /-- Successive actions of the restricted factors give the action of their pure tensor. -/
 theorem smul_moduleLeft_smul_moduleRight (a : A) (b : B) (m : M) :
     letI := moduleLeft (k := k) (A := A) (B := B) M

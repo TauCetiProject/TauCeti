@@ -206,11 +206,7 @@ noncomputable def arrowTensorDGBimoduleBoundary :
   let f' : arrowTensorDGBimodule hd hdε →ₗ[𝒜ᵐᵒᵖ] vertexTensorDGBimodule hd hdε :=
     { toFun := f
       map_add' := f.map_add
-      map_smul' := fun b z ↦ by
-        rw [RingHom.id_apply]
-        exact (congrArg f (arrowTensorDGBimodule_smul_right hd hdε b z)).trans
-          ((f.map_smul ((1 : 𝒜) ⊗ₜ[k] b) z).trans
-            (vertexTensorDGBimodule_smul_right hd hdε b (f z)).symm) }
+      map_smul' := fun b z ↦ f.map_smul_moduleRight b z }
   have hf' (z : arrowTensorDGBimodule hd hdε) : f' z = f z := rfl
   refine ⟨⟨f', ?_, ?_⟩, (mem_dgBimoduleHomSubmodule _ _ _).mpr ?_⟩
   · intro q z hz
@@ -223,9 +219,7 @@ noncomputable def arrowTensorDGBimoduleBoundary :
       (arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε z).symm
   · intro a z
     simp only [DGRightModuleHom.coe_mk, hf']
-    exact (congrArg f (arrowTensorDGBimodule_smul_left hd hdε a z)).trans
-      ((f.map_smul (a ⊗ₜ[k] (1 : 𝒜ᵐᵒᵖ)) z).trans
-        (vertexTensorDGBimodule_smul_left hd hdε a (f z)).symm)
+    exact f.map_smul_moduleLeft a z
 
 @[simp]
 theorem arrowTensorDGBimoduleBoundary_apply (z : arrowTensorDGBimodule hd hdε) :
