@@ -182,12 +182,8 @@ preserves unimodularity. -/
 theorem Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff {R m : Type*} [CommSemiring R]
     [Fintype m] [DecidableEq m] (g : Matrix.GeneralLinearGroup m R) {v : m → R} :
     Module.IsUnimodular R ((g : Matrix m m R) *ᵥ v) ↔ Module.IsUnimodular R v := by
-  let e : (m → R) ≃ₗ[R] (m → R) :=
-    LinearEquiv.ofLinearMap (Matrix.mulVecLin (g : Matrix m m R))
-      (Matrix.mulVecLin (↑g⁻¹ : Matrix m m R))
-      (LinearMap.ext fun x ↦ by simp [Matrix.mulVec_mulVec])
-      (LinearMap.ext fun x ↦ by simp [Matrix.mulVec_mulVec])
-  exact e.isUnimodular_apply_iff
+  simpa using (LinearMap.GeneralLinearGroup.toLinearEquiv
+    (Units.map (Matrix.toLinAlgEquiv' (R := R) (n := m)).toMonoidHom g)).isUnimodular_apply_iff
 
 /-- Every row of an invertible matrix over a semiring is unimodular. -/
 theorem Matrix.GeneralLinearGroup.isUnimodular_apply {R m : Type*} [Semiring R] [Fintype m]
