@@ -133,6 +133,38 @@ private theorem holderOnWith_iteratedFDeriv_smul_ball {k : ℕ} {f : E → F} {�
     _ ≤ (2 : ℝ≥0) ^ k * 1 * (N * (ε + M * t) + M * (N * t)) := by gcongr
     _ = _ := by ring
 
+/-- The constants of the Leibniz rule on small balls can be made small: there are a top-order
+Hölder constant `ε₁ > 0` and a radius `r > 0` such that
+`C (N (ε₁ + M t) + M N t) ≤ ε` with `t = (2 ρ) ^ (1 - α)` for every `0 ≤ ρ < r`. -/
+private theorem exists_pos_leibnizConstant_le {α : ℝ≥0} (hα : α < 1) {C M N ε : ℝ}
+    (hC : 0 ≤ C) (hN : 0 ≤ N) (hε : 0 < ε) :
+    ∃ ε₁ > 0, ∃ r > 0, ∀ ρ : ℝ, 0 ≤ ρ → ρ < r →
+      C * (N * (ε₁ + M * (2 * ρ) ^ (1 - (α : ℝ))) + M * (N * (2 * ρ) ^ (1 - (α : ℝ)))) ≤ ε := by
+  have hα' : (0 : ℝ) < 1 - α := sub_pos.2 (by exact_mod_cast hα)
+  -- The top-order contribution `C N ε₁` is at most `ε / 2`.
+  set ε₁ : ℝ := ε / (2 * (C * N + 1))
+  have hε₁ : 0 < ε₁ := by positivity
+  have hCε₁ : C * N * ε₁ ≤ ε / 2 := by
+    have h1 : C * N * ε₁ = ε / 2 * (C * N / (C * N + 1)) := by
+      simp only [ε₁]
+      field_simp
+    rw [h1]
+    exact mul_le_of_le_one_right (by positivity) ((div_le_one (by positivity)).2 (by linarith))
+  -- The lower-order contributions `2 C M N (2 ρ) ^ (1 - α)` are below `ε / 2` for small `ρ`.
+  have hcont : Tendsto (fun r : ℝ ↦ 2 * C * M * N * (2 * r) ^ (1 - (α : ℝ))) (𝓝 0) (𝓝 0) := by
+    have h2 : Continuous fun r : ℝ ↦ 2 * r := continuous_const.mul continuous_id
+    have h := (((Real.continuous_rpow_const hα'.le).comp h2).const_mul (2 * C * M * N)).tendsto 0
+    simpa [Real.zero_rpow hα'.ne'] using h
+  obtain ⟨r, hr, hrε⟩ :=
+    Metric.eventually_nhds_iff.1 (hcont.eventually (gt_mem_nhds (half_pos hε)))
+  refine ⟨ε₁, hε₁, r, hr, fun ρ hρ hρr ↦ ?_⟩
+  have hsmall : 2 * C * M * N * (2 * ρ) ^ (1 - (α : ℝ)) < ε / 2 :=
+    hrε (by rwa [Real.dist_0_eq_abs, abs_of_nonneg hρ])
+  have hring : C * (N * (ε₁ + M * (2 * ρ) ^ (1 - (α : ℝ))) + M * (N * (2 * ρ) ^ (1 - (α : ℝ)))) =
+      C * N * ε₁ + 2 * C * M * N * (2 * ρ) ^ (1 - (α : ℝ)) := by ring
+  rw [hring]
+  linarith
+
 /-- **Cutoffs preserve little Hölder continuity.** If the `δ`-thickening of the support of a
 `C^{k+1}` cutoff `χ` lies in a set `s` on which `f` is `C^k` with derivatives through order `k`
 bounded by `M`, and the `k`-th derivative of `f` has `α`-Hölder difference quotients on `s`
@@ -148,43 +180,17 @@ theorem memLittleHolder_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ
     MemLittleHolder α (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) := by
   rw [memLittleHolder_iff]
   intro ε hε
-  have hα' : (0 : ℝ) < 1 - α := sub_pos.2 (by exact_mod_cast hα)
-  set C : ℝ := (2 : ℝ) ^ k
-  have hC : 0 < C := by positivity
-  -- The top-order Hölder constant of `f` on small balls, chosen so that `C N ε₁ ≤ ε / 2`.
-  set ε₁ : ℝ := ε / (2 * (C * N + 1))
-  have hε₁ : 0 < ε₁ := by positivity
-  have hCε₁ : C * N * ε₁ ≤ ε / 2 := by
-    have h1 : C * N * ε₁ = ε / 2 * (C * N / (C * N + 1)) := by
-      simp only [ε₁]
-      field_simp
-    rw [h1]
-    exact mul_le_of_le_one_right (by positivity) ((div_le_one (by positivity)).2 (by linarith))
+  obtain ⟨ε₁, hε₁, r, hr, hconst⟩ :=
+    exists_pos_leibnizConstant_le hα (C := (2 : ℝ) ^ k) (M := M) (by positivity) N.coe_nonneg hε
   obtain ⟨η, hη, hfη⟩ := hfH ε₁ hε₁
-  -- The lower-order contributions `2 C M N (2 ρ) ^ (1 - α)` are below `ε / 2` for small `ρ`.
-  have hcont : Tendsto (fun r : ℝ ↦ 2 * C * M * N * (2 * r) ^ (1 - (α : ℝ))) (𝓝 0) (𝓝 0) := by
-    have h2 : Continuous fun r : ℝ ↦ 2 * r := continuous_const.mul continuous_id
-    have h := (((Real.continuous_rpow_const hα'.le).comp h2).const_mul (2 * C * M * N)).tendsto 0
-    simpa [Real.zero_rpow hα'.ne'] using h
-  obtain ⟨ρ₀, hρ₀, hρ₀ε⟩ :=
-    Metric.eventually_nhds_iff.1 (hcont.eventually (gt_mem_nhds (half_pos hε)))
-  set ρ : ℝ≥0 := ⟨min (min (ρ₀ / 2) δ) (η / 2), by positivity⟩
+  have : (0 : ℝ) < δ := by exact_mod_cast hδ
+  set ρ : ℝ≥0 := ⟨min (min (r / 2) δ) (η / 2), by positivity⟩
   have hρ : 0 < ρ := by
-    change (0 : ℝ) < min (min (ρ₀ / 2) δ) (η / 2)
-    have : (0 : ℝ) < δ := by exact_mod_cast hδ
+    change (0 : ℝ) < min (min (r / 2) δ) (η / 2)
     positivity
   have hρδ : (ρ : ℝ) ≤ δ := (min_le_left _ _).trans (min_le_right _ _)
-  have hρη : 2 * (ρ : ℝ) ≤ η := by
-    have : (ρ : ℝ) ≤ η / 2 := min_le_right _ _
-    linarith
-  have hρρ₀ : (ρ : ℝ) < ρ₀ := by
-    have : (ρ : ℝ) ≤ ρ₀ / 2 := (min_le_left _ _).trans (min_le_left _ _)
-    linarith
-  have hsmall : 2 * C * M * N * (2 * (ρ : ℝ)) ^ (1 - (α : ℝ)) < ε / 2 := by
-    refine hρ₀ε ?_
-    rw [Real.dist_0_eq_abs, abs_of_nonneg ρ.coe_nonneg]
-    exact hρρ₀
-  set ε₁' : ℝ≥0 := ⟨ε₁, hε₁.le⟩
+  have hρη : (ρ : ℝ) ≤ η / 2 := min_le_right _ _
+  have hρr : (ρ : ℝ) ≤ r / 2 := (min_le_left _ _).trans (min_le_left _ _)
   -- The derivative of the product vanishes outside the support of the cutoff.
   have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := fun x hx ↦
     Function.notMem_support.1 fun h ↦
@@ -196,7 +202,7 @@ theorem memLittleHolder_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ
     intro x hx y hy
     have hB : ball x ρ ⊆ s :=
       (ball_subset_ball hρδ).trans ((ball_subset_thickening hx _).trans hχs)
-    have hfH₁ : HolderOnWith ε₁' α (iteratedFDeriv ℝ k f) (ball x ρ) := by
+    have hfH₁ : HolderOnWith ⟨ε₁, hε₁.le⟩ α (iteratedFDeriv ℝ k f) (ball x ρ) := by
       refine HolderOnWith.of_dist_le fun z hz w hw ↦ hfη z (hB hz) w (hB hw) ?_
       have := dist_triangle_right z w x
       rw [mem_ball] at hz hw
@@ -204,15 +210,8 @@ theorem memLittleHolder_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ
     have h := (holderOnWith_iteratedFDeriv_smul_ball (hf.mono hB) hχ hα.le
       (fun j hj z hz ↦ hfb j hj z (hB hz)) hχb hfH₁).dist_le (mem_ball_self hρ) hy
     refine h.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-    have hε₁' : (ε₁' : ℝ) = ε₁ := rfl
-    have hC' : (2 : ℝ) ^ k = C := rfl
     push_cast
-    rw [hε₁', hC']
-    have hring : C * (N * (ε₁ + M * (2 * (ρ : ℝ)) ^ (1 - (α : ℝ))) +
-        M * (N * (2 * (ρ : ℝ)) ^ (1 - (α : ℝ)))) =
-        C * N * ε₁ + 2 * C * M * N * (2 * (ρ : ℝ)) ^ (1 - (α : ℝ)) := by ring
-    rw [hring]
-    linarith
+    exact hconst ρ ρ.coe_nonneg (by linarith)
   refine ⟨ρ, by exact_mod_cast hρ, fun x y hxy ↦ ?_⟩
   by_cases hx : x ∈ tsupport χ
   · exact hball x hx y (by rwa [mem_ball, dist_comm])
