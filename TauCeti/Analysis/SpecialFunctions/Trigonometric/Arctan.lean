@@ -78,19 +78,6 @@ theorem arctan_div_add_arctan_div {u v : ℝ} (h : 0 < u / v) :
   rw [← inv_div u v, arctan_inv_of_pos h]
   ring
 
-/-- As `η → 0⁺`, `arctan (c / η)` tends to `π / 2` times the sign of `c`. -/
-theorem tendsto_arctan_div_nhdsGT_zero (c : ℝ) :
-    Tendsto (fun η : ℝ => arctan (c / η)) (𝓝[>] 0) (𝓝 (π / 2 * Real.sign c)) := by
-  rcases lt_trichotomy c 0 with hc | rfl | hc
-  · rw [Real.sign_of_neg hc, mul_neg_one]
-    refine (tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp ?_
-    exact (tendsto_inv_nhdsGT_zero.const_mul_atTop_of_neg hc).congr fun η =>
-      (div_eq_mul_inv c η).symm
-  · simp
-  · rw [Real.sign_of_pos hc, mul_one]
-    refine (tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp ?_
-    exact (tendsto_inv_nhdsGT_zero.const_mul_atTop hc).congr fun η => (div_eq_mul_inv c η).symm
-
 /-- If `f → c ≠ 0` and `g → 0⁺` along a filter `l`, then `arctan (f / g)` tends to `π / 2` times
 the sign of `c` along `l`. -/
 theorem tendsto_arctan_div_of_tendsto_nhdsGT_zero {ι : Type*} {l : Filter ι} {f g : ι → ℝ}
@@ -104,6 +91,13 @@ theorem tendsto_arctan_div_of_tendsto_nhdsGT_zero {ι : Type*} {l : Filter ι} {
   · rw [Real.sign_of_pos hc, mul_one]
     exact (tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp
       (hf.pos_mul_atTop hc (tendsto_inv_nhdsGT_zero.comp hg))
+
+/-- As `η → 0⁺`, `arctan (c / η)` tends to `π / 2` times the sign of `c`. -/
+theorem tendsto_arctan_div_nhdsGT_zero (c : ℝ) :
+    Tendsto (fun η : ℝ => arctan (c / η)) (𝓝[>] 0) (𝓝 (π / 2 * Real.sign c)) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · exact tendsto_arctan_div_of_tendsto_nhdsGT_zero tendsto_const_nhds hc tendsto_id
 
 end Real
 

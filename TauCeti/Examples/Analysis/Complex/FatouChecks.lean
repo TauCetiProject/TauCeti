@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Limit
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
-import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -95,50 +93,24 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_me
     (hx : x ∈ Ioo 0 1) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 1) := by
-  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_pos.2 hx.2).ne'
-    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx.1.ne' (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  rw [Real.sign_of_pos (sub_pos.2 hx.2), mul_one] at h₁
-  rw [Real.sign_of_pos hx.1, mul_one] at h₂
-  have := (h₁.add h₂).div_const π
-  rw [add_halves, div_self Real.pi_ne_zero] at this
-  simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
+  simpa [Real.sign_of_pos (sub_pos.2 hx.2), Real.sign_of_neg (neg_neg_of_pos hx.1)] using
+    tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one hx.1.ne' hx.2.ne
 
 /-- **Left of the interval the boundary limit is `0`.** -/
 theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_neg {x : ℝ}
     (hx : x < 0) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
-  have hx' : (0 : ℝ) < 1 - x := by linarith
-  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) hx'.ne'
-    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx.ne (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  rw [Real.sign_of_pos hx', mul_one] at h₁
-  rw [Real.sign_of_neg hx, mul_neg_one] at h₂
-  have := (h₁.add h₂).div_const π
-  rw [add_neg_cancel, zero_div] at this
-  simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
+  simpa [Real.sign_of_pos (by linarith : (0 : ℝ) < 1 - x), Real.sign_of_pos (neg_pos.2 hx)] using
+    tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one hx.ne (by linarith)
 
 /-- **Right of the interval the boundary limit is `0`.** -/
 theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_one_lt {x : ℝ}
     (hx : 1 < x) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
-  have hx' : (0 : ℝ) < x := by linarith
-  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_neg.2 hx).ne
-    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx'.ne' (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
-  rw [Real.sign_of_neg (sub_neg.2 hx), mul_neg_one] at h₁
-  rw [Real.sign_of_pos hx', mul_one] at h₂
-  have := (h₁.add h₂).div_const π
-  rw [neg_add_cancel, zero_div] at this
-  simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
+  simpa [Real.sign_of_neg (sub_neg.2 hx), Real.sign_of_neg (by linarith : -x < 0)] using
+    tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one (by linarith) hx.ne'
 
 /-- **Limits at the jump along rays**: `P[1_{[0,1]}](ct + it) → 1/2 + arctan c / π` as
 `t → 0⁺`. -/

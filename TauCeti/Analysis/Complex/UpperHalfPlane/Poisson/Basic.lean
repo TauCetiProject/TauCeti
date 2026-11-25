@@ -8,16 +8,18 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import Mathlib.Basic.Real.Sign
 public import Mathlib.Probability.Distributions.Cauchy
 public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
-import TauCeti.Probability.Distributions.Cauchy.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -69,8 +71,10 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
   `TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`).
 * `TauCeti.upperHalfPlanePoissonIntegral_volume_restrict_Icc`: the Poisson integral of Lebesgue
-  measure on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`, from the
-  primitive `TauCeti.hasDerivAt_arctan_sub_re_div_im_div_pi` of the Poisson kernel.
+  measure on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`; as
+  `z → x ∉ {a, b}` through the upper half-plane it tends to `(sign (b - x) - sign (a - x)) / 2`,
+  that is to `1` inside `(a, b)` and to `0` outside `[a, b]`
+  (`TauCeti.tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc`).
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
   `ℂ₊` exactly for measures that are not Poisson-finite
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
@@ -491,20 +495,6 @@ theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
     upperHalfPlanePoissonIntegral (Measure.dirac a) z = upperHalfPlanePoissonKernel z a := by
   rw [upperHalfPlanePoissonIntegral_def, integral_dirac]
 
-/-- `s ↦ arctan ((s - Re z) / Im z) / π` is a primitive of the Poisson kernel `P(z, ·)`. For
-`Im z = 0` both the function and the kernel vanish. -/
-theorem hasDerivAt_arctan_sub_re_div_im_div_pi (z : ℂ) (s : ℝ) :
-    HasDerivAt (fun s => Real.arctan ((s - z.re) / z.im) / π)
-      (upperHalfPlanePoissonKernel z s) s := by
-  have key (w : ℂ) (hw : 0 ≤ w.im) : HasDerivAt (fun s => Real.arctan ((s - w.re) / w.im) / π)
-      (upperHalfPlanePoissonKernel w s) s := by
-    simpa only [upperHalfPlanePoissonKernel_eq_cauchyPDFReal hw, Real.coe_toNNReal _ hw] using
-      TauCeti.Probability.hasDerivAt_arctan_div_pi w.re w.im.toNNReal s
-  rcases le_or_gt 0 z.im with hz | hz
-  · exact key z hz
-  · simpa [upperHalfPlanePoissonKernel_conj, Pi.neg_def, div_neg, Real.arctan_neg, neg_div] using
-      (key (conj z) (by simpa using hz.le)).neg
-
 /-- **The Poisson integral of an interval**: for `a ≤ b`, the Poisson integral of Lebesgue measure
 on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`. For `z` in the
 upper half-plane this is the angle under which `[a, b]` is seen from `z`, divided by `π`. -/
@@ -512,11 +502,28 @@ theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b : ℝ} (hab : a �
     upperHalfPlanePoissonIntegral (volume.restrict (Icc a b)) z =
       (Real.arctan ((b - z.re) / z.im) - Real.arctan ((a - z.re) / z.im)) / π := by
   rw [upperHalfPlanePoissonIntegral_def, integral_Icc_eq_integral_Ioc,
-    ← intervalIntegral.integral_of_le hab,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (fun s _ => hasDerivAt_arctan_sub_re_div_im_div_pi z s)
-      (isPoissonFinite_volume.integrable_upperHalfPlanePoissonKernel z).intervalIntegrable,
-    ← sub_div]
+    ← intervalIntegral.integral_of_le hab, ← Real.integral_div_sub_sq_add_sq, div_eq_inv_mul,
+    ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr fun s _ => ?_
+  rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub, ← neg_sub z.re s, neg_sq]
+  field_simp
+
+/-- **Boundary limits of the Poisson integral of an interval**: for `a ≤ b` and a real point
+`x ∉ {a, b}`, the Poisson integral of Lebesgue measure on `[a, b]` tends to
+`(sign (b - x) - sign (a - x)) / 2` as `z → x` through the upper half-plane, that is to `1` for
+`a < x < b` and to `0` for `x < a` or `x > b`. -/
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b x : ℝ} (hab : a ≤ b)
+    (hxa : x ≠ a) (hxb : x ≠ b) :
+    Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc a b)))
+      (𝓝[UpperHalfPlane.upperHalfPlaneSet] (x : ℂ))
+      (𝓝 ((Real.sign (b - x) - Real.sign (a - x)) / 2)) := by
+  have hlim {c : ℝ} (hc : x ≠ c) := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_ne_zero.2 hc.symm)
+    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  have h := ((hlim hxb).sub (hlim hxa)).div_const π
+  rw [show (π / 2 * Real.sign (b - x) - π / 2 * Real.sign (a - x)) / π =
+      (Real.sign (b - x) - Real.sign (a - x)) / 2 by field_simp] at h
+  exact h.congr fun z => (upperHalfPlanePoissonIntegral_volume_restrict_Icc hab z).symm
 
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
