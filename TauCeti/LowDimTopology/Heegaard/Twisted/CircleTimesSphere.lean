@@ -80,7 +80,8 @@ here, it accounts for the class `p₀` that the augmented twisted homology
 * `lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff`: with coefficients
   in `X`, the chain `x ⊗ p₀` is a cycle exactly when `x ∈ X[1 + t]`.
 * `TauCeti.HeegaardRegionSystem.circleTimesSphereTorOneAddEquiv`:
-  `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`.
+  `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t))` is abstractly `𝔽₂`, with
+  `circleTimesSphereTorOneAddEquiv_apply`.
 
 ## References
 
@@ -338,6 +339,16 @@ noncomputable def circleTimesSphereTorOneAddEquiv :
   (ModuleCat.torOneQuotientSpanSingletonSelfIso
     isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain).toLinearEquiv.toAddEquiv.trans
     circleTimesSphereQuotientEquiv.toAddEquiv
+
+/-- The equivalence `Tor₁^R(R ⧸ (1 + t), R ⧸ (1 + t)) ≃ 𝔽₂` is
+`ModuleCat.torOneQuotientSpanSingletonSelfIso` followed by the augmentation
+`circleTimesSphereQuotientEquiv`. -/
+@[simp]
+theorem circleTimesSphereTorOneAddEquiv_apply (x) :
+    circleTimesSphereTorOneAddEquiv x =
+      circleTimesSphereQuotientEquiv ((ModuleCat.torOneQuotientSpanSingletonSelfIso
+        isSMulRegular_one_add_single_circleTimesSpherePeriodicDomain).hom x) := by
+  simp [circleTimesSphereTorOneAddEquiv]
 
 end HeegaardRegionSystem
 
