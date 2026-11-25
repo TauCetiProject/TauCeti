@@ -59,10 +59,12 @@ the coadjoint orbit appear on `G` as follows.
   section with the cotangent moment map of the lifted action; on the orbit it is the statement
   that the inclusion of the orbit into `𝔤*` is a moment map for the KKS form.
 * **Naturality.** The forms depend additively on `ν` (`Module.Dual.leftInvariantForm_add`,
-  `Module.Dual.leftInvariantKirillovForm_add`), and a smooth homomorphism `φ : K → G` pulls `α_ν`
-  and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}` (`Module.Dual.mpullback_leftInvariantForm`,
-  `Module.Dual.mpullback_leftInvariantKirillovForm`). Applied to the projections of a product
-  `G × K`, this splits the Kirillov form of a product group into the forms of its factors.
+  `Module.Dual.leftInvariantKirillovForm_add`) and vanish at `ν = 0`
+  (`Module.Dual.leftInvariantForm_zero`, `Module.Dual.leftInvariantKirillovForm_zero`), and a
+  smooth homomorphism `φ : K → G` pulls `α_ν` and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}`
+  (`Module.Dual.mpullback_leftInvariantForm`, `Module.Dual.mpullback_leftInvariantKirillovForm`).
+  Applied to the projections of a product `G × K`, this splits the Kirillov form of a product
+  group into the forms of its factors.
 
 ## References
 
@@ -219,6 +221,18 @@ theorem leftInvariantForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I G)) :
   -- of `GroupLieAlgebra I G`; both are the model space, but `rw` cannot see this.
   rfl
 
+/-- The left-invariant one-form of the zero covector vanishes. -/
+@[simp]
+theorem leftInvariantForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 := by
+  apply Subtype.ext
+  funext g
+  ext v
+  rw [leftInvariantForm_apply]
+  -- `LinearMap.zero_apply`, up to reading the translate in `TangentSpace I (g⁻¹ * g)` as an
+  -- element of `GroupLieAlgebra I G`, as in `leftInvariantForm_add`.
+  rfl
+
 /-! ### The left-invariant Kirillov form -/
 
 /-- The **left-invariant Kirillov form** `σ_ν = -dα_ν` of `ν ∈ 𝔤*` on `G`, where `α_ν` is the
@@ -325,6 +339,12 @@ theorem leftInvariantKirillovForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I 
   rw [leftInvariantKirillovForm, leftInvariantKirillovForm, leftInvariantKirillovForm,
     leftInvariantForm_add, map_add, neg_add]
 
+/-- The left-invariant Kirillov form of the zero covector vanishes. -/
+@[simp]
+theorem leftInvariantKirillovForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantKirillovForm = 0 := by
+  rw [leftInvariantKirillovForm, leftInvariantForm_zero, map_zero, neg_zero]
+
 /-- The left-invariant Kirillov form is invariant under left translations. -/
 @[simp]
 theorem mpullback_mul_left_leftInvariantKirillovForm (h : G) :
@@ -377,26 +397,21 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDim
 /-- **Naturality of the left-invariant one-form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant one-form of `ν` back to the left-invariant one-form of `ν ∘ dφ`. -/
 @[simp]
-theorem mpullback_leftInvariantForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
-    SmoothForm.mpullback φ hφ ν.leftInvariantForm =
-      leftInvariantForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
-  apply Subtype.ext
-  funext k
+theorem mpullback_leftInvariantForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
+      leftInvariantForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm, leftInvariantForm_eq_leftInvariantSmoothForm,
+    TauCeti.mpullback_leftInvariantSmoothForm]
+  congr 1
   ext v
-  obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (v 0)
-  have hφξ : mfderiv I' I φ k (mulInvariantVectorField ξ k) =
-      mulInvariantVectorField (φ.groupLieAlgebraMap I' I ξ) (φ k) :=
-    (ContMDiffMonoidMorphism.mk φ hφ).mfderiv_mulInvariantVectorField k ξ
-  rw [SmoothForm.mpullback_apply, leftInvariantForm_apply, leftInvariantForm_apply, ← hξ, hφξ,
-    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+  simp
 
 /-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant Kirillov form of `ν` back to the left-invariant Kirillov form of `ν ∘ dφ`. -/
 @[simp]
-theorem mpullback_leftInvariantKirillovForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
-    SmoothForm.mpullback φ hφ ν.leftInvariantKirillovForm =
-      leftInvariantKirillovForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
+theorem mpullback_leftInvariantKirillovForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantKirillovForm =
+      leftInvariantKirillovForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
   rw [leftInvariantKirillovForm, leftInvariantKirillovForm, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_leftInvariantForm]
 

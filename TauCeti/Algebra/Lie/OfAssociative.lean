@@ -56,6 +56,7 @@ If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 
 * `LieHom.leftRegularRep_mem_of_mem`: every left ideal of `A` is invariant.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
+* `LieAlgebra.ker_ad_eq_centralizer`: the kernel of `ad x` is the centralizer of `x`.
 * `LieAlgebra.ad_comp_ad`: `ad x ∘ ad y` expanded into left and right multiplications.
 * `LieAlgebra.ad_pow_three_eq_smul_ad`: `(ad x)³ = 4 c • ad x` when `x * x = c • 1`.
 * `LieSubalgebra.ad_pow_three_eq_smul_ad`: the same cubic for `ad x` on a Lie subalgebra.
@@ -153,6 +154,13 @@ namespace LieAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
+
+/-- **The kernel of an adjoint operator of an associative algebra is a centralizer**: `⁅x, y⁆`
+vanishes exactly when `y` commutes with `x`. -/
+theorem ker_ad_eq_centralizer (x : A) :
+    LinearMap.ker (ad R A x) = Subalgebra.toSubmodule (Subalgebra.centralizer R {x}) := by
+  ext y
+  simp [Subalgebra.mem_centralizer_iff, Ring.lie_def, sub_eq_zero, eq_comm]
 
 /-- **The composite of two adjoint operators of an associative algebra**, expanded into left and
 right multiplications: `⁅x, ⁅y, z⁆⁆ = x y z - x z y - y z x + z y x`. -/

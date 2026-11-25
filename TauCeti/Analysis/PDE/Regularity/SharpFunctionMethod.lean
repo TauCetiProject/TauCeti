@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction

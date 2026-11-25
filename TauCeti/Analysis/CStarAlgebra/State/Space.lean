@@ -57,7 +57,7 @@ Jesse Peterson, *Notes on von Neumann algebras* (2013), Section 4.1.
 public section
 
 open Set Filter WeakDual
-open scoped ComplexOrder Topology
+open scoped ComplexOrder ComplexStarModule Topology
 
 namespace TauCeti
 
@@ -84,6 +84,14 @@ theorem map_nonneg_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A} (ha : 0
 /-- A state has norm one. -/
 theorem norm_toStrongDual_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : ‖toStrongDual φ‖ = 1 :=
   (mem_stateSpace_iff.1 hφ).2
+
+/-- An algebra with a state is nonzero. -/
+theorem nontrivial_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : Nontrivial A := by
+  by_contra hA
+  rw [not_nontrivial_iff_subsingleton] at hA
+  have h0 : ‖toStrongDual φ‖ ≤ 0 :=
+    (toStrongDual φ).opNorm_le_bound le_rfl fun a => by simp [Subsingleton.elim a 0]
+  linarith [norm_toStrongDual_of_mem_stateSpace hφ]
 
 /-- A state is contractive. -/
 theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
@@ -170,6 +178,22 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
     fun ⟨ω, hω, h⟩ =>
       h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
 
+/-- A state takes real values on self-adjoint elements. -/
+theorem isSelfAdjoint_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
+  have hpos : ∀ x, 0 ≤ x → 0 ≤ toStrongDual φ x := fun x hx =>
+    (map_nonneg_of_mem_stateSpace hφ hx).trans_eq (toStrongDual_apply φ x).symm
+  simpa only [PositiveContinuousLinearMap.mk₀_apply, toStrongDual_apply] using
+    ha.map' (PositiveContinuousLinearMap.mk₀ _ hpos)
+
+/-- A state sees only the real part of an element: `re (φ (ℜ x)) = re (φ x)`. -/
+theorem re_apply_realPart_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (x : A) :
+    (φ (ℜ x : A)).re = (φ x).re := by
+  have him : (φ (ℑ x : A)).im = 0 :=
+    RCLike.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hφ (ℑ x).property).star_eq
+  conv_rhs => rw [← realPart_add_I_smul_imaginaryPart x]
+  simp [him]
+
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
   intro φ hφ ψ hψ s t hs ht hst
@@ -204,6 +228,14 @@ noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
   (rfl)
+
+/-- Restricting the functional induced by a positive functional `σ` of `B` along `f` gives the
+functional induced by `σ ∘ f`. -/
+@[simp]
+theorem pullbackFunctional_toWeakDual (f : F) (σ : B →P[ℂ] ℂ) :
+    pullbackFunctional A f (StrongDual.toWeakDual (σ : B →L[ℂ] ℂ)) =
+      StrongDual.toWeakDual ((σ.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) :=
+  DFunLike.ext _ _ fun _ => by simp
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
@@ -257,6 +289,12 @@ theorem mem_stateSpace_iff_map_one :
 /-- A state of a unital C⋆-algebra takes the value `1` at `1`. -/
 theorem map_one_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : φ 1 = 1 :=
   (mem_stateSpace_iff_map_one.1 hφ).2
+
+/-- A state of a unital C⋆-algebra takes the value `c` at `c • 1`, so it extends the unique state
+`c • 1 ↦ c` of the subalgebra `ℂ·1`. -/
+theorem map_algebraMap_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (c : ℂ) :
+    φ (algebraMap ℂ A c) = c := by
+  simp [Algebra.algebraMap_eq_smul_one, map_one_of_mem_stateSpace hφ]
 
 /-- On a unital C⋆-algebra, a functional is a state exactly when `‖φ‖ = φ 1 = 1`. Positivity is
 then automatic: it follows from `φ 1 = ‖φ‖ = 1`. -/
