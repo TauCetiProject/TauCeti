@@ -10,6 +10,7 @@ public import Mathlib.Dynamics.Ergodic.EmpiricalMeasure
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import TauCeti.Dynamics.BirkhoffSum.Integrable
+import TauCeti.Dynamics.Ergodic.EmpiricalMeasure
 import Mathlib.Topology.Metrizable.Basic
 
 /-!
@@ -30,8 +31,8 @@ converse integrates the Birkhoff averages against an invariant probability.
 * `TauCeti.UniquelyErgodic.tendstoUniformly_birkhoffAverage`: for a uniquely ergodic continuous
   map with invariant probability `μ`, the Birkhoff averages of `f` converge uniformly to
   `∫ x, f x ∂μ`.
-* `TauCeti.uniquelyErgodic_of_tendstoUniformly`: uniform convergence of the Birkhoff averages of
-  every `f : C(X, ℝ)` to a constant implies unique ergodicity.
+* `TauCeti.uniquelyErgodic_of_tendstoUniformly_birkhoffAverage`: uniform convergence of the
+  Birkhoff averages of every `f : C(X, ℝ)` to a constant implies unique ergodicity.
 * `TauCeti.uniquelyErgodic_iff_tendstoUniformly_birkhoffAverage`: the equivalence.
 
 ## References
@@ -47,17 +48,14 @@ open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X] {T : X → X}
+variable {X : Type*} [MeasurableSpace X] {T : X → X}
 
-/-- The integral of a continuous function on a compact space against an invariant probability
-is a limit of the integrals of its Birkhoff averages; if these converge uniformly to `c`, the
-integral is `c`. -/
-theorem integral_eq_of_tendstoUniformly_birkhoffAverage [CompactSpace X]
-    {ν : ProbabilityMeasure X} (hν : ν ∈ invariantProbabilities T) (f : C(X, ℝ)) {c : ℝ}
+/-- The integral of an integrable function against an invariant probability is a limit of the
+integrals of its Birkhoff averages; if these converge uniformly to `c`, the integral is `c`. -/
+theorem integral_eq_of_tendstoUniformly_birkhoffAverage {ν : ProbabilityMeasure X}
+    (hν : ν ∈ invariantProbabilities T) {f : X → ℝ} (hfi : Integrable f (ν : Measure X)) {c : ℝ}
     (hc : TendstoUniformly (fun n ↦ birkhoffAverage ℝ T f n) (fun _ ↦ c) atTop) :
     ∫ x, f x ∂ν = c := by
-  have hfi : Integrable f (ν : Measure X) :=
-    (BoundedContinuousFunction.mkOfCompact f).integrable _
   refine eq_of_forall_dist_le fun ε hε ↦ ?_
   obtain ⟨n, hn⟩ := ((Metric.tendstoUniformly_iff.mp hc ε hε).and
     (eventually_ge_atTop 1)).exists
@@ -71,11 +69,13 @@ theorem integral_eq_of_tendstoUniformly_birkhoffAverage [CompactSpace X]
   rw [← dist_eq_norm]
   exact (hn.1 x).le
 
+variable [TopologicalSpace X] [BorelSpace X]
+
 /-- **Uniform convergence implies unique ergodicity.** If the Birkhoff averages of every
 continuous function on a nonempty compact metrizable space converge uniformly to a constant, then
 the continuous map `T` is uniquely ergodic. -/
-theorem uniquelyErgodic_of_tendstoUniformly [MetrizableSpace X] [CompactSpace X] [Nonempty X]
-    (hT : Continuous T)
+theorem uniquelyErgodic_of_tendstoUniformly_birkhoffAverage [MetrizableSpace X] [CompactSpace X]
+    [Nonempty X] (hT : Continuous T)
     (h : ∀ f : C(X, ℝ), ∃ c : ℝ,
       TendstoUniformly (fun n ↦ birkhoffAverage ℝ T f n) (fun _ ↦ c) atTop) :
     UniquelyErgodic T := by
@@ -83,25 +83,8 @@ theorem uniquelyErgodic_of_tendstoUniformly [MetrizableSpace X] [CompactSpace X]
   refine ProbabilityMeasure.toMeasure_injective
     (ext_of_forall_integral_eq_of_IsFiniteMeasure fun g ↦ ?_)
   obtain ⟨c, hc⟩ := h g.toContinuousMap
-  exact (integral_eq_of_tendstoUniformly_birkhoffAverage h₁ _ hc).trans
-    (integral_eq_of_tendstoUniformly_birkhoffAverage h₂ _ hc).symm
-
-omit [BorelSpace X] in
-/-- The empirical measure of the orbit of `x` of length `n + 1` integrates `g ∘ T - g` to
-`(g (T^[n + 1] x) - g x) / (n + 1)`, which is at most `2 ‖g‖ / (n + 1)` in norm. -/
-private theorem norm_integral_comp_sub_integral_empiricalMeasure_le
-    [MeasurableSingletonClass X] (g : X →ᵇ ℝ) (x : X) (n : ℕ) :
-    ‖(∫ y, (g ∘ T) y ∂(empiricalMeasure T x n)) - ∫ y, g y ∂(empiricalMeasure T x n)‖ ≤
-      2 * ‖g‖ / (n + 1) := by
-  rw [integral_empiricalMeasure_eq_birkhoffaverage, integral_empiricalMeasure_eq_birkhoffaverage,
-    birkhoffAverage_comp_apply, ← dist_eq_norm,
-    birkhoffAverage_apply_congr_ring (R := NNReal) ℝ, birkhoffAverage_apply_congr_ring
-      (R := NNReal) ℝ, dist_birkhoffAverage_apply_birkhoffAverage]
-  push_cast
-  gcongr
-  have h1 := g.norm_coe_le_norm (T^[n + 1] x)
-  have h2 := g.norm_coe_le_norm x
-  exact (dist_le_norm_add_norm _ _).trans (by linarith)
+  exact (integral_eq_of_tendstoUniformly_birkhoffAverage h₁ (g.integrable _) hc).trans
+    (integral_eq_of_tendstoUniformly_birkhoffAverage h₂ (g.integrable _) hc).symm
 
 /-- **Unique ergodicity implies uniform convergence.** For a continuous uniquely ergodic map `T`
 of a compact metrizable space with invariant probability `μ`, the Birkhoff averages of every
@@ -126,6 +109,8 @@ theorem UniquelyErgodic.tendstoUniformly_birkhoffAverage [MetrizableSpace X] [Co
   choose! x hx using fun n (hn : n ∈ S) ↦ hn
   -- A cluster point `ν` of the empirical measures along these orbits.
   let u : ℕ → ProbabilityMeasure X := fun n ↦ ⟨empiricalMeasure T (x n) n, inferInstance⟩
+  have hu : ∀ n, (u n : Measure X) = empiricalMeasure T (x n) n := fun n ↦
+    ProbabilityMeasure.coe_mk _ _
   obtain ⟨ν, -, hν⟩ := isCompact_univ.exists_mapClusterPt (f := atTop ⊓ 𝓟 S) (u := u) (by simp)
   have hνinv : ν ∈ invariantProbabilities T := by
     refine (mem_invariantProbabilities_iff_map_eq hT.measurable).mpr
@@ -138,8 +123,9 @@ theorem UniquelyErgodic.tendstoUniformly_birkhoffAverage [MetrizableSpace X] [Co
       refine ((tendsto_const_div_atTop_nhds_zero_nat (2 * ‖g‖)).comp
         (tendsto_add_atTop_nat 1)).congr fun n ↦ ?_
       simp
-    exact (squeeze_zero_norm (fun n ↦
-      norm_integral_comp_sub_integral_empiricalMeasure_le g (x n) n) h0).mono_left inf_le_left
+    simp only [hu]
+    exact (squeeze_zero_norm (fun n ↦ norm_integral_comp_sub_integral_empiricalMeasure_le T
+      g.norm_coe_le_norm (x n) n) h0).mono_left inf_le_left
   have hνμ : ν = μ := h.eq_of_mem hνinv hμ
   -- Along an ultrafilter the integrals of `f` converge to `c`, but stay `ε`-far on `S`.
   obtain ⟨U, hUF, hU⟩ := mapClusterPt_iff_ultrafilter.mp hν
@@ -151,7 +137,7 @@ theorem UniquelyErgodic.tendstoUniformly_birkhoffAverage [MetrizableSpace X] [Co
   obtain ⟨n, h1n, h2n⟩ := (h1.and h2).exists
   refine hx n h2n ?_
   have he : ∫ y, f y ∂(u n : Measure X) = birkhoffAverage ℝ T f (n + 1) (x n) := by
-    rw [← birkhoffAverage_apply_congr_ring (R := NNReal) ℝ]
+    rw [hu, ← birkhoffAverage_apply_congr_ring (R := NNReal) ℝ]
     exact integral_empiricalMeasure_eq_birkhoffaverage T (x n) f n
   simpa [dist_comm, he, c] using h1n
 
@@ -162,7 +148,7 @@ theorem uniquelyErgodic_iff_tendstoUniformly_birkhoffAverage [MetrizableSpace X]
     [Nonempty X] (hT : Continuous T) :
     UniquelyErgodic T ↔ ∀ f : C(X, ℝ), ∃ c : ℝ,
       TendstoUniformly (fun n ↦ birkhoffAverage ℝ T f n) (fun _ ↦ c) atTop := by
-  refine ⟨fun h f ↦ ?_, uniquelyErgodic_of_tendstoUniformly hT⟩
+  refine ⟨fun h f ↦ ?_, uniquelyErgodic_of_tendstoUniformly_birkhoffAverage hT⟩
   obtain ⟨μ, hμ⟩ := h.nonempty
   exact ⟨_, h.tendstoUniformly_birkhoffAverage hT hμ f⟩
 

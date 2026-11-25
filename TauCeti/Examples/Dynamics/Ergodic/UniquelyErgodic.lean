@@ -38,8 +38,7 @@ theorem not_uniquelyErgodic_doubling : ¬ UniquelyErgodic doubling := by
   have h₀ : (⟨Measure.dirac 0, inferInstance⟩ : ProbabilityMeasure UnitAddCircle) ∈
       invariantProbabilities doubling := by
     refine mem_invariantProbabilities.mpr ⟨hm, ?_⟩
-    change Measure.map doubling (Measure.dirac 0) = Measure.dirac 0
-    rw [Measure.map_dirac' hm]
+    rw [ProbabilityMeasure.coe_mk, Measure.map_dirac' hm]
     simp [doubling]
   have hvol : (⟨volume, inferInstance⟩ : ProbabilityMeasure UnitAddCircle) ∈
       invariantProbabilities doubling :=
