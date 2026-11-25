@@ -14,8 +14,9 @@ public import Mathlib.Algebra.DualNumber
 # Check: the dual numbers in characteristic other than `2`
 
 For a field `k` in which `2 ≠ 0` and `X = Spec k[ε]/(ε²)`, the sheaf `Ω_{X/k}` admits no locally
-free quotient of rank `1`. The Kähler differentials of `k[ε]/(ε²)` are spanned by `dε`, and
-`2ε dε = d(ε²) = 0`, so `ε` kills them; a surjection onto `k[ε]/(ε²)` would then force `ε = 0`.
+free quotient of rank `1`, nor of any rank `d ≠ 0`. The Kähler differentials of `k[ε]/(ε²)` are
+spanned by `dε`, and `2ε dε = d(ε²) = 0`, so `ε` kills them; a surjection onto `(k[ε]/(ε²))^d`
+would then force `ε = 0`.
 By the stalk criterion it suffices to see this at the stalk of the closed point, which is
 `k[ε]/(ε²)` itself, the ring being local (`StructureSheaf.toStalkAlgHom_closedPoint_bijective`).
 
@@ -78,15 +79,15 @@ variable (k) in
 abbrev closedPt : Spec (dualNumberRing k) := IsLocalRing.closedPoint (dualNumberRing k)
 
 /-- **Check.** For a field `k` with `2 ≠ 0`, `Ω_{X/k}` for `X = Spec k[ε]/(ε²)` admits no locally
-free quotient of rank `1`. -/
-theorem not_hasLocallyFreeQuotientOfDifferentials_one (h2 : (2 : k) ≠ 0) :
-    ¬ HasLocallyFreeQuotientOfDifferentials k (Spec (dualNumberRing k)) 1 := fun h ↦ by
+free quotient of any rank `d ≠ 0`; the Check is the case `d = 1`. -/
+theorem not_hasLocallyFreeQuotientOfDifferentials (h2 : (2 : k) ≠ 0) {d : ℕ} (hd : d ≠ 0) :
+    ¬ HasLocallyFreeQuotientOfDifferentials k (Spec (dualNumberRing k)) d := fun h ↦ by
   obtain ⟨g, hg⟩ := h.exists_surjective_stalk (closedPt k)
   -- Stated at `closedPt k`, typed as a point of `Spec`, so that the stalk's `k`-algebra
   -- instance `Scheme.stalkBaseAlgebra` is found.
   have hbij : Function.Bijective (StructureSheaf.toStalkAlgHom k _ (closedPt k)) :=
     StructureSheaf.toStalkAlgHom_closedPoint_bijective k _
-  refine not_surjective h2 _ hbij.2 ?_ one_ne_zero g hg
+  refine not_surjective h2 _ hbij.2 ?_ hd g hg
   rw [Ne, ← map_zero (StructureSheaf.toStalkAlgHom k _ _), hbij.1.eq_iff]
   intro h
   simpa using congrArg TrivSqZeroExt.snd h
