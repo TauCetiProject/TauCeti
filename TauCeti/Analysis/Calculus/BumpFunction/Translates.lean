@@ -26,6 +26,10 @@ This is how a norm localized by one cutoff is bounded by norms localized by anot
 built from `χ(· - x) f` is the finite sum of the quantities built from `g_a(· - x) η(· - x - a) f`,
 and each multiplier `g_a(· - x)` is a translate of one fixed compactly supported function, so its
 size does not depend on `x`.
+
+Such quantities read a function placed at scale `h` about a centre `x`, `y ↦ g (h⁻¹ • (y - x))`.
+This keeps the class `Cⁿ` (`ContDiff.comp_inv_smul_sub`) and, for `h ≠ 0`, compact support
+(`HasCompactSupport.comp_inv_smul_sub`).
 -/
 
 public section
@@ -35,6 +39,20 @@ open Set Function
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
+
+/-- A function of class `Cⁿ` placed at scale `h` about a centre `x`, `y ↦ g (h⁻¹ • (y - x))`, is
+of class `Cⁿ`. -/
+theorem _root_.ContDiff.comp_inv_smul_sub {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : E → F} (hg : ContDiff ℝ n g) (h : ℝ) (x : E) :
+    ContDiff ℝ n fun y ↦ g (h⁻¹ • (y - x)) :=
+  hg.comp ((contDiff_id.sub contDiff_const).const_smul h⁻¹)
+
+/-- A compactly supported function placed at a nonzero scale `h` about a centre `x`,
+`y ↦ g (h⁻¹ • (y - x))`, is compactly supported. -/
+theorem _root_.HasCompactSupport.comp_inv_smul_sub {F : Type*} [Zero F] {g : E → F}
+    (hg : HasCompactSupport g) {h : ℝ} (hh : h ≠ 0) (x : E) :
+    HasCompactSupport fun y ↦ g (h⁻¹ • (y - x)) :=
+  (hg.comp_smul (inv_ne_zero hh)).comp_homeomorph (Homeomorph.subRight x)
 
 /-- **A compactly supported function is a finite combination of translates of any nonzero
 function.** If `η` and `χ` are of class `Cⁿ`, `η ≠ 0` and `χ` has compact support, there are a
