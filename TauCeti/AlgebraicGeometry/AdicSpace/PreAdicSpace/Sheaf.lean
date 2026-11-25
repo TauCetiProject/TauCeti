@@ -23,6 +23,9 @@ Forgetting also the topology on sections gives a sheafed space of commutative ri
 maps of pre-adic spaces are defined, so it is the setting for arguments about morphisms through
 their stalk maps. Both forgetful functors are faithful.
 
+The global sections of a sheafy pre-adic space vanish exactly when the space is empty
+(`TauCeti.SheafyPreAdicSpace.subsingleton_presheaf_obj_top_iff_isEmpty`).
+
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §8.1.
@@ -145,6 +148,24 @@ instance : forgetToRingSheafedSpace.{u}.Faithful where
     rw [forgetToRingSheafedSpace_map_hom, forgetToRingSheafedSpace_map_hom] at h'
     exact Functor.map_injective (TopCommRingCat.isCompleteSeparated.ι ⋙
       forget₂ TopCommRingCat CommRingCat).mapPresheaf h'
+
+/-- The ring of global sections `𝒪_X(X)` of a sheafy pre-adic space `X` has at most one element
+exactly when `X` is empty. -/
+theorem subsingleton_presheaf_obj_top_iff_isEmpty (X : SheafyPreAdicSpace.{u}) :
+    Subsingleton (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj ↔ IsEmpty X.obj := by
+  refine ⟨fun hs ↦ ⟨fun x ↦ ?_⟩, fun _ ↦ ?_⟩
+  · -- the germ at `x` is a ring map from the zero ring to the local ring `𝒪_{X,x}`
+    have := (X.obj.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom.codomain_trivial
+      (h := hs)
+    exact false_of_nontrivial_of_subsingleton (X.obj.toRingPresheafedSpace.presheaf.stalk x)
+  · -- on the empty space `⊤ = ⊥`, so the sections over `⊤` form a terminal object, which
+    -- receives a ring map from the zero ring
+    have h : (⊤ : Opens X.obj.toTopCat) = ⊥ := by
+      ext x
+      exact isEmptyElim x
+    exact ((X.toSheafedSpace.sheaf.isTerminalOfEqEmpty h).from
+      (CompleteSeparatedTopCommRingCat.of PUnit.{u + 1})).hom.val.codomain_trivial
+      (h := by rw [CompleteSeparatedTopCommRingCat.of_obj]; infer_instance)
 
 end SheafyPreAdicSpace
 

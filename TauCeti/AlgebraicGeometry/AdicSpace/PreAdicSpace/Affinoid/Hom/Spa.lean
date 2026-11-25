@@ -44,11 +44,11 @@ adic space has one, and it is unique.
   source, by gluing over the open affinoid subspaces.
 * `TauCeti.AdicSpace.homSpaEquiv_comp`: naturality in the source. Naturality in the Huber pair is
   `TauCeti.ValuationSpectrum.presentationLimitAppTop_comp_pairComap`.
+* `TauCeti.AdicSpace.subsingleton_homSpa_of_surjective_intCast`: if `ℤ → A` is surjective,
+  morphisms to `Spa(A, A⁺)` are unique.
 * `TauCeti.AdicSpace.subsingleton_homSpa_of_subsingleton`,
   `TauCeti.AdicSpace.nonempty_homSpa_iff_isEmpty_of_subsingleton`: morphisms to `Spa(0, 0)` are
   unique, and exist exactly from the empty adic space.
-* `TauCeti.AdicSpace.subsingleton_presheaf_obj_top_of_isEmpty`: the global sections of an empty
-  adic space vanish.
 
 ## References
 
@@ -211,75 +211,53 @@ theorem homSpaEquiv_comp {W X : AdicSpace.{u}} (h : W ⟶ X)
       h.hom.appTop.comp (homSpaEquiv P S hS X f) :=
   presentationLimitAppTop_comp _ _ _ _ h.hom f
 
-/-- **Global sections of an empty adic space vanish.** The structure presheaf of an adic space is
-a sheaf, so its value on the empty open, which is `⊤` here, is a terminal complete separated ring;
-the map to it from the zero ring forces `1 = 0`. -/
-theorem subsingleton_presheaf_obj_top_of_isEmpty (X : AdicSpace.{u}) [IsEmpty X.obj] :
-    Subsingleton (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj := by
-  let F : TopCat.Sheaf CompleteSeparatedTopCommRingCat.{u} X.obj.toTopCat :=
-    ⟨X.obj.toPresheafedSpace.presheaf, X.property.isSheafy⟩
-  have h : (⊤ : Opens X.obj.toTopCat) = ⊥ := by
-    ext x
-    exact isEmptyElim x
-  let t := (F.isTerminalOfEqEmpty h).from (⟨TopCommRingCat.of PUnit.{u + 1},
-    (TopCommRingCat.isCompleteSeparated_iff _).mpr
-      (TopCommRingCat.isCompleteSeparated_of_completeSpace_of_t0Space _)⟩ :
-      CompleteSeparatedTopCommRingCat.{u})
-  have h01 : (1 : (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj) = 0 := by
-    have := congrArg t.hom.val (Subsingleton.elim (α := PUnit.{u + 1}) 1 0)
-    exact (map_one t.hom.val).symm.trans (this.trans (map_zero t.hom.val))
-  exact ⟨fun a b ↦ by rw [← mul_one a, ← mul_one b, h01, mul_zero, mul_zero]⟩
+/-- **Morphisms to `Spa(A, A⁺)` for a quotient of `ℤ`.** If the canonical ring map `ℤ → A` is
+surjective, every adic space has at most one morphism to `Spa(A, A⁺)`. -/
+theorem subsingleton_homSpa_of_surjective_intCast (h : Function.Surjective (Int.castRingHom A))
+    (X : AdicSpace.{u}) :
+    Subsingleton (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
+  (homSpaEquiv P S hS X).subsingleton_congr.mpr
+    ⟨fun _ _ ↦ Subtype.ext <| (RingHom.cancel_right h).mp (RingHom.ext_int _ _)⟩
 
-/-- **Morphisms to `Spa(ℤ, ℤ)`** (the discrete-target Check of `homSpaEquiv`): if `A` is discrete
-and isomorphic to `ℤ` as a ring, every adic space has exactly one morphism to `Spa(A, A⁺)`. The
-only ring map `A → 𝒪_X(X)` is the one through `ℤ`; it is continuous because `A` is discrete, and
-it lands in the integral sections because they form a subring. -/
+/-- **Morphisms to `Spa(ℤ, ℤ)`**: if `A` is discrete and isomorphic to `ℤ` as a ring, every adic
+space has exactly one morphism to `Spa(A, A⁺)`. The only ring map `A → 𝒪_X(X)` is the one through
+`ℤ`; it is continuous because `A` is discrete, and it lands in the integral sections because they
+form a subring. -/
 @[instance_reducible]
 noncomputable def uniqueHomSpaOfRingEquivInt [DiscreteTopology A] (e : A ≃+* ℤ)
     (X : AdicSpace.{u}) :
     Unique (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
-  letI : Unique {φ : A →+* (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj //
-      Continuous φ ∧ ∀ a ∈ S.plus, φ a ∈ X.obj.plusSubring ⊤} :=
-    { default := ⟨(Int.castRingHom _).comp e.toRingHom, continuous_of_discreteTopology,
-        fun a _ ↦ intCast_mem _ (e a)⟩
-      uniq φ := Subtype.ext <| RingHom.ext fun a ↦ by
-        have h := RingHom.congr_fun
-          (RingHom.ext_int (φ.val.comp e.symm.toRingHom) (Int.castRingHom _)) (e a)
-        rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-          e.symm_apply_apply] at h
-        exact h }
-  (homSpaEquiv P S hS X).unique
+  haveI := subsingleton_homSpa_of_surjective_intCast P S hS
+    (fun a ↦ ⟨e a, (map_intCast e.symm (e a)).symm.trans (e.symm_apply_apply a)⟩) X
+  uniqueOfSubsingleton <| (homSpaEquiv P S hS X).symm
+    ⟨(Int.castRingHom _).comp e.toRingHom, continuous_of_discreteTopology,
+      fun a _ ↦ intCast_mem _ (e a)⟩
 
 /-- **Morphisms to `Spa(0, 0)` are unique.** If `A` is the zero ring, every adic space has at
 most one morphism to `Spa(A, A⁺)`. -/
 theorem subsingleton_homSpa_of_subsingleton [Subsingleton A] (X : AdicSpace.{u}) :
     Subsingleton (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
-  (homSpaEquiv P S hS X).subsingleton_congr.mpr
-    ⟨fun φ ψ ↦ Subtype.ext <| RingHom.ext fun a ↦ by
-      rw [Subsingleton.elim a 0, map_zero, map_zero]⟩
+  subsingleton_homSpa_of_surjective_intCast P S hS (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) X
 
-/-- **Only the empty adic space maps to `Spa(0, 0)`** (the zero-target Check of `homSpaEquiv`): if
-`A` is the zero ring, an adic space `X` has a morphism to `Spa(A, A⁺)` exactly when it is empty.
-A ring map `A → 𝒪_X(X)` forces `𝒪_X(X) = 0`, which fails at any point since the stalks are local
-rings; conversely the global sections of the empty space are zero. -/
+/-- **Only the empty adic space maps to `Spa(0, 0)`**: if `A` is the zero ring, an adic space `X`
+has a morphism to `Spa(A, A⁺)` exactly when it is empty. A ring map `A → 𝒪_X(X)` exists exactly
+when `𝒪_X(X) = 0`, which happens exactly when `X` is empty. -/
 theorem nonempty_homSpa_iff_isEmpty_of_subsingleton [Subsingleton A] (X : AdicSpace.{u}) :
     Nonempty (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) ↔ IsEmpty X.obj := by
   rw [(homSpaEquiv P S hS X).nonempty_congr]
-  refine ⟨fun ⟨φ⟩ ↦ ⟨fun x ↦ ?_⟩, fun _ ↦ ?_⟩
-  · have : Nontrivial (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj :=
-      (X.obj.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom.domain_nontrivial
-    exact one_ne_zero <| (map_one φ.val).symm.trans <|
-      (congrArg φ.val (Subsingleton.elim 1 0)).trans (map_zero φ.val)
-  · have := subsingleton_presheaf_obj_top_of_isEmpty X
-    let φ : A →+* (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj :=
-      ⟨⟨⟨0, Subsingleton.elim _ _⟩, fun _ _ ↦ Subsingleton.elim _ _⟩, Subsingleton.elim _ _,
-        fun _ _ ↦ Subsingleton.elim _ _⟩
-    exact ⟨⟨φ, continuous_of_const fun _ _ ↦ Subsingleton.elim _ _, fun a _ ↦ by
-      rw [Subsingleton.elim (φ a) 0]
-      exact zero_mem _⟩⟩
+  refine Iff.trans ⟨fun ⟨φ⟩ ↦ φ.val.codomain_trivial, fun hs ↦ ?_⟩
+    (SheafyPreAdicSpace.subsingleton_presheaf_obj_top_iff_isEmpty ⟨X.obj, X.property.isSheafy⟩)
+  have : Subsingleton (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj := hs
+  let φ : A →+* (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj :=
+    ⟨⟨⟨0, Subsingleton.elim _ _⟩, fun _ _ ↦ Subsingleton.elim _ _⟩, Subsingleton.elim _ _,
+      fun _ _ ↦ Subsingleton.elim _ _⟩
+  exact ⟨⟨φ, continuous_of_const fun _ _ ↦ Subsingleton.elim _ _, fun a _ ↦ by
+    rw [Subsingleton.elim (φ a) 0]
+    exact zero_mem _⟩⟩
 
 end AdicSpace
 
