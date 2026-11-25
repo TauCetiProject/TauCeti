@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+import TauCeti.Analysis.BoundedVariation.DeGiorgi
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
@@ -200,5 +201,15 @@ theorem essentialBoundary_inter_ae_eq_reducedBoundary (hn : 2 ≤ finrank ℝ E)
     ⟨euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero hn hu hfin, ?_⟩
   rw [sdiff_eq_empty.2 (subset_inter (reducedBoundary_subset_essentialBoundary hn)
     reducedBoundary_subset), measure_empty]
+
+/-- **The perimeter is the measure of the essential boundary.** In dimension `n ≥ 2`, a set `s` of
+locally finite perimeter in an open set `Ω` has `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`. -/
+theorem perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter (hn : 2 ≤ finrank ℝ E)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
+    perimeter volume Ω s = μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) := by
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin,
+    measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
 
 end TauCeti
