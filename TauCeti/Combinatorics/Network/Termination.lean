@@ -35,6 +35,8 @@ subgroup, augmentation sequences need not terminate.
 ## Main results
 
 * `TauCeti.Flow.AugmentsTo.val_add_le`: an augmentation step raises the value by at least `d`.
+* `TauCeti.Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le`: a compatible flow value and
+  source--sink cut capacity have natural multipliers `n ≤ m`.
 * `TauCeti.Flow.wellFounded_val_lt`: the relation of having larger value is well-founded on flows
   with values in `zmultiples d`.
 * `TauCeti.Flow.acc_augmentsTo`: every sequence of augmentation steps from a flow with values in
@@ -110,19 +112,19 @@ theorem wellFounded_val_lt (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultipl
       exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [h] at hg⟩⟩
   rcases eq_or_ne s t with hst | hst
   · exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [BoundedFlow.val_eq_zero_of_eq hst] at hg⟩⟩
-  obtain ⟨m, hm⟩ := mem_zmultiples_iff.1 (arrowSum_mem hcap {s} {s}ᶜ)
-  choose n hn using fun f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
-    exists_nsmul_eq_val hd f.property
-  have hnm (f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d}) :
-      (n f : ℤ) ≤ m := by
-    refine (zsmul_le_zsmul_iff_left hd).1 ?_
-    rw [natCast_zsmul, hn, hm]
-    exact f.val.val_le_arrowSum (mem_singleton_self s) (by simpa using hst.symm)
+  choose n m hn hm hnm using fun f :
+      {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
+    exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le hd hcap f.property
+      (S := {s}) (mem_singleton_self s) (by simpa using hst.symm)
+  have hm_eq (f g :
+      {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d}) : m f = m g :=
+    (nsmul_strictMono_of_pos hd).injective <| by rw [hm f, hm g]
   refine Subrelation.wf (fun {g f} h ↦ ?_)
-    (InvImage.wf (fun f ↦ (m - n f).toNat) wellFounded_lt)
+    (InvImage.wf (fun f ↦ m f - n f) wellFounded_lt)
   have hlt : n f < n g := (nsmul_lt_nsmul_iff_left hd).1 (by rwa [hn, hn])
-  have := hnm g
-  exact (by omega : (m - n g).toNat < (m - n f).toNat)
+  simp only [InvImage]
+  rw [← hm_eq f g]
+  exact tsub_lt_tsub_left_of_le (by simpa only [← hm_eq f g] using hnm g) hlt
 
 /-- **Termination of augmentation for capacities in a cyclic subgroup.** For capacities in
 `zmultiples d` and distinct terminals, every sequence of augmentation steps starting from a flow
