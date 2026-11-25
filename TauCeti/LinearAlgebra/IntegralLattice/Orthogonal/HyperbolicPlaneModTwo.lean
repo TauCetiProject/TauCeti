@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.ModTwo
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Quadratic
+public import TauCeti.LinearAlgebra.QuadraticForm.ModTwo
 
 /-!
 # Norms in the classes modulo two of `U ⊕ N`
@@ -41,7 +43,8 @@ every orthogonal transvection of `M / 2M`.
   nonzero class of `(U ⊕ N) / 2(U ⊕ N)` contains a vector of norm `t` if and only if `t` is
   congruent modulo four to the norms of its members.
 * `TauCeti.IntegralLattice.mk_mem_normClassesModTwo_neg_two_hyperbolicPlane_orthogonalSum_iff`:
-  a class contains a vector of norm `-2` if and only if its norms are `2` modulo four.
+  a class contains a vector of norm `-2` if and only if the mod-two reduction
+  `QuadraticForm.reduceModTwo` of the quadratic form `B(x, x) / 2` is `1` on it.
 
 ## References
 
@@ -156,16 +159,29 @@ theorem mk_mem_normClassesModTwo_hyperbolicPlane_orthogonalSum_iff (hN : N.IsEve
     exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
 
 /-- **Roots in the classes modulo two of `U ⊕ N`.** For an even unimodular lattice `N`, a class of
-`(U ⊕ N) / 2(U ⊕ N)` contains a vector of norm `-2` if and only if the norms of its members are
-`2` modulo four, that is, if and only if the mod-two quadratic form `B(x, x) / 2 mod 2` is `1` on
-it. -/
+`(U ⊕ N) / 2(U ⊕ N)` contains a vector of norm `-2` if and only if the mod-two reduction `Q₂` of
+the quadratic form `B(x, x) / 2` is `1` on it. -/
 theorem mk_mem_normClassesModTwo_neg_two_hyperbolicPlane_orthogonalSum_iff (hN : N.IsEven)
     (hNu : N.IsUnimodular) (x : hyperbolicPlane.orthogonalSum N) :
     (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) (hyperbolicPlane.orthogonalSum N)) ∈
         (hyperbolicPlane.orthogonalSum N).normClassesModTwo (-2) ↔
-      (hyperbolicPlane.orthogonalSum N).integralNorm x ≡ 2 [ZMOD 4] := by
+      ((hyperbolicPlane.orthogonalSum N).quadraticForm
+        ((isEven_orthogonalSum_iff _ _).mpr ⟨isEven_hyperbolicPlane, hN⟩)).reduceModTwo
+          (Submodule.Quotient.mk x) = 1 := by
   have hcast : ((-2 : ℤ) : ℚ) = -2 := by norm_num
   have h2 : (-2 : ℤ) ≡ 2 [ZMOD 4] := by decide
+  -- `Q₂ [x] = 1` says that `B(x, x) / 2` is odd, that is, `B(x, x) ≡ 2 [ZMOD 4]`.
+  have hQ : ((hyperbolicPlane.orthogonalSum N).quadraticForm
+      ((isEven_orthogonalSum_iff _ _).mpr ⟨isEven_hyperbolicPlane, hN⟩)).reduceModTwo
+        (Submodule.Quotient.mk x) = 1 ↔
+      (hyperbolicPlane.orthogonalSum N).integralNorm x ≡ 2 [ZMOD 4] := by
+    obtain ⟨q, hq⟩ := ((hyperbolicPlane.orthogonalSum N).even_integralNorm_iff x).mpr
+      (((isEven_orthogonalSum_iff _ _).mpr ⟨isEven_hyperbolicPlane, hN⟩).exists_norm_eq_two_mul x)
+    rw [QuadraticForm.reduceModTwo_mk, quadraticForm_apply, hq, ← two_mul,
+      Int.mul_ediv_cancel_left _ two_ne_zero, ZMod.intCast_eq_one_iff_odd, Int.odd_iff,
+      Int.ModEq, show (4 : ℤ) = 2 * 2 by norm_num, Int.mul_emod_mul_of_pos _ _ two_pos]
+    omega
+  rw [hQ]
   constructor
   · intro h
     rw [← hcast] at h
