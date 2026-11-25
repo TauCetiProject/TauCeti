@@ -60,9 +60,7 @@ theorem opensCongr_inverse_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ 
 theorem opensCongr_inverse_op_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
     (h.trans k).opensCongr.equivalence.inverse.op =
       k.opensCongr.equivalence.inverse.op ⋙ h.opensCongr.equivalence.inverse.op := by
-  change (h.trans k).opensCongr.equivalence.inverse.op =
-    (k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse).op
-  exact congrArg Functor.op (opensCongr_inverse_trans h k)
+  rfl
 
 variable (A : Type a) [Category.{b} A]
 

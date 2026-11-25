@@ -48,6 +48,8 @@ variable {C : Type*} [Category* C] {D : Type*} [Category* D]
 
 /-- A site equivalence preserves the sectionwise addition of sheaf morphisms. -/
 instance sheafCongr_additive : (e.sheafCongr J K A).functor.Additive := by
+  -- `ObjectProperty.lift` inherits additivity from the composite of sheafToPresheaf
+  -- and precomposition, using the generic additive whiskeringLeft instance.
   unfold sheafCongr sheafCongr.functor
   infer_instance
 

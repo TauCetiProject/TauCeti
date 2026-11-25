@@ -167,7 +167,6 @@ theorem gammaTransportClass_eq : gammaTransportClass.{u,v} = liftedClass.{u,v} :
   simp only [ConcreteCategory.comp_apply] at happly
   exact happly.trans (congrArg d.hom hread)
 
-
 /-- A genuinely cross-universe permutation of a repeated two-set cover. -/
 def indexEquiv : Fin 2 ≃ ULift.{u + 1} (Fin 2) :=
   (Equiv.swap 0 1).trans Equiv.ulift.symm
@@ -307,7 +306,6 @@ theorem twiceSheafMap_transport :
         twiceSheafMap.{max u v}.hom) oneClass.{max u v}
   simp only [ConcreteCategory.comp_apply] at h
   exact h.symm
-
 
 /-- A nonzero-valued presheaf on the literal empty base in arbitrary universe. -/
 abbrev emptyPresheaf : (Opens PEmpty.{u + 1})ᵒᵖ ⥤ ModuleCat.{max (u + 1) (v + 1)} ℂ :=
@@ -605,7 +603,6 @@ example :
           Equiv.cechComplexReindexIso indexEquiv.{u}.symm (fun _ ↦ (⊤ : Opens (OnePoint ℂ))) :=
   Equiv.cechComplexReindexIso_trans _ _ _
 
-
 /-- The nonidentity refinement remains a native refinement after lifting the sphere. -/
 example :
     let h := liftHomeomorph.{u}
@@ -856,14 +853,20 @@ theorem compositionSequentialMap_eq :
     (Homeomorph.cechCohomologyIso_trans (X := TopCat.of disconnectedBase)
       (Y := TopCat.of disconnectedBase) (Z := TopCat.of (ULift.{u + 1} disconnectedBase))
       (A := ModuleCat.{u + 1} ℂ) compositionSwap compositionLift.{u} 0)
-  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
-    isoWhiskerLeft_hom, isoWhiskerRight_hom, whiskerLeft_app, whiskerRight_app,
-    Functor.associator_inv_app, Functor.whiskeringLeftObjCompIso,
-    Iso.refl_symm, Iso.refl_hom, NatTrans.id_app] at h
-  change _ = _ ≫ _ ≫ (cechCohomology (TopCat.of (ULift.{u + 1} disconnectedBase))
-    (ModuleCat.{u + 1} ℂ) 0).map (𝟙 _ ≫ compositionCoefficientIso.{u}.hom) at h
-  rw [Category.id_comp compositionCoefficientIso.{u}.hom] at h
-  simpa only [compositionSequentialMap, Functor.whiskeringLeft_obj_obj, Functor.comp_obj]
+  have hcomponent := Functor.whiskeringLeft_transport_comp_hom_app
+    compositionLift.{u}.opensCongr.equivalence.inverse.op
+    compositionSwap.opensCongr.equivalence.inverse.op
+    (compositionSwap.trans compositionLift.{u}).opensCongr.equivalence.inverse.op
+    (opensCongr_inverse_op_trans compositionSwap compositionLift.{u}).symm
+    (compositionSwap.cechCohomologyIso (X := TopCat.of disconnectedBase)
+      (Y := TopCat.of disconnectedBase) (A := ModuleCat.{u + 1} ℂ) 0)
+    (compositionLift.{u}.cechCohomologyIso (X := TopCat.of disconnectedBase)
+      (Y := TopCat.of (ULift.{u + 1} disconnectedBase)) (A := ModuleCat.{u + 1} ℂ) 0)
+    (Iso.refl _) compositionSheaf.{u}.obj
+  simp only [Iso.trans_refl, Iso.refl_hom, NatTrans.id_app] at hcomponent
+  rw [hcomponent] at h
+  simpa only [compositionSequentialMap, compositionCoefficientIso, Iso.app_hom,
+    Functor.whiskeringLeft_obj_obj, Functor.comp_obj, Category.comp_id]
     using h.symm
 
 /-- Reading back the sequentially transported class returns the original nonzero value two. -/
@@ -878,6 +881,7 @@ theorem compositionSequential_read_two :
     (X := TopCat.of disconnectedBase) (Y := TopCat.of (ULift.{u + 1} disconnectedBase))
     (A := ModuleCat.{u + 1} ℂ) 0).app compositionSheaf.{u}.obj
   rw [compositionSequentialMap_eq]
+  -- The local e is Iso.app of the composite transport, with these exact hom/inv components.
   change compositionRead.{u} ((cechCohomologyZeroIso compositionSheaf.{u}).inv
     (e.inv (e.hom compositionClass.{u}))) = ULift.up 2
   rw [e.hom_inv_id_apply, compositionClass, Iso.hom_inv_id_apply]
