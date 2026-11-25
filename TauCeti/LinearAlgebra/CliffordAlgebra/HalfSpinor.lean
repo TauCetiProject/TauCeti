@@ -81,6 +81,8 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `v ⌟ β` is `TauCeti.twoVectorContraction β v`.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
   dimension.
+* `CliffordAlgebra.exists_ne_zero_eigenspace_chirality`: every nontrivial complex Clifford module
+  has a nonzero vector in the `ε`-eigenspace of `Γ` for `ε ^ 2 = 1`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
@@ -413,6 +415,35 @@ theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     · rw [hbot ε hε, hbot (-ε) (neg_ne_zero.2 hε)]
   · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
     exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
+
+variable (ρ) in
+/-- **Every nontrivial complex Clifford module has a nonzero half-spinor** in the `ε`-eigenspace
+of `Γ` for `ε = ±1` (`hε : ε ^ 2 = 1`), when `Q v = -‖v‖²`. -/
+theorem exists_ne_zero_eigenspace_chirality [Nontrivial W] {ε : ℂ} (hε : ε ^ 2 = 1) :
+    ∃ ψ : eigenspace (ρ (chirality Q o)) ε, (ψ : W) ≠ 0 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hQv : Q v ≠ 0 := by simpa [hQ] using hv
+  obtain ⟨w, hw⟩ := exists_ne (0 : W)
+  have hΓ2 (z : W) : ρ (chirality Q o) (ρ (chirality Q o) z) = z := by
+    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
+  have hε2 : ε * ε = 1 := by simpa [sq] using hε
+  by_cases hp : w + ε • ρ (chirality Q o) w = 0
+  · have h2w : (2 : ℂ) • w = 0 → w = 0 := fun h ↦ (smul_eq_zero.1 h).resolve_left two_ne_zero
+    have hm : w - ε • ρ (chirality Q o) w ≠ 0 := fun h ↦ hw <| h2w <| by
+      linear_combination (norm := module) hp + h
+    have hmem_neg : w - ε • ρ (chirality Q o) w ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
+      rw [mem_eigenspace_iff, map_sub, map_smul, hΓ2, smul_sub, neg_smul, smul_smul, neg_mul,
+        hε2, neg_one_smul]
+      abel
+    let e := halfSpinCliffordMulEquiv o ρ (-ε) hQv
+    refine ⟨⟨(e ⟨w - ε • ρ (chirality Q o) w, hmem_neg⟩ : W), ?_⟩, ?_⟩
+    · simpa only [neg_neg] using (e ⟨w - ε • ρ (chirality Q o) w, hmem_neg⟩).property
+    · intro h0
+      exact hm (congrArg Subtype.val ((map_eq_zero_iff e e.injective).1 (Subtype.ext h0)))
+  · refine ⟨⟨w + ε • ρ (chirality Q o) w, ?_⟩, hp⟩
+    rw [mem_eigenspace_iff, map_add, map_smul, hΓ2]
+    simp only [smul_add, smul_smul, hε2, one_smul, add_comm]
 
 variable [FiniteDimensional ℂ W]
 
