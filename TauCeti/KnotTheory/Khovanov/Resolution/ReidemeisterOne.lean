@@ -253,9 +253,8 @@ private theorem reindex_fiberwiseMul_reindex_insertCircle [Fintype σ] [Fintype 
   classical
   have := Fintype.ofFinite τ
   rw [Khovanov.insertCircle_false, AlgHom.toLinearMap_apply,
-    ← fiberwiseMul_equiv_apply, ← fiberwiseMul_equiv_apply, ← AlgHom.comp_apply, fiberwiseMul_comp,
-    ← AlgHom.comp_apply, fiberwiseMul_comp, ← AlgHom.comp_apply, fiberwiseMul_comp]
-  simp only [Function.comp_assoc]
+    ← fiberwiseMul_equiv_apply, ← fiberwiseMul_equiv_apply]
+  simp only [← AlgHom.comp_apply, fiberwiseMul_comp]
 
 /-- Reindexings, a split and a death of the label `X` compose to the split along the composite of
 the circle maps. -/
@@ -267,9 +266,8 @@ private theorem deleteCircle_reindex_fiberwiseSplit_reindex [Fintype σ] [Fintyp
       Khovanov.fiberwiseSplit (a ∘ g ∘ b ∘ Sum.inl) x := by
   classical
   rw [Khovanov.deleteCircle_true, ← Khovanov.fiberwiseSplit_equiv_apply,
-    ← Khovanov.fiberwiseSplit_equiv_apply, ← LinearMap.comp_apply,
-    Khovanov.fiberwiseSplit_comp, ← LinearMap.comp_apply, Khovanov.fiberwiseSplit_comp,
-    ← LinearMap.comp_apply, Khovanov.fiberwiseSplit_comp]
+    ← Khovanov.fiberwiseSplit_equiv_apply]
+  simp only [← LinearMap.comp_apply, Khovanov.fiberwiseSplit_comp, Function.comp_assoc]
 
 end Composite
 
@@ -364,19 +362,24 @@ private theorem kinkMergeTrue_app_comp_resolutionCubeι (S : Finset (Fin n)) :
         (fiberwiseMul (A := fun _ ↦ R[ε]) (D.kinkSaddleCircleMap h true S
           (cubeState_resolveCrossingVertex_last_eq S true false) (D.ht h true S))).toLinearMap := by
   have hs := D.card_circlesAt_kink h true S
-  have hsad := (D.reidemeisterOne h true).resolveCrossingSaddle_app_comp_resolutionCubeι
-    (Fin.last n) ((isPlanar_reidemeisterOne D h true).2 hD) R j S
-    (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inl hs)
+  -- The saddle lands in the resolution `false`, which `kinkNotIso` writes as `!true`.
+  have hsad : ((D.reidemeisterOne h true).resolveCrossingSaddle (Fin.last n)
+      ((isPlanar_reidemeisterOne D h true).2 hD) R j).app S ≫
+        ((D.reidemeisterOne h true).resolveCrossing (Fin.last n) (!true)).resolutionCubeι
+          (((isPlanar_reidemeisterOne D h true).2 hD).resolveCrossing _ _ (!true)) R (j - 1) S ≫
+          ModuleCat.ofHom (reindex R (fun _ ↦ R[ε])
+            ((D.reidemeisterOne h true).resolveCrossingCubeCircleEquiv (Fin.last n) (!true)
+              S)).toLinearMap = _ :=
+    (D.reidemeisterOne h true).resolveCrossingSaddle_app_comp_resolutionCubeι
+      (Fin.last n) ((isPlanar_reidemeisterOne D h true).2 hD) R j S
+      (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inl hs)
   rw [resolutionEdgeMap_eq_resolutionMergeMap _ _ _ _ _ hs, resolutionMergeMap_def] at hsad
   unfold kinkMergeTrue
   simp only [NatTrans.comp_app, Category.assoc]
   rw [kinkNotIso, ResolutionEquiv.resolutionCubeNatIso_inv_app_comp_resolutionCubeι _ _ _ _ _ _
     _ (by simp), ofHom_reindex_eq_comp
       ((D.reidemeisterOne h true).resolveCrossingCubeCircleEquiv (Fin.last n) (!true) S)]
-  -- `kinkNotIso` lands in the resolution `!true`, which the saddle writes as `false`; the two
-  -- agree only definitionally, through the inferred objects of the composite.
-  erw [reassoc_of% hsad]
-  rw [kinkSelfIso,
+  rw [reassoc_of% hsad, kinkSelfIso,
     ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
       (by simp), adjoinCircleCubeInsert_app_comp_resolutionCubeι_assoc]
   congr 1
@@ -465,9 +468,17 @@ private theorem kinkSplitFalse_app_comp_resolutionCubeι (S : Finset (Fin n)) :
         (Khovanov.fiberwiseSplit (D.kinkSaddleCircleMap h false S
           (cubeState_resolveCrossingVertex_last_eq S false true) (D.ht h false S))) := by
   have hs := D.card_circlesAt_kink h false S
-  have hsad := (D.reidemeisterOne h false).resolveCrossingSaddle_app_comp_resolutionCubeι
-    (Fin.last n) ((isPlanar_reidemeisterOne D h false).2 hD) R j S
-    (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inr hs)
+  -- The saddle starts from the resolution `true`, which `kinkNotIso` writes as `!false`.
+  have hsad : _ =
+      ((D.reidemeisterOne h false).resolveCrossing (Fin.last n) (!false)).resolutionCubeι
+          (((isPlanar_reidemeisterOne D h false).2 hD).resolveCrossing _ _ (!false)) R j S ≫
+        ModuleCat.ofHom (reindex R (fun _ ↦ R[ε])
+          ((D.reidemeisterOne h false).resolveCrossingCubeCircleEquiv (Fin.last n) (!false)
+            S)).toLinearMap ≫
+          ModuleCat.ofHom ((D.reidemeisterOne h false).resolutionEdgeMap _ _ _ R) :=
+    (D.reidemeisterOne h false).resolveCrossingSaddle_app_comp_resolutionCubeι
+      (Fin.last n) ((isPlanar_reidemeisterOne D h false).2 hD) R j S
+      (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inr hs)
   rw [resolutionEdgeMap_eq_resolutionSplitMap _ _ _ _ _ hs, resolutionSplitMap_def] at hsad
   unfold kinkSplitFalse
   simp only [NatTrans.comp_app, Category.assoc]
@@ -475,19 +486,14 @@ private theorem kinkSplitFalse_app_comp_resolutionCubeι (S : Finset (Fin n)) :
     ResolutionEquiv.resolutionCubeNatIso_inv_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
       (by simp), ofHom_reindex_eq_comp
       ((D.reidemeisterOne h false).resolveCrossingCubeCircleEquiv (Fin.last n) false S),
-    Category.assoc, reassoc_of% hsad, kinkNotIso]
-  -- `kinkNotIso` starts from the resolution `!false`, which the saddle writes as `true`; the two
-  -- agree only definitionally, through the inferred objects of the composite.
-  erw [ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
-    (by simp)]
+    Category.assoc, reassoc_of% hsad, kinkNotIso,
+    ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
+      (by simp)]
   congr 1
   refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
   rw [kinkSaddleCircleMap, ← deleteCircle_reindex_fiberwiseSplit_reindex]
   simp [kinkCircleEquiv, kinkLoopCircleEquiv, adjoinCircleDelete_apply, ← reindex_reindex]
-  -- The two sides now differ only in writing the face of the saddle as `true` (from `hsad`) and
-  -- as `!false` (from `kinkCircleEquiv`), which agree definitionally.
-  rfl
 
 private instance isIso_kinkSplitFalse : IsIso (D.kinkSplitFalse h hD R j) :=
   isIso_of_app_comp_resolutionCubeι _
