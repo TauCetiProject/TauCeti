@@ -1,0 +1,173 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Module.Torsion.TateModule.Snake
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion.Lattice
+
+/-!
+# The Tate module of a commutative Lie group
+
+For a preconnected commutative Lie group `G` the exponential gives a short exact sequence
+`0 → Λ → 𝔤 → G → 0` of abelian groups, with `Λ` the exponential lattice. Multiplication by a
+nonzero integer is bijective on the real vector space `𝔤`, so the Tate module of a cokernel
+(`TauCeti.tateModuleδEquiv`) identifies the `p`-adic Tate module of `G` with the `p`-adic
+completion `lim Λ ⧸ pⁿΛ` of `Λ`. A compatible family of points `exp(λₙ / pⁿ)` goes to the family
+of classes of the `λₙ`. The lattice `Λ` is discrete in `𝔤`, hence finitely generated, so for prime
+`p` the Tate module is `ℤ_[p] ⊗ Λ` as a `ℤ_[p]`-module (`TauCeti.tateModuleδPadicEquiv`).
+
+These are the inverse limits of the level-`n` torsion isomorphisms `TauCeti.lieExpTorsionEquiv`.
+
+## Main definitions
+
+* `TauCeti.lieExpTateModuleEquiv`: `T_p G ≃ lim Λ ⧸ pⁿΛ` for `p ≠ 0`.
+* `TauCeti.lieExpTateModulePadicEquiv`: `T_p G ≃ₗ[ℤ_[p]] ℤ_[p] ⊗ Λ` for prime `p`.
+
+## Main statements
+
+* `TauCeti.lieExpTateModuleEquiv_apply_val`: if `exp X` is the `n`-th level of `x` and
+  `pⁿ X = λ ∈ Λ`, the `n`-th component of the image of `x` is the class of `λ`.
+* `TauCeti.proj_lieExpTateModuleEquiv_symm`: the `n`-th level of the point with `n`-th component
+  `[λ]` is `exp(λ / pⁿ)`.
+
+The Check for the circle is in `TauCeti.Examples.Geometry.Lie.Exponential.CircleTorsion`.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open scoped ContDiff Manifold TensorProduct IsMulCommutative
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+section Completion
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  [IsMulCommutative G]
+
+/-- The sequence `0 → Λ → 𝔤 → G` of the exponential is exact at `𝔤`. -/
+theorem exact_subtype_lieExpLattice :
+    Function.Exact (lieExpLattice (I := I) (G := G)).subtype
+      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap :=
+  LinearMap.exact_subtype_ker_map _
+
+omit [FiniteDimensional ℝ E] [T2Space G] [BoundarylessManifold I G] [IsMulCommutative G] in
+/-- Multiplication by a nonzero integer is bijective on the Lie algebra. -/
+theorem bijective_zsmul_leftInvariantDerivation {n : ℤ} (hn : n ≠ 0) :
+    Function.Bijective fun X : LeftInvariantDerivation I G ↦ n • X := by
+  simpa only [← Int.cast_smul_eq_zsmul ℝ] using
+    (Int.cast_ne_zero.mpr hn).isUnit.smul_bijective (β := LeftInvariantDerivation I G)
+
+variable [PreconnectedSpace G] (p : ℕ)
+
+/-- The exponential homomorphism of a preconnected commutative Lie group is surjective, as a
+`ℤ`-linear map. -/
+theorem surjective_toIntLinearMap_lieExpAddMonoidHom :
+    Function.Surjective (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap := by
+  simpa only [Function.Surjective, AddMonoidHom.coe_toIntLinearMap] using
+    lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)
+
+variable (I G) in
+/-- **The Tate module of a preconnected commutative Lie group is the `p`-adic completion of its
+exponential lattice**, for `p ≠ 0`: `TauCeti.tateModuleδEquiv` for `0 → Λ → 𝔤 → G → 0`. -/
+def lieExpTateModuleEquiv (hp : p ≠ 0) :
+    TateModule p (Additive G) ≃+
+      AdicCompletion (Ideal.span {(p : ℤ)}) (lieExpLattice (I := I) (G := G)) :=
+  tateModuleδEquiv p exact_subtype_lieExpLattice (lieExpLattice (I := I) (G := G)).injective_subtype
+    surjective_toIntLinearMap_lieExpAddMonoidHom
+    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr hp))
+
+/-- **The components of the Tate-module isomorphism**: if `exp X` is the `n`-th level of `x` and
+`pⁿ X = λ ∈ Λ`, then the `n`-th component of the image of `x` is the class of `λ`. -/
+theorem lieExpTateModuleEquiv_apply_val (hp : p ≠ 0) (x : TateModule p (Additive G)) {n : ℕ}
+    {X : LeftInvariantDerivation I G}
+    (hX : Additive.ofMul (lieExp X) = (TateModule.proj n x : Additive G))
+    {l : lieExpLattice (I := I) (G := G)}
+    (hl : (l : LeftInvariantDerivation I G) = ((p ^ n : ℕ) : ℤ) • X) :
+    (lieExpTateModuleEquiv I G p hp x).val n = Submodule.Quotient.mk l := by
+  rw [lieExpTateModuleEquiv, tateModuleδEquiv_apply, tateModuleδ_apply_val]
+  exact tateModuleLevelδ_eq p _ _ _ _
+    (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply, hX]) hl
+
+/-- **The inverse of the Tate-module isomorphism**: the `n`-th level of the point whose `n`-th
+component is the class of `λ ∈ Λ` is `exp(λ / pⁿ)`. -/
+theorem proj_lieExpTateModuleEquiv_symm (hp : p ≠ 0)
+    (c : AdicCompletion (Ideal.span {(p : ℤ)}) (lieExpLattice (I := I) (G := G))) {n : ℕ}
+    {l : lieExpLattice (I := I) (G := G)} (hc : c.val n = Submodule.Quotient.mk l) :
+    (TateModule.proj n ((lieExpTateModuleEquiv I G p hp).symm c) : Additive G) =
+      Additive.ofMul (lieExp (((p ^ n : ℕ) : ℝ)⁻¹ • (l : LeftInvariantDerivation I G))) := by
+  have hpn : (((p ^ n : ℕ) : ℤ) : ℝ) ≠ 0 := by exact_mod_cast pow_ne_zero n hp
+  let y : TateModuleLevel p (Additive G) n :=
+    ⟨_, lieExp_inv_smul_mem_torsionBy (I := I) _ (by exact_mod_cast hpn) l⟩
+  have hl : (l : LeftInvariantDerivation I G) =
+      ((p ^ n : ℕ) : ℤ) • (((p ^ n : ℕ) : ℤ) : ℝ)⁻¹ • (l : LeftInvariantDerivation I G) := by
+    rw [← Int.cast_smul_eq_zsmul ℝ, smul_inv_smul₀ hpn]
+  have hy : tateModuleLevelδ p exact_subtype_lieExpLattice
+      (lieExpLattice (I := I) (G := G)).injective_subtype
+      surjective_toIntLinearMap_lieExpAddMonoidHom n y = Submodule.Quotient.mk l :=
+    tateModuleLevelδ_eq p _ _ _ y
+      (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply]) hl
+  have hinj := (bijective_tateModuleLevelδ p exact_subtype_lieExpLattice
+    (lieExpLattice (I := I) (G := G)).injective_subtype surjective_toIntLinearMap_lieExpAddMonoidHom
+    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr hp)) n).1
+  rw [← hc] at hy
+  rw [lieExpTateModuleEquiv, hinj ((tateModuleLevelδ_proj_tateModuleδEquiv_symm p _ _ _ _ c n).trans
+    hy.symm)]
+  simp only [y, Int.cast_natCast]
+
+end Completion
+
+section Padic
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  [IsMulCommutative G]
+
+/-- The exponential lattice is discrete in the Lie algebra. -/
+local instance : DiscreteTopology (lieExpLattice (I := I) (G := G)) :=
+  inferInstanceAs (DiscreteTopology (lieExpAddMonoidHom (I := I) (G := G)).ker)
+
+/-- The Lie algebra is finite-dimensional. -/
+local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+  finiteDimensional_leftInvariantDerivation
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+
+/-- The exponential lattice of a commutative Lie group is finitely generated, being discrete in
+the finite-dimensional Lie algebra. -/
+instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
+  instModuleFinite_of_discrete_submodule _
+
+variable [PreconnectedSpace G] (p : ℕ) [Fact p.Prime]
+
+variable (I G) in
+/-- **The Tate module of a preconnected commutative Lie group is `ℤ_[p] ⊗ Λ`**, as a
+`ℤ_[p]`-module, for prime `p`: `TauCeti.tateModuleδPadicEquiv` for `0 → Λ → 𝔤 → G → 0`. -/
+def lieExpTateModulePadicEquiv :
+    TateModule p (Additive G) ≃ₗ[ℤ_[p]] ℤ_[p] ⊗[ℤ] lieExpLattice (I := I) (G := G) :=
+  tateModuleδPadicEquiv p exact_subtype_lieExpLattice
+    (lieExpLattice (I := I) (G := G)).injective_subtype
+    surjective_toIntLinearMap_lieExpAddMonoidHom
+    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
+
+/-- `PadicInt.tensorAdicCompletionEquiv` turns the `ℤ_[p] ⊗ Λ` form into the `p`-adic completion
+form `TauCeti.lieExpTateModuleEquiv`. -/
+@[simp]
+theorem tensorAdicCompletionEquiv_lieExpTateModulePadicEquiv (x : TateModule p (Additive G)) :
+    PadicInt.tensorAdicCompletionEquiv p _ (lieExpTateModulePadicEquiv I G p x) =
+      lieExpTateModuleEquiv I G p (Fact.out : p.Prime).ne_zero x :=
+  tensorAdicCompletionEquiv_tateModuleδPadicEquiv p _ _ _ _ x
+
+end Padic
+
+end TauCeti
