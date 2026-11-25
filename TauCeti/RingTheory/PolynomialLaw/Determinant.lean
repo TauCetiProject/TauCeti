@@ -48,6 +48,8 @@ to be a ring.
 * `TauCeti.Determinant.charCoeff_inv_mul_apply`: `Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)` for a unit `u`.
 * `TauCeti.Determinant.charpoly`: the characteristic polynomial, monic of degree `d`, with
   `χ(x, 0) = (-1)ᵈ D x` and `χ(1, X) = (X - 1)ᵈ`.
+* `TauCeti.Determinant.apply_eq_prod_of_charpoly_eq_prod`: a determinant whose characteristic
+  polynomial at `r` is `∏ⱼ (X - aⱼ)` takes the value `∏ⱼ aⱼ` at `r`.
 * `TauCeti.Determinant.coeff_charpoly_inv_mul_eval_zero`,
   `TauCeti.Determinant.C_eval_zero_mul_charpoly_inv`, `TauCeti.Determinant.charpoly_inv`: the
   characteristic polynomial of the inverse of a unit is the normalized reciprocal
@@ -278,12 +280,18 @@ theorem charCoeff_one_eq_choose (i : ℕ) : D.charCoeff i 1 = d.choose i := by
   rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi, ← add_tmul, toFun_tmul_one,
     Algebra.TensorProduct.rid_tmul, one_smul, coeff_one_add_X_pow, Nat.choose_symm hi]
 
+/-- The characteristic coefficients are homogeneous: `Λᵢ(a x) = aⁱ Λᵢ(x)` for `a ∈ A`. This is the
+coefficient form of the characteristic polynomial of a twist by a character. -/
+theorem charCoeff_smul (i : ℕ) (a : A) (x : R) :
+    D.charCoeff i (a • x) = a ^ i * D.charCoeff i x := by
+  rw [charCoeff_def, charCoeff_def, PolynomialLaw.coeff_optionElim_smul, smul_eq_mul]
+
 /-- The trace of a determinant, its first characteristic coefficient `Λ₁`, as an `A`-linear map.
 It is `0` for a determinant of dimension zero. -/
 def trace : R →ₗ[A] A where
   toFun := D.charCoeff 1
   map_add' x y := PolynomialLaw.coeff_optionElim_add_of_exponent_one x y _ _ _
-  map_smul' a x := by simpa [charCoeff] using PolynomialLaw.coeff_optionElim_smul 1 a x _ D.toLaw _
+  map_smul' a x := by simpa using D.charCoeff_smul 1 a x
 
 /-- The trace is the first characteristic coefficient. -/
 theorem trace_apply (x : R) : D.trace x = D.charCoeff 1 x :=
@@ -298,12 +306,6 @@ theorem trace_one : D.trace 1 = d := by
 @[simp]
 theorem trace_eq_zero_of_dim_zero (D : Determinant A R 0) : D.trace = 0 :=
   LinearMap.ext fun x ↦ D.charCoeff_eq_zero zero_lt_one x
-
-/-- The characteristic coefficients are homogeneous: `Λᵢ(a x) = aⁱ Λᵢ(x)` for `a ∈ A`. This is the
-coefficient form of the characteristic polynomial of a twist by a character. -/
-theorem charCoeff_smul (i : ℕ) (a : A) (x : R) :
-    D.charCoeff i (a • x) = a ^ i * D.charCoeff i x := by
-  simpa [charCoeff] using PolynomialLaw.coeff_optionElim_smul i a x _ D.toLaw _
 
 /-- **Characteristic coefficients of an inverse.** For a unit `u` and `i ≤ d`,
 `Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)`: the characteristic polynomial of `u⁻¹` is the normalized reciprocal
@@ -384,6 +386,20 @@ theorem eval_zero_charpoly (x : R) : (D.charpoly x).eval 0 = (-1) ^ d * D x := b
   rw [← coeff_zero_eq_eval_zero, coeff_charpoly, ite_eq_left (Nat.zero_le d), Nat.sub_zero,
     charCoeff_dim]
 
+/-- The value of a determinant is `(-1) ^ d` times the constant term of the characteristic
+polynomial. -/
+theorem apply_eq_neg_one_pow_mul_eval_zero_charpoly (x : R) :
+    D x = (-1) ^ d * (D.charpoly x).eval 0 := by
+  rw [eval_zero_charpoly, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+
+/-- A determinant whose characteristic polynomial at `r` is `∏ⱼ (X - aⱼ)` takes the value
+`∏ⱼ aⱼ` at `r`. -/
+theorem apply_eq_prod_of_charpoly_eq_prod {r : R} {a : Fin d → A}
+    (h : D.charpoly r = ∏ j, (X - C (a j))) : D r = ∏ j, a j := by
+  rw [apply_eq_neg_one_pow_mul_eval_zero_charpoly, h, eval_prod]
+  simp only [eval_sub, eval_X, eval_C, zero_sub, Finset.prod_neg, Finset.card_univ,
+    Fintype.card_fin, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+
 /-- In positive dimension, the trace is minus the coefficient of `X ^ (d - 1)` in the
 characteristic polynomial. -/
 theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
@@ -417,8 +433,10 @@ theorem coeff_charpoly_inv_mul_eval_zero (u : Rˣ) {i : ℕ} (hi : i ≤ d) :
     Nat.sub_sub_self hi, ← D.charCoeff_inv_mul_apply u hi]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hi
   rw [Nat.add_sub_cancel_left, pow_add]
-  ring_nf
-  rw [pow_mul', neg_one_sq, one_pow, mul_one]
+  calc (-1) ^ k * D.charCoeff k ↑u⁻¹ * ((-1) ^ i * (-1) ^ k * D u)
+      = ((-1) ^ k * (-1) ^ k) * ((-1) ^ i * (D.charCoeff k ↑u⁻¹ * D u)) := by ring
+    _ = (-1) ^ i * (D.charCoeff k ↑u⁻¹ * D u) := by
+      rw [← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
 
 /-- **Normalized reciprocal characteristic polynomial.** For a unit `u`,
 `χ(u, 0) χ(u⁻¹, X) = X^d χ(u, X⁻¹)`, the reflection of `χ(u, X)` in degree `d`: the roots of
@@ -436,10 +454,9 @@ theorem C_eval_zero_mul_charpoly_inv (u : Rˣ) :
 `χ(u, 0)⁻¹ X^d χ(u, X⁻¹)`, where `χ(u, 0)⁻¹ = (-1)ᵈ D(u⁻¹)`. -/
 theorem charpoly_inv (u : Rˣ) :
     D.charpoly ↑u⁻¹ = C ((-1) ^ d * D ↑u⁻¹) * (D.charpoly u).reflect d := by
-  rw [← C_eval_zero_mul_charpoly_inv, ← mul_assoc, ← C_mul, eval_zero_charpoly,
-    show (-1) ^ d * D ↑u⁻¹ * ((-1) ^ d * D u) = ((-1) ^ d * (-1) ^ d) * D (↑u⁻¹ * u) by
-      rw [map_mul]; ring,
-    ← mul_pow, neg_one_mul, neg_neg, one_pow, Units.inv_mul, map_one, one_mul, C_1, one_mul]
+  rw [← C_eval_zero_mul_charpoly_inv, ← mul_assoc, ← C_mul, mul_right_comm,
+    ← apply_eq_neg_one_pow_mul_eval_zero_charpoly, ← map_mul, Units.mul_inv, map_one, C_1,
+    one_mul]
 
 end CommRing
 
