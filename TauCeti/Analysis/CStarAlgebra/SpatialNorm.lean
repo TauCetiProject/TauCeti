@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 public import TauCeti.Algebra.Star.TensorProductLift
+public import TauCeti.Analysis.InnerProductSpace.Operator.VectorFunctional
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.Basic
@@ -46,7 +47,8 @@ subalgebra of `B(E ⊗₂ F)`.
   `NonUnitalStarSubalgebra.spatialTensorHom_injective`.
 * `NonUnitalStarSubalgebra.spatialNorm A B`: the spatial norm, with
   `NonUnitalStarSubalgebra.spatialNorm_eq_zero_iff`, `NonUnitalStarSubalgebra.spatialNorm_add_le`,
-  `NonUnitalStarSubalgebra.spatialNorm_smul`, `NonUnitalStarSubalgebra.spatialNorm_mul_le`,
+  `NonUnitalStarSubalgebra.spatialNorm_smul`, `NonUnitalStarSubalgebra.spatialNorm_star`,
+  `NonUnitalStarSubalgebra.spatialNorm_mul_le`,
   `NonUnitalStarSubalgebra.spatialNorm_star_mul_self` and
   `NonUnitalStarSubalgebra.spatialNorm_tmul`.
 * `NonUnitalStarSubalgebra.minTensor A B`: the spatial tensor product `A ⊗_min B`, with
@@ -86,15 +88,6 @@ theorem spatialTensorLinearMap_tmul (a : E →L[𝕜] E') (b : F →L[𝕜] F') 
     spatialTensorLinearMap 𝕜 E F E' F' (a ⊗ₜ b) = mapLCompletion a b :=
   (rfl)
 
-/-- The vector functional `a ↦ ⟪ξ', a ξ⟫` on `B(E, E')`. -/
-private def vectorFunctional (ξ : E) (ξ' : E') : (E →L[𝕜] E') →ₗ[𝕜] 𝕜 :=
-  (innerSL 𝕜 ξ').toLinearMap ∘ₗ (ContinuousLinearMap.apply 𝕜 E' ξ).toLinearMap
-
-@[simp]
-private theorem vectorFunctional_apply (ξ : E) (ξ' : E') (a : E →L[𝕜] E') :
-    vectorFunctional ξ ξ' a = ⟪ξ', a ξ⟫_𝕜 :=
-  (rfl)
-
 /-- Testing `a ⊗ b` on `ξ ⊗ η` against `ξ' ⊗ η'` gives `⟪ξ', a ξ⟫ ⟪η', b η⟫`: for every `x`, the
 matrix coefficient of `spatialTensorLinearMap x` is that of the operator in `B(F, F')` obtained by
 applying the vector functional `a ↦ ⟪ξ', a ξ⟫` to the first factor of `x`. -/
@@ -103,7 +96,7 @@ private theorem inner_spatialTensorLinearMap (ξ : E) (ξ' : E') (η : F) (η' :
     ⟪((ξ' ⊗ₜ η' : E' ⊗[𝕜] F') : Completion (E' ⊗[𝕜] F')),
         spatialTensorLinearMap 𝕜 E F E' F' x ((ξ ⊗ₜ η : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))⟫_𝕜 =
       ⟪η', TensorProduct.lid 𝕜 (F →L[𝕜] F')
-        ((vectorFunctional ξ ξ').rTensor (F →L[𝕜] F') x) η⟫_𝕜 := by
+        ((vectorFunctional (𝕜 := 𝕜) ξ ξ').toLinearMap.rTensor (F →L[𝕜] F') x) η⟫_𝕜 := by
   induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
     simp only [map_add, add_apply, inner_add_right, hx, hy]
@@ -207,6 +200,17 @@ theorem spatialNorm_nonneg (x : A ⊗[𝕜] B) : 0 ≤ spatialNorm A B x :=
 theorem spatialNorm_eq_zero_iff {x : A ⊗[𝕜] B} : spatialNorm A B x = 0 ↔ x = 0 := by
   rw [spatialNorm_def, norm_eq_zero,
     (injective_iff_map_eq_zero' _).1 (spatialTensorHom_injective A B)]
+
+/-- The spatial norm of `0` is `0`. -/
+@[simp]
+theorem spatialNorm_zero : spatialNorm A B 0 = 0 := by
+  rw [spatialNorm_eq_zero_iff]
+
+/-- The spatial norm is invariant under the star operation. -/
+@[simp]
+theorem spatialNorm_star (x : A ⊗[𝕜] B) : spatialNorm A B (star x) = spatialNorm A B x := by
+  rw [spatialNorm_def, spatialNorm_def, map_star]
+  exact norm_star (spatialTensorHom A B x)
 
 /-- The triangle inequality for the spatial norm. -/
 theorem spatialNorm_add_le (x y : A ⊗[𝕜] B) :
