@@ -113,8 +113,7 @@ theorem ConvexOn.continuousAt_fderiv {s : Set E} (hg : ConvexOn ℝ s g) (hs : s
     have h₁ := ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub h
     have h₂ := ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (-h)
     simp only [map_neg, norm_neg] at h₂
-    rw [show (fderiv ℝ g x' - fderiv ℝ g x) h = fderiv ℝ g x' h - fderiv ℝ g x h from rfl,
-      Real.norm_eq_abs, abs_le]
+    rw [sub_apply, Real.norm_eq_abs, abs_le]
     constructor <;> linarith
   rw [dist_eq_norm]
   have hη : η = ε / 4 := rfl
