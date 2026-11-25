@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
-public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.Analysis.CStarAlgebra.State.Extension
 import TauCeti.RingTheory.TraceFunctional.Star
 
@@ -30,7 +29,8 @@ The estimates for positive contractions
 `TauCeti.Analysis.CStarAlgebra.State.Unitization`, and the extension formula, uniqueness and
 existence along a star homomorphism (`PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`,
 `eq_of_apply_map_eq`, `exists_apply_map_eq`) in `TauCeti.Analysis.CStarAlgebra.State.Extension`.
-This file specializes them to a closed ideal.
+This file specializes them to a closed ideal. The unitization case `A ⊆ Unitization ℂ A`
+(`PositiveContinuousLinearMap.eq_unitization_of_apply_inr_eq`) is in the latter file.
 
 * `PositiveContinuousLinearMap.tendsto_apply_mul_mul_of_apply_coe_eq` and
   `tendsto_apply_mul_mul_of_apply_coe_eq'`: a positive functional `γ` with `‖γ‖ ≤ ‖τ‖`
@@ -51,10 +51,6 @@ This file specializes them to a closed ideal.
   is a tracial state.
 * `PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`: a
   tracial state of `I` extends uniquely to a tracial state of `A`.
-* `PositiveContinuousLinearMap.eq_unitization_of_apply_inr_eq` and
-  `tendsto_unitization_apply_inr_mul_mul_inr`: for the ideal `A` of `A⁺¹`, the extension is the
-  unitization extension `τ⁺¹`, and `τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate
-  unit `e` of `A`.
 
 ## Implementation notes
 
@@ -206,29 +202,5 @@ theorem IsTracialState.existsUnique_isTracialState_apply_coe_eq {τ : I →P[ℂ
     fun γ' ⟨hγ', h'⟩ ↦ huniq γ' ⟨hγ'.norm_eq_one.trans hτ.norm_eq_one.symm, h'⟩⟩
 
 end Ideal
-
-section Unitization
-
-/-- **The unitization extension is the extension from `A ⊆ A⁺¹`.** A positive functional of norm
-at most `‖τ‖` on `Unitization ℂ A` that restricts to `τ` on `A` is the unitization extension
-`τ⁺¹`. -/
-theorem eq_unitization_of_apply_inr_eq {τ : A →P[ℂ] ℂ} {γ : Unitization ℂ A →P[ℂ] ℂ}
-    (hγ : ‖(γ : Unitization ℂ A →L[ℂ] ℂ)‖ ≤ ‖(τ : A →L[ℂ] ℂ)‖) (h : ∀ a : A, γ a = τ a) :
-    γ = τ.unitization :=
-  eq_of_apply_map_eq (Unitization.inrNonUnitalStarAlgHom ℂ A)
-    (fun b x ↦ ⟨x.fst • b * b + b * x.snd * b, by ext <;> simp [add_mul, smul_mul_assoc]⟩) hγ
-    (norm_unitization τ).le h (unitization_apply_inr τ)
-
-/-- **The extension formula for the unitization.** For a positive functional `τ` of `A`,
-`τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate unit `e` of `A`; here `e x e` lies
-in `A`, where `τ⁺¹` is `τ`. -/
-theorem tendsto_unitization_apply_inr_mul_mul_inr (τ : A →P[ℂ] ℂ) {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) (x : Unitization ℂ A) :
-    Tendsto (fun e : A ↦ τ.unitization ((e : Unitization ℂ A) * x * e)) l
-      (𝓝 (τ.unitization x)) :=
-  tendsto_apply_map_mul_mul_map (Unitization.inrNonUnitalStarAlgHom ℂ A) (norm_unitization τ).le
-    (unitization_apply_inr τ) hl x
-
-end Unitization
 
 end PositiveContinuousLinearMap
