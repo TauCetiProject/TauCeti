@@ -168,13 +168,11 @@ private theorem integrable_abs_mul_one_add_sq (hφ : Continuous φ) (hφc : HasC
   (by fun_prop : Continuous fun x ↦ |φ x| * (1 + x ^ 2)).integrable_of_hasCompactSupport
     (hasCompactSupport_abs_mul_one_add_sq hφc)
 
-/-- At every height `y`, `(x, t) ↦ P(x + iy, t) φ(x)` is jointly measurable. -/
-private theorem measurable_upperHalfPlanePoissonKernel_add_mul_I_mul (hφ : Measurable φ)
-    (y : ℝ) :
-    Measurable fun p : ℝ × ℝ ↦ upperHalfPlanePoissonKernel (p.1 + y * I) p.2 * φ p.1 :=
-  (measurable_uncurry_upperHalfPlanePoissonKernel.comp
-    (by fun_prop : Measurable fun p : ℝ × ℝ ↦ ((p.1 + y * I : ℂ), p.2))).mul
-      (hφ.comp measurable_fst)
+/-- At every height `y`, `(x, t) ↦ P(x + iy, t)` is jointly measurable. -/
+private theorem measurable_upperHalfPlanePoissonKernel_add_mul_I (y : ℝ) :
+    Measurable fun p : ℝ × ℝ ↦ upperHalfPlanePoissonKernel (p.1 + y * I) p.2 :=
+  measurable_uncurry_upperHalfPlanePoissonKernel.comp
+    (by fun_prop : Measurable fun p : ℝ × ℝ ↦ ((p.1 + y * I : ℂ), p.2))
 
 /-- For `y > 0`, `(x, t) ↦ P(x + iy, t) φ(x)` is integrable for Lebesgue measure times a
 Poisson-finite `ν`, when `φ` is a.e. strongly measurable and `|φ(x)| (1 + x ^ 2)` is integrable. -/
@@ -188,9 +186,8 @@ private theorem integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod (hν :
   set K := 2 * max y y⁻¹ / π
   refine ((hψ.mul_const K).mul_prod ((isPoissonFinite_iff ν).1 hν)).mono' ?_
     (.of_forall fun p ↦ ?_)
-  · exact (measurable_uncurry_upperHalfPlanePoissonKernel.comp
-      (by fun_prop : Measurable fun p : ℝ × ℝ ↦ ((p.1 + y * I : ℂ), p.2))).aestronglyMeasurable.mul
-        hφ.comp_fst
+  · exact (measurable_upperHalfPlanePoissonKernel_add_mul_I y).aestronglyMeasurable.mul
+      hφ.comp_fst
   · have h := upperHalfPlanePoissonKernel_le (z := p.1 + y * I) (by simpa using hy.le) p.2
     have hP := upperHalfPlanePoissonKernel_nonneg (z := p.1 + y * I) (by simpa using hy.le) p.2
     have hre : ((p.1 : ℂ) + y * I).re = p.1 := by simp
@@ -247,8 +244,9 @@ theorem tendsto_integral_mul_upperHalfPlanePoissonIntegral_add_mul_I (hν : IsPo
     (.of_forall (tendsto_integral_upperHalfPlanePoissonKernel_add_mul_I_mul
       (hφc.uniformContinuous_of_continuous hφ) hB))).congr' ?_
   · refine .of_forall fun y ↦ ?_
-    exact (((measurable_upperHalfPlanePoissonKernel_add_mul_I_mul hφ.measurable y).comp
-      measurable_swap).stronglyMeasurable.integral_prod_right' (ν := volume)).aestronglyMeasurable
+    exact ((((measurable_upperHalfPlanePoissonKernel_add_mul_I y).mul
+      (hφ.measurable.comp measurable_fst)).comp measurable_swap).stronglyMeasurable
+        |>.integral_prod_right' (ν := volume)).aestronglyMeasurable
   · filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with y hy
     refine .of_forall fun t ↦ ?_
     rw [Real.norm_eq_abs, ← div_eq_mul_inv]
