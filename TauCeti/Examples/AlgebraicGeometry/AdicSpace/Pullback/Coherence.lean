@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Huber.Padic.Field
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 
 /-!
 # Checks for the symmetry and unit of fibre products of affinoid adic spaces
@@ -129,13 +130,9 @@ noncomputable def ev {a : ℚ_[2]} (ha : IsPowerBounded a) : T.Hom S where
     exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp hx).map_of_isTateRing
       (continuous_weightedEvalHomCompletion _ _ _).continuousAt
 
-/-- The coordinate `T` of `ℚ₂⟨T⟩`. -/
-noncomputable def X : D :=
-  ((weightedX _ isWeightFamily_one_weight 0 :
-    weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set ℚ_[2])) isWeightFamily_one_weight) : D)
-
-theorem ev_X {a : ℚ_[2]} (ha : IsPowerBounded a) : (ev ha).toRingHom X = a := by
-  rw [ev, X]
+theorem ev_polydiscVar {a : ℚ_[2]} (ha : IsPowerBounded a) :
+    (ev ha).toRingHom (Pair.polydiscVar 1 ℚ_[2] 0) = a := by
+  rw [ev, Pair.polydiscVar]
   dsimp only
   rw [weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
 
@@ -148,24 +145,15 @@ theorem ev_comp_f {a : ℚ_[2]} (ha : IsPowerBounded a) : (ev ha).comp f = Pair.
   rw [algebraMap_completion_weightedRestrictedSubring_apply, weightedEvalHomCompletion_coe,
     weightedEvalHom_weightedC, RingHom.id_apply]
 
-/-- The base map of a composite with a projection, on a point of `D ×_{Spa ℚ₂} D`. -/
-theorem comp_base_apply (g : ofPair _ hTT ⟶ ofPair _ hTT) (h : ofPair _ hTT ⟶ ofPair T hT)
-    (w : (ofPair _ hTT).obj) : (g ≫ h).hom.base w = h.hom.base (g.hom.base w) :=
-  rfl
-
-/-- The base map of a composite of endomorphisms of `D ×_{Spa ℚ₂} D`, on a point. -/
-theorem comp_base_apply' (g h : ofPair _ hTT ⟶ ofPair _ hTT) (w : (ofPair _ hTT).obj) :
-    (g ≫ h).hom.base w = h.hom.base (g.hom.base w) :=
-  rfl
-
 /-- **The symmetry moves the point `T = 0, S = 1` to the point `T = 1, S = 0`.** The points
 `y₀`, `y₁` of the disc cut out by `T = 0` and `T = 1` are distinct and lie over the same point of
 `Spa ℚ₂`; a point `z` of `D ×_{Spa ℚ₂} D` with projections `(y₀, y₁)` exists, and `σ` sends it to
 the distinct point with projections `(y₁, y₀)`, and back. -/
 theorem exists_symmetry_moves_point :
     ∃ (y₀ y₁ : (ofPair T hT).obj) (z : (ofPair _ hTT).obj),
-      (ofPairHomeomorph T hT y₀).val.toValuativeRel.vle X 0 ∧
-      (ofPairHomeomorph T hT y₁).val.toValuativeRel.vle (X - 1) 0 ∧ y₀ ≠ y₁ ∧
+      (ofPairHomeomorph T hT y₀).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0) 0 ∧
+      (ofPairHomeomorph T hT y₁).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0 - 1) 0 ∧
+      y₀ ≠ y₁ ∧
       (comapOfPair hS hT f).hom.base y₀ = (comapOfPair hS hT f).hom.base y₁ ∧
       pr₁.hom.base z = y₀ ∧ pr₂.hom.base z = y₁ ∧
       pr₁.hom.base (σ.hom.base z) = y₁ ∧ pr₂.hom.base (σ.hom.base z) = y₀ ∧
@@ -177,37 +165,37 @@ theorem exists_symmetry_moves_point :
   have h1 : IsPowerBounded (1 : ℚ_[2]) := by simp
   let y₀ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm ((ev h0).spaComap x₀)
   let y₁ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm ((ev h1).spaComap x₀)
-  have hy {a : ℚ_[2]} (ha : IsPowerBounded a) :
-      (comapOfPair hS hT f).hom.base ((ofPairHomeomorph T hT).symm ((ev ha).spaComap x₀)) =
+  have hy (p : T.Hom S) (hp : p.comp f = Pair.Hom.id S) :
+      (comapOfPair hS hT f).hom.base ((ofPairHomeomorph T hT).symm (p.spaComap x₀)) =
         (ofPairHomeomorph S hS).symm x₀ := by
     rw [comapOfPair_base_ofPairHomeomorph_symm]
     exact congrArg (ofPairHomeomorph S hS).symm <|
-      (congrFun (Pair.Hom.spaComap_comp (ev ha) f) x₀).symm.trans <| by
-        rw [ev_comp_f, Pair.Hom.spaComap_id, id_eq]
-  have hv₀ : (ofPairHomeomorph T hT y₀).val.toValuativeRel.vle X 0 := by
+      (congrFun (Pair.Hom.spaComap_comp p f) x₀).symm.trans <| by
+        rw [hp, Pair.Hom.spaComap_id, id_eq]
+  have hv₀ :
+      (ofPairHomeomorph T hT y₀).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0) 0 := by
     rw [Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle]
-    simp [ev_X]
-  have hv₁ : (ofPairHomeomorph T hT y₁).val.toValuativeRel.vle (X - 1) 0 := by
+    simp [ev_polydiscVar]
+  have hv₁ :
+      (ofPairHomeomorph T hT y₁).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0 - 1) 0 := by
     rw [Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle]
-    simp [ev_X]
+    simp [ev_polydiscVar]
   have hy_ne : y₀ ≠ y₁ := fun h ↦ by
     have hv := hv₀
     rw [h, Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle] at hv
-    simp [ev_X] at hv
+    simp [ev_polydiscVar] at hv
+  have hy₀₁ : (comapOfPair hS hT f).hom.base y₀ = (comapOfPair hS hT f).hom.base y₁ :=
+    (hy _ (ev_comp_f h0)).trans (hy _ (ev_comp_f h1)).symm
   obtain ⟨z, hz₁, hz₂⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
-    y₀ y₁ ((hy h0).trans (hy h1).symm)
-  have hσ₁ : pr₁.hom.base (σ.hom.base z) = y₁ := by
-    rw [← comp_base_apply, σ_comp_pr₁]
-    exact hz₂
-  have hσ₂ : pr₂.hom.base (σ.hom.base z) = y₀ := by
-    rw [← comp_base_apply, σ_comp_pr₂]
-    exact hz₁
-  refine ⟨y₀, y₁, z, hv₀, hv₁, hy_ne, (hy h0).trans (hy h1).symm, hz₁, hz₂, hσ₁, hσ₂,
-    fun h ↦ hy_ne ?_, ?_⟩
+    y₀ y₁ hy₀₁
+  have hσ₁ : pr₁.hom.base (σ.hom.base z) = y₁ :=
+    (congrArg (fun φ ↦ φ.hom.base z) σ_comp_pr₁).trans hz₂
+  have hσ₂ : pr₂.hom.base (σ.hom.base z) = y₀ :=
+    (congrArg (fun φ ↦ φ.hom.base z) σ_comp_pr₂).trans hz₁
+  refine ⟨y₀, y₁, z, hv₀, hv₁, hy_ne, hy₀₁, hz₁, hz₂, hσ₁, hσ₂, fun h ↦ hy_ne ?_, ?_⟩
   · rw [← hz₁, ← hσ₁, h]
     rfl
-  · rw [← comp_base_apply', σ_comp_σ]
-    rfl
+  · exact congrArg (fun φ ↦ φ.hom.base z) σ_comp_σ
 
 /-! ### The unit -/
 
