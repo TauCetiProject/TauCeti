@@ -49,6 +49,8 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   target.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues`:
   `‖A‖_F = √(∑ᵢ σᵢ(A)²)`.
+* `LinearMap.frobenius_apply_eq_sqrt_sum_range_sq_singularValues`: the same as a sum over
+  `Finset.range (dim E)`.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply`:
   `‖A‖₁ ≤ √(rank A) ‖A‖_F`.
 
@@ -215,6 +217,15 @@ theorem sq_frobenius_apply_eq_sum_sq_singularValues (A : E →ₗ[𝕜] F) :
   rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues,
     ← A.sum_fin_singularValues (· ^ 2) (by simp)]
   exact Real.sq_sqrt (Finset.sum_nonneg fun i _ ↦ sq_nonneg (A.singularValues i))
+
+/-- The Frobenius seminorm is the square root of the sum of the squares of the singular values
+below the dimension of the source, written as a sum over `Finset.range`. -/
+theorem frobenius_apply_eq_sqrt_sum_range_sq_singularValues (A : E →ₗ[𝕜] F) :
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A =
+      √(∑ i ∈ Finset.range (finrank 𝕜 E), A.singularValues i ^ 2) := by
+  rw [← Real.sqrt_sq (apply_nonneg _ A),
+    A.sq_frobenius_apply_eq_sum_sq_singularValues,
+    Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i ^ 2)]
 
 end LinearMap
 

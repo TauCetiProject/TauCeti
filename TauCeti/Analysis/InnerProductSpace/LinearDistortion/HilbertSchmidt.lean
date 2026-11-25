@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
-public import Mathlib.Analysis.MeanInequalities
+import TauCeti.Algebra.Module.LinearMap.Defs
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # The Hilbert–Schmidt distortion of a linear map
@@ -30,6 +31,9 @@ arithmetic and geometric means on the `σᵢ²`, `J(A) = σ₁ ⋯ σₙ ≤ (�
 ## Main declarations
 
 * `Orientation.hilbertSchmidtDistortion`: `q_S(A)`.
+* `Orientation.hilbertSchmidtDistortion_eq_top_iff`,
+  `Orientation.hilbertSchmidtDistortion_eq_zero_iff`: `q_S(A) = ∞` exactly for nonzero `A` with
+  `J(A) ≤ 0`, and in positive dimension `q_S(A) = 0` exactly for `A = 0`.
 * `Orientation.hilbertSchmidtDistortion_eq_ofReal_singularValues`: the singular-value formula
   `q_S(A) = (σ₁² + ⋯ + σₙ²)^{n/2} / (n^{n/2} σ₁ ⋯ σₙ)` when `J(A) > 0`.
 * `Orientation.orientedJacobian_le_frobenius_div_sqrt_pow`: `J(A) ≤ (‖A‖_HS / √n)ⁿ`.
@@ -38,7 +42,8 @@ arithmetic and geometric means on the `σᵢ²`, `J(A) = σ₁ ⋯ σₙ ≤ (�
   `Orientation.outerDistortion_le_mul_hilbertSchmidtDistortion`: `q_S ≤ q_O ≤ n^{n/2} q_S`.
 * `Orientation.hilbertSchmidtDistortion_smul`,
   `Orientation.hilbertSchmidtDistortion_linearIsometry_comp`,
-  `Orientation.hilbertSchmidtDistortion_comp_linearIsometryEquiv`: the invariances of `q_O`.
+  `Orientation.hilbertSchmidtDistortion_comp_linearIsometryEquiv`: the invariances of `q_S`
+  under positive scaling (`cⁿ > 0`) and orientation-preserving isometries.
 
 ## References
 
@@ -100,65 +105,23 @@ omit [FiniteDimensional ℝ W] in
 theorem hilbertSchmidtDistortion_zero (hn : 0 < n) : oV.hilbertSchmidtDistortion oW 0 = 0 := by
   simp [hilbertSchmidtDistortion_def, oV.orientedJacobian_zero_of_pos oW hn]
 
+omit [FiniteDimensional ℝ W] in
+/-- When `J(A) > 0`, the Hilbert–Schmidt distortion is finite. -/
+theorem hilbertSchmidtDistortion_ne_top_of_pos {A : V →ₗ[ℝ] W}
+    (h : 0 < oV.orientedJacobian oW A) : oV.hilbertSchmidtDistortion oW A ≠ ⊤ := by
+  simp [hilbertSchmidtDistortion_def, h]
+
+omit [FiniteDimensional ℝ W] in
+/-- The Hilbert–Schmidt distortion is infinite exactly for the nonzero maps with `J(A) ≤ 0`. -/
+theorem hilbertSchmidtDistortion_eq_top_iff {A : V →ₗ[ℝ] W} :
+    oV.hilbertSchmidtDistortion oW A = ⊤ ↔ A ≠ 0 ∧ oV.orientedJacobian oW A ≤ 0 := by
+  rw [hilbertSchmidtDistortion_def]
+  split_ifs with h hA
+  · simp [h.not_ge]
+  · simp [hA]
+  · simp [hA, not_lt.mp h]
+
 /-! ### The Frobenius norm against the operator norm and the Jacobian -/
-
-omit [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)] in
-/-- The power `√n ^ n`, the normalising constant `n^{n/2}`, is positive (it is `1` for
-`n = 0`). -/
-theorem _root_.Real.sqrt_natCast_pow_self_pos (n : ℕ) : 0 < √(n : ℝ) ^ n := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  · exact pow_pos (Real.sqrt_pos.mpr (Nat.cast_pos.mpr hn)) n
-
-omit [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)] in
-/-- The Frobenius norm is the square root of the sum of the squares of the singular values below
-the dimension. -/
-theorem _root_.LinearMap.frobenius_eq_sqrt_sum_range (A : V →ₗ[ℝ] W) :
-    frobenius ℝ V W A = √(∑ i ∈ Finset.range (finrank ℝ V), A.singularValues i ^ 2) := by
-  rw [← Real.sqrt_sq (apply_nonneg _ A), A.sq_frobenius_apply_eq_sum_sq_singularValues,
-    Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i ^ 2)]
-
-omit [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)] in
-/-- The operator norm is at most the Frobenius norm. -/
-theorem _root_.LinearMap.norm_toContinuousLinearMap_le_frobenius (A : V →ₗ[ℝ] W) :
-    ‖LinearMap.toContinuousLinearMap A‖ ≤ frobenius ℝ V W A := by
-  simpa [opNorm_apply] using opNorm_apply_le_schatten_apply 2 A
-
-omit [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)] in
-/-- The Frobenius norm is at most `√(dim V)` times the operator norm. -/
-theorem _root_.LinearMap.frobenius_le_sqrt_finrank_mul_norm (A : V →ₗ[ℝ] W) :
-    frobenius ℝ V W A ≤ √(finrank ℝ V : ℝ) * ‖LinearMap.toContinuousLinearMap A‖ := by
-  rw [A.frobenius_eq_sqrt_sum_range, A.norm_toContinuousLinearMap_eq_singularValues_zero,
-    ← Real.sqrt_sq (A.singularValues_nonneg 0), ← Real.sqrt_mul (Nat.cast_nonneg _)]
-  refine Real.sqrt_le_sqrt ?_
-  calc ∑ i ∈ Finset.range (finrank ℝ V), A.singularValues i ^ 2
-      ≤ ∑ _i ∈ Finset.range (finrank ℝ V), A.singularValues 0 ^ 2 :=
-        Finset.sum_le_sum fun i _ ↦ pow_le_pow_left₀ (A.singularValues_nonneg i)
-          (A.singularValues_antitone (Nat.zero_le i)) 2
-    _ = _ := by simp
-
-/-- **Arithmetic and geometric means** for `n` nonnegative numbers, in the form used for the
-Hilbert–Schmidt distortion: `σ₀ ⋯ σₙ₋₁ ≤ ((σ₀² + ⋯ + σₙ₋₁²)^{1/2} / √n)ⁿ`. -/
-theorem _root_.Real.prod_range_le_sqrt_sum_sq_div_sqrt_pow (σ : ℕ → ℝ) (hσ : ∀ i, 0 ≤ σ i)
-    (n : ℕ) :
-    ∏ i ∈ Finset.range n, σ i ≤ (√(∑ i ∈ Finset.range n, σ i ^ 2) / √(n : ℝ)) ^ n := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  have hS : 0 ≤ ∑ i ∈ Finset.range n, σ i ^ 2 := Finset.sum_nonneg fun i _ ↦ sq_nonneg _
-  have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  -- AM-GM for the squares `σᵢ²`, with unit weights.
-  have hamgm := Real.geom_mean_le_arith_mean (Finset.range n) (fun _ ↦ (1 : ℝ))
-    (fun i ↦ σ i ^ 2) (fun _ _ ↦ zero_le_one) (by simpa using hnR) (fun i _ ↦ sq_nonneg _)
-  simp only [Real.rpow_one, Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one,
-    one_mul] at hamgm
-  rw [Real.rpow_inv_le_iff_of_pos (Finset.prod_nonneg fun i _ ↦ sq_nonneg _)
-    (div_nonneg hS hnR.le) hnR, Real.rpow_natCast, Finset.prod_pow] at hamgm
-  have hrhs : (∑ i ∈ Finset.range n, σ i ^ 2) / n =
-      (√(∑ i ∈ Finset.range n, σ i ^ 2) / √(n : ℝ)) ^ 2 := by
-    rw [div_pow, Real.sq_sqrt hS, Real.sq_sqrt hnR.le]
-  rw [hrhs, ← pow_mul, mul_comm, pow_mul] at hamgm
-  exact (pow_le_pow_iff_left₀ (Finset.prod_nonneg fun i _ ↦ hσ i)
-    (pow_nonneg (div_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)) n) two_ne_zero).mp hamgm
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- The oriented Jacobian is at most `(‖A‖_HS / √n)ⁿ`: the inequality of arithmetic and geometric
@@ -166,9 +129,11 @@ means for the squares of the singular values. -/
 theorem orientedJacobian_le_frobenius_div_sqrt_pow (A : V →ₗ[ℝ] W) :
     oV.orientedJacobian oW A ≤ (frobenius ℝ V W A / √(n : ℝ)) ^ n := by
   refine (le_abs_self _).trans ?_
-  rw [oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues, A.frobenius_eq_sqrt_sum_range,
-    (Fact.out : finrank ℝ V = n)]
-  exact Real.prod_range_le_sqrt_sum_sq_div_sqrt_pow _ A.singularValues_nonneg n
+  have h := Real.prod_le_sqrt_sum_sq_div_sqrt_card_pow (Finset.range n) A.singularValues
+    fun i _ ↦ A.singularValues_nonneg i
+  rw [Finset.card_range] at h
+  rwa [oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues,
+    A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues, (Fact.out : finrank ℝ V = n)]
 
 /-! ### Formula and lower bound -/
 
@@ -180,7 +145,8 @@ theorem hilbertSchmidtDistortion_eq_ofReal_singularValues {A : V →ₗ[ℝ] W}
     oV.hilbertSchmidtDistortion oW A =
       ENNReal.ofReal (√(∑ i ∈ Finset.range n, A.singularValues i ^ 2) ^ n /
         (√(n : ℝ) ^ n * ∏ i ∈ Finset.range n, A.singularValues i)) := by
-  rw [oV.hilbertSchmidtDistortion_of_pos oW h, A.frobenius_eq_sqrt_sum_range,
+  rw [oV.hilbertSchmidtDistortion_of_pos oW h,
+    A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues,
     oV.orientedJacobian_eq_prod_singularValues_of_nonneg oW h.le, (Fact.out : finrank ℝ V = n)]
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
@@ -189,7 +155,7 @@ theorem one_le_hilbertSchmidtDistortion {A : V →ₗ[ℝ] W} (h : 0 < oV.orient
     1 ≤ oV.hilbertSchmidtDistortion oW A := by
   have hc := Real.sqrt_natCast_pow_self_pos n
   rw [oV.hilbertSchmidtDistortion_of_pos oW h, ENNReal.one_le_ofReal,
-    one_le_div (mul_pos hc h), mul_comm, ← le_div_iff₀ hc, ← div_pow]
+    one_le_div (mul_pos hc h), mul_comm (√(n : ℝ) ^ n), ← le_div_iff₀ hc, ← div_pow]
   exact oV.orientedJacobian_le_frobenius_div_sqrt_pow oW A
 
 /-! ### Comparison with the outer distortion -/
@@ -202,7 +168,8 @@ theorem hilbertSchmidtDistortion_le_outerDistortion (A : V →ₗ[ℝ] W) :
   · rw [oV.hilbertSchmidtDistortion_of_pos oW h, oV.outerDistortion_of_pos oW h]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [← div_div, div_le_div_iff_of_pos_right h,
-      div_le_iff₀ (Real.sqrt_natCast_pow_self_pos n), ← mul_pow, mul_comm]
+      div_le_iff₀ (Real.sqrt_natCast_pow_self_pos n), ← mul_pow,
+      mul_comm ‖LinearMap.toContinuousLinearMap A‖]
     refine pow_le_pow_left₀ (apply_nonneg _ A) ?_ n
     simpa [(Fact.out : finrank ℝ V = n)] using A.frobenius_le_sqrt_finrank_mul_norm
   · simp only [hilbertSchmidtDistortion_def, outerDistortion_def, h, ite_false, le_refl]
@@ -226,6 +193,14 @@ theorem outerDistortion_le_mul_hilbertSchmidtDistortion (A : V →ₗ[ℝ] W) :
     oV.hilbertSchmidtDistortion_of_nonpos oW (not_lt.mp h) hA,
     ENNReal.mul_top (ENNReal.ofReal_pos.mpr hc).ne']
 
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- In positive dimension the Hilbert–Schmidt distortion vanishes exactly at the zero map. -/
+theorem hilbertSchmidtDistortion_eq_zero_iff (hn : 0 < n) {A : V →ₗ[ℝ] W} :
+    oV.hilbertSchmidtDistortion oW A = 0 ↔ A = 0 := by
+  refine ⟨fun h ↦ (oV.outerDistortion_eq_zero_iff oW hn).mp ?_,
+    fun h ↦ h ▸ oV.hilbertSchmidtDistortion_zero oW hn⟩
+  simpa [h] using oV.outerDistortion_le_mul_hilbertSchmidtDistortion oW A
+
 /-! ### Invariance -/
 
 omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
@@ -247,25 +222,23 @@ no Hilbert–Schmidt distortion. -/
 theorem hilbertSchmidtDistortion_linearIsometry_comp (U : W →ₗᵢ[ℝ] X)
     (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oV.hilbertSchmidtDistortion oX (U.toLinearMap ∘ₗ A) = oV.hilbertSchmidtDistortion oW A := by
-  have hzero : U.toLinearMap ∘ₗ A = 0 ↔ A = 0 := by
-    simp [LinearMap.ext_iff, map_eq_zero_iff U U.injective]
   have hF : frobenius ℝ V X (U.toLinearMap ∘ₗ A) = frobenius ℝ V W A := by
     simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues,
       LinearMap.singularValues_linearIsometry_comp]
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
-    oV.orientedJacobian_comp_of_left_eq_one oW oX hU, hF, hzero]
+    oV.orientedJacobian_comp_of_left_eq_one oW oX hU, hF,
+    LinearMap.comp_eq_zero_iff_of_injective U.injective]
 
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no Hilbert–Schmidt distortion. -/
 theorem hilbertSchmidtDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
     (hU : oX.orientedJacobian oV (U : X →ₗ[ℝ] V) = 1) (A : V →ₗ[ℝ] W) :
     oX.hilbertSchmidtDistortion oW (A ∘ₗ (U : X →ₗ[ℝ] V)) = oV.hilbertSchmidtDistortion oW A := by
-  have hzero : A ∘ₗ (U : X →ₗ[ℝ] V) = 0 ↔ A = 0 := by
-    simp [LinearMap.ext_iff, U.surjective.forall]
   have hF : frobenius ℝ X W (A ∘ₗ (U : X →ₗ[ℝ] V)) = frobenius ℝ V W A := by
     simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues,
       LinearMap.singularValues_comp_linearIsometryEquiv]
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
-    oX.orientedJacobian_comp_of_right_eq_one oV oW hU, hF, hzero]
+    oX.orientedJacobian_comp_of_right_eq_one oV oW hU, hF,
+    LinearMap.comp_eq_zero_iff_of_surjective (f := (U : X →ₗ[ℝ] V)) U.surjective]
 
 end Orientation
