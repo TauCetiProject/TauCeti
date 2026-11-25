@@ -26,11 +26,11 @@ frame map of `s` descends: the frame of `[(p, l), a]` is the frame of `p` compos
 rotation of `a` (`TauCeti.SpinCStructure.toFrame_twist_mk`). Equivalently, `P ⊗ L` is the quotient
 of `P ×_X L` by the circle acting by `(p, l) • w = (p • [1, w], l • w⁻¹)`.
 
-Twisting is functorial: equivalences of `Spinᶜ` structures and equivariant homeomorphisms of
-principal `U(1)`-bundles induce equivalences of twists (`TauCeti.SpinCStructure.twistEquiv`), so
-the equivalence class of `s.twist L` depends only on the equivalence class of `s` and the
-isomorphism class of `L`. Twisting by the trivial bundle changes nothing
-(`TauCeti.SpinCStructure.twistTrivialEquiv`): `[(p, w), a] ↦ p • [1, w] a`.
+Twisting is functorial: equivalences of `Spinᶜ` structures and equivalences of principal
+`U(1)`-bundles (`TauCeti.PrincipalBundle.Equiv`) induce equivalences of twists
+(`TauCeti.SpinCStructure.twistEquiv`), so the equivalence class of `s.twist L` depends only on
+the equivalence class of `s` and the isomorphism class of `L`. Twisting by the trivial bundle
+changes nothing (`TauCeti.SpinCStructure.twistTrivialEquiv`): `[(p, w), a] ↦ p • [1, w] a`.
 
 This is the action of the isomorphism classes of complex line bundles on the equivalence classes
 of `Spinᶜ` structures. Twisting preserves the orientation induced by `s`; on the classes of
@@ -131,69 +131,48 @@ theorem toFrame_twist_inl (x : X) (p : s.P x) (l : L x) :
       s.toFrame ⟨x, p⟩ :=
   (s.fiberProd Circle L).toFrame_extend_inl _ _ _ _ _ x (FiberProd.mk p l)
 
-/-- **Twisting is functorial**: an equivalence `φ : s ≃ t` of `Spinᶜ` structures and a fibrewise
-equivariant bijection `ψ` from `L` to a principal `U(1)`-bundle `L'`, continuous on total spaces
-in both directions, induce an equivalence of twists `[(p, l), a] ↦ [(φ p, ψ l), a]`. -/
+variable {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
+  [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
+  {L'' : X → Type} [TopologicalSpace (TotalSpace Circle L'')] [∀ x, TopologicalSpace (L'' x)]
+  [FiberBundle Circle L''] [∀ x, MulAction Circleᵐᵒᵖ (L'' x)] [PrincipalBundle Circle L'']
+
+/-- **Twisting is functorial**: an equivalence `φ : s ≃ t` of `Spinᶜ` structures and an
+equivalence `ψ : L ≃ L'` of principal `U(1)`-bundles induce an equivalence of twists
+`[(p, l), a] ↦ [(φ p, ψ l), a]`. -/
 noncomputable def twistEquiv {s t : SpinCStructure F V n} (φ : s.Equiv t)
-    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
-    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
-    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
-    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L)) :
-    (s.twist L).Equiv (t.twist L') :=
-  (φ.fiberProd ψ hψ hψc hψc').extend _ _ _ _ _
+    (ψ : PrincipalBundle.Equiv Circle L L') : (s.twist L).Equiv (t.twist L') :=
+  (φ.fiberProd ψ).extend _ _ _ _ _
 
 @[simp]
 theorem twistEquiv_toEquiv_mk {s t : SpinCStructure F V n} (φ : s.Equiv t)
-    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
-    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
-    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
-    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
-    (x : X) (p : s.P x) (l : L x) (a : spinCGroup (realCliffordForm n 0) hQ) :
-    (twistEquiv φ ψ hψ hψc hψc').toEquiv x
+    (ψ : PrincipalBundle.Equiv Circle L L') (x : X) (p : s.P x) (l : L x)
+    (a : spinCGroup (realCliffordForm n 0) hQ) :
+    (twistEquiv φ ψ).toEquiv x
         (Extend.mk (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
           (P := (s.fiberProd Circle L).P) (FiberProd.mk p l) a) =
       Extend.mk (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-        (P := (t.fiberProd Circle L').P) (FiberProd.mk (φ.toEquiv x p) (ψ x l)) a :=
+        (P := (t.fiberProd Circle L').P) (FiberProd.mk (φ.toEquiv x p) (ψ.toEquiv x l)) a :=
   (OrthonormalFrameLift.Equiv.extend_toEquiv_mk _ _ _ _ _ _ x _ a).trans
     (congrArg (fun q ↦ Extend.mk (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-      (P := (t.fiberProd Circle L').P) q a) (φ.fiberProd_toEquiv_mk ψ hψ hψc hψc' x p l))
+      (P := (t.fiberProd Circle L').P) q a) (φ.fiberProd_toEquiv_mk ψ x p l))
 
 @[simp]
 theorem twistEquiv_toEquiv_inl {s t : SpinCStructure F V n} (φ : s.Equiv t)
-    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
-    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
-    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
-    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
-    (x : X) (p : s.P x) (l : L x) :
-    (twistEquiv φ ψ hψ hψc hψc').toEquiv x
+    (ψ : PrincipalBundle.Equiv Circle L L') (x : X) (p : s.P x) (l : L x) :
+    (twistEquiv φ ψ).toEquiv x
         (Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
           (P := (s.fiberProd Circle L).P) (FiberProd.mk p l)) =
       Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-        (P := (t.fiberProd Circle L').P) (FiberProd.mk (φ.toEquiv x p) (ψ x l)) :=
+        (P := (t.fiberProd Circle L').P) (FiberProd.mk (φ.toEquiv x p) (ψ.toEquiv x l)) :=
   (OrthonormalFrameLift.Equiv.extend_toEquiv_inl _ _ _ _ _ _ x _).trans
     (congrArg (Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-      (P := (t.fiberProd Circle L').P)) (φ.fiberProd_toEquiv_mk ψ hψ hψc hψc' x p l))
+      (P := (t.fiberProd Circle L').P)) (φ.fiberProd_toEquiv_mk ψ x p l))
 
 /-- Twisting by the identity equivalence of `s` and the identity of `L` gives the identity
 equivalence of the twist. -/
 @[simp]
-theorem twistEquiv_refl
-    (hψ : ∀ x (l : L x) (w : Circle), _root_.Equiv.refl (L x) (op w • l) =
-      op w • _root_.Equiv.refl (L x) l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, _root_.Equiv.refl (L l.proj) l.snd⟩ : TotalSpace Circle L))
-    (hψc' : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, (_root_.Equiv.refl (L l.proj)).symm l.snd⟩ : TotalSpace Circle L)) :
-    twistEquiv (OrthonormalFrameLift.Equiv.refl s) (fun x ↦ _root_.Equiv.refl (L x)) hψ hψc hψc' =
+theorem twistEquiv_refl :
+    twistEquiv (OrthonormalFrameLift.Equiv.refl s) (PrincipalBundle.Equiv.refl Circle L) =
       OrthonormalFrameLift.Equiv.refl (s.twist L) := by
   rw [twistEquiv, OrthonormalFrameLift.Equiv.fiberProd_refl]
   exact OrthonormalFrameLift.Equiv.extend_refl _ _ _ _ _ _
@@ -201,43 +180,17 @@ theorem twistEquiv_refl
 /-- The inverse of the twist by `φ` and `ψ` is the twist by the inverses of `φ` and `ψ`. -/
 @[simp]
 theorem twistEquiv_symm {s t : SpinCStructure F V n} (φ : s.Equiv t)
-    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
-    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
-    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
-    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L)) :
-    (twistEquiv φ ψ hψ hψc hψc').symm =
-      twistEquiv φ.symm (fun x ↦ (ψ x).symm)
-        (fun x l w ↦ (ψ x).symm_apply_eq.2 (by rw [hψ, _root_.Equiv.apply_symm_apply]))
-        hψc' hψc := by
-  rw [twistEquiv, twistEquiv, ← OrthonormalFrameLift.Equiv.fiberProd_symm φ ψ hψ hψc hψc']
+    (ψ : PrincipalBundle.Equiv Circle L L') : (twistEquiv φ ψ).symm = twistEquiv φ.symm ψ.symm := by
+  rw [twistEquiv, twistEquiv, ← OrthonormalFrameLift.Equiv.fiberProd_symm φ ψ]
   exact (OrthonormalFrameLift.Equiv.extend_symm _ _ _ _ _ _).symm
 
 /-- The composite of the twists by `φ, ψ` and by `φ', ψ'` is the twist by the composites. -/
 @[simp]
 theorem twistEquiv_trans {s t u : SpinCStructure F V n} (φ : s.Equiv t) (φ' : t.Equiv u)
-    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
-    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
-    {L'' : X → Type} [TopologicalSpace (TotalSpace Circle L'')] [∀ x, TopologicalSpace (L'' x)]
-    [FiberBundle Circle L''] [∀ x, MulAction Circleᵐᵒᵖ (L'' x)] [PrincipalBundle Circle L'']
-    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
-    (hψc : Continuous fun l : TotalSpace Circle L ↦
-      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
-    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
-    (ψ' : ∀ x, L' x ≃ L'' x) (hψ' : ∀ x (l : L' x) (w : Circle), ψ' x (op w • l) = op w • ψ' x l)
-    (hψ'c : Continuous fun l : TotalSpace Circle L' ↦
-      (⟨l.proj, ψ' l.proj l.snd⟩ : TotalSpace Circle L''))
-    (hψ'c' : Continuous fun l : TotalSpace Circle L'' ↦
-      (⟨l.proj, (ψ' l.proj).symm l.snd⟩ : TotalSpace Circle L')) :
-    (twistEquiv φ ψ hψ hψc hψc').trans (twistEquiv φ' ψ' hψ' hψ'c hψ'c') =
-      twistEquiv (φ.trans φ') (fun x ↦ (ψ x).trans (ψ' x))
-        (fun x l w ↦ by simp only [_root_.Equiv.trans_apply, hψ, hψ'])
-        (hψ'c.comp hψc) (hψc'.comp hψ'c') := by
+    (ψ : PrincipalBundle.Equiv Circle L L') (ψ' : PrincipalBundle.Equiv Circle L' L'') :
+    (twistEquiv φ ψ).trans (twistEquiv φ' ψ') = twistEquiv (φ.trans φ') (ψ.trans ψ') := by
   unfold twistEquiv
-  rw [← OrthonormalFrameLift.Equiv.fiberProd_trans φ φ' ψ hψ hψc hψc' ψ' hψ' hψ'c hψ'c']
+  rw [← OrthonormalFrameLift.Equiv.fiberProd_trans φ φ' ψ ψ']
   exact (OrthonormalFrameLift.Equiv.extend_trans _ _ _ _ _ _ _).symm
 
 /-- **Twisting by the trivial bundle changes nothing**: the twist of a `Spinᶜ` structure `s` by
