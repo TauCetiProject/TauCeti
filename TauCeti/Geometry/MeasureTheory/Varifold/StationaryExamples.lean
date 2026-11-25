@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
+import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
@@ -19,22 +20,24 @@ Let `E` be a finite-dimensional real inner product space. This file checks that 
 
 * *A measure with a constant plane field.* For an additive Haar measure `μ` on `E`, an open
   `W ⊆ E` and a fixed plane `P ∈ G(E, k)`, the varifold `μ⌞W ⊗ δ_P`, the image of `μ` on `W`
-  under `x ↦ (x, P)`, is stationary (`Euclidean.firstVariation_map_prodMk_const`): its first
+  under `x ↦ (x, P)`, is stationary (`Euclidean.firstVariation_map_prodMk_right`): its first
   variation is `∫ tr (P ∘ DX) dμ = tr (P ∘ ∫ DX dμ) = 0`. For `k = dim E` the only plane is `E`,
   and this is the volume of `W`; for `E = ℝ²` and `k = 1` it is Lebesgue measure lifted with a
   constant line.
-* *An affine plane.* For a `k`-dimensional subspace `S` and `a ∈ E`, the varifold of the affine
-  plane `a + S` with multiplicity one, the image of the volume of `S` under
-  `s ↦ (a + s, P_S)` where `P_S` is the orthogonal projection onto `S`, is stationary
+* *An affine plane.* For a `k`-dimensional subspace `S`, `a ∈ E` and an additive Haar measure
+  `ν` on `S`, the varifold of the affine plane `a + S` with constant multiplicity, the image of
+  `ν` under `s ↦ (a + s, P_S)` where `P_S` is the orthogonal projection onto `S`, is stationary
   (`Euclidean.firstVariation_map_affinePlane`). Its first variation is
   `∫_S tr (P_S ∘ DX(a + s)) ds = ∫_S tr (Dg(s)) ds = 0`, with `g = P_S ∘ X ∘ (a + ·) : S → S`
-  compactly supported, by the cyclicity of the trace. For `k = 1` this is the varifold of a line.
+  compactly supported, by the cyclicity of the trace. Multiplicity one is `ν = volume`; for `k = 1`
+  this is the varifold of a line.
 
 ## Main results
 
-* `Euclidean.firstVariation_map_prodMk_const`: a Haar measure with a constant plane field is
+* `Euclidean.firstVariation_map_prodMk_right`: a Haar measure with a constant plane field is
   stationary.
-* `Euclidean.firstVariation_map_affinePlane`: an affine plane with multiplicity one is stationary.
+* `Euclidean.firstVariation_map_affinePlane`: an affine plane with constant multiplicity is
+  stationary.
 
 ## References
 
@@ -60,27 +63,27 @@ private theorem tangentialDivergence_eq_traceCLM_comp (X : E → E) (x : E) (P :
       ((TauCeti.traceCLM ℝ E).comp (ContinuousLinearMap.compL ℝ E E E P)) (fderiv ℝ X x) := by
   simp [tangentialDivergence_def, TauCeti.traceCLM_apply]
 
+/-- The first variation of the image of a measure `ν` that is finite on compact sets under a proper
+map `f` is `∫ div_{(f a).2} X ((f a).1) dν(a)`. -/
+private theorem firstVariation_map_apply {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] (ν : Measure α) [IsFiniteMeasureOnCompacts ν] {W : Opens E}
+    {f : α → W × grassmannian ℝ E k} (hf : IsProperMap f) (X : 𝓓^{1}(W, E)) :
+    firstVariation (ν.map f) X = ∫ a, tangentialDivergence X (f a).1 (f a).2 ∂ν := by
+  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap ν hf
+  rw [firstVariation_apply, integral_map hf.continuous.aemeasurable (by
+    simpa using (tangentialDivergenceCc (k := k) X).continuous.aestronglyMeasurable)]
+
 /-- **A Haar measure with a constant plane field is stationary.** For an additive Haar measure `μ`,
 an open set `W` and a plane `P ∈ G(E, k)`, the varifold `μ⌞W ⊗ δ_P` has first variation zero. -/
-theorem firstVariation_map_prodMk_const (μ : Measure E) [μ.IsAddHaarMeasure] (W : Opens E)
+theorem firstVariation_map_prodMk_right (μ : Measure E) [μ.IsAddHaarMeasure] (W : Opens E)
     (P : grassmannian ℝ E k) :
     firstVariation ((μ.comap ((↑) : W → E)).map fun x => (x, P)) = 0 := by
-  have hf : Continuous fun x : W => ((x, P) : W × grassmannian ℝ E k) :=
-    continuous_id.prodMk continuous_const
-  have : IsFiniteMeasureOnCompacts ((μ.comap ((↑) : W → E)).map fun x => (x, P)) :=
-    ⟨fun K hK => by
-      have hK' : IsCompact (Prod.fst '' K) := hK.image continuous_fst
-      rw [Measure.map_apply hf.measurable hK.isClosed.measurableSet]
-      refine (measure_mono (show (fun x => (x, P)) ⁻¹' K ⊆ Prod.fst '' K from
-        fun x hx => ⟨(x, P), hx, rfl⟩)).trans_lt ?_
-      exact (Measure.comap_apply _ Subtype.val_injective
-        (fun _ hs => W.isOpen.measurableSet.subtype_image hs) μ hK'.isClosed.measurableSet).trans_lt
-        (hK'.image continuous_subtypeVal).measure_lt_top⟩
+  -- `x ↦ (x, P)` is proper since its first component is the identity.
+  have hf : IsProperMap fun x : W => ((x, P) : W × grassmannian ℝ E k) :=
+    isProperMap_of_comp_of_t2 (continuous_id.prodMk continuous_const) continuous_fst
+      isProperMap_id
   ext X
-  change _ = (0 : ℝ)
-  rw [firstVariation_apply,
-    integral_map hf.aemeasurable (by
-      simpa using (tangentialDivergenceCc (k := k) X).continuous.aestronglyMeasurable)]
+  rw [firstVariation_map_apply _ hf, zero_apply]
   refine (integral_subtype_comap W.isOpen.measurableSet
     (fun x => tangentialDivergence X x P)).trans ?_
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx =>
@@ -105,35 +108,27 @@ private theorem tangentialDivergence_starProjection_eq (S : Submodule ℝ E) {X 
   exact LinearMap.trace_comp_comm' (S.orthogonalProjectionOnto ∘L fderiv ℝ X (a + s) :
     E →ₗ[ℝ] S) (S.subtypeL : S →ₗ[ℝ] E)
 
-/-- **An affine plane is stationary.** For a `k`-dimensional subspace `S` and `a ∈ E`, the
-varifold of the affine plane `a + S` with multiplicity one, the image of the volume of `S` under
-`s ↦ (a + s, P_S)`, has first variation zero. -/
-theorem firstVariation_map_affinePlane (S : Submodule ℝ E) (hS : finrank ℝ S = k) (a : E) :
-    firstVariation ((volume : Measure S).map fun s : S =>
+/-- **An affine plane is stationary.** For a `k`-dimensional subspace `S`, `a ∈ E` and an additive
+Haar measure `ν` on `S`, the varifold of the affine plane `a + S` with constant multiplicity, the
+image of `ν` under `s ↦ (a + s, P_S)`, has first variation zero. Multiplicity one is
+`ν = volume`. -/
+theorem firstVariation_map_affinePlane (S : Submodule ℝ E) (hS : finrank ℝ S = k) (a : E)
+    (ν : Measure S) [ν.IsAddHaarMeasure] :
+    firstVariation (ν.map fun s : S =>
       (((⟨a + s, by simp⟩ : (⊤ : Opens E))),
         (⟨S.starProjection, grassmannian.starProjection_mem hS⟩ : grassmannian ℝ E k))) = 0 := by
-  set P : grassmannian ℝ E k := ⟨S.starProjection, grassmannian.starProjection_mem hS⟩
-  set f : S → (⊤ : Opens E) × grassmannian ℝ E k := fun s => (⟨a + s, by simp⟩, P)
   -- `s ↦ a + s` is a closed embedding of `S` into `E`.
   have hg : Topology.IsClosedEmbedding fun s : S => a + (s : E) :=
     (Homeomorph.addLeft a).isClosedEmbedding.comp
       S.isClosed_of_finiteDimensional.isClosedEmbedding_subtypeVal
-  have hf : Continuous f :=
-    ((hg.continuous.subtype_mk fun _ => by simp).prodMk continuous_const)
-  have : IsFiniteMeasureOnCompacts ((volume : Measure S).map f) :=
-    ⟨fun K hK => by
-      rw [Measure.map_apply hf.measurable hK.isClosed.measurableSet]
-      refine (measure_mono fun s hs => ?_).trans_lt
-        (hg.isCompact_preimage ((hK.image continuous_fst).image continuous_subtypeVal)
-          |>.measure_lt_top)
-      exact ⟨_, ⟨_, hs, rfl⟩, rfl⟩⟩
+  have hf : IsProperMap fun s : S =>
+      (((⟨a + s, by simp⟩ : (⊤ : Opens E))),
+        (⟨S.starProjection, grassmannian.starProjection_mem hS⟩ : grassmannian ℝ E k)) :=
+    isProperMap_of_comp_of_t2 ((hg.continuous.subtype_mk fun _ => by simp).prodMk
+      continuous_const) (continuous_subtypeVal.comp continuous_fst) hg.isProperMap
   ext X
-  change _ = (0 : ℝ)
-  rw [firstVariation_apply,
-    integral_map hf.aemeasurable (by
-      simpa using (tangentialDivergenceCc (k := k) X).continuous.aestronglyMeasurable)]
+  rw [firstVariation_map_apply _ hf, zero_apply]
   have hX : Differentiable ℝ (X : E → E) := X.contDiff.differentiable one_ne_zero
-  change ∫ s : S, tangentialDivergence X (a + s) S.starProjection = 0
   simp_rw [tangentialDivergence_starProjection_eq S hX a]
   -- `g = P_S ∘ X ∘ (a + ·)` is a compactly supported `C¹` map of `S`.
   have hgd : ContDiff ℝ 1 fun s : S => S.orthogonalProjectionOnto (X (a + s)) :=
