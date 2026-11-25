@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Laurent.MeromorphicGerm
 public import TauCeti.Analysis.Meromorphic.Conj
-import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Laurent coefficients under reflection
