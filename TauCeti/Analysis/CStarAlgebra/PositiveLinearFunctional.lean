@@ -25,8 +25,9 @@ approximate units, so pulling a positive functional back along it does not chang
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
 For the same reason the norm is additive on positive functionals,
 `PositiveContinuousLinearMap.opNorm_add`.
-Positive functionals are closed under scaling by a nonnegative real, which multiplies the norm
-(`PositiveContinuousLinearMap.opNorm_smul`); Mathlib only provides the `ℕ`-action.
+Positive functionals are closed under scaling by a nonnegative real, so they form an
+`ℝ≥0`-module, and scaling multiplies the norm (`PositiveContinuousLinearMap.opNorm_smul`);
+Mathlib only provides the `ℕ`-action.
 Along a star isomorphism `e`, pulling back along `e` and then along `e.symm` (or the other way
 round) recovers the functional,
 `PositiveContinuousLinearMap.comp_ofClass_comp_ofClass_symm` and
@@ -82,7 +83,11 @@ instance : IsSMulApply ℝ≥0 (E →P[ℂ] ℂ) where
 @[simp]
 theorem toContinuousLinearMap_smul (c : ℝ≥0) (τ : E →P[ℂ] ℂ) :
     ((c • τ : E →P[ℂ] ℂ) : E →L[ℂ] ℂ) = c • (τ : E →L[ℂ] ℂ) :=
-  rfl
+  (rfl)
+
+/-- Positive functionals form a module over the nonnegative reals. -/
+noncomputable instance instModuleNNReal : Module ℝ≥0 (E →P[ℂ] ℂ) :=
+  fast_instance% FunLike.module
 
 end NNRealSMul
 
