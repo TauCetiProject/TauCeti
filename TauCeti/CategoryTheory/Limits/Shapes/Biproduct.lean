@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
@@ -46,6 +47,10 @@ an equivalence preserves and reflects being an isomorphism
 biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`). The comparison
 isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
 (`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
+In a preadditive category, after adding a second copy of `X₂`, the unipotent automorphism
+`Biprod.unipotentUpper r` of `X₁ ⊞ X₂` becomes a commutator of two unipotent automorphisms of
+`(X₁ ⊞ X₂) ⊞ X₂` (`CategoryTheory.Biprod.mapIso_unipotentUpper_refl_eq_commutatorElement`),
+the three-summand step of Whitehead's lemma.
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
@@ -577,6 +582,29 @@ instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_col
         simp)) }⟩ }
 
 end CategoryTheory.Limits
+
+namespace CategoryTheory.Biprod
+
+open Limits
+open scoped commutatorElement
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+
+/-- After adding a second copy of `X₂`, the unipotent automorphism `(x₁, x₂) ↦ (x₁, x₂ + r x₁)` of
+`X₁ ⊞ X₂` becomes the commutator of the automorphisms `(w, x₃) ↦ (w + inr x₃, x₃)` and
+`(w, x₃) ↦ (w, x₃ + r (fst w))` of `(X₁ ⊞ X₂) ⊞ X₂`. This is the three-summand step of Whitehead's
+lemma. -/
+theorem mapIso_unipotentUpper_refl_eq_commutatorElement {X₁ X₂ : C} (r : X₁ ⟶ X₂) :
+    Aut.of (biprod.mapIso (unipotentUpper r) (Iso.refl X₂)) =
+      ⁅Aut.of (unipotentLower (biprod.inr : X₂ ⟶ X₁ ⊞ X₂)),
+        Aut.of (unipotentUpper (biprod.fst ≫ r : X₁ ⊞ X₂ ⟶ X₂))⁆ := by
+  ext : 2
+  simp only [commutatorElement_def, Aut.mul_asIso, Aut.inv_asIso, Iso.trans_hom, Iso.symm_hom,
+    biprod.mapIso_hom, Iso.refl_hom, unipotentUpper_hom, unipotentUpper_inv, unipotentLower_hom,
+    unipotentLower_inv]
+  ext <;> simp [ofComponents]
+
+end CategoryTheory.Biprod
 
 namespace CategoryTheory.Functor
 

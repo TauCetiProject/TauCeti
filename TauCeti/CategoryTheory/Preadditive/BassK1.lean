@@ -39,8 +39,9 @@ the quotient `Y`, has class `[X, α] + [Y, β]`, whatever its off-diagonal block
 that the unipotent automorphisms `Biprod.unipotentUpper` and `Biprod.unipotentLower` have trivial
 class (`TauCeti.BassK1.of_unipotentUpper`, `TauCeti.BassK1.of_unipotentLower`): after adding a
 second copy of the target summand, a unipotent automorphism becomes a commutator of two
-unipotent automorphisms of the three-fold biproduct, and the class of a commutator vanishes
-because the class map is a homomorphism to an abelian group.
+unipotent automorphisms of the three-fold biproduct
+(`CategoryTheory.Biprod.mapIso_unipotentUpper_refl_eq_commutatorElement`), and the class of a
+commutator vanishes because the class map is a homomorphism to an abelian group.
 
 The group is functorial in functors preserving zero morphisms and binary biproducts, in
 particular in additive functors between preadditive categories (`TauCeti.BassK1.map`), and
@@ -324,21 +325,6 @@ section Triangular
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 
-/-- After adding a second copy of `X₂`, the unipotent automorphism `(x₁, x₂) ↦ (x₁, x₂ + r x₁)` of
-`X₁ ⊞ X₂` becomes the commutator of the automorphisms `(w, x₃) ↦ (w, x₃ + r (fst w))` and
-`(w, x₃) ↦ (w + inr x₃, x₃)` of `(X₁ ⊞ X₂) ⊞ X₂`. -/
-private lemma biprod_unipotentUpper_eq {X₁ X₂ : C} (r : X₁ ⟶ X₂) :
-    Aut.of (biprod.mapIso (Biprod.unipotentUpper r) (Iso.refl X₂)) =
-      (Aut.of (Biprod.unipotentLower (biprod.inr : X₂ ⟶ X₁ ⊞ X₂)))⁻¹ *
-        (Aut.of (Biprod.unipotentUpper (biprod.fst ≫ r : X₁ ⊞ X₂ ⟶ X₂)))⁻¹ *
-        Aut.of (Biprod.unipotentLower (biprod.inr : X₂ ⟶ X₁ ⊞ X₂)) *
-        Aut.of (Biprod.unipotentUpper (biprod.fst ≫ r : X₁ ⊞ X₂ ⟶ X₂)) := by
-  ext : 2
-  simp only [Aut.mul_asIso, Aut.inv_asIso, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-    Iso.refl_hom, Biprod.unipotentUpper_hom, Biprod.unipotentUpper_inv,
-    Biprod.unipotentLower_hom, Biprod.unipotentLower_inv]
-  ext <;> simp [Biprod.ofComponents]
-
 /-- The unipotent automorphism `(x₁, x₂) ↦ (x₁, x₂ + r x₁)` of `X₁ ⊞ X₂` has trivial class. -/
 @[simp]
 theorem of_unipotentUpper {X₁ X₂ : C} (r : X₁ ⟶ X₂) :
@@ -347,8 +333,7 @@ theorem of_unipotentUpper {X₁ X₂ : C} (r : X₁ ⟶ X₂) :
   rw [of_one, add_zero] at h
   rw [← h]
   simp only [Aut.one_asIso]
-  rw [biprod_unipotentUpper_eq, of_mul, of_mul, of_mul, of_inv, of_inv]
-  abel
+  rw [Biprod.mapIso_unipotentUpper_refl_eq_commutatorElement, of_commutatorElement]
 
 /-- The unipotent automorphism `(x₁, x₂) ↦ (x₁ + r x₂, x₂)` of `X₁ ⊞ X₂` has trivial class. -/
 @[simp]
