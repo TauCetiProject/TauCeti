@@ -110,26 +110,23 @@ theorem conditionalTrace_of_notMem (hF : F * F = 1) (hT : T ∉ F.conditionalTra
   rw [trace_of_notMem, mul_zero]
   -- `F T + T F = F (F (F T + T F))` would be trace class.
   refine fun h ↦ hT (mem_conditionalTraceDomain.2 ?_)
-  simpa only [← mul_def, ← mul_assoc, hF, one_mul] using comp_left_mem_finiteSubmodule F h
+  simpa only [← mul_assoc, hF, one_mul] using mul_left_mem_finiteSubmodule F h
 
 /-! ### The conditional trace extends the trace -/
 
 /-- Every trace-class operator lies in the domain of the conditional trace. -/
 theorem finiteSubmodule_traceClass_le_conditionalTraceDomain (F : E →L[𝕜] E) :
     ((traceClass 𝕜).operatorGauge E E).finiteSubmodule ≤ F.conditionalTraceDomain :=
-  fun T hT ↦ mem_conditionalTraceDomain.2 <| by
-    simpa only [← mul_def] using
-      add_mem (comp_left_mem_finiteSubmodule F hT) (comp_right_mem_finiteSubmodule hT F)
+  fun _ hT ↦ mem_conditionalTraceDomain.2 <|
+    add_mem (mul_left_mem_finiteSubmodule F hT) (mul_right_mem_finiteSubmodule hT F)
 
 /-- **The conditional trace extends the trace.** If `F² = 1`, the conditional trace of a
 trace-class operator is its trace. -/
 theorem conditionalTrace_eq_trace (hF : F * F = 1)
     (hT : T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule) :
     F.conditionalTrace T = T.trace := by
-  have hFT : F * T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-    simpa only [← mul_def] using comp_left_mem_finiteSubmodule F hT
-  have hFTF : F * T * F ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-    simpa only [← mul_def] using comp_right_mem_finiteSubmodule hFT F
+  have hFT := mul_left_mem_finiteSubmodule F hT
+  have hFTF := mul_right_mem_finiteSubmodule hFT F
   -- `Tr ((F T) F) = Tr (F (F T)) = Tr T`, by the trace property.
   have hcomm : (F * T * F).trace = T.trace := by
     rw [mul_def (F * T), ← trace_comp_comm F hFT, ← mul_def, ← mul_assoc, hF, one_mul]
@@ -141,8 +138,8 @@ theorem conditionalTrace_eq_trace (hF : F * F = 1)
 
 /-- For `T` in the domain, `F (F T + T F)` is trace class. -/
 private theorem mul_anticommutator_mem_traceClass (hT : T ∈ F.conditionalTraceDomain) :
-    F * (F * T + T * F) ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-  simpa only [← mul_def] using comp_left_mem_finiteSubmodule F (mem_conditionalTraceDomain.1 hT)
+    F * (F * T + T * F) ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule :=
+  mul_left_mem_finiteSubmodule F (mem_conditionalTraceDomain.1 hT)
 
 /-- The conditional trace is additive on its domain. -/
 theorem conditionalTrace_add (hS : S ∈ F.conditionalTraceDomain)
