@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
 import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
 # Weak gradients on level sets
@@ -26,7 +27,12 @@ If the superlevel sets `{u > l}`, `l > k`, have finite measure and `u > k` on a 
 measure, then there are levels
 `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure, along which the measure of
 `{u > lⱼ, ∇u ≠ 0}` tends to zero. This is the measure-theoretic input of the weak maximum
-principle with bounded drift.
+principle. Its level-set argument is
+`TauCeti.W1p.ae_value_le_of_forall_le_of_tendsto`: for `k ≥ 0`, if at every level `l ≥ k` exceeded
+on a set of positive measure a fixed positive constant is bounded by a quantity `F(Γₗ)` attached
+to `Γₗ = {u > l, ∇u ≠ 0}`, and `F(Γ)` tends to zero with `|Γ|`, then `u ≤ k` almost everywhere.
+The gradient of `(u - l)⁺` vanishes almost everywhere outside `Γₗ`, and it is not zero if `u > l`
+on a set of positive measure and a Sobolev inequality holds for `(u - l)⁺`.
 
 The same holds for the classical gradient of a `C¹` function, which is read off from the weak
 statement on small balls. In particular a level set of a `C¹` function on which its derivative
@@ -38,7 +44,7 @@ public section
 namespace TauCeti
 
 open Filter _root_.MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace Gradient Topology
+open scoped ENNReal NNReal InnerProductSpace Gradient Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -89,17 +95,17 @@ coincidence set has empty interior. -/
 theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       W1p.value u x = W1p.value v x → W1p.gradient u x = W1p.gradient v x := by
-  have hvalue : ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega]
-      W1p.value u - W1p.value v := by
-    simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
-  have hgradient : ⇑(W1p.gradient (u - v)) =ᵐ[mu.restrict Omega]
-      W1p.gradient u - W1p.gradient v := by
-    simpa only [← W1p.gradientL_apply, map_sub] using Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)
-  filter_upwards [W1p.gradient_ae_eq_zero_on_level_set hp (u - v) 0, hvalue, hgradient]
-    with x hx hux hgx
+  filter_upwards [W1p.gradient_ae_eq_zero_on_level_set hp (u - v) 0, W1p.value_sub_ae u v,
+    W1p.gradient_sub_ae u v] with x hx hux hgx
   intro h
   apply sub_eq_zero.mp
   simpa only [hgx, Pi.sub_apply] using hx (by rw [hux, Pi.sub_apply, h, sub_self])
+
+/-- The set `{u > l, ∇u ≠ 0}` of a Sobolev function is measurable. -/
+theorem W1p.measurableSet_lt_value_and_gradient_ne_zero (u : W1p mu Omega p) (l : ℝ) :
+    MeasurableSet {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0} :=
+  (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
+    ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
 
 /-- If increasing levels `mⱼ`, eventually above `k`, have a null intersection of the sets
 `{u > mⱼ, ∇u ≠ 0}`, and each lies below an admissible level `l ≥ k` (one exceeded by `u` on a set
@@ -116,9 +122,7 @@ private theorem W1p.exists_tendsto_measure_of_monotone_levels (u : W1p mu Omega 
   set μ := mu.restrict Omega
   set T : ℝ → Set E :=
     fun l ↦ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}
-  have hT : ∀ l, MeasurableSet (T l) := fun l ↦
-    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
-      ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
+  have hT : ∀ l, MeasurableSet (T l) := W1p.measurableSet_lt_value_and_gradient_ne_zero u
   have hTanti : Antitone T := fun l l' hll' x hx ↦ ⟨hll'.trans_lt hx.1, hx.2⟩
   obtain ⟨i, hi⟩ := hmk
   choose l hkl hml hnot using hL
@@ -163,7 +167,6 @@ private theorem W1p.exists_tendsto_measure_of_bddAbove (hp : p ≠ ∞) (u : W1p
     exact ⟨max k (M - 1 / ((j : ℝ) + 1)), le_max_left _ _, le_max_right _ _,
       fun hae ↦ hl'L.2 (hae.mono fun x hx ↦ hx.trans hl'.le)⟩
 
-
 /-- Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, have superlevel sets `{u > l}` of finite measure for every
 `l > k` (for instance because `Ω` has finite measure, or because `k ≥ 0`), and suppose `u > k` on
 a set of positive measure. Then there are levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive
@@ -190,6 +193,82 @@ theorem W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (hp : p ≠ ∞
       exact lt_asymm hj (mem_iInter.1 hx j).1
     · obtain ⟨l, hlL, hjl⟩ := not_bddAbove_iff.1 hbdd j
       exact ⟨l, hlL.1, hjl.le, hlL.2⟩
+
+/-- **The level-set argument of the weak maximum principle.** Let `u ∈ W^{1,p}(Ω)`,
+`1 ≤ p < ∞`, and `k ≥ 0`, and let `F` assign to every set a quantity in `[0, ∞]` which tends to
+zero along every sequence of measurable sets whose measures tend to zero. If a constant `c ≠ 0`
+satisfies `c ≤ F {u > l, ∇u ≠ 0}` at every level `l ≥ k` which `u` exceeds on a set of positive
+measure, then `u ≤ k` almost everywhere: otherwise there are such levels along which
+`|{u > l, ∇u ≠ 0}| → 0` (`TauCeti.W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero`). -/
+theorem W1p.ae_value_le_of_forall_le_of_tendsto (hp : p ≠ ∞) (u : W1p mu Omega p) {k : ℝ}
+    (hk : 0 ≤ k) {F : Set E → ℝ≥0∞}
+    (hF : ∀ Γ : ℕ → Set E, (∀ j, MeasurableSet (Γ j)) →
+      Tendsto (fun j ↦ mu.restrict Omega (Γ j)) atTop (𝓝 0) →
+        Tendsto (fun j ↦ F (Γ j)) atTop (𝓝 0))
+    {c : ℝ≥0∞} (hc : c ≠ 0)
+    (hlevel : ∀ l, k ≤ l → (¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l) →
+      c ≤ F {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
+  -- Since `u ∈ Lᵖ` and `k ≥ 0`, the superlevel sets `{u > l}`, `l > k`, have finite measure.
+  have hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞ := fun l hkl ↦
+    ((Lp.memLp (W1p.value u)).measure_gt_lt_top hp0 hp (hk.trans_lt hkl)).ne
+  by_contra hcon
+  obtain ⟨l, hl, htend⟩ := W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero hp u hfin hcon
+  exact hc (le_antisymm (ge_of_tendsto' (hF _
+    (fun j ↦ W1p.measurableSet_lt_value_and_gradient_ne_zero u (l j)) htend)
+    fun j ↦ hlevel (l j) (hl j).1 (hl j).2) zero_le)
+
+/-- Above a level `l ≥ 0`, the gradient of `(u - l)⁺` vanishes almost everywhere outside the set
+`{u > l, ∇u ≠ 0}`. -/
+theorem W1p.ae_mem_of_gradient_posPartAbove_ne_zero (hp : p ≠ ∞) {l : ℝ} (hl : 0 ≤ l)
+    (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.gradient (W1p.posPartAbove hp hl u) x ≠ 0 →
+      x ∈ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0} := by
+  filter_upwards [W1p.gradient_posPartAbove_ae hp hl u] with x hx hne
+  rw [hx] at hne
+  by_cases hlt : l < W1p.value u x
+  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hlt] at hne
+    exact ⟨hlt, hne⟩
+  · exact absurd (indicator_of_notMem (s := {y | l < W1p.value u y}) hlt _) hne
+
+omit [FiniteDimensional ℝ E] in
+/-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the weighted
+integral `∫_Ω w |∇v| |v|` of a nonnegative weight `w` is a lower integral that only sees `Γ`. -/
+theorem W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq {v : W1p mu Omega p}
+    {w : E → ℝ} (hw : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ w x)
+    (hint : Integrable (fun x ↦ w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖)) (mu.restrict Omega))
+    {Γ : Set E} (hΓ : MeasurableSet Γ)
+    (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
+    ENNReal.ofReal (∫ x in Omega, w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖) ∂mu) =
+      ∫⁻ x in Γ, ‖w x‖ₑ * (‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ) ∂mu.restrict Omega := by
+  rw [ofReal_integral_eq_lintegral_ofReal hint
+      (hw.mono fun x hx ↦ mul_nonneg hx (by positivity)), ← lintegral_indicator hΓ]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hgrad, hw] with x hx hwx
+  by_cases hxΓ : x ∈ Γ
+  · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul hwx, ENNReal.ofReal_mul (norm_nonneg _),
+      ofReal_norm, ofReal_norm, Real.eNorm_of_nonneg hwx]
+  · have hg0 : W1p.gradient v x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
+    rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, mul_zero, ENNReal.ofReal_zero]
+
+/-- If `u > l ≥ 0` on a set of positive measure and `(u - l)⁺` satisfies a Sobolev inequality
+`‖(u - l)⁺‖_q ≤ S ‖∇(u - l)⁺‖_p` with `q ≠ 0`, then the gradient of `(u - l)⁺` is not zero:
+otherwise `(u - l)⁺ = 0`, that is `u ≤ l`, almost everywhere. -/
+theorem W1p.enorm_gradient_posPartAbove_ne_zero (hp : p ≠ ∞) {l : ℝ} (hl : 0 ≤ l)
+    {u : W1p mu Omega p} {q : ℝ≥0∞} (hq : q ≠ 0) {S : ℝ≥0}
+    (hsob : eLpNorm (W1p.value (W1p.posPartAbove hp hl u)) q (mu.restrict Omega) ≤
+      S * ‖W1p.gradient (W1p.posPartAbove hp hl u)‖ₑ)
+    (hnot : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l) :
+    ‖W1p.gradient (W1p.posPartAbove hp hl u)‖ₑ ≠ 0 := by
+  intro hzero
+  refine hnot ?_
+  have hv0 : eLpNorm (W1p.value (W1p.posPartAbove hp hl u)) q (mu.restrict Omega) = 0 :=
+    le_antisymm (hsob.trans_eq (by rw [hzero, mul_zero])) zero_le
+  rw [eLpNorm_eq_zero_iff hq] at hv0
+  filter_upwards [hv0, W1p.value_posPartAbove_ae hp hl u] with x h₁ h₂
+  rw [h₂, Pi.zero_apply] at h₁
+  linarith [le_max_left (W1p.value u x - l) 0]
 
 /-- The classical gradient of a function of class `C¹` on `Ω` vanishes almost everywhere on each
 of its level sets in `Ω`. This is read off from

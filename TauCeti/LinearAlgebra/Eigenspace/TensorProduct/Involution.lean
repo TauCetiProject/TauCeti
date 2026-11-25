@@ -73,13 +73,14 @@ private theorem eigenspaceTensorIncl_mem (μ : k)
   congr 1
   · induction p₁ using TensorProduct.inductionOn with
     | tmul x y =>
-      simp only [map_tmul, Submodule.subtype_apply, mem_eigenspace_iff.1 x.2,
-        mem_eigenspace_iff.1 y.2, one_smul, tmul_smul]
+      simp only [map_tmul, Submodule.subtype_apply, mem_eigenspace_iff.1 x.property,
+        mem_eigenspace_iff.1 y.property, one_smul, tmul_smul]
     | add a b ha hb => simp only [map_add, ha, hb, smul_add]
   · induction p₂ using TensorProduct.inductionOn with
     | tmul x y =>
-      simp only [map_tmul, Submodule.subtype_apply, mem_eigenspace_iff.1 x.2,
-        mem_eigenspace_iff.1 y.2, tmul_smul, smul_tmul', smul_smul, mul_neg, mul_one, neg_neg]
+      simp only [map_tmul, Submodule.subtype_apply, mem_eigenspace_iff.1 x.property,
+        mem_eigenspace_iff.1 y.property, tmul_smul, smul_tmul', smul_smul, mul_neg, mul_one,
+            neg_neg]
     | add a b ha hb => simp only [map_add, ha, hb, smul_add]
 
 /-- On `X ⊗ Y` the two projections, tensored and added, are `½ (1 + μ (f ⊗ g))`. -/
@@ -123,7 +124,7 @@ def eigenspaceTensorMapEquiv (hf : Function.Involutive f) (hg : Function.Involut
       (eigenspace (map f g) μ).subtype)
     (by
       ext z
-      have hz := mem_eigenspace_iff.1 z.2
+      have hz := mem_eigenspace_iff.1 z.property
       simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.codRestrict_apply,
         Submodule.subtype_apply, LinearMap.prod_apply, Function.prod, eigenspaceTensorIncl,
         LinearMap.coprod_apply, LinearMap.id_coe, id_eq]

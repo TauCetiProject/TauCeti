@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Idempotents
 
 import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Sections of unramified algebras

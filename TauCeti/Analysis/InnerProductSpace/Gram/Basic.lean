@@ -6,21 +6,44 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
-# Dimension vanishing for Gram determinants
+# Basic properties of Gram matrices and their determinants
+
+The matrix of the inner product `innerₛₗ 𝕜` in a basis `b`, as computed by Mathlib's
+`LinearMap.toMatrix₂`, is the Gram matrix `Matrix.gram 𝕜 b` of `b`, with entries `⟪b i, b j⟫`
+(`Module.Basis.toMatrix₂_innerₛₗ`). This holds over `ℝ` and `ℂ` alike, in any semi-inner product
+space. Over `ℝ` it reads `LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix.gram ℝ b`
+(`LinearMap.BilinForm.toMatrix_innerₗ`), which is the form in which Gram matrices enter the
+bilinear-form API, for instance through dual bases.
 
 In a finite-dimensional real or complex semi-inner-product space `E`, any family of vectors indexed
 by a finite type of cardinality strictly greater than `finrank 𝕜 E` is linearly dependent, so its
 Gram determinant vanishes (`Matrix.det_gram_eq_zero_of_finrank_lt`).
-
-## Main results
-
-* `Matrix.det_gram_eq_zero_of_finrank_lt`: `(gram 𝕜 v).det = 0` when
-  `Module.finrank 𝕜 E < Fintype.card n` and `Module.Finite 𝕜 E`.
 -/
 
 public section
+
+open scoped InnerProductSpace
+
+section Basis
+
+variable {𝕜 E ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The matrix of the inner product in a basis `b` is the Gram matrix of `b`. -/
+theorem Module.Basis.toMatrix₂_innerₛₗ [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] (b : Module.Basis ι 𝕜 E) :
+    LinearMap.toMatrix₂ b b (innerₛₗ 𝕜) = Matrix.gram 𝕜 b := by
+  ext k l
+  rw [LinearMap.toMatrix₂_apply, innerₛₗ_apply_apply, Matrix.gram_apply]
+
+/-- The matrix of the real inner product in a basis `b` is the Gram matrix of `b`. -/
+theorem LinearMap.BilinForm.toMatrix_innerₗ [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (b : Module.Basis ι ℝ E) : toMatrix b (innerₗ E) = Matrix.gram ℝ b :=
+  b.toMatrix₂_innerₛₗ
+
+end Basis
 
 namespace Matrix
 

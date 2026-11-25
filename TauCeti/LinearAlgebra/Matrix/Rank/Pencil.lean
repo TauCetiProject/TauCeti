@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 
 /-!
 # Rank bounds along a pencil
@@ -50,22 +51,21 @@ open Module Polynomial
 
 namespace Matrix
 
-variable {m n K : Type*} [Finite m] [Fintype n] [Field K]
+variable {m n K : Type*} [Finite m] [Finite n] [Field K]
 
 /-- **Rank bounds along a matrix pencil.** If `rank (A + t • B) ≤ p` for infinitely many scalars
 `t`, then it holds for every `t`: each `(p + 1) × (p + 1)` minor of `A + t • B` is a polynomial
 in `t` with infinitely many roots, hence zero. -/
 theorem rank_add_smul_le_of_infinite {A B : Matrix m n K} {p : ℕ}
     (h : {t : K | (A + t • B).rank ≤ p}.Infinite) (t : K) : (A + t • B).rank ≤ p := by
+  have := Fintype.ofFinite n
   rw [rank_le_iff_forall_det_submatrix_eq_zero]
   intro r c
   -- The minor at `(r, c)` as a polynomial in the parameter.
-  let P : K[X] := ((A.map C + (X : K[X]) • B.map C).submatrix r c).det
+  let P : K[X] := ((X : K[X]) • (B.submatrix r c).map C + (A.submatrix r c).map C).det
   have hP (s : K) : P.eval s = ((A + s • B).submatrix r c).det := by
-    rw [← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    simp [mul_comm s]
+    rw [eval_det_X_add_C, add_comm (s • _)]
+    simp [submatrix_add, submatrix_smul]
   have hP0 : P = 0 := eq_zero_of_infinite_isRoot P <| h.mono fun s hs ↦ by
     rw [Set.mem_ofPred_eq, IsRoot.def, hP]
     exact rank_le_iff_forall_det_submatrix_eq_zero.1 hs r c

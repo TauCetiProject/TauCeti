@@ -56,7 +56,8 @@ Since `ζ u` vanishes off `K` and `H ∩ K ⊆ Ω`, its extension by zero lies i
 (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`), with weak Hessian the extension by zero
 of `D²(ζ u)` (`TauCeti.Wkp.iteratedGradient_ae_eq_indicator_of_isClosed`). Its first-order part
 lies in `W^{1,p}_0(H)` (`TauCeti.W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact`, since `Ω` and
-`H` agree on `U ⊇ K`), and it vanishes off `K`, where the coefficients are close to `A₀`.
+`H` agree on `U ⊇ K`), and it vanishes off `K`, where the coefficients are close to `A₀`
+(`TauCeti.Wkp.exists_value_ae_eq_indicator_of_inter_eq_normalHalfSpace_inter`).
 The half-space estimate therefore bounds `‖D²(ζ u)‖` by `(C / λ)` times the `Lᵖ` norm of
 `ζ f + tr (A ∘ T)`, and `ζ D²u = D²(ζ u) - T`.
 
@@ -77,6 +78,35 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Extension by zero to the half-space near a flat boundary portion.** Let `Ω ∩ U = H ∩ U` for
+the half-space `H`, and let `w ∈ W^{2,p}(Ω)`, with first-order part in `W^{1,p}_0(Ω)`, vanish
+almost everywhere off a compact set `K ⊆ U`. Then some `W ∈ W^{2,p}(H)`, with first-order part in
+`W^{1,p}_0(H)`, has value `1_Ω w` and weak Hessian `1_Ω D²w` almost everywhere on `H`. -/
+theorem Wkp.exists_value_ae_eq_indicator_of_inter_eq_normalHalfSpace_inter {a : ℝ}
+    {Omega U : Opens (WithLp 2 (ℝ × E))}
+    (hΩU : (Omega : Set (WithLp 2 (ℝ × E))) ∩ U =
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ U)
+    {K : Set (WithLp 2 (ℝ × E))} (hK : IsCompact K) (hKU : K ⊆ U)
+    {w : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2}
+    (hw0 : Wkp.firstOrder 1 w ∈ w1p0Submodule volume Omega p)
+    (hwK : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), x ∉ K → Wkp.value 2 w x = 0) :
+    ∃ W : Wkp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p 2,
+      Wkp.firstOrder 1 W ∈ w1p0Submodule volume (normalHalfSpace a) p ∧
+      Wkp.value 2 W =ᵐ[volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))]
+        (Omega : Set (WithLp 2 (ℝ × E))).indicator (Wkp.value 2 w) ∧
+      Wkp.iteratedGradient 1 W
+          =ᵐ[volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))]
+        (Omega : Set (WithLp 2 (ℝ × E))).indicator (Wkp.iteratedGradient 1 w) := by
+  -- Inside `U`, which contains `K`, the domain `Ω` is the half-space `H`.
+  have hHK : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ K ⊆ Omega :=
+    fun x hx => ((hΩU.symm ▸ ⟨hx.1, hKU hx.2⟩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E))) ∩ U)).1
+  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_indicator_of_isClosed (V := normalHalfSpace a)
+    hK.isClosed hHK 2 w hwK
+  exact ⟨W, W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hΩU hK hKU hw0
+    (by simpa only [Wkp.value_firstOrder] using hwK)
+    (by simpa only [Wkp.value_firstOrder] using hW), hW,
+    Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW⟩
 
 /-- **The half-space estimate near a flat boundary portion.** Let `Ω ∩ U = H ∩ U` for the half-space
 `H`, and let `w ∈ W^{2,p}(Ω)`, with first-order part in `W^{1,p}_0(Ω)`, vanish off a compact set
@@ -115,13 +145,8 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     fun x hx => ((hΩU ▸ ⟨hx.1, hKU hx.2⟩ :
       x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ U)).1
   -- The extension `W` of `w` by zero to `H`, with weak Hessian the extension of `D²w`.
-  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_indicator_of_isClosed (V := normalHalfSpace a)
-    hK.isClosed hHK 2 w hwK
-  have hWD := Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW
-  have hW0 : Wkp.firstOrder 1 W ∈ w1p0Submodule volume (normalHalfSpace a) p := by
-    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hΩU hK hKU hw0 ?_ ?_
-    · simpa only [Wkp.value_firstOrder] using hwK
-    · simpa only [Wkp.value_firstOrder] using hW
+  obtain ⟨W, hW0, hW, hWD⟩ :=
+    Wkp.exists_value_ae_eq_indicator_of_inter_eq_normalHalfSpace_inter hΩU hK hKU hw0 hwK
   have hWK := Wkp.value_ae_eq_zero_of_value_ae_eq_indicator hwK hW
   -- The equation for `W` on `H`, with the extension by zero of `g` on the right.
   have hG : MemLp ((Omega : Set (WithLp 2 (ℝ × E))).indicator g) p
@@ -242,11 +267,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
   -- The first-order part of `ζ u` is the zero-boundary function `v`.
   have hw0 : Wkp.firstOrder 1 w ∈ w1p0Submodule volume Omega p := by
     obtain ⟨v, hv⟩ := hu0
-    have hfo : Wkp.firstOrder 1 w = (v : W1p volume Omega p) := by
-      refine W1p.ext_value (Lp.ext ?_)
-      rw [Wkp.value_firstOrder]
-      exact hwv.trans hv.symm
-    exact hfo ▸ v.2
+    exact Wkp.firstOrder_mem_w1p0Submodule_of_value_ae_eq v.property (hv.trans hwv.symm)
   -- The half-space estimate for `ζ u`, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ a hlam hA₀ hΩU hcpt.isCompact hζU hε hA w FL hw0 hwK hweq
   rw [hζD]

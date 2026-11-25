@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
@@ -33,12 +34,11 @@ conditions placed on `f`:
 
 From these conditions we derive the remaining normalizations of the profile on `[0, ∞)`: `f(0) = 0`
 and `f'(0) = 1`, `0 ≤ f' ≤ 1`, `f'' ≤ 0`, monotonicity, positivity away from the tip, the upper
-bound `f ≤ √2`, the secant bounds `0 < f(r) / r ≤ 1`, and the round-tip curvature identities
-`-f''(r) / f(r) = 1 / 4` and `(1 - f'(r)²) / f(r)² = 1 / 4` for `0 < |r| < r₀`. The radial and
-tangential sectional curvatures of `dr² + f(r)² g_(S²)` are `-f'' / f` and `(1 - f'²) / f²`, which
-these inequalities make nonnegative; this is the source of the nonnegative curvature of the
-standard cap. Finally, the class of standard cap profiles is nonempty
-(`TauCeti.exists_isStandardCapProfile`), so the standard cap can be chosen.
+bound `f ≤ √2`, and the secant bounds `0 < f(r) / r ≤ 1`. The radial and tangential sectional
+curvatures of `dr² + f(r)² g_(S²)` are `-f'' / f` and `(1 - f'²) / f²`, which these inequalities
+make nonnegative; this is the source of the nonnegative curvature of the standard cap. Finally, the
+class of standard cap profiles is nonempty (`TauCeti.exists_isStandardCapProfile`), so the
+standard cap can be chosen.
 
 ## Main definitions
 
@@ -47,20 +47,22 @@ standard cap. Finally, the class of standard cap profiles is nonempty
 ## Main results
 
 * `TauCeti.IsStandardCapProfile.eventuallyEq_two_mul_sin`: near the tip, on both sides, the profile
-  is `2 sin (r / 2)`.
-* `TauCeti.IsStandardCapProfile.exists_neg_deriv_deriv_div_eq_and_one_sub_deriv_sq_div_sq_eq`: near
-  the punctured tip (`0 < |r| < r₀`), both `-f''(r) / f(r)` and `(1 - f'(r)²) / f(r)²` equal
-  `1 / 4`.
+  is `2 sin (r / 2)`; `TauCeti.IsStandardCapProfile.deriv_eventuallyEq_cos` and
+  `TauCeti.IsStandardCapProfile.deriv_deriv_eventuallyEq_neg_sin_div_two` give its first two
+  derivatives there.
 * `TauCeti.IsStandardCapProfile.apply_zero`, `TauCeti.IsStandardCapProfile.deriv_zero`: `f(0) = 0`
   and `f'(0) = 1`.
 * `TauCeti.IsStandardCapProfile.deriv_nonneg`, `TauCeti.IsStandardCapProfile.deriv_le_one`,
   `TauCeti.IsStandardCapProfile.deriv_deriv_nonpos`: `0 ≤ f' ≤ 1` and `f'' ≤ 0` on `[0, ∞)`.
 * `TauCeti.IsStandardCapProfile.apply_pos`, `TauCeti.IsStandardCapProfile.apply_le_sqrt_two`:
   `0 < f(r) ≤ √2` for `r > 0`.
-* `TauCeti.IsStandardCapProfile.apply_le_self`,
+* `TauCeti.IsStandardCapProfile.dslope_zero_pos`,
+  `TauCeti.IsStandardCapProfile.dslope_zero_le_one`,
+  `TauCeti.IsStandardCapProfile.apply_le_self`,
   `TauCeti.IsStandardCapProfile.antitoneOn_div_self`,
   `TauCeti.IsStandardCapProfile.div_self_pos`, `TauCeti.IsStandardCapProfile.div_self_le_one`:
-  secant bounds `0 < f(r) / r ≤ 1` and antitonicity of `r ↦ f(r) / r` on `(0, ∞)`.
+  positivity and unit upper bound of `dslope f 0`, secant bounds `0 < f(r) / r ≤ 1`, and
+  antitonicity of `r ↦ f(r) / r` on `(0, ∞)`.
 * `TauCeti.exists_isStandardCapProfile`: standard cap profiles exist.
 
 ## Implementation notes
@@ -114,34 +116,39 @@ include hf
 theorem differentiable : Differentiable ℝ f :=
   hf.contDiff.differentiable (by simp)
 
-/-- Near the tip, on `(-r₀, r₀)`, a standard cap profile and its first two derivatives agree with
-`2 sin (r / 2)`, `cos (r / 2)`, and `-sin (r / 2) / 2`. -/
-theorem exists_eq_two_mul_sin_and_deriv :
-    ∃ r₀ > 0, ∀ r, |r| < r₀ →
-      f r = 2 * sin (r / 2) ∧ deriv f r = cos (r / 2) ∧
-        deriv (deriv f) r = -sin (r / 2) / 2 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
-  have hIoo : ∀ s ∈ Ioo (-r₀) r₀, f s = 2 * sin (s / 2) := fun s hs ↦ by
-    rcases le_or_gt 0 s with h0 | h0
-    · exact h s ⟨h0, hs.2⟩
-    · have hodd := hf.odd (-s)
-      rw [neg_neg] at hodd
-      rw [hodd, h (-s) ⟨by linarith, by linarith [hs.1]⟩, neg_div, sin_neg]
-      ring
-  refine ⟨r₀, hr₀, fun r hr ↦ ?_⟩
-  have hmem : r ∈ Ioo (-r₀) r₀ := abs_lt.1 hr
-  have heq : f =ᶠ[𝓝 r] fun s ↦ 2 * sin (s / 2) :=
-    eventuallyEq_iff_exists_mem.2 ⟨Ioo (-r₀) r₀, isOpen_Ioo.mem_nhds hmem, hIoo⟩
-  have hd : deriv f =ᶠ[𝓝 r] fun s ↦ cos (s / 2) := by
-    filter_upwards [heq.deriv] with s hs
-    rw [hs, (((hasDerivAt_id' s).div_const 2).sin.const_mul 2).deriv]; ring
-  refine ⟨hIoo r hmem, hd.eq_of_nhds, ?_⟩
-  rw [hd.deriv_eq, (((hasDerivAt_id' r).div_const 2).cos).deriv]; ring
-
 /-- Near the tip, on both sides, a standard cap profile is `2 sin (r / 2)`. -/
 theorem eventuallyEq_two_mul_sin : f =ᶠ[𝓝 0] fun r ↦ 2 * sin (r / 2) := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
-  filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hr₀) hr₀] with r hr using (h r (abs_lt.2 hr)).1
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hr₀) hr₀] with r hr
+  rcases le_or_gt 0 r with h0 | h0
+  · exact h r ⟨h0, hr.2⟩
+  · have hodd := hf.odd (-r)
+    rw [neg_neg] at hodd
+    rw [hodd, h (-r) ⟨by linarith, by linarith [hr.1]⟩, neg_div, sin_neg]
+    ring
+
+/-- Near the tip, on both sides, the derivative of a standard cap profile is `cos (r / 2)`. -/
+theorem deriv_eventuallyEq_cos : deriv f =ᶠ[𝓝 0] fun r ↦ cos (r / 2) := by
+  filter_upwards [hf.eventuallyEq_two_mul_sin.eventuallyEq_nhds] with r hr
+  rw [hr.deriv_eq, (((hasDerivAt_id' r).div_const 2).sin.const_mul 2).deriv]
+  ring
+
+/-- Near the tip, on both sides, the second derivative of a standard cap profile is
+`-sin (r / 2) / 2`. -/
+theorem deriv_deriv_eventuallyEq_neg_sin_div_two :
+    deriv (deriv f) =ᶠ[𝓝 0] fun r ↦ -(sin (r / 2) / 2) := by
+  filter_upwards [hf.deriv_eventuallyEq_cos.eventuallyEq_nhds] with r hr
+  rw [hr.deriv_eq, ((hasDerivAt_id' r).div_const 2).cos.deriv]
+  ring
+
+/-- On a common interval `[0, r₀)` at the tip, a standard cap profile is `2 sin (r / 2)`, its
+derivative is `cos (r / 2)` and its second derivative is `-sin (r / 2) / 2`. -/
+theorem exists_eq_two_mul_sin_and_deriv_eq_cos_and_deriv_deriv_eq_neg_sin_div_two :
+    ∃ r₀ > 0, ∀ r ∈ Ico 0 r₀, f r = 2 * sin (r / 2) ∧ deriv f r = cos (r / 2) ∧
+      deriv (deriv f) r = -(sin (r / 2) / 2) := by
+  obtain ⟨r₀, hr₀, h⟩ := Metric.eventually_nhds_iff.1 (hf.eventuallyEq_two_mul_sin.and
+    (hf.deriv_eventuallyEq_cos.and hf.deriv_deriv_eventuallyEq_neg_sin_div_two))
+  exact ⟨r₀, hr₀, fun r hr ↦ h (by rw [Real.dist_0_eq_abs, abs_of_nonneg hr.1]; exact hr.2)⟩
 
 /-- A standard cap profile vanishes at the tip. -/
 theorem apply_zero : f 0 = 0 := by
@@ -150,8 +157,7 @@ theorem apply_zero : f 0 = 0 := by
 /-- A standard cap profile has unit slope at the tip. -/
 @[simp]
 theorem deriv_zero : deriv f 0 = 1 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
-  simpa using (h 0 (by simpa using hr₀)).2.1
+  simpa using hf.deriv_eventuallyEq_cos.eq_of_nhds
 
 /-- The derivative of a standard cap profile is antitone on `[0, ∞)`. -/
 theorem antitoneOn_deriv : AntitoneOn (deriv f) (Ici 0) :=
@@ -250,22 +256,30 @@ theorem sq_div_self_le_one (r : ℝ) : (f r / r) ^ 2 ≤ 1 := by
   · simp
   · nlinarith [hf.div_self_pos hr, hf.div_self_le_one r]
 
-/-- Near the punctured tip (`0 < |r| < r₀`), both `-f''(r) / f(r)` and `(1 - f'(r)²) / f(r)²`
-equal `1 / 4`, the sectional curvature of the round sphere of radius `2`. -/
-theorem exists_neg_deriv_deriv_div_eq_and_one_sub_deriv_sq_div_sq_eq :
-    ∃ r₀ > 0, ∀ r, r ≠ 0 → |r| < r₀ →
-      -deriv (deriv f) r / f r = 1 / 4 ∧ (1 - deriv f r ^ 2) / f r ^ 2 = 1 / 4 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
-  refine ⟨r₀, hr₀, fun r hr0 hr ↦ ?_⟩
-  obtain ⟨hf0, hd, hdd⟩ := h r hr
-  have hpos : f r ≠ 0 := fun h0 ↦ by
-    rcases lt_or_gt_of_ne hr0 with hlt | hgt
-    · exact (hf.apply_pos (neg_pos.2 hlt)).ne' (by rw [hf.odd, h0, neg_zero])
-    · exact (hf.apply_pos hgt).ne' h0
-  have hsin : sin (r / 2) ≠ 0 := fun hs ↦ hpos (by rw [hf0, hs, mul_zero])
-  refine ⟨?_, ?_⟩
-  · rw [hf0, hdd]; field_simp; ring
-  · rw [hf0, hd, ← sin_sq]; field_simp; ring
+/-- Away from the tip, the difference quotient `dslope f 0 r` of a standard cap profile is
+`f(r) / r`. -/
+theorem dslope_zero_of_ne_zero {r : ℝ} (hr : r ≠ 0) : dslope f 0 r = f r / r := by
+  rw [dslope_of_ne _ hr, slope_def_field, hf.apply_zero, sub_zero, sub_zero]
+
+/-- The ratio `f(r) / r`, read as `f'(0) = 1` at the tip, is positive everywhere on `ℝ`. -/
+theorem dslope_zero_pos (r : ℝ) : 0 < dslope f 0 r := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · rw [dslope_same, hf.deriv_zero]
+    exact one_pos
+  · rw [hf.dslope_zero_of_ne_zero hr]
+    exact hf.div_self_pos hr
+
+/-- The difference quotient `dslope f 0 r` (equal to `f(r) / r` away from `0` and `1` at `0`) is at
+most one everywhere on `ℝ`. -/
+theorem dslope_zero_le_one (r : ℝ) : dslope f 0 r ≤ 1 := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp [dslope_same, hf.deriv_zero]
+  · rw [hf.dslope_zero_of_ne_zero hr]
+    exact hf.div_self_le_one r
+
+/-- The squared difference quotient `(dslope f 0 r)²` is at most one everywhere on `ℝ`. -/
+theorem sq_dslope_zero_le_one (r : ℝ) : dslope f 0 r ^ 2 ≤ 1 := by
+  nlinarith [hf.dslope_zero_pos r, hf.dslope_zero_le_one r]
 
 end IsStandardCapProfile
 

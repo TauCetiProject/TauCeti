@@ -60,7 +60,7 @@ theorem contMDiffAt_subtype_iff_contDiffAt {U : TopologicalSpace.Opens E} {f : E
 theorem contMDiff_subtype_iff_contDiffOn {U : TopologicalSpace.Opens E} {f : E → F} :
     ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n (fun y : U ↦ f y) ↔ ContDiffOn 𝕜 n f U :=
   ⟨fun h x hx ↦ (contMDiffAt_subtype_iff_contDiffAt.1 (h ⟨x, hx⟩)).contDiffWithinAt,
-   fun h x ↦ contMDiffAt_subtype_iff_contDiffAt.2 (h.contDiffAt (U.isOpen.mem_nhds x.2))⟩
+   fun h x ↦ contMDiffAt_subtype_iff_contDiffAt.2 (h.contDiffAt (U.isOpen.mem_nhds x.property))⟩
 
 end Opens
 

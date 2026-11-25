@@ -6,302 +6,469 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
-public import TauCeti.Geometry.RicciFlow.StandardCap.SectionalCurvature
-import Mathlib.Analysis.Analytic.ChangeOrigin
+public import TauCeti.Geometry.RicciFlow.StandardCap.PuncturedMetric
 import Mathlib.Analysis.Calculus.DSlope
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosSqrt
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Coercive
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
-import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
-import TauCeti.Geometry.Manifold.Riemannian.Restriction.Real
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Topology.EMetricSpace.LocalComparison
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 
 /-!
-# The complete smooth standard cap metric
+# The standard cap metric
 
-Let `f : ℝ → ℝ` be a standard cap profile (`TauCeti.IsStandardCapProfile f`) and `V` a real inner
-product space. Decomposing `v ∈ V` away from `0` into radial and spherical parts rewrites the
-warped-product metric `dr² + f(r)² g_(Sⁿ)` (`r = ‖x‖`) in global Cartesian form
+A standard cap profile `f` gives the standard cap metric `dr² + f(r)² g_(Sⁿ)` on a real inner
+product space `V` of dimension `n + 1`; for `V = ℝ³` this is Perelman's standard initial metric,
+which Ricci flow with surgery glues in along the necks it cuts. In Cartesian coordinates the metric
+at `x` pairs tangent vectors `v`, `w` to
 
-`g_x(v, w) = (f ‖x‖ / ‖x‖)² ⟪v, w⟫ + ((1 - (f ‖x‖ / ‖x‖)²) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`,
+`a(x) ⟪v, w⟫ + ((1 - a(x)) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`,  with  `a(x) = (f(‖x‖) / ‖x‖)²`,
 
-extended to `⟪v, w⟫` at `x = 0`. Because `f(r) = 2 sin (r / 2)` near `0`, both coefficients are
-smooth functions of `‖x‖²` (`Real.evenSincSq`), so `g` extends smoothly across `0 ∈ V`, is
-invariant under `LinearIsometryEquiv` (`O(V)`), and satisfies:
+so that the radial direction has unit length and the spheres about the tip are scaled by
+`f(r) / r`. At the tip `a = f'(0)² = 1` and the metric is Euclidean.
 
-* `g_x(v, v) ≤ ‖v‖²`, `(f B / B)² ‖v‖² ≤ g_x(v, v)` on `{‖x‖ ≤ B}`, and
-  `⟪x, v⟫² / ‖x‖² ≤ g_x(v, v)` everywhere on `V`;
-* polar coordinates (`TauCeti.radialSphereDiffeomorph`) define a Riemannian isometry from
-  `hf.puncturedMetric V` onto the restriction of `hf.metric V` to `V ∖ {0}`;
-* for finite-dimensional `V`, `WithMetric (hf.metric V)` has radial distance from `0` equal to
-  `edist x 0`, is metrically and geodesically complete, and has nonnegative sectional and scalar
-  curvature everywhere, constant sectional curvature `1 / 4` and scalar curvature `d (d - 1) / 4`
-  near `0`, and scalar curvature `(d - 1) (d - 2) / 2` on the cylindrical end (`3 / 2` and `1`
-  when `d = 3`).
+The norm `‖x‖` is not differentiable at the tip, and the two coefficients `a` and
+`(1 - a) / ‖x‖²` are smooth there because, near the tip, `f` is the odd profile `2 sin (r / 2)` of
+a round sphere: then `a = 2 (1 - cos ‖x‖) / ‖x‖²` and
+`(1 - a) / ‖x‖² = (‖x‖² - 2 (1 - cos ‖x‖)) / ‖x‖⁴` are analytic functions of `‖x‖²`, namely
+difference quotients at `0` of the entire function `TauCeti.cosSqrt` with
+`cosSqrt (r²) = cos r`.
 
-## Main definitions and results
+Every linear isometry equivalence `V ≃ₗᵢ[ℝ] W` preserves the standard cap metric, giving orthogonal
+(`O(V)`) invariance by Riemannian isometries. Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ`
+pull the standard cap metric back to `TauCeti.IsStandardCapProfile.puncturedMetric` and restrict to
+a global Riemannian isometry onto `V ∖ {0}`
+(`TauCeti.IsStandardCapProfile.polarRiemannianIsometry`). Since curvature is natural under local
+isometries, its scalar curvature transfers to the standard cap away from the tip, and by continuity
+also at the tip: the scalar curvature is nonnegative, equal to that of the round sphere of radius
+`2` near the tip and to that of the round cylinder `ℝ × Sⁿ(√2)` on the end (`3 / 2` and `1` when
+`dim V = 3`).
 
-* `TauCeti.IsStandardCapProfile.metric`,
-  `TauCeti.IsStandardCapProfile.metric_inner_linearIsometryEquiv`,
-  `TauCeti.IsStandardCapProfile.metric_pullback_linearIsometryEquiv`,
-  `TauCeti.IsStandardCapProfile.linearIsometryEquivRiemannianIsometry`.
-* `TauCeti.IsStandardCapProfile.polarRiemannianIsometry`,
-  `TauCeti.IsStandardCapProfile.isLocalRiemannianIsometry_toWithMetric_polar`.
-* `TauCeti.IsStandardCapProfile.riemannianEDist_toWithMetric_zero`,
-  `TauCeti.IsStandardCapProfile.norm_ofWithMetric_le_of_riemannianEDist_le`,
-  `TauCeti.IsStandardCapProfile.completeSpace_withMetric`,
-  `TauCeti.IsStandardCapProfile.isGeodesicallyCompleteAt_withMetric`.
-* `TauCeti.IsStandardCapProfile.sectionalCurvature_withMetric_nonneg`,
-  `TauCeti.IsStandardCapProfile.exists_hasSectionalCurvatureAt_withMetric_round`,
-  `TauCeti.IsStandardCapProfile.scalarCurvature_metric_of_ne_zero`,
+## Main definitions
+
+* `TauCeti.standardCapPolar`: polar coordinates `(r, u) ↦ r u` from `(0, ∞) × Sⁿ` to `V`.
+* `TauCeti.IsStandardCapProfile.metric`: the standard cap metric on `V`, a smooth Riemannian
+  metric also at the tip.
+* `TauCeti.IsStandardCapProfile.linearIsometryEquivRiemannianIsometry`: the Riemannian isometry
+  between `WithMetric (hf.metric V)` and `WithMetric (hf.metric W)` induced by `V ≃ₗᵢ[ℝ] W`.
+* `TauCeti.IsStandardCapProfile.polarRiemannianIsometry`: polar coordinates as a Riemannian isometry
+  from `hf.puncturedMetric V` onto `(hf.metric V).restrictOpenTangentSpace (puncturedSpace V)`.
+
+## Main results
+
+* `TauCeti.IsStandardCapProfile.metric_inner`, `TauCeti.IsStandardCapProfile.metric_inner_zero`,
+  `TauCeti.IsStandardCapProfile.metric_inner_of_ne_zero`: the standard cap metric in Cartesian
+  coordinates, its Euclidean value at the tip, and its quotient expression away from the tip.
+* `TauCeti.IsStandardCapProfile.metric_inner_smul_self`,
+  `TauCeti.IsStandardCapProfile.sq_inner_le_sq_norm_mul_metric_inner`,
+  `TauCeti.IsStandardCapProfile.metric_inner_self_le`,
+  `TauCeti.IsStandardCapProfile.le_metric_inner_self_of_norm_le`: unit radial length, radial
+  Cauchy–Schwarz bound, global Euclidean upper bound, and closed-ball coercivity lower bound.
+* `TauCeti.IsStandardCapProfile.metric_inner_linearIsometryEquiv`,
+  `TauCeti.IsStandardCapProfile.metric_pullback_linearIsometryEquiv`: invariance under linear
+  isometry equivalences.
+* `TauCeti.IsStandardCapProfile.pullback_metric_standardCapPolar`,
+  `TauCeti.IsStandardCapProfile.puncturedMetric_eq_pullback`,
+  `TauCeti.IsStandardCapProfile.isLocalRiemannianIsometry_toWithMetric_polar`: polar-coordinate
+  pullback and local Riemannian isometry into `WithMetric (hf.metric V)`.
+* `TauCeti.IsStandardCapProfile.scalarCurvature_metric_of_ne_zero`,
   `TauCeti.IsStandardCapProfile.scalarCurvature_metric_nonneg`,
   `TauCeti.IsStandardCapProfile.exists_scalarCurvature_metric_eq_round`,
-  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_metric_eq_cylinder`.
+  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_metric_eq_cylinder`: scalar curvature away
+  from the tip, global nonnegativity, and constant values near the tip and on the cylindrical end.
 
 ## References
 
-* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Clay Math. Monogr. 3 (2007),
-  Definition 12.1; G. Perelman, arXiv:math/0303109 (2003), §2; P. Petersen, *Riemannian Geometry*,
-  3rd ed. (2016), §1.4.4.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Clay Mathematics
+  Monographs 3 (2007), Definition 12.1.
+* G. Perelman, *Ricci flow with surgery on three-manifolds*, arXiv:math/0303109 (2003), §2.
 -/
 
 public noncomputable section
 
-open Bundle CovariantDerivative Filter Manifold Metric Module Real Set TopologicalSpace
-open scoped ContDiff ENNReal InnerProductSpace Manifold Matrix NNReal Topology
+open Bundle Set Real Filter Topology
+open scoped ContDiff Manifold InnerProductSpace
 
 namespace TauCeti
 
-section BilinForm
-
-open Classical in
-private def standardCapAngularCoeff (f : ℝ → ℝ) (s : ℝ) : ℝ :=
-  if s ≤ 0 then Real.evenSincSq (4⁻¹ * s) else (f √s / √s) ^ 2
-
-private def standardCapRadialCoeff (f : ℝ → ℝ) : ℝ → ℝ :=
-  dslope (fun s : ℝ ↦ 1 - standardCapAngularCoeff f s) 0
-
-@[simp]
-private theorem standardCapAngularCoeff_zero (f : ℝ → ℝ) : standardCapAngularCoeff f 0 = 1 := by
-  simp [standardCapAngularCoeff]
-
-private theorem standardCapAngularCoeff_sq_of_pos (f : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
-    standardCapAngularCoeff f (r ^ 2) = (f r / r) ^ 2 := by
-  simp [standardCapAngularCoeff, not_le.2 (sq_pos_of_pos hr), sqrt_sq hr.le]
-
-private theorem standardCapRadialCoeff_sq_of_pos (f : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
-    standardCapRadialCoeff f (r ^ 2) = (1 - (f r / r) ^ 2) / r ^ 2 := by
-  simp [standardCapRadialCoeff, dslope_of_ne _ (sq_pos_of_pos hr).ne', slope_def_field,
-    standardCapAngularCoeff_sq_of_pos f hr]
-
-private theorem standardCapAngularCoeff_eq_evenSincSq_of_lt {f : ℝ → ℝ} {r₀ : ℝ} (hr₀ : 0 < r₀)
-    (hsin : ∀ r ∈ Ico 0 r₀, f r = 2 * sin (r / 2)) {t : ℝ} (ht : t < r₀ ^ 2) :
-    standardCapAngularCoeff f t = Real.evenSincSq (4⁻¹ * t) := by
-  rcases le_or_gt t 0 with ht0 | ht0
-  · simp [standardCapAngularCoeff, ht0]
-  · have hsqrt : √t < r₀ := (sqrt_lt_sqrt ht0.le ht).trans_eq (sqrt_sq hr₀.le)
-    have h4 : 4⁻¹ * t = (√t / 2) ^ 2 := by rw [div_pow, sq_sqrt ht0.le]; ring
-    simp only [standardCapAngularCoeff, not_le.2 ht0, ↓reduceIte]
-    rw [hsin √t ⟨sqrt_nonneg t, hsqrt⟩, h4, Real.evenSincSq_sq,
-      Real.sinc_of_ne_zero (div_ne_zero (sqrt_ne_zero'.2 ht0) two_ne_zero)]; ring
-
-private theorem contDiff_standardCapAngularCoeff {f : ℝ → ℝ} (hf : IsStandardCapProfile f) :
-    ContDiff ℝ ∞ (standardCapAngularCoeff f) := by
-  rw [contDiff_iff_contDiffAt]
-  obtain ⟨r₀, hr₀, hsin⟩ := hf.exists_eq_two_mul_sin
-  intro s
-  rcases lt_or_ge s (r₀ ^ 2) with hs | hs
-  · have ha : AnalyticOnNhd ℝ (fun t : ℝ ↦ Real.evenSincSq (4⁻¹ * t)) univ :=
-      Real.analyticOnNhd_evenSincSq.comp (analyticOnNhd_const.mul analyticOnNhd_id)
-        (mapsTo_univ _ _)
-    refine (ha s trivial).contDiffAt.congr_of_eventuallyEq ?_
-    filter_upwards [Iio_mem_nhds hs] with t ht
-    exact standardCapAngularCoeff_eq_evenSincSq_of_lt hr₀ hsin ht
-  · have hs0 : 0 < s := (sq_pos_of_pos hr₀).trans_le hs
-    have hev : standardCapAngularCoeff f =ᶠ[𝓝 s] fun t ↦ (f √t / √t) ^ 2 := by
-      filter_upwards [Ioi_mem_nhds hs0] with t ht
-      simp [standardCapAngularCoeff, not_le.2 ht]
-    have hsq : ContDiffAt ℝ ∞ (√·) s := contDiffAt_sqrt hs0.ne'
-    exact (((hf.contDiff.contDiffAt.comp s hsq).div hsq (sqrt_ne_zero'.2 hs0)).pow
-      2).congr_of_eventuallyEq hev
-
-private theorem contDiff_standardCapRadialCoeff {f : ℝ → ℝ} (hf : IsStandardCapProfile f) :
-    ContDiff ℝ ∞ (standardCapRadialCoeff f) := by
-  rw [contDiff_iff_contDiffAt]
-  obtain ⟨r₀, hr₀, hsin⟩ := hf.exists_eq_two_mul_sin
-  intro s
-  rcases lt_or_ge s (r₀ ^ 2) with hs | hs
-  · have ha : AnalyticOnNhd ℝ (dslope (fun t : ℝ ↦ 1 - Real.evenSincSq (4⁻¹ * t)) 0) univ :=
-      (analyticOnNhd_const.sub (Real.analyticOnNhd_evenSincSq.comp
-        (analyticOnNhd_const.mul analyticOnNhd_id) (mapsTo_univ _ _))).dslope 0
-    refine (ha s trivial).contDiffAt.congr_of_eventuallyEq ?_
-    filter_upwards [Iio_mem_nhds hs] with t ht
-    rcases eq_or_ne t 0 with rfl | ht0
-    · simp only [standardCapRadialCoeff, dslope_same]
-      refine Filter.EventuallyEq.deriv_eq ?_
-      filter_upwards [Iio_mem_nhds (sq_pos_of_pos hr₀)] with u hu
-      rw [standardCapAngularCoeff_eq_evenSincSq_of_lt hr₀ hsin hu]
-    · simp [standardCapRadialCoeff, dslope_of_ne _ ht0, slope_def_field,
-        standardCapAngularCoeff_eq_evenSincSq_of_lt hr₀ hsin ht]
-  · have hs0 : 0 < s := (sq_pos_of_pos hr₀).trans_le hs
-    have hev : standardCapRadialCoeff f =ᶠ[𝓝 s] fun t ↦ (1 - standardCapAngularCoeff f t) / t := by
-      filter_upwards [Ioi_mem_nhds hs0] with t ht
-      simp [standardCapRadialCoeff, dslope_of_ne _ ht.ne', slope_def_field]
-    exact (((contDiffAt_const.sub (contDiff_standardCapAngularCoeff hf).contDiffAt).div
-      contDiffAt_id hs0.ne')).congr_of_eventuallyEq hev
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-private def capBilinForm (f : ℝ → ℝ) (x : V) : V →L[ℝ] V →L[ℝ] ℝ :=
-  let g₀ : V →L[ℝ] V →L[ℝ] ℝ := innerSL ℝ
-  standardCapAngularCoeff f (‖x‖ ^ 2) • g₀ +
-    standardCapRadialCoeff f (‖x‖ ^ 2) • (innerSL ℝ x).smulRight (innerSL ℝ x)
+/-! ### Polar coordinates on `(0, ∞) × Sⁿ` -/
 
-private theorem capBilinForm_apply (f : ℝ → ℝ) (x v w : V) :
-    capBilinForm f x v w = standardCapAngularCoeff f (‖x‖ ^ 2) * ⟪v, w⟫_ℝ +
-      standardCapRadialCoeff f (‖x‖ ^ 2) * (⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ) := by
-  have hg₀ : (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) v w = ⟪v, w⟫_ℝ := innerSL_apply_apply ℝ v w
-  simp [capBilinForm, hg₀, mul_comm ⟪x, v⟫_ℝ ⟪x, w⟫_ℝ]
+section Polar
 
-private theorem contDiff_capBilinForm {f : ℝ → ℝ} (hf : IsStandardCapProfile f) :
-    ContDiff ℝ ∞ (capBilinForm f : V → V →L[ℝ] V →L[ℝ] ℝ) := by
-  let _ : NormedAddCommGroup (V →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (V →L[ℝ] ℝ) := inferInstance
-  let _ : NormedAddCommGroup (V →L[ℝ] V →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (V →L[ℝ] V →L[ℝ] ℝ) := inferInstance
-  let g₀ : V →L[ℝ] V →L[ℝ] ℝ := innerSL ℝ
-  have hnsq : ContDiff ℝ ∞ (fun x : V ↦ ‖x‖ ^ 2) := contDiff_norm_sq ℝ
-  have hinner : ContDiff ℝ ∞ (innerSL ℝ : V → V →L[ℝ] ℝ) := (innerSL ℝ (E := V)).contDiff
-  exact (((contDiff_standardCapAngularCoeff hf).comp hnsq).smul (contDiff_const (c := g₀))).add
-    (((contDiff_standardCapRadialCoeff hf).comp hnsq).smul (hinner.smulRight hinner))
+open Metric (sphere)
+open TauCeti.Manifold
 
-private theorem capBilinForm_symm (f : ℝ → ℝ) (x v w : V) :
-    capBilinForm f x v w = capBilinForm f x w v := by
-  rw [capBilinForm_apply, capBilinForm_apply, real_inner_comm w v, mul_comm ⟪x, w⟫_ℝ ⟪x, v⟫_ℝ]
+variable (V) in
+/-- Polar coordinates `(r, u) ↦ r u` from `(0, ∞) × Sⁿ` to `V`, the coordinates in which the
+standard cap metric is `dr² + f(r)² g_(Sⁿ)`. -/
+def standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1) : V :=
+  (p.1 : ℝ) • (p.2 : V)
 
-private theorem capBilinForm_self_of_ne_zero (f : ℝ → ℝ) {x : V} (hx : x ≠ 0) (v : V) :
-    capBilinForm f x v v =
-      (f ‖x‖ / ‖x‖) ^ 2 * (‖v‖ ^ 2 - ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2) + ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2 := by
-  have hpos := norm_pos_iff.2 hx
-  rw [capBilinForm_apply, standardCapAngularCoeff_sq_of_pos f hpos,
-    standardCapRadialCoeff_sq_of_pos f hpos, real_inner_self_eq_norm_sq]
-  field_simp [pow_ne_zero 2 hpos.ne']; ring
+@[simp]
+theorem standardCapPolar_apply (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    standardCapPolar V p = (p.1 : ℝ) • (p.2 : V) :=
+  (rfl)
 
-private theorem sq_inner_div_le_capBilinForm_self (f : ℝ → ℝ) (x v : V) :
-    ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2 ≤ capBilinForm f x v v := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [capBilinForm_apply]
-  · have hcs : ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2 ≤ ‖v‖ ^ 2 :=
-      div_le_of_le_mul₀ (sq_nonneg ‖x‖) (sq_nonneg ‖v‖)
-        (by simpa only [sq_abs, mul_pow, mul_comm (‖x‖ ^ 2)] using
-          pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm x v) 2)
-    rw [capBilinForm_self_of_ne_zero f hx v]
-    exact le_add_of_nonneg_left (mul_nonneg (sq_nonneg _) (sub_nonneg.2 hcs))
+theorem standardCapPolar_def :
+    standardCapPolar V =
+      fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ) • (q.2 : V) :=
+  (rfl)
 
-private theorem capBilinForm_self_le {f : ℝ → ℝ} (hf : IsStandardCapProfile f) (x v : V) :
-    capBilinForm f x v v ≤ ‖v‖ ^ 2 := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [capBilinForm_apply]
-  · have hid := sq_inner_div_le_capBilinForm_self id x v
-    rw [capBilinForm_self_of_ne_zero id hx v, id_eq, div_self (norm_ne_zero_iff.2 hx)] at hid
-    rw [capBilinForm_self_of_ne_zero f hx v]
-    nlinarith [hf.sq_div_self_le_one ‖x‖]
+/-- The point `r u` in polar coordinates has norm `r`. -/
+theorem norm_standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    ‖standardCapPolar V p‖ = p.1 := by
+  rw [standardCapPolar_apply, norm_smul, norm_eq_of_mem_sphere p.2, mul_one,
+    Real.norm_of_nonneg p.1.property.le]
 
-private theorem sq_div_self_mul_le_capBilinForm_self {f : ℝ → ℝ} (hf : IsStandardCapProfile f)
-    {x : V} (hx : x ≠ 0) (v : V) :
-    (f ‖x‖ / ‖x‖) ^ 2 * ‖v‖ ^ 2 ≤ capBilinForm f x v v := by
-  have hrad : 0 ≤ ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2 := by positivity
-  rw [capBilinForm_self_of_ne_zero f hx v]
-  nlinarith [hf.sq_div_self_le_one ‖x‖]
+/-- Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ` cover every point of `V` except the
+origin: `x ≠ 0` is `r u` for `r = ‖x‖` and `u = x / ‖x‖`. -/
+theorem range_standardCapPolar : range (standardCapPolar V) = {0}ᶜ := by
+  ext x
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨p, rfl⟩
+    exact norm_ne_zero_iff.1 ((norm_standardCapPolar p).trans_ne p.1.property.ne')
+  have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
+  refine ⟨(⟨‖x‖, hr⟩, ⟨‖x‖⁻¹ • x, ?_⟩), ?_⟩
+  · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hr.ne']
+  · simp [smul_smul, mul_inv_cancel₀ hr.ne']
 
-private theorem isCoercive_capBilinForm {f : ℝ → ℝ} (hf : IsStandardCapProfile f) (x : V) :
-    IsCoercive (capBilinForm f x) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · exact ⟨1, one_pos, fun v ↦ by simp [capBilinForm_apply, sq]⟩
-  · refine ⟨(f ‖x‖ / ‖x‖) ^ 2, sq_pos_of_pos (hf.div_self_pos (norm_ne_zero_iff.2 hx)), fun v ↦ ?_⟩
-    simpa only [sq, mul_assoc] using sq_div_self_mul_le_capBilinForm_self hf hx v
+variable {n : ℕ} [Fact (Module.finrank ℝ V = n + 1)]
 
-private theorem le_capBilinForm_self_of_norm_le {f : ℝ → ℝ} (hf : IsStandardCapProfile f)
-    {B : ℝ} {x : V} (hx : ‖x‖ ≤ B) (v : V) :
-    (f B / B) ^ 2 * ‖v‖ ^ 2 ≤ capBilinForm f x v v := by
-  rcases eq_or_lt_of_le ((norm_nonneg x).trans hx) with rfl | hB
-  · obtain rfl := norm_le_zero_iff.1 hx; simp [capBilinForm_apply]
-  · rcases eq_or_ne x 0 with rfl | hx0
-    · simp [capBilinForm_apply]
-      nlinarith [hf.sq_div_self_le_one B, sq_nonneg ‖v‖]
-    · have hanti := hf.antitoneOn_div_self (mem_Ioi.2 (norm_pos_iff.2 hx0)) (mem_Ioi.2 hB) hx
-      exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (hf.div_self_pos hB.ne').le hanti 2)
-        (sq_nonneg ‖v‖)).trans (sq_div_self_mul_le_capBilinForm_self hf hx0 v)
+/-- The differential of polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ`: a tangent vector
+`(ρ, ξ)` at `(r, u)` is sent to `r ξ + ρ u`, where `ξ` is read in `V`. -/
+theorem mvfderiv_standardCapPolar_apply (p : standardCapRadialDomain × sphere (0 : V) 1)
+    (v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+    mvfderiv (𝓘(ℝ).prod (𝓡 n)) (standardCapPolar V) p v =
+      (p.1 : ℝ) • mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (tangentSpaceProdEquiv p v).2 +
+        NormedSpace.fromTangentSpace (p.1 : ℝ)
+          (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 (tangentSpaceProdEquiv p v).1) • (p.2 : V) := by
+  have hι := (contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.2).mdifferentiableAt one_ne_zero
+  have h₁ : mvfderiv (𝓘(ℝ).prod (𝓡 n))
+      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.2 : V)) p v =
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (tangentSpaceProdEquiv p v).2 := by
+    rw [tangentSpaceProdEquiv_apply]
+    exact mvfderiv_comp_snd_apply _ p v
+  have h₂ : mvfderiv (𝓘(ℝ).prod (𝓡 n))
+      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p v =
+      NormedSpace.fromTangentSpace (p.1 : ℝ)
+        (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 (tangentSpaceProdEquiv p v).1) := by
+    rw [tangentSpaceProdEquiv_apply, tangentSpaceOpenEquiv_apply]
+    exact (mvfderiv_comp_fst_apply _ p v).trans (mvfderiv_subtype_val_apply p.1 v.1)
+  have hd₁ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.2 : V)) p :=
+    hι.comp p mdifferentiableAt_snd
+  have hd₂ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ)
+      (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p :=
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero).comp p mdifferentiableAt_fst
+  rw [standardCapPolar_def, mvfderiv_fun_smul hd₂ hd₁]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁, h₂]
 
-end BilinForm
+/-- Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ` are smooth. -/
+theorem contMDiff_standardCapPolar {m : ℕ∞ω} :
+    ContMDiff (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V) m (standardCapPolar V) :=
+  (contMDiff_subtypeVal.comp contMDiff_fst).smul (contMDiff_coe_sphere.comp contMDiff_snd)
+
+/-- Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ` have injective differentials: the image
+`r ξ + ρ u` of `(ρ, ξ)` has radial component `ρ` and tangential component `r ξ`. -/
+theorem injective_mfderiv_standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    Function.Injective (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+      (standardCapPolar V) p) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  have hv' := congrArg (NormedSpace.fromTangentSpace _) hv
+  rw [NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_standardCapPolar_apply, map_zero] at hv'
+  -- The radial component vanishes, since `ξ` is orthogonal to `u`.
+  have hρ : NormedSpace.fromTangentSpace (p.1 : ℝ)
+      (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 (tangentSpaceProdEquiv p v).1) = 0 := by
+    have h := congrArg (fun z : V ↦ ⟪(p.2 : V), z⟫_ℝ) hv'
+    simp only [inner_add_right, real_inner_smul_right, inner_coe_mvfderiv_subtypeVal_sphere,
+      real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, inner_zero_right] at h
+    linarith
+  rw [hρ, zero_smul, add_zero, smul_eq_zero_iff_right p.1.property.ne'] at hv'
+  have hξ : (tangentSpaceProdEquiv p v).2 = 0 :=
+    (injective_mvfderiv_subtypeVal_sphere p.2).eq_iff' (map_zero _) |>.1 hv'
+  have h₁ : (tangentSpaceProdEquiv p v).1 = 0 :=
+    (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1).injective
+      ((NormedSpace.fromTangentSpace _).injective (by rw [hρ, map_zero, map_zero]))
+  exact (tangentSpaceProdEquiv p).injective (by rw [map_zero]; exact Prod.ext h₁ hξ)
+
+/-- Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ` have invertible differentials. -/
+theorem isInvertible_mfderiv_standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+      (standardCapPolar V) p).IsInvertible := by
+  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
+  -- The model spaces `ℝ × ℝⁿ` and `V` have the same dimension `n + 1`.
+  refine (isInvertible_mfderiv_iff_injective ?_).2 (injective_mfderiv_standardCapPolar p)
+  rw [Module.finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self,
+    Fact.out (p := Module.finrank ℝ V = n + 1), add_comm]
+
+end Polar
 
 namespace IsStandardCapProfile
 
-variable {f : ℝ → ℝ} (hf : IsStandardCapProfile f)
+variable {f : ℝ → ℝ} (V)
 
-/-- The **standard cap metric** on `V` associated to `f`: Euclidean at `0` and equal to
-`dr² + f(r)² g_(Sⁿ)` in polar coordinates `x = r • u` away from `0`. -/
-def metric (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
-    ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : V ↦ TangentSpace 𝓘(ℝ, V) x) :=
-  coerciveRiemannianMetric (capBilinForm f) (contDiff_capBilinForm hf) (capBilinForm_symm f)
-    (isCoercive_capBilinForm hf)
+/-- The inner product of `V` as a continuous bilinear form over `ℝ`. -/
+private abbrev realInner : V →L[ℝ] V →L[ℝ] ℝ := innerSL ℝ
 
-section Basic
+/-- The standard cap metric at `x` as a bilinear form on `V`:
+`a ⟪v, w⟫ + ((1 - a) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫` with `a = (f(‖x‖) / ‖x‖)²`, read as `1` at
+the tip. -/
+private def capForm (f : ℝ → ℝ) (x : V) : V →L[ℝ] V →L[ℝ] ℝ :=
+  dslope f 0 ‖x‖ ^ 2 • realInner V +
+    ((1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2) • (innerSL ℝ x).smulRight (innerSL ℝ x)
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+variable {V}
 
-private theorem metric_inner_eq_capBilinForm (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
-    (hf.metric V).inner x v w =
-      capBilinForm f x (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) :=
-  coerciveRiemannianMetric_inner _ _ _ _ x v w
+private theorem combination_apply (a b : ℝ) (x v w : V) :
+    (a • realInner V + b • (innerSL ℝ x).smulRight (innerSL ℝ x)) v w =
+      a * ⟪v, w⟫_ℝ + b * (⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ) := by
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
+    innerSL_apply_apply]
+  -- `realInner V` is `innerSL ℝ`, read as a bilinear rather than sesquilinear map.
+  rfl
 
-/-- At the tip `0 ∈ V`, the standard cap metric coincides with the Euclidean inner product. -/
+private theorem capForm_apply (x v w : V) :
+    capForm V f x v w = dslope f 0 ‖x‖ ^ 2 * ⟪v, w⟫_ℝ +
+      (1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2 * (⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ) :=
+  combination_apply _ _ x v w
+
+variable (hf : IsStandardCapProfile f)
+include hf
+
+/-- Near the tip, the coefficients of the cap form are analytic functions of `‖x‖²`, built from
+the difference quotients of `cosSqrt`. -/
+private theorem capForm_eventuallyEq_tip :
+    capForm V f =ᶠ[𝓝 0] fun y ↦ (-2 * dslope cosSqrt 0 (‖y‖ ^ 2)) • realInner V +
+      (2 * dslope (dslope cosSqrt 0) 0 (‖y‖ ^ 2)) • (innerSL ℝ y).smulRight (innerSL ℝ y) := by
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  filter_upwards [Metric.ball_mem_nhds (0 : V) hr₀] with y hy
+  rw [mem_ball_zero_iff] at hy
+  rcases eq_or_ne y 0 with rfl | hy0
+  · ext v w
+    rw [capForm_apply, combination_apply]
+    simp [dslope_same, hf.deriv_zero, deriv_cosSqrt_zero]
+    ring
+  have hr : 0 < ‖y‖ := norm_pos_iff.2 hy0
+  have hr2 : ‖y‖ ^ 2 ≠ 0 := by positivity
+  -- With `r = ‖y‖`, `f r = 2 sin (r / 2)` and `cos r = 1 - 2 sin² (r / 2)`.
+  have hcos : cos ‖y‖ = 1 - 2 * sin (‖y‖ / 2) ^ 2 := by
+    rw [← cos_two_mul_eq_one_sub, mul_div_cancel₀ _ two_ne_zero]
+  have hD₁ : dslope cosSqrt 0 (‖y‖ ^ 2) = (cos ‖y‖ - 1) / ‖y‖ ^ 2 := by
+    rw [dslope_of_ne _ hr2, slope_def_field, cosSqrt_sq, cosSqrt_zero, sub_zero]
+  have hD₂ : dslope (dslope cosSqrt 0) 0 (‖y‖ ^ 2) =
+      ((cos ‖y‖ - 1) / ‖y‖ ^ 2 + 1 / 2) / ‖y‖ ^ 2 := by
+    rw [dslope_of_ne _ hr2, slope_def_field, hD₁, dslope_same, deriv_cosSqrt_zero]
+    ring
+  have ha : dslope f 0 ‖y‖ ^ 2 = -2 * dslope cosSqrt 0 (‖y‖ ^ 2) := by
+    rw [hf.dslope_zero_of_ne_zero hr.ne', h _ ⟨hr.le, hy⟩, hD₁, hcos]
+    field_simp
+    ring
+  have hb : (1 - dslope f 0 ‖y‖ ^ 2) / ‖y‖ ^ 2 = 2 * dslope (dslope cosSqrt 0) 0 (‖y‖ ^ 2) := by
+    rw [ha, hD₁, hD₂]
+    field_simp
+    ring
+  rw [capForm, hb, ha]
+
+/-- The cap form is smooth, also at the tip. -/
+private theorem contDiff_capForm : ContDiff ℝ ∞ (capForm V f) := by
+  -- Use Mathlib's operator-norm scalar-action instance, without exporting another instance.
+  let : IsBoundedSMul ℝ (V →L[ℝ] V →L[ℝ] ℝ) :=
+    NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := V →L[ℝ] V →L[ℝ] ℝ)
+  have hrank : ContDiff ℝ ∞ fun y : V ↦ (innerSL ℝ y).smulRight (innerSL ℝ y) :=
+    (innerSL ℝ).contDiff.smulRight (innerSL ℝ).contDiff
+  rw [contDiff_iff_contDiffAt]
+  intro x
+  rcases eq_or_ne x 0 with rfl | hx
+  · have hD₁ : ContDiff ℝ ∞ (dslope cosSqrt 0) := (analyticOnNhd_cosSqrt.dslope 0).contDiff
+    have hD₂ : ContDiff ℝ ∞ (dslope (dslope cosSqrt 0) 0) :=
+      ((analyticOnNhd_cosSqrt.dslope 0).dslope 0).contDiff
+    refine ContDiffAt.congr_of_eventuallyEq ?_ hf.capForm_eventuallyEq_tip
+    refine ContDiff.contDiffAt (ContDiff.add ?_ ?_)
+    · exact (contDiff_const.mul (hD₁.comp (contDiff_norm_sq ℝ))).smul contDiff_const
+    · exact (contDiff_const.mul (hD₂.comp (contDiff_norm_sq ℝ))).smul hrank
+  · -- Away from the tip `dslope f 0 ‖y‖ = f ‖y‖ / ‖y‖`, a quotient of smooth functions.
+    have hnorm : ContDiffAt ℝ ∞ (fun y : V ↦ ‖y‖) x := contDiffAt_norm ℝ hx
+    have hq : ContDiffAt ℝ ∞ (fun y : V ↦ f ‖y‖ / ‖y‖) x :=
+      (hf.contDiff.contDiffAt.comp x hnorm).div hnorm (norm_ne_zero_iff.2 hx)
+    have hev : capForm V f =ᶠ[𝓝 x] fun y ↦ (f ‖y‖ / ‖y‖) ^ 2 • realInner V +
+        ((1 - (f ‖y‖ / ‖y‖) ^ 2) / ‖y‖ ^ 2) • (innerSL ℝ y).smulRight (innerSL ℝ y) := by
+      filter_upwards [isOpen_ne.mem_nhds hx] with y hy
+      rw [capForm, hf.dslope_zero_of_ne_zero (norm_ne_zero_iff.2 hy)]
+    refine ContDiffAt.congr_of_eventuallyEq ?_ hev
+    exact ((hq.pow 2).smul contDiffAt_const).add
+      (((contDiffAt_const.sub (hq.pow 2)).div (hnorm.pow 2) (by positivity)).smul
+        hrank.contDiffAt)
+
+/-- The cap form dominates `min (f(‖x‖) / ‖x‖)² 1` times the Euclidean form on the diagonal. -/
+private theorem min_mul_inner_self_le_capForm (x v : V) :
+    min (dslope f 0 ‖x‖ ^ 2) 1 * ⟪v, v⟫_ℝ ≤ capForm V f x v v := by
+  rw [capForm_apply, real_inner_self_eq_norm_sq]
+  set a := dslope f 0 ‖x‖ ^ 2
+  have ha : 0 < a := pow_pos (hf.dslope_zero_pos ‖x‖) 2
+  have hm₁ : min a 1 ≤ a := min_le_left _ _
+  have hm₂ : min a 1 ≤ 1 := min_le_right _ _
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp only [inner_zero_left, mul_zero, add_zero]
+    exact mul_le_mul_of_nonneg_right hm₁ (sq_nonneg _)
+  -- With `t = ⟪x, v⟫² / ‖x‖² ∈ [0, ‖v‖²]`, the form is `a (‖v‖² - t) + t`.
+  have hN : 0 < ‖x‖ ^ 2 := by positivity
+  set t := ⟪x, v⟫_ℝ ^ 2 / ‖x‖ ^ 2
+  have ht₀ : 0 ≤ t := by positivity
+  have ht₁ : t ≤ ‖v‖ ^ 2 := by
+    rw [div_le_iff₀ hN]
+    have := abs_real_inner_le_norm x v
+    nlinarith [abs_nonneg ⟪x, v⟫_ℝ, sq_abs ⟪x, v⟫_ℝ, norm_nonneg x, norm_nonneg v]
+  have heq : (1 - a) / ‖x‖ ^ 2 * (⟪x, v⟫_ℝ * ⟪x, v⟫_ℝ) = (1 - a) * t := by
+    simp only [t]
+    ring
+  rw [heq]
+  nlinarith [mul_nonneg (sub_nonneg.2 hm₁) (sub_nonneg.2 ht₁), mul_nonneg (sub_nonneg.2 hm₂) ht₀]
+
+/-- The cap form is coercive at every point: it dominates `min (f(‖x‖) / ‖x‖)² 1` times the
+Euclidean form. -/
+private theorem isCoercive_capForm (x : V) : IsCoercive (capForm V f x) :=
+  ⟨_, lt_min (pow_pos (hf.dslope_zero_pos ‖x‖) 2) one_pos, fun v ↦ by
+    rw [mul_assoc, ← sq, ← real_inner_self_eq_norm_sq]
+    exact hf.min_mul_inner_self_le_capForm x v⟩
+
+omit hf in
+private theorem capForm_symm (x v w : V) : capForm V f x v w = capForm V f x w v := by
+  rw [capForm_apply, capForm_apply, real_inner_comm v w]
+  ring
+
+variable (V) in
+/-- **The standard cap metric** on a real inner product space `V`. At `x`, tangent vectors
+`v`, `w` are paired to
+`(f(‖x‖) / ‖x‖)² ⟪v, w⟫ + ((1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`,
+the Euclidean metric at the tip `x = 0`. The radial direction has unit length and the sphere of
+radius `r` about the tip is scaled by `f(r) / r`, so in polar coordinates this is
+`dr² + f(r)² g_(Sⁿ)` (`TauCeti.IsStandardCapProfile.metric_inner_mfderiv_standardCapPolar`). Near
+the tip, where `f(r) = 2 sin (r / 2)`, its coefficients `(f(‖x‖) / ‖x‖)²` and
+`(1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²` are analytic functions of `‖x‖²`, so it is smooth across the
+tip. -/
+def metric : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : V ↦ TangentSpace 𝓘(ℝ, V) x) :=
+  coerciveRiemannianMetric (capForm V f) hf.contDiff_capForm capForm_symm hf.isCoercive_capForm
+
+/-- The standard cap metric pairs `v` and `w` at `x` to
+`a ⟪v, w⟫ + ((1 - a) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`, where `a = (dslope f 0 ‖x‖)²` is `(f(‖x‖) / ‖x‖)²`
+away from the tip and `1` at the tip. -/
 @[simp]
+theorem metric_inner (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (hf.metric V).inner x v w = dslope f 0 ‖x‖ ^ 2 *
+        ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ +
+      (1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2 *
+        (⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ * ⟪x, NormedSpace.fromTangentSpace x w⟫_ℝ) :=
+  (coerciveRiemannianMetric_inner _ _ _ _ x v w).trans (capForm_apply _ _ _)
+
+/-- Away from the tip, the standard cap metric combines the rescaled Euclidean inner product
+`(f(‖x‖) / ‖x‖)² ⟪v, w⟫` with the rank-one radial correction
+`((1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`. -/
+theorem metric_inner_of_ne_zero {x : V} (hx : x ≠ 0) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (hf.metric V).inner x v w = (f ‖x‖ / ‖x‖) ^ 2 *
+        ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ +
+      (1 - (f ‖x‖ / ‖x‖) ^ 2) / ‖x‖ ^ 2 *
+        (⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ * ⟪x, NormedSpace.fromTangentSpace x w⟫_ℝ) := by
+  rw [metric_inner, hf.dslope_zero_of_ne_zero (norm_ne_zero_iff.2 hx)]
+
+/-- At the tip, the standard cap metric is the Euclidean metric. -/
 theorem metric_inner_zero (v w : TangentSpace 𝓘(ℝ, V) (0 : V)) :
     (hf.metric V).inner 0 v w =
       ⟪NormedSpace.fromTangentSpace (0 : V) v, NormedSpace.fromTangentSpace (0 : V) w⟫_ℝ := by
-  rw [hf.metric_inner_eq_capBilinForm, capBilinForm_apply]; simp
+  rw [metric_inner, norm_zero, dslope_same, hf.deriv_zero]
+  simp
 
-/-- Away from `0 ∈ V`, the standard cap metric splits into angular and radial parts. -/
-theorem metric_inner_of_ne_zero {x : V} (hx : x ≠ 0) (v w : TangentSpace 𝓘(ℝ, V) x) :
-    (hf.metric V).inner x v w =
-      (f ‖x‖ / ‖x‖) ^ 2 * ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ +
-        (1 - (f ‖x‖ / ‖x‖) ^ 2) / ‖x‖ ^ 2 *
-          (⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ * ⟪x, NormedSpace.fromTangentSpace x w⟫_ℝ) := by
-  have hpos := norm_pos_iff.2 hx
-  rw [hf.metric_inner_eq_capBilinForm, capBilinForm_apply,
-    standardCapAngularCoeff_sq_of_pos f hpos, standardCapRadialCoeff_sq_of_pos f hpos]
+/-- **The radial component of a tangent vector is at most its cap length**: at `x`, the standard
+cap metric satisfies `⟪x, v⟫² ≤ ‖x‖² g_x(v, v)`. -/
+theorem sq_inner_le_sq_norm_mul_metric_inner (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
+    ⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ ^ 2 ≤ ‖x‖ ^ 2 * (hf.metric V).inner x v v := by
+  rw [metric_inner]
+  set w := NormedSpace.fromTangentSpace x v
+  set a := dslope f 0 ‖x‖ ^ 2
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hcs : ⟪x, w⟫_ℝ ^ 2 ≤ ‖x‖ ^ 2 * ‖w‖ ^ 2 := by
+    rw [← mul_pow, ← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm x w) 2
+  -- With `a = (f(‖x‖) / ‖x‖)² ≥ 0`, the difference is `a` times the Cauchy–Schwarz defect.
+  have heq : ‖x‖ ^ 2 * (a * ⟪w, w⟫_ℝ + (1 - a) / ‖x‖ ^ 2 * (⟪x, w⟫_ℝ * ⟪x, w⟫_ℝ)) =
+      ⟪x, w⟫_ℝ ^ 2 + a * (‖x‖ ^ 2 * ‖w‖ ^ 2 - ⟪x, w⟫_ℝ ^ 2) := by
+    rw [real_inner_self_eq_norm_sq]
+    field_simp
+    ring
+  rw [heq]
+  nlinarith [mul_nonneg (sq_nonneg (dslope f 0 ‖x‖)) (sub_nonneg.2 hcs)]
+
+/-- **The radial direction has unit length**: at every point `t • x` of the line through `x`, the
+vector `x` has cap length `‖x‖`. -/
+theorem metric_inner_smul_self (t : ℝ) (x : V) :
+    (hf.metric V).inner (t • x) ((NormedSpace.fromTangentSpace (t • x)).symm x)
+      ((NormedSpace.fromTangentSpace (t • x)).symm x) = ‖x‖ ^ 2 := by
+  rw [metric_inner, ContinuousLinearEquiv.apply_symm_apply, real_inner_smul_left,
+    real_inner_self_eq_norm_sq]
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp [hf.deriv_zero]
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hN : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  rw [norm_smul, Real.norm_eq_abs]
+  have ht' : |t| ≠ 0 := abs_ne_zero.2 ht
+  field_simp
+  rw [sq_abs]
+  ring
 
 /-- The standard cap metric is everywhere bounded above by the Euclidean norm squared. -/
 theorem metric_inner_self_le (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
     (hf.metric V).inner x v v ≤ ‖NormedSpace.fromTangentSpace x v‖ ^ 2 := by
-  rw [hf.metric_inner_eq_capBilinForm]; exact capBilinForm_self_le hf x _
+  rw [metric_inner, real_inner_self_eq_norm_sq]
+  set w := NormedSpace.fromTangentSpace x v
+  have ha : dslope f 0 ‖x‖ ^ 2 ≤ 1 := hf.sq_dslope_zero_le_one ‖x‖
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp only [inner_zero_left, mul_zero, add_zero]
+    exact mul_le_of_le_one_left (sq_nonneg _) ha
+  have hN : 0 < ‖x‖ ^ 2 := by positivity
+  set t := ⟪x, w⟫_ℝ ^ 2 / ‖x‖ ^ 2
+  have ht₁ : t ≤ ‖w‖ ^ 2 := by
+    rw [div_le_iff₀ hN]
+    have := abs_real_inner_le_norm x w
+    nlinarith [abs_nonneg ⟪x, w⟫_ℝ, sq_abs ⟪x, w⟫_ℝ, norm_nonneg x, norm_nonneg w]
+  have heq : (1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2 * (⟪x, w⟫_ℝ * ⟪x, w⟫_ℝ) =
+      (1 - dslope f 0 ‖x‖ ^ 2) * t := by
+    simp only [t]
+    ring
+  rw [heq]
+  nlinarith [mul_nonneg (sub_nonneg.2 ha) (sub_nonneg.2 ht₁)]
 
 /-- On `{‖x‖ ≤ B}`, the standard cap metric dominates `(f B / B)²` times the Euclidean norm
 squared. -/
 theorem le_metric_inner_self_of_norm_le {B : ℝ} {x : V} (hx : ‖x‖ ≤ B)
     (v : TangentSpace 𝓘(ℝ, V) x) :
     (f B / B) ^ 2 * ‖NormedSpace.fromTangentSpace x v‖ ^ 2 ≤ (hf.metric V).inner x v v := by
-  rw [hf.metric_inner_eq_capBilinForm]; exact le_capBilinForm_self_of_norm_le hf hx _
-
-/-- The radial component `⟪x, v⟫² / ‖x‖²` is globally bounded above by `hf.metric V` (including at
-`x = 0`, where `0 / 0 = 0`). -/
-theorem sq_inner_div_le_metric_inner_self (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
-    ⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ ^ 2 / ‖x‖ ^ 2 ≤ (hf.metric V).inner x v v := by
-  rw [hf.metric_inner_eq_capBilinForm]; exact sq_inner_div_le_capBilinForm_self f x _
+  have hle : (f B / B) ^ 2 ≤ min (dslope f 0 ‖x‖ ^ 2) 1 := by
+    refine le_min ?_ (hf.sq_div_self_le_one B)
+    rcases eq_or_ne B 0 with rfl | hB0
+    · simp only [div_zero, zero_pow two_ne_zero]
+      exact sq_nonneg _
+    have hB : 0 < B := lt_of_le_of_ne ((norm_nonneg x).trans hx) hB0.symm
+    rcases eq_or_ne x 0 with rfl | hx0
+    · simpa [dslope_same, hf.deriv_zero] using hf.sq_div_self_le_one B
+    rw [hf.dslope_zero_of_ne_zero (norm_ne_zero_iff.2 hx0)]
+    exact pow_le_pow_left₀ (hf.div_self_pos hB.ne').le
+      (hf.antitoneOn_div_self (norm_pos_iff.2 hx0) hB hx) 2
+  rw [metric, coerciveRiemannianMetric_inner, ← real_inner_self_eq_norm_sq]
+  exact (mul_le_mul_of_nonneg_right hle real_inner_self_nonneg).trans
+    (hf.min_mul_inner_self_le_capForm x _)
 
 /-- Every linear isometry equivalence `e : V ≃ₗᵢ[ℝ] W` preserves the standard cap metric; in
 particular `hf.metric V` is orthogonally (`O(V)`) invariant. -/
-@[simp]
 theorem metric_inner_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
     (e : V ≃ₗᵢ[ℝ] W) (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
     (hf.metric W).inner (e x) (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, W) e x v) (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, W) e x w) =
@@ -311,9 +478,10 @@ theorem metric_inner_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W] [Inn
         e (NormedSpace.fromTangentSpace x u) := by
     rw [NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_eq_fderiv,
       ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ← e.coe_toContinuousLinearEquiv, e.toContinuousLinearEquiv.fderiv]; rfl
-  rw [hf.metric_inner_eq_capBilinForm, hf.metric_inner_eq_capBilinForm, hdf v, hdf w,
-    capBilinForm_apply, capBilinForm_apply]; simp
+      ← e.coe_toContinuousLinearEquiv, e.toContinuousLinearEquiv.fderiv,
+      ContinuousLinearEquiv.coe_coe]
+  rw [hf.metric_inner, hf.metric_inner, hdf v, hdf w]
+  simp
 
 /-- Pulling back the standard cap metric along a linear isometry equivalence `e : V ≃ₗᵢ[ℝ] W`
 recovers `hf.metric V`. -/
@@ -355,7 +523,8 @@ def linearIsometryEquivRiemannianIsometry [FiniteDimensional ℝ V] {W : Type*}
         mfderiv 𝓘(ℝ, V) 𝓘(ℝ, W) e p.ofWithMetric
           (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p u) := by
       rw [mfderiv_comp_apply p h1 (h2.comp p h3), mfderiv_comp_apply p h2 h3]
-      dsimp only [Function.comp_apply]; rw [WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric]
+      dsimp only [Function.comp_apply]
+      rw [WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric]
     rw [WithMetric.inner_def, WithMetric.inner_def, hcomp]
     dsimp only [Function.comp_apply]
     rw [WithMetric.ofWithMetric_toWithMetric, hdf v, hdf w, hf.metric_inner_linearIsometryEquiv]
@@ -365,39 +534,73 @@ theorem ofWithMetric_linearIsometryEquivRiemannianIsometry_apply [FiniteDimensio
     {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
     (e : V ≃ₗᵢ[ℝ] W) (p : WithMetric (hf.metric V)) :
     (hf.linearIsometryEquivRiemannianIsometry e p).ofWithMetric = e p.ofWithMetric := by
-  rw [← RiemannianIsometry.coe_toDiffeomorph]; simp [linearIsometryEquivRiemannianIsometry]
+  rw [← RiemannianIsometry.coe_toDiffeomorph]
+  simp [linearIsometryEquivRiemannianIsometry]
 
 @[simp]
 theorem ofWithMetric_linearIsometryEquivRiemannianIsometry_symm_apply [FiniteDimensional ℝ V]
     {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
     (e : V ≃ₗᵢ[ℝ] W) (q : WithMetric (hf.metric W)) :
     ((hf.linearIsometryEquivRiemannianIsometry e).symm q).ofWithMetric = e.symm q.ofWithMetric := by
-  apply e.injective; rw [← hf.ofWithMetric_linearIsometryEquivRiemannianIsometry_apply,
+  apply e.injective
+  rw [← hf.ofWithMetric_linearIsometryEquivRiemannianIsometry_apply,
     RiemannianIsometry.apply_symm_apply, e.apply_symm_apply]
 
-private theorem isLocalRiemannianIsometry_toWithMetric [FiniteDimensional ℝ V] :
-    letI : RiemannianBundle _ := ⟨(hf.metric V).toRiemannianMetric⟩
-    IsLocalRiemannianIsometry 𝓘(ℝ, V) 𝓘(ℝ, V) (WithMetric.toWithMetric (hf.metric V)) := by
-  let _ : RiemannianBundle _ := ⟨(hf.metric V).toRiemannianMetric⟩
-  exact
-    { contMDiff := WithMetric.contMDiff_toWithMetric
-      isInvertible_mfderiv := fun x ↦ by
-        rw [WithMetric.mfderiv_toWithMetric]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
-      inner_mfderiv := fun x v w ↦ by
-        rw [WithMetric.inner_def, WithMetric.ofWithMetric_toWithMetric,
-          WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric,
-          WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric,
-          ContMDiffRiemannianMetric.inner_riemannianBundle (hf.metric V)] }
+section Polar
 
-end Basic
+open Metric (sphere)
+open TauCeti.Manifold
 
-section PolarIsometry
+variable {n : ℕ} [Fact (Module.finrank ℝ V = n + 1)]
 
-variable (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
-  [Fact (finrank ℝ V = n + 1)]
+/-- **The standard cap metric in polar coordinates** is `dr² + f(r)² g_(Sⁿ)`: polar coordinates
+`(r, u) ↦ r u` on `(0, ∞) × Sⁿ` pull the standard cap metric back to the punctured standard cap
+metric `TauCeti.IsStandardCapProfile.puncturedMetric`. -/
+theorem metric_inner_mfderiv_standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1)
+    (v w : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+    (hf.metric V).inner (standardCapPolar V p)
+        (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+          (standardCapPolar V) p v)
+        (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+          (standardCapPolar V) p w) =
+      (hf.puncturedMetric V).inner p v w := by
+  have hr : 0 < (p.1 : ℝ) := p.1.property
+  have hnorm := norm_standardCapPolar p
+  have hx : standardCapPolar V p ≠ 0 := norm_ne_zero_iff.1 (hnorm.trans_ne hr.ne')
+  have hu : ⟪(p.2 : V), (p.2 : V)⟫_ℝ = 1 := by
+    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.2, one_pow]
+  have hξ (v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) : ⟪(p.2 : V),
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (tangentSpaceProdEquiv p v).2⟫_ℝ = 0 :=
+    inner_coe_mvfderiv_subtypeVal_sphere p.2 _
+  have hξ' (v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+      ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (tangentSpaceProdEquiv p v).2,
+        (p.2 : V)⟫_ℝ = 0 := by
+    rw [real_inner_comm]
+    exact hξ v
+  rw [hf.metric_inner_of_ne_zero hx, hnorm, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_standardCapPolar_apply,
+    mvfderiv_standardCapPolar_apply, puncturedMetric_inner,
+    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
+    ContMDiffRiemannianMetric.ofLE_inner, ContMDiffRiemannianMetric.ofLE_inner,
+    sphereRoundMetric_inner]
+  simp only [standardCapPolar_apply, inner_add_left, inner_add_right, real_inner_smul_left,
+    real_inner_smul_right, hu, hξ, hξ', riemannianMetricVectorSpace_inner, Real.inner_apply]
+  field_simp
+  ring
 
-/-- The warped-product punctured metric `dr² + f(r)² g_(Sⁿ)` is the pullback along polar
-coordinates `radialSphereDiffeomorph V` of the standard cap metric restricted to `V ∖ {0}`. -/
+/-- **The punctured standard cap is the standard cap in polar coordinates**: pulling the standard
+cap metric back along `(r, u) ↦ r u` gives the punctured standard cap metric. -/
+theorem pullback_metric_standardCapPolar :
+    (hf.metric V).pullback (standardCapPolar V) contMDiff_standardCapPolar
+        injective_mfderiv_standardCapPolar =
+      hf.puncturedMetric (n := n) V := by
+  ext p v w
+  rw [ContMDiffRiemannianMetric.pullback_inner, hf.metric_inner_mfderiv_standardCapPolar]
+
+variable (V) in
+/-- Pulling the restriction of `hf.metric V` to `puncturedSpace V` back along the polar
+diffeomorphism `radialSphereDiffeomorph V` recovers `hf.puncturedMetric V`. -/
 theorem puncturedMetric_eq_pullback :
     hf.puncturedMetric (n := n) V =
       ((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)).pullback
@@ -405,45 +608,23 @@ theorem puncturedMetric_eq_pullback :
         ((radialSphereDiffeomorph (n := n) V).contMDiff.of_le (by simp))
         (fun _ ↦ ((radialSphereDiffeomorph (n := n) V).isInvertible_mfderiv
           (by simp)).injective) := by
-  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
   ext p v w
-  have hr : 0 < (p.1 : ℝ) := p.1.property
-  have hu : ‖(p.2 : V)‖ = 1 := norm_eq_of_mem_sphere p.2
-  have hu2 : ⟪(p.2 : V), (p.2 : V)⟫_ℝ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
-  have hx0 : (p.1 : ℝ) • (p.2 : V) ≠ 0 := smul_ne_zero hr.ne' (ne_zero_of_mem_unit_sphere p.2)
-  have hnorm : ‖(p.1 : ℝ) • (p.2 : V)‖ = (p.1 : ℝ) := by
-    rw [norm_smul, hu, mul_one, Real.norm_of_nonneg hr.le]
-  have horth_v := inner_coe_mvfderiv_subtypeVal_sphere p.2 (Manifold.tangentSpaceProdEquiv p v).2
-  have horth_w := inner_coe_mvfderiv_subtypeVal_sphere p.2 (Manifold.tangentSpaceProdEquiv p w).2
-  have horth_v' : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2
-      (Manifold.tangentSpaceProdEquiv p v).2, (p.2 : V)⟫_ℝ = 0 := by rwa [real_inner_comm]
   have hcomp : ((Subtype.val : puncturedSpace V → V) ∘ radialSphereDiffeomorph (n := n) V) =
-      fun q ↦ (q.1 : ℝ) • (q.2 : V) := funext (coe_radialSphereDiffeomorph_apply (n := n))
+      standardCapPolar V := funext (coe_radialSphereDiffeomorph_apply (n := n))
   have hdf (z : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
-      NormedSpace.fromTangentSpace (radialSphereDiffeomorph (n := n) V p : V)
-          (Manifold.tangentSpaceOpenEquiv (radialSphereDiffeomorph (n := n) V p)
-            (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V) (radialSphereDiffeomorph (n := n) V) p z)) =
-        mvfderiv (𝓘(ℝ).prod (𝓡 n))
-          (fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ) • (q.2 : V)) p z := by
-    have h1 : Manifold.tangentSpaceOpenEquiv (radialSphereDiffeomorph (n := n) V p)
+      tangentSpaceOpenEquiv (radialSphereDiffeomorph (n := n) V p)
         (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V) (radialSphereDiffeomorph (n := n) V) p z) =
-        mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
-          ((Subtype.val : puncturedSpace V → V) ∘ radialSphereDiffeomorph (n := n) V) p z := by
-      rw [mfderiv_comp_apply p ((contMDiff_subtype_val (n := 1)).mdifferentiableAt one_ne_zero)
-        ((radialSphereDiffeomorph (n := n) V).contMDiff.mdifferentiableAt (by simp)),
-        Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
-    rw [h1, NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply, hcomp]
-  rw [hf.puncturedMetric_inner, Manifold.inner_restrictOpenTangentSpace_real,
-    ContMDiffRiemannianMetric.ofLE_inner, sphereRoundMetric_inner,
-    ContMDiffRiemannianMetric.pullback_inner,
-    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
-    hf.metric_inner_of_ne_zero (coe_radialSphereDiffeomorph_apply (n := n) p ▸ hx0), hdf v, hdf w,
-    coe_radialSphereDiffeomorph_apply (n := n), mvfderiv_radial_smul_coe_sphere_apply (n := n),
-    mvfderiv_radial_smul_coe_sphere_apply (n := n), hnorm]
-  simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right,
-    horth_v, horth_w, horth_v', hu2, mul_zero, zero_add, add_zero, mul_one]
-  field_simp [hr.ne']; ring
+        mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V) (standardCapPolar V) p z := by
+    rw [← hcomp, mfderiv_comp_apply p
+      ((contMDiff_subtypeVal (n := 1)).mdifferentiableAt one_ne_zero)
+      ((radialSphereDiffeomorph (n := n) V).contMDiff.mdifferentiableAt (by simp)),
+      mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+  rw [ContMDiffRiemannianMetric.pullback_inner,
+    ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner, hdf v, hdf w,
+    coe_radialSphereDiffeomorph_apply, ← standardCapPolar_apply]
+  exact (hf.metric_inner_mfderiv_standardCapPolar p v w).symm
 
+variable (V) in
 /-- **Polar coordinates are a Riemannian isometry** from `hf.puncturedMetric V` on `(0, ∞) × Sⁿ`
 onto the standard cap metric restricted to the punctured space `V ∖ {0}`. -/
 def polarRiemannianIsometry :
@@ -457,7 +638,7 @@ def polarRiemannianIsometry :
   letI : RiemannianBundle _ :=
     ⟨((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)).toRiemannianMetric⟩
   { toDiffeomorph := radialSphereDiffeomorph (n := n) V
-    inner_mfderiv' := fun p v w ↦ by
+    inner_mfderiv' p v w := by
       have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
       rw [ContMDiffRiemannianMetric.inner_riemannianBundle
           ((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)),
@@ -491,7 +672,7 @@ theorem polarRiemannianIsometry_symm_apply_fst (x : puncturedSpace V) :
     letI : RiemannianBundle (fun y : puncturedSpace V ↦ TangentSpace 𝓘(ℝ, V) y) :=
       ⟨((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)).toRiemannianMetric⟩
     ((hf.polarRiemannianIsometry (n := n) V).symm x).1 =
-      ⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.2)⟩ := by
+      ⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.property)⟩ := by
   let _ : RiemannianBundle _ := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
   let _ : RiemannianBundle _ :=
     ⟨((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)).toRiemannianMetric⟩
@@ -511,6 +692,7 @@ theorem coe_polarRiemannianIsometry_symm_apply_snd (x : puncturedSpace V) :
   rw [RiemannianIsometry.coe_symm, hf.toDiffeomorph_polarRiemannianIsometry,
     coe_radialSphereDiffeomorph_symm_apply_snd]
 
+variable (V) in
 /-- Polar coordinates `(r, u) ↦ WithMetric.toWithMetric (hf.metric V) (r • u)` are a local
 Riemannian isometry from `hf.puncturedMetric V` into `WithMetric (hf.metric V)`. -/
 theorem isLocalRiemannianIsometry_toWithMetric_polar :
@@ -525,385 +707,52 @@ theorem isLocalRiemannianIsometry_toWithMetric_polar :
   let _ : RiemannianBundle _ :=
     ⟨((hf.metric V).restrictOpenTangentSpace (puncturedSpace V)).toRiemannianMetric⟩
   let _ : RiemannianBundle _ := ⟨(hf.metric V).toRiemannianMetric⟩
-  have hfn : (WithMetric.toWithMetric (hf.metric V) ∘ Subtype.val ∘
+  have hfn : (⇑(WithMetric.riemannianIsometry (hf.metric V)).symm ∘ Subtype.val ∘
       ⇑(hf.polarRiemannianIsometry (n := n) V)) =
-      fun p ↦ WithMetric.toWithMetric (hf.metric V) ((p.1 : ℝ) • (p.2 : V)) :=
-    funext fun p ↦ congrArg _ (hf.coe_polarRiemannianIsometry_apply V p)
+      fun p ↦ WithMetric.toWithMetric (hf.metric V) ((p.1 : ℝ) • (p.2 : V)) := by
+    rw [WithMetric.coe_riemannianIsometry_symm]
+    exact funext fun p ↦ congrArg _ (hf.coe_polarRiemannianIsometry_apply p)
   rw [← hfn]
-  exact hf.isLocalRiemannianIsometry_toWithMetric.comp
+  exact (WithMetric.riemannianIsometry (hf.metric V)).symm.isLocalRiemannianIsometry.comp
     (((hf.metric V).isLocalRiemannianIsometry_restrictOpenTangentSpace
       (puncturedSpace V)).comp (hf.polarRiemannianIsometry (n := n) V).isLocalRiemannianIsometry)
 
-end PolarIsometry
+end Polar
 
-/-! ### Metric and geodesic completeness of the standard cap -/
+/-! ### Scalar curvature -/
 
-section Completeness
+section ScalarCurvature
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-include hf
+open Metric (sphere)
+open Module
 
-/-- Because `g_x(v, v) ≤ ‖v‖²` everywhere, the Riemannian extended distance on
-`WithMetric (hf.metric V)` is at most the Euclidean extended distance on `V`. -/
-theorem riemannianEDist_toWithMetric_le (x y : V) :
-    Manifold.riemannianEDist 𝓘(ℝ, V) (WithMetric.toWithMetric (hf.metric V) x)
-      (WithMetric.toWithMetric (hf.metric V) y) ≤ edist x y := by
-  rw [IsRiemannianManifold.out (I := 𝓘(ℝ, V)) x y,
-    ← one_mul (Manifold.riemannianEDist 𝓘(ℝ, V) x y), ← ENNReal.coe_one]
-  refine TauCeti.Manifold.riemannianEDist_le_mul (C := (1 : NNReal))
-    WithMetric.contMDiff_toWithMetric one_ne_zero (fun z v ↦ ?_) x y
-  rw [NNReal.coe_one, one_mul]
-  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
-  rw [← real_inner_self_eq_norm_sq, WithMetric.inner_def, WithMetric.ofWithMetric_toWithMetric,
-    WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric, norm_tangentSpace_vectorSpace]
-  exact hf.metric_inner_self_le z v
+variable [FiniteDimensional ℝ V]
 
-private theorem norm_mvfderiv_japaneseBracket_le {ε : ℝ} (hε : 0 < ε)
-    (p : WithMetric (hf.metric V)) (v : TangentSpace 𝓘(ℝ, V) p) :
-    ‖mvfderiv 𝓘(ℝ, V) ((fun x : V ↦ √(ε ^ 2 + ‖x‖ ^ 2)) ∘ WithMetric.ofWithMetric) p v‖ₑ ≤
-      (1 : ℝ≥0) * ‖v‖ₑ := by
-  have hpos (x : V) : 0 < ε ^ 2 + ‖x‖ ^ 2 := by positivity
-  have hderiv (x : V) : HasFDerivAt (fun y : V ↦ √(ε ^ 2 + ‖y‖ ^ 2))
-      ((1 / (2 * √(ε ^ 2 + ‖x‖ ^ 2))) • (2 • innerSL ℝ x)) x :=
-    (((hasStrictFDerivAt_norm_sq x).hasFDerivAt).const_add (ε ^ 2)).sqrt (hpos x).ne'
-  rw [ENNReal.coe_one, one_mul, ← ofReal_norm, ← ofReal_norm]
-  refine ENNReal.ofReal_le_ofReal ?_
-  let w := NormedSpace.fromTangentSpace p.ofWithMetric
-    (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v)
-  have hmv : mvfderiv 𝓘(ℝ, V) ((fun x : V ↦ √(ε ^ 2 + ‖x‖ ^ 2)) ∘ WithMetric.ofWithMetric) p v =
-      ⟪p.ofWithMetric, w⟫_ℝ / √(ε ^ 2 + ‖p.ofWithMetric‖ ^ 2) := by
-    rw [WithMetric.mvfderiv_comp_ofWithMetric_apply, mvfderiv_eq_fderiv,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, (hderiv p.ofWithMetric).fderiv]
-    simp only [_root_.smul_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul]
-    field_simp [(Real.sqrt_pos.2 (hpos p.ofWithMetric)).ne']; rfl
-  rw [hmv]
-  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
-  rw [Real.norm_eq_abs, sq_abs, div_pow, Real.sq_sqrt (hpos _).le, ← real_inner_self_eq_norm_sq v,
-    WithMetric.inner_def]
-  rcases eq_or_ne p.ofWithMetric 0 with hp0 | hp0
-  · rw [hp0]; simp
-  · exact (div_le_div_of_nonneg_left (sq_nonneg _) (pow_pos (norm_pos_iff.2 hp0) 2)
-      (le_add_of_nonneg_left (sq_nonneg ε))).trans
-      (hf.sq_inner_div_le_metric_inner_self p.ofWithMetric _)
+omit hf in
+/-- A nontrivial finite-dimensional space has dimension `n + 1` for some `n`, recorded as the
+instance that the polar coordinates on `(0, ∞) × Sⁿ` take. -/
+private theorem exists_fact_finrank_eq_succ [Nontrivial V] :
+    ∃ n : ℕ, Fact (finrank ℝ V = n + 1) :=
+  (Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne').imp fun _ hn ↦ ⟨hn⟩
 
-/-- The Riemannian extended distance from `x` to the tip `0` in `WithMetric (hf.metric V)` equals
-the Euclidean extended distance `edist x 0`: radial rays from the tip have unit speed. -/
-@[simp]
-theorem riemannianEDist_toWithMetric_zero (x : V) :
-    Manifold.riemannianEDist 𝓘(ℝ, V) (WithMetric.toWithMetric (hf.metric V) x)
-      (WithMetric.toWithMetric (hf.metric V) 0) = edist x 0 := by
-  refine le_antisymm (hf.riemannianEDist_toWithMetric_le x 0) ?_
-  have : (𝓝[>] (0 : ℝ)).NeBot := nhdsGT_neBot 0
-  have hlim : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal (‖x‖ - ε)) (𝓝[>] 0) (𝓝 (ENNReal.ofReal ‖x‖)) := by
-    have hsub : Tendsto (fun ε : ℝ ↦ ‖x‖ - ε) (𝓝[>] 0) (𝓝 (‖x‖ - 0)) :=
-      ((tendsto_const_nhds (x := ‖x‖)).sub tendsto_id).mono_left nhdsWithin_le_nhds
-    rw [sub_zero] at hsub
-    exact ENNReal.continuous_ofReal.continuousAt.tendsto.comp hsub
-  rw [edist_dist, dist_zero_right]
-  refine le_of_tendsto hlim ?_
-  filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-  have hψ : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, ℝ) 1
-      ((fun y : V ↦ √(ε ^ 2 + ‖y‖ ^ 2)) ∘ WithMetric.ofWithMetric (g := hf.metric V)) :=
-    (((contDiff_const.add (contDiff_norm_sq ℝ)).sqrt fun y ↦ by positivity).contMDiff).comp
-      WithMetric.contMDiff_ofWithMetric
-  have hed := Manifold.edist_le_mul_riemannianEDist hψ one_ne_zero
-    (hf.norm_mvfderiv_japaneseBracket_le hε)
-    (WithMetric.toWithMetric (hf.metric V) x) (WithMetric.toWithMetric (hf.metric V) 0)
-  rw [ENNReal.coe_one, one_mul, edist_dist, Real.dist_eq] at hed
-  refine (ENNReal.ofReal_le_ofReal ?_).trans hed
-  have h0 : √(ε ^ 2 + ‖(0 : V)‖ ^ 2) = ε := by simp [Real.sqrt_sq hε.le]
-  have hx_le : ‖x‖ ≤ √(ε ^ 2 + ‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm.trans_le
-    (Real.sqrt_le_sqrt (le_add_of_nonneg_left (sq_nonneg ε)))
-  dsimp only [Function.comp_apply, WithMetric.ofWithMetric_toWithMetric]
-  rw [h0]; exact (sub_le_sub_right hx_le ε).trans (le_abs_self _)
+/-- The scalar curvature of the standard cap at `r u`, for `r > 0` and `u` in the unit sphere,
+is the scalar curvature of the punctured standard cap at `(r, u)`. -/
+theorem scalarCurvature_metric_standardCapPolar {n : ℕ} [Fact (finrank ℝ V = n + 1)]
+    (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    (hf.metric V).scalarCurvature (standardCapPolar V p) =
+      (hf.puncturedMetric (n := n) V).scalarCurvature p := by
+  rw [← hf.pullback_metric_standardCapPolar,
+    ContMDiffRiemannianMetric.scalarCurvature_pullback_of_isInvertible _ contMDiff_standardCapPolar
+      isInvertible_mfderiv_standardCapPolar]
 
-/-- Points at Riemannian extended distance at most `R` from the tip `0` have Euclidean norm at most
-`R`. -/
-theorem norm_ofWithMetric_le_of_riemannianEDist_le {p : WithMetric (hf.metric V)} {R : ℝ}
-    (hR : 0 ≤ R) (hp : Manifold.riemannianEDist 𝓘(ℝ, V) p (WithMetric.toWithMetric (hf.metric V) 0)
-      ≤ ENNReal.ofReal R) : ‖p.ofWithMetric‖ ≤ R := by
-  rw [← p.toWithMetric_ofWithMetric, hf.riemannianEDist_toWithMetric_zero, edist_dist,
-    dist_zero_right] at hp
-  exact (ENNReal.ofReal_le_ofReal_iff hR).1 hp
-
-private theorem norm_mfderiv_ofWithMetric_le_of_norm_le {B : ℝ} (hB : 0 < B)
-    {p : WithMetric (hf.metric V)} (hp : ‖p.ofWithMetric‖ ≤ B) (v : TangentSpace 𝓘(ℝ, V) p) :
-    letI := normedAddCommGroupTangentSpaceVectorSpace p.ofWithMetric
-    ‖mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v‖ₑ ≤
-      ((B / f B).toNNReal : ℝ≥0∞) * ‖v‖ₑ := by
-  let _ := normedAddCommGroupTangentSpaceVectorSpace p.ofWithMetric
-  set c : NNReal := (B / f B).toNNReal
-  have hc : (c : ℝ) = B / f B := Real.coe_toNNReal _ (div_pos hB (hf.apply_pos hB)).le
-  rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
-  refine ENNReal.ofReal_le_ofReal
-    ((pow_le_pow_iff_left₀ (norm_nonneg _) (mul_nonneg c.coe_nonneg (norm_nonneg _))
-      two_ne_zero).1 ?_)
-  have hb := hf.le_metric_inner_self_of_norm_le hp
-    (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v)
-  have hinv : (c : ℝ) ^ 2 * (f B / B) ^ 2 = 1 := by
-    rw [hc]; field_simp [(hf.apply_pos hB).ne', hB.ne']
-  have hnorm_eq : ‖mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v‖ =
-      ‖NormedSpace.fromTangentSpace p.ofWithMetric
-        (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v)‖ := by
-    rw [NormedSpace.fromTangentSpace_apply]
-    -- `normedAddCommGroupTangentSpaceVectorSpace` transports the norm of `V` to `TangentSpace`.
-    rfl
-  calc ‖mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v‖ ^ 2
-      = (c : ℝ) ^ 2 * ((f B / B) ^ 2 * ‖NormedSpace.fromTangentSpace p.ofWithMetric
-          (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) WithMetric.ofWithMetric p v)‖ ^ 2) := by
-        rw [hnorm_eq, ← mul_assoc, hinv, one_mul]
-    _ ≤ (c : ℝ) ^ 2 * (hf.metric V).inner p.ofWithMetric _ _ :=
-        mul_le_mul_of_nonneg_left hb (sq_nonneg _)
-    _ = ((c : ℝ) * ‖v‖) ^ 2 := by rw [mul_pow, ← real_inner_self_eq_norm_sq, WithMetric.inner_def]
-
-/-- Along a short path in `WithMetric (hf.metric V)` starting in `{d₁ · 0 ≤ R}`, the Euclidean
-displacement is controlled by `((R + 1) / f (R + 1))` times the Riemannian distance. -/
-private theorem edist_ofWithMetric_le_of_riemannianEDist_lt_one (R : NNReal)
-    {x y : WithMetric (hf.metric V)}
-    (hx : Manifold.riemannianEDist 𝓘(ℝ, V) x (WithMetric.toWithMetric (hf.metric V) 0) ≤ R)
-    (hxy : Manifold.riemannianEDist 𝓘(ℝ, V) x y < 1) :
-    edist x.ofWithMetric y.ofWithMetric ≤
-      ((((R : ℝ) + 1) / f ((R : ℝ) + 1)).toNNReal : ℝ≥0∞) *
-        Manifold.riemannianEDist 𝓘(ℝ, V) x y := by
-  set B : ℝ := (R : ℝ) + 1
-  have hB : 0 < B := by positivity
-  set c : NNReal := (B / f B).toNNReal
-  have hδ : ∀ δ : ℝ≥0∞, Manifold.riemannianEDist 𝓘(ℝ, V) x y < δ → δ ≤ 1 →
-      edist x.ofWithMetric y.ofWithMetric ≤ (c : ℝ≥0∞) * δ := fun δ hyδ hδ1 ↦ by
-    obtain ⟨γ, hγ0, hγ1, hγ, hlen⟩ := Manifold.exists_lt_of_riemannianEDist_lt hyδ
-    have hnorm : ∀ t ∈ Icc (0 : ℝ) 1, ‖(γ t).ofWithMetric‖ ≤ B := fun t ht ↦ by
-      have hxt : Manifold.riemannianEDist 𝓘(ℝ, V) (γ t) x ≤ 1 := by
-        rw [Manifold.riemannianEDist_comm]
-        exact ((Manifold.riemannianEDist_le_pathELength (hγ.mono (Icc_subset_Icc_right ht.2)) hγ0
-          rfl ht.1).trans (Manifold.pathELength_mono le_rfl ht.2)).trans (hlen.le.trans hδ1)
-      have hd : Manifold.riemannianEDist 𝓘(ℝ, V) (γ t)
-          (WithMetric.toWithMetric (hf.metric V) 0) ≤ ENNReal.ofReal B := by
-        calc Manifold.riemannianEDist 𝓘(ℝ, V) (γ t) (WithMetric.toWithMetric (hf.metric V) 0)
-            ≤ Manifold.riemannianEDist 𝓘(ℝ, V) (γ t) x +
-                Manifold.riemannianEDist 𝓘(ℝ, V) x (WithMetric.toWithMetric (hf.metric V) 0) :=
-              Manifold.riemannianEDist_triangle
-          _ ≤ 1 + R := add_le_add hxt hx
-          _ = ENNReal.ofReal B := by
-              rw [ENNReal.ofReal_add R.coe_nonneg zero_le_one, ENNReal.ofReal_coe_nnreal,
-                ENNReal.ofReal_one, add_comm]
-      exact hf.norm_ofWithMetric_le_of_riemannianEDist_le hB.le hd
-    have key := Manifold.enorm_sub_le_mul_pathELength (f := WithMetric.ofWithMetric) zero_le_one
-      (hγ.mdifferentiableOn one_ne_zero) (WithMetric.contMDiff_ofWithMetric.comp_contMDiffOn hγ)
-      (fun t _ ↦ WithMetric.contMDiff_ofWithMetric.mdifferentiableAt one_ne_zero) fun t ht ↦
-        hf.norm_mfderiv_ofWithMetric_le_of_norm_le hB (hnorm t ht) _
-    rw [hγ0, hγ1, ← eDist_eq_eNorm_sub, edist_comm] at key
-    exact key.trans (by gcongr)
-  have : (𝓝[>] (Manifold.riemannianEDist 𝓘(ℝ, V) x y)).NeBot := nhdsGT_neBot_of_exists_gt ⟨1, hxy⟩
-  have hlim : Tendsto (fun δ ↦ (c : ℝ≥0∞) * δ) (𝓝[>] (Manifold.riemannianEDist 𝓘(ℝ, V) x y))
-      (𝓝 ((c : ℝ≥0∞) * Manifold.riemannianEDist 𝓘(ℝ, V) x y)) :=
-    (ENNReal.Tendsto.const_mul tendsto_id (Or.inr ENNReal.coe_ne_top)).mono_left nhdsWithin_le_nhds
-  refine ge_of_tendsto hlim ?_
-  filter_upwards [Ioo_mem_nhdsGT hxy] with δ hδmem using hδ δ hδmem.1 hδmem.2.le
-
-/-- **Metric completeness of the standard cap.** Equipped with its Riemannian `MetricSpace`
-structure `MetricSpace.ofRiemannianMetric`, `WithMetric (hf.metric V)` is a complete metric
-space. -/
-theorem completeSpace_withMetric :
-    letI : MetricSpace (WithMetric (hf.metric V)) :=
-      MetricSpace.ofRiemannianMetric 𝓘(ℝ, V) (WithMetric (hf.metric V))
-    CompleteSpace (WithMetric (hf.metric V)) := by
-  let d₀ : PseudoEMetricSpace (WithMetric (hf.metric V)) :=
-    .induced (WithMetric.ofWithMetric : WithMetric (hf.metric V) → V) inferInstance
-  let d₁ : PseudoEMetricSpace (WithMetric (hf.metric V)) :=
-    .ofRiemannianMetric 𝓘(ℝ, V) (WithMetric (hf.metric V))
-  have hd₀_complete : @CompleteSpace (WithMetric (hf.metric V)) d₀.toUniformSpace := by
-    let _ : UniformSpace (WithMetric (hf.metric V)) := d₀.toUniformSpace
-    exact CompleteSpace.of_comp_eq_id (WithMetric.toWithMetric (hf.metric V))
-      WithMetric.ofWithMetric rfl WithMetric.continuous_toWithMetric uniformContinuous_comap
-  refine PseudoEMetricSpace.completeSpace_of_continuous_local_edist_bound_at_basepoint d₀ d₁
-    (WithMetric.toWithMetric (hf.metric V) 0) hd₀_complete continuous_id
-    (fun p ↦ ne_top_of_le_ne_top (edist_ne_top p.ofWithMetric 0)
-      (hf.riemannianEDist_toWithMetric_le p.ofWithMetric 0)) fun R ↦ ?_
-  set c : NNReal := (((R : ℝ) + 1) / f ((R : ℝ) + 1)).toNNReal
-  refine ⟨max c (2 * R), fun x y hx hy ↦ ?_⟩
-  have hd₀_edist (a b : WithMetric (hf.metric V)) :
-      d₀.edist a b = edist a.ofWithMetric b.ofWithMetric :=
-    -- `PseudoEMetricSpace.induced` defines `edist` by precomposing with `WithMetric.ofWithMetric`.
-    rfl
-  have hd₁_edist (a b : WithMetric (hf.metric V)) :
-      d₁.edist a b = Manifold.riemannianEDist 𝓘(ℝ, V) a b :=
-    -- `PseudoEMetricSpace.ofRiemannianMetric` installs `Manifold.riemannianEDist` as `edist`.
-    rfl
-  rw [hd₁_edist] at hx hy; rw [hd₀_edist, hd₁_edist]
-  rcases lt_or_ge (Manifold.riemannianEDist 𝓘(ℝ, V) x y) 1 with hxy | hxy
-  · exact (hf.edist_ofWithMetric_le_of_riemannianEDist_lt_one R hx hxy).trans
-      (by gcongr; exact le_max_left _ _)
-  · have hx_norm := hf.norm_ofWithMetric_le_of_riemannianEDist_le R.coe_nonneg
-      (by simpa [ENNReal.ofReal_coe_nnreal] using hx)
-    have hy_norm := hf.norm_ofWithMetric_le_of_riemannianEDist_le R.coe_nonneg
-      (by simpa [ENNReal.ofReal_coe_nnreal] using hy)
-    calc edist x.ofWithMetric y.ofWithMetric
-        = ENNReal.ofReal ‖x.ofWithMetric - y.ofWithMetric‖ := by rw [edist_dist, dist_eq_norm]
-      _ ≤ ENNReal.ofReal (2 * (R : ℝ)) :=
-          ENNReal.ofReal_le_ofReal ((norm_sub_le _ _).trans (by linarith))
-      _ = ((2 * R : NNReal) : ℝ≥0∞) * 1 := by push_cast [ENNReal.ofReal_mul]; simp
-      _ ≤ ((max c (2 * R) : NNReal) : ℝ≥0∞) * Manifold.riemannianEDist 𝓘(ℝ, V) x y := by
-          gcongr; exact le_max_right _ _
-
-/-- **Geodesic completeness of the standard cap.** Every maximal geodesic of `hf.metric V` on a
-finite-dimensional real inner product space `V` is defined on all of `ℝ`. -/
-theorem isGeodesicallyCompleteAt_withMetric (p : WithMetric (hf.metric V)) :
-    Manifold.IsGeodesicallyCompleteAt 𝓘(ℝ, V) (WithMetric (hf.metric V)) p := by
-  let _ : MetricSpace (WithMetric (hf.metric V)) :=
-    MetricSpace.ofRiemannianMetric 𝓘(ℝ, V) (WithMetric (hf.metric V))
-  have : CompleteSpace (WithMetric (hf.metric V)) := hf.completeSpace_withMetric
-  exact Manifold.isGeodesicallyCompleteAt_of_completeSpace p
-
-end Completeness
-
-/-! ### Global sectional and scalar curvature of the standard cap -/
-
-section Curvature
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-include hf
-
-private theorem sectionalCurvature_withMetric_of_ne_zero {n : ℕ} [Fact (finrank ℝ V = n + 1)]
-    {p : WithMetric (hf.metric V)} (hp : p.ofWithMetric ≠ 0) (X Y : TangentSpace 𝓘(ℝ, V) p) :
-    letI : RiemannianBundle _ := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
-    ∃ (q : standardCapRadialDomain × sphere (0 : V) 1) (u v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) q),
-      (q.1 : ℝ) = ‖p.ofWithMetric‖ ∧
-      (LinearIndependent ℝ ![u, v] ↔ LinearIndependent ℝ ![X, Y]) ∧
-      (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) p X Y =
-        (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
-          (standardCapRadialDomain × sphere (0 : V) 1)).sectionalCurvature
-          (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) q u v := by
-  let _ : RiemannianBundle _ := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
-  have hloc := hf.isLocalRiemannianIsometry_toWithMetric_polar (n := n) V
-  set ψ : standardCapRadialDomain × sphere (0 : V) 1 → WithMetric (hf.metric V) :=
-    fun z ↦ WithMetric.toWithMetric (hf.metric V) ((z.1 : ℝ) • (z.2 : V))
-  obtain ⟨q, hq_norm, hψq⟩ : ∃ q : standardCapRadialDomain × sphere (0 : V) 1,
-      (q.1 : ℝ) = ‖p.ofWithMetric‖ ∧ ψ q = p := by
-    refine ⟨(radialSphereDiffeomorph (n := n) V).symm ⟨p.ofWithMetric, mem_puncturedSpace.2 hp⟩,
-      by simp, ?_⟩
-    have hcoe := congrArg Subtype.val ((radialSphereDiffeomorph (n := n) V).apply_symm_apply
-      ⟨p.ofWithMetric, mem_puncturedSpace.2 hp⟩)
-    rw [coe_radialSphereDiffeomorph_apply] at hcoe; exact WithMetric.ext hcoe
-  subst hψq
-  obtain ⟨e, he⟩ := hloc.exists_linearIsometryEquiv_eq_mfderiv q
-  obtain ⟨u, hu⟩ := (hloc.mfderiv_surjective q) X
-  obtain ⟨v, hv⟩ := (hloc.mfderiv_surjective q) Y
-  refine ⟨q, u, v, hq_norm, ?_, ?_⟩
-  · have hcomp : ⇑e.toLinearEquiv.toLinearMap ∘ ![u, v] = ![X, Y] := by
-      ext i; fin_cases i <;> simp [he, hu, hv]
-    have hli := e.toLinearEquiv.toLinearMap.linearIndependent_iff (LinearEquiv.ker e.toLinearEquiv)
-      (v := ![u, v])
-    rw [hcomp] at hli; exact hli.symm
-  · have hsec := hloc.sectionalCurvature_mfderiv q u v; rwa [hu, hv] at hsec
-
-private theorem sectionalCurvature_withMetric_tip_limit
-    {p₀ : WithMetric (hf.metric V)} (hp₀ : p₀.ofWithMetric = 0)
-    {X Y : TangentSpace 𝓘(ℝ, V) p₀} (hXY : LinearIndependent ℝ ![X, Y])
-    {s : Set (WithMetric (hf.metric V))} (hs : s ∈ 𝓝 p₀) {k : ℝ}
-    (hk : ∀ q ∈ s, q.ofWithMetric ≠ 0 → ∀ u v : TangentSpace 𝓘(ℝ, V) q,
-      LinearIndependent ℝ ![u, v] →
-      (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) q u v = k) :
-    (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-      (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) p₀ X Y = k := by
-  have hcard : 2 ≤ finrank ℝ V := by
-    have h := hXY.fintype_card_le_finrank
-    rwa [Fintype.card_fin, (tangentSpaceCastModel 𝓘(ℝ, V) p₀).toLinearEquiv.finrank_eq] at h
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (M := V) (by omega)
-  have : Nontrivial (WithMetric (hf.metric V)) :=
-    (WithMetric.equiv (hf.metric V)).surjective.nontrivial
-  obtain ⟨u, hu, hu₀⟩ := FiberBundle.exists_contMDiff_section_eq 𝓘(ℝ, V) V ∞ X
-  obtain ⟨v, hv, hv₀⟩ := FiberBundle.exists_contMDiff_section_eq 𝓘(ℝ, V) V ∞ Y
-  have hcont :=
-    ((leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).contMDiffAt_sectionalCurvature
-      (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) (n := (⊤ : ℕ∞)) (hu p₀) (hv p₀)
-      (by rwa [hu₀, hv₀])).continuousAt
-  have hdet_cont : Continuous fun q ↦
-      inner ℝ (u q) (u q) * inner ℝ (v q) (v q) - inner ℝ (u q) (v q) ^ 2 :=
-    ((hu.continuous.inner_bundle hu.continuous).mul (hv.continuous.inner_bundle hv.continuous)).sub
-      ((hu.continuous.inner_bundle hv.continuous).pow 2)
-  have hdet₀ : inner ℝ (u p₀) (u p₀) * inner ℝ (v p₀) (v p₀) - inner ℝ (u p₀) (v p₀) ^ 2 ≠ 0 := by
-    rw [hu₀, hv₀, ← Matrix.real_det_gram_fin_two]
-    exact Matrix.det_gram_ne_zero_iff_linearIndependent.mpr hXY
-  have hev : ∀ᶠ q in 𝓝[≠] p₀,
-      (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) q (u q) (v q) = k := by
-    filter_upwards [nhdsWithin_le_nhds (inter_mem hs (hdet_cont.continuousAt.eventually_ne hdet₀)),
-      self_mem_nhdsWithin] with q ⟨hqs, hqdet⟩ hqne
-    exact hk q hqs (fun h ↦ hqne (WithMetric.ext (h.trans hp₀.symm))) (u q) (v q)
-      (Matrix.det_gram_ne_zero_iff_linearIndependent.mp (by rwa [Matrix.real_det_gram_fin_two]))
-  have : (𝓝[≠] p₀).NeBot := mem_closure_iff_nhdsWithin_neBot.1 (by
-    rw [closure_compl_singleton]; trivial)
-  simpa [hu₀, hv₀] using tendsto_nhds_unique
-    ((hcont.tendsto.mono_left nhdsWithin_le_nhds).congr' hev) tendsto_const_nhds
-
-/-- **Near the tip (including at `0`), the standard cap has constant sectional curvature
-`1 / 4`.** -/
-theorem exists_hasSectionalCurvatureAt_withMetric_round :
-    ∃ r₀ > 0, ∀ p : WithMetric (hf.metric V), ‖p.ofWithMetric‖ < r₀ →
-      (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).HasSectionalCurvatureAt
-        (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) p (1 / 4) := by
-  rcases Nat.eq_zero_or_pos (finrank ℝ V) with hd0 | hdpos
-  · refine ⟨1, one_pos, fun p _ ↦
-      (leviCivitaConnection 𝓘(ℝ, V)
-        (WithMetric (hf.metric V))).hasSectionalCurvatureAt_of_finrank_le_one
-        (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) p (1 / 4) ?_⟩
-    rw [(tangentSpaceCastModel 𝓘(ℝ, V) p).toLinearEquiv.finrank_eq, hd0]; exact Nat.zero_le 1
-  · obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero hdpos.ne'
-    let _ : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-    obtain ⟨r₀, hr₀, hpunct⟩ :=
-      hf.exists_hasSectionalCurvatureAt_puncturedMetric_round (n := n) (V := V)
-    have haway : ∀ q : WithMetric (hf.metric V), ‖q.ofWithMetric‖ < r₀ → q.ofWithMetric ≠ 0 →
-        ∀ X Y : TangentSpace 𝓘(ℝ, V) q, LinearIndependent ℝ ![X, Y] →
-        (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-          (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) q X Y = 1 / 4 := by
-      intro q hqr hq0 X Y hXY
-      obtain ⟨z, u, v, hz, hli, hsec⟩ :=
-        hf.sectionalCurvature_withMetric_of_ne_zero (n := n) hq0 X Y
-      let _ : RiemannianBundle (fun w : standardCapRadialDomain × sphere (0 : V) 1 ↦
-        TangentSpace (𝓘(ℝ).prod (𝓡 n)) w) := ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
-      exact hsec.trans ((hpunct z (hz.trans_lt hqr)).sectionalCurvature_eq u v (hli.2 hXY))
-    refine ⟨r₀, hr₀, fun p hp ↦ (hasSectionalCurvatureAt_iff _ _ _ _).2 fun X Y hXY ↦ ?_⟩
-    rcases eq_or_ne p.ofWithMetric 0 with hp0 | hp0
-    · exact hf.sectionalCurvature_withMetric_tip_limit hp0 hXY
-        (s := WithMetric.ofWithMetric ⁻¹' Metric.ball (0 : V) r₀)
-        ((Metric.isOpen_ball.preimage WithMetric.continuous_ofWithMetric).mem_nhds
-          (by simp [hp0, hr₀]))
-        fun q hq hq0 u v huv ↦ haway q (by simpa using hq) hq0 u v huv
-    · exact haway p hp hp0 X Y hXY
-
-/-- **Every tangent two-plane of the standard cap (including at the tip) has nonnegative sectional
-curvature.** -/
-theorem sectionalCurvature_withMetric_nonneg (p : WithMetric (hf.metric V))
-    (X Y : TangentSpace 𝓘(ℝ, V) p) :
-    0 ≤ (leviCivitaConnection 𝓘(ℝ, V) (WithMetric (hf.metric V))).sectionalCurvature
-      (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, V)) p X Y := by
-  by_cases hXY : LinearIndependent ℝ ![X, Y]
-  · rcases eq_or_ne p.ofWithMetric 0 with hp0 | hp0
-    · obtain ⟨r₀, hr₀, hround⟩ := hf.exists_hasSectionalCurvatureAt_withMetric_round (V := V)
-      rw [(hround p (by simp [hp0, hr₀])).sectionalCurvature_eq X Y hXY]; norm_num
-    · have hdpos : 0 < finrank ℝ V := by
-        have h := hXY.fintype_card_le_finrank
-        rw [Fintype.card_fin, (tangentSpaceCastModel 𝓘(ℝ, V) p).toLinearEquiv.finrank_eq] at h
-        omega
-      obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero hdpos.ne'
-      let _ : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-      obtain ⟨z, u, v, -, -, hsec⟩ := hf.sectionalCurvature_withMetric_of_ne_zero (n := n) hp0 X Y
-      rw [hsec]; exact hf.sectionalCurvature_puncturedMetric_nonneg (n := n) z u v
-  · rw [sectionalCurvature_apply,
-      not_not.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr hXY), div_zero]
-
-/-- Away from `0 ∈ V`, the scalar curvature of `hf.metric V` equals that of `hf.puncturedMetric V`
-evaluated at the polar coordinates of `x`. -/
-theorem scalarCurvature_metric_eq_scalarCurvature_puncturedMetric {n : ℕ}
-    [Fact (finrank ℝ V = n + 1)] {x : V} (hx : x ≠ 0) :
-    (hf.metric V).scalarCurvature x =
-      (hf.puncturedMetric (n := n) V).scalarCurvature
-        ((radialSphereDiffeomorph (n := n) V).symm ⟨x, mem_puncturedSpace.2 hx⟩) := by
-  rw [← (hf.metric V).scalarCurvature_restrictOpenTangentSpace (puncturedSpace V)
-      ⟨x, mem_puncturedSpace.2 hx⟩, hf.puncturedMetric_eq_pullback (n := n) V,
-    ContMDiffRiemannianMetric.scalarCurvature_pullback]; simp
+/-- Away from the tip, the scalar curvature of the standard cap at `x` is the scalar curvature of
+the punctured standard cap at a point of `(0, ∞) × Sⁿ` of radius `‖x‖`. -/
+theorem exists_scalarCurvature_metric_eq_puncturedMetric {n : ℕ} [Fact (finrank ℝ V = n + 1)]
+    {x : V} (hx : x ≠ 0) :
+    ∃ p : standardCapRadialDomain × sphere (0 : V) 1, (p.1 : ℝ) = ‖x‖ ∧
+      (hf.metric V).scalarCurvature x = (hf.puncturedMetric (n := n) V).scalarCurvature p := by
+  obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
+  exact ⟨p, (norm_standardCapPolar p).symm, hf.scalarCurvature_metric_standardCapPolar p⟩
 
 /-- Away from `0 ∈ V`, the scalar curvature of `hf.metric V` is given by the warped-product radial
 formula in `r = ‖x‖`. -/
@@ -912,61 +761,62 @@ theorem scalarCurvature_metric_of_ne_zero {x : V} (hx : x ≠ 0) :
       ((finrank ℝ V : ℝ) - 1) * ((finrank ℝ V : ℝ) - 2) * (1 - deriv f ‖x‖ ^ 2) / f ‖x‖ ^ 2 -
         2 * ((finrank ℝ V : ℝ) - 1) * deriv (deriv f) ‖x‖ / f ‖x‖ := by
   have : Nontrivial V := ⟨⟨x, 0, hx⟩⟩
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-  let _ : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-  rw [hf.scalarCurvature_metric_eq_scalarCurvature_puncturedMetric (n := n) hx,
-    hf.scalarCurvature_puncturedMetric (n := n), hn, radialSphereDiffeomorph_symm_apply_fst]
-  push_cast; ring
+  obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
+  obtain ⟨p, hp, hpx⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) hx
+  rw [hpx, hf.scalarCurvature_puncturedMetric (n := n), hp, hn.out]
+  push_cast
+  ring
 
-private theorem scalarCurvature_metric_of_subsingleton [Subsingleton V] (x : V) :
-    (hf.metric V).scalarCurvature x = 0 := by
-  let _ : RiemannianBundle _ := ⟨(hf.metric V).toRiemannianMetric⟩
-  rw [ContMDiffRiemannianMetric.scalarCurvature_def]
-  refine (leviCivitaConnection 𝓘(ℝ, V) V).scalarCurvature_eq_zero_of_ricciTensor_eq_zero x
-    ((leviCivitaConnection 𝓘(ℝ, V) V).ricciTensor_eq_zero_of_finrank_le_one x ?_)
-  rw [Module.finrank_zero_of_subsingleton]
-  exact Nat.zero_le 1
-
-/-- **The standard cap metric has nonnegative scalar curvature everywhere on `V`**, in every
-dimension. -/
+/-- **The standard cap has nonnegative scalar curvature**, also at its tip. -/
 theorem scalarCurvature_metric_nonneg (x : V) : 0 ≤ (hf.metric V).scalarCurvature x := by
   rcases subsingleton_or_nontrivial V with hV | hV
-  · rw [hf.scalarCurvature_metric_of_subsingleton x]
-  · obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-    let _ : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-    have hx : x ∈ closure ({0}ᶜ : Set V) := by rw [closure_compl_singleton]; trivial
-    refine le_on_closure (fun y (hy : y ≠ 0) ↦ ?_) continuous_const.continuousOn
-      (hf.metric V).continuous_scalarCurvature.continuousOn hx
-    rw [hf.scalarCurvature_metric_eq_scalarCurvature_puncturedMetric (n := n) hy]
-    exact hf.scalarCurvature_puncturedMetric_nonneg (n := n) _
+  · exact ((hf.metric V).scalarCurvature_eq_zero_of_subsingleton x).ge
+  obtain ⟨n, _⟩ := exists_fact_finrank_eq_succ (V := V)
+  refine (hf.metric V).le_scalarCurvature_of_dense (dense_compl_singleton 0) (fun y hy ↦ ?_) x
+  obtain ⟨p, -, hp⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) hy
+  exact hp ▸ hf.scalarCurvature_puncturedMetric_nonneg p
 
-/-- **Near the tip (including at `0`), the standard cap metric on `V` has scalar curvature
-`d (d - 1) / 4`** (`d = finrank ℝ V`), the scalar curvature of the round sphere of radius `2`. -/
-theorem exists_scalarCurvature_metric_eq_round :
-    ∃ r₀ > 0, ∀ x : V, ‖x‖ < r₀ →
-      (hf.metric V).scalarCurvature x = (finrank ℝ V : ℝ) * ((finrank ℝ V : ℝ) - 1) / 4 := by
-  let _ : RiemannianBundle _ := ⟨(hf.metric V).toRiemannianMetric⟩
-  let _ := Bundle.instIsContMDiffRiemannianBundle (hf.metric V)
-  obtain ⟨r₀, hr₀, hround⟩ := hf.exists_hasSectionalCurvatureAt_withMetric_round (V := V)
-  refine ⟨r₀, hr₀, fun x hx ↦ ?_⟩
-  rw [ContMDiffRiemannianMetric.scalarCurvature_def,
-    ← hf.isLocalRiemannianIsometry_toWithMetric.scalarCurvature_map x,
-    (hround (WithMetric.toWithMetric (hf.metric V) x) (by simpa using hx)).scalarCurvature_eq,
-    (tangentSpaceCastModel 𝓘(ℝ, V) _).toLinearEquiv.finrank_eq]; ring
-
-/-- **On a sufficiently far cylindrical end (`R ≤ ‖x‖`), the standard cap metric on `V` has scalar
-curvature `(d - 1) (d - 2) / 2`**, the scalar curvature of `ℝ × S^(d - 1)(√2)`. -/
+/-- **The cylindrical end of the standard cap**: far from the tip the scalar curvature of the
+standard cap on a space of dimension `d` is `(d - 1)(d - 2) / 2`, the scalar curvature of the round
+cylinder `ℝ × S^(d - 1)(√2)`. For `V = ℝ³` it is one. -/
 theorem exists_scalarCurvature_metric_eq_cylinder :
     ∃ R > 0, ∀ x : V, R ≤ ‖x‖ →
-      (hf.metric V).scalarCurvature x = ((finrank ℝ V : ℝ) - 1) * ((finrank ℝ V : ℝ) - 2) / 2 := by
+      (hf.metric V).scalarCurvature x = (finrank ℝ V - 1) * (finrank ℝ V - 2) / 2 := by
   rcases subsingleton_or_nontrivial V with hV | hV
-  · exact ⟨1, one_pos, fun x hx ↦ absurd (Subsingleton.elim x 0 ▸ hx) (by simp)⟩
-  · obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-    let _ : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-    obtain ⟨R, hR, hcyl⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_cylinder (n := n) (V := V)
-    refine ⟨R, hR, fun x hx ↦ ?_⟩
-    rw [hf.scalarCurvature_metric_eq_scalarCurvature_puncturedMetric (n := n)
-        (norm_pos_iff.1 (hR.trans_le hx)), hcyl _ (by simpa using hx), hn]; push_cast; ring
+  · exact ⟨1, one_pos, fun x hx ↦ by simp [Subsingleton.elim x 0] at hx; linarith⟩
+  obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
+  obtain ⟨R, hR, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_cylinder (V := V) (n := n)
+  refine ⟨R, hR, fun x hx ↦ ?_⟩
+  obtain ⟨p, hp, hpx⟩ :=
+    hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) (norm_pos_iff.1 (hR.trans_le hx))
+  rw [hpx, h p (hp ▸ hx), hn.out]
+  push_cast
+  ring
+
+/-- **The round tip of the standard cap**: near the tip, including at the tip itself, the scalar
+curvature of the standard cap on a space of dimension `d` is `d (d - 1) / 4`, the scalar curvature
+of the round sphere of radius `2`. -/
+theorem exists_scalarCurvature_metric_eq_round :
+    ∃ r₀ > 0, ∀ x : V, ‖x‖ < r₀ →
+      (hf.metric V).scalarCurvature x = finrank ℝ V * (finrank ℝ V - 1) / 4 := by
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · exact ⟨1, one_pos, fun x _ ↦ by
+    simp [(hf.metric V).scalarCurvature_eq_zero_of_subsingleton,
+      Module.finrank_zero_of_subsingleton]⟩
+  obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_round (V := V) (n := n)
+  have hne (x : V) (hx : ‖x‖ < r₀) (hx0 : x ≠ 0) :
+      (hf.metric V).scalarCurvature x = finrank ℝ V * (finrank ℝ V - 1) / 4 := by
+    obtain ⟨p, hp, hpx⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) hx0
+    rw [hpx, h p (hp ▸ hx), hn.out]
+    push_cast
+    ring
+  refine ⟨r₀, hr₀, fun x hx ↦ ?_⟩
+  rcases eq_or_ne x 0 with rfl | hx0
+  · exact (hf.metric V).scalarCurvature_eq_of_eventually_nhdsNE <| eventually_nhdsWithin_iff.2 <|
+      Filter.eventually_of_mem (Metric.ball_mem_nhds 0 hr₀) fun y hy hy0 ↦
+        hne y (mem_ball_zero_iff.1 hy) hy0
+  · exact hne x hx hx0
 
 /-- In dimension three, the standard cap metric has scalar curvature `3 / 2` near the tip (including
 at `0`). -/
@@ -981,7 +831,7 @@ theorem exists_scalarCurvature_metric_eq_one_of_finrank_eq_three (hd : finrank �
   obtain ⟨R, hR, h⟩ := hf.exists_scalarCurvature_metric_eq_cylinder (V := V)
   exact ⟨R, hR, fun x hx ↦ by rw [h x hx, hd]; norm_num⟩
 
-end Curvature
+end ScalarCurvature
 
 end IsStandardCapProfile
 

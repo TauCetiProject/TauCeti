@@ -68,7 +68,7 @@ says that a symplectomorphism preserving the primitives carries the Liouville fi
 of `θ₂`. -/
 theorem mfderiv_apply_eq_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : σ₂.IsNondegenerate)
     (hσ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (hα : mpullback I I₂ ψ α₂ = α)
-    (hZ : RoughForm.interior Z σ.1 = α) (hZ₂ : RoughForm.interior Z₂ σ₂.1 = α₂) (x : M) :
+    (hZ : RoughForm.interior Z σ.val = α) (hZ₂ : RoughForm.interior Z₂ σ₂.val = α₂) (x : M) :
     mfderiv I I₂ ψ x (Z x) = Z₂ (ψ x) := by
   rw [← sub_eq_zero]
   refine SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ₂ (ψ x) _ fun w ↦ ?_
@@ -97,7 +97,7 @@ be a diffeomorphism with `ψ^*σ₂ = σ` and `ψ^*α₂ = α`, where `σ₂` is
 symplectomorphism preserving `θ` commutes with the local flow of the Liouville field of `θ`. -/
 theorem apply_flowOf_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : σ₂.IsNondegenerate)
     (hσ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (hα : mpullback I I₂ ψ α₂ = α)
-    (hZ : RoughForm.interior Z σ.1 = α) (hZ₂ : RoughForm.interior Z₂ σ₂.1 = α₂)
+    (hZ : RoughForm.interior Z σ.val = α) (hZ₂ : RoughForm.interior Z₂ σ₂.val = α₂)
     (hZ₂' : CMDiff 1 (fun y ↦ (⟨y, Z₂ y⟩ : TangentBundle I₂ M₂))) (t : ℝ) (x : M) :
     ψ (flowOf Z t x) = flowOf Z₂ t (ψ x) :=
   ψ.apply_flowOf (by simp) hZ₂' (ψ.mfderiv_apply_eq_of_interior_eq hσ₂ hσ hα hZ hZ₂) t x

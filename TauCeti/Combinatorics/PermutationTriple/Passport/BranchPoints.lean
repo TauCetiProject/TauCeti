@@ -105,14 +105,14 @@ variable {n : ℕ}
 
 /-- The branch-point action restricts to admissible specifications. -/
 instance : MulAction (Perm (Fin 3))ᵐᵒᵖ (OrderedPassport n) where
-  smul ρ P := ⟨P.1.reindexBranchPoints ρ.unop,
-    (P.1.isAdmissible_reindexBranchPoints_iff ρ.unop).2 P.2⟩
-  one_smul P := Subtype.ext P.1.reindexBranchPoints_one
+  smul ρ P := ⟨P.val.reindexBranchPoints ρ.unop,
+    (P.val.isAdmissible_reindexBranchPoints_iff ρ.unop).2 P.property⟩
+  one_smul P := Subtype.ext P.val.reindexBranchPoints_one
   mul_smul ρ σ P := Subtype.ext
-    (P.1.reindexBranchPoints_reindexBranchPoints σ.unop ρ.unop).symm
+    (P.val.reindexBranchPoints_reindexBranchPoints σ.unop ρ.unop).symm
 
 @[simp] theorem coe_smul (ρ : (Perm (Fin 3))ᵐᵒᵖ) (P : OrderedPassport n) :
-    (ρ • P).1 = ρ • P.1 := (rfl)
+    (ρ • P).val = ρ • P.val := (rfl)
 
 /-- A branch-point orbit contains at most six ordered passports. -/
 theorem card_orbit_le_six (P : OrderedPassport n) :
@@ -137,7 +137,7 @@ variable {n : ℕ}
     simp only [passportOf_partition, coe_reindexBranchPoints,
       PassportSpec.partition_reindexBranchPoints]
     exact congrArg Nat.Partition.parts
-      (Equiv.Perm.partition_eq_of_isConj.mp (t.1.isConj_component_reindexBranchPoints ρ i))
+      (Equiv.Perm.partition_eq_of_isConj.mp (t.val.isConj_component_reindexBranchPoints ρ i))
 
 /-- The refined ordered passport is equivariant for branch-point reindexing. -/
 @[simp] theorem orderedPassportOf_reindexBranchPoints (t : ConnectedTriple n)
@@ -194,6 +194,14 @@ theorem op_smul_mem_classSet_reindexBranchPoints_iff (ρ : Perm (Fin 3))
     MulOpposite.op ρ • c ∈ (P.reindexBranchPoints ρ).classSet ↔ c ∈ P.classSet := by
   simp only [mem_classSet, ConnectedIsoClass.hasPassport_op_smul_reindexBranchPoints_iff]
 
+/-- The branch-point action preserves membership of classes in passports: an isomorphism class
+lies in a passport exactly when its image under a reordering lies in the reordered passport. -/
+theorem smul_mem_classSet_smul_iff (ρ : (Perm (Fin 3))ᵐᵒᵖ) (c : ConnectedIsoClass n)
+    (P : PassportSpec n) : ρ • c ∈ (ρ • P).classSet ↔ c ∈ P.classSet := by
+  induction ρ using MulOpposite.rec' with | h ρ => ?_
+  rw [smul_eq_reindexBranchPoints, MulOpposite.unop_op]
+  exact op_smul_mem_classSet_reindexBranchPoints_iff ρ c P
+
 /-- The classes of a reordered passport are the reordered classes of the passport. -/
 theorem mem_classSet_reindexBranchPoints_iff (ρ : Perm (Fin 3)) (c : ConnectedIsoClass n)
     (P : PassportSpec n) :
@@ -234,21 +242,21 @@ variable {n : ℕ}
 
 /-- Ordered passports in one branch-point orbit have the same passport size. -/
 theorem passportSize_eq_of_mem_orbit {P Q : OrderedPassport n}
-    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) : Q.1.passportSize = P.1.passportSize := by
+    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) : Q.val.passportSize = P.val.passportSize := by
   obtain ⟨ρ, rfl⟩ := hQ
   simp
 
 /-- An isomorphism class lies in the class set of at most one ordered passport of a branch-point
 orbit: two ordered passports of one orbit sharing a class are equal. -/
 theorem eq_of_mem_orbit_of_mem_classSet {P Q : OrderedPassport n}
-    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) {c : ConnectedIsoClass n} (hcQ : c ∈ Q.1.classSet)
-    (hcP : c ∈ P.1.classSet) : Q = P := by
+    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) {c : ConnectedIsoClass n} (hcQ : c ∈ Q.val.classSet)
+    (hcP : c ∈ P.val.classSet) : Q = P := by
   obtain ⟨ρ, rfl⟩ := hQ
   exact Subtype.ext (PassportSpec.eq_of_mem_classSet (by simp) hcQ hcP)
 
 /-- Distinct ordered passports of one branch-point orbit have disjoint class sets. -/
 theorem disjoint_classSet_of_mem_orbit {P Q : OrderedPassport n}
-    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) (hne : Q ≠ P) : Disjoint Q.1.classSet P.1.classSet :=
+    (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) (hne : Q ≠ P) : Disjoint Q.val.classSet P.val.classSet :=
   Finset.disjoint_left.mpr fun _ hcQ hcP ↦ hne (eq_of_mem_orbit_of_mem_classSet hQ hcQ hcP)
 
 end OrderedPassport

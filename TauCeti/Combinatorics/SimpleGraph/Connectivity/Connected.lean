@@ -16,12 +16,17 @@ vertices of a diagram by `Fin n` so that every nonzero vertex has a neighbour wi
 number is what makes connectedness of the Dynkin diagrams, finite and affine alike, a short check.
 
 Graphs with the same reachability relation have canonically equivalent connected components.
+Every vertex of a connected component with at least two vertices has a neighbour inside it.
 Deleting any vertex leaves each connected component not containing it as a single component.
 
 ## Main results
 
+* `SimpleGraph.Reachable.apply_eq_apply`: a function constant along the edges is constant along
+  reachability.
 * `SimpleGraph.connected_of_exists_adj_lt`: a graph on a type with a well-founded `<`, in which
   every vertex other than `v₀` has an adjacent vertex below it, is connected.
+* `SimpleGraph.ConnectedComponent.exists_adj_toSimpleGraph`: in a nontrivial connected component,
+  every vertex is adjacent to another vertex of the component.
 * `SimpleGraph.ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one`: deleting a
   vertex leaves each other connected component intact.
 -/
@@ -52,6 +57,12 @@ def connectedComponentEquivOfReachableEq {V : Type*} (G : SimpleGraph V)
     (G.connectedComponentEquivOfReachableEq h).symm (H.connectedComponentMk v) =
       G.connectedComponentMk v := (rfl)
 
+/-- **No vertex of a nontrivial connected component is isolated in it.** In a connected component
+with at least two vertices, every vertex is adjacent to another vertex of the component. -/
+theorem ConnectedComponent.exists_adj_toSimpleGraph {V : Type*} {G : SimpleGraph V}
+    (C : G.ConnectedComponent) [Nontrivial C] (i : C) : ∃ j, C.toSimpleGraph.Adj i j :=
+  C.connected_toSimpleGraph.preconnected.exists_adj_of_nontrivial i
+
 /-! ### Components after deleting a vertex -/
 
 /-- Deleting a vertex leaves every other connected component intact: exactly one component of the
@@ -66,16 +77,16 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
   constructor
   · constructor
     intro D E
-    obtain ⟨x, hxD⟩ := D.1.exists_rep
-    obtain ⟨y, hyE⟩ := E.1.exists_rep
+    obtain ⟨x, hxD⟩ := D.val.exists_rep
+    obtain ⟨y, hyE⟩ := E.val.exists_rep
     have hxC : G.connectedComponentMk (x : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom x).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.property)
     have hyC : G.connectedComponentMk (y : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom y).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.property)
     obtain ⟨p⟩ := ConnectedComponent.exact (hxC.trans hyC.symm)
     have hvp : v ∉ p.support := by
       intro hv
@@ -97,6 +108,15 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
     rw [ConnectedComponent.map_mk]
     exact hxC
 
+/-- A function that is constant along the edges of a graph is constant along reachability. -/
+theorem Reachable.apply_eq_apply {V β : Type*} {G : SimpleGraph V} {f : V → β}
+    (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) {i j : V} (h : G.Reachable i j) : f i = f j := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => rfl
+  | cons hadj _ ih => exact (hf hadj).trans ih
+section
+
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 
 /-- **A graph on a well-founded order in which every vertex other than `v₀` has a neighbour below
@@ -110,5 +130,7 @@ theorem connected_of_exists_adj_lt (v₀ : V) (h : ∀ v ≠ v₀, ∃ w < v, G.
     · rfl
     · obtain ⟨w, hwv, hadj⟩ := h v hv
       exact (ih w hwv).trans hadj.reachable
+
+end
 
 end SimpleGraph

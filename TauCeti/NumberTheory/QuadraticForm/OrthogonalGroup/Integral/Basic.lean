@@ -105,7 +105,7 @@ theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
         (Submodule.span (PadicInt.subring p) (Set.range b)) ↔
       ∀ i j, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p := by
     rw [b.mapsTo_span_range_iff_forall_toMatrix_mem]
-    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   rw [mem_integralOrthogonalSubgroup_iff]
   exact and_congr (hmaps _).symm (hmaps _).symm
 
@@ -140,7 +140,7 @@ theorem isOpen_integralOrthogonalSubgroup :
       LinearMap.toMatrix b b (g : V ≃ₗ[ℚ_[p]] V).toLinearMap) :=
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   have ho : IsOpen (PadicInt.subring p : Set ℚ_[p]) := by
     simpa using PadicInt.isOpenEmbedding_coe.isOpen_range
   have hset : (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) =
@@ -162,8 +162,6 @@ theorem isOpen_integralOrthogonalSubgroup :
 theorem isCompact_integralOrthogonalSubgroup :
     IsCompact (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) := by
   let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
-  let : IsModuleTopology ℚ_[p] (Matrix ι ι ℚ_[p]) :=
-    inferInstanceAs (IsModuleTopology ℚ_[p] (ι → ι → ℚ_[p]))
   let : CompactSpace (Matrix ι ι ℤ_[p]) := inferInstanceAs (CompactSpace (ι → ι → ℤ_[p]))
   let f := (LinearMap.toMatrixAlgEquiv b).symm.toMonoidHom.comp
     (PadicInt.Coe.ringHom.mapMatrix.toMonoidHom)
@@ -171,7 +169,7 @@ theorem isCompact_integralOrthogonalSubgroup :
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap).comp
       (continuous_pi fun i ↦ continuous_pi fun j ↦
-        continuous_subtype_val.comp ((continuous_apply j).comp (continuous_apply i)))
+        continuous_subtypeVal.comp ((continuous_apply j).comp (continuous_apply i)))
   have hcompact : IsCompact ((MonoidHom.mrange f).units : Set (Module.End ℚ_[p] V)ˣ) :=
     Submonoid.units_isCompact (isCompact_range hf)
   let e := generalLinearContinuousMulEquiv (K := ℚ_[p]) (V := V)

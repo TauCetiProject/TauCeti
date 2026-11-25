@@ -42,6 +42,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane`: two isotropic vectors with polar
   pairing one span a hyperbolic plane.
+* `QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one`: in every characteristic,
+  a plane containing such a pair is isometric to the `xy`-plane `TauCeti.binaryQuadraticForm K 0 0`.
 * `QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal`,
   `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair`: such a pair splits a
   finite-dimensional form as the orthogonal sum of its hyperbolic plane and the orthogonal
@@ -50,6 +52,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 * `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
   `TauCeti.hyperbolicClass`.
+* `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is hyperbolic
+  exactly when `-ab` is a square.
 
 ## References
 
@@ -238,6 +242,18 @@ theorem formClass_hyperbolicPlane :
   rw [presentedForm_one_neg_one]
   exact QuadraticMap.Equivalent.refl _
 
+/-- **Hyperbolicity of a diagonal plane.** The class of `⟨a, b⟩` is the hyperbolic class exactly
+when `-ab` is a square. -/
+@[simp]
+theorem RegularFormClass.mk_binary_eq_hyperbolicClass_iff (a b : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ = hyperbolicClass K ↔ IsSquare (-(a * b)) := by
+  have hdisc : IsSquare (a * b * ((1 : Kˣ) * (-1))) ↔ IsSquare (-(a * b)) := by simp
+  rw [hyperbolicClass_def, RegularFormClass.mk_eq_mk_iff, presentedForm_one_neg_one,
+    presentedForm_two, ← hdisc]
+  refine ⟨fun h ↦ ((equivalent_binary_iff a b 1 (-1)).mp (h.trans ?_)).1,
+    equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare⟩
+  exact (equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare ⟨1, by simp⟩).symm
+
 end HyperbolicClass
 
 variable {V : Type v} [AddCommGroup V] [Module K V]
@@ -304,6 +320,23 @@ theorem _root_.QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane [Inve
     (Q.restrict (Submodule.span K {x, y})).Equivalent (hyperbolicPlane K) := by
   rw [← range_hyperbolicPairMap]
   exact ⟨(hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy).symm⟩
+
+/-- A plane containing a hyperbolic pair `w, f` (isotropic vectors with polar pairing one) is
+isometric to the `xy`-plane `(K², xy)`: in the basis `w, f` the form reads `xy`. Unlike
+`QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane`, this holds in every
+characteristic. -/
+theorem _root_.QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one
+    (Q : QuadraticForm K V) (hV : Module.finrank K V = 2) {w f : V} (hw : Q w = 0)
+    (hf : Q f = 0) (hwf : polar Q w f = 1) :
+    Q.Equivalent (binaryQuadraticForm K 0 0) := by
+  have hli : LinearIndependent K ![w, f] := LinearIndependent.pair_iff.mpr fun s t hst ↦
+    ⟨by simpa [polar_comm Q f w, hf, hwf] using congrArg (polar Q f) hst,
+      by simpa [hw, hwf] using congrArg (polar Q w) hst⟩
+  have hb : Q.basisRepr (basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])) =
+      binaryQuadraticForm K 0 0 := QuadraticMap.ext fun c ↦ by
+    simp [basisRepr_apply, Fin.sum_univ_two, QuadraticMap.map_add, QuadraticMap.map_smul,
+      polar_smul_left, polar_smul_right, hw, hf, hwf, binaryQuadraticForm_apply, mul_comm]
+  exact ⟨hb ▸ Q.isometryEquivBasisRepr _⟩
 
 /-- Two isotropic vectors `x, y` with `polar Q x y = 1` split `Q` as the orthogonal sum of the
 hyperbolic plane they span and its orthogonal complement. -/
