@@ -88,9 +88,7 @@ example
   refine ⟨hJ, ?_, ?_, ?_⟩
   · rw [hev.deriv_eq, hpow]
     simp
-  · rw [hev.deriv.deriv_eq, hpow]
-    rw [show (fun t : ℝ ↦ (m : ℝ) * (1 + t) ^ (m - 1)) =
-      fun t ↦ (m : ℝ) * (1 + t) ^ (m - 1) from rfl, deriv_const_mul_field', hpow]
+  · rw [hev.deriv.deriv_eq, hpow, deriv_const_mul_field', hpow]
     rcases Nat.eq_zero_or_pos m with hm | hm
     · simp [hm]
     · simp [Nat.cast_sub hm]
