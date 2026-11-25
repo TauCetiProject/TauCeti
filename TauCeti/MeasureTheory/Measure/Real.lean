@@ -202,10 +202,7 @@ finite `μ`, the masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`, for an a
 theorem sum_measureReal_preimage_singleton_inter [IsFiniteMeasure μ] {X : Ω → A}
     (hX : Measurable X) (S : Set Ω) :
     ∑ a, μ.real (X ⁻¹' {a} ∩ S) = μ.real S := by
-  have h : ∀ a, μ.real (X ⁻¹' {a} ∩ S) = (μ.restrict S).real (X ⁻¹' {a}) := fun a ↦ by
-    rw [measureReal_def, measureReal_def,
-      Measure.restrict_apply (hX (measurableSet_singleton a))]
-  simp only [h]
+  simp only [← measureReal_restrict_apply (hX (measurableSet_singleton _))]
   rw [sum_measureReal_preimage_singleton _ fun a _ ↦ hX (measurableSet_singleton a)]
   simp [measureReal_def]
 

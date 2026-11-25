@@ -87,7 +87,7 @@ theorem labelEntropy_const [IsZeroOrProbabilityMeasure μ] (a₀ : A) :
   refine Finset.sum_eq_zero fun a _ ↦ ?_
   by_cases h : a₀ = a
   · obtain rfl | _ := eq_zero_or_isProbabilityMeasure (μ := μ) <;> simp [h]
-  · simp [Set.preimage_const_of_notMem (Ne.symm h ∘ Eq.symm ∘ Set.mem_singleton_iff.mp)]
+  · simp [Set.preimage_const_of_notMem (Set.notMem_singleton_iff.mpr h)]
 
 /-- Under the zero measure every label has entropy zero. -/
 @[simp]
@@ -127,8 +127,7 @@ theorem labelEntropy_pair_self (μ : Measure Ω) (X : Ω → A) :
   rw [labelEntropy_pair, labelEntropy_def]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [Finset.sum_eq_single a (fun b _ hb ↦ ?_) (by simp), Set.inter_self]
-  rw [← Set.preimage_inter, Set.singleton_inter_eq_empty.mpr hb.symm, Set.preimage_empty]
-  simp
+  simp [((Set.disjoint_singleton.mpr hb.symm).preimage X).inter_eq]
 
 /-- A label conditioned on itself has conditional entropy zero. -/
 @[simp]
@@ -141,9 +140,7 @@ theorem condLabelEntropy_self (μ : Measure Ω) (X : Ω → A) : condLabelEntrop
     rcases eq_or_ne (μ.real (X ⁻¹' {a})) 0 with h0 | h0
     · simp [h0]
     · simp [div_self h0]
-  · have : X ⁻¹' {a} ∩ X ⁻¹' {b} = ∅ := by
-      rw [← Set.preimage_inter, Set.singleton_inter_eq_empty.mpr h, Set.preimage_empty]
-    simp [this]
+  · simp [((Set.disjoint_singleton.mpr h).preimage X).inter_eq]
 
 end Basic
 

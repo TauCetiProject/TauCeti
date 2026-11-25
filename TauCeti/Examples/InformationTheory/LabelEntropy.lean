@@ -90,9 +90,11 @@ example : condLabelEntropy skewLaw Prod.snd Prod.fst = 1 / 2 * log 2 := by
 /-- The joint entropy, computed directly from the cells: `H((X, Y)) = (3/2) log 2`. -/
 theorem skewLaw_labelEntropy_pair :
     labelEntropy skewLaw (fun ω ↦ (ω.1, ω.2)) = 3 / 2 * log 2 := by
+  have h4 : log 4 = 2 * log 2 := by
+    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, log_pow, Nat.cast_ofNat]
   simp only [labelEntropy_pair, Fintype.sum_bool, skewLaw_real]
   norm_num [Set.mem_preimage, Set.mem_inter_iff, negMulLog]
-  rw [one_div, one_div, log_inv, log_inv, show (4 : ℝ) = 2 ^ 2 by norm_num, log_pow]
+  simp only [one_div, log_inv, h4]
   ring
 
 /-- The chain rule checks the first conditional value against the joint entropy:
