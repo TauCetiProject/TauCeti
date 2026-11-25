@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.FormCore
-import TauCeti.Analysis.InnerProductSpace.L2Space
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 import TauCeti.Analysis.Normed.Lp.Finsupp
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
-import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # A form core that is not a graph core
@@ -46,10 +45,16 @@ variable (𝕜 : Type*) [RCLike 𝕜]
 
 /-- The diagonal operator `(S x)ₖ = 4ᵏ xₖ` on `ℓ²(ℕ, 𝕜)`, on its maximal domain
 `{x ∈ ℓ² | (4ᵏ xₖ) ∈ ℓ²}`: the diagonal operator `HilbertBasis.diagonalPMap` with coefficients `4ᵏ`
-in the standard Hilbert basis of `ℓ²(ℕ, 𝕜)`. It is exposed so that the `HilbertBasis.diagonalPMap`
-API applies to it. -/
-@[expose] def diagonalOperator : ℓ²(ℕ, 𝕜) →ₗ.[𝕜] ℓ²(ℕ, 𝕜) :=
+in the standard Hilbert basis of `ℓ²(ℕ, 𝕜)` (`diagonalOperator_eq`). -/
+def diagonalOperator : ℓ²(ℕ, 𝕜) →ₗ.[𝕜] ℓ²(ℕ, 𝕜) :=
   (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)).diagonalPMap fun k ↦ (4 : 𝕜) ^ k
+
+/-- The diagonal operator is `HilbertBasis.diagonalPMap` with coefficients `4ᵏ` in the standard
+Hilbert basis of `ℓ²(ℕ, 𝕜)`. -/
+theorem diagonalOperator_eq :
+    diagonalOperator 𝕜 =
+      (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)).diagonalPMap fun k ↦ (4 : 𝕜) ^ k :=
+  (rfl)
 
 variable {𝕜}
 
@@ -59,6 +64,11 @@ theorem diagonalOperator_apply (x : (diagonalOperator 𝕜).domain) (k : ℕ) :
   rw [← HilbertBasis.inner_default_apply (diagonalOperator 𝕜 x : ℓ²(ℕ, 𝕜)) k,
     ← HilbertBasis.inner_default_apply (x : ℓ²(ℕ, 𝕜)) k]
   exact HilbertBasis.inner_diagonalPMap_apply _ _ x k
+
+/-- The standard basis vectors lie in the domain of the diagonal operator. -/
+theorem default_mem_domain_diagonalOperator (k : ℕ) :
+    (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) k ∈ (diagonalOperator 𝕜).domain :=
+  HilbertBasis.self_mem_diagonalPMap_domain _ _ k
 
 /-- The diagonal operator is closed. -/
 theorem isClosed_diagonalOperator : (diagonalOperator 𝕜).IsClosed :=
@@ -150,7 +160,7 @@ private theorem testVectorL2_apply (M k : ℕ) :
 
 /-- The vector `v_M` with `(v_M)ₖ = 2⁻ᵏ / M` for `k < M` and `0` otherwise. -/
 def testVector (M : ℕ) : (diagonalOperator 𝕜).domain :=
-  ⟨testVectorL2 M, HilbertBasis.mem_diagonalPMap_domain_of_finite _ _ <| by
+  ⟨testVectorL2 M, HilbertBasis.mem_diagonalPMap_domain_of_hasFiniteSupport _ _ <| by
     simpa only [HilbertBasis.inner_default_apply, testVectorL2_apply] using
       hasFiniteSupport_testVector M⟩
 
@@ -163,8 +173,9 @@ theorem testVector_apply (M k : ℕ) :
 /-- `⟪w, S v_M⟫ = 1` for `M ≠ 0`. -/
 theorem inner_weightVector_diagonalOperator_testVector {M : ℕ} (hM : M ≠ 0) :
     ⟪(weightVector : ℓ²(ℕ, 𝕜)), diagonalOperator 𝕜 (testVector M)⟫_𝕜 = 1 := by
-  simp only [inner_weightVector_diagonalOperator, testVector_apply, mul_ite, mul_zero,
-    TauCeti.tsum_ite_lt_eq_sum_range]
+  simp only [inner_weightVector_diagonalOperator, testVector_apply, mul_ite, mul_zero]
+  rw [tsum_eq_sum (s := Finset.range M) fun k hk ↦ ite_eq_right (by simpa using hk),
+    Finset.sum_ite_of_true fun k hk ↦ Finset.mem_range.1 hk]
   have h2 (k : ℕ) : (2 : 𝕜) ^ k ≠ 0 := pow_ne_zero _ two_ne_zero
   have hM' : (M : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 hM
   simp only [mul_inv, mul_left_comm _ ((M : 𝕜)⁻¹), mul_inv_cancel₀ (h2 _), mul_one,
@@ -186,7 +197,9 @@ theorem re_inner_diagonalOperator_testVector (M : ℕ) :
     diagonalOperator_default (testVector M)
   simp only [HilbertBasis.inner_default_apply, hterm] at h
   refine h.tsum_eq.symm.trans ?_
-  rw [TauCeti.tsum_ite_lt_eq_sum_range, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  rw [tsum_eq_sum (s := Finset.range M) fun k hk ↦ ite_eq_right (by simpa using hk),
+    Finset.sum_ite_of_true fun k hk ↦ Finset.mem_range.1 hk, Finset.sum_const, Finset.card_range,
+    nsmul_eq_mul]
   rcases eq_or_ne M 0 with rfl | hM
   · simp
   · have hM' : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hM
@@ -196,8 +209,8 @@ theorem re_inner_diagonalOperator_testVector (M : ℕ) :
 theorem norm_toFriedrichsSpace_testVector_sq (M : ℕ) :
     ‖LinearPMap.toFriedrichsSpace isSymmetricBoundedBelow_diagonalOperator
       (testVector M : (diagonalOperator 𝕜).domain)‖ ^ 2 = (M : ℝ)⁻¹ := by
-  rw [LinearPMap.norm_toFriedrichsSpace_sq, re_inner_diagonalOperator_testVector, sub_self,
-    zero_mul, add_zero]
+  rw [LinearPMap.norm_toFriedrichsSpace_sq, re_inner_diagonalOperator_testVector]
+  simp
 
 /-- **A form core.** The kernel `D` of `x ↦ ⟪w, S x⟫` in the domain of the diagonal operator is a
 form core: it is dense in the form completion. -/
@@ -212,18 +225,19 @@ theorem isFormCore_kernelDomain :
     exact absurd hM (not_lt.2 (by positivity))
   have hMpos : (0 : ℝ) < M := Nat.cast_pos.2 (Nat.pos_of_ne_zero hM0)
   refine ⟨x - c • testVector M, (mem_kernelDomain_iff _).2 ?_, ?_⟩
-  · rw [LinearPMap.map_sub, LinearPMap.map_smul, inner_sub_right, inner_smul_right,
-      inner_weightVector_diagonalOperator_testVector hM0, mul_one, sub_self]
+  · simp [c, LinearPMap.map_sub, LinearPMap.map_smul, inner_sub_right, inner_smul_right,
+      inner_weightVector_diagonalOperator_testVector hM0]
   · rw [sub_sub_cancel, map_smul, norm_smul]
     refine lt_of_pow_lt_pow_left₀ 2 hε.le ?_
-    rw [mul_pow, norm_toFriedrichsSpace_testVector_sq, ← div_eq_mul_inv, div_lt_iff₀ hMpos]
-    rwa [div_lt_iff₀ (by positivity), mul_comm] at hM
+    rw [mul_pow, norm_toFriedrichsSpace_testVector_sq]
+    rw [div_lt_iff₀ (by positivity)] at hM
+    field_simp
+    linarith
 
 /-- `⟪w, S e₀⟫ = 1` for the first vector `e₀` of the standard Hilbert basis. -/
-theorem inner_weightVector_diagonalOperator_single :
+theorem inner_weightVector_diagonalOperator_default_zero :
     ⟪(weightVector : ℓ²(ℕ, 𝕜)), diagonalOperator 𝕜
-      ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0,
-        HilbertBasis.self_mem_diagonalPMap_domain _ _ 0⟩⟫_𝕜 = 1 := by
+      ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0, default_mem_domain_diagonalOperator 0⟩⟫_𝕜 = 1 := by
   have h : diagonalOperator 𝕜 ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0,
       HilbertBasis.self_mem_diagonalPMap_domain _ _ 0⟩ =
       (4 : 𝕜) ^ 0 • (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0 :=
@@ -249,7 +263,7 @@ theorem not_hasCore_kernelDomain : ¬(diagonalOperator 𝕜).HasCore kernelDomai
     exact (mem_kernelDomain_iff _).1 y.property.1)
   have := hsub ((diagonalOperator 𝕜).mem_graph ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0,
     HilbertBasis.self_mem_diagonalPMap_domain _ _ 0⟩)
-  simp only [Set.mem_ofPred_eq, inner_weightVector_diagonalOperator_single] at this
+  simp only [Set.mem_ofPred_eq, inner_weightVector_diagonalOperator_default_zero] at this
   exact one_ne_zero this
 
 end TauCeti.Examples.FormCore
