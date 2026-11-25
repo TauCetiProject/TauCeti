@@ -224,7 +224,7 @@ private theorem single_swap_mem_of_longRoot
       have hsub := N.toSubmodule.sub_mem hgw hmem
       rw [GLSymplecticFin.coe_positiveLongRootTransvectionUnit] at hsub
       rw [transvectionUnit_mulVec_sub k m _ _
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) 1 _] at hsub
+        (Fin.finSumFinEquiv_inl_ne_inr i i) 1 _] at hsub
       simpa [Pi.single_apply] using hsub
   | true =>
       let g := GLSymplecticFin.negativeLongRootTransvectionUnit (R := k) i 1
@@ -232,7 +232,7 @@ private theorem single_swap_mem_of_longRoot
       have hsub := N.toSubmodule.sub_mem hgw hmem
       rw [GLSymplecticFin.coe_negativeLongRootTransvectionUnit] at hsub
       rw [transvectionUnit_mulVec_sub k m _ _
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) 1 _] at hsub
+        (Fin.finSumFinEquiv_inr_ne_inl i i) 1 _] at hsub
       simpa [Pi.single_apply] using hsub
 
 /-- A difference-root element moves an upper standard basis vector between indices. -/
@@ -248,13 +248,13 @@ private theorem differenceShortRootUnit_mulVec_single_sub (i j : Fin m) (hji : j
     simp
   have hcoli : i.addNat m ≠ Fin.castAdd m i := by
     intro h
-    apply GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i
+    apply Fin.finSumFinEquiv_inr_ne_inl i i
     rw [finSumFinEquiv_apply_right, finSumFinEquiv_apply_left]
     rw [← addNat_eq_natAdd]
     exact h
   have hcolj : j.addNat m ≠ Fin.castAdd m i := by
     intro h
-    apply GLSymplecticFin.finSumFinEquiv_inr_ne_inl j i
+    apply Fin.finSumFinEquiv_inr_ne_inl j i
     rw [finSumFinEquiv_apply_right, finSumFinEquiv_apply_left]
     rw [← addNat_eq_natAdd]
     exact h
@@ -291,7 +291,7 @@ private theorem single_one_mem_of_ne_bot
     rcases b' with i | i
     · apply single_one_mem_of_transvection k m N hw
         (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inl i))
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i)
+        (Fin.finSumFinEquiv_inr_ne_inl i i)
         (GLSymplecticFin.negativeLongRootTransvectionUnit i 1)
         (GLSymplecticFin.coe_negativeLongRootTransvectionUnit i 1)
       have : w (finSumFinEquiv (Sum.inl i)) ≠ 0 := by
@@ -300,7 +300,7 @@ private theorem single_one_mem_of_ne_bot
       exact this
     · apply single_one_mem_of_transvection k m N hw
         (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inr i))
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i)
+        (Fin.finSumFinEquiv_inl_ne_inr i i)
         (GLSymplecticFin.positiveLongRootTransvectionUnit i 1)
         (GLSymplecticFin.coe_positiveLongRootTransvectionUnit i 1)
       have : w (finSumFinEquiv (Sum.inr i)) ≠ 0 := by

@@ -136,7 +136,7 @@ theorem hom_apply_matrix (root : RootSubgroupIndex m) (c : Multiplicative R) :
           Matrix (Fin (m + m)) (Fin (m + m)) R) *
           single (finSumFinEquiv (.inl j)) (finSumFinEquiv (.inr i)) c.toAdd = 0 := by
         apply single_mul_single_of_ne
-        exact finSumFinEquiv_inr_ne_inl j j
+        exact Fin.finSumFinEquiv_inr_ne_inl j j
       simp only [Matrix.transvection, add_mul, mul_add, one_mul, mul_one, hz, add_zero,
         tangentMatrix_positiveSum, submatrix_add, Pi.add_apply,
         submatrix_one_equiv, submatrix_single_equiv,
@@ -149,7 +149,7 @@ theorem hom_apply_matrix (root : RootSubgroupIndex m) (c : Multiplicative R) :
           Matrix (Fin (m + m)) (Fin (m + m)) R) *
           single (finSumFinEquiv (.inr j)) (finSumFinEquiv (.inl i)) c.toAdd = 0 := by
         apply single_mul_single_of_ne
-        exact finSumFinEquiv_inl_ne_inr j j
+        exact Fin.finSumFinEquiv_inl_ne_inr j j
       simp only [Matrix.transvection, add_mul, mul_add, one_mul, mul_one, hz, add_zero,
         tangentMatrix_negativeSum, submatrix_add, Pi.add_apply,
         submatrix_one_equiv, submatrix_single_equiv,

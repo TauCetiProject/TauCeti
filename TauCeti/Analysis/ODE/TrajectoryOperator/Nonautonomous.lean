@@ -251,7 +251,7 @@ theorem isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
     (nonautonomousDomainTrajectoryOperator (p := 2) ι A).IsInvertible :=
   (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀)
+    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
     (lt_of_le_of_lt (mul_le_mul_of_nonneg_left
       (norm_nonautonomousDomainTrajectoryOperator_sub_domainTrajectoryOperator_le ι A₀
         (nonneg_of_ae_norm_sub_le hA) hA)
@@ -272,7 +272,7 @@ theorem norm_inverse_nonautonomousDomainTrajectoryOperator_le_of_ae_norm_sub_le
       domainTrajectoryOperator ι A₀‖ ≤ C * δ :=
     mul_le_mul_of_nonneg_left hdiff (by positivity)
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀) (hCδ.trans_lt hsmall)).trans ?_
+    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (hCδ.trans_lt hsmall)).trans ?_
   gcongr
 
 /-- Under the hypotheses of

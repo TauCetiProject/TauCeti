@@ -13,6 +13,7 @@ public import TauCeti.Topology.CWComplex.Classical.CWType
 import TauCeti.Topology.CWComplex.Abstract.ClosureFinite
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.Category.TopCat.RelativeCellComplex
+import TauCeti.Topology.Maps.DomRestrict
 
 /-!
 # Categorical relative CW complexes are classical relative CW complexes
@@ -135,17 +136,6 @@ private lemma coe_cellPartialEquiv (γ : c.Cells) :
     (c.cellPartialEquiv γ : (Fin γ.j → ℝ) → Y) = c.cellMap γ :=
   rfl
 
-private lemma continuousOn_cellPartialEquiv_symm (γ : c.Cells) :
-    ContinuousOn (cellPartialEquiv c γ).symm (cellPartialEquiv c γ).target := by
-  let e := cellPartialEquiv c γ
-  let g : e.target → Metric.ball (0 : Fin γ.j → ℝ) 1 := fun y ↦
-    ⟨e.symm y, e.map_target y.property⟩
-  have hg : Continuous g := (c.isEmbedding_cellMap γ).continuous_iff.2 (by
-    convert continuous_subtypeVal using 1
-    funext y
-    exact e.right_inv y.property)
-  exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtypeVal.comp hg)
-
 private lemma cellMap_boundary_finite (γ : c.Cells) :
     ∃ I : ∀ n, Finset (c.attachCells n (not_isMax n)).ι,
       MapsTo (c.cellMap γ) (Metric.sphere 0 1)
@@ -178,7 +168,8 @@ fixed radial identification of the max-norm ball with the Euclidean disk. -/
   map n i := cellPartialEquiv c ⟨n, not_isMax n, i⟩
   source_eq _ _ := rfl
   continuousOn n i := continuousOn_cellMap c ⟨n, not_isMax n, i⟩
-  continuousOn_symm n i := continuousOn_cellPartialEquiv_symm c ⟨n, not_isMax n, i⟩
+  continuousOn_symm n i :=
+    (c.isEmbedding_cellMap ⟨n, not_isMax n, i⟩).isInducing.continuousOn_toPartialEquiv_symm _
   pairwiseDisjoint' := by
     intro ni _ nj _ hne
     simp only [Function.onFun, c.coe_cellPartialEquiv]

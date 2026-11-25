@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.Topology.Algebra.Valued.DiscreteValuationRing
 
 /-!
 # The valuative relation on an adic completion
@@ -246,25 +247,15 @@ theorem natCard_residueField_adicCompletion_eq_absNorm :
 /-- An adic completion with finite residue field is a nonarchimedean local field. -/
 instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
     IsNonarchimedeanLocalField (v.adicCompletion K) := by
-  -- The discrete valuation admits a rank-one normalization; its chosen base does not affect the
-  -- topology.
-  let _ : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).RankOne :=
-    Valuation.IsRankOneDiscrete.rankOne _ (by norm_num : (1 : NNReal) < 2)
-  let _ : NormedField (v.adicCompletion K) :=
-    Valued.toNormedField (v.adicCompletion K) ℤᵐ⁰
   -- The residue field of `𝒪_v` is `R ⧸ v`, which is finite.
-  let _ : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
+  have : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
     Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
-  -- Local compactness comes from Mathlib's criterion for the `Valued` structure of `K_v`. That
-  -- criterion is stated for `Valued.integer`, which unfolds to `v.adicCompletionIntegers K`, so
-  -- its two inputs are supplied by `inferInstanceAs` at the latter.
-  let _ : ProperSpace (v.adicCompletion K) :=
-    (@properSpace_iff_completeSpace_and_isDiscreteValuationRing_integer_and_finite_residueField
-      (v.adicCompletion K) ℤᵐ⁰ _ _
-      (inferInstance : Valued (v.adicCompletion K) ℤᵐ⁰) inferInstance).mpr
-      ⟨inferInstance,
-        inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K)),
-        inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
+  -- `Valued.integer (v.adicCompletion K)` unfolds to `v.adicCompletionIntegers K`, so the
+  -- finiteness input of the local compactness criterion is supplied by `inferInstanceAs`.
+  have : LocallyCompactSpace (v.adicCompletion K) :=
+    have : Finite (IsLocalRing.ResidueField (Valued.integer (v.adicCompletion K))) :=
+      inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))
+    Valued.integer.locallyCompactSpace_of_finite_residueField
   exact ⟨⟩
 
 /-- The zero-preserving normalized valuation of the completion `K_v` is the inverse of its adic
@@ -348,6 +339,19 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
   rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
     algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     Algebra.algebraMap_self_apply]
+
+/-- **Elements of `R` congruent to `1` in the completion.** Let `a` be the image in `Kˣ` of an
+element `r` of `R`. The image of `a` in `K_v` lies in the step `U(K_v, n)` of the unit filtration
+exactly when `r ∉ v` and `r ≡ 1` modulo `v ^ n`. -/
+theorem unitsMap_algebraMap_mem_unitFiltration_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {a : Kˣ} {r : R}
+    (hr : algebraMap R K r = a) {n : ℕ} :
+    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
+        TauCeti.unitFiltration (v.adicCompletion K) n ↔
+      r ∉ v.asIdeal ∧ r - 1 ∈ v.asIdeal ^ n := by
+  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass, ← hr,
+    ← IsScalarTower.algebraMap_apply, notMem_asIdeal_iff_valued_algebraMap_eq_one (K := K),
+    mem_asIdeal_pow_iff_valued_algebraMap_le (K := K), map_sub (algebraMap R _), map_one]
 
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/

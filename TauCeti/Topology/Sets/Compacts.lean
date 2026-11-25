@@ -35,8 +35,11 @@ In a Hausdorff space, viewing a compact set as a closed set is monotone, and so 
 locally compact space, a closed set disjoint from a compact set `K` misses some compact
 neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`); local homology
 along `K` is the colimit over the compact neighbourhoods of `K`.
-Finally, inducing maps pull back compact sets contained in their range
-(`IsInducing.preimageCompacts`).
+A compact open set is nonempty exactly when it is not `⊥`
+(`TopologicalSpace.CompactOpens.coe_nonempty`), as Mathlib records for compact sets.
+`TopologicalSpace.Compacts.mem_inf_compl_toCloseds` describes the intersection of an open set with
+the open complement of a compact set of a Hausdorff space. Finally, inducing maps pull back compact
+sets contained in their range (`IsInducing.preimageCompacts`).
 -/
 
 public section
@@ -121,6 +124,12 @@ lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens 
   K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
     (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
 
+/-- The open set `U ⊓ Kᶜ` cut out of an open set `U` by a compact set `K` of a Hausdorff space is
+the set difference `U ∖ K`. -/
+lemma mem_inf_compl_toCloseds [T2Space α] {U : Opens α} {K : Compacts α} {x : α} :
+    x ∈ U ⊓ K.toCloseds.compl ↔ x ∈ (U : Set α) \ K :=
+  Iff.rfl
+
 /-- A compact set `L` whose interior contains `K`, as a compact neighbourhood of `K`. The body is
 exposed, as for Mathlib's `compactNhdsMkOfOpens`, so that the underlying compact set is `L` by
 definition. -/
@@ -181,6 +190,17 @@ lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClo
 end CompactNhds
 
 end TopologicalSpace.Compacts
+
+namespace TopologicalSpace.CompactOpens
+
+variable {α : Type*} [TopologicalSpace α]
+
+/-- A compact open set is nonempty exactly when it is not `⊥`. -/
+@[simp]
+theorem coe_nonempty {K : CompactOpens α} : (K : Set α).Nonempty ↔ K ≠ ⊥ := by
+  rw [← ne_empty_iff_nonempty, ← coe_bot, Ne, Ne, SetLike.coe_set_eq]
+
+end TopologicalSpace.CompactOpens
 
 namespace Topology.IsInducing
 

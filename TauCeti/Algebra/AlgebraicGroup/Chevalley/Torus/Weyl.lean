@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 
 /-!
 # Weyl representatives normalize the actual Chevalley torus
@@ -103,17 +104,6 @@ private theorem torusPoints_conj_simpleWeylElement (s : Fin t.rank → Aˣ) :
   simp only [MulAut.conj_apply, D.torusPoints_conj_rootSubgroupPoints,
     D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, mul_one, mul_neg]
 
-private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
-    D.weylElement (t.simpleIndex ht i) A s =
-      D.torusPoints A (D.simpleCorootParameter i A s) *
-        D.weylElement (t.simpleIndex ht i) A 1 := by
-  apply Subtype.ext
-  have h := D.coe_simpleCorootPoints_eq_root_word i A s
-  simpa only [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix,
-    weylElement_def, Subgroup.coe_mul, coe_rootSubgroupPoints_simpleIndex,
-    coe_rootSubgroupPoints_reflectionPerm_simpleIndex, Subgroup.coe_inv,
-    inv_one, Units.val_one] using (eq_mul_inv_iff_mul_eq.mp h).symm
-
 /-- Conjugation by a pinned simple Weyl representative acts by the simple reflection on
 all points of the actual torus, not just those extending to the full weight lattice. -/
 theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
@@ -121,7 +111,7 @@ theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
       D.torusPoints A (D.simpleReflectionTorusParameter i A s) := by
   have h := D.torusPoints_conj_simpleWeylElement i A s
-  rw [D.simpleWeylElement_eq_coroot_mul i A
+  rw [D.weylElement_simpleIndex_eq_torusPoints_mul A i
       (torusCharacter s (D.coordinateRoot (t.simpleIndex ht i))),
     mul_inv_eq_iff_eq_mul] at h
   rw [simpleReflectionTorusParameter_def, map_div]
@@ -174,6 +164,12 @@ representatives; no field or algebraic-closure hypothesis is needed. -/
 instance normal_torusPoints_subgroupOf_weylSubgroup :
     (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)).Normal :=
   Subgroup.normal_subgroupOf_of_le_normalizer (D.weylSubgroup_le_normalizer_range_torusPoints A)
+
+/-- Every coroot point `h_γ(s)` lies in `D.weylSubgroup A` over every commutative ring `A`. -/
+theorem corootPoints_mem_weylSubgroup (γ : Fin t.numRoots) (s : Aˣ) :
+    D.corootPoints γ A s ∈ D.weylSubgroup A := by
+  rw [D.corootPoints_apply]
+  exact D.torusPoints_mem_weylSubgroup A _
 
 end
 

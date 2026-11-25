@@ -44,6 +44,9 @@ conjugate-linear in the first argument as in Mathlib.
 * `TauCeti.HermitianMetric.toCore`: the form at `σ` as an inner product core on the complex
   fibre at `σ`.
 * `TauCeti.HermitianMetric.norm`: the norm `‖u‖_σ` of a vector in the complex fibre at `σ`.
+* `TauCeti.HermitianMetric.fiberConj`: complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex
+  fibre at `σ` to the one at `conj σ`; it is antiunitary
+  (`TauCeti.HermitianMetric.form_fiberConj`).
 * `TauCeti.HermitianMetric.placeNorm`: the norm `‖x‖_v` of `x ∈ E` at an infinite place `v`,
   computed at either complex embedding inducing `v` (`TauCeti.HermitianMetric.placeNorm_mk`).
 * `TauCeti.HermitianMetric.rescale`: the metric `Ē(c)` with all norms multiplied by `e^{-c}`.
@@ -149,6 +152,25 @@ theorem form_tmul_tmul (σ : K →+* ℂ) (c d : Codomain σ) (x y : E) :
   rw [Codomain.tmul_eq_smul σ c, Codomain.tmul_eq_smul σ d, LinearMap.map_smulₛₗ₂, map_smul,
     smul_eq_mul, smul_eq_mul, mul_assoc]
 
+/-- Integers of `K` come out of the form on vectors of `E` through `σ`: conjugate-linearly on the
+left and linearly on the right. -/
+theorem form_tmul_smul_tmul_smul (σ : K →+* ℂ) (a b : 𝓞 K) (x y : E) :
+    h.form σ (1 ⊗ₜ (a • x)) (1 ⊗ₜ (b • y)) = conj (σ a) * σ b * h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
+  rw [Codomain.tmul_smul, Codomain.tmul_smul, LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul,
+    smul_eq_mul, mul_assoc]
+
+/-- Two hermitian metrics are equal when their forms agree on vectors of `E`, since these span
+every complex fibre. -/
+theorem ext_tmul {h' : HermitianMetric K E}
+    (hh : ∀ σ (x y : E), h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) = h'.form σ (1 ⊗ₜ x) (1 ⊗ₜ y)) : h = h' := by
+  ext σ u v
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  | tmul c x =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+    | tmul d y => rw [h.form_tmul_tmul, h'.form_tmul_tmul, hh]
+
 /-- The normed group structure on the complex fibre at `σ` given by the core `h.toCore σ`, whose
 norm is `HermitianMetric.norm`; used locally to read off the norm axioms. -/
 private abbrev normedAddCommGroup (σ : K →+* ℂ) : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) :=
@@ -176,6 +198,18 @@ theorem form_self_eq_norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) 
 theorem norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h.norm σ u ^ 2 = (h.form σ u u).re := by
   rw [h.form_self_eq_norm_sq, Complex.ofReal_re]
+
+/-- Orthogonality for the form at `σ` is symmetric. -/
+theorem form_eq_zero_symm {σ : K →+* ℂ} {u v : Codomain σ ⊗[𝓞 K] E} :
+    h.form σ u v = 0 ↔ h.form σ v u = 0 := by
+  rw [← h.conj_form σ v u, map_eq_zero]
+
+/-- **Pythagoras' theorem** for vectors orthogonal for the form at `σ`. -/
+theorem norm_add_sq_eq_norm_sq_add_norm_sq_of_form_eq_zero {σ : K →+* ℂ}
+    {u v : Codomain σ ⊗[𝓞 K] E} (huv : h.form σ u v = 0) :
+    h.norm σ (u + v) ^ 2 = h.norm σ u ^ 2 + h.norm σ v ^ 2 := by
+  simp only [norm_sq, map_add, LinearMap.add_apply, huv, h.form_eq_zero_symm.mp huv, add_zero,
+    zero_add, Complex.add_re]
 
 @[simp]
 theorem norm_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} : h.norm σ u = 0 ↔ u = 0 := by
@@ -225,6 +259,63 @@ theorem conj_form_tmul_of_isReal {σ : K →+* ℂ} (hσ : IsReal σ) (x y : E) 
   generalize conjugate σ = τ at hc ⊢
   subst hc
   rfl
+
+/-! ### Complex conjugation of fibres -/
+
+section FiberConj
+
+variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F]
+
+variable (E) in
+/-- Complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex fibre `E_σ` to `E_{conj σ}`: it
+fixes the vectors `1 ⊗ x` of `E` and is conjugate-linear (`fiberConj_smul`). -/
+def fiberConj (σ : K →+* ℂ) :
+    Codomain σ ⊗[𝓞 K] E →ₗ[𝓞 K] Codomain (conjugate σ) ⊗[𝓞 K] E :=
+  (Codomain.conj σ).rTensor E
+
+@[simp]
+theorem fiberConj_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
+    fiberConj E σ (c ⊗ₜ x) = Codomain.conj σ c ⊗ₜ x :=
+  LinearMap.rTensor_tmul _ _ _ _
+
+theorem fiberConj_one_tmul (σ : K →+* ℂ) (x : E) :
+    fiberConj E σ ((1 : Codomain σ) ⊗ₜ x) = 1 ⊗ₜ x := by
+  simp
+
+/-- Complex conjugation of fibres is conjugate-linear. -/
+@[simp]
+theorem fiberConj_smul (σ : K →+* ℂ) (c : ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+    fiberConj E σ (c • u) = conj c • fiberConj E σ u := by
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [smul_add, map_add, hu, hv, map_add, smul_add]
+  | tmul d x =>
+    rw [TensorProduct.smul_tmul', fiberConj_tmul, fiberConj_tmul, TensorProduct.smul_tmul']
+    congr 1
+    apply (Codomain.equiv (conjugate σ)).injective
+    simp
+
+/-- Complex conjugation of fibres commutes with the complexification of linear maps. -/
+theorem fiberConj_baseChange (σ : K →+* ℂ) (f : F →ₗ[𝓞 K] E) (u : Codomain σ ⊗[𝓞 K] F) :
+    fiberConj E σ (f.baseChange (Codomain σ) u) =
+      f.baseChange (Codomain (conjugate σ)) (fiberConj F σ u) := by
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [map_add, hu, hv]
+  | tmul d x => simp
+
+/-- Complex conjugation of fibres is antiunitary: the form at `conj σ` of the conjugates
+of `u, v` is `conj h_σ(u, v)`. -/
+theorem form_fiberConj (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+    h.form (conjugate σ) (fiberConj E σ u) (fiberConj E σ v) = conj (h.form σ u v) := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  | tmul c x =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+    | tmul d y =>
+      simp [h.form_tmul_tmul σ c d, h.form_tmul_tmul (conjugate σ) (Codomain.conj σ c),
+        h.form_conjugate_tmul]
+
+end FiberConj
 
 /-- The norm `‖x‖_v` of `x ∈ E` at an infinite place `v` of `K`, computed at a complex embedding
 inducing `v`; it does not depend on the choice of embedding (`placeNorm_mk`). -/
@@ -304,7 +395,8 @@ variable {F G : Type*} [AddCommGroup F] [Module (𝓞 K) F] [AddCommGroup G] [Mo
 
 /-- An **isometry** between hermitian metrics: an `𝓞 K`-linear isomorphism `E ≃ F` whose
 complexification is unitary at every complex embedding. Unitarity is tested on vectors of `E`;
-`HermitianMetric.IsometryEquiv.form_baseChange` gives it on the whole complex fibre. -/
+`HermitianMetric.IsometryEquiv.form_toLinearMap_baseChange` gives it on the whole complex
+fibre. -/
 structure IsometryEquiv (h : HermitianMetric K E) (h' : HermitianMetric K F)
     extends E ≃ₗ[𝓞 K] F where
   /-- The linear isomorphism preserves the hermitian forms. -/
@@ -343,7 +435,8 @@ theorem toLinearEquiv_injective :
   ext fun x ↦ congr($he x)
 
 /-- An isometry preserves the hermitian forms on the whole complex fibre. -/
-theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+theorem form_toLinearMap_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ)
+    (u v : Codomain σ ⊗[𝓞 K] E) :
     h'.form σ (e.toLinearMap.baseChange (Codomain σ) u)
         (e.toLinearMap.baseChange (Codomain σ) v) = h.form σ u v := by
   induction u using TensorProduct.inductionOn with
@@ -355,9 +448,10 @@ theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codom
       rw [LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, h'.form_tmul_tmul,
         h.form_tmul_tmul, LinearEquiv.coe_coe, e.form_tmul]
 
-theorem norm_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+theorem norm_toLinearMap_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ)
+    (u : Codomain σ ⊗[𝓞 K] E) :
     h'.norm σ (e.toLinearMap.baseChange (Codomain σ) u) = h.norm σ u := by
-  rw [norm_def, norm_def, e.form_baseChange]
+  rw [norm_def, norm_def, e.form_toLinearMap_baseChange]
 
 @[simp]
 theorem form_tmul_map (e : IsometryEquiv h h') (σ : K →+* ℂ) (x y : E) :
@@ -411,6 +505,17 @@ theorem apply_symm_apply (e : IsometryEquiv h h') (x : F) : e (e.symm x) = x :=
 @[simp]
 theorem trans_apply (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') (x : E) :
     e.trans e' x = e' (e x) := (rfl)
+
+@[simp]
+theorem toLinearEquiv_refl : (refl h).toLinearEquiv = LinearEquiv.refl (𝓞 K) E := (rfl)
+
+@[simp]
+theorem toLinearEquiv_symm (e : IsometryEquiv h h') : e.symm.toLinearEquiv = e.toLinearEquiv.symm :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') :
+    (e.trans e').toLinearEquiv = e.toLinearEquiv.trans e'.toLinearEquiv := (rfl)
 
 end IsometryEquiv
 

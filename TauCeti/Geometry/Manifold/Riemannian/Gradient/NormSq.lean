@@ -63,7 +63,7 @@ theorem mgradient_norm_sq_mgradient (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
   apply eq_mgradient_iff.mpr
   intro v
   rw [real_inner_smul_left, mvfderiv_norm_sq_mgradient hf v]
-  simpa only [hessian_def] using
+  simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient] using
     congrArg (fun r : ℝ ↦ 2 * r) (hessian_symm x hf (mgradient I f x) v)
 
 end TauCeti.Manifold

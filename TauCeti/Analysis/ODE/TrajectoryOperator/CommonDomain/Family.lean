@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Estimates for the trajectory operator of a family over a common domain
@@ -115,7 +117,10 @@ theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
     (hu : ∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) :
     (1 - max ‖A₀.inverse‖ 1 * δ) * ‖u‖ ≤
       max ‖A₀.inverse‖ 1 * ‖familyDomainTrajectoryOperator ι A u‖ := by
-  have h₀ := norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator hSymm hA₀ u
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hA₀
+  set M := max ‖A₀.inverse‖ 1
+  have h₀ :=
+    norm_le_max_mul_norm_domainTrajectoryOperator hSymm hA₀.norm_le_norm_inverse_mul_norm u
   have hdiff :=
     norm_familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_le (ι := ι) hδ hA hu
   have htri : ‖domainTrajectoryOperator ι A₀ u‖ ≤
@@ -138,7 +143,7 @@ theorem isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt
     ((memLp_top_const (μ := μ₀) A₀).toLp _)
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
   exact (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀)
+    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
     ((mul_le_mul_of_nonneg_left hle (by positivity)).trans_lt h)
 
 /-- Under the hypotheses of
@@ -157,7 +162,7 @@ theorem norm_inverse_familyDomainTrajectoryOperator_le
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
   replace hle := mul_le_mul_of_nonneg_left hle (by positivity : (0 : ℝ) ≤ max ‖A₀.inverse‖ 1)
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀) (lt_of_le_of_lt hle h)).trans ?_
+    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (lt_of_le_of_lt hle h)).trans ?_
   exact div_le_div_of_nonneg_left (by positivity) (sub_pos.2 h) (by linarith)
 
 omit [CompleteSpace D] in
@@ -172,7 +177,7 @@ theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_ten
       (∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) →
         ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ := by
   set M := max ‖A₀.inverse‖ 1
-  have hM : 0 < M := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  have hM : 0 < M := by positivity
   have hδ : 0 < (2 * M)⁻¹ := by positivity
   refine ⟨2 * M, {s | ‖A s - A₀‖ ≤ (2 * M)⁻¹},
     (hA.eventually (Metric.closedBall_mem_nhds A₀ hδ)).mono fun s hs ↦ by
