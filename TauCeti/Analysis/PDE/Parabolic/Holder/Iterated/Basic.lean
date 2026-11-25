@@ -757,6 +757,13 @@ theorem valueL_apply (f : ParabolicCkHolderSpace k α E F hab) (p : slab (E := E
 theorem coe_valueL (f : ParabolicCkHolderSpace k α E F hab) : ⇑(valueL f) = f :=
   funext (valueL_apply f)
 
+/-- Evaluation of a finite sum is the sum of the evaluations. -/
+@[simp]
+theorem coe_sum {κ : Type*} (s : Finset κ) (f : κ → ParabolicCkHolderSpace k α E F hab) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) := by
+  rw [← coe_valueL, map_sum, FunLike.coe_sum]
+  simp only [coe_valueL]
+
 /-- The supremum norm of the underlying map equals that of the order-zero derivative field. -/
 theorem norm_valueL (f : ParabolicCkHolderSpace k α E F hab) :
     ‖valueL f‖ = ‖mixedDerivL 0 0 f‖ := by
@@ -978,6 +985,11 @@ theorem norm_valueL_le_one :
 theorem norm_spatialFDerivBCF_le (f : ParabolicCkHolderSpace k α E F hab) :
     ‖spatialFDerivBCF f‖ ≤ ‖f‖ :=
   (norm_spatialFDerivBCF f).trans_le (f.norm_mixedDerivL_le 0 1)
+
+/-- Each value of each field is bounded by the norm. -/
+theorem norm_mixedDerivL_apply_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
+    (p : slab (E := E) a b) : ‖mixedDerivL r m f p‖ ≤ ‖f‖ :=
+  ((mixedDerivL r m f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le r m)
 
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :

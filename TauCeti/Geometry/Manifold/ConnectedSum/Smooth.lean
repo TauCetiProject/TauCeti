@@ -176,7 +176,7 @@ private theorem exists_contMDiffAt_deck (h₁ : IsOpenEmbedding e₁) (h₂ : Is
     rw [← IsOpenEmbedding.inl.map_nhds_eq, EventuallyEq, eventually_map]
     filter_upwards [hev] with x' ⟨v', hv', hx', hy'⟩
     simp only [comp_apply, Sum.elim_inl, id_eq, mk_inl, mk_inr]
-    exact ((inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨v', hv', hx', hy'⟩).symm
+    exact ((inl_eq_inr_iff h₁.injective).2 ⟨v', hv', hx', hy'⟩).symm
   · -- `z = e₂ w'` is glued to `w = e₁ (inversion 0 1 w')`, as the inversion is an involution.
     rcases z with x | x <;> rcases w with y | y <;>
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
@@ -190,7 +190,7 @@ private theorem exists_contMDiffAt_deck (h₁ : IsOpenEmbedding e₁) (h₂ : Is
     rw [← IsOpenEmbedding.inr.map_nhds_eq, EventuallyEq, eventually_map]
     filter_upwards [hev] with x' ⟨v', hv', hx', hy'⟩
     simp only [comp_apply, Sum.elim_inr, id_eq, mk_inl, mk_inr]
-    refine (inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨inversion 0 1 v',
+    refine (inl_eq_inr_iff h₁.injective).2 ⟨inversion 0 1 v',
       by simpa [inversion_eq_center one_ne_zero] using hv', hy', ?_⟩
     rw [inversion_inversion (0 : E) one_ne_zero, hx']
 

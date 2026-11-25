@@ -58,9 +58,10 @@ energy plus a bounded term. This is how compactness for unperturbed pseudoholomo
 These are statements about one tangent space at a time, for the Floer data `(J, K)` of the
 manifold Floer equation of `TauCeti.Geometry.Symplectic.Floer.Manifold`. For components `K_s`, `K_t`
 smooth on the product, `TauCeti.Geometry.Symplectic.Floer.Graph.TamingForm` assembles `Ω_c` into a
-smooth two-form and proves it closed when `ω` is. The smoothness of `J_K` as a section of the
-endomorphism bundle is not treated here. For bundled finite-regularity data with an antilinear
-forcing term, the same skew product is `TauCeti.InhomogeneousTerm.graphStructureAt`.
+smooth two-form and proves it closed when `ω` is. For jointly smooth data, `J_K` is a smooth
+section of the endomorphism bundle of `(ℝ × ℝ) × M`
+(`TauCeti.Geometry.Symplectic.Floer.Graph.Smooth`). For bundled finite-regularity data with an
+antilinear forcing term, the same skew product is `TauCeti.InhomogeneousTerm.graphStructureAt`.
 
 ## References
 

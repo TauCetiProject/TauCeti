@@ -107,7 +107,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift (σ : ℝ) :
     exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift (mu := mu)
       (lam := lam) (Lam := Lam) σ
   obtain ⟨D₀, hD₀, hbound⟩ :=
-    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg (mu := mu)
       (lam := lam) (Lam := Lam)
   set D := D₀ * (1 + σ ^ 2) ^ Fintype.card ι
   lift α to ℝ≥0 using hα.le

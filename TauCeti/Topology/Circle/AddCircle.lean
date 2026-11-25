@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Algebra.AddCircle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The additive circle and the complex unit circle
@@ -22,10 +23,14 @@ are `0` and the half period `T / 2`.
 Applied to both factors, it identifies the torus `S¹ × S¹` with the standard torus
 `UnitAddTorus (Fin 2) = ℝ² / ℤ²`. Applied coordinatewise, it identifies the standard torus
 `UnitAddTorus ι` with the product of circles `ι → Circle` as topological groups.
+A real function whose classes in `AddCircle p` tend to a point along a filter with a basis of
+preconnected sets, such as a one-sided neighborhood filter in `ℝ`, tends to one of its lifts: on a
+connected set where the classes stay near a point, the function stays near one lift.
 Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at the identity, with
 `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
 at some small time, every point forward by a small continuous amount, and the short secants
 `(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
+A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 
 ## Main definitions
 
@@ -51,8 +56,14 @@ at some small time, every point forward by a small continuous amount, and the sh
   identity at time `0`, with `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at
   small positive times, moves every point forward by a small continuous amount at some arbitrarily
   small nonzero time.
+* `AddCircle.exists_forall_abs_sub_eq_norm_coe_of_isPreconnected`,
+  `AddCircle.exists_tendsto_add_int_mul_of_tendsto_coe` — a real function whose classes in the
+  circle stay near, or tend to, a point lifts near, or tends to, one of its lifts, on a
+  preconnected set or along a filter with a preconnected basis.
 * `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
+* `UnitAddCircle.coe_eq_zero_iff` — a real number vanishes in `ℝ/ℤ` exactly when it is an
+  integer.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
@@ -197,7 +208,72 @@ theorem exists_forall_eq_add_pos (ψ : ℝ × AddCircle T → AddCircle T)
 
 end Displacement
 
+section Lift
+
+open Set Filter
+open scoped Topology
+
+variable {X : Type*} [TopologicalSpace X] {p : ℝ}
+
+/-- **Lifting on a connected set.** If a function `f` with values in `ℝ`, continuous on a
+preconnected set `s`, stays within `p / 2` of the class of `y` in `AddCircle p`, then on `s` it
+stays near one lift `y + n p` of that class: its distance to `y + n p` is the distance in the
+circle. -/
+theorem exists_forall_abs_sub_eq_norm_coe_of_isPreconnected (hp : 0 < p) {s : Set X}
+    (hs : IsPreconnected s) {f : X → ℝ} (hf : ContinuousOn f s) {y : ℝ}
+    (hsmall : ∀ x ∈ s, ‖((f x - y : ℝ) : AddCircle p)‖ < p / 2) :
+    ∃ n : ℤ, ∀ x ∈ s, |f x - (y + n * p)| = ‖((f x - y : ℝ) : AddCircle p)‖ := by
+  set k : X → ℤ := fun x ↦ round (p⁻¹ * (f x - y))
+  have hk (x : X) : ‖((f x - y : ℝ) : AddCircle p)‖ = |f x - (y + k x * p)| := by
+    rw [norm_eq, sub_sub]
+  -- Two points of `s` cannot have different nearest multiples of the period: the image of `s`
+  -- is an interval, which would contain a point at distance `p / 2` from `y + p ℤ`.
+  have hle {x₁ x₂ : X} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s) : ¬k x₁ < k x₂ := by
+    intro hlt
+    have h₁ := hsmall x₁ hx₁
+    have h₂ := hsmall x₂ hx₂
+    rw [hk, abs_lt] at h₁ h₂
+    have hk' : (k x₁ : ℝ) + 1 ≤ k x₂ := by exact_mod_cast hlt
+    obtain ⟨x, hx, hfx⟩ : y + (k x₁ + 1 / 2) * p ∈ f '' s :=
+      (hs.image f hf).Icc_subset (mem_image_of_mem f hx₁) (mem_image_of_mem f hx₂)
+        ⟨by nlinarith, by nlinarith⟩
+    have h := hsmall x hx
+    rw [hfx, show y + (k x₁ + 1 / 2) * p - y = p / 2 + (k x₁ : ℤ) * p by ring,
+      coe_add_int_mul_period, norm_half_period_eq, abs_of_pos hp] at h
+    linarith
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · exact ⟨0, by simp⟩
+  refine ⟨k x₀, fun x hx ↦ ?_⟩
+  rw [hk, le_antisymm (not_lt.1 (hle hx₀ hx)) (not_lt.1 (hle hx hx₀))]
+
+/-- **Lifting a limit from the circle.** Let `l` be a filter with a basis of preconnected sets,
+for instance a one-sided neighborhood filter `𝓝[>] a` in `ℝ`, and `f` a real function continuous on
+a set of `l`. If the classes of `f` in `AddCircle p` tend to the class of `y` along `l`, then `f`
+itself tends to one of its lifts `y + n p`. -/
+theorem exists_tendsto_add_int_mul_of_tendsto_coe (hp : 0 < p) {l : Filter X}
+    (hl : ∀ u ∈ l, ∃ v ∈ l, v ⊆ u ∧ IsPreconnected v) {f : X → ℝ} {u : Set X} (hu : u ∈ l)
+    (hf : ContinuousOn f u) {y : ℝ}
+    (h : Tendsto (fun x ↦ (f x : AddCircle p)) l (𝓝 (y : AddCircle p))) :
+    ∃ n : ℤ, Tendsto f l (𝓝 (y + n * p)) := by
+  have hnorm : Tendsto (fun x ↦ ‖((f x - y : ℝ) : AddCircle p)‖) l (𝓝 0) := by
+    simpa [coe_sub] using tendsto_iff_norm_sub_tendsto_zero.1 h
+  obtain ⟨v, hv, hvu, hvc⟩ := hl _ (inter_mem hu
+    (hnorm.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < p / 2))))
+  obtain ⟨n, hn⟩ := exists_forall_abs_sub_eq_norm_coe_of_isPreconnected hp hvc
+    (hf.mono fun x hx ↦ (hvu hx).1) fun x hx ↦ (hvu hx).2
+  refine ⟨n, tendsto_iff_norm_sub_tendsto_zero.2 (hnorm.congr' ?_)⟩
+  filter_upwards [hv] with x hx
+  rw [Real.norm_eq_abs, hn x hx]
+
+end Lift
+
 end AddCircle
+
+/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
+theorem UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
+    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
+  rw [AddCircle.coe_eq_zero_iff]
+  simp only [zsmul_one, eq_comm]
 
 namespace ContinuousMap
 

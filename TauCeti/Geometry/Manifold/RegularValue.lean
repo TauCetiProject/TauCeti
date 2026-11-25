@@ -59,8 +59,12 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target; in
   particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
-* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
+* `IsLocalDiffeomorphAt.isRegularPoint`, `IsLocalDiffeomorph.isRegularValue`: a local
+  diffeomorphism is regular at every point, so every value of a local diffeomorphism is regular.
 * `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
+* `ContinuousLinearEquiv.comp_isRegularPoint_iff`, `ContinuousLinearEquiv.comp_isRegularValue_iff`:
+  postcomposing a map into a normed space with a continuous linear equivalence preserves regular
+  points and regular values.
 * `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
@@ -329,12 +333,37 @@ theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
     IsRegularValue K J (f ∘ g) y :=
   fun p hp ↦ (hf (g p) hp).comp (hg p hp)
 
+/-- A continuous linear equivalence between normed spaces is regular at every point. -/
+theorem _root_.ContinuousLinearEquiv.isRegularPoint (e : E' ≃L[𝕜] E'') (z : E') :
+    IsRegularPoint 𝓘(𝕜, E') 𝓘(𝕜, E'') e z := by
+  rw [isRegularPoint_iff, mfderiv_eq_fderiv, e.fderiv]
+  exact e.surjective
+
+/-- Postcomposing a map into a normed space with a continuous linear equivalence preserves regular
+points. -/
+theorem _root_.ContinuousLinearEquiv.comp_isRegularPoint_iff (e : E' ≃L[𝕜] E'') {g : M → E'} :
+    IsRegularPoint I 𝓘(𝕜, E'') (e ∘ g) x ↔ IsRegularPoint I 𝓘(𝕜, E') g x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (e.isRegularPoint _).comp h⟩
+  simpa [← comp_assoc] using (e.symm.isRegularPoint _).comp h
+
+/-- Postcomposing a map into a normed space with a continuous linear equivalence `e` preserves
+regular values: `e z` is a regular value of `e ∘ g` exactly when `z` is one of `g`. -/
+theorem _root_.ContinuousLinearEquiv.comp_isRegularValue_iff (e : E' ≃L[𝕜] E'') {g : M → E'}
+    {z : E'} : IsRegularValue I 𝓘(𝕜, E'') (e ∘ g) (e z) ↔ IsRegularValue I 𝓘(𝕜, E') g z := by
+  simp only [isRegularValue_iff, comp_apply, e.injective.eq_iff, e.comp_isRegularPoint_iff]
+
 end Composition
 
 /-- A `C^n` local diffeomorphism at `x`, with `n ≠ 0`, has `x` as a regular point. -/
 theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : ℕ∞ω}
     (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
   (h.isInvertible_mfderiv hn).surjective
+
+/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
+at every point. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue {n : ℕ∞ω}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
+  isRegularValue_iff.2 fun x _ ↦ (hf x).isRegularPoint hn
 
 /-- Every point of a product is a regular point of the second projection. -/
 theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by
