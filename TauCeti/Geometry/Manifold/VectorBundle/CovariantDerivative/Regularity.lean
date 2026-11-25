@@ -66,15 +66,6 @@ variable
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
-/-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
-`C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
-theorem contMDiff_covariantDerivative
-    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
-    {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
-    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
-      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
-  contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)
-
 /-- An operator which is `C^n` over the whole manifold, in the sense of Mathlib's
 `ContMDiffCovariantDerivativeOn`, sends a `C^(n + 1)` section to a `C^n` section of the bundle
 `Hom(TM, V)` of `V`-valued one-forms. The operator need not be a covariant derivative. -/
@@ -85,6 +76,15 @@ theorem _root_.ContMDiffCovariantDerivativeOn.contMDiff_univ
     ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
       (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (D σ x)) :=
   contMDiffOn_univ.mp (hD.contMDiff hσ.contMDiffOn)
+
+/-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
+`C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
+theorem contMDiff_covariantDerivative
+    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
+    {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
+    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
+  ContMDiffCovariantDerivative.contMDiff.contMDiff_univ hσ
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
 `C^n` at `x` produces a section which is `C^n` at `x`. -/

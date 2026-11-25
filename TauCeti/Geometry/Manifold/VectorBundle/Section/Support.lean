@@ -98,9 +98,8 @@ theorem isClosed_tsupport (s : Cₛ^n⟮I; F, V⟯) : IsClosed s.tsupport :=
 
 /-- A section vanishes off its closed support. -/
 theorem eq_zero_of_notMem_tsupport (s : Cₛ^n⟮I; F, V⟯) {x : M}
-    (hx : x ∉ s.tsupport) : s x = 0 := by
-  by_contra h
-  exact hx (subset_closure h)
+    (hx : x ∉ s.tsupport) : s x = 0 :=
+  Bundle.apply_eq_zero_of_notMem_closure hx
 
 /-- Containment of closed support in a closed set is equivalent to vanishing outside it. -/
 theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed K) :

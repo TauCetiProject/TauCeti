@@ -407,10 +407,7 @@ theorem integral_inner_formalAdjoint (hcov : cov.IsMetricCompatible)
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hτc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
-  · have hτy : τ y = 0 := by
-      by_contra h
-      exact hy (subset_closure h)
-    simp [pairingField, hτy, LinearIsometryEquiv.map_zero]
+  · simp [pairingField, Bundle.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero]
   · simp [cov.apply_eq_zero_of_notMem_closure hy]
 
 /-- **Integration by parts for the formal adjoint of a connection**, when the one-form has
@@ -421,9 +418,8 @@ theorem integral_inner_formalAdjoint_of_isCompact_left (hcov : cov.IsMetricCompa
     (hτ : CMDiff ∞ (T% τ)) (hαc : IsCompact (closure {x | α x ≠ 0})) :
     ∫ x, ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
-  have hαy {y : M} (hy : y ∉ closure {x | α x ≠ 0}) : α y = 0 := by
-    by_contra h
-    exact hy (subset_closure h)
+  have hαy {y : M} (hy : y ∉ closure {x | α x ≠ 0}) : α y = 0 :=
+    Bundle.apply_eq_zero_of_notMem_closure hy
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hαc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
   · simp [pairingField, hαy hy, LinearIsometryEquiv.map_zero]
