@@ -299,6 +299,12 @@ theorem stripFiberConj_symm_stripFiberConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ
     stripFiberConj r.symm (stripFiberConj r F) = F := by
   ext p <;> simp
 
+/-- Conjugating by the fibre map recovers `F` from its conjugate by the inverse fibre map. -/
+@[simp]
+theorem stripFiberConj_stripFiberConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    stripFiberConj r (stripFiberConj r.symm F) = F := by
+  ext p <;> simp
+
 /-- Conjugation by a fibre reversal keeps the deck condition and the invariance of the two
 boundary lines: the reversal exchanges the two lines, and so does its inverse. -/
 private theorem stripFiberConj_data {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r)
