@@ -47,10 +47,10 @@ variable {A M : Type*} [CommSemiring A] [TopologicalSpace A] [ContinuousMul A] [
 theorem IsUnramified.twist (h : ρ.IsUnramified) (hχ : (ofCharacter χ).IsUnramified) :
     (ρ.twist χ).IsUnramified := by
   rw [isUnramified_ofCharacter_iff] at hχ
-  rw [isUnramified_iff] at h ⊢
-  intro σ hσ
-  ext x
-  simp [hχ σ hσ, h σ hσ]
+  rw [isUnramified_iff_le_ker] at h ⊢
+  rw [toRepresentation_twist]
+  exact (le_inf (fun σ hσ ↦ MonoidHom.mem_ker.mpr (hχ σ hσ)) h).trans
+    (Representation.ker_inf_ker_le_ker_charTwist _ _)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The twist of a tamely ramified representation by a tamely ramified character is tamely
@@ -58,10 +58,10 @@ ramified. -/
 theorem IsTamelyRamified.twist (h : ρ.IsTamelyRamified) (hχ : (ofCharacter χ).IsTamelyRamified) :
     (ρ.twist χ).IsTamelyRamified := by
   rw [isTamelyRamified_ofCharacter_iff] at hχ
-  rw [isTamelyRamified_iff] at h ⊢
-  intro σ hσ
-  ext x
-  simp [hχ σ hσ, h σ hσ]
+  rw [isTamelyRamified_iff_le_ker] at h ⊢
+  rw [toRepresentation_twist]
+  exact (le_inf (fun σ hσ ↦ MonoidHom.mem_ker.mpr (hχ σ hσ)) h).trans
+    (Representation.ker_inf_ker_le_ker_charTwist _ _)
 
 end Twist
 
@@ -77,21 +77,17 @@ variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 /-- A tensor product of unramified representations is unramified. -/
 theorem IsUnramified.tprod (h : ρ.IsUnramified) (h' : ρ'.IsUnramified) :
     (ρ.tprod ρ').IsUnramified := by
-  rw [isUnramified_iff] at h h' ⊢
-  intro σ hσ
-  rw [← coe_toRepresentation, toRepresentation_tprod]
-  exact MonoidHom.mem_ker.mp (Representation.ker_inf_ker_le_ker_tprod _ _
-    ⟨MonoidHom.mem_ker.mpr (h σ hσ), MonoidHom.mem_ker.mpr (h' σ hσ)⟩)
+  rw [isUnramified_iff_le_ker] at h h' ⊢
+  rw [toRepresentation_tprod]
+  exact (le_inf h h').trans (Representation.ker_inf_ker_le_ker_tprod _ _)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- A tensor product of tamely ramified representations is tamely ramified. -/
 theorem IsTamelyRamified.tprod (h : ρ.IsTamelyRamified) (h' : ρ'.IsTamelyRamified) :
     (ρ.tprod ρ').IsTamelyRamified := by
-  rw [isTamelyRamified_iff] at h h' ⊢
-  intro σ hσ
-  rw [← coe_toRepresentation, toRepresentation_tprod]
-  exact MonoidHom.mem_ker.mp (Representation.ker_inf_ker_le_ker_tprod _ _
-    ⟨MonoidHom.mem_ker.mpr (h σ hσ), MonoidHom.mem_ker.mpr (h' σ hσ)⟩)
+  rw [isTamelyRamified_iff_le_ker] at h h' ⊢
+  rw [toRepresentation_tprod]
+  exact (le_inf h h').trans (Representation.ker_inf_ker_le_ker_tprod _ _)
 
 end Tensor
 
@@ -107,19 +103,17 @@ variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 /-- The Hom representation of two unramified representations is unramified. -/
 theorem IsUnramified.linHom (h : ρ.IsUnramified) (h' : ρ'.IsUnramified) :
     (ρ.linHom ρ').IsUnramified := by
-  rw [isUnramified_iff] at h h' ⊢
-  intro σ hσ
-  ext f x
-  simp [linHom_apply_apply, h' σ hσ, h σ⁻¹ (inv_mem hσ)]
+  rw [isUnramified_iff_le_ker] at h h' ⊢
+  rw [toRepresentation_linHom]
+  exact (le_inf h h').trans (Representation.ker_inf_ker_le_ker_linHom _ _)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The Hom representation of two tamely ramified representations is tamely ramified. -/
 theorem IsTamelyRamified.linHom (h : ρ.IsTamelyRamified) (h' : ρ'.IsTamelyRamified) :
     (ρ.linHom ρ').IsTamelyRamified := by
-  rw [isTamelyRamified_iff] at h h' ⊢
-  intro σ hσ
-  ext f x
-  simp [linHom_apply_apply, h' σ hσ, h σ⁻¹ (inv_mem hσ)]
+  rw [isTamelyRamified_iff_le_ker] at h h' ⊢
+  rw [toRepresentation_linHom]
+  exact (le_inf h h').trans (Representation.ker_inf_ker_le_ker_linHom _ _)
 
 end LinHom
 

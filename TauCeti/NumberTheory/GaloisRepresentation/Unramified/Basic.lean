@@ -91,6 +91,17 @@ omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 theorem isTamelyRamified_iff : ρ.IsTamelyRamified ↔ ∀ σ ∈ wildInertiaSubgroup K, ρ σ = 1 :=
   Iff.rfl
 
+/-- Unramifiedness as a statement about the kernel: `I_K ≤ ker ρ`. -/
+theorem isUnramified_iff_le_ker :
+    ρ.IsUnramified ↔ inertiaSubgroup K ≤ ρ.toRepresentation.ker :=
+  Iff.rfl
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- Tame ramification as a statement about the kernel: `P_K ≤ ker ρ`. -/
+theorem isTamelyRamified_iff_le_ker :
+    ρ.IsTamelyRamified ↔ wildInertiaSubgroup K ≤ ρ.toRepresentation.ker :=
+  Iff.rfl
+
 /-- Unramified representations are tamely ramified, since wild inertia lies in inertia. -/
 theorem IsUnramified.isTamelyRamified (h : ρ.IsUnramified) : ρ.IsTamelyRamified :=
   (wildInertiaSubgroup_le_inertiaSubgroup K).trans h
