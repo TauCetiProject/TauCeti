@@ -353,35 +353,13 @@ private theorem eLpNorm_exp_mul_smul_starProjection_le (hx : ContDiff ℝ ∞ x)
       (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
         (b * a : ℝ≥0) * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
   set p := (weakGaugeFixedKernel x).starProjection f
-  set N := eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume
   -- `‖p‖₂² = ⟪p, f⟫`, since `f - p` is orthogonal to the kernel.
   have hpf : ⟪p, f⟫ = ‖p‖ ^ 2 := by
     have h := (weakGaugeFixedKernel x).re_inner_starProjection_eq_normSq f
     rwa [RCLike.re_to_real, ← Submodule.norm_coe, ← Submodule.starProjection_apply] at h
-  have hpair : |⟪p, f⟫| ≤
-      (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • p z) 2 volume).toReal * N.toReal :=
-    abs_inner_le_of_memLp_exp_mul_smul (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound
-      hsol hlim hc ((weakGaugeFixedKernel x).starProjection_apply_mem f)) hf
-  have ha' : (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • p z) 2 volume).toReal ≤
-      a * ‖p‖ := by
-    simpa [Lp.norm_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
-      (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top p)) ha
-  -- Hence `‖p‖₂ ≤ a ‖exp(c ρ) f‖₂`.
-  have hP : ‖p‖ ≤ a * N.toReal := by
-    have h₁ : ‖p‖ ^ 2 ≤ a * ‖p‖ * N.toReal := by
-      rw [← hpf]
-      exact (le_abs_self _).trans
-        (hpair.trans (mul_le_mul_of_nonneg_right ha' ENNReal.toReal_nonneg))
-    rcases (norm_nonneg p).eq_or_lt with h | h
-    · rw [← h]
-      positivity
-    · nlinarith
-  calc _ ≤ b * eLpNorm p 2 volume := hb
-    _ = b * ENNReal.ofReal ‖p‖ := by rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top p)]
-    _ ≤ b * ENNReal.ofReal (a * N.toReal) := by gcongr
-    _ = (b * a : ℝ≥0) * N := by
-      rw [ENNReal.ofReal_mul a.coe_nonneg, ENNReal.ofReal_coe_nnreal,
-        ENNReal.ofReal_toReal hf.eLpNorm_ne_top, ENNReal.coe_mul, mul_assoc]
+  exact TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner hb
+    (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim hc
+      ((weakGaugeFixedKernel x).starProjection_apply_mem f)) ha hf (hpf ▸ le_abs_self _)
 
 /-- **The weighted estimate for the kernel projection, uniformly over a window of divisors.** For
 every degree `m`, radius `R₀` and rate `|c| < 1/2` there is a constant `K` with the following

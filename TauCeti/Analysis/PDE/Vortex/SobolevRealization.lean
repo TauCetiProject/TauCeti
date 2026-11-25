@@ -105,7 +105,9 @@ right inverses are `C^n` in the operator
 `ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalRightInverse`), they are `C^n` along a family
 of coefficients `C^n` in `L∞`
 (`TauCeti.Vortex.contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator`,
-`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`).
+`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`). Along such a family
+the derivative of `L_a` in a direction `v` is the zeroth-order operator whose coefficient is the
+derivative of `a` in that direction (`TauCeti.Vortex.fderiv_sobolevGaugeFixedOperator_comp_apply`).
 
 ## References
 
@@ -252,6 +254,30 @@ theorem contDiff_sobolevGaugeFixedOperator {n : WithTop ℕ∞} :
     simp [sobolevGaugeFixedOperator, H]
   rw [funext h]
   exact contDiff_const.add (H.contDiff.clm_comp contDiff_const)
+
+/-- **The derivative of the realization along a family of coefficients.** The realization is
+affine in the `L∞` class of the coefficient, so along a family `a` of coefficients differentiable
+at `p₀` its derivative in the direction `v`, applied to `y`, is the zeroth-order part with
+coefficient `a' = Da(p₀) v`: the `L²` class of `z ↦ Z(a'(z), y(z))`, with `Z` the bilinear map
+`gaugeFixedZerothOrder`. -/
+theorem fderiv_sobolevGaugeFixedOperator_comp_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}
+    (ha : DifferentiableAt ℝ a p₀) (v : X) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    fderiv ℝ (fun p ↦ sobolevGaugeFixedOperator (a p)) p₀ v y =
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (fderiv ℝ a p₀ v) (sobolevFieldValues y) := by
+  set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+  have hT : DifferentiableAt ℝ (fun p ↦ sobolevGaugeFixedOperator (a p)) p₀ :=
+    ((contDiff_sobolevGaugeFixedOperator (n := 1)).differentiable one_ne_zero).differentiableAt.comp
+      p₀ ha
+  -- Evaluated at `y`, the family is the constant `L₀ y` plus the linear map `b ↦ Z(b, y)` of `a`.
+  have hS (p : X) : sobolevGaugeFixedOperator (a p) y =
+      sobolevGaugeFixedOperator 0 y + H.flip (sobolevFieldValues y) (a p) := by
+    simp [sobolevGaugeFixedOperator, H]
+  have h : HasFDerivAt (fun p ↦ sobolevGaugeFixedOperator (a p) y)
+      ((H.flip (sobolevFieldValues y)).comp (fderiv ℝ a p₀)) p₀ := by
+    simp only [hS]
+    exact ((H.flip (sobolevFieldValues y)).hasFDerivAt.comp p₀ ha.hasFDerivAt).const_add _
+  simpa using congrArg (fun L ↦ L v) ((hT.hasFDerivAt.clm_apply (hasFDerivAt_const y p₀)).unique h)
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed

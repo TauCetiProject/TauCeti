@@ -23,7 +23,9 @@ factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie betwee
 
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
-(`abs_inner_le_of_memLp_exp_mul_smul`).
+(`abs_inner_le_of_memLp_exp_mul_smul`). So if `‖u‖₂² ≤ |⟪e, A⟫|`, where the weight `exp(-c ρ)`
+costs at most `q ‖u‖₂` on `e` and the weight `exp(c ρ)` at most `a` on `u`, then
+`‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`).
 -/
 
 public section
@@ -170,7 +172,7 @@ theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
 section L2
 
 open MeasureTheory
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace NNReal
 
 variable {X F : Type*} [Norm X] [MeasurableSpace X] {μ : Measure X}
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -192,6 +194,41 @@ theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ} {e f : Lp F 2 μ}
       ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
   rw [hinner, ← Lp.norm_toLp _ he, ← Lp.norm_toLp _ hf]
   exact abs_real_inner_le_norm _ _
+
+/-- **A weighted bound from a pairing inequality.** Let `ρ(z) = √(b + ‖z‖²)` and let `u`, `e`, `A`
+be `L²` functions with `‖u‖₂² ≤ |⟪e, A⟫|`. Suppose that the weight `exp(c ρ)` costs at most `a` on
+`u`, that `exp(-c ρ) e` is square integrable with norm at most `q ‖u‖₂`, and that `exp(c ρ) A` is
+square integrable. Then `‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂`.
+
+Typically `u` lies in a finite-dimensional space of decaying functions, on which every weight
+costs a bounded factor, and the pairing inequality comes from an orthogonality relation. -/
+theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ} {a q : ℝ≥0}
+    (hu : eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤ a * eLpNorm u 2 μ)
+    (he : MemLp (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ)
+    (hqe : eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ ≤ q * eLpNorm u 2 μ)
+    (hA : MemLp (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ)
+    (hinner : ‖u‖ ^ 2 ≤ |⟪e, A⟫|) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤
+      (a * q : ℝ≥0) * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ := by
+  set N := eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ
+  have hq : (eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ).toReal ≤ q * ‖u‖ := by
+    simpa [Lp.norm_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
+      (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top u)) hqe
+  -- From `‖u‖₂² ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) A‖₂ ≤ q ‖u‖₂ N`, `‖u‖₂ ≤ q N`.
+  have hP : ‖u‖ ≤ q * N.toReal := by
+    have h₁ : ‖u‖ ^ 2 ≤ q * ‖u‖ * N.toReal := hinner.trans
+      ((abs_inner_le_of_memLp_exp_mul_smul he hA).trans
+        (mul_le_mul_of_nonneg_right hq ENNReal.toReal_nonneg))
+    rcases (norm_nonneg u).eq_or_lt with h | h
+    · rw [← h]
+      positivity
+    · nlinarith
+  calc _ ≤ a * eLpNorm u 2 μ := hu
+    _ = a * ENNReal.ofReal ‖u‖ := by rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top u)]
+    _ ≤ a * ENNReal.ofReal (q * N.toReal) := by gcongr
+    _ = (a * q : ℝ≥0) * N := by
+      rw [ENNReal.ofReal_mul q.coe_nonneg, ENNReal.ofReal_coe_nnreal,
+        ENNReal.ofReal_toReal hA.eLpNorm_ne_top, ENNReal.coe_mul, mul_assoc]
 
 end L2
 
