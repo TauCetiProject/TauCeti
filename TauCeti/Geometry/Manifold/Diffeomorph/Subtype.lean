@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Restricting a diffeomorphism to embedded submanifolds
@@ -128,57 +127,5 @@ theorem mpullback_subtypeOfIsSmoothEmbedding_mpullback_subtype_val (F : M ≃ₘ
   rw [← hFσ]
   exact SmoothForm.mpullback_mpullback_of_comp_eq _ _ _ _
     (F.subtype_val_comp_subtypeOfIsSmoothEmbedding hs ht h) τ
-
-end Diffeomorph
-
-namespace Diffeomorph
-
-open TopologicalSpace
-
-variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
-  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} {U D : Opens M}
-
-/-- For nested open subsets, the iterated open subtype is diffeomorphic to the smaller open
-subset, over any nontrivially normed field and at every regularity. -/
-def nestedOpen (h : U ≤ D) :
-    (Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) ≃ₘ^n⟮I, I⟯ U where
-  toFun x := ⟨x.val.val, x.property⟩
-  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
-  left_inv x := by cases x; rfl
-  right_inv u := by cases u; rfl
-  contMDiff_toFun := by
-    apply (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
-    exact (contMDiff_subtypeVal (I := I) (U := D)).comp contMDiff_subtypeVal
-  contMDiff_invFun := by
-    apply (TauCeti.ContMDiff.subtypeVal_comp_iff
-      (Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) _).mp
-    apply (TauCeti.ContMDiff.subtypeVal_comp_iff D _).mp
-    exact contMDiff_subtypeVal
-
-/-- The nested-open identification keeps the underlying ambient point. -/
-@[simp]
-theorem nestedOpen_apply (h : U ≤ D)
-    (x : Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
-    nestedOpen (I := I) (n := n) h x = ⟨x.val.val, x.property⟩ := by rfl
-
-/-- The inverse nested-open identification inserts the intermediate-open membership. -/
-@[simp]
-theorem nestedOpen_symm_apply (h : U ≤ D) (x : U) :
-    (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ := by rfl
-
-/-- The forward identification preserves the ambient point. The stronger point formula is
-already a simp rule, so this coercion law is available for explicit rewriting. -/
-theorem nestedOpen_apply_coe (h : U ≤ D)
-    (x : Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
-    (nestedOpen (I := I) (n := n) h x : M) = x.val.val := by
-  rw [nestedOpen_apply]
-
-/-- The inverse identification projects to the canonical inclusion into the larger open.
-Its point formula already supplies the corresponding simplification. -/
-theorem nestedOpen_symm_apply_coe (h : U ≤ D) (x : U) :
-    ((nestedOpen (I := I) (n := n) h).symm x : D) = Opens.inclusion h x := by
-  rw [nestedOpen_symm_apply]
 
 end Diffeomorph
