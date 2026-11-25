@@ -16,11 +16,12 @@ dimension `r`. The determinant line `det (B × F) = ⋀ʳ (B × F)` of the trivi
 identified with `𝕜` by the fixed coordinate `TauCeti.DetBundle.modelCoord F` of the basis
 `Module.finBasis 𝕜 F` (`TauCeti.DetBundle.trivialEquiv`), and these identifications form a
 homeomorphism of total spaces `det (B × F) ≃ B × 𝕜` (`TauCeti.DetBundle.trivialHomeomorph`). It is
-continuous because, read in the trivialization of `det (B × F)` induced from the canonical
-trivialization of `B × F`, it is the identity of `𝕜`.
+continuous because it is the trivialization of `det (B × F)` induced from the global
+trivialization `Bundle.Trivial.trivialization B F` of `B × F`, whose base set is all of `B`.
 
-For `𝕜 = ℂ` and `F = ℂʳ` this is the canonical isomorphism `det(ℂʳ) ≃ ℂ` of the determinant line of
-a trivial complex vector bundle.
+For `𝕜 = ℂ` and `F = ℂʳ` this is the isomorphism `det(ℂʳ) ≃ ℂ` of the determinant line of a trivial
+complex vector bundle determined by the fixed basis `Module.finBasis ℂ F`. It need not be the
+standard determinant of the coordinate basis of `ℂʳ`; the two differ by a nonzero scalar.
 
 ## Main definitions
 
@@ -67,21 +68,33 @@ theorem trivialEquiv_ιMulti (x : B) (v : Fin (finrank 𝕜 F) → F) :
 
 /-- The identification of the determinant line of a trivial bundle with `𝕜` is the fixed coordinate
 `TauCeti.DetBundle.modelCoord F` of the determinant line of the model fibre. -/
+@[simp]
 theorem trivialEquiv_apply (x : B) (v : DetBundle 𝕜 F (Trivial B F) x) :
     trivialEquiv 𝕜 B F x v = modelCoord F (linearEquiv 𝕜 F (Trivial B F) x v) := by
   rw [trivialEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
     LinearEquiv.trans_apply]
 
+/-- The inverse of the identification of the determinant line of a trivial bundle with `𝕜` is the
+inverse of the fixed coordinate `TauCeti.DetBundle.modelCoord F`. -/
+@[simp]
+theorem trivialEquiv_symm_apply (x : B) (c : 𝕜) :
+    (trivialEquiv 𝕜 B F x).symm c =
+      (linearEquiv 𝕜 F (Trivial B F) x).symm ((modelCoord F).symm c) := by
+  rw [trivialEquiv, LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
+    LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, LinearEquiv.symm_trans_apply]
+
 variable [TopologicalSpace B]
 
-/-- The chart coordinate of the trivialization of the determinant line of `B × F` induced by its
-canonical trivialization is the fixed coordinate `TauCeti.DetBundle.modelCoord F`. -/
-private theorem chartCoord_trivializationAt (y x : B)
-    (hx : x ∈ (trivializationAt F (Trivial B F) y).baseSet) (v : DetBundle 𝕜 F (Trivial B F) x) :
-    chartCoord (trivializationAt F (Trivial B F) y) hx v = trivialEquiv 𝕜 B F x v := by
-  -- The canonical trivialization of `B × F` is the identity on each fibre.
-  have h : (trivializationAt F (Trivial B F) y).linearEquivAt 𝕜 x hx = LinearEquiv.refl 𝕜 F :=
-    LinearEquiv.ext fun _ ↦ rfl
+/-- The chart coordinate of the global trivialization `Bundle.Trivial.trivialization B F` of `B × F`
+is the fixed coordinate `TauCeti.DetBundle.modelCoord F`. -/
+private theorem chartCoord_trivialization (x : B)
+    (hx : x ∈ (Trivial.trivialization B F).baseSet) (v : DetBundle 𝕜 F (Trivial B F) x) :
+    chartCoord (Trivial.trivialization B F) hx v = trivialEquiv 𝕜 B F x v := by
+  -- The global trivialization of `B × F` is the identity on each fibre.
+  have h : (Trivial.trivialization B F).linearEquivAt 𝕜 x hx = LinearEquiv.refl 𝕜 F :=
+    LinearEquiv.ext fun v ↦ by
+      rw [Trivialization.linearEquivAt_apply]
+      simp only [Trivial.trivialization_apply, LinearEquiv.refl_apply]
   rw [chartCoord_apply, h, LinearEquiv.exteriorPower_refl, LinearEquiv.refl_apply,
     trivialEquiv_apply]
 
@@ -90,15 +103,23 @@ variable [CompleteSpace 𝕜]
 variable (𝕜 B F) in
 /-- **The determinant line of a trivial bundle is trivial.** The fibrewise identifications
 `TauCeti.DetBundle.trivialEquiv` of `⋀ʳ F` with `𝕜` form a homeomorphism of total spaces
-`det (B × F) ≃ B × 𝕜`. -/
+`det (B × F) ≃ B × 𝕜`. It is continuous because it is the trivialization of the determinant line
+induced by the global trivialization `Bundle.Trivial.trivialization B F`. -/
 def trivialHomeomorph :
     TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F)) ≃ₜ TotalSpace 𝕜 (Trivial B 𝕜) :=
-  bundleHomeomorph (trivialEquiv 𝕜 B F) <|
-    FiberBundle.continuous_totalSpaceMk_of_trivializationAt (fun x ↦ trivialEquiv 𝕜 B F x)
-      continuous_id fun y x v _ _ ↦ by
-      have hx : x ∈ (trivializationAt F (Trivial B F) y).baseSet := Set.mem_univ x
-      rw [trivializationAt_eq, trivialization_apply_mk _ hx, chartCoord_trivializationAt]
-      simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_apply, id]
+  bundleHomeomorph (trivialEquiv 𝕜 B F) <| by
+    have : MemTrivializationAtlas (Trivial.trivialization B F) :=
+      ⟨by simp only [trivializationAtlas, Trivial.fiberBundle_trivializationAtlas',
+        Set.mem_singleton_iff]⟩
+    have hx (x : B) : x ∈ (Trivial.trivialization B F).baseSet := by
+      simp only [Trivial.trivialization_baseSet, Set.mem_univ]
+    have he : Continuous (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)) := by
+      simpa only [Trivialization.source_eq, trivialization_baseSet, Trivial.trivialization_baseSet,
+        Set.preimage_univ, continuousOn_univ] using
+        (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)).continuousOn
+    refine ((Trivial.homeomorphProd B 𝕜).symm.continuous.comp he).congr fun p ↦ ?_
+    rw [Function.comp_apply, trivialization_apply_mk _ (hx p.proj), chartCoord_trivialization,
+      Homeomorph.symm_apply_eq, Trivial.homeomorphProd_apply]
 
 @[simp]
 theorem trivialHomeomorph_apply (p : TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F))) :
