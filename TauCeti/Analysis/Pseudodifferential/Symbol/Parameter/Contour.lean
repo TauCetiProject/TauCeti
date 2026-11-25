@@ -40,9 +40,10 @@ path with bounded speed and `‖γ t‖` bounded below by a positive constant an
 `1 + |t|`, and a branch of `λ^s` with bounded argument, the exponent is `σ = Re s`. For the
 resolvent parametrix (`m = -2`) the conditions are `-1 < Re s < 0`, and the integral has order
 `2 Re s`: this is the strip of negative powers in which Seeley's integral converges. Along the
-negative real axis, `γ(t) = -|t|` and `g(t) = t ^ (-σ)` for `t > 0` (and `0` otherwise) give
-Balakrishnan's real-axis form of this integral (`TauCeti.ParameterSymbol.balakrishnanIntegral`);
-there the singularity of the weight at `t = 0` is needed.
+negative real axis, `γ(t) = -|t|` and `g(t) = t ^ (-ρ)` for `t > 0` (and `0` otherwise), with
+`0 < ρ < 1`, give Balakrishnan's real-axis form of this integral
+(`TauCeti.ParameterSymbol.balakrishnanIntegral`). There the exponent is `σ = -ρ ∈ (-1, 0)`, and
+the singularity of the weight at `t = 0` is needed.
 
 The estimates come from the symbol estimates of `a` uniformly in the spectral parameter
 (`TauCeti.ParameterSymbol.exists_norm_mixedDeriv_coefficient_le`): the weight

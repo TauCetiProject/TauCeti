@@ -23,7 +23,8 @@ power `A^{-σ}` as an integral of the resolvent along the negative real axis,
 
 `A^{-σ} = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) (A + t)⁻¹ dt`
 
-(`LinearPMap.negPow_eq_integral_resolvent` for operators with compact resolvent). It is Seeley's
+(`CFC.rpow_neg_eq_integral_ringInverse_add` for bounded `A`,
+`LinearPMap.negPow_eq_integral_resolvent` for operators with compact resolvent). It is Seeley's
 contour integral `(i / 2π) ∫_Γ λ ^ (-σ) (A - λ)⁻¹ dλ` around the spectrum, collapsed onto the cut.
 Replacing the resolvent by a strongly parameter-dependent symbol `b((x, ξ), λ)`
 (`TauCeti.ParameterSymbol`) of order `m`, for instance a parametrix of `A - λ` (of order `-2` for
@@ -160,8 +161,9 @@ theorem coefficient_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (b.balakrishnanIntegral hΛ hσ hm).coefficient p = (Real.sin (Real.pi * σ) / Real.pi) •
       ∫ t in Ioi (0 : ℝ), t ^ (-σ) • b.coefficient (p, -(t : ℂ)) := by
-  rw [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul, Pi.smul_apply,
-    coefficient_contourIntegral, ← integral_indicator measurableSet_Ioi, Complex.coe_smul]
+  simp only [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul,
+    Pi.smul_apply, coefficient_contourIntegral]
+  rw [← integral_indicator measurableSet_Ioi, Complex.coe_smul]
   congr 1
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   dsimp only
@@ -251,27 +253,13 @@ theorem coefficient_balakrishnanIntegral_eq_rpow (hσ0 : 0 < σ) (hm : m - 2 * �
     {A : V →L[ℂ] V} (hA : IsStrictlyPositive A)
     (hr : ∀ t : ℝ, 0 < t → r.coefficient (p, -(t : ℂ)) * (A + t • 1) = 1) :
     (r.balakrishnanIntegral hΛ hσ hm).coefficient p = A ^ (-σ) := by
-  -- The resolvent integral of the power `σ` of `B = A⁻¹ = A ^ (-1)`.
-  set B : V →L[ℂ] V := A ^ (-1 : ℝ)
-  have hB : 0 ≤ B := CFC.rpow_nonneg
-  have hBA : B * A = 1 := by
-    simpa [CFC.rpow_one A hA.nonneg] using CFC.rpow_neg_mul_rpow (1 : ℝ) hA
-  have hpow : B ^ σ = A ^ (-σ) := by
-    rw [CFC.rpow_rpow A (-1) σ hA, neg_one_mul]
-  -- Along the axis, `r` is `B (1 + t B)⁻¹ = (A + t)⁻¹`.
-  have hres (t : ℝ) (ht : 0 < t) :
-      r.coefficient (p, -(t : ℂ)) = cfc (fun x : ℝ ↦ x / (1 + t * x)) B := by
-    have hunit : IsUnit (A + t • (1 : V →L[ℂ] V)) :=
-      (hA.add_nonneg (smul_nonneg ht.le zero_le_one)).isUnit
-    refine (hunit.mul_left_inj).1 ((hr t ht).trans ?_)
-    have h := CFC.cfc_div_one_add_mul_mul_one_add_smul hB ht.le
-    calc (1 : V →L[ℂ] V) = B * A := hBA.symm
-      _ = cfc (fun x : ℝ ↦ x / (1 + t * x)) B * (1 + t • B) * A := by rw [h]
-      _ = cfc (fun x : ℝ ↦ x / (1 + t * x)) B * (A + t • 1) := by
-          rw [mul_assoc, add_mul, one_mul, smul_mul_assoc, hBA]
-  rw [coefficient_balakrishnanIntegral, ← hpow, CFC.rpow_eq_integral_cfc_div_one_add_mul hB hσ0 hσ]
+  rw [coefficient_balakrishnanIntegral, CFC.rpow_neg_eq_integral_ringInverse_add hA hσ0 hσ]
   congr 1
-  exact setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ by rw [hres t ht]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+  -- Along the axis, `r` is a left inverse of the unit `A + t`, so it is `(A + t)⁻¹`.
+  have hunit : IsUnit (A + t • (1 : V →L[ℂ] V)) :=
+    (hA.add_nonneg (smul_nonneg ht.le zero_le_one)).isUnit
+  rw [hunit.mul_left_inj.1 ((hr t ht).trans (Ring.inverse_mul_cancel _ hunit).symm)]
 
 /-- **The Balakrishnan integral of the inverse of a parameter-elliptic symbol.** Let `a` be a
 symbol of order `m` elliptic with parameter whose value at `(x, ξ)` along the negative real axis is
@@ -334,13 +322,13 @@ theorem coefficient_balakrishnanIntegral_inverse_shiftedLaplacian {V : Type*}
   have hq : 0 < s + ‖ξ‖ ^ 2 := by positivity
   obtain ⟨q, hq_def⟩ : ∃ q : NNReal, (q : ℝ) = s + ‖ξ‖ ^ 2 := ⟨⟨_, hq.le⟩, rfl⟩
   have hq0 : 0 < q := by rwa [← NNReal.coe_pos, hq_def]
-  have hA : algebraMap NNReal (V →L[ℂ] V) q = (s + ‖ξ‖ ^ 2) • (1 : V →L[ℂ] V) := by
-    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def, hq_def]
+  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
+    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
   rw [coefficient_balakrishnanIntegral_inverse hΛ hσ (by linarith) hm h (A := algebraMap NNReal _ q)
-    (isStrictlyPositive_algebraMap hq0) fun t ht ↦ ?_, CFC.rpow_algebraMap,
-    Algebra.algebraMap_eq_smul_one, NNReal.smul_def, NNReal.coe_rpow, hq_def]
+    (isStrictlyPositive_algebraMap hq0) fun t ht ↦ ?_, CFC.rpow_algebraMap, hmap, NNReal.coe_rpow,
+    hq_def]
   have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
-  rw [coefficient_shiftedLaplacian s x ξ hmem, hA, ← add_smul, ← Complex.coe_smul]
+  rw [coefficient_shiftedLaplacian s x ξ hmem, hmap, hq_def, ← add_smul, ← Complex.coe_smul]
   congr 1
   push_cast
   ring

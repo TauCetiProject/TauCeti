@@ -1339,22 +1339,25 @@ theorem isElliptic_shiftedLaplacian_of_re_le {s δ : ℝ} (hδ : 0 < δ)
       (((δ + ‖ξ‖ ^ 2 : ℝ) : ℂ) - (z - (s - δ : ℝ))) = ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z := by
     push_cast
     ring
-  obtain ⟨κ, h, hκ⟩ : ∃ κ : ℝ, (∀ (ξ : CoordinateSpace n) {z : ℂ}, z ∈ Λ →
+  obtain ⟨κ, h⟩ : ∃ κ : ℝ, ∀ (ξ : CoordinateSpace n) {z : ℂ}, z ∈ Λ →
       ((((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z) • ContinuousLinearMap.id ℂ V).IsInvertible ∧
         ‖((((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z) • ContinuousLinearMap.id ℂ V).inverse‖ ≤
-          κ * parameterWeight ξ (z - (s - δ : ℝ)) ^ (-2 : ℝ)) ∧ 0 ≤ κ := by
-    refine ⟨_, fun ξ z hz ↦ heq ξ z ▸
-      isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos zero_lt_one hδ
+          κ * parameterWeight ξ (z - (s - δ : ℝ)) ^ (-2 : ℝ) := by
+    exact ⟨_, fun ξ z hz ↦ by
+      rw [← heq]
+      exact isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos zero_lt_one hδ
         (q := δ + ‖ξ‖ ^ 2) (by linarith)
         (by simp only [Complex.sub_re, Complex.ofReal_re, zero_mul]; linarith [hΛ z hz])
-        (by linarith [norm_nonneg (z - (s - δ : ℝ)), sq_nonneg ‖ξ‖]), ?_⟩
-    exact inv_nonneg.2 (div_nonneg (by norm_num) (by positivity))
+        (by linarith [norm_nonneg (z - (s - δ : ℝ)), sq_nonneg ‖ξ‖])⟩
+  -- Only the size of the constant matters, so replace `κ` by `max κ 0 ≥ 0`.
   refine ⟨fun x ξ z hz ↦ ?_, fun K _ ↦
-    ⟨κ * (1 + Real.sqrt ‖((s - δ : ℝ) : ℂ)‖) ^ (-(-2 : ℝ)), fun x _ ξ z hz ↦ ?_⟩⟩
+    ⟨max κ 0 * (1 + Real.sqrt ‖((s - δ : ℝ) : ℂ)‖) ^ (-(-2 : ℝ)), fun x _ ξ z hz ↦ ?_⟩⟩
   · rw [coefficient_shiftedLaplacian s x ξ hz]
     exact (h ξ hz).1
   · rw [coefficient_shiftedLaplacian s x ξ hz, mul_assoc]
-    refine (h ξ hz).2.trans (mul_le_mul_of_nonneg_left ?_ hκ)
+    refine (h ξ hz).2.trans <| (mul_le_mul_of_nonneg_right (le_max_left κ 0)
+      (Real.rpow_nonneg (parameterWeight_pos ξ _).le _)).trans
+      (mul_le_mul_of_nonneg_left ?_ (le_max_right κ 0))
     simpa using parameterWeight_rpow_le_mul_parameterWeight_add_rpow ξ (z - (s - δ : ℝ))
       ((s - δ : ℝ) : ℂ) (by norm_num : (-2 : ℝ) ≤ 0)
 
