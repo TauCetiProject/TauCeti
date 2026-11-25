@@ -83,7 +83,7 @@ theorem isGFinite_banachIsotypicProjector_apply (σ : ContRepresentation k G W)
 
 /-- The **isotypic part** `V(σ)`: the range of the isotypic projector `e_σ`. For `σ` irreducible
 over an algebraically closed field it is the set of vectors fixed by `e_σ`
-(`mem_banachIsotypicRange_iff`). -/
+(`mem_banachIsotypicRange_iff_apply_eq_self`). -/
 def banachIsotypicRange (σ : ContRepresentation k G W) (hσ : Continuous σ) : Submodule k V :=
   LinearMap.range (banachIsotypicProjector π hπ σ hσ).toContinuousLinearMap.toLinearMap
 
@@ -102,16 +102,13 @@ theorem banachIsotypicProjector_apply_mem_banachIsotypicRange (σ : ContRepresen
 
 /-- For `σ` irreducible over an algebraically closed field, the isotypic part is the set of vectors
 fixed by `e_σ`. -/
-theorem mem_banachIsotypicRange_iff [IsAlgClosed k] (σ : ContRepresentation k G W)
+theorem mem_banachIsotypicRange_iff_apply_eq_self [IsAlgClosed k] (σ : ContRepresentation k G W)
     (hσ : Continuous σ) (hirr : Representation.IsIrreducible σ.toRepresentation) {v : V} :
     v ∈ banachIsotypicRange π hπ σ hσ ↔ banachIsotypicProjector π hπ σ hσ v = v := by
   refine ⟨fun hv ↦ ?_, fun hv ↦ hv ▸ banachIsotypicProjector_apply_mem_banachIsotypicRange
     π hπ σ hσ v⟩
   obtain ⟨w, rfl⟩ := (mem_banachIsotypicRange π hπ σ hσ).1 hv
-  simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-    ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
-      (congrArg ContIntertwiningMap.toContinuousLinearMap
-        (banachIsotypicProjector_idempotent π hπ σ hσ hirr)) w
+  exact banachIsotypicProjector_apply_apply π hπ σ hσ hirr w
 
 /-- The isotypic part `V(σ)` consists of `G`-finite vectors. -/
 theorem banachIsotypicRange_le_gFiniteSubmodule (σ : ContRepresentation k G W)
@@ -146,14 +143,10 @@ theorem iSupIndep_banachIsotypicRange [IsAlgClosed k] {ι : Type*}
       obtain ⟨z, rfl⟩ := (mem_banachIsotypicRange π hπ _ _).1 hz
       rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
         ContIntertwiningMap.toContinuousLinearMap_apply]
-      simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-        ContIntertwiningMap.toContinuousLinearMap_zero, zero_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
-          (congrArg ContIntertwiningMap.toContinuousLinearMap
-            (banachIsotypicProjector_comp_of_not_equiv π hπ (models i).rep
-              (models i).continuous_rep (models i).isIrreducible (models j).rep
-              (models j).continuous_rep (models j).isIrreducible (hne hji))) z
-  rw [← (mem_banachIsotypicRange_iff π hπ _ _ (models i).isIrreducible).1 hx]
+      exact banachIsotypicProjector_apply_apply_of_not_equiv π hπ (models i).rep
+        (models i).continuous_rep (models i).isIrreducible (models j).rep
+        (models j).continuous_rep (models j).isIrreducible (hne hji) z
+  rw [← (mem_banachIsotypicRange_iff_apply_eq_self π hπ _ _ (models i).isIrreducible).1 hx]
   exact hle hx'
 
 /-- The isotypic parts of a skeleton of the unitary dual are independent. -/
