@@ -12,10 +12,11 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 /-!
 # Winding numbers and trace-zero weights of contour cycles
 
-The generalized winding number of a contour cycle is defined at every point by additive extension
-from its closed absolutely continuous generators. Away from the cycle's trace, every generator is
-in the classical regime: its principal value is an ordinary integral and its winding number is an
-integer.
+The generalized winding number of a contour cycle takes a value at every point, by additive
+extension from its closed absolutely continuous generators. Away from the cycle's trace, every
+generator is in the classical regime: its principal value is an ordinary integral and its winding
+number is an integer. On the trace the principal value need not exist, even for a Lipschitz
+generator, and the value is then a junk value.
 This file transfers that classical package to finite formal `ℤ`-combinations of curves.
 
 The support formula is the bridge between the free-abelian-group definition and the single-curve

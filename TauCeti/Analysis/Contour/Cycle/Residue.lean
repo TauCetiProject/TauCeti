@@ -14,9 +14,9 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 # The classical residue theorem for contour cycles
 
 This file extends the classical residue theorem from one closed absolutely continuous curve to a
-finite formal integer cycle `C` of such curves. For `f` differentiable on `U ∖ S` and meromorphic at
-each point of the finite set `S` lying in `U`, and a cycle `C` in `U` that is **null-homologous**
-there and whose trace **avoids** `S`,
+finite formal integer cycle `C` of such curves. For `U` open, `f` differentiable on `U ∖ S` and
+meromorphic at each point of the finite set `S` lying in `U`, and a cycle `C` in `U` that is
+**null-homologous** there and whose trace **avoids** `S`,
 
 `Cycle.integral f C = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`,
 

@@ -84,6 +84,26 @@ open Set Filter Topology MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {U : Set ℂ} {f : ℂ → E}
 
+/-- The concatenation `t ↦ if t ≤ b then γ t else δ t` of a curve `γ` on `[a, b]` with a curve `δ`
+on `[b, c]` that starts where `γ` ends agrees with `γ` on `[a, b]` and with `δ` on `[b, c]`, and it
+maps `[a, c]` into any set into which both curves map their intervals. -/
+private theorem eqOn_ite_le_and_mapsTo {γ δ : ℝ → ℂ} {a b c : ℝ} (hab : a ≤ b) (hbc : b ≤ c)
+    (hjoin : γ b = δ b) (hγU : MapsTo γ (uIcc a b) U) (hδU : MapsTo δ (uIcc b c) U) :
+    EqOn (fun t ↦ if t ≤ b then γ t else δ t) γ (Icc a b) ∧
+      EqOn (fun t ↦ if t ≤ b then γ t else δ t) δ (Icc b c) ∧
+      MapsTo (fun t ↦ if t ≤ b then γ t else δ t) (uIcc a c) U := by
+  have hleft : EqOn (fun t ↦ if t ≤ b then γ t else δ t) γ (Icc a b) :=
+    fun t ht ↦ ite_eq_left ht.2
+  have hright : EqOn (fun t ↦ if t ≤ b then γ t else δ t) δ (Icc b c) := fun t ht ↦ by
+    rcases ht.1.eq_or_lt with rfl | hlt
+    · simp [hjoin]
+    · exact ite_eq_right (not_le.2 hlt)
+  refine ⟨hleft, hright, fun t ht ↦ ?_⟩
+  rw [uIcc_of_le (hab.trans hbc)] at ht
+  rcases le_total t b with htb | hbt
+  · exact hleft ⟨ht.1, htb⟩ ▸ hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
+  · exact hright ⟨hbt, ht.2⟩ ▸ hδU (by rw [uIcc_of_le hbc]; exact ⟨hbt, ht.2⟩)
+
 /-- **Path independence.** If the contour integral of a continuous `f` vanishes along every closed
 piecewise-`C¹` curve in `U`, then its contour integrals along two piecewise-`C¹` curves in `U` with
 the same endpoints agree. -/
@@ -99,14 +119,14 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
   · have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
       (by simpa using hγ.comp_const_sub (a + b)) hγU.comp_const_sub_uIcc
       (by simpa using hstart) (by simpa using hend) (not_le.mp hab).le
-    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
-      add_sub_cancel_left] at this
+    simpa only [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] using this
   wlog hcd : c ≤ d generalizing δ c d with H
   · have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
       (by simpa using hδ.comp_const_sub (c + d)) hδU.comp_const_sub_uIcc
       (by simpa using hstart) (by simpa using hend) (not_le.mp hcd).le
-    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
-      add_sub_cancel_left] at this
+    simpa only [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] using this
   -- The closed curve: `γ` on `[a, b]`, then `δ` backwards on `[b, b + d - c]`.
   have hbe : b ≤ b + d - c := by linarith
   have hρ : IsPiecewiseC1On (fun t => δ (b + d - t)) b (b + d - c) := by
@@ -116,28 +136,28 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     rw [uIcc_of_le hcd]
     exact ⟨by linarith [ht.2], by linarith [ht.1]⟩
   set σ : ℝ → ℂ := fun t => if t ≤ b then γ t else δ (b + d - t)
-  have hσγ : EqOn σ γ (Icc a b) := fun t ht => ite_eq_left ht.2
-  have hσρ : EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [σ, hend]
-    · exact ite_eq_right (not_le.2 hlt)
+  obtain ⟨hσγ, hσρ, hσU⟩ : EqOn σ γ (Icc a b) ∧
+      EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) ∧ MapsTo σ (uIcc a (b + d - c)) U :=
+    eqOn_ite_le_and_mapsTo hab hbe (by simpa using hend) hγU hρU
   have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
-  have hσU : MapsTo σ (uIcc a (b + d - c)) U := fun t ht ↦ by
-    rw [uIcc_of_le (hab.trans hbe)] at ht
-    rcases le_total t b with htb | hbt
-    · exact hσγ ⟨ht.1, htb⟩ ▸ hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
-    · exact hσρ ⟨hbt, ht.2⟩ ▸ hρU (by rw [uIcc_of_le hbe]; exact ⟨hbt, ht.2⟩)
   have hσclosed : σ a = σ (b + d - c) := by
     rw [hσγ ⟨le_rfl, hab⟩, hσρ ⟨hbe, le_rfl⟩]
     simpa using hstart
+  -- Its integral splits at `b` into the integrals along `γ` and along the reversed leg.
+  have hsplit := intervalIntegral_deriv_smul_eq_add_of_eqOn (f := f) (b := b)
+    (δ := fun t => δ (b + d - t))
+    (fun t ht => hσγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hab] at ht)))
+    (fun t ht => hσρ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hbe] at ht)))
+    (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
+    (hρ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU)
+  -- The reversed leg integrates to minus the integral along `δ`.
+  have hrev : ∫ t in b..b + d - c, deriv (fun t => δ (b + d - t)) t • f (δ (b + d - t)) =
+      -∫ t in c..d, deriv δ t • f (δ t) := by
+    rw [intervalIntegral_deriv_smul_comp_const_sub, ← intervalIntegral.integral_symm]
+    simp
   have hzero := h σ a (b + d - c) hσpc hσU hσclosed
-  rwa [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := b) (δ := fun t => δ (b + d - t))
-      (fun t ht => hσγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hab] at ht)))
-      (fun t ht => hσρ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hbe] at ht)))
-      (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
-      (hρ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU),
-    intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_left, sub_sub_cancel,
-    intervalIntegral.integral_symm c d, ← sub_eq_add_neg, sub_eq_zero] at hzero
+  rw [hsplit, hrev, ← sub_eq_add_neg] at hzero
+  exact sub_eq_zero.mp hzero
 
 /-- **Segments as contour integrals.** The contour integral along the segment from `z` to `w`,
 parametrized affinely on `[s, s + 1]`, is Mathlib's curve integral of the `1`-form `v ↦ v • f x`
@@ -168,21 +188,10 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
     rw [segment_eq_image_lineMap]
     exact ⟨t - 1, ⟨by linarith [ht.1], by linarith [ht.2]⟩, AffineMap.lineMap_apply_module' _ _ _⟩
   set η : ℝ → ℂ := fun t => if t ≤ 1 then γ t else σ t
-  have hηγ : EqOn η γ (Icc 0 1) := fun t ht => ite_eq_left ht.2
-  have hησ : EqOn η σ (Icc 1 2) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [η, σ, hz]
-    · exact ite_eq_right (not_le.2 hlt)
+  obtain ⟨hηγ, hησ, hηU⟩ : EqOn η γ (Icc 0 1) ∧ EqOn η σ (Icc 1 2) ∧ MapsTo η (uIcc 0 2) U :=
+    eqOn_ite_le_and_mapsTo zero_le_one one_le_two (by simp [σ, hz]) hγU hσU
   have hσpc : IsPiecewiseC1On σ 1 2 := .of_contDiffOn (by fun_prop)
   have hηpc : IsPiecewiseC1On η 0 2 := hγ.if_le hσpc zero_le_one one_le_two (by simp [σ, hz])
-  have hηU : MapsTo η (uIcc 0 2) U := by
-    intro t ht
-    rw [uIcc_of_le zero_le_two] at ht
-    rcases le_total t 1 with ht1 | ht1
-    · rw [hηγ ⟨ht.1, ht1⟩]
-      exact hγU (by rw [uIcc_of_le zero_le_one]; exact ⟨ht.1, ht1⟩)
-    · rw [hησ ⟨ht1, ht.2⟩]
-      exact hσU (by rw [uIcc_of_le one_le_two]; exact ⟨ht1, ht.2⟩)
   refine ⟨η, hηpc, hηU, hηγ ⟨le_rfl, zero_le_one⟩, by rw [hησ ⟨one_le_two, le_rfl⟩]; norm_num [σ],
     ?_⟩
   have hseg' := intervalIntegral_deriv_smul_segment_eq_curveIntegral f z w 1

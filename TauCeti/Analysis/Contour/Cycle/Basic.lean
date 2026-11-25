@@ -25,9 +25,11 @@ its regularity, and its closedness. Its canonical extension to `ℝ` lets existi
 contour results apply directly. In particular, it does not introduce a second notion of contour
 integral.
 
-Absolute continuity is the regularity under which the contour integral
-`∫ t in a..b, γ' t • f (γ t)` of a continuous `f` is defined: the derivative exists almost
-everywhere and is interval-integrable. Every piecewise-`C¹` curve is absolutely continuous
+Absolute continuity is the regularity under which the contour integrand `t ↦ γ' t • f (γ t)` of a
+continuous `f` is interval-integrable: the derivative exists almost everywhere and is
+interval-integrable. For `f` with values in a complete space, its integral is the contour integral
+`∫ t in a..b, γ' t • f (γ t)`; for an incomplete codomain the Bochner integral is the junk value
+`0`. Every piecewise-`C¹` curve is absolutely continuous
 (`TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval`), so the closed piecewise-`C¹` curves —
 circles, polygons, sector boundaries — are generators. Statements that need more of a generator,
 such as the principal-value theorems for immersed curves, ask for it as a hypothesis on the
@@ -251,7 +253,8 @@ theorem trace_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousO
     trace (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       γ '' uIcc a b := by
   rw [trace_of]
-  exact AbsolutelyContinuousClosedCurve.image_of γ hγ hclosed
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.image_of γ hγ hclosed
 
 /-- Negating every coefficient does not change the trace. -/
 @[simp]
@@ -298,7 +301,8 @@ theorem isIn_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuo
     IsIn (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) Ω ↔
       MapsTo γ (uIcc a b) Ω := by
   rw [isIn_iff, trace_of, ← Set.mapsTo_iff_image_subset]
-  exact AbsolutelyContinuousClosedCurve.mapsTo_of_iff γ hγ hclosed Ω
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.mapsTo_of_iff γ hγ hclosed Ω
 
 /-- A one-generator cycle lies in `Ω` exactly when its parametrization maps its interval into
 `Ω`. -/
@@ -357,7 +361,8 @@ theorem integral_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuo
     integral f (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       ∫ t in a..b, deriv γ t • f (γ t) := by
   rw [integral, FreeAddCommGroup.lift_apply_of]
-  exact AbsolutelyContinuousClosedCurve.integral_of γ hγ hclosed f
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.integral_of γ hγ hclosed f
 
 /-- Integrating over a one-generator cycle gives the raw contour integral over that curve. -/
 @[simp]
@@ -498,7 +503,9 @@ theorem norm_integral_le_of_norm_le_const {E : Type*} [NormedAddCommGroup E] [No
   exact mul_le_mul_of_nonneg_left (hgen γ hγ) (abs_nonneg _)
 
 /-- The winding number of a cycle, obtained by additively extending the generalized winding number
-of its generators. -/
+of its generators. Off the trace of the cycle each generator's principal value is an ordinary
+integral; on the trace it need not exist, even for a Lipschitz generator, and the value is then a
+junk value. -/
 def windingNumber (z₀ : ℂ) : Cycle →+ ℂ :=
   FreeAddCommGroup.lift
     fun γ : AbsolutelyContinuousClosedCurve ↦ TauCeti.Contour.windingNumber γ γ.a γ.b z₀
@@ -509,7 +516,8 @@ theorem windingNumber_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyCon
     windingNumber z₀ (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       TauCeti.Contour.windingNumber γ a b z₀ := by
   rw [windingNumber, FreeAddCommGroup.lift_apply_of]
-  exact AbsolutelyContinuousClosedCurve.windingNumber_of γ hγ hclosed z₀
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.windingNumber_of γ hγ hclosed z₀
 
 /-- The winding number of a one-generator cycle is the winding number of that curve. -/
 @[simp]
