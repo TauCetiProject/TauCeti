@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.Topology.Connected.Clopen
 
 import Mathlib.Topology.Instances.Real.Lemmas
@@ -23,6 +24,8 @@ rather than by passing to the subtype.
 
 * `IsPreconnected.apply_eq_of_eventually_eq`: a function whose value is locally constant along a
   preconnected set is constant along it.
+* `TauCeti.apply_eq_of_forall_sub_lt`: a function on `[a, b] ⊆ ℝ` that agrees at the ends of every
+  short subinterval agrees at `a` and `b`.
 
 The example at the end of the file spells the statement out on the interval `[0, 1] ⊆ ℝ`, where it
 says that a map into a discrete space continuous on `[0, 1]` cannot take two different values
@@ -49,6 +52,24 @@ theorem apply_eq_of_eventually_eq {Y : Type*} {f : X → Y} (hs : IsPreconnected
     (fun _ _ _ _ => Eq.symm) hb ha
 
 end IsPreconnected
+
+namespace TauCeti
+
+/-- A function that takes the same value at the two ends of every subinterval of `[a, b] ⊆ ℝ` of
+length less than a fixed `δ > 0` takes the same value at `a` and at `b`. This is the gluing step
+for a quantity that is known to be unchanged across short subintervals. -/
+theorem apply_eq_of_forall_sub_lt {Y : Type*} {f : ℝ → Y} {a b δ : ℝ} (hab : a ≤ b)
+    (hδ : 0 < δ) (hf : ∀ ⦃p q⦄, a ≤ p → p ≤ q → q ≤ b → q - p < δ → f p = f q) : f a = f b := by
+  refine isPreconnected_Icc.apply_eq_of_eventually_eq (fun t ht ↦ ?_) (Set.left_mem_Icc.2 hab)
+    (Set.right_mem_Icc.2 hab)
+  filter_upwards [inter_mem_nhdsWithin (Set.Icc a b) (Metric.ball_mem_nhds t hδ)]
+    with s ⟨hs, hsδ⟩
+  rw [Real.ball_eq_Ioo] at hsδ
+  rcases le_total s t with h | h
+  · exact hf hs.1 h ht.2 (by linarith [hsδ.1])
+  · exact (hf ht.1 h hs.2 (by linarith [hsδ.2])).symm
+
+end TauCeti
 
 /-- On the preconnected set `[0, 1] ⊆ ℝ`, a map into a discrete space that is continuous there
 takes the same value at `0` and at `1`; continuity on a discrete-valued map is local constancy. -/

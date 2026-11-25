@@ -105,35 +105,28 @@ private theorem domainSpectralFlow_add_domainSpectralFlow_eq_add_of_forall_exist
       (fun t ht ↦ hsymm s hs t (hsub ht)) fun t ht ↦ ?_
     obtain ⟨c, -, hinv⟩ := hloc t (hsub ht)
     exact ⟨c, hinv s hs t (hsub ht) (by simpa using hδ)⟩
-  -- The box over an interval `[x, y]` of length less than `δ` with a shift admissible near `t₀`.
-  have hbox {x y t₀ : ℝ} (hax : a ≤ x) (hxy : x ≤ y) (hyb : y ≤ b) (ht₀ : t₀ ∈ Icc a b)
-      (hx : |x - t₀| < δ) (hy : |y - t₀| < δ) :
+  -- The box over an interval `[x, y]` of length less than `δ`, with a shift admissible near `x`.
+  have hbox {x y : ℝ} (hax : a ≤ x) (hxy : x ≤ y) (hyb : y ≤ b) (hlt : y - x < δ) :
       domainSpectralFlow ι (G u) x y + domainSpectralFlow ι (fun s ↦ G s y) u v =
         domainSpectralFlow ι (fun s ↦ G s x) u v + domainSpectralFlow ι (G v) x y := by
     have hsub : Icc x y ⊆ Icc a b := Icc_subset_Icc hax hyb
-    obtain ⟨c, hc, hinv⟩ := hloc t₀ ht₀
+    obtain ⟨c, hc, hinv⟩ := hloc x ⟨hax, hxy.trans hyb⟩
     refine domainSpectralFlow_add_domainSpectralFlow_eq_add_of_isInvertible hι hxy huv
       (hG.mono (prod_mono subset_rfl hsub)) (fun s hs t ht ↦ hsymm s hs t (hsub ht)) hc
       fun s hs t ht ↦ hinv s hs t (hsub ht) ?_
-    rw [abs_lt] at hx hy ⊢
+    rw [abs_lt]
     constructor <;> linarith [ht.1, ht.2]
-  -- `Φ y` is the defect of the identity over `[u, v] × [a, y]`; it is locally constant.
+  -- `Φ y` is the defect of the identity over `[u, v] × [a, y]`; it is unchanged across short
+  -- subintervals.
   set Φ : ℝ → ℤ := fun y ↦ domainSpectralFlow ι (G u) a y +
     domainSpectralFlow ι (fun s ↦ G s y) u v - domainSpectralFlow ι (fun s ↦ G s a) u v -
       domainSpectralFlow ι (G v) a y
   have hu : u ∈ Icc u v := left_mem_Icc.2 huv
   have hv : v ∈ Icc u v := right_mem_Icc.2 huv
-  have := isPreconnected_Icc.apply_eq_of_eventually_eq (f := Φ) (fun t₀ ht₀ ↦ by
-    filter_upwards [inter_mem_nhdsWithin (Icc a b) (ball_mem_nhds t₀ hδ)] with t ⟨ht, htδ⟩
-    rw [mem_ball, Real.dist_eq] at htδ
-    have ht₀δ : |t₀ - t₀| < δ := by simpa using hδ
-    rcases le_total t₀ t with h | h
-    · have := hbox ht₀.1 h ht.2 ht₀ ht₀δ htδ
-      simp only [Φ, hrow hu ht₀.1 h ht.2, hrow hv ht₀.1 h ht.2]
-      linarith
-    · have := hbox ht.1 h ht₀.2 ht₀ htδ ht₀δ
-      simp only [Φ, hrow hu ht.1 h ht₀.2, hrow hv ht.1 h ht₀.2]
-      linarith) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
+  have := apply_eq_of_forall_sub_lt (f := Φ) hab hδ fun p q hap hpq hqb hlt ↦ by
+    have := hbox hap hpq hqb hlt
+    simp only [Φ, hrow hu hap hpq hqb, hrow hv hap hpq hqb]
+    linarith
   simp only [Φ, domainSpectralFlow_self] at this
   linarith
 
@@ -170,22 +163,17 @@ theorem domainSpectralFlow_add_domainSpectralFlow_eq_add (hab : a ≤ b) (huv : 
     exact domainSpectralFlow_add_adjacent_intervals hι hup hpq
       ((hG.uncurry_right t ht).mono hsub) (fun s hs ↦ hsymm s (hsub hs) t ht)
       fun s hs ↦ h₀ s (hsub hs) t ht
-  -- `Θ q` is the defect of the identity over `[u, q] × [a, b]`; it is locally constant.
+  -- `Θ q` is the defect of the identity over `[u, q] × [a, b]`; it is unchanged across short
+  -- subintervals.
   set Θ : ℝ → ℤ := fun q ↦ domainSpectralFlow ι (G u) a b +
     domainSpectralFlow ι (fun s ↦ G s b) u q - domainSpectralFlow ι (fun s ↦ G s a) u q -
       domainSpectralFlow ι (G q) a b
   have ha : a ∈ Icc a b := left_mem_Icc.2 hab
   have hb : b ∈ Icc a b := right_mem_Icc.2 hab
-  have := isPreconnected_Icc.apply_eq_of_eventually_eq (f := Θ) (fun s₀ hs₀ ↦ by
-    filter_upwards [inter_mem_nhdsWithin (Icc u v) (ball_mem_nhds s₀ hδ)] with s ⟨hs, hsδ⟩
-    rw [mem_ball, Real.dist_eq, abs_lt] at hsδ
-    rcases le_total s₀ s with h | h
-    · have := hstrip hs₀.1 h hs.2 (by linarith [hsδ.2])
-      simp only [Θ, hcol ha hs₀.1 h hs.2, hcol hb hs₀.1 h hs.2]
-      linarith
-    · have := hstrip hs.1 h hs₀.2 (by linarith [hsδ.1])
-      simp only [Θ, hcol ha hs.1 h hs₀.2, hcol hb hs.1 h hs₀.2]
-      linarith) (left_mem_Icc.2 huv) (right_mem_Icc.2 huv)
+  have := apply_eq_of_forall_sub_lt (f := Θ) huv hδ fun p q hup hpq hqv hlt ↦ by
+    have := hstrip hup hpq hqv hlt
+    simp only [Θ, hcol ha hup hpq hqv, hcol hb hup hpq hqv]
+    linarith
   simp only [Θ, domainSpectralFlow_self] at this
   linarith
 
