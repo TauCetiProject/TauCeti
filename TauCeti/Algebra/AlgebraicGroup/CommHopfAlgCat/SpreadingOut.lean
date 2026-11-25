@@ -80,11 +80,6 @@ theorem exists_finset_bialgEquiv_baseChange [Algebra.FiniteType K H] :
     rw [TauCeti.Algebra.span_adjoin_eq_toSubmodule_adjoin, hs, Algebra.top_toSubmodule]
   have : TensorProduct.CompatibleSMul (S.integer K) K H H :=
     IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors _) K H H
-  -- The `S.integer K`-module structure on `H ⊗[K] H` through the left factor, which the Hopf
-  -- algebra structure of the form uses, rather than the one of a subalgebra of `K`.
-  let : Module (S.integer K) (H ⊗[K] H) := TensorProduct.leftModule
-  have : TensorProduct.CompatibleSMul (S.integer K) K H (H ⊗[K] H) :=
-    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors _) K H (H ⊗[K] H)
   let : HopfAlgebra (S.integer K) A := hA.hopfAlgebra
   have : Algebra.FiniteType (S.integer K) A :=
     (Subalgebra.fg_iff_finiteType A).mp (Subalgebra.fg_adjoin_finset s)

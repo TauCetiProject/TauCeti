@@ -23,8 +23,10 @@ restricts to `A` under the hypotheses it needs: the antipode always, the counit 
 `algebraMap R K` is injective, and the comultiplication when `A` is flat over the domain `R` and
 `K`-balanced and `R`-balanced tensors agree, so that `A ⊗[R] A → H ⊗[K] H` is injective
 (`Subalgebra.tensorSquareMap_injective`). Then the operations of `H` restrict to a Hopf algebra
-structure on `A` over `R`, and all Hopf identities hold over `R`. When `K` is a localization of `R`
-and `A` spans `H` over `K`, it is a **Hopf form** of `H`: `K ⊗[R] A ≃ H` as bialgebras.
+structure on `A` over `R`, and all Hopf identities hold over `R`. When moreover `K` is a
+localization of the domain `R` and the flat `A` spans `H` over `K`, it is a **Hopf form** of `H`:
+`K ⊗[R] A ≃ H` as bialgebras. Flatness is used through the injectivity of `A ⊗[R] A → H ⊗[K] H`,
+which makes the restricted comultiplication well defined.
 
 This is the passage from a group scheme over `K` to a model over `R`: for an affine group over a
 number field, a finitely generated flat `A` over the `S`-integers, stable under the Hopf
@@ -66,8 +68,9 @@ variable {R K H : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K] [Semiri
 variable (K) in
 /-- An `R`-subalgebra `A` of a Hopf algebra `H` over `K` is **stable under the Hopf operations**
 of `H` when the comultiplication maps `A` into the image of `A ⊗[R] A`, the counit maps `A` into the
-image of `R`, and the antipode maps `A` into itself. Such an `A` spanning `H` over a localization
-`K` of `R` is a Hopf form of `H` (`baseChangeBialgEquiv`). -/
+image of `R`, and the antipode maps `A` into itself. Such an `A` which is moreover flat over the
+domain `R` and spans `H` over a localization `K` of `R` is a Hopf form of `H`
+(`baseChangeBialgEquiv`). -/
 structure IsStableUnderHopfOps (A : Subalgebra R H) : Prop where
   /-- The comultiplication of an element of `A` lies in the image of `A ⊗[R] A`. -/
   comul_mem ⦃x : H⦄ : x ∈ A → Coalgebra.comul (R := K) x ∈ (tensorSquareMap K A).range
@@ -189,8 +192,6 @@ theorem tensorSquareMap_comulAlgHom (x : A) :
   exact AlgHom.coe_codRestrict _ _ _ x
 
 /-! ### Reflecting identities into `H` -/
-
-variable [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)]
 
 private theorem tensorCubeMap_assoc_rTensor (t : A ⊗[R] A) :
     tensorCubeMap K A (Algebra.TensorProduct.assoc R R R A A A

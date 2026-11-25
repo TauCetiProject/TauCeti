@@ -23,7 +23,8 @@ domain `R`.
 * `Subalgebra.tensorSquareMap`: the canonical map `A ⊗[R] A → H ⊗[K] H`, the `Subalgebra`
   analogue of `Subring.tensorSquareMap`.
 * `Subalgebra.tensorSquareMap_injective`: it is injective when `A` is flat over the domain `R`
-  and `K ⊗ -` is balanced over `R` on `H`, for instance when `K` is the fraction field of `R`.
+  and `K`-balanced and `R`-balanced tensors in `H ⊗ H` agree
+  (`TensorProduct.CompatibleSMul R K H H`), for instance when `K` is the fraction field of `R`.
 * `Subalgebra.isBaseChange_val`: when `A` spans `H` over a localization `K` of `R`, the
   inclusion `A → H` is the base change of `A` to `K`;
   `Subalgebra.map_algEquiv_tensorTensorTensorComm_one_tmul` compares its tensor square with
@@ -82,30 +83,36 @@ theorem map_algEquiv_tensorTensorTensorComm_one_tmul (M : Submonoid R) [IsLocali
 
 variable (K) in
 /-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` for an `R`-subalgebra `A` of a
-`K`-algebra `H`, when `K`-balanced and `R`-balanced tensors in `H ⊗ (H ⊗ H)` agree. On pure
-tensors it applies the inclusion of `A` and `tensorSquareMap`. -/
-noncomputable def tensorCubeMap [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)]
-    (A : Subalgebra R H) : A ⊗[R] (A ⊗[R] A) →ₗ[R] H ⊗[K] (H ⊗[K] H) :=
-  (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.toLinearMap ∘ₗ
+`K`-algebra `H`. On pure tensors it applies the inclusion of `A` and `tensorSquareMap`. -/
+noncomputable def tensorCubeMap (A : Subalgebra R H) : A ⊗[R] (A ⊗[R] A) →ₗ[R] H ⊗[K] (H ⊗[K] H) :=
+  TensorProduct.mapOfCompatibleSMul K R R H (H ⊗[K] H) ∘ₗ
     TensorProduct.map A.val.toLinearMap (tensorSquareMap K A).toLinearMap
 
 /-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` on pure tensors. -/
 @[simp]
-theorem tensorCubeMap_tmul [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)] (A : Subalgebra R H)
-    (x : A) (t : A ⊗[R] A) :
-    tensorCubeMap K A (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t := by
-  rw [tensorCubeMap, LinearMap.comp_apply, TensorProduct.map_tmul, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_eq]
-  exact (TensorProduct.mapOfCompatibleSMul_tmul R K R H (H ⊗[K] H) _ _).symm
+theorem tensorCubeMap_tmul (A : Subalgebra R H) (x : A) (t : A ⊗[R] A) :
+    tensorCubeMap K A (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t :=
+  (rfl)
 
 /-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` intertwines the associators. -/
-theorem tensorCubeMap_assoc_tmul [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)]
-    (A : Subalgebra R H) (t : A ⊗[R] A) (z : A) :
+theorem tensorCubeMap_assoc_tmul (A : Subalgebra R H) (t : A ⊗[R] A) (z : A) :
     tensorCubeMap K A (Algebra.TensorProduct.assoc R R R A A A (t ⊗ₜ z)) =
       TensorProduct.assoc K H H H (tensorSquareMap K A t ⊗ₜ (z : H)) := by
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [TensorProduct.add_tmul, map_add, hs, ht]
   | tmul x y => simp
+
+/-- If `K`-balanced and `R`-balanced tensors agree in `H ⊗ H`, they agree in `H ⊗ (H ⊗[K] H)`. -/
+-- A pure tensor `a ⊗ b` of `H ⊗[K] H` is the image of `a` under the `K`-linear map `· ⊗ b`.
+private theorem compatibleSMul_tensorProduct [TensorProduct.CompatibleSMul R K H H] :
+    TensorProduct.CompatibleSMul R K H (H ⊗[K] H) where
+  smul_tmul k h t := by
+    induction t using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [smul_add, TensorProduct.tmul_add, hs, ht]
+    | tmul a b =>
+      rw [TensorProduct.smul_tmul']
+      exact congrArg (LinearMap.lTensor H (((TensorProduct.mk K H H).flip b).restrictScalars R))
+        (TensorProduct.smul_tmul (R := R) k h a)
 
 end Semiring
 
@@ -131,10 +138,10 @@ theorem tensorSquareMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Su
 
 /-- For a flat `R`-subalgebra `A` of a `K`-algebra `H` over the domain `R`, the canonical map
 `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` is injective when `K`-balanced and `R`-balanced tensors
-agree in `H ⊗ H` and in `H ⊗ (H ⊗ H)`, for instance when `K` is the fraction field of `R`. -/
-theorem tensorCubeMap_injective [TensorProduct.CompatibleSMul R K H H]
-    [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)] (A : Subalgebra R H) [Module.Flat R A] :
-    Function.Injective (tensorCubeMap K A) := by
+agree in `H ⊗ H`, for instance when `K` is the fraction field of `R`. -/
+theorem tensorCubeMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Subalgebra R H)
+    [Module.Flat R A] : Function.Injective (tensorCubeMap K A) := by
+  have := compatibleSMul_tensorProduct (R := R) (K := K) (H := H)
   refine (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.injective.comp ?_
   exact TensorProduct.map_injective_of_flat_flat_of_isDomain _ _
     Subtype.val_injective (tensorSquareMap_injective A)
