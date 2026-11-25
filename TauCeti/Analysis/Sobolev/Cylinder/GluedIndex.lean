@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Fredholm.Parametric
 import TauCeti.Analysis.Fredholm.Stabilization
-import TauCeti.Analysis.Normed.Module.FiniteDimension.OpNorm
 
 /-!
 # The kernel and the index of glued operators on the cylinder
@@ -26,9 +25,9 @@ then so is `D_R` for every sufficiently long neck, and
 
 `ind D_R = ind D₁ + ind D₂`
 
-(`TauCeti.CylinderSobolev.isFredholm_and_index_jetOperator_gluedCoeff`). For linearized Floer
-operators along trajectories this is the additivity of the index under the catenation of
-trajectories at a common nondegenerate orbit.
+(`TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`).
+For linearized Floer operators along trajectories this is the additivity of the index under the
+catenation of trajectories at a common nondegenerate orbit.
 
 **Stabilized kernels.** The pieces need not be onto. Let `ιᵢ : Sᵢ → L²` be stabilizers whose
 sections vanish near the glued ends and such that the stabilized operators
@@ -37,7 +36,8 @@ operator `(ξ, σ₁, σ₂) ↦ D_R ξ + j_R (σ₁, σ₂)`, with the translat
 `j_R = gluedStabilizer ι₁ ι₂ R`. For long necks `A_R` has right inverses `Q` of norm at most
 `4 (‖Q₁‖ + ‖Q₂‖)`
 (`TauCeti.CylinderSobolev.exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff`).
-The main theorem (`TauCeti.CylinderSobolev.finrank_ker_coprod_jetOperator_gluedCoeff`) compares
+The main theorem
+(`exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq`) compares
 the kernels: when the kernels `Eᵢ` of `Aᵢ` are finite-dimensional, then for long necks the kernel
 `E_R` of `A_R` is finite-dimensional, of dimension `dim E₁ + dim E₂`. The index additivity
 follows, since a surjective stabilization by `S` has index `ind D + dim S` and kernel `E`, so that
@@ -65,10 +65,11 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
 
 ## Main results
 
-* `TauCeti.CylinderSobolev.finrank_ker_coprod_jetOperator_gluedCoeff`: the kernel of the stabilized
-  glued operator has dimension `dim E₁ + dim E₂` for long necks.
-* `TauCeti.CylinderSobolev.isFredholm_and_index_jetOperator_gluedCoeff`: the glued operator of two
-  Fredholm operators is Fredholm for long necks, with `ind D_R = ind D₁ + ind D₂`.
+* `exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq`: the
+  kernel of the stabilized glued operator has dimension `dim E₁ + dim E₂` for long necks.
+* `TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`: the
+  glued operator of two Fredholm operators is Fredholm for long necks, with
+  `ind D_R = ind D₁ + ind D₂`.
 
 ## References
 
@@ -166,14 +167,15 @@ private theorem norm_coprod_cut_le {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0) (hTR : T < R) (h2TR : 2 * T ≤ R)
-    {β γ : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1)
-    (hγ : ContDiff ℝ 2 γ) (hγ1 : ∀ s, |γ s| ≤ 1) (hγ'1 : ∀ s, |deriv γ s| ≤ 1)
-    (hγβ : ∀ s, γ s = 1 - β s) (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
+    {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1)
+    (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s) (hγ1 : ∀ s, |1 - β s| ≤ 1)
+    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
+    (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
     {B d ε : ℝ} (hB₁ : ∀ᵐ z ∂stripMeasure, ‖M₁ z‖ ≤ B) (hB₂ : ∀ᵐ z ∂stripMeasure, ‖M₂ z‖ ≤ B)
-    (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv γ s| ≤ d) (hε : 0 ≤ ε)
+    (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ d) (hε : 0 ≤ ε)
     (hn₁ : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₁ (z + (R, 0))‖ ≤ ε)
-    (hn₂ : ∀ᵐ z ∂stripMeasure, γ z.1 ≠ 0 → ‖Function.uncurry
+    (hn₂ : ∀ᵐ z ∂stripMeasure, 1 - β z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₂ (z + (-R, 0))‖ ≤ ε)
     {ξ : H1 V} {σ : S₁ × S₂}
     (hx : (((jetOperator stripMeasure
@@ -206,13 +208,13 @@ private theorem norm_coprod_cut_le {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     · rw [h₅ hz', neg_zero, smul_zero]
     · rw [hβR _ (by linarith), zero_smul]
   have hζ₂ : ∀ᵐ z ∂stripMeasure, (-translateLp (-R) (ι₂ σ.2)) z =
-      γ z.1 • jetOperator stripMeasure G (ξ : Lp (V × V × V) 2 stripMeasure) z := by
+      (1 - β z.1) • jetOperator stripMeasure G (ξ : Lp (V × V × V) 2 stripMeasure) z := by
     rw [hD]
     filter_upwards [Lp.coeFn_neg (translateLp (-R) (ι₂ σ.2)),
       Lp.coeFn_neg (translateLp R (ι₁ σ.1) + translateLp (-R) (ι₂ σ.2)),
       Lp.coeFn_add (translateLp R (ι₁ σ.1)) (translateLp (-R) (ι₂ σ.2)), hv₁, hv₂]
       with z h₁ h₂ h₃ h₄ h₅
-    rw [h₁, h₂, Pi.neg_apply, Pi.neg_apply, h₃, Pi.add_apply, hγβ]
+    rw [h₁, h₂, Pi.neg_apply, Pi.neg_apply, h₃, Pi.add_apply]
     rcases le_or_gt (-T - -R) z.1 with hz | hz
     · rw [hβR _ (by linarith), sub_zero, one_smul, h₄ (by linarith), zero_add]
     rw [h₅ hz, neg_zero, add_zero]
@@ -234,15 +236,16 @@ private theorem norm_coprod_preglue_le {M₁ M₂ : ℝ × ℝ → V × V × V �
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0) (hTR : T < R) (h2TR : 2 * T ≤ R)
-    {β γ : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1)
-    (hγ : ContDiff ℝ 2 γ) (hγ1 : ∀ s, |γ s| ≤ 1) (hγ'1 : ∀ s, |deriv γ s| ≤ 1)
-    (hγβ : ∀ s, γ s = 1 - β s) (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
+    {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1)
+    (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s) (hγ1 : ∀ s, |1 - β s| ≤ 1)
+    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
+    (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
     {B d ε : ℝ} (hB : ∀ᵐ z ∂stripMeasure,
       ‖Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z‖ ≤ B)
-    (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv γ s| ≤ d) (hε : 0 ≤ ε)
+    (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ d) (hε : 0 ≤ ε)
     (hn₁ : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₁ (z + (R, 0))‖ ≤ ε)
-    (hn₂ : ∀ᵐ z ∂stripMeasure, γ z.1 ≠ 0 → ‖Function.uncurry
+    (hn₂ : ∀ᵐ z ∂stripMeasure, 1 - β z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₂ (z + (-R, 0))‖ ≤ ε)
     {ξ₁ ξ₂ : H1 V} {σ₁ : S₁} {σ₂ : S₂}
     (hk₁ : (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁) (ξ₁, σ₁) = 0)
@@ -264,7 +267,7 @@ private theorem norm_coprod_preglue_le {M₁ M₂ : ℝ × ℝ → V × V × V �
   have e₂ := norm_jetOperator_cutoffL_translate_add_le hM₂ hG (-R) hγ hγ1 hγ'1 hB hγd hε hn₂ hk₂
     (hv₂.mono fun z h hz ↦ h (by
       by_contra hz'
-      exact hz (by rw [hγβ, hβR _ (by linarith), sub_zero])))
+      exact hz (by simp only [hβR z.1 (by linarith), sub_zero])))
   calc _ = ‖(jetOperator stripMeasure G
           (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R ξ₁) : Lp (V × V × V) 2 stripMeasure) +
           translateLp R (ι₁ σ₁)) + (jetOperator stripMeasure G
@@ -275,48 +278,6 @@ private theorem norm_coprod_preglue_le {M₁ M₂ : ℝ × ℝ → V × V × V �
         abel_nf
     _ ≤ (ε + d * B) * ‖ξ₁‖ + (ε + d * B) * ‖ξ₂‖ := (norm_add_le _ _).trans (add_le_add e₁ e₂)
     _ = _ := by ring
-
-/-- Multiplying by a cutoff `β(s)` that is locally constant, equal to `b`, on the first
-coordinates of a measurable set `A` is multiplication by `b` on `A`. -/
-theorem multiplicationOperator_linftyIndicator_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
-    {B : ℝ} (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {A : Set (ℝ × ℝ)}
-    (hA : MeasurableSet A) {b : ℝ} (h : ∀ z ∈ A, β =ᶠ[𝓝 z.1] fun _ ↦ b) (x : H1 V) :
-    Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-        (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure) =
-      b • Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-        (x : Lp (V × V × V) 2 stripMeasure) := by
-  refine Lp.ext ?_
-  filter_upwards [Lp.multiplicationOperator_linftyIndicator_ae hA
-      (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure),
-    Lp.coeFn_smul b (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA)
-      (x : Lp (V × V × V) 2 stripMeasure)),
-    Lp.multiplicationOperator_linftyIndicator_ae hA (x : Lp (V × V × V) 2 stripMeasure),
-    coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
-      (x : Lp (V × V × V) 2 stripMeasure)] with z h₁ h₂ h₃ h₄
-  rw [h₁, h₂, Pi.smul_apply, h₃]
-  by_cases hz : z ∈ A
-  · rw [indicator_of_mem hz, indicator_of_mem hz, coe_cutoffL, h₄,
-      cutoffCoeff_of_eventuallyEq (h z hz)]
-    rfl
-  · rw [indicator_of_notMem hz, indicator_of_notMem hz, smul_zero]
-
-/-- Translating the cut-off of an `L²` class to `A` by `a` is cutting off its translate to the set
-`B` of the points that `z ↦ z + (a, 0)` maps into `A`. -/
-theorem translateLp_multiplicationOperator_linftyIndicator {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {A B : Set (ℝ × ℝ)} (hA : MeasurableSet A) (hB : MeasurableSet B) (a : ℝ)
-    (hAB : ∀ z, z ∈ B ↔ z + (a, 0) ∈ A) (f : Lp E 2 stripMeasure) :
-    translateLp a (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f) =
-      Lp.multiplicationOperator (linftyIndicator stripMeasure B hB) (translateLp a f) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_translateLp a
-      (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f),
-    Lp.multiplicationOperator_linftyIndicator_ae hB (translateLp a f), coeFn_translateLp a f,
-    (measurePreserving_add_strip a).quasiMeasurePreserving.ae
-      (Lp.multiplicationOperator_linftyIndicator_ae hA f)] with z h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₄]
-  by_cases hz : z ∈ B
-  · rw [indicator_of_mem ((hAB z).1 hz), indicator_of_mem hz, h₃]
-  · rw [indicator_of_notMem (mt (hAB z).2 hz), indicator_of_notMem hz]
 
 /-- The pregluing `β f₁ + γ f₂` of two sections with complementary cutoffs, `β = 1` and `γ = 0` on
 `s < 0` and `β = 0` and `γ = 1` on `s > R / 2`, is `f₁` on `s < 0` and `f₂` on `s > R / 2`; so it
@@ -368,16 +329,18 @@ private theorem free_ker {S Y : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S
     (((H1 V).subtype.prodMap LinearMap.id : H1 V × S →ₗ[ℝ] _ × S))
     ((H1 V).injective_subtype.prodMap Function.injective_id) A.ker).symm
 
-/-- If `Q` is a right inverse of `A`, then `v - Q (A v)` lies in the kernel of `A`: `id - Q A` is a
-projection onto the kernel. -/
-private theorem sub_apply_mem_ker {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    {A : X →L[ℝ] Lp W 2 stripMeasure} {Q : Lp W 2 stripMeasure →L[ℝ] X}
-    (hQ : A.comp Q = ContinuousLinearMap.id ℝ _) (v : X) :
-    (ContinuousLinearMap.id ℝ X - Q.comp A) v ∈ A.ker := by
-  have h := congrArg (fun F ↦ F (A v)) hQ
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, ContinuousLinearMap.id_apply,
-    ContinuousLinearMap.comp_apply, map_sub, h, sub_self]
+/-- If `x ≤ c x` with `c < 1`, then `x ≤ 0`. -/
+private theorem nonpos_of_le_mul_of_lt_one {x c : ℝ} (h : x ≤ c * x) (hc : c < 1) : x ≤ 0 := by
+  nlinarith
+
+/-- A bound `‖x‖ ≤ ‖a‖ + ‖b‖` on the first components bounds `(x, s₁, s₂)` by `(a, s₁)` and
+`(b, s₂)`. -/
+private theorem norm_mk_mk_le {X Y₁ Y₂ : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y₁] [SeminormedAddCommGroup Y₂] {x a b : X} (s₁ : Y₁) (s₂ : Y₂)
+    (h : ‖x‖ ≤ ‖a‖ + ‖b‖) : ‖(x, (s₁, s₂))‖ ≤ ‖(a, s₁)‖ + ‖(b, s₂)‖ :=
+  norm_prod_le_iff.2 ⟨h.trans (add_le_add (norm_fst_le (a, s₁)) (norm_fst_le (b, s₂))),
+    norm_prod_le_iff.2 ⟨(norm_snd_le (a, s₁)).trans (le_add_of_nonneg_right (norm_nonneg _)),
+      (norm_snd_le (b, s₂)).trans (le_add_of_nonneg_left (norm_nonneg _))⟩⟩
 
 /-- An element of the kernel of the stabilized glued operator whose two cut pieces are fixed by the
 projections `id - Qᵢ Aᵢ` vanishes, once the pieces' errors are small compared with
@@ -412,26 +375,18 @@ private theorem eq_zero_of_cut {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ]
         (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2))) :
     v = 0 := by
   obtain ⟨e₁, e₂⟩ := norm_coprod_cut_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1
-    (fun _ ↦ rfl) hβ0 hβR hB₁ hB₂ hβd hγd hε hn₁ hn₂ (ξ := v.1) (σ := v.2) (by simpa using hv)
+    hβ0 hβR hB₁ hB₂ hβd hγd hε hn₁ hn₂ (ξ := v.1) (σ := v.2) (by simpa using hv)
   have hδ : 0 ≤ ε + d * B := add_nonneg hε (mul_nonneg ((abs_nonneg _).trans (hβd 0)) hB0)
   -- The cutoffs add up to `1` and the translations are isometries, so `v` is bounded by the pieces.
   have hξ : ‖v.1‖ ≤ ‖translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1)‖ +
       ‖translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1)‖ := by
     rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
-    conv_lhs => rw [← cutoffL_add_cutoffL_one_sub hβ hβ1 hβ'1 hγ hγ1 hγ'1 v.1]
+    conv_lhs => rw [← cutoffL_add_cutoffL hβ hβ1 hβ'1 hγ hγ1 hγ'1 (funext fun s ↦ by simp) v.1]
     exact norm_add_le _ _
+  set p₁ : H1 V × S₁ := (translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1)
+  set p₂ : H1 V × S₂ := (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2)
   have key : ‖v‖ ≤ (‖Q₁‖ + ‖Q₂‖) * (ε + d * B) * ‖v‖ :=
-    calc ‖v‖ ≤ ‖((translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) :
-          H1 V × S₁)‖ + ‖((translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) :
-          H1 V × S₂)‖ :=
-        norm_prod_le_iff.2 ⟨hξ.trans (add_le_add (norm_fst_le ((translate (testSection V) (-R)
-          (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) : H1 V × S₁)) (norm_fst_le ((translate
-            (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) : H1 V × S₂))),
-          norm_prod_le_iff.2 ⟨(norm_snd_le ((translate (testSection V) (-R)
-            (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) : H1 V × S₁)).trans (le_add_of_nonneg_right
-              (norm_nonneg _)), (norm_snd_le ((translate (testSection V) R
-            (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) : H1 V × S₂)).trans (le_add_of_nonneg_left
-              (norm_nonneg _))⟩⟩
+    calc ‖v‖ ≤ ‖p₁‖ + ‖p₂‖ := norm_mk_mk_le v.2.1 v.2.2 hξ
       _ ≤ ‖Q₁‖ * ((ε + d * B) * ‖v.1‖) + ‖Q₂‖ * ((ε + d * B) * ‖v.1‖) :=
         add_le_add (((congrArg norm h₁).trans_le (Q₁.le_opNorm _)).trans
           (mul_le_mul_of_nonneg_left e₁ (norm_nonneg _)))
@@ -439,10 +394,7 @@ private theorem eq_zero_of_cut {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ]
             (mul_le_mul_of_nonneg_left e₂ (norm_nonneg _)))
       _ = (‖Q₁‖ + ‖Q₂‖) * (ε + d * B) * ‖v.1‖ := by ring
       _ ≤ _ := mul_le_mul_of_nonneg_left (norm_fst_le v) (by positivity)
-  have hv0 : ‖v‖ ≤ 0 := by
-    by_contra hpos
-    exact (lt_irrefl _) (key.trans_lt (mul_lt_of_lt_one_left (not_le.1 hpos) hsmall))
-  exact norm_le_zero_iff.1 hv0
+  exact norm_le_zero_iff.1 (nonpos_of_le_mul_of_lt_one key hsmall)
 
 /-- **The kernel of the glued operator is at most as large as those of the pieces.** Cutting an
 element of the kernel of `D_R ⊕ j_R` along the neck and projecting the two pieces to the kernels of
@@ -502,15 +454,13 @@ private theorem finiteDimensional_and_finrank_ker_le {M₁ M₂ : ℝ × ℝ →
   have hc₂ (v : H1 V × (S₁ × S₂)) :
       c₂ v = (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) := by
     simp [hc₂def]
-  have hP₁ := sub_apply_mem_ker hQ₁
-  have hP₂ := sub_apply_mem_ker hQ₂
+  have hr₁ := ContinuousLinearMap.rightInverse_of_comp hQ₁
+  have hr₂ := ContinuousLinearMap.rightInverse_of_comp hQ₂
   clear_value A₁ A₂ A c₁ c₂
-  -- The cut pieces projected to the kernels of the pieces.
+  -- The cut pieces projected to the kernels of the pieces along the ranges of `Q₁` and `Q₂`.
   let Φ : A.ker →ₗ[ℝ] A₁.ker × A₂.ker :=
-    (LinearMap.codRestrict A₁.ker (((ContinuousLinearMap.id ℝ _ - Q₁.comp A₁).comp c₁ :
-      _ →ₗ[ℝ] _) ∘ₗ A.ker.subtype) fun x ↦ hP₁ (c₁ x)).prod
-    (LinearMap.codRestrict A₂.ker (((ContinuousLinearMap.id ℝ _ - Q₂.comp A₂).comp c₂ :
-      _ →ₗ[ℝ] _) ∘ₗ A.ker.subtype) fun x ↦ hP₂ (c₂ x))
+    (((A₁.projKerOfRightInverse Q₁ hr₁).comp c₁ : _ →ₗ[ℝ] _) ∘ₗ A.ker.subtype).prod
+      (((A₂.projKerOfRightInverse Q₂ hr₂).comp c₂ : _ →ₗ[ℝ] _) ∘ₗ A.ker.subtype)
   have hinj : Function.Injective Φ := by
     intro x y hxy
     rw [← sub_eq_zero]
@@ -533,8 +483,7 @@ private theorem finiteDimensional_and_finrank_ker_le {M₁ M₂ : ℝ × ℝ →
 private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
     (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1) (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s)
     (hγ1 : ∀ s, |1 - β s| ≤ 1) (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
-    (hβ₀ : ∀ s < 0, β =ᶠ[𝓝 s] fun _ ↦ 1) (hβR' : ∀ s, R / 2 < s → β =ᶠ[𝓝 s] fun _ ↦ 0)
-    (f₁ f₂ : H1 V) :
+    (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0) (f₁ f₂ : H1 V) :
     ‖f₁‖ ≤ ‖cutoffL hβ hβ1 hβ'1 (translate (testSection V) R f₁) +
         cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) f₂)‖ +
         ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
@@ -545,6 +494,10 @@ private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : Con
         ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 ≤ -(R / 2)}
           (measurableSet_le measurable_fst measurable_const))
           (f₂ : Lp (V × V × V) 2 stripMeasure)‖ := by
+  have hβ₀ (s : ℝ) (hs : s < 0) : β =ᶠ[𝓝 s] fun _ ↦ 1 :=
+    (eventually_lt_nhds hs).mono fun t ht ↦ hβ0 t ht.le
+  have hβR' (s : ℝ) (hs : R / 2 < s) : β =ᶠ[𝓝 s] fun _ ↦ 0 :=
+    (eventually_gt_nhds hs).mono fun t ht ↦ hβR t ht.le
   obtain ⟨l₁, l₂⟩ := norm_le_norm_cutoffL_add_cutoffL (V := V) hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ₀
     (fun s hs ↦ (hβ₀ s hs).mono fun t ht ↦ by simp [ht]) hβR'
     (fun s hs ↦ (hβR' s hs).mono fun t ht ↦ by simp [ht]) (translate (testSection V) R f₁)
@@ -574,7 +527,6 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s) (hγ1 : ∀ s, |1 - β s| ≤ 1)
     (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
     (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
-    (hβ₀ : ∀ s < 0, β =ᶠ[𝓝 s] fun _ ↦ 1) (hβR' : ∀ s, R / 2 < s → β =ᶠ[𝓝 s] fun _ ↦ 0)
     {B d ε : ℝ} (hB0 : 0 ≤ B) (hB : ∀ᵐ z ∂stripMeasure,
       ‖Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z‖ ≤ B)
     (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ d) (hε : 0 ≤ ε)
@@ -606,11 +558,11 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
   set g := cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
     cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1)
   have eA := norm_coprod_preglue_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1
-    (fun _ ↦ rfl) hβ0 hβR hB hβd hγd hε hn₁ hn₂ (ξ₁ := k₁.1) (σ₁ := k₁.2) (ξ₂ := k₂.1)
+    hβ0 hβR hB hβd hγd hε hn₁ hn₂ (ξ₁ := k₁.1) (σ₁ := k₁.2) (ξ₂ := k₂.1)
     (σ₂ := k₂.2) (by simpa using hk₁) (by simpa using hk₂)
   have eP := ((congrArg norm h).trans_le (Q.le_opNorm _)).trans
     (mul_le_mul_of_nonneg_left eA (norm_nonneg Q))
-  obtain ⟨l₁, l₂⟩ := norm_le_norm_preglue_add hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ₀ hβR' k₁.1 k₂.1
+  obtain ⟨l₁, l₂⟩ := norm_le_norm_preglue_add hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0 hβR k₁.1 k₂.1
   -- With `N = ‖(k₁, k₂)‖`, both elements are at most `(2 ‖Q‖ δ + θ) N`, so `N = 0`.
   set N := ‖((k₁, k₂) : (H1 V × S₁) × (H1 V × S₂))‖
   have hδ : 0 ≤ ε + d * B := add_nonneg hε (mul_nonneg ((abs_nonneg _).trans (hβd 0)) hB0)
@@ -632,9 +584,7 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
   have key : N ≤ (2 * ‖Q‖ * (ε + d * B) + θ) * N := norm_prod_le_iff.2
     ⟨norm_prod_le_iff.2 ⟨by linarith [ht₁ k₁ hk₁], by linarith⟩,
       norm_prod_le_iff.2 ⟨by linarith [ht₂ k₂ hk₂], by linarith⟩⟩
-  have hN0 : N ≤ 0 := by
-    by_contra hpos
-    exact (lt_irrefl _) (key.trans_lt (mul_lt_of_lt_one_left (not_le.1 hpos) hsmall))
+  have hN0 := nonpos_of_le_mul_of_lt_one key hsmall
   exact ⟨norm_le_zero_iff.1 (hN₁.trans hN0), norm_le_zero_iff.1 (hN₂.trans hN0)⟩
 
 /-- **The kernel of the glued operator is at least as large as those of the pieces.** Pregluing
@@ -650,7 +600,6 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
     (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s) (hγ1 : ∀ s, |1 - β s| ≤ 1)
     (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
     (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
-    (hβ₀ : ∀ s < 0, β =ᶠ[𝓝 s] fun _ ↦ 1) (hβR' : ∀ s, R / 2 < s → β =ᶠ[𝓝 s] fun _ ↦ 0)
     {B d ε : ℝ} (hB0 : 0 ≤ B) (hB : ∀ᵐ z ∂stripMeasure,
       ‖Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z‖ ≤ B)
     (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ d) (hε : 0 ≤ ε)
@@ -683,7 +632,7 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
           (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker := by
   have hzero (k₁ k₂) := eq_zero_of_preglue hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0
-    hβR hβ₀ hβR' hB0 hB hβd hγd hε hn₁ hn₂ hθ ht₁ ht₂ hsmall (k₁ := k₁) (k₂ := k₂)
+    hβR hB0 hB hβd hγd hε hn₁ hn₂ hθ ht₁ ht₂ hsmall (k₁ := k₁) (k₂ := k₂)
   set A₁ := ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁
   set A₂ := ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂
   set A := ((jetOperator stripMeasure
@@ -703,12 +652,11 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
       (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
         cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
     simp [hpredef]
-  have hP := sub_apply_mem_ker hQ
+  have hr := ContinuousLinearMap.rightInverse_of_comp hQ
   clear_value A₁ A₂ A pre
-  -- The pregluing corrected into the kernel of the glued operator.
-  let Ψ : A₁.ker × A₂.ker →ₗ[ℝ] A.ker := LinearMap.codRestrict A.ker
-    (((ContinuousLinearMap.id ℝ _ - Q.comp A).comp pre : _ →ₗ[ℝ] _) ∘ₗ
-      (A₁.ker.subtype.prodMap A₂.ker.subtype)) fun k ↦ hP _
+  -- The pregluing corrected into the kernel of the glued operator along the range of `Q`.
+  let Ψ : A₁.ker × A₂.ker →ₗ[ℝ] A.ker :=
+    ((A.projKerOfRightInverse Q hr).comp pre : _ →ₗ[ℝ] _) ∘ₗ A₁.ker.subtype.prodMap A₂.ker.subtype
   have hinj : Function.Injective Ψ := by
     intro x y hxy
     rw [← sub_eq_zero]
@@ -723,41 +671,6 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
   have := free_ker A₂
   have := free_ker A
   exact Module.finrank_prod.symm.trans_le (LinearMap.finrank_le_finrank_of_injective hinj)
-
-/-- **Uniformly small tails.** The parts on `s ≥ R` and on `s ≤ -R` of the sections in a
-finite-dimensional space `K` of `L²` sections are, for large `R`, at most `θ` times the norms of
-the sections. -/
-theorem eventually_forall_norm_multiplicationOperator_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (K : Submodule ℝ (Lp E 2 stripMeasure)) [FiniteDimensional ℝ K] {θ : ℝ}
-    (hθ : 0 < θ) :
-    (∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
-        {z : ℝ × ℝ | R ≤ z.1} (measurableSet_le measurable_const measurable_fst)) f‖ ≤ θ * ‖f‖) ∧
-      ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
-        {z : ℝ × ℝ | z.1 ≤ -R} (measurableSet_le measurable_fst measurable_const)) f‖ ≤
-          θ * ‖f‖ := by
-  -- The cut-offs to a decreasing family of sets with empty intersection, as operators on `K`,
-  -- tend to zero in operator norm.
-  have key {s : ℝ → Set (ℝ × ℝ)} (hs : ∀ R, MeasurableSet (s R)) (hanti : Antitone s)
-      (hempty : ⋂ R, s R = ∅) : ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator
-        (linftyIndicator stripMeasure (s R) (hs R)) f‖ ≤ θ * ‖f‖ := by
-    let T (R : ℝ) : K →L[ℝ] Lp E 2 stripMeasure :=
-      (Lp.multiplicationOperator (linftyIndicator stripMeasure (s R) (hs R))).comp K.subtypeL
-    have hT : Tendsto (fun R ↦ ‖T R‖) atTop (𝓝 0) :=
-      ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero fun f ↦
-        tendsto_zero_iff_norm_tendsto_zero.2 (Lp.tendsto_norm_multiplicationOperator_linftyIndicator
-          ENNReal.ofNat_ne_top hs hanti hempty _)
-    filter_upwards [hT.eventually (ge_mem_nhds hθ)] with R hR f hf
-    exact ((T R).le_opNorm ⟨f, hf⟩).trans (mul_le_mul_of_nonneg_right hR (norm_nonneg _))
-  refine ⟨key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_,
-    key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_⟩
-  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-    have := mem_iInter.1 hz (z.1 + 1)
-    simp only [mem_ofPred_eq] at this
-    linarith
-  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-    have := mem_iInter.1 hz (-z.1 + 1)
-    simp only [mem_ofPred_eq] at this
-    linarith
 
 /-- The first components of a space of elements of `W^{1,2} × S`, as `L²` jets. -/
 private abbrev jetComponents {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S]
@@ -822,10 +735,6 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
   have hγ'1 (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 1 := (hγd s).trans hRL
   have hβ0 (s : ℝ) (hs : s ≤ 0) : β s = 1 := neckCutoff_neg_two_div_eq_one hR.le hs
   have hβR (s : ℝ) (hs : R / 2 ≤ s) : β s = 0 := neckCutoff_neg_two_div_eq_zero hR hs
-  have hβ₀ (s : ℝ) (hs : s < 0) : β =ᶠ[𝓝 s] fun _ ↦ 1 :=
-    (eventually_lt_nhds hs).mono fun t ht ↦ hβ0 t ht.le
-  have hβR' (s : ℝ) (hs : R / 2 < s) : β =ᶠ[𝓝 s] fun _ ↦ 0 :=
-    (eventually_gt_nhds hs).mono fun t ht ↦ hβR t ht.le
   -- On the support of `1 - β`, where `s > 0`, the glued field is `M₂(· - R, ·)`.
   have hn₂ : ∀ᵐ z ∂stripMeasure, 1 - β z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₂ (z + (-R, 0))‖ ≤ ε :=
@@ -851,7 +760,7 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
     (ht₂ _ (Submodule.mem_map_of_mem hk)).trans (mul_le_mul_of_nonneg_left
       ((Submodule.norm_coe _).trans_le (norm_fst_le k)) (by norm_num))
   exact ⟨hfin, le_antisymm hle (finrank_ker_add_finrank_ker_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1
-    hβ'1 hγ hγ1 hγ'1 hβ0 hβR hβ₀ hβR' hB0 hB hβd hγd hε hn hn₂ hQ (by norm_num) ht₁' ht₂'
+    hβ'1 hγ hγ1 hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ hQ (by norm_num) ht₁' ht₂'
     hsmall₂)⟩
 
 /-- The choice of `ε` and of the neck length making the cutting and the pregluing errors
@@ -880,7 +789,8 @@ inverses and finite-dimensional kernels `Eᵢ`. Then for every sufficiently long
 `E_R` of the stabilized glued operator `(ξ, σ₁, σ₂) ↦ D_R ξ + j_R (σ₁, σ₂)`
 (`TauCeti.CylinderSobolev.gluedStabilizer`) is finite-dimensional, of dimension
 `dim E₁ + dim E₂`. -/
-theorem finrank_ker_coprod_jetOperator_gluedCoeff {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+theorem exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq
+    {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
     (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
@@ -954,7 +864,8 @@ ends match: `M₁(s, t) → M(t)` as `s → +∞` and `M₂(s, t) → M(t)` as `
 If `D₁` and `D₂` are Fredholm, then for every sufficiently long neck the operator `D_R` of the glued
 coefficient field `M_R` (`TauCeti.gluedCoeff`, neck length `2 R`) is Fredholm, and
 `ind D_R = ind D₁ + ind D₂`. -/
-theorem isFredholm_and_index_jetOperator_gluedCoeff {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+theorem exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq
+    {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
     (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
@@ -970,21 +881,15 @@ theorem isFredholm_and_index_jetOperator_gluedCoeff {M₁ M₂ : ℝ × ℝ → 
           ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).index := by
   obtain ⟨S₁, -, -, hS₁, ⟨T₁, hT₁⟩, Q₁, hQ₁⟩ := hD₁.exists_le_testSectionLp_isTopCompl
   obtain ⟨S₂, -, -, hS₂, ⟨T₂, hT₂⟩, Q₂, hQ₂⟩ := hD₂.exists_le_testSectionLp_isTopCompl
-  have hι₁ : ∀ σ : S₁, ∀ᵐ z ∂stripMeasure, max T₁ T₂ < z.1 → S₁.subtypeL σ z = 0 := fun σ ↦ by
-    filter_upwards [hT₁ σ σ.property] with z hz hT using
-      hz ((le_max_left T₁ T₂).trans_lt (hT.trans_le (le_abs_self _)))
-  have hι₂ : ∀ σ : S₂, ∀ᵐ z ∂stripMeasure, z.1 < -max T₁ T₂ → S₂.subtypeL σ z = 0 := fun σ ↦ by
-    filter_upwards [hT₂ σ σ.property] with z hz hT using
-      hz ((le_max_right T₁ T₂).trans_lt (lt_neg_of_lt_neg hT |>.trans_le (neg_le_abs _)))
+  have hι₁ := ae_subtypeL_eq_zero_of_lt hT₁ (le_max_left T₁ T₂)
+  have hι₂ := ae_subtypeL_eq_zero_of_lt_neg hT₂ (le_max_right T₁ T₂)
   have := hD₁.finite_ker
   have := hD₂.finite_ker
   have := (hD₁.coprod_of_finiteDimensional S₁.subtypeL).finite_ker
   have := (hD₂.coprod_of_finiteDimensional S₂.subtypeL).finite_ker
-  have : FiniteDimensional ℝ (Lp W 2 stripMeasure ⧸
-    ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).range) := hD₁.finite_coker
-  have : FiniteDimensional ℝ (Lp W 2 stripMeasure ⧸
-    ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).range) := hD₂.finite_coker
-  obtain ⟨R₀, hR₀⟩ := finrank_ker_coprod_jetOperator_gluedCoeff hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
+  obtain ⟨R₀, hR₀⟩ :=
+    exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq hM₁ hM₂
+      h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
   obtain ⟨R₁, hR₁⟩ := exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff hM₁ hM₂
     h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
   refine ⟨max R₀ R₁, fun R hR ↦ ?_⟩
@@ -993,22 +898,15 @@ theorem isFredholm_and_index_jetOperator_gluedCoeff {M₁ M₂ : ℝ × ℝ → 
   set D := (jetOperator stripMeasure
     (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
       (H1 V).subtypeL
-  set j := gluedStabilizer S₁.subtypeL S₂.subtypeL R
-  have hsurj : Function.Surjective (D.coprod j) := fun η ↦
-    ⟨Q η, by simpa using congrArg (fun T ↦ T η) hQ⟩
-  refine ⟨ContinuousLinearMap.IsFredholm.of_surjective_coprod D j hsurj hfin, ?_⟩
-  have := (ContinuousLinearMap.IsFredholm.of_surjective_coprod D j hsurj hfin).finite_ker
-  have := (ContinuousLinearMap.IsFredholm.of_surjective_coprod D j hsurj hfin).finite_coker
-  have hsurj₁ : Function.Surjective
-      (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod S₁.subtypeL) := fun η ↦
-    ⟨Q₁ η, by simpa using congrArg (fun T ↦ T η) hQ₁⟩
-  have hsurj₂ : Function.Surjective
-      (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod S₂.subtypeL) := fun η ↦
-    ⟨Q₂ η, by simpa using congrArg (fun T ↦ T η) hQ₂⟩
+  have hsurj := (ContinuousLinearMap.rightInverse_of_comp hQ).surjective
+  have hF := ContinuousLinearMap.IsFredholm.of_surjective_coprod D _ hsurj hfin
+  have := hF.finite_ker
+  refine ⟨hF, ?_⟩
   rw [ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective _ _ hsurj,
-    ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective _ _ hsurj₁,
-    ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective _ _ hsurj₂, hrank,
-    Module.finrank_prod]
+    ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective _ _
+      (ContinuousLinearMap.rightInverse_of_comp hQ₁).surjective,
+    ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective _ _
+      (ContinuousLinearMap.rightInverse_of_comp hQ₂).surjective, hrank, Module.finrank_prod]
   push_cast
   ring
 

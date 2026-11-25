@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Analysis.Fredholm.Parametric
 
 /-!
 # Closed range from a finite-dimensional cokernel
@@ -151,11 +152,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_surjective_coprod {S : Type*}
       fun x y hxy ↦ ?_
     · simp
     · exact Subtype.ext (congrArg (fun v : (T.coprod B).ker ↦ (v : E × S).1) hxy)
-  · refine Module.Finite.of_surjective ((LinearMap.range (T : E →ₗ[𝕜] F)).mkQ ∘ₗ
-      (B : S →ₗ[𝕜] F)) fun y ↦ ?_
-    obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-    obtain ⟨⟨x, s⟩, rfl⟩ := h y
-    refine ⟨s, (Submodule.Quotient.eq _).2 ⟨-x, ?_⟩⟩
-    simp
+  · exact Module.Finite.of_surjective _
+      ((ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective T B).2 h)
 
 end TauCeti

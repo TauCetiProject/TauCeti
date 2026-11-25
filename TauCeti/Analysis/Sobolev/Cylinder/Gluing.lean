@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
@@ -86,6 +87,14 @@ This is the cylinder version of
 `TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`, which
 glues trajectory operators on the line, and it uses the same glued coefficient and cutoffs.
 
+**Cut-offs beyond the neck.** Translating the cut-off of an `L²` section to a set is cutting off
+its translate to the translated set
+(`TauCeti.CylinderSobolev.translateLp_multiplicationOperator_linftyIndicator`), and the parts on
+`s ≥ R` and on `s ≤ -R` of the sections of a finite-dimensional space of `L²` sections are
+uniformly small for large `R`
+(`TauCeti.CylinderSobolev.eventually_forall_norm_multiplicationOperator_le`). These control the
+tails of kernel elements of the pieces beyond the neck when comparing kernels of glued operators.
+
 ## References
 
 * A. Floer, *The unregularized gradient flow of the symplectic action*, Comm. Pure Appl. Math. 41
@@ -102,7 +111,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Set Topology
 open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
@@ -468,6 +477,61 @@ theorem ae_translateLp_eq_zero_of_lt_neg_sub {S : Type*} [NormedAddCommGroup S]
     (measurePreserving_add_strip a).quasiMeasurePreserving.ae (hι σ)] with z h₁ h₂ hz
   rw [h₁]
   exact h₂ (by rw [Prod.fst_add]; linarith)
+
+/-! ### Cut-offs beyond the neck -/
+
+/-- Translating the cut-off of an `L²` class to `A` by `a` is cutting off its translate to the set
+`B` of the points that `z ↦ z + (a, 0)` maps into `A`. -/
+theorem translateLp_multiplicationOperator_linftyIndicator {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {A B : Set (ℝ × ℝ)} (hA : MeasurableSet A) (hB : MeasurableSet B) (a : ℝ)
+    (hAB : ∀ z, z ∈ B ↔ z + (a, 0) ∈ A) (f : Lp E 2 stripMeasure) :
+    translateLp a (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f) =
+      Lp.multiplicationOperator (linftyIndicator stripMeasure B hB) (translateLp a f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp a
+      (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f),
+    Lp.multiplicationOperator_linftyIndicator_ae hB (translateLp a f), coeFn_translateLp a f,
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae
+      (Lp.multiplicationOperator_linftyIndicator_ae hA f)] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₄]
+  by_cases hz : z ∈ B
+  · rw [indicator_of_mem ((hAB z).1 hz), indicator_of_mem hz, h₃]
+  · rw [indicator_of_notMem (mt (hAB z).2 hz), indicator_of_notMem hz]
+
+/-- **Uniformly small tails.** The parts on `s ≥ R` and on `s ≤ -R` of the sections in a
+finite-dimensional space `K` of `L²` sections are, for large `R`, at most `θ` times the norms of
+the sections. -/
+theorem eventually_forall_norm_multiplicationOperator_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (K : Submodule ℝ (Lp E 2 stripMeasure)) [FiniteDimensional ℝ K] {θ : ℝ}
+    (hθ : 0 < θ) :
+    (∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | R ≤ z.1} (measurableSet_le measurable_const measurable_fst)) f‖ ≤ θ * ‖f‖) ∧
+      ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | z.1 ≤ -R} (measurableSet_le measurable_fst measurable_const)) f‖ ≤
+          θ * ‖f‖ := by
+  -- The cut-offs to a decreasing family of sets with empty intersection, as operators on `K`,
+  -- tend to zero in operator norm.
+  have key {s : ℝ → Set (ℝ × ℝ)} (hs : ∀ R, MeasurableSet (s R)) (hanti : Antitone s)
+      (hempty : ⋂ R, s R = ∅) : ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator
+        (linftyIndicator stripMeasure (s R) (hs R)) f‖ ≤ θ * ‖f‖ := by
+    let T (R : ℝ) : K →L[ℝ] Lp E 2 stripMeasure :=
+      (Lp.multiplicationOperator (linftyIndicator stripMeasure (s R) (hs R))).comp K.subtypeL
+    have hT : Tendsto (fun R ↦ ‖T R‖) atTop (𝓝 0) :=
+      ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero fun f ↦
+        tendsto_zero_iff_norm_tendsto_zero.2 (Lp.tendsto_norm_multiplicationOperator_linftyIndicator
+          ENNReal.ofNat_ne_top hs hanti hempty _)
+    filter_upwards [hT.eventually (ge_mem_nhds hθ)] with R hR f hf
+    exact ((T R).le_opNorm ⟨f, hf⟩).trans (mul_le_mul_of_nonneg_right hR (norm_nonneg _))
+  refine ⟨key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_,
+    key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_⟩
+  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+    have := mem_iInter.1 hz (z.1 + 1)
+    simp only [mem_ofPred_eq] at this
+    linarith
+  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+    have := mem_iInter.1 hz (-z.1 + 1)
+    simp only [mem_ofPred_eq] at this
+    linarith
 
 variable [CompleteSpace W]
 
