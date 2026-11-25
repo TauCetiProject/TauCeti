@@ -70,16 +70,18 @@ private theorem eLpNormWkp_inter_le_of_twistedReflection (hΩ : MapsTo (starRing
     eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) 1 ξ ≤
       ↑(2 * C) * (eLpNorm η r (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) +
         eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
-  have hR (v : V) : ‖(R : V →L[ℝ] V) v‖ = ‖v‖ := R.norm_map v
+  have hR (v : V) : ‖(R : V →L[ℝ] V) v‖ ≤ ‖v‖ := (R.norm_map v).le
   have hae : ξ =ᵐ[volume.restrict (U ∩ {z | 0 ≤ z.im})] twistedReflection (R : V →L[ℝ] V) ξ :=
     Filter.EventuallyEq.symm (ae_restrict_of_ae_restrict_of_subset inter_subset_right
       (twistedReflection_ae_eq_restrict _ ξ))
   rw [eLpNormWkp_congr_ae hae]
   refine (eLpNormWkp_mono_set inter_subset_left).trans (h.trans ?_)
-  rw [ENNReal.coe_mul, ENNReal.coe_ofNat, mul_assoc, mul_left_comm, mul_add 2]
-  gcongr
-  · exact eLpNorm_twistedReflection_le hΩ hR hr η
-  · exact eLpNorm_twistedReflection_le hΩ hR hq ξ
+  calc _ ≤ ↑C * (2 * eLpNorm η r (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) +
+        2 * eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
+        gcongr
+        · exact eLpNorm_twistedReflection_le hΩ hR hr η
+        · exact eLpNorm_twistedReflection_le hΩ hR hq ξ
+    _ = _ := by push_cast; ring
 
 variable [FiniteDimensional ℝ V] (hR : Function.Involutive R)
 include hR

@@ -71,6 +71,9 @@ its odd reflection Sobolev. That gluing step is not part of this file.
   boundary values.
 * `TauCeti.MemLpLoc.twistedReflection`, `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ`
   bounds pass to and from twisted reflections.
+* `TauCeti.eLpNorm_twistedReflection_le`: on a conjugation-invariant set, the twisted reflection
+  by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the axis, for `1 ≤ p`;
+  `MeasureTheory.AEStronglyMeasurable.twistedReflection` is the accompanying measurability.
 
 ## References
 
@@ -234,8 +237,9 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.twistedReflection {U : Set ℂ
   have hg : AEStronglyMeasurable ({z : ℂ | 0 < z.im}.indicator f) (volume.restrict U) := by
     refine (aestronglyMeasurable_indicator_iff hH).2 ?_
     rw [Measure.restrict_restrict hH]
-    exact hf.mono_measure (Measure.restrict_mono (show {z : ℂ | 0 < z.im} ∩ U ⊆
-      U ∩ {z | 0 ≤ z.im} from fun z hz => ⟨hz.2, (show 0 < z.im from hz.1).le⟩) le_rfl)
+    have hsub : {z : ℂ | 0 < z.im} ∩ U ⊆ U ∩ {z | 0 ≤ z.im} := fun z hz =>
+      ⟨hz.2, (mem_ofPred.1 hz.1).le⟩
+    exact hf.mono_measure (Measure.restrict_mono hsub le_rfl)
   have hconj : MeasurePreserving (conjLIE : ℂ → ℂ) (volume.restrict ((conjLIE : ℂ → ℂ) ⁻¹' U))
       (volume.restrict U) :=
     conjLIE.measurePreserving.restrict_preimage_emb conjLIE.toHomeomorph.measurableEmbedding U
@@ -250,7 +254,7 @@ reflection by a norm-preserving map `L` at most doubles the `Lᵖ` norm up to th
 `1 ≤ p`. Its norm agrees off the null axis with that of the even reflection,
 which `TauCeti.eLpNorm_planarReflection_le` bounds. -/
 theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
-    {L : F →L[ℝ] F} (hL : ∀ v, ‖L v‖ = ‖v‖) (hp : 1 ≤ p) (f : ℂ → F) :
+    {L : F →L[ℝ] F} (hL : ∀ v, ‖L v‖ ≤ ‖v‖) (hp : 1 ≤ p) (f : ℂ → F) :
     eLpNorm (TauCeti.twistedReflection L f) p (volume.restrict U) ≤
       2 * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
   -- The order-one reflection weight is `1` and its node is `-1`, so the bound is `1 + 1`.
@@ -263,10 +267,12 @@ theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ
     (imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hU hz)
     (higherReflectionCoeff 1) f
   rw [planarReflectionBound_higherReflectionCoeff, hb] at h
+  -- Off the null axis the twisted reflection is pointwise dominated by the order-one reflection.
   refine (eLpNorm_mono_ae (hf.twistedReflection hU L) ?_).trans h
   filter_upwards [ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz
   rcases lt_or_gt_of_ne hz with hz | hz
-  · simp [hz, hL, imDilation_higherReflectionNode_fin_one, higherReflectionCoeff_one]
+  · simpa [hz, imDilation_higherReflectionNode_fin_one, higherReflectionCoeff_one] using
+      hL (f (conj z))
   · simp [hz, hz.le]
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
