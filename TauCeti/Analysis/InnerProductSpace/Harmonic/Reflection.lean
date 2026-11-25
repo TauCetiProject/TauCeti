@@ -254,9 +254,8 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace
     rw [EventuallyEq, ae_restrict_iff' (U ⊓ normalHalfSpace a).isOpen.measurableSet]
     filter_upwards [hae', hρ.ae hw0'] with x hx hx0 hxUH
     rw [Opens.coe_inf] at hxUH
-    have hρx : ρ x ∉ normalHalfSpace (E := E) a := by
-      rw [hρdef, normalReflection_mem_normalHalfSpace_iff, not_lt]
-      exact (mem_normalHalfSpace a x).1 hxUH.2 |>.le
+    have hρx : ρ x ∉ normalHalfSpace (E := E) a :=
+      normalReflection_notMem_normalHalfSpace hxUH.2
     rw [← hx hxUH.1, hx0 (hU hxUH.1) hρx, sub_zero]
   refine ⟨h, hh, ?_, hwh, ?_⟩
   · -- `h ∘ ρ` and `-h` are continuous on `U` and agree almost everywhere there.

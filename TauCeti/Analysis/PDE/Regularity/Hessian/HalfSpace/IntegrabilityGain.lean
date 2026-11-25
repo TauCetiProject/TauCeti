@@ -80,36 +80,14 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)]
 
-omit [Fact (1 ≤ p)] [Fact (1 ≤ r)] in
-/-- The odd reflection `x ↦ g x - g (ρ x)` across the boundary of `H = {a < x.fst}` of a function
-`g ∈ Lʳ(H)` extended by zero lies in `Lʳ(ℝ × E)`. -/
-private theorem memLp_indicator_sub_indicator_comp_normalReflection {a : ℝ}
-    {g : WithLp 2 (ℝ × E) → ℝ}
-    (hg : MemLp g r ((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a))) :
-    MemLp (fun x => (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g x -
-      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g (normalReflection E a x))
-      r volume := by
-  have h := (memLp_indicator_iff_restrict
-    (normalHalfSpace (E := E) a).isOpen.measurableSet.nullMeasurableSet).2 hg
-  exact h.sub (h.comp_measurePreserving (measurePreserving_normalReflection a))
-
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- The reflection `ρ` in the boundary hyperplane of `H = {a < x.fst}` maps `H` off itself. -/
-private theorem normalReflection_notMem_normalHalfSpace {a : ℝ} {x : WithLp 2 (ℝ × E)}
-    (hx : x ∈ normalHalfSpace (E := E) a) :
-    normalReflection E a x ∉ normalHalfSpace (E := E) a := by
-  rw [mem_normalHalfSpace] at hx
-  rw [normalReflection_mem_normalHalfSpace_iff]
-  exact hx.not_gt
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Conjugating by the linear normal reflection `R`, an isometric involution, does not increase
-the distance to the identity. -/
-private theorem norm_conj_normalLinearReflection_sub_id_le
+/-- Conjugating by the linear normal reflection `R`, an isometric involution, preserves the
+distance to the identity. -/
+private theorem norm_conj_normalLinearReflection_sub_id
     (B : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
     ‖(normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L B ∘L
         (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) -
-      ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ ≤
+      ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ =
       ‖B - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ := by
   set R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E) :=
     (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
@@ -117,16 +95,8 @@ private theorem norm_conj_normalLinearReflection_sub_id_le
   have hconj : R ∘L B ∘L R - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E)) =
       R ∘L (B - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))) ∘L R := by
     ext z; simp [hRR]
-  have hR : ‖R‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z => by
-    rw [one_mul]
-    exact ((normalLinearReflection E).norm_map z).le
-  rw [hconj]
-  calc ‖R ∘L (B - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))) ∘L R‖
-      ≤ ‖R‖ * (‖B - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ * ‖R‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ 1 * (‖B - ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ * 1) := by gcongr
-    _ = _ := by ring
+  rw [hconj, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Across the boundary hyperplane the reflected equation is the negative of the original one:
@@ -189,7 +159,7 @@ private theorem ae_norm_reflectedCoeff_sub_id_le {a δ : ℝ} (hδ : 0 ≤ δ)
   rw [piecewise_eq_of_notMem _ _ _ hx]
   by_cases hx' : x ∈ normalReflection E a ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
   · rw [piecewise_eq_of_mem _ _ _ hx']
-    exact (norm_conj_normalLinearReflection_sub_id_le _).trans (h₂ hx')
+    exact (norm_conj_normalLinearReflection_sub_id _).trans_le (h₂ hx')
   · rw [piecewise_eq_of_notMem _ _ _ hx']
     rw [sub_self, ContinuousLinearMap.opNorm_zero]
     exact hδ
@@ -264,14 +234,23 @@ private theorem exists_wkp_value_ae_eq_of_norm_sub_id_le_of_normalHalfSpace_aux
     exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_id_le
       (E := WithLp 2 (ℝ × E)) hp hp_top hr hr_top
   refine ⟨δ, hδ, fun a A hA hAδ u f hf hur hu0 htr => ?_⟩
+  have hodd {g : WithLp 2 (ℝ × E) → ℝ}
+      (hg : MemLp g r
+        ((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a))) :
+      MemLp (fun x => (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g x -
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g
+          (normalReflection E a x)) r volume := by
+    simpa only [Measure.restrict_univ, normalReflection_eq_hyperplaneReflection] using
+      memLp_indicator_sub_indicator_comp_hyperplaneReflection
+        (normalHalfSpace a).isOpen.measurableSet MeasurableSet.univ (mapsTo_univ _ _)
+        (by rwa [univ_inter]) (by rwa [univ_inter])
   -- The odd reflection `w` of `u` lies in `W^{2,p}(ℝ × E)` and solves the reflected equation, to
   -- which the whole-space integrability gain applies.
   obtain ⟨w, hwv, hwD⟩ := Wkp.exists_value_ae_eq_sub_comp_normalReflection u hu0
   obtain ⟨v, hv, -⟩ := hgain (reflectedCoeff a A)
     (stronglyMeasurable_reflectedCoeff hA).aestronglyMeasurable
     (ae_norm_reflectedCoeff_sub_id_le hδ.le hAδ) w _
-    (memLp_indicator_sub_indicator_comp_normalReflection hf)
-    ((memLp_indicator_sub_indicator_comp_normalReflection hur).ae_eq hwv.symm)
+    (hodd hf) ((hodd hur).ae_eq hwv.symm)
     (ae_trace_reflectedCoeff_comp_eq htr hwD)
   -- On `H` the value of `w` is that of `u`.
   refine ⟨Wkp.restrictL le_top 2 v, ?_⟩
@@ -302,9 +281,7 @@ everywhere statements on `H` and `H'` to each other. -/
 private theorem quasiMeasurePreserving_restrict_normalHalfSpace
     (e : WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E)) {a a' : ℝ}
     (h : (normalHalfSpace (E := E) a' : Set (WithLp 2 (ℝ × E))) =
-      e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))))
-    (h' : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
-      e.symm ⁻¹' (normalHalfSpace (E := E) a' : Set (WithLp 2 (ℝ × E)))) :
+      e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))) :
     QuasiMeasurePreserving e
         ((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a'))
         ((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)) ∧
@@ -316,7 +293,9 @@ private theorem quasiMeasurePreserving_restrict_normalHalfSpace
   have hqe' := e.symm.toContinuousAddEquiv.quasiMeasurePreserving_addHaar
     (volume : Measure (WithLp 2 (ℝ × E))) volume
   rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at hqe hqe'
-  exact ⟨hqe.restrict (h ▸ mapsTo_preimage _ _), hqe'.restrict (h' ▸ mapsTo_preimage _ _)⟩
+  refine ⟨hqe.restrict (h ▸ mapsTo_preimage _ _), hqe'.restrict fun x hx => ?_⟩
+  rw [h, mem_preimage, ContinuousLinearEquiv.apply_symm_apply]
+  exact hx
 
 /-- **Integrability gain on a half-space for strong solutions vanishing on the boundary**
 (Gilbarg–Trudinger, Lemma 9.16, near a flat boundary portion). Let `1 < p, r < ∞`. There is
@@ -364,7 +343,7 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le_
     rw [hH a, ← preimage_comp]
     ext x
     simp
-  obtain ⟨hpull, hpush⟩ := quasiMeasurePreserving_restrict_normalHalfSpace e (hH a) hHH'
+  obtain ⟨hpull, hpush⟩ := quasiMeasurePreserving_restrict_normalHalfSpace e (hH a)
   -- `w = u ∘ e ∈ W^{2,p}(H')` has weak Hessian `e† D²u(e ·) e` and zero boundary values.
   obtain ⟨w, hwv, hwD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((A + A†) / 2)(e y) e⁻†` close to `1`, where

@@ -176,9 +176,8 @@ private theorem eLpNorm_restrict_le_of_ae_eq_sub_comp_normalReflection
       D =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)] W := by
     filter_upwards [ae_restrict_of_ae hW, ae_restrict_mem hS] with x hx hxS
     -- `ρ` maps `H` off itself.
-    have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-      rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-      exact ((mem_normalHalfSpace a x).1 hxS).not_gt
+    have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
+      normalReflection_notMem_normalHalfSpace hxS
     rw [hx, indicator_of_mem hxS, indicator_of_notMem hρx]
     simp
   rw [eLpNorm_congr_ae heq]

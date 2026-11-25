@@ -182,7 +182,7 @@ theorem W1p.halfSpaceTrace_apply_ae_of_continuousOn (hp : p ≠ ∞) (a : ℝ)
     · have hxH : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
         (mem_normalHalfSpace a x).2 hlt
       have hρ : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
-        fun h => (lt_asymm hlt) ((normalReflection_mem_normalHalfSpace_iff a x).1 h)
+        normalReflection_notMem_normalHalfSpace hxH
       rw [indicator_of_mem hxH, indicator_of_notMem hρ, add_zero, h1 hxH, Function.comp_apply]
       simp only [fold, abs_of_pos (sub_pos.2 hlt), add_sub_cancel]
       rfl
