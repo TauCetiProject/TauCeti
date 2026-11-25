@@ -72,7 +72,15 @@ where `c(e₀) c(e₂) ψ` lies in the `2i`-eigenspace.
 * `TauCeti.AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply`: the formula for
   `c(v) c(w) ψ` above, and
   `bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply` (also in
-  `TauCeti.AlmostComplexStructure`): `c(e₀) c(e₂) ψ` lies in the `2i`-eigenspace.
+  `TauCeti.AlmostComplexStructure`): `c(e₀) c(e₂)` takes the `μ`-eigenspace to the
+  `-μ`-eigenspace for every scalar `μ`.
+* `TauCeti.AlmostComplexStructure.exists_ne_zero_bivectorExterior_apply`: a nontrivial complex
+  Clifford module has a nonzero positive half-spinor of Kähler eigenvalue `-2i` in the complex
+  orientation. In the opposite orientation, a positive half-spinor of nonzero Kähler eigenvalue
+  vanishes (`eq_zero_of_bivectorExterior_apply_of_orientation_eq_neg`).
+* `TauCeti.AlmostComplexStructure.canonicalSubmodulePositiveBasis`: in the invariant Clifford
+  submodule generated from a nonzero positive `-2i`-eigenspinor `u`, the positive half-spinors
+  have basis `u` and `c(e₀) c(e₂) u`.
 
 ## References
 

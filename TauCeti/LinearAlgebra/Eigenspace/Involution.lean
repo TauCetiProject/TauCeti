@@ -30,6 +30,8 @@ identity.
 * `Module.End.eigenProjOfInvolutive_apply_of_mem_neg`: it kills the `ν`-eigenspace for `μ ν = -1`.
 * `Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg`: the projections for `μ` and
   `-μ` add up to the identity.
+* `Module.End.hasEigenvalue_or_neg_of_involutive`: one of these eigenspaces is nonzero if
+  `Y` is nontrivial.
 -/
 
 public section
