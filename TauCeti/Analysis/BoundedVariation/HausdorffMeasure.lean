@@ -31,7 +31,8 @@ The comparison rests on the lower density of `|Dχ_s|` at points of `∂*s`: for
 of a closed ball of radius `r` in `ℝⁿ⁻¹`
 (`TauCeti.tendsto_variationMeasure_closedBall_div_volume_closedBall`), and for `n = 1`, where
 `μHE[0]` is counting measure, `1 ≤ |Dχ_s| (closedBall x r)` for small `r`
-(`TauCeti.eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one`).
+(`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`, whose
+factor `Measure.addHaarScalarFactor volume volume` is `1`).
 
 Consequences:
 
@@ -89,8 +90,9 @@ theorem euclideanHausdorffMeasure_le_variationMeasure_preimage {A : Set E}
         volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E - 1))) r) = 1 := by
       rw [← hn, Nat.sub_self, volume_euclideanSpace_eq_dirac,
         Measure.dirac_apply_of_mem (mem_closedBall_self hr.le)]
-    refine (((eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one hn.symm
-      (hA hy)).and self_mem_nhdsWithin).mono fun r ⟨hr, hr0⟩ => ?_).frequently
+    refine (((eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one
+      hn.symm (hA hy)).and self_mem_nhdsWithin).mono fun r ⟨hr, hr0⟩ => ?_).frequently
+    rw [Measure.addHaarScalarFactor_self, ENNReal.coe_one] at hr
     rw [hvol hr0, mul_one, ← Subtype.preimage_closedBall]
     exact ht.le.trans hr
   -- The density of `|Dχ_s|` at `y` is one, so it eventually exceeds `t < 1`.

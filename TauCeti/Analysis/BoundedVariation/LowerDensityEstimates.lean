@@ -47,12 +47,12 @@ blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. As a firs
 reduced boundary lies in the essential boundary
 (`TauCeti.reducedBoundary_subset_essentialBoundary`).
 
-In dimension one, with Lebesgue measure, the perimeter bound takes the sharp form
-`1 ≤ |Dχ_s| (closedBall x r)` for every small `r > 0`
-(`TauCeti.eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one`): every small ball
-around `x` meets both `s` and its complement in positive measure, and an open interval charged by
-a set and by its complement has perimeter at least one
-(`TauCeti.Real.one_le_perimeter_of_ordConnected`).
+In dimension one, writing `μ = c • volume`, the perimeter bound takes the sharp form
+`c ≤ |Dχ_s| (closedBall x r)` for every small `r > 0`
+(`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`); for
+Lebesgue measure, `c = 1`. Every small ball around `x` meets both `s` and its complement in
+positive measure, and an open interval charged by a set and by its complement has Lebesgue
+perimeter at least one (`TauCeti.Real.one_le_perimeter_of_ordConnected`).
 
 Write `m(ρ) = μ(s ∩ ball x ρ)`. Cutting `s` by the ball of radius `ρ` adds at most `m'(ρ)` to its
 perimeter (`TauCeti.ae_perimeter_inter_ball_le`), and at the reduced boundary
@@ -279,17 +279,24 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
   exact h.trans (mul_le_mul_right hP _)
 
 /-- **The lower density estimate for the perimeter measure in dimension one.** Let `E` have
-dimension one, with Lebesgue measure. At a point `x` of the reduced boundary of `s` in `Ω`, every
-small closed ball around `x` has perimeter measure `|Dχ_s| (closedBall x r)` at least one. -/
-theorem eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one (hn : finrank ℝ E = 1)
-    (hx : x ∈ reducedBoundary volume Ω s) :
-    ∀ᶠ r in 𝓝[>] 0,
-      1 ≤ variationMeasure volume Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+dimension one, and let `c` be the factor `μ.addHaarScalarFactor volume` with `μ = c • volume`. At
+a point `x` of the reduced boundary of `s` in `Ω`, every small closed ball around `x` has
+perimeter measure `|Dχ_s| (closedBall x r)` at least `c`. For Lebesgue measure, `c = 1`. -/
+theorem eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one
+    (hn : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, (μ.addHaarScalarFactor volume : ℝ≥0∞) ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  have hμv : μ ≪ volume := Measure.absolutelyContinuous_isAddHaarMeasure μ volume
+  have hvμ : volume ≪ μ := Measure.absolutelyContinuous_isAddHaarMeasure volume μ
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   filter_upwards [eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary
     hx, Ioo_mem_nhdsGT hε] with r hr hrε
   refine le_trans ?_ hr
-  -- Transport to the real line along a linear isometry equivalence.
+  -- Scale `μ` to Lebesgue measure, then transport to the real line along a linear isometry
+  -- equivalence.
+  conv_rhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
+  rw [perimeter_def, totalVariationOn_smul_measure, ← perimeter_def]
+  refine le_mul_of_one_le_right zero_le ?_
   let e : ℝ ≃ₗᵢ[ℝ] E :=
     (OrthonormalBasis.singleton (Fin 1) ℝ).equiv (stdOrthonormalBasis ℝ E) (finCongr hn.symm)
   have he : MeasurePreserving e := e.measurePreserving
@@ -300,15 +307,16 @@ theorem eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one (hn : fi
     rw [← preimage_inter, he.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding]
   refine Real.one_le_perimeter_of_ordConnected ?_ ?_ ?_ ?_
   · rw [hV]
-    exact ((nullMeasurableSet_restrict_of_mem_reducedBoundary hx).mono
-      (Measure.restrict_mono ((ball_subset_ball hrε.2.le).trans hεΩ) le_rfl)).preimage
-      (he.restrict_preimage measurableSet_ball).quasiMeasurePreserving
+    exact (((nullMeasurableSet_restrict_of_mem_reducedBoundary hx).mono
+      (Measure.restrict_mono ((ball_subset_ball hrε.2.le).trans hεΩ) le_rfl)).mono_ac
+      (hvμ.restrict _)).preimage (he.restrict_preimage measurableSet_ball).quasiMeasurePreserving
   · rw [hV]
     exact convex_iff_ordConnected.1 ((convex_ball x r).linear_preimage e.toLinearMap)
   · rw [hV, hmeas]
-    exact (measure_inter_ball_pos hx hrε.1).ne'
+    exact fun h => (measure_inter_ball_pos hx hrε.1).ne' (hμv h)
   · rw [hV, ← preimage_compl, hmeas]
-    exact (measure_inter_ball_pos (s := sᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
+    exact fun h => (measure_inter_ball_pos (s := sᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
+      (hμv h)
 
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
 let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,
