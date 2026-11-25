@@ -11,7 +11,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.OpensModelSpace
 
 /-!
 # Smooth nondegenerate metrics on a manifold
@@ -45,6 +46,8 @@ Levi-Civita connection for an indefinite metric.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle`: the metric of a smooth
   Riemannian bundle instance on the tangent bundle, as a smooth nondegenerate metric.
 * `Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric`: the positive-definite specialization.
+* `Bundle.ContMDiffRiemannianMetric.chartMetric_opens_model_space`: on an open subset of a normed
+  space, the chart metric of a Riemannian metric is the metric itself.
 
 ## References
 
@@ -312,6 +315,25 @@ theorem chartMetric_extChartAt_apply_basis {ι : Type*} (b : Module.Basis ι ℝ
   simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b hbase,
     Trivialization.symmL_apply _ hbase]
 
+/-- At the centre of its chart, the chart metric is the metric itself. -/
+theorem chartMetric_extChartAt_self_apply (x₀ : M) (u w : E) :
+    g.chartMetric x₀ (extChartAt I x₀ x₀) u w = g x₀ u w := by
+  have hbase : x₀ ∈ (trivializationAt E (TangentSpace I) x₀).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x₀
+  rw [g.chartMetric_extChartAt_apply (mem_extChartAt_source x₀),
+    ← Trivialization.symmL_apply (R := ℝ) _ hbase, ← Trivialization.symmL_apply (R := ℝ) _ hbase,
+    symmL_trivializationAt_self, symmL_trivializationAt_self]
+
+/-- At the centre of its chart, the Gram matrix of the chart metric in a basis `b` of the model
+space is the Gram matrix of the metric. -/
+theorem toMatrix₂_chartMetric_extChartAt_self {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ E) (x₀ : M) :
+    LinearMap.toMatrix₂ b b (g.chartMetric x₀ (extChartAt I x₀ x₀)).toBilinForm =
+      Matrix.of fun i j ↦ g x₀ (b i) (b j) := by
+  ext i j
+  rw [LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply, Matrix.of_apply,
+    g.chartMetric_extChartAt_self_apply]
+
 /-- The chart metric is symmetric at every point of the chart target. -/
 theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
     LinearMap.IsSymm (g.chartMetric x₀ z).toBilinForm :=
@@ -447,6 +469,24 @@ theorem toNondegenerateMetric_apply
     (x : M) (v w : TangentSpace I x) :
     g.toNondegenerateMetric x v w = g.inner x v w :=
   (rfl)
+
+open TopologicalSpace in
+/-- On an open subset of a normed space, the chart metric of a metric at a point of the subset is
+the value of the metric there. -/
+theorem chartMetric_opens_model_space {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {U : Opens V} (g : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x))
+    (x₀ : U) {z : V} (hz : z ∈ U) :
+    g.toNondegenerateMetric.chartMetric x₀ z = g.inner ⟨z, hz⟩ := by
+  ext u w
+  rw [Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _
+      (by rwa [Opens.extChartAt_opens_target]), Opens.extChartAt_opens_model_space_symm_apply x₀ hz,
+    ← Trivialization.symmL_apply (R := ℝ) _
+      (Manifold.mem_trivializationAt_opens_model_space_baseSet _ _),
+    ← Trivialization.symmL_apply (R := ℝ) _
+      (Manifold.mem_trivializationAt_opens_model_space_baseSet _ _),
+    Manifold.trivializationAt_opens_model_space_symmL,
+    Manifold.trivializationAt_opens_model_space_symmL]
+  exact toNondegenerateMetric_apply g ⟨z, hz⟩ u w
 
 end Bundle.ContMDiffRiemannianMetric
 

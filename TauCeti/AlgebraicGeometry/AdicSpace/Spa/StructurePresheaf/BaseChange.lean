@@ -130,7 +130,7 @@ theorem Presentation.hom_ext (p : Presentation P) {X : CompleteSeparatedTopCommR
   -- as maps out of the completion itself, `f` and `g` agree by extensionality for `A⟨p⟩`
   rw [← cancel_epi (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm)]
   refine Subtype.ext <| completion_locTopology_ringHom_ext_of_continuous P p.num p.den _
-    p.hasDenominatorPower _ _ (_ ≫ f.hom).2 (_ ≫ g.hom).2 ?_
+    p.hasDenominatorPower _ _ (_ ≫ f.hom).property (_ ≫ g.hom).property ?_
   simp only [Presentation.toCompletionLocTopHom, Category.assoc] at h
   exact congrArg Subtype.val h
 

@@ -11,7 +11,9 @@ public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
+public import TauCeti.Analysis.Variational.QuadraticEnergy
 import TauCeti.Analysis.Normed.Operator.Coercive
+import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # The spectrum of a coercive variational problem
@@ -55,7 +57,9 @@ eigenfunction.
 ## Main declarations
 
 * `IsCoercive.formSolutionMap`: the Lax--Milgram solution map `H →L[ℝ] V` of the forcing
-  `v ↦ ⟪h, J v⟫`, characterized by `IsCoercive.apply_formSolutionMap`.
+  `v ↦ ⟪h, J v⟫`, characterized by `IsCoercive.apply_formSolutionMap`; for symmetric `B` it is
+  the global minimizer of the quadratic energy
+  (`IsCoercive.isMinOn_quadraticEnergy_iff_eq_formSolutionMap`).
 * `IsCoercive.formSolutionOperator`: the induced solution operator `S : H →L[ℝ] H`, with
   `IsCoercive.isCompactOperator_formSolutionOperator`,
   `IsCoercive.isSymmetric_formSolutionOperator` and
@@ -128,6 +132,15 @@ theorem eq_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) {h : H} {u : 
   apply eq_solutionOfFunctional hB
   simpa only [ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply,
     innerSL_apply_apply] using hu
+
+/-- For a symmetric coercive form and the forcing `v ↦ ⟪h, J v⟫`, the global minimizer of the
+quadratic energy is the solution map's value `formSolutionMap J h`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_formSolutionMap (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (J : V →L[ℝ] H) (h : H) {u : V} :
+    IsMinOn (B.quadraticEnergy (ContinuousLinearMap.toSesqForm J h)) Set.univ u ↔
+      u = hB.formSolutionMap J h := by
+  rw [formSolutionMap_apply]
+  exact hB.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional hsymm _
 
 /-- The form perturbation operator on `V` is the solution map precomposed with `J`, where the
 solution operator on `H` is the same pair of maps composed in the other order. -/
@@ -386,6 +399,17 @@ theorem hasEigenvector_formSolutionOperator (hB : IsCoercive B) (J : V →L[ℝ]
   rw [ContinuousLinearMap.coe_coe, formSolutionOperator_apply, ← hsol, smul_smul,
     inv_mul_cancel₀ hkappa, one_smul]
 
+/-- On a variational eigenfunction `u` with nonzero eigenvalue `κ`, the solution operator acts as
+`S (J u) = κ⁻¹ J u`. -/
+theorem formSolutionOperator_apply_eq_inv_smul (hB : IsCoercive B) {J : V →L[ℝ] H}
+    {u : V} {κ : ℝ} (hκ : κ ≠ 0) (heq : ∀ v, B u v = κ * ⟪J u, J v⟫_ℝ) :
+    hB.formSolutionOperator J (J u) = κ⁻¹ • J u := by
+  have hsol : κ⁻¹ • u = hB.formSolutionMap J (J u) :=
+    hB.eq_formSolutionMap J fun v ↦ by
+      rw [_root_.map_smul, _root_.smul_apply, heq, smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hκ,
+        one_mul]
+  rw [formSolutionOperator_apply, ← hsol, _root_.map_smul]
+
 /-- An eigenvector of the solution operator with nonzero eigenvalue produces a variational
 eigenfunction for the reciprocal eigenvalue. -/
 theorem exists_forall_apply_eq_smul_inner (hB : IsCoercive B) (J : V →L[ℝ] H) {mu : ℝ}
@@ -621,5 +645,27 @@ theorem exists_hilbertBasis_forall_apply_eq_smul_inner [CompleteSpace H] (hB : I
     fun x => hB.pos_of_forall_apply_eq_smul_inner J (hune x) (heq x), hune, hJu, heq, fun h => ?_⟩
   simpa only [inv_inv] using
     (hB.formSolutionOperator J).hasSum_smul_repr_of_apply_eq_smul b nu hdiag h
+
+/-- **Finitely many variational eigenvalues below any bound.** For a compact `J` and an
+orthonormal family of images `J uᵢ` of variational eigenfunctions with positive eigenvalues `κᵢ`,
+only finitely many `κᵢ` lie below any given bound. -/
+theorem finite_setOf_le_of_orthonormal (hB : IsCoercive B) {J : V →L[ℝ] H}
+    (hJc : IsCompactOperator J) {ι : Type*} {v : ι → H} (hv : Orthonormal ℝ v) {κ : ι → ℝ}
+    (hκ : ∀ i, 0 < κ i) {u : ι → V} (hJu : ∀ i, J (u i) = v i)
+    (heq : ∀ i w, B (u i) w = κ i * ⟪J (u i), J w⟫_ℝ) (C : ℝ) :
+    {i : ι | κ i ≤ C}.Finite := by
+  rcases le_or_gt C 0 with hC | hC
+  · refine Set.finite_empty.subset fun i hi ↦ ?_
+    simp only [Set.mem_ofPred_eq] at hi
+    linarith [hκ i]
+  · have hS (i : ι) : hB.formSolutionOperator J (v i) = (κ i)⁻¹ • v i := by
+      simpa only [hJu] using hB.formSolutionOperator_apply_eq_inv_smul (hκ i).ne' (heq i)
+    have hfin := IsCompactOperator.finite_setOf_le_norm_of_orthonormal
+      (hB.isCompactOperator_formSolutionOperator hJc)
+      (T := (hB.formSolutionOperator J : H →ₗ[ℝ] H)) (μ := fun i ↦ (κ i)⁻¹)
+      hv hS (inv_pos.2 hC)
+    refine hfin.subset fun i hi ↦ ?_
+    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, abs_inv, abs_of_pos (hκ i)] at hi ⊢
+    exact inv_anti₀ (hκ i) hi
 
 end IsCoercive

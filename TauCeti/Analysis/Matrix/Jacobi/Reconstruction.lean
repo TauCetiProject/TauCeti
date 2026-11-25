@@ -27,17 +27,17 @@ Applying this Lanczos tridiagonalization to `T = (diagonal lam).toEuclideanLin` 
 `EuclideanSpace ℝ (Fin (n + 1))` and the weighted Vandermonde vectors `w m k = √(q k) * lam k ^ m`
 realizes every strictly decreasing sequence `lam : Fin (n + 1) → ℝ` and strictly positive
 probability vector `q : Fin (n + 1) → ℝ` (`∑ k, q k = 1`) as the ordered eigenvalues and spectral
-weights of a positive-subdiagonal Jacobi matrix.
+weights of a positive-subdiagonal symmetric Jacobi matrix.
 
 ## Main results
 
 * `TauCeti.inner_gramSchmidtNormed_succ_apply_castSucc`: unconditional Lanczos subdiagonal formula
   `⟪e (k + 1), T (e k)⟫ = ‖gramSchmidt 𝕜 w k‖⁻¹ * ‖gramSchmidt 𝕜 w (k + 1)‖`.
-* `TauCeti.inner_gramSchmidtNormed_apply_eq_jacobiMatrix_map`: unconditional Lanczos
+* `TauCeti.inner_gramSchmidtNormed_apply_eq_symmJacobiMatrix_map`: unconditional Lanczos
   tridiagonalization of a symmetric operator along `gramSchmidtNormed 𝕜 w`.
 * `TauCeti.exists_jacobiEigenvalues_eq_and_jacobiSpectralWeight_eq`: surjectivity of
-  `(a, b) ↦ (jacobiEigenvalues a b, jacobiSpectralWeight a b)` from positive-subdiagonal Jacobi
-  matrices onto strictly decreasing spectra and strictly positive probability weights.
+  `(a, b) ↦ (jacobiEigenvalues a b, jacobiSpectralWeight a b)` from positive-subdiagonal symmetric
+  Jacobi matrices onto strictly decreasing spectra and strictly positive probability weights.
 
 ## References
 
@@ -147,10 +147,10 @@ private theorem inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt {T : E →�
 `T (w k.castSucc) = w k.succ`, the matrix elements of `T` along `gramSchmidtNormed 𝕜 w` form the
 real symmetric Jacobi matrix with diagonal `r ↦ re ⟪e r, T (e r)⟫` and subdiagonal
 `k ↦ ‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖`. -/
-theorem inner_gramSchmidtNormed_apply_eq_jacobiMatrix_map {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric)
+theorem inner_gramSchmidtNormed_apply_eq_symmJacobiMatrix_map {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric)
     {w : Fin (n + 1) → E} (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (i j : Fin (n + 1)) :
     inner 𝕜 (gramSchmidtNormed 𝕜 w i) (T (gramSchmidtNormed 𝕜 w j)) =
-      (jacobiMatrix
+      (symmJacobiMatrix
         (fun r => RCLike.re (inner 𝕜 (gramSchmidtNormed 𝕜 w r) (T (gramSchmidtNormed 𝕜 w r))))
         (fun k => ‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖)).map
         (algebraMap ℝ 𝕜) i j := by
@@ -159,26 +159,26 @@ theorem inner_gramSchmidtNormed_apply_eq_jacobiMatrix_map {T : E →ₗ[𝕜] E}
     rw [← hT x y, inner_conj_symm]
   by_cases hij : i = j
   · subst hij
-    simp only [Matrix.map_apply, jacobiMatrix_apply_self, RCLike.algebraMap_eq_ofReal]
+    simp only [Matrix.map_apply, symmJacobiMatrix_apply_self, RCLike.algebraMap_eq_ofReal]
     exact (RCLike.conj_eq_iff_re.mp (hT_conj (e i) (e i)).symm).symm
   · by_cases h1 : j.val = i.val + 1
     · let k : Fin n := ⟨i.val, by omega⟩
       have hi' : i = k.castSucc := Fin.ext rfl
       have hj' : j = k.succ := Fin.ext (by simp [k, h1])
-      rw [hi', hj', Matrix.map_apply, jacobiMatrix_apply_castSucc_succ,
+      rw [hi', hj', Matrix.map_apply, symmJacobiMatrix_apply_castSucc_succ,
         RCLike.algebraMap_eq_ofReal, hT_conj, inner_gramSchmidtNormed_succ_apply_castSucc hw k,
         RCLike.conj_ofReal]
     · by_cases h2 : i.val = j.val + 1
       · let k : Fin n := ⟨j.val, by omega⟩
         have hj' : j = k.castSucc := Fin.ext rfl
         have hi' : i = k.succ := Fin.ext (by simp [k, h2])
-        rw [hi', hj', Matrix.map_apply, jacobiMatrix_apply_succ_castSucc,
+        rw [hi', hj', Matrix.map_apply, symmJacobiMatrix_apply_succ_castSucc,
           RCLike.algebraMap_eq_ofReal, inner_gramSchmidtNormed_succ_apply_castSucc hw k]
       · rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hgt
-        · rw [Matrix.map_apply, jacobiMatrix_apply_of_add_one_lt_right _ _ (i := i) (j := j)
+        · rw [Matrix.map_apply, symmJacobiMatrix_apply_of_add_one_lt_right _ _ (i := i) (j := j)
             (by omega), map_zero, hT_conj,
             inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt hw (by omega), map_zero]
-        · rw [Matrix.map_apply, jacobiMatrix_apply_of_add_one_lt_left _ _ (i := i) (j := j)
+        · rw [Matrix.map_apply, symmJacobiMatrix_apply_of_add_one_lt_left _ _ (i := i) (j := j)
             (by omega), map_zero]
           exact inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt hw (by omega)
 
@@ -230,10 +230,10 @@ private theorem gramSchmidtNormed_spectralVandermondeVec_zero {lam q : Fin (n + 
     exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp (by simpa using hsq)
   exact gramSchmidtNormed_eq_self_of_inner_eq_zero (fun _ hj => (not_lt_bot hj).elim) hnorm0
 
-private theorem jacobiMatrix_spectralVandermondeVec_eq_conj_diagonal {lam q : Fin (n + 1) → ℝ}
+private theorem symmJacobiMatrix_spectralVandermondeVec_eq_conj_diagonal {lam q : Fin (n + 1) → ℝ}
     {Q : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hQ : ∀ k i, Q k i = gramSchmidtNormed ℝ (spectralVandermondeVec lam q) i k) :
-    jacobiMatrix
+    symmJacobiMatrix
         (fun r => ⟪gramSchmidtNormed ℝ (spectralVandermondeVec lam q) r,
           (Matrix.diagonal lam).toEuclideanLin
             (gramSchmidtNormed ℝ (spectralVandermondeVec lam q) r)⟫)
@@ -243,7 +243,7 @@ private theorem jacobiMatrix_spectralVandermondeVec_eq_conj_diagonal {lam q : Fi
   ext i j
   have hT : (Matrix.diagonal lam).toEuclideanLin.IsSymmetric :=
     isSymmetric_toEuclideanLin_iff.mpr (Matrix.isHermitian_diagonal lam)
-  have htrid := inner_gramSchmidtNormed_apply_eq_jacobiMatrix_map hT
+  have htrid := inner_gramSchmidtNormed_apply_eq_symmJacobiMatrix_map hT
     (diagMul_spectralVandermondeVec lam q) i j
   simp only [Matrix.map_apply, RCLike.re_to_real, Algebra.algebraMap_self,
     RingHom.id_apply] at htrid
@@ -252,9 +252,9 @@ private theorem jacobiMatrix_spectralVandermondeVec_eq_conj_diagonal {lam q : Fi
     dotProduct, Matrix.toLpLin_apply, Matrix.mulVec_diagonal, star_trivial]
   refine Finset.sum_congr rfl fun k _ => by ring
 
-/-- **Spectral reconstruction for Jacobi matrices**: every strictly decreasing tuple of eigenvalues
-`lam` and positive spectral weight vector `q` summing to `1` are realized by a Jacobi matrix with
-strictly positive subdiagonal entries. -/
+/-- **Spectral reconstruction for symmetric Jacobi matrices**: every strictly decreasing tuple of
+eigenvalues `lam` and positive spectral weight vector `q` summing to `1` are realized by a symmetric
+Jacobi matrix with strictly positive subdiagonal entries. -/
 theorem exists_jacobiEigenvalues_eq_and_jacobiSpectralWeight_eq {lam q : Fin (n + 1) → ℝ}
     (hlam : StrictAnti lam) (hq : ∀ k, 0 < q k) (hsum : ∑ k, q k = 1) :
     ∃ (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ),
@@ -282,18 +282,18 @@ theorem exists_jacobiEigenvalues_eq_and_jacobiSpectralWeight_eq {lam q : Fin (n 
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toMatrix_orthonormalBasis_self_mul_conjTranspose
       basisE
   have hQQT : Q * Qᵀ = 1 := by rwa [conjTranspose_eq_transpose_of_trivial] at hQJH
-  have hJeq : jacobiMatrix a b = Qᵀ * Matrix.diagonal lam * Q :=
-    jacobiMatrix_spectralVandermondeVec_eq_conj_diagonal hQ_apply
+  have hJeq : symmJacobiMatrix a b = Qᵀ * Matrix.diagonal lam * Q :=
+    symmJacobiMatrix_spectralVandermondeVec_eq_conj_diagonal hQ_apply
   have hlam_eq : jacobiEigenvalues a b = lam := by
     refine jacobiEigenvalues_eq_of_charpoly_eq hlam.antitone ?_
     rw [hJeq, Matrix.charpoly_mul_comm, ← mul_assoc, hQQT, one_mul, Matrix.charpoly_diagonal]
   refine ⟨a, b, hb_pos, hlam_eq, funext fun k => ?_⟩
   have hvk_norm : ‖(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1)))‖ = 1 :=
     Matrix.norm_toLp_apply_of_mul_conjTranspose_eq_one hQJH k
-  have hvk_eig : jacobiMatrix a b *ᵥ ⇑(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) =
+  have hvk_eig : symmJacobiMatrix a b *ᵥ ⇑(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) =
       jacobiEigenvalues a b k • ⇑(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) := by
-    simpa [hJeq, hlam_eq] using
-      Matrix.transpose_mul_diagonal_mul_mulVec_apply_of_mul_transpose_eq_one hQQT lam k
+    rw [hJeq, hlam_eq, WithLp.ofLp_toLp]
+    exact Matrix.mul_diagonal_mul_mulVec_col_of_mul_eq_one (P := Qᵀ) hQQT lam k
   rw [jacobiSpectralWeight_eq_sq_eigenvector
     (fun _ hj => by rw [hlam_eq]; exact hlam.injective.ne hj) hvk_norm hvk_eig, PiLp.toLp_apply,
     hQ_apply]

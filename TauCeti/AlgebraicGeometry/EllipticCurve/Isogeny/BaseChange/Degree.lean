@@ -44,7 +44,8 @@ extensions, such as an algebraic closure of an imperfect field.
 
 ## Main results
 
-* `TauCeti.Isogeny.degree_map`: `deg (φ.map f) = deg φ`.
+* `TauCeti.Isogeny.degree_map`: `deg (φ.map f) = deg φ`, and `TauCeti.Isogeny.degree_baseChange`
+  for the base change `φ.baseChange K`.
 
 ## References
 
@@ -101,7 +102,7 @@ private theorem linearIndependent_functionFieldMap_basis (φ : Isogeny W₁ W₂
   rw [Fintype.linearIndependent_iff]
   intro g hg i
   -- each coefficient is a pulled-back function `φ_K^* (h i)`
-  choose h hh using fun i ↦ AlgHom.mem_fieldRange.1 (g i).2
+  choose h hh using fun i ↦ AlgHom.mem_fieldRange.1 (g i).property
   -- with a common denominator `s`: `s • h i` is the function `r i` of the coordinate ring
   obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples (W₂.map f).CoordinateRing⁰
     Finset.univ h
@@ -142,7 +143,7 @@ private theorem linearIndependent_functionFieldMap_basis (φ : Isogeny W₁ W₂
     · simpa using hc (j, i) (Finset.mk_mem_product hj (Finset.mem_univ i))
     · simpa using Finsupp.notMem_support_iff.1 fun h ↦ hj (hT i h)
   have hs0 : algebraMap (W₂.map f).CoordinateRing (W₂.map f).FunctionField s ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
   have hh0 : h i = 0 := by
     have := hr i
     rw [hr0, map_zero, Algebra.smul_def, eq_comm, mul_eq_zero] at this
@@ -160,7 +161,7 @@ private theorem span_functionFieldMap_basis (φ : Isogeny W₁ W₂) (f : F →+
   set V := Submodule.span M' (Set.range (FunctionField.map W₁ f ∘ b))
   -- `FunctionField.map W₁ f` carries `φ^* F(W₂)` into `φ_K^* K(W₂)`
   have hM (c : φ.fieldPullback.fieldRange) : FunctionField.map W₁ f c ∈ M' := by
-    obtain ⟨z, hz⟩ := AlgHom.mem_fieldRange.1 c.2
+    obtain ⟨z, hz⟩ := AlgHom.mem_fieldRange.1 c.property
     exact AlgHom.mem_fieldRange.2 ⟨FunctionField.map W₂ f z, by rw [map_fieldPullback_map, hz]⟩
   -- so the image of `F(W₁)` lies in `V`
   have hE (e : W₁.FunctionField) : FunctionField.map W₁ f e ∈ V := by
@@ -212,6 +213,12 @@ theorem degree_map (φ : Isogeny W₁ W₂) (f : F →+* K) : (φ.map f).degree 
   rw [degree_def, degree_def, Module.finrank_eq_card_basis
     (Module.Basis.mk (linearIndependent_functionFieldMap_basis φ f b)
       (span_functionFieldMap_basis φ f b).ge), Fintype.card_fin]
+
+/-- `degree_map` for `φ.baseChange K`, stated between the base-changed curves `W₁⁄K` and `W₂⁄K`,
+which are not syntactically the curves of `φ.map (algebraMap F K)`. -/
+theorem degree_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : (φ.baseChange K).degree = φ.degree :=
+  degree_map φ _
 
 end TauCeti.Isogeny
 

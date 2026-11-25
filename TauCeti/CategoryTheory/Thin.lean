@@ -16,7 +16,9 @@ Mathlib records that functor categories into a thin category are thin, that the 
 category is thin, and that every functor out of a thin category is faithful. This file records one
 further closure property: a category induced along a map into a thin category is thin. It also
 records a naturality computation for a natural transformation `η : F ⟶ G ⋙ H` where `G` lands in a
-thin category, in which thinness makes the two morphisms of that category that arise equal.
+thin category, in which thinness makes the two morphisms of that category that arise equal, and
+that a functor out of a thin category sends any two composites with the same source and target to
+the same composite.
 
 The motivating instance is the category of members of a family `B` of opens of a topological
 space, `InducedCategory (Opens X) (Subtype.val : B → Opens X)`, which indexes the limits describing
@@ -31,6 +33,8 @@ then discharges the equation the preimage has to satisfy.
   category is thin.
 * `CategoryTheory.NatTrans.map_comp_app_comp_map_comp_map`: moving `η : F ⟶ G ⋙ H` past a map
   `F.map a`, when `G` lands in a thin category.
+* `CategoryTheory.Functor.map_comp_map_eq_map_comp_map`: a functor out of a thin category sends
+  every square to a commutative square.
 -/
 
 public section
@@ -68,5 +72,16 @@ theorem map_comp_app_comp_map_comp_map {𝒞 𝒟 ℰ : Type*} [Category* 𝒞] 
   simp [Subsingleton.elim l (G.map a ≫ k₁ ≫ k₂)]
 
 end CategoryTheory.NatTrans
+
+namespace CategoryTheory.Functor
+
+/-- A functor out of a thin category sends every square to a commutative square: the two
+composites `f ≫ v` and `u ≫ g` from `a` to `b` are equal, hence so are their images. -/
+theorem map_comp_map_eq_map_comp_map {J C : Type*} [Category* J] [Quiver.IsThin J] [Category* C]
+    (G : J ⥤ C) {a c c' b : J} (f : a ⟶ c) (v : c ⟶ b) (u : a ⟶ c') (g : c' ⟶ b) :
+    G.map f ≫ G.map v = G.map u ≫ G.map g := by
+  rw [← G.map_comp, ← G.map_comp, Subsingleton.elim (f ≫ v) (u ≫ g)]
+
+end CategoryTheory.Functor
 
 end

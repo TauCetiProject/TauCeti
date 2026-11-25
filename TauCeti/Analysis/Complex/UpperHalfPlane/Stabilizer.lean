@@ -61,6 +61,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
   `Matrix.isElliptic_iff_abs_trace_lt_two` means that its trace has absolute value less than `2`.
+* `Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic`: an elliptic matrix fixing `w ∈ ℍ`
+  fixes no other point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
@@ -99,7 +101,7 @@ theorem coe_eq_scalar_of_smul_eq_self_of_denom_eq {g : SL(2, ℝ)} {z : ℍ} {e 
     rw [h1, hd, eq_div_iff hne] at h2
     rw [← h2]
     ring
-  simp only [num, denom, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp only [num, denom, mapGL_coe_matrix, map_apply_coe, Matrix.map_apply,
     RingHom.id_apply, Algebra.algebraMap_self, Complex.ext_iff, Complex.add_re, Complex.add_im,
     Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
     add_zero] at hd hn
@@ -200,7 +202,7 @@ def stabilizerDeriv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) : stabilizer Γ z →*
   toFun q := Matrix.ProjectiveSpecialLinearGroup.smulDeriv ((q : Γ) : PSL(2, ℝ)) z
   map_one' := by simp
   map_mul' q₁ q₂ := by
-    have h₂ : (((q₂ : Γ) : PSL(2, ℝ)) • z) = z := q₂.2
+    have h₂ : (((q₂ : Γ) : PSL(2, ℝ)) • z) = z := q₂.property
     simp only [Subgroup.coe_mul, Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul, h₂]
 
 /-- The derivative character evaluated on an element of the stabilizer. -/
@@ -216,7 +218,7 @@ theorem stabilizerDeriv_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
   rw [injective_iff_map_eq_one]
   intro q hq
   exact Subtype.ext (Subtype.ext
-    (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.2 hq))
+    (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smulDeriv_eq_one q.property hq))
 
 /-- A point stabilizer in a subgroup of `PSL(2, ℝ)` is commutative. -/
 instance instIsMulCommutativeStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
@@ -235,7 +237,7 @@ theorem discCoordinate_stabilizer_smul (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q 
     (τ : ℍ) :
     discCoordinate z (q • τ) = stabilizerDeriv Γ z q * discCoordinate z τ := by
   have hq : ((q : Γ) : PSL(2, ℝ)) • z = z := by
-    have h := q.2
+    have h := q.property
     rwa [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at h
   rw [Subgroup.smul_def, Subgroup.smul_def, stabilizerDeriv_apply]
   exact discCoordinate_psl_smul_of_smul_eq_self hq τ
@@ -302,7 +304,7 @@ theorem coe_stabilizerRotation_eq_denom_zpow {Γ : Subgroup PSL(2, ℝ)} {z : �
 /-- A lift to `SL(2, ℝ)` of an element of the stabilizer of `z` fixes `z`. -/
 theorem smul_eq_self_of_coe_eq {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} (q : stabilizer Γ z)
     {g : SL(2, ℝ)} (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) : g • z = z := by
-  have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
+  have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.property
   rwa [← hg, pslMk_smul] at h
 
 /-- **The automorphy factor at a fixed point is a root of unity.** If the image of
@@ -318,7 +320,7 @@ theorem denom_zpow_eq_one_of_dvd {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {g : SL(2
   let q : stabilizer Γ z := ⟨⟨g, hg⟩, by rw [mem_stabilizer_iff, Subgroup.mk_smul, pslMk_smul, hgz]⟩
   have hroot : ((stabilizerRotation Γ z q : ℂˣ) : ℂ) ^ Nat.card (stabilizer Γ z) = 1 := by
     rw [← Units.val_pow_eq_pow_val,
-      (mem_rootsOfUnity _ _).mp (stabilizerRotation Γ z q).2, Units.val_one]
+      (mem_rootsOfUnity _ _).mp (stabilizerRotation Γ z q).property, Units.val_one]
   rw [coe_stabilizerRotation_eq_denom_zpow q rfl, ← zpow_natCast, ← _root_.zpow_mul] at hroot
   obtain ⟨t, ht⟩ := hdvd
   rw [ht, show (2 * Nat.card (stabilizer Γ z) : ℤ) * t = (-2 * Nat.card (stabilizer Γ z)) * -t by
@@ -392,7 +394,7 @@ theorem discCoordinate_positiveStabilizerGenerator_zpow (n : ℤ) (τ : ℍ) :
     ring
   rw [discCoordinate_stabilizer_smul]
   simp only [map_zpow, stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator]
-  rw [← Complex.exp_int_mul, hangle, mul_comm]
+  rw [← Complex.exp_intCast_mul, hangle, mul_comm]
 
 end PositiveGenerator
 
@@ -436,5 +438,14 @@ theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g 
   refine isElliptic_of_exists_smul_eq_self (by simp) (fun hc ↦ hg ?_) ⟨z, hz⟩
   have h := forall_smul_eq_self_iff_mem_center.mpr hc
   exact eq_of_smul_eq_smul fun w : ℍ ↦ by rw [one_smul, pslMk_smul]; exact h w
+
+/-- **An elliptic element fixes exactly one point of `ℍ`.** If `mapGL ℝ g` is elliptic and `g`
+fixes `w`, then `w` is the only point of `ℍ` fixed by `g`. -/
+theorem smul_eq_self_iff_of_isElliptic {g : SL(2, ℝ)} {w : ℍ}
+    (hell : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g)) (hw : g • w = w) (z : ℍ) :
+    g • z = z ↔ z = w := by
+  have hpos : 0 < (mapGL ℝ g).val.det := by simp
+  rw [← mapGL_smul, gl_smul_eq_self_iff_eq_fixedPt hpos hell] at hw ⊢
+  rw [hw]
 
 end Matrix.SpecialLinearGroup
