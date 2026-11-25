@@ -27,20 +27,18 @@ these two circle coordinates the double cover restricted to the tori is the squa
 
 `toSO3 (torusHom z) = rotationTorusHom (z ^ 2)` (`TauCeti.SU2.toSO3_torusHom`).
 
-So passing from `SU(2)` to `SO(3) = SU(2) ⧸ {±1}` changes the two lattices of the torus by
-index two.
+So, read in these circle coordinates, passing from `SU(2)` to `SO(3) = SU(2) ⧸ {±1}` is the
+power map `z ↦ z²` of the circle, which changes its character and period lattices by index two.
 
 * **Characters.** A continuous character `z ↦ zᵐ` of `T` descends to a character of `T'`, that is,
   takes equal values at torus elements with the same rotation, exactly when `m` is even
   (`TauCeti.SU2.forall_apply_eq_of_toSO3_torusHom_eq_iff`). Equivalently, by
   `ContinuousMonoidHom.exists_eq_comp_id_pow_iff` for `n = 2`, the characters of `T'` pull back to
   the sublattice `2ℤ` of the character lattice `ℤ` of `T`.
-* **Period lattices.** The kernel of the squaring map is `{±1}`, so the Lie map of the double
-  cover carries the period lattice of `T` onto a sublattice of index two in that of `T'`
-  (`TauCeti.relIndex_map_lieMap_id_circle_pow_periodLattice` for `n = 2`). With the generator
-  `-iσ₃ / 2` of the Lie algebra of `T`, of period `4π`
-  (`TauCeti.lieExp_smul_suTwoEquiv_single_two_eq_one_iff`), this is the passage to the rotation
-  generator of period `2π` in `SO(3)`.
+* **Period lattices.** The kernel of the squaring map `z ↦ z²` of the circle is `{±1}`, so its
+  Lie map carries the period lattice of the circle onto a sublattice of index two
+  (`TauCeti.relIndex_map_lieMap_id_circle_pow_periodLattice` for `n = 2`). This file does not
+  treat the Lie map of `toSO3` itself or the period lattices of the subgroups `T` and `T'`.
 
 ## Main definitions
 
@@ -130,6 +128,7 @@ theorem rotationTorusHom_injective : Function.Injective rotationTorusHom := fun 
 
 /-- **The double cover on the maximal tori is the squaring map.** The image of the torus element
 `diag(z, z⁻¹)` of `SU(2)` in `SO(3)` is the rotation attached to `z²`. -/
+@[simp]
 theorem toSO3_torusHom (z : Circle) : toSO3 (torusHom z) = rotationTorusHom (z ^ 2) :=
   Subtype.ext (coe_toSO3_torusHom_eq_rotationTorusMatrix z)
 
@@ -151,11 +150,9 @@ theorem mem_range_rotationTorusHom_iff {R : specialOrthogonalGroup (Fin 3) ℝ} 
     · have hx1 : x = 1 := Subtype.ext h
       exact ⟨w, by rw [hxg, hx1, one_mul]⟩
     · -- Then `torusHom w = -g`, and `torusHom (-w) = -torusHom w = g`.
-      have hneg : torusMatrix (-w) = -torusMatrix w := by
-        ext i j
-        fin_cases i <;> fin_cases j <;> simp [inv_neg]
-      refine ⟨-w, Subtype.ext ?_⟩
-      rw [coe_torusHom, hneg, ← coe_torusHom, hxg, Submonoid.coe_mul, h, neg_one_mul, neg_neg]
+      have hwg : torusMatrix w = -g := by
+        rw [← coe_torusHom, hxg, Submonoid.coe_mul, h, neg_one_mul]
+      exact ⟨-w, Subtype.ext (by simp [hwg])⟩
   · rintro ⟨z, rfl⟩
     exact ⟨z ^ 2, (toSO3_torusHom z).symm⟩
 
@@ -191,7 +188,8 @@ theorem forall_apply_eq_of_toSO3_torusHom_eq_iff (χ : Circle →ₜ* Circle) :
       exact Circle.neg_ne_self 1 (hodd.neg_one_zpow.symm.trans h1)
     exact ⟨k, fun z ↦ by rw [hm, hk, two_mul]⟩
   · rintro ⟨k, hk⟩ z w hzw
-    rw [hk, hk, _root_.zpow_mul, _root_.zpow_mul, zpow_two, zpow_two, ← sq, ← sq, hzw]
+    rw [hk, hk, _root_.zpow_mul, _root_.zpow_mul]
+    exact_mod_cast congrArg (· ^ k) hzw
 
 end SU2
 
