@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 import TauCeti.RepresentationTheory.BaseChange
 import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
 import TauCeti.RepresentationTheory.Stabilizer
 
@@ -46,6 +47,10 @@ the ramification set for a representation with open kernel, are not proved here.
 * `TauCeti.ContinuousRep.ramificationSet_subset_of_surjective`: an equivariant quotient is
   unramified wherever the representation is.
 * `TauCeti.ContinuousRep.ramificationSet_baseChange_subset`: `Ram(B ⊗ ρ) ⊆ Ram ρ`.
+
+Each bound comes with its form at a single place: `isUnramifiedAt_trivial`,
+`isUnramifiedAt_prod_iff`, `IsUnramifiedAt.tprod`, `IsUnramifiedAt.dual`,
+`IsUnramifiedAt.of_surjective`, `IsUnramifiedAt.baseChange` and `Iso.isUnramifiedAt_iff`.
 
 -/
 
@@ -112,14 +117,21 @@ theorem ramificationSet_subset_of_ker_le {B P : Type*} [Semiring B] [AddCommMono
   fun _ hv h ↦ hv (h.of_ker_le hker)
 
 variable (F A M) in
+/-- The trivial representation is unramified at every finite place. -/
+@[simp]
+theorem isUnramifiedAt_trivial (v : HeightOneSpectrum (𝓞 F)) :
+    (trivial (Field.absoluteGaloisGroup F) A M).IsUnramifiedAt v := fun _ _ _ ↦ by
+  rw [toRepresentation_trivial, Representation.ker_trivial]
+  exact le_top
+
+variable (F A M) in
 /-- The trivial representation is unramified everywhere. -/
 @[simp]
 theorem ramificationSet_trivial : (trivial (Field.absoluteGaloisGroup F) A M).ramificationSet = ∅ :=
-  Set.eq_empty_of_forall_notMem fun v hv ↦ hv fun _ _ _ ↦ by
-    rw [toRepresentation_trivial, Representation.ker_trivial]
-    exact le_top
+  Set.eq_empty_of_forall_notMem fun v hv ↦ hv (isUnramifiedAt_trivial F A M v)
 
 /-- A product is unramified at `v` exactly when both factors are. -/
+@[simp]
 theorem isUnramifiedAt_prod_iff :
     (ρ.prod ρ').IsUnramifiedAt v ↔ ρ.IsUnramifiedAt v ∧ ρ'.IsUnramifiedAt v := by
   simp only [IsUnramifiedAt, toRepresentation_prod, Representation.ker_prod, le_inf_iff]
@@ -127,25 +139,30 @@ theorem isUnramifiedAt_prod_iff :
     fun h Q hQ hv ↦ ⟨h.1 Q hQ hv, h.2 Q hQ hv⟩⟩
 
 /-- **The ramification set of a product** is the union of the ramification sets. -/
+@[simp]
 theorem ramificationSet_prod :
     (ρ.prod ρ').ramificationSet = ρ.ramificationSet ∪ ρ'.ramificationSet := by
   ext v
   simp only [mem_ramificationSet_iff, Set.mem_union, isUnramifiedAt_prod_iff, not_and_or]
 
+/-- Isomorphic representations are unramified at the same finite places. -/
+theorem Iso.isUnramifiedAt_iff (e : Iso ρ ρ') : ρ.IsUnramifiedAt v ↔ ρ'.IsUnramifiedAt v :=
+  ⟨fun h ↦ h.of_ker_le e.toRepresentationEquiv.ker_eq.le,
+    fun h ↦ h.of_ker_le e.toRepresentationEquiv.ker_eq.ge⟩
+
 /-- Isomorphic representations have the same ramification set. -/
 theorem Iso.ramificationSet_eq (e : Iso ρ ρ') : ρ.ramificationSet = ρ'.ramificationSet :=
-  (ramificationSet_subset_of_ker_le e.toRepresentationEquiv.ker_eq.ge).antisymm
-    (ramificationSet_subset_of_ker_le e.toRepresentationEquiv.ker_eq.le)
+  Set.ext fun _ ↦ e.isUnramifiedAt_iff.not
+
+/-- An equivariant quotient of a representation unramified at `v` is unramified at `v`. -/
+theorem IsUnramifiedAt.of_surjective (h : ρ.IsUnramifiedAt v) (f : Hom ρ ρ')
+    (hf : Function.Surjective f) : ρ'.IsUnramifiedAt v :=
+  h.of_ker_le (f.toIntertwiningMap.ker_le_ker_of_surjective hf)
 
 /-- An equivariant quotient is unramified wherever the representation is. -/
 theorem ramificationSet_subset_of_surjective (f : Hom ρ ρ') (hf : Function.Surjective f) :
-    ρ'.ramificationSet ⊆ ρ.ramificationSet := by
-  refine ramificationSet_subset_of_ker_le fun σ hσ ↦ ?_
-  rw [MonoidHom.mem_ker] at hσ ⊢
-  refine LinearMap.ext fun y ↦ ?_
-  obtain ⟨x, rfl⟩ := hf y
-  have hx : ρ.toRepresentation σ x = x := LinearMap.congr_fun hσ x
-  exact (f.isIntertwining σ x).symm.trans (congrArg f hx)
+    ρ'.ramificationSet ⊆ ρ.ramificationSet :=
+  fun _ hv h ↦ hv (h.of_surjective f hf)
 
 end Predicates
 
@@ -156,18 +173,22 @@ variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [Module A N] [TopologicalSpace N] [IsModuleTopology A N] [Module.Finite A N]
   [TopologicalSpace (M ⊗[A] N)] [IsModuleTopology A (M ⊗[A] N)]
 
+/-- A tensor product of representations unramified at `v` is unramified at `v`. -/
+theorem IsUnramifiedAt.tprod {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {ρ' : ContinuousRep (Field.absoluteGaloisGroup F) A N} {v : HeightOneSpectrum (𝓞 F)}
+    (h : ρ.IsUnramifiedAt v) (h' : ρ'.IsUnramifiedAt v) : (ρ.tprod ρ').IsUnramifiedAt v :=
+  fun Q hQ hQv ↦ by
+    rw [toRepresentation_tprod]
+    exact (le_inf (h Q hQ hQv) (h' Q hQ hQv)).trans (Representation.ker_inf_ker_le_ker_tprod _ _)
+
 /-- **The ramification set of a tensor product** is contained in the union of the ramification
 sets. -/
 theorem ramificationSet_tprod_subset (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
     (ρ' : ContinuousRep (Field.absoluteGaloisGroup F) A N) :
     (ρ.tprod ρ').ramificationSet ⊆ ρ.ramificationSet ∪ ρ'.ramificationSet := by
   intro v hv
-  by_contra h
-  simp only [Set.mem_union, mem_ramificationSet_iff, not_or, not_not] at h
-  refine hv fun Q hQ hQv ↦ ?_
-  rw [toRepresentation_tprod]
-  exact (le_inf (h.1 Q hQ hQv) (h.2 Q hQ hQv)).trans
-    (Representation.ker_inf_ker_le_ker_tprod _ _)
+  rw [Set.mem_union, mem_ramificationSet_iff, mem_ramificationSet_iff, ← not_and_or]
+  exact fun h ↦ hv (h.1.tprod h.2)
 
 end Tensor
 
@@ -178,12 +199,17 @@ variable {A M : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
   [Module.Projective A M] [TopologicalSpace (Module.Dual A M)]
   [IsModuleTopology A (Module.Dual A M)]
 
+/-- The contragredient of a representation unramified at `v` is unramified at `v`. -/
+theorem IsUnramifiedAt.dual {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {v : HeightOneSpectrum (𝓞 F)} (h : ρ.IsUnramifiedAt v) : ρ.dual.IsUnramifiedAt v :=
+  h.of_ker_le (by
+    rw [toRepresentation_dual]
+    exact ρ.toRepresentation.ker_le_ker_dual)
+
 /-- **The ramification set of the contragredient** is contained in that of the representation. -/
 theorem ramificationSet_dual_subset (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M) :
-    ρ.dual.ramificationSet ⊆ ρ.ramificationSet := by
-  refine ramificationSet_subset_of_ker_le ?_
-  rw [toRepresentation_dual]
-  exact ρ.toRepresentation.ker_le_ker_dual
+    ρ.dual.ramificationSet ⊆ ρ.ramificationSet :=
+  fun _ hv h ↦ hv h.dual
 
 end Dual
 
@@ -194,14 +220,19 @@ variable {A M : Type*} [CommSemiring A] [TopologicalSpace A] [AddCommMonoid M] [
   [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B]
   [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)]
 
+/-- The scalar extension `B ⊗ ρ` of a representation unramified at `v` is unramified at `v`. -/
+theorem IsUnramifiedAt.baseChange {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {v : HeightOneSpectrum (𝓞 F)} (h : ρ.IsUnramifiedAt v) : (ρ.baseChange B).IsUnramifiedAt v :=
+  h.of_ker_le (by
+    rw [toRepresentation_baseChange]
+    exact ρ.toRepresentation.ker_le_ker_baseChange B)
+
 /-- **Extension of scalars does not create ramification**: `Ram(B ⊗ ρ) ⊆ Ram ρ`. For `B` the
 residue field this says that a raw reduction is unramified wherever the representation is; the
 converse fails. -/
 theorem ramificationSet_baseChange_subset (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M) :
-    (ρ.baseChange B).ramificationSet ⊆ ρ.ramificationSet := by
-  refine ramificationSet_subset_of_ker_le (ρ := ρ) (τ := ρ.baseChange B) ?_
-  rw [toRepresentation_baseChange]
-  exact ρ.toRepresentation.ker_le_ker_baseChange B
+    (ρ.baseChange B).ramificationSet ⊆ ρ.ramificationSet :=
+  fun _ hv h ↦ hv (h.baseChange B)
 
 end BaseChange
 
