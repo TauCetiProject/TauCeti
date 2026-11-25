@@ -36,6 +36,10 @@ from one approximation for each path component.
   point induce the same map on positive-dimensional homotopy groups.
 * `HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`: a subspace containing the path
   component of the base point has the same positive-dimensional homotopy groups.
+* `HomotopyGroup.subsingleton_iff_of_pathComponent_subset`: in positive dimension, such a subspace
+  has trivial `N`-th homotopy group if and only if the ambient space does.
+* `FundamentalGroup.bijective_mapOfEq_subtypeVal_of_pathComponent_subset`: the inclusion of such a
+  subspace induces a bijection on fundamental groups.
 * `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset`: the same, as a group isomorphism.
 * `HomotopyGroup.bijective_map_sigmaMk`: a summand of a disjoint union has the same
   positive-dimensional homotopy groups as the disjoint union.
@@ -116,6 +120,21 @@ theorem bijective_map_subtypeVal_of_pathComponent_subset [Nonempty N] {S : Set X
     · exact (H.eq_fst s ht).trans (_root_.GenLoop.boundary _ t ht)
   · induction a using Quotient.inductionOn with | h p => ?_
     exact ⟨⟦lift p⟧, congrArg _ (_root_.GenLoop.ext _ _ fun t ↦ GenLoop.map_apply _ _ _ t)⟩
+
+/-- In positive dimension, a subspace containing the path component of `x ∈ S` has trivial `N`-th
+homotopy group at `x` if and only if the ambient space does. -/
+theorem subsingleton_iff_of_pathComponent_subset [Nonempty N] {S : Set X} {x : S}
+    {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
+    Subsingleton (HomotopyGroup N S x) ↔ Subsingleton (HomotopyGroup N X x') :=
+  (Equiv.ofBijective _ (bijective_map_subtypeVal_of_pathComponent_subset hS hx)).subsingleton_congr
+
+/-- If a subspace `S` contains the path component of `x ∈ S`, its inclusion induces a bijection
+`π₁(S, x) → π₁(X, x')` on fundamental groups. -/
+theorem _root_.FundamentalGroup.bijective_mapOfEq_subtypeVal_of_pathComponent_subset
+    {S : Set X} {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
+    Function.Bijective (FundamentalGroup.mapOfEq (ContinuousMap.subtypeVal S) hx) :=
+  (bijective_map_iff_bijective_mapOfEq (ContinuousMap.subtypeVal S) hx).1
+    (bijective_map_subtypeVal_of_pathComponent_subset hS hx)
 
 /-- **The homotopy groups of a subspace containing a path component**, as a group isomorphism. In
 positive dimension, if a subspace `S` contains the path component of `x ∈ S`, its inclusion
