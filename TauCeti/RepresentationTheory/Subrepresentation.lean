@@ -515,6 +515,16 @@ theorem toSubmodule_res (f : H →* K) (σ : Subrepresentation ρ) :
     (σ.res f).toSubmodule = σ.toSubmodule :=
   rfl
 
+/-- Restriction along a monoid homomorphism keeps the underlying set. -/
+@[simp]
+theorem coe_res (f : H →* K) (σ : Subrepresentation ρ) : (σ.res f : Set V) = σ :=
+  rfl
+
+/-- A vector lies in the restriction of `σ` along `f` exactly when it lies in `σ`. -/
+@[simp]
+theorem mem_res {f : H →* K} {σ : Subrepresentation ρ} {v : V} : v ∈ σ.res f ↔ v ∈ σ :=
+  Iff.rfl
+
 /-- The representation carried by the restriction of `σ` along `f` is the restriction along `f` of
 the representation carried by `σ`. -/
 theorem toRepresentation_res (f : H →* K) (σ : Subrepresentation ρ) :
