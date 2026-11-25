@@ -330,27 +330,25 @@ almost complex structure `v ↦ j(b, v)` on `V` given by the fibre block of `J` 
 `{b} × V`. The fibres `{b} × V` are `J`-complex submanifolds, and this is the structure `J`
 induces on them (`TauCeti.ComplexStructureFamily.isPseudoholomorphicAt_prodMk_right_iff`). -/
 def fiberAlmostComplexStructure (b : B) : SmoothAlmostComplexStructure 𝓘(ℝ, V) V where
-  toEndomorphism :=
-    ⟨(fun v ↦ fiberBlock J (b, v) : V → V →L[ℝ] V), fun v ↦ (contMDiffAt_hom_bundle _).2
-      ⟨contMDiffAt_id, by
-        have h : ContDiff ℝ ∞ (fun v : V ↦ fiberBlock J (b, v)) :=
-          (contDiff_fiberBlock J).comp (contDiff_const.prodMk contDiff_id)
-        simpa [inCoordinates_tangent_bundle_core_model_space] using h.contDiffAt.contMDiffAt⟩⟩
+  toEndomorphism := Manifold.tangentEndomorphismOfModel (fun v ↦ fiberBlock J (b, v))
+    ((contDiff_fiberBlock J).comp (contDiff_const.prodMk contDiff_id))
   square_neg v := by
     ext w
+    rw [Manifold.tangentEndomorphismOfModel_apply]
     exact (fiberBlock_apply_apply_and_connectionBlock_anticommute J i hi
       (hJ.isPseudoholomorphicAt (b, v))).1 w
 
 @[simp]
 theorem fiberAlmostComplexStructure_toEndomorphism (b : B) (v : V) :
     (fiberAlmostComplexStructure J i hi hJ b).toEndomorphism v = fiberBlock J (b, v) :=
-  (rfl)
+  Manifold.tangentEndomorphismOfModel_apply _ _ v
 
 /-- The fibre structure over `b` acts on a vertical vector `w` at `v` as `J` does on `(0, w)` at
 `(b, v)`. -/
 theorem fiberAlmostComplexStructure_apply (b : B) (v w : V) :
     fiberAlmostComplexStructure J i hi hJ b v w = (J (b, v) (0, w)).2 :=
-  (rfl)
+  (congrArg (fun A : V →L[ℝ] V ↦ A w)
+    (fiberAlmostComplexStructure_toEndomorphism J i hi hJ b v)).trans (fiberBlock_apply J (b, v) w)
 
 /-- A block structure sends a vertical vector `(0, w)` at `(b, v)` to the vertical vector
 `(0, j w)`, with `j` the fibre structure over `b`: the vertical subspaces are `J`-complex. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Model
 public import TauCeti.Geometry.Symplectic.Manifold.CurvePairing
-import TauCeti.Geometry.Manifold.TwoForm.Closed
+import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 /-!
 # Closed curves in the normal model are constant
@@ -30,12 +30,15 @@ fibre `{z₀} × ℂ` carries the standard structure
 Both are tamed by the standard area form of `ℂ`, so a closed connected `J_N`-holomorphic curve is
 constant (`TauCeti.apply_eq_of_isPseudoholomorphicAt_smoothNormalModelStructure`): its base
 component is a closed holomorphic curve in `ℂ`, hence constant, so the curve lies in one normal
-fibre, where it is a closed holomorphic curve in `ℂ` again. In Taubes's reconstruction of curves
-from limits of Seiberg–Witten solutions the limiting curve lives in the total space of the normal
-bundle `N_C` with the structure `J_N`, and its components are either projected with positive
-degree to `C` or vertical, contained in one normal fibre. A vertical component lies over one point
-of `C`, hence in a single trivialized chart `ℂ × ℂ` of `N_C`, so this theorem says that `N_C`
-contains no compact nonconstant vertical component.
+fibre, where it is a closed holomorphic curve in `ℂ` again. So the normal model `ℂ × ℂ` contains
+no closed nonconstant `J_N`-curve.
+
+This is motivated by Taubes's reconstruction of curves from limits of Seiberg–Witten solutions:
+the limiting curve lives in the total space of the normal bundle `N_C` with the structure `J_N`,
+and its components are either projected with positive degree to `C` or vertical, contained in one
+normal fibre. A vertical component lies over one point of `C`, hence in a single trivialized chart
+`ℂ × ℂ` of `N_C`. Concluding that `N_C` has no compact nonconstant vertical component needs the
+normal bundle `N_C` carrying `J_N` as an almost complex manifold, which is not formalized here.
 
 ## References
 
@@ -133,12 +136,13 @@ theorem isPseudoholomorphic_fst_smoothNormalModelStructure :
 /-- **The normal fibres carry the standard structure**: the fibre structure of `J_N` over every
 point of the base is multiplication by `I`. -/
 theorem fiberAlmostComplexStructure_smoothNormalModelStructure (z₀ : ℂ) :
-    ComplexStructureFamily.fiberAlmostComplexStructure (smoothNormalModelStructure hν hμ)
-        (LinearMap.toContinuousLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap)
-        (AlmostComplexStructure.ofComplexModule ℂ).apply_apply
+    ComplexStructureFamily.fiberAlmostComplexStructure (smoothNormalModelStructure hν hμ) _ _
         (isPseudoholomorphic_fst_smoothNormalModelStructure hν hμ) z₀ =
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth := by
   ext w v
+  -- `v` is a tangent vector of the model manifold `ℂ` at `w`, whose type
+  -- `TangentSpace 𝓘(ℝ, ℂ) w` is `ℂ` by definition; retype it as a complex number so that it can be
+  -- paired with `0 : ℂ` into a tangent vector `(0, v)` of `ℂ × ℂ`
   let v' : ℂ := v
   refine (ComplexStructureFamily.fiberAlmostComplexStructure_apply _ _ _ _ z₀ w v').trans ?_
   refine (congrArg Prod.snd (smoothNormalModelStructure_apply hν hμ (z₀, w) (0, v'))).trans ?_
@@ -165,23 +169,16 @@ theorem apply_eq_of_isPseudoholomorphicAt_smoothNormalModelStructure {u : C → 
       e.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j (smoothNormalModelStructure hν hμ) u c) (c c' : C) :
     u c = u c' := by
-  -- the standard area form of `ℂ` tames multiplication by `I`
-  let β : ℂ →L[ℝ] ℂ →L[ℝ] ℝ := stdComplexSymplecticForm.toBilinForm.toContinuousBilinearMap
-  have hβ_apply (a b : ℂ) : β a b = stdComplexSymplecticForm a b := by simp [β]
-  have hβ (a : ℂ) : β a a = 0 := by simp [hβ_apply]
-  have hβI (a : ℂ) (ha : a ≠ 0) :
-      0 < β a (LinearMap.toContinuousLinearMap
-        (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap a) := by
-    rw [hβ_apply]
-    exact (stdComplexSymplecticForm_apply_ofComplexModule a).symm ▸ Complex.normSq_pos.2 ha
-  refine apply_eq_of_isPseudoholomorphic_fst (isPseudoholomorphic_fst_smoothNormalModelStructure
-    hν hμ) hβ hβI (θ := fun _ ↦ SmoothTwoForm.const β) (fun z₀ v w hw ↦ ?_)
-    (fun _ ↦ (mem_closedForms _ _).mpr
-      ((SmoothForm.isClosed_def _).mp (SmoothTwoForm.isClosed_const β))) hu ho hhol c c'
-  rw [fiberAlmostComplexStructure_smoothNormalModelStructure, SmoothTwoForm.const_apply β hβ,
-    AlmostComplexStructure.fromTangentSpace_constSmooth_apply]
-  -- `NormedSpace.fromTangentSpace` is Mathlib's identification of `TangentSpace 𝓘(ℝ, ℂ) v` with
-  -- `ℂ`, which is the identity map.
-  exact hβI w hw
+  -- the standard area form of `ℂ` tames multiplication by `I`, on the base and on every fibre
+  refine ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst
+    (isPseudoholomorphic_fst_smoothNormalModelStructure hν hμ)
+    (β := stdComplexSymplecticForm.toBilinForm.toContinuousBilinearMap)
+    stdComplexSymplecticForm.isAlt stdComplexSymplecticForm_tames
+    (θ := fun _ ↦ stdComplexSymplecticForm.constSmooth) (fun z₀ w v hv ↦ ?_)
+    (fun _ ↦ (mem_closedForms _ _).mpr ((SmoothForm.isClosed_def _).mp
+      (SymplecticForm.isClosed_constSmooth _))) hu ho hhol c c'
+  rw [fiberAlmostComplexStructure_smoothNormalModelStructure]
+  exact SmoothTwoForm.tames_iff.1
+    (SymplecticForm.tames_constSmooth_iff.2 stdComplexSymplecticForm_tames) w v hv
 
 end TauCeti

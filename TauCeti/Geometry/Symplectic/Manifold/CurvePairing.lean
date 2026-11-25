@@ -70,11 +70,13 @@ structure `i` (`TauCeti.ComplexStructureFamily`). The fibres are then `J`-comple
 component of a curve in the fibre over `b` is pseudoholomorphic for the fibre structure
 `TauCeti.ComplexStructureFamily.fiberAlmostComplexStructure` over `b`. So a closed connected curve
 in one fibre is constant as soon as the fibre structure is tamed by a closed two-form
-(`TauCeti.apply_eq_of_forall_fst_eq`). If moreover `i` is tamed, the base component of every closed
-connected curve is constant, so the curve lies in one fibre: closed connected curves in `B × W` are
-constant (`TauCeti.apply_eq_of_isPseudoholomorphic_fst`). This applies to the vertical curves of the
-normal model of an embedded pseudoholomorphic curve, whose almost complex structure `J_N` is a block
-structure over the base with the standard structure on every normal fibre.
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq`). If moreover
+`i` is tamed, the base component of every closed connected curve is constant, so the curve lies in
+one fibre: closed connected curves in `B × W` are constant
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`). This applies to the
+vertical curves of the normal model of an embedded pseudoholomorphic curve, whose almost complex
+structure `J_N` is a block structure over the base with the standard structure on every normal
+fibre.
 
 ## References
 
@@ -251,7 +253,8 @@ form `B`: `B v (Jc v) > 0` for `v ≠ 0`. Every smooth map from a closed connect
 pseudoholomorphic for the constant structure `Jc` is constant.
 
 For curves in the fibres of a block almost complex structure on a product, see
-`TauCeti.apply_eq_of_forall_fst_eq` and `TauCeti.apply_eq_of_isPseudoholomorphic_fst`. -/
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq` and
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`. -/
 theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] {Jc : V →L[ℝ] V} (hJc : ∀ v, Jc (Jc v) = -v) {B : V →L[ℝ] V →L[ℝ] ℝ}
     (hB : ∀ v, B v v = 0) (hBJ : ∀ v, v ≠ 0 → 0 < B v (Jc v)) {u : C → V}
@@ -272,13 +275,15 @@ theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup 
 
 /-! ### Closed curves in block almost complex structures -/
 
+namespace ComplexStructureFamily
+
 /-- **Closed vertical curves are constant.** Let `K` be a block almost complex structure on
 `B × W`, one for which the projection to `B` is pseudoholomorphic for a constant structure `i`, and
 let `v` be a smooth pseudoholomorphic map from a closed connected surface into the fibre over `b`.
 If the fibre structure over `b` is tamed along `v` by a closed two-form on `W`, then `v` is
 constant. -/
-theorem apply_eq_of_forall_fst_eq {B W : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup W] [NormedSpace ℝ W]
+theorem apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq {B W : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] [NormedAddCommGroup W] [NormedSpace ℝ W]
     {K : SmoothAlmostComplexStructure 𝓘(ℝ, B × W) (B × W)} {i : B →L[ℝ] B}
     {hi : ∀ a, i (i a) = -a}
     (hK : IsPseudoholomorphic K (SmoothAlmostComplexStructure.const i hi) Prod.fst) {b : B}
@@ -289,7 +294,7 @@ theorem apply_eq_of_forall_fst_eq {B W : Type*} [NormedAddCommGroup B] [NormedSp
     {θ : SmoothTwoForm 𝓘(ℝ, W) W}
     (hθ : ∀ c (w : TangentSpace 𝓘(ℝ, W) (v c).2), w ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (v c).2 w
-        (ComplexStructureFamily.fiberAlmostComplexStructure K i hi hK b (v c).2 w))
+        (fiberAlmostComplexStructure K i hi hK b (v c).2 w))
     (hcl : θ ∈ closedForms 𝓘(ℝ, W) W 2) (c c' : C) : v c = v c' := by
   have hsnd : ContMDiff I' 𝓘(ℝ, W) ∞ (fun c ↦ (v c).2) :=
     (ContinuousLinearMap.snd ℝ B W).contDiff.contMDiff.comp hv
@@ -312,7 +317,7 @@ theorem apply_eq_of_isPseudoholomorphic_fst {B W : Type*} [NormedAddCommGroup B]
     {θ : B → SmoothTwoForm 𝓘(ℝ, W) W}
     (hθ : ∀ b (w : W) (w' : TangentSpace 𝓘(ℝ, W) w), w' ≠ 0 →
       0 < SmoothBundleForm.eval₂ (θ b) w w'
-        (ComplexStructureFamily.fiberAlmostComplexStructure K i hi hK b w w'))
+        (fiberAlmostComplexStructure K i hi hK b w w'))
     (hcl : ∀ b, θ b ∈ closedForms 𝓘(ℝ, W) W 2) {v : C → B × W}
     (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
     (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
@@ -322,7 +327,9 @@ theorem apply_eq_of_isPseudoholomorphic_fst {B W : Type*} [NormedAddCommGroup B]
     apply_eq_of_isPseudoholomorphicAt_const hi hβ hβi
       ((ContinuousLinearMap.fst ℝ B W).contDiff.contMDiff.comp hv) ho
       (fun c ↦ (hK.isPseudoholomorphicAt (v c)).comp (hhol c))
-  exact apply_eq_of_forall_fst_eq hK hv ho hhol (fun c'' ↦ hfst c'' c)
+  exact apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq hK hv ho hhol (fun c'' ↦ hfst c'' c)
     (fun c'' w hw ↦ hθ _ _ w hw) (hcl _) c c'
+
+end ComplexStructureFamily
 
 end TauCeti
