@@ -18,7 +18,8 @@ Let `Ω = (Ω_1, …, Ω_q)` be a cluster for a `C¹` weight `W` on a Euclidean 
 `Ω_i` and `Ω_j` is `Σ_ij = ∂*Ω_i ∩ ∂*Ω_j` (`TauCeti.Cluster.interface`), and its weighted area is
 `A_ij = ∫_{Σ_ij} e^{−W} dHⁿ⁻¹` (`TauCeti.Cluster.interfaceArea`); permuting the cells permutes
 the interfaces and their areas (`TauCeti.Cluster.interface_permute`,
-`TauCeti.Cluster.interfaceArea_permute`). Up to an `Hⁿ⁻¹`-null set the
+`TauCeti.Cluster.interfaceArea_permute`). The cells have locally finite perimeter
+(`TauCeti.Cluster.exists_totalVariationOn_indicator_cell_ne_top`), and up to an `Hⁿ⁻¹`-null set the
 reduced boundary of a union of cells `⋃_{i ∈ S} Ω_i` is the union of the interfaces `Σ_ij` with
 `i ∈ S` and `j ∉ S` (`TauCeti.Cluster.reducedBoundary_biUnion_cell_ae_eq`), almost every point of
 `∂*Ω_i` lies on exactly one interface `Σ_ij`
@@ -108,23 +109,12 @@ theorem interfaceArea_permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) (i j 
   rw [interfaceArea_def, interfaceArea_def, interface_permute]
 
 /-- For a `C¹` weight, the cells of a cluster have locally finite perimeter. -/
-private theorem exists_totalVariationOn_indicator_cell_ne_top (hW : ContDiff ℝ 1 W)
+theorem exists_totalVariationOn_indicator_cell_ne_top (hW : ContDiff ℝ 1 W)
     (Ω : Cluster W q) (i : Fin q) :
     ∀ K, IsCompact K → K ⊆ ((⊤ : Opens E) : Set E) → ∃ U : Opens E, K ⊆ (U : Set E) ∧
       totalVariationOn volume U ((Ω.cell i).indicator 1) ≠ ∞ :=
   exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
     ((Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self) (Ω.weightedPerimeter_lt_top i).ne
-
-/-- For a `C¹` weight, a union of cells of a cluster has finite weighted perimeter. -/
-private theorem weightedPerimeter_biUnion_cell_ne_top (hW : ContDiff ℝ 1 W) (Ω : Cluster W q)
-    (S : Finset (Fin q)) : weightedPerimeter W ⊤ (⋃ i ∈ S, Ω.cell i) ≠ ⊤ :=
-  ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun i _ => (Ω.weightedPerimeter_lt_top i).ne)
-    (Ω.weightedPerimeter_biUnion_cell_le hW S)
-
-/-- A union of cells of a cluster is null-measurable. -/
-private theorem nullMeasurableSet_biUnion_cell (Ω : Cluster W q) (S : Finset (Fin q)) :
-    NullMeasurableSet (⋃ i ∈ S, Ω.cell i) volume :=
-  .biUnion (Finset.countable_toSet S) fun i _ => Ω.nullMeasurableSet_cell i
 
 /-- **No triple points.** For a `C¹` weight, in dimension `n ≥ 2`, `Hⁿ⁻¹`-almost no point lies
 on the reduced boundaries of three distinct cells. -/
@@ -172,7 +162,7 @@ theorem reducedBoundary_biUnion_cell_ae_eq (hW : ContDiff ℝ 1 W) (hn : 2 ≤ f
     (Ω.exists_totalVariationOn_indicator_cell_ne_top hW) S
     (exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
       ((Ω.nullMeasurableSet_biUnion_cell S).mono Measure.restrict_le_self)
-      (Ω.weightedPerimeter_biUnion_cell_ne_top hW S))
+      (Ω.weightedPerimeter_biUnion_cell_lt_top hW S).ne)
 
 /-- For a `C¹` weight, in dimension `n ≥ 2`, `Hⁿ⁻¹`-almost every point of the reduced boundary
 `∂*Ω_i` of a cell lies on exactly one interface `Σ_ij` with `j ≠ i`. -/
@@ -199,7 +189,7 @@ theorem weightedPerimeter_biUnion_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1
     weightedPerimeter W ⊤ (⋃ i ∈ S, Ω.cell i) = ∑ i ∈ S, ∑ j ∈ Sᶜ, Ω.interfaceArea i j := by
   rw [weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hn
       ((Ω.nullMeasurableSet_biUnion_cell S).mono Measure.restrict_le_self)
-      (Ω.weightedPerimeter_biUnion_cell_ne_top hW S),
+      (Ω.weightedPerimeter_biUnion_cell_lt_top hW S).ne,
     setLIntegral_congr (Ω.reducedBoundary_biUnion_cell_ae_eq hW hn S),
     lintegral_biUnion_finset₀ ?_ fun p _ => (Ω.measurableSet_interface p.1 p.2).nullMeasurableSet,
     Finset.sum_product]
