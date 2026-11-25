@@ -16,7 +16,7 @@ public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
-import Mathlib.Topology.Algebra.Group.CompactOpen
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
 /-!
@@ -1006,16 +1006,14 @@ theorem unitsMapCharacter_one : unitsMapCharacter B (1 : Γ →ₜ* Aˣ) = 1 := 
 /-- Extending the coefficients of a character commutes with products. -/
 @[simp]
 theorem unitsMapCharacter_mul [ContinuousMul A] (χ ψ : Γ →ₜ* Aˣ) :
-    unitsMapCharacter B (χ * ψ) = unitsMapCharacter B χ * unitsMapCharacter B ψ :=
-  map_mul (ContinuousMonoidHom.compRight Γ
-    (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩)) χ ψ
+    unitsMapCharacter B (χ * ψ) = unitsMapCharacter B χ * unitsMapCharacter B ψ := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_mul]
 
 /-- Extending the coefficients of a character commutes with integer powers. -/
 @[simp]
 theorem unitsMapCharacter_zpow [ContinuousMul A] (χ : Γ →ₜ* Aˣ) (n : ℤ) :
-    unitsMapCharacter B (χ ^ n) = unitsMapCharacter B χ ^ n :=
-  map_zpow (ContinuousMonoidHom.compRight Γ
-    (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩)) χ n
+    unitsMapCharacter B (χ ^ n) = unitsMapCharacter B χ ^ n := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_zpow]
 
 variable [IsTopologicalSemiring A] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
 

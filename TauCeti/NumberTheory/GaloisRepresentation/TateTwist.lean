@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Characte
 public import TauCeti.RepresentationTheory.Continuous.Determinant.Operations
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.BaseChange
 public import Mathlib.Topology.Algebra.Group.Units
-import Mathlib.Topology.Algebra.Group.CompactOpen
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -139,8 +139,8 @@ theorem cyclotomicPow_comp_mapOfAlgebra (n : ℤ) :
       cyclotomicPow ℓ F' A n := by
   rw [cyclotomicPow_def, cyclotomicPow_def,
     ← continuousLocalCyclotomicCharacter_comp_mapOfAlgebra ℓ F F',
-    ContinuousRep.unitsMapCharacter_comp]
-  exact map_zpow (ContinuousMonoidHom.compLeft Aˣ (Field.absoluteGaloisGroup.mapOfAlgebra F F')) _ n
+    ContinuousRep.unitsMapCharacter_comp, ← ContinuousMonoidHom.compLeft_apply, map_zpow,
+    ContinuousMonoidHom.compLeft_apply]
 
 end Restriction
 
