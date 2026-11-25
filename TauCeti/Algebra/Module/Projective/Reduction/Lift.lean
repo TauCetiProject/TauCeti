@@ -187,7 +187,8 @@ private theorem exists_isIdempotentElem_map_eq [Module.Finite A P] [Module.Proje
   have : Module.Finite O P := .trans A P
   have : IsAdicComplete (Ideal.span {ϖ}) (Module.End A P) := .of_finite _ _
   let _ : Module A Y := Module.compHom Y π
-  let qA := q.restrictScalarsOfCompHom (R := A) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  have : LinearMap.CompatibleSMul Y Y A B := .of_compHom (σ := π) (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+  let qA := q.restrictScalars A
   have hqA : IsIdempotentElem qA := LinearMap.ext fun y ↦ by
     simpa [qA] using LinearMap.congr_fun hq y
   -- Transport `q` along `P ⧸ ϖ P ≃ Y` and lift it to an idempotent of `P`.
@@ -274,24 +275,23 @@ theorem exists_projective_reduction_of_projective
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin' B Y
   obtain ⟨t, hst⟩ := Module.projective_lifting_property s LinearMap.id hs
   let _ : Module A Y := Module.compHom Y π
-  let _ : Module A (Fin n → B) := Module.compHom _ π
+  let _ : Module A B := Module.compHom B π
   let ρ : (Fin n → A) →ₗ[A] (Fin n → B) :=
-    { toFun v i := π (v i)
-      map_add' v w := funext fun i ↦ map_add π (v i) (w i)
-      map_smul' a v := funext fun i ↦ map_mul π a (v i) }
-  have hρ : Function.Surjective ρ := fun w ↦
-    ⟨fun i ↦ Function.surjInv hπ (w i), funext fun i ↦ Function.surjInv_eq hπ (w i)⟩
+    (π.toSemilinearMap.toLinearMapOfCompHom fun _ _ ↦ rfl).compLeft (Fin n)
+  have hρ' : ⇑ρ = (π ∘ ·) := funext fun v ↦ funext fun i ↦ by simp [ρ]
+  have hρ : Function.Surjective ρ := hρ' ▸ hπ.comp_left
   have hρker : Ideal.span {algebraMap O A ϖ} • (⊤ : Submodule A (Fin n → A)) = LinearMap.ker ρ := by
     ext v
-    rw [Submodule.mem_span_algebraMap_smul_top_pi_iff, ← hker, LinearMap.mem_ker, funext_iff]
-    -- `ρ v i` is `π (v i)` by definition.
-    rfl
+    rw [Submodule.mem_span_algebraMap_smul_top_pi_iff, ← hker, LinearMap.mem_ker, hρ', funext_iff]
+    simp only [Function.comp_apply, Pi.zero_apply, RingHom.mem_ker]
   have : IsAdicComplete (Ideal.span {ϖ}) (Module.End A (Fin n → A)) := .of_finite _ _
   let E := (Submodule.quotEquivOfEq _ _ hρker).trans (ρ.quotKerEquivOfSurjective hρ)
   have hY (a : A) (y : Y) : a • y = π a • y := rfl
   have hB (a : A) (w : Fin n → B) : a • w = π a • w := rfl
-  let s' := s.restrictScalarsOfCompHom hB hY
-  let t' := t.restrictScalarsOfCompHom hY hB
+  have := LinearMap.CompatibleSMul.of_compHom hB hY
+  have := LinearMap.CompatibleSMul.of_compHom hY hB
+  let s' := s.restrictScalars A
+  let t' := t.restrictScalars A
   obtain ⟨X, hXp, ⟨g⟩⟩ := exists_projective_quotient_smul_top_linearEquiv ϖ
     (E.symm.toLinearMap ∘ₗ t') (s' ∘ₗ E.toLinearMap)
     (LinearMap.ext fun y ↦ by

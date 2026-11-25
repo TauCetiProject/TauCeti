@@ -13,21 +13,22 @@ public import Mathlib.RingTheory.Ideal.Maps
 
 Let `σ : R →+* S` be a ring homomorphism. A map semilinear along `σ` kills `ker σ • P`
 (`LinearMap.map_eq_zero_of_mem_ker_smul_top`). When `R` acts on `S`-modules through `σ`, a
-`σ`-semilinear map into such a module, or an `S`-linear map between such modules, is `R`-linear
-(`LinearMap.toLinearMapOfCompHom`, `LinearMap.restrictScalarsOfCompHom`). The action of `R` is
-given by hypotheses `a • m = σ a • m` rather than by `Module.compHom`, so the maps also apply to
-modules whose `R`-module structure is already present.
+`σ`-semilinear map into such a module is `R`-linear (`LinearMap.toLinearMapOfCompHom`), and an
+`S`-linear map between such modules restricts to an `R`-linear map through Mathlib's
+`LinearMap.restrictScalars` (`LinearMap.CompatibleSMul.of_compHom`). The action of `R` is given by
+hypotheses `a • m = σ a • m` rather than by `Module.compHom`, so these also apply to modules whose
+`R`-module structure is already present.
 
 ## Main definitions
 
 * `LinearMap.toLinearMapOfCompHom`: a `σ`-semilinear map into a module on which `R` acts through
   `σ`, as an `R`-linear map.
-* `LinearMap.restrictScalarsOfCompHom`: an `S`-linear map between modules on which `R` acts through
-  `σ`, as an `R`-linear map.
 
 ## Main results
 
 * `LinearMap.map_eq_zero_of_mem_ker_smul_top`: a map semilinear along `σ` kills `ker σ • P`.
+* `LinearMap.CompatibleSMul.of_compHom`: `S`-linear maps between modules on which `R` acts through
+  `σ` commute with the action of `R`.
 -/
 
 public section
@@ -59,16 +60,10 @@ theorem coe_toLinearMapOfCompHom (g : P →ₛₗ[σ] M) (hM : ∀ (a : R) (m : 
     ⇑(g.toLinearMapOfCompHom hM) = g :=
   (rfl)
 
-/-- An `S`-linear map between modules on which `R` acts through `σ`, as an `R`-linear map. -/
-def restrictScalarsOfCompHom (g : M →ₗ[S] N) (hM : ∀ (a : R) (m : M), a • m = σ a • m)
-    (hN : ∀ (a : R) (n : N), a • n = σ a • n) : M →ₗ[R] N where
-  toFun := g
-  map_add' := g.map_add
-  map_smul' a m := by rw [hM, hN, g.map_smul, RingHom.id_apply]
-
-@[simp]
-theorem coe_restrictScalarsOfCompHom (g : M →ₗ[S] N) (hM : ∀ (a : R) (m : M), a • m = σ a • m)
-    (hN : ∀ (a : R) (n : N), a • n = σ a • n) : ⇑(g.restrictScalarsOfCompHom hM hN) = g :=
-  (rfl)
+/-- An `S`-linear map between modules on which `R` acts through `σ` commutes with the action of
+`R`, so it restricts to an `R`-linear map (`LinearMap.restrictScalars`). -/
+theorem CompatibleSMul.of_compHom (hM : ∀ (a : R) (m : M), a • m = σ a • m)
+    (hN : ∀ (a : R) (n : N), a • n = σ a • n) : CompatibleSMul M N R S :=
+  ⟨fun g a m ↦ by rw [hM, hN, g.map_smul]⟩
 
 end LinearMap

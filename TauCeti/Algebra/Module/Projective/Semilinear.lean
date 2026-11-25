@@ -45,9 +45,10 @@ theorem projective_lifting_property_semilinear [Module.Projective R P] (F : M �
   -- Restrict the scalars of `M` and `N` along `σ`, so that `F` and `g` become `R`-linear.
   let : Module R M := Module.compHom M σ
   let : Module R N := Module.compHom N σ
-  obtain ⟨h, hh⟩ := projective_lifting_property
-    (F.restrictScalarsOfCompHom (fun _ _ ↦ rfl) fun _ _ ↦ rfl)
-    (g.toLinearMapOfCompHom fun _ _ ↦ rfl) (by rwa [LinearMap.coe_restrictScalarsOfCompHom])
+  have : LinearMap.CompatibleSMul M N R S :=
+    .of_compHom (σ := σ) (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+  obtain ⟨h, hh⟩ := projective_lifting_property (F.restrictScalars R)
+    (g.toLinearMapOfCompHom fun _ _ ↦ rfl) (by rwa [LinearMap.coe_restrictScalars])
   exact ⟨{ h.toAddMonoidHom with map_smul' := h.map_smul },
     LinearMap.ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
 
