@@ -27,7 +27,7 @@ analytic spaces. The node chart `{(b, x, y) | xy = s(b)}` of a nodal family is t
 
 The structure sheaf is the sheaf `TopCat.Presheaf.quotientIdealSheaf` of the holomorphic structure
 sheaf, `J` and `V(J)`, which reads the stalks as the quotients `𝒪_{X,x} ⧸ J_x`
-(`TopCat.Presheaf.quotientIdealSheaf.stalkEquiv`). What is specific to holomorphic functions is
+(`TauCeti.closedAnalyticSubspace.stalkEquiv`). What is specific to holomorphic functions is
 that `J_x` is proper exactly at the points of `V(J)` (`stalkIdeal_ne_top_iff`), so that these
 stalks are local rings.
 
@@ -35,6 +35,7 @@ stalks are local rings.
 
 * `TauCeti.closedAnalyticSubspace.zeroLocus J`: the common zero locus `V(J)`, a closed subset.
 * `TauCeti.closedAnalyticSubspace J`: the locally ringed space `(V(J), (𝒪_X ⧸ J 𝒪_X)|_{V(J)})`.
+* `TauCeti.closedAnalyticSubspace.stalkEquiv J z`: its stalk at `z` is `𝒪_{X,z} ⧸ J_z`.
 
 ## Main results
 
@@ -160,8 +161,13 @@ end closedAnalyticSubspace
 
 /-- **The closed analytic subspace cut out by an ideal of holomorphic functions.** The locally
 ringed space `(V(J), (𝒪_X ⧸ J 𝒪_X)|_{V(J)})`, whose stalk at `x` is `𝒪_{X,x} ⧸ J_x`
-(`TopCat.Presheaf.quotientIdealSheaf.stalkEquiv`). -/
-abbrev closedAnalyticSubspace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+(`TauCeti.closedAnalyticSubspace.stalkEquiv`).
+
+The body is exposed so that the points of `closedAnalyticSubspace J` are definitionally those of
+`TauCeti.closedAnalyticSubspace.zeroLocus J`, and its structure sheaf is
+`TopCat.Presheaf.quotientIdealSheaf` (`TauCeti.closedAnalyticSubspace_carrier`,
+`TauCeti.closedAnalyticSubspace_presheaf`). -/
+@[expose] def closedAnalyticSubspace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
     {X : Type} [TopologicalSpace X] [ChartedSpace H X]
     (J : Ideal ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤))) : LocallyRingedSpace where
@@ -174,11 +180,58 @@ abbrev closedAnalyticSubspace {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   isLocalRing z := TopCat.Presheaf.quotientIdealSheaf.isLocalRing_stalk
     (closedAnalyticSubspace.stalkIdeal_ne_top_iff.mpr z.property)
 
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  (J : Ideal ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
+
+/-- The points of the closed analytic subspace cut out by `J` are the points of `V(J)`. -/
+theorem closedAnalyticSubspace_carrier :
+    (closedAnalyticSubspace J).carrier = TopCat.of (closedAnalyticSubspace.zeroLocus J) :=
+  (rfl)
+
+/-- The structure sheaf of the closed analytic subspace cut out by `J` is `(𝒪_X ⧸ J 𝒪_X)|_{V(J)}`.
+-/
+theorem closedAnalyticSubspace_presheaf :
+    (closedAnalyticSubspace J).presheaf =
+      ((holomorphicStructureSheaf I X).presheaf.quotientIdealSheaf J
+        (closedAnalyticSubspace.zeroLocus J)).presheaf :=
+  (rfl)
+
+end
+
 namespace closedAnalyticSubspace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
   {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+
+/-! ### Stalks -/
+
+section
+
+variable (J : Ideal ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
+
+/-- **The stalks of a closed analytic subspace.** The stalk at a point `z` of `V(J)` of the closed
+analytic subspace cut out by `J` is the quotient `𝒪_{X,z} ⧸ J_z`. -/
+def stalkEquiv (z : zeroLocus J) :
+    (closedAnalyticSubspace J).presheaf.stalk z ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk z.val ⧸
+        (holomorphicStructureSheaf I X).presheaf.stalkIdeal J z.val :=
+  TopCat.Presheaf.quotientIdealSheaf.stalkEquiv _ J (zeroLocus J) z
+
+variable {J} in
+/-- The stalk isomorphism sends the germ of a section to its class at the base point. -/
+@[simp]
+theorem stalkEquiv_germ {z : zeroLocus J} {W : Opens (TopCat.of (zeroLocus J))} (hz : z ∈ W)
+    (f : (closedAnalyticSubspace J).presheaf.obj (op W)) :
+    stalkEquiv J z ((closedAnalyticSubspace J).presheaf.germ W z hz f) =
+      (TopCat.Presheaf.quotientIdealSheaf.sectionsEquiv _ J (zeroLocus J) W f).val ⟨z, hz⟩ :=
+  TopCat.Presheaf.quotientIdealSheaf.stalkEquiv_germ hz f
+
+end
 
 /-! ### Nilpotents survive -/
 
@@ -220,8 +273,7 @@ theorem not_isReduced_stalk_span_sq {f : (holomorphicStructureSheaf I X).preshea
       rw [← map_pow, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
       exact TopCat.Presheaf.germ_mem_stalkIdeal (F := (holomorphicStructureSheaf I X).presheaf)
         (Ideal.subset_span rfl) z.val⟩
-  let e := TopCat.Presheaf.quotientIdealSheaf.stalkEquiv (holomorphicStructureSheaf I X).presheaf
-    (Ideal.span {f ^ 2}) (zeroLocus (Ideal.span {f ^ 2})) z
+  let e := stalkEquiv (Ideal.span {f ^ 2}) z
   refine germ_notMem_stalkIdeal_span_sq hfz hf (Ideal.Quotient.eq_zero_iff_mem.mp ?_)
   exact e.symm.injective (((hnil.map e.symm).eq_zero).trans (map_zero _).symm)
 
