@@ -111,10 +111,10 @@ noncomputable def adicCompletion (D : Derivation R A M) :
     obtain ⟨a, ha⟩ := exists_val_eq I x (n + 1)
     obtain ⟨b, hb⟩ := exists_val_eq I y (n + 1)
     have hab : (x * y).val (n + 1) = Submodule.Quotient.mk (a * b) := by simp [ha, hb]
-    simp [adicCompletionFun_val I D ha, adicCompletionFun_val I D hb, adicCompletionFun_val I D hab,
-      val_eq_mk_of_le I n.le_succ ha, val_eq_mk_of_le I n.le_succ hb]
-    -- `A` and `A ⧸ I ^ n` act alike on `M ⧸ I ^ n • M` (`AdicCompletion.mk_smul_mk`)
-    rfl
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, adicCompletionFun_val I D hab, val_add,
+      Pi.add_apply, smul_eval, adicCompletionFun_val I D ha, adicCompletionFun_val I D hb,
+      val_eq_mk_of_le I n.le_succ ha, val_eq_mk_of_le I n.le_succ hb, Ideal.Quotient.mk_eq_mk,
+      mk_smul_mk, leibniz, Quotient.mk_add, Quotient.mk_smul]
 
 /-- If `x` is represented by `a` modulo `I ^ (n + 1)`, then `D̂ x` is represented by `D a`
 modulo `I ^ n`. -/
