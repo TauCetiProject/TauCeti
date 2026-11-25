@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Wkp.ShiftedMollification
 
 /-!
-# Functions smooth up to the real axis are dense in `W^{k,p}` of an upper half
+# Approximation up to the real axis in `W^{k,p}` of an upper half, for compact support in `Ω`
 
 Let `Ω ⊆ ℂ` be open and let `Ω⁺ = Ω ∩ {0 < im}` be its upper half
 (`TopologicalSpace.Opens.upperHalf`). For a half-disc chart of a surface with boundary, `Ω⁺` is the
@@ -17,7 +17,9 @@ interior of the chart image and the real axis is the boundary. This file shows t
 `W^{k,p}(Ω⁺)` vanishing off a compact subset `K` of `Ω`, which may meet the real axis, is a limit
 in `W^{k,p}(Ω⁺)` of restrictions of test functions on the whole plane, for every order `k` and
 `1 ≤ p < ∞` (`TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_upperHalf`). So such
-an element is approximated by functions smooth up to the real axis.
+an element is approximated by functions smooth up to the real axis. The support condition cannot
+be dropped: the rest of the boundary of `Ω⁺` can be irregular, for instance a slit, and near it a
+general element of `W^{k,p}(Ω⁺)` need not be approximable by functions smooth on the plane.
 
 The argument is the shifted mollification
 `TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_of_shift`: translate by `2 r i`
