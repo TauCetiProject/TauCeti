@@ -95,6 +95,8 @@ private theorem mfderiv_eq_mfderivWithin_comp_extChartAt_symm {x : X}
     OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
     PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
     preimage_ofPred_eq, id_eq, modelWithCornersSelf_coe, range_id, subset_univ, inf_of_le_left]
+  -- Both sides are the same derivative; they differ only in `tangentSpaceCastModel` at two
+  -- equal points, and these identifications are identities by definition.
   rfl
 
 omit [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M] in
@@ -139,9 +141,7 @@ private theorem fderivWithin_add_eq_zero_of_im_pos {F : Type*} [NormedAddCommGro
   have hUD : UniqueDiffOn ℝ U := hU ▸ closedUpperHalfPlaneModel.uniqueDiffOn.inter hO
   have hint : ∀ z ∈ O ∩ {z : ℂ | 0 < z.im}, U ∈ 𝓝 z := fun z hz ↦
     mem_of_superset ((hO.inter (isOpen_lt continuous_const Complex.continuous_im)).mem_nhds hz)
-      fun w hw ↦ ⟨hw.1, by
-        rw [range_closedUpperHalfPlaneModel]
-        exact (show 0 < w.im from hw.2).le⟩
+      fun w hw ↦ ⟨hw.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hw.2⟩
   -- The derivative within `U` is continuous on `U`, and it is the derivative off the real axis.
   have hdf : ContinuousOn (fderivWithin ℝ f U) U := hf.continuousOn_fderivWithin hUD le_rfl
   have hG : ContinuousOn
@@ -283,68 +283,12 @@ private theorem isPseudoholomorphicWithinAt_of_isWeakPseudoholomorphicOnBordered
     (hf.mono interior_subset) (hJ.mono interior_subset) continuousOn_const).1
       (hw.mono interior_subset)
   have hG₀ := fderivWithin_add_eq_zero_of_im_pos hO (hUO ▸ hf) (hUO ▸ hJ) (fun z hz ↦ hpt z
-    (interior_maximal (fun w hw ↦ hUO ▸ ⟨hw.1, by
-      rw [range_closedUpperHalfPlaneModel]
-      exact (show 0 < w.im from hw.2).le⟩)
+    (interior_maximal (fun w hw ↦ hUO ▸
+      ⟨hw.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hw.2⟩)
       (hO.inter (isOpen_lt continuous_const Complex.continuous_im)) hz)) (hUO ▸ hz₀)
   exact (isPseudoholomorphicAt_of_fderivWithin_chart J₀
     ((hu.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt one_ne_zero)
     hG₀).isPseudoholomorphicWithinAt
-
-omit [HasGroupoid X borderedHolomorphicGroupoid] [CompleteSpace E] [I.Boundaryless]
-  [IsManifold I ∞ M] in
-/-- **Bordered holomorphic charts are holomorphic off the real axis.** For a bordered holomorphic
-chart `φ` of `X` and a point `z` of positive imaginary part in its extended target, the derivative
-of the inverse chart at `z` is complex linear: in the chart at `φ⁻¹ z` it is the derivative of a
-holomorphic chart change. -/
-private theorem mfderiv_extend_symm_I_mul {φ : OpenPartialHomeomorph X ClosedUpperHalfPlane}
-    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X) {z : ℂ}
-    (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) (w : ℂ) :
-    mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel (φ.extend closedUpperHalfPlaneModel).symm z
-        (Complex.I * w) =
-      @HMul.hMul ℂ ℂ ℂ _ Complex.I (mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
-        (φ.extend closedUpperHalfPlaneModel).symm z w) := by
-  set x := (φ.extend closedUpperHalfPlaneModel).symm z
-  set χ := chartAt ClosedUpperHalfPlane x
-  have hφ' : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 X :=
-    borderedHolomorphicGroupoid_maximalAtlas_subset (by exact_mod_cast le_top) hφ
-  have hzT : closedUpperHalfPlaneModel.symm z ∈ φ.target := by
-    rw [OpenPartialHomeomorph.extend_target] at hz
-    exact hz.1
-  -- The extended target is a neighbourhood of `z`, which is off the real axis.
-  have hT : (φ.extend closedUpperHalfPlaneModel).target ∈ 𝓝 z := by
-    refine mem_of_superset ((φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm).inter
-      (isOpen_lt continuous_const Complex.continuous_im) |>.mem_nhds ⟨hzT, hzim⟩) fun v hv ↦ ?_
-    rw [OpenPartialHomeomorph.extend_target, range_closedUpperHalfPlaneModel]
-    exact ⟨hv.1, (show 0 < v.im from hv.2).le⟩
-  have hφs : MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
-      (φ.extend closedUpperHalfPlaneModel).symm z :=
-    ((contMDiffOn_extend_symm hφ').contMDiffAt (by rwa [← φ.extend_target'])).mdifferentiableAt
-      one_ne_zero
-  -- The chart change `χ ∘ φ⁻¹`, read in `ℂ`, is holomorphic at `z`.
-  have he : φ.symm ≫ₕ χ ∈ borderedHolomorphicGroupoid := (hφ χ (chart_mem_atlas _ x)).1
-  have hD : IsOpen (closedUpperHalfPlaneModel.symm ⁻¹' (φ.symm ≫ₕ χ).source ∩
-      {v : ℂ | 0 < v.im}) :=
-    ((φ.symm ≫ₕ χ).open_source.preimage closedUpperHalfPlaneModel.continuous_symm).inter
-      (isOpen_lt continuous_const Complex.continuous_im)
-  have hτ := ((mem_borderedHolomorphicGroupoid_iff.1 he).2.1).differentiableAt
-    (hD.mem_nhds ⟨⟨hzT, mem_chart_source ClosedUpperHalfPlane x⟩, hzim⟩)
-  have key : ∀ v : ℂ, fderiv ℝ (closedUpperHalfPlaneModel ∘ (φ.symm ≫ₕ χ) ∘
-      closedUpperHalfPlaneModel.symm) z (Complex.I * v) =
-        Complex.I * fderiv ℝ (closedUpperHalfPlaneModel ∘ (φ.symm ≫ₕ χ) ∘
-          closedUpperHalfPlaneModel.symm) z v := fun v ↦ by
-    rw [hτ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← smul_eq_mul,
-      map_smul, smul_eq_mul]
-  rw [hφs.mfderiv]
-  simp only [OpenPartialHomeomorph.extend, PartialEquiv.coe_trans_symm,
-    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
-    ModelWithCorners.toPartialEquiv_coe_symm, Function.comp_apply, writtenInExtChartAt, extChartAt,
-    PartialEquiv.coe_trans, ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
-    OpenPartialHomeomorph.coe_toPartialHomeomorph, chartAt_self_eq,
-    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
-    modelWithCornersSelf_coe, range_id, id_eq, fderivWithin_univ]
-  exact key w
 
 /-- **Pseudoholomorphic maps are weak solutions, in one pair of charts.** For a map `u` of class
 `C¹` on an open set `s`, pseudoholomorphic there, the coordinate expression in a bordered
@@ -376,9 +320,8 @@ private theorem isWeakCauchyRiemannOn_chart_of_isPseudoholomorphicOn
   have hzU : z ∈ U := interior_subset hz
   set x := (φ.extend closedUpperHalfPlaneModel).symm z
   -- The interior of `U` lies in the open upper half-plane.
-  have hzim : 0 < z.im := by
-    have hzr := interior_mono (inter_subset_left.trans φ.extend_target_subset_range) hz
-    rwa [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at hzr
+  have hzim : 0 < z.im :=
+    interior_subset_setOf_im_pos (inter_subset_left.trans φ.extend_target_subset_range) hz
   have hφs : MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
       (φ.extend closedUpperHalfPlaneModel).symm z :=
     ((contMDiffOn_extend_symm (borderedHolomorphicGroupoid_maximalAtlas_subset
@@ -399,14 +342,15 @@ private theorem isWeakCauchyRiemannOn_chart_of_isPseudoholomorphicOn
       (by simp))).2 fun w ↦ ?_
   have hc := hpx.mfderiv_apply_commute
     (mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel (φ.extend closedUpperHalfPlaneModel).symm z w)
-  simp only [SmoothAlmostComplexStructure.toEndomorphism_ofBorderedHolomorphic] at hc
   rw [mfderiv_comp z hux hφs]
+  -- Unfold the composite derivative; the tangent spaces of `ℂ` and of `X` are `ℂ` by definition.
   change mfderiv closedUpperHalfPlaneModel I u x (mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
       (φ.extend closedUpperHalfPlaneModel).symm z (Complex.I * w)) =
     (J₀.toContMDiff ℓ) ((u ∘ (φ.extend closedUpperHalfPlaneModel).symm) z)
       (mfderiv closedUpperHalfPlaneModel I u x (mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
         (φ.extend closedUpperHalfPlaneModel).symm z w))
-  rw [mfderiv_extend_symm_I_mul hφ hzU.1 hzim, SmoothAlmostComplexStructure.toContMDiff_apply]
+  rw [SmoothAlmostComplexStructure.mfderiv_extend_symm_I_mul_of_mem_maximalAtlas hφ hzU.1 hzim,
+    SmoothAlmostComplexStructure.toContMDiff_apply]
   exact hc
 
 /-- **Comparison with `IsPseudoholomorphicOn`.** For the zero inhomogeneous term, a smooth almost
@@ -442,20 +386,13 @@ theorem isWeakPseudoholomorphicBordered_iff_isPseudoholomorphic
 
 /-! ### Checks on the closed upper half-plane -/
 
-/-- The inclusion of the closed upper half-plane into `ℂ` is smooth. -/
-private theorem contMDiff_coe :
-    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) := by
-  have he : (closedUpperHalfPlaneModel : ClosedUpperHalfPlane → ℂ) = (↑) :=
-    funext closedUpperHalfPlaneModel_apply
-  exact he ▸ closedUpperHalfPlaneModel.contMDiff
-
 -- The inclusion of the closed upper half-plane into `ℂ`, pseudoholomorphic at the boundary points
 -- too, is a weak solution up to the boundary for the structure `i` of `ℂ`.
 example : IsWeakPseudoholomorphicBordered (ContMDiffAlmostComplexStructureFamily.const
     ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)) 0 p
       ((↑) : ClosedUpperHalfPlane → ℂ) :=
   (isWeakPseudoholomorphicBordered_iff_isPseudoholomorphic _
-    (contMDiff_coe.of_le (by exact_mod_cast le_top))).2
+    ClosedUpperHalfPlane.contMDiff_coe).2
       SmoothAlmostComplexStructure.isPseudoholomorphic_coe_ofBorderedHolomorphic
 
 /-- **Conjugation is not pseudoholomorphic.** The map `z ↦ conj z` from the closed upper
@@ -470,7 +407,7 @@ theorem not_isPseudoholomorphicOn_conj {s : Set ClosedUpperHalfPlane} (hs : IsOp
   have hu : ContMDiffOn closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) 1
       (fun z : ClosedUpperHalfPlane ↦ conj (z : ℂ)) s :=
     (Complex.conjCLE.contDiff.contMDiff.comp
-      (contMDiff_coe.of_le (by exact_mod_cast le_top))).contMDiffOn
+      ClosedUpperHalfPlane.contMDiff_coe).contMDiffOn
   exact fun h ↦ not_isWeakPseudoholomorphicOnBordered_conj (ℓ := ⊤) (p := 2) hs hne
     ((isWeakPseudoholomorphicOnBordered_iff_isPseudoholomorphicOn _ hs hu).2 h)
 

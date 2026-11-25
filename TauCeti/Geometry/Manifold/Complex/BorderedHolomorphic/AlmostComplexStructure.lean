@@ -40,6 +40,8 @@ induced structure is the standard one.
   structure of a Riemann surface with boundary.
 * `TauCeti.SmoothAlmostComplexStructure.ofBorderedHolomorphic_apply`: it is multiplication by `i`
   on every tangent space.
+* `TauCeti.SmoothAlmostComplexStructure.mfderiv_extend_symm_I_mul_of_mem_maximalAtlas`: off the
+  real axis, the inverse of a bordered holomorphic chart intertwines multiplication by `i` with it.
 
 ## References
 
@@ -92,6 +94,67 @@ theorem inTangentCoordinates_ofBorderedHolomorphic {x₀ x : M}
         (fun x ↦ (ofBorderedHolomorphic M).toEndomorphism x) x₀ x =
       I • ContinuousLinearMap.id ℝ ℂ :=
   inTangentCoordinates_ofTangentCoordChangeISMul _ hx
+
+open ClosedUpperHalfPlane in
+/-- **Inverse bordered holomorphic charts are holomorphic off the real axis.** For a bordered
+holomorphic chart `φ` of a Riemann surface with boundary and a point `z` of positive imaginary part
+in its extended target, the derivative of the inverse chart at `z` intertwines multiplication by
+`i` with the induced almost complex structure: in the chart at `φ⁻¹ z` it is the derivative of a
+holomorphic chart change. -/
+theorem mfderiv_extend_symm_I_mul_of_mem_maximalAtlas
+    {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas M) {z : ℂ}
+    (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) (w : ℂ) :
+    mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel (φ.extend closedUpperHalfPlaneModel).symm z
+        (I * w) =
+      ofBorderedHolomorphic M ((φ.extend closedUpperHalfPlaneModel).symm z)
+        (mfderiv 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel (φ.extend closedUpperHalfPlaneModel).symm z
+          w) := by
+  set x := (φ.extend closedUpperHalfPlaneModel).symm z
+  set χ := chartAt ClosedUpperHalfPlane x
+  have hφ' : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
+    borderedHolomorphicGroupoid_maximalAtlas_subset (by exact_mod_cast le_top) hφ
+  have hzT : closedUpperHalfPlaneModel.symm z ∈ φ.target := by
+    rw [OpenPartialHomeomorph.extend_target] at hz
+    exact hz.1
+  -- The extended target is a neighbourhood of `z`, which is off the real axis.
+  have hT : closedUpperHalfPlaneModel '' φ.target ∈ 𝓝 z := by
+    rw [← φ.extend_target']
+    refine mem_of_superset ((φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm).inter
+      (isOpen_lt continuous_const continuous_im) |>.mem_nhds ⟨hzT, hzim⟩) fun v hv ↦ ?_
+    rw [OpenPartialHomeomorph.extend_target]
+    exact ⟨hv.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hv.2⟩
+  have hφs : MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
+      (φ.extend closedUpperHalfPlaneModel).symm z :=
+    ((contMDiffOn_extend_symm hφ').contMDiffAt hT).mdifferentiableAt one_ne_zero
+  -- The chart change `χ ∘ φ⁻¹`, read in `ℂ`, is holomorphic at `z`.
+  have he : φ.symm ≫ₕ χ ∈ borderedHolomorphicGroupoid := (hφ χ (chart_mem_atlas _ x)).1
+  have hD : IsOpen (closedUpperHalfPlaneModel.symm ⁻¹' (φ.symm ≫ₕ χ).source ∩
+      {v : ℂ | 0 < v.im}) :=
+    ((φ.symm ≫ₕ χ).open_source.preimage closedUpperHalfPlaneModel.continuous_symm).inter
+      (isOpen_lt continuous_const continuous_im)
+  have hτ := ((mem_borderedHolomorphicGroupoid_iff.1 he).2.1).differentiableAt
+    (hD.mem_nhds ⟨⟨hzT, mem_chart_source ClosedUpperHalfPlane x⟩, hzim⟩)
+  have key : fderiv ℝ (closedUpperHalfPlaneModel ∘ (φ.symm ≫ₕ χ) ∘
+      closedUpperHalfPlaneModel.symm) z (I * w) =
+        I • fderiv ℝ (closedUpperHalfPlaneModel ∘ (φ.symm ≫ₕ χ) ∘
+          closedUpperHalfPlaneModel.symm) z w := by
+    rw [hτ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← smul_eq_mul,
+      map_smul]
+  -- Both tangent spaces are `ℂ`, so `j` is multiplication by `i` and the derivative of the inverse
+  -- chart, read in the chart at `x`, is the derivative of the chart change; the remaining
+  -- `tangentSpaceCastModel` identifications are identities by definition.
+  refine Eq.trans ?_ (ofBorderedHolomorphic_apply x _).symm
+  rw [hφs.mfderiv]
+  simp only [OpenPartialHomeomorph.extend, PartialEquiv.coe_trans_symm,
+    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
+    ModelWithCorners.toPartialEquiv_coe_symm, Function.comp_apply, writtenInExtChartAt, extChartAt,
+    PartialEquiv.coe_trans, ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
+    OpenPartialHomeomorph.coe_toPartialHomeomorph, chartAt_self_eq,
+    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
+    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
+    modelWithCornersSelf_coe, range_id, id_eq, fderivWithin_univ]
+  exact key
 
 /-! ### Check: the closed upper half-plane -/
 

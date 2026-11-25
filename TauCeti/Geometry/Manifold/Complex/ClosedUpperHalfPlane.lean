@@ -135,6 +135,24 @@ theorem range_closedUpperHalfPlaneModel :
   rw [h]
   exact Subtype.range_coe_subtype
 
+/-- The points of positive imaginary part lie in the closed upper half-plane. -/
+theorem setOf_im_pos_subset_range_closedUpperHalfPlaneModel :
+    {z : ℂ | 0 < z.im} ⊆ range closedUpperHalfPlaneModel := fun z hz ↦ by
+  rw [range_closedUpperHalfPlaneModel]
+  exact (show 0 < z.im from hz).le
+
+/-- The interior in `ℂ` of a subset of the closed upper half-plane consists of points of positive
+imaginary part. -/
+theorem interior_subset_setOf_im_pos {t : Set ℂ} (ht : t ⊆ range closedUpperHalfPlaneModel) :
+    interior t ⊆ {z : ℂ | 0 < z.im} := by
+  have h := interior_mono ht
+  rwa [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at h
+
+/-- The inclusion of the closed upper half-plane into `ℂ` is smooth up to the boundary. -/
+theorem ClosedUpperHalfPlane.contMDiff_coe {n : ℕ∞ω} :
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n ((↑) : ClosedUpperHalfPlane → ℂ) :=
+  funext closedUpperHalfPlaneModel_apply ▸ closedUpperHalfPlaneModel.contMDiff
+
 /-- The part of the extended target of a chart into the closed upper half-plane lying over an
 open set is relatively open in the closed upper half-plane: it is `Ω ∩ {z | 0 ≤ z.im}` for an
 open `Ω ⊆ ℂ`. -/
