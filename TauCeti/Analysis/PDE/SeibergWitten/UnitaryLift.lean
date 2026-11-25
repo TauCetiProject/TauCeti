@@ -364,7 +364,8 @@ theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
   set u' := positiveHalfSpinorsEquiv o ρ u
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u' = u' :=
     hx u' (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
-  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu
+  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂) hu
   rw [AlmostComplexStructure.mem_unitaryGroup_iff]
   intro v
   set A := (spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V)
@@ -423,10 +424,11 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
   have hx₀ : spinCGroup.toSpecialOrthogonal Q hQ₀ x₀ ∈ J.unitaryGroup Q := by
     rwa [spinCGroup.toSpecialOrthogonal_ofSpin, hs]
   -- `x₀` moves the canonical line to itself, so `x₀ u = c u`.
-  have hP := (cliffordProjection_kahlerForm_apply_eq_self_iff hQ he h₀ h₂
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have hP := (cliffordProjection_kahlerForm_apply_eq_self_iff hQ hJ
     (ψ := (positiveHalfSpinorsEquiv o ρ).symm (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u'))).2
     (ι_apply_apply_spinCGroupHalfSpinRep hQ₀ hx₀
-      ((cliffordProjection_kahlerForm_apply_eq_self_iff hQ he h₀ h₂).1 hu))
+      ((cliffordProjection_kahlerForm_apply_eq_self_iff hQ hJ).1 hu))
   obtain ⟨c, hc⟩ := hspan _ hP
   have hc' : (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u' : W) = c • (u' : W) := by
     rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hc, map_smul, Submodule.coe_smul]
@@ -565,11 +567,12 @@ theorem
   -- `x` fixes `u` and moves `u'` to a multiple `c u'` of itself.
   have hxv : spinCGroupHalfSpinRep o ρ 1 hQ₀ x v = v :=
     hx v (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂
   obtain ⟨c, hc⟩ :=
     hspan' ((positiveHalfSpinorsEquiv o ρ).symm (spinCGroupHalfSpinRep o ρ 1 hQ₀ x v'))
-    ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ he h₀ h₂).2
+    ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ hJ).2
       (ι_apply_apply_spinCGroupHalfSpinRep hQ₀ hxA
-        ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ he h₀ h₂).1 hu')))
+        ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ hJ).1 hu')))
   have hxv' : spinCGroupHalfSpinRep o ρ 1 hQ₀ x v' = c • v' := by
     rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hc, map_smul]
   -- Computing the determinant in the basis `(u, u')` identifies `c` with `det x`.
@@ -782,7 +785,7 @@ end ComplexDeterminant
 
 section FrameModel
 
-open scoped Matrix
+open scoped _root_.Matrix
 open AlmostComplexStructure (unitaryGroupFrameEquiv complexCoords_unitaryGroupFrameEquiv_apply)
 
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)

@@ -56,17 +56,6 @@ the closure of the image of `A⁺`.
 
 public section
 
-namespace UniformSpace.Completion
-
--- `Completion.coeRingHom` bundles the coercion `α → Completion α` as a ring homomorphism, but
--- Mathlib records no lemma for it in applied form. This names that identification once, so the
--- proof below can rewrite with it rather than unfold the definition inside a `simp`.
-private theorem coeRingHom_apply {α : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α]
-    [IsUniformAddGroup α] (a : α) :
-    (coeRingHom : α →+* Completion α) a = (a : Completion α) := rfl
-
-end UniformSpace.Completion
-
 namespace TauCeti.ValuationSpectrum
 
 open UniformSpace
