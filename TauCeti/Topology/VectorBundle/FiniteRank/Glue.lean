@@ -179,9 +179,8 @@ theorem isInvertible_chartToQ (hx : x ∈ D.baseSet i) (hk : x ∈ Q.core.baseSe
   · rw [D.chartToQ_of_mem hi]
     exact (D.isInvertible_inChartCoordinates hi hx hk).comp
       ContinuousLinearMap.isInvertible_equiv
-  · rw [D.baseSet_of_notMem hi] at hx
-    rw [D.chartToQ_of_notMem hi]
-    exact Q.core.isInvertible_coordChange hx.1 hk
+  · rw [D.chartToQ_of_notMem hi]
+    exact Q.core.isInvertible_coordChange (D.baseSet_subset_of_notMem hi hx) hk
 
 theorem continuousOn_chartToQ (i k : B) :
     ContinuousOn (D.chartToQ i k) (D.baseSet i ∩ Q.core.baseSet k) := by
@@ -339,21 +338,22 @@ theorem inChartCoordinates_glueHom (hi : x ∈ D.glue.core.baseSet i)
     D.glue.core.inChartCoordinates Q.core i k x (D.glueHom.fiberMap x) = D.chartToQ i k x :=
   (D.glueHom.operator_eq i k ⟨x, hi, hk⟩).symm
 
+/-- On the fibre at `x`, the comparison with `Q` reads the chart of the glued core at `x` in the
+chart of `Q` at `x`. -/
+theorem fiberMap_glueHom (x : B) : D.glueHom.fiberMap x = D.chartToQ x x x :=
+  -- `operator_self` at `x`, whose left-hand side is `chartToQ x x x` by `operator_glueHom`.
+  (operator_self D.glueHom x).symm
+
 /-- At a point of `V`, the comparison with `Q` is `Φ` after reindexing coordinates. -/
 theorem fiberMap_glueHom_of_mem (hx : x ∈ D.V) :
     D.glueHom.fiberMap x = (Φ.fiberMap x).comp D.rankEquiv.symm.toContinuousLinearMap := by
-  rw [← operator_self]
-  -- The chart operators of `glueHom` are `chartToQ` by definition (`operator_glueHom`).
-  change D.chartToQ x x x = _
-  rw [D.chartToQ_eq_operator hx (P.mem_baseSet_self x) (Q.mem_baseSet_self x), operator_self]
+  rw [D.fiberMap_glueHom, D.chartToQ_eq_operator hx (P.mem_baseSet_self x) (Q.mem_baseSet_self x),
+    operator_self]
 
 /-- Away from `V`, the comparison with `Q` is the identity. -/
 theorem fiberMap_glueHom_of_notMem (hx : x ∉ D.V) :
     D.glueHom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin Q.rank → 𝕜) := by
-  rw [← operator_self]
-  -- The chart operators of `glueHom` are `chartToQ` by definition (`operator_glueHom`).
-  change D.chartToQ x x x = _
-  rw [D.chartToQ_of_notMem hx]
+  rw [D.fiberMap_glueHom, D.chartToQ_of_notMem hx]
   exact Q.coordChange_self x
 
 theorem isInvertible_fiberMap_glueHom (x : B) : (D.glueHom.fiberMap x).IsInvertible := by
