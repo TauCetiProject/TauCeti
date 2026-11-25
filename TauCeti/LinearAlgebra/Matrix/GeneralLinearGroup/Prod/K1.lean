@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Prod.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
 # Algebraic `K₁` of a product of rings
 
-A matrix over a product ring `A × B` is a pair of matrices of the same size, one over `A` and one
-over `B`, and it is invertible exactly when both are. So `GL n (A × B) ≃* GL n A × GL n B`
-(`TauCeti.prodGL`), compatibly with stabilization `u ↦ u ⊕ 1`. Passing to the limit, algebraic
+The isomorphism `GL n (A × B) ≃* GL n A × GL n B` (`TauCeti.prodGL`, taking the two components
+of every entry) is compatible with stabilization `u ↦ u ⊕ 1`. Passing to the limit, algebraic
 `K₁` takes products of rings to products of groups:
 `K₁(A × B) ≃* K₁(A) × K₁(B)` (`TauCeti.AlgebraicK1.prodEquiv`), the two components being the
 homomorphisms of `K₁` induced by the projections `A × B → A` and `A × B → B`. The inverse sends
@@ -21,9 +21,6 @@ matrix over `A × B` with components `u` and `v`. The rings may be noncommutativ
 
 ## Main definitions
 
-* `TauCeti.prodGL`: the isomorphism `GL n (A × B) ≃* GL n A × GL n B` for arbitrary semirings,
-  taking components entrywise. Mathlib's `Matrix.GeneralLinearGroup.prodEquiv` is the same
-  isomorphism for commutative rings.
 * `TauCeti.AlgebraicK1.prodEquiv`: the isomorphism `K₁(A × B) ≃* K₁(A) × K₁(B)`.
 
 ## Main results
@@ -51,57 +48,6 @@ open Matrix
 
 namespace TauCeti
 
-/-! ## Invertible matrices over a product of semirings -/
-
-section prodGL
-
-variable (n : Type*) [Fintype n] [DecidableEq n] (A B : Type*) [Semiring A] [Semiring B]
-
-/-- The isomorphism `GL n (A × B) ≃* GL n A × GL n B` taking the two components of every entry,
-for arbitrary (possibly noncommutative) semirings: Mathlib's `Matrix.prodRingEquiv` on units.
-Mathlib's `Matrix.GeneralLinearGroup.prodEquiv` is the same isomorphism for commutative
-rings. -/
-def prodGL : GL n (A × B) ≃* GL n A × GL n B :=
-  (Units.mapEquiv (Matrix.prodRingEquiv n A B).toMulEquiv).trans MulEquiv.prodUnits
-
-variable {n A B}
-
-/-- The first component of `prodGL` is entrywise application of the first projection. -/
-@[simp]
-theorem prodGL_apply_fst (g : GL n (A × B)) :
-    (prodGL n A B g).1 = Units.map ((RingHom.fst A B).mapMatrix (m := n)) g :=
-  (rfl)
-
-/-- The second component of `prodGL` is entrywise application of the second projection. -/
-@[simp]
-theorem prodGL_apply_snd (g : GL n (A × B)) :
-    (prodGL n A B g).2 = Units.map ((RingHom.snd A B).mapMatrix (m := n)) g :=
-  (rfl)
-
-/-- The entries of the invertible matrix over `A × B` with components `g.1` and `g.2` are the
-pairs of corresponding entries. -/
-@[simp]
-theorem coe_prodGL_symm_apply (g : GL n A × GL n B) (i j : n) :
-    ((prodGL n A B).symm g : Matrix n n (A × B)) i j =
-      ((g.1 : Matrix n n A) i j, (g.2 : Matrix n n B) i j) :=
-  (rfl)
-
-/-- Applying the first projection entrywise to the invertible matrix over `A × B` with
-components `g.1` and `g.2` recovers `g.1`. -/
-@[simp]
-theorem unitsMap_fst_prodGL_symm (g : GL n A × GL n B) :
-    Units.map ((RingHom.fst A B).mapMatrix (m := n)) ((prodGL n A B).symm g) = g.1 := by
-  rw [← prodGL_apply_fst, MulEquiv.apply_symm_apply]
-
-/-- Applying the second projection entrywise to the invertible matrix over `A × B` with
-components `g.1` and `g.2` recovers `g.2`. -/
-@[simp]
-theorem unitsMap_snd_prodGL_symm (g : GL n A × GL n B) :
-    Units.map ((RingHom.snd A B).mapMatrix (m := n)) ((prodGL n A B).symm g) = g.2 := by
-  rw [← prodGL_apply_snd, MulEquiv.apply_symm_apply]
-
-end prodGL
-
 variable {A B : Type*} [Ring A] [Ring B]
 
 /-- Splitting an invertible matrix over `A × B` into its two components commutes with
@@ -109,8 +55,8 @@ stabilization `u ↦ u ⊕ 1`. -/
 theorem prodGL_stabilizeGL {m n : ℕ} (h : m ≤ n) (g : GL (Fin m) (A × B)) :
     prodGL (Fin n) A B (stabilizeGL (A × B) h g) =
       Prod.map (stabilizeGL A h) (stabilizeGL B h) (prodGL (Fin m) A B g) :=
-  Prod.ext (stabilizeGL_map h (RingHom.fst A B) g).symm
-    (stabilizeGL_map h (RingHom.snd A B) g).symm
+  Prod.ext (by simpa using (stabilizeGL_map h (RingHom.fst A B) g).symm)
+    (by simpa using (stabilizeGL_map h (RingHom.snd A B) g).symm)
 
 /-- Stabilizing the invertible matrix over `A × B` with components `p.1` and `p.2` stabilizes
 both components. -/
