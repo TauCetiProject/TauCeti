@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
 public import Mathlib.LinearAlgebra.DFinsupp
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
+import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-!
 # The center bounds the number of simple modules of a semisimple algebra
@@ -157,14 +158,9 @@ theorem card_isotypicComponents_le_finrank_center [Module.Finite k (Subalgebra.c
   classical
   let _ : Fintype (isotypicComponents R R) := Fintype.ofFinite _
   obtain ⟨e, hmem, hne, hcen⟩ := exists_center_family k R
-  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.val :=
-    (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R R)
   -- The chosen elements are linearly independent over `k`, one from each independent summand.
-  have hind' : iSupIndep fun c : isotypicComponents R R ↦ c.val.restrictScalars k := by
-    intro c
-    simpa only [← Submodule.restrictScalars_iSup, disjoint_iff,
-      ← Submodule.restrictScalars_inf, Submodule.restrictScalars_eq_bot_iff] using hind c
-  have hli : LinearIndependent k e := hind'.linearIndependent _ hmem hne
+  have hli : LinearIndependent k e :=
+    (iSupIndep_isotypicComponents_restrictScalars k (B := R)).linearIndependent _ hmem hne
   -- Read the independence inside the center and count.
   have hli' : LinearIndependent k fun c ↦ (⟨e c, hcen c⟩ : Subalgebra.center k R) :=
     LinearIndependent.of_comp (Subalgebra.center k R).val.toLinearMap hli

@@ -380,14 +380,13 @@ variable [Algebra.IsCentral F B] [IsSimpleRing B] [FiniteDimensional F B]
 the reduced trace `TauCeti.Algebra.reducedTrace F B`. -/
 theorem semisimpleReducedTrace_eq_reducedTrace_of_ne_zero (hdeg : (deg F B : F) ≠ 0) (b : B) :
     semisimpleReducedTrace F B b = reducedTrace F B b := by
-  rw [semisimpleReducedTrace_eq_inv_deg_mul_trace, trace_mulLeft_eq_deg_mul_reducedTrace]
-  field_simp
+  rw [semisimpleReducedTrace_eq_trace_reducedTrace_of_ne_zero F hdeg, Algebra.trace_self_apply]
 
 /-- On a central simple algebra in characteristic `0`, `semisimpleReducedTrace F B` is the reduced
 trace `TauCeti.Algebra.reducedTrace F B`. -/
 theorem semisimpleReducedTrace_eq_reducedTrace [CharZero F] (b : B) :
-    semisimpleReducedTrace F B b = reducedTrace F B b :=
-  semisimpleReducedTrace_eq_reducedTrace_of_ne_zero (by exact_mod_cast deg_ne_zero F B) b
+    semisimpleReducedTrace F B b = reducedTrace F B b := by
+  rw [semisimpleReducedTrace_eq_trace_reducedTrace F, Algebra.trace_self_apply]
 
 end Field
 
