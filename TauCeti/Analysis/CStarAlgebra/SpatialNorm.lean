@@ -46,8 +46,10 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 ## Main declarations
 
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
-  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap` and
-  `TauCeti.spatialTensorLinearMap_injective`.
+  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap`,
+  `TauCeti.spatialTensorLinearMap_injective`, and its invariance under the flip
+  `E ⊗₂ F ≃ F ⊗₂ E` (`TauCeti.spatialTensorLinearMap_comm_apply`,
+  `TauCeti.norm_spatialTensorLinearMap_comm`).
 * `NonUnitalStarSubalgebra.spatialTensorHom A B`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`,
   with `NonUnitalStarSubalgebra.spatialTensorHom_tmul` and
   `NonUnitalStarSubalgebra.spatialTensorHom_injective`.
@@ -136,6 +138,37 @@ theorem spatialTensorLinearMap_injective :
     · simp [hi]
     · simpa [map_finsuppSum, Finsupp.sum_apply, Finsupp.single_apply, hi] using this
   simpa using hωi
+
+/-! ### The flip -/
+
+/-- The flip of completed tensor products intertwines `spatialTensorLinearMap` and its flipped
+version. -/
+theorem spatialTensorLinearMap_comm_apply (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F'))
+    (u : Completion (E ⊗[𝕜] F)) :
+    spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)
+        ((commIsometry 𝕜 E F).completion u) =
+      (commIsometry 𝕜 E' F').completion (spatialTensorLinearMap 𝕜 E F E' F' x u) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => simpa using mapLCompletion_commIsometry_completion a b u
+  | add x y hx hy => simp only [map_add, add_apply, hx, hy]
+
+/-- The flip does not increase the norm of `spatialTensorLinearMap`. -/
+theorem norm_spatialTensorLinearMap_comm_le (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
+    ‖spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)‖ ≤
+      ‖spatialTensorLinearMap 𝕜 E F E' F' x‖ := by
+  refine opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  obtain ⟨u, rfl⟩ := (commIsometry 𝕜 E F).completion.surjective v
+  rw [spatialTensorLinearMap_comm_apply, LinearIsometryEquiv.norm_map,
+    LinearIsometryEquiv.norm_map]
+  exact le_opNorm _ _
+
+/-- **Flip invariance**: `‖(b ⊗ a)‖ = ‖(a ⊗ b)‖` for the spatial operator of a tensor and of its
+flip. -/
+theorem norm_spatialTensorLinearMap_comm (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
+    ‖spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)‖ =
+      ‖spatialTensorLinearMap 𝕜 E F E' F' x‖ := by
+  refine (norm_spatialTensorLinearMap_comm_le x).antisymm ?_
+  simpa using norm_spatialTensorLinearMap_comm_le (TensorProduct.comm 𝕜 _ _ x)
 
 end TauCeti
 
