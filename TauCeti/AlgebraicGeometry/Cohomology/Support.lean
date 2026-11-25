@@ -202,9 +202,13 @@ global functions. For `Z = X` this says `H^q_X(W, M) ≃ₗ H^q(W, M)`. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset {W : X.Opens}
     (hW : (W : Set X) ⊆ Z) (q : ℕ) : M.cohomologyWithSupport Z W q ≃ₗ[Γ(X, ⊤)] cohomologyOn M q W :=
   LinearEquiv.ofBijective (M.cohomologyWithSupportToCohomologyOn Z W q) <| by
-    have := (((toSheaf X).obj M).supportedHEquivOfSubset Z hW q).bijective
-    rwa [show ⇑(((toSheaf X).obj M).supportedHEquivOfSubset Z hW q) = _ from
-      funext fun x ↦ Sheaf.supportedHEquivOfSubset_apply _ Z hW x] at this
+    -- by their `_apply` lemmas, both maps evaluate to `relativeH'.toH'`
+    have h : ⇑(M.cohomologyWithSupportToCohomologyOn Z W q) =
+        ⇑(((toSheaf X).obj M).supportedHEquivOfSubset Z hW q) :=
+      funext fun x ↦ (M.cohomologyWithSupportToCohomologyOn_apply Z W q x).trans
+        (Sheaf.supportedHEquivOfSubset_apply _ Z hW x).symm
+    rw [h]
+    exact (((toSheaf X).obj M).supportedHEquivOfSubset Z hW q).bijective
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset_apply
