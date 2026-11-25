@@ -67,6 +67,8 @@ Hermitian row orthogonality.
   executable cyclotomic certificate.
 * `TauCeti.isCharacterTableSpec_specialLinearTwoThree`: the distinguished complex embedding of the
   displayed ordinary table is a character table of `SL(2, 3)`.
+* `TauCeti.irreducibleCharacters_specialLinearTwoThree`: the irreducible complex characters of
+  `SL(2, 3)` are the seven embedded rows.
 
 ## References
 
@@ -443,6 +445,17 @@ theorem isCharacterTableSpec_specialLinearTwoThree :
     IsCharacterTableSpec (SpecialLinearGroup (Fin 2) (ZMod 3))
       specialLinearTwoThreeComplexCharacterTable :=
   isCyclotomicCharacterTableSpec_specialLinearTwoThree.isCharacterTableSpec
+
+/-- **The irreducible characters of `SL(2, 3)`** are the seven rows of the exact table
+`TauCeti.specialLinearTwoThreeExactCharacterTable`, embedded in `ℂ` by
+`TauCeti.Cyclotomic.complexEmbedding` and read through the class numbering
+`TauCeti.specialLinearTwoThreeClassData.index`. -/
+theorem irreducibleCharacters_specialLinearTwoThree :
+    irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3)) = Set.range fun i g =>
+      Cyclotomic.complexEmbedding
+        (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index g)) :=
+  ClassData.IsExactCharacterTableSpec.irreducibleCharacters_eq_range
+    isCyclotomicCharacterTableSpec_specialLinearTwoThree _ Cyclotomic.complexEmbedding_star
 
 /-- **The Burnside--Dixon--Schneider algorithm, searching for its own prime with budget `2`,
 returns a character table of `SL(2, 3)`.** -/
