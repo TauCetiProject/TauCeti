@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Three
 public import TauCeti.NumberTheory.Cyclotomic.Completion
 
 /-!
@@ -29,8 +30,11 @@ namespace TauCeti.Examples.CyclotomicCompletionSeven
 local notation "F" => complexField 3
 local notation "ζ" => complexField.zetaInteger 3
 
+/-- Seven is prime, so `ZMod 7` is the field `𝔽₇`. -/
+local instance instFactPrimeSeven : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
+
 /-- The ring homomorphism `𝓞 F → 𝔽₇` sending `complexRoot 3` to a root `a` of `X² + X + 1`. -/
-noncomputable def toZModSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) : 𝓞 F →+* ZMod 7 :=
+private noncomputable def toZModSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) : 𝓞 F →+* ZMod 7 :=
   ((complexField.isPrimitiveRoot_zeta 3).integralPowerBasis.lift a <| by
     rw [IsPrimitiveRoot.integralPowerBasis_gen, ← NumberField.RingOfIntegers.minpoly_coe,
       IsPrimitiveRoot.coe_toInteger, ← cyclotomic_eq_minpoly (complexField.isPrimitiveRoot_zeta 3)
@@ -38,49 +42,61 @@ noncomputable def toZModSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) : 𝓞 F →
     simpa [add_assoc] using ha).toRingHom
 
 /-- `toZModSeven a ha` sends `complexRoot 3` to `a`. -/
-theorem toZModSeven_zeta (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) : toZModSeven a ha ζ = a := by
+private theorem toZModSeven_zetaInteger (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) :
+    toZModSeven a ha ζ = a := by
   rw [toZModSeven, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
     complexField.zetaInteger_eq_toInteger, ← IsPrimitiveRoot.integralPowerBasis_gen,
     PowerBasis.lift_gen]
 
+/-- `toZModSeven a ha` sends `7` to `0`. -/
+private theorem toZModSeven_natCast_seven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) :
+    toZModSeven a ha ((7 : ℕ) : 𝓞 F) = 0 := by
+  rw [map_natCast, ZMod.natCast_self]
+
 /-- The place of `F` cut out by `toZModSeven a ha`. -/
-noncomputable def placeSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) : HeightOneSpectrum (𝓞 F) where
+private noncomputable def placeSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) :
+    HeightOneSpectrum (𝓞 F) where
   asIdeal := RingHom.ker (toZModSeven a ha)
-  isPrime := by
-    have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
-    exact RingHom.ker_isPrime _
+  isPrime := RingHom.ker_isPrime _
   ne_bot := fun h ↦ by
-    have h7 : ((7 : ℕ) : 𝓞 F) ∈ RingHom.ker (toZModSeven a ha) := by
-      rw [RingHom.mem_ker, map_natCast]; rfl
+    have h7 := RingHom.mem_ker.2 (toZModSeven_natCast_seven a ha)
     rw [h, Ideal.mem_bot] at h7
     exact absurd h7 (by exact_mod_cast (show (7 : ℕ) ≠ 0 by norm_num))
 
+/-- Membership in `placeSeven a ha` is vanishing under `toZModSeven a ha`. -/
+private theorem mem_placeSeven_iff (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) {x : 𝓞 F} :
+    x ∈ (placeSeven a ha).asIdeal ↔ toZModSeven a ha x = 0 :=
+  RingHom.mem_ker
+
 /-- The place `placeSeven a ha` lies over `7`. -/
-theorem seven_mem_placeSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) :
-    ((7 : ℕ) : 𝓞 F) ∈ (placeSeven a ha).asIdeal := by
-  change _ ∈ RingHom.ker _
-  rw [RingHom.mem_ker, map_natCast]; rfl
+private theorem seven_mem_placeSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) :
+    ((7 : ℕ) : 𝓞 F) ∈ (placeSeven a ha).asIdeal :=
+  (mem_placeSeven_iff a ha).2 (toZModSeven_natCast_seven a ha)
+
+/-- If `n : ℕ` reduces to `a` in `𝔽₇`, then `complexRoot 3 - n` lies in `placeSeven a ha`. -/
+private theorem zetaInteger_sub_natCast_mem_placeSeven (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0)
+    (n : ℕ) (hn : (n : ZMod 7) = a) : ζ - n ∈ (placeSeven a ha).asIdeal := by
+  rw [mem_placeSeven_iff, map_sub, toZModSeven_zetaInteger, map_natCast, hn, sub_self]
 
 /-- At a place `v` of `F`, the reduction of `complexRoot 3` is the image of `n : ℕ` exactly when
 `complexRoot 3 - n` lies in `v`. -/
-theorem residue_zeta_eq_natCast_iff (v : HeightOneSpectrum (𝓞 F)) (n : ℕ) :
+private theorem residue_zetaInteger_eq_natCast_iff (v : HeightOneSpectrum (𝓞 F)) (n : ℕ) :
     residue (v.adicCompletionIntegers F) (algebraMap (𝓞 F) (v.adicCompletionIntegers F) ζ) = n ↔
       ζ - n ∈ v.asIdeal := by
-  rw [← v.under_maximalIdeal_adicCompletionIntegers (K := F), Ideal.mem_comap, map_sub,
-    map_natCast, ← residue_eq_zero_iff, map_sub, map_natCast, sub_eq_zero]
+  rw [← v.residue_algebraMap_adicCompletionIntegers_eq_iff (K := F), map_natCast, map_natCast]
 
 /-- At each place over `7` the reduction of `complexRoot 3` is `2` or `4`. -/
-theorem residue_zeta_eq_two_or_four (v : HeightOneSpectrum (𝓞 F))
+private theorem residue_zetaInteger_eq_two_or_four (v : HeightOneSpectrum (𝓞 F))
     (hv : ((7 : ℕ) : 𝓞 F) ∈ v.asIdeal) :
     residue (v.adicCompletionIntegers F) (algebraMap (𝓞 F) (v.adicCompletionIntegers F) ζ) = 2 ∨
       residue (v.adicCompletionIntegers F) (algebraMap (𝓞 F) (v.adicCompletionIntegers F) ζ) =
         4 := by
-  have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
   have hchar := v.charP_residueField_adicCompletionIntegers (K := F) 7 hv
   set ρ := residue (v.adicCompletionIntegers F) (algebraMap (𝓞 F) (v.adicCompletionIntegers F) ζ)
   have hζ : ζ ^ 2 + ζ + 1 = 0 := by
-    have := (complexField.isPrimitiveRoot_zetaInteger 3).geom_sum_eq_zero (by norm_num)
-    simpa [Finset.sum_range_succ, add_comm, add_left_comm, add_assoc] using this
+    rw [complexField.zetaInteger_eq_toInteger]
+    exact IsCyclotomicExtension.Rat.Three.eta_sq_add_eta_add_one
+      (complexField.isPrimitiveRoot_zeta 3)
   have hρ : ρ ^ 2 + ρ + 1 = 0 := by
     simpa [ρ] using congrArg (fun x ↦ residue (v.adicCompletionIntegers F)
       (algebraMap (𝓞 F) (v.adicCompletionIntegers F) x)) hζ
@@ -95,16 +111,13 @@ theorem residue_zeta_eq_two_or_four (v : HeightOneSpectrum (𝓞 F))
 /-- At each place over `7` the residue field is `𝔽₇`. -/
 example (v : HeightOneSpectrum (𝓞 F)) (hv : ((7 : ℕ) : 𝓞 F) ∈ v.asIdeal) :
     Nat.card (ResidueField (v.adicCompletionIntegers F)) = 7 := by
-  have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
-  have := v.charP_residueField_adicCompletionIntegers (K := F) 7 hv
-  let χ := ZMod.castHom (dvd_refl 7) (ResidueField (v.adicCompletionIntegers F))
-  have hχ : Function.Bijective χ := by
-    refine ⟨χ.injective, RingHom.range_eq_top.1 (eq_top_iff.2 ?_)⟩
-    rw [← closure_residue_zetaInteger_eq_top v, Subring.closure_le, Set.singleton_subset_iff]
-    rcases residue_zeta_eq_two_or_four v hv with h | h
-    · exact ⟨2, by rw [h, map_ofNat]⟩
-    · exact ⟨4, by rw [h, map_ofNat]⟩
-  rw [← Nat.card_eq_of_bijective χ hχ, Nat.card_zmod]
+  have hpe : ordProj[7] 3 = 1 := by
+    rw [Nat.factorization_eq_zero_of_not_dvd (by norm_num), pow_zero]
+  rcases residue_zetaInteger_eq_two_or_four v hv with h | h
+  · exact natCard_residueField_of_residue_zetaInteger_pow_ordProj_eq_natCast v 7 hv (n := 2)
+      (by rw [hpe, pow_one, h, Nat.cast_ofNat])
+  · exact natCard_residueField_of_residue_zetaInteger_pow_ordProj_eq_natCast v 7 hv (n := 4)
+      (by rw [hpe, pow_one, h, Nat.cast_ofNat])
 
 /-- There are two places over `7`, at which `complexRoot 3` reduces to `2` and to `4`. -/
 example : ∃ v w : HeightOneSpectrum (𝓞 F), v ≠ w ∧
@@ -114,15 +127,11 @@ example : ∃ v w : HeightOneSpectrum (𝓞 F), v ≠ w ∧
       4 := by
   have h2 : (2 : ZMod 7) ^ 2 + 2 + 1 = 0 := by decide
   have h4 : (4 : ZMod 7) ^ 2 + 4 + 1 = 0 := by decide
-  have hmem (a : ZMod 7) (ha : a ^ 2 + a + 1 = 0) (n : ℕ) (hn : (n : ZMod 7) = a) :
-      ζ - n ∈ (placeSeven a ha).asIdeal := by
-    change _ ∈ RingHom.ker _
-    rw [RingHom.mem_ker, map_sub, toZModSeven_zeta, map_natCast, hn, sub_self]
-  have hv := hmem 2 h2 2 rfl
-  have hw := hmem 4 h4 4 rfl
+  have hv := zetaInteger_sub_natCast_mem_placeSeven 2 h2 2 rfl
+  have hw := zetaInteger_sub_natCast_mem_placeSeven 4 h4 4 rfl
   refine ⟨placeSeven 2 h2, placeSeven 4 h4, fun h ↦ ?_, seven_mem_placeSeven 2 h2,
-    seven_mem_placeSeven 4 h4, (residue_zeta_eq_natCast_iff _ 2).2 hv,
-    (residue_zeta_eq_natCast_iff _ 4).2 hw⟩
+    seven_mem_placeSeven 4 h4, (residue_zetaInteger_eq_natCast_iff _ 2).2 hv,
+    (residue_zetaInteger_eq_natCast_iff _ 4).2 hw⟩
   rw [h] at hv
   have h1 : (1 : 𝓞 F) ∈ (placeSeven 4 h4).asIdeal := by
     have := (placeSeven 4 h4).asIdeal.sub_mem hv hw
