@@ -27,13 +27,7 @@ fixed finite set of coordinates meeting every orbit are equal. Hence:
   shift-invariant subset (`TauCeti.IsExpansiveAction.subMulAction`);
 * for the metric `dist x y = (1/2)^n`, where `n` is the first coordinate at which `x` and `y`
   differ (Mathlib's `PiNat.metricSpace`), the one-sided full shift over a discrete alphabet is
-  positively expansive with constant `3/4` (`TauCeti.isPositivelyExpansive_shift_piNat`):
-  distinct sequences first differ at some `k`, and their `k`-th shifts are at distance `1`.
-
-## References
-
-These are the full-shift and subshift parts of §5.3 of the Tau Ceti roadmap
-`ClassicalErgodicTheory`, with its one-sided shift Check.
+  positively expansive with constant `3/4` (`TauCeti.isPositivelyExpansive_shift_piNat`).
 -/
 
 public section
@@ -83,8 +77,7 @@ theorem isExpansiveAction_iterateMulAct_shift_nat [UniformSpace α] [DiscreteUni
 
 /-- For the metric `dist x y = (1/2)^n` on `ℕ → α`, where `n` is the first coordinate at which `x`
 and `y` differ, the one-sided full shift over a discrete alphabet is positively expansive with
-constant `3/4`: distinct sequences first differ at some `k`, and their `k`-th shifts differ at
-`0`, so they are at distance `1`. -/
+constant `3/4`. -/
 theorem isPositivelyExpansive_shift_piNat [TopologicalSpace α] [DiscreteTopology α] :
     letI := PiNat.metricSpace (E := fun _ : ℕ ↦ α)
     IsPositivelyExpansive (shift (1 : ℕ) : (ℕ → α) → ℕ → α) (3 / 4) := by
