@@ -772,6 +772,10 @@ theorem eq_one_of_length_eq_zero {γ : MooreLoopSpace X x} (h : γ.length = 0) :
 theorem length_eq_zero_iff {γ : MooreLoopSpace X x} : γ.length = 0 ↔ γ = 1 :=
   ⟨eq_one_of_length_eq_zero, fun h ↦ h ▸ length_one⟩
 
+/-- The only Moore loop of length zero is the unit. -/
+theorem length_preimage_singleton_zero : (length ⁻¹' {0} : Set (MooreLoopSpace X x)) = {1} :=
+  Set.ext fun _ ↦ length_eq_zero_iff
+
 @[simp]
 theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
   (rfl)

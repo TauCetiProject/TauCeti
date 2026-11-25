@@ -31,10 +31,11 @@ projection of the fibre product. Its fibre over a Moore loop `γ` at `x` is ther
 Moore loops at `y` of the length of `γ` (`TauCeti.MooreLoopSpace.fiberFstHomeomorph`). For a loop
 `γ` of positive length `L`, reparametrizing to the unit interval identifies these with the loop
 space `Path y y` (`TauCeti.MooreLoopSpace.lengthLevelHomeomorph`), while over the unit, of length
-zero, the fibre is a single point (`TauCeti.MooreLoopSpace.length_preimage_singleton_zero`). This
-is the case of a product of the description of the Moore loop map of a Hurewicz fibration in
-`TauCeti.Topology.PathSpace.Moore.LoopFibration`: over the Moore loops of positive length its
-fibres are copies of the loop space of the fibre, while over the unit the fibre is a point.
+zero, the fibre is a single point (`TauCeti.MooreLoopSpace.length_preimage_singleton_zero`). For a
+general continuous map, `TauCeti.Topology.PathSpace.Moore.LoopFibration` identifies the fibre of
+its Moore loop map with the loop space of the fibre only over the constant loops of positive length
+(`TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`). For the first projection of a product the
+description extends to every Moore loop of positive length.
 
 ## Main definitions
 
@@ -45,8 +46,6 @@ fibres are copies of the loop space of the fibre, while over the unit the fibre 
 * `TauCeti.MooreLoopSpace.prodContinuousMulEquiv`: `Ω_{(x, y)}(X × Y) ≅ Ω_x X ×_{[0, ∞)} Ω_y Y`.
 * `TauCeti.MooreLoopSpace.fiberFstHomeomorph`: the fibre of the Moore loop map of the first
   projection over `γ` is the space of Moore loops at `y` of the length of `γ`.
-* `TauCeti.MooreLoopSpace.lengthLevelHomeomorph`: for `L > 0`, the Moore loops of length `L` form a
-  copy of the loop space.
 
 ## References
 
@@ -94,7 +93,7 @@ theorem source_prod (γ : MoorePath X) (δ : MoorePath Y) (h : γ.length = δ.le
 @[simp]
 theorem target_prod (γ : MoorePath X) (δ : MoorePath Y) (h : γ.length = δ.length) :
     (γ.prod δ h).target = (γ.target, δ.target) := by
-  rw [target_def, length_prod, prod_apply, target_def, target_def, h]
+  simp [target_def, h]
 
 @[simp]
 theorem map_fst_prod (γ : MoorePath X) (δ : MoorePath Y) (h : γ.length = δ.length) :
@@ -157,20 +156,19 @@ variable {x : X} {y : Y}
 /-- The **product of two Moore loops of equal length**, a Moore loop in `X × Y` at `(x, y)`. -/
 def prod (γ : MooreLoopSpace X x) (δ : MooreLoopSpace Y y) (h : γ.length = δ.length) :
     MooreLoopSpace (X × Y) (x, y) :=
-  ⟨γ.toMoorePath.prod δ.toMoorePath (by rw [length_toMoorePath, length_toMoorePath, h]), by simp,
-    by simp⟩
+  ⟨γ.toMoorePath.prod δ.toMoorePath (by simpa using h), by simp, by simp⟩
 
 @[simp]
 theorem toMoorePath_prod (γ : MooreLoopSpace X x) (δ : MooreLoopSpace Y y)
     (h : γ.length = δ.length) :
     (γ.prod δ h).toMoorePath =
-      γ.toMoorePath.prod δ.toMoorePath (by rw [length_toMoorePath, length_toMoorePath, h]) :=
+      γ.toMoorePath.prod δ.toMoorePath (by simpa using h) :=
   (rfl)
 
 @[simp]
 theorem length_prod (γ : MooreLoopSpace X x) (δ : MooreLoopSpace Y y) (h : γ.length = δ.length) :
     (γ.prod δ h).length = γ.length := by
-  rw [← length_toMoorePath, toMoorePath_prod, MoorePath.length_prod, length_toMoorePath]
+  simp [← length_toMoorePath]
 
 @[simp]
 theorem map_fst_prod (γ : MooreLoopSpace X x) (δ : MooreLoopSpace Y y)
@@ -191,6 +189,14 @@ theorem prod_map_fst_map_snd (γ : MooreLoopSpace (X × Y) (x, y)) :
       (map (ContinuousMap.snd : C(X × Y, Y)) rfl γ)
       ((length_map _ _ _).trans (length_map _ _ _).symm) = γ :=
   ext (by simp)
+
+/-- The second component of a Moore loop in `X × Y` whose first component is `γ` has the length
+of `γ`. -/
+theorem length_map_snd_of_map_fst_eq {γ : MooreLoopSpace X x}
+    {η : MooreLoopSpace (X × Y) (x, y)} (hη : map (ContinuousMap.fst : C(X × Y, X)) rfl η = γ) :
+    (map (ContinuousMap.snd : C(X × Y, Y)) rfl η).length = γ.length := by
+  subst hη
+  exact (length_map _ _ _).trans (length_map _ _ _).symm
 
 /-- A Moore loop in `X × Y` whose first component is `γ` is the product of `γ` with its second
 component. -/
@@ -283,19 +289,14 @@ def fiberFstHomeomorph (γ : MooreLoopSpace X x) :
     (map (ContinuousMap.fst : C(X × Y, X)) rfl ⁻¹' {γ} : Set (MooreLoopSpace (X × Y) (x, y))) ≃ₜ
       (length ⁻¹' {γ.length} : Set (MooreLoopSpace Y y)) where
   toFun η := ⟨map (ContinuousMap.snd : C(X × Y, Y)) rfl η.val,
-    mem_preimage.2 (mem_singleton_iff.2 ((length_map _ _ _).trans ((length_map _ _ _).symm.trans
-      (congrArg length (mem_singleton_iff.1 (mem_preimage.1 η.property))))))⟩
-  invFun δ := ⟨γ.prod δ.val (mem_singleton_iff.1 (mem_preimage.1 δ.property)).symm,
-    mem_preimage.2 (mem_singleton_iff.2 (map_fst_prod _ _ _))⟩
-  left_inv η := Subtype.ext <|
-    prod_map_snd_of_map_fst_eq (mem_singleton_iff.1 (mem_preimage.1 η.property)) <|
-      (congrArg length (mem_singleton_iff.1 (mem_preimage.1 η.property))).symm.trans
-        ((length_map _ _ _).trans (length_map _ _ _).symm)
-  right_inv δ := Subtype.ext <|
-    map_snd_prod γ δ.val (mem_singleton_iff.1 (mem_preimage.1 δ.property)).symm
+    length_map_snd_of_map_fst_eq (eq_of_mem_singleton η.property)⟩
+  invFun δ := ⟨γ.prod δ.val (eq_of_mem_singleton δ.property).symm, map_fst_prod _ _ _⟩
+  left_inv η := Subtype.ext <| prod_map_snd_of_map_fst_eq (eq_of_mem_singleton η.property)
+    (length_map_snd_of_map_fst_eq (eq_of_mem_singleton η.property)).symm
+  right_inv δ := Subtype.ext <| map_snd_prod γ δ.val (eq_of_mem_singleton δ.property).symm
   continuous_toFun := ((map _ _).continuous.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun := (continuous_const.mooreLoopSpace_prod continuous_subtypeVal
-    fun δ ↦ (mem_singleton_iff.1 (mem_preimage.1 δ.property)).symm).subtype_mk _
+    fun δ ↦ (eq_of_mem_singleton (mem_preimage.1 δ.property)).symm).subtype_mk _
 
 @[simp]
 theorem coe_fiberFstHomeomorph_apply (γ : MooreLoopSpace X x)
@@ -309,42 +310,8 @@ theorem coe_fiberFstHomeomorph_apply (γ : MooreLoopSpace X x)
 theorem coe_fiberFstHomeomorph_symm_apply (γ : MooreLoopSpace X x)
     (δ : (length ⁻¹' {γ.length} : Set (MooreLoopSpace Y y))) :
     ((fiberFstHomeomorph γ).symm δ : MooreLoopSpace (X × Y) (x, y)) =
-      γ.prod δ.val (mem_singleton_iff.1 (mem_preimage.1 δ.property)).symm :=
+      γ.prod δ.val (eq_of_mem_singleton δ.property).symm :=
   (rfl)
-
-/-- The only Moore loop of length zero is the unit, so over the unit the fibre of the Moore loop
-map of the first projection is a single point. -/
-theorem length_preimage_singleton_zero :
-    (length ⁻¹' {0} : Set (MooreLoopSpace Y y)) = {1} :=
-  Set.ext fun _ ↦ length_eq_zero_iff
-
-variable (y) in
-/-- **Moore loops of a fixed positive length are loops on the unit interval**: for `L > 0`, a Moore
-loop of length `L` is sent to its reparametrization to the unit interval, and a loop on the unit
-interval to the same loop run in time `L`. This is the restriction of
-`TauCeti.MooreLoopSpace.posLengthHomeomorph` to the length `L`. -/
-def lengthLevelHomeomorph {L : ℝ≥0} (hL : 0 < L) :
-    (length ⁻¹' {L} : Set (MooreLoopSpace Y y)) ≃ₜ Path y y where
-  toFun δ := δ.val.toPath
-  invFun c := ⟨((posLengthHomeomorph y).symm (⟨L, hL⟩, c)).val,
-    mem_preimage.2 (mem_singleton_iff.2 (length_posLengthHomeomorph_symm_apply _))⟩
-  left_inv δ := Subtype.ext <| coe_posLengthHomeomorph_symm_mk_toPath δ.val hL
-    (mem_singleton_iff.1 (mem_preimage.1 δ.property))
-  right_inv _ := toPath_posLengthHomeomorph_symm_apply _
-  continuous_toFun := continuous_toPath.comp continuous_subtypeVal
-  continuous_invFun := (continuous_subtypeVal.comp ((posLengthHomeomorph y).symm.continuous.comp
-    (continuous_const.prodMk continuous_id))).subtype_mk _
-
-@[simp]
-theorem lengthLevelHomeomorph_apply {L : ℝ≥0} (hL : 0 < L)
-    (δ : (length ⁻¹' {L} : Set (MooreLoopSpace Y y))) :
-    lengthLevelHomeomorph y hL δ = δ.val.toPath :=
-  (rfl)
-
-@[simp]
-theorem toMoorePath_lengthLevelHomeomorph_symm_apply {L : ℝ≥0} (hL : 0 < L) (c : Path y y) :
-    ((lengthLevelHomeomorph y hL).symm c).val.toMoorePath = c.toMoorePath.rescale L :=
-  toMoorePath_posLengthHomeomorph_symm_apply (⟨L, hL⟩, c)
 
 end MooreLoopSpace
 
