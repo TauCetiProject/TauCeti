@@ -831,6 +831,15 @@ theorem baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     ρ.baseChange B g = (ρ g).baseChange B :=
   Representation.baseChange_apply ρ.toRepresentation g
 
+/-- If `g` acts on `M` by the scalar `c`, it acts on the base change `B ⊗[A] M` by the image of
+`c` in `B`. -/
+theorem baseChange_apply_of_forall_apply_eq_smul (ρ : ContinuousRep Γ A M) {g : Γ} {c : A}
+    (h : ∀ x, ρ g x = c • x) (y : B ⊗[A] M) : ρ.baseChange B g y = algebraMap A B c • y := by
+  rw [baseChange_apply]
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => rw [map_add, hy, hz, smul_add]
+  | tmul b x => rw [LinearMap.baseChange_tmul, h, TensorProduct.tmul_smul, algebraMap_smul]
+
 section Iso
 
 variable {N : Type*} [AddCommMonoid N] [Module A N] [TopologicalSpace N] [IsModuleTopology A N]
