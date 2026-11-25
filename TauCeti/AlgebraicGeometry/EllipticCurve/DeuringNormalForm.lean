@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GammaOneThreeForm
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.SplittingField.Construction
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
@@ -81,21 +82,21 @@ variable {R : Type*} [CommRing R]
 /-! ### The Deuring normal form -/
 
 /-- The Weierstrass curve `Y² + aXY + Y = X³` in **Deuring normal form**: `a₁ = a`, `a₃ = 1` and
-`a₂ = a₄ = a₆ = 0`. -/
-def deuringNormalForm (a : R) : WeierstrassCurve R where
-  a₁ := a
-  a₂ := 0
-  a₃ := 1
-  a₄ := 0
-  a₆ := 0
+`a₂ = a₄ = a₆ = 0`. It is the case `a₃ = 1` of `WeierstrassCurve.gammaOneThreeForm`. -/
+def deuringNormalForm (a : R) : WeierstrassCurve R :=
+  gammaOneThreeForm a 1
 
 variable (a : R)
 
-@[simp] theorem deuringNormalForm_a₁ : (deuringNormalForm a).a₁ = a := (rfl)
-@[simp] theorem deuringNormalForm_a₂ : (deuringNormalForm a).a₂ = 0 := (rfl)
-@[simp] theorem deuringNormalForm_a₃ : (deuringNormalForm a).a₃ = 1 := (rfl)
-@[simp] theorem deuringNormalForm_a₄ : (deuringNormalForm a).a₄ = 0 := (rfl)
-@[simp] theorem deuringNormalForm_a₆ : (deuringNormalForm a).a₆ = 0 := (rfl)
+/-- The Deuring normal form is the curve `Y² + a₁XY + a₃Y = X³` with `a₁ = a` and `a₃ = 1`. -/
+theorem deuringNormalForm_eq_gammaOneThreeForm : deuringNormalForm a = gammaOneThreeForm a 1 :=
+  (rfl)
+
+@[simp] theorem deuringNormalForm_a₁ : (deuringNormalForm a).a₁ = a := gammaOneThreeForm_a₁ _ _
+@[simp] theorem deuringNormalForm_a₂ : (deuringNormalForm a).a₂ = 0 := gammaOneThreeForm_a₂ _ _
+@[simp] theorem deuringNormalForm_a₃ : (deuringNormalForm a).a₃ = 1 := gammaOneThreeForm_a₃ _ _
+@[simp] theorem deuringNormalForm_a₄ : (deuringNormalForm a).a₄ = 0 := gammaOneThreeForm_a₄ _ _
+@[simp] theorem deuringNormalForm_a₆ : (deuringNormalForm a).a₆ = 0 := gammaOneThreeForm_a₆ _ _
 
 @[simp]
 theorem deuringNormalForm_b₂ : (deuringNormalForm a).b₂ = a ^ 2 := by
@@ -115,19 +116,19 @@ theorem deuringNormalForm_b₈ : (deuringNormalForm a).b₈ = 0 := by
 
 @[simp]
 theorem deuringNormalForm_c₄ : (deuringNormalForm a).c₄ = a * (a ^ 3 - 24) := by
-  rw [c₄, deuringNormalForm_b₂, deuringNormalForm_b₄]
+  rw [deuringNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_c₄]
   ring
 
 /-- The `c₆` of the Deuring normal form `Y² + aXY + Y = X³` is `-a⁶ + 36a³ - 216`. -/
 @[simp]
 theorem deuringNormalForm_c₆ : (deuringNormalForm a).c₆ = -a ^ 6 + 36 * a ^ 3 - 216 := by
-  rw [c₆, deuringNormalForm_b₂, deuringNormalForm_b₄, deuringNormalForm_b₆]
+  rw [deuringNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_c₆]
   ring
 
 /-- The discriminant of the Deuring normal form `Y² + aXY + Y = X³` is `a³ - 27`. -/
 @[simp]
 theorem deuringNormalForm_Δ : (deuringNormalForm a).Δ = a ^ 3 - 27 := by
-  rw [Δ, deuringNormalForm_b₂, deuringNormalForm_b₄, deuringNormalForm_b₆, deuringNormalForm_b₈]
+  rw [deuringNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_Δ]
   ring
 
 /-- The Deuring normal form `Y² + aXY + Y = X³` is elliptic exactly when `a³ - 27` is a unit. -/
@@ -156,7 +157,7 @@ theorem eval_Ψ₃_deuringNormalForm_zero : (deuringNormalForm a).Ψ₃.eval 0 =
 @[simp]
 theorem map_deuringNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
     (deuringNormalForm a).map φ = deuringNormalForm (φ a) := by
-  ext <;> simp
+  simp [deuringNormalForm_eq_gammaOneThreeForm]
 
 /-! ### Changes of variables to Deuring normal form -/
 

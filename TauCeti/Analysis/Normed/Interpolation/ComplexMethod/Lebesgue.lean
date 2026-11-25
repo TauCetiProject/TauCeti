@@ -238,21 +238,23 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {α : Type*} {m�
 private def fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠ ∞) (c : E) :
     (lebesgue ℂ E μ p₀ p₁).inter :=
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  have h₀ : MemLp (fiber f c) p₀ μ := SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₀ c
-  have h₁ : MemLp (fiber f c) p₁ μ := SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₁ c
+  have h₀ : MemLp (fiber f c) p₀ μ :=
+    SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf hp0 hp_top p₀ c
+  have h₁ : MemLp (fiber f c) p₁ μ :=
+    SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf hp0 hp_top p₁ c
   ⟨(h₀.toLp _, h₁.toLp _), mem_lebesgue_inter_iff.2 (h₀.coeFn_toLp.trans h₁.coeFn_toLp.symm)⟩
 
 private theorem interFst_fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠ ∞)
     (c : E) : (lebesgue ℂ E μ p₀ p₁).interFst (fiberInter hf hp_top c) =
-      (SimpleFunc.memLp_restrict_const_fiber hf (zero_lt_one.trans_le Fact.out).ne' hp_top p₀
-        c).toLp (fiber f c) := by
+      (SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf (zero_lt_one.trans_le Fact.out).ne'
+        hp_top p₀ c).toLp (fiber f c) := by
   rw [interFst_apply]
   rfl
 
 private theorem interSnd_fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠ ∞)
     (c : E) : (lebesgue ℂ E μ p₀ p₁).interSnd (fiberInter hf hp_top c) =
-      (SimpleFunc.memLp_restrict_const_fiber hf (zero_lt_one.trans_le Fact.out).ne' hp_top p₁
-        c).toLp (fiber f c) := by
+      (SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf (zero_lt_one.trans_le Fact.out).ne'
+        hp_top p₁ c).toLp (fiber f c) := by
   rw [interSnd_apply]
   rfl
 
@@ -280,7 +282,8 @@ private theorem sumSpaceEmbed_sumFamily_self {s : ℝ} (f : SimpleFunc α E) (hf
     (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (sumFamily (lebesgue ℂ E μ p₀ p₁) f.range (coeff θ s)
       (fiberInter hf hp_top) θ ((refl ℂ ℂ).fstToSum 1)) = L1AddLinfty.ofLp g := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  have h₀ : ∀ c, MemLp (fiber f c) p₀ μ := SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₀
+  have h₀ : ∀ c, MemLp (fiber f c) p₀ μ :=
+    SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf hp0 hp_top p₀
   have hG : (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (sumFamily (lebesgue ℂ E μ p₀ p₁) f.range
       (coeff θ s) (fiberInter hf hp_top) θ ((refl ℂ ℂ).fstToSum 1)) =
         L1AddLinfty.ofLp (∑ c ∈ f.range, coeff θ s c θ • (h₀ c).toLp (fiber f c)) := by
@@ -318,10 +321,10 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le (hθ : θ ∈ Icc (0 :
   have hre₀ (t : ℝ) : (t * I : ℂ).re = 0 := by simp
   have hre₁ (t : ℝ) : (1 + t * I : ℂ).re = 1 := by simp
   have h₀ (t : ℝ) := norm_toSpanSingleton_sum_coeff_smul_le (z := t * I) f hf (q := p₀)
-    (SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₀)
+    (SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf hp0 hp_top p₀)
     (by rwa [hre₀]) (by rwa [hre₀])
   have h₁ (t : ℝ) := norm_toSpanSingleton_sum_coeff_smul_le (z := 1 + t * I) f hf (q := p₁)
-    (SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₁)
+    (SimpleFunc.memLp_restrict_const_fiber eNorm_zero hf hp0 hp_top p₁)
     (by rwa [hre₁]) (by rwa [hre₁])
   simp only [hre₀, hre₁] at h₀ h₁
   -- Stein's theorem applied to `1 ∈ [ℂ, ℂ]_θ`

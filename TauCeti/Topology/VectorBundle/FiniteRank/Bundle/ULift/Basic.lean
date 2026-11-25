@@ -13,12 +13,12 @@ public import TauCeti.Topology.VectorBundle.ULift
 /-!
 # Universe lifting for variable-rank vector bundles
 
-For `V : FiniteRankVectorBundle.{u, v, w} 𝕜 X`, `V.ulift` lifts every fibre to
+For `V : FiniteRankBundle.{w} 𝕜 X`, `V.ulift` lifts every fibre to
 `ULift.{w'} (V.Fiber x)` in `Type (max w w')`, equipped with the fibrewise equivalence
 `ContinuousLinearEquiv.ulift` and glued total-space comparison `uliftTotalSpaceHomeomorph`. This
-defines `uliftFunctor 𝕜 X : FiniteRankVectorBundle.{u, v, w} 𝕜 X ⥤`
-`FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X`, which is unconditionally additive in all universes
-`u, v, w, w'`. For its comparison with `toAtlasFunctor` and full faithfulness, see
+defines `uliftFunctor 𝕜 X : FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankBundle.{max w w'} 𝕜 X`,
+which is unconditionally additive in all universes `w, w', u, v`. For its comparison with
+`toAtlasFunctor` and full faithfulness, see
 `TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift.Comparison`.
 
 ## References
@@ -31,32 +31,34 @@ public section
 
 open Bundle CategoryTheory Topology
 
-namespace TauCeti.FiniteRankVectorBundle
+namespace TauCeti.FiniteRankBundle
 
-open VariableRankBundle
-
-universe u v w w'
+universe w w' u v
 
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] {X : Type u} [TopologicalSpace X]
 
 section ULift
-variable (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
+
+variable (V : FiniteRankBundle.{w} 𝕜 X)
+
 /-- Lift the fibres of a variable-rank vector bundle from `Type w` to `Type (max w w')`. -/
 -- Expose the rank and fibre projections so `V.ulift.Fiber` reduces to `ULift (V.Fiber ·)`.
 @[expose, implicit_reducible] noncomputable def ulift :
-    FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X :=
+    FiniteRankBundle.{max w w'} 𝕜 X :=
   { rank := V.rank, Fiber x := ULift.{w'} (V.Fiber x) }
+
 @[simp] theorem rank_ulift :
-    (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).rank = V.rank := by rfl
+    (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).rank = V.rank := by rfl
+
 @[simp] theorem fiber_ulift (x : X) :
-    (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber x =
+    (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).Fiber x =
       ULift.{w'} (V.Fiber x) := by rfl
 
 /-- On `V.ulift`, the preferred stratum chart equivalence at `x` factors through
 `ContinuousLinearEquiv.ulift`. -/
 @[simp] theorem continuousLinearEquivAt_ulift (x : X) :
     VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
-      ((V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).StratumFiber (V.rank x))
+      ((V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).StratumFiber (V.rank x))
       ⟨x, rfl⟩ =
       (ContinuousLinearEquiv.ulift : ULift.{w'} (V.Fiber x) ≃L[𝕜] V.Fiber x).trans
         (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
@@ -70,33 +72,36 @@ variable (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
 /-- The glued total space of `V.ulift` is homeomorphic over `X` to `TotalSpace Unit V.Fiber` via
 `ULift.down` on fibres. -/
 noncomputable def uliftTotalSpaceHomeomorph :
-    TotalSpace Unit (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber ≃ₜ
+    TotalSpace Unit (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).Fiber ≃ₜ
       TotalSpace Unit V.Fiber :=
-  (VariableRankBundle.totalSpaceHomeomorph
-      (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X)).symm.trans
+  (FiniteRankBundle.totalSpaceHomeomorph
+      (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X)).symm.trans
     ((Homeomorph.sigmaCongrRight fun n ↦
         TauCeti.uliftTotalSpaceHomeomorph (Fin n → 𝕜) (V.StratumFiber n)).trans
-      (VariableRankBundle.totalSpaceHomeomorph V))
+      (FiniteRankBundle.totalSpaceHomeomorph V))
+
 @[simp] theorem uliftTotalSpaceHomeomorph_apply
-    (p : TotalSpace Unit (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber) :
+    (p : TotalSpace Unit (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).Fiber) :
     V.uliftTotalSpaceHomeomorph p = ⟨p.proj, p.snd.down⟩ := by
   simp only [uliftTotalSpaceHomeomorph, Homeomorph.trans_apply, Homeomorph.sigmaCongrRight_apply,
-    FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply, TauCeti.uliftTotalSpaceHomeomorph_apply,
-    FiniteRankVectorBundle.totalSpaceHomeomorph_apply]
+    FiniteRankBundle.totalSpaceHomeomorph_symm_apply, TauCeti.uliftTotalSpaceHomeomorph_apply,
+    FiniteRankBundle.totalSpaceHomeomorph_apply]
+
 @[simp] theorem uliftTotalSpaceHomeomorph_symm_apply (p : TotalSpace Unit V.Fiber) :
     (V.uliftTotalSpaceHomeomorph : TotalSpace Unit
-      (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber ≃ₜ _).symm p =
+      (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).Fiber ≃ₜ _).symm p =
       ⟨p.proj, ULift.up p.snd⟩ := by
   simp only [uliftTotalSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
-    Homeomorph.sigmaCongrRight_symm_apply, FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply,
-    TauCeti.uliftTotalSpaceHomeomorph_symm_apply, FiniteRankVectorBundle.totalSpaceHomeomorph_apply]
+    Homeomorph.sigmaCongrRight_symm_apply, FiniteRankBundle.totalSpaceHomeomorph_symm_apply,
+    TauCeti.uliftTotalSpaceHomeomorph_symm_apply, FiniteRankBundle.totalSpaceHomeomorph_apply]
+
 end ULift
 
 variable (𝕜 X) in
 /-- Lift variable-rank vector bundles and their morphisms from fibre universe `w` to `max w w'`. -/
 -- Expose the object assignment so evaluated morphisms act on `ULift (V.Fiber ·)`.
 @[expose, implicit_reducible] noncomputable def uliftFunctor :
-    FiniteRankVectorBundle.{u, v, w} 𝕜 X ⥤ FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X where
+    FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankBundle.{max w w'} 𝕜 X where
   obj V := V.ulift
   map {V W} f :=
     { fiberMap x := (ContinuousLinearEquiv.ulift :
@@ -107,7 +112,7 @@ variable (𝕜 X) in
         (f.totalSpaceMap.continuous.comp V.uliftTotalSpaceHomeomorph.continuous)).congr
         fun p ↦ by
           simp only [Function.comp_apply, uliftTotalSpaceHomeomorph_apply,
-            VariableRankBundle.Hom.totalSpaceMap_mk, uliftTotalSpaceHomeomorph_symm_apply,
+            FiniteRankBundle.Hom.totalSpaceMap_mk, uliftTotalSpaceHomeomorph_symm_apply,
             LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
             ContinuousLinearEquiv.ulift_symm_apply]
           rw [ContinuousLinearEquiv.ulift_apply] }
@@ -119,16 +124,20 @@ variable (𝕜 X) in
   map_comp _ _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ ULift.ext (by
     simp only [fiberMap_comp, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.apply_symm_apply])
-@[simp] theorem uliftFunctor_obj (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X) :
-    (uliftFunctor.{u, v, w, w'} 𝕜 X).obj V =
-      (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X) := by rfl
-variable {V W : FiniteRankVectorBundle.{u, v, w} 𝕜 X}
+
+@[simp] theorem uliftFunctor_obj (V : FiniteRankBundle.{w} 𝕜 X) :
+    (uliftFunctor.{w, w'} 𝕜 X).obj V =
+      (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X) := by rfl
+
+variable {V W : FiniteRankBundle.{w} 𝕜 X}
+
 @[simp] theorem fiberMap_uliftFunctor_map_apply (f : V ⟶ W) (x : X)
-    (v : ((uliftFunctor.{u, v, w, w'} 𝕜 X).obj V).Fiber x) :
-    ((uliftFunctor.{u, v, w, w'} 𝕜 X).map f).fiberMap x v = ULift.up (f.fiberMap x v.down) := by rfl
-instance : (uliftFunctor.{u, v, w, w'} 𝕜 X).Additive where
+    (v : ((uliftFunctor.{w, w'} 𝕜 X).obj V).Fiber x) :
+    ((uliftFunctor.{w, w'} 𝕜 X).map f).fiberMap x v = ULift.up (f.fiberMap x v.down) := by rfl
+
+instance : (uliftFunctor.{w, w'} 𝕜 X).Additive where
   map_add {_ _ _ _} := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
     simp only [fiberMap_add, LinearMap.add_apply, fiberMap_uliftFunctor_map_apply]
     exact (ULift.ext ULift.add_down).symm
 
-end TauCeti.FiniteRankVectorBundle
+end TauCeti.FiniteRankBundle

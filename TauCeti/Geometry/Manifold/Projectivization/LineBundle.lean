@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
@@ -13,7 +14,6 @@ public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The line bundles `𝒪(k)` on projective space
@@ -54,7 +54,8 @@ is injective on homogeneous polynomials of degree `d`
 * `Projectivization.twistCore k`: the vector-bundle core of `𝒪(k)`.
 * `Projectivization.isContMDiff_twistCore`: `𝒪(k)` is an analytic line bundle.
 * `Projectivization.contMDiff_section_twistCore_iff`: a section of `𝒪(k)` is `C^r` exactly when
-  its coordinate in every standard chart is `C^r` on that chart.
+  its coordinate in every standard chart is `C^r` on that chart;
+  `Projectivization.mdifferentiable_section_twistCore_iff` is the differentiable version.
 * `Projectivization.homogeneousSection`: the section of `𝒪(d)` defined by a homogeneous
   polynomial of degree `d`, analytic by `Projectivization.contMDiff_homogeneousSection`.
 
@@ -204,30 +205,23 @@ theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph ((twistCore k).indexAt x) :=
   (rfl)
 
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
+on `v`. -/
+theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
+    v ((twistCore (𝕜 := 𝕜) k).indexAt (mk 𝕜 v hv)) ≠ 0 := by
+  have hx := (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at (mk 𝕜 v hv)
+  rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
+
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `x` does not vanish on the
+chosen representative. -/
+theorem rep_indexAt_twistCore_ne_zero (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    x.rep ((twistCore (𝕜 := 𝕜) k).indexAt x) ≠ 0 := by
+  simpa only [mk_rep] using apply_indexAt_twistCore_mk_ne_zero k x.rep_ne_zero
+
 @[simp]
 theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
     (v : 𝕜) : (twistCore k).coordChange i j x v = twistTransition k i j x * v :=
   (rfl)
-
-/-- The coordinate change of `𝒪(k)` from the chart `i` to the chart `j` has determinant the
-transition function. -/
-theorem det_coordChange_twistCore (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    ((twistCore k).coordChange i j x).det = twistTransition k i j x := by
-  have h : (twistCore k).coordChange i j x =
-      ContinuousLinearMap.toSpanSingleton 𝕜 (twistTransition k i j x) := by
-    ext
-    simp [mul_comm]
-  rw [h, ContinuousLinearMap.det_toSpanSingleton]
-
-/-- The coordinate change between the trivializations `i` and `j` of `𝒪(k)`, as a linear
-equivalence of the model fibre, has determinant the transition function. -/
-theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {i j : Fin (n + 1)}
-    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
-    LinearMap.det ((((twistCore k).localTriv i).coordChangeL 𝕜
-      ((twistCore k).localTriv j) x).toLinearEquiv : 𝕜 →ₗ[𝕜] 𝕜) = twistTransition k i j x := by
-  rw [← det_coordChange_twistCore k i j x,
-    ← (twistCore k).localTriv_coordChangeL (i := i) (j := j) ⟨hi, hj⟩, ContinuousLinearMap.det,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on `ℂℙⁿ`. -/
@@ -247,6 +241,14 @@ theorem twistCore_localTriv_apply (k : ℤ) (j : Fin (n + 1)) (s : ℙ 𝕜 (Fin
       twistTransition k ((twistCore k).indexAt x) j x * s x :=
   (rfl)
 
+/-- In the trivialization of `𝒪(k)` at `x₀`, a vector at `x` with coordinate `c` in the frame of the
+preferred chart at `x` has the coordinate
+`twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c`. -/
+theorem twistCore_trivializationAt_apply_snd (k : ℤ) (x₀ x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) (c : 𝕜) :
+    (trivializationAt 𝕜 (twistCore k).Fiber x₀ ⟨x, c⟩).2 =
+      twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c :=
+  (rfl)
+
 /-- **Sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is `C^r` exactly when,
 for every `j`, its coordinate `x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the
 frame of the chart `j` is `C^r` on the standard affine open `U_j`. -/
@@ -263,6 +265,25 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) {r : ℕ∞ω} (s : ℙ 𝕜 (
       fun _ hx ↦ hx
   rw [← contMDiffOn_univ, ← iUnion_affineOpen,
     contMDiffOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
+  exact forall_congr' key
+
+/-- **Differentiable sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is
+differentiable exactly when, for every `j`, its coordinate
+`x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the frame of the chart `j` is
+differentiable on the standard affine open `U_j`. -/
+theorem mdifferentiable_section_twistCore_iff (k : ℤ) (s : ℙ 𝕜 (Fin (n + 1) → 𝕜) → 𝕜) :
+    MDifferentiable 𝓘(𝕜, Fin n → 𝕜) (𝓘(𝕜, Fin n → 𝕜).prod 𝓘(𝕜))
+        (fun x ↦ TotalSpace.mk' 𝕜 (E := (twistCore k).Fiber) x (s x)) ↔
+      ∀ j, MDifferentiableOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜)
+        (fun x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x) (affineOpen j) := by
+  let s' : ∀ x, (twistCore (𝕜 := 𝕜) (n := n) k).Fiber x := s
+  have key (j : Fin (n + 1)) := by
+    haveI : MemTrivializationAtlas ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j) := ⟨⟨j, rfl⟩⟩
+    exact ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j).mdifferentiableOn_section_iff
+      (IB := 𝓘(𝕜, Fin n → 𝕜)) (s := s') (a := affineOpen j) (isOpen_affineOpen j)
+      fun _ hx ↦ hx
+  rw [← mdifferentiableOn_univ, ← iUnion_affineOpen,
+    mdifferentiableOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
   exact forall_congr' key
 
 /-! ### Sections from homogeneous polynomials -/
@@ -309,8 +330,7 @@ theorem twistTransition_mul_homogeneousSection (d : ℕ) (P : MvPolynomial (Fin 
     (j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     twistTransition (d : ℤ) ((twistCore (d : ℤ)).indexAt x) j x * homogeneousSection d P x =
       eval x.rep P / x.rep j ^ d := by
-  have ha : x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ≠ 0 :=
-    (mem_affineOpen_iff _ x).1 ((twistCore (𝕜 := 𝕜) (d : ℤ)).mem_baseSet_at x)
+  have ha := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) x
   simp only [homogeneousSection, twistTransition, zpow_natCast]
   rw [div_pow]
   field_simp
@@ -348,8 +368,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
     (hP : P.IsHomogeneous d) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     homogeneousSection d P (mk 𝕜 v hv) = 0 ↔ eval v P = 0 := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 v hv
-  have hi := (mem_affineOpen_iff _ _).1
-    ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
+  have hi := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) (mk 𝕜 v hv)
   have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
     rw [← ha, Units.smul_def, hP.eval_smul]
   simp [homogeneousSection, hrep, hi]

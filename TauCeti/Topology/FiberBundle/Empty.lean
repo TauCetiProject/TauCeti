@@ -8,24 +8,25 @@ module
 public import Mathlib.Topology.FiberBundle.Basic
 
 /-!
-# Fibre bundles and trivializations with empty spaces
+# Fibre bundles and trivializations in the empty case
 
-A map `p : Z → B` whose domain `Z` is empty is globally trivial with any empty model fibre `F`,
-with base set the whole of `B`. This handles the degenerate range of bundle projections whose
-fibres become empty above a dimension threshold, such as Stiefel bundles of `k`-frames when `k`
-exceeds the rank of the vector bundle.
-
-Any fibre family over an empty base space also carries a canonical `FiberBundle` structure with
-empty trivialization atlas.
+Two degenerate empty cases arise for fibre bundles:
+* A map `p : Z → B` whose domain `Z` is empty is globally trivial with any empty model fibre `F`,
+  with base set the whole of `B` (`Bundle.Trivialization.ofIsEmpty`). This handles bundle
+  projections whose fibres become empty above a dimension threshold, such as Stiefel bundles of
+  `k`-frames when `k` exceeds the rank of the vector bundle.
+* Any family of topological spaces `E : B → Type*` over an empty base `B` (`[IsEmpty B]`) carries a
+  canonical vacuous `FiberBundle F E` structure (`FiberBundle.ofIsEmpty`) with empty trivialization
+  atlas (`FiberBundle.trivializationAtlas_ofIsEmpty`). This handles empty rank strata when
+  assembling bundles across locally constant strata.
 
 ## Main declarations
 
 * `Bundle.Trivialization.ofIsEmpty`: the global trivialization of `p : Z → B` with empty fibre `F`
   when `Z` and `F` are empty.
-* `TauCeti.fiberBundleOfIsEmpty`: canonical `FiberBundle` structure over an empty base with empty
-  trivialization atlas.
-* `TauCeti.trivializationAtlas_fiberBundleOfIsEmpty`: the trivialization atlas of
-  `fiberBundleOfIsEmpty` is empty.
+* `FiberBundle.ofIsEmpty`: the vacuous `FiberBundle F E` instance over an empty base `B`.
+* `FiberBundle.trivializationAtlas_ofIsEmpty`: the trivialization atlas of `FiberBundle.ofIsEmpty`
+  is empty.
 -/
 
 public section
@@ -63,26 +64,26 @@ theorem ofIsEmpty_baseSet : (ofIsEmpty F p).baseSet = univ :=
 
 end Bundle.Trivialization
 
-namespace TauCeti
+namespace FiberBundle
 
 open Bundle
 
-universe u v w
-
-variable {B : Type u} [TopologicalSpace B] [IsEmpty B] (F : Type v) (E : B → Type w)
-  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
-
-/-- Any fibre family over an empty base is a `FiberBundle` with empty trivialization atlas. -/
-@[instance_reducible] def fiberBundleOfIsEmpty [TopologicalSpace F] : FiberBundle F E where
+/-- Any family of topological spaces over an empty base is vacuously a `FiberBundle`. -/
+@[instance_reducible]
+def ofIsEmpty {B : Type*} [TopologicalSpace B] [IsEmpty B] (F : Type*)
+    [TopologicalSpace F] (E : B → Type*) [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace F E)] : FiberBundle F E where
+  totalSpaceMk_isInducing' := isEmptyElim
   trivializationAtlas' := ∅
   trivializationAt' := isEmptyElim
   mem_baseSet_trivializationAt' := isEmptyElim
   trivialization_mem_atlas' := isEmptyElim
-  totalSpaceMk_isInducing' := isEmptyElim
 
-/-- The trivialization atlas of `fiberBundleOfIsEmpty` is empty. -/
-@[simp] theorem trivializationAtlas_fiberBundleOfIsEmpty [TopologicalSpace F] :
-    let _ : FiberBundle F E := fiberBundleOfIsEmpty F E
+/-- The trivialization atlas of `FiberBundle.ofIsEmpty` is empty. -/
+@[simp] theorem trivializationAtlas_ofIsEmpty {B : Type*} [TopologicalSpace B]
+    [IsEmpty B] (F : Type*) [TopologicalSpace F] (E : B → Type*) [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace F E)] :
+    letI := FiberBundle.ofIsEmpty F E
     trivializationAtlas F E = ∅ := (rfl)
 
-end TauCeti
+end FiberBundle

@@ -449,6 +449,10 @@ theorem isUnit_iff_ord_eq_zero {x : P.integers} (hx : (x : F) ≠ 0) :
     IsUnit x ↔ P.ord (x : F) = 0 :=
   Valuation.isUnit_iff_ord_eq_zero P.valuation hx
 
+/-- A nonzero function lies in the unit group of `𝒪_P` exactly when it has order zero at `P`. -/
+theorem mem_unitGroup_iff_ord_eq_zero (f : Fˣ) : f ∈ P.integers.unitGroup ↔ P.ord (f : F) = 0 :=
+  Valuation.mem_unitGroup_iff_ord_eq_zero P.valuation f
+
 /-- **Existence half of Stichtenoth, Theorem 1.1.6(b)**: relative to a prime element `t` for
 `P`, every nonzero `f : F` is `t ^ (ord_P f)` times a unit of `𝒪_P`. -/
 theorem exists_eq_zpow_mul_unit {t : F} (ht : P.valuation.IsUniformizer t) {f : F} (hf : f ≠ 0) :
