@@ -413,6 +413,10 @@ def normHom : WeilGroupReal →ₜ* ℝˣ :=
 theorem normHom_apply (w : WeilGroupReal) : normHom w = norm w :=
   (rfl)
 
+/-- As a function, `normHom` is `norm`. -/
+theorem coe_normHom : ⇑normHom = ⇑norm :=
+  (rfl)
+
 /-- The underlying homomorphism of `normHom` is `norm`. -/
 @[simp]
 theorem toMonoidHom_normHom : (normHom : WeilGroupReal →* ℝˣ) = norm :=
@@ -479,6 +483,11 @@ private theorem continuous_normSection : Continuous normSection := by
 /-- **The norm is a quotient map.** -/
 theorem isQuotientMap_norm : IsQuotientMap norm :=
   .of_inverse continuous_normSection continuous_norm norm_normSection
+
+/-- The norm is a quotient map, as a continuous homomorphism. -/
+theorem isQuotientMap_normHom : IsQuotientMap normHom := by
+  rw [coe_normHom]
+  exact isQuotientMap_norm
 
 /-- **The norm is surjective.** -/
 theorem norm_surjective : Function.Surjective norm :=

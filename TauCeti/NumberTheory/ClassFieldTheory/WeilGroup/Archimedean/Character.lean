@@ -55,8 +55,7 @@ Precomposition with the norm identifies them: the kernel of the norm is the comm
 which every homomorphism into a commutative group kills, and the norm is a quotient map. -/
 noncomputable def compNormHomEquiv (A : Type*) [CommGroup A] [TopologicalSpace A] :
     (ℝˣ →ₜ* A) ≃ (WeilGroupReal →ₜ* A) :=
-  (ContinuousMonoidHom.homEquivOfIsQuotientMap normHom
-      (funext normHom_apply ▸ isQuotientMap_norm)).trans <|
+  (ContinuousMonoidHom.homEquivOfIsQuotientMap normHom isQuotientMap_normHom).trans <|
     Equiv.subtypeUnivEquiv fun χ ↦ by
       rw [toMonoidHom_normHom, ker_norm]
       exact Group.Abelianization.commutator_le_ker _
@@ -66,10 +65,21 @@ theorem compNormHomEquiv_apply {A : Type*} [CommGroup A] [TopologicalSpace A] (�
     compNormHomEquiv A ψ = ψ.comp normHom := by
   simp [compNormHomEquiv]
 
+/-- The inverse of `compNormHomEquiv` is the factorization through the norm. -/
+theorem compNormHomEquiv_symm_comp_normHom {A : Type*} [CommGroup A] [TopologicalSpace A]
+    (χ : WeilGroupReal →ₜ* A) : ((compNormHomEquiv A).symm χ).comp normHom = χ := by
+  rw [← compNormHomEquiv_apply, Equiv.apply_symm_apply]
+
+@[simp]
+theorem compNormHomEquiv_symm_apply_norm {A : Type*} [CommGroup A] [TopologicalSpace A]
+    (χ : WeilGroupReal →ₜ* A) (w : WeilGroupReal) :
+    (compNormHomEquiv A).symm χ (norm w) = χ w := by
+  simpa using DFunLike.congr_fun (compNormHomEquiv_symm_comp_normHom χ) w
+
 /-- **Continuous homomorphisms from `W_ℝ` to a commutative group factor through the norm.** -/
 theorem exists_eq_comp_normHom {A : Type*} [CommGroup A] [TopologicalSpace A]
     (χ : WeilGroupReal →ₜ* A) : ∃ ψ : ℝˣ →ₜ* A, χ = ψ.comp normHom :=
-  ⟨(compNormHomEquiv A).symm χ, by rw [← compNormHomEquiv_apply, Equiv.apply_symm_apply]⟩
+  ⟨(compNormHomEquiv A).symm χ, (compNormHomEquiv_symm_comp_normHom χ).symm⟩
 
 /-- **The character `w ↦ |norm w| ^ s * sgn(norm w) ^ ε` of `W_ℝ`**, the pullback along the norm of
 the character `x ↦ |x| ^ s * sgn(x) ^ ε` of `ℝˣ`. Every continuous character of `W_ℝ` is one of
