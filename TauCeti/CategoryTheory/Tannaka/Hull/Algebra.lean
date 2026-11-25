@@ -49,6 +49,8 @@ force the commutation with `ω` of morphisms in `⟨X⟩`.
 * The natural endomorphism algebra is a finite `R`-module when `ω X` is finite over a
   Noetherian ring and `ω` preserves monomorphisms and epimorphisms, in particular
   finite-dimensional over a field.
+* `CategoryTheory.Functor.finite_obj_of_subquotientHull`: under the same hypotheses, every
+  object of `⟨X⟩` has a finite fibre.
 * `CategoryTheory.Functor.hullEvalAlgHom_restrictEndAlgHom`: for `Y ∈ ⟨X⟩`, the transition map
   `ObjectProperty.restrictEndAlgHom` from the algebra of `⟨X⟩` to that of `⟨Y⟩` followed by
   evaluation at `Y` is the component at `Y`. Unit and composition laws of the transition maps are
@@ -352,6 +354,15 @@ section Finite
 
 variable [Preadditive C] [HasFiniteBiproducts C] (ω : C ⥤ ModuleCat.{w} R) [ω.Additive]
   [ω.PreservesMonomorphisms] [ω.PreservesEpimorphisms] (X : C)
+
+variable {X} in
+/-- Every object of the hull of `X` has a finite fibre when `X` does. -/
+theorem finite_obj_of_subquotientHull [IsNoetherianRing R] [Module.Finite R (ω.obj X)] {Y : C}
+    (hY : subquotientHull X Y) : Module.Finite R (ω.obj Y) := by
+  obtain ⟨ι, _, Z, i, q, _, _⟩ := subquotientHull_iff.1 hY
+  have : Module.Finite R (ω.obj Z) :=
+    Module.Finite.of_injective _ ((ModuleCat.mono_iff_injective (ω.map i)).1 inferInstance)
+  exact Module.Finite.of_surjective _ ((ModuleCat.epi_iff_surjective (ω.map q)).1 inferInstance)
 
 /-- The endomorphism algebra of the fibre functor on the hull of `X` is a finite module when
 `ω X` is a finite module over a Noetherian ring; over a field it is finite-dimensional. -/
