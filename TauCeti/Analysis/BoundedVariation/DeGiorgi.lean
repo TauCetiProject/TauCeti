@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.BlowUp
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.BoundedVariation.Dilation
+import TauCeti.Analysis.BoundedVariation.HausdorffMeasure
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.Real
@@ -88,49 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 section OneDim
 
-/-- In dimension `1`, every point of `reducedBoundary μ Ω s` (against an additive Haar measure `μ`)
-is isolated in `reducedBoundary μ Ω s`. -/
-private theorem exists_isolated_reducedBoundary_of_finrank_eq_one {μ : Measure E}
-    [μ.IsAddHaarMeasure] (hdim : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) :
-    ∃ r₀ > 0, closedBall x r₀ ⊆ Ω ∧ reducedBoundary μ Ω s ∩ ball x r₀ = {x} := by
-  have := Ω.isOpen.locallyCompactSpace
-  let x₀ : Ω := ⟨x, reducedBoundary_subset hx⟩
-  obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds x₀.property)
-  have hKR : IsCompact (closedBall x₀ R) := isCompact_closedBall_subtype hRΩ
-  have hlim := tendsto_measure_closedBall_sdiff_singleton_nhds_zero
-    (μ := variationMeasure μ Ω (s.indicator 1)) (z := x₀)
-    ⟨R, hR, ((measure_mono sdiff_subset).trans_lt hKR.measure_lt_top).ne⟩
-  have hmul : Tendsto (fun r => ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *
-      variationMeasure μ Ω (s.indicator 1) (closedBall x₀ r \ {x₀})) (𝓝[>] 0) (𝓝 0) := by
-    simpa only [mul_zero] using
-      ENNReal.Tendsto.const_mul (hlim.mono_left nhdsWithin_le_nhds) (Or.inr ENNReal.ofReal_ne_top)
-  obtain ⟨rk, hk, hrk, hrkR⟩ := ((hmul.eventually
-    (gt_mem_nhds (ENNReal.inv_pos.2 (ENNReal.ofNat_ne_top (n := 2))))).and
-      (Ioo_mem_nhdsGT hR)).exists
-  have hrkΩ : closedBall x rk ⊆ Ω := (closedBall_subset_closedBall hrkR.le).trans hRΩ
-  refine ⟨rk / 2, half_pos hrk, (closedBall_subset_closedBall (half_le_self hrk.le)).trans hrkΩ,
-    Subset.antisymm (fun y ⟨hyB, hyx⟩ => ?_) (singleton_subset_iff.2 ⟨hx, mem_ball_self
-      (half_pos hrk)⟩)⟩
-  by_contra hyne
-  set δ := min (dist y x) (rk / 2)
-  have hδ : 0 < δ := lt_min (dist_pos.2 hyne) (half_pos hrk)
-  have hsub : closedBall y (δ / 2) ⊆ closedBall x rk \ {x} := fun z hz => by
-    have hzy : dist z y < δ := (mem_closedBall.1 hz).trans_lt (half_lt_self hδ)
-    refine ⟨mem_closedBall.2 (calc dist z x ≤ dist z y + dist y x := dist_triangle z y x
-      _ ≤ rk / 2 + rk / 2 := add_le_add (hzy.le.trans (min_le_right _ _)) (mem_ball.1 hyx).le
-      _ = rk := add_halves rk), fun hzx => (lt_irrefl (dist x y)) (by
-        calc dist x y < δ := (mem_singleton_iff.1 hzx) ▸ hzy
-          _ ≤ dist y x := min_le_left _ _
-          _ = dist x y := dist_comm y x)⟩
-  have hbΩ : ball y (δ / 2) ⊆ Ω :=
-    (ball_subset_closedBall.trans hsub).trans (sdiff_subset.trans hrkΩ)
-  have hge := inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one hdim hyB
-    (half_pos hδ) hbΩ
-  have hpre : ((↑) : Ω → E) ⁻¹' closedBall y (δ / 2) ⊆ closedBall x₀ rk \ {x₀} := fun z hz => by
-    obtain ⟨hz1, hz2⟩ := hsub hz
-    exact ⟨hz1, fun hzx => hz2 (congrArg Subtype.val hzx)⟩
-  exact hk.not_ge (hge.trans (mul_le_mul_right (measure_mono hpre) _))
-
 /-- When `(f '' Ioo a b)` lies inside `ball x r₀ \ {x}` around an isolated point `x` of `∂*s`, the
 pulled-back set `f ⁻¹' s` has zero perimeter on `(a, b)`. -/
 private theorem perimeter_Ioo_preimage_eq_zero_of_isolated (hdim : finrank ℝ E = 1)
@@ -164,7 +122,8 @@ private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finra
     (hx : x ∈ reducedBoundary volume Ω s) :
     ∃ r₀ > 0, closedBall x r₀ ⊆ Ω ∧ reducedBoundary volume Ω s ∩ ball x r₀ = {x} ∧
       ∃ w : E, ‖w‖ = 1 ∧ s =ᵐ[volume.restrict (ball x r₀)] {y | ⟪y, w⟫ < ⟪x, w⟫} := by
-  obtain ⟨r₀, hr₀, hr₀Ω, hiso⟩ := exists_isolated_reducedBoundary_of_finrank_eq_one hdim hx
+  obtain ⟨r₀, hr₀, hr₀Ω, hiso⟩ :=
+    exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one hdim hx
   set ν := outerNormal volume Ω s x
   have hν : ‖ν‖ = 1 := norm_outerNormal hx
   let f := coordEquivOfFinrankEqOne hdim hν x
@@ -291,17 +250,6 @@ private theorem eventually_variationMeasure_closedBall_le_mul_volume (hn : 2 ≤
   filter_upwards [(tendsto_variationMeasure_closedBall_div_volume_closedBall hn hx).eventually
     (gt_mem_nhds hc), self_mem_nhdsWithin] with ρ h (hρ : 0 < ρ)
   exact ((ENNReal.div_lt_iff (.inl (measure_closedBall_pos _ _ hρ).ne')
-    (.inl measure_closedBall_lt_top.ne)).1 h).le
-
-/-- At a point of the reduced boundary, in dimension `n ≥ 2`, for each `c < 1` the perimeter measure
-of every small closed ball `closedBall x ρ` is at least `c ω_{n-1} ρ ^ (n - 1)`. -/
-private theorem eventually_mul_volume_le_variationMeasure_closedBall (hn : 2 ≤ finrank ℝ E)
-    (hx : x ∈ reducedBoundary volume Ω s) {c : ℝ≥0∞} (hc : c < 1) :
-    ∀ᶠ ρ in 𝓝[>] 0, c * volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E - 1))) ρ) ≤
-      variationMeasure volume Ω (s.indicator 1) ((↑) ⁻¹' closedBall x ρ) := by
-  filter_upwards [(tendsto_variationMeasure_closedBall_div_volume_closedBall hn hx).eventually
-    (lt_mem_nhds hc), self_mem_nhdsWithin] with ρ h (hρ : 0 < ρ)
-  exact ((ENNReal.lt_div_iff_mul_lt (.inl (measure_closedBall_pos _ _ hρ).ne')
     (.inl measure_closedBall_lt_top.ne)).1 h).le
 
 /-! ### Rescaled sets near a point of the reduced boundary -/
@@ -621,16 +569,6 @@ private theorem variationMeasure_le_euclideanHausdorffMeasure_image (hn : 2 ≤ 
     (.inl (ENNReal.div_pos (measure_ball_pos _ _ one_pos).ne' (by simp)).ne'))
     (eventually_nhdsWithin_of_forall hbound)
 
-/-- In dimension `n ≥ 2`, the perimeter measure is at least `Hⁿ⁻¹` on subsets of the reduced
-boundary. -/
-private theorem euclideanHausdorffMeasure_image_le_variationMeasure (hn : 2 ≤ finrank ℝ E)
-    {B : Set Ω} (hB : ∀ y ∈ B, (y : E) ∈ reducedBoundary volume Ω s) :
-    μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) ≤ variationMeasure volume Ω (s.indicator 1) B := by
-  rw [isometry_subtypeVal.euclideanHausdorffMeasure_image]
-  refine ENNReal.le_of_forall_lt_one_mul_le fun c hc =>
-    mul_euclideanHausdorffMeasure_le_measure _ _ fun y hy => ?_
-  exact (eventually_mul_volume_le_variationMeasure_closedBall hn (hB y hy) hc).frequently
-
 /-- **The perimeter measure is Hausdorff measure on the reduced boundary.** In every ambient
 dimension `n ≥ 0`, every subset `B` of `Ω` contained in the reduced boundary of `s`, measurable or
 not, satisfies `|Dχ_s|(B) = Hⁿ⁻¹(B)`. -/
@@ -644,8 +582,9 @@ theorem variationMeasure_eq_euclideanHausdorffMeasure_image {B : Set Ω}
       simp [Subsingleton.elim (outerNormal volume Ω s y) 0] at hν
     simp [hB0]
   · exact variationMeasure_eq_euclideanHausdorffMeasure_image_of_finrank_eq_one h1 hB
-  · exact le_antisymm (variationMeasure_le_euclideanHausdorffMeasure_image h2 hB)
-      (euclideanHausdorffMeasure_image_le_variationMeasure h2 hB)
+  · refine le_antisymm (variationMeasure_le_euclideanHausdorffMeasure_image h2 hB) ?_
+    simpa only [Subtype.coe_injective.preimage_image] using
+      euclideanHausdorffMeasure_le_variationMeasure_preimage (image_subset_iff.2 hB)
 
 /-- **De Giorgi's structure theorem, set evaluation form.** For any open set `Ω ⊆ E` and any sets
 `s, A ⊆ E`, `variationMeasure volume Ω (s.indicator 1)` evaluated at `(↑) ⁻¹' A` (giving the

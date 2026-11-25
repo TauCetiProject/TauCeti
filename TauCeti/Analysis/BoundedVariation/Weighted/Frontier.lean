@@ -68,10 +68,8 @@ theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
       ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x)) ∂μHE[finrank ℝ E - 1] := by
   rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
   · have : Subsingleton E := finrank_zero_iff.1 hn
-    rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-    · simp
-    · rw [eq_univ_of_forall (s := s) fun y => Subsingleton.elim x y ▸ hx, weightedPerimeter_univ hW]
-      exact zero_le
+    rw [weightedPerimeter_of_subsingleton]
+    exact zero_le
   by_cases hI : ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x))
       ∂μHE[finrank ℝ E - 1] = ∞
   · rw [hI]

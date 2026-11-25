@@ -61,6 +61,9 @@ instead indexed by `ℕ` with three families of spaces, which is the form taken 
 For four consecutive maps, `LinearMap.finrank_sub_finrank_sub_finrank_of_exact` gives the
 alternating dimension difference with endpoint kernel corrections.
 
+A short exact sequence `0 → K → X → Y → 0` with `Y` projective splits as `X ≃ K × Y`
+(`Function.Exact.exists_linearEquiv_prod_of_projective`).
+
 For an exact augmented sequence with one family of spaces,
 `TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
 with its final image correction. It applies even when the full resolution is unbounded.
@@ -308,6 +311,25 @@ theorem finrank_eq_add {k M N P : Type*} [DivisionRing k] [AddCommGroup M] [Modu
     Module.finrank k N = Module.finrank k M + Module.finrank k P := by
   rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
     h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
+
+section Projective
+
+variable {R K X Y : Type*} [Semiring R] [AddCommGroup K] [Module R K] [AddCommGroup X]
+  [Module R X] [AddCommGroup Y] [Module R Y] [Module.Projective R Y] {f : K →ₗ[R] X}
+  {g : X →ₗ[R] Y}
+
+/-- **A short exact sequence onto a projective module splits.** If `0 → K → X → Y → 0` is exact
+and `Y` is projective, then `X ≃ K × Y` compatibly with the inclusion of `K` and the projection
+onto `Y`. -/
+theorem exists_linearEquiv_prod_of_projective (hfg : Exact f g) (hf : Function.Injective f)
+    (hg : Function.Surjective g) :
+    ∃ e : X ≃ₗ[R] K × Y, f = e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y ∧
+      g = LinearMap.snd R K Y ∘ₗ e.toLinearMap := by
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property g LinearMap.id hg
+  obtain ⟨e, he⟩ := (hfg.splitSurjectiveEquiv hf) ⟨s, hs⟩
+  exact ⟨e, he⟩
+
+end Projective
 
 end Function.Exact
 

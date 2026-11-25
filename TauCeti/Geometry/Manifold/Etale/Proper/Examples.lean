@@ -15,8 +15,11 @@ import TauCeti.Topology.CategoryTheory.Groupoid.Constructions
 # Proper étale presentations from manifolds and group actions
 
 Unit groupoids present their underlying manifolds. For a smooth action of a discrete countable
-group, properness of the action characterizes proper étaleness of its action groupoid. In
-particular, smooth finite-group actions give proper étale presentations.
+group, properness of the action characterizes proper étaleness of its action groupoid; no
+separation hypothesis on the manifold is needed, since a space with a proper action of a
+discrete group is Hausdorff. In particular, smooth finite-group actions on Hausdorff
+manifolds give proper étale presentations. These are the global quotient presentations `[X/G]`,
+with isotropy the full stabilizers, including the elements acting trivially on `X`.
 -/
 
 public section
@@ -49,13 +52,16 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace X] [ChartedSpace H X] [IsManifold I ∞ X] [T2Space X]
   [SecondCountableTopology X] [ContMDiffConstSMul I ∞ G X]
 
+omit [T2Space X] in
 /-- A proper smooth action of a discrete countable group gives a proper étale presentation
-with the source-pulled arrow atlas. -/
+with the source-pulled arrow atlas. The manifold is Hausdorff because the action is proper. -/
 instance isProperEtaleGroupoid [Countable G] [ProperSMul G X] :
     IsProperEtaleGroupoid I I (ActionCategory G X) := by
+  have := t2Space_of_properSMul_of_t1Group (G := G) (X := X)
   exact .of_isTopologicalGroupoid (isLocalDiffeomorph_source I ∞ G X)
     (isLocalDiffeomorph_target I ∞ G X) ((isProperMap_source_target_iff G X).2 inferInstance)
 
+omit [T2Space X] in
 /-- The action groupoid of a smooth discrete countable group action is proper étale exactly
 when the action is proper. -/
 theorem isProperEtaleGroupoid_iff [Countable G] :
@@ -68,7 +74,7 @@ theorem isProperEtaleGroupoid_iff [Countable G] :
 
 /-- A smooth action of a finite discrete group on a Hausdorff second-countable manifold gives
 a proper étale presentation. -/
-theorem isProperEtaleGroupoid_of_finite [Finite G] :
+instance isProperEtaleGroupoid_of_finite [Finite G] :
     IsProperEtaleGroupoid I I (ActionCategory G X) := by
   have := ContMDiffConstSMul.continuousConstSMul (I := I) ∞ (Γ := G) (M := X)
   have : ContinuousSMul G X := ⟨continuous_prod_of_discrete_left.mpr continuous_const_smul⟩
