@@ -31,35 +31,28 @@ namespace TauCeti
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [Fact (finrank ℝ E = n + 1)]
 
-/-- The second fundamental form of the unit sphere bounding the closed unit ball is the induced
-metric: `II = h`. -/
-theorem boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm
-    (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
-    boundarySecondFundamentalForm q = boundaryInducedForm q := by
-  ext u w
-  rw [boundarySecondFundamentalForm_closedBall, boundaryInducedForm_apply]
-
 /-- **The Weingarten map of the unit sphere is the identity**: `S_q = id` at every point of the
 boundary of the closed unit ball. -/
+@[simp]
 theorem boundaryWeingarten_closedBall (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
     boundaryWeingarten q = LinearMap.id := by
-  refine ((eq_boundaryWeingarten_iff q LinearMap.id).2 fun u w ↦ ?_).symm
-  rw [LinearMap.id_apply, boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm]
+  rw [← one_smul ℝ (LinearMap.id : Module.End ℝ _), boundaryWeingarten_eq_smul_id_iff, one_smul]
+  exact boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm q
 
 /-- **Every principal curvature of the unit sphere is `1`.** -/
+@[simp]
 theorem boundaryPrincipalCurvatures_closedBall
     (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) (i : Fin n) :
-    boundaryPrincipalCurvatures q i = 1 := by
-  have h := boundaryWeingarten_boundaryPrincipalDirection q i
-  rw [boundaryWeingarten_closedBall, LinearMap.id_apply] at h
-  exact smul_left_injective ℝ (boundaryPrincipalDirection_ne_zero q i)
-    (h.symm.trans (one_smul ℝ _).symm)
+    boundaryPrincipalCurvatures q i = 1 :=
+  boundaryPrincipalCurvatures_eq_of_boundaryWeingarten_eq_smul
+    (by rw [boundaryWeingarten_closedBall, one_smul]) i
 
 /-- **The mean curvature of the unit sphere is `1`**, for `n ≥ 1`. -/
+@[simp]
 theorem boundaryMeanCurvature_closedBall [NeZero n]
     (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
-    boundaryMeanCurvature q = 1 := by
-  rw [boundaryMeanCurvature_eq_sum_div]
-  simp [boundaryPrincipalCurvatures_closedBall, NeZero.ne n]
+    boundaryMeanCurvature q = 1 :=
+  boundaryMeanCurvature_eq_of_boundaryWeingarten_eq_smul
+    (by rw [boundaryWeingarten_closedBall, one_smul])
 
 end TauCeti
