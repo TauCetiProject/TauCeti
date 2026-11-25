@@ -569,7 +569,7 @@ section Split
 
 open RestrictedProduct
 
-variable {ι : Type*} [DecidableEq ι] [Countable ι] {G : ι → Type*} {K : ι → Type*}
+variable {ι : Type*} [Countable ι] {G : ι → Type*} {K : ι → Type*}
   [∀ i, Group (G i)] [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
   [∀ i, TopologicalSpace (G i)] [∀ i, SecondCountableTopology (G i)]
   [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)] (B : ∀ i, K i) (T : Finset ι)

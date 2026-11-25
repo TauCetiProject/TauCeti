@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Decomposition
 public import TauCeti.Topology.Algebra.RestrictedProduct.Box
-public import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 
 /-!
 # Splitting a restricted product of groups at a finite set of indices
@@ -14,10 +14,13 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 For a family of groups `G i` with subgroup-like reference sets `B i` and a finite set `T` of
 indices, `TauCeti.restrictedProductSplit B T` is the isomorphism of `Πʳ i, [G i, B i]` with the
 product of the finite product `Π i : T, G i` and the restricted product over the complement of
-`T`. The reference sets may be any `SubgroupClass` family, and `T` is a `Finset`. For a family of
-`Subgroup`s and a finite `Set` of indices, `TauCeti.awayDecomposition` in
-`TauCeti/Topology/Algebra/RestrictedProduct/Away/Decomposition.lean` is the same splitting,
-stated with `RestrictedProductGroup`.
+`T`. The reference sets may be any `SubgroupClass` family, and `T` is a `Finset`. It is
+`TauCeti.awayDecomposition`, from
+`TauCeti/Topology/Algebra/RestrictedProduct/Away/Decomposition.lean`, for the `Subgroup` family
+`Subgroup.ofClass (B i)` and the set `(T : Set ι)`, restated with the reference sets `B i`
+themselves, so that it applies directly to restricted products such as the domain of
+`TauCeti.restrictedHaar`; its coordinate and continuity lemmas are those of
+`TauCeti.awayDecomposition`.
 
 ## Main definitions and results
 
@@ -47,29 +50,29 @@ theorem finite_of_forall_mem_imp_apply_notMem {ι : Type*} {R : ι → Type*} {A
       · exact Or.inl h
       · exact Or.inr ⟨⟨i, h⟩, hs i h hi, rfl⟩
 
-variable {ι : Type*} [DecidableEq ι] {G : ι → Type*} {K : ι → Type*} [∀ i, Group (G i)]
+variable {ι : Type*} {G : ι → Type*} {K : ι → Type*} [∀ i, Group (G i)]
   [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
 
 /-- The splitting of `Πʳ i, [G i, B i]` at a finite set `T` of indices, as the product of the
-finite product `Π i : T, G i` with the restricted product over the complement of `T`. -/
+finite product `Π i : T, G i` with the restricted product over the complement of `T`.
+
+This is `awayDecomposition` for the `Subgroup` family `Subgroup.ofClass (B i)` and the finite set
+`(T : Set ι)`. Its type is stated with the reference sets `B i` and the subtype of `T` themselves,
+which agree with those of `awayDecomposition` only up to unfolding `Subgroup.ofClass` and the
+coercion of `T` to a set; the coordinate and continuity lemmas below are transported once here, so
+that users never see that unfolding. -/
 @[to_additive addRestrictedProductSplit /-- The splitting of `Πʳ i, [G i, B i]` at a
 finite set `T` of indices, as the product of the finite product `Π i : T, G i` with the restricted
-product over the complement of `T`. -/]
-def restrictedProductSplit (B : ∀ i, K i) (T : Finset ι) :
-    (Πʳ i, [G i, B i]) ≃* (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] where
-  toFun x := (fun i ↦ x i.val,
-    ⟨fun i ↦ x i.val, Subtype.val_injective.tendsto_cofinite.eventually x.property⟩)
-  invFun y := ⟨fun i ↦ if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩,
-    eventually_cofinite.mpr <| finite_of_forall_mem_imp_apply_notMem
-      (A := fun i ↦ (B i : Set (G i))) T y.2 fun i h hi ↦ by simpa [h] using hi⟩
-  left_inv x := by
-    ext i
-    simp
-  right_inv y := by
-    ext i
-    · simp [i.property]
-    · simp [i.property]
-  map_mul' _ _ := rfl
+product over the complement of `T`.
+
+This is `addAwayDecomposition` for the `AddSubgroup` family `AddSubgroup.ofClass (B i)` and the
+finite set `(T : Set ι)`. Its type is stated with the reference sets `B i` and the subtype of `T`
+themselves, which agree with those of `addAwayDecomposition` only up to unfolding
+`AddSubgroup.ofClass` and the coercion of `T` to a set; the coordinate and continuity lemmas below
+are transported once here, so that users never see that unfolding. -/]
+noncomputable def restrictedProductSplit (B : ∀ i, K i) (T : Finset ι) :
+    (Πʳ i, [G i, B i]) ≃* (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] :=
+  awayDecomposition (T : Set ι) T.finite_toSet fun i ↦ Subgroup.ofClass (B i)
 
 variable (B : ∀ i, K i) (T : Finset ι)
 
@@ -77,27 +80,16 @@ variable (B : ∀ i, K i) (T : Finset ι)
 @[to_additive (attr := simp) addRestrictedProductSplit_apply_fst /-- The finite component of
 `addRestrictedProductSplit B T` reads off the coordinates in `T`. -/]
 theorem restrictedProductSplit_apply_fst (x : Πʳ i, [G i, B i]) (i : T) :
-    (restrictedProductSplit B T x).1 i = x i := by
-  rfl
+    (restrictedProductSplit B T x).1 i = x i :=
+  awayDecomposition_fst (T : Set ι) T.finite_toSet (fun i ↦ Subgroup.ofClass (B i)) x i
 
 /-- The restricted component of `restrictedProductSplit B T` reads off the coordinates outside
 `T`. -/
 @[to_additive (attr := simp) addRestrictedProductSplit_apply_snd /-- The restricted component of
 `addRestrictedProductSplit B T` reads off the coordinates outside `T`. -/]
 theorem restrictedProductSplit_apply_snd (x : Πʳ i, [G i, B i]) (i : {i // i ∉ T}) :
-    (restrictedProductSplit B T x).2 i = x i := by
-  rfl
-
-/-- The inverse of `restrictedProductSplit B T` takes its coordinates in `T` from the finite
-component and its other coordinates from the restricted component. -/
-@[to_additive (attr := simp) addRestrictedProductSplit_symm_apply /-- The inverse of
-`addRestrictedProductSplit B T` takes its coordinates in `T` from the finite component and its
-other coordinates from the restricted component. -/]
-theorem restrictedProductSplit_symm_apply
-    (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) (i : ι) :
-    (restrictedProductSplit B T).symm y i = if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩ := by
-  -- the inverse of the equivalence is its `invFun` field, by definition
-  rfl
+    (restrictedProductSplit B T x).2 i = x i :=
+  awayDecomposition_snd (T : Set ι) T.finite_toSet (fun i ↦ Subgroup.ofClass (B i)) x i
 
 /-- The inverse of `restrictedProductSplit B T` takes its coordinates in `T` from the finite
 component. -/
@@ -105,8 +97,9 @@ component. -/
 `addRestrictedProductSplit B T` takes its coordinates in `T` from the finite component. -/]
 theorem restrictedProductSplit_symm_apply_of_mem
     (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) {i : ι} (hi : i ∈ T) :
-    (restrictedProductSplit B T).symm y i = y.1 ⟨i, hi⟩ := by
-  simp [hi]
+    (restrictedProductSplit B T).symm y i = y.1 ⟨i, hi⟩ :=
+  awayDecomposition_symm_apply_of_mem (T : Set ι) T.finite_toSet
+    (fun i ↦ Subgroup.ofClass (B i)) y i hi
 
 /-- The inverse of `restrictedProductSplit B T` takes its coordinates outside `T` from the
 restricted component. -/
@@ -115,8 +108,21 @@ restricted component. -/
 component. -/]
 theorem restrictedProductSplit_symm_apply_of_notMem
     (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) {i : ι} (hi : i ∉ T) :
-    (restrictedProductSplit B T).symm y i = y.2 ⟨i, hi⟩ := by
-  simp [hi]
+    (restrictedProductSplit B T).symm y i = y.2 ⟨i, hi⟩ :=
+  awayDecomposition_symm_apply_of_notMem (T : Set ι) T.finite_toSet
+    (fun i ↦ Subgroup.ofClass (B i)) y i hi
+
+/-- The inverse of `restrictedProductSplit B T` takes its coordinates in `T` from the finite
+component and its other coordinates from the restricted component. -/
+@[to_additive (attr := simp) addRestrictedProductSplit_symm_apply /-- The inverse of
+`addRestrictedProductSplit B T` takes its coordinates in `T` from the finite component and its
+other coordinates from the restricted component. -/]
+theorem restrictedProductSplit_symm_apply [DecidableEq ι]
+    (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) (i : ι) :
+    (restrictedProductSplit B T).symm y i = if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩ := by
+  split_ifs with h
+  · exact restrictedProductSplit_symm_apply_of_mem B T y h
+  · exact restrictedProductSplit_symm_apply_of_notMem B T y h
 
 /-- The inverse image of a box under the inverse of `restrictedProductSplit B T` is the product
 of the box over `T` with the box over the complement. -/
@@ -139,29 +145,22 @@ section Topology
 
 variable [∀ i, TopologicalSpace (G i)]
 
-/-- The splitting `restrictedProductSplit B T` is continuous for every reference family: its
-finite component consists of coordinate evaluations, and its restricted component is a map out of
-a single restricted product whose coordinate maps are identities. -/
+/-- The splitting `restrictedProductSplit B T` is continuous for every reference family, by
+`continuous_awayDecomposition`. -/
 @[to_additive continuous_addRestrictedProductSplit /-- The splitting
-`addRestrictedProductSplit B T` is continuous for every reference family: its finite component
-consists of coordinate evaluations, and its restricted component is a map out of a single
-restricted product whose coordinate maps are identities. -/]
+`addRestrictedProductSplit B T` is continuous for every reference family, by
+`continuous_addAwayDecomposition`. -/]
 theorem continuous_restrictedProductSplit : Continuous (restrictedProductSplit B T) :=
-  (continuous_pi fun i : T ↦ RestrictedProduct.continuous_eval i.val).prodMk <|
-    RestrictedProduct.mapAlong_continuous G (fun i : {i // i ∉ T} ↦ G i.val) Subtype.val
-      Subtype.val_injective.tendsto_cofinite (fun _ ↦ id) (.of_forall fun _ _ hx ↦ hx)
-      fun _ ↦ continuous_id
+  continuous_awayDecomposition (T : Set ι) T.finite_toSet fun i ↦ Subgroup.ofClass (B i)
 
 /-- The inverse of `restrictedProductSplit B T` is continuous when the reference sets outside `T`
-are open; the reference sets in `T` play no role. -/
+are open; the reference sets in `T` play no role (`continuous_awayDecomposition_symm`). -/
 @[to_additive continuous_addRestrictedProductSplit_symm /-- The inverse of
 `addRestrictedProductSplit B T` is continuous when the reference sets outside `T` are open; the
-reference sets in `T` play no role. -/]
+reference sets in `T` play no role (`continuous_addAwayDecomposition_symm`). -/]
 theorem continuous_restrictedProductSplit_symm (hB : ∀ i ∉ T, IsOpen (B i : Set (G i))) :
     Continuous (restrictedProductSplit B T).symm :=
-  continuous_restrictedProduct_of_apply_eq_of_isOpen T.finite_toSet hB
-    (fun y i ↦ restrictedProductSplit_symm_apply_of_mem B T y i.property)
-    fun y i ↦ restrictedProductSplit_symm_apply_of_notMem B T y i.property
+  continuous_awayDecomposition_symm (T : Set ι) T.finite_toSet (fun i ↦ Subgroup.ofClass (B i)) hB
 
 end Topology
 

@@ -59,7 +59,7 @@ namespace TauCeti
 
 section Split
 
-variable {ι : Type*} [DecidableEq ι] {G : ι → Type*} {K : ι → Type*} [∀ i, Group (G i)]
+variable {ι : Type*} {G : ι → Type*} {K : ι → Type*} [∀ i, Group (G i)]
   [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
 
 variable (B : ∀ i, K i) (T : Finset ι)
@@ -111,7 +111,7 @@ variable (B : ∀ i, K i) [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))]
 
 section Fubini
 
-variable [DecidableEq ι] (T : Finset ι)
+variable (T : Finset ι)
 
 /-- **Fubini splitting of `restrictedHaar`.** For every finite set `T` of indices,
 `restrictedProductSplit B T` carries `restrictedHaar B μ hμB` to the product of the finite
@@ -204,7 +204,6 @@ product of the integrals of the `f i`. -/]
 theorem integral_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ i, G i → 𝕜}
     (hfB : ∀ᶠ i in cofinite, f i = (B i : Set (G i)).indicator 1) :
     ∫ x, ∏ᶠ i, f i (x i) ∂restrictedHaar B μ hμB = ∏ᶠ i, ∫ y, f i y ∂μ i := by
-  classical
   obtain ⟨T, hT⟩ := exists_finset_eq_indicator_and_measure_eq_one B μ hμB hfB
   have hint (i : ι) (hi : i ∉ T) : ∫ y, f i y ∂μ i = 1 := by
     simp [(hT i hi).1, integral_indicator (hBopen.out i).measurableSet, measureReal_def,
@@ -240,7 +239,6 @@ theorem integrable_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ 
     (hf : ∀ i, Integrable (f i) (μ i))
     (hfB : ∀ᶠ i in cofinite, f i = (B i : Set (G i)).indicator 1) :
     Integrable (fun x ↦ ∏ᶠ i, f i (x i)) (restrictedHaar B μ hμB) := by
-  classical
   obtain ⟨T, hT⟩ := exists_finset_eq_indicator_and_measure_eq_one B μ hμB hfB
   have h := measurePreserving_restrictedProductSplitMeasurableEquiv_symm B μ hμB T
   refine (h.integrable_comp_emb (restrictedProductSplitMeasurableEquiv B T).symm.measurableEmbedding
