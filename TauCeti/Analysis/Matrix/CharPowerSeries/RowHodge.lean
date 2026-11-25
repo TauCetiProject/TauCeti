@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Convex.Sequence.Face
 public import TauCeti.Analysis.Matrix.CharPowerSeries.Rearrangement
 public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.Matrix.CharPowerSeries.Weight
 
 /-!
 # Row Hodge lower polygons of principal-minor series
@@ -43,6 +44,11 @@ A uniform bound `‖A i j‖ ≤ C` gives the line of slope `-logb b C` through 
 Newton polygon (`Matrix.isSupportingLine_newtonPolygon_charPowerSeries`): every finite slope of
 the principal-minor series is at least `-logb b C`.
 
+On `J × ℕ` with `J` finite, block row decay `‖A (j, k) i‖ ≤ s ^ k` with `0 < s ≤ 1` gives the
+lower polygon `n ↦ -logb b s * ∑ i < n, ⌊i / #J⌋`, from the weighted coefficient estimate
+`Matrix.norm_charCoeff_le_pow_sum_range_div`; its slopes `-logb b s * ⌊n / #J⌋` are
+nondecreasing (`Matrix.mul_sum_range_div_le_newtonPolygon_charPowerSeries`).
+
 ## Main definitions
 
 * `TauCeti.rowHodgePolygon b r`: the row Hodge polygon of the majorant `r` in base `b`.
@@ -58,6 +64,8 @@ the principal-minor series is at least `-logb b C`.
   heights and the Newton polygon of the principal-minor series.
 * `Matrix.isSupportingLine_newtonPolygon_charPowerSeries`: the slope bound from a uniform bound
   on the entries.
+* `Matrix.mul_sum_range_div_le_newtonPolygon_charPowerSeries`: block row decay bounds the Newton
+  polygon of the principal-minor series below.
 
 ## References
 
@@ -193,14 +201,13 @@ theorem rowHodgePolygon_le_addValuation_charCoeff (hb : 1 < b)
     rowHodgePolygon b r n ≤ v (A.charCoeff n) := by
   have hcoeff := norm_charCoeff_le_prod_decreasingRearrangement hr hA n
   by_cases h : ∀ k < n, 0 < decreasingRearrangement r k
-  · have key := (PowerSeries.norm_coeff_mul_rpow_pow_le_iff A.charPowerSeries v hb hv n 0
+  · have key := (PowerSeries.norm_coeff_le_rpow_neg_iff A.charPowerSeries v hb hv n
       (∑ k ∈ range n, -Real.logb b (decreasingRearrangement r k))).mp <| by
-      rw [Real.rpow_zero, one_pow, mul_one, coeff_charPowerSeries, sum_neg_distrib, neg_neg,
+      rw [coeff_charPowerSeries, sum_neg_distrib, neg_neg,
         ← Real.logb_prod _ _ fun k hk ↦ (h k (mem_range.mp hk)).ne',
         Real.rpow_logb (zero_lt_one.trans hb) hb.ne' (prod_pos fun k hk ↦ h k (mem_range.mp hk))]
       exact hcoeff
-    rwa [rowHodgePolygon_of_forall_lt h, ← coeff_charPowerSeries, ← add_zero (∑ k ∈ range n, _),
-      ← zero_mul (n : ℝ)]
+    rwa [rowHodgePolygon_of_forall_lt h, ← coeff_charPowerSeries]
   · obtain ⟨k, hk, hk0⟩ : ∃ k < n, decreasingRearrangement r k = 0 := by
       push Not at h
       obtain ⟨k, hk, hk0⟩ := h
@@ -236,5 +243,29 @@ theorem isSupportingLine_newtonPolygon_charPowerSeries (hb : 1 < b)
       fun _ ↦ le_rfl) n).trans
     (rowHodgePolygon_le_newtonPolygon_charPowerSeries hb hv
       ⟨C, by rintro _ ⟨i, rfl⟩; exact le_rfl⟩ hA n)
+
+/-- **Block row decay bounds the Newton polygon.** Let `v` be a real additive valuation with
+`‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. If `0 < s ≤ 1` and every entry in a row indexed
+by `(j, k)` of a matrix `A` on `J × ℕ` has norm at most `s ^ k`, then the heights
+`-logb b s * ∑ i < n, ⌊i / #J⌋` lie below the Newton polygon of the principal-minor series
+`A.charPowerSeries`, which is the Fredholm determinant `det (1 - T A)` when its principal-minor
+families are summable. -/
+theorem mul_sum_range_div_le_newtonPolygon_charPowerSeries {J : Type*} [Finite J] [DecidableEq J]
+    (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {s : ℝ} (hs₀ : 0 < s) (hs₁ : s ≤ 1)
+    {A : Matrix (J × ℕ) (J × ℕ) K} (hA : ∀ i j, ‖A i j‖ ≤ s ^ i.2) :
+    (fun n ↦ ((-Real.logb b s * (∑ i ∈ range n, i / Nat.card J : ℕ) : ℝ) : WithTop ℝ)) ≤
+      A.charPowerSeries.newtonPolygon v := by
+  have hc : 0 ≤ -Real.logb b s := neg_nonneg.mpr (Real.logb_nonpos hb hs₀.le hs₁)
+  refine PowerSeries.le_newtonPolygon ⟨⟨fun _ _ _ _ _ _ ↦ WithTop.coe_ne_top⟩,
+    fun i _ j _ hij ↦ ?_⟩ fun n ↦ ?_
+  · -- The unit slopes `c ⌊n / #J⌋` are nondecreasing.
+    simp only [unitSlope_def, WithTop.untop₀_coe, sum_range_succ, Nat.cast_add]
+    have := Nat.div_le_div_right (c := Nat.card J) hij
+    have : ((i / Nat.card J : ℕ) : ℝ) ≤ (j / Nat.card J : ℕ) := by exact_mod_cast this
+    nlinarith
+  · refine (PowerSeries.norm_coeff_le_rpow_neg_iff A.charPowerSeries v hb hv n _).mp ?_
+    rw [coeff_charPowerSeries, neg_mul, neg_neg, Real.rpow_mul (zero_lt_one.trans hb).le,
+      Real.rpow_logb (zero_lt_one.trans hb) hb.ne' hs₀, Real.rpow_natCast]
+    exact norm_charCoeff_le_pow_sum_range_div hs₀.le hs₁ hA n
 
 end Matrix
