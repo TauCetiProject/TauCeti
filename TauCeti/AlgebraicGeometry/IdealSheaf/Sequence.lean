@@ -39,6 +39,10 @@ subscheme `V(I)`. Since `ι` is affine, `ι_* 𝒪_{V(I)}` is quasi-coherent, an
   `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(J)}` vanishes.
 * `Scheme.IdealSheafData.shortExact_toPushforwardSubscheme`: the sequence
   `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)}` is short exact.
+* `Scheme.IdealSheafData.pushforwardSubschemeMap`: for `I ≤ J`, the restriction
+  `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions to the smaller closed subscheme, through which
+  `𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors
+  (`Scheme.IdealSheafData.toPushforwardSubscheme_pushforwardSubschemeMap`).
 * `Scheme.IdealSheafData.isQuasicoherent_sheaf`: the ideal sheaf `I` is quasi-coherent.
 
 ## References
@@ -135,6 +139,50 @@ theorem shortExact_toPushforwardSubscheme :
   exact := ShortComplex.exact_of_f_is_kernel _ I.isLimitKernelForkSheafι
   mono_f := inferInstanceAs (Mono I.sheafι)
   epi_g := I.epi_toPushforwardSubscheme
+
+section PushforwardSubschemeMap
+
+/-! ### Restriction to a smaller closed subscheme -/
+
+variable {I} {J : X.IdealSheafData}
+
+/-- For `I ≤ J`, the restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions on `V(I)` to the
+smaller closed subscheme `V(J)`. It is the morphism through which the restriction
+`𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors (`toPushforwardSubscheme_pushforwardSubschemeMap`). -/
+def pushforwardSubschemeMap (h : I ≤ J) : I.pushforwardSubscheme ⟶ J.pushforwardSubscheme :=
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).val
+
+/-- Restricting functions from `X` to `V(I)` and then to `V(J)` is restricting them to `V(J)`. -/
+@[reassoc (attr := simp)]
+lemma toPushforwardSubscheme_pushforwardSubschemeMap (h : I ≤ J) :
+    I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h = J.toPushforwardSubscheme :=
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).property
+
+/-- The restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` is an epimorphism. -/
+instance epi_pushforwardSubschemeMap (h : I ≤ J) : Epi (pushforwardSubschemeMap h) :=
+  have : Epi (I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h) := by
+    rw [toPushforwardSubscheme_pushforwardSubschemeMap]
+    infer_instance
+  epi_of_epi I.toPushforwardSubscheme _
+
+variable (I) in
+/-- Restricting functions from `V(I)` to `V(I)` is the identity. -/
+@[simp]
+lemma pushforwardSubschemeMap_refl : pushforwardSubschemeMap (le_refl I) = 𝟙 _ := by
+  rw [← cancel_epi I.toPushforwardSubscheme, toPushforwardSubscheme_pushforwardSubschemeMap,
+    Category.comp_id]
+
+/-- Restriction from `V(I)` to `V(J)` and then to `V(K)` is restriction to `V(K)`. -/
+@[reassoc (attr := simp)]
+lemma pushforwardSubschemeMap_comp {K : X.IdealSheafData} (h : I ≤ J) (h' : J ≤ K) :
+    pushforwardSubschemeMap h ≫ pushforwardSubschemeMap h' =
+      pushforwardSubschemeMap (h.trans h') := by
+  rw [← cancel_epi I.toPushforwardSubscheme, toPushforwardSubscheme_pushforwardSubschemeMap_assoc,
+    toPushforwardSubscheme_pushforwardSubschemeMap, toPushforwardSubscheme_pushforwardSubschemeMap]
+
+end PushforwardSubschemeMap
 
 /-- An ideal sheaf is quasi-coherent: it is the kernel of the morphism `𝒪_X ⟶ ι_* 𝒪_{V(I)}`
 between quasi-coherent sheaves, the target being quasi-coherent as `ι` is affine. -/

@@ -58,6 +58,9 @@ along base change; closed subgroup schemes are treated in
   section of `E` there; in particular (`pointsPullback_left_apply_eq_zero_iff`) the base change
   `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the zero
   section at `f s'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_eq_one_iff_of_isPullback` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback`:
+  compatible sections have multiples vanishing along the same base maps and base points.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 
@@ -311,6 +314,29 @@ theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.
     (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
   rw [left_apply_eq_zero_iff_of_isPullback hg h0, ← Scheme.Hom.comp_apply,
     pointsPullback_left_comp, Scheme.Hom.comp_apply]
+
+include hg h0 in
+/-- For compatible sections in a cartesian square of pointed elliptic curves, a multiple of
+the pulled-back section is zero exactly when the original multiple is zero along the base map. -/
+theorem pow_eq_one_iff_of_isPullback
+    {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap}
+    {Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (hP : P.left ≫ g = f ≫ Q.left) (n : ℕ) :
+    P ^ n = 1 ↔ f ≫ (Q ^ n).left = f ≫ E.zero := by
+  rw [(eq_pointsPullback_iff hg h0).mpr hP, ← map_pow]
+  simpa [Over.OverMorphism.ext_iff, hom_one_left] using
+    comp_pointsPullback_left_eq_comp_zero_iff hg h0 (Q ^ n) (𝟙 S')
+
+include hg h0 in
+/-- For compatible sections in a cartesian square of pointed elliptic curves, their multiples
+meet the zero sections at corresponding points of the bases. -/
+theorem pow_left_apply_eq_zero_iff_of_isPullback
+    {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap}
+    {Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (hP : P.left ≫ g = f ≫ Q.left) (n : ℕ) (s' : S') :
+    (P ^ n).left s' = E'.zero s' ↔ (Q ^ n).left (f s') = E.zero (f s') := by
+  rw [(eq_pointsPullback_iff hg h0).mpr hP, ← map_pow]
+  exact pointsPullback_left_apply_eq_zero_iff hg h0 (Q ^ n) s'
 
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
