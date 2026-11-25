@@ -63,6 +63,8 @@ its adelic points.
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
   topological coefficient algebras, as an isomorphism of topological monoids of points.
+* `BialgEquiv.mapDomainContinuousMulEquiv`: pre-composition with an isomorphism of bialgebras, as
+  an isomorphism of topological monoids of points.
 
 ## References
 
@@ -196,6 +198,37 @@ theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R �
     (e.mapValueContinuousMulEquiv.symm x).ofConv h = e.symm (x.ofConv h) := by
   obtain ⟨y, rfl⟩ := (e.mapValueContinuousMulEquiv (H₁ := H₁)).surjective x
   simp
+
+/-- An isomorphism `e : H₁ ≃ₐc[k] H₂` of bialgebras induces, by pre-composition, an isomorphism of
+topological monoids of points `WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R)`; it is
+`BialgEquiv.mapDomainMulEquiv` with its continuity in both directions. -/
+noncomputable def BialgEquiv.mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H₂) :
+    WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R) where
+  toMulEquiv := e.mapDomainMulEquiv
+  continuous_toFun := (BialgHom.continuous_mapDomain _).congr fun x ↦
+    (e.mapDomainMulEquiv_apply x).symm
+  continuous_invFun := (BialgHom.continuous_mapDomain _).congr fun x ↦
+    (e.mapDomainMulEquiv_symm_apply x).symm
+
+/-- As a function, `mapDomainContinuousMulEquiv` is the pre-composition map `BialgHom.mapDomain`. -/
+theorem BialgEquiv.coe_mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H₂) :
+    ⇑(e.mapDomainContinuousMulEquiv (R := R)) = BialgHom.mapDomain (A := R) (e : H₁ →ₐc[k] H₂) :=
+  funext e.mapDomainMulEquiv_apply
+
+/-- The forward map of `mapDomainContinuousMulEquiv` is pre-composition with `e`. -/
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (e : H₁ ≃ₐc[k] H₂)
+    (x : WithConv (H₂ →ₐ[k] R)) :
+    e.mapDomainContinuousMulEquiv x = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) x :=
+  e.mapDomainMulEquiv_apply x
+
+/-- The inverse map of `mapDomainContinuousMulEquiv` is pre-composition with `e.symm`. -/
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_symm_apply (e : H₁ ≃ₐc[k] H₂)
+    (x : WithConv (H₁ →ₐ[k] R)) :
+    (e.mapDomainContinuousMulEquiv (R := R)).symm x =
+      BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁) x :=
+  e.mapDomainMulEquiv_symm_apply x
 
 end Functoriality
 

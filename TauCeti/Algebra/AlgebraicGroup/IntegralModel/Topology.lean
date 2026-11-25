@@ -54,9 +54,8 @@ private theorem coe_integralPoints_eq_preimage :
     (integralPoints 𝒪[E] E A : Set (WithConv (E ⊗[𝒪[E]] A →ₐ[E] E))) =
       PointTopology.baseChangeConvHomeomorph 𝒪[E] E A E ⁻¹'
         Set.range (AlgHom.mapValue (H := A) (Algebra.ofId 𝒪[E] E)) := by
-  rw [← Homeomorph.image_symm, PointTopology.coe_baseChangeConvHomeomorph_symm,
-    ← Set.range_comp, integralPoints_def, MonoidHom.coe_range, AlgHom.pointsBaseChange_def,
-    MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
+  rw [← Homeomorph.image_symm, PointTopology.coe_baseChangeConvHomeomorph_symm]
+  simp [integralPoints_def, AlgHom.pointsBaseChange_def, ← Set.range_comp]
 
 /-- **The integral points are open.** For a Hopf algebra `A` of finite type over the valuation
 ring of a ring `E` with a valuative topology, the integral points form an open subgroup of the
@@ -112,15 +111,10 @@ valuation ring of a nonarchimedean local field `E`, `𝒢(𝒪[E])` is a compact
 theorem isCompact_integralPoints :
     IsCompact (𝒢.integralPoints : Set (WithConv (H →ₐ[E] E))) := by
   let i := CommHopfAlgCat.ofIso ((CategoryTheory.ObjectProperty.ι _).mapIso 𝒢.genericFiberIso)
-  have he : BialgHom.mapDomain (A := E)
-      (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom) =
-      (BialgEquiv.mapDomainMulEquiv (A := E) i).toMonoidHom := by
-    rw [← FiniteTypeCommHopfAlgCat.toBialgHom_ofIso_ι_mapIso]
-    exact MonoidHom.ext fun g ↦ (BialgEquiv.mapDomainMulEquiv_apply i g).symm
-  rw [integralPoints_def, he, Subgroup.comap_equiv_eq_map_symm', Subgroup.coe_map]
-  exact (IntegralModel.isCompact_integralPoints 𝒢.coord).image <|
-    (BialgHom.continuous_mapDomain _).congr fun g ↦
-      (BialgEquiv.mapDomainMulEquiv_symm_apply i g).symm
+  rw [integralPoints_def, Subgroup.coe_comap, ← FiniteTypeCommHopfAlgCat.toBialgHom_ofIso_ι_mapIso,
+    BialgEquiv.toBialgHom_eq_coe, ← BialgEquiv.coe_mapDomainContinuousMulEquiv]
+  exact (i.mapDomainContinuousMulEquiv.toHomeomorph.isCompact_preimage).2
+    (IntegralModel.isCompact_integralPoints 𝒢.coord)
 
 end LocalField
 
