@@ -133,9 +133,9 @@ theorem X_smul_hatToPlus (c : H.Generator →₀ ZMod 2) : (X : (ZMod 2)[X]) •
   rw [hatToPlus_apply, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
     mem_minusLattice_iff]
   intro x
-  rw [Finsupp.smul_apply, smul_eq_toLaurent_mul, toLaurent_X, Finsupp.mapRange_apply, ← mul_assoc,
-    T_mul, mul_T_assoc]
-  exact ⟨Polynomial.C (c x), by simp⟩
+  rw [Finsupp.smul_apply, X_smul_eq_T_one_mul, Finsupp.mapRange_apply, ← mul_assoc,
+    T_mul_mul_T_neg]
+  exact ⟨Polynomial.C (c x), toLaurent_C _⟩
 
 /-- **`CF̂` is the kernel of `U` on `CF⁺`.** A class in `CF⁺` is killed by `U` exactly when it lies
 in the image of `hatToPlus`. -/
@@ -146,7 +146,7 @@ theorem exact_hatToPlus_X_smul :
   refine ⟨fun hy => ?_, fun ⟨c, hc⟩ => hc ▸ X_smul_hatToPlus c⟩
   obtain ⟨c, rfl⟩ := Submodule.mkQ_surjective _ y
   simp only [Submodule.mkQ_apply, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-    mem_minusLattice_iff, Finsupp.smul_apply, smul_eq_toLaurent_mul, toLaurent_X,
+    mem_minusLattice_iff, Finsupp.smul_apply, X_smul_eq_T_one_mul,
     T_one_mul_mem_range_toLaurent_iff] at hy
   refine ⟨Finsupp.mapRange (fun f => f.coeff (-1))
     (by rw [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]) c, ?_⟩
@@ -168,7 +168,7 @@ theorem X_smul_plus_surjective :
   rw [← Submodule.Quotient.mk_smul, Submodule.mkQ_apply]
   congr 1
   ext x
-  rw [Finsupp.smul_apply, smul_eq_toLaurent_mul, toLaurent_X, Finsupp.smul_apply, smul_eq_mul,
+  rw [Finsupp.smul_apply, X_smul_eq_T_one_mul, Finsupp.smul_apply, smul_eq_mul,
     ← mul_assoc, ← T_add]
   simp
 

@@ -34,6 +34,7 @@ of `T⁻¹`.
   `Polynomial.toLaurent`.
 * `LaurentPolynomial.smul_eq_toLaurent_mul`: polynomials act on Laurent polynomials by
   multiplication.
+* `LaurentPolynomial.coeff_C_mul_T`: the coefficients of `a Tⁿ`.
 * `Polynomial.toLaurent_mul_T_neg_one`: `p T⁻¹ = divX p + p(0) T⁻¹`.
 * `LaurentPolynomial.C_mul_T_eq_toLaurent_iff`: `a Tⁿ` with `n < 0` is a polynomial only when
   `a = 0`.
@@ -97,13 +98,24 @@ variable {R : Type*} [Semiring R]
 theorem smul_eq_toLaurent_mul (p : R[X]) (f : R[T;T⁻¹]) : p • f = toLaurent p * f :=
   (rfl)
 
+/-- The variable `X` acts on Laurent polynomials as multiplication by `T 1`. -/
+theorem X_smul_eq_T_one_mul (f : R[T;T⁻¹]) : (X : R[X]) • f = T 1 * f := by
+  rw [smul_eq_toLaurent_mul, toLaurent_X]
+
+/-- The coefficient of degree `m` of `a Tⁿ` is `a` if `n = m` and `0` otherwise. -/
+theorem coeff_C_mul_T (a : R) (n m : ℤ) : (C a * T n).coeff m = if n = m then a else 0 := by
+  rw [← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+
+/-- Multiplying by `Tⁿ` and by `T⁻ⁿ` cancel. -/
+theorem T_mul_mul_T_neg (n : ℤ) (f : R[T;T⁻¹]) : T n * f * T (-n) = f := by
+  rw [T_mul, mul_T_assoc, add_neg_cancel, T_zero, mul_one]
+
 /-- Multiplying a polynomial `p` by `T⁻¹` gives the polynomial `divX p` plus the multiple
 `p(0) T⁻¹` of `T⁻¹`. -/
 theorem _root_.Polynomial.toLaurent_mul_T_neg_one (p : R[X]) :
     toLaurent p * T (-1) = toLaurent p.divX + C (p.coeff 0) * T (-1) := by
   conv_lhs => rw [← X_mul_divX_add p]
-  rw [map_add, map_mul, toLaurent_X, toLaurent_C, add_mul, T_mul, mul_T_assoc]
-  simp
+  rw [map_add, map_mul, toLaurent_X, toLaurent_C, add_mul, T_mul_mul_T_neg]
 
 /-- A multiple `a Tⁿ` of a negative power of `T` is a polynomial only when it vanishes. -/
 theorem C_mul_T_eq_toLaurent_iff {n : ℤ} (hn : n < 0) {a : R} {p : R[X]} :
@@ -111,7 +123,7 @@ theorem C_mul_T_eq_toLaurent_iff {n : ℤ} (hn : n < 0) {a : R} {p : R[X]} :
   refine ⟨fun h ↦ ?_, fun ⟨ha, hp⟩ ↦ by simp [ha, hp]⟩
   have ha : a = 0 := by
     have := TauCeti.exists_toLaurent_eq_iff.mp ⟨p, h.symm⟩ n hn
-    simpa [← single_eq_C_mul_T] using this
+    rwa [coeff_C_mul_T, ite_eq_left rfl] at this
   subst ha
   exact ⟨rfl, by simpa using h.symm⟩
 
@@ -123,17 +135,16 @@ theorem T_one_mul_mem_range_toLaurent_iff {f : R[T;T⁻¹]} :
   constructor
   · rintro ⟨q, hq⟩
     have hf : f = toLaurent q.divX + C (q.coeff 0) * T (-1) := by
-      rw [← toLaurent_mul_T_neg_one, hq, T_mul, mul_T_assoc]
-      simp
+      rw [← toLaurent_mul_T_neg_one, hq, T_mul_mul_T_neg]
     have hcoeff : f.coeff (-1) = q.coeff 0 := by
       have h0 := TauCeti.exists_toLaurent_eq_iff.mp ⟨q.divX, rfl⟩ (-1) (by norm_num)
-      simp [hf, h0, ← single_eq_C_mul_T, -coeff_toLaurent]
+      rw [hf, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, h0, coeff_C_mul_T, ite_eq_left rfl,
+        zero_add]
     exact ⟨q.divX, by rw [hcoeff, ← hf]⟩
   · rintro ⟨p, hp⟩
     refine ⟨X * p + Polynomial.C (f.coeff (-1)), ?_⟩
     generalize f.coeff (-1) = a at hp ⊢
-    rw [← hp, map_add, map_mul, toLaurent_X, toLaurent_C, mul_add, T_mul (1 : ℤ) (C _ * _),
-      mul_T_assoc]
-    simp
+    rw [← hp, map_add, map_mul, toLaurent_X, toLaurent_C, mul_add, ← mul_assoc,
+      T_mul_mul_T_neg]
 
 end LaurentPolynomial
