@@ -5,33 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Topology.Instances.RealVectorSpace
+public import TauCeti.LinearAlgebra.Dimension.RealRat
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
 # A discontinuous automorphism of the reals under addition
 
-A Check for `TauCeti.ContinuousOut` showing that the topology matters. For
-`G = Multiplicative ℝ`, the reals under addition with their usual topology, the abelian `G` has
-`OuterAut G = MulAut G`, which contains the `ℚ`-linear automorphism exchanging two elements
-`b₁, b₂` of a Hamel basis (`swapAut`). It is not continuous (`not_continuous_swapAut`), so it
-is not in the image of `TauCeti.ContinuousAut G` (`swapAut_notMem_range_toMulAut`): a
-continuous additive self-map of `ℝ` is `x ↦ c x` (Mathlib's `map_real_smul`), and `c b₁ = b₂`,
-`c b₂ = b₁` force `c = ±1`, hence `b₂ = ±b₁`.
+A Check for `TauCeti.ContinuousAut` showing that the topology matters. For
+`G = Multiplicative ℝ`, the reals under addition with their usual topology, the `ℚ`-linear
+automorphism exchanging two elements `b₁, b₂` of a Hamel basis (`swapAut`) is an element of
+`MulAut G` that is not continuous (`not_continuous_swapAut`), so `TauCeti.ContinuousAut.toMulAut`
+is not surjective (`swapAut_notMem_range_toMulAut`): a continuous additive self-map of `ℝ` is
+`x ↦ c x` (Mathlib's `map_real_smul`), and `c b₁ = b₂`, `c b₂ = b₁` force `c = ±1`, hence
+`b₂ = ±b₁`.
+
+This motivates `TauCeti.ContinuousOut`: since `G` is abelian, `OuterAut G` is isomorphic to
+`MulAut G`, which therefore contains automorphisms not coming from `ContinuousAut G`; that
+isomorphism is not proved here.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 open Multiplicative
 
 namespace TauCeti.DiscontinuousAutReal
-
-/-- A Hamel basis of `ℝ` over `ℚ` has at least two elements. -/
-instance nontrivial_ofVectorSpaceIndex : Nontrivial (Module.Basis.ofVectorSpaceIndex ℚ ℝ) := by
-  rw [← Cardinal.one_lt_iff_nontrivial, (Module.Basis.ofVectorSpace ℚ ℝ).mk_eq_rank'',
-    Real.rank_rat_real]
-  exact_mod_cast Cardinal.nat_lt_continuum 1
 
 /-- The automorphism of the reals under addition given by the `ℚ`-linear map exchanging the
 Hamel basis elements `b i` and `b j`. -/

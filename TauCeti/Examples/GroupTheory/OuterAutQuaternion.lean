@@ -23,7 +23,7 @@ automorphism exactly when `a i ↦ u ^ i`, `xa i ↦ v * u ^ i` is an injective 
 is decidable; there are `24` such pairs.
 -/
 
-@[expose] public section
+public section
 
 open QuaternionGroup
 
@@ -33,44 +33,46 @@ namespace TauCeti.QuaternionOuterAut
 local notation "Q₈" => QuaternionGroup 2
 
 /-- The map `a i ↦ u ^ i`, `xa i ↦ v * u ^ i` attached to a pair `p = (u, v)`. -/
-def ofGens (p : Q₈ × Q₈) : Q₈ → Q₈
+private def ofGens (p : Q₈ × Q₈) : Q₈ → Q₈
   | a i => p.1 ^ i.val
   | xa i => p.2 * p.1 ^ i.val
 
 /-- The pairs `(u, v)` for which `ofGens (u, v)` is an injective homomorphism. -/
-def IsGenPair (p : Q₈ × Q₈) : Prop :=
+private def IsGenPair (p : Q₈ × Q₈) : Prop :=
   (∀ x y, ofGens p (x * y) = ofGens p x * ofGens p y) ∧ Function.Injective (ofGens p)
 
-instance : DecidablePred IsGenPair := fun _ => by unfold IsGenPair; infer_instance
+private instance : DecidablePred IsGenPair := fun _ => by unfold IsGenPair; infer_instance
 
-theorem card_isGenPair : Fintype.card {p : Q₈ × Q₈ // IsGenPair p} = 24 := by
+/-- Exactly `24` pairs satisfy `IsGenPair`. -/
+private theorem card_isGenPair : Fintype.card {p : Q₈ × Q₈ // IsGenPair p} = 24 := by
   decide +kernel
 
-/-- Every element of `Q₈` is `a 1 ^ i` or `xa 0 * a 1 ^ i`. -/
-theorem ofGens_apply_eq (φ : MulAut Q₈) (x : Q₈) : ofGens (φ (a 1), φ (xa 0)) x = φ x := by
+/-- An automorphism `φ` of `Q₈` agrees with `ofGens` of its values on `a 1` and `xa 0`. -/
+private theorem ofGens_apply_eq (φ : MulAut Q₈) (x : Q₈) : ofGens (φ (a 1), φ (xa 0)) x = φ x := by
   cases x with
   | a i => simp [ofGens, ← map_pow, a_one_pow]
   | xa i => simp [ofGens, ← map_pow, ← map_mul, a_one_pow, xa_mul_a]
 
-theorem isGenPair_apply (φ : MulAut Q₈) : IsGenPair (φ (a 1), φ (xa 0)) := by
+/-- The images of `a 1` and `xa 0` under an automorphism form a pair satisfying `IsGenPair`. -/
+private theorem isGenPair_mulAut (φ : MulAut Q₈) : IsGenPair (φ (a 1), φ (xa 0)) := by
   have h : ofGens (φ (a 1), φ (xa 0)) = φ := funext (ofGens_apply_eq φ)
   refine ⟨fun x y => ?_, ?_⟩ <;> rw [h]
   · exact map_mul φ x y
   · exact φ.injective
 
 /-- The automorphism of `Q₈` attached to a pair satisfying `IsGenPair`. -/
-noncomputable def mulAutOfIsGenPair (p : {p : Q₈ × Q₈ // IsGenPair p}) : MulAut Q₈ :=
+private noncomputable def mulAutOfIsGenPair (p : {p : Q₈ × Q₈ // IsGenPair p}) : MulAut Q₈ :=
   MulEquiv.ofBijective (MulHom.mk (ofGens p.val) p.property.1)
     (Finite.injective_iff_bijective.1 p.property.2)
 
-theorem mulAutOfIsGenPair_apply (p : {p : Q₈ × Q₈ // IsGenPair p}) (x : Q₈) :
+private theorem mulAutOfIsGenPair_apply (p : {p : Q₈ × Q₈ // IsGenPair p}) (x : Q₈) :
     mulAutOfIsGenPair p x = ofGens p.val x :=
   rfl
 
 /-- `MulAut Q₈` is in bijection with the pairs satisfying `IsGenPair`, by
 `φ ↦ (φ(a 1), φ(xa 0))`. -/
-noncomputable def mulAutEquiv : MulAut Q₈ ≃ {p : Q₈ × Q₈ // IsGenPair p} where
-  toFun φ := ⟨(φ (a 1), φ (xa 0)), isGenPair_apply φ⟩
+private noncomputable def mulAutEquiv : MulAut Q₈ ≃ {p : Q₈ × Q₈ // IsGenPair p} where
+  toFun φ := ⟨(φ (a 1), φ (xa 0)), isGenPair_mulAut φ⟩
   invFun := mulAutOfIsGenPair
   left_inv φ := MulEquiv.ext fun x => by
     rw [mulAutOfIsGenPair_apply, ofGens_apply_eq]
@@ -97,10 +99,10 @@ theorem card_range_conj : Nat.card (MulAut.conj : Q₈ →* MulAut Q₈).range =
 
 /-- `OuterAut Q₈` has order `24 / 4 = 6`. -/
 theorem card_outerAut : Nat.card (OuterAut Q₈) = 6 := by
-  have h := Subgroup.card_eq_card_quotient_mul_card_subgroup
-    (MulAut.conj : Q₈ →* MulAut Q₈).range
+  have h : Nat.card (MulAut Q₈) =
+      Nat.card (OuterAut Q₈) * Nat.card (MulAut.conj : Q₈ →* MulAut Q₈).range :=
+    Subgroup.card_eq_card_quotient_mul_card_subgroup _
   rw [card_mulAut, card_range_conj] at h
-  change 24 = Nat.card (OuterAut Q₈) * 4 at h
   omega
 
 section Discrete
