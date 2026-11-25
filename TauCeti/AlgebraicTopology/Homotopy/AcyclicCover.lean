@@ -18,7 +18,8 @@ Serre's theorems that the homotopy groups of a simply connected space are unique
 when its mod-two homology vanishes, or torsion when its rational homology vanishes, share one
 argument, which climbs the Whitehead tower one homotopy group at a time. This file proves it once,
 for a ring of coefficients `k` and a property `P` of abelian groups invariant under isomorphism
-(`TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`). It needs two inputs:
+(`TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`), with the space, the ring and the
+groups in one arbitrary universe. It needs two inputs:
 
 * **the first homotopy group:** if `Z` is `(n + 1)`-connected and has the `k`-homology of a point,
   then `πₙ₊₂(Z)` has the property `P`; this comes from the Hurewicz isomorphism
@@ -61,19 +62,21 @@ open CategoryTheory Limits AlgebraicTopology
 
 open scoped Topology Topology.Homotopy
 
+universe u
+
 namespace TauCeti
 
-variable (k : Type) [CommRing k]
+variable (k : Type u) [CommRing k]
 
 /-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and which has the
 `k`-homology of a point. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point, then
 so has the `(m + 2)`-connected cover `X⟨m + 2⟩`. -/
-theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{0}) [T2Space X]
+theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) [T2Space X]
     [PathConnectedSpace X] (x : X) (m : ℕ)
     (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
     (hXk : ∀ i, Subsingleton (((singularChains k).obj X).homology (i + 1)))
-    (hK : ∀ {Y : Type} [TopologicalSpace Y] {y : Y},
+    (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
       IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     (i : ℕ) :
@@ -86,13 +89,13 @@ theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{0}) 
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 (hXk i)
 
-variable (P : (G : Type) → [AddCommGroup G] → Prop)
-  (hP : ∀ {G H : Type} [AddCommGroup G] [AddCommGroup H], (G ≃+ H) → P G → P H)
-  (hπ : ∀ {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ),
+variable (P : (G : Type u) → [AddCommGroup G] → Prop)
+  (hP : ∀ {G H : Type u} [AddCommGroup G] [AddCommGroup H], (G ≃+ H) → P G → P H)
+  (hπ : ∀ {Z : Type u} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ),
     (∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z)) →
     (∀ i, Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (i + 1))) →
       P (Additive (π_ (n + 2) Z z)))
-  (hK : ∀ {A : Type} [AddCommGroup A], P A → ∀ {n : ℕ} [NeZero n] {X : Type}
+  (hK : ∀ {A : Type u} [AddCommGroup A], P A → ∀ {n : ℕ} [NeZero n] {X : Type u}
     [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace (Multiplicative A) n X x →
       ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)))
 
@@ -107,7 +110,7 @@ abelian groups invariant under isomorphism. Suppose that
 
 Then every homotopy group `πₙ₊₂(Y)` of a simply connected space `Y` with the `k`-homology of a
 point has the property `P`. No CW structure is assumed on `Y`. -/
-theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type} [TopologicalSpace Y]
+theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type u} [TopologicalSpace Y]
     [SimplyConnectedSpace Y]
     (hY : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     (y : Y) (n : ℕ) : P (Additive (π_ (n + 2) Y y)) := by

@@ -31,6 +31,7 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
   `WittVector.teichmuller_add_verschiebung_coeff_succ`: the Witt coordinates of `[a] + V x`.
 * `WittVector.exists_eq_teichmuller_add_verschiebung`: every Witt vector is `[x₀] + V u`.
 * `WittVector.sub_coeff_zero`: the zeroth Witt coordinate of `x - y` is `x₀ - y₀`.
+* `WittVector.ghostComponent_one`: the first ghost component is `x₀ ^ p + p * x₁`.
 * `WittVector.coeff_frobenius_zero`, `WittVector.mul_coeff_one`: the zeroth Witt coordinate of
   `F x` and the first Witt coordinate of `x y`.
 * `WittVector.mul_coeff_one_charP`: in characteristic `p`, `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`.
@@ -80,13 +81,16 @@ theorem exists_eq_teichmuller_add_verschiebung (x : 𝕎 R) :
   intro i hi
   rw [Nat.lt_one_iff.mp hi, sub_coeff_zero, teichmuller_coeff_zero, sub_self]
 
+/-- The first ghost component of a Witt vector is `x₀ ^ p + p * x₁`. -/
+theorem ghostComponent_one (x : 𝕎 R) :
+    ghostComponent 1 x = x.coeff 0 ^ p + p * x.coeff 1 := by
+  simp [ghostComponent_apply, add_comm]
+
 /-- The zeroth Witt coordinate of `F x` is `x₀ ^ p + p x₁`, the first ghost component of `x`. -/
 theorem coeff_frobenius_zero (x : 𝕎 R) :
     (frobenius x).coeff 0 = x.coeff 0 ^ p + p * x.coeff 1 := by
-  have h := ghostComponent_frobenius 0 x
-  rw [ghostComponent_apply, ghostComponent_apply, wittPolynomial_zero, wittPolynomial_one] at h
-  simp only [MvPolynomial.aeval_X, map_add, map_mul, map_pow, map_natCast] at h
-  rw [h, add_comm]
+  rw [← ghostComponent_one, ← ghostComponent_frobenius]
+  simp [ghostComponent_apply]
 
 /-- The first Witt coordinate of a product: `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁ + p x₁ y₁`. -/
 theorem mul_coeff_one (x y : 𝕎 R) :

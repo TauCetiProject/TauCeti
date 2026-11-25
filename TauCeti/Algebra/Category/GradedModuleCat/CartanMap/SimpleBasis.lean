@@ -124,8 +124,7 @@ private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
   by_cases hn₀ : n = 0
   · have : Subsingleton M.obj := Module.finrank_zero_iff.mp (hn.trans hn₀)
     have hM : IsZero M := IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι M
-      ((IsZero.iff_id_eq_zero _).2
-        (GradedModuleCat.hom_ext (LinearMap.ext fun _ => Subsingleton.elim (α := M.obj) _ _)))
+      (GradedModuleCat.isZero_of_subsingleton M.obj)
     rw [← LaurentK0.ofExactK0_exactK0_of.{uA}, ExactK0.of_eq_zero_of_isZero.{uA} hM, map_zero]
     exact G.zero_mem
   have : Nontrivial M.obj := Module.nontrivial_of_finrank_pos (by rw [hn]; omega)

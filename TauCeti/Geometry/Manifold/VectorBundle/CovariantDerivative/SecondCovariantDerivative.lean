@@ -325,8 +325,8 @@ theorem secondCovariantDerivative_smul_apply {f : M → ℝ} (hf : ContMDiff I �
     secondCovariantDerivative_apply cov covT hσ x hY,
     covariantDerivative_covariantDerivative_smul_section (k := ∞) (X := X) (by simp) cov hf' hY
       hσ' x,
-    cov.covariantDerivative_smul_section_apply (hf.mdifferentiable (by simp) x)
-      (hσ.mdifferentiable (by simp) x)]
+    cov.isCovariantDerivativeOnUniv.leibniz_apply (hσ.mdifferentiable (by simp) x)
+      (hf.mdifferentiable (by simp) x)]
   module
 
 /-- **The double commutator of the second covariant derivative with multiplication.** For smooth
@@ -345,8 +345,8 @@ theorem secondCovariantDerivative_smul_smul_sub {f g : M → ℝ} (hf : ContMDif
   rw [secondCovariantDerivative_smul_apply cov covT hf (hg.smul_section hσ) x hY,
     secondCovariantDerivative_smul_apply cov covT hf hσ x hY,
     secondCovariantDerivative_smul_apply cov covT hg hσ x hY,
-    cov.covariantDerivative_smul_section_apply hgd hσd,
-    cov.covariantDerivative_smul_section_apply hgd hσd]
+    cov.isCovariantDerivativeOnUniv.leibniz_apply hσd hgd,
+    cov.isCovariantDerivativeOnUniv.leibniz_apply hσd hgd]
   simp only [Pi.smul_apply']
   module
 

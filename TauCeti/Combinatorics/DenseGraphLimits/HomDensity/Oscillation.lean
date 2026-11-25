@@ -57,9 +57,8 @@ theorem abs_homDensityFin_sub_le_of_adj_iff (F : SimpleGraph V) {G G' : SimpleGr
   -- The adjacency-preserving vertex maps into a host `H`.
   let P : SimpleGraph W → Finset (V → W) := fun H =>
     univ.filter fun ψ => ∀ a b, F.Adj a b → H.Adj (ψ a) (ψ b)
-  have hcard : ∀ H : SimpleGraph W, Nat.card (F →g H) = #(P H) := by
-    intro H
-    rw [card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  have hcard : ∀ H : SimpleGraph W, Nat.card (F →g H) = #(P H) :=
+    fun H => F.card_hom_eq_card_filter_adjPreserving H
   -- The maps avoiding `w` preserve adjacency into `G` exactly when they do into `G'`.
   have hsdiff : P G \ S = P G' \ S := by
     ext ψ
