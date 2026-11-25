@@ -277,6 +277,18 @@ theorem sq_sqrt_one_sub_sq {t : ℝ} (ht : |t| ≤ 1) : √(1 - t ^ 2) ^ 2 = 1 -
   have : t ^ 2 ≤ 1 := by nlinarith [abs_nonneg t, sq_abs t]
   exact sq_sqrt (by linarith)
 
+/-- The squared half-angle quotient can be rationalized when `|t| ≤ 1`. -/
+theorem sq_div_one_add_sqrt_one_sub_sq {t : ℝ} (ht : |t| ≤ 1) :
+    (t / (1 + √(1 - t ^ 2))) ^ 2 =
+      (1 - √(1 - t ^ 2)) / (1 + √(1 - t ^ 2)) := by
+  set s := √(1 - t ^ 2)
+  have hs : s ^ 2 = 1 - t ^ 2 := sq_sqrt_one_sub_sq ht
+  have ht₂ : t ^ 2 = 1 - s ^ 2 := by linarith
+  have hs₀ : 0 ≤ s := sqrt_nonneg _
+  rw [div_pow, ht₂]
+  field_simp
+  ring
+
 /-- For nonnegative ordered inputs, squaring `√(1 - (b / a)²)` recovers its argument. -/
 theorem sq_sqrt_one_sub_sq_div {a b : ℝ} (hb : 0 ≤ b) (hba : b ≤ a) :
     (√(1 - (b / a) ^ 2)) ^ 2 = 1 - (b / a) ^ 2 := by
