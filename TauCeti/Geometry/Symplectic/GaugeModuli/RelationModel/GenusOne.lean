@@ -16,7 +16,7 @@ import TauCeti.Topology.Algebra.GroupAction.Transitive
 
 Let `ζ : ℂ` be a primitive `r`-th root of unity. At genus one, the twisted relation
 `⁅A, B⁆ = ζ • 1` in `SU(r)` is equivalent to the Weyl commutation relation `A * B = ζ • (B * A)`
-(`Matrix.specialUnitaryGroup.commutatorElement_eq_smul_one_iff`). By the clock–shift normal form
+(`Matrix.coe_commutatorElement_eq_smul_one_iff`). By the clock–shift normal form
 in `TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift`, rescaling the unitary clock matrix
 `C₀ = diag(1, ζ, …, ζ^{r-1})` and cyclic shift matrix `S₀` into `SU(r)` yields an explicit
 solution (`Matrix.exists_clock_shift_specialUnitaryGroup`), and every solution in `SU(r)` is

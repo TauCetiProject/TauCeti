@@ -279,6 +279,27 @@ theorem coe_kerExternalProductBlockEquiv_symm_apply (A : V₀ →L[𝕜] V₁) (
         TensorProduct.map A.adjoint.ker.subtype B.adjoint.ker.subtype p.2) := by
   simp [kerExternalProductBlockEquiv]
 
+/-- `kerExternalProductBlockEquiv` sends a kernel vector to the tensor of kernel vectors whose
+inclusion is its first component. -/
+@[simp]
+theorem map_subtype_kerExternalProductBlockEquiv_apply_fst (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (w : (externalProductBlock A B).ker) :
+    TensorProduct.map A.ker.subtype B.ker.subtype (kerExternalProductBlockEquiv A B w).1 =
+      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).fst := by
+  obtain ⟨p, rfl⟩ := (kerExternalProductBlockEquiv A B).symm.surjective w
+  simp
+
+/-- `kerExternalProductBlockEquiv` sends a kernel vector to the tensor of kernel vectors whose
+inclusion is its second component. -/
+@[simp]
+theorem map_subtype_kerExternalProductBlockEquiv_apply_snd (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (w : (externalProductBlock A B).ker) :
+    TensorProduct.map A.adjoint.ker.subtype B.adjoint.ker.subtype
+        (kerExternalProductBlockEquiv A B w).2 =
+      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).snd := by
+  obtain ⟨p, rfl⟩ := (kerExternalProductBlockEquiv A B).symm.surjective w
+  simp
+
 /-- The dimension of the kernel of the external product block is
 `dim ker A · dim ker B + dim ker A† · dim ker B†`. -/
 theorem finrank_ker_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
@@ -315,6 +336,28 @@ theorem coe_kerExternalProductBlockAdjointNegEquiv_symm_apply (A : V₀ →L[�
   simp only [← LinearEquiv.coe_coe, TensorProduct.toLinearMap_congr, TensorProduct.map_map,
     LinearEquiv.ofEq_symm, LinearEquiv.refl_symm, LinearEquiv.refl_toLinearMap, LinearMap.comp_id,
     Submodule.subtype_comp_ofEq]
+
+/-- `kerExternalProductBlockAdjointNegEquiv` sends a kernel vector to the tensor of kernel vectors
+whose inclusion is its first component. -/
+@[simp]
+theorem map_subtype_kerExternalProductBlockAdjointNegEquiv_apply_fst (A : V₀ →L[𝕜] V₁)
+    (B : W₀ →L[𝕜] W₁) (w : (externalProductBlock A.adjoint (-B)).ker) :
+    TensorProduct.map A.adjoint.ker.subtype B.ker.subtype
+        (kerExternalProductBlockAdjointNegEquiv A B w).1 =
+      (w : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))).fst := by
+  conv_rhs => rw [← (kerExternalProductBlockAdjointNegEquiv A B).symm_apply_apply w,
+    coe_kerExternalProductBlockAdjointNegEquiv_symm_apply, WithLp.toLp_fst]
+
+/-- `kerExternalProductBlockAdjointNegEquiv` sends a kernel vector to the tensor of kernel vectors
+whose inclusion is its second component. -/
+@[simp]
+theorem map_subtype_kerExternalProductBlockAdjointNegEquiv_apply_snd (A : V₀ →L[𝕜] V₁)
+    (B : W₀ →L[𝕜] W₁) (w : (externalProductBlock A.adjoint (-B)).ker) :
+    TensorProduct.map A.ker.subtype B.adjoint.ker.subtype
+        (kerExternalProductBlockAdjointNegEquiv A B w).2 =
+      (w : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))).snd := by
+  conv_rhs => rw [← (kerExternalProductBlockAdjointNegEquiv A B).symm_apply_apply w,
+    coe_kerExternalProductBlockAdjointNegEquiv_symm_apply, WithLp.toLp_snd]
 
 /-- The dimension of the kernel of the formal adjoint `externalProductBlock A† (-B)` of the
 external product block is `dim ker A† · dim ker B + dim ker A · dim ker B†`. -/

@@ -14,11 +14,11 @@ import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.Star.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Matrix.Normal
+import TauCeti.Analysis.Matrix.UnitaryGroup.TwistedCommutator
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
-import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
 # Unitary clock and shift matrices and the finite Stone–von Neumann theorem
@@ -221,7 +221,8 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
         ← mul_assoc, pow_succ']
   have hv_orth {m₁ m₂ : ℕ} (hne : ζ ^ m₁ ≠ ζ ^ m₂) :
       dotProduct (star (vNat m₁)) (vNat m₂) = 0 := by
-    have hdot := Matrix.star_mulVec_dotProduct_mulVec A₁.property (vNat m₁) (vNat m₂)
+    have hdot := Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup
+      A₁.property (vNat m₁) (vNat m₂)
     rw [hv_eig m₁, hv_eig m₂, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
       smul_eq_mul, ← mul_assoc] at hdot
     have hcoeff : star (ζ ^ m₁ * d 0) * (ζ ^ m₂ * d 0) ≠ 1 := fun h1 => hne <| by
@@ -232,8 +233,8 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
     exact (mul_eq_zero.mp (by linear_combination hdot)).resolve_left (sub_ne_zero.mpr hcoeff)
   have hv_norm (m : ℕ) : dotProduct (star (vNat m)) (vNat m) = 1 := by
     simpa [vNat, dotProduct, Pi.single_apply] using
-      Matrix.star_mulVec_dotProduct_mulVec (Submonoid.pow_mem _ B₁.property m)
-        (Pi.single 0 1) (Pi.single 0 1)
+      Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup
+        (Submonoid.pow_mem _ B₁.property m) (Pi.single 0 1) (Pi.single 0 1)
   have hVu : Vmat ∈ unitaryGroup (Fin r) ℂ := by
     rw [mem_unitaryGroup_iff']
     have hVcol (j : Fin r) : Vmat.col j = vNat j.val := by
@@ -424,7 +425,7 @@ theorem exists_clock_shift_specialUnitaryGroup {r : ℕ} [NeZero r] {ζ : ℂ}
   obtain ⟨c₂, hc₂⟩ := exists_circle_smul_mem_specialUnitaryGroup (shiftUnitary r)
   let A₀ : specialUnitaryGroup (Fin r) ℂ := ⟨_, hc₁⟩
   let B₀ : specialUnitaryGroup (Fin r) ℂ := ⟨_, hc₂⟩
-  refine ⟨c₁, c₂, A₀, B₀, rfl, rfl, specialUnitaryGroup.commutatorElement_eq_smul_one_iff.mpr ?_⟩
+  refine ⟨c₁, c₂, A₀, B₀, rfl, rfl, coe_commutatorElement_eq_smul_one_iff.mpr ?_⟩
   simp only [A₀, B₀, Matrix.smul_mul, Matrix.mul_smul, clockUnitary_mul_shiftUnitary hζ, smul_smul]
   congr 1
   ring
@@ -469,7 +470,7 @@ theorem exists_specialUnitaryGroup_conj_to_clock_shift {r : ℕ} [NeZero r] {ζ 
     (hAB : ((⁅A, B⁆ : specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = ζ • 1) :
     ∃ u : specialUnitaryGroup (Fin r) ℂ,
       ConjAct.toConjAct u • A = A₀ ∧ ConjAct.toConjAct u • B = B₀ := by
-  have hrel := specialUnitaryGroup.commutatorElement_eq_smul_one_iff.mp hAB
+  have hrel := coe_commutatorElement_eq_smul_one_iff.mp hAB
   obtain ⟨U₂, α, b, hU₂A, hU₂B⟩ := exists_unitary_conj_to_clock_shift hζ
     ⟨A, (mem_specialUnitaryGroup_iff.mp A.property).1⟩
     ⟨B, (mem_specialUnitaryGroup_iff.mp B.property).1⟩ hrel

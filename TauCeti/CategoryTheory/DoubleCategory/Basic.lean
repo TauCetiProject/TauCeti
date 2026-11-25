@@ -342,6 +342,27 @@ namespace StrictDoubleCategory
 
 attribute [simp] hId_hComp hComp_hId vId_vComp vComp_vId
 
+variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
+  (D : StrictDoubleCategory.{s} O H V)
+
+/-- The vertical identity cell on an identity horizontal edge is a left unit for horizontal
+pasting, since it is the horizontal identity cell on the identity vertical edge. -/
+@[simp]
+theorem vId_edgeId_hComp {a b d : O} {p : Edge H a b} {q : Edge H a d} {r : Edge V b d}
+    (α : D.Cell p q (edgeId V a) r) :
+    D.hComp (D.vId (edgeId H a)) α = α.cast (Category.id_comp (self := H) p).symm
+      (Category.id_comp (self := H) q).symm rfl rfl := by
+  rw [← hId_id, hId_hComp]
+
+/-- The vertical identity cell on an identity horizontal edge is a right unit for horizontal
+pasting, since it is the horizontal identity cell on the identity vertical edge. -/
+@[simp]
+theorem hComp_vId_edgeId {a b c : O} {p : Edge H a b} {q : Edge H c b} {l : Edge V a c}
+    (α : D.Cell p q l (edgeId V b)) :
+    D.hComp α (D.vId (edgeId H b)) = α.cast (Category.comp_id (self := H) p).symm
+      (Category.comp_id (self := H) q).symm rfl rfl := by
+  rw [← hId_id, hComp_hId]
+
 end StrictDoubleCategory
 
 end TauCeti

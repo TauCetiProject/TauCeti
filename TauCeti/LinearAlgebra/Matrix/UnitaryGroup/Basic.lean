@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
-# Coordinate action of unitary matrices
+# Coordinate action and diagonal stabilizers of unitary matrices
 
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
 matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitary` records that
@@ -27,8 +30,13 @@ matrix `A` by `star (det A)` therefore keeps it unitary and makes its determinan
 matrix with the same columns as `A` away from `j`
 (`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`).
 
-`Matrix.star_mulVec_dotProduct_mulVec` records that left-multiplying by a unitary matrix preserves
+`Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup` says that a unitary matrix preserves
 the Hermitian dot product `star x ⬝ᵥ y`.
+
+For a diagonal with distinct entries, two unitary frames give the same conjugate exactly
+when their relative frame is diagonal. This is the sign ambiguity for orthogonal frames
+and the phase ambiguity for complex unitary frames in Anderson, Guionnet and Zeitouni,
+*An Introduction to Random Matrices* (2010), §4.1.
 -/
 
 public section
@@ -82,13 +90,12 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
 
-/-- Left-multiplication by a unitary matrix preserves the Hermitian dot product `star x ⬝ᵥ y`. -/
-theorem star_mulVec_dotProduct_mulVec {R n : Type*} [Semiring R] [StarRing R]
-    [Fintype n] [DecidableEq n] {M : Matrix n n R} (hM : M ∈ unitary (Matrix n n R))
-    (x y : n → R) :
-    star (M *ᵥ x) ⬝ᵥ (M *ᵥ y) = star x ⬝ᵥ y := by
-  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul,
-    (mem_unitary_iff_conjTranspose.mp hM).1, vecMul_one]
+/-- A unitary matrix preserves the Hermitian dot product. -/
+theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {n α : Type*} [Fintype n]
+    [DecidableEq n] [CommRing α] [StarRing α] {A : Matrix n n α} (hA : A ∈ unitaryGroup n α)
+    (x y : n → α) : star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
+  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
+    (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
 
 namespace UnitaryGroup
 
@@ -147,5 +154,44 @@ def permutationUnitary : Equiv.Perm n →* unitary (Matrix n n R) :=
 theorem coe_permutationUnitary (σ : Equiv.Perm n) :
     (permutationUnitary (R := R) σ : Matrix n n R) = σ⁻¹.permMatrix R :=
   (rfl)
+
+section DiagonalStabilizer
+
+variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
+  [CommSemiring R] [IsLeftCancelMulZero R] [StarRing R]
+
+/-- A diagonal with distinct entries has exactly the diagonal unitary frames in its stabilizer. -/
+theorem conjStarAlgAut_diagonal_eq_iff {d : ι → R} (hd : Function.Injective d)
+    (U : unitary (Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d ↔ Matrix.IsDiag (U : Matrix ι ι R) := by
+  rw [Unitary.conjStarAlgAut_apply]
+  constructor
+  · intro h
+    apply TauCeti.isDiag_of_commute_diagonal hd
+    calc
+      diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
+      _ = U * diagonal d := by simp [Matrix.mul_assoc]
+  · intro h
+    have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
+      rw [← h.diagonal_diag]
+      exact Matrix.commute_diagonal _ _
+    rw [hcomm.eq]
+    simp [Matrix.mul_assoc]
+
+/-- Two frames give the same conjugate of a simple diagonal exactly when they differ
+by a right diagonal unitary. -/
+theorem conjStarAlgAut_diagonal_eq_conjStarAlgAut_iff {d : ι → R} (hd : Function.Injective d)
+    (U V : unitary (Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = Unitary.conjStarAlgAut ℕ _ V (diagonal d) ↔
+      Matrix.IsDiag ((star V * U : unitary (Matrix ι ι R)) : Matrix ι ι R) := by
+  rw [← conjStarAlgAut_diagonal_eq_iff hd, Unitary.conjStarAlgAut_mul_apply]
+  have hV : Unitary.conjStarAlgAut ℕ (Matrix ι ι R) (star V)
+      (Unitary.conjStarAlgAut ℕ _ V (diagonal d)) = diagonal d := by
+    rw [← Unitary.conjStarAlgAut_mul_apply]
+    simp
+  conv_rhs => rhs; rw [← hV]
+  exact (Unitary.conjStarAlgAut ℕ (Matrix ι ι R) (star V)).injective.eq_iff.symm
+
+end DiagonalStabilizer
 
 end Matrix
