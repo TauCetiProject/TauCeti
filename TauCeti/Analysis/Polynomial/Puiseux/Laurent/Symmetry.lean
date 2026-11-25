@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
-import TauCeti.Analysis.Polynomial.Conjugation
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Polynomial.Puiseux.RootPermutation
 
 /-!
 # Conjugation symmetry of constructed Laurent factorizations
@@ -22,7 +20,8 @@ after conjugation on a full neighborhood, including the exceptional hyperplane; 
 parameters need not be fixed points of the involution.
 
 The branches are constructed by `exists_analyticOnNhd_nonmonic_laurent`. The unique
-conjugation permutation of a distinct root labelling then acts on those same branches.
+conjugation permutation of a distinct root labelling,
+`existsUnique_root_conj_perm_of_powerSubstitution`, then acts on those same branches.
 `AnalyticAt.laurent_eq_of_conj` identifies the exponents and unit germs at paired parameters.
 No symmetry assumption on the leading or trailing coefficient units is needed. Original
 fibers may drop degree or be nullified on the hyperplane.
@@ -88,40 +87,12 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     filter_upwards [(hU.prod isOpen_ball).mem_nhds
       (x := (x, (0 : ℂ))) ⟨hx, mem_ball_self hR'⟩] with b hb
     exact ⟨fun i ↦ hW0 i b hb, fun hb0 i ↦ hWform b ⟨hb.1, hb.2, hb0⟩ i⟩
-  let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
-  let T := U ×ˢ ball (0 : ℂ) R'
-  let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
-  let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ d.factorial)
-  have hq : MapsTo q S (U ×ˢ (ball 0 R \ {0})) := fun b hb ↦
-    ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1, pow_ne_zero _ hb.2.2⟩
-  have hconjBall : MapsTo conj (ball (0 : ℂ) R') (ball 0 R') := by
-    intro z hz
-    simpa only [mem_ball_zero_iff, Complex.norm_conj] using hz
-  have hκ : ContinuousOn κ T := hτ.prodMap Complex.continuous_conj.continuousOn
-  have hκT : MapsTo κ T T := hτU.prodMap hconjBall
-  have hκS : MapsTo κ S S :=
-    hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩
-  have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
-      (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
-    obtain ⟨h₁, h₂, h₃⟩ := hq hb
-    rw [(hr b hb).2, isRoot_C_mul_prod_X_sub_C_iff (by
-      rw [hlead _ ⟨h₁, h₂⟩]
-      exact mul_ne_zero (pow_ne_zero _ h₃) (hu0 _ ⟨h₁, h₂⟩))]
-  -- The punctured product is connected; conjugation therefore uses one permutation.
-  let := isPathConnected_iff_pathConnectedSpace.1
-    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
-      (0 : ℂ) hR')
-  have hSc : IsPreconnected S :=
-    (isPreconnected_iff_preconnectedSpace.2 inferInstance).prod
-      (isPreconnected_iff_preconnectedSpace.2 inferInstance)
+  obtain ⟨σ, ⟨hσσ, hσ⟩, -⟩ := existsUnique_root_conj_perm_of_powerSubstitution hR'
+    d.factorial_ne_zero hfit (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩ ▸
+      mul_ne_zero (pow_ne_zero _ hb.2.2) (hu0 b ⟨hb.1, hb.2.1⟩))
+    hτ hτU hττ hconj (fun i ↦ (hra i).continuousOn) hr
+  obtain ⟨hκ, hκT, -⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU
   obtain ⟨x₀⟩ : Nonempty U := inferInstance
-  obtain ⟨t₀⟩ : Nonempty ↥(ball (0 : ℂ) R' \ {0}) := inferInstance
-  obtain ⟨σ, ⟨hσσ, hσ⟩, -⟩ := TauCeti.existsUnique_root_conj_perm_of_subset_closure
-    hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
-    (fun b hb ↦ (hr b hb).1) hroot (hκ.mono (prod_mono subset_rfl sdiff_subset)) hκS hκS
-    (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
-    (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
-    ⟨(x₀, t₀), x₀.property, t₀.property⟩
   -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
   have hcompat (x : U) (i : Fin d) := AnalyticAt.laurent_eq_of_conj_of_forms
     (D₁ := r (σ i)) (D₂ := r i)

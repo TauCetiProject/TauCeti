@@ -39,39 +39,49 @@ open IsLocalRing
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- A valuation subring prolonging a henselian valuation subring to an algebraic extension
-is the integral closure of the base valuation subring. -/
-theorem toSubring_eq_integralClosure_of_comap_eq {B : ValuationSubring L} {A : ValuationSubring K}
+/-- A valuation subring dominating the local integral closure restricts to the base
+valuation subring. -/
+private theorem comap_eq_of_dominates_integralClosure {W : ValuationSubring L}
+    {A : ValuationSubring K} (hW : (integralClosure A L).toSubring ≤ W.toSubring)
+    (hlocal : IsLocalHom (Subring.inclusion hW)) : W.comap (algebraMap K L) = A := by
+  let C := integralClosure A L
+  have : IsLocalRing W.toSubring := inferInstanceAs (IsLocalRing W)
+  have : IsLocalRing C := (Subring.inclusion hW).domain_isLocalRing
+  refine comap_eq_of_map_maximalIdeal_le (algebraMap A C) (algebraMap C L)
+    (map_maximalIdeal_le _) (fun c ↦ (W.mem_toSubring _).mp (hW c.property)) ?_
+    (algebraMap K L) ?_
+  · intro c hc
+    exact coe_mem_nonunits_iff.mpr (map_nonunit (Subring.inclusion hW) c hc)
+  · intro a
+    -- Both scalar towers send `a` to its image in `L` under the same algebra map.
+    simp only [← IsScalarTower.algebraMap_apply A C L, IsScalarTower.algebraMap_apply A K L,
+      algebraMap_apply]
+
+/-- In an algebraic extension, membership in a prolongation of a henselian valuation subring
+forces integrality. -/
+private theorem isIntegral_of_mem_of_comap_eq {B : ValuationSubring L} {A : ValuationSubring K}
     [HenselianRing A (maximalIdeal A)] [Algebra.IsAlgebraic K L]
-    (hB : B.comap (algebraMap K L) = A) : B.toSubring = (integralClosure A L).toSubring := by
+    (hB : B.comap (algebraMap K L) = A) {x : L} (hx : x ∈ B) : IsIntegral A x := by
   let C := integralClosure A L
   let R : LocalSubring L :=
     { toSubring := C.toSubring, isLocalRing := TauCeti.IsIntegralClosure.isLocalRing A L C }
-  have hCB : C.toSubring ≤ B.toSubring := B.integralClosure_toSubring_le_iff.mpr hB.ge
-  refine le_antisymm ?_ hCB
-  intro x hx
-  by_contra hxC
+  by_contra hxA
+  have hxC : x ∉ C.toSubring := fun h ↦
+    hxA ((mem_integralClosure_iff A L).mp (Subalgebra.mem_toSubring.mp h))
   obtain ⟨W, hW, hxW⟩ := LocalSubring.exists_le_valuationSubring_of_isIntegrallyClosedIn
     (R := R) hxC
-  have hBW : B ≠ W := fun h ↦ hxW (h ▸ (B.mem_toSubring x).mp hx)
+  have hBW : B ≠ W := fun h ↦ hxW (h ▸ hx)
   have : IsLocalRing R.toSubring := R.isLocalRing
   have : IsLocalHom (Subring.inclusion hW.1) := hW.2
-  have hW' : W.comap (algebraMap K L) = A := by
-    refine comap_eq_of_map_maximalIdeal_le (algebraMap A C) (algebraMap C L)
-      (map_maximalIdeal_le _) (fun c ↦ (W.mem_toSubring _).mp (hW.1 c.property)) ?_
-      (algebraMap K L) ?_
-    · intro c hc
-      exact coe_mem_nonunits_iff.mpr (map_nonunit (Subring.inclusion hW.1) c hc)
-    · intro a
-      simp only [← IsScalarTower.algebraMap_apply A C L, IsScalarTower.algebraMap_apply A K L,
-        algebraMap_apply]
+  have hW' : W.comap (algebraMap K L) = A := comap_eq_of_dominates_integralClosure hW.1 hW.2
   obtain ⟨u, huB, huW, hu⟩ := exists_mem_nonunits_valuation_eq_one hBW (hB.trans hW'.symm)
   -- The separating element is integral and a unit in `W`, hence a unit in `C` and in `B`.
-  have huC : u ∈ C.toSubring := by
-    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff]
-    exact A.isIntegral_iff_forall_comap_le.mpr (fun V hAV ↦ hu V (hB.le.trans hAV))
+  have huA : IsIntegral A u :=
+    A.isIntegral_iff_forall_comap_le.mpr (fun V hAV ↦ hu V (hB.le.trans hAV))
+  have huC : u ∈ C.toSubring := Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff A L).mpr huA)
   have hunit : IsUnit (⟨u, huC⟩ : R.toSubring) :=
     IsUnit.of_map (Subring.inclusion hW.1) _ ((W.valuation_eq_one_iff ⟨u, hW.1 huC⟩).mpr huW)
+  have hCB : C.toSubring ≤ B.toSubring := B.integralClosure_toSubring_le_iff.mpr hB.ge
   have huB' : IsUnit (⟨u, hCB huC⟩ : B) := hunit.map (Subring.inclusion hCB)
   exact notMem_maximalIdeal.mpr huB' (coe_mem_nonunits_iff.mp huB)
 
@@ -87,16 +97,20 @@ theorem mem_iff_isIntegral_of_comap_eq {B : ValuationSubring L} {A : ValuationSu
     have hE : (B.comap (algebraMap E L)).comap (algebraMap K E) = A := by
       rwa [comap_comap, ← IsScalarTower.algebraMap_eq]
     let y : E := ⟨x, IntermediateField.mem_adjoin_simple_self K x⟩
-    have hy : IsIntegral A y := by
-      rw [← mem_integralClosure_iff, ← Subalgebra.mem_toSubring,
-        ← (B.comap (algebraMap E L)).toSubring_eq_integralClosure_of_comap_eq hE,
-        mem_toSubring, mem_comap]
-      simpa [y] using hxB
+    have hy : IsIntegral A y := isIntegral_of_mem_of_comap_eq hE (mem_comap.mpr hxB)
     simpa [y] using hy.map (IsScalarTower.toAlgHom A E L)
   · intro hxA
-    rw [← mem_toSubring]
-    apply B.integralClosure_toSubring_le_iff.mpr hB.ge
-    rwa [Subalgebra.mem_toSubring, mem_integralClosure_iff]
+    exact (B.mem_toSubring x).mp (B.integralClosure_toSubring_le_iff.mpr hB.ge
+      (Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff A L).mpr hxA)))
+
+/-- A valuation subring prolonging a henselian valuation subring to an algebraic extension
+is the integral closure of the base valuation subring. -/
+theorem toSubring_eq_integralClosure_of_comap_eq {B : ValuationSubring L} {A : ValuationSubring K}
+    [HenselianRing A (maximalIdeal A)] [Algebra.IsAlgebraic K L]
+    (hB : B.comap (algebraMap K L) = A) : B.toSubring = (integralClosure A L).toSubring := by
+  ext x
+  simpa only [mem_toSubring, Subalgebra.mem_toSubring, mem_integralClosure_iff] using
+    mem_iff_isIntegral_of_comap_eq hB (Algebra.IsAlgebraic.isAlgebraic x)
 
 /-- A henselian valuation subring has a unique prolongation to every algebraic field extension.
 Uniqueness is equality of valuation subrings, hence is independent of normalization. -/
@@ -118,8 +132,8 @@ theorem decompositionSubgroup_eq_top_of_comap_eq {B : ValuationSubring L} {A : V
   intro σ
   rw [mem_decompositionSubgroup_iff]
   intro x
-  simp only [← mem_toSubring, B.toSubring_eq_integralClosure_of_comap_eq hB,
-    Subalgebra.mem_toSubring, mem_integralClosure_iff]
+  rw [mem_iff_isIntegral_of_comap_eq hB (Algebra.IsAlgebraic.isAlgebraic (σ x)),
+    mem_iff_isIntegral_of_comap_eq hB (Algebra.IsAlgebraic.isAlgebraic x)]
   simpa only [AlgEquiv.restrictScalars_apply] using
     isIntegral_algEquiv (σ.restrictScalars A) (x := x)
 

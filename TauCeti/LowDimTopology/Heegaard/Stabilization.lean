@@ -46,8 +46,9 @@ same (`TauCeti.HeegaardRegionSystem.periodicDomains_stabilize`). In Lipshitz's f
 characteristic and one for the four new quarter corners, while each point measure gains the
 multiplicity `D(r₀)` of the four corners at `x₀`, so the Maslov index is unchanged
 (`TauCeti.HeegaardRegionSystem.maslovIndex_stabilize`). Consequently weak and strong
-admissibility, the relative grading and the domains counted by the hat differential are those of
-the original diagram, and under the identification of the hat chain groups by
+admissibility, the relative grading (modulo the periodic Maslov indices, which are also
+unchanged) and the domains counted by the hat differential are those of the original diagram, and
+under the identification of the hat chain groups by
 `TauCeti.HeegaardRegionSystem.stabilizeChainEquiv` the hat differentials agree
 (`TauCeti.HeegaardRegionSystem.hatDifferential_comp_stabilizeChainEquiv`). None of this needs the
 region `r₀` to avoid the basepoints. When `r₀` contains a basepoint, as it does in the usual
@@ -75,7 +76,9 @@ changes.
   `TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_stabilize_iff` and
   `TauCeti.HeegaardRegionSystem.stronglyAdmissible_stabilize_iff`: so are the admissibility
   conditions.
-* `TauCeti.HeegaardRegionSystem.relativeGrading_stabilize`: so is the relative grading.
+* `TauCeti.HeegaardRegionSystem.coe_relativeGrading_stabilize` and
+  `TauCeti.HeegaardRegionSystem.relativeGrading_stabilize`: so is the relative grading, modulo
+  the periodic Maslov indices, and outright when these vanish.
 * `TauCeti.HeegaardRegionSystem.hatDomains_stabilize` and
   `TauCeti.HeegaardRegionSystem.hatDifferential_comp_stabilizeChainEquiv`: so are the domains
   counted by the hat differential, and the hat differential itself.
@@ -500,15 +503,17 @@ theorem periodicMaslovIndices_stabilize :
   ext q
   simp only [mem_periodicMaslovIndices_iff, periodicDomains_stabilize, maslovIndex_stabilize]
 
-/-- Under the normalization of `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_eq`,
-the relative grading of `x ∪ {x₀}` and `y ∪ {x₀}` in the stabilized diagram is that of `x` and `y`
-in the original diagram. -/
-theorem relativeGrading_stabilize [Fintype Basepoint]
+/-- Under the normalization of
+`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq`, the relative grading of
+`x ∪ {x₀}` and `y ∪ {x₀}` in the stabilized diagram is that of `x` and `y` in the original diagram,
+modulo the periodic Maslov indices at `x`. -/
+theorem coe_relativeGrading_stabilize [Fintype Basepoint]
     (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
       H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (y : H.Generator) :
-    (H.stabilize r₀).relativeGrading (stabilizeEuler χ r₀) (H.stabilizeGenerator r₀ x)
-        (H.stabilizeGenerator r₀ y) = H.relativeGrading χ x y := by
+    (y : H.Generator) :
+    ((H.stabilize r₀).relativeGrading (stabilizeEuler χ r₀) (H.stabilizeGenerator r₀ x)
+        (H.stabilizeGenerator r₀ y) : ℚ ⧸ H.periodicMaslovIndices χ x) =
+      H.relativeGrading χ x y := by
   have hself' (x' : (H.stabilize r₀).Generator) (E : Region → ℤ)
       (hE : (H.stabilize r₀).IsDomainBetween x' x' E) :
       (H.stabilize r₀).maslovIndex (stabilizeEuler χ r₀) x' x' E -
@@ -521,13 +526,26 @@ theorem relativeGrading_stabilize [Fintype Basepoint]
   · obtain ⟨D, hD⟩ := h
     have hD' : (H.stabilize r₀).IsDomainBetween (H.stabilizeGenerator r₀ x)
         (H.stabilizeGenerator r₀ y) D := H.isDomainBetween_stabilize_iff.mpr hD
-    rw [hD.relativeGrading_eq hself hP, hD'.relativeGrading_eq hself'
-      (by simpa only [periodicDomains_stabilize, maslovIndex_stabilize] using hP),
-      maslovIndex_stabilize, stabilize_basepoint]
+    have h' := hD'.coe_relativeGrading_eq hself'
+    rw [periodicMaslovIndices_stabilize] at h'
+    rw [h', hD.coe_relativeGrading_eq hself, maslovIndex_stabilize, stabilize_basepoint]
   · simp only [not_exists] at h
     rw [relativeGrading_of_forall_not_isDomainBetween h,
       relativeGrading_of_forall_not_isDomainBetween fun D hD =>
         h D (H.isDomainBetween_stabilize_iff.mp hD)]
+
+/-- Under the normalization of `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_eq`,
+the relative grading of `x ∪ {x₀}` and `y ∪ {x₀}` in the stabilized diagram is that of `x` and `y`
+in the original diagram. -/
+theorem relativeGrading_stabilize [Fintype Basepoint]
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
+    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (y : H.Generator) :
+    (H.stabilize r₀).relativeGrading (stabilizeEuler χ r₀) (H.stabilizeGenerator r₀ x)
+        (H.stabilizeGenerator r₀ y) = H.relativeGrading χ x y := by
+  have h :=
+    QuotientAddGroup.eq_iff_sub_mem.mp (H.coe_relativeGrading_stabilize r₀ (x := x) hself y)
+  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
 
 end Euler
 
