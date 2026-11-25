@@ -50,6 +50,7 @@ computations of `TauCeti.Algebra.Lie.Heisenberg.Orbit` to the coadjoint action o
 * `TauCeti.Nil.tangentSpaceCastModel_adjointContinuousLinearMap`: `Ad_g (a, b, c) =
   (a, b, c + x b - y a)`.
 * `TauCeti.Nil.tangentSpaceCastModel_lie`: `⁅(a, b, c), (a', b', c')⁆ = (0, 0, a b' - b a')`.
+* `TauCeti.Nil.lie_eq_smul_groupLieAlgebraEquiv_symm_heisenbergZ`: `⁅ξ, η⁆ = (a b' - b a') Z`.
 * `TauCeti.Nil.groupLieAlgebraEquiv_adjointRepresentation`,
   `TauCeti.Nil.dualMap_groupLieAlgebraEquiv_coadjointRepresentation`: the adjoint and coadjoint
   representations of `Nil` are those of the matrix Heisenberg group.
@@ -150,6 +151,8 @@ theorem tangentSpaceCastModel_lie (ξ η : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
   -- The bracket is the derivative at the identity of the adjoint orbit map `g ↦ Ad_g η`.
   have h := Lie.mvfderiv_tangentAd_apply_one (I := 𝓘(ℝ, R3)) (G := Nil) ξ η
   dsimp only at h
+  -- The `show` matches the elaborated statement of `Lie.mvfderiv_tangentAd_apply_one`, so that
+  -- `rw [hfun] at h` fires.
   have hfun : (fun g : Nil ↦ show R3 from Lie.tangentAd (I := 𝓘(ℝ, R3)) g η) =
       (fun r : R3 ↦ (b.1, b.2.1, b.2.2 + r.1 * b.2.1 - r.2.1 * b.1)) ∘ toProd := by
     funext g
@@ -161,6 +164,8 @@ theorem tangentSpaceCastModel_lie (ξ η : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
     rw [mvfderiv_comp_apply _ hF.differentiableAt.mdifferentiableAt
       ((contMDiff_toProd (n := 1)).mdifferentiableAt one_ne_zero), mfderiv_toProd_apply,
       mvfderiv_eq_fderiv, hF.fderiv]
+    -- `mvfderiv_eq_fderiv` leaves `D` composed with the cast `NormedSpace.fromTangentSpace`
+    -- of the tangent space of `ℝ³` at `toProd 1`, which is the identity of `ℝ³` by definition.
     rfl
   rw [hfun, hval, LieAlgebra.ad_apply] at h
   refine h.symm.trans ?_
@@ -185,11 +190,10 @@ def groupLieAlgebraEquiv : GroupLieAlgebra 𝓘(ℝ, R3) Nil ≃ₗ⁅ℝ⁆ hei
     simp only [map_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_smul, RingHom.id_apply,
       smul_add]
   map_lie' {ξ η} := by
-    rw [lie_eq_smul_heisenbergZ, tangentSpaceCastModel_lie]
-    simp only [zero_smul, zero_add]
-    simp
-    congr 1
-    ring
+    rw [tangentSpaceCastModel_lie]
+    simp only [add_lie, lie_add, smul_lie, lie_smul, lie_self, lie_heisenbergX_heisenbergY,
+      lie_heisenbergY_heisenbergX, heisenbergZ_lie, lie_heisenbergZ, smul_zero, smul_neg]
+    module
   invFun A := (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).symm
     ((A : Matrix (Fin 3) (Fin 3) ℝ) 0 1, (A : Matrix (Fin 3) (Fin 3) ℝ) 1 2,
       (A : Matrix (Fin 3) (Fin 3) ℝ) 0 2)
@@ -230,16 +234,29 @@ theorem tangentSpaceCastModel_groupLieAlgebraEquiv_symm (A : heisenberg ℝ) :
         (A : Matrix (Fin 3) (Fin 3) ℝ) 0 2) :=
   (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).apply_symm_apply _
 
+/-- **The bracket of the Lie algebra of `Nil` is central**: `⁅ξ, η⁆ = (a b' - b a') Z` for
+`ξ = (a, b, c)`, `η = (a', b', c')` and `Z = groupLieAlgebraEquiv.symm (heisenbergZ ℝ)`. -/
+theorem lie_eq_smul_groupLieAlgebraEquiv_symm_heisenbergZ (ξ η : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    ⁅ξ, η⁆ = ((tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1 *
+        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) η).2.1 -
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 *
+        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) η).1) •
+      groupLieAlgebraEquiv.symm (heisenbergZ ℝ) := by
+  apply (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).injective
+  rw [map_smul, tangentSpaceCastModel_lie, tangentSpaceCastModel_groupLieAlgebraEquiv_symm]
+  simp
+
 /-- **The adjoint action of `Nil` is conjugation of matrices**: under `groupLieAlgebraEquiv` and
 `toHeisenberg`, `Ad_g` is the adjoint action `A ↦ g A g⁻¹` of the matrix Heisenberg group. -/
 theorem groupLieAlgebraEquiv_adjointRepresentation (g : Nil) (ξ : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
     groupLieAlgebraEquiv (Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ξ) =
       HeisenbergGroup.adjointRepresentation ℝ (toHeisenberg g) (groupLieAlgebraEquiv ξ) := by
   rw [HeisenbergGroup.adjointRepresentation_apply, lie_eq_smul_heisenbergZ,
-    Lie.adjointRepresentation_apply, groupLieAlgebraEquiv_apply, groupLieAlgebraEquiv_apply,
+    HeisenbergGroup.nilpotentPart_apply_zero_one, HeisenbergGroup.nilpotentPart_apply_one_two,
+    x_toHeisenberg, y_toHeisenberg, groupLieAlgebraEquiv_apply_zero_one,
+    groupLieAlgebraEquiv_apply_one_two, Lie.adjointRepresentation_apply,
+    groupLieAlgebraEquiv_apply, groupLieAlgebraEquiv_apply,
     tangentSpaceCastModel_adjointContinuousLinearMap]
-  simp only [add_smul, sub_smul]
-  simp
   module
 
 /-- **The coadjoint action of `Nil` is the matrix coadjoint action**: restricting functionals along

@@ -24,7 +24,10 @@ transported along the Lie algebra isomorphism `TauCeti.Nil.groupLieAlgebraEquiv`
 computes the coadjoint orbits of the Lie group `Nil`, their stabilizers and their
 Kirillov–Kostant–Souriau forms `Module.Dual.coadjointOrbitForm`.
 
-* The coordinate `r = ν Z` is invariant
+* The coordinates transform as stated
+  (`TauCeti.Nil.coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergX`,
+  `TauCeti.Nil.coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergY`); in
+  particular `r = ν Z` is invariant
   (`TauCeti.Nil.coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergZ`).
 * If `r ≠ 0`, the orbit of `ν` is the whole plane `{μ | μ Z = r}`
   (`TauCeti.Nil.range_coadjointRepresentation_apply_of_ne_zero`), and the stabilizer of `ν` is the
@@ -74,6 +77,24 @@ noncomputable section
 namespace TauCeti.Nil
 
 local notation "R3" => ℝ × ℝ × ℝ
+
+/-- The first coordinate of the coadjoint action: `p ↦ p + r y`. -/
+theorem coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergX (g : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν (groupLieAlgebraEquiv.symm (heisenbergX ℝ)) =
+      ν (groupLieAlgebraEquiv.symm (heisenbergX ℝ)) +
+        g.y * ν (groupLieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  simpa using LinearMap.congr_fun (dualMap_groupLieAlgebraEquiv_coadjointRepresentation g ν)
+    (heisenbergX ℝ)
+
+/-- The second coordinate of the coadjoint action: `q ↦ q - r x`. -/
+theorem coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergY (g : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν (groupLieAlgebraEquiv.symm (heisenbergY ℝ)) =
+      ν (groupLieAlgebraEquiv.symm (heisenbergY ℝ)) -
+        g.x * ν (groupLieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  simpa using LinearMap.congr_fun (dualMap_groupLieAlgebraEquiv_coadjointRepresentation g ν)
+    (heisenbergY ℝ)
 
 /-- **The coordinate `r = ν Z` is invariant under the coadjoint action**, since `Z` is central. -/
 theorem coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergZ (g : Nil)
@@ -170,17 +191,9 @@ theorem eval₂_coadjointOrbitForm_fundamentalVectorField
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) η).1) := by
   -- The bracket `⁅ξ, η⁆` is `(a b' - b a') Z`, and every point of the orbit takes the value `r`
   -- on the central vector `Z`.
-  have hlie : ⁅ξ, η⁆ = ((tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1 *
-        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) η).2.1 -
-      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 *
-        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) η).1) •
-      groupLieAlgebraEquiv.symm (heisenbergZ ℝ) := by
-    apply (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).injective
-    rw [map_smul, tangentSpaceCastModel_lie, tangentSpaceCastModel_groupLieAlgebraEquiv_symm]
-    simp
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
   rw [Module.Dual.eval₂_coadjointOrbitForm_fundamentalVectorField, Representation.orbitMap_mk,
-    hlie, map_smul, coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergZ,
-    smul_eq_mul, mul_comm]
+    lie_eq_smul_groupLieAlgebraEquiv_symm_heisenbergZ, map_smul,
+    coadjointRepresentation_apply_groupLieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
 
 end TauCeti.Nil
