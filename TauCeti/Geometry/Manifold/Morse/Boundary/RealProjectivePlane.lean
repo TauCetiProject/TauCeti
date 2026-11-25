@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedChainComplex
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Signs
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -57,6 +58,19 @@ So a multiple `n` of the saddle is a boundary exactly when `n` is even
 (`single_mem_range_signedMorseBoundary_iff_even_projectiveMomentFunction_real`): this is the
 computation `H₁(ℝℙ²; ℤ) = ℤ/2` on the level of the integral Morse boundary.
 
+Since the minimum is unique and `ℝℙ²` has dimension two, the integral Morse boundary squares to
+zero (`signedMorseBoundary_comp_signedMorseBoundary_projectiveMomentFunction_real`), so the
+integral Morse chain complex `TauCeti.IsAdaptedPseudoGradient.signedMorseComplex` is defined, and
+its homology is that of `ℝℙ²`:
+
+* `H₀ = R` with coefficients in any ring `R`, for every adapted pseudo-gradient;
+* `H₁ = ℤ/2` and `H₂ = 0` over `ℤ`, for the adapted pseudo-gradients commuting with the sign
+  changes of the homogeneous coordinates: the differential `d₂`, which sends the maximum to `±2`
+  times the saddle, is injective and its image consists of the chains with even coefficient at the
+  saddle (`injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real`,
+  `mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real`). Modulo two all three
+  homology groups are instead `ZMod 2`.
+
 ## Main declarations
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -78,6 +92,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the saddle is an integral Morse boundary exactly when `n` is even.
 * `exists_isAdaptedPseudoGradient_signedMorseBoundary_single_projectiveMomentFunction_real`: some
   adapted pseudo-gradient has `d₂ = ±2` for all orientations.
+* `signedMorseBoundary_comp_signedMorseBoundary_projectiveMomentFunction_real`: the integral Morse
+  boundary squares to zero.
+* `nonempty_linearEquiv_homology_zero_signedMorseComplex_projectiveMomentFunction_real`,
+  `nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFunction_real`,
+  `isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real`: the integral Morse
+  homology in degree `0` is `R` over any ring; over `ℤ`, for pseudo-gradients commuting with the
+  sign changes, it is `ℤ/2` in degree `1` and `0` in degree `2`.
 
 ## References
 
@@ -181,6 +202,59 @@ theorem signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real
   IsMorseSmale.signedMorseBoundary_single_eq_zero_of_unique_index_zero
     (hX.isMorseSmale_projectiveMomentFunction_real hw) hf 𝔬 hp
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0) a
+
+/-- **`∂² = 0` on `ℝℙ²`.** For every pseudo-gradient adapted to the moment function on the real
+projective plane and every choice of orientations of the unstable manifolds, the integral Morse
+boundary squares to zero, with coefficients in any ring. So the integral Morse chain complex
+`TauCeti.IsAdaptedPseudoGradient.signedMorseComplex` of `ℝℙ²` is defined. -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_projectiveMomentFunction_real
+    (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X)
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X) (R : Type*) [Ring R] :
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 :=
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two
+    (hX.isMorseSmale_projectiveMomentFunction_real hw) (Module.finrank_fin_fun ℝ).le
+    (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)
+
+/-- For distinct weights, the moment function on `ℝℙ²` has exactly one critical point of each index
+`k ≤ 2`. -/
+private theorem exists_forall_eq_projectiveMomentFunction_real (hw : Injective w) {k : ℕ}
+    (hk : k ≤ 2) :
+    ∃ p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+        manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k}, ∀ q, q = p :=
+  Nat.card_eq_one_iff_exists.1 <| by
+    rw [natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
+      criticalCount_projectiveMomentFunction_real hw, ite_eq_left_iff.2 fun h ↦ absurd hk h,
+      ENat.toNat_one]
+
+/-- A chain supported on critical points of index `k`, when `p` is the only one, is a multiple of
+`p`. -/
+private theorem eq_single_of_forall_eq_projectiveMomentFunction_real {k : ℕ}
+    {p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k}}
+    (hp : ∀ q, q = p) {R : Type*} [Zero R]
+    (c : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k} →₀ R) :
+    c = Finsupp.single p (c p) :=
+  letI : Unique _ := ⟨⟨p⟩, hp⟩
+  Finsupp.unique_single c
+
+/-- **`H₀(ℝℙ²) = R`.** For every pseudo-gradient adapted to the moment function on the real
+projective plane and every choice of orientations, the integral Morse homology in degree `0`, with
+coefficients in any ring `R`, is `R`, since the minimum is the only critical point of index `0`. -/
+theorem nonempty_linearEquiv_homology_zero_signedMorseComplex_projectiveMomentFunction_real
+    (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X)
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X) {R : Type*} [Ring R]
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
+    Nonempty ((hX.signedMorseComplex 𝔬 hf R hsq).homology 0 ≃ₗ[R] R) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p, hp⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 0) (by norm_num)
+  exact nonempty_linearEquiv_homology_zero_signedMorseComplex hsq
+    (IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
+      (hX.isMorseSmale_projectiveMomentFunction_real hw)
+      (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)) p hp
 
 /-! ### The integral boundary of the maximum -/
 
@@ -509,6 +583,127 @@ theorem exists_isAdaptedPseudoGradient_signedMorseBoundary_single_projectiveMome
   exact ⟨X, hX, fun 𝔬 _ _ hp hq ↦
     signedMorseBoundary_single_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε
       (isMorse_projectiveMomentFunction hw) 𝔬 hp hq⟩
+
+/-! ### The integral Morse homology of `ℝℙ²` -/
+
+include hX hXε in
+/-- **The boundaries in degree one of `ℝℙ²`.** For an adapted pseudo-gradient of the moment
+function on the real projective plane which commutes with the sign changes of the homogeneous
+coordinates, and every choice of orientations, a graded chain `c` of index one is an integral
+Morse boundary exactly when its coefficient at the saddle `q` is even. -/
+theorem mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (q : {q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1})
+    (c : {q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1} →₀ ℤ) :
+    c ∈ LinearMap.range (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) ↔ 2 ∣ c q := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  have hcoeff (p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1}) :=
+    signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε hf 𝔬
+      p.property q.property
+  constructor
+  · -- Every coefficient of the boundary at the saddle is `±2`.
+    rintro ⟨y, rfl⟩
+    rw [signedMorseBoundaryAt_apply, Finsupp.sum]
+    refine Finset.dvd_sum fun p _ ↦ Dvd.dvd.mul_left ?_ _
+    rcases hcoeff p with h | h <;> simp [h]
+  · -- The maximum has boundary `±2 q`, and the chains of index one are the multiples of `q`.
+    rintro ⟨k, hk⟩
+    obtain ⟨p, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
+    obtain ⟨q', hq'⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+    have hq (r) : r = q := (hq' r).trans (hq' q).symm
+    rw [eq_single_of_forall_eq_projectiveMomentFunction_real hq c, hk]
+    rcases hcoeff p with h | h <;>
+      [refine ⟨Finsupp.single p k, ?_⟩; refine ⟨Finsupp.single p (-k), ?_⟩] <;>
+    · ext r
+      rw [hq r, signedMorseBoundaryAt_single_apply, h, Finsupp.single_eq_same]
+      push_cast
+      ring
+
+include hX hXε in
+/-- **The differential `d₂` of `ℝℙ²` is injective over `ℤ`.** For an adapted pseudo-gradient of the
+moment function on the real projective plane which commutes with the sign changes of the
+homogeneous coordinates, and every choice of orientations, the graded integral Morse boundary from
+index two to index one, which sends the maximum to `±2` times the saddle, is injective. -/
+theorem injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X) :
+    Injective (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p, hp⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
+  obtain ⟨q, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro c hc0
+  have h0 := congrArg (· q) hc0
+  simp only [Finsupp.coe_zero, Pi.zero_apply] at h0
+  rw [eq_single_of_forall_eq_projectiveMomentFunction_real hp c, signedMorseBoundaryAt_single_apply,
+    Int.cast_id] at h0
+  rw [eq_single_of_forall_eq_projectiveMomentFunction_real hp c,
+    mul_eq_zero.1 h0 |>.resolve_right ?_, Finsupp.single_zero]
+  rcases signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε hf 𝔬
+    p.property q.property with h | h <;> simp [h]
+
+include hX hXε in
+/-- **`H₁(ℝℙ²; ℤ) = ℤ/2`.** For an adapted pseudo-gradient of the moment function on the real
+projective plane which commutes with the sign changes of the homogeneous coordinates, such as the
+one of `TauCeti.exists_isAdaptedPseudoGradient_projectiveMomentFunction_mfderiv_smul`, and every
+choice of orientations, the integral Morse homology in degree `1` is `ℤ/2`: every chain of index
+one is a cycle, and it is a boundary exactly when its coefficient at the saddle is even. -/
+theorem nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
+    Nonempty ((hX.signedMorseComplex 𝔬 hf ℤ hsq).homology 1 ≃ₗ[ℤ] ZMod 2) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨q, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+  set K := hX.signedMorseComplex 𝔬 hf ℤ hsq
+  have hm : (ComplexShape.down ℕ).next 1 = 0 := ChainComplex.next_nat_succ 0
+  -- Every chain of index one is a cycle, since the minimum is unique, so the homology in degree
+  -- one is the quotient of the chains by the boundaries.
+  have hd0 : K.d 1 0 = 0 := signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0
+    (IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
+      (hX.isMorseSmale_projectiveMomentFunction_real hw)
+      (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0))
+  -- The coefficient at the saddle modulo two vanishes exactly on the boundaries.
+  let ψ : ({q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1} →₀ ℤ) →ₗ[ℤ]
+      ZMod 2 :=
+    (Int.castAddHom (ZMod 2)).toIntLinearMap ∘ₗ Finsupp.lapply q
+  have hψ_apply (c) : ψ c = (c q : ZMod 2) := by simp [ψ]
+  have hψ : Surjective ψ := fun a ↦ ⟨Finsupp.single q (a.cast : ℤ), by
+    rw [hψ_apply, Finsupp.single_eq_same, ZMod.intCast_zmod_cast]⟩
+  have hexact : Function.Exact (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) ψ := fun c ↦ by
+    rw [hψ_apply, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_ofNat,
+      ← mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real hX hXε hf 𝔬 q c,
+      LinearMap.mem_range, Set.mem_range]
+  -- The differential of `K` into degree one is the graded integral Morse boundary, and the terms
+  -- of `K` are the chain modules by definition (`signedMorseComplex_X`).
+  have hd : (K.d (1 + 1) 1).hom = hX.signedMorseBoundaryAt 𝔬 hf ℤ 1 :=
+    LinearMap.ext (signedMorseComplex_d_apply hsq 1)
+  rw [← hd, ← ChainComplex.prev ℕ 1] at hexact
+  exact ⟨((K.isoHomologyι 1 0 hm hd0) ≪≫ (K.sc 1).moduleCatOpcyclesIso).toLinearEquiv.trans
+    (hexact.linearEquivOfSurjective hψ)⟩
+
+include hX hXε in
+/-- **`H₂(ℝℙ²; ℤ) = 0`.** For an adapted pseudo-gradient of the moment function on the real
+projective plane which commutes with the sign changes of the homogeneous coordinates, and every
+choice of orientations, the integral Morse homology in degree `2` vanishes: the differential `d₂`
+sends the maximum to `±2` times the saddle, so it has no nonzero cycles. Over `ZMod 2` this
+homology is instead `ZMod 2`
+(`IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`). -/
+theorem isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
+    CategoryTheory.Limits.IsZero ((hX.signedMorseComplex 𝔬 hf ℤ hsq).homology 2) := by
+  -- The differential out of degree two is injective, so there are no nonzero cycles.
+  refine (hX.signedMorseComplex 𝔬 hf ℤ hsq).isZero_homology_of_injective_d
+    (ChainComplex.next_nat_succ 1) fun a b hab ↦ ?_
+  exact injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real hX hXε hf 𝔬 <|
+    (signedMorseComplex_d_apply hsq 1 a).symm.trans (hab.trans (signedMorseComplex_d_apply hsq 1 b))
 
 end Maximum
 
