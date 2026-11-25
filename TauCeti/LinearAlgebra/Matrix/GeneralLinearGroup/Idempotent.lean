@@ -21,8 +21,9 @@ This file shows that, after adding one more zero block, the conjugating matrix c
 elementary subgroup `TauCeti.elementarySubgroup`.
 
 The reason is Whitehead's lemma: for invertible `g` the block diagonal matrix `g ⊕ g⁻¹` is
-elementary, and it conjugates `M ⊕ 0` to `g M g⁻¹ ⊕ 0`. So conjugate matrices become conjugate by
-an elementary matrix once they are padded by a zero block of the same size.
+elementary, and it conjugates `M ⊕ 0` to `g M g⁻¹ ⊕ 0`
+(`TauCeti.exists_mem_elementarySubgroup_mul_fromBlocks_mul_inv`). So conjugate matrices become
+conjugate by an elementary matrix once they are padded by a zero block of the same size.
 
 Elementary conjugators matter because elementary matrices lift along every surjective ring
 homomorphism (`RingHom.map_elementarySubgroup_eq_of_surjective`), whereas invertible matrices do
@@ -32,8 +33,6 @@ fibre product, as in the Mayer–Vietoris sequence of `K₀` for a Milnor square
 
 ## Main results
 
-* `TauCeti.exists_mem_elementarySubgroup_mul_fromBlocks_mul_inv`: for invertible `g`, the matrices
-  `M ⊕ 0` and `g M g⁻¹ ⊕ 0` are conjugate by an elementary matrix.
 * `Matrix.IdempotentEquivalent.exists_mem_elementarySubgroup_mul_fromBlocks_mul_inv`: for
   equivalent idempotents `e ∼ f`, the matrices `(e ⊕ 0) ⊕ 0` and `(0 ⊕ f) ⊕ 0` are conjugate by an
   elementary matrix.
@@ -54,22 +53,6 @@ fibre product, as in the Mayer–Vietoris sequence of `K₀` for a Milnor square
 public section
 
 open Matrix
-
-namespace TauCeti
-
-variable {A : Type*} [Ring A] {m : Type*} [DecidableEq m] [Fintype m]
-
-/-- **Conjugate matrices are elementarily conjugate after stabilization.** For an invertible `g`,
-the elementary matrix `g ⊕ g⁻¹` (Whitehead's lemma) conjugates `M ⊕ 0` to `g M g⁻¹ ⊕ 0`. -/
-theorem exists_mem_elementarySubgroup_mul_fromBlocks_mul_inv (g : GL m A) (M : Matrix m m A) :
-    ∃ ε ∈ elementarySubgroup (m ⊕ m) A,
-      (ε : Matrix (m ⊕ m) (m ⊕ m) A) * fromBlocks M 0 0 0 * (↑ε⁻¹ : Matrix (m ⊕ m) (m ⊕ m) A) =
-        fromBlocks ((g : Matrix m m A) * M * ((g⁻¹ : GL m A) : Matrix m m A)) 0 0 0 := by
-  refine ⟨fromBlocksGL (g, g⁻¹), fromBlocksGL_inv_mem_elementarySubgroup g, ?_⟩
-  rw [← map_inv, Prod.inv_mk, inv_inv, coe_fromBlocksGL, coe_fromBlocksGL]
-  simp [fromBlocks_multiply]
-
-end TauCeti
 
 namespace Matrix
 
