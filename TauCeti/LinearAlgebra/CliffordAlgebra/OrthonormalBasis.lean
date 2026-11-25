@@ -45,6 +45,9 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
   `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
+* `TauCeti.two_nsmul_sum_sum_apply_apply_eq`: for additive maps `γᵢ` satisfying the Clifford
+  relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, the contraction `∑ᵢⱼ γᵢ γⱼ B i j` of a doubly indexed family
+  splits into its trace and its antisymmetrization.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -55,6 +58,33 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 public section
 
 open scoped RealInnerProductSpace
+
+namespace TauCeti
+
+/-- **Clifford contraction of a doubly indexed family.** Let `γᵢ` be additive maps satisfying the
+Clifford relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, such as Clifford multiplication by the vectors of an
+orthonormal basis. Then for every family `B i j`,
+
+`2 ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i + ∑ᵢ ∑ⱼ γᵢ γⱼ (B i j - B j i)`.
+
+For `B i j = ∇²σ(eᵢ, eⱼ)` the first term is twice the rough Laplacian and the second is a
+curvature term. -/
+theorem two_nsmul_sum_sum_apply_apply_eq {ι V G : Type*} [Fintype ι] [DecidableEq ι]
+    [AddCommGroup V] [FunLike G V V] [AddMonoidHomClass G V V] (γ : ι → G)
+    (hγ : ∀ i j s, γ i (γ j s) + γ j (γ i s) = if i = j then -(2 • s) else 0)
+    (B : ι → ι → V) :
+    2 • ∑ i, ∑ j, γ i (γ j (B i j)) =
+      -(2 • ∑ i, B i i) + ∑ i, ∑ j, γ i (γ j (B i j - B j i)) := by
+  -- Exchanging the indices and applying the Clifford relation gives
+  -- `∑ᵢ ∑ⱼ γᵢ γⱼ B j i + ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i`.
+  have hswap : ∑ i, ∑ j, γ i (γ j (B j i)) + ∑ i, ∑ j, γ i (γ j (B i j)) = -(2 • ∑ i, B i i) := by
+    rw [Finset.sum_comm (f := fun i j ↦ γ i (γ j (B j i))), ← Finset.sum_add_distrib]
+    simp only [← Finset.sum_add_distrib, hγ, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+      Finset.sum_neg_distrib, Finset.smul_sum]
+  simp only [map_sub, Finset.sum_sub_distrib, eq_sub_of_add_eq hswap]
+  abel
+
+end TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
