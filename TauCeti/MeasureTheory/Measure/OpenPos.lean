@@ -38,6 +38,8 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
 * `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
   by its values at almost every point of the set.
+* `IsOpen.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V` that agree
+  almost everywhere on `U ∩ V` agree on `closure U ∩ V`.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
@@ -106,6 +108,19 @@ theorem ext_closure_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U : S
     rw [hVS] at this
     exact this
   exact hpos.ne' hnull
+
+/-- Two functions continuous on `closure U ∩ V`, for open sets `U` and `V`, that agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`, for a measure which charges every nonempty open
+set. -/
+theorem eqOn_closure_inter_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U V : Set X}
+    (hU : IsOpen U) (hV : IsOpen V) {f g : X → Y} (hf : ContinuousOn f (closure U ∩ V))
+    (hg : ContinuousOn g (closure U ∩ V)) (h : f =ᵐ[μ.restrict (U ∩ V)] g) :
+    EqOn f g (closure U ∩ V) := by
+  have hUV : U ∩ V ⊆ closure U ∩ V := inter_subset_inter_left _ subset_closure
+  refine (Measure.eqOn_open_of_ae_eq h (hU.inter hV) (hf.mono hUV) (hg.mono hUV)).of_subset_closure
+    hf hg hUV fun x hx => ?_
+  rw [inter_comm]
+  exact hV.inter_closure ⟨hx.2, hx.1⟩
 
 end IsOpen
 
