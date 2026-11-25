@@ -9,21 +9,39 @@ public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.RingTheory.Flat.Extensions
+import TauCeti.Algebra.Homology.CyclesComplex
+import TauCeti.CategoryTheory.Exact.HomologicalComplex
 
 /-!
-# Flat cycles in an exact tail
+# Flat cycles in complexes of modules
 
-In a bounded-above complex of flat modules, the cycles in degree `i` are flat if the complex
-is exact in all degrees strictly greater than `i`. No exactness in degree `i` is required.
-In particular every cycle module of a bounded-above acyclic flat complex is flat. If exactness
-also holds in degree `i`, its opcycles (the quotient by incoming boundaries) are flat as well.
+This file collects flatness criteria for the cycles `Z_i(K)` and cycle cokernels `K_i / Z_i(K)`
+of complexes of modules over a commutative ring `R`.
 
-This is the dimension-shifting step used when cutting off flat resolutions: the acyclic
-mapping cone of a quasi-isomorphism between bounded-above flat complexes has flat cycles.
-The quotient terms at a cutoff can consequently be shown flat, and finitely presented flat
-quotients are projective. The terms need not be finite, and the base ring need not be
-Noetherian. Only the terms at or above the cycle degree (strictly above the opcycle degree)
-need to be flat; nothing is assumed about the remaining terms.
+* **Exact tails of bounded-above cochain complexes**
+  (`CochainComplex.flat_cycles_of_exactAt_of_isStrictlyLE` and
+  `CochainComplex.flat_opcycles_of_exactAt_of_isStrictlyLE`): in a bounded-above complex of flat
+  modules, the cycles in degree `i` are flat if the complex is exact in all degrees strictly
+  greater than `i` (no exactness in degree `i` is required); if exactness also holds in degree `i`,
+  its opcycles are flat as well. This is the dimension-shifting step used when cutting off flat
+  resolutions: the acyclic mapping cone of a quasi-isomorphism between bounded-above flat complexes
+  has flat cycles. Only the terms at or above the cycle degree (strictly above the opcycle degree)
+  need to be flat; nothing is assumed about the remaining terms.
+
+* **Degreewise cycle and homology extensions**
+  (`HomologicalComplex.flat_cycles_of_flat_X_of_flat_cokernel`,
+  `HomologicalComplex.flat_cycles_of_flat_cokernel_of_flat_homology`,
+  `HomologicalComplex.flat_cokernel_iCycles_of_flat_cycles_of_flat_homology`): for an arbitrary
+  complex `K`, the short exact sequence `0 ⟶ Z_q(K) ⟶ K_q ⟶ K_q / Z_q(K) ⟶ 0` makes `Z_q(K)` flat
+  whenever `K_q` and `K_q / Z_q(K)` are flat, and for `c.Rel i j` the presentation
+  `0 ⟶ K_i / Z_i(K) ⟶ Z_j(K) ⟶ H_j(K) ⟶ 0` relates flatness of `K_i / Z_i(K)` and `Z_j(K)` when
+  `H_j(K)` is flat.
+
+* **Nonnegative chain complexes with flat homology**
+  (`ChainComplex.flat_cokernel_iCycles_of_flat_homology`,
+  `ChainComplex.flat_cycles_of_flat_homology`): in a chain complex indexed by `ℕ`, flatness of the
+  terms and homology below degree `p` (at most `p` for `Z_p(K)`) implies flatness of `K_p / Z_p(K)`
+  and `Z_p(K)` by induction on degree.
 
 ## References
 
@@ -97,3 +115,99 @@ theorem flat_opcycles_of_exactAt_of_isStrictlyLE (K : CochainComplex (ModuleCat.
   exact Module.Flat.of_linearEquiv e.toLinearEquiv
 
 end CochainComplex
+
+namespace HomologicalComplex
+
+variable {R : Type u} [CommRing R]
+
+/-- If `K_q` and `K_q / Z_q(K)` are flat, then the cycles `Z_q(K)` are flat. -/
+theorem flat_cycles_of_flat_X_of_flat_cokernel {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{v} R) c) (q : ι)
+    [Module.Flat R (K.X q)] [Module.Flat R (cokernel (K.iCycles q) : ModuleCat.{v} R)] :
+    Module.Flat R (K.cycles q) := by
+  have hS := (shortExact_iff_degreewise_shortExact _).1 K.cyclesComplexShortComplex_shortExact q
+  have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₂ := by
+    rw [ShortComplex.map_X₂, eval_obj, cyclesComplexShortComplex_X₂]
+    infer_instance
+  have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
+    rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
+    exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles q) : ModuleCat.{v} R))
+  have hX₁ : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₁ :=
+    Function.Exact.flat_left_of_injective_of_surjective
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+      hS.moduleCat_injective_f hS.moduleCat_surjective_g
+  rw [ShortComplex.map_X₁, eval_obj, cyclesComplexShortComplex_X₁] at hX₁
+  exact hX₁
+
+/-- For `c.Rel i j`, if the homology `H_j(K)` is flat, then the cycles `Z_j(K)` are flat if and
+only if the cycle cokernel `K_i / Z_i(K)` is flat. -/
+theorem flat_cycles_iff_flat_cokernel_iCycles_of_flat_homology {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{v} R) c) (i j : ι) (hij : c.Rel i j)
+    [Module.Flat R (K.homology j)] :
+    Module.Flat R (K.cycles j) ↔ Module.Flat R (cokernel (K.iCycles i) : ModuleCat.{v} R) := by
+  let S := ShortComplex.mk (K.cyclesComplexShortComplex_shortExact.δ i j hij)
+    (homologyMap K.cyclesComplexShortComplex.f j)
+    (K.cyclesComplexShortComplex_shortExact.δ_comp i j hij)
+  have hS : S.ShortExact :=
+    { exact := K.cyclesComplexShortComplex_shortExact.homology_exact₁ i j hij
+      mono_f := K.mono_δ_cyclesComplexShortComplex hij
+      epi_g := inferInstance }
+  let e₁ : (cokernel (K.iCycles i) : ModuleCat.{v} R) ≅ S.X₁ :=
+    eqToIso (by simp) ≪≫
+      K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero i (by simp) (by simp)
+  let e₂ : K.cycles j ≅ S.X₂ :=
+    eqToIso (by simp) ≪≫
+      K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero j (by simp) (by simp)
+  have : Module.Flat R S.X₃ :=
+    Module.Flat.of_linearEquiv
+      (eqToIso (congrArg (·.homology j) K.cyclesComplexShortComplex_X₂)).toLinearEquiv
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have : Module.Flat R S.X₂ := Module.Flat.of_linearEquiv e₂.symm.toLinearEquiv
+    have : Module.Flat R S.X₁ :=
+      Function.Exact.flat_left_of_injective_of_surjective
+        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+        hS.moduleCat_injective_f hS.moduleCat_surjective_g
+    exact Module.Flat.of_linearEquiv e₁.toLinearEquiv
+  · have : Module.Flat R S.X₁ := Module.Flat.of_linearEquiv e₁.symm.toLinearEquiv
+    have : Module.Flat R S.X₂ :=
+      Function.Exact.flat_of_injective_of_surjective
+        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+        hS.moduleCat_injective_f hS.moduleCat_surjective_g
+    exact Module.Flat.of_linearEquiv e₂.toLinearEquiv
+
+end HomologicalComplex
+
+namespace ChainComplex
+
+variable {R : Type u} [CommRing R]
+
+/-- In a nonnegative chain complex whose terms and homology below degree `p` are flat, the cycle
+cokernel `K_p / Z_p(K)` is flat. -/
+theorem flat_cokernel_iCycles_of_flat_homology (K : ChainComplex (ModuleCat.{v} R) ℕ) (p : ℕ)
+    (hX : ∀ q < p, Module.Flat R (K.X q)) (hH : ∀ q < p, Module.Flat R (K.homology q)) :
+    Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{v} R) := by
+  induction p with
+  | zero =>
+    have h0 : IsZero (cokernel (K.iCycles 0)) := by
+      have := K.isIso_iCycles 0 _ rfl (K.shape 0 _ (by simp))
+      exact isZero_cokernel_of_epi _
+    have := ModuleCat.subsingleton_of_isZero h0
+    exact Module.Flat.of_free
+  | succ p ih =>
+    have := hX p (Nat.lt_succ_self p)
+    have := hH p (Nat.lt_succ_self p)
+    have := ih (fun q hq ↦ hX q (Nat.lt_succ_of_lt hq)) (fun q hq ↦ hH q (Nat.lt_succ_of_lt hq))
+    have : Module.Flat R (K.cycles p) := K.flat_cycles_of_flat_X_of_flat_cokernel p
+    exact (K.flat_cycles_iff_flat_cokernel_iCycles_of_flat_homology (p + 1) p (by simp)).1
+      inferInstance
+
+/-- In a nonnegative chain complex whose terms through degree `p` and homology below degree `p`
+are flat, the cycles `Z_p(K)` are flat. -/
+theorem flat_cycles_of_flat_homology (K : ChainComplex (ModuleCat.{v} R) ℕ) (p : ℕ)
+    (hX : ∀ q ≤ p, Module.Flat R (K.X q)) (hH : ∀ q < p, Module.Flat R (K.homology q)) :
+    Module.Flat R (K.cycles p) := by
+  have := hX p le_rfl
+  have := K.flat_cokernel_iCycles_of_flat_homology p (fun q hq ↦ hX q hq.le) hH
+  exact K.flat_cycles_of_flat_X_of_flat_cokernel p
+
+end ChainComplex

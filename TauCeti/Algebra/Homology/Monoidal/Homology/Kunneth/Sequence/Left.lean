@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
+import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
 import TauCeti.Algebra.Homology.ShortComplex.Exact
 import TauCeti.Algebra.Homology.ShortComplex.Flat
-import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # The Künneth short exact sequence with a projective first factor
@@ -469,23 +469,8 @@ theorem isIso_homologyKunneth_of_flat_homology_left
     [∀ p, Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R)]
     [∀ p, Module.Flat R (K.homology p)] (n : I) :
     IsIso (homologyKunneth K L n) := by
-  have (p : I) : Module.Flat R (K.cycles p) := by
-    have hS := K.homologyPresentation_shortExact p
-    have : Module.Flat R (K.cyclesComplexShortComplex.X₃.X (p + 1)) := by
-      rw [cyclesComplexShortComplex_X₃]
-      exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles (p + 1)) : ModuleCat.{u} R))
-    have : Module.Flat R (K.homologyPresentation p).X₁ :=
-      Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero
-        (p + 1) (by simp) (by simp)).symm.toLinearEquiv
-    have : Module.Flat R (K.homologyPresentation p).X₂ :=
-      Function.Exact.flat_of_injective_of_surjective
-        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
-        hS.moduleCat_injective_f hS.moduleCat_surjective_g
-    have hX₁ : Module.Flat R (K.cyclesComplexShortComplex.X₁.X p) :=
-      Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero
-        p (by simp) (by simp)).toLinearEquiv
-    rw [cyclesComplexShortComplex_X₁] at hX₁
-    exact hX₁
+  have (p : I) : Module.Flat R (K.cycles p) :=
+    (K.flat_cycles_iff_flat_cokernel_iCycles_of_flat_homology (p + 1) p (by simp)).2 inferInstance
   have := mono_homologyKunneth_left K L n
   suffices Epi (homologyKunneth K L n) from isIso_of_mono_of_epi _
   by_cases hn : ∃ m, m + 1 = n

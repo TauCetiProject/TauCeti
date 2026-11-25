@@ -59,7 +59,11 @@ theorem lTensor_of_flat {R : Type u} [CommRing R] {X : ShortComplex (ModuleCat.{
 theorem map_tensorLeft_of_flat {R : Type u} [CommRing R] {X : ShortComplex (ModuleCat.{u} R)}
     (hX : X.ShortExact) [Module.Flat R X.X₃] (M : ModuleCat.{u} R) :
     (X.map (tensorLeft M)).ShortExact :=
-  hX.lTensor_of_flat M
+  ShortComplex.shortExact_of_iso
+    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      (by ext; simp [ModuleCat.hom_whiskerLeft])
+      (by ext; simp [ModuleCat.hom_whiskerLeft]))
+    (hX.lTensor_of_flat M)
 
 /-- Tensoring a short exact sequence of `R`-modules with flat third term on the right with any
 `R`-module `M` preserves short exactness. -/

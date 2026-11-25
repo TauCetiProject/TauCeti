@@ -13,11 +13,12 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
 import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Left
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.AlgebraicTopology.Singular.Empty
 import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor.Basic
-import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -119,17 +120,6 @@ variable {k : Type w} [CommRing k]
 
 section Flat
 
-/-- An empty space has zero, hence flat, singular chain modules. -/
-private lemma flat_singularChains_of_not_nonempty (X : TopCat.{w}) (hX : ¬ Nonempty X)
-    (M : ModuleCat.{w} k) (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).X p) := by
-  have hne : Nonempty (SimplexCategory.toTop.{w}.obj ⦋p⦌) := inferInstance
-  have : IsEmpty ((toSSet.obj X) _⦋p⦌) := ⟨fun f ↦ hX ⟨f.down.hom hne.some⟩⟩
-  have : IsZero (((toSSet.obj X).chainComplex M).X p) := by
-    rw [IsZero.iff_id_eq_zero]
-    exact (toSSet.obj X).chainComplex_hom_ext fun x ↦ isEmptyElim x
-  have := ModuleCat.subsingleton_of_isZero this
-  exact Module.Flat.of_free
-
 /-- On a one-point space, each singular chain module `Cₙ(pt; N)` is isomorphic to `N`, and the
 degree-2 differential `d 2 1` is an isomorphism, so `C₂(pt; N) / Z₂(pt; N) ≅ N`. -/
 private def cokernelICyclesTwoPUnitIso (N : ModuleCat.{w} k) :
@@ -178,76 +168,27 @@ private lemma flat_of_flat_cokernel_iCycles_two (Y : TopCat.{w}) (y₀ : Y) (N :
   let pt : TopCat.{w} := TopCat.of PUnit
   let iPt : pt ⟶ Y := TopCat.ofHom (ContinuousMap.const _ y₀)
   let rPt : Y ⟶ pt := TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
-  let F := (singularChainComplexFunctor (ModuleCat.{w} k)).obj N
-  have hφψ : F.map iPt ≫ F.map rPt = 𝟙 (F.obj pt) := by rw [← F.map_comp]; exact F.map_id pt
-  let ι := (cyclesComplexShortComplexMap (F.map iPt)).τ₃.f 2
-  let ρ := (cyclesComplexShortComplexMap (F.map rPt)).τ₃.f 2
+  have hir : iPt ≫ rPt = 𝟙 pt := ConcreteCategory.hom_ext _ _ fun _ ↦ rfl
+  let φ := SSet.chainComplexMap (toSSet.map iPt) N
+  let ψ := SSet.chainComplexMap (toSSet.map rPt) N
+  have hφψ : φ ≫ ψ = 𝟙 ((toSSet.obj pt).chainComplex N) :=
+    HomologicalComplex.hom_ext _ _ fun n ↦ by
+      rw [HomologicalComplex.comp_f, SSet.chainComplexMap_f_comp, ← CategoryTheory.Functor.map_comp,
+        hir, CategoryTheory.Functor.map_id, SSet.chainComplexMap_id]
+  let ι := (cyclesComplexShortComplexMap φ).τ₃.f 2
+  let ρ := (cyclesComplexShortComplexMap ψ).τ₃.f 2
   have hιρ : ι ≫ ρ = 𝟙 _ :=
     congrArg (fun m ↦ m.τ₃.f 2)
-      ((cyclesComplexShortComplexMap_comp (F.map iPt) (F.map rPt)).symm.trans
+      ((cyclesComplexShortComplexMap_comp φ ψ).symm.trans
         (by rw [hφψ, cyclesComplexShortComplexMap_id]))
-  have : Module.Flat k ((F.obj Y).cyclesComplexShortComplex.X₃.X 2) := by
+  have : Module.Flat k (((toSSet.obj Y).chainComplex N).cyclesComplexShortComplex.X₃.X 2) := by
     rw [cyclesComplexShortComplex_X₃]
     exact inferInstanceAs (Module.Flat k
       (cokernel (((toSSet.obj Y).chainComplex N).iCycles 2) : ModuleCat.{w} k))
-  have hflat : Module.Flat k ((F.obj pt).cyclesComplexShortComplex.X₃.X 2) :=
+  have hflat : Module.Flat k (((toSSet.obj pt).chainComplex N).cyclesComplexShortComplex.X₃.X 2) :=
     Module.Flat.of_retract ι.hom ρ.hom (congrArg ModuleCat.Hom.hom hιρ)
   rw [cyclesComplexShortComplex_X₃] at hflat
-  have : Module.Flat k (cokernel (((toSSet.obj pt).chainComplex N).iCycles 2) : ModuleCat.{w} k) :=
-    hflat
   exact Module.Flat.of_linearEquiv (cokernelICyclesTwoPUnitIso N).toLinearEquiv
-
-/-- If `K_q` and `K_q / Z_q(K)` are flat, then `Z_q(K)` is flat. -/
-private lemma flat_cycles_of_flat_X_of_flat_cokernel (K : ChainComplex (ModuleCat.{w} k) ℕ) (q : ℕ)
-    [Module.Flat k (K.X q)] [Module.Flat k (cokernel (K.iCycles q) : ModuleCat.{w} k)] :
-    Module.Flat k (K.cycles q) := by
-  have hS := (shortExact_iff_degreewise_shortExact _).1 K.cyclesComplexShortComplex_shortExact q
-  have : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₂ := by
-    rw [ShortComplex.map_X₂, eval_obj, cyclesComplexShortComplex_X₂]
-    infer_instance
-  have : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
-    rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat k (cokernel (K.iCycles q) : ModuleCat.{w} k))
-  have hX₁ : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₁ :=
-    Function.Exact.flat_left_of_injective_of_surjective
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
-      hS.moduleCat_injective_f hS.moduleCat_surjective_g
-  rw [ShortComplex.map_X₁, eval_obj, cyclesComplexShortComplex_X₁] at hX₁
-  exact hX₁
-
-/-- In a nonnegative chain complex with flat terms and flat homology, all cycles and cycle
-cokernels are flat by induction on degree. -/
-private lemma flat_cycles_and_cokernel_of_flat_homology (K : ChainComplex (ModuleCat.{w} k) ℕ)
-    [∀ p, Module.Flat k (K.X p)] [∀ p, Module.Flat k (K.homology p)] (p : ℕ) :
-    Module.Flat k (K.cycles p) ∧ Module.Flat k (cokernel (K.iCycles p) : ModuleCat.{w} k) := by
-  induction p with
-  | zero =>
-    have h0 : IsZero (cokernel (K.iCycles 0)) := by
-      have := K.isIso_iCycles 0 _ rfl (K.shape 0 _ (by simp))
-      exact isZero_cokernel_of_epi _
-    have hcok : Module.Flat k (cokernel (K.iCycles 0) : ModuleCat.{w} k) :=
-      have := ModuleCat.subsingleton_of_isZero h0
-      Module.Flat.of_free
-    exact ⟨flat_cycles_of_flat_X_of_flat_cokernel K 0, hcok⟩
-  | succ p ih =>
-    have hcok : Module.Flat k (cokernel (K.iCycles (p + 1)) : ModuleCat.{w} k) := by
-      have hS := K.homologyPresentation_shortExact p
-      have : Module.Flat k (K.homologyPresentation p).X₂ :=
-        have : Module.Flat k (K.cyclesComplexShortComplex.X₁.X p) := by
-          rw [cyclesComplexShortComplex_X₁]
-          exact ih.1
-        Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero
-          p (by simp) (by simp)).symm.toLinearEquiv
-      have : Module.Flat k (K.homologyPresentation p).X₁ :=
-        Function.Exact.flat_left_of_injective_of_surjective
-          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
-          hS.moduleCat_injective_f hS.moduleCat_surjective_g
-      have hX₃ : Module.Flat k (K.cyclesComplexShortComplex.X₃.X (p + 1)) :=
-        Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero
-          (p + 1) (by simp) (by simp)).toLinearEquiv
-      rw [cyclesComplexShortComplex_X₃] at hX₃
-      exact hX₃
-    exact ⟨flat_cycles_of_flat_X_of_flat_cokernel K (p + 1), hcok⟩
 
 variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
 
@@ -261,9 +202,13 @@ theorem mono_singularHomologyKunneth
     by_cases hY : Nonempty Y
     · have : Module.Flat k N := flat_of_flat_cokernel_iCycles_two Y hY.some N
       exact SSet.flat_chainComplex_X (toSSet.obj Y) N q
-    · exact flat_singularChains_of_not_nonempty Y hY N q
+    · have : IsEmpty Y := not_nonempty_iff.1 hY
+      have : Subsingleton (((toSSet.obj Y).chainComplex N).X q) :=
+        ModuleCat.subsingleton_of_isZero
+          ((eval _ _ q).map_isZero ((toSSet.obj Y).isZero_chainComplex N))
+      exact Module.Flat.of_free
   have (q : ℕ) : Module.Flat k (((toSSet.obj Y).chainComplex N).cycles q) :=
-    flat_cycles_of_flat_X_of_flat_cokernel ((toSSet.obj Y).chainComplex N) q
+    ((toSSet.obj Y).chainComplex N).flat_cycles_of_flat_X_of_flat_cokernel q
   rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
   -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
   -- explicitly: instance search does not identify the homology instances of the general
@@ -289,12 +234,17 @@ theorem isIso_singularHomologyKunneth_of_flat
       have : Module.Flat k M :=
         Module.Flat.of_retract i.hom r.hom (congrArg ModuleCat.Hom.hom (by simp [i, r]))
       exact SSet.flat_chainComplex_X (toSSet.obj X) M p
-    · exact flat_singularChains_of_not_nonempty X hne M p
+    · have : IsEmpty X := not_nonempty_iff.1 hne
+      have : Subsingleton (((toSSet.obj X).chainComplex M).X p) :=
+        ModuleCat.subsingleton_of_isZero
+          ((eval _ _ p).map_isZero ((toSSet.obj X).isZero_chainComplex M))
+      exact Module.Flat.of_free
   -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
   have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
   have (p : ℕ) : Module.Flat k
       (cokernel (((toSSet.obj X).chainComplex M).iCycles p) : ModuleCat.{w} k) :=
-    (flat_cycles_and_cokernel_of_flat_homology ((toSSet.obj X).chainComplex M) p).2
+    ((toSSet.obj X).chainComplex M).flat_cokernel_iCycles_of_flat_homology p
+      (fun _ _ ↦ inferInstance) (fun _ _ ↦ inferInstance)
   rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
   -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
   exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology_left
