@@ -199,15 +199,6 @@ private theorem sectionSecondOrderContraction_smulRight_smulRight (hx : I.IsInte
   rw [← sum_sum_sectionCommutatorSymbol_smul hx P c e hce ξ η v]
   simp [sectionSecondOrderContraction]
 
-omit [IsManifold I ∞ M] [T2Space M] in
-/-- The coordinate functionals of a basis and the basis vectors satisfy `∑ₖ ξ(bₖ) bᵏ = ξ`. -/
-private theorem sum_apply_smul_coord (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    ∑ k, ξ (Module.finBasis ℝ (TangentSpace I x) k) •
-      LinearMap.toContinuousLinearMap ((Module.finBasis ℝ (TangentSpace I x)).coord k) = ξ := by
-  ext w
-  simpa using LinearMap.congr_fun
-    ((Module.finBasis ℝ (TangentSpace I x)).sum_dual_apply_smul_coord ξ.toLinearMap) w
-
 /-- **The leading coefficient on rank-one maps** is half the commutator symbol:
 `A_x(ξ ⊗ η ⊗ v) = ½ [[P, ξ], η] v`. -/
 @[simp]
@@ -216,19 +207,8 @@ theorem sectionSecondOrderCoefficient_smulRight_smulRight (hx : I.IsInteriorPoin
     (ξ η : TangentSpace I x →L[ℝ] ℝ) (v : V x) :
     sectionSecondOrderCoefficient I hx P (ξ.smulRight (η.smulRight v)) =
       (2 : ℝ)⁻¹ • sectionCommutatorSymbol I hx P ![ξ, η] v :=
-  sectionSecondOrderContraction_smulRight_smulRight hx P _ _ sum_apply_smul_coord ξ η v
-
-omit [IsManifold I ∞ M] [T2Space M] [∀ x, TopologicalSpace (W x)] in
-/-- Linear maps out of `Hom(T_xM, Hom(T_xM, V_x))` agree as soon as they agree on the rank-one
-maps `ξ ⊗ η ⊗ v`. -/
-private theorem ext_smulRight_smulRight {T T' :
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x}
-    (h : ∀ (ξ η : TangentSpace I x →L[ℝ] ℝ) (v : V x),
-      T (ξ.smulRight (η.smulRight v)) = T' (ξ.smulRight (η.smulRight v))) :
-    T = T' :=
-  LinearMap.ext_smulRight fun ξ L ↦ LinearMap.congr_fun
-    (LinearMap.ext_smulRight (T := T ∘ₗ ξ.smulRightₗ) (T' := T' ∘ₗ ξ.smulRightₗ)
-      fun η v ↦ h ξ η v) L
+  sectionSecondOrderContraction_smulRight_smulRight hx P _ _
+    (Module.finBasis ℝ _).sum_apply_smul_coord_toContinuousLinearMap ξ η v
 
 /-- **Characterization of the leading coefficient.** It is the unique linear map on
 `Hom(T_xM, Hom(T_xM, V_x))` sending each rank-one map `ξ ⊗ η ⊗ v` to `½ [[P, ξ], η] v`. -/
@@ -239,7 +219,7 @@ theorem eq_sectionSecondOrderCoefficient_iff (hx : I.IsInteriorPoint x)
       ∀ (ξ η : TangentSpace I x →L[ℝ] ℝ) (v : V x),
         T (ξ.smulRight (η.smulRight v)) = (2 : ℝ)⁻¹ • sectionCommutatorSymbol I hx P ![ξ, η] v :=
   ⟨fun h ξ η v ↦ h ▸ sectionSecondOrderCoefficient_smulRight_smulRight hx P ξ η v,
-    fun h ↦ ext_smulRight_smulRight fun ξ η v ↦ by
+    fun h ↦ LinearMap.ext_smulRight_smulRight fun ξ η v ↦ by
       rw [h, sectionSecondOrderCoefficient_smulRight_smulRight]⟩
 
 /-- For finitely many covectors `cⱼ` and vectors `eⱼ` at `x` with `∑ⱼ ξ(eⱼ) cⱼ = ξ` for every
@@ -255,8 +235,7 @@ theorem sectionSecondOrderCoefficient_apply_eq_sum (hx : I.IsInteriorPoint x)
   have h : sectionSecondOrderContraction hx P c e = sectionSecondOrderCoefficient I hx P :=
     (eq_sectionSecondOrderCoefficient_iff hx P _).2
       (sectionSecondOrderContraction_smulRight_smulRight hx P c e hce)
-  rw [← h]
-  rfl
+  simp only [← h, sectionSecondOrderContraction, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- **The leading coefficient is symmetric**: it takes the same value on a bilinear map `B` and on
 its transpose `(u, w) ↦ B(w, u)`. So it only depends on the symmetric part of `B`. -/
@@ -266,8 +245,9 @@ theorem sectionSecondOrderCoefficient_eq_of_apply_swap (hx : I.IsInteriorPoint x
     sectionSecondOrderCoefficient I hx P B' = sectionSecondOrderCoefficient I hx P B := by
   set b := Module.finBasis ℝ (TangentSpace I x)
   set c := fun k ↦ LinearMap.toContinuousLinearMap (b.coord k)
-  rw [sectionSecondOrderCoefficient_apply_eq_sum hx P c b sum_apply_smul_coord,
-    sectionSecondOrderCoefficient_apply_eq_sum hx P c b sum_apply_smul_coord, Finset.sum_comm]
+  have hc := b.sum_apply_smul_coord_toContinuousLinearMap
+  rw [sectionSecondOrderCoefficient_apply_eq_sum hx P c b hc,
+    sectionSecondOrderCoefficient_apply_eq_sum hx P c b hc, Finset.sum_comm]
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   rw [h, sectionCommutatorSymbol_comm hx P (c j)]
@@ -279,10 +259,8 @@ theorem sectionSecondOrderCoefficient_smulRight_smulRight_self (hx : I.IsInterio
     (ξ : TangentSpace I x →L[ℝ] ℝ) (v : V x) :
     sectionSecondOrderCoefficient I hx P (ξ.smulRight (ξ.smulRight v)) =
       sectionPrincipalSymbol I hx P ξ v := by
-  have h : ![ξ, ξ] = fun _ ↦ ξ := by
-    funext i
-    fin_cases i <;> rfl
-  rw [sectionSecondOrderCoefficient_smulRight_smulRight, sectionPrincipalSymbol_def, h,
+  rw [sectionSecondOrderCoefficient_smulRight_smulRight, sectionPrincipalSymbol_def,
+    Matrix.vec_single_eq_const, Matrix.vecCons_const,
     LinearMap.smul_apply, Nat.factorial_two, Nat.cast_ofNat]
 
 /-! ### Smoothness of the leading coefficient -/
@@ -318,13 +296,9 @@ theorem contMDiff_sectionSecondOrderCoefficient [BoundarylessManifold I M]
     Finset.sum_apply]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  have hjk : (fun i ↦ mvfderiv I (![u j, u k] i) y) =
-      ![mvfderiv I (u j) y, mvfderiv I (u k) y] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [← sectionCommutatorSymbol_mvfderiv BoundarylessManifold.isInteriorPoint P ![u j, u k] (τ j k),
-    hjk]
-  rfl
+  -- The section `τ j k` is built from the values `θ y (X j y) (X k y)`.
+  have hτ : τ j k y = θ y (X j y) (X k y) := rfl
+  rw [← hτ, sectionCommutatorSymbol_mvfderiv_pair]
 
 end TauCeti
 
@@ -595,8 +569,7 @@ theorem sectionPrincipalSymbol_eq_of_forall_apply_eq_add_add
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   obtain ⟨σ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
   have hfun : (fun _ : Fin 2 ↦ mvfderiv I f x) = ![mvfderiv I f x, mvfderiv I f x] := by
-    funext i
-    fin_cases i <;> rfl
+    rw [Matrix.vec_single_eq_const, Matrix.vecCons_const]
   rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_def, LinearMap.smul_apply, hfun,
     sectionCommutatorSymbol_mvfderiv_of_order_two,
     apply_smul_smul_sub_of_forall_apply_eq_add cov covT A B C h f f σ x, ← two_smul ℝ, map_smul,

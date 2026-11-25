@@ -82,6 +82,8 @@ symbol is its fibre map.
   function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.sectionPrincipalSymbol_mvfderiv_of_order_one`: a first-order operator has
   `σ_geom(P)(df_x) s(x) = P(f s)(x) - f(x) (P s)(x)`.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_pair`: an operator of order at most two has
+  `[[P, df_x], dg_x] s(x) = ([[P, f], g] s)(x)`.
 * `TauCeti.sectionCommutatorSymbol_mvfderiv_of_order_two`: a second-order operator has
   `[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
@@ -262,6 +264,19 @@ theorem sectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
   rwa [sectionCommutatorSymbol_apply, smoothSectionFiberMap_apply]
 
+/-- The commutator symbol at `x` in two covectors, evaluated on the differentials at `x` of smooth
+functions `f` and `g` and on the value at `x` of a smooth section `s`, is the value at `x` of the
+double commutator `[[P, f], g] s`. -/
+theorem sectionCommutatorSymbol_mvfderiv_pair (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P ![mvfderiv I f x, mvfderiv I g x] (s x) =
+      commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2 P ![f, g] s x := by
+  rw [← sectionCommutatorSymbol_mvfderiv hx]
+  congr 2
+  funext i
+  fin_cases i <;> rfl
+
 /-- A real multilinear map on `T_x*M` with values in `Hom(V_x, W_x)` is the commutator symbol of
 `P` at `x` as soon as it sends the differentials at `x` of smooth functions `f₁, …, fₘ` and the
 value at `x` of a smooth section `s` to the value at `x` of `[⋯[P, f₁], …, fₘ] s`. -/
@@ -376,10 +391,7 @@ theorem sectionCommutatorSymbol_mvfderiv_of_order_two (hx : I.IsInteriorPoint x)
         f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (g • s) x -
           g x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • s) x +
             (f x * g x) • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
-  have hfg : (fun i ↦ mvfderiv I (![f, g] i) x) = ![mvfderiv I f x, mvfderiv I g x] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [← hfg, sectionCommutatorSymbol_mvfderiv, commutatorSymbol_apply_apply]
+  rw [sectionCommutatorSymbol_mvfderiv_pair, commutatorSymbol_apply_apply]
   simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
     mul_apply_eq_comp, smulCommutator_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_succ,
     Matrix.cons_val_fin_one, ContMDiffSection.coe_sub, Pi.sub_apply,
