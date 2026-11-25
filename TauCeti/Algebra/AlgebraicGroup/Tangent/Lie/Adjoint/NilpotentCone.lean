@@ -95,6 +95,9 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
+* `TauCeti.mem_adjointInvariantPolynomials_iff_mem_coinvariants` and
+  `TauCeti.nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal`: the invariants and the ideal of
+  the cone, in terms of the coinvariants of the symmetric algebra of the comodule `𝔤*`.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: the ideal
   is stable under scaling and under the adjoint action.
 * `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
@@ -218,20 +221,22 @@ theorem polynomialCoact_eval_ι
         (Comodule.coact (R := k) (C := H) (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)) =
       Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ)
         ((Derivation.adjointAction (CommAlgCat.of k A) g).val z) := by
-  rw [adjointPolynomialComoduleAlgebra_coact_ι]
-  rw [← Derivation.adjointComodule_endOfPoint_eq_adjointAction]
-  rw [← inv_inv g]
-  rw [← Comodule.baseChangeEvaluation_dual_endOfPoint]
-  rw [inv_inv, Comodule.endOfPoint_tmul, one_smul, Comodule.dual_coact]
-  generalize Comodule.dualCoact (R := k) (H := H) (M := 𝔤) φ = q
-  induction q using TensorProduct.inductionOn with
-  | add q r hq hr => simp only [map_add, LinearMap.add_apply, hq, hr]
-  | tmul ψ h =>
-      simp only [LinearMap.rTensor_tmul, Algebra.TensorProduct.lift_tmul,
-        SymmetricAlgebra.lift_ι_apply, LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply,
-        TensorProduct.comm_tmul, hx]
-      rw [TensorProduct.tmul_eq_smul_one_tmul ((g⁻¹).ofConv h) ψ,
-        map_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm]
+  have heval (w : A ⊗[k] Module.Dual k 𝔤) :
+      x.liftBaseChange A w = Module.Dual.baseChangeEvaluation w z := by
+    induction w using TensorProduct.inductionOn with
+    | add w w' hw hw' => simp only [map_add, LinearMap.add_apply, hw, hw']
+    | tmul a ψ =>
+        rw [LinearMap.liftBaseChange_tmul, hx, TensorProduct.tmul_eq_smul_one_tmul a ψ,
+          map_smul, LinearMap.smul_apply]
+  have htranslate := DFunLike.congr_fun
+    (ComoduleAlgebra.lift_liftBaseChange_endOfPoint (g⁻¹).ofConv x)
+    (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)
+  simp only [SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    TensorProduct.mk_apply, AlgHom.comp_apply] at htranslate
+  rw [ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply, ← htranslate, heval,
+    Comodule.baseChangeEvaluation_dual_endOfPoint, inv_inv]
+  exact congrArg (Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ))
+    (Derivation.adjointComodule_endOfPoint_eq_adjointAction (CommAlgCat.of k A) g z)
 
 end Evaluation
 
@@ -426,6 +431,55 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk [IsAlgClosed k] [Algebra
     exact nilpotentConeIdeal_le_iff.mp hx p hp hp₀
 
 end Basic
+
+section Coinvariants
+
+variable {k : Type u} [Field k] {H : Type u} [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+attribute [local instance] ComoduleAlgebra.symmetricAlgebra
+
+/-- The invariant polynomial functions on the Lie algebra are the coinvariants of the symmetric
+algebra of the contragredient of the adjoint comodule. -/
+theorem mem_adjointInvariantPolynomials_iff_mem_coinvariants
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} :
+    letI := Comodule.dual k H 𝔤
+    p ∈ adjointInvariantPolynomials k H ↔
+      p ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k 𝔤)) := by
+  let := Comodule.dual k H 𝔤
+  -- Both coactions are algebra maps extending the contragredient coaction on generators.
+  have h : (letI := adjointPolynomialComoduleAlgebra k H
+      ComoduleAlgebra.coactAlgHom k H (SymmetricAlgebra k (Module.Dual k 𝔤))) =
+      Comodule.symmetricAlgebraCoact k H (Module.Dual k 𝔤) := by
+    let := adjointPolynomialComoduleAlgebra k H
+    refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ ?_)
+    simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, Function.comp_apply,
+      ComoduleAlgebra.coactAlgHom_apply, adjointPolynomialComoduleAlgebra_coact_ι,
+      Comodule.symmetricAlgebraCoact_ι, Comodule.dual_coact]
+  have hp : (letI := adjointPolynomialComoduleAlgebra k H
+      Comodule.coact (R := k) (C := H) p) = Comodule.symmetricAlgebraCoact k H _ p := by
+    let := adjointPolynomialComoduleAlgebra k H
+    rw [← ComoduleAlgebra.coactAlgHom_apply, h]
+  rw [mem_adjointInvariantPolynomials, hp, ComoduleAlgebra.mem_coinvariants,
+    ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply]
+
+/-- The ideal of the adjoint nilpotent cone is the ideal generated by the coinvariants of the
+symmetric algebra of the contragredient of the adjoint comodule vanishing at the origin. -/
+theorem nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal :
+    letI := Comodule.dual k H 𝔤
+    nilpotentConeIdeal k H = (ComoduleAlgebra.coinvariants k H
+      (SymmetricAlgebra k (Module.Dual k 𝔤))).symmetricAlgebraHilbertIdeal := by
+  let := Comodule.dual k H 𝔤
+  refine le_antisymm (nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
+    (Subalgebra.symmetricAlgebraHilbertIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
+  · exact Subalgebra.mem_symmetricAlgebraHilbertIdeal_of_mem
+      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mp hp) hp₀
+  · exact mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
+      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mpr hp) hp₀
+
+end Coinvariants
 
 section Connected
 

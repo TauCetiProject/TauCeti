@@ -25,6 +25,10 @@ least `√π` (`Stirling.le_log_factorial_stirling`), which gives the lower boun
 `n = ⌊x⌋₊` to the real `x` uses that `t log t - t` is nondecreasing on `[1, ∞)`, with increment
 at most `log x` over `[n, x]`.
 
+Separately, the elementary bound `x ^ n / n! ≤ e ^ x` for `n = ⌊x⌋₊` (a single term of the
+exponential series, `Real.pow_div_factorial_le_exp`) gives `∑_{1 ≤ k ≤ x} log (x / k) ≤ x` for
+every real `x ≥ 0`.
+
 ## Main results
 
 * `Real.log_factorial_le`: `log n! ≤ n log n - n + (1 / 2) log n + 1` for every `n`.
@@ -33,6 +37,7 @@ at most `log x` over `[n, x]`.
   for `1 ≤ x`.
 * `Real.abs_log_floor_factorial_sub_le`: `|log ⌊x⌋₊! - (x log x - x)| ≤ (1 / 2) log x + 1`
   for `1 ≤ x`.
+* `Real.sum_log_div_le`: `∑_{1 ≤ k ≤ x} log (x / k) ≤ x` for `0 ≤ x`.
 -/
 
 public section
@@ -99,5 +104,18 @@ theorem abs_log_floor_factorial_sub_le (hx : 1 ≤ x) :
   have := log_nonneg (by linarith [two_le_pi] : 1 ≤ π)
   rw [abs_le]
   constructor <;> linarith
+
+/-- `∑_{1 ≤ k ≤ x} log (x / k) ≤ x` for real `x ≥ 0`: the sum is `log (x ^ n / n!)` with
+`n = ⌊x⌋₊`, and `x ^ n / n! ≤ e ^ x`. -/
+theorem sum_log_div_le (hx : 0 ≤ x) : ∑ k ∈ Finset.Icc 1 ⌊x⌋₊, log (x / k) ≤ x := by
+  rcases Nat.eq_zero_or_pos ⌊x⌋₊ with h | h
+  · simpa [h] using hx
+  have hx1 : 0 < x := Nat.floor_pos.mp h |>.trans_lt' one_pos
+  have hprod : ∏ k ∈ Finset.Icc 1 ⌊x⌋₊, (x / k) = x ^ ⌊x⌋₊ / (⌊x⌋₊ ! : ℝ) := by
+    rw [Finset.prod_div_distrib, Finset.prod_const, Nat.card_Icc, add_tsub_cancel_right,
+      ← Finset.prod_Ico_id_eq_factorial, Nat.cast_prod, Finset.Ico_add_one_right_eq_Icc]
+  rw [← log_prod fun k hk ↦ (div_pos hx1 (by
+    exact_mod_cast (Finset.mem_Icc.mp hk).1)).ne', hprod]
+  exact (log_le_iff_le_exp (by positivity)).mpr (pow_div_factorial_le_exp x hx _)
 
 end Real
