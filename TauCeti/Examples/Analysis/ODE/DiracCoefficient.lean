@@ -9,13 +9,12 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.Analysis.ODE.Propagator.Holomorphic
-public import TauCeti.Analysis.ODE.Propagator.Liouville
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Checks for Carathéodory systems: the Dirac coefficient and Liouville's formula
+# Checks for Carathéodory systems: the Dirac coefficient
 
-**The Dirac coefficient.** For `z ∈ ℂ` and `q = f + i g ∈ ℂ` let
+For `z ∈ ℂ` and `q = f + i g ∈ ℂ` let
 `D(z, q) = [[f, -z - g], [z - g, -f]]`, the coefficient `-Ω(z - Q_q)` of the Dirac system, acting
 on `EuclideanSpace ℂ (Fin 2)`. It is `z J + Q_q` with `J = [[0, -1], [1, 0]]` an isometry and
 `Q_q = [[f, -g], [-g, -f]]` satisfying `‖Q_q v‖ = |q| ‖v‖`, so in the Euclidean operator norm
@@ -25,13 +24,7 @@ Hence for `q` integrable on `[a, b]` the propagator of `r ↦ D(z, q(r))` is ent
 of `Fin 2 → ℂ` the bound fails: at `z = 0` and `q = 1 + i` the coefficient has norm `2 > √2 = |q|`
 (`TauCeti.Examples.DiracCoefficient.linftyOpNorm_diracMatrix_zero_one_add_I`).
 
-**Liouville's formula.** For the constant coefficient `A = [[1, 1], [0, 1]]` on `Fin 2 → ℝ`, the
-propagator has determinant `e^{2(t - s)} = e^{(t - s) tr A}`; the sum of the entries (`3`) or
-`det A` (`1`) in place of the trace would give a different value. The time-ordered propagator
-`[[1, 1], [1, 2]]` of `TauCeti.Examples.Propagator` has determinant `1 = e^{tr A + tr B}` for the
-nilpotent `A`, `B` there.
-
-These are Checks of §§1.4 and 1.6 of the DiracScatteringAndNonlinearFourierTransform roadmap.
+These are Checks of §1.6 of the DiracScatteringAndNonlinearFourierTransform roadmap.
 -/
 
 public section
@@ -129,31 +122,5 @@ theorem linftyOpNorm_diracMatrix_zero_one_add_I :
   · have h : (1 + Complex.I : ℂ) = ((1 : ℝ) : ℂ) + ((1 : ℝ) : ℂ) * Complex.I := by simp
     rw [h, Complex.norm_add_mul_I, Real.sqrt_lt' two_pos]
     norm_num
-
-/-- **Liouville's formula for a constant coefficient.** For `A = [[1, 1], [0, 1]]` on `Fin 2 → ℝ`,
-the propagator from `s` to `t` has determinant `e^{2(t - s)}`, the exponential of `(t - s) tr A`. -/
-theorem det_propagator_const (s t : ℝ) :
-    (LinearMap.toMatrix' (propagator (fun _ ↦ LinearMap.toContinuousLinearMap
-      (Matrix.toLin' !![(1 : ℝ), 1; 0, 1])) t s : (Fin 2 → ℝ) →ₗ[ℝ] Fin 2 → ℝ)).det =
-      Real.exp (2 * (t - s)) := by
-  rw [det_toMatrix'_propagator (a := min s t) (b := max s t)
-    continuousOn_const.integrableOn_Icc ⟨min_le_left _ _, le_max_left _ _⟩
-    ⟨min_le_right _ _, le_max_right _ _⟩]
-  simp [LinearMap.toMatrix'_toLin', Matrix.trace_fin_two, ← Real.exp_eq_exp_ℝ]
-  ring_nf
-
-/-- The trace, not the sum of the entries or the determinant, of `A = [[1, 1], [0, 1]]` gives
-Liouville's formula: for `t ≠ 0`, `e^{2t}` differs from `e^{3t}` and from `e^t`. -/
-theorem exp_two_mul_ne (t : ℝ) (ht : t ≠ 0) :
-    Real.exp (2 * t) ≠ Real.exp (3 * t) ∧ Real.exp (2 * t) ≠ Real.exp t := by
-  constructor <;> intro h <;> have := Real.exp_injective h <;> apply ht <;> linarith
-
-/-- The time-ordered propagator `[[1, 1], [1, 2]]` has determinant `1 = e^{tr A + tr B}` for the
-nilpotent `A = [[0, 1], [0, 0]]` and `B = [[0, 0], [1, 0]]`. -/
-theorem det_timeOrdered :
-    (!![(1 : ℝ), 1; 1, 2]).det = Real.exp ((!![(0 : ℝ), 1; 0, 0]).trace +
-      (!![(0 : ℝ), 0; 1, 0]).trace) := by
-  simp [Matrix.det_fin_two, Matrix.trace_fin_two]
-  norm_num
 
 end TauCeti.Examples.DiracCoefficient
