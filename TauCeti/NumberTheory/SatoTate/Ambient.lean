@@ -11,6 +11,8 @@ public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
+import TauCeti.Algebra.AlgebraicGroup.Symplectic.RankOne
+
 /-!
 # The ambient groups of Sato–Tate theory: `U(d)` and `USp(d)`
 
@@ -236,12 +238,15 @@ theorem map_star_mem_USp_iff {x : U d} : UnitaryGroup.map_star x ∈ USp d ↔ x
   · intro h
     rw [h, hΩ]
 
-/-- For every `2 × 2` matrix `M`, `Mᵀ Ω_2 M = det M • Ω_2`. -/
+/-- For every `2 × 2` matrix `M`, `Mᵀ Ω_2 M = det M • Ω_2`. This is
+`TauCeti.mul_JFin_one_mul_transpose_eq_det_smul` applied to `Mᵀ`, read through
+`Ω_{1+1} = −JFin 1 ℂ`. -/
 theorem transpose_mul_symplecticForm_two_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
     Mᵀ * symplecticForm 2 * M = M.det • symplecticForm 2 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, symplecticForm_apply, Matrix.det_fin_two] <;> ring
+  have h := mul_JFin_one_mul_transpose_eq_det_smul Mᵀ
+  rw [transpose_transpose, det_transpose] at h
+  change Mᵀ * symplecticForm (1 + 1) * M = M.det • symplecticForm (1 + 1)
+  rw [symplecticForm_eq_neg_JFin, Matrix.mul_neg, Matrix.neg_mul, h, smul_neg]
 
 /-- `USp(2)` is the determinant-one subgroup of `U(2)`, since `gᵀ Ω_2 g = det g • Ω_2`
 (`transpose_mul_symplecticForm_two_mul`). -/
