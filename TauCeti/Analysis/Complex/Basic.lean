@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -82,6 +83,9 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
+conjugate (`Complex.conj_eq_inv_of_pow_eq`).
 -/
 
 public section
@@ -498,6 +502,15 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- An `n`-th root `z`, `n ≠ 0`, of a complex number `w` with `w * conj w = 1` lies on the unit
+circle, so its conjugate is its inverse. -/
+theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
+    (hw : w * conj w = 1) : conj z = z⁻¹ := by
+  have hw' : ‖w‖ = 1 := TauCeti.RCLike.mul_conj_eq_one_iff.1 hw
+  have hz' : ‖z‖ = 1 :=
+    (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
+  exact (inv_eq_conj hz').symm
 
 end Complex
 
