@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
@@ -17,6 +18,11 @@ boundary values of the function. If the weak derivative of `u` has a continuous 
 `g` on `[a,b]`, then the distance from `u` to any element of the closure-defined
 `W^{1,∞}_0(a,b)` is at least `max (|g a|) (|g b|)`. In particular, membership in that closure
 forces both endpoint derivatives to vanish.
+
+The same argument applies to `W^{1,∞}_Γ(a,b)`, the closure of the restrictions of test functions on
+`ℝ` supported away from `closure Γ`: the distance from `u` to it is at least `|g t|` at every point
+`t ∈ [a,b]` of `closure Γ`
+(`TauCeti.W1p.abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule`).
 
 The polynomial `x(1-x)` on `(0,1)` has zero endpoint trace but is at distance at least one
 from `W^{1,∞}_0(0,1)`. Thus the kernel of the endpoint trace is not contained in the
@@ -122,5 +128,38 @@ theorem exists_intervalTraceL_eq_zero_notMem_w1p0Submodule_top :
         ContinuousMap.coe_mk] using hx
     simp [intervalTraceL_apply, hrep]
   · exact (not_le_of_gt zero_lt_one) (by simpa only [dist_self] using hdist u h)
+
+/-- **The `W^{1,∞}` distance to `W^{1,∞}_Γ(a,b)` bounds the weak derivative on `closure Γ`.** If
+the weak derivative of `u` has a continuous representative `g` on `[a,b]`, then `|g t| ≤ dist u v`
+for every `v ∈ W^{1,∞}_Γ(a,b)` and every `t ∈ [a,b]` in `closure Γ`: every generator has
+derivative zero near `closure Γ`. -/
+theorem abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule {a b : ℝ} (hab : a < b) {Γ : Set ℝ}
+    {u v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤} {g : ℝ → ℝ} (hg : ContinuousOn g (Icc a b))
+    (hu : gradient u =ᵐ[volume.restrict (Ioo a b)] g)
+    (hv : v ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ Γ) {t : ℝ}
+    (ht : t ∈ Icc a b) (htΓ : t ∈ closure Γ) : |g t| ≤ dist u v := by
+  -- The distance bound is closed in `v`, so it suffices to test it on the generators.
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    (isClosed_le continuous_const (continuous_const.dist continuous_id)) (fun φ hφ ↦ ?_) hv
+  have hle : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
+  set w := restrictL hle (ofTestFunctionₗ volume ⊤ ⊤ φ)
+  have hw : gradient w =ᵐ[volume.restrict (Ioo a b)] ∇ (φ : ℝ → ℝ) := by
+    filter_upwards [gradient_restrictL_ae (mu := volume) hle (ofTestFunctionₗ volume ⊤ ⊤ φ),
+      ae_restrict_of_ae (gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := ⊤) φ)]
+      with s h1 h2 using h1.trans h2
+  have hG : ∀ᵐ s ∂volume.restrict (Ioo a b), ‖g s - ∇ (φ : ℝ → ℝ) s‖ ≤ dist u w := by
+    filter_upwards [ae_norm_gradient_sub_le_dist u w, hu, hw] with s hs hus hws
+    simpa only [hus, hws] using hs
+  -- Express the bound as an equality of continuous functions to recover the value at `t`.
+  have hc : ContinuousOn (fun s ↦ max ‖g s - ∇ (φ : ℝ → ℝ) s‖ (dist u w)) (Icc a b) :=
+    (hg.sub (φ.contDiff.continuous_gradient (by simp)).continuousOn).norm.sup
+      continuousOn_const
+  have heq := Measure.eqOn_Icc_of_ae_eq volume hab.ne
+    (by
+      rw [← restrict_Ioo_eq_restrict_Icc]
+      exact hG.mono fun s hs ↦ max_eq_right hs) hc continuousOn_const ht
+  simp only [gradient_of_notMem_tsupport (disjoint_right.1 hφ htΓ), sub_zero,
+    Real.norm_eq_abs] at heq
+  exact max_eq_right_iff.1 heq
 
 end TauCeti.W1p
