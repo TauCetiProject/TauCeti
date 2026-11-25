@@ -34,6 +34,8 @@ immersion, which is a monomorphism of sheafy pre-adic spaces, to the case of aff
   morphisms.
 * `TauCeti.PreAdicSpace.hom_ext_of_ofRestrict`: morphisms out of a sheafy pre-adic space agreeing
   on every member of an open cover are equal.
+* `TauCeti.PreAdicSpace.ext_of_appTop_ofRestrict`: global sections of a sheafy pre-adic space
+  agreeing on every member of an open cover are equal.
 * `TauCeti.SheafyPreAdicSpace.exists_comp_eq_of_iSup_eq_top`: factoring through a monomorphism of
   sheafy pre-adic spaces is local on the source.
 
@@ -78,7 +80,7 @@ include hU in
 private theorem exists_ofRestrict_base_eq (x : X) :
     ∃ (i : ι) (y : X.restrict (U i).isOpenEmbedding),
       (X.ofRestrict (U i).isOpenEmbedding).base y = x := by
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (by rw [hU]; trivial : x ∈ ⨆ i, U i)
   exact ⟨i, ⟨x, hi⟩, rfl⟩
 
 /-- **Gluing morphisms out of a sheafy pre-adic space.** If `X` is sheafy, the opens `U i` cover
@@ -103,6 +105,29 @@ theorem hom_ext_of_ofRestrict {g g' : X ⟶ Y}
     (h : ∀ i, X.ofRestrict (U i).isOpenEmbedding ≫ g = X.ofRestrict (U i).isOpenEmbedding ≫ g') :
     g = g' :=
   Hom.ext' (PresheafedSpace.hom_ext_of_ofRestrict hX U hU fun i ↦ congrArg Hom.toHom (h i))
+
+include hX hU in
+/-- **Global sections of a sheafy pre-adic space are determined locally**: two global sections
+whose restrictions to every member of an open cover agree are equal. -/
+theorem ext_of_appTop_ofRestrict {s t : (X.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj}
+    (h : ∀ i, (X.ofRestrict (U i).isOpenEmbedding).appTop s =
+      (X.ofRestrict (U i).isOpenEmbedding).appTop t) : s = t := by
+  -- By `Hom.appTop_def`, the global-sections map of `X.ofRestrict _` is the presheaf map of `X`
+  -- along the counit `V i ⟶ ⊤` of the open-embedding adjunction, so `h` is the hypothesis of
+  -- `eq_of_locally_eq'` for the underlying type-valued sheaf.
+  simp only [Hom.appTop_def] at h
+  have hO : Presheaf.IsSheaf (Opens.grothendieckTopology _)
+      (X.toPresheafedSpace.presheaf ⋙ TopCommRingCat.isCompleteSeparated.ι) :=
+    Presheaf.isSheaf_comp_of_isSheaf _ _ _ hX
+  let G : TopCat.Sheaf (Type u) X.toTopCat :=
+    ⟨_, Presheaf.isSheaf_comp_of_isSheaf _ _ (forget _root_.TopCommRingCat) hO⟩
+  let V (i : ι) : Opens X :=
+    (U i).isOpenEmbedding.isOpenMap.functor.obj ((Opens.map (Opens.inclusion' (U i))).obj ⊤)
+  refine G.eq_of_locally_eq' V ⊤
+    (fun i ↦ (U i).isOpenEmbedding.isOpenMap.adjunction.counit.app ⊤) ?_ s t h
+  intro x _
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (by rw [hU]; trivial : x ∈ ⨆ i, U i)
+  exact Opens.mem_iSup.mpr ⟨i, ⟨⟨x, hi⟩, trivial, rfl⟩⟩
 
 end PreAdicSpace
 
