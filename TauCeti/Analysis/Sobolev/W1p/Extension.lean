@@ -497,9 +497,7 @@ theorem W1p0.not_exists_value_ae_eq_const_of_inner_gradient_eq_one
   have hfin : mu (Omega : Set E) < ⊤ := hΩ.measure_lt_top
   have : IsFiniteMeasure (mu.restrict (Omega : Set E)) := isFiniteMeasure_restrict.2 hfin.ne
   have hconst : W1p.value u = W1p.value (W1p.const c : W1p mu Omega p) := by
-    refine Lp.ext (hc.trans ?_)
-    rw [W1p.value_const]
-    exact (Lp.coeFn_const p (mu.restrict Omega) c).symm
+    exact Lp.ext (hc.trans (W1p.value_const_ae c).symm)
   have hgu : W1p.gradient (u - g) = -W1p.gradient g := by
     simp [W1p.ext_value hconst]
   have hgrad : ∀ᵐ x ∂mu.restrict Omega, ⟪W1p.gradient (u - g) x, w⟫_ℝ = -1 := by
