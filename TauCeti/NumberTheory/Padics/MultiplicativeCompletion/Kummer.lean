@@ -52,6 +52,8 @@ cohomology of `ℤ_p(1) = lim_m μ_{p^m}` to the inverse limit of the finite-lev
 
 ## Main results
 
+* `TauCeti.kummerH1Transition_eq`: the transition maps are induced by the power maps on
+  coefficients.
 * `TauCeti.kummerH1Transition_kummerMap`: the transition maps change the level of Kummer
   classes.
 * `TauCeti.padicKummerMap_apply_of_eq`: the coordinates of the limit Kummer map are Kummer
@@ -100,6 +102,14 @@ as the subgroup of compatible families in the product of the cohomology groups. 
 abbrev kummerH1Limit :
     AddSubgroup (∀ m : ℕ, H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m))) :=
   (kummerH1Tower p K).lim
+
+/-- The transition map `TauCeti.kummerH1Transition` is the map induced on `H¹` by the power map
+`TauCeti.kummerCoeffPow` on coefficients. -/
+theorem kummerH1Transition_eq (m : ℕ) :
+    kummerH1Transition p K m =
+      explicitCoeff1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ (m + 1)))
+        (kummerCoeffPow K (pow_dvd_pow p m.le_succ)) continuous_of_discreteTopology :=
+  (rfl)
 
 variable {p K}
 
