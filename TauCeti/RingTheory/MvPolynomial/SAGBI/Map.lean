@@ -24,8 +24,8 @@ The key observation is a coordinate argument from `TauCeti.RingTheory.MvPolynomi
 `ℓ 1 = 1` shows that the extension of `A` contracts back to `A`
 (`MvPolynomial.map_mem_adjoin_image_map_iff`). Choosing `ℓ` nonzero on the leading coefficient of
 a nonzero element `f` of the extension produces an element of `A` with the same leading exponent
-as `f`. So, when `K` has no zero divisors, the monoid of leading exponents of the extension is that
-of `A` (`MonomialOrder.leadingExponents_adjoin_image_map`).
+as `f`. So, when `K` is nontrivial and has no zero divisors, the monoid of leading exponents of the
+extension is that of `A` (`MonomialOrder.leadingExponents_adjoin_image_map`).
 
 Consequently, over a field `K`, the initial algebra of the extension is the extension of the
 initial algebra (`MonomialOrder.initialAlgebra_adjoin_image_map`), a set `B` is a SAGBI basis of
@@ -56,8 +56,8 @@ section NoZeroDivisors
 variable [CommRing K] [NoZeroDivisors K] [Nontrivial K] [Algebra k K]
 
 /-- **Leading exponents under extension of scalars.** Extending the scalars of a subalgebra `A`
-of `MvPolynomial σ k` to a `k`-algebra `K` without zero divisors does not change its monoid of
-leading exponents. -/
+of `MvPolynomial σ k` to a nontrivial `k`-algebra `K` without zero divisors does not change its
+monoid of leading exponents. -/
 @[simp]
 theorem leadingExponents_adjoin_image_map :
     m.leadingExponents (Algebra.adjoin K (map (algebraMap k K) '' ↑A)) =
