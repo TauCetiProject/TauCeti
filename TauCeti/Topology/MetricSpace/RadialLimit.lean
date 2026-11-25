@@ -17,10 +17,13 @@ those images is explicit: the real-valued diameter of an unbounded set has junk 
 
 This is the metric step in continuous removal of isolated singularities, separating radial
 convergence from the estimates controlling angular oscillation. The general form,
-`TauCeti.tendsto_nhdsNE_of_tendsto_comp_of_tendsto_diam_image_sphere`, works in any metric
-source and any pseudo-metric target, along any path meeting every small sphere; the radial form
-`TauCeti.tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere` specialises it to a ray
-in a real normed space.
+`TauCeti.tendsto_nhdsWithin_diff_of_tendsto_comp_of_tendsto_diam_image_inter_sphere`, works in any
+metric source and any pseudo-metric target, for approach within any set `s`, along any path in `s`
+meeting every small sphere; only the parts of the spheres inside `s` enter. Taking `s` to be the
+whole space gives `TauCeti.tendsto_nhdsNE_of_tendsto_comp_of_tendsto_diam_image_sphere`, and the
+radial form `TauCeti.tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere` specialises it
+to a ray in a real normed space. Approach within a closed half-plane is the case needed at a
+boundary puncture, where the spheres are replaced by half-circles.
 -/
 
 public section
@@ -30,6 +33,26 @@ namespace TauCeti
 open Bornology Filter Metric Set Topology
 
 variable {E F : Type*} [PseudoMetricSpace F]
+
+/-- Convergence along any path in `s` meeting every small sphere about a point, and vanishing
+diameters of the bounded images of the parts of those spheres inside `s`, imply convergence at the
+point within `s`. No continuity of the map, the path, or value at the point is required. -/
+theorem tendsto_nhdsWithin_diff_of_tendsto_comp_of_tendsto_diam_image_inter_sphere
+    [MetricSpace E] {u : E → F} {s : Set E} {a : E} {c : ℝ → E} {q : F}
+    (hc : ∀ᶠ t in 𝓝[>] (0 : ℝ), c t ∈ s ∩ sphere a t)
+    (hr : Tendsto (fun t ↦ u (c t)) (𝓝[>] 0) (𝓝 q))
+    (hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' (s ∩ sphere a t)))
+    (hd : Tendsto (fun t ↦ diam (u '' (s ∩ sphere a t))) (𝓝[>] 0) (𝓝 0)) :
+    Tendsto u (𝓝[s \ {a}] a) (𝓝 q) := by
+  have hρ : Tendsto (dist · a) (𝓝[s \ {a}] a) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨tendsto_nhdsWithin_of_tendsto_nhds
+      ((continuous_id.dist continuous_const).tendsto' a 0 (dist_self a)),
+      eventually_mem_nhdsWithin.mono fun _ hx ↦ dist_pos.mpr hx.2⟩
+  refine tendsto_iff_dist_tendsto_zero.mpr <| squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
+    (by simpa using (hd.comp hρ).add ((tendsto_iff_dist_tendsto_zero.mp hr).comp hρ))
+  filter_upwards [self_mem_nhdsWithin, hρ.eventually hb, hρ.eventually hc] with x hxs hx hcx
+  exact (dist_triangle _ _ _).trans <| add_le_add_left (dist_le_diam_of_mem hx
+    (mem_image_of_mem u ⟨hxs.1, mem_sphere.mpr rfl⟩) (mem_image_of_mem u hcx)) _
 
 /-- Convergence along any path meeting every small sphere about a point and vanishing diameters
 of bounded sphere images imply convergence at the puncture. No continuity of the map, the path,
@@ -41,15 +64,9 @@ theorem tendsto_nhdsNE_of_tendsto_comp_of_tendsto_diam_image_sphere [MetricSpace
     (hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' sphere a t))
     (hd : Tendsto (fun t ↦ diam (u '' sphere a t)) (𝓝[>] 0) (𝓝 0)) :
     Tendsto u (𝓝[≠] a) (𝓝 q) := by
-  have hρ : Tendsto (dist · a) (𝓝[≠] a) (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨tendsto_nhdsWithin_of_tendsto_nhds
-      ((continuous_id.dist continuous_const).tendsto' a 0 (dist_self a)),
-      eventually_mem_nhdsWithin.mono fun _ ↦ dist_pos.mpr⟩
-  refine tendsto_iff_dist_tendsto_zero.mpr <| squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
-    (by simpa using (hd.comp hρ).add ((tendsto_iff_dist_tendsto_zero.mp hr).comp hρ))
-  filter_upwards [hρ.eventually hb, hρ.eventually hc] with x hx hcx
-  exact (dist_triangle _ _ _).trans <| add_le_add_left
-    (dist_le_diam_of_mem hx (mem_image_of_mem u (mem_sphere.mpr rfl)) (mem_image_of_mem u hcx)) _
+  simpa [compl_eq_univ_sdiff] using
+    tendsto_nhdsWithin_diff_of_tendsto_comp_of_tendsto_diam_image_inter_sphere (s := univ)
+      (by simpa using hc) hr (by simpa using hb) (by simpa using hd)
 
 /-- Convergence along one radius and vanishing diameters of bounded sphere images imply
 convergence at the puncture. No continuity of the map or value at the puncture is required. -/
