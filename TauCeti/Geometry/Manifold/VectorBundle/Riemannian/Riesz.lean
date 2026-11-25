@@ -298,13 +298,13 @@ theorem mdifferentiableAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).so
     MDiffAt (T% fun y ↦ rieszDual (I := I) y (Φ y)) x := by
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
   have hmem : (chartAt H a).source ∈ 𝓝 x := (chartAt H a).open_source.mem_nhds hx
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) a).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
   have hGinv (i j : Fin (Module.finrank ℝ E)) :
-      MDiffAt (fun y ↦ chartInvGramMatrix (I := I) a y i j) x := by
-    have hOn : ContMDiffOn I 𝓘(ℝ) 1
-        (fun y ↦ chartInvGramMatrix (I := I) a y i j) (chartAt H a).source := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartInvGramMatrix_entry (I := I) (n := 1) a i j
-    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
+      MDiffAt (fun y ↦ chartInvGramMatrix (I := I) a y i j) x :=
+    ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := 1) a i j).contMDiffAt
+      ((trivializationAt E (TangentSpace I) a).open_baseSet.mem_nhds hx')).mdifferentiableAt
+      one_ne_zero
   have hc (i : Fin (Module.finrank ℝ E)) : MDiffAt (fun y ↦
       ∑ j, chartInvGramMatrix (I := I) a y i j * Φ y (chartLocalFrame (I := I) a j y)) x := by
     simpa only [Finset.sum_fn, Pi.mul_apply] using MDifferentiableAt.sum (t := Finset.univ)
@@ -312,9 +312,8 @@ theorem mdifferentiableAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).so
   have hsum : MDiffAt (T% fun y ↦
       ∑ i, (∑ j, chartInvGramMatrix (I := I) a y i j *
         Φ y (chartLocalFrame (I := I) a j y)) • chartLocalFrame (I := I) a i y) x :=
-    MDifferentiableAt.sum_section fun i _ ↦ (hc i).smul_section
-      ((contMDiffAt_chartLocalFrame_of_mem_chart_source (I := I) (n := 1) a hx i).mdifferentiableAt
-        one_ne_zero)
+    MDifferentiableAt.sum_section fun i _ ↦
+      (hc i).smul_section (mdifferentiableAt_chartLocalFrame (I := I) a hx' i)
   refine hsum.congr_of_eventuallyEq (Filter.eventually_of_mem hmem fun y hy ↦ ?_)
   simpa only [Matrix.mulVec, dotProduct] using congrArg (TotalSpace.mk' E y)
     (rieszDual_eq_sum_chartLocalFrame (I := I) a hy (Φ y))
@@ -331,11 +330,10 @@ theorem _root_.MDifferentiableAt.rieszDual_innerSL_comp
     (hη : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
     (hτ : MDiffAt (T% τ) x) :
-    MDiffAt (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
-  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  exact mdifferentiableAt_rieszDual x (mem_chart_source H x) fun j ↦
-    hτ.inner_bundle (hη.clm_bundle_apply
-      ((contMDiffAt_chartLocalFrame (I := I) (n := 1) x j).mdifferentiableAt one_ne_zero))
+    MDiffAt (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x :=
+  mdifferentiableAt_rieszDual x (mem_chart_source H x) fun j ↦
+    hτ.inner_bundle (hη.clm_bundle_apply (mdifferentiableAt_chartLocalFrame (I := I) x
+      (mem_baseSet_trivializationAt E (TangentSpace I) x) j))
 
 end Differentiable
 

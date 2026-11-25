@@ -49,18 +49,17 @@ divergence theorem. The one-form `∇σ` has compact support as soon as `σ` has
 
 ## Main results
 
-* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian`,
-  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`, and
-  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_or`:
-  **the energy identity**, when `τ` or `σ` has compact support.
-* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right` and
-  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right_of_or`:
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian` and
+  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`:
+  **the energy identity**, when `τ`, respectively `σ`, has compact support.
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right_of_or` and
+  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right`:
   the rough Laplacian is formally self-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_self_nonneg`: it is
   nonnegative.
 * `CovariantDerivative.IsMetricCompatible.apply_eq_zero_of_roughLaplacian_eq_zero`,
   `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff`, and
-  `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff_apply_eq_zero`:
+  `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff_of_compactSpace`:
   characterizations of rough-harmonic sections.
 * `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero` and
   `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_noncompactSpace`:
@@ -135,44 +134,30 @@ theorem integral_inner_roughLaplacian_of_isCompact_left (hcov : cov.IsMetricComp
     (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)) hτ
     (hσc.of_isClosed_subset isClosed_closure hc)
 
-/-- **Green's first identity for the rough Laplacian**, when either `σ` or `τ` has compact
-support. -/
-theorem integral_inner_roughLaplacian_of_or (hcov : cov.IsMetricCompatible)
+/-- **Green's second identity / formal self-adjointness of `∇*∇`**, when either `σ` or `τ` has
+compact support: `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
+theorem integral_inner_roughLaplacian_left_eq_right_of_or (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
     (hsupp : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
-  hsupp.elim (hcov.integral_inner_roughLaplacian_of_isCompact_left hσ hτ)
-    (hcov.integral_inner_roughLaplacian hσ hτ)
+      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
+  calc _ = ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
+        hsupp.elim (hcov.integral_inner_roughLaplacian_of_isCompact_left hσ hτ)
+          (hcov.integral_inner_roughLaplacian hσ hτ)
+    _ = ∫ x, cov.innerCovariantDerivative τ σ x ∂riemannianVolume I M :=
+        integral_congr_ae (.of_forall fun x ↦ cov.innerCovariantDerivative_comm σ τ x)
+    _ = ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫ ∂riemannianVolume I M :=
+        (hsupp.elim (hcov.integral_inner_roughLaplacian hτ hσ)
+          (hcov.integral_inner_roughLaplacian_of_isCompact_left hτ hσ)).symm
+    _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
 
 /-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
 `σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
 theorem integral_inner_roughLaplacian_left_eq_right (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
-  calc _ = ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
-        hcov.integral_inner_roughLaplacian hσ hτ hτc
-    _ = ∫ x, cov.innerCovariantDerivative τ σ x ∂riemannianVolume I M :=
-        integral_congr_ae (.of_forall fun x ↦ cov.innerCovariantDerivative_comm σ τ x)
-    _ = ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫ ∂riemannianVolume I M :=
-        (hcov.integral_inner_roughLaplacian_of_isCompact_left hτ hσ hτc).symm
-    _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
-
-/-- **Green's second identity / formal self-adjointness of `∇*∇`**, when either `σ` or `τ` has
-compact support. -/
-theorem integral_inner_roughLaplacian_left_eq_right_of_or (hcov : cov.IsMetricCompatible)
-    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
-    (hsupp : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
-  rcases hsupp with hσc | hτc
-  · calc _ = ∫ x, ⟪τ x, cov.roughLaplacian (leviCivitaConnection I M) σ x⟫ ∂riemannianVolume I M :=
-          integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
-      _ = ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫ ∂riemannianVolume I M :=
-          (hcov.integral_inner_roughLaplacian_left_eq_right hτ hσ hσc).symm
-      _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
-  · exact hcov.integral_inner_roughLaplacian_left_eq_right hσ hτ hτc
+      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M :=
+  hcov.integral_inner_roughLaplacian_left_eq_right_of_or hσ hτ (.inr hτc)
 
 /-- **The rough Laplacian is nonnegative.** For a metric connection and a compactly supported
 smooth section `σ`, `∫ ⟪∇*∇ σ, σ⟫ dV = ∫ |∇σ|² dV ≥ 0`. -/
@@ -213,7 +198,7 @@ omit [SigmaCompactSpace M] in
 /-- **The kernel of the rough Laplacian on a closed manifold.** For a metric connection on a
 Riemannian vector bundle over a compact manifold without boundary, a smooth section satisfies
 `∇*∇ σ = 0` if and only if it is parallel, `∇σ = 0`. -/
-theorem roughLaplacian_eq_zero_iff_apply_eq_zero [CompactSpace M]
+theorem roughLaplacian_eq_zero_iff_of_compactSpace [CompactSpace M]
     (hcov : cov.IsMetricCompatible) (hσ : CMDiff ∞ (T% σ)) :
     cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 :=
   hcov.roughLaplacian_eq_zero_iff hσ isClosed_closure.isCompact
