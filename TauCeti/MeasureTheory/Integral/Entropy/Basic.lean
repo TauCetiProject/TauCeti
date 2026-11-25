@@ -87,6 +87,34 @@ theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
   simp only [Real.negMulLog_eq_neg] at h
   nlinarith
 
+/-- Scaling a function scales its entropy by the same factor, when the function and its
+`x log x` transform are integrable. -/
+theorem entropy_const_mul {α : Type*} [MeasurableSpace α] (μ : Measure α) (c : ℝ)
+    (g : α → ℝ) (hg : Integrable g μ)
+    (hlog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
+    entropy μ (fun x ↦ c * g x) = c * entropy μ g := by
+  by_cases hc : c = 0
+  · simp [entropy_def, hc]
+  have hlog_ae : (fun x ↦ (c * g x) * Real.log (c * g x)) =ᵐ[μ]
+      fun x ↦ c * (g x * Real.log (g x)) + (c * Real.log c) * g x := by
+    filter_upwards with x
+    by_cases hx : g x = 0
+    · simp [hx]
+    · rw [Real.log_mul hc hx]
+      ring
+  have hlog_integral :
+      (∫ x, (c * g x) * Real.log (c * g x) ∂μ) =
+        c * (∫ x, g x * Real.log (g x) ∂μ) +
+          (c * Real.log c) * (∫ x, g x ∂μ) := by
+    rw [integral_congr_ae hlog_ae, integral_add (hlog.const_mul c)
+      (hg.const_mul (c * Real.log c)), integral_const_mul, integral_const_mul]
+  have hmass : (∫ x, c * g x ∂μ) = c * ∫ x, g x ∂μ := integral_const_mul _ _
+  rw [entropy_def, entropy_def, hlog_integral, hmass]
+  by_cases hm : (∫ x, g x ∂μ) = 0
+  · simp [hm]
+  · rw [Real.log_mul hc hm]
+    ring
+
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
 function, when the function and its `x log x` transform are integrable. -/
 theorem entropy_nonneg {α : Type*} [MeasurableSpace α] (μ : Measure α)

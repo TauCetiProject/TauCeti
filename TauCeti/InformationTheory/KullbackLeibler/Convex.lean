@@ -59,53 +59,10 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
-    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
-    (hfi : Integrable f μ) (hhi : Integrable h μ) :
-    μ.withDensity (fun x ↦ ENNReal.ofReal (f x)) ≪
-        μ.withDensity (fun x ↦ ENNReal.ofReal (h x)) ∧
-      llr (μ.withDensity (fun x ↦ ENNReal.ofReal (f x)))
-        (μ.withDensity (fun x ↦ ENNReal.ofReal (h x))) =ᵐ[μ.withDensity
-          (fun x ↦ ENNReal.ofReal (f x))] fun x ↦ Real.log (f x / h x) := by
-  let F : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x)
-  let H : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (h x)
-  let R : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x / h x)
-  let ρ := μ.withDensity F
-  let σ := μ.withDensity H
-  have hHm : AEMeasurable H μ := hhi.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hRm : AEMeasurable R μ :=
-    (hfi.aestronglyMeasurable.aemeasurable.div
-      hhi.aestronglyMeasurable.aemeasurable).ennreal_ofReal
-  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.hasFiniteIntegral
-  have : IsFiniteMeasure σ := isFiniteMeasure_withDensity_ofReal hhi.hasFiniteIntegral
-  have hmul : H * R =ᵐ[μ] F := by
-    filter_upwards [hh, hzero] with x hhx hz
-    by_cases h0 : h x = 0
-    · simp [F, H, R, h0, hz h0]
-    · simp only [Pi.mul_apply, F, H, R, ← ENNReal.ofReal_mul hhx]
-      congr 1
-      field_simp
-  have heq : ρ = σ.withDensity R := by
-    dsimp [ρ, σ]
-    rw [← withDensity_mul₀ hHm hRm, withDensity_congr_ae hmul]
-  have hac : ρ ≪ σ := by
-    rw [heq]
-    exact withDensity_absolutelyContinuous _ _
-  have hrn : ρ.rnDeriv σ =ᵐ[σ] R := by
-    rw [heq]
-    exact Measure.rnDeriv_withDensity₀ σ (hRm.mono_ac (withDensity_absolutelyContinuous μ H))
-  refine ⟨hac, ?_⟩
-  filter_upwards [hac.ae_le hrn, (withDensity_absolutelyContinuous μ F).ae_le hf,
-    (withDensity_absolutelyContinuous μ F).ae_le hh] with x hx hfx hhx
-  simp only [llr_def]
-  -- Match the unfolded likelihood ratio to the local measure aliases.
-  change Real.log ((ρ.rnDeriv σ x).toReal) = Real.log (f x / h x)
-  simp only [hx, R, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
-
 /-- The log-sum of two nonnegative integrable functions is bounded by the integrated weighted
-logarithmic difference. A zero of the second function must also be a zero of the first almost
-everywhere. Integrability is required for the difference, not for each logarithmic term. -/
+logarithmic difference. The proof uses the scalar Klein inequality
+`Real.sub_le_mul_log_sub_mul_log`. A zero of the second function must also be a zero of the first
+almost everywhere. Integrability is required for the difference, not for each logarithmic term. -/
 theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
     {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
     (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
@@ -113,47 +70,115 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
     (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
     (∫ x, f x ∂μ) * Real.log ((∫ x, f x ∂μ) / (∫ x, h x ∂μ)) ≤
       ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
-  let F : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x)
-  let H : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (h x)
-  let ρ := μ.withDensity F
-  let σ := μ.withDensity H
-  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.hasFiniteIntegral
-  have : IsFiniteMeasure σ := isFiniteMeasure_withDensity_ofReal hhi.hasFiniteIntegral
-  have ⟨hac, hratio⟩ := withDensity_ofReal_ac_and_llr μ hf hh hzero hfi hhi
-  have hdiff_eq : (fun x ↦ f x * Real.log (f x / h x)) =ᵐ[μ]
-      (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) := by
-    filter_upwards [hzero] with x hz
-    by_cases hf0 : f x = 0
-    · simp [hf0]
-    · have hh0 : h x ≠ 0 := fun hh0 ↦ hf0 (hz hh0)
-      rw [Real.log_div hf0 hh0]
-      ring
-  have hweighted : Integrable (fun x ↦ Real.log (f x / h x)) ρ := by
-    dsimp [ρ, F]
-    rw [TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
-      hfi.aestronglyMeasurable.aemeasurable hf]
-    exact hdiff.congr (by simpa only [smul_eq_mul] using hdiff_eq.symm)
-  have hllr : Integrable (llr ρ σ) ρ := hweighted.congr hratio.symm
-  have hmass (u : α → ℝ) (hu : 0 ≤ᵐ[μ] u) (hui : Integrable u μ) :
-      (μ.withDensity (fun x ↦ ENNReal.ofReal (u x))).real univ = ∫ x, u x ∂μ := by
-    simpa only [Measure.restrict_univ, setIntegral_univ] using
-      (TauCeti.MeasureTheory.measureReal_withDensity_ofReal (μ := μ) (s := univ)
-        (ρ := u) (by simpa using hu) MeasurableSet.univ.nullMeasurableSet
-        (by simpa using hui.aestronglyMeasurable.aemeasurable))
-  have hmassf : ρ.real univ = ∫ x, f x ∂μ := hmass f hf hfi
-  have hmassh : σ.real univ = ∫ x, h x ∂μ := hmass h hh hhi
-  have hint : (∫ x, llr ρ σ x ∂ρ) =
-      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  let A : ℝ := ∫ x, f x ∂μ
+  let B : ℝ := ∫ x, h x ∂μ
+  change A * Real.log (A / B) ≤ ∫ x, f x * Real.log (f x) -
+    f x * Real.log (h x) ∂μ
+  have hA_nonneg : 0 ≤ A := integral_nonneg_of_ae hf
+  have hB_nonneg : 0 ≤ B := integral_nonneg_of_ae hh
+  by_cases hA : A = 0
+  · have hfzero : f =ᵐ[μ] fun _ ↦ 0 :=
+      (integral_eq_zero_iff_of_nonneg_ae hf hfi).mp hA
+    have hright : (∫ x, f x * Real.log (f x) -
+        f x * Real.log (h x) ∂μ) = 0 := by
+      calc
+        _ = ∫ x, (0 : ℝ) ∂μ := by
+          apply integral_congr_ae
+          filter_upwards [hfzero] with x hx
+          simp [hx]
+        _ = 0 := by simp
+    rw [hA, hright]
+    simp
+  have hA_pos : 0 < A := lt_of_le_of_ne hA_nonneg (Ne.symm hA)
+  have hB_pos : 0 < B := by
+    rcases hB_nonneg.eq_or_lt with hB | hB
+    · have hB_zero : (∫ x, h x ∂μ) = 0 := by simpa [B] using hB.symm
+      have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
+        (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB_zero
+      have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
+        filter_upwards [hzero, hhzero] with x hx hhx
+        exact hx hhx
+      have hA_zero : A = 0 := by
+        dsimp [A]
+        rw [integral_congr_ae hfzero]
+        simp
+      exact (hA hA_zero).elim
+    · exact hB
+  let p : α → ℝ := fun x ↦ A⁻¹ * f x
+  let q : α → ℝ := fun x ↦ B⁻¹ * h x
+  have hp : 0 ≤ᵐ[μ] p := by
+    filter_upwards [hf] with x hfx
+    exact mul_nonneg (inv_nonneg.mpr hA_pos.le) hfx
+  have hq : 0 ≤ᵐ[μ] q := by
+    filter_upwards [hh] with x hhx
+    exact mul_nonneg (inv_nonneg.mpr hB_pos.le) hhx
+  have hzero_pq : ∀ᵐ x ∂μ, q x = 0 → p x = 0 := by
+    filter_upwards [hzero] with x hx
+    intro hqx
+    have hhx : h x = 0 :=
+      (mul_eq_zero.mp (by simpa [q] using hqx)).resolve_left (inv_ne_zero hB_pos.ne')
+    simp [p, hx hhx]
+  have hpi : Integrable p μ := hfi.const_mul A⁻¹
+  have hqi : Integrable q μ := hhi.const_mul B⁻¹
+  have hp_mass : (∫ x, p x ∂μ) = 1 := by
     calc
-      _ = ∫ x, Real.log (f x / h x) ∂ρ := integral_congr_ae hratio
-      _ = ∫ x, f x * Real.log (f x / h x) ∂μ := by
-        simpa only [ρ, F, smul_eq_mul] using
-          (TauCeti.MeasureTheory.integral_withDensity_ofReal
-            hfi.aestronglyMeasurable.aemeasurable hf (fun x ↦ Real.log (f x / h x)))
-      _ = _ := integral_congr_ae hdiff_eq
-  have hkl := InformationTheory.mul_log_le_toReal_klDiv hac hllr
-  rw [InformationTheory.toReal_klDiv hac hllr, hmassf, hmassh, hint] at hkl
-  linarith
+      _ = A⁻¹ * (∫ x, f x ∂μ) := by simp [p, integral_const_mul]
+      _ = 1 := by simp [A, inv_mul_cancel₀ hA_pos.ne']
+  have hq_mass : (∫ x, q x ∂μ) = 1 := by
+    calc
+      _ = B⁻¹ * (∫ x, h x ∂μ) := by simp [q, integral_const_mul]
+      _ = 1 := by simp [B, inv_mul_cancel₀ hB_pos.ne']
+  have hratio : (fun x ↦ p x * Real.log (p x) - p x * Real.log (q x)) =ᵐ[μ]
+      fun x ↦ A⁻¹ * (f x * Real.log (f x) - f x * Real.log (h x)) +
+        p x * (Real.log B - Real.log A) := by
+    filter_upwards [hzero] with x hx
+    by_cases hf0 : f x = 0
+    · simp [p, q, hf0]
+    · have hh0 : h x ≠ 0 := fun hh0 ↦ hf0 (hx hh0)
+      have hlogp : Real.log (A⁻¹ * f x) = -Real.log A + Real.log (f x) := by
+        rw [Real.log_mul (inv_ne_zero hA_pos.ne') hf0, Real.log_inv]
+      have hlogq : Real.log (B⁻¹ * h x) = -Real.log B + Real.log (h x) := by
+        rw [Real.log_mul (inv_ne_zero hB_pos.ne') hh0, Real.log_inv]
+      simp only [p, q, hlogp, hlogq]
+      ring
+  have hratio_integrable : Integrable
+      (fun x ↦ p x * Real.log (p x) - p x * Real.log (q x)) μ :=
+    ((hdiff.const_mul A⁻¹).add (hpi.mul_const (Real.log B - Real.log A))).congr
+      hratio.symm
+  have hklein : ∀ᵐ x ∂μ, p x - q x ≤
+      p x * Real.log (p x) - p x * Real.log (q x) := by
+    filter_upwards [hp, hq, hzero_pq] with x hpx hqx hx
+    exact Real.sub_le_mul_log_sub_mul_log hpx hqx hx
+  have hmono := integral_mono_ae (hpi.sub hqi) hratio_integrable hklein
+  have hmono0 : 0 ≤
+      ∫ x, p x * Real.log (p x) - p x * Real.log (q x) ∂μ := by
+    calc
+      0 = (∫ x, p x ∂μ) - ∫ x, q x ∂μ := by rw [hp_mass, hq_mass]; ring
+      _ ≤ _ := by rw [← integral_sub hpi hqi]; exact hmono
+  have hratio_integral :
+      (∫ x, p x * Real.log (p x) - p x * Real.log (q x) ∂μ) =
+        A⁻¹ * (∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ) +
+          (Real.log B - Real.log A) := by
+    calc
+      _ = ∫ x, A⁻¹ * (f x * Real.log (f x) - f x * Real.log (h x)) +
+          p x * (Real.log B - Real.log A) ∂μ := integral_congr_ae hratio
+      _ = A⁻¹ * (∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ) +
+          (Real.log B - Real.log A) * (∫ x, p x ∂μ) := by
+        rw [integral_add (hdiff.const_mul A⁻¹) (hpi.mul_const _),
+          integral_const_mul, integral_mul_const]
+        ring
+      _ = _ := by rw [hp_mass]; ring
+  rw [hratio_integral] at hmono0
+  have hlog_le : Real.log A - Real.log B ≤ A⁻¹ *
+      (∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ) := by
+    linarith
+  calc
+    A * Real.log (A / B) = A * (Real.log A - Real.log B) := by
+      rw [Real.log_div hA_pos.ne' hB_pos.ne']
+    _ ≤ A * (A⁻¹ *
+        (∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ)) :=
+      mul_le_mul_of_nonneg_left hlog_le hA_pos.le
+    _ = _ := by field_simp [hA_pos.ne']
 
 end MeasureTheory.Measure
 

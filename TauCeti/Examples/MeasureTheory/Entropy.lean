@@ -34,8 +34,12 @@ example {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] (g : α × β → ℝ) :
-    entropy (ν.prod μ) (g ∘ Prod.swap) = entropy (μ.prod ν) g :=
-  entropy_prod_swap μ ν g
+    entropy (ν.prod μ) (g ∘ Prod.swap) = entropy (μ.prod ν) g := by
+  rw [← measurePreserving_swap.map_eq]
+  have hswap : MeasurableEmbedding (Prod.swap : α × β → β × α) :=
+    MeasurableEquiv.prodComm.measurableEmbedding
+  rw [entropy_map hswap]
+  simp [Function.comp_def]
 
 example {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ}
     (hf : 0 ≤ᵐ[μ] f) (hfi : Integrable f μ) :
