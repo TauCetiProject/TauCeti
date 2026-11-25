@@ -49,7 +49,8 @@ the symbol sequence of the de Rham complex.
 * `TauCeti.tsupport_mextDerivSection_apply_subset`: `d` does not enlarge supports.
 * `TauCeti.sectionPrincipalSymbol_mextDerivSection_apply`: the principal symbol of `d` at `ξ` is
   `ξ ∧ ·`.
-* `TauCeti.mextDerivSection_comp_mextDerivSection`: `d ∘ d = 0`.
+* `TauCeti.mextDerivSection_comp_mextDerivSection`, `TauCeti.mextDerivSection_mextDerivSection`:
+  `d ∘ d = 0`, also in the applied form `d (d s) = 0`.
 * `TauCeti.sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection`:
   the principal symbols of `d` form a complex.
 
@@ -107,6 +108,13 @@ theorem mextDerivSection_comp_mextDerivSection :
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, ContMDiffSection.coe_zero, Pi.zero_apply,
     mextDerivSection_apply, hds]
   simpa using congrFun (SmoothForm.mextDeriv_mextDeriv (SmoothBundleForm.ofContMDiffSection s)) x
+
+/-- `d (d s) = 0` for every smooth section `s` of the form bundle. -/
+@[simp]
+theorem mextDerivSection_mextDerivSection
+    (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x⟯) :
+    mextDerivSection I M (k + 1) (mextDerivSection I M k s) = 0 :=
+  LinearMap.congr_fun mextDerivSection_comp_mextDerivSection s
 
 /-- **The Leibniz rule** `d (f ω) = df ∧ ω + f dω` for a smooth function `f` and a smooth section
 `ω` of `Λᵏ T*M`, evaluated on tangent vectors: `df ∧ ω` is the wedge of the `1`-form
