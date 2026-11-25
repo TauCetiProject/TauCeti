@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import Mathlib.Analysis.Complex.Conformal
 
 /-!
 # A non-constant complex structure for the similarity principle
@@ -105,13 +106,6 @@ theorem add_transportedComplexStructure_add_transportedCoeff_eq_zero (z : ℂ) (
     ContinuousLinearEquiv.symm_apply_apply, smul_smul, I_mul_I, neg_smul, one_smul, map_neg]
   abel
 
-/-- The real derivative of a complex-differentiable map commutes with multiplication by `i`:
-`∂_t σ = i ∂_s σ`. -/
-theorem _root_.DifferentiableAt.fderiv_apply_I_eq_I_smul {σ : ℂ → V} {z : ℂ}
-    (hσ : DifferentiableAt ℂ σ z) : fderiv ℝ σ z I = I • fderiv ℝ σ z 1 := by
-  rw [hσ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← map_smul,
-    smul_eq_mul, mul_one]
-
 /-- For `J = Φ i Φ⁻¹` and `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹`, every `ξ = Φ σ` with `σ` holomorphic
 solves `∂_s ξ + J ∂_t ξ + C ξ = 0`. -/
 theorem fderiv_apply_add_transportedComplexStructure_add_eq_zero {σ : ℂ → V} {z : ℂ}
@@ -124,7 +118,8 @@ theorem fderiv_apply_add_transportedComplexStructure_add_eq_zero {σ : ℂ → V
   rw [hD.fderiv]
   simpa only [add_apply, comp_apply, ContinuousLinearEquiv.coe_coe, flip_apply, add_comm] using
     add_transportedComplexStructure_add_transportedCoeff_eq_zero
-      (DΦ := fderiv ℝ fun w ↦ (Φ w : V →L[ℝ] V)) z (σ z) hσ.fderiv_apply_I_eq_I_smul
+      (DΦ := fderiv ℝ fun w ↦ (Φ w : V →L[ℝ] V)) z (σ z)
+      (differentiableAt_complex_iff_differentiableAt_real.1 hσ).2
 
 /-- The normalization `Φ⁻¹ J' Φ = -i` is wrong: if `J' Φ = -Φ i` at `z₀` and `v ≠ 0`, then
 `ξ w = Φ w ((w - z₀) v)` fails `∂_s ξ + J' ∂_t ξ + C' ξ = 0` at its zero `z₀`, whatever `C'`. -/

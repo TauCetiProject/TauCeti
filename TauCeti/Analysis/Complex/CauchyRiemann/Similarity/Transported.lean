@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.Conformal
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 
@@ -24,11 +25,9 @@ weak derivative `DΦ ∈ Lᵖ_loc(Ω)`. Put `J = Φ i Φ⁻¹`
 (`TauCeti.transportedCoeff Φ DΦ`). Then `C` is locally `Lᵖ` when `Φ⁻¹` is also continuous on `Ω`
 (`TauCeti.memLpLoc_transportedCoeff_of_memLpLoc`), and every `ξ = Φ σ` with `σ` holomorphic is a
 weak solution of `∂_s ξ + J ∂_t ξ + C ξ = 0`
-(`TauCeti.isWeakLinearCauchyRiemannOn_transportedComplexStructure`). Every factorization produced
-by the similarity principle for weak solutions, with a `W^{1,p}` frame `Φ`, therefore solves an
-equation of the kind it treats. This extends the classical case of
-`TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported`, where `Φ` is `C¹`, `DΦ = fderiv` and
-`C` is continuous, to Sobolev frames; both proofs rest on the pointwise identity
+(`TauCeti.isWeakLinearCauchyRiemannOn_transportedComplexStructure`). This extends the classical
+case of `TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported`, where `Φ` is `C¹`,
+`DΦ = fderiv` and `C` is continuous, to Sobolev frames; both proofs rest on the pointwise identity
 `TauCeti.add_transportedComplexStructure_add_transportedCoeff_eq_zero`.
 
 ## Main declarations
@@ -97,6 +96,7 @@ theorem isWeakLinearCauchyRiemannOn_transportedComplexStructure {p : ℝ≥0} (h
     simpa only [B, add_apply, precompL_apply, precompR_apply, ContinuousLinearMap.id_apply,
       compL_apply, comp_apply, ContinuousLinearEquiv.coe_coe] using
       add_transportedComplexStructure_add_transportedCoeff_eq_zero z (σ z)
-        (hσ.differentiableAt (Ω.isOpen.mem_nhds hz)).fderiv_apply_I_eq_I_smul
+        (differentiableAt_complex_iff_differentiableAt_real.1
+          (hσ.differentiableAt (Ω.isOpen.mem_nhds hz))).2
 
 end TauCeti
