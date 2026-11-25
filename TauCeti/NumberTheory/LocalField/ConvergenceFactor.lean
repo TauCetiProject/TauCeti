@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Padic
 import TauCeti.MeasureTheory.Measure.Haar.DistribChar
-import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
@@ -83,8 +82,7 @@ theorem withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one :
     setLIntegral_one, addHaar_setOf_valuation_eq_one]
 
 /-- **Invariance of the form measure.** The measure `|x|_K⁻¹ μ` on `K` is invariant under
-multiplication by every nonzero scalar `c`, since multiplication by `c` scales `μ` by
-`|c|_K⁻¹` (`TauCeti.distribHaarChar_eq_normalizedAbsoluteValue`) and the density by `|c|_K`. -/
+multiplication by every nonzero scalar `c`. -/
 theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) :
     (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹).map (c • ·) =
       μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
