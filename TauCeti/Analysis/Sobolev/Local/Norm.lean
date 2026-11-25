@@ -273,6 +273,20 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       exact eNorm_le_iff_norm_le.2 hle
 
 
+/-- Negation does not increase the `W^{k,p}` norm. -/
+theorem eLpNormWkp_neg_le [CompleteSpace F] :
+    eLpNormWkp p U k (-f) ≤ eLpNormWkp p U k f :=
+  (eLpNormWkp_clm_comp_le (f := f) (-ContinuousLinearMap.id ℝ F)).trans
+    (mul_le_of_le_one_left zero_le (by
+      rw [← ofReal_norm, norm_neg]
+      exact ENNReal.ofReal_le_one.2 ContinuousLinearMap.norm_id_le))
+
+/-- The triangle inequality for the `W^{k,p}` norm of a difference. -/
+theorem eLpNormWkp_sub_le [CompleteSpace F] (hp : 1 ≤ p) :
+    eLpNormWkp p U k (f - g) ≤ eLpNormWkp p U k f + eLpNormWkp p U k g := by
+  rw [sub_eq_add_neg]
+  exact (eLpNormWkp_add_le hp).trans (add_le_add le_rfl eLpNormWkp_neg_le)
+
 /-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
 weak derivatives of `f` on the interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on
 the interior of `T` in `Lᵖ(T)`, in the sense of `TauCeti.WeakDerivChainLe`, then
