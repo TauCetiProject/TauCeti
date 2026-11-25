@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Irreducible
-public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Induction
+public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Induction.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Subrepresentation
 
@@ -60,17 +60,25 @@ variable (χ : WeilGroupComplex →* ℂˣ)
 def induceRepresentation : Representation ℂ WeilGroupReal (Fin 2 → ℂ) :=
   (stdRep ℂ 2).comp (induceCharacter χ)
 
+/-- An element `w` of `W_ℝ` acts on `ℂ²` in the induction of `χ` by the matrix
+`induceCharacter χ w`. -/
+theorem induceRepresentation_apply (w : WeilGroupReal) (v : Fin 2 → ℂ) :
+    induceRepresentation χ w v = (induceCharacter χ w : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v :=
+  stdRep_apply_apply _ _ _ _
+
 /-- `z ∈ ℂˣ` acts on `ℂ²` in the induction of `χ` by `diag(χ z, χ (conj z))`. -/
+@[simp]
 theorem induceRepresentation_includeComplex (z : WeilGroupComplex) (v : Fin 2 → ℂ) :
     induceRepresentation χ (includeComplex z) v = ![(χ z : ℂ) * v 0, (χ (star z) : ℂ) * v 1] := by
   ext i
-  fin_cases i <;> simp [induceRepresentation, mulVec_diagonal]
+  fin_cases i <;> simp [induceRepresentation_apply, mulVec_diagonal]
 
 /-- `j` acts on `ℂ²` in the induction of `χ` by `[[0, χ (-1)], [1, 0]]`. -/
+@[simp]
 theorem induceRepresentation_j (v : Fin 2 → ℂ) :
     induceRepresentation χ j v = ![(χ (-1) : ℂ) * v 1, v 0] := by
   ext i
-  fin_cases i <;> simp [induceRepresentation, mulVec, dotProduct, Fin.sum_univ_two]
+  fin_cases i <;> simp [induceRepresentation_apply, mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- **The induction of a conjugation-invariant character is reducible.** If `χ ∘ conj = χ`, then
 `ℂˣ` acts on `ℂ²` by the scalar `χ z`, and the line through an eigenvector `(s, 1)` of the image
@@ -86,12 +94,14 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
     rcases exists_includeComplex_or_j_mul w with ⟨z, rfl⟩ | ⟨z, rfl⟩
     · refine ⟨χ z, ?_⟩
       ext i
-      fin_cases i <;> simp [hv, induceRepresentation_includeComplex, hstar]
+      fin_cases i <;> simp [hv, hstar]
     · refine ⟨s * χ z, ?_⟩
       ext i
-      fin_cases i <;>
-        simp [hv, map_mul, induceRepresentation_includeComplex,
-          induceRepresentation_j, hstar, hs] <;> ring
+      fin_cases i
+      · simp [hv, map_mul, hstar, hs]
+        ring
+      · simp [hv, map_mul, hstar]
+        ring
   let σ : Subrepresentation (induceRepresentation χ) :=
     { toSubmodule := Submodule.span ℂ {v}
       apply_mem_toSubmodule := fun w x hx ↦ by
@@ -113,20 +123,48 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
     simp [hv] at h0 h1
     simp [h1] at h0
 
-/-- A subrepresentation of the induction of `χ` containing the first basis vector is everything:
+/-- In the induction of `χ`, a subrepresentation containing the first basis vector is everything:
 the image of `j` carries the first basis vector to the second. -/
-theorem eq_top_of_single_zero_mem {σ : Subrepresentation (induceRepresentation χ)}
-    (h : (![1, 0] : Fin 2 → ℂ) ∈ σ.toSubmodule) : σ = ⊤ := by
-  have h' : (![0, 1] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
-    simpa [induceRepresentation_j] using σ.apply_mem_toSubmodule j h
+private theorem induceRepresentation_eq_top_of_single_zero_mem
+    {σ : Subrepresentation (induceRepresentation χ)}
+    (h : (Pi.single 0 1 : Fin 2 → ℂ) ∈ σ.toSubmodule) : σ = ⊤ := by
+  have h' : (Pi.single 1 1 : Fin 2 → ℂ) ∈ σ.toSubmodule := by
+    convert σ.apply_mem_toSubmodule j h using 1
+    ext i
+    fin_cases i <;> simp
   refine Subrepresentation.toSubmodule_injective ?_
   rw [Subrepresentation.toSubmodule_top, eq_top_iff]
   intro x _
-  have hx : x = x 0 • (![1, 0] : Fin 2 → ℂ) + x 1 • ![0, 1] := by
+  have hx : x = x 0 • (Pi.single 0 1 : Fin 2 → ℂ) + x 1 • Pi.single 1 1 := by
     ext i
     fin_cases i <;> simp
   rw [hx]
   exact σ.toSubmodule.add_mem (σ.toSubmodule.smul_mem _ h) (σ.toSubmodule.smul_mem _ h')
+
+/-- In the induction of `χ`, if `χ z₀ ≠ χ (conj z₀)`, then the action of `z₀` separates the two
+coordinates: a subrepresentation containing `v` contains each coordinate part `Pi.single i (v i)`,
+obtained from the action of `z₀` minus the other eigenvalue. -/
+private theorem induceRepresentation_single_mem_of_mem {z₀ : WeilGroupComplex}
+    (hz₀ : (χ z₀ : ℂ) ≠ χ (star z₀)) {σ : Subrepresentation (induceRepresentation χ)}
+    {v : Fin 2 → ℂ} (hv : v ∈ σ.toSubmodule) (i : Fin 2) :
+    Pi.single i (v i) ∈ σ.toSubmodule := by
+  have hzv := σ.apply_mem_toSubmodule (includeComplex z₀) hv
+  have hab : (χ z₀ : ℂ) - χ (star z₀) ≠ 0 := sub_ne_zero.mpr hz₀
+  fin_cases i
+  · convert σ.toSubmodule.smul_mem ((χ z₀ : ℂ) - χ (star z₀))⁻¹
+      (σ.toSubmodule.sub_mem hzv (σ.toSubmodule.smul_mem (χ (star z₀) : ℂ) hv)) using 1
+    ext k
+    fin_cases k
+    · simp [vecHead, vecTail]
+      field_simp
+    · simp [vecHead, vecTail]
+  · convert σ.toSubmodule.smul_mem ((χ z₀ : ℂ) - χ (star z₀))⁻¹
+      (σ.toSubmodule.sub_mem (σ.toSubmodule.smul_mem (χ z₀ : ℂ) hv) hzv) using 1
+    ext k
+    fin_cases k
+    · simp [vecHead, vecTail]
+    · simp [vecHead, vecTail]
+      field_simp
 
 /-- **Irreducibility of the induction.** The two-dimensional induction of a character `χ` of
 `W_ℂ = ℂˣ` to `W_ℝ` is irreducible if and only if `χ ∘ conj ≠ χ`. For `χ(z) = z^p zbar^q` this is
@@ -135,53 +173,29 @@ theorem isIrreducible_induceRepresentation_iff :
     (induceRepresentation χ).IsIrreducible ↔
       χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom ≠ χ := by
   refine ⟨fun hirr h ↦ not_isIrreducible_induceRepresentation_of_comp_star_eq χ h hirr,
-    fun h ↦ ?_⟩
+    fun h ↦ ⟨fun σ ↦ ?_⟩⟩
   obtain ⟨z₀, hz₀⟩ := DFunLike.ne_iff.mp h
   simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply,
     starMulAut_apply] at hz₀
-  have hab : (χ z₀ : ℂ) - χ (star z₀) ≠ 0 :=
-    sub_ne_zero.mpr fun hab ↦ hz₀ (Units.val_injective hab.symm)
-  have hc : (χ (-1) : ℂ) ≠ 0 := Units.ne_zero _
-  have hbot_ne_top : (⊥ : Subrepresentation (induceRepresentation χ)) ≠ ⊤ := fun hbt ↦ by
-    have := congrArg Subrepresentation.toSubmodule hbt
-    rw [Subrepresentation.toSubmodule_bot, Subrepresentation.toSubmodule_top] at this
-    exact bot_ne_top this
-  refine { toNontrivial := ⟨⊥, ⊤, hbot_ne_top⟩, eq_bot_or_eq_top := fun σ ↦ ?_ }
+  have hz₀' : (χ z₀ : ℂ) ≠ χ (star z₀) := fun h ↦ hz₀ (Units.val_injective h.symm)
   by_cases hσ : σ.toSubmodule = ⊥
   · exact Or.inl (Subrepresentation.toSubmodule_injective
       (hσ.trans Subrepresentation.toSubmodule_bot.symm))
   right
   obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hσ
-  have hzw := σ.apply_mem_toSubmodule (includeComplex z₀) hw
-  rw [induceRepresentation_includeComplex] at hzw
-  -- the action of `z₀` minus each eigenvalue isolates one coordinate of `w`
-  have h₀ : (![((χ z₀ : ℂ) - χ (star z₀)) * w 0, 0] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
-    convert σ.toSubmodule.sub_mem hzw (σ.toSubmodule.smul_mem (χ (star z₀) : ℂ) hw) using 1
-    ext i
-    fin_cases i <;> simp
-    ring
-  have h₁ : (![0, ((χ z₀ : ℂ) - χ (star z₀)) * w 1] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
-    convert σ.toSubmodule.sub_mem (σ.toSubmodule.smul_mem (χ z₀ : ℂ) hw) hzw using 1
-    ext i
-    fin_cases i <;> simp
-    ring
-  refine eq_top_of_single_zero_mem χ ?_
-  by_cases hw₀ : w 0 = 0
-  · have hw₁ : w 1 ≠ 0 := fun hw₁ ↦ hw0 (by ext i; fin_cases i <;> simp [hw₀, hw₁])
-    have h2 : (![0, 1] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
-      convert σ.toSubmodule.smul_mem (((χ z₀ : ℂ) - χ (star z₀)) * w 1)⁻¹ h₁ using 1
-      ext i
-      fin_cases i <;> simp
-      field_simp
-    have hj := σ.apply_mem_toSubmodule j h2
-    rw [induceRepresentation_j] at hj
-    convert σ.toSubmodule.smul_mem (χ (-1) : ℂ)⁻¹ hj using 1
-    ext i
-    fin_cases i <;> simp [hc]
-  · convert σ.toSubmodule.smul_mem (((χ z₀ : ℂ) - χ (star z₀)) * w 0)⁻¹ h₀ using 1
-    ext i
-    fin_cases i <;> simp
-    field_simp
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hw0
+  -- the coordinate part of `w` at `i` is a nonzero multiple of the basis vector at `i`
+  have hsingle : (Pi.single i 1 : Fin 2 → ℂ) ∈ σ.toSubmodule := by
+    refine (Submodule.smul_mem_iff _ hi).mp ?_
+    simpa [← Pi.single_smul'] using induceRepresentation_single_mem_of_mem χ hz₀' hw i
+  refine induceRepresentation_eq_top_of_single_zero_mem χ ?_
+  fin_cases i
+  · exact hsingle
+  · -- the image of `j` carries the second basis vector to a multiple of the first
+    refine (Submodule.smul_mem_iff _ (Units.ne_zero (χ (-1)))).mp ?_
+    convert σ.apply_mem_toSubmodule j hsingle using 1
+    ext k
+    fin_cases k <;> simp
 
 end WeilGroupReal
 
