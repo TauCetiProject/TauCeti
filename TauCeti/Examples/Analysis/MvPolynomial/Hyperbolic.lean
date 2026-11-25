@@ -12,7 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 /-!
 # Checks for hyperbolic polynomials and their Gårding cones
 
-Checks of `TauCetiRoadmap/ComplexHessianEquations/README.md` §2.2 that need only the elementary
+Worked examples of hyperbolic polynomials and their Gårding cones that need only the elementary
 theory of `MvPolynomial.IsHyperbolic` and `MvPolynomial.gardingCone`, all on `ℝ²` in the
 direction `e = (1, 1)` unless stated otherwise.
 
@@ -44,21 +44,20 @@ namespace TauCeti.HyperbolicExamples
 
 /-! ### `xy` and `x + y` -/
 
+/-- `xy` on `ℝ²` is the elementary symmetric polynomial `σ_2` in two variables. -/
+theorem X_mul_X_eq_esymm_card :
+    (X 0 * X 1 : MvPolynomial (Fin 2) ℝ) = esymm (Fin 2) ℝ (Fintype.card (Fin 2)) := by
+  rw [esymm_card, Fin.prod_univ_two]
+
 /-- `xy` on `ℝ²` is hyperbolic of degree `2` in the direction `e = (1, 1)`. -/
-theorem isHyperbolic_X_mul_X : IsHyperbolic (X 0 * X 1 : MvPolynomial (Fin 2) ℝ) 2 1 where
-  isHomogeneous := (isHomogeneous_X ℝ 0).mul (isHomogeneous_X ℝ 1)
-  eval_pos := by simp
-  splits x := by
-    simp only [map_mul, aeval_X, Pi.one_apply, map_one, one_mul]
-    simpa only [add_comm] using
-      (Polynomial.Splits.X_add_C (x 0)).mul (Polynomial.Splits.X_add_C (x 1))
+theorem isHyperbolic_X_mul_X : IsHyperbolic (X 0 * X 1 : MvPolynomial (Fin 2) ℝ) 2 1 := by
+  rw [X_mul_X_eq_esymm_card]
+  simpa using isHyperbolic_esymm_card (σ := Fin 2)
 
 /-- The Gårding cone of `xy` in the direction `(1, 1)` is the open quadrant. -/
 theorem gardingCone_X_mul_X :
     gardingCone (X 0 * X 1 : MvPolynomial (Fin 2) ℝ) 1 = {x | 0 < x 0 ∧ 0 < x 1} := by
-  have h : (X 0 * X 1 : MvPolynomial (Fin 2) ℝ) = esymm (Fin 2) ℝ (Fintype.card (Fin 2)) := by
-    rw [esymm_card, Fin.prod_univ_two]
-  rw [h, gardingCone_esymm_card]
+  rw [X_mul_X_eq_esymm_card, gardingCone_esymm_card]
   ext x
   simp [Fin.forall_fin_two]
 
@@ -98,25 +97,15 @@ theorem gardingCone_X_add_X :
 /-- The derivative `D_e (x + y)` is the constant `2`. -/
 theorem sum_smul_pderiv_X_add_X :
     ∑ i, (1 : Fin 2 → ℝ) i • pderiv i (X 0 + X 1 : MvPolynomial (Fin 2) ℝ) = C 2 := by
-  simp only [Pi.one_apply, map_add, pderiv_X, smul_add, one_smul, Fin.sum_univ_two,
-    Pi.single_eq_same, ne_eq, one_ne_zero, not_false_eq_true, Pi.single_eq_of_ne, add_zero,
-    zero_ne_one, zero_add, one_add_one_eq_two]
-  exact (map_ofNat C 2).symm
+  simp [Fin.sum_univ_two, pderiv_X, one_add_one_eq_two, map_ofNat]
 
 /-! ### Degree zero -/
 
-/-- A positive constant is hyperbolic of degree `0` in every direction. -/
-theorem isHyperbolic_C {σ : Type*} {c : ℝ} (hc : 0 < c) (b : σ → ℝ) :
-    IsHyperbolic (C c : MvPolynomial σ ℝ) 0 b where
-  isHomogeneous := isHomogeneous_C σ c
-  eval_pos := by simpa using hc
-  splits _ := by simp
-
-/-- The Gårding cone of a nonzero constant is the whole space. -/
-theorem gardingCone_C {σ : Type*} {c : ℝ} (hc : c ≠ 0) (b : σ → ℝ) :
-    gardingCone (C c : MvPolynomial σ ℝ) b = univ := by
-  ext x
-  simpa [mem_gardingCone] using fun _ _ ↦ hc
+/-- The constant `2` is hyperbolic of degree `0` in the direction `(1, 1)`, with the whole plane
+as cone. -/
+example : IsHyperbolic (C 2 : MvPolynomial (Fin 2) ℝ) 0 1 ∧
+    gardingCone (C 2 : MvPolynomial (Fin 2) ℝ) 1 = univ :=
+  ⟨isHyperbolic_C two_pos 1, gardingCone_C two_ne_zero 1⟩
 
 /-- The cone of the constant `1` contains `-a`. -/
 example {σ : Type*} (a : σ → ℝ) : -a ∈ gardingCone (C 1 : MvPolynomial σ ℝ) a := by
@@ -128,22 +117,10 @@ example : gardingCone (X 0 + X 1 : MvPolynomial (Fin 2) ℝ) 1 ⊆
   rw [sum_smul_pderiv_X_add_X, gardingCone_C two_ne_zero]
   exact subset_univ _
 
-/-- The zero polynomial is hyperbolic in no direction. -/
-theorem not_isHyperbolic_zero {σ : Type*} (m : ℕ) (b : σ → ℝ) :
-    ¬ IsHyperbolic (0 : MvPolynomial σ ℝ) m b :=
-  fun h ↦ by simpa using h.eval_pos
-
-/-- The directional derivatives of a constant vanish, so they are not positive and the
-derivative of a degree-zero hyperbolic polynomial is not hyperbolic. -/
-theorem sum_smul_pderiv_C {σ : Type*} [Fintype σ] (c : ℝ) (b : σ → ℝ) :
-    ∑ i, b i • pderiv i (C c : MvPolynomial σ ℝ) = 0 := by
-  simp
-
 /-- The positive-degree conclusions fail in degree `0`: `D_b 1 = 0` is not hyperbolic. -/
 example {σ : Type*} [Fintype σ] (b : σ → ℝ) :
-    ¬ IsHyperbolic (∑ i, b i • pderiv i (C 1 : MvPolynomial σ ℝ)) 0 b := by
-  rw [sum_smul_pderiv_C]
-  exact not_isHyperbolic_zero 0 b
+    ¬ IsHyperbolic (∑ i, b i • pderiv i (C 1 : MvPolynomial σ ℝ)) 0 b :=
+  fun h ↦ h.ne_zero (by simp)
 
 /-- The independence of the direction survives in degree `0`: `1` is hyperbolic in every `b`,
 with the same cone as in any other direction `a`. -/
@@ -165,7 +142,7 @@ theorem esymm_fin_one_two : esymm (Fin 1) ℝ 2 = 0 := by
 /-- `σ_2` in one variable is not hyperbolic in any direction. -/
 example (m : ℕ) (b : Fin 1 → ℝ) : ¬ IsHyperbolic (esymm (Fin 1) ℝ 2) m b := by
   rw [esymm_fin_one_two]
-  exact not_isHyperbolic_zero m b
+  exact fun h ↦ h.ne_zero rfl
 
 /-! ### The family `p_c = (x₁ + x₂)² - c (x₁ - x₂)²` -/
 
@@ -231,7 +208,7 @@ theorem gardingCone_familyPoly {c : ℝ} (hc : 0 ≤ c) :
 theorem closure_gardingCone_familyPoly_subset {c : ℝ} (hc : 0 ≤ c) :
     closure (gardingCone (familyPoly c) 1) ⊆ {x | √c * |x 0 - x 1| ≤ x 0 + x 1} := by
   rw [gardingCone_familyPoly hc]
-  exact closure_minimal (fun x hx ↦ (show √c * |x 0 - x 1| < x 0 + x 1 from hx).le)
+  exact closure_minimal (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
     (isClosed_le (by fun_prop) (by fun_prop))
 
 /-- The coordinate vector `e₁ = (1, 0)` lies in the closure of the cone of `p_c` exactly when
@@ -242,7 +219,7 @@ theorem mem_closure_gardingCone_familyPoly_iff {c : ℝ} (hc : 0 ≤ c) :
   · have h' := closure_gardingCone_familyPoly_subset hc h
     norm_num at h'
     nlinarith [Real.sq_sqrt hc, Real.sqrt_nonneg c]
-  · have hs : √c ≤ 1 := by simpa using Real.sqrt_le_sqrt h
+  · have hs : √c ≤ 1 := Real.sqrt_le_one.2 h
     have ht : Filter.Tendsto (fun ε : ℝ ↦ (![1, 0] : Fin 2 → ℝ) + ε • 1)
         (nhdsWithin 0 (Ioi 0)) (nhds ![1, 0]) := by
       have hcont : Continuous fun ε : ℝ ↦ (![1, 0] : Fin 2 → ℝ) + ε • 1 := by fun_prop
@@ -258,12 +235,14 @@ theorem quadrant_subset_gardingCone_familyPoly_iff {c : ℝ} (hc : 0 ≤ c) :
   rw [gardingCone_familyPoly hc]
   refine ⟨fun h ↦ ?_, fun h x ⟨h0, h1⟩ ↦ ?_⟩
   · by_contra! hlt
-    have hs : 1 < √c := by simpa using Real.sqrt_lt_sqrt zero_le_one hlt
-    have h' := h (show ![√c + 1, √c - 1] ∈ {x : Fin 2 → ℝ | 0 < x 0 ∧ 0 < x 1} from
-      ⟨by simp; linarith, by simp; linarith⟩)
+    have hs : 1 < √c := (Real.lt_sqrt zero_le_one).2 (by simpa using hlt)
+    have hmem : ![√c + 1, √c - 1] ∈ {x : Fin 2 → ℝ | 0 < x 0 ∧ 0 < x 1} := by
+      norm_num
+      constructor <;> linarith
+    have h' := h hmem
     norm_num at h'
     linarith
-  · have hs : √c ≤ 1 := by simpa using Real.sqrt_le_sqrt h
+  · have hs : √c ≤ 1 := Real.sqrt_le_one.2 h
     have habs : |x 0 - x 1| < x 0 + x 1 := abs_lt.2 ⟨by linarith, by linarith⟩
     calc √c * |x 0 - x 1| ≤ 1 * |x 0 - x 1| := by gcongr
       _ < x 0 + x 1 := by rwa [one_mul]
@@ -277,8 +256,8 @@ theorem eval_pderiv_zero_familyPoly (c : ℝ) (x : Fin 2 → ℝ) :
 /-- At `c = 1/4`, `∂₁ p_c > 0` on the cone. -/
 example {x : Fin 2 → ℝ} (hx : x ∈ gardingCone (familyPoly (1 / 4)) 1) :
     0 < eval x (pderiv 0 (familyPoly (1 / 4))) := by
-  have hs : √(1 / 4 : ℝ) = 1 / 2 := by
-    rw [show (1 / 4 : ℝ) = (1 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  have hs : √(1 / 4 : ℝ) = 1 / 2 :=
+    (Real.sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).2 (by norm_num)
   rw [gardingCone_familyPoly (by norm_num), mem_ofPred_eq, hs] at hx
   rw [eval_pderiv_zero_familyPoly]
   linarith [le_abs_self (x 0 - x 1), neg_abs_le (x 0 - x 1)]
@@ -334,9 +313,7 @@ theorem gardingCone_sectorPoly :
 example : eval ![1, 1 / 10] sectorPoly = -709 / 1000 ∧
     ![(1 : ℝ), 1 / 10] ∉ gardingCone sectorPoly 1 := by
   refine ⟨by norm_num, ?_⟩
-  have h4 : (4 : ℝ) ≤ √19 := by
-    rw [show (4 : ℝ) = √(4 ^ 2) by rw [Real.sqrt_sq (by norm_num)]]
-    exact Real.sqrt_le_sqrt (by norm_num)
+  have h4 : (4 : ℝ) ≤ √19 := Real.le_sqrt_of_sq_le (by norm_num)
   rw [gardingCone_sectorPoly]
   norm_num
   linarith
@@ -355,9 +332,7 @@ example : ![(1 : ℝ), 7 / 10] ∈ gardingCone sectorPoly 1 ∧
     eval ![1, 7 / 10] sectorPoly = 59 / 1000 ∧
     eval ![1, 7 / 10] (pderiv 0 sectorPoly) = -2 / 5 := by
   refine ⟨?_, by norm_num, ?_⟩
-  · have h5 : √19 < 5 := by
-      rw [show (5 : ℝ) = √(5 ^ 2) by rw [Real.sqrt_sq (by norm_num)]]
-      exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+  · have h5 : √19 < 5 := (Real.sqrt_lt' (by norm_num)).2 (by norm_num)
     rw [gardingCone_sectorPoly]
     norm_num
     linarith
