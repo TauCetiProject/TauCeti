@@ -119,6 +119,13 @@ theorem twistedEuler_apply (φ : LaurentRing R K) (i : K) (f : LaurentRing R K) 
     twistedEuler φ i f = eulerDerivation i f + eulerDerivation i φ * f := by
   rw [twistedEuler, LinearMap.add_apply, LinearMap.mulLeft_apply, Derivation.coeFn_coe]
 
+/-- For `φ = x_i`, the twisted Euler operator `θ_i + x_i` sends `x^m` to `m_i x^m + x_i x^m`. -/
+theorem twistedEuler_X_single (i : K) (m : K →₀ ℤ) (r : R) :
+    twistedEuler (X i : LaurentRing R K) i (single m r) =
+      single m ((m i : R) * r) + single (Finsupp.single i 1 + m) r := by
+  rw [twistedEuler_apply, eulerDerivation_single, eulerDerivation_X_self, X_def,
+    single_mul_single, one_mul]
+
 /-- The twisted Euler operators of a fixed Laurent polynomial commute pairwise, so that they are
 the differentials of a Koszul complex, the twisted de Rham complex of the torus. -/
 theorem commute_twistedEuler (φ : LaurentRing R K) (i j : K) :
@@ -182,12 +189,6 @@ private theorem residue_single (m : K →₀ ℤ) (r : k) :
 
 private theorem residue_one : residue (1 : LaurentRing k K) = 1 := by
   rw [one_def, residue_single, Finsupp.coe_zero, Pi.zero_apply, residueCoeff_zero, one_mul]
-
-private theorem twistedEuler_X_single (m : K →₀ ℤ) (r : k) :
-    twistedEuler (X default : LaurentRing k K) default (single m r) =
-      single m ((m default : k) * r) + single (Finsupp.single default 1 + m) r := by
-  rw [twistedEuler_apply, eulerDerivation_single, eulerDerivation_X_self, X_def,
-    single_mul_single, one_mul]
 
 private theorem residue_comp_twistedEuler [CharZero k] :
     residue ∘ₗ twistedEuler (X default : LaurentRing k K) default = 0 := by
