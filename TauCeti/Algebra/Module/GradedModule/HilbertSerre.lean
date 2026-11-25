@@ -108,7 +108,8 @@ private theorem exists_lengthSeries_eq_of_forall_X_smul_eq_zero {M : Type*} [Add
     by_contra hne
     have := hB hne
     omega
-  rw [coeff_mk, hbot, Module.length_bot, ENat.toNat_zero, Nat.cast_zero]
+  rw [coeff_mk, hbot]
+  simp
 
 variable [IsArtinianRing A] [Finite σ]
 
@@ -166,12 +167,11 @@ private theorem exists_lengthSeries_mul_eq (s : Finset σ) :
           (length_piece_ne_top hG (d + 1)), ENat.toNat_add (length_piece_ne_top hG d)
           (length_piece_ne_top (smul_mem_quotient_piece G hG _ _) (d + 1))] at this
         exact_mod_cast this)
-      (by rw [hd₀ (d₀ - 1) (by omega), Module.length_bot, ENat.toNat_zero, Nat.cast_zero])
-      (by rw [G.ker_piece_eq_bot hf (hd₀ (d₀ - 1) (by omega)), Module.length_bot,
-        ENat.toNat_zero, Nat.cast_zero])
+      (by rw [hd₀ (d₀ - 1) (by omega)]; simp)
+      (by rw [G.ker_piece_eq_bot hf (hd₀ (d₀ - 1) (by omega))]; simp)
     refine ⟨hC - Polynomial.X * hK, ?_⟩
-    rw [Finset.card_insert_of_notMem hi, pow_succ', ← mul_assoc, key, sub_mul, mul_assoc, hhK,
-      hhC, Polynomial.coe_sub, Polynomial.coe_mul, Polynomial.coe_X]
+    rw [Finset.card_insert_of_notMem hi, pow_succ', ← mul_assoc, key]
+    simp [sub_mul, mul_assoc, hhK, hhC]
 
 end Induction
 
@@ -212,8 +212,8 @@ theorem exists_degree_lt_and_eval_eq_length
   have hq : mk (fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℚ)) =
       q * invOneSubPow ℚ (Fintype.card σ) := by
     have := congrArg (PowerSeries.map (Int.castRingHom ℚ)) hh
-    rw [map_mul, map_pow, map_sub, map_one, PowerSeries.map_X,
-      ← Polynomial.polynomial_map_coe] at this
+    simp only [map_mul, map_pow, map_sub, map_one, PowerSeries.map_X] at this
+    rw [← Polynomial.polynomial_map_coe] at this
     rw [← this, mul_assoc, ← invOneSubPow_inv_eq_one_sub_pow, Units.inv_val, mul_one]
     ext n
     simp

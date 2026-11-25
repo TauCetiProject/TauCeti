@@ -49,9 +49,13 @@ theorem length_ker_piece_add_length_piece_add (G : InternalGrading R M ι)
   let f₁ : (G.ker hf).piece p →ₗ[R] G.piece p :=
     ((LinearMap.ker f).subtype.restrictScalars R).restrict fun _ hz ↦ (G.mem_ker_piece hf).1 hz
   let f₂ : G.piece p →ₗ[R] H.piece (p + r) :=
-    (f.restrictScalars R).restrict fun _ hx ↦ by exact hf.map_mem hx
+    (f.restrictScalars R).restrict fun _ hx ↦ by
+      rw [LinearMap.restrictScalars_apply]
+      exact hf.map_mem hx
   let f₃ : H.piece (p + r) →ₗ[R] (H.quotient U hf.isHomogeneous_range).piece (p + r) :=
-    (U.mkQ.restrictScalars R).restrict fun _ hx ↦ by exact H.mk_mem_quotient_piece U _ hx
+    (U.mkQ.restrictScalars R).restrict fun _ hx ↦ by
+      rw [LinearMap.restrictScalars_apply, Submodule.mkQ_apply]
+      exact H.mk_mem_quotient_piece U _ hx
   have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) :=
     (LinearMap.coe_restrict_apply _ z).trans <|
       (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.subtype_apply _)
