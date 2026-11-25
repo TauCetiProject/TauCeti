@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.FieldTheory.Separable
 import TauCeti.RingTheory.Polynomial.Vieta
-import TauCeti.Analysis.Complex.PowSubstitution
+import TauCeti.Analysis.Complex.RootsOfUnity.Descent
 import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 import TauCeti.Analysis.Polynomial.Puiseux.Contact
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
@@ -59,9 +59,10 @@ similarity principle (`TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn`
 `x + ζⁿ`, so it permutes the branches: `u_(σ i)(ζ) = u_i(c ζ)` for a permutation `σ` of the labels,
 the same on the whole disc because the roots are distinct off the centre
 (`TauCeti.existsUnique_root_rotation_perm`). Along a cycle of `σ` of length `k`, the branch `u_a`
-is invariant under the rotations by the `(n / k)`-th roots of unity, so it is a function `v` of
-`t = ζ^(n / k)`, continuous because `ζ ↦ ζ^(n / k)` is a quotient map
-(`TauCeti.continuousOn_ball_of_forall_add_pow_eq`). These functions are the local branches of the
+is invariant under the rotations by the `(n / k)`-th roots of unity, so it factors as
+`u_a(ζ) = v(ζ^(n / k))` through its descent `v = TauCeti.descendPow (n / k) u_a`, which is
+continuous because `ζ ↦ ζ^(n / k)` is an open map (`TauCeti.continuousOn_descendPow`). These
+functions are the local branches of the
 root multigraph at `x`, with the cycle lengths `k` as multiplicities
 (`TauCeti.exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn`):
 
@@ -321,19 +322,30 @@ private theorem exists_perm_pow_apply_eq (hρ : 0 < ρ) (hc : IsPrimitiveRoot c 
     have h1 : u (σ i) (c ^ j * ζ) = u i (c * (c ^ j * ζ)) := hσ i ((), c ^ j * ζ) ⟨trivial, hcζ⟩
     rw [pow_succ, Equiv.Perm.mul_apply, ih (σ i) ζ hζ, h1, pow_succ', mul_assoc]
 
+/-- A power `σʲ` of a permutation fixes `a` exactly when the length of the cycle of `a` divides
+`j`. -/
+private theorem pow_apply_eq_self_iff_minimalPeriod_dvd {a : Fin m} {j : ℕ} :
+    (σ ^ j) a = a ↔ Function.minimalPeriod σ a ∣ j := by
+  rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, Function.IsPeriodicPt, Function.IsFixedPt,
+    Equiv.Perm.coe_pow]
+
 /-- Under a rotation of the labels as in `exists_perm_pow_apply_eq`, every label comes back to
-itself after `n` rotations. -/
-private theorem isPeriodicPt_of_pow_apply_eq (hρ : 0 < ρ) (hc : IsPrimitiveRoot c n)
+itself after `n` rotations: the length `k` of its cycle divides `n`, and `k` and `n / k` are
+positive. -/
+private theorem minimalPeriod_dvd_and_pos (hρ : 0 < ρ) (hc : IsPrimitiveRoot c n) (hn : n ≠ 0)
     (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
     (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (i : Fin m) :
-    Function.IsPeriodicPt σ n i := by
+    Function.minimalPeriod σ i ∣ n ∧ 0 < Function.minimalPeriod σ i ∧
+      n / Function.minimalPeriod σ i ≠ 0 := by
   have hζ : ((ρ / 2 : ℝ) : ℂ) ∈ ball (0 : ℂ) ρ := by
     rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
     linarith
-  have h : (σ ^ n) i = i := hinj _ hζ (by simpa using hρ.ne') (a₁ := (σ ^ n) i) (a₂ := i) (by
-    simp only
-    rw [hσ n i _ hζ, hc.pow_eq_one, one_mul])
-  rwa [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow]
+  have hk : Function.minimalPeriod σ i ∣ n := pow_apply_eq_self_iff_minimalPeriod_dvd.1 <|
+    hinj _ hζ (by simpa using hρ.ne') (a₁ := (σ ^ n) i) (a₂ := i) (by
+      simp only
+      rw [hσ n i _ hζ, hc.pow_eq_one, one_mul])
+  have hk0 := Nat.pos_of_dvd_of_pos hk (Nat.pos_of_ne_zero hn)
+  exact ⟨hk, hk0, (Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hk) hk0).ne'⟩
 
 /-- Two parameters `ζ ≠ 0` and `ζ'` with the same `n`-th power differ by a rotation `cʲ`; if the
 labels `a` and `a'` carry the same value at them, then `σʲ` carries `a'` to `a`. -/
@@ -351,70 +363,48 @@ private theorem exists_pow_apply_eq_of_apply_eq (hc : IsPrimitiveRoot c n) (hn :
   simp only
   rw [hσ j a' ζ hζ, ← hζ', h]
 
-/-- The branch of the orbit of the label `a`: with `k` the length of the cycle of `a` and
-`d = n / k`, it reads `u_a` at the principal `d`-th root of its argument. -/
-private noncomputable def orbitBranch (u : Fin m → ℂ → ℂ) (σ : Equiv.Perm (Fin m)) (n : ℕ)
-    (a : Fin m) (t : ℂ) : ℂ :=
-  u a (t ^ ((n / Function.minimalPeriod σ a : ℕ) : ℂ)⁻¹)
-
-/-- **The branch of an orbit descends.** With `k` the length of the cycle of `a` and `d = n / k`,
-the value `u_a(ζ)` only depends on `ζᵈ`: the rotations by the `d`-th roots of unity are the powers
-of `cᵏ`, and `σᵏ` fixes `a`. So `u_a(ζ)` is the orbit branch at `ζᵈ`. -/
-private theorem orbitBranch_pow (hρ : 0 < ρ) (hc : IsPrimitiveRoot c n) (hn : n ≠ 0)
+/-- **The branch of an orbit is invariant.** With `k` the length of the cycle of `a`, the branch
+`u_a` is invariant under the rotations by the `(n / k)`-th roots of unity: they are the powers of
+`cᵏ`, and `σᵏ` fixes `a`. So `u_a` descends through `ζ ↦ ζ^(n / k)` (`TauCeti.descendPow`). -/
+private theorem apply_rootsOfUnity_smul_eq (hρ : 0 < ρ) (hc : IsPrimitiveRoot c n) (hn : n ≠ 0)
     (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
     (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (a : Fin m)
-    {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) ρ) :
-    orbitBranch u σ n a (ζ ^ (n / Function.minimalPeriod σ a)) = u a ζ := by
-  have hk : Function.minimalPeriod σ a ∣ n :=
-    (isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj a).minimalPeriod_dvd
-  set k := Function.minimalPeriod σ a
-  set d := n / k
-  have hnk : n = k * d := (Nat.mul_div_cancel' hk).symm
-  have hd : d ≠ 0 := fun hd ↦ hn (by rw [hnk, hd, mul_zero])
-  have : NeZero d := ⟨hd⟩
-  rw [orbitBranch]
-  set w := (ζ ^ d) ^ ((d : ℂ)⁻¹)
-  have hw : w ^ d = ζ ^ d := Complex.cpow_nat_inv_pow _ hd
-  rcases eq_or_ne ζ 0 with rfl | hζ0
-  · simp [w, zero_pow hd, Complex.zero_cpow (inv_ne_zero (Nat.cast_ne_zero.2 hd))]
-  -- `w / ζ` is a `d`-th root of unity, hence a power of the primitive `d`-th root `cᵏ`
-  obtain ⟨j, -, hj⟩ := (hc.pow (Nat.pos_of_ne_zero hn) hnk).eq_pow_of_pow_eq_one (ξ := w / ζ)
-    (by rw [div_pow, hw, div_self (pow_ne_zero _ hζ0)])
-  have hwζ : w = c ^ (k * j) * ζ := by rw [pow_mul, hj, div_mul_cancel₀ _ hζ0]
-  have hfix : (σ ^ (k * j)) a = a := by
-    have := (Function.isPeriodicPt_minimalPeriod σ a).mul_const j
-    rwa [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow] at this
-  rw [hwζ, ← hσ _ _ _ hζ, hfix]
-
-/-- The orbit branch of `a` reads `u_a` on the disc `ball 0 ρⁿ`: each `t` there is `ζᵈ` for some
-`ζ ∈ ball 0 ρ`, `d = n / k` with `k` the length of the cycle of `a`, and then `tᵏ = ζⁿ` and the
-orbit branch takes the value `u_a(ζ)` at `t`. -/
-private theorem exists_pow_eq_orbitBranch (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) (hc : IsPrimitiveRoot c n)
-    (hn : n ≠ 0) (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
-    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (a : Fin m) {t : ℂ}
-    (ht : t ∈ ball (0 : ℂ) (ρ ^ n)) :
-    ∃ ζ ∈ ball (0 : ℂ) ρ, ζ ^ (n / Function.minimalPeriod σ a) = t ∧
-      t ^ Function.minimalPeriod σ a = ζ ^ n ∧ orbitBranch u σ n a t = u a ζ := by
-  have hk : Function.minimalPeriod σ a ∣ n :=
-    (isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj a).minimalPeriod_dvd
-  have hd : n / Function.minimalPeriod σ a ≠ 0 :=
-    (Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hk)
-      (Nat.pos_of_dvd_of_pos hk (Nat.pos_of_ne_zero hn) |> fun h ↦ h)).ne'
+    {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) ρ) (ξ : rootsOfUnity (n / Function.minimalPeriod σ a) ℂ) :
+    u a (ξ • ζ) = u a ζ := by
+  obtain ⟨hk, -, hd⟩ := minimalPeriod_dvd_and_pos hρ hc hn hσ hinj a
   have : NeZero (n / Function.minimalPeriod σ a) := ⟨hd⟩
+  -- `ξ` is a power of the primitive `(n / k)`-th root of unity `cᵏ`
+  obtain ⟨j, -, hj⟩ := (hc.pow (Nat.pos_of_ne_zero hn) (Nat.mul_div_cancel' hk).symm)
+    |>.eq_pow_of_pow_eq_one (ξ := ((ξ : ℂˣ) : ℂ))
+    (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 ξ.prop, Units.val_one])
+  rw [Subgroup.smul_def, Units.smul_def, smul_eq_mul, ← hj, ← pow_mul, ← hσ _ _ _ hζ,
+    pow_apply_eq_self_iff_minimalPeriod_dvd.2 (dvd_mul_right _ j)]
+
+/-- The descended branch of `a` reads `u_a` on the disc `ball 0 ρⁿ`: each `t` there is `ζᵈ` for
+some `ζ ∈ ball 0 ρ`, `d = n / k` with `k` the length of the cycle of `a`, and then `tᵏ = ζⁿ` and
+the descended branch takes the value `u_a(ζ)` at `t`. -/
+private theorem exists_pow_eq_descendPow (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) (hc : IsPrimitiveRoot c n)
+    (hn : n ≠ 0) (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
+    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (a : Fin m)
+    [NeZero (n / Function.minimalPeriod σ a)] {t : ℂ} (ht : t ∈ ball (0 : ℂ) (ρ ^ n)) :
+    ∃ ζ ∈ ball (0 : ℂ) ρ, ζ ^ (n / Function.minimalPeriod σ a) = t ∧
+      t ^ Function.minimalPeriod σ a = ζ ^ n ∧
+      descendPow (n / Function.minimalPeriod σ a) (u a) t = u a ζ := by
   have ht' : t ∈ (· ^ (n / Function.minimalPeriod σ a)) '' ball (0 : ℂ) ρ := by
     rw [image_pow_ball hρ.le]
     exact ball_subset_ball (pow_le_pow_of_le_one hρ.le hρ1 (Nat.div_le_self n _)) ht
   obtain ⟨ζ, hζ, rfl⟩ := ht'
-  refine ⟨ζ, hζ, rfl, ?_, orbitBranch_pow hρ hc hn hσ hinj a hζ⟩
-  rw [← pow_mul, Nat.div_mul_cancel hk]
+  refine ⟨ζ, hζ, rfl, ?_, descendPow_pow (apply_rootsOfUnity_smul_eq hρ hc hn hσ hinj a hζ)⟩
+  rw [← pow_mul, Nat.div_mul_cancel (minimalPeriod_dvd_and_pos hρ hc hn hσ hinj a).1]
 
-/-- **The orbit branches solve the pulled-back equation.** Let `u_i` be continuous branches on
-`ball 0 ρ`, `0 < ρ ≤ min 1 r`, listing the roots `R(x + ζⁿ)` of the Newton coefficient equation,
-with the roots simple off `x` and the labels rotated by `σ`. Then the orbit branch `v` of a label
-`a` whose cycle has length `k` is continuous on `ball 0 ρⁿ`; off `t = 0` it is `C¹` and solves
+/-- **The descended branches solve the pulled-back equation.** Let `u_i` be continuous branches
+on `ball 0 ρ`, `0 < ρ ≤ min 1 r`, listing the roots `R(x + ζⁿ)` of the Newton coefficient
+equation, with the roots simple off `x` and the labels rotated by `σ`. Then the descent `v` of
+`u_a` through `ζ ↦ ζ^(n / k)`, for a label `a` whose cycle has length `k`, is continuous on
+`ball 0 ρⁿ`; off `t = 0` it is `C¹` and solves
 `\bar∂v + \overline{k t^(k-1)} (v ν(x + tᵏ) + \bar v μ(x + tᵏ)) = 0`, and it solves the same
 equation distributionally on `ball 0 (ρⁿ / 2)`, centre included. -/
-private theorem orbitBranch_hasWeakConjWirtingerDerivOn
+private theorem descendPow_hasWeakConjWirtingerDerivOn
     (hb : ∀ j ∈ Icc 1 m, ContDiffOn ℝ 1 (b j) (ball x r))
     (hR : ∀ y ∈ ball x r, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j)
     (hsimple : ∀ y ∈ ball x r, y ≠ x → (R y).Nodup) {ν μ : ℂ → ℂ →L⋆[ℂ] ℂ}
@@ -425,108 +415,104 @@ private theorem orbitBranch_hasWeakConjWirtingerDerivOn
     (huc : ∀ i, ContinuousOn (u i) (ball 0 ρ))
     (hroots : ∀ ζ ∈ ball (0 : ℂ) ρ, R (x + ζ ^ n) = univ.val.map fun i ↦ u i ζ)
     (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
-    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (a : Fin m) :
-    ContinuousOn (orbitBranch u σ n a) (ball 0 (ρ ^ n)) ∧
-      (∀ t ∈ ball (0 : ℂ) (ρ ^ n), t ≠ 0 → ContDiffAt ℝ 1 (orbitBranch u σ n a) t ∧
-        conjWirtingerDeriv (orbitBranch u σ n a) t +
-          conj (Function.minimalPeriod σ a * t ^ (Function.minimalPeriod σ a - 1)) •
-          (orbitBranch u σ n a t • ν (x + t ^ Function.minimalPeriod σ a) +
-            conj (orbitBranch u σ n a t) • μ (x + t ^ Function.minimalPeriod σ a)) = 0) ∧
-      HasWeakConjWirtingerDerivOn volume ⟨ball 0 (ρ ^ n / 2), isOpen_ball⟩ (orbitBranch u σ n a)
-        fun t ↦ -(conj (Function.minimalPeriod σ a * t ^ (Function.minimalPeriod σ a - 1)) *
-          (orbitBranch u σ n a t * ν (x + t ^ Function.minimalPeriod σ a) 1 +
-            conj (orbitBranch u σ n a t) * μ (x + t ^ Function.minimalPeriod σ a) 1)) := by
-  have hper := isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj a
-  have hk0 : Function.minimalPeriod σ a ≠ 0 :=
-    (hper.minimalPeriod_pos (Nat.pos_of_ne_zero hn)).ne'
-  have hk : Function.minimalPeriod σ a ∣ n := hper.minimalPeriod_dvd
-  -- continuity: the orbit branch descends from `u_a` along `ζ ↦ ζᵈ`
-  have hvc : ContinuousOn (orbitBranch u σ n a) (ball 0 (ρ ^ n)) := by
-    have hd : n / Function.minimalPeriod σ a ≠ 0 := fun h ↦
-      hn (by rw [← Nat.div_mul_cancel hk, h, zero_mul])
-    refine (continuousOn_ball_of_forall_add_pow_eq (x := 0) hd hρ.le (huc a) fun z hz ↦ ?_).mono
-      (ball_subset_ball (pow_le_pow_of_le_one hρ.le hρ1 (Nat.div_le_self n _)))
-    rw [zero_add]
-    exact orbitBranch_pow hρ hc hn hσ hinj a hz
-  -- each value of the orbit branch is a root
-  have hmem : ∀ t ∈ ball (0 : ℂ) (ρ ^ n),
-      orbitBranch u σ n a t ∈ R (x + t ^ Function.minimalPeriod σ a) := fun t ht ↦ by
-    obtain ⟨ζ, hζ, -, htk, hvζ⟩ := exists_pow_eq_orbitBranch hρ hρ1 hc hn hσ hinj a ht
+    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) (a : Fin m)
+    [NeZero (n / Function.minimalPeriod σ a)] :
+    letI v := descendPow (n / Function.minimalPeriod σ a) (u a)
+    letI k := Function.minimalPeriod σ a
+    ContinuousOn v (ball 0 (ρ ^ n)) ∧
+      (∀ t ∈ ball (0 : ℂ) (ρ ^ n), t ≠ 0 → ContDiffAt ℝ 1 v t ∧
+        conjWirtingerDeriv v t + conj (k * t ^ (k - 1)) •
+          (v t • ν (x + t ^ k) + conj (v t) • μ (x + t ^ k)) = 0) ∧
+      HasWeakConjWirtingerDerivOn volume ⟨ball 0 (ρ ^ n / 2), isOpen_ball⟩ v
+        fun t ↦ -(conj (k * t ^ (k - 1)) *
+          (v t * ν (x + t ^ k) 1 + conj (v t) * μ (x + t ^ k) 1)) := by
+  obtain ⟨-, hk0, -⟩ := minimalPeriod_dvd_and_pos hρ hc hn hσ hinj a
+  -- continuity: the branch `u_a` descends along the quotient map `ζ ↦ ζᵈ`
+  have hvc :
+      ContinuousOn (descendPow (n / Function.minimalPeriod σ a) (u a)) (ball 0 (ρ ^ n)) := by
+    have := continuousOn_descendPow isOpen_ball (huc a) fun ζ hζ ↦
+      apply_rootsOfUnity_smul_eq hρ hc hn hσ hinj a hζ
+    rw [image_pow_ball hρ.le] at this
+    exact this.mono (ball_subset_ball (pow_le_pow_of_le_one hρ.le hρ1 (Nat.div_le_self n _)))
+  -- each value of the descended branch is a root
+  have hmem : ∀ t ∈ ball (0 : ℂ) (ρ ^ n), descendPow (n / Function.minimalPeriod σ a) (u a) t ∈
+      R (x + t ^ Function.minimalPeriod σ a) := fun t ht ↦ by
+    obtain ⟨ζ, hζ, -, htk, hvζ⟩ := exists_pow_eq_descendPow hρ hρ1 hc hn hσ hinj a ht
     rw [hvζ, htk, hroots ζ hζ]
     exact Multiset.mem_map_of_mem _ (mem_univ_val a)
   have hpow : Set.MapsTo (fun t : ℂ ↦ x + t ^ Function.minimalPeriod σ a) (ball 0 (ρ ^ n))
       (ball x r) := fun t ht ↦ by
     have hle : (ρ ^ n) ^ Function.minimalPeriod σ a ≤ r :=
-      (pow_le_of_le_one (by positivity) (pow_le_one₀ hρ.le hρ1) hk0).trans
+      (pow_le_of_le_one (by positivity) (pow_le_one₀ hρ.le hρ1) hk0.ne').trans
         ((pow_le_of_le_one hρ.le hρ1 hn).trans hρr)
-    simpa [mem_ball_iff_norm] using mapsTo_pow_ball_zero hk0 hle ht
+    simpa [mem_ball_iff_norm] using mapsTo_pow_ball_zero hk0.ne' hle ht
   have hcl := fun t (ht : t ∈ ball (0 : ℂ) (ρ ^ n)) (ht0 : t ≠ 0) ↦
     contDiffAt_and_conjWirtingerDeriv_add_smul_eq_zero hb hR hsimple ν μ heq
       (hpow ht) ht0 (hvc.continuousAt (isOpen_ball.mem_nhds ht))
       (eventually_of_mem (isOpen_ball.mem_nhds ht) hmem)
   exact ⟨hvc, hcl, hasWeakConjWirtingerDerivOn_ball_half hν hμ (by positivity) hpow hvc hcl⟩
 
-/-- **Distinct orbit branches do not meet off the centre, and each is injective.** If the orbit
-branches of labels `a` and `a'` take the same value at points `t ≠ 0` and `t'` of `ball 0 ρⁿ` with
-`tᵏ = t'ᵏ'`, for the cycle lengths `k` and `k'`, then `a` and `a'` lie on the same cycle of `σ`,
-and if `a = a'` then `t = t'`. -/
-private theorem sameCycle_and_eq_of_orbitBranch_eq (hρ : 0 < ρ) (hρ1 : ρ ≤ 1)
+/-- **Distinct descended branches do not meet off the centre, and each is injective.** If the
+descended branches of labels `a` and `a'` take the same value at points `t ≠ 0` and `t'` of
+`ball 0 ρⁿ` with `tᵏ = t'ᵏ'`, for the cycle lengths `k` and `k'`, then `a` and `a'` lie on the
+same cycle of `σ`, and if `a = a'` then `t = t'`. -/
+private theorem sameCycle_and_eq_of_descendPow_eq (hρ : 0 < ρ) (hρ1 : ρ ≤ 1)
     (hc : IsPrimitiveRoot c n) (hn : n ≠ 0)
     (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
-    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) {a a' : Fin m}
+    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ)
+    [∀ i, NeZero (n / Function.minimalPeriod σ i)] {a a' : Fin m}
     {t t' : ℂ} (ht : t ∈ ball (0 : ℂ) (ρ ^ n)) (ht' : t' ∈ ball (0 : ℂ) (ρ ^ n)) (ht0 : t ≠ 0)
     (hpow : t' ^ Function.minimalPeriod σ a' = t ^ Function.minimalPeriod σ a)
-    (h : orbitBranch u σ n a' t' = orbitBranch u σ n a t) :
+    (h : descendPow (n / Function.minimalPeriod σ a') (u a') t' =
+      descendPow (n / Function.minimalPeriod σ a) (u a) t) :
     σ.SameCycle a' a ∧ (a' = a → t' = t) := by
-  obtain ⟨ζ, hζ, hζt, htζ, hvζ⟩ := exists_pow_eq_orbitBranch hρ hρ1 hc hn hσ hinj a ht
-  obtain ⟨ζ', -, hζt', htζ', hvζ'⟩ := exists_pow_eq_orbitBranch hρ hρ1 hc hn hσ hinj a' ht'
-  have hk0 : Function.minimalPeriod σ a ≠ 0 :=
-    ((isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj a).minimalPeriod_pos (Nat.pos_of_ne_zero hn)).ne'
+  obtain ⟨ζ, hζ, hζt, htζ, hvζ⟩ := exists_pow_eq_descendPow hρ hρ1 hc hn hσ hinj a ht
+  obtain ⟨ζ', -, hζt', htζ', hvζ'⟩ := exists_pow_eq_descendPow hρ hρ1 hc hn hσ hinj a' ht'
   have hζ0 : ζ ≠ 0 := by
     rintro rfl
-    exact ht0 ((pow_eq_zero_iff hk0).1 (htζ.trans (zero_pow hn)))
+    exact ht0 ((pow_eq_zero_iff (minimalPeriod_dvd_and_pos hρ hc hn hσ hinj a).2.1.ne').1
+      (htζ.trans (zero_pow hn)))
   obtain ⟨j, hj, hζ'⟩ := exists_pow_apply_eq_of_apply_eq hc hn hσ hinj hζ hζ0
     (by rw [← htζ', hpow, htζ]) (by rw [← hvζ', ← hvζ, h])
   refine ⟨⟨j, by simpa using hj⟩, fun haa ↦ ?_⟩
   subst haa
   -- `σʲ` fixes `a`, so `j` is a multiple of the cycle length `k` and `cʲ` is a `d`-th root of 1
-  obtain ⟨l, rfl⟩ : Function.minimalPeriod σ a' ∣ j := by
-    refine Function.IsPeriodicPt.minimalPeriod_dvd ?_
-    rwa [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow]
-  have hk : Function.minimalPeriod σ a' ∣ n :=
-    (isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj a').minimalPeriod_dvd
-  have hkl : Function.minimalPeriod σ a' * l * (n / Function.minimalPeriod σ a') = n * l := by
-    rw [mul_comm _ l, mul_assoc, Nat.mul_div_cancel' hk, mul_comm]
-  rw [← hζt', ← hζt, hζ', mul_pow, ← pow_mul, hkl, pow_mul, hc.pow_eq_one, one_pow, one_mul]
+  obtain ⟨l, rfl⟩ := pow_apply_eq_self_iff_minimalPeriod_dvd.1 hj
+  set k := Function.minimalPeriod σ a'
+  have hcl : (c ^ (k * l) * ζ) ^ (n / k) = (c ^ (k * (n / k))) ^ l * ζ ^ (n / k) := by ring
+  rw [← hζt', ← hζt, hζ', hcl,
+    Nat.mul_div_cancel' (minimalPeriod_dvd_and_pos hρ hc hn hσ hinj a').1, hc.pow_eq_one,
+    one_pow, one_mul]
 
-/-- **The orbit branches list the roots.** For `ζ ∈ ball 0 ρ`, the roots `R(x + ζⁿ)` are, with
-multiplicity, the values of the orbit branches at the `k`-th roots of `ζⁿ`, over the cycles of `σ`
-with representatives `q.out` and lengths `k`. -/
-private theorem eq_sum_map_nthRoots_orbitBranch [Fintype (Quotient (Equiv.Perm.SameCycle.setoid σ))]
+/-- **The descended branches list the roots.** For `ζ ∈ ball 0 ρ`, the roots `R(x + ζⁿ)` are,
+with multiplicity, the values of the descended branches at the `k`-th roots of `ζⁿ`, over the
+cycles of `σ` with representatives `q.out` and lengths `k`. -/
+private theorem eq_sum_map_nthRoots_descendPow
+    [Fintype (Quotient (Equiv.Perm.SameCycle.setoid σ))]
     (hρ : 0 < ρ) (hc : IsPrimitiveRoot c n) (hn : n ≠ 0)
     (hroots : ∀ ζ ∈ ball (0 : ℂ) ρ, R (x + ζ ^ n) = univ.val.map fun i ↦ u i ζ)
     (hσ : ∀ j i, ∀ ζ ∈ ball (0 : ℂ) ρ, u ((σ ^ j) i) ζ = u i (c ^ j * ζ))
-    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ) {ζ : ℂ}
-    (hζ : ζ ∈ ball (0 : ℂ) ρ) :
+    (hinj : ∀ ζ ∈ ball (0 : ℂ) ρ, ζ ≠ 0 → Function.Injective fun i ↦ u i ζ)
+    [∀ i, NeZero (n / Function.minimalPeriod σ i)] {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) ρ) :
     R (x + ζ ^ n) = ∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ),
-      (nthRoots (Function.minimalPeriod σ q.out) (ζ ^ n)).map (orbitBranch u σ n q.out) := by
+      (nthRoots (Function.minimalPeriod σ q.out) (ζ ^ n)).map
+        (descendPow (n / Function.minimalPeriod σ q.out) (u q.out)) := by
   have hsum {ι : Type} (s : Finset ι) (f : ι → ℂ) :
       ∑ i ∈ s, ({f i} : Multiset ℂ) = s.val.map f := by
     rw [sum_eq_multiset_sum, ← Multiset.sum_map_singleton (s.val.map f), Multiset.map_map,
       Function.comp_def]
   rw [hroots ζ hζ, ← hsum, ← σ.sum_quotient_sameCycle_sum_range]
   refine sum_congr rfl fun q _ ↦ ?_
-  have hk : Function.minimalPeriod σ q.out ∣ n :=
-    (isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj q.out).minimalPeriod_dvd
+  have hk := (minimalPeriod_dvd_and_pos hρ hc hn hσ hinj q.out).1
   set k := Function.minimalPeriod σ q.out
   have hnk : n = n / k * k := (Nat.div_mul_cancel hk).symm
   rw [(hc.pow (Nat.pos_of_ne_zero hn) hnk).nthRoots_eq (α := ζ ^ (n / k))
     (by rw [← pow_mul, ← hnk]), Multiset.map_map, hsum, range_val]
   refine Multiset.map_congr rfl fun j _ ↦ ?_
-  have hcn : ‖c‖ = 1 := hc.norm'_eq_one hn
-  have hcζ : c ^ j * ζ ∈ ball (0 : ℂ) ρ := by simpa [hcn] using hζ
-  rw [Function.comp_apply, ← pow_mul, mul_comm (n / k) j, pow_mul, ← mul_pow,
-    orbitBranch_pow hρ hc hn hσ hinj _ hcζ, hσ j _ ζ hζ]
+  have hcζ : c ^ j * ζ ∈ ball (0 : ℂ) ρ := by simpa [hc.norm'_eq_one hn] using hζ
+  have hpow : (c ^ (n / k)) ^ j * ζ ^ (n / k) = (c ^ j * ζ) ^ (n / k) := by ring
+  rw [Function.comp_apply, hpow,
+    descendPow_pow (apply_rootsOfUnity_smul_eq hρ hc hn hσ hinj _ hcζ), hσ j _ ζ hζ]
 
 /-- The setting of the orbit branches: for `n = m!` there are continuous branches `u_i` on
 `ball 0 ρ`, `0 < ρ ≤ min 1 r`, listing the roots `R(x + ζⁿ)`, distinct off the centre, and a
@@ -607,19 +593,19 @@ theorem exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn (hr : 0 < r)
   obtain ⟨ρ, hρ, hρ1, hρr, c, hc, u, σ, huc, hroots, hinj, hσ⟩ :=
     exists_perm_root_branches hr (fun j hj ↦ (hb j hj).continuousOn) hR hsimple
   set n := m.factorial
-  -- the orbit branches on `ball 0 δ`, `δ = ρⁿ / 2`
-  have hper (i : Fin m) := isPeriodicPt_of_pow_apply_eq hρ hc hσ hinj i
+  -- the descended branches on `ball 0 δ`, `δ = ρⁿ / 2`
+  have hper (i : Fin m) := minimalPeriod_dvd_and_pos hρ hc hn hσ hinj i
+  have (i : Fin m) : NeZero (n / Function.minimalPeriod σ i) := ⟨(hper i).2.2⟩
   set δ := ρ ^ n / 2
   have hδ : 0 < δ := by positivity
   have hδ1 : δ ≤ 1 := (half_le_self (by positivity)).trans (pow_le_one₀ hρ.le hρ1)
   have hδρ : ball (0 : ℂ) δ ⊆ ball 0 (ρ ^ n) := ball_subset_ball (half_le_self (by positivity))
-  have hbr (a : Fin m) := orbitBranch_hasWeakConjWirtingerDerivOn hb hR hsimple hν hμ heq hρ hρ1
+  have hbr (a : Fin m) := descendPow_hasWeakConjWirtingerDerivOn hb hR hsimple hν hμ heq hρ hρ1
     hρr hc hn huc hroots hσ hinj a
-  have hkm (a : Fin m) : Function.minimalPeriod σ a ≤ m := by
-    simpa using Function.minimalPeriod_le_card (f := σ) (x := a)
   refine ⟨Quotient (Equiv.Perm.SameCycle.setoid σ), inferInstance,
-    fun q ↦ Function.minimalPeriod σ q.out, fun q ↦ orbitBranch u σ n q.out, δ ^ (m + 1),
-    by positivity, δ, hδ, fun q ↦ (hper q.out).minimalPeriod_pos (Nat.pos_of_ne_zero hn), ?_,
+    fun q ↦ Function.minimalPeriod σ q.out,
+    fun q ↦ descendPow (n / Function.minimalPeriod σ q.out) (u q.out),
+    δ ^ (m + 1), by positivity, δ, hδ, fun q ↦ (hper q.out).2.1, ?_,
     fun s hs ↦ ?_, fun q s hs t ht ↦ ?_, fun q t ht t' ht' htt' ↦ ?_,
     fun q q' hqq' t ht t' ht' ht0 htt' ↦ ?_, fun q ↦ (hbr q.out).1.mono hδρ,
     fun q t ht ↦ (hbr q.out).2.1 t (hδρ ht), fun q ↦ (hbr q.out).2.2⟩
@@ -632,26 +618,26 @@ theorem exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn (hr : 0 < r)
       refine ball_subset_ball ?_ hs
       exact (pow_le_of_le_one hδ.le hδ1 (Nat.succ_ne_zero m)).trans (half_le_self (by positivity))
     obtain ⟨ζ, hζ, rfl⟩ := hs'
-    exact eq_sum_map_nthRoots_orbitBranch hρ hc hn hroots hσ hinj hζ
+    exact eq_sum_map_nthRoots_descendPow hρ hc hn hroots hσ hinj hζ
   · -- a `k`-th root of `s ∈ ball 0 δ^(m + 1)`, `k ≤ m`, lies in `ball 0 δ`
-    have hk0 := (hper q.out).minimalPeriod_pos (Nat.pos_of_ne_zero hn)
+    have hk0 := (hper q.out).2.1
     rw [mem_nthRoots hk0] at ht
     rw [mem_ball_zero_iff] at hs ⊢
     rw [← ht, norm_pow] at hs
     exact (pow_lt_pow_iff_left₀ (norm_nonneg t) hδ.le hk0.ne').1
-      (hs.trans_le (pow_le_pow_of_le_one hδ.le hδ1 ((hkm q.out).trans (Nat.le_succ m))))
+      (hs.trans_le (pow_le_pow_of_le_one hδ.le hδ1
+        (Function.minimalPeriod_le_card.trans_eq (Fintype.card_fin m) |>.trans m.le_succ)))
   · -- injectivity of a single branch: off the centre by the cycle structure
     obtain ⟨hpow, hv⟩ := Prod.ext_iff.1 htt'
     rcases eq_or_ne t 0 with rfl | ht0
-    · have hk0 := (hper q.out).minimalPeriod_pos (Nat.pos_of_ne_zero hn)
+    · have hk0 := (hper q.out).2.1
       exact ((pow_eq_zero_iff hk0.ne').1 (hpow.symm.trans (zero_pow hk0.ne'))).symm
-    exact ((sameCycle_and_eq_of_orbitBranch_eq hρ hρ1 hc hn hσ hinj (hδρ ht) (hδρ ht') ht0
+    exact ((sameCycle_and_eq_of_descendPow_eq hρ hρ1 hc hn hσ hinj (hδρ ht) (hδρ ht') ht0
       hpow.symm hv.symm).2 rfl).symm
   · -- distinct branches lie over distinct cycles
     obtain ⟨hpow, hv⟩ := Prod.ext_iff.1 htt'
-    have hsc := (sameCycle_and_eq_of_orbitBranch_eq hρ hρ1 hc hn hσ hinj (hδρ ht) (hδρ ht') ht0
-      hpow.symm hv.symm).1
-    exact hqq' (by rw [← Quotient.out_eq q, ← Quotient.out_eq q', Quotient.sound hsc.symm])
+    exact hqq' (Quotient.out_equiv_out.1 (sameCycle_and_eq_of_descendPow_eq hρ hρ1 hc hn hσ hinj
+      (hδρ ht) (hδρ ht') ht0 hpow.symm hv.symm).1.symm)
 
 end Orbits
 
