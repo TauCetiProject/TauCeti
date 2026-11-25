@@ -161,9 +161,10 @@ theorem rank_of_clopenProjective (U : Clopens (PrimeSpectrum R)) :
       ← basicOpen_eq_zeroLocus_of_isIdempotentElem _ (isIdempotentElemEquivClopens.symm U).prop,
       basicOpen_isIdempotentElemEquivClopens_symm]
     simp
-  -- The underlying module of `P_U` is `R ⧸ (1 - e)` by definition.
+  -- The underlying module of `P_U` is `R ⧸ (1 - e)`.
   have hobj : Module.rankAtStalk (clopenProjective R U).obj p =
-      Module.rankAtStalk (R ⧸ Ideal.span {1 - e}) p := rfl
+      Module.rankAtStalk (R ⧸ Ideal.span {1 - e}) p :=
+    congr_fun (Module.rankAtStalk_eq_of_equiv (eqToIso (clopenProjective_obj R U)).toLinearEquiv) p
   rw [rank_of, hobj, LocallyConstant.coe_charFn]
   by_cases hp : p ∈ U
   · rw [Set.indicator_of_mem hp, Pi.one_apply]
@@ -180,7 +181,9 @@ theorem of_clopenProjective_top : SplitK0.of.{u} (clopenProjective R ⊤) = 1 :=
   -- The isomorphism is built on underlying modules: `P_⊤` is `R ⧸ (1 - 1)` by
   -- `clopenProjective_obj`, and the unit is `R` by `tensorUnit_obj`.
   refine SplitK0.of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (LinearEquiv.toModuleIso (Submodule.quotEquivOfEqBot _ ?_)))
+    (eqToIso (clopenProjective_obj R ⊤) ≪≫
+      LinearEquiv.toModuleIso (Submodule.quotEquivOfEqBot _ ?_) ≪≫
+      eqToIso (tensorUnit_obj R).symm))
   rw [isIdempotentElemEquivClopens_symm_top, sub_self, Ideal.span_singleton_eq_bot]
 
 /-- The projective module of an intersection is the tensor product: `[P_{U ∩ V}] = [P_U] [P_V]`,
@@ -207,8 +210,12 @@ theorem of_clopenProjective_inf (U V : Clopens (PrimeSpectrum R)) :
   -- The isomorphism is built on underlying modules: `P_U` is `R ⧸ (1 - e)` by
   -- `clopenProjective_obj`, and the tensor product is that of modules by `tensorObj_obj`.
   exact SplitK0.of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (LinearEquiv.toModuleIso ((Submodule.quotEquivOfEq _ _ hspan).symm ≪≫ₗ
-      (TensorProduct.quotTensorQuotEquivQuotSup _ _).symm)))
+    (eqToIso (clopenProjective_obj R (U ⊓ V)) ≪≫
+      LinearEquiv.toModuleIso ((Submodule.quotEquivOfEq _ _ hspan).symm ≪≫ₗ
+        (TensorProduct.quotTensorQuotEquivQuotSup _ _).symm ≪≫ₗ
+        TensorProduct.congr (eqToIso (clopenProjective_obj R U)).toLinearEquiv.symm
+          (eqToIso (clopenProjective_obj R V)).toLinearEquiv.symm) ≪≫
+      eqToIso (tensorObj_obj R _ _).symm))
 
 /-- The projective modules of complementary clopen sets add up to `R`:
 `[P_{Uᶜ}] = 1 - [P_U]`, since `R ≅ R ⧸ (1 - e) × R ⧸ (e)` for an idempotent `e`. -/
@@ -217,9 +224,14 @@ theorem of_clopenProjective_compl (U : Clopens (PrimeSpectrum R)) :
   set e := isIdempotentElemEquivClopens.symm U
   rw [eq_sub_iff_add_eq', SplitK0.one_def]
   refine (SplitK0.of_eq_add_of_linearEquiv_prod ?_).symm
-  exact (AlgEquiv.prodQuotientOfIsIdempotentElem R e.prop.one_sub e.prop (sub_add_cancel 1 e.val)
-    e.prop.one_sub_mul_self).toLinearEquiv.trans ((LinearEquiv.refl R _).prodCongr
-      (Submodule.quotEquivOfEq _ _ (by simp [e])))
+  -- `R ≅ R ⧸ (1 - e) × R ⧸ (e)`, carried to the underlying modules by `tensorUnit_obj` and
+  -- `clopenProjective_obj`.
+  exact (eqToIso (tensorUnit_obj R)).toLinearEquiv ≪≫ₗ
+    (AlgEquiv.prodQuotientOfIsIdempotentElem R e.prop.one_sub e.prop (sub_add_cancel 1 e.val)
+      e.prop.one_sub_mul_self).toLinearEquiv ≪≫ₗ
+    (eqToIso (clopenProjective_obj R U)).toLinearEquiv.symm.prodCongr
+      (Submodule.quotEquivOfEq _ _ (by simp [e]) ≪≫ₗ
+        (eqToIso (clopenProjective_obj R Uᶜ)).toLinearEquiv.symm)
 
 /-! ### The rank section -/
 

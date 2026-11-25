@@ -20,6 +20,10 @@ from the first isomorphism theorem `LinearMap.quotKerEquivRange`.
 Such bounds compose: if `a` kills the kernel (or the cokernel) of `f : M → N` and `b` kills that of
 `g : N → P`, then `a * b` kills the kernel (or the cokernel) of `g ∘ f`
 (`LinearMap.mul_mem_annihilator_ker_comp`, `LinearMap.mul_mem_annihilator_range_comp`).
+
+The file also records the value of Mathlib's third isomorphism theorem
+`Submodule.quotientQuotientEquivQuotientSup` on representatives
+(`Submodule.quotientQuotientEquivQuotientSup_mk_mk`).
 -/
 
 public section
@@ -73,3 +77,17 @@ theorem mul_mem_annihilator_range_comp (f : M →ₗ[A] N) (g : N →ₗ[A] P) {
   exact ⟨m, by rw [comp_apply, hm, map_smul, hn, mul_smul]⟩
 
 end LinearMap
+
+namespace Submodule
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- The third isomorphism theorem `(M ⧸ S) ⧸ (T ⧸ S) ≃ M ⧸ (S ⊔ T)` sends the class of the class
+of `x` to the class of `x`. -/
+@[simp]
+theorem quotientQuotientEquivQuotientSup_mk_mk (S T : Submodule R M) (x : M) :
+    quotientQuotientEquivQuotientSup S T (Quotient.mk (Quotient.mk x)) = Quotient.mk x := by
+  rw [quotientQuotientEquivQuotientSup, LinearEquiv.trans_apply, quotEquivOfEq_mk]
+  exact quotientQuotientEquivQuotientAux_mk_mk _ _ _ _
+
+end Submodule

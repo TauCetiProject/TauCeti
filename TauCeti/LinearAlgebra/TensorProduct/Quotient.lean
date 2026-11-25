@@ -17,6 +17,7 @@ public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Dual.Divisibility
+import TauCeti.LinearAlgebra.Isomorphisms
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -134,12 +135,9 @@ theorem quotTensorQuotEquivQuotSup_mk_tmul_mk (I J : Ideal R) (a b : R) :
       Ideal.Quotient.mk (I ⊔ J) (a * b) := by
   rw [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul, ← Ideal.Quotient.mk_eq_mk,
-    ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.quotEquivOfEq_mk]
-  -- The third isomorphism theorem sends the class of the class of `a * b` to the class of
-  -- `a * b`; Mathlib states this only for the auxiliary map, which it unfolds to.
-  rw [Submodule.quotientQuotientEquivQuotientSup, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk]
-  exact congrArg _ (Submodule.quotientQuotientEquivQuotientAux_mk_mk _ _ _ _)
+    ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.quotEquivOfEq_mk,
+    Submodule.quotientQuotientEquivQuotientSup_mk_mk, Submodule.quotEquivOfEq_mk,
+    Ideal.Quotient.mk_eq_mk]
 
 /-- The inverse of `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a]` to `[a] ⊗ [1]`. -/
 @[simp]
