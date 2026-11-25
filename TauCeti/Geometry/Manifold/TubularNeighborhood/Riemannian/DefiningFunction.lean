@@ -66,7 +66,7 @@ theorem exists_regular_definingFunction_normalExp
     {ε : M → ℝ} (hε : Continuous ε) (hεpos : ∀ x, 0 < ε x) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x => f.NormalSpace x hn
+    let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     letI : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
     ∃ (r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮J, N; 𝓘(ℝ), ℝ⟯),
@@ -90,7 +90,7 @@ theorem exists_regular_definingFunction_normalExp
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  let ν : M → Type _ := fun x => f.NormalSpace x hn
+  let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance

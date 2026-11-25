@@ -32,7 +32,9 @@ subsets and to the union of a directed family of open subsets
 (`TopCat.isZero_compactSupportCohomology_sup_of_disjoint`,
 `TopCat.isZero_compactSupportCohomology_iSup_of_monotone`). Over the finite partial unions the two
 combine: if `Hⁿ_c(s i)` vanishes for pairwise disjoint open subsets `s i`, so does `Hⁿ_c(⋃ i, s i)`
-(`TopCat.isZero_compactSupportCohomology_iSup_of_pairwise_disjoint`).
+(`TopCat.isZero_compactSupportCohomology_iSup_of_pairwise_disjoint`). For two open subsets that
+need not be disjoint, the Mayer–Vietoris sequence gives the vanishing of `Hⁿ_c(U ∪ V)` from that
+of `Hⁿ_c(U)`, `Hⁿ_c(V)` and `Hⁿ⁺¹_c(U ∩ V)` (`TopCat.isZero_compactSupportCohomology_sup`).
 
 In the proof of Poincaré duality for a manifold `M` of dimension `m` by induction over open subsets
 (Hatcher, Lemma 3.36), the step from two open sets to their union compares two Mayer–Vietoris
@@ -136,6 +138,23 @@ theorem isZero_compactSupportCohomology_sup_of_disjoint {U V : Opens X} (hd : Di
     exact fun x _ ↦ Opens.mem_sup.2 (Opens.mem_sup.1 x.property)
   · exact Opens.coe_disjoint.1 (Set.disjoint_left.2 fun x hU hV ↦
       Set.disjoint_left.1 (Opens.coe_disjoint.2 hd) hU hV)
+
+/-- **Cohomology with compact supports of the union of two open subsets.** For open subsets `U`
+and `V` of a Hausdorff space with `Hⁿ_c(U) = 0`, `Hⁿ_c(V) = 0` and `Hⁿ⁺¹_c(U ∩ V) = 0`, also
+`Hⁿ_c(U ∪ V) = 0`: in the Mayer–Vietoris sequence of the cover of `U ∪ V` by `U` and `V`, the group
+`Hⁿ_c(U ∪ V)` sits between `Hⁿ_c(U) ⊞ Hⁿ_c(V)` and `Hⁿ⁺¹_c(U ∩ V)`. -/
+theorem isZero_compactSupportCohomology_sup {U V : Opens X}
+    (hU : IsZero (((toTopCat X).obj U).compactSupportCohomology R k M n))
+    (hV : IsZero (((toTopCat X).obj V).compactSupportCohomology R k M n))
+    (hUV : IsZero (((toTopCat X).obj (U ⊓ V)).compactSupportCohomology R k M (n + 1))) :
+    IsZero (((toTopCat X).obj (U ⊔ V)).compactSupportCohomology R k M n) := by
+  refine isZero_compactSupportCohomology_of_sup_eq_top R k M
+    ((Opens.map (inclusion' (U ⊔ V))).obj U) ((Opens.map (inclusion' (U ⊔ V))).obj V) ?_ n
+    ((isZero_compactSupportCohomology_comap_iff le_sup_left).2 hU)
+    ((isZero_compactSupportCohomology_comap_iff le_sup_right).2 hV)
+    ((isZero_compactSupportCohomology_comap_iff (inf_le_left.trans le_sup_left)).2 hUV)
+  rw [eq_top_iff]
+  exact fun x _ ↦ Opens.mem_sup.2 (Opens.mem_sup.1 x.property)
 
 /-- **Cohomology with compact supports of a directed union of open subsets.** For a directed family
 of open subsets `U i` of a Hausdorff space with `Hⁿ_c(U i) = 0` for every `i`, also

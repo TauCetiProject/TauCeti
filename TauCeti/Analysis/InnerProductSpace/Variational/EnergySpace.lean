@@ -48,8 +48,9 @@ underlying sesquilinear form.
 * `TauCeti.CoerciveHermitianForm.toEnergySpace_eq_toDual_symm_iff`: on a Banach space, `u` solves
   `a.form u v = ℓ v` for every `v` exactly when `a.toEnergySpace u` is the Riesz representative,
   in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`.
-* `TauCeti.CoerciveHermitianForm.toEnergySpace_solutionOfFunctional`: when `V` is a Hilbert
-  space, the Lax–Milgram solution of `a.form u v = ℓ v` is mapped to that Riesz representative.
+* `TauCeti.CoerciveHermitianForm.isUnit_continuousLinearMapOfBilin`: when `V` is a Hilbert
+  space, the Fréchet–Riesz operator of `a.form` is invertible, so the Lax–Milgram solution maps
+  of `a.form` are defined.
 
 ## References
 
@@ -254,7 +255,7 @@ theorem toEnergySpace_eq_toDual_symm_iff [CompleteSpace V] (ℓ : StrongDual �
   · obtain ⟨v, rfl⟩ := a.toEnergySpace.surjective x
     simp [h, InnerProductSpace.toDual_symm_apply]
 
-/-! ### Comparison with the Lax–Milgram solution map -/
+/-! ### Invertibility of the Fréchet–Riesz operator on a Hilbert space -/
 
 section LaxMilgram
 
@@ -266,17 +267,6 @@ theorem isUnit_continuousLinearMapOfBilin :
     IsUnit (InnerProductSpace.continuousLinearMapOfBilin a.form) :=
   have ⟨_, hc, hcoer⟩ := a.exists_coercive
   InnerProductSpace.isUnit_continuousLinearMapOfBilin_of_coercive a.form hc hcoer
-
-/-- **The Lax–Milgram solution is a Riesz representative.** On a Hilbert space `V`, the solution
-`u` of `a.form u v = ℓ v` for every `v` is mapped by `a.toEnergySpace` to the Riesz
-representative, in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`. -/
-theorem toEnergySpace_solutionOfFunctional (ℓ : StrongDual 𝕜 V) :
-    a.toEnergySpace
-        (InnerProductSpace.solutionOfFunctional a.form a.isUnit_continuousLinearMapOfBilin ℓ) =
-      (InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
-        (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) :=
-  (a.toEnergySpace_eq_toDual_symm_iff ℓ _).mpr
-    (InnerProductSpace.apply_solutionOfFunctional_eq a.form _ ℓ)
 
 end LaxMilgram
 
