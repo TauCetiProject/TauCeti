@@ -42,7 +42,7 @@ on a compact thickening of `K` fills isolated representative defects, and the or
 derivative agrees with the normal form's logarithmic derivative codiscretely on `frontier K`. On
 the finite set of discrepancies, `Set.Countable.ae_deriv_eq_zero_on_preimage` ensures that
 `deriv γ` vanishes almost everywhere, so the derivative-weighted boundary integrals agree without
-any regularity or non-degeneracy assumptions on `γ` beyond `IsPiecewiseC1On`.
+any regularity or non-degeneracy assumptions on `γ` beyond absolute continuity.
 
 ## Main results
 
@@ -50,9 +50,9 @@ any regularity or non-degeneracy assumptions on `γ` beyond `IsPiecewiseC1On`.
   `∮_{C(c,R)} logDeriv f = 2πi · ∑ᶠ z, divisor f (ball c R) z`, the circle argument principle with
   the counting data taken from `MeromorphicOn.divisor`.
 * `TauCeti.Contour.argumentPrinciple_nullHomologous_divisor` —
-  `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · divisorCount f U K` for a closed piecewise-`C¹`
-  curve `γ` on `frontier K` that is null-homologous in a compact preconnected set `K ⊆ U` and winds
-  once around every point of `interior K`.
+  `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · divisorCount f U K` for a closed absolutely
+  continuous curve `γ` on `frontier K` that is null-homologous in a compact preconnected set
+  `K ⊆ U` and winds once around every point of `interior K`.
 
 ## References
 
@@ -139,8 +139,8 @@ private theorem normalForm_exceptional_data {F : ℂ → ℂ} {K V : Set ℂ} {p
 
 /-- **The argument principle against the divisor on a compact preconnected region.** Let `K` be a
 compact preconnected set contained in a set `U`, let `f` be meromorphic on `U` with meromorphic
-order `0` on `frontier K`, and let `γ` be a closed piecewise-`C¹` curve on `[[a, b]]` tracing
-points of `frontier K`, null-homologous in `K`, and winding once around every point of
+order `0` on `frontier K`, and let `γ` be a closed absolutely continuous curve on `[[a, b]]`
+tracing points of `frontier K`, null-homologous in `K`, and winding once around every point of
 `interior K`. Then the contour integral of `logDeriv f` along `γ` is `2πi` times
 `divisorCount f U K`.
 
@@ -150,7 +150,7 @@ theorem argumentPrinciple_nullHomologous_divisor {f : ℂ → ℂ} {U K : Set �
     (hK : IsCompact K) (hK_conn : IsPreconnected K)
     (hKU : K ⊆ U) (hf : MeromorphicOn f U)
     (hfr : ∀ x ∈ frontier K, meromorphicOrderAt f x = 0)
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγfr : ∀ t ∈ uIcc a b, γ t ∈ frontier K) (hclosed : γ a = γ b)
     (hnull : IsNullHomologous γ a b K)
     (hwind : ∀ x ∈ interior K, windingNumber γ a b x = 1) :

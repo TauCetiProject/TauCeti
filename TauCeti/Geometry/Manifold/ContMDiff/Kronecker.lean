@@ -9,12 +9,15 @@ public import TauCeti.Analysis.Normed.Operator.Kronecker
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
-# Smooth families of Kronecker products
+# Smooth families of Kronecker products and operator conjugations
 
-Kronecker products of `C^r` families of finite-coordinate operators are `C^r`.
+Kronecker products of `C^r` families of finite-coordinate operators are `C^r`, and so are
+the operator conjugations `ContinuousLinearMap.homCoordConj S R` of two `C^r` families.
 These lemmas apply in particular to transition functions and morphisms of tensor-product
-vector bundles. They use the continuous bilinear map `ContinuousLinearMap.kroneckerL`,
-so no completeness of the scalar field or regularity of the source atlas is needed.
+and Hom vector bundles. They use the continuous bilinear map `ContinuousLinearMap.kroneckerL`
+and, for conjugations, the coordinates `ContinuousLinearEquiv.finProdCLM` together with pre- and
+postcomposition, so no completeness of the scalar field or regularity of the source atlas is
+needed.
 -/
 
 public section
@@ -62,3 +65,52 @@ theorem ContMDiff.clm_kronecker
     ContMDiff I 𝓘(𝕜, (Fin (m * n) → 𝕜) →L[𝕜] (Fin (m' * n') → 𝕜)) r
       (fun y ↦ (f y).kronecker (g y)) :=
   fun y ↦ (hf y).clm_kronecker (hg y)
+
+section HomCoordConj
+
+variable {S : M → (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)} {R : M → (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)}
+
+/-- Operator conjugations of two families of operators preserve `C^r` regularity within a set at
+a point. -/
+theorem ContMDiffWithinAt.clm_homCoordConj
+    (hS : ContMDiffWithinAt I 𝓘(𝕜, (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)) r S s x)
+    (hR : ContMDiffWithinAt I 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) r R s x) :
+    ContMDiffWithinAt I 𝓘(𝕜, (Fin (m * n) → 𝕜) →L[𝕜] (Fin (m' * n') → 𝕜)) r
+      (fun y ↦ (S y).homCoordConj (R y)) s x := by
+  -- In the coordinates `finProdCLM`, conjugation is `T ↦ R ∘ T ∘ S`.
+  let φ := ContinuousLinearEquiv.finProdCLM 𝕜 m n
+  let ψ := ContinuousLinearEquiv.finProdCLM 𝕜 m' n'
+  have h := (contMDiffWithinAt_const (c := ψ.symm.toContinuousLinearMap)).clm_comp
+    (((hR.clm_postcomp (F₁ := Fin m' → 𝕜)).clm_comp
+      (hS.clm_precomp (F₃ := Fin n → 𝕜))).clm_comp
+        (contMDiffWithinAt_const (c := φ.toContinuousLinearMap)))
+  refine h.congr (fun y _ ↦ ?_) ?_ <;>
+  · refine ContinuousLinearMap.ext fun v ↦ ψ.injective ?_
+    simp [φ, ψ]
+
+/-- Operator conjugations of two families of operators preserve `C^r` regularity at a point. -/
+theorem ContMDiffAt.clm_homCoordConj
+    (hS : ContMDiffAt I 𝓘(𝕜, (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)) r S x)
+    (hR : ContMDiffAt I 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) r R x) :
+    ContMDiffAt I 𝓘(𝕜, (Fin (m * n) → 𝕜) →L[𝕜] (Fin (m' * n') → 𝕜)) r
+      (fun y ↦ (S y).homCoordConj (R y)) x :=
+  ContMDiffWithinAt.clm_homCoordConj hS hR
+
+/-- Operator conjugations of two families of operators that are `C^r` on a set are `C^r`
+there. -/
+theorem ContMDiffOn.clm_homCoordConj
+    (hS : ContMDiffOn I 𝓘(𝕜, (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)) r S s)
+    (hR : ContMDiffOn I 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) r R s) :
+    ContMDiffOn I 𝓘(𝕜, (Fin (m * n) → 𝕜) →L[𝕜] (Fin (m' * n') → 𝕜)) r
+      (fun y ↦ (S y).homCoordConj (R y)) s :=
+  fun y hy ↦ (hS y hy).clm_homCoordConj (hR y hy)
+
+/-- Operator conjugations of two `C^r` families of operators are `C^r`. -/
+theorem ContMDiff.clm_homCoordConj
+    (hS : ContMDiff I 𝓘(𝕜, (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)) r S)
+    (hR : ContMDiff I 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) r R) :
+    ContMDiff I 𝓘(𝕜, (Fin (m * n) → 𝕜) →L[𝕜] (Fin (m' * n') → 𝕜)) r
+      (fun y ↦ (S y).homCoordConj (R y)) :=
+  fun y ↦ (hS y).clm_homCoordConj (hR y)
+
+end HomCoordConj

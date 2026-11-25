@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Elementary bounds on the Japanese bracket

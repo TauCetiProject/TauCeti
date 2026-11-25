@@ -43,6 +43,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
   `Matrix.toBlocks₂₁_eq_submatrix`, and `Matrix.toBlocks₂₂_eq_submatrix`: block extraction
   as submatrix restriction.
+* `Matrix.toSquareBlockProp_eq_submatrix`: a square block is the submatrix along the subtype
+  inclusion.
 * `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
   off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
@@ -50,6 +52,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
   `blockDiagonal d * X * blockDiagonal d'`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
+* `Matrix.det_toSquareBlockProp_mul_mul`: the minor of `L * M * U` on a down-closed set is the
+  product of the minors of `L`, `M` and `U`.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
   the leading blocks on the strict initial segments.
 * `Matrix.BlockTriangular.isUnit_det_toSquareBlockProp`: leading blocks of an invertible
@@ -92,6 +96,11 @@ public theorem toBlocks₂₁_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
 /-- The lower-right block is the submatrix along the right sum injections. -/
 public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m ⊕ n) (p ⊕ q) α) :
     M.toBlocks₂₂ = M.submatrix Sum.inr Sum.inr :=
+  (rfl)
+
+/-- The square block on `{a | p a}` is the submatrix along the subtype inclusion. -/
+public theorem toSquareBlockProp_eq_submatrix {m α : Type*} (M : Matrix m m α) (p : m → Prop) :
+    M.toSquareBlockProp p = M.submatrix (Subtype.val : {a // p a} → m) Subtype.val :=
   (rfl)
 
 /-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
@@ -204,6 +213,15 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   exact hM k
 
 variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]
+
+/-- **Minors of `L * M * U` on down-closed sets.** For a block lower triangular `L` and a block
+upper triangular `U`, the determinant of the square block of `L * M * U` on a down-closed set of
+indices is the product of the determinants of the square blocks of `L`, `M` and `U`. -/
+public theorem det_toSquareBlockProp_mul_mul (hL : L.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockTriangular b) (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    ((L * M * U).toSquareBlockProp p).det =
+      (L.toSquareBlockProp p).det * (M.toSquareBlockProp p).det * (U.toSquareBlockProp p).det := by
+  rw [hU.toSquareBlockProp_mul hp, hL.toSquareBlockProp_mul_of_toDual hp, det_mul, det_mul]
 
 /-- A leading block of a block upper triangular matrix with unit determinant also has unit
 determinant. The set of indices may be any down-closed union of blocks. -/

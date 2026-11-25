@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 import Mathlib.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
 # The inertia subgroups generate the Galois group of a number field

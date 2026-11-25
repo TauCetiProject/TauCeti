@@ -124,6 +124,11 @@ theorem coordinateDeriv_cons (j : Fin n) (js : List (Fin n)) (f : CoordinateSpac
     coordinateDeriv (j :: js) f x =
       fderiv ℝ (coordinateDeriv js f) x (EuclideanSpace.single j 1) := (rfl)
 
+/-- The coordinate derivative along a single index is the derivative in that coordinate direction:
+`∂ⱼ f x = Df(x) eⱼ`. -/
+theorem coordinateDeriv_singleton (j : Fin n) (f : CoordinateSpace n → A) (x : CoordinateSpace n) :
+    coordinateDeriv [j] f x = fderiv ℝ f x (EuclideanSpace.single j 1) := (rfl)
+
 /-- Differentiating along a concatenated word differentiates along the second word first. -/
 theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv (α ++ β) f = coordinateDeriv α (coordinateDeriv β f) := by
@@ -362,6 +367,13 @@ theorem _root_.Filter.EventuallyEq.coordinateDeriv {f g : CoordinateSpace n → 
   | cons j js ih =>
     filter_upwards [ih.eventuallyEq_nhds] with y hy
     rw [coordinateDeriv_cons, coordinateDeriv_cons, hy.fderiv_eq]
+
+/-- Coordinate derivatives do not enlarge the topological support. -/
+theorem tsupport_coordinateDeriv_subset (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    tsupport (coordinateDeriv α f) ⊆ tsupport f := by
+  induction α with
+  | nil => exact subset_rfl
+  | cons j js ih => exact (tsupport_fderiv_apply_subset ℝ _).trans ih
 
 /-- Every nonempty coordinate derivative of a constant function vanishes. -/
 theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :

@@ -18,7 +18,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.PDE.Vortex.Potential
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 

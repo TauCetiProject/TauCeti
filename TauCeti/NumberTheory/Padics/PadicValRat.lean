@@ -8,10 +8,11 @@ module
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 
 /-!
-# Vanishing of the `p`-adic valuation of a rational number
+# Vanishing and denominators of the `p`-adic valuation of a rational number
 
-This file characterises when the `p`-adic valuation of a nonzero rational number vanishes, and
-compares the valuations of two rational numbers with sum `1`.
+This file characterises when the `p`-adic valuation of a nonzero rational number vanishes,
+compares the valuations of two rational numbers with sum `1`, and reads the multiplicity of `p` in
+the denominator of a rational number off its valuation.
 
 ## Main results
 
@@ -22,6 +23,10 @@ compares the valuations of two rational numbers with sum `1`.
 * `padicValRat.max_natAbs_eq_of_add_eq_one`: if `x + y = 1`, then `x` and `y` have the common
   denominator `w = x.den`, and `max(|v_p(x)|, |v_p(y)|)` is the largest of the valuations of the
   three terms of `x.num + y.num = w`.
+* `padicValRat.toNat_neg`: the multiplicity of `p` in the denominator of `q` is the negative part
+  of `v_p(q)`.
+* `Rat.multiplicity_den_add_of_lt`: if `p` divides the denominator of `r` to a higher power than
+  that of `q`, then it divides the denominator of `q + r` to the same power as that of `r`.
 -/
 
 public section
@@ -78,4 +83,41 @@ theorem max_natAbs_eq_of_add_eq_one {p : ℕ} [hp : Fact p.Prime] {x y : ℚ} (h
   simp only [padicValRat_def, hden, Nat.padicValNat_def] at h₁ h₂ hx hy ⊢
   omega
 
+/-- The `p`-adic valuation of a rational number is at least minus the multiplicity of `p` in its
+denominator. -/
+theorem neg_multiplicity_den_le (p : ℕ) (q : ℚ) :
+    -(multiplicity p q.den : ℤ) ≤ padicValRat p q := by
+  rw [padicValRat_def]
+  omega
+
+/-- At a prime `p`, the multiplicity of `p` in the denominator of a rational number is the
+negative part of its `p`-adic valuation. -/
+theorem toNat_neg {p : ℕ} [hp : Fact p.Prime] (q : ℚ) :
+    (-padicValRat p q).toNat = multiplicity p q.den := by
+  rw [padicValRat_def]
+  rcases Rat.num_or_den_zero_padicVal q hp.out with h | h <;> omega
+
 end padicValRat
+
+namespace Rat
+
+/-- **Ultrametric property of the denominator.** If `p` divides the denominator of `r` to a higher
+power than that of `q`, then it divides the denominator of `q + r` to exactly the same power as
+that of `r`. -/
+theorem multiplicity_den_add_of_lt {p : ℕ} [Fact p.Prime] {q r : ℚ}
+    (h : multiplicity p q.den < multiplicity p r.den) :
+    multiplicity p (q + r).den = multiplicity p r.den := by
+  have hr := padicValRat.toNat_neg (p := p) r
+  have hq := padicValRat.neg_multiplicity_den_le p q
+  have hr0 : r ≠ 0 := by
+    rintro rfl
+    simp at h
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp
+  have hlt : padicValRat p r < padicValRat p q := by omega
+  have hrq : r + q ≠ 0 := fun h0 ↦ by
+    rw [eq_neg_of_add_eq_zero_left h0, padicValRat.neg] at hlt
+    exact hlt.false
+  rw [← padicValRat.toNat_neg, add_comm, padicValRat.add_eq_of_lt hrq hr0 hq0 hlt, hr]
+
+end Rat

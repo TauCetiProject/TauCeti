@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Module.FiniteSpan
-import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Compressible and incompressible vectors
@@ -170,19 +170,10 @@ theorem IsCompressibleVector.exists_isCompressibleVector_zero_dist_le
     linarith
   let u := NormedSpace.normalize y
   have hu : ‖u‖ = 1 := NormedSpace.norm_normalize hy0
-  have hyu : dist y u = |‖y‖ - 1| := by
-    rw [dist_eq_norm]
-    calc
-      ‖y - u‖ = ‖(‖y‖ - 1) • u‖ := by
-        rw [sub_smul, one_smul, NormedSpace.norm_smul_normalize]
-      _ = _ := by rw [norm_smul, Real.norm_eq_abs, hu, mul_one]
   refine ⟨u, isCompressibleVector_zero_right_iff.mpr
     ⟨hu, s, hs, fun i hi ↦ by simp [u, NormedSpace.normalize, hy i hi]⟩, ?_⟩
-  have hnorm : |‖y‖ - 1| ≤ dist x y := by
-    simpa only [hn, dist_eq_norm, Real.norm_eq_abs, norm_sub_rev y x] using
-      (dist_norm_norm_le y x)
   rw [← dist_eq_norm] at hxy
-  linarith [dist_triangle x y u]
+  exact (NormedSpace.dist_normalize_le_two_mul_dist hn y).trans (by linarith)
 
 /-- At radius zero, an incompressible unit vector has more than `k` nonzero coordinates. -/
 theorem isIncompressibleVector_zero_right_iff :
