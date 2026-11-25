@@ -112,24 +112,20 @@ theorem floerConformalJetCoeff_positiveEndChart_comp_endTransferCoeff (ω : Symp
     ContinuousLinearMap.id_apply, hβ, hdβ, zero_apply, mul_zero, zero_smul, zero_add, one_mul,
     ω.floerLinearizationCoeff_comp_positiveEndChart_apply hH hHs hζ hu hfl v.1, map_smul,
     LinearMap.coe_toContinuousLinearMap', smul_smul]
-  have hJJ (x : V) : (J (positiveEndChart q ζ) (u (positiveEndChart q ζ))).toLinearMap
-      ((J (positiveEndChart q ζ) (u (positiveEndChart q ζ))).toLinearMap x) = -x :=
-    (J (positiveEndChart q ζ) (u (positiveEndChart q ζ))).apply_apply x
-  generalize (J (positiveEndChart q ζ) (u (positiveEndChart q ζ))).toLinearMap = L at hJJ ⊢
-  generalize ω.floerLinearizationCoeff (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-    (positiveEndChart q ζ) v.1 = c
-  generalize (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 = a at hdet ⊢
-  generalize (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 = b at hdet ⊢
-  generalize positiveEndChartScale q ζ = r at hr hdet ⊢
-  generalize √(cylindricalWeight (positiveEndChart q ζ)) = ρ at hρ ⊢
-  simp only [map_add, map_sub, map_smul, hJJ, smul_add, smul_sub, smul_neg, smul_smul]
-  have h₁ : ρ⁻¹ * (r * (ρ * 1)) = r := by field_simp
-  have h₂ : r⁻¹ * (a * a) + r⁻¹ * (b * b) = r := by
-    field_simp
-    linear_combination -hdet
-  linear_combination (norm := module) h₁ • c - h₂ • c
+  set L := J (positiveEndChart q ζ) (u (positiveEndChart q ζ))
+  set a := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1
+  set b := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2
+  set r := positiveEndChartScale q ζ
+  set ρ := √(cylindricalWeight (positiveEndChart q ζ))
+  -- The zeroth-order term is `(a + b J) (a - b J) c = (a² + b²) c = r² c`.
+  rw [map_add L.toLinearMap _ (a • _ - b • L.toLinearMap _), smul_add a, smul_add b,
+    add_add_add_comm, L.smul_add_smul_apply_smul_sub_smul, ← hdet]
+  -- The weight factor cancels, and `r⁻¹ r² = r`.
+  rw [show ρ⁻¹ * (r * (ρ * 1)) = r by field_simp, sq, mul_smul, smul_add r⁻¹,
+    inv_smul_smul₀ hr.ne']
+  congr 1
+  simp only [map_add, map_smul, L.apply_apply]
+  module
 
 /-- **Pointwise comparison with an end model.** Let the Floer data at the point `w = φ'_q(ζ)` of the
 end `q`, with `ζ = (s, t)` and `s ≥ 2`, be the structures `J_q(t)` and the pair-of-pants
@@ -221,8 +217,8 @@ theorem norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_le (ω : Symplecti
 data on the pair of pants which beyond a height `T` of the end `q`, read in the positive end chart
 `φ'_q`, are the structures `J_q(t)` of a `C¹` family and the pair-of-pants perturbation of
 period-one Hamiltonians `H_q` with `H_q` jointly `C²`, and let `u` be differentiable and solve the
-Floer equation there. Let the loops of `u ∘ φ'_q` converge uniformly to a one-periodic orbit `x` of
-the end Hamiltonian `H'_q`, with slice defect `∂t (u ∘ φ'_q) - X_{H'_q}(u ∘ φ'_q)` tending
+Floer equation there. Let the loops of `u ∘ φ'_q` converge uniformly to a continuous loop `x`,
+with slice defect `∂t (u ∘ φ'_q) - X_{H'_q}(u ∘ φ'_q)` tending
 uniformly to zero, and let the cutoff `β` be `1` with vanishing derivative beyond the height `T`.
 Then for every `ε > 0` and every sufficiently large `s`, at every `t ∈ [0, 1]`, the coefficient
 field on conformal jets at `φ'_q(s, t)`, composed with the jet coefficient of the transfer along
@@ -247,8 +243,7 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
       (ω.perturbedFDeriv Ks Kt u (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V))
     (hβ : ∀ ζ : ℝ × ℝ, T ≤ ζ.1 →
       β (positiveEndChart q ζ) = 1 ∧ fderiv ℝ β (positiveEndChart q ζ) = 0)
-    {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    {x : ℝ → V} (hxc : Continuous x)
     (hux : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) x atTop (Icc 0 1))
     (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
@@ -268,7 +263,6 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
   set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap
   set S : ℝ → V →L[ℝ] V :=
     fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t)
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hJx : Continuous fun t ↦ Jc (t, x t) := hJq.continuous.comp (continuous_id.prodMk hxc)
   have hS : Continuous S := (continuous_fderiv_slice_right
     (f := fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
@@ -288,7 +282,7 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
     (continuous_id.prodMk hxc)).comp_tendstoUniformlyOn (g := Jc)
     (fun _ _ ↦ hJq.continuous.continuousAt) hux.graph) (min 1 (ε / (2 * B))) (by positivity)
   have hFM := ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJq
-    (contDiff_uncurry_positiveEndHamiltonian hHs) isCompact_Icc hx hux hδ
+    (contDiff_uncurry_positiveEndHamiltonian hHs) isCompact_Icc hxc.continuousOn hux hδ
     (by positivity : 0 < ε / (2 * B))
   filter_upwards [eventually_ge_atTop (max T 2), hJu, hFM] with s hs hsJ hsF t ht
   have hsT : T ≤ (s, t).1 := (le_max_left _ _).trans hs

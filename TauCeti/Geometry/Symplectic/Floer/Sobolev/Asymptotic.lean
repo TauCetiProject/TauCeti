@@ -98,10 +98,10 @@ private theorem norm_floerJetCoeff_sub_stationaryJetCoeff_le (ω : SymplecticFor
   nlinarith
 
 /-- **The coefficient field on an end converges to its stationary model.** Let `J_t(y)` be a `C¹`
-family of almost complex structures and `H_t(y)` a `C²` Hamiltonian, and let `x` be an orbit of
-`X_{H_t}`. If the loops of `u` converge uniformly on a compact set `T` of times to `x` along a
-filter `l` of `s`, and the slice defect `∂t u - X_{H_t}(u)` tends uniformly to zero there, then for
-every `ε > 0`, eventually along `l`, at every `t ∈ T`, the coefficient field on jets of the
+family of almost complex structures and `H_t(y)` a `C²` Hamiltonian, and let `x` be a loop that is
+continuous on a compact set `T` of times. If the loops of `u` converge uniformly on `T` to `x` along
+a filter `l` of `s`, and the slice defect `∂t u - X_{H_t}(u)` tends uniformly to zero there, then
+for every `ε > 0`, eventually along `l`, at every `t ∈ T`, the coefficient field on jets of the
 linearized operator along `u` of the datum `(J_t, 0, H_t)` is within `ε` of that of the stationary
 cylinder operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`. No condition is put on the datum away
 from the end: the statement only concerns the end datum. -/
@@ -109,8 +109,8 @@ theorem eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt (ω : Sym
     {Je : ℝ → V → AlmostComplexStructure V} {He : ℝ → V → ℝ}
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hHe : ContDiff ℝ 2 (uncurry He)) {T : Set ℝ} (hT : IsCompact T) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t) {l : Filter ℝ}
-    {u : ℝ × ℝ → V} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l T)
+    (hx : ContinuousOn x T) {l : Filter ℝ} {u : ℝ × ℝ → V}
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l T)
     (hδ : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (He t)) u (s, t)) 0 l T)
     {ε : ℝ} (hε : 0 < ε) :
@@ -120,8 +120,7 @@ theorem eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt (ω : Sym
         Floer.stationaryJetCoeff (fun t ↦ Je t (x t))
           (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)) (s, t)‖ < ε := by
   filter_upwards [ω.eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le hJe hHe hT
-    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt).continuousOn hux hδ
-    (by positivity : 0 < ε / 4)] with s hs t ht
+    hx hux hδ (by positivity : 0 < ε / 4)] with s hs t ht
   exact (norm_floerJetCoeff_sub_stationaryJetCoeff_le ω (by positivity) (hs t ht)).trans_lt
     (by linarith)
 
@@ -150,8 +149,9 @@ theorem eventually_forall_norm_floerJetCoeff_sub_lt_atBot (ω : SymplecticForm V
         ω.floerJetCoeff (fun w y ↦ (Jm w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ Hm w.2) (fun w ↦ xm w.2) (s, t)‖ < ε := by
   filter_upwards [eventually_le_atBot (-R),
-    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJm hHm isCompact_Icc hxm
-      huxm hδm hε] with s hsR hs t ht
+    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJm hHm isCompact_Icc
+      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt).continuousOn huxm hδm hε]
+    with s hsR hs t ht
   -- For `s ≤ -R` the data are the end data `(J₋_t, 0, H₋_t)`.
   rw [ω.floerJetCoeff_congr_data u
     (J' := fun w y ↦ (Jm w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
@@ -180,8 +180,9 @@ theorem eventually_forall_norm_floerJetCoeff_sub_lt_atTop (ω : SymplecticForm V
         ω.floerJetCoeff (fun w y ↦ (Jp w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ Hp w.2) (fun w ↦ xp w.2) (s, t)‖ < ε := by
   filter_upwards [eventually_ge_atTop R,
-    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJp hHp isCompact_Icc hxp
-      huxp hδp hε] with s hsR hs t ht
+    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJp hHp isCompact_Icc
+      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt).continuousOn huxp hδp hε]
+    with s hsR hs t ht
   -- For `s ≥ R` the data are the end data `(J₊_t, 0, H₊_t)`.
   rw [ω.floerJetCoeff_congr_data u
     (J' := fun w y ↦ (Jp w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
