@@ -71,8 +71,8 @@ example : letI : CompactSpace cantorSet := isCompact_iff_compactSpace.1 isCompac
 example (n : ℕ) : IsAF (CStarMatrix (Fin n) (Fin n) ℂ × CARAlgebra) :=
   isAF_of_finiteDimensional.prod CStarInductiveLimit.isAF
 
-/-- The minimal unitization of an AF algebra is AF. -/
-example (n : ℕ) : IsAF (Unitization ℂ (CStarMatrix (Fin n) (Fin n) ℂ)) :=
-  isAF_of_finiteDimensional.unitization
+/-- The minimal unitization of an AF algebra is AF, here for the CAR algebra. -/
+example : IsAF (Unitization ℂ CARAlgebra) :=
+  (CStarInductiveLimit.isAF : IsAF CARAlgebra).unitization
 
 end TauCeti

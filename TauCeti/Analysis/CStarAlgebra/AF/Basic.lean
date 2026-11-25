@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Analysis.CStarAlgebra.Unitization
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.Algebra.Star.NonUnitalSubalgebra.Finite
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -39,8 +39,6 @@ finite-dimensional C⋆-subalgebras.
   ⋆-homomorphisms and is invariant under ⋆-isomorphisms.
 * `TauCeti.IsAF.prod`, `TauCeti.IsAF.unitization`: products of two AF algebras and minimal
   unitizations of AF algebras are AF.
-* `NonUnitalStarSubalgebra.isClosed_of_finiteDimensional`: finite-dimensional ⋆-subalgebras are
-  closed, so the stages of an AF algebra are C⋆-subalgebras.
 * `TauCeti.IsAF.separableSpace`: an AF algebra is separable.
 * `TauCeti.IsAF.exists_finiteDimensional_approx`: in an AF algebra every finite subset is
   approximated to every positive tolerance inside a finite-dimensional C⋆-subalgebra.
@@ -48,7 +46,7 @@ finite-dimensional C⋆-subalgebras.
 ## References
 
 * O. Bratteli, *Inductive limits of finite dimensional C*-algebras*, Trans. Amer. Math. Soc. 171
-  (1972), 195–234: Theorem 2.2 (the local characterization) and Theorem 3.3 (ideals).
+  (1972), 195–234: Theorem 2.2 (the local characterization).
 -/
 
 public section
@@ -76,58 +74,13 @@ theorem isAF_iff : IsAF A ↔ ∃ S : ℕ → NonUnitalStarSubalgebra ℂ A,
 
 end TauCeti
 
-namespace NonUnitalStarSubalgebra
-
-variable {R A B : Type*} [Field R] [NonUnitalRing A] [StarRing A] [Module R A]
-  [NonUnitalRing B] [StarRing B] [Module R B]
-
-/-- A ⋆-subalgebra is finite-dimensional exactly when its underlying submodule is. -/
-theorem finiteDimensional_iff_toSubmodule (S : NonUnitalStarSubalgebra R A) :
-    FiniteDimensional R S ↔ FiniteDimensional R S.toNonUnitalSubalgebra.toSubmodule :=
-  Iff.rfl
-
-/-- A ⋆-subalgebra of a finite-dimensional ⋆-algebra is finite-dimensional. -/
-instance instFiniteDimensional [FiniteDimensional R A] (S : NonUnitalStarSubalgebra R A) :
-    FiniteDimensional R S :=
-  inferInstanceAs (FiniteDimensional R S.toNonUnitalSubalgebra.toSubmodule)
-
-/-- The image of a finite-dimensional ⋆-subalgebra under a ⋆-homomorphism is finite-dimensional. -/
-instance instFiniteDimensionalMap (S : NonUnitalStarSubalgebra R A)
-    [h : FiniteDimensional R S] (f : A →⋆ₙₐ[R] B) : FiniteDimensional R (S.map f) := by
-  have : FiniteDimensional R S.toNonUnitalSubalgebra.toSubmodule := h
-  have e : (S.map f).toNonUnitalSubalgebra.toSubmodule =
-      S.toNonUnitalSubalgebra.toSubmodule.map (f : A →ₗ[R] B) := rfl
-  rw [finiteDimensional_iff_toSubmodule, e]
-  infer_instance
-
-/-- The product of two finite-dimensional ⋆-subalgebras is finite-dimensional. -/
-instance instFiniteDimensionalProd (S : NonUnitalStarSubalgebra R A)
-    (T : NonUnitalStarSubalgebra R B) [hS : FiniteDimensional R S] [hT : FiniteDimensional R T] :
-    FiniteDimensional R (S.prod T) := by
-  have : FiniteDimensional R S.toNonUnitalSubalgebra.toSubmodule := hS
-  have : FiniteDimensional R T.toNonUnitalSubalgebra.toSubmodule := hT
-  have e : (S.prod T).toNonUnitalSubalgebra.toSubmodule =
-      S.toNonUnitalSubalgebra.toSubmodule.prod T.toNonUnitalSubalgebra.toSubmodule := rfl
-  rw [finiteDimensional_iff_toSubmodule, e]
-  exact (Submodule.prodEquiv _ _).symm.finiteDimensional
-
-/-- A finite-dimensional ⋆-subalgebra of a Hausdorff topological ⋆-algebra over a complete field
-is closed. -/
-theorem isClosed_of_finiteDimensional {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [TopologicalSpace A] [T2Space A] [IsTopologicalAddGroup A] [Module 𝕜 A] [ContinuousSMul 𝕜 A]
-    (S : NonUnitalStarSubalgebra 𝕜 A) [h : FiniteDimensional 𝕜 S] : IsClosed (S : Set A) :=
-  have : FiniteDimensional 𝕜 S.toNonUnitalSubalgebra.toSubmodule := h
-  S.toNonUnitalSubalgebra.toSubmodule.isClosed_of_finiteDimensional
-
-end NonUnitalStarSubalgebra
-
 namespace TauCeti
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
 /-- A finite-dimensional C⋆-algebra is AF, with every stage the whole algebra. -/
 theorem isAF_of_finiteDimensional [FiniteDimensional ℂ A] : IsAF A :=
-  ⟨fun _ ↦ ⊤, monotone_const, fun _ ↦ NonUnitalStarSubalgebra.instFiniteDimensional _,
+  ⟨fun _ ↦ ⊤, monotone_const, fun _ ↦ inferInstance,
     by simpa only [NonUnitalStarAlgebra.coe_top, iUnion_const] using dense_univ⟩
 
 namespace IsAF
@@ -140,7 +93,7 @@ are AF. -/
 theorem of_surjective (hA : IsAF A) (f : A →⋆ₙₐ[ℂ] B) (hf : Function.Surjective f) : IsAF B := by
   obtain ⟨S, hmono, hfin, hdense⟩ := hA
   refine ⟨fun n ↦ (S n).map f, fun m n h ↦ NonUnitalStarSubalgebra.map_mono (hmono h),
-    fun n ↦ have := hfin n; (S n).instFiniteDimensionalMap f, ?_⟩
+    fun n ↦ have := hfin n; inferInstance, ?_⟩
   have h : (⋃ n, (((S n).map f : NonUnitalStarSubalgebra ℂ B) : Set B)) =
         f '' ⋃ n, (S n : Set A) := by
     simp [image_iUnion]
@@ -164,7 +117,7 @@ theorem prod (hA : IsAF A) (hB : IsAF B) : IsAF (A × B) := by
   obtain ⟨S, hS, hSfin, hSdense⟩ := hA
   obtain ⟨T, hT, hTfin, hTdense⟩ := hB
   refine ⟨fun n ↦ (S n).prod (T n), fun m n h ↦ NonUnitalStarSubalgebra.prod_mono (hS h) (hT h),
-    fun n ↦ have := hSfin n; have := hTfin n; (S n).instFiniteDimensionalProd (T n), ?_⟩
+    fun n ↦ have := hSfin n; have := hTfin n; inferInstance, ?_⟩
   refine (hSdense.prod hTdense).mono ?_
   rintro ⟨a, b⟩ ⟨ha, hb⟩
   obtain ⟨m, ha⟩ := mem_iUnion.1 ha
@@ -198,24 +151,23 @@ theorem separableSpace (hA : IsAF A) : SeparableSpace A := by
 theorem unitization (hA : IsAF A) : IsAF (Unitization ℂ A) := by
   obtain ⟨S, hmono, hfin, hdense⟩ := hA
   let ι (n : ℕ) := Unitization.starMap (NonUnitalStarSubalgebraClass.subtype (S n))
-  let T (n : ℕ) : NonUnitalStarSubalgebra ℂ (Unitization ℂ A) :=
-    (⊤ : NonUnitalStarSubalgebra ℂ (Unitization ℂ (S n))).map (ι n).toNonUnitalStarAlgHom
+  let T (n : ℕ) : NonUnitalStarSubalgebra ℂ (Unitization ℂ A) := (ι n).toNonUnitalStarAlgHom.range
   have hT (n : ℕ) (x : Unitization ℂ A) : x ∈ T n ↔ x.snd ∈ S n := by
-    refine ⟨?_, fun hx ↦ ⟨Unitization.inl x.fst + Unitization.inr ⟨x.snd, hx⟩, trivial, ?_⟩⟩
-    · rintro ⟨y, -, rfl⟩
-      exact (show (ι n y).snd ∈ S n by simp [ι])
-    · exact (show ι n (Unitization.inl x.fst + Unitization.inr ⟨x.snd, hx⟩) = x by
-        ext <;> simp [ι])
+    rw [NonUnitalStarAlgHom.mem_range, StarAlgHom.coe_toNonUnitalStarAlgHom]
+    refine ⟨?_, fun hx ↦ ⟨Unitization.inl x.fst + Unitization.inr ⟨x.snd, hx⟩, ?_⟩⟩
+    · rintro ⟨y, rfl⟩
+      simp [ι]
+    · ext <;> simp [ι]
   refine ⟨T, fun m n h x ↦ by simpa only [hT] using fun hx ↦ hmono h hx, fun n ↦ ?_, ?_⟩
   · have := hfin n
     have : FiniteDimensional ℂ (Unitization ℂ (S n)) :=
       (Unitization.linearEquiv ℂ ℂ (S n)).symm.finiteDimensional
-    exact NonUnitalStarSubalgebra.instFiniteDimensionalMap _ _
-  · have h : (⋃ n, (T n : Set (Unitization ℂ A))) =
+    infer_instance
+  · have he (x : Unitization ℂ A) : Unitization.uniformEquivProd x = (x.fst, x.snd) := rfl
+    have h : (⋃ n, (T n : Set (Unitization ℂ A))) =
         Unitization.uniformEquivProd ⁻¹' (univ ×ˢ ⋃ n, (S n : Set A)) := by
       ext x
-      simp only [mem_iUnion, SetLike.mem_coe, hT, mem_preimage, mem_prod, mem_univ, true_and]
-      rfl
+      simp only [mem_iUnion, SetLike.mem_coe, hT, mem_preimage, he, mem_prod, mem_univ, true_and]
     rw [h]
     exact (dense_univ.prod hdense).preimage Unitization.uniformEquivProd.toHomeomorph.isOpenMap
 

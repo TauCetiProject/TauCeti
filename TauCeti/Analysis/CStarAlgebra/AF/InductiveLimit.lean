@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.AF.Basic
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Sequential
+import TauCeti.Topology.Algebra.NonUnitalStarAlgebra.FiniteDimensional
 
 /-!
 # AF algebras as inductive limits
@@ -48,23 +49,18 @@ theorem CStarInductiveLimit.isAF {T : ∀ ⦃i j : ℕ⦄, i ≤ j → Type*} {f
     [∀ i j (h : i ≤ j), NonUnitalAlgHomClass (T h) ℂ (A i) (A j)]
     [∀ i j (h : i ≤ j), StarHomClass (T h) (A i) (A j)] [DirectedSystem A (f · · ·)] :
     IsAF (CStarInductiveLimit A f) := by
-  refine isAF_iff.2
-    ⟨fun n ↦ (⊤ : NonUnitalStarSubalgebra ℂ (A n)).map (CStarInductiveLimit.of A f n),
-    fun m n h x hx ↦ ?_, fun n ↦ NonUnitalStarSubalgebra.instFiniteDimensionalMap _ _, ?_⟩
-  · obtain ⟨a, -, rfl⟩ := hx
-    exact ⟨f m n h a, trivial, CStarInductiveLimit.of_f h a⟩
-  · simpa [NonUnitalStarSubalgebra.coe_map] using CStarInductiveLimit.dense_iUnion_range_of A f
+  refine isAF_iff.2 ⟨fun n ↦ (CStarInductiveLimit.of A f n).range, fun m n h x hx ↦ ?_,
+    fun _ ↦ inferInstance, ?_⟩
+  · obtain ⟨a, rfl⟩ := hx
+    exact ⟨f m n h a, CStarInductiveLimit.of_f h a⟩
+  · simpa [NonUnitalStarAlgHom.coe_range] using CStarInductiveLimit.dense_iUnion_range_of A f
 
-/-- A C⋆-algebra carrying a sequential colimit cocone of finite-dimensional C⋆-algebras is AF: its
-stages are the images of the cocone maps. -/
+/-- A C⋆-algebra carrying a sequential colimit cocone of finite-dimensional C⋆-algebras is AF,
+being ⋆-isomorphic to the C⋆-inductive limit of the cocone's system. -/
 theorem IsSeqColimitCocone.isAF {C : Type*} [NonUnitalCStarAlgebra C]
     {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {ι : ∀ n, A n →⋆ₙₐ[ℂ] C} (hι : IsSeqColimitCocone α ι) :
-    IsAF C := by
-  refine isAF_iff.2 ⟨fun n ↦ (⊤ : NonUnitalStarSubalgebra ℂ (A n)).map (ι n),
-    fun m n h x hx ↦ ?_, fun n ↦ NonUnitalStarSubalgebra.instFiniteDimensionalMap _ _, ?_⟩
-  · obtain ⟨a, -, rfl⟩ := hx
-    exact ⟨seqTransHom α h a, trivial, hι.comp_seqTransHom_apply h a⟩
-  · simpa [NonUnitalStarSubalgebra.coe_map] using hι.dense_iUnion_range
+    IsAF C :=
+  ((CStarInductiveLimit.isSeqColimitCocone_of α).equiv hι).isAF_iff.1 CStarInductiveLimit.isAF
 
 end Limit
 
