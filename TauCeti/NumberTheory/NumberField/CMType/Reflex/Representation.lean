@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Unramified.Basic
-public import TauCeti.NumberTheory.NumberField.CMType.ReflexField
+public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import Mathlib.RingTheory.Unramified.Field
 import Mathlib.RingTheory.Unramified.Pi
 import TauCeti.RingTheory.Unramified.TraceRepresentation
@@ -107,17 +107,19 @@ end Finite
 noncomputable def typeRepresentation (Φ : CMType E) : E →+* Module.End ℂ (Φ → ℂ) :=
   (Algebra.lmul ℂ (Φ → ℂ)).toRingHom.comp (RingHom.pi fun φ : Φ ↦ (φ : E →+* ℂ))
 
+@[simp]
 theorem typeRepresentation_apply (Φ : CMType E) (a : E) (v : Φ → ℂ) (φ : Φ) :
     Φ.typeRepresentation a v φ = (φ : E →+* ℂ) a * v φ :=
   (rfl)
 
 /-- **`ℂ^Φ` has the type trace**: the trace of `a` on `ℂ^Φ` is `∑_{φ ∈ Φ} φ a`. -/
+@[simp]
 theorem trace_typeRepresentation [Finite (E →+* ℂ)] (Φ : CMType E) (a : E) :
     LinearMap.trace ℂ (Φ → ℂ) (Φ.typeRepresentation a) = Φ.typeTrace a := by
   classical
-  have : Fintype Φ := Fintype.ofFinite Φ
-  rw [LinearMap.trace_eq_matrix_trace ℂ (Pi.basisFun ℂ Φ), typeTrace_apply,
-    finsum_mem_eq_toFinset_sum, ← Finset.sum_set_coe]
-  simp [Matrix.trace, typeRepresentation_apply]
+  have := Fintype.ofFinite (E →+* ℂ)
+  rw [LinearMap.trace_eq_matrix_trace ℂ (Pi.basisFun ℂ Φ), typeTrace_eq_sum,
+    ← Finset.sum_subtype_eq_sum_filter]
+  simp [Matrix.trace]
 
 end TauCeti.CMType

@@ -8,9 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.Unramified.Basic
 import Mathlib.Algebra.Algebra.Hom.Rat
-import Mathlib.RingTheory.Unramified.Field
-import Mathlib.RingTheory.Unramified.Finite
 import TauCeti.RingTheory.Semisimple.Trace.Basic
+import TauCeti.RingTheory.Unramified.Field
 
 /-!
 # Representations of an unramified algebra are determined by their traces
@@ -68,9 +67,6 @@ theorem exists_linearEquiv_of_trace_eq [Module.Finite ℚ E] [Algebra.FormallyUn
     (ρ : E →+* Module.End k V) (ρ' : E →+* Module.End k W)
     (h : ∀ a, LinearMap.trace k V (ρ a) = LinearMap.trace k W (ρ' a)) :
     ∃ e : V ≃ₗ[k] W, ∀ a v, e (ρ a v) = ρ' a (e v) := by
-  have : IsReduced (k ⊗[ℚ] E) := Algebra.FormallyUnramified.isReduced_of_field k _
-  have : IsArtinianRing (k ⊗[ℚ] E) := IsArtinianRing.of_finite k _
-  have : IsSemisimpleRing (k ⊗[ℚ] E) := IsArtinianRing.isSemisimpleRing_of_isReduced _
   let : Module (k ⊗[ℚ] E) V := Module.compHom V (tensorLift ρ : k ⊗[ℚ] E →+* Module.End k V)
   let : Module (k ⊗[ℚ] E) W := Module.compHom W (tensorLift ρ' : k ⊗[ℚ] E →+* Module.End k W)
   have hV (x : k ⊗[ℚ] E) (v : V) : x • v = tensorLift ρ x v := rfl
