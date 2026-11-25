@@ -33,6 +33,10 @@ endomorphism mapping a basis into itself, as the number of basis vectors it fixe
   to a basis vector `b (π i)` has trace the number of fixed points of `π`.
 * `LinearMap.trace_eq_neg_of_toMatrix_eq_neg_transpose`: endomorphisms with matrices `A` and
   `-Aᵀ` have opposite traces.
+* `LinearMap.trace_eq_neg_self_of_mul_eq_neg_mul`, `LinearMap.trace_eq_zero_of_mul_eq_neg_mul`:
+  an endomorphism anticommuting with an invertible endomorphism has opposite trace to itself,
+  hence trace zero when `R` has unique division by naturals (in particular in characteristic
+  zero).
 -/
 
 public section
@@ -122,5 +126,27 @@ theorem trace_eq_neg_of_toMatrix_eq_neg_transpose {R M N ι : Type*} [CommRing R
     (h : LinearMap.toMatrix b' b' g = -(LinearMap.toMatrix b b f)ᵀ) :
     trace R N g = -trace R M f := by
   simp [trace_eq_matrix_trace R b, trace_eq_matrix_trace R b', h]
+
+/-- An endomorphism that anticommutes with a unit endomorphism equals the negation of its own
+trace. -/
+theorem trace_eq_neg_self_of_mul_eq_neg_mul {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {J T : M →ₗ[R] M} (hJ : IsUnit J) (h : J * T = -(T * J)) :
+    trace R M T = -trace R M T := by
+  rcases hJ with ⟨u, rfl⟩
+  calc
+    trace R M T = trace R M (↑u⁻¹ * (↑u * T)) := by rw [← mul_assoc, Units.inv_mul, one_mul]
+    _ = trace R M ((↑u * T) * ↑u⁻¹) := trace_mul_comm R _ _
+    _ = trace R M (-T) := by rw [h, neg_mul, mul_assoc, Units.mul_inv, mul_one]
+    _ = -trace R M T := map_neg _ _
+
+/-- Over an additively torsion-free commutative ring (in particular any characteristic-zero
+domain), an endomorphism that anticommutes with a unit endomorphism has trace zero. -/
+theorem trace_eq_zero_of_mul_eq_neg_mul {R M : Type*} [CommRing R] [HasUniqueDiv R]
+    [AddCommGroup M] [Module R M] {J T : M →ₗ[R] M} (hJ : IsUnit J) (h : J * T = -(T * J)) :
+    trace R M T = 0 := by
+  refine nsmul_right_injective (by decide : (2 : ℕ) ≠ 0) ?_
+  dsimp only
+  rw [nsmul_zero, two_nsmul, add_eq_zero_iff_eq_neg]
+  exact trace_eq_neg_self_of_mul_eq_neg_mul hJ h
 
 end LinearMap

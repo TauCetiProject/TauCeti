@@ -33,6 +33,10 @@ This file develops the basic operations on Fredholm modules that preserve their 
   modules.
 * `FredholmModule.ofFiniteDimensional`: on a finite-dimensional Hilbert space every
   `*`-representation with every self-adjoint operator is a Fredholm module.
+* `FredholmModule.IsNormalized`, `FredholmModule.IsDegenerate`, `FredholmModule.zeroRep`:
+  involutive (`F² = 1`) and degenerate (`[F, π(a)] = 0`, `(F² - 1) π(a) = 0`) predicates and
+  zero-representation degenerate modules.
+* `EvenFredholmModule.flipGrading`: orientation reversal `γ ↦ -γ` of an even Fredholm module.
 
 Each construction has its even counterpart in the `EvenFredholmModule` namespace.
 
@@ -44,6 +48,11 @@ The defining conditions are one-sided, but the compact operators form a two-side
 
 * `TauCeti.FredholmModule A H`: an odd Fredholm module over `A` on `H`.
 * `TauCeti.EvenFredholmModule A H`: an even Fredholm module, with grading `γ`.
+* `TauCeti.FredholmModule.IsNormalized`, `TauCeti.FredholmModule.IsDegenerate`: normalized and
+  degenerate predicates (with `EvenFredholmModule` counterparts).
+* `TauCeti.FredholmModule.zeroRep`, `TauCeti.EvenFredholmModule.zeroRep`: zero-representation
+  degenerate modules.
+* `TauCeti.EvenFredholmModule.flipGrading`: grading sign reversal `γ ↦ -γ`.
 
 ## References
 
@@ -234,6 +243,94 @@ end Conj
 
 end CompleteSpace
 
+section PredicatesAndZeroRep
+
+variable [CompleteSpace H]
+
+/-- A Fredholm module is **normalized** (or involutive) when `F² = 1`. -/
+def IsNormalized (M : FredholmModule A H) : Prop :=
+  M.operator * M.operator = 1
+
+/-- Characterization of normalized Fredholm modules by `F² = 1` (not `@[simp]`, so conditional
+`@[simp]` lemmas taking `hM : M.IsNormalized` remain in `simp` normal form). -/
+theorem isNormalized_iff {M : FredholmModule A H} :
+    M.IsNormalized ↔ M.operator * M.operator = 1 :=
+  (Iff.rfl)
+
+@[simp]
+theorem IsNormalized.operator_mul_operator {M : FredholmModule A H} (hM : M.IsNormalized) :
+    M.operator * M.operator = 1 :=
+  hM
+
+theorem IsNormalized.isCompactOperator_mul_self_sub_one {M : FredholmModule A H}
+    (hM : M.IsNormalized) : IsCompactOperator ⇑(M.operator * M.operator - 1) := by
+  rw [hM.operator_mul_operator, sub_self]
+  exact isCompactOperator_zero
+
+/-- A Fredholm module is **degenerate** when `[F, π(a)] = 0` and `(F² - 1) π(a) = 0` for every
+`a : A`. -/
+structure IsDegenerate (M : FredholmModule A H) : Prop where
+  commutator_eq_zero (a : A) : M.operator * M.rep a - M.rep a * M.operator = 0
+  mul_self_sub_one_mul_eq_zero (a : A) : (M.operator * M.operator - 1) * M.rep a = 0
+
+theorem IsDegenerate.commute_operator_rep {M : FredholmModule A H} (hM : M.IsDegenerate) (a : A) :
+    Commute M.operator (M.rep a) :=
+  sub_eq_zero.mp (hM.commutator_eq_zero a)
+
+theorem IsDegenerate.rep_mul_mul_self_sub_one_eq_zero {M : FredholmModule A H}
+    (hM : M.IsDegenerate) (a : A) :
+    M.rep a * (M.operator * M.operator - 1) = 0 := by
+  have h := congrArg star (hM.mul_self_sub_one_mul_eq_zero (star a))
+  rwa [star_mul, map_star, star_star, star_sub, star_mul, star_one, M.star_operator,
+    star_zero] at h
+
+section ConjPredicates
+
+variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+
+theorem IsNormalized.conj {M : FredholmModule A H} (hM : M.IsNormalized) (U : H ≃ₗᵢ[ℂ] H') :
+    (M.conj U).IsNormalized := by
+  rw [IsNormalized, conj_operator, ← map_mul, hM.operator_mul_operator, map_one]
+
+theorem IsDegenerate.conj {M : FredholmModule A H} (hM : M.IsDegenerate) (U : H ≃ₗᵢ[ℂ] H') :
+    (M.conj U).IsDegenerate where
+  commutator_eq_zero a := by
+    rw [conj_operator, conj_rep_apply, ← map_mul, ← map_mul, ← map_sub,
+      hM.commutator_eq_zero a, map_zero]
+  mul_self_sub_one_mul_eq_zero a := by
+    rw [conj_operator, conj_rep_apply, ← map_mul, ← map_one U.conjStarAlgEquiv, ← map_sub,
+      ← map_mul, hM.mul_self_sub_one_mul_eq_zero a, map_zero]
+
+end ConjPredicates
+
+variable (A) in
+/-- The degenerate Fredholm module with zero representation `π = 0` and a given self-adjoint
+operator `F`. -/
+def zeroRep (F : H →L[ℂ] H) (hF : IsSelfAdjoint F) : FredholmModule A H where
+  rep :=
+    { (0 : A →ₙₐ[ℂ] H →L[ℂ] H) with
+      map_star' _ := by simp }
+  operator := F
+  isSelfAdjoint_operator := hF
+  isCompactOperator_commutator _ := by simp [isCompactOperator_zero]
+  isCompactOperator_mul_self_sub_one_mul _ := by simp [isCompactOperator_zero]
+
+@[simp]
+theorem zeroRep_rep_apply (F : H →L[ℂ] H) (hF : IsSelfAdjoint F) (a : A) :
+    (zeroRep A F hF).rep a = 0 :=
+  (rfl)
+
+@[simp]
+theorem zeroRep_operator (F : H →L[ℂ] H) (hF : IsSelfAdjoint F) : (zeroRep A F hF).operator = F :=
+  (rfl)
+
+theorem isDegenerate_zeroRep (F : H →L[ℂ] H) (hF : IsSelfAdjoint F) :
+    (zeroRep A F hF).IsDegenerate where
+  commutator_eq_zero _ := by simp
+  mul_self_sub_one_mul_eq_zero _ := by simp
+
+end PredicatesAndZeroRep
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℂ H]
@@ -381,7 +478,74 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
 
 end Conj
 
+/-- Reversing the sign of the grading `γ ↦ -γ` reverses the orientation of an even Fredholm
+module. -/
+def flipGrading : EvenFredholmModule A H where
+  toFredholmModule := M.toFredholmModule
+  grading := -M.grading
+  isSelfAdjoint_grading := M.isSelfAdjoint_grading.neg
+  grading_mul_grading := by rw [neg_mul_neg, M.grading_mul_grading]
+  commute_grading_rep a := (M.commute_grading_rep a).neg_left
+  grading_mul_operator := by rw [neg_mul, mul_neg, M.grading_mul_operator]
+
+@[simp]
+theorem flipGrading_toFredholmModule : M.flipGrading.toFredholmModule = M.toFredholmModule :=
+  (rfl)
+
+@[simp]
+theorem flipGrading_grading : M.flipGrading.grading = -M.grading :=
+  (rfl)
+
+@[simp]
+theorem flipGrading_flipGrading : M.flipGrading.flipGrading = M := by
+  ext1 <;> simp
+
 end CompleteSpace
+
+section PredicatesAndZeroRep
+
+variable [CompleteSpace H]
+
+/-- An even Fredholm module is **normalized** when its underlying operator satisfies `F² = 1`. -/
+abbrev IsNormalized (M : EvenFredholmModule A H) : Prop :=
+  M.toFredholmModule.IsNormalized
+
+theorem isNormalized_iff {M : EvenFredholmModule A H} :
+    M.IsNormalized ↔ M.operator * M.operator = 1 :=
+  (Iff.rfl)
+
+/-- An even Fredholm module is **degenerate** when `[F, π(a)] = 0` and `(F² - 1) π(a) = 0` for
+every `a : A`. -/
+abbrev IsDegenerate (M : EvenFredholmModule A H) : Prop :=
+  M.toFredholmModule.IsDegenerate
+
+variable (A) in
+/-- The degenerate even Fredholm module with zero representation `π = 0`, operator `F`, and
+grading `γ` anticommuting with `F`. -/
+def zeroRep (F γ : H →L[ℂ] H) (hF : IsSelfAdjoint F) (hγ : IsSelfAdjoint γ) (hγγ : γ * γ = 1)
+    (hγF : γ * F = -(F * γ)) : EvenFredholmModule A H where
+  toFredholmModule := FredholmModule.zeroRep A F hF
+  grading := γ
+  isSelfAdjoint_grading := hγ
+  grading_mul_grading := hγγ
+  commute_grading_rep _ := Commute.zero_right γ
+  grading_mul_operator := hγF
+
+@[simp]
+theorem zeroRep_toFredholmModule (F γ : H →L[ℂ] H) (hF hγ hγγ hγF) :
+    (zeroRep A F γ hF hγ hγγ hγF).toFredholmModule = FredholmModule.zeroRep A F hF :=
+  (rfl)
+
+@[simp]
+theorem zeroRep_grading (F γ : H →L[ℂ] H) (hF hγ hγγ hγF) :
+    (zeroRep A F γ hF hγ hγγ hγF).grading = γ :=
+  (rfl)
+
+theorem isDegenerate_zeroRep (F γ : H →L[ℂ] H) (hF hγ hγγ hγF) :
+    (zeroRep A F γ hF hγ hγγ hγF).IsDegenerate :=
+  FredholmModule.isDegenerate_zeroRep F hF
+
+end PredicatesAndZeroRep
 
 section FiniteDimensional
 
