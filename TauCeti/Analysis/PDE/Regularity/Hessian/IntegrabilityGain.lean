@@ -336,35 +336,14 @@ theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E →L[�
     _ = lam⁻¹ * ‖B‖ := by
         rw [mul_comm ‖B‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
 
-/-- The coefficient field `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` of the equation for `u ∘ e`. -/
-private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
-    (ha : AEStronglyMeasurable a volume) (e : E ≃L[ℝ] E) :
-    AEStronglyMeasurable (fun y ↦ (e.symm : E →L[ℝ] E) ∘L ((2⁻¹ : ℝ) • (a (e y) +
-      (a (e y)).adjoint)) ∘L (e.symm : E →L[ℝ] E).adjoint) volume := by
-  have hΦ : Continuous fun X : E →L[ℝ] E ↦ (e.symm : E →L[ℝ] E) ∘L ((2⁻¹ : ℝ) • (X + X.adjoint))
-      ∘L (e.symm : E →L[ℝ] E).adjoint :=
-    continuous_const.clm_comp
-      (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
-        continuous_const)
-  exact hΦ.comp_aestronglyMeasurable
-    (ha.comp_quasiMeasurePreserving (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar _ _))
-
-/-- Transporting back along `e`: if `v' ∈ W^{2,r}(E)` has value `u ∘ e`, then some `v ∈ W^{2,r}(E)`
-has value `u`. -/
-private theorem exists_value_ae_eq_of_value_ae_eq_comp {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr_top : r ≠ ⊤)
-    (e : E ≃L[ℝ] E) {g : E → ℝ} {v' : Wkp (volume : Measure E) ⊤ r 2}
-    (hv' : (Wkp.value 2 v' : E → ℝ) =ᵐ[volume] fun y ↦ g (e y)) :
-    ∃ v : Wkp (volume : Measure E) ⊤ r 2, (Wkp.value 2 v : E → ℝ) =ᵐ[volume] g := by
-  obtain ⟨v, hv, -, -⟩ :=
-    Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hr_top e.symm (U := ⊤) (W := ⊤)
-      (by simp) v'
-  rw [Measure.ae_restrict_coe_opens_top] at hv
-  refine ⟨v, ?_⟩
-  filter_upwards [hv,
-    (e.symm.toContinuousAddEquiv.quasiMeasurePreserving_addHaar volume volume).ae hv']
-    with y h₁ h₂
-  rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at h₂
-  rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The coefficient `N ((X + X†) / 2) N†` of the equation after a linear change of variables
+depends continuously on `X`. -/
+theorem continuous_conj_symmPart (N : E →L[ℝ] E) :
+    Continuous fun X : E →L[ℝ] E ↦ N ∘L ((2⁻¹ : ℝ) • (X + X.adjoint)) ∘L N.adjoint :=
+  continuous_const.clm_comp
+    (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
+      continuous_const)
 
 /-- **Integrability gain for strong solutions with coefficients close to a frozen elliptic
 operator** (Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, r < ∞`. There is `δ > 0`, depending only
@@ -406,7 +385,10 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
   have hadj := hqe.ae ((Measure.ae_restrict_coe_opens_top (volume : Measure E)) ▸
     Wkp.adjoint_iteratedGradient_one_ae_eq u)
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` close to `1`.
-  obtain ⟨v', hv', -⟩ := hid _ (aestronglyMeasurable_conj_symmPart ha e)
+  obtain ⟨v', hv', -⟩ := hid (fun y ↦ (e.symm : E →L[ℝ] E) ∘L ((2⁻¹ : ℝ) • (a (e y) +
+      (a (e y)).adjoint)) ∘L (e.symm : E →L[ℝ] E).adjoint)
+    ((continuous_conj_symmPart _).comp_aestronglyMeasurable
+      (ha.comp_quasiMeasurePreserving hqe))
     (by
       filter_upwards [hqe.ae haA] with y hy
       refine (norm_conj_symmPart_sub_id_le hlam e hee he (a (e y))).trans ?_
@@ -418,7 +400,11 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
       filter_upwards [hwD, hadj, hqe.ae htr] with y h₁ h₂ h₃
       rw [h₁, ← traceCLM_apply, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id
         hMN, ContinuousLinearMap.traceCLM_symmPart_comp _ _ h₂, traceCLM_apply, h₃])
-  obtain ⟨v, hv⟩ := exists_value_ae_eq_of_value_ae_eq_comp hr_top e (hv'.trans hwv)
+  -- Composing back with `e⁻¹` gives `v ∈ W^{2,r}(E)` with value `u`.
+  obtain ⟨v, hv⟩ := Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv hr_top e
+    (U := ⊤) (W := ⊤) (by simp) (g := Wkp.value 2 u)
+    (by rw [Measure.ae_restrict_coe_opens_top]; exact hv'.trans hwv)
+  rw [Measure.ae_restrict_coe_opens_top] at hv
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq hv⟩
 
 end TauCeti

@@ -42,6 +42,8 @@ preserved because `e` is a homeomorphism (`TauCeti.W1p.compL_mem_w1p0Submodule`)
   `W^{1,p}` function whose weak gradient is given by the weak Hessian of `u`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
+* `TauCeti.Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv`: if `u ∘ e` lies in
+  `W^{2,p}(e⁻¹(W))`, then `u` lies in `W^{2,p}(W)`.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
 
@@ -118,7 +120,7 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 
 /-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
 `U = e⁻¹(W)`. -/
-private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
+theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
     (hUW : (U : Set E) = e ⁻¹' W) :
     QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
   (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
@@ -228,6 +230,22 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
   · rw [Wkp.firstOrder_one, hw]
     exact compCLE_mem_w1p0Submodule hp e hUW hu
+
+/-- **Transporting back along a linear automorphism.** Let `U = e⁻¹(W)`. If `v' ∈ W^{2,p}(U)` has
+the value of `g ∘ e`, then some `v ∈ W^{2,p}(W)` has the value of `g`. -/
+theorem Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤)
+    (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W) {g : E → ℝ} {v' : Wkp mu U p 2}
+    (hv' : Wkp.value 2 v' =ᵐ[mu.restrict U] fun y => g (e y)) :
+    ∃ v : Wkp mu W p 2, Wkp.value 2 v =ᵐ[mu.restrict W] g := by
+  have hWU : (W : Set E) = e.symm ⁻¹' U := by
+    rw [hUW, ← preimage_comp]
+    ext x
+    simp
+  obtain ⟨v, hv, -, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp e.symm hWU v'
+  refine ⟨v, ?_⟩
+  filter_upwards [hv, (quasiMeasurePreserving_restrict_of_coe_eq_preimage e.symm hWU).ae hv']
+    with y h₁ h₂
+  rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
 
 /-! ### Transferring Hessian estimates along a linear change of variables -/
 
