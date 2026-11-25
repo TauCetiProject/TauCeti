@@ -189,6 +189,10 @@ theorem mvfderiv_intervalDefiningFunction_one (x : Icc a b) :
 `b = 1` this is `x (1 - x)` on `[0, 1]`. -/
 theorem isBoundaryDefiningFunctionOn_interval :
     IsBoundaryDefiningFunctionOn 0 (intervalDefiningFunction a b) univ where
+  -- The boundary and interior facts `hx` below are at the model `𝓡∂ (0 + 1)` with the charts
+  -- `instChartedSpaceIccZeroAddOne`. `Icc_isBoundaryPoint_iff` and `Icc_isInteriorPoint_iff` are
+  -- stated at Mathlib's `𝓡∂ 1` and its interval charts, and apply here because these models and
+  -- charts agree by definition.
   isOpen := isOpen_univ
   contMDiffOn := (contDiff_sub_mul_sub.contMDiff.comp contMDiff_subtypeVal_Icc).contMDiffOn
   pos x _ hx := by

@@ -46,9 +46,7 @@ instance instIsManifoldIccZeroAddOne {k : ℕ∞ω} : IsManifold (𝓡∂ (0 + 1
 @[simp]
 theorem Icc_isBoundaryPoint_iff (x : Icc a b) :
     (𝓡∂ 1).IsBoundaryPoint x ↔ (x : ℝ) = a ∨ (x : ℝ) = b :=
-  (Set.ext_iff.1 boundary_Icc x).trans <| by
-    rw [mem_insert_iff, mem_singleton_iff, Subtype.ext_iff, Subtype.ext_iff, Icc.coe_bot,
-      Icc.coe_top]
+  (Set.ext_iff.1 boundary_Icc x).trans <| by simp [Subtype.ext_iff]
 
 /-- A point of `[a, b]` is a manifold interior point exactly when it lies strictly between the
 endpoints. -/
