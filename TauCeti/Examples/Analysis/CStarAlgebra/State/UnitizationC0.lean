@@ -14,8 +14,9 @@ import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 On `c₀ = C₀(ℕ, ℂ)`, ordered by its spectral order, `τ(f) = Σₙ 2⁻⁽ⁿ⁺¹⁾ f(n)` is a faithful positive
 functional (`faithfulFunctional`, `eq_zero_of_faithfulFunctional_star_mul_self_eq_zero`). Since `c₀`
-has no unit (`no_identity`), its extension `τ⁺¹` to the unitization `Unitization ℂ C₀(ℕ, ℂ)` is
-faithful too, by `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`
+has no unit (`ZeroAtInftyContinuousMap.not_exists_identity`), its extension `τ⁺¹` to the
+unitization `Unitization ℂ C₀(ℕ, ℂ)` is faithful too, by
+`PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`
 (`eq_zero_of_unitization_faithfulFunctional_star_mul_self_eq_zero`). The identification of this
 unitization with the space `c` of convergent sequences is not formalized here.
 -/
@@ -82,19 +83,12 @@ theorem eq_zero_of_faithfulFunctional_star_mul_self_eq_zero (g : C₀(ℕ, ℂ))
   have := congrFun hz n
   simpa [w] using this
 
-/-- **`c₀` has no unit**: no element of `c₀` is a two-sided multiplicative identity. -/
-theorem no_identity : ¬∃ e : C₀(ℕ, ℂ), ∀ a : C₀(ℕ, ℂ), e * a = a ∧ a * e = a := by
-  rintro ⟨e, he⟩
-  have h1 (n : ℕ) : e n = 1 := by
-    simpa using congrArg (· n) (he (ZeroAtInftyContinuousMap.single n 1)).1
-  exact one_ne_zero <|
-    tendsto_nhds_unique (tendsto_const_nhds.congr fun n ↦ (h1 n).symm) e.tendsto_cofinite
-
 /-- **Faithfulness of `τ⁺¹` on the unitization of `c₀`.** The extension `τ⁺¹` of the faithful
 functional `τ` to `Unitization ℂ C₀(ℕ, ℂ)` vanishes on `x⋆ x` only for `x = 0`. -/
 theorem eq_zero_of_unitization_faithfulFunctional_star_mul_self_eq_zero
     {x : Unitization ℂ C₀(ℕ, ℂ)} (hx : faithfulFunctional.unitization (star x * x) = 0) : x = 0 :=
   faithfulFunctional.eq_zero_of_unitization_map_star_mul_self_eq_zero
-    eq_zero_of_faithfulFunctional_star_mul_self_eq_zero no_identity hx
+    eq_zero_of_faithfulFunctional_star_mul_self_eq_zero
+    ZeroAtInftyContinuousMap.not_exists_identity hx
 
 end TauCeti.UnitizationC0Example
