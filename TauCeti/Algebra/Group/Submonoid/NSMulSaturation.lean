@@ -34,7 +34,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 ## Main results
 
-* `AddSubmonoid.nsmulSaturated_map_prod_id`: a swapped graph preserves and reflects saturation.
+* `AddSubmonoid.nsmulSaturated_map_prod_id`: the image of a submonoid under `n ↦ (f n, n)`
+  is saturated exactly when the submonoid is saturated.
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
@@ -318,9 +319,8 @@ end Submonoid
 
 namespace AddSubmonoid
 
-/-- The graph of an additive map, with the source coordinate second, is saturated exactly
-when the source monoid is saturated, provided nonzero natural multiples are injective in
-the first coordinate. -/
+/-- The image of `s` under `n ↦ (f n, n)` is `NSMulSaturated` exactly when `s` is,
+provided nonzero natural multiples are injective on the first coordinate `M`. -/
 theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
     [HasUniqueDiv M] (s : AddSubmonoid N) (f : N →+ M) :
     (s.map (f.prod (AddMonoidHom.id N))).NSMulSaturated ↔ s.NSMulSaturated := by
