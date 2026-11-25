@@ -64,8 +64,6 @@ basic example: the canonical form on `c₀ × c₀*` is not strongly nondegenera
 
 ## Main definitions
 
-* `TauCeti.strongDualCotangentSymplecticFormL`: the canonical form on `V × V*` as a continuous
-  bilinear map.
 * `TauCeti.strongDualCotangentSmoothForm`: the canonical form on `V × V*` as a constant smooth
   two-form.
 
@@ -103,26 +101,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-! ### The canonical form as a constant smooth two-form -/
 
 variable (V) in
-/-- The canonical symplectic form `((q, α), (q', β)) ↦ β(q) - α(q')` on `V × V*` as a continuous
-bilinear map. Its underlying bilinear form is `TauCeti.strongDualCotangentSymplecticForm`. -/
-def strongDualCotangentSymplecticFormL :
-    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
-  LinearMap.mkContinuous₂ (strongDualCotangentSymplecticForm (V := V)).toBilinForm 2 fun x y ↦ by
-    rw [show strongDualCotangentSymplecticForm.toBilinForm x y = y.2 x.1 - x.2 y.1 from
-      strongDualCotangentSymplecticForm_apply x y]
-    calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
-          (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
-      _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
-          gcongr
-          exacts [norm_snd_le y, norm_fst_le x, norm_snd_le x, norm_fst_le y]
-      _ = 2 * ‖x‖ * ‖y‖ := by ring
-
-@[simp]
-theorem strongDualCotangentSymplecticFormL_apply (x y : V × StrongDual ℝ V) :
-    strongDualCotangentSymplecticFormL V x y = strongDualCotangentSymplecticForm x y :=
-  (rfl)
-
-variable (V) in
 /-- The canonical symplectic form `((q, α), (q', β)) ↦ β(q) - α(q')` on `V × V*`, as a constant
 smooth two-form on the model manifold `V × V*`. In finite dimension it is
 `strongDualCotangentSymplecticForm.constSmooth`
@@ -137,7 +115,8 @@ theorem eval₂_strongDualCotangentSmoothForm (x : V × StrongDual ℝ V)
     (v w : TangentSpace 𝓘(ℝ, V × StrongDual ℝ V) x) :
     SmoothBundleForm.eval₂ (strongDualCotangentSmoothForm V) x v w =
       strongDualCotangentSymplecticForm (fromTangentSpace x v) (fromTangentSpace x w) :=
-  SmoothTwoForm.const_apply _ (fun _ ↦ by simp) x v w
+  (SmoothTwoForm.const_apply _ (fun _ ↦ by simp) x v w).trans
+    (strongDualCotangentSymplecticFormL_apply _ _)
 
 /-- The simp normal form of `TauCeti.eval₂_strongDualCotangentSmoothForm`, with `eval₂`
 unfolded. -/
@@ -203,8 +182,8 @@ theorem mem_range_flat_strongDualCotangentSmoothForm_iff {x : V × StrongDual �
     refine ⟨(fromTangentSpace x).symm (q, -a), ContinuousLinearMap.ext fun w ↦ ?_⟩
     have hw : w = (fromTangentSpace x).symm ((fromTangentSpace x w).1, 0) +
         (fromTangentSpace x).symm (0, (fromTangentSpace x w).2) := by
-      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.eta,
-        ContinuousLinearEquiv.symm_apply_apply]
+      rw [← map_add]
+      simp
     rw [flat_strongDualCotangentSmoothForm_apply, ContinuousLinearEquiv.apply_symm_apply]
     conv_rhs => rw [hw, map_add, hq]
     simp [a, sub_eq_add_neg, add_comm]
@@ -257,11 +236,8 @@ theorem isHamiltonianVectorField_strongDualCotangentSmoothForm (a : StrongDual �
   have hL : (fun x : V × StrongDual ℝ V ↦ a x.1 + x.2 b) = L := funext fun w ↦ (hLw w).symm
   refine SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ ?_
   obtain ⟨w, rfl⟩ := (fromTangentSpace x).symm.surjective v
-  rw [hL, mvfderiv_eq_fderiv, L.fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, hLw,
-    eval₂_strongDualCotangentSmoothForm, ContinuousLinearEquiv.apply_symm_apply,
-    ContinuousLinearEquiv.apply_symm_apply, strongDualCotangentSymplecticForm_apply]
-  simp [add_comm]
+  rw [hL, mvfderiv_eq_fderiv, L.fderiv]
+  simp [hLw, add_comm]
 
 /-- The Hamiltonian vector fields `(0, -a)` of the position coordinate `(q, α) ↦ a(q)` and
 `(b, 0)` of the momentum coordinate `(q, α) ↦ α(b)` pair under the canonical form to `a(b)`. -/
