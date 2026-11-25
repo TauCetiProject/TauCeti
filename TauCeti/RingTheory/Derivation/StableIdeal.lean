@@ -115,7 +115,8 @@ theorem algebraicIndependent_mk_of_forall_apply_mem {k R ι : Type*} [Field k] [
   intro p hp
   have hp' : p ∈ P.comap (aeval x) := by
     rw [Ideal.mem_comap, ← Ideal.Quotient.eq_zero_iff_mem, ← hp]
-    exact comp_aeval_apply (φ := Ideal.Quotient.mkₐ k P) x p
+    simpa [Ideal.Quotient.mkₐ_eq_mk, Function.comp_def] using
+      comp_aeval_apply (f := x) (Ideal.Quotient.mkₐ k P) p
   simpa [(Ideal.derivativeIdeal_le_self_iff.mp hJ).resolve_right hJ'] using hp'
 
 end TauCeti
