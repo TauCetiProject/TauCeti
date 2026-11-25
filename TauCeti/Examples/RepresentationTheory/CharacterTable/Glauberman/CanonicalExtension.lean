@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Affine.Basic
-public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.CanonicalExtension
+public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.CanonicalExtension.Basic
 
 /-!
 # Checks for Glauberman's canonical extension
