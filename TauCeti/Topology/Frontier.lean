@@ -85,15 +85,6 @@ continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; 
 puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
 needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
 
-## Membership is locally constant off the frontier
-
-Off the frontier of a set `s`, membership in `s` is locally constant
-(`TauCeti.eventually_mem_iff_of_notMem_frontier`), since such a point lies in `interior s` or in
-`interior sᶜ`. Conversely, a label `a : X → ι` that is locally constant at `x` puts `x` off the
-frontier of each of its fibres (`TauCeti.notMem_frontier_preimage_singleton_of_eventually`).
-Together they bound the frontiers of the atoms of a partition built from finitely many sets by the
-union of the frontiers of those sets.
-
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -128,10 +119,6 @@ let alone a holomorphic map.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
-* `TauCeti.eventually_mem_iff_of_notMem_frontier` — off the frontier of a set, membership in the
-  set is locally constant.
-* `TauCeti.notMem_frontier_preimage_singleton_of_eventually` — a label that is locally constant at
-  a point puts that point off the frontier of each of its fibres.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
@@ -381,41 +368,6 @@ theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y �
     exact hyD hy
 
 end DefiningFunction
-
-section LocallyConstant
-
-open Filter Topology
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- Off the frontier of a set, membership in the set is locally constant. -/
-theorem eventually_mem_iff_of_notMem_frontier {s : Set X} {x : X} (hx : x ∉ frontier s) :
-    ∀ᶠ y in 𝓝 x, (y ∈ s ↔ x ∈ s) := by
-  by_cases hxs : x ∈ s
-  · have : x ∈ interior s := (mem_interior_iff_notMem_frontier hxs).mpr hx
-    filter_upwards [mem_interior_iff_mem_nhds.mp this] with y hy
-    simp [hy, hxs]
-  · have : x ∈ interior sᶜ :=
-      (mem_interior_iff_notMem_frontier (s := sᶜ) hxs).mpr (by rwa [frontier_compl])
-    filter_upwards [mem_interior_iff_mem_nhds.mp this] with y hy
-    simp [hxs, (mem_compl_iff s y).mp hy]
-
-/-- If a label is locally constant at `x`, then `x` is not in the frontier of any of its
-fibres. -/
-theorem notMem_frontier_preimage_singleton_of_eventually {ι : Type*} {a : X → ι} {x : X}
-    (hx : ∀ᶠ y in 𝓝 x, a y = a x) (i : ι) : x ∉ frontier (a ⁻¹' {i}) := by
-  by_cases hi : a x = i
-  · subst hi
-    have : x ∈ interior (a ⁻¹' {a x}) := mem_interior_iff_mem_nhds.mpr hx
-    exact fun h ↦ h.2 this
-  · have : x ∈ interior (a ⁻¹' {i})ᶜ := by
-      refine mem_interior_iff_mem_nhds.mpr ?_
-      filter_upwards [hx] with y hy
-      simp [hy, hi]
-    rw [interior_compl] at this
-    exact fun h ↦ this h.1
-
-end LocallyConstant
 
 section Bound
 

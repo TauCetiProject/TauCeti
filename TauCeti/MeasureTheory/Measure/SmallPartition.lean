@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.Topology.MetricSpace.Bounded
-public import TauCeti.Topology.Frontier
 
 /-!
 # Finite partitions with small atoms and null boundaries
@@ -17,17 +16,16 @@ sets, for every `ε > 0` there is a finite measurable partition, given by a labe
 whose atoms have diameter less than `ε` and boundaries of measure zero
 (`TauCeti.exists_label_diam_lt_measure_frontier_eq_zero`).
 
-The atoms are built from a finite cover by balls whose spheres are null: each point is sent to the
-first ball of the cover containing it, so the atoms are the `disjointed` sets of the cover. Off
-the union of the frontiers of the balls the label is locally constant, so every atom has its
-frontier in that null union.
+The atoms are built from a finite cover by balls whose frontiers are null: each point is sent to
+the first ball of the cover containing it, so the atoms are the `disjointed` sets of the cover.
+Each atom is an intersection of a ball with complements of balls, so its frontier is null too.
 
 These partitions are the input to the comparison of measure entropy with topological entropy.
 -/
 
 public section
 
-open MeasureTheory Metric Set Filter Topology
+open MeasureTheory Metric Set
 
 namespace TauCeti
 
@@ -71,16 +69,10 @@ theorem exists_label_diam_lt_measure_frontier_eq_zero (μ : Measure X) [SFinite 
     calc diam (a ⁻¹' {j}) ≤ diam (B j) := diam_mono hsub isBounded_ball
       _ ≤ 2 * r (e j) := diam_ball (hr0 _).1.le
       _ < ε := by linarith [(hr0 (e j : X)).2]
-  · -- Off the null union of the frontiers of the balls, the label is locally constant.
-    refine measure_mono_null (t := ⋃ l, frontier (B l)) (fun x hx ↦ ?_)
-      (measure_iUnion_null fun l ↦ hrμ _)
-    by_contra hxU
-    simp only [mem_iUnion, not_exists] at hxU
-    have hev : ∀ᶠ y in 𝓝 x, ∀ l, (y ∈ B l ↔ x ∈ B l) :=
-      eventually_all.mpr fun l ↦ eventually_mem_iff_of_notMem_frontier (hxU l)
-    refine notMem_frontier_preimage_singleton_of_eventually ?_ j hx
-    filter_upwards [hev] with y hy
-    exact le_antisymm (Fin.find_le_of_pos _ ((hy _).mpr (Fin.find_spec (hB x))))
-      (Fin.find_le_of_pos _ ((hy _).mp (Fin.find_spec (hB y))))
+  · -- Each atom is a ball minus earlier balls, all with null frontiers.
+    rw [ha]
+    refine disjointedRec (p := fun s ↦ μ (frontier s) = 0) (fun s l hs ↦ ?_) (hrμ _)
+    rw [Set.sdiff_eq]
+    exact null_frontier_inter hs (by rw [frontier_compl]; exact hrμ _)
 
 end TauCeti
