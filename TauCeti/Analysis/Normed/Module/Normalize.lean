@@ -27,6 +27,8 @@ sphere, which moves nets built from arbitrary approximants onto the sphere.
 * `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
   vector `x`.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
+* `ContinuousOn.sphereDirection`: taking the direction of a continuous map with nonzero values
+  preserves continuity on the specified set.
 * `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
 
 ## Main definitions
@@ -158,6 +160,13 @@ theorem continuousAt_sphereDirection (hx : x ≠ 0) : ContinuousAt (sphereDirect
     coe_sphereDirection_of_ne_zero e hx]
   exact (tendsto_id.normalize hx).congr' <| Filter.mem_of_superset (isOpen_ne.mem_nhds hx)
     fun y hy ↦ (coe_sphereDirection_of_ne_zero e hy).symm
+
+/-- Taking the direction of a vector-valued function preserves continuity on a set where the
+function is continuous and takes nonzero values. -/
+theorem _root_.ContinuousOn.sphereDirection {X : Type*} [TopologicalSpace X] {f : X → E} {s : Set X}
+    (hf : ContinuousOn f s) (e : sphere (0 : E) 1) (hne : ∀ x ∈ s, f x ≠ 0) :
+    ContinuousOn (fun x ↦ sphereDirection e (f x)) s :=
+  fun x hx ↦ (continuousAt_sphereDirection e (hne x hx)).comp_continuousWithinAt (hf x hx)
 
 /-- Directions of two vectors are at distance at most `2 ‖x - y‖ / ‖y‖`, in the multiplied-out
 form `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`, which also holds when either vector vanishes. -/

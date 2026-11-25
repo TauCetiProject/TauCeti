@@ -138,7 +138,8 @@ theorem circleIndexSymbolScalar_apply (z : Circle) (s : ℝ) :
   by_cases hs : 0 < s <;> simp [circleIndexSymbolScalar, hs]
 
 /-- In period-one coordinates the full coefficient acts by multiplication by the cylinder scalar. -/
-theorem coefficient_toSymbol_circleFourierIndexSymbol_eq_scalar_smul_id (x s : ℝ) :
+theorem coefficient_toSymbol_circleFourierIndexSymbol_eq_circleIndexSymbolScalar_smul_id
+    (x s : ℝ) :
     (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * s)) =
       circleIndexSymbolScalar ρ (Circle.exp (2 * Real.pi * x), s) • ContinuousLinearMap.id ℂ ℂ := by
   rw [circleIndexSymbolScalar_apply, coefficient_toSymbol_circleFourierIndexSymbol]
@@ -153,7 +154,7 @@ theorem coefficient_toSymbol_circleFourierIndexSymbol_eq_scalar_smul_id (x s : �
 @[simp↓] theorem coefficient_toSymbol_circleFourierIndexSymbol_apply_one (x s : ℝ) :
     (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * s)) 1 =
       circleIndexSymbolScalar ρ (Circle.exp (2 * Real.pi * x), s) := by
-  rw [coefficient_toSymbol_circleFourierIndexSymbol_eq_scalar_smul_id]
+  rw [coefficient_toSymbol_circleFourierIndexSymbol_eq_circleIndexSymbolScalar_smul_id]
   simp
 
 /-- Above the circle identity the cylinder scalar is constant. -/

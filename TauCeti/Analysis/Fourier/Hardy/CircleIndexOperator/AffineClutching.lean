@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.Homotopy.Basic
-public import TauCeti.Topology.Circle.Cayley
+public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator.Chart
 import TauCeti.Topology.ContinuousMap.CodRestrict
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
@@ -21,9 +22,8 @@ On the punctured coordinate plane, `circleIndexAffineLocalHomotopy` is a homotop
 `circleIndexAffineLocalScalar` to the inversion homeomorphism `Homeomorph.inv₀ ℂ`.
 
 The rectangle comparison is due to Atiyah and Singer, *The Index of Elliptic Operators: I*,
-§8, Fig. 3, p. 526. The affine representative, chart and explicit local deformation are
-adapted from `CircleAffineSymbol.lean` and `CircleCotangent.lean` in the Lean-Atiyah-Singer
-formalization by Alpha Squared Labs and Codex.
+§8, Fig. 3, p. 526. The affine representative and explicit local deformation are adapted from
+`CircleAffineSymbol.lean` in the Lean-Atiyah-Singer formalization by Alpha Squared Labs and Codex.
 [Atiyah–Singer I](https://doi.org/10.2307/1970715)
 [Lean-Atiyah-Singer](https://github.com/alpha-squared-labs/Lean-Atiyah-Singer)
 -/
@@ -34,8 +34,6 @@ noncomputable section
 
 open scoped ContDiff
 open Topology
-open Complex (boundaryCayleyParametrization boundaryCayleyParametrization_apply
-  boundaryCayleyParametrization_zero isOpenEmbedding_boundaryCayleyParametrization)
 open Real (coe_boundaryCayley)
 
 namespace TauCeti
@@ -100,17 +98,19 @@ theorem contDiff_circleIndexAffineScalar_comp_circleExp :
     norm_num
 
 /-- In the oriented chart twice the affine scalar has the Cayley denominator. -/
-theorem two_mul_circleIndexAffineScalar_boundaryCayleyParametrization (w : ℂ) :
-    2 * circleIndexAffineScalar (boundaryCayleyParametrization w) =
+theorem two_mul_circleIndexAffineScalar_circleIndexAffineParametrization (w : ℂ) :
+    2 * circleIndexAffineScalar (circleIndexAffineParametrization w) =
       (-Complex.I * w.re - 2 * w.im) / (1 - (w.re / 2 : ℂ) * Complex.I) := by
-  rw [boundaryCayleyParametrization_apply, circleIndexAffineScalar_apply, coe_boundaryCayley]
+  rw [circleIndexAffineParametrization_apply, circleIndexAffineScalar_apply, coe_boundaryCayley]
   push_cast
   have hd : (w.re : ℂ) / 2 + Complex.I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   have hc : 1 - (w.re : ℂ) / 2 * Complex.I ≠ 0 := Complex.ne_zero_of_re_pos (by simp)
   apply (eq_div_iff hc).mpr
-  have h := div_mul_cancel₀ ((w.re : ℂ) / 2 - Complex.I) hd
-  linear_combination (norm := (ring_nf; simp [Complex.I_sq]; ring))
-    -(1 + (w.im : ℂ)) * Complex.I * h
+  set q := ((w.re : ℂ) / 2 - Complex.I) / ((w.re : ℂ) / 2 + Complex.I)
+  have h : q * ((w.re : ℂ) / 2 + Complex.I) = (w.re : ℂ) / 2 - Complex.I :=
+    div_mul_cancel₀ _ hd
+  linear_combination -(1 + (w.im : ℂ)) * Complex.I * h +
+    (1 + (w.im : ℂ)) * (1 + q) * Complex.I_sq
 
 local notation "U" => {w : ℂ // w ≠ 0}
 
@@ -118,17 +118,22 @@ local notation "U" => {w : ℂ // w ≠ 0}
 def circleIndexAffineLocalScalar : C(U, U) :=
   let s := {w : ℂ | w ≠ 0}
   let f := circleIndexAffineScalar.comp
-    ⟨boundaryCayleyParametrization, isOpenEmbedding_boundaryCayleyParametrization.continuous⟩
+    ⟨circleIndexAffineParametrization,
+      isOpenEmbedding_circleIndexAffineParametrization.continuous⟩
   have h : Set.MapsTo f s s := fun _ hw h₀ ↦ hw <|
-    isOpenEmbedding_boundaryCayleyParametrization.injective <|
-      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans boundaryCayleyParametrization_zero.symm
+    isOpenEmbedding_circleIndexAffineParametrization.injective <|
+      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans
+        circleIndexAffineParametrization_zero.symm
   (f.restrict s).codRestrict s fun w ↦ h w.property
 
 /-- In the ambient complex plane the restricted scalar has its original value. -/
 @[simp] theorem coe_circleIndexAffineLocalScalar (w : U) :
     (circleIndexAffineLocalScalar w : ℂ) =
-      circleIndexAffineScalar (boundaryCayleyParametrization w) :=
-  ContinuousMap.coe_codRestrict_apply _ _ _ _
+      circleIndexAffineScalar (circleIndexAffineParametrization w) := by
+  dsimp only [circleIndexAffineLocalScalar]
+  refine (ContinuousMap.coe_codRestrict_apply _ _ _ _).trans ?_
+  rw [ContinuousMap.restrict_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+  rfl
 
 private def localPhase (t : unitInterval) : ℂ :=
   Complex.exp ((-(1 - (t : ℝ)) * Real.pi / 2 : ℝ) * Complex.I)
@@ -181,17 +186,21 @@ private theorem localValue_ne_zero (p : unitInterval × U) : localValue p ≠ 0 
       (localNumerator_ne_zero p.1 p.2)) (localDenominator_ne_zero p.1 p.2)
 
 private theorem localValue_zero (w : U) :
-    localValue (0, w) = circleIndexAffineScalar (boundaryCayleyParametrization w) := by
-  have h := two_mul_circleIndexAffineScalar_boundaryCayleyParametrization w
+    localValue (0, w) = circleIndexAffineScalar (circleIndexAffineParametrization w) := by
+  have h := two_mul_circleIndexAffineScalar_circleIndexAffineParametrization w
   rw [localValue]
   have hphase : localPhase 0 = -Complex.I := by simp [localPhase]
   rw [hphase]
   simp only [localDenominator, Set.Icc.coe_zero, sub_zero, one_mul, zero_mul, add_zero,
     Complex.ofReal_one, mul_one, Complex.ofReal_div, Complex.ofReal_ofNat, one_div]
-  have hn : localNumerator 0 w = (w.val.re : ℂ) - 2 * w.val.im * Complex.I := by
-    apply Complex.ext <;> simp [localNumerator]
-  rw [hn]
-  linear_combination (norm := (ring_nf; simp [Complex.I_sq]; ring)) -h / 2
+  have hn : -Complex.I * localNumerator 0 w = -Complex.I * w.val.re - 2 * w.val.im := by
+    have hv : localNumerator 0 w = (w.val.re : ℂ) - 2 * w.val.im * Complex.I := by
+      apply Complex.ext <;> simp [localNumerator]
+    rw [hv]
+    linear_combination 2 * (w.val.im : ℂ) * Complex.I_sq
+  rw [mul_assoc, hn, mul_div_assoc, ← h]
+  push_cast
+  ring
 
 private theorem localValue_one (w : U) : localValue (1, w) = w.val⁻¹ := by
   rw [localValue]
@@ -199,6 +208,11 @@ private theorem localValue_one (w : U) : localValue (1, w) = w.val⁻¹ := by
     apply Complex.ext <;> norm_num [localNumerator]
   rw [hn, Complex.inv_def, Complex.normSq_eq_norm_sq]
   norm_num [localPhase, localDenominator, div_eq_mul_inv]
+
+private theorem coe_invHomeomorph_apply (w : U) :
+    ((Homeomorph.inv₀ ℂ : C(U, U)) w : ℂ) = w.val⁻¹ := by
+  rw [ContinuousMap.coe_ofClass, Homeomorph.inv₀]
+  rfl
 
 /-- The homotopy from the charted affine scalar to complex inversion on the punctured plane.
 Its positive real scale absorbs the factor of two in the Cayley formula. -/
@@ -208,8 +222,10 @@ def circleIndexAffineLocalHomotopy :
   continuous_toFun := continuous_localValue.subtype_mk localValue_ne_zero
   map_zero_left w := by
     apply Subtype.ext
-    simpa only [coe_circleIndexAffineLocalScalar] using localValue_zero w
-  map_one_left w := Subtype.ext (localValue_one w)
+    simpa only [Subtype.coe_mk, coe_circleIndexAffineLocalScalar] using localValue_zero w
+  map_one_left w := by
+    apply Subtype.ext
+    simpa only [Subtype.coe_mk, coe_invHomeomorph_apply] using localValue_one w
 
 /-- The numerator reflects across the real axis, stretches the imaginary component and rotates
 by a phase. The denominator multiplies a complex Cayley factor by the positive real radial

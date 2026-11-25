@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
+public import TauCeti.Analysis.Complex.Cayley
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
@@ -27,6 +28,8 @@ continuous on the closed unit disc and holomorphic inside it can be transported 
 half-plane. The open-half-plane restriction, centred at an arbitrary point of `ℍ`, is
 `UpperHalfPlane.discCoordinate`.
 
+The scalar identities and the real inverse coordinate are provided by `Analysis.Complex.Cayley`.
+
 ## Main statements
 
 * `TauCeti.norm_sub_I_lt_norm_add_I_iff`: a point is closer to `i` than to `-i` exactly when it
@@ -36,8 +39,6 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   half-plane.
 * `TauCeti.injOn_sub_I_div_add_I`: the transform is injective off its pole `-i`.
 * `TauCeti.sub_I_div_add_I_sub_sub_I_div_add_I`: the difference of two values of the transform.
-* `TauCeti.continuousAt_sub_I_div_add_I` and `TauCeti.norm_sub_I_div_norm_add_I_ofReal`:
-  continuity and unit norm at real boundary points.
 * `TauCeti.one_sub_conj_mul_sub_I_div_add_I_ne_zero`: the denominator of a standard disc
   automorphism does not vanish at a real boundary point in Cayley coordinates.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
@@ -54,13 +55,6 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
-* `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
-* `TauCeti.sub_I_div_add_I_I_mul_one_add_div_one_sub`: the other inverse identity, away from
-  `w = 1`.
-* `TauCeti.I_mul_one_add_div_one_sub_add_I_ne_zero`: the inverse transform keeps `z + i` away
-  from `0`.
-* `TauCeti.I_mul_one_add_div_one_sub_add_I` and `TauCeti.one_sub_sub_I_div_add_I`: the
-  denominators `z + i` and `1 - w` of the transform and its inverse, at each other's values.
 * `TauCeti.re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq`: the real part of the inverse
   transform, `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
@@ -74,19 +68,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
 * `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
   two maps are analytic away from their poles `-ζ` and `-i`.
-* `Complex.inverseCayleyCoord`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real
-  number, which inverts the transform (`Complex.inverseCayleyCoord_cayley`,
-  `Complex.cayley_inverseCayleyCoord`) and agrees with the complex expression on the unit circle
-  (`Complex.ofReal_inverseCayleyCoord`), where it is `w ↦ -Im w / (1 - Re w)`
-  (`Complex.inverseCayleyCoord_eq_neg_im_div`).
-
-The real and imaginary parts of the real-input quotient are from
-`TauCeti.Analysis.Complex.Pick.Nevanlinna`, by the Tau Ceti contributors, Jon Crall,
-Claude Opus 5 and OpenAI gpt-6.1-sol.
-
-The real inverse coordinate API is adapted from Kitware DKPS
-`ForTauCeti/Analysis/InnerProductSpace/LinearPMap/SpectralMeasure/Construction.lean`
-(Jon Crall and Claude Opus 5; copyright (c) 2026 Kitware, Inc.; Apache-2.0).
+* `Complex.measurable_inverseCayleyCoord`: the real inverse coordinate is measurable.
 
 ## References
 
@@ -99,17 +81,6 @@ open Bornology Complex Filter Metric Set Topology
 open scoped ContDiff
 
 namespace TauCeti
-
-/-- The denominator of the Cayley transform does not vanish on the closed upper half-plane. -/
-theorem add_I_ne_zero_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : z + I ≠ 0 := fun h => by
-  have := congrArg Complex.im h
-  simp only [add_im, I_im, zero_im] at this
-  linarith
-
-/-- The squared distances from `z` to `-i` and to `i` differ by `4 * z.im`. -/
-theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 * z.im := by
-  simp only [Complex.sq_norm, normSq_apply, add_re, add_im, sub_re, sub_im, I_re, I_im]
-  ring
 
 /-- A point is closer to `i` than to `-i` exactly when it lies in the open upper half-plane. -/
 theorem norm_sub_I_lt_norm_add_I_iff {z : ℂ} : ‖z - I‖ < ‖z + I‖ ↔ 0 < z.im := by
@@ -129,46 +100,6 @@ theorem norm_sub_I_div_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
   rw [norm_div, div_lt_one (norm_pos_iff.mpr hz), ← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _),
     norm_add_I_sq]
   constructor <;> intro h <;> linarith
-
-/-- The Cayley transform is continuous at every real point. -/
-theorem continuousAt_sub_I_div_add_I (x : ℝ) :
-    ContinuousAt (fun z : ℂ => (z - I) / (z + I)) (x : ℂ) :=
-  (continuousAt_id.sub continuousAt_const).div (continuousAt_id.add continuousAt_const)
-    (add_I_ne_zero_of_im_nonneg (by simp))
-
-/-- The Cayley transform of a real point lies on the unit circle. -/
-@[simp] theorem norm_sub_I_div_norm_add_I_ofReal (x : ℝ) :
-    ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
-  rw [← norm_div]
-  have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
-  refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
-  simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
-
-end TauCeti
-
-namespace Real
-
-/-- The real part of a boundary Cayley point. -/
-@[simp]
-theorem re_sub_I_div_add_I_ofReal (x : ℝ) :
-    (((x : ℂ) - I) / ((x : ℂ) + I)).re = (x ^ 2 - 1) / (x ^ 2 + 1) := by
-  rw [div_re]
-  simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
-    normSq_apply]
-  ring
-
-/-- The imaginary part of a boundary Cayley point. -/
-@[simp]
-theorem im_sub_I_div_add_I_ofReal (x : ℝ) :
-    (((x : ℂ) - I) / ((x : ℂ) + I)).im = -(2 * x) / (x ^ 2 + 1) := by
-  rw [div_im]
-  simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
-    normSq_apply]
-  ring
-
-end Real
-
-namespace TauCeti
 
 /-- The denominator of a standard disc automorphism does not vanish at the Cayley transform of a
 real point. -/
@@ -204,45 +135,6 @@ theorem injOn_sub_I_div_add_I :
 theorem sub_I_div_add_I_sub_sub_I_div_add_I {s t : ℂ} (hs : s + I ≠ 0) (ht : t + I ≠ 0) :
     (s - I) / (s + I) - (t - I) / (t + I) = 2 * I * (s - t) / ((s + I) * (t + I)) := by
   rw [div_sub_div _ _ hs ht]
-  ring
-
-/-- The denominator `z + i` of the Cayley transform at `z = i (1 + w) / (1 - w)` is
-`2 i / (1 - w)`. -/
-theorem I_mul_one_add_div_one_sub_add_I {w : ℂ} (hw : w ≠ 1) :
-    I * (1 + w) / (1 - w) + I = 2 * I / (1 - w) := by
-  have : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
-  field_simp
-  ring
-
-/-- The denominator `1 - w` of the inverse Cayley transform at `w = (z - i) / (z + i)` is
-`2 i / (z + i)`. -/
-theorem one_sub_sub_I_div_add_I {z : ℂ} (hz : z + I ≠ 0) :
-    1 - (z - I) / (z + I) = 2 * I / (z + I) := by
-  field_simp
-  ring
-
-/-- Away from `w = 1`, the value `i (1 + w) / (1 - w)` of the inverse Cayley transform keeps the
-denominator `z + i` of the transform away from `0`. -/
-theorem I_mul_one_add_div_one_sub_add_I_ne_zero {w : ℂ} (hw : w ≠ 1) :
-    I * (1 + w) / (1 - w) + I ≠ 0 := by
-  rw [I_mul_one_add_div_one_sub_add_I hw]
-  exact div_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) (sub_ne_zero.mpr hw.symm)
-
-/-- The inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` is a right inverse of the transform
-away from `w = 1`. -/
-theorem sub_I_div_add_I_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
-    (I * (1 + w) / (1 - w) - I) / (I * (1 + w) / (1 - w) + I) = w := by
-  have h1 : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
-  have hnum : I * (1 + w) / (1 - w) - I = 2 * I * w / (1 - w) := by
-    field_simp
-    ring
-  rw [I_mul_one_add_div_one_sub_add_I hw, hnum]
-  field_simp
-
-/-- The inverse Cayley transform takes the Cayley image of a point back to that point. -/
-theorem I_mul_one_add_sub_I_div_add_I_div_one_sub {z : ℂ} (hz : z + I ≠ 0) :
-    I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
-  field_simp
   ring
 
 /-- The real part of the inverse Cayley transform `i (1 + w) / (1 - w)`, weighted by
@@ -436,14 +328,6 @@ theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
 
 /-! ### Cayley transforms of the closed unit disc centred at a boundary point -/
 
-/-- The imaginary part of `i (ζ - z) / (ζ + z)` is `(‖ζ‖² - ‖z‖²) / ‖ζ + z‖²`. -/
-theorem im_I_mul_sub_div_add (ζ z : ℂ) :
-    (I * (ζ - z) / (ζ + z)).im = (normSq ζ - normSq z) / normSq (ζ + z) := by
-  rw [div_im, ← sub_div, normSq_apply, normSq_apply, normSq_apply]
-  congr 1
-  simp only [mul_re, mul_im, I_re, I_im, sub_re, sub_im, add_re, add_im]
-  ring
-
 /-- The map `z ↦ i (ζ - z) / (ζ + z)` sends the closed disc of radius `‖ζ‖` into the closed upper
 half-plane. -/
 theorem im_I_mul_sub_div_add_nonneg {ζ z : ℂ} (hz : ‖z‖ ≤ ‖ζ‖) :
@@ -505,82 +389,12 @@ end TauCeti
 
 
 open MeasureTheory
-open scoped ComplexOrder
 
 namespace Complex
 
-/-- The real inverse Cayley coordinate, with value zero at its singular point `1`. -/
-noncomputable def inverseCayleyCoord (w : ℂ) : ℝ := (I * (1 + w) / (1 - w)).re
-
-/-- Formula for the real inverse Cayley coordinate. -/
-theorem inverseCayleyCoord_def (w : ℂ) :
-    inverseCayleyCoord w = (I * (1 + w) / (1 - w)).re := (rfl)
-
-/-- The real inverse Cayley coordinate is continuous at every complex point other than its pole. -/
-@[fun_prop] theorem continuousAt_inverseCayleyCoord {z : ℂ} (hz : z ≠ 1) :
-    ContinuousAt inverseCayleyCoord z :=
-  continuous_re.continuousAt.comp (TauCeti.hasDerivAt_I_mul_one_add_div_one_sub hz).continuousAt
-
 /-- The inverse Cayley coordinate is measurable. -/
 @[fun_prop] theorem measurable_inverseCayleyCoord : Measurable inverseCayleyCoord := by
-  unfold inverseCayleyCoord
+  rw [funext inverseCayleyCoord_def]
   fun_prop
-
-/-- The inverse Cayley coordinate has value zero at `1`. -/
-@[simp] theorem inverseCayleyCoord_one : inverseCayleyCoord 1 = 0 := by
-  simp [inverseCayleyCoord]
-
-/-- Applying the inverse coordinate to a complex Cayley parameter recovers its real part. -/
-@[simp] theorem inverseCayleyCoord_cayley (z : ℂ) :
-    inverseCayleyCoord ((z - I) / (z + I)) = z.re := by
-  by_cases hz : z + I = 0
-  · rw [eq_neg_of_add_eq_zero_left hz]
-    simp [inverseCayleyCoord]
-  · rw [inverseCayleyCoord_def, TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub hz]
-
-/-- The Cayley transform recovers every unit-circle point other than `1`. -/
-theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
-    ((inverseCayleyCoord w : ℂ) - I) / ((inverseCayleyCoord w : ℂ) + I) = w := by
-  -- Expose `surjOn`'s target set so the pair elaborates as set-difference membership:
-  -- closed-ball membership is `‖w‖ ≤ 1`, and exclusion from `{1}` reduces to `w ≠ 1`.
-  obtain ⟨z, hz, hzw⟩ := TauCeti.bijOn_sub_I_div_add_I_im_nonneg.surjOn
-    (show w ∈ Metric.closedBall 0 1 \ {1} from
-      ⟨mem_closedBall_zero_iff.mpr hw.le, h1⟩)
-  dsimp only at hzw
-  have him : z.im = 0 := by
-    have hnot : ¬ 0 < z.im := by
-      intro hpos
-      have hlt := (TauCeti.norm_sub_I_div_add_I_lt_one_iff
-        (TauCeti.add_I_ne_zero_of_im_nonneg hz)).mpr hpos
-      rw [hzw, hw] at hlt
-      exact (lt_irrefl 1) hlt
-    exact le_antisymm (not_lt.mp hnot) hz
-  have hreal : (z.re : ℂ) = z := by
-    apply Complex.ext <;> simp [him]
-  rw [← hzw, inverseCayleyCoord_cayley, hreal]
-
-/-- On the unit circle the inverse Cayley coordinate is real:
-`inverseCayleyCoord w = i (1 + w) / (1 - w)`. -/
-theorem ofReal_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) :
-    (inverseCayleyCoord w : ℂ) = I * (1 + w) / (1 - w) := by
-  have him : (I * (1 + w) / (1 - w)).im = 0 := by
-    simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
-  exact Complex.ext (by simp [inverseCayleyCoord_def]) (by simp [him])
-
-/-- On the unit circle the inverse Cayley coordinate is `w ↦ -Im w / (1 - Re w)`. -/
-theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
-    inverseCayleyCoord w = -w.im / (1 - w.re) := by
-  have hre : w.re ^ 2 + w.im ^ 2 = 1 := by
-    have := normSq_eq_norm_sq w
-    rw [hw, normSq_apply] at this
-    nlinarith
-  rw [inverseCayleyCoord_def]
-  simp only [div_re, mul_re, mul_im, I_re, I_im, add_re, add_im, sub_re, sub_im, one_re, one_im,
-    normSq_apply]
-  by_cases h1 : 1 - w.re = 0
-  · have : w.im = 0 := by nlinarith
-    simp [this, show w.re = 1 by linarith]
-  · field_simp
-    linear_combination w.im * hre
 
 end Complex

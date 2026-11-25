@@ -7,6 +7,7 @@ module
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 public import TauCeti.Topology.Circle.Cayley

@@ -35,8 +35,6 @@ noncomputable section
 
 namespace TauCeti
 
-open Circle (homeomorphSphere)
-
 local notation "ι" => OrthonormalBasis.repr (OrthonormalBasis.singleton (Fin 1) ℝ)
 
 variable (ρ : FrequencyCutoff (CoordinateSpace 1))
@@ -60,6 +58,22 @@ theorem one_le_norm_homotopyAffine_circleIndexSymbolScalar (t : unitInterval) (z
     apply Circle.one_le_norm_lineMap_of_one_le z 1
     have hs₀ : (1 + s) / 2 ≤ 0 := by linarith
     linarith [mul_nonpos_of_nonneg_of_nonpos t.property.1 hs₀]
+
+/-- The compact strip `Circle × [-1, 1]` works for every cutoff and homotopy time. Outside it the
+homotopy has invertible complex values. -/
+theorem isCompact_strip_and_isUnit_homotopyAffine_circleIndexSymbolScalar :
+    let strip := (Set.univ : Set Circle) ×ˢ Set.Icc (-1 : ℝ) 1
+    IsCompact strip ∧ ∀ (ρ : FrequencyCutoff (CoordinateSpace 1)) (t : unitInterval)
+        (p : Circle × ℝ), p ∉ strip →
+      IsUnit (ContinuousMap.Homotopy.affine (circleIndexSymbolScalar ρ) circleIndexAffineScalar
+        (t, p)) := by
+  refine ⟨isCompact_univ.prod isCompact_Icc, ?_⟩
+  intro ρ t ⟨z, s⟩ hout
+  have hs : 1 ≤ |s| := by
+    by_contra! h
+    exact hout ⟨Set.mem_univ _, (abs_lt.mp h).1.le, (abs_lt.mp h).2.le⟩
+  have hnorm := one_le_norm_homotopyAffine_circleIndexSymbolScalar ρ t z hs
+  exact isUnit_iff_ne_zero.mpr (norm_pos_iff.mp (zero_lt_one.trans_le hnorm))
 
 /-- The full symbol scalar on the unit square, with normalized covector ranging from `-1` to `1`.
 The position variable traverses one period. -/
@@ -93,74 +107,73 @@ private theorem norm_squareScalar_of_mem_boundary {y : Fin 2 → unitInterval}
     · rw [squareScalar_top ρ (by simpa using hi), Circle.norm_coe]
 
 /-- The circle-valued phase of the full symbol on the square, with value `1` at its zeros. -/
-def circleIndexBoundaryPhase (y : Fin 2 → unitInterval) : Circle :=
-  homeomorphSphere.symm (sphereDirection (homeomorphSphere 1)
-    ((circleFourierIndexSymbol ρ).toSymbol.coefficient (ι (y 0), ι (2 * (2 * (y 1 : ℝ) - 1))) 1))
+def circleIndexSquarePhase (y : Fin 2 → unitInterval) : Circle :=
+  (1 : Circle).circleValuedSphereDirection (circleIndexSquareScalar ρ y)
 
 /-- The phase of the actual coefficient at frequency twice the normalized covector. -/
-theorem circleIndexBoundaryPhase_apply (y : Fin 2 → unitInterval) :
-    circleIndexBoundaryPhase ρ y = homeomorphSphere.symm
-      (sphereDirection (homeomorphSphere 1) (circleIndexSquareScalar ρ y)) := by
-  rw [circleIndexBoundaryPhase, coefficient_toSymbol_circleFourierIndexSymbol_apply_one,
+theorem circleIndexSquarePhase_apply (y : Fin 2 → unitInterval) :
+    circleIndexSquarePhase ρ y = (1 : Circle).circleValuedSphereDirection
+      ((circleFourierIndexSymbol ρ).toSymbol.coefficient
+        (ι (y 0), ι (2 * (2 * (y 1 : ℝ) - 1))) 1) := by
+  rw [circleIndexSquarePhase, coefficient_toSymbol_circleFourierIndexSymbol_apply_one,
     circleIndexSquareScalar_apply, unitToCircle_apply]
 
 /-- On the boundary the scalar has norm one, so taking its phase preserves it. -/
-@[simp] theorem coe_circleIndexBoundaryPhase {y : Fin 2 → unitInterval}
+@[simp] theorem coe_circleIndexSquarePhase {y : Fin 2 → unitInterval}
     (hy : y ∈ Cube.boundary (Fin 2)) :
-    (circleIndexBoundaryPhase ρ y : ℂ) = circleIndexSquareScalar ρ y := by
+    (circleIndexSquarePhase ρ y : ℂ) = circleIndexSquareScalar ρ y := by
   have hn := norm_squareScalar_of_mem_boundary ρ hy
   have hz : circleIndexSquareScalar ρ y ≠ 0 := norm_ne_zero_iff.mp (hn.trans_ne one_ne_zero)
-  rw [circleIndexBoundaryPhase_apply, Circle.coe_homeomorphSphere_symm_apply,
-    coe_sphereDirection_eq_div_norm _ hz, hn, Complex.ofReal_one, div_one]
+  rw [circleIndexSquarePhase, Circle.coe_circleValuedSphereDirection_of_ne_zero _ hz, hn,
+    Complex.ofReal_one, div_one]
 
 /-- The phase is continuous wherever the scalar on the square is nonzero. -/
-theorem continuousOn_circleIndexBoundaryPhase_nonzeroLocus :
-    ContinuousOn (circleIndexBoundaryPhase ρ) {y | circleIndexSquareScalar ρ y ≠ 0} := by
-  rw [funext (circleIndexBoundaryPhase_apply ρ)]
-  exact (circleIndexSquareScalar ρ).continuous.continuousOn.sphereDirection 1 fun _ hy ↦ hy
+theorem continuousOn_circleIndexSquarePhase_nonzeroLocus :
+    ContinuousOn (circleIndexSquarePhase ρ) {y | circleIndexSquareScalar ρ y ≠ 0} :=
+  (circleIndexSquareScalar ρ).continuous.continuousOn.circleValuedSphereDirection 1 fun _ hy ↦ hy
 
 /-- The phase is continuous on the entire boundary, including points with phase `-1`. -/
-theorem continuousOn_circleIndexBoundaryPhase :
-    ContinuousOn (circleIndexBoundaryPhase ρ) (Cube.boundary (Fin 2)) :=
-  (continuousOn_circleIndexBoundaryPhase_nonzeroLocus ρ).mono fun _ hy ↦
+theorem continuousOn_circleIndexSquarePhase :
+    ContinuousOn (circleIndexSquarePhase ρ) (Cube.boundary (Fin 2)) :=
+  (continuousOn_circleIndexSquarePhase_nonzeroLocus ρ).mono fun _ hy ↦
     norm_ne_zero_iff.mp ((norm_squareScalar_of_mem_boundary ρ hy).trans_ne one_ne_zero)
 
 /-- The bottom edge has constant phase. -/
-@[simp] theorem circleIndexBoundaryPhase_bottom (x : unitInterval) :
-    circleIndexBoundaryPhase ρ ![x, 0] = 1 := by
+@[simp] theorem circleIndexSquarePhase_bottom (x : unitInterval) :
+    circleIndexSquarePhase ρ ![x, 0] = 1 := by
   apply Circle.ext
-  rw [coe_circleIndexBoundaryPhase ρ ⟨1, Or.inl (by simp)⟩, squareScalar_bottom ρ (by simp)]
+  rw [coe_circleIndexSquarePhase ρ ⟨1, Or.inl (by simp)⟩, squareScalar_bottom ρ (by simp)]
   simp only [Circle.coe_one]
 
 /-- The right edge has constant phase. -/
-@[simp] theorem circleIndexBoundaryPhase_right (x : unitInterval) :
-    circleIndexBoundaryPhase ρ ![1, x] = 1 := by
+@[simp] theorem circleIndexSquarePhase_right (x : unitInterval) :
+    circleIndexSquarePhase ρ ![1, x] = 1 := by
   apply Circle.ext
-  rw [coe_circleIndexBoundaryPhase ρ ⟨0, Or.inr (by simp)⟩,
+  rw [coe_circleIndexSquarePhase ρ ⟨0, Or.inr (by simp)⟩,
     squareScalar_vertical ρ (Or.inr (by simp))]
   simp only [Circle.coe_one]
 
 /-- The top edge follows the circle character in increasing position. -/
-@[simp] theorem circleIndexBoundaryPhase_top (x : unitInterval) :
-    circleIndexBoundaryPhase ρ ![x, 1] = Circle.exp (2 * Real.pi * x) := by
+@[simp] theorem circleIndexSquarePhase_top (x : unitInterval) :
+    circleIndexSquarePhase ρ ![x, 1] = Circle.exp (2 * Real.pi * x) := by
   apply Circle.ext
-  rw [coe_circleIndexBoundaryPhase ρ ⟨1, Or.inr (by simp)⟩, squareScalar_top ρ (by simp)]
+  rw [coe_circleIndexSquarePhase ρ ⟨1, Or.inr (by simp)⟩, squareScalar_top ρ (by simp)]
   simp only [Matrix.cons_val_zero, unitToCircle_apply]
 
 /-- The left edge has constant phase. -/
-@[simp] theorem circleIndexBoundaryPhase_left (x : unitInterval) :
-    circleIndexBoundaryPhase ρ ![0, x] = 1 := by
+@[simp] theorem circleIndexSquarePhase_left (x : unitInterval) :
+    circleIndexSquarePhase ρ ![0, x] = 1 := by
   apply Circle.ext
-  rw [coe_circleIndexBoundaryPhase ρ ⟨0, Or.inl (by simp)⟩,
+  rw [coe_circleIndexSquarePhase ρ ⟨0, Or.inl (by simp)⟩,
     squareScalar_vertical ρ (Or.inl (by simp))]
   simp only [Circle.coe_one]
 
 /-- The full circle index symbol has winding number `-1` on the counterclockwise rectangle.
 The three constant edges have lift zero, and the top lift increases by `2π` before its
 orientation is reversed. -/
-@[simp] theorem squareBoundaryDegree_circleIndexBoundaryPhase :
-    squareBoundaryDegree (circleIndexBoundaryPhase ρ) = -1 := by
-  have h := squareBoundaryDegree_mul_two_pi_eq (continuousOn_circleIndexBoundaryPhase ρ)
+@[simp] theorem squareBoundaryDegree_circleIndexSquarePhase :
+    squareBoundaryDegree (circleIndexSquarePhase ρ) = -1 := by
+  have h := squareBoundaryDegree_mul_two_pi_eq (continuousOn_circleIndexSquarePhase ρ)
     (θB := fun _ ↦ 0) (θR := fun _ ↦ 0) (θT := fun x ↦ 2 * Real.pi * (x : ℝ))
     (θL := fun _ ↦ 0) continuous_const continuous_const (by fun_prop) continuous_const
     (fun x ↦ by simp) (fun x ↦ by simp) (fun x ↦ by simp) (fun x ↦ by simp)

@@ -93,7 +93,6 @@ open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
-open Circle (homeomorphSphere)
 
 /-! ### The boundary loop -/
 
@@ -502,18 +501,17 @@ theorem squareCenterOffset_ne_zero_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.bou
 /-- The direction of a point of the square from its centre, the point `c / ‖c‖` of the circle for
 `c = squareCenterOffset y` (`TauCeti.coe_squareCenterDirection`). It is `1` at the centre. -/
 def squareCenterDirection (y : Fin 2 → I) : Circle :=
-  homeomorphSphere.symm (sphereDirection (homeomorphSphere 1) (squareCenterOffset y))
+  (1 : Circle).circleValuedSphereDirection (squareCenterOffset y)
 
 /-- Away from the centre, the direction from the centre is `c / ‖c‖` for the offset `c`. -/
 theorem coe_squareCenterDirection {y : Fin 2 → I} (hy : squareCenterOffset y ≠ 0) :
     (squareCenterDirection y : ℂ) = squareCenterOffset y / ‖squareCenterOffset y‖ := by
-  simp only [squareCenterDirection, Circle.coe_homeomorphSphere_symm_apply,
-    coe_sphereDirection_eq_div_norm _ hy]
+  simp only [squareCenterDirection, Circle.coe_circleValuedSphereDirection_of_ne_zero _ hy]
 
 /-- The direction from the centre is continuous wherever the offset from the centre is nonzero. -/
 theorem continuousOn_squareCenterDirection_nonzeroLocus :
     ContinuousOn squareCenterDirection {y | squareCenterOffset y ≠ 0} :=
-  continuous_squareCenterOffset.continuousOn.sphereDirection 1 fun _ hy ↦ hy
+  continuous_squareCenterOffset.continuousOn.circleValuedSphereDirection 1 fun _ hy ↦ hy
 
 /-- The direction from the centre is continuous on the boundary of the square. -/
 theorem continuousOn_squareCenterDirection :
@@ -532,7 +530,7 @@ private theorem pathAngle_squareCenterDirection_eq_arg_sub {a b : Fin 2 → I} (
     (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
       (f := fun s ↦ squareCenterOffset (γ s)) (by fun_prop)) fun t ↦ by
       simpa only [squareCenterDirection, Function.comp_apply] using
-        (Complex.sphereDirection_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
+        (Complex.circleValuedSphereDirection_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
   simp only [comp_apply, Path.source, Path.target]
 
 /-- Along an edge of the square that avoids the closed positive real axis, as seen from the

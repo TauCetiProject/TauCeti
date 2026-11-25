@@ -108,7 +108,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex ComplexConjugate Filter Metric
-open Circle (homeomorphSphere)
+open Circle (circleValuedSphereDirection)
 open scoped Topology ContDiff
 
 /-! ### The winding phase -/
@@ -116,7 +116,7 @@ open scoped Topology ContDiff
 /-- The winding phase `(z / |z|)^m` as a circle-valued map on the plane. At the origin, where it
 has no continuous extension for `m ≠ 0`, its value is `1`. -/
 def windingPhase (m : ℕ) (z : ℂ) : Circle :=
-  homeomorphSphere.symm (sphereDirection (homeomorphSphere 1) z) ^ m
+  circleValuedSphereDirection 1 z ^ m
 
 /-- The winding phase of degree zero is `1`. -/
 @[simp]
@@ -131,8 +131,7 @@ theorem windingPhase_zero_right (m : ℕ) : windingPhase m 0 = 1 := by
 /-- Off the origin, the winding phase is `(z / |z|)^m`. -/
 theorem coe_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
     (windingPhase m z : ℂ) = (z / (‖z‖ : ℂ)) ^ m := by
-  rw [windingPhase, Circle.coe_pow, Circle.coe_homeomorphSphere_symm_apply,
-    coe_sphereDirection_eq_div_norm _ hz]
+  rw [windingPhase, Circle.coe_pow, Circle.coe_circleValuedSphereDirection_of_ne_zero _ hz]
 
 /-- The winding phase is smooth off the origin. -/
 theorem contDiffAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) {n : WithTop ℕ∞} :
@@ -152,8 +151,9 @@ phase `m Im (log (w / z))`, which is smooth near `w = z`. -/
 private theorem windingPhase_eq_mul_exp (m : ℕ) {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
     windingPhase m w = windingPhase m z * Circle.exp (m * (log (w / z)).im) := by
   simp only [windingPhase, log_im, Circle.exp_natCast_mul, ← mul_pow]
-  rw [← Complex.sphereDirection_one_eq_exp_arg,
-    ← Circle.sphereDirection_mul_of_ne_zero 1 hz (div_ne_zero hw hz), mul_div_cancel₀ w hz]
+  rw [← Complex.circleValuedSphereDirection_one_eq_exp_arg,
+    ← Circle.circleValuedSphereDirection_mul_of_ne_zero 1 hz (div_ne_zero hw hz),
+    mul_div_cancel₀ w hz]
 
 /-- The logarithmic derivative of the winding phase is `m dθ`, where `dθ_z(v) = Im (v / z)`. -/
 theorem gaugeForm_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
