@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
@@ -146,14 +147,6 @@ theorem IsNPositive.norm_apply_le_of_forall_nonneg {φ : A →ₗ[ℂ] B} (hφ :
   simpa [Unitization.norm_inr, ← Unitization.algebraMap_eq_inl, norm_algebraMap',
     abs_of_nonneg h0] using (hφ.unitizationLinearMap ht).norm_apply_le (a : A⁺¹)
 
-/-- Compressing a positive contraction `p` by a positive contraction `e` gives `e p e ≤ e`. -/
-private theorem mul_mul_le_of_nonneg_of_norm_le_one {e p : A} (he0 : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
-    (hp0 : 0 ≤ p) (hp1 : ‖p‖ ≤ 1) : e * p * e ≤ e := by
-  have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp0.isSelfAdjoint
-  rw [he0.star_eq] at h
-  exact h.trans ((smul_le_of_le_one_left he0.isSelfAdjoint.mul_self_nonneg hp1).trans
-    (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1))
-
 /-- The norm of a continuous `2`-positive map `ψ` is the limit of `‖ψ e‖` along any increasing
 approximate unit. -/
 theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPositive 2 (ψ : A →ₗ[ℂ] B))
@@ -174,7 +167,7 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
     simpa [hψ.toPositiveLinearMap_apply] using
       CStarAlgebra.norm_le_norm_of_le_of_nonneg
         (OrderHomClass.mono (hψ.toPositiveLinearMap two_pos)
-          (mul_mul_le_of_nonneg_of_norm_le_one he0 he1 hp0 hp1))
+          (CStarAlgebra.mul_mul_le_of_nonneg_of_norm_le_one he0 he1 hp0 hp1))
         (_root_.map_nonneg (hψ.toPositiveLinearMap two_pos)
           (he0.isSelfAdjoint.conjugate_nonneg hp0))
   · filter_upwards [hl.eventually_norm] with e he
