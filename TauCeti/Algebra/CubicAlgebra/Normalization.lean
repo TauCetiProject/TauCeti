@@ -285,12 +285,12 @@ product is a scalar. -/
 theorem eq_repr_mul_of_sub_mul_sub_eq_algebraMap {u v w : R}
     (h : (b 1 - algebraMap R A u) * (b 2 - algebraMap R A v) = algebraMap R A w) :
     u = b.repr (b 1 * b 2) 2 ∧ v = b.repr (b 1 * b 2) 1 := by
-  have h₁ := congr($(congrArg b.repr h) 1)
-  have h₂ := congr($(congrArg b.repr h) 2)
-  simp only [Fin.isValue, mul_sub, sub_mul, map_sub, Finsupp.coe_sub, Pi.sub_apply, repr_smul',
-    repr_self, ne_eq, Fin.reduceEq, not_false_eq_true, Finsupp.single_eq_of_ne, mul_zero, sub_zero,
-    repr_mul_algebraMap, Finsupp.single_eq_same, mul_one, repr_algebraMap hb₀, one_ne_zero,
-    sub_self] at h₁ h₂
+  have h₁ : b.repr (b 1 * b 2) 1 - v = 0 := by
+    simpa [mul_sub, sub_mul, repr_smul', repr_mul_algebraMap, repr_algebraMap hb₀] using
+      congr($(congrArg b.repr h) 1)
+  have h₂ : b.repr (b 1 * b 2) 2 - u = 0 := by
+    simpa [mul_sub, sub_mul, repr_smul', repr_mul_algebraMap, repr_algebraMap hb₀] using
+      congr($(congrArg b.repr h) 2)
   exact ⟨by linear_combination -h₂, by linear_combination -h₁⟩
 
 /-- A basis whose second and third vectors already have a scalar product is its own
