@@ -139,6 +139,11 @@ theorem hilbertSchmidtInner_neg_left (A B : W →L[ℝ] V) :
     (-A).hilbertSchmidtInner B = -A.hilbertSchmidtInner B := by
   simpa using hilbertSchmidtInner_smul_left (-1) A B
 
+/-- The Hilbert–Schmidt inner product changes sign with its right argument. -/
+theorem hilbertSchmidtInner_neg_right (A B : W →L[ℝ] V) :
+    A.hilbertSchmidtInner (-B) = -A.hilbertSchmidtInner B := by
+  simpa using hilbertSchmidtInner_smul_right (-1) A B
+
 /-- The Hilbert–Schmidt inner product `B ↦ ⟪A, B⟫_HS` with a fixed left argument, as a continuous
 linear functional. -/
 noncomputable def hilbertSchmidtInnerL (A : W →L[ℝ] V) : (W →L[ℝ] V) →L[ℝ] ℝ :=
