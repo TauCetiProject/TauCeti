@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables.HalfPlaneChart
 import TauCeti.Analysis.Sobolev.Local.Locality
+import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients.HalfDisc
 import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 
@@ -93,18 +94,11 @@ private theorem memWkpLoc_halfCoord_comp_extChartAt_trans (hn : 1 ≤ n) (hkn : 
         (extChartAt closedUpperHalfPlaneModel (A.center i))) z)) := by
   set e : PartialEquiv ℂ ℂ := (extChartAt closedUpperHalfPlaneModel (B.center j)).symm.trans
     (extChartAt closedUpperHalfPlaneModel (A.center i))
-  -- `extChartAt I x` is by definition `(chartAt H x).extend I`, and `A.chart i` is
-  -- `chartAt H (A.center i)`.
-  have hextA : (A.chart i).extend closedUpperHalfPlaneModel =
-      extChartAt closedUpperHalfPlaneModel (A.center i) := rfl
-  have hextB : (B.chart j).extend closedUpperHalfPlaneModel =
-      extChartAt closedUpperHalfPlaneModel (B.center j) := rfl
-  obtain ⟨Ω, hΩ, hΩe⟩ := (B.chart j).exists_isOpen_extend_target_inter_preimage
+  obtain ⟨Ω, hΩ, hΩe⟩ := exists_isOpen_extChartAt_target_inter_preimage (B.center j)
     (A.chart i).open_source
-  obtain ⟨Ω', hΩ', hΩ'e⟩ := (A.chart i).exists_isOpen_extend_target_inter_preimage
+  obtain ⟨Ω', hΩ', hΩ'e⟩ := exists_isOpen_extChartAt_target_inter_preimage (A.center i)
     (B.chart j).open_source
-  rw [hextB, ← extChartAt_source (I := closedUpperHalfPlaneModel)] at hΩe
-  rw [hextA, ← extChartAt_source (I := closedUpperHalfPlaneModel)] at hΩ'e
+  rw [← extChartAt_source (I := closedUpperHalfPlaneModel)] at hΩe hΩ'e
   have hs' : e.source = Ω ∩ {z | 0 ≤ z.im} := by
     rw [← hΩe, PartialEquiv.trans_source, PartialEquiv.symm_source]
   have ht' : e.target = Ω' ∩ {z | 0 ≤ z.im} := by
@@ -140,7 +134,7 @@ theorem memWkpLoc_halfCoord_extChartAt_target (hn : 1 ≤ n) (hkn : k ≤ n) {s 
   set e : PartialEquiv ℂ ℂ := eB.symm.trans eA
   have hcomp := A.memWkpLoc_halfCoord_comp_extChartAt_trans B hn hkn (hs i) j
   -- The coordinate change of the bundle from `i` to `j`, `Cⁿ` up to the real axis.
-  obtain ⟨Ω₀, hΩ₀, hΩ₀e⟩ := (B.chart j).exists_isOpen_extend_target_inter_preimage
+  obtain ⟨Ω₀, hΩ₀, hΩ₀e⟩ := exists_isOpen_extChartAt_target_inter_preimage (B.center j)
     ((A.triv i).open_baseSet.inter (B.triv j).open_baseSet)
   have hC : ContDiffOn ℝ k
       (fun z ↦ ((A.triv i).coordChangeL ℝ (B.triv j) (eB.symm z) : F →L[ℝ] F))
@@ -199,11 +193,8 @@ theorem exists_chartValueL_ae_eq_halfCoord (hn : 1 ≤ n) (hkn : k ≤ n)
   have hcomp (j : Fin B.n) (m : Fin (finrank ℝ F)) : ∃ v : Wkp volume (B.halfImage j) p k,
       (Wkp.value k v : ℂ → ℝ) =ᵐ[volume.restrict (B.halfImage j : Set ℂ)]
         fun z ↦ (finBasis ℝ F).coord m (B.halfSectionChartData.coord j s z) := by
-    obtain ⟨Ω, hΩ, hΩe⟩ := (B.chart j).exists_isOpen_extend_target_inter_preimage
+    obtain ⟨Ω, hΩ, hΩe⟩ := exists_isOpen_extChartAt_target_inter_preimage (B.center j)
       (B.triv j).open_baseSet
-    -- `extChartAt I x` is by definition `(chartAt H x).extend I`.
-    rw [show (B.chart j).extend closedUpperHalfPlaneModel =
-      extChartAt closedUpperHalfPlaneModel (B.center j) from rfl] at hΩe
     have hcl : closure (B.halfImage j : Set ℂ) ⊆ Ω := fun z hz ↦ by
       obtain ⟨x, hx, rfl⟩ := closure_minimal (B.halfImage_subset_extChartAt_image_closure_dom j)
         (B.isCompact_extChartAt_image_closure_dom j).isClosed hz

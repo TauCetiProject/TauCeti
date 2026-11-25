@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables.Higher
 import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.Analysis.Sobolev.Local.Locality
-import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
 
 /-!
 # Local Sobolev classes under changes of half-plane chart
@@ -25,22 +24,19 @@ does not apply to them directly.
 
 This file shows that such a map `e`, given as a partial equivalence of `ℂ`, preserves the
 half-disc classes `TauCeti.MemWkpLoc p (V ∩ {0 ≤ im}) k` of every order `k ≤ n`
-(`TauCeti.MemWkpLoc.comp_partialEquiv_halfPlane`), and that a field of continuous linear maps of
-class `Cᵏ` up to the real axis preserves the class of order `k` on subsets of
-`Ω ∩ {0 ≤ im}` (`TauCeti.MemWkpLoc.contDiffOn_clm_apply_inter_setOf_im_nonneg`). Coordinate
-changes of a vector bundle over a surface with boundary are of the second kind.
+(`TauCeti.MemWkpLoc.comp_partialEquiv_halfPlane`).
 
 ## The argument
 
-Both statements are local (`TauCeti.memWkpLoc_iff_locally`), and near each point a map that is
+The statement is local (`TauCeti.memWkpLoc_iff_locally`), and near each point a map that is
 `Cⁿ` up to the real axis agrees with a map that is `Cⁿ` on an open neighbourhood of the point
-(`TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg`), so the results for open sets apply. For
-the change of variables, the extension `Φ` of `e` also needs an invertible derivative near the
-point. Extending `e.symm` in the same way to `Ψ`, the composite `Ψ ∘ Φ` is the identity on a
-neighbourhood of the point in the closed upper half-plane, where derivatives are unique since the
-half-plane is convex with nonempty interior. So the derivative of `Ψ` is a left inverse of that of
-`Φ` at the point (`TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`), and the derivative of `Φ` is
-invertible near the point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
+(`TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg`), so the results for open sets apply once
+the extension `Φ` of `e` has an invertible derivative near the point. Extending `e.symm` in the
+same way to `Ψ`, the composite `Ψ ∘ Φ` is the identity on a neighbourhood of the point in the
+closed upper half-plane, where derivatives are unique (`TauCeti.uniqueDiffOn_setOfPred_le_im`). So
+the derivative of `Ψ` is a left inverse of that of `Φ` at the point
+(`TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`), and the derivative of `Φ` is invertible near the
+point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
 
 ## Main declarations
 
@@ -48,8 +44,6 @@ invertible near the point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
   relatively open subsets of the closed upper half-plane, `Cⁿ` in both directions, agrees with a
   `Cⁿ` map with invertible derivative on an open neighbourhood of the point.
 * `TauCeti.MemWkpLoc.comp_partialEquiv_halfPlane`: such maps preserve the half-disc classes.
-* `TauCeti.MemWkpLoc.contDiffOn_clm_apply_inter_setOf_im_nonneg`: fields of continuous linear
-  maps of class `Cᵏ` up to the real axis preserve the half-disc classes of order `k`.
 
 ## References
 
@@ -66,24 +60,7 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
-  [NormedSpace ℝ G] {p : ENNReal} {k : ℕ}
-
-/-- **Fields of continuous linear maps of class `Cᵏ` up to the real axis.** Let `A` be a field of
-continuous linear maps between finite-dimensional spaces that is `Cᵏ` on the relatively open
-subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane, for an open `Ω`. Then `z ↦ A z (u z)` lies
-in the local Sobolev class of order `k` on every subset `U` of `Ω ∩ {0 ≤ im}` on which `u`
-does. -/
-theorem MemWkpLoc.contDiffOn_clm_apply_inter_setOf_im_nonneg [FiniteDimensional ℝ F]
-    [FiniteDimensional ℝ G] {Ω U : Set ℂ} (hΩ : IsOpen Ω) {A : ℂ → F →L[ℝ] G} {u : ℂ → F}
-    (hu : MemWkpLoc p U k u) (hA : ContDiffOn ℝ k A (Ω ∩ {z | 0 ≤ z.im}))
-    (hU : U ⊆ Ω ∩ {z | 0 ≤ z.im}) : MemWkpLoc p U k (fun z ↦ A z (u z)) := by
-  refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
-  obtain ⟨W, hW, hzW, A', hA', hA'A⟩ := exists_contDiffOn_eqOn_inter_setOf_im_nonneg hΩ hA (hU hz)
-  refine ⟨U ∩ W, inter_mem_nhdsWithin _ (hW.mem_nhds hzW), ?_⟩
-  refine ((hu.mono inter_subset_left).contDiffOn_clm_apply (Ω := ⟨W, hW⟩) hA' le_rfl
-    inter_subset_right).congr fun y hy ↦ ?_
-  rw [← hA'A ⟨hU hy.1, hy.2⟩]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {k : ℕ}
 
 variable {e : PartialEquiv ℂ ℂ} {Ω Ω' : Set ℂ} {n : ℕ}
 
@@ -115,11 +92,7 @@ theorem exists_contDiffOn_eqOn_det_fderiv_ne_zero (hn : 1 ≤ n) (hΩ : IsOpen �
     rw [hΨe ⟨ht ▸ e.map_source hz', hΦz ▸ hz.2.2⟩, e.left_inv hz']
   -- Derivatives are unique within `S`, a neighbourhood of `z₀` in the closed upper half-plane.
   have huniq : UniqueDiffWithinAt ℝ S z₀ := by
-    have hH : UniqueDiffWithinAt ℝ {z : ℂ | 0 ≤ z.im} z₀ :=
-      uniqueDiffWithinAt_convex (convex_halfSpace_im_ge 0)
-        ⟨Complex.I, mem_interior_iff_mem_nhds.2 (mem_of_superset
-          ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds (by simp))
-          fun z hz ↦ le_of_lt hz)⟩ (subset_closure hz₀.2)
+    have hH := uniqueDiffOn_setOfPred_le_im 0 z₀ hz₀.2
     refine hH.mono_nhds (nhdsWithin_le_iff.2 ?_)
     exact inter_mem (inter_mem (mem_nhdsWithin_of_mem_nhds (hΩ.mem_nhds hz₀.1))
       self_mem_nhdsWithin) (mem_nhdsWithin_of_mem_nhds (hSo.mem_nhds ⟨hz₀W, by
