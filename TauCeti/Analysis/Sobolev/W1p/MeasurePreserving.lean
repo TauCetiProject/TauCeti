@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.Logic.Equiv.Set
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
@@ -382,7 +383,7 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p ↔
       u ∈ w1p0Submodule volume V p := by
   have hVU : (V : Set F') = g.symm ⁻¹' U :=
-    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
+    g.toHomeomorph.toEquiv.eq_symm_preimage_of_eq_preimage hUV
   refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule g hUV⟩
   rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
   exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule g.symm hVU hu
@@ -395,7 +396,7 @@ theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ
     (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) := by
   have hVU : (V : Set F') = g.symm ⁻¹' U :=
-    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
+    g.toHomeomorph.toEquiv.eq_symm_preimage_of_eq_preimage hUV
   have hmp := measurePreserving_restrict g.measurePreserving hUV
   let C : Lp ℝ p (volume.restrict (V : Set F')) →L[ℝ] Lp ℝ p (volume.restrict (U : Set F)) :=
     (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap

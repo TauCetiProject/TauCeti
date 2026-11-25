@@ -984,6 +984,12 @@ theorem W1p.value_const (c : ℝ) :
     W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c :=
   W1p.value_mk _ _ _
 
+/-- The value of the constant Sobolev function `c` is `c` almost everywhere. -/
+theorem W1p.value_const_ae (c : ℝ) :
+    W1p.value (W1p.const c : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun _ => c := by
+  rw [W1p.value_const]
+  exact Lp.coeFn_const p _ c
+
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]
 theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=

@@ -15,6 +15,7 @@ An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ 
 
 The preimage of `{y}` under `e` is `{e.symm y}` (`Equiv.preimage_singleton`). Together with
 `Set.preimage_comp`, this identifies fibres after relabelling the base by an equivalence.
+Conversely, `s = e⁻¹(t)` gives `t = e.symm⁻¹(s)` (`Equiv.eq_symm_preimage_of_eq_preimage`).
 
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Equiv.bijOn_of_coe_eq`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
@@ -48,6 +49,12 @@ theorem bijOn_of_coe_eq {α β : Type*} {s : Set α} {t : Set β} {g : α → β
   · have := e.injective (Subtype.ext ((he ⟨x, hx⟩).trans (hxy.trans (he ⟨y, hy⟩).symm)))
     exact congrArg Subtype.val this
   · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).property, by rw [← he, e.apply_symm_apply]⟩
+
+/-- If `s` is the preimage of `t` under an equivalence `e`, then `t` is the preimage of `s` under
+`e.symm`. -/
+theorem eq_symm_preimage_of_eq_preimage {α β : Type*} (e : α ≃ β) {s : Set α} {t : Set β}
+    (h : s = e ⁻¹' t) : t = e.symm ⁻¹' s :=
+  h ▸ (e.symm_preimage_preimage t).symm
 
 open Classical in
 /-- An injective map `f : α → β` identifies `β` with the sum of `α`, sent to `β` by `f`, and the

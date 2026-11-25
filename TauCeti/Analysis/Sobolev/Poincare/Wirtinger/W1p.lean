@@ -567,8 +567,8 @@ theorem W1p.exists_eq_const_of_gradient_eq_zero [IsFiniteMeasure (mu.restrict (O
     ∃ c : ℝ, u = W1p.const c := by
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
   refine ⟨c, W1p.ext_value (Lp.ext ?_)⟩
-  filter_upwards [hc, Lp.coeFn_const p (mu.restrict (Omega : Set E)) c] with x h1 h2
-  rw [h1, W1p.value_const, h2, Function.const_apply]
+  filter_upwards [hc, W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c] with x h1 h2
+  rw [h1, h2]
 
 /-- On a preconnected domain, a Sobolev function with vanishing gradient and vanishing integral
 over a set of positive measure is zero. -/
@@ -604,9 +604,7 @@ theorem W1p.integralL_apply (u : W1p mu Omega p) :
 theorem W1p.integralL_const (c : ℝ) :
     W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
   rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
-  refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_const p (mu.restrict (Omega : Set E)) c] with x hx
-  rw [W1p.value_const, hx, Function.const_apply]
+  exact integral_congr_ae (W1p.value_const_ae c)
 
 /-- **A Sobolev function with vanishing gradient and mean is zero.** On a preconnected domain of
 finite measure, if the weak gradient of `u ∈ W^{1,p}(Ω)` and its integral over `Ω` both vanish,

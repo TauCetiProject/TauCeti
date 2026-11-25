@@ -117,9 +117,8 @@ private theorem pairingL_valueL_const_one (f : Lp ℝ 2 (mu.restrict Omega)) :
     pairingL f W1p.valueL (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
   rw [pairingL_apply, W1p.valueL_apply]
   refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_const 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) (1 : ℝ)]
-    with x hx
-  rw [W1p.value_const, hx, Function.const_apply, mul_one]
+  filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1] with x hx
+  rw [hx, mul_one]
 
 -- The shortcut instances of the energy-form file, to aid instance search for continuous bilinear
 -- forms on `W^{1,2}(Ω)`.
@@ -367,10 +366,8 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
       hVΩ ▸ e.symm.measurePreserving.restrict_preimage Ω.isOpen.measurableSet
     filter_upwards [W1p.value_compAffineIsometryEquivL_ae e.symm hVΩ
       (W1p.const 1 : W1p volume Ω 2),
-      hmp.quasiMeasurePreserving.ae
-        (Lp.coeFn_const 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) (1 : ℝ))]
-      with y h1 h2
-    rw [h1, W1p.value_const, h2, Function.const_apply]
+      hmp.quasiMeasurePreserving.ae (W1p.value_const_ae (Omega := Ω) (p := 2) 1)] with y h1 h2
+    rw [h1, h2]
   have hT1 := W1p.frontierTrace_ae_eq_of_continuousOn ENNReal.ofNat_ne_top hV hVb
     continuousOn_const hv1
   have h1 : ℓ (W1p.const 1) = (∫ x in Ω, f x) +
