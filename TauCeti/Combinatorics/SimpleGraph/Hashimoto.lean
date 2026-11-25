@@ -16,11 +16,11 @@ import Mathlib.Data.Set.Finite.List
 The Hashimoto matrix, or non-backtracking edge matrix, of a simple graph is indexed by its darts:
 the entry at `(a, b)` is `1` when `a` ends where `b` starts and `b` is not the reverse of `a`, and
 `0` otherwise. Its powers count the walks that never step straight back along the dart they
-arrived on. In particular the trace of its `m`-th power is the number `N_m` of closed
-non-backtracking walks of length `m` that do not backtrack across their closing step either, each
-counted with its starting vertex. These numbers are the coefficients of the logarithmic derivative
-of the Ihara zeta function of the graph, which is how the trace formula below turns into the
-determinant formula `ζ(u) = det(1 - u B)⁻¹`.
+arrived on. In particular, for `m ≥ 1`, the trace of its `m`-th power is the number `N_m` of
+closed non-backtracking walks of length `m` that do not backtrack across their closing step either,
+each counted with its starting vertex. These numbers are the coefficients of the logarithmic
+derivative of the Ihara zeta function of the graph, which is how the trace formula below turns into
+the determinant formula `ζ(u) = det(1 - u B)⁻¹`.
 
 ## Main definitions
 
@@ -65,8 +65,9 @@ abbrev NonBacktrackingDartSeq (k : ℕ) (a b : G.Dart) : Type _ :=
     (a :: l).getLast (List.cons_ne_nil a l) = b}
 
 /-- The number `N_m` of closed non-backtracking walks of length `m`
-(`SimpleGraph.Walk.IsNonBacktrackingCycle`), each counted with its starting vertex: a cycle of
-length `m ≥ 1` traversed in one direction contributes `m` walks, one for each starting point. -/
+(`SimpleGraph.Walk.IsNonBacktrackingCycle`), each counted with its starting vertex: a primitive
+cycle of length `m ≥ 1` traversed in one direction contributes `m` walks, one for each starting
+point. -/
 noncomputable def closedNonBacktrackingCount (G : SimpleGraph V) (m : ℕ) : ℕ :=
   Nat.card {c : Σ u : V, G.Walk u u // c.2.length = m ∧ c.2.IsNonBacktrackingCycle}
 
@@ -134,8 +135,7 @@ theorem sum_col_hashimotoMatrix [AddCommMonoidWithOne R] (b : G.Dart) :
 omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
 /-- There are finitely many sequences of `k` darts after a given dart, as there are finitely many
 lists of darts of length `k`. -/
-private theorem finite_nonBacktrackingDartSeq [Finite G.Dart] (k : ℕ) (a b : G.Dart) :
-    Finite (NonBacktrackingDartSeq k a b) :=
+instance [Finite G.Dart] (k : ℕ) (a b : G.Dart) : Finite (NonBacktrackingDartSeq k a b) :=
   have := (List.finite_length_eq G.Dart k).to_subtype
   Finite.of_injective (fun l => (⟨l.val, l.property.1⟩ : {l : List G.Dart | l.length = k}))
     fun _ _ h => Subtype.ext (by simpa using h)
@@ -156,7 +156,6 @@ theorem hashimotoMatrix_pow_apply [Semiring R] (k : ℕ) (a b : G.Dart) :
         ⟨fun ⟨l, hl, _, hb⟩ => h (by simpa [List.eq_nil_of_length_eq_zero hl] using hb)⟩
       rw [Nat.card_of_isEmpty, Nat.cast_zero]
   | succ k ih =>
-    have (c : G.Dart) := finite_nonBacktrackingDartSeq k c b
     rw [pow_succ', Matrix.mul_apply]
     simp_rw [ih, hashimotoMatrix_apply, boole_mul]
     rw [← sum_filter, sum_subtype _ (fun _ => mem_filter_univ _), ← Nat.cast_sum,
@@ -255,7 +254,6 @@ vertex. For `m = 0` the trace is the number of darts, while `N₀` is the number
 theorem trace_hashimotoMatrix_pow [Semiring R] {m : ℕ} (hm : m ≠ 0) :
     (G.hashimotoMatrix R ^ m).trace = G.closedNonBacktrackingCount m := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
-  have (a : G.Dart) := finite_nonBacktrackingDartSeq (k + 1) a a
   simp only [trace, diag_apply, hashimotoMatrix_pow_apply]
   rw [← Nat.cast_sum, ← Nat.card_sigma, Nat.succ_eq_add_one, closedNonBacktrackingCount_add_one]
 
