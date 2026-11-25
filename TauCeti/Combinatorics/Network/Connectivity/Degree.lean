@@ -47,6 +47,27 @@ universe u v
 
 variable {V : Type u} {Q : V → V → Type v}
 
+private def restrictedArrowEquiv (v : V) :
+    {a : Σ x y, Q x y | a.1 = v ∧ a.2.1 ≠ v} ≃
+      (Σ w : {w : V // w ≠ v}, Q v w) := by
+  let e₁ : {a : Σ x y, Q x y | a.1 = v ∧ a.2.1 ≠ v} ≃
+      {a : {a : Σ x y, Q x y // a.1 = v} // a.val.2.1 ≠ v} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun a : Σ x y, Q x y ↦ a.1 = v) (fun a ↦ a.2.1 ≠ v)).symm
+  let e₂ : {a : {a : Σ x y, Q x y // a.1 = v} // a.val.2.1 ≠ v} ≃
+      {a : Σ y, Q v y // a.1 ≠ v} :=
+    (Equiv.sigmaSubtype v).subtypeEquiv fun a ↦ by
+      rcases a with ⟨⟨x, y, a⟩, h⟩
+      cases h
+      rfl
+  exact e₁.trans <| e₂.trans <| Equiv.subtypeSigmaEquiv (Q v) (fun w ↦ w ≠ v)
+
+private def reverseArrowEquiv : (Σ x y, Q x y) ≃ (Σ y x, Q x y) where
+  toFun := fun ⟨x, y, a⟩ ↦ ⟨y, x, a⟩
+  invFun := fun ⟨y, x, a⟩ ↦ ⟨x, y, a⟩
+  left_inv := fun ⟨_, _, _⟩ ↦ rfl
+  right_inv := fun ⟨_, _, _⟩ ↦ rfl
+
 /-- Arc connectivity is at most the extended cardinality of every directed cut separating two
 specified vertices. -/
 theorem arcConnectivity_le_encard_cut {C : Set V} {s t : V} (hs : s ∈ C) (ht : t ∉ C) :
@@ -55,7 +76,7 @@ theorem arcConnectivity_le_encard_cut {C : Set V} {s t : V} (hs : s ∈ C) (ht :
   have hstrong := (isArcStrong_iff_le_arcConnectivity k).2 hk
   let A := {a : Σ x y, Q x y | a.1 ∈ C ∧ a.2.1 ∉ C}
   by_cases hA : A.Finite
-  · rw [← hA.cast_ncard_eq, Set.ncard_eq_toFinset_card A hA]
+  · rw [hA.encard_eq_coe_toFinset_card]
     exact Nat.cast_le.2 <| (hstrong.isArcReachable s t).le_card hs ht fun _ _ e hx hy ↦ by
       apply hA.mem_toFinset.mpr
       exact ⟨hx, hy⟩
@@ -69,20 +90,10 @@ theorem arcConnectivity_le_encard_nonloop_out [Nontrivial V] (v : V) :
   obtain ⟨w, hwv⟩ := exists_ne v
   let A := {a : Σ x y, Q x y | a.1 ∈ ({v} : Set V) ∧ a.2.1 ∉ ({v} : Set V)}
   let e : A ≃ (Σ w : {w : V // w ≠ v}, Q v w) :=
-    { toFun := fun a ↦ by
-        obtain ⟨⟨x, y, a⟩, hx, hy⟩ := a
-        have hxv : x = v := by simpa using hx
-        subst x
-        exact ⟨⟨y, by simpa using hy⟩, a⟩
-      invFun := fun a ↦ ⟨⟨v, a.1, a.2⟩, by simp [A, a.1.property]⟩
-      left_inv := by
-        rintro ⟨⟨x, y, a⟩, hx, hy⟩
-        have hxv : x = v := by simpa using hx
-        subst x
-        rfl
-      right_inv := by rintro ⟨⟨y, hy⟩, a⟩; rfl }
+    (Equiv.subtypeEquivRight fun a ↦ by simp [A]).trans <|
+      restrictedArrowEquiv (Q := Q) v
   refine (arcConnectivity_le_encard_cut (Q := Q) (C := {v}) (s := v) (t := w) rfl hwv).trans_eq ?_
-  exact ENat.card_congr e
+  exact (ENat.card_coe_set_eq A).symm.trans (ENat.card_congr e)
 
 /-- On at least two vertices, arc connectivity is at most the extended cardinality of the
 nonloop arrows entering a chosen vertex. -/
@@ -91,22 +102,14 @@ theorem arcConnectivity_le_encard_nonloop_in [Nontrivial V] (v : V) :
   obtain ⟨w, hwv⟩ := exists_ne v
   let A := {a : Σ x y, Q x y | a.1 ∈ ({v}ᶜ : Set V) ∧ a.2.1 ∉ ({v}ᶜ : Set V)}
   let e : A ≃ (Σ w : {w : V // w ≠ v}, Q w v) :=
-    { toFun := fun a ↦ by
-        obtain ⟨⟨x, y, a⟩, hx, hy⟩ := a
-        have hyv : y = v := by simpa using hy
-        subst y
-        exact ⟨⟨x, by simpa using hx⟩, a⟩
-      invFun := fun a ↦ ⟨⟨a.1, v, a.2⟩, by simp [A, a.1.property]⟩
-      left_inv := by
-        rintro ⟨⟨x, y, a⟩, hx, hy⟩
-        have hyv : y = v := by simpa using hy
-        subst y
-        rfl
-      right_inv := by rintro ⟨⟨x, hx⟩, a⟩; rfl }
+    ((reverseArrowEquiv (Q := Q)).subtypeEquiv fun a ↦ by
+      rcases a with ⟨x, y, a⟩
+      simp [A, reverseArrowEquiv, and_comm]).trans <|
+        restrictedArrowEquiv (Q := fun x y ↦ Q y x) v
   refine (arcConnectivity_le_encard_cut (Q := Q) (C := {v}ᶜ) (s := w) (t := v) ?_ ?_).trans_eq ?_
   · simpa using hwv
   · simp
-  · exact ENat.card_congr e
+  · exact (ENat.card_coe_set_eq A).symm.trans (ENat.card_congr e)
 
 /-- On at least two vertices, arc connectivity is at most the number of nonloop arrows leaving a
 chosen vertex. Only these nonloop arrows need to be finite. -/

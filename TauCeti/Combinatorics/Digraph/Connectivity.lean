@@ -126,7 +126,7 @@ theorem arcConnectivity_le_encard_nonloop_out [Nontrivial V] (v : V) :
     (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj v w).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
   exact (TauCeti.arcConnectivity_le_encard_nonloop_out (Q := D.AdjHom) v).trans_eq
-    (ENat.card_congr e)
+    ((ENat.card_congr e).trans (ENat.card_coe_set_eq _))
 
 /-- On at least two vertices, the arc connectivity of a digraph is at most the extended cardinality
 of the nonloop sources adjacent to any specified vertex. Loops do not contribute to this bound. -/
@@ -137,7 +137,7 @@ theorem arcConnectivity_le_encard_nonloop_in [Nontrivial V] (v : V) :
     (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj w v).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter (fun w : V ↦ w ≠ v) fun w ↦ D.Adj w v)
   exact (TauCeti.arcConnectivity_le_encard_nonloop_in (Q := D.AdjHom) v).trans_eq
-    (ENat.card_congr e)
+    ((ENat.card_congr e).trans (ENat.card_coe_set_eq _))
 
 /-- On at least two vertices, the arc connectivity of a digraph is at most the number of nonloop
 targets adjacent from any specified vertex, when that set of targets is finite. Loops do not
