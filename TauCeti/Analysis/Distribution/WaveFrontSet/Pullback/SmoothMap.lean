@@ -23,6 +23,14 @@ submersion its normal set is empty, so every distribution has a pullback
 (`Distribution.adjoint_fderiv_apply_ne_zero_of_surjective`), and it is the pullback by integration
 over the fibres of `f` (`Distribution.pullback_eq_compCLMOfSubmersion`).
 
+The wave front set of the pullback lies in the pullback of the wave front set of `T`
+(`Distribution.waveFrontSet_pullback_subset`):
+
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+
+So `k^* (f^* T)` is defined whenever the wave front set of `T` meets neither the normal set of `f`
+nor that of `f ∘ k` (`Distribution.adjoint_fderiv_apply_ne_zero_of_comp`).
+
 ## The construction
 
 Hörmander reduces the pullback along `f` to a pullback along a submersion followed by a
@@ -35,6 +43,10 @@ wave front set pulls back with the transpose of the derivative
 exactly when it comes from a covector of `WF(T)` in the normal set of `f`. So under the hypothesis
 `g^* T` restricts to `E × {0}` (`Distribution.pullbackInl`), and `f = g ∘ (x ↦ (x, 0))` on `Ω`.
 For a continuous function `F` both steps are composition with `F`, which gives `F ∘ f`.
+The wave front set bound composes the bounds for the two steps
+(`Distribution.waveFrontSet_compCLMOfSubmersion`, `Distribution.waveFrontSet_pullbackInl_subset`):
+a covector `((x, 0), (ξ, η))` of `WF(g^* T)` has `η` with `(f x, η) ∈ WF(T)` and
+`ξ = Df(x)ᵀ η`.
 
 When `f` is a submersion, the restriction to `E × {0}` is computed by pairing `g^* T` with the
 test functions `(x, y) ↦ ψ x ρₙ y` for shrinking normalized bumps `ρₙ`
@@ -51,6 +63,10 @@ test functions `(x, y) ↦ ψ x ρₙ y` for shrinking normalized bumps `ρₙ`
 * `Distribution.pullback_add`, `Distribution.pullback_smul`,
   `Distribution.pullback_smul_of_ne_zero`, `Distribution.pullback_zero`,
   `Distribution.pullback_neg`, `Distribution.pullback_sub`: linearity in `T`.
+* `Distribution.isMicrolocallySmoothAt_pullback`, `Distribution.waveFrontSet_pullback_subset`:
+  the wave front set of `f^* T` lies in `{(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+* `Distribution.adjoint_fderiv_apply_ne_zero_of_comp`: if `WF(T)` meets neither the normal set
+  of `f` nor that of `f ∘ k`, then `WF(f^* T)` does not meet the normal set of `k`.
 * `Distribution.adjoint_fderiv_apply_ne_zero_of_surjective`: the hypothesis holds for every
   distribution when `f` is a submersion.
 * `Distribution.pullback_eq_compCLMOfSubmersion`: along a submersion, `f^*` is the pullback
@@ -246,6 +262,77 @@ theorem pullback_sub (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') {S 
   have hT' := notMem_waveFrontSet_addSndPullback hf hT
   rw [pullback_eq_pullbackInl hf hfΩ hS rfl hS', pullback_eq_pullbackInl hf hfΩ hT rfl hT']
   exact (pullback_eq_pullbackInl hf hfΩ _ (map_sub _ S T) _).trans (pullbackInl_sub _ hS' hT')
+
+/-! ### The wave front set of the pullback -/
+
+/-- **The wave front set of the pullback, pointwise** (Hörmander I, Theorem 8.2.4). Let `x₀ ∈ Ω`
+and `ξ₀ ≠ 0`. If `T` is microlocally smooth at `(f x₀, η)` for every `η` with
+`Df(x₀)ᵀ η = ξ₀`, then `f^* T` is microlocally smooth at `(x₀, ξ₀)`. -/
+theorem isMicrolocallySmoothAt_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+    {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) {x₀ ξ₀ : E}
+    (hx₀ : x₀ ∈ Ω) (hξ₀ : ξ₀ ≠ 0)
+    (hT : ∀ η, (fderiv ℝ f x₀).adjoint η = ξ₀ → T.IsMicrolocallySmoothAt (f x₀) η) :
+    (T.pullback f hf hfΩ h).IsMicrolocallySmoothAt x₀ ξ₀ := by
+  have hS := notMem_waveFrontSet_addSndPullback hf h
+  have hU := mapsTo_inl_addSndDomain hf.continuousOn hfΩ
+  rw [pullback_eq_pullbackInl hf hfΩ h rfl hS]
+  refine isMicrolocallySmoothAt_pullbackInl _ hU hS hx₀ hξ₀ fun η ↦ ?_
+  have hd : DifferentiableAt ℝ f (toLp 2 (x₀, (0 : E'))).fst :=
+    (hf.differentiableOn (by simp) x₀ hx₀).differentiableAt (Ω.isOpen.mem_nhds hx₀)
+  rw [addSndPullback_eq_compCLMOfSubmersion, isMicrolocallySmoothAt_compCLMOfSubmersion_iff
+    volume volume _ _ _ T (hU hx₀) fun h0 ↦ hξ₀ (by simpa using congrArg WithLp.fst h0)]
+  intro η' hη'
+  rw [adjoint_fderiv_addSnd_apply hd] at hη'
+  obtain ⟨h₁, rfl⟩ := Prod.ext_iff.1 (toLp_injective 2 hη')
+  simpa [addSnd_apply] using hT η' h₁
+
+/-- **The wave front set of the pullback** (Hörmander I, Theorem 8.2.4). The covectors of the
+wave front set of `f^* T` are of the form `(x, Df(x)ᵀ η)` with `x ∈ Ω` and `(f x, η)` in the wave
+front set of `T`:
+
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+
+Covectors with `Df(x)ᵀ η = 0` do not occur, by the hypothesis on `WF(T)`. For a submersion this
+is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
+`Distribution.waveFrontSet_compCLMOfSubmersion`). -/
+theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+    {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
+    (T.pullback f hf hfΩ h).waveFrontSet ⊆
+      {p | p.1 ∈ Ω ∧ ∃ η, (f p.1, η) ∈ T.waveFrontSet ∧ (fderiv ℝ f p.1).adjoint η = p.2} := by
+  rintro ⟨x, ξ⟩ hxξ
+  obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
+  refine ⟨hx, ?_⟩
+  by_contra hmem
+  refine hns (isMicrolocallySmoothAt_pullback hf hfΩ h hx hξ fun η hη ↦ ?_)
+  by_contra hns'
+  refine hmem ⟨η, mem_waveFrontSet_iff.2 ⟨hfΩ hx, ?_, hns'⟩, hη⟩
+  rintro rfl
+  exact hξ (by rw [← hη, map_zero])
+
+/-- **Pulling back twice.** Let `k` be differentiable on an open set `Ω₀` with values in `Ω`, and
+let the wave front set of `T` not meet the normal set of `f`. If it does not meet the normal set
+of `f ∘ k` either, then the wave front set of `f^* T` does not meet the normal set of `k`, so
+that, for `k` smooth, `k^* (f^* T)` is defined. -/
+theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup E₀]
+    [InnerProductSpace ℝ E₀] [CompleteSpace E₀] {Ω₀ : Opens E₀} {k : E₀ → E}
+    (hk : DifferentiableOn ℝ k Ω₀) (hkΩ : MapsTo k Ω₀ Ω) (hf : ContDiffOn ℝ ∞ f Ω)
+    (hfΩ : MapsTo f Ω Ω') {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0)
+    (hfk : ∀ x ∈ Ω₀, ∀ η, ((f ∘ k) x, η) ∈ T.waveFrontSet →
+      (fderiv ℝ (f ∘ k) x).adjoint η ≠ 0) :
+    ∀ x ∈ Ω₀, ∀ ζ, (k x, ζ) ∈ (T.pullback f hf hfΩ h).waveFrontSet →
+      (fderiv ℝ k x).adjoint ζ ≠ 0 := by
+  intro x hx ζ hζ
+  obtain ⟨-, η, hη, hηζ⟩ := waveFrontSet_pullback_subset hf hfΩ h hζ
+  dsimp only at hη hηζ
+  subst hηζ
+  have hkx : DifferentiableAt ℝ k x := (hk x hx).differentiableAt (Ω₀.isOpen.mem_nhds hx)
+  have hfkx : DifferentiableAt ℝ f (k x) :=
+    (hf.differentiableOn (by simp) _ (hkΩ hx)).differentiableAt (Ω.isOpen.mem_nhds (hkΩ hx))
+  have hne := hfk x hx η hη
+  rwa [fderiv_comp x hfkx hkx, ContinuousLinearMap.adjoint_comp] at hne
 
 /-! ### Agreement with the pullback along a submersion -/
 
