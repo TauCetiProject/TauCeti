@@ -19,8 +19,9 @@ colimit cocone in `Rep A G` jointly span its point, because the forgetful functo
 `ModuleCat A` preserves colimits. So the property "smooth" on
 `Rep A G` is closed under colimits of every shape, in particular under arbitrary direct sums and
 filtered colimits. Hence `SmoothRep A G` has all colimits, computed in `Rep A G`, and the
-inclusion `SmoothRep A G ⥤ Rep A G` preserves them. Together with the preservation of kernels and
-finite products, the inclusion is exact.
+inclusion `SmoothRep A G ⥤ Rep A G` preserves them. (That it preserves finite limits and finite
+colimits, so is exact, is the general `CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+`CategoryTheory.ObjectProperty.preservesFiniteColimits_ι`.)
 
 ## Main results
 
@@ -29,8 +30,6 @@ finite products, the inclusion is exact.
 * `TauCeti.SmoothRep.hasColimitsOfSize`: `SmoothRep A G` has all colimits.
 * `TauCeti.SmoothRep.preservesColimitsOfSize_ι`: the inclusion into `Rep A G` preserves all
   colimits.
-* `TauCeti.SmoothRep.preservesFiniteColimits_ι`: the inclusion into `Rep A G` preserves finite
-  colimits; with `TauCeti.SmoothRep.preservesFiniteLimits_ι` it is exact.
 
 ## References
 
@@ -69,10 +68,6 @@ instance hasColimitsOfSize : HasColimitsOfSize.{w, w} (SmoothRep.{w} A G) where
 /-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves all colimits. -/
 instance preservesColimitsOfSize_ι : PreservesColimitsOfSize.{w, w} (ι.{w} A G) where
   preservesColimitsOfShape := inferInstance
-
-/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves finite colimits. -/
-instance preservesFiniteColimits_ι : PreservesFiniteColimits (ι.{w} A G) :=
-  PreservesColimitsOfSize.preservesFiniteColimits _
 
 end SmoothRep
 
