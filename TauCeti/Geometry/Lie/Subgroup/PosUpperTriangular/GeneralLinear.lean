@@ -23,8 +23,6 @@ global diffeomorphism and `f` is a smooth embedding with closed image.
 
 ## Main definitions
 
-* `TauCeti.Lie.immersedLieSubgroupDataOfPosUpperTriangular`: the presentation of `C` as a
-  connected immersed Lie subgroup of `AN`.
 * `TauCeti.Lie.lieExpDiffeomorphOfImmersedPosUpperTriangular`: the exponential of `C` as a global
   diffeomorphism.
 
@@ -88,12 +86,10 @@ end Immersion
 
 section GeneralLinear
 
-universe u
-
-variable {n : ℕ} {𝕜 : Type u} [RCLike 𝕜]
-  {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type u} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {C : Type u} [Group C] [TopologicalSpace C] [ChartedSpace H C] [LieGroup I ∞ C]
+variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {C : Type*} [Group C] [TopologicalSpace C] [ChartedSpace H C] [LieGroup I ∞ C]
 
 local notation "Mat" => Matrix (Fin n) (Fin n) 𝕜
 local notation "AN" => posUpperTriangularGroup (Fin n) 𝕜
@@ -105,7 +101,7 @@ variable [FiniteDimensional ℝ E] [T2Space C] [ConnectedSpace C]
 /-- A connected real Lie group `C` with an injective smooth immersive homomorphism into `GL_n(𝕜)`
 with values in the positive triangular group `AN` presents a connected immersed Lie subgroup
 of `AN`. -/
-def immersedLieSubgroupDataOfPosUpperTriangular (f : C →* GL (Fin n) 𝕜) (hinj : Injective f)
+private def immersedLieSubgroupDataOfPosUpperTriangular (f : C →* GL (Fin n) 𝕜) (hinj : Injective f)
     (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
     ImmersedLieSubgroupData 𝓘(ℝ, Model) (f.codRestrict AN hf).range where
   X := C

@@ -252,7 +252,8 @@ of a second-countable Lie group `G` is the range of the differential of a connec
 subgroup of `G`, its integral leaf subgroup. -/
 theorem exists_immersedLieSubgroupData_range_lieMapToHom_eq
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
-    ∃ (K : Subgroup G) (d : ImmersedLieSubgroupData I K), d.lieMapToHom.range = S :=
+    ∃ (K : Subgroup G) (d : ImmersedLieSubgroupData.{0, 0, w, 0, 0, w} I K),
+      d.lieMapToHom.range = S :=
   ⟨_, S.integralLeafSubgroupData, S.range_lieMapToHom_integralLeafSubgroupData⟩
 
 /-- The integral leaf subgroup of a Lie subalgebra is a connected immersed Lie subgroup. -/
