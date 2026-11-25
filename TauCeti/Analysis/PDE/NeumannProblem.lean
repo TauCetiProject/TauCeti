@@ -201,7 +201,8 @@ essentially bounded energy density and satisfy `λ‖ξ‖² ≤ ξ ⬝ a(x) ξ`
 
 `∫_Ω ⟨a ∇u, ∇v⟩ = ℓ v` for every `v ∈ H¹(Ω)`,
 
-the weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ℓ` with homogeneous conormal boundary condition. -/
+the weak Neumann problem with datum `ℓ`. The boundary part of `ℓ`, if any, prescribes the
+conormal derivative: for `ℓ = ∫_Ω f ·` it is the homogeneous condition `aⁱʲ ∂ⱼu νᵢ = 0` on `∂Ω`. -/
 theorem existsUnique_setIntegral_eq_zero_forall_energyFormH1_eq
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
     (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
