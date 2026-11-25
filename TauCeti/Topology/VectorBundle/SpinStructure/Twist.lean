@@ -94,8 +94,10 @@ local notation "ρC" => MonoidHom.comp
 structure with principal bundle `(P ×_X L) ×_μ Spinᶜ(n)`, the extension of structure group of
 the fibre product of `P` and `L` along multiplication by the central circle
 `μ : ([s, z], w) ↦ [s, z w]`. The frame of `[(p, l), a]` is the frame of `p` composed with the
-rotation of `a` (`TauCeti.SpinCStructure.toFrame_twist_mk`). -/
-noncomputable abbrev twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
+rotation of `a` (`TauCeti.SpinCStructure.toFrame_twist_mk`). Its body is exposed so that the
+fibre `(s.twist L).P x` unfolds to the fibre of the extension downstream. -/
+@[expose]
+noncomputable def twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
   (s.fiberProd Circle L).extend (spinCGroup.mulCircle _ hQ)
     (spinCGroup.continuous_mulCircle _ _)
     (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
@@ -106,6 +108,15 @@ noncomputable abbrev twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
       v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
 
 variable {L} (s : SpinCStructure F V n)
+
+/-- The principal bundle of the twist of `s` by `L` is the extension of structure group of the
+fibre product of the principal bundle of `s` with `L` along the multiplication by the central
+circle. -/
+@[simp]
+theorem twist_P :
+    (s.twist L).P = Extend (s.fiberProd Circle L).P (spinCGroup.mulCircle _ hQ)
+      (spinCGroup.continuous_mulCircle _ _) :=
+  (rfl)
 
 /-- **The frame of `[(p, l), a]`** in the twist of a `Spinᶜ` structure by `L` sends `v` to the
 frame of `p` applied to the rotation of `a`. -/

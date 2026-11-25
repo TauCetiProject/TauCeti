@@ -15,7 +15,9 @@ An **equivalence** `TauCeti.PrincipalBundle.Equiv H Q Q'` of two bundles `Q` and
 same base, each with a right action of `H` on its fibres, is a family of bijections
 `Q x ≃ Q' x` that is `H`-equivariant and induces continuous maps of total spaces in both
 directions. For principal `H`-bundles these are the isomorphisms of principal bundles over the
-identity of the base. Equivalences form a groupoid (`refl`, `symm`, `trans`).
+identity of the base. Equivalences form a groupoid (`refl`, `symm`, `trans`, with the groupoid
+laws `symm_symm`, `refl_trans`, `trans_refl`, `self_trans_symm`, `symm_trans_self` and
+`symm_trans`).
 
 ## Main definitions
 
@@ -108,6 +110,35 @@ theorem symm_toEquiv (ψ : Equiv H Q Q') (x : X) : ψ.symm.toEquiv x = (ψ.toEqu
 @[simp]
 theorem trans_toEquiv (ψ : Equiv H Q Q') (ψ' : Equiv H Q' Q'') (x : X) :
     (ψ.trans ψ').toEquiv x = (ψ.toEquiv x).trans (ψ'.toEquiv x) :=
+  (rfl)
+
+@[simp]
+theorem symm_symm (ψ : Equiv H Q Q') : ψ.symm.symm = ψ :=
+  (rfl)
+
+@[simp]
+theorem refl_symm : (refl H Q).symm = refl H Q :=
+  (rfl)
+
+@[simp]
+theorem refl_trans (ψ : Equiv H Q Q') : (refl H Q).trans ψ = ψ :=
+  (rfl)
+
+@[simp]
+theorem trans_refl (ψ : Equiv H Q Q') : ψ.trans (refl H Q') = ψ :=
+  (rfl)
+
+@[simp]
+theorem self_trans_symm (ψ : Equiv H Q Q') : ψ.trans ψ.symm = refl H Q :=
+  ext fun x q ↦ (ψ.toEquiv x).symm_apply_apply q
+
+@[simp]
+theorem symm_trans_self (ψ : Equiv H Q Q') : ψ.symm.trans ψ = refl H Q' :=
+  ext fun x q ↦ (ψ.toEquiv x).apply_symm_apply q
+
+@[simp]
+theorem symm_trans (ψ : Equiv H Q Q') (ψ' : Equiv H Q' Q'') :
+    (ψ.trans ψ').symm = ψ'.symm.trans ψ.symm :=
   (rfl)
 
 end Equiv
