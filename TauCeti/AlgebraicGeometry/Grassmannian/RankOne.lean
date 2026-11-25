@@ -109,9 +109,11 @@ theorem SpecMap_chartToProj (x : M) {S : Type u} [CommRing S]
         (ψ.comp (evalUniversal R x).toRingHom) (by simp))) ≫
         Proj.awayι (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x)
           (ι_mem_homogeneousSubmodule R M x) one_pos := by
+  -- Merge the two `Spec.map`s into `Spec.map` of the ring map `ψ ∘ (awayEquiv R x).symm`.
   rw [chartToProj_def, ← Category.assoc, ← Spec.map_comp, RingEquiv.toCommRingCatIso_inv,
-    AlgEquiv.toRingEquiv_symm, ← CommRingCat.ofHom_comp,
-    ← RingHom.comp_homogeneousLocalizationAwayLift ψ _ (by simp), ← awayEquiv_symm_toRingHom,
+    AlgEquiv.toRingEquiv_symm, ← CommRingCat.ofHom_comp]
+  -- `(awayEquiv R x).symm` is `Away.lift` of the evaluation, and `ψ` passes inside `Away.lift`.
+  rw [← RingHom.comp_homogeneousLocalizationAwayLift ψ _ (by simp), ← awayEquiv_symm_toRingHom,
     RingEquiv.toRingHom_eq_coe]
 
 /-- **The rank-one charts agree on overlaps.** On the overlap of the charts of `G(1, M)` at `x`
@@ -147,6 +149,12 @@ private noncomputable def chartToProjOfFun (x : Fin 1 → M) :
     Spec (.of (ChartAlgebra R x)) ⟶ Proj (homogeneousSubmodule R M) :=
   ((eq_const_of_unique x).symm : (fun _ : Fin 1 ↦ x 0) = x) ▸ chartToProj R (x 0)
 
+/-- On a constant index `fun _ ↦ m`, the cast in `chartToProjOfFun` is along `rfl` and reduces, so
+`chartToProjOfFun R (fun _ ↦ m)` is `chartToProj R m` by definition. -/
+private theorem chartToProjOfFun_const (m : M) :
+    chartToProjOfFun R (fun _ : Fin 1 ↦ m) = chartToProj R m :=
+  (rfl)
+
 /-- **The rank-one Grassmannian maps to `Proj (Sym M)`**, by the chart maps `chartToProj`, which
 agree on overlaps (`Module.Grassmannian.chartToProj_transition`). -/
 noncomputable def toProj : scheme R M 1 ⟶ Proj (homogeneousSubmodule R M) :=
@@ -157,6 +165,7 @@ noncomputable def toProj : scheme R M 1 ⟶ Proj (homogeneousSubmodule R M) :=
       ← Category.assoc, IsPullback.isoPullback_hom_snd, Category.assoc]
     obtain ⟨a, rfl⟩ : ∃ a, x = fun _ ↦ a := ⟨_, eq_const_of_unique x⟩
     obtain ⟨b, rfl⟩ : ∃ b, y = fun _ ↦ b := ⟨_, eq_const_of_unique y⟩
+    rw [chartToProjOfFun_const, chartToProjOfFun_const]
     exact chartToProj_transition R a b
 
 /-- On the chart indexed by `x : Fin 1 → M`, `toProj R` is `chartToProjOfFun R x`. -/
@@ -168,7 +177,7 @@ private theorem chartι_toProjOfFun (x : Fin 1 → M) :
 @[reassoc (attr := simp)]
 theorem chartι_toProj (m : M) :
     chartι R (fun _ : Fin 1 ↦ m) ≫ toProj R = chartToProj R m :=
-  chartι_toProjOfFun R _
+  (chartι_toProjOfFun R _).trans (chartToProjOfFun_const R m)
 
 /-- `toProj R` lies over `Spec R`. -/
 @[reassoc (attr := simp)]
