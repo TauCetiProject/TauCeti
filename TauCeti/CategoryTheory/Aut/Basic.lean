@@ -78,6 +78,6 @@ instance small_iso (X Y : C) [Small.{w} (X ⟶ Y)] : Small.{w} (X ≅ Y) :=
 /-- If the endomorphisms of `X` form a `w`-small type, so does its automorphism group. In
 particular automorphism groups in a `w`-locally small category are `w`-small. -/
 instance small_aut (X : C) [Small.{w} (X ⟶ X)] : Small.{w} (Aut X) :=
-  small_of_injective (f := fun σ : Aut X ↦ σ.asIso.hom) fun _ _ h ↦ Aut.ext (Iso.ext h)
+  small_map Aut.isoEquiv
 
 end TauCeti
