@@ -37,7 +37,12 @@ change along `t` of the fiber at `i`. For a commuting triangle `a ≫ b = d`, th
 base change along `d`, coherently for three composable morphisms
 (`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`); in particular, morphisms which agree after
 base change along `b` agree after base change along `d`
-(`CategoryTheory.Over.pullback_map_eq_map_of_comp_eq`).
+(`CategoryTheory.Over.pullback_map_eq_map_of_comp_eq`). For a cone `c` over a diagram `D`, the
+predicate `CategoryTheory.Limits.Cone.LiftsAlong` says that a morphism between base changes to the
+cone point is, up to these identifications, the base change of a morphism between base changes to a
+member of `D`; lifts are stable under passage to later members
+(`CategoryTheory.Limits.Cone.LiftsAlong.precomp`) and under composition
+(`CategoryTheory.Limits.Cone.liftsAlong_comp`).
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -191,6 +196,13 @@ theorem pullbackCompIsoOfEq_hom_app (h : a ≫ b = d) (A : Over Z) :
       (pullbackComp a b).inv.app A ≫ eqToHom (by subst h; rfl) := by
   simp [pullbackCompIsoOfEq, eqToHom_app]
 
+/-- The inverse component of the triangle comparison is transport along the triangle equality,
+followed by `pullbackComp`. -/
+theorem pullbackCompIsoOfEq_inv_app (h : a ≫ b = d) (A : Over Z) :
+    (pullbackCompIsoOfEq h).inv.app A =
+      eqToHom (by subst h; rfl) ≫ (pullbackComp a b).hom.app A := by
+  simp [pullbackCompIsoOfEq, eqToHom_app]
+
 /-- `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
 @[reassoc (attr := simp)]
 theorem pullbackCompIsoOfEq_hom_app_left_fst (h : a ≫ b = d) (A : Over Z) :
@@ -325,6 +337,70 @@ instance preservesEpimorphisms_star (X : C) [(prod.functor.obj X).PreservesEpimo
 end HasBinaryProducts
 
 end Over
+
+namespace Limits.Cone
+
+variable {C : Type u} [Category.{v} C] [HasPullbacks C] {J : Type*} [Category* J] {D : J ⥤ C}
+
+section LiftsAlong
+
+variable (c : Cone D)
+
+/-- The morphism `u` between base changes to the cone point lifts to a morphism between the base
+changes to `D.obj k` along `g : k ⟶ i`: the base change of the lift to the cone point is `u`, up to
+the comparison isomorphisms `Over.pullbackCompIsoOfEq`. -/
+def LiftsAlong {i : J} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : J}
+    (g : k ⟶ i) : Prop :=
+  ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+    (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+      (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u
+
+variable {c}
+
+/-- A lift is a morphism whose base change agrees with the given arrow under the canonical
+comparison isomorphisms. -/
+theorem liftsAlong_iff {i : J} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : J}
+    (g : k ⟶ i) : c.LiftsAlong u g ↔
+      ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+        (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+          (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u := Iff.rfl
+
+/-- Identity morphisms lift along every morphism to `i`. -/
+@[simp]
+theorem liftsAlong_id {i : J} (A : Over (D.obj i)) {k : J} (g : k ⟶ i) :
+    c.LiftsAlong (𝟙 ((Over.pullback (c.π.app i)).obj A)) g :=
+  ⟨𝟙 _, by simp⟩
+
+/-- Lifts of two composable morphisms along the same morphism to `i` compose to a lift of their
+composite. -/
+theorem liftsAlong_comp {i : J} {A B E : Over (D.obj i)}
+    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B}
+    {u' : (Over.pullback (c.π.app i)).obj B ⟶ (Over.pullback (c.π.app i)).obj E} {k : J}
+    {g : k ⟶ i} (hu : c.LiftsAlong u g) (hu' : c.LiftsAlong u' g) :
+    c.LiftsAlong (u ≫ u') g := by
+  obtain ⟨v, hv⟩ := hu
+  obtain ⟨v', hv'⟩ := hu'
+  exact ⟨v ≫ v', by simp [hv', reassoc_of% hv]⟩
+
+/-- A lift along `g` base changes to a lift along `h ≫ g`. -/
+theorem LiftsAlong.precomp {i : J} {A B : Over (D.obj i)}
+    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B} {k l : J}
+    {g : k ⟶ i} (h : l ⟶ k) (hg : c.LiftsAlong u g) : c.LiftsAlong u (h ≫ g) := by
+  obtain ⟨v, hv⟩ := hg
+  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
+  refine ⟨C.inv.app A ≫ (Over.pullback (D.map h)).map v ≫ C.hom.app B, ?_⟩
+  have hcoh (Z : Over (D.obj i)) := Over.pullbackCompIsoOfEq_hom_app_eq (c.w h)
+    (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) Z
+  have hnat := (Over.pullbackCompIsoOfEq (c.w h)).hom.naturality v
+  dsimp only [Functor.comp_map] at hnat
+  rw [hcoh, hcoh]
+  simp [C, reassoc_of% hnat, hv]
+
+end LiftsAlong
+
+end Limits.Cone
 
 namespace IsPullback
 

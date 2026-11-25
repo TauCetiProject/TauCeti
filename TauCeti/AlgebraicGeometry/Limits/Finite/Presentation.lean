@@ -39,10 +39,8 @@ member, and two morphisms over a member which agree over the limit agree over so
   presented quasi-compact quasi-separated stage models.
 * `CategoryTheory.Limits.IsLimit.exists_mono_pullbackMap`: monomorphism inheritance for a
   quasi-compact locally finite type morphism from a quasi-compact quasi-separated stage source.
-* `CategoryTheory.Limits.IsLimit.LiftsAlong`: a lift of a morphism to a member of the diagram,
-  stable under passage to later members (`LiftsAlong.comp`).
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_comp_eq`: morphism descent for the base
-  change functors of over categories.
+  change functors of over categories, stated through `CategoryTheory.Limits.Cone.LiftsAlong`.
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_eq_map`: descent of equalities of
   morphisms for the base change functors of over categories.
 
@@ -61,45 +59,6 @@ universe u
 open CategoryTheory Limits AlgebraicGeometry
 
 namespace CategoryTheory.Limits.IsLimit
-
-variable {I : Type u} [Category.{u} I] {D : I ⥤ Scheme.{u}} {c : Cone D}
-
-section Eventually
-
-variable (c) in
-/-- The morphism `u` between base changes to the cone point lifts to a morphism between the base
-changes to `D.obj k` along `g : k ⟶ i`. -/
-def LiftsAlong {i : I} {A B : Over (D.obj i)}
-    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : I}
-    (g : k ⟶ i) : Prop :=
-  ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
-    (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
-      (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u
-
-/-- A lift is a morphism whose base change agrees with the given arrow under the canonical
-comparison isomorphisms. -/
-theorem liftsAlong_iff {i : I} {A B : Over (D.obj i)}
-    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : I}
-    (g : k ⟶ i) : LiftsAlong c u g ↔
-      ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
-        (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
-          (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u := Iff.rfl
-
-/-- A lift along `g` base changes to a lift along `h ≫ g`. -/
-theorem LiftsAlong.comp {i : I} {A B : Over (D.obj i)}
-    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B} {k l : I}
-    {g : k ⟶ i} (h : l ⟶ k) (hg : LiftsAlong c u g) : LiftsAlong c u (h ≫ g) := by
-  obtain ⟨v, hv⟩ := hg
-  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
-  refine ⟨C.inv.app A ≫ (Over.pullback (D.map h)).map v ≫ C.hom.app B, ?_⟩
-  have hcoh (Z : Over (D.obj i)) := Over.pullbackCompIsoOfEq_hom_app_eq (c.w h)
-    (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) Z
-  have hnat := (Over.pullbackCompIsoOfEq (c.w h)).hom.naturality v
-  dsimp only [Functor.comp_map] at hnat
-  rw [hcoh, hcoh]
-  simp [C, reassoc_of% hnat, hv]
-
-end Eventually
 
 variable {I : Type u} [Category.{u} I] [IsCofiltered I] {D : I ⥤ Scheme.{u}}
   [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)] {c : Cone D} (hc : IsLimit c)
@@ -432,13 +391,13 @@ theorem exists_overPullback_map_comp_eq [∀ i, CompactSpace (D.obj i)]
     [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {A B : Over (D.obj i)} [QuasiCompact A.hom]
     [QuasiSeparated A.hom] [LocallyOfFinitePresentation B.hom]
     (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) :
-    ∃ (j : I) (f : j ⟶ i), LiftsAlong c u f := by
+    ∃ (j : I) (f : j ⟶ i), c.LiftsAlong u f := by
   have hu : u.left ≫ pullback.snd B.hom (c.π.app i) = pullback.snd A.hom (c.π.app i) := Over.w u
   -- Descend `u`, written with the base as the first factor of the pullbacks.
   obtain ⟨j, f, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq (p := A.hom) (q := B.hom)
     ((pullbackSymmetry _ _).hom ≫ u.left ≫ (pullbackSymmetry _ _).inv) (by simp [hu])
-  refine ⟨j, f, Over.homMk ((pullbackSymmetry _ _).hom ≫ b ≫ (pullbackSymmetry _ _).inv)
-    (by simp [hb₁]), ?_⟩
+  refine ⟨j, f, (Cone.liftsAlong_iff u f).mpr
+    ⟨Over.homMk ((pullbackSymmetry _ _).hom ≫ b ≫ (pullbackSymmetry _ _).inv) (by simp [hb₁]), ?_⟩⟩
   have hb := congrArg (· ≫ pullback.snd _ _) hb₂
   simp only [Category.assoc, pullback.lift_snd, Category.comp_id, pullbackSymmetry_inv_comp_snd]
     at hb

@@ -86,16 +86,16 @@ private theorem exists_lifts {i : I} (X : Over (D.obj i)) [LocallyOfFinitePresen
             ι[(Over.pullback (c.π.app i)).obj X] := by
   -- Lift the three structure morphisms, each along some morphism to `i`, then along a common one.
   let R : Fin 3 → ∀ {k : I}, (k ⟶ i) → Prop := ![
-    LiftsAlong c (Functor.OplaxMonoidal.η (Over.pullback (c.π.app i)) ≫
+    c.LiftsAlong (Functor.OplaxMonoidal.η (Over.pullback (c.π.app i)) ≫
       η[(Over.pullback (c.π.app i)).obj X]),
-    LiftsAlong c (δ (Over.pullback (c.π.app i)) X X ≫ μ[(Over.pullback (c.π.app i)).obj X]),
-    LiftsAlong c ι[(Over.pullback (c.π.app i)).obj X]]
+    c.LiftsAlong (δ (Over.pullback (c.π.app i)) X X ≫ μ[(Over.pullback (c.π.app i)).obj X]),
+    c.LiftsAlong ι[(Over.pullback (c.π.app i)).obj X]]
   obtain ⟨j, g, hg⟩ := IsCofiltered.exists_forall_of_stable (R := R)
-    (by intro n; fin_cases n <;> exact fun h hg ↦ hg.comp h)
+    (by intro n; fin_cases n <;> exact fun h hg ↦ hg.precomp h)
     (by intro n; fin_cases n <;> exact hc.exists_overPullback_map_comp_eq _)
-  obtain ⟨vo, hvo⟩ := (liftsAlong_iff _ _).mp (hg 0)
-  obtain ⟨vm, hvm⟩ := (liftsAlong_iff _ _).mp (hg 1)
-  obtain ⟨vi, hvi⟩ := (liftsAlong_iff _ _).mp (hg 2)
+  obtain ⟨vo, hvo⟩ := (Cone.liftsAlong_iff _ _).mp (hg 0)
+  obtain ⟨vm, hvm⟩ := (Cone.liftsAlong_iff _ _).mp (hg 1)
+  obtain ⟨vi, hvi⟩ := (Cone.liftsAlong_iff _ _).mp (hg 2)
   refine ⟨j, g, ε _ ≫ vo, Functor.LaxMonoidal.μ _ X X ≫ vm, vi, ?_, ?_, hvi⟩
   · rw [Functor.map_comp, Category.assoc, hvo, ← Category.assoc, ← Category.assoc]
     exact congrArg (· ≫ η[(Over.pullback (c.π.app i)).obj X]) (toUnit_unique _ _)
@@ -242,21 +242,23 @@ theorem exists_grpObj_overPullback {i : I} (X : Over (D.obj i))
   -- The given group law, transported to the base change to the cone point of `X ×_{Dᵢ} Dⱼ`.
   let T : GrpObj ((Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)) :=
     .ofIso ((Over.pullbackCompIsoOfEq (c.w g)).app X).symm
+  -- The transported law, restated on the source of the comparison isomorphism.
+  let T' : GrpObj ((Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X) := T
+  -- The comparison is a homomorphism for the transported law; cancel it in each lift equation.
+  have : IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X))
+      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X) :=
+    inferInstanceAs (IsMonHom ((Over.pullbackCompIsoOfEq (c.w g)).app X).symm.inv)
   have h_one' : (Over.pullback (c.π.app j)).map one = Functor.OplaxMonoidal.η _ ≫
       η[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    rw [toUnit_unique (Functor.OplaxMonoidal.η _) (toUnit _), MonObj.ofIso_one, ← Category.assoc,
-      ← h_one]
-    simp
+    rw [← cancel_mono ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X), h_one, Category.assoc,
+      IsMonHom.one_hom, toUnit_unique (toUnit _) (Functor.OplaxMonoidal.η _)]
   have h_mul' : (Over.pullback (c.π.app j)).map mul =
       δ _ _ _ ≫ μ[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    simp only [T, MonObj.ofIso_mul, Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
-    rw [← reassoc_of% h_mul]
-    simp
+    rw [← cancel_mono ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X), h_mul, Category.assoc,
+      IsMonHom.mul_hom]
   have h_inv' : (Over.pullback (c.π.app j)).map inv =
       ι[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    simp only [T, GrpObj.ofIso_inv, Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
-    rw [← Category.assoc, ← h_inv]
-    simp
+    rw [← cancel_mono ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X), h_inv, GrpObj.inv_hom]
   have : QuasiCompact ((Over.pullback (D.map g)).obj X).hom := by
     simpa only [Over.pullback_obj_hom] using
       (inferInstanceAs (QuasiCompact (pullback.snd X.hom (D.map g))))
@@ -269,10 +271,6 @@ theorem exists_grpObj_overPullback {i : I} (X : Over (D.obj i))
     ((Over.pullback (c.π.app j)).map_mul_assoc h_mul')
     ((Over.pullback (c.π.app j)).map_left_inv h_one' h_mul' h_inv')
     ((Over.pullback (c.π.app j)).map_right_inv h_one' h_mul' h_inv')
-  let T' : GrpObj ((Over.pullback (D.map g) ⋙ Over.pullback (c.π.app j)).obj X) := T
-  have : IsMonHom (M := (Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X))
-      ((Over.pullbackCompIsoOfEq (c.w g)).hom.app X) :=
-    inferInstanceAs (IsMonHom ((Over.pullbackCompIsoOfEq (c.w g)).app X).symm.inv)
   exact ⟨k, h ≫ g, exists_grpObj_of_map_axioms X g h one mul inv
     (by rw [h_one', Functor.Monoidal.ε_η_assoc]) (by rw [h_mul', Functor.Monoidal.μ_δ_assoc])
     e₁ e₂ e₃ e₄ e₅⟩
