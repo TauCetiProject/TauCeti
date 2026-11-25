@@ -58,7 +58,7 @@ variable {R G X M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Group G]
 /-- **Extension by zero is equivariant**: for a `G`-stable open subset `U` of a Hausdorff
 `G`-space `X`, extension by zero `C_c^∞(U, M) → C_c^∞(X, M)` intertwines the translation
 representations. -/
-@[expose] def compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
+def compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
     (hU : IsOpen (U : Set X)) :
     (compactlySupportedRep R G U M).IntertwiningMap (compactlySupportedRep R G X M) where
   toLinearMap := LocallyConstant.compactlySupported.extendByZero R M hU
@@ -68,7 +68,8 @@ representations. -/
       simp only [LinearMap.coe_comp, comp_apply, compactlySupportedRep_apply_coe]
       rw [LocallyConstant.compactlySupported.extendByZero_apply_coe hU _ ⟨x, hx⟩,
         LocallyConstant.compactlySupported.extendByZero_apply_coe hU _ ⟨_, hx'⟩]
-      exact (compactlySupportedRep_apply_coe (R := R) (M := M) g f ⟨x, hx⟩)
+      exact (compactlySupportedRep_apply_coe (R := R) (M := M) g f ⟨x, hx⟩).trans
+        (congrArg f.val (SetLike.mk_smul_mk U g⁻¹ x hx))
     · have hx' : g⁻¹ • x ∉ U := fun h ↦ hx (by simpa using U.smul_mem g h)
       simp only [LinearMap.coe_comp, comp_apply, compactlySupportedRep_apply_coe]
       rw [LocallyConstant.compactlySupported.extendByZero_apply_of_notMem hU _ hx,
@@ -83,14 +84,14 @@ theorem coe_compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
 
 /-- **Restriction is equivariant**: for a `G`-stable closed subset `Z` of a `G`-space `X`,
 restriction `C_c^∞(X, M) → C_c^∞(Z, M)` intertwines the translation representations. -/
-@[expose] def compactlySupportedRestrict (Z : SubMulAction G X) (hZ : IsClosed (Z : Set X)) :
+def compactlySupportedRestrict (Z : SubMulAction G X) (hZ : IsClosed (Z : Set X)) :
     (compactlySupportedRep R G X M).IntertwiningMap (compactlySupportedRep R G Z M) where
   toLinearMap := LocallyConstant.compactlySupported.restrict R M hZ
   isIntertwining' g := LinearMap.ext fun f ↦ LocallyConstant.compactlySupported.ext fun z ↦ by
     simp only [LinearMap.coe_comp, comp_apply]
     rw [LocallyConstant.compactlySupported.restrict_apply hZ, compactlySupportedRep_apply_coe,
-      compactlySupportedRep_apply_coe, LocallyConstant.compactlySupported.restrict_apply hZ]
-    rfl
+      compactlySupportedRep_apply_coe, LocallyConstant.compactlySupported.restrict_apply hZ,
+      SubMulAction.val_smul]
 
 @[simp]
 theorem coe_compactlySupportedRestrict (Z : SubMulAction G X) (hZ : IsClosed (Z : Set X)) :
