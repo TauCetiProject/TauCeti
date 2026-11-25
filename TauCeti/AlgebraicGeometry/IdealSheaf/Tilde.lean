@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
-import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # The ideal sheaf of an ideal on an affine scheme
@@ -64,7 +63,8 @@ noncomputable def ofIdealTopSectionsEquiv :
         rw [RingHom.id_apply, Scheme.Modules.smul_Spec_def, ofIdealTopSectionsMk,
           ofIdealTopSectionsMk, smul_sectionMk]
         simp only [Submodule.coe_smul, smul_eq_mul, map_mul]
-        rw [TopCat.Presheaf.map_apply_eq_self] }
+        rw [Subsingleton.elim (⊤ : (Spec R).Opens).leTop (𝟙 ⊤), op_id,
+          CategoryTheory.Functor.map_id, CommRingCat.id_apply] }
     ⟨fun a b h ↦ by
         simp only [LinearMap.coe_mk, AddHom.coe_mk, ofIdealTopSectionsMk, sectionMk_inj] at h
         exact Subtype.ext

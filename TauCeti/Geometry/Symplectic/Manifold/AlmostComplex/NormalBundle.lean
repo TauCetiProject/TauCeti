@@ -22,7 +22,7 @@ range of `df_x` into itself at every point `x`. This holds for a pseudoholomorph
 Riemann surface, `df ∘ j = J ∘ df`
 (`TauCeti.SmoothEmbedding.mapsTo_tangentRange_of_isPseudoholomorphicAt`). Then `J` descends to
 the intrinsic normal spaces `N_x = T_{f x} N ⧸ range (df_x)`
-(`TauCeti.SmoothEmbedding.NormalSpace`): the normal complex structure
+(`Manifold.IsImmersion.NormalSpace`): the normal complex structure
 (`TauCeti.SmoothEmbedding.normalComplexStructureAt`) is the endomorphism of `N_x` with
 `J_N [v] = [J v]` for ambient tangent vectors `v`. Its underlying linear map is that of the
 quotient almost complex structure (`TauCeti.AlmostComplexStructure.quotient`), as
@@ -102,10 +102,14 @@ variable (f : SmoothEmbedding I I' n M N) (hn : n ≠ 0) (J : SmoothAlmostComple
 /-- The complex structure of the normal space of an embedding at `x` whose tangent space is
 `J`-invariant: the endomorphism `J_N` of `N_x = T_{f x} N ⧸ range (df_x)` with
 `J_N [v] = [J v]` (`TauCeti.SmoothEmbedding.normalComplexStructureAt_normalClass`). -/
-def normalComplexStructureAt (x : M) (hJ : MapsTo (J (f x)) (f.tangentRange x hn)
-    (f.tangentRange x hn)) : f.NormalSpace x hn →L[ℝ] f.NormalSpace x hn :=
-  f.normalLiftL x hn ((f.normalClassL x hn).comp (J.toEndomorphism (f x))) fun v hv ↦ by
-    rw [ContinuousLinearMap.comp_apply, normalClassL_apply, normalClass_eq_zero_iff]
+def normalComplexStructureAt (x : M) (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+    (f.isImmersion.tangentRange x hn)) : f.isImmersion.NormalSpace x hn →L[ℝ]
+        f.isImmersion.NormalSpace x hn :=
+  f.isImmersion.normalLiftL x hn
+      ((f.isImmersion.normalClassL x hn).comp (J.toEndomorphism (f x))) fun v hv ↦ by
+    rw
+        [ContinuousLinearMap.comp_apply, Manifold.IsImmersion.normalClassL_apply,
+            Manifold.IsImmersion.normalClass_eq_zero_iff]
     exact hJ hv
 
 variable {f hn J}
@@ -114,25 +118,29 @@ variable {f hn J}
 normal projection is complex linear. -/
 @[simp]
 theorem normalComplexStructureAt_normalClass {x : M}
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn))
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn))
     (v : TangentSpace I' (f x)) :
-    f.normalComplexStructureAt hn J x hJ (f.normalClass x hn v) =
-      f.normalClass x hn (J (f x) v) := by
-  rw [normalComplexStructureAt, normalLiftL_normalClass, ContinuousLinearMap.comp_apply,
-    normalClassL_apply]
+    f.normalComplexStructureAt hn J x hJ (f.isImmersion.normalClass x hn v) =
+      f.isImmersion.normalClass x hn (J (f x) v) := by
+  rw
+      [normalComplexStructureAt, Manifold.IsImmersion.normalLiftL_normalClass,
+          ContinuousLinearMap.comp_apply,
+    Manifold.IsImmersion.normalClassL_apply]
 
 /-- The normal complex structure is the almost complex structure that `J` induces on the
 quotient `N_x = T_{f x} N ⧸ range (df_x)`. -/
 theorem normalComplexStructureAt_toLinearMap {x : M}
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn)) :
     (f.normalComplexStructureAt hn J x hJ).toLinearMap =
-      ((J.almostComplexStructureAt (f x)).quotient (f.tangentRange x hn)
+      ((J.almostComplexStructureAt (f x)).quotient (f.isImmersion.tangentRange x hn)
         fun _ hv ↦ by
           rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
           exact hJ hv).toLinearMap := by
   refine LinearMap.ext fun ν ↦ ?_
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn ν
-  rw [ContinuousLinearMap.coe_coe, normalComplexStructureAt_normalClass, normalClass_def]
+  obtain ⟨v, rfl⟩ := f.isImmersion.normalClass_surjective x hn ν
+  rw
+      [ContinuousLinearMap.coe_coe, normalComplexStructureAt_normalClass,
+          Manifold.IsImmersion.normalClass_def]
   refine ((AlmostComplexStructure.quotient_mk _ _ _ v).trans ?_).symm
   rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
   exact (Submodule.mkQ_apply _ _).symm
@@ -140,8 +148,8 @@ theorem normalComplexStructureAt_toLinearMap {x : M}
 /-- The normal complex structure squares to `-1`. -/
 @[simp]
 theorem normalComplexStructureAt_normalComplexStructureAt {x : M}
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn))
-    (ν : f.NormalSpace x hn) :
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn))
+    (ν : f.isImmersion.NormalSpace x hn) :
     f.normalComplexStructureAt hn J x hJ (f.normalComplexStructureAt hn J x hJ ν) = -ν := by
   have h := LinearMap.congr_fun (normalComplexStructureAt_toLinearMap hJ)
   simp only [ContinuousLinearMap.coe_coe] at h
@@ -150,9 +158,9 @@ theorem normalComplexStructureAt_normalComplexStructureAt {x : M}
 
 /-- The normal complex structure squares to `-1`, as an identity of endomorphisms. -/
 theorem normalComplexStructureAt_comp_self {x : M}
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn)) :
     (f.normalComplexStructureAt hn J x hJ).comp (f.normalComplexStructureAt hn J x hJ) =
-      -ContinuousLinearMap.id ℝ (f.NormalSpace x hn) :=
+      -ContinuousLinearMap.id ℝ (f.isImmersion.NormalSpace x hn) :=
   ContinuousLinearMap.ext fun ν ↦ normalComplexStructureAt_normalComplexStructureAt hJ ν
 
 end Fibre
@@ -166,7 +174,7 @@ variable [IsManifold I ∞ M] {f : SmoothEmbedding I I' n M N} (hn : n ≠ 0)
 
 /-- The tangent space at `x` of a pseudoholomorphic embedding is `J`-invariant. -/
 theorem mapsTo_tangentRange_of_isPseudoholomorphicAt (hf : IsPseudoholomorphicAt j J f x) :
-    MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn) := by
+    MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn) := by
   -- By the Cauchy–Riemann equation `df ∘ j = J ∘ df`, `J (df w)` is the tangent vector `df (j w)`.
   rintro _ ⟨w, rfl⟩
   exact ⟨j x w, hf.mfderiv_apply_commute w⟩
@@ -185,12 +193,13 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] [FiniteDimensional 
 on the total space of its normal bundle when the embedding is `C^n` with `m + 1 ≤ n`. -/
 theorem contMDiff_normalComplexStructureAt (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (hJ : ∀ x, MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+        (f.isImmersion.tangentRange x hn)) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, P)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
-        TotalSpace.mk' P (E := fun x ↦ f.NormalSpace x hn) p.proj
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
+        TotalSpace.mk' P (E := fun x ↦ f.isImmersion.NormalSpace x hn) p.proj
           (f.normalComplexStructureAt hn J p.proj (hJ p.proj) p.snd)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   -- `N` is `C^∞` and `m ≤ ∞`, so `N` is `C^(m + 1)`, as the normal bundle API requires.
@@ -213,7 +222,7 @@ theorem contMDiff_normalComplexStructureAt (hm : m + 1 ≤ n)
   generalize f.normalQuotientMap hn p = r at hq ⊢
   subst hq
   rw [normalQuotientMap_apply]
-  exact congrArg (TotalSpace.mk' P (E := fun x ↦ f.NormalSpace x hn) p.proj)
+  exact congrArg (TotalSpace.mk' P (E := fun x ↦ f.isImmersion.NormalSpace x hn) p.proj)
     (normalComplexStructureAt_normalClass (hJ p.proj) p.snd)
 
 /-- The normal complex structure of an embedding whose tangent spaces are `J`-invariant is a `C^m`
@@ -221,13 +230,14 @@ section of the endomorphism bundle of its normal bundle when the embedding is `C
 `m + 1 ≤ n`. -/
 theorem contMDiff_normalComplexStructureAt_hom_bundle (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (hJ : ∀ x, MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+        (f.isImmersion.tangentRange x hn)) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
     ContMDiff I (I.prod 𝓘(ℝ, P →L[ℝ] P)) m
       (fun x ↦ TotalSpace.mk' (P →L[ℝ] P)
-        (E := fun x ↦ f.NormalSpace x hn →L[ℝ] f.NormalSpace x hn) x
+        (E := fun x ↦ f.isImmersion.NormalSpace x hn →L[ℝ] f.isImmersion.NormalSpace x hn) x
         (f.normalComplexStructureAt hn J x (hJ x))) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
@@ -239,10 +249,11 @@ continuous complex structure on its normal bundle. With them the normal bundle i
 bundle (`TauCeti.Bundle.ContinuousComplexStructure.Fiber`). -/
 def normalComplexStructure [IsManifold I 1 M]
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (hJ : ∀ x, MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+        (f.isImmersion.tangentRange x hn)) :
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
-    Bundle.ContinuousComplexStructure P (fun x ↦ f.NormalSpace x hn) :=
+    Bundle.ContinuousComplexStructure P (fun x ↦ f.isImmersion.NormalSpace x hn) :=
   letI := f.normalSpaceFiberBundle hn hdim
   letI := f.normalSpaceVectorBundle hn hdim
   { toFun x := f.normalComplexStructureAt hn J x (hJ x)
@@ -260,8 +271,9 @@ fibre. -/
 @[simp]
 theorem normalComplexStructure_apply [IsManifold I 1 M]
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (hJ : ∀ x, MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) (x : M)
-    (ν : f.NormalSpace x hn) :
+    (hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn))
+        (x : M)
+    (ν : f.isImmersion.NormalSpace x hn) :
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
     f.normalComplexStructure hn J hdim hJ x ν = f.normalComplexStructureAt hn J x (hJ x) ν :=
@@ -280,9 +292,9 @@ variable [FiniteDimensional ℝ V] [RiemannianBundle (fun y : N ↦ TangentSpace
 orthogonal representative of `J_N ν` is `J` applied to the orthogonal representative of `ν`: the
 orthogonal complement of the tangent space is `J`-invariant. -/
 theorem normalRepresentative_normalComplexStructureAt
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn))
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn))
     (hJg : ∀ v w : TangentSpace I' (f x), inner ℝ (J (f x) v) (J (f x) w) = inner ℝ v w)
-    (ν : f.NormalSpace x hn) :
+    (ν : f.isImmersion.NormalSpace x hn) :
     f.normalRepresentative x hn (f.normalComplexStructureAt hn J x hJ ν) =
       J (f x) (f.normalRepresentative x hn ν) := by
   refine ((f.normalRepresentative_eq_iff x hn _ _).2 ⟨?_, ?_⟩)
@@ -298,9 +310,9 @@ theorem normalRepresentative_normalComplexStructureAt
 /-- If `J` is orthogonal at `f x` and the tangent space at `x` is `J`-invariant, then the normal
 complex structure is orthogonal for the induced metric on the normal bundle. -/
 theorem inner_normalComplexStructureAt_normalComplexStructureAt
-    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn))
+    (hJ : MapsTo (J (f x)) (f.isImmersion.tangentRange x hn) (f.isImmersion.tangentRange x hn))
     (hJg : ∀ v w : TangentSpace I' (f x), inner ℝ (J (f x) v) (J (f x) w) = inner ℝ v w)
-    (ν μ : f.NormalSpace x hn) :
+    (ν μ : f.isImmersion.NormalSpace x hn) :
     (f.normalRiemannianMetric hn).inner x (f.normalComplexStructureAt hn J x hJ ν)
         (f.normalComplexStructureAt hn J x hJ μ) =
       (f.normalRiemannianMetric hn).inner x ν μ := by

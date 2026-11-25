@@ -647,6 +647,14 @@ theorem contMDiff_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace 
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
   fun q ↦ contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible hn (hσ q.2) (hH q)
 
+/-- On a Banach manifold, if every flat map of `σ` is invertible, the Hamiltonian vector field of a
+`C²` function is differentiable. -/
+theorem mdifferentiable_hamiltonianVectorField_of_isInvertible [CompleteSpace E]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MDifferentiable I I.tangent (fun y ↦ (σ.hamiltonianVectorField f y : TangentBundle I M)) :=
+  (contMDiff_hamiltonianVectorField_of_isInvertible hσ (n := 1) (by simp)
+    (by norm_num [hf])).mdifferentiable one_ne_zero
+
 end IsInvertible
 
 namespace IsNondegenerate
@@ -846,8 +854,7 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_le [CompactSpace M] {
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     MDifferentiable I I.tangent (fun y ↦ (σ.hamiltonianVectorField f y : TangentBundle I M)) :=
-  (h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])).mdifferentiable
-    one_ne_zero
+  mdifferentiable_hamiltonianVectorField_of_isInvertible h.isInvertible_flat hf
 
 /-- **Hamiltonian vector fields of a rescaled form.** For a nondegenerate form `σ` and `c ≠ 0`,
 `X^{cσ}_f = c⁻¹ X^σ_f`. -/

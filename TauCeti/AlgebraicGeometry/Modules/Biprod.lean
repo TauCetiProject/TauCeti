@@ -16,17 +16,16 @@ The site-level closure properties of direct sums of sheaves of modules
 (`TauCeti/Algebra/Category/ModuleCat/Sheaf/Quasicoherent/Biprod.lean`) specialize to a scheme `X`
 by taking the sheaf of rings to be the structure sheaf of `X`. Since `X.Modules` carries its own
 category and abelian structures, instance search does not find the site-level instances for
-`M ⊞ N`, and they are restated here. This file also records the finite-biproduct decompositions
-`biproductIsoFree` and `freeTensorIsoBiproduct` in `X.Modules` and specializes the zero and
-finite-product closure instances for finite presentation. These specializations pre-elaborate the
-ringed-site hypotheses to stay within the default typeclass search-size bound.
+`M ⊞ N`, and they are restated here. This file also records the finite-biproduct decomposition
+`freeTensorIsoBiproduct` in `X.Modules` and specializes the zero and finite-product closure
+instances for finite presentation. These specializations pre-elaborate the ringed-site hypotheses
+to stay within the default typeclass search-size bound.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts`: `X.Modules` has finite biproducts.
-* `AlgebraicGeometry.Scheme.Modules.biproductIsoFree` and
-  `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: `𝒪_X^{⊕I}` is the biproduct of `I`
-  copies of `𝒪_X`, and `𝒪_X^{⊕I} ⊗ L ≅ ⨁_{I} L` for finite `I`.
+* `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: `𝒪_X^{⊕I} ⊗ L ≅ ⨁_{I} L` for finite
+  `I`.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFiniteType_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biprod` and
@@ -51,39 +50,15 @@ universe u
 instance instHasFiniteBiproducts (X : Scheme.{u}) : HasFiniteBiproducts X.Modules :=
   Abelian.hasFiniteBiproducts
 
-/-- The free `𝒪_X`-module on a finite type `I` is the biproduct of `I` copies of `𝒪_X`. -/
-noncomputable def biproductIsoFree (X : Scheme.{u}) (I : Type u) [Finite I] :
-    (⨁ fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) ≅ (SheafOfModules.free I : X.Modules) :=
-  (biproduct.isColimit (C := X.Modules)
-    (fun _ : I ↦ (𝟙_ X.Modules : X.Modules))).coconePointUniqueUpToIso
-    (SheafOfModules.isColimitFreeCofan (R := X.ringCatSheaf) I)
-
-/-- `biproductIsoFree` sends the `i`-th summand to the `i`-th basis section. -/
-@[reassoc, simp]
-theorem biproduct_ι_biproductIsoFree_hom (X : Scheme.{u}) {I : Type u} [Finite I] (i : I) :
-    biproduct.ι (fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) i ≫
-      (biproductIsoFree X I).hom =
-      (SheafOfModules.ιFree i : (𝟙_ X.Modules : X.Modules) ⟶ (SheafOfModules.free I : X.Modules)) :=
-  (biproduct.isColimit (C := X.Modules)
-    (fun _ : I ↦ (𝟙_ X.Modules : X.Modules))).comp_coconePointUniqueUpToIso_hom
-    (SheafOfModules.isColimitFreeCofan (R := X.ringCatSheaf) I) ⟨i⟩
-
-/-- The inverse of `biproductIsoFree` sends the `i`-th basis section to the `i`-th summand. -/
-@[reassoc, simp]
-theorem ιFree_biproductIsoFree_inv (X : Scheme.{u}) {I : Type u} [Finite I] (i : I) :
-    (SheafOfModules.ιFree i : (𝟙_ X.Modules : X.Modules) ⟶ (SheafOfModules.free I : X.Modules)) ≫
-      (biproductIsoFree X I).inv =
-      biproduct.ι (fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) i :=
-  (biproduct.isColimit (C := X.Modules)
-    (fun _ : I ↦ (𝟙_ X.Modules : X.Modules))).comp_coconePointUniqueUpToIso_inv
-    (SheafOfModules.isColimitFreeCofan (R := X.ringCatSheaf) I) ⟨i⟩
-
 /-- Tensoring the free `𝒪_X`-module on a finite type `I` with `L` gives the biproduct of `I`
 copies of `L`. -/
 noncomputable def freeTensorIsoBiproduct {X : Scheme.{u}} (I : Type u) [Finite I] (L : X.Modules) :
     ((SheafOfModules.free I : X.Modules) ⊗ L : X.Modules) ≅ ⨁ fun _ : I ↦ L :=
   have : Fintype I := .ofFinite I
-  (tensorRight L).mapIso (biproductIsoFree X I).symm ≪≫
+  (tensorRight L).mapIso
+      ((biproduct.isColimit (C := X.Modules)
+        (fun _ : I ↦ (𝟙_ X.Modules : X.Modules))).coconePointUniqueUpToIso
+        (SheafOfModules.isColimitFreeCofan (R := X.ringCatSheaf) I)).symm ≪≫
     (tensorRight L).mapBiproduct (fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) ≪≫
     biproduct.mapIso fun _ : I ↦ λ_ L
 
@@ -102,7 +77,10 @@ theorem biproduct_ι_freeTensorIsoBiproduct_inv {X : Scheme.{u}} {I : Type u} [F
       congrArg ((λ_ L).inv ≫ ·) <|
         (biproduct.ι_desc_assoc _ i _).trans <|
           ((tensorRight L).map_comp _ _).symm.trans <|
-            congrArg (tensorRight L).map (biproduct_ι_biproductIsoFree_hom X i)
+            congrArg (tensorRight L).map <|
+              (biproduct.isColimit (C := X.Modules)
+                (fun _ : I ↦ (𝟙_ X.Modules : X.Modules))).comp_coconePointUniqueUpToIso_hom
+                (SheafOfModules.isColimitFreeCofan (R := X.ringCatSheaf) I) ⟨i⟩
 
 /-- On the `i`-th basis summand, `freeTensorIsoBiproduct` applies `λ_ L` followed by the `i`-th
 coprojection into `⨁_I L`. -/

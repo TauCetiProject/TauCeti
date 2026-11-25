@@ -45,6 +45,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   separate vectors when the original module is projective.
 * `TauCeti.Module.Dual.eq_zero_of_forall_baseChange_eq_zero`: base changes to a fraction ring of
   a set of functionals separating points separate points.
+* `IsBaseChange.toDualBaseChange_tmul_tmul`: the value of Mathlib's comparison
+  `IsBaseChange.toDualBaseChange` on two pure tensors, in simp normal form.
 
 ## References
 
@@ -265,5 +267,17 @@ theorem toDual_ne_zero (h : IsBaseChange A j) (s : Module.Dual R V) (hs : s ≠ 
   apply FaithfulSMul.algebraMap_injective R A
   have hv := DFunLike.congr_fun hz (j v)
   simpa only [toDual_comp_apply, LinearMap.zero_apply, map_zero] using hv
+
+omit [FaithfulSMul R A] in
+/-- `IsBaseChange.toDualBaseChange_tmul` for the canonical base change `A ⊗[R] V`, evaluated on
+an arbitrary pure tensor `b ⊗ v`. -/
+@[simp]
+theorem toDualBaseChange_tmul_tmul [Module.Free R V] [Module.Finite R V] (a : A)
+    (f : Module.Dual R V) (b : A) (v : V) :
+    (TensorProduct.isBaseChange R V A).toDualBaseChange (a ⊗ₜ f) (b ⊗ₜ v) =
+      a * b * algebraMap R A (f v) := by
+  have h : (TensorProduct.isBaseChange R V A).toDualBaseChange (a ⊗ₜ f) (1 ⊗ₜ v) =
+      a * algebraMap R A (f v) := toDualBaseChange_tmul ..
+  rw [TensorProduct.tmul_eq_smul_one_tmul b, map_smul, h, smul_eq_mul, mul_left_comm, mul_assoc]
 
 end IsBaseChange
