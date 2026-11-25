@@ -639,14 +639,14 @@ theorem _root_.Convex.frontier_subset_essentialBoundary (hs : Convex ℝ s)
     rw [hball (x - (r / R) • (z - x)) hr.1]
     gcongr
     exact (hs.ball_sub_smul_sub_subset_compl_inter_ball (hzρ.trans interior_subset) hρ hx.1 hx.2
-      hr.1.le hr.2)
+      le_rfl hr.1.le hr.2)
   · -- The set fills a fixed proportion of small balls, so it has no density zero.
     refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
     filter_upwards [hev] with r hr
     rw [hball (x + (r / R) • (z - x)) hr.1]
     gcongr
     exact (hs.ball_add_smul_sub_subset_interior_inter_ball (hzρ.trans interior_subset) hρ hx.1
-      hr.1.le hr.2).trans
+      le_rfl hr.1.le hr.2).trans
       (inter_subset_inter_left _ interior_subset)
 
 /-- **The essential boundary of a convex set is its frontier.** Against an additive Haar measure,

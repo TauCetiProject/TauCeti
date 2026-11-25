@@ -245,23 +245,10 @@ theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
   have hR₀ : 0 < R := hr.trans_le hrR
   set t := r / R
   have ht₀ : 0 < t := div_pos hr hR₀
-  have ht₁ : t ≤ 1 := (div_le_one hR₀).2 hrR
-  have hsub : ball (x + t • (z - x)) (t * ρ) ⊆ closedBall x r ∩ s := by
-    intro w hw
-    refine ⟨?_, ?_⟩
-    · have hc : dist (x + t • (z - x)) x = t * dist x z := by
-        simp [dist_eq_norm, norm_smul, abs_of_pos ht₀, norm_sub_rev]
-      rw [mem_closedBall]
-      calc dist w x ≤ dist w (x + t • (z - x)) + dist (x + t • (z - x)) x := dist_triangle _ _ _
-        _ ≤ t * ρ + t * dist x z := by rw [hc]; exact add_le_add (mem_ball.1 hw).le le_rfl
-        _ = t * (dist x z + ρ) := by ring
-        _ ≤ t * R := by gcongr
-        _ = r := div_mul_cancel₀ r hR₀.ne'
-    · have h := TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
-        (fun w hw ↦ hs.starConvex (hball hw)) hx (t := 1 - t) (by linarith) (by linarith)
-      have hc : z + (1 - t) • (x - z) = x + t • (z - x) := by module
-      rw [hc, sub_sub_cancel] at h
-      exact interior_subset (h hw)
+  have hsub : ball (x + t • (z - x)) (t * ρ) ⊆ closedBall x r ∩ s :=
+    (hs.ball_add_smul_sub_subset_interior_inter_ball hball hρ hx
+      (by rwa [← dist_eq_norm, dist_comm]) hr.le hrR).trans fun _ hw =>
+      ⟨ball_subset_closedBall hw.2, interior_subset hw.1⟩
   have hscale : ρ / R * r = t * ρ := by simp only [t]; ring
   calc ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r)
       = μ (ball (x + t • (z - x)) (t * ρ)) := by

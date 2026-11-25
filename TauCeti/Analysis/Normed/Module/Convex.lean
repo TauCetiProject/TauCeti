@@ -27,7 +27,7 @@ that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
 convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`. For a convex set
 `s` containing `ball z ρ` and a point `x ∈ closure s`, the homothety with centre `x` and ratio
-`r / (‖z - x‖ + ρ)` sends `ball z ρ` into `interior s ∩ ball x r`
+`r / R`, for `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, sends `ball z ρ` into `interior s ∩ ball x r`
 (`Convex.ball_add_smul_sub_subset_interior_inter_ball`), and when `x` is not interior the
 homothety with the opposite ratio sends it into `sᶜ ∩ ball x r`
 (`Convex.ball_sub_smul_sub_subset_compl_inter_ball`).
@@ -167,46 +167,43 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
 
 /-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s`. For
-`0 ≤ r ≤ ‖z - x‖ + ρ`, the image of `ball z ρ` under the homothety with centre `x` and ratio
-`r / (‖z - x‖ + ρ)` is a ball in `interior s ∩ ball x r`. -/
+`‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety with centre `x` and
+ratio `r / R` is a ball in `interior s ∩ ball x r`. -/
 theorem Convex.ball_add_smul_sub_subset_interior_inter_ball {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
-    {ρ r : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s) (hr : 0 ≤ r)
-    (hrR : r ≤ ‖z - x‖ + ρ) :
-    Metric.ball (x + (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆
-      interior s ∩ Metric.ball x r := by
-  have hR : 0 < ‖z - x‖ + ρ := by positivity
-  have hl : 0 ≤ r / (‖z - x‖ + ρ) := by positivity
-  have hl1 : r / (‖z - x‖ + ρ) ≤ 1 := (div_le_one hR).2 hrR
-  refine Set.subset_inter ?_ (Metric.ball_subset_ball' (le_of_eq ?_))
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
+    (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
+    Metric.ball (x + (r / R) • (z - x)) (r / R * ρ) ⊆ interior s ∩ Metric.ball x r := by
+  have hR₀ : 0 < R := by have := norm_nonneg (z - x); linarith
+  have hl : 0 ≤ r / R := by positivity
+  have hl1 : r / R ≤ 1 := (div_le_one hR₀).2 hrR
+  refine Set.subset_inter ?_ (Metric.ball_subset_ball' ?_)
   · convert TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
-      (fun w hw => hs.starConvex (hz hw)) hx (t := 1 - r / (‖z - x‖ + ρ)) (by linarith)
+      (fun w hw => hs.starConvex (hz hw)) hx (t := 1 - r / R) (by linarith)
       (by linarith) using 2
     · module
     · ring
-  · rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hl]
-    field_simp
-    ring
+  · rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hl, ← mul_add]
+    calc r / R * (ρ + ‖z - x‖) ≤ r / R * R := by gcongr; linarith
+      _ = r := div_mul_cancel₀ r hR₀.ne'
 
 /-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s` not be an
-interior point. For `0 ≤ r ≤ ‖z - x‖ + ρ`, the image of `ball z ρ` under the homothety with centre
-`x` and ratio `-r / (‖z - x‖ + ρ)` is a ball in `sᶜ ∩ ball x r`: the midpoint of a point of `s` and
+interior point. For `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety
+with centre `x` and ratio `-r / R` is a ball in `sᶜ ∩ ball x r`: the midpoint of a point of `s` and
 an interior point is interior. -/
 theorem Convex.ball_sub_smul_sub_subset_compl_inter_ball {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
-    {ρ r : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
-    (hxs : x ∉ interior s) (hr : 0 ≤ r) (hrR : r ≤ ‖z - x‖ + ρ) :
-    Metric.ball (x - (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆
-      sᶜ ∩ Metric.ball x r := by
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
+    (hxs : x ∉ interior s) (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
+    Metric.ball (x - (r / R) • (z - x)) (r / R * ρ) ⊆ sᶜ ∩ Metric.ball x r := by
   intro y hy
   -- The reflection `2 • x - y` of `y` through `x` lies in the homothetic ball inside `s`.
-  have hy' : (2 : ℝ) • x - y ∈
-      Metric.ball (x + (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) := by
+  have hy' : (2 : ℝ) • x - y ∈ Metric.ball (x + (r / R) • (z - x)) (r / R * ρ) := by
     rw [mem_ball_iff_norm] at hy ⊢
     rw [← norm_neg]
     convert hy using 2
     module
-  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hρ hx hr hrR hy'
+  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hρ hx hR hr hrR hy'
   refine ⟨fun hys => hxs ?_, ?_⟩
   · convert hs.add_smul_sub_mem_interior' (subset_closure hys) hyi
       (t := 1 / 2) ⟨by norm_num, by norm_num⟩ using 1
