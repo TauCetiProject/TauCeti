@@ -194,6 +194,17 @@ theorem coe_smul_supportedModule (h : (P : Set M) + s ⊆ s)
     (↑(g • f) : R[M]) = mapDomainRingHom R P.subtype g * f.val :=
   (rfl)
 
+/-- Changing coefficients commutes with the action of the submonoid algebra on a stable support. -/
+@[simp]
+theorem supportedMap_smul {S : Type*} [Semiring S] (φ : R →+* S) (h : (P : Set M) + s ⊆ s)
+    (g : AddMonoidAlgebra R P) (f : supported R R s) :
+    letI := P.supportedModule (R := R) h
+    letI := P.supportedModule (R := S) h
+    supportedMap s φ (g • f) = mapRingHom P φ g • supportedMap s φ f := by
+  apply Subtype.ext
+  simp only [coe_supportedMap, coe_smul_supportedModule, ← coe_mapRingHom, map_mul]
+  rw [← RingHom.comp_apply, mapRingHom_comp_mapDomainRingHom, RingHom.comp_apply]
+
 /-- A right translate of an additive submonoid is stable under addition from the left. -/
 theorem add_subset_of_eq_add_singleton {m : M} (hs : s = (P : Set M) + {m}) :
     (P : Set M) + s ⊆ s := by
@@ -247,10 +258,14 @@ theorem supportedMap_supportedAddSingletonEquiv {S : Type*} [Semiring S] (φ : R
     (hs : s = (P : Set M) + {m}) (g : AddMonoidAlgebra R P) :
     supportedMap s φ (P.supportedAddSingletonEquiv hs g) =
       P.supportedAddSingletonEquiv hs (mapRingHom P φ g) := by
-  apply Subtype.ext
-  simp only [coe_supportedMap, coe_supportedAddSingletonEquiv, ← coe_mapRingHom, map_mul,
-    mapRingHom_single, map_one]
-  rw [← RingHom.comp_apply, mapRingHom_comp_mapDomainRingHom, RingHom.comp_apply]
+  have h₁ : supportedMap s φ (P.supportedAddSingletonEquiv hs (1 : AddMonoidAlgebra R P)) =
+      P.supportedAddSingletonEquiv hs 1 := by
+    apply Subtype.ext
+    simp only [coe_supportedMap, coe_supportedAddSingletonEquiv, map_one, one_mul,
+      ← coe_mapRingHom, mapRingHom_single]
+  simpa only [h₁, ← map_smul, smul_eq_mul, mul_one] using
+    P.supportedMap_smul φ (P.add_subset_of_eq_add_singleton hs) g
+      (P.supportedAddSingletonEquiv hs 1)
 
 /-- The inverse frame recovers the submonoid-algebra coordinate by multiplying by the
 inverse monomial in the ambient algebra. -/

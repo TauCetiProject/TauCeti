@@ -258,16 +258,13 @@ instance instModuleConeDivisorSections (sigma : Phi.cones) (a : Phi.Ray → ℤ)
   AddSubmonoid.supportedModule _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
 
 /-- Changing coefficients commutes with the action of the chart ring on sections. -/
-@[simp]
 theorem supportedMap_smul_coneDivisorSections {S : Type*} [Semiring S] (φ : R →+* S)
     {sigma : Phi.cones} {a : Phi.Ray → ℤ}
     (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
     (f : Phi.coneDivisorSections R sigma a) :
     supportedMap (Phi.coneDivisorWeights sigma a) φ (g • f) =
-      mapRingHom _ φ g • supportedMap _ φ f := by
-  apply Subtype.ext
-  simp only [coe_supportedMap, AddSubmonoid.coe_smul_supportedModule, ← coe_mapRingHom, map_mul]
-  rw [← RingHom.comp_apply, mapRingHom_comp_mapDomainRingHom, RingHom.comp_apply]
+      mapRingHom _ φ g • supportedMap _ φ f :=
+  AddSubmonoid.supportedMap_smul _ φ (dualSemigroup_add_coneDivisorWeights_subset sigma a) g f
 
 /-- Multiplication by the Cartier character trivializes the local section module over the chart
 ring. The character has value `-a ρ` on each ray of the chart. -/
