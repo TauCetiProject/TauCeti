@@ -152,6 +152,23 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
 
+/-- Complex scalars act continuously on the `L²` complexification of a real normed space: in the
+real coordinates `x + i y ↦ (x, y)`, multiplication by `c` is `(x, y) ↦ (c.re x - c.im y,
+c.im x + c.re y)`. For a real inner product space this also follows from the complex normed space
+structure; it is not an instance, to avoid a second instance path in that case. -/
+theorem complexification_continuous_const_smul (c : ℂ) :
+    Continuous fun z : WithLp 2 (Complexification X) ↦ c • z := by
+  have h : Continuous fun z : WithLp 2 (Complexification X) ↦ (z.ofLp.re, z.ofLp.im) := by
+    simpa only [Function.comp_def, complexificationEquivProd_apply, ofLp_toLp] using
+      (prod_continuous_ofLp 2 X X).comp (complexificationEquivProd X).continuous
+  rw [(complexificationEquivProd X).toHomeomorph.isInducing.continuous_iff]
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toHomeomorph,
+    complexificationEquivProd_apply]
+  refine (prod_continuous_toLp 2 X X).comp' ?_
+  simp only [ofLp_smul, Complexification.smul_re, Complexification.smul_im]
+  exact ((h.fst.const_smul _).sub (h.snd.const_smul _)).prodMk
+    ((h.fst.const_smul _).add (h.snd.const_smul _))
+
 variable (X) in
 /-- The real-linear isometric inclusion `x ↦ x + i 0` of a real normed space `X` into its `L²`
 complexification `WithLp 2 (Complexification X)`. -/
@@ -311,6 +328,17 @@ def complexifyL2 (T : X →L[ℝ] Y) :
 @[simp]
 theorem ofLp_complexifyL2_apply (T : X →L[ℝ] Y) (z : WithLp 2 (Complexification X)) :
     (T.complexifyL2 z).ofLp = T.complexify z.ofLp := (rfl)
+
+/-- As a linear map, the complexification is `ContinuousLinearMap.complexify` transported along
+the identifications `WithLp.linearEquiv` of the `L²` complexifications with their underlying
+spaces. -/
+theorem coe_complexifyL2 (T : X →L[ℝ] Y) :
+    (T.complexifyL2 : WithLp 2 (Complexification X) →ₗ[ℂ] WithLp 2 (Complexification Y)) =
+      (WithLp.linearEquiv 2 ℂ (Complexification X)).symm.arrowCongr
+        (WithLp.linearEquiv 2 ℂ (Complexification Y)).symm
+        (T.complexify : Complexification X →ₗ[ℂ] Complexification Y) := by
+  ext z
+  exact WithLp.ofLp_injective 2 <| by simp [complexify_apply, LinearMap.complexify_apply]
 
 /-- The complexification agrees with `T` on real vectors. -/
 @[simp]

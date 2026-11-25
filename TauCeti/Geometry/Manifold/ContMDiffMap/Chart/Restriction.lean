@@ -67,6 +67,11 @@ theorem restrict_apply (f : C^n⟮I, M; J, N⟯) (U : Opens M) (x : U) :
     f.restrict U x = f x := by
   rfl
 
+/-- A restricted native map is the composition with the inclusion of the open source. -/
+theorem restrict_eq_comp (f : C^n⟮I, M; J, N⟯) (U : Opens M) :
+    f.restrict U = f.comp ⟨Subtype.val, contMDiff_subtypeVal⟩ :=
+  (rfl)
+
 /-- The underlying function of a restricted native map is ordinary composition with inclusion. -/
 @[simp]
 theorem coe_restrict (f : C^n⟮I, M; J, N⟯) (U : Opens M) :

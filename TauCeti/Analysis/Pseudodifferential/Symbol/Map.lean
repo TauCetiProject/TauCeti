@@ -11,10 +11,11 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 # Images of symbols under maps of the coefficient spaces
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
-spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
-`TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
-operator `T`, so do the values of its derivatives
+by isomorphisms of `V` and `W`, or the passage `ℓ ∘ a ∘ e` to a scalar entry
+(`TauCeti.Symbol.entryMap`), has the same order (`TauCeti.Symbol.map`), and commutes with
+mixed, spatial and frequency derivatives (`TauCeti.Symbol.mixedDeriv_map`,
+`TauCeti.Symbol.spatialDeriv_map`, `TauCeti.Symbol.frequencyDeriv_map`). In particular, if
+every value of a symbol commutes with an operator `T`, so do the values of its derivatives
 (`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
 `TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
 
@@ -65,12 +66,40 @@ theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : 
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
 
+/-- Mixed derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem mixedDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (a.map Φ).coefficient x ξ = Φ (mixedDeriv α β a.coefficient x ξ) :=
+  Φ.mixedDeriv_comp_left a.contDiff_coefficient α β x ξ
+
 /-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
 isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
 theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
     (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
       fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
   funext fun p ↦ by simp
+
+/-- If `Φ` acts on the coefficients by `T ↦ L ∘ T ∘ K`, the coefficient of the image symbol is
+`L ∘ a(x, ξ) ∘ K`. -/
+theorem coefficient_map_eq_comp_comp {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) (a : Symbol n V W m) :
+    (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
+  funext fun p ↦ by rw [coefficient_map, hΦ]
+
+/-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
+determined by a vector `e ∈ V` and a functional `ℓ` on `W`. The image `a.map (entryMap ℓ e)` of a
+symbol is its scalar entry `ℓ ∘ a(x, ξ) ∘ e`, through which a matrix-valued quantization is
+computed componentwise. -/
+def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ →L[ℂ] ℂ) :=
+  ((ContinuousLinearMap.compL ℂ ℂ W ℂ ℓ).comp
+    ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
+    ).restrictScalars ℝ
+
+@[simp]
+theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
+    entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
+  (rfl)
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
@@ -137,8 +166,7 @@ theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
   refine isUniform_iff.2 fun α β ↦ ?_
   obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
   refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
-  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
-    Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  rw [mixedDeriv_map, mul_assoc]
   exact Φ.le_opNorm_of_le (hC x ξ)
 
 end Map

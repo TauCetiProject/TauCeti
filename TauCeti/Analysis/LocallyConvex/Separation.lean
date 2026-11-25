@@ -37,6 +37,8 @@ continuous functional.
   and nonzero at a prescribed vector `u`.
 * `TauCeti.exists_strongDual_pos_of_not_sameRay_neg`: two nonzero vectors that do not point in
   opposite directions are both positive for some continuous functional.
+* `TauCeti.add_smul_notMem_of_linearMap_lt`: a ray along which a separating linear functional is
+  nonincreasing avoids the separated set.
 -/
 
 public section
@@ -100,5 +102,21 @@ theorem exists_strongDual_pos_of_not_sameRay_neg {u v : E} (h : ¬SameRay ℝ u 
     (by rwa [neg_neg, mem_segment_iff_sameRay, zero_sub, sub_zero, sameRay_neg_swap])
     (u := u) (by rintro rfl; exact h (SameRay.zero_left _))
   exact ⟨L, by simpa using hu, hv⟩
+
+section
+
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
+
+/-- A ray along which a separating linear functional is nonincreasing avoids the separated set. -/
+theorem add_smul_notMem_of_linearMap_lt {s : Set E} {z : E}
+    {f : E →ₗ[ℝ] ℝ} (hfs : ∀ y ∈ s, f z < f y) {v : E}
+    (hfv : f v ≤ 0) {t : ℝ} (ht : 0 ≤ t) : z + t • v ∉ s := by
+  intro hmem
+  have hf_ray : f (z + t • v) ≤ f z := by
+    rw [map_add, map_smul, smul_eq_mul]
+    exact add_le_of_nonpos_right (mul_nonpos_of_nonneg_of_nonpos ht hfv)
+  exact not_lt_of_ge hf_ray (hfs _ hmem)
+
+end
 
 end TauCeti
