@@ -350,7 +350,10 @@ theorem coefficient_principal_eq_pseudodifferentialPrincipalSymbol
       ((contDiffAt_symm_trans_of_mem_maximalAtlas he he₀ hw).differentiableAt (by simp)),
     pseudodifferentialPrincipalSymbol_eq_of_chartAt P p hspec]
   congr 3
-  exact (InnerProductSpace.toDual_symm_innerSL_comp η _).symm
+  -- `chartFrequency p` unfolds to the inverse Riesz map of `⟪η, de_p ·⟫ ∘ d(e₀⁻¹)`, which is
+  -- `⟪η, (de_p ∘ d(e₀⁻¹)) ·⟫` up to reassociating the composite, so `exact` closes it by unfolding.
+  exact ((congrArg _ (ContinuousLinearMap.innerSL_apply_comp η _)).trans
+    (InnerProductSpace.toDual_symm_innerSL _)).symm
 
 /-- **The principal symbol read in a chart.** Let `P`, the chart `e`, the cutoffs `φ`, `ψ` and the
 local symbol `a` be as in `TauCeti.coefficient_principal_eq_pseudodifferentialPrincipalSymbol`. At
