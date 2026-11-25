@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
@@ -183,16 +184,10 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
   -- Each coordinate `g l` is `Cʲ` near every point of the closed half-disc `T`.
   have hgT (l : ι) {i : ℕ} (hi : i ≤ j) (z : ℂ) (hz : z ∈ T) : ContDiffAt ℝ i (g l) z :=
     ((hg l).contDiffAt ((V l).isOpen.mem_nhds (hTV l hz))).of_le (by exact_mod_cast hi)
-  have hsum (y : F) : y = ∑ l, A l (ℓ l y) := by
-    simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
-    exact (b.sum_repr y).symm
   refine ⟨v, hv, ⟨⋂ l, V l, isOpen_iInter_of_finite fun l => (V l).isOpen⟩,
     subset_iInter hTV, fun z => ∑ l, A l (g l z), ContDiffOn.sum fun l _ =>
       (A l).contDiff.comp_contDiffOn ((hg l).mono (iInter_subset _ l)), ?_, fun i hi => ?_⟩
-  · filter_upwards [ae_all_iff.2 hug] with z hz
-    rw [hsum (u z)]
-    exact Finset.sum_congr rfl fun l _ => by rw [hz l]
+  · exact ae_eq_sum_smulRight_of_coord_ae_eq b hug
   · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
       (fun l => hgT l hi) fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
     exact ⟨fun z hz => by simpa using h.1 z hz, h.2⟩

@@ -62,6 +62,9 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
 * `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis`: the same bound
   for values in a finite-dimensional space, by the norms in `W^{j+1,p}` of the disc of the
   coordinates in a finite basis.
+* `TauCeti.ae_eq_sum_smulRight_of_coord_ae_eq`: a map agrees almost everywhere with the map
+  assembled from representatives of its coordinates in a finite basis; shared with the half-disc
+  bound.
 
 ## References
 
@@ -198,6 +201,18 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball {q : ℝ≥
   exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
 
 
+/-- **Reassembling a map from representatives of its coordinates.** If `b` is a finite basis of
+`E` and each coordinate `z ↦ b.coord l (u z)` of `u` agrees `μ`-almost everywhere with `g l`, then
+`u` agrees `μ`-almost everywhere with `z ↦ ∑ₗ g l z • b l`, written as `∑ₗ A l (g l z)` for the
+continuous linear maps `A l : t ↦ t • b l`. -/
+theorem ae_eq_sum_smulRight_of_coord_ae_eq {α ι E : Type*} [MeasurableSpace α] [Fintype ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} (b : Basis ι ℝ E) {u : α → E}
+    {g : ι → α → ℝ} (h : ∀ l, (fun z => b.coord l (u z)) =ᵐ[μ] g l) :
+    u =ᵐ[μ] fun z => ∑ l, (ContinuousLinearMap.id ℝ ℝ).smulRight (b l) (g l z) := by
+  filter_upwards [ae_all_iff.2 h] with z hz
+  simp only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, ← hz,
+    Basis.coord_apply, b.sum_repr]
+
 /-- **Local `C^{j,1-2/q}` bounds on a disc, for finite-dimensional values.** For `2 < q < ∞`, a
 finite basis `b` of `F`, a centre `c` and a radius `s` there is a constant `K` such that, for
 every open `Ω` containing the closure of `ball c s`, every `u ∈ MemWkpLoc q Ω (j + 1)` with values
@@ -224,15 +239,9 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : 
   refine ⟨(∑ l, ‖A l‖₊) * K, fun {Ω} u hsub hu => ?_⟩
   choose v hv g hg hug hb using fun l =>
     hK (Ω := Ω) (fun z => ℓ l (u z)) hsub (hu.clm_comp (ℓ l))
-  have hsum (x : F) : x = ∑ l, A l (ℓ l x) := by
-    simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
-    exact (b.sum_repr x).symm
   refine ⟨v, hv, fun z => ∑ l, A l (g l z),
     ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ?_⟩
-  · filter_upwards [ae_all_iff.2 hug] with z hz
-    rw [hsum (u z)]
-    exact Finset.sum_congr rfl fun l _ => by rw [hz l]
+  · exact ae_eq_sum_smulRight_of_coord_ae_eq b hug
   · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
       (fun l z hz => ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi))
       fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
