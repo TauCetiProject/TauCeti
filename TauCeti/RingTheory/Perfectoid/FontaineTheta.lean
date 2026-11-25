@@ -51,6 +51,7 @@ characterises the generators of `ker θ` as its distinguished elements
   relative Frobenius.
 * `WittVector.coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta`: the zeroth Witt coordinate of an
   element of `ker θ` lies in the Jacobson radical of `A♭`.
+* `WittVector.natCast_dvd_fontaineTheta_sub_untilt`: `θ x ≡ (x₀)♯` modulo `p`.
 
 ## References
 
@@ -108,6 +109,12 @@ theorem coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta {ξ : WittVector p (Pre
   have : IsAdicComplete (span {ξ.coeff 0}) (PreTilt A p) :=
     Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h
   exact IsAdicComplete.le_jacobson _ (mem_span_singleton_self _)
+
+/-- **Fontaine's map modulo `p`.** For every `x : W(A♭)`, `θ x` agrees modulo `p` with the sharp
+`(x₀)♯` of its zeroth Witt coordinate: both reduce to the zeroth coordinate of `x₀` in `A ⧸ p`. -/
+theorem natCast_dvd_fontaineTheta_sub_untilt (x : WittVector p (PreTilt A p)) :
+    (p : A) ∣ fontaineTheta A p x - (x.coeff 0).untilt := by
+  rw [← mem_span_singleton, ← Ideal.Quotient.eq, mk_fontaineTheta, PreTilt.mk_untilt_eq_coeff_zero]
 
 end Kernel
 
