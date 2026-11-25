@@ -79,6 +79,7 @@ theorem restrictedCoroot_def (μ : Dual K 𝔞) :
   (rfl)
 
 /-- **`λ(H'_λ) = 2`** for `λ ≠ 0`. -/
+@[simp]
 theorem apply_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
     μ (hθ.restrictedCoroot h𝔞 μ) = 2 := by
   rw [restrictedCoroot_def, map_smul, smul_eq_mul,
@@ -104,6 +105,12 @@ theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
   simp only [restrictedCoroot_def, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_smul]
   congr 1
   field_simp
+
+/-- The restricted coroot of `-λ` is `-H'_λ`. -/
+@[simp]
+theorem restrictedCoroot_neg (μ : Dual K 𝔞) :
+    hθ.restrictedCoroot h𝔞 (-μ) = -hθ.restrictedCoroot h𝔞 μ := by
+  rw [← neg_one_smul K μ, restrictedCoroot_smul, inv_neg, inv_one, neg_one_smul]
 
 /-- On the restricted root space `𝔤_ν`, the coroot `H'_λ` acts by `ν(H'_λ)`. -/
 theorem restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace {ν : Dual K 𝔞} (μ : Dual K 𝔞)
