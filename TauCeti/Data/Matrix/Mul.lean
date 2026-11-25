@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Matrix.Basic
+import Mathlib.Data.Matrix.Basis
 
 /-!
-# Matrix products: positivity of powers, nonvanishing of factors and opposite rings
+# Matrix products: positive powers, nonzero factors, opposite rings, and noncommutativity
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -40,6 +40,9 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 `g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
 `(L.map f).prod` and `(L.map g).prod`.
 
+Over a nontrivial coefficient `NonAssocSemiring` and a nontrivial finite index type, square matrix
+multiplication is noncommutative.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -68,6 +71,8 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
 * `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
+* `Matrix.not_isMulCommutative`: `Matrix m m R` is not multiplicatively commutative when `m` and
+  `R` are nontrivial.
 -/
 
 public section
@@ -76,10 +81,9 @@ open scoped Matrix
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
 section StrictOrderedSemiring
 
+variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix n n R}
 
 /-- If `A` is entrywise nonnegative and its power `A ^ k`, for some `k > 0`, is strictly positive,
@@ -296,5 +300,15 @@ theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
       ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
 
 end Semiring
+
+/-- A square matrix semiring `Matrix m m R` over a nontrivial `NonAssocSemiring` and a nontrivial
+finite index type is not multiplicatively commutative. -/
+theorem not_isMulCommutative {m R : Type*} [Fintype m] [Nontrivial m] [NonAssocSemiring R]
+    [Nontrivial R] : ¬IsMulCommutative (Matrix m m R) := by
+  classical
+  rintro ⟨⟨hcomm⟩⟩
+  obtain ⟨i, j, hij⟩ := exists_pair_ne m
+  have h := congrFun (congrFun (hcomm (single i j (1 : R)) (single j i 1)) i) i
+  simp [hij.symm] at h
 
 end Matrix

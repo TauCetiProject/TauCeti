@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
+import TauCeti.Data.Matrix.Mul
+import TauCeti.RingTheory.Idempotents.Matrix
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Hom
@@ -38,11 +41,12 @@ already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
 Hilbert C⋆-module.
 
-The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
-sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
-diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ` of `M_n(ℂ)` and the corner
-embeddings into block-diagonal matrices.
+The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: finite generation
+and `finrank`, entries of finite sums and of `1 × 1` matrices, entrywise images under sums and
+scalar multiples of linear maps, the transpose as a linear map, the star algebra isomorphism
+`M_m(M_n(A)) ≃ M_{m × n}(A)`, the diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ`
+of `M_n(ℂ)`, the corner embeddings into block-diagonal matrices, noncommutativity, and
+orthogonal-idempotent rank bounds transported from `Matrix`.
 
 ## Main declarations
 
@@ -51,8 +55,9 @@ embeddings into block-diagonal matrices.
 * `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
-* `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
-  types when `A` is finite, so `CStarMatrix m n ℂ` is finite-dimensional.
+* `CStarMatrix.instModuleFinite`, `Module.finrank_cstarMatrix`: `CStarMatrix m n A` is a finite
+  module over finite index types when `A` is finite (so `CStarMatrix m n ℂ` is
+  finite-dimensional), with `finrank` matching `Module.finrank_matrix`.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
@@ -67,7 +72,13 @@ embeddings into block-diagonal matrices.
   for self-adjoint and unitary matrices.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
-* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
+* `CStarMatrix.not_isMulCommutative`: `CStarMatrix m m A` is noncommutative when `m` and `A` are
+  nontrivial.
+* `OrthogonalIdempotents.card_le_of_cstarMatrix`: pairwise orthogonal nonzero idempotents in
+  `CStarMatrix n n K` over a domain `K` satisfying `StrongRankCondition` have size at most
+  `Fintype.card n`.
+* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.toOneByOne_symm_apply`,
+  `CStarMatrix.toOneByOne_eq_ofMatrix`, `CStarMatrix.reindexₐ_apply_apply`:
   entries of finite sums, of `1 × 1` C⋆-matrices and of reindexed matrices, with
   `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
   `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
@@ -220,6 +231,15 @@ instance instModuleFinite {m : Type*} [Finite m] [Finite n] [Semiring R] [AddCom
     [Module R A] [Module.Finite R A] : Module.Finite R (CStarMatrix m n A) :=
   inferInstanceAs (Module.Finite R (m → n → A))
 
+/-- The `finrank` of `CStarMatrix m n A` over `R` matches `Module.finrank_matrix`. -/
+@[simp]
+theorem _root_.Module.finrank_cstarMatrix (R A : Type*) [Semiring R] [StrongRankCondition R]
+    [AddCommMonoid A] [Module R A] [Module.Free R A] (m n : Type*) [Fintype m] [Fintype n] :
+    Module.finrank R (CStarMatrix m n A) =
+      Fintype.card m * Fintype.card n * Module.finrank R A :=
+  (ofMatrixₗ (m := m) (n := n) (R := R) (A := A)).symm.finrank_eq.trans
+    (Module.finrank_matrix R A m n)
+
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
 lemma ofMatrix_symm_mul {m k : Type*} [Fintype n] [Mul A] [AddCommMonoid A]
@@ -344,6 +364,24 @@ lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [N
   apply ofMatrix.symm.injective
   simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
 
+/-- A square matrix algebra `CStarMatrix m m A` over a nontrivial `NonAssocSemiring` and a
+nontrivial finite index type is not multiplicatively commutative. -/
+theorem not_isMulCommutative {m : Type*} [Fintype m] [Nontrivial m] [NonAssocSemiring A]
+    [Nontrivial A] : ¬IsMulCommutative (CStarMatrix m m A) := fun ⟨⟨hcomm⟩⟩ ↦
+  Matrix.not_isMulCommutative ⟨⟨fun M N ↦ by
+    simpa only [ofMatrix_symm_mul, Equiv.symm_apply_apply] using
+      congrArg ofMatrix.symm (hcomm (ofMatrix M) (ofMatrix N))⟩⟩
+
+/-- Over a domain `K` satisfying `StrongRankCondition`, any finite family of pairwise orthogonal
+nonzero idempotents in `CStarMatrix n n K` has cardinality at most `Fintype.card n`. -/
+theorem _root_.OrthogonalIdempotents.card_le_of_cstarMatrix {K ι n : Type*} [Ring K] [IsDomain K]
+    [StrongRankCondition K] [Fintype ι] [Fintype n] [DecidableEq n]
+    {e : ι → CStarMatrix n n K} (he : OrthogonalIdempotents e) (hne : ∀ i, e i ≠ 0) :
+    Fintype.card ι ≤ Fintype.card n :=
+  (he.map CStarMatrix.ofMatrixRingEquiv.symm.toRingHom).card_le_of_matrix fun i h ↦
+    hne i <| CStarMatrix.ofMatrixRingEquiv.symm.injective <| by
+      simpa using h
+
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
     (f : ι → CStarMatrix m n A) (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j :=
@@ -354,6 +392,17 @@ theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
 theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
     (a : A) (i j : n) : toOneByOne n R A a i j = a :=
   rfl
+
+/-- Applying `(CStarMatrix.toOneByOne n R A).symm` reads the `(default, default)` entry. -/
+@[simp]
+theorem toOneByOne_symm_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A]
+    [Module R A] (M : CStarMatrix n n A) : (toOneByOne n R A).symm M = M default default :=
+  (rfl)
+
+/-- `CStarMatrix.toOneByOne` agrees with `ofMatrix` of a constant `1 × 1` matrix. -/
+theorem toOneByOne_eq_ofMatrix [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A]
+    [Module R A] (a : A) : toOneByOne n R A a = ofMatrix (Matrix.of fun _ _ ↦ a) :=
+  ext fun _ _ ↦ by simp
 
 /-- The entries of a reindexed C⋆-matrix. Mathlib's `CStarMatrix.reindexₐ_apply` has right-hand
 side `Matrix.reindex e e M i j` with `M` a `CStarMatrix`, which is not type-correct at instance

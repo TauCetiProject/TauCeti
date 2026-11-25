@@ -32,6 +32,9 @@ public import Mathlib.Analysis.RCLike.Basic
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
+* `RCLike.instSMulPosReflectLE`: scoped under `ComplexOrder`, scalar multiplication on the right by
+  a strictly positive element of a `StarOrderedRing` `K`-`StarModule` reflects `≤`, complementing
+  `RCLike.instMulPosReflectLE`.
 -/
 
 public section
@@ -134,6 +137,40 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
 /-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
 theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
   simpa [norm_sub_rev] using re_le_norm (1 - z)
+
+section Order
+
+open scoped ComplexOrder
+
+/-- Scoped under `ComplexOrder`, right scalar multiplication by a strictly positive element `b > 0`
+of a `StarOrderedRing` `K`-`StarModule` reflects `≤` (`z₁ • b ≤ z₂ • b → z₁ ≤ z₂`), complementing
+`RCLike.instMulPosReflectLE`. -/
+theorem instSMulPosReflectLE {B : Type*} [NonUnitalRing B] [PartialOrder B] [StarRing B]
+    [StarOrderedRing B] [Module K B] [StarModule K B] [IsScalarTower K B B]
+    [SMulCommClass K B B] : SMulPosReflectLE K B where
+  le_of_smul_le_smul_right {b} hb {z₁ z₂} h := by
+    have hb_sa : IsSelfAdjoint b := .of_nonneg hb.le
+    have hsub : 0 ≤ (z₂ - z₁) • b := by
+      simpa only [sub_smul, sub_nonneg] using h
+    have hc_sa : star (z₂ - z₁) = z₂ - z₁ := by
+      have hstar : star ((z₂ - z₁) • b) = (z₂ - z₁) • b :=
+        (IsSelfAdjoint.of_nonneg hsub).star_eq
+      rw [star_smul, hb_sa.star_eq] at hstar
+      exact smul_left_injective K hb.ne' hstar
+    have him : im (z₂ - z₁) = 0 := conj_eq_iff_im.mp hc_sa
+    have hre_eq : (re (z₂ - z₁) : K) = z₂ - z₁ := re_eq_self_of_im_eq_zero him
+    rw [← sub_nonneg, nonneg_iff]
+    refine ⟨?_, him⟩
+    by_contra! hneg
+    have hpos : 0 < -((z₂ - z₁) • b) := by
+      have hsmul : 0 < ((-re (z₂ - z₁) : ℝ) : K) • b :=
+        smul_pos (ofReal_pos.mpr (neg_pos.mpr hneg)) hb
+      simpa only [ofReal_neg, neg_smul, hre_eq] using hsmul
+    exact not_le_of_gt (neg_pos.mp hpos) hsub
+
+scoped[ComplexOrder] attribute [instance] RCLike.instSMulPosReflectLE
+
+end Order
 
 end RCLike
 

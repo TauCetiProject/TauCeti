@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
-# The corner of a diagonal matrix unit
+# Idempotents in matrix rings and the corner of a diagonal matrix unit
 
 For a ring `α` and an index `i`, the diagonal matrix unit `Eᵢᵢ = Matrix.single i i 1` is an
 idempotent of `Matrix n n α`. Its corner `Eᵢᵢ · Matrix n n α · Eᵢᵢ` consists of the matrices
@@ -20,6 +23,11 @@ whole matrix ring as a two-sided ideal, because `1 = ∑ⱼ Eⱼᵢ Eᵢᵢ Eᵢ
 Together these say that `α` is a full idempotent corner of `Matrix n n α`, the standard instance of
 Morita equivalence. In a product of matrix rings over division rings, one such unit per factor
 selects a full idempotent whose corner is a product of division rings.
+
+Over a domain `K` satisfying `StrongRankCondition` (for instance any commutative integral domain or
+division ring), any finite family of pairwise orthogonal nonzero idempotents in `Matrix n n K` has
+cardinality at most `Fintype.card n` (`OrthogonalIdempotents.card_le_of_matrix`), because choosing
+one nonzero row from each idempotent yields a left `K`-linearly independent family in `n → K`.
 
 ## Main definitions
 
@@ -36,6 +44,9 @@ selects a full idempotent whose corner is a product of division rings.
 * `Matrix.single_apply_eq_of_mem_corner`: a matrix in the corner of `Eᵢᵢ` is supported on the
   entry `(i, i)`.
 * `Matrix.twoSidedIdeal_span_single_one_eq_top`: the diagonal matrix unit `Eᵢᵢ` is full.
+* `OrthogonalIdempotents.card_le_of_matrix`: a family of pairwise orthogonal nonzero idempotents in
+  `Matrix n n K` over a domain `K` satisfying `StrongRankCondition` has size at most
+  `Fintype.card n`.
 -/
 
 public section
@@ -139,3 +150,31 @@ theorem twoSidedIdeal_span_single_one_eq_top [NonAssocRing α] (i : n) :
     (TwoSidedIdeal.mul_mem_left _ _ _ (TwoSidedIdeal.subset_span rfl))
 
 end Matrix
+
+/-- Over a domain `K` satisfying `StrongRankCondition` (for instance any commutative integral
+domain or division ring), a finite family of pairwise orthogonal nonzero idempotents in
+`Matrix n n K` has cardinality at most `Fintype.card n`. -/
+theorem OrthogonalIdempotents.card_le_of_matrix {K ι n : Type*} [Ring K] [IsDomain K]
+    [StrongRankCondition K] [Fintype ι] [Fintype n] [DecidableEq n] {e : ι → Matrix n n K}
+    (he : OrthogonalIdempotents e) (hne : ∀ i, e i ≠ 0) : Fintype.card ι ≤ Fintype.card n := by
+  classical
+  have hex (i : ι) : ∃ r : n, e i r ≠ 0 := Function.ne_iff.mp (hne i)
+  let r (i : ι) : n := (hex i).choose
+  let w (i : ι) : n → K := e i (r i)
+  have hw_ne (i : ι) : w i ≠ 0 := (hex i).choose_spec
+  have hw_mul (i j : ι) : Matrix.vecMul (w i) (e j) = if i = j then w i else 0 := by
+    rw [← Matrix.mul_apply_eq_vecMul, he.mul_eq]
+    ext c
+    by_cases hij : i = j <;> simp [hij, w]
+  have hli : LinearIndependent K w := by
+    rw [linearIndependent_iff']
+    intro s c hc j hj
+    have h0 : Matrix.vecMul (∑ i ∈ s, c i • w i) (e j) = 0 := by rw [hc, Matrix.zero_vecMul]
+    have hsum : Matrix.vecMul (∑ i ∈ s, c i • w i) (e j) = c j • w j := by
+      simp [Matrix.sum_vecMul, Matrix.smul_vecMul, hw_mul, hj]
+    obtain ⟨col, hcol⟩ := Function.ne_iff.mp (hw_ne j)
+    have hmul : c j * w j col = 0 := by
+      simpa only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply] using
+        congrFun (hsum.symm.trans h0) col
+    exact (mul_eq_zero.mp hmul).resolve_right hcol
+  simpa only [Module.finrank_fintype_fun_eq_card] using hli.fintype_card_le_finrank
