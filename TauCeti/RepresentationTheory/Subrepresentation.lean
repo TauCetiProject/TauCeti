@@ -34,7 +34,9 @@ lemmas move an order statement between the two lattices, which is what lets a su
 argument — a dimension count, say, or an orthogonal complement — settle a question about
 subrepresentations; and the membership lemma does the same for a single element, so that a
 carrier computed by a `toSubmodule` lemma answers a `SetLike` membership goal without unfolding
-the `SetLike` instance by hand. `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot` and
+the `SetLike` instance by hand. `Subrepresentation.spanSingleton` packages the line through a
+vector that every `ρ g` sends to a scalar multiple of itself, a common way to exhibit a proper
+nonzero subrepresentation. `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot` and
 `Representation.IntertwiningMap.surjective_iff_range_eq_top` are the first consumers of the `⊥` and
 `⊤` lemmas, and belong here because `⊥` and `⊤` of `Subrepresentation` have no other API: they are
 `LinearMap.range_eq_bot` and `LinearMap.range_eq_top` moved up to the subrepresentation lattice,
@@ -98,6 +100,10 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.toSubmodule_bot`
 * `Subrepresentation.toSubmodule_top`
 * `Subrepresentation.instNontrivial`
+* `Subrepresentation.spanSingleton`
+* `Subrepresentation.toSubmodule_spanSingleton`
+* `Subrepresentation.mem_spanSingleton`
+* `Subrepresentation.self_mem_spanSingleton`
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
@@ -170,6 +176,34 @@ lemma mem_top {v : W} : v ∈ (⊤ : Subrepresentation ρ) := Submodule.mem_top
 instance instNontrivial [Nontrivial W] : Nontrivial (Subrepresentation ρ) :=
   ⟨⟨⊥, ⊤, fun hc => _root_.bot_ne_top (α := Submodule A W) (by
     rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])⟩⟩
+
+/-- **The line through a common eigenvector.** If every `ρ g` sends `v` to a scalar multiple of
+`v`, then the span of `v` is a subrepresentation. -/
+def spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) : Subrepresentation ρ where
+  toSubmodule := A ∙ v
+  apply_mem_toSubmodule g x hx := by
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    obtain ⟨t, ht⟩ := h g
+    rw [map_smul, ht]
+    exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v))
+
+/-- The line through a common eigenvector carries the span of that vector. -/
+@[simp]
+lemma toSubmodule_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
+    (spanSingleton v h).toSubmodule = A ∙ v :=
+  (rfl)
+
+/-- A vector lies in the line through a common eigenvector `v` exactly when it is a multiple
+of `v`. -/
+lemma mem_spanSingleton {v x : W} {h : ∀ g, ∃ t : A, ρ g v = t • v} :
+    x ∈ spanSingleton v h ↔ ∃ a : A, a • v = x :=
+  Submodule.mem_span_singleton
+
+/-- A common eigenvector lies in the line it spans. -/
+@[simp]
+lemma self_mem_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
+    v ∈ spanSingleton v h :=
+  Submodule.mem_span_singleton_self v
 
 /-- One subrepresentation is contained in another exactly when the subspace it carries is. -/
 @[simp]
