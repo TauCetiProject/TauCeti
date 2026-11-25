@@ -32,7 +32,7 @@ scheme morphisms. Being an isomorphism is such a local property: a morphism of m
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
 Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
-adjoint to direct image.
+adjoint to direct image, and it is an equivalence of categories of modules.
 
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
@@ -54,8 +54,12 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoOfCommSq`: the comparison `t^* r^* ≅ l^* b^*`
+  of composite pullbacks around a commutative square, and
+  `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoId`: `f^* g^* ≅ 𝟭` for a section `f` of `g`;
 * `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
-  pullback is direct image along the inverse;
+  pullback is direct image along the inverse, and
+  `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback` shows it is an equivalence;
 * `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app`: the unit of
   `(f ≫ g)^* ⊣ (f ≫ g)_*` through the units of `g` and `f`, and
   `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app` the
@@ -66,7 +70,8 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
-  composition, and equality of scheme morphisms;
+  composition, and equality of scheme morphisms, and `pullbackObjUnitIso_inv_conj_comp` pulling
+  back a function factored through a pulled-back module;
 * `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
@@ -226,6 +231,47 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   subst p
   simp [pullbackCongr]
 
+/-- The comparison `t^* r^* ≅ l^* b^*` of composite pullbacks around a commutative square
+`t ≫ r = l ≫ b` of schemes, through `(t ≫ r)^* = (l ≫ b)^*`. -/
+def pullbackCompIsoOfCommSq {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) : pullback r ⋙ pullback t ≅ pullback b ⋙ pullback l :=
+  pullbackComp t r ≪≫ pullbackCongr sq.w ≪≫ (pullbackComp l b).symm
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_hom_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).hom.app M =
+      (pullbackComp t r).hom.app M ≫ (pullbackCongr sq.w).hom.app M ≫
+        (pullbackComp l b).inv.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_inv_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).inv.app M =
+      (pullbackComp l b).hom.app M ≫ (pullbackCongr sq.w).inv.app M ≫
+        (pullbackComp t r).inv.app M :=
+  (rfl)
+
+/-- For a section `f` of `g`, i.e. `f ≫ g = 𝟙 X`, pulling back along `g` and then along `f` is
+the identity: `f^* g^* ≅ (f ≫ g)^* = (𝟙 X)^* ≅ 𝟭`. Along an isomorphism `g`, with `f = inv g`,
+this identifies `(inv g)^* g^*` with the identity. -/
+def pullbackCompIsoId {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) :
+    pullback g ⋙ pullback f ≅ 𝟭 X.Modules :=
+  pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId X
+
+@[simp]
+lemma pullbackCompIsoId_hom_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).hom.app M =
+      (pullbackComp f g).hom.app M ≫ (pullbackCongr h).hom.app M ≫ (pullbackId X).hom.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoId_inv_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).inv.app M =
+      (pullbackId X).inv.app M ≫ (pullbackCongr h).inv.app M ≫ (pullbackComp f g).inv.app M :=
+  (rfl)
+
 end Coherence
 
 section IsIso
@@ -240,6 +286,14 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) 
         (pushforwardComp (inv g) g).symm)
       (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
         pushforwardId X)).toAdjunction
+
+/-- Along an isomorphism of schemes `g`, pullback of modules is an equivalence of categories, being
+restriction along the open immersion `g` (`restrictEquivalence`). -/
+instance isEquivalence_pullback (g : X ⟶ Y) [IsIso g] : (pullback g).IsEquivalence := by
+  have := (restrictEquivalence (asIso g)).isEquivalence_functor
+  rw [restrictEquivalence_functor] at this
+  have := Functor.isEquivalence_of_iso (restrictFunctorIsoPullback (asIso g).hom)
+  rwa [asIso_hom] at this
 
 end IsIso
 
@@ -329,6 +383,26 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
   subst g
   simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
     Category.id_comp]
+
+/-- Pulling back along `f : X ⟶ Y` a function `a ≫ b` on `Y`, factored through `g^* M`, is the
+composite of the pulled-back factors, after the identifications `f^* 𝒪_Y ≅ 𝒪_X` and
+`f^* g^* M ≅ h^* M` for `h = f ≫ g`. -/
+@[reassoc]
+lemma pullbackObjUnitIso_inv_conj_comp (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z} (w : f ≫ g = h)
+    (M : Z.Modules) (a : 𝟙_ Y.Modules ⟶ (pullback g).obj M)
+    (b : (pullback g).obj M ⟶ 𝟙_ Y.Modules) :
+    (pullbackObjUnitIso f).inv ≫ (pullback f).map (a ≫ b ≫ (pullbackObjUnitIso g).inv) ≫
+        (pullbackComp f g).hom.app _ ≫ (pullbackCongr w).hom.app _ =
+      ((pullbackObjUnitIso f).inv ≫ (pullback f).map a ≫ (pullbackComp f g).hom.app M ≫
+          (pullbackCongr w).hom.app M) ≫
+        ((pullbackCongr w).inv.app M ≫ (pullbackComp f g).inv.app M ≫ (pullback f).map b ≫
+            (pullbackObjUnitIso f).hom) ≫
+          (pullbackObjUnitIso h).inv := by
+  subst w
+  rw [← pullbackObjUnitIso_inv_comp]
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, Category.comp_id, Functor.map_comp, Category.assoc,
+    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_assoc]
 
 /-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
 `g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
