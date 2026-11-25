@@ -761,13 +761,22 @@ open scoped Pointwise
 /-- **Translation identifies the orbits of conjugate subgroups.** If `K = gHg⁻¹`, translation by
 `g` carries the `H`-orbits bijectively onto the `K`-orbits. The equation is taken as a hypothesis
 so that `K` may be any expression for the conjugate subgroup. -/
-@[expose]
 noncomputable def MulAction.orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
     (hHK : ConjAct.toConjAct g • H = K) :
     MulAction.orbitRel.Quotient H X ≃ MulAction.orbitRel.Quotient K X :=
   MulAction.orbitRelQuotientCongr ((Subgroup.equivSMul (ConjAct.toConjAct g) H).trans
       (MulEquiv.subgroupCongr hHK)) (MulAction.toPerm g) fun h a ↦ by
     simp [Subgroup.smul_def, ConjAct.smul_def, mul_smul]
+
+/-- `orbitRelQuotientSMulEquiv g hHK` is the orbit-space equivalence `orbitRelQuotientCongr`
+induced by translation by `g`, along the conjugation isomorphism `H ≃* K`. -/
+theorem MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) :
+    MulAction.orbitRelQuotientSMulEquiv (X := X) g hHK =
+      MulAction.orbitRelQuotientCongr ((Subgroup.equivSMul (ConjAct.toConjAct g) H).trans
+        (MulEquiv.subgroupCongr hHK)) (MulAction.toPerm g) fun h a ↦ by
+          simp [Subgroup.smul_def, ConjAct.smul_def, mul_smul] :=
+  (rfl)
 
 /-- `orbitRelQuotientSMulEquiv g hHK` sends the `H`-orbit of `a` to the `K`-orbit of `g • a`. -/
 @[simp]

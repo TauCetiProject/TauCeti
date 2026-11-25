@@ -96,7 +96,7 @@ variable {G α : Type*} [Group G] [MulAction G α] {R : Type*} [CommSemiring R]
 /-- **The stabiliser-weighted pairing** `∑_x c(x)⁻¹ f(x) g(x)` of two functions on the orbit space
 of `G` acting on `α`, where `c(x)` is the order of the stabiliser of the orbit `x`
 (`cardStabilizerOnOrbit`) and the inverse is `Ring.inverse`. The sum is a `finsum`, so it is `0`
-when there are infinitely many orbits. -/
+when the summand `x ↦ c(x)⁻¹ f(x) g(x)` has infinite support. -/
 noncomputable def stabilizerWeightedPairing (f g : orbitRel.Quotient G α → R) : R :=
   ∑ᶠ x, Ring.inverse (cardStabilizerOnOrbit x : R) * (f x * g x)
 
@@ -183,8 +183,9 @@ variable {G α : Type*} [Group G] [MulAction G α] {M : Type*} [AddCommMonoid M]
 
 /-- **The level trace** from functions on the `V`-orbits to functions on the `U`-orbits: its value
 at the orbit of `x` is `∑ h(u⁻¹ • x)`, the sum over `u ∈ U / (V ∩ U)`. It is a sum, not an average:
-no division by the index is made. The sum is a `finsum`, so the trace is `0` when the index of
-`V ∩ U` in `U` is infinite. -/
+no division by the index is made. The sum is a `finsum`, so the trace is `0` at the orbit of `x`
+when `c ↦ h(u⁻¹ • x)` has infinite support; the theorems below assume `V ∩ U` has finite index in
+`U` (`Subgroup.IsFiniteRelIndex`), where every such sum is finite. -/
 noncomputable def levelTrace (V U : Subgroup G) (h : orbitRel.Quotient V α → M) :
     orbitRel.Quotient U α → M :=
   Quotient.lift (fun x ↦ ∑ᶠ c : U ⧸ V.subgroupOf U, h (orbitOfCosetTranslate x c))
@@ -225,7 +226,7 @@ theorem levelTrace_self (U : Subgroup G) (h : orbitRel.Quotient U α → M) :
   induction p using Quotient.inductionOn' with
   | h x =>
     rw [levelTrace_of_le le_rfl]
-    rfl
+    simp only [Function.comp_apply, TauCeti.Setoid.map_of_le_mk]
 
 /-- The level trace of `0` is `0`. -/
 @[simp]
@@ -270,24 +271,13 @@ theorem inverse_cardStabilizerOnOrbit_smul_levelTrace {V U : Subgroup G} (hle : 
   classical
   induction p using Quotient.inductionOn' with | h x => ?_
   have := Fintype.ofFinite (U ⧸ V.subgroupOf U)
-  let φ : U ⧸ V.subgroupOf U → orbitRel.Quotient V α := orbitOfCosetTranslate x
-  -- the fibre over the orbit of `x` is the image of `φ`
-  have himage : Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (X := α) hle) ⁻¹'
-      {Quotient.mk'' x} = ↑(Finset.univ.image φ) := by
-    ext q
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, Finset.coe_image, Finset.coe_univ,
-      Set.image_univ, Set.mem_range]
-    refine ⟨fun hq ↦ ?_, ?_⟩
-    · obtain ⟨c, hc⟩ := cosetToOrbitRelMapFiber_surjective hle x ⟨q, hq⟩
-      exact ⟨c, (cosetToOrbitRelMapFiber_apply hle x c).symm.trans (congrArg Subtype.val hc)⟩
-    · rintro ⟨c, rfl⟩
-      have := (cosetToOrbitRelMapFiber hle x c).property
-      rwa [cosetToOrbitRelMapFiber_apply] at this
-  rw [himage, finsum_mem_coe_finset, levelTrace_mk, finsum_eq_sum_of_fintype, Finset.sum_comp,
-    Finset.smul_sum]
+  -- the fibre over the orbit of `x` is the image of `orbitOfCosetTranslate x`
+  rw [preimage_map_of_le_mk_eq_range_orbitOfCosetTranslate hle, ← Set.image_univ, ← Finset.coe_univ,
+    ← Finset.coe_image, finsum_mem_coe_finset, levelTrace_mk, finsum_eq_sum_of_fintype,
+    Finset.sum_comp, Finset.smul_sum]
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨c, -, rfl⟩ := Finset.mem_image.mp hq
-  -- `q = φ c` occurs `c_U(x) / c_V(q)` times among the cosets
+  -- `q = orbitOfCosetTranslate x c` occurs `c_U(x) / c_V(q)` times among the cosets
   have hcount := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit hle x c
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at hcount
   rw [cardStabilizerOnOrbit_mk] at hp ⊢
@@ -342,8 +332,9 @@ theorem stabilizerWeightedPairing_comp_orbitRelQuotientSMulEquiv {R : Type*} [Co
     (f₁ f₂ : orbitRel.Quotient K α → R) :
     stabilizerWeightedPairing (f₁ ∘ MulAction.orbitRelQuotientSMulEquiv g hHK)
         (f₂ ∘ MulAction.orbitRelQuotientSMulEquiv g hHK) =
-      stabilizerWeightedPairing f₁ f₂ :=
-  stabilizerWeightedPairing_comp_orbitRelQuotientCongr _ _ _ f₁ f₂
+      stabilizerWeightedPairing f₁ f₂ := by
+  rw [MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr]
+  exact stabilizerWeightedPairing_comp_orbitRelQuotientCongr _ _ _ f₁ f₂
 
 variable {M : Type*} [AddCommMonoid M]
 

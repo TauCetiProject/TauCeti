@@ -78,6 +78,21 @@ theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x :
       Quotient.mk'' y := by simpa [Subgroup.smul_def] using heq
   simpa only [Subgroup.coe_inv, inv_inv] using heq'.trans (Quotient.out_eq q.val)
 
+/-- The fibre over the orbit of `x` of the map from `H`-orbits to `K`-orbits is the set of
+`H`-orbits of the translates `k⁻¹ • x`, `k ∈ K`, indexed by the cosets of `H` in `K`. -/
+theorem preimage_map_of_le_mk_eq_range_orbitOfCosetTranslate {H K : Subgroup G} (h : H ≤ K)
+    (x : X) :
+    Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) ⁻¹'
+        {Quotient.mk'' x} =
+      Set.range (orbitOfCosetTranslate (𝒢 := H) (ℋ := K) x) := by
+  ext q
+  refine ⟨fun hq ↦ ?_, ?_⟩
+  · obtain ⟨c, hc⟩ := cosetToOrbitRelMapFiber_surjective h x ⟨q, hq⟩
+    exact ⟨c, (cosetToOrbitRelMapFiber_apply h x c).symm.trans (congrArg Subtype.val hc)⟩
+  · rintro ⟨c, rfl⟩
+    have := (cosetToOrbitRelMapFiber h x c).property
+    rwa [cosetToOrbitRelMapFiber_apply] at this
+
 /-- Every fibre of the orbit map for a finite-index subgroup inclusion is finite. -/
 theorem finite_fiber_orbitRel_map_of_isFiniteRelIndex {H K : Subgroup G}
     (h : H ≤ K) [H.IsFiniteRelIndex K] (p : orbitRel.Quotient K X) :

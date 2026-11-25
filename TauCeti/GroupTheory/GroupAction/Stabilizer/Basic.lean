@@ -387,8 +387,9 @@ open scoped Pointwise in
 theorem cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
     (hHK : ConjAct.toConjAct g • H = K) (q : MulAction.orbitRel.Quotient H α) :
     cardStabilizerOnOrbit (MulAction.orbitRelQuotientSMulEquiv g hHK q) =
-      cardStabilizerOnOrbit q :=
-  cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
+      cardStabilizerOnOrbit q := by
+  rw [MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr]
+  exact cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
 
 section Sum
 
