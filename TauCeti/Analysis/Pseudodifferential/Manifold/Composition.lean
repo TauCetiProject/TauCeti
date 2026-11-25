@@ -105,7 +105,7 @@ include he
 
 /-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
 `φ`, since every output of the compression does. -/
-private theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
+theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
     {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
     (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
       quantizeSchwartzValue b.toSymbol.coefficient u y =
