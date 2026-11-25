@@ -101,12 +101,6 @@ theorem IsInfiniteProjection.ne_zero [IsProperStar R] {p : R} (hp : IsInfinitePr
 theorem not_isInfiniteProjection_zero [IsProperStar R] : ¬ IsInfiniteProjection (0 : R) :=
   fun h ↦ h.ne_zero rfl
 
-omit [PartialOrder R] in
-/-- If `v⋆v = p` is a star projection, then `v` is a partial isometry. -/
-private theorem isPartialIsometry_of_star_mul_self_eq [IsProperStar R] {p v : R}
-    (hp : IsStarProjection p) (hv : star v * v = p) : IsPartialIsometry v :=
-  isPartialIsometry_iff_isStarProjection_star_mul_self.mpr (hv ▸ hp)
-
 variable [StarOrderedRing R] [IsProperStar R]
 
 /-- A nonzero properly infinite projection is infinite. -/
@@ -114,7 +108,7 @@ theorem IsProperlyInfiniteProjection.isInfiniteProjection {p : R}
     (h : IsProperlyInfiniteProjection p) (hp : p ≠ 0) : IsInfiniteProjection p := by
   obtain ⟨hpp, v, w, hv, hw, hvp, hwp, hvw⟩ := h
   refine ⟨hpp, v, hv, hvp, fun hvv ↦ hp ?_⟩
-  have hwproj := (isPartialIsometry_of_star_mul_self_eq hpp hw).isStarProjection_mul_star_self
+  have hwproj := (IsPartialIsometry.of_star_mul_self_eq hpp hw).isStarProjection_mul_star_self
   have hw0 : w * star w = 0 := by
     rw [← (hwproj.le_iff_mul_eq_right hpp).mp hwp, ← hvv, hvw]
   rw [mul_star_self_eq_zero] at hw0
@@ -122,24 +116,29 @@ theorem IsProperlyInfiniteProjection.isInfiniteProjection {p : R}
 
 /-! ### Permanence under equivalence and splitting -/
 
+/-- A witness `v` for a subprojection of `p` (`v⋆v = p` and `vv⋆ ≤ p`) is fixed by `p` on both
+sides: `p v = v` and `v p = v`. -/
+private theorem mul_eq_self_and_mul_eq_self {p v : R} (hp : IsStarProjection p)
+    (hv : star v * v = p) (hvp : v * star v ≤ p) : p * v = v ∧ v * p = v :=
+  have hvi := IsPartialIsometry.of_star_mul_self_eq hp hv
+  ⟨hvi.mul_eq_self_of_mul_star_self_le hp hvp, hvi.mul_eq_self_of_star_mul_self_le hp hv.le⟩
+
 /-- Conjugating a witness: if `u⋆u = p`, `uu⋆ = q`, `v⋆v = p` and `vv⋆ ≤ p`, then `w = u v u⋆`
-has `w⋆w = q`, `ww⋆ = u (vv⋆) u⋆` and `ww⋆ ≤ q`, and `q` is a star projection. -/
+has `w⋆w = q`, `ww⋆ = u (vv⋆) u⋆` and `ww⋆ ≤ q`. -/
 private theorem conj_witness {p q u v : R} (hp : IsStarProjection p) (hu : star u * u = p)
     (hu' : u * star u = q) (hv : star v * v = p) (hvp : v * star v ≤ p) :
     star (u * v * star u) * (u * v * star u) = q ∧
       u * v * star u * star (u * v * star u) = u * (v * star v) * star u ∧
-      u * v * star u * star (u * v * star u) ≤ q ∧ IsStarProjection q := by
-  have hvi := isPartialIsometry_of_star_mul_self_eq hp hv
-  have hui := isPartialIsometry_of_star_mul_self_eq hp hu
-  have hpv : p * v = v := hvi.mul_eq_self_of_mul_star_self_le hp hvp
-  have hvp' : v * p = v := hv ▸ hvi.mul_star_mul_self_assoc
-  have hup : u * p = u := hu ▸ hui.mul_star_mul_self_assoc
+      u * v * star u * star (u * v * star u) ≤ q := by
+  obtain ⟨hpv, hvp'⟩ := mul_eq_self_and_mul_eq_self hp hv hvp
+  have hup : u * p = u :=
+    (IsPartialIsometry.of_star_mul_self_eq hp hu).mul_eq_self_of_star_mul_self_le hp hu.le
   have hqe : u * p * star u = q := by rw [hup, hu']
   have h₂ : u * v * star u * star (u * v * star u) = u * (v * star v) * star u := by
     calc _ = u * (v * (star u * u) * star v) * star u := by
           simp only [star_mul, star_star, mul_assoc]
       _ = _ := by rw [hu, hvp']
-  refine ⟨?_, h₂, ?_, hu' ▸ hui.isStarProjection_mul_star_self⟩
+  refine ⟨?_, h₂, ?_⟩
   · calc _ = u * (star v * (star u * u) * v) * star u := by
           simp only [star_mul, star_star, mul_assoc]
       _ = q := by rw [hu, mul_assoc (star v), hpv, hv, hqe]
@@ -151,16 +150,19 @@ private theorem conj_witness {p q u v : R} (hp : IsStarProjection p) (hu : star 
 theorem IsInfiniteProjection.of_star_mul_self_eq {p q u : R} (hp : IsInfiniteProjection p)
     (hu : star u * u = p) (hu' : u * star u = q) : IsInfiniteProjection q := by
   obtain ⟨hpp, v, hv, hvp, hne⟩ := hp
-  obtain ⟨h₁, h₂, h₃, hq⟩ := conj_witness hpp hu hu' hv hvp
+  obtain ⟨h₁, h₂, h₃⟩ := conj_witness hpp hu hu' hv hvp
+  have hq : IsStarProjection q :=
+    hu' ▸ (IsPartialIsometry.of_star_mul_self_eq hpp hu).isStarProjection_mul_star_self
   refine ⟨hq, _, h₁, h₃, fun h ↦ hne ?_⟩
   -- Compress `u (vv⋆) u⋆ = q` back by `x ↦ u⋆ x u`, giving `p (vv⋆) p = p p p`.
-  have hvv := (isPartialIsometry_of_star_mul_self_eq hpp hv).isStarProjection_mul_star_self
+  have hvv := (IsPartialIsometry.of_star_mul_self_eq hpp hv).isStarProjection_mul_star_self
   have e₁ : star u * (u * (v * star v) * star u) * u = v * star v := by
     calc _ = (star u * u) * (v * star v) * (star u * u) := by simp only [mul_assoc]
       _ = _ := by
         rw [hu, (hvv.le_iff_mul_eq_right hpp).mp hvp, (hvv.le_iff_mul_eq_left hpp).mp hvp]
   have e₂ : star u * q * u = p := by
-    rw [← hu', ← mul_assoc, hu, mul_assoc, hu, hpp.isIdempotentElem.eq]
+    calc _ = (star u * u) * (star u * u) := by rw [← hu']; simp only [mul_assoc]
+      _ = p := by rw [hu, hpp.isIdempotentElem.eq]
   rw [← e₁, ← h₂, h, e₂]
 
 /-- **Proper infiniteness is invariant under Murray–von Neumann equivalence**: if `u⋆u = p` and
@@ -170,27 +172,18 @@ theorem IsProperlyInfiniteProjection.of_star_mul_self_eq {p q u : R}
     (hp : IsProperlyInfiniteProjection p) (hu : star u * u = p) (hu' : u * star u = q) :
     IsProperlyInfiniteProjection q := by
   obtain ⟨hpp, v, w, hv, hw, hvp, hwp, hvw⟩ := hp
-  obtain ⟨hv₁, hv₂, hv₃, hq⟩ := conj_witness hpp hu hu' hv hvp
-  obtain ⟨hw₁, hw₂, hw₃, -⟩ := conj_witness hpp hu hu' hw hwp
+  obtain ⟨hv₁, hv₂, hv₃⟩ := conj_witness hpp hu hu' hv hvp
+  obtain ⟨hw₁, hw₂, hw₃⟩ := conj_witness hpp hu hu' hw hwp
+  have hq : IsStarProjection q :=
+    hu' ▸ (IsPartialIsometry.of_star_mul_self_eq hpp hu).isStarProjection_mul_star_self
   refine ⟨hq, _, _, hv₁, hw₁, hv₃, hw₃, ?_⟩
   -- `(u (vv⋆) u⋆) (u (ww⋆) u⋆) = u (vv⋆) p (ww⋆) u⋆ = u (vv⋆) (ww⋆) u⋆ = 0`.
-  have hvv := (isPartialIsometry_of_star_mul_self_eq hpp hv).isStarProjection_mul_star_self
+  have hvv := (IsPartialIsometry.of_star_mul_self_eq hpp hv).isStarProjection_mul_star_self
   have hvvp : v * star v * p = v * star v := (hvv.le_iff_mul_eq_left hpp).mp hvp
   rw [hv₂, hw₂]
   calc _ = u * (v * star v * (star u * u) * (w * star w)) * star u := by
         simp only [mul_assoc]
     _ = 0 := by rw [hu, hvvp, hvw, mul_zero, zero_mul]
-
-/-- A witness `v` for a subprojection of `p` lies in the corner `q R q` of every projection
-`q ≥ p`: `q v q = v`. -/
-private theorem mul_mul_eq_self {p q v : R} (hp : IsStarProjection p) (hq : IsStarProjection q)
-    (hpq : p ≤ q) (hv : star v * v = p) (hvp : v * star v ≤ p) : q * v * q = v := by
-  have hvi := isPartialIsometry_of_star_mul_self_eq hp hv
-  have hpv : p * v = v := hvi.mul_eq_self_of_mul_star_self_le hp hvp
-  have hvp' : v * p = v := hv ▸ hvi.mul_star_mul_self_assoc
-  have hqp : q * p = p := (hp.le_iff_mul_eq_right hq).mp hpq
-  have hpq' : p * q = p := (hp.le_iff_mul_eq_left hq).mp hpq
-  rw [← hpv, ← mul_assoc, hqp, hpv, ← hvp', mul_assoc, hpq']
 
 /-- **Infiniteness in corners**: an infinite projection `p` is infinite in the corner `q R q` of
 every projection `q ≥ p`, that is, it has a witness `v` with `q v q = v`. -/
@@ -198,7 +191,8 @@ theorem IsInfiniteProjection.exists_mul_mul_eq_self {p q : R} (hp : IsInfinitePr
     (hq : IsStarProjection q) (hpq : p ≤ q) :
     ∃ v : R, q * v * q = v ∧ star v * v = p ∧ v * star v ≤ p ∧ v * star v ≠ p := by
   obtain ⟨hpp, v, hv, hvp, hne⟩ := hp
-  exact ⟨v, mul_mul_eq_self hpp hq hpq hv hvp, hv, hvp, hne⟩
+  exact ⟨v, (IsPartialIsometry.of_star_mul_self_eq hpp hv).mul_mul_eq_self_of_le hq
+    (hv.le.trans hpq) (hvp.trans hpq), hv, hvp, hne⟩
 
 /-- **Proper infiniteness in corners**: a properly infinite projection `p` is properly infinite in
 the corner `q R q` of every projection `q ≥ p`, that is, it has witnesses `v`, `w` with
@@ -208,8 +202,11 @@ theorem IsProperlyInfiniteProjection.exists_mul_mul_eq_self {p q : R}
     ∃ v w : R, q * v * q = v ∧ q * w * q = w ∧ star v * v = p ∧ star w * w = p ∧
       v * star v ≤ p ∧ w * star w ≤ p ∧ v * star v * (w * star w) = 0 := by
   obtain ⟨hpp, v, w, hv, hw, hvp, hwp, hvw⟩ := hp
-  exact ⟨v, w, mul_mul_eq_self hpp hq hpq hv hvp, mul_mul_eq_self hpp hq hpq hw hwp, hv, hw, hvp,
-    hwp, hvw⟩
+  exact ⟨v, w,
+    (IsPartialIsometry.of_star_mul_self_eq hpp hv).mul_mul_eq_self_of_le hq (hv.le.trans hpq)
+      (hvp.trans hpq),
+    (IsPartialIsometry.of_star_mul_self_eq hpp hw).mul_mul_eq_self_of_le hq (hw.le.trans hpq)
+      (hwp.trans hpq), hv, hw, hvp, hwp, hvw⟩
 
 /-- **Splitting a properly infinite projection**: a properly infinite projection `p` contains a
 sequence of mutually orthogonal subprojections each equivalent to `p`. With witnesses `v`, `w`,
@@ -218,28 +215,32 @@ theorem IsProperlyInfiniteProjection.exists_seq {p : R} (hp : IsProperlyInfinite
     ∃ f : ℕ → R, (∀ i, star (f i) * f i = p) ∧ (∀ i, f i * star (f i) ≤ p) ∧
       Pairwise fun i j ↦ f i * star (f i) * (f j * star (f j)) = 0 := by
   obtain ⟨hpp, v, w, hv, hw, hvp, hwp, hvw⟩ := hp
-  have hvi := isPartialIsometry_of_star_mul_self_eq hpp hv
-  have hwi := isPartialIsometry_of_star_mul_self_eq hpp hw
-  have hpw : p * w = w := hwi.mul_eq_self_of_mul_star_self_le hpp hwp
-  have hwp' : w * p = w := hw ▸ hwi.mul_star_mul_self_assoc
+  have hvi := IsPartialIsometry.of_star_mul_self_eq hpp hv
+  have hwi := IsPartialIsometry.of_star_mul_self_eq hpp hw
+  obtain ⟨hpw, hwp'⟩ := mul_eq_self_and_mul_eq_self hpp hw hwp
   set f : ℕ → R := fun i ↦ (w * ·)^[i] v
   have hzero : f 0 = v := Function.iterate_zero_apply _ _
   have hsucc (i : ℕ) : f (i + 1) = w * f i := Function.iterate_succ_apply' _ _ _
   have hpf (i : ℕ) : p * f i = f i := by
     cases i with
-    | zero => rw [hzero, hvi.mul_eq_self_of_mul_star_self_le hpp hvp]
+    | zero => rw [hzero, (mul_eq_self_and_mul_eq_self hpp hv hvp).1]
     | succ i => rw [hsucc, ← mul_assoc, hpw]
   have hstar (i : ℕ) : star (f i) * f i = p := by
     induction i with
     | zero => rw [hzero, hv]
     | succ i ih =>
-      rw [hsucc, star_mul, mul_assoc, ← mul_assoc (star w), hw, hpf, ih]
+      calc star (f (i + 1)) * f (i + 1) = star (f i) * (star w * w) * f i := by
+            simp only [hsucc, star_mul, mul_assoc]
+        _ = p := by rw [hw, mul_assoc, hpf, ih]
   have hle (i : ℕ) : f i * star (f i) ≤ p := by
     induction i with
     | zero => rw [hzero]; exact hvp
     | succ i ih =>
-      rw [hsucc, star_mul, ← mul_assoc, mul_assoc w]
-      exact (star_right_conjugate_le_conjugate ih w).trans (by rw [hwp']; exact hwp)
+      calc f (i + 1) * star (f (i + 1)) = w * (f i * star (f i)) * star w := by
+            simp only [hsucc, star_mul, mul_assoc]
+        _ ≤ w * p * star w := star_right_conjugate_le_conjugate ih w
+        _ = w * star w := by rw [hwp']
+        _ ≤ p := hwp
   have hvw' : star v * w = 0 := (hvi.star_mul_eq_zero_iff hwi).mpr hvw
   -- `fᵢ⋆ fᵢ₊ₖ₊₁ = 0`, by induction on `i`.
   have horth (i k : ℕ) : star (f i) * f (i + k + 1) = 0 := by
@@ -247,11 +248,16 @@ theorem IsProperlyInfiniteProjection.exists_seq {p : R} (hp : IsProperlyInfinite
     | zero =>
       rw [zero_add, hsucc, hzero, ← mul_assoc, hvw', zero_mul]
     | succ i ih =>
-      rw [show i + 1 + k + 1 = i + k + 1 + 1 by omega, hsucc, hsucc, star_mul, mul_assoc,
-        ← mul_assoc (star w), hw, hpf, ih]
+      calc star (f (i + 1)) * f (i + 1 + k + 1)
+          = star (f i) * (star w * w) * f (i + k + 1) := by
+            rw [show i + 1 + k + 1 = i + k + 1 + 1 by omega]
+            simp only [hsucc, star_mul, mul_assoc]
+        _ = 0 := by rw [hw, mul_assoc, hpf, ih]
   have key (i j : ℕ) (h : i < j) : f i * star (f i) * (f j * star (f j)) = 0 := by
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt h
-    rw [mul_assoc, ← mul_assoc (star (f i)), horth, zero_mul, mul_zero]
+    calc _ = f i * (star (f i) * f (i + k + 1)) * star (f (i + k + 1)) := by
+          simp only [mul_assoc]
+      _ = 0 := by rw [horth, mul_zero, zero_mul]
   refine ⟨f, hstar, hle, fun i j hij ↦ ?_⟩
   rcases lt_or_gt_of_ne hij with h | h
   · exact key i j h
