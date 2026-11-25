@@ -137,13 +137,12 @@ theorem snd_mul (x y : SerreAlgebra k) : (x * y).snd =
     x.fst * y.snd + x.snd * involute y.fst + x.snd * involute y.snd * ofUnit (-1) := rfl
 
 /-- The matrix `!![c, d; 0, σ(c) + σ(d) {-1}]` of right multiplication by `x = c + d Π` on the free
-left `K_*ᴹ(k)`-module with basis `1, Π`, acting on row vectors. This faithful representation
-(`TauCeti.SerreAlgebra.toMatrix_injective`, `TauCeti.SerreAlgebra.toMatrix_mul`) is how the ring
-structure of `L(k)` is constructed. -/
-def toMatrix (x : SerreAlgebra k) : Matrix (Fin 2) (Fin 2) (MilnorK k) :=
+left `K_*ᴹ(k)`-module with basis `1, Π`, acting on row vectors. This representation is faithful
+and multiplicative, and the ring structure of `L(k)` is transported along it. -/
+private def toMatrix (x : SerreAlgebra k) : Matrix (Fin 2) (Fin 2) (MilnorK k) :=
   !![x.fst, x.snd; 0, involute x.fst + involute x.snd * ofUnit (-1)]
 
-theorem toMatrix_injective : Function.Injective (toMatrix (k := k)) := fun x y h ↦ by
+private theorem toMatrix_injective : Function.Injective (toMatrix (k := k)) := fun x y h ↦ by
   have h₀ := congrFun (congrFun h 0) 0
   have h₁ := congrFun (congrFun h 0) 1
   simp only [toMatrix, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
@@ -155,14 +154,14 @@ private theorem ofUnit_neg_one_mul_involute_mul (x y : MilnorK k) :
     ofUnit (-1) * (involute x * y) = x * (ofUnit (-1) * y) := by
   rw [← mul_assoc, ofUnit_mul_involute, mul_assoc]
 
-theorem toMatrix_mul (x y : SerreAlgebra k) :
+private theorem toMatrix_mul (x y : SerreAlgebra k) :
     toMatrix (x * y) = toMatrix x * toMatrix y := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [toMatrix, Matrix.mul_apply, Fin.sum_univ_two, mul_add, add_mul, mul_assoc, add_assoc,
       ofUnit_mul_involute, ofUnit_neg_one_mul_involute_mul, add_left_comm]
 
-theorem toMatrix_pow (x : SerreAlgebra k) (n : ℕ) : toMatrix (x ^ n) = toMatrix x ^ n := by
+private theorem toMatrix_pow (x : SerreAlgebra k) (n : ℕ) : toMatrix (x ^ n) = toMatrix x ^ n := by
   induction n with
   | zero =>
     -- The `Pow` instance is `npowRec`, so `x ^ 0` is `1` and `x ^ (n + 1)` is `x ^ n * x` by
@@ -174,21 +173,23 @@ theorem toMatrix_pow (x : SerreAlgebra k) (n : ℕ) : toMatrix (x ^ n) = toMatri
     change toMatrix (x ^ n * x) = _
     rw [toMatrix_mul, ih, pow_succ]
 
+-- The map is `toMatrix` written out: an instance body is exposed, so it cannot name the private
+-- `toMatrix`, but its proof arguments may use the private lemmas about it.
 instance instRing : Ring (SerreAlgebra k) :=
-  toMatrix_injective.ring _
-    (by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix])
-    (by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix])
-    (fun x y ↦ by
-      ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, add_mul, add_add_add_comm])
-    toMatrix_mul
-    (fun x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, add_comm])
-    (fun x y ↦ by
-      ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, sub_mul, add_sub_add_comm])
-    (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, mul_assoc])
-    (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, mul_assoc])
-    toMatrix_pow
-    (fun n ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, Matrix.natCast_apply])
-    (fun n ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, Matrix.intCast_apply])
+  Function.Injective.ring
+    (fun x : SerreAlgebra k ↦ !![x.fst, x.snd; 0, involute x.fst + involute x.snd * ofUnit (-1)])
+    (by exact toMatrix_injective)
+    (by ext i j; fin_cases i <;> fin_cases j <;> simp)
+    (by ext i j; fin_cases i <;> fin_cases j <;> simp)
+    (fun x y ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [add_mul, add_add_add_comm])
+    (by exact toMatrix_mul)
+    (fun x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [add_comm])
+    (fun x y ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [sub_mul, add_sub_add_comm])
+    (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [mul_assoc])
+    (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [mul_assoc])
+    (by exact toMatrix_pow)
+    (fun n ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.natCast_apply])
+    (fun n ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.intCast_apply])
 
 /-! ### The embedding of `K_*ᴹ(k)` and the indeterminate `Π` -/
 
