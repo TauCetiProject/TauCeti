@@ -574,27 +574,16 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
   (G : C ⥤ D) [G.Additive] [G.PreservesHomology]
   {ι : Type w} {c : ComplexShape ι} (K : HomologicalComplex C c) (i : ι)
 
-/-- The inverse cycles comparison commutes with the actual mapped complex's cycle inclusion. -/
-@[reassoc]
-lemma mapCyclesIso_inv_iCycles :
-    ((K.sc i).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex c).obj K).iCycles i =
-      G.map (K.iCycles i) := by
-  exact (K.sc i).mapCyclesIso_inv_comp_iCycles G
-
-/-- The forward cycles comparison commutes with the actual mapped complex's cycle inclusion. -/
-@[reassoc]
-lemma mapCyclesIso_hom_iCycles :
-    ((K.sc i).mapCyclesIso G).hom ≫ G.map (K.iCycles i) =
-      ((G.mapHomologicalComplex c).obj K).iCycles i := by
-  exact (K.sc i).mapCyclesIso_hom_iCycles G
-
 /-- An additive homology-preserving functor transports the differential's cycle lift. -/
 @[reassoc]
 lemma map_toCycles_comp_mapCyclesIso_inv (j : ι) :
     G.map (K.toCycles i j) ≫ ((K.sc j).mapCyclesIso G).inv =
       ((G.mapHomologicalComplex c).obj K).toCycles i j := by
   apply (cancel_mono (((G.mapHomologicalComplex c).obj K).iCycles j)).1
-  rw [Category.assoc, mapCyclesIso_inv_iCycles, ← G.map_comp,
+  -- The mapped complex's cycle inclusion in degree `j` is that of `(K.sc j).map G`.
+  have hi : ((K.sc j).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex c).obj K).iCycles j =
+      G.map (K.iCycles j) := (K.sc j).mapCyclesIso_inv_comp_iCycles G
+  rw [Category.assoc, hi, ← G.map_comp,
     HomologicalComplex.toCycles_i, HomologicalComplex.toCycles_i,
     Functor.mapHomologicalComplex_obj_d]
 
@@ -611,8 +600,12 @@ lemma cyclesComparison_iCycles :
     cyclesComparison G K i H L φ ≫ H.map (L.iCycles i) =
       G.map (K.iCycles i) ≫ φ.f i := by
   dsimp only [cyclesComparison]
-  rw [Category.assoc, Category.assoc, mapCyclesIso_hom_iCycles,
-    HomologicalComplex.cyclesMap_i, ← Category.assoc, mapCyclesIso_inv_iCycles]
+  -- The cycle inclusions of the mapped complexes are those of the mapped short complexes.
+  have hK : ((K.sc i).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex c).obj K).iCycles i =
+      G.map (K.iCycles i) := (K.sc i).mapCyclesIso_inv_comp_iCycles G
+  have hL : ((L.sc i).mapCyclesIso H).hom ≫ H.map (L.iCycles i) =
+      ((H.mapHomologicalComplex c).obj L).iCycles i := (L.sc i).mapCyclesIso_hom_iCycles H
+  rw [Category.assoc, Category.assoc, hL, HomologicalComplex.cyclesMap_i, ← Category.assoc, hK]
 /-- The induced comparison of cycles commutes with passage to homology classes. -/
 lemma cyclesComparison_homologyπ :
     G.map (K.homologyπ i) ≫

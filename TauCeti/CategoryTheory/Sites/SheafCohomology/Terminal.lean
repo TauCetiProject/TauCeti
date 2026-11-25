@@ -165,7 +165,7 @@ lemma freeYonedaSheafIsoConstant_naturality {S T : C} (hS : IsTerminal S)
   apply (freeYonedaSheafSectionsEquiv J S Z).injective
   rw [freeYonedaSheafSectionsEquiv_naturality_left, ← hTn, ← hSn]
   exact ConcreteCategory.congr_hom
-    (constantSheafAdj_homEquiv_terminal_restrict J hS hT i
+    (constantSheafAdj_homEquiv_comp_map J hS hT i
       (AddCommGrpCat.of (ULift ℤ)) Z (𝟙 Z)) (ULift.up (1 : ℤ))
 
 end CategoryTheory.Limits.IsTerminal

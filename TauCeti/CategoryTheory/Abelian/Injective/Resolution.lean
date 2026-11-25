@@ -116,6 +116,29 @@ lemma injectiveResolutionsCompIso_hom_app (X : C) :
       (F.mapInjectiveResolution (injectiveResolution X)).iso.inv :=
   (rfl)
 
+/-- The injective-resolution comparison agrees with transport to any chosen resolution. -/
+theorem injectiveResolutionsCompIso_hom_app_comp_iso_hom {X : C} (I : InjectiveResolution X) :
+    F.injectiveResolutionsCompIso.hom.app X ≫ (F.mapInjectiveResolution I).iso.hom =
+      (F.mapHomotopyCategory (ComplexShape.up ℕ)).map I.iso.hom := by
+  rw [Functor.injectiveResolutionsCompIso_hom_app]
+  erw [← cancel_epi (F.mapInjectiveResolution (injectiveResolution X)).iso.hom,
+    Iso.hom_inv_id_assoc]
+  have t := InjectiveResolution.iso_hom_naturality (𝟙 (F.obj X))
+    (F.mapInjectiveResolution (injectiveResolution X)) (F.mapInjectiveResolution I)
+    ((F.mapHomologicalComplex _).map
+      (InjectiveResolution.homotopyEquiv (injectiveResolution X) I).hom) (by
+        rw [Functor.mapInjectiveResolution_ι_f_zero,
+          Functor.mapInjectiveResolution_ι_f_zero, Functor.mapHomologicalComplex_map_f]
+        exact (F.map_comp _ _).symm.trans
+          ((congrArg F.map (InjectiveResolution.desc_commutes_zero (𝟙 X) I
+            (injectiveResolution X))).trans ((F.map_comp _ _).trans (by
+            exact congrArg (· ≫ F.map (I.ι.f 0)) (F.map_id X)))))
+  -- The quotient lift evaluates the chosen resolution map on its homotopy class.
+  dsimp only [InjectiveResolution.iso, Functor.mapHomotopyCategory]
+  erw [Quotient.lift_map_functor_map]
+  erw [CategoryTheory.Functor.map_id, Category.id_comp] at t
+  exact t
+
 end CategoryTheory.Functor
 
 noncomputable section

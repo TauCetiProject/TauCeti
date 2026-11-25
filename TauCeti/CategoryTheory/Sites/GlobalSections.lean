@@ -44,7 +44,7 @@ lemma ΓNatIsoSheafSections_hom_app_eq_ΓRes {T : C} (hT : IsTerminal T) (F : Sh
     (constantSheafΓAdj J A) (constantSheafAdj J A hT) F
   rw [Equiv.symm_apply_eq] at h
   refine h.trans ?_
-  rw [IsTerminal.constantSheafAdj_homEquiv_apply]
+  rw [constantSheafAdj_homEquiv_apply]
   -- The global-sections cone is the adjunction counit viewed as a presheaf map.
   change (((sheafificationAdjunction J A).homEquiv _ _)
     ((constantSheafΓAdj J A).counit.app F)).app (op T) =

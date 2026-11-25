@@ -589,7 +589,7 @@ private lemma mappedSuccExtClass_naturality (n : ℕ) :
         change (mappedCyclesIso G K n).inv ≫ (mappedResolution G K).iCycles (n + 1) =
           G.map (K.iCycles (n + 1)) ≫ 𝟙 _
         rw [Category.comp_id]
-        exact HomologicalComplex.mapCyclesIso_inv_iCycles G K (n + 1)
+        exact (K.sc (n + 1)).mapCyclesIso_inv_comp_iCycles G
       comm₂₃ := by
         -- The second short-complex arrows are the differential lifts to cycles.
         change 𝟙 _ ≫ (mappedResolution G K).toCycles (n + 1) (n + 2) =

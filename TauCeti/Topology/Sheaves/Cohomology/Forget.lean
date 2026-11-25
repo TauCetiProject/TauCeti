@@ -185,6 +185,17 @@ private abbrev forgetModuleComplex (K : CochainComplex (X.Sheaf (ModuleCat.{u} R
   ((forgetSheaf X R).mapHomologicalComplex (.up ℕ)).obj K
 variable {F : X.Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F)
 private abbrev forgottenIota := (forgetSheaf X R).map (I.ι.f 0)
+private lemma forgottenIota_comp_d :
+    forgottenIota I ≫ (forgetModuleComplex I.cocomplex).d 0 1 = 0 :=
+  CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
+    (I.ι.f 0) I.ι_f_zero_comp_complex_d
+private lemma forgottenIota_exact :
+    (ShortComplex.mk _ _ (forgottenIota_comp_d I)).Exact :=
+  CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
+    (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀
+private lemma forgottenI_exactAt_succ (j : ℕ) :
+    (forgetModuleComplex I.cocomplex).ExactAt (j + 1) :=
+  CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ j
 /-- Underlying abelian terms of a module injective resolution are acyclic on every open.
 This uses their flasqueness, without asserting that forgetting preserves injectives. -/
 lemma moduleInjectiveResolution_acyclic (V : Opens X) (j k : ℕ) :
@@ -203,11 +214,9 @@ private def forgottenIHomologyIso (n : ℕ) :
       (forgetModuleComplex I.cocomplex)).homology n ≅
       ((forgetSheaf X R).obj F).cohomologyPresheaf n :=
   Sheaf.H'.homologyIsoCohomologyPresheaf (forgottenIota I)
-    (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-    (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-    (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ)
+    (forgottenIota_comp_d I)
+    (forgottenIota_exact I)
+    (forgottenI_exactAt_succ I)
       (moduleInjectiveResolution_acyclic I) n
 
 variable (X R)
@@ -268,11 +277,9 @@ private lemma Godement_to_I_abelian_homology (n : ℕ)
   have ht := Sheaf.H'.homologyMap_comp_homologyIsoCohomologyPresheaf_hom
     (godementForgetι F) (godementForgetι_comp_d F) (exact_godementForgetι F)
     (godementForget_exactAt F) (godementForget_subsingleton_H' F) n
-    (forgottenIota I) (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-    (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-    (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ)
+    (forgottenIota I) (forgottenIota_comp_d I)
+    (forgottenIota_exact I)
+    (forgottenI_exactAt_succ I)
       (moduleInjectiveResolution_acyclic I) hψ
   erw [CategoryTheory.Functor.map_id, Category.comp_id] at ht
   exact ht
@@ -446,11 +453,9 @@ lemma moduleCohomologyForgetIsoOfInjectiveResolution_hom_homologyπ (n : ℕ)
   have h := congrArg (fun x ↦ (Sheaf.cohomologyPresheafEvaluationIsoFunctorH _ n
     isTerminalTop).hom.app ((forgetSheaf X R).obj F) x)
     (Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply
-      (forgottenIota I) (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-      (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-      (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ)
+      (forgottenIota I) (forgottenIota_comp_d I)
+      (forgottenIota_exact I)
+      (forgottenI_exactAt_succ I)
         (moduleInjectiveResolution_acyclic I)
       n (op ⊤) (moduleForgetCyclesComparison I.cocomplex n z))
   simpa only [forgottenIHomologyIso, forgottenIota, evaluation_obj_map,
@@ -492,23 +497,18 @@ private lemma forgottenI_open_resolutionClass {F : X.Sheaf (ModuleCat.{u} R)}
     (U.cohomologyPresheafObjIsoSheafRestrictH
       ((forgetSheaf X R).obj F) n).hom
       (Sheaf.H'.resolutionClass (forgottenIota I)
-        (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-        (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-        (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ)
+        (forgottenIota_comp_d I)
+        (forgottenIota_exact I)
+        (forgottenI_exactAt_succ I)
         U s hs) =
     (Sheaf.cohomologyPresheafEvaluationIsoFunctorH (Opens.grothendieckTopology U) n
       isTerminalTop).hom.app
       ((forgetSheaf (TopCat.of U) R).obj (U.sheafRestrict.obj F))
       (Sheaf.H'.resolutionClass (forgottenIota (X := TopCat.of U) (R := R)
           IU)
-        (CochainComplex.map_augmentation_comp_d (forgetSheaf (TopCat.of U) R) IU.cocomplex
-        (IU.ι.f 0) IU.ι_f_zero_comp_complex_d)
-        (CochainComplex.map_augmentation_exact (forgetSheaf (TopCat.of U) R) IU.cocomplex
-        (IU.ι.f 0) IU.ι_f_zero_comp_complex_d IU.exact₀)
-        (CochainComplex.map_exactAt_succ (forgetSheaf (TopCat.of U) R) IU.cocomplex
-          IU.cocomplex_exactAt_succ)
+        (forgottenIota_comp_d IU)
+        (forgottenIota_exact IU)
+        (forgottenI_exactAt_succ IU)
         (⊤ : Opens U)
         ((I.cocomplex.X n).obj.map (overTopMap U).left.op s)
         (HomologicalComplex.d_app_map_eq_zero
@@ -516,20 +516,16 @@ private lemma forgottenI_open_resolutionClass {F : X.Sheaf (ModuleCat.{u} R)}
             (forgetModuleComplex I.cocomplex)) (overTopMap U).left.op s hs)) := by
   exact cohomologyPresheafObjIsoSheafRestrictH_resolutionClass U (forgetModuleComplex I.cocomplex)
     (forgottenIota I)
-    (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-    (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-    (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ) s hs
+    (forgottenIota_comp_d I)
+    (forgottenIota_exact I)
+    (forgottenI_exactAt_succ I) s hs
 
 private def moduleCycleClass {F : X.Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F)
     (n : ℕ) (z : (moduleSectionsComplex I.cocomplex).cycles n) :=
   Sheaf.H'.resolutionClass (forgottenIota I)
-    (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d)
-    (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.cocomplex
-        (I.ι.f 0) I.ι_f_zero_comp_complex_d I.exact₀)
-    (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex I.cocomplex_exactAt_succ)
+    (forgottenIota_comp_d I)
+    (forgottenIota_exact I)
+    (forgottenI_exactAt_succ I)
     (⊤ : Opens X)
     ((I.cocomplex.X n).ΓRes (op ⊤) ((moduleSectionsComplex I.cocomplex).iCycles n z))
     (moduleSectionsCycle_ΓRes_d_eq_zero I.cocomplex n z)

@@ -12,7 +12,7 @@ public import Mathlib.Data.ZMod.Basic
 # Native derived restriction on proper disconnected opens and endpoint coefficients
 
 These examples retain arbitrary degree, a proper nested pair of opens, a genuinely nonidentity
-coefficient map, empty and zero coefficients, and a point over ℤ/2. They use the actual native
+coefficient map, empty and zero coefficients, and a point over ℤ/2. They use the native
 restriction maps and composition comparison; no forgetting-injectives instance is supplied.
 -/
 
@@ -41,7 +41,7 @@ lemma firstTwo_proper : firstTwo ≠ ⊤ := by
   intro h
   have hx : (2 : Fin 3) ∈ firstTwo := h ▸ trivial
   exact (by decide : ¬((2 : Fin 3).val < 2)) hx
-/-- The inner open is proper in the actual two-point subspace. -/
+/-- The inner open is proper in the two-point subspace. -/
 lemma firstOne_proper_in_firstTwo : firstOne ≠ firstTwo := by
   intro h
   have hx : (1 : Fin 3) ∈ firstOne := h ▸ (by simp [firstTwo])
@@ -59,7 +59,7 @@ def integerSheaf : threePointSpace.Sheaf (ModuleCat ℤ) := skyscraperF.obj inte
 /-- The skyscraper coefficient map induced by multiplication by two. -/
 def coefficientTwo : integerSheaf ⟶ integerSheaf :=
   skyscraperF.map (2 • 𝟙 integerModule)
-/-- Multiplication by two gives an actual nonidentity coefficient morphism. -/
+/-- Multiplication by two gives a nonidentity coefficient morphism. -/
 lemma coefficientTwo_ne_id : coefficientTwo ≠ 𝟙 integerSheaf := by
   intro h
   have hmem : (0 : Fin 3) ∈ (⊤ : Opens threePointSpace) := trivial
@@ -75,7 +75,7 @@ lemma coefficientTwo_ne_id : coefficientTwo ≠ 𝟙 integerSheaf := by
     erw [dite_eq_left hmem]
     rfl
   have hc := congrArg (fun f ↦ e.inv ≫ f ≫ e.hom) ht
-  -- The evaluated identity sheaf map is the identity on the skyscraper's actual top carrier.
+  -- The evaluated identity sheaf map is the identity on the skyscraper's top carrier.
   have hid : (𝟙 integerSheaf : integerSheaf ⟶ integerSheaf).hom.app (op ⊤) =
       e.hom ≫ e.inv := by
     exact e.hom_inv_id.symm
@@ -92,18 +92,18 @@ example (n : ℕ) :
       ((Sheaf.Γ (Opens.grothendieckTopology firstTwo) (ModuleCat ℤ)).rightDerived n).map
         (firstTwo.sheafRestrict.map coefficientTwo) :=
   (rightDerivedΓRestriction firstTwo n).naturality coefficientTwo
-/-- Direct restriction agrees with restriction through the actual relative open subspace. -/
+/-- Direct restriction agrees with restriction through the relative open subspace. -/
 example (n : ℕ) :
     (firstOne.rightDerivedΓRestriction n).app integerSheaf =
     (firstTwo.rightDerivedΓRestriction n).app integerSheaf ≫
       (rightDerivedΓRestriction (X := TopCat.of firstTwo)
         ((Opens.map firstTwo.inclusion').obj firstOne) n).app
           (firstTwo.sheafRestrict.obj integerSheaf) ≫
-      (relativeDerivedGammaIso firstOne_le_firstTwo n).hom.app
+      (relativeDerivedΓIso firstOne_le_firstTwo n).hom.app
         (((Opens.map firstTwo.inclusion').obj firstOne).sheafRestrict.obj
           (firstTwo.sheafRestrict.obj integerSheaf)) ≫
       ((Sheaf.Γ (Opens.grothendieckTopology firstOne) (ModuleCat ℤ)).rightDerived n).map
-        ((actualNestedRestrictionIso firstOne_le_firstTwo).hom.app integerSheaf) :=
+        ((nestedRestrictionIso firstOne_le_firstTwo).hom.app integerSheaf) :=
   rightDerivedΓRestriction_nested firstOne_le_firstTwo integerSheaf n
 end Disconnected
 namespace Empty

@@ -31,7 +31,7 @@ The construction uses the localized-site comparison
 `CategoryTheory.GrothendieckTopology.cohomologyPresheafEvaluationIsoFunctorOverH` together with site
 invariance along `TopologicalSpace.Opens.overEquivalence`.
 
-For module sheaves, native derived restriction commutes with the top and actual nested opens;
+For module sheaves, native derived restriction commutes with the top and nested opens;
 the chosen-resolution formula uses the original module section carriers.
 -/
 
@@ -216,11 +216,8 @@ def rightDerivedSectionsRestrictIso (U : Opens X)
     ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj (op U)).rightDerived n ≅
       U.sheafRestrict ⋙
         (Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R)).rightDerived n := by
-  let E := (sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj (op U)
-  exact (Functor.rightUnitor (E.rightDerived n)).symm ≪≫
-    Functor.rightDerivedCompIso E (𝟭 (ModuleCat.{u} R)) U.sheafRestrict
-      (Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R))
-      (Functor.rightUnitor E ≪≫ sheafRestrictΓIso U) n
+  exact Functor.rightDerivedPrecompIso _ U.sheafRestrict
+    (Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R)) (sheafRestrictΓIso U) n
 
 /-- The native all-degree restriction map, derived from ΓRes and the sections comparison. -/
 def rightDerivedΓRestriction (U : Opens X)
@@ -261,7 +258,7 @@ lemma rightDerivedΓRestrictionComplexMap_f {F : X.Sheaf (ModuleCat.{u} R)}
         (sheafRestrictΓIso U).hom.app (I.cocomplex.X j) := by
   rfl
 
-/-- Compute native derived restriction using the actual cochain restriction on any resolution. -/
+/-- Compute native derived restriction using the cochain restriction on any resolution. -/
 theorem rightDerivedΓRestriction_app_injectiveResolution {F : X.Sheaf (ModuleCat.{u} R)}
     (I : InjectiveResolution F) (n : ℕ) :
     (rightDerivedΓRestriction U n).app F ≫
@@ -318,7 +315,7 @@ end TopologicalSpace.Opens
 namespace TopologicalSpace.Opens
 variable {X : TopCat.{u}} {R : Type u} [CommRing R]
 variable (U : Opens X)
-/-- Each cochain component is the native section restriction, in the actual section carriers. -/
+/-- Each cochain component is the native section restriction, in the section carriers. -/
 @[reassoc]
 lemma rightDerivedΓRestrictionComplexMap_f_ΓRes {F : X.Sheaf (ModuleCat.{u} R)}
     (I : InjectiveResolution F) (j : ℕ) :
@@ -338,7 +335,7 @@ end TopologicalSpace.Opens
 namespace TopologicalSpace.Opens
 variable {X : TopCat.{u}} {R : Type u} [CommRing R]
 variable (U : Opens X)
-/-- Each component restricts sections on every open of the actual open subspace. -/
+/-- Each component restricts sections on every open of the open subspace. -/
 @[reassoc]
 lemma rightDerivedΓRestrictionComplexMap_f_ΓRes_open {F : X.Sheaf (ModuleCat.{u} R)}
     (I : InjectiveResolution F) (j : ℕ) (D : Opens U) :
@@ -361,22 +358,20 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R] {U V : Opens X}
 
 
 /-- Transport derived global sections along the canonical relative-open equivalence. -/
-def relativeDerivedGammaIso (h : V ≤ U) (n : ℕ) :
+def relativeDerivedΓIso (h : V ≤ U) (n : ℕ) :
     (Sheaf.Γ (Opens.grothendieckTopology (relativeOpen h)) (ModuleCat.{u}
       R)).rightDerived n ≅
     (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor ⋙
       (Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R)).rightDerived n := by
-  exact (Functor.rightUnitor _).symm ≪≫
-    Functor.rightDerivedCompIso _ (𝟭 (ModuleCat.{u} R))
-      (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor _
-      (Functor.rightUnitor _ ≪≫ relativeGammaIso h) n
+  exact Functor.rightDerivedPrecompIso _ (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor
+    _ (relativeΓIso h) n
 
 private abbrev transportedInjectiveResolution (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F) :
     InjectiveResolution ((relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor.obj F) :=
   (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor.mapInjectiveResolution I
-/-- Apply the actual relative global-sections comparison to a chosen resolution. -/
-def relativeGammaComplexMap (h : V ≤ U)
+/-- Apply the relative global-sections comparison to a chosen resolution. -/
+def relativeΓComplexMap (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F) :
     ((Sheaf.Γ (Opens.grothendieckTopology (relativeOpen h)) (ModuleCat.{u} R)).mapHomologicalComplex
       (.up ℕ)).obj I.cocomplex ⟶
@@ -385,29 +380,29 @@ def relativeGammaComplexMap (h : V ≤ U)
       (((relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor.mapInjectiveResolution
         I).cocomplex) := by
   let T := (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor
-  exact (NatTrans.mapHomologicalComplex (relativeGammaIso h).hom _).app I.cocomplex ≫
+  exact (NatTrans.mapHomologicalComplex (relativeΓIso h).hom _).app I.cocomplex ≫
     (Functor.mapHomologicalComplexCompIso
       (Iso.refl (T ⋙ Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R))) _).inv.app
         I.cocomplex
-/-- Components of the resolution comparison are the actual relative Γ comparison. -/
+/-- Components of the resolution comparison are the relative Γ comparison. -/
 @[simp]
-lemma relativeGammaComplexMap_f (h : V ≤ U)
+lemma relativeΓComplexMap_f (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F) (j : ℕ) :
-    (relativeGammaComplexMap h I).f j = (relativeGammaIso h).hom.app (I.cocomplex.X j) :=
+    (relativeΓComplexMap h I).f j = (relativeΓIso h).hom.app (I.cocomplex.X j) :=
   Category.comp_id _
 
 /-- The derived relative comparison is computed on any chosen injective resolution. -/
-lemma relativeDerivedGammaIso_app (h : V ≤ U)
+lemma relativeDerivedΓIso_app (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F) (n : ℕ) :
-    (relativeDerivedGammaIso h n).hom.app F ≫
+    (relativeDerivedΓIso h n).hom.app F ≫
       (((relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor.mapInjectiveResolution
         I).isoRightDerivedObj
         (Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R)) n).hom =
     (I.isoRightDerivedObj
       (Sheaf.Γ (Opens.grothendieckTopology (relativeOpen h)) (ModuleCat.{u} R)) n).hom ≫
-      HomologicalComplex.homologyMap (relativeGammaComplexMap h I) n := by
+      HomologicalComplex.homologyMap (relativeΓComplexMap h I) n := by
   -- This is the chosen-resolution component of the public relative Γ comparison.
-  exact Functor.rightDerivedPrecompIso_app_hom _ _ _ (relativeGammaIso h) I n
+  exact Functor.rightDerivedPrecompIso_app_hom _ _ _ (relativeΓIso h) I n
 
 private abbrev nestedResolution (h : V ≤ U) {F : X.Sheaf (ModuleCat.{u} R)} (I :
   InjectiveResolution F) :=
@@ -419,26 +414,26 @@ private def nestedCoefficientComplexMap (h : V ≤ U) {F : X.Sheaf (ModuleCat.{u
     (I : InjectiveResolution F) : (nestedResolution h I).cocomplex ⟶
     (((V.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I)).cocomplex := by
   letI := Functor.preservesZeroMorphisms_of_iso
-    (actualNestedRestrictionIso (A := ModuleCat.{u} R) h).symm
+    (nestedRestrictionIso (A := ModuleCat.{u} R) h).symm
   dsimp only [nestedResolution, transportedInjectiveResolution, Functor.mapInjectiveResolution]
   exact (NatTrans.mapHomologicalComplex
-    (actualNestedRestrictionIso (A := ModuleCat.{u} R) h).hom (.up ℕ)).app I.cocomplex
+    (nestedRestrictionIso (A := ModuleCat.{u} R) h).hom (.up ℕ)).app I.cocomplex
 
 private lemma nestedCoefficientComplexMap_f (h : V ≤ U) {F : X.Sheaf (ModuleCat.{u} R)}
     (I : InjectiveResolution F) (j : ℕ) :
-    (nestedCoefficientComplexMap h I).f j = (actualNestedRestrictionIso h).hom.app (I.cocomplex.X
+    (nestedCoefficientComplexMap h I).f j = (nestedRestrictionIso h).hom.app (I.cocomplex.X
       j) := by
   rfl
 
 @[reassoc]
-private lemma relativeGammaComplexMap_allProjections (h : V ≤ U)
+private lemma relativeΓComplexMap_allProjections (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)}
     (I : InjectiveResolution F) (j : ℕ) (D : Opens V) :
-    (relativeGammaComplexMap h I).f j ≫
+    (relativeΓComplexMap h I).f j ≫
         ((transportedInjectiveResolution h I).cocomplex.X j).ΓRes (op D) =
       (I.cocomplex.X j).ΓRes (op ((Opens.map (relativeOpenIso h).hom).obj D)) := by
-  rw [relativeGammaComplexMap_f]
-  exact relativeGammaIso_hom_app_ΓRes h (I.cocomplex.X j) D
+  rw [relativeΓComplexMap_f]
+  exact relativeΓIso_hom_app_ΓRes h (I.cocomplex.X j) D
 
 
 private lemma nestedComplexComposition_allProjections (h : V ≤ U)
@@ -446,7 +441,7 @@ private lemma nestedComplexComposition_allProjections (h : V ≤ U)
     (rightDerivedΓRestrictionComplexMap U I).f j ≫
       (rightDerivedΓRestrictionComplexMap (X := TopCat.of U) (relativeOpen h)
         ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I)).f j ≫
-      (relativeGammaComplexMap h
+      (relativeΓComplexMap h
         ((((relativeOpen h).sheafRestrict (X := TopCat.of U) (C
           := ModuleCat.{u} R)).mapInjectiveResolution
           ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I)))).f j ≫
@@ -459,13 +454,13 @@ private lemma nestedComplexComposition_allProjections (h : V ≤ U)
   let IW := (((relativeOpen h).sheafRestrict (X := TopCat.of U) (C
     := ModuleCat.{u} R)).mapInjectiveResolution
     IU)
-  have hH := relativeGammaComplexMap_allProjections h IW j D
+  have hH := relativeΓComplexMap_allProjections h IW j D
   have hW := rightDerivedΓRestrictionComplexMap_f_ΓRes_open
     (X := TopCat.of U) (relativeOpen h) IU j ((relativeSites h).inverse.obj D)
   have hU := rightDerivedΓRestrictionComplexMap_f_ΓRes_open U I j
     ((relativeInclusionSites h).obj ((relativeSites h).inverse.obj D))
   erw [Sheaf.ΓRes_naturality, reassoc_of% hH, reassoc_of% hW, reassoc_of% hU]
-  erw [nestedCoefficientComplexMap_f, actualNestedRestrictionIso_hom_app_hom_app]
+  erw [nestedCoefficientComplexMap_f, nestedRestrictionIso_hom_app_hom_app]
   exact Sheaf.ΓRes_map _ _
 
 private lemma nestedComplexComposition (h : V ≤ U)
@@ -473,7 +468,7 @@ private lemma nestedComplexComposition (h : V ≤ U)
     rightDerivedΓRestrictionComplexMap U I ≫
       rightDerivedΓRestrictionComplexMap (X := TopCat.of U) (relativeOpen h)
         ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I) ≫
-      relativeGammaComplexMap h
+      relativeΓComplexMap h
         ((((relativeOpen h).sheafRestrict (X := TopCat.of U) (C
           := ModuleCat.{u} R)).mapInjectiveResolution
           ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I))) ≫
@@ -489,17 +484,17 @@ private lemma nestedComplexComposition (h : V ≤ U)
   simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f, Category.assoc]
   rw [nestedComplexComposition_allProjections, rightDerivedΓRestrictionComplexMap_f_ΓRes_open]
 
-/-- Direct derived restriction equals restriction through the actual nested open subspace. -/
+/-- Direct derived restriction equals restriction through the nested open subspace. -/
 theorem rightDerivedΓRestriction_nested (h : V ≤ U) (F : X.Sheaf (ModuleCat.{u} R)) (n : ℕ) :
   (rightDerivedΓRestriction (R := R) V n).app F =
     (rightDerivedΓRestriction (R := R) U n).app F ≫
     (rightDerivedΓRestriction (X := TopCat.of U) (R := R) (relativeOpen h) n).app
       (U.sheafRestrict.obj F) ≫
-    (relativeDerivedGammaIso (R := R) h n).hom.app
+    (relativeDerivedΓIso (R := R) h n).hom.app
       (((relativeOpen h).sheafRestrict (X := TopCat.of U) (C := ModuleCat.{u} R)).obj
         (U.sheafRestrict.obj F)) ≫
     ((Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R)).rightDerived n).map
-      ((actualNestedRestrictionIso h).hom.app F) := by
+      ((nestedRestrictionIso h).hom.app F) := by
   let I := injectiveResolution F
   let IU := ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution I)
   let IW := (((relativeOpen h).sheafRestrict (X := TopCat.of U) (C
@@ -511,17 +506,17 @@ theorem rightDerivedΓRestriction_nested (h : V ≤ U) (F : X.Sheaf (ModuleCat.{
   apply (cancel_mono (IV.isoRightDerivedObj ΓV n).hom).mp
   rw [rightDerivedΓRestriction_app_injectiveResolution V I n]
   have hcomm : IT.ι.f 0 ≫ (nestedCoefficientComplexMap h I).f 0 =
-      (actualNestedRestrictionIso h).hom.app F ≫ IV.ι.f 0 := by
+      (nestedRestrictionIso h).hom.app F ≫ IV.ι.f 0 := by
     rw [nestedCoefficientComplexMap_f]
     dsimp only [IT, IV, nestedResolution, transportedInjectiveResolution]
     simp only [Functor.mapInjectiveResolution_ι_f_zero]
-    exact (actualNestedRestrictionIso h).hom.naturality (I.ι.f 0)
+    exact (nestedRestrictionIso h).hom.naturality (I.ι.f 0)
   have hA := InjectiveResolution.isoRightDerivedObj_hom_naturality
-    ((actualNestedRestrictionIso h).hom.app F) IT IV (nestedCoefficientComplexMap h I)
+    ((nestedRestrictionIso h).hom.app F) IT IV (nestedCoefficientComplexMap h I)
     hcomm ΓV n
   -- The composed section functor maps the complex map degreewise before taking homology.
   change _ = _ ≫ HomologicalComplex.homologyMap ((ΓV.mapHomologicalComplex _).map _) n at hA
-  have hH := relativeDerivedGammaIso_app h IW n
+  have hH := relativeDerivedΓIso_app h IW n
   have hW := rightDerivedΓRestriction_app_injectiveResolution (X := TopCat.of U) (relativeOpen h)
     IU n
   have hU := rightDerivedΓRestriction_app_injectiveResolution U I n
