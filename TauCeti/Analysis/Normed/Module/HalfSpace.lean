@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
+import Mathlib.Analysis.Normed.Module.RCLike.Basic
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Half-spaces of a real normed space
@@ -97,12 +99,9 @@ theorem isOpen_setOf_forall_mem_pos_apply (hS : IsCompact S) (hφ : ContinuousOn
   have : CompactSpace S := isCompact_iff_compactSpace.mp hS
   have hcont : Continuous fun p : E × S ↦ φ p.2 p.1 :=
     (hφ.domRestrict.comp continuous_snd).clm_apply continuous_fst
-  refine isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
-  -- The tube lemma over the compact space `S` turns pointwise neighbourhoods into a uniform one.
-  filter_upwards [isCompact_univ.eventually_forall_of_forall_eventually (x₀ := x)
-    (P := fun y (i : S) ↦ 0 < φ i y)
-    fun i _ ↦ hcont.continuousAt.eventually (lt_mem_nhds (hx i i.property))] with y hy i hi
-  exact hy ⟨i, hi⟩ (mem_univ _)
+  -- The tube lemma over the compact space `S`.
+  simpa [Subtype.forall] using
+    isOpen_forall_prodMk_mem (ι := (id : S → S)) continuous_id (isOpen_lt continuous_const hcont)
 
 /-- **The interior of an intersection of closed half-spaces over a compact family.** If `φ`
 depends continuously on `i` in the compact set `S` and no `φ i` with `i ∈ S` vanishes, then the
@@ -145,9 +144,8 @@ theorem setOf_forall_mem_sphere_nonneg_apply (hφ : ∀ (c : ℝ) v, φ (c • v
   refine Subset.antisymm (fun x hx v ↦ ?_) fun x hx v _ ↦ hx v
   rcases eq_or_ne v 0 with rfl | hv
   · simp [show φ 0 = 0 by simpa using hφ 0 0]
-  have h := hx (‖v‖⁻¹ • v) (by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)])
+  have h := hx (‖v‖⁻¹ • v)
+    (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hv))
   rw [hφ, smul_apply, smul_eq_mul] at h
   exact nonneg_of_mul_nonneg_right h (pow_pos (inv_pos.mpr (norm_pos_iff.mpr hv)) 2)
 
@@ -156,9 +154,8 @@ is positivity at every nonzero vector. -/
 theorem setOf_forall_mem_sphere_pos_apply (hφ : ∀ (c : ℝ) v, φ (c • v) = c ^ 2 • φ v) :
     {x | ∀ v ∈ Metric.sphere (0 : F) 1, 0 < φ v x} = {x | ∀ v ≠ 0, 0 < φ v x} := by
   refine Subset.antisymm (fun x hx v hv ↦ ?_) fun x hx v hv ↦ hx v (by rintro rfl; simp at hv)
-  have h := hx (‖v‖⁻¹ • v) (by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)])
+  have h := hx (‖v‖⁻¹ • v)
+    (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hv))
   rw [hφ, smul_apply, smul_eq_mul] at h
   exact pos_of_mul_pos_right h (by positivity)
 
