@@ -5,35 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
+public import TauCeti.Analysis.Calculus.Taylor.Integral
 
 /-!
 # Directional Taylor remainders in iterated-gradient form
 
-Evaluating every slot of `TauCeti.iteratedGradientChain f k x` along a repeated direction `h` via
-`TauCeti.IteratedGradient.fullContractL` recovers the diagonal multilinear derivative
-`iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h)` without any smoothness hypothesis on `f`: each step in
-the iterated-gradient recursion adds a left Fréchet-derivative slot, and the base step pairs the
-gradient with `h` through the Riesz isometry.
-
-Combined with Taylor's theorem with integral remainder
-(`map_add_eq_sum_add_integral_iteratedFDeriv`) under the parameter reversal `s = 1 - t` along the
-segment from `x` to `y`, this expresses the order-`m` Taylor remainder of `f` at `x` expanded about
-`y` as an integral over `s ∈ (0, 1)` at `x + s • (y - x)` weighted by `s ^ m`: the basepoint `x` of
-the homothety `y ↦ x + s • (y - x)` is fixed as `y` varies, preparing the spatial ray change of
+Combining `TauCeti.sub_sum_iteratedFDeriv_eq_setIntegral_iteratedFDeriv` with the unconditional
+contraction identity `TauCeti.fullContractL_iteratedGradientChain` expresses the degree-`m` Taylor
+remainder of a real-valued function `f` at `x` expanded about `y` on a complete real inner product
+space as an integral over `s ∈ (0, 1)` of `IteratedGradient.fullContractL m (x - y)` applied to
+`iteratedGradientChain f m (x + s • (y - x))` weighted by `s ^ m`: the basepoint `x` of the
+homothety `y ↦ x + s • (y - x)` is fixed as `y` varies, preparing the spatial ray change of
 variables used in potential and averaged Taylor estimates.
 
 ## Main declarations
 
-* `TauCeti.fullContractL_iteratedGradientChain`: unconditional identification of full contraction
-  of `iteratedGradientChain f k x` with `iteratedFDeriv ℝ (k + 1) f x` on a constant tuple.
-* `TauCeti.continuousOn_sum_iteratedFDeriv`: continuity of the degree-`m` Taylor sum in the center
-  point on an open set.
-* `TauCeti.sub_sum_iteratedFDeriv_eq_setIntegral_iteratedFDeriv`: Taylor's integral remainder
-  parametrized from `x` towards `y` over `s ∈ (0, 1)`.
-* `TauCeti.sub_sum_iteratedFDeriv_eq_setIntegral_fullContractL`: the scalar inner-product version
-  in terms of `IteratedGradient.fullContractL` and `iteratedGradientChain`.
+* `TauCeti.sub_sum_iteratedFDeriv_eq_setIntegral_fullContractL`: the scalar inner-product Taylor
+  integral remainder in terms of `IteratedGradient.fullContractL` and `iteratedGradientChain`.
 
 ## References
 
@@ -49,107 +38,6 @@ open MeasureTheory Set
 open scoped Nat
 
 namespace TauCeti
-
-section ContractionBridge
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- Contracting all `k + 1` slots of the `i`th multilinear derivative of `iteratedGradientChain f k`
-along a constant tuple `(h, …, h)` recovers the `(k + 1 + i)`th multilinear derivative of `f` on
-`(h, …, h)`. No differentiability assumption on `f` is needed. -/
-theorem fullContractL_iteratedFDeriv_iteratedGradientChain_const (f : E → ℝ) (i k : ℕ)
-    (x h : E) :
-    IteratedGradient.fullContractL k h
-        (iteratedFDeriv ℝ i (iteratedGradientChain f k) x (fun _ ↦ h)) =
-      iteratedFDeriv ℝ (k + 1 + i) f x (fun _ ↦ h) := by
-  induction k generalizing i with
-  | zero =>
-      rw [iteratedGradientChain_zero, IteratedGradient.fullContractL_zero]
-      have hgrad : gradient f =
-          ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f := rfl
-      rw [hgrad, ContinuousLinearEquiv.iteratedFDeriv_comp_left,
-        ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-        ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-        innerSL_apply_apply, real_inner_comm, InnerProductSpace.toDual_symm_apply]
-      exact (iteratedFDeriv_succ_apply_right (𝕜 := ℝ) (f := f) (x := x)
-        (fun _ : Fin (i + 1) ↦ h)).symm.trans
-        (congrArg (fun n ↦ iteratedFDeriv ℝ n f x (fun _ ↦ h)) (by omega))
-  | succ k ih =>
-      rw [iteratedGradientChain_succ, IteratedGradient.fullContractL_succ,
-        ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
-      have hstep :
-          iteratedFDeriv ℝ i (fderiv ℝ (iteratedGradientChain f k)) x (fun _ ↦ h) h =
-            iteratedFDeriv ℝ (i + 1) (iteratedGradientChain f k) x (fun _ ↦ h) :=
-        (iteratedFDeriv_succ_apply_right (𝕜 := ℝ) (f := iteratedGradientChain f k) (x := x)
-          (fun _ : Fin (i + 1) ↦ h)).symm
-      rw [hstep, ih (i + 1)]
-      exact congrArg (fun n ↦ iteratedFDeriv ℝ n f x (fun _ ↦ h)) (by omega)
-
-/-- Full contraction of `iteratedGradientChain f k x` in direction `h` agrees unconditionally with
-the `(k + 1)`st multilinear Fréchet derivative of `f` at `x` evaluated on the constant tuple `h`. -/
-@[simp]
-theorem fullContractL_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x h : E) :
-    IteratedGradient.fullContractL k h (iteratedGradientChain f k x) =
-      iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h) := by
-  simpa only [iteratedFDeriv_zero_apply] using
-    fullContractL_iteratedFDeriv_iteratedGradientChain_const f 0 k x h
-
-end ContractionBridge
-
-section SegmentRemainder
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-omit [CompleteSpace F] in
-/-- For a `C^m` map `f : E → F` on an open set `Ω` and a fixed point `x : E`, the degree-`m` Taylor
-sum `y ↦ ∑ j ∈ range (m + 1), (j !)⁻¹ • D^j f(y)(x - y, …, x - y)` is continuous on `Ω`. -/
-theorem continuousOn_sum_iteratedFDeriv {Ω : Set E} (hΩ : IsOpen Ω) {f : E → F} {m : ℕ}
-    (hf : ContDiffOn ℝ m f Ω) (x : E) :
-    ContinuousOn (fun y ↦ ∑ j ∈ Finset.range (m + 1),
-      (j ! : ℝ)⁻¹ • iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) Ω := by
-  induction m with
-  | zero =>
-    simp_rw [zero_add, Finset.sum_range_one, Nat.factorial_zero, Nat.cast_one, inv_one, one_smul,
-      iteratedFDeriv_zero_apply]
-    exact hf.continuousOn
-  | succ m ih =>
-    simp_rw [Finset.sum_range_succ _ (m + 1)]
-    refine (ih (hf.of_le (by simp))).add (continuousOn_const.smul ?_)
-    exact continuous_eval.comp_continuousOn
-      ((ContinuousOn.continuousOn_iteratedFDeriv (k := m + 1) hf hΩ (by simp)).prodMk
-        (continuous_pi fun _ ↦ continuous_const.sub continuous_id).continuousOn)
-
-/-- **Taylor's integral remainder parametrized from the evaluation point.** If `f` is `C^{m+1}` at
-every point of the segment `s ↦ x + s • (y - x)` (`s ∈ [0, 1]`), then the remainder of `f x` modulo
-its degree-`m` Taylor sum at `y` equals `(m !)⁻¹` times the integral over `s ∈ (0, 1)` of
-`s ^ m • D^{m+1} f (x + s • (y - x)) (x - y, …, x - y)`. -/
-theorem sub_sum_iteratedFDeriv_eq_setIntegral_iteratedFDeriv (f : E → F) (m : ℕ) (x y : E)
-    (hf : ∀ s ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ (m + 1) f (x + s • (y - x))) :
-    f x - ∑ j ∈ Finset.range (m + 1),
-        (j ! : ℝ)⁻¹ • iteratedFDeriv ℝ j f y (fun _ ↦ x - y) =
-      (m ! : ℝ)⁻¹ • ∫ s in Ioo (0 : ℝ) 1,
-        s ^ m • iteratedFDeriv ℝ (m + 1) f (x + s • (y - x)) (fun _ ↦ x - y) := by
-  have hseg : ∀ t : ℝ, y + t • (x - y) = x + (1 - t) • (y - x) := fun t ↦ by
-    rw [sub_smul, one_smul]
-    abel_nf
-    module
-  have hft : ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ (m + 1) f (y + t • (x - y)) := fun t ht ↦ by
-    rw [hseg t]
-    exact hf (1 - t) ⟨sub_nonneg.2 ht.2, sub_le_self _ ht.1⟩
-  have htaylor := map_add_eq_sum_add_integral_iteratedFDeriv (n := m) hft
-  rw [add_sub_cancel, ← sub_eq_iff_eq_add'] at htaylor
-  rw [htaylor]
-  congr 1
-  set g : ℝ → F := fun s ↦ s ^ m • iteratedFDeriv ℝ (m + 1) f (x + s • (y - x)) (fun _ ↦ x - y)
-  have hflip : (∫ t in (0 : ℝ)..1,
-      (1 - t) ^ m • iteratedFDeriv ℝ (m + 1) f (y + t • (x - y)) (fun _ ↦ x - y)) =
-        ∫ t in (0 : ℝ)..1, g (1 - t) :=
-    intervalIntegral.integral_congr fun t _ ↦ by simp only [g, hseg t]
-  rw [hflip, intervalIntegral.integral_comp_sub_left g 1, sub_self, sub_zero,
-    intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo]
-
-end SegmentRemainder
 
 section InnerProductRemainder
 

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -473,17 +473,14 @@ theorem setLIntegral_eNorm_taylorRemainderKernel_le {Ω : Set E} (hb : Bornology
         rw [pow_add, pow_succ]
         ring
 
-/-- Joint product integrability and `L¹` bound for `(x, z) ↦ taylorRemainderKernel φ m x z (G z)`
-on `(μ.restrict Ω).prod (μ.restrict Ω)` when `Ω` is bounded and `G` is integrable on `Ω`. -/
+/-- Joint product integrability for `(x, z) ↦ taylorRemainderKernel φ m x z (G z)` on
+`(μ.restrict Ω).prod (μ.restrict Ω)` when `Ω` is bounded and `G` is integrable on `Ω`. -/
 private theorem integrable_taylorRemainderKernel_prod {Ω : Set E} (hb : Bornology.IsBounded Ω)
     {φ : E → ℝ} (hφ_meas : Measurable φ) (hsupp : Function.support φ ⊆ closure Ω)
     {M : ℝ} (hM : ∀ y, ‖φ y‖ ≤ M) {m : ℕ} {G : E → IteratedGradient E m}
     (hG : IntegrableOn G Ω μ) :
     Integrable (fun p : E × E ↦ taylorRemainderKernel φ m p.1 p.2 (G p.2))
-      ((μ.restrict Ω).prod (μ.restrict Ω)) ∧
-    ∫⁻ p, ‖taylorRemainderKernel φ m p.1 p.2 (G p.2)‖ₑ ∂((μ.restrict Ω).prod (μ.restrict Ω)) ≤
-      ENNReal.ofReal (M * μ.real (ball (0 : E) 1) / (m + 1).factorial *
-        diam Ω ^ (finrank ℝ E + m + 1)) * eLpNorm G 1 (μ.restrict Ω) := by
+      ((μ.restrict Ω).prod (μ.restrict Ω)) := by
   let ν : Measure E := μ.restrict Ω
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   let F : E × E → ℝ := fun p ↦ taylorRemainderKernel φ m p.1 p.2 (G p.2)
@@ -492,19 +489,14 @@ private theorem integrable_taylorRemainderKernel_prod {Ω : Set E} (hb : Bornolo
     isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
       ((stronglyMeasurable_taylorRemainderKernel hφ_meas m).aestronglyMeasurable.prodMk
         hG.aestronglyMeasurable.comp_snd)
-  have hae_cl : ∀ᵐ z ∂ν, z ∈ closure Ω := by
-    have hemp : (closure Ω)ᶜ ∩ Ω = ∅ :=
-      Set.ext fun x ↦ iff_false_intro fun ⟨h1, h2⟩ ↦ h1 (subset_closure h2)
-    rw [ae_iff, ← compl_def, Measure.restrict_apply isClosed_closure.measurableSet.compl,
-      hemp, measure_empty]
+  have hae_cl : ∀ᵐ z ∂ν, z ∈ closure Ω :=
+    (ae_restrict_iff isClosed_closure.measurableSet).2 (.of_forall fun _ hz ↦ subset_closure hz)
   have hbound : ∫⁻ p, ‖F p‖ₑ ∂ν.prod ν ≤ ENNReal.ofReal C * eLpNorm G 1 ν := by
     calc
       ∫⁻ p, ‖F p‖ₑ ∂ν.prod ν
         = ∫⁻ z, ∫⁻ x, ‖F (x, z)‖ₑ ∂ν ∂ν := lintegral_prod_symm _ hF_meas.eNorm
-      _ ≤ ∫⁻ z, ∫⁻ x, ‖taylorRemainderKernel φ m x z‖ₑ * ‖G z‖ₑ ∂ν ∂ν := by
-          refine lintegral_mono fun z ↦ lintegral_mono fun x ↦ ?_
-          rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
-          exact ENNReal.ofReal_le_ofReal (ContinuousLinearMap.le_opNorm _ _)
+      _ ≤ ∫⁻ z, ∫⁻ x, ‖taylorRemainderKernel φ m x z‖ₑ * ‖G z‖ₑ ∂ν ∂ν :=
+          lintegral_mono fun z ↦ lintegral_mono fun x ↦ (taylorRemainderKernel φ m x z).le_opENorm _
       _ = ∫⁻ z, (∫⁻ x, ‖taylorRemainderKernel φ m x z‖ₑ ∂ν) * ‖G z‖ₑ ∂ν :=
           lintegral_congr fun z ↦ lintegral_mul_const' _ _ eNorm_ne_top
       _ ≤ ∫⁻ z, ENNReal.ofReal C * ‖G z‖ₑ ∂ν := by
@@ -515,7 +507,7 @@ private theorem integrable_taylorRemainderKernel_prod {Ω : Set E} (hb : Bornolo
       _ = ENNReal.ofReal C * eLpNorm G 1 ν := by
           rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
             eLpNorm_one_eq_lintegral_eNorm hG.aestronglyMeasurable]
-  refine ⟨⟨hF_meas, ?_⟩, hbound⟩
+  refine ⟨hF_meas, ?_⟩
   rw [hasFiniteIntegral_def]
   exact hbound.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
     (memLp_one_iff_integrable.2 hG).eLpNorm_lt_top)
@@ -529,7 +521,7 @@ theorem ae_integrableOn_taylorRemainderKernel_apply {Ω : Set E} (hb : Bornology
     (hG : IntegrableOn G Ω μ) :
     ∀ᵐ x ∂μ.restrict Ω, IntegrableOn (fun z ↦ taylorRemainderKernel φ m x z (G z)) Ω μ := by
   have : IsFiniteMeasure (μ.restrict Ω) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  exact (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).1.prod_right_ae
+  exact (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).prod_right_ae
 
 /-- On a bounded set `Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and
 `∀ y, ‖φ y‖ ≤ M`, the integral operator `x ↦ ∫ z in Ω, taylorRemainderKernel φ m x z (G z)` maps
@@ -539,7 +531,7 @@ theorem integrableOn_setIntegral_taylorRemainderKernel_apply {Ω : Set E}
     (hsupp : Function.support φ ⊆ closure Ω) {M : ℝ} (hM : ∀ y, ‖φ y‖ ≤ M) {m : ℕ}
     {G : E → IteratedGradient E m} (hG : IntegrableOn G Ω μ) :
     IntegrableOn (fun x ↦ ∫ z in Ω, taylorRemainderKernel φ m x z (G z) ∂μ) Ω μ :=
-  (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).1.integral_prod_left
+  (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).integral_prod_left
 
 /-- **`L¹(Ω) → L¹(Ω)` norm bound for the Taylor-remainder integral operator** on a bounded set
 `Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and `∀ y, ‖φ y‖ ≤ M`, stated in
@@ -551,17 +543,15 @@ theorem eLpNorm_one_setIntegral_taylorRemainderKernel_le {Ω : Set E} (hb : Born
     eLpNorm (fun x ↦ ∫ z in Ω, taylorRemainderKernel φ m x z (G z) ∂μ) 1 (μ.restrict Ω) ≤
       ENNReal.ofReal (M * μ.real (ball (0 : E) 1) / (m + 1).factorial *
         diam Ω ^ (finrank ℝ E + m + 1)) * eLpNorm G 1 (μ.restrict Ω) := by
-  let ν : Measure E := μ.restrict Ω
-  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  obtain ⟨hF_int, hbound⟩ := integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG
-  rw [eLpNorm_one_eq_lintegral_eNorm hF_int.integral_prod_left.aestronglyMeasurable]
-  calc
-    ∫⁻ x, ‖∫ z, taylorRemainderKernel φ m x z (G z) ∂ν‖ₑ ∂ν
-      ≤ ∫⁻ x, ∫⁻ z, ‖taylorRemainderKernel φ m x z (G z)‖ₑ ∂ν ∂ν :=
-        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
-    _ = ∫⁻ p : E × E, ‖taylorRemainderKernel φ m p.1 p.2 (G p.2)‖ₑ ∂ν.prod ν :=
-        (lintegral_prod _ hF_int.aestronglyMeasurable.eNorm).symm
-    _ ≤ _ := hbound
+  have hcol : ∀ᵐ z ∂μ.restrict Ω, ∫⁻ x in Ω, ‖taylorRemainderKernel φ m x z‖ₑ ∂μ ≤
+      ENNReal.ofReal (M * μ.real (ball (0 : E) 1) / (m + 1).factorial *
+        diam Ω ^ (finrank ℝ E + m + 1)) :=
+    ((ae_restrict_iff isClosed_closure.measurableSet).2
+      (.of_forall fun _ hz ↦ subset_closure hz)).mono fun _ hz ↦
+        setLIntegral_eNorm_taylorRemainderKernel_le hb hsupp hM m hz
+  exact (eLpNorm_integral_apply_le
+      (stronglyMeasurable_taylorRemainderKernel hφ_meas m).aestronglyMeasurable
+      hG.aestronglyMeasurable le_rfl (.of_forall fun _ ↦ le_top) hcol).trans_eq (by simp)
 
 end PotentialL1
 
