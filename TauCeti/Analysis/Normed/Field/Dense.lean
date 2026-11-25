@@ -30,13 +30,14 @@ generated over `L` by the separable closure of `K` in `Ω`, and every finite sep
 of `L` inside `Ω` is `L⟮y⟯` for an element `y` separable over `K`.
 
 If moreover `ι : Kbar →ₐ[K] Ω` embeds a separably closed field over `K`, the separable closure of
-`L` in `Ω` lies in the compositum `L · ι(Kbar)`, `L`-algebra maps out of it are determined by
-their values on `ι(Kbar)`, and every finite separable extension of `L` inside `Ω` is `L⟮ι β⟯` for
-some `β ∈ Kbar`. For a number field `F`, a finite place `v`, `L = F_v`, `Ω = F_v^alg` and
-`Kbar = F^alg` this is the comparison of the global and local algebraic closures: an
-`F_v`-automorphism of `F_v^alg` fixing `ι(F^alg)` is the identity, so restriction along `ι` from
-the absolute Galois group of `F_v` to that of `F` is injective. This is the key step towards
-identifying the former with a decomposition group of `F`, which is not done here.
+`L` in `Ω` lies in the compositum `L · ι(Kbar)`, two `L`-algebra maps out of `Ω` that agree on
+`ι(Kbar)` agree on the separable closure of `L` in `Ω`, and every finite separable extension of
+`L` inside `Ω` is `L⟮ι β⟯` for some `β ∈ Kbar`. For a number field `F`, a finite place `v`,
+`L = F_v`, `Ω = F_v^alg` and `Kbar = F^alg` this is the comparison of the global and local
+algebraic closures: an `F_v`-automorphism of `F_v^alg` fixing `ι(F^alg)` is the identity, so
+restriction along `ι` from the absolute Galois group of `F_v` to that of `F` is injective. This is
+the key step towards identifying the former with a decomposition group of `F`, which is not done
+here.
 
 ## Main results
 
@@ -64,9 +65,10 @@ The first result is proved in an algebraic closure of `L` with its spectral norm
 `L⟮x⟯` there. The minimal polynomial of `x` over `L` is approximated by a monic polynomial `g` over
 `K` of the same degree with a root `y` close to `x`
 (`IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt`), Krasner's lemma
-(`IsKrasner.krasner`) gives `L⟮x⟯ ≤ L⟮y⟯`, and comparing degrees gives equality. Then `g` is the
-minimal polynomial of `y` over `L`, which is separable, so `g` and hence `y` are separable over
-`K`. A trivially normed `L` is discrete, so `K` maps onto `L` and `y = x` works.
+(`IsKrasner.krasner`) gives `L⟮x⟯ ≤ L⟮y⟯`, and comparing degrees gives equality. Then
+`g.map (algebraMap K L)` is the minimal polynomial of `y` over `L`, which is separable, so `g` and
+hence `y` are separable over `K`. A trivially normed `L` is discrete, so `K` maps onto `L` and
+`y = x` works.
 
 ## References
 
@@ -116,7 +118,7 @@ private theorem exists_isSeparable_adjoin_simple_eq_of_isAlgClosed {K L Ω : Typ
     rw [adjoin.finrank hxi, adjoin.finrank hyi, hdeg, ← natDegree_map (algebraMap K L)]
     exact natDegree_le_natDegree (minpoly.degree_le_of_ne_zero L y (hgm.map _).ne_zero hgyL)
   refine ⟨y, ?_, hxy'⟩
-  -- `g` is the minimal polynomial of `y` over `L`, which is separable since `y ∈ L⟮x⟯`
+  -- `g.map (algebraMap K L)` is the minimal polynomial of `y` over `L`, separable as `y ∈ L⟮x⟯`
   have hyL : IsSeparable L y := by
     have : Algebra.IsSeparable L L⟮y⟯ := by
       rw [← hxy']
