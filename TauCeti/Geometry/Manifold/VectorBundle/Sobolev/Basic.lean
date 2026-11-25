@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -258,14 +258,9 @@ theorem aeTransition_of_differentiableOn {μ : Measure E} [μ.IsAddHaarMeasure]
     (hinv : ∀ i i', ∀ y ∈ C.overlap i i', C.transition i' i (C.transition i i' y) = y) :
     C.AETransition μ := by
   refine C.aeTransition_iff.2 fun i i' P h ↦ ?_
-  have hN : μ ({z | ¬P z} ∩ C.overlap i' i) = 0 := by
-    rw [ae_iff, Measure.restrict_apply' (C.image i).isOpen.measurableSet] at h
-    exact measure_mono_null (inter_subset_inter_right _ (C.overlap_subset_image i' i)) h
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
-    ((hd i' i).mono inter_subset_right) hN
-  rw [ae_iff, Measure.restrict_apply' (C.isOpen_overlap i i').measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  exact ⟨C.transition i i' y, ⟨hy.1, hmaps i i' hy.2⟩, hinv i i' y hy.2⟩
+  exact ae_restrict_comp_of_leftInvOn μ (C.isOpen_overlap i i').measurableSet
+    (C.isOpen_overlap i' i).measurableSet (hd i' i) (hmaps i i') (hinv i i')
+    (ae_restrict_of_ae_restrict_of_subset (C.overlap_subset_image i' i) h)
 
 end Transition
 
@@ -1088,6 +1083,15 @@ theorem sectionChartData_coord_ae_eq [MeasurableSpace E] [OpensMeasurableSpace E
     A.sectionChartData.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i s := by
   filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
   exact A.sectionChartData_coord_of_mem s hy
+
+/-- On the image of chart `i`, a function is almost everywhere the reading of a section in the
+chart data of the atlas exactly when it is almost everywhere its reading `A.coord i s`. -/
+theorem ae_eq_sectionChartData_coord_iff [MeasurableSpace E] [OpensMeasurableSpace E]
+    (μ : Measure E) {i : Fin A.n} {s : ∀ x, V x} {f : E → F} :
+    f =ᵐ[μ.restrict (A.image i)] A.sectionChartData.coord i s ↔
+      f =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  ⟨fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s),
+    fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s).symm⟩
 
 section FiniteMeasure
 

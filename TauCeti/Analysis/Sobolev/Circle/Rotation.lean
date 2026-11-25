@@ -24,12 +24,14 @@ under them.
 The action is strongly continuous: `θ ↦ rotate θ a` is continuous for every `a ∈ H^s`. The
 differentiability of an orbit map depends on the regularity of the vector: the orbit map
 `θ ↦ rotate θ a` of `a ∈ H^s` is differentiable in `H^s` exactly when `a` lies in `H^(s + 1)`,
-and its derivative is then the rotated derivative of `a`. In the jointly varying form, a
-sufficient condition is one extra order of regularity: `(θ, a) ↦ rotate θ a` is continuously
-differentiable as a map `ℝ × H^t → H^s` whenever `s + 1 ≤ t`. This is the derivative offset of
-variable reparametrizations of boundary maps by rotations: differentiating the rotated map in the
-rotation parameter is controlled by one more order of regularity of the map than that of the
-target space.
+and its derivative is then the rotated derivative of `a`. More generally the orbit map is `Cʳ`
+in `H^s` exactly when `a` lies in `H^(s + r)`, so the action on a single space `H^s` is `Cʳ` only
+along the vectors of `H^(s + r)`. In the jointly varying form each derivative costs one order of
+regularity:
+`(θ, a) ↦ rotate θ a` is a `Cʳ` map `ℝ × H^t → H^s` whenever `s + r ≤ t`. This is the derivative
+offset of variable reparametrizations of boundary maps by rotations: differentiating the rotated
+map `r` times in the rotation parameter is controlled by `r` more orders of regularity of the map
+than that of the target space.
 
 ## Main definitions
 
@@ -51,8 +53,21 @@ target space.
   `H^s`, `‖rotate φ a - rotate ψ a‖ ≤ |φ - ψ| ‖derivative T h a‖`.
 * `TauCeti.CircleSobolev.differentiableAt_rotate_iff`: the orbit map of `a ∈ H^s` is
   differentiable in `H^s` at some (equivalently every) point exactly when `a ∈ H^(s + 1)`.
-* `TauCeti.CircleSobolev.contDiff_rotate`: for `s + 1 ≤ t`, `(θ, a) ↦ rotate θ a` is a `C¹` map
+* `TauCeti.CircleSobolev.contDiff_rotate_apply_iff`: the orbit map of `a ∈ H^s` is `Cʳ` in `H^s`
+  exactly when `a ∈ H^(s + r)`.
+* `TauCeti.CircleSobolev.norm_rotate_sub_rotate_sub_smul_le`: for `s + 2 ≤ t`, the orbit map of
+  `a ∈ H^t` agrees with its tangent line in `H^s` up to `|φ - ψ|² (2π/T)² ‖a‖`.
+* `TauCeti.CircleSobolev.hasFDerivAt_rotate`: for `s + 1 ≤ t`, the derivative of
+  `(θ, a) ↦ rotate θ a` as a map `ℝ × H^t → H^s`.
+* `TauCeti.CircleSobolev.contDiff_rotate`: for `s + r ≤ t`, `(θ, a) ↦ rotate θ a` is a `Cʳ` map
   `ℝ × H^t → H^s`.
+
+## Implementation notes
+
+`contDiff_rotate` is proved by induction on `r`. The partial derivative in the angle is again a
+rotation orbit, of the derivative `a'`, and the partial derivative in `a` is rotation followed by
+the inclusion `H^t → H^s`. That operator-valued map is a `Cᵏ` function of the angle for the
+operator norm when `s + k + 1 ≤ t`, by the second-order Taylor bound for the orbit maps.
 
 ## References
 
@@ -282,11 +297,115 @@ theorem differentiableAt_rotate_iff (a : CircleSobolev s E) (θ : ℝ) :
         add_neg_cancel, fourier_eval_zero, mul_one]
   exact ⟨c, hc⟩
 
-/-- For `s + 1 ≤ t`, the rotation action `(θ, a) ↦ rotate θ a` is a `C¹` map `ℝ × H^t → H^s`. Its
-partial derivative in `θ` is `rotate θ (derivative T h a)`, and in `a` it is the rotation itself. -/
-theorem contDiff_rotate (h : s + 1 ≤ t) :
-    ContDiff ℝ 1 fun p : ℝ × CircleSobolev t E ↦
-      (rotate (p.1 : AddCircle T) (inclusion (by linarith) p.2) : CircleSobolev s E) := by
+/-! ### Higher differentiability -/
+
+omit hT in
+/-- The coefficients of the second-order Taylor remainder of a rotation orbit are controlled by
+the frequency factor squared. -/
+private theorem norm_coeff_rotate_sub_sub_le (a : CircleSobolev t E) (φ ψ : ℝ) (n : ℤ) :
+    ‖fourier n (φ : AddCircle T) • a.coeff n - fourier n (ψ : AddCircle T) • a.coeff n -
+        (φ - ψ) • (fourier n (ψ : AddCircle T) • (2 * π * I * n / T : ℂ) • a.coeff n)‖ ≤
+      |φ - ψ| ^ 2 * (‖(2 * π * I * n / T : ℂ)‖ ^ 2 * ‖a.coeff n‖) := by
+  have h : fourier n (φ : AddCircle T) • a.coeff n - fourier n (ψ : AddCircle T) • a.coeff n -
+      (φ - ψ) • (fourier n (ψ : AddCircle T) • (2 * π * I * n / T : ℂ) • a.coeff n) =
+      (fourier n (φ : AddCircle T) - fourier n (ψ : AddCircle T) -
+        (φ - ψ) * (2 * π * I * n / T * fourier n (ψ : AddCircle T))) • a.coeff n := by
+    module
+  rw [h, norm_smul]
+  exact (mul_le_mul_of_nonneg_right (norm_fourier_coe_sub_sub_le n φ ψ)
+    (norm_nonneg (a.coeff n))).trans_eq (by ring)
+
+/-- **Second-order Taylor bound for the rotation orbits.** For `s + 2 ≤ t` and `a ∈ H^t`, the
+orbit map `θ ↦ rotate θ a` agrees with its tangent line in `H^s` to second order:
+`‖rotate φ a - rotate ψ a - (φ - ψ) rotate ψ a'‖ ≤ |φ - ψ|² (2π/T)² ‖a‖`. -/
+theorem norm_rotate_sub_rotate_sub_smul_le (h : s + 2 ≤ t) (a : CircleSobolev t E) (φ ψ : ℝ) :
+    ‖(rotate (φ : AddCircle T) (inclusion (by linarith) a) -
+        rotate (ψ : AddCircle T) (inclusion (by linarith) a) -
+        (φ - ψ) • rotate (ψ : AddCircle T) (derivative T (by linarith) a) : CircleSobolev s E)‖ ≤
+      |φ - ψ| ^ 2 * (2 * π / T) ^ 2 * ‖a‖ :=
+  norm_le_of_forall_le fun n ↦ by
+    -- The factor `|2πin/T|²` costs two orders of regularity.
+    have hw : weight s n * ‖(2 * π * I * n / T : ℂ)‖ ^ 2 ≤ (2 * π / T) ^ 2 * weight t n := by
+      rw [norm_two_pi_I_mul_intCast_div hT.out, mul_pow, mul_left_comm]
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      calc weight s n * |(n : ℝ)| ^ 2 ≤ weight s n * (1 + |(n : ℝ)|) ^ 2 := by
+            refine mul_le_mul_of_nonneg_left ?_ (weight_nonneg s n)
+            exact pow_le_pow_left₀ (abs_nonneg _) (by linarith) 2
+        _ = weight (s + 2) n := (weight_add_two s n).symm
+        _ ≤ weight t n := weight_le_weight h n
+    simp only [coeff_sub, coeff_real_smul, Pi.sub_apply, Pi.smul_apply, coeff_rotate,
+      coeff_inclusion, coeff_derivative]
+    calc _ ≤ weight s n * (|φ - ψ| ^ 2 * (‖(2 * π * I * n / T : ℂ)‖ ^ 2 * ‖a.coeff n‖)) :=
+          mul_le_mul_of_nonneg_left (norm_coeff_rotate_sub_sub_le a φ ψ n) (weight_nonneg s n)
+      _ = |φ - ψ| ^ 2 * ((weight s n * ‖(2 * π * I * n / T : ℂ)‖ ^ 2) * ‖a.coeff n‖) := by ring
+      _ ≤ |φ - ψ| ^ 2 * (((2 * π / T) ^ 2 * weight t n) * ‖a.coeff n‖) := by gcongr
+      _ = _ := by ring
+
+/-- For `s + 2 ≤ t`, rotation followed by the inclusion `H^t → H^s` is differentiable in the
+angle for the operator norm, with derivative the rotation followed by differentiation. -/
+private theorem hasDerivAt_rotate_comp_inclusion (h : s + 2 ≤ t) (θ : ℝ) :
+    HasDerivAt (fun φ : ℝ ↦ ((rotate (φ : AddCircle T) : CircleSobolev s E ≃ₗᵢ[ℂ] _) :
+        CircleSobolev s E →L[ℂ] CircleSobolev s E).comp
+          (inclusion (show s ≤ t by linarith)))
+      (((rotate (θ : AddCircle T) : CircleSobolev s E ≃ₗᵢ[ℂ] _) :
+        CircleSobolev s E →L[ℂ] CircleSobolev s E).comp
+          (derivative T (show s + 1 ≤ t by linarith))) θ := by
+  rw [hasDerivAt_iff_isLittleO]
+  refine Asymptotics.IsBigO.trans_isLittleO (g := fun φ ↦ ‖φ - θ‖ ^ 2) ?_
+    (Asymptotics.isLittleO_pow_sub_sub θ one_lt_two)
+  refine Asymptotics.IsBigO.of_bound ((2 * π / T) ^ 2) (Eventually.of_forall fun φ ↦ ?_)
+  rw [norm_pow, norm_norm, Real.norm_eq_abs]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun a ↦ ?_
+  simp only [sub_apply, smul_apply, ContinuousLinearMap.comp_apply]
+  exact (norm_rotate_sub_rotate_sub_smul_le h a φ θ).trans_eq (by ring)
+
+/-- For `s + k + 1 ≤ t`, rotation followed by the inclusion `H^t → H^s` is a `Cᵏ` function of the
+angle for the operator norm. -/
+private theorem contDiff_rotate_comp_inclusion {k : ℕ} (h : s + k + 1 ≤ t) :
+    ContDiff ℝ k fun θ : ℝ ↦ ((rotate (θ : AddCircle T) : CircleSobolev s E ≃ₗᵢ[ℂ] _) :
+        CircleSobolev s E →L[ℂ] CircleSobolev s E).comp
+          (inclusion (show s ≤ t by linarith [k.cast_nonneg (α := ℝ)])) := by
+  induction k generalizing t with
+  | zero =>
+    -- The operator is Lipschitz in the angle, by the Lipschitz bound on the orbit maps.
+    rw [Nat.cast_zero, add_zero] at h
+    have hc : 0 ≤ 2 * π / T := div_nonneg (by positivity) hT.out.le
+    refine contDiff_zero.2 (LipschitzWith.continuous (K := (2 * π / T).toNNReal)
+      (LipschitzWith.of_dist_le_mul fun φ ψ ↦ ?_))
+    rw [dist_eq_norm, Real.dist_eq, Real.coe_toNNReal _ hc]
+    refine ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg hc (abs_nonneg _)) fun a ↦ ?_
+    calc ‖rotate (φ : AddCircle T) (inclusion _ a) - rotate (ψ : AddCircle T) (inclusion _ a)‖
+        ≤ |φ - ψ| * ‖derivative T h a‖ := norm_rotate_sub_rotate_le h a φ ψ
+      _ ≤ |φ - ψ| * (2 * π / T * ‖a‖) :=
+          mul_le_mul_of_nonneg_left (norm_derivative_le T h a) (abs_nonneg _)
+      _ = 2 * π / T * |φ - ψ| * ‖a‖ := by ring
+  | succ k ih =>
+    push_cast at h
+    have hd (θ : ℝ) :=
+      hasDerivAt_rotate_comp_inclusion (s := s) (t := t) (E := E) (T := T) (by linarith) θ
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_deriv.2 ⟨fun θ ↦ (hd θ).differentiableAt, by simp, ?_⟩
+    rw [funext fun θ ↦ (hd θ).deriv]
+    -- Differentiation `H^t → H^s` factors through `H^(t - 1)`, where the inductive hypothesis
+    -- applies.
+    have hD : (derivative T (by linarith) : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
+        (inclusion (by linarith)).comp (derivative T (by linarith : t - 1 + 1 ≤ t)) :=
+      ContinuousLinearMap.ext fun a ↦ (inclusion_derivative T _ _ a).symm
+    simp only [hD, ← ContinuousLinearMap.comp_assoc]
+    exact (((ContinuousLinearMap.compL ℂ _ _ _).flip
+      (derivative T (by linarith : t - 1 + 1 ≤ t))).restrictScalars ℝ).contDiff.comp
+        (ih (t := t - 1) (by linarith))
+
+/-- The derivative of the rotation action. For `s + 1 ≤ t`, `(θ, a) ↦ rotate θ a` is
+differentiable as a map `ℝ × H^t → H^s`. Its partial derivative in `θ` is
+`rotate θ (derivative T h a)`, and in `a` it is the rotation itself. -/
+theorem hasFDerivAt_rotate (h : s + 1 ≤ t) (p : ℝ × CircleSobolev t E) :
+    HasFDerivAt (fun q : ℝ × CircleSobolev t E ↦
+        (rotate (q.1 : AddCircle T) (inclusion (by linarith) q.2) : CircleSobolev s E))
+      (((1 : ℝ →L[ℝ] ℝ).smulRight (rotate (p.1 : AddCircle T) (derivative T h p.2))).coprod
+        ((((rotate (p.1 : AddCircle T) : CircleSobolev s E ≃ₗᵢ[ℂ] _) :
+          CircleSobolev s E →L[ℂ] CircleSobolev s E).comp
+            (inclusion (by linarith))).restrictScalars ℝ)) p := by
   have hst : s ≤ t := by linarith
   let f : ℝ → CircleSobolev t E → CircleSobolev s E :=
     fun φ b ↦ rotate (φ : AddCircle T) (inclusion hst b)
@@ -303,29 +422,68 @@ theorem contDiff_rotate (h : s + 1 ≤ t) :
     (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ (CircleSobolev s E) 1).continuous.comp <|
       continuous_rotate.comp <| (continuous_quotient_mk'.comp continuous_fst).prodMk
         ((derivative T h).continuous.comp continuous_snd)
-  -- The partial derivative in `a` is Lipschitz in `θ` for the operator norm, by the Lipschitz
-  -- bound on the orbit maps.
-  have cf₂ : Continuous ↿f₂ := by
-    refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-    rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-    have hlim : Tendsto (fun p : ℝ × CircleSobolev t E ↦ |p.1 - p₀.1| * (2 * π / T)) (𝓝 p₀)
-        (𝓝 0) := by
-      have := ((continuous_fst.sub continuous_const).abs.mul continuous_const).tendsto p₀
-        (f := fun p : ℝ × CircleSobolev t E ↦ |p.1 - p₀.1| * (2 * π / T))
-      simpa using this
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) hlim
-    refine ContinuousLinearMap.opNorm_le_bound _
-      (mul_nonneg (abs_nonneg _) (div_nonneg (by positivity) hT.out.le)) fun b ↦ ?_
-    calc ‖rotate (p.1 : AddCircle T) (inclusion hst b) -
-          rotate (p₀.1 : AddCircle T) (inclusion hst b)‖
-        ≤ |p.1 - p₀.1| * ‖derivative T h b‖ := norm_rotate_sub_rotate_le h b p.1 p₀.1
-      _ ≤ |p.1 - p₀.1| * (2 * π / T * ‖b‖) :=
-          mul_le_mul_of_nonneg_left (norm_derivative_le T h b) (abs_nonneg _)
-      _ = |p.1 - p₀.1| * (2 * π / T) * ‖b‖ := by ring
-  refine contDiff_one_iff_hasFDerivAt.2 ⟨fun p ↦ (↿f₁ p).coprod (↿f₂ p),
-    (ContinuousLinearMap.coprodEquivL ℝ).continuous.comp (cf₁.prodMk cf₂), fun p ↦ ?_⟩
+  have cf₂ : Continuous ↿f₂ :=
+    (ContinuousLinearMap.restrictScalarsL ℂ (CircleSobolev t E) (CircleSobolev s E) ℝ
+      ℝ).continuous.comp <| (contDiff_rotate_comp_inclusion (s := s) (t := t) (k := 0)
+        (by simpa using h)).continuous.comp continuous_fst
   exact (hasStrictFDerivAt_uncurry_coprod (Eventually.of_forall fun q ↦ df₁ q.1 q.2)
     (Eventually.of_forall fun q ↦ df₂ q.1 q.2) cf₁.continuousAt cf₂.continuousAt).hasFDerivAt
+
+/-- **The derivative offset of rotations.** For `s + r ≤ t`, the rotation action
+`(θ, a) ↦ rotate θ a` is a `Cʳ` map `ℝ × H^t → H^s`: each derivative in the angle costs one order
+of regularity. -/
+theorem contDiff_rotate {r : ℕ} (h : s + r ≤ t) :
+    ContDiff ℝ r fun p : ℝ × CircleSobolev t E ↦
+      (rotate (p.1 : AddCircle T) (inclusion (by linarith [r.cast_nonneg (α := ℝ)]) p.2) :
+        CircleSobolev s E) := by
+  induction r generalizing t with
+  | zero =>
+    exact contDiff_zero.2 <| continuous_rotate.comp <|
+      (continuous_quotient_mk'.comp continuous_fst).prodMk
+        ((inclusion _).continuous.comp continuous_snd)
+  | succ r ih =>
+    push_cast at h
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_hasFDerivAt.2 ⟨_, ?_, hasFDerivAt_rotate (by linarith)⟩
+    -- The partial derivative in the angle is the rotation action on `H^(t - 1)` applied to the
+    -- derivative, and the partial derivative in `a` is the operator-valued rotation.
+    have h₁ : ContDiff ℝ r fun p : ℝ × CircleSobolev t E ↦
+        (rotate (p.1 : AddCircle T) (derivative T (by linarith) p.2) : CircleSobolev s E) := by
+      have hD := (ih (t := t - 1) (by linarith)).comp <| contDiff_fst.prodMk <|
+        ((derivative T (by linarith : t - 1 + 1 ≤ t)).restrictScalars ℝ).contDiff.comp
+          contDiff_snd
+      convert hD using 2 with p
+      simp
+    -- The partial derivative in `a` is rotation followed by the inclusion `H^t → H^s`, which is
+    -- `Cʳ` in the angle because `s + r + 1 ≤ t`.
+    have h₂ := (ContinuousLinearMap.restrictScalarsL ℂ (CircleSobolev t E) (CircleSobolev s E) ℝ
+      ℝ).contDiff.comp <| (contDiff_rotate_comp_inclusion (s := s) (t := t) (E := E)
+        (T := T) (k := r) (by linarith)).comp (contDiff_fst (F := CircleSobolev t E))
+    exact (ContinuousLinearMap.coprodEquivL ℝ).contDiff.comp <|
+      ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ (CircleSobolev s E) 1).contDiff.comp h₁).prodMk h₂
+
+/-- **The smooth vectors of the rotation action.** The orbit map `θ ↦ rotate θ a` of `a ∈ H^s` is
+`Cʳ` in `H^s` exactly when `a` lies in `H^(s + r)`. So the rotation action on the single space
+`H^s` is `Cʳ` only along the vectors of `H^(s + r)`. -/
+theorem contDiff_rotate_apply_iff {r : ℕ} (a : CircleSobolev s E) :
+    ContDiff ℝ r (fun θ : ℝ ↦ rotate (θ : AddCircle T) a) ↔
+      ∃ b : CircleSobolev (s + r) E, inclusion (by linarith [r.cast_nonneg (α := ℝ)]) b = a := by
+  refine ⟨fun ha ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
+  · induction r generalizing s with
+    | zero => exact ⟨inclusion (by simp) a, by simp⟩
+    | succ r ih =>
+      rw [Nat.cast_succ] at ha
+      obtain ⟨c, rfl⟩ := (differentiableAt_rotate_iff a 0).1 (ha.differentiable (by simp) 0)
+      -- The derivative of the orbit of `c` is the orbit of its derivative, which is therefore
+      -- `Cʳ`, so the derivative of `c` lies in `H^(s + r)`.
+      have hc := (contDiff_succ_iff_deriv.1 ha).2.2
+      rw [show deriv _ = _ from funext fun θ ↦ (hasDerivAt_rotate le_rfl c θ).deriv] at hc
+      obtain ⟨d, hd⟩ := ih (derivative T le_rfl c) hc
+      obtain ⟨b, rfl, -⟩ := exists_inclusion_eq_and_derivative_eq_of_le T (by linarith) c d
+        fun n ↦ by rw [← coeff_derivative T le_rfl c n, ← hd, coeff_inclusion]
+      exact ⟨inclusion (by push_cast; linarith) b, by simp⟩
+  · subst hb
+    exact (contDiff_rotate le_rfl).comp (contDiff_id.prodMk contDiff_const)
 
 end CircleSobolev
 

@@ -35,8 +35,6 @@ with the markings, is canonically isomorphic to the chosen base change.
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.Hom`: morphisms of pointed prestable families.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.toOver`: the functor forgetting the markings.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.totalIso`: the isomorphism of total spaces
-  induced by an isomorphism of pointed families.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isoMk`: an isomorphism of pointed families
   from an isomorphism of total spaces over `S` preserving the markings.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.autToOver`: the injective homomorphism from
@@ -58,9 +56,13 @@ with the markings, is canonically isomorphic to the chosen base change.
   families is an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isProper_hom`: the map of total spaces of a
   morphism of pointed families is proper.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.Hom.hom_markingPoint`: over a field, a
+  morphism of pointed prestable families matches the marked points.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isPullback_pullbackMap_hom`: the base change of
   a morphism of pointed families is a base change of its map of total spaces, so it stays
   surjective (`TauCeti.AlgebraicGeometry.PointedPrestableFamily.surjective_pullbackMap_hom`).
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackMap_injective_of_epi`: base change
+  is injective on morphisms when the projection of total spaces is an epimorphism.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.mem_range_autToOver_iff`: an automorphism of
   the total space over `S` comes from the pointed family exactly when it fixes every marking.
 
@@ -151,38 +153,6 @@ def toOver : PointedPrestableFamily S n ⥤ Over S where
 instance : (toOver (S := S) (n := n)).Faithful where
   map_injective h := hom_ext congr(($h).left)
 
-/-- The isomorphism of total spaces induced by an isomorphism of pointed prestable families. -/
-def totalIso (e : P ≅ Q) : P.total ≅ Q.total :=
-  (toOver ⋙ Over.forget S).mapIso e
-
-@[simp]
-theorem totalIso_hom (e : P ≅ Q) : (totalIso e).hom = e.hom.hom :=
-  (rfl)
-
-@[simp]
-theorem totalIso_inv (e : P ≅ Q) : (totalIso e).inv = e.inv.hom :=
-  (rfl)
-
-@[simp]
-theorem totalIso_refl (P : PointedPrestableFamily S n) :
-    totalIso (Iso.refl P) = Iso.refl P.total :=
-  (toOver ⋙ Over.forget S).mapIso_refl P
-
-@[simp]
-theorem totalIso_symm (e : P ≅ Q) : totalIso e.symm = (totalIso e).symm :=
-  (toOver ⋙ Over.forget S).mapIso_symm e
-
-@[simp]
-theorem totalIso_trans (e : P ≅ Q) (e' : Q ≅ R) :
-    totalIso (e ≪≫ e') = totalIso e ≪≫ totalIso e' :=
-  (toOver ⋙ Over.forget S).mapIso_trans e e'
-
-/-- `totalIso e` lies over the base `S`. -/
-@[reassoc]
-theorem totalIso_hom_comp_over (e : P ≅ Q) :
-    (totalIso e).hom ≫ Q.total ↘ S = P.total ↘ S := by
-  rw [totalIso_hom, Q.over_eq_toBase, P.over_eq_toBase, e.hom.hom_comp_toBase]
-
 /-- An isomorphism of pointed prestable families from an isomorphism of total spaces over `S`
 carrying each marking to the corresponding marking. -/
 def isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
@@ -200,12 +170,6 @@ theorem isoMk_inv_hom (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toB
     (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : (isoMk e he hm).inv.hom = e.inv :=
   (rfl)
 
-@[simp]
-theorem totalIso_isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
-    (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : totalIso (isoMk e he hm) = e := by
-  ext1
-  rfl
-
 /-- A morphism of pointed prestable families is an isomorphism exactly when its map of total
 spaces is an isomorphism. -/
 theorem isIso_iff_isIso_hom (f : P ⟶ Q) : IsIso f ↔ IsIso f.hom :=
@@ -221,6 +185,13 @@ instance isIso_of_isIso_hom (f : P ⟶ Q) [IsIso f.hom] : IsIso f :=
 instance : (toOver (S := S) (n := n)).ReflectsIsomorphisms where
   reflects f _ :=
     (isIso_iff_isIso_hom f).2 (by simpa using inferInstanceAs (IsIso (toOver.map f).left))
+
+/-- Over a field, the map of total spaces of a morphism of pointed prestable families carries
+each marked point to the corresponding marked point. -/
+theorem Hom.hom_markingPoint {K : Type u} [Field K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (f : P ⟶ Q) (i : Fin n) :
+    f.hom (P.markingPoint i : P.total) = Q.markingPoint i := by
+  rw [coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply, Hom.marking_comp_hom]
 
 /-- Forgetting the markings, as a group homomorphism from the automorphisms of a pointed
 prestable family to the automorphisms of its total space over `S`. -/
@@ -285,6 +256,15 @@ spaces has surjective map of total spaces. -/
 instance surjective_pullbackMap_hom (g : T ⟶ S) (f : P ⟶ Q) [Surjective f.hom] :
     Surjective (pullbackMap g f).hom :=
   MorphismProperty.of_isPullback (P := @Surjective) (isPullback_pullbackMap_hom g f) ‹_›
+
+/-- Base change along `g` is injective on morphisms `P ⟶ Q` when the projection
+`P ×_S T ⟶ P` of total spaces is an epimorphism. -/
+theorem pullbackMap_injective_of_epi (g : T ⟶ S) [Epi (pullback.fst P.toBase g)] :
+    Function.Injective (pullbackMap g : (P ⟶ Q) → (P.pullback g ⟶ Q.pullback g)) := by
+  intro f f' hff'
+  refine hom_ext ?_
+  rw [← cancel_epi (pullback.fst P.toBase g), (isPullback_pullbackMap_hom g f).w,
+    (isPullback_pullbackMap_hom g f').w, hff']
 
 /-- Base change along `g : T ⟶ S` as a functor from pointed prestable families over `S` to
 pointed prestable families over `T`. -/

@@ -21,9 +21,9 @@ This file develops the geometric and functorial API of `P.dualGraph`:
 
 * geometric formulas for `numMarkings`, special flags (`valence + numMarkings`), and
   `logCanonicalDegree`;
-* functorial `DualGraph.Iso` equivalences under pointed curve isomorphisms (`dualGraphIso`) and
-  extensions of separably closed base fields (`dualGraphPullbackIso`), together with invariance of
-  semistability, stability, arithmetic genus, and first Betti number;
+* functorial `DualGraph.Iso` equivalences under pointed curve isomorphisms (`dualGraphIsoOfIso`)
+  and extensions of separably closed base fields (`dualGraphPullbackIso`), together with invariance
+  of semistability, stability, arithmetic genus, and first Betti number;
 * specialization of `logCanonicalDegree` on smooth pointed curves (`logCanonicalDegree_ofSmooth`);
 * geometric classification of unstable components (`dualGraph_logCanonicalDegree_nonpos_iff`) into
   geometric rational tails with at most one marking and unmarked geometric rational bridges.
@@ -32,8 +32,8 @@ This file develops the geometric and functorial API of `P.dualGraph`:
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph`: the dual graph of a pointed
   prestable curve over a separably closed field, with its markings.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraphIso`: isomorphism of dual graphs
-  induced by an isomorphism of pointed prestable curves.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraphIsoOfIso`: the isomorphism of dual
+  graphs induced by an isomorphism of pointed prestable curves.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraphPullbackIso`: isomorphism of dual
   graphs under base change along an extension of separably closed fields.
 
@@ -43,11 +43,15 @@ In the namespace `TauCeti.AlgebraicGeometry.PointedPrestableFamily`:
 
 * `dualGraph_reindex`: reindexing the markings of the curve reindexes the markings of its dual
   graph.
-* `coe_dualGraphVertexEquiv_dualGraphIso_vertexEquiv`,
-  `dualGraphEdgeEquiv_dualGraphIso_edgeEquiv`,
-  `coe_dualGraphVertexEquiv_dualGraphPullbackIso_vertexEquiv` and
-  `dualGraphEdgeEquiv_dualGraphPullbackIso_edgeEquiv`: action of `dualGraphIso` and
-  `dualGraphPullbackIso` on vertices and edges.
+* `coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv`,
+  `image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv` and
+  `dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv`: action of `dualGraphIsoOfIso` on vertices,
+  component images, and edges.
+* `dualGraphIsoOfIso_refl`, `dualGraphIsoOfIso_symm` and `dualGraphIsoOfIso_trans`: compatibility
+  of `dualGraphIsoOfIso` with identities, inverses, and composites.
+* `coe_dualGraphVertexEquiv_dualGraphPullbackIso_vertexEquiv` and
+  `dualGraphEdgeEquiv_dualGraphPullbackIso_edgeEquiv`: action of `dualGraphPullbackIso` on vertices
+  and edges.
 * `ncard_specialPoints_eq_valence_add_numMarkings` and `logCanonicalDegree_dualGraph`: geometric
   formulas for special flags and `logCanonicalDegree`.
 * `logCanonicalDegree_ofSmooth`: on a smooth `n`-pointed curve of genus `g`,
@@ -91,6 +95,73 @@ theorem dualGraph_reindex [IsSepClosed K] (e : Fin m ↪ Fin n) :
   rw [dualGraph, show (P.reindex e).markingPoint = P.markingPoint ∘ e from
     funext (P.markingPoint_reindex e)]
   exact P.total.dualGraph_comp P.markingPoint e
+
+/-- An isomorphism of pointed prestable curves over a separably closed field induces an
+isomorphism of their dual graphs: the isomorphism `AlgebraicGeometry.Scheme.dualGraphIsoOfIso`
+induced by the isomorphism of total spaces, which lies over `Spec K` and matches the markings. -/
+def dualGraphIsoOfIso [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
+  Scheme.dualGraphIsoOfIso (K := K) (X := P.total) (Y := Q.total)
+    ((Over.forget _).mapIso (toOver.mapIso e)) (Over.w (toOver.map e.hom)) _ _
+    e.hom.hom_markingPoint
+
+/-- The isomorphism of dual graphs carries a component of the blowup of the total space of `P`
+to its image under the induced isomorphism of blowups. -/
+@[simp]
+theorem coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (v : P.dualGraph.Vertex) :
+    (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
+        Set (Q.total.singularLocus K).blowup) =
+      (Scheme.singularLocusBlowupIso (R := K) (X := P.total) (Y := Q.total)
+          ((Over.forget _).mapIso (toOver.mapIso e)) (Over.w (toOver.map e.hom))).hom ''
+        (P.total.dualGraphVertexEquiv P.markingPoint v) :=
+  Scheme.coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv ..
+
+/-- The image of the component of the blowup of the total space of `Q` corresponding to a vertex
+`v`, under the blowup morphism followed by a morphism `f` out of the total space, is the image of
+the component `v` of the blowup of the total space of `P` under the blowup morphism followed by
+the map of total spaces `e.hom.hom` and `f`. -/
+theorem image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) {Z : Scheme.{u}}
+    (f : Q.total ⟶ Z) (v : P.dualGraph.Vertex) :
+    ((Q.total.singularLocus K).blowupToBase ≫ f) ''
+        (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
+          Set (Q.total.singularLocus K).blowup) =
+      ((P.total.singularLocus K).blowupToBase ≫ e.hom.hom ≫ f) ''
+        (P.total.dualGraphVertexEquiv P.markingPoint v : Set (P.total.singularLocus K).blowup) :=
+  Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv ..
+
+/-- The isomorphism of dual graphs carries a node of the total space of `P` to its image under the
+map of total spaces `e.hom.hom`. -/
+@[simp]
+theorem dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (x : P.dualGraph.Edge) :
+    (Q.total.dualGraphEdgeEquiv Q.markingPoint ((dualGraphIsoOfIso e).edgeEquiv x) : Q.total) =
+      e.hom.hom (P.total.dualGraphEdgeEquiv P.markingPoint x) :=
+  Scheme.dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv ..
+
+/-- The isomorphism of dual graphs induced by the identity is the identity. -/
+@[simp]
+theorem dualGraphIsoOfIso_refl [IsSepClosed K] :
+    dualGraphIsoOfIso (Iso.refl P) = DualGraph.Iso.refl _ :=
+  Scheme.dualGraphIsoOfIso_refl ..
+
+/-- The isomorphism of dual graphs induced by the inverse isomorphism is the inverse. -/
+theorem dualGraphIsoOfIso_symm [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) : dualGraphIsoOfIso e.symm = (dualGraphIsoOfIso e).symm :=
+  Scheme.dualGraphIsoOfIso_symm (K := K) (X := P.total) (Y := Q.total)
+    ((Over.forget _).mapIso (toOver.mapIso e))
+    (Over.w (toOver.map e.hom)) _ _ e.hom.hom_markingPoint
+
+/-- The isomorphism of dual graphs induced by a composite of isomorphisms is the composite. -/
+theorem dualGraphIsoOfIso_trans [IsSepClosed K] {P Q R : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) (e' : Q ≅ R) :
+    dualGraphIsoOfIso (e ≪≫ e') = (dualGraphIsoOfIso e).trans (dualGraphIsoOfIso e') :=
+  Scheme.dualGraphIsoOfIso_trans (K := K) (X := P.total) (Y := Q.total) (Z := R.total)
+    ((Over.forget _).mapIso (toOver.mapIso e))
+    (Over.w (toOver.map e.hom)) _ _ e.hom.hom_markingPoint
+    ((Over.forget _).mapIso (toOver.mapIso e')) (Over.w (toOver.map e'.hom)) _
+    e'.hom.hom_markingPoint
 
 end Basic
 
@@ -201,81 +272,31 @@ theorem logCanonicalDegree_dualGraph (v : P.dualGraph.Vertex) :
     P.total.dualGraph_genus P.markingPoint v]
   omega
 
-/-! ### Functoriality under curve isomorphisms and field extensions -/
+/-! ### Invariance under curve isomorphisms and field extensions -/
 
-variable {P} {Q R : PointedPrestableFamily (Spec (.of K)) n}
+variable {P} {Q : PointedPrestableFamily (Spec (.of K)) n}
 
-/-- An isomorphism `e : P ≅ Q` of pointed prestable curves induces an isomorphism of their dual
-graphs. -/
-def dualGraphIso (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
-  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) (totalIso_hom_comp_over e)
-    P.markingPoint Q.markingPoint fun i ↦ by
-      rw [totalIso_hom, coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply,
-        e.hom.marking_comp_hom]
-
-/-- `dualGraphIso e` maps each vertex to its image under `singularLocusBlowupIso (totalIso e)`. -/
-@[simp]
-theorem coe_dualGraphVertexEquiv_dualGraphIso_vertexEquiv (e : P ≅ Q)
-    (v : P.dualGraph.Vertex) :
-    (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIso e).vertexEquiv v) :
-        Set (Q.total.singularLocus K).blowup) =
-      (Scheme.singularLocusBlowupIso (totalIso e) (totalIso_hom_comp_over e)).hom ''
-        (P.total.dualGraphVertexEquiv P.markingPoint v :
-          Set (P.total.singularLocus K).blowup) := by
-  rw [dualGraphIso]
-  exact Scheme.coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv ..
-
-/-- `dualGraphIso e` maps each node of `P` to its image under `e.hom.hom`. -/
-@[simp]
-theorem dualGraphEdgeEquiv_dualGraphIso_edgeEquiv (e : P ≅ Q) (x : P.dualGraph.Edge) :
-    (Q.total.dualGraphEdgeEquiv Q.markingPoint ((dualGraphIso e).edgeEquiv x) : Q.total) =
-      e.hom.hom (P.total.dualGraphEdgeEquiv P.markingPoint x) := by
-  rw [dualGraphIso, Scheme.dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv, totalIso_hom]
-
-private theorem dualGraphIsoOfIso_congr {X Y : Scheme.{u}} [X.Over (Spec (.of K))]
-    [Y.Over (Spec (.of K))] [PrestableFamily (X ↘ Spec (.of K))]
-    [PrestableFamily (Y ↘ Spec (.of K))] {e₁ e₂ : X ≅ Y} (heq : e₁ = e₂)
-    (he₁ : e₁.hom ≫ Y ↘ Spec (.of K) = X ↘ Spec (.of K))
-    (he₂ : e₂.hom ≫ Y ↘ Spec (.of K) = X ↘ Spec (.of K))
-    (p : Fin n → (X ↘ Spec (.of K)).smoothLocus) (q : Fin n → (Y ↘ Spec (.of K)).smoothLocus)
-    (hpq₁ : ∀ i, e₁.hom (p i : X) = q i) (hpq₂ : ∀ i, e₂.hom (p i : X) = q i) :
-    Scheme.dualGraphIsoOfIso e₁ he₁ p q hpq₁ = Scheme.dualGraphIsoOfIso e₂ he₂ p q hpq₂ := by
-  subst heq
-  rfl
-
-@[simp]
-theorem dualGraphIso_refl :
-    dualGraphIso (CategoryTheory.Iso.refl P) = DualGraph.Iso.refl P.dualGraph := by
-  rw [dualGraphIso, ← Scheme.dualGraphIsoOfIso_refl P.markingPoint]
-  exact dualGraphIsoOfIso_congr (totalIso_refl P) ..
-
-theorem dualGraphIso_symm (e : P ≅ Q) :
-    dualGraphIso e.symm = (dualGraphIso e).symm := by
-  rw [dualGraphIso, dualGraphIso, ← Scheme.dualGraphIsoOfIso_symm]
-  exact dualGraphIsoOfIso_congr (totalIso_symm e) ..
-
-theorem dualGraphIso_trans (e : P ≅ Q) (e' : Q ≅ R) :
-    dualGraphIso (e ≪≫ e') = (dualGraphIso e).trans (dualGraphIso e') := by
-  rw [dualGraphIso, dualGraphIso, dualGraphIso, ← Scheme.dualGraphIsoOfIso_trans]
-  exact dualGraphIsoOfIso_congr (totalIso_trans e e') ..
-
+/-- Isomorphic pointed prestable curves have semistable dual graphs simultaneously. -/
 theorem dualGraph_isSemistable_iff_of_iso (e : P ≅ Q) :
-    P.dualGraph.IsSemistable ↔ Q.dualGraph.IsSemistable := (dualGraphIso e).isSemistable_iff
+    P.dualGraph.IsSemistable ↔ Q.dualGraph.IsSemistable := (dualGraphIsoOfIso e).isSemistable_iff
 
+/-- Isomorphic pointed prestable curves have stable dual graphs simultaneously. -/
 theorem dualGraph_isStable_iff_of_iso (e : P ≅ Q) :
-    P.dualGraph.IsStable ↔ Q.dualGraph.IsStable := (dualGraphIso e).isStable_iff
+    P.dualGraph.IsStable ↔ Q.dualGraph.IsStable := (dualGraphIsoOfIso e).isStable_iff
 
+/-- Isomorphic pointed prestable curves have the same combinatorial arithmetic genus. -/
 theorem dualGraph_arithmeticGenus_eq_of_iso (e : P ≅ Q) :
-    P.dualGraph.arithmeticGenus = Q.dualGraph.arithmeticGenus := (dualGraphIso e).arithmeticGenus_eq
+    P.dualGraph.arithmeticGenus = Q.dualGraph.arithmeticGenus :=
+  (dualGraphIsoOfIso e).arithmeticGenus_eq
 
+/-- Isomorphic pointed prestable curves have the same dual-graph first Betti number. -/
 theorem dualGraph_firstBetti_eq_of_iso (e : P ≅ Q) :
-    P.dualGraph.firstBetti = Q.dualGraph.firstBetti := (dualGraphIso e).firstBetti_eq
+    P.dualGraph.firstBetti = Q.dualGraph.firstBetti := (dualGraphIsoOfIso e).firstBetti_eq
 
 section Pullback
 
-variable (L : Type u) [Field L] [IsSepClosed L] [Algebra K L]
+variable (P) (L : Type u) [Field L] [IsSepClosed L] [Algebra K L]
 
-variable (P) in
 /-- Invariance of `P.dualGraph` under extension of a separably closed base field. -/
 def dualGraphPullbackIso :
     P.dualGraph.Iso (P.pullback (Spec.algebraMap K L)).dualGraph :=
@@ -318,19 +339,27 @@ theorem dualGraphEdgeEquiv_dualGraphPullbackIso_edgeEquiv (x : P.dualGraph.Edge)
     (X' := (P.pullback (Spec.algebraMap K L)).total)
     (P.isPullback_pullback_over (Spec.algebraMap K L)) ..
 
+/-- Base change along an extension of separably closed fields preserves dual-graph semistability. -/
+@[simp]
 theorem dualGraph_pullback_isSemistable_iff :
     (P.pullback (Spec.algebraMap K L)).dualGraph.IsSemistable ↔ P.dualGraph.IsSemistable :=
   (P.dualGraphPullbackIso L).isSemistable_iff.symm
 
+/-- Base change along an extension of separably closed fields preserves dual-graph stability. -/
+@[simp]
 theorem dualGraph_pullback_isStable_iff :
     (P.pullback (Spec.algebraMap K L)).dualGraph.IsStable ↔ P.dualGraph.IsStable :=
   (P.dualGraphPullbackIso L).isStable_iff.symm
 
+/-- Base change along an extension of separably closed fields preserves the combinatorial
+arithmetic genus. -/
 @[simp]
 theorem dualGraph_pullback_arithmeticGenus :
     (P.pullback (Spec.algebraMap K L)).dualGraph.arithmeticGenus = P.dualGraph.arithmeticGenus :=
   (P.dualGraphPullbackIso L).arithmeticGenus_eq.symm
 
+/-- Base change along an extension of separably closed fields preserves the dual-graph first Betti
+number. -/
 @[simp]
 theorem dualGraph_pullback_firstBetti :
     (P.pullback (Spec.algebraMap K L)).dualGraph.firstBetti = P.dualGraph.firstBetti :=

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-public import TauCeti.LinearAlgebra.ExteriorPower.Prod
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RingTheory.KoszulComplex.Basic
