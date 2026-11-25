@@ -124,9 +124,8 @@ private theorem θ_inv (n : N) : θ n⁻¹ = θ n := by
 /-- **The defining sum of `Irr(G | θ)`**, at any function on `G`, is `2 ψ(1) - 2 ψ(-1)`. -/
 private theorem sum_mul_θ_inv (ψ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ) :
     ∑ n : N, ψ n * θ n⁻¹ = 2 * ψ 1 - 2 * ψ (-1) := by
-  simp_rw [θ_inv, θ_eq, mul_add, Finset.sum_add_distrib, mul_ite, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  simp only [OneMemClass.coe_one, coe_negOne]
+  simp only [θ_inv]
+  simp [θ_eq, mul_add, Finset.sum_add_distrib, coe_negOne]
   ring
 
 /-- `χhat` restricts to `θ` on `Q₈`. -/
@@ -193,6 +192,15 @@ private theorem degree_ne_table_one_iff :
     specialLinearTwoThreeExactCharacterTable_apply]
   decide +kernel
 
+/-- Row `i` takes the same value at `1` and `-1` exactly when its degree is the entry in the
+second column. -/
+private theorem character_one_eq_neg_one_iff (i : SpecialLinearTwoThreeClassIndex) :
+    specialLinearTwoThreeCharacter i 1 = specialLinearTwoThreeCharacter i (-1) ↔
+      (specialLinearTwoThreeCharacterDegrees i : Cyclotomic 12) =
+        specialLinearTwoThreeExactCharacterTable i ⟨1, by decide⟩ := by
+  simp [specialLinearTwoThreeCharacter_one, specialLinearTwoThreeCharacter_neg_one,
+    ← Cyclotomic.complexEmbedding_injective.eq_iff]
+
 /-- `χhat ω` and `χhat ω²` are the last two rows of the table. -/
 private theorem χhat_mul_ω₁ :
     (fun g => χhat g * ω₁ g) = specialLinearTwoThreeCharacter ⟨5, by decide⟩ := by
@@ -217,12 +225,8 @@ theorem irreducibleCharactersOver_θ :
   have key (i : SpecialLinearTwoThreeClassIndex) :
       2 * specialLinearTwoThreeCharacter i 1 - 2 * specialLinearTwoThreeCharacter i (-1) ≠ 0 ↔
         i = ⟨4, by decide⟩ ∨ i = ⟨5, by decide⟩ ∨ i = ⟨6, by decide⟩ := by
-    rw [← degree_ne_table_one_iff, specialLinearTwoThreeCharacter_one,
-      specialLinearTwoThreeCharacter_neg_one, ← mul_sub, ne_eq, mul_eq_zero, sub_eq_zero,
-      ← map_natCast (Cyclotomic.complexEmbedding (e := 12))
-        (specialLinearTwoThreeCharacterDegrees i),
-      Cyclotomic.complexEmbedding_injective.eq_iff]
-    simp
+    refine Iff.trans ?_ ((character_one_eq_neg_one_iff i).not.trans (degree_ne_table_one_iff i))
+    simp [← mul_sub, sub_eq_zero]
   constructor
   · rintro ⟨hψ, hne⟩
     obtain ⟨i, rfl⟩ : ψ ∈ Set.range specialLinearTwoThreeCharacter := by
