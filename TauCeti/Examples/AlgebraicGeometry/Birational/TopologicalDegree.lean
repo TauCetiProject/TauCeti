@@ -51,10 +51,8 @@ theorem topologicalDegree_squareMap : (squareMap K).toRationalMap.topologicalDeg
   rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 -- In characteristic `2` as well: over `ZMod 2` the degree is still `2`.
-example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
-    (MvPolynomial.expand 2 : MvPolynomial PUnit.{1} (ZMod 2) →ₐ[ZMod 2] _).toRingHom)
-    ).toRationalMap = 2 := by
-  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
+example : (squareMap (ZMod 2)).toRationalMap.topologicalDegree = 2 :=
+  topologicalDegree_squareMap _
 
 -- The `K`-linear Frobenius of `𝔸^d_K` in characteristic `p` has topological degree `p ^ d`.
 example (p d : ℕ) [Fact p.Prime] [CharP K p] :
