@@ -102,6 +102,9 @@ theorem inner_tangentSpace_Icc (x : Icc a b) (v w : TangentSpace (𝓡∂ 1) x) 
     inner ℝ v w =
       mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v *
         mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w := by
+  -- The bundle instance `instRiemannianBundleIcc` is `iccEuclideanMetric`, which is
+  -- `inducedRiemannianMetric` of the inclusion, by definition; so the inner product of the bundle
+  -- is the one `inducedRiemannianMetric_inner` computes, and the ascription below unfolds to it.
   have h : inner ℝ v w = inner ℝ (mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v)
       (mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w) :=
     inducedRiemannianMetric_inner _ _ _ x v w
