@@ -33,6 +33,9 @@ between nowhere-vanishing top forms and orientations; it holds at boundary and c
   form.
 * `TauCeti.Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff`: a tangent basis is
   positive for it exactly when the form is positive on the basis.
+* `TauCeti.Manifold.Orientation.orientationAt_ofTopForm_of_apply_eq_smul`: at a point where a top
+  form is a nonzero multiple of another one, their orientations agree or are opposite according
+  to the sign of the multiple.
 * `TauCeti.Manifold.Orientation.ofTopForm_eq_of_eq_smul`,
   `TauCeti.Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul`: a pointwise positive (negative)
   multiple of a top form defines the same (opposite) orientation.
@@ -223,6 +226,36 @@ theorem orientation_eq_ite_orientationAt_ofTopForm [IsManifold I 1 M]
       ((Fintype.card_fin k).trans hk.symm))).resolve_left ?_
     exact fun h' ↦ h ((orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp h')
 
+/-- At a point where a top form is a nonzero multiple `c` of another one, the two orientations
+agree if `c` is positive and are opposite if `c` is negative. -/
+theorem orientationAt_ofTopForm_of_apply_eq_smul [IsManifold I 1 M]
+    (hk : Module.finrank ℝ E = k) {φ φ' : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
+    (h0 : ∀ x, φ x ≠ 0) (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {x : M} {c : ℝ}
+    (hc : c ≠ 0) (h : φ' x = c • φ x) :
+    orientationAt (ofTopForm hk φ' hφ' h0') x = if 0 < c then orientationAt (ofTopForm hk φ hφ h0) x
+      else -orientationAt (ofTopForm hk φ hφ h0) x := by
+  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
+  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
+  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk hφ' h0' b
+  rw [h, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h₂
+  rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb <;>
+    rcases lt_or_gt_of_ne hc with hc | hc
+  · rw [ite_eq_right hb.not_gt] at h₁
+    rw [ite_eq_left (mul_pos_of_neg_of_neg hc hb)] at h₂
+    rw [ite_eq_right hc.not_gt, ← h₂, h₁]
+  · rw [ite_eq_right hb.not_gt] at h₁
+    rw [ite_eq_right (mul_neg_of_pos_of_neg hc hb).not_gt] at h₂
+    rw [ite_eq_left hc]
+    exact neg_injective (h₂.symm.trans h₁)
+  · rw [ite_eq_left hb] at h₁
+    rw [ite_eq_right (mul_neg_of_neg_of_pos hc hb).not_gt] at h₂
+    rw [ite_eq_right hc.not_gt, ← h₁, h₂,
+      neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin k))]
+  · rw [ite_eq_left hb] at h₁
+    rw [ite_eq_left (mul_pos hc hb)] at h₂
+    rw [ite_eq_left hc]
+    exact h₂.symm.trans h₁
+
 /-- A top form that is a pointwise positive multiple of another one defines the same
 orientation. -/
 theorem ofTopForm_eq_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = k)
@@ -230,17 +263,8 @@ theorem ofTopForm_eq_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = 
     (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, 0 < c x)
     (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = ofTopForm hk φ hφ h0 := by
   ext x
-  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
-  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk hφ' h0' b
-  rw [h, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h₂
-  rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb
-  · rw [ite_eq_right hb.not_gt] at h₁
-    rw [ite_eq_right (mul_neg_of_pos_of_neg (hc x) hb).not_gt] at h₂
-    exact neg_injective (h₂.symm.trans h₁)
-  · rw [ite_eq_left hb] at h₁
-    rw [ite_eq_left (mul_pos (hc x) hb)] at h₂
-    exact h₂.symm.trans h₁
+  rw [orientationAt_ofTopForm_of_apply_eq_smul hk hφ h0 hφ' h0' (hc x).ne' (h x),
+    ite_eq_left (hc x)]
 
 /-- A top form that is a pointwise negative multiple of another one defines the opposite
 orientation. -/
@@ -249,18 +273,8 @@ theorem ofTopForm_eq_neg_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ 
     (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, c x < 0)
     (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = -ofTopForm hk φ hφ h0 := by
   ext x
-  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
-  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk hφ' h0' b
-  rw [h, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h₂
-  rw [orientationAt_neg]
-  rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb
-  · rw [ite_eq_right hb.not_gt] at h₁
-    rw [ite_eq_left (mul_pos_of_neg_of_neg (hc x) hb)] at h₂
-    rw [← h₂, h₁]
-  · rw [ite_eq_left hb] at h₁
-    rw [ite_eq_right (mul_neg_of_neg_of_pos (hc x) hb).not_gt] at h₂
-    rw [← h₁, h₂, neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin k))]
+  rw [orientationAt_neg, orientationAt_ofTopForm_of_apply_eq_smul hk hφ h0 hφ' h0' (hc x).ne (h x),
+    ite_eq_right (hc x).not_gt]
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']

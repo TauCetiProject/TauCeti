@@ -122,19 +122,6 @@ theorem wedgePow_smul (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
     rw [wedgePow_succ, wedgePow_succ, ih, pairedWedge_smul_left, pairedWedge_smul_right, smul_smul,
       pow_succ]
 
-/-- The real wedge is associative, up to the canonical reassociation of its degree. -/
-private theorem pairedWedge_mul_assoc {k l m : ℕ} (φ : E [⋀^Fin k]→L[ℝ] ℝ)
-    (ψ : E [⋀^Fin l]→L[ℝ] ℝ) (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ ψ)
-        χ v =
-      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ ψ χ)
-        (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
-  pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ mul_assoc a b c) φ ψ χ v
-
 /-! ### The power rule for two-forms -/
 
 /-- **The power rule for interior products.** Inserting a vector `v` into the `(m + 1)`-th wedge
@@ -189,19 +176,6 @@ theorem curryLeftTopological_wedgePow_succ_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] 
 
 /-! ### Wedge powers after a covector -/
 
-/-- The real wedge is associative, read with the reindexing on the right-hand side. -/
-private theorem pairedWedge_mul_assoc_apply {k l m : ℕ} (φ : E [⋀^Fin k]→L[ℝ] ℝ)
-    (ψ : E [⋀^Fin l]→L[ℝ] ℝ) (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + (l + m)) → E) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ ψ χ)
-        v =
-      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ ψ)
-        χ (v ∘ Fin.cast (Nat.add_assoc k l m)) := by
-  rw [pairedWedge_mul_assoc]
-  -- The two reindexings `Fin.cast` cancel.
-  congr 1
-
 /-- For real one-forms `a` and `b` and any form `Q`, `a ∧ Q ∧ b ∧ a = 0`, because `a` occurs
 twice. -/
 private theorem pairedWedge_pairedWedge_pairedWedge_eq_zero {p : ℕ}
@@ -221,7 +195,7 @@ private theorem pairedWedge_pairedWedge_pairedWedge_eq_zero {p : ℕ}
     simp only [coe_zero, Pi.zero_apply]
   -- `a ∧ (Q ∧ (b ∧ a)) = ±((b ∧ a) ∧ a) ∧ Q`, up to reindexing the arguments.
   ext v
-  rw [pairedWedge_mul_assoc_apply, pairedWedge_comm _ mul_comm, pairedWedge_mul_assoc_apply, hba]
+  rw [pairedWedge_mul_assoc', pairedWedge_comm _ mul_comm, pairedWedge_mul_assoc', hba]
   simp
 
 /-- **Wedge powers after a covector ignore two-forms divisible by it.** For real one-forms `a`
@@ -240,7 +214,7 @@ theorem pairedWedge_wedgePow_add_pairedWedge {m : ℕ} (a b : E [⋀^Fin 1]→L[
     rw [wedgePow_succ, pairedWedge_add_right, pairedWedge_add_right,
       pairedWedge_pairedWedge_pairedWedge_eq_zero, add_zero, wedgePow_succ]
     ext v
-    rw [pairedWedge_mul_assoc_apply, pairedWedge_mul_assoc_apply, ih]
+    rw [pairedWedge_mul_assoc', pairedWedge_mul_assoc', ih]
 
 /-- **The linear scaling law of the contact volume form.** For real one-forms `a` and `b`, a
 two-form `B` and a scalar `c`,

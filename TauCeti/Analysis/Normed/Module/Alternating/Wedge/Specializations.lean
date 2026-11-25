@@ -112,11 +112,8 @@ theorem wedge_self_of_odd (hk : Odd k) (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge
 theorem wedge_assoc (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
     (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :
     wedge (wedge φ ψ) χ v =
-      wedge φ (wedge ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
-  exact pairedWedge_assoc _ _ _ _
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (fun a b c : ℝ => mul_assoc a b c) φ ψ χ v
+      wedge φ (wedge ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
+  pairedWedge_mul_assoc φ ψ χ v
 
 /-- The wedge of forms valued in a normed real algebra, using multiplication in the algebra. -/
 noncomputable def wedgeMul {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
