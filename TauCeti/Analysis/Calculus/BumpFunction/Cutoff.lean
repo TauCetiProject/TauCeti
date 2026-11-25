@@ -202,8 +202,8 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_superlevel [NormedSpace ℝ E]
   obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ := hK.exists_contDiff_cutoff_sublevel hν hab
   refine ⟨fun x ↦ 1 - ψ x, contDiff_const.sub hψ,
     fun x ↦ ⟨by simp [(hψ01 x).2], by simp [(hψ01 x).1]⟩,
-    fun x hx ↦ (hψ1 x hx).mono fun y h ↦ by simp [show ψ y = 1 from h],
-    fun x hx ↦ (hψ0 x hx).mono fun y h ↦ by simp [show ψ y = 0 from h], fun x hx ↦ ?_⟩
+    fun x hx ↦ (hψ1 x hx).mono fun y h ↦ by simp [h],
+    fun x hx ↦ (hψ0 x hx).mono fun y h ↦ by simp [h], fun x hx ↦ ?_⟩
   rw [fderiv_const_sub, hψK x hx, neg_zero]
 
 /-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a

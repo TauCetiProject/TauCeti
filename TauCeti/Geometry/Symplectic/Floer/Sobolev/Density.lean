@@ -163,6 +163,6 @@ theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V
       (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z) (ae_of_all _ hst))
   -- Near `s` the cut-off map agrees with `ξ`.
   refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
-  simp [show β z' = 1 from h]
+  simp [h]
 
 end TauCeti.Floer

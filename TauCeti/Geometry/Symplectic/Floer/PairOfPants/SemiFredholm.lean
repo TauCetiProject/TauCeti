@@ -896,45 +896,26 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (ω : Symple
   have hηc' : ContDiff ℝ 2 ηc :=
     contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) hη hηS
   have hηcS : tsupport ηc ⊆ tsupport η := tsupport_smul_subset_right _ _
-  have hDc := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu
-    (hηc'.of_le one_le_two) (hηcS.trans hηS)
   have hI {g : ℝ × ℝ → ℝ} (hg : ContinuousOn g K) : IntegrableOn g K := hg.integrableOn_compact hK
-  have hW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
-    hJ hKs hKt hu hwc (hηc'.of_le one_le_two) hηcS hηc hηS
-  -- On `K`, where `w⁻¹ ≤ Λ`, the unweighted norm is at most `Λ` times the `w`-weighted one.
-  have hDK : ∫ z in K, ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 ≤
-      Λ * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 := by
-    rw [← integral_const_mul]
-    refine (setIntegral_mono_on (hI (hDc.norm.pow 2).continuousOn)
-      (hW.const_mul Λ).integrableOn hK.measurableSet fun z hz ↦ ?_).trans
-      (setIntegral_le_integral (hW.const_mul Λ) (ae_of_all _ fun z ↦ ?_))
-    · have hρ := hwS z (hKS hz)
-      have h : 1 ≤ Λ * w z := by
-        rw [← inv_mul_cancel₀ hρ.ne']
-        exact mul_le_mul_of_nonneg_right (hΛ z hz) hρ.le
-      calc _ ≤ Λ * w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 :=
-          le_mul_of_one_le_left (sq_nonneg _) h
-        _ = _ := by ring
-    · have := hw z
-      positivity
   have hηcY : ∫ z in K, ‖ηc z‖ ^ 2 ≤ ∫ z in K, ‖η z‖ ^ 2 := by
     refine setIntegral_mono_on (hI (hηc'.continuous.norm.pow 2).continuousOn)
       (hI (hη.continuous.norm.pow 2).continuousOn) hK.measurableSet fun z _ ↦ ?_
     simp only [ηc, norm_smul, Real.norm_eq_abs]
     gcongr
     exact mul_le_of_le_one_left (norm_nonneg _) (abs_coreCutoff_le_one hR₀ z)
+  -- On `K`, where `w⁻¹ ≤ Λ`, we have `1 ≤ Λ w`.
+  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ Λ * w z := by
+    have hρ := hwS z (hKS hz)
+    rw [← inv_mul_cancel₀ hρ.ne']
+    exact mul_le_mul_of_nonneg_right (hΛ z hz) hρ.le
   calc _ ≤ ∫ z in K, sobolevDensity ηc z := by
         simpa only [ηc, K] using setIntegral_sobolevDensity_le_coreCutoff R₀ hη hηS
-    _ ≤ C₀ * ((∫ z in K, ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) +
-          ∫ z in K, ‖ηc z‖ ^ 2) := by
-        have hηcK : tsupport ηc ⊆ K := by
-          simpa only [ηc, K] using tsupport_coreCutoff_smul_subset hR₀ hηS
-        have h₁ : IntegrableOn (fun z ↦ ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) K :=
-          hI (hDc.norm.pow 2).continuousOn
-        have h₂ : IntegrableOn (fun z ↦ ‖ηc z‖ ^ 2) K :=
-          hI (hηc'.continuous.norm.pow 2).continuousOn
-        rw [← integral_add h₁ h₂]
-        exact hint hηc' hηcK
+    _ ≤ C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) +
+          ∫ z in K, ‖ηc z‖ ^ 2) :=
+        ω.setIntegral_sobolevDensity_le_mul_integral_mul_add isOpen_thricePuncturedSphereReal hJ
+          hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint hηc'
+          (hηc.mono (support_smul_subset_right (coreCutoff R₀) η)) (hηcS.trans hηS)
+          (by simpa only [ηc, K] using tsupport_coreCutoff_smul_subset hR₀ hηS)
     _ ≤ _ := by gcongr
 
 /-- **Patching the adjoint at one height.** Under the hypotheses of

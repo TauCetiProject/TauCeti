@@ -327,7 +327,7 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
     simpa only [Floer.sobolevDensity_apply] using
       Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one
         (measurableSet_le Complex.equivRealProdCLM.symm.continuous.norm.measurable measurable_const)
-        hK (fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab.le)) hβ1
+        hK (ofPred_subset_ofPred.2 fun _ hz ↦ hz.trans hab.le) hβ1
         (hξ₀.of_le one_le_two)
   have h₂ : ∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 ≤
       2 * (∫ z, ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2) + C₁ * ∫ z in K, ‖ξ z‖ ^ 2 :=

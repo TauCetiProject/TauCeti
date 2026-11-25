@@ -133,7 +133,7 @@ private theorem setIntegral_sobolevDensity_covectorPullback_eq_smul (p : PSSPlan
     rw [norm_symm_realChart_cylindricalEndLift]
     exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hζ.1.le (by positivity))
   filter_upwards [(hφ.tendsto ζ).eventually (hβ1 _ hφζ)] with ζ' h
-  rw [covectorPullback_fun_smul, show β (φ ζ') = 1 from h, one_smul]
+  rw [covectorPullback_fun_smul, h, Pi.one_apply, one_smul]
 
 /-- **The estimate of the adjoint on the end.** Under an estimate of `D_u^*` with a weight `w` on
 covector fields supported in the part `‖z‖ > exp (2π Re)` of the end, `D_u^*` controls the
@@ -268,8 +268,8 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end (ω :
     setIntegral_mono_set ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact
         (isCompact_setOf_norm_equivRealProdCLM_symm_le _))
       (ae_of_all _ fun _ ↦ by positivity)
-      (ae_of_all _ fun z (hz : _ ≤ _) ↦ (show _ ≤ _ from
-        hz.trans (Real.exp_le_exp.2 (by nlinarith [Real.pi_pos]))))
+      (ofPred_subset_ofPred.2 fun _ hz ↦
+        hz.trans (Real.exp_le_exp.2 (by nlinarith [Real.pi_pos]))).eventuallySubset
   have hX : 0 ≤ ∫ z, w z * ‖ω.floerLinearizationAdjoint
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
     integral_nonneg fun z ↦ by have := hw z; positivity
