@@ -17,7 +17,7 @@ continuous bilinear map. Then
 `x ↦ ∫ a in K, L (Φ x a) (g a) ∂μ`
 
 is `C^n`: all derivatives fall on the smooth factor `Φ`. The integrand is not jointly smooth, so
-`IsCompact.contMDiffAt_setIntegral_parametric` does not apply directly. Instead the weight is moved
+`IsCompact.contMDiffAt_parametric_setIntegral` does not apply directly. Instead the weight is moved
 into the measure: with `j a = (a, g a)`, the integral is the integral of the jointly smooth function
 `(x, (a, e)) ↦ L (Φ x a) e` against the pushforward of `μ` restricted to `K` along `j`, which is
 concentrated on the compact graph `j '' K` of `g` over `K`.
@@ -30,7 +30,8 @@ Gårding smoothing.
 
 ## Main results
 
-* `IsCompact.contMDiffAt_setIntegral_clm`: smoothness of a weighted integral over a compact set.
+* `IsCompact.contMDiffAt_parametric_setIntegral_clm`: smoothness of a weighted integral over a
+  compact set.
 * `ContinuousLinearMap.contMDiff_integral_comp_inv_mul`: the Lie-group corollary.
 -/
 
@@ -57,7 +58,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 set of parameters with `μ K < ∞`, let `g` be continuous on `K` and let `L` be a continuous bilinear
 map. If `(x, a) ↦ Φ x a` is `C^n` at every point `(x₀, a)` with `a ∈ K`, then
 `x ↦ ∫ a in K, L (Φ x a) (g a) ∂μ` is `C^n` at `x₀`. No smoothness of `g` is needed. -/
-theorem _root_.IsCompact.contMDiffAt_setIntegral_clm (L : E₁ →L[ℝ] E₂ →L[ℝ] F)
+theorem _root_.IsCompact.contMDiffAt_parametric_setIntegral_clm (L : E₁ →L[ℝ] E₂ →L[ℝ] F)
     {Φ : M → N → E₁} {g : N → E₂} {K : Set N} (hK : IsCompact K) (hμK : μ K ≠ ⊤)
     (hΦ : ∀ a ∈ K, ContMDiffAt (I.prod J) 𝓘(ℝ, E₁) n (uncurry Φ) (x₀, a))
     (hg : ContinuousOn g K) :
@@ -80,7 +81,7 @@ theorem _root_.IsCompact.contMDiffAt_setIntegral_clm (L : E₁ →L[ℝ] E₂ �
       (hΦ a ha).comp (x₀, j a) (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).contMDiffAt
     exact (L.contMDiff.contMDiffAt.comp _ h₁).clm_apply
       (contMDiff_snd.comp contMDiff_snd).contMDiffAt
-  refine (hK'.contMDiffAt_setIntegral_parametric (μ := ν) hν hf).congr_of_eventuallyEq ?_
+  refine (hK'.contMDiffAt_parametric_setIntegral (μ := ν) hν hf).congr_of_eventuallyEq ?_
   -- Near `x₀`, each `Φ x` is continuous on `K`, so the integrand against `ν` is measurable.
   obtain ⟨U, V, hU, -, hx₀U, hKV, hΦU⟩ := exists_isOpen_prod_contMDiffOn (I' := I.prod J)
     (J := 𝓘(ℝ, E₁)) (n := 0) (f := uncurry Φ) hK (by simp) fun a ha ↦ (hΦ a ha).of_le zero_le
@@ -114,7 +115,7 @@ theorem _root_.ContinuousLinearMap.contMDiff_integral_comp_inv_mul {G : Type*}
   have hK : IsCompact (C * tsupport a) := hC.mul ha'
   have hΦ : ContMDiff (I.prod I) 𝓘(ℝ, E₁) n (uncurry fun x y : G ↦ a (x⁻¹ * y)) :=
     ha.comp (contMDiff_fst.inv.mul contMDiff_snd)
-  refine (hK.contMDiffAt_setIntegral_clm (μ := ν) L hK.measure_lt_top.ne (fun y _ ↦ hΦ _)
+  refine (hK.contMDiffAt_parametric_setIntegral_clm (μ := ν) L hK.measure_lt_top.ne (fun y _ ↦ hΦ _)
     hf.continuousOn).congr_of_eventuallyEq ?_
   filter_upwards [hx₀C] with x hx
   refine (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_).symm
