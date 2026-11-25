@@ -10,7 +10,6 @@ public import Mathlib.Order.Filter.TendstoCofinite
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
-import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
 # Units of a number field
@@ -35,9 +34,6 @@ to see that a non-torsion unit of a field of prime degree generates the field.
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
   base field `ℚ` is torsion.
-* `IsPrimitiveRoot.one_sub_zpow_eq_one_of_val_eq`: for `ζ` a primitive `p ^ a`-th root of unity
-  in a field of characteristic zero, an integer power of `1 - ζ` that is the value of an integral
-  unit is `1`.
 * `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
   product `|N(u)| = 1`.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
@@ -81,48 +77,6 @@ theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖�
   simp [NumberField.prod_norm_embedding_eq_abs_norm, ← Rat.cast_abs, NumberField.Units.norm]
 
 end Units
-
-namespace IsPrimitiveRoot
-
-variable {K : Type*} [Field K]
-
-/-- If `ζ` is a primitive `p ^ a`-th root of unity in a field of characteristic zero, `p` prime, and
-the value of an integral unit is an integer power of `1 - ζ`, then that power is `1`. -/
-theorem one_sub_zpow_eq_one_of_val_eq [CharZero K] {p a : ℕ} [hp : Fact p.Prime] {ζ : K}
-    (hζ : IsPrimitiveRoot ζ (p ^ a)) {w : (𝓞 K)ˣ} {n : ℤ}
-    (hw : ((w : 𝓞 K) : K) = (1 - ζ) ^ n) : (1 - ζ) ^ n = 1 := by
-  rcases Nat.eq_zero_or_pos a with rfl | ha
-  · -- At level `1`, `ζ = 1`, so `1 - ζ = 0` and only its zeroth power is the value of a unit.
-    rw [pow_zero, IsPrimitiveRoot.one_right_iff] at hζ
-    subst hζ
-    rcases eq_or_ne n 0 with rfl | hn
-    · exact zpow_zero _
-    · simp [zero_zpow n hn] at hw
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt ha
-  have hint : IsIntegral ℤ ζ := .of_pow (pow_pos hp.out.pos _) (hζ.pow_eq_one ▸ isIntegral_one)
-  set z : 𝓞 K := ⟨ζ, hint⟩
-  have hzζ : (z : K) = ζ := RingOfIntegers.coe_mk hint
-  have hz : IsPrimitiveRoot z (p ^ (0 + k + 1)) := by
-    refine IsPrimitiveRoot.of_map_of_injective (f := algebraMap (𝓞 K) K) ?_
-      RingOfIntegers.coe_injective
-    rwa [← RingOfIntegers.coe_eq_algebraMap, hzζ]
-  -- `1 - z` is not a unit of `𝓞 K`, since `p` is not.
-  have hnu : ¬IsUnit (1 - z) := by
-    rw [← IsUnit.neg_iff, neg_sub]
-    exact hz.not_isUnit_sub_one
-  -- So no positive power of `1 - ζ` is the value of an integral unit.
-  have key (m : ℕ) (v : (𝓞 K)ˣ) (hv : ((v : 𝓞 K) : K) = (1 - ζ) ^ m) : m = 0 := by
-    by_contra hm
-    have hvz : (1 - z) ^ m = v := RingOfIntegers.coe_injective (by simp [hv, hzζ])
-    exact hnu ((isUnit_pow_iff hm).1 (hvz ▸ v.isUnit))
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · rw [key m w (by rw [hw, zpow_natCast]), Nat.cast_zero, zpow_zero]
-  · rw [key m w⁻¹ ?_, Nat.cast_zero, neg_zero, zpow_zero]
-    have hmul : (((w⁻¹ : (𝓞 K)ˣ) : 𝓞 K) : K) * ((w : 𝓞 K) : K) = 1 := by
-      simp [RingOfIntegers.coe_eq_algebraMap]
-    rw [eq_inv_of_mul_eq_one_left hmul, hw, zpow_neg, inv_inv, zpow_natCast]
-
-end IsPrimitiveRoot
 
 namespace TauCeti.NumberField.Units
 
