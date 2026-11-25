@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transvection
 public import TauCeti.NumberTheory.Modular.Abelianization
 import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
 
 /-!
 # Symplectic transvections in `SL(2, ℤ)` and positive factorizations

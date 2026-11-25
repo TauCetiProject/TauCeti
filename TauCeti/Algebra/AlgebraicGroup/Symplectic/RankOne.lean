@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
 import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 
 /-!
@@ -21,7 +22,6 @@ group scheme `SL₂`, as subgroup schemes of `GL₂`.
 
 ## Main declarations
 
-* `TauCeti.JFin_one_eq`: the alternating form `JFin 1` written out.
 * `TauCeti.submatrix_mul_JFin_mul_transpose`: reindexing `M J Mᵀ` along `finSumFinEquiv` gives the
   same product with Mathlib's `Matrix.J`.
 * `TauCeti.mul_JFin_one_mul_transpose_eq_det_smul`: a `2 × 2` matrix `M` satisfies
@@ -40,16 +40,8 @@ universe u
 
 section JFin
 
-variable (R : Type u) [CommRing R]
+variable {R : Type u} [CommRing R]
 
-/-- The transported alternating form of `Sp₂`, written out. -/
-theorem JFin_one_eq : JFin 1 R = !![0, -1; 1, 0] := by
-  rw [JFin_eq_submatrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
-
-variable {R} in
 /-- Reindexing `M J Mᵀ` along `finSumFinEquiv` gives the same product for the reindexed `M` and
 Mathlib's `Matrix.J`. -/
 theorem submatrix_mul_JFin_mul_transpose {m : ℕ} (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
@@ -58,7 +50,6 @@ theorem submatrix_mul_JFin_mul_transpose {m : ℕ} (M : Matrix (Fin (m + m)) (Fi
         Mᵀ.submatrix finSumFinEquiv finSumFinEquiv := by
   rw [← JFin_submatrix, submatrix_mul_equiv, submatrix_mul_equiv]
 
-variable {R} in
 /-- A `2 × 2` matrix scales the transported alternating form by its determinant:
 `M J Mᵀ = det(M) J`. This is `Matrix.transpose_mul_J_mul_eq_det_smul` read through the
 reindexing. -/
