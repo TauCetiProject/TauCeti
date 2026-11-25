@@ -39,6 +39,11 @@ give explicit `𝔤𝔩₂(ℂ)`-modules, such as the discrete series of `GL₂(
   `TauCeti.lie_compactCartanY_weightVector`: the normalization above;
   `TauCeti.lie_gl2RotationGenerator_weightVector`: `J v_ℓ = iℓ v_ℓ`, so that `r_θ = exp(θJ)` acts
   on `v_ℓ` by `e^{iℓθ}`.
+* `TauCeti.CompactWeightModule.smul_weightVector_mem`: every Lie submodule of
+  `TauCeti.CompactWeightModule k μ` is spanned by weight vectors, since it contains the weight
+  components of its vectors. As `H_c` acts on `v_ℓ` by the distinct scalars `ℓ`, applying
+  `H_c - ℓ` to a vector removes its `ℓ`-component, and an induction on the size of the support
+  finishes.
 * `TauCeti.CompactWeightModule.one_lie_lieSubmodule`: the central scalar of every Lie submodule of
   `TauCeti.CompactWeightModule k μ` is `μ`.
 * `TauCeti.CompactWeightModule.gl2Casimir_lieSubmodule`: the Casimir operator of every Lie
@@ -307,6 +312,78 @@ theorem lie_gl2RotationGenerator_weightVector (ℓ : ℤ) :
     rw [compactCartanH_eq, smul_smul]
     simp
   rw [hJ, smul_lie, lie_compactCartanH_weightVector, smul_smul]
+
+namespace CompactWeightModule
+
+/-! ### Weight components -/
+
+/-- A vector is the sum of its weight components. -/
+theorem sum_smul_weightVector (v : CompactWeightModule k μ) :
+    ∑ j ∈ (equivFinsupp k μ v).support, equivFinsupp k μ v j • weightVector k μ j = v := by
+  have h := (weightBasis k μ).linearCombination_repr v
+  rw [Finsupp.linearCombination_apply, Finsupp.sum] at h
+  simp only [weightBasis_apply] at h
+  exact h
+
+/-- The coordinates of `H_c v`: `H_c` multiplies the `j`-th coordinate by `j`. -/
+@[simp]
+theorem equivFinsupp_lie_compactCartanH_apply (v : CompactWeightModule k μ) (j : ℤ) :
+    equivFinsupp k μ ⁅compactCartanH, v⁆ j = j * equivFinsupp k μ v j := by
+  conv_lhs => rw [← sum_smul_weightVector v]
+  simp only [lie_sum, lie_smul, lie_compactCartanH_weightVector, smul_smul, map_sum, map_smul,
+    equivFinsupp_weightVector]
+  rw [Finset.sum_apply']
+  simp only [Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq']
+  split_ifs with h
+  · rw [mul_comm]
+  · rw [Finsupp.notMem_support_iff.mp h, mul_zero]
+
+/-- **Lie submodules are spanned by weight vectors.** The `ℓ`-component of a vector of a Lie
+submodule `N` lies in `N`. -/
+theorem smul_weightVector_mem
+    {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)}
+    {v : CompactWeightModule k μ} (hv : v ∈ N) (ℓ : ℤ) :
+    equivFinsupp k μ v ℓ • weightVector k μ ℓ ∈ N := by
+  classical
+  induction hn : (equivFinsupp k μ v).support.card using Nat.strong_induction_on
+    generalizing v ℓ with
+  | _ n ih =>
+  by_cases hℓ : equivFinsupp k μ v ℓ = 0
+  · rw [hℓ, zero_smul]
+    exact N.zero_mem
+  -- `u = (H_c - ℓ) v` has the coordinates `(j - ℓ) v_j`, and no `ℓ`-coordinate.
+  set u := ⁅compactCartanH, v⁆ - (ℓ : ℂ) • v with hu_def
+  have hu : u ∈ N := sub_mem (N.lie_mem hv) (N.smul_mem _ hv)
+  have hcoord (j : ℤ) : equivFinsupp k μ u j = (j - ℓ) * equivFinsupp k μ v j := by
+    rw [hu_def, map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply,
+      equivFinsupp_lie_compactCartanH_apply, smul_eq_mul, sub_mul]
+  have hsupp : (equivFinsupp k μ u).support = (equivFinsupp k μ v).support.erase ℓ := by
+    ext j
+    simp only [Finsupp.mem_support_iff, Finset.mem_erase, hcoord, ne_eq, mul_eq_zero, not_or,
+      sub_eq_zero, Int.cast_inj]
+  have hcard : (equivFinsupp k μ u).support.card < n := by
+    rw [hsupp, ← hn]
+    exact Finset.card_erase_lt_of_mem (Finsupp.mem_support_iff.mpr hℓ)
+  -- The other components of `v` lie in `N`.
+  have hother (j : ℤ) (hj : j ≠ ℓ) : equivFinsupp k μ v j • weightVector k μ j ∈ N := by
+    have h := ih _ hcard hu j rfl
+    rw [hcoord, mul_smul] at h
+    exact (N.toSubmodule.smul_mem_iff (sub_ne_zero.mpr (Int.cast_injective.ne hj))).mp h
+  -- The `ℓ`-component is `v` minus the others.
+  have hsum := sum_smul_weightVector v
+  rw [← Finset.add_sum_erase _ _ (Finsupp.mem_support_iff.mpr hℓ)] at hsum
+  rw [eq_sub_of_add_eq hsum]
+  exact sub_mem hv (sum_mem fun j hj ↦ hother j (Finset.ne_of_mem_erase hj))
+
+/-- A weight vector with a nonzero coordinate of a vector of `N` lies in `N`. -/
+theorem weightVector_mem_of_mem
+    {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)}
+    {v : CompactWeightModule k μ} (hv : v ∈ N) {ℓ : ℤ} (hℓ : equivFinsupp k μ v ℓ ≠ 0) :
+    weightVector k μ ℓ ∈ N :=
+  (N.toSubmodule.smul_mem_iff hℓ).mp (smul_weightVector_mem hv ℓ)
+
+end CompactWeightModule
 
 /-! ### The Casimir operator and the central scalar -/
 

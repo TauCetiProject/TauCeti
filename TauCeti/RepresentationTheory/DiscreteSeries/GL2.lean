@@ -101,6 +101,12 @@ theorem mem_negativeDiscreteSeriesWeights {k : ℕ} {ℓ : ℤ} :
     ℓ ∈ negativeDiscreteSeriesWeights k ↔ ℓ ≤ -(k : ℤ) ∧ ℓ % 2 = (k : ℤ) % 2 :=
   Iff.rfl
 
+/-- Negation maps the weights of the negative ray onto those of the positive ray. -/
+theorem neg_mem_positiveDiscreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
+    -ℓ ∈ positiveDiscreteSeriesWeights k ↔ ℓ ∈ negativeDiscreteSeriesWeights k := by
+  simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights]
+  omega
+
 /-- The weights of `D_k` are those of its two rays. -/
 theorem discreteSeriesWeights_eq_union (k : ℕ) :
     discreteSeriesWeights k =

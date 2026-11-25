@@ -65,34 +65,23 @@ theorem isUnit_det_compactCayley : IsUnit compactCayley.det := by
 /-- `C diag(1, -1) = H_c C`. -/
 theorem compactCayley_mul_compactCartanReflection :
     compactCayley * compactCartanReflection = compactCartanH * compactCayley := by
-  rw [compactCayley_def, compactCartanReflection_def, compactCartanH_def, mul_fin_two, mul_fin_two]
-  congr 1
-  ring_nf
-  simp [I_sq]
+  rw [compactCayley_def, compactCartanReflection_def, compactCartanH_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [Complex.ext_iff, mul_apply, Fin.sum_univ_two]
 
 /-- `C E₁₂ = X_c C`. -/
 theorem compactCayley_mul_single_zero_one :
     compactCayley * single 0 1 1 = compactCartanX * compactCayley := by
-  have hs : single 0 1 (1 : ℂ) = !![0, 1; 0, 0] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> rfl
-  rw [hs, compactCayley_def, compactCartanX_def, mul_fin_two, mul_fin_two]
-  congr 1
-  ring_nf
-  simp [I_sq]
-  ring
+  rw [compactCayley_def, compactCartanX_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [Complex.ext_iff, mul_apply, Fin.sum_univ_two]
 
 /-- `C E₂₁ = Y_c C`. -/
 theorem compactCayley_mul_single_one_zero :
     compactCayley * single 1 0 1 = compactCartanY * compactCayley := by
-  have hs : single 1 0 (1 : ℂ) = !![0, 0; 1, 0] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> rfl
-  rw [hs, compactCayley_def, compactCartanY_def, mul_fin_two, mul_fin_two]
-  congr 1
-  ring_nf
-  simp [I_sq]
-  ring
+  rw [compactCayley_def, compactCartanY_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [Complex.ext_iff, mul_apply, Fin.sum_univ_two]
 
 private theorem conj_of_mul_eq {M M' : Matrix (Fin 2) (Fin 2) ℂ}
     (h : compactCayley * M = M' * compactCayley) : compactCayley * M * compactCayley⁻¹ = M' := by
