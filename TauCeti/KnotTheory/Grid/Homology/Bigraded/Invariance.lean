@@ -88,12 +88,16 @@ theorem bigradedUnblockedHomologyIsomorphic_relabelColumns_finRotate :
 grid along validated column-commutation data has `GH⁻` isomorphic to that of the original as a
 bigraded `K[U]`-module. -/
 theorem bigradedUnblockedHomologyIsomorphic_swapColumns (C : ColumnCommutationData G) :
-    hG.BigradedUnblockedHomologyIsomorphic (hG.swapColumns C.column (finRotate n C.column)) K :=
-  .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
+    hG.BigradedUnblockedHomologyIsomorphic (hG.swapColumns C.column (finRotate n C.column)) K := by
+  refine .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
     (G.unblockedHomologyCommutationMap K C) (G.unblockedHomologyCommutationMap_bijective C K)
-    fun _ _ hy ↦
-      OddComponentGridDiagram.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
-        hG.toOddComponentGridDiagram K C hy
+    fun _ _ hy ↦ ?_
+  -- The target piece is that of `hG.toOddComponentGridDiagram.swapColumns C`: both odd-component
+  -- diagrams have underlying diagram `G.swapColumns C.column (finRotate n C.column)` by definition
+  -- (`OddComponentGridDiagram.val_swapColumns`).
+  change _ ∈ (hG.toOddComponentGridDiagram.swapColumns C).bigradedUnblockedHomologyPiece K _
+  exact OddComponentGridDiagram.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
+    hG.toOddComponentGridDiagram K C hy
 
 /-- **The bigraded `GH⁻` is invariant under elementary column commutations.** -/
 theorem bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation {G' : GridDiagram n}
@@ -130,12 +134,18 @@ theorem bigradedUnblockedHomologyIsomorphic_stabilizeX (s : Fin n) :
 `O`-marking is the north-east corner of the new block. -/
 theorem bigradedUnblockedHomologyIsomorphic_stabilizeX_succ (s : Fin n) :
     hG.BigradedUnblockedHomologyIsomorphic
-      ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG) K :=
-  (BigradedUnblockedHomologyIsomorphic.of_semilinearMap
+      ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG) K := by
+  refine (BigradedUnblockedHomologyIsomorphic.of_semilinearMap
     (fun _ ↦ by rw [AlgHom.coe_toRingHom, aeval_rename, Function.comp_def])
-    (G.stabilizeXSuccHomologyMap s K) (G.stabilizeXSuccHomologyMap_bijective s K) fun _ _ hy ↦
-      OddComponentGridDiagram.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece
-        hG.toOddComponentGridDiagram s K hy).symm
+    (G.stabilizeXSuccHomologyMap s K) (G.stabilizeXSuccHomologyMap_bijective s K)
+    fun _ _ hy ↦ ?_).symm
+  -- The source piece is that of `hG.toOddComponentGridDiagram.stabilizeXSucc s`: both
+  -- odd-component diagrams have underlying diagram `G.stabilizeX s.succ (G.X s).succ s` by
+  -- definition (`OddComponentGridDiagram.val_stabilizeXSucc`).
+  change _ ∈ (hG.toOddComponentGridDiagram.stabilizeXSucc s).bigradedUnblockedHomologyPiece K _
+    at hy
+  exact OddComponentGridDiagram.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece
+    hG.toOddComponentGridDiagram s K hy
 
 end Moves
 

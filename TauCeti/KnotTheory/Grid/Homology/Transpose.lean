@@ -152,12 +152,15 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] 
 
 /-- The diagonal reflection of a knot grid preserves the bigraded `GH⁻`. -/
 theorem bigradedUnblockedHomologyIsomorphic_transpose :
-    hG.BigradedUnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K :=
-  .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
+    hG.BigradedUnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K := by
+  refine .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
     (G.unblockedHomologyTransposeEquiv K).toLinearMap
-    (G.unblockedHomologyTransposeEquiv K).bijective fun _ _ hy ↦
-      OddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_bigradedUnblockedHomologyPiece
-        hG.toOddComponentGridDiagram K hy
+    (G.unblockedHomologyTransposeEquiv K).bijective fun _ _ hy ↦ ?_
+  -- The target piece is that of `hG.toOddComponentGridDiagram.transpose`: the two odd-component
+  -- diagrams agree by definition (`IsKnot.transpose_toOddComponentGridDiagram`).
+  change _ ∈ hG.toOddComponentGridDiagram.transpose.bigradedUnblockedHomologyPiece K _
+  exact OddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_bigradedUnblockedHomologyPiece
+    hG.toOddComponentGridDiagram K hy
 
 /-- The diagonal reflection of a knot grid preserves `GH⁻` as an Alexander-graded
 `K[U]`-module. -/
