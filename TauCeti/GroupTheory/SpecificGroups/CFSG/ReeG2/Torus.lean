@@ -40,12 +40,12 @@ theorem weightTorus_injective : Function.Injective d.weightTorus := by
   intro s t h
   rw [weightTorus_apply, weightTorus_apply] at h
   exact (MulEquiv.arrowCongr (finCongr d.rank_eq_two) (MulEquiv.refl _)).injective
-    (weightTorusPoints_injective d.1.Closure h)
+    (weightTorusPoints_injective d.val.Closure h)
 
 /-- The half-Frobenius swaps the two weight-torus coordinates and cubes the one
 that moves to the second coordinate. -/
 @[simp]
-theorem halfFrobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem halfFrobenius_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
     d.halfFrobenius (d.weightTorus s) = d.weightTorus
       (![s ((finCongr d.rank_eq_two).symm 1), s ((finCongr d.rank_eq_two).symm 0) ^ 3] ∘
         finCongr d.rank_eq_two) := by
@@ -55,12 +55,12 @@ theorem halfFrobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 /-- The Ree Steinberg map exchanges the two weight-torus coordinates, with exponents
 `3^m` and `3^(m+1)` for the parameter `q = 3^(2m+1)`. -/
 @[simp]
-theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem steinberg_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
     d.steinberg (d.weightTorus s) = d.weightTorus
       (![s ((finCongr d.rank_eq_two).symm 1) ^ (3 ^ d.toSuzukiReeIndex.halfExponent),
         s ((finCongr d.rank_eq_two).symm 0) ^ (3 ^ (d.toSuzukiReeIndex.halfExponent + 1))] ∘
           finCongr d.rank_eq_two) := by
-  let swapCube (t : Fin d.1.rank → d.1.Closureˣ) :=
+  let swapCube (t : Fin d.val.rank → d.val.Closureˣ) :=
     ![t ((finCongr d.rank_eq_two).symm 1), t ((finCongr d.rank_eq_two).symm 0) ^ 3] ∘
       finCongr d.rank_eq_two
   -- The odd-power lemma uses the composition monoid; the pointwise rules use `MonoidHom`.
@@ -72,7 +72,7 @@ theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
       change d.halfFrobenius (d.halfFrobenius (d.weightTorus (swapCube t))) = _
       rw [d.halfFrobenius_halfFrobenius, primeFrobenius_def, weightTorus_apply,
         frobenius_weightTorusPoints, weightTorus_apply]
-      apply congrArg (weightTorusPoints d.1.Closure)
+      apply congrArg (weightTorusPoints d.val.Closure)
       funext i
       simp only [swapCube, Function.comp_apply, Equiv.apply_symm_apply, Pi.pow_apply,
         characteristic_eq_three, pow_one]
@@ -82,7 +82,7 @@ theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 private theorem parameter_exponents :
     3 ^ (d.toSuzukiReeIndex.halfExponent + 1) *
-      3 ^ d.toSuzukiReeIndex.halfExponent = d.1.fieldOrder := by
+      3 ^ d.toSuzukiReeIndex.halfExponent = d.val.fieldOrder := by
   rw [← pow_add, d.fieldOrder_eq_three_pow,
     d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one]
   congr 1
@@ -90,9 +90,10 @@ private theorem parameter_exponents :
 
 /-- An ambient weight-torus point is fixed precisely when its first parameter is
 `q`-rational and its second is the `3^(m+1)`-st power of the first. -/
-theorem weightTorus_mem_fixedSubgroup_steinberg_iff (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem weightTorus_mem_fixedSubgroup_steinberg_iff (s : Fin d.val.rank → d.val.Closureˣ) :
     d.weightTorus s ∈ fixedSubgroup d.steinberg ↔
-      s ((finCongr d.rank_eq_two).symm 0) ^ d.1.fieldOrder = s ((finCongr d.rank_eq_two).symm 0) ∧
+      s ((finCongr d.rank_eq_two).symm 0) ^ d.val.fieldOrder =
+        s ((finCongr d.rank_eq_two).symm 0) ∧
         s ((finCongr d.rank_eq_two).symm 1) =
           s ((finCongr d.rank_eq_two).symm 0) ^ (3 ^ (d.toSuzukiReeIndex.halfExponent + 1)) := by
   rw [mem_fixedSubgroup, steinberg_weightTorus, d.weightTorus_injective.eq_iff]
@@ -116,14 +117,14 @@ theorem weightTorus_mem_fixedSubgroup_steinberg_iff (s : Fin d.1.rank → d.1.Cl
       rw [hy, ← pow_mul, d.parameter_exponents, hx]
     · exact hy.symm
 
-private def torusParameters : d.1.fixedFieldˣ →* (Fin d.1.rank → d.1.Closureˣ) :=
-  MonoidHom.pi (![Units.map d.1.fixedField.subtype.toMonoidHom,
+private def torusParameters : d.val.fixedFieldˣ →* (Fin d.val.rank → d.val.Closureˣ) :=
+  MonoidHom.pi (![Units.map d.val.fixedField.subtype.toMonoidHom,
     (powMonoidHom (3 ^ (d.toSuzukiReeIndex.halfExponent + 1))).comp
-      (Units.map d.1.fixedField.subtype.toMonoidHom)] ∘ finCongr d.rank_eq_two)
+      (Units.map d.val.fixedField.subtype.toMonoidHom)] ∘ finCongr d.rank_eq_two)
 
-private theorem torusParameters_apply (t : d.1.fixedFieldˣ) :
-    d.torusParameters t = ![Units.map d.1.fixedField.subtype.toMonoidHom t,
-      (Units.map d.1.fixedField.subtype.toMonoidHom t) ^
+private theorem torusParameters_apply (t : d.val.fixedFieldˣ) :
+    d.torusParameters t = ![Units.map d.val.fixedField.subtype.toMonoidHom t,
+      (Units.map d.val.fixedField.subtype.toMonoidHom t) ^
         (3 ^ (d.toSuzukiReeIndex.halfExponent + 1))] ∘ finCongr d.rank_eq_two := by
   funext i
   obtain ⟨j, rfl⟩ := (finCongr d.rank_eq_two).symm.surjective i
@@ -133,22 +134,22 @@ private theorem torusParameters_apply (t : d.1.fixedFieldˣ) :
 
 /-- The torus of the Ree fixed-point group, parametrized faithfully by the nonzero elements
 of its fixed field. Its ambient fundamental-weight coordinates are `(t, t^(3^(m+1)))`. -/
-def fixedTorus : d.1.fixedFieldˣ →* d.FixedPoints :=
+def fixedTorus : d.val.fixedFieldˣ →* d.FixedPoints :=
   (d.weightTorus.comp d.torusParameters).codRestrict
     (fixedSubgroup d.steinberg) fun t ↦ by
       rw [MonoidHom.comp_apply, torusParameters_apply, weightTorus_mem_fixedSubgroup_steinberg_iff]
       simp only [Function.comp_apply, Equiv.apply_symm_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, and_true]
       apply Units.ext
-      simpa using d.1.mem_fixedField.mp (t : d.1.fixedField).property
+      simpa using d.val.mem_fixedField.mp (t : d.val.fixedField).property
 
 /-- The torus embedding has the specified fundamental-weight coordinates in the actual
 algebraic-closure carrier. -/
 @[simp]
-theorem coe_fixedTorus (t : d.1.fixedFieldˣ) :
+theorem coe_fixedTorus (t : d.val.fixedFieldˣ) :
     (d.fixedTorus t : d.AmbientGroup) = d.weightTorus
-      (![Units.map d.1.fixedField.subtype.toMonoidHom t,
-        (Units.map d.1.fixedField.subtype.toMonoidHom t) ^
+      (![Units.map d.val.fixedField.subtype.toMonoidHom t,
+        (Units.map d.val.fixedField.subtype.toMonoidHom t) ^
           (3 ^ (d.toSuzukiReeIndex.halfExponent + 1))] ∘ finCongr d.rank_eq_two) := by
   exact congrArg d.weightTorus (d.torusParameters_apply t)
 
@@ -157,7 +158,7 @@ theorem fixedTorus_injective : Function.Injective d.fixedTorus := by
   intro t u h
   have hp := d.weightTorus_injective (congrArg (fun g : d.FixedPoints ↦ (g : d.AmbientGroup)) h)
   have h0 := congrFun hp ((finCongr d.rank_eq_two).symm 0)
-  apply Units.map_injective (f := d.1.fixedField.subtype.toMonoidHom) Subtype.val_injective
+  apply Units.map_injective (f := d.val.fixedField.subtype.toMonoidHom) Subtype.val_injective
   simpa only [torusParameters_apply, Function.comp_apply, Equiv.apply_symm_apply,
     Matrix.cons_val_zero] using h0
 
@@ -172,9 +173,9 @@ theorem mem_range_fixedTorus_iff (g : d.FixedPoints) :
     have hmem : d.weightTorus s ∈ fixedSubgroup d.steinberg := by
       rw [hs]
       exact g.property
-    have hf := (d.weightTorus_mem_fixedSubgroup_steinberg_iff s).mp hmem
-    let t : d.1.fixedField := ⟨s ((finCongr d.rank_eq_two).symm 0), d.1.mem_fixedField.mpr
-      (congrArg Units.val hf.1)⟩
+    obtain ⟨hfirst, hsecond⟩ := (d.weightTorus_mem_fixedSubgroup_steinberg_iff s).mp hmem
+    let t : d.val.fixedField := ⟨s ((finCongr d.rank_eq_two).symm 0), d.val.mem_fixedField.mpr
+      (congrArg Units.val hfirst)⟩
     have ht : t ≠ 0 := by
       intro h
       exact (s ((finCongr d.rank_eq_two).symm 0)).ne_zero (congrArg Subtype.val h)
@@ -187,11 +188,11 @@ theorem mem_range_fixedTorus_iff (g : d.FixedPoints) :
     simp only [Function.comp_apply, Equiv.apply_symm_apply]
     fin_cases j
     · exact Units.ext rfl
-    · exact Units.ext (congrArg Units.val hf.2).symm
+    · exact Units.ext (congrArg Units.val hsecond).symm
 
 /-- The torus in the Ree fixed-point group has order `q - 1`. -/
-theorem natCard_range_fixedTorus : Nat.card d.fixedTorus.range = d.1.fieldOrder - 1 := by
+theorem natCard_range_fixedTorus : Nat.card d.fixedTorus.range = d.val.fieldOrder - 1 := by
   rw [← Nat.card_congr (MonoidHom.ofInjective d.fixedTorus_injective).toEquiv,
-    Nat.card_units, d.1.card_fixedField]
+    Nat.card_units, d.val.card_fixedField]
 
 end TauCeti.ReeG2LieIndex
