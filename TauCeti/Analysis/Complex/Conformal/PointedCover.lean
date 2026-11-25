@@ -28,13 +28,14 @@ theory of these covers, which holds for every `Ω` admitting one; the existence 
 of a hyperbolic plane domain is the uniformization theorem and is not proved here.
 
 The cover is stored as a scalar function `ℂ → ℂ`, so that `deriv` and the other one-variable
-tools apply to it directly; its values off the unit disc play no role. Covers are compared on the
-unit disc, and lifts through a cover on their source set `U`, aside from the formula
-`PointedCover.ofBall_toFun`.
+tools apply to it directly. Off the unit disc it takes the base value `a`, so a pointed cover is
+determined by its values on the disc (`PointedCover.ext`). Covers are compared on the unit disc,
+and lifts through a cover on their source set `U`.
 
 ## Main declarations
 
 * `TauCeti.PointedCover Ω a`: a based holomorphic covering map of `Ω` by the unit disc.
+* `TauCeti.PointedCover.ext`: two pointed covers that agree on the unit disc are equal.
 * `TauCeti.PointedCover.coverMap`: the cover as a covering map `Complex.UnitDisc → Ω`.
 * `TauCeti.PointedCover.deriv_ne_zero`: a pointed cover has nonvanishing derivative on the disc.
 * `TauCeti.PointedCover.exists_differentiableOn_lift`: a holomorphic map of a simply connected
@@ -71,7 +72,8 @@ open scoped Topology
 /-- A *pointed cover* of `Ω ⊆ ℂ` at `a`: a holomorphic map `toFun` of the unit disc into `Ω`,
 sending `0` to `a`, that is a covering map of `Complex.UnitDisc` onto the subtype `Ω`.
 
-Only the values of `toFun` on the unit disc are meaningful; covers are compared on the disc. -/
+Off the unit disc, `toFun` takes the base value `a`, so the cover is determined by its values on
+the disc. -/
 structure PointedCover (Ω : Set ℂ) (a : ℂ) where
   /-- The scalar representative of the cover. -/
   toFun : ℂ → ℂ
@@ -86,12 +88,30 @@ structure PointedCover (Ω : Set ℂ) (a : ℂ) where
     (⟨toFun z, mapsTo (mem_ball_zero_iff.2 z.norm_lt_one)⟩ : Ω)
   /-- The cover maps the unit disc onto `Ω`. -/
   surjOn : SurjOn toFun (ball 0 1) Ω
+  /-- Off the unit disc, the cover takes the base value. -/
+  toFun_of_notMem : ∀ z ∉ ball (0 : ℂ) 1, toFun z = a
 
 namespace PointedCover
 
 variable {Ω : Set ℂ} {a : ℂ} (F : PointedCover Ω a)
 
 attribute [simp] map_zero
+
+/-- Two pointed covers of `Ω` at `a` that agree on the unit disc are equal. -/
+@[ext (iff := false)]
+theorem ext {F G : PointedCover Ω a} (h : EqOn F.toFun G.toFun (ball 0 1)) : F = G := by
+  have hfg : F.toFun = G.toFun := funext fun z ↦ by
+    by_cases hz : z ∈ ball (0 : ℂ) 1
+    · exact h hz
+    · rw [F.toFun_of_notMem z hz, G.toFun_of_notMem z hz]
+  cases F
+  cases G
+  cases hfg
+  rfl
+
+/-- Two pointed covers of `Ω` at `a` are equal if and only if they agree on the unit disc. -/
+theorem ext_iff {F G : PointedCover Ω a} : F = G ↔ EqOn F.toFun G.toFun (ball 0 1) :=
+  ⟨fun h ↦ h ▸ eqOn_refl _ _, ext⟩
 
 /-- The base point of a pointed cover lies in `Ω`. -/
 theorem base_mem (F : PointedCover Ω a) : a ∈ Ω :=
@@ -225,6 +245,9 @@ def rotate (u : Circle) : PointedCover Ω a where
     obtain ⟨z, hz, rfl⟩ := F.surjOn hw
     refine ⟨u⁻¹ * z, balanced_ball_zero.smul_mem (Circle.norm_coe u⁻¹).le hz, ?_⟩
     simp
+  -- Rotations preserve the complement of the disc.
+  toFun_of_notMem z hz := F.toFun_of_notMem _ fun h ↦ hz <| by
+    simpa using balanced_ball_zero.smul_mem (Circle.norm_coe u⁻¹).le h
 
 @[simp]
 theorem rotate_toFun (u : Circle) : (F.rotate u).toFun = fun z ↦ F.toFun (u * z) :=
@@ -258,8 +281,8 @@ theorem existsUnique_eqOn_comp_const_mul (G : PointedCover Ω a) :
     (fun _ hz ↦ balanced_ball_zero.smul_mem hζ.le hz)
     (fun _ hz ↦ balanced_ball_zero.smul_mem hc.le hz)
     (fun z hz ↦ (hGζ hz).symm.trans (hGc hz)) h₀ (by simp)
-    (show (2⁻¹ : ℂ) ∈ ball (0 : ℂ) 1 by norm_num [mem_ball_zero_iff])
-  simpa using hζc
+  have hhalf : (2⁻¹ : ℂ) ∈ ball (0 : ℂ) 1 := by norm_num [mem_ball_zero_iff]
+  simpa using hζc hhalf
 
 /-- All pointed covers of `Ω` at `a` have the same derivative norm at the origin. -/
 theorem norm_deriv_toFun_zero_eq (G : PointedCover Ω a) :
@@ -271,31 +294,37 @@ theorem norm_deriv_toFun_zero_eq (G : PointedCover Ω a) :
   rw [hev.deriv_eq, deriv_comp_mul_left]
   simp [hζ]
 
-/-- For `0 < r`, the affine map `z ↦ c + r * z` is a pointed cover of the disc `ball c r` at its
-centre. -/
+/-- For `0 < r`, the affine map `z ↦ c + r * z` on the unit disc is a pointed cover of the disc
+`ball c r` at its centre. -/
 noncomputable def ofBall (c : ℂ) {r : ℝ} (hr : 0 < r) : PointedCover (ball c r) c :=
   -- Mathlib's affine homeomorphism of `ball 0 1` onto `ball c r` is `z ↦ c + r * z`.
   let f := OpenPartialHomeomorph.unitBallBall c r hr
   have hf : ∀ z, f z = c + r * z := fun z ↦ by simp [f, add_comm]
   have hs : f.source = ball 0 1 := OpenPartialHomeomorph.unitBallBall_source c r hr
   have ht : f.target = ball c r := OpenPartialHomeomorph.unitBallBall_target c r hr
-  { toFun z := c + r * z
-    differentiableOn := by fun_prop
-    mapsTo z hz := by simpa only [hf, ht] using f.map_source (hs ▸ hz)
+  have hb : ∀ z ∈ ball (0 : ℂ) 1, c + (ball 0 1).indicator (fun z : ℂ ↦ (r : ℂ) * z) z = f z :=
+    fun z hz ↦ by rw [indicator_of_mem hz, hf]
+  { toFun z := c + (ball 0 1).indicator (fun z : ℂ ↦ (r : ℂ) * z) z
+    differentiableOn := (show DifferentiableOn ℂ (fun z : ℂ ↦ c + r * z) (ball 0 1) by
+      fun_prop).congr fun z hz ↦ (hb z hz).trans (hf z)
+    mapsTo z hz := by simpa only [hb z hz, ht] using f.map_source (hs ▸ hz)
     map_zero := by simp
     isCoveringMap := by
       convert (UnitDisc.homeomorphBall.trans <| (Homeomorph.setCongr hs.symm).trans <|
         f.toHomeomorphSourceTarget.trans <| Homeomorph.setCongr ht).isCoveringMap using 1
       funext z
       ext
-      simp [hf, Homeomorph.setCongr]
-    surjOn w hw :=
-      ⟨f.symm w, hs ▸ f.map_target (ht ▸ hw), (hf _).symm.trans (f.right_inv (ht ▸ hw))⟩ }
+      simp [hb z (mem_ball_zero_iff.2 z.norm_lt_one), Homeomorph.setCongr]
+    surjOn w hw := by
+      have hm : f.symm w ∈ ball (0 : ℂ) 1 := hs ▸ f.map_target (ht ▸ hw)
+      exact ⟨f.symm w, hm, (hb _ hm).trans (f.right_inv (ht ▸ hw))⟩
+    toFun_of_notMem _ hz := by simp [indicator_of_notMem hz] }
 
-/-- The scalar representative of `PointedCover.ofBall c hr` is `z ↦ c + r * z`. -/
+/-- On the unit disc, `PointedCover.ofBall c hr` is `z ↦ c + r * z`. -/
 @[simp]
-theorem ofBall_toFun (c : ℂ) {r : ℝ} (hr : 0 < r) :
-    (ofBall c hr).toFun = fun z ↦ c + r * z := (rfl)
+theorem ofBall_toFun (c : ℂ) {r : ℝ} (hr : 0 < r) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    (ofBall c hr).toFun z = c + r * z :=
+  congrArg (c + ·) (indicator_of_mem hz _)
 
 end PointedCover
 
