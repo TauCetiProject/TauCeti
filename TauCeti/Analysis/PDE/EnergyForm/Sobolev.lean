@@ -1275,6 +1275,41 @@ theorem div_mul_norm_sq_le_energyFormH1_self_of_zero_drift
   simpa using mul_norm_sq_le_of_gradient_sub_value_bound (P := P) (by simpa using h.pos.le)
     (A := lam) (B := 0) (by simpa using key) hu
 
+/-- **An `H¹`-norm lower bound from a mass floor, with no drift.** When the drift vanishes on `Ω`
+and the mass coefficient satisfies `δ ≤ c` on `Ω`,
+
+`min λ δ · ‖u‖²_{H¹} ≤ a(u, u)`
+
+for every `u ∈ H¹(Ω)`: the ellipticity floor controls the gradient and the mass floor controls
+the value. For `δ > 0` this is coercivity on all of `H¹(Ω)`, and hence on every closed subspace,
+with no Poincaré inequality and no boundary condition. With no drift to absorb, the constants `λ`
+and `δ` are kept whole, unlike in `min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound`. -/
+theorem min_mul_norm_sq_le_energyFormH1_self_of_zero_drift {delta : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_zero : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), b x = 0)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_lower : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), delta ≤ c x) (u : W1p mu Omega 2) :
+    min lam delta * ‖u‖ ^ 2 ≤ energyFormH1 a b c u u := by
+  have hb : AEStronglyMeasurable b (mu.restrict Omega) :=
+    aestronglyMeasurable_const.congr <|
+      (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx => (hb_zero x hx).symm
+  have hcoeff := memLp_energyIntegrand_of_bounds (beta := 0) h.upper_nonneg ha hb hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun x hx => by rw [hb_zero x hx, norm_zero])
+    hc_bound
+  -- Split off the mass floor: `a(u, u) = a_{c - δ}(u, u) + δ ‖u‖²_{L²}`, where the shifted mass
+  -- `c - δ` is nonnegative, so the shifted form dominates `λ ‖∇u‖²`.
+  have hshift := energyFormH1_mass_sub_const hcoeff delta u u
+  have hgrad := mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (c := fun x => c x - delta)
+    (gamma := gamma + ‖delta‖) h ha (hc.sub aestronglyMeasurable_const) hb_zero
+    (fun x hx => (norm_sub_le _ _).trans (add_le_add_left (hc_bound x hx) _))
+    (fun x hx => sub_nonneg.2 (hc_lower x hx)) u
+  rw [hshift, real_inner_self_eq_norm_sq] at hgrad
+  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left lam delta, min_le_right lam delta, sq_nonneg ‖W1p.value u‖,
+    sq_nonneg ‖W1p.gradient u‖]
+
 end UniformlyEllipticOn
 
 end Domain

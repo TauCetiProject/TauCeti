@@ -346,6 +346,14 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
       rw [hx, LinearIsometryEquiv.norm_map])]
   exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp)
 
+/-- Precomposition with an affine isometry preserves the `Lᵖ` norm of the value. -/
+@[simp] theorem W1p.norm_value_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) :
+    ‖W1p.value (W1p.compAffineIsometryEquivL g hUV u)‖ = ‖W1p.value u‖ := by
+  have hmp := measurePreserving_restrict g.measurePreserving hUV
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.value_compAffineIsometryEquivL_ae g hUV u)]
+  exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp)
+
 /-- Rigid changes of coordinates preserve zero Sobolev boundary values. -/
 theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
