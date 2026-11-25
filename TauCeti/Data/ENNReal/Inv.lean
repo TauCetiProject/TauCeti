@@ -37,6 +37,7 @@ is at most `2 b`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_sub_toReal_inv_le_one`,
   `ENNReal.toReal_inv_sub_toReal_inv_lt_one`: bounds in `[0, 1]` and `[0, 1)` on the reciprocal
   exponent gap `p.toReal⁻¹ - q.toReal⁻¹`.
+* `ENNReal.inv_lt_inv_add_inv_of_le`: `b⁻¹ < c⁻¹ + a⁻¹` for `0 < a ≤ b` and finite `c`.
 * `ENNReal.natCast_lt_natCast_mul_iff`: `(n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k` for
   `p ≠ 0`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
@@ -265,6 +266,14 @@ theorem exists_le_lt_lt_add {a b ν : ℝ≥0∞} (ha : a ≤ 1) (hν : ν < 1) 
   obtain ⟨t, h₁, h₂⟩ := exists_between
     (lt_min hν (add_comm ν b ▸ ENNReal.lt_add_right hν.ne_top hb))
   exact ⟨t, h.trans h₁.le, (h₂.trans_le (min_le_left _ _)).le, h₁, h₂.trans_le (min_le_right _ _)⟩
+
+/-- **Every finite exponent clears a supercritical one.** If `a ≤ b` and `a ≠ 0`, then
+`b⁻¹ < c⁻¹ + a⁻¹` for every finite `c`. Read with `a = n` the dimension, `b = p` and `c = q`, this
+is the Rellich–Kondrachov condition `1/p < 1/q + 1/n` for one derivative when `p ≥ n`. -/
+theorem inv_lt_inv_add_inv_of_le {a b c : ℝ≥0∞} (hab : a ≤ b) (ha : a ≠ 0) (hc : c ≠ ∞) :
+    b⁻¹ < c⁻¹ + a⁻¹ :=
+  (ENNReal.inv_le_inv.2 hab).trans_lt
+    (add_comm a⁻¹ c⁻¹ ▸ ENNReal.lt_add_right (ENNReal.inv_ne_top.2 ha) (ENNReal.inv_ne_zero.2 hc))
 
 /-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
 `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/

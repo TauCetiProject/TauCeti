@@ -39,6 +39,9 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 * `TauCeti.BoundedWord ι k`: the words in `ι` of length at most `k`.
 * `TauCeti.BoundedWord.castSucc`, `TauCeti.BoundedWord.snoc`: a word of length at most `k` as a
   word of length at most `k + 1`, unchanged or with a letter appended.
+* `TauCeti.BoundedWord.nil`: the empty word.
+* `TauCeti.BoundedWord.snocOptionEquiv`: the words of length at most `k + 1` as the empty word or a
+  word of length at most `k` followed by one letter.
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
   representation over any ring.
@@ -49,7 +52,10 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 
 * `ContRepresentation.wordSeminorm_apply`, `ContRepresentation.sobolevSeminorm_apply`: the two
   seminorms as explicit sums.
+* `TauCeti.BoundedWord.sum_succ`: a sum over the words of length at most `k + 1`, split into the
+  empty word and the words `w i` with `|w| ≤ k`.
 * `ContRepresentation.wordSeminorm_zero`: `P_0` is the norm.
+* `ContRepresentation.wordSeminorm_succ`: `P_{k+1}(v) = ‖v‖ + ∑ i, P_k(dπ(X_i) v)`.
 * `ContRepresentation.sobolevSeminorm_le_wordSeminorm`: `Q_k ≤ P_k`.
 * `ContRepresentation.wordSeminorm_mono`: `P_k ≤ P_l` for `k ≤ l`.
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le`: `P_k(dπ(X_i) v) ≤ P_{k+1}(v)`.
@@ -179,6 +185,53 @@ theorem snoc_left_injective (i : ι) : Function.Injective fun w : BoundedWord ι
   fun w w' h ↦ ofFn_injective (by
     simpa using congrArg (fun w : BoundedWord ι (k + 1) ↦ List.ofFn w.2) h)
 
+/-- The empty word, of length at most `k`. -/
+def nil : BoundedWord ι k :=
+  ⟨0, Fin.elim0⟩
+
+/-- The empty word has no letters. -/
+@[simp]
+theorem ofFn_nil : List.ofFn (nil : BoundedWord ι k).2 = [] :=
+  (rfl)
+
+/-- Every word of length at most `k + 1` is uniquely the empty word (the image of `none`) or a
+word `w i` with `|w| ≤ k` (the image of `some (w, i)`). -/
+noncomputable def snocOptionEquiv : Option (BoundedWord ι k × ι) ≃ BoundedWord ι (k + 1) :=
+  Equiv.ofBijective (Option.elim · nil fun p ↦ p.1.snoc p.2) <| by
+    refine ⟨fun p q h ↦ ?_, fun w ↦ ?_⟩
+    · have h' := congrArg (fun w : BoundedWord ι (k + 1) ↦ List.ofFn w.2) h
+      rcases p with _ | ⟨w, i⟩ <;> rcases q with _ | ⟨w', i'⟩
+      · rfl
+      · simp at h'
+      · simp at h'
+      · simp only [Option.elim_some, ofFn_snoc] at h'
+        obtain ⟨hw, hi⟩ := List.append_inj' h' rfl
+        rw [ofFn_injective hw, (List.singleton_inj.mp hi)]
+    · obtain ⟨n, f⟩ := w
+      induction n using Fin.cases with
+      | zero => exact ⟨none, Sigma.ext rfl (heq_of_eq (funext fun x ↦ x.elim0))⟩
+      | succ n =>
+        exact ⟨some (⟨n, Fin.init f⟩, f (Fin.last n)),
+          Sigma.ext rfl (heq_of_eq (Fin.snoc_init_self f))⟩
+
+/-- `snocOptionEquiv` sends `none` to the empty word. -/
+@[simp]
+theorem snocOptionEquiv_none : snocOptionEquiv none = (nil : BoundedWord ι (k + 1)) :=
+  (rfl)
+
+/-- `snocOptionEquiv` sends `some (w, i)` to `w.snoc i`. -/
+@[simp]
+theorem snocOptionEquiv_some (w : BoundedWord ι k) (i : ι) :
+    snocOptionEquiv (some (w, i)) = w.snoc i :=
+  (rfl)
+
+/-- **A sum over the words of length at most `k + 1`** is the term of the empty word plus the
+terms of the words `w i` with `|w| ≤ k`. -/
+theorem sum_succ {M : Type*} [AddCommMonoid M] [Fintype ι] (f : BoundedWord ι (k + 1) → M) :
+    ∑ w, f w = f nil + ∑ i, ∑ w : BoundedWord ι k, f (w.snoc i) := by
+  rw [← snocOptionEquiv.sum_comp, Fintype.sum_option, Fintype.sum_prod_type_right]
+  simp
+
 end BoundedWord
 
 end TauCeti
@@ -280,6 +333,17 @@ theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoot
     wordSeminorm I π X 0 v = ‖(v : V)‖ := by
   rw [wordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
   simp
+
+/-- **The recursion for the word seminorms.** `P_{k+1}(v) = ‖v‖ + ∑ i, P_k(dπ(X_i) v)`: a word
+of length at most `k + 1` is empty or a word of length at most `k` followed by a letter `i`, and
+`dπ(X_{w i}) v = dπ(X_w) dπ(X_i) v`. -/
+theorem wordSeminorm_succ (X : ι → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I π) :
+    wordSeminorm I π X (k + 1) v =
+      ‖(v : V)‖ + ∑ i, wordSeminorm I π X k (lieSmoothVectorsDerivative I π (X i) v) := by
+  rw [wordSeminorm_apply, BoundedWord.sum_succ (M := ℝ)]
+  simp only [BoundedWord.ofFn_nil, wordAction_nil, BoundedWord.ofFn_snoc, wordAction_append,
+    wordAction_singleton, one_apply_eq_self, mul_apply_eq_comp, wordSeminorm_apply]
 
 /-! ### Monotonicity and the derivative estimate -/
 

@@ -335,6 +335,13 @@ theorem mem_annihilatorPunctured {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annih
     z ∈ hξ.annihilatorPunctured ↔ z.snd ≠ 0 :=
   mem_zeroSectionCompl
 
+/-- The symplectization `ξ⁰ ∖ 0` is the complement of the zero section of the annihilator line. -/
+theorem coe_annihilatorPunctured :
+    (hξ.annihilatorPunctured : Set (TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x)) =
+      zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x := by
+  ext z
+  rw [SetLike.mem_coe, mem_annihilatorPunctured, mem_zeroSectionCompl]
+
 /-- **Local charts of the symplectization pull back `dθ` to `d(eˢ β)`.** If `κ : ℝ × M → ξ⁰` is
 differentiable at `p` and, composed with the inclusion `ξ⁰ → T*M`, agrees near `p` with the map
 `(s, y) ↦ eˢ β_y`, then `κ` pulls `dθ` back at `p` to the exterior derivative of the
