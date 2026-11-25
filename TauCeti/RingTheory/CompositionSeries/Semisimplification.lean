@@ -30,8 +30,8 @@ block of size three), which is why the full composition series is used.
 
 ## Main definitions
 
-* `TauCeti.compositionFactor s i`: the factor `s i.succ / s i.castSucc` of a composition series.
-* `TauCeti.seriesSemisimplification s`: the product of the factors of `s`.
+* `TauCeti.seriesSemisimplification s`: the product of the factors `s i.succ / s i.castSucc` of a
+  composition series `s`.
 * `TauCeti.semisimplification R M`: the semisimplification of a module of finite length, the
   product of the factors of a chosen composition series from `⊥` to `⊤`.
 
@@ -58,39 +58,21 @@ variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
 
 /-! ### The factors of a composition series -/
 
-/-- The factor `s i.succ / s i.castSucc` of the composition series `s` at the index `i`, the
-subquotient that `TauCeti.IsCompositionFactorAt` compares with a given module. -/
-abbrev compositionFactor (s : CompositionSeries (Submodule R M)) (i : Fin s.length) : Type v :=
-  ↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc)
-
-/-- The product of the factors of a composition series. -/
+/-- The product of the factors `s i.succ / s i.castSucc` of a composition series. It is
+semisimple, each factor being simple by `TauCeti.isSimpleModule_subquotient`. -/
 abbrev seriesSemisimplification (s : CompositionSeries (Submodule R M)) : Type v :=
-  (i : Fin s.length) → compositionFactor s i
-
-instance isSimpleModule_compositionFactor (s : CompositionSeries (Submodule R M))
-    (i : Fin s.length) : IsSimpleModule R (compositionFactor s i) :=
-  isSimpleModule_subquotient s i
-
-instance isSemisimpleModule_seriesSemisimplification (s : CompositionSeries (Submodule R M)) :
-    IsSemisimpleModule R (seriesSemisimplification s) :=
-  inferInstance
-
-/-- `IsCompositionFactorAt s i S` says that the factor at `i` is isomorphic to `S`. -/
-theorem isCompositionFactorAt_iff_nonempty_linearEquiv {s : CompositionSeries (Submodule R M)}
-    {i : Fin s.length} {S : Type w} [AddCommGroup S] [Module R S] :
-    IsCompositionFactorAt s i S ↔ Nonempty (compositionFactor s i ≃ₗ[R] S) :=
-  isCompositionFactorAt_iff
+  (i : Fin s.length) → ↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc)
 
 variable [IsNoetherian R M] [IsArtinian R M]
 
 /-- The multiplicity of a simple module `S` in the factor of `s` at `i` is `1` if the factor is a
 copy of `S` and `0` otherwise. -/
-theorem jordanHolderMultiplicity_compositionFactor (s : CompositionSeries (Submodule R M))
+theorem jordanHolderMultiplicity_subquotient (s : CompositionSeries (Submodule R M))
     (i : Fin s.length) (S : Type w) [AddCommGroup S] [Module R S]
     [Decidable (IsCompositionFactorAt s i S)] :
-    jordanHolderMultiplicity R (compositionFactor s i) S =
-      if IsCompositionFactorAt s i S then 1 else 0 := by
-  split_ifs with h <;> rw [isCompositionFactorAt_iff_nonempty_linearEquiv] at h
+    jordanHolderMultiplicity R (↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc))
+      S = if IsCompositionFactorAt s i S then 1 else 0 := by
+  split_ifs with h <;> rw [isCompositionFactorAt_iff] at h
   · exact jordanHolderMultiplicity_eq_one_of_isSimpleModule_of_linearEquiv S h.some
   · exact jordanHolderMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule S
       (not_nonempty_iff.1 h)
@@ -107,7 +89,7 @@ theorem jordanHolderMultiplicity_seriesSemisimplification
   rw [jordanHolderMultiplicity_pi,
     ← compositionMultiplicity_eq_jordanHolderMultiplicity s hbot htop,
     compositionMultiplicity_eq_sum_ite]
-  exact Finset.sum_congr rfl fun i _ ↦ jordanHolderMultiplicity_compositionFactor s i S
+  exact Finset.sum_congr rfl fun i _ ↦ jordanHolderMultiplicity_subquotient s i S
 
 variable (R M) in
 /-- **The semisimplification `M^ss`** of a module of finite length: the product of the factors of a
@@ -165,11 +147,6 @@ theorem nonempty_linearEquiv_semisimplification_prod_quotient (N : Submodule R M
     rw [jordanHolderMultiplicity_prod, jordanHolderMultiplicity_semisimplification,
       jordanHolderMultiplicity_semisimplification, jordanHolderMultiplicity_semisimplification,
       jordanHolderMultiplicity_eq_submodule_add_quotient N]
-
-/-- A simple module is its own semisimplification. -/
-theorem nonempty_linearEquiv_semisimplification_of_isSimpleModule [IsSimpleModule R M] :
-    Nonempty (semisimplification R M ≃ₗ[R] M) :=
-  nonempty_linearEquiv_semisimplification_of_isSemisimpleModule
 
 /-- The semisimplification of the zero module is zero. -/
 instance subsingleton_semisimplification [Subsingleton M] :
