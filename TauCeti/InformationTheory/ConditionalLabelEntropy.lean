@@ -28,7 +28,9 @@ conditional probability given `b x` is integrated over `x`.
   the values `∞`, `0` and `log 2`.
 * `TauCeti.conditionalLabelEntropy_eq_of_ae_eq`: the value is unchanged when the conditional
   distribution is replaced by a kernel agreeing with it almost everywhere for the law of `b`.
-* `TauCeti.conditionalLabelEntropy_self`: conditioning a measurable label on itself gives zero.
+* `TauCeti.conditionalLabelEntropy_comp_self`, `TauCeti.conditionalLabelEntropy_self`: a
+  measurable function of a label, in particular the label itself, conditioned on that label gives
+  zero.
 * `TauCeti.conditionalLabelEntropy_const`: conditioning on a constant label integrates the
   information of the atoms of `a` under `μ`.
 
@@ -74,10 +76,17 @@ theorem atomInformation_of_ne_zero {p : ℝ≥0∞} (hp : p ≠ 0) :
   simp [atomInformation_def, hp]
 
 /-- The information is infinite exactly at probability zero. -/
+@[simp]
 theorem atomInformation_eq_top_iff {p : ℝ≥0∞} : atomInformation p = ∞ ↔ p = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ atomInformation_zero⟩
   by_contra h0
   simp [atomInformation_of_ne_zero h0] at h
+
+/-- The information `atomInformation` is a measurable function of the probability. -/
+@[fun_prop]
+theorem measurable_atomInformation : Measurable atomInformation :=
+  Measurable.ite (measurableSet_singleton 0) measurable_const
+    (ENNReal.measurable_ofReal.comp (measurable_log.comp ENNReal.measurable_toReal).neg)
 
 variable {X Y Z : Type*} {mX : MeasurableSpace X} [MeasurableSpace Y] [StandardBorelSpace Y]
   [Nonempty Y] [MeasurableSpace Z] {μ : Measure X} [IsFiniteMeasure μ]
@@ -102,12 +111,29 @@ theorem conditionalLabelEntropy_eq_of_ae_eq {a : X → Y} {b : X → Z} (hb : AE
   filter_upwards [ae_of_ae_map hb hκ] with x hx
   rw [hx]
 
+/-- **Conditioning on a function of the label.** A measurable function of `b` has conditional
+entropy zero given `b`: given `b x`, the atom `{f (b x)}` is sure. -/
+theorem conditionalLabelEntropy_comp_self {b : X → Z} (hb : AEMeasurable b μ) {f : Z → Y}
+    (hf : Measurable f) : conditionalLabelEntropy μ (f ∘ b) b = 0 := by
+  rw [conditionalLabelEntropy_eq_of_ae_eq hb (condDistrib_comp_self hb hf).symm]
+  simp [Kernel.deterministic_apply, Measure.dirac_apply_of_mem (Set.mem_singleton _)]
+
 /-- **Conditioning on itself.** A measurable label conditioned on itself has conditional entropy
 zero: given `a x`, the atom `{a x}` is sure. -/
 theorem conditionalLabelEntropy_self {a : X → Y} (ha : AEMeasurable a μ) :
-    conditionalLabelEntropy μ a a = 0 := by
-  rw [conditionalLabelEntropy_eq_of_ae_eq ha (condDistrib_self ha).symm]
-  simp [Kernel.id_apply, Measure.dirac_apply_of_mem (Set.mem_singleton _)]
+    conditionalLabelEntropy μ a a = 0 :=
+  conditionalLabelEntropy_comp_self (f := id) ha measurable_id
+
+/-- Under a probability measure, the conditional distribution of `a` given a constant label is
+the law of `a`. -/
+theorem condDistrib_apply_const_of_isProbabilityMeasure [IsProbabilityMeasure μ]
+    [MeasurableSingletonClass Z] {a : X → Y} (ha : Measurable a) (z : Z) :
+    condDistrib a (fun _ ↦ z) μ z = μ.map a := by
+  ext s hs
+  rw [condDistrib_apply_of_ne_zero measurable_const ha z (by simp [Measure.map_const]),
+    Measure.map_apply (measurable_const.prodMk ha) ((measurableSet_singleton z).prod hs),
+    Measure.map_apply ha hs]
+  simp [Measure.map_const, Set.mk_preimage_prod]
 
 /-- **Conditioning on a constant.** Under a probability measure, conditioning a measurable label
 on a constant label integrates the information of its atoms under `μ`. -/
@@ -115,15 +141,7 @@ theorem conditionalLabelEntropy_const [IsProbabilityMeasure μ] [MeasurableSingl
     {a : X → Y} (ha : Measurable a) (z : Z) :
     conditionalLabelEntropy μ a (fun _ ↦ z) = ∫⁻ x, atomInformation (μ (a ⁻¹' {a x})) ∂μ := by
   refine lintegral_congr fun x ↦ ?_
-  have hz : μ.map (fun _ : X ↦ z) {z} ≠ 0 := by
-    simp [Measure.map_const]
-  rw [condDistrib_apply_of_ne_zero measurable_const ha z hz,
-    Measure.map_apply (measurable_const.prodMk ha) ((measurableSet_singleton z).prod
-      (measurableSet_singleton (a x)))]
-  simp only [Measure.map_const, measure_univ, smul_apply, Measure.dirac_apply_of_mem
-    (Set.mem_singleton z), smul_eq_mul, mul_one, inv_one, one_mul]
-  congr 2
-  ext y
-  simp
+  rw [condDistrib_apply_const_of_isProbabilityMeasure ha z,
+    Measure.map_apply ha (measurableSet_singleton _)]
 
 end TauCeti
