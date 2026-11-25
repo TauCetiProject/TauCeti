@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.MeasureTheory.Measure.ContentOfOpens
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.MeasureTheory.Integral.DualPairing
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 
 /-!
 # The mass measure of a functional of locally finite mass
@@ -383,9 +383,9 @@ theorem massMeasure_le_of_enorm_apply_le (ν : Measure Ω) [ν.OuterRegular]
   have hopen (U : Set Ω) (hU : IsOpen U) : massMeasure T U ≤ ν U := by
     obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
     rw [massMeasure_preimage_coe hT hU']
-    exact localMass_le_iff.2 fun φ hφU hφ => (h φ).trans <|
-      TauCeti.lintegral_enorm_le_measure ν hU.measurableSet
-        (fun x hx => hφU (subset_tsupport _ hx)) fun x => hφ x
+    refine localMass_le_iff.2 fun φ hφU hφ => (h φ).trans ?_
+    simpa using lintegral_enorm_le_ofReal_mul_measure ν hU.measurableSet
+      (fun x hx => hφU (subset_tsupport _ hx)) fun x => hφ x
   refine Measure.le_iff'.2 fun s => ?_
   rw [s.measure_eq_iInf_isOpen (massMeasure T), s.measure_eq_iInf_isOpen ν]
   exact iInf₂_mono fun U _ => iInf_mono fun hU => hopen U hU

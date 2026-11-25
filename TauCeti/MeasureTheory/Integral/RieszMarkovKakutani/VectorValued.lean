@@ -14,7 +14,7 @@ public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
-import TauCeti.Analysis.Distribution.Mass.PolarDensity
+import TauCeti.Analysis.Distribution.Mass.Polar.Density
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.DualPairing
