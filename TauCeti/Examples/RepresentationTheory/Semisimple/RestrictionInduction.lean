@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Maschke
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 public import TauCeti.RepresentationTheory.Augmentation.Semisimple
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+public import TauCeti.RepresentationTheory.Semisimple.NonSemisimple
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 /-!
@@ -92,8 +93,8 @@ example : ¬ IsSemisimpleRepresentation
     fin_cases i
     · simp [hdiag]
     · simp [h10, hw]
-  · rw [LinearMap.mem_ker, LinearMap.proj_apply, Pi.sub_apply, happ, Fin.sum_univ_two, h10,
-      hdiag]
+  · rw [← Subrepresentation.mem_toSubmodule, LinearMap.mem_ker, LinearMap.proj_apply,
+      Pi.sub_apply, happ, Fin.sum_univ_two, h10, hdiag]
     ring
   · intro h
     have := congrFun h 0
