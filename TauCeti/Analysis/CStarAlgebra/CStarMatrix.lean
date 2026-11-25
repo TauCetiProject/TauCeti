@@ -564,6 +564,7 @@ def blockDiagonalNonUnitalStarAlgHom [Fintype ι] :
       Matrix.blockDiagonal'_conjTranspose]
 
 /-- The block-diagonal embedding sends `x` to the block-diagonal matrix with blocks `x i`. -/
+@[simp]
 theorem blockDiagonalNonUnitalStarAlgHom_apply [Fintype ι] (x : Π i, CStarMatrix (n i) (n i) B) :
     blockDiagonalNonUnitalStarAlgHom R B x =
       ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) :=
