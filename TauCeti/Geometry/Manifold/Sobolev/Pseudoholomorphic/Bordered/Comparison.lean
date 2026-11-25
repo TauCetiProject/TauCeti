@@ -186,7 +186,8 @@ private theorem isPseudoholomorphicAt_of_fderivWithin_chart
   have hg : MDifferentiableWithinAt 𝓘(ℝ, ℂ) I (u ∘ (φ.extend closedUpperHalfPlaneModel).symm)
       (range closedUpperHalfPlaneModel) z₀ :=
     MDifferentiableAt.comp_mdifferentiableWithinAt _ (by rwa [hz₀x])
-      (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
+      (mdifferentiableWithinAt_extend_symm (IsManifold.chart_mem_maximalAtlas x)
+        ((φ.extend closedUpperHalfPlaneModel).map_source (by simp [φ])))
   have hgz : (u ∘ (φ.extend closedUpperHalfPlaneModel).symm) z₀ = u x := by
     rw [Function.comp_apply, hz₀x]
   have huψ : u x ∈ ψ'.source := by
@@ -201,7 +202,7 @@ private theorem isPseudoholomorphicAt_of_fderivWithin_chart
   rw [hgz] at hcr
   refine isPseudoholomorphicAt_iff_mfderiv.2 ⟨hud, fun (w : ℂ) ↦ ?_⟩
   rw [SmoothAlmostComplexStructure.ofBorderedHolomorphic_apply, smul_eq_mul,
-    hud.mfderiv_eq_mfderivWithin_comp_extChartAt_symm]
+    hud.mfderiv_eq_mfderivWithin_comp_extChartAt_symm, extChartAt]
   have hcrw := hcr w
   simp only [SmoothAlmostComplexStructure.toContMDiff_apply] at hcrw
   exact hcrw
