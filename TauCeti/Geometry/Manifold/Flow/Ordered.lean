@@ -128,7 +128,7 @@ theorem contMDiff_orderedFlowOf_uncurry [CompleteSpace E] [T2Space M] [Boundaryl
 
 section Inverse
 
-variable [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M] {k : ℕ}
+variable [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M] {k : ℕ}
   {v : Fin k → (x : M) → TangentSpace I x}
 
 /-- **The reversed ordered flow undoes the ordered flow.** For complete `C¹` vector fields, running
@@ -144,7 +144,7 @@ theorem orderedFlowOf_rev_neg_orderedFlowOf
   | succ k ih =>
     rw [orderedFlowOf_eq_comp_flowOf_last (fun i ↦ v i.rev), orderedFlowOf_succ v]
     simp only [Function.comp_apply, Fin.rev_last, Fin.rev_castSucc]
-    rw [flowOf_eq_globalFlow (hv 0) (hc 0), ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+    rw [flowOf_neg_flowOf (hv 0) ((hc 0).mem_flowDomain _ _)]
     exact ih (fun i ↦ hv i.succ) (fun i ↦ hc i.succ) (fun i ↦ s i.succ) _
 
 /-- **The ordered flow undoes the reversed ordered flow.** For complete `C¹` vector fields, the
@@ -159,9 +159,8 @@ theorem orderedFlowOf_orderedFlowOf_rev_neg
   | succ k ih =>
     rw [orderedFlowOf_eq_comp_flowOf_last (fun i ↦ v i.rev), orderedFlowOf_succ v]
     simp only [Function.comp_apply, Fin.rev_last, Fin.rev_castSucc]
-    rw [ih (fun i ↦ hv i.succ) (fun i ↦ hc i.succ) (fun i ↦ s i.succ),
-      flowOf_eq_globalFlow (hv 0) (hc 0),
-      ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+    rw [ih (fun i ↦ hv i.succ) (fun i ↦ hc i.succ) (fun i ↦ s i.succ)]
+    exact flowOf_flowOf_neg (hv 0) (hc 0) (s 0) _
 
 end Inverse
 
