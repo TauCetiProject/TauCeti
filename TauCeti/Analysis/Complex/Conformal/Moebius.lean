@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # Unit-disc Moebius factors
@@ -126,17 +127,15 @@ lemma hasDerivAt_unitDiscMoebiusFormula (a p : ℂ)
     (hp : 1 - (starRingEnd ℂ) a * p ≠ 0) :
     HasDerivAt (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
       ((1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2) p := by
-  have hn : HasDerivAt (fun z : ℂ => z - a) 1 p := (hasDerivAt_id p).sub_const a
-  have hd : HasDerivAt (fun z : ℂ => 1 - (starRingEnd ℂ) a * z) (-(starRingEnd ℂ) a) p := by
-    simpa using ((hasDerivAt_id p).const_mul ((starRingEnd ℂ) a)).const_sub 1
-  have hq := hn.div hd hp
-  have hval : (1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2
-      = (1 * (1 - (starRingEnd ℂ) a * p) - (p - a) * -(starRingEnd ℂ) a)
-        / (1 - (starRingEnd ℂ) a * p) ^ 2 := by
-    congr 1
+  -- The factor is the fractional-linear map with `k = n = 1`, `l = -a`, `m = -conj a`.
+  have hfun : (fun z : ℂ => (1 * z + -a) / (-(starRingEnd ℂ) a * z + 1)) =
+      fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z) := by
+    funext z
     ring
-  rw [hval]
-  exact hq
+  have h := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -a) (m := -(starRingEnd ℂ) a) (n := 1)
+    (z := p) (by rwa [neg_mul, neg_add_eq_sub])
+  rw [hfun] at h
+  exact h.congr_deriv (by ring)
 
 /-- The scalar unit-disc Moebius factor `z ↦ (z - a) / (1 - conj a * z)` has the difference
 quotient `(1 - conj a * a) / ((1 - conj a * s) * (1 - conj a * t))`. -/

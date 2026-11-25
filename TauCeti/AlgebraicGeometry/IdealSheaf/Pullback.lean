@@ -198,7 +198,7 @@ instance epi_pullbackSheafHom : Epi (I.pullbackSheafHom g) := by
 `g^* I ⟶ I.comap g` is an isomorphism: pulling back along `g` preserves the monomorphism
 `I ⟶ 𝒪_Y`, so the comparison is also a monomorphism. -/
 instance isIso_pullbackSheafHom_of_flat [Flat g] : IsIso (I.pullbackSheafHom g) := by
-  have h₁ : Mono ((Scheme.Modules.pullback g).map I.sheafι) := g.mono_pullback_map_of_flat I.sheafι
+  have h₁ : Mono ((Scheme.Modules.pullback g).map I.sheafι) := Functor.map_mono _ _
   have h₂ : Mono (Scheme.Modules.pullbackObjUnitIso g).hom := inferInstance
   have : Mono (I.pullbackSheafHom g ≫ (I.comap g).sheafι) := by
     rw [pullbackSheafHom_sheafι]

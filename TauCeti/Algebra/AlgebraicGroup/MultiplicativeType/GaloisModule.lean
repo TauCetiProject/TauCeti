@@ -25,6 +25,8 @@ lies in the stabilizer of any prescribed cocharacter.
 
 * `TauCeti.MultiplicativeTypeCommHopfAlgCat.instDistribMulActionCocharacterLattice`: the
   contragredient absolute-Galois action on cocharacters.
+* `TauCeti.MultiplicativeTypeCommHopfAlgCat.smul_cocharacter_eq_of_forall_smul_eq`: a Galois
+  element fixing every character fixes every cocharacter.
 * `TauCeti.MultiplicativeTypeCommHopfAlgCat.stabilizer_cocharacterLattice_isOpen`: every
   cocharacter has open stabilizer.
 * `TauCeti.MultiplicativeTypeCommHopfAlgCat.instContinuousSMulCocharacterLattice`: the
@@ -70,6 +72,19 @@ theorem cocharacterLattice_smul_def (T : MultiplicativeTypeCommHopfAlgCat k)
     (σ : Field.absoluteGaloisGroup k) (f : cocharacterLattice T) :
     σ • f = cocharacterGaloisRepresentation T σ f :=
   rfl
+
+/-- An absolute Galois element fixing every geometric character of a group of multiplicative type
+fixes every cocharacter, since the Galois action on cocharacters is contragredient. -/
+theorem smul_cocharacter_eq_of_forall_smul_eq (T : MultiplicativeTypeCommHopfAlgCat k)
+    {σ : Field.absoluteGaloisGroup k}
+    (hσ : ∀ χ : CommHopfAlgCat.geometricCharacterGroup T.obj.obj, σ • χ = χ)
+    (f : cocharacterLattice T) : σ • f = f := by
+  apply cocharacterLattice_ext
+  intro x
+  have hx : σ⁻¹ • x = x := by
+    apply Additive.toMul.injective
+    rw [CommHopfAlgCat.toMul_smul, inv_smul_eq_iff, hσ]
+  rw [cocharacterLattice_smul_def, cocharacterGaloisRepresentation_apply_apply, hx]
 
 /-- The cocharacter lattice carries the discrete topology. -/
 noncomputable instance instTopologicalSpaceCocharacterLattice

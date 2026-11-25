@@ -24,7 +24,9 @@ a proper dense subspace of a Hilbert space can have a reflexive continuous dual.
 
 The converse uses `ContinuousLinearMap.surjective_of_norm_le_norm_comp`, the
 surjectivity criterion for an operator whose adjoint is bounded below. The bidual
-isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`.
+isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`. Through it, every bounded bilinear
+form on `E* × E` over a reflexive space `E` is `(f, x) ↦ f (T x)` for an operator `T` of no larger
+norm (`TauCeti.exists_apply_eq_and_norm_le_of_surjective_inclusionInDoubleDual`).
 
 Finally, `LinearIsometry.surjective_of_surjective_inclusionInDoubleDual` is the standard
 surjectivity criterion for representing the dual of a reflexive space: a linear isometry from a
@@ -90,6 +92,31 @@ theorem completeSpace_of_surjective_inclusionInDoubleDual
     inferInstance
 
 end Complete
+
+section Bilinear
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- On a reflexive space `E`, every bounded bilinear form `B` on `E* × E` has the form
+`(f, x) ↦ f (T x)` for an operator `T` on `E` with `‖T‖ ≤ ‖B‖`: `T x` is the vector whose
+evaluation map is `B (·) x`. -/
+theorem exists_apply_eq_and_norm_le_of_surjective_inclusionInDoubleDual
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) (B : StrongDual 𝕜 E →L[𝕜] E →L[𝕜] 𝕜) :
+    ∃ T : E →L[𝕜] E, (∀ f x, f (T x) = B f x) ∧ ‖T‖ ≤ ‖B‖ := by
+  obtain ⟨e, he⟩ : ∃ e : E ≃ₗᵢ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E),
+      ∀ y, e y = inclusionInDoubleDual 𝕜 E y :=
+    ⟨.ofSurjective (inclusionInDoubleDualLi 𝕜) hE, fun y ↦ by simp [inclusionInDoubleDualLi]⟩
+  obtain ⟨T, hT⟩ : ∃ T : E →L[𝕜] E, ∀ x, e (T x) = B.flip x :=
+    ⟨e.symm.toLinearIsometry.toContinuousLinearMap ∘L B.flip, fun x ↦ e.apply_symm_apply _⟩
+  have hTx (f : StrongDual 𝕜 E) (x : E) : f (T x) = B f x := by
+    simpa [he, dual_def] using congr($(hT x) f)
+  refine ⟨T, hTx, T.opNorm_le_bound (norm_nonneg B) fun x ↦ ?_⟩
+  rw [← e.norm_map]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun f ↦ ?_
+  rw [he, dual_def, hTx]
+  exact (B.le_opNorm₂ f x).trans_eq (mul_right_comm _ _ _)
+
+end Bilinear
 
 section Banach
 

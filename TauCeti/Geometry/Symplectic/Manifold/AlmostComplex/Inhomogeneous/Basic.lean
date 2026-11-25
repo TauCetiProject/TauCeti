@@ -180,6 +180,31 @@ theorem contMDiff_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace �
   exact (Pullback.contMDiff_lift (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
     contMDiff_snd).comp ((A.contMDiff.comp hb).clm_bundle_apply hξ')
 
+/-- A native Hom section read in the tangent trivializations at `x` and `y` is `Cⁿ` on the product
+of the chart sources at `x` and `y`. -/
+theorem contMDiffOn_inCoordinates (A : DomainDependentHomSection I M IP P n) (x : P) (y : M) :
+    ContMDiffOn (IP.prod I) 𝓘(ℝ, EP →L[ℝ] E) n
+      (fun q : P × M ↦ ContinuousLinearMap.inCoordinates EP (TangentSpace IP) E
+        (TangentSpace I) x q.1 y q.2 (A q))
+      ((chartAt HP x).source ×ˢ (chartAt H y).source) := by
+  -- Read `A` in the trivialization at `(x, y)` of the Hom bundle between the pullbacks, and
+  -- compare the pulled-back trivializations with those of the factors.
+  let eh := trivializationAt (EP →L[ℝ] E) (fun q : P × M ↦
+    horizontalTangentBundle I M IP P q →L[ℝ] verticalTangentBundle I M IP P q) (x, y)
+  have h := (eh.contMDiffOn_iff (IM := IP.prod I) (n := n)
+    (f := fun q ↦ TotalSpace.mk' (EP →L[ℝ] E) (E := fun q : P × M ↦
+      horizontalTangentBundle I M IP P q →L[ℝ] verticalTangentBundle I M IP P q) q (A q))
+    (s := (chartAt HP x).source ×ˢ (chartAt H y).source) fun q hq ↦ eh.mem_source.2 ?_).1
+      A.contMDiff.contMDiffOn
+  · refine h.2.congr fun q hq ↦ ?_
+    exact (ContinuousLinearMap.inCoordinates_pullback_of_mem
+      (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
+      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) (x, y) q (A q)
+      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.1)
+      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.2)).symm
+  · simp only [eh, hom_trivializationAt_baseSet]
+    exact hq
+
 /-- Restrict a native ambient Hom section to the intrinsic tangent bundles of an open product. -/
 def restrictOpen (A : DomainDependentHomSection I M IP P n)
     (U : TopologicalSpace.Opens P) (V : TopologicalSpace.Opens M) :
