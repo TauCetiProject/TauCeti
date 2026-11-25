@@ -53,8 +53,9 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 * `QuadraticForm.extendScalars_apply`, `QuadraticForm.toMvPolynomial_extendScalars`: the
   coordinate formula for the extension; its coordinate polynomial is that of `Q` with the
   coefficients mapped into `L`.
-* `QuadraticForm.extendScalars_apply_algebraMap_comp`, `QuadraticForm.extendScalars_smul_apply`:
-  the extension agrees with `Q` on `K`-points and scales by `c²` along scalars.
+* `QuadraticForm.extendScalars_apply_algebraMap_comp`,
+  `QuadraticForm.extendScalars_apply_smul_algebraMap_comp`: the extension agrees with `Q` on
+  `K`-points and scales by `c²` along scalars.
 * `QuadraticForm.toMatrix'_polarBilin_extendScalars`: the Gram matrix of the polar form of the
   extension is the image of the Gram matrix of the polar form of `Q`.
 * `QuadraticForm.extendScalars_self`, `QuadraticForm.extendScalars_extendScalars`: extension to
@@ -156,7 +157,7 @@ theorem eq_extendScalars_iff {Q : QuadraticForm K (ι → K)} {Q' : QuadraticFor
 
 /-- The extension scales by `c²` along the scalar multiples of a vector with coordinates in `K`:
 `(extendScalars L Q)(c ⊗ v) = c² Q(v)`. -/
-theorem extendScalars_smul_apply (Q : QuadraticForm K (ι → K)) (c : L) (v : ι → K) :
+theorem extendScalars_apply_smul_algebraMap_comp (Q : QuadraticForm K (ι → K)) (c : L) (v : ι → K) :
     extendScalars L Q (c • (algebraMap K L ∘ v)) = c ^ 2 * algebraMap K L (Q v) := by
   rw [QuadraticMap.map_smul, extendScalars_apply_algebraMap_comp, smul_eq_mul, pow_two]
 
