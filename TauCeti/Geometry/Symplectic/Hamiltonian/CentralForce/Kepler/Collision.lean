@@ -181,7 +181,7 @@ private theorem exists_isCompact_forall_mem_of_hasDerivAt_kepler (hm : 0 < m) (h
 
 /-- Along the maximal integral curve of the Kepler Hamiltonian vector field on the punctured phase
 space, positions and momenta solve Hamilton's equations in `V × V`. -/
-private theorem hasDerivAt_coe_maximalIntegralCurve_kepler (x : puncturedPhaseSpace V) {t : ℝ}
+theorem hasDerivAt_coe_maximalIntegralCurve_kepler (x : puncturedPhaseSpace V) {t : ℝ}
     (ht : t ∈ maximalIntegralCurveInterval (SmoothTwoForm.hamiltonianVectorField
       (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
