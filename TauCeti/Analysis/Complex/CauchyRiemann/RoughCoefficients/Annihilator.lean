@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Data.ENNReal.Holder
 
 /-!
@@ -33,7 +34,9 @@ regular as the coefficients allow:
 * the same holds for a covector field `η : Ω → V →L[ℝ] ℝ` on a finite-dimensional normed space,
   paired with `D φ` by `∫ η(D φ)`
   (`TauCeti.memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero`). This form needs no
-  inner product on `V`.
+  inner product on `V`. For smooth `J` and `S` such a covector field agrees almost everywhere with
+  a smooth field
+  (`TauCeti.exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero`).
 
 After the reflection `ρ(z) = -conj z`, an annihilator of `D` is a weak solution of a homogeneous
 real Cauchy–Riemann equation whose leading coefficient again squares to `-1`
@@ -207,5 +210,26 @@ theorem memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*
     rw [← h (TestFunction.postcompCLM (L.symm : _ →L[ℝ] V) φ)]
     refine integral_congr_ae (Filter.Eventually.of_forall fun z ↦ ?_)
     simp [hT, P, Q, L.symm.comp_fderiv]
+
+/-- **The annihilator of a real Cauchy–Riemann operator with smooth coefficients is smooth.** Let
+`Ω ⊆ ℂ` be open, `V` a finite-dimensional real normed space, `J` a smooth field of complex
+structures on `V` and `S` a smooth field of endomorphisms over `Ω`. If a locally `L^q` covector
+field `η` (`q > 1`) satisfies `∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω`,
+then `η` agrees almost everywhere on `Ω` with a smooth covector field. -/
+theorem exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+    {J S : ℂ → V →L[ℝ] V} (hJ : ContDiffOn ℝ (⊤ : ℕ∞) J Ω)
+    (hS : ContDiffOn ℝ (⊤ : ℕ∞) S Ω) (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
+    {η : ℂ → V →L[ℝ] ℝ} {q : ℝ≥0∞} (hq : 1 < q) (hη : MemLpLoc q Ω η)
+    (h : ∀ φ : 𝓓(Ω, V), ∫ z, η z (fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
+      S z ((φ : ℂ → V) z)) = 0) :
+    ∃ g : ℂ → V →L[ℝ] ℝ, ContDiffOn ℝ (⊤ : ℕ∞) g Ω ∧ η =ᵐ[volume.restrict Ω] g := by
+  have hreg (k : ℕ) : MemWkpLoc 3 Ω (k + 1) η :=
+    memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero (hJ.of_le (mod_cast le_top))
+      (hS.of_le (mod_cast le_top)) hJ2 hq hη h (by simp)
+  -- Morrey's embedding at order zero gives a continuous representative, smooth at every order.
+  obtain ⟨g, hg, hηg⟩ := (hreg 0).exists_contDiffOn_ae_eq (by norm_num)
+  exact ⟨g, contDiffOn_infty.2 fun k ↦
+    (hreg k).contDiffOn_of_continuousOn (by norm_num) hg.continuousOn hηg, hηg⟩
 
 end TauCeti
