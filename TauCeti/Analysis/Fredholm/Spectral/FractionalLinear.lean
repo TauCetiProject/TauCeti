@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fredholm.Spectral.Flow
 import TauCeti.Algebra.Algebra.Spectrum
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
-import TauCeti.Topology.Algebra.Indicator
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Order.Interval
 
@@ -135,30 +134,6 @@ private theorem cfc_indicator_Icc_mul_ringInverse_one_add_smul (hT : IsSelfAdjoi
   · rw [hsp]
     exact ⟨_, hmem, div_one_add_mul_div_one_sub_mul hkc.ne⟩
 
-/-- For a spectral cut `c` of `T` and `c < d` with `d` not in the spectrum, the rank of the
-spectral projection for `[0, d]`, if finite, is the count of eigenvalues in `[0, c]` plus the rank
-of the spectral projection for `(c, d]`. -/
-private theorem finrank_range_cfc_indicator_Icc_eq_add {d : ℝ} (hT : IsSelfAdjoint T)
-    (hcut : IsSpectralCutOn (fun _ : ℝ ↦ T) c univ) (hcd : c < d) (hd : d ∉ spectrum ℝ T)
-    (hfd : FiniteDimensional 𝕜 (cfc ((Icc 0 d).indicator (1 : ℝ → ℝ)) T).range) :
-    Module.finrank 𝕜 (cfc ((Icc 0 d).indicator (1 : ℝ → ℝ)) T).range = spectralCount c T +
-      Module.finrank 𝕜 (cfc ((Ioc c d).indicator (1 : ℝ → ℝ)) T).range := by
-  have hdisj : Disjoint (Icc 0 c) (Ioc c d) :=
-    disjoint_left.2 fun x (hx : x ∈ Icc 0 c) (hx' : x ∈ Ioc c d) ↦ (not_lt.2 hx.2) hx'.1
-  have h₀ := hcut.continuousOn_indicator_Icc_zero (mem_univ 0) hT
-  have := hcut.finiteDimensional_range_cfc_indicator_Icc_zero (mem_univ 0) hT
-  have hcont : ContinuousOn ((Ioc c d).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) :=
-    continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-      (disjoint_frontier_Ioc (hcut.notMem_spectrum (mem_univ 0)) hd)
-  have hcontd : ContinuousOn ((Icc 0 d).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) := by
-    rw [← Icc_union_Ioc_eq_Icc hcut.pos.le hcd.le, indicator_union_of_disjoint hdisj]
-    exact h₀.add hcont
-  have : FiniteDimensional 𝕜 (cfc ((Ioc c d).indicator (1 : ℝ → ℝ)) T).range :=
-    Submodule.finiteDimensional_of_le (T.range_cfc_indicator_le_of_subset (Ω := Ioc c d)
-      (Ω' := Icc 0 d) (fun x hx ↦ ⟨hcut.pos.le.trans hx.1.le, hx.2⟩) hcont hcontd)
-  rw [spectralCount_def, ← Icc_union_Ioc_eq_Icc hcut.pos.le hcd.le]
-  exact T.finrank_range_cfc_indicator_union hdisj h₀ hcont
-
 /-! ### Spectral flow -/
 
 variable {A : ℝ → H →L[𝕜] H} {a b : ℝ}
@@ -223,9 +198,7 @@ theorem spectralFlow_mul_ringInverse_one_add_smul (hab : a ≤ b) (hA : Continuo
     simp only [hBdef] at hfd ⊢
     rw [hP] at hfd
     rw [spectralCount_def, hP]
-    exact ⟨finrank_range_cfc_indicator_Icc_eq_add (hsa v hv.2)
-      (isSpectralCutOn_iff.2 ⟨hc.pos, fun _ _ ↦ (isSpectralCutOn_iff.1 hc).2 v hv₂⟩) hcd hdv hfd,
-      hdv⟩
+    exact ⟨hc.finrank_range_cfc_indicator_Icc_eq_add hv₂ (hsa v hv.2) hcd hdv hfd, hdv⟩
   have hsub := ordConnected_Icc.uIcc_subset_ball_inter ht ⟨hu.1, hu.2⟩
   have hr := isPreconnected_uIcc.finrank_range_cfc_indicator_eq
     (hA.mono fun v hv ↦ (hsub hv).2) (fun v hv ↦ hsa v (hsub hv).2) (Ω := Ioc c d)

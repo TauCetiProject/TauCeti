@@ -339,28 +339,6 @@ private theorem finiteDimensional_range_cfc_indicator_Icc_zero :
     (continuousOn_const.continuousOn_indicator_of_disjoint_frontier
       (disjoint_frontier_Icc h₁ h₂)))
 
-omit hc in
-/-- For cuts `c' < c` of `S`, the count for `c` is the count for `c'` plus the rank of the spectral
-projection for `(c', c]`. -/
-private theorem spectralCount_eq_add {c' : ℝ} (hc' : 0 < c') (hcc : c' < c)
-    (h₁' : -c' ∉ spectrum ℝ S) (h₂' : c' ∉ spectrum ℝ S)
-    (hfd' : FiniteDimensional 𝕜 (cfc ((Icc (-c') c').indicator (1 : ℝ → ℝ)) S).range) :
-    spectralCount c S =
-      spectralCount c' S + Module.finrank 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) S).range := by
-  have hcont : ContinuousOn ((Ioc c' c).indicator (1 : ℝ → ℝ)) (spectrum ℝ S) :=
-    continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-      (disjoint_frontier_Ioc h₂' h₂)
-  have := finiteDimensional_range_cfc_indicator_Icc_zero hS hc'.le h₁' h₂' hfd'
-  have : FiniteDimensional 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) S).range :=
-    Submodule.finiteDimensional_of_le (S.range_cfc_indicator_le_of_subset (Ω' := Icc (-c) c)
-      (fun x hx ↦ ⟨by linarith [hx.1], hx.2⟩) hcont
-      (continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-        (disjoint_frontier_Icc h₁ h₂)))
-  rw [spectralCount_def, spectralCount_def, ← Icc_union_Ioc_eq_Icc hc'.le hcc.le]
-  exact S.finrank_range_cfc_indicator_union
-    (disjoint_left.2 fun x hx hx' ↦ (not_lt.2 hx.2) hx'.1)
-    (continuousOn_indicator_Icc_zero hS hc'.le h₁' h₂' hfd') hcont
-
 end Single
 
 /-- At a time `u` of a spectral cut `c`, the indicator of `[0, c]` is continuous on the spectrum of
@@ -379,6 +357,32 @@ theorem IsSpectralCutOn.finiteDimensional_range_cfc_indicator_Icc_zero (h : IsSp
   TauCeti.finiteDimensional_range_cfc_indicator_Icc_zero hsa h.pos.le (h.neg_notMem_spectrum hu)
     (h.notMem_spectrum hu) (h.finiteDimensional_range_cfc_indicator_Icc hu)
 
+/-- At a time `u` of a spectral cut `c`, and for `c < d` with `d` not in the spectrum of the
+self-adjoint operator `A u`, the rank of the spectral projection for `[0, d]`, if finite, is the
+count of eigenvalues in `[0, c]` plus the rank of the spectral projection for `(c, d]`. -/
+theorem IsSpectralCutOn.finrank_range_cfc_indicator_Icc_eq_add (h : IsSpectralCutOn A c s)
+    {u d : ℝ} (hu : u ∈ s) (hsa : IsSelfAdjoint (A u)) (hcd : c < d)
+    (hd : d ∉ spectrum ℝ (A u))
+    (hfd : FiniteDimensional 𝕜 (cfc ((Icc 0 d).indicator (1 : ℝ → ℝ)) (A u)).range) :
+    Module.finrank 𝕜 (cfc ((Icc 0 d).indicator (1 : ℝ → ℝ)) (A u)).range =
+      spectralCount c (A u) +
+        Module.finrank 𝕜 (cfc ((Ioc c d).indicator (1 : ℝ → ℝ)) (A u)).range := by
+  have hdisj : Disjoint (Icc 0 c) (Ioc c d) :=
+    disjoint_left.2 fun x (hx : x ∈ Icc 0 c) (hx' : x ∈ Ioc c d) ↦ (not_lt.2 hx.2) hx'.1
+  have h₀ := h.continuousOn_indicator_Icc_zero hu hsa
+  have := h.finiteDimensional_range_cfc_indicator_Icc_zero hu hsa
+  have hcont : ContinuousOn ((Ioc c d).indicator (1 : ℝ → ℝ)) (spectrum ℝ (A u)) :=
+    continuousOn_const.continuousOn_indicator_of_disjoint_frontier
+      (disjoint_frontier_Ioc (h.notMem_spectrum hu) hd)
+  have hcontd : ContinuousOn ((Icc 0 d).indicator (1 : ℝ → ℝ)) (spectrum ℝ (A u)) := by
+    rw [← Icc_union_Ioc_eq_Icc h.pos.le hcd.le, indicator_union_of_disjoint hdisj]
+    exact h₀.add hcont
+  have : FiniteDimensional 𝕜 (cfc ((Ioc c d).indicator (1 : ℝ → ℝ)) (A u)).range :=
+    Submodule.finiteDimensional_of_le ((A u).range_cfc_indicator_le_of_subset (Ω := Ioc c d)
+      (Ω' := Icc 0 d) (fun x hx ↦ ⟨h.pos.le.trans hx.1.le, hx.2⟩) hcont hcontd)
+  rw [spectralCount_def, ← Icc_union_Ioc_eq_Icc h.pos.le hcd.le]
+  exact (A u).finrank_range_cfc_indicator_union hdisj h₀ hcont
+
 /-- **The local count does not depend on the cut.** If `c` and `c'` are spectral cuts of a
 continuous path of self-adjoint operators on `[s, t]`, the changes of the counts of eigenvalues in
 `[0, c]` and in `[0, c']` from `s` to `t` agree. -/
@@ -394,8 +398,9 @@ theorem IsSpectralCutOn.spectralCount_sub_spectralCount_eq {s t c c' : ℝ} (hst
     -- path since `c'` and `c` stay out of the spectrum.
     have hdec : ∀ u ∈ Icc s t, spectralCount c (A u) = spectralCount c' (A u) +
         Module.finrank 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) (A u)).range := fun u hu ↦
-      spectralCount_eq_add (hsa u hu) (hc.2 u hu).1 (hc.2 u hu).2.1 (hc.2 u hu).2.2 hc'.pos hcc
-        (hc'.2 u hu).1 (hc'.2 u hu).2.1 (hc'.2 u hu).2.2
+      (spectralCount_def c (A u)).trans (hc'.finrank_range_cfc_indicator_Icc_eq_add hu (hsa u hu)
+        hcc (hc.notMem_spectrum hu)
+        (hc.finiteDimensional_range_cfc_indicator_Icc_zero hu (hsa u hu)))
     have hr := isPreconnected_Icc.finrank_range_cfc_indicator_eq hA hsa
       (Ω := Ioc c' c) (fun u hu ↦ disjoint_frontier_Ioc (hc'.notMem_spectrum hu)
         (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩
