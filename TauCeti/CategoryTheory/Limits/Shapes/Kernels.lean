@@ -86,7 +86,7 @@ theorem of_isColimit_cokernelCofork_comp {C : Type*} [Category* C] [HasZeroMorph
   refine of_isColimit' ⟨hα⟩ (PushoutCocone.IsColimit.mk _ (fun s ↦ (d s).val)
     (fun s ↦ (d s).property) (fun s ↦ ?_) (fun s m hm _ ↦ ?_))
   · refine Cofork.IsColimit.hom_ext hp ?_
-    rw [CokernelCofork.π_ofπ, ← reassoc_of% hα, (d s).property, s.condition]
+    simp [← reassoc_of% hα, (d s).property, s.condition]
   · refine Cofork.IsColimit.hom_ext hc' ?_
     rw [CokernelCofork.π_ofπ, hm, (d s).property]
 
