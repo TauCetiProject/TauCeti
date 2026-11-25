@@ -15,7 +15,8 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 /-!
 # The closed upper half-plane as a model with corners
 
-`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part.
+`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part. Being a
+closed subset of `ℂ`, it is locally compact (`ClosedUpperHalfPlane.instLocallyCompactSpace`).
 `closedUpperHalfPlaneModel` is its real model with corners in `ℂ`. Its manifold interior is the
 open upper half-plane, and its manifold boundary is the real axis. The inverse of the model
 retracts the lower half-plane onto the real axis; it is only a model inverse on the model range.
@@ -66,6 +67,10 @@ theorem coe_ofReal (s : ℝ) : (ofReal s : ℂ) = s := by rw [ofReal]
 
 /-- The imaginary coordinate of every point of the closed upper half-plane is nonnegative. -/
 theorem im_nonneg (z : ClosedUpperHalfPlane) : 0 ≤ (z : ℂ).im := z.property
+
+/-- The closed upper half-plane is locally compact, being a closed subset of `ℂ`. -/
+instance instLocallyCompactSpace : LocallyCompactSpace ClosedUpperHalfPlane :=
+  (isClosed_le continuous_const Complex.continuous_im).locallyCompactSpace
 
 end ClosedUpperHalfPlane
 
@@ -153,6 +158,16 @@ theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage 
   simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_coe_symm,
     range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
   tauto
+
+/-- The part of the target of the extended chart at `x` of a manifold modelled on the closed upper
+half-plane lying over an open set is relatively open in the closed upper half-plane: it is
+`Ω ∩ {z | 0 ≤ z.im}` for an open `Ω ⊆ ℂ`. This is
+`OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage` for the chart at `x`. -/
+theorem exists_isOpen_extChartAt_target_inter_preimage {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] (x : M) {W : Set M} (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (extChartAt closedUpperHalfPlaneModel x).target ∩
+      (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} :=
+  (chartAt ClosedUpperHalfPlane x).exists_isOpen_extend_target_inter_preimage hW
 
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]

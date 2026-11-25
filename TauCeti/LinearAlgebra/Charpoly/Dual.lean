@@ -7,14 +7,16 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 
 /-!
 # The characteristic polynomial of the transpose
 
 Over a commutative ring, the transpose `f.dualMap` of an endomorphism `f` of a finite free module
 has the characteristic polynomial of `f` (`LinearMap.charpoly_dualMap`): in the dual basis its
-matrix is the transposed matrix of `f`. Over a field, their kernels also have the same dimension
-(`LinearMap.finrank_ker_dualMap`).
+matrix is the transposed matrix of `f`. Over a domain they therefore have the same eigenvalues
+(`Module.End.hasEigenvalue_dualMap_iff`). Over a field, their kernels also have the same
+dimension (`LinearMap.finrank_ker_dualMap`).
 -/
 
 public section
@@ -46,3 +48,16 @@ theorem finrank_ker_dualMap {K V : Type*} [Field K] [AddCommGroup V] [Module K V
   omega
 
 end LinearMap
+
+namespace Module.End
+
+/-- Over a domain, an endomorphism of a finite free module and its transpose have the same
+eigenvalues, since they have the same characteristic polynomial. -/
+@[simp]
+theorem hasEigenvalue_dualMap_iff {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [Module.Free R M] [Module.Finite R M] (f : Module.End R M) (μ : R) :
+    HasEigenvalue f.dualMap μ ↔ HasEigenvalue f μ := by
+  rw [hasEigenvalue_iff_isRoot_charpoly, hasEigenvalue_iff_isRoot_charpoly,
+    LinearMap.charpoly_dualMap]
+
+end Module.End

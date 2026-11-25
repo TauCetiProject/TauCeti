@@ -13,9 +13,10 @@ import Mathlib.Algebra.Ring.Idempotent
 
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
 nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
-of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), exact positive-power norms without
-`NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative,
-convergence to `0` of finite partial products when factors tend to `0` cofinitely
+of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its form
+`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
+norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
+multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
@@ -57,6 +58,11 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The extended norm is submultiplicative: `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ`. -/
+theorem eNorm_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ := by
+  simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le a b
 
 /-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
 `‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
