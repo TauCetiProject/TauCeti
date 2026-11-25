@@ -12,7 +12,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import Mathlib.RingTheory.Regular.Category
 public import TauCeti.Algebra.Module.Torsion.LTensor
 public import TauCeti.Algebra.Module.Torsion.Map
-public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 public import TauCeti.RingTheory.QuotSMulTop
 
 /-!
