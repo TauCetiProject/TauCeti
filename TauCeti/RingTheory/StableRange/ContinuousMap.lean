@@ -185,7 +185,7 @@ theorem HasStableRangeLE.exists_extension_ne_zero [NormalSpace X] {s : ℕ}
   -- where `G` vanishes. The row `(G, φ)` is unimodular, and a shortening `G + φ c` is nowhere
   -- zero and agrees with `G` on `A`.
   obtain ⟨G, hG⟩ := f.exists_restrict_eq hA
-  have hGA (x : X) (hx : x ∈ A) : G x = f ⟨x, hx⟩ := by rw [← hG]; rfl
+  have hGA (x : X) (hx : x ∈ A) : G x = f ⟨x, hx⟩ := by rw [← hG, ContinuousMap.restrict_apply]
   obtain ⟨φ, hφA, hφ1, -⟩ := exists_continuous_zero_one_of_isClosed hA
     (isClosed_eq G.continuous continuous_const)
     (Set.disjoint_left.2 fun x hx hx0 ↦ hf ⟨x, hx⟩ (by rw [← hGA x hx]; exact hx0))
@@ -250,8 +250,10 @@ theorem dense_isUnimodular_continuousMap_Icc_real (a b : ℝ) :
     · refine ⟨1, fun hq0 ↦ hvS (Finset.mem_image.2 ⟨t, ?_, ?_⟩)⟩
       · rw [Multiset.mem_toFinset, mem_roots hpu]
         simp [ht]
-      · simpa [Polynomial.toContinuousMapOn, sub_eq_zero] using hq0
-    · exact ⟨0, by simpa [Polynomial.toContinuousMapOn, sub_eq_zero] using ht⟩
+      · simpa [Polynomial.toContinuousMapOn_apply, Polynomial.toContinuousMap_apply, sub_eq_zero]
+          using hq0
+    · exact ⟨0, by simpa [Polynomial.toContinuousMapOn_apply, Polynomial.toContinuousMap_apply,
+        sub_eq_zero] using ht⟩
 
 /-- Unimodular `1`-rows, that is nowhere vanishing functions, are dense in `C([a, b], ℂ)`: the
 topological stable rank of `C([a, b], ℂ)` is at most `1`. -/
@@ -265,6 +267,8 @@ theorem dense_isUnimodular_continuousMap_Icc_complex (a b : ℝ) :
   rw [Metric.mem_ball, dist_pi_lt_iff (by positivity), Fin.forall_fin_two] at hs
   rw [Set.mem_ofPred_eq, isUnimodular_continuousMap_iff_forall_exists_ne_zero] at hs1
   let h : C(Set.Icc a b, ℂ) := ⟨fun t ↦ (s 0 t : ℂ) + (s 1 t : ℂ) * Complex.I, by fun_prop⟩
+  have hre (t) : (h t).re = s 0 t := by simp [h]
+  have him (t) : (h t).im = s 1 t := by simp [h]
   refine ⟨fun _ ↦ h, ?_, ?_⟩
   · rw [Metric.mem_ball, dist_pi_lt_iff hε]
     intro i
@@ -275,23 +279,15 @@ theorem dense_isUnimodular_continuousMap_Icc_complex (a b : ℝ) :
       Real.dist_eq] at h1 h2
     rw [Complex.dist_eq, Fin.fin_one_eq_zero i]
     refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-    simp only [h, ContinuousMap.coe_mk, Complex.sub_re, Complex.sub_im, Complex.add_re,
-      Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.re_ofReal_mul,
-      Complex.im_ofReal_mul, Complex.I_re, Complex.I_im, mul_zero, mul_one, add_zero, zero_add]
+    rw [Complex.sub_re, Complex.sub_im, hre, him]
     linarith
   · rw [Set.mem_ofPred_eq, isUnimodular_continuousMap_iff_forall_exists_ne_zero]
     intro t
     refine ⟨0, fun h0 ↦ ?_⟩
-    have hre := congrArg Complex.re h0
-    have him := congrArg Complex.im h0
-    simp only [h, ContinuousMap.coe_mk, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.re_ofReal_mul, Complex.im_ofReal_mul, Complex.I_re,
-      Complex.I_im, mul_zero, mul_one, add_zero, zero_add, Complex.zero_re,
-      Complex.zero_im] at hre him
     obtain ⟨i, hi⟩ := hs1 t
     fin_cases i
-    · exact hi hre
-    · exact hi him
+    · exact hi (by simpa [h0] using (hre t).symm)
+    · exact hi (by simpa [h0] using (him t).symm)
 
 /-- `C([a, b], ℂ)` has stable range at most `1`. -/
 theorem hasStableRangeLE_one_continuousMap_Icc_complex (a b : ℝ) :
