@@ -55,12 +55,6 @@ theorem unitsFormMeasure_apply (s : Set Kˣ) :
       (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) (Units.val '' s) :=
   Units.measurableEmbedding_val₀.comap_apply _ s
 
-/-- An additive Haar measure on `K` gives `{0}` mass zero, since `0 • univ = {0}`. -/
-private theorem addHaar_singleton_zero : μ {0} = 0 := by
-  have h := addHaar_smul_eq_normalizedAbsoluteValue_mul μ (0 : K) Set.univ
-  rwa [Set.zero_smul_set Set.univ_nonempty, AbsoluteValue.map_zero, NNRat.cast_zero,
-    ENNReal.coe_zero, zero_mul] at h
-
 /-- The pushforward of the form measure along `Units.val` is the measure `|x|_K⁻¹ μ` on `K`. -/
 theorem map_val_unitsFormMeasure :
     (unitsFormMeasure K μ).map Units.val =
@@ -68,7 +62,7 @@ theorem map_val_unitsFormMeasure :
   rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
   refine restrict_eq_self_of_ae_mem ?_
   filter_upwards [measure_eq_zero_iff_ae_notMem.1
-    (withDensity_absolutelyContinuous μ _ (addHaar_singleton_zero μ))] with x hx
+    (withDensity_absolutelyContinuous μ _ (measure_singleton 0))] with x hx
   exact ⟨Units.mk0 x hx, rfl⟩
 
 instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant := by
@@ -89,7 +83,7 @@ instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeft
 instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := by
   have : SigmaFinite (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) := by
     refine SigmaFinite.withDensity_of_ne_top ?_
-    refine measure_mono_null (fun x hx ↦ ?_) (addHaar_singleton_zero μ)
+    refine measure_mono_null (fun x hx ↦ ?_) (measure_singleton (μ := μ) 0)
     by_contra h0
     exact hx (ENNReal.inv_ne_top.2 (by simpa using h0))
   refine SigmaFinite.of_map _ Units.measurableEmbedding_val₀.measurable.aemeasurable ?_
