@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
-public import Mathlib.CategoryTheory.Groupoid
 
 /-!
 # The groupoid of band-preserving transformations
 
 Let `F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be pseudofunctors whose fibres over `G` are groupoids, for
 instance gerbes. Every modification `m : η ⟶ θ` of strong transformations `F ⟶ G` is then
-invertible: its components are natural transformations between functors into groupoids
-(`BandedMorphism.modificationIso`).
+invertible (`Pseudofunctor.isGroupoid_hom`); `BandedMorphism.modificationIso` records this as an
+explicit isomorphism with forward modification `m`.
 
 For `A`-bandings `bF`, `bG`, the band-preserving transformations `F ⟶ G` with all modifications
 between them form the full subcategory `BandedMorphism.HomCategory bF bG` of Mathlib's category of
@@ -58,18 +58,12 @@ variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat
 
 /-! ### Modifications into groupoid fibres are invertible -/
 
-/-- The component of a modification `m : η ⟶ θ` at `a`, as an isomorphism of `1`-morphisms in
-`Cat`: its natural transformation has components in the groupoid fibre of `G` over `a`. -/
-noncomputable def modificationAppIso {η θ : F ⟶ G} (m : η ⟶ θ) (a : LocallyDiscrete Cᵒᵖ) :
-    η.app a ≅ θ.app a :=
-  haveI : IsGroupoid (G.obj a) := hG a.as.unop
-  haveI := NatIso.isIso_of_isIso_app (m.as.app a).toNatTrans
-  Cat.Hom.isoMk (asIso (m.as.app a).toNatTrans)
-
 /-- **A modification into a pseudofunctor with groupoid fibres is an isomorphism**, with forward
-modification `m`. -/
+modification `m`: it is `asIso m` for the instance `Pseudofunctor.isGroupoid_hom`, whose
+hypothesis on all objects of `LocallyDiscrete Cᵒᵖ` follows from the one on test objects `U`. -/
 noncomputable def modificationIso {η θ : F ⟶ G} (m : η ⟶ θ) : η ≅ θ :=
-  StrongTrans.isoMk (modificationAppIso m) fun f ↦ m.as.naturality f
+  haveI : ∀ a : LocallyDiscrete Cᵒᵖ, IsGroupoid (G.obj a) := fun a ↦ hG a.as.unop
+  asIso m
 
 @[simp]
 theorem modificationIso_hom {η θ : F ⟶ G} (m : η ⟶ θ) : (modificationIso m).hom = m :=
