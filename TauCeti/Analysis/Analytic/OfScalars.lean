@@ -21,7 +21,9 @@ normed field, at any point of its ball of convergence, as the termwise different
 zero they recover the coefficients. Termwise differentiation of a scalar series represents the
 derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n` and
 `y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. Inside the disc of convergence, both
-`∑ c n * y ^ n` and `∑ n * c n * y ^ n` converge absolutely. It also computes the scalar series
+`∑ c n * y ^ n` and `∑ n * c n * y ^ n` converge absolutely; correspondingly, a real series
+summable on `[0, R)` remains summable inside `R` when multiplied by the index `n`
+(`TauCeti.summable_nat_mul_of_forall_lt`). It also computes the scalar series
 of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
 `‖1‖ = 1`. Over a densely normed field, a scalar series that
 converges at every nonzero point of a disk about the origin has radius at least that of the disk;
@@ -36,7 +38,11 @@ ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
 multilinear series is `ofScalars` of its `coeff` sequence
 (`FormalMultilinearSeries.ofScalars_coeff`). Over a topological field `𝕜`, the scalar series
 `FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
-(`TauCeti.mkPiRingSeries_eq_ofScalars`).
+(`TauCeti.mkPiRingSeries_eq_ofScalars`). Shifting a scalar power series around a base point `z₀`
+in a complete normed algebra yields a `HasFPowerSeriesOnBall` expansion around `z₀` whenever the
+convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`), and yields
+analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
+(`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
 
 public section
@@ -351,5 +357,43 @@ theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpac
   ext1 n
   rw [mkPiRingSeries_def, ← (FormalMultilinearSeries.ofScalars 𝕜 c n).mkPiRing_apply_one_eq_self]
   simp [FormalMultilinearSeries.ofScalars]
+
+/-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
+the radius `R`. -/
+theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
+    (hf : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun s : ℕ => f s * r ^ s)
+    {r : ℝ} (hr0 : 0 ≤ r) (hr : r < R) :
+    Summable fun s : ℕ => (s : ℝ) * f s * r ^ s := by
+  have hR_pos : 0 < R := hr0.trans_lt hr
+  have hrad : ENNReal.ofReal R ≤ (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine FormalMultilinearSeries.le_radius_ofScalars_of_summable f fun z _ hz => ?_
+    rw [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff hR_pos] at hz
+    exact ((hf ‖z‖ (norm_nonneg z) hz).abs.congr fun s => by
+      simp only [abs_mul, abs_pow, Real.norm_eq_abs, abs_abs]).of_abs
+  have hnorm : ‖r‖ₑ < (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine lt_of_lt_of_le ?_ hrad
+    rwa [← ofReal_norm, Real.norm_of_nonneg hr0, ENNReal.ofReal_lt_ofReal_iff hR_pos]
+  exact (FormalMultilinearSeries.summable_norm_natCast_mul_ofScalars f hnorm).of_norm
+
+/-- Shifting a scalar power series `FormalMultilinearSeries.ofScalarsSum c` by `z₀` gives a
+`HasFPowerSeriesOnBall` expansion around `z₀`, provided its convergence radius is positive. -/
+theorem hasFPowerSeriesOnBall_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E)
+    (hr : 0 < (FormalMultilinearSeries.ofScalars E c).radius) :
+    HasFPowerSeriesOnBall (fun z : E ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+      (FormalMultilinearSeries.ofScalars E c) z₀
+      (FormalMultilinearSeries.ofScalars E c).radius := by
+  simpa only [FormalMultilinearSeries.ofScalarsSum, zero_add] using
+    ((FormalMultilinearSeries.ofScalars E c).hasFPowerSeriesOnBall hr).comp_sub z₀
+
+/-- A shifted scalar power series `z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀)` is analytic
+on its open ball of convergence around `z₀`. -/
+theorem analyticOnNhd_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E) :
+    AnalyticOnNhd 𝕜 (fun z : E ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+      (Metric.eball z₀ (FormalMultilinearSeries.ofScalars E c).radius) :=
+  (FormalMultilinearSeries.ofScalars E c).analyticOnNhd.comp
+    (analyticOnNhd_id.sub analyticOnNhd_const) fun z hz ↦ by
+      simpa [Metric.mem_eball, edist_zero_right, eDist_eq_eNorm_sub] using hz
 
 end TauCeti

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
+public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.GroupTheory.ArchimedeanDensely
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Power comparisons in ordered monoids with zero
@@ -20,6 +23,9 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
 * replacing the base `c ≥ 0` by `max 1 c ≥ 1` allows raising the exponent (`c ^ m ≤ max 1 c ^ n`
   for `m ≤ n`) and re-basing shifted or rescaled geometric bounds (`c ^ m ≤ (max 1 c ^ k) ^ n`
   for `m ≤ k * n`);
+* trading one factor `c` for two factors `b ≥ 0` with `c ≤ b ^ 2` does not decrease
+  `c ^ s * b ^ (L - 2 * s)`; this needs only a preorder. In a linearly ordered semifield, this
+  bounds the weight of a trace word in the Füredi–Komlós enumeration;
 * in a `MulArchimedean` `LinearOrderedCommGroupWithZero` admitting a largest element strictly
   below `1`, no nonzero element other than `1` is a `k`-th power for arbitrarily large `k : ℕ`
   (`TauCeti.eq_one_of_forall_exists_le_pow_eq`).
@@ -30,6 +36,12 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
   `(m, n)` and `(m', n')` are proportional.
 * `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
 * `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
+* `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
+  `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
+* `TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`: for `0 ≤ c ≤ b ^ 2`, `c ≤ A ^ 2 / m`,
+  `0 ≤ b ≤ A * γ ^ 2` and `m > 0`, a word of length `L` with `e` distinct edges, `2 * e ≤ L`, and
+  `1 ≤ t ≤ e + 1` vertices has weight `c ^ e * b ^ (L - 2 * e)` at most
+  `m * A ^ L * (γ ^ (2 * (L + 2 - 2 * t)) / m ^ t)`.
 * `TauCeti.eq_one_of_forall_exists_le_pow_eq`: in a `MulArchimedean`
   `LinearOrderedCommGroupWithZero Γ` admitting a largest element strictly below `1`, a nonzero
   element that is a `k`-th power for arbitrarily large `k : ℕ` equals `1`.
@@ -70,6 +82,49 @@ theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder
     c ^ m ≤ (max 1 c ^ k) ^ n := by
   rw [← pow_mul]
   exact pow_le_max_one_pow hc h
+
+/-- Trading one factor `c` for two factors `b`: in an ordered monoid with zero, if
+`0 ≤ c ≤ b ^ 2` and `0 ≤ b`, then `c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r)` for
+`r ≤ s` and `2 * s ≤ L`. -/
+theorem pow_mul_pow_sub_two_mul_le {M₀ : Type*} [MonoidWithZero M₀] [Preorder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] [MulPosMono M₀] {b c : M₀} (hb : 0 ≤ b) (hc : 0 ≤ c)
+    (hcb : c ≤ b ^ 2) {r s L : ℕ} (hrs : r ≤ s) (hs : 2 * s ≤ L) :
+    c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r) := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hrs
+  calc c ^ (r + d) * b ^ (L - 2 * (r + d)) = c ^ r * (c ^ d * b ^ (L - 2 * (r + d))) := by
+        rw [pow_add, mul_assoc]
+    _ ≤ c ^ r * ((b ^ 2) ^ d * b ^ (L - 2 * (r + d))) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hc hcb d)
+          (pow_nonneg hb _)) (pow_nonneg hc r)
+    _ = c ^ r * b ^ (L - 2 * r) := by
+        rw [← pow_mul, ← pow_add]
+        congr 2
+        omega
+
+/-- **Weight of a trace word.** In a linearly ordered semifield, let `0 ≤ c ≤ b ^ 2`,
+`c ≤ A ^ 2 / m` and `0 ≤ b ≤ A * γ ^ 2` with `m > 0`. Then a word of length `L` with `e` distinct
+edges, `2 * e ≤ L`, and `t` vertices, `1 ≤ t ≤ e + 1`, whose entries contribute
+`c ^ e * b ^ (L - 2 * e)`, has weight at most `m * A ^ L * (γ ^ (2 * (L + 2 - 2 * t)) / m ^ t)`.
+This is the form counted by the weighted Füredi–Komlós enumeration. -/
+theorem pow_mul_pow_sub_le_mul_pow_div_pow {K : Type*} [Semifield K] [LinearOrder K]
+    [IsStrictOrderedRing K] {b c A γ m : K} (hb : 0 ≤ b) (hc : 0 ≤ c) (hcb : c ≤ b ^ 2)
+    (hcA : c ≤ A ^ 2 / m) (hbA : b ≤ A * γ ^ 2) (hm : 0 < m) {e t L : ℕ} (ht : 1 ≤ t)
+    (hte : t ≤ e + 1) (heL : 2 * e ≤ L) :
+    c ^ e * b ^ (L - 2 * e) ≤ m * A ^ L * (γ ^ (2 * (L + 2 - 2 * t)) / m ^ t) := by
+  obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+  have hexp : L + 2 - 2 * (t' + 1) = L - 2 * t' := by omega
+  have hAL : A ^ L = (A ^ 2) ^ t' * A ^ (L - 2 * t') := by
+    rw [← pow_mul, ← pow_add]
+    congr 1
+    omega
+  calc _ ≤ c ^ t' * b ^ (L - 2 * t') := pow_mul_pow_sub_two_mul_le hb hc hcb (by omega) heL
+    _ ≤ (A ^ 2 / m) ^ t' * (A * γ ^ 2) ^ (L - 2 * t') :=
+        mul_le_mul (pow_le_pow_left₀ hc hcA _) (pow_le_pow_left₀ hb hbA _) (pow_nonneg hb _)
+          (pow_nonneg (hc.trans hcA) _)
+    _ = _ := by
+        rw [hexp, hAL, div_pow, mul_pow, ← pow_mul γ 2]
+        field_simp
+        ring
 
 /-- A nonzero element of a discrete archimedean ordered group with zero that admits `k`-th roots
 for arbitrarily large `k : ℕ` is at least `1`. -/

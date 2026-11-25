@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 
 /-!
@@ -39,7 +40,7 @@ variable (S : Scheme.{u}) {J : GrothendieckTopology Scheme.{u}}
 /-- The abelian sheaf `𝔾_m : T ↦ Γ(T, 𝒪_T)ˣ` on the big fpqc site of `S` is a sheaf for every
 topology coarser than the fpqc topology. -/
 lemma isSheaf_Gm_of_le (hJ : J ≤ fpqcTopology) : Presheaf.IsSheaf (J.over S) (Gm S).obj :=
-  fun E ↦ Presieve.isSheaf_of_le _ (fun _ _ hR ↦ hJ _ hR) ((Gm S).property E)
+  fun E ↦ Presieve.isSheaf_of_le _ (GrothendieckTopology.over_mono hJ S) ((Gm S).property E)
 
 variable (J) in
 /-- The multiplicative group `𝔾_m : T ↦ Γ(T, 𝒪_T)ˣ` as a sheaf of groups on the big site of `S`

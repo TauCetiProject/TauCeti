@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
 import TauCeti.Analysis.Complex.Identity
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
+import TauCeti.Analysis.MellinTransform.ExpKernel
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -656,8 +657,8 @@ theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.
   exact (eq_complexHurwitzZeta_of_eqOn_re_gt hc1 (b := 1) hdg (fun z hz => by
     have hz1 : 1 < z.re := by simpa using hz
     dsimp only
-    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc,
-      complexHurwitzSeries_add_one_right hz1 hc_ne]) hs).symm
+    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc, complexHurwitzSeries_add_one c hz1,
+      mul_comm (-z), ← cpow_def_of_ne_zero hc_ne]) hs).symm
 
 end TauCeti
 

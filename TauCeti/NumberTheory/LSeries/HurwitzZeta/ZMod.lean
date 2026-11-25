@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Comparison
+public import TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries
 public import TauCeti.NumberTheory.LSeries.ZMod.LFunction
 
 /-!
@@ -41,7 +41,7 @@ theorem LFunction_eq_cpow_mul_sum_Icc_complexHurwitzSeries (Φ : ZMod N → ℂ)
       (N : ℂ) ^ (-s) *
         ∑ a ∈ Finset.Icc 1 N, Φ a * TauCeti.complexHurwitzSeries s ((a : ℂ) / N) :=
   LFunction_eq_cpow_mul_sum_Icc_of_eq_hurwitzZeta Φ s
-    fun _ hx => TauCeti.complexHurwitzSeries_ofReal_eq_hurwitzZeta hs hx
+    fun _ hx => TauCeti.complexHurwitzSeries_ofReal hx.1 hx.2 hs
 
 end ZMod
 

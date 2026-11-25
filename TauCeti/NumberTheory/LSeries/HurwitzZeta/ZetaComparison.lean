@@ -7,17 +7,16 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Continuation
-import TauCeti.NumberTheory.LSeries.HurwitzZeta.Comparison
+import TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries
 
 /-!
 # Comparisons of the continued complex Hurwitz zeta function with Mathlib zeta functions
 
-Extends the half-plane series comparisons in `TauCeti.NumberTheory.LSeries.HurwitzZeta.Comparison`
+Extends the half-plane series comparisons in `TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries`
 to all `s ≠ 1` via `TauCeti.eq_complexHurwitzZeta_of_eqOn_re_gt`:
 - along `(0, 1]`, `TauCeti.complexHurwitzZeta s x = HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`;
 - at `c = 1`, `TauCeti.complexHurwitzZeta s 1 = riemannZeta s`;
-- at `c = 1 / 2`, `TauCeti.complexHurwitzZeta s (1 / 2) = (2 ^ s - 1) * riemannZeta s`;
-- at `s = 0` and `x ∈ (0, 1]`, `HurwitzZeta.hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x`.
+- at `c = 1 / 2`, `TauCeti.complexHurwitzZeta s (1 / 2) = (2 ^ s - 1) * riemannZeta s`.
 
 ## Main results
 
@@ -25,8 +24,6 @@ to all `s ≠ 1` via `TauCeti.eq_complexHurwitzZeta_of_eqOn_re_gt`:
   `x ∈ (0, 1]` and `s ≠ 1`.
 * `TauCeti.complexHurwitzZeta_one_right`, `TauCeti.complexHurwitzZeta_one_half_right`:
   specializations at `c = 1` and `c = 1 / 2` for `s ≠ 1`.
-* `HurwitzZeta.hurwitzZeta_apply_zero_of_mem_Ioc`: endpoint evaluation of `HurwitzZeta.hurwitzZeta`
-  at `s = 0` for `x ∈ (0, 1]`.
 -/
 
 public section
@@ -46,7 +43,7 @@ theorem complexHurwitzZeta_ofReal_eq_hurwitzZeta {s : ℂ} {x : ℝ} (hs : s ≠
     fun _ hz => (HurwitzZeta.differentiableAt_hurwitzZeta _ hz).differentiableWithinAt
   exact (eq_complexHurwitzZeta_of_eqOn_re_gt hx_re (b := 1) hdg (fun z hz => by
     have hz1 : 1 < z.re := by simpa using hz
-    exact (complexHurwitzSeries_ofReal_eq_hurwitzZeta hz1 hx).symm) hs).symm
+    exact (complexHurwitzSeries_ofReal hx.1 hx.2 hz1).symm) hs).symm
 
 /-- At `c = 1` and `s ≠ 1`, `complexHurwitzZeta s 1 = riemannZeta s`. -/
 theorem complexHurwitzZeta_one_right {s : ℂ} (hs : s ≠ 1) :
@@ -63,19 +60,8 @@ theorem complexHurwitzZeta_one_half_right {s : ℂ} (hs : s ≠ 1) :
       (differentiableAt_const 1)).mul (differentiableAt_riemannZeta hz)).differentiableWithinAt
   exact (eq_complexHurwitzZeta_of_eqOn_re_gt hhalf_re (b := 1) hdg (fun z hz => by
     have hz1 : 1 < z.re := by simpa using hz
-    exact (complexHurwitzSeries_one_half_right hz1).symm) hs).symm
+    exact (complexHurwitzSeries_one_half hz1).symm) hs).symm
 
 end TauCeti
-
-namespace HurwitzZeta
-
-/-- For `x ∈ (0, 1]`, `hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x`. -/
-@[simp]
-theorem hurwitzZeta_apply_zero_of_mem_Ioc {x : ℝ} (hx : x ∈ Ioc 0 1) :
-    hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x := by
-  rw [← TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta zero_ne_one hx,
-    TauCeti.complexHurwitzZeta_zero_left]
-
-end HurwitzZeta
 
 end

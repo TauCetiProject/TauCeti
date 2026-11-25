@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 public import TauCeti.Analysis.Normed.Operator.StableSequence
 import Mathlib.Data.Nat.Bitwise
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Stability of the finite-section method
@@ -92,9 +93,10 @@ theorem isUnit_and_norm_ringInverse_le_of_finiteSection {M : ℝ}
       (hS : ∀ᶠ n in atTop,
         IsUnit (S.finiteSection b n) ∧ ‖Ring.inverse (S.finiteSection b n)‖ ≤ M) (x : H) :
       ‖x‖ ≤ M * ‖S x‖ :=
-    norm_le_mul_norm_apply_of_finiteSection (hS.mono fun _ ⟨hu, hn⟩ y ↦
-      (norm_le_norm_ringInverse_mul_norm_apply hu y).trans
-        (mul_le_mul_of_nonneg_right hn (norm_nonneg _))) x
+    norm_le_mul_norm_apply_of_finiteSection (hS.mono fun _ ⟨hu, hn⟩ y ↦ by
+      have hy := (isInvertible_iff_isUnit.mpr hu).norm_le_norm_inverse_mul_norm y
+      rw [← ringInverse_eq_inverse] at hy
+      exact hy.trans (mul_le_mul_of_nonneg_right hn (norm_nonneg _))) x
   obtain ⟨n, -, hn⟩ := hM.exists
   exact isUnit_and_norm_ringInverse_le_of_forall_norm_le ((norm_nonneg _).trans hn) (lower hM)
     (injective_of_forall_norm_le (lower hM'))

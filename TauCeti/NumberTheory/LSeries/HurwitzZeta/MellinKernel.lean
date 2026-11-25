@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-public import TauCeti.Analysis.MellinTransform.ExpKernel
-public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
+public import TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.MellinTransform.Growth
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -19,13 +18,10 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 /-!
 # Mellin–Laplace kernel for the complex Hurwitz zeta function
 
-Bridges the elementary Mellin–Laplace kernel estimates in
-`TauCeti.Analysis.MellinTransform.ExpKernel`
-(`TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`,
-`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`, and
-`TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`) to `TauCeti.complexHurwitzSeries`: for
-`1 < Re s` and `0 < Re c`,
-`∫₀^∞ t^{s−1} e^{−ct} / (1 − e^{−t}) dt = Γ(s) * complexHurwitzSeries s c`.
+Bridges `TauCeti.complexHurwitzSeries_eq_integral` in
+`TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries` to the form
+`∫₀^∞ t^{s−1} e^{−ct} / (1 − e^{−t}) dt = Γ(s) * complexHurwitzSeries s c` for `1 < Re s` and
+`0 < Re c`.
 
 Splitting off the exponential tail on `(1, ∞)` defines `TauCeti.hurwitzTailIntegral`, which
 converges for all `s : ℂ` when `0 < Re c` and is jointly analytic on
@@ -58,20 +54,9 @@ theorem integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries {s c :
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t))) =
       Gamma s * complexHurwitzSeries s c := by
   have hs0 : 0 < s.re := by linarith
-  have hkernel : EqOn
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t))))
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (cexp ((1 - c) * t) / (cexp t - 1))) (Ioi 0) :=
-    fun t _ => by simp only [Complex.exp_neg_mul_div_one_sub_exp_neg]
-  rw [setIntegral_congr_fun measurableSet_Ioi hkernel]
-  have hsum := hasSum_setIntegral_cpow_mul_exp_neg_mul hs hc subset_rfl
-  have hterm : (fun k : ℕ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * cexp (-(((k : ℂ) + c) * t))) =
-      fun k : ℕ => Gamma s * ((k : ℂ) + c) ^ (-s) := funext fun k => by
-    have hk : 0 < ((k : ℂ) + c).re := by
-      simp only [add_re, natCast_re]
-      positivity
-    exact integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs0 hk
-  rw [hterm] at hsum
-  exact hsum.unique ((hasSum_complexHurwitzSeries_of_re_pos hs hc).mul_left (Gamma s))
+  rw [complexHurwitzSeries_eq_integral hs hc, mul_inv_cancel_left₀ (Gamma_ne_zero_of_re_pos hs0)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+  ring_nf
 
 /-- The exponential tail integral on `(1, ∞)`,
 `∫ t in Ioi 1, (t : ℂ) ^ (s - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t)))`. -/

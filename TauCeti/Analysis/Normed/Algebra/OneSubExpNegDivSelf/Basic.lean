@@ -34,6 +34,7 @@ map.
 * `oneSubExpNegDivSelf_eq_dslope_exp_zero_neg` and
   `Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg`: identification of `oneSubExpNegDivSelf`
   with the divided difference `dslope exp 0 (-z)`.
+* `Real.tsum_pow_div_factorial_succ`: over `ℝ`, `∑ yⁿ / (n + 1)! = (exp y - 1) / y` for `y ≠ 0`.
 
 ## References
 
@@ -198,3 +199,17 @@ theorem _root_.Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg (z : ℂ) :
   simpa only [Complex.exp_eq_exp_ℂ] using _root_.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg z
 
 end DSlope
+
+section Real
+
+/-- Over `ℝ`, the series `∑_{n ≥ 0} yⁿ / (n + 1)!` of `oneSubExpNegDivSelf` at `-y` sums to
+`(exp y - 1) / y` for `y ≠ 0`. -/
+theorem Real.tsum_pow_div_factorial_succ {y : ℝ} (hy : y ≠ 0) :
+    ∑' n : ℕ, y ^ n / ((n + 1).factorial : ℝ) = (Real.exp y - 1) / y := by
+  have h := mul_oneSubExpNegDivSelf (𝕂 := ℝ) (-y)
+  rw [oneSubExpNegDivSelf_eq_tsum, neg_neg, ← Real.exp_eq_exp_ℝ] at h
+  simp only [smul_eq_mul, inv_mul_eq_div] at h
+  rw [eq_div_iff hy]
+  linear_combination -h
+
+end Real
