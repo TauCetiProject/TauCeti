@@ -32,6 +32,7 @@ Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any cl
 
 ## Main definitions
 
+* `Euclidean.lineVarifoldParam a u P`: the parametrization `t ↦ (a + t u, P)`.
 * `Euclidean.lineVarifold a u P`: the line `a + ℝu`, parametrized by Lebesgue measure, with the
   constant plane `P`.
 * `Euclidean.verticalLift a u w`: the line `a + ℝu` with the constant plane `span {w}`.
@@ -130,44 +131,55 @@ private theorem tangentialDivergence_verticalField [FiniteDimensional ℝ E] {ψ
 
 /-! ### The line varifold -/
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [FiniteDimensional ℝ E]
 
+/-- The parametrization `t ↦ (a + t u, P)` of the line `a + ℝu` carrying the constant plane
+`P`. -/
+def lineVarifoldParam (a u : E) (P : grassmannian ℝ E k) :
+    ℝ → (⊤ : Opens E) × grassmannian ℝ E k :=
+  fun t => (⟨a + t • u, by simp⟩, P)
+
+/-- The parametrization of the line varifold evaluates to `(a + t u, P)`. -/
+@[simp]
+theorem lineVarifoldParam_apply (a u : E) (P : grassmannian ℝ E k) (t : ℝ) :
+    lineVarifoldParam a u P t = (⟨a + t • u, by simp⟩, P) :=
+  (rfl)
+
+/-- The parametrization `t ↦ (a + t u, P)` of the line varifold is continuous. -/
+theorem continuous_lineVarifoldParam (a u : E) (P : grassmannian ℝ E k) :
+    Continuous (lineVarifoldParam a u P) :=
+  ((continuous_const.add (continuous_id.smul continuous_const)).subtype_mk fun _ => by
+    simp).prodMk continuous_const
+
+variable [MeasurableSpace E] [BorelSpace E]
 
 /-- The varifold of the line `a + ℝu`, parametrized by Lebesgue measure, carrying the constant
 plane `P` at every point: the image of Lebesgue measure under `t ↦ (a + t u, P)`. -/
 def lineVarifold (a u : E) (P : grassmannian ℝ E k) :
     Measure ((⊤ : Opens E) × grassmannian ℝ E k) :=
-  (volume : Measure ℝ).map fun t => (⟨a + t • u, by simp⟩, P)
+  (volume : Measure ℝ).map (lineVarifoldParam a u P)
 
 omit [BorelSpace E] in
 /-- The defining formula of `Euclidean.lineVarifold`. -/
 theorem lineVarifold_def (a u : E) (P : grassmannian ℝ E k) :
-    lineVarifold a u P = (volume : Measure ℝ).map fun t => (⟨a + t • u, by simp⟩, P) := by
+    lineVarifold a u P = (volume : Measure ℝ).map (lineVarifoldParam a u P) := by
   rw [lineVarifold]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The parametrization `t ↦ (a + t u, P)` of the line varifold is continuous. -/
-private theorem continuous_lineVarifold_param (a u : E) (P : grassmannian ℝ E k) :
-    Continuous fun t : ℝ => ((⟨a + t • u, by simp⟩ : (⊤ : Opens E)), P) :=
-  ((continuous_const.add (continuous_id.smul continuous_const)).subtype_mk fun _ => by
-    simp).prodMk continuous_const
 
 /-- The line varifold of a measurable set `s` is the Lebesgue measure of the parameters
 `t` with `(a + t u, P) ∈ s`. -/
 theorem lineVarifold_apply (a u : E) (P : grassmannian ℝ E k)
     {s : Set ((⊤ : Opens E) × grassmannian ℝ E k)} (hs : MeasurableSet s) :
-    lineVarifold a u P s =
-      volume ((fun t : ℝ => ((⟨a + t • u, by simp⟩ : (⊤ : Opens E)), P)) ⁻¹' s) := by
-  rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifold_param a u P).measurable hs]
+    lineVarifold a u P s = volume (lineVarifoldParam a u P ⁻¹' s) := by
+  rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifoldParam a u P).measurable hs]
 
 /-- Integrating against the line varifold is integrating along the parametrization
 `t ↦ (a + t u, P)`. -/
 theorem integral_lineVarifold {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (a u : E)
     (P : grassmannian ℝ E k) {f : (⊤ : Opens E) × grassmannian ℝ E k → F}
     (hf : AEStronglyMeasurable f (lineVarifold a u P)) :
-    ∫ z, f z ∂lineVarifold a u P = ∫ t : ℝ, f (⟨a + t • u, by simp⟩, P) := by
+    ∫ z, f z ∂lineVarifold a u P = ∫ t : ℝ, f (lineVarifoldParam a u P t) := by
   rw [lineVarifold_def] at hf ⊢
-  exact integral_map (continuous_lineVarifold_param a u P).aemeasurable hf
+  exact integral_map (continuous_lineVarifoldParam a u P).aemeasurable hf
 
 /-- The line varifold is finite on compact sets. -/
 theorem isFiniteMeasureOnCompacts_lineVarifold {a u : E} (hu : u ≠ 0) (P : grassmannian ℝ E k) :
@@ -184,9 +196,9 @@ theorem firstVariation_lineVarifold_apply {a u : E} (hu : u ≠ 0) (P : grassman
     (X : 𝓓^{1}((⊤ : Opens E), E)) :
     firstVariation (lineVarifold a u P) X = ∫ t : ℝ, tangentialDivergence X (a + t • u) P := by
   have := isFiniteMeasureOnCompacts_lineVarifold (a := a) hu P
-  rw [firstVariation_apply, integral_lineVarifold a u P (by
-    simpa only [coe_tangentialDivergenceCc] using
-      (map_continuous (tangentialDivergenceCc (k := k) X)).aestronglyMeasurable)]
+  rw [firstVariation_apply,
+    integral_lineVarifold a u P (integrable_tangentialDivergence X).aestronglyMeasurable]
+  simp only [lineVarifoldParam_apply]
 
 /-- The *vertical lift* of the line `a + ℝu` along `w ≠ 0`: the line varifold carrying the
 constant plane `span {w}` at every point. -/
