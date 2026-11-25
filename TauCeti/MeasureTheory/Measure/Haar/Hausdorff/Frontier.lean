@@ -33,18 +33,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] {Ω : Opens E}
   {s : Set E}
 
-/-- A set whose frontier has finite `μH[n - 1]` measure in an open set `Ω` agrees almost
-everywhere in `Ω` with its interior, in positive dimension `n`. -/
-theorem ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top (hn : finrank ℝ E ≠ 0)
-    (h : μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ Ω) ≠ ∞) :
-    s =ᵐ[μ.restrict Ω] interior s := by
-  have hH : μH[((finrank ℝ E : ℕ) : ℝ)] (frontier s ∩ Ω) = 0 :=
-    (hausdorffMeasure_zero_or_top (Nat.cast_lt.2 (Nat.sub_lt (Nat.pos_of_ne_zero hn) one_pos))
-      _).resolve_right h
-  have hnull : μ (frontier s ∩ Ω) = 0 := absolutelyContinuous_isAddHaarMeasure μ _ hH
-  refine (interior_ae_eq_of_null_frontier ?_).symm
-  rwa [Measure.restrict_apply' Ω.isOpen.measurableSet]
-
 /-- A set whose frontier has locally finite `μH[n - 1]` measure in an open set `Ω`, that is finite
 `μH[n - 1]` measure in every compact subset of `Ω`, agrees almost everywhere in `Ω` with its
 interior, in positive dimension `n`. -/
@@ -61,5 +49,13 @@ theorem ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_to
   exact absolutelyContinuous_isAddHaarMeasure μ _
     ((hausdorffMeasure_zero_or_top (Nat.cast_lt.2 (Nat.sub_lt (Nat.pos_of_ne_zero hn) one_pos))
       _).resolve_right (h K hK hKΩ))
+
+/-- A set whose frontier has finite `μH[n - 1]` measure in an open set `Ω` agrees almost
+everywhere in `Ω` with its interior, in positive dimension `n`. -/
+theorem ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top (hn : finrank ℝ E ≠ 0)
+    (h : μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ Ω) ≠ ∞) :
+    s =ᵐ[μ.restrict Ω] interior s :=
+  ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top μ hn fun _ _ hKΩ =>
+    ne_top_of_le_ne_top h (measure_mono (inter_subset_inter_right _ hKΩ))
 
 end TauCeti

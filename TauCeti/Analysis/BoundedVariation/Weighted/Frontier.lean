@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Integral.Layercake
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Lebesgue.PositiveDensity
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff.Frontier
 
 /-!
@@ -19,10 +20,12 @@ import TauCeti.MeasureTheory.Measure.Haar.Hausdorff.Frontier
 For a `C¹` weight `W` with measure `μ = e^{−W} · volume`, the codimension-one measure is
 `μ^{n−1} = e^{−W} · μHE[n − 1]`. In dimension `n ≥ 2`, every set `s`, measurable or not, has
 `P_μ(s; Ω) ≤ μ^{n−1}(∂s ∩ Ω)` in every open set `Ω`
-(`TauCeti.weightedPerimeter_le_lintegral_frontier_inter`). If the right side is finite, the
-frontier has locally finite `μHE[n − 1]` measure, so `s` agrees with its interior almost everywhere
-in `Ω` (`TauCeti.ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top`), and
-the interior has locally finite perimeter
+(`TauCeti.weightedPerimeter_le_setLIntegral_frontier_inter`). If the right side is finite, the
+frontier has locally finite `μHE[n − 1]` measure
+(`TauCeti.measure_inter_ne_top_of_setLIntegral_ne_top`), so `s` agrees with its interior almost
+everywhere in `Ω`
+(`TauCeti.ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top`), and the
+interior has locally finite perimeter
 (`TauCeti.exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`).
 Then `P_μ(s; Ω) = ∫ e^{−W} d|D1_s|` (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`), and
 the layer-cake formula compares both sides on the open superlevel sets of `e^{−W}`, where the
@@ -56,34 +59,10 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {Ω : Opens E} {s : Set E}
 
-omit [FiniteDimensional ℝ E] in
-/-- If `μ^{n−1}(∂s ∩ Ω) = ∫_{∂s ∩ Ω} e^{−W} dHⁿ⁻¹` is finite, then the frontier of `s` has finite
-`(n − 1)`-dimensional Hausdorff measure in every compact subset of `Ω`. -/
-private theorem euclideanHausdorffMeasure_frontier_inter_ne_top (hW : ContDiff ℝ 1 W)
-    (h : ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x))
-      ∂μHE[finrank ℝ E - 1] ≠ ∞) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    μHE[finrank ℝ E - 1] (frontier s ∩ K) ≠ ∞ := by
-  rcases K.eq_empty_or_nonempty with rfl | hne
-  · simp
-  have hρ : Continuous fun x : E => Real.exp (-W x) := hW.continuous.neg.rexp
-  obtain ⟨y, -, hy⟩ := hK.exists_isMinOn hne hρ.continuousOn
-  have hle : ENNReal.ofReal (Real.exp (-W y)) * μHE[finrank ℝ E - 1] (frontier s ∩ K) ≤
-      ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x)) ∂μHE[finrank ℝ E - 1] :=
-    calc ENNReal.ofReal (Real.exp (-W y)) * μHE[finrank ℝ E - 1] (frontier s ∩ K)
-        = ∫⁻ _ in frontier s ∩ K, ENNReal.ofReal (Real.exp (-W y)) ∂μHE[finrank ℝ E - 1] :=
-          (setLIntegral_const _ _).symm
-      _ ≤ ∫⁻ x in frontier s ∩ K, ENNReal.ofReal (Real.exp (-W x)) ∂μHE[finrank ℝ E - 1] :=
-          setLIntegral_mono hρ.measurable.ennreal_ofReal fun x hx =>
-            ENNReal.ofReal_le_ofReal (hy hx.2)
-      _ ≤ _ := lintegral_mono_set (inter_subset_inter_right _ hKΩ)
-  intro htop
-  rw [htop, ENNReal.mul_top (by simpa using Real.exp_pos (-W y))] at hle
-  exact h (top_le_iff.1 hle)
-
 /-- **The frontier bound for the weighted perimeter.** For a `C¹` weight `W`, in dimension
 `n ≥ 2`, every set `s`, measurable or not, has `P_μ(s; Ω) ≤ ∫_{∂s ∩ Ω} e^{−W} dHⁿ⁻¹` in every open
 set `Ω`. -/
-theorem weightedPerimeter_le_lintegral_frontier_inter (hW : ContDiff ℝ 1 W)
+theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
     (hn : 2 ≤ finrank ℝ E) (Ω : Opens E) (s : Set E) :
     weightedPerimeter W Ω s ≤
       ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x)) ∂μHE[finrank ℝ E - 1] := by
@@ -91,8 +70,9 @@ theorem weightedPerimeter_le_lintegral_frontier_inter (hW : ContDiff ℝ 1 W)
       ∂μHE[finrank ℝ E - 1] = ∞
   · rw [hI]
     exact le_top
+  have hρ : Continuous fun x : E => Real.exp (-W x) := hW.continuous.neg.rexp
   have hK (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :=
-    euclideanHausdorffMeasure_frontier_inter_ne_top hW hI hK hKΩ
+    measure_inter_ne_top_of_setLIntegral_ne_top hρ hK (fun x _ => Real.exp_pos (-W x)) hKΩ hI
   -- The frontier is Lebesgue-null in `Ω`, so `s` agrees with its interior almost everywhere there.
   have hH (K : Set E) (hK' : IsCompact K) (hKΩ : K ⊆ Ω) :
       μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ K) ≠ ∞ :=
@@ -108,7 +88,6 @@ theorem weightedPerimeter_le_lintegral_frontier_inter (hW : ContDiff ℝ 1 W)
     simpa only [perimeter_def] using
       exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
         (μ := volume) hK hK' hKΩ
-  have hρ : Continuous fun x : E => Real.exp (-W x) := hW.continuous.neg.rexp
   rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin,
     lintegral_eq_lintegral_meas_lt _ (.of_forall fun _ => (Real.exp_pos _).le)
       (hρ.comp continuous_subtypeVal).measurable.aemeasurable,
