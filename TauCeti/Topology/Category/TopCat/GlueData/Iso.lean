@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Category.TopCat.GlueData
+public import TauCeti.Topology.Category.TopCat.GlueData.Map
 public import TauCeti.Topology.Category.TopCat.GlueData.Reindex
 
 /-!
@@ -18,21 +18,24 @@ The two gluing data may live in different universes. Isomorphisms compose
 (`TopCat.GlueData.Iso.trans`) and invert (`TopCat.GlueData.Iso.symm`), and reindexing along a
 bijection gives an isomorphism (`TopCat.GlueData.reindexIso`).
 
-An isomorphism preserves and reflects the identifications made by the gluing
-(`TopCat.GlueData.Iso.ι_eq_iff`), so it induces a homeomorphism of the existing glued carriers,
-`TopCat.GlueData.Iso.gluedHomeomorph`, given on each piece by the piece homeomorphism. An
-isomorphism is determined by its index bijection and this homeomorphism (`TopCat.GlueData.Iso.ext`).
+An isomorphism is a bundled special case of the unbundled isomorphisms of gluing data in
+`TauCeti.Topology.Category.TopCat.GlueData.Map`: its index map is a bijection, and it
+preserves and reflects the identifications made by the gluing (`TopCat.GlueData.Iso.ι_eq_iff`).
+So for gluing data in one universe it induces the homeomorphism
+`TopCat.GlueData.gluedHomeomorph` of the existing glued carriers, given on each piece by the
+piece homeomorphism; this is `TopCat.GlueData.Iso.gluedHomeomorph`. An isomorphism is determined
+by its index bijection and this homeomorphism (`TopCat.GlueData.Iso.ext`), and the isomorphisms
+form a groupoid.
 
 The hypotheses of the separation, countability and connectedness criteria for glued spaces in
 `TauCeti.Topology.Category.TopCat.GlueData` are invariant under isomorphisms:
 
-* the relation between two pieces corresponds to the relation between the corresponding pieces
-  (`TopCat.GlueData.Iso.preimage_chartRel`), so it is closed for one gluing exactly when it is
-  closed for the other (`TopCat.GlueData.Iso.isClosed_chartRel_iff`), which is the input of
+* by `TopCat.GlueData.Iso.ι_eq_iff`, the piece homeomorphisms satisfy the hypothesis of
+  `TopCat.GlueData.isClosed_chartRel_iff_of_homeomorph`, which transfers the input of
   `TopCat.GlueData.t2Space_iff_isClosed_chartRel`;
-* the overlap graphs correspond (`TopCat.GlueData.Iso.nonempty_V_iff`), so their chains of
-  nonempty overlaps correspond (`TopCat.GlueData.Iso.reflTransGen_iff`), which is the input of
-  `TopCat.GlueData.connectedSpace_iff_reflTransGen` and
+* the chains of nonempty overlaps correspond (`TopCat.GlueData.Iso.reflTransGen_iff`, which
+  needs no nonempty piece, unlike `TopCat.GlueData.reflTransGen_nonempty_V_iff_of_surjective`),
+  which is the input of `TopCat.GlueData.connectedSpace_iff_reflTransGen` and
   `TopCat.GlueData.preconnectedSpace_iff_reflTransGen`;
 * the index types are equivalent and the pieces are homeomorphic, which transfers the
   countability hypotheses of `TopCat.GlueData.secondCountableTopology`.
@@ -80,6 +83,8 @@ structure Iso (D : TopCat.GlueData.{u}) (D' : TopCat.GlueData.{v}) where
       D'.t (indexEquiv i) (indexEquiv j) (overlapHomeomorph i j x)
 
 namespace Iso
+
+section
 
 variable {D : TopCat.GlueData.{u}} {D' : TopCat.GlueData.{v}} {D'' : TopCat.GlueData.{w}}
 
@@ -182,31 +187,7 @@ theorem ι_eq_iff {i j : D.J} (x : D.U i) (y : D.U j) :
     exact ⟨α.overlapHomeomorph i j z, by rw [← α.pieceHomeomorph_f, hx],
       by rw [← α.overlapHomeomorph_t, ← α.pieceHomeomorph_f, hy]⟩
 
-/-! ### The relation between two pieces -/
-
-/-- The relation between the `i`-th and `j`-th pieces of `D` is the preimage of the relation
-between the corresponding pieces of `D'` under the piece homeomorphisms. -/
-theorem preimage_chartRel (i j : D.J) :
-    Prod.map (α.pieceHomeomorph i) (α.pieceHomeomorph j) ⁻¹'
-        D'.chartRel (α.indexEquiv i) (α.indexEquiv j) =
-      D.chartRel i j := by
-  ext p
-  simp only [mem_preimage, Prod.map_fst, Prod.map_snd, mem_chartRel_iff, α.ι_eq_iff]
-
-/-- The relation between two pieces is closed exactly when the relation between the
-corresponding pieces is closed. This transfers the hypothesis of the Hausdorff criterion
-`TopCat.GlueData.t2Space_iff_isClosed_chartRel`. -/
-theorem isClosed_chartRel_iff (i j : D.J) :
-    IsClosed (D'.chartRel (α.indexEquiv i) (α.indexEquiv j)) ↔ IsClosed (D.chartRel i j) := by
-  rw [← α.preimage_chartRel i j]
-  exact ((α.pieceHomeomorph i).prodCongr (α.pieceHomeomorph j)).isClosed_preimage.symm
-
 /-! ### The overlap graph -/
-
-/-- Two pieces overlap exactly when the corresponding pieces overlap. -/
-theorem nonempty_V_iff (i j : D.J) :
-    Nonempty (D'.V (α.indexEquiv i, α.indexEquiv j)) ↔ Nonempty (D.V (i, j)) :=
-  ⟨fun ⟨z⟩ ↦ ⟨(α.overlapHomeomorph i j).symm z⟩, fun ⟨z⟩ ↦ ⟨α.overlapHomeomorph i j z⟩⟩
 
 /-- Two pieces are joined by a chain of pieces with consecutive nonempty overlaps exactly when
 the corresponding pieces are. This transfers the hypothesis of the connectedness criteria
@@ -216,80 +197,32 @@ theorem reflTransGen_iff (i j : D.J) :
     Relation.ReflTransGen (fun a b ↦ Nonempty (D'.V (a, b))) (α.indexEquiv i) (α.indexEquiv j) ↔
       Relation.ReflTransGen (fun a b ↦ Nonempty (D.V (a, b))) i j := by
   refine ⟨fun h ↦ ?_, fun h ↦ Relation.ReflTransGen.lift (p := fun a b ↦ Nonempty (D'.V (a, b)))
-    α.indexEquiv (fun a b hab ↦ (α.nonempty_V_iff a b).2 hab) _ _ h⟩
+    α.indexEquiv (fun a b ⟨z⟩ ↦ ⟨α.overlapHomeomorph a b z⟩) _ _ h⟩
   have h' : Relation.ReflTransGen (fun a b ↦ Nonempty (D.V (a, b)))
       (α.indexEquiv.symm (α.indexEquiv i)) (α.indexEquiv.symm (α.indexEquiv j)) :=
     Relation.ReflTransGen.lift (p := fun a b ↦ Nonempty (D.V (a, b))) α.indexEquiv.symm
       (fun a b hab ↦ by
         obtain ⟨a, rfl⟩ := α.indexEquiv.surjective a
         obtain ⟨b, rfl⟩ := α.indexEquiv.surjective b
-        simpa only [Function.onFun, Equiv.symm_apply_apply] using (α.nonempty_V_iff a b).1 hab)
+        obtain ⟨z⟩ := hab
+        simpa only [Function.onFun, Equiv.symm_apply_apply] using
+          (⟨(α.overlapHomeomorph a b).symm z⟩ : Nonempty (D.V (a, b))))
       _ _ h
   simpa only [Equiv.symm_apply_apply] using h'
 
+end
+
 /-! ### The homeomorphism of glued spaces -/
 
-/-- The piece homeomorphisms followed by the inclusions of the pieces of `D'`, on the disjoint
-union of the pieces of `D`. -/
-private noncomputable def sigmaMap : C(Σ i, D.U i, D'.toGlueData.glued) :=
-  .sigma fun i ↦ (D'.toGlueData.ι (α.indexEquiv i)).hom.comp (α.pieceHomeomorph i)
+variable {D D' D'' : TopCat.GlueData.{u}} (α : D.Iso D')
 
-private theorem factorsThrough_sigmaMap :
-    Function.FactorsThrough α.sigmaMap (ContinuousMap.sigma fun i ↦ (D.toGlueData.ι i).hom) :=
-  fun p q h ↦ (α.ι_eq_iff p.2 q.2).2 h
-
-/-- The continuous map of glued spaces induced by an isomorphism of gluing data, descended from
-the piece homeomorphisms along the quotient map from the disjoint union of the pieces. -/
-private noncomputable def gluedMap : C(D.toGlueData.glued, D'.toGlueData.glued) :=
-  D.isOpenQuotientMap_sigma_ι.isQuotientMap.lift α.sigmaMap α.factorsThrough_sigmaMap
-
-private theorem gluedMap_ι (i : D.J) (x : D.U i) :
-    α.gluedMap (D.toGlueData.ι i x) = D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) :=
-  DFunLike.congr_fun
-    (D.isOpenQuotientMap_sigma_ι.isQuotientMap.lift_comp α.sigmaMap α.factorsThrough_sigmaMap)
-    ⟨i, x⟩
-
-private theorem gluedMap_injective : Function.Injective α.gluedMap := by
-  intro x y h
-  obtain ⟨i, x, rfl⟩ := D.ι_jointly_surjective x
-  obtain ⟨j, y, rfl⟩ := D.ι_jointly_surjective y
-  rw [α.gluedMap_ι, α.gluedMap_ι] at h
-  exact (α.ι_eq_iff x y).1 h
-
-private theorem gluedMap_surjective : Function.Surjective α.gluedMap := by
-  intro y
-  obtain ⟨i', y, rfl⟩ := D'.ι_jointly_surjective y
-  obtain ⟨i, rfl⟩ := α.indexEquiv.surjective i'
-  exact ⟨D.toGlueData.ι i ((α.pieceHomeomorph i).symm y), by
-    rw [α.gluedMap_ι, Homeomorph.apply_symm_apply]⟩
-
-private theorem isOpenMap_gluedMap : IsOpenMap α.gluedMap := by
-  refine D.isOpenQuotientMap_sigma_ι.isOpenMap_iff.2 (isOpenMap_sigma.2 fun i ↦ ?_)
-  simpa only [Function.comp_def, α.gluedMap_ι] using
-    (D'.ι_isOpenEmbedding (α.indexEquiv i)).isOpenMap.comp (α.pieceHomeomorph i).isOpenMap
-
-/-- The homeomorphism of glued spaces induced by an isomorphism of gluing data. On each piece it
-is the corresponding piece homeomorphism (`TopCat.GlueData.Iso.gluedHomeomorph_ι`). -/
-noncomputable def gluedHomeomorph : D.toGlueData.glued ≃ₜ D'.toGlueData.glued :=
-  (Equiv.ofBijective α.gluedMap
-    (show Function.Bijective α.gluedMap from ⟨α.gluedMap_injective, α.gluedMap_surjective⟩))
-    |>.toHomeomorphOfContinuousOpen α.gluedMap.continuous α.isOpenMap_gluedMap
-
-/-- The homeomorphism of glued spaces is the corresponding piece homeomorphism on each piece. -/
-@[simp]
-theorem gluedHomeomorph_ι (i : D.J) (x : D.U i) :
-    α.gluedHomeomorph (D.toGlueData.ι i x) =
-      D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) := by
-  rw [gluedHomeomorph, Equiv.toHomeomorphOfContinuousOpen_apply, Equiv.coe_ofBijective,
-    gluedMap_ι]
-
-/-- The inverse homeomorphism of glued spaces is the inverse piece homeomorphism on each
-corresponding piece. -/
-@[simp]
-theorem gluedHomeomorph_symm_ι (i : D.J) (y : D'.U (α.indexEquiv i)) :
-    α.gluedHomeomorph.symm (D'.toGlueData.ι (α.indexEquiv i) y) =
-      D.toGlueData.ι i ((α.pieceHomeomorph i).symm y) := by
-  rw [Homeomorph.symm_apply_eq, gluedHomeomorph_ι, Homeomorph.apply_symm_apply]
+/-- The homeomorphism of glued spaces induced by an isomorphism of gluing data: the
+`TopCat.GlueData.gluedHomeomorph` of its piece homeomorphisms, which is the corresponding piece
+homeomorphism on each piece (`TopCat.GlueData.gluedHomeomorph_ι`). -/
+noncomputable abbrev gluedHomeomorph : D.toGlueData.glued ≃ₜ D'.toGlueData.glued :=
+  TopCat.GlueData.gluedHomeomorph α.pieceHomeomorph (fun _ _ x y ↦ α.ι_eq_iff x y)
+    ((α.indexEquiv.surjective.iUnion_comp fun k ↦ range (D'.toGlueData.ι k)).trans
+      D'.iUnion_range_ι)
 
 /-- An isomorphism of gluing data is determined by its index bijection and its homeomorphism of
 glued spaces. -/
@@ -299,7 +232,8 @@ theorem ext {α β : D.Iso D'} (he : α.indexEquiv = β.indexEquiv)
   have hφ (i : D.J) (x : D.U i) :
       D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) =
         D'.toGlueData.ι (β.indexEquiv i) (β.pieceHomeomorph i x) := by
-    rw [← gluedHomeomorph_ι, ← gluedHomeomorph_ι, h]
+    simpa only [Iso.gluedHomeomorph, gluedHomeomorph_ι] using
+      DFunLike.congr_fun h (D.toGlueData.ι i x)
   revert he hφ
   obtain ⟨e, φ, ψ, hf, -⟩ := α
   obtain ⟨e', φ', ψ', hf', -⟩ := β
@@ -374,7 +308,29 @@ theorem symm_trans (β : D'.Iso D'') : (α.trans β).symm = β.symm.trans α.sym
   ext (Equiv.symm_trans _ _) (by
     rw [gluedHomeomorph_symm, gluedHomeomorph_trans, gluedHomeomorph_trans, gluedHomeomorph_symm,
       gluedHomeomorph_symm]
-    rfl)
+    exact Homeomorph.ext fun _ ↦ Homeomorph.symm_trans_apply _ _ _)
+
+/-- The identity isomorphism followed by an isomorphism is that isomorphism. -/
+@[simp]
+theorem refl_trans : (Iso.refl D).trans α = α :=
+  ext (Equiv.refl_trans _) (by
+    rw [gluedHomeomorph_trans, gluedHomeomorph_refl]
+    exact Homeomorph.ext fun _ ↦ rfl)
+
+/-- An isomorphism followed by the identity isomorphism is that isomorphism. -/
+@[simp]
+theorem trans_refl : α.trans (Iso.refl D') = α :=
+  ext (Equiv.trans_refl _) (by
+    rw [gluedHomeomorph_trans, gluedHomeomorph_refl]
+    exact Homeomorph.ext fun _ ↦ rfl)
+
+/-- Composition of isomorphisms of gluing data is associative. -/
+theorem trans_assoc {D''' : TopCat.GlueData.{u}} (β : D'.Iso D'') (γ : D''.Iso D''') :
+    (α.trans β).trans γ = α.trans (β.trans γ) :=
+  ext (Equiv.trans_assoc _ _ _) (by
+    rw [gluedHomeomorph_trans, gluedHomeomorph_trans, gluedHomeomorph_trans,
+      gluedHomeomorph_trans]
+    exact Homeomorph.ext fun _ ↦ rfl)
 
 end Iso
 
@@ -399,7 +355,7 @@ theorem coe_gluedHomeomorph_reindexIso (D : TopCat.GlueData.{u}) {K : Type u} (e
     ⇑(D.reindexIso e).gluedHomeomorph = D.reindexMap e := by
   ext x
   obtain ⟨i, x, rfl⟩ := (D.reindex e).ι_jointly_surjective x
-  rw [Iso.gluedHomeomorph_ι, reindexMap_ι]
+  rw [gluedHomeomorph_ι, reindexMap_ι]
   -- The piece homeomorphism of `reindexIso` is the identity of `D.U (e i)`.
   rfl
 
