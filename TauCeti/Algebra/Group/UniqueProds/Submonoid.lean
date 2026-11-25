@@ -6,27 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
-public import Mathlib.Algebra.Group.Submonoid.Defs
+public import Mathlib.Algebra.Group.Subsemigroup.Defs
 
 /-!
-# Unique products in submonoids
+# Unique products in subobjects closed under multiplication
 
-Submonoids inherit unique products and two unique products from the ambient monoid.
-The additive instances allow unique-sum results to apply directly to additive submonoids.
+Subsemigroups, submonoids and subgroups, and more generally the members of any `MulMemClass`,
+inherit unique products and two unique products from the ambient type. The additive instances
+allow unique-sum results to apply directly to additive submonoids and additive subgroups.
 -/
 
 public section
 
-namespace Submonoid
+namespace MulMemClass
 
-variable {M : Type*} [Monoid M]
-
-@[to_additive]
-instance instUniqueProds [UniqueProds M] (S : Submonoid M) : UniqueProds S :=
-  UniqueProds.of_injective_mulHom S.subtype.toMulHom Subtype.val_injective inferInstance
+variable {M S : Type*} [Mul M] [SetLike S M] [MulMemClass S M]
 
 @[to_additive]
-instance instTwoUniqueProds [TwoUniqueProds M] (S : Submonoid M) : TwoUniqueProds S :=
-  TwoUniqueProds.of_injective_mulHom S.subtype.toMulHom Subtype.val_injective inferInstance
+instance instUniqueProds [UniqueProds M] (s : S) : UniqueProds s :=
+  UniqueProds.of_injective_mulHom ⟨Subtype.val, fun _ _ => rfl⟩ Subtype.val_injective
+    inferInstance
 
-end Submonoid
+@[to_additive]
+instance instTwoUniqueProds [TwoUniqueProds M] (s : S) : TwoUniqueProds s :=
+  TwoUniqueProds.of_injective_mulHom ⟨Subtype.val, fun _ _ => rfl⟩ Subtype.val_injective
+    inferInstance
+
+end MulMemClass
