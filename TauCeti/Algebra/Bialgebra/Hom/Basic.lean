@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.Ideal.Maps
 /-!
 # Basic facts about bialgebra morphisms
 
+`BialgHom.toCoalgHom_eq_ofClass` identifies the structure projection to a coalgebra morphism
+with the coercion `CoalgHom.ofClass`.
+
 `BialgHom.id_toRingHom` and `BialgHom.comp_toRingHom` identify the direct ring-homomorphism
 coercions of the identity and composition. They complement Mathlib's `BialgHom.id_toAlgHom`
 and `BialgHom.comp_toAlgHom`, which concern the algebra-homomorphism coercions.
@@ -36,6 +39,11 @@ theorem id_toRingHom : (BialgHom.id R A : A →+* A) = RingHom.id A := rfl
 
 variable {R A}
 variable {B : Type*} [Semiring B] [Algebra R B] [CoalgebraStruct R B]
+
+/-- The coalgebra morphism underlying a bialgebra morphism is its coercion to a coalgebra
+morphism. -/
+theorem toCoalgHom_eq_ofClass (f : A →ₐc[R] B) : f.toCoalgHom = CoalgHom.ofClass f :=
+  rfl
 
 /-- The ring homomorphism underlying a composite of bialgebra morphisms is the composite
 of the underlying ring homomorphisms. -/

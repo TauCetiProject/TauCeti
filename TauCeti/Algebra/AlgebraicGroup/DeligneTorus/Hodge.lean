@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.BaseChange
 public import TauCeti.Geometry.Hodge.Decomposition
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
@@ -61,6 +61,9 @@ weight `n`.
 * `TauCeti.DeligneTorus.isHodgeDecomposition_hodgeComponent`: for a finite-dimensional
   representation pure of weight `n`, the family `p ↦ V^{p, n - p}` is a Hodge decomposition of
   weight `n`.
+* `Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent`: a real subspace
+  `N` is a subrepresentation exactly when `ℂ ⊗[ℝ] N` is the sum of its intersections with the
+  `V^{p,q}`.
 
 ## References
 
@@ -324,5 +327,33 @@ theorem isHodgeDecomposition_hodgeComponent [Module.Finite ℝ V] {n : ℤ}
   exists_forall_lt_eq_bot := by
     obtain ⟨a, ha⟩ := ((finite_setOf_hodgeComponent_ne_bot V).image Prod.fst).bddBelow
     exact ⟨a, fun p hp ↦ by_contra fun h ↦ (ha ⟨(p, n - p), h, rfl⟩).not_gt hp⟩
+
+/-! ### Subrepresentations -/
+
+/-- **The subrepresentations of `S` are the subspaces compatible with the Hodge decomposition.**
+A real subspace `N` of a representation `V` of the Deligne torus is a subrepresentation, its
+stabilizer being all of `S`, exactly when its complexification is the sum of its intersections
+with the Hodge components: `ℂ ⊗[ℝ] N = ⊕ (ℂ ⊗[ℝ] N ∩ V^{p,q})`. -/
+theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent
+    (N : Submodule ℝ V) :
+    N.stabilizerHopfIdeal S = ⊥ ↔
+      N.baseChange ℂ = ⨆ pq : ℤ × ℤ, N.baseChange ℂ ⊓ hodgeComponent V pq.1 pq.2 := by
+  let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+  -- the complexified representation, as a comodule over `ℂ[ℤ²]` through the splitting
+  let _ := Comodule.Corestrict (R := ℂ) (M := ℂ ⊗[ℝ] V) (C := ℂ ⊗[ℝ] S)
+    (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  have h := (N.baseChange ℂ).stabilizerHopfIdeal_corestrict_eq_bot_iff (H₁ := ℂ ⊗[ℝ] S)
+    (H₂ := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) splittingBialgEquiv
+  rw [BialgHom.toCoalgHom_eq_ofClass, HopfIdeal.toIdeal_le_ker_iff_of_injective
+    (f := ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))))
+    splittingBialgEquiv.injective] at h
+  have hV (pq : ℤ × ℤ) := congrFun (hodgeComponent_eq_comp (V := V)) pq
+  rw [← Submodule.stabilizerHopfIdeal_baseChange_eq_bot_iff (K := ℂ), ← h,
+    Submodule.stabilizerHopfIdeal_eq_bot_iff, Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace,
+    ← hodgeIndexEquiv.iSup_comp]
+  simp only [hV, Function.comp_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace]
 
 end TauCeti.DeligneTorus
