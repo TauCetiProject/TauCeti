@@ -9,6 +9,7 @@ public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
+import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
@@ -266,11 +267,8 @@ instance SpecMap_fstHom {R M : Type u} [CommRing R] [AddCommGroup M] [Module R M
     [Module Rᵐᵒᵖ M] [IsCentralScalar R M] :
     IsFirstOrderThickening
       (Spec.map (CommRingCat.ofHom (TrivSqZeroExt.fstHom R R M : TrivSqZeroExt R M →+* R))) :=
-  (SpecMap_iff _ fun r ↦ ⟨TrivSqZeroExt.inl r, by simp⟩).2 <| le_bot_iff.1 <|
-    Ideal.mul_le.2 fun (x : TrivSqZeroExt R M) hx (y : TrivSqZeroExt R M) hy ↦ by
-      have hx : x.fst = 0 := by simpa [RingHom.mem_ker] using hx
-      have hy : y.fst = 0 := by simpa [RingHom.mem_ker] using hy
-      ext <;> simp [hx, hy]
+  (SpecMap_iff _ TrivSqZeroExt.fst_surjective).2 <|
+    (pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq R M)
 
 /-- A first-order thickening `i : T ⟶ T'` with `T'` affine is, up to isomorphisms of source and
 target, the closed immersion `Spec (B ⧸ I) ⟶ Spec B` for `B = Γ(T', ⊤)` and an ideal `I` of `B`

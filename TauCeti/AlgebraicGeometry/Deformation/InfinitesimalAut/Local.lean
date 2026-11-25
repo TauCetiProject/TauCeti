@@ -60,9 +60,6 @@ is the first step in identifying the infinitesimal automorphisms of `X` with the
   `TauCeti.AlgebraicGeometry.eq_infinitesimalAutRestrict_iff` says this characterizes it.
 * `TauCeti.AlgebraicGeometry.dualNumberDeformationMap_comp`: compatibility of `U[ε] ⟶ X[ε]` with
   composition of open immersions.
-* `TauCeti.AlgebraicGeometry.infinitesimalAutRestrict_infinitesimalAutRestrict_comp`: for open
-  immersions `k : V ⟶ U` and `j : U ⟶ X`, restricting `e` to `U` and then to `V` commutes with the
-  composite `V[ε] ⟶ U[ε] ⟶ X[ε]`.
 * `TauCeti.AlgebraicGeometry.infinitesimalAut_ext_of_openCover`: infinitesimal automorphisms with
   the same restrictions to the members of an open cover are equal.
 
@@ -251,18 +248,6 @@ theorem eq_infinitesimalAutRestrict_iff {e : infinitesimalAut f} {g : infinitesi
   ⟨by rintro rfl; exact infinitesimalAutRestrict_comp_dualNumberDeformationMap f j e,
     fun h ↦ Subtype.ext <| aut_ext f j <|
       h.trans (infinitesimalAutRestrict_comp_dualNumberDeformationMap f j e).symm⟩
-
-/-- For open immersions `k : V ⟶ U` and `j : U ⟶ X`, the twice-restricted automorphism `(e|_U)|_V`
-commutes with the composite `V[ε] ⟶ U[ε] ⟶ X[ε]`:
-`(e|_U)|_V ≫ (V[ε] ⟶ U[ε]) ≫ (U[ε] ⟶ X[ε]) = (V[ε] ⟶ U[ε]) ≫ (U[ε] ⟶ X[ε]) ≫ e`. By
-`dualNumberDeformationMap_comp`, this composite is the morphism `V[ε] ⟶ X[ε]` for `k ≫ j`. -/
-@[reassoc]
-theorem infinitesimalAutRestrict_infinitesimalAutRestrict_comp {V : Scheme.{u}} (k : V ⟶ U)
-    [IsOpenImmersion k] (e : infinitesimalAut f) :
-    (infinitesimalAutRestrict (j ≫ f) k (infinitesimalAutRestrict f j e)).val.asIso.hom.left ≫
-        dualNumberDeformationMap (j ≫ f) k ≫ dualNumberDeformationMap f j =
-      dualNumberDeformationMap (j ≫ f) k ≫ dualNumberDeformationMap f j ≫ e.val.asIso.hom.left := by
-  simp
 
 end Restrict
 
