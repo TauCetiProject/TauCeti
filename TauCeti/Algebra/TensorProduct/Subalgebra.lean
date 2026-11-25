@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.RingTheory.TensorProduct.AlgEquiv
 import Mathlib.RingTheory.Flat.Domain
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
@@ -102,18 +103,6 @@ theorem tensorCubeMap_assoc_tmul (A : Subalgebra R H) (t : A ⊗[R] A) (z : A) :
   | add s t hs ht => simp only [TensorProduct.add_tmul, map_add, hs, ht]
   | tmul x y => simp
 
-/-- If `K`-balanced and `R`-balanced tensors agree in `H ⊗ H`, they agree in `H ⊗ (H ⊗[K] H)`. -/
--- A pure tensor `a ⊗ b` of `H ⊗[K] H` is the image of `a` under the `K`-linear map `· ⊗ b`.
-private theorem compatibleSMul_tensorProduct [TensorProduct.CompatibleSMul R K H H] :
-    TensorProduct.CompatibleSMul R K H (H ⊗[K] H) where
-  smul_tmul k h t := by
-    induction t using TensorProduct.inductionOn with
-    | add s t hs ht => simp only [smul_add, TensorProduct.tmul_add, hs, ht]
-    | tmul a b =>
-      rw [TensorProduct.smul_tmul']
-      exact congrArg (LinearMap.lTensor H (((TensorProduct.mk K H H).flip b).restrictScalars R))
-        (TensorProduct.smul_tmul (R := R) k h a)
-
 end Semiring
 
 variable {R K H : Type*} [CommRing R] [IsDomain R] [CommRing K] [Algebra R K] [Ring H]
@@ -141,7 +130,6 @@ theorem tensorSquareMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Su
 agree in `H ⊗ H`, for instance when `K` is the fraction field of `R`. -/
 theorem tensorCubeMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Subalgebra R H)
     [Module.Flat R A] : Function.Injective (tensorCubeMap K A) := by
-  have := compatibleSMul_tensorProduct (R := R) (K := K) (H := H)
   refine (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.injective.comp ?_
   exact TensorProduct.map_injective_of_flat_flat_of_isDomain _ _
     Subtype.val_injective (tensorSquareMap_injective A)
