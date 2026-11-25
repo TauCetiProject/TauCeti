@@ -13,7 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Short
 For `l = 3`, the middle index `1` and `i = 0`, the short root matrix
 `TauCeti.AntidiagonalSpecialOrthogonal.shortRootMatrix` with `h = ½` is the matrix with rows
 `(1, a, -a²/2)`, `(0, 1, -a)`, `(0, 0, 1)`: the conjugate `δ⁻¹ x_{ε₁}(a) δ` of the root map of the
-split form `q₃ = x₁x₃ + x₂²` by `δ = diag(2, 1, 1)` (ReductiveGroups §9B.6, Checks).
+split form `q₃ = x₁x₃ + x₂²` by `δ = diag(2, 1, 1)`.
 -/
 
 public section

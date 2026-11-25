@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.DiagonalTorus
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.RootSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
+public import TauCeti.Algebra.Ring.Invertible
+public import TauCeti.LinearAlgebra.Matrix.Exponential.CubeZero
 
 /-!
 # Short root subgroups of `SO_l^J` for odd `l`
@@ -20,9 +22,10 @@ image `i' = l - 1 - i`. The nilpotent matrix `N = E_im - E_{m i'}` (`rootNilpote
 x_i(a) = 1 + a N + ½ a² N² = 1 + a(E_im - E_{m i'}) - ½ a² E_{i i'}.
 ```
 
-This is the exponential of `a N`, so `x_i(a + b) = x_i(a) x_i(b)`, it preserves `J_l`, and it has
-determinant one; `a ↦ x_i(a)` is a homomorphism `𝔾ₐ → SO_l^J`, promoted here to a closed immersion
-of affine group schemes over every ring containing `½`. For `l = 3` and `i = 0` it is the matrix
+This is the exponential of `a N` (`TauCeti.RingTheory.Nilpotent.Exp.CubeZero`), so
+`x_i(a + b) = x_i(a) x_i(b)`, it preserves `J_l`, and it has determinant one; `a ↦ x_i(a)` is a
+homomorphism `𝔾ₐ → SO_l^J`, promoted here to a closed immersion of affine group schemes over every
+ring containing `½`. For `l = 3` and `i = 0` it is the matrix
 with rows `(1, a, -a²/2)`, `(0, 1, -a)`, `(0, 0, 1)`; its entry `-a²/2` is why `2` must be
 invertible. For `i < m` it is the root subgroup of the short root `ε_i` of the diagonal torus, and
 conjugation by `d = diag(d_k)` with `d_{k'} = d_k⁻¹` and `d_m = 1` scales its parameter by `d_i`.
@@ -111,43 +114,6 @@ theorem rootNilpotent_shortRoot_mul_self_mul_self :
     single_mul_single_of_ne _ _ _ _ s.rev_ne_m, single_mul_single_of_ne _ _ _ _ s.i_ne_rev.symm]
   simp
 
-/-- The exponential of a matrix `N` with `N³ = 0` is additive: with `2h = 1`,
-`exp((a + b) N) = exp(a N) exp(b N)`, where `exp(a N) = 1 + a N + h a² N²`. -/
-private theorem expNilpotent_add (N : Matrix (Fin l) (Fin l) A) {h : A} (hh : 2 * h = 1)
-    (h3 : N * N * N = 0) (a b : A) :
-    1 + (a + b) • N + (h * (a + b) * (a + b)) • (N * N) =
-      (1 + a • N + (h * a * a) • (N * N)) * (1 + b • N + (h * b * b) • (N * N)) := by
-  have h3' : N * (N * N) = 0 := by rw [← Matrix.mul_assoc, h3]
-  have h4 : N * N * (N * N) = 0 := by rw [← Matrix.mul_assoc, h3, Matrix.zero_mul]
-  simp only [add_mul, mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-    Matrix.mul_smul, smul_smul]
-  simp only [h3, h3', h4, smul_zero, add_zero]
-  linear_combination (norm := module) (a * b * hh) • (N * N)
-
-/-- If `N³ = 0` and `J Nᵀ = -(N J)`, then `exp(a N) = 1 + a N + h a² N²` preserves `J` when
-`2h = 1`. -/
-private theorem expNilpotent_mul_mul_transpose (N J : Matrix (Fin l) (Fin l) A) {h : A}
-    (hh : 2 * h = 1) (h3 : N * N * N = 0) (hJ : J * Nᵀ = -(N * J)) (a : A) :
-    (1 + a • N + (h * a * a) • (N * N)) * J * (1 + a • N + (h * a * a) • (N * N))ᵀ = J := by
-  have h3' : N * (N * N) = 0 := by rw [← Matrix.mul_assoc, h3]
-  have h4 : N * N * (N * N) = 0 := by rw [← Matrix.mul_assoc, h3, Matrix.zero_mul]
-  have hJ2 : J * (N * N)ᵀ = N * N * J := by
-    rw [transpose_mul, ← Matrix.mul_assoc, hJ, Matrix.neg_mul, Matrix.mul_assoc, hJ,
-      Matrix.mul_neg, neg_neg, Matrix.mul_assoc]
-  have hJM : J * (1 + a • N + (h * a * a) • (N * N))ᵀ =
-      (1 - a • N + (h * a * a) • (N * N)) * J := by
-    rw [transpose_add, transpose_add, transpose_smul, transpose_smul, transpose_one,
-      Matrix.mul_add, Matrix.mul_add, Matrix.mul_smul, Matrix.mul_smul, hJ, hJ2, Matrix.mul_one,
-      add_mul, sub_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.smul_mul, smul_neg,
-      sub_eq_add_neg]
-  have hprod :
-      (1 + a • N + (h * a * a) • (N * N)) * (1 - a • N + (h * a * a) • (N * N)) = 1 := by
-    simp only [add_mul, mul_add, mul_sub, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-      Matrix.mul_smul, smul_smul]
-    simp only [h3, h3', h4, smul_zero, add_zero]
-    linear_combination (norm := module) (a * a * hh) • (N * N)
-  rw [Matrix.mul_assoc, hJM, ← Matrix.mul_assoc, hprod, Matrix.one_mul]
-
 /-- **The short root matrix** `x_i(a) = 1 + a N + h a² N²`, where `h` plays the role of `½`. -/
 def shortRootMatrix (h a : A) : Matrix (Fin l) (Fin l) A :=
   1 + a • rootNilpotent s.i s.m + (h * a * a) • (rootNilpotent s.i s.m * rootNilpotent s.i s.m)
@@ -175,13 +141,13 @@ theorem shortRootMatrix_zero (h : A) : shortRootMatrix s h 0 = 1 := by
 /-- **`x_i(a + b) = x_i(a) x_i(b)`** when `2h = 1`. -/
 theorem shortRootMatrix_add {h : A} (hh : 2 * h = 1) (a b : A) :
     shortRootMatrix s h (a + b) = shortRootMatrix s h a * shortRootMatrix s h b :=
-  expNilpotent_add _ hh (rootNilpotent_shortRoot_mul_self_mul_self s) a b
+  one_add_smul_add_smul_mul_self_add hh (rootNilpotent_shortRoot_mul_self_mul_self s) a b
 
 /-- **`x_i(a)` preserves `J_l`** when `2h = 1`: `x_i(a) J_l x_i(a)ᵀ = J_l`. -/
 theorem shortRootMatrix_mul_formMatrix_mul_transpose {h : A} (hh : 2 * h = 1) (a : A) :
     shortRootMatrix s h a * formMatrix A l * (shortRootMatrix s h a)ᵀ = formMatrix A l :=
-  expNilpotent_mul_mul_transpose _ _ hh (rootNilpotent_shortRoot_mul_self_mul_self s)
-    (formMatrix_mul_transpose_rootNilpotent s.i s.m) a
+  one_add_smul_add_smul_mul_self_mul_mul_transpose _ hh
+    (rootNilpotent_shortRoot_mul_self_mul_self s) (formMatrix_mul_transpose_rootNilpotent s.i s.m) a
 
 /-- `x_i(a)` is the product of the transvections `1 + a E_im`, `1 - a E_{m i'}` and
 `1 + (a² - h a²) E_{i i'}`. -/
@@ -324,18 +290,13 @@ variable {R : Type u} [CommRing R] [Invertible (2 : R)] {l : ℕ} (s : ShortRoot
 variable {A : Type w} [CommRing A] [Algebra R A]
 variable {B : Type v} [CommRing B] [Algebra R B]
 
-variable (A) in
-/-- The image of `½` in an `R`-algebra is a half of `1`. -/
-theorem two_mul_algebraMap_invOf_two : 2 * algebraMap R A ⅟2 = 1 := by
-  rw [← map_ofNat (algebraMap R A) 2, ← map_mul, mul_invOf_self, map_one]
-
 /-- The short root subgroup on Hopf points: an `A`-point of `𝔾ₐ` goes to the `A`-point of
 `SO_l^J` given by its short root matrix, with `h = ½`. -/
 noncomputable def shortRootSubgroupPoints :
     WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A) →*
       WithConv (coordinateHopfAlgebra R l →ₐ[R] A) :=
   (pointsMulEquiv R l (A := A)).symm.toMonoidHom.comp
-    ((shortRootPoints s (two_mul_algebraMap_invOf_two (R := R) A)).comp
+    ((shortRootPoints s (two_mul_map_invOf_two (algebraMap R A))).comp
       (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).toMonoidHom)
 
 /-- Under the point equivalence of `SO_l^J`, a short root point is the short root matrix of its
@@ -344,7 +305,7 @@ additive parameter. -/
 theorem pointsMulEquiv_shortRootSubgroupPoints
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv R l (A := A) (shortRootSubgroupPoints s q) =
-      shortRootPoints s (two_mul_algebraMap_invOf_two (R := R) A)
+      shortRootPoints s (two_mul_map_invOf_two (algebraMap R A))
         (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A) q) := by
   rw [shortRootSubgroupPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.apply_symm_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
