@@ -207,6 +207,7 @@ theorem mk_eq_mk_iff {a b : positivePart 𝒜} :
 
 /-- An element of positive degree has zero class in the indecomposables exactly when it is
 decomposable. -/
+@[simp]
 theorem mk_eq_zero_iff {a : positivePart 𝒜} :
     mk 𝒜 a = 0 ↔ (a : A) ∈ positivePart 𝒜 * positivePart 𝒜 :=
   Submodule.Quotient.mk_eq_zero _
