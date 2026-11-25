@@ -107,13 +107,13 @@ structure PatchedModule (_h : π₁.comp p₁ = π₂.comp p₂)
   /-- The component in `P₂`. -/
   snd : P₂
   /-- The patching condition `α (1 ⊗ x) = 1 ⊗ y`. -/
-  apply_tmul_one_fst : α (tmul π₁ 1 fst) = tmul π₂ 1 snd
+  apply_one_tmul_fst : α (tmul π₁ 1 fst) = tmul π₂ 1 snd
 
 namespace PatchedModule
 
 variable {h : π₁.comp p₁ = π₂.comp p₂} {α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
 
-attribute [simp] apply_tmul_one_fst
+attribute [simp] apply_one_tmul_fst
 
 instance : Zero (PatchedModule h α) where
   zero := ⟨0, 0, by simp⟩
@@ -131,11 +131,11 @@ instance : Sub (PatchedModule h α) where
 
 instance : SMul ℕ (PatchedModule h α) where
   smul n x := ⟨n • x.fst, n • x.snd, by
-    rw [tmul_nsmul, tmul_nsmul, map_nsmul, x.apply_tmul_one_fst]⟩
+    rw [tmul_nsmul, tmul_nsmul, map_nsmul, x.apply_one_tmul_fst]⟩
 
 instance : SMul ℤ (PatchedModule h α) where
   smul n x := ⟨n • x.fst, n • x.snd, by
-    rw [tmul_zsmul, tmul_zsmul, map_zsmul, x.apply_tmul_one_fst]⟩
+    rw [tmul_zsmul, tmul_zsmul, map_zsmul, x.apply_one_tmul_fst]⟩
 
 @[simp] theorem fst_zero : (0 : PatchedModule h α).fst = 0 := (rfl)
 @[simp] theorem snd_zero : (0 : PatchedModule h α).snd = 0 := (rfl)
@@ -158,7 +158,7 @@ instance : AddCommGroup (PatchedModule h α) :=
 instance : SMul D (PatchedModule h α) where
   smul d x := ⟨p₁ d • x.fst, p₂ d • x.snd, by
     have hd : π₁ (p₁ d) = π₂ (p₂ d) := DFunLike.congr_fun h d
-    simp only [one_tmul_smul, map_smul, x.apply_tmul_one_fst, hd]⟩
+    simp only [one_tmul_smul, map_smul, x.apply_one_tmul_fst, hd]⟩
 
 @[simp] theorem fst_smul (d : D) (x : PatchedModule h α) : (d • x).fst = p₁ d • x.fst := (rfl)
 @[simp] theorem snd_smul (d : D) (x : PatchedModule h α) : (d • x).snd = p₂ d • x.snd := (rfl)
@@ -245,7 +245,7 @@ def map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
     (hg : ∀ x, α' (BalancedExtension.map π₁ g₁ x) = BalancedExtension.map π₂ g₂ (α x)) :
     PatchedModule h α →ₗ[D] PatchedModule h α' :=
   lift (g₁.comp (fstHom h α)) (g₂.comp (sndHom h α)) fun x ↦ by
-    simpa using (hg (tmul π₁ 1 x.fst)).trans (congrArg _ x.apply_tmul_one_fst)
+    simpa using (hg (tmul π₁ 1 x.fst)).trans (congrArg _ x.apply_one_tmul_fst)
 
 @[simp]
 theorem fst_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
@@ -355,7 +355,7 @@ variable (h : π₁.comp p₁ = π₂.comp p₂) (hD : ∀ a₁ a₂, π₁ a₁
 
 /-- On a finite free module the patching condition is the coordinatewise compatibility
 `π₁ ∘ x = π₂ ∘ y` of the coordinate vectors `x` and `y`. -/
-private theorem commSqEquiv_tmul_one_eq_iff (ι : Type*) [Fintype ι]
+private theorem commSqEquiv_one_tmul_eq_iff (ι : Type*) [Fintype ι]
     (x : BalancedExtension p₁ (ι → D)) (y : BalancedExtension p₂ (ι → D)) :
     commSqEquiv h (ι → D) (tmul π₁ 1 x) = tmul π₂ 1 y ↔
       ∀ i, π₁ (piScalarRight p₁ ι x i) = π₂ (piScalarRight p₂ ι y i) := by
@@ -376,7 +376,7 @@ private theorem bijective_toPatchedModule_pi (n : ℕ) :
       Pi.zero_apply] at h₁ h₂
     exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨map_zero p₁, map_zero p₂⟩
   · intro m
-    have key := (commSqEquiv_tmul_one_eq_iff h (Fin n) _ _).1 (PatchedModule.apply_tmul_one_fst m)
+    have key := (commSqEquiv_one_tmul_eq_iff h (Fin n) _ _).1 (PatchedModule.apply_one_tmul_fst m)
     choose d hd using fun i ↦ (hD _ _ (key i)).exists
     refine ⟨d, PatchedModule.ext ?_ ?_⟩
     · refine (piScalarRight p₁ (Fin n)).injective (funext fun i ↦ ?_)
