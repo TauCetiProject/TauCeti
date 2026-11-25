@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.AutomaticSmoothness
 public import TauCeti.Geometry.Lie.Faithfulness
+import TauCeti.Geometry.Lie.Exponential.LocalInverse
 
 /-!
 # The Lie functor on continuous homomorphisms
@@ -21,13 +22,15 @@ the smooth Lie functor.
 * `ContinuousMonoidHom.lieMap` is the Lie map of a continuous homomorphism.
 * `ContinuousMonoidHom.lieMap_comp` gives its composition law.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
+* `ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`: a real-linear map `φ` with
+  `exp ∘ φ = f ∘ exp` is the Lie map of `f`.
 -/
 
 public section
 
 noncomputable section
 
-open Topology
+open Filter Topology
 open scoped ContDiff Manifold
 
 namespace ContinuousMonoidHom
@@ -113,5 +116,26 @@ theorem lieMap_injective [PreconnectedSpace G] :
   ext x
   simpa only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism] using
     congrArg (fun k : ContMDiffMonoidMorphism I I' ∞ G G' ↦ k x) hsmooth
+
+/-- **The Lie map is determined by the exponential.** A real-linear map `φ : 𝔤 → 𝔤'` with
+`exp(φ X) = f(exp X)` for every `X` is the Lie map of `f`. -/
+theorem lieMap_apply_eq_of_lieExp [T2Space G] [BoundarylessManifold I G] [T2Space G']
+    [BoundarylessManifold I' G'] (f : G →ₜ* G')
+    (φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G')
+    (h : ∀ X, _root_.lieExp (φ X) = f (_root_.lieExp X)) (X : LeftInvariantDerivation I G) :
+    lieMap (I := I) (I' := I') f X = φ X := by
+  -- Compare `t ↦ exp(t • df X)` and `t ↦ exp(t • φ X)` near `t = 0`, where `exp` is injective.
+  have hlim (Y : LeftInvariantDerivation I' G') :
+      Tendsto (fun t : ℝ ↦ t • Y) (𝓝[≠] 0) (𝓝 0) := by
+    have : Tendsto (fun t : ℝ ↦ t • Y) (𝓝 0) (𝓝 ((0 : ℝ) • Y)) :=
+      (continuous_id.smul continuous_const).tendsto 0
+    rw [zero_smul] at this
+    exact this.mono_left nhdsWithin_le_nhds
+  have heq := TauCeti.eventuallyEq_of_tendsto_of_lieExp_eventuallyEq
+    (hlim (lieMap (I := I) (I' := I') f X)) (hlim (φ X)) (Eventually.of_forall fun t ↦ by
+      simp only
+      rw [← map_smul, ← map_lieExp, ← map_smul, h])
+  obtain ⟨t, ht, ht0⟩ := (heq.and self_mem_nhdsWithin).exists
+  exact smul_right_injective _ ht0 ht
 
 end ContinuousMonoidHom

@@ -33,13 +33,15 @@ A homomorphism from a group with continuous left translations and open kernel is
 every topology on the target; for a discrete target, continuity is equivalent to openness of the
 kernel. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
-`ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
-topological group are computed pointwise, and the multiplicative isomorphism underlying a
-continuous multiplicative isomorphism has the same underlying function. A topologically embedded
-continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
-range, with forward and inverse computation rules. The file also records the
-agreement of finite order before and after forgetting continuity, and the open kernel of a
-finite-order continuous character into the units of a `T1` commutative integral domain.
+`ContinuousMonoidHom.snd`. The `n`-th power map of a commutative monoid with continuous
+multiplication is packaged as `TauCeti.powContinuousMonoidHom`. Integer powers of continuous
+homomorphisms into a commutative topological group are computed pointwise, and the multiplicative
+isomorphism underlying a continuous multiplicative isomorphism has the same underlying function.
+A topologically embedded continuous group homomorphism is also packaged as a continuous
+multiplicative equivalence with its range, with forward and inverse computation rules. The file
+also records the agreement of finite order before and after forgetting continuity, and the open
+kernel of a finite-order continuous character into the units of a `T1` commutative integral
+domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -147,6 +149,21 @@ theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type
     IsClosed (f.range : Set H) := by
   rw [MonoidHom.coe_range]
   exact (isCompact_range hf).isClosed
+
+/-- The `n`-th power map `m ↦ mⁿ` of a commutative monoid with continuous multiplication, as a
+continuous homomorphism. -/
+def powContinuousMonoidHom (M : Type*) [Monoid M] [IsMulCommutative M] [TopologicalSpace M]
+    [ContinuousMul M] (n : ℕ) : M →ₜ* M where
+  toFun m := m ^ n
+  map_one' := one_pow n
+  map_mul' a b := (Commute.mul_pow (mul_comm' a b) n)
+  continuous_toFun := continuous_pow n
+
+@[simp]
+theorem powContinuousMonoidHom_apply {M : Type*} [Monoid M] [IsMulCommutative M]
+    [TopologicalSpace M] [ContinuousMul M] (n : ℕ) (m : M) :
+    powContinuousMonoidHom M n m = m ^ n :=
+  (rfl)
 
 namespace ContinuousMonoidHom
 
