@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Ray
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Convex.TriangleEquality
 import TauCeti.Analysis.Contour.Residue.Germ
-import TauCeti.Analysis.Meromorphic.Sum
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Noncancellation of simple poles in finite sums

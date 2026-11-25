@@ -57,6 +57,8 @@ meromorphic order to every point of `closedBall c R`.
   `MeromorphicAt.meromorphicOrderAt_mul_nonpos`, `MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff`,
   `MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero`: the same for a product of
   scalar functions.
+* `le_meromorphicOrderAt_sum`: a common lower bound on the orders of finitely many meromorphic
+  summands bounds the order of their sum.
 -/
 
 public section
@@ -266,5 +268,29 @@ theorem MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff {f g : 𝕜 → 𝕜} (h
   hf.meromorphicOrderAt_smul_nonpos_iff hg hfg hgf
 
 end Mul
+
+section Sum
+
+/-- A common lower bound on the meromorphic orders of the summands also bounds the order of
+the sum from below. In particular, a finite sum cannot acquire a pole of higher order than
+those of its summands. -/
+theorem le_meromorphicOrderAt_sum {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {s : Finset ι} {f : ι → 𝕜 → E} {z : 𝕜}
+    {m : WithTop ℤ} (hf : ∀ i ∈ s, MeromorphicAt (f i) z)
+    (hm : ∀ i ∈ s, m ≤ meromorphicOrderAt (f i) z) :
+    m ≤ meromorphicOrderAt (∑ i ∈ s, f i) z := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty =>
+    rw [Finset.sum_empty, Pi.zero_def, meromorphicOrderAt_const]
+    simp
+  | cons i s hi ih =>
+    have hf' j (hj : j ∈ s) := hf j (Finset.mem_cons_of_mem hj)
+    rw [Finset.sum_cons]
+    exact (le_min (hm i (Finset.mem_cons_self i s))
+      (ih hf' fun j hj ↦ hm j (Finset.mem_cons_of_mem hj))).trans
+        (meromorphicOrderAt_add (hf i (Finset.mem_cons_self i s)) (MeromorphicAt.sum hf'))
+
+end Sum
 
 end
