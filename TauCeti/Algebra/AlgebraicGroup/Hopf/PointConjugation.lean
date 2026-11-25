@@ -151,7 +151,7 @@ private theorem map_comp_comul_pointConjugationAlgHom
         (pointConjugationAlgHom g)).comp (Bialgebra.comulAlgHom R H) =
       (Bialgebra.comulAlgHom R H).comp (pointConjugationAlgHom g) := by
   apply WithConv.toConv_injective
-  rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
+  rw [AlgHom.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,

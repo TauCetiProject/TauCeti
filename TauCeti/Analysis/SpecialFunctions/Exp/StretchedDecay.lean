@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Stretched exponential decay implies rapid power decay
@@ -26,6 +29,17 @@ big-O or pointwise bound by `exp (-p * u ^ α)` at infinity upgrades to a unifor
 `C * exp (-p * u ^ α)` on all of `[a, ∞)`, with `C ≥ 0`. Dividing the argument by a positive
 real `N` preserves stretched-exponential asymptotic bounds `f =O[atTop] fun u ↦ exp (-c * u ^ α)`,
 rescaling the coefficient from `c` to `c / N ^ α`.
+
+On the complex side, for `c ≥ 0` and `|α| ≤ 1` the principal power satisfies
+`c cos (α π) ‖z‖ ^ α ≤ Re (c z ^ α)` on the whole plane, which gives the pointwise bound
+`TauCeti.norm_cexp_neg_mul_cpow_le`. For `c > 0` and `0 < α < 1/2` the constant `cos (α π)` is
+positive, so `exp (-c z ^ α)` is little-o of every real power of `‖z‖` along `cobounded ℂ`:
+`TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. At `α = 1/2` this decay fails along
+`cobounded ℂ`, because `exp (-c z ^ (1/2))` has norm one on the negative real axis. The
+function `exp (-c z ^ α)` is holomorphic on the slit plane:
+`TauCeti.differentiableAt_cexp_neg_mul_cpow`. These estimates generalize the
+fourth-root case of the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
 
 public section
@@ -75,7 +89,7 @@ theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO {F : Type*} [Seminorme
     continuous_exp.comp_continuousOn <| continuousOn_const.mul <|
       continuousOn_id.rpow_const fun u hu ↦ ha.imp (fun ha0 ↦ (ha0.trans_le hu).ne') id
   obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
-    hg fun u _ ↦ (exp_pos _).ne')
+    hg fun u _ ↦ norm_ne_zero_iff.mpr (exp_pos _).ne')
   refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
   have hCu := hC u hu
   rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)] at hCu
@@ -90,5 +104,39 @@ theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually {F : Type*} [Semin
   refine exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO ha hf (IsBigO.of_bound C₀ ?_)
   filter_upwards [h] with u hu
   rwa [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
+
+section Cpow
+
+open Complex Bornology
+
+/-- For `c ≥ 0` and `|α| ≤ 1`, the principal power gives the pointwise bound
+`‖exp (-c z ^ α)‖ ≤ exp (-(c cos (α π)) ‖z‖ ^ α)` on the whole plane. -/
+theorem norm_cexp_neg_mul_cpow_le {c α : ℝ} (hc : 0 ≤ c) (hα : |α| ≤ 1) (z : ℂ) :
+    ‖cexp (-(c * z ^ (α : ℂ)))‖ ≤ Real.exp (-(c * Real.cos (α * π)) * ‖z‖ ^ α) := by
+  simp only [Complex.norm_exp, neg_re, re_ofReal_mul]
+  have h := mul_le_mul_of_nonneg_left (cos_mul_norm_rpow_le_re_cpow (z := z) hα) hc
+  refine Real.exp_le_exp.2 ?_
+  rw [neg_mul, mul_assoc]
+  exact neg_le_neg h
+
+/-- For `c > 0` and `0 < α < 1/2`, the function `exp (-c z ^ α)` is little-o of every real power
+of `‖z‖` along `cobounded ℂ`. -/
+theorem isLittleO_cexp_neg_mul_cpow_cobounded {c α : ℝ} (hc : 0 < c) (hα : 0 < α)
+    (hα2 : α < 1 / 2) (r : ℝ) :
+    (fun z : ℂ => cexp (-(c * z ^ (α : ℂ)))) =o[cobounded ℂ] fun z => ‖z‖ ^ r := by
+  have hcos : 0 < Real.cos (α * π) :=
+    Real.cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
+  have h := (isLittleO_exp_neg_mul_rpow_rpow_atTop (mul_pos hc hcos) hα r).comp_tendsto
+    (tendsto_norm_cobounded_atTop (E := ℂ))
+  have hα₁ : |α| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
+  exact (IsBigO.of_norm_le fun z => norm_cexp_neg_mul_cpow_le hc.le hα₁ z).trans_isLittleO h
+
+/-- The damping exponential `exp (-b z ^ α)` is holomorphic on the slit plane, for all complex
+`b` and `α`. -/
+theorem differentiableAt_cexp_neg_mul_cpow (b α : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+    DifferentiableAt ℂ (fun w : ℂ => cexp (-(b * w ^ α))) z :=
+  ((differentiableAt_id.cpow_const hz).const_mul _).neg.cexp
+
+end Cpow
 
 end TauCeti

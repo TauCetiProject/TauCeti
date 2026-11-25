@@ -343,20 +343,10 @@ theorem IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral
       ∫ τ in t₀..t, waveSinPropagator F (t - τ) (G τ) := by
   have hw := fun τ (hτ : τ ∈ uIcc t₀ t) ↦
     hasDerivWithinAt_duhamel (hu.mono (Set.OrdConnected.uIcc_subset ‹_› ht₀ ht)) t hτ
-  -- `‖D⁻¹ sin((t - τ)D) G(τ)‖ ≤ |t - t₀| ‖G(τ)‖` for `τ` between `t₀` and `t`.
-  have hint : IntervalIntegrable (fun τ ↦ waveSinPropagator F (t - τ) (G τ)) volume t₀ t := by
-    refine (hG.smul |t - t₀|).mono_fun ?_ ?_
-    · exact continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
-        ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hG.def'.1)
-    · filter_upwards [ae_restrict_mem measurableSet_uIoc] with τ hτ
-      rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_abs]
-      exact ((waveSinPropagator F (t - τ)).le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right ((norm_waveSinPropagator_le _).trans
-          (abs_sub_right_of_mem_uIcc (uIoc_subset_uIcc hτ))) (norm_nonneg _))
   rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right
     (fun τ hτ ↦ (hw τ hτ).continuousWithinAt)
     (fun τ hτ ↦ ((hw τ (Ioo_subset_Icc_self hτ)).hasDerivAt
-      (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hint]
+      (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hG.waveSinPropagator_sub_apply]
   simp
 
 /-- A strong solution `u` of the free wave equation on an order-connected set of times `s`

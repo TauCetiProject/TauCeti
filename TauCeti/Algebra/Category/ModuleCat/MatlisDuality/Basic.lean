@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.RingTheory.MatlisDuality.Basic
+import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
 /-!
 # The Matlis dual on bundled modules over an algebra
@@ -21,7 +22,8 @@ and `R ⧸ J(R)` is semisimple.
 ## Main definitions
 
 * `ModuleCat.matlisDual` and `ModuleCat.matlisDualOp`: `D_R` as a contravariant additive functor
-  from left to right modules and from right to left modules.
+  from left to right modules and from right to left modules; `D_R` sends surjections of right
+  modules to monomorphisms (`ModuleCat.mono_matlisDualOp_map_of_surjective`).
 * `ModuleCat.matlisDualEvalIso` and `ModuleCat.matlisDualEvalIsoOp`: biduality for bundled modules
   of finite length over `R`.
 
@@ -32,7 +34,8 @@ A module over an `R`-algebra `A` is bundled in `ModuleCat A`, which remembers on
 dual of a module this equals the `R`-action on the values only propositionally, not definitionally.
 The bundled duals `ModuleCat.matlisDualObj` and `ModuleCat.matlisDualOpObj` are therefore not
 reducible to `MatlisDual`, and are compared with it by `ModuleCat.matlisDualObjEquiv` and
-`ModuleCat.matlisDualOpObjEquiv`.
+`ModuleCat.matlisDualOpObjEquiv`, and with the dual of any linearly equivalent right module by
+`ModuleCat.matlisDualOpObjEquivOfLinearEquiv`.
 
 ## References
 
@@ -144,6 +147,21 @@ theorem matlisDualOpObjEquiv_map_apply {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g : N 
       equivLinearMap R E N' (matlisDualOpObjEquiv R E N' φ) (g x) :=
   mapOp_apply g.hom (matlisDualOpObjEquiv R E N' φ) x
 
+/-- The bundled dual of a right module `N` is the Matlis dual of any right module `N'` linearly
+equivalent to it, for any action of `R` on `N'` compatible with `Aᵐᵒᵖ`. -/
+def matlisDualOpObjEquivOfLinearEquiv {N' : Type*} [AddCommGroup N'] [Module Aᵐᵒᵖ N'] [Module R N']
+    [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{w} Aᵐᵒᵖ) (e : N' ≃ₗ[Aᵐᵒᵖ] N) :
+    matlisDualOpObj R E N ≃ₗ[A] MatlisDual R E N' :=
+  (matlisDualOpObjEquiv R E N).trans (congrOp e)
+
+@[simp]
+theorem matlisDualOpObjEquivOfLinearEquiv_apply {N' : Type*} [AddCommGroup N'] [Module Aᵐᵒᵖ N']
+    [Module R N'] [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{w} Aᵐᵒᵖ) (e : N' ≃ₗ[Aᵐᵒᵖ] N)
+    (φ : matlisDualOpObj R E N) (x : N') :
+    equivLinearMap R E N' (matlisDualOpObjEquivOfLinearEquiv R E N e φ) x =
+      equivLinearMap R E N (matlisDualOpObjEquiv R E N φ) (e x) :=
+  congrOp_apply e _ x
+
 /-- The Matlis dual `D_R = Hom_R(-, E)`, from right to left `A`-modules. -/
 @[expose, simps]
 def matlisDualOp : (ModuleCat.{w} Aᵐᵒᵖ)ᵒᵖ ⥤ ModuleCat.{max w v} A where
@@ -159,6 +177,22 @@ def matlisDualOp : (ModuleCat.{w} Aᵐᵒᵖ)ᵒᵖ ⥤ ModuleCat.{max w v} A wh
     apply (matlisDualOpObjEquiv R E _).injective
     ext x
     simp
+
+/-- **The Matlis dual of a surjection is a monomorphism**: precomposition with a surjective map
+of right modules is injective. -/
+theorem mono_matlisDualOp_map_of_surjective {N N' : ModuleCat.{w} Aᵐᵒᵖ} (π : N ⟶ N')
+    (hπ : Function.Surjective π) : Mono ((matlisDualOp R E).map π.op) := by
+  rw [ModuleCat.mono_iff_injective]
+  intro φ ψ h
+  rw [matlisDualOp_map, Quiver.Hom.unop_op] at h
+  apply (matlisDualOpObjEquiv R E N').injective
+  refine (equivLinearMap R E N').injective
+    (LinearMap.lcomp_injective_of_surjective (S := R) (N := E) (π.hom.restrictScalars R) hπ
+      (LinearMap.ext fun y ↦ ?_))
+  rw [LinearMap.lcomp_apply, LinearMap.lcomp_apply]
+  exact (matlisDualOpObjEquiv_map_apply R E π φ y).symm.trans
+    ((congrArg (fun χ ↦ equivLinearMap R E _ (matlisDualOpObjEquiv R E _ χ) y) h).trans
+      (matlisDualOpObjEquiv_map_apply R E π ψ y))
 
 theorem matlisDualOpMap_add {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g h : N ⟶ N') :
     matlisDualOpMap R E (g + h) = matlisDualOpMap R E g + matlisDualOpMap R E h := by

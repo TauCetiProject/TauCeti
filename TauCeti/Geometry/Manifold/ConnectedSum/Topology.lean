@@ -110,7 +110,7 @@ theorem compactSpace [CompactSpace M] [CompactSpace N] (h₁ : IsOpenEmbedding e
         refine Or.inr ⟨⟨_, apply_inversion_mem_puncture h₂.injective hv0⟩, ?_, ?_⟩
         · rintro ⟨w, hw, hwv⟩
           exact hinv hv0 (mem_ball_zero_iff.1 hv) (mem_ball_zero_iff.1 hw) (h₂.injective hwv).symm
-        · exact ((inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨v, hv0, hxv, rfl⟩).symm
+        · exact ((inl_eq_inr_iff h₁.injective).2 ⟨v, hv0, hxv, rfl⟩).symm
       · exact Or.inl ⟨x, hx, rfl⟩
     · by_cases hy : (y : N) ∈ e₂ '' ball 0 1
       · obtain ⟨w, hw, hyw⟩ := hy

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.Complex.LeviForm.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 

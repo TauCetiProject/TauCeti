@@ -329,6 +329,16 @@ theorem projModelAffinePoint_projModelBaseChange {x y : R} (h : W.toAffine.Equat
   exact ⟨(RingHom.id_comp f).trans (RingHom.comp_id f).symm,
     funext fun k ↦ by fin_cases k <;> simp⟩
 
+/-- Pulling back an affine section along `Spec f` gives the point along `f` with coordinates
+`[f x : f y : 1]`. -/
+theorem SpecMap_projModelAffinePoint {x y : R} (h : W.toAffine.Equation x y) :
+    Spec.map (CommRingCat.ofHom f) ≫ W.projModelAffinePoint h =
+      W.projModelPoint f (P := ![f x, f y, 1])
+        ((Projective.equation_some _ _).mpr (h.map f)) (i := 2) (by simp) := by
+  rw [← projModelAffinePoint_projModelBaseChange, projModelAffinePoint_def,
+    projModelPoint_projModelBaseChange]
+  exact (projModelPoint_eq_projModelPoint_iff_of_apply_eq rfl).mpr ⟨RingHom.id_comp f, rfl⟩
+
 /-! ### Identity and composition -/
 
 /-- Base change along the identity of `R` is the identity of the projective Weierstrass model, up
