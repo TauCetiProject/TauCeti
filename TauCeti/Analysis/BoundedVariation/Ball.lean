@@ -207,6 +207,11 @@ theorem perimeter_closedBall (hr : 0 < r) :
   rw [perimeter_congr_ae (ae_restrict_of_ae (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero c r
     hr.ne')), perimeter_ball hr]
 
+/-- A ball has finite perimeter in the whole space. -/
+theorem perimeter_ball_ne_top : perimeter μ ⊤ (ball c r) ≠ ∞ := by
+  rw [perimeter_ball_eq_ofReal_div_mul]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
+
 /-- **Balls are isoperimetric equality cases.** In dimension `n ≥ 1`, a ball of radius `r > 0`
 satisfies `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`, equality in the isoperimetric
 inequality `P(E)^n ≥ n^n μ (ball 0 1) μ E^(n-1)`. -/
