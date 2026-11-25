@@ -216,6 +216,15 @@ def hochschildBimoduleNormalizedCochainComplexXIso (n : ℕ) :
       ModuleCat.of R (hochschildBimoduleNormalizedCochains R A M n) :=
   Iso.refl _
 
+variable {R A M} in
+/-- Two elements of the normalized Hochschild cochain complex are equal exactly when their
+underlying normalized cochains are. -/
+theorem hochschildBimoduleNormalizedCochainComplex_X_ext_iff {n : ℕ}
+    {x y : (hochschildBimoduleNormalizedCochainComplex R A M).X n} :
+    x = y ↔ (hochschildBimoduleNormalizedCochainComplexXIso R A M n).hom x =
+      (hochschildBimoduleNormalizedCochainComplexXIso R A M n).hom y :=
+  (hochschildBimoduleNormalizedCochainComplexXIso R A M n).toLinearEquiv.injective.eq_iff.symm
+
 /-- Under the identifications `hochschildBimoduleNormalizedCochainComplexXIso`, the differential of
 the normalized Hochschild cochain complex is the restricted Hochschild coboundary. -/
 @[reassoc, elementwise]
@@ -234,11 +243,9 @@ theorem hochschildBimoduleNormalizedCochainComplex_d_eq_zero_iff {n : ℕ}
     (hochschildBimoduleNormalizedCochainComplex R A M).d n (n + 1) x = 0 ↔
       ((hochschildBimoduleNormalizedCochainComplexXIso R A M n).hom x :
         (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCocycles R A M n := by
-  rw [← (hochschildBimoduleNormalizedCochainComplexXIso R A M
-      (n + 1)).toLinearEquiv.injective.eq_iff, Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-    hochschildBimoduleNormalizedCochainComplex_d_apply, map_zero, Subtype.ext_iff,
-    mem_hochschildBimoduleCocycles_iff, coe_hochschildBimoduleNormalizedCoboundary,
-    ZeroMemClass.coe_zero]
+  simp [hochschildBimoduleNormalizedCochainComplex_X_ext_iff,
+    hochschildBimoduleNormalizedCochainComplex_d_apply, Subtype.ext_iff,
+    mem_hochschildBimoduleCocycles_iff]
 
 /-- The inclusion of the normalized Hochschild cochain complex into the Hochschild cochain
 complex. -/
@@ -414,10 +421,9 @@ private theorem quasiIsoAt_hochschildBimoduleNormalizedCochainComplexι_zero :
     fun x _ b hb ↦ ⟨0, ?_⟩⟩
   · simpa [hochschildBimoduleNormalizedCochainComplex_d_eq_zero_iff,
       hochschildBimoduleCochainComplex_d_eq_zero_iff] using hy
-  · rw [← (hochschildBimoduleCochainComplexXIso R A M 0).toLinearEquiv.injective.eq_iff,
-      Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply]
-    simp [hochschildBimoduleNormalizedCochainComplexι_f_apply]
-  · apply (hochschildBimoduleNormalizedCochainComplexXIso R A M 0).toLinearEquiv.injective
+  · simp [hochschildBimoduleCochainComplex_X_ext_iff,
+      hochschildBimoduleNormalizedCochainComplexι_f_apply]
+  · rw [hochschildBimoduleNormalizedCochainComplex_X_ext_iff]
     have h := congrArg (hochschildBimoduleCochainComplexXIso R A M 0).hom hb
     simp only [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero,
       hochschildBimoduleNormalizedCochainComplexι_f_apply] at h
@@ -450,9 +456,8 @@ theorem quasiIsoAt_hochschildBimoduleNormalizedCochainComplexι (n : ℕ) (hn : 
     · rw [hochschildBimoduleNormalizedCochainComplex_d_eq_zero_iff, Iso.inv_hom_id_apply]
       exact sub_mem hy (hochschildBimoduleCoboundaries_le_hochschildBimoduleCocycles R A M (k + 1)
         (mem_hochschildBimoduleCoboundaries_succ_iff.2 ⟨φ, rfl⟩))
-    · rw [← (hochschildBimoduleCochainComplexXIso R A M (k + 1)).toLinearEquiv.injective.eq_iff,
-        Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply]
-      simp [hochschildBimoduleNormalizedCochainComplexι_f_apply,
+    · simp [hochschildBimoduleCochainComplex_X_ext_iff,
+        hochschildBimoduleNormalizedCochainComplexι_f_apply,
         hochschildBimoduleCochainComplex_d_apply]
   · have h := congrArg (hochschildBimoduleCochainComplexXIso R A M (k + 1)).hom hb
     rw [hochschildBimoduleCochainComplex_d_apply,
@@ -465,8 +470,7 @@ theorem quasiIsoAt_hochschildBimoduleNormalizedCochainComplexι (n : ℕ) (hn : 
           (h ▸ ((hochschildBimoduleNormalizedCochainComplexXIso R A M 2).hom x).property)
       · lia
     refine ⟨(hochschildBimoduleNormalizedCochainComplexXIso R A M k).inv ⟨_, hb'⟩, ?_⟩
-    rw [← (hochschildBimoduleNormalizedCochainComplexXIso R A M
-        (k + 1)).toLinearEquiv.injective.eq_iff, Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    rw [hochschildBimoduleNormalizedCochainComplex_X_ext_iff,
       hochschildBimoduleNormalizedCochainComplex_d_apply, Iso.inv_hom_id_apply]
     exact Subtype.ext h
 

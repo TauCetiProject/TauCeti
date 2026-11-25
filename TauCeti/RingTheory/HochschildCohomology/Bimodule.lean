@@ -212,6 +212,15 @@ def hochschildBimoduleCochainComplexXIso (n : ℕ) :
       ModuleCat.of R ((Fin n → A) →ₘₗ[R] M) :=
   Iso.refl _
 
+variable {R A M} in
+/-- Two elements of the Hochschild cochain complex are equal exactly when their underlying
+cochains are. -/
+theorem hochschildBimoduleCochainComplex_X_ext_iff {n : ℕ}
+    {x y : (hochschildBimoduleCochainComplex R A M).X n} :
+    x = y ↔ (hochschildBimoduleCochainComplexXIso R A M n).hom x =
+      (hochschildBimoduleCochainComplexXIso R A M n).hom y :=
+  (hochschildBimoduleCochainComplexXIso R A M n).toLinearEquiv.injective.eq_iff.symm
+
 /-- Under the identifications `hochschildBimoduleCochainComplexXIso`, the differential of the
 Hochschild cochain complex is the Hochschild coboundary. -/
 @[reassoc, elementwise]
