@@ -467,7 +467,7 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   have hE' : (#G.edgeFinset : ℝ) ≠ 0 := by linarith
   push_cast
   field_simp
-  rfl
+  ring
 
 /-- The cross-degree coboundary constant of the complete complex is `card V / 3` whenever
 `3 ≤ card V` (Beasley, Proposition 10). The lower bound is the cross-degree star bound. For the

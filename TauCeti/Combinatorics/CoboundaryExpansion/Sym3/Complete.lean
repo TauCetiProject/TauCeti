@@ -71,6 +71,13 @@ def seed (u v : Fin 4) : Perm (Fin 3) :=
   if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
   else if u = 2 ∧ v = 3 then swap 0 2 else 1
 
+/-- The values of the seed: `swap 1 2`, `swap 0 1`, `swap 0 2` on `(1, 2)`, `(1, 3)`, `(2, 3)`
+and `1` elsewhere. -/
+theorem seed_def (u v : Fin 4) :
+    seed u v = if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
+      else if u = 2 ∧ v = 3 then swap 0 2 else 1 :=
+  (rfl)
+
 /-- The seed is `1` on the three edges at the vertex `0`. -/
 theorem seed_zero_of_pos : ∀ v : Fin 4, 0 < v → seed 0 v = 1 := by decide
 
