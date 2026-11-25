@@ -101,8 +101,8 @@ noncomputable def gammaEquiv (X : EllObj B) :
 change of points along `φ`. -/
 @[simp]
 theorem gammaEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gamma B N).obj (op Y)) :
-    (gammaEquiv X ((gamma B N).map φ.op α)).1 =
-      (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (gammaEquiv Y α).1 :=
+    (gammaEquiv X ((gamma B N).map φ.op α)).val =
+      (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (gammaEquiv Y α).val :=
   homLevelEquiv_map φ α
 
 /-- Two morphisms of moduli problems into `[Γ(N)]` agree once they assign the same homomorphism
@@ -110,7 +110,7 @@ theorem gammaEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gamma B N).obj (op
 @[ext]
 theorem gamma_hom_ext {P : ModuliProblem B} {f g : P ⟶ gamma B N}
     (h : ∀ (X : EllObj B) (α : P.obj (op X)),
-      (gammaEquiv X (f.app (op X) α)).1 = (gammaEquiv X (g.app (op X) α)).1) :
+      (gammaEquiv X (f.app (op X) α)).val = (gammaEquiv X (g.app (op X) α)).val) :
     f = g :=
   homLevel_hom_ext h
 
@@ -130,8 +130,8 @@ noncomputable def gammaAction : (GL (Fin 2) (ZMod N))ᵐᵒᵖ →* Aut (gamma B
 @[simp]
 theorem gammaEquiv_gammaAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gamma B N).obj (op X)) :
-    (gammaEquiv X ((gammaAction B N g).asIso.hom.app (op X) α)).1 =
-      (gammaEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
+    (gammaEquiv X ((gammaAction B N g).asIso.hom.app (op X) α)).val =
+      (gammaEquiv X α).val.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
   homLevelEquiv_homLevelAction_hom_app _ _ X α
 
 /-- The inverse of the automorphism of `[Γ(N)]` given by a matrix `g` sends a `[Γ(N)]`-structure
@@ -139,8 +139,8 @@ theorem gammaEquiv_gammaAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X :
 @[simp]
 theorem gammaEquiv_gammaAction_inv_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gamma B N).obj (op X)) :
-    (gammaEquiv X ((gammaAction B N g).asIso.inv.app (op X) α)).1 =
-      (gammaEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
+    (gammaEquiv X ((gammaAction B N g).asIso.inv.app (op X) α)).val =
+      (gammaEquiv X α).val.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
   homLevelEquiv_homLevelAction_inv_app _ _ X α
 
 /-- Every homomorphism from the trivial group `(ℤ/1ℤ)²` is a Drinfeld basis of `E[1]`, so an object

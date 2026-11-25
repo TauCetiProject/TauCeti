@@ -62,13 +62,13 @@ theorem exists_piece_eq_bot_of_lt_of_moduleFinite [Module.Finite A M]
     G.span_setOf_exists_mem_piece_eq_top A
   obtain ⟨s, hs, hfg⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp
     (hspan.symm ▸ Module.Finite.fg_top)
-  choose d hd using fun x : s ↦ hs x.2
+  choose d hd using fun x : s ↦ hs x.property
   obtain ⟨b, hb⟩ := (Set.finite_range d).bddBelow
-  refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).2 fun y hy ↦ ?_⟩
+  refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_⟩
   have hmem : y ∈ Submodule.span A (s : Set M) := by
     rw [← hfg, hspan]
     exact Submodule.mem_top
-  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.1 hmem
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hmem
   rw [← decompose_of_mem_same G.piece hy, decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
@@ -78,7 +78,7 @@ theorem exists_piece_eq_bot_of_lt_of_moduleFinite [Module.Finite A M]
   rw [sub_add_cancel] at h
   have hbi : b ≤ d (g i) := hb ⟨g i, rfl⟩
   have h0 : (decompose 𝒜 (c i) (p - d (g i)) : A) = 0 :=
-    (Submodule.eq_bot_iff _).1 (h𝒜 _ (by omega)) _ (decompose 𝒜 (c i) _).2
+    (Submodule.eq_bot_iff _).mp (h𝒜 _ (by omega)) _ (decompose 𝒜 (c i) _).property
   rw [h, h0, zero_smul]
 
 end Semiring
@@ -101,8 +101,8 @@ theorem decompose_mem_span_of_mem_positive_smul_top {x : M}
     · refine Submodule.iSup_induction _ (motive := fun a =>
         (decompose G.piece (a • y) p : M) ∈ S) ha (fun hi a ha => ?_) ?_ ?_
       · let f : M →ₗ[k] M := Algebra.lsmul k k M a
-        have hf : TauCeti.LinearMap.IsHomogeneous f G.piece G.piece i :=
-          TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
+        have hf : LinearMap.IsHomogeneous f G.piece G.piece i :=
+          LinearMap.isHomogeneous_def.mpr fun q z hz => by
             simpa [f, add_comm] using SetLike.GradedSMul.smul_mem ha hz
         have h := hf.map_decompose (p - i) y
         rw [sub_add_cancel] at h

@@ -189,11 +189,11 @@ abbrev shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
   projective := r.projective
   d := r.d
   «π» := r.π
-  isHomogeneous_d n := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+  isHomogeneous_d n := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
     rw [InternalGrading.shift_piece] at hx ⊢
     rw [add_right_comm]
     exact (r.isHomogeneous_d n).map_mem hx
-  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+  isHomogeneous_π := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
     rw [InternalGrading.shift_piece] at hx ⊢
     rw [add_right_comm]
     exact r.isHomogeneous_π.map_mem hx

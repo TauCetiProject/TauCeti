@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GammaOneThreeForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 
 /-!
@@ -131,21 +132,29 @@ variable {R : Type*} [CommRing R]
 /-- The Weierstrass curve `Y² + 3μXY + (μ³ - 1)Y = X³` in **level-three normal form**:
 `a₁ = 3μ`, `a₃ = μ³ - 1` and `a₂ = a₄ = a₆ = 0`. With a root `ζ` of `ζ² + ζ + 1`, the points
 `(0, 0)` and `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` form a basis of its `3`-torsion when it is
-elliptic, that is, when `3` and `μ³ - 1` are units. -/
-def levelThreeNormalForm (μ : R) : WeierstrassCurve R where
-  a₁ := 3 * μ
-  a₂ := 0
-  a₃ := μ ^ 3 - 1
-  a₄ := 0
-  a₆ := 0
+elliptic, that is, when `3` and `μ³ - 1` are units. It is the case `a₁ = 3μ`, `a₃ = μ³ - 1` of
+`WeierstrassCurve.gammaOneThreeForm`. -/
+def levelThreeNormalForm (μ : R) : WeierstrassCurve R :=
+  gammaOneThreeForm (3 * μ) (μ ^ 3 - 1)
 
 variable (μ : R)
 
-@[simp] theorem levelThreeNormalForm_a₁ : (levelThreeNormalForm μ).a₁ = 3 * μ := (rfl)
-@[simp] theorem levelThreeNormalForm_a₂ : (levelThreeNormalForm μ).a₂ = 0 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₃ : (levelThreeNormalForm μ).a₃ = μ ^ 3 - 1 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₄ : (levelThreeNormalForm μ).a₄ = 0 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₆ : (levelThreeNormalForm μ).a₆ = 0 := (rfl)
+/-- The level-three normal form is the curve `Y² + a₁XY + a₃Y = X³` with `a₁ = 3μ` and
+`a₃ = μ³ - 1`. -/
+theorem levelThreeNormalForm_eq_gammaOneThreeForm :
+    levelThreeNormalForm μ = gammaOneThreeForm (3 * μ) (μ ^ 3 - 1) :=
+  (rfl)
+
+@[simp] theorem levelThreeNormalForm_a₁ : (levelThreeNormalForm μ).a₁ = 3 * μ :=
+  gammaOneThreeForm_a₁ _ _
+@[simp] theorem levelThreeNormalForm_a₂ : (levelThreeNormalForm μ).a₂ = 0 :=
+  gammaOneThreeForm_a₂ _ _
+@[simp] theorem levelThreeNormalForm_a₃ : (levelThreeNormalForm μ).a₃ = μ ^ 3 - 1 :=
+  gammaOneThreeForm_a₃ _ _
+@[simp] theorem levelThreeNormalForm_a₄ : (levelThreeNormalForm μ).a₄ = 0 :=
+  gammaOneThreeForm_a₄ _ _
+@[simp] theorem levelThreeNormalForm_a₆ : (levelThreeNormalForm μ).a₆ = 0 :=
+  gammaOneThreeForm_a₆ _ _
 
 @[simp]
 theorem levelThreeNormalForm_b₂ : (levelThreeNormalForm μ).b₂ = 9 * μ ^ 2 := by
@@ -166,15 +175,14 @@ theorem levelThreeNormalForm_b₈ : (levelThreeNormalForm μ).b₈ = 0 := by
 
 @[simp]
 theorem levelThreeNormalForm_c₄ : (levelThreeNormalForm μ).c₄ = 9 * μ * (μ ^ 3 + 8) := by
-  rw [c₄, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄]
+  rw [levelThreeNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_c₄]
   ring
 
 /-- The discriminant of the level-three normal form `Y² + 3μXY + (μ³ - 1)Y = X³` is
 `27 (μ³ - 1)³`. -/
 @[simp]
 theorem levelThreeNormalForm_Δ : (levelThreeNormalForm μ).Δ = 27 * (μ ^ 3 - 1) ^ 3 := by
-  rw [Δ, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄, levelThreeNormalForm_b₆,
-    levelThreeNormalForm_b₈]
+  rw [levelThreeNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_Δ]
   ring
 
 /-- The level-three normal form is elliptic exactly when `3` and `μ³ - 1` are units. -/
@@ -187,9 +195,8 @@ theorem isElliptic_levelThreeNormalForm_iff :
 `27μ³ (μ³ + 8)³ / (μ³ - 1)³`. -/
 theorem levelThreeNormalForm_j {F : Type*} [Field F] (μ : F) [(levelThreeNormalForm μ).IsElliptic] :
     (levelThreeNormalForm μ).j = 27 * μ ^ 3 * (μ ^ 3 + 8) ^ 3 / (μ ^ 3 - 1) ^ 3 := by
-  obtain ⟨h3, hμ⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
+  obtain ⟨h3, _⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
   have h3 : (3 : F) ≠ 0 := h3.ne_zero
-  have hμ : μ ^ 3 - 1 ≠ 0 := hμ.ne_zero
   rw [j_eq, levelThreeNormalForm_c₄, levelThreeNormalForm_Δ, show (27 : F) = 3 ^ 3 by norm_num]
   field_simp
   ring
@@ -241,7 +248,7 @@ theorem evalEval_ψ₂_levelThreeNormalForm_basisPoint (ζ : R) :
 @[simp]
 theorem map_levelThreeNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
     (levelThreeNormalForm μ).map φ = levelThreeNormalForm (φ μ) := by
-  ext <;> simp [map_ofNat]
+  simp [levelThreeNormalForm_eq_gammaOneThreeForm, map_ofNat]
 
 /-! ### Bases of the `3`-torsion -/
 

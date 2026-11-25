@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+import Mathlib.Analysis.InnerProductSpace.GramMatrix
+import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Positive-definite functions on groups and unitary representations
@@ -15,8 +17,7 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 A function `φ : G → 𝕜` on a group, valued in an `RCLike` field `𝕜` such as `ℝ` or `ℂ`, is
 positive definite when `∑ᵢ ∑ⱼ conj (cᵢ) cⱼ φ (gᵢ⁻¹ gⱼ) ≥ 0` for all finite families, that is,
 when the kernel `(g, h) ↦ φ (g⁻¹ * h)` is positive semidefinite in the sense of Mathlib's
-`Matrix.PosSemidef` for matrices indexed by `G`. No topology on `G` is involved: this is the
-theory for discrete groups.
+`Matrix.PosSemidef` for matrices indexed by `G`. The construction involves no topology on `G`.
 
 The coefficients `g ↦ ⟪ξ, π g ξ⟫` of unitary representations are positive definite, and the
 GNS construction shows that every positive-definite function arises this way. The GNS space of
@@ -28,6 +29,14 @@ vector whose coefficient is `φ` receives an intertwining linear isometry from t
 is onto when that vector is cyclic. When `φ` vanishes at infinity, so does every coefficient of
 its GNS representation, since the GNS vectors span a dense subspace.
 
+When `G` carries a topology in which multiplication is separately continuous, the identity
+`‖gnsVector g - gnsVector h‖ ^ 2 = 2 * (re (φ 1) - re (φ (g⁻¹ * h)))` shows that continuity of `φ`
+at the identity makes the GNS vectors depend continuously on `g`. Every orbit of the GNS
+representation is then continuous, because the operators are uniformly bounded and the orbits of
+the GNS vectors, which span a dense subspace, are continuous. Thus the continuous
+positive-definite functions are exactly the coefficients of strongly continuous unitary
+representations on Hilbert spaces.
+
 ## Main declarations
 
 * `ContRepresentation.IsUnitary.posSemidef_inner_map_inv_mul`: coefficients of unitary
@@ -37,15 +46,22 @@ its GNS representation, since the GNS vectors span a dense subspace.
   `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`.
 * `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_cofinite`: the GNS representation of a
   positive-definite function vanishing at infinity has coefficients vanishing at infinity.
+* `Matrix.PosSemidef.continuous_gnsRepresentation_apply` and
+  `Matrix.PosSemidef.continuous_gnsRepresentation_apply_iff`: the GNS representation is strongly
+  continuous exactly when the positive-definite function is continuous, and continuity at the
+  identity suffices (`Matrix.PosSemidef.continuous_of_continuousAt_one`).
 * `Matrix.PosSemidef.gnsIsometry` and `Matrix.PosSemidef.gnsEquiv`: the universal property of
   the GNS representation.
 * `TauCeti.posSemidef_inv_mul_iff_exists_isUnitary`: a function on a group is positive definite
-  exactly when it is a coefficient of a unitary representation on a Hilbert space.
+  exactly when it is a coefficient of a unitary representation on a Hilbert space, and
+  `TauCeti.continuous_and_posSemidef_inv_mul_iff_exists_isUnitary`: it is moreover continuous
+  exactly when the representation can be taken strongly continuous.
 
 ## References
 
 * C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, §§1.6 and 16.1.
-* B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Appendix C.4.
+* B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Appendix C.4, in particular
+  Proposition C.4.2 and Theorem C.4.10.
 -/
 
 public section
@@ -64,7 +80,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [Inne
 `(g, h) ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫` is positive semidefinite. -/
 theorem posSemidef_inner_map_inv_mul (hπ : π.IsUnitary) (ξ : V) :
     (Matrix.of fun g h : G ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫_𝕜).PosSemidef := by
-  convert TauCeti.posSemidef_gram 𝕜 fun g : G ↦ π g ξ using 1
+  convert Matrix.posSemidef_gram 𝕜 fun g : G ↦ π g ξ using 1
   ext g h
   rw [Matrix.of_apply, Matrix.gram_apply, hπ.inner_map_inv_mul]
 
@@ -171,6 +187,21 @@ theorem norm_gnsVector_sub_sq (g h : G) :
   simp only [inner_gnsVector, inv_mul_cancel]
   ring
 
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS vector at the identity is a
+unit vector. -/
+theorem norm_gnsVector_one (hφ1 : φ 1 = 1) : ‖hφ.gnsVector 1‖ = 1 := by
+  have h : ‖hφ.gnsVector 1‖ ^ 2 = 1 := by
+    rw [@norm_sq_eq_re_inner 𝕜, hφ.inner_gnsVector, inv_mul_cancel, hφ1, RCLike.one_re]
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp h
+
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS representation moves the GNS
+vector at the identity by `g` a distance whose square is at most `2 * ‖φ g - 1‖`. -/
+theorem norm_gnsRepresentation_gnsVector_one_sub_sq_le (hφ1 : φ 1 = 1) (g : G) :
+    ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ ^ 2 ≤ 2 * ‖φ g - 1‖ := by
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev, hφ.norm_gnsVector_sub_sq, inv_one,
+    one_mul, hφ1, RCLike.one_re]
+  linarith [RCLike.one_sub_re_le_norm_sub_one (φ g)]
+
 /-- If a positive-definite function vanishes at infinity, then so does every coefficient
 `g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/
 theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (𝓝 0))
@@ -229,6 +260,52 @@ theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (�
   calc ‖⟪x, hφ.gnsRepresentation g (y - y')⟫_𝕜‖
       ≤ ‖x‖ * ‖hφ.gnsRepresentation g (y - y')‖ := norm_inner_le_norm _ _
     _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (y - y'), norm_nonneg x]
+
+section Continuity
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- If a positive-definite function is continuous at the identity, then the GNS vectors depend
+continuously on the group element, since
+`‖gnsVector g - gnsVector h‖ ^ 2 = 2 * (re (φ 1) - re (φ (g⁻¹ * h)))`. -/
+theorem continuous_gnsVector (hcont : ContinuousAt φ 1) : Continuous hφ.gnsVector := by
+  refine continuous_iff_continuousAt.mpr fun g ↦ tendsto_iff_norm_sub_tendsto_zero.mpr ?_
+  have hφg : Tendsto (fun h ↦ φ (g⁻¹ * h)) (𝓝 g) (𝓝 (φ 1)) := by
+    have hmul := (continuous_const_mul g⁻¹).tendsto g
+    rw [inv_mul_cancel] at hmul
+    exact hcont.tendsto.comp hmul
+  have hsq : Tendsto (fun h ↦ ‖hφ.gnsVector h - hφ.gnsVector g‖ ^ 2) (𝓝 g) (𝓝 0) := by
+    simp_rw [norm_sub_rev _ (hφ.gnsVector g), hφ.norm_gnsVector_sub_sq]
+    simpa using
+      ((RCLike.continuous_re.tendsto _).comp hφg).const_sub (RCLike.re (φ 1)) |>.const_mul 2
+  simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
+
+include hφ in
+/-- A positive-definite function on a group with separately continuous multiplication that is
+continuous at the identity is continuous: it is the coefficient
+`g ↦ ⟪gnsVector 1, gnsVector g⟫` of the continuous GNS vectors. -/
+theorem continuous_of_continuousAt_one (hcont : ContinuousAt φ 1) : Continuous φ := by
+  simpa using
+    (continuous_const (y := hφ.gnsVector 1)).inner (𝕜 := 𝕜) (hφ.continuous_gnsVector hcont)
+
+/-- The GNS representation of a positive-definite function that is continuous at the identity is
+strongly continuous: every orbit `g ↦ gnsRepresentation g x` is continuous. -/
+theorem continuous_gnsRepresentation_apply (hcont : ContinuousAt φ 1) (x : hφ.gnsSpace) :
+    Continuous fun g ↦ hφ.gnsRepresentation g x := by
+  refine ContinuousLinearMap.continuous_apply_of_dense_span hφ.dense_span_range_gnsVector
+    hφ.isUnitary_gnsRepresentation.norm_le_one (fun _ ⟨a, ha⟩ ↦ ?_) x
+  subst ha
+  simp only [gnsRepresentation_gnsVector]
+  exact (hφ.continuous_gnsVector hcont).comp (continuous_mul_const a)
+
+/-- The GNS representation of a positive-definite function is strongly continuous exactly when
+the function is continuous. -/
+theorem continuous_gnsRepresentation_apply_iff :
+    (∀ x, Continuous fun g ↦ hφ.gnsRepresentation g x) ↔ Continuous φ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ hφ.continuous_gnsRepresentation_apply h.continuousAt⟩
+  simpa using (continuous_const (y := hφ.gnsVector 1)).inner (𝕜 := 𝕜) (h (hφ.gnsVector 1))
+
+end Continuity
 
 section Universal
 
@@ -323,5 +400,23 @@ theorem posSemidef_inv_mul_iff_exists_isUnitary :
     fun g ↦ (hφ.inner_gnsVector_one_gnsRepresentation g).symm⟩, ?_⟩
   rintro ⟨V, _, _, _, π, ξ, hπ, hξ⟩
   simpa only [hξ] using hπ.posSemidef_inner_map_inv_mul ξ
+
+/-- **GNS characterization of continuous positive-definite functions.** On a group with separately
+continuous multiplication, a function `φ` is continuous and positive definite exactly when it is a
+coefficient `g ↦ ⟪ξ, π g ξ⟫` of a strongly continuous unitary representation `π` on a Hilbert
+space over `𝕜`, which may be taken in the universe `max u v`. -/
+theorem continuous_and_posSemidef_inv_mul_iff_exists_isUnitary [TopologicalSpace G]
+    [SeparatelyContinuousMul G] :
+    Continuous φ ∧ (Matrix.of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef ↔
+      ∃ (V : Type (max u v)) (_ : NormedAddCommGroup V) (_ : InnerProductSpace 𝕜 V)
+        (_ : CompleteSpace V) (π : ContRepresentation 𝕜 G V) (ξ : V),
+        π.IsUnitary ∧ (∀ v, Continuous fun g ↦ π g v) ∧ ∀ g, φ g = ⟪ξ, π g ξ⟫_𝕜 := by
+  refine ⟨fun ⟨hcont, hφ⟩ ↦ ⟨hφ.gnsSpace, inferInstance, inferInstance, inferInstance,
+    hφ.gnsRepresentation, hφ.gnsVector 1, hφ.isUnitary_gnsRepresentation,
+    hφ.continuous_gnsRepresentation_apply hcont.continuousAt,
+    fun g ↦ (hφ.inner_gnsVector_one_gnsRepresentation g).symm⟩, ?_⟩
+  rintro ⟨V, _, _, _, π, ξ, hπ, hπc, hξ⟩
+  refine ⟨?_, by simpa only [hξ] using hπ.posSemidef_inner_map_inv_mul ξ⟩
+  simpa only [← hξ] using (continuous_const (y := ξ)).inner (𝕜 := 𝕜) (hπc ξ)
 
 end TauCeti

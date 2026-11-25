@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 
 /-!
@@ -46,6 +45,32 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 
 universe uk uA uI
+
+section Terms
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A}
+
+namespace GradedProjectiveResolution
+
+variable {M : GradedModuleCat.{uA} 𝒜}
+
+/-- A finitely generated term of a concrete graded projective resolution, as an object of the
+finite graded projective category. -/
+def finiteProjectiveTerm
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
+    [Module.Finite A (r.X n)] : (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
+  ⟨r.termObj n, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective n⟩⟩
+
+/-- The underlying graded object of the finite projective term is the original resolution term. -/
+@[simp]
+theorem finiteProjectiveTerm_obj
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
+    [Module.Finite A (r.X n)] : (r.finiteProjectiveTerm n).obj = r.termObj n := (rfl)
+
+end GradedProjectiveResolution
+
+end Terms
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
@@ -87,8 +112,6 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) by rw [this]
   cases n with
   | zero =>
-      have : Epi r.augmentation :=
-        (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
       let aug : (M ⟶ (S i).obj.shiftObj 0) ≃ₗ[k]
           (r.termObj 0 ⟶ (S i).obj.shiftObj 0) :=
         LinearEquiv.ofBijective (Linear.leftComp k _ r.augmentation) ⟨

@@ -115,10 +115,10 @@ theorem isIso_of_sub_id_mem_positive_smul_top
   have hrange : LinearMap.range f.hom = ⊤ :=
     InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜 (LinearMap.range f.hom)
       f.isHomogeneous.isHomogeneous_range b hb fun p x _ ↦
-        Submodule.mem_sup.2 ⟨f.hom x, LinearMap.mem_range_self f.hom x, -(f.hom x - x),
+        Submodule.mem_sup.mpr ⟨f.hom x, LinearMap.mem_range_self f.hom x, -(f.hom x - x),
           neg_mem (hf x), by rw [neg_sub, add_sub_cancel]⟩
-  have hsurj : Function.Surjective f.hom := LinearMap.range_eq_top.1 hrange
-  have : Epi f := (epi_iff_surjective f).2 hsurj
+  have hsurj : Function.Surjective f.hom := LinearMap.range_eq_top.mp hrange
+  have : Epi f := (epi_iff_surjective f).mpr hsurj
   let σ : P ⟶ P := Projective.factorThru (𝟙 P) f
   have hσ : σ ≫ f = 𝟙 P := Projective.factorThru_comp (𝟙 P) f
   let π : P →ₗ[A] kernelObj f :=
@@ -128,20 +128,20 @@ theorem isIso_of_sub_id_mem_positive_smul_top
   have hker_top :
       (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj f)) = ⊤ := by
     refine top_unique fun z _ ↦ ?_
-    have hz : z.1 ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P) := by
-      have hz0 : f.hom z.1 = 0 := z.2
-      simpa [hz0] using neg_mem (hf z.1)
-    have hπz : π z.1 = z := Subtype.ext (by simp [π])
+    have hz : z.val ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P) := by
+      have hz0 : f.hom z.val = 0 := z.property
+      simpa [hz0] using neg_mem (hf z.val)
+    have hπz : π z.val = z := Subtype.ext (by simp [π])
     exact hπz ▸ Submodule.map_mem_smul_top _ π hz
   have hker_below : ∀ p < b, (kernelObj f).grading.piece p = ⊥ := fun p hp ↦
-    (Submodule.eq_bot_iff _).2 fun z hz ↦ Subtype.ext <|
-      (Submodule.eq_bot_iff _).1 (hb p hp) z.1 ((InternalGrading.mem_ker_piece _ _).1 hz)
+    (Submodule.eq_bot_iff _).mpr fun z hz ↦ Subtype.ext <|
+      (Submodule.eq_bot_iff _).mp (hb p hp) z.val ((InternalGrading.mem_ker_piece _ _).mp hz)
   let _ := (kernelObj f).gradedSMul
   have : Subsingleton (kernelObj f) :=
     InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hker_below hker_top
   have hinj : Function.Injective f.hom :=
-    LinearMap.ker_eq_bot.1 Submodule.eq_bot_of_subsingleton
-  exact (isIso_iff_bijective f).2 ⟨hinj, hsurj⟩
+    LinearMap.ker_eq_bot.mp Submodule.eq_bot_of_subsingleton
+  exact (isIso_iff_bijective f).mpr ⟨hinj, hsurj⟩
 
 variable [DirectSum.Decomposition 𝒜]
 

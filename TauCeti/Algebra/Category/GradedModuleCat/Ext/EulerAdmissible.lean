@@ -90,9 +90,9 @@ theorem IsMinimal.subsingleton_gradedExt_of_lt_of_bddBelow (hr : r.IsMinimal) {c
     (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
     Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
   choose lb hlb using hb
-  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.2 <|
-    hr.subsingleton_ext_of_lt hM lb hlb (p := j) hjn _ fun q hq ↦ by
-      simpa [sub_eq_add_neg] using hN (q - j) (sub_ne_zero.mpr hq)
+  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.mpr <|
+    hr.subsingleton_ext_of_lt hM lb hlb (p := j) hjn _ <| by
+      simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
 
 variable [∀ n, Module.Finite k (r.X n)]
 
@@ -154,7 +154,7 @@ theorem IsMinimal.isGradedExtInternallyFinite
     IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N :=
   ⟨fun n ↦ (GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj (r.termObj n) N).of_equiv fun p ↦
     (hr.extLinearEquiv ((N.shiftObj p).positive_smul_top_eq_bot_of_concentrated p
-      fun q hq ↦ by simpa [sub_eq_add_neg] using hN (q - p) (sub_ne_zero.mpr hq)) n).trans <| by
+      (by simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN p)) n).trans <| by
         rw [← GradedModuleCat.shiftFunctor_obj]
         exact extLinearEquivOfIso k (Iso.refl M)
           ((GradedModuleCat.shiftPowIso 𝒜 p).app N).symm n⟩

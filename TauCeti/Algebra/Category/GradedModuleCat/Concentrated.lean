@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 # Degree-zero action on concentrated graded modules
 
 A graded module concentrated in a single internal degree is its own piece in that degree, and is
-annihilated by positive-degree scalars. Concentration is preserved by graded surjections.
+annihilated by positive-degree scalars. Concentration is preserved by graded surjections,
+and moves with internal shifts.
 Such modules are the test targets for detecting the generating degrees of minimal
 projective resolution terms via Ext. The algebra itself need not be nonnegatively graded.
 For a decomposed graded algebra, every scalar acts through its degree-zero component, so a
@@ -48,6 +49,13 @@ theorem piece_eq_top_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
   · exact le_rfl
   · rw [hN q hq]
     exact bot_le
+
+/-- The shift `N{j}` of a graded module concentrated in degree `p` is concentrated in degree
+`p + j`. -/
+theorem shiftObj_piece_eq_bot_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (j : ℤ) :
+    ∀ q, q ≠ p + j → (N.shiftObj j).grading.piece q = ⊥ := fun q hq ↦ by
+  simpa [sub_eq_add_neg] using hN (q - j) (by omega)
 
 /-- Positive-degree scalars annihilate any module concentrated in one internal degree. -/
 theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) (p : ℤ)
@@ -124,7 +132,7 @@ theorem finite_of_concentrated [DirectSum.Decomposition 𝒜] [Module.Finite k (
   obtain ⟨t, ht⟩ := Module.Finite.fg_top (R := k) (M := 𝒜 0)
   have hmem (y : N) : y ∈ N.grading.piece p :=
     (piece_eq_top_of_concentrated hN).symm ▸ Submodule.mem_top
-  let S : Finset N := (t ×ˢ s).image fun z ↦ (z.1 : A) • z.2
+  let S : Finset N := (t ×ˢ s).image fun z ↦ (z.fst : A) • z.snd
   refine ⟨⟨S, eq_top_iff.mpr fun y _ ↦ ?_⟩⟩
   obtain ⟨f, -, rfl⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top : y ∈ _)
   refine Submodule.sum_mem _ fun x hx ↦ ?_

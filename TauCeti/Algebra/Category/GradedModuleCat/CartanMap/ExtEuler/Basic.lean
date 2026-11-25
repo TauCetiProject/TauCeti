@@ -140,8 +140,8 @@ theorem isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite
     {P : GradedModuleCat.{uA} 𝒜} (hP : gradedFiniteProjectiveModules 𝒜 P)
     (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N] :
     IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) P N := by
-  let _ : Module.Finite A P := (gradedFiniteProjectiveModules_iff.1 hP).1
-  let _ : Module.Projective A P := (gradedFiniteProjectiveModules_iff.1 hP).2
+  let _ : Module.Finite A P := (gradedFiniteProjectiveModules_iff.mp hP).left
+  let _ : Module.Projective A P := (gradedFiniteProjectiveModules_iff.mp hP).right
   exact isGradedEulerAdmissible_of_projective k _ P N
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P N).of_equiv fun j ↦
       (GradedModuleCat.homShiftPowEquiv 𝒜 P N j).symm)
@@ -218,7 +218,7 @@ theorem isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModu
     IsGradedEulerAdmissibleOn.{w} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteProjectiveModules 𝒜) (gradedFiniteModules 𝒜) where
   isGradedEulerAdmissible P M hP hM := by
-    let _ : Module.Finite A M := gradedFiniteModules_iff.1 hM
+    let _ : Module.Finite A M := gradedFiniteModules_iff.mp hM
     have : Module.Finite k M := Module.Finite.trans A M
     exact isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite hP M
 

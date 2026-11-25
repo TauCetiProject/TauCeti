@@ -65,9 +65,6 @@ Grothendieck groups live in the same universe as the coefficient data.
 * `TauCeti.gradedFiniteModulesExactStructure_conflation_iff` and
   `TauCeti.gradedFiniteProjectiveModulesExactStructure_conflation_iff`: the conflations of the two
   structures are the short exact sequences of graded modules with terms in the subcategory.
-* `TauCeti.laurentK0_of_shortExact` and
-  `TauCeti.laurentK0_of_gradedFiniteModules_eq_zero_of_subsingleton`: short exact additivity and
-  subsingleton vanishing in the graded Grothendieck group of finite graded modules.
 * `TauCeti.gradedFiniteModulesExactStructureShiftFunctorCompιIso` and
   `TauCeti.gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso`: the restricted shifts
   agree with the ambient grading shift after inclusion.
@@ -287,11 +284,7 @@ private abbrev finiteZero : GradedModuleCat.{uA} 𝒜 where
   gradedSMul := ⟨fun _ _ => by simp⟩
 
 private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
-  (IsZero.iff_id_eq_zero _).2 (by
-    apply GradedModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    exact Subsingleton.elim (α := PUnit) _ _)
+  GradedModuleCat.isZero_of_subsingleton _
 
 private theorem finite_finiteZero : Module.Finite A (finiteZero (𝒜 := 𝒜)) :=
   inferInstance
@@ -333,7 +326,7 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
     let _ : Module.Projective A S.X₃ := h₃.2
     obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
       ((GradedModuleCat.epi_iff_surjective S.g).1 hS.epi_g)
-    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
+    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm
 
 instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
@@ -458,32 +451,6 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
   rw [gradedFiniteProjectiveModulesExactStructure,
     GradedExactStructure.fullSubcategory_conflation_iff,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
-
-/-- A short exact sequence of graded modules whose terms are finitely generated over `A` yields
-the additive class relation `[X₂] = [X₁] + [X₃]` in `G₀^gr(mod A)`. -/
-theorem laurentK0_of_shortExact {S : ShortComplex (GradedModuleCat.{uA} 𝒜)}
-    (hS : S.ShortExact) (h₁ : gradedFiniteModules 𝒜 S.X₁)
-    (h₂ : gradedFiniteModules 𝒜 S.X₂) (h₃ : gradedFiniteModules 𝒜 S.X₃) :
-    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨S.X₂, h₂⟩ =
-      LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨S.X₁, h₁⟩ +
-        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨S.X₃, h₃⟩ := by
-  let S' : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
-    ShortComplex.mk
-      (ObjectProperty.homMk S.f :
-        (⟨S.X₁, h₁⟩ : (gradedFiniteModules 𝒜).FullSubcategory) ⟶ ⟨S.X₂, h₂⟩)
-      (ObjectProperty.homMk S.g :
-        (⟨S.X₂, h₂⟩ : (gradedFiniteModules 𝒜).FullSubcategory) ⟶ ⟨S.X₃, h₃⟩)
-      (ObjectProperty.hom_ext _ S.zero)
-  exact LaurentK0.of_conflation.{uA} (gradedFiniteModulesExactStructure 𝒜)
-    ((gradedFiniteModulesExactStructure_conflation_iff S').mpr hS)
-
-/-- A finite graded module whose carrier is a subsingleton vanishes in `G₀^gr(mod A)`. -/
-theorem laurentK0_of_gradedFiniteModules_eq_zero_of_subsingleton
-    (X : (gradedFiniteModules 𝒜).FullSubcategory) [Subsingleton X.obj] :
-    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) X = 0 :=
-  LaurentK0.of_eq_zero_of_isZero.{uA} _ <|
-    IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι X
-      (GradedModuleCat.isZero_of_subsingleton X.obj)
 
 /-! ### Classes of shifted modules -/
 

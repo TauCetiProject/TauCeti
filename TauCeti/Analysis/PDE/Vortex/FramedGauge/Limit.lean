@@ -8,8 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Regularity
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Limits of gauges and the closed gauge orbit relation
@@ -47,10 +48,14 @@ uniformly to an element of `G_(k+1)`
 (`TauCeti.Vortex.exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly`). The
 orbit relation of `G_(k+1)` on `A_m^k` is therefore closed under locally uniform convergence of
 continuous fields (`TauCeti.Vortex.mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly`). This
-is the input to the Hausdorff property of the quotient `A_m^k / G_(k+1)`, once convergence in
-`H^k` is known to give locally uniform convergence of continuous representatives; that step is not
-treated here. The fields `x i`, `y i` and the gauges `u i` need not lie in `A_m^k` or `G_(k+1)`.
-Convergence of the gauges in the `H^(k+1)` norm and the slice theorem are not treated here either.
+is the input to the Hausdorff property of the quotient `A_m^k / G_(k+1)`: since convergence in
+`H^k` implies uniform convergence of continuous representatives
+(`TauCeti.Vortex.SobolevFieldSpace.tendstoUniformly_of_tendsto`), the orbit relation on the
+continuous fields of `A_m^k` is closed
+(`TauCeti.Vortex.SobolevFieldSpace.isClosed_setOf_exists_gaugeTransform_eq`, in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology`). The fields `x i`, `y i` and the gauges
+`u i` need not lie in `A_m^k` or `G_(k+1)`.
+Convergence of the gauges in the `H^(k+1)` norm and the slice theorem are not treated here.
 
 ## References
 
@@ -257,7 +262,7 @@ private theorem tendsto_sectionValue_of_tendstoLocallyUniformly
   have hsec : Continuous fun p : EuclideanSpace ℝ (Fin 4) ↦ 2 * ((p 2 : ℂ) + (p 3 : ℂ) * I) := by
     fun_prop
   simp only [sectionValue_apply]
-  exact (hsec.tendsto _).comp ((tendstoLocallyUniformlyOn_univ.2 h).tendsto_at (mem_univ z))
+  exact (hsec.tendsto _).comp (h.tendsto_at z)
 
 /-- The limit theorem for gauge equivalent fields, given the limit of the gauges at one point. -/
 private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
@@ -280,7 +285,7 @@ private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
   refine ⟨v, hvd, gaugeTransform_eq_iff.2 fun z ↦
     ⟨by rw [hvω]; exact connectionDifferenceCLM_apply (x z, y z), ?_⟩, hv⟩
   -- Pass to the limit in `us i z * α(xs i) z = α(ys i) z`.
-  have hvz := (tendstoLocallyUniformlyOn_univ.2 hv).tendsto_at (mem_univ z)
+  have hvz := hv.tendsto_at z
   refine tendsto_nhds_unique (hvz.mul (tendsto_sectionValue_of_tendstoLocallyUniformly hx z)) ?_
   exact (tendsto_sectionValue_of_tendstoLocallyUniformly hy z).congr fun i ↦
     ((gaugeTransform_eq_iff.1 (hxy i) z).2).symm
@@ -302,7 +307,7 @@ theorem exists_gaugeTransform_eq_of_tendstoLocallyUniformly [l.NeBot]
     tendstoLocallyUniformly_iff_filter.2 fun z ↦
       (tendstoLocallyUniformly_iff_filter.1 h z).mono_left hU
   have hc : Tendsto (fun i ↦ (us i 0 : ℂ)) U (𝓝 ((U.map fun i ↦ us i 0).lim : ℂ)) :=
-    (continuous_subtype_val.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
+    (continuous_subtypeVal.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
   obtain ⟨v, hvd, hv, -⟩ := exists_gaugeTransform_eq_of_tendsto_apply hus hxy (hmono hx)
     (hmono hy) hxc hyc hc
   exact ⟨v, hvd, hv⟩
@@ -358,12 +363,10 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniform
   have hC1 (i : Fin 4) : ContDiff ℝ 1 (fun z ↦ x z i - y z i) := by
     have hdi := mem_sobolevFields.1 hd i
     simp only [Pi.sub_apply, PiLp.sub_apply] at hdi
-    refine TemperedDistribution.contDiff_of_mem_realSobolevFunctions ?_ hdi ?_
-    · rw [Complex.finrank_real_complex]
-      push_cast
-      linarith
-    · exact ((EuclideanSpace.proj i).continuous.comp hxc).sub
-        ((EuclideanSpace.proj i).continuous.comp hyc)
+    exact TemperedDistribution.contDiff_of_mem_realSobolevFunctions
+      (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) hdi
+      (((EuclideanSpace.proj i).continuous.comp hxc).sub
+        ((EuclideanSpace.proj i).continuous.comp hyc))
   have hω : ContDiff ℝ (1 : ℕ) (gaugeForm v) := by
     have heq : gaugeForm v = fun z ↦ (x z 0 - y z 0) • reCLM + (x z 1 - y z 1) • imCLM :=
       funext fun z ↦ (gaugeTransform_eq_iff.1 hv z).1
@@ -391,8 +394,8 @@ theorem mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly [l.NeBot] {k : �
   have h2 : 2 < (k : ℝ) + 1 := by linarith
   obtain ⟨v, hvG, hv, -⟩ :=
     exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
-      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (us i).2)
-      (fun i ↦ congrArg Subtype.val (hus i)) hx hy hxc hyc x.2 y.2
+      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (us i).property)
+      (fun i ↦ congrArg Subtype.val (hus i)) hx hy hxc hyc x.property y.property
   exact ⟨⟨v, hvG⟩, Subtype.ext hv⟩
 
 end TauCeti.Vortex

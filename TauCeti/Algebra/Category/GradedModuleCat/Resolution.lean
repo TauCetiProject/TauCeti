@@ -75,45 +75,40 @@ theorem differential_comp_differential (n : ℕ) :
 theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentation = 0 :=
   GradedModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero
 
-/-- The chain complex in `GradedModuleCat 𝒜` underlying a concrete graded projective resolution,
-constructed without assuming a decomposition of `𝒜`. -/
-@[expose]
-noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
+/-- The augmentation of a concrete graded resolution is an epimorphism of graded modules. -/
+instance epi_augmentation : Epi r.augmentation :=
+  (GradedModuleCat.epi_iff_surjective _).2 r.surjective_π
+
+/-- The chain complex of graded modules formed by the terms and differentials of a concrete
+graded resolution. It is reducible so that the augmentation `r.augmentation : r.termObj 0 ⟶ M`
+and its `Epi` instance apply directly to the degree-zero term of the complex. -/
+noncomputable abbrev complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
 
-/-- The `n`th object of `r.complex` is `r.termObj n`. -/
+/-- The terms of the chain complex of a concrete graded resolution are its terms. -/
 @[simp]
-theorem complex_X (n : ℕ) :
-    r.complex.X n = r.termObj n := by
+theorem complex_X (n : ℕ) : r.complex.X n = r.termObj n :=
   rfl
 
-/-- In positive homological degree, the differential of `r.complex` is `r.differential`. -/
-@[simp]
+/-- The differentials of the chain complex of a concrete graded resolution are its
+differentials. -/
 theorem complex_d (n : ℕ) :
     r.complex.d (n + 1) n = r.differential n := by
   simp [complex]
 
-/-- The degree-zero differential of `r.complex` composes to zero with `r.augmentation`. -/
-@[reassoc]
-theorem complex_d_one_zero_comp_augmentation :
-    (r.complex.d 1 0 : r.complex.X 1 ⟶ r.complex.X 0) ≫ (r.augmentation : r.complex.X 0 ⟶ M) =
-      0 := by
-  rw [r.complex_d 0]
-  exact r.differential_zero_comp_augmentation
+/-- The augmentation vanishes on the image of the first differential of the chain complex. -/
+theorem complex_d_one_zero_comp_augmentation : r.complex.d 1 0 ≫ r.augmentation = 0 := by
+  rw [complex_d]; exact r.differential_zero_comp_augmentation
 
-/-- The augmentation of a concrete graded resolution is an epimorphism in `GradedModuleCat 𝒜`. -/
-instance epi_augmentation : Epi r.augmentation :=
-  (GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π
-
-/-- `r.complex` is exact at degree `0` against `r.augmentation`. -/
-theorem exact_complex_d_one_zero_augmentation :
-    (ShortComplex.mk (r.complex.d 1 0) (r.augmentation : r.complex.X 0 ⟶ M)
+/-- The chain complex of a concrete graded resolution is exact at its augmentation. -/
+theorem exact_complex_d_one_zero :
+    (ShortComplex.mk (r.complex.d 1 0) r.augmentation
       r.complex_d_one_zero_comp_augmentation).Exact :=
   ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
     r.augmentation r.differential_zero_comp_augmentation
     (GradedModuleCat.exact_iff.mpr r.exact_d_π)
 
-/-- `r.complex` is exact at every positive homological degree `n + 1`. -/
+/-- The chain complex of a concrete graded resolution is exact in positive degrees. -/
 theorem complex_exactAt_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
   ChainComplex.of_exactAt_succ r.termObj r.differential r.differential_comp_differential n
     (GradedModuleCat.exact_iff.mpr (r.exact_d_d n))
@@ -128,9 +123,7 @@ noncomputable def toProjectiveResolution : ProjectiveResolution M := by
     (fun n => by
       let := r.projective n
       exact inferInstanceAs (Projective (r.termObj n)))
-    r.epi_augmentation
-    r.exact_complex_d_one_zero_augmentation
-    r.complex_exactAt_succ
+    inferInstance r.exact_complex_d_one_zero r.complex_exactAt_succ
 
 /-- The terms of the categorical resolution are the original graded modules. -/
 noncomputable def toProjectiveResolutionXIso (n : ℕ) :
@@ -158,7 +151,7 @@ theorem toProjectiveResolution_π_f_zero :
   simpa [toProjectiveResolutionXIso, toProjectiveResolution,
     ChainComplex.toProjectiveResolution, complex] using
     ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := r.complex) r.augmentation
-      (by rw [complex_d]; exact r.differential_zero_comp_augmentation)
+      r.complex_d_one_zero_comp_augmentation
 
 omit [DirectSum.Decomposition 𝒜] in
 /-- **A graded resolution with vanishing tail bounds the projective dimension.** If the terms of

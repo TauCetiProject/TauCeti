@@ -20,6 +20,8 @@ With the multiplicity `mult w`, `1` at a real and `2` at a complex place, this r
 
 ## Main results
 
+* `TauCeti.NumberField.sum_re_embeddings_eq_trace`: `∑_σ Re (σ x) = Tr_{K/ℚ} x`, over the complex
+  embeddings `σ`.
 * `TauCeti.NumberField.InfinitePlace.sum_mult_mul_re_embedding_eq_trace`:
   `∑_w mult w * Re (w.embedding x) = Tr_{K/ℚ} x`.
 -/
@@ -28,21 +30,28 @@ public section
 
 open Finset NumberField NumberField.InfinitePlace
 
-namespace TauCeti.NumberField.InfinitePlace
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- **The trace as a sum over the complex embeddings**: `∑_σ Re (σ x)` is the trace `Tr_{K/ℚ} x`,
+the real part of Mathlib's `trace_eq_sum_embeddings`. -/
+theorem sum_re_embeddings_eq_trace (x : K) :
+    ∑ σ : K →+* ℂ, (σ x).re = Algebra.trace ℚ K x := by
+  have h := congr(Complex.re $(_root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := x)))
+  rw [Complex.re_sum, ← Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun φ ↦ (φ x).re)
+    (fun σ ↦ (σ x).re) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply], eq_ratCast,
+    Complex.ratCast_re] at h
+  exact h.symm
+
+namespace InfinitePlace
 
 open scoped Classical in
 /-- **The trace as a sum over the infinite places**: `∑_w mult w * Re (w.embedding x)` is the
 trace `Tr_{K/ℚ} x`, where a real place counts once and a complex place twice. -/
 theorem sum_mult_mul_re_embedding_eq_trace (x : K) :
     ∑ w : InfinitePlace K, (mult w : ℝ) * (w.embedding x).re = Algebra.trace ℚ K x := by
-  have h := congr(Complex.re $(_root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := x)))
-  rw [Complex.re_sum, ← Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun φ ↦ (φ x).re)
-    (fun σ ↦ (σ x).re) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply],
-    ← Finset.sum_fiberwise univ InfinitePlace.mk (fun φ ↦ (φ x).re)] at h
-  rw [eq_ratCast, Complex.ratCast_re] at h
-  rw [h]
+  rw [← sum_re_embeddings_eq_trace, ← Finset.sum_fiberwise univ InfinitePlace.mk]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   -- The embeddings above `w` are `w.embedding` and its conjugate, which have the same real part.
   have hφ (φ) (hφ : φ ∈ ({φ | InfinitePlace.mk φ = w} : Finset _)) :
@@ -51,4 +60,6 @@ theorem sum_mult_mul_re_embedding_eq_trace (x : K) :
     rcases embedding_mk_eq φ with h | h <;> simp [h]
   rw [Finset.sum_congr rfl hφ, Finset.sum_const, card_filter_mk_eq, nsmul_eq_mul]
 
-end TauCeti.NumberField.InfinitePlace
+end InfinitePlace
+
+end TauCeti.NumberField

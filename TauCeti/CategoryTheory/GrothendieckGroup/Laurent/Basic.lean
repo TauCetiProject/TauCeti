@@ -61,7 +61,6 @@ graded objects with isomorphic images.
 * `TauCeti.LaurentK0.T_smul`: `qⁿ · [M] = [M{n}]`, and its generating cases
   `TauCeti.LaurentK0.T_one_smul_of` and `TauCeti.LaurentK0.T_neg_one_smul_of`.
 * `TauCeti.LaurentK0.liftEquiv`: the universal property over the Laurent coefficient ring.
-* `TauCeti.LaurentK0.of_eq_zero_of_isZero`: the class of a zero object vanishes.
 * `TauCeti.LaurentK0.of_conflation`: the defining relation `[M₂] = [M₁] + [M₃]` of a conflation.
 * `TauCeti.LaurentK0.hom_ext`: a `ℤ[q,q⁻¹]`-linear map out of `LaurentK0 E` is determined by its
   values on object classes.
@@ -141,11 +140,6 @@ lemma ofExactK0_exactK0_of (X : C) : ofExactK0 E (ExactK0.of X) = of E X :=
 /-- Isomorphic objects have the same class. -/
 theorem of_congr {X Y : C} (e : X ≅ Y) : of E X = of E Y := by
   rw [← ofExactK0_exactK0_of, ← ofExactK0_exactK0_of, ExactK0.of_congr e]
-
-/-- The class of an object which is zero vanishes. -/
-@[simp]
-theorem of_eq_zero_of_isZero {X : C} (hX : IsZero X) : of E X = 0 := by
-  rw [← ofExactK0_exactK0_of, ExactK0.of_eq_zero_of_isZero hX, map_zero]
 
 /-- **The defining relation of graded `K₀`**: the class of the middle term of a conflation is the
 sum of the classes of its outer terms.  The grading plays no role, so this is
