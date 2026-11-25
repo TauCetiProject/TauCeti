@@ -11,11 +11,11 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Estimate
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
+import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff
 import TauCeti.Analysis.Sobolev.Local.Wkp.Norm
 import TauCeti.Data.ENNReal.Holder
-import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # Uniform estimates and compactness for the nonlinear Cauchy–Riemann equation in the plane
@@ -56,7 +56,8 @@ constant depends on the coefficient only through a bound for its norm, then boun
 `W^{m+2,p}` on every `U` with compact closure in `W₁`.
 
 For compactness, `C^ℓ` convergence of the data bounds their derivatives on compact sets uniformly
-in `n` (`TendstoUniformlyOn.exists_forall_norm_le_of_isCompact`), so the uniform estimate applies.
+in `n` (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly`), so the
+uniform estimate applies.
 The bounds in `W^{ℓ+1,p}` are bounds in the spaces `TauCeti.Wkp`
 (`TauCeti.exists_wkp_norm_le_eLpNormWkp`), and Rellich's theorem with classical derivatives
 (`Module.Basis.exists_subseq_memWkpLoc_tendstoLocallyUniformlyOn_iteratedFDeriv`) gives a
@@ -130,10 +131,11 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
     simpa only [hcA, ContinuousLinearEquiv.symm_apply_apply] using h.continuousLinearEquiv_comp e
   have hA2' : ∀ᵐ z ∂volume.restrict Ω, c (A z) * c (A z) = -1 := by
     filter_upwards [hA2] with z hz
-    change e.conjContinuousAlgEquiv (A z) * e.conjContinuousAlgEquiv (A z) = -1
-    rw [← map_mul, hz, map_neg, map_one]
+    -- `c` is the algebra equivalence `e.conjContinuousAlgEquiv`, read as a linear map.
+    have h := congrArg e.conjContinuousAlgEquiv hz
+    rwa [map_mul, map_neg, map_one] at h
   have hest := hC _ 0 DA _ _ (h'.isWeakCRSolution hp.le hc (hf.clm_comp (e : V →L[ℝ] E)).memLpLoc)
-    hc hA2' hA' (by rw [show (0 : ℂ → E →L[ℝ] E) = 0 from rfl, eLpNormWkp_zero_fun]; exact zero_le)
+    hc hA2' hA' (by simp [eLpNormWkp_zero_fun])
     (hf.clm_comp (e : V →L[ℝ] E))
   -- Transport the estimate back to `V`.
   have hf' := eLpNormWkp_clm_comp_le (p := p) (U := Ω) (k := k) (e : V →L[ℝ] E) (f := f)
@@ -306,34 +308,6 @@ theorem exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 <
 
 /-! ### Compactness -/
 
-/-- Maps of class `C^ℓ` whose derivatives of orders at most `ℓ` converge locally uniformly have
-those derivatives bounded on each compact set, uniformly along the sequence. -/
-private theorem exists_forall_norm_iteratedFDeriv_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ℓ : ℕ} {F : ℕ → ℂ × V → E} {f : ℂ × V → E}
-    (hF : ∀ n, ContDiff ℝ ℓ (F n))
-    (h : ∀ i ≤ ℓ, TendstoLocallyUniformly (fun n => iteratedFDeriv ℝ i (F n))
-      (iteratedFDeriv ℝ i f) atTop)
-    {L : Set (ℂ × V)} (hL : IsCompact L) :
-    ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L, ‖iteratedFDeriv ℝ i (F n) x‖ ≤ B := by
-  have h1 (i : ℕ) (hi : i ≤ ℓ) : ∃ B : ℝ, ∀ n, ∀ x ∈ L, ‖iteratedFDeriv ℝ i (F n) x‖ ≤ B :=
-    TendstoUniformlyOn.exists_forall_norm_le_of_isCompact
-      (tendstoLocallyUniformly_iff_forall_isCompact.1 (h i hi) L hL) hL fun n =>
-        ((hF n).continuous_iteratedFDeriv (by exact_mod_cast hi)).continuousOn
-  choose! B hB using h1
-  exact ⟨∑ i ∈ Finset.range (ℓ + 1), |B i|, fun n i hi x hx => (hB i hi n x hx).trans
-    ((le_abs_self _).trans (Finset.single_le_sum (fun j _ => abs_nonneg (B j))
-      (Finset.mem_range.2 (by omega))))⟩
-
-omit [FiniteDimensional ℝ V] in
-/-- Locally uniform convergence of the derivatives of order `0` is locally uniform convergence of
-the maps. -/
-private theorem tendstoLocallyUniformly_of_iteratedFDeriv_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {F : ℕ → ℂ × V → E} {f : ℂ × V → E}
-    (h : TendstoLocallyUniformly (fun n => iteratedFDeriv ℝ 0 (F n)) (iteratedFDeriv ℝ 0 f)
-      atTop) : TendstoLocallyUniformly F f atTop := by
-  simpa [Function.comp_def] using (continuousMultilinearCurryFin0 ℝ (ℂ × V)
-    E).isometry.uniformContinuous.comp_tendstoLocallyUniformly h
-
 /-- Bounds for the `u n` in `W^{k,p}(W)` bound their coordinates in a basis in the space
 `Wkp volume W p k`, uniformly in `n`. -/
 private theorem exists_forall_wkp_repr_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ} {W : Opens ℂ}
@@ -454,8 +428,8 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
   have hB (L : Set (ℂ × V)) (hL : IsCompact L) : ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
       ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
         ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B := by
-    obtain ⟨B₁, hB₁⟩ := exists_forall_norm_iteratedFDeriv_le hJ hJt hL
-    obtain ⟨B₂, hB₂⟩ := exists_forall_norm_iteratedFDeriv_le hη hηt hL
+    obtain ⟨B₁, hB₁⟩ := exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hJ hJt hL
+    obtain ⟨B₂, hB₂⟩ := exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hη hηt hL
     exact ⟨max B₁ B₂, fun n i hi x hx =>
       ⟨(hB₁ n i hi x hx).trans (le_max_left _ _), (hB₂ n i hi x hx).trans (le_max_right _ _)⟩⟩
   obtain ⟨φ, v, hφ, hv, hconv⟩ := exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv hq hq'
@@ -475,8 +449,10 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
       ((hconv 0 (Nat.zero_le ℓ)).tendsto_at hz)
   have hvg : ContinuousOn (fun z => ((z, v z) : ℂ × V)) Ω := continuousOn_id.prodMk hv.continuousOn
   -- The data converge locally uniformly along the subsequence, to continuous limits.
-  have hJ0 := tendstoLocallyUniformly_of_iteratedFDeriv_zero (hJt 0 (Nat.zero_le ℓ))
-  have hη0 := tendstoLocallyUniformly_of_iteratedFDeriv_zero (hηt 0 (Nat.zero_le ℓ))
+  have hJ0 := tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
+    (tendstoLocallyUniformlyOn_univ.2 (hJt 0 (Nat.zero_le ℓ))))
+  have hη0 := tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
+    (tendstoLocallyUniformlyOn_univ.2 (hηt 0 (Nat.zero_le ℓ))))
   have hJc := hJ0.continuous (.of_forall fun n => (hJ n).continuous)
   have hηc := hη0.continuous (.of_forall fun n => (hη n).continuous)
   have hφJ : TendstoLocallyUniformly (fun n (x : ℂ × V) => J (φ n) x.1 x.2)

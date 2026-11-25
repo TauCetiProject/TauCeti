@@ -178,7 +178,7 @@ theorem exists_eLpNormWkp_succ_comp_le_of_norm_le (hp : 2 < p) (k : ℕ) (B : �
   rw [← eLpNormWkp_linearIsometryEquiv_comp e]
   refine hC (fun x => e (g x)) W u hW (e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg) huc
     huW fun z hz i hi => ?_
-  rw [show (fun x => e (g x)) = e ∘ g from rfl, e.norm_iteratedFDeriv_comp_left]
+  rw [← Function.comp_def e g, e.norm_iteratedFDeriv_comp_left]
   exact hB z hz i hi
 
 /-- **Local bound for composition with a `C^{k+1}` map.** Let `p > 2`, let `g : F → G` be
