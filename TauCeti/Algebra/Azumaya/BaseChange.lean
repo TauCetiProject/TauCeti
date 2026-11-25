@@ -116,14 +116,8 @@ theorem isAzumaya_baseChange_of_faithfulSMul (h : Function.Bijective (AlgHom.mul
 then `S ⊗[R] A` is Azumaya over every commutative `R`-algebra `S`: faithfulness of the finite
 projective `R`-module `A` survives base change (`TauCeti.Module.faithfulSMul_baseChange`), and so
 does bijectivity of the defining map (`isAzumaya_baseChange_of_faithfulSMul`). -/
-theorem isAzumaya_baseChange (R : Type u) (A : Type v) (S : Type w) [CommRing R] [Ring A]
-    [Algebra R A] [CommRing S] [Algebra R S] [IsAzumaya R A] : IsAzumaya S (S ⊗[R] A) :=
+instance isAzumaya_baseChange (R : Type u) (A : Type v) (S : Type w) [CommRing R] [Ring A]
+    [Algebra R A] [CommSemiring S] [Algebra R S] [IsAzumaya R A] : IsAzumaya S (S ⊗[R] A) :=
   isAzumaya_baseChange_of_faithfulSMul R A S IsAzumaya.bij
-
-/-- The base change of an Azumaya algebra over a commutative ring is Azumaya
-(`isAzumaya_baseChange`). -/
-instance instIsAzumayaBaseChange (R : Type u) (A : Type v) (S : Type w) [CommRing R] [Ring A]
-    [Algebra R A] [CommRing S] [Algebra R S] [IsAzumaya R A] : IsAzumaya S (S ⊗[R] A) :=
-  isAzumaya_baseChange R A S
 
 end TauCeti.Brauer
