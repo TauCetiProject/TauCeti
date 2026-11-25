@@ -9,7 +9,8 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Algebra.Order.Chebyshev
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Maclaurin
+import TauCeti.Analysis.MeanInequalities
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Norm bounds for elementary symmetric functions
@@ -51,10 +52,21 @@ theorem norm_esymm_le_choose_mul_sqrt_mean_sq_pow (s : Multiset R) (k : ℕ) :
     simp only [mem_map, forall_exists_index, and_imp]
     rintro a b _ rfl
     exact norm_nonneg b
-  have hmean := (s.map norm).esymm_le_choose_mul_mean_pow hnorm k
-  rw [card_map] at hmean
-  refine hmean.trans ?_
-  gcongr
-  exact div_nonneg (sum_nonneg hnorm) (Nat.cast_nonneg _)
+  have hcard : (s.map norm).card = s.card := card_map _ _
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  by_cases hkn : k ≤ s.card
+  · have hmean := (s.map norm).esymm_div_choose_rpow_le_rpow_of_nonneg le_rfl hk hnorm
+    -- Maclaurin at index 1 bounds the normalized `k`th symmetric mean.
+    simp only [Nat.cast_one, div_one, Real.rpow_one, esymm_one, Nat.choose_one_right,
+      one_div, hcard] at hmean
+    have hchoose : (0 : ℝ) < s.card.choose k := Nat.cast_pos.mpr (Nat.choose_pos hkn)
+    have hnonneg := div_nonneg (sum_nonneg hnorm) (Nat.cast_nonneg s.card)
+    rw [Real.rpow_inv_le_iff_of_pos (div_nonneg (esymm_nonneg hnorm _) hchoose.le) hnonneg
+      (Nat.cast_pos.mpr hk), Real.rpow_natCast, div_le_iff₀ hchoose, mul_comm] at hmean
+    exact hmean.trans (by gcongr)
+  · have hlt : (s.map norm).card < k := by simpa only [hcard] using Nat.lt_of_not_ge hkn
+    rw [esymm_of_card_lt hlt, Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge hkn), Nat.cast_zero,
+      zero_mul]
 
 end Multiset

@@ -30,8 +30,7 @@ product in elementary symmetric polynomials.
   `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
-* `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
-  multiset of zeros vanish.
+* `Multiset.esymm_replicate`: `e_k` on a multiset of `n` copies of `c` is `n.choose k * c^k`.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
 * `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
@@ -83,14 +82,25 @@ theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (
     (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
   simp [Multiset.esymm_cons]
 
+/-- The `k`th elementary symmetric function of `n` copies of `c` is `n.choose k * c^k`. -/
+theorem Multiset.esymm_replicate {R : Type*} [CommSemiring R] (n : ℕ) (c : R) (k : ℕ) :
+    (Multiset.replicate n c).esymm k = (n.choose k : R) * c ^ k := by
+  rw [Multiset.esymm]
+  calc
+    _ = (((Multiset.replicate n c).powersetCard k).map fun _ ↦ c ^ k).sum := by
+      congr 1
+      refine Multiset.map_congr rfl fun t ht ↦ ?_
+      obtain ⟨hle, hcard⟩ := Multiset.mem_powersetCard.mp ht
+      rw [t.eq_replicate_of_mem (fun a ha ↦
+        Multiset.eq_of_mem_replicate (Multiset.mem_of_le hle ha)), Multiset.prod_replicate, hcard]
+    _ = _ := by simp [Multiset.map_const', Multiset.card_powersetCard, nsmul_eq_mul]
+
 /-- The positive-degree elementary symmetric functions of `n` zeros vanish:
 `e_{j+1}(0, …, 0) = 0`. -/
 @[simp]
 theorem Multiset.esymm_replicate_zero {R : Type*} [CommSemiring R] (n j : ℕ) :
     (Multiset.replicate n (0 : R)).esymm (j + 1) = 0 := by
-  induction n with
-  | zero => exact Multiset.esymm_of_card_lt (by simp)
-  | succ n ih => rw [Multiset.replicate_succ, Multiset.esymm_cons_zero, ih]
+  simp [Multiset.esymm_replicate]
 
 /-- Adjoining a zero to a multiset `s` of at most `n` elements appends `0` to its elementary
 symmetric values: `e_{j+1}(0, s)` for `j < n + 1` is `e₁(s), …, eₙ(s), 0`. -/
