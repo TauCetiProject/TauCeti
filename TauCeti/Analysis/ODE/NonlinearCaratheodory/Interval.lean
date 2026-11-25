@@ -157,9 +157,10 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_eq_picard_of_lipschitzWith
     ⟨(min_le_left _ _).trans (min_le_right _ _), (le_max_right _ _).trans (le_max_left _ _)⟩
 
 omit hF in
-/-- **The a priori bound on an interval.** Under the hypotheses of
-`TauCeti.exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith`, if `‖F t x₀‖ ≤ m t` for almost
-every `t ∈ I` with `m` integrable on compact subsets of `I`, then a solution on `I` satisfies
+/-- **The a priori bound on an interval.** Let `t₀` lie in the interval `I`, let `F t` be
+Lipschitz with constant `L t` for almost every `t ∈ I`, where `L` is integrable on compact subsets
+of `I`, and let `‖F t x₀‖ ≤ m t` for almost every `t ∈ I`, where `m` is integrable on compact
+subsets of `I`. A solution on `I` satisfies
 `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for `t ∈ I`. -/
 theorem norm_sub_le_mul_exp_of_forall_mem_eq_picard_of_lipschitzWith (hI : I.OrdConnected)
     (ht₀ : t₀ ∈ I) {m : ℝ → ℝ} (hm : LocallyIntegrableOn m I)
