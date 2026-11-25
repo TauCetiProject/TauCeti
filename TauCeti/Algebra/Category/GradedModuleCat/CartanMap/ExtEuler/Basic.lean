@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Sesquilinear
+import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The q-Euler form between graded projectives and finite graded modules
@@ -144,12 +145,6 @@ theorem isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite
   exact isGradedEulerAdmissible_of_projective k _ P N
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P N).of_equiv fun j ↦
       (GradedModuleCat.homShiftPowEquiv 𝒜 P N j).symm)
-
-/-- Applying the semilinear map induced by `LaurentPolynomial.invert` is `invert`. -/
-private theorem invert_toSemilinearMap_apply (z : LaurentPolynomial ℤ) :
-    (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom.toSemilinearMap z = invert z := by
-  rw [RingHom.toSemilinearMap_apply, RingHom.toFun_eq_coe, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, AlgEquiv.coe_toRingEquiv]
 
 /-- **The q-Euler pairing against a fixed finite-dimensional graded module**,
 `K₀^gr(proj A) → ℤ[q,q⁻¹]`. It is `q`-antilinear in the projective class and sends `[P]` to
