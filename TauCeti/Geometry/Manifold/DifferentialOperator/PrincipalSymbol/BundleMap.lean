@@ -114,9 +114,9 @@ theorem sectionCommutatorSymbol_of_eq_comp_comp (hx : I.IsInteriorPoint x)
   choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
   obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
   obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := G) ∞ x v
-  rw [ContMDiffSection.evalLinearMap_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    smoothSectionFiberMap_apply, sectionCommutatorSymbol_mvfderiv, sectionCommutatorSymbol_mvfderiv,
-    commutatorSymbol_apply_of_eq_comp_comp L R h, smoothSectionFiberMap_apply]
+  simp only [ContMDiffSection.evalLinearMap_apply, LinearMap.comp_apply,
+    smoothSectionFiberMap_apply, sectionCommutatorSymbol_mvfderiv hx,
+    commutatorSymbol_apply_of_eq_comp_comp L R h]
 
 /-- **The principal symbol under bundle maps.** If `Q = R ∘ P ∘ L` for maps `L` and `R` of sections
 that are linear over the smooth functions, then at an interior point `x` the principal symbol of `Q`
@@ -197,9 +197,8 @@ theorem IsSectionLaplaceType.of_eq_comp_comp [RiemannianBundle (fun x : M ↦ Ta
       R ((P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯) (L s))) :
     IsSectionLaplaceType Q c := by
   refine isSectionLaplaceType_iff.2 ⟨hP.pos, fun x hx ξ ↦ ?_⟩
-  rw [sectionPrincipalSymbol_of_eq_comp_comp hx h, hP.sectionPrincipalSymbol_eq hx ξ,
-    LinearMap.smul_comp, LinearMap.id_comp, LinearMap.comp_smul, ← smoothSectionFiberMap_comp,
-    hRL, smoothSectionFiberMap_id]
+  simp [sectionPrincipalSymbol_of_eq_comp_comp hx h, hP.sectionPrincipalSymbol_eq hx ξ,
+    LinearMap.smul_comp, LinearMap.comp_smul, ← smoothSectionFiberMap_comp, hRL]
 
 end Symbol
 
