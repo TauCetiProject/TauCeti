@@ -260,8 +260,8 @@ private theorem integral_chart_piece_refine [FiniteDimensional ℝ E]
     {u : Set M} (hu : IsChartMeasurable I u) (hus : u ⊆ (extChartAt I α).source) :
     (∫ y in (extChartAt I α) '' u, φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar) =
       ∑ i, ∫ y in (extChartAt I α) '' (u ∩ c.piece i),
-        φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar :=
-  setIntegral_image_extChartAt_eq_sum_disjointed α
+        φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar := by
+  simpa only [ChartCover.piece_def] using setIntegral_image_extChartAt_eq_sum_disjointed α
     (signed_coefficient_integrable l hi b α).integrableOn hu hus
     (fun j ↦ (c.isOpen_domain j).isChartMeasurable) fun _ hx hn ↦
       signedInChartAt_eq_zero_of_notMem_tsupport l φ b α (hus hx) fun ht ↦ hn (c.covers (hc ht))
@@ -273,7 +273,8 @@ private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
     (hc : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ s)
     (hd : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ t) :
     coverIntegral l b φ c = coverIntegral l b φ d := by
-  unfold coverIntegral ChartCover.piece
+  unfold coverIntegral
+  simp only [ChartCover.piece_def]
   apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
   exact sum_setIntegral_image_extChartAt_disjointed_eq
     (f := fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x))
@@ -504,7 +505,10 @@ public theorem integralTopForm_eq_sum_disjointed_chart_integrals [IsManifold I 1
         ∫ y in (extChartAt I (α i)) '' disjointed u i,
           φ.signedInChartAt b (α i) (fun x ↦ l.signAt (α i) x) y ∂b.addHaar := by
   let c : ChartCover (I := I) (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := ⟨m, α, u, hu, hs, hc⟩
-  exact integralTopForm_eq_coverIntegral l φ hi b c Subset.rfl
+  rw [integralTopForm_eq_coverIntegral l φ hi b c Subset.rfl]
+  unfold coverIntegral
+  simp only [ChartCover.piece_def]
+  rfl
 
 /-- A compact manifold admits a finite disjoint chartwise Borel partition computing every
 integrable top-form integral. No measurable structure on the manifold is installed. -/

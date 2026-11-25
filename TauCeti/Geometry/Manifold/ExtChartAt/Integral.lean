@@ -68,8 +68,10 @@ namespace ChartCover
 variable {s : Set M} (c : ChartCover I s)
 
 /-- The disjointed pieces of a chart cover. -/
-@[expose] def piece (i : Fin c.n) : Set M :=
+def piece (i : Fin c.n) : Set M :=
   disjointed c.domain i
+
+theorem piece_def (i : Fin c.n) : c.piece i = disjointed c.domain i := (rfl)
 
 theorem piece_subset (i : Fin c.n) : c.piece i ⊆ (extChartAt I (c.center i)).source :=
   (disjointed_subset c.domain i).trans (c.domain_subset i)
