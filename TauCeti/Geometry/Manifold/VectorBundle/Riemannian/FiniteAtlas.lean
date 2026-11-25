@@ -342,6 +342,18 @@ theorem topologicalSpace_finiteAtlasPseudoMetricSpace (k : ℕ) :
       finiteAtlasTopology IB e U hU c K k :=
   (rfl)
 
+/-- `finiteAtlasTopology` is the topology induced by `toSymmetricSection` from the
+pseudometric topology of the smooth `C^k` finite-atlas seminorm. -/
+theorem finiteAtlasTopology_eq_induced_toSymmetricSection (k : ℕ) :
+    finiteAtlasTopology IB e U hU c K k =
+      .induced toSymmetricSection
+        (ContMDiffSection.finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)
+          |>.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace) :=
+  -- `finiteAtlasTopology` is the topology of `PseudoMetricSpace.induced toSymmetricSection`,
+  -- whose uniformity is definitionally `UniformSpace.comap toSymmetricSection` of the
+  -- seminorm's uniformity.
+  UniformSpace.toTopologicalSpace_comap
+
 /-- Convergence in `finiteAtlasTopology` is convergence to zero of `finiteAtlasDist`. -/
 theorem tendsto_finiteAtlasTopology_iff (k : ℕ) {P : Type*} {l : Filter P}
     {g : P → ContMDiffRiemannianMetric IB ∞ F V} {g₀ : ContMDiffRiemannianMetric IB ∞ F V} :
@@ -609,10 +621,8 @@ theorem frameTopology_infty_eq_iInf_finiteAtlasTopology :
     frameTopology IB ∞ e U hU = ⨅ k : ℕ, finiteAtlasTopology IB e U hU c K k := by
   let _ := ContMDiffSection.frameTopology (I := IB) (n := ∞) e U hU
   have hp := ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty e U hU hK
+  simp_rw [finiteAtlasTopology_eq_induced_toSymmetricSection]
   rw [frameTopology_eq_induced_toSymmetricSection, hp.topologicalSpace_eq_iInf, induced_iInf]
-  refine iInf_congr fun k ↦ ?_
-  rw [← topologicalSpace_finiteAtlasPseudoMetricSpace, finiteAtlasPseudoMetricSpace,
-    UniformSpace.toTopologicalSpace_comap]
 
 /-- Convergence of smooth metrics in `frameTopology IB ∞` is convergence in `finiteAtlasDist ... k`
 for every finite derivative order `k : ℕ`. -/
