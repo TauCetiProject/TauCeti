@@ -21,9 +21,7 @@ whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. For a closed partial
 this characterises cores: a submodule of its domain is a core exactly when the closure of
 the graph of the restriction contains the whole graph,
 `LinearPMap.IsClosed.hasCore_iff_graph_subset_closure`. A closed partial map is also
-its own closure, `LinearPMap.IsClosed.closure_eq`, and viewing a continuous linear map into a `T₂`
-space as a partial linear map on `⊤` produces a closed graph,
-`ContinuousLinearMap.isClosed_toPMap_top`.
+its own closure, `LinearPMap.IsClosed.closure_eq`.
 
 ## Provenance
 
@@ -90,20 +88,3 @@ theorem IsClosed.hasCore_iff_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.I
   rwa [← SetLike.coe_subset_coe, Submodule.topologicalClosure_coe]
 
 end LinearPMap
-
-namespace ContinuousLinearMap
-
-variable {R E F : Type*} [CommRing R]
-  [AddCommGroup E] [Module R E] [TopologicalSpace E]
-  [AddCommGroup F] [Module R F] [TopologicalSpace F] [T2Space F]
-
-/-- Viewing a continuous linear map `B` into a `T₂` space as a partial linear map on `⊤` produces a
-closed partial linear map. -/
-theorem isClosed_toPMap_top (B : E →L[R] F) : ((B : E →ₗ[R] F).toPMap ⊤).IsClosed := by
-  have h : (((B : E →ₗ[R] F).toPMap ⊤).graph : Set (E × F)) = {p | B p.1 = p.2} := by
-    ext ⟨x, y⟩
-    simp [LinearPMap.mem_graph_iff]
-  rw [LinearPMap.IsClosed, h]
-  exact isClosed_eq (B.continuous.comp continuous_fst) continuous_snd
-
-end ContinuousLinearMap

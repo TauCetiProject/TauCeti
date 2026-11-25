@@ -63,8 +63,7 @@ def adjointComp (T : E →ₗ.[𝕜] F) : E →ₗ.[𝕜] E :=
 /-- The domain of `adjointComp T` is precisely the maximal composition domain. -/
 theorem mem_adjointComp_domain {T : E →ₗ.[𝕜] F} {x : E} :
     x ∈ T.adjointComp.domain ↔ ∃ hx : x ∈ T.domain, T ⟨x, hx⟩ ∈ T†.domain := by
-  -- Composition preserves the restricted domain; `domRestrict` intersects it with `T.domain`.
-  change x ∈ (Submodule.comap T.toFun T†.domain).map T.domain.subtype ⊓ T.domain ↔ _
+  rw [adjointComp, comp_domain, domRestrict_domain]
   constructor
   · rintro ⟨⟨⟨y, hy⟩, h, rfl⟩, _⟩
     exact ⟨hy, h⟩
@@ -124,8 +123,7 @@ def compAdjoint (T : E →ₗ.[𝕜] F) : F →ₗ.[𝕜] F :=
 /-- The domain of `compAdjoint T` is precisely `{y ∈ D(T†) | T† y ∈ D(T)}`. -/
 theorem mem_compAdjoint_domain {T : E →ₗ.[𝕜] F} {y : F} :
     y ∈ T.compAdjoint.domain ↔ ∃ hy : y ∈ T†.domain, T† ⟨y, hy⟩ ∈ T.domain := by
-  -- Composition preserves the restricted domain; `domRestrict` intersects it with `T†.domain`.
-  change y ∈ (Submodule.comap T†.toFun T.domain).map T†.domain.subtype ⊓ T†.domain ↔ _
+  rw [compAdjoint, comp_domain, domRestrict_domain]
   constructor
   · rintro ⟨⟨⟨z, hz⟩, h, rfl⟩, _⟩
     exact ⟨hz, h⟩
@@ -135,6 +133,12 @@ theorem mem_compAdjoint_domain {T : E →ₗ.[𝕜] F} {y : F} :
 /-- Every vector in the domain of `T T†` belongs to the domain of `T†`. -/
 theorem compAdjoint_domain_le (T : E →ₗ.[𝕜] F) : T.compAdjoint.domain ≤ T†.domain :=
   fun _ hy ↦ (mem_compAdjoint_domain.mp hy).choose
+
+/-- When `T.domain` is not dense, `T†` vanishes on its domain, so `D(T T†) = D(T†)`. -/
+theorem compAdjoint_domain_of_not_dense {T : E →ₗ.[𝕜] F} (hd : ¬Dense (T.domain : Set E)) :
+    T.compAdjoint.domain = T†.domain :=
+  le_antisymm (compAdjoint_domain_le T) fun _ hy ↦ mem_compAdjoint_domain.mpr
+    ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩
 
 /-- Evaluating `compAdjoint T` at `y` applies `T` to `T† y`. -/
 @[simp]
@@ -318,10 +322,9 @@ theorem IsClosed.compAdjoint_eq_adjoint_adjointComp {T : E →ₗ.[𝕜] F} (hT 
     rw [compAdjoint_apply, adjointComp_apply]
     exact (LinearPMap.congr_fun hdd _ _).symm
   · have hdom : T.compAdjoint.domain = (T†).adjointComp.domain := by
-      ext y
-      rw [mem_compAdjoint_domain, mem_adjointComp_domain]
-      exact ⟨fun ⟨hy, _⟩ ↦ ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩,
-        fun ⟨hy, _⟩ ↦ ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩⟩
+      rw [compAdjoint_domain_of_not_dense hd]
+      exact (le_antisymm (adjointComp_domain_le (T†)) fun _ hy ↦ mem_adjointComp_domain.mpr
+        ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩).symm
     refine LinearPMap.ext hdom fun y hy₁ hy₂ ↦ ?_
     rw [compAdjoint_apply, adjointComp_apply]
     have h0 : T† ⟨y, compAdjoint_domain_le T hy₁⟩ = 0 := adjoint_apply_of_not_dense hd _
@@ -338,10 +341,7 @@ theorem IsClosed.dense_compAdjoint_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClos
   by_cases hd : Dense (T.domain : Set E)
   · rw [hT.compAdjoint_eq_adjoint_adjointComp]
     exact dense_adjointComp_domain (T†) (adjoint_isClosed hd) (dense_adjoint_domain hT.isClosable)
-  · have hdom : T.compAdjoint.domain = T†.domain :=
-      le_antisymm (compAdjoint_domain_le T) fun y hy ↦ mem_compAdjoint_domain.mpr
-        ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩
-    rw [hdom]
+  · rw [compAdjoint_domain_of_not_dense hd]
     exact dense_adjoint_domain hT.isClosable
 
 /-- For a closed densely defined `T`, every vector of `F` is `y + T T† y` for a vector in the
@@ -360,7 +360,7 @@ theorem isSelfAdjoint_compAdjoint (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
   exact isSelfAdjoint_adjointComp (T†) (adjoint_isClosed hd) (dense_adjoint_domain hT.isClosable)
 
 /-- For a closed densely defined operator `T`, the domain of `T T†` is a graph core for `T†`. -/
-theorem IsClosed.hasCore_compAdjoint_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
+theorem IsClosed.adjoint_hasCore_compAdjoint_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : (T†).HasCore T.compAdjoint.domain := by
   rw [hT.compAdjoint_eq_adjoint_adjointComp]
   exact (adjoint_isClosed hd).hasCore_adjointComp_domain

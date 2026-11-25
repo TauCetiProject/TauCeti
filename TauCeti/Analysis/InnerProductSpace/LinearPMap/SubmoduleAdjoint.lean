@@ -28,16 +28,12 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
   adjoint.
 * `LinearPMap.closure_adjoint`: taking the closure of a partial linear map does not
   change its adjoint.
-* `LinearPMap.adjoint_apply_mem_orthogonal_ker`: `T† y ∈ (ker T)ᗮ` unconditionally.
 * `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
   operator.
 * `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
   densely defined operator.
 * `LinearPMap.tendsto_inner_apply_of_isClosable`: for closable `A`, a family `uᵢ → 0` of
   `dom A` with `‖A uᵢ‖` eventually bounded has `A uᵢ → 0` weakly.
-* `ContinuousLinearMap.compPMap_adjoint`: the adjoint of `W ∘ M` for a bounded
-  operator `W` and an arbitrary partial linear map `M` is `M† ∘ W†` on its maximal
-  domain.
 
 ## Provenance
 
@@ -204,17 +200,6 @@ theorem closure_adjoint (T : E →ₗ.[𝕜] F) : T.closure† = T† := by
       rw [adjoint_apply_of_not_dense hd' ⟨y, hy⟩, adjoint_apply_of_not_dense hd ⟨y, hy'⟩]
   · rw [closure_def' hTc]
 
-/-- Every value `T† y` of the adjoint of a partial linear map lies in `(ker T)ᗮ`. No density or
-closedness assumption is required: when `T.domain` is not dense, `T†` takes the value `0`. -/
-theorem adjoint_apply_mem_orthogonal_ker (T : E →ₗ.[𝕜] F) (y : T†.domain) : T† y ∈ T.kerᗮ := by
-  by_cases hd : Dense (T.domain : Set E)
-  · rw [Submodule.mem_orthogonal]
-    intro x hx
-    obtain ⟨u, rfl, hu⟩ := mem_ker_iff.mp hx
-    rw [← inner_conj_symm, adjoint_isFormalAdjoint hd y u, hu, inner_zero_right, _root_.map_zero]
-  · rw [adjoint_apply_of_not_dense hd]
-    exact zero_mem _
-
 end CompleteSource
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
@@ -288,44 +273,4 @@ theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClos
   simpa using this
 
 end LinearPMap
-
-namespace ContinuousLinearMap
-
-variable {𝕜 G E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-
-/-- The adjoint of a bounded operator composed on the left with an arbitrary partial linear map
-`M` is `M† ∘ W†` on its maximal domain `{y | W† y ∈ M†.domain}`. No closedness or density
-assumption on `M` is needed. -/
-theorem compPMap_adjoint (W : E →L[𝕜] F) (M : G →ₗ.[𝕜] E) :
-    ((W : E →ₗ[𝕜] F).compPMap M)† =
-      M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.property := by
-  have hdom : ((W : E →ₗ[𝕜] F).compPMap M)†.domain =
-      (M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.property).domain := by
-    ext y
-    -- `LinearPMap.comp` has no simp lemma for `.domain`; unfold it and `compPMap.domain`.
-    change y ∈ ((W : E →ₗ[𝕜] F).compPMap M)†.domain ↔ W.adjoint y ∈ M†.domain
-    rw [LinearPMap.mem_adjoint_domain_iff, LinearPMap.mem_adjoint_domain_iff]
-    have hfun : ⇑((innerₛₗ 𝕜 y).comp ((W : E →ₗ[𝕜] F).compPMap M).toFun) =
-        ⇑((innerₛₗ 𝕜 (W.adjoint y)).comp M.toFun) := by
-      funext x
-      exact (W.adjoint_inner_left (M x) y).symm
-    exact Iff.of_eq congr(Continuous $hfun)
-  refine LinearPMap.ext hdom fun y hy hy' ↦ ?_
-  -- `LinearPMap.comp` has no `@[simp]` evaluation lemma in Mathlib; unfold the RHS application.
-  change (((W : E →ₗ[𝕜] F).compPMap M)†) ⟨y, hy⟩ = M† ⟨W.adjoint y, hy'⟩
-  by_cases hd : Dense (M.domain : Set G)
-  · have hd' : Dense (((W : E →ₗ[𝕜] F).compPMap M).domain : Set G) := hd
-    refine LinearPMap.adjoint_apply_eq hd' ⟨y, hy⟩ fun x ↦ ?_
-    rw [LinearMap.compPMap_apply, coe_coe,
-      LinearPMap.adjoint_isFormalAdjoint hd ⟨W.adjoint y, hy'⟩ x, W.adjoint_inner_left]
-  · have hd' : ¬Dense (((W : E →ₗ[𝕜] F).compPMap M).domain : Set G) := hd
-    rw [LinearPMap.adjoint_apply_of_not_dense hd' ⟨y, hy⟩,
-      LinearPMap.adjoint_apply_of_not_dense hd ⟨W.adjoint y, hy'⟩]
-
-end ContinuousLinearMap
 

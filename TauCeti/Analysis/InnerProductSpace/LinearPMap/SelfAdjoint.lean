@@ -45,9 +45,9 @@ linear maps used by the semigroup development.
 * `LinearPMap.IsFormalAdjoint.norm_smul_sub_sq`: the square-sum identity for a shift, and the
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
   `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`; for any partial
-  map with nonnegative real quadratic form,
-  `LinearPMap.neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg` bounds `‖c • x - A x‖` below by
-  `(-re c) * ‖x‖`.
+  map whose real quadratic form is bounded below by `γ * ‖x‖ ^ 2`,
+  `LinearPMap.sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner` bounds `‖c • x - A x‖`
+  below by `(γ - re c) * ‖x‖`.
 * `LinearPMap.IsFormalAdjoint.two_mul_re_inner_sub_le`: the variational inequality of a
   symmetric map bounded below by `t`, with the quadratic form of the real shift `A - t` computed
   by `LinearPMap.re_inner_apply_sub_smul_self`.
@@ -61,7 +61,8 @@ linear maps used by the semigroup development.
   `LinearPMap.denseRange_smul_sub_iff`: the shift has dense range exactly when `A†` has no nonzero
   eigenvector for `conj c`.
 * `LinearPMap.orthogonal_range_eq_ker_adjoint`: for a densely defined `T`,
-  `(range T)ᗮ = ker T†`.
+  `(range T)ᗮ = ker T†`, and `LinearPMap.adjoint_apply_mem_orthogonal_ker`: every value of `T†`
+  lies in `(ker T)ᗮ` unconditionally.
 * `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
   the range of a symmetric map is orthogonal to its kernel, and for a self-adjoint map
   `(range A)ᗮ = ker A`; `LinearPMap.exists_coe_eq_sub_starProjection` removes the kernel
@@ -201,6 +202,18 @@ theorem orthogonal_range_eq_ker_adjoint [CompleteSpace E] {F : Type*} [NormedAdd
   · rintro ⟨z, rfl, hz⟩ _ ⟨x, rfl⟩
     exact (adjoint_isFormalAdjoint hd z x).symm.trans (by rw [hz, inner_zero_left])
 
+/-- Every value `T† y` of the adjoint of a partial linear map lies in `(ker T)ᗮ`. No density or
+closedness assumption is required: when `T.domain` is not dense, `T†` takes the value `0`. -/
+theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (T : E →ₗ.[𝕜] F) (y : T†.domain) : T† y ∈ T.kerᗮ := by
+  by_cases hd : Dense (T.domain : Set E)
+  · rw [Submodule.mem_orthogonal]
+    intro x hx
+    obtain ⟨u, rfl, hu⟩ := mem_ker_iff.mp hx
+    rw [← inner_conj_symm, adjoint_isFormalAdjoint hd y u, hu, inner_zero_right, _root_.map_zero]
+  · rw [adjoint_apply_of_not_dense hd]
+    exact zero_mem _
+
 /-- For a self-adjoint `A`, the orthogonal complement of the range is the kernel. -/
 theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker [CompleteSpace E] {A : E →ₗ.[𝕜] E}
     (hA : IsSelfAdjoint A) : (LinearMap.range A.toFun)ᗮ = A.ker := by
@@ -296,17 +309,20 @@ theorem IsFormalAdjoint.norm_re_smul_sub_le_norm_smul_sub {A : E →ₗ.[𝕜] E
   rw [hA.norm_smul_sub_sq c x]
   exact le_add_of_nonneg_left (by positivity)
 
-/-- A partial linear map with nonnegative real quadratic form satisfies
-`(-re c) * ‖x‖ ≤ ‖c • x - A x‖` for every scalar `c`. No symmetry assumption on `A` is needed. -/
-theorem neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg
-    {A : E →ₗ.[𝕜] E} (hpos : ∀ x : A.domain, 0 ≤ RCLike.re (inner 𝕜 (A x) (x : E)))
-    (c : 𝕜) (x : A.domain) : (-RCLike.re c) * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖ := by
+/-- A partial linear map whose real quadratic form is bounded below by `γ * ‖x‖ ^ 2` satisfies
+`(γ - re c) * ‖x‖ ≤ ‖c • x - A x‖` for every scalar `c`. No symmetry assumption on `A` is
+needed. -/
+theorem sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner
+    {A : E →ₗ.[𝕜] E} {γ : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x) (x : E)))
+    (c : 𝕜) (x : A.domain) : (γ - RCLike.re c) * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖ := by
   rcases eq_or_ne (x : E) 0 with hx0 | hx0
   · simp [hx0]
-  have hre : (-RCLike.re c) * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) := by
-    rw [inner_sub_left, inner_smul_left, _root_.map_sub, RCLike.mul_re, RCLike.conj_re,
+  have hre :
+      (γ - RCLike.re c) * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) := by
+    rw [sub_mul, inner_sub_left, inner_smul_left, _root_.map_sub, RCLike.mul_re, RCLike.conj_re,
       RCLike.conj_im, inner_self_im, inner_self_eq_norm_sq]
-    linarith [hpos x]
+    linarith [hγ x]
   have hcs : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) ≤
       ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by
     calc RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E))

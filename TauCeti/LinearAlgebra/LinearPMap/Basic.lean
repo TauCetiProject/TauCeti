@@ -25,6 +25,9 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
   outside its range keeps it injective.
 * `LinearPMap.mem_ker_iff_mem_graph`: the kernel consists of the vectors `x` with `(x, 0)` in the
   graph.
+* `LinearMap.compPMap_domain`, `LinearPMap.comp_domain`, `LinearPMap.comp_apply`,
+  `LinearPMap.mem_comp_toPMap_comap_domain`, and `LinearPMap.comp_toPMap_comap_apply`: domain and
+  evaluation lemmas for compositions of partial and everywhere-defined linear maps.
 -/
 
 public section
@@ -112,6 +115,50 @@ end supSpanSingleton
 theorem mem_ker_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M) {x : E} :
     x ∈ f.ker ↔ (x, 0) ∈ f.graph := by
   simp [mem_ker_iff, eq_comm]
+
+section Comp
+
+variable {T G : Type*} [Ring T] {τ : S →+* T} {ρ : R →+* T} [RingHomCompTriple σ τ ρ]
+  [AddCommGroup G] [Module T G]
+
+/-- Composing a linear map on the left with a partial linear map preserves the domain. -/
+@[simp]
+theorem _root_.LinearMap.compPMap_domain (g : F →ₛₗ[τ] G) (f : E →ₛₗ.[σ] F) :
+    (g.compPMap (ρ := ρ) f).domain = f.domain :=
+  rfl
+
+/-- Composing two partial linear maps gives a partial linear map on the inner map's domain. -/
+@[simp]
+theorem comp_domain (g : F →ₛₗ.[τ] G) (f : E →ₛₗ.[σ] F) (H : ∀ x : f.domain, f x ∈ g.domain) :
+    (g.comp (ρ := ρ) f H).domain = f.domain :=
+  rfl
+
+/-- Evaluating a composition `g.comp f H` applies `g` to `f x`. -/
+@[simp]
+theorem comp_apply (g : F →ₛₗ.[τ] G) (f : E →ₛₗ.[σ] F) (H : ∀ x : f.domain, f x ∈ g.domain)
+    (x : (g.comp (ρ := ρ) f H).domain) :
+    g.comp (ρ := ρ) f H x = g ⟨f ⟨x, x.property⟩, H ⟨x, x.property⟩⟩ :=
+  rfl
+
+/-- A vector belongs to the maximal domain of `g` composed with `f` (expressed via `toPMap` on
+`g.domain.comap f`) if and only if `f x ∈ g.domain`. -/
+theorem mem_comp_toPMap_comap_domain (g : F →ₛₗ.[τ] G) (f : E →ₛₗ[σ] F)
+    (H : ∀ y : (f.toPMap (g.domain.comap f)).domain, f.toPMap (g.domain.comap f) y ∈ g.domain)
+    {x : E} :
+    x ∈ (g.comp (ρ := ρ) (f.toPMap (g.domain.comap f)) H).domain ↔ f x ∈ g.domain := by
+  rw [comp_domain, LinearMap.toPMap_domain, Submodule.mem_comap]
+
+/-- Evaluating the maximal-domain composition of a partial linear map `g` with a linear map `f`
+applies `g` to `f x`. -/
+theorem comp_toPMap_comap_apply (g : F →ₛₗ.[τ] G) (f : E →ₛₗ[σ] F)
+    (H : ∀ y : (f.toPMap (g.domain.comap f)).domain, f.toPMap (g.domain.comap f) y ∈ g.domain)
+    (x : (g.comp (ρ := ρ) (f.toPMap (g.domain.comap f)) H).domain) :
+    g.comp (ρ := ρ) (f.toPMap (g.domain.comap f)) H x =
+      g ⟨f x, (mem_comp_toPMap_comap_domain (ρ := ρ) g f H).mp x.property⟩ := by
+  rw [comp_apply]
+  exact congrArg g (Subtype.ext (LinearMap.toPMap_apply f _ _))
+
+end Comp
 
 end LinearPMap
 

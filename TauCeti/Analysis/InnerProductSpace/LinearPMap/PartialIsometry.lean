@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.AdjointComp
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
@@ -117,36 +117,36 @@ theorem IsPartialIsometry.compPMap_adjointComp {u : E →L[𝕜] F} (hu : u.IsPa
     {M : G →ₗ.[𝕜] E} (hrange : LinearMap.range M.toFun ≤ u.kerᗮ) :
     ((u : E →ₗ[𝕜] F).compPMap M).adjointComp = M.adjointComp := by
   have hadj := u.compPMap_adjoint M
-  have hproj (x : M.domain) : u.adjoint (u (M x)) = M x :=
-    hu.adjoint_apply_apply (hrange (LinearMap.mem_range_self M.toFun x))
+  have hcomp_apply {x : G} (hx₁ : x ∈ ((u : E →ₗ[𝕜] F).compPMap M).domain)
+      (hx₂ : x ∈ M.domain) :
+      u.adjoint (((u : E →ₗ[𝕜] F).compPMap M) ⟨x, hx₁⟩) = M ⟨x, hx₂⟩ := by
+    have hval : ((u : E →ₗ[𝕜] F).compPMap M) ⟨x, hx₁⟩ = u (M ⟨x, hx₂⟩) := by
+      rw [LinearMap.compPMap_apply, coe_coe]; rfl
+    rw [hval]
+    exact hu.adjoint_apply_apply (hrange (LinearMap.mem_range_self M.toFun ⟨x, hx₂⟩))
   have hdom : ((u : E →ₗ[𝕜] F).compPMap M).adjointComp.domain = M.adjointComp.domain := by
     ext x
     rw [LinearPMap.mem_adjointComp_domain, LinearPMap.mem_adjointComp_domain]
-    refine ⟨fun ⟨hx, hux⟩ ↦ ⟨hx, ?_⟩, fun ⟨hx, hMx⟩ ↦ ⟨hx, ?_⟩⟩
-    · rw [hadj] at hux
-      -- Unfold `.comp` domain membership on `hux` to `u.adjoint (u (M ⟨x, hx⟩)) ∈ M†.domain`.
-      change u.adjoint (u (M ⟨x, hx⟩)) ∈ M†.domain at hux
-      rwa [hproj ⟨x, hx⟩] at hux
-    · rw [hadj]
-      -- Unfold `.comp` domain membership to `u.adjoint (u (M ⟨x, hx⟩)) ∈ M†.domain`.
-      change u.adjoint (u (M ⟨x, hx⟩)) ∈ M†.domain
-      rwa [hproj ⟨x, hx⟩]
+    refine ⟨fun ⟨hx, hux⟩ ↦ ?_, fun ⟨hx, hMx⟩ ↦ ?_⟩
+    · have hx' : x ∈ M.domain := by simpa using hx
+      rw [hadj, LinearPMap.mem_comp_toPMap_comap_domain, coe_coe, hcomp_apply hx hx'] at hux
+      exact ⟨hx', hux⟩
+    · have hx' : x ∈ ((u : E →ₗ[𝕜] F).compPMap M).domain := by simpa using hx
+      refine ⟨hx', ?_⟩
+      rw [hadj, LinearPMap.mem_comp_toPMap_comap_domain, coe_coe, hcomp_apply hx' hx]
+      exact hMx
   refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
-  have hxM : x ∈ M.domain := LinearPMap.adjointComp_domain_le M hx₂
-  have hMx : M ⟨x, hxM⟩ ∈ M†.domain := (LinearPMap.mem_adjointComp_domain.mp hx₂).choose_spec
-  have hux : u.adjoint (u (M ⟨x, hxM⟩)) ∈ M†.domain := (hproj ⟨x, hxM⟩).symm ▸ hMx
-  rw [LinearPMap.adjointComp_apply _ ⟨x, hx₁⟩, LinearPMap.adjointComp_apply M ⟨x, hx₂⟩]
-  have hcomp : ((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩ ∈
-      (M†.comp ((u.adjoint : F →ₗ[𝕜] E).toPMap
-        (M†.domain.comap (u.adjoint : F →ₗ[𝕜] E))) fun y ↦ y.property).domain := hux
-  let lhsVal : (((u : E →ₗ[𝕜] F).compPMap M)†).domain :=
-    ⟨((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩,
-      (LinearPMap.mem_adjointComp_domain.mp hx₁).choose_spec⟩
-  have lhs_eq : (((u : E →ₗ[𝕜] F).compPMap M)†) lhsVal =
-      (M†) ⟨u.adjoint (u (M ⟨x, hxM⟩)), hux⟩ :=
-    LinearPMap.congr_fun hadj lhsVal.property hcomp
-  rw [lhs_eq]
-  exact congrArg (M†) (Subtype.ext (hproj ⟨x, hxM⟩))
+  have hMx : M ⟨x, LinearPMap.adjointComp_domain_le M hx₂⟩ ∈ M†.domain :=
+    (LinearPMap.mem_adjointComp_domain.mp hx₂).choose_spec
+  have hux : (u.adjoint : F →ₗ[𝕜] E)
+      (((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩) ∈ M†.domain := by
+    simpa only [coe_coe, hcomp_apply _ (LinearPMap.adjointComp_domain_le M hx₂)] using hMx
+  have hcomp := (LinearPMap.mem_comp_toPMap_comap_domain (M†) (u.adjoint : F →ₗ[𝕜] E)
+    (by rintro ⟨_, hy⟩; simpa using hy)).mpr hux
+  rw [LinearPMap.adjointComp_apply _ ⟨x, hx₁⟩, LinearPMap.adjointComp_apply M ⟨x, hx₂⟩,
+    LinearPMap.congr_fun hadj (LinearPMap.mem_adjointComp_domain.mp hx₁).choose_spec hcomp,
+    LinearPMap.comp_toPMap_comap_apply]
+  exact congrArg (M†) (Subtype.ext (by simpa only [coe_coe] using hcomp_apply _ _))
 
 end Hilbert
 

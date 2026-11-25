@@ -21,7 +21,7 @@ is the **modulus** `|T| = (T†T)^(1/2) = T.modulus : E →ₗ.[𝕜] E` of `T`.
 
 On the subspace `D(T†T)` — which is simultaneously a graph core for `T`
 (`LinearPMap.IsClosed.hasCore_adjointComp_domain`) and a graph core for `|T|`
-(`LinearPMap.IsClosed.hasCore_adjointComp_domain_modulus`) — the identity `|T|† |T| = T†T` yields
+(`LinearPMap.IsClosed.modulus_hasCore_adjointComp_domain`) — the identity `|T|† |T| = T†T` yields
 pointwise norm equality `‖|T| x‖ = ‖T x‖`. Passing to graph closures along both cores shows that
 `|T|` and `T` have the **exact same domain** `D(|T|) = D(T)` and satisfy `‖|T| x‖ = ‖T x‖` for
 every `x ∈ D(T)`. Consequently `ker |T| = ker T`, `(range |T|)ᗮ = ker T`, and the closure of
@@ -124,9 +124,9 @@ theorem IsClosed.adjointComp_domain_le_modulus_domain {T : E →ₗ.[𝕜] F} (h
   (isSelfAdjoint_adjointComp T hT hd).domain_le_sqrt_domain (re_inner_adjointComp_nonneg T)
 
 /-- The domain of `T†T` is a graph core for `|T|`. -/
-theorem IsClosed.hasCore_adjointComp_domain_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
+theorem IsClosed.modulus_hasCore_adjointComp_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.HasCore T.adjointComp.domain :=
-  (isSelfAdjoint_adjointComp T hT hd).hasCore_sqrt_domain (re_inner_adjointComp_nonneg T)
+  (isSelfAdjoint_adjointComp T hT hd).sqrt_hasCore_domain (re_inner_adjointComp_nonneg T)
 
 /-- **Uniqueness of the modulus.** Any nonnegative self-adjoint partial linear map `M` with
 `M.adjointComp = T.adjointComp` equals `T.modulus`. -/
@@ -165,7 +165,7 @@ private theorem norm_modulus_apply_of_mem_adjointComp_domain {T : E →ₗ.[𝕜
 theorem IsClosed.modulus_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.domain = T.domain :=
   le_antisymm
-    ((hT.hasCore_adjointComp_domain_modulus hd).domain_le_of_norm_eq hT (adjointComp_domain_le T)
+    ((hT.modulus_hasCore_adjointComp_domain hd).domain_le_of_norm_eq hT (adjointComp_domain_le T)
       fun u hu ↦ (norm_modulus_apply_of_mem_adjointComp_domain hT hd u hu).symm)
     (hT.hasCore_adjointComp_domain.domain_le_of_norm_eq (hT.isClosed_modulus hd)
       (hT.adjointComp_domain_le_modulus_domain hd)

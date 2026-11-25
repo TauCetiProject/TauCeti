@@ -42,7 +42,7 @@ uniformly over every `RCLike 𝕜`.
 * `IsSelfAdjoint.isSelfAdjoint_sqrt`, `IsSelfAdjoint.dense_sqrt_domain`,
   `IsSelfAdjoint.re_inner_sqrt_nonneg`: `A.sqrt` is self-adjoint, densely defined, and nonnegative.
 * `IsSelfAdjoint.sqrt_adjointComp`: `(A.sqrt).adjointComp = A`.
-* `IsSelfAdjoint.domain_le_sqrt_domain`, `IsSelfAdjoint.hasCore_sqrt_domain`: `A.domain` sits
+* `IsSelfAdjoint.domain_le_sqrt_domain`, `IsSelfAdjoint.sqrt_hasCore_domain`: `A.domain` sits
   inside `A.sqrt.domain` as a graph core for `A.sqrt`.
 * `IsSelfAdjoint.eq_sqrt`, `IsSelfAdjoint.eq_sqrt_iff`: uniqueness of the positive square root.
 * `LinearPMap.sqrt_zero`, `ContinuousLinearMap.IsPositive.toPMap_top_sqrt`: compatibility with `0`
@@ -97,7 +97,7 @@ variable {A : E →ₗ.[𝕜] E}
 
 private theorem neg_one_mem_resolventSet (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) : (-1 : 𝕜) ∈ A.resolventSet :=
-  hA.mem_resolventSet_of_re_neg_of_re_inner_nonneg hpos (by simp)
+  hA.mem_resolventSet_of_re_lt (γ := 0) (by simpa using hpos) (by simp)
 
 private theorem sqrtB_mem_domain (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) (y : E) :
@@ -226,6 +226,14 @@ private theorem sqrt_apply_sqrtS (hA : IsSelfAdjoint A)
       ⟨sqrtS A z, ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top (sqrtS A) z⟩) = sqrtC A z
   rw [ContinuousLinearMap.inverse_toPMap_top_apply (sqrtS A) (sqrtS_injective hA hpos)]
 
+private theorem sqrt_apply_sqrtS_sqrtS (hA : IsSelfAdjoint A)
+    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) {u : A.sqrt.domain} {z : E}
+    (hu : sqrtS A (sqrtS A z) = (u : E)) :
+    A.sqrt u = sqrtS A (sqrtC A z) := by
+  have hsub : u = ⟨sqrtS A (sqrtS A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext hu.symm
+  rw [hsub, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
+    commute_sqrtS_sqrtC.symm.eq, mul_apply_eq_comp]
+
 private theorem re_inner_sqrtC_sqrtS_nonneg (z : E) :
     0 ≤ RCLike.re ⟪sqrtC A z, sqrtS A z⟫ := by
   have hSC : 0 ≤ sqrtS A * sqrtC A :=
@@ -340,22 +348,16 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
         exact sqrtB_add_apply hA hpos ⟨x, hx⟩
       have hx_dom : x ∈ A.sqrt.domain := hxS ▸ sqrtS_mem_sqrt_domain (sqrtS A z)
       refine mem_adjointComp_domain.mpr ⟨hx_dom, ?_⟩
-      have hval : A.sqrt ⟨x, hx_dom⟩ = sqrtS A (sqrtC A z) := by
-        have hsub : (⟨x, hx_dom⟩ : A.sqrt.domain) =
-            ⟨sqrtS A (sqrtS A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext hxS.symm
-        rw [hsub, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
-          commute_sqrtS_sqrtC.symm.eq, mul_apply_eq_comp]
+      have hval : A.sqrt ⟨x, hx_dom⟩ = sqrtS A (sqrtC A z) :=
+        sqrt_apply_sqrtS_sqrtS hA hpos hxS
       rw [hsqrt_adj, hval]
       exact sqrtS_mem_sqrt_domain (sqrtC A z)
     · set z := (x : E) + A x
       have hxB : sqrtB A z = (x : E) := sqrtB_add_apply hA hpos x
       have hxS : sqrtS A (sqrtS A z) = (x : E) := by
         rw [← mul_apply_eq_comp, sqrtS_mul_self hA hpos, hxB]
-      have h1 : A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩ = sqrtS A (sqrtC A z) := by
-        have hsub : (⟨y, adjointComp_domain_le A.sqrt y.property⟩ : A.sqrt.domain) =
-            ⟨sqrtS A (sqrtS A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext (hxy.symm.trans hxS.symm)
-        rw [hsub, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
-          commute_sqrtS_sqrtC.symm.eq, mul_apply_eq_comp]
+      have h1 : A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩ = sqrtS A (sqrtC A z) :=
+        sqrt_apply_sqrtS_sqrtS hA hpos (hxS.trans hxy)
       rw [adjointComp_apply]
       have h2 := LinearPMap.congr_fun hsqrt_adj
         (mem_adjointComp_domain.mp y.property).choose_spec
@@ -374,7 +376,7 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
 
 /-- For a nonnegative self-adjoint partial linear map `A`, `A.domain` is a graph core for
 `A.sqrt`. -/
-theorem _root_.IsSelfAdjoint.hasCore_sqrt_domain {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
+theorem _root_.IsSelfAdjoint.sqrt_hasCore_domain {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :
     A.sqrt.HasCore A.domain := by
   have hcore := (hA.isSelfAdjoint_sqrt hpos).isClosed.hasCore_adjointComp_domain
@@ -539,7 +541,7 @@ theorem _root_.IsSelfAdjoint.eq_sqrt {A M : E →ₗ.[𝕜] E} (hA : IsSelfAdjoi
     rw [h₁, h₂, ← hsubM, ← hsubS]
     exact heval
   have hcoreM : M.HasCore A.domain := hMsq ▸ hM.isClosed.hasCore_adjointComp_domain
-  have hcoreS : A.sqrt.HasCore A.domain := hA.hasCore_sqrt_domain hpos
+  have hcoreS : A.sqrt.HasCore A.domain := hA.sqrt_hasCore_domain hpos
   rw [← hcoreM.closure_eq, hdomR, hcoreS.closure_eq]
 
 /-- Characterization of `A.sqrt` as the unique nonnegative self-adjoint partial linear map whose
