@@ -70,6 +70,10 @@ differential of `κ` at `(t, x)` is injective, hence bijective between these spa
   `dθ` is nondegenerate at every nonzero covector of `ξ⁰`.
 * `IsContactDistribution.isSymplectic_mpullback_subtype_val_mextDerivₗ_annihilatorLiouvilleForm`:
   `dθ` is a symplectic form on `ξ⁰ ∖ 0`.
+* `TauCeti.IsContactDistribution.exists_lift_symplectizationToCotangent`: every nonzero covector
+  `z ∈ ξ⁰` is `eᵗ β_x` for a local contact form `β` (up to sign), and `(s, y) ↦ eˢ β_y` lifts to
+  `ξ⁰` near `(t, x)`; such lifts pull `dθ` back to `d(eˢ β)`
+  (`TauCeti.IsContactDistribution.eval₂_mextDerivₗ_annihilatorLiouvilleForm_mfderiv`).
 
 ## References
 
@@ -331,7 +335,60 @@ theorem mem_annihilatorPunctured {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annih
     z ∈ hξ.annihilatorPunctured ↔ z.snd ≠ 0 :=
   mem_zeroSectionCompl
 
+/-- **Local charts of the symplectization pull back `dθ` to `d(eˢ β)`.** If `κ : ℝ × M → ξ⁰` is
+differentiable at `p` and, composed with the inclusion `ξ⁰ → T*M`, agrees near `p` with the map
+`(s, y) ↦ eˢ β_y`, then `κ` pulls `dθ` back at `p` to the exterior derivative of the
+symplectization form `eˢ β`: `dθ_(κ p)(dκ u, dκ u') = d(eˢ β)_p(u, u')`. -/
+theorem eval₂_mextDerivₗ_annihilatorLiouvilleForm_mfderiv
+    {κ : ℝ × M → TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} {β : SmoothForm I M ℝ 1}
+    {p : ℝ × M}
+    (hev : annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ κ =ᶠ[𝓝 p] β.symplectizationToCotangent) :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
+    haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
+      hξ.finrank_sub_one_add_one
+    MDifferentiableAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) κ p →
+      ∀ u u' : TangentSpace (𝓘(ℝ).prod I) p,
+        SmoothBundleForm.eval₂ (mextDerivₗ (I.prod 𝓘(ℝ, Fin 1 → ℝ)) 1 hξ.annihilatorLiouvilleForm)
+            (κ p) (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) κ p u)
+            (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) κ p u') =
+          SmoothBundleForm.eval₂ (mextDerivₗ (𝓘(ℝ).prod I) 1 β.symplectization) p u u' :=
+  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
+  fun hκ u u' ↦ by
+  rw [mextDerivₗ_annihilatorLiouvilleForm]
+  exact eval₂_mpullback_mfderiv_of_eventuallyEq _ hev hκ u u'
+
 variable [T2Space M]
+
+/-- **Local trivializations of the symplectization through a nonzero covector.** A nonzero
+covector `z` of `ξ⁰` over `x` is `eᵗ β_x` for a one-form `β` which defines `ξ` near `x` and is a
+contact form at `x`, and near `(t, x)` the map `(s, y) ↦ eˢ β_y` lifts to a map `κ : ℝ × M → ξ⁰`
+smooth at `(t, x)` with `κ (t, x) = z`. Such a `β` exists whether or not `ξ` is coorientable; it
+is a local contact form of `ξ` or its negative. -/
+theorem exists_lift_symplectizationToCotangent
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} (hz : z.snd ≠ 0) :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    ∃ (β : SmoothForm I M ℝ 1) (t : ℝ)
+      (κ : ℝ × M → TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x),
+      (∀ᶠ y in 𝓝 z.proj, β.kerDistribution y = ξ y) ∧ IsContactFormAt β.val z.proj ∧
+        κ (t, z.proj) = z ∧
+        annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ κ =ᶠ[𝓝 (t, z.proj)]
+          β.symplectizationToCotangent ∧
+        ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ κ (t, z.proj) :=
+  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
+  haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
+  by
+  have hj := hξ.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
+    hξ.finrank_sub_one_add_one
+  obtain ⟨W, hW, hxW, α, hα⟩ := hξ.exists_smoothForm_ker_eq_isContactFormAt z.proj
+  obtain ⟨β, hβ, t, ht⟩ := exists_symplectizationToCotangent_eq hα hxW hz
+  obtain ⟨κ, hκp, hev, hκ⟩ := exists_lift_annihilatorInclusion hj hW (fun y hy ↦ (hβ y hy).1)
+    hxW ht
+  exact ⟨β, t, κ, Filter.eventually_of_mem (hW.mem_nhds hxW) fun y hy ↦
+    (SmoothForm.kerDistribution_eq_ker β y).trans (hβ y hy).1, (hβ _ hxW).2, hκp, hev, hκ⟩
 
 /-- **The symplectization of a contact structure is nondegenerate.** The exterior derivative of
 the tautological one-form of `ξ⁰` is nondegenerate at every nonzero covector annihilating `ξ`. -/
@@ -349,14 +406,10 @@ theorem nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm
   by
   have hj := hξ.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
     hξ.finrank_sub_one_add_one
-  rw [mextDerivₗ_annihilatorLiouvilleForm]
-  obtain ⟨W, hW, hxW, α, hα⟩ := hξ.exists_smoothForm_ker_eq_isContactFormAt z.proj
-  obtain ⟨β, hβ, t, ht⟩ := exists_symplectizationToCotangent_eq hα hxW hz
-  obtain ⟨κ, hκp, hev, hκ⟩ := exists_lift_annihilatorInclusion hj hW (fun y hy ↦ (hβ y hy).1)
-    hxW ht
-  rw [← hκp]
+  obtain ⟨β, t, κ, -, hβ, hκp, hev, hκ⟩ := hξ.exists_lift_symplectizationToCotangent hz
+  rw [mextDerivₗ_annihilatorLiouvilleForm, ← hκp]
   refine nondegenerate_bilinFormAt_mpullback_of_eventuallyEq hj.contMDiff hev
-    (hκ.mdifferentiableAt (by simp)) (hβ _ hxW).2 ?_
+    (hκ.mdifferentiableAt (by simp)) hβ ?_
   -- The source `ξ⁰` is modelled on `E × (Fin 1 → ℝ)`.
   simp only [Module.finrank_prod, Module.finrank_self, Module.finrank_fin_fun, add_comm]
 
