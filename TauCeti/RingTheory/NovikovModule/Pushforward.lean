@@ -240,6 +240,7 @@ theorem pushforward_mem_potentialFiltration {C : ℝ} {a : NovikovModule R F}
       (by rwa [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs)]), map_zero]
 
 /-- The pushforward is continuous for the potential-cutoff topologies. -/
+@[fun_prop]
 theorem continuous_pushforward : Continuous (pushforward ρ π hπ) :=
   continuous_of_forall_mem_potentialFiltration (pushforward ρ π hπ) fun C =>
     ⟨C, fun _ ha => pushforward_mem_potentialFiltration hπ ρ ha⟩

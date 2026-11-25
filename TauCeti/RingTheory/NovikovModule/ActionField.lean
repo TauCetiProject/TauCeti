@@ -163,6 +163,7 @@ section Ring
 variable [Ring R] [Ring k] (ρ : R →+* k)
 
 /-- The action-field specialization is continuous for the potential-cutoff topologies. -/
+@[fun_prop]
 theorem continuous_actionFieldMap (r : ∀ i, P i) : Continuous (actionFieldMap hF ρ r) :=
   continuous_pushforward _ ρ
 
