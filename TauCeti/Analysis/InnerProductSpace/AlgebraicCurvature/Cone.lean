@@ -307,7 +307,7 @@ theorem twoNonnegCurvatureOperatorCone_le_nonnegRicciCone (hn : Module.finrank �
   mem_nonnegRicciCone.mpr fun u ↦ by
     rcases eq_or_ne u 0 with rfl | hu
     · simp
-    rw [ricci_apply_self_eq_norm_sq_mul _ hu]
+    rw [ricci_apply_self_eq_norm_sq_mul _ u]
     exact mul_nonneg (sq_nonneg _) (ricci_apply_self_nonneg_of_mem_twoNonneg hn hr <| by
       rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hu)])
 

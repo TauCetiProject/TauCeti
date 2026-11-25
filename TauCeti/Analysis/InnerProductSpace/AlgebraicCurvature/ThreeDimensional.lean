@@ -183,7 +183,7 @@ theorem forall_inner_curvatureEndomorphism_add_inner_nonneg_iff_forall_ricci_non
     obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
         (show ‖‖u‖⁻¹ • u‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
-    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
+    rw [ricci_apply_self_eq_norm_sq_mul r u, ← he]
     exact mul_nonneg (sq_nonneg _) (h ω₁ ω₂ hω)
   · obtain ⟨e, -, he⟩ :=
       exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂ hω
@@ -203,7 +203,7 @@ theorem forall_inner_curvatureEndomorphism_add_inner_pos_iff_forall_ricci_pos_of
   · obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
         (show ‖‖u‖⁻¹ • u‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
-    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
+    rw [ricci_apply_self_eq_norm_sq_mul r u, ← he]
     exact mul_pos (pow_pos (norm_pos_iff.mpr hu) 2) (h ω₁ ω₂ hω)
   · obtain ⟨e, he₁, he⟩ :=
       exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂ hω
@@ -253,10 +253,10 @@ theorem IsAlgebraicCurvature.ricci_reactionTensor_apply_self_nonneg_of_ricci_app
   obtain ⟨b, hb⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
     (show ‖‖e‖⁻¹ • e‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) he₀)
   have hb₀ : ricci r (b 0) (b 0) = 0 := by
-    rw [ricci_apply_self_eq_norm_sq_mul r he₀] at he
+    rw [ricci_apply_self_eq_norm_sq_mul r e] at he
     rw [hb]
     exact (mul_eq_zero.mp he).resolve_left (pow_ne_zero 2 (norm_ne_zero_iff.mpr he₀))
-  rw [ricci_apply_self_eq_norm_sq_mul _ he₀, ← hb,
+  rw [ricci_apply_self_eq_norm_sq_mul _ e, ← hb,
     hr.ricci_reactionTensor_apply_self_of_ricci_apply_self_eq_zero b hb₀]
   positivity
 

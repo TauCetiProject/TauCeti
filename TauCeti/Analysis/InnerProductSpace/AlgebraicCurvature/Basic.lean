@@ -599,10 +599,12 @@ theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalB
   rw [ricci_apply, LinearMap.BilinMap.metricTrace_eq_sum (ricciSlice r u v) b]
   simp only [ricciSlice_apply]
 
-/-- The Ricci curvature of a nonzero vector `u` is `‖u‖²` times that of the unit vector
-`‖u‖⁻¹ • u`. -/
-theorem ricci_apply_self_eq_norm_sq_mul (r : FourTensor V) {u : V} (hu : u ≠ 0) :
+/-- The Ricci curvature of a vector `u` is `‖u‖²` times that of `‖u‖⁻¹ • u`, which is a unit
+vector when `u ≠ 0`; for `u = 0` both sides vanish. -/
+theorem ricci_apply_self_eq_norm_sq_mul (r : FourTensor V) (u : V) :
     ricci r u u = ‖u‖ ^ 2 * ricci r (‖u‖⁻¹ • u) (‖u‖⁻¹ • u) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · simp
   have hu' : ‖u‖ ≠ 0 := norm_ne_zero_iff.mpr hu
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   field_simp
