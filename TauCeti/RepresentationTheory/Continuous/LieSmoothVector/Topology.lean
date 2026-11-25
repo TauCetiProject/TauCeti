@@ -20,9 +20,9 @@ family of word seminorms `P_k = ContRepresentation.wordSeminorm I π X k`, `k : 
 the topology of this family on `ContRepresentation.LieSmoothSpace I π X`, a copy (a one-field
 structure) of the smooth vectors, rather than on `lieSmoothVectors I π` itself, which keeps the
 subspace topology of `V`. The linear equivalence `ContRepresentation.LieSmoothSpace.linearEquiv`
-moves between the two. The elements are the smooth vectors for every `X`, but the topology depends
-on `X`: it is the usual topology of the smooth vectors only when `X` spans the Lie algebra (for
-an empty family, every `P_k` is the norm of `V`).
+moves between the two. The elements are the smooth vectors for every `X`, but in general the
+topology depends on `X` (for an empty family, every `P_k` is the norm of `V`). When `X` spans the
+Lie algebra it is the usual topology of the smooth vectors; this file does not prove that.
 
 The word seminorm of order zero is the norm of `V`
 (`ContRepresentation.wordSeminorm_zero`). So the family separates points and the topology is
@@ -81,8 +81,8 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 /-- The smooth vectors `lieSmoothVectors I π` of a continuous representation, as a type carrying
 the topology of the word seminorms `P_k` of the family `X` (`LieSmoothSpace.withSeminorms`). It
 is a copy of the smooth vectors: the submodule `lieSmoothVectors I π` itself keeps the subspace
-topology of `V`. The topology depends on `X`, and is the topology of the smooth vectors only when
-`X` spans the Lie algebra, for instance when `X` is a basis. -/
+topology of `V`. In general the topology depends on `X`; it is the topology of the smooth vectors
+when `X` spans the Lie algebra, for instance when `X` is a basis. -/
 @[ext]
 structure LieSmoothSpace (X : ι → LeftInvariantDerivation I G) where
   /-- A smooth vector, as an element of `LieSmoothSpace I π X`. -/
