@@ -109,7 +109,8 @@ theorem isotropy_fundamental_eq_lieAnnihilator_orbitMap_coadjointRepresentation
       lieAnnihilator ℝ (GroupLieAlgebra I G) ((coadjointRepresentation ℝ I G).orbitMap ν x) := by
   have h := ν.isEquivariantMomentMap_coadjointOrbitForm
   have hc := h.momentCocycle_eq_zero x
-  refine le_antisymm (h.isotropy_le_lieAnnihilator hc) fun ξ hξ ↦ ?_
+  refine le_antisymm (SmoothTwoForm.isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero hc)
+    fun ξ hξ ↦ ?_
   -- The differential of the orbit map is injective and sends `ξ_O x` to `⁅ξ, μ x⁆ = 0`.
   rw [InfinitesimalAction.mem_isotropy_iff]
   refine ν.injective_differential_orbitMap_coadjointRepresentation x ?_

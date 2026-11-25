@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Complex
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # The volume scaling of multiplication on the mixed space
@@ -82,28 +83,15 @@ theorem volume_image_mul_left (c : mixedSpace K) (A : Set (mixedSpace K)) :
   rw [h, Measure.addHaar_image_linearMap, ← Algebra.norm_apply, abs_algebraNorm]
 
 open scoped Classical in
-/-- **Change of variables for multiplication on the mixed space.** If `c` has nonzero mixed norm,
-the substitution `x ↦ c * x` divides an integral over the mixed space by `mixedEmbedding.norm c`.
-No integrability or measurability hypothesis on `g` is needed. -/
+/-- **Change of variables for multiplication on the mixed space.** The substitution `x ↦ c * x`
+divides an integral over the mixed space by `mixedEmbedding.norm c`; if that norm is `0`, both
+sides are `0`. No integrability or measurability hypothesis on `g` is needed. -/
 theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (g : mixedSpace K → E) {c : mixedSpace K} (hc : mixedEmbedding.norm c ≠ 0) :
+    (g : mixedSpace K → E) (c : mixedSpace K) :
     ∫ x, g (c * x) = (mixedEmbedding.norm c)⁻¹ • ∫ x, g x := by
-  have hu : IsUnit c := TauCeti.NumberField.mixedEmbedding.isUnit_iff_norm_ne_zero.mpr hc
-  let e : mixedSpace K ≃L[ℝ] mixedSpace K :=
-    (hu.unit.mulLeftLinearEquiv ℝ (mixedSpace K)).toContinuousLinearEquiv
-  have hdet : LinearMap.det (Algebra.lmul ℝ (mixedSpace K) c) ≠ 0 := by
-    rw [← Algebra.norm_apply, ← abs_ne_zero, abs_algebraNorm]
-    exact hc
-  have hmap : Measure.map (c * ·) volume =
-      ENNReal.ofReal (mixedEmbedding.norm c)⁻¹ • (volume : Measure (mixedSpace K)) := by
-    have h := Measure.map_linearMap_addHaar_eq_smul_addHaar volume hdet
-    rwa [abs_inv, ← Algebra.norm_apply, abs_algebraNorm] at h
-  have h := e.toHomeomorph.measurableEmbedding.integral_map (μ := volume) g
-  -- The homeomorphism underlying `e` is multiplication by `c`.
-  have he : ⇑e.toHomeomorph = (c * ·) := rfl
-  rw [he, hmap, integral_smul_measure,
-    ENNReal.toReal_ofReal (inv_nonneg.mpr (mixedEmbedding.norm_nonneg c))] at h
-  exact h.symm
+  have h := Measure.integral_comp_linearMap volume g (Algebra.lmul ℝ (mixedSpace K) c)
+  have hc : ⇑(Algebra.lmul ℝ (mixedSpace K) c) = (c * ·) := funext fun _ ↦ by simp
+  rwa [hc, ← Algebra.norm_apply, abs_algebraNorm] at h
 
 open scoped Classical in
 /-- **The unit action preserves volume.**  With it, `measure_smul` and `measure_preimage_smul`

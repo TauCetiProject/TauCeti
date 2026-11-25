@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Symplectic.Hamiltonian.SingularPoint
 
 /-!
 # Nondegenerate rank-zero points on symplectic manifolds
@@ -35,7 +36,8 @@ lives on a symplectic vector space, to manifolds, and shows that it is intrinsic
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerateRankZeroPoint_comp_right_iff` and
   `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_iff`).
 * It depends only on the germ of `F`, may be tested on the Hessians of the components when
-  `G = ℝⁿ`, and is unchanged by composing `F` with a map whose differential is injective.
+  `G = ℝⁿ`, and is unchanged by composing `F` with a map whose differential has a continuous
+  linear left inverse.
 * On a surface, a nondegenerate rank-zero point of one Hamiltonian `H` is exactly a nondegenerate
   critical point of `H` in the sense of Morse theory
   (`IsNondegenerate.isNondegenerateRankZeroPoint_iff_isManifoldNondegenerateCriticalPoint`, in
@@ -159,16 +161,15 @@ theorem isNondegenerateRankZeroPoint_pi_iff {ι : Type*} [Fintype ι] {F : M →
   exact span_range_hessianQuadraticForm_pi hF.contDiffAt_comp_extChartAt_symm
 
 /-- **Invariance under reparametrization of the values.** On a boundaryless manifold, composing `F`
-with a `C²` map `g` whose differential at `F x` is injective preserves and reflects nondegenerate
-rank-zero points. -/
-theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G → G'}
-    (hg : ContDiffAt ℝ 2 g (F x)) (hinj : Injective (fderiv ℝ g (F x)))
-    (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F x) :
+with a `C²` map `g` whose differential at `F x` has a continuous linear left inverse preserves and
+reflects nondegenerate rank-zero points. -/
+theorem isNondegenerateRankZeroPoint_comp_iff {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x))
+    (hD : (fderiv ℝ g (F x)).HasLeftInverse) (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F x) :
     hσ.IsNondegenerateRankZeroPoint (g ∘ F) x ↔ hσ.IsNondegenerateRankZeroPoint F x := by
   rw [isNondegenerateRankZeroPoint_iff_comp_extChartAt_symm,
     isNondegenerateRankZeroPoint_iff_comp_extChartAt_symm, Function.comp_assoc]
   exact SymplecticForm.isNondegenerateRankZeroPoint_comp_iff (by simpa using hg)
-    (by simpa using hinj) hF.contDiffAt_comp_extChartAt_symm
+    (by simpa using hD) hF.contDiffAt_comp_extChartAt_symm
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic surface.** On a boundaryless
 two-dimensional manifold, a point is a nondegenerate rank-zero point of a function `H` exactly when
