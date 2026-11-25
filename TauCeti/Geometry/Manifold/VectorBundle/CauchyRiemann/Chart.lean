@@ -153,6 +153,24 @@ theorem contDiffOn_chartZeroOrder (hD : IsRealCauchyRiemannOperator F j D) {u : 
     simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet]
     exact ⟨hx.1, hx.2.1⟩
 
+/-- **Smoothness of the zeroth-order term near the chart image.** If a real Cauchy–Riemann
+operator is `C^n` on `M`, its zeroth-order term in chart `i` is `C^n` on the open set of points of
+the chart target lying over the base set of the trivialization of chart `i`, which contains the
+chart image. -/
+theorem contDiffOn_chartZeroOrder_of_univ (hD : IsRealCauchyRiemannOperator F j D)
+    (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
+    ContDiffOn ℝ n (A.chartZeroOrder D i)
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
+  simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
+
+/-- The zeroth-order term in chart `i` of a real Cauchy–Riemann operator which is `C^n` on `M` is
+`C^n` on the chart image. -/
+theorem contDiffOn_chartZeroOrder_image (hD : IsRealCauchyRiemannOperator F j D)
+    (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
+    ContDiffOn ℝ n (A.chartZeroOrder D i) (A.image i) :=
+  (A.contDiffOn_chartZeroOrder_of_univ hD hDs i).mono
+    ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+
 /-- **Boundedness of the zeroth-order term.** The zeroth-order term in chart `i` of a real
 Cauchy–Riemann operator which is `C^n` on `M` is bounded on the closure of the image of chart `i`,
 a compact subset of the open set where it is continuous. -/
