@@ -202,6 +202,19 @@ theorem degreeTwoEquiv_symm_apply (x : degree F 2) :
     degreeTwoEquiv.symm x = toMatsumotoGroup (x : MilnorK F) :=
   (rfl)
 
+/-- The degree-two component of `TauCeti.MilnorK.degreeTwoEquiv q` is `q`. -/
+@[simp]
+theorem toMatsumotoGroup_coe_degreeTwoEquiv (q : MatsumotoGroup F) :
+    toMatsumotoGroup (degreeTwoEquiv q : MilnorK F) = q :=
+  degreeTwoEquiv.symm_apply_apply q
+
+/-- `TauCeti.MilnorK.degreeTwoEquiv` sends the degree-two component of `x ∈ K_2ᴹ(F)` back
+to `x`. -/
+@[simp]
+theorem degreeTwoEquiv_toMatsumotoGroup (x : degree F 2) :
+    degreeTwoEquiv (toMatsumotoGroup (x : MilnorK F)) = x :=
+  degreeTwoEquiv.apply_symm_apply x
+
 /-- The inverse of `TauCeti.MilnorK.degreeTwoEquiv` sends `{a} {b}` to the Steinberg symbol
 `{a, b}`. -/
 theorem degreeTwoEquiv_symm_ofUnit_mul_ofUnit (a b : Fˣ) :
