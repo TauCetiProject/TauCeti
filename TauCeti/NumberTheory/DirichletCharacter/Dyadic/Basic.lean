@@ -20,10 +20,6 @@ The factorization statement is `DirichletCharacter.factorsThrough_of_odd_half`;
 `DirichletCharacter.IsPrimitive.factorization_two_ne_one` gives the valuation restriction.
 Here valuation means `Nat.factorization`, whose value at the zero level is zero.
 
-At level eight every unit squares to one, so every character has order dividing two
-(`DirichletCharacter.sq_eq_one_of_level_eight`) and is its own inverse
-(`DirichletCharacter.inv_eq_self_of_level_eight`).
-
 ## References
 
 M. A. Bennett and S. Siksek, *A conjecture of Erdős, supersingular primes and short
@@ -95,23 +91,5 @@ example (χ : DirichletCharacter R 10) : ¬χ.IsPrimitive :=
 
 example (χ : DirichletCharacter R 14) : ¬χ.IsPrimitive :=
   not_isPrimitive_two_mul (m := 7) χ (by decide)
-
-/-! ### Characters of level eight -/
-
-/-- Every Dirichlet character of level eight has order dividing two, because every unit
-modulo eight squares to one. -/
-theorem sq_eq_one_of_level_eight (χ : DirichletCharacter R 8) : χ ^ 2 = 1 := by
-  refine MulChar.ext fun u ↦ ?_
-  rw [MulChar.pow_apply_coe, ← map_pow, MulChar.one_apply_coe, ← Units.val_pow_eq_pow_val,
-    (by decide : ∀ u : (ZMod 8)ˣ, u ^ 2 = 1) u, Units.val_one, map_one]
-
-/-- Every Dirichlet character of level eight is its own inverse. -/
-theorem inv_eq_self_of_level_eight (χ : DirichletCharacter R 8) : χ⁻¹ = χ :=
-  inv_eq_of_mul_eq_one_right (by rw [← sq, sq_eq_one_of_level_eight])
-
-/-- Two characters of level eight multiply to the principal character exactly when they are
-equal. -/
-theorem mul_eq_one_iff_eq_of_level_eight {ψ ρ : DirichletCharacter R 8} : ψ * ρ = 1 ↔ ψ = ρ := by
-  rw [mul_eq_one_iff_eq_inv, inv_eq_self_of_level_eight]
 
 end DirichletCharacter

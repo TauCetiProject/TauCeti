@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Orthogonality of the Dirichlet characters modulo eight on the odd residues
@@ -68,13 +68,9 @@ theorem sum_fin_four_apply_eq_sum {R : Type*} [CommSemiring R] (χ : DirichletCh
     ∑ a : Fin 4, χ (2 * (a : ℕ) + 1) = ∑ x : ZMod 8, χ x := by
   have h0 (x : ZMod 8) (hx : ¬IsUnit x) : χ x = 0 := MulChar.map_nonunit χ hx
   have huniv : (univ : Finset (ZMod 8)) = {0, 1, 2, 3, 4, 5, 6, 7} := by decide
-  rw [Fin.sum_univ_four, huniv,
-    sum_insert (by decide), sum_insert (by decide), sum_insert (by decide),
-    sum_insert (by decide), sum_insert (by decide), sum_insert (by decide),
-    sum_insert (by decide), sum_singleton, h0 0 (by decide), h0 2 (by decide),
-    h0 4 (by decide), h0 6 (by decide)]
-  norm_num
-  ring
+  rw [Fin.sum_univ_four, huniv]
+  simp +decide [h0 0 (by decide), h0 2 (by decide), h0 4 (by decide), h0 6 (by decide)]
+  norm_num [add_assoc]
 
 /-- **Orthogonality of the characters of level eight on the odd residues.** For characters `ψ`
 and `ρ` of level eight with values in an integral domain, `∑ a, ψ (2 * a + 1) * ρ (2 * a + 1)`

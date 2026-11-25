@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Orthogonality
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 
 /-!
 # The quadratic reciprocity matrix of the characters modulo eight
@@ -219,22 +220,6 @@ theorem quadraticReciprocityMatrix_mul_self [DecidableEq (DirichletCharacter ℂ
   by_cases h : ψ = σ <;> by_cases h' : ψ' = σ' <;> norm_num [h, h']
 
 /-! ### Two entries -/
-
-/-- The lift of `ZMod.χ₄` to level eight takes the value `(-1) ^ a` at the odd residue
-`2 * a + 1`. -/
-private theorem changeLevel_χ₄_apply_fin_four (a : Fin 4) :
-    changeLevel (by norm_num : 4 ∣ 8) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))
-      (2 * (a : ℕ) + 1) = (-1) ^ (a : ℕ) := by
-  have hcast : (2 * (a : ℕ) + 1 : ZMod 8) = (((2 * a + 1 : ℕ) : ℤ) : ZMod 8) := by
-    push_cast
-    ring
-  have hcop : IsCoprime ((2 * a + 1 : ℕ) : ℤ) (8 : ℕ) :=
-    Int.isCoprime_iff_gcd_eq_one.mpr (by fin_cases a <;> rfl)
-  have hval : ZMod.χ₄ (((2 * a + 1 : ℕ) : ℤ) : ZMod 4) = (-1) ^ (a : ℕ) := by
-    fin_cases a <;> decide
-  rw [hcast, changeLevel_ringHomComp_intCast_apply _ _ hcop, hval]
-  push_cast
-  rfl
 
 /-- The diagonal entry of the quadratic reciprocity matrix at the pair of principal characters
 is `1/2`. -/
