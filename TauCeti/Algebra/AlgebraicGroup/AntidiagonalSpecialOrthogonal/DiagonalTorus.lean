@@ -122,6 +122,16 @@ theorem diagonalTorusWeight_eq_zero {i : Fin l} (hi : l / 2 ≤ i) (hrev : l / 2
   rw [diagonalTorusWeight_apply, ite_eq_right_iff.mpr (fun h => by omega),
     ite_eq_right_iff.mpr (fun h => by omega), sub_zero, Pi.zero_apply]
 
+/-- An entry that is its own mirror image, the middle entry for odd `l`, has weight `0`. -/
+theorem diagonalTorusWeight_eq_zero_of_rev_eq {i : Fin l} (h : Fin.rev i = i) :
+    diagonalTorusWeight.{u} l i = 0 := by
+  have h' := congrArg Fin.val h
+  rw [Fin.val_rev] at h'
+  apply diagonalTorusWeight_eq_zero
+  · omega
+  · rw [h]
+    omega
+
 /-- The weights of the diagonal torus sum to zero. -/
 theorem sum_diagonalTorusWeight_eq_zero : ∑ i, diagonalTorusWeight.{u} l i = 0 := by
   funext k

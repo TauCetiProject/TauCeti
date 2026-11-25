@@ -53,8 +53,10 @@ and resolvent methods:
   `iIndepFun_wignerMatrix_offDiag_column`);
 * entries at the same unordered position have the same norm
   (`norm_wignerMatrix_apply_eq_of_mk_eq`);
-* centred corner entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ`
-  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), bounded corner entries of
+* centred upper corner entries give centred off-diagonal matrix entries
+  (`integral_wignerMatrix_apply_eq_zero_of_ne`), centred corner entries give centred matrix entries
+  (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` corner entries give `Lᵖ` matrix entries
+  (`memLp_wignerMatrix_apply`), bounded corner entries of
   second absolute moment at most `σ ^ 2` give matrix entries whose higher absolute moments are
   controlled by the entry bound and `σ ^ 2 / n` (`integral_norm_wignerMatrix_apply_pow_add_two_le`),
   and a product of `k` matrix entries is integrable when the corner entries lie in `Lᵏ`
@@ -751,18 +753,27 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
   · simp only [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hξ _ (max_lt i.isLt j.isLt)) (by positivity)
 
+/-- If the upper corner entries of size `n` are centred, every off-diagonal entry of the `n × n`
+Wigner matrix has expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero_of_ne {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    {i j : Fin n} (hne : i ≠ j) :
+    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
+      hξ ⟨(j.val, i.val), h⟩ i.isLt]
+
 /-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
 expectation zero. -/
 theorem integral_wignerMatrix_apply_eq_zero {n : ℕ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
-  · obtain rfl := Fin.ext h
+  by_cases hne : i = j
+  · subst hne
     simp [integral_const_mul, integral_complex_ofReal, hη _ i.isLt]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
-      hξ ⟨(j.val, i.val), h⟩ i.isLt]
+  · exact integral_wignerMatrix_apply_eq_zero_of_ne hξ hne
 
 /-- If the corner entries of size `n` lie in `Lᵖ`, so does every entry of the `n × n` Wigner
 matrix. -/
