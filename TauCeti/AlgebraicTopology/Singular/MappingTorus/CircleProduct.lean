@@ -243,6 +243,19 @@ lemma integralCohomologyEquiv_integralBasisAddCircleProd
         (integralBasisAddCircleProd φ p hdet i) = basisAddCircleProd φ p hdet i := by
   simp [integralBasisAddCircleProd]
 
+/-- The coordinates of an integral class `x` in `integralBasisAddCircleProd` are those of its
+unit-coefficient image in `basisAddCircleProd`, computed by `basisAddCircleProd_repr_zero` and
+`basisAddCircleProd_repr_one`. -/
+@[simp]
+lemma integralBasisAddCircleProd_repr
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    (x : (TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).integralCohomology 1) :
+    (integralBasisAddCircleProd φ p hdet).repr x = (basisAddCircleProd φ p hdet).repr
+      ((TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).integralCohomologyEquiv 1 x) := by
+  rw [integralBasisAddCircleProd, Module.Basis.map_repr, LinearEquiv.symm_symm]
+  rfl
+
 /-- **The cup product of the basis is `[ds] ⌣ [dt]`.** The integral cup product of the two vectors
 of `integralBasisAddCircleProd` is, in unit coefficients, the class
 `t = pr₁^* θ_p ⌣ pr₂^* [dt]` of
