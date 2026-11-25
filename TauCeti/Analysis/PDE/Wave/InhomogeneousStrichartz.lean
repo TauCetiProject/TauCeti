@@ -24,11 +24,10 @@ with zero data at `t = -∞` is the retarded Duhamel integral
 
 (`TauCeti.waveSinPropagator`). Let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
 with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates
-`p₁` and `r₁'`, where the time exponent `2` is allowed only at the endpoint in dimension
-`n ≥ 4`, on either side or on both: `q = 2` only if `1 + (n - 1) / r = (n - 1) / 2`, and
-`q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2`. Put
-`γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file proves the **retarded
-Strichartz estimate** for every integrable forcing term `F : ℝ → L²(E)`:
+`p₁` and `r₁'`, where the time exponent `2` is allowed, on either side or on both, in dimension
+`n ≥ 4`: the pairs `(2, r)` with `r` at least the endpoint exponent `2 (n - 1) / (n - 3)`,
+`r = ∞` included. Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file
+proves the **retarded Strichartz estimate** for every integrable forcing term `F : ℝ → L²(E)`:
 
 `‖u‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Pⱼ F‖_{L^{p₁}_t L^{r₁'}_x}`
 
@@ -130,9 +129,9 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
 nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley
 cutoff `ψⱼ` built from `φ` as symbol, let `(q, r)` be wave-admissible,
 `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with
-`2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where the time exponent `2` is allowed only at
-the endpoint in dimension `n ≥ 4`, on either side or on both: `q = 2` only if
-`1 + (n - 1) / r = (n - 1) / 2`, and `q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2`. Put
+`2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where the time exponent `2` is allowed, on
+either side or on both, in dimension `n ≥ 4`: the pairs `(2, r)` with `r` at least the endpoint
+exponent `2 (n - 1) / (n - 3)`, `r = ∞` included. Put
 `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every
 integrable forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
 `u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`, the solution of `∂ₜ²u - Δu = F` with zero data at
@@ -145,13 +144,11 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
     {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E)
     {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
     (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →

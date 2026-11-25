@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.Propagator
 public import TauCeti.Analysis.PDE.Wave.Strichartz
+import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.PDE.Wave.Endpoint
@@ -42,7 +43,8 @@ of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. Then there is `C` such tha
   ‖F‖_{L^{p₁}_t L^{r₁'}_x}` for forcing terms `F : ℝ → L²(E)` integrable in time, measured along
   a second wave-admissible pair `(q₁, r₁)` with `2 < q₁ ≤ ∞`, Hölder conjugates `p₁` and `r₁'`,
   and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This retarded estimate also holds when either pair, or both,
-  is the endpoint pair `q = 2`, `1 + (n - 1) / r = (n - 1) / 2`, of dimension `n ≥ 4`.
+  has time exponent `2`, in dimension `n ≥ 4`: the endpoint pair `(2, r₀)`,
+  `1 + (n - 1) / r₀ = (n - 1) / 2`, and the pairs `(2, r)` beyond it, `r₀ < r ≤ ∞`.
 
 At the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, which are all wave-admissible, the estimates for `W₊(t) Pⱼ`,
 `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ` hold in `L^∞_t L^r_x` with `γ = n / 2 - n / r`.
@@ -85,7 +87,12 @@ by reversing time (`TauCeti.enorm_integral_adjoint_neg_le`). When both pairs are
 the Christ–Kiselev lemma does not apply, and the Keel–Tao bound on every region of times,
 `ContDiffBump.exists_enorm_setIntegral_inner_halfWavePropagator_sub_littlewoodPaley_le_of_endpoint`,
 is used on the region `s < t`, and, after reflecting time, on the region `t < s` for the `W₊(-τ)`
-halves.
+halves. The pairs `(2, r)` beyond the endpoint reduce to the endpoint pair `(2, r₀)` by Bernstein's
+inequality, on the side of the solution and on the side of the forcing: some dyadic multiplier
+`Qⱼ` reproduces the block, `Pⱼ Qⱼ = Pⱼ`
+(`ContDiffBump.exists_fourierMultiplierCLM_dyadicMultiplier_eq`), and it is bounded from `L^{r₀}`
+to `L^r`, and from `L^{r'}` to `L^{r₀'}`, with norm a constant times `2^{jn (1/r₀ - 1/r)}`
+(`ContDiffBump.eLpNorm_dyadicMultiplier_le_of_le`), the difference of the two scaling exponents.
 
 ## Main declarations
 
@@ -1225,23 +1232,14 @@ theorem exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le (hr : 2 
 
 end TimeExponentTop
 
-/-- **The retarded Strichartz estimate for the frequency-localized wave Duhamel operator** in
-mixed norm, with the forcing measured along a second admissible pair. Let `E` have dimension `n`,
-let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as
-symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`,
-and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`.
-The time exponent `2` is allowed only at the endpoint in dimension `n ≥ 4`, on either side or on
+/-- The retarded estimate for the frequency-localized wave Duhamel operator in mixed norm, where
+the time exponent `2` is allowed only at the endpoint in dimension `n ≥ 4`, on either side or on
 both: `q = 2` only if `1 + (n - 1) / r = (n - 1) / 2`, and `q₁ = 2` only if
-`1 + (n - 1) / r₁ = (n - 1) / 2`.
-Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for
-every `j ∈ ℤ` and every forcing term `F : ℝ → L²(E)` that is integrable in time,
-
-`‖∫_{s < t} D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s) ds‖_{L^q_t L^r_x}`
-`  ≤ C 2^{j(γ + γ₁ - 1)} ‖F‖_{L^{p₁}_t L^{r₁'}_x}`.
-
-The pair `(q₁, r₁) = (q, r)` gives the exponent `2γ - 1`, and the pairs `(∞, r₁)` measure the
-forcing in `L¹_t L^{r₁'}_x`, the energy pair `(∞, 2)` among them. -/
-theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+`1 + (n - 1) / r₁ = (n - 1) / 2`. These are the pairs covered by the Keel–Tao and Christ–Kiselev
+arguments; the other pairs `(2, r)` follow by Bernstein's inequality in
+`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`. -/
+private theorem
+    exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le_of_sharp
     {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
@@ -1269,7 +1267,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
     simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
-  obtain ⟨hn, hr2⟩ := two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hq2 hE
+  obtain ⟨hn, hr2⟩ :=
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr (fun h ↦ (hq2 h).1) hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
   have hr₁ := two_le_of_waveAdmissible (ENNReal.HolderConjugate.ne_zero r₁ r₁') hqr₁ hn
   -- Test against `L^{p}_t L^{r'}_x` with `p` and `r'` the Hölder conjugates of `q` and `r`.
@@ -1284,6 +1283,152 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   exact (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
     hPPF.aestronglyMeasurable).eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
     (p' := (1 - q⁻¹)⁻¹) (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦ hC j m hm F G hF hG
+
+/-- The retarded estimate with the forcing measured along any pair `(2, r₁)` in dimension `n ≥ 4`,
+from the one along the endpoint pair `(2, r₀)`, `r₀ ≤ r₁`: some dyadic multiplier `Qⱼ` has
+`Pⱼ Qⱼ = Pⱼ`, so `F` may be replaced by `Qⱼ F`, and by Bernstein's inequality `Qⱼ` is bounded from
+`L^{r₁'}` to `L^{r₀'}` with norm a constant times `2^{jn (1/r₀ - 1/r₁)}`. -/
+private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_of_sharp_output
+    {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
+    (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
+    (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) :
+              Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal) + ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1)) *
+            eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume := by
+  rcases ne_or_eq q₁ 2 with hq₁2' | rfl
+  · exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le_of_sharp
+      hq hq_top hqr hq2 hq₁ hqr₁ fun h ↦ absurd h hq₁2'
+  have hn := hq₁2 rfl
+  have h2 : ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ := by simp
+  rw [h2] at hqr₁
+  -- The endpoint exponent `r₀ ≤ r₁`, with Hölder conjugate `r₀' ≥ r₁'`.
+  obtain ⟨r₀, hr₀, hr₀r₁⟩ := (le_of_eq_of_le (by ring) hqr₁).lt_or_eq.elim
+    (exists_waveEndpoint_le (by exact_mod_cast hn) (ENNReal.HolderConjugate.ne_zero r₁ r₁'))
+    fun h ↦ ⟨r₁, h, le_rfl⟩
+  have hr₀2 := (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr₀).1
+  have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr₀2)
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le_of_sharp
+      (p₁ := p₁) (r₁' := (1 - r₀⁻¹)⁻¹) hq hq_top hqr hq2 le_rfl (by rw [h2]; linarith)
+      fun _ ↦ ⟨hn, hr₀⟩
+  obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
+  have hB := ENNReal.coe_toNNReal
+    (φ.memLp_fourierInv_dyadicDilate σ 0 (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r₁'⁻¹)⁻¹).eLpNorm_ne_top
+  have hr₁1 : r₁⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (ENNReal.HolderConjugate.one_le r₁ r₁')
+  have hr₁'r₀' : r₁' ≤ (1 - r₀⁻¹)⁻¹ := by
+    rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.HolderConjugate.one_sub_inv r₁ r₁']
+    exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hr₀r₁) 1
+  have hexp : r₁'.toReal⁻¹ - ((1 - r₀⁻¹)⁻¹).toReal⁻¹ = (r₀⁻¹).toReal - (r₁⁻¹).toReal := by
+    rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv,
+      ← ENNReal.HolderConjugate.one_sub_inv r₁ r₁',
+      ENNReal.toReal_sub_of_le hr₁1 ENNReal.one_ne_top,
+      ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 (one_le_two.trans hr₀2)) ENNReal.one_ne_top]
+    ring
+  refine ⟨C * (eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r₁'⁻¹)⁻¹ volume).toNNReal,
+    fun j m hm F hF ↦ ?_⟩
+  -- `Pⱼ Pⱼ Qⱼ F(s) = Pⱼ Pⱼ F(s)`: the estimate along `(2, r₀)` applies to `Qⱼ F`, and Bernstein's
+  -- inequality from `L^{r₁'}` to `L^{r₀'}` bounds `Qⱼ F` at each time.
+  have h := hC j m hm _ ((φ.dyadicMultiplier ℂ σ j).integrable_comp hF)
+  simp only [hσ j m hm] at h
+  refine h.trans ((mul_le_mul_right (eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
+    (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (ENNReal.HolderConjugate.one_le r₁' r₁)
+      hr₁'r₀') hF.aestronglyMeasurable) _).trans_eq ?_)
+  rw [hexp, ENNReal.coe_mul, hB, show ∀ c a b k x : ℝ≥0∞, c * a * (b * k * x) = c * k * (a * b) * x
+    from fun _ _ _ _ _ ↦ by ring, ← ENNReal.ofReal_mul (by positivity),
+    ← Real.rpow_add (zpow_pos two_pos j), h2]
+  ring_nf
+
+/-- **The retarded Strichartz estimate for the frequency-localized wave Duhamel operator** in
+mixed norm, with the forcing measured along a second admissible pair. Let `E` have dimension `n`,
+let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as
+symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`,
+and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`.
+The time exponent `2` is allowed, on either side or on both, in dimension `n ≥ 4`; the pairs
+`(2, r)` are those with `r` at least the endpoint exponent `2 (n - 1) / (n - 3)`, `r = ∞` included.
+Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for
+every `j ∈ ℤ` and every forcing term `F : ℝ → L²(E)` that is integrable in time,
+
+`‖∫_{s < t} D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s) ds‖_{L^q_t L^r_x}`
+`  ≤ C 2^{j(γ + γ₁ - 1)} ‖F‖_{L^{p₁}_t L^{r₁'}_x}`.
+
+The pair `(q₁, r₁) = (q, r)` gives the exponent `2γ - 1`, and the pairs `(∞, r₁)` measure the
+forcing in `L¹_t L^{r₁'}_x`, the energy pair `(∞, 2)` among them. -/
+theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+    {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞)
+    (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E)
+    {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
+    (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) :
+              Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal) + ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1)) *
+            eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume := by
+  rcases ne_or_eq q 2 with hq2' | rfl
+  · exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_of_sharp_output hq
+      hq_top hqr (fun h ↦ absurd h hq2') hq₁ hqr₁ hq₁2
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact ⟨0, fun _ _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
+  have hn := hq2 rfl
+  have h2 : ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ := by simp
+  rw [h2] at hqr
+  -- The endpoint exponent `r₀ ≤ r`.
+  obtain ⟨r₀, hr₀, hr₀r⟩ := (le_of_eq_of_le (by ring) hqr).lt_or_eq.elim
+    (exists_waveEndpoint_le (by exact_mod_cast hn) hr0) fun h ↦ ⟨r, h, le_rfl⟩
+  have hr₀2 := (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr₀).1
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_of_sharp_output (p₁ := p₁)
+      (r₁' := r₁') le_rfl (by simp) (by rw [h2]; linarith) (fun _ ↦ ⟨hn, hr₀⟩) hq₁ hqr₁ hq₁2
+  obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
+  have hB := ENNReal.coe_toNNReal
+    (φ.memLp_fourierInv_dyadicDilate σ 0 (1 + r⁻¹ - r₀⁻¹)⁻¹).eLpNorm_ne_top
+  refine ⟨(eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + r⁻¹ - r₀⁻¹)⁻¹ volume).toNNReal * C,
+    fun j m hm F hF ↦ ?_⟩
+  -- `Qⱼ` fixes the retarded integral, whose integrand lies in the range of `Pⱼ`.
+  have hQ (t : ℝ) : φ.dyadicMultiplier ℂ σ j (∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+      (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s)))) =
+        ∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+          (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) := by
+    rw [← ContinuousLinearMap.integral_comp_comm _
+      (φ.integrable_waveSinPropagator_sub_littlewoodPaley hm
+        ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF) t).integrableOn]
+    refine setIntegral_congr_fun measurableSet_Iio fun s _ ↦ ?_
+    rw [dyadicMultiplier_def, fourierMultiplierCLM_waveSinPropagator_apply,
+      Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm, ← dyadicMultiplier_def, hσ j m hm]
+  -- Bernstein's inequality from `L^{r₀}` to `L^r` at each time, then the estimate at `(2, r₀)`.
+  have h := eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
+    (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (one_le_two.trans hr₀2) hr₀r)
+    (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+      ((Lp.fourierMultiplierCLM ℂ m).integrable_comp
+        ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)).aestronglyMeasurable) (q := 2)
+  simp only [hQ] at h
+  refine h.trans ((mul_le_mul_right (hC j m hm F hF) _).trans_eq ?_)
+  rw [ENNReal.coe_mul, hB, ← ENNReal.toReal_inv, ← ENNReal.toReal_inv,
+    show ∀ a k c b x : ℝ≥0∞, a * k * (c * b * x) = k * c * (a * b) * x
+      from fun _ _ _ _ _ ↦ by ring, ← ENNReal.ofReal_mul (by positivity),
+    ← Real.rpow_add (zpow_pos two_pos j), h2]
+  ring_nf
 
 end ContDiffBump
 

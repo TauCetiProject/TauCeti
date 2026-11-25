@@ -290,20 +290,18 @@ theorem exists_waveEndpoint_le {n : ℝ} (hn : 3 < n) (hr0 : r ≠ 0)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
-`2 ≤ q < ∞` and `r ≠ 0`, where `q = 2` only at the endpoint `1 + (n - 1) / r = (n - 1) / 2` in
-dimension `n ≥ 4`, has `n ≥ 2` and `r ≥ 2`: the case `2 < q` is
-`TauCeti.two_le_finrank_of_waveAdmissible`, and the endpoint case
-`TauCeti.two_le_and_ne_top_of_waveEndpoint`. -/
+`2 ≤ q < ∞` and `r ≠ 0`, where `q = 2` only in dimension `n ≥ 4`, has `n ≥ 2` and `r ≥ 2`: the case
+`2 < q` is `TauCeti.two_le_finrank_of_waveAdmissible`, and the case `q = 2` is
+`TauCeti.two_le_of_waveAdmissible`. -/
 theorem two_le_finrank_of_waveAdmissible_of_two_le {q : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ (∞ : ℝ≥0∞))
     (hr0 : r ≠ 0)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hE : 0 < Module.finrank ℝ E) : 2 ≤ Module.finrank ℝ E ∧ 2 ≤ r := by
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E) (hE : 0 < Module.finrank ℝ E) :
+    2 ≤ Module.finrank ℝ E ∧ 2 ≤ r := by
   rcases hq.eq_or_lt with rfl | hq
-  · obtain ⟨hn, hre⟩ := hq2 rfl
-    exact ⟨by omega, (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hre).1⟩
+  · have hn := hq2 rfl
+    exact ⟨by omega, two_le_of_waveAdmissible hr0 hqr (by omega)⟩
   · obtain ⟨hqn, hqr'⟩ := waveAdmissible_toNNReal hq hq_top hqr
     obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hqn hr0 hqr' hE
     exact ⟨hn, hr2⟩
