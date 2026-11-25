@@ -37,11 +37,6 @@ locally `Lᵖ` on `V`). If `u` is continuous on `V`, the mollifications also con
 
 ## Main declarations
 
-* `TauCeti.HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator` and
-  `TauCeti.HasWeakFDerivOn.fderiv_normed_convolution_indicator`: interior derivative identity
-  `D(φ ⋆ V.indicator u) = φ ⋆ V.indicator Du`.
-* `MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator`: smoothness of the
-  zero-extended mollification.
 * `TauCeti.HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le`: `Lᵖ` gradient bound
   `‖D(φ ⋆ V.indicator u)‖_{Lᵖ(s)} ≤ ‖Du‖_{Lᵖ(V)}` for `1 ≤ p ≤ ∞`.
 * `TauCeti.HasWeakFDerivOn.tendsto_eLpNorm_fderiv_normed_convolution_indicator_sub`: `Lᵖ`
@@ -64,55 +59,12 @@ noncomputable section
 open ContinuousLinearMap Filter MeasureTheory Metric Set TopologicalSpace
 open scoped ContDiff Convolution ENNReal Topology
 
-/-- **Smoothness of the interior mollification.** If `u` is locally integrable on `Ω` and `V` is a
-null-measurable set with compact closure in `Ω`, then convolving the zero extension of `u` from `V`
-with a normalized smooth bump yields a globally smooth function. -/
-theorem MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {Ω : Set E} {u : E → F} (hu : LocallyIntegrableOn u Ω μ) {V : Set E}
-    (hV : NullMeasurableSet V μ) (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω)
-    (φ : ContDiffBump (0 : E)) :
-    ContDiff ℝ ∞ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] V.indicator u) := by
-  have huV : Integrable (V.indicator u) μ :=
-    (hu.integrableOn_of_isCompact_closure hVc hVΩ).integrable_indicator₀ hV
-  exact φ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) φ.contDiff_normed
-    huV.locallyIntegrable
-
 namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
-
-/-- **Interior derivative of a normalized-bump mollification.** If `u` has weak Fréchet derivative
-`Du` on `Ω`, `V` has compact closure in `Ω`, and `closedBall x φ.rOut ⊆ V`, then
-`φ.normed μ ⋆ V.indicator u` is Fréchet differentiable at `x` with derivative
-`(φ.normed μ ⋆ V.indicator Du) x`. -/
-theorem HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
-    {V : Opens E} (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
-    (φ : ContDiffBump (0 : E)) {x : E} (hx : closedBall x φ.rOut ⊆ V) :
-    HasFDerivAt (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)
-      ((φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x) x := by
-  have huV : MemLp u 1 (μ.restrict V) := memLp_one_iff_integrable.2
-    (hu.locallyIntegrableOn.integrableOn_of_isCompact_closure hVc hVΩ)
-  have hDuV : MemLp Du 1 (μ.restrict V) := memLp_one_iff_integrable.2
-    (hu.locallyIntegrableOn_deriv.integrableOn_of_isCompact_closure hVc hVΩ)
-  have h := (hu.mono (subset_closure.trans hVΩ)).hasFDerivAt_indicator_convolution_normed
-    huV hDuV le_rfl le_rfl φ x hx
-  simpa only [convolution_flip] using h
-
-/-- **Interior derivative identity for a normalized-bump mollification.** If `u` has weak Fréchet
-derivative `Du` on `Ω`, `V` has compact closure in `Ω`, and `closedBall x φ.rOut ⊆ V`, then
-`fderiv ℝ (φ.normed μ ⋆ V.indicator u) x = (φ.normed μ ⋆ V.indicator Du) x`. -/
-theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
-    {V : Opens E} (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
-    (φ : ContDiffBump (0 : E)) {x : E} (hx : closedBall x φ.rOut ⊆ V) :
-    fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x =
-      (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x :=
-  (hu.hasFDerivAt_normed_convolution_indicator hVc hVΩ φ hx).fderiv
 
 /-- **`Lᵖ` gradient bound for interior mollifications.** If `V` has compact closure in `Ω`,
 `1 ≤ p ≤ ∞`, and every point of a measurable set `s` has `closedBall x φ.rOut ⊆ V`, then

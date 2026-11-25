@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -36,7 +37,10 @@ for every `U`-holomorphic function `f` and every upper bound `B ≥ 0` of `‖f�
 `f` makes `f ↦ ∑ j, w j * f (ζ j) * g j` a finite-rank linear evaluation operator, so applying it
 fiberwise preserves continuous, smooth, or holomorphic dependence on external parameters in
 addition to yielding scalar uniform Runge approximation
-(`TauCeti.Analysis.Complex.Runge.Approximation`).
+(`TauCeti.Analysis.Complex.Runge.Approximation`). By the Hahn–Banach theorem the same data
+approximate functions with values in any complex normed space within the same error
+(`TauCeti.norm_sub_sum_smul_le_of_scalar`); the operator applied to families depending on
+parameters is studied in `TauCeti.Analysis.Complex.Runge.Parameter`.
 
 ## Main declarations and results
 
@@ -44,6 +48,8 @@ addition to yielding scalar uniform Runge approximation
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
 * `TauCeti.exists_finite_rank_runge_operator`: existence of the compact neighbourhood `L ⊆ U ∩ Ω`
   and `f`-independent finite-rank evaluation approximants with operator norm bound `ε * B`.
+* `TauCeti.norm_sub_sum_smul_le_of_scalar`: evaluation data approximating scalar holomorphic
+  functions approximate functions with values in any complex normed space within the same error.
 
 ## References
 
@@ -251,5 +257,30 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
         norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ ≤ (ε / 2) * B + (ε / 2) * B := add_le_add herr₁ herr₂
     _ = ε * B := by ring
+
+/-- **Vector-valued finite-rank Runge estimate.** If nodes `ζ j`, weights `w j` and functions
+`g j` approximate every scalar function holomorphic on `U` at the points of `K` within `ε` times
+any nonnegative bound for it on `L`, then they approximate every function holomorphic on `U` with
+values in a complex normed space `G` just as well. -/
+theorem norm_sub_sum_smul_le_of_scalar {ι : Type*} [Fintype ι] {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℂ G] {U L K : Set ℂ} {ζ w : ι → ℂ} {g : ι → ℂ → ℂ}
+    {ε : ℝ} (hA : ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U → ∀ B : ℝ, 0 ≤ B → (∀ y ∈ L, ‖f y‖ ≤ B) →
+      ∀ z ∈ K, ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B)
+    {f : ℂ → G} (hf : DifferentiableOn ℂ f U) {B : ℝ} (hB : 0 ≤ B) (hfB : ∀ y ∈ L, ‖f y‖ ≤ B)
+    {z : ℂ} (hz : z ∈ K) :
+    ‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B := by
+  -- The zero function shows that the error bound is nonnegative.
+  have hεB : 0 ≤ ε * B := by
+    simpa using hA 0 (differentiableOn_const 0) B hB (fun _ _ ↦ by simpa using hB) z hz
+  refine NormedSpace.norm_le_dual_bound ℂ _ hεB fun φ ↦ ?_
+  have hφ := hA (fun y ↦ φ (f y)) (φ.differentiable.comp_differentiableOn hf) (B * ‖φ‖)
+    (mul_nonneg hB (norm_nonneg φ))
+    (fun y hy ↦ (φ.le_opNorm (f y)).trans (by rw [mul_comm]; gcongr; exact hfB y hy)) z hz
+  have heq : φ (f z - ∑ j, (w j * g j z) • f (ζ j)) =
+      φ (f z) - ∑ j, w j * φ (f (ζ j)) * g j z := by
+    simp only [map_sub, map_sum, map_smul, smul_eq_mul]
+    exact congrArg _ (Finset.sum_congr rfl fun j _ ↦ by ring)
+  rw [heq, mul_assoc]
+  exact hφ
 
 end TauCeti

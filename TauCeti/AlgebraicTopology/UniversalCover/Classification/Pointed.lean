@@ -267,8 +267,7 @@ theorem exists_homeomorph_comp_eq_of_simplyConnectedSpace
     [SimplyConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
     ∃ h : E ≃ₜ F, h e₀ = f₀ ∧ q ∘ h = p :=
-  IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf <| by
-    rw [TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
-      TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
+  IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf <|
+    TauCeti.FundamentalGroup.mapOfEq_range_eq_of_subsingleton ..
 
 end IsCoveringMap

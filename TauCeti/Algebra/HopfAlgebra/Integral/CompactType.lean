@@ -30,6 +30,9 @@ finite-dimensional unitary matrix corepresentations (`TauCeti.unitaryCoefficient
   orthogonality of distinct simple coefficient spaces.
 * `TauCeti.AlgebraicHaar.span_unitaryCoefficientSet_eq_top`: if `A` admits an `AlgebraicHaar`
   functional, then `unitaryCoefficientSet A` spans `A` over `ℂ`.
+* `TauCeti.AlgebraicHaar.linearMap_ext`: if `A` admits an `AlgebraicHaar` functional, then linear
+  maps out of `A` are determined by their values on unitary coefficient matrices of simple
+  comodules.
 * `TauCeti.nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top`: if
   `unitaryCoefficientSet A` spans `A` over `ℂ`, then `A` admits an `AlgebraicHaar` functional.
 * `TauCeti.compactType_iff`: Dijkhuizen–Koornwinder equivalence between existence of an
@@ -154,6 +157,29 @@ theorem span_unitaryCoefficientSet_eq_top :
     h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
   exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem fun i j ↦
     Submodule.subset_span (b.coefficientMatrix_mem_unitaryCoefficientSet hb i j)
+
+include h in
+/-- If a complex Hopf star algebra `A` admits an `AlgebraicHaar` functional, then two linear maps
+out of `A` agree once they agree on the entries of every unitary coefficient matrix of a simple
+comodule. -/
+theorem linearMap_ext {N : Type*} [AddCommGroup N] [Module ℂ N] {f g : A →ₗ[ℂ] N}
+    (H : ∀ (M : Type u) [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M]
+      [IsSimpleOrder (Subcomodule ℂ A M)] (b : Basis (Fin (finrank ℂ M)) ℂ M),
+      coefficientMatrix (C := A) b ∈ unitary (Matrix _ _ A) →
+        ∀ i j, f (coefficientMatrix (C := A) b i j) = g (coefficientMatrix (C := A) b i j)) :
+    f = g := by
+  ext a
+  induction a using h.induction_simpleCoefficientSubmodules with
+  | mem P hP x hx =>
+    obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
+    have := hM
+    have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
+    obtain ⟨b, hb⟩ := exists_basis_coefficientMatrix_mem_unitary h.isRightInvariantIntegral
+      h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
+    exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem
+      (P := LinearMap.eqLocus f g) (H M b hb) hx
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
 
 end AlgebraicHaar
 

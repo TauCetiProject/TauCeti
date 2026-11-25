@@ -1,0 +1,89 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
+
+/-!
+# Cross products with a generator of local homology
+
+Let `x` be a point of a `T₁` space `M` in the source of an open partial homeomorphism to a real
+normed space `E` of finite dimension `r`, and let `k` be a commutative ring. The local homology
+`H_r(M, M ∖ x; k)` is a copy of `k` (`TauCeti.singularHomologyComplSingletonFinrankIso`), so each
+generator `o` of it is a basis
+(`TauCeti.bijective_toSpanSingleton_singularHomology_complSingleton`). Since the local homology
+vanishes in the other degrees, the relative Künneth theorem leaves a single summand: the cross
+product `y ↦ o × y` is a bijection `H_q(C) → H_{r+q}(C(M, M ∖ x; k) ⊗ C)` for every chain complex
+`C` of `k`-modules
+(`TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`). For `M = E` and
+`x = 0`, this is the Thom isomorphism of a product bundle with fibre `E`.
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.3 (local orientations), Section 3.B (the relative Künneth formula) and Section 4.D
+  (the Thom class of a product bundle).
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits MonoidalCategory Module
+
+universe w
+
+namespace TauCeti
+
+variable {k : Type w} [CommRing k] {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
+
+include hx in
+/-- **A generator of local homology is a basis.** At a point with a chart to a real normed space
+of finite dimension `r`, a generator `o` of `H_r(M, M ∖ x; k)` is a basis: `a ↦ a • o` is a
+bijection `k → H_r(M, M ∖ x; k)`, since this module is a copy of `k`. -/
+theorem bijective_toSpanSingleton_singularHomology_complSingleton {r : ℕ}
+    (hr : finrank ℝ E = r)
+    {o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) :
+    Function.Bijective (LinearMap.toSpanSingleton k _ o) := by
+  subst hr
+  exact (singularHomologyComplSingletonFinrankIso (𝟙_ (ModuleCat.{w} k)) φ hx).toLinearEquiv
+    |>.bijective_toSpanSingleton_of_span_eq_top ho
+
+include hx in
+/-- **The cross product with a generator of local homology is bijective.** At a point with a chart
+to a real normed space of finite dimension `r`, let `o` generate `H_r(M, M ∖ x; k)`. Then for every
+chain complex `C` of `k`-modules, the cross product `y ↦ o × y` is a bijection
+`H_q(C) → H_{r+q}(C(M, M ∖ x; k) ⊗ C)`: the local homology of `M` at `x` is one copy of `k`, in
+degree `r`. -/
+theorem bijective_homologyCross_tmul_singularChainComplex_complSingleton
+    (C : ChainComplex (ModuleCat.{w} k) ℕ) {r : ℕ} (hr : finrank ℝ E = r)
+    {o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) (q n : ℕ) (hn : r + q = n) :
+    Function.Bijective fun y : C.homology q ↦ HomologicalComplex.homologyCross
+      ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+        (𝟙_ (ModuleCat.{w} k))) C r q n hn (o ⊗ₜ y) := by
+  have hK : ∀ p ≠ r, IsZero (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+      (𝟙_ (ModuleCat.{w} k))).homology p) := fun p hp ↦
+    isZero_singularHomology_complSingleton_of_ne _ φ hx hr hp
+  -- The relative chains are a retract of the absolute chains, a sum of copies of `k`.
+  have (p : ℕ) : Module.Projective k
+      (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+        (𝟙_ (ModuleCat.{w} k))).X p) :=
+    have : Projective (𝟙_ (ModuleCat.{w} k)) :=
+      @ModuleCat.projective_of_categoryTheory_projective _ _ _
+        (inferInstanceAs (Module.Projective k k))
+    have := SSetPair.projective_chainComplex_X (𝟙_ (ModuleCat.{w} k))
+      (TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))) p
+    ModuleCat.projective_of_module_projective _
+  exact HomologicalComplex.bijective_homologyCross_tmul _ C hK
+    (bijective_toSpanSingleton_singularHomology_complSingleton φ hx hr ho) q n hn
+
+end TauCeti

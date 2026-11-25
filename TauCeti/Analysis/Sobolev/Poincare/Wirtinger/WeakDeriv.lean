@@ -119,12 +119,13 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
   have hv_S : Tendsto (fun n => eLpNorm (v n - u) 1 (μ.restrict S)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hv_L1 (fun _ => zero_le)
       fun n => eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)
-  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) :=
-    tendsto_average_of_L1' (μ := μ.restrict S) u
-      (.of_forall fun n =>
-        ((hv_cd n).continuous.continuousOn.integrableOn_compact hUcomp).mono_set
-          (hSU.trans subset_closure))
-      hv_S
+  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) := by
+    simpa only [setAverage_eq] using
+      (tendsto_integral_of_L1' (μ := μ.restrict S) u
+        (.of_forall fun n =>
+          ((hv_cd n).continuous.continuousOn.integrableOn_compact hUcomp).mono_set
+            (hSU.trans subset_closure))
+        hv_S).const_smul (μ.real S)⁻¹
   have hum : AEStronglyMeasurable u (μ.restrict U) :=
     hu.locallyIntegrableOn.aestronglyMeasurable.mono_measure
       (Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl)

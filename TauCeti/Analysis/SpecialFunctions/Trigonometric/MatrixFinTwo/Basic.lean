@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -32,9 +33,14 @@ triangle group in `PSL(2, ℝ)`.
 ## Main results
 
 * `Matrix.sin_smul_pow_fin_two`: the powers of a determinant-one matrix of trace `2 cos θ`.
+* `Matrix.pow_eq_cos_smul_one_add_fin_two`,
+  `Matrix.SpecialLinearGroup.coe_zpow_eq_cos_smul_one_add`: for `sin θ ≠ 0`, the natural and
+  integer powers `A ^ n = cos (n θ) • 1 + (sin (n θ) / sin θ) • (A - cos θ • 1)`.
 * `Matrix.trace_pow_eq_two_mul_cos_fin_two`: the traces `2 cos (n θ)` of those powers.
 * `Matrix.pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div`: a determinant-one real matrix of trace
   `2 cos (π / k)`, with `2 ≤ k`, has `k`-th power `-1`.
+* `Matrix.ProjectiveSpecialLinearGroup.orderOf_mk_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
+  `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has order exactly `k`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
@@ -92,6 +98,18 @@ theorem sin_smul_pow_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet :
     rw [e₁, e₂]
     module
 
+/-- The powers of a real `2 × 2` matrix of determinant one and trace `2 cos θ`, for `sin θ ≠ 0`:
+`A ^ n = cos (n θ) • 1 + (sin (n θ) / sin θ) • (A - cos θ • 1)`. -/
+theorem pow_eq_cos_smul_one_add_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet : A.det = 1)
+    (htr : A.trace = 2 * cos θ) (hθ : sin θ ≠ 0) (n : ℕ) :
+    A ^ n =
+      cos (n * θ) • (1 : Matrix (Fin 2) (Fin 2) ℝ) + (sin (n * θ) / sin θ) • (A - cos θ • 1) := by
+  refine smul_right_injective _ hθ ?_
+  dsimp only
+  rw [sin_smul_pow_fin_two hdet htr n, sub_mul, one_mul, sin_sub, smul_add, smul_smul, smul_smul,
+    mul_div_cancel₀ _ hθ]
+  module
+
 /-- The traces of the powers of a real `2 × 2` matrix of determinant one and trace `2 cos θ` are
 `trace (A ^ n) = 2 cos (n θ)`. -/
 theorem trace_pow_eq_two_mul_cos_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} (hdet : A.det = 1)
@@ -147,9 +165,63 @@ theorem mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq {A : SL(2, ℝ)} {k :
     simpa only [mk_neg] using
       (mk_pow_eq_one_of_trace_eq_two_mul_cos_pi_div (A := -A) hk hneg)
 
+private theorem orderOf_mk_of_trace_eq_two_mul_cos_pi_div {A : SL(2, ℝ)} {k : ℕ} (hk : 2 ≤ k)
+    (h : (A : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * cos (π / k)) :
+    orderOf (A : PSL(2, ℝ)) = k := by
+  refine (orderOf_eq_iff (by omega)).2 ⟨mk_pow_eq_one_of_trace_eq_two_mul_cos_pi_div hk h,
+    fun m hmk hm hpow ↦ ?_⟩
+  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
+    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at hpow
+  -- `A ^ m = ± 1` has squared trace `4`, while `(2 cos (m π / k)) ^ 2 < 4` for `0 < m < k`
+  have htr : ((A ^ m : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 = 4 := by
+    rcases hpow with hpow | hpow <;> simp [hpow, trace_one] <;> norm_num
+  have hs : 0 < sin (m * (π / k)) := by
+    refine sin_pos_of_pos_of_lt_pi (by positivity) ?_
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity), mul_comm]
+    exact mul_lt_mul_of_pos_left (by exact_mod_cast hmk) pi_pos
+  rw [SpecialLinearGroup.coe_pow, trace_pow_eq_two_mul_cos_fin_two A.det_coe h] at htr
+  nlinarith [sin_sq_add_cos_sq (m * (π / k))]
+
+/-- **The order of an elliptic element of `PSL(2, ℝ)`.** If a matrix of `SL(2, ℝ)` has trace
+`± 2 cos (π / k)` with `2 ≤ k`, then its class in `PSL(2, ℝ)` has order exactly `k`: a power
+`A ^ m = ± 1` with `0 < m < k` would have trace `± 2 cos (m π / k) = ± 2`. -/
+theorem orderOf_mk_of_trace_sq_eq_two_mul_cos_pi_div_sq {A : SL(2, ℝ)} {k : ℕ} (hk : 2 ≤ k)
+    (h : (A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 = (2 * cos (π / k)) ^ 2) :
+    orderOf (A : PSL(2, ℝ)) = k := by
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp h with h | h
+  · exact orderOf_mk_of_trace_eq_two_mul_cos_pi_div hk h
+  · have hneg : ((-A : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
+        2 * cos (π / k) := by rw [SpecialLinearGroup.coe_neg, trace_neg, h, neg_neg]
+    simpa only [mk_neg] using orderOf_mk_of_trace_eq_two_mul_cos_pi_div (A := -A) hk hneg
+
 end ProjectiveSpecialLinearGroup
 
 namespace SpecialLinearGroup
+
+/-- The integer powers of a matrix of `SL(2, ℝ)` of trace `2 cos θ`, for `sin θ ≠ 0`:
+`A ^ n = cos (n θ) • 1 + (sin (n θ) / sin θ) • (A - cos θ • 1)` for every `n : ℤ`. -/
+theorem coe_zpow_eq_cos_smul_one_add {A : SL(2, ℝ)} {θ : ℝ}
+    (htr : (A : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * cos θ) (hθ : sin θ ≠ 0) (n : ℤ) :
+    ((A ^ n : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ) =
+      cos (n * θ) • (1 : Matrix (Fin 2) (Fin 2) ℝ) +
+        (sin (n * θ) / sin θ) • ((A : Matrix (Fin 2) (Fin 2) ℝ) - cos θ • 1) := by
+  cases n with
+  | ofNat m =>
+    rw [Int.ofNat_eq_natCast, zpow_natCast, coe_pow, Int.cast_natCast]
+    exact pow_eq_cos_smul_one_add_fin_two A.det_coe htr hθ m
+  | negSucc m =>
+    -- `A⁻¹ = adjugate A = trace A • 1 - A` also has trace `2 cos θ`
+    have hinv : ((A⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ) =
+        (2 * cos θ) • 1 - (A : Matrix (Fin 2) (Fin 2) ℝ) := by
+      rw [coe_inv, adjugate_fin_two_eq_trace_smul_one_sub, htr]
+    have htr' : ((A⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * cos θ := by
+      rw [hinv, trace_sub, trace_smul, trace_one, htr, Fintype.card_fin, smul_eq_mul]
+      ring
+    rw [zpow_negSucc, ← inv_pow, coe_pow,
+      pow_eq_cos_smul_one_add_fin_two (A⁻¹).det_coe htr' hθ (m + 1), hinv, Int.cast_negSucc,
+      neg_mul, cos_neg, sin_neg, neg_div]
+    push_cast
+    module
 
 -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
@@ -199,8 +271,7 @@ theorem pslMk_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = Tau
   have h : rotation (π / 2) = -(map (Int.castRingHom ℝ) ModularGroup.S) := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [map_apply_coe, ModularGroup.coe_S]
-  rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_def, psl2zToPSL2R_mk,
-    sl2zToPSL2R_apply]
+  rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_eq_mk]
 
 /-- The trace of the product of `rotation θ` with a `2 × 2` matrix `A`:
 `trace (R(θ) A) = trace A cos θ + (A₁₀ - A₀₁) sin θ`. -/

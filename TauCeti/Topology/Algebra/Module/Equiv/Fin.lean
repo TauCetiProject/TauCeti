@@ -23,6 +23,11 @@ along an equality of lengths. The vanishing
 characterizations identify products of coordinate subspaces with a single coordinate subspace,
 as needed for product charts.
 
+For a family of operators over `Fin (n + 1)`, splitting off the first coordinate with
+`Fin.consEquivL` turns the product operator `ContinuousLinearMap.piMap T` into the binary product
+of its first factor with the product of the remaining ones
+(`ContinuousLinearMap.consEquivL_symm_comp_piMap`).
+
 The constructions combine Mathlib's `ContinuousLinearEquiv.piCongrLeft`,
 `sumPiEquivProdPi`, and `prodProdProdComm` with finite-index equivalences.
 -/
@@ -213,6 +218,22 @@ theorem productCoords_vanishing_iff (hd : d ≤ n) (he : e ≤ m)
   exact Prod.mk_eq_zero
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {R : Type*} [Semiring R] {n : ℕ} {E F : Fin (n + 1) → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Splitting off the first coordinate turns a product over `Fin (n + 1)` into the binary product
+of its first factor with the product of the remaining ones. -/
+theorem consEquivL_symm_comp_piMap (T : ∀ i, E i →L[R] F i) :
+    ((Fin.consEquivL R F).symm : (∀ i, F i) →L[R] F 0 × ∀ i : Fin n, F i.succ) ∘L piMap T =
+      ((T 0).prodMap (piMap fun i : Fin n ↦ T i.succ)) ∘L
+        ((Fin.consEquivL R E).symm : (∀ i, E i) →L[R] E 0 × ∀ i : Fin n, E i.succ) := by
+  ext x <;> simp [Fin.tail]
+
+end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 

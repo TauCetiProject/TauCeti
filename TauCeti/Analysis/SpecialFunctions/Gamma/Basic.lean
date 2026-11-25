@@ -13,6 +13,7 @@ import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -81,6 +82,9 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
+* `Complex.norm_inv_Gamma_add_natCast_mul_factorial_le` —
+  `‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (R + N + k) ^ N` for every `c` with `1 - Re c ≤ N` and
+  `‖c‖ ≤ R`: factorial decay up to a polynomial factor, without a half-plane restriction.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
@@ -325,6 +329,35 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+/-- For every complex `c`, the reciprocal Gamma function decays along `c + k` like `1 / k!` up to a
+polynomial factor: if `1 - Re c ≤ N` and `‖c‖ ≤ R`, then
+`‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (R + N + k) ^ N`. This extends
+`Complex.norm_inv_Gamma_add_natCast_le` from the half-plane `1 ≤ Re s` to all `c`, by writing
+`1 / Γ(c + k) = (c + k)_N / Γ(c + N + k)`. -/
+theorem norm_inv_Gamma_add_natCast_mul_factorial_le {c : ℂ} {N : ℕ} {R : ℝ}
+    (hN : 1 - c.re ≤ N) (hR : ‖c‖ ≤ R) (k : ℕ) :
+    ‖(Gamma (c + k))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ * (R + N + k) ^ N := by
+  rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + k) N, norm_mul]
+  have hR₀ : 0 ≤ R := (norm_nonneg c).trans hR
+  have h₁ : ‖(ascPochhammer ℂ N).eval (c + k)‖ ≤ (R + N + k) ^ N := by
+    have hck : ‖c + k‖ ≤ R + k :=
+      (norm_add_le _ _).trans (by rw [Complex.norm_natCast]; linarith)
+    refine (TauCeti.norm_ascPochhammer_eval_le_of_norm_le N hck).trans ?_
+    rw [TauCeti.ascPochhammer_eval_eq_prod_range]
+    calc ∏ i ∈ Finset.range N, (R + k + i) ≤ ∏ _i ∈ Finset.range N, (R + N + k) := by
+          refine Finset.prod_le_prod₀ (fun i _ => by positivity) fun i hi => ?_
+          have : (i : ℝ) ≤ N := by exact_mod_cast (Finset.mem_range.1 hi).le
+          linarith
+      _ = (R + N + k) ^ N := by simp
+  have h₂ : ‖(Gamma (c + k + N))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ := by
+    have := norm_inv_Gamma_add_natCast_le (s := c + N) (by simp; linarith) k
+    rw [show c + k + N = c + N + k by ring]
+    rwa [le_div_iff₀ (by positivity)] at this
+  calc ‖(ascPochhammer ℂ N).eval (c + k)‖ * ‖(Gamma (c + k + N))⁻¹‖ * k !
+      = ‖(ascPochhammer ℂ N).eval (c + k)‖ * (‖(Gamma (c + k + N))⁻¹‖ * k !) := by ring
+    _ ≤ (R + N + k) ^ N * ‖(Gamma (c + N))⁻¹‖ := by gcongr
+    _ = ‖(Gamma (c + N))⁻¹‖ * (R + N + k) ^ N := by ring
 
 /-- For every complex `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, where
 `(s)_n = (ascPochhammer ℂ n).eval s`. Unlike `Complex.Gamma_add_nat_div_Gamma_eq`, this holds at

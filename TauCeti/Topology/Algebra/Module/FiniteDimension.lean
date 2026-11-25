@@ -581,6 +581,14 @@ theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Inj
 
 end ContinuousAffineMap
 
+/-- The affine line `t ↦ y + t • e` through `y` in a nonzero direction `e` of a Hausdorff
+topological vector space is a closed embedding of the scalars. -/
+theorem TauCeti.isClosedEmbedding_add_smul_left {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
+    [ContinuousSMul 𝕜 E] [T2Space E] (y : E) {e : E} (he : e ≠ 0) :
+    Topology.IsClosedEmbedding fun t : 𝕜 => y + t • e :=
+  (Homeomorph.addLeft y).isClosedEmbedding.comp (isClosedEmbedding_smul_left he)
+
 /-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
 range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If
 `A ⧸ (J ∩ A)` is finite over `K`, then the induced map `A ⧸ (J ∩ A) → B ⧸ J` is bijective. -/
