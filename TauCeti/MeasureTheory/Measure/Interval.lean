@@ -378,33 +378,25 @@ theorem measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero [LinearOrder α] {a b c : 
     rcases lt_trichotomy t c with h | rfl | h
     exacts [.inl ⟨htI.1, h⟩, .inr (.inr rfl), .inr (.inl ⟨h, htI.2⟩)]
   rcases hleft with hneg0 | hneg1 <;> rcases hright with hpos0 | hpos1
-  · refine (hs1 (measure_mono_null ?_
+  · refine (hs1 (measure_mono_null (fun t ht => ?_)
       (measure_union_null hneg0 (measure_union_null hpos0 hc)))).elim
-    intro t ht
-    rcases hcov ht.2 with h | h | h
-    exacts [.inl ⟨ht.1, h⟩, .inr (.inl ⟨ht.1, h⟩), .inr (.inr h)]
-  · refine .inr (measure_mono_null ?_
+    have := hcov ht.2
+    simp_all
+    tauto
+  · refine .inr (measure_mono_null (fun t ht => ?_)
       (measure_union_null hneg0 (measure_union_null hpos1 hc)))
-    intro t ht
-    rcases hcov ht.2 with h | h | h
-    · rcases ht.1 with ⟨htT, _⟩ | ⟨ht1, _⟩
-      exacts [.inl ⟨htT, h⟩, absurd ht1 (not_lt.2 h.2.le)]
-    · rcases ht.1 with ⟨_, ht1⟩ | ⟨_, htT⟩
-      exacts [absurd h.1 ht1, .inr (.inl ⟨h, htT⟩)]
-    · exact .inr (.inr h)
-  · refine .inl (measure_mono_null ?_
+    have := hcov ht.2
+    simp_all [mem_symmDiff]
+    grind
+  · refine .inl (measure_mono_null (fun t ht => ?_)
       (measure_union_null hneg1 (measure_union_null hpos0 hc)))
-    intro t ht
-    rcases hcov ht.2 with h | h | h
-    · rcases ht.1 with ⟨_, ht1⟩ | ⟨_, htT⟩
-      exacts [absurd h.2 ht1, .inl ⟨h, htT⟩]
-    · rcases ht.1 with ⟨htT, _⟩ | ⟨ht1, _⟩
-      exacts [.inr (.inl ⟨htT, h⟩), absurd ht1 (not_lt.2 h.1.le)]
-    · exact .inr (.inr h)
-  · refine (hs0 (measure_mono_null ?_
+    have := hcov ht.2
+    simp_all [mem_symmDiff]
+    grind
+  · refine (hs0 (measure_mono_null (fun t ht => ?_)
       (measure_union_null hneg1 (measure_union_null hpos1 hc)))).elim
-    intro t ht
-    rcases hcov ht.1 with h | h | h
-    exacts [.inl ⟨h, ht.2⟩, .inr (.inl ⟨h, ht.2⟩), .inr (.inr h)]
+    have := hcov ht.1
+    simp_all
+    tauto
 
 end MeasureTheory

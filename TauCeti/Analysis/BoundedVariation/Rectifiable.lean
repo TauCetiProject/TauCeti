@@ -15,6 +15,7 @@ import TauCeti.Geometry.MeasureTheory.Rectifiable.ConeCriterion
 import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Countable rectifiability of the reduced boundary
@@ -30,9 +31,10 @@ The proof treats `dim E ≤ 1` and `dim E ≥ 2` by distinct mechanisms:
   `dim E = 0`, `E` is a subsingleton. When `dim E = 1`, the localized BV Poincaré inequality on
   `ball x r ⊆ Ω` has exponent `(dim E)⁻¹ = 1`, so the volume factor `μ A` (`A = s ∩ ball x r` or
   `ball x r \ s`, depending on whether the ball mean of `χ_s` is at most or at least `1 / 2`)
-  cancels from both sides and `diam (ball x r) / μ.real (ball x r)` is bounded independently of
-  `r`. Letting `r → 0⁺` shows that every point of `∂*s` is an atom of the σ-finite perimeter
-  measure `|Dχ_s|`, hence `∂*s` is countable.
+  cancels from both sides and `diam (ball x r) / μ.real (ball x r)` is bounded independently of `r`
+  (`TauCeti.inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one`). Letting `r → 0⁺` shows
+  that every point of `∂*s` is an atom of the σ-finite perimeter measure `|Dχ_s|`, hence `∂*s` is
+  countable.
 * **Dimensions `dim E ≥ 2` (`TauCeti.exists_pos_forall_abs_inner_sub_outerNormal_le`).** By the
   lower volume density estimates (`TauCeti.eventually_ofReal_pow_le_mul_measure_inter_ball` and
   `TauCeti.eventually_ofReal_pow_le_mul_measure_ball_sdiff`), `∂*s` is a countable union of strata
@@ -113,7 +115,7 @@ private theorem exists_subset_ball_measure_ne_zero_half_le_abs_indicator_sub [μ
 /-- In dimension `1`, for an additive Haar measure `μ`, at any `x ∈ reducedBoundary μ Ω s` and for
 any `ball x r ⊆ Ω` (`r > 0`), the perimeter measure of `closedBall x r` is bounded below by a
 positive constant independent of `r`. -/
-private theorem inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one [μ.IsAddHaarMeasure]
+theorem inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one [μ.IsAddHaarMeasure]
     (hn : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r)
     (hrΩ : ball x r ⊆ Ω) :
     (2⁻¹ : ℝ≥0∞) ≤ ENNReal.ofReal (2 / μ.real (ball 0 1)) *
@@ -169,8 +171,7 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
       ext y
       simp only [S, mem_iInter, mem_preimage, mem_closedBall, forall_gt_imp_ge_iff_le_of_dense,
         dist_le_zero, mem_ofPred_eq]
-    have hK : IsCompact (S r₀) := Topology.IsInducing.subtypeVal.isCompact_preimage'
-      (isCompact_closedBall x r₀) (by rwa [Subtype.range_coe])
+    have hK : IsCompact (S r₀) := isCompact_preimage_coe_closedBall hr₀Ω
     have hfin : variationMeasure μ Ω (s.indicator 1) (S r₀) ≠ ∞ :=
       (hK.measure_lt_top (μ := variationMeasure μ Ω (s.indicator 1))).ne
     have hlim := tendsto_measure_biInter_gt (μ := variationMeasure μ Ω (s.indicator 1))

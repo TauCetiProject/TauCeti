@@ -20,6 +20,7 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Instances.ENNReal
+import TauCeti.Topology.MetricSpace.ProperSpace
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 
@@ -145,8 +146,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
   have hint (ρ : ℝ) (hρ : closedBall x ρ ⊆ Ω) :
       IntegrableOn σ (((↑) : Ω → E) ⁻¹' closedBall x ρ) ν :=
     (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).integrableOn_isCompact
-      (Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x ρ)
-        (by rwa [Subtype.range_coe]))
+      (isCompact_preimage_coe_closedBall hρ)
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
   choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
     exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hh ht
@@ -255,10 +255,8 @@ theorem eventually_variationMeasure_closedBall_le_mul_enorm_setIntegral
     exact inv_lt_one_of_one_lt₀ (by exact_mod_cast ht)
   filter_upwards [havg, Ioc_mem_nhdsGT hε] with r hr hrε
   set S := ((↑) : Ω → E) ⁻¹' closedBall x r
-  have hS : IsCompact S := Topology.IsInducing.subtypeVal.isCompact_preimage'
-    (isCompact_closedBall x r) (by
-      rw [Subtype.range_coe]
-      exact (closedBall_subset_closedBall hrε.2).trans hεΩ)
+  have hS : IsCompact S :=
+    isCompact_preimage_coe_closedBall ((closedBall_subset_closedBall hrε.2).trans hεΩ)
   have hS0 : ν.real S ≠ 0 := by
     rw [measureReal_ne_zero_iff hS.measure_lt_top.ne]
     exact variationMeasure_preimage_closedBall_ne_zero hx hrε.1

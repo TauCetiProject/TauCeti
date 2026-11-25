@@ -19,7 +19,7 @@ import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.Interval
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.MetricSpace.ProperSpace
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -88,65 +88,27 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 section OneDim
 
-/-- In dimension `1`, at any point `x ∈ reducedBoundary μ Ω s` (for an additive Haar measure `μ`),
-every ball `ball x r ⊆ Ω` (`r > 0`) has Euclidean perimeter at least `1`. -/
-private theorem one_le_perimeter_volume_ball_of_finrank_eq_one {μ : Measure E} [μ.IsAddHaarMeasure]
-    (hdim : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r)
-    (hΩ : ball x r ⊆ Ω) :
-    1 ≤ perimeter volume ⟨ball x r, isOpen_ball⟩ s := by
-  let f := coordEquivOfFinrankEqOne hdim (norm_outerNormal hx) x
-  have hfmp := f.measurePreserving
-  have hf0 : f 0 = x := by simp [f]
-  have hball : f ⁻¹' ball x r = Ioo (-r) r := by
-    ext t
-    simp [← hf0, mem_ball, f.dist_map, abs_lt]
-  have hcomap : Opens.comap ⟨f, f.continuous⟩ ⟨ball x r, isOpen_ball⟩ = ⟨Ioo (-r) r, isOpen_Ioo⟩ :=
-    Opens.ext hball
-  have hveq : (volume : Measure E) = Measure.addHaarScalarFactor volume μ • μ :=
-    Measure.isAddLeftInvariant_eq_smul volume μ
-  have hpos {A : Set E} (hA : 0 < μ A) : 0 < volume A := by
-    rw [hveq, smul_apply, ENNReal.smul_def]
-    exact ENNReal.mul_pos
-      (ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume μ).ne')
-      hA.ne'
-  have hsbm : NullMeasurableSet (s ∩ ball x r) volume := by
-    have hsΩ : NullMeasurableSet (s ∩ Ω) volume :=
-      hveq ▸ (nullMeasurableSet_inter_of_mem_reducedBoundary hx).smul_measure _
-    have heq : (s ∩ Ω) ∩ ball x r = s ∩ ball x r := by rw [inter_assoc, inter_eq_right.2 hΩ]
-    exact heq ▸ hsΩ.inter measurableSet_ball.nullMeasurableSet
-  rw [← f.perimeter_comap hfmp, hcomap]
-  refine Real.one_le_perimeter_Ioo ?_ ?_ ?_
-  · rw [← hball, ← preimage_inter]
-    exact hsbm.preimage hfmp.quasiMeasurePreserving
-  · rw [← hball, ← preimage_inter,
-      hfmp.measure_preimage_emb f.toHomeomorph.toMeasurableEquiv.measurableEmbedding]
-    exact (hpos (measure_inter_ball_pos hx hr)).ne'
-  · rw [← hball, ← preimage_sdiff,
-      hfmp.measure_preimage_emb f.toHomeomorph.toMeasurableEquiv.measurableEmbedding,
-      Set.sdiff_eq, inter_comm]
-    exact (hpos (measure_inter_ball_pos (by rwa [reducedBoundary_compl]) hr)).ne'
-
 /-- In dimension `1`, every point of `reducedBoundary μ Ω s` (against an additive Haar measure `μ`)
 is isolated in `reducedBoundary μ Ω s`. -/
 private theorem exists_isolated_reducedBoundary_of_finrank_eq_one {μ : Measure E}
     [μ.IsAddHaarMeasure] (hdim : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) :
     ∃ r₀ > 0, closedBall x r₀ ⊆ Ω ∧ reducedBoundary μ Ω s ∩ ball x r₀ = {x} := by
   have := Ω.isOpen.locallyCompactSpace
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  set c := Measure.addHaarScalarFactor μ volume
   let x₀ : Ω := ⟨x, reducedBoundary_subset hx⟩
   obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds x₀.property)
   have hKR : IsCompact (closedBall x₀ R) := by
     rw [← Subtype.preimage_closedBall]
-    exact Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x R)
-      (by rwa [Subtype.range_coe])
+    exact isCompact_preimage_coe_closedBall hRΩ
   have hlim := tendsto_measure_closedBall_sdiff_singleton_nhds_zero
     (μ := variationMeasure μ Ω (s.indicator 1)) (z := x₀)
     ⟨R, hR, ((measure_mono sdiff_subset).trans_lt hKR.measure_lt_top).ne⟩
-  have hcpos : (0 : ℝ≥0∞) < c :=
-    ENNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume)
-  obtain ⟨rk, hk, hrk, hrkR⟩ := (((hlim.mono_left nhdsWithin_le_nhds).eventually
-    (gt_mem_nhds hcpos)).and (Ioo_mem_nhdsGT hR)).exists
+  have hmul : Tendsto (fun r => ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *
+      variationMeasure μ Ω (s.indicator 1) (closedBall x₀ r \ {x₀})) (𝓝[>] 0) (𝓝 0) := by
+    simpa only [mul_zero] using
+      ENNReal.Tendsto.const_mul (hlim.mono_left nhdsWithin_le_nhds) (Or.inr ENNReal.ofReal_ne_top)
+  obtain ⟨rk, hk, hrk, hrkR⟩ := ((hmul.eventually
+    (gt_mem_nhds (ENNReal.inv_pos.2 (ENNReal.ofNat_ne_top (n := 2))))).and
+      (Ioo_mem_nhdsGT hR)).exists
   have hrkΩ : closedBall x rk ⊆ Ω := (closedBall_subset_closedBall hrkR.le).trans hRΩ
   refine ⟨rk / 2, half_pos hrk, (closedBall_subset_closedBall (half_le_self hrk.le)).trans hrkΩ,
     Subset.antisymm (fun y ⟨hyB, hyx⟩ => ?_) (singleton_subset_iff.2 ⟨hx, mem_ball_self
@@ -154,26 +116,22 @@ private theorem exists_isolated_reducedBoundary_of_finrank_eq_one {μ : Measure 
   by_contra hyne
   set δ := min (dist y x) (rk / 2)
   have hδ : 0 < δ := lt_min (dist_pos.2 hyne) (half_pos hrk)
-  have hsub : ball y δ ⊆ closedBall x rk \ {x} := fun z hz =>
-    ⟨mem_closedBall.2 (calc dist z x ≤ dist z y + dist y x := dist_triangle z y x
-      _ ≤ rk / 2 + rk / 2 := add_le_add ((mem_ball.1 hz).le.trans (min_le_right _ _))
-          (mem_ball.1 hyx).le
-      _ = rk := add_halves rk),
-      fun hzx => (lt_irrefl (dist x y)) (by
-        calc dist x y < δ := (mem_singleton_iff.1 hzx) ▸ mem_ball.1 hz
+  have hsub : closedBall y (δ / 2) ⊆ closedBall x rk \ {x} := fun z hz => by
+    have hzy : dist z y < δ := (mem_closedBall.1 hz).trans_lt (half_lt_self hδ)
+    refine ⟨mem_closedBall.2 (calc dist z x ≤ dist z y + dist y x := dist_triangle z y x
+      _ ≤ rk / 2 + rk / 2 := add_le_add (hzy.le.trans (min_le_right _ _)) (mem_ball.1 hyx).le
+      _ = rk := add_halves rk), fun hzx => (lt_irrefl (dist x y)) (by
+        calc dist x y < δ := (mem_singleton_iff.1 hzx) ▸ hzy
           _ ≤ dist y x := min_le_left _ _
           _ = dist x y := dist_comm y x)⟩
-  have hbΩ : ball y δ ⊆ Ω := (hsub.trans sdiff_subset).trans hrkΩ
-  have hlt : perimeter μ ⟨ball y δ, isOpen_ball⟩ s < c := by
-    rw [perimeter_def, ← variationMeasure_preimage_coe (U := ⟨ball y δ, isOpen_ball⟩) hu hfin hbΩ]
-    refine (measure_mono fun z hz => ?_).trans_lt hk
+  have hbΩ : ball y (δ / 2) ⊆ Ω :=
+    (ball_subset_closedBall.trans hsub).trans (sdiff_subset.trans hrkΩ)
+  have hge := inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one hdim hyB
+    (half_pos hδ) hbΩ
+  have hpre : ((↑) : Ω → E) ⁻¹' closedBall y (δ / 2) ⊆ closedBall x₀ rk \ {x₀} := fun z hz => by
     obtain ⟨hz1, hz2⟩ := hsub hz
     exact ⟨hz1, fun hzx => hz2 (congrArg Subtype.val hzx)⟩
-  have hge : (c : ℝ≥0∞) ≤ perimeter μ ⟨ball y δ, isOpen_ball⟩ s := by
-    rw [Measure.isAddLeftInvariant_eq_smul μ volume, perimeter_smul_measure]
-    simpa using mul_le_mul_right
-      (one_le_perimeter_volume_ball_of_finrank_eq_one hdim hyB hδ hbΩ) (c : ℝ≥0∞)
-  exact hlt.not_ge hge
+  exact hk.not_ge (hge.trans (mul_le_mul_right (measure_mono hpre) _))
 
 /-- When `(f '' Ioo a b)` lies inside `ball x r₀ \ {x}` around an isolated point `x` of `∂*s`, the
 pulled-back set `f ⁻¹' s` has zero perimeter on `(a, b)`. -/
@@ -221,16 +179,20 @@ private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finra
     ext t; simp [f, mem_ball, dist_eq_norm, norm_smul, hν, abs_lt]
   have hTm {a b : ℝ} (hsub : Ioo a b ⊆ Ioo (-r₀) r₀) :
       NullMeasurableSet (f ⁻¹' s ∩ Ioo a b) volume := by
-    have hsΩ := nullMeasurableSet_inter_of_mem_reducedBoundary hx
-    have hsball : s ∩ ball x r₀ = (s ∩ Ω) ∩ ball x r₀ := by
-      rw [inter_assoc, inter_eq_right.2 (ball_subset_closedBall.trans hr₀Ω)]
-    have h1 : NullMeasurableSet (f ⁻¹' s ∩ Ioo (-r₀) r₀) volume := by
-      rw [← hball, ← preimage_inter, hsball]
-      exact (hsΩ.inter measurableSet_ball.nullMeasurableSet).preimage hfmp.quasiMeasurePreserving
-    have hsub_eq : (f ⁻¹' s ∩ Ioo (-r₀) r₀) ∩ Ioo a b = f ⁻¹' s ∩ Ioo a b := by
-      rw [inter_assoc, inter_eq_right.2 hsub]
-    exact hsub_eq ▸ h1.inter measurableSet_Ioo.nullMeasurableSet
+    have hΩsub : Ioo a b ⊆ f ⁻¹' Ω :=
+      hsub.trans (hball ▸ preimage_mono (ball_subset_closedBall.trans hr₀Ω))
+    have heq : f ⁻¹' s ∩ Ioo a b = f ⁻¹' (s ∩ Ω) ∩ Ioo a b :=
+      Set.ext fun t => ⟨fun ⟨hs, ht⟩ => ⟨⟨hs, hΩsub ht⟩, ht⟩, fun ⟨⟨hs, _⟩, ht⟩ => ⟨hs, ht⟩⟩
+    rw [heq]
+    exact ((nullMeasurableSet_inter_of_mem_reducedBoundary hx).preimage
+      hfmp.quasiMeasurePreserving).inter measurableSet_Ioo.nullMeasurableSet
   have hemb := f.toHomeomorph.toMeasurableEquiv.measurableEmbedding
+  have hne {t : Set E} (ht : x ∈ reducedBoundary volume Ω t) :
+      volume (f ⁻¹' t ∩ Ioo (-r₀) r₀) ≠ 0 := by
+    have heq : f ⁻¹' t ∩ Ioo (-r₀) r₀ = f ⁻¹' (t ∩ ball x r₀) := by rw [← hball, preimage_inter]
+    rw [heq, hfmp.measure_preimage_emb hemb]
+    exact (measure_inter_ball_pos ht hr₀).ne'
+  have hsdiff : Ioo (-r₀) r₀ \ f ⁻¹' s = f ⁻¹' sᶜ ∩ Ioo (-r₀) r₀ := by ext; simp [and_comm]
   have htrans {w : E} {J : Set ℝ} (hJ : ∀ y : E, (f.symm y ∈ J) ↔ ⟪y, w⟫ < ⟪x, w⟫)
       (h0 : volume (((f ⁻¹' s) ∆ J) ∩ Ioo (-r₀) r₀) = 0) :
       s =ᵐ[volume.restrict (ball x r₀)] {y | ⟪y, w⟫ < ⟪x, w⟫} := by
@@ -243,11 +205,8 @@ private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finra
     · intro t ⟨⟨htw, hts⟩, htb⟩
       exact ⟨.inr ⟨f.symm_apply_apply t ▸ (hJ (f t)).2 htw, hts⟩, hball ▸ htb⟩
   refine ⟨r₀, hr₀, hr₀Ω, hiso, ?_⟩
-  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero
-    (by rw [← hball, ← preimage_inter, hfmp.measure_preimage_emb hemb]
-        exact (measure_inter_ball_pos hx hr₀).ne')
-    (by rw [← hball, ← preimage_sdiff, hfmp.measure_preimage_emb hemb, Set.sdiff_eq, inter_comm]
-        exact (measure_inter_ball_pos (by rwa [reducedBoundary_compl]) hr₀).ne')
+  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero (hne hx)
+    (hsdiff ▸ hne (by rwa [reducedBoundary_compl]))
     ((Real.perimeter_Ioo_eq_zero_iff (hTm (Ioo_subset_Ioo_right hr₀.le))).1
       (perimeter_Ioo_preimage_eq_zero_of_isolated hdim hx hr₀Ω hiso fun t ht => by
         rw [abs_of_neg ht.2]; exact ⟨neg_pos.2 ht.2, neg_lt.2 ht.1⟩))
@@ -268,9 +227,9 @@ private theorem variationMeasure_singleton_eq_euclideanHausdorffMeasure_of_finra
   obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hy
   obtain ⟨r₀, hr₀, hr₀Ω, hiso, w, hw, hae⟩ :=
     exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one hdim hy
-  have hK : IsCompact (closedBall y r₀) :=
-    Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall (y : E) r₀)
-      (by rwa [Subtype.range_coe])
+  have hK : IsCompact (closedBall y r₀) := by
+    rw [← Subtype.preimage_closedBall]
+    exact isCompact_preimage_coe_closedBall hr₀Ω
   have hlim := (tendsto_measure_closedBall_nhdsGE_zero
     (μ := variationMeasure volume Ω (s.indicator 1)) (z := y)
     ⟨r₀, hr₀, hK.measure_lt_top.ne⟩).mono_left (nhdsWithin_mono (0 : ℝ) Ioi_subset_Ici_self)
