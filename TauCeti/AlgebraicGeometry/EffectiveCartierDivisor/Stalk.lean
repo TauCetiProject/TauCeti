@@ -15,7 +15,7 @@ import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Regular.SMul
 import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.Localization.Ideal
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Effective Cartier divisors on locally noetherian schemes are detected on stalks
@@ -272,17 +272,14 @@ theorem exists_stalkIdeal_eq_span_singleton_of_comap {Y : Scheme.{u}} {I : X.Ide
 /-- **Stalks where an effective Cartier divisor cuts out the maximal ideal have dimension at most
 one.** Let `f : Y ⟶ X` be an open immersion along which `I` pulls back to an effective Cartier
 divisor, and `y` a point of `Y` at which the stalk ideal of `I` is the maximal ideal of the
-noetherian local ring `𝒪_{X,f(y)}`. Then `𝒪_{X,f(y)}` has Krull dimension at most one, by Krull's
-principal ideal theorem. -/
+noetherian local ring `𝒪_{X,f(y)}`. Then that maximal ideal is principal, so `𝒪_{X,f(y)}` has
+Krull dimension at most one by `IsLocalRing.ringKrullDim_le_one_of_isPrincipal_maximalIdeal`. -/
 theorem ringKrullDim_stalk_le_one_of_comap {Y : Scheme.{u}} {I : X.IdealSheafData} (f : Y ⟶ X)
     [IsOpenImmersion f] (hI : (I.comap f).IsEffectiveCartier) (y : Y)
     [IsNoetherianRing (X.presheaf.stalk (f y))]
     (hy : I.stalkIdeal (f y) = maximalIdeal (X.presheaf.stalk (f y))) :
     ringKrullDim (X.presheaf.stalk (f y)) ≤ 1 := by
   obtain ⟨a, -, ha⟩ := exists_stalkIdeal_eq_span_singleton_of_comap f hI y
-  rw [hy] at ha
-  have hna : ¬ IsUnit a := (mem_maximalIdeal a).mp (ha ▸ Ideal.mem_span_singleton_self a)
-  rw [← maximalIdeal_height_eq_ringKrullDim, ha]
-  exact_mod_cast Ideal.height_span_singleton_le_one hna
+  exact IsLocalRing.ringKrullDim_le_one_of_isPrincipal_maximalIdeal ⟨a, hy ▸ ha⟩
 
 end AlgebraicGeometry.Scheme.IdealSheafData
