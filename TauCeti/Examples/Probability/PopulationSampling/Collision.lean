@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.Probability.Exchangeability.FiniteDeFinetti
 public import TauCeti.Probability.Exchangeability.PermutedPopulation
 import Mathlib.Tactic.NormNum
@@ -238,11 +239,6 @@ example {α : Type*} [MeasurableSpace α] [Nonempty α] :
 
 /-! ### Samples of size at most one, and the measurability of the all-distinct event -/
 
-/-- The product of trivial σ-algebras is trivial. -/
-private theorem measurableSpace_pi_bot {ι : Type*} {X : ι → Type*} :
-    MeasurableSpace.pi (m := fun i => (⊥ : MeasurableSpace (X i))) = ⊥ := by
-  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
-
 -- For samples of size at most one, `p = 1` and a distinct-valued population has excess `0`.
 example {α ι κ : Type*} [MeasurableSpace α] [Fintype ι] [Subsingleton ι] [Fintype κ]
     [MeasurableSpace κ] [MeasurableSingletonClass κ] {x : κ → α} (hx : Injective x)
@@ -261,7 +257,7 @@ example {α ι κ : Type*} [MeasurableSpace α] [Fintype ι] [Subsingleton ι] [
 example {ι α : Type*} [Nontrivial ι] (e : ι ↪ α) :
     ¬ MeasurableSet[MeasurableSpace.pi (X := fun _ : ι => α) (m := fun _ => ⊥)]
       {f : ι → α | Injective f} := by
-  rw [measurableSpace_pi_bot, MeasurableSpace.measurableSet_bot_iff]
+  rw [MeasurableSpace.pi_bot, MeasurableSpace.measurableSet_bot_iff]
   obtain ⟨i, j, hij⟩ := exists_pair_ne ι
   rintro (h | h)
   · exact (Set.eq_empty_iff_forall_notMem.1 h) e e.injective
@@ -280,7 +276,7 @@ example {α : Type*} {x : Fin 3 → α} :
     (Fin.castLEEmb (by decide))
   have := isProbabilityMeasure_sampleWithReplacement (ι := Fin 2) (Measure.dirac x)
   refine le_antisymm (iSup₂_le fun A hA => ?_) bot_le
-  have hA' : MeasurableSet[⊥] A := measurableSpace_pi_bot (X := fun _ : Fin 2 => α) ▸ hA
+  have hA' : MeasurableSet[⊥] A := MeasurableSpace.pi_bot (X := fun _ : Fin 2 => α) ▸ hA
   rcases MeasurableSpace.measurableSet_bot_iff.1 hA' with rfl | rfl <;>
     simp only [measure_empty, measure_univ, tsub_self, le_refl]
 

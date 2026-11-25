@@ -23,7 +23,8 @@ index types is measurable in the family (`TauCeti.MeasureTheory.measurable_comp_
 
 It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
 point `w` of a dependent product is the finset update of `w` by `z`
-(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`).
+(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`), and that the product
+of trivial σ-algebras is trivial (`MeasurableSpace.pi_bot`).
 
 These are general measurable product constructions, independent of any measure or stochastic
 process.
@@ -108,6 +109,12 @@ measurable in `u`. -/
 theorem measurable_comp_apply {ι κ : Type*} (e : ι → κ) :
     Measurable fun (u : κ → α) (a : ι) ↦ u (e a) :=
   Measurable.of_eval fun a ↦ measurable_pi_apply (e a)
+
+/-- The product of trivial σ-algebras is trivial. -/
+@[simp]
+theorem _root_.MeasurableSpace.pi_bot {ι : Type*} {X : ι → Type*} :
+    MeasurableSpace.pi (m := fun i => (⊥ : MeasurableSpace (X i))) = ⊥ := by
+  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
 
 end MeasureTheory
 
