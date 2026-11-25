@@ -299,6 +299,28 @@ theorem setOf_lt_schwarzRearrangement_eq_univ [ProperSpace E] [IsFiniteMeasureOn
   setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top μ f t
     (fun _ ↦ measure_ball_lt_top) h
 
+/-- The Schwarz rearrangement takes the value `∞` at `x` if and only if every finite strict
+superlevel set of `f` has measure strictly larger than `μ (ball 0 ‖x‖)`. -/
+theorem schwarzRearrangement_eq_top_iff {x : E} :
+    schwarzRearrangement μ f x = ∞ ↔
+      ∀ t : ℝ≥0∞, t ≠ ∞ → μ (ball (0 : E) ‖x‖) < μ {y | t < f y} := by
+  refine ⟨fun h t ht ↦ (lt_schwarzRearrangement_iff μ).1 (h ▸ ht.lt_top), fun h ↦ ?_⟩
+  by_contra hne
+  exact lt_irrefl _ ((lt_schwarzRearrangement_iff μ).2 (h _ hne))
+
+variable {μ} in
+/-- For a measure that is finite on compact sets of a proper space, if every nonnegative strict
+superlevel set of `u` has infinite measure, the Schwarz rearrangement of `ENNReal.ofReal ∘ u` is
+identically `∞`. -/
+theorem schwarzRearrangement_ofReal_eq_top_of_forall_measure_eq_top
+    [ProperSpace E] [IsFiniteMeasureOnCompacts μ] {u : E → ℝ}
+    (hu : ∀ s : ℝ, 0 ≤ s → μ {y | s < u y} = ∞) (x : E) :
+    schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x = ∞ := by
+  rw [schwarzRearrangement_eq_top_iff]
+  intro t ht
+  simp_rw [ENNReal.lt_ofReal_iff_toReal_lt ht, hu _ ENNReal.toReal_nonneg]
+  exact measure_ball_lt_top
+
 end Measure
 
 section AddHaar

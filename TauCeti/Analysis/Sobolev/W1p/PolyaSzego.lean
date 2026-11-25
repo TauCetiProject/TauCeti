@@ -250,17 +250,40 @@ private theorem memLp_toReal_schwarzRearrangement_value (u : W1p mu ⊤ 1) :
   memLp_restrict_coe_opens_top.2
     (memLp_one_iff_integrable.2 (W1p.integrable_value u).toReal_schwarzRearrangement)
 
+/-- Chosen pointwise weak-gradient representative for the real Schwarz rearrangement of
+`(W1p.value u)⁺`. -/
+private def schwarzRearrangementRawGradient (u : W1p mu ⊤ 1) : E → E :=
+  Classical.choose (exists_hasWeakFDerivOn_of_w1p u)
+
+/-- `schwarzRearrangementRawGradient u` is a weak gradient for the real Schwarz rearrangement of
+`(W1p.value u)⁺`. -/
+private theorem hasWeakFDerivOn_schwarzRearrangementRawGradient (u : W1p mu ⊤ 1) :
+    HasWeakFDerivOn mu ⊤
+      (fun x ↦ (TauCeti.schwarzRearrangement mu
+        (fun y ↦ ENNReal.ofReal (W1p.value u y)) x).toReal)
+      (fun x ↦ innerSL ℝ (schwarzRearrangementRawGradient u x)) :=
+  (Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)).1
+
+/-- `schwarzRearrangementRawGradient u` lies in `L¹` on `⊤`. -/
+private theorem memLp_schwarzRearrangementRawGradient (u : W1p mu ⊤ 1) :
+    MemLp (schwarzRearrangementRawGradient u) 1 (mu.restrict (⊤ : Opens E)) :=
+  (Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)).2.1
+
+/-- `L¹` bound for `schwarzRearrangementRawGradient u` in terms of `W1p.posPart`. -/
+private theorem lintegral_enorm_schwarzRearrangementRawGradient_le (u : W1p mu ⊤ 1) :
+    ∫⁻ x, ‖schwarzRearrangementRawGradient u x‖ₑ ∂mu ≤
+      ∫⁻ x, ‖W1p.gradient (W1p.posPart ENNReal.one_ne_top u) x‖ₑ ∂mu :=
+  (Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)).2.2
+
 /-- Weak-gradient compatibility between the `Lp` classes used to construct
 `W1p.schwarzRearrangement u`. -/
 private theorem hasWeakFDerivOn_toLp_schwarzRearrangement (u : W1p mu ⊤ 1) :
     HasWeakFDerivOn mu ⊤
       ((memLp_toReal_schwarzRearrangement_value u).toLp _)
-      (fun x ↦ innerSL ℝ
-        (((Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)).2.1.toLp _) x)) := by
-  let hg := Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)
-  refine (hg.1.congr_ae (memLp_toReal_schwarzRearrangement_value u).coeFn_toLp.symm).congr_ae_deriv
-    ?_
-  filter_upwards [hg.2.1.coeFn_toLp] with x hx
+      (fun x ↦ innerSL ℝ (((memLp_schwarzRearrangementRawGradient u).toLp _) x)) := by
+  refine ((hasWeakFDerivOn_schwarzRearrangementRawGradient u).congr_ae
+    (memLp_toReal_schwarzRearrangement_value u).coeFn_toLp.symm).congr_ae_deriv ?_
+  filter_upwards [(memLp_schwarzRearrangementRawGradient u).coeFn_toLp] with x hx
   rw [hx]
 
 /-- **Positive-part Schwarz rearrangement on `W^{1,1}`.** Maps `u : W1p mu ⊤ 1` to the `W^{1,1}`
@@ -268,7 +291,7 @@ element whose value is the real Schwarz rearrangement of the positive part `(W1p
 def schwarzRearrangement (u : W1p mu ⊤ 1) : W1p mu ⊤ 1 :=
   W1p.mk
     ((memLp_toReal_schwarzRearrangement_value u).toLp _)
-    ((Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)).2.1.toLp _)
+    ((memLp_schwarzRearrangementRawGradient u).toLp _)
     (hasWeakFDerivOn_toLp_schwarzRearrangement u)
 
 /-- The value of `W1p.schwarzRearrangement u` agrees almost everywhere with the real Schwarz
@@ -285,18 +308,8 @@ theorem value_schwarzRearrangement_ae (u : W1p mu ⊤ 1) :
 theorem schwarzRearrangement_zero :
     W1p.schwarzRearrangement (0 : W1p (E := E) mu ⊤ 1) = 0 := by
   refine W1p.ext_value (Lp.ext ?_)
-  have h0_ae : ⇑(W1p.value (0 : W1p (E := E) mu ⊤ 1)) =ᵐ[mu] 0 := by
-    rw [← mu.ae_restrict_coe_opens_top, W1p.value_zero]
-    exact Lp.coeFn_zero ℝ 1 _
-  have hae : (fun y ↦ ENNReal.ofReal (W1p.value (0 : W1p (E := E) mu ⊤ 1) y)) =ᵐ[mu] 0 :=
-    h0_ae.mono fun _ hy ↦ by
-      dsimp only
-      rw [W1p.value_zero] at hy ⊢
-      rw [hy, Pi.zero_apply, Pi.zero_apply, ENNReal.ofReal_zero]
-  filter_upwards [value_schwarzRearrangement_ae (0 : W1p (E := E) mu ⊤ 1),
-    Lp.coeFn_zero ℝ 1 (mu.restrict (⊤ : Opens E))] with x hx h0
-  rw [hx, TauCeti.schwarzRearrangement_congr_ae mu hae, TauCeti.schwarzRearrangement_zero,
-    Pi.zero_apply, ENNReal.toReal_zero, W1p.value_zero, h0, Pi.zero_apply]
+  filter_upwards [value_schwarzRearrangement_ae (0 : W1p (E := E) mu ⊤ 1)] with x hx
+  simp [hx]
 
 /-- Precomposing `W1p.schwarzRearrangement` with `W1p.posPart` leaves it unchanged. -/
 @[simp]
@@ -393,20 +406,19 @@ theorem norm_value_schwarzRearrangement_of_ae_nonneg {u : W1p mu ⊤ 1}
 theorem norm_gradient_schwarzRearrangement_le_posPart (u : W1p mu ⊤ 1) :
     ‖W1p.gradient (W1p.schwarzRearrangement u)‖ ≤
       ‖W1p.gradient (W1p.posPart ENNReal.one_ne_top u)‖ := by
-  let hg := Classical.choose_spec (exists_hasWeakFDerivOn_of_w1p u)
   have hgrad_ae : ⇑(W1p.gradient (W1p.schwarzRearrangement u)) =ᵐ[mu.restrict (⊤ : Opens E)]
-      Classical.choose (exists_hasWeakFDerivOn_of_w1p u) := by
+      schwarzRearrangementRawGradient u := by
     rw [schwarzRearrangement, W1p.gradient_mk]
-    exact hg.2.1.coeFn_toLp
+    exact (memLp_schwarzRearrangementRawGradient u).coeFn_toLp
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hgrad_ae]
   refine ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) ?_
-  have hm1 : MemLp (Classical.choose (exists_hasWeakFDerivOn_of_w1p u)) 1 mu :=
-    memLp_restrict_coe_opens_top.1 hg.2.1
+  have hm1 : MemLp (schwarzRearrangementRawGradient u) 1 mu :=
+    memLp_restrict_coe_opens_top.1 (memLp_schwarzRearrangementRawGradient u)
   have hm2 := W1p.memLp_gradient (W1p.posPart ENNReal.one_ne_top u)
   rw [eLpNorm_restrict_coe_opens_top, eLpNorm_restrict_coe_opens_top,
     eLpNorm_one_eq_lintegral_eNorm hm1.aestronglyMeasurable,
     eLpNorm_one_eq_lintegral_eNorm hm2.aestronglyMeasurable]
-  exact hg.2.2
+  exact lintegral_enorm_schwarzRearrangementRawGradient_le u
 
 /-- **`W^{1,1}` Pólya–Szegő inequality, `L¹` norm form.** The `L¹` norm of the weak gradient of
 `W1p.schwarzRearrangement u` is at most that of `u`. -/

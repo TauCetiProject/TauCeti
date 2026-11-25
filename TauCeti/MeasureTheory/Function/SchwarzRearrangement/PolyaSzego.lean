@@ -209,31 +209,39 @@ private theorem lintegral_ofReal_comp_norm_fderiv_volume_le_of_ne_top [Nontrivia
     simp [hempty]
   · exact ht htpos
 
-/-- For `S = {s ≥ 0 | volume {h > s} ≠ ∞}` and `c = sInf S`, shifting `h` at `c` commutes with
-extended Schwarz rearrangement up to `+ ENNReal.ofReal c`. -/
+/-- Nonnegative levels at which the strict superlevel set of `h` has finite Lebesgue volume. -/
+private def finiteVolumeLevels (h : E → ℝ) : Set ℝ :=
+  {s : ℝ | 0 ≤ s ∧ volume {x | s < h x} ≠ ∞}
+
+/-- `finiteVolumeLevels h` is bounded below by `0`. -/
+private theorem bddBelow_finiteVolumeLevels (h : E → ℝ) : BddBelow (finiteVolumeLevels h) :=
+  ⟨0, fun _ hs ↦ hs.1⟩
+
+/-- The infimum of `finiteVolumeLevels h` is nonnegative. -/
+private theorem sInf_finiteVolumeLevels_nonneg (h : E → ℝ) :
+    0 ≤ sInf (finiteVolumeLevels h) :=
+  Real.sInf_nonneg fun _ hs ↦ hs.1
+
+/-- Shifting `h` at `c = sInf (finiteVolumeLevels h)` commutes with extended Schwarz rearrangement
+up to `+ ENNReal.ofReal c`. -/
 private theorem schwarzRearrangement_ofReal_eq_add_sInf [Nontrivial E] (h : E → ℝ) (x : E) :
     schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x =
       schwarzRearrangement volume
-        (fun y ↦ ENNReal.ofReal (max (h y - sInf {s : ℝ | 0 ≤ s ∧ volume {x | s < h x} ≠ ∞}) 0))
-        x + ENNReal.ofReal (sInf {s : ℝ | 0 ≤ s ∧ volume {x | s < h x} ≠ ∞}) := by
-  set S : Set ℝ := {s : ℝ | 0 ≤ s ∧ volume {x | s < h x} ≠ ∞}
-  set c := sInf S
-  have hSbdd : BddBelow S := ⟨0, fun _ hs ↦ hs.1⟩
-  have hc0 : 0 ≤ c := Real.sInf_nonneg fun _ hs ↦ hs.1
+        (fun y ↦ ENNReal.ofReal (max (h y - sInf (finiteVolumeLevels h)) 0)) x +
+        ENNReal.ofReal (sInf (finiteVolumeLevels h)) := by
+  set c := sInf (finiteVolumeLevels h)
+  have hc0 : 0 ≤ c := sInf_finiteVolumeLevels_nonneg h
   rw [← congrFun (schwarzRearrangement_add_const volume _ _) x]
   refine eq_of_forall_lt_iff fun t ↦ ?_
   rw [lt_schwarzRearrangement_iff, lt_schwarzRearrangement_iff]
   rcases lt_or_ge t (ENNReal.ofReal c) with htc | hct
   · have ht_fin : t ≠ ∞ := (lt_trans htc ENNReal.ofReal_lt_top).ne
-    have htr_not : t.toReal ∉ S := notMem_of_lt_csInf (ENNReal.toReal_lt_of_lt_ofReal htc) hSbdd
+    have htr_not : t.toReal ∉ finiteVolumeLevels h :=
+      notMem_of_lt_csInf (ENNReal.toReal_lt_of_lt_ofReal htc) (bddBelow_finiteVolumeLevels h)
     have hvol : volume {y | t < ENNReal.ofReal (h y)} = ∞ := by
-      have hvol' : volume {y | t.toReal < h y} = ∞ := by
-        by_contra hne
-        exact htr_not ⟨ENNReal.toReal_nonneg, hne⟩
-      convert hvol' using 2
-      ext y
-      conv_lhs => rw [← ENNReal.ofReal_toReal ht_fin]
-      exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg
+      simp_rw [ENNReal.lt_ofReal_iff_toReal_lt ht_fin]
+      by_contra hne
+      exact htr_not ⟨ENNReal.toReal_nonneg, hne⟩
     have huniv : {y | t < ENNReal.ofReal (max (h y - c) 0) + ENNReal.ofReal c} = univ :=
       eq_univ_of_forall fun _ ↦ htc.trans_le le_add_self
     rw [hvol, huniv, measure_univ_of_isAddLeftInvariant]
@@ -242,52 +250,34 @@ private theorem schwarzRearrangement_ofReal_eq_add_sInf [Nontrivial E] (h : E �
     · suffices {y | t < ENNReal.ofReal (h y)} =
           {y | t < ENNReal.ofReal (max (h y - c) 0) + ENNReal.ofReal c} by rw [this]
       ext y
-      simp only [mem_ofPred_eq]
-      rw [← ENNReal.ofReal_add (le_max_right _ _) hc0, ← ENNReal.ofReal_toReal ht_fin]
+      simp only [mem_ofPred_eq, ← ENNReal.ofReal_add (le_max_right _ _) hc0,
+        ENNReal.lt_ofReal_iff_toReal_lt ht_fin]
       have hcs : c ≤ t.toReal := (ENNReal.ofReal_le_iff_le_toReal ht_fin).1 hct
-      rw [ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg,
-        ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg]
       grind
 
 /-- Removing the finite-superlevel-measure hypothesis for convex nondecreasing `Φ` with `Φ 0 = 0`
-by shifting `h` at the infimum `c` of nonnegative levels with finite superlevel volume (or noting
-`(h⁺)* = ∞`, so `((h⁺)*).toReal = 0`, when all nonnegative superlevel volumes are `∞`). -/
+by shifting `h` at `sInf (finiteVolumeLevels h)` (or noting `(h⁺)* = ∞`, so `((h⁺)*).toReal = 0`,
+when `finiteVolumeLevels h` is empty). -/
 private theorem lintegral_ofReal_comp_norm_fderiv_volume_le_of_monotoneOn [Nontrivial E]
     (hh : LipschitzWith K h) {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ)
     (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) :
     ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ (fun z ↦
         (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) := by
-  let S : Set ℝ := {s : ℝ | 0 ≤ s ∧ volume {x | s < h x} ≠ ∞}
-  rcases S.eq_empty_or_nonempty with hSempty | hSne
-  · have htop_all (x : E) :
-        schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x = ∞ := by
-      by_contra hne
-      have hlt : schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x <
-          schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x := by
-        rw [lt_schwarzRearrangement_iff]
-        set r := (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x).toReal
-        have hvol' : volume {y | r < h y} = ∞ := by
-          by_contra hfin
-          exact (hSempty ▸ notMem_empty r) ⟨ENNReal.toReal_nonneg, hfin⟩
-        have hset : {y | schwarzRearrangement volume (fun z ↦ ENNReal.ofReal (h z)) x <
-            ENNReal.ofReal (h y)} = {y | r < h y} := by
-          ext y
-          conv_lhs => rw [← ENNReal.ofReal_toReal hne]
-          exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg
-        rw [hset, hvol']
-        exact measure_ball_lt_top
-      exact lt_irrefl _ hlt
-    simp [htop_all, hΦ0]
-  · set c := sInf S
-    have hSbdd : BddBelow S := ⟨0, fun _ hs ↦ hs.1⟩
-    have hc0 : 0 ≤ c := Real.sInf_nonneg fun _ hs ↦ hs.1
+  rcases (finiteVolumeLevels h).eq_empty_or_nonempty with hSempty | hSne
+  · have htop : ∀ x, schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x = ∞ :=
+      schwarzRearrangement_ofReal_eq_top_of_forall_measure_eq_top fun s hs ↦ by
+        by_contra hfin
+        exact (hSempty ▸ notMem_empty s) ⟨hs, hfin⟩
+    simp [htop, hΦ0]
+  · set c := sInf (finiteVolumeLevels h)
     let hc_fun : E → ℝ := fun x ↦ max (h x - c) 0
     have hhc_lip : LipschitzWith K hc_fun :=
       (LipschitzWith.of_dist_le_mul fun x y ↦ by
         simpa [dist_sub_right] using hh.dist_le_mul x y).max_const 0
     have hhc_fin (t : ℝ) (ht : 0 < t) : volume {x | t < hc_fun x} ≠ ∞ := by
-      obtain ⟨s, hsS, hsc⟩ := (csInf_lt_iff hSbdd hSne).1 (lt_add_of_pos_right c ht)
+      obtain ⟨s, hsS, hsc⟩ :=
+        (csInf_lt_iff (bddBelow_finiteVolumeLevels h) hSne).1 (lt_add_of_pos_right c ht)
       refine ne_top_of_le_ne_top hsS.2 (measure_mono fun x hx ↦ ?_)
       simp only [hc_fun, mem_ofPred_eq] at hx ⊢
       grind
@@ -298,7 +288,8 @@ private theorem lintegral_ofReal_comp_norm_fderiv_volume_le_of_monotoneOn [Nontr
           (fun y ↦ ENNReal.ofReal (hc_fun y)) z).toReal + c := by
       ext z
       rw [schwarzRearrangement_ofReal_eq_add_sInf h z,
-        ENNReal.toReal_add (hhc_ne z) ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hc0]
+        ENNReal.toReal_add (hhc_ne z) ENNReal.ofReal_ne_top,
+        ENNReal.toReal_ofReal (sInf_finiteVolumeLevels_nonneg h)]
     simp_rw [hval_eq, fderiv_add_const]
     refine (lintegral_ofReal_comp_norm_fderiv_volume_le_of_ne_top hhc_lip hhc_fin hΦ hΦ0.le).trans
       (lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_))
@@ -365,6 +356,14 @@ theorem lintegral_enorm_fderiv_toReal_schwarzRearrangement_le
     hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ
       (convexOn_id (convex_Ici 0)) le_rfl
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- Nonnegativity of `Φ ‖fderiv ℝ w x‖` for nondecreasing `Φ` on `[0, ∞)` with `Φ 0 = 0`. -/
+private theorem ae_comp_norm_fderiv_nonneg {μ : Measure E} {Φ : ℝ → ℝ}
+    (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) (w : E → ℝ) :
+    0 ≤ᵐ[μ] fun x ↦ Φ ‖fderiv ℝ w x‖ :=
+  ae_of_all _ fun _ ↦ by
+    simpa [hΦ0] using hΦm (mem_Ici.2 le_rfl) (norm_nonneg _) (norm_nonneg _)
+
 /-- **Integrability in the Lipschitz convex-integrand Pólya–Szegő inequality.** For any additive
 Haar measure `μ`, if `h` is `K`-Lipschitz and `Φ` is convex and nondecreasing on `[0, ∞)` with
 `Φ 0 = 0`, integrability of `x ↦ Φ ‖fderiv ℝ h x‖` under `μ` implies integrability of
@@ -375,16 +374,12 @@ theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement
     {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) μ) :
     Integrable (fun x ↦ Φ ‖fderiv ℝ (fun z ↦
-      (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) μ := by
-  have hnonneg (w : E → ℝ) (x : E) : 0 ≤ Φ ‖fderiv ℝ w x‖ :=
-    hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) (norm_nonneg _) (norm_nonneg _)
-  refine (lintegral_ofReal_ne_top_iff_integrable
-    (hΦm.measurable_comp (measurable_fderiv ℝ _).norm
-      fun _ ↦ norm_nonneg _).aestronglyMeasurable
-    (ae_of_all _ (hnonneg _))).1 ?_
-  refine ne_top_of_le_ne_top ((lintegral_ofReal_ne_top_iff_integrable
-    hint.aestronglyMeasurable (ae_of_all _ (hnonneg h))).2 hint) ?_
-  exact hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ hΦ0.le
+      (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) μ :=
+  (lintegral_ofReal_ne_top_iff_integrable
+    (hΦm.measurable_comp (measurable_fderiv ℝ _).norm fun _ ↦ norm_nonneg _).aestronglyMeasurable
+    (ae_comp_norm_fderiv_nonneg hΦm hΦ0 _)).1 <|
+    ne_top_of_le_ne_top hint.lintegral_lt_top.ne
+      (hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ hΦ0.le)
 
 /-- **Bochner-integral Pólya–Szegő inequality for Lipschitz functions.** For any additive Haar
 measure `μ`, `K`-Lipschitz `h`, and convex nondecreasing `Φ` on `[0, ∞)` with `Φ 0 = 0`, if
@@ -397,14 +392,12 @@ theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_le
     ∫ x, Φ ‖fderiv ℝ (fun z ↦
         (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ∂μ ≤
       ∫ x, Φ ‖fderiv ℝ h x‖ ∂μ := by
-  have hnonneg (w : E → ℝ) (x : E) : 0 ≤ Φ ‖fderiv ℝ w x‖ :=
-    hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) (norm_nonneg _) (norm_nonneg _)
   have hint' := hh.integrable_comp_norm_fderiv_toReal_schwarzRearrangement hΦ hΦm hΦ0 hint
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hnonneg _)) hint'.aestronglyMeasurable,
-    integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hnonneg h)) hint.aestronglyMeasurable]
-  exact ENNReal.toReal_mono
-    ((lintegral_ofReal_ne_top_iff_integrable hint.aestronglyMeasurable
-      (ae_of_all _ (hnonneg h))).2 hint)
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_comp_norm_fderiv_nonneg hΦm hΦ0 _)
+      hint'.aestronglyMeasurable,
+    integral_eq_lintegral_of_nonneg_ae (ae_comp_norm_fderiv_nonneg hΦm hΦ0 h)
+      hint.aestronglyMeasurable]
+  exact ENNReal.toReal_mono hint.lintegral_lt_top.ne
     (hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ hΦ0.le)
 
 end LipschitzWith
