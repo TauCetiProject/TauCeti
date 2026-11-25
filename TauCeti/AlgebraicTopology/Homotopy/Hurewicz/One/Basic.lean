@@ -77,6 +77,7 @@ public section
 noncomputable section
 
 open CategoryTheory Convexity Simplicial unitInterval TauCeti.TopCat
+open Convexity.StdSimplex (faceInclusion faceInclusion_apply)
 
 universe u
 
@@ -87,51 +88,63 @@ local notation "toI" => (StdSimplex.homeomorphI : C(StdSimplex ℝ (Fin 2), I))
 
 variable {R : Type u} [Ring R] {X : TopCat.{u}}
 
-/-- The inclusion of the `i`-th facet of the standard `2`-simplex. -/
-private def face (i : Fin 3) : C(StdSimplex ℝ (Fin 2), StdSimplex ℝ (Fin 3)) :=
-  ⟨StdSimplex.map i.succAbove, StdSimplex.continuous_map ℝ _⟩
-
 section FaceWeights
 
 variable (a : StdSimplex ℝ (Fin 2))
 
-@[simp] private lemma face_zero_weights_zero : (face 0 a).weights 0 = 0 :=
-  StdSimplex.weights_map_succAbove_self 0 a
-@[simp] private lemma face_zero_weights_one : (face 0 a).weights 1 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
+private lemma face_zero_weights_zero : (faceInclusion 0 a).weights 0 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 0 a
+private lemma face_zero_weights_one : (faceInclusion 0 a).weights 1 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_zero_weights_two : (face 0 a).weights 2 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
+private lemma face_zero_weights_two : (faceInclusion 0 a).weights 2 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_one_weights_zero : (face 1 a).weights 0 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
+private lemma face_one_weights_zero : (faceInclusion 1 a).weights 0 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_one_weights_one : (face 1 a).weights 1 = 0 :=
-  StdSimplex.weights_map_succAbove_self 1 a
-@[simp] private lemma face_one_weights_two : (face 1 a).weights 2 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
+private lemma face_one_weights_one : (faceInclusion 1 a).weights 1 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 1 a
+private lemma face_one_weights_two : (faceInclusion 1 a).weights 2 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_two_weights_zero : (face 2 a).weights 0 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
+private lemma face_two_weights_zero : (faceInclusion 2 a).weights 0 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_two_weights_one : (face 2 a).weights 1 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
+private lemma face_two_weights_one : (faceInclusion 2 a).weights 1 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_two_weights_two : (face 2 a).weights 2 = 0 :=
-  StdSimplex.weights_map_succAbove_self 2 a
+private lemma face_two_weights_two : (faceInclusion 2 a).weights 2 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 2 a
 
 end FaceWeights
 
+-- In this file `simp` computes the weights of points of the facets with the lemmas above, so it
+-- keeps the facet inclusion folded.
+attribute [local simp] face_zero_weights_zero face_zero_weights_one face_zero_weights_two
+  face_one_weights_zero face_one_weights_one face_one_weights_two
+  face_two_weights_zero face_two_weights_one face_two_weights_two
+attribute [-simp] faceInclusion_apply
+
 private lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3)
-    (g : C(I, X)) (h : f.comp (face i) = g.comp toI) :
+    (g : C(I, X)) (h : f.comp (faceInclusion i) = g.comp toI) :
     (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g :=
-  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ congr($h w)).trans
+  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ (faceInclusion_apply i w).symm ▸ congr($h w)).trans
     ((X.toSSetObjEquiv _).symm_apply_eq.2 (toSSetObjEquiv_simplex₁ g).symm)
 
 private lemma d_simplexMapChain (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
-    (h₀ : f.comp (face 0) = g₀.comp toI)
-    (h₁ : f.comp (face 1) = g₁.comp toI)
-    (h₂ : f.comp (face 2) = g₂.comp toI) :
+    (h₀ : f.comp (faceInclusion 0) = g₀.comp toI)
+    (h₁ : f.comp (faceInclusion 1) = g₁.comp toI)
+    (h₂ : f.comp (faceInclusion 2) = g₂.comp toI) :
     ((singularChains R).obj X).d 2 1 (simplexMapChain R f) =
       pathChain R g₀ - pathChain R g₁ + pathChain R g₂ := by
   rw [singularChains_d_simplexChain (n := 1), Fin.sum_univ_three,
