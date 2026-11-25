@@ -21,7 +21,8 @@ placed in degree zero of `D(A)`, is not `(f)`-completely flat: its derived reduc
 in degree zero has none.
 
 The derived reduction is computed on the two-term resolution `A --f--> A` of `A ⧸ (f)`, the
-projective resolution given by the short exact sequence `TauCeti.regularElementShortComplex`
+projective resolution given by the short exact sequence
+`TauCeti.mulQuotientSpanSingletonShortComplex`
 (`CategoryTheory.ShortComplex.ShortExact.projectiveResolution`): it is K-flat, so the derived
 reduction is its degreewise reduction `A ⧸ (f) --0--> A ⧸ (f)`, whose differential vanishes
 because `f` maps to zero in `A ⧸ (f)`. For `A = ℤ` and `f = p` this shows that `F_p` is not
@@ -59,8 +60,8 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
       ((derivedReduction (Ideal.span {f})).obj
         ((singleFunctor (ModuleCat.{u} A) 0).obj (ModuleCat.of A (A ⧸ Ideal.span {f}))))) := by
   intro hz
-  set R := (regularElementShortComplex_shortExact (isRegular_iff_mem_nonZeroDivisors.2 hf).left
-    ).projectiveResolution
+  set R := (mulQuotientSpanSingletonShortComplex_shortExact
+    (isRegular_iff_mem_nonZeroDivisors.2 hf).left).projectiveResolution
   let P := R.cochainComplex
   have : P.IsKFlat :=
     CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P 0 fun _ ↦ inferInstance
@@ -76,7 +77,7 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
   -- the differentials into and out of degree `-1` vanish
   have hin : B.d (-2) (-1) = 0 :=
     IsZero.eq_of_src (F.map_isZero
-      (((regularElementShortComplex f).isZero_resolutionComplex_X_add_two 0).of_iso
+      (((mulQuotientSpanSingletonShortComplex f).isZero_resolutionComplex_X_add_two 0).of_iso
         (R.cochainComplexXIso (-2) 2))) _ _
   -- `R.complex` is `resolutionComplex` by definition (`projectiveResolution_complex`), whose
   -- differential `R.complex.d 1 0` is multiplication by `f` (`resolutionComplex_d_one_zero`);
