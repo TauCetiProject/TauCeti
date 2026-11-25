@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.RingTheory.Normal.SeparablyGenerated
+import TauCeti.RingTheory.TensorProduct.IsDomain
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Normal schemes
@@ -62,6 +64,14 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_pullback_of_isSeparablyGenerated`: base change of a
   normal scheme over a field `k` along a finitely generated separably generated field extension
   `K / k` is normal (Stacks, Lemma 33.10.6 (0C3M), for `K` finitely generated over `k`).
+* `TauCeti.AlgebraicGeometry.not_isIntegral_pullback_of_mul_self_mem_range`: if `A` contains an
+  element `a ∉ k` with `a * a ∈ k`, then `Spec A ×_{Spec k} Spec A` is not integral, so the
+  conclusion of the previous result cannot be strengthened to integrality.
+* `TauCeti.AlgebraicGeometry.not_isReduced_pullback_of_pow_char_mem_range`: in prime
+  characteristic `p`, if `A` contains an element `a ∉ k` with `a ^ p ∈ k`, then
+  `Spec A ×_{Spec k} Spec A` is not reduced, hence not normal (by `IsNormalScheme.isReduced`); for
+  a field `A` this is the base change of the normal scheme `Spec A` along an inseparable
+  extension.
 
 ## References
 
@@ -282,6 +292,38 @@ theorem isNormalScheme_pullback_of_isSeparablyGenerated {k K : Type u} [Field k]
   isNormalScheme_pullback_of_forall_tensorProduct
     (fun _ _ _ hB q _ ↦
       forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparablyGenerated hB q) f
+
+open Limits in
+/-- **The base change of `Spec A` along `A` need not be integral.** If `k` is a field and the
+`k`-algebra `A` contains an element `a ∉ k` with `a * a ∈ k` (for instance `i` with `i * i = -1`
+in `ℚ(i)` over `ℚ`), then `Spec A ×_{Spec k} Spec A = Spec (A ⊗[k] A)` is not integral. -/
+theorem not_isIntegral_pullback_of_mul_self_mem_range {k A : Type u} [Field k] [CommRing A]
+    [Algebra k A] {a : A} (ha : a ∉ Set.range (algebraMap k A))
+    (haa : a * a ∈ Set.range (algebraMap k A)) :
+    ¬ IsIntegral (pullback (Spec.map (CommRingCat.ofHom (algebraMap k A)))
+      (Spec.map (CommRingCat.ofHom (algebraMap k A)))) := by
+  intro _
+  have := IsIntegral.of_isIso (pullbackSpecIso k A A).hom
+  rw [affine_isIntegral_iff] at this
+  exact not_isDomain_tensorProduct_of_mul_self_mem_range ha haa this
+
+open Limits in
+open scoped TensorProduct in
+/-- **Separability cannot be dropped.** If `k` is a field of prime characteristic `p` and the
+`k`-algebra `A` contains an element `a ∉ k` with `a ^ p ∈ k`, then
+`Spec A ×_{Spec k} Spec A = Spec (A ⊗[k] A)` is not reduced, so by `IsNormalScheme.isReduced` it
+is not normal. When `A` is a field, `Spec A` is normal and this is its base change along the
+inseparable extension `A / k`. -/
+theorem not_isReduced_pullback_of_pow_char_mem_range {k A : Type u} [Field k] [CommRing A]
+    [Algebra k A] (p : ℕ) [Fact p.Prime] [CharP k p] {a : A}
+    (ha : a ∉ Set.range (algebraMap k A)) (hap : a ^ p ∈ Set.range (algebraMap k A)) :
+    ¬ IsReduced (pullback (Spec.map (CommRingCat.ofHom (algebraMap k A)))
+      (Spec.map (CommRingCat.ofHom (algebraMap k A)))) := by
+  intro _
+  have : IsReduced (Spec (.of (A ⊗[k] A))) := isReduced_of_isOpenImmersion
+    (pullbackSpecIso k A A).inv
+  rw [affine_isReduced_iff] at this
+  exact not_isReduced_tensorProduct_of_pow_char_mem_range p ha hap this
 
 end AlgebraicGeometry
 

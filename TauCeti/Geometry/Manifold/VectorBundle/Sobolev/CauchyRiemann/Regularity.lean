@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import Mathlib.Tactic.Module
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 
@@ -164,8 +164,7 @@ theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
     (η := fun z x ↦ -(2 : ℝ) • A.chartZeroOrder D i z x 1)
     (((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).prod isOpen_univ)
     contDiffOn_const hη
-    (fun z hz ↦ ⟨(A.image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i) hz, mem_univ _⟩)
+    (fun z hz ↦ ⟨A.image_subset_target_inter_preimage_baseSet i hz, mem_univ _⟩)
     (.of_forall fun _ ↦ lsmul_I_mul_lsmul_I)
     (isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero A hD hDs hp hw i)
 
