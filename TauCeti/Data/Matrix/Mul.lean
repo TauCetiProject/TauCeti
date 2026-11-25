@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
 
 /-!
@@ -29,6 +30,9 @@ out to the left without any commutativity, since the left factor has entries `0`
 
 Transposing a product of rectangular matrices and passing to the opposite ring reverses the
 factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+
+Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
+are `R`-linear combinations of the entries of the middle factor.
 
 By associativity of rectangular matrix multiplication, a left inverse and a right inverse of the
 same matrix are equal, and reindexing the rows and columns of a two-sided invertible rectangular
@@ -55,6 +59,8 @@ matrix to a common finite index type gives a unit in the square matrix ring.
   reindexed vectors.
 * `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
   the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
+  `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 * `Matrix.left_inv_eq_right_inv`: a left inverse and a right inverse of a rectangular matrix are
   equal.
 * `Matrix.isUnit_submatrix_equiv_of_mul_eq_one`: reindexing a two-sided invertible rectangular
@@ -224,6 +230,17 @@ theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix
   simp [Matrix.mul_apply]
 
 end MulOpposite
+
+/-- The entries of a matrix over an `R`-algebra `A` sandwiched between two matrices over `R` are
+`R`-linear combinations of its entries. -/
+theorem map_algebraMap_mul_mul_map_algebraMap_apply {R A l m n o : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype m] [Fintype n] (F : Matrix l m R) (u : Matrix m n A)
+    (G : Matrix n o R) (i : l) (j : o) :
+    (F.map (algebraMap R A) * u * G.map (algebraMap R A)) i j =
+      ∑ q, ∑ p, (F i p * G q j) • u p q := by
+  simp only [Matrix.mul_apply, map_apply, Finset.sum_mul, Algebra.smul_def, map_mul]
+  refine Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [mul_assoc, ← Algebra.commutes (G q j), ← mul_assoc]
 
 section Semiring
 

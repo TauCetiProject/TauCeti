@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Acyclic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CarrierHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialComplex.InducedChainMap
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Basic
 
@@ -44,10 +44,19 @@ hypothesis, so `λ_# ∘ Sd = 1` on ordered chains
 subdivision is `[{v₀}, {v₀, v₁}] - [{v₁}, {v₀, v₁}]`, and the last-vertex map sends the first
 simplex to the edge and collapses the second.
 
+The other composite `Sd ∘ λ_#` is chain homotopic to the identity, so that `Sd` is a chain homotopy
+equivalence with homotopy inverse `λ_#` (`TauCeti.subdivisionHomotopyEquiv`). This is the acyclic
+carrier theorem `TauCeti.orderedSimplicialChainComplexHomotopyOfCarrier`: a face `τ` of the
+subdivision, a chain of faces of `K`, is carried together with `Sd (λ_# τ)` by the subdivision of
+the largest face of `K` in `τ`, which is a cone with that face, the largest vertex of `τ`, as cone
+vertex.
+
 ## Main definitions
 
 * `TauCeti.OrderedSimplicialChain.subdivision`: the subdivision operator on ordered chains.
 * `TauCeti.subdivisionChainMap`: the subdivision chain map of ordered chain complexes.
+* `TauCeti.subdivisionHomotopyEquiv`: the barycentric subdivision chain map, as a chain homotopy
+  equivalence with homotopy inverse the last-vertex map.
 
 ## Main results
 
@@ -118,18 +127,6 @@ theorem augmentation_comp_subdivision_zero :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp
 
-/-- Every cell in the subdivision of the boundary of a cell `c` lies in the subdivision of a
-codimension-one face of `c`. -/
-theorem exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary {n : ℕ}
-    (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
-    (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
-    ∃ j, e ∈ (subdivision (L := L) R b n (single (c.face j) 1)).support := by
-  classical
-  rw [boundary_single, map_sum] at he
-  obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
-  rw [map_smul] at he
-  exact ⟨j, Finsupp.support_smul he⟩
-
 /-- **Simplices of the subdivision of a cell are spanned by barycenters of its faces.** Every
 vertex of a cell in the support of the subdivision of a cell `c` is the barycenter of a face of
 `c`. -/
@@ -150,7 +147,7 @@ theorem exists_le_eq_of_mem_support_subdivision {n : ℕ} (c : RealizationCell K
     rw [RealizationCell.cone_val] at hw
     rcases Finset.mem_insert.mp hw with rfl | hw
     · exact ⟨c.val, le_rfl, rfl⟩
-    · obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
+    · obtain ⟨j, he⟩ := exists_mem_support_face_of_mem_support_boundary _ c he
       obtain ⟨τ, hτ, rfl⟩ := ih (c.face j) he hw
       exact ⟨τ, hτ.trans (c.face_val_subset j), rfl⟩
 
@@ -165,24 +162,11 @@ theorem subset_of_mem_support_map_subdivision
   classical
   rw [← (subdivision R b n (single c 1)).sum_single, Finsupp.sum, map_sum] at hd
   obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
-  rw [map_single] at hd
-  have hd := Finsupp.support_smul hd
-  by_cases hinj : Function.Injective (f ∘ e.vertexEmbedding)
-  · by_cases hK : Finset.univ.image (f ∘ e.vertexEmbedding) ∈ K
-    · obtain ⟨d', σ, hσ⟩ := RealizationCell.exists_eq_vertexEmbedding_comp hinj hK
-      rw [hσ, tupleChain_vertexEmbedding_comp] at hd
-      obtain rfl := Finset.mem_singleton.mp
-        (Finsupp.support_single_subset (Finsupp.support_smul hd))
-      intro v hv
-      have hv' : v ∈ Finset.univ.image (f ∘ e.vertexEmbedding) := by
-        rwa [hσ, ← Finset.image_image, Finset.image_univ_of_surjective σ.surjective,
-          d.image_vertexEmbedding]
-      obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hv'
-      obtain ⟨τ, hτ, hτb⟩ := exists_le_eq_of_mem_support_subdivision c he (e.vertexEmbedding_mem i)
-      simp only [Function.comp_apply, ← hτb]
-      exact hτ (hf τ)
-    · simp [tupleChain_eq_zero_of_image_notMem hK] at hd
-  · simp [tupleChain_eq_zero_of_not_injective hinj] at hd
+  rw [val_eq_image_of_mem_support_map_single f hd]
+  intro v hv
+  obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hv
+  obtain ⟨τ, hτ, rfl⟩ := exists_le_eq_of_mem_support_subdivision c he hw
+  exact hτ (hf τ)
 
 variable (hb : StrictMono b)
   (hL : ∀ ⦃s : Finset ι⦄, s ∈ L → ∀ ρ : TauCeti.SetLike.Face K,
@@ -195,7 +179,7 @@ theorem forall_lt_and_insert_mem_of_mem_support_subdivision_boundary {n : ℕ}
     (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
     (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
     (∀ w ∈ e.val.val, w < b c.val) ∧ insert (b c.val) e.val.val ∈ L := by
-  obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
+  obtain ⟨j, he⟩ := exists_mem_support_face_of_mem_support_boundary _ c he
   have hlt : ∀ w ∈ e.val.val, ∃ τ < c.val, b τ = w := fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ := exists_le_eq_of_mem_support_subdivision (c.face j) he hw
     exact ⟨τ, lt_of_le_of_lt hτ (c.face_val_ssubset j), rfl⟩
@@ -218,7 +202,8 @@ theorem boundary_comp_subdivision (n : ℕ) :
     simp only [LinearMap.coe_comp, Function.comp_apply, lsingle_apply, subdivision_succ_single,
       zero_add, pow_one, neg_smul, one_smul, map_neg,
       boundary_cone_zero fun _ he ↦
-        forall_lt_and_insert_mem_of_mem_support_subdivision_boundary hb hL c he,
+        (forall_lt_and_insert_mem_of_mem_support_subdivision_boundary hb hL c he).imp_left
+          fun h w hw ↦ (h w hw).le,
       hε, hε₀, single_zero, zero_sub, neg_neg]
   | succ n ih =>
     refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
@@ -230,7 +215,8 @@ theorem boundary_comp_subdivision (n : ℕ) :
         map_zero]
     simp only [LinearMap.coe_comp, Function.comp_apply, lsingle_apply, subdivision_succ_single,
       map_smul, boundary_cone_succ fun _ he ↦
-        forall_lt_and_insert_mem_of_mem_support_subdivision_boundary hb hL c he,
+        (forall_lt_and_insert_mem_of_mem_support_subdivision_boundary hb hL c he).imp_left
+          fun h w hw ↦ (h w hw).le,
       hz, map_zero, zero_add, smul_smul, ← pow_add, Even.neg_one_pow ⟨n + 2, rfl⟩, one_smul]
 
 /-- **A simplicial map sending barycenters to vertices of their faces inverts `Sd` on the left.**
@@ -305,7 +291,8 @@ theorem subdivisionChainMap_f (n : ℕ) :
     (subdivisionChainMap R hb hL).f n =
       eqToHom (orderedSimplicialChainComplex_X R n) ≫
         ModuleCat.ofHom (subdivision R b n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
-  orderedSimplicialChainComplexHomOfLinear_f R _ _ n
+  (orderedSimplicialChainComplexHomOfLinear_f R _ _ n).trans
+    (orderedSimplicialChainComplexXHomOfLinearMap_def R _)
 
 /-- A simplicial map sending the barycenter of every face to a vertex of that face is a left
 inverse of the subdivision chain map. -/
@@ -339,3 +326,144 @@ theorem map_lastVertexMap_comp_subdivision (n : ℕ) :
     (fun τ ↦ by rw [lastVertexMap_subdivisionBarycenter]; exact Finset.max'_mem _ _) n
 
 end TauCeti.OrderedSimplicialChain
+
+namespace TauCeti
+
+open AbstractSimplicialComplex OrderedSimplicialChain
+
+variable {α : Type u} [LinearOrder α] (K : _root_.AbstractSimplicialComplex α)
+
+section SubdivisionCarrier
+
+/-- The cone vertex of the carrier of a face of the barycentric subdivision: its largest vertex,
+which is the largest face of `K` in the chain of faces it spans. -/
+private def subdivisionCarrierVertex
+    (τ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K)) :
+    LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex) :=
+  τ.val.max' ((orderedBarycentricSubdivision K).isRelLowerSet_faces τ.property).1
+
+/-- The carrier of a face `τ` of the barycentric subdivision: the faces of the barycentric
+subdivision spanned by faces of the largest face of `K` in `τ`. -/
+private def subdivisionCarrier (τ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K))
+    (s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))) :
+    Prop :=
+  ∀ w ∈ s, subdivisionFace K w ⊆ subdivisionFace K (subdivisionCarrierVertex K τ)
+
+omit [LinearOrder α] in
+/-- Every face of the barycentric subdivision lies in its own carrier. -/
+private theorem subdivisionCarrier_self
+    (τ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K)) :
+    subdivisionCarrier K τ τ.val := fun _ hw ↦
+  subdivisionFace_subset_subdivisionFace_max' K τ.property hw
+
+omit [LinearOrder α] in
+/-- The carrier of `τ` lies in the closed cone at the largest vertex of `τ`. -/
+private theorem subdivisionCarrier_cone
+    (τ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K))
+    (s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)))
+    (hs : s ∈ orderedBarycentricSubdivision K) (hP : subdivisionCarrier K τ s) :
+    (∀ w ∈ s, w ≤ subdivisionCarrierVertex K τ) ∧
+      insert (subdivisionCarrierVertex K τ) s ∈ orderedBarycentricSubdivision K :=
+  ⟨fun w hw ↦ le_of_subdivisionFace_subset K (hP w hw),
+    insert_mem_orderedBarycentricSubdivision K hs hP⟩
+
+omit [LinearOrder α] in
+/-- The carrier of `τ` is closed under adjoining the largest vertex of `τ`. -/
+private theorem subdivisionCarrier_insert
+    (τ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K))
+    (s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)))
+    (hP : subdivisionCarrier K τ s) :
+    subdivisionCarrier K τ (insert (subdivisionCarrierVertex K τ) s) := fun w hw ↦ by
+  rcases Finset.mem_insert.mp hw with rfl | hw
+  exacts [subset_rfl, hP w hw]
+
+omit [LinearOrder α] in
+/-- The carriers increase with the face of the subdivision. -/
+private theorem subdivisionCarrier_mono
+    {τ σ : TauCeti.SetLike.Face (orderedBarycentricSubdivision K)} (hτσ : τ ≤ σ)
+    (s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)))
+    (hP : subdivisionCarrier K τ s) : subdivisionCarrier K σ s := fun w hw ↦
+  (hP w hw).trans (subdivisionCarrier_self K σ _
+    (SetLike.face_le_iff.mp hτσ (Finset.max'_mem _ _)))
+
+variable (R : Type v) [Ring R]
+
+/-- `Sd ∘ λ_#` sends a cell of the barycentric subdivision to a chain supported on its carrier. -/
+private theorem subdivisionCarrier_of_mem_support_subdivision_map {n : ℕ}
+    (c : RealizationCell (orderedBarycentricSubdivision K) n)
+    {d : RealizationCell (orderedBarycentricSubdivision K) n}
+    (hd : d ∈ (subdivision R (subdivisionBarycenter K) n
+      (map R (lastVertexMap K) n (single c 1))).support) :
+    subdivisionCarrier K c.val d.val.val := by
+  classical
+  rw [← (map R (lastVertexMap K) n (single c 1)).sum_single, Finsupp.sum, map_sum] at hd
+  obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
+  rw [← smul_single_one, map_smul] at hd
+  intro w hw
+  obtain ⟨τ, hτ, rfl⟩ := exists_le_eq_of_mem_support_subdivision e (Finsupp.support_smul hd) hw
+  -- The face `τ` lies in the image of `c` under the last-vertex map, which lies in the largest
+  -- face of `K` in `c`.
+  intro x hx
+  have hx : x ∈ c.val.val.image (lastVertexMap K) := by
+    rw [← val_eq_image_of_mem_support_map_single _ he]
+    exact SetLike.face_le_iff.mp hτ (by simpa using hx)
+  obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp hx
+  exact subdivisionCarrier_self K c.val p hp
+    (by rw [lastVertexMap_apply]; exact Finset.max'_mem _ _)
+
+end SubdivisionCarrier
+
+variable (R : Type v) [Ring R]
+
+/-- **The barycentric subdivision chain map is a chain homotopy equivalence**, with homotopy
+inverse the map induced by the last-vertex map. The composite `λ_# ∘ Sd` is the identity
+(`subdivisionChainMap_comp_orderedSimplicialChainComplexMap`), and `Sd ∘ λ_#` is homotopic to the
+identity by the acyclic carrier theorem: a cell `τ` of the subdivision and its image under
+`Sd ∘ λ_#` both lie in the subdivision of the largest face of `K` in `τ`, which is a cone with that
+face as cone vertex. -/
+def subdivisionHomotopyEquiv :
+    HomotopyEquiv (orderedSimplicialChainComplex K R)
+      (orderedSimplicialChainComplex (orderedBarycentricSubdivision K) R) where
+  hom := subdivisionChainMap R (strictMono_subdivisionBarycenter K)
+    (insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision K)
+  inv := orderedSimplicialChainComplexMap R (lastVertexMap K)
+  homotopyHomInvId := Homotopy.ofEq (subdivisionChainMap_comp_orderedSimplicialChainComplexMap R _
+    _ (lastVertexMap K)
+    (fun τ ↦ by rw [lastVertexMap_subdivisionBarycenter]; exact Finset.max'_mem _ _))
+  homotopyInvHomId :=
+    (Homotopy.ofEq (by
+      simp only [subdivisionChainMap, orderedSimplicialChainComplexMap_def,
+        orderedSimplicialChainComplexHomOfLinear_comp])).trans <|
+    (orderedSimplicialChainComplexHomotopyOfCarrier
+      (φ := fun n ↦ subdivision R (subdivisionBarycenter K) n ∘ₗ map R (lastVertexMap K) n)
+      (ψ := fun _ ↦ LinearMap.id)
+      (fun n ↦ by
+        rw [← LinearMap.comp_assoc, boundary_comp_subdivision (strictMono_subdivisionBarycenter K)
+          (insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision K),
+          LinearMap.comp_assoc, boundary_comp_map, LinearMap.comp_assoc])
+      (fun n ↦ (LinearMap.comp_id _).trans (LinearMap.id_comp _).symm)
+      (subdivisionCarrier_cone K) (fun τ s _ ↦ subdivisionCarrier_insert K τ s)
+      (fun _ _ hτσ s _ ↦ subdivisionCarrier_mono K hτσ s)
+      (fun _ c _ hd ↦ subdivisionCarrier_of_mem_support_subdivision_map K R c hd)
+      (fun _ c d hd ↦ by
+        obtain rfl := Finset.mem_singleton.mp (Finsupp.support_single_subset hd)
+        exact subdivisionCarrier_self K _)
+      (by rw [← LinearMap.comp_assoc, augmentation_comp_subdivision_zero,
+        augmentation_comp_map_zero, LinearMap.comp_id])).trans <|
+    Homotopy.ofEq (orderedSimplicialChainComplexHomOfLinear_id R _)
+
+/-- The forward map of the subdivision homotopy equivalence is the subdivision chain map. -/
+@[simp]
+theorem subdivisionHomotopyEquiv_hom :
+    (subdivisionHomotopyEquiv K R).hom = subdivisionChainMap R (strictMono_subdivisionBarycenter K)
+      (insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision K) :=
+  (rfl)
+
+/-- The homotopy inverse of the subdivision chain map is the map induced by the last-vertex
+map. -/
+@[simp]
+theorem subdivisionHomotopyEquiv_inv :
+    (subdivisionHomotopyEquiv K R).inv = orderedSimplicialChainComplexMap R (lastVertexMap K) :=
+  (rfl)
+
+end TauCeti

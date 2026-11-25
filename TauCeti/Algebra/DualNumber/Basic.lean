@@ -29,7 +29,9 @@ Multiplication by `ε` is exact over any semiring. Over any ring, each element
 infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`, and `1 + inr c`
 determines `c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
-their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
+their value on `ε`. In particular an `R`-algebra endomorphism `f` of `R[ε]` multiplies
+`ε`-coefficients by that of `f ε`, and over a reduced semiring `f ε` has zero `R`-component, so
+`f ε = (f ε).snd • ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
 are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
 linear maps out of them are determined by their values on `1` and `ε`.
 -/
@@ -151,6 +153,36 @@ theorem apply_dualNumber {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring
     AlgHom.comp_apply, inlAlgHom_apply] using hz.symm
 
 end AlgHom
+
+namespace DualNumber
+
+open TrivSqZeroExt
+
+variable {R : Type*} [CommSemiring R] {F : Type*} [FunLike F R[ε] R[ε]] [AlgHomClass F R R[ε] R[ε]]
+
+/-- The `ε`-coefficient of the image of `x` under an endomorphism `f` of the dual numbers is the
+`ε`-coefficient of `x` times that of `f ε`. -/
+theorem snd_apply_eq_snd_mul_snd_apply_eps (f : F) (x : R[ε]) : (f x).snd = x.snd * (f ε).snd := by
+  have h := congrArg snd ((AlgHom.ofClass f).apply_dualNumber x)
+  rw [← algebraMap_eq_inl, AlgHom.commutes, AlgHom.commutes] at h
+  simpa [DualNumber.snd_mul, algebraMap_eq_inl] using h
+
+/-- Over a reduced semiring, an endomorphism of the dual numbers sends `ε` to an element with zero
+`R`-component. -/
+@[simp]
+theorem fst_apply_eps_eq_zero [IsReduced R] (f : F) : (f ε).fst = 0 :=
+  ((isNilpotent_eps.map f).map (fstHom R R R)).eq_zero
+
+/-- A dual number is a multiple of `ε` exactly when its `R`-component vanishes. Applied to the
+image `f ε` of `ε` under an endomorphism `f`, this says that `f ε = (f ε).snd • ε` exactly when
+`(f ε).fst = 0`, which always holds over a reduced semiring
+(`DualNumber.fst_apply_eps_eq_zero`). -/
+theorem eq_snd_smul_eps_iff (x : R[ε]) : x = x.snd • ε ↔ x.fst = 0 := by
+  refine ⟨fun h ↦ by rw [h, fst_smul, fst_eps, smul_zero], fun h ↦ ?_⟩
+  conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
+  rw [h, inl_zero, zero_add, inr_eq_smul_eps]
+
+end DualNumber
 
 namespace DualNumber
 
