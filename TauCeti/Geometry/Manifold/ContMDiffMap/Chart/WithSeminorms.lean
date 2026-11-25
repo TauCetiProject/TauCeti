@@ -140,6 +140,45 @@ end ContMDiffMap
 
 namespace TauCeti
 
+section ChartDerivatives
+
+open Bornology ContMDiffMap Filter _root_.Manifold
+open scoped ContDiff
+
+variable {𝕜 E H M F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ∞ω} [IsManifold I n M]
+
+/-- Eventual bounds for the coordinate derivatives on compact subsets of chart targets imply that
+the range of the sequence is bounded in the weak Whitney topology. -/
+theorem isVonNBounded_range_of_eventually_norm_iteratedFDerivWithin_le
+    (f : ℕ → C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (hb : ∀ (x : M) (K : Set E), IsCompact K → K ⊆ (extChartAt I x).target →
+      ∀ m : ℕ, m ≤ n → ∃ R : ℝ, ∀ᶠ i in atTop, ∀ y ∈ K,
+        ‖iteratedFDerivWithin 𝕜 m (f i ∘ (extChartAt I x).symm) (extChartAt I x).target y‖ ≤ R) :
+    IsVonNBounded 𝕜 (range f) := by
+  apply isVonNBounded_iff_forall_exists_norm_chartIteratedFDeriv_le.2
+  intro x m hm K
+  let T := (extChartAt I x).target
+  let K' := Subtype.val '' (K : Set T)
+  have hK' : IsCompact K' := K.isCompact.image continuous_subtypeVal
+  obtain ⟨R, hR⟩ := hb x K' hK' (image_val_subset (γ := (K : Set T))) m hm
+  let p (i : ℕ) := chartDerivativeSeminorm x K m hm (f i)
+  have hp : IsBoundedUnder (· ≤ ·) atTop p := by
+    refine ⟨max 0 R, hR.mono fun i hi ↦ ?_⟩
+    exact (chartDerivativeSeminorm_le_iff x K m hm (f i) (le_max_left ..)).mpr
+      fun y hy ↦ by
+        rw [chartIteratedFDeriv_self_target_apply]
+        exact (hi y ⟨y, hy, rfl⟩).trans (le_max_right ..)
+  obtain ⟨C, hC⟩ := hp.bddAbove_range
+  refine ⟨max 0 C, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  exact (chartDerivativeSeminorm_le_iff x K m hm (f i) (le_max_left ..)).mp
+    ((hC (mem_range_self i)).trans (le_max_right ..))
+
+end ChartDerivatives
+
 -- The vector-space structure travels with the scoped weak Whitney topology.
 scoped[TauCeti.ManifoldWeakWhitney] attribute [instance]
   ContMDiffMap.isTopologicalAddGroup_manifoldWeakWhitney
