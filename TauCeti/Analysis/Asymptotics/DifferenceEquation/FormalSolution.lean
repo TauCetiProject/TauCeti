@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
 import Mathlib.Analysis.Analytic.Binomial
-import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Formal solutions of second-order linear difference equations
@@ -103,11 +103,6 @@ private def ApproxTo (l : Filter ι) (w : ι → ℂ) (M : ℕ) (F : ι → ℂ)
     Prop :=
   (fun i ↦ F i - (PowerSeries.trunc (M + 1) P).eval (w i)) =O[l] fun i ↦ w i ^ (M + 1)
 
-/-- `PowerSeries.eval₂_trunc_eq_sum_range` for `Polynomial.eval`. -/
-private lemma eval_trunc (n : ℕ) (P : PowerSeries ℂ) (x : ℂ) :
-    (PowerSeries.trunc n P).eval x = ∑ i ∈ range n, PowerSeries.coeff i P * x ^ i := by
-  simpa using PowerSeries.eval₂_trunc_eq_sum_range x (RingHom.id ℂ) n P
-
 private lemma isBigO_one_eval (hw : Tendsto w l (𝓝 0)) (p : Polynomial ℂ) :
     (fun i ↦ p.eval (w i)) =O[l] fun _ ↦ (1 : ℂ) :=
   ((p.continuous.tendsto 0).comp hw).isBigO_one ℂ
@@ -180,8 +175,8 @@ private lemma approxTo_one_add_mul_cpow (hw : Tendsto w l (𝓝 0)) (M : ℕ) (j
   refine IsBigO.congr_left (h.trans hcmp) fun i ↦ ?_
   simp only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries,
     FormalMultilinearSeries.apply_eq_prod_smul_coeff, prod_const, card_univ, Fintype.card_fin,
-    FormalMultilinearSeries.coeff_ofScalars, smul_eq_mul, Function.comp_apply, eval_trunc,
-    PowerSeries.coeff_mk, sub_right_inj]
+    FormalMultilinearSeries.coeff_ofScalars, smul_eq_mul, Function.comp_apply,
+    PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
   exact sum_congr rfl fun _ _ ↦ by ring
 
 end Approx
@@ -376,9 +371,9 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
   set u : ℕ → ℂ := fun n ↦ (n : ℂ)⁻¹
   have hu : Tendsto u atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
   have hF : ApproxTo atTop u N f (PowerSeries.mk fs) :=
-    hf.congr_left fun n ↦ by simp [eval_trunc, u, mul_comm]
+    hf.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, u, mul_comm]
   have hG : ApproxTo atTop u N g (PowerSeries.mk gs) :=
-    hg.congr_left fun n ↦ by simp [eval_trunc, u, mul_comm]
+    hg.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, u, mul_comm]
   have hbin := approxTo_one_add_mul_cpow hu N
   -- each term `aₛ n⁻ˢ (ρ² (1 + 2n⁻¹)^{α-s} + ρ f (1 + n⁻¹)^{α-s} + g)` and its series
   have hterm := approxTo_sum hu (range (N + 1)) fun s _ ↦ approxTo_mul hu
@@ -392,8 +387,8 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
   refine (hmain.congr' ?_ (Eventually.of_forall fun _ ↦ rfl)).trans ?_
   · filter_upwards [eventually_ne_atTop 0] with n hn
     simp only [Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_pow, Polynomial.coe_X,
-      Polynomial.eval_C, Polynomial.eval_mul, Polynomial.eval_pow, Polynomial.eval_X, eval_trunc,
-      u]
+      Polynomial.eval_C, Polynomial.eval_mul, Polynomial.eval_pow, Polynomial.eval_X,
+      PowerSeries.eval_trunc, u]
     rw [formalDifferenceSolution_residual_eq f g a ρ α (N + 1) hn, ← mul_sub]
     congr 2
     exact sum_congr rfl fun t ht ↦ by rw [coeff_sum_kernelSeries fs gs ρ α a (mem_range.1 ht)]
