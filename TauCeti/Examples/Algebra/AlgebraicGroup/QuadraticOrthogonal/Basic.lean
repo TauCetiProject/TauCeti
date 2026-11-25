@@ -44,7 +44,7 @@ entry squares to `1`. -/
 example {A : Type*} [CommRing A] [Algebra (ZMod 2) A] (g : GL (Fin 1) A) :
     g ∈ pointsSubgroup (ZMod 2) 1 (QuadraticMap.proj 0 0) A ↔
       (g : Matrix (Fin 1) (Fin 1) A) 0 0 ^ 2 = 1 := by
-  simp only [mem_pointsSubgroup_iff, baseChangeForm_proj]
+  simp only [mem_pointsSubgroup_iff, baseChangeForm_proj, QuadraticMap.proj_apply]
   refine ⟨fun h ↦ by simpa [mulVec, dotProduct, sq] using h fun _ ↦ 1, fun h x ↦ ?_⟩
   simp [mulVec, dotProduct, ← sq, mul_pow, h]
 
@@ -56,7 +56,7 @@ example (g : GL (Fin 2) (ZMod 2)) :
     g ∈ pointsSubgroup (ZMod 2) 2 (QuadraticMap.proj 0 1) (ZMod 2) ↔
       (g : Matrix (Fin 2) (Fin 2) (ZMod 2)) = 1 ∨
         (g : Matrix (Fin 2) (Fin 2) (ZMod 2)) = !![0, 1; 1, 0] := by
-  simp only [mem_pointsSubgroup_iff, baseChangeForm_proj]
+  simp only [mem_pointsSubgroup_iff, baseChangeForm_proj, QuadraticMap.proj_apply]
   set M := (g : Matrix (Fin 2) (Fin 2) (ZMod 2))
   have key : ∀ a b c d : ZMod 2,
       ((∀ x : Fin 2 → ZMod 2, (a * x 0 + b * x 1) * (c * x 0 + d * x 1) = x 0 * x 1) ↔
@@ -85,7 +85,8 @@ example {A : Type*} [CommRing A] (a : A) :
     nonsingInvUnit !![1, 2 * a, -a ^ 2; 0, 1, -a; 0, 0, 1] (by simp [det_fin_three]) ∈
       pointsSubgroup ℤ 3 (QuadraticMap.proj 0 2 + QuadraticMap.proj 1 1) A := by
   refine (mem_pointsSubgroup_iff _).2 fun x ↦ ?_
-  simp only [baseChangeForm_add, add_apply, baseChangeForm_proj, nonsingInvUnit]
+  simp only [baseChangeForm_add, add_apply, baseChangeForm_proj, QuadraticMap.proj_apply,
+    nonsingInvUnit]
   simp [mulVec, dotProduct, Fin.sum_univ_three]
   ring
 

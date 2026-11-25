@@ -135,16 +135,12 @@ theorem baseChangeForm_add (q q' : QuadraticForm R (ι → R)) (A : Type*) [Comm
   simp [Matrix.map_add, Matrix.add_mulVec]
 
 /-- The form with the coefficients of the coordinate product `xᵢ xⱼ` is again `xᵢ xⱼ`. -/
-theorem baseChangeForm_proj (i j : ι) (A : Type*) [CommRing A] [Algebra R A] (x : ι → A) :
-    baseChangeForm (QuadraticMap.proj (R := R) i j) A x = x i * x j := by
-  rw [baseChangeForm_apply, coefficientMatrix_proj]
-  rcases le_total i j with h | h
-  · simp only [h, inf_of_le_left, sup_of_le_right, Matrix.map_single, map_one,
-      Matrix.single_mulVec, one_mul]
-    exact dotProduct_single x (x j) i
-  · simp only [h, inf_of_le_right, sup_of_le_left, Matrix.map_single, map_one,
-      Matrix.single_mulVec, one_mul]
-    exact (dotProduct_single x (x i) j).trans (mul_comm _ _)
+@[simp]
+theorem baseChangeForm_proj (i j : ι) (A : Type*) [CommRing A] [Algebra R A] :
+    baseChangeForm (QuadraticMap.proj (R := R) i j) A = QuadraticMap.proj (R := A) i j := by
+  ext x
+  rcases le_total i j with h | h <;>
+    simp [h, Matrix.single_mulVec, dotProduct, Function.update_apply, mul_comm]
 
 end Coefficients
 
