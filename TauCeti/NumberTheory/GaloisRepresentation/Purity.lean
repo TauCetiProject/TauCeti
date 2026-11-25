@@ -14,8 +14,6 @@ public import TauCeti.NumberTheory.WeilNumber.IotaWeight
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
-import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
-
 /-!
 # Representations pure of a weight outside a set of places
 
