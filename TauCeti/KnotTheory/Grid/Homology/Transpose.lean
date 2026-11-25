@@ -38,8 +38,6 @@ diagonal reflection and under column commutations
 * `TauCeti.GridDiagram.unblockedHomologyTransposeEquiv_unblockedHomologyClass`,
   `TauCeti.GridDiagram.unblockedHomologyTransposeEquiv_symm_unblockedHomologyClass`: it and its
   inverse send the class of a cycle to the class of the reflected cycle.
-* `TauCeti.OddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_piece`: it preserves the
-  Alexander grading.
 * `unblockedHomologyTransposeEquiv_mem_bigradedUnblockedHomologyPiece`, in the namespace
   `TauCeti.OddComponentGridDiagram`: it preserves the `O`-Maslov--Alexander bigrading.
 * `TauCeti.GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_transpose`,
@@ -131,34 +129,9 @@ theorem transposeRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : G
   rw [hdegree]
   exact hc x.transpose e he
 
-/-- The diagonal reflection, including the renaming of the coefficient variables along `G.O`,
-preserves the Alexander grading of unblocked chains. -/
-theorem transposeRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
-    (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.val.transposeRenameEquiv R c ∈ G.transpose.alexanderChainMinusPiece R a := by
-  classical
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  rw [GridDiagram.transposeRenameEquiv_apply,
-    support_rename_of_injective G.val.O.toPerm.injective, Finset.mem_image] at he
-  obtain ⟨e, he, rfl⟩ := he
-  have hx := G.alexanderℤ_transpose x.transpose
-  rw [GridState.transpose_transpose] at hx
-  rw [hx, Finsupp.degree_mapDomain]
-  exact hc x.transpose e he
-
 end Chains
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-
-/-- The equivalence induced by the diagonal reflection preserves the Alexander grading on
-homology. -/
-theorem unblockedHomologyTransposeEquiv_mem_piece {a : ℤ} {y : G.val.unblockedHomology R}
-    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.val.unblockedHomologyTransposeEquiv R y ∈
-      (G.transpose.alexanderUnblockedHomologyGrading R).piece a :=
-  G.unblockedHomologyEquivOfIntertwining_mem_piece R G.transpose _ _
-    (fun _ _ hc => G.transposeRenameEquiv_mem_alexanderChainMinusPiece R hc) hy
 
 /-- The equivalence induced by the diagonal reflection preserves the `O`-Maslov--Alexander
 bigrading on homology. -/

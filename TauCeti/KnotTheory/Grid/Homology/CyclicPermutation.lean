@@ -14,8 +14,7 @@ public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 
 Cyclically permuting the rows or the columns of a grid diagram is a grid move
 (`GridDiagram.IsMove.cyclicRows`, `GridDiagram.IsMove.cyclicColumns`). This file constructs the
-equivalences that either move induces on the unblocked grid homology `GH⁻` and shows that they
-preserve the Alexander grading.
+equivalences that either move induces on the unblocked grid homology `GH⁻`.
 
 The chain-level input is that relabeling every grid state by the cyclic permutation intertwines
 the two unblocked differentials, after renaming the variables `V_c` along the same permutation
@@ -27,10 +26,7 @@ of the rows this is an isomorphism of modules over `R[V₀, …, V_{n-1}]`
 (`GridDiagram.unblockedHomologyRelabelRowsFinRotateEquiv`); for the columns it is semilinear along
 the renaming of the variables (`GridDiagram.unblockedHomologyRelabelColumnsFinRotateEquiv`).
 
-Both moves preserve the Alexander grading of grid states (`Grading/CyclicPermutation.lean`), so
-both equivalences preserve the Alexander grading of `GH⁻`
-(`OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`, in
-`Homology/Alexander.lean`). They also preserve the full `(O-Maslov, Alexander)` bigrading
+Both equivalences preserve the full `(O-Maslov, Alexander)` bigrading of `GH⁻`
 (`Homology/Bigraded/CyclicPermutation.lean`), so on a knot grid, where every variable acts as `U`
 and renaming the variables does not change the evaluation `V_c ↦ U`, both moves preserve `GH⁻` as
 a bigraded `R[U]`-module
@@ -44,12 +40,6 @@ homology are in `Homology/Symmetry.lean`.
 * `TauCeti.GridDiagram.unblockedHomologyRelabelRowsFinRotateEquiv`,
   `TauCeti.GridDiagram.unblockedHomologyRelabelColumnsFinRotateEquiv`: the equivalences induced by
   the cyclic permutations of the rows and of the columns.
-
-## Main results
-
-* `TauCeti.OddComponentGridDiagram.relabelRowsEquiv_mem_alexanderChainMinusPiece`,
-  `TauCeti.OddComponentGridDiagram.relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece`: the
-  chain-level relabelings preserve the Alexander grading.
 
 ## References
 
@@ -116,35 +106,5 @@ theorem unblockedHomologyRelabelColumnsFinRotateEquiv_unblockedHomologyClass
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 end GridDiagram
-
-namespace OddComponentGridDiagram
-
-variable {n : ℕ}
-
-/-! ### The Alexander grading -/
-
-variable (G : OddComponentGridDiagram n) (R : Type*) [CommRing R]
-
-/-- Relabeling the grid states along a cyclic permutation of the rows preserves the Alexander
-grading of chains. -/
-theorem relabelRowsEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
-    (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    GridChain.relabelRowsEquiv (finRotate n) c ∈
-      (G.relabelRows (finRotate n)).alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  rw [GridChain.forall_mem_support_relabelRowsEquiv_iff]
-  simpa only [alexanderℤ_relabelRows_finRotate] using hc
-
-/-- Relabeling the grid states along a cyclic permutation of the columns and renaming the
-variables along the same permutation preserves the Alexander grading of chains. -/
-theorem relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ}
-    {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    GridChain.relabelColumnsRenameEquiv R (finRotate n) c ∈
-      (G.relabelColumns (finRotate n)).alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  rw [GridChain.forall_mem_support_relabelColumnsRenameEquiv_iff]
-  simpa only [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain] using hc
-
-end OddComponentGridDiagram
 
 end TauCeti
