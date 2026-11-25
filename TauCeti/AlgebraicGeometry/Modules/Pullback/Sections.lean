@@ -153,6 +153,11 @@ lemma presheaf_map_pullbackSectionsLE {V' : Y.Opens} (i : V' ⟶ V) (s : Γ(M, U
 @[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :
     pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by
   simp [pullbackSectionsLE]
+/-- Pulling a global section back to the whole source agrees with the canonical section
+pullback, the inverse image of the whole target being the whole source. -/
+lemma pullbackSectionsLE_top (s : Γ(M, ⊤)) :
+    pullbackSectionsLE g M ⊤ ⊤ g.preimage_top.ge s = Scheme.Hom.pullbackSections g M ⊤ s :=
+  pullbackSectionsLE_self g M ⊤ s
 /-- Pullback to a smaller open is natural in the coefficient sheaf. -/
 lemma pullbackSectionsLE_naturality {N : X.Modules} (φ : M ⟶ N) (s : Γ(M, U)) :
     ((pullback g).map φ).app V (pullbackSectionsLE g M U V hV s) =

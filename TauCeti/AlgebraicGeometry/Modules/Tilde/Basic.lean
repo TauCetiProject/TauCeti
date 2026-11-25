@@ -473,6 +473,12 @@ theorem _root_.AlgebraicGeometry.isBaseChange_tildeToTop (M : ModuleCat.{u} R) :
   IsBaseChange.of_surjective_algebraMap bijective_algebraMap_Spec_top.surjective
     (ConcreteCategory.bijective_of_isIso (tilde.toOpen M ⊤))
 
+/-- The global sections functor `moduleSpecΓFunctor` evaluates a morphism of modules on `Spec R`
+on the sections over `⊤`. -/
+theorem _root_.AlgebraicGeometry.moduleSpecΓFunctor_map_apply {M N : (Spec R).Modules}
+    (f : M ⟶ N) (x : moduleSpecΓFunctor.obj M) : moduleSpecΓFunctor.map f x = f.app ⊤ x :=
+  (rfl)
+
 end GlobalSections
 
 end
