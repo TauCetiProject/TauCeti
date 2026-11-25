@@ -54,6 +54,12 @@ finitely many of a family of pairwise non-isomorphic simple modules
 * `IsSemisimpleModule.exists_forall_smul_eq_ite`: for a semisimple module finite over its
   endomorphism ring, an element of the ring acts as the identity on the simple submodules of a
   given type and as zero on all the others, by Jacobson density.
+
+* `TauCeti.iSupIndep_isotypicComponents_restrictScalars`: the isotypic components of a module
+  stay independent after restricting scalars.
+
+* `IsIsotypic.isotypicComponents_eq_singleton_top`: a nonzero isotypic semisimple module is its
+  only isotypic component.
 -/
 
 public section
@@ -353,4 +359,31 @@ theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
     (IsIsotypicOfType.isotypicComponent R M S') N (hN.trans inf_le_right)
   exact h ⟨e.symm.trans e'⟩
 
+variable {R M} in
+/-- The isotypic components of an `R`-module `M` stay independent after restricting scalars to
+`k`. -/
+theorem iSupIndep_isotypicComponents_restrictScalars (k : Type*) [Semiring k] [Module k M]
+    [SMul k R] [IsScalarTower k R M] :
+    iSupIndep fun c : isotypicComponents R M ↦ c.val.restrictScalars k := by
+  intro c
+  simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
+    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M) c
+
 end TauCeti
+
+namespace IsIsotypic
+
+/-- The only isotypic component of a nonzero isotypic semisimple module is the whole module. -/
+theorem isotypicComponents_eq_singleton_top {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [IsSemisimpleModule R M] [Nontrivial M] (h : IsIsotypic R M) :
+    isotypicComponents R M = {⊤} := by
+  ext m
+  refine ⟨?_, ?_⟩
+  · rintro ⟨S, _, rfl⟩
+    exact isotypicComponent_eq_top_iff.mpr (h S)
+  · rintro rfl
+    obtain ⟨S, -, _⟩ :=
+      (IsSemisimpleModule.eq_bot_or_exists_simple_le (⊤ : Submodule R M)).resolve_left top_ne_bot
+    exact ⟨S, inferInstance, (isotypicComponent_eq_top_iff.mpr (h S)).symm⟩
+
+end IsIsotypic
