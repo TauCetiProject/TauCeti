@@ -160,8 +160,9 @@ theorem swap (h : IsLiquidWeights w₁ w₂ w₃) : IsLiquidWeights w₂ w₁ w�
   obtain ⟨h₁, h₂, h₃⟩ := h
   exact ⟨h₂, h₁, by linarith⟩
 
-/-- For liquid weights the cosine `(w₁² − w₂² − w₃²) / (2 w₂ w₃)` lies in `(−1, 1)`. -/
-theorem cos_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
+/-- For liquid weights the quotient `(w₁² − w₂² − w₃²) / (2 w₂ w₃)` lies in `(−1, 1)`, so it is
+the cosine of the zero angle `θ₀` (`cos_lozengeZeroAngleFst`). -/
+theorem div_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
     (w₁ ^ 2 - w₂ ^ 2 - w₃ ^ 2) / (2 * w₂ * w₃) ∈ Ioo (-1) 1 := by
   have h1 := h.pos_fst
   have h2 := h.pos_snd
@@ -175,7 +176,7 @@ theorem cos_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
 /-- For liquid weights `θ₀ ∈ (0, π)`. -/
 theorem lozengeZeroAngleFst_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
     lozengeZeroAngleFst w₁ w₂ w₃ ∈ Ioo 0 Real.pi :=
-  ⟨Real.arccos_pos.2 h.cos_mem_Ioo.2, Real.arccos_lt_pi.2 h.cos_mem_Ioo.1⟩
+  ⟨Real.arccos_pos.2 h.div_mem_Ioo.2, Real.arccos_lt_pi.2 h.div_mem_Ioo.1⟩
 
 /-- For liquid weights `φ₀ ∈ (0, π)`. -/
 theorem lozengeZeroAngleSnd_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
@@ -185,7 +186,7 @@ theorem lozengeZeroAngleSnd_mem_Ioo (h : IsLiquidWeights w₁ w₂ w₃) :
 /-- For liquid weights `cos θ₀ = (w₁² − w₂² − w₃²) / (2 w₂ w₃)`. -/
 theorem cos_lozengeZeroAngleFst (h : IsLiquidWeights w₁ w₂ w₃) :
     Real.cos (lozengeZeroAngleFst w₁ w₂ w₃) = (w₁ ^ 2 - w₂ ^ 2 - w₃ ^ 2) / (2 * w₂ * w₃) :=
-  Real.cos_arccos h.cos_mem_Ioo.1.le h.cos_mem_Ioo.2.le
+  Real.cos_arccos h.div_mem_Ioo.1.le h.div_mem_Ioo.2.le
 
 /-- For liquid weights `cos φ₀ = (w₂² − w₁² − w₃²) / (2 w₁ w₃)`. -/
 theorem cos_lozengeZeroAngleSnd (h : IsLiquidWeights w₁ w₂ w₃) :
@@ -199,8 +200,8 @@ theorem mul_sin_lozengeZeroAngleFst (h : IsLiquidWeights w₁ w₂ w₃) :
   have h1 := h.pos_fst
   have h2 := h.pos_snd
   have h3 := h.pos_thd
-  have hX := h.cos_mem_Ioo
-  have hY := h.swap.cos_mem_Ioo
+  have hX := h.div_mem_Ioo
+  have hY := h.swap.div_mem_Ioo
   rw [lozengeZeroAngleFst, lozengeZeroAngleSnd, Real.sin_arccos, Real.sin_arccos]
   refine (pow_left_inj₀ (mul_nonneg h2.le (Real.sqrt_nonneg _))
     (mul_nonneg h1.le (Real.sqrt_nonneg _)) two_ne_zero).1 ?_
@@ -239,7 +240,7 @@ theorem IsLiquidWeights.sin_add_ne_zero (hw : IsLiquidWeights w₁ w₂ w₃)
   rw [hs, mul_zero, zero_eq_neg, mul_eq_zero] at h1
   have hsin := h1.resolve_left hw.pos_thd.ne'
   have hcos := cos_eq_of_lozengeCharFun_eq_zero hw.pos_snd.ne' hw.pos_thd.ne' h
-  have hc := hw.cos_mem_Ioo
+  have hc := hw.div_mem_Ioo
   rw [← hcos] at hc
   have := Real.sin_sq_add_cos_sq θ
   rw [hsin] at this

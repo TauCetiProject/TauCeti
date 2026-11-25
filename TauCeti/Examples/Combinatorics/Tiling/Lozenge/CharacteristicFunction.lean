@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.CharacteristicFunction
 import TauCeti.Analysis.Fourier.InvAddMulExp
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.ArccosHalf
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
