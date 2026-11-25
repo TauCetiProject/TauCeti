@@ -50,8 +50,8 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 * `TauCeti.ModuleTower.IsAdicSystem.pow_smul_top_eq_bot`: `I^{n+1} Mₙ = 0`.
 * `TauCeti.ModuleTower.IsAdicSystem.surjective_limπ_comp`: bottom surjectivity implies
   surjectivity onto each term.
-* `TauCeti.ModuleTower.IsAdicSystem.surjective_of_bottom_surjective`: bottom surjectivity from an
-  `I`-adically precomplete module implies surjectivity onto the limit.
+* `TauCeti.ModuleTower.IsAdicSystem.surjective_of_surjective_limπ_zero_comp`: bottom surjectivity
+  from an `I`-adically precomplete module implies surjectivity onto the limit.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_obj`: if `M₀` is finite, then so is every `Mₙ`.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_lim`: the limit is a finite module.
 * `TauCeti.ModuleTower.IsAdicSystem.ker_limπ`: the kernel of `L → Mₙ` is `I^{n+1} L`.
@@ -187,7 +187,7 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
 
 /-- A linear map to the limit of an `I`-adic system is surjective if its source is
 `I`-adically precomplete and its composite with the bottom projection is surjective. -/
-theorem surjective_of_bottom_surjective [IsPrecomplete I P]
+theorem surjective_of_surjective_limπ_zero_comp [IsPrecomplete I P]
     (hφ : Function.Surjective (F.limπ 0 ∘ₗ φ)) : Function.Surjective φ := by
   have hφn := hF.surjective_limπ_comp hφ
   intro z
@@ -337,7 +337,7 @@ theorem ker_limπ (n : ℕ) : LinearMap.ker (F.limπ n) = I ^ (n + 1) • ⊤ :=
 precomplete ring (EGA I, Ch. 0, 7.2.9). -/
 theorem finite_lim : Module.Finite A F.lim := by
   obtain ⟨k, φ, hφ⟩ := hF.exists_fin_surjective_limπ_zero_comp
-  exact Module.Finite.of_surjective φ (hF.surjective_of_bottom_surjective hφ)
+  exact Module.Finite.of_surjective φ (hF.surjective_of_surjective_limπ_zero_comp hφ)
 
 /-- **`lim Mₙ ⧸ I^{n+1} lim Mₙ ≃ Mₙ`** for an `I`-adic system over an `I`-adically precomplete ring
 with `M₀` finite (EGA I, Ch. 0, 7.2.9), induced by the projection `lim Mₙ → Mₙ`. -/

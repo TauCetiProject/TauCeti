@@ -127,7 +127,7 @@ theorem projective_lim
           dsimp [gn]
           rw [← LinearMap.comp_assoc, F.transition_comp_limπ])
   have hgs : Function.Surjective g :=
-    hF.surjective_of_bottom_surjective (hg ▸ hg0s)
+    hF.surjective_of_surjective_limπ_zero_comp (hg ▸ hg0s)
   have hgi : Function.Injective g := by
     apply LinearMap.ker_eq_bot.mp
     apply le_antisymm _ bot_le
