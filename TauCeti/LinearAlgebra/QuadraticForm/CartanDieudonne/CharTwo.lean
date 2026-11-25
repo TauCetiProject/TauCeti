@@ -68,23 +68,6 @@ section Transvection
 
 variable [CharP K 2] (Q : QuadraticForm K V)
 
-/-- The orthogonal transvection in a vector of nonzero norm. -/
-private noncomputable def tv (a : V) (ha : Q a ≠ 0) : orthogonalGroup Q :=
-  let _ := invertibleOfNonzero ha
-  reflectionOrthogonal Q a
-
-private theorem tv_apply (a : V) (ha : Q a ≠ 0) (x : V) :
-    (tv Q a ha : V ≃ₗ[K] V) x = x + ((Q a)⁻¹ * polar Q a x) • a := by
-  let _ := invertibleOfNonzero ha
-  rw [tv, reflectionOrthogonal_apply_of_charTwo, invOf_eq_inv]
-
-omit [CharP K 2] in
-private theorem tv_apply_of_polar_eq_zero (a : V) (ha : Q a ≠ 0) {x : V}
-    (hx : polar Q a x = 0) : (tv Q a ha : V ≃ₗ[K] V) x = x := by
-  let _ := invertibleOfNonzero ha
-  rw [tv, coe_reflectionOrthogonal]
-  exact reflection_apply_of_polar_eq_zero Q a hx
-
 private theorem map_add_ne_zero_of_polar_ne_zero {x y : V} (hxy : Q x = Q y)
     (hp : polar Q x y ≠ 0) : Q (x + y) ≠ 0 := by
   rwa [map_add_eq_polar_of_map_eq Q hxy]
@@ -92,12 +75,15 @@ private theorem map_add_ne_zero_of_polar_ne_zero {x y : V} (hxy : Q x = Q y)
 /-- The transvection in `x + y` sends `x` to `y` when `x` and `y` have equal norm and nonzero
 polar pairing: in characteristic two, `x + y = x - y`, so this is
 `reflection_sub_apply_eq_of_map_eq`. -/
-private theorem tv_add_apply_left {x y : V} (hxy : Q x = Q y) (hp : polar Q x y ≠ 0) :
-    (tv Q (x + y) (map_add_ne_zero_of_polar_ne_zero Q hxy hp) : V ≃ₗ[K] V) x = y := by
-  have key (a : V) (ha : Q a ≠ 0) (h : a = x - y) : (tv Q a ha : V ≃ₗ[K] V) x = y := by
+private theorem reflectionOrthogonalOfNeZero_add_apply_left {x y : V} (hxy : Q x = Q y)
+    (hp : polar Q x y ≠ 0) :
+    (reflectionOrthogonalOfNeZero Q (x + y) (map_add_ne_zero_of_polar_ne_zero Q hxy hp) :
+      V ≃ₗ[K] V) x = y := by
+  have key (a : V) (ha : Q a ≠ 0) (h : a = x - y) :
+      (reflectionOrthogonalOfNeZero Q a ha : V ≃ₗ[K] V) x = y := by
     subst h
     let _ := invertibleOfNonzero ha
-    rw [tv, coe_reflectionOrthogonal]
+    rw [reflectionOrthogonalOfNeZero_eq, coe_reflectionOrthogonal]
     exact reflection_sub_apply_eq_of_map_eq Q x y hxy
   exact key _ _ (by
     rw [sub_eq_add_neg, neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo K y)])
@@ -105,17 +91,19 @@ private theorem tv_add_apply_left {x y : V} (hxy : Q x = Q y) (hp : polar Q x y 
 variable {Q} (H : Subgroup (orthogonalGroup Q))
 
 /-- Vectors of equal norm and nonzero polar pairing are exchanged by a transvection. -/
-private theorem exists_mem_apply_eq_of_polar_ne_zero (hH : ∀ a ha, tv Q a ha ∈ H) {x y : V}
+private theorem exists_mem_apply_eq_of_polar_ne_zero
+    (hH : ∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H) {x y : V}
     (hxy : Q x = Q y) (hp : polar Q x y ≠ 0) :
     ∃ h ∈ H, (h : V ≃ₗ[K] V) x = y ∧
       ∀ z, polar Q x z = polar Q y z → (h : V ≃ₗ[K] V) z = z :=
-  ⟨_, hH _ _, tv_add_apply_left Q hxy hp, fun z hz ↦
-    tv_apply_of_polar_eq_zero Q _ _ (by rw [polar_add_left, hz, CharTwo.add_self_eq_zero])⟩
+  ⟨_, hH _ _, reflectionOrthogonalOfNeZero_add_apply_left Q hxy hp, fun z hz ↦
+    reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero Q _ _
+      (by rw [polar_add_left, hz, CharTwo.add_self_eq_zero])⟩
 
 /-- **The stabilizer step.** If `Q e ≠ 0`, the transvections fixing `e` act transitively on the
 vectors `f` of a given norm with `polar Q e f = 1`. -/
-private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H) {e f f' : V}
-    (he : Q e ≠ 0) (hf : polar Q e f = 1) (hf' : polar Q e f' = 1) (hff : Q f' = Q f) :
+private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H)
+    {e f f' : V} (he : Q e ≠ 0) (hf : polar Q e f = 1) (hf' : polar Q e f' = 1) (hff : Q f' = Q f) :
     ∃ h ∈ H, (h : V ≃ₗ[K] V) e = e ∧ (h : V ≃ₗ[K] V) f' = f := by
   have hfe : polar Q f e = 1 := by rw [polar_comm, hf]
   have hf'e : polar Q f' e = 1 := by rw [polar_comm, hf']
@@ -147,7 +135,7 @@ private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H) {e f f'
 /-- Two vectors of equal nonzero norm are related by a product of at most two transvections, as
 long as every pair of such vectors that are polar orthogonal admits a vector of nonzero norm with
 nonzero polar pairing with both. -/
-private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
+private theorem exists_mem_apply_eq (hH : ∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H)
     (hgood : ∀ x y : V, Q x = Q y → Q x ≠ 0 → polar Q x y = 0 → x ≠ y →
       ∃ w, Q w ≠ 0 ∧ polar Q x w ≠ 0 ∧ polar Q y w ≠ 0)
     {x y : V} (hxy : Q x = Q y) (hx : Q x ≠ 0) : ∃ h ∈ H, (h : V ≃ₗ[K] V) x = y := by
@@ -157,9 +145,11 @@ private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
   · obtain ⟨w, hw, hxw, hyw⟩ := hgood x y hxy hx hp hxy'
     set c := (Q w)⁻¹ * polar Q w x
     have hc0 : c ≠ 0 := mul_ne_zero (inv_ne_zero hw) (by rwa [polar_comm])
-    have hz : (tv Q w hw : V ≃ₗ[K] V) x = x + c • w := tv_apply Q w hw x
-    set z := (tv Q w hw : V ≃ₗ[K] V) x
-    have hQz : Q x = Q z := (map_app_of_mem_orthogonalGroup (tv Q w hw).property x).symm
+    have hz : (reflectionOrthogonalOfNeZero Q w hw : V ≃ₗ[K] V) x = x + c • w := by
+      rw [reflectionOrthogonalOfNeZero_apply, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq]
+    set z := (reflectionOrthogonalOfNeZero Q w hw : V ≃ₗ[K] V) x
+    have hQz : Q x = Q z :=
+      (map_app_of_mem_orthogonalGroup (reflectionOrthogonalOfNeZero Q w hw).property x).symm
     have hxz : polar Q x z ≠ 0 := by
       simp only [hz, polar_add_right, polar_smul_right, polar_self_eq_zero_of_charTwo, zero_add,
         smul_eq_mul]
@@ -350,22 +340,20 @@ private def extensionSubgroup (H : Subgroup (orthogonalGroup Q)) (W P : Submodul
       orthogonalGroup.inv_apply_eq_of_apply_eq (hgP z hz)⟩
     rw [hgW, ← orthogonalGroup.coe_mul_apply, mul_inv_cancel, Subgroup.coe_one, one_apply_eq_self]
 
+omit [CharP K 2] in
 /-- The transvections of the restriction of `Q` to `W` extend to transvections of `Q` fixing every
 vector polar orthogonal to `W`. -/
-private theorem tv_mem_extensionSubgroup {H : Subgroup (orthogonalGroup Q)}
-    (hH : ∀ a ha, tv Q a ha ∈ H) {W P : Submodule K V}
-    (hWP : W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin P) (a : W)
-    (ha : (Q.restrict W) a ≠ 0) : tv (Q.restrict W) a ha ∈ extensionSubgroup H W P := by
+private theorem reflectionOrthogonalOfNeZero_mem_extensionSubgroup
+    {H : Subgroup (orthogonalGroup Q)} (hH : ∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H)
+    {W P : Submodule K V} (hWP : W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin P) (a : W)
+    (ha : (Q.restrict W) a ≠ 0) :
+    reflectionOrthogonalOfNeZero (Q.restrict W) a ha ∈ extensionSubgroup H W P := by
   have ha' : Q a ≠ 0 := by simpa only [QuadraticMap.restrict_apply] using ha
-  refine ⟨tv Q a ha', hH a ha', fun u ↦ ?_, fun z hz ↦ ?_⟩
-  · have hpolar : polar (Q.restrict W) a u = polar Q a u := by
-      simpa only [polarBilin_apply_apply, LinearMap.domRestrict₁₂_apply] using
-        LinearMap.congr_fun₂ (polarBilin_restrict Q W) a u
-    rw [tv_apply Q (a : V) ha', tv_apply, hpolar, Submodule.coe_add, Submodule.coe_smul,
-      QuadraticMap.restrict_apply]
-  · refine tv_apply_of_polar_eq_zero Q a ha' ?_
-    rw [polar_comm]
-    exact (LinearMap.BilinForm.mem_orthogonal_iff.mp (hWP a.property)) z hz
+  refine ⟨reflectionOrthogonalOfNeZero Q a ha', hH a ha',
+    reflectionOrthogonalOfNeZero_restrict_apply Q W a ha, fun z hz ↦ ?_⟩
+  refine reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero Q a ha' ?_
+  rw [polar_comm]
+  exact (LinearMap.BilinForm.mem_orthogonal_iff.mp (hWP a.property)) z hz
 
 /-- **The restriction step.** If the transvections generate the orthogonal group of the polar
 orthogonal complement `W` of a plane spanned by `e` and `f` with `polar Q e f = 1`, then every
@@ -373,8 +361,8 @@ orthogonal map fixing `e` and `f` lies in every subgroup containing the transvec
 private theorem mem_of_apply_eq_self {e f : V} (hef : polar Q e f = 1)
     (ih : ∀ H' : Subgroup (orthogonalGroup (Q.restrict
         (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f})))),
-      (∀ a ha, tv _ a ha ∈ H') → H' = ⊤)
-    (H : Subgroup (orthogonalGroup Q)) (hH : ∀ a ha, tv Q a ha ∈ H)
+      (∀ a ha, reflectionOrthogonalOfNeZero _ a ha ∈ H') → H' = ⊤)
+    (H : Subgroup (orthogonalGroup Q)) (hH : ∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H)
     (g : orthogonalGroup Q) (hge : (g : V ≃ₗ[K] V) e = e) (hgf : (g : V ≃ₗ[K] V) f = f) :
     g ∈ H := by
   set P := Submodule.span K {e, f}
@@ -383,7 +371,7 @@ private theorem mem_of_apply_eq_self {e f : V} (hef : polar Q e f = 1)
       orthogonalGroup.restrict g (map_orthogonal_polarBilin_of_mem_orthogonalGroup g.property
         (by rw [Submodule.map_span, Set.image_pair, LinearEquiv.coe_coe, hge, hgf])) ∈
         extensionSubgroup H W P := by
-    rw [ih _ (tv_mem_extensionSubgroup hH le_rfl)]
+    rw [ih _ (reflectionOrthogonalOfNeZero_mem_extensionSubgroup hH le_rfl)]
     exact Subgroup.mem_top _
   convert hg'
   refine Subtype.ext (LinearEquiv.toLinearMap_injective (LinearMap.ext_on_codisjoint
@@ -657,7 +645,8 @@ private theorem exists_frame_not_exc [FiniteDimensional K V] [Nontrivial V]
 private theorem eq_top_of_finrank_eq (n : ℕ) :
     ∀ {W : Type v} [AddCommGroup W] [Module K W] [FiniteDimensional K W],
       finrank K W = n → ∀ (Q : QuadraticForm K W), Q.polarBilin.Nondegenerate → ¬ Exc Q →
-        ∀ H : Subgroup (orthogonalGroup Q), (∀ a ha, tv Q a ha ∈ H) → H = ⊤ := by
+        ∀ H : Subgroup (orthogonalGroup Q),
+          (∀ a ha, reflectionOrthogonalOfNeZero Q a ha ∈ H) → H = ⊤ := by
   induction n using Nat.strong_induction_on with
   | ind n ih =>
     intro W _ _ _ hn Q hB hexc H hH
@@ -717,6 +706,7 @@ theorem subgroup_eq_top_of_reflection_mem_of_nondegenerate_polarBilin [FiniteDim
         ((equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ
           (by omega)).mpr ⟨U, hU, hU2⟩)
     · let _ := invertibleOfNonzero ha
+      rw [reflectionOrthogonalOfNeZero_eq]
       exact hreflection a
   · have : NeZero (2 : K) := ⟨h2⟩
     let _ := invertibleOfNonzero h2

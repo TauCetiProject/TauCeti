@@ -64,6 +64,9 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   `orthogonalGroup Q`, so that statements about products of reflections and about the ranges of the
   Pin and Spin actions can name it. `TauCeti.QuadraticMap.reflectionOrthogonal_mul_self` and
   `TauCeti.QuadraticMap.reflectionOrthogonal_inv` are its group-level involution facts.
+* `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero Q v hv`: over a field, the same reflection
+  for a vector with `hv : Q v ≠ 0`, for statements quantifying over vectors of nonzero norm, with
+  its formula, its fixed vectors, and its compatibility with restriction to a submodule.
 * `QuadraticMap.negOrthogonal Q`: the isometry `x ↦ -x`, as an element of
   `orthogonalGroup Q`.
 
@@ -1110,6 +1113,44 @@ variable (Q : QuadraticForm K V)
 theorem reflection_apply_eq_sub_div (v : V) [Invertible (Q v)] (x : V) :
     reflection Q v x = x - (polar Q v x / Q v) • v := by
   rw [reflection_apply, invOf_eq_inv, div_eq_inv_mul]
+
+/-- Over a field, the reflection in a vector `v` of nonzero norm, as an element of
+`orthogonalGroup Q`: this is `reflectionOrthogonal Q v` with the `Invertible (Q v)` instance built
+from `hv`, for statements that quantify over the vectors of nonzero norm. -/
+noncomputable def reflectionOrthogonalOfNeZero (v : V) (hv : Q v ≠ 0) : orthogonalGroup Q :=
+  letI := invertibleOfNonzero hv
+  reflectionOrthogonal Q v
+
+/-- `reflectionOrthogonalOfNeZero` agrees with `reflectionOrthogonal` for any `Invertible (Q v)`
+instance. -/
+theorem reflectionOrthogonalOfNeZero_eq (v : V) (hv : Q v ≠ 0) [Invertible (Q v)] :
+    reflectionOrthogonalOfNeZero Q v hv = reflectionOrthogonal Q v := by
+  rw [reflectionOrthogonalOfNeZero, Subsingleton.elim (invertibleOfNonzero hv) ‹_›]
+
+/-- The reflection in a vector `v` of nonzero norm is `x ↦ x - ((Q v)⁻¹ * polar Q v x) • v`. -/
+theorem reflectionOrthogonalOfNeZero_apply (v : V) (hv : Q v ≠ 0) (x : V) :
+    (reflectionOrthogonalOfNeZero Q v hv : V ≃ₗ[K] V) x = x - ((Q v)⁻¹ * polar Q v x) • v := by
+  let _ := invertibleOfNonzero hv
+  rw [reflectionOrthogonalOfNeZero_eq, coe_reflectionOrthogonal, reflection_apply, invOf_eq_inv]
+
+/-- The reflection in `v` fixes every vector in the kernel of `polar Q v`. -/
+theorem reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero (v : V) (hv : Q v ≠ 0) {x : V}
+    (hx : polar Q v x = 0) : (reflectionOrthogonalOfNeZero Q v hv : V ≃ₗ[K] V) x = x := by
+  rw [reflectionOrthogonalOfNeZero_apply, hx, mul_zero, zero_smul, sub_zero]
+
+/-- The reflection in a vector of nonzero norm is an involution. -/
+theorem reflectionOrthogonalOfNeZero_mul_self (v : V) (hv : Q v ≠ 0) :
+    reflectionOrthogonalOfNeZero Q v hv * reflectionOrthogonalOfNeZero Q v hv = 1 := by
+  let _ := invertibleOfNonzero hv
+  rw [reflectionOrthogonalOfNeZero_eq, reflectionOrthogonal_mul_self]
+
+/-- On a submodule `U`, the reflection in a vector `v ∈ U` of the ambient form restricts to the
+reflection in `v` of the restricted form `Q.restrict U`. -/
+theorem reflectionOrthogonalOfNeZero_restrict_apply (U : Submodule K V) (v : U)
+    (hv : Q.restrict U v ≠ 0) (y : U) :
+    (reflectionOrthogonalOfNeZero Q v (by rwa [QuadraticMap.restrict_apply] at hv) :
+      V ≃ₗ[K] V) y = ((reflectionOrthogonalOfNeZero (Q.restrict U) v hv : U ≃ₗ[K] U) y : V) := by
+  simp [reflectionOrthogonalOfNeZero_apply, QuadraticMap.restrict_apply, QuadraticMap.polar]
 
 end ReflectionField
 
