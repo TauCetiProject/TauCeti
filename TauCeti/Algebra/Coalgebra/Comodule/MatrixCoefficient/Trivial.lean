@@ -29,6 +29,8 @@ coefficient calculation, a trivial comodule's coefficient subalgebra is the bott
 
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubmodule_le_span_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton`.
+* `TauCeti.Comodule.matrixCoefficientSubmodule_le_span_singleton_iff`: conversely, a free comodule
+  with coefficients on the line spanned by `g` has the coaction `m ↦ m ⊗ g`.
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubalgebra_le_adjoin_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubalgebra_eq_adjoin_singleton`.
 * `TauCeti.Comodule.trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one`.
@@ -101,6 +103,39 @@ theorem groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton (g : Grou
       (C := C) g)
 
 end GroupLikeSubmodule
+
+section GroupLikeCoact
+
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
+
+/-- **Coefficients on a group-like line force the group-like coaction.** A free comodule has all
+its matrix coefficients in the line spanned by a group-like element `g` exactly when its
+coaction is `m ↦ m ⊗ g`. A coefficient `c(φ, m)` on that line is `φ m • g`, as the counit shows,
+and the coaction is determined by its coefficients along a basis. -/
+theorem matrixCoefficientSubmodule_le_span_singleton_iff [Module.Free R M] (g : GroupLike R C) :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ R ∙ (g : C) ↔
+      ∀ m : M, coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) := by
+  refine ⟨fun h m ↦ ?_, fun h ↦ matrixCoefficientSubmodule_le fun φ m ↦ ?_⟩
+  · have hc (φ : M →ₗ[R] R) : matrixCoefficient (R := R) (C := C) φ m = φ m • (g : C) := by
+      obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1
+        (h (matrixCoefficient_mem_submodule (R := R) (C := C) φ m))
+      have hε := congrArg (Coalgebra.counit (R := R) (A := C)) hr
+      rw [map_smul, counit_matrixCoefficient, g.isGroupLikeElem_val.counit_eq_one, smul_eq_mul,
+        mul_one] at hε
+      rw [← hr, hε]
+    -- Both sides have the same coordinates `c(bᵢ*, m)` along a basis `(bᵢ)` of `M`.
+    classical
+    let b := Module.Free.chooseBasis R M
+    refine (TensorProduct.equivFinsuppOfBasisLeft b).injective (Finsupp.ext fun i ↦ ?_)
+    rw [TensorProduct.equivFinsuppOfBasisLeft_apply, LinearMap.rTensor_def,
+      ← matrixCoefficient_def, hc, TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply,
+      Module.Basis.coord_apply]
+  · rw [matrixCoefficient_def, h, TensorProduct.map_tmul, LinearMap.id_apply,
+      TensorProduct.lid_tmul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+
+end GroupLikeCoact
 
 section GroupLikeSubalgebra
 
