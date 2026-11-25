@@ -72,14 +72,14 @@ theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {G : Type*} [NormedA
   refine HasDerivAt.congr_of_eventuallyEq ?_ h
   simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)
 
-/-- If `f (x + t • v) = g (c + t)` for every scalar `t` and `g` has derivative `g'` at `c`, then `f`
-has derivative `g'` at `x` in the direction `v`. -/
+/-- If `f (x + t • v) = g (c + t)` for every scalar `t` near `0` and `g` has derivative `g'` at `c`,
+then `f` has derivative `g'` at `x` in the direction `v`. -/
 theorem _root_.HasDerivAt.hasLineDerivAt_of_add_smul {E : Type*} [AddCommGroup E] [Module 𝕜 E]
     {f : E → F} {x v : E} {g : 𝕜 → F} {g' : F} {c : 𝕜} (hg : HasDerivAt g g' c)
-    (hf : ∀ t : 𝕜, f (x + t • v) = g (c + t)) : HasLineDerivAt 𝕜 f g' x v := by
+    (hf : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = g (c + t)) : HasLineDerivAt 𝕜 f g' x v := by
   unfold HasLineDerivAt
   rw [← add_zero c] at hg
-  exact (hg.comp_const_add c 0).congr_of_eventuallyEq (Eventually.of_forall hf)
+  exact (hg.comp_const_add c 0).congr_of_eventuallyEq hf
 
 /-- The function `y ↦ ∫ₐᵇ g (y - t h) dt` of a continuous `g` has directional derivative
 `g (y - a h) - g (y - b h)` in the direction `h`. -/

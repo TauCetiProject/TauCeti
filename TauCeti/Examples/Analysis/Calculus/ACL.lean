@@ -77,13 +77,13 @@ theorem isACLpOn_absFst : IsACLpOn absFst ∞ univ :=
 theorem formalDeriv_absFst_single_zero {x : ℝ²} (hx : x 0 ≠ 0) :
     formalDeriv absFst x (e 0 1) = SignType.sign (x 0) := by
   rw [formalDeriv_apply_single]
-  exact ((hasDerivAt_abs hx).hasLineDerivAt_of_add_smul fun t ↦ by
+  exact ((hasDerivAt_abs hx).hasLineDerivAt_of_add_smul <| .of_forall fun t ↦ by
     simp [absFst_apply]).lineDeriv
 
 /-- The formal derivative of `|x₁|` sends `e₂` to `0`. -/
 theorem formalDeriv_absFst_single_one (x : ℝ²) : formalDeriv absFst x (e 1 1) = 0 := by
   rw [formalDeriv_apply_single]
-  exact ((hasDerivAt_const (x 1) |x 0|).hasLineDerivAt_of_add_smul fun t ↦ by
+  exact ((hasDerivAt_const (x 1) |x 0|).hasLineDerivAt_of_add_smul <| .of_forall fun t ↦ by
     simp [absFst_apply]).lineDeriv
 
 /-- On the line `x₁ = 0`, the first partial derivative of `|x₁|` does not exist. -/
@@ -148,9 +148,9 @@ theorem ae_hasLineDerivAt_cantorFst :
   apply hx
   intro i
   fin_cases i
-  · exact h.hasLineDerivAt_of_add_smul fun t ↦ by simp [cantorFst_apply]
+  · exact h.hasLineDerivAt_of_add_smul <| .of_forall fun t ↦ by simp [cantorFst_apply]
   · exact (hasDerivAt_const (x 1) (cantorFunction (x 0))).hasLineDerivAt_of_add_smul
-      fun t ↦ by simp [cantorFst_apply]
+      (.of_forall fun t ↦ by simp [cantorFst_apply])
 
 /-- The formal derivative of `c(x₁)` vanishes almost everywhere. -/
 theorem ae_formalDeriv_cantorFst_eq_zero : ∀ᵐ x : ℝ², formalDeriv cantorFst x = 0 :=
