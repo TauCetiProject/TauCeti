@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Littlewood–Paley decomposition of symbols
@@ -317,11 +317,12 @@ theorem hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece (a : Symbo
   -- On the ball of radius `2^J φ.rIn`, a neighbourhood of `ξ`, the partition is finite.
   have hξ : ξ ∈ ball (0 : CoordinateSpace n) (2 ^ J * φ.rIn) :=
     mem_ball_zero_iff.2 ((div_lt_iff₀ φ.rIn_pos).1 hJ)
-  have hsum := coefficient_frequencyLaplacianPow_eventuallyEq
+  have hsum := Filter.EventuallyEq.coefficient_frequencyLaplacianPow
     (a := ∑ j ∈ Finset.range (J + 1), a.littlewoodPaleyPiece φ j) (b := a) (x := x) (ξ := ξ) ?_ N
   · rw [← hsum.eq_of_nhds, map_sum, coefficient_sum, Finset.sum_apply]
     refine hasSum_sum_of_ne_finset_zero fun j hj =>
-      coefficient_frequencyLaplacianPow_eq_zero_of_isOpen isOpen_ball x (fun η hη => ?_) N hξ
+      (a.littlewoodPaleyPiece φ j).coefficient_frequencyLaplacianPow_eq_zero_of_isOpen isOpen_ball x
+        (fun η hη => ?_) N hξ
     rw [coefficient_littlewoodPaleyPiece, φ.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le
       (by simpa using hj) (mem_ball_zero_iff.1 hη).le, zero_smul]
   · filter_upwards [isOpen_ball.mem_nhds hξ] with η hη
@@ -369,7 +370,7 @@ theorem exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPi
   refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
     (mu := volume) (s := 2 ^ j) (μ := m - 2 * N) (fun ξ _ => by simpa using hC j x hx ξ)
     fun ξ hξ =>
-      coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
+      (a.littlewoodPaleyPiece φ j).coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
         (U := {η | 2 ^ j * φ.rOut < ‖η‖}) (isOpen_lt continuous_const continuous_norm) x
         (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x (le_of_lt hξ'))
         N (by simpa using hξ)).trans_eq ?_

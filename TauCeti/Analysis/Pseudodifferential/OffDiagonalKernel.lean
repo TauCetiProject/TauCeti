@@ -315,7 +315,7 @@ theorem offDiagonalKernel_congr {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V 
   set N := max (⌊(m + n) / 2⌋₊ + 1) (⌊(m' + n) / 2⌋₊ + 1)
   have hN {μ : ℝ} (hμ : ⌊(μ + n) / 2⌋₊ + 1 ≤ N) : μ - 2 * N < -n :=
     lt_of_le_of_lt (by gcongr) (sub_two_mul_floor_lt μ n)
-  have hΔ (ξ : CoordinateSpace n) := (coefficient_frequencyLaplacianPow_eventuallyEq
+  have hΔ (ξ : CoordinateSpace n) := (Filter.EventuallyEq.coefficient_frequencyLaplacianPow
     (Filter.Eventually.of_forall h) N (ξ := ξ)).eq_of_nhds
   rw [offDiagonalKernel_eq a (hN (le_max_left _ _)) hxy,
     offDiagonalKernel_eq b (hN (le_max_right _ _)) hxy, quantizationKernel_def,

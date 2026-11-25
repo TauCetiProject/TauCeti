@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 import TauCeti.Analysis.SpecificLimits.DyadicSum
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Calderón–Zygmund estimates for the kernels of uniform symbols
