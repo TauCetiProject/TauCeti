@@ -176,12 +176,11 @@ theorem stageSeminorm_dirac_natCast_val_add_mul_sub_le (h : ℕ) (a : ZMod (p ^ 
     stageSeminorm h
       (dirac (p := p) (K := K) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * u) -
         dirac ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * v)) ≤ ‖u - v‖ := by
-  rw [stageSeminorm_apply]
+  rw [stageSeminorm_apply, map_sub (stage (p := p) (K := K) h)]
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun c ↦ ?_
-  have hu := hasSum_eval_natCast_val_add_mul K c a u
-  have hv := hasSum_eval_natCast_val_add_mul K c a v
-  simp only [stage_apply, Submodule.coe_sub, LinearMap.sub_apply, coe_dirac_apply, eval_ofStage,
-    ← (hu.sub hv).tsum_eq]
+  rw [_root_.sub_apply, stage_dirac_natCast_val_add_mul, stage_dirac_natCast_val_add_mul,
+    ← (hasSum_eval_natCast_val_add_mul K c a u).summable.tsum_sub
+      (hasSum_eval_natCast_val_add_mul K c a v).summable]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
     (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun n ↦ ?_
   rw [← sub_smul]

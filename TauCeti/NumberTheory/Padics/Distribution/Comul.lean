@@ -503,8 +503,7 @@ theorem eval_curryEquiv_prodSMul {h k : ℕ} {R E : Type*}
     eval S (curryEquiv S E (prodSMul a b)) x = eval R a x • b := by
   have hcur : curryEquiv S E (prodSMul a b) = curryEquiv ℤ_[p] E (prodSMul a b) := by
     ext i j; simp
-  rw [eval_eq_eval_padicInt S, eval_eq_eval_padicInt R, hcur,
-    curryEquiv_prodSMul_eq_compLeft (S := ℤ_[p]), eval_compLeft ℤ_[p],
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply]
+  rw [eval_eq_eval_padicInt S, eval_eq_eval_padicInt R, hcur]
+  simp [curryEquiv_prodSMul_eq_compLeft (S := ℤ_[p]), eval_compLeft ℤ_[p]]
 
 end TauCeti.AnalyticStage

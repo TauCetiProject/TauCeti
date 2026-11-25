@@ -25,7 +25,7 @@ series multiplication:
   `amiceTerm p h n e` into the weighted Vandermonde sum with integral factorial multiplier
   `TauCeti.amiceComulCoeff p h i j = ⌊(i + j) / pʰ⌋! / (⌊i / pʰ⌋! ⌊j / pʰ⌋!)`
   (`TauCeti.AnalyticStage.comul_amiceTerm`), which simplifies to `1` when `n < p ^ h`
-  (`comul_amiceTerm_of_lt_pow`, `comul_amiceTerm_of_lt`);
+  (`comul_amiceTerm_of_lt_pow`, `comul_amiceTerm_one_of_lt_pow`);
 * evaluating at level `h = n` proves `amiceTransform (μ * ν) = amiceTransform μ * amiceTransform ν`
   over any such field `K`, including in positive characteristic, bundling `amiceTransform` into the
   injective `K`-algebra homomorphism `amiceTransformAlgHom` (whence
@@ -51,7 +51,7 @@ series multiplication:
 
 * `TauCeti.AnalyticStage.comul_amiceTerm`: weighted Vandermonde expansion of `comul` on Amice's
   basis at all degrees `n : ℕ` for every complete ultrametric `ℤ_p`-module `E`, specializing to
-  `comul_amiceTerm_of_lt_pow` and `comul_amiceTerm_of_lt` when `n < p ^ h`.
+  `comul_amiceTerm_of_lt_pow` and `comul_amiceTerm_one_of_lt_pow` when `n < p ^ h`.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_dirac` and
   `TauCeti.LocallyAnalyticDistribution.ofOnOpenDisc_binomialSeries`: `dirac x` corresponds under the
   Amice bijection to `PowerSeries.binomialSeries K x`.
@@ -223,7 +223,7 @@ theorem comul_amiceTerm_of_lt_pow {h n : ℕ} {E : Type*} [NormedAddCommGroup E]
 so that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
 expands `amiceTerm p h n 1` into `∑_{i + j = n} prodSMul (amiceTerm p h i 1) (amiceTerm p h j 1)`.
 -/
-theorem comul_amiceTerm_of_lt {h n : ℕ} {R : Type*} [NormedRing R] [Algebra ℤ_[p] R]
+theorem comul_amiceTerm_one_of_lt_pow {h n : ℕ} {R : Type*} [NormedRing R] [Algebra ℤ_[p] R]
     [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
     (S : Type*) [Semiring S] [Module S R] [ContinuousConstSMul S R] [SMulCommClass ℤ_[p] S R]
     (hn : n < p ^ h) :
@@ -264,7 +264,8 @@ theorem amiceTransform_mul (μ ν : LocallyAnalyticDistribution p K) :
   ext n
   have hn : n < p ^ n := Nat.lt_pow_self hp.out.one_lt
   rw [coeff_amiceTransform, mahlerTerm_def, ← stage_apply, stage_mul,
-    ContinuousLinearMap.comp_apply, comul_amiceTerm_of_lt K hn, map_sum, PowerSeries.coeff_mul]
+    ContinuousLinearMap.comp_apply, comul_amiceTerm_one_of_lt_pow K hn, map_sum,
+    PowerSeries.coeff_mul]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   have hij' := Finset.mem_antidiagonal.mp hij
   have hij1 : ij.1 < p ^ n := by omega
