@@ -14,7 +14,7 @@ public import Mathlib.Topology.MetricSpace.Bounded
 In a compact pseudometric space with an s-finite measure `μ` on a σ-algebra containing the open
 sets, for every `ε > 0` there is a finite measurable partition, given by a label `a : X → Fin n`,
 whose atoms have diameter less than `ε` and boundaries of measure zero
-(`MeasureTheory.Measure.exists_label_diam_lt_measure_frontier_eq_zero`).
+(`MeasureTheory.Measure.exists_partition_diam_lt_null_frontier`).
 
 The atoms are built from a finite cover by balls whose frontiers are null: each point is sent to
 the first ball of the cover containing it, so the atoms are the `disjointed` sets of the cover.
@@ -46,9 +46,9 @@ variable {X : Type*} [PseudoMetricSpace X] [CompactSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X]
 
 /-- **Small partitions with null boundaries.** In a compact pseudometric space with an s-finite
-measure, for every `ε > 0` there is a finite measurable label whose atoms have diameter less than
-`ε` and frontiers of measure zero. -/
-theorem exists_label_diam_lt_measure_frontier_eq_zero (μ : Measure X) [SFinite μ] {ε : ℝ}
+measure, for every `ε > 0` there is a finite measurable partition, given by a label
+`a : X → Fin n`, whose atoms have diameter less than `ε` and frontiers of measure zero. -/
+theorem exists_partition_diam_lt_null_frontier (μ : Measure X) [SFinite μ] {ε : ℝ}
     (hε : 0 < ε) :
     ∃ (n : ℕ) (a : X → Fin n), Measurable a ∧ (∀ i, diam (a ⁻¹' {i}) < ε) ∧
       ∀ i, μ (frontier (a ⁻¹' {i})) = 0 := by
