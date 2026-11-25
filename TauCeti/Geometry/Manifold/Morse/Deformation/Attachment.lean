@@ -82,10 +82,11 @@ theorem exists_homotopyEquiv_pushout_comp_sublevelRetraction (hf : ContMDiff I �
   -- inclusion.
   obtain ⟨r, hr, ⟨R⟩⟩ := exists_sublevelDeformation hf has hcas hregas
   rw [sublevelInclusion_eq_inclusion] at hr R
-  set er := (ContinuousMap.HomotopyEquiv.ofRetraction _ r hr R.toHomotopy).symm
+  set er := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) r hr
+    (ContinuousMap.HomotopicRel.homotopic ⟨R⟩)).symm
   have her : α ≫ TopCat.ofHom r = α ≫ TopCat.ofHom er.toFun :=
     congrArg (α ≫ TopCat.ofHom ·) (ContinuousMap.ext
-      (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ r hr R.toHomotopy)).symm
+      (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_symm_apply _ r hr _)).symm
   -- The inclusion `M_t → M_b` across the collar `f⁻¹[t, b]`.
   obtain ⟨e₂, he₂⟩ := exists_sublevelHomotopyEquiv hf htb hctb hregtb
   -- Change the base of the attachment from `M_s` to `M_a` along `r`.
@@ -99,7 +100,7 @@ theorem exists_homotopyEquiv_pushout_comp_sublevelRetraction (hf : ContMDiff I �
   refine ⟨E.symm.trans (e.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, he₂, hE,
     he]
-  exact ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ r hr _ z
+  simp [er]
 
 /-- **Moving an attachment across the regular collars of a compact band.** Let `j : A → D` be an
 embedding whose image has the homotopy extension property, and `α : A → M_s` an attaching map, and

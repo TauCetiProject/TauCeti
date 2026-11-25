@@ -42,6 +42,7 @@ either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` 
 * `Matrix.realify`: the real matrix of the `ℝ`-linear map a matrix over `𝕜` induces.
 * `Matrix.realifyLinearMap`: realification, as an `ℝ`-linear map.
 * `Matrix.realifyAlgHom`: realification of square matrices, as an `ℝ`-algebra homomorphism.
+* `Matrix.realifyStarAlgHom`: the same map as a homomorphism of `ℝ`-algebras with involution.
 * `Matrix.interleavedRealifyAlgHom`: realification with adjacent real and imaginary coordinates.
 * `Matrix.interleavedRealifyAlgHom_injective` and `Matrix.interleavedRealifyAlgHom_apply`:
   injectivity and the entry formula for interleaved realification.
@@ -58,12 +59,16 @@ either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` 
 * `Matrix.IsHermitian.isSymm_realify`: a Hermitian matrix realifies to a symmetric one.
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
 * `Matrix.det_realify`: the real determinant is the squared modulus of the determinant over `𝕜`.
-* `Matrix.isUnit_det_realify_iff`: realification preserves and reflects invertibility.
+* `Matrix.isUnit_det_realify_iff`, `Matrix.isUnit_realify_iff`: realification preserves and
+  reflects invertibility.
+* `Matrix.realify_star`, `Matrix.isSelfAdjoint_realify_iff`: on square matrices realification
+  commutes with the involutions, so it preserves and reflects self-adjointness.
 * `Matrix.realify_map_starRingEnd`: entrywise conjugation becomes congruence by the reflection
   `TauCeti.realifyReflection` that negates the imaginary coordinates.
 * `Matrix.realify_injective` and `Matrix.realifyAlgHom`: realification is injective, and on square
   matrices it is a homomorphism of `ℝ`-algebras.
 * `Matrix.commute_J_realify`: realifications commute with `Matrix.J`.
+* `Matrix.realify_smul_one`: the scalar matrix `z • 1` realifies to `re z • 1 + im z • J`.
 * `Matrix.realify_mem_orthogonalGroup_iff` and `Matrix.realify_mem_symplecticGroup_iff`: a matrix
   is unitary exactly when its realification is orthogonal, and exactly when it is symplectic.
 
@@ -233,6 +238,12 @@ theorem isUnit_det_realify_iff [Fintype ι] [DecidableEq ι] {A : Matrix ι ι �
     IsUnit A.realify.det ↔ IsUnit A.det := by
   simp [isUnit_iff_ne_zero]
 
+/-- A square matrix is invertible exactly when its realification is. -/
+@[simp]
+theorem isUnit_realify_iff [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜} :
+    IsUnit A.realify ↔ IsUnit A := by
+  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det, isUnit_det_realify_iff]
+
 /-- Entrywise conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/
 theorem realify_map_starRingEnd [Fintype ι] [DecidableEq ι]
@@ -273,6 +284,19 @@ theorem realify_inj {A B : Matrix m n 𝕜} :
     A.realify = B.realify ↔ A = B :=
   realify_injective.eq_iff
 
+/-- Realification of square matrices commutes with the involutions: the conjugate transpose
+becomes the transpose, which is the involution of real matrices. -/
+@[simp]
+theorem realify_star (A : Matrix ι ι 𝕜) : (star A).realify = star A.realify := by
+  rw [star_eq_conjTranspose, realify_conjTranspose, star_eq_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
+
+/-- A square matrix is self-adjoint exactly when its realification is. -/
+@[simp]
+theorem isSelfAdjoint_realify_iff {A : Matrix ι ι 𝕜} :
+    IsSelfAdjoint A.realify ↔ IsSelfAdjoint A := by
+  rw [IsSelfAdjoint, IsSelfAdjoint, ← realify_star, realify_inj]
+
 variable (m n 𝕜) in
 /-- Realification of matrices, as an `ℝ`-linear map. -/
 def realifyLinearMap : Matrix m n 𝕜 →ₗ[ℝ] Matrix (m ⊕ m) (n ⊕ n) ℝ where
@@ -294,6 +318,19 @@ def realifyAlgHom [Fintype ι] [DecidableEq ι] :
 @[simp]
 theorem realifyAlgHom_apply [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) : realifyAlgHom ι 𝕜 A = A.realify :=
+  (rfl)
+
+variable (ι 𝕜) in
+/-- Realification of square matrices, as a homomorphism of `ℝ`-algebras with involution: the
+conjugate transpose becomes the transpose (`Matrix.realify_star`). -/
+def realifyStarAlgHom [Fintype ι] [DecidableEq ι] :
+    Matrix ι ι 𝕜 →⋆ₐ[ℝ] Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ where
+  toAlgHom := realifyAlgHom ι 𝕜
+  map_star' := realify_star
+
+@[simp]
+theorem realifyStarAlgHom_apply [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι 𝕜) : realifyStarAlgHom ι 𝕜 A = A.realify :=
   (rfl)
 
 noncomputable section Interleaved
@@ -332,6 +369,13 @@ end Interleaved
 theorem commute_J_realify [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) : Commute (J ι ℝ) A.realify := by
   simp [Commute, SemiconjBy, J, realify, fromBlocks_multiply]
+
+/-- The realification of a scalar matrix `z • 1` is `re z • 1 + im z • J`: for `𝕜 = ℂ` and
+`z ≠ 0`, multiplication by `z` rotates each pair of real coordinates by `arg z` and scales it by
+`‖z‖`; for `z = 0` it is the zero map. -/
+theorem realify_smul_one [DecidableEq ι] (z : 𝕜) :
+    (z • 1 : Matrix ι ι 𝕜).realify = RCLike.re z • 1 + RCLike.im z • J ι ℝ := by
+  ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [J, h]
 
 /-- A square matrix is unitary exactly when its realification is orthogonal. -/
 @[simp]

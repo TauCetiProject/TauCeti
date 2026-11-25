@@ -151,6 +151,12 @@ theorem relabel_color {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ')
 theorem relabel_rev {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (c : κ') :
     (S.relabel e).rev c = e (S.rev (e.symm c)) := (rfl)
 
+/-- Renaming the palette renames the total color of every pair. -/
+@[simp]
+theorem colorOfPair_relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (u v : V) :
+    (S.relabel e).colorOfPair u v = (S.colorOfPair u v).map e := by
+  by_cases h : u = v <;> simp [h, colorOfPair_of_ne]
+
 variable {ι : Type*}
 
 /-- Split a coherent pair coloring by a symmetric labelling of the unordered vertex pairs: the

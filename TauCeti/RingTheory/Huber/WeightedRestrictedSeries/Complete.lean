@@ -88,6 +88,10 @@ specialisations are discharged with.
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
   `A`-algebra equivalence.
+* `TauCeti.Huber.toMvPowerSeries` : the power series of an element of `A⟨X₁,…,Xₖ⟩`, an injective
+  ring homomorphism (`TauCeti.Huber.toMvPowerSeries_injective`) sending a restricted series to
+  itself and a constant `a` to `C a` (`TauCeti.Huber.toMvPowerSeries_coe`,
+  `TauCeti.Huber.toMvPowerSeries_algebraMap`).
 * `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv` and
   `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm` : the
   comparison and its inverse are uniformly continuous. The inverse is the canonical map into
@@ -340,6 +344,46 @@ theorem coe_restrictedMvPowerSeriesCompletionEquiv_symm :
     ⇑(restrictedMvPowerSeriesCompletionEquiv k A).symm
       = ((↑) : _ → restrictedMvPowerSeriesCompletion k A) :=
   UniformSpace.Completion.coe_completeRingEquivSelf_symm _
+
+variable (k A) in
+/-- **The power series of an element of `A⟨X₁,…,Xₖ⟩`**, as a ring homomorphism: the comparison
+`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` followed by the inclusion of the restricted
+series into all power series. -/
+noncomputable def toMvPowerSeries :
+    restrictedMvPowerSeriesCompletion k A →+* MvPowerSeries (Fin k) A :=
+  (Subring.subtype _).comp (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom
+
+/-- The power series of `f ∈ A⟨X₁,…,Xₖ⟩` is the underlying series of its image under the
+comparison `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. -/
+theorem toMvPowerSeries_apply (f : restrictedMvPowerSeriesCompletion k A) :
+    toMvPowerSeries k A f = (restrictedMvPowerSeriesCompletionEquiv k A f : _) :=
+  (rfl)
+
+/-- The power series of a restricted series, regarded as an element of its completion, is that
+series. -/
+@[simp]
+theorem toMvPowerSeries_coe
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    toMvPowerSeries k A (f : restrictedMvPowerSeriesCompletion k A) = f := by
+  rw [toMvPowerSeries_apply, restrictedMvPowerSeriesCompletionEquiv_coe]
+
+/-- The power series of a constant `a ∈ A⟨X₁,…,Xₖ⟩` is the constant series `C a`. (Not `@[simp]`:
+`simp` proves it through `TauCeti.Huber.toMvPowerSeries_coe`.) -/
+theorem toMvPowerSeries_algebraMap (a : A) :
+    toMvPowerSeries k A (algebraMap A (restrictedMvPowerSeriesCompletion k A) a) =
+      MvPowerSeries.C a := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply, toMvPowerSeries_coe, coe_weightedC]
+
+/-- An element of `A⟨X₁,…,Xₖ⟩` is determined by its power series. -/
+theorem toMvPowerSeries_injective : Function.Injective (toMvPowerSeries k A) :=
+  Subtype.val_injective.comp (restrictedMvPowerSeriesCompletionEquiv k A).injective
+
+/-- Two elements of `A⟨X₁,…,Xₖ⟩` are equal as soon as their power series have the same
+coefficients. -/
+theorem ext_toMvPowerSeries_coeff {f g : restrictedMvPowerSeriesCompletion k A}
+    (h : ∀ ν, MvPowerSeries.coeff ν (toMvPowerSeries k A f) =
+      MvPowerSeries.coeff ν (toMvPowerSeries k A g)) : f = g :=
+  toMvPowerSeries_injective (MvPowerSeries.ext h)
 
 /-- The comparison is uniformly continuous: it is the uniform bijection between a complete
 Hausdorff space and its completion. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Basic facts about generalized Schauder bases
@@ -16,10 +17,10 @@ The basis vectors of a generalized Schauder basis span a dense subspace whenever
 filter is nontrivial, since every vector is a limit of finite coordinate projections.
 
 The coordinate functionals recover the coefficients of a finite sum of basis vectors, and of a
-basis series converging along any nontrivial summation filter below `atTop`, not only along the
-filter of the basis. Precomposing a continuous functional with a finite projection, or with an
-initial projection of a classical Schauder basis, gives a finite linear combination of
-coordinate functionals.
+basis series converging along any nontrivial summation filter whose support contains the queried
+index, not only along the filter of the basis. Precomposing a continuous functional with a finite
+projection, or with an initial projection of a classical Schauder basis, gives a finite linear
+combination of coordinate functionals.
 
 An unconditional basis indexed by `ℕ` is also a classical Schauder basis: convergence along the
 net of all finite sets implies convergence along initial segments. Conversely, any generalized
@@ -46,10 +47,9 @@ variable {β 𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup 
 
 /-- The basis vectors of a generalized Schauder basis span a dense subspace. -/
 theorem dense_span [L.NeBot] : Dense (Submodule.span 𝕜 (range b) : Set X) := fun x ↦
-  mem_closure_of_tendsto (b.tendsto_proj x) (Eventually.of_forall fun A ↦ by
-    rw [SetLike.mem_coe, proj_apply]
-    exact Submodule.sum_mem _ fun i _ ↦
-      Submodule.smul_mem _ _ (Submodule.subset_span (mem_range_self i)))
+  mem_closure_of_tendsto (b.tendsto_proj x) (Eventually.of_forall fun A ↦
+    Submodule.span_mono (image_subset_range b A)
+      (b.range_proj_eq_span A ▸ (b.proj A).toLinearMap.mem_range_self x))
 
 /-- A finite coordinate projection fixes every linear combination supported in its index set. -/
 theorem proj_sum_of_subset (a : β → 𝕜) {A B : Finset β} (hBA : B ⊆ A) :
@@ -63,27 +63,16 @@ theorem proj_sum_of_subset (a : β → 𝕜) {A B : Finset β} (hBA : B ⊆ A) :
 filter are uniformly bounded, then the basis expansion of every vector converges unconditionally. -/
 theorem hasSum_of_forall_norm_proj_le [L.NeBot] {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C)
     (x : X) : HasSum (fun i ↦ b.coord i x • b i) x := by
-  have hC0 : 0 ≤ C := (norm_nonneg (0 : X →L[𝕜] X)).trans (b.proj_empty ▸ hC ∅)
-  classical
-  rw [HasSum, SummationFilter.unconditional_filter, Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨y, hxy, hy⟩ := Metric.dense_iff.1 b.dense_span x (ε / (C + 1)) (by positivity)
-  obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hy
-  refine eventually_atTop.2 ⟨c.support, fun A hA ↦ ?_⟩
-  set y := c.sum fun i a ↦ a • b i with hy_def
-  have hyA : b.proj A y = y := by
-    rw [hy_def, Finsupp.sum, b.proj_sum_of_subset c hA]
-  have hnorm : ‖x - y‖ < ε / (C + 1) := by simpa [Metric.mem_ball, dist_eq_norm'] using hxy
-  rw [dist_eq_norm, ← b.proj_apply]
-  have hsub : b.proj A x - x = b.proj A (x - y) - (x - y) := by
-    rw [map_sub, hyA, sub_sub_sub_cancel_right]
-  calc
-    ‖b.proj A x - x‖ = ‖b.proj A (x - y) - (x - y)‖ := congrArg norm hsub
-    _ ≤ ‖b.proj A (x - y)‖ + ‖x - y‖ := norm_sub_le _ _
-    _ ≤ C * ‖x - y‖ + ‖x - y‖ := by gcongr; exact (b.proj A).le_of_opNorm_le (hC A) (x - y)
-    _ = (C + 1) * ‖x - y‖ := by ring
-    _ < (C + 1) * (ε / (C + 1)) := by gcongr
-    _ = ε := mul_div_cancel₀ ε (by positivity)
+  -- The projections are uniformly bounded and converge to the identity on the span of the basis
+  -- vectors, which is dense, so they converge to the identity everywhere.
+  have hspan : ∀ y ∈ (Submodule.span 𝕜 (range b) : Set X),
+      Tendsto (fun A : Finset β ↦ b.proj A y) atTop (𝓝 ((1 : X →L[𝕜] X) y)) := fun y hy ↦ by
+    obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hy
+    exact tendsto_atTop_of_eventually_const fun A hA ↦ by
+      rw [Finsupp.sum, b.proj_sum_of_subset c hA, one_apply_eq_self]
+  rw [HasSum, SummationFilter.unconditional_filter]
+  simpa only [proj_apply, one_apply_eq_self] using
+    ContinuousLinearMap.tendsto_apply_of_dense b.dense_span (.of_forall hC) hspan x
 
 /-- A generalized Schauder basis whose expansion converges unconditionally is an unconditional
 Schauder basis, with the same basis vectors and coordinate functionals. -/
@@ -138,17 +127,16 @@ theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (A : Finset β) :
   ext x
   simp [proj_apply, mul_comm]
 
-/-- Coordinates of a convergent basis series are its coefficients. The series may converge
-along any nontrivial summation filter `L'` below `atTop`, which need not be the filter `L` of the
-basis. -/
-theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] [L'.LeAtTop] {a : β → 𝕜}
-    {x : X} (h : HasSum (fun i ↦ a i • b i) x L') (i : β) : b.coord i x = a i := by
-  classical
-  have h2 : HasSum (fun j ↦ b.coord i (a j • b j)) (a i) L' := by
-    have : (fun j ↦ b.coord i (a j • b j)) = Pi.single i (a i) := by
-      ext j; by_cases hj : j = i <;> simp [b.ortho, hj]
-    rw [this]; exact (hasSum_pi_single i (a i)).mono_left SummationFilter.le_atTop
-  exact (h.map (b.coord i) (b.coord i).continuous).unique h2
+/-- The `i`-th coordinate of a convergent basis series is its `i`-th coefficient. The series may
+converge along any nontrivial summation filter `L'` whose partial sums eventually contain `i`
+(that is, `i ∈ L'.support`), which need not be the filter `L` of the basis. For `L'` below `atTop`,
+such as `SummationFilter.conditional`, every index lies in the support by `simp`. -/
+theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] {a : β → 𝕜} {x : X}
+    (h : HasSum (fun i ↦ a i • b i) x L') (i : β) (hi : i ∈ L'.support) :
+    b.coord i x = a i :=
+  -- Once the partial sums contain `i`, their `i`-th coordinate is constantly `a i`.
+  tendsto_nhds_unique (((b.coord i).continuous.tendsto x).comp h)
+    (tendsto_const_nhds.congr' (Eventually.mono hi fun _ hs ↦ (b.coord_sum a hs).symm))
 
 section CoordinateSeries
 
@@ -170,15 +158,13 @@ theorem summable_coord_smulRight [CompleteSpace F] (v : β → F)
   hs.of_norm_bounded fun i ↦
     (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
 
-/-- The sum of rank-one coordinate maps takes each basis vector to its prescribed vector. -/
-theorem tsum_coord_smulRight_apply_basis [CompleteSpace F] (v : β → F)
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) (i : β) :
+/-- A summable series of rank-one coordinate maps takes each basis vector to its prescribed
+vector. -/
+theorem tsum_coord_smulRight_apply_basis (v : β → F)
+    (hs : Summable (fun k ↦ (b.coord k).smulRight (v k))) (i : β) :
     (∑' k, (b.coord k).smulRight (v k)) (b i) = v i := by
-  classical
-  rw [tsum_apply (b.summable_coord_smulRight v hs), tsum_eq_single i]
-  · simp [b.ortho]
-  · intro k hki
-    simp [b.ortho, hki.symm]
+  rw [tsum_apply hs, tsum_eq_single i fun k hki ↦ by simp [b.ortho, hki.symm]]
+  simp [b.ortho]
 
 end CoordinateSeries
 

@@ -36,6 +36,10 @@ specialization.
 * `TauCeti.simplyBlockedRingHomAlong`: rename surviving variables along a column map, then block
   the target column.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
+* `TauCeti.simplyBlockedSpecializationLinearMap`: the same, as a linear map over the ground
+  semiring.
+* `TauCeti.simplyBlockedLift`: coefficientwise inclusion of the surviving variables, a section
+  of the specialization (`TauCeti.simplyBlockedSpecialization_simplyBlockedLift`).
 * `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
 * `TauCeti.simplyBlockedRenameRingHomInvPair`, `TauCeti.simplyBlockedRenameRingHomInvPairSymm`:
   the renaming and its inverse form a `RingHomInvPair`.
@@ -61,16 +65,23 @@ specialization.
   they carry the blocked source column to the blocked target column.
 * `TauCeti.simplyBlockedMap_simplyBlockedSpecialization`: specialization intertwines an
   unblocked semilinear map with its specialization `TauCeti.simplyBlockedMap`.
+* `TauCeti.simplyBlockedSpecialization_simplyBlockedLift`: specializing the lift of a specialized
+  chain recovers it.
 * `TauCeti.simplyBlockedSpecialization_surjective` and
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
   `TauCeti.X_smul_gridChainMinus_injective` says form a copy of `GC⁻`.
+  `TauCeti.simplyBlockedSpecializationLinearMap_surjective` and
+  `TauCeti.exact_X_smul_simplyBlockedSpecializationLinearMap` are the same for the linear maps
+  over the ground semiring.
 * `TauCeti.GridDiagram.simplyBlockedCoefficient_eq_sum`: a matrix coefficient is the sum, over the
   rectangles which avoid the blocked `O`-marking, of the product of the variables of the other
   `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.simplyBlockedSpecialization_unblockedDifferential`: coefficientwise
   specialization intertwines the unblocked differential with the simply blocked map, so the latter
-  really is the `V_i = 0` reduction of the former.
+  really is the `V_i = 0` reduction of the former;
+  `TauCeti.GridDiagram.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential` is the same
+  over the ground semiring.
 * `TauCeti.GridDiagram.map_simplyBlockedDifferential_of_simplyBlockedSpecialization`: a compatible
   function between specialized chains inherits the unblocked chain equation.
 
@@ -394,6 +405,45 @@ theorem simplyBlockedSpecialization_surjective :
   unfold simplyBlockedSpecialization
   exact hf
 
+/-- Including the surviving variables `V_c`, `c ≠ i`, in the full polynomial ring, coefficientwise.
+It is a section of the specialization at `V_i = 0`
+(`TauCeti.simplyBlockedSpecialization_simplyBlockedLift`), linear over the ground semiring. -/
+noncomputable def simplyBlockedLift : GridChainHat R n i →ₗ[R] GridChainMinus R n :=
+  Finsupp.mapRange.linearMap (MvPolynomial.rename Subtype.val).toLinearMap
+
+/-- The lift renames each coefficient into the full polynomial ring. -/
+@[simp]
+theorem simplyBlockedLift_apply (c : GridChainHat R n i) (x : GridState n) :
+    simplyBlockedLift R i c x = MvPolynomial.rename Subtype.val (c x) :=
+  (rfl)
+
+/-- Specializing the lift of a chain at `V_i = 0` recovers the chain. -/
+@[simp]
+theorem simplyBlockedSpecialization_simplyBlockedLift (c : GridChainHat R n i) :
+    simplyBlockedSpecialization R i (simplyBlockedLift R i c) = c := by
+  ext x
+  rw [simplyBlockedSpecialization_apply, simplyBlockedLift_apply, killCompl_rename_app]
+
+/-- Specialization at `V_i = 0`, as a linear map over the ground semiring. -/
+noncomputable def simplyBlockedSpecializationLinearMap :
+    GridChainMinus R n →ₗ[R] GridChainHat R n i :=
+  Finsupp.mapRange.linearMap
+    (MvPolynomial.killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+      Subtype.val_injective).toLinearMap
+
+/-- The linear specialization is `simplyBlockedSpecialization`. -/
+@[simp]
+theorem simplyBlockedSpecializationLinearMap_apply (c : GridChainMinus R n) :
+    simplyBlockedSpecializationLinearMap R i c = simplyBlockedSpecialization R i c :=
+  (rfl)
+
+/-- The linear specialization at `V_i = 0` is surjective. -/
+theorem simplyBlockedSpecializationLinearMap_surjective :
+    Function.Surjective (simplyBlockedSpecializationLinearMap (n := n) R i) := by
+  intro y
+  simpa only [simplyBlockedSpecializationLinearMap_apply] using
+    simplyBlockedSpecialization_surjective R i y
+
 /-- Multiplication by the blocked variable `V_i` is injective on the unblocked grid chain
 module. -/
 theorem X_smul_gridChainMinus_injective :
@@ -432,6 +482,17 @@ theorem exact_X_smul_simplyBlockedSpecialization :
   simp only [simplyBlockedSpecialization_apply, Finsupp.coe_zero, Pi.zero_apply,
     Set.mem_ofPred_eq]
   exact forall_congr' fun x => exact_X_mul_simplyBlockedRingHom R i (c x)
+
+/-- `TauCeti.exact_X_smul_simplyBlockedSpecialization` with multiplication by `V_i` and the
+specialization at `V_i = 0` as linear maps over the ground semiring. -/
+theorem exact_X_smul_simplyBlockedSpecializationLinearMap :
+    Function.Exact
+      (DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X i : MvPolynomial (Fin n) R))
+      (simplyBlockedSpecializationLinearMap R i) := by
+  intro c
+  simpa only [simplyBlockedSpecializationLinearMap_apply, Set.mem_range,
+    DistribSMul.toLinearMap_apply] using
+    exact_X_smul_simplyBlockedSpecialization R i c
 
 /-- Specialization at `V_i = 0` kills multiples of `V_i`. -/
 @[simp]
@@ -695,6 +756,14 @@ theorem map_simplyBlockedDifferential_of_simplyBlockedSpecialization {m : ℕ} {
   obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R j c
   rw [← simplyBlockedSpecialization_unblockedDifferential, hg, hg,
     ← simplyBlockedSpecialization_unblockedDifferential, hf]
+
+/-- Over the ground semiring, linear specialization intertwines the unblocked and simply blocked
+maps. -/
+theorem simplyBlockedSpecializationLinearMap_comp_unblockedDifferential (i : Fin n) :
+    simplyBlockedSpecializationLinearMap R i ∘ₗ (G.unblockedDifferential R).restrictScalars R =
+      (G.simplyBlockedDifferential R i).restrictScalars R ∘ₗ
+        simplyBlockedSpecializationLinearMap R i :=
+  LinearMap.ext (G.simplyBlockedSpecialization_unblockedDifferential R i)
 
 end GridDiagram
 

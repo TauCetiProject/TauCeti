@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 
 /-!
 # Fundamental domains of integer spans
@@ -32,6 +33,10 @@ is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`)
 vectors whose integer span contains a full lattice are linearly independent
 (`IsZLattice.linearIndependent_of_le_span`).
 
+For a finite index type `d`, the integer vectors `d → ℤ` are the standard lattice
+`ℤ^d ⊆ ℝ^d`, so sums over them can be read as sums over that lattice
+(`TauCeti.summable_pi_int_iff_summable_span`).
+
 ## Main results
 
 * `ZSpan.convex_fundamentalDomain`: the fundamental domain of a real basis is convex.
@@ -45,12 +50,15 @@ vectors whose integer span contains a full lattice are linearly independent
   tiled by the lattice translates of a bounded convex cell of arbitrarily large measure.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
   exactly when it is the coordinate vector of an element of `Λ` in a `ℤ`-basis of `Λ`.
+* `TauCeti.summable_pi_int_iff_summable_span`: for a finite index type `d`, summability over
+  the integer vectors `d → ℤ` is summability over the standard lattice `ℤ^d ⊆ ℝ^d`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
 * `ZLattice.module_free_and_finite_of_injective`: the source of an injective linear map whose
   range is a full lattice is a free `ℤ`-module of finite rank.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instIsZLatticeComapSpanSubtype`: a discrete subgroup is a full lattice in its span.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
@@ -192,6 +200,23 @@ theorem _root_.Module.Basis.mem_span_basisFun_iff [Finite ι] {Λ : Type*} [AddC
   · rintro ⟨l, rfl⟩ i
     simp
 
+/-- For a finite index type `d`, through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ`
+are the standard lattice `ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ`
+is summable over the integer vectors exactly when it is summable over that lattice. The
+equivalence is the coordinate map of the integral basis `Module.Basis.restrictScalars ℤ` of the
+standard basis (`Module.Basis.coe_restrictScalars_equivFun_symm`). -/
+theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [AddCommMonoid α]
+    [TopologicalSpace α] {f : (d → ℝ) → α} :
+    (Summable fun n : d → ℤ ↦ f fun i ↦ (n i : ℝ)) ↔
+      Summable fun ℓ : Submodule.span ℤ (Set.range (Pi.basisFun ℝ d)) ↦ f ℓ := by
+  -- The lattice vector with coordinates `n` is the real vector `fun i ↦ (n i : ℝ)`.
+  have hcoe (n : d → ℤ) :
+      (((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm n : d → ℝ) = fun i ↦ (n i : ℝ) := by
+    simp [Module.Basis.coe_restrictScalars_equivFun_symm]
+  rw [← ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm.toEquiv.summable_iff]
+  simp only [Function.comp_def, LinearEquiv.coe_toEquiv, hcoe]
+
+
 end TauCeti
 
 universe u
@@ -212,6 +237,13 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtypeVal V.injective_subtype
+
+/-- A discrete subgroup `L` is a full lattice in its `K`-span: viewed as a subgroup of
+`span K L`, it spans that space. -/
+instance instIsZLatticeComapSpanSubtype {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L] :
+    IsZLattice K (ZLattice.comap K L (Submodule.span K (L : Set E)).subtype) :=
+  ⟨by rw [ZLattice.coe_comap]; exact Submodule.span_span_coe_preimage⟩
 
 section LinearIsometryEquiv
 

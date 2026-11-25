@@ -49,6 +49,8 @@ apply to `e ∘ R`.
   an open subset of the target.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
+* `IsLocalDiffeomorph.existsUnique_contMDiff_comp_eq`: a `C^m` map constant on the fibres of a
+  surjective local diffeomorphism descends to a unique `C^m` map on its target.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
   `IsLocalDiffeomorph.contMDiff_comp_prodMap_iff`: the same cancellation for maps out of a
   product, along the second factor.
@@ -183,6 +185,19 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N
   refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (hp.contMDiff.of_le hm)⟩
   obtain ⟨x, rfl⟩ := hsurj y
   exact ((hp x).contMDiffAt_comp_iff hm).1 (hg x)
+
+/-- **Smooth maps constant on fibres descend along a surjective local diffeomorphism.** If `p` is a
+surjective `C^n` local diffeomorphism, `m ≤ n`, and a `C^m` map `g` is constant on the fibres of
+`p`, then `g` factors as `g' ∘ p` for a unique map `g'`, and `g'` is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.existsUnique_contMDiff_comp_eq {m : ℕ∞ω} {g : M → N}
+    (hp : IsLocalDiffeomorph I J n p) (hsurj : Function.Surjective p) (hm : m ≤ n)
+    (hg : ContMDiff I I' m g) (hgp : Function.FactorsThrough g p) :
+    ∃! g' : B → N, ContMDiff J I' m g' ∧ g' ∘ p = g := by
+  have hcomp : (g ∘ Function.surjInv hsurj) ∘ p = g :=
+    funext fun x ↦ hgp (Function.surjInv_eq hsurj (p x))
+  refine ⟨g ∘ Function.surjInv hsurj,
+    ⟨(hp.contMDiff_comp_iff hsurj hm).1 (by rwa [hcomp]), hcomp⟩, fun g' hg' ↦ ?_⟩
+  exact hsurj.injective_comp_right (hg'.2.trans hcomp.symm)
 
 section Prod
 

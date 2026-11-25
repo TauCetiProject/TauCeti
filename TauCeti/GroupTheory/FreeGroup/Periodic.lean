@@ -260,8 +260,8 @@ theorem isRotated_or_isRotated_invRev_of_isPeriodicWord {P Q w : List (α × Boo
 private theorem not_exists_eq_flatten_replicate_of_lift_eq {w : List (Fin 2 × Bool)}
     (h : lift (fun c => if c = 1 then Multiplicative.ofAdd (1 : ℤ) else 1) (mk w) =
       Multiplicative.ofAdd 1) : ¬∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten :=
-  not_exists_eq_flatten_replicate_of_not_isProperPower
-    (Group.not_isProperPower_of_map_eq_ofAdd_one _ h)
+  not_exists_eq_flatten_replicate_of_not_isProperPower fun hp =>
+    TauCeti.not_isProperPower_ofAdd_one (h ▸ hp.map _)
 
 /-- The length bound of overlapping periodicities is sharp: in `F(a, b)` the word `aabaa`, of length
 `5 < 3 + 4 - gcd(3, 4)`, is both `aab`-periodic and `aaba`-periodic, and neither `aab` nor `aaba`

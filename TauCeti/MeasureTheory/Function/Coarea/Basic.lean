@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Function.Coarea.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
@@ -36,9 +36,9 @@ measurable set.
 Suppose that `f` is approximated on `s` by a linear map `L` up to `δ`, in the sense of
 `ApproximatesLinearOn`, and that `M` is a continuous linear right inverse of `L`. The map
 `h x = x + M (f x - L x)` satisfies `L ∘ h = f`, and it is approximated on `s` by the identity up to
-`c = δ ‖M‖` (`TauCeti.Analysis.Calculus.ApproximatesLinearOn`). When `c < 1`, it distorts distances
-on `s` by factors between `1 - c` and `1 + c`, and it maps each fibre `s ∩ f ⁻¹' {y}` onto the
-fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`. The linear coarea formula
+`c = δ ‖M‖` (`TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic`). When `c < 1`, it distorts
+distances on `s` by factors between `1 - c` and `1 + c`, and it maps each fibre `s ∩ f ⁻¹' {y}`
+onto the fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`. The linear coarea formula
 `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton` for `h '' s` then gives the
 coarea formula for `f` on `s` up to factors close to `1`
 (`ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Trilinear
 public import TauCeti.Algebra.Homology.SquareZero.Graded

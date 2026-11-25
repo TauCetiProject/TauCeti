@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Pullback
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 
 /-!
 # Invariance of weak pseudoholomorphic maps under diffeomorphisms of the target
@@ -17,20 +16,25 @@ Let `X` be a Riemann surface and `g : M → N` a smooth diffeomorphism between m
 on the same boundaryless model `I`. A map `g ∘ u : X → N` is weakly pseudoholomorphic for a
 domain-dependent structure `J` on `N` and an inhomogeneous term `ν` exactly when `u : X → M` is
 weakly pseudoholomorphic for the pulled-back structure `g^* J` and term `g^* ν`
-(`TauCeti.isWeakPseudoholomorphicOn_diffeomorph_comp_iff` on open sets,
+(`TauCeti.isWeakPseudoholomorphicOn_diffeomorph_comp_iff` on a set,
 `TauCeti.isWeakPseudoholomorphic_diffeomorph_comp_iff` on the whole surface). This is the
 invariance of the weak equation under diffeomorphisms of the target, with `J` and `ν`
 transported along. As a Check, `z ↦ 2 z` solves the equation on `ℂ` for the structure `i`, since
-`i` pulls back to itself along `z ↦ 2 z` and the identity solves it
-(`TauCeti.isWeakPseudoholomorphic_two_mul`).
+`i` pulls back to itself along `z ↦ 2 z` (`TauCeti.twoSMulDiffeomorph`,
+`TauCeti.pullback_twoSMulDiffeomorph_ofComplexManifold`, and for domain-dependent structures
+`const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph` in the namespace
+`TauCeti.ContMDiffAlmostComplexStructureFamily`, whose fully qualified name is longer than a line)
+and the identity solves it (`TauCeti.isWeakPseudoholomorphic_two_mul`).
 
 The predicate tests every chart `ψ` of the maximal atlas of `M` and every chart `χ` of that of
 `N`, and `ψ ↦ g⁻¹ ≫ ψ`, `χ ↦ g ≫ χ` match these charts so that `ψ = χ ∘ g`. In matched
 charts the two coordinate equations are the same: the coordinate expressions `ψ ∘ u ∘ φ⁻¹` and
 `χ ∘ (g ∘ u) ∘ φ⁻¹` are equal, and `g^* J` and `g^* ν` read in `ψ` are `J` and `ν` read in `χ`
 (`TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback`,
-`TauCeti.InhomogeneousTerm.chartTerm_pullback`). The Sobolev class is preserved by composition
-with `g` (`Diffeomorph.memWkpLocMapOnGroupoid_diffeomorph_comp_iff`). No comparison of the
+`TauCeti.InhomogeneousTerm.chartTerm_pullback`). The Sobolev class follows from continuity and
+the coordinate equations
+(`TauCeti.isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn`), and composition
+with the homeomorphism `g` preserves continuity, so `s` need not be open. No comparison of the
 equation in two charts of the same manifold is needed.
 
 ## Implementation notes
@@ -87,13 +91,13 @@ private theorem isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff (g : M ≃ₘ�
   rfl
 
 /-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
-map `g ∘ u` is weakly pseudoholomorphic on an open set `s` for `J` and `ν` exactly when `u` is
-weakly pseudoholomorphic on `s` for the pulled-back structure `g^* J` and term `g^* ν`. -/
-theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) (hs : IsOpen s) :
+map `g ∘ u` is weakly pseudoholomorphic on `s` for `J` and `ν` exactly when `u` is weakly
+pseudoholomorphic on `s` for the pulled-back structure `g^* J` and term `g^* ν`. -/
+theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) :
     IsWeakPseudoholomorphicOn J ν p (g ∘ u) s ↔
       IsWeakPseudoholomorphicOn (J.pullback g le_top) (ν.pullback g le_top) p u s := by
-  rw [isWeakPseudoholomorphicOn_iff, isWeakPseudoholomorphicOn_iff]
-  refine and_congr (g.memWkpLocMapOnGroupoid_diffeomorph_comp_iff le_rfl (by simp) hs)
+  simp only [isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn]
+  refine and_congr (g.toHomeomorph.comp_continuousOn_iff u s)
     ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ hφ χ hχ ↦ ?_⟩
   · -- Test `g ∘ u` in the chart `g⁻¹ ≫ ψ` of `N`.
     refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
@@ -118,18 +122,23 @@ theorem isWeakPseudoholomorphic_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) 
     IsWeakPseudoholomorphic J ν p (g ∘ u) ↔
       IsWeakPseudoholomorphic (J.pullback g le_top) (ν.pullback g le_top) p u := by
   simp only [← isWeakPseudoholomorphicOn_univ,
-    isWeakPseudoholomorphicOn_diffeomorph_comp_iff g isOpen_univ]
+    isWeakPseudoholomorphicOn_diffeomorph_comp_iff g]
 
 /-! ### Checks -/
 
 section Checks
 
 /-- The map `z ↦ 2 z` of `ℂ`, as a diffeomorphism. -/
-private noncomputable def twoSMulDiffeomorph : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ :=
+noncomputable def twoSMulDiffeomorph : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ :=
   (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv.toDiffeomorph
 
+/-- The diffeomorphism `twoSMulDiffeomorph` is `z ↦ 2 z`. -/
+@[simp]
+theorem twoSMulDiffeomorph_apply (z : ℂ) : twoSMulDiffeomorph z = 2 * z := by
+  simp [twoSMulDiffeomorph, two_mul, two_smul]
+
 /-- The structure `i` of `ℂ` pulls back to itself along `z ↦ 2 z`. -/
-private theorem pullback_twoSMulDiffeomorph_ofComplexManifold {ℓ : ℕ∞} :
+theorem pullback_twoSMulDiffeomorph_ofComplexManifold {ℓ : ℕ∞} :
     ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ).pullback
       twoSMulDiffeomorph le_top =
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ := by
@@ -155,6 +164,19 @@ private theorem pullback_twoSMulDiffeomorph_ofComplexManifold {ℓ : ℕ∞} :
     rw [smul_comm]
   exact key _ hD v
 
+/-- A domain-dependent structure equal to the structure `i` of `ℂ` at every domain point is its own
+pullback along `z ↦ 2 z`. -/
+theorem ContMDiffAlmostComplexStructureFamily.const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph
+    {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P] {ℓ : ℕ∞} :
+    ContMDiffAlmostComplexStructureFamily.const (IP := IP) (P := P)
+        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) =
+      (ContMDiffAlmostComplexStructureFamily.const
+        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)).pullback
+        twoSMulDiffeomorph le_top := by
+  rw [ContMDiffAlmostComplexStructureFamily.pullback_const,
+    pullback_twoSMulDiffeomorph_ofComplexManifold]
+
 /-- **Check.** On `X = M = N = ℂ` with the structure `i`, the map `z ↦ 2 z` is weakly
 pseudoholomorphic: it is `g ∘ id` for the diffeomorphism `g = (2 ·)`, along which `i` pulls back
 to itself, and the identity solves the equation. -/
@@ -162,20 +184,16 @@ theorem isWeakPseudoholomorphic_two_mul {ℓ : ℕ∞} {p : ENNReal} :
     IsWeakPseudoholomorphic (ContMDiffAlmostComplexStructureFamily.const
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)) 0 p
       (fun z : ℂ ↦ 2 * z) := by
-  have hJ : ContMDiffAlmostComplexStructureFamily.const (IP := 𝓘(ℝ, ℂ)) (P := ℂ)
-      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) =
-      (ContMDiffAlmostComplexStructureFamily.const
-        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)).pullback
-        twoSMulDiffeomorph le_top := by
-    rw [ContMDiffAlmostComplexStructureFamily.pullback_const,
-      pullback_twoSMulDiffeomorph_ofComplexManifold]
+  have hJ :=
+    ContMDiffAlmostComplexStructureFamily.const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph
+      (IP := 𝓘(ℝ, ℂ)) (P := ℂ) (ℓ := ℓ)
   have hid := (isWeakPseudoholomorphic_ofEq (ν := 0) rfl hJ).2
     (isWeakPseudoholomorphic_id (X := ℂ) (ℓ := ℓ) (p := p))
   rw [InhomogeneousTerm.ofEq_zero, ← InhomogeneousTerm.pullback_zero twoSMulDiffeomorph le_top,
     ← isWeakPseudoholomorphic_diffeomorph_comp_iff] at hid
   convert hid using 1
   funext z
-  simp [twoSMulDiffeomorph, two_mul, two_smul]
+  simp
 
 end Checks
 

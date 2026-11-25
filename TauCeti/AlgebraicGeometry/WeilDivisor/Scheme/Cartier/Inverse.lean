@@ -304,8 +304,8 @@ theorem toWeilDivisor_injective [IsNormalScheme X] :
     refine TopCat.Sheaf.eq_of_locally_eq' (cartierDivisorSheaf X) U ⊤ (fun _ ↦ homOfLE le_top)
       hcover D 0 fun x ↦ ?_
     have : Nonempty (U x) := ⟨⟨x, hxU x⟩⟩
-    obtain ⟨u, hu⟩ := exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme
-      (U := U x) (f := g x) fun y hy ↦ by
+    obtain ⟨u, hu⟩ := exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed
+      (U := U x) (fun _ _ ↦ inferInstance) (f := g x) fun y hy ↦ by
         rw [← D.coeff_toWeilDivisor_eq_ord y hy (g x) (hg x), ← toWeilDivisorHom_apply, hD,
           WeilDivisor.coeff_zero]
     have hunit : Units.map (X.germToFunctionField (U x)).hom u = g x := Units.ext hu
