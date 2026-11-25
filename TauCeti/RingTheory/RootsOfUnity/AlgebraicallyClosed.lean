@@ -63,12 +63,5 @@ theorem IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime_of_isAlgClosed
     {K Ω : Type*} [Field K] [Field Ω] [Algebra K Ω] [IsAlgClosed Ω]
     {n j : ℕ} {ζ : Ω} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
     (hirr : Irreducible (Polynomial.cyclotomic n K)) :
-    ∃ τ : Ω ≃ₐ[K] Ω, τ ζ = ζ ^ j := by
-  have : NeZero n :=
-    ⟨by rintro rfl; exact not_irreducible_one (Polynomial.cyclotomic_zero K ▸ hirr)⟩
-  have := hζ.neZero'
-  have : NeZero (n : K) := ⟨fun hn ↦
-    (NeZero.ne (n : Ω)) (by simpa using congrArg (algebraMap K Ω) hn)⟩
-  apply IsConjRoot.exists_algEquiv_of_isAlgClosed
-  rw [isConjRoot_def, (hζ.minpoly_eq_cyclotomic_of_irreducible hirr).symm,
-    ((hζ.pow_of_coprime j hj.symm).minpoly_eq_cyclotomic_of_irreducible hirr).symm]
+    ∃ τ : Ω ≃ₐ[K] Ω, τ ζ = ζ ^ j :=
+  (hζ.isConjRoot_pow_of_coprime hj hirr).exists_algEquiv_of_isAlgClosed

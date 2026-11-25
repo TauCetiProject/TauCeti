@@ -17,11 +17,16 @@ points of the circle with the same `n`-th power. These are the facts needed to i
 of the cyclic rotation groups `ℤ/n` acting on the circle, as in the quotient constructions of lens
 spaces.
 
+The standard complex character `ZMod.stdAddChar` takes primitive values at units. We also
+describe its values and their images under multiplicative maps of `ℂ`.
+
 ## Main results
 
 * `ZMod.isPrimitiveRoot_stdAddChar_one`: the standard complex character at `1` is primitive.
-* `MonoidHom.exists_map_stdAddChar_one_eq`: an injective multiplicative map permutes primitive
-  standard character values.
+* `MonoidHom.exists_map_stdAddChar_one_eq`: an injective multiplicative map sends `ζ_n` to
+  `ζ_n^d` for some unit `d` modulo `n`.
+* `ZMod.map_stdAddChar_of_map_stdAddChar_one`: the image of every standard character value is
+  determined by the image of its value at `1`.
 * `ZMod.toCircle_pow_eq_one`: every value of `ZMod.toCircle` is an `n`-th root of unity.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.

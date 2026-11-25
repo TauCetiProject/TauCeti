@@ -16,7 +16,7 @@ at `∞`, in `q = exp (2πiτ / N)`, with coefficients in `ℚ(ζ_N)`, where `ζ
 unit `d` modulo `N`, applying the automorphism `ζ_N ↦ ζ_N^d` of `ℚ(ζ_N)` to these coefficients
 gives the expansion of another element of `F_N`. This constructs the diagonal subgroup action
 (`TauCeti.modularFunctionFieldDiagAction`). We compute its joint fixed points with the separate
-`SL(2, ℤ/Nℤ)` right action. Compatibility and assembly into a `GL₂` action remain to be proved.
+`SL(2, ℤ/Nℤ)` right action.
 
 The coefficient automorphism is the restriction to `ℚ(ζ_N)` of any field endomorphism `σ` of `ℂ`
 with `σ ζ_N = ζ_N^d`. Such a `σ` exists (`Units.exists_ringEquiv_apply_stdAddChar_one`), and its
@@ -29,7 +29,7 @@ An element of `F_N` is fixed by every `diag(1, d)` exactly when its expansion ha
 coefficients, because the field fixed by all automorphisms of `ℂ` is `ℚ` and every automorphism
 of `ℂ` sends `ζ_N` to some `ζ_N^d`. Together with the fixed field `ℚ(ζ_N)(j)` of `SL(2, ℤ/Nℤ)`,
 the joint fixed points of these two separate actions are exactly the level-one field
-`F₁ = ℚ(j)`. This is a joint fixed-point result, independent of the remaining compatibility proof.
+`F₁ = ℚ(j)`.
 
 ## Main declarations
 
