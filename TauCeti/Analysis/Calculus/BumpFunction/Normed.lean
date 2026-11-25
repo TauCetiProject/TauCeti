@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.BumpFunction.Basic
 public import TauCeti.MeasureTheory.Measure.Comap
+public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -29,6 +31,9 @@ specializes them to `(TauCeti.ballBump x₀ hρ).normed μ`, which is supported 
 `‖(TauCeti.ballBump x₀ hρ).normed μ y‖ ≤ C * ρ ^ (-finrank ℝ E)` with `C` independent of `x₀`
 and `ρ`.
 
+The measure `f.normedMeasure μ` with density `f.normed μ` against `μ` is a probability measure
+concentrated on that closed ball, and integrating against it is integrating against `f.normed μ`.
+
 ## Main declarations
 
 * `ContDiffBump.integrable_normed_smul`: bump-weighted continuous functions are integrable.
@@ -36,6 +41,8 @@ and `ρ`.
   radius `f.rOut` are integrals over the whole space.
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
+* `ContDiffBump.normedMeasure`: the probability measure with density `f.normed μ`, with
+  `ContDiffBump.integral_normedMeasure` and `ContDiffBump.ae_mem_closedBall_normedMeasure`.
 * `ContDiffBump.setIntegral_normed`: for a locally finite measure `μ` positive on nonempty open
   sets, integrating `f.normed μ` over any superset of `Metric.closedBall c f.rOut` yields `1`.
 * `ContDiffBump.setIntegral_normed_halfSpace`: integrating `f.normed μ` (for `f` centered at `0`)
@@ -57,7 +64,7 @@ open scoped ContDiff Topology
 
 namespace ContDiffBump
 
-section Comap
+section
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup G]
@@ -99,7 +106,32 @@ theorem integral_closedBall_normed_smul_const [CompleteSpace G] (z : G) :
     ∫ x : closedBall c f.rOut, f.normed μ x • z ∂(μ.comap (↑)) = z := by
   rw [integral_smul_const, f.integral_closedBall_normed, one_smul]
 
-end Comap
+/-- The probability measure with density `f.normed μ` against `μ`. -/
+noncomputable def normedMeasure : Measure E :=
+  μ.withDensity fun x ↦ ENNReal.ofReal (f.normed μ x)
+
+instance : IsProbabilityMeasure (f.normedMeasure μ) :=
+  ⟨by rw [normedMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal f.integrable_normed (ae_of_all _ f.nonneg_normed),
+    f.integral_normed, ENNReal.ofReal_one]⟩
+
+omit [FiniteDimensional ℝ E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- Integrating against `f.normedMeasure μ` is integrating against the density `f.normed μ`. -/
+theorem integral_normedMeasure (g : E → G) :
+    ∫ x, g x ∂f.normedMeasure μ = ∫ x, f.normed μ x • g x ∂μ := by
+  rw [normedMeasure, integral_withDensity_eq_integral_toReal_smul
+    f.continuous_normed.measurable.ennreal_ofReal
+    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp [f.nonneg_normed]
+
+/-- The measure `f.normedMeasure μ` is concentrated on the closed ball of radius `f.rOut`. -/
+theorem ae_mem_closedBall_normedMeasure : ∀ᵐ x ∂f.normedMeasure μ, x ∈ closedBall c f.rOut :=
+  (ae_withDensity_iff f.continuous_normed.measurable.ennreal_ofReal).2
+    (ae_of_all _ fun x hx ↦ ball_subset_closedBall <| by
+      rw [← f.support_normed_eq (μ := μ)]
+      exact fun h ↦ hx (by simp [h]))
+
+end
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]

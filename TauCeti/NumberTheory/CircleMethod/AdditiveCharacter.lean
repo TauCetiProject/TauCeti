@@ -229,6 +229,27 @@ theorem distInt_periodic : Function.Periodic distInt 1 := fun α ↦ by
 theorem distInt_neg (α : ℝ) : distInt (-α) = distInt α := by
   rw [distInt_eq_norm, distInt_eq_norm, AddCircle.coe_neg, norm_neg]
 
+theorem distInt_le_abs (α : ℝ) : distInt α ≤ |α| := by
+  simpa using distInt_le_abs_sub_intCast α 0
+
+/-- `‖·‖` is subadditive: `‖α + β‖ ≤ ‖α‖ + ‖β‖`. -/
+theorem distInt_add_le (α β : ℝ) : distInt (α + β) ≤ distInt α + distInt β := by
+  simp only [distInt_eq_norm, AddCircle.coe_add]
+  exact norm_add_le _ _
+
+/-- A fraction `k / q` with `q ∤ k` is at distance at least `1 / q` from the integers. -/
+theorem one_div_le_distInt_intCast_div {q : ℕ} {k : ℤ} (hk : ¬(q : ℤ) ∣ k) :
+    1 / (q : ℝ) ≤ distInt (k / q) := by
+  rcases Nat.eq_zero_or_pos q with rfl | hq
+  · simp
+  have hq' : (0 : ℝ) < q := by exact_mod_cast hq
+  set r := round ((k : ℝ) / q)
+  have hne : k - q * r ≠ 0 := fun h ↦ hk ⟨r, by linarith⟩
+  have h1 : (1 : ℝ) ≤ |((k - q * r : ℤ) : ℝ)| := by exact_mod_cast Int.one_le_abs hne
+  rw [distInt_def, show (k : ℝ) / q - r = ((k - q * r : ℤ) : ℝ) / q by
+    push_cast; field_simp, abs_div, abs_of_pos hq']
+  exact div_le_div_of_nonneg_right h1 hq'.le
+
 /-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2|x| / π ≤ |sin x|` for `|x| ≤ π / 2`. -/
 theorem two_mul_distInt_le_abs_sin (α : ℝ) : 2 * distInt α ≤ |Real.sin (π * α)| := by
   -- `|sin (π ·)|` is `1`-periodic, so it is unchanged when `α` is replaced by `r = α - round α`.

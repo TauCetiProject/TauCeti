@@ -43,7 +43,11 @@ about `y ∈ range j`, the preimages of these star hulls are cofinal among the c
 set keeps its convex hull compact (`IsCompact.convexHull_insert`), without finite-dimensionality, so
 in a Hausdorff space the closed convex hull of `insert x s` lies in any set containing `x` and
 star-convex about every point of a compact convex superset of `s`
-(`IsCompact.closure_convexHull_insert_subset_of_forall_starConvex`).
+(`IsCompact.closure_convexHull_insert_subset_of_forall_starConvex`). Over a linearly ordered field
+with compact closed intervals (`CompactIccSpace`), in a topological vector space, the convex hull of
+a finite union of sets with compact convex hulls is compact (`TauCeti.isCompact_convexHull_union`,
+`Finset.isCompact_convexHull_biUnion`), although the convex hull of a single compact set need not
+be in infinite dimension.
 -/
 
 public section
@@ -228,6 +232,38 @@ theorem IsCompact.closure_convexHull_insert_subset_of_forall_starConvex {𝕜 E 
   (closure_minimal (convexHull_mono (insert_subset_insert hsK))
     (hK.convexHull_insert hKc x).isClosed).trans
     (hKc.convexHull_insert_subset_of_forall_starConvex hx h)
+
+section ConvexHullUnion
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]
+  [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+
+/-- If two sets have compact convex hulls, so does their union. When both sets are nonempty, its
+convex hull is the convex join of the two convex hulls. -/
+theorem TauCeti.isCompact_convexHull_union {s t : Set E} (hs : IsCompact (convexHull 𝕜 s))
+    (ht : IsCompact (convexHull 𝕜 t)) : IsCompact (convexHull 𝕜 (s ∪ t)) := by
+  rcases s.eq_empty_or_nonempty with rfl | hs₀
+  · simpa using ht
+  rcases t.eq_empty_or_nonempty with rfl | ht₀
+  · simpa using hs
+  rw [convexHull_union hs₀ ht₀]
+  exact hs.convexJoin ht
+
+/-- If finitely many sets have compact convex hulls, so does their union. In particular the convex
+hull of a finite union of compact convex sets is compact. -/
+theorem Finset.isCompact_convexHull_biUnion {ι : Type*} (s : Finset ι) {t : ι → Set E}
+    (ht : ∀ i ∈ s, IsCompact (convexHull 𝕜 (t i))) :
+    IsCompact (convexHull 𝕜 (⋃ i ∈ s, t i)) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s _ ih =>
+    rw [Finset.set_biUnion_insert]
+    exact TauCeti.isCompact_convexHull_union (ht i (Finset.mem_insert_self i s))
+      (ih fun j hj ↦ ht j (Finset.mem_insert_of_mem hj))
+
+end ConvexHullUnion
 
 namespace TopologicalSpace.Compacts
 

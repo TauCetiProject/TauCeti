@@ -39,9 +39,10 @@ its parametrization an injective immersive homomorphism. The image of its differ
 identity is the fibre of the distribution there, which is `S`.
 
 Second countability of `G` is part of the definition of a manifold in the reference below. The
-presentation is modelled on Euclidean space, the model of the Frobenius leaf, while
-`TauCeti.Lie.ImmersedLieSubgroupData` takes its source model in the universes of the model of `G`,
-so the model of `G` is taken in `Type`.
+presentation is modelled on Euclidean space, the model of the Frobenius leaf, in `Type`. The data
+`TauCeti.Lie.ImmersedLieSubgroupData` allows a source model in any universe, but the predicate
+`TauCeti.Lie.IsImmersedLieSubgroup` pins it to the universes of the model of `G`, so the model of
+`G` is taken in `Type`.
 
 ## Main definitions
 
@@ -252,7 +253,8 @@ of a second-countable Lie group `G` is the range of the differential of a connec
 subgroup of `G`, its integral leaf subgroup. -/
 theorem exists_immersedLieSubgroupData_range_lieMapToHom_eq
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
-    ∃ (K : Subgroup G) (d : ImmersedLieSubgroupData I K), d.lieMapToHom.range = S :=
+    ∃ (K : Subgroup G) (d : ImmersedLieSubgroupData.{0, 0, w, 0, 0, w} I K),
+      d.lieMapToHom.range = S :=
   ⟨_, S.integralLeafSubgroupData, S.range_lieMapToHom_integralLeafSubgroupData⟩
 
 /-- The integral leaf subgroup of a Lie subalgebra is a connected immersed Lie subgroup. -/
