@@ -27,7 +27,7 @@ Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 
 For a free module, in every characteristic, `-Q` is the quadratic form of a bilinear form
-(`CliffordAlgebra.exists_bilinForm_toQuadraticMap_eq_zero_sub`), so `CliffordAlgebra.changeForm`
+(Mathlib's `LinearMap.BilinMap.toQuadraticMap_surjective`), so `CliffordAlgebra.changeForm`
 compares `C(Q)` with the exterior algebra. This gives linear left inverses of `ι` and of the
 scalars (`CliffordAlgebra.exists_leftInverse_ι_of_free`,
 `CliffordAlgebra.exists_leftInverse_algebraMap_of_free`), hence injectivity of `ι` and of the
@@ -244,20 +244,12 @@ section Free
 
 variable [Module.Free R M]
 
-/-- For a free module, in every characteristic, `-Q` is the quadratic form of a bilinear form.
-Such a form `B` lets `CliffordAlgebra.changeForm` map `C(Q)` linearly to the exterior algebra,
-compatibly with `ι` and with the scalars. -/
-theorem exists_bilinForm_toQuadraticMap_eq_zero_sub (Q : QuadraticForm R M) :
-    ∃ B : LinearMap.BilinForm R M, B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by
-  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
-  exact ⟨B, by rw [hB, zero_sub]⟩
-
 /-- **`ι` has a linear left inverse for a free module**, in every characteristic:
 `ExteriorAlgebra.ιInv` after `CliffordAlgebra.changeForm` to the exterior algebra. It is the
 counterpart of `CliffordAlgebra.ιInv`, which needs `2` to be invertible. -/
 theorem exists_leftInverse_ι_of_free (Q : QuadraticForm R M) :
     ∃ f : CliffordAlgebra Q →ₗ[R] M, Function.LeftInverse f (ι Q) := by
-  obtain ⟨B, hB⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
   refine ⟨ExteriorAlgebra.ιInv ∘ₗ changeForm hB, fun m => ?_⟩
   rw [LinearMap.comp_apply, changeForm_ι]
   exact ExteriorAlgebra.ι_leftInverse m
@@ -271,7 +263,7 @@ theorem ι_injective_of_free (Q : QuadraticForm R M) : Function.Injective (ι Q)
 theorem exists_leftInverse_algebraMap_of_free (Q : QuadraticForm R M) :
     ∃ f : CliffordAlgebra Q →ₗ[R] R,
       Function.LeftInverse f (algebraMap R (CliffordAlgebra Q)) := by
-  obtain ⟨B, hB⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
   refine ⟨(ExteriorAlgebra.algebraMapInv (R := R) (M := M)).toLinearMap ∘ₗ changeForm hB,
     fun r => ?_⟩
   rw [LinearMap.comp_apply, changeForm_algebraMap, AlgHom.toLinearMap_apply]
@@ -308,7 +300,7 @@ theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
   let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) :=
     linearOrderOfSTO WellOrderingRel
   let b := Module.Free.chooseBasis R M
-  obtain ⟨B, h⟩ := exists_bilinForm_toQuadraticMap_eq_zero_sub Q
+  obtain ⟨B, h⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
   let y : ExteriorAlgebra R M := changeForm h x
   have hycontract (d : Module.Dual R M) :
       contractLeft (Q := (0 : QuadraticForm R M)) d y = 0 := by
