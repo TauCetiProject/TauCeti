@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Inclusion
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
 
 /-!
@@ -61,15 +62,7 @@ tangent equivalence `TauCeti.subtypeValClosedBallTangentEquiv`. -/
 theorem mvfderiv_subtypeVal_closedBall (x : closedBall (0 : E) 1) :
     mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x =
       (subtypeValClosedBallTangentEquiv (n := n) x).toContinuousLinearMap := by
-  rw [subtypeValClosedBallTangentEquiv_toContinuousLinearMap]
-  rfl
-
-/-- The differential of the inclusion of the closed unit ball into `E`, read in `E`, is injective
-at every point, including the points of the boundary sphere. -/
-theorem injective_mvfderiv_subtypeVal_closedBall (x : closedBall (0 : E) 1) :
-    Function.Injective (mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x) := by
-  rw [mvfderiv_subtypeVal_closedBall]
-  exact (subtypeValClosedBallTangentEquiv (n := n) x).injective
+  rw [mvfderiv, subtypeValClosedBallTangentEquiv_toContinuousLinearMap]
 
 /-- The **Euclidean metric** on the closed unit ball of `E`: the analytic Riemannian metric
 induced by the inclusion into `E`. -/
@@ -77,7 +70,8 @@ def closedBallEuclideanMetric :
     ContMDiffRiemannianMetric (𝓡∂ n) ω (EuclideanSpace ℝ (Fin n))
       (fun x : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ n) x) :=
   inducedRiemannianMetric (n := ω) (Subtype.val : closedBall (0 : E) 1 → E)
-    contMDiff_subtypeVal_closedBall injective_mvfderiv_subtypeVal_closedBall
+    contMDiff_subtypeVal_closedBall fun x _ _ h ↦ injective_mfderiv_subtypeVal_closedBall x
+      (by rwa [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply] at h)
 
 /-- The Euclidean metric evaluates the inner product of `E` on the images of tangent vectors
 under the differential of the inclusion. -/
@@ -129,16 +123,16 @@ def closedBallTangentIsometry (x : closedBall (0 : E) 1) :
     TangentSpace (𝓡∂ n) x ≃ₗᵢ[ℝ] E where
   toLinearEquiv := (subtypeValClosedBallTangentEquiv (n := n) x).toLinearEquiv
   norm_map' v := by
-    rw [norm_tangentSpace_closedBall, mvfderiv_subtypeVal_closedBall]
-    rfl
+    rw [norm_tangentSpace_closedBall, mvfderiv_subtypeVal_closedBall,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- The isometry `TauCeti.closedBallTangentIsometry` is the differential of the inclusion. -/
 @[simp]
 theorem closedBallTangentIsometry_apply (x : closedBall (0 : E) 1) (v : TangentSpace (𝓡∂ n) x) :
     closedBallTangentIsometry x v =
       mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x v := by
-  rw [mvfderiv_subtypeVal_closedBall]
-  rfl
+  rw [mvfderiv_subtypeVal_closedBall, ContinuousLinearEquiv.coe_coe, closedBallTangentIsometry,
+    LinearIsometryEquiv.coe_mk, ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-! ### The closed unit ball of `EuclideanSpace ℝ (Fin n)` -/
 

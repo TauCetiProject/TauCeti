@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Outward
+public import TauCeti.Geometry.Manifold.MFDeriv.Inner
 
 /-!
 # The outward unit normal of the closed unit ball
@@ -48,27 +49,22 @@ theorem inner_mvfderiv_subtypeVal_closedBall_boundary
           (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) →
             closedBall (0 : E) 1) q w)⟫ = 0 := by
   set B := closedBall (0 : E) 1
-  set j : (𝓡∂ (n + 1)).boundary B → E := fun y ↦ ((y : B) : E)
   have hB : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : B → E) q :=
     (contMDiff_subtypeVal_closedBall (n := n + 1) (k := 1)).mdifferentiableAt one_ne_zero
   have hι : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary B → B) q :=
     (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 1) B).contMDiff.mdifferentiableAt
       one_ne_zero
-  have hj := hB.hasMFDerivAt.comp q hι.hasMFDerivAt
-  have hsq := (hasStrictFDerivAt_norm_sq (j q)).hasFDerivAt.hasMFDerivAt.comp q hj
-  have hconst : (fun y : E ↦ ‖y‖ ^ 2) ∘ j = fun _ ↦ (1 : ℝ) := by
+  -- The squared norm is constant on the boundary sphere, so its differential vanishes there.
+  have hconst : (fun y ↦ ‖((Subtype.val : B → E) ∘ Subtype.val) y‖ ^ 2) =
+      fun _ : (𝓡∂ (n + 1)).boundary B ↦ (1 : ℝ) := by
     funext y
-    simp [j, (isBoundaryPoint_closedBall_iff (n := n + 1)).mp y.property]
-  rw [hconst] at hsq
-  have hL := hsq.mfderiv
-  rw [mfderiv_const] at hL
-  have h := congrArg (fun L : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ ↦ L w) hL
-  have h' : (2 : ℕ) • ⟪((q : B) : E), mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : B → E) q
-      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary B → B) q w)⟫ = 0 := h.symm
-  rw [mvfderiv_apply_eq_mfderiv_apply]
-  simpa using h'
+    simp [(isBoundaryPoint_closedBall_iff (n := n + 1)).mp y.property]
+  have h := DFunLike.congr_fun (mvfderiv_norm_sq_comp (hB.comp q hι)) w
+  rw [hconst, mvfderiv_const, zero_apply, smul_apply,
+    ContinuousLinearMap.comp_apply, mvfderiv_comp_apply q hB hι, innerSL_apply_apply,
+    Function.comp_apply] at h
+  exact (smul_eq_zero.mp h.symm).resolve_left two_ne_zero
 
 /-- The **outward unit normal of the closed unit ball** at a point `x` of its boundary sphere is
 the radial vector `x`: the differential of the inclusion maps it to `x`. -/
