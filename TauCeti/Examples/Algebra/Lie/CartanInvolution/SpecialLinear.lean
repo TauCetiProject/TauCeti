@@ -98,9 +98,8 @@ private theorem slRestrictedRoot_eq_iff {i j k l : Fin (r + 1)} (hij : i ≠ j) 
     slRestrictedRoot r ℝ k l = slRestrictedRoot r ℝ i j ↔ k = i ∧ l = j := by
   refine ⟨fun h ↦ ?_, fun ⟨hki, hlj⟩ ↦ hki ▸ hlj ▸ rfl⟩
   have hH (H : specialLinearDiagonalCartan r ℝ) : (H : sl (Fin (r + 1)) ℝ) ∈
-      specialLinearDiagonal r ℝ := by
-    rw [← specialLinearDiagonalCartan_toSubmodule]
-    exact H.property
+      specialLinearDiagonal r ℝ :=
+    mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp H.property
   by_cases hkl : k = l
   · subst hkl
     rw [slRestrictedRoot_self] at h
@@ -137,8 +136,8 @@ theorem restrictedRootSpace_zero_specialLinearDiagonal :
     ← specialLinearDiagonalCartan_normalizer_eq_self r ℝ (.inr (.of_ne_zero' two_ne_zero)),
     LieSubalgebra.mem_normalizer_iff']
   intro H hH
-  rw [← LieSubalgebra.mem_toSubmodule, specialLinearDiagonalCartan_toSubmodule] at hH
-  rw [mem_restrictedRootSpace_zero.mp hX ⟨H, hH⟩]
+  rw [mem_restrictedRootSpace_zero.mp hX
+    ⟨H, mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp hH⟩]
   exact zero_mem _
 
 /-- `𝔞` lies in the `-1`-eigenspace `𝔭` of `X ↦ -Xᵀ`: diagonal matrices are symmetric. -/
@@ -188,9 +187,8 @@ theorem restrictedRootSpace_slRestrictedRoot {i j : Fin (r + 1)} (hij : i ≠ j)
       exact (mul_eq_zero.mp (h H k l)).resolve_left (sub_ne_zero.mpr hH)
   · rintro ⟨c, rfl⟩
     refine mem_restrictedRootSpace.mpr fun H ↦ ?_
-    have hH : (H : sl (Fin (r + 1)) ℝ) ∈ specialLinearDiagonalCartan r ℝ := by
-      rw [← LieSubalgebra.mem_toSubmodule, specialLinearDiagonalCartan_toSubmodule]
-      exact H.property
+    have hH : (H : sl (Fin (r + 1)) ℝ) ∈ specialLinearDiagonalCartan r ℝ :=
+      mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mpr H.property
     rw [slRestrictedRoot_apply, ← map_smul, smul_eq_mul, mul_one]
     simpa only [LieSubalgebra.coe_bracket_of_module, LinearMap.sub_apply,
       specialLinearEpsilon_apply] using lie_specialLinearDiagonalCartan_single ⟨H, hH⟩ hij c
