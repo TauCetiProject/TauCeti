@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Amalgamation
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
-import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Torsor
 import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.Valuation.Continuous.Invariant
 
@@ -22,7 +21,9 @@ the fixed subring `Aᴳ`. The group acts on `Spv A` by `(g • y)(a) = y(g⁻¹ 
 `g • y = comap (g⁻¹ • ·) y`. This file shows that the restriction map `Spv A → Spv R` is a
 quotient by this action on the level of points, with no hypothesis on the order of `G`:
 
-* its fibres are exactly the `G`-orbits, when `G` fixes `R`;
+* its fibres are exactly the `G`-orbits, when `G` fixes `R`; that points in one orbit have the
+  same restriction needs neither finiteness nor invariance
+  (`TauCeti.ValuationSpectrum.comap_algebraMap_comap_toRingHom`);
 * it is surjective when `R → A` is injective, since `A` is integral over `R`
   (`TauCeti.ValuationSpectrum.comap_algebraMap_surjective_of_isIntegral`).
 
@@ -58,6 +59,23 @@ open scoped TensorProduct
 open Algebra.TensorProduct
 
 namespace TauCeti.ValuationSpectrum
+
+section Action
+
+variable {G R A : Type*} [Group G] [CommRing R] [CommRing A] [Algebra R A]
+  [MulSemiringAction G A] [SMulCommClass G R A]
+
+/-- Pulling back along the action of `g ∈ G` does not change the image in `Spv R`, since `G` acts
+by `R`-algebra automorphisms. No finiteness or invariance hypothesis is needed. -/
+@[simp]
+theorem comap_algebraMap_comap_toRingHom (g : G) (y : Spv A) :
+    comap (algebraMap R A) (comap (MulSemiringAction.toRingHom G A g) y) =
+      comap (algebraMap R A) y := by
+  rw [comap_comap]
+  congr 1
+  exact RingHom.ext fun r ↦ smul_algebraMap g r
+
+end Action
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (G : Type*) [Group G] [Finite G]
   [MulSemiringAction G A] [Algebra.IsInvariant R A G]
