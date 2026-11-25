@@ -14,19 +14,19 @@ public import TauCeti.RingTheory.CentralIdempotent
 # Semisimple rings with no nontrivial central idempotents
 
 A nonzero semisimple ring whose only central idempotents are `0` and `1` is simple
-(`TauCeti.IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset`). By the Wedderburn–Artin
+(`IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset`). By the Wedderburn–Artin
 theorem it is a product of `n` matrix rings over division rings, which has `2 ^ n` central
 idempotents (`TauCeti.card_centralIdempotents_pi_of_isSimpleRing`); so `n = 1`.
 
 ## Main results
 
-* `TauCeti.IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset`: a nontrivial semisimple
+* `IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset`: a nontrivial semisimple
   ring whose central idempotents are `0` and `1` is simple.
 -/
 
 public section
 
-namespace TauCeti
+open TauCeti
 
 /-- **Semisimple rings without nontrivial central idempotents are simple.** A nontrivial
 semisimple ring `R` whose central idempotents are among `0` and `1` is simple: a Wedderburn–Artin
@@ -44,5 +44,3 @@ theorem IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset {R : Type*} [
     Set.ncard_pair zero_ne_one] at hcard
   obtain rfl : n = 1 := Nat.pow_right_injective le_rfl (by simpa using hcard.symm)
   exact IsSimpleRing.of_ringEquiv (φ.toRingEquiv.trans (RingEquiv.piUnique _)).symm inferInstance
-
-end TauCeti
