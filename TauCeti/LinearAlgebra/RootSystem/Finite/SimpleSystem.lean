@@ -266,10 +266,11 @@ theorem root_mem_hull_simpleSystem_or_neg_mem (hf : ∀ k, f (P.root k) ≠ 0) (
       root_mem_hull_simpleSystem (reflectionPerm_self_mem_positiveSystem_iff.mpr h)
   · exact .inl (root_mem_hull_simpleSystem h)
 
-/-- The simple roots are linearly independent. The proof follows Mathlib's
-`RootPairing.linearIndepOn_root_baseOf'`, with the simple system in place of `baseOf`. -/
+/-- The simple roots are linearly independent. -/
 theorem linearIndepOn_root_simpleSystem (hf : ∀ k, f (P.root k) ≠ 0) :
     LinearIndepOn R P.root (P.simpleSystem f) := by
+  -- This follows Mathlib's `RootPairing.linearIndepOn_root_baseOf'`, with the simple system in
+  -- place of `baseOf`.
   have : Fintype ι := Fintype.ofFinite ι
   -- The simple roots, seen in the span of the roots, where `posRootForm` is positive definite.
   let v (i : P.simpleSystem f) : P.rootSpan R := P.rootSpanMem R i

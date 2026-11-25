@@ -11,16 +11,19 @@ public import Mathlib.LinearAlgebra.Prod
 import Mathlib.Geometry.Convex.Cone.Dual
 
 /-!
-# Salience of images and products of cones, and the line spanned by a ray
+# Salience and functional-sign bounds for cones, and the line spanned by a ray
 
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file proves the
 two closure properties of salience that concern standard cone constructions, the image under an
 injective linear map and the product of two pointed cones, together with the salience of the cone
 hull of a single vector and of the cone hull of a set on which some linear functional is positive.
-It also computes the dimension of the linear span of the cone hull of a single nonzero vector,
-which is the one-dimensionality making such a cone a ray, and the invariance of that dimension
-under multiplying a cone by the zero cone. None of these statements involves a lattice, so
-they belong to the generic convex-cone API rather than to any consumer of it.
+It records the sign bounds behind that salience: a linear functional nonnegative (respectively
+positive) on a set is nonnegative on its cone hull (respectively positive on the nonzero vectors
+of it), and it gives a cone-hull inclusion for the image of a set under an indexing map, splitting
+off one index. It also computes the dimension of the linear span of the cone hull of a single
+nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance of
+that dimension under multiplying a cone by the zero cone. None of these statements involves a
+lattice, so they belong to the generic convex-cone API rather than to any consumer of it.
 
 ## Main declarations
 
