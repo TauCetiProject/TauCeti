@@ -91,6 +91,10 @@ instance instIsAlgebraic : Algebra.IsAlgebraic K (SpectralAlgClosure K) :=
 instance instIsAlgClosed : IsAlgClosed (SpectralAlgClosure K) :=
   inferInstanceAs (IsAlgClosed (AlgebraicClosure K))
 
+/-- `K^alg` is an algebraic closure of `K`. -/
+instance instIsAlgClosure : IsAlgClosure K (SpectralAlgClosure K) :=
+  inferInstanceAs (IsAlgClosure K (AlgebraicClosure K))
+
 /-- The canonical `K`-algebra isomorphism from `AlgebraicClosure K` to its type synonym
 `SpectralAlgClosure K`, the identity on the underlying type. -/
 def algEquiv : AlgebraicClosure K ≃ₐ[K] SpectralAlgClosure K :=

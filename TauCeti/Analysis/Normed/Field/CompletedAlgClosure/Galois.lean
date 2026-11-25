@@ -201,26 +201,15 @@ theorem galoisExtension_injective :
 
 /-- **Every continuous `K`-algebra endomorphism of `C` is some `σ_C`.** -/
 theorem exists_galoisExtension_eq (τ : CompletedAlgClosure K →A[K] CompletedAlgClosure K) :
-    ∃ σ : Field.absoluteGaloisGroup K, ⇑τ = galoisExtension σ := by
-  let ι := IsScalarTower.toAlgHom K (SpectralAlgClosure K) (CompletedAlgClosure K)
-  have hι : Function.Injective ι := ι.toRingHom.injective
-  let φ := (τ : CompletedAlgClosure K →ₐ[K] CompletedAlgClosure K).comp ι
-  have hφ (a : SpectralAlgClosure K) : φ a ∈ ι.range := by
-    refine (Algebra.IsIntegral.isIntegral (R := K) a |>.map φ).mem_range_algHom_of_minpoly_splits
-      (K := SpectralAlgClosure K) (L := CompletedAlgClosure K) ?_ ι
-    rw [minpoly.algHom_eq φ φ.toRingHom.injective]
-    exact IsAlgClosed.splits _
-  let ρ := (AlgEquiv.ofInjective ι hι).symm.toAlgHom.comp (φ.codRestrict ι.range hφ)
-  have hρ (a : SpectralAlgClosure K) : ι (ρ a) = φ a :=
-    congr($((AlgEquiv.ofInjective ι hι).apply_symm_apply ⟨φ a, hφ a⟩).val)
-  -- `τ` preserves `K^alg`, since it sends each `a` to a root of the minimal polynomial of `a`,
-  -- and its restriction `ρ` is an automorphism because `K^alg / K` is algebraic.
-  refine ⟨(absoluteGaloisGroupEquiv K).symm
-      (AlgEquiv.ofBijective ρ (Algebra.IsAlgebraic.algHom_bijective ρ)),
-    eq_galoisExtension_of_continuous _ τ.continuous fun a ↦ ?_⟩
-  rw [MulEquiv.apply_symm_apply, AlgEquiv.coe_ofBijective]
-  -- `τ a` is `φ a` and `ρ a`, coerced to `C`, is `ι (ρ a)`.
-  exact (hρ a).symm
+    ∃ σ : Field.absoluteGaloisGroup K, ⇑τ = galoisExtension σ :=
+  -- `τ` preserves the normal subextension `K^alg` of `C / K`; its restriction is `σ`.
+  ⟨(absoluteGaloisGroupEquiv K).symm
+      ((τ : CompletedAlgClosure K →ₐ[K] CompletedAlgClosure K).restrictNormal'
+        (SpectralAlgClosure K)),
+    eq_galoisExtension_of_continuous _ τ.continuous fun a ↦ by
+      rw [MulEquiv.apply_symm_apply]
+      exact ((τ : CompletedAlgClosure K →ₐ[K] CompletedAlgClosure K).restrictNormal_commutes
+        (SpectralAlgClosure K) a).symm⟩
 
 /-- Every continuous `K`-algebra automorphism of `C` is some `σ_C`. -/
 theorem galoisExtension_surjective (τ : CompletedAlgClosure K ≃A[K] CompletedAlgClosure K) :
