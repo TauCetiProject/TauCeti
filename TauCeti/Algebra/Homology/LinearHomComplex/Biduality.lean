@@ -7,12 +7,11 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Module.Injective
-public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.Algebra.Homology.LinearHomComplex.Bidual
+public import TauCeti.Algebra.Module.Injective.Bidual
 
 import Mathlib.Algebra.Category.ModuleCat.Injective
 import TauCeti.Algebra.Homology.LinearHomComplex.Single
-import TauCeti.Algebra.Module.Injective.Bidual
 
 /-!
 # Biduality on the cohomology of complexes
@@ -21,15 +20,19 @@ For self-injective commutative coefficients, the Kronecker equivalence identifie
 cohomology of the dual complex with the dual of cohomology in the opposite degree. Applied
 twice, it identifies `CochainComplex.bidualHom` on cohomology with signed evaluation.
 Consequently this map is a quasi-isomorphism precisely when every cohomology module is
-reflexive. Over a Noetherian self-injective ring, finitely generated cohomology suffices.
+reflexive. Finitely presented cohomology suffices over a self-injective ring, as does finitely
+generated cohomology over a Noetherian self-injective ring.
 Since the coefficient complex `R[0]` is bounded below and consists of injectives, it is
 K-injective, so this dual complex computes the derived coefficient dual.
 
 The public equivalence `CochainComplex.linearDualHomologyEquiv` and its cocycle equation
 `CochainComplex.linearDualHomologyEquiv_homologyπ` use
 `CochainComplex.linearHomComplexSingleKroneckerEquiv` and its computation on cocycle classes.
-The finite-module case uses `Module.IsReflexive.of_injective_of_finite`. This is the coefficient
-calculation underlying biduality at a geometric point in SGA 4½, [Dualité], 1.1–1.4.
+The instance `CochainComplex.quasiIso_bidualHom` applies whenever the cohomology modules are
+reflexive, including the finite-presentation and finite-module cases through
+`Module.IsReflexive.of_injective_of_finitePresentation` and
+`Module.IsReflexive.of_injective_of_finite`. This is the coefficient calculation underlying
+biduality at a geometric point in SGA 4½, [Dualité], 1.1–1.4.
 -/
 
 public section
@@ -140,10 +143,10 @@ theorem quasiIso_bidualHom_iff :
   rw [quasiIso_iff]
   simp only [quasiIsoAt_bidualHom_iff]
 
-/-- Over a Noetherian self-injective commutative ring, a complex with finitely generated
-cohomology is quasi-isomorphic to its double dual through the signed evaluation map. -/
-theorem quasiIso_bidualHom_of_finite_homology [IsNoetherianRing R]
-    [∀ i, Module.Finite R (K.homology i)] : QuasiIso (bidualHom K) :=
-  (quasiIso_bidualHom_iff K).2 fun _ ↦ inferInstance
+/-- Over a self-injective commutative ring, a complex with reflexive cohomology is
+quasi-isomorphic to its double dual through the signed evaluation map. -/
+instance quasiIso_bidualHom [∀ i, Module.IsReflexive R (K.homology i)] :
+    QuasiIso (bidualHom K) :=
+  (quasiIso_bidualHom_iff K).2 inferInstance
 
 end CochainComplex
