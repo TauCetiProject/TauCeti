@@ -227,8 +227,7 @@ theorem entireResultant_mul (hP : P.Monic) (hF : F.IsEntire) (hG : G.IsEntire) :
 unit exactly when `P` and `F` are coprime in the ring of entire series. -/
 theorem isUnit_entireResultant_iff (hP : P.Monic) (hF : F.IsEntire) :
     IsUnit (entireResultant P F) ↔
-      IsCoprime (⟨P, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P)⟩ : IsEntire.subring R)
-        ⟨F, IsEntire.mem_subring.mpr hF⟩ := by
+      IsCoprime (IsEntire.polynomialHom P) ⟨F, IsEntire.mem_subring.mpr hF⟩ := by
   refine ⟨fun h ↦ ?_, fun ⟨a, b, hab⟩ ↦ ?_⟩
   · -- A polynomial Bézout relation `u * P + v * r = 1` for the remainder `r` gives an entire one.
     rw [entireResultant_eq_resultant hP, isUnit_resultant_iff_isCoprime hP] at h
@@ -236,10 +235,10 @@ theorem isUnit_entireResultant_iff (hP : P.Monic) (hF : F.IsEntire) :
     have hdiv := hF.modByMonic_add_divByMonic hP
     refine ⟨⟨u - v * F.divByMonic P, IsEntire.mem_subring.mpr ((PowerSeries.isEntire_coe u).sub
       ((PowerSeries.isEntire_coe v).mul (hF.divByMonic P)))⟩,
-      ⟨v, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe v)⟩, Subtype.ext ?_⟩
+      IsEntire.polynomialHom v, Subtype.ext ?_⟩
     have huv' := congrArg (fun p : R[X] ↦ (p : R⟦X⟧)) huv
     simp only [Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_one] at huv'
-    simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
+    simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one, IsEntire.coe_polynomialHom]
     linear_combination huv' - (v : R⟦X⟧) * hdiv
   · -- Reducing `a * P + b * F = 1` modulo `P` makes the reduction of `F` a unit.
     have hred := congrArg (IsEntire.mkAdjoinRoot hP) hab

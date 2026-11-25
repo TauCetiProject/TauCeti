@@ -10,6 +10,8 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 public import TauCeti.Topology.Algebra.PointTopology.Localization
+import TauCeti.Analysis.Normed.Field.ZPowers
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # The point topology on the multiplicative group
@@ -22,6 +24,10 @@ Mathlib's topology on `Aˣ` induced by `Units.embedProduct`. This file bundles t
 an isomorphism of topological groups. Since `R[T;T⁻¹]` is the localization of `R[X]` away from `X`,
 the homeomorphism is `TauCeti.PointTopology.localizationAwayXHomeomorph`.
 
+Over a proper normed field, such as `ℚ_[p]`, a point of `𝔾ₘ` generates a relatively compact
+subgroup exactly when the corresponding unit has norm one
+(`TauCeti.MultiplicativeGroup.isCompact_closure_zpowers_iff_norm_eq_one`).
+
 As an application, the points of an affine group over a totally disconnected ring are totally
 disconnected (`TauCeti.PointTopology.instTotallyDisconnectedSpaceWithConv`), but the hypothesis on
 the coefficient ring cannot be dropped: the real points of `𝔾ₘ` form `ℝˣ`, which contains the
@@ -31,6 +37,8 @@ connected half-line of positive reals.
 
 * `TauCeti.MultiplicativeGroup.pointsContinuousMulEquiv`: the points of `𝔾ₘ` with the point
   topology are isomorphic, as topological groups, to `Aˣ` with the units topology.
+* `TauCeti.MultiplicativeGroup.isCompact_closure_zpowers_iff_norm_eq_one`: over a proper normed
+  field, the powers of a point of `𝔾ₘ` are relatively compact exactly when its unit has norm one.
 * `TauCeti.MultiplicativeGroup.not_totallyDisconnectedSpace_real`: the real points of `𝔾ₘ` are not
   totally disconnected.
 
@@ -89,6 +97,15 @@ theorem pointsContinuousMulEquiv_apply (f : WithConv (R[T;T⁻¹] →ₐ[R] A)) 
 theorem pointsContinuousMulEquiv_symm_apply (u : Aˣ) :
     (pointsContinuousMulEquiv R A).symm u = (pointsMulEquiv (R := R)).symm u :=
   (rfl)
+
+/-- Over a proper normed field `K`, the powers of a `K`-point `x` of the multiplicative group form a
+relatively compact subgroup exactly when the unit `pointsMulEquiv x` has norm one. -/
+theorem isCompact_closure_zpowers_iff_norm_eq_one {K : Type*} [NormedField K] [ProperSpace K]
+    [Algebra R K] (x : WithConv (R[T;T⁻¹] →ₐ[R] K)) :
+    IsCompact (closure (Subgroup.zpowers x : Set (WithConv (R[T;T⁻¹] →ₐ[R] K)))) ↔
+      ‖(pointsMulEquiv x : K)‖ = 1 := by
+  rw [← TauCeti.isCompact_closure_zpowers_iff_norm_eq_one, ← pointsContinuousMulEquiv_apply,
+    ContinuousMulEquiv.isCompact_closure_zpowers_iff]
 
 /-- The real points of the multiplicative group, with the point topology, are not totally
 disconnected: they contain the connected image of the path `r ↦ exp r`. -/
