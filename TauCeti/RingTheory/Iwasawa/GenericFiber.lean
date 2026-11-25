@@ -114,7 +114,10 @@ theorem IsPseudoIsomorphism.baseChange_bijective {f : M →ₗ[O⟦X⟧] N}
     obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion_of_isScalarTower
       (x := Submodule.Quotient.mk (p := LinearMap.range f) n)
     rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
-    exact ⟨a, by rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]; exact ha⟩
+    refine ⟨a, ?_⟩
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+      LinearMap.range_restrictScalars, Submodule.restrictScalars_mem]
+    exact ha
 
 variable [IsAdicComplete (maximalIdeal O) O]
 
