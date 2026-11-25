@@ -67,7 +67,7 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   positive plane, whose end lies at `s → ∞` in end coordinates, the estimate of the adjoint of a
   half-cylinder at a nondegenerate orbit then bounds the `W^{1,2}` energy of `η'` by
   `∫ ‖w‖² ‖D_u^* η‖²` over the plane, by
-  `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_pssPlane`.
+  `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive`.
   The adjoint on `η'` is the Jacobian `det (dφ) = (2π ‖w‖)²` times `D_u^* η`, so its squared
   norm carries the Jacobian twice; the change of variables absorbs one copy, leaving the weight
   `4π² ‖w‖²`. The kernel of `D_u^*` is the cokernel of `D_u`. Every PSS plane is the positive
@@ -796,7 +796,7 @@ This is the plane counterpart of the end estimate of the adjoint on the pair of 
 `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`,
 and the proof follows that one. -/
 theorem
-    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_pssPlane
+    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))
     {L : ℝ≥0} (hX : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
