@@ -116,13 +116,12 @@ theorem IsEffective.genericPoint_mem_nonvanishingLocus (hD : D.IsEffective) :
   let s := D.sheaf.presheaf.map i.op hD.canonicalSection
   -- Over `V`, the section `s_D` is `r` times the basis section, with `r ≠ 0` because `s_D` is the
   -- rational function `1`; hence the basic open set of `r` is a nonempty part of `X_{s_D}`.
-  let r := Scheme.Modules.trivializationCoordinate D.sheaf t (𝟙 V) s
+  set r := Scheme.Modules.trivializationCoordinate D.sheaf t (𝟙 V) s with hr_def
   have hr : r ≠ 0 := by
     intro hr0
     have hs : s = 0 := by
       rw [Scheme.Modules.eq_trivializationCoordinate_smul_map_trivializationGenerator
-        D.sheaf t (𝟙 V) s,
-        show Scheme.Modules.trivializationCoordinate D.sheaf t (𝟙 V) s = 0 from hr0, zero_smul]
+        D.sheaf t (𝟙 V) s, ← hr_def, hr0, zero_smul]
     have h1 := hD.rationalFunctionsEquiv_sheafι_app_map_canonicalSection V
     -- `s` is by definition the restriction of `s_D` to `V` in `𝒪_X(D) = D.sheaf`.
     change rationalFunctionsEquiv V (Scheme.Modules.Hom.app D.sheafι V s) = 1 at h1
@@ -203,8 +202,7 @@ private lemma exists_isEffective_isLocalEquationAt_inv_notMem {y : X}
   have hunit : IsUnit (X.presheaf.germ A y hyA b) := by
     refine IsUnit.of_mul_eq_one c (IsFractionRing.injective (X.presheaf.stalk y)
       X.functionField ?_)
-    rw [map_mul, hc, map_one, Scheme.algebraMap_germ_eq_germToFunctionField,
-      Units.val_inv_eq_inv_val, Units.val_mk0, mul_inv_cancel₀ hb0]
+    simp [hc, Scheme.algebraMap_germ_eq_germToFunctionField, hb0]
   exact (hbW ((X.mem_basicOpen b y hyA).mpr hunit)).2 rfl
 
 /-- **Effective divisors with prescribed nonvanishing locus.** On an integral scheme whose
@@ -230,9 +228,9 @@ theorem exists_isEffective_nonvanishingLocus_le (V : X.Opens) [Nonempty V] :
   let G' (y : X) : CartierDivisor X := if hy : y ∈ V then 0 else G y hy
   have hG' (y : X) : (G' y).IsEffective := by
     by_cases hy : y ∈ V
-    · rw [show G' y = 0 from dite_eq_left hy]
+    · simp only [G', hy, ↓reduceDIte]
       exact isEffective_zero
-    · rw [show G' y = G y hy from dite_eq_right hy]
+    · simp only [G', hy, ↓reduceDIte]
       exact hG y hy
   have hsum (t : Finset X) : (∑ y ∈ t, G' y).IsEffective :=
     (mem_effectiveSubmonoid _).mp <|
@@ -244,7 +242,7 @@ theorem exists_isEffective_nonvanishingLocus_le (V : X.Opens) [Nonempty V] :
   have hxZ : x ∈ hZ.toFinset := hZ.mem_toFinset.mpr hxV
   obtain ⟨e, he, her⟩ := isEffective_iff_exists.mp (hsum (hZ.toFinset.erase x)) x
   have hfx : (G' x).IsLocalEquationAt x (f x hxV) := by
-    rw [show G' x = G x hxV from dite_eq_right hxV]
+    simp only [G', hxV, ↓reduceDIte]
     exact hf x hxV
   have hloc := hfx.mul he
   rw [Finset.add_sum_erase _ _ hxZ] at hloc
@@ -253,8 +251,8 @@ theorem exists_isEffective_nonvanishingLocus_le (V : X.Opens) [Nonempty V] :
   refine hfinv x hxV ?_
   have heq : ((f x hxV)⁻¹ : X.functionFieldˣ).val =
       ((f x hxV * e)⁻¹ : X.functionFieldˣ).val * e := by
-    rw [mul_inv_rev, Units.val_mul, mul_comm (e⁻¹ : X.functionFieldˣ).val, mul_assoc,
-      Units.inv_mul, mul_one]
+    rw [← Units.val_mul]
+    simp
   rw [heq]
   exact Subring.mul_mem _ hinv her
 

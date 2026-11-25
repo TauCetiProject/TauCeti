@@ -93,7 +93,7 @@ private lemma bijective_app_freeHomEquiv_symm {F L : X.Modules}
   have himg (k : ι) : ((F ⊗ tensorPow L n).sectionsEquivTop.symm (t' k)).val (op W) =
       F.tmulRight (Scheme.Modules.tensorPowSection sW n) (F.presheaf.map (i ≫ j).op (t k)) := by
     rw [Scheme.Modules.sectionsEquivTop_symm_val,
-      show W.leTop = i ≫ homOfLE (L.nonvanishingLocus_le s) from rfl, op_comp,
+      show W.leTop = i ≫ homOfLE (L.nonvanishingLocus_le s) from Subsingleton.elim _ _, op_comp,
       Functor.map_comp_apply, ht' k, Scheme.Modules.map_tmulRight_tensorPowSection]
     simp only [← Functor.map_comp_apply, ← op_comp]
     -- Both sides restrict `s` along a morphism `W ⟶ ⊤` of the thin category `X.Opens`, and any two

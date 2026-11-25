@@ -706,11 +706,9 @@ theorem vectorBundleDegree_tensor_of_isCurveOver [X.IsCurveOver k]
   have hS := TauCeti.cokernelSequence_shortExact φ
   -- The modification `0 ⟶ 𝒪_X^r ⟶ E ⊗ L ⟶ T ⟶ 0` gives `deg (V ⊗ (E ⊗ L)) = r · deg V + s · χ(T)`
   -- and `deg (E ⊗ L) = χ(T)`.
-  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor (free X r)).obj.obj 1
-  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor (E.twist L)).obj.obj 0
-  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor (E.twist L)).obj.obj 1
-  have h₁ := vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support k
-    hS hfin V (subsingleton_cohomology_of_two_le_of_isCurveOver k _ 2 le_rfl)
+  have h₁ :=
+  vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver
+    k hS hfin V
   have h₂ := vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver k hS
   have := finiteDimensional_cohomology_of_isCurveOver k (InvertibleSheaf.trivial X).obj 0
   have := finiteDimensional_cohomology_of_isCurveOver k (InvertibleSheaf.trivial X).obj 1
