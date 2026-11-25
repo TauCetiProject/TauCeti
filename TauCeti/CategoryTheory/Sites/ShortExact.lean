@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # Short exact sequences of abelian sheaves without sheafification
@@ -65,16 +66,10 @@ image under `S.g`. -/
 private lemma app_eq_of_app_eq {U : Cᵒᵖ} {a b : S.X₂.obj.obj U}
     (hab : S.g.hom.app U a = S.g.hom.app U b) : h.hom.app U a = h.hom.app U b := by
   obtain ⟨y, hy⟩ := hS U (a - b) (by rw [map_sub, hab, sub_self])
-  rw [← sub_eq_zero, ← map_sub, ← hy, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-    ← ObjectProperty.FullSubcategory.comp_hom, hh]
-  simp
+  rw [← sub_eq_zero, ← map_sub, ← hy]
+  simpa using congr(($hh).hom.app U y)
 
 variable [Sheaf.IsLocallySurjective S.g]
-
-/-- The sheaf `G`, viewed as a sheaf of sets, satisfies the sheaf condition for types. -/
-private lemma isSheaf_forget (G : Sheaf J AddCommGrpCat.{w}) :
-    Presieve.IsSheaf J (G.obj ⋙ forget AddCommGrpCat.{w}) :=
-  (isSheaf_iff_isSheaf_of_type J _).1 ((sheafCompose J (forget AddCommGrpCat.{w})).obj G).property
 
 include hS hh in
 /-- A section `s` of `S.X₃` has an image in `G`: a section `d` of `G` whose restriction along
@@ -91,11 +86,10 @@ private lemma exists_section (U : Cᵒᵖ) (s : S.X₃.obj.obj U) :
     simp only [x, Functor.comp_map, TypeCat.ofHom_apply]
     rw [← NatTrans.naturality_apply h.hom, ← NatTrans.naturality_apply h.hom]
     refine app_eq_of_app_eq hS h hh ?_
-    rw [NatTrans.naturality_apply S.g.hom, NatTrans.naturality_apply S.g.hom,
-      Presheaf.app_localPreimage, Presheaf.app_localPreimage, ← ConcreteCategory.comp_apply,
-      ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← Functor.map_comp, ← op_comp,
-      ← op_comp, hw]
-  obtain ⟨d, hd, -⟩ := isSheaf_forget G _ (Presheaf.imageSieve_mem J S.g.hom s) x hx
+    simpa [NatTrans.naturality_apply, Presheaf.app_localPreimage] using
+      congr(S.X₃.obj.map (Quiver.Hom.op $hw) s)
+  obtain ⟨d, hd, -⟩ := Sheaf.isSheaf_obj_comp G (forget AddCommGrpCat.{w}) _
+    (Presheaf.imageSieve_mem J S.g.hom s) x hx
   exact ⟨d, fun V φ t ht ↦ (hd φ ⟨t, ht⟩).trans
     (app_eq_of_app_eq hS h hh ((Presheaf.app_localPreimage _ _ _ _).trans ht.symm))⟩
 
@@ -108,12 +102,6 @@ private lemma map_descSection {U : Cᵒᵖ} (s : S.X₃.obj.obj U) {V : C} (φ :
     G.obj.map φ.op (descSection hS h hh U s) = h.hom.app _ t :=
   (exists_section hS h hh U s).choose_spec φ t ht
 
-/-- Two sections of `G` over `U` are equal as soon as their restrictions agree along every
-member of a covering sieve of `U`. -/
-private lemma section_ext {U : Cᵒᵖ} (R : Sieve U.unop) (hR : R ∈ J U.unop) {a b : G.obj.obj U}
-    (hab : ∀ ⦃V : C⦄ (φ : V ⟶ U.unop), R φ → G.obj.map φ.op a = G.obj.map φ.op b) : a = b :=
-  ((isSheaf_forget G).isSeparated R hR).ext hab
-
 /-- The factorization of `h : S.X₂ ⟶ G` through the locally surjective `S.g`, defined by gluing
 the values of `h` on local preimages. -/
 private noncomputable def desc : S.X₃ ⟶ G where
@@ -121,26 +109,23 @@ private noncomputable def desc : S.X₃ ⟶ G where
     { app U := AddCommGrpCat.ofHom
         { toFun := descSection hS h hh U
           map_zero' := by
-            refine section_ext _ (Presheaf.imageSieve_mem J S.g.hom (0 : S.X₃.obj.obj U)) ?_
+            refine G.isSeparated _ _
+              (Presheaf.imageSieve_mem J S.g.hom (0 : S.X₃.obj.obj U)) _ _ ?_
             rintro V φ ⟨t, ht⟩
             rw [map_descSection hS h hh _ φ t ht, map_zero,
               app_eq_of_app_eq hS h hh (b := 0) (by rw [ht, map_zero, map_zero]), map_zero]
           map_add' s s' := by
-            refine section_ext _ (J.intersection_covering
-              (Presheaf.imageSieve_mem J S.g.hom s) (Presheaf.imageSieve_mem J S.g.hom s')) ?_
+            refine G.isSeparated _ _ (J.intersection_covering
+              (Presheaf.imageSieve_mem J S.g.hom s) (Presheaf.imageSieve_mem J S.g.hom s')) _ _ ?_
             rintro V φ ⟨⟨t, ht⟩, ⟨t', ht'⟩⟩
             rw [map_add, map_descSection hS h hh _ φ t ht, map_descSection hS h hh _ φ t' ht',
               map_descSection hS h hh _ φ (t + t') (by rw [map_add, map_add, ht, ht']), map_add] }
       naturality U U' ψ := by
         ext s
-        refine section_ext _ (Presheaf.imageSieve_mem J S.g.hom (S.X₃.obj.map ψ s)) ?_
+        refine G.isSeparated _ _ (Presheaf.imageSieve_mem J S.g.hom (S.X₃.obj.map ψ s)) _ _ ?_
         rintro V φ ⟨t, ht⟩
-        have ht' : S.g.hom.app _ t = S.X₃.obj.map (φ ≫ ψ.unop).op s := by
-          rw [ht, op_comp, Quiver.Hom.op_unop, Functor.map_comp, ConcreteCategory.comp_apply]
-        simp only [ConcreteCategory.comp_apply, AddCommGrpCat.hom_ofHom, AddMonoidHom.coe_mk,
-          ZeroHom.coe_mk]
-        rw [map_descSection hS h hh _ φ t ht, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
-          ← Quiver.Hom.op_unop ψ, ← op_comp, map_descSection hS h hh s _ t ht'] }
+        have hd := map_descSection hS h hh s (φ ≫ ψ.unop) t (by simp [ht])
+        simpa [map_descSection hS h hh _ φ t ht] using hd.symm }
 
 private lemma desc_hom_app_apply (U : Cᵒᵖ) (s : S.X₃.obj.obj U) :
     (desc hS h hh).hom.app U s = descSection hS h hh U s :=
@@ -148,9 +133,7 @@ private lemma desc_hom_app_apply (U : Cᵒᵖ) (s : S.X₃.obj.obj U) :
 
 private lemma g_desc : S.g ≫ desc hS h hh = h := by
   ext U a
-  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ConcreteCategory.comp_apply,
-    desc_hom_app_apply]
-  simpa using map_descSection hS h hh (S.g.hom.app U a) (𝟙 U.unop) a (by simp)
+  simpa [desc_hom_app_apply] using map_descSection hS h hh (S.g.hom.app U a) (𝟙 U.unop) a (by simp)
 
 /-- **A locally surjective morphism of abelian sheaves is the cokernel of its kernel.** If
 `S.g : S.X₂ ⟶ S.X₃` is a locally surjective morphism of sheaves of abelian groups and every

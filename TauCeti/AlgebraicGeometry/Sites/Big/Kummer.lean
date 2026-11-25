@@ -219,6 +219,48 @@ noncomputable def kummerSequenceOverMapPullbackIso :
     ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
       (fpqcTopology.over T)).mapShortComplex.mapIso (fpqcKummerOverMapPullbackIso n f)
 
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₁ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₁ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).hom :=
+  (rfl)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₂ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₂ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom :=
+  (rfl)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_hom_τ₃ :
+    (kummerSequenceOverMapPullbackIso J n f).hom.τ₃ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom :=
+  (rfl)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₁ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₁ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).inv :=
+  (rfl)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₂ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₂ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv :=
+  (rfl)
+
+@[simp]
+lemma kummerSequenceOverMapPullbackIso_inv_τ₃ :
+    (kummerSequenceOverMapPullbackIso J n f).inv.τ₃ =
+      ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv :=
+  (rfl)
+
 /-- **The restricted Kummer sequence is exact.** For a morphism `f : T ⟶ S`, a natural number `n`
 invertible on `T` (for instance, invertible on `S`) and a topology `J` on schemes between the
 étale and the fpqc topology, the restriction of the Kummer sequence of `S` along `f` to the site
