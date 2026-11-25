@@ -42,7 +42,7 @@ variable {R m n : Type*} (S : Type*) [Semiring S] [AddCommMonoid R] [Module S R]
 
 /-- Column-stacking vectorization `Matrix.vec` as a linear equivalence. Its inverse puts the
 coordinate `v (j, i)` at the entry `(i, j)`. -/
-@[expose] def vecLinearEquiv : Matrix m n R ≃ₗ[S] (n × m → R) where
+def vecLinearEquiv : Matrix m n R ≃ₗ[S] (n × m → R) where
   toFun := vec
   invFun v := of fun i j ↦ v (j, i)
   map_add' := vec_add
@@ -51,14 +51,14 @@ coordinate `v (j, i)` at the entry `(i, j)`. -/
   right_inv _ := rfl
 
 @[simp]
-theorem vecLinearEquiv_apply (A : Matrix m n R) : vecLinearEquiv S A = A.vec := rfl
+theorem vecLinearEquiv_apply (A : Matrix m n R) : vecLinearEquiv S A = A.vec := (rfl)
 
 @[simp]
 theorem vecLinearEquiv_symm_apply (v : n × m → R) (i : m) (j : n) :
-    (vecLinearEquiv S).symm v i j = v (j, i) := rfl
+    (vecLinearEquiv S).symm v i j = v (j, i) := (rfl)
 
 @[simp]
-theorem vec_vecLinearEquiv_symm (v : n × m → R) : ((vecLinearEquiv S).symm v).vec = v := rfl
+theorem vec_vecLinearEquiv_symm (v : n × m → R) : ((vecLinearEquiv S).symm v).vec = v := (rfl)
 
 end LinearEquiv
 
