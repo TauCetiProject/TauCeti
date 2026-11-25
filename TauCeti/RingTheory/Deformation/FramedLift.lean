@@ -382,6 +382,14 @@ theorem lift_mk {β : Sort*} (f : FramedLift ρbar T A → β)
     lift f hf (mk x) = f x :=
   (rfl)
 
+/-- The descent of an invariant function to framed deformations is unique. -/
+theorem lift_unique {β : Sort*} (f : FramedLift ρbar T A → β)
+    (hf : ∀ (b : A.strictKernel n) x, f (b • x) = f x) (g : FramedStrictClass ρbar T A → β)
+    (hg : ∀ x, g (mk x) = f x) : g = lift f hf :=
+  funext fun c ↦ by
+    obtain ⟨x, rfl⟩ := mk_surjective c
+    exact hg x
+
 /-- The pushforward of framed deformations along a morphism `f : A ⟶ B` of `C_Λ`. -/
 def map (f : A ⟶ B) : FramedStrictClass ρbar T A → FramedStrictClass ρbar T B :=
   lift (fun x ↦ mk (FramedLift.map f x)) fun b x ↦ by rw [FramedLift.map_smul, mk_smul]
