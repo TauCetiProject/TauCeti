@@ -83,6 +83,13 @@ def complexRealFrame (u : Fin r → V) : Fin (2 * r) → V :=
     (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k))
 
 /-- The frame of `u` is the family `(i, 0) ↦ u i`, `(i, 1) ↦ J (u i)` on `Fin r × Fin 2`,
+evaluated at `finProdFinEquiv.symm` of the index cast to `Fin (r * 2)`. -/
+theorem complexRealFrame_def (u : Fin r → V) :
+    J.complexRealFrame u = fun k ↦ (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
+      (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k)) :=
+  (rfl)
+
+/-- The frame of `u` is the family `(i, 0) ↦ u i`, `(i, 1) ↦ J (u i)` on `Fin r × Fin 2`,
 reindexed by `Fin (2 * r)` through `finProdFinEquiv`. -/
 theorem complexRealFrame_eq_comp (u : Fin r → V) :
     J.complexRealFrame u = (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) ∘
@@ -208,13 +215,8 @@ theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu :
     (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
     (alternatingFormEquiv_kahlerForm_vecCons_eq_zero hJ hJu)
     (alternatingFormEquiv_kahlerForm_vecCons_apply hJ hu)
-  -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
-  have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
-      r.factorial := by
-    unfold complexRealFrame
-    exact h
-  rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, h',
-    inv_mul_cancel₀ (by positivity)]
+  rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, complexRealFrame_def,
+    h, inv_mul_cancel₀ (by positivity)]
 
 /-- The frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is orthonormal for the Hermitian
 metric of `J` is calibrated by `ω ^ r / r!`. -/
