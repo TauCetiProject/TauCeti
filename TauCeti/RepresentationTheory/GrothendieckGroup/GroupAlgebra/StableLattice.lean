@@ -28,9 +28,10 @@ depend on the lattice
 finitely generated and torsion-free over `O`, whose scalar extensions to `K` are equivalent have
 reductions with the same class. For two full lattices in the same representation `ρ` over `K`
 this is `TauCeti.reductionK0_residueField_eq_of_isFullLattice`; such lattices exist when `G` is
-finite (`TauCeti.exists_isFullLattice_subrepresentation`). This is what makes the reduction of
-lattices a well-defined map from representations over `K` to `G₀(k[G])`, the decomposition map of
-modular representation theory.
+finite (`TauCeti.exists_isFullLattice_subrepresentation`). So the reduction class depends only on
+the representation over `K`; together with additivity along short exact sequences, which is not
+proved here, this yields the decomposition map `G₀(K[G]) → G₀(k[G])` of modular representation
+theory.
 
 The argument is Serre's. Clearing denominators in an equivalence `K ⊗_O L₁ ≃ K ⊗_O L₂`
 (`Representation.Equiv.exists_intertwiningMap_comp_eq_smul`) embeds `L₁` in `L₂` with image

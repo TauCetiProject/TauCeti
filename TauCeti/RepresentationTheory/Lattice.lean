@@ -213,10 +213,9 @@ theorem TauCeti.exists_isFullLattice_subrepresentation (K : Type*) [Field K] [Al
     refine Submodule.subset_span ⟨(g * h, i), ?_⟩
     simp
   refine ⟨⟨L, fun g _ hv ↦ by rw [Representation.restrictScalars_apply]; exact hstab g hv⟩, ?_⟩
-  refine { Submodule.IsLattice.of_fg K (Submodule.fg_span (Set.finite_range _)) with
-    span_eq_top := top_le_iff.mp (b.span_eq ▸ Submodule.span_mono ?_) }
+  refine Submodule.isFullLattice_span (Set.finite_range _)
+    (top_le_iff.mp (b.span_eq ▸ Submodule.span_mono ?_))
   rintro _ ⟨i, rfl⟩
-  refine Submodule.subset_span ⟨(1, i), ?_⟩
-  simp
+  exact ⟨(1, i), by simp⟩
 
 end StableLattice
