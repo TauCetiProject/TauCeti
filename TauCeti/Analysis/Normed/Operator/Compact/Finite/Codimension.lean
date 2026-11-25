@@ -74,7 +74,8 @@ theorem exists_norm_comp_subtypeL_le_two_mul_of_isCover (T : E →L[𝕜] F) {ε
     mem_image_of_mem T (mem_closedBall_zero_iff.2 hx.le)
   have hxy' : ‖y - T x‖ ≤ ε := by rw [← dist_eq_norm, dist_comm]; exact mem_closedBall.1 hxy
   -- The centre `y` has norm `φ y (y - T x) ≤ ε`, since `φ y` vanishes at `T x`.
-  have hφx : φ y (T x) = 0 := congr_fun (LinearMap.mem_ker.1 x.property) ⟨y, hy⟩
+  have hφx : φ y (T x) = 0 := by
+    simpa [A] using congr_fun (LinearMap.mem_ker.1 x.property) ⟨y, hy⟩
   have hy' : ‖y‖ ≤ ε := by
     have h : φ y (y - T x) = ‖y‖ := by rw [map_sub, hφx, sub_zero, hφy]
     calc ‖y‖ = ‖φ y (y - T x)‖ := by rw [h, RCLike.norm_ofReal, abs_norm]

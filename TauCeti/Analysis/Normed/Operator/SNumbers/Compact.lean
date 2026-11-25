@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Basic
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Topology.MetricSpace.Cover
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Codimension
 import TauCeti.Topology.MetricSpace.CoveringNumbers
@@ -20,9 +21,9 @@ If the image `T(B_E)` of the closed unit ball under `T : E →L[𝕜] F` is cove
 quotient by `span {yᵢ}` moves every point of `T(B_E)` to within `ε` of the origin. Over `ℝ` or
 `ℂ` the Gelfand number satisfies `c_k(T) ≤ 2ε`: if `φᵢ` are norming functionals of the
 centres, then on the subspace `⋂ ker (φᵢ ∘ T)`, of codimension at most `k`, every `T x` with
-`‖x‖ ≤ 1` lies within `ε` of a centre `yᵢ` of norm `φᵢ (yᵢ - T x) ≤ ε`. With the covers by
-`2 ^ n` balls defining the entropy numbers this gives `d_{2^n}(T) ≤ eₙ(T)` and
-`c_{2^n}(T) ≤ 2 eₙ(T)`.
+`‖x‖ ≤ 1` lies within `ε` of a centre `yᵢ` of norm `φᵢ (yᵢ - T x) ≤ ε`. The comparisons
+`d_{2^n}(T) ≤ eₙ(T)` and `c_{2^n}(T) ≤ 2 eₙ(T)` with entropy numbers, which follow from these
+estimates, are in `TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Comparison`.
 
 As a consequence the Gelfand and the Kolmogorov numbers both detect compactness: `cₙ(T) → 0`
 and `dₙ(T) → 0` each hold exactly when `T(B_E)` is totally bounded. For the converse
@@ -38,8 +39,7 @@ When `F` is complete, `T` is a compact operator exactly when `cₙ(T) → 0`, an
 
 * The quantitative Kolmogorov estimate `d_k(T) ≤ ‖c‖ ε` for a scalar `c` with `1 < ‖c‖`, and
   therefore `dₙ(T) → 0` for every compact `T`, hold over any `NontriviallyNormedField 𝕜`. The
-  sharp estimate `d_k(T) ≤ ε` and the comparison with entropy numbers need a
-  `DenselyNormedField 𝕜`.
+  sharp estimate `d_k(T) ≤ ε` needs a `DenselyNormedField 𝕜`.
 * The Gelfand estimate uses the Hahn–Banach theorem and is stated over `RCLike 𝕜`.
 * The implications from `cₙ(T) → 0` or `dₙ(T) → 0` to total boundedness hold over any locally
   compact nontrivially normed field. Over a complete field `𝕜` that is not locally compact, such
@@ -54,9 +54,6 @@ When `F` is complete, `T` is a compact operator exactly when `cₙ(T) → 0`, an
 * `ContinuousLinearMap.kolmogorovNumber_le_of_isCover`,
   `ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover`: the covering estimates
   `d_k(T) ≤ ε` and `c_k(T) ≤ 2ε`.
-* `ContinuousLinearMap.kolmogorovNumber_two_pow_le_entropyNumber`,
-  `ContinuousLinearMap.gelfandNumber_two_pow_le_two_mul_entropyNumber`: `d_{2^n}(T) ≤ eₙ(T)` and
-  `c_{2^n}(T) ≤ 2 eₙ(T)`.
 * `ContinuousLinearMap.tendsto_kolmogorovNumber_atTop_nhds_zero_iff_totallyBounded`,
   `ContinuousLinearMap.tendsto_gelfandNumber_atTop_nhds_zero_iff_totallyBounded`: total
   boundedness of `T(B_E)` via `dₙ(T) → 0` and via `cₙ(T) → 0`.
@@ -68,8 +65,6 @@ When `F` is complete, `T` is a compact operator exactly when `cₙ(T) → 0`, an
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), Theorem 9.3,
   for the compactness criteria.
-* A. Pietsch, *Operator Ideals*, North-Holland Mathematical Library 20, North-Holland (1980),
-  Chapter 12, for entropy numbers and their comparison with Gelfand and Kolmogorov numbers.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `AddOns/Compact.lean`: an earlier Lean formalization of the compactness criteria.
 -/
@@ -99,8 +94,7 @@ theorem kolmogorovNumber_le_nnnorm_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ}
   have hV : Module.rank 𝕜 (Submodule.span 𝕜 (N : Set F)) ≤ k :=
     (rank_span_finset_le N).trans (by exact_mod_cast hcard)
   refine (T.kolmogorovNumber_le hV).trans ?_
-  rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
-  exact T.norm_mkQL_span_comp_le_of_isCover hN hc
+  exact_mod_cast T.norm_mkQL_span_comp_le_of_isCover hN hc
 
 /-- If `T(B_E)` is totally bounded, the Kolmogorov numbers of `T` tend to zero. -/
 theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
@@ -137,14 +131,6 @@ theorem kolmogorovNumber_le_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ�
   refine (T.kolmogorovNumber_le_nnnorm_mul_of_isCover hcard hN
     (c := c) (by exact_mod_cast hc₁)).trans ?_
   exact ((lt_div_iff₀ hε).1 hca).le
-
-/-- **Kolmogorov numbers below entropy numbers.** Over a densely normed field,
-`d_{2^n}(T) ≤ eₙ(T)`. -/
-theorem kolmogorovNumber_two_pow_le_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
-    T.kolmogorovNumber (2 ^ n) ≤ T.entropyNumber n :=
-  le_of_forall_gt_imp_ge_of_dense fun _ ha ↦
-    let ⟨_, hcard, hN⟩ := exists_isCover_of_entropyNumber_lt ha
-    T.kolmogorovNumber_le_of_isCover hcard hN
 
 end DenselyNormedField
 
@@ -228,17 +214,7 @@ theorem gelfandNumber_le_two_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε :
     T.gelfandNumber k ≤ 2 * ε := by
   obtain ⟨M, -, hM, hTM⟩ := T.exists_norm_comp_subtypeL_le_two_mul_of_isCover hN
   refine (T.gelfandNumber_le (hM.trans (by exact_mod_cast hcard))).trans ?_
-  rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, NNReal.coe_two]
-  exact hTM
-
-/-- **Gelfand numbers below entropy numbers.** `c_{2^n}(T) ≤ 2 eₙ(T)`. -/
-theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
-    T.gelfandNumber (2 ^ n) ≤ 2 * T.entropyNumber n := by
-  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
-  have ha' : T.entropyNumber n < a / 2 := by
-    rwa [lt_div_iff₀ two_pos, mul_comm]
-  obtain ⟨N, hcard, hN⟩ := exists_isCover_of_entropyNumber_lt ha'
-  exact (T.gelfandNumber_le_two_mul_of_isCover hcard hN).trans_eq (mul_div_cancel₀ _ two_ne_zero)
+  exact_mod_cast hTM
 
 /-- If `T(B_E)` is totally bounded, the Gelfand numbers of `T` tend to zero. -/
 theorem tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
