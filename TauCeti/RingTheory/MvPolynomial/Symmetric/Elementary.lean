@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Multiset
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
-import Mathlib.Tactic.LinearCombination
 public import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!

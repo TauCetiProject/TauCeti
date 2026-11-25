@@ -11,7 +11,6 @@ public import Mathlib.Topology.Algebra.MvPolynomial
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.Convex.Sequence.DiscreteConcave
 import TauCeti.Analysis.MeanInequalities
-import TauCeti.Analysis.MeanInequalities.Newton
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
 
