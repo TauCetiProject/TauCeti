@@ -44,8 +44,6 @@ scheme is its local ring.
   `κ(𝔪_R) → κ(𝔮)` surjective is the kernel of an `R`-algebra map `S →ₐ[R] ResidueField R`.
 * `Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes`: at a minimal prime `p` with
   `R_p` reduced, for instance a minimal prime of a reduced ring, `R_p → κ(p)` is bijective.
-* `Localization.AtPrime.algebraMap_mem_ker_residueField_iff`: `r ∈ R` maps into the kernel of
-  `R_p → κ(p)` exactly when `r ∈ p`.
 -/
 
 public section
@@ -165,11 +163,3 @@ theorem Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes (p : Ideal 
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, IsLocalRing.residue_surjective⟩
   rw [IsLocalRing.residue_eq_zero_iff, hm] at hx
   exact Ideal.mem_bot.mp hx
-
-/-- An element of `R` maps into the kernel of the residue map `R_p → κ(p)` exactly when it lies in
-`p`. -/
-theorem Localization.AtPrime.algebraMap_mem_ker_residueField_iff {p : Ideal R} [p.IsPrime]
-    {r : R} :
-    algebraMap R (Localization.AtPrime p) r ∈
-        RingHom.ker (algebraMap (Localization.AtPrime p) p.ResidueField) ↔ r ∈ p := by
-  rw [RingHom.mem_ker, ← IsScalarTower.algebraMap_apply, Ideal.algebraMap_residueField_eq_zero]

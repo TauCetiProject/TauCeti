@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Kaehler.Conormal
-public import TauCeti.RingTheory.LocalRing.ResidueField.Ideal
 public import TauCeti.RingTheory.Ideal.Cotangent.Span
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Ideal
@@ -24,7 +23,7 @@ with a `k`-point `φ`, the local ring `R = A_𝔭` at `𝔭 = ker φ` has biject
 * for `R = k[x]_(x)` the class of `x`, which spans `𝔪/𝔪²`, maps to `1 ⊗ dx`
   (`polynomial_span_toCotangent_X_eq_top`, `polynomial_kerCotangentToTensor_X`);
 * for the non-Noetherian `R = k[x₀, x₁, …]` localized at `(x₀, x₁, …)` the conormal map is still
-  bijective (`mvPolynomial_bijective_kerCotangentToTensor`), sending the class of `xᵢ` to
+  bijective (`mvPolynomial_kerCotangentToTensor_bijective`), sending the class of `xᵢ` to
   `1 ⊗ dxᵢ` (`mvPolynomial_kerCotangentToTensor_X`).
 
 The Stacks Project, Lemma 10.140.4 (Tag 00TU), states injectivity for Noetherian rings only.
@@ -72,16 +71,19 @@ open Polynomial
 abbrev evalZero : k[X] →ₐ[k] k :=
   Polynomial.aeval 0
 
-/-- `x` lies in the kernel of `x ↦ 0`. -/
-theorem X_mem_ker_evalZero : (X : k[X]) ∈ RingHom.ker (evalZero (k := k)) := by
-  simp
+/-- The image of `x` in `R = k[x]_(x)` lies in the maximal ideal, the kernel of `R → κ`. -/
+theorem algebraMap_X_mem_ker_residueField :
+    algebraMap k[X] (LocalRingAt (evalZero (k := k))) X ∈
+      RingHom.ker (algebraMap _ (ResidueField (LocalRingAt (evalZero (k := k))))) := by
+  rw [ResidueField.algebraMap_eq, ker_residue]
+  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff _ (RingHom.ker evalZero) _).mpr (by simp)
 
 /-- For `R = k[x]_(x)`, the conormal map sends the class of `x` to `1 ⊗ dx`. -/
 theorem polynomial_kerCotangentToTensor_X :
     kerCotangentToTensor k (LocalRingAt (evalZero (k := k)))
         (ResidueField (LocalRingAt (evalZero (k := k))))
         ((RingHom.ker _).toCotangent
-          ⟨_, Localization.AtPrime.algebraMap_mem_ker_residueField_iff.mpr X_mem_ker_evalZero⟩) =
+          ⟨_, algebraMap_X_mem_ker_residueField⟩) =
       1 ⊗ₜ D k _ (algebraMap k[X] (LocalRingAt (evalZero (k := k))) X) :=
   kerCotangentToTensor_toCotangent _ _ _ _
 
@@ -89,7 +91,7 @@ theorem polynomial_kerCotangentToTensor_X :
 theorem polynomial_span_toCotangent_X_eq_top :
     Submodule.span (LocalRingAt (evalZero (k := k)))
         {(RingHom.ker (algebraMap _ (ResidueField (LocalRingAt (evalZero (k := k)))))).toCotangent
-          ⟨_, Localization.AtPrime.algebraMap_mem_ker_residueField_iff.mpr X_mem_ker_evalZero⟩} =
+          ⟨_, algebraMap_X_mem_ker_residueField⟩} =
       ⊤ := by
   have hI : RingHom.ker (evalZero (k := k)) = Ideal.span {X} := by
     rw [AlgHom.ker_coe, coe_aeval_eq_evalRingHom, ker_evalRingHom, map_zero, sub_zero]
@@ -101,7 +103,7 @@ theorem polynomial_span_toCotangent_X_eq_top :
       congrArg (Ideal.map _) hI, Ideal.map_span, Set.image_singleton]
   have h := (Ideal.span_range_toCotangent_eq_top_iff _
     (fun _ : Unit ↦ algebraMap k[X] (LocalRingAt (evalZero (k := k))) X) fun _ ↦
-      Localization.AtPrime.algebraMap_mem_ker_residueField_iff.mpr X_mem_ker_evalZero).mpr
+      algebraMap_X_mem_ker_residueField).mpr
     (le_sup_of_le_left (by rw [Set.range_const, hm]))
   rwa [Set.range_const] at h
 
@@ -113,14 +115,18 @@ section MvPolynomial
 abbrev mvEvalZero : MvPolynomial ℕ k →ₐ[k] k :=
   MvPolynomial.aeval 0
 
-/-- Each `xᵢ` lies in the kernel of the point `0`. -/
-theorem mvPolynomial_X_mem_ker_mvEvalZero (i : ℕ) :
-    MvPolynomial.X i ∈ RingHom.ker (mvEvalZero (k := k)) := by
-  simp [RingHom.mem_ker]
+/-- The image of each `xᵢ` in `R = k[x₀, x₁, …]_(x₀, x₁, …)` lies in the maximal ideal, the kernel
+of `R → κ`. -/
+theorem mvPolynomial_algebraMap_X_mem_ker_residueField (i : ℕ) :
+    algebraMap (MvPolynomial ℕ k) (LocalRingAt (mvEvalZero (k := k))) (MvPolynomial.X i) ∈
+      RingHom.ker (algebraMap _ (ResidueField (LocalRingAt (mvEvalZero (k := k))))) := by
+  rw [ResidueField.algebraMap_eq, ker_residue]
+  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff _ (RingHom.ker mvEvalZero) _).mpr
+    (by simp [RingHom.mem_ker])
 
 /-- For `R = k[x₀, x₁, …]` localized at `(x₀, x₁, …)`, which is not Noetherian, the conormal map is
 bijective. -/
-theorem mvPolynomial_bijective_kerCotangentToTensor :
+theorem mvPolynomial_kerCotangentToTensor_bijective :
     Function.Bijective (kerCotangentToTensor k (LocalRingAt (mvEvalZero (k := k)))
       (ResidueField (LocalRingAt (mvEvalZero (k := k))))) :=
   mvEvalZero.kerCotangentToTensor_residueField_bijective
@@ -131,8 +137,7 @@ theorem mvPolynomial_kerCotangentToTensor_X (i : ℕ) :
     kerCotangentToTensor k (LocalRingAt (mvEvalZero (k := k)))
         (ResidueField (LocalRingAt (mvEvalZero (k := k))))
         ((RingHom.ker _).toCotangent
-          ⟨_, Localization.AtPrime.algebraMap_mem_ker_residueField_iff.mpr
-            (mvPolynomial_X_mem_ker_mvEvalZero i)⟩) =
+          ⟨_, mvPolynomial_algebraMap_X_mem_ker_residueField i⟩) =
       1 ⊗ₜ D k _ (algebraMap (MvPolynomial ℕ k) (LocalRingAt (mvEvalZero (k := k)))
         (MvPolynomial.X i)) :=
   kerCotangentToTensor_toCotangent _ _ _ _
