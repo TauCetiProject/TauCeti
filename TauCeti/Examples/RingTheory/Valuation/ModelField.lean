@@ -55,13 +55,14 @@ example (K : Type*) [Field K] [ValuativeRel K]
     simp only [v]
     rw [map_lt_map_iff, WithZero.coe_lt_coe, Multiplicative.ofAdd_lt, Prod.Lex.toLex_lt_toLex]
   have hv_one : (1 : ValueGroupWithZero K) = v 0 0 := by
-    simp only [v]
-    rw [← map_one e.symm]
-    rfl
+    simp only [v, Prod.mk_zero_zero, toLex_zero, ofAdd_zero, WithZero.coe_one, map_one]
   have hv_pow (b : ℤ) (n : ℕ) : v 0 b ^ n = v 0 (n * b) := by
-    simp only [v]
-    rw [← map_pow, ← WithZero.coe_pow, ← ofAdd_nsmul]
-    congr
+    induction n with
+    | zero => rw [pow_zero, Nat.cast_zero, zero_mul, hv_one]
+    | succ n ih =>
+      rw [pow_succ, ih, Nat.cast_succ, add_one_mul]
+      simp only [v]
+      rw [← map_mul, ← WithZero.coe_mul, ← ofAdd_add, ← toLex_add, Prod.mk_add_mk, add_zero]
   refine ⟨⟨⟨v 0 (-1), by rw [hv_one, hv_lt]; omega, fun δ hδ ↦ ?_⟩⟩, ?_⟩
   · rcases eq_or_ne δ 0 with rfl | hδ0
     · exact zero_le
