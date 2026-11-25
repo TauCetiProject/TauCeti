@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
+public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 
 import TauCeti.Algebra.BigOperators.Finprod
 
