@@ -205,6 +205,8 @@ private theorem isPseudoholomorphicAt_of_fderivWithin_chart
     hud.mfderiv_eq_mfderivWithin_comp_extChartAt_symm, extChartAt]
   have hcrw := hcr w
   simp only [SmoothAlmostComplexStructure.toContMDiff_apply] at hcrw
+  -- `hcrw` is the goal with `w : ℂ` in place of a tangent vector at `z₀` and the products taken in
+  -- `ℂ`; the tangent spaces at `z₀` and `x` are `ℂ` by definition.
   exact hcrw
 
 /-- **Weak solutions are pseudoholomorphic, at one point.** For the zero inhomogeneous term and a
