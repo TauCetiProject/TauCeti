@@ -235,19 +235,6 @@ private theorem continuous_symChartMetric (k : ℕ∞) (x₀ : M) :
 
 /-! ### Comparison of the topologies -/
 
-omit [I.Boundaryless] in
-private theorem frameTopology_eq_induced (n : ℕ∞) {ι : Type*}
-    (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
-      (π (symmetricBilinearMaps ℝ E ℝ)
-        (fun x : M ↦ symmetricBilinearMaps ℝ (TangentSpace I x) ℝ)))
-    [∀ i, MemTrivializationAtlas (e i)]
-    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet) :
-    frameTopology I n e U hU =
-      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := I) (n := n) e U hU) := by
-  let _ := ContMDiffSection.frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology I n e U hU
-  exact (isEmbedding_toSymmetricSection_frameTopology (IB := I) (n := n) e U hU).eq_induced
-
 /-- The chart Cᵏ topology on smooth metrics is induced by forgetting regularity and using the
 section topology on Cᵏ metrics, for every finite order and for smooth regularity. -/
 theorem chartCkTopology_eq_induced_ofLE [LocallyCompactSpace E] (k : ℕ∞)
@@ -261,7 +248,7 @@ theorem chartCkTopology_eq_induced_ofLE [LocallyCompactSpace E] (k : ℕ∞)
     chartCkTopology (I := I) (M := M) k =
       .induced (fun g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
         g.ofLE (m := (k : ℕ∞ω)) (by exact_mod_cast le_top)) (frameTopology I k e U hU) := by
-  rw [frameTopology_eq_induced, induced_compose,
+  rw [frameTopology_eq_induced_toSymmetricSection, induced_compose,
     ContMDiffSection.frameTopology_eq_of_covers e U hU hcover
     (symTriv (I := I) (M := M)) (chartSourceOpens H) chartSourceOpens_subset_baseSet
     fun x ↦ ⟨x, mem_chartSourceOpens.mpr (mem_chart_source H x)⟩]
@@ -371,7 +358,8 @@ theorem isEmbedding_toSymmetricSection_chartCInfty [LocallyCompactSpace E]
   let _ := chartCInftyTopology (I := I) (M := M)
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
   exact ⟨⟨(chartCInftyTopology_eq_frameTopology e U hU hcover).trans
-    (frameTopology_eq_induced ⊤ e U hU)⟩, toSymmetricSection_injective⟩
+    (frameTopology_eq_induced_toSymmetricSection (IB := I) (n := ∞) e U hU)⟩,
+    toSymmetricSection_injective⟩
 
 /-- On a compact manifold the smooth metrics with the chart C∞ topology form an open subspace of
 the smooth sections of `Sym²(T*M)`, with the compact derivative topology of any covering frame

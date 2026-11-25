@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.Basic
 public import TauCeti.Combinatorics.RibbonGraph.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # The permutation triple of a bipartite ribbon graph
@@ -118,6 +119,13 @@ theorem isConnected_toPermutationTriple (ν : Γ.E ≃ Fin n) :
   exact and_congr hnonempty
     (MulAction.isPretransitive_congr (f := Γ.edgeEquivMonodromyGroup ν)
       (Γ.rotationGroupEquivMonodromyGroup ν).surjective ν.bijective).symm
+
+/-- The monodromy orbits of the triple are the connected components of the graph. -/
+theorem card_monodromyOrbits_toPermutationTriple (ν : Γ.E ≃ Fin n) :
+    Nat.card (MulAction.orbitRel.Quotient (Γ.toPermutationTriple ν).monodromyGroup (Fin n)) =
+      Nat.card Γ.ConnectedComponent :=
+  (Nat.card_congr (MulAction.orbitRelQuotientCongr (Γ.rotationGroupEquivMonodromyGroup ν) ν
+    (Γ.edgeEquivMonodromyGroup ν).map_smul')).symm
 
 /-- Postcomposing an edge numbering by a relabeling simultaneously relabels the resulting
 permutation triple. -/

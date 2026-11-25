@@ -213,8 +213,7 @@ countable union over finite sets bounding it. -/
 theorem measurableSet_treeClass [Countable V] : MeasurableSet (treeClass (V := V)) := by
   classical
   let E (x y : V) : Set (RelationalConfiguration Language.order V) := {c | codeRel leSymb c x y}
-  have hE (x y : V) : MeasurableSet (E x y) := by
-    simpa only [E, codeRel_iff] using measurableSet_setOf_eval (atom leSymb ![x, y]) true
+  have hE (x y : V) : MeasurableSet (E x y) := measurableSet_setOf_codeRel leSymb x y
   have heq : treeClass = modelsOfTheory Language.order.partialOrderTheory ∩
       (⋃ a, ⋂ x, E a x) ∩ (⋂ x, ⋃ s : Finset V, ⋂ y ∈ (↑s : Set V)ᶜ, (E y x)ᶜ) ∩
       (⋂ x, ⋂ y, ⋂ z, ⋂ (_ : y ≠ z), (E y x ∩ E z x)ᶜ ∪ (E y z ∪ E z y)) := by
