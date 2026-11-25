@@ -22,9 +22,12 @@ characters `J(χ, φ)` is Mathlib's `jacobiSum χ φ`. Over a finite field these
 of Gauss sums to a single Gauss sum, and they count the solutions of diagonal equations
 `∑ᵢ aᵢ xᵢ ^ dᵢ = b` (`TauCeti.card_sum_mul_pow_eq`).
 
-As in Mathlib, every character vanishes at `0`, the trivial one included. So the trivial
-character gives no exceptional cases here, in contrast with sources that set `1(0) = 1`, and only
-the product `∏ᵢ χᵢ` decides which formula applies.
+As in Mathlib, every character vanishes at `0`, the trivial one included, in contrast with
+sources that set `1(0) = 1`. So the trivial character gives no exceptional cases in the scaling
+results, the vanishing of `J₀`, the Gauss-sum relation and the recursion for `J₀`: there only the
+product `∏ᵢ χᵢ` decides which formula applies. The recursion `J(χ) = -χ_p(-1) J(χ')` needs `χ_p`
+to be nontrivial, and the absolute-value formulas need every `χᵢ` to be nontrivial, since
+`g(1, ψ) = -1`.
 
 ## Main definitions
 
@@ -32,6 +35,7 @@ the product `∏ᵢ χᵢ` decides which formula applies.
 
 ## Main results
 
+* `TauCeti.multiJacobiSum_def`: `J_t(χ)` is the sum of `∏ᵢ χᵢ(xᵢ)` over `∑ᵢ xᵢ = t`.
 * `TauCeti.multiJacobiSum_fin_two_one`: for two characters, `J(χ, φ)` is `jacobiSum χ φ`.
 * `TauCeti.multiJacobiSum_eq_sum_mul`: removing the `p`-th character,
   `J_t(χ) = ∑_y χ_p(y) J_{t - y}(χ')`.
@@ -41,9 +45,10 @@ the product `∏ᵢ χᵢ` decides which formula applies.
 * `TauCeti.multiJacobiSum_zero_eq_zero`: `J₀(χ) = 0` if `∏ᵢ χᵢ ≠ 1`.
 * `TauCeti.prod_gaussSum_eq_gaussSum_prod_mul_add`: over a finite field,
   `∏ᵢ g(χᵢ, ψ) = g(∏ᵢ χᵢ, ψ) J(χ) + J₀(χ)` for every additive character `ψ`.
-* `TauCeti.gaussSum_prod_mul_multiJacobiSum_one`,
-  `TauCeti.multiJacobiSum_one_eq_prod_gaussSum_div`: if `∏ᵢ χᵢ ≠ 1`, then
-  `J(χ) = ∏ᵢ g(χᵢ, ψ) / g(∏ᵢ χᵢ, ψ)`.
+* `TauCeti.gaussSum_prod_mul_multiJacobiSum_one`: if `∏ᵢ χᵢ ≠ 1`, then
+  `g(∏ᵢ χᵢ, ψ) J(χ) = ∏ᵢ g(χᵢ, ψ)` for every additive character `ψ`.
+* `TauCeti.multiJacobiSum_one_eq_prod_gaussSum_div`: if moreover `ψ` is primitive and the number
+  of elements of the field is nonzero in the value field, then `J(χ) = ∏ᵢ g(χᵢ, ψ) / g(∏ᵢ χᵢ, ψ)`.
 * `TauCeti.multiJacobiSum_zero_of_prod_eq_one`: if `∏ᵢ χᵢ = 1`, then
   `J₀(χ) = χ_p(-1) (q - 1) J(χ')`.
 * `TauCeti.multiJacobiSum_one_eq_mul_jacobiSum`, `TauCeti.multiJacobiSum_one_of_prod_eq_one`: the
@@ -82,17 +87,23 @@ Mathlib's `jacobiSum` (`TauCeti.multiJacobiSum_fin_two_one`). -/
 def multiJacobiSum (χ : ι → MulChar R R') (t : R) : R' :=
   ∑ x : ι → R with ∑ i, x i = t, ∏ i, χ i (x i)
 
+/-- The multiple Jacobi sum `J_t(χ)` is the sum of `∏ᵢ χᵢ(xᵢ)` over the tuples with
+`∑ᵢ xᵢ = t`. -/
+theorem multiJacobiSum_def (χ : ι → MulChar R R') (t : R) :
+    multiJacobiSum χ t = ∑ x : ι → R with ∑ i, x i = t, ∏ i, χ i (x i) :=
+  (rfl)
+
 /-- With no characters the only tuple is the empty one, whose sum is `0`. -/
 @[simp]
 theorem multiJacobiSum_of_isEmpty [IsEmpty ι] (χ : ι → MulChar R R') (t : R) :
     multiJacobiSum χ t = if t = 0 then 1 else 0 := by
-  split_ifs with ht <;> simp [multiJacobiSum, eq_comm, ht]
+  split_ifs with ht <;> simp [multiJacobiSum_def, eq_comm, ht]
 
 /-- For a single character `χ`, `J_t(χ) = χ(t)`. -/
 @[simp]
 theorem multiJacobiSum_of_unique [Unique ι] (χ : ι → MulChar R R') (t : R) :
     multiJacobiSum χ t = χ default t := by
-  rw [multiJacobiSum, sum_filter, ← (Equiv.funUnique ι R).symm.sum_comp]
+  rw [multiJacobiSum_def, sum_filter, ← (Equiv.funUnique ι R).symm.sum_comp]
   simp
 
 /-- Reindexing the family of characters along a bijection does not change the multiple Jacobi
@@ -100,7 +111,7 @@ sum. -/
 @[simp]
 theorem multiJacobiSum_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e : κ ≃ ι)
     (χ : ι → MulChar R R') (t : R) : multiJacobiSum (χ ∘ e) t = multiJacobiSum χ t := by
-  rw [multiJacobiSum, multiJacobiSum, sum_filter, sum_filter,
+  rw [multiJacobiSum_def, multiJacobiSum_def, sum_filter, sum_filter,
     ← (e.arrowCongr (Equiv.refl R)).symm.sum_comp]
   refine sum_congr rfl fun x _ ↦ ?_
   simp [e.sum_comp (fun i ↦ x i), e.prod_comp (fun i ↦ χ i (x i))]
@@ -109,7 +120,7 @@ theorem multiJacobiSum_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e 
 `J_t(χ) = ∑_y χ_p(y) J_{t - y}(χ')`, where `χ'` is the family with `χ_p` removed. -/
 theorem multiJacobiSum_eq_sum_mul {n : ℕ} (χ : Fin (n + 1) → MulChar R R') (p : Fin (n + 1))
     (t : R) : multiJacobiSum χ t = ∑ y, χ p y * multiJacobiSum (p.removeNth χ) (t - y) := by
-  simp only [multiJacobiSum, sum_filter, mul_sum]
+  simp only [multiJacobiSum_def, sum_filter, mul_sum]
   rw [← (Fin.insertNthEquiv (fun _ ↦ R) p).sum_comp, Fintype.sum_prod_type]
   refine sum_congr rfl fun y _ ↦ sum_congr rfl fun x _ ↦ ?_
   simp [Fin.sum_univ_succAbove _ p, Fin.prod_univ_succAbove _ p, eq_sub_iff_add_eq, add_comm y,
@@ -132,7 +143,7 @@ the value at `u` of the product of the characters. -/
 theorem multiJacobiSum_mul_of_isUnit (χ : ι → MulChar R R') {u : R} (hu : IsUnit u) (t : R) :
     multiJacobiSum χ (u * t) = (∏ i, χ i) u * multiJacobiSum χ t := by
   obtain ⟨u, rfl⟩ := hu
-  rw [multiJacobiSum, multiJacobiSum, sum_filter, sum_filter, mul_sum,
+  rw [multiJacobiSum_def, multiJacobiSum_def, sum_filter, sum_filter, mul_sum,
     ← (Equiv.piCongrRight fun _ ↦ Units.mulLeft u).sum_comp]
   refine sum_congr rfl fun x _ ↦ ?_
   simp [← mul_sum, MulChar.prod_apply_coe, prod_mul_distrib]
@@ -143,7 +154,7 @@ theorem sum_filter_sum_mul_eq_prod_mul_multiJacobiSum (χ : ι → MulChar R R')
     (t : R) :
     ∑ x : ι → R with ∑ i, (a i : R) * x i = t, ∏ i, χ i (x i) =
       (∏ i, χ i ↑(a i)⁻¹) * multiJacobiSum χ t := by
-  rw [multiJacobiSum, sum_filter, sum_filter, mul_sum,
+  rw [multiJacobiSum_def, sum_filter, sum_filter, mul_sum,
     ← (Equiv.piCongrRight fun i ↦ Units.mulLeft (a i)⁻¹).sum_comp]
   refine sum_congr rfl fun x _ ↦ ?_
   simp [prod_mul_distrib]
@@ -186,7 +197,7 @@ theorem prod_gaussSum_eq_gaussSum_prod_mul_add (χ : ι → MulChar F R) (ψ : A
     _ = ∑ t, ψ t * multiJacobiSum χ t := by
         rw [← sum_fiberwise univ (fun x : ι → F ↦ ∑ i, x i)]
         refine sum_congr rfl fun t _ ↦ ?_
-        rw [multiJacobiSum, mul_sum]
+        rw [multiJacobiSum_def, mul_sum]
         exact sum_congr rfl fun x hx ↦ by rw [(mem_filter.mp hx).2]
     _ = _ := by
         simp_rw [hfib, sum_add_distrib, ← sum_mul, gaussSum, sum_ite_eq', mem_univ, ite_true]
@@ -199,7 +210,8 @@ theorem gaussSum_prod_mul_multiJacobiSum_one [IsDomain R] {χ : ι → MulChar F
   rw [prod_gaussSum_eq_gaussSum_prod_mul_add, multiJacobiSum_zero_eq_zero hχ, add_zero]
 
 /-- **Multiple Jacobi sums as quotients of Gauss sums.** If the product of the characters is
-nontrivial and `ψ` is primitive, then `J(χ) = ∏ᵢ g(χᵢ, ψ) / g(∏ᵢ χᵢ, ψ)`. -/
+nontrivial, `ψ` is primitive and the number of elements of `F` is nonzero in `F'`, then
+`J(χ) = ∏ᵢ g(χᵢ, ψ) / g(∏ᵢ χᵢ, ψ)`. -/
 theorem multiJacobiSum_one_eq_prod_gaussSum_div {F' : Type*} [Field F']
     (h : (Fintype.card F : F') ≠ 0) {χ : ι → MulChar F F'} (hχ : ∏ i, χ i ≠ 1)
     {ψ : AddChar F F'} (hψ : ψ.IsPrimitive) :
@@ -292,7 +304,7 @@ theorem norm_multiJacobiSum_one_of_prod_eq_one [Nonempty ι] {χ : ι → MulCha
     norm_neg, ← Units.coe_neg_one, MulChar.norm_apply_unit, one_mul,
     norm_multiJacobiSum_one_of_prod_ne_one (χ := Fin.removeNth 0 (χ ∘ e.symm)) (fun _ ↦ hχ _) hrem,
     Fintype.card_fin, hn]
-  congr 1
+  exact congrArg (√(Fintype.card F) ^ ·) (by omega)
 
 end Complex
 

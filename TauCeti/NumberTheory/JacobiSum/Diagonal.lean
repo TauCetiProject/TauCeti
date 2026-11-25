@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.JacobiSum.Multiple
 public import TauCeti.NumberTheory.MulChar.Duality
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.Algebra.BigOperators.Hyperplane
 import TauCeti.NumberTheory.MulChar.Cyclic
 import TauCeti.NumberTheory.MulChar.Orthogonality
 import TauCeti.NumberTheory.MulChar.Real
@@ -68,26 +69,6 @@ private theorem card_sum_mul_pow_eq_sum_prod_card (a : ι → F) (d : ι → ℕ
   simp only [mem_filter, mem_univ, true_and, Fintype.mem_piFinset, funext_iff]
   exact ⟨fun h ↦ h.2, fun h ↦ ⟨by simp [h, hu], h⟩⟩
 
-/-- If `aⱼ ≠ 0` and `g` is invariant under translation of the `j`-th coordinate, then summing `g`
-over all tuples is summing it over the `q` parallel hyperplanes `∑ᵢ aᵢ uᵢ = c`, on each of which
-it has the same sum. -/
-private theorem card_smul_sum_filter_sum_mul_eq {M : Type*} [AddCommMonoid M] {a : ι → F} {j : ι}
-    (hj : a j ≠ 0) {g : (ι → F) → M} (hg : ∀ u c, g (u + Pi.single j c) = g u) (b : F) :
-    Fintype.card F • ∑ u : ι → F with ∑ i, a i * u i = b, g u = ∑ u, g u := by
-  have key : ∀ c, ∑ u : ι → F with ∑ i, a i * u i = c, g u =
-      ∑ u : ι → F with ∑ i, a i * u i = b, g u := by
-    intro c
-    rw [sum_filter, sum_filter, ← Equiv.sum_comp (Equiv.addRight (Pi.single j ((c - b) / a j)))]
-    refine sum_congr rfl fun u _ ↦ ?_
-    have hsum : ∑ i, a i * (u i + Pi.single (M := fun _ ↦ F) j ((c - b) / a j) i) =
-        ∑ i, a i * u i + (c - b) := by
-      simp [mul_add, sum_add_distrib, Pi.single_apply, mul_div_cancel₀ _ hj]
-    have hiff : ∑ i, a i * u i + (c - b) = c ↔ ∑ i, a i * u i = b := by
-      constructor <;> intro h <;> linear_combination h
-    simp only [Equiv.coe_addRight, Pi.add_apply, hsum, hg, hiff]
-  rw [← sum_fiberwise univ (fun u : ι → F ↦ ∑ i, a i * u i) g]
-  simp [key, card_univ]
-
 /-- Over a hyperplane `∑ᵢ aᵢ uᵢ = b` with nonzero `aᵢ`, a product `∏_{i ∈ T} fᵢ(uᵢ)` over a proper
 subset `T` of the coordinates, of functions with `∑_y fᵢ(y) = 0`, sums to `q ^ (r - 1)` when `T`
 is empty and to `0` otherwise. -/
@@ -113,13 +94,13 @@ private theorem sum_filter_sum_mul_eq_prod_eq_ite {a : ι → F} (ha : ∀ i, a 
     refine (mul_eq_zero.mp (h.trans (prod_eq_zero (mem_univ i) ?_))).resolve_left hq
     simpa [hi] using hf i
 
-open scoped Classical in
 /-- **Solutions of a diagonal equation.** For units `aᵢ`, positive exponents `dᵢ` and any `b`, the
 number of solutions of `∑ᵢ aᵢ xᵢ ^ dᵢ = b` in `F ^ r`, `r ≥ 1`, is
 `q ^ (r - 1) + ∑_χ ∏ᵢ χᵢ(aᵢ⁻¹) J_b(χ)`, the sum over the families of nontrivial characters `χᵢ`
 with `χᵢ ^ dᵢ = 1`. For `b ≠ 0` the Jacobi sum `J_b(χ)` is `(∏ᵢ χᵢ)(b) J(χ)`
 (`TauCeti.multiJacobiSum_eq_mul_multiJacobiSum_one`); for `b = 0` it is `J₀(χ)`. -/
-theorem card_sum_mul_pow_eq [Nonempty ι] (a : ι → Fˣ) {d : ι → ℕ} (hd : ∀ i, d i ≠ 0) (b : F) :
+theorem card_sum_mul_pow_eq [Nonempty ι] [DecidableEq (MulChar F ℂ)] (a : ι → Fˣ) {d : ι → ℕ}
+    (hd : ∀ i, d i ≠ 0) (b : F) :
     (#{x : ι → F | ∑ i, (a i : F) * x i ^ d i = b} : ℂ) =
       (Fintype.card F : ℂ) ^ (Fintype.card ι - 1) +
         ∑ χ ∈ Fintype.piFinset fun i ↦ ({χ | χ ^ d i = 1 ∧ χ ≠ 1} : Finset (MulChar F ℂ)),
@@ -145,18 +126,6 @@ theorem card_sum_mul_pow_eq [Nonempty ι] (a : ι → Fˣ) {d : ι → ℕ} (hd 
   simp_rw [prod_univ_sum]
   rw [sum_comm]
   exact sum_congr rfl fun χ _ ↦ sum_filter_sum_mul_eq_prod_mul_multiJacobiSum χ a b
-
-omit [Fintype F] [DecidableEq F] in
-/-- There are at most `d - 1` nontrivial characters `χ` with `χ ^ d = 1`, the character group
-being cyclic. -/
-private theorem card_filter_pow_eq_one_and_ne_one_le [Finite F] [DecidableEq (MulChar F ℂ)]
-    {d : ℕ} (hd : d ≠ 0) : #{χ : MulChar F ℂ | χ ^ d = 1 ∧ χ ≠ 1} ≤ d - 1 := by
-  have h := IsCyclic.card_pow_eq_one_le (α := MulChar F ℂ) (Nat.pos_of_ne_zero hd)
-  have he : ({χ | χ ^ d = 1 ∧ χ ≠ 1} : Finset (MulChar F ℂ)) =
-      ({χ | χ ^ d = 1} : Finset _).erase 1 := by
-    ext; simp [and_comm]
-  rw [he, card_erase_of_mem (by simp)]
-  omega
 
 /-- **The error term of a diagonal equation.** For units `aᵢ`, positive exponents `dᵢ` and
 `b ≠ 0`, the number `N` of solutions of `∑ᵢ aᵢ xᵢ ^ dᵢ = b` in `F ^ r`, `r ≥ 1`, satisfies
@@ -187,6 +156,6 @@ theorem abs_card_sum_mul_pow_eq_sub_le [Nonempty ι] (a : ι → Fˣ) {d : ι �
     (mem_filter.mp (Fintype.mem_piFinset.mp hχ i)).2.2).trans ?_)
   rw [nsmul_eq_mul, Fintype.card_piFinset]
   gcongr
-  exact_mod_cast prod_le_prod fun i _ ↦ card_filter_pow_eq_one_and_ne_one_le (hd i)
+  exact_mod_cast prod_le_prod fun i _ ↦ MulChar.card_filter_pow_eq_one_and_ne_one_le (hd i)
 
 end TauCeti
