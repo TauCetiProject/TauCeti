@@ -177,7 +177,7 @@ theorem twistedReflection_conj (hR : Function.Involutive R) (ξ : ℂ → V) (z 
 theorem twistedReflection_ae_eq_restrict (R : V →L[ℝ] V) (ξ : ℂ → V) :
     twistedReflection R ξ =ᵐ[volume.restrict {z : ℂ | 0 ≤ z.im}] ξ := by
   have hm : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+  have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := Complex.ae_im_ne_zero
   filter_upwards [ae_restrict_mem hm, ae_restrict_of_ae hne] with z hz hz'
   exact twistedReflection_of_im_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
 
@@ -187,7 +187,7 @@ theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [
     [ContinuousStar V] (ξ : ℂ → V) :
     twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
       starSchwarzReflection ξ := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
   rcases lt_or_gt_of_ne hz with hz | hz
   · rw [twistedReflection_of_im_neg hz, starSchwarzReflection_of_im_neg hz,
       ContinuousLinearEquiv.coe_coe, starL'_apply]
@@ -197,7 +197,7 @@ theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [
 differ only on the real axis. -/
 theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
     twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
   rcases lt_or_gt_of_ne hz with hz | hz
   · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
       ContinuousLinearMap.id_apply]
@@ -491,7 +491,7 @@ theorem integral_laplacian_smul_twistedReflection_conjCLE_id_eq_zero (φ : 𝓓(
     ∫ z, Δ (φ : ℂ → ℝ) z • twistedReflection (conjCLE : ℂ →L[ℝ] ℂ) id z = 0 := by
   have hae : (fun z ↦ Δ (φ : ℂ → ℝ) z • twistedReflection (conjCLE : ℂ →L[ℝ] ℂ) id z) =ᵐ[volume]
       fun z ↦ Δ (φ : ℂ → ℝ) z • id z := by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)] with z hz
+    filter_upwards [Complex.ae_im_ne_zero] with z hz
     rw [twistedReflection_conjCLE_id hz, id]
   rw [integral_congr_ae hae]
   have hh : HarmonicOnNhd (id : ℂ → ℂ) Ω := fun x _ ↦ (contDiffAt_id (𝕜 := ℂ)).harmonicAt

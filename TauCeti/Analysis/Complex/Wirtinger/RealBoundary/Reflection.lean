@@ -415,7 +415,8 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
   have hH : MeasurableSet {z : ℂ | 0 < z.im} :=
     measurableSet_lt measurable_const Complex.measurable_im
   rw [Complex.integral_eq_setIntegral_add_comp_conj ha,
-    integral_add ha.integrableOn (Complex.integrable_comp_conj ha).integrableOn,
+    integral_add (g := fun z ↦ a (conj z) • starSchwarzReflection f (conj z)) ha.integrableOn
+      ((integrable_comp conjLIE _).2 ha).integrableOn,
     setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
     setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0), ← integral_star]
   congr 1 <;> refine setIntegral_congr_fun hH fun z hz ↦ ?_
@@ -795,7 +796,7 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn
         I • fderivWithin ℝ ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) z I)) =ᵐ[
       volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] η := by
     rw [EventuallyEq, ae_restrict_iff' hm]
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz hzΩ
+    filter_upwards [Complex.ae_im_ne_zero] with z hz hzΩ
     have hz' : 0 < z.im := lt_of_le_of_ne hzΩ.2 (Ne.symm hz)
     rw [← hη z hzΩ.1 hz', conjWirtingerDeriv_apply, smul_eq_mul, mul_one,
       fderivWithin_of_mem_nhds (inter_im_nonneg_mem_nhds hzΩ.1 hz')]
