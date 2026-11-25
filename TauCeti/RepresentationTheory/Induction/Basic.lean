@@ -39,7 +39,7 @@ on the groups or on the representations.
   and `H`-equivariance of `Representation.IndV.lift`.
 * `Representation.iSup_range_indV_mk_eq_top`: the images of the generator maps `a ↦ ⟦h ⊗ a⟧`
   span an induced representation.
-* `Representation.indV_mk_apply`: the generator map at `h` turns the action of `g` on the
+* `Representation.indV_mk_apply_eq_ind`: the generator map at `h` turns the action of `g` on the
   coefficient into the induced action of `h⁻¹ φ(g) h`, and `Representation.indV_mk_comp_conjNormal`
   is the resulting `N`-equivariance for subgroups `N ≤ H` of `G` with `N` normal, twisted by
   conjugation `n ↦ s n s⁻¹`.
@@ -50,7 +50,7 @@ on the groups or on the representations.
 ## Implementation notes
 
 As in `TauCeti/RepresentationTheory/Induction/Projection.lean`, the generator lemmas
-`Representation.ind_apply_map_mk_one`, `Representation.indV_mk_apply`,
+`Representation.ind_apply_map_mk_one`, `Representation.indV_mk_apply_eq_ind`,
 `Representation.IndV.lift_mk`, `Representation.IntertwiningMap.ind_mk`,
 `Representation.Equiv.ind_mk`, and `Representation.Equiv.ind_symm_mk` are stated with the
 reducible abbreviation `Representation.IndV.mk`, which `simp` unfolds, so they are not `simp`
@@ -233,8 +233,8 @@ theorem iSup_range_indV_mk_eq_top (φ : G' →* G) (ρ : Representation k G' U) 
 
 /-- The generator map at `s` turns the action of `h` on the coefficient into the induced action of
 the conjugate `s⁻¹ φ(h) s`: `⟦s ⊗ h a⟧ = (s⁻¹ φ(h) s) ⟦s ⊗ a⟧`. -/
-theorem indV_mk_apply (φ : G' →* G) (ρ : Representation k G' U) (h : G') (s : G) (a : U) :
-    IndV.mk φ ρ s (ρ h a) = ind φ ρ (s⁻¹ * φ h * s) (IndV.mk φ ρ s a) := by
+theorem indV_mk_apply_eq_ind (φ : G' →* G) (ρ : Representation k G' U) (h : G') (s : G)
+    (a : U) : IndV.mk φ ρ s (ρ h a) = ind φ ρ (s⁻¹ * φ h * s) (IndV.mk φ ρ s a) := by
   rw [ind_mk]
   simpa [ofMulAction_single, mul_assoc] using Coinvariants.mk_tmul_inv
     (ρ := (leftRegular k G).comp φ) (τ := ρ) (MonoidAlgebra.single s (1 : k)) a h⁻¹
@@ -248,7 +248,7 @@ theorem indV_mk_comp_conjNormal (ρ : Representation k H U) (hNH : N ≤ H) (s :
         ρ ((Subgroup.inclusion hNH).comp (MulAut.conjNormal s).toMonoidHom n) =
       ind H.subtype ρ (n : G) ∘ₗ IndV.mk H.subtype ρ s := by
   refine LinearMap.ext fun a ↦ ?_
-  rw [LinearMap.comp_apply, indV_mk_apply, LinearMap.comp_apply]
+  rw [LinearMap.comp_apply, indV_mk_apply_eq_ind, LinearMap.comp_apply]
   simp [MulAut.conjNormal_apply, mul_assoc]
 
 end Generators

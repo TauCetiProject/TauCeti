@@ -116,7 +116,7 @@ noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
       -- cannot reach inside those sealed wrappers, so the goal is restated definitionally.
       change IndV.mk H.subtype A.ρ s⁻¹ (A.ρ (TauCeti.mackeyToH s H K m) a) =
         Representation.ind H.subtype A.ρ ((m : K) : G) (IndV.mk H.subtype A.ρ s⁻¹ a)
-      rw [Representation.indV_mk_apply, Subgroup.coe_subtype, TauCeti.coe_mackeyToH_apply]
+      rw [Representation.indV_mk_apply_eq_ind, Subgroup.coe_subtype, TauCeti.coe_mackeyToH_apply]
       simp [mul_assoc]⟩
 
 -- The public generator-evaluation lemmas in this file deliberately are not simp lemmas: their
