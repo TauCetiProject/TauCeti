@@ -25,8 +25,8 @@ Since the fundamental groupoid is a groupoid, reversing paths turns the contrava
 `x ↦ Hom_R(L(x), R)` back into a covariant one.
 
 The dual system is the coefficient system of the cochains dual to the chains with coefficients in
-`L`. In Morse theory, the Morse complex of `-f` with coefficients in `L^∨` is the signed dual of the
-Morse complex of `f` with coefficients in `L` on an oriented manifold
+`L`. In Morse theory, the twisted Morse boundary of `-f` with coefficients in `L^∨` is the signed
+transpose of the twisted Morse boundary of `f` with coefficients in `L` on an oriented manifold
 (`TauCeti.Geometry.Manifold.Morse.Boundary.TwistedDual`).
 
 ## Main definitions

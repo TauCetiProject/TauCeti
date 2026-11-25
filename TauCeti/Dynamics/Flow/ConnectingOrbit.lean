@@ -119,11 +119,9 @@ theorem connectingPath_eq_symm_of_eq_reverse {ψ : _root_.Flow ℝ α} (h : ψ =
   · simp
   have hs : s ∈ Ioo (0 : unitInterval) 1 :=
     ⟨unitInterval.pos_iff_ne_zero.2 h0, unitInterval.lt_one_iff_ne_one.2 h1⟩
-  have hs' : unitInterval.symm s ∈ Ioo (0 : unitInterval) 1 := by
-    obtain ⟨h₀, h₁⟩ := hs
-    rw [← Subtype.coe_lt_coe] at h₀ h₁
-    constructor <;> rw [← Subtype.coe_lt_coe] <;> simp only [unitInterval.coe_symm_eq] <;>
-      push_cast at * <;> linarith
+  have hs' : unitInterval.symm s ∈ Ioo (0 : unitInterval) 1 :=
+    ⟨unitInterval.pos_iff_ne_zero.2 (mt unitInterval.symm_eq_zero.1 h1),
+      unitInterval.lt_one_iff_ne_one.2 (mt unitInterval.symm_eq_one.1 h0)⟩
   rw [connectingPath_apply_of_mem_Ioo _ _ hs, Path.symm_apply, Function.comp_apply,
     connectingPath_apply_of_mem_Ioo _ _ hs', _root_.Flow.reverse_apply, unitInterval.coe_symm_eq,
     sub_sub_cancel, ← Real.log_inv, inv_div]

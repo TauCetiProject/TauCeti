@@ -24,7 +24,7 @@ the second is the transpose of the first, up to the sign `(-1) ^ ind_f p` at eac
 The component of the boundary of `f` from `p` to `q` is the sum over the trajectories `y` from `p`
 to `q` of their signs times the transports `L(p) → L(q)` along them. The same points `y` are the
 trajectories of `-X` from `q` to `p` (`TauCeti.IsAdaptedPseudoGradient.neg_morseTrajectorySlice`),
-and they trace the reversed paths (`TauCeti.IsAdaptedPseudoGradient.trajectoryPathClass_neg`).
+and they trace the reversed paths (`TauCeti.IsAdaptedPseudoGradient.neg_trajectoryPathClass`).
 Transport in `L^∨` along a reversed path is the dual map of transport in `L` along the path
 (`TauCeti.LocalCoefficientSystem.transport_dual_symm`), and with the dual orientation data each
 trajectory counts for `-f` with `(-1) ^ ind_f p` times its sign for `f`
@@ -120,11 +120,11 @@ theorem IsMorseSmale.twistedMorseBoundaryMap_dual (hMS : hX.IsMorseSmale)
     -- Along each trajectory, transport in `L^∨` along the reversed path is the dual map of
     -- transport in `L`, and the sign for `-f` is `(-1) ^ ind_f p` times the sign for `f`.
     have hy := hX.mem_morseTrajectorySlice.1 y.property
-    rw [hX.trajectoryPathClass_neg hf (p := (p : M)) (q := q) y
+    rw [hX.neg_trajectoryPathClass hf (p := (p : M)) (q := q) y
         ((Equiv.subtypeEquivRight hslice) y) (Equiv.subtypeEquivRight_apply_coe _ _),
       LocalCoefficientSystem.transport_dual_symm, Equiv.subtypeEquivRight_apply_coe, map_zsmul,
       smul_smul]
-    -- The linear map of `LinearEquiv.dualMap e` is by definition `Module.Dual.transpose e`.
+    -- The sign for `-f` with the dual orientation data is `(-1) ^ ind_f p` times the sign for `f`.
     exact congrArg (· • _) (neg_trajectorySign_of_unstableFrameOrientation
       (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
       (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q)) hf hp hq oM

@@ -61,7 +61,7 @@ arc is a homotopy between their concatenated paths, so that their transports agr
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `trajectoryPathClass`: the homotopy class of the path traced by a trajectory; for `-X` it is
-  the reversed class (`trajectoryPathClass_neg`).
+  the reversed class (`neg_trajectoryPathClass`).
 * `brokenTrajectoryPathClass`: the homotopy class of the concatenated path of a broken trajectory.
 * `twistedMorseBoundaryMap`: the component `L(p) → L(q)` of the twisted Morse boundary.
 * `twistedMorseBoundary`: the Morse boundary with coefficients in `L`.
@@ -112,7 +112,7 @@ theorem trajectoryPathClass_def {p q : M} (y : hX.morseTrajectorySlice p q) :
 trajectories of `X` from `p` to `q` also lies on a trajectory of `-X` from `q` to `p`
 (`TauCeti.IsAdaptedPseudoGradient.neg_morseTrajectorySlice`), and the path class it traces for
 `-X` is the reverse of the one it traces for `X`. -/
-theorem trajectoryPathClass_neg (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
+theorem neg_trajectoryPathClass (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
     (y : hX.morseTrajectorySlice p q) (y' : (hX.neg hf).morseTrajectorySlice q p)
     (h : (y' : M) = y) :
     (hX.neg hf).trajectoryPathClass y' = (hX.trajectoryPathClass y).symm := by
