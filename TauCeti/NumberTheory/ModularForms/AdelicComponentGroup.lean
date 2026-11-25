@@ -8,8 +8,8 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
-public import TauCeti.Topology.Algebra.Group.RelIndex
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # The congruence groups of the `GL₂` components
@@ -180,29 +180,29 @@ theorem isCongruenceSubgroup_comap_mapGL_componentGroup
       ((componentGroup U g).comap (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)) :=
   ⟨M, NeZero.ne M, Subgroup.map_le_iff_le_comap.mp (map_Gamma_le_componentGroup h)⟩
 
-/-- **`Γ_{g,U'}` has finite index in `Γ_{g,U}`** for an open subgroup `U'` of a compact subgroup
-`U`: the index is at most that of `gU'g⁻¹` in `gUg⁻¹`, which is that of `U'` in `U`, finite
-because `U'` is open and `U` is compact. -/
+/-- **`Γ_{g,U'}` has finite index in `Γ_{g,U}`** whenever `U'` is an open and `U` a compact
+subgroup of `GL₂(𝔸_f)`; no containment `U' ≤ U` is assumed. -/
 theorem relIndex_componentGroup_ne_zero {U U' : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
     (hU' : IsOpen (U' : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
     (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
     (componentGroup U' g).relIndex (componentGroup U g) ≠ 0 := by
+  -- The index is at most that of `gU'g⁻¹` in `gUg⁻¹`, which is that of `U'` in `U`.
   set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
   set c := (MulAut.conj g).toMonoidHom
-  -- `Γ_{g,U} ⊓ φ⁻¹(gU'g⁻¹) ≤ Γ_{g,U'}`
-  have hle : (U'.map c).comap φ ⊓ componentGroup U g ≤ componentGroup U' g := fun γ hγ ↦
-    Subgroup.mem_inf.mpr ⟨(Subgroup.mem_inf.mp hγ.2).1, hγ.1⟩
-  -- `φ(Γ_{g,U}) ≤ gUg⁻¹`
-  have hmap : (componentGroup U g).map φ ≤ U.map c := by
-    rintro _ ⟨γ, hγ, rfl⟩
-    exact (Subgroup.mem_inf.mp hγ).2
+  -- `φ⁻¹(gU'g⁻¹) ⊓ Γ_{g,U} ≤ Γ_{g,U'}`
+  have hle : (U'.map c).comap φ ⊓ componentGroup U g ≤ componentGroup U' g := by
+    rw [componentGroup, componentGroup]
+    exact le_inf (inf_le_right.trans inf_le_left) inf_le_left
+  -- `Γ_{g,U} ≤ φ⁻¹(gUg⁻¹)`
+  have hcomap : componentGroup U g ≤ (U.map c).comap φ := by
+    rw [componentGroup]
+    exact inf_le_right
   have hc : (U'.map c).relIndex (U.map c) ≠ 0 := by
     rw [Subgroup.relIndex_map_map_of_injective _ _ (MulAut.conj g).injective]
-    exact relIndex_ne_zero_of_isOpen_of_isCompact hU' hU
-  have hφ : ((U'.map c).comap φ).relIndex (componentGroup U g) ≠ 0 := by
-    rw [Subgroup.relIndex_comap]
-    exact fun h ↦ hc (Subgroup.relIndex_eq_zero_of_le_right hmap h)
+    exact Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hU' hU
+  have hφ : ((U'.map c).comap φ).relIndex (componentGroup U g) ≠ 0 :=
+    mt (Subgroup.relIndex_eq_zero_of_le_right hcomap) (Subgroup.relIndex_comap_ne_zero φ hc)
   refine fun h ↦ hφ ?_
   rw [← Subgroup.inf_relIndex_right]
   exact Subgroup.relIndex_eq_zero_of_le_left hle h
