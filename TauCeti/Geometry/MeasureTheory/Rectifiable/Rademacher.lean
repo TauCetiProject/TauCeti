@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
-import Mathlib.Data.Nat.Pairing
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Geometry.Euclidean.Volume.Density
@@ -129,42 +128,6 @@ namespace LocallyLipschitzOn
 variable (hg : LocallyLipschitzOn E g) (hE : CountablyRectifiable k E)
     (hEm : NullMeasurableSet E μHE[k])
 include hg hE hEm
-/-- Disjoint Borel bi-Lipschitz patch cover of `E` with globally Lipschitz patchwise extensions of
-`g` for `hg : LocallyLipschitzOn E g`. -/
-theorem exists_disjoint_measurable_bilipschitz_extension_cover [NormedSpace ℝ W] [FiniteDimensional
-    ℝ W] : ∃ (B : ℕ → Set (Euc[k])) (f : ℕ → Euc[k] → V) (gExt : ℕ → V → W) (K_f L_f K_g : ℕ → ℝ≥0),
-    (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧ (∀ n, LipschitzWith (K_f n) (f
-    n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧ (∀ n, LipschitzWith (K_g n) (gExt n)
-    ∧ EqOn g (gExt n) (f n '' B n)) ∧ Pairwise (Disjoint on fun n => f n '' B n) ∧
-    (∀ n, f n '' B n ⊆ E) ∧ (⋃ n, f n '' B n) =ᵐ[μHE[k]] E := by
-  obtain ⟨O, _, hO, hcov, hLip⟩ := hg.exists_open_cover_lipschitzOnWith (.of_separableSpace E)
-  choose gExt₀ hgExt_lip hgExt_eq using fun m => (hLip m).extend_finite_dimension
-  let U := disjointed O
-  have hDm (m : ℕ) : MeasurableSet (U m) := MeasurableSet.disjointed (fun j => (hO j).measurableSet)
-    m
-  obtain ⟨B₀, f₀, K₀, L₀, hBm₀, hTm₀, hbi₀, hdisj₀, hsub₀, hcov_ae₀⟩ :=
-    hE.exists_disjoint_measurable_bilipschitz_cover hEm
-  let B (n : ℕ) := B₀ n.unpair.1 ∩ f₀ n.unpair.1 ⁻¹' U n.unpair.2; let f (n : ℕ) := f₀ n.unpair.1
-  have himg (n : ℕ) : f n '' B n = f₀ n.unpair.1 '' B₀ n.unpair.1 ∩ U n.unpair.2 :=
-    Set.image_inter_preimage _ _ _
-  have hunion : (⋃ n, f n '' B n) = ⋃ i, f₀ i '' B₀ i := Subset.antisymm (iUnion_subset fun n =>
-    himg n ▸ inter_subset_left.trans (subset_iUnion (fun i => f₀ i '' B₀ i) n.unpair.1))
-    (iUnion_subset fun i x hx => by
-      obtain ⟨m, hxm⟩ := mem_iUnion.mp (by
-        simpa only [U, iUnion_disjointed] using hcov (hsub₀ i hx) : x ∈ ⋃ m, U m)
-      exact mem_iUnion.mpr ⟨Nat.pair i m, by rw [himg, Nat.unpair_pair]; exact ⟨hx, hxm⟩⟩)
-  refine ⟨B, f, fun n => gExt₀ n.unpair.2, fun n => K₀ n.unpair.1, fun n => L₀ n.unpair.1, fun n =>
-    _, fun n => (hBm₀ _).inter ((hDm _).preimage (hbi₀ _).1.continuous.measurable),
-    fun n => himg n ▸ (hTm₀ _).inter (hDm _),
-    fun n => ⟨(hbi₀ _).1, fun u v => (hbi₀ _).2 ⟨u.val, u.property.1⟩ ⟨v.val, v.property.1⟩⟩,
-    fun n => ⟨hgExt_lip _, (hgExt_eq _).mono (himg n ▸ inter_subset_inter (hsub₀ _)
-      (disjointed_subset O _))⟩,
-    fun m n hmn => ?_, fun n => himg n ▸ inter_subset_left.trans (hsub₀ _), hunion ▸ hcov_ae₀⟩
-  rw [Function.onFun, himg m, himg n]
-  by_cases h1 : m.unpair.1 = n.unpair.1
-  · exact (disjoint_disjointed O fun h2 => hmn (by rw [← Nat.pair_unpair m, ← Nat.pair_unpair n,
-      h1, h2])).mono inter_subset_right inter_subset_right
-  · exact (hdisj₀ h1).mono inter_subset_left inter_subset_left
 private lemma aemeasurable_of_extension_cover [NormedSpace ℝ W] [FiniteDimensional ℝ W] {α : Type*}
     [MeasurableSpace α] [Nonempty α] {F : V → α} (hpatch : ∀ {B : Set (Euc[k])} {f : Euc[k] → V}
     {gExt : V → W} {K_f L_f K_g : ℝ≥0}, MeasurableSet B → LipschitzWith K_f f → AntilipschitzWith

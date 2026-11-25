@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Bi-Lipschitz parametrizations of rectifiable sets
@@ -27,7 +28,10 @@ theorem and the zero-Jacobian image theorem.
 
 When `s` is `μHE[k]`-null-measurable,
 `CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover` refines the cover to pairwise
-disjoint Borel bi-Lipschitz images inside `s`.
+disjoint Borel bi-Lipschitz images inside `s`, and for `LocallyLipschitzOn s g` into a
+finite-dimensional real normed space,
+`LocallyLipschitzOn.exists_disjoint_measurable_bilipschitz_extension_cover` further refines the
+patches so that `g` agrees on each patch with a globally Lipschitz map.
 
 ## References
 
@@ -141,3 +145,47 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
   simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset
 
 end TauCeti
+
+/-- Disjoint Borel bi-Lipschitz patch cover of `E` with globally Lipschitz patchwise extensions of
+`g` for `hg : LocallyLipschitzOn E g`. -/
+theorem LocallyLipschitzOn.exists_disjoint_measurable_bilipschitz_extension_cover
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+    {k : ℕ} {E : Set V} {g : V → W} (hg : LocallyLipschitzOn E g)
+    (hE : TauCeti.CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k]) :
+    ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
+      (gExt : ℕ → V → W) (K_f L_f K_g : ℕ → ℝ≥0),
+      (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧
+      (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
+      (∀ n, LipschitzWith (K_g n) (gExt n) ∧ EqOn g (gExt n) (f n '' B n)) ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧
+      (∀ n, f n '' B n ⊆ E) ∧ (⋃ n, f n '' B n) =ᵐ[μHE[k]] E := by
+  obtain ⟨O, _, hO, hcov, hLip⟩ := hg.exists_open_cover_lipschitzOnWith (.of_separableSpace E)
+  choose gExt₀ hgExt_lip hgExt_eq using fun m ↦ (hLip m).extend_finite_dimension
+  let U := disjointed O
+  have hDm (m : ℕ) : MeasurableSet (U m) :=
+    MeasurableSet.disjointed (fun j ↦ (hO j).measurableSet) m
+  obtain ⟨B₀, f₀, K₀, L₀, hBm₀, hTm₀, hbi₀, hdisj₀, hsub₀, hcov_ae₀⟩ :=
+    hE.exists_disjoint_measurable_bilipschitz_cover hEm
+  let B (n : ℕ) := B₀ n.unpair.1 ∩ f₀ n.unpair.1 ⁻¹' U n.unpair.2
+  let f (n : ℕ) := f₀ n.unpair.1
+  have himg (n : ℕ) : f n '' B n = f₀ n.unpair.1 '' B₀ n.unpair.1 ∩ U n.unpair.2 :=
+    Set.image_inter_preimage _ _ _
+  have hunion : (⋃ n, f n '' B n) = ⋃ i, f₀ i '' B₀ i := Subset.antisymm
+    (iUnion_subset fun n ↦
+      himg n ▸ inter_subset_left.trans (subset_iUnion (fun i ↦ f₀ i '' B₀ i) n.unpair.1))
+    (iUnion_subset fun i x hx ↦ by
+      obtain ⟨m, hxm⟩ := mem_iUnion.mp (by
+        simpa only [U, iUnion_disjointed] using hcov (hsub₀ i hx) : x ∈ ⋃ m, U m)
+      exact mem_iUnion.mpr ⟨Nat.pair i m, by rw [himg, Nat.unpair_pair]; exact ⟨hx, hxm⟩⟩)
+  refine ⟨B, f, fun n ↦ gExt₀ n.unpair.2, fun n ↦ K₀ n.unpair.1, fun n ↦ L₀ n.unpair.1,
+    fun n ↦ _, fun n ↦ (hBm₀ _).inter ((hDm _).preimage (hbi₀ _).1.continuous.measurable),
+    fun n ↦ himg n ▸ (hTm₀ _).inter (hDm _),
+    fun n ↦ ⟨(hbi₀ _).1, fun u v ↦ (hbi₀ _).2 ⟨u.val, u.property.1⟩ ⟨v.val, v.property.1⟩⟩,
+    fun n ↦ ⟨hgExt_lip _, (hgExt_eq _).mono (himg n ▸ inter_subset_inter (hsub₀ _)
+      (disjointed_subset O _))⟩,
+    fun m n hmn ↦ ?_, fun n ↦ himg n ▸ inter_subset_left.trans (hsub₀ _), hunion ▸ hcov_ae₀⟩
+  rw [Function.onFun, himg m, himg n]
+  by_cases h1 : m.unpair.1 = n.unpair.1
+  · exact (disjoint_disjointed O fun h2 ↦ hmn (by rw [← Nat.pair_unpair m, ← Nat.pair_unpair n,
+      h1, h2])).mono inter_subset_right inter_subset_right
+  · exact (hdisj₀ h1).mono inter_subset_left inter_subset_left

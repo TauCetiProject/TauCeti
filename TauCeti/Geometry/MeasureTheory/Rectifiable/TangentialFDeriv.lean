@@ -318,6 +318,7 @@ theorem tangentialFDeriv_add (h₁ : ∃ L, HasTangentialFDerivAt k E g₁ L x)
 
 /-- Scalar multiplication rule for `tangentialFDeriv`. Because `ℝ` is a field and `tangentialFDeriv`
 defaults to `0`, no differentiability hypothesis is needed. -/
+@[simp]
 theorem tangentialFDeriv_const_smul (c : ℝ) (g : V → W) (x : V) :
     TFD[k, E, c • g, x] = c • TFD[k, E, g, x] := by
   obtain rfl | hc := eq_or_ne c 0
@@ -336,6 +337,7 @@ theorem tangentialFDeriv_const_smul (c : ℝ) (g : V → W) (x : V) :
 
 /-- Negation rule for `tangentialFDeriv`, holding unconditionally without differentiability
 hypotheses. -/
+@[simp]
 theorem tangentialFDeriv_neg (g : V → W) (x : V) :
     TFD[k, E, -g, x] = -TFD[k, E, g, x] := by
   simpa only [neg_one_smul] using tangentialFDeriv_const_smul (-1 : ℝ) g x
@@ -487,7 +489,9 @@ theorem hasTangentialFDerivAt_of_comp (hgf : HasFDerivWithinAt (g ∘ f) B s u�
   let P := LinearMap.range A.toLinearMap; let L := B ∘L A.gramLeftInverse
   have htan_iff (Q) := hf.isApproximateTangentPlane_iff hinj hi hu₀ hsub hdens hdiff (Q := Q)
   have hU := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj
-  have hLA : L ∘L A = B := B.comp_gramLeftInverse_comp_self hU
+  have hLA : L ∘L A = B := by
+    rw [ContinuousLinearMap.comp_assoc, A.gramLeftInverse_comp_self hU,
+      ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
   refine ⟨⟨P, (htan_iff P).mpr rfl, fun Q hQ => (htan_iff Q).mp hQ⟩, ?_, fun ε hε => ?_⟩
   · -- Step 2: `L` factors through the orthogonal projection onto `range A` via `gramLeftInverse`.
     rw [approximateTangentProjection_eq,
@@ -526,7 +530,9 @@ theorem hasTangentialFDerivAt_of_comp (hgf : HasFDerivWithinAt (g ∘ f) B s u�
 theorem tangentialFDeriv_comp_eq (hgf : HasFDerivWithinAt (g ∘ f) B s u₀) :
     TFD[(finrank ℝ U), E, g, (f u₀)] ∘L A = B := by
   rw [(hf.hasTangentialFDerivAt_of_comp hinj hi hu₀ hsub hdens hdiff hgf).tangentialFDeriv_eq,
-    B.comp_gramLeftInverse_comp_self ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj)]
+    ContinuousLinearMap.comp_assoc,
+    A.gramLeftInverse_comp_self ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj),
+    ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
 
 /-- Sharp bound `‖tangentialFDeriv (finrank ℝ U) E g (f u₀)‖ ≤ K` on a patch. -/
 theorem norm_tangentialFDeriv_le_of_lipschitzOnWith (hgf : HasFDerivWithinAt (g ∘ f) B s u₀)

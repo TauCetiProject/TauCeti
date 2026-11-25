@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
@@ -57,12 +58,13 @@ the density theorem for rectifiable sets.
 * `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`: a part of a set with density zero does not
   contribute to the upper density.
 * `TauCeti.volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith`,
+  `TauCeti.tendsto_volume_inter_closedBall_div_of_mem_nhds`,
   `TauCeti.tendsto_volume_div_zero_of_antilipschitzWith`,
   `TauCeti.not_tendsto_volume_inter_shifted_closedBall_div_zero`,
   `TauCeti.not_tendsto_outside_cone_top_of_lt_top`, and
   `HasFDerivWithinAt.norm_comp_le_of_lipschitzOnWith`: antilipschitz volume comparison,
-  density-zero pullback, non-vanishing shifted-ball density, proper-subspace cone obstruction, and
-  the resulting density-one directional derivative bound.
+  neighborhood density one, density-zero pullback, non-vanishing shifted-ball density,
+  proper-subspace cone obstruction, and the resulting density-one directional derivative bound.
 
 ## References
 
@@ -122,6 +124,17 @@ theorem volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith {U V 
     simpa only [Subtype.dist_eq, domRestrict_apply] using
       hi.le_mul_dist ⟨x, hts x.property⟩ ⟨y, hts y.property⟩ :
     AntilipschitzWith L (t.domRestrict f)).le_euclideanHausdorffMeasure_image_of_domRestrict _
+
+/-- Every neighborhood `s ∈ 𝓝 x` has density one at `x` with respect to a locally finite additive
+Haar volume measure. -/
+theorem tendsto_volume_inter_closedBall_div_of_mem_nhds {E : Type*} [NormedAddCommGroup E]
+    [MeasureSpace E] [BorelSpace E] [IsAddHaarMeasure (volume : Measure E)]
+    [IsLocallyFiniteMeasure (volume : Measure E)] {s : Set E} {x : E} (hs : s ∈ 𝓝 x) :
+    Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall (0 : E) r))
+      (𝓝[>] 0) (𝓝 1) :=
+  (hasDensityAt_iff.mp (mem_essentialInterior.mp
+    (interior_subset_essentialInterior (μ := volume) (mem_interior_iff_mem_nhds.mpr hs)))).congr
+    fun _ => by rw [addHaar_closedBall_center]
 
 /-- At a Lebesgue density-one point `x₀` of `s`, shifted sub-balls
 `closedBall (x₀ + (ρ / 2) • u) ((η / 4) * ρ)` cannot have density in `s` tending to zero. -/

@@ -172,19 +172,6 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
     [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E E₁ E₂ : Set V}
 
-omit [FiniteDimensional ℝ V] in
-/-- Enlarging the subspace preserves the cone-density condition. -/
-theorem DensityZeroOutsideCones.mono_submodule {S : Set V} {x : V} {P Q : Submodule ℝ V}
-    (h : DensityZeroOutsideCones k S x P) (hPQ : P ≤ Q) :
-    DensityZeroOutsideCones k S x Q :=
-  densityZeroOutsideCones_iff.mpr fun ε hε =>
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (densityZeroOutsideCones_iff.mp h ε hε) (.of_forall fun _ => zero_le)
-      (.of_forall fun _ => ENNReal.div_le_div_right (measure_mono (by
-        rintro _ ⟨hzB, hzQ⟩
-        exact ⟨hzB, hzQ.trans_le (infDist_le_infDist_of_subset
-          (SetLike.coe_subset_coe.mpr hPQ) ⟨0, P.zero_mem⟩)⟩)) _)
-
 /-- `P` is an approximate tangent `k`-plane to `E` at `x` (Mattila, Definition 15.17). -/
 structure IsApproximateTangentPlane (k : ℕ) (E : Set V) (x : V) (P : Submodule ℝ V) : Prop where
   /-- `P` has dimension `k`. -/

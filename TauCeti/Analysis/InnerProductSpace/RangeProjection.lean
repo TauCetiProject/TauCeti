@@ -46,7 +46,6 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 * `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
   (`ContinuousLinearMap.gramLeftInverse_def`) of `A` when `A† A` is invertible
   (`ContinuousLinearMap.gramLeftInverse_comp_self`,
-  `ContinuousLinearMap.comp_gramLeftInverse_comp_self`,
   `ContinuousLinearMap.gramLeftInverse_apply_apply`), with
   `ContinuousLinearMap.continuousAt_gramLeftInverse` and
   `ContinuousLinearMap.contDiffAt_gramLeftInverse`.
@@ -116,13 +115,6 @@ theorem gramLeftInverse_def (A : F →L[𝕜] V) :
 theorem gramLeftInverse_comp_self {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
     gramLeftInverse A ∘L A = 1 := by
   rw [gramLeftInverse, comp_assoc, ← mul_def, Ring.inverse_mul_cancel _ hA]
-
-/-- Precomposing `B ∘L gramLeftInverse A` with `A` recovers `B` when `A† A` is invertible. -/
-@[simp]
-theorem comp_gramLeftInverse_comp_self {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-    (B : F →L[𝕜] W) {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
-    (B ∘L gramLeftInverse A) ∘L A = B := by
-  rw [comp_assoc, gramLeftInverse_comp_self hA, one_def, comp_id]
 
 /-- `(A† A)⁻¹ A†` recovers `v` from `A v` when `A† A` is invertible. -/
 @[simp]
