@@ -31,6 +31,8 @@ is needed.
   under `G`.
 * `Representation.charEigenspaceSubrepresentation`: the `θ`-eigensubmodule of `H` as a
   subrepresentation of `ρ`, with membership `Representation.mem_charEigenspaceSubrepresentation`.
+* `Representation.toSubmodule_charEigenspaceSubrepresentation`: its underlying submodule is the
+  `θ`-eigensubmodule of the restriction of `ρ` to `H`.
 * `Representation.exists_subrepresentation_isIrreducible_forall_apply_eq_smul`: for finite `G`, an
   irreducible representation of `G` on which `H` acts by `θ` exists.
 -/
@@ -62,9 +64,9 @@ theorem apply_mem_charEigenspace_comp_subtype (ρ : Representation k G V) {θ : 
     congr 1
     ext
     simp [hh', mul_assoc]
-  have hv' := hv h'
-  simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype] at hv' ⊢
-  rw [← mul_apply_eq_comp, ← map_mul, hconj, map_mul, mul_apply_eq_comp, hv', map_smul, hθh]
+  -- `h` acts on `ρ g v` as `h'` acts on `v`, transported by `ρ g`.
+  have hρ : ρ h (ρ g v) = ρ g (ρ h' v) := by simpa using congr(ρ $hconj v)
+  simpa [hρ, hθh] using congr(ρ g $(hv h'))
 
 /-- **The `θ`-eigensubmodule of a normal subgroup as a subrepresentation.** For a normal subgroup
 `H` of `G` and a character `θ` of `H` invariant under conjugation by `G`, the vectors on which `H`
@@ -83,6 +85,14 @@ theorem mem_charEigenspaceSubrepresentation (ρ : Representation k G V) {θ : H 
     v ∈ charEigenspaceSubrepresentation ρ θ hθ ↔ ∀ h : H, ρ h v = (θ h : k) • v :=
   mem_charEigenspace_iff (ρ.comp H.subtype) θ
 
+/-- The underlying submodule of the `θ`-eigensubrepresentation of `H` is the `θ`-eigensubmodule
+of the restriction of `ρ` to `H`. -/
+@[simp]
+theorem toSubmodule_charEigenspaceSubrepresentation (ρ : Representation k G V) {θ : H →* kˣ}
+    (hθ : ∀ (g : G) (h : H), θ ⟨g * h * g⁻¹, hH.conj_mem h h.property g⟩ = θ h) :
+    (charEigenspaceSubrepresentation ρ θ hθ).toSubmodule = charEigenspace (ρ.comp H.subtype) θ :=
+  (rfl)
+
 end CommRing
 
 /-- **Existence of a representation on which `H` acts by an invariant character.** Let `H` be a
@@ -98,14 +108,21 @@ theorem exists_subrepresentation_isIrreducible_forall_apply_eq_smul [Field k] [F
   have := Fintype.ofFinite G
   set ρ := (trivial k G k).funLeft G
   set S := charEigenspaceSubrepresentation ρ θ hθ
-  -- `S` contains the nonzero vector `∑_h θ(h)⁻¹ δ_h`.
+  -- `S` contains the vector `∑_h θ(h)⁻¹ δ_h`, which is nonzero: its value at `1` is `1`, since
+  -- only `h = 1` contributes.
+  have hone : charSum (ρ.comp H.subtype) θ (Pi.single 1 1) 1 = 1 := by
+    rw [charSum_apply, Finset.sum_apply, Finset.sum_eq_single (1 : H)]
+    · simp [ρ]
+    · intro h _ hh
+      simp [ρ, inv_eq_one, hh]
+    · simp
   have hS : S ≠ ⊥ := by
     intro hS
     have hmem : charSum (ρ.comp H.subtype) θ (Pi.single 1 1) ∈ S :=
       charSum_apply_mem (ρ.comp H.subtype) θ _
     rw [hS] at hmem
     have h0 := congrFun ((Submodule.mem_bot k).1 hmem) 1
-    simp [charSum_apply, ρ, Pi.single_apply] at h0
+    exact one_ne_zero (hone.symm.trans h0)
   obtain ⟨τ, hτS, hτ⟩ := exists_isAtom_le hS
   refine ⟨τ, isIrreducible_toRepresentation_of_isAtom hτ, fun h ξ => ?_⟩
   exact Subtype.ext ((mem_charEigenspaceSubrepresentation ρ hθ).1 (hτS ξ.property) h)

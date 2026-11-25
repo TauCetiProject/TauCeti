@@ -49,6 +49,7 @@ in `TauCeti.RepresentationTheory.LinearCharacter.NormalSubgroup`).
 
 * `MonoidHom.IsFullyRamified`: `H` contains the commutators and the commutator pairing of `θ` is
   nondegenerate modulo `H`.
+* `MonoidHom.IsFullyRamified.normal`: `H` is normal in `J`.
 * `MonoidHom.IsFullyRamified.character_eq_zero_of_notMem`: off `H` the character vanishes.
 * `MonoidHom.IsFullyRamified.sum_character_mul_character_inv`: the character pairing of two such
   representations is `|H| · dim · dim'`.
@@ -92,6 +93,12 @@ structure IsFullyRamified (θ : H →* kˣ) : Prop where
 namespace IsFullyRamified
 
 variable {θ : H →* kˣ}
+
+/-- **`H` is normal.** A subgroup containing every commutator is normal, since
+`g h g⁻¹ = (g h g⁻¹ h⁻¹) h`. This is a theorem rather than an instance, as the instance search
+cannot find `hθ`. -/
+theorem normal (hθ : θ.IsFullyRamified) : H.Normal where
+  conj_mem h hh g := by simpa using H.mul_mem (hθ.commutator_mem g h) hh
 
 /-- **Off `H` the character vanishes.** If `θ` is fully ramified, any representation on which `H`
 acts by `θ` has character `0` outside `H`. -/
