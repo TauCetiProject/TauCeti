@@ -237,7 +237,7 @@ theorem commutatorElement_unitaryMk (x z x' z' : R)
   exact (unitarySubgroup.coe_commutatorElement _ _).trans (by simp)
 
 /-- **The unitary root group is nontrivial** over every nontrivial commutative ring with an
-involution, including the identity. -/
+involution `σ`, including `σ = id`. -/
 theorem nontrivial_unitarySubgroup [Nontrivial R] (hσ : Function.Involutive σ) :
     Nontrivial (unitarySubgroup σ) := by
   -- The parameters `(2, 2)` satisfy the trace equation, and are nontrivial unless `2 = 0`, in
