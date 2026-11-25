@@ -25,7 +25,8 @@ controls variation of inverse operators by variation of the original operators.
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
 inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
-degree. Scaling the identity by a nonzero scalar `c`
+degree. For such a nonzero scalar `c` with `c - A` invertible, `1 - A / c` is a unit
+(`ContinuousLinearMap.isUnit_one_add_neg_inv_smul`). Scaling the identity by a nonzero scalar `c`
 from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
 real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
 topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
@@ -326,6 +327,30 @@ theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
     map_inv₀]
 
 end Smul
+
+section OneAddNegInvSMul
+
+variable {𝕜 S M : Type*} [Field 𝕜] [Field S] [Algebra S 𝕜]
+  [TopologicalSpace M] [AddCommGroup M] [Module 𝕜 M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul 𝕜 M] [Module S (M →L[𝕜] M)] [IsScalarTower S 𝕜 (M →L[𝕜] M)]
+
+/-- For a nonzero scalar `c` from a subfield `S` of the scalars, such as a real shift of a
+complex-linear map, `1 - A / c = c⁻¹ (c - A)`. -/
+theorem one_add_neg_inv_smul_eq {c : S} (hc : c ≠ 0) (A : M →L[𝕜] M) :
+    1 + (-c⁻¹) • A = (algebraMap S 𝕜 c)⁻¹ • (algebraMap S 𝕜 c • (1 : M →L[𝕜] M) - A) := by
+  rw [← map_inv₀, algebraMap_smul, algebraMap_smul, smul_sub, smul_smul, inv_mul_cancel₀ hc,
+    one_smul, neg_smul, ← sub_eq_add_neg]
+
+/-- For a nonzero scalar `c` from a subfield `S` of the scalars with `c - A` invertible,
+`1 - A / c` is a unit. -/
+theorem isUnit_one_add_neg_inv_smul {c : S} (hc : c ≠ 0) {A : M →L[𝕜] M}
+    (h : (algebraMap S 𝕜 c • (1 : M →L[𝕜] M) - A).IsInvertible) :
+    IsUnit (1 + (-c⁻¹) • A) := by
+  rw [one_add_neg_inv_smul_eq hc, ← isInvertible_iff_isUnit,
+    isInvertible_smul_iff (inv_ne_zero ((map_ne_zero _).2 hc))]
+  exact h
+
+end OneAddNegInvSMul
 
 section SMulId
 
