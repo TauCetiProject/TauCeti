@@ -169,7 +169,7 @@ order of vanishing `1`. -/
 theorem ordFrac_ofUnits_of_irreducible {π : O} (hπ : Irreducible π) (u : Lˣ)
     (hu : (u : L) = algebraMap O L π) :
     ordFrac O (ofUnits L u) = Multiplicative.ofAdd 1 := by
-  rw [ordFrac_eq_iff, det_ofUnits, hu, Ring.ordFrac_irreducible hπ, WithZero.exp]
+  rw [ordFrac_eq_iff, det_ofUnits, hu, Ring.ordFrac_irreducible hπ, WithZero.exp_eq_coe_ofAdd]
 
 /-- The order of vanishing `K₁(L) →* Multiplicative ℤ` of a discrete valuation ring `O` with
 fraction field `L` is surjective. -/
@@ -180,7 +180,7 @@ theorem ordFrac_surjective : Function.Surjective (ordFrac O : AlgebraicK1 L →*
   have h1 := ordFrac_ofUnits_of_irreducible hπ (Units.mk0 _ hπ0) rfl
   intro z
   refine ⟨ofUnits L (Units.mk0 _ hπ0) ^ z.toAdd, ?_⟩
-  rw [map_zpow, h1, ← ofAdd_zsmul, smul_eq_mul, mul_one, ofAdd_toAdd]
+  simp [h1, ← ofAdd_zsmul]
 
 /-- **Exactness at `K₁(L)`.** For a discrete valuation ring `O` with fraction field `L`, the image
 of `K₁(O) → K₁(L)` is the kernel of the order of vanishing. -/
@@ -191,7 +191,7 @@ theorem range_map_algebraMap_eq_ker_ordFrac :
     rw [← coe_ordFrac, MonoidHom.mem_ker.1 hx, WithZero.coe_one]
   obtain ⟨a, ha, hax⟩ : (det L x : L) ∈ (IsUnit.submonoid O).map (algebraMap O L) := by
     rw [← Ring.mker_ordFrac_eq_isUnitSubmonoid]
-    exact hx'
+    exact MonoidHom.mem_mker.2 hx'
   obtain ⟨u, rfl⟩ := (IsUnit.mem_submonoid_iff a).1 ha
   refine ⟨ofUnits O u, det_injective_of_specialAlgebraicK1_eq_bot
     (specialAlgebraicK1_eq_bot_of_euclideanDomain L) ?_⟩
