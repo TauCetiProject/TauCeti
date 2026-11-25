@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Admissible boundary parts of Lipschitz domains
@@ -43,6 +44,16 @@ an admissible `Γ` keeps its closure but destroys the chart description at the r
 * `Set.IsAdmissibleBoundaryPart`: `Γ ⊆ frontier Ω` and every frontier point is the centre of a
   boundary-part chart with an admissible base region.
 * `Set.isAdmissibleBoundaryPart_iff_exists_mem_normalCylinder`: the charts need not be centred.
+* `Set.IsLipschitzChart.exists_isBoundaryPartChart_empty`,
+  `Set.IsLipschitzChart.exists_isBoundaryPartChart_univ`: a centred Lipschitz chart, shrunk, is a
+  boundary-part chart over the empty base or the whole base when `Γ` misses, or contains, the
+  frontier near the centre.
+* `Set.IsAdmissibleBaseRegion.ordConnected`,
+  `Set.IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo`: for a one-dimensional base,
+  the base regions are order-connected, so along a frontier path near a point an admissible
+  boundary part is met in an interval of parameters.
+* `Set.isAdmissibleBaseRegion_Ioi`, `Set.isAdmissibleBaseRegion_Iio`: conversely, open half-lines
+  are admissible base regions, with interfaces modelled on a zero space.
 * `Set.IsAdmissibleBoundaryPart.isLipschitzDomain`: `Ω` is then a Lipschitz domain.
 * `Set.IsAdmissibleBoundaryPart.exists_isOpen_frontier_inter_eq`: `Γ` is relatively open in the
   frontier.
@@ -69,7 +80,8 @@ public section
 
 namespace Set
 
-open Metric TauCeti
+open Metric TauCeti Filter
+open scoped Topology
 open scoped NNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -293,7 +305,39 @@ theorem smul (hc : IsBoundaryPartChart Ω Γ e γ K h r B) {c : ℝ} (hc0 : 0 < 
     rw [himage, hgraph, ← smul_normalCylinder hc0, ← smul_set_inter₀ hc0.ne',
       ← smul_set_inter₀ hc0.ne', hc.image_inter_normalCylinder]
 
+/-- A boundary-part chart of `(Ω, Γ')` is one of `(Ω, Γ)` whenever `Γ` and `Γ'` agree inside the
+cylinder. -/
+theorem of_inter_preimage_eq {Γ' : Set F} (hc : IsBoundaryPartChart Ω Γ' e γ K h r B)
+    (hΓ : Γ ∩ e ⁻¹' normalCylinder h r = Γ' ∩ e ⁻¹' normalCylinder h r) :
+    IsBoundaryPartChart Ω Γ e γ K h r B where
+  isLipschitzChart := hc.isLipschitzChart
+  image_inter_normalCylinder := by
+    rw [← image_inter_preimage, hΓ, image_inter_preimage, hc.image_inter_normalCylinder]
+
 end IsBoundaryPartChart
+
+/-- A Lipschitz chart centred at `x` gives a boundary-part chart of `(Ω, Γ)` over the empty base
+region as soon as `Γ` misses a neighbourhood of `x`. -/
+theorem IsLipschitzChart.exists_isBoundaryPartChart_empty {Ω Γ : Set F}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
+    (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x)
+    (hΓV : Disjoint Γ V) : ∃ ρ : ℝ, IsBoundaryPartChart Ω Γ e γ K ρ ρ ∅ := by
+  obtain ⟨ρ, hcρ, hsub⟩ := hc.exists_preimage_normalCylinder_subset hex hV
+  refine ⟨ρ, hcρ.isBoundaryPartChart_empty.of_inter_preimage_eq ?_⟩
+  rw [empty_inter]
+  exact hΓV.mono_right hsub |>.inter_eq
+
+/-- A Lipschitz chart centred at `x` gives a boundary-part chart of `(Ω, Γ)` over the whole base
+as soon as `Γ ⊆ frontier Ω` contains the frontier near `x`. -/
+theorem IsLipschitzChart.exists_isBoundaryPartChart_univ {Ω Γ : Set F}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
+    (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x)
+    (hΓ : Γ ⊆ frontier Ω) (hΓV : frontier Ω ∩ V ⊆ Γ) :
+    ∃ ρ : ℝ, IsBoundaryPartChart Ω Γ e γ K ρ ρ univ := by
+  obtain ⟨ρ, hcρ, hsub⟩ := hc.exists_preimage_normalCylinder_subset hex hV
+  refine ⟨ρ, hcρ.isBoundaryPartChart_frontier.of_inter_preimage_eq ?_⟩
+  exact Subset.antisymm (inter_subset_inter_left _ hΓ)
+    fun y hy => ⟨hΓV ⟨hy.1, hsub hy.2⟩, hy.2⟩
 
 /-! ### Admissible boundary parts -/
 
@@ -462,5 +506,95 @@ theorem isAdmissibleBoundaryPart_normalHalfSpace :
   convert isAdmissibleBoundaryPart_setOf_lt_fst (LipschitzWith.const (0 : ℝ))
     (isAdmissibleBaseRegion_preimage_setOf_lt_fst (LinearIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E')))
       (LipschitzWith.const (0 : ℝ))) using 1 <;> ext <;> simp
+
+/-! ### One-dimensional bases -/
+
+/-- **Admissible base regions on a line are order-connected.** For a one-dimensional base `ℝ`,
+every admissible base region is order-connected. -/
+theorem IsAdmissibleBaseRegion.ordConnected {B : Set ℝ} (hB : B.IsAdmissibleBaseRegion E') :
+    B.OrdConnected := by
+  obtain rfl | rfl | ⟨f, β, K, -, rfl⟩ := hB
+  · exact ordConnected_univ
+  · exact ordConnected_empty
+  have hf (s : ℝ) : f s = s • f 1 := by rw [← map_smul, smul_eq_mul, mul_one]
+  have hfst (s : ℝ) : (f s).fst = s * (f 1).fst := by rw [hf, WithLp.smul_fst, smul_eq_mul]
+  -- A linear isometry `ℝ ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E')` forces `E'` to be zero, so the region above a
+  -- graph over `E'` is the set where a nonzero multiple of the coordinate exceeds a constant.
+  -- The first coordinate of `f 1` is nonzero, since `f` reaches `(1, 0)`.
+  have ha : (f 1).fst ≠ 0 := fun ha => by
+    obtain ⟨s, hs⟩ := f.surjective (WithLp.toLp 2 (1, 0))
+    have := congrArg WithLp.fst hs
+    rw [hfst, ha, mul_zero] at this
+    simp at this
+  -- The second coordinate of every `f s` vanishes, since `f` reaches `(0, (f s).snd)`.
+  have hsnd (s : ℝ) : (f s).snd = 0 := by
+    obtain ⟨u, hu⟩ := f.surjective (WithLp.toLp 2 (0, (f 1).snd))
+    have h1 : u * (f 1).fst = 0 := by
+      rw [← hfst, hu, WithLp.toLp_fst]
+    have h2 : u • (f 1).snd = (f 1).snd := by
+      rw [← WithLp.smul_snd, ← hf, hu, WithLp.toLp_snd]
+    rw [(mul_eq_zero.1 h1).resolve_right ha, zero_smul] at h2
+    rw [hf, WithLp.smul_snd, ← h2, smul_zero]
+  refine ⟨fun x hx y hy t ht => ?_⟩
+  rw [mem_preimage, mem_ofPred_eq, hfst, hsnd] at hx hy ⊢
+  rcases ha.lt_or_gt with ha | ha <;> nlinarith [ht.1, ht.2]
+
+/-- Conversely, the open half-line `(c, ∞)` is an admissible base region, with interfaces modelled
+on a zero space: it is the region above the constant `c` after `s ↦ (s, 0)`. -/
+theorem isAdmissibleBaseRegion_Ioi [Subsingleton E'] (c : ℝ) :
+    (Ioi c).IsAdmissibleBaseRegion E' := by
+  have : Unique E' := uniqueOfSubsingleton 0
+  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst
+    (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E').symm (LipschitzWith.const (α := E') c) using 1
+  ext s
+  simp
+
+/-- The open half-line `(-∞, c)` is an admissible base region, with interfaces modelled on a zero
+space: it is the region above the constant `-c` after `s ↦ (-s, 0)`. -/
+theorem isAdmissibleBaseRegion_Iio [Subsingleton E'] (c : ℝ) :
+    (Iio c).IsAdmissibleBaseRegion E' := by
+  have : Unique E' := uniqueOfSubsingleton 0
+  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst
+    ((LinearIsometryEquiv.neg ℝ).trans (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E').symm)
+    (LipschitzWith.const (α := E') (-c)) using 1
+  ext s
+  simp
+
+/-- **Along a frontier path, an admissible boundary part of a planar chart is order-connected.**
+If the boundary charts have a one-dimensional base, then every frontier point `x` has a
+neighbourhood `U` such that for every continuous injective path `c` on `[a, b]` running through
+`frontier Ω ∩ U`, the parameters `t` with `c t ∈ Γ` form an order-connected set: if both ends
+lie in `Γ`, so does every point between. -/
+theorem IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo {Ω Γ : Set F}
+    (hΓ : Ω.IsAdmissibleBoundaryPart Γ ℝ E') {x : F} (hx : x ∈ frontier Ω) :
+    ∃ U ∈ 𝓝 x, ∀ (c : ℝ → F) {a b : ℝ}, a ≤ b → ContinuousOn c (Icc a b) →
+      InjOn c (Icc a b) → MapsTo c (Icc a b) (frontier Ω ∩ U) → c a ∈ Γ → c b ∈ Γ →
+        ∀ t ∈ Icc a b, c t ∈ Γ := by
+  obtain ⟨e, γ, K, h, r, B, hc, hB, hex⟩ := hΓ.exists_isBoundaryPartChart x hx
+  have hC := hc.isLipschitzChart
+  refine ⟨e ⁻¹' normalCylinder h r, ((isOpen_normalCylinder h r).preimage e.continuous).mem_nhds
+    (by rw [mem_preimage, hex]; exact zero_mem_normalCylinder hC.height_pos hC.radius_pos),
+    fun c a b hab hcc hci hcm hca hcb t ht => ?_⟩
+  -- In the chart, the base coordinate along `c` is continuous and injective, hence monotone, and
+  -- the base region is order-connected.
+  set φ : ℝ → ℝ := fun t => (e (c t)).snd
+  have hφc : ContinuousOn φ (Icc a b) :=
+    (WithLp.sndL 2 ℝ ℝ ℝ).continuous.comp_continuousOn (e.continuous.comp_continuousOn hcc)
+  -- Two frontier points of the cylinder with the same base coordinate are equal.
+  have hφi : InjOn φ (Icc a b) := fun s hs u hu hsu => by
+    refine hci hs hu (e.injective (WithLp.ofLp_injective 2 (Prod.ext ?_ hsu)))
+    rw [WithLp.ofLp_fst, WithLp.ofLp_fst, hC.fst_apply_eq_of_mem_frontier (hcm hs).1 (hcm hs).2,
+      hC.fst_apply_eq_of_mem_frontier (hcm hu).1 (hcm hu).2]
+    exact congrArg γ hsu
+  have hmem (u : ℝ) (hu : u ∈ Icc a b) : c u ∈ Γ ↔ φ u ∈ B :=
+    hc.mem_iff_of_mem_frontier (hcm hu).1 (hcm hu).2
+  have ha := left_mem_Icc.2 hab
+  have hb := right_mem_Icc.2 hab
+  rw [hmem t ht]
+  rcases hφc.strictMonoOn_of_injOn_Icc' hab hφi with hm | hm
+  · exact hB.ordConnected.out ((hmem a ha).1 hca) ((hmem b hb).1 hcb)
+      ⟨hm.monotoneOn ha ht ht.1, hm.monotoneOn ht hb ht.2⟩
+  · exact hB.ordConnected.out ((hmem b hb).1 hcb) ((hmem a ha).1 hca)
+      ⟨hm.antitoneOn ht hb ht.2, hm.antitoneOn ha ht ht.1⟩
 
 end Set

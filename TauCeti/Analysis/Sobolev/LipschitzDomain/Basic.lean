@@ -53,6 +53,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   Lipschitz graph is a Lipschitz boundary chart.
 * `Set.IsLipschitzChart.compl_closure`: a Lipschitz chart of `Ω`, with its normal coordinate
   reflected, is a Lipschitz chart of `(closure Ω)ᶜ`, with the negated graph.
+* `Set.IsLipschitzChart.exists_preimage_normalCylinder_subset`: a chart centred at `x`
+  restricts to a cylinder whose preimage lies in any given neighbourhood of `x`.
 * `Set.IsLipschitzDomain.compl_closure`: the exterior of a Lipschitz domain is a Lipschitz domain.
 * `Set.IsLipschitzDomain.interior_closure`: a Lipschitz domain is regular open.
 * `Set.IsLipschitzDomain.frontier_closure`: the closure of a Lipschitz domain has the same
@@ -267,6 +269,28 @@ theorem mono (hc : IsLipschitzChart Ω e γ K h r) {h' r' : ℝ} (hh' : 0 < h') 
   image_inter_normalCylinder := by
     have hsub := normalCylinder_mono (E := E) hh hr
     rw [← inter_eq_right.2 hsub, ← inter_assoc, hc.image_inter_normalCylinder, inter_assoc]
+
+/-- A Lipschitz chart centred at `x` restricts to a cylinder whose preimage lies in any given
+neighbourhood of `x`. -/
+theorem exists_preimage_normalCylinder_subset (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x) :
+    ∃ ρ : ℝ, IsLipschitzChart Ω e γ K ρ ρ ∧ e ⁻¹' normalCylinder ρ ρ ⊆ V := by
+  have hW : e.symm ⁻¹' V ∈ 𝓝 (0 : WithLp 2 (ℝ × E)) :=
+    e.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [← hex, e.symm_apply_apply])
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
+  have hρ : 0 < min (ε / 2) (min h r) :=
+    lt_min (half_pos hε) (lt_min hc.height_pos hc.radius_pos)
+  refine ⟨_, hc.mono hρ hρ ((min_le_right _ _).trans (min_le_left _ _))
+    ((min_le_right _ _).trans (min_le_right _ _)), fun y hy => ?_⟩
+  rw [mem_preimage, mem_normalCylinder] at hy
+  have h1 : ‖(e y).fst‖ < ε / 2 := by
+    rw [Real.norm_eq_abs, abs_lt]
+    exact ⟨by linarith [min_le_left (ε / 2) (min h r)], hy.2.1.trans_le (min_le_left _ _)⟩
+  have h2 : ‖(e y).snd‖ < ε / 2 := hy.2.2.trans_le (min_le_left _ _)
+  have hy' : e y ∈ ball 0 ε := by
+    rw [mem_ball_zero_iff, WithLp.prod_norm_eq_of_L2, Real.sqrt_lt' hε]
+    nlinarith [norm_nonneg (e y).fst, norm_nonneg (e y).snd]
+  simpa using hball hy'
 
 /-- A `K`-Lipschitz chart is a `K'`-Lipschitz chart for every `K' ≥ K`. -/
 theorem weaken (hc : IsLipschitzChart Ω e γ K h r) {K' : ℝ≥0} (hK : K ≤ K') :
