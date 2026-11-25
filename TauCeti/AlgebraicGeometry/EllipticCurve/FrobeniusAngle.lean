@@ -112,7 +112,7 @@ theorem cos_frobeniusAngle {p : Nat.Primes} (hp : E.HasGoodReductionAt p) :
   have hpos : 0 < 2 * √(p : ℝ) := by positivity
   -- the Hasse bound `a_p² ≤ 4p = (2√p)²`, read as `-2√p ≤ a_p ≤ 2√p`
   have habs := abs_le_of_sq_le_sq' (a := (W.frobeniusTrace : ℝ)) (b := 2 * √(p : ℝ))
-    (by rwa [mul_pow, Real.sq_sqrt hp0.le, show (2 : ℝ) ^ 2 = 4 by norm_num]) hpos.le
+    (by rw [mul_pow, Real.sq_sqrt hp0.le]; linarith) hpos.le
   rw [frobeniusAngle, ← ha]
   refine Real.cos_arccos ?_ ?_
   · rw [le_div_iff₀ hpos]

@@ -9,9 +9,9 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Data.Nat.Prime.Basic
 import Mathlib.Tactic.NormNum.Prime
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -128,28 +128,19 @@ section Integral
 
 variable (W : WeierstrassCurve ℤ) (p : Nat.Primes)
 
-/-- Reading an integral equation over `ℚ` and then over `ℚ_p` is reading it over `ℤ_p` and then
-over `ℚ_p`. -/
-private theorem baseChange_baseChange_padic :
-    (W.baseChange ℚ).baseChange ℚ_[p] = (W.baseChange ℤ_[p]).baseChange ℚ_[p] := by
-  simp only [baseChange, map_map]
-  congr 1
-
-/-- The integral equation `W`, read over `ℤ_p` and then over `ℚ_p`, has good reduction exactly
-when `p` does not divide its discriminant. -/
-private theorem hasGoodReduction_baseChange_padic_iff :
-    letI : IsIntegral ℤ_[p] ((W.baseChange ℤ_[p]).baseChange ℚ_[p]) := ⟨⟨_, rfl⟩⟩
-    ((W.baseChange ℤ_[p]).baseChange ℚ_[p]).HasGoodReduction ℤ_[p] ↔ ¬ (p : ℤ) ∣ W.Δ := by
-  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, baseChange,
-    map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.isUnit_intCast_iff]
+/-- **An integral equation, read over `ℚ_p`, has good reduction over `ℤ_p` exactly when `p` does
+not divide its discriminant.** -/
+theorem hasGoodReduction_baseChange_padic_iff :
+    (W.baseChange ℚ_[p]).HasGoodReduction ℤ_[p] ↔ ¬ (p : ℤ) ∣ W.Δ := by
+  rw [hasGoodReduction_baseChange_iff_isUnit_algebraMap_Δ, algebraMap_int_eq, eq_intCast,
+    PadicInt.isUnit_intCast_iff]
 
 /-- **An integral equation has good reduction at every prime not dividing its discriminant.** -/
 theorem hasGoodReductionAt_baseChange_of_not_dvd (h : ¬ (p : ℤ) ∣ W.Δ) :
     (W.baseChange ℚ).HasGoodReductionAt p := by
-  rw [hasGoodReductionAt_iff, baseChange_baseChange_padic]
-  have : IsIntegral ℤ_[p] ((W.baseChange ℤ_[p]).baseChange ℚ_[p]) := ⟨⟨_, rfl⟩⟩
+  rw [hasGoodReductionAt_iff, baseChange_baseChange]
   exact HasGoodReduction.hasGoodReduction_minimal ℤ_[p]
-    ((hasGoodReduction_baseChange_padic_iff W p).2 h)
+    ((W.hasGoodReduction_baseChange_padic_iff p).2 h)
 
 /-- **For an integral equation whose discriminant is not divisible by `p ^ 12` (hence minimal at
 `p`), good reduction at `p` means that `p` does not divide the discriminant.** The hypothesis
@@ -159,14 +150,13 @@ discriminant. -/
 theorem hasGoodReductionAt_baseChange_iff_not_dvd (h12 : ¬ (p : ℤ) ^ 12 ∣ W.Δ) :
     (W.baseChange ℚ).HasGoodReductionAt p ↔ ¬ (p : ℤ) ∣ W.Δ := by
   refine ⟨fun h ↦ ?_, W.hasGoodReductionAt_baseChange_of_not_dvd p⟩
-  rw [hasGoodReductionAt_iff, baseChange_baseChange_padic] at h
-  set V := (W.baseChange ℤ_[p]).baseChange ℚ_[p]
-  have : IsIntegral ℤ_[p] V := ⟨⟨_, rfl⟩⟩
-  have : IsMinimal ℤ_[p] V := isMinimal_baseChange_of_not_pow_twelve_dvd_Δ ℤ_[p] _
-    PadicInt.irreducible_p (by
+  rw [hasGoodReductionAt_iff, baseChange_baseChange] at h
+  have : IsMinimal ℤ_[p] (W.baseChange ℚ_[p]) := by
+    rw [← W.baseChange_baseChange (A := ℤ_[p]) ℚ_[p]]
+    exact isMinimal_baseChange_of_not_pow_twelve_dvd_Δ ℤ_[p] _ PadicInt.irreducible_p (by
       rwa [baseChange, map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.pow_p_dvd_int_iff])
-  obtain ⟨C, hC⟩ := V.exists_smul_eq_minimal ℤ_[p]
-  exact (hasGoodReduction_baseChange_padic_iff W p).1
+  obtain ⟨C, hC⟩ := (W.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
+  exact (W.hasGoodReduction_baseChange_padic_iff p).1
     ⟨(valuation_Δ_eq_of_isMinimal_smul ℤ_[p] C hC).symm.trans h.goodReduction⟩
 
 /-! The curve `y² = x³ - x + 1`, with discriminant `-368 = -2⁴ · 23`, has good reduction at `5`
