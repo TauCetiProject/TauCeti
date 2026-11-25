@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFree
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
+import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
 # The rank of the sheaf of relative differentials
@@ -37,7 +39,11 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
   rank `d` is smooth of relative dimension `d`;
 * `TauCeti.AlgebraicGeometry.isInvertible_relativeDifferentials` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`: in relative dimension one
-  it is an invertible sheaf.
+  it is an invertible sheaf;
+* `TauCeti.AlgebraicGeometry.free_kaehlerDifferential_stalk`,
+  `TauCeti.AlgebraicGeometry.finite_kaehlerDifferential_stalk` and
+  `TauCeti.AlgebraicGeometry.finrank_kaehlerDifferential_stalk`: on a scheme smooth of relative
+  dimension `n`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring are free of rank `n`.
 
 ## References
 
@@ -175,6 +181,22 @@ lemma InvertibleSheaf.relativeDifferentials_obj
     (InvertibleSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
   (rfl)
 
+/-- On a scheme smooth over `Spec R`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring
+form a free `𝒪_{X,x}`-module. -/
+instance free_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of R))] (x : X) :
+    Module.Free (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] := by
+  have := FiniteLocallyFreeSheaf.free_stalk (FiniteLocallyFreeSheaf.relativeDifferentials R X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Free.of_equiv (X.relativeDifferentialsStalkEquiv R x)
+
+/-- On a scheme smooth over `Spec R`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring
+form a finitely generated `𝒪_{X,x}`-module. -/
+instance finite_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of R))] (x : X) :
+    Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] := by
+  have := FiniteLocallyFreeSheaf.finite_stalk (FiniteLocallyFreeSheaf.relativeDifferentials R X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Finite.equiv (X.relativeDifferentialsStalkEquiv R x)
+
 variable (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))]
 
 /-- The sheaf of relative differentials `Ω_{X/R}` of a scheme smooth of relative dimension `n`
@@ -193,6 +215,14 @@ lemma FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj :
       X.relativeDifferentials R :=
   haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
   FiniteLocallyFreeSheaf.relativeDifferentials_obj R X
+
+/-- On a scheme smooth of relative dimension `n` over `Spec R`, the Kähler differentials
+`Ω[𝒪_{X,x}⁄R]` of each local ring have rank `n` over `𝒪_{X,x}`. -/
+theorem finrank_kaehlerDifferential_stalk (x : X) :
+    Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] = n := by
+  rw [← (X.relativeDifferentialsStalkEquiv R x).finrank_eq,
+    ← FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj R X n,
+    FiniteLocallyFreeSheaf.finrank_stalk, FiniteLocallyFreeSheaf.FixedRank.rank_apply]
 
 end
 

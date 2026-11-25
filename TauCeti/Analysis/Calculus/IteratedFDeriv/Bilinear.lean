@@ -113,25 +113,21 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow
   B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (ρ₁ := fun i y ↦ ‖y‖ ^ (ℓ - i))
     (ρ₂ := fun i y ↦ ‖y‖ ^ (m - i)) hf hg hn hfn hgn fun _ hi ↦ isBigO_rpow_mul_rpow l ℓ m hi
 
-/-- The Leibniz rule at a point of an open set, with all derivatives of order at most `k` of `f`
-and `g` bounded by constants. -/
+/-- The Leibniz rule at a point where `f` and `g` are `C^k`, with all derivatives of order at most
+`k` of `f` and `g` there bounded by constants. -/
 theorem ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
-    (B : X →L[𝕜] Y →L[𝕜] Z) {f : E → X} {g : E → Y} {U : Set E} (hU : IsOpen U) {x : E}
-    (hx : x ∈ U) {k : ℕ} (hf : ContDiffOn 𝕜 k f U) (hg : ContDiffOn 𝕜 k g U) {M₁ M₂ : ℝ}
+    (B : X →L[𝕜] Y →L[𝕜] Z) {f : E → X} {g : E → Y} {x : E} {k : ℕ}
+    (hf : ContDiffAt 𝕜 k f x) (hg : ContDiffAt 𝕜 k g x) {M₁ M₂ : ℝ}
     (h₁ : ∀ i ≤ k, ‖iteratedFDeriv 𝕜 i f x‖ ≤ M₁) (h₂ : ∀ i ≤ k, ‖iteratedFDeriv 𝕜 i g x‖ ≤ M₂) :
     ‖iteratedFDeriv 𝕜 k (fun y => B (f y) (g y)) x‖ ≤ ‖B‖ * 2 ^ k * M₁ * M₂ := by
-  have h := B.norm_iteratedFDerivWithin_le_of_bilinear hf hg hU.uniqueDiffOn hx (n := k) le_rfl
-  rw [iteratedFDerivWithin_of_isOpen k hU hx] at h
-  refine h.trans ?_
-  calc ‖B‖ * ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * ‖iteratedFDerivWithin 𝕜 i f U x‖ *
-        ‖iteratedFDerivWithin 𝕜 (k - i) g U x‖
+  refine (B.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt hf hg le_rfl).trans ?_
+  have hM₁ : 0 ≤ M₁ := (norm_nonneg _).trans (h₁ 0 (Nat.zero_le _))
+  calc ‖B‖ * ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f x‖ *
+        ‖iteratedFDeriv 𝕜 (k - i) g x‖
       ≤ ‖B‖ * ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * M₁ * M₂ := by
-        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi => ?_) (norm_nonneg B)
-        rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen (k - i) hU hx]
-        have hM₁ : 0 ≤ M₁ := (norm_nonneg _).trans (h₁ 0 (Nat.zero_le _))
-        exact mul_le_mul (mul_le_mul_of_nonneg_left
-          (h₁ i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))) (Nat.cast_nonneg _))
-          (h₂ (k - i) (Nat.sub_le k i)) (norm_nonneg _) (mul_nonneg (Nat.cast_nonneg _) hM₁)
+        gcongr with i hi
+        · exact h₁ i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+        · exact h₂ (k - i) (Nat.sub_le k i)
     _ = ‖B‖ * 2 ^ k * M₁ * M₂ := by
         rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
         push_cast
@@ -161,13 +157,13 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_sub_le_of_bilinear (B : X →L[�
       ((hf₂.continuousLinearMap_comp B).clm_apply hg₂).contDiffAt, hsplit,
     iteratedFDeriv_add_apply ((hf.continuousLinearMap_comp B).clm_apply hg₁).contDiffAt
       ((hf₂.continuousLinearMap_comp B).clm_apply hg).contDiffAt]
-  have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    hf.contDiffOn hg₁.contDiffOn (fun i hi ↦ by
+  have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    hf.contDiffAt hg₁.contDiffAt (fun i hi ↦ by
       rw [iteratedFDeriv_sub_apply (hf₁.of_le (by exact_mod_cast hi)).contDiffAt
         (hf₂.of_le (by exact_mod_cast hi)).contDiffAt]
       exact hδ₁ i hi) hN
-  have h₂ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    hf₂.contDiffOn hg.contDiffOn hM (fun i hi ↦ by
+  have h₂ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    hf₂.contDiffAt hg.contDiffAt hM (fun i hi ↦ by
       rw [iteratedFDeriv_sub_apply (hg₁.of_le (by exact_mod_cast hi)).contDiffAt
         (hg₂.of_le (by exact_mod_cast hi)).contDiffAt]
       exact hδ₂ i hi)
@@ -275,22 +271,22 @@ private theorem ContinuousLinearMap.norm_iteratedFDeriv_bilinear_taylor_le
     (x := x) ((hg τ).of_le (hle hi)).contDiffAt ((hg t).of_le (hle hi)).contDiffAt
     (hg'.of_le (hle hi)).contDiffAt
   rw [B.iteratedFDeriv_bilinear_taylor_eq hf hg hf' hg']
-  have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    (contDiff_taylor_remainder hf hf' t τ).contDiffOn (hg τ).contDiffOn
+  have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    (contDiff_taylor_remainder hf hf' t τ).contDiffAt (hg τ).contDiffAt
     (fun i hi ↦ by
       rw [hDf hi]
       exact hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (f τ) x - iteratedFDeriv 𝕜 j (f t) x -
         (τ - t) • iteratedFDeriv 𝕜 j f' x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (g τ) x‖) (fun j ↦ norm_nonneg _) hi)
-  have h₂ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    (hf t).contDiffOn (contDiff_taylor_remainder hg hg' t τ).contDiffOn
+  have h₂ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    (hf t).contDiffAt (contDiff_taylor_remainder hg hg' t τ).contDiffAt
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (f t) x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ by
       rw [hDg hi]
       exact hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (g τ) x - iteratedFDeriv 𝕜 j (g t) x -
         (τ - t) • iteratedFDeriv 𝕜 j g' x‖) (fun j ↦ norm_nonneg _) hi)
-  have h₃ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    (g := g τ - g t) hf'.contDiffOn ((hg τ).sub (hg t)).contDiffOn
+  have h₃ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    (g := g τ - g t) hf'.contDiffAt ((hg τ).sub (hg t)).contDiffAt
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j f' x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ by
       rw [iteratedFDeriv_sub_apply ((hg τ).of_le (hle hi)).contDiffAt
@@ -360,7 +356,8 @@ theorem exists_norm_iteratedFDeriv_bilinear_le (B : X →L[𝕜] Y →L[𝕜] Z)
   have hM₁ : 0 ≤ M₁ := (norm_nonneg _).trans (h₁ 0 (Nat.zero_le _))
   have hM₂ : 0 ≤ M₂ := (norm_nonneg _).trans (h₂ 0 (Nat.zero_le _))
   have hjk : ((j : ℕ∞ω)) ≤ k := by exact_mod_cast hj
-  refine (B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le hU hx (hf.of_le hjk) (hg.of_le hjk)
+  refine (B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+    ((hf.contDiffAt (hU.mem_nhds hx)).of_le hjk) ((hg.contDiffAt (hU.mem_nhds hx)).of_le hjk)
     (fun i hi => h₁ i (hi.trans hj)) (fun i hi => h₂ i (hi.trans hj))).trans ?_
   have : (2 : ℝ) ^ j ≤ 2 ^ k := pow_le_pow_right₀ one_le_two hj
   calc ‖B‖ * 2 ^ j * M₁ * M₂ = ‖B‖ * 2 ^ j * (M₁ * M₂) := by ring

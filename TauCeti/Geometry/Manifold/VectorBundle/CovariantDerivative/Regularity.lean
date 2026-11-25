@@ -28,6 +28,8 @@ local frame.
 
 * `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
   `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
+* `ContMDiffCovariantDerivativeOn.contMDiff_univ`: the same for any operator which is `C^n` on the
+  whole manifold in the sense of `ContMDiffCovariantDerivativeOn`.
 * `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
@@ -64,6 +66,17 @@ variable
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
+/-- An operator which is `C^n` over the whole manifold, in the sense of Mathlib's
+`ContMDiffCovariantDerivativeOn`, sends a `C^(n + 1)` section to a `C^n` section of the bundle
+`Hom(TM, V)` of `V`-valued one-forms. The operator need not be a covariant derivative. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.contMDiff_univ
+    {D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[𝕜] V x}
+    (hD : ContMDiffCovariantDerivativeOn F n D Set.univ) {σ : Π x : M, V x}
+    (hσ : CMDiff (n + 1) (T% σ)) :
+    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (D σ x)) :=
+  contMDiffOn_univ.mp (hD.contMDiff hσ.contMDiffOn)
+
 /-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
 `C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
 theorem contMDiff_covariantDerivative
@@ -71,7 +84,7 @@ theorem contMDiff_covariantDerivative
     {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
     ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
       (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
-  contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)
+  ContMDiffCovariantDerivative.contMDiff.contMDiff_univ hσ
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
 `C^n` at `x` produces a section which is `C^n` at `x`. -/
