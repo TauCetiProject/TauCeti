@@ -22,6 +22,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -52,6 +53,8 @@ bounds.
   the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
   `L²` functions.
+* `MeasureTheory.MemLp.norm_toLp_continuousLinearMap_comp_le`: postcomposing an `Lᵖ` function
+  with a continuous linear map `L` scales the `Lᵖ` norm by at most `‖L‖`.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.integral_norm_sq_eq_toReal_eLpNorm_sq`: the integral of the squared pointwise
   norm of any a.e. strongly measurable function is its squared `L²` seminorm, as a real number.
@@ -847,5 +850,23 @@ theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMe
     (hbound.mono fun x hx ↦ norm_sub_rev (f x) z ▸ hx)
 
 end Inv
+
+end MeasureTheory
+
+namespace MeasureTheory
+
+open scoped ENNReal
+
+/-- **Postcomposition with a continuous linear map.** The `Lᵖ` norm of `L ∘ u` is at most
+`‖L‖ ‖u‖_{Lᵖ}`. -/
+theorem MemLp.norm_toLp_continuousLinearMap_comp_le {α 𝕜 E F : Type*} {m : MeasurableSpace α}
+    {μ : Measure α} {p : ℝ≥0∞} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {u : α → E} (hu : MemLp u p μ)
+    (L : E →L[𝕜] F) :
+    ‖(hu.continuousLinearMap_comp L).toLp _‖ ≤ ‖L‖ * (eLpNorm u p μ).toReal := by
+  rw [Lp.norm_toLp]
+  calc (eLpNorm (fun x ↦ L (u x)) p μ).toReal ≤ (‖L‖ₑ * eLpNorm u p μ).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top hu.eLpNorm_ne_top) L.eLpNorm_comp_le
+    _ = ‖L‖ * (eLpNorm u p μ).toReal := by rw [ENNReal.toReal_mul, toReal_eNorm]
 
 end MeasureTheory
