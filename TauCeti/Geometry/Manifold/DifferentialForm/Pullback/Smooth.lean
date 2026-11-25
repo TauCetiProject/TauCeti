@@ -328,11 +328,7 @@ evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     (mpullback f hf φ).val x ![v] = φ.val (f x) ![mfderiv I I' f x v] := by
-  rw [mpullback_apply]
-  congr 1
-  ext i
-  fin_cases i
-  rfl
+  rw [coe_mpullback, TauCeti.mpullback_apply_one]
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
@@ -500,6 +496,15 @@ theorem mpullback_prodMap_mpullback_snd {f : M → M''} {g : M' → M'''}
 theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
+
+/-- Pulling a smooth form back along a map `f` restricted to an open subset `U` evaluates tangent
+vectors at `x ∈ U` through the differential of `f` itself. -/
+theorem mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U)
+    (v : Fin k → TangentSpace I x) :
+    (mpullback _ hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
+  rw [mpullback_apply]
+  exact congrArg (φ.val (f x)) (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

@@ -44,6 +44,9 @@ Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphic
   inclusion `ℍ → ℂ`.
 * `Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq`: the derivative
   of a function invariant under a Möbius transformation.
+* `UpperHalfPlane.comp_ofComplex_comp_coe_smul_ofComplex`: composing `f ∘ ofComplex` with the
+  Möbius transformation `w ↦ g • ofComplex w` of `ℂ` gives `τ ↦ f (g • τ)` read through
+  `ofComplex`.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
   `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
@@ -298,3 +301,15 @@ theorem inner_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v w : ℂ) :
   ring
 
 end Matrix.GeneralLinearGroup
+
+namespace UpperHalfPlane
+
+/-- Composing `f ∘ ofComplex` with the Möbius transformation `w ↦ g • ofComplex w`, read through
+`ofComplex`, gives `τ ↦ f (g • τ)` read through `ofComplex`. -/
+theorem comp_ofComplex_comp_coe_smul_ofComplex {g : GL (Fin 2) ℝ} (f : ℍ → ℂ) :
+    (f ∘ ofComplex) ∘ (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) =
+      (fun τ ↦ f (g • τ)) ∘ ofComplex := by
+  funext w
+  simp [ofComplex_apply]
+
+end UpperHalfPlane

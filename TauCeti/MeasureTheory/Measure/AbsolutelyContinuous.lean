@@ -39,6 +39,8 @@ is a common dominating measure for `μ` and `ν`.
   form of absolute continuity of a finite measure.
 * `MeasureTheory.Measure.absolutelyContinuous_self_add`,
   `MeasureTheory.Measure.absolutelyContinuous_add_self`: `μ ≪ μ + ν` and `ν ≪ μ + ν`.
+* `MeasureTheory.Measure.AbsolutelyContinuous.tendsto_measure_zero`: transfer vanishing
+  measures of arbitrary families of sets to an absolutely continuous finite measure.
 
 ## References
 
@@ -49,7 +51,7 @@ is a common dominating measure for `μ` and `ν`.
 public section
 
 open MeasureTheory Filter Set
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -93,7 +95,7 @@ end MeasureTheory
 
 namespace MeasureTheory.Measure.AbsolutelyContinuous
 
-variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+variable {α : Type*} {m : MeasurableSpace α} {μ ν : Measure α}
 
 /-- **`ε`–`δ` absolute continuity.** If a finite measure `ν` is absolutely continuous with respect
 to `μ`, then for every `ε ≠ 0` there is `δ > 0` such that `μ s < δ` implies `ν s < ε`, for every
@@ -118,5 +120,14 @@ theorem exists_pos_measure_lt_of_measure_lt [IsFiniteMeasure ν] (h : ν ≪ μ)
   -- But every tail has `ν`-measure at least `ε`.
   exact hε (nonpos_iff_eq_zero.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
     (subset_toMeasurable μ (s n)).trans <| subset_iUnion₂_of_subset n le_rfl subset_rfl)
+
+/-- If the `μ`-measures of a family of sets tend to zero, so do their `ν`-measures for any
+finite `ν ≪ μ`. The sets need not be measurable, and the index filter is arbitrary. -/
+theorem tendsto_measure_zero {ι : Type*} {l : Filter ι} {s : ι → Set α}
+    [IsFiniteMeasure ν] (h : ν ≪ μ) (hs : Tendsto (fun i ↦ μ (s i)) l (𝓝 0)) :
+    Tendsto (fun i ↦ ν (s i)) l (𝓝 0) := by
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_
+  obtain ⟨δ, hδ, hsmall⟩ := h.exists_pos_measure_lt_of_measure_lt hε.ne'
+  exact (hs.eventually_lt_const hδ).mono fun i hi ↦ (hsmall (s i) hi).le
 
 end MeasureTheory.Measure.AbsolutelyContinuous
