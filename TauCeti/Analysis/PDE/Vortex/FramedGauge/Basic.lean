@@ -544,16 +544,20 @@ theorem contDiff_coe_of_contDiff_gaugeForm {u : ℂ → Circle}
     exact_mod_cast le_self_add
   | coe n => exact_mod_cast hfin n hω
 
+/-- The local form of `TauCeti.Vortex.contDiff_gaugeForm`: the logarithmic derivative of a gauge
+that is `C^(n+1)` at `z` is `C^n` at `z`. -/
+theorem contDiffAt_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle} {z : ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z) : ContDiffAt ℝ n (gaugeForm u) z :=
+  contDiffAt_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
+      (conjCLE.contDiff.contDiffAt.comp z (hu.of_le le_self_add)) |>.clm_comp
+      (hu.fderiv_right le_rfl))
+
 /-- A `C²` gauge has a differentiable logarithmic derivative. -/
 theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z) :
-    DifferentiableAt ℝ (gaugeForm u) z := by
-  have h : ContDiffAt ℝ 1 (gaugeForm u) z :=
-    contDiffAt_const.clm_comp
-      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
-        (conjCLE.contDiff.contDiffAt.comp z (hu.of_le (by norm_num))) |>.clm_comp
-        (hu.fderiv_right (by norm_num)))
-  exact h.differentiableAt one_ne_zero
+    DifferentiableAt ℝ (gaugeForm u) z :=
+  (contDiffAt_gaugeForm (n := 1) hu).differentiableAt one_ne_zero
 
 /-- Gauges and fields depending on a parameter, `C^(n+1)` and `C^n` jointly in the parameter and
 the point, give gauge-transformed fields that are `C^n` jointly in the parameter and the point. -/
@@ -591,11 +595,7 @@ theorem contDiffAt_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle} {z :
     (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z)
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiffAt ℝ n x z) :
     ContDiffAt ℝ n (gaugeTransform u x) z := by
-  have hg : ContDiffAt ℝ n (gaugeForm u) z :=
-    contDiffAt_const.clm_comp
-      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
-        (conjCLE.contDiff.contDiffAt.comp z (hu.of_le le_self_add)) |>.clm_comp
-        (hu.fderiv_right le_rfl))
+  have hg := contDiffAt_gaugeForm hu
   have hr := reCLM.contDiff.contDiffAt.comp z (hu.of_le le_self_add)
   have hi := imCLM.contDiff.contDiffAt.comp z (hu.of_le le_self_add)
   have hc (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := (contDiffAt_piLp _).mp hx i

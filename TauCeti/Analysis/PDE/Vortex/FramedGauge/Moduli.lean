@@ -52,8 +52,9 @@ Conversely, a smooth framed gauge relating two fields of `A_m^k` lies in `G_(k+1
 All in the namespace `TauCeti.Vortex`:
 
 * `exists_norm_iteratedFDeriv_sub_referenceField_le_mul`: outside the cutoff disc, the
-  derivatives of `x - x_ref` of order `n` are bounded by a constant, depending only on `n`, times
-  a bound for the derivatives of order at most `n` of the end trivialization of `x`.
+  derivatives of `x - x_ref` of order `n` are bounded by a constant, depending only on `f`, `m`
+  and `n` (not on `x`, `z` or `E`), times a bound for the derivatives of order at most `n` of the
+  end trivialization of `x`.
 * `isBigO_iteratedFDeriv_sub_referenceField`: for a smooth vortex normalized at its end, every
   derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth framed vortex
