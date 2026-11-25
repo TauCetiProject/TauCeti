@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+public import TauCeti.Analysis.Holder.CompLinear
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CompLeft
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 
@@ -59,6 +63,11 @@ differentiated equation, whose data are one order lower.
   `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_smul`: linearity in the direction.
 * `TauCeti.ParabolicCkHolderSpace.norm_spatialLineDerivL_le`: the operator norm of `∂_h` is at
   most `‖h‖`.
+* `TauCeti.ParabolicCkHolderSpace.spatialTrace_spatialLineDerivL` and
+  `TauCeti.ParabolicCkHolderSpace.norm_spatialTrace_spatialLineDerivL_le`: the spatial traces of
+  `∂_h u` are the derivatives in the direction `h` of the spatial traces of `u`.
+* `TauCeti.ParabolicCkHolderSpace.norm_spatialFDerivL_apply_le_sum`: on `ℝⁿ`, the spatial
+  gradient is bounded by the directional derivatives in the coordinate directions.
 
 ## References
 
@@ -335,5 +344,59 @@ theorem norm_spatialLineDerivL_apply_le (h : E) (f : ParabolicCkHolderSpace (k +
 theorem norm_spatialLineDerivL_le (h : E) :
     ‖spatialLineDerivL (k := k) (α := α) (F := F) (hab := hab) h‖ ≤ ‖h‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg h) _
+
+/-- The spatial trace of `∂_h u` at a time `t` is the derivative of the spatial trace of `u` at
+`t` in the direction `h`. -/
+theorem spatialTrace_spatialLineDerivL (h : E) (u : ParabolicCkHolderSpace (k + 1) α E F hab)
+    (t : Icc a b) :
+    (spatialLineDerivL h u).spatialTrace t = CkHolderSpace.compLeftL
+      (ContinuousLinearMap.apply ℝ F h) (CkHolderSpace.fderivL k α E F (u.spatialTrace t)) :=
+  CkHolderSpace.ext fun x ↦ by
+    rw [spatialTrace_apply, spatialLineDerivL_apply_eq_spatialFDerivL, spatialFDerivL_slabMk,
+      CkHolderSpace.compLeftL_apply, ContinuousLinearMap.apply_apply, CkHolderSpace.fderivL_apply,
+      coe_spatialTrace]
+
+/-- The spatial traces of `∂_h u` are bounded by `‖h‖` times those of `u`. -/
+theorem norm_spatialTrace_spatialLineDerivL_le (h : E)
+    (u : ParabolicCkHolderSpace (k + 1) α E F hab) (t : Icc a b) :
+    ‖(spatialLineDerivL h u).spatialTrace t‖ ≤ ‖h‖ * ‖u.spatialTrace t‖ := by
+  rw [spatialTrace_spatialLineDerivL]
+  have hh : ‖ContinuousLinearMap.apply ℝ F h‖ ≤ ‖h‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg h) fun v ↦ by
+      simpa [mul_comm] using v.le_opNorm h
+  refine (ContinuousLinearMap.le_of_opNorm_le _ (CkHolderSpace.norm_compLeftL_le _) _).trans ?_
+  refine mul_le_mul hh ?_ (norm_nonneg _) (norm_nonneg _)
+  exact (ContinuousLinearMap.le_of_opNorm_le _ CkHolderSpace.norm_fderivL_le_one _).trans
+    (one_mul _).le
+
+/-- On `ℝⁿ = EuclideanSpace ℝ ι`, the spatial gradient of a scalar map is bounded by its
+directional derivatives in the coordinate directions: `‖D_x u‖ ≤ ∑ₗ ‖∂ₗ u‖`. -/
+theorem norm_spatialFDerivL_apply_le_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (u : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hab) :
+    ‖spatialFDerivL k α (EuclideanSpace ℝ ι) ℝ hab u‖ ≤
+      ∑ l, ‖spatialLineDerivL (EuclideanSpace.single l (1 : ℝ)) u‖ := by
+  -- The gradient is `v ↦ ⟪∑ₗ (∂ₗ u) eₗ, v⟫`.
+  set W : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι) hab :=
+    ∑ l, compLeftL (ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single l (1 : ℝ)))
+      (spatialLineDerivL (EuclideanSpace.single l (1 : ℝ)) u)
+  have hW : compLeftL (innerSL ℝ) W = spatialFDerivL k α (EuclideanSpace ℝ ι) ℝ hab u :=
+    ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
+      conv_rhs => rw [← (EuclideanSpace.basisFun ι ℝ).toBasis.sum_repr v]
+      simp only [_root_.map_sum, compLeftL_compLeftL, coe_sum, Finset.sum_apply, compLeftL_apply,
+        spatialLineDerivL_apply_eq_spatialFDerivL, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.toSpanSingleton_apply, map_smul, sum_apply,
+        smul_apply, smul_eq_mul, mul_comm,
+        OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
+        OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, W]
+      refine Finset.sum_congr rfl fun l _ ↦ ?_
+      rw [innerSL_apply_apply, EuclideanSpace.inner_single_left]
+      simp
+  rw [← hW]
+  refine (ContinuousLinearMap.le_of_opNorm_le _ ((norm_compLeftL_le _).trans
+    (norm_innerSL_le ℝ)) _).trans ?_
+  rw [one_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun l _ ↦ ?_)
+  refine (ContinuousLinearMap.le_of_opNorm_le _ (norm_compLeftL_le _) _).trans ?_
+  simp
 
 end TauCeti.ParabolicCkHolderSpace
