@@ -77,8 +77,10 @@ variable {r A} in
 /-- Trace-zero diagonal matrices commute. -/
 theorem lie_eq_zero_of_mem_specialLinearDiagonal {X Y : sl (Fin (r + 1)) A}
     (hX : X ∈ specialLinearDiagonal r A) (hY : Y ∈ specialLinearDiagonal r A) : ⁅X, Y⁆ = 0 :=
-  Subtype.ext (lie_eq_zero_of_isDiag ((mem_specialLinearDiagonal_iff r A X).mp hX)
-    ((mem_specialLinearDiagonal_iff r A Y).mp hY))
+  Subtype.ext <| by
+    rw [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero]
+    exact lie_eq_zero_of_isDiag ((mem_specialLinearDiagonal_iff r A X).mp hX)
+      ((mem_specialLinearDiagonal_iff r A Y).mp hY)
 
 /-- Reading the first diagonal entries identifies a trace-zero diagonal matrix with a tuple.
 The final diagonal entry is minus the sum of that tuple. -/
@@ -286,9 +288,11 @@ theorem specialLinearDiagonalCartanBasis_apply (i : Fin r) :
   exact specialLinearCorootBasis_apply r A i
 
 instance : IsLieAbelian (specialLinearDiagonalCartan r A) where
-  trivial X Y := Subtype.ext <| lie_eq_zero_of_mem_specialLinearDiagonal
-    (mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp X.property)
-    (mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp Y.property)
+  trivial X Y := Subtype.ext <| by
+    rw [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero]
+    exact lie_eq_zero_of_mem_specialLinearDiagonal
+      (mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp X.property)
+      (mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp Y.property)
 
 /-- The diagonal Cartan subalgebra of `sl` is self-normalizing outside rank one, and in rank one
 once multiplication by `2` is injective. Bracketing a normalizing matrix with `E_aa - E_cc` scales

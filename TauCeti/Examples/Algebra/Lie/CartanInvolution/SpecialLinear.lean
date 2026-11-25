@@ -5,23 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
-public import TauCeti.Algebra.Lie.CartanInvolution.Matrix
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
-public import TauCeti.Algebra.Lie.GeneralLinear.Radical
-public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
+public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
 public import TauCeti.Algebra.Lie.SpecialLinear.Character
-public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
-public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 import TauCeti.Algebra.Lie.SpecialLinear.Root.Base
 
 /-!
 # Restricted roots of `𝔰𝔩_n(ℝ)`
 
-On `𝔰𝔩_{r+1}(ℝ)` with the Cartan involution `θ X = -Xᵀ`, the trace-zero diagonal matrices
-`𝔞 = TauCeti.specialLinearDiagonal r ℝ` form a maximal abelian subspace of the `-1`-eigenspace
-`𝔭` (the symmetric matrices). For `H ∈ 𝔞` the bracket `[H, X]` has `(k, l)` entry
-`(H k k - H l l) X k l` (`TauCeti.lie_apply_of_mem_specialLinearDiagonal`), so:
+On `𝔰𝔩_{r+1}(ℝ)` with the Cartan involution `θ X = -Xᵀ` (`TauCeti.slNegTranspose`), the
+trace-zero diagonal matrices `𝔞 = TauCeti.specialLinearDiagonal r ℝ` form a maximal abelian
+subspace of the `-1`-eigenspace `𝔭` (the symmetric matrices). For `H ∈ 𝔞` the bracket `[H, X]`
+has `(k, l)` entry `(H k k - H l l) X k l` (`TauCeti.lie_apply_of_mem_specialLinearDiagonal`), so:
 
 * the centralizer `𝔤_0` of `𝔞` is `𝔞` itself, and `𝔪 = 𝔤_0 ∩ 𝔨 = 0`;
 * the restricted roots are the functionals `e_i - e_j : H ↦ H i i - H j j` for `i ≠ j`, the
@@ -30,6 +25,11 @@ On `𝔰𝔩_{r+1}(ℝ)` with the Cartan involution `θ X = -Xᵀ`, the trace-ze
 
 This is the split case of the restricted root decomposition: `𝔞` is a Cartan subalgebra, every
 restricted root space is a line, and `𝔪 = 0`.
+
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Chapter VI, §4, and Appendix C.
+* S. Helgason, *Differential Geometry, Lie Groups, and Symmetric Spaces*, Chapter X, Table VI.
 -/
 
 public section
@@ -42,10 +42,6 @@ namespace TauCeti
 
 variable (r : ℕ) (A : Type*) [CommRing A]
 
-/-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`. -/
-noncomputable def slNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
-  (sl (Fin (r + 1)) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_sl
-
 /-- The functional `e_i - e_j : H ↦ H i i - H j j` on the trace-zero diagonal matrices: the
 root `εᵢ - εⱼ` of the coordinate weights `TauCeti.specialLinearEpsilon`, read on
 `specialLinearDiagonal r A`, the underlying submodule of `specialLinearDiagonalCartan r A`.
@@ -56,26 +52,6 @@ def slRestrictedRoot (i j : Fin (r + 1)) : Dual A (specialLinearDiagonal r A) :=
     (LinearEquiv.ofEq _ _ (specialLinearDiagonalCartan_toSubmodule r A).symm).toLinearMap
 
 variable {r A}
-
-/-- The Cartan involution `slNegTranspose` is `X ↦ -Xᵀ` on the underlying matrices. -/
-@[simp]
-theorem coe_slNegTranspose_apply (X : sl (Fin (r + 1)) ℝ) :
-    ((slNegTranspose r X : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
-      -(X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ)ᵀ := by
-  rw [slNegTranspose, LieSubalgebra.coe_restrictNegConjTranspose_apply,
-    conjTranspose_eq_transpose_of_trivial]
-
-variable (r) in
-/-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔩_{r+1}(ℝ)`. -/
-theorem isCartanInvolution_slNegTranspose : (slNegTranspose r).IsCartanInvolution :=
-  LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _
-
-/-- The Cartan involution acts on the trace-zero diagonal matrices by `-1`. -/
-theorem slNegTranspose_apply_of_mem_specialLinearDiagonal {X : sl (Fin (r + 1)) ℝ}
-    (hX : X ∈ specialLinearDiagonal r ℝ) : slNegTranspose r X = -X := by
-  ext : 1
-  rw [coe_slNegTranspose_apply, ((mem_specialLinearDiagonal_iff r ℝ X).mp hX).isSymm.eq,
-    NegMemClass.coe_neg]
 
 /-- The functional `e_i - e_j` evaluates to `H i i - H j j`. -/
 @[simp]
@@ -91,10 +67,12 @@ theorem slRestrictedRoot_apply (i j : Fin (r + 1)) (H : specialLinearDiagonal r 
 theorem slRestrictedRoot_self (k : Fin (r + 1)) : slRestrictedRoot r A k k = 0 :=
   LinearMap.ext fun H ↦ by rw [slRestrictedRoot_apply, sub_self, LinearMap.zero_apply]
 
-/-- `e_k - e_l = e_i - e_j` with `i ≠ j` forces `(k, l) = (i, j)`: for `k ≠ l` both are the roots
-`εₖ - εₗ` and `εᵢ - εⱼ` read on `𝔞` (`TauCeti.specialLinearRoot_inj`), and for `k = l` the root
-`εᵢ - εⱼ` would vanish (`TauCeti.specialLinearRoot_isNonZero`). -/
-private theorem slRestrictedRoot_eq_iff {i j k l : Fin (r + 1)} (hij : i ≠ j) :
+/-- The functionals `e_k - e_l` and `e_i - e_j` with `i ≠ j` coincide exactly when
+`(k, l) = (i, j)`: for `k ≠ l` both are the roots `εₖ - εₗ` and `εᵢ - εⱼ` read on `𝔞`
+(`TauCeti.specialLinearRoot_inj`), and for `k = l` the root `εᵢ - εⱼ` would vanish
+(`TauCeti.specialLinearRoot_isNonZero`). -/
+@[simp]
+theorem slRestrictedRoot_eq_iff {i j k l : Fin (r + 1)} (hij : i ≠ j) :
     slRestrictedRoot r ℝ k l = slRestrictedRoot r ℝ i j ↔ k = i ∧ l = j := by
   refine ⟨fun h ↦ ?_, fun ⟨hki, hlj⟩ ↦ hki ▸ hlj ▸ rfl⟩
   have hH (H : specialLinearDiagonalCartan r ℝ) : (H : sl (Fin (r + 1)) ℝ) ∈
@@ -179,7 +157,7 @@ theorem restrictedRootSpace_slRestrictedRoot {i j : Fin (r + 1)} (hij : i ≠ j)
     by_cases hkl : i = k ∧ j = l
     · obtain ⟨rfl, rfl⟩ := hkl
       simp
-    · rw [ite_eq_right_iff.mpr (fun h ↦ absurd h hkl), mul_zero, eq_comm]
+    · rw [ite_eq_right hkl, mul_zero, eq_comm]
       -- Choose `H ∈ 𝔞` with `H k k - H l l ≠ H i i - H j j`.
       have hne : slRestrictedRoot r ℝ k l ≠ slRestrictedRoot r ℝ i j := fun h' ↦
         hkl (((slRestrictedRoot_eq_iff hij).mp h').imp Eq.symm Eq.symm)
