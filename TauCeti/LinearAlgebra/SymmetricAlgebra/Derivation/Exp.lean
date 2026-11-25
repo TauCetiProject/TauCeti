@@ -33,6 +33,8 @@ polynomial functions Chevalley's restriction theorem describes.
 
 * `SymmetricAlgebra.exists_iterate_derivationOfEnd_eq_zero`: `D_f` is locally nilpotent when `f`
   is nilpotent.
+* `SymmetricAlgebra.iterate_derivationOfEnd_prod_ι_eq_zero`: if `f ^ k = 0`, then `D_f` kills
+  every product of `n` generators after `n * (k - 1) + 1` iterations.
 * `SymmetricAlgebra.taylorExp_derivationOfEnd`: `exp D_f = map (exp f)`.
 * `SymmetricAlgebra.map_exp_apply_of_derivationOfEnd_eq_zero`: an element killed by `D_f` is
   fixed by `map (exp f)`.
@@ -65,6 +67,25 @@ theorem exists_iterate_derivationOfEnd_eq_zero {f : Module.End R M} (hf : IsNilp
     (adjoin_range_ι R M) ?_ p
   rintro _ ⟨x, rfl⟩
   exact ⟨n, by rw [iterate_derivationOfEnd_ι, hn, LinearMap.zero_apply, map_zero]⟩
+
+/-- **Nilpotency on products of generators**: if `f ^ k = 0`, then the derivation induced by `f`
+kills every product of `n` generators after `n * (k - 1) + 1` iterations. -/
+theorem iterate_derivationOfEnd_prod_ι_eq_zero {f : Module.End R M} {k : ℕ} (hf : f ^ k = 0)
+    {n : ℕ} (v : Fin n → M) {j : ℕ} (hj : n * (k - 1) < j) :
+    (derivationOfEnd R M f)^[j] (∏ i, ι R M (v i)) = 0 := by
+  induction n generalizing j with
+  | zero =>
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt hj
+    simp [Function.iterate_succ_apply]
+  | succ n ih =>
+    rw [Fin.prod_univ_succ, Derivation.iterate_apply_mul]
+    refine sum_eq_zero fun ab hab ↦ ?_
+    rw [mem_antidiagonal] at hab
+    by_cases ha : k ≤ ab.1
+    · have h : (f ^ ab.1) (v 0) = 0 := by
+        rw [← Nat.sub_add_cancel ha, pow_add, hf, mul_zero, LinearMap.zero_apply]
+      rw [iterate_derivationOfEnd_ι, h, map_zero, zero_mul, smul_zero]
+    · rw [ih _ (j := ab.2) (by rw [Nat.succ_mul] at hj; omega), mul_zero, smul_zero]
 
 variable [Module ℚ M]
 

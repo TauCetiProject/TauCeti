@@ -89,7 +89,7 @@ theorem normForm_spinGroupEquivQuaternionUnitary (Q : QuadraticForm K V)
     QuaternionAlgebra.normForm a 0 b
       (spinGroupEquivQuaternionUnitary Q hQ hV e he s : ℍ[K,a,0,b]) = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitary Q hQ hV e he s).2
+    (spinGroupEquivQuaternionUnitary Q hQ hV e he s).property
 
 /-- Every nondegenerate ternary Spin group over the base field is isomorphic to the norm-one
 group of a quaternion algebra with unit symbols. -/

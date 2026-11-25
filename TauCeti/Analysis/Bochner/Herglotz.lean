@@ -220,17 +220,22 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
     rw [div_le_one (by positivity)]
     exact_mod_cast fejerCount_le (N + 1) 0
   -- By Prokhorov's theorem on the compact circle, the `ν N` cluster weakly at some `μ`.
-  obtain ⟨μ, U, hU, hμ, -, hlim⟩ :=
-    finite_measure_cluster_limit ν C hmass IsTightMeasureSet.of_compactSpace
+  obtain ⟨μ, U, hU, -, hμ, -, hlim⟩ :=
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet ν atTop C (forall_mem_range.2 hmass)
+      IsTightMeasureSet.of_compactSpace (.of_forall mem_range_self)
   refine ⟨μ, hμ, fun m ↦ ?_⟩
   let νf : ℕ → FiniteMeasure Circle := fun N ↦ ⟨ν N, hνfin N⟩
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
-  have hweak : Tendsto νf U (𝓝 μf) := FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 hlim
+  have hweak : Tendsto νf U (𝓝 μf) := FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 <| by
+    simpa only [νf, μf, FiniteMeasure.toMeasure_mk] using hlim
   have hcont : Continuous fun z : Circle ↦ (z : ℂ) ^ m :=
-    (continuous_subtype_val.comp (continuous_zpow (G := Circle) m)).congr fun z ↦
+    (continuous_subtypeVal.comp (continuous_zpow (G := Circle) m)).congr fun z ↦
       Circle.coe_zpow z m
-  have hconv := (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).1 hweak
-    (.mkOfCompact ⟨_, hcont⟩)
+  have hconv : Tendsto (fun N ↦ ∫ z : Circle, (z : ℂ) ^ m ∂ν N) U
+      (𝓝 (∫ z : Circle, (z : ℂ) ^ m ∂μ)) := by
+    simpa only [νf, μf, FiniteMeasure.toMeasure_mk, BoundedContinuousFunction.mkOfCompact_apply,
+      ContinuousMap.coe_mk] using
+      (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).1 hweak (.mkOfCompact ⟨_, hcont⟩)
   -- The moments of `ν N` converge to `φ m`, and to the moment of `μ`.
   have hφlim : Tendsto (fun N ↦ ∫ z : Circle, (z : ℂ) ^ m ∂ν N) U (𝓝 (φ m)) := by
     simp only [hmoment]

@@ -9,12 +9,17 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Set.Restrict
 
 /-!
-# Preimages under a map restricted to a preimage
+# Preimages under a map restricted to a subset or preimage
 
 The preimage of a set `u ⊆ t` under `Set.restrictPreimage t f` has the same cardinality as the
 preimage of `u` under `f`, and is finite exactly when that preimage is; in particular this holds
 for the fibres over points of `t`. Dually, removing the preimage of a set from the domain does not
 change the fibres over points outside that set.
+
+For a domain restriction `u.domRestrict f`, the preimage of `{y}` lies in `{⟨x, hx⟩}` exactly when
+`x` is the only point of `u` sent to `y` (`Set.preimage_domRestrict_singleton_subset_iff`), and
+the preimage of `s` under the inclusion of `(s \ {x})ᶜ` lies in `{x}`
+(`Set.preimage_val_compl_diff_singleton_subset`).
 -/
 
 public section
@@ -41,5 +46,18 @@ of `T` in a fiber over a point outside `Z`. -/
 theorem natCard_fiber_sdiff_preimage {T : Set α} {Z : Set β} {y : β} (hy : y ∉ Z) :
     Nat.card {x // f x = y ∧ x ∈ T \ f ⁻¹' Z} = Nat.card {x // f x = y ∧ x ∈ T} :=
   Nat.card_congr <| Equiv.subtypeEquivRight fun x ↦ by grind
+
+/-- The preimage of `{y}` under `u.domRestrict f` is contained in `{⟨x, hx⟩}` if and only if `x` is
+the only point of `u` sent to `y`. -/
+theorem preimage_domRestrict_singleton_subset_iff {u : Set α} {f : α → β} {x : α} {y : β}
+    (hx : x ∈ u) :
+    u.domRestrict f ⁻¹' {y} ⊆ {⟨x, hx⟩} ↔ ∀ z ∈ u, f z = y → z = x :=
+  ⟨fun h z hz hfz ↦ congrArg Subtype.val (h (a := ⟨z, hz⟩) hfz),
+    fun h z hz ↦ Subtype.ext (h z z.property hz)⟩
+
+/-- The preimage of `s` under the subtype inclusion `(s \ {x})ᶜ → α` is contained in `{x}`. -/
+theorem preimage_val_compl_diff_singleton_subset (s : Set α) (x : α) :
+    (Subtype.val : ↥(s \ {x})ᶜ → α) ⁻¹' s ⊆ {⟨x, fun h ↦ h.2 rfl⟩} :=
+  fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.property ⟨hz, h⟩)
 
 end Set

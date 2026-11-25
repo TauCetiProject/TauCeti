@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Basic.Real.Pointwise
-import Mathlib.Topology.Algebra.InfiniteSum.Order
+import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Topology.Algebra.Order.Field
 import Mathlib.Topology.UniformSpace.HeineCantor
 
@@ -492,28 +492,19 @@ private lemma dist_dyadicApprox_le_tsum {f : ℝ≥0 → Y} (hf : ContinuousOn f
     dist_nonneg.trans (hM (n + 1 + k) (by omega) 0 (Nat.two_pow_pos _))
   have hshift_sum : Summable (fun k : ℕ ↦ M (n + 1 + k)) :=
     hM_sum.comp_injective (add_right_injective (n + 1))
-  have hpartial (N : ℕ) :
-      dist (f (dyadicApprox n x)) (f (dyadicApprox (N + n) x)) ≤
-        ∑ k ∈ Finset.range N, M (n + 1 + k) := by
-    induction N with
-    | zero => simp
-    | succ N ih =>
-      rw [Nat.succ_add, Finset.sum_range_succ]
-      refine (dist_triangle _ (f (dyadicApprox (N + n) x)) _).trans (add_le_add ih ?_)
-      have hidx : n + 1 + N = N + n + 1 := by omega
-      rw [hidx]
-      exact dist_dyadicApprox_succ_le hx (N + n) (hidx ▸ hM_nonneg N)
-        (hM (N + n + 1) (by omega))
-  have hlim_lhs : Tendsto (fun N : ℕ ↦ dist (f (dyadicApprox n x)) (f (dyadicApprox (N + n) x)))
-      atTop (𝓝 (dist (f (dyadicApprox n x)) (f x))) := by
-    have h_app : Tendsto (fun N : ℕ ↦ dyadicApprox (N + n) x) atTop (𝓝 x) :=
-      (tendsto_dyadicApprox x).comp (tendsto_add_atTop_nat n)
-    have h_nhds : Tendsto (fun N : ℕ ↦ dyadicApprox (N + n) x) atTop (𝓝[Iic 1] x) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ h_app
-        (Eventually.of_forall fun N ↦ (dyadicApprox_le_and_lt (N + n)).1.trans hx)
-    exact tendsto_const_nhds.dist ((hf x hx).tendsto.comp h_nhds)
-  exact le_of_tendsto_of_tendsto hlim_lhs hshift_sum.hasSum.tendsto_sum_nat
-    (Eventually.of_forall hpartial)
+  have hstep (k : ℕ) :
+      dist (f (dyadicApprox (k + n) x)) (f (dyadicApprox (k.succ + n) x)) ≤ M (n + 1 + k) := by
+    have hidx : n + 1 + k = k + n + 1 := by omega
+    rw [Nat.succ_add, hidx]
+    exact dist_dyadicApprox_succ_le hx (k + n) (hidx ▸ hM_nonneg k) (hM (k + n + 1) (by omega))
+  have h_app : Tendsto (fun k : ℕ ↦ dyadicApprox (k + n) x) atTop (𝓝 x) :=
+    (tendsto_dyadicApprox x).comp (tendsto_add_atTop_nat n)
+  have h_nhds : Tendsto (fun k : ℕ ↦ dyadicApprox (k + n) x) atTop (𝓝[Iic 1] x) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ h_app
+      (Eventually.of_forall fun k ↦ (dyadicApprox_le_and_lt (k + n)).1.trans hx)
+  simpa only [Nat.zero_add] using dist_le_tsum_of_dist_le_of_tendsto₀
+    (f := fun k ↦ f (dyadicApprox (k + n) x)) (fun k ↦ M (n + 1 + k))
+    hstep hshift_sum ((hf x hx).tendsto.comp h_nhds)
 
 private lemma dist_le_of_dyadic {f : ℝ≥0 → Y} (hf : ContinuousOn f (Iic 1)) (n : ℕ)
     {h C : ℝ} (hC0 : 0 ≤ C)

@@ -14,8 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.Probability.BrownianMotion.NormalizedIncrements
+import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Cdf
-import TauCeti.Probability.Moments.SubGaussian
+import TauCeti.Probability.Moments.SubGaussian.Gaussian.Real
 
 /-!
 # Lévy's exact uniform modulus of continuity for Brownian motion
@@ -243,7 +244,7 @@ private lemma measure_dyadicBadEvent_pair_le {Ω : Type*} [MeasurableSpace Ω] {
   set u : ℝ := (1 + ε) * √(2 * Δ * Real.log ((2 : ℝ) ^ n / k))
   have hu_nn : 0 ≤ u := mul_nonneg (by positivity) (Real.sqrt_nonneg _)
   have hdist :
-      ((nndist (((i + k : ℕ) : ℝ≥0) / 2 ^ n).1 ((i : ℝ≥0) / 2 ^ n).1 : ℝ≥0) : ℝ) = Δ := by
+      ((nndist (((i + k : ℕ) : ℝ≥0) / 2 ^ n).val ((i : ℝ≥0) / 2 ^ n).val : ℝ≥0) : ℝ) = Δ := by
     rw [coe_nndist, NNReal.val_eq_coe, NNReal.val_eq_coe, Real.dist_eq]; push_cast
     rw [show ((i : ℝ) + k) / (2 : ℝ) ^ n - (i : ℝ) / (2 : ℝ) ^ n = Δ by dsimp [Δ]; ring]
     exact abs_of_pos hΔ_pos
@@ -253,9 +254,13 @@ private lemma measure_dyadicBadEvent_pair_le {Ω : Type*} [MeasurableSpace Ω] {
       dsimp only [u]; rw [mul_pow, hsq]; field_simp
     rw [← Real.le_log_iff_exp_le (by positivity), hu_sq, Real.log_pow, Real.log_rpow zero_lt_two]
     nlinarith [sq_nonneg (1 + ε)]
-  refine le_trans (measure_mono fun _ hω ↦ hω.2)
-    (((hB.hasLaw_sub _ _).hasSubgaussianMGF.measure_lt_abs_le hu_nn).trans
-      (ENNReal.ofReal_le_ofReal ?_))
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  have hsub := (hB.hasLaw_sub (((i + k : ℕ) : ℝ≥0) / 2 ^ n) ((i : ℝ≥0) / 2 ^ n)).hasSubgaussianMGF
+  refine le_trans (measure_mono
+    (t := {ω | u ≤ |B (((i + k : ℕ) : ℝ≥0) / 2 ^ n) ω - B ((i : ℝ≥0) / 2 ^ n) ω|})
+    fun _ hω ↦ hω.2.le) ?_
+  rw [← ofReal_measureReal]
+  refine ENNReal.ofReal_le_ofReal ((hsub.measureReal_abs_ge_le hu_nn).trans ?_)
   rw [hdist]; exact mul_le_mul_of_nonneg_left hexp_le zero_le_two
 
 private lemma dyadic_union_exponent_le {q n : ℕ} (hq : 2 ≤ q) :
@@ -581,7 +586,7 @@ private lemma measure_forall_abs_normalized_le {Ω : Type*} [MeasurableSpace Ω]
   rw [hpre, hprob, ← ofReal_measureReal, ← ENNReal.ofReal_pow measureReal_nonneg]
   refine ENNReal.ofReal_le_ofReal ?_
   exact (pow_le_pow_left₀ measureReal_nonneg hexp_step N).trans_eq
-    (by rw [← Real.exp_nat_mul]; dsimp only [N]; congr 1; ring)
+    (by rw [← Real.exp_natCast_mul]; dsimp only [N]; congr 1; ring)
 
 private lemma gaussianPDFReal_add_one_ge {b ε : ℝ} (hb_gt1 : 1 < b)
     (hε_pos : 0 < ε) (hε_le : ε ≤ 1 / 2) {n : ℕ}
@@ -665,7 +670,7 @@ private lemma summable_exp_neg_floor_mul_gaussianPDFReal {q : ℕ} (hq : 2 ≤ q
       (neg_neg_of_pos (by positivity)) (sub_pos.2 hr_gt1))
   refine ((summable_geometric_of_lt_one (Real.exp_pos _).le hα).comp_injective
     (add_left_injective (N₁ + 1))).congr fun k ↦ ?_
-  dsimp only [Function.comp_apply]; rw [← Real.exp_nat_mul]; congr 1; push_cast; ring
+  dsimp only [Function.comp_apply]; rw [← Real.exp_natCast_mul]; congr 1; push_cast; ring
 
 private lemma le_modulus_div_sqrt_of_exists_gt {g : ℝ≥0 → ℝ} {b_nn : ℝ≥0} {ε h : ℝ} {n : ℕ}
     (hbdd : BddAbove {a : ℝ | ∃ x ∈ Iic (1 : ℝ≥0), ∃ y ∈ Iic (1 : ℝ≥0),

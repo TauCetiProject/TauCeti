@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
@@ -15,8 +16,10 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 functions on the open set `U`. Holomorphy can be checked on any ambient representative;
 in particular, extension by zero outside `U` gives the same condition. The topology and
 uniformity are inherited from continuous maps, so convergence means locally uniform
-convergence. This subalgebra is closed and complete, and restriction to a smaller open
-set is a continuous algebra homomorphism.
+convergence. This subalgebra is closed and complete, and both restriction to a smaller open
+set and precomposition along a holomorphic map into another open set are continuous algebra
+homomorphisms, and `HolomorphicFunctions.vanishingAt` cuts out the nonunital subalgebra of
+holomorphic functions vanishing at a marked point.
 
 These algebras provide domains for continuous holomorphic functional calculi without
 choosing a supremum norm on a possibly noncompact open set.
@@ -121,6 +124,20 @@ theorem of_extend (f : holomorphicFunctions U) :
   ext z
   simp
 
+/-- Extending `of U g hg` agrees with `g` on `U`. -/
+@[simp]
+theorem extend_of {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    extend (of U g hg) z = g z := by
+  rw [extend_apply _ ⟨z, hz⟩, of_apply]
+
+/-- The zero extension of zero is zero. -/
+@[simp]
+theorem extend_zero : extend (0 : holomorphicFunctions U) = 0 := by
+  ext z
+  by_cases hz : z ∈ U
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [hz]
+
 /-- Restriction along an inclusion of open domains. -/
 noncomputable def restrict (h : V ≤ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicFunctions V :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ
@@ -140,13 +157,19 @@ theorem restrict_of (h : V ≤ U) (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g
   ext z
   simp
 
+/-- Extending a restricted function agrees with the original extension on the smaller domain. -/
+@[simp]
+theorem extend_restrict (h : V ≤ U) (f : holomorphicFunctions U) {z : ℂ} (hz : z ∈ V) :
+    extend (restrict h f) z = extend f z := by
+  rw [extend_apply _ ⟨z, hz⟩, restrict_apply, extend_apply f ⟨z, h hz⟩]
+
 @[simp]
 theorem restrict_refl : restrict (le_refl U) = AlgHom.id ℂ (holomorphicFunctions U) := by
   ext f z
   simp
 
 @[simp]
-theorem restrict_comp (hVU : V ≤ U) (hWV : W ≤ V) :
+theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
     (restrict hWV).comp (restrict hVU) = restrict (hWV.trans hVU) := by
   ext f z
   simp
@@ -155,7 +178,7 @@ theorem restrict_comp (hVU : V ≤ U) (hWV : W ≤ V) :
 theorem continuous_restrict (h : V ≤ U) : Continuous (restrict h) := by
   unfold restrict
   exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ
-    ⟨Set.inclusion h, continuous_inclusion h⟩).comp continuous_subtype_val |>.subtype_mk _
+    ⟨Set.inclusion h, continuous_inclusion h⟩).comp continuous_subtypeVal |>.subtype_mk _
 
 /-- Convergence in the inherited topology is locally uniform convergence on the open domain. -/
 theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
@@ -166,6 +189,172 @@ theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
     tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
   simp only [Function.comp_def, extend_apply]
   rfl
+
+/-- If a holomorphic function on `U` maps a subset `s ⊆ U` into an open set `V`, it maps a smaller
+open neighbourhood `U' ≤ U` of `s` into `V`. -/
+theorem exists_le_mapsTo_extend {s : Set ℂ} (hs : s ⊆ U) (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) s V) :
+    ∃ U' : Opens ℂ, s ⊆ U' ∧ U' ≤ U ∧ MapsTo (extend f) U' V := by
+  refine ⟨⟨Subtype.val '' (f.val ⁻¹' (V : Set ℂ)),
+    U.isOpen.isOpenMap_subtypeVal _ (V.isOpen.preimage f.val.continuous)⟩,
+    fun z hz => ⟨⟨z, hs hz⟩, ?_, rfl⟩, ?_, ?_⟩
+  · rw [mem_preimage, ← extend_apply]
+    exact hf hz
+  · rintro _ ⟨z, -, rfl⟩
+    exact z.property
+  · rintro _ ⟨z, hz, rfl⟩
+    rw [extend_apply]
+    exact mem_preimage.mp hz
+
+/-- Values of `f` on `U` lie in `V` when `extend f` maps `U` into `V`. -/
+theorem apply_mem_of_mapsTo_extend (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) U V) (z : U) : f.val z ∈ V := by
+  rw [← extend_apply]
+  exact hf z.property
+
+/-- Precomposition with holomorphic functions on `V` along a holomorphic map from `U` into `V`. -/
+noncomputable def comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V) :
+    holomorphicFunctions V →ₐ[ℂ] holomorphicFunctions U :=
+  ((ContinuousMap.compRightAlgHom ℂ ℂ
+    (ContinuousMap.mk
+      (fun z : U => (⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ : V))
+      (f.val.continuous.subtype_mk _))).comp (holomorphicFunctions V).val).codRestrict
+      (holomorphicFunctions U) fun g =>
+        ⟨extend g ∘ extend f, (differentiableOn_extend g).comp (differentiableOn_extend f) hf,
+          fun z => by
+            simp only [Function.comp_apply, AlgHom.comp_apply, Subalgebra.coe_val,
+              ContinuousMap.compRightAlgHom_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+            rw [extend_apply f z, extend_apply g ⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩]⟩
+
+@[simp]
+theorem comp_apply (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
+    (g : holomorphicFunctions V) (z : U) :
+    (comp f hf g).val z =
+      g.val ⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ := (rfl)
+
+/-- On the domain `U`, the zero extension of `comp f hf g` is `extend g ∘ extend f`. -/
+theorem extend_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
+    (g : holomorphicFunctions V) {z : ℂ} (hz : z ∈ U) :
+    extend (comp f hf g) z = extend g (extend f z) := by
+  rw [extend_apply _ ⟨z, hz⟩, comp_apply, ← extend_apply g]
+  congr 1
+  exact (extend_apply f ⟨z, hz⟩).symm
+
+/-- Composition with an ambient holomorphic representative agrees with function composition. -/
+@[simp]
+theorem comp_of (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
+    (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g V) :
+    comp f hf (of V g hg) = of U (g ∘ extend f) (hg.comp (differentiableOn_extend f) hf) := by
+  apply Subtype.ext
+  ext z
+  simp [Function.comp_apply]
+
+/-- Restricting the domain commutes with precomposition. -/
+@[simp]
+theorem restrict_comp (hWU : W ≤ U) (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) U V) (g : holomorphicFunctions V) :
+    restrict hWU (comp f hf g) =
+      comp (restrict hWU f)
+        (fun z hz => by
+          rw [extend_apply _ ⟨z, hz⟩, restrict_apply]
+          exact extend_apply f ⟨z, hWU hz⟩ ▸ hf (hWU hz)) g := by
+  apply Subtype.ext
+  ext z
+  simp only [restrict_apply, comp_apply]
+  rfl
+
+/-- Restricting the codomain before precomposing agrees with precomposing directly. -/
+@[simp]
+theorem comp_restrict {V' : Opens ℂ} (hVV' : V ≤ V') (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) U V) (g : holomorphicFunctions V') :
+    comp f hf (restrict hVV' g) = comp f (hf.mono_right hVV') g := by
+  apply Subtype.ext
+  ext z
+  rfl
+
+/-- Precomposition of holomorphic functions is associative. -/
+theorem comp_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
+    (g : holomorphicFunctions V) (hg : MapsTo (extend g) V W) (h : holomorphicFunctions W) :
+    comp f hf (comp g hg h) =
+      comp (comp f hf g)
+        (fun z hz => by rw [extend_comp f hf g hz]; exact hg (hf hz)) h := by
+  apply Subtype.ext
+  ext z
+  rfl
+
+/-- Precomposition along a holomorphic map is continuous for the compact-open topology. -/
+@[continuity]
+theorem continuous_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V) :
+    Continuous (comp f hf) := by
+  unfold comp
+  exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ
+    (ContinuousMap.mk
+      (fun z : U => (⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ : V))
+      (f.val.continuous.subtype_mk _))).comp continuous_subtypeVal |>.subtype_mk _
+
+/-- Point evaluation of a holomorphic function on `U` at `x ∈ U`. -/
+noncomputable def eval (x : ℂ) (hx : x ∈ U) : holomorphicFunctions U →ₐ[ℂ] ℂ :=
+  (ContinuousMap.evalAlgHom ℂ ℂ (⟨x, hx⟩ : U)).comp (holomorphicFunctions U).val
+
+@[simp]
+theorem eval_apply (x : ℂ) (hx : x ∈ U) (f : holomorphicFunctions U) :
+    eval x hx f = f.val ⟨x, hx⟩ := (rfl)
+
+/-- The nonunital complex subalgebra of `holomorphicFunctions U` consisting of functions
+vanishing at a marked point `x ∈ U`. -/
+noncomputable def vanishingAt (U : Opens ℂ) (x : ℂ) (hx : x ∈ U) :
+    NonUnitalSubalgebra ℂ (holomorphicFunctions U) :=
+  NonUnitalAlgHom.equalizer (eval x hx).toNonUnitalAlgHom 0
+
+/-- Membership in `HolomorphicFunctions.vanishingAt U x hx` means vanishing at `⟨x, hx⟩`. -/
+@[simp]
+theorem mem_vanishingAt_iff {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} {f : holomorphicFunctions U} :
+    f ∈ vanishingAt U x hx ↔ f.val ⟨x, hx⟩ = 0 := by
+  simp [vanishingAt, NonUnitalAlgHom.mem_equalizer]
+
+/-- Pointwise evaluation of a function in `HolomorphicFunctions.vanishingAt U x hx` at `⟨x, hx⟩`
+vanishes. -/
+@[simp]
+theorem apply_coe_vanishingAt {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} (f : vanishingAt U x hx) :
+    (f : holomorphicFunctions U).val ⟨x, hx⟩ = 0 :=
+  mem_vanishingAt_iff.mp f.property
+
+/-- Restriction of holomorphic functions vanishing at `x` along an inclusion of open domains. -/
+noncomputable def restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    vanishingAt U x (h hx) →ₙₐ[ℂ] vanishingAt V x hx :=
+  ((restrict h).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt U x (h hx)))).codRestrict
+      (vanishingAt V x hx) fun f => mem_vanishingAt_iff.mpr (by simp)
+
+/-- Coercing `restrictVanishingAt` back to `holomorphicFunctions V` recovers `restrict`. -/
+@[simp]
+theorem coe_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V)
+    (f : vanishingAt U x (h hx)) :
+    (restrictVanishingAt h hx f : holomorphicFunctions V) = restrict h f.val := (rfl)
+
+/-- Restricting `vanishingAt` along `le_refl` is the identity homomorphism. -/
+@[simp]
+theorem restrictVanishingAt_refl {x : ℂ} (hx : x ∈ U) :
+    restrictVanishingAt (le_refl U) hx = NonUnitalAlgHom.id ℂ (vanishingAt U x hx) := by
+  ext f
+  simp
+
+/-- Successive restrictions of `vanishingAt` compose to restriction along the composite
+inclusion. -/
+@[simp]
+theorem restrictVanishingAt_comp_restrictVanishingAt {x : ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (hx : x ∈ W) :
+    (restrictVanishingAt hWV hx).comp (restrictVanishingAt hVU (hWV hx)) =
+      restrictVanishingAt (hWV.trans hVU) hx := by
+  ext f
+  simp [← AlgHom.comp_apply]
+
+/-- Restriction on `HolomorphicFunctions.vanishingAt` is continuous for the compact-open
+topology. -/
+@[continuity]
+theorem continuous_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    Continuous (restrictVanishingAt h hx) :=
+  ((continuous_restrict h).comp continuous_subtypeVal).subtype_mk _
 
 end HolomorphicFunctions
 
