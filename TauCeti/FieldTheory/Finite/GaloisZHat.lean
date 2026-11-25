@@ -35,6 +35,7 @@ equivalence `TauCeti.zHat.liftContinuousMulEquiv` that both identifications shar
   generates `Gal(L/k)` topologically, since its fixed field is `k`
   (`TauCeti.FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`).
 * `TauCeti.FiniteField.galoisGroupEquivZHat`: `Gal(L/k) ≃ₜ* ℤ̂`, with
+  `galoisGroupEquivZHat_symm_apply` (its inverse is the lift of Frobenius),
   `galoisGroupEquivZHat_apply_frobenius` and `galoisGroupEquivZHat_symm_apply_gen`.
 -/
 
@@ -98,12 +99,18 @@ def galoisGroupEquivZHat : Gal(L/k) ≃ₜ* zHat.{v} :=
   haveI : T2Space Gal(L/k) := krullTopology_t2
   zHat.liftContinuousMulEquiv _ (frobeniusAlgEquivOfAlgebraic_lift_bijective k L)
 
-/-- The inverse equivalence sends the canonical generator of `ℤ̂` to the arithmetic Frobenius. -/
+/-- The inverse equivalence is the lift of the arithmetic Frobenius to `ℤ̂`. -/
 @[simp]
+theorem galoisGroupEquivZHat_symm_apply (x : zHat.{v}) :
+    (galoisGroupEquivZHat k L).symm x =
+      zHat.lift (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L) x :=
+  zHat.liftContinuousMulEquiv_symm_apply _ _ x
+
+/-- The inverse equivalence sends the canonical generator of `ℤ̂` to the arithmetic Frobenius. -/
 theorem galoisGroupEquivZHat_symm_apply_gen :
     (galoisGroupEquivZHat k L).symm zHat.gen =
       _root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L := by
-  rw [galoisGroupEquivZHat, zHat.liftContinuousMulEquiv_symm_apply, zHat.lift_gen]
+  rw [galoisGroupEquivZHat_symm_apply, zHat.lift_gen]
 
 /-- The equivalence sends the arithmetic Frobenius to the canonical generator of `ℤ̂`. -/
 @[simp]

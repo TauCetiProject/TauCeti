@@ -147,13 +147,18 @@ noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
   haveI : T2Space Gal(maximalUnramifiedExtension K Ω/K) := krullTopology_t2
   zHat.liftContinuousMulEquiv _ (maximalUnramifiedFrobeniusLift_bijective K Ω)
 
-/-- The inverse isomorphism sends the canonical generator of `ℤ̂` to arithmetic Frobenius. -/
+/-- The inverse isomorphism is the lift of arithmetic Frobenius to `ℤ̂`. -/
 @[simp]
+theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply (x : zHat.{max u v}) :
+    (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm x =
+      zHat.lift (maximalUnramifiedFrobenius K Ω) x :=
+  zHat.liftContinuousMulEquiv_symm_apply _ _ x
+
+/-- The inverse isomorphism sends the canonical generator of `ℤ̂` to arithmetic Frobenius. -/
 theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen :
     (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm zHat.gen =
       maximalUnramifiedFrobenius K Ω := by
-  rw [maximalUnramifiedGaloisGroupEquivZHat, zHat.liftContinuousMulEquiv_symm_apply,
-    zHat.lift_gen]
+  rw [maximalUnramifiedGaloisGroupEquivZHat_symm_apply, zHat.lift_gen]
 
 /-- The isomorphism sends arithmetic Frobenius to the canonical generator of `ℤ̂`. -/
 @[simp]
