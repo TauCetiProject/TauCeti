@@ -31,6 +31,8 @@ of a degree-one circle map.
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
+* `TauCeti.fourier_add_eq_mul`, `TauCeti.star_fourier`: `fourier (m + n) = fourier m * fourier n`
+  and `(fourier n)⋆ = fourier (-n)` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
@@ -87,6 +89,17 @@ theorem fourier_pow (k : ℤ) (m : ℕ) :
 theorem fourier_one_pow (m : ℕ) :
     fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
   simpa using fourier_pow (T := T) 1 m
+
+/-- The Fourier monomials are multiplicative in the index as elements of `C(AddCircle T, ℂ)`. -/
+theorem fourier_add_eq_mul (m n : ℤ) : fourier (T := T) (m + n) = fourier m * fourier n := by
+  ext x
+  rw [fourier_add, ContinuousMap.mul_apply]
+
+/-- The adjoint of the Fourier monomial `fourier n` in `C(AddCircle T, ℂ)` is `fourier (-n)`. -/
+@[simp]
+theorem star_fourier (n : ℤ) : star (fourier (T := T) n) = fourier (-n) := by
+  ext x
+  rw [ContinuousMap.star_apply, Complex.star_def, ← fourier_neg]
 
 /-- Pointwise, the `m`-th power of the fundamental Fourier monomial is the monomial
 of natural frequency `m`. -/
