@@ -174,13 +174,12 @@ theorem ramificationSet_subset_of_surjective (f : Hom ρ ρ') (hf : Function.Sur
 /-! ### One prime above `v` suffices -/
 
 /-- Over a perfect field (for instance a number field), unramifiedness at `v` can be tested at a
-single maximal ideal `Q` of the integral closure of `𝓞 F` in `F^alg` above `v`: the primes above `v`
-are `G_F`-conjugate (`TauCeti.GaloisRep.exists_smul_eq_of_under_eq`), their inertia groups are
-conjugate, and the kernel of `ρ` is normal. -/
+single maximal ideal `Q` of the integral closure of `𝓞 F` in `F^alg` above `v`. -/
 theorem isUnramifiedAt_iff_of_isMaximal [PerfectField F]
     {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))} (hQ : Q.IsMaximal)
     (hQv : Q.under (𝓞 F) = v.asIdeal) :
     ρ.IsUnramifiedAt v ↔ GaloisRep.inertiaGroup F Q ≤ ρ.toRepresentation.ker := by
+  -- The primes above `v` are `G_F`-conjugate, so are their inertia groups, and `ker ρ` is normal.
   refine ⟨fun h ↦ h Q hQ hQv, fun h Q' hQ' hQ'v ↦ ?_⟩
   have := hQ.isPrime
   have := hQ'.isPrime
@@ -190,8 +189,7 @@ theorem isUnramifiedAt_iff_of_isMaximal [PerfectField F]
 
 /-- **`isUnramifiedAt_iff_exists`**: over a number field, `ρ` is unramified at `v` exactly when the
 inertia group at some maximal ideal of the integral closure of `𝓞 F` in `F^alg` above `v` acts
-trivially. Such a maximal ideal exists because the integral closure is integral over `𝓞 F` and `v`
-is a maximal ideal of `𝓞 F`. -/
+trivially. -/
 theorem isUnramifiedAt_iff_exists [NumberField F] :
     ρ.IsUnramifiedAt v ↔ ∃ Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)),
       Q.IsMaximal ∧ Q.under (𝓞 F) = v.asIdeal ∧
@@ -206,7 +204,7 @@ theorem isUnramifiedAt_iff_exists [NumberField F] :
 
 /-- A continuous representation of `G_F` is **unramified outside** a set `S` of finite places if
 it is unramified at every finite place not in `S`, that is, if its ramification set is contained
-in `S`. The roadmap's intended use has `S` finite. -/
+in `S`. Typically `S` is finite. -/
 def IsUnramifiedOutside (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
     (S : Set (HeightOneSpectrum (𝓞 F))) : Prop :=
   ρ.ramificationSet ⊆ S
@@ -250,6 +248,12 @@ theorem isUnramifiedOutside_trivial (S : Set (HeightOneSpectrum (𝓞 F))) :
     (trivial (Field.absoluteGaloisGroup F) A M).IsUnramifiedOutside S := by
   simp [IsUnramifiedOutside]
 
+/-- An equivariant quotient of a representation unramified outside `S` is unramified outside `S`. -/
+theorem IsUnramifiedOutside.of_surjective {S : Set (HeightOneSpectrum (𝓞 F))}
+    (h : ρ.IsUnramifiedOutside S) (f : Hom ρ ρ') (hf : Function.Surjective f) :
+    ρ'.IsUnramifiedOutside S :=
+  (ramificationSet_subset_of_surjective f hf).trans h
+
 end Predicates
 
 section Tensor
@@ -276,6 +280,13 @@ theorem ramificationSet_tprod_subset (ρ : ContinuousRep (Field.absoluteGaloisGr
   rw [Set.mem_union, mem_ramificationSet_iff, mem_ramificationSet_iff, ← not_and_or]
   exact fun h ↦ hv (h.1.tprod h.2)
 
+/-- A tensor product of representations unramified outside `S` is unramified outside `S`. -/
+theorem IsUnramifiedOutside.tprod {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {ρ' : ContinuousRep (Field.absoluteGaloisGroup F) A N} {S : Set (HeightOneSpectrum (𝓞 F))}
+    (h : ρ.IsUnramifiedOutside S) (h' : ρ'.IsUnramifiedOutside S) :
+    (ρ.tprod ρ').IsUnramifiedOutside S :=
+  (ramificationSet_tprod_subset ρ ρ').trans (Set.union_subset h h')
+
 end Tensor
 
 section Dual
@@ -296,6 +307,12 @@ theorem IsUnramifiedAt.dual {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A 
 theorem ramificationSet_dual_subset (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M) :
     ρ.dual.ramificationSet ⊆ ρ.ramificationSet :=
   fun _ hv h ↦ hv h.dual
+
+/-- The contragredient of a representation unramified outside `S` is unramified outside `S`. -/
+theorem IsUnramifiedOutside.dual {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S) :
+    ρ.dual.IsUnramifiedOutside S :=
+  (ramificationSet_dual_subset ρ).trans h
 
 end Dual
 
@@ -319,6 +336,13 @@ converse fails. -/
 theorem ramificationSet_baseChange_subset (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M) :
     (ρ.baseChange B).ramificationSet ⊆ ρ.ramificationSet :=
   fun _ hv h ↦ hv (h.baseChange B)
+
+/-- The scalar extension `B ⊗ ρ` of a representation unramified outside `S` is unramified
+outside `S`. -/
+theorem IsUnramifiedOutside.baseChange {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
+    {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S) :
+    (ρ.baseChange B).IsUnramifiedOutside S :=
+  (ramificationSet_baseChange_subset B ρ).trans h
 
 end BaseChange
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Invariant.Profinite
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
+import TauCeti.RingTheory.Invariant.Galois
 
 /-!
 # Transitivity of the absolute Galois group on primes above a prime
@@ -43,34 +44,17 @@ namespace TauCeti.GaloisRep
 
 variable {F : Type*} [Field F]
 
-/-- An element of `O` is fixed by `σ ∈ G_F` exactly when its image in `F^alg` is. -/
-theorem smul_integralClosure_eq_iff (σ : Field.absoluteGaloisGroup F)
-    (x : integralClosure (𝓞 F) (AlgebraicClosure F)) :
-    σ • x = x ↔ DFunLike.coe (F := AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) σ
-      (x : AlgebraicClosure F) = x := by
-  rw [← coe_smul_integralClosure, Subtype.ext_iff]
-
-variable (F) in
-/-- For a perfect field `F`, the elements of the integral closure `O` of `𝓞 F` in `F^alg` fixed by
-`G_F` are those of `𝓞 F`: a fixed element lies in `F` because `F^alg / F` is Galois, and it is
-integral over `𝓞 F`, hence over `ℤ`. -/
-theorem isInvariant_integralClosure [PerfectField F] :
+/-- For a perfect field `F`, the elements of `O` fixed by `G_F` are those of `𝓞 F`. -/
+instance isInvariant_integralClosure [PerfectField F] :
     Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
       (Field.absoluteGaloisGroup F) where
   isInvariant x hx := by
-    obtain ⟨y, hy⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed
-      (k := F) (x : AlgebraicClosure F)).2 fun σ ↦ (smul_integralClosure_eq_iff σ x).1 (hx σ)
-    have hyO : IsIntegral (𝓞 F) y := by
-      rw [← isIntegral_algebraMap_iff (B := AlgebraicClosure F), hy]
-      exact x.property
-    refine ⟨⟨y, isIntegral_trans (R := ℤ) y hyO⟩, Subtype.ext ?_⟩
-    rw [← hy]
-    rfl
+    obtain ⟨r, hr⟩ := (InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed F
+      (x : AlgebraicClosure F)).2 ⟨x.property, fun σ ↦ (smul_integralClosure_eq_iff σ x).1 (hx σ)⟩
+    exact ⟨r, Subtype.ext hr⟩
 
 variable (F) in
-/-- The action of `G_F` on `O` is continuous for the discrete topology on `O`: the stabilizer of an
-element is the stabilizer of an algebraic element of `F^alg`, which is open in the Krull
-topology. -/
+/-- The action of `G_F` on `O` is continuous for the discrete topology on `O`. -/
 theorem continuousSMul_integralClosure :
     letI : TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⊥
     ContinuousSMul (Field.absoluteGaloisGroup F) (integralClosure (𝓞 F) (AlgebraicClosure F)) := by
@@ -94,7 +78,6 @@ theorem exists_smul_eq_of_under_eq [PerfectField F]
   let _ : TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⊥
   have : DiscreteTopology (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⟨rfl⟩
   have := continuousSMul_integralClosure F
-  have := isInvariant_integralClosure F
   exact Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite P Q hPQ
 
 /-- For a perfect field `F`, the inertia groups at two primes of `O` over the same prime of `𝓞 F`
