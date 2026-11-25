@@ -164,27 +164,31 @@ private theorem contDiff_and_lintegral_eq_of_comp_add
         ENNReal.ofReal (ω.hamiltonianAction H x₁ - ω.hamiltonianAction H x₀) := by
   -- The translates `v_k` are smooth `L`-Lipschitz Floer trajectories for the same data.
   set v : ℕ → ℝ × ℝ → V := fun k z ↦ u k (z + (τ k, 0))
-  have htr (k : ℕ) := contDiff_comp_add_and_periodic_and_isComplexLinearMap_and_lipschitzWith
-    (J := fun z ↦ J z.2 (u k z)) (hu k) (hper k) (hfloer k) (hL k) (τ k)
+  have hvc (k : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (v k) := (hu k).comp (contDiff_id.add contDiff_const)
+  have hvper (k : ℕ) (s : ℝ) : Periodic (fun t ↦ v k (s, t)) 1 := fun t ↦ by
+    simpa [v] using hper k (s + τ k) t
   have hvfloer (k : ℕ) : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (v k z))
         (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (v k) z : ℝ × ℝ →ₗ[ℝ] V) :=
-    fun z hz ↦ by simpa using (htr k).2.2.1 z hz
+    fun z hz ↦ by
+      simpa using isComplexLinearMap_perturbedFDeriv_comp_add (J := fun z ↦ J z.2 (u k z))
+        (hfloer k) (τ k) z hz
+  have hvL (k : ℕ) : LipschitzWith L (v k) :=
+    ((hL k).comp (IsometryEquiv.addRight ((τ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
+      (mul_one L).le
   have hgK (z : ℝ × ℝ) : g z ∈ K := hK.mem_of_tendsto
     (hg.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)) (.of_forall fun k ↦ huK k _)
   have hgW (z : ℝ × ℝ) : (z.2, g z) ∈ W := hKW ⟨mem_univ _, hgK z⟩
   -- The limit is a `C¹` Floer trajectory, and its energy is the drop of action between its ends.
   obtain ⟨hgc, -, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW hJ
-    hJper (fun k ↦ (htr k).1) (fun k ↦ (htr k).2.1) hvfloer
-    (fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (htr k).2.2.2⟩) hgW
+    hJper hvc hvper hvfloer (fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hvL k)⟩) hgW
     fun z ↦ hg.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
   exact ⟨hgc, hgeq,
-    hamiltonianAction_le_hamiltonianAction_of_tendstoUniformly hH hHper hW hJ hJper
-      (fun k ↦ (htr k).1) (fun k ↦ (htr k).2.1) hvfloer (fun k ↦ (htr k).2.2.2) hgW
-      (fun z ↦ hJt _ _ (hgK z)) hg hx₀ hx₀per hx₁ hx₁per hbot htop,
+    hamiltonianAction_le_hamiltonianAction_of_tendstoUniformly hH hHper hW hJ hJper hvc hvper
+      hvfloer hvL hgW (fun z ↦ hJt _ _ (hgK z)) hg hx₀ hx₀per hx₁ hx₁per hbot htop,
     setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly hH hHper hW
-      hJ hJper (fun k ↦ (htr k).1) (fun k ↦ (htr k).2.1) hvfloer (fun k ↦ (htr k).2.2.2) hgW
-      (fun z ↦ hJt _ _ (hgK z)) hg hx₀ hx₀per hx₁ hx₁per hbot htop⟩
+      hJ hJper hvc hvper hvfloer hvL hgW (fun z ↦ hJt _ _ (hgK z)) hg hx₀ hx₀per hx₁ hx₁per hbot
+      htop⟩
 
 /-- **The levels of a sequence of trajectories from `x₀` to `x₁`.** Under the hypotheses of
 `exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_lintegral_eq`, there are a
