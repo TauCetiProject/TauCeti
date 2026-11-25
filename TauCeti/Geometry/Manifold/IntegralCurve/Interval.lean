@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Topology.Connected.Clopen
 
 /-!
@@ -29,6 +30,14 @@ point agree, which is what is needed to glue local flows of an inward-pointing v
 
 This extends the open-interval uniqueness API to closed and half-open intervals. In
 particular it applies to velocity lifts of geodesic segments.
+
+Run backwards from a common end point (`IsMIntegralCurveOn.apply_sub_min_eq_of_apply_eq`),
+uniqueness also separates forward integral curves that start on the boundary and enter the
+interior at once: two such curves meet only at equal times, and then they start at the same
+point (`IsMIntegralCurveOn.eq_and_apply_zero_eq_of_apply_eq`). Hence the flow-out of the
+boundary along an inward-pointing vector field is injective (`TauCeti.injOn_flowOut_boundary`),
+as the flow construction of a collar requires (J. M. Lee, *Introduction to Smooth Manifolds*,
+second edition, Theorem 9.24; M. Hirsch, *Differential Topology*, Chapter 4, Theorem 6.1).
 
 ## References
 
@@ -158,4 +167,76 @@ theorem eqOn_of_isPreconnected [T2Space M]
   intro t ht'
   exact Set.eq_univ_iff_forall.mp hall ⟨t, ht'⟩
 
+/-- Integral curves on `[0, a]` and `[0, b]` with a common end point `γ a = δ b` agree after
+running back for the same time `min a b`. The vector field is C¹ along the first curve. -/
+theorem apply_sub_min_eq_of_apply_eq [T2Space M]
+    (hγ : IsMIntegralCurveOn γ v (Icc 0 a)) (hδ : IsMIntegralCurveOn δ v (Icc 0 b))
+    (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hv : ∀ t ∈ Icc 0 a, CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t))
+    (h : γ a = δ b) : γ (a - min a b) = δ (b - min a b) := by
+  -- Shift both curves so that they are defined on `[0, min a b]` and meet at its right end.
+  have hm : 0 ≤ min a b := le_min ha hb
+  have hγ' : IsMIntegralCurveOn (γ ∘ (· + (a - min a b))) v (Icc 0 (min a b)) :=
+    (hγ.comp_add _).mono fun t ht ↦ ⟨by linarith [ht.1, min_le_left a b], by linarith [ht.2]⟩
+  have hδ' : IsMIntegralCurveOn (δ ∘ (· + (b - min a b))) v (Icc 0 (min a b)) :=
+    (hδ.comp_add _).mono fun t ht ↦ ⟨by linarith [ht.1, min_le_right a b], by linarith [ht.2]⟩
+  have heq := hγ'.eqOn_of_isPreconnected hδ' isPreconnected_Icc (right_mem_Icc.2 hm)
+    (fun t ht ↦ hv _ ⟨by linarith [ht.1, min_le_left a b], by linarith [ht.2]⟩)
+    (by simpa only [comp_apply, add_sub_cancel] using h) (left_mem_Icc.2 hm)
+  simpa only [comp_apply, zero_add] using heq
+
+/-- **Forward integral curves from the boundary do not meet.** Let `γ` and `δ` be integral curves
+of `v` on `[0, a]` and `[0, b]`, with `a, b ≥ 0`, starting on the boundary of `M` and lying in its
+interior at every positive time. If `γ a = δ b`, then `a = b` and the two curves start at the same
+point. The vector field is C¹ along the first curve. -/
+theorem eq_and_apply_zero_eq_of_apply_eq [T2Space M]
+    (hγ : IsMIntegralCurveOn γ v (Icc 0 a)) (hδ : IsMIntegralCurveOn δ v (Icc 0 b))
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hγ0 : γ 0 ∈ I.boundary M) (hδ0 : δ 0 ∈ I.boundary M)
+    (hγi : ∀ t ∈ Ioc 0 a, γ t ∈ I.interior M) (hδi : ∀ t ∈ Ioc 0 b, δ t ∈ I.interior M)
+    (hv : ∀ t ∈ Icc 0 a, CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t))
+    (h : γ a = δ b) : a = b ∧ γ 0 = δ 0 := by
+  -- Running back for the time `min a b` reaches the starting point of the shorter curve, on the
+  -- boundary, and a point of the longer curve, in the interior unless the times agree.
+  have key := apply_sub_min_eq_of_apply_eq hγ hδ ha hb hv h
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · rw [min_eq_left hab.le, sub_self] at key
+    exact absurd key (I.disjoint_interior_boundary.ne_of_mem
+      (hδi _ ⟨sub_pos.2 hab, sub_le_self _ ha⟩) hγ0).symm
+  · simpa using key
+  · rw [min_eq_right hba.le, sub_self] at key
+    exact absurd key (I.disjoint_interior_boundary.ne_of_mem
+      (hγi _ ⟨sub_pos.2 hba, sub_le_self _ hb⟩) hδ0)
+
 end IsMIntegralCurveOn
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [T2Space M]
+  {v : (x : M) → TangentSpace I x}
+
+/-- **The flow-out of the boundary is injective.** Let `Φ x t` be a forward flow of a C¹ vector
+field `v`, given on a set `W ⊆ M × ℝ` as by `TauCeti.exists_contMDiffOn_boundaryFlow`: for a
+boundary point `x` and `(x, t) ∈ W` with `t ≥ 0`, the segment `{x} × [0, t]` lies in `W`, the
+curve `s ↦ Φ x s` starts at `x` and is an integral curve of `v` on `[0, t]`, and `Φ x t` lies in
+the interior of `M` if `t > 0`. Then `(x, t) ↦ Φ x t` is injective on the points of `W` over the
+boundary of `M` at nonnegative times. -/
+theorem injOn_flowOut_boundary {W : Set (M × ℝ)} {Φ : M → ℝ → M}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hΦ : ∀ x ∈ I.boundary M, ∀ t, (x, t) ∈ W → 0 ≤ t →
+      (∀ s ∈ Icc 0 t, (x, s) ∈ W) ∧ Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) v (Icc 0 t) ∧
+        (0 < t → Φ x t ∈ I.interior M)) :
+    InjOn (fun p : M × ℝ ↦ Φ p.1 p.2) (W ∩ I.boundary M ×ˢ Ici 0) := by
+  rintro ⟨x, a⟩ ⟨hxa, hx, ha⟩ ⟨y, b⟩ ⟨hyb, hy, hb⟩ h
+  obtain ⟨hxW, hx0, hxc, -⟩ := hΦ x hx a hxa ha
+  obtain ⟨hyW, hy0, hyc, -⟩ := hΦ y hy b hyb hb
+  -- Along each curve, the positive times stay in `W`, so the curve is in the interior there.
+  obtain ⟨rfl, h0⟩ := hxc.eq_and_apply_zero_eq_of_apply_eq hyc ha hb (by rwa [hx0]) (by rwa [hy0])
+    (fun t ht ↦ (hΦ x hx t (hxW t (Ioc_subset_Icc_self ht)) ht.1.le).2.2.2 ht.1)
+    (fun t ht ↦ (hΦ y hy t (hyW t (Ioc_subset_Icc_self ht)) ht.1.le).2.2.2 ht.1)
+    (fun t _ ↦ hv _) h
+  rw [hx0, hy0] at h0
+  rw [h0]
+
+end TauCeti
