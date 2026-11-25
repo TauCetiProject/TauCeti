@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Hopf reduction: the reduced spaces of `ℂ²` by the diagonal circle
