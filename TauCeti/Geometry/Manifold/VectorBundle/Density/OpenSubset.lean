@@ -9,15 +9,19 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace
 
 /-!
 # Intrinsic densities on open subsets
 
-The intrinsic density line of an open submanifold is smoothly identified with the pullback of
-the ambient density line (`TauCeti.DensityBundle.openDiffeomorph`, an instance of
-`TauCeti.bundleDiffeomorph`). The comparison uses the native tangent-frame identity. It also acts
-on real bundle-dual densities with arbitrary normed model fibres
-(`TauCeti.DensityBundle.openHomDiffeomorph`).
+On an open submanifold `U` of `M`, the intrinsic density line of `U` is identified with the
+ambient density line pulled back along the inclusion: `TauCeti.DensityBundle.openEquiv` fibrewise
+and `TauCeti.DensityBundle.openDiffeomorph` on total spaces, with target
+`TauCeti.DensityBundle.pullbackAmbientDensity`. The same comparison identifies real bundle-dual
+densities `openHomBundle` with `pullbackAmbientHomBundle`, for arbitrary normed model fibres
+(`TauCeti.DensityBundle.openHomEquiv`, `TauCeti.DensityBundle.openHomDiffeomorph`). These
+identifications let density-valued test data, and hence native bundle distributions, be
+restricted to open subsets intrinsically.
 -/
 
 public noncomputable section
@@ -27,32 +31,6 @@ open scoped Manifold ContDiff
 universe u v
 
 namespace TauCeti.DensityBundle
-
-section Coordinates
-
-variable {EX HX X EB HB B₁ B₂ G : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX]
-  [TopologicalSpace HX] {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
-  [NormedAddCommGroup EB] [NormedSpace ℝ EB] [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
-  [TopologicalSpace B₁] [ChartedSpace HB B₁] [TopologicalSpace B₂] [ChartedSpace HB B₂]
-  [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {E₁ : B₁ → Type*} [TopologicalSpace (TotalSpace G E₁)] [∀ x, TopologicalSpace (E₁ x)]
-  [FiberBundle G E₁]
-  {E₂ : B₂ → Type*} [TopologicalSpace (TotalSpace G E₂)] [∀ x, TopologicalSpace (E₂ x)]
-  [FiberBundle G E₂]
-
-/-- A map into a fibre bundle is smooth if its base map is smooth and, near each point, its
-fibre coordinates agree with those of a smooth map into another bundle with the same fibre. -/
-private theorem contMDiff_totalSpace_of_eventually_coordinates_eq
-    (g : X → TotalSpace G E₂) (h : X → TotalSpace G E₁)
-    (hg : ContMDiff IX IB ∞ fun x ↦ (g x).proj) (hh : ContMDiff IX (IB.prod 𝓘(ℝ, G)) ∞ h)
-    (hco : ∀ p, ∀ᶠ q in 𝓝 p, (trivializationAt G E₂ (g p).proj (g q)).2 =
-      (trivializationAt G E₁ (h p).proj (h q)).2) :
-    ContMDiff IX (IB.prod 𝓘(ℝ, G)) ∞ g := by
-  intro p
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  exact ⟨hg p, (Bundle.contMDiffAt_totalSpace_iff.mp (hh p)).2.congr_of_eventuallyEq (hco p)⟩
-
-end Coordinates
 
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type v} [TopologicalSpace H]
@@ -109,7 +87,7 @@ private theorem contMDiff_openEquiv_subtypeVal :
       (fun p : TotalSpace ℝ (TauCeti.DensityBundle I U) ↦
         TotalSpace.mk' ℝ (E := TauCeti.DensityBundle I M) (p.proj : M)
           (openEquiv p.proj p.snd)) := by
-  refine contMDiff_totalSpace_of_eventually_coordinates_eq _ id
+  refine Bundle.contMDiff_totalSpace_of_eventuallyEq (h := id)
     (contMDiff_subtypeVal.comp (contMDiff_proj _)) contMDiff_id fun p ↦ ?_
   filter_upwards [(FiberBundle.continuous_proj ℝ
     (TauCeti.DensityBundle I U)).continuousAt.eventually
@@ -134,8 +112,7 @@ def openDiffeomorph :
       TotalSpace ℝ (pullbackAmbientDensity (I := I) (U := U)) :=
   TauCeti.bundleDiffeomorph openEquiv contMDiff_openEquiv_pullback
 
-/-- The density diffeomorphism acts by the fibre comparison over the same base point. This
-records `TauCeti.bundleDiffeomorph_apply` for the unexposed definition. -/
+/-- The density diffeomorphism acts by the fibre comparison over the same base point. -/
 @[simp]
 theorem openDiffeomorph_apply (p : TotalSpace ℝ (TauCeti.DensityBundle I U)) :
     openDiffeomorph (I := I) p = ⟨p.proj, openEquiv p.proj p.snd⟩ :=
@@ -224,7 +201,10 @@ private theorem eventually_trivializationAt_openHomEquiv_eq (x : U) :
   -- The ambient density trivialization's base-set test is stated at `(y : M)` through the open
   -- pullback carrier, which `rw` does not match syntactically.
   erw [ite_eq_left hyDM]
-  -- Express the tensor-Hom coordinate in the density trivialization after fibre evaluation.
+  -- After the simp lemmas the ambient side is `linearMapAt` of the density trivialization applied
+  -- through the open pullback carrier, and the open side still contains `openEquiv y`. `simp`
+  -- cannot fold the first into the density trivialization's coordinate, and `openEquiv` is
+  -- `ContinuousLinearEquiv.refl`, so the goal is restated by unfolding both definitionally.
   change ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M))
     ⟨(y : M), openEquiv y (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))⟩).2 =
     ((trivializationAt ℝ (TauCeti.DensityBundle I U) x)
@@ -238,7 +218,7 @@ private theorem contMDiff_openHomEquiv_subtypeVal :
       (fun p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) ↦
         TotalSpace.mk' (F →L[ℝ] ℝ) (E := ambientHomBundle (I := I) (V := V))
           (p.proj : M) (openHomEquiv p.proj p.snd)) := by
-  refine contMDiff_totalSpace_of_eventually_coordinates_eq _ id
+  refine Bundle.contMDiff_totalSpace_of_eventuallyEq (h := id)
     (contMDiff_subtypeVal.comp (contMDiff_proj _)) contMDiff_id fun p ↦ ?_
   filter_upwards [(FiberBundle.continuous_proj (F →L[ℝ] ℝ)
     (openHomBundle (I := I) (V := V) (U := U))).continuousAt.eventually
@@ -259,8 +239,8 @@ private theorem contMDiff_openHomEquiv_symm_pullback :
         TotalSpace.mk' (F →L[ℝ] ℝ) (E := openHomBundle (I := I) (V := V) (U := U))
           p.proj ((openHomEquiv p.proj).symm p.snd)) := by
   -- Compare with the canonical lift of the pullback total space into the ambient one.
-  refine contMDiff_totalSpace_of_eventually_coordinates_eq _
-    (fun q ↦ TotalSpace.mk' (F →L[ℝ] ℝ) (E := ambientHomBundle (I := I) (V := V))
+  refine Bundle.contMDiff_totalSpace_of_eventuallyEq
+    (h := fun q ↦ TotalSpace.mk' (F →L[ℝ] ℝ) (E := ambientHomBundle (I := I) (V := V))
       (q.proj : M) q.snd)
     (contMDiff_proj _) (Pullback.contMDiff_lift _ contMDiff_subtypeVal_continuousMap)
     fun p ↦ ?_
