@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -206,6 +207,13 @@ theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ ×
   simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
 
+/-- The normal reflection in `{a} × E` maps the half-space `{x | a < x.fst}` off itself. -/
+theorem normalReflection_notMem_normalHalfSpace {a : ℝ} {x : WithLp 2 (ℝ × E)}
+    (hx : x ∈ normalHalfSpace (E := E) a) :
+    normalReflection E a x ∉ normalHalfSpace (E := E) a := by
+  rw [normalReflection_mem_normalHalfSpace_iff, not_lt]
+  exact ((mem_normalHalfSpace a x).1 hx).le
+
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
 followed by the translation by `(2a, 0)`. -/
 theorem normalReflection_eq_add (a : ℝ) :
@@ -302,6 +310,16 @@ theorem measurePreserving_normalReflection (a : ℝ) :
   rw [normalReflection_eq_add]
   exact (measurePreserving_add_right (volume : Measure (WithLp 2 (ℝ × E)))
     (WithLp.toLp 2 (2 * a, 0))).comp (normalLinearReflection E).measurePreserving
+
+/-- The reflection `ρ` in `{a} × E` preserves volume, restricted to the whole space. -/
+theorem measurePreserving_normalReflection_top (a : ℝ) :
+    MeasurePreserving (normalReflection E a)
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E))))
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E)))) := by
+  rw [Measure.restrict_coe_opens_top]
+  exact measurePreserving_normalReflection a
 
 /-- Change of variables by the normal reflection: integrals against Lebesgue measure are
 invariant under it. -/

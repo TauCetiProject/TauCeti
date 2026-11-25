@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Resolvent
 public import TauCeti.Analysis.Sobolev.Trace.OddReflection
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Basic
 import TauCeti.Analysis.Sobolev.Trace.Kernel
 
 /-!
@@ -53,7 +54,9 @@ integrability of a strong solution up to a flat boundary portion, as for the who
 * **Uniqueness.** The odd reflection `v` of a solution `u ∈ W^{2,p}(H) ∩ W^{1,p}_0(H)` of
   `u - Δu = 0` lies in `W^{2,p}(ℝ × E)`
   (`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`), and since the trace is invariant
-  under conjugation by the linear part of `ρ`, `v - Δv` is the odd reflection of `u - Δu = 0`. As
+  under conjugation by the linear part of `ρ`
+  (`TauCeti.traceCLM_ae_eq_sub_comp_normalReflection`), `v - Δv` is the odd reflection of
+  `u - Δu = 0`. As
   `1 - Δ` is injective on `W^{2,p}(ℝ × E)`
   (`TauCeti.Wkp.oneSubLaplacianL_injective`), `v = 0`, so `u = 0`.
 
@@ -249,10 +252,8 @@ theorem value_sub_trace_halfSpaceDirichletResolventL_ae_eq (hp : 1 < p) (hp_top 
   filter_upwards [value_restrictL_ae le_top 2 w, iteratedGradient_restrictL_ae le_top 1 w,
     ae_restrict_of_ae hw, ae_restrict_of_ae (oddExtensionL_ae a f), ae_restrict_mem hH]
     with x h₁ h₂ h₃ h₄ hx
-  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-    rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff, not_lt]
-    exact ((mem_normalHalfSpace a x).1 hx).le
-  rw [h₁, h₂, ← h₃, h₄, indicator_of_mem hx, indicator_of_notMem hρx, sub_zero]
+  rw [h₁, h₂, ← h₃, h₄, indicator_of_mem hx,
+    indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx), sub_zero]
 
 /-! ### Uniqueness -/
 
@@ -275,23 +276,20 @@ theorem eq_zero_of_value_sub_trace_ae_eq_zero_of_normalHalfSpace {a : ℝ}
     have h := (ae_eq_restrict_iff_indicator_ae_eq hH).1 heq
     rwa [indicator_zero'] at h
   have hkI (y : WithLp 2 (ℝ × E)) : H.indicator (value 2 u) y -
-      traceCLM ℝ (WithLp 2 (ℝ × E)) (H.indicator (iteratedGradient 1 u) y) = k y := by
+      H.indicator (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (iteratedGradient 1 u x)) y = k y := by
     by_cases hy : y ∈ H
     · simp only [k, indicator_of_mem hy, traceCLM_apply]
-    · simp only [k, indicator_of_notMem hy, map_zero, sub_zero]
+    · simp only [k, indicator_of_notMem hy, sub_zero]
   -- `v - Δv` is the odd reflection `k - k ∘ ρ` of `u - Δu`, since `tr (R ∘ M ∘ R) = tr M`.
   have hv0 : oneSubLaplacianL v = 0 := by
     refine Lp.ext ?_
     rw [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]
-    filter_upwards [oneSubLaplacianL_ae v, hv, hvD, hk,
+    filter_upwards [oneSubLaplacianL_ae v, hv, traceCLM_ae_eq_sub_comp_normalReflection hvD, hk,
       (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae_eq_comp hk,
       (Lp.coeFn_zero ℝ p _).filter_mono Measure.ae_le_ae_restrict_coe_opens_top]
       with x h₁ h₂ h₃ h₄ h₅ h₆
-    simp only [Function.comp_apply, Pi.zero_apply] at h₄ h₅
-    have hR := (normalLinearReflection E).toContinuousLinearEquiv.traceCLM_comp_comp_symm
-      (H.indicator (iteratedGradient 1 u) (normalReflection E a x))
-    rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm, normalLinearReflection_symm] at hR
-    rw [h₁, h₂, h₃, h₆, Pi.zero_apply, ← traceCLM_apply, map_sub, hR]
+    simp only [Function.comp_apply, Pi.sub_apply, Pi.zero_apply] at h₃ h₄ h₅
+    rw [h₁, h₂, h₆, Pi.zero_apply, ← traceCLM_apply, h₃]
     linear_combination hkI x - hkI (normalReflection E a x) + h₄ - h₅
   have hv' : v = 0 := oneSubLaplacianL_injective (by rw [hv0, map_zero])
   subst hv'
@@ -302,11 +300,9 @@ theorem eq_zero_of_value_sub_trace_ae_eq_zero_of_normalHalfSpace {a : ℝ}
   filter_upwards [ae_restrict_of_ae hv, ae_restrict_of_ae h0, ae_restrict_mem hH,
     value_zero_ae (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (Omega := normalHalfSpace a)
       (p := p) 2] with x h₁ h₂ hx h₃
-  have hρx : normalReflection E a x ∉ H := by
-    rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff, not_lt]
-    exact ((mem_normalHalfSpace a x).1 hx).le
   rw [Pi.zero_apply] at h₂ h₃
-  rw [h₂, indicator_of_mem hx, indicator_of_notMem hρx, sub_zero] at h₁
+  rw [h₂, indicator_of_mem hx, indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx),
+    sub_zero] at h₁
   rw [h₃, ← h₁]
 
 /-- **The half-space solution is the only one.** For `1 < p < ∞`, every `u ∈ W^{2,p}(H)` on
