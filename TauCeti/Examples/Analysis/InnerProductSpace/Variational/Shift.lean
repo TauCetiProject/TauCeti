@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.Variational.Shift
 
 /-!
@@ -25,20 +26,16 @@ namespace TauCeti.ShiftExamples
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
-/-- The diagonal operator `u ↦ (d₁ u₁, d₂ u₂)` on `ℝ²`. -/
-noncomputable abbrev diagCLM (d : Fin 2 → ℝ) : ℝ² →L[ℝ] ℝ² :=
-  (EuclideanSpace.equiv (Fin 2) ℝ).symm.toContinuousLinearMap ∘L
-    ContinuousLinearMap.pi (fun i ↦ d i • ContinuousLinearMap.proj i) ∘L
-    (EuclideanSpace.equiv (Fin 2) ℝ).toContinuousLinearMap
-
 /-- The diagonal form `diag(d₁, d₂)`, `(u, v) ↦ d₁ u₁ v₁ + d₂ u₂ v₂`, on `ℝ²`. -/
-noncomputable abbrev diagForm (d : Fin 2 → ℝ) : ℝ² →L⋆[ℝ] ℝ² →L[ℝ] ℝ :=
-  (innerSL ℝ).bilinearComp (ContinuousLinearMap.id ℝ ℝ²) (diagCLM d)
+noncomputable def diagForm (d : Fin 2 → ℝ) : ℝ² →L⋆[ℝ] ℝ² →L[ℝ] ℝ :=
+  (innerSL ℝ).bilinearComp (ContinuousLinearMap.id ℝ ℝ²)
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) (Matrix.diagonal d))
 
 /-- The diagonal form in coordinates. -/
-theorem diagForm_apply (d : Fin 2 → ℝ) (u v : ℝ²) :
+private theorem diagForm_apply (d : Fin 2 → ℝ) (u v : ℝ²) :
     diagForm d u v = d 0 * (u 0 * v 0) + d 1 * (u 1 * v 1) := by
-  simp [PiLp.inner_apply, Fin.sum_univ_two]
+  simp [diagForm, Matrix.inner_toEuclideanCLM, Matrix.mulVec_diagonal, dotProduct,
+    Fin.sum_univ_two]
   ring
 
 /-- `diag(1, -3)` on `ℝ²` satisfies the semibounded bound with `c = 1` and `ω = 4`, for
