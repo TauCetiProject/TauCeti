@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 Let `τ` be a positive tracial functional on a C⋆-algebra `A`. Its unnormalized matrix trace
 `τ_m(p) = ∑ i, τ (p i i)` takes the same value on Murray–von Neumann equivalent matrix projections
 of any sizes: if `vᴴ v = p` and `v vᴴ = q`, both traces are `∑ i k, τ (star (v k i) * v k i)`, by
-the trace property of `τ`
-(`PositiveTracialFunctional.sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self`).
+the trace property of `τ` for rectangular matrices (`PositiveTracialFunctional.sum_map_mul_comm`).
 It is additive under block sum and nonnegative, so it induces an additive pairing
 `τ_* : K₀(A) →+ ℝ` on the projection `K₀`-group (`TauCeti.PositiveTracialFunctional.kZeroPairing`).
 The pairing is positive on classes of projections and natural: for a star homomorphism
@@ -55,11 +54,11 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   (τ : PositiveTracialFunctional A) {m n : Type*} [Fintype m] [Fintype n]
 
-/-- **Trace property for rectangular matrices.** For `v : Matrix n m A`, the unnormalized matrix
-traces of `vᴴ v` and `v vᴴ` agree. -/
-theorem sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self (v : Matrix n m A) :
-    ∑ i, τ ((vᴴ * v) i i) = ∑ k, τ ((v * vᴴ) k k) := by
-  simp only [Matrix.mul_apply, conjTranspose_apply, map_sum]
+/-- **Trace property for rectangular matrices.** For `u : Matrix m n A` and `v : Matrix n m A`, the
+unnormalized matrix traces of `u v` and `v u` agree. -/
+theorem sum_map_mul_comm (u : Matrix m n A) (v : Matrix n m A) :
+    ∑ i, τ ((u * v) i i) = ∑ k, τ ((v * u) k k) := by
+  simp only [Matrix.mul_apply, map_sum]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ τ.map_mul_comm _ _
 
@@ -67,7 +66,7 @@ theorem sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self (v : Ma
 theorem sum_map_eq_of_isMurrayVonNeumannEquivalent {p : Matrix m m A} {q : Matrix n n A}
     (h : IsMurrayVonNeumannEquivalent p q) : ∑ i, τ (p i i) = ∑ k, τ (q k k) := by
   obtain ⟨-, -, v, rfl, rfl⟩ := h
-  exact τ.sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self v
+  exact τ.sum_map_mul_comm vᴴ v
 
 /-- The unnormalized matrix trace of a matrix projection is a nonnegative real number. -/
 theorem sum_map_nonneg {p : Matrix m m A} (hp : IsStarProjection p) : 0 ≤ ∑ i, τ (p i i) :=
@@ -106,6 +105,8 @@ private noncomputable def pairingMonoidHom : ProjectionMonoid A →+ ℝ where
 noncomputable def kZeroPairing : ProjectionKZero A →+ ℝ :=
   GrothendieckAddGroup.lift τ.pairingMonoidHom
 
+-- Not `@[simp]`: the simp normal form of `Algebra.GrothendieckAddGroup.of x` is
+-- `AddLocalization.addMonoidOf ⊤ x`, as for `TauCeti.ProjectionKZero.map_of_mk`.
 /-- The trace pairing sends the class of `p` to the real part of `∑ i, τ (p i i)`. -/
 theorem kZeroPairing_of_mk {p : Matrix m m A} (hp : IsStarProjection p) :
     τ.kZeroPairing (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) = (∑ i, τ (p i i)).re :=
