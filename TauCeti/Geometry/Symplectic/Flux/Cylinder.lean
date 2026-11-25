@@ -48,6 +48,22 @@ does not depend on `R`, although the band carrying the isotopy moves off to infi
 Vanishing of the ordinary flux is therefore a strictly weaker condition than vanishing of the
 compactly supported flux.
 
+On the other hand the area form is exact, `dr ∧ dθ = d(r dθ)`
+(`TauCeti.cylinderAreaForm_mem_exactForms`), so the compactly supported flux of a compactly
+supported diffeotopy only depends on its final diffeomorphism. In particular every compactly
+supported diffeotopy ending at the identity has zero compactly supported flux
+(`TauCeti.compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl`): the loops contribute
+nothing, and the compactly supported flux of a shear is an invariant of its final map.
+
+The same shears show that the compactly supported flux is not continuous in the endpoint for the
+weak Whitney `C^∞` topology of the ambient map space. As `R → ∞` the final maps of the shears
+along `r ↦ -f(r - R)` converge to the identity in that topology
+(`TauCeti.tendsto_final_cylinderShearDiffeotopy_of_apply_eq_sub`), while their compactly supported
+fluxes stay equal to one nonzero class. So, for any `T₁` topology on `H¹_c`, no function of the
+endpoint which agrees with the compactly supported flux on these shears and vanishes at the
+identity is continuous at the identity
+(`TauCeti.not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy`).
+
 ## Main results
 
 * `TauCeti.fluxForm_cylinderShearDiffeotopy_cylinderAreaForm`: the flux form of the shear is
@@ -60,6 +76,11 @@ compactly supported flux.
 * `TauCeti.compactFlux_cylinderShearDiffeotopy_eq_iff`,
   `TauCeti.compactFlux_cylinderShearDiffeotopy_eq_zero_iff`: the compactly supported flux is
   determined by `∫ g`, and vanishes exactly when `∫ g = 0`.
+* `TauCeti.compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl`: compactly supported
+  diffeotopies ending at the identity have zero compactly supported flux.
+* `TauCeti.not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy`: the compactly
+  supported flux, read as a function of the endpoint, is not continuous at the identity for the
+  weak Whitney `C^∞` topology.
 
 ## References
 
@@ -234,5 +255,77 @@ theorem compactFlux_cylinderShearDiffeotopy_eq_zero_iff (hgc : HasCompactSupport
     ← map_eq_zero_iff _ (compactlySupportedDeRhamCohomology.bijective_integral_real
       Manifold.Orientation.real).injective,
     compactlySupportedDeRhamCohomology.integral_mk_funSMulₗ_realLineCoordForm hgc]
+
+/-! ### Loops have zero compactly supported flux -/
+
+/-- **Compactly supported loops of the cylinder have zero compactly supported flux.** The area
+form `dr ∧ dθ = d(r dθ)` is exact, so a diffeotopy of the cylinder which is the identity outside a
+compact set and ends at the identity has zero compactly supported flux. Thus the compactly
+supported fluxes of loops of compactly supported area-preserving diffeomorphisms of the cylinder
+all vanish, while the shears along functions `g` with `∫ g ≠ 0`, which do not end at the identity,
+have nonzero compactly supported flux. -/
+theorem compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl
+    {Φ : Diffeotopy (𝓘(ℝ).prod 𝓘(ℝ)) ∞ (ℝ × AddCircle p)}
+    (h : Φ.final = Diffeomorph.refl (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) ∞)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (cylinderAreaClosedForm p).val)
+    (hc : Φ.fluxForm (cylinderAreaClosedForm p).val ∈
+      compactlySupportedForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1)
+    {K : Set (ℝ × AddCircle p)} (hK : IsCompact K) (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) :
+    Φ.compactFlux (cylinderAreaClosedForm p) hΦ hc = 0 :=
+  Φ.compactFlux_eq_zero_of_final_eq_refl _
+    ((coe_cylinderAreaClosedForm p).symm ▸ cylinderAreaForm_mem_exactForms p) h hΦ hc hK hΦK
+
+/-! ### The compactly supported flux is not continuous in the endpoint -/
+
+section Discontinuity
+
+open Filter Topology
+open scoped TauCeti.ManifoldWeakWhitney
+
+/-- **The endpoint compactly supported flux is not weakly continuous.** Let `G i` be smooth
+compactly supported functions with the same nonzero integral `c` which eventually vanish on each
+bounded subset of `ℝ`, for instance the translates `r ↦ g (r - R)` of a compactly supported `g`
+with `∫ g ≠ 0`, as `R → ∞`. The final maps `φ_i` of the shear diffeotopies along `G i` converge to
+the identity in the weak Whitney `C^∞` topology
+(`TauCeti.tendsto_timeSlice_cylinderShearDiffeotopy`), but their compactly supported fluxes are
+all equal and nonzero. Hence, for any `T₁` topology on `H¹_c(ℝ × AddCircle p)`, a function `F` of
+the endpoint which agrees with the compactly supported flux at every `φ_i` and vanishes at the
+identity is not continuous at the identity, even within the set of the `φ_i`. -/
+theorem not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy {ι : Type*}
+    {l : Filter ι} [l.NeBot] {G : ι → C^∞⟮𝓘(ℝ), ℝ; ℝ⟯} (hGc : ∀ i, HasCompactSupport (G i))
+    (hG : ∀ A : Set ℝ, Bornology.IsBounded A → ∀ᶠ i in l, ∀ r ∈ A, G i r = 0) {c : ℝ}
+    (hc : c ≠ 0) (hint : ∀ i, ∫ r, G i r = c)
+    [TopologicalSpace (compactlySupportedDeRhamCohomology (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1)]
+    [T1Space (compactlySupportedDeRhamCohomology (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1)]
+    (F : C^∞⟮𝓘(ℝ).prod 𝓘(ℝ), ℝ × AddCircle p; 𝓘(ℝ).prod 𝓘(ℝ), ℝ × AddCircle p⟯ →
+      compactlySupportedDeRhamCohomology (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1)
+    (hF : ∀ i, F (cylinderShearDiffeotopy p (G i)).final.toContMDiffMap =
+      (cylinderShearDiffeotopy p (G i)).compactFlux (cylinderAreaClosedForm p)
+        (final_cylinderShearDiffeotopy_mem_diffeomorphStabilizer p (G i))
+        (fluxForm_cylinderShearDiffeotopy_mem_compactlySupportedForms p (G i) (hGc i)))
+    (hF₀ : F ContMDiffMap.id = 0) :
+    ¬ ContinuousWithinAt F
+      (range fun i ↦ (cylinderShearDiffeotopy p (G i)).final.toContMDiffMap) ContMDiffMap.id := by
+  intro hF_cont
+  obtain ⟨i₀⟩ := l.nonempty_of_neBot
+  -- The endpoints converge to the identity from within their range.
+  have hφ : Tendsto (fun i ↦ (cylinderShearDiffeotopy p (G i)).final.toContMDiffMap) l
+      (𝓝[range fun i ↦ (cylinderShearDiffeotopy p (G i)).final.toContMDiffMap]
+        ContMDiffMap.id) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, Eventually.of_forall fun i ↦ mem_range_self i⟩
+    simpa only [Diffeotopy.final_def] using tendsto_timeSlice_cylinderShearDiffeotopy p hG 1
+  -- Equal integrals give equal compactly supported fluxes, so `F` is constant on the endpoints.
+  have hconst : ∀ i, (F ∘ fun i ↦ (cylinderShearDiffeotopy p (G i)).final.toContMDiffMap) i =
+      (cylinderShearDiffeotopy p (G i₀)).compactFlux (cylinderAreaClosedForm p)
+        (final_cylinderShearDiffeotopy_mem_diffeomorphStabilizer p (G i₀))
+        (fluxForm_cylinderShearDiffeotopy_mem_compactlySupportedForms p (G i₀) (hGc i₀)) :=
+    fun i ↦ (hF i).trans ((compactFlux_cylinderShearDiffeotopy_eq_iff p (G i) (G i₀) (hGc i)
+      (hGc i₀)).2 ((hint i).trans (hint i₀).symm))
+  have h := hF_cont.tendsto.comp hφ
+  rw [hF₀] at h
+  exact hc ((hint i₀).symm.trans ((compactFlux_cylinderShearDiffeotopy_eq_zero_iff p (G i₀)
+    (hGc i₀)).1 (tendsto_const_nhds_iff.1 (h.congr hconst))))
+
+end Discontinuity
 
 end TauCeti

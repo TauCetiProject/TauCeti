@@ -9,7 +9,8 @@ public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
 public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.Data.ENat.Lattice
 public import TauCeti.CategoryTheory.Abelian.Injective.MinimalCoresolution
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
+import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Dominant dimension
@@ -228,13 +229,6 @@ section Abelian
 
 variable [Abelian C]
 
-/-- Projective-injective objects are closed under binary biproducts. -/
-private theorem projective_and_injective_biprod (A B : C) (hA : Projective A ∧ Injective A)
-    (hB : Projective B ∧ Injective B) : Projective (A ⊞ B) ∧ Injective (A ⊞ B) := by
-  obtain ⟨_, _⟩ := hA
-  obtain ⟨_, _⟩ := hB
-  exact ⟨inferInstance, inferInstance⟩
-
 /-- **Projective-injective coresolutions.** In an abelian category, `X` has a projective-injective
 coresolution with `n` terms exactly when there is an exact sequence `0 → X → I⁰ → ⋯ → Iⁿ⁻¹` with
 every `Iⁱ` projective and injective. -/
@@ -248,14 +242,16 @@ theorem hasProjectiveInjectiveCoresolution_iff {X : C} {n : ℕ} :
 retract of `Y`. -/
 theorem HasProjectiveInjectiveCoresolution.of_retract {X Y : C} {n : ℕ} (r : Retract X Y)
     (h : HasProjectiveInjectiveCoresolution Y n) : HasProjectiveInjectiveCoresolution X n :=
-  ObjectProperty.IsSyzygy.of_retract (fun _ h ↦ h.2) projective_and_injective_biprod r h
+  ObjectProperty.IsSyzygy.of_retract (fun _ h ↦ h.2)
+    (fun A B ↦ projective_and_injective_biprod A B) r h
 
 /-- Projective-injective coresolutions of an extension: if the ends of a short exact sequence have
 projective-injective coresolutions with `n` terms, so does the middle. -/
 theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (hS : S.ShortExact)
     {n : ℕ} (h₁ : HasProjectiveInjectiveCoresolution S.X₁ n)
     (h₃ : HasProjectiveInjectiveCoresolution S.X₃ n) : HasProjectiveInjectiveCoresolution S.X₂ n :=
-  ObjectProperty.IsSyzygy.of_shortExact (fun _ h ↦ h.2) projective_and_injective_biprod hS h₁ h₃
+  ObjectProperty.IsSyzygy.of_shortExact (fun _ h ↦ h.2)
+    (fun A B ↦ projective_and_injective_biprod A B) hS h₁ h₃
 
 /-- **The case `dom.dim X ≥ 1`.** It holds exactly when `X` embeds into a projective-injective
 object. -/

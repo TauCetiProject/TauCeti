@@ -6,15 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
+public import TauCeti.RepresentationTheory.InvariantForm
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.InvariantForm
+import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 
 /-!
 # The standard representation of the symplectic group
 
 This file restricts the standard representation of the general linear group to the symplectic
 group. It defines the standard alternating form from `Matrix.J`, proves that the standard action
-preserves it, and packages the resulting equivariant self-duality.
+preserves it, and packages the resulting equivariant self-duality. It also shows that the
+symplectic group acts transitively on the isotropic subspaces of each dimension, and that over a
+field the standard form spans its invariant bilinear forms.
 
 ## Main definitions
 
@@ -24,6 +30,20 @@ preserves it, and packages the resulting equivariant self-duality.
   a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`, and its value
   against the all-ones vector is `TauCeti.stdSymplecticBilinForm_one_right`.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
+
+## Main results
+
+* `TauCeti.exists_map_stdSymplecticRep_eq`: `Sp₂ₙ(k)` acts transitively on the isotropic subspaces
+  of each dimension. It follows from the transitivity of isometries on isotropic subspaces,
+  `LinearMap.BilinForm.IsAlt.exists_isometryEquiv_map_eq`.
+* `TauCeti.isInvariantForm_stdSymplecticBilinForm`: the standard form is invariant.
+* `TauCeti.toMatrix'_mem_symplecticGroup_iff`: a linear endomorphism of `k^(2n)` has a symplectic
+  matrix exactly when it preserves the standard alternating form.
+* `TauCeti.exists_eq_smul_stdSymplecticBilinForm` and
+  `TauCeti.invariantForms_stdSymplecticRep_eq_span_stdSymplecticBilinForm`:
+  over a field, every `Sp₂ₙ(k)`-invariant bilinear form is a multiple of the standard one. Its
+  invariance under the symplectic transvections already forces this
+  (`LinearMap.BilinForm.exists_eq_smul_of_forall_isIsometry_transvection`).
 
 ## References
 
@@ -170,6 +190,23 @@ theorem stdSymplecticBilinForm_stdSymplecticRep
     LinearMap.congr_fun
       (LinearMap.congr_fun (stdSymplecticBilinForm_comp_stdSymplecticRep k n g) v) w
 
+/-- The standard symplectic form is an invariant form of the standard representation. -/
+theorem isInvariantForm_stdSymplecticBilinForm :
+    Representation.IsInvariantForm (stdSymplecticRep k n) (stdSymplecticBilinForm k n) :=
+  Representation.isInvariantForm_iff_isIsometry.mpr fun g =>
+    BilinForm.isIsometry_iff_comp.mpr <| by
+      rw [stdSymplecticRep_apply]
+      exact stdSymplecticBilinForm_comp_stdSymplecticRep k n g
+
+/-- A linear endomorphism of `k^(2n)` has a symplectic matrix exactly when it preserves the
+standard symplectic form. -/
+theorem toMatrix'_mem_symplecticGroup_iff
+    {f : ((Fin n ⊕ Fin n) → k) →ₗ[k] ((Fin n ⊕ Fin n) → k)} :
+    LinearMap.toMatrix' f ∈ Matrix.symplecticGroup (Fin n) k ↔
+      BilinForm.IsIsometry (stdSymplecticBilinForm k n) f := by
+  rw [SymplecticGroup.mem_iff', ← Matrix.toBilin'.injective.eq_iff, ← Matrix.toBilin'_comp,
+    Matrix.toLin'_toMatrix', ← stdSymplecticBilinForm, BilinForm.isIsometry_iff_comp]
+
 /-- The standard symplectic form identifies the standard module with its dual. -/
 noncomputable def stdSymplecticRepToDual :
     ((Fin n ⊕ Fin n) → k) ≃ₗ[k] Module.Dual k ((Fin n ⊕ Fin n) → k) :=
@@ -292,6 +329,47 @@ theorem char_stdSymplecticDualFDRep (g : Matrix.symplecticGroup (Fin n) k) :
         Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) := by
   simpa only [FDRep.character, FDRep.of_ρ', Representation.character] using
     char_stdSymplecticDualRep k n g
+
+/-- **`Sp₂ₙ(k)` acts transitively on the isotropic subspaces of each dimension.** Two subspaces of
+`k^(2n)` that are isotropic for the standard alternating form and have the same dimension are
+related by the standard action of a symplectic matrix. This holds in every characteristic. -/
+theorem exists_map_stdSymplecticRep_eq {U₁ U₂ : Submodule k ((Fin n ⊕ Fin n) → k)}
+    (h₁ : U₁ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₁)
+    (h₂ : U₂ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₂)
+    (h : Module.finrank k U₁ = Module.finrank k U₂) :
+    ∃ g : Matrix.symplecticGroup (Fin n) k, U₁.map (stdSymplecticRep k n g) = U₂ := by
+  obtain ⟨g, hg⟩ := (isAlt_stdSymplecticBilinForm k n).exists_isometryEquiv_map_eq
+    (stdSymplecticBilinForm_nondegenerate k n) h₁ h₂ h
+  have hA : LinearMap.toMatrix' (g : ((Fin n ⊕ Fin n) → k) →ₗ[k] (Fin n ⊕ Fin n) → k) ∈
+      Matrix.symplecticGroup (Fin n) k :=
+    (toMatrix'_mem_symplecticGroup_iff k n).mpr (BilinForm.isIsometry_iff.mpr fun x y => by simp)
+  refine ⟨⟨_, hA⟩, ?_⟩
+  rw [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix', hg]
+
+/-- **The invariant bilinear forms of the symplectic group.** Over a field, a bilinear form on
+`k^(2n)` invariant under the standard action of `Sp₂ₙ(k)` is a scalar multiple of the standard
+symplectic form. Invariance under the symplectic transvections `x ↦ x + ω(v, x) v` already
+suffices (`LinearMap.BilinForm.exists_eq_smul_of_forall_isIsometry_transvection`). -/
+theorem exists_eq_smul_stdSymplecticBilinForm {B : LinearMap.BilinForm k ((Fin n ⊕ Fin n) → k)}
+    (hB : Representation.IsInvariantForm (stdSymplecticRep k n) B) :
+    ∃ c : k, B = c • stdSymplecticBilinForm k n := by
+  refine LinearMap.BilinForm.exists_eq_smul_of_forall_isIsometry_transvection
+    (stdSymplecticBilinForm_nondegenerate k n).1 fun v => ?_
+  let τ := LinearMap.transvection (stdSymplecticBilinForm k n v) v
+  have hτ : LinearMap.toMatrix' τ ∈ Matrix.symplecticGroup (Fin n) k :=
+    (toMatrix'_mem_symplecticGroup_iff k n).mpr
+      ((isAlt_stdSymplecticBilinForm k n).isIsometry_transvection v)
+  have h := hB.isIsometry ⟨_, hτ⟩
+  rwa [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix'] at h
+
+/-- **The invariant bilinear forms of the symplectic group**: over a field, the bilinear forms on
+`k^(2n)` invariant under `Sp₂ₙ(k)` are the multiples of the standard symplectic form, so they form
+the span of that form, which is a line when `n > 0`. -/
+theorem invariantForms_stdSymplecticRep_eq_span_stdSymplecticBilinForm :
+    Representation.invariantForms (stdSymplecticRep k n) =
+      Submodule.span k {stdSymplecticBilinForm k n} :=
+  (isInvariantForm_stdSymplecticBilinForm k n).invariantForms_eq_span_of_forall_exists_eq_smul
+    fun _ => exists_eq_smul_stdSymplecticBilinForm k n
 
 end Field
 

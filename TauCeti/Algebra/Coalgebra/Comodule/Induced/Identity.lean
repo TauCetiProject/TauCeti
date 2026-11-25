@@ -82,14 +82,12 @@ theorem inducedIdInv_inducedIdHom (t : induced (CoalgHom.id R C) M) :
   apply Subtype.ext
   rw [coe_inducedIdInv_apply, ← Hom.map_coact_apply, ← LinearMap.rTensor_def]
   have h := LinearMap.congr_fun (congrArg Hom.toLinearMap
-    (Hom.cofreeLift_rid_comp_lTensor_counit_comp
+    (Hom.cofreeLift_cofreeCounit_comp
       (Subcomodule.subtype (induced (CoalgHom.id R C) M)))) t
   have he : (inducedIdHom (R := R) (C := C) M).toLinearMap =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ
-          (Subcomodule.subtype (induced (CoalgHom.id R C) M)).toLinearMap := by
+      cofreeCounit R C M ∘ₗ (Subcomodule.subtype (induced (CoalgHom.id R C) M)).toLinearMap := by
     ext s
-    simp
+    simp [cofreeCounit_def]
   rw [he]
   simpa only [Hom.cofreeLift_toLinearMap, LinearMap.comp_apply,
     Hom.coe_toLinearMap, Subcomodule.subtype_apply] using h
@@ -103,7 +101,8 @@ theorem inducedIdHom_naturality (f : Hom R C M N) :
       Hom.comp f (inducedIdHom (R := R) (C := C) M) := by
   ext t
   simp only [Hom.comp_apply, inducedIdHom_apply, coe_inducedMap_apply]
-  exact LinearMap.congr_fun (rid_comp_lTensor_counit_comp_rTensor (C := C) f.toLinearMap) t
+  simpa [cofreeCounit_def] using
+    LinearMap.congr_fun (cofreeCounit_comp_rTensor (R := R) (C := C) f.toLinearMap) t
 
 /-- The inverse identity-induction comparison is natural in the coefficient comodule. -/
 theorem inducedIdInv_naturality (f : Hom R C M N) :

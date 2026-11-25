@@ -90,22 +90,6 @@ private lemma shortExact_succ (n : ℕ) :
       (K.iCycles_toCycles _ _)).ShortExact :=
   K.shortExact_resolution_succ (fun j ↦ CochainComplex.exactAt_succ_of_quasiIsoAt ι j) n
 
-/-- Global sections are degree `0` Čech cohomology. -/
-private def sectionsIsoCechZero (G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
-    (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj G ≅
-      (cechCohomology X (ModuleCat.{u} R) 0).obj G.obj :=
-  (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).app G ≪≫ cechCohomologyZeroIso G
-
-@[reassoc]
-private lemma sectionsIsoCechZero_hom_naturality
-    {G G' : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : G ⟶ G') :
-    (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map f ≫
-        (sectionsIsoCechZero G').hom =
-      (sectionsIsoCechZero G).hom ≫ (cechCohomology X (ModuleCat.{u} R) 0).map f.hom := by
-  simp only [sectionsIsoCechZero, Iso.trans_hom, Iso.app_hom, Category.assoc,
-    ← cechCohomologyZeroIso_hom_naturality]
-  exact ((Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.naturality_assoc f _)
-
 /-- The cycles of `Γ(K)` in degree `n + 1` are the global sections of `Zⁿ⁺¹`. -/
 private def isLimitSucc (n : ℕ) :
     IsLimit (KernelFork.ofι ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
@@ -126,8 +110,7 @@ private lemma isLimitSucc_lift (n : ℕ) :
 private def isLimitZero :
     IsLimit (KernelFork.ofι ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
       (CochainComplex.fromSingle₀Equiv K F ι).val)
-      (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-        Functor.map_zero]) :
+      (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) :
         KernelFork ((((Sheaf.Γ (Opens.grothendieckTopology X)
           (ModuleCat.{u} R)).mapHomologicalComplex _).obj K).sc' 0 0 1).g) :=
   KernelFork.mapIsLimit _ (CochainComplex.exact_f_zero_of_quasiIsoAt ι).fIsKernel _
@@ -154,9 +137,7 @@ private abbrev leftHomologyDataZero :
   i := (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
     (CochainComplex.fromSingle₀Equiv K F ι).val
   π := (sectionsIsoCechZero F).hom
-  wi := by
-    dsimp
-    rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property, Functor.map_zero]
+  wi := Functor.map_fromSingle₀Equiv_val_comp_d _ ι
   hi := isLimitZero ι
   wπ := isLimitZero_lift_comp ι
   hπ := ((ShortComplex.exact_iff_mono (ShortComplex.mk _ _ (isLimitZero_lift_comp ι))
@@ -168,7 +149,7 @@ private lemma leftHomologyDataZero_π_comp_homologyIso_inv :
         (leftHomologyDataZero ι).homologyIso.inv =
       (leftHomologyDataZero ι).cyclesIso.inv ≫ ShortComplex.homologyπ _ := by
   -- the projection of `leftHomologyDataZero ι` is `sectionsIsoCechZero F`
-  simpa [leftHomologyDataZero, sectionsIsoCechZero] using
+  exact (sectionsIsoCechZero_hom_assoc F (leftHomologyDataZero ι).homologyIso.inv).symm.trans
     (leftHomologyDataZero ι).π_comp_homologyIso_inv
 
 private lemma leftHomologyDataZero_cyclesIso_inv :
@@ -177,8 +158,7 @@ private lemma leftHomologyDataZero_cyclesIso_inv :
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-            Functor.map_zero]) := by
+          (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) := by
   rw [← cancel_mono (HomologicalComplex.iCycles _ _), Category.assoc,
     HomologicalComplex.cyclesIsoSc'_inv_iCycles,
     ShortComplex.LeftHomologyData.cyclesIso_inv_comp_iCycles, HomologicalComplex.liftCycles_i]
@@ -332,7 +312,7 @@ private lemma leftHomologyDataSucc_π_comp_homologyIso_inv (n : ℕ) :
       (leftHomologyDataSucc ι hK n).cyclesIso.inv ≫ ShortComplex.homologyπ _ := by
   -- the projection of `leftHomologyDataSucc ι hK n` is `sectionsIsoCechZero` followed by the
   -- iterated connecting map
-  simpa [leftHomologyDataSucc, sectionsIsoCechZero] using
+  simpa only [sectionsIsoCechZero_hom, Category.assoc] using
     (leftHomologyDataSucc ι hK n).π_comp_homologyIso_inv
 
 private lemma leftHomologyDataSucc_cyclesIso_inv (n : ℕ) :
@@ -370,8 +350,7 @@ theorem cechCohomologyObjIsoOfIsFlasque_zero_hom :
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-            Functor.map_zero]) ≫
+          (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) ≫
         (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           K).homologyπ 0 := by
   rw [cechCohomologyObjIsoOfIsFlasque, Iso.trans_hom, Iso.symm_hom, Iso.symm_hom,
@@ -431,7 +410,7 @@ theorem cechCohomologyObjIsoOfIsFlasque_hom_naturality
     rw [← cancel_epi ((Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F ≫
       (cechCohomologyZeroIso F).hom)]
     have e := sectionsIsoCechZero_hom_naturality f
-    simp only [sectionsIsoCechZero, Iso.trans_hom, Iso.app_hom, Category.assoc] at e
+    simp only [sectionsIsoCechZero_hom, Category.assoc] at e
     simp only [Category.assoc]
     rw [← reassoc_of% e, cechCohomologyObjIsoOfIsFlasque_zero_hom,
       reassoc_of% (cechCohomologyObjIsoOfIsFlasque_zero_hom ι hK),
@@ -446,7 +425,7 @@ theorem cechCohomologyObjIsoOfIsFlasque_hom_naturality
       (K.cycles (n + 1)) ≫ (cechCohomologyZeroIso (K.cycles (n + 1))).hom ≫
         resolutionCechδ ι n (k := 0) (m := n + 1) (by omega))]
     have e := sectionsIsoCechZero_hom_naturality (HomologicalComplex.cyclesMap φ (n + 1))
-    simp only [sectionsIsoCechZero, Iso.trans_hom, Iso.app_hom, Category.assoc] at e
+    simp only [sectionsIsoCechZero_hom, Category.assoc] at e
     simp only [Category.assoc]
     rw [resolutionCechδ_naturality_assoc ι ι' hφ, ← reassoc_of% e,
       cechCohomologyObjIsoOfIsFlasque_succ_hom,

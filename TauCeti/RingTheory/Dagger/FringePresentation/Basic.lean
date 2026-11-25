@@ -312,6 +312,16 @@ theorem eventually_mem_stageIdeal {f : washnitzerAlgebra (Fin P.n) K} (hf : f �
     Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, rfl⟩))
   exact Subtype.ext hg.symm
 
+/-- A property holding at all real radii close enough to `1` holds at all radii of `P` close
+enough to `1`. -/
+theorem eventually_atBot_of_nhdsGT {p : ℝ → Prop} (h : ∀ᶠ ρ in 𝓝[>] (1 : ℝ), p ρ) :
+    ∀ᶠ ρ in atBot, p ((ρ : Set.Ioc (1 : ℝ) P.radius) : ℝ) := by
+  obtain ⟨u, hu, hpu⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' P.one_lt_radius).mp h
+  refine eventually_atBot.mpr ⟨⟨min ((1 + u) / 2) P.radius, ?_, min_le_right _ _⟩,
+    fun ρ hρ ↦ hpu ⟨ρ.property.1, ?_⟩⟩
+  · exact lt_min (by linarith [hu.out]) P.one_lt_radius
+  · exact (Subtype.coe_le_coe.mpr hρ).trans_lt ((min_le_left _ _).trans_lt (by linarith [hu.out]))
+
 /-- **The kernel of `A_ρ → A`.** An element of a stage which vanishes in `A` already vanishes in
 some smaller stage. -/
 theorem exists_stageMap_eq_zero {ρ : Set.Ioc (1 : ℝ) P.radius} (x : P.stage ρ)

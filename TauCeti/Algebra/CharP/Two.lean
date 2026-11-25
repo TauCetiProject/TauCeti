@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Data.ZMod.Defs
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -27,6 +30,15 @@ divisors, two roots of `X ^ 2 + t X - s` are equal or differ by `t`
 (`TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charTwo`). An algebra endomorphism over a ring of
 characteristic two that translates an element by a scalar is an involution on that element
 (`AlgHom.apply_apply_of_apply_eq_add_algebraMap`), as for the translations permuting these roots.
+
+Since `1 + 1 = 0`, the exclusive-or of bits is their sum: the indicator of a bit of an exclusive-or
+of natural numbers accumulated over a list is the sum of the indicators of that bit of the terms
+(`TauCeti.ite_testBit_foldl_xor_of_charTwo`). This compares a computation on binary
+representations with a sum in the semiring.
+
+A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two
+(`TauCeti.charP_two_of_algebra_zmod_two`). This is the instance-shaped `p = 2` case of Mathlib's
+`charP_of_injective_algebraMap'`, usable as a local instance for `ZMod 2`-algebras.
 
 -/
 
@@ -74,6 +86,25 @@ theorem add_eq_map_add_add_of_charTwo (R : Type*) {V W F : Type*} [Semiring R] [
     a + b = D (k + t) + (k' + t') := by
   rw [map_add, add_add_add_comm, ← h₁, ← h₂, add_assoc, ← add_assoc p,
     add_self_eq_zero_of_charTwo R, zero_add]
+
+/-- In characteristic two, the indicator of a bit of an exclusive-or accumulated over a list is
+the sum of the indicators of that bit of the initial value and of the terms. -/
+theorem ite_testBit_foldl_xor_of_charTwo {R α : Type*} [NonAssocSemiring R] [CharP R 2]
+    (f : α → ℕ) (l : List α) (a p : ℕ) :
+    (if (l.foldl (fun acc i ↦ acc ^^^ f i) a).testBit p then (1 : R) else 0) =
+      (if a.testBit p then (1 : R) else 0) +
+        (l.map fun i ↦ if (f i).testBit p then (1 : R) else 0).sum := by
+  induction l generalizing a with
+  | nil => rw [List.foldl_nil, List.map_nil, List.sum_nil, add_zero]
+  | cons x l ih =>
+    rw [List.foldl_cons, ih, Nat.testBit_xor, List.map_cons, List.sum_cons, ← add_assoc]
+    cases a.testBit p <;> cases (f x).testBit p <;> simp [CharTwo.add_self_eq_zero]
+
+/-- A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two, the algebra map
+from the field `ZMod 2` being injective. -/
+theorem charP_two_of_algebra_zmod_two (k : Type*) [Semiring k] [Nontrivial k]
+    [Algebra (ZMod 2) k] : CharP k 2 :=
+  charP_of_injective_algebraMap (algebraMap (ZMod 2) k).injective 2
 
 end TauCeti
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Algebra.Group.Conj
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
@@ -271,12 +271,13 @@ theorem norm_inv_mk_conjugator_mul_mul [DecidableEq α] (x : FreeGroup α) :
 
 /-- The reduced word of an element `A` that is not a proper power is fixed by no nontrivial
 rotation: rotating it by `k` gives it back exactly when the length of `A` divides `k`. -/
-theorem rotate_toWord_eq_self_iff [DecidableEq α] {A : FreeGroup α} (hA : ¬Group.IsProperPower A)
-    {k : ℕ} : A.toWord.rotate k = A.toWord ↔ A.toWord.length ∣ k := by
+theorem rotate_toWord_eq_self_iff [DecidableEq α] {A : FreeGroup α}
+    (hA : ¬TauCeti.IsProperPower A) {k : ℕ} :
+    A.toWord.rotate k = A.toWord ↔ A.toWord.length ∣ k := by
   refine ⟨fun h => ?_, fun ⟨c, hc⟩ => by rw [hc, List.rotate_length_mul]⟩
   set p := A.toWord.take (k % A.toWord.length)
   have hn : 0 < A.toWord.length :=
-    List.length_pos_iff.2 (toWord_eq_nil_iff.not.2 (Group.ne_one_of_not_isProperPower hA))
+    List.length_pos_iff.2 (toWord_eq_nil_iff.not.2 (TauCeti.ne_one_of_not_isProperPower hA))
   -- the prefix `p` is reduced, so its length is `k % |A|`
   have hp : norm (mk p) = k % A.toWord.length := by
     rw [norm, toWord_mk, (isReduced_toWord.infix (List.take_prefix _ _).isInfix).reduce_eq,

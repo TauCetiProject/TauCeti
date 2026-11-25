@@ -31,6 +31,8 @@ for instance the local factor `[E₂(K) : φ E₁(K)] / #E₁(K)[φ]` of an isog
 * `Subgroup.index_map_mul_relIndex_ker`: the image-index factorization for groups.
 * `AddSubgroup.index_map_mul_relIndex_ker`: the same factorization for additive groups.
 * `Subgroup.index_smul`: pointwise action by a group preserves subgroup index.
+* `Subgroup.finiteIndex_normalizer_map_subtype`: the image of a normal subgroup of a
+  finite-index subgroup has a finite-index normalizer in the ambient group.
 * `MonoidHom.index_range_mul_index_mul_card_inf_ker` and its additive form
   `AddMonoidHom.index_range_mul_index_mul_card_inf_ker`: the identity displayed above.
 
@@ -45,6 +47,19 @@ public section
 namespace Subgroup
 
 variable {G G' : Type*} [Group G] [Group G']
+
+/-- The image in `G` of a normal subgroup of a finite-index subgroup `H` has a finite-index
+normalizer: it is normalized by `H`. The normal subgroup need not have finite index in `H`. -/
+@[to_additive /-- The image in `G` of a normal additive subgroup of a finite-index additive
+subgroup `H` has a finite-index normalizer: it is normalized by `H`. The normal additive subgroup
+need not have finite index in `H`. -/]
+theorem finiteIndex_normalizer_map_subtype (H : Subgroup G) [H.FiniteIndex]
+    (V : Subgroup H) [V.Normal] :
+    (normalizer (V.map H.subtype : Set G)).FiniteIndex := by
+  have : ((V.map H.subtype).subgroupOf H).Normal := by
+    rw [← comap_subtype, comap_map_eq_self_of_injective H.subtype_injective]
+    infer_instance
+  exact finiteIndex_of_le (le_normalizer_of_normal_subgroupOf (map_subtype_le _))
 
 /-- The index of a subgroup under a surjection factors into the image index and the
 relative index in the kernel. Infinite indices have the usual value zero. -/
