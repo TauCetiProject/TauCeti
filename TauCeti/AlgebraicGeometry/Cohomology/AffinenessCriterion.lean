@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.Modules.LinearCombination
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Serre's criterion for affineness
@@ -73,7 +74,10 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed
   let I := IdealSheafData.vanishingIdeal ⟨(U : Set X)ᶜ ∪ {x}, U.isOpen.isClosed_compl.union hx⟩
   have hrange : Set.range I.subschemeι = (U : Set X)ᶜ ∪ {x} := by
     simp [I, IdealSheafData.range_subschemeι]
-  have hUB := isCompl_preimage_of_range_eq I.subschemeι hx hxU hrange
+  have hUB : IsCompl (I.subschemeι ⁻¹ᵁ U) (I.subschemeι ⁻¹ᵁ ⟨{x}ᶜ, hx.isOpen_compl⟩) :=
+    Opens.isCompl_comap_iff.mpr <| hrange ▸
+      ⟨fun y hy ↦ hy.elim (fun hyU ↦ .inr (ne_of_mem_of_not_mem hxU hyU).symm) (.inl <| · ▸ hxU),
+        Set.disjoint_left.mpr fun y hy hyUx ↦ hy.elim (· hyUx.1) (hyUx.2 ·)⟩
   -- The function on `Z` that is `1` at `x` and `0` on `X ∖ U` lifts to `X`, as `H¹(X, I) = 0`.
   obtain ⟨e, he⟩ := exists_basicOpen_eq_of_isCompl hUB
   obtain ⟨g, hg⟩ : ∃ g : Γ(X, ⊤), I.subschemeι.app ⊤ g = e := by
