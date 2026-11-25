@@ -233,15 +233,16 @@ theorem one_le_perimeter_of_mem_essentialBoundary (hs : NullMeasurableSet s) {Ω
   have hsub : ∀ {u v : ℝ}, u ∈ closedBall x r → v ∈ closedBall x r → Icc u v ⊆ Ω :=
     fun hu hv => ((convex_closedBall x r).ordConnected.out hu hv).trans
       ((closedBall_subset_ball hrε).trans hεΩ)
-  rcases le_total p q with hpq | hqp
-  · have h := ofReal_sum_le_perimeter ht (x := ![p, q])
-      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq)
-      (by simpa using hsub hpB hqB) (fun i => by fin_cases i <;> assumption)
-    simpa [hpt, hqt] using h
-  · have h := ofReal_sum_le_perimeter ht (x := ![q, p])
-      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hqp)
-      (by simpa using hsub hqB hpB) (fun i => by fin_cases i <;> assumption)
-    simpa [hpt, hqt] using h
+  suffices h : ENNReal.ofReal |t.indicator 1 q - t.indicator (1 : ℝ → ℝ) p| ≤
+      perimeter volume Ω t by simpa [hpt, hqt] using h
+  clear hpt hqt
+  -- The bound is symmetric in `p` and `q`, so order them.
+  wlog hpq : p ≤ q generalizing p q
+  · rw [abs_sub_comm]
+    exact this q hq hqB p hp hpB (le_of_not_ge hpq)
+  simpa using ofReal_sum_le_perimeter ht (x := ![p, q])
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq)
+    (by simpa using hsub hpB hqB) (fun i => by fin_cases i <;> assumption)
 
 /-- **Every finite set of essential boundary points is counted by the perimeter.** If a finite set
 `F` of points of the essential boundary of a null-measurable `s ⊆ ℝ` lies in the open set `Ω`, then
@@ -272,8 +273,9 @@ theorem card_le_perimeter_of_subset_essentialBoundary (hs : NullMeasurableSet s)
       have hyF := hF (Finset.mem_coe.2 (Finset.mem_insert_of_mem hy))
       refine ⟨hyF.1, hyF.2, fun hyB => ?_⟩
       exact hδF (closedBall_subset_ball (half_lt_self hδ) hyB) hy
-    have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) ((Ω₁ ⊔ Ω₂ : Opens ℝ) : Set ℝ) :=
-      locallyIntegrableOn_indicator_const (hs.mono Measure.restrict_le_self) (1 : ℝ)
+    have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) ((Ω₁ ⊔ Ω₂ : Opens ℝ) : Set ℝ) := by
+      rw [Pi.one_def]
+      exact locallyIntegrableOn_indicator_const (hs.mono Measure.restrict_le_self) (1 : ℝ)
     calc ((insert a F).card : ℝ≥0∞) = 1 + F.card := by
           rw [Finset.card_insert_of_notMem haF, Nat.cast_add, Nat.cast_one, add_comm]
       _ ≤ perimeter volume Ω₁ s + perimeter volume Ω₂ s := add_le_add h₁ h₂
