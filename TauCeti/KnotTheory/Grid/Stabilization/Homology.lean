@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 public import TauCeti.KnotTheory.Grid.Stabilization.Comparison
-public import TauCeti.KnotTheory.Grid.Stabilization.Components
-public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 
 /-!
 # Stabilization invariance of `GH⁻`

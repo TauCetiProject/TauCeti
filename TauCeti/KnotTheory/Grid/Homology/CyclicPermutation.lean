@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!
 # Invariance of `GH⁻` under cyclic permutation

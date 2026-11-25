@@ -24,8 +24,11 @@ semilinear maps over the polynomial rings in the grid variables, along a ring ho
 a renaming of the variables. When that homomorphism commutes with the evaluation `V_j ↦ U`, the
 underlying function is `R[U]`-linear (`GridDiagram.IsKnot.unblockedHomologyLinearMapOfSemilinear`),
 so such a map that is bijective and preserves the Alexander grading witnesses the relation
-(`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`). This is the form in which the
-grid-move invariance theorems for `GH⁻` are stated.
+(`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`). The grid-move invariance
+theorems for `GH⁻` are stated for the bigraded relation, through
+`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic.of_semilinearMap`
+(`Homology/Bigraded/Relation.lean`), and the Alexander-graded relation is recovered from them by
+forgetting the Maslov grading.
 
 The Alexander grading and the convention that `U` has degree `-1` follow
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 4 and 6.

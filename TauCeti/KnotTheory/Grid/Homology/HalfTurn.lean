@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
+public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!
 # The half-turn on unblocked grid homology
