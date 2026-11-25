@@ -43,7 +43,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
-* `ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner`: the same polarized relation for a
+* `LinearMap.apply_apply_add_swap_eq_neg_two_inner`: the same polarized relation for a
   linear map `c : W → End U` satisfying the Clifford relation `c(v)² = -⟪v, v⟫`.
 * `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
   `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
@@ -230,11 +230,12 @@ omit hQ in
 /-- **The polarized Clifford relation.** If a linear map `c : W → End U` from a real inner product
 space satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
 `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
-theorem ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+theorem LinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
-    [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousSMul ℝ U] (c : W →L[ℝ] U →L[ℝ] U)
-    (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s) (u v : W) (s : U) :
+    (c : W →ₗ[ℝ] Module.End ℝ U) (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s)
+    (u v : W) (s : U) :
     c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
   have h := hc (u + v) s
-  simp only [map_add, add_apply, hc, inner_add_left, inner_add_right, real_inner_comm u v] at h
+  simp only [map_add, LinearMap.add_apply, hc, inner_add_left, inner_add_right,
+    real_inner_comm u v] at h
   linear_combination (norm := module) h

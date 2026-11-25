@@ -189,7 +189,10 @@ private theorem sum_sum_secondCovariantDerivative_eq (hσ : CMDiff ∞ (T% σ)) 
   -- The Clifford multiplications by the basis vectors satisfy the Clifford relations.
   have hγ (i j : ι) (s : V x) : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) =
       if i = j then -(2 • s) else 0 := by
-    rw [(c x).apply_apply_add_swap_eq_neg_two_inner hcl, b.inner_eq_ite]
+    have h : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) = -(2 * ⟪b i, b j⟫) • s :=
+      ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap).apply_apply_add_swap_eq_neg_two_inner
+        hcl _ _ _
+    rw [h, b.inner_eq_ite]
     split_ifs <;> simp [two_smul]
   -- The symmetric part contracts to the trace, the antisymmetric part to the curvature.
   have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (b i)) hγ
@@ -380,10 +383,13 @@ theorem covariantDerivative_diracOperator_apply {ι : Type*} [Fintype ι]
       (fun p q q' ↦ by simp only [map_add])
       (fun r p q ↦ by simp only [map_smul])
   have hY₀ := hY.self_of_nhds
-  simpa [B, map_sum] using congrArg (TensorProduct.lift B)
-    ((InnerProductSpace.canonicalCovariantTensor_eq_sum _
-      (OrthonormalBasis.mk hY₀.1 hY₀.2)).symm.trans
-        (InnerProductSpace.canonicalCovariantTensor_eq_sum _ b))
+  calc ∑ i, c x (Y i x) (cov.secondCovariantDerivative covT σ x w (Y i x))
+      = LinearMap.BilinMap.metricTrace B := by
+        rw [LinearMap.BilinMap.metricTrace_eq_sum B (OrthonormalBasis.mk hY₀.1 hY₀.2)]
+        simp [B]
+    _ = ∑ i, c x (b i) (cov.secondCovariantDerivative covT σ x w (b i)) := by
+        rw [LinearMap.BilinMap.metricTrace_eq_sum B b]
+        simp [B]
 
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] (htor : covT.torsion x = 0)
   (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
@@ -421,8 +427,11 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt {ι : Type*} [F
     with hf
   -- `f` vanishes on the diagonal and is symmetric off it.
   have hsymm (i j : ι) (hij : i ≠ j) : f j i = f i j := by
-    have h := (c x).apply_apply_add_swap_eq_neg_two_inner hcl (b i) (b j)
-      (cov.curvatureTensor x (b i) (b j) (σ x))
+    have h : c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) +
+        c x (b j) (c x (b i) (cov.curvatureTensor x (b i) (b j) (σ x))) =
+          -(2 * ⟪b i, b j⟫) • cov.curvatureTensor x (b i) (b j) (σ x) :=
+      ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap).apply_apply_add_swap_eq_neg_two_inner
+        hcl _ _ _
     simp only [b.inner_eq_ite, hij, ite_false, mul_zero, neg_zero, zero_smul] at h
     simp only [hf, cov.curvatureTensor_antisymm x (b j) (b i), LinearMap.neg_apply, map_neg]
     linear_combination (norm := module) -h
