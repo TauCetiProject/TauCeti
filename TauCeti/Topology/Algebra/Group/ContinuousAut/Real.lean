@@ -16,12 +16,10 @@ The continuous automorphisms of the additive group of `ℝ`, written multiplicat
 map `ℝ → ℝ` is `ℝ`-linear (Mathlib's `map_real_smul`), so it is multiplication by its value
 `TauCeti.ContinuousAut.realScale φ` at `1`. This gives
 
-`TauCeti.ContinuousAut.realMulEquivUnits : ContinuousAut (Multiplicative ℝ) ≃* ℝˣ`,
+`TauCeti.Real.continuousAutEquivUnits : ContinuousAut (Multiplicative ℝ) ≃* ℝˣ`,
 
-and, the group being commutative, `TauCeti.ContinuousOut.realMulEquivUnits :
-ContinuousOut (Multiplicative ℝ) ≃* ℝˣ`. This is the TeichmullerGeometry §4.2 Check "for
-`G = Multiplicative ℝ`, the reals under addition with their usual topology, the continuous
-automorphisms are the maps `x ↦ c x`, `c ≠ 0`, so `TauCeti.ContinuousOut G ≅ ℝˣ`".
+with inverse `TauCeti.Real.continuousAutOfUnit`, and, the group being commutative,
+`TauCeti.Real.continuousOutEquivUnits : ContinuousOut (Multiplicative ℝ) ≃* ℝˣ`.
 -/
 
 public section
@@ -36,24 +34,40 @@ def realScale (φ : ContinuousAut (Multiplicative ℝ)) : ℝ :=
   (φ (Multiplicative.ofAdd 1)).toAdd
 
 /-- A continuous automorphism of `Multiplicative ℝ` is multiplication by its scaling factor. -/
+@[simp]
 theorem apply_eq_realScale_mul (φ : ContinuousAut (Multiplicative ℝ)) (x : ℝ) :
     (φ (Multiplicative.ofAdd x)).toAdd = realScale φ * x := by
   let f : ℝ →+ ℝ := (φ.toMulEquiv.toMonoidHom).toAdditive
-  have hf : Continuous f := continuous_toAdd.comp (φ.continuous.comp continuous_ofAdd)
+  -- `f` is `φ` read in the additive presentation.
+  have hf_apply : ∀ y, f y = (φ (Multiplicative.ofAdd y)).toAdd := fun _ => rfl
+  have hf : Continuous f := by
+    rw [show (f : ℝ → ℝ) = fun y => (φ (Multiplicative.ofAdd y)).toAdd from funext hf_apply]
+    exact continuous_toAdd.comp (φ.continuous.comp continuous_ofAdd)
   have := map_real_smul f hf x 1
-  simp only [smul_eq_mul, mul_one] at this
-  rw [realScale, mul_comm]
-  exact this
+  rw [hf_apply, hf_apply, smul_eq_mul, smul_eq_mul, mul_one] at this
+  rw [this, realScale, mul_comm]
 
 /-- The scaling factor of a continuous automorphism is nonzero. -/
 theorem realScale_ne_zero (φ : ContinuousAut (Multiplicative ℝ)) : realScale φ ≠ 0 := by
   intro h
-  have h1 : φ (Multiplicative.ofAdd 1) = φ 1 :=
-    (Multiplicative.toAdd.injective h).trans (map_one φ).symm
-  simpa using congrArg Multiplicative.toAdd (φ.injective h1)
+  rw [realScale, ← toAdd_one, Multiplicative.toAdd.injective.eq_iff, ← map_one φ] at h
+  exact one_ne_zero (ofAdd_eq_one.mp (φ.injective h))
+
+/-- The scaling factor of a composite is the product of the scaling factors. -/
+@[simp]
+theorem realScale_mul (φ ψ : ContinuousAut (Multiplicative ℝ)) :
+    realScale (φ * ψ) = realScale φ * realScale ψ := by
+  conv_lhs => rw [realScale, mul_apply, ← ofAdd_toAdd (ψ (Multiplicative.ofAdd 1))]
+  rw [apply_eq_realScale_mul, apply_eq_realScale_mul, mul_one]
+
+end TauCeti.ContinuousAut
+
+namespace TauCeti.Real
+
+open ContinuousAut
 
 /-- Multiplication by a nonzero real, as a continuous automorphism of `Multiplicative ℝ`. -/
-def ofRealUnit (c : ℝˣ) : ContinuousAut (Multiplicative ℝ) where
+def continuousAutOfUnit (c : ℝˣ) : ContinuousAut (Multiplicative ℝ) where
   toFun x := Multiplicative.ofAdd ((c : ℝ) * x.toAdd)
   invFun x := Multiplicative.ofAdd (((c⁻¹ : ℝˣ) : ℝ) * x.toAdd)
   left_inv x := by simp
@@ -62,55 +76,60 @@ def ofRealUnit (c : ℝˣ) : ContinuousAut (Multiplicative ℝ) where
   continuous_toFun := continuous_ofAdd.comp (continuous_const.mul continuous_toAdd)
   continuous_invFun := continuous_ofAdd.comp (continuous_const.mul continuous_toAdd)
 
-/-- `ofRealUnit c` is `x ↦ c x`. -/
+/-- `continuousAutOfUnit c` is `x ↦ c x`. -/
 @[simp]
-theorem ofRealUnit_apply (c : ℝˣ) (x : Multiplicative ℝ) :
-    ofRealUnit c x = Multiplicative.ofAdd ((c : ℝ) * x.toAdd) :=
+theorem continuousAutOfUnit_apply (c : ℝˣ) (x : Multiplicative ℝ) :
+    continuousAutOfUnit c x = Multiplicative.ofAdd ((c : ℝ) * x.toAdd) :=
   (rfl)
+
+/-- The inverse of `continuousAutOfUnit c` is `x ↦ c⁻¹ x`. -/
+@[simp]
+theorem continuousAutOfUnit_symm_apply (c : ℝˣ) (x : Multiplicative ℝ) :
+    (continuousAutOfUnit c).symm x = Multiplicative.ofAdd (((c⁻¹ : ℝˣ) : ℝ) * x.toAdd) :=
+  (rfl)
+
+/-- The scaling factor of `continuousAutOfUnit c` is `c`. -/
+@[simp]
+theorem realScale_continuousAutOfUnit (c : ℝˣ) : realScale (continuousAutOfUnit c) = c := by
+  rw [realScale, continuousAutOfUnit_apply, toAdd_ofAdd, toAdd_ofAdd, mul_one]
 
 /-- **The continuous automorphisms of `ℝ` are the multiplications by nonzero reals.** The
 isomorphism sends a continuous automorphism to its scaling factor. -/
-def realMulEquivUnits : ContinuousAut (Multiplicative ℝ) ≃* ℝˣ where
+def continuousAutEquivUnits : ContinuousAut (Multiplicative ℝ) ≃* ℝˣ where
   toFun φ := Units.mk0 (realScale φ) (realScale_ne_zero φ)
-  invFun := ofRealUnit
+  invFun := continuousAutOfUnit
   left_inv φ := by
     ext x
-    change Multiplicative.ofAdd (realScale φ * x.toAdd) = φ x
-    rw [← apply_eq_realScale_mul, ofAdd_toAdd]
-    rfl
-  right_inv c := Units.ext (by simp [realScale])
-  map_mul' φ ψ := Units.ext <| by
-    simp only [Units.val_mk0, Units.val_mul, realScale, mul_apply]
-    rw [← ofAdd_toAdd (ψ (Multiplicative.ofAdd 1)), apply_eq_realScale_mul, realScale,
-      toAdd_ofAdd]
+    rw [continuousAutOfUnit_apply, Units.val_mk0, ← apply_eq_realScale_mul, ofAdd_toAdd,
+      ofAdd_toAdd]
+  right_inv c := Units.ext (by rw [Units.val_mk0, realScale_continuousAutOfUnit])
+  map_mul' φ ψ := Units.ext (by rw [Units.val_mk0, Units.val_mul, Units.val_mk0,
+    Units.val_mk0, realScale_mul])
 
-/-- `realMulEquivUnits` sends a continuous automorphism to its scaling factor. -/
+/-- `continuousAutEquivUnits` sends a continuous automorphism to its scaling factor. -/
 @[simp]
-theorem coe_realMulEquivUnits_apply (φ : ContinuousAut (Multiplicative ℝ)) :
-    (realMulEquivUnits φ : ℝ) = realScale φ :=
+theorem coe_continuousAutEquivUnits_apply (φ : ContinuousAut (Multiplicative ℝ)) :
+    (continuousAutEquivUnits φ : ℝ) = realScale φ :=
   (rfl)
 
-/-- The inverse of `realMulEquivUnits` is multiplication. -/
+/-- The inverse of `continuousAutEquivUnits` is multiplication. -/
 @[simp]
-theorem realMulEquivUnits_symm_apply (c : ℝˣ) : realMulEquivUnits.symm c = ofRealUnit c :=
+theorem continuousAutEquivUnits_symm_apply (c : ℝˣ) :
+    continuousAutEquivUnits.symm c = continuousAutOfUnit c :=
   (rfl)
-
-end TauCeti.ContinuousAut
-
-namespace TauCeti.ContinuousOut
 
 /-- **The continuous outer automorphism group of `ℝ` is `ℝˣ`**: the group is commutative, so
 its continuous outer automorphisms are its continuous automorphisms, the multiplications by
 nonzero reals. -/
-def realMulEquivUnits : ContinuousOut (Multiplicative ℝ) ≃* ℝˣ :=
-  mulEquivOfIsMulCommutative.trans ContinuousAut.realMulEquivUnits
+def continuousOutEquivUnits : ContinuousOut (Multiplicative ℝ) ≃* ℝˣ :=
+  ContinuousOut.mulEquivOfIsMulCommutative.trans continuousAutEquivUnits
 
-/-- `ContinuousOut.realMulEquivUnits` sends the class of a continuous automorphism to its scaling
+/-- `continuousOutEquivUnits` sends the class of a continuous automorphism to its scaling
 factor. -/
 @[simp]
-theorem coe_realMulEquivUnits_mk (φ : ContinuousAut (Multiplicative ℝ)) :
-    (realMulEquivUnits (φ : ContinuousOut (Multiplicative ℝ)) : ℝ) = ContinuousAut.realScale φ := by
-  rw [realMulEquivUnits, MulEquiv.trans_apply, mulEquivOfIsMulCommutative_mk,
-    ContinuousAut.coe_realMulEquivUnits_apply]
+theorem coe_continuousOutEquivUnits_mk (φ : ContinuousAut (Multiplicative ℝ)) :
+    (continuousOutEquivUnits (φ : ContinuousOut (Multiplicative ℝ)) : ℝ) = realScale φ := by
+  rw [continuousOutEquivUnits, MulEquiv.trans_apply,
+    ContinuousOut.mulEquivOfIsMulCommutative_mk, coe_continuousAutEquivUnits_apply]
 
-end TauCeti.ContinuousOut
+end TauCeti.Real
