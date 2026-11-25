@@ -49,7 +49,8 @@ immersion, and it is surjective.
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
-open AlgebraicGeometry.Scheme.IdealSheafData (mem_range_subschemeι_vanishingIdeal_compl_iff)
+open AlgebraicGeometry.Scheme.IdealSheafData
+  (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff)
 
 universe u
 
@@ -62,18 +63,18 @@ section Pointwise
 variable {X U V : AlgebraicGeometry.Scheme.{u}} (j : U ⟶ X) (p : V ⟶ X) [IsOpenImmersion j]
   [Etale p]
 
-/-- **The pointwise criterion**, characterising the defining condition of an elementary
-distinguished square (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open immersion `j` and an
-étale `p`, the base change of `p` to the reduced closed complement of `U` is an isomorphism if every
-point outside `U` has exactly one preimage under `p`, at which `p` induces
-an isomorphism of residue fields. -/
+/-- **The pointwise criterion**, sufficiency direction, for the defining condition of an
+elementary distinguished square (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open immersion
+`j` and an étale `p`, the base change of `p` to the reduced closed complement of `U` is an
+isomorphism if every point outside `U` has exactly one preimage under `p`, at which `p` induces an
+isomorphism of residue fields. -/
 theorem isIso_pullback_snd_of_pointwise (h : ∀ x ∉ Set.range j, ∃! v, p v = x)
     (hres : ∀ v, p v ∉ Set.range j → IsIso (p.residueFieldMap v)) :
     IsIso (pullback.snd p
       (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal j.opensRange.compl).subschemeι) := by
   set ι := (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal j.opensRange.compl).subschemeι
-  have hι (z) : ι z ∉ Set.range j := by
-    simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
+  have hι (z) : ι z ∉ Set.range j :=
+    (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).1 ⟨z, rfl⟩
   have hcond (w) : p (pullback.fst p ι w) = ι (pullback.snd p ι w) := by
     rw [← AlgebraicGeometry.Scheme.Hom.comp_apply, pullback.condition,
       AlgebraicGeometry.Scheme.Hom.comp_apply]
@@ -130,7 +131,7 @@ theorem eq_of_p_eq {v₁ v₂ : Q.V} (h : Q.p v₁ = Q.p v₂) (hv : Q.p v₂ �
     v₁ = v₂ := by
   set ι := (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl).subschemeι
   obtain ⟨z, hz⟩ : Q.p v₂ ∈ Set.range ι :=
-    (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).2 (by simpa using hv)
+    (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).2 hv
   obtain ⟨w₁, hw₁, hw₁'⟩ :=
     AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback v₁ z (h.trans hz.symm)
   obtain ⟨w₂, hw₂, hw₂'⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback v₂ z hz.symm

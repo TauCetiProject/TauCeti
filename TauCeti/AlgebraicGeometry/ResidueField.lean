@@ -448,8 +448,9 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
   have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
   rwa [hz] at h
 
-/-- Base change along a morphism preserving the residue field at a point preserves the residue
-field at every point above it: the mirror image of `isIso_residueFieldMap_fst`. -/
+/-- If `f` preserves the residue field at `pullback.fst f g z`, then its base change
+`pullback.snd f g` along `g` preserves the residue field at `z`: the mirror image of
+`isIso_residueFieldMap_fst`. -/
 theorem isIso_residueFieldMap_snd (z : ↑(pullback f g))
     [IsIso (f.residueFieldMap (pullback.fst f g z))] :
     IsIso ((pullback.snd f g).residueFieldMap z) := by

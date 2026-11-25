@@ -48,7 +48,7 @@ isomorphism `p⁻¹(Z) ⟶ Z` along `Z' ⟶ Z`.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isPullback`: the square
-  `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` is cartesian.
+  `U ×_X V ⟶ U`, `U ×_X V ⟶ V`, `j`, `p` is cartesian.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isNisnevichCovering`: `{j, p}` is
   a Nisnevich covering.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.ofArrows_mem_nisnevichTopology`:
@@ -63,7 +63,8 @@ isomorphism `p⁻¹(Z) ⟶ Z` along `Z' ⟶ Z`.
 public section
 
 open CategoryTheory Limits AlgebraicGeometry TopologicalSpace
-open AlgebraicGeometry.Scheme.IdealSheafData (mem_range_subschemeι_vanishingIdeal_compl_iff)
+open AlgebraicGeometry.Scheme.IdealSheafData
+  (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff)
 
 universe u
 
@@ -105,7 +106,7 @@ theorem exists_isIso_residueFieldMap_p (x : X) (hx : x ∉ Set.range Q.j) :
     ∃ v : Q.V, Q.p v = x ∧ IsIso (Q.p.residueFieldMap v) := by
   set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl
   have hxI : x ∈ Set.range I.subschemeι :=
-    (mem_range_subschemeι_vanishingIdeal_compl_iff _ x).2 (by simpa using hx)
+    (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ x).2 hx
   obtain ⟨z, rfl⟩ := hxI
   obtain ⟨w, rfl⟩ : ∃ w, pullback.snd Q.p I.subschemeι w = z :=
     ⟨inv (pullback.snd Q.p I.subschemeι) z, by
@@ -118,7 +119,7 @@ theorem exists_isIso_residueFieldMap_p (x : X) (hx : x ∉ Set.range Q.j) :
       infer_instance
     exact AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_comp _ _ w
 
-/-- The square `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` of an elementary distinguished square is
+/-- The square `U ×_X V ⟶ U`, `U ×_X V ⟶ V`, `j`, `p` of an elementary distinguished square is
 cartesian. -/
 theorem isPullback : IsPullback (pullback.fst Q.j Q.p) (pullback.snd Q.j Q.p) Q.j Q.p :=
   IsPullback.of_hasPullback _ _
@@ -167,7 +168,8 @@ noncomputable def ofZariski (U V : X.Opens) (h : U ⊔ V = ⊤) : ElementaryDist
     refine (isIso_iff_isOpenImmersion_and_surjective _).2 ⟨inferInstance, ⟨fun z ↦ ?_⟩⟩
     have hz : I.subschemeι z ∈ V := by
       have hzU : I.subschemeι z ∉ U := by
-        simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
+        rw [← SetLike.mem_coe, ← Scheme.Opens.range_ι]
+        exact (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).1 ⟨z, rfl⟩
       have : I.subschemeι z ∈ U ⊔ V := h ▸ Opens.mem_top _
       exact (Opens.mem_sup.1 this).resolve_left hzU
     obtain ⟨v, hv⟩ : I.subschemeι z ∈ Set.range V.ι := by simpa using hz
@@ -200,8 +202,8 @@ noncomputable def pullback : ElementaryDistinguishedSquare Y where
       (Limits.pullback.snd Q.j g).opensRange.compl
     have hrange : Set.range (I'.subschemeι ≫ g) ⊆ (Q.j.opensRange.compl : Set X) := by
       rintro _ ⟨z, rfl⟩
-      have hz : I'.subschemeι z ∉ Set.range (Limits.pullback.snd Q.j g) := by
-        simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
+      have hz : I'.subschemeι z ∉ Set.range (Limits.pullback.snd Q.j g) :=
+        (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).1 ⟨z, rfl⟩
       rw [AlgebraicGeometry.Scheme.Pullback.range_snd] at hz
       simpa using hz
     have hker : I.subschemeι.ker ≤ (I'.subschemeι ≫ g).ker := by
