@@ -118,13 +118,15 @@ theorem quasiIso_localChainKPresheaf_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Co
   have hZ : (Z K₁)ᶜ ⊆ (Z K₂)ᶜ ∪ (Z K₃)ᶜ := by
     rw [← compl_inter]
     exact compl_subset_compl.2 h₁
+  have hab := TopCat.relativeMayerVietorisChainToBiprod_fromBiprod R (X := TopCat.of M)
+    (hc h.le₂₄) (hc h.le₃₄) (hc h.le₁₂) (hc h.le₁₃)
   have := TopCat.mono_relativeMayerVietorisChainToBiprod R (X := TopCat.of M) (U := (Z K₂)ᶜ)
     (V := (Z K₃)ᶜ) (W := (Z K₄)ᶜ) (hc h.le₂₄) (hc h.le₃₄) hW
   have := TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod R (X := TopCat.of M)
     (U := (Z K₂)ᶜ) (V := (Z K₃)ᶜ) (W := (Z K₄)ᶜ) (Z := (Z K₁)ᶜ) h₂.isOpen_compl
     h₃.isOpen_compl (hc h.le₂₄) (hc h.le₃₄) (hc h.le₁₂) (hc h.le₁₃) hW hZ
   rw [TopCat.KPresheaf.mayerVietorisDesc_eq_desc]
-  exact mappingCone.quasiIso_desc_extendMap_of_quasiIso_cokernelDesc _ _
+  exact mappingCone.quasiIso_desc_extendMap_of_quasiIso_cokernelDesc _ hab
     (by rw [localChainRestriction_def, localChainRestriction_def])
     (by rw [localChainRestriction_def, localChainRestriction_def]) _
 
