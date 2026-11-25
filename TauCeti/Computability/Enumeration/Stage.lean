@@ -148,13 +148,14 @@ theorem mem_stageLimit_iff_eventually {A : ℕ → Finset α} (hA : Monotone A) 
   rw [mem_stageLimit]
   exact ⟨fun ⟨s₀, hx⟩ => ⟨s₀, fun _ hs => hA hs hx⟩, fun ⟨s₀, h⟩ => ⟨s₀, h s₀ le_rfl⟩⟩
 
-/-- Every finite subset of the limit is already contained in a stage of an increasing
-enumeration. -/
-theorem exists_subset_stage_of_subset_stageLimit {A : ℕ → Finset α} (hA : Monotone A)
+/-- Every finite subset of the limit is already contained in a stage of a directed enumeration. -/
+theorem exists_subset_stage_of_subset_stageLimit {A : ℕ → Finset α} (hA : Directed (· ⊆ ·) A)
     {D : Finset α} (hD : (D : Set α) ⊆ stageLimit A) : ∃ s, D ⊆ A s := by
-  have hmono : Monotone fun s => (A s : Set α) := fun _ _ h => Finset.coe_subset.mpr (hA h)
+  have hdir : Directed (· ⊆ ·) fun s => (A s : Set α) := fun i j => by
+    obtain ⟨k, hik, hjk⟩ := hA i j
+    exact ⟨k, Finset.coe_subset.mpr hik, Finset.coe_subset.mpr hjk⟩
   rw [stageLimit_eq_iUnion] at hD
-  obtain ⟨s, hs⟩ := hmono.directed_le.exists_mem_subset_of_finset_subset_biUnion hD
+  obtain ⟨s, hs⟩ := hdir.exists_mem_subset_of_finset_subset_biUnion hD
   exact ⟨s, Finset.coe_subset.mp hs⟩
 
 /-- Increasing finite stages have unbounded cardinalities exactly when their limit is
@@ -164,7 +165,7 @@ theorem stageLimit_infinite_iff {A : ℕ → Finset α} (hA : Monotone A) :
   constructor
   · intro h n
     obtain ⟨D, hD, hcard⟩ := h.exists_subset_card_eq n
-    obtain ⟨s, hs⟩ := exists_subset_stage_of_subset_stageLimit hA hD
+    obtain ⟨s, hs⟩ := exists_subset_stage_of_subset_stageLimit hA.directed_le hD
     exact ⟨s, hcard ▸ Finset.card_le_card hs⟩
   · intro h hfin
     obtain ⟨s, hs⟩ := h (hfin.toFinset.card + 1)
@@ -193,7 +194,8 @@ theorem finite_prefix_stabilizes {A : ℕ → Finset ℕ} (hA : Monotone A) (u :
   classical
   -- All limit members in the finite prefix appear together in one stage.
   obtain ⟨s₀, hs₀⟩ := exists_subset_stage_of_subset_stageLimit (D :=
-      (Finset.range u).filter (· ∈ stageLimit A)) hA fun _ hx => (Finset.mem_filter.mp hx).2
+      (Finset.range u).filter (· ∈ stageLimit A)) hA.directed_le
+    fun _ hx => (Finset.mem_filter.mp hx).2
   refine ⟨s₀, fun s hs x hx => ⟨fun h => subset_stageLimit A s h, fun h => ?_⟩⟩
   exact hA hs (hs₀ (Finset.mem_filter.2 ⟨Finset.mem_range.2 hx, h⟩))
 

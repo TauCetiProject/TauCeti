@@ -66,7 +66,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
-  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
+  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`; sandwiched compositions obey
+  `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖` (`ContinuousLinearMap.norm_adjoint_comp_comp_le`).
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
@@ -89,7 +90,8 @@ Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ �
 (`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), so the determinants
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), and likewise for
+the adjoint equivalence (`ContinuousLinearEquiv.det_adjointEquiv`), so the determinants
 of an invertible real operator and of the adjoint of its inverse multiply to `1`
 (`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
@@ -288,6 +290,14 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   exact opNorm_comp_le _ _
 
 end RealAdjointBilinear
+
+/-- Operator-norm bound `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖`. -/
+theorem norm_adjoint_comp_comp_le {G H : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜 H] [CompleteSpace E] [CompleteSpace F]
+    (P : E →L[𝕜] F) (T : H →L[𝕜] F) (Q : G →L[𝕜] H) : ‖P† ∘L T ∘L Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖ := by
+  calc ‖P† ∘L T ∘L Q‖ ≤ ‖P†‖ * (‖T‖ * ‖Q‖) := (opNorm_comp_le _ _).trans <|
+        mul_le_mul_of_nonneg_left (opNorm_comp_le _ _) (norm_nonneg _)
+    _ = ‖P‖ * ‖T‖ * ‖Q‖ := by rw [adjoint.norm_map]; ring
 
 end ContinuousLinearMap
 
@@ -712,6 +722,27 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+namespace ContinuousLinearEquiv
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of the adjoint equivalence is the conjugate of the determinant. -/
+@[simp]
+theorem det_adjointEquiv [CompleteSpace E] (A : E ≃L[𝕜] E) :
+    LinearMap.det (A.adjointEquiv : E →ₗ[𝕜] E) = star (LinearMap.det (A : E →ₗ[𝕜] E)) := by
+  -- In infinite dimensions both determinants are `1`.
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · simp [LinearMap.det_eq_one_of_not_module_finite hE]
+  have h : (A.adjointEquiv : E →ₗ[𝕜] E) = LinearMap.adjoint (A : E →ₗ[𝕜] E) := by
+    have hA : LinearMap.toContinuousLinearMap (A : E →ₗ[𝕜] E) = (A : E →L[𝕜] E) := by
+      ext; simp
+    ext x
+    rw [LinearMap.adjoint_eq_toCLM_adjoint, hA]
+    simp [adjointEquiv_apply]
+  rw [h, LinearMap.det_adjoint]
+
+end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 

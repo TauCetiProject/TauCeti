@@ -33,6 +33,8 @@ structure. `loopHomologyZeroAlgEquiv` identifies it with the group algebra, and
 `loopHomologyZeroπ_mul` and `loopHomologyZeroπ_one` identify the actual chain product and unit
 with the homology operations. The projection `loopZeroChainToGroupAlgebra` of zero chains is
 surjective, and its kernel is exactly the boundaries (`loopZeroChainToGroupAlgebra_eq_zero_iff`).
+When the fundamental group is trivial, every zero chain of augmentation zero is a boundary
+(`loopZeroChain_mem_range_boundary_of_augment_eq_zero`).
 This supplies the algebraic bridge from loop chains to classical
 local coefficients. References: W. S. Massey, *Singular Homology Theory*,
 Chapter VII; Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
@@ -231,6 +233,22 @@ theorem loopZeroChainToGroupAlgebra_eq_zero_iff
       a ∈ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0) := by
   rw [← loopHomologyZeroπ_eq_zero_iff, ← loopHomologyZeroIso_hom_π]
   exact (loopHomologyZeroIso X x R).toLinearEquiv.map_eq_zero_iff
+
+/-- **A zero chain of Moore loops of augmentation zero is a boundary when the fundamental group is
+trivial**, for instance over a simply connected space: the Moore loops then form a path connected
+space. -/
+theorem loopZeroChain_mem_range_boundary_of_augment_eq_zero [Subsingleton (FundamentalGroup X x)]
+    {a : NormalizedCubicalChain (MooreLoopSpace X x) R 0}
+    (ha : NormalizedCubicalChain.augment (MooreLoopSpace X x) R a = 0) :
+    a ∈ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0) := by
+  refine (loopZeroChainToGroupAlgebra_eq_zero_iff a).1 ?_
+  have h : loopZeroChainToGroupAlgebra X x R =
+      MonoidAlgebra.lsingle 1 ∘ₗ NormalizedCubicalChain.augment (MooreLoopSpace X x) R :=
+    NormalizedCubicalChain.linearMap_ext fun c ↦ by
+      rw [loopZeroChainToGroupAlgebra_ofCube, LinearMap.comp_apply,
+        NormalizedCubicalChain.augment_ofCube, MonoidAlgebra.lsingle_apply,
+        Subsingleton.elim (MooreLoopSpace.fundamentalGroupHom x (c 0)) 1]
+  rw [h, LinearMap.comp_apply, ha, map_zero]
 
 /-- The projection of zero chains of Moore loops to the group algebra is surjective. -/
 theorem loopZeroChainToGroupAlgebra_surjective :

@@ -118,16 +118,16 @@ theorem commutatorElement_differenceShortRootUnit_differenceShortRootUnit
   -- The cross-block terms commute.
   have hBC : Commute (transvectionUnit hJ'I' (-a)) (transvectionUnit hJK b) :=
     commute_transvectionUnit hJ'I' hJK
-      (finSumFinEquiv_inr_ne_inl i j) (finSumFinEquiv_inl_ne_inr k j) _ _
+      (Fin.finSumFinEquiv_inr_ne_inl i j) (Fin.finSumFinEquiv_inl_ne_inr k j) _ _
   have hAD : Commute (transvectionUnit hIJ a) (transvectionUnit hK'J' (-b)) :=
     commute_transvectionUnit hIJ hK'J'
-      (finSumFinEquiv_inl_ne_inr j k) (finSumFinEquiv_inr_ne_inl j i) _ _
+      (Fin.finSumFinEquiv_inl_ne_inr j k) (Fin.finSumFinEquiv_inr_ne_inl j i) _ _
   have hCQ : Commute (transvectionUnit hJK b) (transvectionUnit hK'I' (-(a * b))) :=
     commute_transvectionUnit hJK hK'I'
-      (finSumFinEquiv_inl_ne_inr k k) (finSumFinEquiv_inr_ne_inl i j) _ _
+      (Fin.finSumFinEquiv_inl_ne_inr k k) (Fin.finSumFinEquiv_inr_ne_inl i j) _ _
   have hAQ : Commute (transvectionUnit hIJ a) (transvectionUnit hK'I' (-(a * b))) :=
     commute_transvectionUnit hIJ hK'I'
-      (finSumFinEquiv_inl_ne_inr j k) (finSumFinEquiv_inr_ne_inl i i) _ _
+      (Fin.finSumFinEquiv_inl_ne_inr j k) (Fin.finSumFinEquiv_inr_ne_inl i i) _ _
   rw [TauCeti.commutatorElement_mul_mul_eq_mul_of_commute hBC hAD
     (by simpa only [hBD] using hCQ.mul_left hAQ), hAC, hBD]
 
@@ -154,11 +154,11 @@ theorem commutatorElement_differenceShortRootUnit_positiveLongRootTransvectionUn
   let I' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr i)
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hIJ : I ≠ J := differenceShortRoot_first_indices_ne hij
-  have hJI' : J ≠ I' := finSumFinEquiv_inl_ne_inr j i
-  have hII' : I ≠ I' := finSumFinEquiv_inl_ne_inr i i
+  have hJI' : J ≠ I' := Fin.finSumFinEquiv_inl_ne_inr j i
+  have hII' : I ≠ I' := Fin.finSumFinEquiv_inl_ne_inr i i
   have hJ'I' : J' ≠ I' := differenceShortRoot_second_indices_ne hij
-  have hJJ' : J ≠ J' := finSumFinEquiv_inl_ne_inr j j
-  have hIJ' : I ≠ J' := finSumFinEquiv_inl_ne_inr i j
+  have hJJ' : J ≠ J' := Fin.finSumFinEquiv_inl_ne_inr j j
+  have hIJ' : I ≠ J' := Fin.finSumFinEquiv_inl_ne_inr i j
   have hBC :
       ⁅transvectionUnit hJ'I' (-a), transvectionUnit hJJ' b⁆ =
         transvectionUnit hJI' (a * b) := by
@@ -177,12 +177,12 @@ theorem commutatorElement_differenceShortRootUnit_positiveLongRootTransvectionUn
     ring
   rw [commutatorElement_mul_left_eq_conj_mul, hBC, hAC]
   exact mul_mul_inv_mul_eq_of_commutatorElement_eq hAE
-    (commute_transvectionUnit hII' hJI' (finSumFinEquiv_inr_ne_inl i j)
-      (finSumFinEquiv_inr_ne_inl i i) _ _)
-    (commute_transvectionUnit hII' hIJ' (finSumFinEquiv_inr_ne_inl i i)
-      (finSumFinEquiv_inr_ne_inl j i) _ _)
-    (commute_transvectionUnit hJI' hIJ' (finSumFinEquiv_inr_ne_inl i i)
-      (finSumFinEquiv_inr_ne_inl j j) _ _)
+    (commute_transvectionUnit hII' hJI' (Fin.finSumFinEquiv_inr_ne_inl i j)
+      (Fin.finSumFinEquiv_inr_ne_inl i i) _ _)
+    (commute_transvectionUnit hII' hIJ' (Fin.finSumFinEquiv_inr_ne_inl i i)
+      (Fin.finSumFinEquiv_inr_ne_inl j i) _ _)
+    (commute_transvectionUnit hJI' hIJ' (Fin.finSumFinEquiv_inr_ne_inl i i)
+      (Fin.finSumFinEquiv_inr_ne_inl j j) _ _)
 
 /-- **The structure-constant-two Chevalley relation in the standard symplectic group.** The
 commutator of `x_{eᵢ-eⱼ}(a)` and `x_{eᵢ+eⱼ}(b)` is `x_{2eᵢ}(2ab)`. -/
@@ -204,9 +204,9 @@ theorem commutatorElement_differenceShortRootUnit_positiveSumShortRootUnit
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hIJ : I ≠ J := differenceShortRoot_first_indices_ne hij
   have hJ'I' : J' ≠ I' := differenceShortRoot_second_indices_ne hij
-  have hIJ' : I ≠ J' := finSumFinEquiv_inl_ne_inr i j
-  have hJI' : J ≠ I' := finSumFinEquiv_inl_ne_inr j i
-  have hII' : I ≠ I' := finSumFinEquiv_inl_ne_inr i i
+  have hIJ' : I ≠ J' := Fin.finSumFinEquiv_inl_ne_inr i j
+  have hJI' : J ≠ I' := Fin.finSumFinEquiv_inl_ne_inr j i
+  have hII' : I ≠ I' := Fin.finSumFinEquiv_inl_ne_inr i i
   have hBD :
       ⁅transvectionUnit hJ'I' (-a), transvectionUnit hIJ' b⁆ =
         transvectionUnit hII' (a * b) := by
@@ -222,7 +222,7 @@ theorem commutatorElement_differenceShortRootUnit_positiveSumShortRootUnit
           transvectionUnit hIJ' b * transvectionUnit hJI' b⁆ =
         transvectionUnit hII' (a * b) := by
     rw [commutatorElement_mul_right_eq_mul_conj, hBD,
-      (commute_transvectionUnit hJ'I' hJI' (finSumFinEquiv_inr_ne_inl i j)
+      (commute_transvectionUnit hJ'I' hJI' (Fin.finSumFinEquiv_inr_ne_inl i j)
         hJ'I'.symm _ _).commutator_eq]
     simp only [mul_one, mul_assoc, mul_inv_cancel, mul_one]
   have hADE :
@@ -232,8 +232,8 @@ theorem commutatorElement_differenceShortRootUnit_positiveSumShortRootUnit
     rw [commutatorElement_mul_right_eq_mul_conj,
       (commute_transvectionUnit hIJ hIJ' hIJ.symm hIJ'.symm _ _).commutator_eq,
       one_mul, hAE]
-    rw [(commute_transvectionUnit hIJ' hII' (finSumFinEquiv_inr_ne_inl j i)
-      (finSumFinEquiv_inr_ne_inl i i) _ _).eq, mul_inv_cancel_right]
+    rw [(commute_transvectionUnit hIJ' hII' (Fin.finSumFinEquiv_inr_ne_inl j i)
+      (Fin.finSumFinEquiv_inr_ne_inl i i) _ _).eq, mul_inv_cancel_right]
   rw [commutatorElement_mul_left_eq_conj_mul, hBDE, hADE]
   rw [(commute_transvectionUnit hIJ hII' hIJ.symm hII'.symm _ _).eq]
   simp only [mul_assoc, mul_inv_cancel, mul_one]
@@ -259,10 +259,10 @@ theorem commutatorElement_differenceShortRootUnit_negativeLongRootTransvectionUn
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hIJ : I ≠ J := differenceShortRoot_first_indices_ne hij
   have hJ'I' : J' ≠ I' := differenceShortRoot_second_indices_ne hij
-  have hI'I : I' ≠ I := finSumFinEquiv_inr_ne_inl i i
-  have hI'J : I' ≠ J := finSumFinEquiv_inr_ne_inl i j
-  have hJ'I : J' ≠ I := finSumFinEquiv_inr_ne_inl j i
-  have hJ'J : J' ≠ J := finSumFinEquiv_inr_ne_inl j j
+  have hI'I : I' ≠ I := Fin.finSumFinEquiv_inr_ne_inl i i
+  have hI'J : I' ≠ J := Fin.finSumFinEquiv_inr_ne_inl i j
+  have hJ'I : J' ≠ I := Fin.finSumFinEquiv_inr_ne_inl j i
+  have hJ'J : J' ≠ J := Fin.finSumFinEquiv_inr_ne_inl j j
   have hBC :
       ⁅transvectionUnit hJ'I' (-a), transvectionUnit hI'I b⁆ =
         transvectionUnit hJ'I (-(a * b)) := by
@@ -302,9 +302,9 @@ theorem commutatorElement_differenceShortRootUnit_negativeSumShortRootUnit
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hIJ : I ≠ J := differenceShortRoot_first_indices_ne hij
   have hJ'I' : J' ≠ I' := differenceShortRoot_second_indices_ne hij
-  have hI'J : I' ≠ J := finSumFinEquiv_inr_ne_inl i j
-  have hJ'I : J' ≠ I := finSumFinEquiv_inr_ne_inl j i
-  have hJ'J : J' ≠ J := finSumFinEquiv_inr_ne_inl j j
+  have hI'J : I' ≠ J := Fin.finSumFinEquiv_inr_ne_inl i j
+  have hJ'I : J' ≠ I := Fin.finSumFinEquiv_inr_ne_inl j i
+  have hJ'J : J' ≠ J := Fin.finSumFinEquiv_inr_ne_inl j j
   have hBC :
       ⁅transvectionUnit hJ'I' (-a), transvectionUnit hI'J b⁆ =
         transvectionUnit hJ'J (-(a * b)) := by
@@ -387,10 +387,10 @@ theorem commutatorElement_positiveSumShortRootUnit_negativeLongRootTransvectionU
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hIJ : I ≠ J := differenceShortRoot_first_indices_ne hij
   have hJ'I' : J' ≠ I' := differenceShortRoot_second_indices_ne hij
-  have hIJ' : I ≠ J' := finSumFinEquiv_inl_ne_inr i j
-  have hJI' : J ≠ I' := finSumFinEquiv_inl_ne_inr j i
-  have hJ'J : J' ≠ J := finSumFinEquiv_inr_ne_inl j j
-  have hII' : I ≠ I' := finSumFinEquiv_inl_ne_inr i i
+  have hIJ' : I ≠ J' := Fin.finSumFinEquiv_inl_ne_inr i j
+  have hJI' : J ≠ I' := Fin.finSumFinEquiv_inl_ne_inr j i
+  have hJ'J : J' ≠ J := Fin.finSumFinEquiv_inr_ne_inl j j
+  have hII' : I ≠ I' := Fin.finSumFinEquiv_inl_ne_inr i i
   exact commutatorElement_transvectionUnit_pair_chain hIJ' hJI' hJ'J hJ'I' hIJ hII' a b
 
 /-- **The complementary negative-sum multiply-laced Chevalley relation.** The commutator of
@@ -412,10 +412,10 @@ theorem commutatorElement_negativeSumShortRootUnit_positiveLongRootTransvectionU
   let J' := (finSumFinEquiv : Fin m ⊕ Fin m ≃ Fin (m + m)) (Sum.inr j)
   have hJI : J ≠ I := differenceShortRoot_first_indices_ne hij.symm
   have hI'J' : I' ≠ J' := differenceShortRoot_second_indices_ne hij.symm
-  have hI'J : I' ≠ J := finSumFinEquiv_inr_ne_inl i j
-  have hJ'I : J' ≠ I := finSumFinEquiv_inr_ne_inl j i
-  have hJJ' : J ≠ J' := finSumFinEquiv_inl_ne_inr j j
-  have hI'I : I' ≠ I := finSumFinEquiv_inr_ne_inl i i
+  have hI'J : I' ≠ J := Fin.finSumFinEquiv_inr_ne_inl i j
+  have hJ'I : J' ≠ I := Fin.finSumFinEquiv_inr_ne_inl j i
+  have hJJ' : J ≠ J' := Fin.finSumFinEquiv_inl_ne_inr j j
+  have hI'I : I' ≠ I := Fin.finSumFinEquiv_inr_ne_inl i i
   rw [commutatorElement_transvectionUnit_pair_chain hI'J hJ'I hJJ' hJI hI'J' hI'I]
   rw [(commute_transvectionUnit hJI hI'J' hI'I.symm hJJ'.symm (-(a * b)) (a * b)).eq]
 

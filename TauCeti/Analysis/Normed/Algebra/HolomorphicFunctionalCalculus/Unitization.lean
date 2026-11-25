@@ -11,18 +11,22 @@ public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 /-!
 # The holomorphic functional calculus in the `ℓ¹` unitization
 
-For an element `a` of a nonunital complex Banach algebra `A`, applying naturality of
-`holomorphicCalculus` to the scalar augmentation `WithLp.unitizationFstA ℂ A` of the `ℓ¹`
-unitization shows that the scalar coordinate of `f(a)` is `f(0)`. Consequently, the unitized
-holomorphic calculus of `a` at `f` lies in `A` if and only if `f(0) = 0`.
+For an element `u` of the external `ℓ¹` unitization `WithLp 1 (Unitization ℂ A)` of a nonunital
+complex Banach algebra `A`, applying naturality of `holomorphicCalculus` to the scalar
+augmentation `WithLp.unitizationFstA ℂ A` shows that the scalar coordinate of `g(u)` is
+`g(WithLp.unitizationFstA ℂ A u)`. Consequently, `g(u)` lies in the embedded copy of `A`
+(and is recovered by projecting onto `A` and re-embedding) if and only if
+`g(WithLp.unitizationFstA ℂ A u) = 0`. When the calculus is evaluated at an embedded element
+`u = WithLp.unitizationInrL ℂ A a`, `WithLp.unitizationFstA ℂ A u = 0`, so vanishing at `0`
+suffices; for general `u`, the germ must vanish at its scalar coordinate
+`WithLp.unitizationFstA ℂ A u`.
 
 ## Main results
 
-* `TauCeti.unitizationFstA_holomorphicCalculus_unitizationInrL`: the scalar coordinate of the
-  unitized calculus at `g` is `g(0)`.
-* `TauCeti.holomorphicCalculus_unitizationInrL_mem_range_iff` and
-  `TauCeti.holomorphicCalculusOn_unitizationInrL_mem_range_iff`: membership in the image of `A` is
-  equivalent to vanishing at `0`.
+* `WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff` and
+  `WithLp.holomorphicCalculusOn_mem_range_unitizationInrL_iff`: membership in the image of `A` is
+  equivalent to vanishing at the scalar coordinate `WithLp.unitizationFstA ℂ A u` (and at `0`
+  when evaluated at `WithLp.unitizationInrL ℂ A a`), via `AlgHom.map_holomorphicCalculus_eq_eval`.
 
 ## References
 
@@ -34,39 +38,33 @@ public noncomputable section
 
 open TopologicalSpace
 
-namespace TauCeti
+namespace WithLp
 
-open HolomorphicFunctions
+open TauCeti HolomorphicFunctions
 
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [CompleteSpace A]
 
-/-- The scalar coordinate of the unitized holomorphic calculus of `a : A` at `g` is `g(0)`. -/
-theorem unitizationFstA_holomorphicCalculus_unitizationInrL (a : A)
-    (g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))) :
-    WithLp.unitizationFstA ℂ A (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g) =
-      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g := by
-  rw [ContinuousAlgHom.map_holomorphicCalculus, holomorphicCalculus_complex]
-  obtain ⟨U, haU, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
-  simp
+/-- **Unitized holomorphic calculus range criterion (germ form).** The holomorphic calculus of
+`u : WithLp 1 (Unitization ℂ A)` lies in the image of `A` if and only if the germ vanishes at
+`WithLp.unitizationFstA ℂ A u`. -/
+theorem holomorphicCalculus_mem_range_unitizationInrL_iff (u : WithLp 1 (Unitization ℂ A))
+    (g : holomorphicGerms (spectrum ℂ u)) :
+    holomorphicCalculus u g ∈ Set.range (unitizationInrL ℂ A) ↔
+      holomorphicGerms.eval (unitizationFstA ℂ A u)
+        (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g = 0 := by
+  rw [mem_range_unitizationInrL_iff,
+    AlgHom.map_holomorphicCalculus_eq_eval (unitizationFstA ℂ A)]
 
-/-- **Nonunital holomorphic calculus criterion (germ form).** For `a` in a nonunital complex Banach
-algebra `A`, the holomorphic calculus of `WithLp.unitizationInrL ℂ A a` in the `ℓ¹` unitization
-lies in the image of `A` if and only if the germ vanishes at `0`. -/
-theorem holomorphicCalculus_unitizationInrL_mem_range_iff (a : A)
-    (g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))) :
-    holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g ∈
-      Set.range (WithLp.unitizationInrL ℂ A) ↔
-      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g = 0 := by
-  rw [WithLp.mem_range_unitizationInrL_iff, unitizationFstA_holomorphicCalculus_unitizationInrL]
+/-- **Unitized holomorphic calculus range criterion (open-domain form).** The calculus of
+`u : WithLp 1 (Unitization ℂ A)` at `f : holomorphicFunctions U` lies in the image of `A` if and
+only if `f` vanishes at `WithLp.unitizationFstA ℂ A u`. -/
+theorem holomorphicCalculusOn_mem_range_unitizationInrL_iff (u : WithLp 1 (Unitization ℂ A))
+    (U : Opens ℂ) (ha : spectrum ℂ u ⊆ U) (f : holomorphicFunctions U) :
+    holomorphicCalculusOn u U ha f ∈ Set.range (unitizationInrL ℂ A) ↔
+      f.val ⟨unitizationFstA ℂ A u,
+        ha (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u)⟩ = 0 := by
+  rw [← holomorphicCalculus_toGerm, u.holomorphicCalculus_mem_range_unitizationInrL_iff,
+    eval_toGerm]
 
-/-- **Nonunital holomorphic calculus criterion (open-domain form).** The unitized calculus of
-`a : A` at `f : holomorphicFunctions U` lies in the image of `A` if and only if `f(0) = 0`. -/
-theorem holomorphicCalculusOn_unitizationInrL_mem_range_iff (a : A) (U : Opens ℂ)
-    (ha : spectrum ℂ (WithLp.unitizationInrL ℂ A a) ⊆ U) (f : holomorphicFunctions U) :
-    holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha f ∈
-      Set.range (WithLp.unitizationInrL ℂ A) ↔
-      f.val ⟨0, ha (WithLp.zero_mem_spectrum_unitizationInrL a)⟩ = 0 := by
-  rw [← holomorphicCalculus_toGerm, holomorphicCalculus_unitizationInrL_mem_range_iff, eval_toGerm]
-
-end TauCeti
+end WithLp

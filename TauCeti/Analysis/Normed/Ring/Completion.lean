@@ -32,6 +32,8 @@ of norm at most one (`TauCeti.Huber.IsPseudoUniformizer.isPowerBounded_iff_norm_
   has norm `1` has the same property.
 * `UniformSpace.Completion.instNonUnitalNormedRing`: the completion of a nonunital seminormed
   ring is a nonunital normed ring.
+* `UniformSpace.Completion.isBounded_coeRingHom`: the embedding of a seminormed ring into its
+  completion is a bounded ring homomorphism.
 -/
 
 public section
@@ -75,3 +77,9 @@ noncomputable instance UniformSpace.Completion.instNonUnitalNormedRing {R : Type
     induction x, y using Completion.induction_on₂ with
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
     | ih a b => simpa only [← Completion.coe_mul', Completion.norm_coe] using norm_mul_le a b
+
+/-- The embedding of a seminormed ring into its completion is a bounded ring homomorphism; it
+preserves norms. -/
+theorem UniformSpace.Completion.isBounded_coeRingHom {R : Type*} [SeminormedRing R] :
+    (Completion.coeRingHom : R →+* Completion R).IsBounded :=
+  ⟨1, one_pos, fun a => by simp⟩
