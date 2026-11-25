@@ -10,8 +10,7 @@ module
 -- supplies the relabelling the proof feeds to Mathlib's `RootPairing.Base.equivOfCartanMatrixEq`.
 -- It re-exports `Mathlib.LinearAlgebra.RootSystem.CartanMatrix`, hence that theorem.
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
--- `TauCeti.LinearAlgebra.RootSystem.Height` supplies `RootPairing.Base.ext`, used in a proof only.
-import TauCeti.LinearAlgebra.RootSystem.Height
+public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 
 /-!
 # Root systems of the same Dynkin type are isomorphic
@@ -22,14 +21,30 @@ of the standard matrices `TauCeti.DynkinType.cartanMatrix`. The other is the rig
 that the type is a complete invariant, and this file supplies it: two root systems carrying bases
 of the same Dynkin type are isomorphic as root pairings.
 
-Nothing here re-proves rigidity. Mathlib's `RootPairing.Base.equivOfCartanMatrixEq` already builds
-an isomorphism from a relabelling matching the two Cartan matrices, and
-`TauCeti.HasCartanType.exists_supportEquiv_cartanMatrix_eq` is what supplies such a relabelling: two
-bases of type `t` are each labelled by the nodes of `t`, and composing the two labellings identifies
-their supports compatibly with the Cartan matrices.
+For root systems over a common base ring, `TauCeti.nonempty_equiv_of_hasCartanType` applies
+Mathlib's `RootPairing.Base.equivOfCartanMatrixEq` directly, with
+`TauCeti.HasCartanType.exists_supportEquiv_cartanMatrix_eq` supplying the relabelling: two bases of
+type `t` are each labelled by the nodes of `t`, and composing the two labellings identifies their
+supports compatibly with the Cartan matrices.
+
+Over arbitrary characteristic-zero domains and without `[IsRootSystem]`, a
+Cartan-matrix-preserving bijection `e : b.support ≃ b₂.support` between the simple roots of two
+finite reduced crystallographic root pairings extends via
+`RootPairing.Base.indexEquivOfCartanMatrixEq` to a bijection `ι ≃ ι₂` between their root index
+types. It relabels simple-root coordinates along `e.symm`, intertwines `P.rootSpanMem ℤ` with
+`b.toWeightBasisInt.equiv b₂.toWeightBasisInt e`, and preserves root heights, positivity, the
+positive roots, maximal root height (when the root sets are nonempty), and the highest root (when
+`P₂` is irreducible).
 
 ## Main results
 
+* `RootPairing.Base.indexEquivOfCartanMatrixEq`: bijection `ι ≃ ι₂` induced by a
+  Cartan-matrix-preserving bijection of simple roots, without `[IsRootSystem]` or equal base rings,
+  together with `rootCoefficients_indexEquivOfCartanMatrixEq`, `indexEquivOfCartanMatrixEq_symm`,
+  `rootSpanMem_indexEquivOfCartanMatrixEq`, `indexEquivOfCartanMatrixEq_apply_support`,
+  `height_indexEquivOfCartanMatrixEq`, `isPos_indexEquivOfCartanMatrixEq_iff`,
+  `image_indexEquivOfCartanMatrixEq_posRoots`, `height_highestRoot_eq_of_cartanMatrixEq`, and
+  `indexEquivOfCartanMatrixEq_highestRoot`.
 * `TauCeti.equivOfCartanMatrixEq_indexEquiv_apply`: the isomorphism constructed from a Cartan
   matrix relabelling carries each simple-root index according to that relabelling.
 * `TauCeti.map_equivOfCartanMatrixEq`: transporting the first base along that isomorphism gives
@@ -45,6 +60,174 @@ Theory*, §11.1, for the isomorphism theorem in the classical language.
 -/
 
 public section
+
+namespace RootPairing.Base
+
+section IndexEquiv
+
+variable {ι R M N ι₂ R₂ M₂ N₂ : Type*}
+  [CommRing R] [IsDomain R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [CommRing R₂] [IsDomain R₂] [CharZero R₂]
+  [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
+  {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  {P₂ : RootPairing ι₂ R₂ M₂ N₂} [Finite ι₂] [P₂.IsCrystallographic] [P₂.IsReduced]
+
+private lemma comp_mem_range_rootCoefficients
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    b.rootCoefficients i ∘ e.symm ∈ Set.range b₂.rootCoefficients := by
+  classical
+  obtain ⟨k, hk⟩ := Set.mem_iUnion.mp
+    (b.iUnion_orbit_single_eq_range_rootCoefficients.ge ⟨i, rfl⟩)
+  rw [← b₂.iUnion_orbit_single_eq_range_rootCoefficients, Set.mem_iUnion]
+  refine ⟨e k, ?_⟩
+  have h := Matrix.comp_equiv_mem_orbit b.cartanMatrix b.cartanMatrix_apply_same
+    b₂.cartanMatrix_apply_same e.symm (fun u v ↦ by simpa using he (e.symm u) (e.symm v)) hk
+  have hs : (Pi.single k 1 : b.support → ℤ) ∘ e.symm = Pi.single (e k) 1 := by
+    ext u; simp [Pi.single_apply, e.symm_apply_eq]
+  rwa [hs] at h
+
+/-- **A Cartan-matrix-preserving bijection between the simple roots of two finite reduced
+crystallographic root pairings extends to a bijection between their root index types**, without
+requiring `[IsRootSystem]` or equal ambient scalar rings. -/
+noncomputable def indexEquivOfCartanMatrixEq
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) : ι ≃ ι₂ :=
+  have hbij : Set.BijOn (· ∘ e.symm)
+      (Set.range b.rootCoefficients) (Set.range b₂.rootCoefficients) :=
+    ⟨by rintro _ ⟨i, rfl⟩; exact comp_mem_range_rootCoefficients b b₂ e he i,
+     fun c₁ _ c₂ _ h ↦ funext fun k ↦ by simpa using congrFun h (e k),
+     by rintro _ ⟨j, rfl⟩
+        exact ⟨b₂.rootCoefficients j ∘ e,
+          comp_mem_range_rootCoefficients b₂ b e.symm
+            (fun u v ↦ by simpa using (he (e.symm u) (e.symm v)).symm) j,
+          funext fun _ ↦ by simp⟩⟩
+  (Equiv.ofInjective b.rootCoefficients b.rootCoefficients_injective).trans <|
+    hbij.equiv.trans (Equiv.ofInjective b₂.rootCoefficients b₂.rootCoefficients_injective).symm
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` relabels simple-root coefficient columns along
+`e.symm`. -/
+@[simp]
+theorem rootCoefficients_indexEquivOfCartanMatrixEq
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    b₂.rootCoefficients (b.indexEquivOfCartanMatrixEq b₂ e he i) =
+      b.rootCoefficients i ∘ e.symm := by
+  simp only [indexEquivOfCartanMatrixEq, Equiv.trans_apply]
+  exact Equiv.apply_ofInjective_symm b₂.rootCoefficients_injective _
+
+/-- The inverse of `RootPairing.Base.indexEquivOfCartanMatrixEq` is the equivalence induced by
+`e.symm`. -/
+@[simp]
+theorem indexEquivOfCartanMatrixEq_symm
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) :
+    (b.indexEquivOfCartanMatrixEq b₂ e he).symm =
+      b₂.indexEquivOfCartanMatrixEq b e.symm
+        (fun u v ↦ by simpa using (he (e.symm u) (e.symm v)).symm) := by
+  ext j
+  apply b.rootCoefficients_injective
+  rw [rootCoefficients_indexEquivOfCartanMatrixEq, Equiv.symm_symm]
+  ext k
+  have h := congrFun (rootCoefficients_indexEquivOfCartanMatrixEq b b₂ e he
+    ((b.indexEquivOfCartanMatrixEq b₂ e he).symm j)) (e k)
+  simpa using h.symm
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` intertwines `rootSpanMem ℤ` with the linear
+equivalence `b.toWeightBasisInt.equiv b₂.toWeightBasisInt e` of root lattices. -/
+@[simp]
+theorem rootSpanMem_indexEquivOfCartanMatrixEq
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    P₂.rootSpanMem ℤ (b.indexEquivOfCartanMatrixEq b₂ e he i) =
+      b.toWeightBasisInt.equiv b₂.toWeightBasisInt e (P.rootSpanMem ℤ i) := by
+  have hspan : P.rootSpanMem ℤ i = ∑ k, b.rootCoefficients i k • b.toWeightBasisInt k :=
+    Subtype.ext <| by
+      dsimp only [RootPairing.rootSpanMem]
+      rw [Submodule.coe_sum]
+      simp_rw [SetLike.val_smul, b.coe_toWeightBasisInt_apply]
+      exact (b.sum_rootCoefficients_smul_root i).symm
+  rw [hspan, map_sum]
+  apply Subtype.ext
+  dsimp only [RootPairing.rootSpanMem]
+  rw [Submodule.coe_sum, ← b₂.sum_rootCoefficients_smul_root]
+  simp_rw [rootCoefficients_indexEquivOfCartanMatrixEq, Function.comp_apply, map_zsmul,
+    Module.Basis.equiv_apply, SetLike.val_smul, b₂.coe_toWeightBasisInt_apply]
+  exact (e.sum_comp fun u ↦ b.rootCoefficients i (e.symm u) • P₂.root u).symm.trans
+    (Finset.sum_congr rfl fun k _ ↦ by simp)
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` extends `e` on simple-root indices. -/
+@[simp]
+theorem indexEquivOfCartanMatrixEq_apply_support
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : b.support) :
+    b.indexEquivOfCartanMatrixEq b₂ e he i = e i := by
+  classical
+  apply b₂.rootCoefficients_injective
+  rw [rootCoefficients_indexEquivOfCartanMatrixEq, b.rootCoefficients_coe i,
+    b₂.rootCoefficients_coe (e i)]
+  ext u; simp [Pi.single_apply, e.symm_apply_eq]
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` preserves root heights. -/
+@[simp]
+theorem height_indexEquivOfCartanMatrixEq
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    b₂.height (b.indexEquivOfCartanMatrixEq b₂ e he i) = b.height i := by
+  rw [← b₂.sum_rootCoefficients_eq_height, rootCoefficients_indexEquivOfCartanMatrixEq,
+    ← b.sum_rootCoefficients_eq_height]
+  exact e.symm.sum_comp (b.rootCoefficients i)
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` preserves positivity of roots. -/
+@[simp]
+theorem isPos_indexEquivOfCartanMatrixEq_iff
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    b₂.IsPos (b.indexEquivOfCartanMatrixEq b₂ e he i) ↔ b.IsPos i := by
+  rw [← b₂.zero_le_rootCoefficients_iff, ← b.zero_le_rootCoefficients_iff,
+    rootCoefficients_indexEquivOfCartanMatrixEq]
+  exact ⟨fun h k ↦ by simpa using h (e k), fun h u ↦ h (e.symm u)⟩
+
+/-- `RootPairing.Base.indexEquivOfCartanMatrixEq` maps the positive roots of `b` onto the positive
+roots of `b₂`. -/
+@[simp]
+theorem image_indexEquivOfCartanMatrixEq_posRoots
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) :
+    b.indexEquivOfCartanMatrixEq b₂ e he '' TauCeti.posRoots P b = TauCeti.posRoots P₂ b₂ := by
+  rw [(b.indexEquivOfCartanMatrixEq b₂ e he).image_eq_preimage_symm]
+  ext j
+  simp [TauCeti.mem_posRoots]
+
+/-- Bases of finite reduced crystallographic root pairings with equal Cartan matrices up to
+relabelling have the same maximal root height. -/
+theorem height_highestRoot_eq_of_cartanMatrixEq [Nonempty ι] [Nonempty ι₂]
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) :
+    b.height b.highestRoot = b₂.height b₂.highestRoot := by
+  refine le_antisymm ?_ ?_
+  · rw [← height_indexEquivOfCartanMatrixEq b b₂ e he b.highestRoot]
+    exact b₂.height_le_height_highestRoot _
+  · have hsymm : ∀ u v, b.cartanMatrix (e.symm u) (e.symm v) = b₂.cartanMatrix u v :=
+      fun u v ↦ by simpa using (he (e.symm u) (e.symm v)).symm
+    rw [← height_indexEquivOfCartanMatrixEq b₂ b e.symm hsymm b₂.highestRoot]
+    exact b.height_le_height_highestRoot _
+
+/-- When `P₂` is irreducible, `RootPairing.Base.indexEquivOfCartanMatrixEq` sends the highest root
+of `b` to the highest root of `b₂`. -/
+@[simp]
+theorem indexEquivOfCartanMatrixEq_highestRoot [Nonempty ι] [Nonempty ι₂] [P₂.IsIrreducible]
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) :
+    b.indexEquivOfCartanMatrixEq b₂ e he b.highestRoot = b₂.highestRoot := by
+  by_contra hne
+  exact (b₂.height_lt_height_highestRoot hne).ne <|
+    (height_indexEquivOfCartanMatrixEq b b₂ e he b.highestRoot).trans
+      (height_highestRoot_eq_of_cartanMatrixEq b b₂ e he)
+
+end IndexEquiv
+
+end RootPairing.Base
 
 namespace TauCeti
 
