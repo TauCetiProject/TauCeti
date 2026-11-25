@@ -75,6 +75,7 @@ theorem isRelEigenvalueVector_relEigenvalueVector_of_exists {h a : E → E → �
   exact hμ.choose_spec.2
 
 /-- **`λ_h[0] = 0`** for any form `h`. -/
+@[simp]
 theorem relEigenvalueVector_zero (h : E → E → 𝕜) : relEigenvalueVector h (fun _ _ ↦ 0) = 0 := by
   rw [relEigenvalueVector_def]
   split_ifs with hμ
@@ -152,14 +153,11 @@ theorem sum_relEigenvalueVector_eq_sum_re_apply (hh : h.IsSymm)
     simp
   let : NormedAddCommGroup E := (hh.innerProductCore hpos).toNormedAddCommGroup
   let : InnerProductSpace 𝕜 E := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
-  have hin : (fun u v ↦ inner 𝕜 u v) = (h · ·) := funext₂ (hh.inner_ofCore_innerProductCore hpos)
   have hon : Orthonormal 𝕜 b := orthonormal_iff_ite.2 fun i j ↦
     (hh.inner_ofCore_innerProductCore hpos _ _).trans (hb i j)
-  obtain ⟨w, hw⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (s := Set.univ)
-    (Fintype.card_fin _).symm (hon.comp _ Subtype.val_injective)
-  obtain rfl : ⇑w = b := funext fun i ↦ hw i (Set.mem_univ i)
+  obtain ⟨w, rfl⟩ := hon.exists_orthonormalBasis_coe_eq (Fintype.card_fin _).symm
   have hlam : IsRelEigenvalueVector (h · ·) (a · ·) (ha.relEigenvalues rfl) :=
-    hin ▸ ha.isRelEigenvalueVector_relEigenvalues
+    funext₂ (hh.inner_ofCore_innerProductCore hpos) ▸ ha.isRelEigenvalueVector_relEigenvalues
   rw [hlam.relEigenvalueVector_eq (ha.relEigenvalues_antitone rfl),
     ha.sum_relEigenvalues_eq_sum_re_apply rfl w]
 

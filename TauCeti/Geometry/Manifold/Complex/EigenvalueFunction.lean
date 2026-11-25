@@ -95,12 +95,13 @@ theorem antitone_relEigenvalueFunction (κ : SmoothTwoForm 𝓘(ℝ, E) X)
   antitone_relEigenvalueVector _ _
 
 /-- **The complex Laplacian of a constant vanishes.** -/
+@[simp]
 theorem complexLaplacian_const (κ : SmoothTwoForm 𝓘(ℝ, E) X) (c : ℝ) (x : X) :
     complexLaplacian E κ (fun _ ↦ c) x = 0 := by
   have h0 : ddbarHermitianForm E 0 (fun _ ↦ c) x = fun _ _ ↦ 0 := by
     ext u v
     simp
-  simp [complexLaplacian_def, relEigenvalueFunction_def, h0, relEigenvalueVector_zero]
+  simp [complexLaplacian_def, relEigenvalueFunction_def, h0]
 
 namespace SmoothTwoForm
 
@@ -127,8 +128,9 @@ theorem Compatible.relEigenvalueFunction_eq_of_isRelEigenvalueVector
     (hα : ∀ u v : E, α x ![I • u, I • v] = α x ![u, v]) {μ : Fin (finrank ℂ E) → ℝ}
     (hμ : IsRelEigenvalueVector (twoFormHermitianForm E κ.val x) (ddbarHermitianForm E α φ x) μ)
     (hμa : Antitone μ) : relEigenvalueFunction E κ α φ x = μ := by
-  rw [relEigenvalueFunction_def, ← coe_twoFormSesqForm (hκ.invariant.apply_I_smul_I_smul x),
-    ← coe_ddbarSesqForm hα] at *
+  rw [relEigenvalueFunction_def]
+  rw [← coe_twoFormSesqForm (hκ.invariant.apply_I_smul_I_smul x), ← coe_ddbarSesqForm hα]
+    at hμ ⊢
   exact hμ.relEigenvalueVector_eq hμa
 
 /-- **`λ_κ[κ] = e`.** -/
