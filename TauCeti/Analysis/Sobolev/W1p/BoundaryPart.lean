@@ -45,7 +45,8 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 * `TauCeti.w1p0Submodule_le_w1pVanishingOnSubmodule`: it contains `W^{1,p}_0(Ω)` when `Γ` misses
   `Ω`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
-* `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, with dense range for `p = 2` when
+* `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, injective
+  (`TauCeti.W1pVanishingOn.valueL_injective`), with dense range for `p = 2` when
   `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
   of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`); `W^{1,p}_Γ(Ω)` is
   complete.
@@ -215,6 +216,16 @@ theorem w1pVanishingOnSubmodule_frontier :
 
 /-! ### Completeness and the value map -/
 
+/-- Shortcut instance for the normed group structure of `W^{1,p}_Γ(Ω)`, inherited through the
+nested Sobolev subspaces; instance search can time out on it inside abstract Hilbert space
+lemmas. -/
+instance : NormedAddCommGroup (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule :=
+  inferInstance
+
+/-- Shortcut instance for the Hilbert space structure of `W^{1,2}_Γ(Ω)`. -/
+instance : InnerProductSpace ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule :=
+  inferInstance
+
 /-- `W^{1,p}_Γ(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
 instance : CompleteSpace (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule :=
   (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.completeSpace_coe
@@ -229,6 +240,12 @@ def W1pVanishingOn.valueL :
 theorem W1pVanishingOn.valueL_apply (u : (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule) :
     W1pVanishingOn.valueL u = W1p.value (u : W1p mu Omega p) := by
   simp [W1pVanishingOn.valueL]
+
+/-- The value map of `W^{1,p}_Γ(Ω)` is injective: an element is determined by its value. -/
+theorem W1pVanishingOn.valueL_injective :
+    Function.Injective (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := p) (Γ := Γ)) :=
+  fun _ _ h ↦ Subtype.ext (W1p.valueL_injective (by
+    simpa only [W1pVanishingOn.valueL_apply, W1p.valueL_apply] using h))
 
 /-- The value map `W^{1,2}_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`, since `W^{1,2}_Γ(Ω)`
 contains `W^{1,2}_0(Ω)`, whose value map has dense range. -/
