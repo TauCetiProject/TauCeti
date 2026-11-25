@@ -13,6 +13,8 @@ import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
 -- the normalized form the centre construction compares against.
 import TauCeti.RingTheory.Valuation.Discrete.Normalize
+-- Proof-only: membership in Mathlib's `Localization.subalgebra.ofField` as a quotient.
+import TauCeti.RingTheory.Localization.AsSubring
 
 /-!
 # Adic valuations on the fraction field of a Dedekind domain
@@ -45,6 +47,8 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.mem_valuationSubringAtPrime_iff`: the localization of `R`
+  at `v`, as a valuation subring of `K`, consists of the fractions `a / s` with `s ∉ v`.
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
   element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
   the maximal ideal.
@@ -245,6 +249,14 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
       _ = WithZero.exp (-1) := by rw [hlog]
   · intro h
     rw [h, WithZero.log_exp, neg_neg]
+
+/-- The elements of the localization of `R` at `v`, as a valuation subring of `K`, are the
+fractions `a / s` with `s ∉ v.asIdeal`. -/
+theorem mem_valuationSubringAtPrime_iff {v : HeightOneSpectrum R} {x : K} :
+    x ∈ valuationSubringAtPrime K v ↔
+      ∃ a, ∃ s ∈ v.asIdeal.primeCompl, x = algebraMap R K a * (algebraMap R K s)⁻¹ := by
+  rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
+    Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
 
 /-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
 `v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a

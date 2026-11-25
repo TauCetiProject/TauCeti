@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
+-- Proof-only: membership in `valuationSubringAtPrime` as a quotient `a / s`.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
 /-!
 # Group actions on the valuation subrings at the places of a Dedekind domain
@@ -52,16 +54,6 @@ section DedekindDomain
 
 variable {L R : Type*} [Field L] [CommRing R] [IsDedekindDomain R] [Algebra R L]
   [IsFractionRing R L]
-
-/-- The elements of the localization of `R` at `w`, as a valuation subring of `L`, are the
-fractions `a / s` with `s ∉ w.asIdeal`. -/
-private theorem mem_valuationSubringAtPrime_iff {w : HeightOneSpectrum R} {x : L} :
-    x ∈ valuationSubringAtPrime L w ↔
-      ∃ a s, s ∈ w.asIdeal.primeCompl ∧ x = algebraMap R L a * (algebraMap R L s)⁻¹ := by
-  rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
-    Subalgebra.mem_toSubring, Localization.subalgebra.ofField, ← SetLike.mem_coe,
-    Subalgebra.coe_copy, Set.mem_ofPred_eq]
-  simp only [exists_prop]
 
 variable (L) in
 /-- A place of `R` is determined by its localization, as a valuation subring of `L`. -/
