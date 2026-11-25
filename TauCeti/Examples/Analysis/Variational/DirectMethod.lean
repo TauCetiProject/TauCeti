@@ -57,12 +57,6 @@ theorem antitone_inv_succ : Antitone fun n : ℕ ↦ (1 / (n + 1) : ℝ≥0) := 
   dsimp only
   gcongr
 
-/-- A diagonal map with antitone nonvanishing coefficients is injective. -/
-private theorem injective_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] {c : ℕ → ℝ≥0} (hc : Antitone c) (h : ∀ n, c n ≠ 0) :
-    Function.Injective (lp.diagonalCLM (p := p) (lp.ofAntitone 𝕜 hc)) :=
-  (lp.injective_diagonalCLM_iff _).2 fun n ↦ by simpa using h n
-
 /-- The compact diagonal map `j = diag(1/(n + 1))` of `ℓ²`. -/
 noncomputable def j : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_inv_succ)
 
@@ -78,7 +72,7 @@ theorem isCompactOperator_j : IsCompactOperator j := by
 
 /-- `j` is injective, since no coefficient vanishes. -/
 theorem injective_j : Function.Injective j :=
-  injective_diagonalCLM_ofAntitone _ fun n ↦ by positivity
+  (lp.injective_diagonalCLM_ofAntitone_iff ℝ _).2 fun n ↦ by positivity
 
 /-- `‖j eₙ‖ = 1/(n + 1)`. -/
 theorem norm_j_single (n : ℕ) : ‖j (e n)‖ = 1 / (n + 1) := by
@@ -117,7 +111,7 @@ noncomputable def k : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antit
 
 /-- `k` is injective, since no coefficient vanishes. -/
 theorem injective_k : Function.Injective k :=
-  injective_diagonalCLM_ofAntitone _ fun n ↦ by positivity
+  (lp.injective_diagonalCLM_ofAntitone_iff ℝ _).2 fun n ↦ by positivity
 
 /-- The energy `E(u) = Σ |uₙ|²/(n + 1)`. -/
 noncomputable def energy (u : L2) : ℝ := ‖k u‖ ^ 2
