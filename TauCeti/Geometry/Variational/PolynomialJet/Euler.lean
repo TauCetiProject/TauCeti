@@ -43,6 +43,8 @@ the image of the horizontal differential in top degree by the total divergences
   variation formula `pr Q (L) = ∑ₐ Qᵃ E_a(L) + ∑ᵢ Dᵢ Θⁱ` for some boundary family `Θ`.
 * `PolynomialJet.euler_mem_stage`: the Euler expression of an order-`r` expression has order at
   most `2r`.
+* `PolynomialJet.euler_of_mem_stage_zero`: for an expression of jet order zero, such as a
+  potential `V(x, u)`, the Euler expression is the partial derivative `∂L/∂uᵃ`.
 
 These are identities of polynomial jet expressions over an arbitrary commutative ring: no smooth
 jet bundle, integral, or fundamental lemma of the calculus of variations is involved.
@@ -444,6 +446,14 @@ theorem euler_mem_stage (a : α) {r : ℕ} {f : PolynomialJet R ι α}
   refine Subalgebra.sum_mem _ fun I hI ↦ Subalgebra.smul_mem _ ?_ _
   have hI : I.degree ≤ r := (mem_stage_iff f r).1 hf a I (by simpa [T] using hI)
   exact stage_mono (by omega) (iteratedTotalDeriv_mem_stage I (pderiv_mem_stage _ hf))
+
+/-- For an expression of jet order zero, such as a potential `V(x, u)`, the Euler expression is
+the partial derivative in the undifferentiated field coordinate: `E_a(L) = ∂L/∂uᵃ`. -/
+theorem euler_of_mem_stage_zero (a : α) {L : PolynomialJet R ι α}
+    (hL : L ∈ stage R ι α 0) : euler a L = pderiv (Sum.inr (a, 0)) L := by
+  rw [euler_eq_sum a L {0} fun I hI ↦ pderiv_eq_zero_of_notMem_vars fun h ↦ hI <| by
+    simpa [Finsupp.degree_eq_zero_iff] using (mem_stage_iff L 0).1 hL a I h]
+  simp
 
 end CommRing
 

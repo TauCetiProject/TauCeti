@@ -5,29 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
-public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 
 /-!
 # The Künneth map and the interchange of factors
 
 For nonnegative chain complexes `K` and `L` in a braided preadditive monoidal category, the Koszul
-interchange `K ⊗ L ⟶ L ⊗ K` (`TauCeti.NatChainComplex.koszulBraidingHom`) sends the tensor
+interchange `K ⊗ L ⟶ L ⊗ K` (`HomologicalComplex.tensorBraiding`) sends the tensor
 product `x ⊗ y` of cycles of degrees `p` and `q` to `(-1)^(p * q) • y ⊗ x`.  So on homology it
 sends the cross product `x × y` to `(-1)^(p * q) • y × x`
-(`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).
+(`ChainComplex.homologyCross_comp_homologyMap_tensorBraiding_hom`).
 
 In a braided category, the signed interchange of the summands `Hₚ(K) ⊗ H_q(L)` is an
 isomorphism of the sources of the Künneth maps, so the Künneth map of `K` and `L` is an
 isomorphism exactly when that of `L` and `K` is
-(`TauCeti.NatChainComplex.isIso_homologyKunneth_comm`).
+(`ChainComplex.isIso_homologyKunneth_comm`).
 
 ## Main results
 
-* `TauCeti.NatChainComplex.cyclesCross_comp_cyclesMap_koszulBraidingHom` and
-  `TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`: interchange on
+* `ChainComplex.cyclesCross_comp_cyclesMap_tensorBraiding_hom` and
+  `ChainComplex.homologyCross_comp_homologyMap_tensorBraiding_hom`: interchange on
   tensor products of cycles and on cross products.
-* `TauCeti.NatChainComplex.isIso_homologyKunneth_comm`: symmetry of the Künneth theorem.
+* `ChainComplex.isIso_homologyKunneth_comm`: symmetry of the Künneth theorem.
 
 ## References
 
@@ -40,7 +41,7 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory HomologicalComplex
 
-namespace TauCeti.NatChainComplex
+namespace ChainComplex
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
   (K L : ChainComplex C ℕ) [K.HasTensor L] [L.HasTensor K]
@@ -52,23 +53,25 @@ variable [BraidedCategory C]
 section Cycles
 
 variable (p q n : ℕ) (h : p + q = n) [K.HasHomology p] [L.HasHomology q]
-  [(tensorObj K L).HasHomology n] [(tensorObj L K).HasHomology n]
+  [(tensorObj K L).HasHomology n]
 
 /-- Koszul interchange sends the tensor product of cycles `x ⊗ y` to `(-1)^(p*q) • y ⊗ x`. -/
 @[reassoc]
-lemma cyclesCross_comp_cyclesMap_koszulBraidingHom :
-    cyclesCross K L p q n h ≫ cyclesMap (koszulBraidingHom K L) n =
+lemma cyclesCross_comp_cyclesMap_tensorBraiding_hom :
+    haveI : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
+    cyclesCross K L p q n h ≫ cyclesMap (tensorBraiding K L).hom n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (K.cycles p) (L.cycles q)).hom ≫
         cyclesCross L K q p n (by omega)) := by
+  have : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
   rw [← cancel_mono ((tensorObj L K).iCycles n)]
-  simp [BraidedCategory.braiding_naturality_assoc]
+  simp [BraidedCategory.braiding_naturality_assoc, Units.smul_def]
 
 end Cycles
 
 section Homology
 
 variable (p q n : ℕ) (h : p + q = n) [K.HasHomology p] [L.HasHomology q]
-  [(tensorObj K L).HasHomology n] [(tensorObj L K).HasHomology n]
+  [(tensorObj K L).HasHomology n]
   [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X ((ComplexShape.down ℕ).prev q)))]
@@ -79,12 +82,14 @@ variable (p q n : ℕ) (h : p + q = n) [K.HasHomology p] [L.HasHomology q]
 /-- Koszul interchange on homology: the cross product `x × y` is sent to
 `(-1)^(p*q) • y × x`. -/
 @[reassoc]
-lemma homologyCross_comp_homologyMap_koszulBraidingHom :
-    homologyCross K L p q n h ≫ homologyMap (koszulBraidingHom K L) n =
+lemma homologyCross_comp_homologyMap_tensorBraiding_hom :
+    haveI : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
+    homologyCross K L p q n h ≫ homologyMap (tensorBraiding K L).hom n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (K.homology p) (L.homology q)).hom ≫
         homologyCross L K q p n (by omega)) := by
+  have : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
   refine homology_tensor_homology_hom_ext K L p q ?_
-  simp [cyclesCross_comp_cyclesMap_koszulBraidingHom_assoc,
+  simp [cyclesCross_comp_cyclesMap_tensorBraiding_hom_assoc,
     BraidedCategory.braiding_naturality_assoc]
 
 end Homology
@@ -96,7 +101,7 @@ section Kunneth
 variable [BraidedCategory C]
 
 variable (n : ℕ) [∀ p, K.HasHomology p] [∀ q, L.HasHomology q]
-  [(tensorObj K L).HasHomology n] [(tensorObj L K).HasHomology n]
+  [(tensorObj K L).HasHomology n]
   [∀ p, PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair
@@ -111,7 +116,9 @@ variable (n : ℕ) [∀ p, K.HasHomology p] [∀ q, L.HasHomology q]
 /-- **The Künneth map is symmetric**: in a braided category, the Künneth map of `K` and `L`
 is an isomorphism exactly when that of `L` and `K` is, since Koszul interchange identifies them. -/
 theorem isIso_homologyKunneth_comm :
+    haveI : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
     IsIso (homologyKunneth K L n) ↔ IsIso (homologyKunneth L K n) := by
+  have : (tensorObj L K).HasHomology n := hasHomology_of_iso (tensorBraiding K L) n
   -- the signed interchange of the summands `Hₚ(K) ⊗ H_q(L)` of degree `n`; it differs from
   -- Mathlib's `GradedObject.Monoidal.braiding` by the Koszul sign `(-1)^(p * q)`
   let σ (X Y : GradedObject ℕ C) [GradedObject.HasTensor X Y] [GradedObject.HasTensor Y X] :
@@ -140,13 +147,13 @@ theorem isIso_homologyKunneth_comm :
     rw [← pow_add, ← two_mul, pow_mul]
     simp
   -- Koszul interchange carries the Künneth map of `K` and `L` to that of `L` and `K`
-  have hκ : homologyKunneth K L n ≫ homologyMap (koszulBraidingHom K L) n =
+  have hκ : homologyKunneth K L n ≫ homologyMap (tensorBraiding K L).hom n =
       σ _ _ ≫ homologyKunneth L K n := by
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-    simp [σ, homologyCross_comp_homologyMap_koszulBraidingHom]
+    simp [σ, homologyCross_comp_homologyMap_tensorBraiding_hom]
   have : IsIso (σ (fun p ↦ K.homology p) (fun q ↦ L.homology q)) := ⟨τ _ _, hστ _ _, hτσ _ _⟩
-  rw [← isIso_comp_right_iff _ (homologyMap (koszulBraidingHom K L) n), hκ, isIso_comp_left_iff]
+  rw [← isIso_comp_right_iff _ (homologyMap (tensorBraiding K L).hom n), hκ, isIso_comp_left_iff]
 
 end Kunneth
 
-end TauCeti.NatChainComplex
+end ChainComplex

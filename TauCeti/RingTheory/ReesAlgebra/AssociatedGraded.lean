@@ -32,7 +32,10 @@ This presents `gr_I R` as a quotient of the Rees algebra, which is a finitely ge
 direct-sum coordinates to the Rees quotient: the degree-`n` coefficient of the class of a Rees
 polynomial `f` is the class of the `n`-th coefficient of `f`, and the image of the degree-`n`
 inclusion is the degree-`n` piece of the grading that `I R[It]`, a homogeneous ideal, induces on
-the quotient.
+the quotient. It also transports the generator map: for a family `aᵢ` generating `I`, sending `Xᵢ`
+to the class of `aᵢ t` is a surjection `(R ⧸ I)[Xᵢ] → R[It] ⧸ I R[It]`, so ring homomorphisms out
+of the Rees quotient are determined in degrees zero and one, and the Rees quotient is a finitely
+generated `R ⧸ I`-algebra when `I` is finitely generated.
 
 ## Main definitions
 
@@ -43,6 +46,8 @@ the quotient.
   `R[It] ⧸ I R[It] ≃ gr_I R`.
 * `Ideal.ReesQuotient.coeff I n` and `Ideal.ReesQuotient.of I n`: the degree-`n` coefficient map
   to `Iⁿ ⧸ Iⁿ⁺¹` and the degree-`n` inclusion from it.
+* `Ideal.ReesQuotient.mvPolynomialHom I ha`: the map `(R ⧸ I)[Xᵢ] → R[It] ⧸ I R[It]` sending `Xᵢ`
+  to the degree-one class of `aᵢ ∈ I`.
 
 ## Main results
 
@@ -55,8 +60,14 @@ the quotient.
 * `Ideal.ReesQuotient.coeff_of_self`, `Ideal.ReesQuotient.coeff_of_of_ne`,
   `Ideal.ReesQuotient.ext_coeff` and `Ideal.ReesQuotient.sum_of_coeff`: the coefficient maps
   retract the inclusions, kill the other degrees, detect equality and reconstruct every element.
+* `Ideal.ReesQuotient.sum_of_coeff_quotientMk`: reconstruction over the support of a polynomial
+  representative, without deciding which quotient coefficients vanish.
 * `Ideal.ReesQuotient.range_of`: the image of the degree-`n` inclusion is the degree-`n` piece of
   the quotient grading.
+* `Ideal.ReesQuotient.mvPolynomialHom_homogeneousComponent`: the generator map is graded.
+* `Ideal.ReesQuotient.mvPolynomialHom_surjective`: the generator map is onto when the `aᵢ`
+  generate `I`; hence `Ideal.ReesQuotient.ringHom_ext` (ring homomorphisms out of the Rees
+  quotient are determined in degrees zero and one) and `Ideal.ReesQuotient.finiteType_of_fg`.
 
 ## Implementation notes
 
@@ -214,6 +225,12 @@ abbrev ReesQuotient : Type u :=
   reesAlgebra I ⧸ I.map (algebraMap R (reesAlgebra I))
 
 namespace ReesQuotient
+
+/-- The ordinary Rees quotient is graded by the images of the homogeneous Rees components. -/
+noncomputable instance instGradedAlgebra :
+    GradedAlgebra (TauCeti.GradedAlgebra.quotientPiece (reesAlgebra.grade I)
+      (I.map (algebraMap R (reesAlgebra I)))) :=
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece _ _ (reesAlgebra.isHomogeneous_map_algebraMap I)
 
 /-- The class `[x tⁿ]` in the Rees quotient of an element `x ∈ Iⁿ`, placed in degree `n`. -/
 noncomputable def mk (n : ℕ) : ↥(I ^ n) →ₗ[R] I.ReesQuotient :=
@@ -378,6 +395,15 @@ theorem sum_of_coeff [∀ n (x : I.GradedPiece n), Decidable (x ≠ 0)] (q : I.R
   simp_rw [map_sum, equivAssociatedGraded_of, coeff_apply]
   exact DirectSum.sum_support_of _
 
+/-- The class of a Rees polynomial can be reconstructed from its quotient coefficients by summing
+over the support of the polynomial itself. -/
+theorem sum_of_coeff_quotientMk (f : reesAlgebra I) :
+    ∑ n ∈ (f : R[X]).support, of I n (coeff I n (Ideal.Quotient.mk _ f)) =
+      Ideal.Quotient.mk _ f := by
+  simp only [coeff_quotientMk, of_mk, mk_apply]
+  simpa only [map_sum] using congrArg (Ideal.Quotient.mk
+    (I.map (algebraMap R (reesAlgebra I)))) (reesAlgebra.as_sum_support f).symm
+
 variable (I) in
 /-- The image of the class map in degree `n` is the degree-`n` piece of the grading that the
 homogeneous ideal `I R[It]` induces on the Rees quotient. -/
@@ -401,6 +427,94 @@ theorem range_of (n : ℕ) :
       (I.map (algebraMap R (reesAlgebra I))) n := by
   have h : of I n ∘ₗ Submodule.mkQ _ = mk I n := LinearMap.ext (of_mk n)
   rw [← range_mk, ← h, LinearMap.range_comp_of_range_eq_top _ (Submodule.range_mkQ _)]
+
+section mvPolynomial
+
+open MvPolynomial
+
+variable {σ : Type*} {a : σ → R}
+
+variable (I) in
+/-- The `R ⧸ I`-algebra map `(R ⧸ I)[Xᵢ] → R[It] ⧸ I R[It]` sending `Xᵢ` to the class of the Rees
+monomial `aᵢ t`, for a family `aᵢ ∈ I`. It is `Ideal.AssociatedGraded.mvPolynomialHom` transported
+through `Ideal.ReesQuotient.equivAssociatedGraded`, and is surjective when the `aᵢ` generate `I`
+(`Ideal.ReesQuotient.mvPolynomialHom_surjective`). -/
+noncomputable def mvPolynomialHom (ha : ∀ i, a i ∈ I) :
+    MvPolynomial σ (R ⧸ I) →ₐ[R ⧸ I] I.ReesQuotient :=
+  (equivAssociatedGraded I).symm.toAlgHom.comp (AssociatedGraded.mvPolynomialHom I ha)
+
+/-- Under the isomorphism with `gr_I R`, the generator map of the Rees quotient is the generator
+map of `gr_I R`. -/
+@[simp]
+theorem equivAssociatedGraded_mvPolynomialHom (ha : ∀ i, a i ∈ I) (P : MvPolynomial σ (R ⧸ I)) :
+    equivAssociatedGraded I (mvPolynomialHom I ha P) = AssociatedGraded.mvPolynomialHom I ha P :=
+  (equivAssociatedGraded I).apply_symm_apply _
+
+/-- The generator map sends `Xᵢ` to the class of `aᵢ` in degree one. -/
+@[simp]
+theorem mvPolynomialHom_X (ha : ∀ i, a i ∈ I) (i : σ) :
+    mvPolynomialHom I ha (X i) = mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩ := by
+  apply (equivAssociatedGraded I).injective
+  rw [equivAssociatedGraded_mvPolynomialHom, AssociatedGraded.mvPolynomialHom_X,
+    equivAssociatedGraded_mk]
+
+/-- The generator map sends the reduction of a homogeneous polynomial `F` of degree `ν` to the
+class of `F(a)` in degree `ν`. -/
+theorem mvPolynomialHom_map_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
+    {F : MvPolynomial σ R} (hF : F.IsHomogeneous ν) :
+    mvPolynomialHom I ha (F.map (Ideal.Quotient.mk I)) = mk I ν ⟨F.eval a, hF.eval_mem_pow ha⟩ := by
+  apply (equivAssociatedGraded I).injective
+  rw [equivAssociatedGraded_mvPolynomialHom,
+    AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous ha hF, equivAssociatedGraded_mk]
+
+/-- The generator map is graded: it sends the `ν`-th homogeneous component of `P` to the
+degree-`ν` piece of the image of `P`. -/
+theorem mvPolynomialHom_homogeneousComponent (ha : ∀ i, a i ∈ I) (ν : ℕ)
+    (P : MvPolynomial σ (R ⧸ I)) :
+    mvPolynomialHom I ha (homogeneousComponent ν P) =
+      of I ν (coeff I ν (mvPolynomialHom I ha P)) := by
+  apply (equivAssociatedGraded I).injective
+  rw [equivAssociatedGraded_mvPolynomialHom, equivAssociatedGraded_of, coeff_apply,
+    equivAssociatedGraded_mvPolynomialHom, AssociatedGraded.mvPolynomialHom_homogeneousComponent]
+
+/-- The generator map sends a homogeneous polynomial of degree `ν` into the degree-`ν` piece. -/
+theorem mvPolynomialHom_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
+    {P : MvPolynomial σ (R ⧸ I)} (hP : P.IsHomogeneous ν) :
+    mvPolynomialHom I ha P = of I ν (coeff I ν (mvPolynomialHom I ha P)) := by
+  simpa [homogeneousComponent_eq_self hP] using mvPolynomialHom_homogeneousComponent ha ν P
+
+/-- If the `aᵢ` generate `I`, then the generator map is surjective: the Rees quotient is generated
+over its degree-zero part `R ⧸ I` by the degree-one classes of the `aᵢ`. -/
+theorem mvPolynomialHom_surjective (ha : ∀ i, a i ∈ I) (hI : I ≤ span (Set.range a)) :
+    Function.Surjective (mvPolynomialHom I ha) :=
+  (equivAssociatedGraded I).symm.surjective.comp (AssociatedGraded.mvPolynomialHom_surjective ha hI)
+
+variable (I) in
+/-- If `I` is finitely generated, then the Rees quotient `R[It] ⧸ I R[It]` is a finitely generated
+`R ⧸ I`-algebra. -/
+theorem finiteType_of_fg (hI : I.FG) : Algebra.FiniteType (R ⧸ I) I.ReesQuotient := by
+  obtain ⟨n, a, rfl⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hI
+  exact .of_surjective (mvPolynomialHom _ fun i ↦ subset_span (Set.mem_range_self i))
+    (mvPolynomialHom_surjective _ le_rfl)
+
+end mvPolynomial
+
+/-- **Ring homomorphisms out of the Rees quotient are determined in degrees zero and one.** Two
+ring homomorphisms `R[It] ⧸ I R[It] →+* T` agree once they agree on the image of `R` and on the
+class of every `x ∈ I` in degree one. -/
+theorem ringHom_ext {T : Type*} [Semiring T] {φ ψ : I.ReesQuotient →+* T}
+    (h₀ : ∀ r, φ (algebraMap R I.ReesQuotient r) = ψ (algebraMap R I.ReesQuotient r))
+    (h₁ : ∀ x : ↥(I ^ 1), φ (mk I 1 x) = ψ (mk I 1 x)) : φ = ψ := by
+  have hI : I ≤ span (Set.range ((↑) : I → R)) := by rw [Subtype.range_coe, span_eq]
+  let g := (mvPolynomialHom I (a := ((↑) : I → R)) fun x ↦ x.property).toRingHom
+  suffices φ.comp g = ψ.comp g from
+    RingHom.ext fun q ↦ by
+      obtain ⟨P, rfl⟩ := mvPolynomialHom_surjective (fun x ↦ x.property) hI q
+      exact DFunLike.congr_fun this P
+  refine MvPolynomial.ringHom_ext (fun q ↦ ?_) (fun x ↦ ?_)
+  · obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
+    simpa [g, ← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply] using h₀ r
+  · simpa [g] using h₁ _
 
 end ReesQuotient
 

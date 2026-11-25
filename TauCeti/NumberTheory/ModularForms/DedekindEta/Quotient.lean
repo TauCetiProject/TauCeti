@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
-# Eta quotients and their orders at the cusps
+# Eta quotients: transformation under `Γ₀(N)` and orders at the cusps
 
 For a level `N` and integer exponents `r_δ` indexed by the positive divisors `δ ∣ N`, the
 **eta quotient** is `f(τ) = ∏_{δ ∣ N} η(δ τ) ^ r_δ`. This file computes the leading term of `f`
@@ -42,10 +43,23 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
 `η(z) ~ e(z / 24)` as `Im z → ∞` (`TauCeti.ModularForm.tendsto_eta_div_exp`), the factor
 `η(δ σ τ)` has leading exponent `A² / (24 δ)`.
 
+The file also proves the transformation of `f` under `Γ₀(N)`. For `γ = (a b; c d) ∈ Γ₀(N)` and
+`δ ∣ N`, the matrix `γ_δ = (a, δ b; c / δ, d) ∈ SL(2, ℤ)` is the conjugate of `γ` by `diag(δ, 1)`
+(`TauCeti.conjScaleGamma0`). It sends `δ τ` to `δ · γ τ` and has the same automorphy factor
+`c τ + d` at `δ τ` as `γ` at `τ`. By the transformation law of `η`,
+`η(δ · γ τ) = ε(γ_δ) √(c τ + d) η(δ τ)` (`TauCeti.ModularForm.eta_natCast_mul_smul`), so
+`f(γ τ) = (∏_δ ε(γ_δ) ^ {r_δ}) · √(c τ + d) ^ {∑_δ r_δ} · f(τ)`.
+When `∑_δ r_δ = 2 k` is even this is the slash relation `f ∣[k] γ = (∏_δ ε(γ_δ) ^ {r_δ}) • f`,
+and the multiplier `γ ↦ ∏_δ ε(γ_δ) ^ {r_δ}` is a character of `Γ₀(N)` with values in the 24th roots
+of unity. Evaluating it as a Kronecker symbol in `d` is the arithmetic half of the criterion of
+Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
+
 ## Main definitions
 
 * `TauCeti.ModularForm.etaQuotient N r`: the eta quotient `∏_{δ ∣ N} η(δ τ) ^ r δ`.
 * `TauCeti.ModularForm.etaQuotientOrder N r c`: the order `L` at a cusp with denominator `c`.
+* `TauCeti.ModularForm.etaQuotientMultiplier N r γ`: the multiplier `∏_{δ ∣ N} ε(γ_δ) ^ {r δ}` at
+  `γ ∈ Γ₀(N)`.
 
 ## Main results
 
@@ -59,6 +73,20 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
+* `TauCeti.ModularForm.etaQuotient_add_intCast`: the translation law
+  `f(τ + n) = e^{π i n (∑_δ δ r_δ) / 12} f(τ)`.
+* `TauCeti.ModularForm.etaQuotient_smul`: the transformation of `f` under `γ ∈ Γ₀(N)`.
+* `TauCeti.ModularForm.etaQuotient_slash`: `f ∣[k] γ = (∏_δ ε(γ_δ) ^ {r_δ}) • f` when
+  `∑_δ r_δ = 2 k`.
+* `TauCeti.ModularForm.etaQuotientMultiplier_pow_twentyFour`,
+  `TauCeti.ModularForm.etaQuotientMultiplier_one`, `TauCeti.ModularForm.etaQuotientMultiplier_mul`:
+  the multiplier is a 24th root of unity, and multiplicative when `∑_δ r_δ` is even.
+* `TauCeti.ModularForm.etaQuotientMultiplier_negOne`,
+  `TauCeti.ModularForm.etaQuotientMultiplier_T_zpow`: the multiplier at `-1` is
+  `(-i) ^ {∑_δ r_δ}`, and at `Tⁿ` it is the factor of the translation law.
+* `TauCeti.ModularForm.etaQuotientMultiplier_eq_of_etaQuotient_smul_eq`: the multiplier is
+  determined by the transformation law at a single point; `etaQuotientMultiplier_ne_zero` and
+  `norm_etaQuotientMultiplier` record that it is a unit of norm one.
 
 ## References
 
@@ -66,22 +94,19 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
 * G. Ligozat, *Courbes modulaires de genre 1*, Bull. Soc. Math. France Mém. **43** (1975).
 * J. Rouse and J. J. Webb, *On spaces of modular forms spanned by eta-quotients*,
   Adv. Math. **272** (2015), §1.
+* T. M. Apostol, *Modular Functions and Dirichlet Series in Number Theory*, 2nd ed., GTM 41,
+  Theorem 3.4.
 -/
 
 public section
 
 open Complex Filter Topology
-open UpperHalfPlane (atImInfty IsBoundedAtImInfty IsZeroAtImInfty orderAtInfty)
+open UpperHalfPlane (atImInfty IsBoundedAtImInfty IsZeroAtImInfty orderAtInfty sqrt_denom_ne_zero)
 open scoped Real ModularForm MatrixGroups UpperHalfPlane Manifold
 
 namespace TauCeti.ModularForm
 
 /-! ### `η(δ τ)` at an arbitrary cusp -/
-
-/-- The principal square root `√(c τ + d)` does not vanish on `ℍ`. -/
-private theorem sqrt_denom_ne_zero (σ : SL(2, ℤ)) (τ : ℍ) :
-    Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ≠ 0 :=
-  Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero σ τ)
 
 /-- The integer data of the factorization `diag(δ, 1) σ = σ' (A B; 0 D)`: with `A = gcd(δ, c)`,
 `δ = A D` with `D > 0`, `c = A c'`, and Bézout coefficients `A = δ x + c y`. -/
@@ -133,11 +158,12 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
     have := σ.det_coe
     rwa [Matrix.det_fin_two] at this
   -- `diag(δ, 1) σ = σ' (A B; 0 D)` with `B = y d`.
-  let σ' : SL(2, ℤ) := ⟨!![D * σ 0 0, x * δ * σ 0 1 - y; c', x * σ 1 1], by
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let σ' : SL(2, ℤ) := .mk !![D * σ 0 0, x * δ * σ 0 1 - y; c', x * σ 1 1] (by
     rw [Matrix.det_fin_two_of]
     refine mul_left_cancel₀ (a := (A : ℤ)) (by exact_mod_cast hA) ?_
     linear_combination (-(σ 0 0 * x * σ 1 1)) * hδ + (x * δ * σ 0 1 - y) * hc +
-      (δ * x) * hdet - hbez⟩
+      (δ * x) * hdet - hbez)
   refine ⟨etaMultiplier σ' * Complex.sqrt (D : ℂ)⁻¹, y * σ 1 1,
     mul_ne_zero (etaMultiplier_ne_zero σ') (Complex.sqrt_eq_zero_iff.not.2 (inv_ne_zero hD0)),
     fun τ ↦ ?_⟩
@@ -234,6 +260,23 @@ theorem differentiableAt_etaQuotient (N : ℕ) (r : ℕ → ℤ) {τ : ℂ} (hτ
 theorem mdifferentiable_etaQuotient (N : ℕ) (r : ℕ → ℤ) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun τ : ℍ ↦ etaQuotient N r τ) := fun τ ↦
   (differentiableAt_etaQuotient N r τ.im_pos).mdifferentiableAt.comp τ τ.mdifferentiable_coe
+
+/-- **The translation law of an eta quotient**:
+`f(τ + n) = e^{π i n (∑_{δ ∣ N} δ r_δ) / 12} f(τ)` for every integer `n`. -/
+theorem etaQuotient_add_intCast (N : ℕ) (r : ℕ → ℤ) (τ : ℂ) (n : ℤ) :
+    etaQuotient N r (τ + n) =
+      cexp (π * I * n * (∑ δ ∈ N.divisors, (δ * r δ : ℤ)) / 12) * etaQuotient N r τ := by
+  have h (δ : ℕ) : η (δ * (τ + n)) ^ r δ =
+      cexp (π * I * n * (δ * r δ : ℤ) / 12) * η (δ * τ) ^ r δ := by
+    have hδ : (δ : ℂ) * (τ + n) = δ * τ + ((δ * n : ℤ) : ℂ) := by
+      push_cast
+      ring
+    rw [hδ, eta_add_intCast, mul_zpow, ← Complex.exp_intCast_mul]
+    congr 2
+    push_cast
+    ring
+  simp only [etaQuotient_apply, h, Finset.prod_mul_distrib, ← Complex.exp_sum, Int.cast_sum,
+    Finset.mul_sum, Finset.sum_div]
 
 /-- **The order of an eta quotient at a cusp**, `∑_{δ ∣ N} gcd(δ, c)² r δ / (24 δ)`. For
 `σ ∈ SL(2, ℤ)` with lower-left entry `c` it is the order at `i ∞`, in the parameter `e(τ)`, of
@@ -392,5 +435,141 @@ theorem isZeroAtImInfty_etaQuotient_slash_iff (N : ℕ) (r : ℕ → ℤ) {k : �
     exact (Real.tendsto_exp_atBot.comp hlin).congr fun τ ↦ by
       simp only [neg_mul, Function.comp_apply, Real.exp_eq_exp, neg_inj]
       ring
+
+/-! ### The transformation under `Γ₀(N)` -/
+
+open Finset CongruenceSubgroup
+
+/-- **The multiplier of an eta quotient** at `γ = (a b; c d) ∈ Γ₀(N)`: the product
+`∏_{δ ∣ N} ε(γ_δ) ^ {r δ}` of eta multipliers at the conjugates `γ_δ = (a, δ b; c / δ, d)` of `γ`
+by `diag(δ, 1)` (`conjScaleGamma0`). The eta quotient transforms under `γ` by this root of unity
+(`etaQuotient_smul`, `etaQuotient_slash`). -/
+noncomputable def etaQuotientMultiplier (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) : ℂ :=
+  ∏ δ ∈ N.divisors.attach,
+    etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ
+
+/-- The defining product of the eta-quotient multiplier. -/
+theorem etaQuotientMultiplier_def (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
+    etaQuotientMultiplier N r γ =
+      ∏ δ ∈ N.divisors.attach,
+        etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ := (rfl)
+
+/-- **The transformation of an eta quotient under `Γ₀(N)`**: for `γ = (a b; c d) ∈ Γ₀(N)`,
+`f(γ τ) = (∏_{δ ∣ N} ε(γ_δ) ^ {r δ}) · √(c τ + d) ^ {∑_{δ ∣ N} r δ} · f(τ)` on the upper
+half-plane, with the principal square root. -/
+theorem etaQuotient_smul (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) (τ : ℍ) :
+    etaQuotient N r ((γ : SL(2, ℤ)) • τ : ℍ) =
+      etaQuotientMultiplier N r γ *
+        Complex.sqrt (((γ : SL(2, ℤ)) 1 0 : ℂ) * τ + (γ : SL(2, ℤ)) 1 1) ^
+          (∑ δ ∈ N.divisors, r δ) * etaQuotient N r τ := by
+  set s := Complex.sqrt (((γ : SL(2, ℤ)) 1 0 : ℂ) * τ + (γ : SL(2, ℤ)) 1 1)
+  -- The factor at each divisor `δ`, by the transformation of `η(δ τ)`.
+  have hfac (δ : N.divisors) : η (δ * ((γ : SL(2, ℤ)) • τ : ℍ)) ^ r δ =
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ *
+        (s ^ r δ * η (δ * τ) ^ r δ) := by
+    rw [conjScaleGamma0_apply, eta_natCast_mul_smul (Nat.pos_of_mem_divisors δ.property),
+      mul_zpow, mul_zpow, mul_assoc]
+  calc etaQuotient N r ((γ : SL(2, ℤ)) • τ : ℍ)
+      = ∏ δ ∈ N.divisors.attach, η (δ * ((γ : SL(2, ℤ)) • τ : ℍ)) ^ r δ := by
+        rw [etaQuotient_apply,
+          ← prod_attach N.divisors (fun δ ↦ η (δ * ((γ : SL(2, ℤ)) • τ : ℍ)) ^ r δ)]
+    _ = etaQuotientMultiplier N r γ *
+          ((∏ δ ∈ N.divisors.attach, s ^ r δ) * ∏ δ ∈ N.divisors.attach, η (δ * τ) ^ r δ) := by
+        rw [prod_congr rfl fun δ _ ↦ hfac δ, prod_mul_distrib, prod_mul_distrib,
+          etaQuotientMultiplier_def]
+    _ = etaQuotientMultiplier N r γ * s ^ (∑ δ ∈ N.divisors, r δ) * etaQuotient N r τ := by
+        rw [prod_zpow_eq_zpow_sum_of_isUnit _ (sqrt_denom_ne_zero (γ : SL(2, ℤ)) τ).isUnit,
+          sum_attach, prod_attach N.divisors (fun δ ↦ η (δ * τ) ^ r δ), etaQuotient_apply,
+          mul_assoc]
+
+/-- **The slash relation of an eta quotient**: if `∑_{δ ∣ N} r δ = 2 k`, then
+`f ∣[k] γ = (∏_{δ ∣ N} ε(γ_δ) ^ {r δ}) • f` for every `γ ∈ Γ₀(N)`. -/
+theorem etaQuotient_slash (N : ℕ) (r : ℕ → ℤ) {k : ℤ} (hk : ∑ δ ∈ N.divisors, r δ = 2 * k)
+    (γ : Gamma0 N) :
+    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] (γ : SL(2, ℤ)) =
+      etaQuotientMultiplier N r γ • fun τ : ℍ ↦ etaQuotient N r τ := by
+  refine (etaQuotient_slash_eq N r hk _).trans (funext fun τ ↦ ?_)
+  rw [etaQuotient_smul, mul_right_comm, Pi.smul_apply, smul_eq_mul,
+    mul_div_cancel_right₀ _ (zpow_ne_zero _ (sqrt_denom_ne_zero _ τ))]
+
+/-- The eta-quotient multiplier is a 24th root of unity. -/
+theorem etaQuotientMultiplier_pow_twentyFour (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
+    etaQuotientMultiplier N r γ ^ 24 = 1 := by
+  -- The 24th power commutes with integer powers.
+  have h24 (z : ℂ) (m : ℤ) : (z ^ m) ^ 24 = (z ^ 24) ^ m :=
+    map_zpow₀ (powMonoidWithZeroHom (M₀ := ℂ) (n := 24) (by decide)) z m
+  simp [etaQuotientMultiplier_def, ← prod_pow, h24, etaMultiplier_pow_twentyFour]
+
+/-- The eta-quotient multiplier never vanishes. -/
+@[simp]
+theorem etaQuotientMultiplier_ne_zero (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
+    etaQuotientMultiplier N r γ ≠ 0 := by
+  intro h
+  have h24 := etaQuotientMultiplier_pow_twentyFour N r γ
+  simp [h] at h24
+
+/-- The eta-quotient multiplier has unit norm, since its 24th power is `1`. -/
+@[simp]
+theorem norm_etaQuotientMultiplier (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
+    ‖etaQuotientMultiplier N r γ‖ = 1 :=
+  norm_eq_one_of_pow_eq_one (etaQuotientMultiplier_pow_twentyFour N r γ) (by decide)
+
+/-- The eta-quotient multiplier is determined by the transformation law `etaQuotient_smul` at a
+single point. -/
+theorem etaQuotientMultiplier_eq_of_etaQuotient_smul_eq {N : ℕ} {r : ℕ → ℤ} {γ : Gamma0 N}
+    {ε : ℂ} {τ : ℍ}
+    (h : etaQuotient N r ((γ : SL(2, ℤ)) • τ : ℍ) =
+      ε * Complex.sqrt (((γ : SL(2, ℤ)) 1 0 : ℂ) * τ + (γ : SL(2, ℤ)) 1 1) ^
+        (∑ δ ∈ N.divisors, r δ) * etaQuotient N r τ) :
+    etaQuotientMultiplier N r γ = ε := by
+  rw [etaQuotient_smul] at h
+  exact mul_right_cancel₀ (zpow_ne_zero _ (sqrt_denom_ne_zero _ τ))
+    (mul_right_cancel₀ (etaQuotient_ne_zero N r τ.im_pos) h)
+
+/-- The eta-quotient multiplier is `1` at the identity. -/
+@[simp]
+theorem etaQuotientMultiplier_one (N : ℕ) (r : ℕ → ℤ) : etaQuotientMultiplier N r 1 = 1 := by
+  simp [etaQuotientMultiplier_def]
+
+/-- The eta-quotient multiplier at `-1 ∈ Γ₀(N)` is `(-i) ^ {∑_{δ ∣ N} r δ}`: each conjugate
+`γ_δ` is `-1`, with `ε(-1) = -i`. -/
+@[simp]
+theorem etaQuotientMultiplier_negOne (N : ℕ) (r : ℕ → ℤ) :
+    etaQuotientMultiplier N r (Gamma0.negOne N) = (-I) ^ ∑ δ ∈ N.divisors, r δ := by
+  rw [etaQuotientMultiplier_def, ← sum_attach N.divisors r,
+    ← prod_zpow_eq_zpow_sum_of_isUnit _ (by simp : IsUnit (-I))]
+  simp
+
+/-- The eta-quotient multiplier at a translation `Tⁿ ∈ Γ₀(N)` is
+`e^{π i n (∑_{δ ∣ N} δ r δ) / 12}`, the factor of the translation law `etaQuotient_add_intCast`. -/
+@[simp]
+theorem etaQuotientMultiplier_T_zpow (N : ℕ) (r : ℕ → ℤ) (n : ℤ)
+    (h : ModularGroup.T ^ n ∈ Gamma0 N) :
+    etaQuotientMultiplier N r ⟨ModularGroup.T ^ n, h⟩ =
+      cexp (π * I * n * (∑ δ ∈ N.divisors, (δ * r δ : ℤ)) / 12) := by
+  refine etaQuotientMultiplier_eq_of_etaQuotient_smul_eq (τ := UpperHalfPlane.I) ?_
+  rw [Subgroup.coe_mk, ModularGroup.coe_T_zpow_smul_eq, etaQuotient_add_intCast]
+  simp [ModularGroup.coe_T_zpow]
+
+/-- **The eta-quotient multiplier is a character of `Γ₀(N)`** when `∑_{δ ∣ N} r δ` is even: then
+the eta quotient has integral weight `k = ½ ∑_δ r δ`, and the slash relation `etaQuotient_slash`
+is compatible with the slash action. -/
+theorem etaQuotientMultiplier_mul (N : ℕ) (r : ℕ → ℤ) (hr : Even (∑ δ ∈ N.divisors, r δ))
+    (γ γ' : Gamma0 N) :
+    etaQuotientMultiplier N r (γ * γ') =
+      etaQuotientMultiplier N r γ * etaQuotientMultiplier N r γ' := by
+  obtain ⟨k, hk⟩ := hr
+  have hk' : ∑ δ ∈ N.divisors, r δ = 2 * k := by rw [hk, two_mul]
+  set f : ℍ → ℂ := fun τ ↦ etaQuotient N r τ
+  have h : etaQuotientMultiplier N r (γ * γ') • f =
+      (etaQuotientMultiplier N r γ * etaQuotientMultiplier N r γ') • f := calc
+    _ = (f ∣[k] (γ : SL(2, ℤ))) ∣[k] (γ' : SL(2, ℤ)) := by
+      rw [← etaQuotient_slash N r hk', Subgroup.coe_mul, SlashAction.slash_mul]
+    _ = etaQuotientMultiplier N r γ • (f ∣[k] (γ' : SL(2, ℤ))) := by
+      rw [etaQuotient_slash N r hk', ModularForm.SL_smul_slash]
+    _ = _ := by rw [etaQuotient_slash N r hk', smul_smul]
+  have hI := congrFun h UpperHalfPlane.I
+  simp only [Pi.smul_apply, smul_eq_mul, f] at hI
+  exact mul_right_cancel₀ (etaQuotient_ne_zero N r (by simp)) hI
 
 end TauCeti.ModularForm
