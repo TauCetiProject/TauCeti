@@ -112,7 +112,8 @@ private def chosenTensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian 
   let _ := hex.choose_spec.choose_spec.choose_spec.choose_spec.choose
   let e : 𝟙_ C ≅ ⨁ a := hex.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
   let f : κ → UnitSimpleClasses C := fun i ↦
-    UnitSimpleClasses.mkOfHomNeZero (biproduct_ι_comp_inv_ne_zero e i)
+    UnitSimpleClasses.mkOfHomNeZero
+      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))
   have hf_inj : Function.Injective f := fun i j hij ↦ by
     classical
     let α := {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)}
@@ -304,7 +305,8 @@ private theorem exists_unitSimpleClasses_iso_of_functor (F : C ⥤ C)
   have hm : m ≠ 0 := fun hm0 ↦ hi <| (IsZero.iff_id_eq_zero _).2 <| by
     simpa [m, Category.assoc] using hm0 =≫ (d.hom ≫ biproduct.π B i)
   have : IsIso m := isIso_of_mono_of_ne_zero hm
-  exact ⟨UnitSimpleClasses.mkOfHomNeZero (biproduct_ι_comp_inv_ne_zero e i),
+  exact ⟨UnitSimpleClasses.mkOfHomNeZero
+      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h)),
     ⟨F.mapIso (eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _)) ≪≫
       SimpleClasses.classOfReprIso (a i)) ≪≫ asIso m⟩⟩
 
