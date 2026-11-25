@@ -47,6 +47,8 @@ No step uses symmetry or irreflexivity.
   have the same length and the same atomic diagram;
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff_sameAtomicType`: two nodes of the same length
   have the same colour exactly when their vertex tuples have the same atomic type;
+* `TauCeti.RelationalConfiguration.unravelColor_map`: the colour for a relabelled code `σ • c` of
+  a node mapped entrywise by a function realizing `σ` on colours is the colour for `c`;
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_orderIso_unravelColor`: the unravelling
   lemma, (i) ⇔ (ii);
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_perm_dropLast_unravelColor`: the
@@ -150,17 +152,22 @@ theorem unravelVertex_append_singleton {n : ℕ} {x : List ℚ} (hx : x.length =
   · simp [unravelVertex]
   · simp [unravelVertex]
 
-/-- The relabelling `σ • c` read on the entrywise image of a node under an order automorphism
-realizing `σ` on colours has the colour of the node for `c`. -/
-private theorem unravelColor_map {c : RelationalConfiguration Language.graph ℕ}
-    {σ : Equiv.Perm ℕ} {π : ℚ ≃o ℚ} (hπ : ∀ r, ratColor (π r) = σ (ratColor r))
+/-- Mapping a node entrywise by a function realizing `σ` on colours applies `σ` to each of its
+vertices. -/
+theorem unravelVertex_map {σ : ℕ → ℕ} {π : ℚ → ℚ} (hπ : ∀ r, ratColor (π r) = σ (ratColor r))
+    {x : List ℚ} {k : ℕ} (hk : k < x.length) :
+    unravelVertex (x.map π) k = σ (unravelVertex x k) := by
+  simp [unravelVertex, List.getElem?_eq_getElem hk, hπ]
+
+/-- The relabelling `σ • c` read on the entrywise image of a node under a function realizing `σ`
+on colours has the colour of the node for `c`. -/
+theorem unravelColor_map {c : RelationalConfiguration Language.graph ℕ}
+    {σ : Equiv.Perm ℕ} {π : ℚ → ℚ} (hπ : ∀ r, ratColor (π r) = σ (ratColor r))
     (x : List ℚ) : unravelColor (σ • c) (x.map π) = unravelColor c x := by
   refine unravelColor_eq_iff.2 ⟨List.length_map _, fun i hi j hj ↦ ?_⟩
-  have hv : ∀ k < x.length, unravelVertex (x.map π) k = σ (unravelVertex x k) := fun k hk ↦ by
-    simp [unravelVertex, List.getElem?_eq_getElem hk, hπ]
   simp only [List.length_map] at hi hj
-  simp only [unravelBits, hv i hi, hv j hj, σ.injective.eq_iff, eval_perm_smul, adjAtom_map,
-    Equiv.symm_apply_apply]
+  simp only [unravelBits, unravelVertex_map hπ hi, unravelVertex_map hπ hj, σ.injective.eq_iff,
+    eval_perm_smul, adjAtom_map, Equiv.symm_apply_apply]
 
 /-- The pairs of vertex tuples of a node `x` and of its image `Ψ x`. -/
 private def unravelSystem (Ψ : Equiv.Perm (List ℚ)) : Set (Σ n, (Fin n → ℕ) × (Fin n → ℕ)) :=
