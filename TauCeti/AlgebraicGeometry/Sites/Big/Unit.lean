@@ -37,26 +37,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme
 
-namespace Modules
-
-variable {S : Scheme.{u}}
-
-/-- Restricting the section `(h'^* 𝒪_S ≅ 𝒪_{T'})⁻¹ 1` of the big site along `f : T ⟶ T'` gives
-the section `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
-lemma bigSectionsRestrict_pullbackObjUnitIso_inv_one {T T' : Over S} (f : T ⟶ T') :
-    bigSectionsRestrict (𝟙_ S.Modules) f
-        ((pullbackObjUnitIso T'.hom).inv.app ⊤ (1 : Γ(T'.left, ⊤))) =
-      (pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) := by
-  -- Both sections are pullbacks of `1 : Γ(S, ⊤)`: this is `bigSectionsRestrict_pullbackSectionsLE`.
-  have e (X : Scheme.{u}) (g : X ⟶ S) :
-      g.pullbackSectionsLE (𝟙_ S.Modules) ⊤ ⊤ le_top (1 : Γ(S, ⊤)) =
-        (pullbackObjUnitIso g).inv.app ⊤ (1 : Γ(X, ⊤)) :=
-    (g.pullbackSectionsLE_self _ ⊤ _).trans (Hom.pullbackObjUnitIso_inv_app_one g).symm
-  rw [← e, ← e]
-  exact bigSectionsRestrict_pullbackSectionsLE _ f ⊤ le_top le_top _
-
-end Modules
-
 /-- The global section `(1)_T = (h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1` of the big-site module `(𝒪_S)^a` of the
 structure sheaf. -/
 noncomputable def bigSheafUnitSection (S : Scheme.{u}) :
@@ -91,13 +71,8 @@ lemma unitToBigSheafUnit_val_app_apply (S : Scheme.{u}) (T : Over S) (r : Γ(T.l
 the identification `h^* 𝒪_S ≅ 𝒪_T` on global sections. -/
 lemma bijective_unitToBigSheafUnit_val_app (S : Scheme.{u}) (T : Over S) :
     Function.Bijective ((unitToBigSheafUnit S).val.app (op T)) := by
-  refine Function.bijective_iff_has_inverse.2
-    ⟨fun x ↦ (Modules.pullbackObjUnitIso T.hom).hom.app ⊤ x, fun r ↦ ?_, fun x ↦ ?_⟩
-  · exact (congrArg (fun y ↦ (Modules.pullbackObjUnitIso T.hom).hom.app ⊤ y)
-      (unitToBigSheafUnit_val_app_apply S T r)).trans
-        congr(Modules.Hom.app $((Modules.pullbackObjUnitIso T.hom).inv_hom_id) ⊤ r)
-  · exact (unitToBigSheafUnit_val_app_apply S T _).trans
-      congr(Modules.Hom.app $((Modules.pullbackObjUnitIso T.hom).hom_inv_id) ⊤ x)
+  rw [funext (unitToBigSheafUnit_val_app_apply S T)]
+  exact ConcreteCategory.bijective_of_isIso ((Modules.pullbackObjUnitIso T.hom).inv.app ⊤)
 
 /-- The morphism `unitToBigSheafUnit S` is an isomorphism. -/
 instance isIso_unitToBigSheafUnit (S : Scheme.{u}) : IsIso (unitToBigSheafUnit S) :=
