@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.RingTheory.Idempotents.Module
 import TauCeti.RingTheory.Idempotents.Prime
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Fibre idempotents of locally constant functions on a prime spectrum
@@ -29,8 +30,6 @@ split `M` into pieces of constant rank; see
 
 ## Main declarations
 
-* `PrimeSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`: an idempotent has empty basic open
-  set exactly when it is zero.
 * `PrimeSpectrum.fiberIdempotent hf a`: the idempotent whose basic open set is `f ⁻¹' {a}`.
 * `PrimeSpectrum.eq_fiberIdempotent_iff`: it is the only idempotent with this basic open set.
 * `PrimeSpectrum.mem_basicOpen_fiberIdempotent`, `PrimeSpectrum.fiberIdempotent_mem_iff`: a prime
@@ -56,12 +55,6 @@ open scoped Pointwise
 open TopologicalSpace
 
 namespace PrimeSpectrum
-
-/-- An idempotent has empty basic open set exactly when it is zero: an idempotent lying in every
-prime ideal is nilpotent, hence zero. -/
-theorem basicOpen_eq_bot_iff_of_isIdempotentElem {R : Type*} [CommSemiring R] {e : R}
-    (he : IsIdempotentElem e) : basicOpen e = ⊥ ↔ e = 0 :=
-  (basicOpen_eq_bot_iff e).trans ⟨he.eq_zero_of_isNilpotent, fun h ↦ h ▸ .zero⟩
 
 variable {R : Type*} [CommRing R] {α : Type*} {f : PrimeSpectrum R → α}
 
