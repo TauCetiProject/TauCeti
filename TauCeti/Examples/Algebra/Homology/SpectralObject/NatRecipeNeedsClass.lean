@@ -84,15 +84,6 @@ abbrev spectralObject : SpectralObject (ModuleCat ℤ) EInt :=
 theorem coe_one_le_coe_two : ((1 : ℤ) : EInt) ≤ ((2 : ℤ) : EInt) :=
   WithBotTop.coe_le_coe.2 (by norm_num)
 
-/-- When the piece `filtration t` is represented by a monomorphism `ι : X ⟶ K`, the object of
-`filtrationFunctor` at `t` is `X`. -/
-private def objIsoOfEqMk (t : ℤ) {X : CochainComplex (ModuleCat ℤ) ℤ}
-    (ι : X ⟶ idComplex) [Mono ι] (h : filtration t = Subobject.mk ι) :
-    filtrationFunctor.obj t ≅ X :=
-  CochainComplex.filtrationFunctorObjIso filtration monotone_filtration t ≪≫
-    eqToIso (congrArg (fun S : Subobject idComplex ↦ (S : CochainComplex (ModuleCat ℤ) ℤ))
-      ((filtrationEInt_coe filtration t).trans h)) ≪≫ Subobject.underlyingIso ι
-
 /-- `H^1(ℤ[-1]) = ℤ ≠ 0`. -/
 theorem not_isZero_homology_degreeOne : ¬ IsZero (degreeOne.homology 1) := fun h => by
   have := (ModuleCat.isZero_iff_subsingleton.1
@@ -118,10 +109,10 @@ theorem not_isZero_H_one_two :
   have hK : IsZero ((filtrationFunctor.obj ((2 : ℤ) : EInt)).homology 1) :=
     ((exactAt_iff_isZero_homology _ _).1
       ((mappingCone.homotopyToZeroOfId degreeOne).acyclic 1)).of_iso
-        (homologyMapIso (objIsoOfEqMk 2 _ h2) 1)
+        (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ h2) 1)
   exact not_isZero_homology_degreeOne ((IsZero.of_mono (homologyMap
     (filtrationFunctor.map f) 1) hK).of_iso
-      (homologyMapIso (objIsoOfEqMk 1 _ h1) 1).symm)
+      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ h1) 1).symm)
 
 /-- **The class `HasSpectralSequence coreE₂CohomologicalNat` fails** for the spectral object of
 `0 ⊆ K^1 ⊆ K`: at `(1, 0)` on the page `2` nothing enters from `ℕ × ℕ`, and the class would make

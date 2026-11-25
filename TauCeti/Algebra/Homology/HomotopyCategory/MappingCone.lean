@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
+public import TauCeti.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.Homotopy
 
 /-!
@@ -153,9 +154,9 @@ lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
   simp
 
 /-- The inclusion `mappingCone.inr f` of `L` into the mapping cone of `f : K ⟶ L` is a
-monomorphism, since it is split in each degree by the projection `mappingCone.snd f`. -/
+monomorphism: it is the inclusion `homotopyCofiber.inr f`. -/
 instance mono_inr : Mono (inr f) :=
-  mono_of_mono_f _ fun n ↦ mono_of_mono_fac (inr_f_snd_v f n)
+  inferInstanceAs (Mono (homotopyCofiber.inr f))
 
 end HasHomotopyCofiber
 
