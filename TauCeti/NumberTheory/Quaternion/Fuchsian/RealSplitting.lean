@@ -14,6 +14,7 @@ import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.CentralSimple.SkolemNoether
 import TauCeti.Algebra.Quaternion.CentralSimple
 import TauCeti.Algebra.Quaternion.SpecialLinear
+import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -310,15 +311,14 @@ theorem conj_splitting_eq_iff {u v : GL (Fin 2) ℝ} :
     simp [smul_smul]
 
 /-- **A quaternion algebra with a real splitting splits at the distinguished place**: the real
-structure constants `place a` and `place b` are not both negative. Otherwise the norm form of
-`ℍ[ℝ, place a, place b]` would be positive definite, which is impossible for an algebra isomorphic
-to `M₂(ℝ)`. -/
+structure constants `place a` and `place b` are not both negative. The splitting makes the real
+Hilbert symbol `(place a, place b)` trivial, and over `ℝ` that symbol is `-1` exactly when both
+entries are negative. -/
 theorem place_a_pos_or_place_b_pos : 0 < S.place a ∨ 0 < S.place b := by
-  by_contra! h
-  have hdef := (_root_.QuaternionAlgebra.posDef_normForm_of_neg
-    (h.1.lt_of_ne S.place_a_ne_zero) (h.2.lt_of_ne S.place_b_ne_zero)).anisotropic
-  exact (QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_anisotropic_normForm
-    (Units.mk0 _ S.place_a_ne_zero) (Units.mk0 _ S.place_b_ne_zero)).mp ⟨S.realAlgEquiv⟩ hdef
+  have : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  exact (hilbertSymbol_real_eq_one_iff (Units.mk0 _ S.place_a_ne_zero)
+    (Units.mk0 _ S.place_b_ne_zero)).mp
+    ((hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix _ _).mpr ⟨S.realAlgEquiv⟩)
 
 /-- **A quaternion algebra with a real splitting is a division algebra when `k` has another real
 embedding**: if `σ` is a real embedding of `k` other than the place, then the ramification at `σ`
