@@ -29,11 +29,13 @@ the underlying star ring homomorphisms, the form taken by functors such as the p
   a projection after the other inclusion is zero.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti.NonUnitalStarRingHom
 
-variable (R S : Type*) [NonUnitalSemiring R] [StarRing R] [NonUnitalSemiring S] [StarRing S]
+section Prod
+
+variable (R S : Type*) [NonUnitalNonAssocSemiring R] [Star R] [NonUnitalNonAssocSemiring S] [Star S]
 
 /-- The first projection `R × S → R` as a star ring homomorphism. -/
 def fst : R × S →⋆ₙ+* R :=
@@ -42,6 +44,25 @@ def fst : R × S →⋆ₙ+* R :=
 /-- The second projection `R × S → S` as a star ring homomorphism. -/
 def snd : R × S →⋆ₙ+* S :=
   NonUnitalStarRingHom.ofClass (NonUnitalStarAlgHom.snd ℕ R S)
+
+variable {R S}
+
+/-- The first projection sends `x` to `x.1`. -/
+@[simp]
+theorem fst_apply (x : R × S) : fst R S x = x.1 :=
+  (rfl)
+
+/-- The second projection sends `x` to `x.2`. -/
+@[simp]
+theorem snd_apply (x : R × S) : snd R S x = x.2 :=
+  (rfl)
+
+end Prod
+
+section InlInr
+
+variable (R S : Type*) [NonUnitalNonAssocSemiring R] [StarAddMonoid R]
+  [NonUnitalNonAssocSemiring S] [StarAddMonoid S]
 
 /-- The first inclusion `R → R × S` as a star ring homomorphism. -/
 def inl : R →⋆ₙ+* R × S :=
@@ -53,25 +74,15 @@ def inr : S →⋆ₙ+* R × S :=
 
 variable {R S}
 
-/-- The first projection sends `x` to `x.1`. -/
-@[simp]
-theorem fst_apply (x : R × S) : fst R S x = x.1 :=
-  rfl
-
-/-- The second projection sends `x` to `x.2`. -/
-@[simp]
-theorem snd_apply (x : R × S) : snd R S x = x.2 :=
-  rfl
-
 /-- The first inclusion sends `r` to `(r, 0)`. -/
 @[simp]
 theorem inl_apply (r : R) : inl R S r = (r, 0) :=
-  rfl
+  (rfl)
 
 /-- The second inclusion sends `s` to `(0, s)`. -/
 @[simp]
 theorem inr_apply (s : S) : inr R S s = (0, s) :=
-  rfl
+  (rfl)
 
 variable (R S)
 
@@ -94,5 +105,7 @@ theorem fst_comp_inr : (fst R S).comp (inr R S) = 0 :=
 @[simp]
 theorem snd_comp_inl : (snd R S).comp (inl R S) = 0 :=
   NonUnitalStarRingHom.ext fun _ ↦ rfl
+
+end InlInr
 
 end TauCeti.NonUnitalStarRingHom

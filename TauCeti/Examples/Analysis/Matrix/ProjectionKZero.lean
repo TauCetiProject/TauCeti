@@ -105,10 +105,8 @@ example : kZeroUnitizationEquiv (GrothendieckAddGroup.of
     (ProjectionMonoid.mk (1 : Matrix (Fin 1) (Fin 1) (Unitization ℂ ℂ)) (.one _))) = (1, 1) := by
   rw [kZeroUnitizationEquiv_apply, UnitizationKZero.unitalProdEquiv_apply,
     ProjectionKZero.map_of_mk, ProjectionKZero.prodEquiv_of_mk,
-    ProjectionKZero.rankAddEquiv_of_mk, ProjectionKZero.rankAddEquiv_of_mk,
-    Matrix.map_one _ (map_zero _) (by simp), Matrix.map_one _ (map_zero _) (by simp),
-    Matrix.map_one _ (map_zero _) (by simp)]
-  simp
+    ProjectionKZero.rankAddEquiv_of_mk, ProjectionKZero.rankAddEquiv_of_mk]
+  simp [Matrix.map_one]
 
 /-- Under `K₀(ℂ⁺) ≅ ℤ²` the homomorphism induced by the augmentation `ε : ℂ⁺ → ℂ` is the second
 projection. -/

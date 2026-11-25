@@ -81,10 +81,10 @@ theorem unitalProdEquiv_apply_snd (x : ProjectionKZero (Unitization R A)) :
       (Unitization.prodStarAlgEquiv R A).toStarRingEquiv =
       NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A) :=
     NonUnitalStarRingHom.ext fun y ↦ by
-      -- The coercions of `toStarRingEquiv` and `fstStarAlgHom` to functions are those of the
-      -- underlying ⋆-algebra maps, which `simp` evaluates.
-      change (Unitization.prodStarAlgEquiv R A y).2 = Unitization.fstStarAlgHom R A y
-      simp
+      rw [NonUnitalStarRingHom.comp_apply, NonUnitalStarRingHom.snd_apply,
+        StarRingEquiv.coe_toNonUnitalStarRingHom, NonUnitalStarRingHom.coe_ofClass,
+        Unitization.fstStarAlgHom_apply]
+      exact congrArg Prod.snd (Unitization.prodStarAlgEquiv_apply R A y)
   rw [augmentation_def, ← h, ProjectionKZero.map_comp, unitalProdEquiv_apply,
     ProjectionKZero.prodEquiv_apply, AddMonoidHom.comp_apply]
 

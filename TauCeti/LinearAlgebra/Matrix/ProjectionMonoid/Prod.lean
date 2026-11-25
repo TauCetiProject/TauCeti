@@ -63,14 +63,14 @@ theorem map_snd_map_inr (y : ProjectionMonoid S) :
 theorem map_fst_map_inr (y : ProjectionMonoid S) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inr R S) y) = 0 := by
   rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inr]
-  exact map_eq_zero_of_forall_eq_zero (fun _ ↦ rfl) y
+  exact map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply y
 
 /-- The second projection kills the image of the first inclusion on `V`. -/
 @[simp]
 theorem map_snd_map_inl (x : ProjectionMonoid R) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inl R S) x) = 0 := by
   rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inl]
-  exact map_eq_zero_of_forall_eq_zero (fun _ ↦ rfl) x
+  exact map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply x
 
 /-- Every class in `V(R × S)` is the sum of the images under the inclusions of its images under
 the two projections. -/
@@ -137,14 +137,14 @@ theorem map_snd_map_inr (y : ProjectionKZero S) :
 theorem map_fst_map_inr (y : ProjectionKZero S) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inr R S) y) = 0 := by
   rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inr,
-    map_eq_zero_of_forall_eq_zero (fun _ ↦ rfl), AddMonoidHom.zero_apply]
+    map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply, AddMonoidHom.zero_apply]
 
 /-- The second projection kills the image of the first inclusion on `K₀`. -/
 @[simp]
 theorem map_snd_map_inl (x : ProjectionKZero R) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inl R S) x) = 0 := by
   rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inl,
-    map_eq_zero_of_forall_eq_zero (fun _ ↦ rfl), AddMonoidHom.zero_apply]
+    map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply, AddMonoidHom.zero_apply]
 
 variable (R S) in
 /-- **`K₀` of a product**: `K₀(R × S) ≃+ K₀(R) × K₀(S)`, induced by the two projections, with
