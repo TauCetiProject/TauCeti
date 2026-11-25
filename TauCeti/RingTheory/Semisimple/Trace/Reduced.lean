@@ -399,6 +399,7 @@ section Matrix
 variable {K : Type*} [Field K] [CharZero K] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- In characteristic `0`, the reduced trace of `M_n(K)` over `K` is the matrix trace. -/
+@[simp]
 theorem semisimpleReducedTrace_matrix (M : Matrix n n K) :
     semisimpleReducedTrace K (Matrix n n K) M = M.trace := by
   cases isEmpty_or_nonempty n
@@ -408,7 +409,7 @@ theorem semisimpleReducedTrace_matrix (M : Matrix n n K) :
 /-- The reduced trace of `x xᵀ` in `M_n(K)` is the sum of the squares of the entries of `x`. -/
 theorem semisimpleReducedTrace_mul_transpose (x : Matrix n n K) :
     semisimpleReducedTrace K (Matrix n n K) (x * x.transpose) = ∑ i, ∑ j, x i j * x i j := by
-  simp [semisimpleReducedTrace_matrix, Matrix.trace, Matrix.mul_apply]
+  simp [Matrix.trace, Matrix.mul_apply]
 
 end Matrix
 

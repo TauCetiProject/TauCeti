@@ -35,6 +35,9 @@ finite-dimensional and semisimple.
 
 * `TauCeti.PositiveInvolution.trd_mul_star_pos`: the defining inequality `Trd(x x*) > 0`.
 * `TauCeti.PositiveInvolution.trd_star_mul_pos`: also `Trd(x* x) > 0` for `x ≠ 0`.
+* `TauCeti.PositiveInvolution.trd_mul_star_eq_zero`,
+  `TauCeti.PositiveInvolution.trd_star_mul_eq_zero`: `Trd(x x*)` and `Trd(x* x)` vanish only at
+  `x = 0`.
 * `TauCeti.PositiveInvolution.star_smul`: a positive involution is `ℚ`-linear.
 * `TauCeti.PositiveInvolution.ofStarRing_toStarRing`, `TauCeti.PositiveInvolution.star_ofStarRing`,
   `TauCeti.PositiveInvolution.toStarRing_ofStarRing`: positive involutions are the `StarRing`
@@ -185,6 +188,16 @@ theorem trd_mul_star_nonneg (x : B) : 0 ≤ Algebra.semisimpleReducedTrace ℚ B
 theorem trd_mul_star_eq_zero {x : B} :
     Algebra.semisimpleReducedTrace ℚ B (x * P.star x) = 0 ↔ x = 0 :=
   ⟨fun h ↦ by_contra fun hx ↦ (P.trd_mul_star_pos x hx).ne' h, fun h ↦ by simp [h]⟩
+
+/-- `Trd_{B/ℚ}(x* x) ≥ 0` for every `x`. -/
+theorem trd_star_mul_nonneg (x : B) : 0 ≤ Algebra.semisimpleReducedTrace ℚ B (P.star x * x) := by
+  simpa using P.trd_mul_star_nonneg (P.star x)
+
+/-- `Trd_{B/ℚ}(x* x) = 0` only for `x = 0`. -/
+@[simp]
+theorem trd_star_mul_eq_zero {x : B} :
+    Algebra.semisimpleReducedTrace ℚ B (P.star x * x) = 0 ↔ x = 0 := by
+  simpa using P.trd_mul_star_eq_zero (x := P.star x)
 
 /-- **A `StarRing` structure satisfying the positivity inequality is a positive involution.** -/
 def ofStarRing [StarRing B]
