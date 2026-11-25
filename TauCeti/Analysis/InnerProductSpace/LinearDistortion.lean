@@ -58,6 +58,9 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
 * `Orientation.outerDistortion_neg_neg`, `Orientation.innerDistortion_neg_neg`: reversing both
   orientations changes neither distortion.
 * `Orientation.outerDistortion_id`: the identity has outer distortion `1`.
+* `Orientation.outerDistortion_linearIsometry`, `Orientation.outerDistortion_smul_linearIsometry`:
+  a linear isometry `U` of oriented Jacobian `1`, and any multiple `c • U` with `cⁿ > 0`, has outer
+  distortion `1`.
 * `Orientation.outerDistortion_linearIsometryEquiv`,
   `Orientation.outerDistortion_linearIsometryEquiv_of_neg`: an isometric isomorphism has outer
   distortion `1` if it preserves orientation, and (in positive dimension) `∞` if it reverses
@@ -437,27 +440,28 @@ theorem outerDistortion_id : oV.outerDistortion oV LinearMap.id = 1 := by
   simp [hid]
 
 omit [FiniteDimensional ℝ W] in
+/-- A linear isometry of oriented Jacobian `1` has outer distortion `1`. -/
+theorem outerDistortion_linearIsometry (U : V →ₗᵢ[ℝ] W)
+    (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
+    oV.outerDistortion oW U.toLinearMap = 1 := by
+  have h := oV.outerDistortion_linearIsometry_comp oV oW U hU LinearMap.id
+  rw [LinearMap.comp_id] at h
+  rw [h, oV.outerDistortion_id]
+
+omit [FiniteDimensional ℝ W] in
 /-- An orientation-preserving isometric isomorphism has outer distortion `1`. -/
 theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
-    oV.outerDistortion oW (U : V →ₗ[ℝ] W) = 1 := by
-  have hUc : U.toLinearIsometry.toLinearMap = (U : V →ₗ[ℝ] W) :=
-    LinearMap.ext fun _ ↦ by simp
-  have hid : oV.outerDistortion oW (U : V →ₗ[ℝ] W) = oV.outerDistortion oV LinearMap.id := by
-    simpa [hUc] using
-      oV.outerDistortion_linearIsometry_comp oV oW U.toLinearIsometry (by rwa [hUc]) LinearMap.id
-  rw [hid, oV.outerDistortion_id]
+    oV.outerDistortion oW (U : V →ₗ[ℝ] W) = 1 :=
+  oV.outerDistortion_linearIsometry oW U.toLinearIsometry hU
 
 omit [FiniteDimensional ℝ W] in
 /-- A multiple `c • U` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) of a linear
 isometry `U` of oriented Jacobian `1` has outer distortion `1`. -/
 theorem outerDistortion_smul_linearIsometry {c : ℝ} (hc : 0 < c ^ n) (U : V →ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
-    oV.outerDistortion oW (c • U.toLinearMap) = 1 := by
-  rw [oV.outerDistortion_smul oW hc]
-  have h := oV.outerDistortion_linearIsometry_comp oV oW U hU LinearMap.id
-  rw [LinearMap.comp_id] at h
-  rw [h, oV.outerDistortion_id]
+    oV.outerDistortion oW (c • U.toLinearMap) = 1 :=
+  (oV.outerDistortion_smul oW hc _).trans (oV.outerDistortion_linearIsometry oW U hU)
 
 /-- An orientation-preserving isometric isomorphism has inner distortion `1`. -/
 theorem innerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
