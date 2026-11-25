@@ -172,7 +172,7 @@ private theorem contDiff_and_setLIntegral_eq_of_comp_add
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (v k z))
         (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (v k) z : ℝ × ℝ →ₗ[ℝ] V) :=
     fun z hz ↦ by
-      simpa using isComplexLinearMap_perturbedFDeriv_comp_add (τ k)
+      simpa using isComplexLinearMap_perturbedFDeriv_comp_add_right (τ k)
         (hfloer k _ ⟨mem_univ _, by simpa using hz.2⟩)
   have hvL (k : ℕ) : LipschitzWith L (v k) :=
     ((hL k).comp (IsometryEquiv.addRight ((τ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken

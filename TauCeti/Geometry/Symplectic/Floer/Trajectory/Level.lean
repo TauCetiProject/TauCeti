@@ -273,7 +273,7 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add
     (f := fun k z ↦ u k (z + (σ k, 0))) (fun k ↦ (hu k).comp (contDiff_id.add contDiff_const))
     (fun k s t ↦ by simpa using hper k (s + σ k) t)
     (fun k z ↦ huK _ _) hc (fun k z hz ↦ hJc _ _ (hmem _ hz)) (fun k z hz ↦ hJM _ _ (hmem _ hz))
-    (fun k z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_add (σ k) (hfloer k _ (hmem _ hz)))
+    (fun k z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_add_right (σ k) (hfloer k _ (hmem _ hz)))
     (fun k ↦ ((hL k).comp (IsometryEquiv.addRight ((σ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
       (mul_one L).le) ha (by simpa using hσa) hg
 
