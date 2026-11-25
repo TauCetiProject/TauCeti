@@ -33,7 +33,9 @@ public section
 open scoped TensorProduct InnerProductSpace WithCStarModule ComplexOrder
 open MulOpposite
 
-namespace WithCStarModule
+namespace TauCeti
+
+open WithCStarModule
 
 /-- The canonical complex bilinear map to the algebraic right C⋆-module tensor product. -/
 def tensorTmul (A : Type*) [AddCommGroup A] [Module ℂ A]
@@ -48,9 +50,11 @@ def tensorTmul (A : Type*) [AddCommGroup A] [Module ℂ A]
   simp only [tensorTmul, LinearMap.compr₂_apply, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply, TensorProduct.mk_apply]
 
-end WithCStarModule
+end TauCeti
 
 namespace Module.Basis
+
+open TauCeti
 
 variable {A H : Type*} [AddCommGroup A] [Module ℂ A] [AddCommGroup H] [Module ℂ H]
 
@@ -64,19 +68,19 @@ noncomputable def tensorCoordinates {ι : Type*} [Finite ι] (b : Basis ι ℂ H
 /-- The coordinates of a pure tensor multiply its basis coordinates by its coefficient. -/
 @[simp] theorem tensorCoordinates_tensorTmul {ι : Type*} [Finite ι]
     (b : Basis ι ℂ H) (ξ : H) (a : A) (i : ι) :
-    b.tensorCoordinates (WithCStarModule.tensorTmul A ξ a) i = b.repr ξ i • a := by
+    b.tensorCoordinates (tensorTmul A ξ a) i = b.repr ξ i • a := by
   classical
   simp [tensorCoordinates]
 
 /-- The inverse coordinate map sums each basis vector tensored with its coefficient. -/
 theorem tensorCoordinates_symm_apply {ι : Type*} [Fintype ι]
     (b : Basis ι ℂ H) (a : ι → A) :
-    b.tensorCoordinates.symm a = ∑ i, WithCStarModule.tensorTmul A (b i) (a i) := by
+    b.tensorCoordinates.symm a = ∑ i, tensorTmul A (b i) (a i) := by
   classical
   apply (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).injective
   simp only [tensorCoordinates, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
     LinearEquiv.apply_symm_apply, TensorProduct.equivFinsuppOfBasisLeft_symm_apply, map_sum,
-    WithCStarModule.linearEquiv_tensorTmul]
+    linearEquiv_tensorTmul]
   exact Finsupp.sum_of_support_subset _ (Finset.subset_univ _) _ (by simp)
 
 end Module.Basis
@@ -84,6 +88,8 @@ end Module.Basis
 namespace WithCStarModule
 
 section RightAction
+
+open TauCeti
 
 variable {A H : Type*} [NonUnitalRing A] [Module ℂ A] [IsScalarTower ℂ A A]
   [AddCommGroup H] [Module ℂ H]
@@ -101,7 +107,7 @@ theorem linearEquiv_smul_tensor (a : Aᵐᵒᵖ) (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, 
   LinearEquiv.apply_symm_apply _ _
 
 /-- Right multiplication of a pure tensor multiplies its coefficient on the right. -/
-@[simp] theorem op_smul_tensorTmul (ξ : H) (a b : A) :
+@[simp] theorem _root_.TauCeti.op_smul_tensorTmul (ξ : H) (a b : A) :
     op b • tensorTmul A ξ a = tensorTmul A ξ (a * b) := by
   apply (linearEquiv ℂ Aᵐᵒᵖ _).injective
   simp only [linearEquiv_smul_tensor, linearEquiv_tensorTmul, LinearMap.lTensor_tmul,
@@ -146,7 +152,7 @@ private theorem tensorPairing_eq_sum {ι : Type*} [Fintype ι] (e : OrthonormalB
       e.toBasis.tensorCoordinates ((WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm z) i := by
     have h := e.toBasis.tensorCoordinates_symm_apply
       (e.toBasis.tensorCoordinates ((WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm z))
-    simpa only [map_sum, WithCStarModule.linearEquiv_tensorTmul,
+    simpa only [map_sum, linearEquiv_tensorTmul,
       LinearEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply,
       OrthonormalBasis.coe_toBasis] using congrArg (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _) h
   conv_lhs => rw [hexp x, hexp y]
@@ -182,41 +188,44 @@ private theorem tensorPairing_mulRight (x y : H ⊗[ℂ] A) (a : A) :
       simp [g, LinearMap.compl₂_apply, LinearMap.compr₂ₛₗ_apply, mul_assoc]
   exact DFunLike.congr_fun (DFunLike.congr_fun h x) y
 
+/-- A tensor self-pairing is an orthonormal-coordinate dot product. Vanishing of the
+coordinate vector forces the original tensor to vanish. -/
+private theorem tensorPairing_self_eq_dotProduct (x : H ⊗[ℂ] A) :
+    ∃ (n : ℕ) (c : Fin n → A), tensorPairing x x = star c ⬝ᵥ c ∧ (c = 0 → x = 0) := by
+  obtain ⟨V, hV, hVx⟩ := TensorProduct.exists_finite_submodule_left_of_setFinite
+    {x} (Set.finite_singleton x)
+  obtain ⟨y, rfl⟩ := Set.singleton_subset_iff.mp hVx
+  let := hV
+  let b := (stdOrthonormalBasis ℂ V).toBasis
+  let e := WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (V ⊗[ℂ] A)
+  refine ⟨_, b.tensorCoordinates (e.symm y), ?_, ?_⟩
+  · rw [LinearMap.rTensor_def, ← Submodule.subtypeₗᵢ_toLinearMap, tensorPairing_map_map,
+      tensorPairing_eq_sum (stdOrthonormalBasis ℂ V)]
+    simp only [dotProduct, Pi.star_apply, b, e]
+  · intro hc
+    have hy : y = 0 := (e.symm.trans b.tensorCoordinates).injective (by
+      simpa only [LinearEquiv.trans_apply, map_zero] using hc)
+    simp [hy]
+
 end Algebraic
 
 section Ordered
 
 variable {A H : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
   [StarModule ℂ A] [SMulCommClass ℂ A A] [IsScalarTower ℂ A A]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-
-variable [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [PartialOrder A] [StarOrderedRing A]
 
 /-- The coefficient pairing of an algebraic tensor with itself is nonnegative. -/
 private theorem tensorPairing_self_nonneg (x : H ⊗[ℂ] A) : 0 ≤ tensorPairing x x := by
-  obtain ⟨V, hV, hVx⟩ := TensorProduct.exists_finite_submodule_left_of_setFinite
-    {x} (Set.finite_singleton x)
-  obtain ⟨y, rfl⟩ := Set.singleton_subset_iff.mp hVx
-  let := hV
-  rw [LinearMap.rTensor_def, ← Submodule.subtypeₗᵢ_toLinearMap, tensorPairing_map_map,
-    tensorPairing_eq_sum (stdOrthonormalBasis ℂ V)]
-  exact dotProduct_star_self_nonneg _
+  obtain ⟨n, c, hc, _⟩ := tensorPairing_self_eq_dotProduct x
+  rw [hc]
+  exact dotProduct_star_self_nonneg c
 
 /-- Vanishing of the self-pairing implies that the algebraic tensor is zero. -/
 private theorem eq_zero_of_tensorPairing_self_eq_zero [IsProperStar A]
     (x : H ⊗[ℂ] A) (hx : tensorPairing x x = 0) : x = 0 := by
-  obtain ⟨V, hV, hVx⟩ := TensorProduct.exists_finite_submodule_left_of_setFinite
-    {x} (Set.finite_singleton x)
-  obtain ⟨y, rfl⟩ := Set.singleton_subset_iff.mp hVx
-  let := hV
-  rw [LinearMap.rTensor_def, ← Submodule.subtypeₗᵢ_toLinearMap, tensorPairing_map_map,
-    tensorPairing_eq_sum (stdOrthonormalBasis ℂ V)] at hx
-  have hc := dotProduct_star_self_eq_zero.mp hx
-  have hy : y = 0 := by
-    apply (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm.injective
-    apply (stdOrthonormalBasis ℂ V).toBasis.tensorCoordinates.injective
-    simpa using hc
-  simp [hy]
+  obtain ⟨n, c, hc, hzero⟩ := tensorPairing_self_eq_dotProduct x
+  exact hzero (dotProduct_star_self_eq_zero.mp (hc.symm.trans hx))
 
 end Ordered
 
@@ -246,7 +255,7 @@ theorem unop_inner_tensor_eq_tensorPairing
       tensorPairing (linearEquiv ℂ Aᵐᵒᵖ _ x) (linearEquiv ℂ Aᵐᵒᵖ _ y) := rfl
 
 /-- The opposite-valued inner product of pure tensors evaluates on their two factors. -/
-@[simp] theorem inner_tensorTmul_tensorTmul (ξ η : H) (a b : A) :
+@[simp] theorem _root_.TauCeti.inner_tensorTmul_tensorTmul (ξ η : H) (a b : A) :
     inner Aᵐᵒᵖ (tensorTmul A ξ a) (tensorTmul A η b) =
       op (⟪ξ, η⟫_ℂ • (star a * b)) := by
   apply unop_injective
@@ -256,6 +265,10 @@ theorem unop_inner_tensor_eq_tensorPairing
 /-- The norm induced by the `A`-valued tensor pairing. -/
 noncomputable instance instNormTensor [Norm Aᵐᵒᵖ] : Norm C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) :=
   CStarModule.norm Aᵐᵒᵖ
+
+/-- The algebraic tensor norm is the square root of the norm of its self-inner product. -/
+theorem norm_tensor_eq_sqrt_norm_inner_self [Norm Aᵐᵒᵖ]
+    (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) : ‖x‖ = √‖inner Aᵐᵒᵖ x x‖ := rfl
 
 /-- The algebraic tensor product is a pre-Hilbert right C⋆-module. -/
 noncomputable instance instCStarModuleTensor [PartialOrder A] [StarOrderedRing A]
@@ -271,7 +284,7 @@ noncomputable instance instCStarModuleTensor [PartialOrder A] [StarOrderedRing A
     intro z x y
     exact congrArg op (map_smul (tensorPairing _) z _)
   star_inner x y := by exact congrArg op (star_tensorPairing _ _)
-  norm_eq_sqrt_norm_inner_self _ := rfl
+  norm_eq_sqrt_norm_inner_self := norm_tensor_eq_sqrt_norm_inner_self
   inner_self {x} := by
     refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
     · apply (linearEquiv ℂ Aᵐᵒᵖ _).injective
@@ -322,7 +335,9 @@ noncomputable instance instNormedSpaceTensor :
 
 end WithCStarModule
 
-namespace WithCStarModule
+namespace TauCeti
+
+open WithCStarModule
 
 variable {A H : Type*} [NonUnitalNormedRing A] [StarRing A] [NormedSpace ℂ A]
   [StarModule ℂ A] [SMulCommClass ℂ A A] [IsScalarTower ℂ A A] [CStarRing A]
@@ -331,12 +346,10 @@ variable {A H : Type*} [NonUnitalNormedRing A] [StarRing A] [NormedSpace ℂ A]
 /-- The norm of an algebraic pure tensor is the product of its factor norms. -/
 @[simp] theorem norm_tensorTmul (ξ : H) (a : A) :
     ‖tensorTmul A ξ a‖ = ‖ξ‖ * ‖a‖ := by
-  have hnorm : ‖tensorTmul A ξ a‖ = √‖inner Aᵐᵒᵖ (tensorTmul A ξ a) (tensorTmul A ξ a)‖ :=
-    rfl
-  rw [hnorm, inner_tensorTmul_tensorTmul, norm_op]
+  rw [norm_tensor_eq_sqrt_norm_inner_self, inner_tensorTmul_tensorTmul, norm_op]
   apply (sq_eq_sq₀ (Real.sqrt_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).mp
   rw [Real.sq_sqrt (norm_nonneg _)]
   simp [norm_smul, inner_self_eq_norm_sq_to_K, CStarRing.norm_star_mul_self,
     pow_two, mul_mul_mul_comm]
 
-end WithCStarModule
+end TauCeti

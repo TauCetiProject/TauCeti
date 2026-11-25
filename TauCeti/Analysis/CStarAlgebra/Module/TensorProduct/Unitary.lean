@@ -22,8 +22,6 @@ open TauCeti MulOpposite
 
 namespace LinearIsometryEquiv
 
-open HilbertModuleTensorProduct
-
 variable {H K A : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [NormedAddCommGroup K] [InnerProductSpace ℂ K]
   [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -32,19 +30,34 @@ variable {H K A : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 by acting on the Hilbert-space factor. -/
 noncomputable def hilbertModuleTensorProductUnitary (f : H ≃ₗᵢ[ℂ] K) :
     CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) (HilbertModuleTensorProduct K A) := by
-  let g := mapToCompletion (A := A) f.toLinearIsometry
-  have h := inner_mapToCompletion (A := A) f.toLinearIsometry
-  have hd := denseRange_mapToCompletion (A := A) f
+  let g := f.toLinearIsometry.toLinearMap.hilbertModuleTensorProductToCompletion (A := A)
+  have h := f.toLinearIsometry.inner_hilbertModuleTensorProductToCompletion (A := A)
+  have hd := f.toLinearIsometry.toLinearMap.denseRange_hilbertModuleTensorProductToCompletion
+    (A := A) f.surjective
   exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) g h hd,
     IsPosSemidefCStarModuleAlong.inner_equivOfInner_id g h hd⟩
+
+/-- The unitary induced by an isometric equivalence has the corresponding induced isometry
+as its underlying map. -/
+@[simp] theorem toLinearIsometry_hilbertModuleTensorProductUnitary (f : H ≃ₗᵢ[ℂ] K) :
+    (f.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry =
+      f.toLinearIsometry.hilbertModuleTensorProduct := by
+  rw [hilbertModuleTensorProductUnitary,
+    IsPosSemidefCStarModuleAlong.toLinearIsometry_equivOfInner]
+  symm
+  exact (IsPosSemidefCStarModuleAlong.eq_liftOfInner_iff _ _ _ _).mpr
+    f.toLinearIsometry.hilbertModuleTensorProduct_coe
 
 /-- On pure tensors the induced unitary applies the equivalence to the Hilbert-space factor. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_mk (f : H ≃ₗᵢ[ℂ] K) (ξ : H) (a : A) :
     f.hilbertModuleTensorProductUnitary (HilbertModuleTensorProduct.mk H A ξ a) =
       HilbertModuleTensorProduct.mk K A (f ξ) a := by
-  rw [HilbertModuleTensorProduct.mk_apply, hilbertModuleTensorProductUnitary,
-    CStarModuleUnitary.mk_apply, IsPosSemidefCStarModuleAlong.equivOfInner_coe,
-    mapToCompletion_tensorTmul, LinearIsometryEquiv.coe_toLinearIsometry]
+  have h := congrArg (fun g : HilbertModuleTensorProduct H A →ₗᵢ[ℂ]
+      HilbertModuleTensorProduct K A ↦ g (HilbertModuleTensorProduct.mk H A ξ a))
+    (f.toLinearIsometry_hilbertModuleTensorProductUnitary (A := A))
+  simpa only [LinearIsometryEquiv.coe_toLinearIsometry,
+    CStarModuleUnitary.toLinearIsometryEquiv_apply, LinearIsometry.hilbertModuleTensorProduct_mk]
+    using h
 
 /-- On pure tensors the inverse unitary applies the inverse equivalence to the Hilbert-space
 factor. -/
@@ -60,10 +73,9 @@ factor. -/
       CStarModuleUnitary.refl Aᵐᵒᵖ (HilbertModuleTensorProduct H A) := by
   apply CStarModuleUnitary.toLinearIsometryEquiv_injective
   apply LinearIsometryEquiv.toLinearIsometry_injective
-  apply LinearIsometry.toContinuousLinearMap_injective
-  apply HilbertModuleTensorProduct.ext
-  intro ξ a
-  simp
+  rw [toLinearIsometry_hilbertModuleTensorProductUnitary,
+    CStarModuleUnitary.toLinearIsometryEquiv_refl]
+  exact LinearIsometry.hilbertModuleTensorProduct_id
 
 /-- Tensoring a composition gives the composition of the induced unitaries. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_trans {L : Type*} [NormedAddCommGroup L]
@@ -72,11 +84,14 @@ factor. -/
       (f.hilbertModuleTensorProductUnitary (A := A)).trans g.hilbertModuleTensorProductUnitary := by
   apply CStarModuleUnitary.toLinearIsometryEquiv_injective
   apply LinearIsometryEquiv.toLinearIsometry_injective
-  apply LinearIsometry.toContinuousLinearMap_injective
-  apply HilbertModuleTensorProduct.ext
-  intro ξ a
-  simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-    CStarModuleUnitary.toLinearIsometryEquiv_apply, hilbertModuleTensorProductUnitary_mk,
-    CStarModuleUnitary.trans_apply, LinearIsometryEquiv.trans_apply]
+  rw [toLinearIsometry_hilbertModuleTensorProductUnitary,
+    CStarModuleUnitary.toLinearIsometryEquiv_trans]
+  -- The isometry underlying a composite equivalence is the composite of the underlying maps.
+  change (g.toLinearIsometry.comp f.toLinearIsometry).hilbertModuleTensorProduct (A := A) =
+    ((g.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry).comp
+      (f.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry
+  rw [toLinearIsometry_hilbertModuleTensorProductUnitary,
+    toLinearIsometry_hilbertModuleTensorProductUnitary]
+  exact LinearIsometry.hilbertModuleTensorProduct_comp _ _
 
 end LinearIsometryEquiv

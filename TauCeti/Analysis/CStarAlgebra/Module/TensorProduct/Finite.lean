@@ -31,6 +31,13 @@ private noncomputable def finiteCoordinates :
     C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) ≃ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
   (e.toBasis.tensorCoordinates (A := A)).trans (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm
 
+omit [PartialOrder A] [StarOrderedRing A] in
+private theorem finiteCoordinates_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+    (finiteCoordinates e).symm a =
+      e.toBasis.tensorCoordinates.symm (WithCStarModule.equiv Aᵐᵒᵖ (ι → A) a) := by
+  rw [finiteCoordinates, LinearEquiv.trans_symm, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
+    WithCStarModule.linearEquiv_apply]
+
 private theorem finiteCoordinates_inner (x y : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
     inner Aᵐᵒᵖ (finiteCoordinates e x) (finiteCoordinates e y) = inner Aᵐᵒᵖ x y := by
   apply unop_injective
@@ -65,19 +72,15 @@ private theorem tensorProductUnitary_coe (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[�
 theorem tensorProductUnitary_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
     (e.tensorProductUnitary (A := A)).symm a =
       ∑ i, HilbertModuleTensorProduct.mk H A (e i) (a i) := by
-  let f := finiteCoordinates (A := A) e
   have h : (e.tensorProductUnitary (A := A)).symm a =
-      (f.symm a : HilbertModuleTensorProduct H A) := by
+      ((finiteCoordinates e).symm a : HilbertModuleTensorProduct H A) := by
     rw [CStarModuleUnitary.symm_apply_eq, tensorProductUnitary_coe]
-    exact (f.apply_symm_apply a).symm
-  have hc : f.symm a =
-      ∑ i, WithCStarModule.tensorTmul A (e i) (a i) := by
-    simpa [f, finiteCoordinates] using e.toBasis.tensorCoordinates_symm_apply
-      (WithCStarModule.equiv Aᵐᵒᵖ (ι → A) a)
-  rw [h, hc]
-  simpa only [Completion.coe_toComplL, HilbertModuleTensorProduct.mk_apply] using
+    exact ((finiteCoordinates e).apply_symm_apply a).symm
+  rw [h, finiteCoordinates_symm_apply, Module.Basis.tensorCoordinates_symm_apply]
+  simpa only [Completion.coe_toComplL, HilbertModuleTensorProduct.mk_apply,
+    OrthonormalBasis.coe_toBasis, WithCStarModule.equiv_pi_apply] using
     map_sum (Completion.toComplL :
       C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) →L[ℂ] HilbertModuleTensorProduct H A)
-      (fun i ↦ WithCStarModule.tensorTmul A (e i) (a i)) Finset.univ
+      (fun i ↦ tensorTmul A (e i) (a i)) Finset.univ
 
 end OrthonormalBasis
