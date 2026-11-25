@@ -26,6 +26,9 @@ which is dense in the closed one, so every point of the closed cylinder is non-w
 (`TauCeti.StrictConvexBilliardTable.nonwanderingSet_closedBilliardMap`, from
 `Function.Semiconj.nonwanderingSet_eq_univ`); the points of the two boundary circles are moreover
 fixed by `T'`.
+
+Both results assume that `χ` is twice differentiable, because the invariance of the area is only
+available in that case; tables whose boundary is merely `C¹` are not covered here.
 -/
 
 public section
