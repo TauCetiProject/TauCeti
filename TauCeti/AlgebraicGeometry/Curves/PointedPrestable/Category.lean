@@ -58,8 +58,10 @@ with the markings, is canonically isomorphic to the chosen base change.
   families is an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isProper_hom`: the map of total spaces of a
   morphism of pointed families is proper.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.totalIso_hom_markingPoint`: over a field,
-  the isomorphism of total spaces matches the marked points.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.totalIso_hom_comp_toBase`: the isomorphism
+  of total spaces lies over the base.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.Hom.hom_markingPoint`: over a field, a
+  morphism of pointed prestable families matches the marked points.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isPullback_pullbackMap_hom`: the base change of
   a morphism of pointed families is a base change of its map of total spaces, so it stays
   surjective (`TauCeti.AlgebraicGeometry.PointedPrestableFamily.surjective_pullbackMap_hom`).
@@ -74,11 +76,10 @@ category API for models in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Mod
 change follows Mathlib's `CategoryTheory.Over.pullback` and uses its canonical isomorphism
 `CategoryTheory.Limits.pullbackLeftPullbackSndIso`.
 
-Only the functors `toOver`, `pullbackFunctor` and `reindexFunctor` and the isomorphism
-`totalIso` expose their bodies, so that their `simps` lemmas are definitional and the statements
-about `pullbackFunctor` typecheck.
-`isoMk`, `pullbackMap`, the canonical isomorphisms, `isoPullback` and `autToOver` keep their
-bodies private and are used through their characteristic lemmas.
+Only the functors `toOver`, `pullbackFunctor` and `reindexFunctor` expose their bodies, so that
+their `simps` lemmas are definitional and the statements about `pullbackFunctor` typecheck.
+`isoMk`, `totalIso`, `pullbackMap`, the canonical isomorphisms, `isoPullback` and `autToOver` keep
+their bodies private and are used through their characteristic lemmas.
 
 ## References
 
@@ -188,20 +189,31 @@ instance : (toOver (S := S) (n := n)).ReflectsIsomorphisms where
     (isIso_iff_isIso_hom f).2 (by simpa using inferInstanceAs (IsIso (toOver.map f).left))
 
 /-- The isomorphism of total spaces induced by an isomorphism of pointed prestable families. -/
-@[expose, simps]
 def totalIso (e : P ≅ Q) : P.total ≅ Q.total where
   hom := e.hom.hom
   inv := e.inv.hom
   hom_inv_id := congr(($(e.hom_inv_id)).hom)
   inv_hom_id := congr(($(e.inv_hom_id)).hom)
 
-/-- Over a field, the isomorphism of total spaces induced by an isomorphism of pointed prestable
-families carries each marked point to the corresponding marked point. -/
-theorem totalIso_hom_markingPoint {K : Type u} [Field K]
-    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (i : Fin n) :
-    (totalIso e).hom (P.markingPoint i : P.total) = Q.markingPoint i := by
-  rw [totalIso_hom, coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply,
-    Hom.marking_comp_hom]
+@[simp]
+theorem totalIso_hom (e : P ≅ Q) : (totalIso e).hom = e.hom.hom :=
+  (rfl)
+
+@[simp]
+theorem totalIso_inv (e : P ≅ Q) : (totalIso e).inv = e.inv.hom :=
+  (rfl)
+
+/-- The isomorphism of total spaces induced by an isomorphism of pointed prestable families lies
+over the base. -/
+theorem totalIso_hom_comp_toBase (e : P ≅ Q) : (totalIso e).hom ≫ Q.toBase = P.toBase := by
+  rw [totalIso_hom, Hom.hom_comp_toBase]
+
+/-- Over a field, the map of total spaces of a morphism of pointed prestable families carries
+each marked point to the corresponding marked point. -/
+theorem Hom.hom_markingPoint {K : Type u} [Field K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (f : P ⟶ Q) (i : Fin n) :
+    f.hom (P.markingPoint i : P.total) = Q.markingPoint i := by
+  rw [coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply, Hom.marking_comp_hom]
 
 /-- Forgetting the markings, as a group homomorphism from the automorphisms of a pointed
 prestable family to the automorphisms of its total space over `S`. -/

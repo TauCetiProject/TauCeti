@@ -183,11 +183,8 @@ theorem isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff (e : F.curve ≅ G.
     (he : e.hom.hom ≫ G.map = F.map) (v : F.curve.dualGraph.Vertex) :
     G.IsContractedVertex ((PointedPrestableFamily.dualGraphIsoOfIso e).vertexEquiv v) ↔
       F.IsContractedVertex v := by
-  have h := Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv (K := K)
-    (PointedPrestableFamily.totalIso e) e.hom.hom_comp_toBase _ _
-    (PointedPrestableFamily.totalIso_hom_markingPoint e) G.map v
-  rw [PointedPrestableFamily.totalIso_hom, he] at h
-  rw [isContractedVertex_iff, isContractedVertex_iff, PointedPrestableFamily.dualGraphIsoOfIso, h]
+  rw [isContractedVertex_iff, isContractedVertex_iff,
+    PointedPrestableFamily.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv, he]
 
 end Iso
 

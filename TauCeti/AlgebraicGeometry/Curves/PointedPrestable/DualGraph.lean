@@ -28,6 +28,13 @@ prestable curve over `K`, the markings are the values of its sections at the poi
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph_reindex`: reindexing the markings
   of the curve reindexes the markings of its dual graph.
+
+In the namespace `TauCeti.AlgebraicGeometry.PointedPrestableFamily`:
+
+* `coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv`: the isomorphism of dual graphs
+  carries a component of the blowup to its image under the induced isomorphism of blowups.
+* `image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv`: it therefore matches the images of
+  the components in the curves.
 -/
 
 public section
@@ -62,11 +69,37 @@ theorem dualGraph_reindex [IsSepClosed K] (e : Fin m ↪ Fin n) :
 /-- An isomorphism of pointed prestable curves over a separably closed field induces an
 isomorphism of their dual graphs: the isomorphism `AlgebraicGeometry.Scheme.dualGraphIsoOfIso`
 induced by the isomorphism of total spaces, which lies over `Spec K` and matches the markings. -/
-@[expose]
 def dualGraphIsoOfIso [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
     (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
-  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) e.hom.hom_comp_toBase _ _
-    (totalIso_hom_markingPoint e)
+  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) (totalIso_hom_comp_toBase e) _ _ fun i ↦ by
+    rw [totalIso_hom]
+    exact e.hom.hom_markingPoint i
+
+/-- The isomorphism of dual graphs carries a component of the blowup of the total space of `P`
+to its image under the induced isomorphism of blowups. -/
+@[simp]
+theorem coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (v : P.dualGraph.Vertex) :
+    (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
+        Set (Q.total.singularLocus K).blowup) =
+      (Scheme.singularLocusBlowupIso (R := K) (totalIso e) (totalIso_hom_comp_toBase e)).hom ''
+        (P.total.dualGraphVertexEquiv P.markingPoint v) :=
+  Scheme.coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv ..
+
+/-- The image of the component of the blowup of the total space of `Q` corresponding to a vertex
+`v`, under the blowup morphism followed by a morphism `f` out of the total space, is the image of
+the component `v` of the blowup of the total space of `P` under the blowup morphism followed by
+the map of total spaces `e.hom.hom` and `f`. -/
+theorem image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) {Z : Scheme.{u}}
+    (f : Q.total ⟶ Z) (v : P.dualGraph.Vertex) :
+    ((Q.total.singularLocus K).blowupToBase ≫ f) ''
+        (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
+          Set (Q.total.singularLocus K).blowup) =
+      ((P.total.singularLocus K).blowupToBase ≫ e.hom.hom ≫ f) ''
+        (P.total.dualGraphVertexEquiv P.markingPoint v : Set (P.total.singularLocus K).blowup) := by
+  rw [← totalIso_hom]
+  exact Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv ..
 
 end PointedPrestableFamily
 
