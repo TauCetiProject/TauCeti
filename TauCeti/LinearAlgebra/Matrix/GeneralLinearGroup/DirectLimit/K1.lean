@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DirectLimit
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DirectLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
@@ -18,7 +18,7 @@ its ring structure and canonical ring homomorphisms `DirectLimit.Ring.of G f i :
 Every invertible matrix over `G_∞` comes from some stage, two invertible matrices of a stage with
 the same image over `G_∞` agree at a later stage, and an invertible matrix of a stage which becomes
 elementary over `G_∞` is elementary at a later stage
-(`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/DirectLimit.lean`).
+(`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/DirectLimit/Basic.lean`).
 
 Since a class of algebraic `K₁` is represented by a single invertible matrix, and is trivial
 exactly when some stabilization of that matrix is elementary, the homomorphisms

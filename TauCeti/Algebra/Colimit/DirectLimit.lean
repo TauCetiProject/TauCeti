@@ -157,14 +157,12 @@ namespace DirectLimit.Ring
 
 open _root_.DirectLimit _root_.DirectLimit.Ring
 
-variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
-  {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)] [IsDirectedOrder ι] [Nonempty ι]
+section RingHomClass
 
-/-- The canonical ring homomorphisms into a direct limit of rings are compatible with the
-transition maps. -/
-@[simp]
-theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of G f j).comp (f i j hij) = of G f i :=
-  RingHom.ext (of_f hij)
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [DirectedSystem G (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] [∀ i, NonAssocSemiring (G i)]
+  [∀ i j h, RingHomClass (T h) (G i) (G j)]
 
 /-- Every element of a direct limit of rings is the image of an element of some stage. -/
 theorem exists_of (z : DirectLimit G f) : ∃ i x, of G f i x = z := by
@@ -177,6 +175,17 @@ theorem exists_eq_of_of_eq {i : ι} {x y : G i} (h : of G f i x = of G f i y) :
     ∃ j, ∃ hij : i ≤ j, f i j hij x = f i j hij y := by
   rw [of_apply, of_apply] at h
   exact exists_eq_of_mk_eq h
+
+end RingHomClass
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
+  {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)] [IsDirectedOrder ι] [Nonempty ι]
+
+/-- The canonical ring homomorphisms into a direct limit of rings are compatible with the
+transition maps. -/
+@[simp]
+theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of G f j).comp (f i j hij) = of G f i :=
+  RingHom.ext (of_f hij)
 
 end DirectLimit.Ring
 
