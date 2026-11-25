@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.AlgebraicGeometry.Curves.Node.Smooth
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.RingTheory.Node.LocalNormalForm
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension

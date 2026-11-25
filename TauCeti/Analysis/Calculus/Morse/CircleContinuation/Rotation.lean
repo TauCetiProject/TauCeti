@@ -52,9 +52,11 @@ the circle to tend to the critical points, and a lift of the angle is recovered 
 (`AddCircle.exists_tendsto_add_int_mul_of_tendsto_coe`).
 
 **The examples.** Let `ρ` be `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` satisfy
-`2 δ T < π / 12` on the window `[1/6, 5/6]`, where `T = ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt`. The
-theorems below say where the trajectories go; when `ρ` is continuous, so are the paths, and the
-trajectories exist by the existence theorems above.
+`2 δ T < π / 12` on the window `[1/6, 5/6]`, where `T = ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt`; this
+holds for instance when `δ < π / 100`
+(`TauCeti.two_mul_mul_integral_inv_mul_one_sub_sq_lt_pi_div_twelve`). The theorems below say where
+the trajectories go; when `ρ` is continuous, so are the paths, and the trajectories exist by the
+existence theorems above.
 
 * For the half-turn `r = r₀ + π ρ`, from `f_{r₀}` to the same function `f_{r₀ + π}`, the
   continuation sends each critical point to itself: in fixed spatial bases it is the identity in
@@ -337,6 +339,33 @@ private theorem rotation_eq_left (h0 : ∀ t ≤ 1 / 3, ρ t = 0) (c : ℝ) :
 private theorem rotation_eq_right (h1 : ∀ t, 2 / 3 ≤ t → ρ t = 1) (c : ℝ) :
     ∀ t ∈ Ico (5 / 6 : ℝ) 1, r₀ + c * ρ t = r₀ + c := fun t ht ↦ by
   rw [h1 t (by linarith [ht.1]), mul_one]
+
+/-- **A sufficient smallness condition.** If `δ < π / 100`, then
+`2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`. So the smallness hypothesis of the examples below
+holds for every small enough amplitude. -/
+theorem two_mul_mul_integral_inv_mul_one_sub_sq_lt_pi_div_twelve {δ : ℝ} (hδ : δ < π / 100) :
+    2 * δ * ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ < π / 12 := by
+  have hlow : ∀ t ∈ Icc (1 / 6 : ℝ) (5 / 6), 4 / 25 ≤ t * (1 - t ^ 2) := fun t ht ↦ by
+    -- `t (1 - t²)` lies above its chord on `[1/6, 5/6]`, which stays above `4 / 25`.
+    have h := mul_nonneg (mul_nonneg (sub_nonneg.2 ht.1) (sub_nonneg.2 ht.2))
+      (by linarith [ht.1] : (0 : ℝ) ≤ t + 1)
+    nlinarith [ht.1, ht.2]
+  have hnonneg : 0 ≤ ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ :=
+    intervalIntegral.integral_nonneg (by norm_num) fun t ht ↦
+      inv_nonneg.2 (by linarith [hlow t ht])
+  rcases lt_or_ge δ 0 with hδ₀ | hδ₀
+  · linarith [mul_nonpos_of_nonpos_of_nonneg (by linarith : 2 * δ ≤ 0) hnonneg, Real.pi_pos]
+  have hle : ‖∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹‖ ≤ 25 / 4 * |5 / 6 - 1 / 6| := by
+    refine intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦ ?_
+    have ht' : t ∈ Icc (1 / 6 : ℝ) (5 / 6) := by
+      rw [uIoc_of_le (by norm_num)] at ht
+      exact Ioc_subset_Icc_self ht
+    rw [Real.norm_of_nonneg (inv_nonneg.2 (by linarith [hlow t ht'])),
+      inv_le_comm₀ (by linarith [hlow t ht']) (by norm_num)]
+    exact le_of_eq_of_le (by norm_num) (hlow t ht')
+  have hwidth : |(5 / 6 : ℝ) - 1 / 6| = 2 / 3 := by norm_num
+  rw [Real.norm_of_nonneg hnonneg, hwidth] at hle
+  linarith [mul_le_mul_of_nonneg_left hle (by linarith : 0 ≤ 2 * δ)]
 
 /-- **The half-turn: the identity in fixed bases, the exchange in tracked labels, on minima.** Let
 `ρ` be `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` with

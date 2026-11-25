@@ -15,7 +15,9 @@ An isomorphism `e : X ≅ Y` of simplicial sets carries a subcomplex `A` of `X` 
 `A.preimage e.inv` of `Y`, and the inclusions of the two subcomplexes are isomorphic arrows. Hence
 any class of morphisms that respects isomorphisms, such as the (inner) anodyne extensions, contains
 one inclusion exactly when it contains the other. Likewise, two monomorphisms into the same
-simplicial set with the same range have isomorphic sources, compatibly with the monomorphisms.
+simplicial set with the same range have isomorphic sources, compatibly with the monomorphisms, and
+for monomorphisms `i : A ⟶ B` and `f : B ⟶ Z` the inclusion of the range of `i ≫ f` into the
+range of `f` is isomorphic, as an arrow, to `i`.
 
 The empty subcomplex `⊥` has no simplices, so it is not `Nonempty`; for instance, slices and
 coslices over a diagram restricted to `⊥` are the whole simplicial set.
@@ -28,6 +30,9 @@ coslices over a diagram restricted to `⊥` are the whole simplicial set.
   `W` of morphisms respecting isomorphisms, `W A.ι ↔ W B.ι`.
 * `SSet.Subcomplex.isoOfRangeEq`: for monomorphisms `f : X ⟶ Z` and `g : Y ⟶ Z` with the same
   range, the isomorphism `X ≅ Y` through which `f` factors as `g`.
+* `SSet.Subcomplex.morphismProperty_iff_homOfLE_of_range_eq`: for monomorphisms `i : A ⟶ B` and
+  `f : B ⟶ Z` and a class `W` of morphisms respecting isomorphisms, `W i` holds exactly when `W`
+  holds for the inclusion of the range of `i ≫ f` into the range of `f`.
 * `SSet.Subcomplex.not_nonempty_bot`: the empty subcomplex `⊥` is not nonempty.
 -/
 
@@ -103,6 +108,19 @@ lemma isoOfRangeEq_inv_comp : (isoOfRangeEq f g h).inv ≫ f = g := by
   rw [Iso.inv_comp_eq, isoOfRangeEq_hom_comp]
 
 end range
+
+/-- Let `i : A ⟶ B` and `f : B ⟶ Z` be monomorphisms of simplicial sets, and let `S ≤ T` be the
+ranges of `i ≫ f` and of `f`. Then a class of morphisms respecting isomorphisms contains `i`
+exactly when it contains the inclusion of `S` into `T`: the two are isomorphic arrows, through
+`toRange (i ≫ f)` and `toRange f`. -/
+lemma morphismProperty_iff_homOfLE_of_range_eq (W : MorphismProperty SSet.{u}) [W.RespectsIso]
+    {A B : SSet.{u}} (i : A ⟶ B) (f : B ⟶ Z) [Mono i] [Mono f] {S T : Z.Subcomplex} (hST : S ≤ T)
+    (hS : range (i ≫ f) = S) (hT : range f = T) :
+    W i ↔ W (homOfLE hST) := by
+  subst hS hT
+  refine W.arrow_mk_iso_iff (Arrow.isoMk (asIso (toRange (i ≫ f))) (asIso (toRange f)) ?_)
+  rw [← cancel_mono (range f).ι]
+  simp
 
 /-- The empty subcomplex has no simplices: it has dimension `< 0`. -/
 @[simp]

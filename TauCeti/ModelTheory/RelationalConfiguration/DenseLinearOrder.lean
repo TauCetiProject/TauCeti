@@ -7,6 +7,7 @@ module
 
 public import Mathlib.ModelTheory.Order
 public import TauCeti.ModelTheory.RelationalConfiguration.Theory
+public import TauCeti.ModelTheory.RelationalConfiguration.WellOrder
 
 /-!
 # The configuration space of linear orders and the dense linear order orbit
@@ -20,6 +21,10 @@ permutation action.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.mem_modelsOfTheory_partialOrderTheory`,
+  `TauCeti.RelationalConfiguration.mem_modelsOfTheory_linearOrderTheory`: a code models the theory
+  of partial (linear) orders exactly when its relation `codeRel leSymb c` is a partial (linear)
+  order.
 * `TauCeti.RelationalConfiguration.isClosed_modelsOfTheory_linearOrder`
 * `TauCeti.RelationalConfiguration.isGδ_modelsOfTheory_dlo`
 * `TauCeti.RelationalConfiguration.polishSpace_modelsOfTheory_dlo`
@@ -40,20 +45,37 @@ private def leEvent (x y : V) : Set (RelationalConfiguration Language.order V) :
 private theorem isClopen_leEvent (x y : V) : IsClopen (leEvent x y) :=
   isClopen_setOf_eval _ _
 
+/-- A configuration models `Language.order.partialOrderTheory` exactly when its relation is a
+partial order. -/
+theorem mem_modelsOfTheory_partialOrderTheory {c : RelationalConfiguration Language.order V} :
+    c ∈ modelsOfTheory Language.order.partialOrderTheory ↔
+      IsPartialOrder V (codeRel leSymb c) := by
+  simp only [mem_modelsOfTheory, partialOrderTheory, preorderTheory, Theory.model_insert_iff,
+    Theory.model_singleton_iff, Relations.realize_antisymmetric, Relations.realize_reflexive,
+    Relations.realize_transitive, relMap_toStructure_iff_codeRel]
+  exact ⟨fun ⟨_, _, _⟩ => { }, fun _ => ⟨inferInstance, inferInstance, inferInstance⟩⟩
+
+/-- A configuration models `Language.order.linearOrderTheory` exactly when its relation is a
+linear order. -/
+theorem mem_modelsOfTheory_linearOrderTheory {c : RelationalConfiguration Language.order V} :
+    c ∈ modelsOfTheory Language.order.linearOrderTheory ↔ IsLinearOrder V (codeRel leSymb c) := by
+  have h : c ∈ modelsOfTheory Language.order.linearOrderTheory ↔
+      Std.Total (codeRel leSymb c) ∧ c ∈ modelsOfTheory Language.order.partialOrderTheory := by
+    simp only [mem_modelsOfTheory, linearOrderTheory, Theory.model_insert_iff,
+      Relations.realize_total, relMap_toStructure_iff_codeRel]
+  rw [h, mem_modelsOfTheory_partialOrderTheory]
+  exact ⟨fun ⟨_, _⟩ => { }, fun _ => ⟨inferInstance, inferInstance⟩⟩
+
 private theorem mem_modelsOfTheory_linearOrder_iff {c : RelationalConfiguration Language.order V} :
     c ∈ modelsOfTheory Language.order.linearOrderTheory ↔
       (∀ x, c ∈ leEvent x x) ∧
       (∀ x y z, c ∈ leEvent x y → c ∈ leEvent y z → c ∈ leEvent x z) ∧
       (∀ x y, c ∈ leEvent x y → c ∈ leEvent y x → x = y) ∧
       (∀ x y, c ∈ leEvent x y ∨ c ∈ leEvent y x) := by
-  simp only [mem_modelsOfTheory, linearOrderTheory, partialOrderTheory, preorderTheory,
-    Theory.model_insert_iff, Theory.model_singleton_iff, Relations.realize_total,
-    Relations.realize_antisymmetric, Relations.realize_reflexive, Relations.realize_transitive,
-    toStructure_relMap, leEvent, mem_ofPred_eq]
-  exact ⟨fun ⟨htotal, hanti, hrefl, htrans⟩ ↦
-    ⟨hrefl.refl, htrans.trans, hanti.antisymm, htotal.total⟩,
+  simp only [mem_modelsOfTheory_linearOrderTheory, leEvent, mem_ofPred_eq, ← codeRel_iff]
+  exact ⟨fun _ ↦ ⟨refl_of _, fun _ _ _ ↦ trans_of _, fun _ _ ↦ antisymm_of _, total_of _⟩,
     fun ⟨hrefl, htrans, hanti, htotal⟩ ↦
-      ⟨⟨htotal⟩, ⟨hanti⟩, ⟨hrefl⟩, ⟨htrans⟩⟩⟩
+      { refl := hrefl, trans := htrans, antisymm := hanti, total := htotal }⟩
 
 /-- The codes for non-strict linear orders form a closed class on any carrier. -/
 theorem isClosed_modelsOfTheory_linearOrder :

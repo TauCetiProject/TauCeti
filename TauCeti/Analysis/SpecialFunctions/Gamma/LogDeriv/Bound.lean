@@ -189,4 +189,18 @@ theorem norm_logDeriv_Gammaℝ_three :
   rw [h', norm_real, Real.norm_eq_abs, abs_of_neg h]
   ring
 
+/-- A constant that used `ψ(1) = -γ` in place of `ψ(1/2)` would be
+`(γ + |ψ(3/2)| + log π) / 2 ≈ 0.87922`, which is below `‖logDeriv Gammaℝ 1‖ ≈ 1.55412`, so it
+fails at `s = 1`. -/
+example : (|Real.digamma 1| + |Real.digamma (3 / 2)| + |Real.log π|) / 2 < ‖logDeriv Gammaℝ 1‖ := by
+  rw [norm_logDeriv_Gammaℝ_one, Real.digamma_one, abs_neg,
+    abs_of_pos (one_half_pos.trans one_half_lt_eulerMascheroniConstant),
+    abs_of_pos Real.digamma_three_halves_pos,
+    abs_of_pos log_pi_pos, Real.digamma_three_halves]
+  -- `2 - 2 log 2 < γ + 2 log 2`, since `2 < 1/2 + 4 * 0.6931`.
+  have hγ := one_half_lt_eulerMascheroniConstant
+  have h2 := log_two_gt_d9
+  norm_num at h2
+  linarith
+
 end Complex

@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
@@ -52,6 +53,9 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.charpoly_eq_of_sq_eq_one`, `LinearMap.charpoly_eq_of_sq_eq_one`: without additive
   torsion, an involution has characteristic polynomial `(X - 1) ^ a * (X + 1) ^ b` whenever
   `a + b = d` and `a - b` is its trace.
+* `Matrix.pow_card_eq_zero_of_trace_pow_eq_zero` and
+  `LinearMap.pow_finrank_eq_zero_of_trace_pow_eq_zero`: without additive torsion, if these traces
+  all vanish then `A ^ d = 0`, by `Matrix.pow_eq_zero_of_charpoly_eq_X_pow`.
 
 ## References
 
@@ -201,6 +205,16 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
     · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
   exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
 
+/-- Without additive torsion in the scalars, a `d × d` matrix `A` whose powers `A ^ j` for
+`0 < j ≤ d` all have trace zero satisfies `A ^ d = 0`. Its characteristic polynomial is then
+`X ^ d`, so this is the Cayley–Hamilton theorem. -/
+theorem pow_card_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {A : Matrix n n R}
+    (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = 0) : A ^ Fintype.card n = 0 := by
+  refine pow_eq_zero_of_charpoly_eq_X_pow ?_
+  rw [← charpoly_zero]
+  exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjn ↦ by
+    rw [h j hj hjn, zero_pow hj.ne', trace_zero]
+
 /-- Without additive torsion in the scalars, if `A ^ 2 = 1`, then the characteristic polynomial of
 `A` is `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = d` and `a - b = tr A`. -/
 theorem charpoly_eq_of_sq_eq_one [IsAddTorsionFree R] {A : Matrix n n R} (hA : A ^ 2 = 1)
@@ -259,6 +273,20 @@ theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     Module.finrank_eq_card_chooseBasisIndex] at h hMN
   rw [charpoly_def, charpoly_def]
   exact Matrix.charpoly_eq_of_trace_pow_eq hMN h
+
+/-- Without additive torsion in the scalars, an endomorphism `f` of a free module of rank `d`
+whose powers `f ^ j` for `0 < j ≤ d` all have trace zero satisfies `f ^ d = 0`. -/
+theorem pow_finrank_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {f : Module.End R M}
+    (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = 0) :
+    f ^ Module.finrank R M = 0 := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R M
+    exact Subsingleton.elim _ _
+  let b := Module.Free.chooseBasis R M
+  simp only [trace_eq_matrix_trace R b, ← LinearMap.toMatrix_pow,
+    Module.finrank_eq_card_chooseBasisIndex] at h ⊢
+  rw [← (toMatrix b b).map_eq_zero_iff, ← LinearMap.toMatrix_pow]
+  exact Matrix.pow_card_eq_zero_of_trace_pow_eq_zero h
 
 /-- Without additive torsion in the scalars, endomorphisms of free modules of the same finite rank
 have the same characteristic polynomial if and only if they have the same traces of all positive

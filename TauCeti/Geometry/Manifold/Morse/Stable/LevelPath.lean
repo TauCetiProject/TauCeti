@@ -53,7 +53,9 @@ through which twisting chain systems give the Barraud–Cornea twisting cocycle
 For records on the levels of a family `c` that avoid the level of `q`, the concatenation of records
 (`TauCeti.concatLevelRecords`, `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`) has the same
 property (`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseRecordsConcat`); it gives the
-composition maps of `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`.
+composition maps of `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle`, and,
+restricted to the trajectory spaces with boundary, those of
+`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`.
 
 The continuity is a consequence of two local estimates for the flow
 (`TauCeti.Geometry.Manifold.Morse.PseudoGradient.Trapping`). Let records `w n` of broken
@@ -104,6 +106,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `concatLevelRecords_mem`, `morseLevelPoint_concatLevelRecords_of_le`,
   `morseLevelPoint_concatLevelRecords_of_ge`, `morseLevelPath_morseRecordsConcat`: the same for
   records on the levels of a family.
+* `TauCeti.concatLevelRecords_assoc`: concatenation of records is associative.
+* `concatLevelRecords_notMem_morseTrajectoryRecords`: a concatenation at `q ≠ r` is not the record
+  of an unbroken trajectory when some level lies between `f q` and `f p`.
 
 ## References
 
@@ -853,6 +858,21 @@ theorem continuous_concatLevelRecords :
     · simp only [concatLevelRecords, h, ↓reduceDIte]
       exact (continuous_apply _).comp continuous_snd
 
+omit [TopologicalSpace M] [CompactSpace M] [T2Space M] in
+/-- **Concatenation of records is associative.** If `f s ≤ f q` and no level of `c` is the level
+of `q` or of `s`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
+theorem concatLevelRecords_assoc {s : M} (hs : ∀ i, c i ≠ f s) (hsq : f s ≤ f q)
+    (a : c ⁻¹' Ioo (f q) (f p) → M) (b : c ⁻¹' Ioo (f s) (f q) → M)
+    (d : c ⁻¹' Ioo (f r) (f s) → M) :
+    concatLevelRecords c hs (concatLevelRecords c hq a b) d =
+      concatLevelRecords c hq a (concatLevelRecords c hs b d) := by
+  funext i
+  -- Compare the level `c i` with `f q` and `f s`; it is neither of them.
+  have := hq i
+  have := hs i
+  simp only [concatLevelRecords]
+  split_ifs <;> first | rfl | (exfalso; grind)
+
 end Concat
 
 namespace IsAdaptedPseudoGradient
@@ -928,6 +948,20 @@ theorem concatLevelRecords_mem :
   obtain ⟨x, z, hx0, hxk, hxc, hxne, hz, hrec, -, -⟩ := exists_chain_concatLevelRecords hq hx0₁ hxk₁
     hxc₁ hxne₁ hz₁ hrec₁ hx0₂ hxk₂ hxc₂ hxne₂ hz₂ hrec₂
   exact hX.mem_morseBrokenTrajectoryRecords.2 ⟨_, x, z, hx0, hxk, hxc, hxne, hz, hrec⟩
+
+/-- **Concatenations are not unbroken.** If `q ≠ r` and some level of `c` lies strictly between
+`f q` and `f p`, the concatenation at `q` of records of broken trajectories from `p` to `q` and
+from `q` to `r` is not the record of an unbroken trajectory from `p` to `r`. -/
+theorem concatLevelRecords_notMem_morseTrajectoryRecords (hqr : q ≠ r) {i₀ : ι}
+    (hi₀ : c i₀ ∈ Ioo (f q) (f p)) :
+    concatLevelRecords c hq w₁ w₂ ∉
+      hX.morseTrajectoryRecords p r ((c ⁻¹' Ioo (f r) (f p)).domRestrict c) := by
+  intro hw
+  -- On the level `c i₀`, the concatenation is a point of the first broken trajectory, which meets
+  -- no unbroken trajectory to `r` since `f r < f q`.
+  have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr hw₂
+  exact hX.apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords hw₁ hw hrq
+    ⟨i₀, hi₀⟩ ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩ (by rw [concatLevelRecords_of_lt hq w₁ w₂ hi₀.1])
 
 /-- **Above the level of `q`, the points of a concatenation are those of the first broken
 trajectory.** -/

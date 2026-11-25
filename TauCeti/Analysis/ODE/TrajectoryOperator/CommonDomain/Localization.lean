@@ -119,7 +119,8 @@ private theorem norm_compLpL_prev_smulLeftCLM_le {ψ : ℝ → ℝ} (hψ : ContD
       (prev_smulLeftCLM_ae hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u).filter_mono
         hae.le] with s hs hψs
     rw [hs, hψs, map_smul]
-  refine norm_le_mul_norm_restrictBaseL ((abs_nonneg _).trans (hc 0)) u ?_ ?_
+  refine norm_le_mul_norm_restrictBaseL ((abs_nonneg _).trans (hc 0)) le_top u
+    (ae_restrict_of_ae ?_) (ae_restrict_of_ae ?_)
   · filter_upwards [hf] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hc s) (norm_nonneg _)
