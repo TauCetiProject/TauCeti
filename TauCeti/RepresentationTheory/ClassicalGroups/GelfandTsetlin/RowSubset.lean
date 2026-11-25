@@ -118,6 +118,7 @@ theorem sum_range_rowSubset (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) (i : �
     split_ifs <;> omega
 
 /-- Row `j ≤ n` of the pattern of `I` sums to `#{r ∈ I | r < j}`. -/
+@[simp]
 theorem rowSum_rowSubset (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) :
     (rowSubset I).rowSum j = #{r ∈ I | r.val < j} := by
   rw [rowSum_def, sum_range_rowSubset I hj, min_eq_right (card_filter_val_lt_le I j)]

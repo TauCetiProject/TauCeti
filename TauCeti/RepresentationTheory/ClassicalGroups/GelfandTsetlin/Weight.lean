@@ -269,7 +269,7 @@ theorem highest_apply (μ : DominantWeight n) (i j : ℕ) :
   rw [topRow_apply, highest_apply_of_lt_of_le μ i.isLt le_rfl]
 
 /-- Row `j ≤ n` of the highest-weight pattern of `μ` sums to `μ₁ + ⋯ + μⱼ`. -/
-theorem rowSum_highest (μ : DominantWeight n) {j : ℕ} (hj : j ≤ n) :
+@[simp] theorem rowSum_highest (μ : DominantWeight n) {j : ℕ} (hj : j ≤ n) :
     (highest μ).rowSum j = TauCeti.prefixSum j μ.val := by
   rw [← topRow_highest μ, prefixSum_topRow, rowSum_def]
   exact Finset.sum_congr rfl fun k hk => by
