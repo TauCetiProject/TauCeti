@@ -33,6 +33,7 @@ denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r =
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum; the differences `k - j` sum to `k (k + 1) / 2`, the squares sum to
 `k (k - 1) (2 k - 1) / 6`, and the products `j (k - j)` sum to `(k ^ 3 - k) / 6`.
+A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 
@@ -60,6 +61,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub`: signed cardinality and signed
   sums of `j`, `k - j`, `j ^ 2`, and `j (k - j)` between `0` and `k : ℤ`, with denominators
   cleared.
+* `Finset.sum_Icc_zero_eq_sum_Icc_one`: a sum over `Icc 0 N` of a sequence vanishing at `0` is
+  its sum over `Icc 1 N`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 -/
@@ -312,5 +315,12 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
     (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
   all_goals simp only [mem_Ico, mem_filter, mem_range] at *
   all_goals first | omega | (congr 1; omega)
+
+/-- A sum over `Finset.Icc 0 N` of a sequence vanishing at `0` is its sum over
+`Finset.Icc 1 N`. -/
+theorem sum_Icc_zero_eq_sum_Icc_one {M : Type*} [AddCommMonoid M] {f : ℕ → M} (h0 : f 0 = 0)
+    (N : ℕ) : ∑ k ∈ Icc 0 N, f k = ∑ k ∈ Icc 1 N, f k := by
+  rw [Icc_eq_cons_Ioc (Nat.zero_le _), sum_cons, h0, zero_add, ← Icc_add_one_left_eq_Ioc,
+    zero_add]
 
 end Finset

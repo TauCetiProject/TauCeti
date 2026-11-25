@@ -47,8 +47,7 @@ def smoothFormIntegration (k : ℕ) :
       (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
         ℝ (ModuleCat.of ℝ ℝ)).X k where
   toFun φ := integrationCochain φ.val
-  map_add' φ ψ := integrationCochain_add (φ.isSmoothForm.of_le (by simp))
-    (ψ.isSmoothForm.of_le (by simp))
+  map_add' := SmoothForm.integrationCochain_add
   map_smul' a φ := integrationCochain_smul a φ.val
 
 /-- Integration of a smooth form is its integration cochain. -/

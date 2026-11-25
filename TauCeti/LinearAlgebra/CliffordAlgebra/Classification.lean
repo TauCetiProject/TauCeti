@@ -151,7 +151,7 @@ private def matrixProdModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
     T ≃ₐ[R] Matrix (Fin k) (Fin k) D × Matrix (Fin k) (Fin k) D :=
   step.trans <| (Algebra.TensorProduct.congr model (AlgEquiv.refl : B ≃ₐ[R] B)).trans <|
-    (Algebra.TensorProduct.prodLeft R (Matrix (Fin m) (Fin m) A) (Matrix (Fin m) (Fin m) A)
+    (Algebra.TensorProduct.prodLeft R R (Matrix (Fin m) (Fin m) A) (Matrix (Fin m) (Fin m) A)
       B).trans <|
       AlgEquiv.prodCongr (matrixTensorByCoefficientEquiv m coeff h)
         (matrixTensorByCoefficientEquiv m coeff h)
