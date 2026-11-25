@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.AEZeroOff
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
-import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Basic
 
 /-!
 # Extension by zero of `(0,1)`-forms from one chart
@@ -24,8 +23,8 @@ antilinear part of the chart-`i` data defined by `g`, so they are those data whe
 complex antilinear almost everywhere (`TauCeti.value_zeroOneExtendByZeroL_ae`).
 
 Over a `C¹` bundle the one-forms have extension by zero at orders `k ≤ 1`, with respect to
-Lebesgue measure (`TauCeti.hasExtensionByZero_tangentHom`), so the hypothesis can be discharged for
-the `Lᵖ` and `W^{1,p}` `(0,1)`-forms.
+Lebesgue measure (`TauCeti.SobolevSection.hasExtensionByZero_of_le_one` for `A.tangentHom`), so
+the hypothesis can be discharged for the `Lᵖ` and `W^{1,p}` `(0,1)`-forms.
 
 This is how a functional on the `Lᵖ` `(0,1)`-forms is tested against chart data over one chart,
 for instance to bound the covector field representing it in that chart.
@@ -37,7 +36,6 @@ for instance to bound the covector field representing it in that chart.
 
 ## Main results
 
-* `TauCeti.hasExtensionByZero_tangentHom`: the one-forms have extension by zero at orders `k ≤ 1`.
 * `TauCeti.zeroOnePartSobolevL_mem_aeZeroOff`: the `(0,1)`-projection preserves vanishing off a
   set.
 * `TauCeti.zeroOneExtendByZeroL_mem_aeZeroOff`: the extension vanishes off `L`.
@@ -45,6 +43,11 @@ for instance to bound the covector field representing it in that chart.
   part of the data defined by `g`.
 * `TauCeti.value_zeroOneExtendByZeroL_ae`: for complex antilinear data, its chart-`i` components
   have the values of `g`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Theorem C.2.3 (the cokernel step, which tests functionals on forms supported in one chart).
 -/
 
 public section
@@ -72,14 +75,6 @@ local instance instVectorBundleRealZeroOneExtension : VectorBundle ℝ F V :=
 
 variable {A : FiniteBundleAtlas ℂ M F V} {μ : Measure ℂ} [μ.IsAddHaarMeasure] {p : ℝ≥0∞}
   [Fact (1 ≤ p)] {k : ℕ}
-
-/-- **Extension by zero of one-forms.** For a `C¹` complex vector bundle over a complex curve, the
-`V`-valued one-forms have extension by zero from one chart at orders `k ≤ 1`, for Lebesgue
-measure. -/
-theorem hasExtensionByZero_tangentHom [ContMDiffVectorBundle 1 F V 𝓘(ℝ, ℂ)]
-    (A : FiniteBundleAtlas ℂ M F V) {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ} (hk : k ≤ 1) :
-    HasExtensionByZero A.tangentHom volume p k :=
-  hasExtensionByZero_of_le_one hk
 
 /-- The `(0,1)`-projection of a one-form vanishing off `L` vanishes off `L`. -/
 theorem zeroOnePartSobolevL_mem_aeZeroOff {L : Set M} {w : SobolevSection A.tangentHom μ p k}
