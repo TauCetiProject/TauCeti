@@ -12,20 +12,22 @@ import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Tori as complements to the unipotent radical
 
 Let `G` be a reduced affine group of finite type over an algebraically closed field `k`, with
-unipotent radical `R_u(G)`, and let `T ⊆ G` be a torus. The torus meets `R_u(G)` trivially
-(`TauCeti.FiniteTypeCommHopfAlgCat.sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_torus`),
-so the composite `T → G → G ⧸ R_u(G)` has trivial scheme-theoretic kernel. A torus is smooth, so
+unipotent radical `R_u(G)`. A reduced closed subgroup `D ⊆ G` whose coordinate algebra is spanned
+by its group-like elements, for instance a torus, meets `R_u(G)` trivially (`TauCeti.
+FiniteTypeCommHopfAlgCat.sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_groupLikeSpanned`),
+so the composite `D → G → G ⧸ R_u(G)` has trivial scheme-theoretic kernel. As `D` is reduced,
 this homomorphism is a closed immersion
 (`TauCeti.FiniteTypeCommHopfAlgCat.coinvariantsι_comp_mkQuotient_surjective`): in coordinates,
-the map from the right coinvariants `O(G ⧸ R_u(G))` to `O(T)` is surjective.
+the map from the right coinvariants `O(G ⧸ R_u(G))` to `O(D)` is surjective.
 
-If moreover `G` is connected, a torus is smooth and connected, so `T` maps isomorphically onto
-`G ⧸ R_u(G)` as soon as `dim Lie(G ⧸ R_u(G)) ≤ dim Lie(T)`
+If moreover `G` is connected, a torus `T ⊆ G` is smooth and connected, so `T` maps
+isomorphically onto `G ⧸ R_u(G)` as soon as `dim Lie(G ⧸ R_u(G)) ≤ dim Lie(T)`
 (`TauCeti.FiniteTypeCommHopfAlgCat.isIso_coinvariantsι_comp_mkQuotient`). Multiplication
 `R_u(G) ⋊ T → G` is then an isomorphism
 (`TauCeti.FiniteTypeCommHopfAlgCat.isIso_productMapOfNormal_unipotentRadical_of_isIso`).
@@ -36,16 +38,17 @@ is the decomposition `G = G_u ⋊ T` of Milne, Theorem 16.33(d), for every torus
 dimension of `G ⧸ G_u`. Solvability is not assumed here: the hypotheses force `G ⧸ R_u(G)` to be
 isomorphic to the torus `T`.
 
-Coordinate arrows reverse the homomorphisms of represented groups: the torus `T` is the closed
-subgroup cut out by a Hopf ideal `I` of `O(G)`, and the composite homomorphism is represented by
-`coinvariantsι ≫ mkQuotient G I : O(G ⧸ R_u(G)) ⟶ O(G) ⧸ I`.
+Coordinate arrows reverse the homomorphisms of represented groups: the subgroup `D` or `T` is the
+closed subgroup cut out by a Hopf ideal `I` of `O(G)`, and the composite homomorphism is
+represented by `coinvariantsι ≫ mkQuotient G I : O(G ⧸ R_u(G)) ⟶ O(G) ⧸ I`.
 
 ## Main declarations
 
 In the `TauCeti.FiniteTypeCommHopfAlgCat` namespace:
 
-* `surjective_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus`: a torus of a reduced
-  group maps to `G ⧸ R_u(G)` by a closed immersion.
+* `coinvariantsι_unipotentRadical_comp_mkQuotient_surjective_of_groupLikeSpanned`: a reduced
+  closed subgroup of a reduced group whose coordinate algebra is spanned by group-like elements,
+  such as a torus, maps to `G ⧸ R_u(G)` by a closed immersion.
 * `isIso_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus`: for connected `G`, a torus
   whose Lie algebra is at least as large as that of `G ⧸ R_u(G)` maps isomorphically onto
   `G ⧸ R_u(G)`.
@@ -67,26 +70,21 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (G : FiniteTypeCommHopfAlgCat.{u, u} k)
 
-/-- A reduced finite-type group over an algebraically closed field is geometrically reduced. -/
-private theorem isGeometricallyReduced_of_isReduced [IsReduced G] :
-    Algebra.IsGeometricallyReduced k G :=
-  (geometricallyReducedCommHopfAlgProperty_of_smooth k G.obj
-    (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k G.obj)).isGeometricallyReduced
-
-/-- **A torus of a reduced group maps to the quotient by the unipotent radical by a closed
-immersion**, over an algebraically closed field. If the Hopf ideal `I` cuts out a torus `T`, the
-coordinate map of the composite `T → G → G ⧸ R_u(G)`, from the right coinvariants to `O(G) ⧸ I`,
-is surjective. -/
-theorem surjective_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus
-    [IsReduced G] {I : HopfIdeal k G} (hI : torusCommHopfAlgProperty k (quotient G I)) :
+/-- **A reduced diagonalizable closed subgroup of a reduced group maps to the quotient by the
+unipotent radical by a closed immersion**, over an algebraically closed field. If the Hopf ideal
+`I` cuts out a reduced closed subgroup `D` whose coordinate algebra is spanned by its group-like
+elements, for instance a torus, the coordinate map of the composite `D → G → G ⧸ R_u(G)`, from the
+right coinvariants to `O(G) ⧸ I`, is surjective. -/
+theorem coinvariantsι_unipotentRadical_comp_mkQuotient_surjective_of_groupLikeSpanned
+    [IsReduced G] {I : HopfIdeal k G}
+    (hI : DiagonalizableGroup.groupLikeSpannedProperty k (quotient G I))
+    [IsReduced (quotient G I)] :
     Function.Surjective
       (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G) ≫
-        CommHopfAlgCat.mkQuotient G.obj I).hom := by
-  have := isGeometricallyReduced_of_isReduced G
-  have : Algebra.IsGeometricallyReduced k (quotient G I) :=
-    (hI.geometricallyReduced k _).isGeometricallyReduced
-  exact coinvariantsι_comp_mkQuotient_surjective G _
-    (kernelHopfIdeal_coinvariantsι_unipotentRadical_comp_mkQuotient_eq_augmentation_of_torus G hI)
+        CommHopfAlgCat.mkQuotient G.obj I).hom :=
+  coinvariantsι_comp_mkQuotient_surjective G _ <|
+  kernelHopfIdeal_coinvariantsι_unipotentRadical_comp_mkQuotient_eq_augmentation_of_groupLikeSpanned
+    G hI
 
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
 
@@ -132,7 +130,6 @@ theorem isIso_productMapOfNormal_unipotentRadical_of_torus
           (Derivation k (quotient G J) (Bialgebra.CounitAlgebra k (quotient G J) k))) :
     IsIso (CommHopfAlgCat.productMapOfNormal G.obj (unipotentRadicalDefiningIdeal G) J
       (isNormal_unipotentRadicalDefiningIdeal G)) := by
-  have := isGeometricallyReduced_of_isReduced G
   have := isIso_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus G hJ hfinrank
   exact isIso_productMapOfNormal_unipotentRadical_of_isIso G J
 
