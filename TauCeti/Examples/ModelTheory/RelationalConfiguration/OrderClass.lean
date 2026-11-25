@@ -75,7 +75,8 @@ example : ofRel (fun x y : ℕ => x = 0 ∨ x = y) ∈ treeClass := by
       trans := by rintro a b c (h | h) (h' | h') <;> omega
       antisymm := by rintro a b (h | h) (h' | h') <;> omega }
   refine ⟨hpo, ⟨0, fun _ => .inl rfl⟩, fun x => ?_, fun x => ?_⟩
-  · exact ((Set.finite_singleton 0).union (Set.finite_singleton x)).subset fun y hy => hy
+  · exact ((Set.finite_singleton 0).union (Set.finite_singleton x)).subset fun y hy => by
+      simpa only [Set.mem_union, Set.mem_singleton_iff, Set.mem_ofPred_eq] using hy
   · rintro a (h | h) b (h' | h') - <;> omega
 
 -- The code of `(ℤ, ≤)` transported to `ℕ` is not a coded tree: it has no least element.
