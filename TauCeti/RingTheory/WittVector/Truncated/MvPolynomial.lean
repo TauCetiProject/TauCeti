@@ -31,7 +31,11 @@ open MvPolynomial
 
 namespace TruncatedWittVector
 
-variable (p : ℕ) (n : ℕ) (R : Type*) [CommSemiring R] {A : Type*} [CommRing A] [Algebra R A]
+variable (p : ℕ) (n : ℕ) (R : Type*) [CommSemiring R]
+
+section CommSemiring
+
+variable {A : Type*} [CommSemiring A] [Algebra R A]
 
 /-- An `R`-algebra map out of the polynomial ring `R[X₀, …, X_{n-1}]` is the same as the
 truncated Witt vector of length `n` whose coordinates are its values on the variables. -/
@@ -55,9 +59,13 @@ theorem algHomEquiv_symm_apply_X (x : TruncatedWittVector p n A) (i : Fin n) :
     (algHomEquiv p n R).symm x (X i) = x.coeff i := by
   rw [← coeff_algHomEquiv, Equiv.apply_symm_apply]
 
+end CommSemiring
+
+variable {A B : Type*} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+
 /-- The Witt vector of an algebra map is natural in the value algebra: post-composing with
 `φ : A →ₐ[R] B` changes the coefficients of the Witt vector along `φ`. -/
-theorem algHomEquiv_comp [Fact p.Prime] {B : Type*} [CommRing B] [Algebra R B] (φ : A →ₐ[R] B)
+theorem algHomEquiv_comp [Fact p.Prime] (φ : A →ₐ[R] B)
     (f : MvPolynomial (Fin n) R →ₐ[R] A) :
     algHomEquiv p n R (φ.comp f) = map n φ.toRingHom (algHomEquiv p n R f) := by
   ext i

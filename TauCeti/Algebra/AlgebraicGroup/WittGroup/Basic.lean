@@ -157,10 +157,13 @@ private theorem comul_coassoc :
       (Algebra.TensorProduct.map (.id R _) (comul p n R)).comp (comul p n R) := by
   refine (algHomEquiv p n R (A := MvPolynomial (Fin n) R ⊗[R]
     (MvPolynomial (Fin n) R ⊗[R] MvPolynomial (Fin n) R))).injective ?_
-  rw [← AlgHom.comp_assoc, algHomEquiv_comp_comul, algHomEquiv_comp_comul, AlgHom.comp_assoc,
-    map_comp_includeLeft, ← AlgHom.comp_assoc, algHomEquiv_comp_comul]
+  -- Instantiate at the triple tensor product so the ring instances are synthesized rather
+  -- than unified against the semiring instances the goal carries.
+  have h := algHomEquiv_comp_comul (p := p) (n := n) (R := R) (A := MvPolynomial (Fin n) R ⊗[R]
+    (MvPolynomial (Fin n) R ⊗[R] MvPolynomial (Fin n) R))
+  rw [← AlgHom.comp_assoc, h, h, AlgHom.comp_assoc, map_comp_includeLeft, ← AlgHom.comp_assoc, h]
   simp only [AlgHom.comp_assoc, map_comp_includeLeft, map_comp_includeRight, AlgHom.comp_id]
-  rw [algHomEquiv_comp_comul]
+  rw [h]
   refine (add_assoc (G := TruncatedWittVector p n
     (MvPolynomial (Fin n) R ⊗[R] (MvPolynomial (Fin n) R ⊗[R] MvPolynomial (Fin n) R)))
     _ _ _).trans ?_
