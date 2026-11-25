@@ -28,9 +28,10 @@ exact sequence `ker (Q₀ ◁ T.f) ⟶ ker (X ◁ T.f) ⟶ Q₁ ⊗ M ⟶ Q₀ �
 (`CategoryTheory.ShortComplex.ShortExact.kernelWhiskerLeftIsoKernelWhiskerRight`) and so gives
 `Tor₁(X, M) ≅ Tor'₁(X, M)` (`CategoryTheory.ShortComplex.ShortExact.torOneIsoTor'One`).
 
-This applies to all `X` and `M` of projective dimension at most one, through their chosen
-projective presentations (`CategoryTheory.torOneIsoTor'OneOfHasProjectiveDimensionLEOne`), for
-instance to all modules over a principal ideal domain.
+This applies to all `X` and `M` of projective dimension at most one whose chosen projective
+covers keep monomorphisms under tensoring, through their chosen projective presentations
+(`CategoryTheory.torOneIsoTor'OneOfHasProjectiveDimensionLEOne`), for instance to all modules over
+a principal ideal domain, where projective modules are flat.
 
 ## References
 
@@ -60,7 +61,7 @@ include hS hT in
 /-- The snake diagram of the map `S ⊗ T.X₁ ⟶ S ⊗ T.X₂` induced by `T.f`, for short exact `S`
 and `T`: its rows are the kernels `ker (S.Xᵢ ◁ T.f)`, the complexes `S ⊗ T.X₁` and `S ⊗ T.X₂`,
 and their cokernel `S ⊗ T.X₃`. -/
-@[expose]
+@[expose, simps]
 def tensorSnakeInput [Mono (S.f ▷ T.X₂)] : SnakeInput C where
   L₀ := ShortComplex.mk
     (kernel.map (S.X₁ ◁ T.f) (S.X₂ ◁ T.f) (S.f ▷ T.X₁) (S.f ▷ T.X₂) (whisker_exchange S.f T.f))
@@ -134,9 +135,8 @@ end ShortComplex.ShortExact
 dimension at most one, with chosen epimorphisms `P_X ⟶ X` and `P_Y ⟶ Y` from projectives. If
 `P_X ⊗ -` and `- ⊗ P_Y` preserve monomorphisms, then `Tor₁(X, Y) ≅ Tor'₁(X, Y)`, computed on the
 projective presentations `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0`. -/
-def torOneIsoTor'OneOfHasProjectiveDimensionLEOne [EnoughProjectives C]
-    [HasProjectiveResolutions C] (X Y : C) [HasProjectiveDimensionLE X 1]
-    [HasProjectiveDimensionLE Y 1]
+def torOneIsoTor'OneOfHasProjectiveDimensionLEOne [EnoughProjectives C] (X Y : C)
+    [HasProjectiveDimensionLE X 1] [HasProjectiveDimensionLE Y 1]
     [((tensoringLeft C).obj (Projective.over X)).PreservesMonomorphisms]
     [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms] :
     ((Tor C 1).obj X).obj Y ≅ ((Tor' C 1).obj X).obj Y :=
@@ -153,5 +153,22 @@ def torOneIsoTor'OneOfHasProjectiveDimensionLEOne [EnoughProjectives C]
     ((tensoringRight C).obj (Projective.over Y)).map_mono _
   (Projective.kernelShortComplex_shortExact X).torOneIsoTor'One
     (Projective.kernelShortComplex_shortExact Y)
+
+/-- The balance isomorphism in projective dimension at most one is `torOneIsoTor'One` for the
+projective presentations `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of `X` and `Y`. The `Projective` and `Mono`
+instances follow from the other hypotheses but are not found by instance search, so they are
+arguments here for the right-hand side to elaborate. -/
+lemma torOneIsoTor'OneOfHasProjectiveDimensionLEOne_eq [EnoughProjectives C] (X Y : C)
+    [HasProjectiveDimensionLE X 1] [HasProjectiveDimensionLE Y 1]
+    [((tensoringLeft C).obj (Projective.over X)).PreservesMonomorphisms]
+    [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms]
+    [Projective (Projective.kernelShortComplex X).X₁]
+    [Projective (Projective.kernelShortComplex Y).X₁]
+    [Mono (Projective.over X ◁ (Projective.kernelShortComplex Y).f)]
+    [Mono ((Projective.kernelShortComplex X).f ▷ Projective.over Y)] :
+    torOneIsoTor'OneOfHasProjectiveDimensionLEOne X Y =
+      (Projective.kernelShortComplex_shortExact X).torOneIsoTor'One
+        (Projective.kernelShortComplex_shortExact Y) := by
+  rw [torOneIsoTor'OneOfHasProjectiveDimensionLEOne]
 
 end CategoryTheory
