@@ -43,10 +43,13 @@ the module of modular symbols of the full modular group with trivial coefficient
 
 ## Main results
 
+* `TauCeti.ModularSymbol.mem_symb_iff_divisor`: equivariance may be checked on paths.
 * `TauCeti.ModularSymbol.eq_of_forall_unimodularDivisor_eq`: a modular symbol is determined by its
   values on the unimodular divisors of representatives of `Γ \ SL(2, ℤ)`.
 * `TauCeti.ModularSymbol.symb_le_symb_comp_inclusion`: for `Γ' ≤ Γ`, every `Γ`-symbol is a
   `Γ'`-symbol.
+* `TauCeti.ModularSymbol.toAddSubmonoid_symb_eq_toAddSubmonoid_symb`: the additive view of
+  `Symb_Γ(V)`, forgetting scalars, depends only on the action of `Γ` on `V`.
 * `TauCeti.ModularSymbol.symb_trivial_eq_bot`: `Symb_{SL(2, ℤ)}(V) = 0` for a trivial action.
 
 ## References
@@ -112,6 +115,20 @@ theorem apply_unimodularDivisor_mul {φ : degreeZero ℤ →+ V} (hφ : φ ∈ s
     φ (unimodularDivisor ℤ ((γ : SL(2, ℤ)) * g)) = ρ γ (φ (unimodularDivisor ℤ g)) := by
   rw [← apply_degreeZeroRep hφ, degreeZeroRep_apply, degreeZeroGLRep_mapGL_unimodularDivisor]
 
+/-- The equivariance of a modular symbol may be checked on paths: an additive map `φ` on `Δ₀` is
+a modular symbol as soon as `φ({γ b} - {γ a}) = ρ(γ) φ({b} - {a})` for all `γ ∈ Γ` and cusps
+`a`, `b`. -/
+theorem mem_symb_iff_divisor {φ : degreeZero ℤ →+ V} :
+    φ ∈ symb ρ ↔ ∀ (γ : Γ) (a b : OnePoint ℚ),
+      φ (divisor ℤ (mapGL ℚ (γ : SL(2, ℤ)) • a) (mapGL ℚ (γ : SL(2, ℤ)) • b)) =
+        ρ γ (φ (divisor ℤ a b)) := by
+  refine ⟨fun hφ ↦ apply_divisor_smul hφ, fun h γ ↦ ?_⟩
+  -- Both sides of the equivariance are additive maps on `Δ₀` agreeing on unimodular divisors.
+  refine DFunLike.congr_fun (addMonoidHom_ext_unimodular (V := V)
+    (φ := φ.comp (degreeZeroRep ℤ (γ : SL(2, ℤ))).toAddMonoidHom)
+    (ψ := (ρ γ).toAddMonoidHom.comp φ) fun g ↦ ?_)
+  simpa [degreeZeroRep_apply, unimodularDivisor_def] using h γ _ _
+
 /-- A modular symbol for `Γ` is determined by its values on the unimodular divisors
 `{t 0} - {t ∞}` for `t` running over a set `s` meeting every right coset `Γ g` of `SL(2, ℤ)`. -/
 theorem eq_of_forall_unimodularDivisor_eq {s : Set SL(2, ℤ)}
@@ -127,6 +144,15 @@ restricted representation. -/
 theorem symb_le_symb_comp_inclusion {Γ' : Subgroup SL(2, ℤ)} (h : Γ' ≤ Γ) :
     symb ρ ≤ symb (ρ.comp (Subgroup.inclusion h)) :=
   fun _ hφ γ D ↦ hφ (Subgroup.inclusion h γ) D
+
+/-- Membership in `Symb_Γ(V)` depends only on the action of `Γ` on `V`, not on the scalars: two
+representations of `Γ` on `V` over different semirings with the same underlying maps have the same
+modular symbols, as an additive submonoid of `Δ₀ →+ V`. -/
+theorem toAddSubmonoid_symb_eq_toAddSubmonoid_symb {S : Type*} [Semiring S] [Module S V]
+    {σ : Representation S Γ V} (h : ∀ (γ : Γ) (v : V), ρ γ v = σ γ v) :
+    (symb ρ).toAddSubmonoid = (symb σ).toAddSubmonoid := by
+  ext φ
+  simp only [Submodule.mem_toAddSubmonoid, mem_symb_iff, h]
 
 /-- The modular symbols of the full modular group `SL(2, ℤ)` with values in a trivial
 representation vanish. -/

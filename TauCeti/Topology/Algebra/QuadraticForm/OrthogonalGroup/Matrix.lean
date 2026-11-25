@@ -43,8 +43,6 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
   let : ContinuousStar R := ⟨continuous_id⟩
   let : ContinuousAdd (Module.End R V) := IsModuleTopology.toContinuousAdd R _
   let : ContinuousAdd (Module.End R (n → R)) := IsModuleTopology.toContinuousAdd R _
-  let : IsModuleTopology R (Matrix n n R) :=
-    inferInstanceAs (IsModuleTopology R (n → n → R))
   let E := orthogonalGroupEquivMatrix h2 e
   let C := (e.toLinearEquiv.conjAlgEquiv (R := R)).toLinearMap
   have hC (g : QuadraticMap.orthogonalGroup Q) :

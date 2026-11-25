@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Measure.Real
 public import TauCeti.Probability.Distributions.FisherSnedecor.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.StudentT.Cdf
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
 
 /-!

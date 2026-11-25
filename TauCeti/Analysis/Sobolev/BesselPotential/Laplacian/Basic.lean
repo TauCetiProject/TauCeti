@@ -136,7 +136,7 @@ theorem integral_inclusionLp_laplacianCLM_mul {s : ℝ} (hs : 0 ≤ s) (u : H^{s
   -- The Schwartz function of `φ` has the values of `φ`.
   have hcoe : ⇑(hc.toSchwartzMap hφ) = φ := funext (hc.toSchwartzMap_toFun hφ)
   have h := congrArg (fun T : 𝓢'(E, ℂ) ↦ T ψ) hT
-  simp only [laplacian_apply_apply, ψ, TauCeti.laplacian_postcompCLM,
+  simp only [laplacian_apply_apply, ψ, SchwartzMap.laplacian_postcompCLM,
     Lp.toTemperedDistribution_apply, SchwartzMap.postcompCLM_apply,
     SchwartzMap.laplacian_apply, hcoe, Complex.ofRealCLM_apply, smul_eq_mul] at h
   rw [integral_congr_ae (.of_forall fun x ↦ mul_comm _ _), h]

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
@@ -30,6 +30,10 @@ estimates are claimed; no bound on the coefficients uniform in the position is r
 The summands have homogeneous degrees, so each is a classical symbol with a single homogeneous
 term (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`), and the operator is their sum after the
 integer-step order inclusions.
+
+The quantization of classical symbols is additive and homogeneous in the symbol
+(`TauCeti.ClassicalSymbol.quantizeSchwartzValue_toSymbol_add` and
+`TauCeti.ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul`).
 
 For the differential symbol of order `m`:
 
@@ -78,6 +82,15 @@ For the differential symbol of order `m`:
   (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator_eq_zero`), so it has
   compact spatial support when the outputs of `D` vanish outside a compact set
   (`TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialOperator`);
+* `TauCeti.ClassicalSymbol.ofDifferentialOperatorMatrix`: the classical symbol, with values in the
+  `κ × ι` complex matrices, of a matrix `D` of such differential operators acting on `ℂ^ι`-valued
+  functions, whose `(i, j)` entry is the symbol of `D i j`
+  (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperatorMatrix`). On Schwartz input
+  its quantization is `u ↦ (∑ⱼ D i j uⱼ)ᵢ`
+  (`TauCeti.ClassicalSymbol.map_quantizeSchwartzValue_ofDifferentialOperatorMatrix`), and the
+  entries of its principal symbol are `i ^ m` times the geometric principal symbols of the entries
+  of `D` (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialOperatorMatrix`). This is the
+  form a differential operator between vector bundles takes in a chart and in frames;
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
@@ -161,6 +174,22 @@ theorem mixedDeriv_nil_differentialSymbol_eq_zero {ι : Type*} {k : ι → ℕ} 
   simp
 
 namespace ClassicalSymbol
+
+/-- The quantization of a sum of classical symbols is the sum of their quantizations. -/
+theorem quantizeSchwartzValue_toSymbol_add (a b : ClassicalSymbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a + b).toSymbol.coefficient u x =
+      quantizeSchwartzValue a.toSymbol.coefficient u x +
+        quantizeSchwartzValue b.toSymbol.coefficient u x := by
+  rw [toSymbol_add, Symbol.coefficient_add, Symbol.quantizeSchwartzValue_coefficient_add]
+
+/-- The quantization of a scalar multiple of a classical symbol is the scalar multiple of its
+quantization. -/
+theorem quantizeSchwartzValue_toSymbol_smul (c : ℂ) (a : ClassicalSymbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (c • a).toSymbol.coefficient u x =
+      c • quantizeSchwartzValue a.toSymbol.coefficient u x := by
+  rw [toSymbol_smul, Symbol.coefficient_smul, quantizeSchwartzValue_smul_left]
 
 variable {ι : Type*} {k : ι → ℕ}
 
@@ -663,6 +692,112 @@ theorem isElliptic_ofDifferentialOperator_iff [Nontrivial V] :
     rw [ContinuousLinearMap.isInvertible_smul_iff (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero)
       (Complex.ofReal_ne_zero.2 h))]
     simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)
+
+/-! ### Matrices of differential operators -/
+
+section Matrix
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq κ] {m : ℕ}
+  (D : κ → ι → differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ m)
+
+/-- The map `c ↦ eᵢ ∘ c ∘ eⱼ*` placing a scalar operator `c` in the entry `(i, j)` of a matrix. -/
+private def matrixEntryMap (i : κ) (j : ι) : (ℂ →L[ℂ] ℂ) →L[ℝ] ((ι → ℂ) →L[ℂ] (κ → ℂ)) :=
+  ((ContinuousLinearMap.compL ℂ (ι → ℂ) ℂ (κ → ℂ)
+      (ContinuousLinearMap.single ℂ (fun _ : κ ↦ ℂ) i)).comp
+    ((ContinuousLinearMap.compL ℂ (ι → ℂ) ℂ ℂ).flip
+      (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) j))).restrictScalars ℝ
+
+private theorem matrixEntryMap_apply (i : κ) (j : ι) (c : ℂ →L[ℂ] ℂ) :
+    matrixEntryMap i j c = ContinuousLinearMap.single ℂ (fun _ : κ ↦ ℂ) i ∘L c ∘L
+      ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) j :=
+  (rfl)
+
+/-- The classical symbol of order `m` of a `κ × ι` matrix `D` of differential operators of order at
+most `m` on the smooth real functions on `ℝⁿ`, in Grothendieck's sense, acting on `ℂ^ι`-valued
+functions: the matrix-valued symbol whose `(i, j)` entry is the polynomial symbol
+`ofDifferentialOperator ℂ (D i j)` of `D i j`
+(`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperatorMatrix`). Its
+quantization on Schwartz input is the operator `u ↦ (∑ⱼ D i j uⱼ)ᵢ`, acting on the real and
+imaginary parts of the components
+(`TauCeti.ClassicalSymbol.map_quantizeSchwartzValue_ofDifferentialOperatorMatrix`). This is how
+a differential operator between vector bundles is a pseudodifferential operator in a chart and in
+frames. -/
+def ofDifferentialOperatorMatrix : ClassicalSymbol n (ι → ℂ) (κ → ℂ) m :=
+  ∑ i, ∑ j, (ofDifferentialOperator ℂ (D i j)).map (matrixEntryMap i j)
+
+/-- The `(i, j)` entry of the full symbol of `ofDifferentialOperatorMatrix D` is the symbol of
+`D i j`. -/
+@[simp]
+theorem coefficient_toSymbol_ofDifferentialOperatorMatrix
+    (p : CoordinateSpace n × CoordinateSpace n) (u : ι → ℂ) (i : κ) :
+    (ofDifferentialOperatorMatrix D).toSymbol.coefficient p u i =
+      ∑ j, (ofDifferentialOperator ℂ (D i j)).toSymbol.coefficient p (u j) := by
+  simp [ofDifferentialOperatorMatrix, Symbol.coefficient_sum, matrixEntryMap_apply,
+    Pi.single_apply]
+
+/-- **The principal symbol of a matrix of differential operators.** Away from `ξ = 0`, the
+`(i, j)` entry of the principal symbol of `ofDifferentialOperatorMatrix D` is `i ^ m` times the
+geometric principal symbol of `D i j` at the covector `⟪ξ, ·⟫`. -/
+theorem coefficient_principal_ofDifferentialOperatorMatrix {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0)
+    (u : ι → ℂ) (i : κ) :
+    (ofDifferentialOperatorMatrix D).principal.coefficient (x, ξ) u i =
+      ∑ j, (Complex.I ^ m * smoothPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) (x := x)
+        BoundarylessManifold.isInteriorPoint (D i j) (innerSL ℝ ξ) : ℂ) * u j := by
+  -- Move `principal` inside the sums and the maps, so that each entry is the principal symbol of
+  -- `ofDifferentialOperator`; `coefficient_principal` is dropped so that `simp` keeps that form.
+  simp only [ofDifferentialOperatorMatrix, principal_sum, principal_map]
+  simp [-coefficient_principal, HomogeneousSymbol.coefficient_sum,
+    HomogeneousSymbol.coefficient_map, coefficient_principal_ofDifferentialOperator _ hξ,
+    matrixEntryMap_apply, Pi.single_apply]
+
+/-- The full symbol of `ofDifferentialOperatorMatrix D` vanishes at every position `x` at which
+every output of every entry of `D` vanishes. -/
+theorem coefficient_toSymbol_ofDifferentialOperatorMatrix_eq_zero {x : CoordinateSpace n}
+    (hD : ∀ i j f, (D i j).val f x = 0) (ξ : CoordinateSpace n) :
+    (ofDifferentialOperatorMatrix D).toSymbol.coefficient (x, ξ) = 0 := by
+  ext u i
+  simp [coefficient_toSymbol_ofDifferentialOperator_eq_zero _ (hD i _)]
+
+/-- If the outputs of all entries of `D` vanish outside a compact set `K`, then the symbol of `D`
+has compact spatial support. -/
+theorem hasCompactSpatialSupport_toSymbol_ofDifferentialOperatorMatrix
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hD : ∀ x ∉ K, ∀ i j f, (D i j).val f x = 0) :
+    (ofDifferentialOperatorMatrix D).toSymbol.HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2
+    ⟨K, hK, fun x hx ↦ coefficient_toSymbol_ofDifferentialOperatorMatrix_eq_zero D (hD x hx)⟩
+
+/-- Quantizing the `(i, j)` entry of a matrix symbol gives the quantization of the scalar symbol on
+the `j`-th component of the input, placed in the `i`-th component of the output. -/
+private theorem quantizeSchwartzValue_map_matrixEntryMap {m' : ℝ} (a : Symbol n ℂ ℂ m') (i : κ)
+    (j : ι) (u : 𝓢(CoordinateSpace n, ι → ℂ)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (matrixEntryMap i j)).coefficient u x =
+      Pi.single i (quantizeSchwartzValue a.coefficient
+        (u.postcompCLM (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) j)) x) := by
+  rw [Symbol.coefficient_map_eq_comp_comp _ _ (matrixEntryMap_apply i j),
+    Symbol.quantizeSchwartzValue_comp_comp]
+  exact congrFun (ContinuousLinearMap.single_apply ℂ _ i) _
+
+/-- **Matrices of differential operators are pseudodifferential operators.** On Schwartz input
+`u` with values in `ℂ^ι`, the quantization of `ofDifferentialOperatorMatrix D` is the matrix `D`
+acting componentwise: for every real-linear functional `ℓ` on `ℂ`, such as the real or the
+imaginary part, the image under `ℓ` of its `i`-th component is `∑ⱼ D i j (ℓ ∘ uⱼ)`. -/
+theorem map_quantizeSchwartzValue_ofDifferentialOperatorMatrix (ℓ : ℂ →L[ℝ] ℝ)
+    (u : 𝓢(CoordinateSpace n, ι → ℂ)) (x : CoordinateSpace n) (i : κ) :
+    ℓ (quantizeSchwartzValue (ofDifferentialOperatorMatrix D).toSymbol.coefficient u x i) =
+      ∑ j, (D i j).val ⟨fun y ↦ ℓ (u y j), (ℓ.contDiff.comp
+        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) j).contDiff.comp
+          (u.smooth ⊤))).contMDiff⟩ x := by
+  simp only [ofDifferentialOperatorMatrix, toSymbol_sum, Symbol.quantizeSchwartzValue_sum_left,
+    toSymbol_map, quantizeSchwartzValue_map_matrixEntryMap, Finset.sum_apply, Pi.single_apply]
+  rw [Finset.sum_eq_single_of_mem i (Finset.mem_univ _) fun b _ hb ↦ by simp [hb.symm]]
+  simp only [ite_true, map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [map_quantizeSchwartzValue_ofDifferentialOperator]
+  simp only [SchwartzMap.postcompCLM_apply, ContinuousLinearMap.proj_apply]
+
+end Matrix
 
 end ClassicalSymbol
 

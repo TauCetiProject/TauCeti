@@ -55,8 +55,11 @@ not microlocally smooth.
   set at points near `x` stay in any open neighbourhood of those at `x` with conic complement.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
-* `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
-  Fourier transforms of a smooth multiple and of a restriction, as localized Fourier transforms of
+* `Distribution.localFourier_eq_of_complexPairing_eq`: multiplication operators commute with
+  modulation of the cutoff by the Fourier atom.
+* `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_smulLeftCLMOfContDiffOn`,
+  `Distribution.localFourier_restrictCLM`: the localized Fourier transforms of a smooth multiple,
+  also by a function smooth on `Ω` only, and of a restriction, as localized Fourier transforms of
   `T` with modified cutoffs.
 * `Distribution.waveFrontSet_smul`, `Distribution.waveFrontSet_conj`: nonzero scalar multiples
   have the same wave front set, and complex conjugation reflects the frequencies.
@@ -206,16 +209,36 @@ theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
     exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
 
+/-- If `S` pairs with each complex test function `ψ` as `T` with `P ψ`, where `P` acts as
+multiplication by `g`, then the localized Fourier transform of `S` with cutoff `φ` is that of `T`
+with cutoff `P φ`: multiplication by `g` commutes with modulation by the Fourier atom. -/
+theorem localFourier_eq_of_complexPairing_eq {S T : 𝓓'(Ω, ℂ)} {P : 𝓓(Ω, ℂ) → 𝓓(Ω, ℂ)}
+    {g : E → ℝ} (hS : ∀ ψ, S.complexPairing ψ = T.complexPairing (P ψ))
+    (hP : ∀ ψ x, P ψ x = g x • ψ x) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    S.localFourier φ η = T.localFourier (P φ) η := by
+  rw [localFourier, localFourier, hS]
+  congr 1
+  ext x
+  simp [bilinLeftCLM_apply, hP, mul_assoc]
+
 /-- The localized Fourier transform of a smooth multiple `g T` with cutoff `φ` is that of `T` with
 cutoff `g φ`. -/
 @[simp]
 theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
     (φ : 𝓓(Ω, ℂ)) (η : E) :
-    (smulLeftCLM hg T).localFourier φ η = T.localFourier (TestFunction.smulLeftCLM hg φ) η := by
-  rw [localFourier, localFourier, complexPairing_smulLeftCLM]
-  congr 1
-  ext x
-  simp [bilinLeftCLM_apply, mul_assoc]
+    (smulLeftCLM hg T).localFourier φ η = T.localFourier (TestFunction.smulLeftCLM hg φ) η :=
+  localFourier_eq_of_complexPairing_eq (complexPairing_smulLeftCLM hg T)
+    (TestFunction.smulLeftCLM_apply hg) φ η
+
+/-- The localized Fourier transform of a multiple `g T`, for `g` smooth on `Ω` only, with cutoff
+`φ` is that of `T` with cutoff `g φ`. -/
+@[simp]
+theorem localFourier_smulLeftCLMOfContDiffOn [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ)) {g : E → ℝ}
+    (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (smulLeftCLMOfContDiffOn hg T).localFourier φ η =
+      T.localFourier (TestFunction.smulLeftCLMOfContDiffOn hg φ) η :=
+  localFourier_eq_of_complexPairing_eq (complexPairing_smulLeftCLMOfContDiffOn hg T)
+    (TestFunction.smulLeftCLMOfContDiffOn_apply hg) φ η
 
 /-- Modulating the cutoff by the Fourier atom `e_ζ` shifts the localized Fourier transform by `ζ`:
 `T ((φ e_ζ) e_η) = T (φ e_(ζ + η))`. -/

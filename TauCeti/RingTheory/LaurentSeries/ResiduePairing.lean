@@ -37,6 +37,8 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
   pairing.
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
 * `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
+* `LaurentSeries.map_residuePairing`: compatibility with coefficient extension along a ring
+  homomorphism.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
 * `LaurentSeries.residuePairing_toLaurentSeries`: on Laurent polynomials it is the coefficient of
   `T⁻¹` in `f * g'`, for the derivative `LaurentPolynomial.derivative`.
@@ -207,6 +209,14 @@ theorem residuePairing_toLaurentSeries (f g : R[T;T⁻¹]) :
       (f * LaurentPolynomial.derivative g).coeff (-1) := by
   rw [residuePairing_apply, ← LaurentPolynomial.toLaurentSeries_derivative, ← map_mul,
     LaurentPolynomial.coeff_toLaurentSeries]
+
+/-- **Coefficient extension commutes with the residue pairing**: a ring homomorphism
+`φ : R →+* S` sends `Res(f dg)` to the residue pairing of the coefficientwise images. -/
+@[simp]
+theorem map_residuePairing {S : Type*} [CommRing S] (φ : R →+* S) (f g : R⸨X⸩) :
+    φ (residuePairing R f g) = residuePairing S (mapRingHom φ f) (mapRingHom φ g) := by
+  rw [residuePairing_apply, residuePairing_apply, derivative_mapRingHom, ← map_mul,
+    coeff_mapRingHom]
 
 section Substitution
 

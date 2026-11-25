@@ -25,7 +25,8 @@ for a small ball `B` around the origin of `T_p M`, and `B ∩ V_p` is convex. Th
 topological consequences for `M^K`:
 
 * `M^K` is locally connected (`TauCeti.locallyConnectedSpace_fixedPoints`), since the sets
-  `exp_p (B ∩ V_p)` are connected;
+  `exp_p (B ∩ V_p)` are connected, so its connected components are open in it
+  (`TauCeti.isOpen_preimage_val_connectedComponentIn_fixedPoints`);
 * when `M` is compact, `M^K` has finitely many connected components
   (`TauCeti.finite_connectedComponents_fixedPoints`), since it is closed, hence compact, and
   locally connected;
@@ -52,6 +53,8 @@ locally constant on `M^G`
 * `TauCeti.isLocallyConstant_domRestrict_fixedPoints`: a function with zero differential at every
   point of `M^K` is locally constant on `M^K`.
 * `TauCeti.locallyConnectedSpace_fixedPoints`: `M^K` is locally connected.
+* `TauCeti.isOpen_preimage_val_connectedComponentIn_fixedPoints`: the connected components of `M^K`
+  are open in `M^K`.
 * `TauCeti.finite_connectedComponents_fixedPoints`: for compact `M`, `M^K` has finitely many
   connected components.
 * `TauCeti.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace`,
@@ -174,6 +177,15 @@ theorem locallyConnectedSpace_fixedPoints : LocallyConnectedSpace (fixedPoints K
   rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, image_preimage_eq_inter_range,
     Subtype.range_coe, hWs]
   exact hs.isPreconnected.image _ (e.continuousOn_symm.mono hse)
+
+/-- **The connected components of the fixed set are open in it**, since the fixed set is locally
+connected. -/
+theorem isOpen_preimage_val_connectedComponentIn_fixedPoints {p : M}
+    (hp : p ∈ fixedPoints K M) :
+    IsOpen ((↑) ⁻¹' connectedComponentIn (fixedPoints K M) p : Set (fixedPoints K M)) := by
+  have := locallyConnectedSpace_fixedPoints hK
+  rw [connectedComponentIn_eq_image hp, Subtype.val_injective.preimage_image]
+  exact isOpen_connectedComponent
 
 /-- **The fixed set of a group of isometries of a compact manifold has finitely many connected
 components.** It is closed, hence compact, and locally connected. -/

@@ -30,6 +30,7 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   `x` is an integer `k` and `exp (π x i) = (-1) ^ k`.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
+* `Complex.exp_two_pi_mul_I_mul_pow`: `(exp (2π i a)) ^ n = exp (2π i n a)` for `a : ℂ` and `n : ℕ`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.norm_exp_two_pi_mul_ofReal_mul_I`: the same with the factors ordered `2 π x i`.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
@@ -71,6 +72,13 @@ theorem exists_int_eq_of_exp_pi_mul_I_eq {x : ℝ} {u : ℤ} (h : cexp (↑(π *
 theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
     cexp (2 * π * I * (z + k)) = cexp (2 * π * I * z) := by
   rw [mul_add, exp_add, mul_comm (2 * π * I) (k : ℂ), exp_int_mul_two_pi_mul_I, mul_one]
+
+/-- Raising `e^{2π i a}` to a natural power `n` multiplies the exponent by `n`. -/
+theorem exp_two_pi_mul_I_mul_pow (a : ℂ) (n : ℕ) :
+    cexp (2 * π * I * a) ^ n = cexp (2 * π * I * n * a) := by
+  rw [← Complex.exp_natCast_mul]
+  congr 1
+  ring
 
 /-- `‖e(x)‖ = 1` for `e(x) = exp (2 π i x)` and real `x`. -/
 @[simp]
