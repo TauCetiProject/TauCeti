@@ -18,7 +18,7 @@ to the tensor square of the ambient algebra, together with its range and basic m
 ## Main definitions and results
 
 * `Subring.tensorSquareMap`: the canonical map from the integral tensor square, the
-  `Subalgebra.tensorSquareMap` of `subalgebraOfSubring S` (`Subring.tensorSquareMap_eq`).
+  `Subalgebra.tensorSquareMap` of `subalgebraOfSubring S` (`Subring.tensorSquareMap_def`).
 * `Subring.subalgebraOfSubringEquiv`: the `ℤ`-linear equivalence between `subalgebraOfSubring S`
   and `S`.
 * `Subring.tensorSquareMap_injective_of_flat`: the canonical map is injective when the subring is
@@ -49,7 +49,7 @@ noncomputable def _root_.Subring.tensorSquareMap (S : Subring A) : S ⊗[ℤ] S 
   Subalgebra.tensorSquareMap R (subalgebraOfSubring S)
 
 /-- The canonical tensor-square map of a subring is that of the corresponding `ℤ`-subalgebra. -/
-theorem _root_.Subring.tensorSquareMap_eq (S : Subring A) :
+theorem _root_.Subring.tensorSquareMap_def (S : Subring A) :
     Subring.tensorSquareMap R S = Subalgebra.tensorSquareMap R (subalgebraOfSubring S) :=
   (rfl)
 
@@ -58,7 +58,7 @@ ambient elements. -/
 @[simp]
 theorem _root_.Subring.tensorSquareMap_tmul (S : Subring A) (x y : S) :
     Subring.tensorSquareMap R S (x ⊗ₜ[ℤ] y) = (x : A) ⊗ₜ[R] (y : A) := by
-  rw [Subring.tensorSquareMap_eq]
+  rw [Subring.tensorSquareMap_def]
   exact Subalgebra.tensorSquareMap_tmul (subalgebraOfSubring S) x y
 
 /-- A subring and the corresponding `ℤ`-subalgebra are isomorphic as abelian groups. -/
@@ -80,7 +80,7 @@ theorem _root_.Subring.tensorSquareMap_injective_of_flat {R : Type u} [CommRing 
     Function.Injective (Subring.tensorSquareMap R S) := by
   have : Module.Flat ℤ (subalgebraOfSubring S) :=
     Module.Flat.of_linearEquiv S.subalgebraOfSubringEquiv
-  rw [Subring.tensorSquareMap_eq]
+  rw [Subring.tensorSquareMap_def]
   exact Subalgebra.tensorSquareMap_injective (R := ℤ) (K := R) (subalgebraOfSubring S)
 
 section Rational
