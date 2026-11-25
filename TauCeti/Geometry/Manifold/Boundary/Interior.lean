@@ -274,6 +274,20 @@ theorem coe_interiorOpensInclusion (u : Opens M) (x : I.interior u) :
   (rfl)
 
 omit [FiniteDimensional 𝕜 E] in
+/-- The image of the interior of the open subset `u` in the interior of `M` consists of the
+interior points of `M` that lie in `u`. -/
+@[simp]
+theorem range_interiorOpensInclusion (u : Opens M) :
+    range (I.interiorOpensInclusion u) = (↑) ⁻¹' (u : Set M) := by
+  ext y
+  refine ⟨?_, fun hy => ?_⟩
+  · rintro ⟨x, rfl⟩
+    exact x.val.property
+  · refine ⟨⟨⟨y, hy⟩, ?_⟩, rfl⟩
+    rw [I.interior_open]
+    exact y.property
+
+omit [FiniteDimensional 𝕜 E] in
 /-- The inclusion of the interior of an open subset into the interior is an open embedding. -/
 theorem isOpenEmbedding_interiorOpensInclusion (u : Opens M) :
     IsOpenEmbedding (I.interiorOpensInclusion u) :=
