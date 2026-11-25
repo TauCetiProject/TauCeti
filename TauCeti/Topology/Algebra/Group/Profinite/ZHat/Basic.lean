@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Completion
 
+import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
+
 /-!
 # The profinite integers as a profinite group
 
@@ -47,6 +49,8 @@ dense, `ℤ̂` is commutative. The identification of the maximal pro-`p` quotien
 * `TauCeti.zHat.lift_mul_apply`, `TauCeti.zHat.lift_zpow_apply`, `TauCeti.zHat.lift_comm`: the
   lift is multiplicative on commuting base elements and compatible with powers, and on `ℤ̂`
   itself it is symmetric.
+* `TauCeti.zHat.mem_zpowers_quotientGenerator`: the image of `1` generates every finite quotient
+  of the defining copy of `ℤ`.
 
 ## References
 
@@ -309,6 +313,20 @@ theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = 
     (isCompact_range (lift a).continuous).isClosed
   rw [← Set.range_eq_univ, ← hclosed.closure_eq]
   exact hdense.closure_range
+
+/-- The canonical generator `1 ∈ ℤ` generates every finite quotient of the defining copy of `ℤ`:
+every element of such a quotient is an integral power of the image of `1`. -/
+theorem mem_zpowers_quotientGenerator
+    (H : FiniteIndexNormalSubgroup (ULift.{u} (Multiplicative ℤ)))
+    (x : ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) :
+    x ∈ Subgroup.zpowers (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
+  have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
+      ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) =
+      (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
+    MonoidHom.ext_mint rfl
+  revert x
+  rw [← Subgroup.eq_top_iff', ← Subgroup.range_zpowersHom, hf, MonoidHom.range_eq_top]
+  exact (QuotientGroup.mk'_surjective _).comp MulEquiv.ulift.symm.surjective
 
 /-- The lift of `a` is injective when every finite quotient of the defining copy of `ℤ` is
 detected by a continuous quotient of the target carrying `a` to the canonical generator. This is
