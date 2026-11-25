@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Function
 public import TauCeti.Analysis.PDE.PoissonIntegral.HalfSpace
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Boundary values of the Poisson integral at points of continuity
@@ -49,7 +50,7 @@ namespace TauCeti
 /-- The point `1` of the real axis, as a unit vector of the bounding line `(ℝ ∙ i)ᗮ`. -/
 def upperHalfPlaneLineUnit : (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ :=
   ⟨Complex.orthonormalBasisOneI.repr 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2 <| by
-    simpa using inner_upperHalfPlaneNormal_repr 1⟩
+    simp⟩
 
 /-- The defining formula of `TauCeti.upperHalfPlaneLineUnit`. -/
 theorem coe_upperHalfPlaneLineUnit :
@@ -72,8 +73,12 @@ theorem norm_upperHalfPlaneLineUnit :
 theorem volume_upperHalfPlaneLine :
     (volume : Measure (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ) =
       (volume : Measure ℝ).map (· • upperHalfPlaneLineUnit) := by
-  rw [volume_eq_of_finrank_eq_one (by rw [finrank_orthogonal_unit]) (v := upperHalfPlaneLineUnit)
-    fun h ↦ by simpa [h] using norm_upperHalfPlaneLineUnit]
+  have hv : (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)) ≠ 0 := fun h ↦ by
+    simpa [h] using upperHalfPlaneNormal.property
+  rw [volume_eq_of_finrank_eq_one (by
+      rw [Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one hv,
+        finrank_euclideanSpace_fin])
+    (v := upperHalfPlaneLineUnit) fun h ↦ by simpa [h] using norm_upperHalfPlaneLineUnit]
   simp [← ofReal_norm]
 
 private theorem isometry_smul_upperHalfPlaneLineUnit :
@@ -162,7 +167,7 @@ theorem tendsto_integral_upperHalfPlanePoissonKernel_mul {f : ℝ → ℝ} {C : 
   refine hT.comp (tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦ ?_⟩)
   · exact (Complex.orthonormalBasisOneI.repr.continuous.tendsto (x₀ : ℂ)).mono_left
       nhdsWithin_le_nhds
-  · simpa [inner_upperHalfPlaneNormal_repr] using hz
+  · simpa using hz
 
 /-- **Boundary values at a point of continuity.** For bounded measurable `h : ℝ → ℂ` continuous
 at `x₀`, `P[h](z) → h(x₀)` as `z → x₀` through the open upper half-plane, with no restriction on
@@ -171,10 +176,8 @@ theorem tendsto_upperHalfPlanePoissonIntegralFun {h : ℝ → ℂ} {C : ℝ}
     (hh : AEStronglyMeasurable h) (hC : ∀ x, ‖h x‖ ≤ C) {x₀ : ℝ} (hx₀ : ContinuousAt h x₀) :
     Tendsto (upperHalfPlanePoissonIntegralFun h) (𝓝[{z : ℂ | 0 < z.im}] (x₀ : ℂ))
       (𝓝 (h x₀)) := by
-  have hint : Integrable h upperHalfPlanePoissonMeasure := by
-    refine Integrable.of_bound (hh.mono_ac ?_) C (.of_forall hC)
-    rw [upperHalfPlanePoissonMeasure_eq_withDensity]
-    exact withDensity_absolutelyContinuous _ _
+  have hint : Integrable h upperHalfPlanePoissonMeasure :=
+    .of_bound (hh.mono_ac upperHalfPlanePoissonMeasure_absolutelyContinuous) C (.of_forall hC)
   have hre := tendsto_integral_upperHalfPlanePoissonKernel_mul
     (continuous_re.comp_aestronglyMeasurable hh)
     (fun x ↦ (abs_re_le_norm _).trans (hC x)) (continuous_re.continuousAt.comp hx₀)
