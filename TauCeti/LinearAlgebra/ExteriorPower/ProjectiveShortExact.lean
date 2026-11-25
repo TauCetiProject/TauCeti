@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.LinearAlgebra.ExteriorPower.FreeShortExact
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.ExteriorPower.Prod
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Determinants of exact sequences of finite projective modules
@@ -220,8 +222,8 @@ theorem shortExactEquivOfProjective_tmul_ιMulti (v : Fin n → M) (z : Fin r �
   -- The splitting lifts `q ∘ z` to `s ∘ q ∘ z`, with the section `s = e.symm ∘ inr`.
   have hcomp : e.symm ∘ (Fin.append (LinearMap.inl R M P ∘ v) (LinearMap.inr R M P ∘ (q ∘ z)) ∘
       Fin.cast rfl) = Fin.append (f ∘ v) (e.symm ∘ LinearMap.inr R M P ∘ q ∘ z) := by
-    ext i
-    refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i <;> simp [hfe]
+    rw [Fin.cast_refl, Function.comp_id, Fin.comp_append, hfe, LinearMap.coe_comp,
+      LinearEquiv.coe_coe, Function.comp_assoc]
   rw [hcomp]
   refine ιMulti_append_eq_of_sub_mem_range f v fun j ↦ (he _).1 ?_
   have hqs : q (e.symm (0, q (z j))) = q (z j) := by simp [hqe]
@@ -273,23 +275,26 @@ theorem map_comp_shortExactEquivOfProjective {M' N' P' : Type*} [AddCommGroup M'
     _root_.exteriorPower.linearMap_ext (AlternatingMap.ext fun w ↦ ?_)))
   obtain ⟨z, rfl⟩ := hq.comp_left w
   have hγz : γ ∘ (q ∘ z) = q' ∘ (β ∘ z) := funext fun j ↦ (LinearMap.congr_fun hγ (z j)).symm
-  have hα' (x : M) : β (f x) = f' (α x) := LinearMap.congr_fun hα x
   have hβ : β ∘ Fin.append (f ∘ v) z = Fin.append (f' ∘ (α ∘ v)) (β ∘ z) := by
-    ext i
-    refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i <;> simp [hα']
+    rw [Fin.comp_append, ← Function.comp_assoc, ← LinearMap.coe_comp, hα, LinearMap.coe_comp,
+      Function.comp_assoc]
   simp [hγz, hβ]
 
 /-- The determinant comparison commutes with base change along any commutative `R`-algebra `A`:
 under the identifications `⋀[A]ᵏ (A ⊗ X) ≃ A ⊗ ⋀[R]ᵏ X` of
 `TauCeti.exteriorPower.equivBaseChange`, the comparison of the base-changed sequence
-`0 → A ⊗ M → A ⊗ N → A ⊗ P → 0` is the base change of the comparison. -/
+`0 → A ⊗ M → A ⊗ N → A ⊗ P → 0` is the base change of the comparison. The base-changed sequence
+is again short exact (`P` is flat, and tensoring is right exact), and its terms have the same
+constant ranks. -/
 theorem shortExactEquivOfProjective_baseChange (A : Type*) [CommRing A] [Algebra R A]
-    (hfA : Function.Injective (f.baseChange A))
-    (heA : Function.Exact (f.baseChange A) (q.baseChange A))
-    (hqA : Function.Surjective (q.baseChange A))
-    (hMA : ∀ p, rankAtStalk (R := A) (A ⊗[R] M) p = n)
-    (hPA : ∀ p, rankAtStalk (R := A) (A ⊗[R] P) p = r) (a : ⋀[R]^n M) (b : ⋀[R]^r P) :
-    shortExactEquivOfProjective hfA heA hqA hMA hPA
+    (a : ⋀[R]^n M) (b : ⋀[R]^r P) :
+    shortExactEquivOfProjective (f := f.baseChange A) (q := q.baseChange A)
+        (by simpa only [LinearMap.baseChange_eq_lTensor] using
+          LinearMap.lTensor_injective_of_exact_of_flat q hq f hf he A)
+        (by simpa only [LinearMap.baseChange_eq_lTensor] using lTensor_exact A he hq)
+        (LinearMap.baseChange_surjective A hq)
+        (fun p ↦ (rankAtStalk_baseChange p).trans (hM _))
+        (fun p ↦ (rankAtStalk_baseChange p).trans (hP _))
         ((equivBaseChange A n).symm (1 ⊗ₜ a) ⊗ₜ[A] (equivBaseChange A r).symm (1 ⊗ₜ b)) =
       (equivBaseChange A (n + r)).symm
         (1 ⊗ₜ shortExactEquivOfProjective hf he hq hM hP (a ⊗ₜ b)) := by
@@ -321,8 +326,8 @@ theorem shortExactEquivOfProjective_baseChange (A : Type*) [CommRing A] [Algebra
         funext fun j ↦ by simp
       have happ : Fin.append (f.baseChange A ∘ fun i ↦ (1 : A) ⊗ₜ[R] v i) (fun j ↦ 1 ⊗ₜ z j) =
           fun i ↦ 1 ⊗ₜ Fin.append (f ∘ v) z i := by
-        ext i
-        refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i <;> simp
+        rw [← Function.comp_def (fun x ↦ (1 : A) ⊗ₜ[R] x) (Fin.append (f ∘ v) z), Fin.comp_append]
+        simp [Function.comp_def]
       simp only [equivBaseChange_symm_tmul_ιMulti, one_smul, hz, happ,
         shortExactEquivOfProjective_tmul_ιMulti]
 
