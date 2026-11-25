@@ -267,9 +267,8 @@ theorem dense_finiteSupport :
   apply mem_closure_of_tendsto (tendsto_truncate f)
   apply Eventually.of_forall
   intro s
-  simpa only [Set.mem_ofPred_eq, truncate, LinearMap.coe_mk, AddHom.coe_mk,
-    Function.HasFiniteSupport] using
-    (Finsupp.indicator s fun n _ ↦ (f : ℤ → R) n).hasFiniteSupport
+  refine s.finite_toSet.subset (Function.support_subset_iff'.mpr fun n hn ↦ ?_)
+  rw [coe_truncate_apply, ite_eq_right (Finset.mem_coe.not.mp hn)]
 
 /-- The coefficient inclusion is contractive for the endpoint maximum norms. -/
 theorem norm_inclusion_le {B : CompactAnnulus} (h : B ≤ A) (f : compactAnnularCoeff R A) :
