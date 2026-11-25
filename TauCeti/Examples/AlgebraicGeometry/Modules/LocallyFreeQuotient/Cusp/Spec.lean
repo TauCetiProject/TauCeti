@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient.Spec
 public import TauCeti.Examples.AlgebraicGeometry.Modules.LocallyFreeQuotient.Cusp.Basic
 public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
+import TauCeti.Algebra.CharP.Two
 
 /-!
 # The cusp in characteristic `2` has a locally free quotient of its differentials
@@ -47,7 +48,7 @@ def cuspDualMap (h2 : (2 : k) = 0) : CuspRing k →ₐ[k] TrivSqZeroExt (CuspRin
       · simp [← cuspX_def, sq]
         linear_combination cuspY_sq k
       · simp [← cuspX_def, sq, MulOpposite.smul_eq_mul_unop]
-        linear_combination cuspY k * two_eq_zero_cuspRing h2)
+        linear_combination cuspY k * (two_eq_zero_of_algebra h2 : (2 : CuspRing k) = 0))
 
 /-- The ring map `A → A[ε]` sends `a ∈ k[x]` to `a`. -/
 @[simp]
