@@ -594,8 +594,8 @@ theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
     ((ω.hasCompactSupport_floerLinearization J Ks Kt u hξ).comp_left (g := fun v ↦ ‖v‖ ^ 2)
       (by simp))
 
-/-- **The cost of a cutoff, for data regular on an open set.** Let the data be regular along `u` on
-a set `U`, and let `β` be a `C¹` function with values in `[0, 1]` whose derivative vanishes off a
+/-- **The cost of a cutoff, for data regular on a set.** Let the data be regular along `u` on a
+set `U`, and let `β` be a `C¹` function with values in `[0, 1]` whose derivative vanishes off a
 compact set `K ⊆ U`. Then multiplying a `C¹` direction `ξ` of compact support in `U` by `β` gives a
 direction whose `D_u` has squared `L²` norm at most twice that of `D_u ξ` plus a multiple of the
 squared `L²` norm of `ξ` over `K`: `∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/

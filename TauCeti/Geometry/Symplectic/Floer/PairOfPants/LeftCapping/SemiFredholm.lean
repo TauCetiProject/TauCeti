@@ -41,8 +41,11 @@ the two ends and in the coordinates of `ℂ` on a compact core containing `0`, i
   is the estimate along every member of the family, for almost complex structures that are
   cylindrical far out on the two ends and a map `u` that solves the Floer equation there and
   converges to nondegenerate orbits. Far out on the input end at `1` the capped datum is the
-  pair-of-pants datum, and far out on the output end it is the pair-of-pants datum translated by
-  `c`, so the end estimates of the pair of pants and of the recentred output end apply.
+  pair-of-pants datum
+  (`TauCeti.Floer.cappedExchangePerturbation_eq_of_pos_fst_positiveEndCoord_one`), and far out on
+  the output end it is the pair-of-pants datum translated by `c`
+  (`TauCeti.Floer.cappedExchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`), so the end
+  estimates of the pair of pants and of the recentred output end apply.
 
 The Sobolev realization of the operator, the finiteness of its cokernel and its index are not
 treated here.
@@ -69,20 +72,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-! ### Patching on the capped surface -/
-
-/-- A point of the part `s > 0` of the input end at `1` or of the output end lies off the open disc
-`‖w‖ < 1/2`: the circle `s = 0` of the end at `0` bounds that disc. -/
-private theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ × ℝ}
-    (hζ : 0 < ζ.1) : 1 / 2 ≤ ‖equivRealProdCLM.symm (positiveEndChart q ζ)‖ := by
-  have hq₀ : 0 < (positiveEndCoord q (positiveEndChart q ζ)).1 := by
-    rwa [fst_positiveEndCoord_positiveEndChart]
-  have h0 := fst_positiveEndCoord_nonpos_of_ne hq hq₀
-  rw [fst_positiveEndCoord, endSign_zero, one_mul] at h0
-  have hS := mem_thricePuncturedSphereReal_iff.1
-    (positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ)
-  have h := (re_endCoord_le_iff (q := zero) (by decide) (r := 0)
-    (by rw [endCenter_zero]; exact hS.1)).1 h0
-  simpa [endCenter_zero] using h
 
 omit [FiniteDimensional ℝ V] in
 /-- Beyond the height `0` on the input end at `1` or on the output end, a section agrees with its
@@ -212,14 +201,6 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_fst_positive
   · rw [update_of_ne hq] at hξR
     exact hend q hq hξ hξc fun z hz ↦ ⟨(hξR hz).1, (hξR hz).2.2⟩
 
-/-- `exp (-2π) / 2 ≤ 1/3`, so the part of the end at `0` beyond the height `1` lies in the disc
-`‖w‖ < 1/3`. -/
-private theorem exp_neg_two_pi_div_two_le : Real.exp (-(2 * Real.pi)) / 2 ≤ 1 / 3 := by
-  have h₁ : 2 * Real.pi + 1 ≤ Real.exp (2 * Real.pi) := Real.add_one_le_exp _
-  have h₂ : Real.exp (-(2 * Real.pi)) * Real.exp (2 * Real.pi) = 1 := by
-    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
-  nlinarith [Real.two_le_pi, Real.exp_pos (-(2 * Real.pi))]
-
 /-- **Patching end estimates into the semi-Fredholm estimate on the pair of pants capped at `0`.**
 Let `J(z)` be compatible along `u` on the capped surface `ℂ ∖ {1}`, with `J` `C¹` and `K_s`, `K_t`
 `C²` at the points `(z, u z)`, and `u` `C¹` there. Suppose that on the input end at `1` and on the
@@ -322,7 +303,7 @@ theorem
     norm_num at h
   have hξ₁A : tsupport ξ₁ ⊆ {z | (positiveEndCoord zero z).1 ≤ 1} := fun z hz ↦ by
     rw [mem_ofPred_eq, fst_positiveEndCoord, endSign_zero, one_mul]
-    exact re_endCoord_zero_le_one (by linarith [h3 hz, exp_neg_two_pi_div_two_le])
+    exact re_endCoord_zero_le_one (by linarith [h3 hz, exp_neg_two_pi_div_two_le_one_third])
   have hξ₀K₀ : tsupport ξ₀ ⊆ K₀ := fun z hz ↦
     by_contra fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hξ₀0 h) hz
   -- The pieces of the estimate, with `X = ∫ ‖D_u ξ‖²` and `Y` the `L²` term of the right side.
@@ -497,29 +478,15 @@ theorem exists_forall_le_mul_integral_floerLinearization_cappedExchangePerturbat
           (fun x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1) ∧
         (fun x ↦ cappedExchangePerturbation H L c (equivRealProdCLM.symm z) x I) =
           fun x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I := by
-    have hpos : 0 < (positiveEndCoord one z).1 := by linarith [h1 hz]
-    have h0 := fst_positiveEndCoord_nonpos_of_ne (by decide : one ≠ zero) hpos
-    rw [fst_positiveEndCoord, endSign_zero, one_mul] at h0
-    have hle : (zero.endCoord (equivRealProdCLM.symm z)).re ≤ L / 2 := by linarith
-    have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁
-      (by decide : one ≠ inf) hpos
-    exact ⟨funext fun x ↦ by rw [cappedExchangePerturbation_of_re_endCoord_le hle, h],
-      funext fun x ↦ by rw [cappedExchangePerturbation_of_re_endCoord_le hle, h]⟩
+    simp only [cappedExchangePerturbation_eq_of_pos_fst_positiveEndCoord_one (H := H) (L := L)
+      (by linarith) hc₀ hc₁ (by linarith [h1 hz] : 0 < (positiveEndCoord one z).1), and_self]
   have hK_inf (z : ℝ × ℝ) (hz : R₂ ≤ (positiveEndCoord inf z).1) :
       (fun x ↦ cappedExchangePerturbation H L c (equivRealProdCLM.symm (z + (c, 0))) x 1) =
           (fun x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1) ∧
         (fun x ↦ cappedExchangePerturbation H L c (equivRealProdCLM.symm (z + (c, 0))) x I) =
           fun x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I := by
-    have h8 := eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf (h1 hz)
-    have hn : 1 / 2 ≤ ‖equivRealProdCLM.symm (z + (c, 0))‖ := by
-      rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero]
-      have h := norm_sub_norm_le (equivRealProdCLM.symm z) (-(c : ℂ))
-      rw [sub_neg_eq_add, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀] at h
-      linarith
-    have hle := re_endCoord_zero_le_half (by linarith : (2 : ℝ) ≤ L) hn
-    have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ (h1 hz)
-    exact ⟨funext fun x ↦ by rw [cappedExchangePerturbation_of_re_endCoord_le hle, h],
-      funext fun x ↦ by rw [cappedExchangePerturbation_of_re_endCoord_le hle, h]⟩
+    simp only [cappedExchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) (L := L)
+      (by linarith) hc₀ hc₁ (h1 hz), and_self]
   -- The end estimates: on the input end at `1` that of the pair of pants, on the output end that
   -- of the recentred end.
   have hend (q : Puncture) : ∃ C R : ℝ, q ≠ zero → ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →

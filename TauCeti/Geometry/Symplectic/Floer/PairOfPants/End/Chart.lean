@@ -129,6 +129,8 @@ apply to all three ends.
   `TauCeti.Floer.exists_positiveEndCoord_positiveEndChart`,
   `TauCeti.Floer.fst_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
   the positive end chart, up to an integer shift of `t`.
+* `TauCeti.Floer.half_le_norm_positiveEndChart`: the parts `s > 0` of the input end at `1` and of
+  the output end lie off the disc `‖w‖ < 1/2`.
 * `TauCeti.Floer.endBandCoord`, `TauCeti.Floer.positiveEndChart_endBandCoord`,
   `TauCeti.Floer.endBandCoord_positiveEndChart`,
   `TauCeti.Floer.image_positiveEndChart_univ_prod_Ico`: the band coordinates, the positive end
@@ -1164,6 +1166,20 @@ theorem fst_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
     (positiveEndCoord q (positiveEndChart q ζ)).1 = ζ.1 := by
   obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
   simp [hk]
+
+/-- A point of the part `s > 0` of the input end at `1` or of the output end lies off the open disc
+`‖w‖ < 1/2`: the circle `s = 0` of the end at `0` bounds that disc. -/
+theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ × ℝ}
+    (hζ : 0 < ζ.1) : 1 / 2 ≤ ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ)‖ := by
+  have hq₀ : 0 < (positiveEndCoord q (positiveEndChart q ζ)).1 := by
+    rwa [fst_positiveEndCoord_positiveEndChart]
+  have h0 := fst_positiveEndCoord_nonpos_of_ne hq hq₀
+  rw [fst_positiveEndCoord, endSign_zero, one_mul] at h0
+  have hS := mem_thricePuncturedSphereReal_iff.1
+    (positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ)
+  have h := (re_endCoord_le_iff (q := zero) (by decide) (r := 0)
+    (by rw [endCenter_zero]; exact hS.1)).1 h0
+  simpa [endCenter_zero] using h
 
 /-- A map of period one in the angular coordinate, read in the positive end coordinates of an end
 and then in its positive end chart, is the map itself. -/
