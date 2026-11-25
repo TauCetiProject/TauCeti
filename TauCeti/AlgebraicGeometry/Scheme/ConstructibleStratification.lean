@@ -327,8 +327,8 @@ lemma Refines.toFiniteStratification_le {T : X.ConstructibleStratification U} (h
   obtain ⟨hs, j, rfl⟩ := T.mem_toFiniteStratification_parts.1 hs
   obtain ⟨i, a, ha⟩ := h j
   have hji : Set.range (T.f j) ⊆ Set.range (S.f i) := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨a x, by rw [← ha, Scheme.Hom.comp_apply]⟩
+    rw [← ha]
+    exact Set.range_comp_subset_range ⇑a ⇑(S.f i)
   exact ⟨_, S.mem_toFiniteStratification_parts.2 ⟨hs.mono (Set.preimage_mono hji), i, rfl⟩,
     Set.preimage_mono hji⟩
 
