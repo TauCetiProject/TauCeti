@@ -43,7 +43,8 @@ The swap reflects the walk and negates `Z`.
 * `TauCeti.Hypergeometric.Parameters.countingFunction`: the counting function `Z`, with
   `height_card_filter_rep_le` and `height_succ_eq_countingFunction`.
 * `TauCeti.Hypergeometric.Parameters.blockStart`: the position of the block of a class, with
-  `take_count_drop_blockStart` and the block form `height_blockStart_add_of_mem_α`.
+  `take_count_drop_blockStart`, `height_blockStart` and the block form
+  `height_blockStart_add_of_mem_α`.
 
 ## References
 
@@ -132,8 +133,7 @@ theorem height_zero : P.height 0 = 0 := by
 
 theorem height_succ (hi : i < P.sortedReps.length) :
     P.height (i + 1) = P.height i + P.step P.sortedReps[i] := by
-  rw [height, height, List.take_add_one, List.getElem?_eq_getElem hi, Option.toList_some,
-    List.map_append, List.sum_append, List.map_singleton, List.sum_singleton]
+  simp [height, List.sum_take_succ _ _ (by simpa using hi : i < (P.sortedReps.map P.step).length)]
 
 /-- The walk moves by a unit step at each of its `2d` steps. -/
 theorem height_succ_eq_add_one_or_sub_one (hi : i < 2 * P.degree) :
@@ -157,9 +157,7 @@ theorem countingFunction_of_one_le (hx : 1 ≤ x) : P.countingFunction x = 0 := 
 list. -/
 private theorem card_filter_eq_countP (p : ℚ → Prop) [DecidablePred p] :
     ((P.α + P.β).filter fun a ↦ p (rep a)).card = P.sortedReps.countP (p ·) := by
-  rw [← Multiset.coe_countP, coe_sortedReps, Multiset.countP_eq_card_filter,
-    Multiset.filter_map, Multiset.card_map]
-  simp only [Function.comp_def]
+  simp [← Multiset.coe_countP, Multiset.countP_eq_card_filter, Multiset.filter_map]
 
 /-- Summing the steps over the classes of `α + β` satisfying `q` gives the number of those in
 `α` minus the number of those in `β`. -/
@@ -179,10 +177,10 @@ private theorem height_card_filter (p : ℚ → Prop) [DecidablePred p]
       (P.α.filter fun a ↦ p (rep a)).card - (P.β.filter fun b ↦ p (rep b)).card := by
   have hpw : P.sortedReps.Pairwise fun x y ↦ decide (p y) → decide (p x) :=
     (List.sortedLE_iff_pairwise.1 P.sortedLE_sortedReps).imp fun hxy ↦ by simpa using hp _ _ hxy
-  rw [card_filter_eq_countP, height, List.take_countP_eq_filter hpw, ← P.sum_map_step_rep_filter,
-    ← Multiset.sum_coe, ← Multiset.map_coe, ← Multiset.filter_coe, coe_sortedReps,
-    Multiset.filter_map, Multiset.map_map]
-  simp only [Function.comp_def]
+  rw [card_filter_eq_countP, height, List.take_countP_eq_filter hpw, ← P.sum_map_step_rep_filter]
+  simpa only [Multiset.filter_coe, Multiset.map_coe, Multiset.sum_coe, Multiset.filter_map,
+    Multiset.map_map, Function.comp_def] using
+    congrArg (fun s : Multiset ℚ ↦ ((s.filter (p ·)).map P.step).sum) P.coe_sortedReps
 
 /-- After the entries at most `x`, the walk is at height `Z(x)`. -/
 theorem height_card_filter_rep_le (x : ℚ) :
@@ -237,13 +235,9 @@ theorem blockStart_def (a : AddCircle (1 : ℚ)) :
 representative plus the multiplicity of `a`. -/
 private theorem card_filter_rep_le (s : Multiset (AddCircle (1 : ℚ))) (a : AddCircle (1 : ℚ)) :
     (s.filter fun c ↦ rep c ≤ rep a).card = (s.filter fun c ↦ rep c < rep a).card + s.count a := by
-  rw [← Multiset.filter_add_not (fun c ↦ rep c < rep a) (s.filter fun c ↦ rep c ≤ rep a),
-    Multiset.card_add, Multiset.filter_filter, Multiset.filter_filter,
-    Multiset.count_eq_card_filter_eq]
-  congr 2
-  · exact Multiset.filter_congr fun c _ ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h, h.le⟩⟩
-  · exact Multiset.filter_congr fun c _ ↦ by
-      rw [not_lt, ← le_antisymm_iff, rep_inj, eq_comm]
+  have h (c : AddCircle (1 : ℚ)) : ¬(rep c < rep a ∧ a = c) := fun ⟨h, hc⟩ ↦ (hc ▸ h).false
+  rw [Multiset.count_eq_card_filter_eq, ← Multiset.card_add, Multiset.filter_add_filter]
+  simp [le_iff_lt_or_eq, rep_inj, eq_comm, h]
 
 /-- The block of a class `a`: the `c` entries of `sortedReps` from position `blockStart a` on,
 with `c` the multiplicity of `a` in `α + β`, all equal `rep a`. -/
@@ -276,26 +270,26 @@ theorem height_blockStart_add (a : AddCircle (1 : ℚ)) (hj : j ≤ (P.α + P.β
     P.height (P.blockStart a + j) = P.height (P.blockStart a) + j * P.step (rep a) := by
   have hblock : (P.sortedReps.drop (P.blockStart a)).take j = List.replicate j (rep a) := by
     rw [← min_eq_left hj, ← List.take_take, P.take_count_drop_blockStart, List.take_replicate]
-  rw [height, height, List.take_add, hblock, List.map_append, List.sum_append, List.map_replicate,
-    List.sum_replicate, nsmul_eq_mul]
+  rw [height, height, List.take_add, hblock]
+  simp
+
+/-- The block of a class `a` starts at height `Z(rep a) - α.count a + β.count a`. -/
+theorem height_blockStart (a : AddCircle (1 : ℚ)) :
+    P.height (P.blockStart a) = P.countingFunction (rep a) - P.α.count a + P.β.count a := by
+  rw [blockStart, P.height_card_filter (· < rep a) fun _ _ hxy hy ↦ hxy.trans_lt hy,
+    countingFunction, card_filter_rep_le, card_filter_rep_le]
+  push_cast
+  ring
 
 /-- The block of a class `a ∈ α` of multiplicity `c` starts at height `Z(rep a) - c`. -/
 theorem height_blockStart_of_mem_α (ha : a ∈ P.α) :
     P.height (P.blockStart a) = P.countingFunction (rep a) - P.α.count a := by
-  rw [blockStart, P.height_card_filter (· < rep a) fun _ _ hxy hy ↦ hxy.trans_lt hy,
-    countingFunction, card_filter_rep_le, card_filter_rep_le,
-    Multiset.count_eq_zero.2 (Multiset.disjoint_left.1 P.disjoint ha)]
-  push_cast
-  ring
+  simp [P.height_blockStart, Multiset.count_eq_zero.2 (Multiset.disjoint_left.1 P.disjoint ha)]
 
 /-- The block of a class `a ∈ β` of multiplicity `c` starts at height `Z(rep a) + c`. -/
 theorem height_blockStart_of_mem_β (ha : a ∈ P.β) :
     P.height (P.blockStart a) = P.countingFunction (rep a) + P.β.count a := by
-  rw [blockStart, P.height_card_filter (· < rep a) fun _ _ hxy hy ↦ hxy.trans_lt hy,
-    countingFunction, card_filter_rep_le, card_filter_rep_le,
-    Multiset.count_eq_zero.2 (Multiset.disjoint_right.1 P.disjoint ha)]
-  push_cast
-  ring
+  simp [P.height_blockStart, Multiset.count_eq_zero.2 (Multiset.disjoint_right.1 P.disjoint ha)]
 
 /-- The block form of the walk at a class `a ∈ α` of multiplicity `c`: after `j ≤ c` steps into
 its block the walk is at `Z(rep a) - c + j`. So the `c` copies of `a` are recorded at the
@@ -335,9 +329,9 @@ theorem step_swap (hx : x ∈ P.sortedReps) : P.swap.step x = -P.step x := by
 /-- The swap reflects the walk. -/
 @[simp]
 theorem height_swap (i : ℕ) : P.swap.height i = -P.height i := by
-  rw [height, height, sortedReps_swap,
-    List.map_congr_left fun q hq ↦ P.step_swap (List.mem_of_mem_take hq), List.sum_neg,
-    List.map_map, Function.comp_def]
+  simp only [height, sortedReps_swap,
+    List.map_congr_left fun _ hq ↦ P.step_swap (List.mem_of_mem_take hq)]
+  simp [List.sum_neg, Function.comp_def]
 
 @[simp]
 theorem countingFunction_swap (x : ℚ) : P.swap.countingFunction x = -P.countingFunction x := by

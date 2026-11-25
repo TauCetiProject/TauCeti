@@ -49,7 +49,7 @@ private theorem rep_one : rep ((1 : ℚ) : AddCircle (1 : ℚ)) = 1 :=
 
 theorem sortedReps_zigzagLegendre : zigzagLegendre.sortedReps = [1 / 2, 1 / 2, 1, 1] := by
   rw [Parameters.sortedReps_eq_iff, List.sortedLE_iff_pairwise]
-  refine ⟨by simp; norm_num, ?_⟩
+  refine ⟨by norm_num, ?_⟩
   simp only [zigzagLegendre, Multiset.insert_eq_cons, Multiset.cons_add, Multiset.singleton_add,
     Multiset.map_cons, Multiset.map_singleton, rep_half, rep_one]
   simp [← Multiset.cons_coe]
@@ -104,7 +104,7 @@ noncomputable def zigzagHalfQuarter : Parameters where
 theorem sortedReps_zigzagHalfQuarter :
     zigzagHalfQuarter.sortedReps = [1 / 4, 1 / 2, 1 / 2, 3 / 4] := by
   rw [Parameters.sortedReps_eq_iff, List.sortedLE_iff_pairwise]
-  refine ⟨by simp; norm_num, ?_⟩
+  refine ⟨by norm_num, ?_⟩
   simp only [zigzagHalfQuarter, Multiset.insert_eq_cons, Multiset.cons_add, Multiset.singleton_add,
     Multiset.map_cons, Multiset.map_singleton, rep_half,
     rep_coe_of_mem (show (1 / 4 : ℚ) ∈ Ioc 0 1 by norm_num),
