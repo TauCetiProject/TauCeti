@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Algebra.Group.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -126,11 +127,6 @@ theorem tateLimit_comp (hd : 1 < d) (hf : ∀ s, |f (φ s) - d * f s| ≤ C) (s 
   simp only [Function.iterate_one, Function.iterate_zero, id_eq, zero_add, pow_one]
   field_simp
   ring
-
-/-- A function that scales by `a` along `φ` scales by `a ^ n` along `φ^[n]`. -/
-theorem apply_iterate_eq_pow_mul {M : Type*} [Monoid M] {a : M} {h : S → M}
-    (hh : ∀ s, h (φ s) = a * h s) (n : ℕ) (s : S) : h (φ^[n] s) = a ^ n * h s :=
-  (Function.Semiconj.iterate_right (gb := (a * ·)) hh n s).trans (mul_left_iterate_apply a _)
 
 /-- Iterating `tateLimit_comp`: `tateLimit φ d f (φ^[n] s) = d ^ n * tateLimit φ d f s`. -/
 theorem tateLimit_iterate (hd : 1 < d) (hf : ∀ s, |f (φ s) - d * f s| ≤ C) (n : ℕ) (s : S) :
