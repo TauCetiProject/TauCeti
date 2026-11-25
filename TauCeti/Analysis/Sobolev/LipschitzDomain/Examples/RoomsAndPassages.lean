@@ -249,10 +249,7 @@ theorem roomsAndPassagesWall_subset_frontier :
 it is an isometric copy of the unit interval. -/
 theorem euclideanHausdorffMeasure_roomsAndPassagesWall :
     (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))) roomsAndPassagesWall = 1 := by
-  have hiso : Isometry fun t : ℝ => toLp 2 ((0 : ℝ), t) :=
-    Isometry.of_dist_eq fun s t => by
-      rw [prod_dist_eq_of_L2]
-      simp [Real.sqrt_sq_eq_abs, Real.dist_eq]
+  have hiso := WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)
   have himage : roomsAndPassagesWall = (fun t : ℝ => toLp 2 ((0 : ℝ), t)) '' Ioo 0 1 := by
     ext x
     rw [mem_roomsAndPassagesWall]
