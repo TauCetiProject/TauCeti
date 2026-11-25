@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Idempotents
+import Mathlib.RingTheory.Nilpotent.Basic
 import TauCeti.Algebra.Module.Projective.LinearMap
 
 /-!
@@ -44,6 +45,8 @@ the reduction map over an `(r)`-adically complete base, without requiring the ke
 * `Ideal.range_pow_le_of_mem_ker_endMapQ` and `Ideal.isNilpotent_of_mem_ker_endMapQ`: an
   endomorphism killed by reduction has `k`-th power with image inside `I ^ k • M`, hence is
   nilpotent as soon as `I` is.
+* `Ideal.isUnit_of_endMapQ_eq_one`: for a nilpotent ideal, an endomorphism reducing to the
+  identity is invertible.
 * `Ideal.exists_isIdempotentElem_endMapQ_eq`: for a projective module and a nilpotent ideal, every
   idempotent endomorphism of `M ⧸ I • M` is the reduction of an idempotent endomorphism of `M`.
 -/
@@ -125,6 +128,15 @@ theorem isNilpotent_of_mem_ker_endMapQ (hI : IsNilpotent I) {f : Module.End R M}
   obtain ⟨m, hm⟩ := hI
   refine ⟨m, LinearMap.range_eq_bot.mp (le_bot_iff.mp ?_)⟩
   simpa [hm] using range_pow_le_of_mem_ker_endMapQ I M hf m
+
+/-- **Units lift along reduction modulo a nilpotent ideal**: an endomorphism of `M` reducing to the
+identity of `M ⧸ I • M` is invertible, since it differs from the identity by a nilpotent
+endomorphism. -/
+theorem isUnit_of_endMapQ_eq_one (hI : IsNilpotent I) {f : Module.End R M}
+    (hf : endMapQ I M f = 1) : IsUnit f := by
+  have h : IsNilpotent (f - 1) :=
+    isNilpotent_of_mem_ker_endMapQ I M hI (by rw [RingHom.mem_ker, map_sub, hf, map_one, sub_self])
+  simpa using h.isUnit_one_add
 
 /-- **Idempotents lift along reduction modulo a nilpotent ideal.** For a projective module `N` and a
 nilpotent ideal `J`, every idempotent endomorphism of `N ⧸ J • N` is the reduction `Ideal.endMapQ`

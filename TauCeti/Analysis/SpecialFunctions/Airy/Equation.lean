@@ -22,6 +22,8 @@ solution satisfies the Riccati equation `W' = z − W²`.
 
 * `TauCeti.deriv_airyAi`, `TauCeti.deriv_airyBi`: the derivatives as regularized `₀F₁` series;
 * `TauCeti.airyAi_ode`, `TauCeti.airyBi_ode`: Airy's equation (DLMF 9.2.1);
+* `TauCeti.hasDerivAt_deriv_of_airy_ode`: the derivative of an entire solution `w` has
+  derivative `z w(z)`;
 * `TauCeti.wronskian_airyAi_airyBi`: `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7);
 * `TauCeti.eq_airy_combination`: every entire solution is
   `π (w(0) Bi′(0) − w′(0) Bi(0)) Ai + π (w′(0) Ai(0) − w(0) Ai′(0)) Bi`;
@@ -158,17 +160,20 @@ theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
     norm_num
     ring
 
+/-- For an entire solution `w` of Airy's equation, `w'` has derivative `z w(z)` at `z`. -/
+theorem hasDerivAt_deriv_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
+    (hw' : ∀ z, deriv^[2] w z = z * w z) (z : ℂ) : HasDerivAt (deriv w) (z * w z) z := by
+  rw [← hw' z, Function.iterate_succ_apply, Function.iterate_one]
+  exact (hw.deriv z).hasDerivAt
+
 /-- The Wronskian of two entire solutions of Airy's equation is constant. -/
 theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
     (hg' : ∀ z, deriv^[2] g z = z * g z) (z w : ℂ) :
     f z * deriv g z - deriv f z * g z = f w * deriv g w - deriv f w * g w := by
-  have h2 {u : ℂ → ℂ} (hu : Differentiable ℂ u) (hu' : ∀ z, deriv^[2] u z = z * u z) (t : ℂ) :
-      HasDerivAt (deriv u) (id t * u t) t := by
-    rw [id, ← hu' t]
-    exact (hu.deriv t).hasDerivAt
-  have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt) (h2 hg hg')
-    (fun t => (hf t).hasDerivAt) (h2 hf hf') z w
+  have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt)
+    (hasDerivAt_deriv_of_airy_ode hg hg') (fun t => (hf t).hasDerivAt)
+    (hasDerivAt_deriv_of_airy_ode hf hf') z w
   linear_combination h
 
 /-- **The Wronskian** `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7). -/

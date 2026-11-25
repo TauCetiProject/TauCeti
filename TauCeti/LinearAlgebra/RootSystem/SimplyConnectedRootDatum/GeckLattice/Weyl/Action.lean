@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
-public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Word
 import TauCeti.RepresentationTheory.ToMultiplicative
 
 /-!
@@ -28,12 +27,10 @@ with the abstract Weyl group.
 
 ## Main declarations
 
-* `TauCeti.DynkinType.geckWeylWordProd`: the abstract Weyl-group element spelled by a word in the
-  Bourbaki nodes.
 * `TauCeti.DynkinType.torusCharacter_geckWeylWordTorusAction`: the contravariant character formula
   for the word-level action.
-* `TauCeti.DynkinType.geckWeylWordTorusAction_eq_of_geckWeylWordProd_eq`: two words spelling the
-  same Weyl element induce the same torus action.
+* `TauCeti.DynkinType.geckWeylWordTorusAction_eq_of_simplyConnectedWeylWordProd_eq`: two words
+  spelling the same Weyl element induce the same torus action.
 * `TauCeti.DynkinType.geckWeylTorusAction`: the resulting action of an abstract Weyl-group element
   on points of the split torus, with `TauCeti.DynkinType.geckWeylTorusAction_mulSingle` computing
   its value on simple-coroot torus points.
@@ -54,58 +51,6 @@ universe v v'
 noncomputable section
 
 variable (t : DynkinType) (ht : t.Valid)
-
-/-! ## Words in the abstract Weyl group -/
-
-/-- **The abstract Weyl-group element spelled by a word in the Bourbaki nodes.** The node indices
-are transported to the support of the pinned simply connected base before multiplying the simple
-reflections. -/
-def geckWeylWordProd (l : List (Fin t.rank)) : (t.simplyConnectedRootDatum ht).weylGroup :=
-  TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-    (l.map (t.simpleSupportEquivSimplyConnectedBase ht))
-
-/-- The empty word spells the identity Weyl-group element. -/
-@[simp]
-theorem geckWeylWordProd_nil : t.geckWeylWordProd ht [] = 1 := by
-  simp [geckWeylWordProd]
-
-/-- Prepending a node multiplies the corresponding simple reflection on the left. -/
-@[simp]
-theorem geckWeylWordProd_cons (i : Fin t.rank) (l : List (Fin t.rank)) :
-    t.geckWeylWordProd ht (i :: l) =
-      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) *
-        t.geckWeylWordProd ht l := by
-  simp [geckWeylWordProd]
-
-/-- Concatenation of node words spells the product of their Weyl-group elements. -/
-@[simp]
-theorem geckWeylWordProd_append (l l' : List (Fin t.rank)) :
-    t.geckWeylWordProd ht (l ++ l') =
-      t.geckWeylWordProd ht l * t.geckWeylWordProd ht l' := by
-  simp [geckWeylWordProd]
-
-/-- Multiplying the simple reflections indexed by a Bourbaki-node word transported along
-`simpleSupportEquivSimplyConnectedBase` recovers `geckWeylWordProd`. -/
-@[simp]
-theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
-    TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-        (l.map (t.simpleSupportEquivSimplyConnectedBase ht)) =
-      t.geckWeylWordProd ht l :=
-  (rfl)
-
-/-- Every Weyl-group element is spelled by a word in the Bourbaki nodes. -/
-theorem geckWeylWordProd_surjective : Function.Surjective (t.geckWeylWordProd ht) := by
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  intro w
-  obtain ⟨l, hl⟩ := TauCeti.exists_wordProd_eq
-    (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w
-  refine ⟨l.map (t.simpleSupportEquivSimplyConnectedBase ht).symm, ?_⟩
-  have hmap :
-      (l.map (t.simpleSupportEquivSimplyConnectedBase ht).symm).map
-          (t.simpleSupportEquivSimplyConnectedBase ht) = l := by
-    simp
-  rw [geckWeylWordProd, hmap]
-  exact hl
 
 /-! ## Characters of the word-level action -/
 
@@ -129,19 +74,21 @@ points is dual to the action of `w⁻¹` on the character lattice. -/
 theorem torusCharacter_geckWeylWordTorusAction (l : List (Fin t.rank))
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) (mu : Fin t.rank → ℤ) :
     TauCeti.torusCharacter (t.geckWeylWordTorusAction ht l A s) mu =
-      TauCeti.torusCharacter s ((t.geckWeylWordProd ht l)⁻¹ • mu) := by
+      TauCeti.torusCharacter s ((t.simplyConnectedWeylWordProd ht l)⁻¹ • mu) := by
   induction l generalizing mu with
   | nil => simp
   | cons i l ih =>
       rw [geckWeylWordTorusAction_cons, MonoidHom.comp_apply,
         t.torusCharacter_geckSimpleReflectionTorusPoint ht, ih,
-        geckWeylWordProd_cons, mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq, mul_smul]
+        simplyConnectedWeylWordProd_cons, mul_inv_rev, RootPairing.weylGroup.ofIdx_inv_eq,
+        mul_smul]
 
 /-- **Weyl words spelling the same abstract element induce the same action on the split torus.**
 This holds over every commutative coefficient ring: the coordinate characters already separate
 torus points. -/
-theorem geckWeylWordTorusAction_eq_of_geckWeylWordProd_eq
-    {l l' : List (Fin t.rank)} (h : t.geckWeylWordProd ht l = t.geckWeylWordProd ht l')
+theorem geckWeylWordTorusAction_eq_of_simplyConnectedWeylWordProd_eq
+    {l l' : List (Fin t.rank)}
+    (h : t.simplyConnectedWeylWordProd ht l = t.simplyConnectedWeylWordProd ht l')
     (A : Type v) [CommRing A] :
     t.geckWeylWordTorusAction ht l A = t.geckWeylWordTorusAction ht l' A := by
   apply MonoidHom.ext
@@ -159,14 +106,14 @@ private noncomputable def geckWeylTorusEndomorphism
     (w : (t.simplyConnectedRootDatum ht).weylGroup)
     (A : Type v) [CommRing A] : (Fin t.rank → Aˣ) →* (Fin t.rank → Aˣ) :=
   t.geckWeylWordTorusAction ht
-    (Function.surjInv (t.geckWeylWordProd_surjective ht) w) A
+    (Function.surjInv (t.simplyConnectedWeylWordProd_surjective ht) w) A
 
 private theorem geckWeylTorusEndomorphism_eq_word
     {w : (t.simplyConnectedRootDatum ht).weylGroup} {l : List (Fin t.rank)}
-    (hl : t.geckWeylWordProd ht l = w) (A : Type v) [CommRing A] :
+    (hl : t.simplyConnectedWeylWordProd ht l = w) (A : Type v) [CommRing A] :
     t.geckWeylTorusEndomorphism ht w A = t.geckWeylWordTorusAction ht l A := by
-  apply t.geckWeylWordTorusAction_eq_of_geckWeylWordProd_eq ht
-  rw [Function.surjInv_eq (t.geckWeylWordProd_surjective ht), hl]
+  apply t.geckWeylWordTorusAction_eq_of_simplyConnectedWeylWordProd_eq ht
+  rw [Function.surjInv_eq (t.simplyConnectedWeylWordProd_surjective ht), hl]
 
 private theorem geckWeylTorusEndomorphism_one (A : Type v) [CommRing A] :
     t.geckWeylTorusEndomorphism ht 1 A = MonoidHom.id _ := by
@@ -179,8 +126,8 @@ private theorem geckWeylTorusEndomorphism_mul
     t.geckWeylTorusEndomorphism ht (w * w') A =
       (t.geckWeylTorusEndomorphism ht w A).comp
         (t.geckWeylTorusEndomorphism ht w' A) := by
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
-  obtain ⟨l', rfl⟩ := t.geckWeylWordProd_surjective ht w'
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
+  obtain ⟨l', rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w'
   rw [t.geckWeylTorusEndomorphism_eq_word ht (l := l ++ l') (by simp),
     geckWeylWordTorusAction_append,
     t.geckWeylTorusEndomorphism_eq_word ht (l := l) rfl,
@@ -219,14 +166,14 @@ noncomputable def geckWeylTorusAction (A : Type v) [CommRing A] :
 
 /-- The abstract Weyl action agrees with the word-level action of any word spelling the element. -/
 theorem geckWeylTorusAction_eq_word {w : (t.simplyConnectedRootDatum ht).weylGroup}
-    {l : List (Fin t.rank)} (hl : t.geckWeylWordProd ht l = w)
+    {l : List (Fin t.rank)} (hl : t.simplyConnectedWeylWordProd ht l = w)
     (A : Type v) [CommRing A] :
     (t.geckWeylTorusAction ht A w).toMonoidHom = t.geckWeylWordTorusAction ht l A := by
   exact t.geckWeylTorusEndomorphism_eq_word ht hl A
 
 /-- Pointwise form of `geckWeylTorusAction_eq_word`. -/
 theorem geckWeylTorusAction_apply_eq_word {w : (t.simplyConnectedRootDatum ht).weylGroup}
-    {l : List (Fin t.rank)} (hl : t.geckWeylWordProd ht l = w)
+    {l : List (Fin t.rank)} (hl : t.simplyConnectedWeylWordProd ht l = w)
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     t.geckWeylTorusAction ht A w s = t.geckWeylWordTorusAction ht l A s := by
   exact DFunLike.congr_fun (t.geckWeylTorusAction_eq_word ht hl A) s
@@ -235,7 +182,7 @@ theorem geckWeylTorusAction_apply_eq_word {w : (t.simplyConnectedRootDatum ht).w
 theorem geckWeylWordTorusAction_geckWeylTorusAction_inv (l : List (Fin t.rank))
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     t.geckWeylWordTorusAction ht l A
-        (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s) = s := by
+        (t.geckWeylTorusAction ht A (t.simplyConnectedWeylWordProd ht l)⁻¹ s) = s := by
   rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
     mul_inv_cancel, map_one, MulAut.one_apply]
 
@@ -260,7 +207,7 @@ theorem map_geckWeylTorusAction {A : Type v} {B : Type v'} [CommRing A] [CommRin
     (s : Fin t.rank → Aˣ) (i : Fin t.rank) :
     Units.map (f : A →* B) (t.geckWeylTorusAction ht A w s i) =
       t.geckWeylTorusAction ht B w (fun j ↦ Units.map (f : A →* B) (s j)) i := by
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   rw [t.geckWeylTorusAction_apply_eq_word ht (l := l) rfl,
     t.geckWeylTorusAction_apply_eq_word ht (l := l) rfl]
   exact t.map_geckWeylWordTorusAction ht f l s i
@@ -272,7 +219,7 @@ theorem torusCharacter_geckWeylTorusAction
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) (mu : Fin t.rank → ℤ) :
     TauCeti.torusCharacter (t.geckWeylTorusAction ht A w s) mu =
       TauCeti.torusCharacter s (w⁻¹ • mu) := by
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   rw [t.geckWeylTorusAction_apply_eq_word ht (l := l) rfl]
   exact t.torusCharacter_geckWeylWordTorusAction ht l A s mu
 
