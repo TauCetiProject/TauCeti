@@ -74,15 +74,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 private theorem one_le_one_add (K : ℝ≥0) : (1 : ℝ) ≤ 1 + K :=
   le_add_of_nonneg_right K.coe_nonneg
 
-omit [InnerProductSpace ℝ E] in
-/-- Inverse graph flattening pulls the region above the graph of `φ` back to the half-space
-`{0 < t}`. -/
-theorem coe_normalHalfSpace_eq_preimage_graphFlattening_symm (φ : C(E, ℝ)) :
-    (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) =
-      (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ := by
-  rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt,
-    coe_normalHalfSpace]
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-! ### Flattening `W^{1,p}` of the region above a Lipschitz graph -/
