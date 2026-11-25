@@ -13,6 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The logarithmic potential of the uniform law on a disc
@@ -60,6 +61,19 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
+/-- The logarithmic kernel `w ↦ log ‖z - w‖` is integrable on every closed disc. -/
+private theorem integrableOn_closedBall_log_norm_sub (c z : ℂ) (r : ℝ) :
+    IntegrableOn (fun w ↦ log ‖z - w‖) (closedBall c r) := by
+  -- The kernel is a reflected translate of the locally integrable `log ‖·‖`.
+  have hK : IntegrableOn (fun x : ℂ ↦ log ‖x‖) (closedBall (z - c) r) :=
+    locallyIntegrable_log_norm.integrableOn_isCompact (isCompact_closedBall _ _)
+  have hpre : (fun w ↦ z - w) ⁻¹' closedBall (z - c) r = closedBall c r := by
+    ext w
+    simp [dist_eq_norm, norm_sub_rev]
+  rw [← hpre]
+  exact ((volume.measurePreserving_sub_left z).integrableOn_comp_preimage
+    (Homeomorph.subLeft z).measurableEmbedding).2 hK
+
 /-- For every `z : ℂ`, the logarithmic kernel `w ↦ log ‖z - w‖` is integrable against the uniform
 law on a disc of any radius, so the logarithmic potential of the law is a genuine integral at every
 point. -/
@@ -68,18 +82,8 @@ theorem integrable_log_norm_sub_uniformBallMeasure (c z : ℂ) (r : ℝ) :
   rcases lt_trichotomy r 0 with hr | rfl | hr
   · simp [uniformBallMeasure_of_neg hr]
   · simpa using integrable_dirac (f := fun w ↦ log ‖z - w‖) (by simp)
-  -- The kernel is a reflected translate of the locally integrable `log ‖·‖`.
-  have hK : IntegrableOn (fun x : ℂ ↦ log ‖x‖) (closedBall (z - c) r) :=
-    locallyIntegrable_log_norm.integrableOn_isCompact (isCompact_closedBall _ _)
-  have hpre : (fun w ↦ z - w) ⁻¹' closedBall (z - c) r = closedBall c r := by
-    ext w
-    simp [dist_eq_norm, norm_sub_rev]
-  have hcl : IntegrableOn (fun w ↦ log ‖z - w‖) (closedBall c r) := by
-    rw [← hpre]
-    exact ((volume.measurePreserving_sub_left z).integrableOn_comp_preimage
-      (Homeomorph.subLeft z).measurableEmbedding).2 hK
   rw [uniformBallMeasure_of_ne_zero hr.ne', ProbabilityTheory.cond]
-  exact (hcl.mono_set ball_subset_closedBall).smul_measure
+  exact ((integrableOn_closedBall_log_norm_sub c z r).mono_set ball_subset_closedBall).smul_measure
     (ENNReal.inv_ne_top.2 (measure_ball_pos volume c hr).ne')
 
 /-- The logarithmic potential of the uniform law on a disc of radius `r > 0` as the radial
@@ -88,16 +92,11 @@ private theorem logarithmicPotential_uniformBallMeasure_eq_integral (c z : ℂ) 
     (hr : 0 < r) :
     (uniformBallMeasure c r).logarithmicPotential z =
       2 / r ^ 2 * ∫ ρ in 0..r, ρ * log (max ρ ‖z - c‖) := by
-  have hint := integrable_log_norm_sub_uniformBallMeasure c z r
-  rw [uniformBallMeasure_of_ne_zero hr.ne', ProbabilityTheory.cond,
-    integrable_smul_measure (ENNReal.inv_ne_zero.2 measure_ball_lt_top.ne)
-      (ENNReal.inv_ne_top.2 (measure_ball_pos volume c hr).ne')] at hint
-  have hball : IntegrableOn (fun w ↦ log ‖z - w‖) (ball c r) := hint
   have hset : {w : ℂ | 0 ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ r} = closedBall c r := by
     ext w
     simp [dist_eq_norm]
   have hcl : IntegrableOn (fun w ↦ log ‖z - w‖) {w : ℂ | 0 ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ r} :=
-    hset ▸ hball.congr_set_ae (volume.addHaar_closedBall_ae_eq_ball c r)
+    hset ▸ integrableOn_closedBall_log_norm_sub c z r
   -- Integrate over the closed disc in polar coordinates about `c`.
   have hpolar : ∫ w in ball c r, log ‖z - w‖ =
       2 * π * ∫ ρ in 0..r, ρ * log (max ρ ‖z - c‖) := by
@@ -125,9 +124,8 @@ private theorem logarithmicPotential_uniformBallMeasure_eq_integral (c z : ℂ) 
     rw [hcircle, hmax, smul_eq_mul]
     ring
   rw [Measure.logarithmicPotential_def, uniformBallMeasure_of_ne_zero hr.ne',
-    ProbabilityTheory.cond, integral_smul_measure, hpolar, Complex.volume_ball,
-    ENNReal.toReal_inv, ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr.le,
-    ENNReal.coe_toReal, NNReal.coe_real_pi, smul_eq_mul]
+    ProbabilityTheory.cond, integral_smul_measure, hpolar, ENNReal.toReal_inv, ← measureReal_def,
+    Complex.volume_real_ball c hr.le, smul_eq_mul]
   field_simp
 
 /-- **The logarithmic potential of the uniform law on a disc, outside the disc.** For a radius
