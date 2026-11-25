@@ -67,7 +67,7 @@ morphism descends to `ℝ` (`BialgHom.galoisDescend`).
 public section
 
 open CategoryTheory TauCeti.DeligneTorus TauCeti.GeneralLinear WithConv
-open scoped TensorProduct
+open scoped TensorProduct Matrix
 
 namespace TauCeti.Hodge.HodgeStructureOn
 
@@ -129,6 +129,34 @@ theorem splitCoordinateMatrix_apply (i j : Fin d) :
     hs.splitCoordinateMatrix e i j = ∑ p ∈ hs.hodgeSupport,
       MonoidAlgebra.single (Multiplicative.ofAdd (-p, p - n)) (e.repr (hs.proj p (e j)) i) :=
   (rfl)
+
+/-- The matrix of the complexified action of `S` in the basis `e`, applied to the coordinates of a
+vector of `H^{p,n-p}`, multiplies them by the character `X^{(-p,p-n)}`. -/
+theorem splitCoordinateMatrix_mulVec_of_mem {p : ℤ} {v : W} (hv : v ∈ hs.piece p) :
+    hs.splitCoordinateMatrix e *ᵥ
+        (algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ∘ e.repr v) =
+      MonoidAlgebra.single (Multiplicative.ofAdd (-p, p - n)) (1 : ℂ) •
+        (algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ∘ e.repr v) := by
+  funext i
+  simp only [Matrix.mulVec, dotProduct, splitCoordinateMatrix_apply, Finset.sum_mul,
+    Pi.smul_apply, smul_eq_mul, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
+    Algebra.algebraMap_self, RingHom.id_apply, MonoidAlgebra.single_mul_single, mul_one, one_mul]
+  rw [Finset.sum_comm]
+  have hp' (p' : ℤ) : ∑ j, MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n))
+      (e.repr (hs.proj p' (e j)) i * e.repr v j) =
+        MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n)) (e.repr (hs.proj p' v) i) := by
+    simp_rw [← MonoidAlgebra.singleAddHom_apply, ← map_sum,
+      ← LinearMap.toMatrix_mulVec_repr e e (hs.proj p') v, Matrix.mulVec, dotProduct,
+      LinearMap.toMatrix_apply]
+  simp_rw [hp']
+  by_cases hmem : p ∈ hs.hodgeSupport
+  · rw [Finset.sum_eq_single p (fun p' _ hp'p ↦ by
+      rw [hs.proj_apply_eq_zero_of_mem_of_ne hv (Ne.symm hp'p), map_zero, Finsupp.zero_apply,
+        MonoidAlgebra.single_zero]) (fun h ↦ absurd hmem h), hs.proj_apply_of_mem hv]
+  · have hv0 : v = 0 := by
+      have hbot : hs.piece p = ⊥ := by simpa [mem_hodgeSupport] using hmem
+      simpa [hbot] using hv
+    simp [hv0]
 
 /-- **The complexified action of `S` on coordinate rings**: the morphism of Hopf `ℂ`-algebras
 `O(GL_d)_ℂ → ℂ[ℤ²]` of the comodule `DirectSum.IsInternal.monoidAlgebraComodule` given by the
@@ -282,6 +310,19 @@ theorem realCoordinateBialgHom_genericMatrix (he : ∀ i, ω.toEquiv (e i) = e i
     Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   rw [h2, map_smul, map_smul, liftEquiv_splittingBialgEquiv_symm_single, smul_eq_mul, mul_comm]
+
+/-- The universal point of `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ` acts through `h` by the matrix
+`∑ p, P p * X^{(-p, p - n)}` of the Hodge projections. -/
+theorem coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom
+    (he : ∀ i, ω.toEquiv (e i) = e i) :
+    (pointToGeneralLinear d (toConv (splittingPoint.ofConv.comp
+      (hs.realCoordinateBialgHom he : coordinateHopfAlgebra ℝ d →ₐ[ℝ] S))) :
+        Matrix (Fin d) (Fin d) (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))) =
+      hs.splitCoordinateMatrix e := by
+  rw [← map_genericMatrix_eq_coe_pointToGeneralLinear]
+  refine Matrix.ext fun i j ↦ ?_
+  simp [← splittingBialgEquiv_one_tmul, one_tmul_realCoordinateBialgHom, genericMatrix_apply,
+    complexCoordinateBialgHom_one_tmul_X]
 
 end Real
 
