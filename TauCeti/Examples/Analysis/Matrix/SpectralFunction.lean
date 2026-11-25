@@ -48,6 +48,10 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 /-- The geometric mean `σ₂^{1/2}` on `ℝ²`. -/
 noncomputable def geomMean (μ : Fin 2 → ℝ) : ℝ := (μ 0 * μ 1) ^ (2⁻¹ : ℝ)
 
+/-- Unfold `TauCeti.SpectralFunctionExamples.geomMean`. -/
+theorem geomMean_def (μ : Fin 2 → ℝ) : geomMean μ = (μ 0 * μ 1) ^ (2⁻¹ : ℝ) :=
+  (rfl)
+
 /-- The spectral function of the geometric mean is `det^{1/2}`. -/
 theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHermitian) :
     geomMean hA.eigenvalues₀ = RCLike.re A.det ^ (2⁻¹ : ℝ) := by
@@ -160,6 +164,10 @@ def minPair (μ : Fin 2 → ℝ) : ℝ := min (μ 0) (μ 1)
 
 /-- The larger coordinate of a vector in `ℝ²`. -/
 def maxPair (μ : Fin 2 → ℝ) : ℝ := max (μ 0) (μ 1)
+
+/-- Unfold `TauCeti.SpectralFunctionExamples.maxPair`. -/
+theorem maxPair_def (μ : Fin 2 → ℝ) : maxPair μ = max (μ 0) (μ 1) :=
+  (rfl)
 
 /-- **The smallest eigenvalue is concave**: `min` is symmetric and concave on `ℝ²`, so its
 spectral function `λ₂` is concave on the Hermitian `2 × 2` matrices. -/
