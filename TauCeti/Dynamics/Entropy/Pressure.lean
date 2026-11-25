@@ -40,6 +40,8 @@ n x)` are all `1` for `φ = 0`.
 * `TauCeti.topologicalPressure_zero` — `P(T, 0)` is the topological entropy `coverEntropy T univ`.
 * `TauCeti.topologicalPressure_mono` — pressure is monotone in the potential.
 * `TauCeti.topologicalPressure_add_const` — `P(T, φ + c) = P(T, φ) + c`.
+* `TauCeti.pressureNetSum_monotone_time` — for a nonnegative potential the pressure sums are
+  monotone in time.
 
 The net-based definitions and their antitonicity lemmas are modelled on `netMaxcard` and
 `netEntropyEntourage` in Mathlib's `Mathlib/Dynamics/TopologicalEntropy/NetEntropy.lean`
@@ -158,6 +160,18 @@ theorem pressureNetSum_mono (h : φ ≤ ψ) (U : SetRel X X) (n : ℕ) :
   refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
   exact Finset.sum_le_sum fun k _ ↦ h _
 
+/-- For a nonnegative potential the pressure sums are monotone in time: nets at time `m` are nets
+at every later time, and the Birkhoff sums increase. -/
+theorem pressureNetSum_monotone_time (hφ : 0 ≤ φ) (T : X → X) (U : SetRel X X) :
+    Monotone (pressureNetSum T φ U) := by
+  intro m n hmn
+  rw [pressureNetSum_le_iff]
+  intro s hs
+  refine le_trans ?_ (hs.of_le hmn).sum_le_pressureNetSum
+  refine Finset.sum_le_sum fun x _ ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+  exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_subset_range.mpr hmn)
+    fun _ _ _ ↦ hφ _
+
 /-- Pressure is monotone in the potential. -/
 theorem topologicalPressure_mono [UniformSpace X] (h : φ ≤ ψ) :
     topologicalPressure T φ ≤ topologicalPressure T ψ :=
@@ -174,13 +188,18 @@ theorem pressureNetSum_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : S
   refine iSup_congr fun s ↦ iSup_congr fun _ ↦ Finset.sum_congr rfl fun x _ ↦ ?_
   rw [mul_comm, ENNReal.ofReal_mul (Real.exp_pos _).le]
 
+/-- Adding a constant `c` to the potential multiplies the pressure sum at time `n` by
+`EReal.exp (c * n)`: the form of `pressureNetSum_add_const` used with growth rates. -/
+theorem pressureNetSum_add_const_eq_exp_mul (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X)
+    (n : ℕ) :
+    pressureNetSum T (fun x ↦ φ x + c) U n = EReal.exp (c * n) * pressureNetSum T φ U n := by
+  simp [pressureNetSum_add_const, ← EReal.exp_coe, mul_comm]
+
 /-- Adding a constant `c` to the potential adds `c` to the pressure at every entourage. -/
 theorem netPressureEntourage_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X) :
     netPressureEntourage T (fun x ↦ φ x + c) U = netPressureEntourage T φ U + c := by
-  have hfun : pressureNetSum T (fun x ↦ φ x + c) U =
-      fun n : ℕ ↦ EReal.exp (c * n) * pressureNetSum T φ U n := funext fun n ↦ by
-    simp [pressureNetSum_add_const, ← EReal.exp_coe, mul_comm]
-  rw [netPressureEntourage_def, netPressureEntourage_def, hfun, expGrowthSup_exp_mul, add_comm]
+  rw [netPressureEntourage_def, netPressureEntourage_def,
+    funext (pressureNetSum_add_const_eq_exp_mul T φ c U), expGrowthSup_exp_mul, add_comm]
 
 /-- Adding a constant `c` to the potential adds `c` to the pressure. -/
 theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X → ℝ) (c : ℝ) :
