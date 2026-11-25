@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finsupp.Pointwise
 public import TauCeti.RingTheory.Idempotented.Basic
 
 /-!
@@ -32,29 +33,16 @@ namespace TauCeti.Examples.Idempotented
 
 variable (A : Type*) [CommRing A]
 
-/-- The inclusion `⊕_n A → ∏_n A`, a homomorphism of nonunital `A`-algebras. -/
-@[expose]
-noncomputable def finsuppToPi : (ℕ →₀ A) →ₙₐ[A] (ℕ → A) where
-  toFun f := f
-  map_smul' _ _ := Finsupp.coe_smul _ _
-  map_zero' := Finsupp.coe_zero
-  map_add' := Finsupp.coe_add
-  map_mul' := Finsupp.coe_mul
-
-/-- The inclusion `⊕_n A → ∏_n A` is the coercion to functions. -/
-@[simp]
-theorem finsuppToPi_apply (f : ℕ →₀ A) : finsuppToPi A f = f :=
-  rfl
-
-/-- `∏_n A` as a module over the unitization of `⊕_n A`, through the inclusion. -/
+/-- `∏_n A` as a module over the unitization of `⊕_n A`, through the inclusion
+`Finsupp.coeFnNonUnitalAlgHom`. -/
 noncomputable abbrev piModule : Module (Unitization A (ℕ →₀ A)) (ℕ → A) :=
-  Module.compHom (ℕ → A) (Unitization.lift (finsuppToPi A)).toRingHom
+  Module.compHom (ℕ → A) (Unitization.lift (Finsupp.coeFnNonUnitalAlgHom A)).toRingHom
 
 attribute [local instance] piModule
 
 /-- The action of `A ⊕ (⊕_n A)` on `∏_n A`: apply the inclusion, then multiply. -/
 theorem piModule_smul (r : Unitization A (ℕ →₀ A)) (m : ℕ → A) :
-    r • m = Unitization.lift (finsuppToPi A) r * m :=
+    r • m = Unitization.lift (Finsupp.coeFnNonUnitalAlgHom A) r * m :=
   rfl
 
 /-- `⊕_n A` with the componentwise product is idempotented. -/

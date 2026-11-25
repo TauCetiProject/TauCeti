@@ -10,7 +10,6 @@ public import Mathlib.Data.Finsupp.Pointwise
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.Algebra.Algebra.Unitization
-public import TauCeti.Data.Finsupp.Pointwise
 
 /-!
 # Idempotented algebras and their nondegenerate modules
