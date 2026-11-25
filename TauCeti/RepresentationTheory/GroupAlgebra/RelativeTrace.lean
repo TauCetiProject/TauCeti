@@ -67,6 +67,7 @@ are described through them.
 
 * `TauCeti.conjInvariants_top`, `TauCeti.conjInvariants_bot`: `R[G]^G = Z(R[G])` and
   `R[G]^1 = R[G]`.
+* `TauCeti.conjInvariants_top_mul_comm`: `R[G]^G` is commutative.
 * `TauCeti.mem_conjInvariants_closure_iff`: `R[G]^{⟨S⟩}` is the centralizer of `S`.
 * `TauCeti.relTrace_apply_eq_sum_of_bijective`: `Tr_Q^P(a) = ∑ᵢ sᵢ a sᵢ⁻¹` for every transversal.
 * `TauCeti.relTrace_self`, `TauCeti.relTrace_apply_of_mem`: `Tr_P^P = id`, and
@@ -247,6 +248,13 @@ theorem conjInvariants_top :
   | of g => exact hx g (Subgroup.mem_top g)
   | add y z hy hz => rw [add_mul, mul_add, hy, hz]
   | smul r y hy => rw [smul_mul_assoc, mul_smul_comm, hy]
+
+/-- The centre `R[G]^G` is commutative. -/
+theorem conjInvariants_top_mul_comm (x y : conjInvariants R (⊤ : Subgroup G)) :
+    x * y = y * x := Subtype.ext <| by
+  have hy : (y : MonoidAlgebra R G) ∈ Subalgebra.center R (MonoidAlgebra R G) := by
+    rw [← conjInvariants_top]; exact y.property
+  exact Subalgebra.mem_center_iff.1 hy x
 
 /-- The trivial subgroup fixes all of `R[G]`. -/
 @[simp]

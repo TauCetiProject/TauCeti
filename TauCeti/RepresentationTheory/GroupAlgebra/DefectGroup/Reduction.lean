@@ -26,14 +26,11 @@ the finitely generated `R`-module `Z b` gives `Z b = T b`, so `b ∈ T`.
 
 So the defect groups of the reduction of a block idempotent `b`, read through the minimal trace
 subgroups of `π(b)` (`TauCeti.isDefectGroup_iff_minimal`), are exactly the subgroups `D` minimal
-with `b ∈ Tr_D^G(R[G]^D)` (`TauCeti.isDefectGroup_conjInvariantsMap_iff_minimal`). This is the
-bullet on defect groups over `O` of ModularCharactersAndBlocks §6.2 (Webb, §12.3, p. 235, and
-Theorem 12.4.5, p. 241).
+with `b ∈ Tr_D^G(R[G]^D)` (`TauCeti.isDefectGroup_conjInvariantsMap_iff_minimal`; Webb, §12.3,
+p. 235, and Theorem 12.4.5, p. 241).
 
 ## Main results
 
-* `TauCeti.mem_smul_top_of_conjInvariantsMap_eq_zero`: an element of `R[G]^H` with zero reduction
-  is a combination of elements of `R[G]^H` with coefficients in `ker π`.
 * `TauCeti.mem_relTraceIdeal_iff_conjInvariantsMap_mem`: a central idempotent is a trace from `P`
   exactly when its reduction is.
 * `TauCeti.isDefectGroup_conjInvariantsMap_iff_minimal`: the defect groups of the reduction of a
@@ -52,19 +49,7 @@ namespace TauCeti
 
 open MonoidAlgebra
 
-variable {R S G : Type*} [CommRing R] [CommRing S] [Group G] (π : R →+* S)
-
-/-- An element of `R[G]^H` whose reduction along `π` vanishes lies in `(ker π) • R[G]^H`: its
-coordinates in the basis of orbit sums lie in `ker π`. -/
-theorem mem_smul_top_of_conjInvariantsMap_eq_zero {H : Subgroup G} [Finite H]
-    {x : conjInvariants R H} (hx : conjInvariantsMap π H x = 0) :
-    x ∈ RingHom.ker π • (⊤ : Submodule R (conjInvariants R H)) := by
-  rw [← (conjInvariantsBasis R H).linearCombination_repr x, Finsupp.linearCombination_apply]
-  refine Submodule.sum_mem _ fun O _ => Submodule.smul_mem_smul ?_ Submodule.mem_top
-  rw [RingHom.mem_ker, ← conjInvariantsBasis_repr_conjInvariantsMap, hx, map_zero,
-    Finsupp.zero_apply]
-
-variable [Finite G] {π}
+variable {R S G : Type*} [CommRing R] [CommRing S] [Group G] [Finite G] {π : R →+* S}
 
 /-- **A central idempotent is a trace from `P` exactly when its reduction is.** Let
 `π : R → S` be a surjective homomorphism of commutative rings whose kernel lies in the Jacobson
@@ -80,17 +65,11 @@ theorem mem_relTraceIdeal_iff_conjInvariantsMap_mem (hπ : Function.Surjective �
     exact (mem_relTraceIdeal_iff le_top).2
       ⟨conjInvariantsMap π P a, by rw [← ha, conjInvariantsMap_relTrace]⟩
   obtain ⟨a', ha'⟩ := (mem_relTraceIdeal_iff le_top).1 h
-  -- Elements of `R[G]^G` commute with each other.
-  have hcomm (x y : conjInvariants R (⊤ : Subgroup G)) : x * y = y * x := Subtype.ext <| by
-    have hy : (y : MonoidAlgebra R G) ∈ Subalgebra.center R (MonoidAlgebra R G) := by
-      rw [← conjInvariants_top]; exact y.property
-    rw [Subalgebra.coe_mul, Subalgebra.coe_mul]
-    exact Subalgebra.mem_center_iff.1 hy x
   obtain ⟨a, rfl⟩ := conjInvariantsMap_surjective π hπ P a'
   set T := relTraceIdeal R (le_top : P ≤ ⊤)
   set t := b * relTrace R P ⊤ a
   have htT : t ∈ T := T.mul_mem_left b (relTrace_mem_relTraceIdeal _ a)
-  have htb : t * b = t := by rw [hcomm, ← mul_assoc, hb.eq]
+  have htb : t * b = t := by rw [conjInvariants_top_mul_comm, ← mul_assoc, hb.eq]
   have hbt : b - t ∈ RingHom.ker π • (⊤ : Submodule R (conjInvariants R (⊤ : Subgroup G))) := by
     refine mem_smul_top_of_conjInvariantsMap_eq_zero π ?_
     rw [map_sub, map_mul, conjInvariantsMap_relTrace, ha',
@@ -99,8 +78,6 @@ theorem mem_relTraceIdeal_iff_conjInvariantsMap_mem (hπ : Function.Surjective �
   let f := LinearMap.mulRight R b
   let M := Submodule.map f ⊤
   let N := Submodule.map f (T.restrictScalars R)
-  have : Module.Finite R (conjInvariants R (⊤ : Subgroup G)) :=
-    .of_basis (conjInvariantsBasis R (⊤ : Subgroup G))
   have hM : M.FG := Submodule.FG.map f
     (Module.Finite.fg_top (R := R) (M := conjInvariants R (⊤ : Subgroup G)))
   have hMN : M ≤ N ⊔ RingHom.ker π • M := by
@@ -111,11 +88,9 @@ theorem mem_relTraceIdeal_iff_conjInvariantsMap_mem (hπ : Function.Surjective �
     rw [hsplit]
     refine Submodule.add_mem_sup ⟨z * t, T.mul_mem_left z htT, rfl⟩ ?_
     have hz : z * (b - t) ∈ RingHom.ker π • (⊤ : Submodule R (conjInvariants R ⊤)) := by
-      refine Submodule.smul_induction_on hbt (fun r hr y _ => ?_) fun x y hx hy => ?_
-      · rw [mul_smul_comm]
-        exact Submodule.smul_mem_smul hr Submodule.mem_top
-      · rw [mul_add]
-        exact Submodule.add_mem _ hx hy
+      have := Submodule.mem_map_of_mem (f := LinearMap.mulLeft R z) hbt
+      rw [Submodule.map_smul''] at this
+      exact Submodule.smul_mono le_rfl le_top this
     have := Submodule.mem_map_of_mem (f := f) hz
     rwa [Submodule.map_smul''] at this
   obtain ⟨y, hy, hyb⟩ := Submodule.mem_map.1 (Submodule.le_of_le_smul_of_le_jacobson hM hker hMN
