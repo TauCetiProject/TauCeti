@@ -10,7 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 import Mathlib.Data.Nat.Totient
-import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # The Stickelberger element and the integral Stickelberger ideal
@@ -240,8 +240,8 @@ theorem mem_stickelbergerDenominatorIdeal_iff_sum_eq_zero {x : MonoidAlgebra ℤ
     rw [ZMod.intCast_zmod_eq_zero_iff_dvd, ← Rat.den_div_intCast_eq_one_iff z m
       (by exact_mod_cast NeZero.ne m), Int.cast_natCast, Rat.den_eq_one_iff]
     exact ⟨fun ⟨n, hn⟩ ↦ by rw [← hn, Rat.num_intCast], fun h ↦ ⟨_, h⟩⟩
-  rw [mem_stickelbergerDenominatorIdeal_iff, ← Set.mem_range, mem_range_mapRingHom_iff]
-  simp only [Set.mem_range, eq_intCast, coeff_mapRingHom_mul_stickelberger, hint, key,
+  rw [mem_stickelbergerDenominatorIdeal_iff, ← RingHom.mem_rangeS, mem_rangeS_mapRingHom_iff]
+  simp only [RingHom.mem_rangeS, eq_intCast, coeff_mapRingHom_mul_stickelberger, hint, key,
     Units.mul_right_eq_zero]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
 
