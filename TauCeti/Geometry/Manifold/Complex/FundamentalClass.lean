@@ -63,6 +63,9 @@ surfaces carries fundamental class to fundamental class
   preferred charts.
 * `TauCeti.complexHomologicalOrientation_apply_of_mem_maximalAtlas`: the canonical local
   orientations, read in any holomorphic chart.
+* `TauCeti.localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas`: a holomorphic chart,
+  centred at a point of its source, carries the canonical local orientation there to the local
+  orientation of `ℂ` at `0` selected by `Complex.orientation`.
 * `TauCeti.comap_complexHomologicalOrientation`: local biholomorphisms that are open embeddings
   pull canonical homological orientations back to canonical homological orientations.
 * `TauCeti.comap_subtypeVal_complexHomologicalOrientation`: the canonical homological orientation

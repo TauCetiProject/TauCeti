@@ -47,6 +47,9 @@ one multiplies them by `(-1) ^ n`, `n` the complex rank
 * `TauCeti.VectorBundleOrientation.mapOrientation_complex` and
   `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex`: a trivialization of the atlas
   reads the canonical orientation, possibly reindexed, as that of the model fibre.
+* `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation`: for a complex
+  line bundle with fibre `ℂ`, a trivialization of the atlas reads the canonical orientation,
+  indexed by `Fin 2`, as `Complex.orientation`.
 * `TauCeti.VectorBundleOrientation.pullback_complex`: the canonical orientation of a pullback
   bundle is the pullback of the canonical orientation.
 * `TauCeti.VectorBundleOrientation.complex_trivial`: the canonical orientation of the trivial
