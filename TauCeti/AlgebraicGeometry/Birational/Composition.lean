@@ -19,6 +19,8 @@ associate: composing `f.comp g` with a morphism `h` is composing `f` with `g.com
 * `AlgebraicGeometry.Scheme.PartialMap.comp_compHom` and
   `AlgebraicGeometry.Scheme.RationalMap.comp_compHom`:
   `(f.comp g).compHom h = f.comp (g.compHom h)`.
+* `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_representative_comp_representative`: the
+  composite of the representatives of `f` and `g` represents `f.comp g`.
 -/
 
 public section
@@ -46,5 +48,10 @@ theorem RationalMap.comp_compHom (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ Z) (h :
   obtain ⟨g, rfl⟩ := g.exists_rep
   rw [← compHom_toRationalMap, comp_def, comp_def, ← compHom_toRationalMap,
     PartialMap.comp_compHom]
+
+/-- The composite of the representatives of `f` and `g` represents `f.comp g`. -/
+theorem RationalMap.toRationalMap_representative_comp_representative (f : X ⤏ Y) [f.IsDominant]
+    (g : Y ⤏ Z) : (f.representative.comp g.representative).toRationalMap = f.comp g := by
+  rw [← RationalMap.comp_def, g.toRationalMap_representative]
 
 end AlgebraicGeometry.Scheme
