@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Mixed
+import TauCeti.LinearAlgebra.Eigenspace.CovectorPair
 
 /-!
 # The type of a Williamson normal form is an invariant
@@ -58,77 +59,6 @@ open Module
 namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-! ### Eigenvalues seen by a pair of coordinates -/
-
-section Covector
-
-variable {A : Module.End ℝ V} {φ ψ : V →ₗ[ℝ] ℝ} {p q : ℝ}
-
-/-- If `A` acts on the pair of covectors `(φ, ψ)` as multiplication by `p + qi`, and `v` is an
-eigenvector of `A²` for the real eigenvalue `μ` not killed by both covectors, then `(p + qi)² = μ`:
-`pq = 0` and `p² - q² = μ`. -/
-private theorem mul_eq_zero_and_sq_sub_sq_eq (hφ : ∀ w, φ (A w) = p * φ w - q * ψ w)
-    (hψ : ∀ w, ψ (A w) = q * φ w + p * ψ w) {μ : ℝ} {v : V} (hv : A (A v) = μ • v)
-    (hφψ : φ v ≠ 0 ∨ ψ v ≠ 0) : p * q = 0 ∧ p ^ 2 - q ^ 2 = μ := by
-  have h₁ := congrArg φ hv
-  have h₂ := congrArg ψ hv
-  rw [hφ, hφ, hψ, map_smul, smul_eq_mul] at h₁
-  rw [hψ, hφ, hψ, map_smul, smul_eq_mul] at h₂
-  -- `X = p² - q² - μ` and `Y = 2pq` satisfy `(X² + Y²) φ v = (X² + Y²) ψ v = 0`.
-  have hφv : ((p ^ 2 - q ^ 2 - μ) ^ 2 + (2 * p * q) ^ 2) * φ v = 0 := by
-    linear_combination (p ^ 2 - q ^ 2 - μ) * h₁ + 2 * p * q * h₂
-  have hψv : ((p ^ 2 - q ^ 2 - μ) ^ 2 + (2 * p * q) ^ 2) * ψ v = 0 := by
-    linear_combination -(2 * p * q) * h₁ + (p ^ 2 - q ^ 2 - μ) * h₂
-  have h : (p ^ 2 - q ^ 2 - μ) ^ 2 + (2 * p * q) ^ 2 = 0 := by
-    rcases hφψ with h | h
-    · exact (mul_eq_zero.1 hφv).resolve_right h
-    · exact (mul_eq_zero.1 hψv).resolve_right h
-  have hX : p ^ 2 - q ^ 2 - μ = 0 := by
-    nlinarith [sq_nonneg (p ^ 2 - q ^ 2 - μ), sq_nonneg (2 * p * q)]
-  have hY : 2 * p * q = 0 := by
-    nlinarith [sq_nonneg (p ^ 2 - q ^ 2 - μ), sq_nonneg (2 * p * q)]
-  exact ⟨by linear_combination hY / 2, by linear_combination hX⟩
-
-/-- If `A` acts on the pair of covectors `(φ, ψ)` as multiplication by `p + qi`, and `v + iw` is an
-eigenvector of `A` for the eigenvalue `a + bi`, `b ≠ 0`, with `v` not killed by both covectors,
-then `p + qi = a ± bi`: `p = a` and `q² = b²`. -/
-private theorem eq_and_sq_eq (hφ : ∀ w, φ (A w) = p * φ w - q * ψ w)
-    (hψ : ∀ w, ψ (A w) = q * φ w + p * ψ w) {a b : ℝ} (hb : b ≠ 0) {v w : V}
-    (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) (hφψ : φ v ≠ 0 ∨ ψ v ≠ 0) :
-    p = a ∧ q ^ 2 = b ^ 2 := by
-  have h₁ := congrArg φ hAv
-  have h₂ := congrArg ψ hAv
-  have h₃ := congrArg φ hAw
-  have h₄ := congrArg ψ hAw
-  simp only [hφ, hψ, map_sub, map_add, map_smul, smul_eq_mul] at h₁ h₂ h₃ h₄
-  -- With `κ = (p - a) + qi`, the relations say `κ (v + iw) = -b (w - iv)`, hence
-  -- `(κ² + b²) (v + iw) = 0`; its real part is `R = (p - a)² - q² + b²` and its imaginary part
-  -- `S = 2 (p - a) q`.
-  have hφv : ((((p - a) ^ 2 - q ^ 2 + b ^ 2) ^ 2 + (2 * (p - a) * q) ^ 2)) * φ v = 0 := by
-    linear_combination (((p - a) ^ 2 - q ^ 2 + b ^ 2) * (p - a) + 2 * (p - a) * q * q) * h₁ +
-      (-((p - a) ^ 2 - q ^ 2 + b ^ 2) * q + 2 * (p - a) * q * (p - a)) * h₂ +
-      (-((p - a) ^ 2 - q ^ 2 + b ^ 2) * b) * h₃ + (-(2 * (p - a) * q) * b) * h₄
-  have hψv : ((((p - a) ^ 2 - q ^ 2 + b ^ 2) ^ 2 + (2 * (p - a) * q) ^ 2)) * ψ v = 0 := by
-    linear_combination (-(2 * (p - a) * q) * (p - a) + ((p - a) ^ 2 - q ^ 2 + b ^ 2) * q) * h₁ +
-      ((2 * (p - a) * q) * q + ((p - a) ^ 2 - q ^ 2 + b ^ 2) * (p - a)) * h₂ +
-      ((2 * (p - a) * q) * b) * h₃ + (-((p - a) ^ 2 - q ^ 2 + b ^ 2) * b) * h₄
-  have h : ((p - a) ^ 2 - q ^ 2 + b ^ 2) ^ 2 + (2 * (p - a) * q) ^ 2 = 0 := by
-    rcases hφψ with h | h
-    · exact (mul_eq_zero.1 hφv).resolve_right h
-    · exact (mul_eq_zero.1 hψv).resolve_right h
-  have hR : (p - a) ^ 2 - q ^ 2 + b ^ 2 = 0 := by
-    nlinarith [sq_nonneg ((p - a) ^ 2 - q ^ 2 + b ^ 2), sq_nonneg (2 * (p - a) * q)]
-  have hS : (p - a) * q = 0 := by
-    nlinarith [sq_nonneg ((p - a) ^ 2 - q ^ 2 + b ^ 2), sq_nonneg (2 * (p - a) * q)]
-  -- `q = 0` would give `(p - a)² + b² = 0`.
-  have hq : q ≠ 0 := by
-    rintro rfl
-    exact hb (by nlinarith [sq_nonneg (p - a), sq_nonneg b])
-  have hpa : p - a = 0 := (mul_eq_zero.1 hS).resolve_right hq
-  exact ⟨by linear_combination hpa, by nlinarith⟩
-
-end Covector
 
 /-! ### The Hamiltonian endomorphism of a form in the span of the Williamson blocks -/
 
@@ -280,7 +210,7 @@ private theorem IsDarbouxBasis.exists_eq_of_hasEigenvalue_sq (hb : ω.IsDarbouxB
   have hAv := hv.apply_eq_smul
   rw [sq, mul_apply_eq_comp] at hAv
   obtain ⟨φ, ψ, p, q, hφ, hψ, hφψ, hblock⟩ := hb.exists_covector c hv.2
-  obtain ⟨hpq, hμ⟩ := mul_eq_zero_and_sq_sub_sq_eq hφ hψ hAv hφψ
+  obtain ⟨hpq, hμ⟩ := End.mul_eq_zero_and_sq_sub_sq_eq_of_apply_apply_eq_smul hφ hψ hAv hφψ
   rcases hblock with ⟨k, hku, rfl, rfl⟩ | ⟨k, hku, hp, rfl⟩ | ⟨j, hp, rfl⟩
   · exact .inl ⟨k, by simp [hku, ← hμ]⟩
   · refine .inl ⟨k, ?_⟩
@@ -299,7 +229,7 @@ private theorem IsDarbouxBasis.exists_abs_eq (hb : ω.IsDarbouxBasis b) {z : ℂ
     (hAw : ω.hamiltonianEnd (∑ i, c i • williamsonBlocks b u i) w = z.im • v + z.re • w) :
     ∃ j, |c (.inr (j, 0))| = z.re ∧ |c (.inr (j, 1))| = z.im := by
   obtain ⟨φ, ψ, p, q, hφ, hψ, hφψ, hblock⟩ := hb.exists_covector c hv
-  obtain ⟨rfl, hq⟩ := eq_and_sq_eq hφ hψ hz.2.ne' hAv hAw hφψ
+  obtain ⟨rfl, hq⟩ := End.eq_and_sq_eq_of_apply_eq_smul_sub_smul hφ hψ hz.2.ne' hAv hAw hφψ
   rcases hblock with ⟨k, -, hp, -⟩ | ⟨k, -, -, rfl⟩ | ⟨j, hp, rfl⟩
   · exact absurd hp hz.1.ne'
   · nlinarith [hz.2]
@@ -404,7 +334,7 @@ theorem IsDarbouxBasis.eq_and_eq_and_card_eq_of_span_williamsonBlocks_eq
       Submodule.span ℝ (Set.range (williamsonBlocks b' u'))) :
     m = m' ∧ f = f' ∧ u.card = u'.card := by
   obtain ⟨P, hP, s, t, hst, hs0, hPs, ht0, hPt⟩ :=
-    hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank (t := u)
+    hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank u
   obtain ⟨hs, ht, hu⟩ :=
     hb.card_eq_and_card_eq_and_card_filter_eq_of_mem_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
   obtain ⟨hs', ht', hu'⟩ := hb'.card_eq_and_card_eq_and_card_filter_eq_of_mem_span_williamsonBlocks

@@ -594,19 +594,19 @@ private theorem IsDarbouxBasis.hasEigenvalue_hamiltonianEnd_williamsonRegular_sq
     simp [hkt, hb.hamiltonianEnd_williamsonRegular_castAdd_fst,
       hb.hamiltonianEnd_williamsonRegular_castAdd_snd, smul_smul, sq]
 
-/-- **The regular element of a Williamson normal form.** The span of the Williamson blocks of a
-Darboux basis with `m + 2f` planes contains a form `P` such that the square of its Hamiltonian
-endomorphism has distinct nonzero real eigenvalues `μ ∈ s` and the Hamiltonian endomorphism itself
-has distinct eigenvalues `z = a + bi ∈ t'` with `a, b > 0`, each with an eigenvector `v + iw`,
-`v ≠ 0`, where `2 |s| + 4 |t'| = dim V`. One such form is `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`,
-`Bₖ` the elliptic or hyperbolic block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus
-pair. -/
+/-- **The regular element of a Williamson normal form.** For a Darboux basis with `m + 2f` planes
+and any set `u` of elliptic planes among the first `m`, the span of the Williamson blocks contains
+a form `P` such that the square of its Hamiltonian endomorphism has distinct nonzero real
+eigenvalues `μ ∈ s` and the Hamiltonian endomorphism itself has distinct eigenvalues
+`z = a + bi ∈ t` with `a, b > 0`, each with an eigenvector `v + iw`, `v ≠ 0`, where
+`2 |s| + 4 |t| = dim V`. One such form is `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`, `Bₖ` the
+elliptic or hyperbolic block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus pair. -/
 theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank
-    (hb : ω.IsDarbouxBasis b) :
-    ∃ P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)), ∃ (s : Finset ℝ) (t' : Finset ℂ),
-      s.card * 2 + t'.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
-        (∀ μ ∈ s, (ω.hamiltonianEnd P ^ 2).HasEigenvalue μ) ∧ (∀ z ∈ t', 0 < z.re ∧ 0 < z.im) ∧
-        ∀ z ∈ t', ∃ v w : V, v ≠ 0 ∧ ω.hamiltonianEnd P v = z.re • v - z.im • w ∧
+    (hb : ω.IsDarbouxBasis b) (u : Finset (Fin m)) :
+    ∃ P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b u)), ∃ (s : Finset ℝ) (t : Finset ℂ),
+      s.card * 2 + t.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
+        (∀ μ ∈ s, (ω.hamiltonianEnd P ^ 2).HasEigenvalue μ) ∧ (∀ z ∈ t, 0 < z.re ∧ 0 < z.im) ∧
+        ∀ z ∈ t, ∃ v w : V, v ≠ 0 ∧ ω.hamiltonianEnd P v = z.re • v - z.im • w ∧
           ω.hamiltonianEnd P w = z.im • v + z.re • w := by
   -- The regular element has the eigenvalues `∓(k + 1)²` of its square and `(j + 1) + i`.
   let z : Fin f → ℂ := fun j ↦ ((((j : ℕ) : ℝ) + 1 : ℝ) : ℂ) + Complex.I
@@ -620,11 +620,11 @@ theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mu
     gcongr
     exact_mod_cast hkl
   have hinj : Function.Injective fun k : Fin m ↦
-      if k ∈ t then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2 :=
-    injective_ite_neg_sq t (fun _ _ hkl _ ↦ hmono.injective.ne hkl) fun _ ↦ by positivity
-  refine ⟨williamsonRegular b t, williamsonRegular_mem_span,
+      if k ∈ u then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2 :=
+    injective_ite_neg_sq u (fun _ _ hkl _ ↦ hmono.injective.ne hkl) fun _ ↦ by positivity
+  refine ⟨williamsonRegular b u, williamsonRegular_mem_span,
     Finset.univ.image fun k : Fin m ↦
-      if k ∈ t then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2,
+      if k ∈ u then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2,
     Finset.univ.image z, ?_, ?_, ?_, ?_, ?_⟩
   · rw [Finset.card_image_of_injective _ hinj,
       Finset.card_image_of_injective _ hz, finrank_eq_card_basis b]
@@ -633,7 +633,7 @@ theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mu
   · simp only [Finset.mem_image, Finset.mem_univ, true_and, not_exists]
     intro k hk
     have := sq_pos_of_pos (by positivity : (0 : ℝ) < ((k : ℕ) : ℝ) + 1)
-    by_cases hku : k ∈ t <;> simp only [hku, ↓reduceIte] at hk <;> linarith
+    by_cases hku : k ∈ u <;> simp only [hku, ↓reduceIte] at hk <;> linarith
   · simp only [Finset.mem_image, Finset.mem_univ, true_and, forall_exists_index]
     rintro _ k rfl
     exact hb.hasEigenvalue_hamiltonianEnd_williamsonRegular_sq k
@@ -672,8 +672,8 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
     let ⟨_, _, hb, hspan⟩ :=
       h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
     ⟨_, _, _, _, hb, hspan⟩,
-  fun ⟨_, _, _, _, hb, hspan⟩ ↦
-    hspan ▸ hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank⟩
+  fun ⟨_, _, _, u, hb, hspan⟩ ↦
+    hspan ▸ hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank u⟩
 
 end IsNondegenerateQuadraticFamily
 
