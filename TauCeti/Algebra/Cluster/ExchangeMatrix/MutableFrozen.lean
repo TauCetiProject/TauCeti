@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import TauCeti.Logic.Equiv.Set
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Standard
 
 /-!
 # Standard mutable and frozen row presentations

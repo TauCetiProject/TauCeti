@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Tropical
 public import TauCeti.Algebra.Cluster.YSeed.Word
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.FrozenSupport
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Standard
 
 import TauCeti.Algebra.Order.Ring.PosPart.Mul
 
