@@ -61,14 +61,23 @@ noncomputable abbrev S : Pair ℚ_[2] := Pair.powerBounded ℚ_[2]
 /-- The Huber pair `(ℚ₂⟨X⟩, ℤ₂⟨X⟩)` of the disc `Spa D`. -/
 noncomputable abbrev T : Pair D := Pair.powerBounded D
 
-/-- The structure morphism `(ℚ₂, ℤ₂) → (ℚ₂⟨X⟩, ℤ₂⟨X⟩)`. -/
-noncomputable def f : S.Hom T where
-  toRingHom := algebraMap ℚ_[2] D
-  continuous_toRingHom := continuous_algebraMap_restrictedMvPowerSeriesCompletion 1 ℚ_[2]
+/-- A continuous ring map `φ : A → B` out of a Tate ring preserves power-boundedness, so it is a
+morphism `(A, A°) → (B, B°)` of the Huber pairs of power-bounded elements. -/
+private noncomputable def powerBoundedHom {A B : Type} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsTateRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    [IsHuberRing B] (φ : A →+* B) (hφ : Continuous φ) :
+    (Pair.powerBounded A).Hom (Pair.powerBounded B) where
+  toRingHom := φ
+  continuous_toRingHom := hφ
   map_mem_plus _ ha := by
     rw [Pair.powerBounded_plus] at ha ⊢
     exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp ha).map_of_isTateRing
-      (continuous_algebraMap_restrictedMvPowerSeriesCompletion 1 ℚ_[2]).continuousAt
+      hφ.continuousAt
+
+/-- The structure morphism `(ℚ₂, ℤ₂) → (ℚ₂⟨X⟩, ℤ₂⟨X⟩)`. -/
+noncomputable def f : S.Hom T :=
+  powerBoundedHom (algebraMap ℚ_[2] D)
+    (continuous_algebraMap_restrictedMvPowerSeriesCompletion 1 ℚ_[2])
 
 private theorem f_toRingHom : f.toRingHom = algebraMap ℚ_[2] D := rfl
 
@@ -146,14 +155,8 @@ private noncomputable def evalAt {a : ℚ_[2]} (ha : IsPowerBounded a) :
 
 /-- The evaluation `X ↦ a` at a power-bounded `a ∈ ℚ₂`, a morphism `(ℚ₂⟨X⟩, ℤ₂⟨X⟩) → (ℚ₂, ℤ₂)`:
 the ring map of `evalAt`, which also preserves the plus ring `ℤ₂⟨X⟩` of `T`. -/
-private noncomputable def ev {a : ℚ_[2]} (ha : IsPowerBounded a) : T.Hom S where
-  toRingHom := (evalAt ha).toRingHom
-  continuous_toRingHom := (evalAt ha).continuous_toRingHom
-  map_mem_plus _ hx := by
-    rw [Pair.powerBounded_plus] at hx
-    refine (congrArg (fun s : Subring ℚ_[2] ↦ _ ∈ s) Pair.powerBounded_plus).mpr ?_
-    exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp hx).map_of_isTateRing
-      (evalAt ha).continuous_toRingHom.continuousAt
+private noncomputable def ev {a : ℚ_[2]} (ha : IsPowerBounded a) : T.Hom S :=
+  powerBoundedHom (evalAt ha).toRingHom (evalAt ha).continuous_toRingHom
 
 private theorem ev_toRingHom {a : ℚ_[2]} (ha : IsPowerBounded a) :
     (ev ha).toRingHom = (evalAt ha).toRingHom :=
@@ -169,6 +172,15 @@ private theorem ev_comp_f {a : ℚ_[2]} (ha : IsPowerBounded a) :
   ext c
   rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, f_toRingHom, ev_toRingHom, evalAt,
     Pair.polydisc.toRingHom_evalHom_algebraMap]
+
+/-- At the point of `Spa D` pulled back from `x` along the evaluation `X ↦ a`, comparing valuations
+of `g, h ∈ ℚ₂⟨X⟩` is comparing valuations at `x` of their values at `a`. -/
+private theorem vle_ofPairHomeomorph_symm_spaComap_ev {a : ℚ_[2]} (ha : IsPowerBounded a)
+    (x : spa S.plus) (g h : D) :
+    (ofPairHomeomorph T isSheafyForEveryPresentation_T
+        ((ofPairHomeomorph T _).symm ((ev ha).spaComap x))).val.toValuativeRel.vle g h ↔
+      x.val.toValuativeRel.vle ((ev ha).toRingHom g) ((ev ha).toRingHom h) := by
+  rw [Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle]
 
 /-- **The symmetry moves the point `X = 0, Y = 1` to the point `X = 1, Y = 0`.** The points
 `y₀`, `y₁` of the disc `Spa D` cut out by `X = 0` and `X = 1` are distinct and lie over the same
@@ -203,16 +215,14 @@ theorem exists_symmetry_moves_point :
       (congrFun (Pair.Hom.spaComap_comp p f) x₀).symm.trans <| by
         rw [hp, Pair.Hom.spaComap_id, id_eq]
   have hv₀ : (ofPairHomeomorph T _ y₀).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0) 0 := by
-    rw [Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle]
-    simp [ev_polydiscVar]
+    simp [y₀, vle_ofPairHomeomorph_symm_spaComap_ev, ev_polydiscVar]
   have hv₁ :
       (ofPairHomeomorph T _ y₁).val.toValuativeRel.vle (Pair.polydiscVar 1 ℚ_[2] 0 - 1) 0 := by
-    rw [Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle]
-    simp [ev_polydiscVar]
+    simp [y₁, vle_ofPairHomeomorph_symm_spaComap_ev, ev_polydiscVar]
   have hy_ne : y₀ ≠ y₁ := fun h ↦ by
     have hv := hv₀
-    rw [h, Homeomorph.apply_symm_apply, Pair.Hom.spaComap_val, comap_vle] at hv
-    simp [ev_polydiscVar] at hv
+    rw [h] at hv
+    simp [y₁, vle_ofPairHomeomorph_symm_spaComap_ev, ev_polydiscVar] at hv
   have hy₀₁ : (comapOfPair isSheafyForEveryPresentation_S _ f).hom.base y₀ =
       (comapOfPair isSheafyForEveryPresentation_S _ f).hom.base y₁ :=
     (hy _ (ev_comp_f h0)).trans (hy _ (ev_comp_f h1)).symm
