@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
@@ -25,13 +26,20 @@ The argument is adapted from `zeta_alt` and its Möbius-square Euler-product sta
 Specializing to real `σ > 1`
 gives the real identity `∑ |μ(n)| n^(-σ) = ζ(σ)/ζ(2σ)`.
 
+Comparing it termwise with `1/ζ(s) = ∑ μ(n) n^(-s)` gives the lower bound
+`ζ(2σ)/ζ(σ) ≤ |ζ(s)|` for `σ = Re s > 1`. This bound is
+`norm_riemannZeta_ratio_le_on_verticalLine` in
+`PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaConvexity.lean` of [PNTConvexity],
+which proves it through the Euler product.
+
 [PNT]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/05076dfe4e396e6dbdea50fde395a5154341f59e/PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean#L1530-L1696
+[PNTConvexity]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/f761e9afa785412f0df0a0de48ef807996a9456f/PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaConvexity.lean#L35-L54
 -/
 
 public section
 
 open Nat Complex
-open scoped ArithmeticFunction.Moebius
+open scoped ArithmeticFunction.Moebius LSeries.notation
 
 namespace TauCeti
 
@@ -123,5 +131,31 @@ theorem riemannZeta_eq_mul_LSeries_moebius_sq {s : ℂ} (hs : 1 < s.re) :
         _root_.LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s) := by
     simpa only [hfactor] using hprod
   exact (riemannZeta_eulerProduct_hasProd hs).unique H
+
+/-- For `σ = Re s > 1`, `|ζ(s)|` is at least `ζ(2σ)/ζ(σ)`: the reciprocal `1/ζ(s)` is the
+Möbius series, which is bounded termwise by the Möbius-square series `ζ(σ)/ζ(2σ)`. -/
+theorem norm_riemannZeta_two_mul_re_div_le {s : ℂ} (hs : 1 < s.re) :
+    ‖riemannZeta (2 * s.re) / riemannZeta s.re‖ ≤ ‖riemannZeta s‖ := by
+  have hσ : 1 < (s.re : ℂ).re := by simpa using hs
+  have hL : ‖L ↗μ s‖ ≤ ‖L (fun n ↦ (μ n : ℂ) ^ 2) s.re‖ := calc
+    _ ≤ ∑' n, ‖LSeries.term ↗μ s n‖ :=
+      norm_tsum_le_tsum_norm (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs).norm
+    _ = (∑' n, LSeries.term (fun n ↦ (μ n : ℂ) ^ 2) s.re n).re := by
+      rw [re_tsum (LSeriesSummable_moebius_sq_iff.mpr hσ)]
+      congr 1 with n
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      rw [LSeries.norm_term_eq, LSeries.term_of_ne_zero hn, ite_eq_right hn,
+        ← ofReal_natCast, ← ofReal_cpow n.cast_nonneg, ← ofReal_intCast, ← ofReal_pow,
+        ← ofReal_div, ofReal_re]
+      rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
+    _ ≤ _ := re_le_norm _
+  have hz := riemannZeta_eq_mul_LSeries_moebius_sq hσ
+  have h1 := ArithmeticFunction.LSeries_zeta_mul_Lseries_moebius hs
+  rw [ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs] at h1
+  rw [hz, div_mul_cancel_left₀ (left_ne_zero_of_mul (hz ▸ riemannZeta_ne_zero_of_one_lt_re hσ)),
+    norm_inv]
+  calc _ ≤ ‖L ↗μ s‖⁻¹ := inv_anti₀ (norm_pos_iff.2 (right_ne_zero_of_mul (h1 ▸ one_ne_zero))) hL
+    _ = ‖riemannZeta s‖ := by rw [← norm_inv, eq_inv_of_mul_eq_one_right h1, inv_inv]
 
 end TauCeti
