@@ -69,7 +69,7 @@ theorem not_positiveInvolution_adjugate :
     ¬ ∃ P : PositiveInvolution (Matrix (Fin 2) (Fin 2) ℚ),
       ∀ x, P.toStarRing.star x = adjugate x := by
   rintro ⟨P, hP⟩
-  have h := P.trd_mul_star_pos !![1, 0; 0, -1] fun h ↦ by
+  have h := P.semisimpleReducedTrace_mul_star_pos !![1, 0; 0, -1] fun h ↦ by
     simpa using congrFun (congrFun h 0) 0
   rw [hP, semisimpleReducedTrace_diag_one_neg_one_mul_adjugate] at h
   norm_num at h
@@ -93,7 +93,7 @@ theorem semisimpleReducedTrace_algebraMap (q : ℚ) :
 theorem not_positiveInvolution_id :
     ¬ ∃ P : PositiveInvolution GaussianRat, ∀ x, P.toStarRing.star x = x := by
   rintro ⟨P, hP⟩
-  have h := P.trd_mul_star_pos (QuadraticAlgebra.omega : GaussianRat) fun h ↦ by
+  have h := P.semisimpleReducedTrace_mul_star_pos (QuadraticAlgebra.omega : GaussianRat) fun h ↦ by
     simpa using congrArg QuadraticAlgebra.im h
   have hω : (QuadraticAlgebra.omega : GaussianRat) * QuadraticAlgebra.omega =
       algebraMap ℚ GaussianRat (-1) := by

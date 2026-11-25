@@ -32,11 +32,13 @@ finite-dimensional and semisimple.
 
 ## Main results
 
-* `TauCeti.PositiveInvolution.trd_mul_star_pos`: the defining inequality `Trd(x x*) > 0`.
-* `TauCeti.PositiveInvolution.trd_star_mul_pos`: also `Trd(x* x) > 0` for `x ≠ 0`.
-* `TauCeti.PositiveInvolution.trd_mul_star_eq_zero`,
-  `TauCeti.PositiveInvolution.trd_star_mul_eq_zero`: `Trd(x x*)` and `Trd(x* x)` vanish only at
-  `x = 0`.
+* `TauCeti.PositiveInvolution.semisimpleReducedTrace_mul_star_pos`: the defining inequality
+  `Trd(x x*) > 0`.
+* `TauCeti.PositiveInvolution.semisimpleReducedTrace_star_mul_pos`: also `Trd(x* x) > 0` for
+  `x ≠ 0`.
+* `TauCeti.PositiveInvolution.semisimpleReducedTrace_mul_star_eq_zero`,
+  `TauCeti.PositiveInvolution.semisimpleReducedTrace_star_mul_eq_zero`: `Trd(x x*)` and `Trd(x* x)`
+  vanish only at `x = 0`.
 
 ## Implementation notes
 
@@ -67,7 +69,7 @@ structure PositiveInvolution where
   /-- The involution `x ↦ x*`, as a `StarRing` structure on `B`. -/
   [toStarRing : StarRing B]
   /-- **Positivity**: `Trd_{B/ℚ}(x x*) > 0` for every nonzero `x`. -/
-  trd_mul_star_pos (x : B) (hx : x ≠ 0) :
+  semisimpleReducedTrace_mul_star_pos (x : B) (hx : x ≠ 0) :
     0 < Algebra.semisimpleReducedTrace ℚ B (x * star x)
 
 namespace PositiveInvolution
@@ -87,43 +89,44 @@ variable (P : PositiveInvolution B)
 
 /-- **Positivity of `x* x`.** For a positive involution, also `Trd_{B/ℚ}(x* x) > 0` for every
 nonzero `x`. -/
-theorem trd_star_mul_pos {x : B} (hx : x ≠ 0) :
+theorem semisimpleReducedTrace_star_mul_pos {x : B} (hx : x ≠ 0) :
     letI := P.toStarRing
     0 < Algebra.semisimpleReducedTrace ℚ B (star x * x) := by
   let := P.toStarRing
-  simpa using P.trd_mul_star_pos (star x) (star_ne_zero.2 hx)
+  simpa using P.semisimpleReducedTrace_mul_star_pos (star x) (star_ne_zero.2 hx)
 
 /-- `Trd_{B/ℚ}(x x*) ≥ 0` for every `x`. -/
-theorem trd_mul_star_nonneg (x : B) :
+theorem semisimpleReducedTrace_mul_star_nonneg (x : B) :
     letI := P.toStarRing
     0 ≤ Algebra.semisimpleReducedTrace ℚ B (x * star x) := by
   let := P.toStarRing
   obtain rfl | hx := eq_or_ne x 0
   · simp
-  · exact (P.trd_mul_star_pos x hx).le
+  · exact (P.semisimpleReducedTrace_mul_star_pos x hx).le
 
 /-- `Trd_{B/ℚ}(x x*) = 0` only for `x = 0`. -/
 @[simp]
-theorem trd_mul_star_eq_zero {x : B} :
+theorem semisimpleReducedTrace_mul_star_eq_zero {x : B} :
     letI := P.toStarRing
     Algebra.semisimpleReducedTrace ℚ B (x * star x) = 0 ↔ x = 0 := by
   let := P.toStarRing
-  exact ⟨fun h ↦ by_contra fun hx ↦ (P.trd_mul_star_pos x hx).ne' h, fun h ↦ by simp [h]⟩
+  exact ⟨fun h ↦ by_contra fun hx ↦ (P.semisimpleReducedTrace_mul_star_pos x hx).ne' h,
+    fun h ↦ by simp [h]⟩
 
 /-- `Trd_{B/ℚ}(x* x) ≥ 0` for every `x`. -/
-theorem trd_star_mul_nonneg (x : B) :
+theorem semisimpleReducedTrace_star_mul_nonneg (x : B) :
     letI := P.toStarRing
     0 ≤ Algebra.semisimpleReducedTrace ℚ B (star x * x) := by
   let := P.toStarRing
-  simpa using P.trd_mul_star_nonneg (star x)
+  simpa using P.semisimpleReducedTrace_mul_star_nonneg (star x)
 
 /-- `Trd_{B/ℚ}(x* x) = 0` only for `x = 0`. -/
 @[simp]
-theorem trd_star_mul_eq_zero {x : B} :
+theorem semisimpleReducedTrace_star_mul_eq_zero {x : B} :
     letI := P.toStarRing
     Algebra.semisimpleReducedTrace ℚ B (star x * x) = 0 ↔ x = 0 := by
   let := P.toStarRing
-  simpa using P.trd_mul_star_eq_zero (x := star x)
+  simpa using P.semisimpleReducedTrace_mul_star_eq_zero (x := star x)
 
 end PositiveInvolution
 
