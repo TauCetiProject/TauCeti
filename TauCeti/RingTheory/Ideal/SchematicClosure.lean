@@ -100,6 +100,18 @@ theorem map_closureIdeal_le (I : Ideal (K ⊗[O] A)) :
     (closureIdeal K I).map (includeRight : A →ₐ[O] K ⊗[O] A) ≤ I :=
   Ideal.map_comap_le
 
+/-- **Universal property of the closure ideal.** An ideal `J` of `A` generates an ideal inside
+`I` in the generic fibre iff `J ≤ I^♮`. -/
+theorem map_le_iff_le_closureIdeal {I : Ideal (K ⊗[O] A)} {J : Ideal A} :
+    J.map (includeRight : A →ₐ[O] K ⊗[O] A) ≤ I ↔ J ≤ closureIdeal K I :=
+  Ideal.map_le_iff_le_comap
+
+variable (K) in
+/-- Every ideal `J` of `A` lies in the closure of the ideal it generates in the generic fibre. -/
+theorem le_closureIdeal_map (J : Ideal A) :
+    J ≤ closureIdeal K (J.map (includeRight : A →ₐ[O] K ⊗[O] A)) :=
+  Ideal.le_comap_map
+
 end Defs
 
 section Localization
@@ -114,6 +126,13 @@ theorem map_closureIdeal (I : Ideal (K ⊗[O] A)) :
     (closureIdeal K I).map (includeRight : A →ₐ[O] K ⊗[O] A) = I := by
   let := Algebra.TensorProduct.rightAlgebra (R := O) (A := K) (B := A)
   exact IsLocalization.map_under (Algebra.algebraMapSubmonoid A M) (K ⊗[O] A) I
+
+/-- Over a localization `K` of `O`, the closure ideal is saturated with respect to `M`:
+`s • a ∈ I^♮` iff `a ∈ I^♮` for `s ∈ M`. -/
+theorem smul_mem_closureIdeal_iff {I : Ideal (K ⊗[O] A)} (s : M) {a : A} :
+    (s : O) • a ∈ closureIdeal K I ↔ a ∈ closureIdeal K I := by
+  rw [mem_closureIdeal, mem_closureIdeal, TensorProduct.tmul_smul]
+  exact IsLocalization.smul_mem_iff (R' := K) (N' := I.restrictScalars K) (s := s)
 
 variable (K) in
 /-- Over a localization `K` of `O`, the generic fibre of the closure `A ⧸ I^♮` is
@@ -137,6 +156,23 @@ theorem exists_closure_genericFiber (I : Ideal (K ⊗[O] A)) :
       ∀ (k : K) (a : A), e (k ⊗ₜ Ideal.Quotient.mk _ a) = Ideal.Quotient.mk I (k ⊗ₜ a) :=
   ⟨closureGenericFiber K M I, closureGenericFiber_tmul K M I⟩
 
+variable {A' : Type x} [CommRing A'] [Algebra O A'] in
+/-- Base change to `K` of the tensor product of the quotient maps `A → A ⧸ I^♮` and
+`A' → A' ⧸ I'^♮` is, through `closureGenericFiber` and `distribBaseChange`, the tensor product
+over `K` of the quotient maps `K ⊗[O] A → (K ⊗[O] A) ⧸ I` and `K ⊗[O] A' → (K ⊗[O] A') ⧸ I'`. -/
+theorem closureGenericFiber_congr_distribBaseChange (I : Ideal (K ⊗[O] A))
+    (I' : Ideal (K ⊗[O] A')) (t : A ⊗[O] A') :
+    TensorProduct.congr (closureGenericFiber K M I).toLinearEquiv
+        (closureGenericFiber K M I').toLinearEquiv
+      (TensorProduct.AlgebraTensorModule.distribBaseChange O K (closure K I) (closure K I')
+        ((1 : K) ⊗ₜ[O] Algebra.TensorProduct.map (Ideal.Quotient.mkₐ O (closureIdeal K I))
+          (Ideal.Quotient.mkₐ O (closureIdeal K I')) t)) =
+      Algebra.TensorProduct.map (Ideal.Quotient.mkₐ K I) (Ideal.Quotient.mkₐ K I')
+        (TensorProduct.AlgebraTensorModule.distribBaseChange O K A A' ((1 : K) ⊗ₜ[O] t)) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul x y => simp
+  | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
+
 end Localization
 
 section FractionRing
@@ -151,12 +187,11 @@ instance isTorsionFree_closure (I : Ideal (K ⊗[O] A)) :
   refine ⟨fun s hs x y hxy ↦ ?_⟩
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-  rw [← sub_eq_zero, ← smul_sub, ← map_sub, ← Ideal.Quotient.mkₐ_eq_mk O, ← map_smul,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, mem_closureIdeal,
-    TensorProduct.tmul_smul] at hxy
-  rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, mem_closureIdeal]
-  exact (IsLocalization.smul_mem_iff (R' := K) (N' := I.restrictScalars K)
-    (s := (⟨s, hs.mem_nonZeroDivisors⟩ : O⁰))).mp hxy
+  rw [Ideal.Quotient.mk_eq_mk_iff_sub_mem,
+    ← smul_mem_closureIdeal_iff O⁰ ⟨s, hs.mem_nonZeroDivisors⟩]
+  simp only [Algebra.smul_def, ← Ideal.Quotient.mk_algebraMap, ← map_mul,
+    Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← mul_sub] at hxy ⊢
+  exact hxy
 
 /-- Over a Dedekind domain, for instance a discrete valuation ring, the closure `A ⧸ I^♮` is
 flat over `O`. -/
@@ -169,7 +204,7 @@ theorem closure_flat [IsDedekindDomain O] (I : Ideal (K ⊗[O] A)) :
 theorem closure_unique {I : Ideal (K ⊗[O] A)} {J : Ideal A}
     [Module.IsTorsionFree O (A ⧸ J)]
     (hJ : J.map (includeRight : A →ₐ[O] K ⊗[O] A) = I) : J = closureIdeal K I := by
-  refine le_antisymm (hJ ▸ Ideal.le_comap_map) fun a ha ↦ ?_
+  refine le_antisymm (hJ ▸ le_closureIdeal_map K J) fun a ha ↦ ?_
   rw [mem_closureIdeal, ← hJ] at ha
   have h : (1 : K) ⊗ₜ[O] (Ideal.Quotient.mk J a) = 0 := by
     have := congrArg (tensorQuotientEquiv (R := O) K A K J).symm
@@ -186,7 +221,7 @@ theorem mem_closure_points {O' : Type x} [CommRing O'] [Algebra O O']
   constructor
   · intro h
     rw [← map_closureIdeal O⁰ I]
-    refine Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_
+    refine map_le_iff_le_closureIdeal.mpr fun a ha ↦ ?_
     have hfa : f a = 0 := h ha
     simp [hfa]
   · intro h a ha

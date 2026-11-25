@@ -87,23 +87,12 @@ private theorem map_comul_eq_zero_of_mem_closureIdeal {b : B}
     (hb : b ∈ closureIdeal K I.toIdeal) :
     Algebra.TensorProduct.map (Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal))
       (Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal)) (Coalgebra.comul (R := O) b) = 0 := by
-  let q := Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal)
-  let Q := Ideal.Quotient.mkₐ K I.toIdeal
-  let e := closureGenericFiber K (nonZeroDivisors O) I.toIdeal
-  have hQ : Algebra.TensorProduct.map Q Q (Coalgebra.comul (R := K) ((1 : K) ⊗ₜ[O] b)) = 0 := by
+  have hQ : Algebra.TensorProduct.map (Ideal.Quotient.mkₐ K I.toIdeal)
+      (Ideal.Quotient.mkₐ K I.toIdeal) (Coalgebra.comul (R := K) ((1 : K) ⊗ₜ[O] b)) = 0 := by
     rw [← RingHom.mem_ker, Ideal.ker_tensorProduct_map_quotient_quotient]
     exact I.comul_mem (mem_closureIdeal.mp hb)
-  have key : ∀ t : B ⊗[O] B,
-      TensorProduct.congr e.toLinearEquiv e.toLinearEquiv
-        (TensorProduct.AlgebraTensorModule.distribBaseChange O K (closure K I.toIdeal)
-          (closure K I.toIdeal) ((1 : K) ⊗ₜ[O] Algebra.TensorProduct.map q q t)) =
-        Algebra.TensorProduct.map Q Q
-          (TensorProduct.AlgebraTensorModule.distribBaseChange O K B B ((1 : K) ⊗ₜ[O] t)) := by
-    intro t
-    induction t using TensorProduct.inductionOn with
-    | tmul x y => simp [e, q, Q]
-    | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
-  rw [Coalgebra.baseChange_comul_tmul K 1 b, ← key, LinearEquiv.map_eq_zero_iff,
+  rw [Coalgebra.baseChange_comul_tmul K 1 b,
+    ← closureGenericFiber_congr_distribBaseChange (nonZeroDivisors O), LinearEquiv.map_eq_zero_iff,
     LinearEquiv.map_eq_zero_iff] at hQ
   exact Module.IsTorsionFree.eq_zero_of_one_tmul_eq_zero (R := O) (K := K) hQ
 
