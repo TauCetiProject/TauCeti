@@ -266,6 +266,14 @@ theorem coroot_typeDSimplyConnectedRootDatum (hn : 4 ≤ n) (k : Fin (2 * n * (n
       typeDSimpleRootCoordinates n (by omega) (typeDRootEquiv n hn k) :=
   coroot_eq_typeDSimpleRootCoordinates hn k
 
+/-- The reflection of the pinned datum in the `k`-th root permutes the root indices as the
+classical reflection `TauCeti.DynkinType.typeDRootReflection` in the `k`-th classical root permutes
+the classical roots. -/
+@[simp] theorem typeDRootEquiv_reflectionPerm (hn : 4 ≤ n) (k l : Fin (2 * n * (n - 1))) :
+    typeDRootEquiv n hn ((typeDSimplyConnectedRootDatum n hn).reflectionPerm k l) =
+      typeDRootReflection (typeDRootEquiv n hn k) (typeDRootEquiv n hn l) :=
+  typeDRootEquiv_typeDReflectionPerm hn k l
+
 private lemma pairing_typeDSimplyConnectedRootDatum (hn : 4 ≤ n)
     (k l : Fin (2 * n * (n - 1))) :
     (typeDSimplyConnectedRootDatum n hn).pairing k l =
