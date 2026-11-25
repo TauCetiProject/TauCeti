@@ -136,7 +136,7 @@ theorem isJacobiFieldOn_geodesicJacobiPropagator (z : TangentBundle I M)
     IsJacobiFieldOn I (maximalGeodesic I M z.proj z.snd)
       (fun t ↦ geodesicJacobiPropagator z t ξ) (geodesicInterval I M z.proj z.snd) := by
   obtain ⟨σ, rfl, hσ, hξ⟩ := exists_contMDiffAt_curveVelocity_eq (I := I.tangent)
-    (n := ∞) (by simp) z BoundarylessManifold.isInteriorPoint ξ (0 : ℝ)
+    (n := ∞) z BoundarylessManifold.isInteriorPoint ξ (0 : ℝ)
   apply (isJacobiFieldOn_variationField_maximalGeodesic (hσ.of_le (by simp))).congr
   intro t ht
   rw [variationField_maximalGeodesic_eq_geodesicJacobiPropagator
