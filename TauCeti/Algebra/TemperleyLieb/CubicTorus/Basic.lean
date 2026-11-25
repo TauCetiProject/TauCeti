@@ -172,6 +172,11 @@ noncomputable def cubeRootPow : AddChar (ZMod 3) ℂˣ :=
 theorem coe_cubeRootPow (x : ZMod 3) : (cubeRootPow x : ℂ) = ZMod.stdAddChar x := by
   simp [cubeRootPow, ZMod.stdAddChar_apply]
 
+/-- Conjugating `ω ^ x` gives `ω ^ (-x)`. -/
+@[simp]
+theorem star_cubeRootPow (x : ZMod 3) : star (cubeRootPow x : ℂ) = cubeRootPow (-x) := by
+  simp [coe_cubeRootPow, AddChar.map_neg_eq_conj]
+
 /-- For `x ≠ 0` in `ZMod 3`, `ω ^ x` is a primitive cube root of unity:
 `1 + ω ^ x + (ω ^ x) ^ 2 = 0`. -/
 theorem one_add_cubeRootPow_add_sq {x : ZMod 3} (hx : x ≠ 0) :
@@ -226,6 +231,13 @@ theorem cubicFactor_apply (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor N a b = cubeRootPow (2 * chainForm (ZMod 3) N a.toAdd b.toAdd) :=
   (rfl)
 
+/-- The factor set is trivial on a pair `(g⁻¹, g)`: `α(-a, a) = 1`, since the chain form is
+alternating. -/
+@[simp]
+theorem cubicFactor_inv_self (g : Multiplicative (Fin N → ZMod 3)) :
+    (cubicFactor N g⁻¹ g : ℂ) = 1 := by
+  simp [cubicFactor_apply, chainForm_self]
+
 theorem weyl_def (a : Fin N → ZMod 3) : weyl N a = of (Multiplicative.ofAdd a) :=
   (rfl)
 
@@ -270,6 +282,11 @@ variable (N) in
 It is a trace (`cubicScalarCoefficient_mul_comm`). -/
 noncomputable def cubicScalarCoefficient : CubicTorus N →ₗ[ℂ] ℂ :=
   (basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).coord 1
+
+/-- The scalar coefficient of `x` is its coefficient at `1` in the basis of `G_N`. -/
+theorem cubicScalarCoefficient_eq_repr_one (x : CubicTorus N) :
+    cubicScalarCoefficient N x = (basis ℂ _ (cubicFactor N)).repr x 1 :=
+  Module.Basis.coord_apply _ _ _
 
 @[simp]
 theorem cubicScalarCoefficient_weyl (a : Fin N → ZMod 3) :

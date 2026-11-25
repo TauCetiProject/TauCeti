@@ -31,10 +31,6 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
   ringed spaces with an isomorphism does not change its image.
 * `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
   immersion through an open immersion gives an open immersion.
-* `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenEmbedding_lift`,
-  `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.stalkMap_lift_surjective`: lifting a
-  morphism through an open immersion preserves open-embedding base maps and surjectivity of stalk
-  maps.
 -/
 
 public section
@@ -99,30 +95,5 @@ instance IsOpenImmersion.isOpenImmersion_lift {X Y Z : LocallyRingedSpace.{u}}
   have := IsOpenImmersion.pullback_snd_isIso_of_range_subset f g H
   dsimp only [IsOpenImmersion.lift]
   infer_instance
-
-/-- Lifting a morphism with open-embedding base through an open immersion yields a morphism with
-open-embedding base. -/
-theorem IsOpenImmersion.isOpenEmbedding_lift {X Y Z : LocallyRingedSpace.{u}}
-    (f : Y ⟶ Z) [hf : IsOpenImmersion f] (g : X ⟶ Z)
-    (hg : Topology.IsOpenEmbedding g.base) (H : Set.range g.base ⊆ Set.range f.base) :
-    Topology.IsOpenEmbedding (IsOpenImmersion.lift f g H).base := by
-  let α := IsOpenImmersion.lift f g H
-  have hfac : α ≫ f = g := IsOpenImmersion.lift_fac f g H
-  have hcomp : f.base ∘ α.base = g.base := funext fun x ↦ congrArg (fun t ↦ t.base x) hfac
-  exact hf.base_open.of_comp _ (hcomp.symm ▸ hg)
-
-/-- Lifting a morphism through an open immersion preserves surjectivity of the stalk map at a
-point. -/
-theorem IsOpenImmersion.stalkMap_lift_surjective {X Y Z : LocallyRingedSpace.{u}}
-    (f : Y ⟶ Z) [IsOpenImmersion f] (g : X ⟶ Z) (H : Set.range g.base ⊆ Set.range f.base)
-    {x : X} (hx : Function.Surjective (g.stalkMap x)) :
-    Function.Surjective ((IsOpenImmersion.lift f g H).stalkMap x) := by
-  intro z
-  let α := IsOpenImmersion.lift f g H
-  have hfac : Function.Surjective ((α ≫ f).stalkMap x) :=
-    IsOpenImmersion.lift_fac f g H ▸ hx
-  obtain ⟨w, hw⟩ := hfac z
-  exact ⟨f.stalkMap (α.base x) w,
-    (ConcreteCategory.congr_hom (PresheafedSpace.stalkMap.comp α.toHom f.toHom x) w).symm.trans hw⟩
 
 end AlgebraicGeometry.LocallyRingedSpace

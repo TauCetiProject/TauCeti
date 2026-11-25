@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
-public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.Dual.Basic
 public import TauCeti.Geometry.Hodge.Tate.Twist
 public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 public import TauCeti.Geometry.Hodge.WeilOperator

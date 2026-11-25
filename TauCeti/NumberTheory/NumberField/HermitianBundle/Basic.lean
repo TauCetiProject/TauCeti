@@ -59,6 +59,9 @@ conjugate-linear in the first argument as in Mathlib.
 * `TauCeti.HermitianMetric.fractionalIdeal`: the hermitian line `(𝔞, e^{-λ_v} |·|_v)` of a
   nonzero fractional ideal `𝔞`; `TauCeti.HermitianMetric.isometryEquivTrivialFractionalIdealOne`
   identifies the line of `(1)` with zero weights with `Ō_K`.
+* `TauCeti.HermitianMetric.isometryEquivFractionalIdealMul`: multiplication by `f ∈ Kˣ` is an
+  isometry from the line of `f⁻¹ 𝔞` with weights `λ_v - log |f|_v` to the line of `𝔞` with weights
+  `λ_v`.
 * `TauCeti.HermitianBundle K`: a finitely generated projective `𝓞 K`-module with a hermitian
   metric, with its `TauCeti.HermitianBundle.rank`.
 
@@ -685,6 +688,50 @@ theorem isometryEquivTrivialFractionalIdealOne_apply (x : 𝓞 K) :
     (isometryEquivTrivialFractionalIdealOne K x : K) = x :=
   (congrArg Subtype.val (isometryEquivOfIsBaseChange_apply _ _ _ _ _ x)).trans
     (FractionalIdeal.coe_linearEquivOne_apply x)
+
+/-- **Multiplication by a unit is an isometry up to a shift of the weights**: for `f ∈ Kˣ`,
+`x ↦ f x` is an isometry from the hermitian line of `J = f⁻¹ I` with weights `w_v - log |f|_v`
+to the line of `I` with weights `w_v`, since `e^{-(w_v - log |f|_v)} |x|_v = e^{-w_v} |f x|_v`. -/
+def isometryEquivFractionalIdealMul {I J : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0) (hJ : J ≠ 0)
+    (f : Kˣ) (hIJ : J = FractionalIdeal.spanSingleton _ (f : K)⁻¹ * I)
+    {w w' : InfinitePlace K → ℝ} (hw : ∀ v, w' v = w v - Real.log (v f)) :
+    IsometryEquiv (fractionalIdeal J hJ w') (fractionalIdeal I hI w) where
+  toFun x := ⟨f * x, by
+    obtain ⟨a, ha⟩ := x
+    rw [hIJ, FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_singleton_mul] at ha
+    obtain ⟨y, hy, rfl⟩ := ha
+    rwa [← mul_assoc, mul_inv_cancel₀ f.ne_zero, one_mul]⟩
+  invFun y := ⟨(f : K)⁻¹ * y, by
+    rw [hIJ, FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_singleton_mul]
+    exact ⟨y, y.property, rfl⟩⟩
+  map_add' x y := Subtype.ext (mul_add _ _ _)
+  map_smul' c x := Subtype.ext (mul_left_comm _ _ _)
+  left_inv x := Subtype.ext (by simp)
+  right_inv y := Subtype.ext (by simp)
+  form_tmul σ x y := by
+    have hf : 0 < ‖σ f‖ := norm_pos_iff.mpr ((_root_.map_ne_zero _).mpr f.ne_zero)
+    have hexp : Real.exp (-2 * w' (InfinitePlace.mk σ)) =
+        Real.exp (-2 * w (InfinitePlace.mk σ)) * ‖σ f‖ ^ 2 := by
+      rw [hw, InfinitePlace.apply, ← Real.exp_log (pow_pos hf 2), ← Real.exp_add, Real.log_pow]
+      ring_nf
+    simp only [fractionalIdeal_def, ofIsBaseChange_form_tmul, LinearEquiv.coe_mk,
+      LinearMap.coe_mk, AddHom.coe_mk, Submodule.subtype_apply, map_mul, hexp,
+      Complex.ofReal_mul, Complex.ofReal_pow, ← Complex.conj_mul']
+    ring
+
+@[simp]
+theorem coe_isometryEquivFractionalIdealMul_apply {I J : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0)
+    (hJ : J ≠ 0) (f : Kˣ) (hIJ : J = FractionalIdeal.spanSingleton _ (f : K)⁻¹ * I)
+    {w w' : InfinitePlace K → ℝ} (hw : ∀ v, w' v = w v - Real.log (v f)) (x : J) :
+    (isometryEquivFractionalIdealMul hI hJ f hIJ hw x : K) = f * x :=
+  (rfl)
+
+@[simp]
+theorem coe_isometryEquivFractionalIdealMul_symm_apply {I J : FractionalIdeal (𝓞 K)⁰ K}
+    (hI : I ≠ 0) (hJ : J ≠ 0) (f : Kˣ) (hIJ : J = FractionalIdeal.spanSingleton _ (f : K)⁻¹ * I)
+    {w w' : InfinitePlace K → ℝ} (hw : ∀ v, w' v = w v - Real.log (v f)) (y : I) :
+    ((isometryEquivFractionalIdealMul hI hJ f hIJ hw).symm y : K) = (f : K)⁻¹ * y :=
+  (rfl)
 
 end NumberField
 

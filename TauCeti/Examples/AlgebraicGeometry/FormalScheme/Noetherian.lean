@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.AlgebraicGeometry.FormalScheme.Noetherian
-public import TauCeti.RingTheory.AdicRing.Padic
+public import TauCeti.RingTheory.Huber.Padic.Basic
+public import TauCeti.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.TrivSqZeroExt
 
 import Mathlib.RingTheory.KrullDimension.Field
@@ -15,29 +16,25 @@ import Mathlib.RingTheory.KrullDimension.Zero
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
-# Examples and counterexamples for locally noetherian formal schemes
+# Checks for locally noetherian formal schemes
 
-We exercise `TauCeti.FormalScheme.IsLocallyNoetherian` and `TauCeti.FormalScheme.IsNoetherian` on
-positive examples and a key boundary counterexample:
+`Spf ℤ_[p]` is a noetherian formal scheme (with noetherian underlying space, stalks, and affine
+section rings, yet not in the essential image of `ofScheme`), and so are its completed
+localisations. Locally noetherian ordinary schemes are locally noetherian formal schemes, and the
+affine formal opens of a locally noetherian formal scheme have noetherian rings of sections,
+whatever chart exhibits them.
 
-1. **Formal spectrum of `ℤ_[p]` (`ofSpf ℤ_[p]`):** `ofSpf ℤ_[p]` is a noetherian formal scheme
-   (with noetherian stalks, noetherian affine section rings, and a noetherian underlying space)
-   that does not come from any ordinary scheme via `ofScheme`.
-2. **Ordinary schemes (`Spec ℤ`, empty formal scheme `ofSpf (ZMod 1)`):** `ofScheme` preserves and
-   reflects both `IsLocallyNoetherian` and `IsNoetherian`.
-3. **Counterexample (`NoetherianSpace X` does not imply `X.IsLocallyNoetherian`):** for any field
-   `k`, the discrete trivial square-zero extension `A = TrivSqZeroExt k (ℕ → k)` has a unique prime
-   ideal, so `ofSpf A` is a one-point formal scheme (`Subsingleton (ofSpf A)` and
-   `NoetherianSpace (ofSpf A)`), yet `A` has a strictly ascending chain of square-zero ideals so
-   `¬ (ofSpf A).IsLocallyNoetherian` by EGA I, Ch. I, 10.6.5 (`isLocallyNoetherian_ofSpf_iff`).
+Non-noetherian adic rings — such as a discrete polynomial ring in infinitely many variables, or the
+discrete infinite-dimensional trivial square-zero extension `TrivSqZeroExt k (ℕ → k)` whose formal
+spectrum has a single point and hence a noetherian underlying space — have formal spectra that are
+not locally noetherian.
 -/
 
 public section
 
 universe u
 
-open CategoryTheory TopologicalSpace Topology Opposite AlgebraicGeometry TauCeti
-open TauCeti.FormalScheme
+open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry TauCeti TauCeti.FormalScheme
 
 noncomputable section
 
@@ -47,19 +44,34 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
--- `ofSpf ℤ_[p]` is a noetherian formal scheme with noetherian stalks and noetherian section rings,
--- yet is not in the essential image of `ofScheme`.
+-- The formal spectrum of the `p`-adic integers is a noetherian formal scheme.
+example : (ofSpf ℤ_[p]).IsNoetherian := inferInstance
+
+-- Its underlying topological space is noetherian, and its topologized section ring is noetherian,
+-- yet `ofSpf ℤ_[p]` is not in the essential image of `ofScheme`.
 example :
-    (ofSpf ℤ_[p]).IsNoetherian ∧ NoetherianSpace (ofSpf ℤ_[p]) ∧
-      (∀ x : ofSpf ℤ_[p], IsNoetherianRing ((ofSpf ℤ_[p]).presheaf.stalk x)) ∧
+    NoetherianSpace (ofSpf ℤ_[p]) ∧
       IsNoetherianRing (isAffineOpen_top_ofSpf ℤ_[p]).Sections ∧
-      (∀ (U : Opens (ofSpf ℤ_[p])), (ofSpf ℤ_[p]).IsAffineOpen U →
-        IsNoetherianRing ((ofSpf ℤ_[p]).presheaf.obj (op U))) ∧
       ¬ ∃ Y : Scheme.{0}, Nonempty (ofSpf ℤ_[p] ≅ ofScheme.obj Y) := by
-  refine ⟨inferInstance, inferInstance, fun _ ↦ inferInstance, inferInstance,
-    fun _ hU ↦ hU.isNoetherianRing, ?_⟩
+  refine ⟨inferInstance, inferInstance, ?_⟩
   simp only [ofScheme_obj, exists_ofSpf_iso_toFormalScheme_iff]
   exact PadicInt.not_discreteTopology
+
+-- Its basic open subsets are noetherian formal schemes too.
+example (f : ℤ_[p]) : (ofSpf (AdicRing.CompletedAway ℤ_[p] f)).IsNoetherian := inferInstance
+
+-- Stalks of `Spf ℤ_[p]` are noetherian.
+example (x : ofSpf ℤ_[p]) : IsNoetherianRing ((ofSpf ℤ_[p]).presheaf.stalk x) := inferInstance
+
+-- Every affine formal open of a locally noetherian formal scheme has a noetherian ring of
+-- sections, including those not given by the defining charts.
+example (X : FormalScheme) [X.IsLocallyNoetherian] (U : Opens X) (hU : X.IsAffineOpen U) :
+    IsNoetherianRing (X.presheaf.obj (op U)) :=
+  hU.isNoetherianRing
+
+-- Open formal subschemes of `Spf ℤ_[p]` are locally noetherian.
+example (U : Opens (ofSpf ℤ_[p])) : ((ofSpf ℤ_[p]).restrict U).IsLocallyNoetherian :=
+  inferInstance
 
 end Padic
 
@@ -69,14 +81,10 @@ section SchemesAndEmpty
 local instance zmodOneTopology : TopologicalSpace (ZMod 1) := ⊥
 local instance zmodOneDiscrete : DiscreteTopology (ZMod 1) := ⟨rfl⟩
 
--- `Spec ℤ` viewed as a formal scheme is locally noetherian and noetherian, and `ofScheme`
--- preserves and reflects both `IsLocallyNoetherian` and `IsNoetherian`.
-example : (Spec (CommRingCat.of ℤ)).toFormalScheme.IsLocallyNoetherian :=
-  inferInstance
+-- A noetherian scheme, such as `Spec ℤ`, gives a noetherian formal scheme.
+example : (Spec (CommRingCat.of ℤ)).toFormalScheme.IsNoetherian := inferInstance
 
-example : (Spec (CommRingCat.of ℤ)).toFormalScheme.IsNoetherian :=
-  inferInstance
-
+-- `ofScheme` preserves and reflects both `IsLocallyNoetherian` and `IsNoetherian`.
 example (Y : Scheme.{u}) :
     (ofScheme.obj Y).IsLocallyNoetherian ↔ AlgebraicGeometry.IsLocallyNoetherian Y := by
   simp
@@ -86,12 +94,25 @@ example (Y : Scheme.{u}) :
   simp
 
 -- The empty formal scheme `ofSpf (ZMod 1)` is noetherian with no nontriviality assumption.
-example : (ofSpf (ZMod 1)).IsNoetherian :=
-  inferInstance
+example : (ofSpf (ZMod 1)).IsNoetherian := inferInstance
 
 end SchemesAndEmpty
 
-section Counterexample
+section NonNoetherian
+
+/-- The discrete topology on a polynomial ring in countably many variables. -/
+local instance mvPolynomialTopology : TopologicalSpace (MvPolynomial ℕ ℚ) := ⊥
+
+/-- Discreteness of the topology on the polynomial ring. -/
+local instance mvPolynomialDiscreteTopology : DiscreteTopology (MvPolynomial ℕ ℚ) := ⟨rfl⟩
+
+-- A discrete ring that is not noetherian has a formal spectrum that is not locally noetherian.
+example : ¬ (ofSpf (MvPolynomial ℕ ℚ)).IsLocallyNoetherian := by
+  simpa using MvPolynomial.not_isNoetherianRing ℕ ℚ
+
+end NonNoetherian
+
+section NoetherianSpaceCounterexample
 
 variable (k : Type u) [Field k]
 
@@ -145,6 +166,6 @@ example :
     exact not_isNoetherianRing_infSqZero k
   exact ⟨inferInstance, inferInstance, hnotL, fun hN ↦ hnotL hN.toIsLocallyNoetherian⟩
 
-end Counterexample
+end NoetherianSpaceCounterexample
 
 end TauCeti.Examples.FormalScheme.Noetherian

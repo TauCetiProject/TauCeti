@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.Huber.Adic
 
-import TauCeti.RingTheory.Finiteness.Ideal
-
 /-!
 # Complete adic rings of finite ideal type
 
@@ -93,7 +91,7 @@ theorem of_isInducing_ringEquiv {R S : Type*} [CommRing R] [TopologicalSpace R]
     [IsTopologicalRing R] [CommRing S] [TopologicalSpace S] [IsTopologicalRing S] [IsAdicRing S]
     (φ : R ≃+* S) (hind : Topology.IsInducing φ) : IsAdicRing R := by
   obtain ⟨hIfg, hI, hIc⟩ := ideal_spec S
-  have hKfg : ((ideal S).comap φ).FG := hIfg.comap_of_equiv φ
+  have hKfg : ((ideal S).comap φ).FG := Ideal.map_symm φ ▸ hIfg.map (φ.symm : S →+* R)
   have hKadic : IsAdic ((ideal S).comap φ) := IsAdic.comap hI φ hind
   have hKcomp : IsAdicComplete ((ideal S).comap φ) R := by
     rw [← Ideal.map_symm]

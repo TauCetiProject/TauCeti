@@ -11,7 +11,6 @@ public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
 
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
-import TauCeti.RingTheory.Finiteness.Ideal
 import TauCeti.Topology.Algebra.Ring.Basic
 import TauCeti.Topology.Discrete
 import TauCeti.Topology.Sheaves.Presheaf
@@ -176,11 +175,8 @@ theorem sectionsTopology_isAdicRing :
       (X.sectionsTopology_isTopologicalRing U hU) := by
   obtain ⟨B, _, _, _, _, ⟨e⟩⟩ := (X.isAffineOpen_iff U).mp hU
   let _ := X.sectionsTopology U hU; have := X.sectionsTopology_isTopologicalRing U hU
-  let φ := (chartSectionsIso X U e).commRingCatIsoToRingEquiv
-  obtain ⟨I, hIfg, hIadic, hIcomp⟩ := IsAdicRing.exists_isAdic (A := B)
-  exact ⟨⟨I.map φ.symm.toRingHom, hIfg.map φ.symm.toRingHom, (Ideal.map_symm φ).symm ▸
-    hIadic.comap φ ⟨sectionsTopology_eq_induced X U hU e⟩,
-    (IsAdicComplete.congr_ringEquiv I φ.symm).mpr hIcomp⟩⟩
+  exact IsAdicRing.of_isInducing_ringEquiv (chartSectionsIso X U e).commRingCatIsoToRingEquiv
+    ⟨sectionsTopology_eq_induced X U hU e⟩
 
 /-- `s ∈ Γ(X, U)` is topologically nilpotent for `X.sectionsTopology U hU` iff its residue vanishes
 at every point of `U` (EGA I, Ch. I, 10.4.5). -/
@@ -227,19 +223,19 @@ end ChartTopology
 section CanonicalChart
 variable {X : FormalScheme.{u}} {U : Opens X}
 
-/-- A finitely generated ideal `J` of `Γ(X, U)` over an affine formal open `U` defines
-`X.sectionsTopology U hU` whenever its radical consists of the sections vanishing in every residue
-field on `U` (EGA I, Ch. I, 10.4.5). -/
+/-- On an affine formal open `U`, `X.sectionsTopology U hU` equals `J.adicTopology` for every
+finitely generated ideal `J ⊆ Γ(U, O_X)` whose radical is `X.vanishingIdeal U`
+(EGA I, Ch. I, 10.4.5). -/
 theorem sectionsTopology_eq_adic (hU : X.IsAffineOpen U) {J : Ideal (X.presheaf.obj (op U))}
-    (hJfg : J.FG) (hJrad : ∀ s : X.presheaf.obj (op U),
-      s ∈ J.radical ↔ ∀ x : U, X.toLocallyRingedSpace.evaluation x s = 0) :
-    @IsAdic _ _ (X.sectionsTopology U hU) J := by
+    (hJfg : J.FG) (hJrad : J.radical = X.vanishingIdeal U) :
+    X.sectionsTopology U hU = J.adicTopology := by
   let _ := X.sectionsTopology U hU; have := X.sectionsTopology_isTopologicalRing U hU
   have := X.sectionsTopology_isAdicRing U hU
   obtain ⟨hIfg, hIadic, -⟩ := IsAdicRing.ideal_spec (X.presheaf.obj (op U))
   exact hIadic.of_radical_eq hIfg hJfg <| Ideal.ext fun s ↦
     hIadic.isTopologicallyNilpotent_iff_mem_radical.symm.trans <|
-      (isTopologicallyNilpotent_iff_forall_evaluation_eq_zero X U hU s).trans (hJrad s).symm
+      (isTopologicallyNilpotent_iff_forall_evaluation_eq_zero X U hU s).trans <| by
+        rw [hJrad, LocallyRingedSpace.mem_vanishingIdeal]
 
 namespace IsAffineOpen
 /-- Type synonym for `Γ(X, U)` over an affine formal open `U ⊆ X`, carrying its canonical
@@ -988,15 +984,6 @@ theorem comap_vanishingIdeal_ofSpf_topSectionsIso_inv {A : Type u} [CommRing A]
       fun h p ↦ (Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff p a).mpr
         ((PrimeSpectrum.mem_vanishingIdeal (Spf.carrier A) a).mp h p.val p.property)⟩
 
-/-- On an affine formal open `U`, `X.sectionsTopology U hU` equals `J.adicTopology` for every
-finitely generated ideal `J ⊆ Γ(U, O_X)` whose radical is `X.vanishingIdeal U`. -/
-theorem sectionsTopology_eq_adic_of_vanishingIdeal (X : FormalScheme.{u}) (U : Opens X)
-    (hU : X.IsAffineOpen U) {J : Ideal (X.presheaf.obj (op U))} (hJfg : J.FG)
-    (hJrad : J.radical = X.vanishingIdeal U) :
-    X.sectionsTopology U hU = J.adicTopology :=
-  X.sectionsTopology_eq_adic hU hJfg fun s ↦ by
-    rw [hJrad, LocallyRingedSpace.mem_vanishingIdeal]
-
 /-- Every affine formal open `U` admits a finitely generated ideal `J ⊆ Γ(U, O_X)` with
 `J.radical = X.vanishingIdeal U`. -/
 theorem exists_fg_radical_eq_vanishingIdeal (X : FormalScheme.{u}) (U : Opens X)
@@ -1021,7 +1008,7 @@ theorem sectionsTopology_eq_induced_of_isAdic {X : FormalScheme.{u}} {U : Opens 
   let tU : TopologicalSpace (X.presheaf.obj (op U)) :=
     TopologicalSpace.induced φ ‹TopologicalSpace R›
   have hadic : @IsAdic _ _ tU (I.comap φ) := IsAdic.comap hI φ ⟨rfl⟩
-  rw [X.sectionsTopology_eq_adic_of_vanishingIdeal U hU (hIfg.comap_of_equiv φ) hrad]
+  rw [X.sectionsTopology_eq_adic hU (Ideal.map_symm φ ▸ hIfg.map φ.symm.toRingHom) hrad]
   exact hadic.symm
 
 /-- If `φ : Γ(U, O_X) ≃+* R` pulls back a finitely generated ideal of definition `I` of `R` to an
@@ -1046,7 +1033,7 @@ theorem sectionsTopology_eq_induced_of_comap_vanishingIdeal {X Y : FormalScheme.
     Y.sectionsTopology V hV = TopologicalSpace.induced φ (X.sectionsTopology U hU) := by
   obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal U hU
   let tU : TopologicalSpace (X.presheaf.obj (op U)) := X.sectionsTopology U hU
-  have hJadic : @IsAdic _ _ tU J := X.sectionsTopology_eq_adic_of_vanishingIdeal U hU hJfg hJrad
+  have hJadic : @IsAdic _ _ tU J := X.sectionsTopology_eq_adic hU hJfg hJrad
   have hKrad : (J.comap φ).radical = Y.vanishingIdeal V := by
     rw [← Ideal.comap_radical, hJrad, hvan]
   exact sectionsTopology_eq_induced_of_isAdic hV φ hJfg hJadic hKrad
@@ -1181,7 +1168,7 @@ theorem sectionsTopology_toFormalScheme_eq_bot (Y : Scheme.{u})
     simp only [Ideal.mem_bot]
     exact (Scheme.isNilpotent_iff_basicOpen_eq_bot_of_isCompact (X := Y) (U := U)
       hU.isCompact s).trans (Y.basicOpen_eq_bot_iff_forall_evaluation_eq_zero s)
-  rw [Y.toFormalScheme.sectionsTopology_eq_adic_of_vanishingIdeal U hU Submodule.fg_bot hrad]
+  rw [Y.toFormalScheme.sectionsTopology_eq_adic hU Submodule.fg_bot hrad]
   let : TopologicalSpace (Y.toFormalScheme.presheaf.obj (op U)) :=
     (⊥ : Ideal (Y.toFormalScheme.presheaf.obj (op U))).adicTopology
   have : DiscreteTopology (Y.toFormalScheme.presheaf.obj (op U)) := is_bot_adic_iff.mp rfl
