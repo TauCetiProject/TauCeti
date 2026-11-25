@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.LinearAlgebra.Determinant
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables.Higher
 import TauCeti.Analysis.Sobolev.Local.HalfPlane
@@ -39,7 +39,8 @@ the change of variables, the extension `Φ` of `e` also needs an invertible deri
 point. Extending `e.symm` in the same way to `Ψ`, the composite `Ψ ∘ Φ` is the identity on a
 neighbourhood of the point in the closed upper half-plane, where derivatives are unique since the
 half-plane is convex with nonempty interior. So the derivative of `Ψ` is a left inverse of that of
-`Φ` at the point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
+`Φ` at the point (`TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`), and the derivative of `Φ` is
+invertible near the point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
 
 ## Main declarations
 
@@ -85,24 +86,6 @@ theorem MemWkpLoc.contDiffOn_clm_apply_inter_setOf_im_nonneg [FiniteDimensional 
   rw [← hA'A ⟨hU hy.1, hy.2⟩]
 
 variable {e : PartialEquiv ℂ ℂ} {Ω Ω' : Set ℂ} {n : ℕ}
-
-/-- If `Ψ ∘ Φ` is the identity on a set `S` containing `z₀` within which derivatives at `z₀` are
-unique, and `Φ` and `Ψ` are differentiable at `z₀` and `Φ z₀`, then the derivative of `Φ` at `z₀`
-is invertible. -/
-private theorem det_fderiv_ne_zero_of_eqOn_comp_id {Φ Ψ : ℂ → ℂ} {S : Set ℂ} {z₀ : ℂ}
-    (huniq : UniqueDiffWithinAt ℝ S z₀) (hΦ : DifferentiableAt ℝ Φ z₀)
-    (hΨ : DifferentiableAt ℝ Ψ (Φ z₀)) (hid : EqOn (Ψ ∘ Φ) id S) (hz₀ : z₀ ∈ S) :
-    (fderiv ℝ Φ z₀).det ≠ 0 := by
-  have hcomp : (fderiv ℝ Ψ (Φ z₀)).comp (fderiv ℝ Φ z₀) = ContinuousLinearMap.id ℝ ℂ :=
-    huniq.eq (hΨ.hasFDerivAt.comp z₀ hΦ.hasFDerivAt).hasFDerivWithinAt
-      ((hasFDerivWithinAt_id z₀ S).congr (fun z hz ↦ hid hz) (hid hz₀))
-  intro h
-  have h1 : LinearMap.det (fderiv ℝ Ψ (Φ z₀) : ℂ →ₗ[ℝ] ℂ) *
-      LinearMap.det (fderiv ℝ Φ z₀ : ℂ →ₗ[ℝ] ℂ) = 1 := by
-    rw [← LinearMap.det_comp, ← ContinuousLinearMap.toLinearMap_comp, hcomp,
-      ContinuousLinearMap.coe_id, LinearMap.det_id]
-  rw [show LinearMap.det (fderiv ℝ Φ z₀ : ℂ →ₗ[ℝ] ℂ) = 0 from h, mul_zero] at h1
-  exact zero_ne_one h1
 
 /-- **Extending a change of half-plane chart across the real axis.** Let `e` be a partial
 equivalence between the relatively open subsets `Ω ∩ {0 ≤ im}` and `Ω' ∩ {0 ≤ im}` of the closed
