@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Order.Filter.AtTopBot.Basic
 
@@ -31,6 +30,13 @@ absolute value at most `(2n + 1) n^{-3/2} ≤ 3/√n`, which is smaller than the
 * `TauCeti.goodTorusSizes θ`: the set `W_θ`.
 * `TauCeti.eventually_mem_goodTorusSizes_or_add_one`: for `θ ∉ πℤ`, eventually `n ∈ W_θ` or
   `n + 1 ∈ W_θ`.
+
+## References
+
+* V. Gorin, *Lectures on random lozenge tilings*, Cambridge Stud. Adv. Math. 193 (2021),
+  Lemma 4.7, whose conclusion `n` or `n + 2` is corrected here to `n` or `n + 1`.
+* R. Kenyon, A. Okounkov, S. Sheffield, *Dimers and amoebae*, Ann. of Math. 163 (2006),
+  for the convergence of the torus measures.
 -/
 
 public section
@@ -45,13 +51,14 @@ def goodTorusSizes (θ : ℝ) : Set ℕ :=
   {n | 1 ≤ n ∧ ∀ j : ℤ, ((n : ℝ) * √n)⁻¹ < |θ - π * j / n|}
 
 /-- Membership in `goodTorusSizes θ`. -/
+@[simp]
 theorem mem_goodTorusSizes {θ : ℝ} {n : ℕ} :
     n ∈ goodTorusSizes θ ↔ 1 ≤ n ∧ ∀ j : ℤ, ((n : ℝ) * √n)⁻¹ < |θ - π * j / n| :=
   Iff.rfl
 
 /-- If neither `n` nor `n + 1` is a good torus size, with `n ≥ 1`, then `θ` is within `3/√n` of a
 point of `πℤ`. -/
-theorem exists_abs_sub_mul_le_of_not_mem_goodTorusSizes {θ : ℝ} {n : ℕ} (hn : 1 ≤ n)
+theorem exists_abs_sub_mul_le_of_notMem_goodTorusSizes {θ : ℝ} {n : ℕ} (hn : 1 ≤ n)
     (h₀ : n ∉ goodTorusSizes θ) (h₁ : n + 1 ∉ goodTorusSizes θ) :
     ∃ k : ℤ, |θ - π * k| ≤ 3 / √n := by
   simp only [mem_goodTorusSizes, not_and, not_forall, not_lt] at h₀ h₁
@@ -78,12 +85,10 @@ theorem exists_abs_sub_mul_le_of_not_mem_goodTorusSizes {θ : ℝ} {n : ℕ} (hn
         · exact mul_le_mul_of_nonneg_left hj'' (by positivity)
         · exact mul_le_mul_of_nonneg_left hj (by positivity)
     _ ≤ 3 / √n := by
-        rw [← add_mul, div_eq_mul_inv, mul_inv, ← mul_assoc]
-        refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-        rw [← div_eq_mul_inv, div_le_iff₀ hn0]
         have : (1 : ℝ) ≤ n := by exact_mod_cast hn
+        rw [← add_mul, ← div_eq_mul_inv, div_le_div_iff₀ (by positivity) hs0]
         push_cast
-        linarith
+        nlinarith [mul_nonneg (sub_nonneg.2 this) hs0.le]
 
 /-- **Good torus sizes.** If `θ ∉ πℤ` then, for all large `n`, `n` or `n + 1` is a good torus
 size. -/
@@ -102,9 +107,10 @@ theorem eventually_mem_goodTorusSizes_or_add_one {θ : ℝ} (hθ : ∀ k : ℤ, 
   filter_upwards [hlim.eventually (gt_mem_nhds (mul_pos pi_pos hδ0)), eventually_ge_atTop 1]
     with n hn h1
   by_contra! h
-  obtain ⟨k, hk⟩ := exists_abs_sub_mul_le_of_not_mem_goodTorusSizes h1 h.1 h.2
+  obtain ⟨k, hk⟩ := exists_abs_sub_mul_le_of_notMem_goodTorusSizes h1 h.1 h.2
   have hround : π * δ ≤ |θ - π * k| := by
-    rw [hδ, ← abs_of_pos pi_pos, ← abs_mul, abs_of_pos pi_pos]
+    have hπδ : π * δ = |π * (θ / π - round (θ / π))| := by rw [hδ, abs_mul, abs_of_pos pi_pos]
+    rw [hπδ]
     calc |π * (θ / π - round (θ / π))| ≤ |π * (θ / π - k)| := by
           rw [abs_mul, abs_mul]
           exact mul_le_mul_of_nonneg_left (round_le _ _) (abs_nonneg _)

@@ -12,8 +12,9 @@ import Mathlib.Analysis.Real.Pi.Bounds
 # Regression examples: good torus sizes
 
 * `θ = π/2`: no even `n` is a good torus size (`j = n/2` gives distance `0`), and every odd `n`
-  is one, since the nearest `πj/n` is at distance `π/(2n) > n^{-3/2}`. So "`n` or `n + 2`" fails
-  at `θ = π/2`, while "`n` or `n + 1`" holds.
+  is one, since the nearest `πj/n` is at distance `π/(2n) > n^{-3/2}`. So the "`n` or `n + 2`" of
+  Gorin's Lemma 4.7 (*Lectures on random lozenge tilings*, 2021) fails at `θ = π/2`, while
+  "`n` or `n + 1`" holds.
 * `θ = 2π/3`: `3` is not a good torus size (`j = 2`), and `4` is one, since
   `min_j |2π/3 - πj/4| = π/12 > 1/8`.
 * `θ = 0.1`: neither `188` nor `189` is a good torus size, through `j = 6` in both cases. How large
@@ -53,13 +54,9 @@ theorem mem_goodTorusSizes_pi_div_two_of_odd {n : ℕ} (hn : Odd n) :
     push_cast
     field_simp
   rw [heq, abs_div, abs_mul, abs_of_pos pi_pos, abs_of_pos (by positivity : (0 : ℝ) < 2 * n),
-    lt_div_iff₀ (by positivity), inv_mul_eq_div, div_lt_iff₀ (by positivity)]
+    inv_eq_one_div, div_lt_div_iff₀ (by positivity) (by positivity)]
   have hA : 1 ≤ |(((n : ℤ) - 2 * j : ℤ) : ℝ)| * √n := one_le_mul_of_one_le_of_one_le hodd hs
-  have h2 := mul_le_mul_of_nonneg_left hA (by positivity : 0 ≤ π * n)
-  have h3 : 2 * (n : ℝ) < π * n := by nlinarith [pi_gt_three]
-  calc 2 * (n : ℝ) < π * n * 1 := by rwa [mul_one]
-    _ ≤ _ := h2
-    _ = _ := by ring
+  nlinarith [pi_gt_three, mul_le_mul_of_nonneg_left hA (by positivity : 0 ≤ π * n)]
 
 /-- `3` is not a good torus size for `θ = 2π/3`. -/
 theorem three_notMem_goodTorusSizes_two_pi_div_three : 3 ∉ goodTorusSizes (2 * π / 3) := by
