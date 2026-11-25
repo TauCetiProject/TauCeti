@@ -181,18 +181,11 @@ theorem exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensi
   refine ⟨δ / 4, by positivity, ?_⟩
   by_contra hM
   push Not at hM
-  -- A sequence of cylinders whose derivatives blow up at points `(sₖ, tₖ)` with `tₖ ∈ [0, 1)`.
+  -- A sequence of cylinders whose derivatives blow up at points `zₖ`. Translated by `(sₖ, 0)`, the
+  -- derivatives blow up at points `(0, tₖ)` with `tₖ ∈ [0, 1)`.
   choose p u hp hu hper hfl huK hE z hz using fun k : ℕ ↦ hM k
-  have hred (k : ℕ) : ∃ t ∈ Ico (0 : ℝ) 1, (k : ℝ) < ‖fderiv ℝ (u k) ((z k).1, t)‖ := by
-    have hpd : Function.Periodic (fun t ↦ fderiv ℝ (u k) ((z k).1, t)) 1 :=
-      fun t ↦ fderiv_add_snd_of_periodic_snd (hper k) _ t
-    obtain ⟨t, ht, heq⟩ := hpd.exists_mem_Ico₀ zero_lt_one (z k).2
-    exact ⟨t, ht, by simpa [← heq] using hz k⟩
-  choose t ht htz using hred
-  -- Translate each cylinder by `(sₖ, 0)`.
+  choose t ht htz using fun k ↦ exists_mem_Ico_fderiv_comp_add_right_eq zero_lt_one (hper k) (z k)
   set v : ℕ → ℝ × ℝ → V := fun k w ↦ u k (w + ((z k).1, 0))
-  have hvd (k : ℕ) (w : ℝ × ℝ) : fderiv ℝ (v k) w = fderiv ℝ (u k) (w + ((z k).1, 0)) :=
-    fderiv_comp_add_right _
   have hvfl (k : ℕ) := isComplexLinearMap_perturbedFDeriv_comp_add_right (hfl k) (z k).1
   have hint (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le
     (H := Hs (p k)) (hJt _ (hp k)) (hHs.comp ((contDiff_const (c := p k)).prodMk contDiff_id))
@@ -216,8 +209,8 @@ theorem exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensi
   have hmem : ((0 : ℝ), t (φ n)) ∈ ({0} ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) :=
     ⟨rfl, (ht (φ n)).1, (ht (φ n)).2.le⟩
   have h := hB n _ hmem
-  rw [hvd, Prod.mk_add_mk, zero_add, add_zero] at h
+  rw [htz] at h
   have hφn : (n : ℝ) ≤ φ n := by exact_mod_cast hφ.id_le n
-  linarith [htz (φ n)]
+  linarith [hz (φ n)]
 
 end TauCeti.SymplecticForm

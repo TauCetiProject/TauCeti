@@ -15,7 +15,7 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 # No bubbling for Floer solutions in a symplectic vector space
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space. Gromov–Floer compactness for
-solutions of the Floer equation `(du - X_K)^{0,1} = 0` of bounded energy has to deal with
+solutions of the Floer equation `(du - X_{Ks,Kt})^{0,1} = 0` of bounded energy has to deal with
 bubbling: where the derivatives of a sequence of solutions blow up, rescaling produces a
 nonconstant pseudoholomorphic plane of finite area, the bubble
 (`TauCeti.SymplecticForm.exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv`). In a
@@ -27,7 +27,7 @@ every energy level and not only below the bubbling threshold of
 
 * **No blow-up at a point**
   (`not_tendsto_norm_fderiv_atTop_of_setLIntegral_floerEnergyDensity_le`).
-  For a `C²` perturbation `K = K_s ds + K_t dt` and a `C²` almost complex structure `J(z, x)` on
+  For a `C²` perturbation `Ks ds + Kt dt` and a `C²` almost complex structure `J(z, x)` on
   `U × V`, the derivatives of smooth solutions `uₙ` on `U` with values in a compact set `K` and
   energy over `U` bounded by `E` cannot tend to infinity along points `zₙ → z₀ ∈ U`, provided that
   `ω` tames `J(z₀, x)` for `x ∈ K`. The bubble `v` at `z₀` is a `C¹` plane, holomorphic for the
@@ -43,8 +43,8 @@ every energy level and not only below the bubbling threshold of
 * **Bounded derivatives of Floer cylinders**
   (`exists_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le`,
   and `exists_lipschitzWith_of_setLIntegral_floerEnergyDensity_le` in
-  Lipschitz form). For a Hamiltonian `H_t` and an almost complex structure `J_t(x)` of period one
-  in `t`, tamed by `ω` on `K`, there is a bound on `‖du‖` over the whole cylinder, uniform over all
+  Lipschitz form). For a Hamiltonian `H_t` of period one in `t` and an almost complex structure
+  `J_t(x)` tamed by `ω` on `K`, there is a bound on `‖du‖` over the whole cylinder, uniform over all
   smooth Floer cylinders `u` of period one with values in `K` and energy at most `E` over
   `ℝ × [0, 1]`. As in `TauCeti.Geometry.Symplectic.Floer.Compactness.SmallEnergy`, translation in
   `s` and periodicity in `t` move any point into the window `(-1, 1) × (-1/2, 3/2)`, whose energy
@@ -52,8 +52,8 @@ every energy level and not only below the bubbling threshold of
 
 The uniform Lipschitz bound is the hypothesis under which the levels of sequences of Floer
 trajectories are selected and matched in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Breaking`
-and `TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit`; for smooth trajectories with
-values in a compact set and bounded energy it holds.
+and `TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit`. It holds for smooth trajectories
+with values in a compact set and bounded energy, for one `C²` structure `J_t(x)` tamed on that set.
 
 ## References
 
@@ -72,38 +72,12 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V} {U : Set (ℝ × ℝ)}
   {z₀ : ℝ × ℝ}
 
-omit [FiniteDimensional ℝ V] in
-/-- The norm of a complex-linear map `F` from the standard complex line, for a structure `J` with
-`‖J a‖ ≤ M ‖a‖` and `c ‖a‖² ≤ ω(a, J a)`, is controlled by its area:
-`c ‖F‖² ≤ (1 + M)² ω(F(1, 0), F(0, 1))`. -/
-private theorem mul_norm_sq_le_of_isComplexLinearMap (ω : SymplecticForm V)
-    {J₀ : AlmostComplexStructure V} {c M : ℝ} (hc : 0 < c) (hJc : ∀ a, c * ‖a‖ ^ 2 ≤ ω a (J₀ a))
-    (hJM : ∀ a, ‖J₀ a‖ ≤ M * ‖a‖) {F : ℝ × ℝ →L[ℝ] V}
-    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₀ (F : ℝ × ℝ →ₗ[ℝ] V)) :
-    c * ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  set a := F stdComplexLineReal
-  have hb : F stdComplexLineImag = J₀ a := by simpa using hF.apply_stdComplexLineImag
-  -- `‖F‖ ≤ ‖F(1, 0)‖ + ‖F(0, 1)‖ ≤ (1 + M) ‖a‖`.
-  have hF : ‖F‖ ≤ (1 + M) * ‖a‖ := by
-    have hM : 0 ≤ (1 + M) * ‖a‖ := by nlinarith [hJM a, norm_nonneg a, norm_nonneg (J₀ a)]
-    refine F.opNorm_le_bound hM fun z ↦ ?_
-    rw [F.apply_stdComplexLine z]
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, norm_smul, hb]
-    have h1 := mul_le_mul_of_nonneg_right (norm_fst_le z) (norm_nonneg a)
-    have h2 := mul_le_mul (norm_snd_le z) (hJM a) (norm_nonneg _) (norm_nonneg z)
-    nlinarith
-  have hsq : ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ‖a‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg F) hF 2
-  rw [hb]
-  nlinarith [hJc a, sq_nonneg (1 + M)]
-
-/-- **No blow-up of the derivatives in a symplectic vector space.** Let `K = K_s ds + K_t dt` be
-`C²` and `J(z, x)` be `C²` on `U × V` for an open set `U ⊆ ℝ × ℝ`, and let `uₙ` be smooth
-solutions of the Floer equation `(du - X_K)^{0,1} = 0` for `J(z, u)` on `U`, with values in a
-compact set `K` and Floer energy over `U` at most `E`. If `ω` tames `J(z₀, x)` for `x ∈ K`, then the
-derivatives `‖duₙ(zₙ)‖` do not tend to infinity along any sequence of points `zₙ → z₀ ∈ U`. -/
+/-- **No blow-up of the derivatives in a symplectic vector space.** Let the perturbation
+`Ks ds + Kt dt` be `C²` and `J(z, x)` be `C²` on `U × V` for an open set `U ⊆ ℝ × ℝ`, and let
+`uₙ` be smooth solutions of the Floer equation `(du - X_{Ks,Kt})^{0,1} = 0` for `J(z, u)` on `U`,
+with values in a compact set `K` and Floer energy over `U` at most `E`. If `ω` tames `J(z₀, x)`
+for `x ∈ K`, then the derivatives `‖duₙ(zₙ)‖` do not tend to infinity along any sequence of points
+`zₙ → z₀ ∈ U`. -/
 theorem not_tendsto_norm_fderiv_atTop_of_setLIntegral_floerEnergyDensity_le
     (ω : SymplecticForm V) {K : Set V} {u : ℕ → ℝ × ℝ → V} {z : ℕ → ℝ × ℝ} {E : ℝ}
     (hU : IsOpen U) (hz₀ : z₀ ∈ U) (hK : IsCompact K)
@@ -146,7 +120,7 @@ theorem not_tendsto_norm_fderiv_atTop_of_setLIntegral_floerEnergyDensity_le
     rw [← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [div_mul_eq_mul_div, le_div_iff₀ hc, mul_comm]
-    exact mul_norm_sq_le_of_isComplexLinearMap ω hc (fun a ↦ (hcM 0 _ (hvK w) a).1)
+    exact ω.mul_opNorm_sq_le_of_isComplexLinearMap hc (fun a ↦ (hcM 0 _ (hvK w) a).1)
       (fun a ↦ (hcM 0 _ (hvK w) a).2) (hCR w)
   have hint : Integrable fun w ↦ ‖fderiv ℝ v w‖ ^ 2 := by
     refine ⟨((hv.continuous_fderiv one_ne_zero).norm.pow 2).aestronglyMeasurable,
@@ -160,11 +134,11 @@ theorem not_tendsto_norm_fderiv_atTop_of_setLIntegral_floerEnergyDensity_le
   simp at hv0
 
 /-- **Floer solutions of bounded energy in a symplectic vector space have bounded derivatives on
-compact sets.** Let `K = K_s ds + K_t dt` be `C²` and `J(z, x)` be `C²` on `U × V` for an open set
-`U ⊆ ℝ × ℝ`, let `D ⊆ U` be compact and `K ⊆ V` compact, with `J(z, x)` tamed by `ω` for `z ∈ D`
-and `x ∈ K`. For every `E` there is a bound `M` such that every smooth solution `u` of the Floer
-equation `(du - X_K)^{0,1} = 0` for `J(z, u)` on `U`, with values in `K` and Floer energy over `U`
-at most `E`, satisfies `‖du‖ ≤ M` on `D`. -/
+compact sets.** Let the perturbation `Ks ds + Kt dt` be `C²` and `J(z, x)` be `C²` on `U × V`
+for an open set `U ⊆ ℝ × ℝ`, let `D ⊆ U` be compact and `K ⊆ V` compact, with `J(z, x)` tamed by
+`ω` for `z ∈ D` and `x ∈ K`. For every `E` there is a bound `M` such that every smooth solution
+`u` of the Floer equation `(du - X_{Ks,Kt})^{0,1} = 0` for `J(z, u)` on `U`, with values in `K`
+and Floer energy over `U` at most `E`, satisfies `‖du‖ ≤ M` on `D`. -/
 theorem exists_forall_norm_fderiv_le_of_isCompact_of_setLIntegral_floerEnergyDensity_le
     (ω : SymplecticForm V)
     {K : Set V} {D : Set (ℝ × ℝ)} (hU : IsOpen U) (hD : IsCompact D) (hDU : D ⊆ U)
@@ -189,15 +163,9 @@ theorem exists_forall_norm_fderiv_le_of_isCompact_of_setLIntegral_floerEnergyDen
   refine tendsto_atTop_mono (fun n ↦ ?_) tendsto_natCast_atTop_atTop
   exact (Nat.cast_le.2 (hψ.id_le n)).trans (hz (ψ n)).le
 
-/-- The segment `{0} × [0, 1]` lies in the closed ball of radius `1/2` about `(0, 1/2)`. -/
-private theorem mem_closedBall_of_mem_Icc {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    ((0 : ℝ), t) ∈ closedBall ((0 : ℝ), (1 / 2 : ℝ)) (1 / 2) := by
-  rw [mem_closedBall, Prod.dist_eq, max_le_iff, Real.dist_eq, Real.dist_eq, abs_le, abs_le]
-  exact ⟨by norm_num, by constructor <;> linarith [ht.1, ht.2]⟩
-
 /-- **Floer cylinders of bounded energy in a symplectic vector space have bounded derivatives.**
-Let `H_t` be a `C²` Hamiltonian and `J_t(x)` a `C²` almost complex structure, both of period one in
-`t`, and let `K ⊆ V` be compact with `J_t(x)` tamed by `ω` for `x ∈ K`. For every `E` there is a
+Let `H_t` be a `C²` Hamiltonian of period one in `t` and `J_t(x)` a `C²` almost complex structure,
+and let `K ⊆ V` be compact with `J_t(x)` tamed by `ω` for `x ∈ K`. For every `E` there is a
 bound `M` such that every smooth solution `u` of the Floer equation
 `∂s u + J_t(u) (∂t u - X_{H_t}(u)) = 0` of period one in `t`, with values in `K` and Floer energy at
 most `E` over the strip `ℝ × [0, 1]`, satisfies `‖du‖ ≤ M` everywhere. -/
@@ -226,11 +194,7 @@ theorem exists_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le (ω :
     (fun z _ x hx ↦ htame z.2 x hx) (3 * E)
   refine ⟨M, fun u hu hper hfl huK hE z ↦ ?_⟩
   -- Move `z` to a point `(0, t)` with `t ∈ [0, 1)`, by periodicity in `t` and translation in `s`.
-  have hpd : Periodic (fun t ↦ fderiv ℝ u (z.1, t)) 1 :=
-    fun t ↦ fderiv_add_snd_of_periodic_snd hper _ t
-  obtain ⟨t, ht, heq⟩ := hpd.exists_mem_Ico₀ zero_lt_one z.2
-  have hvd : fderiv ℝ (fun w ↦ u (w + (z.1, 0))) (0, t) = fderiv ℝ u (z.1, t) := by
-    rw [fderiv_comp_add_right, Prod.mk_add_mk, zero_add, add_zero]
+  obtain ⟨t, ht, hvd⟩ := exists_mem_Ico_fderiv_comp_add_right_eq zero_lt_one hper z
   have hE3 : ∫⁻ w in Ω, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
       (fun w ↦ u (w + (z.1, 0))) w) ≤ ENNReal.ofReal (3 * E) := by
     refine (lintegral_ball_floerEnergyDensity_comp_add_le hHper hper z.1).trans ?_
@@ -243,9 +207,11 @@ theorem exists_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le (ω :
   have h := hM (u := fun w ↦ u (w + (z.1, 0)))
     ((hu.comp (contDiff_id.add contDiff_const)).contDiffOn)
     (fun w _ ↦ huK _) (fun w _ ↦ isComplexLinearMap_perturbedFDeriv_comp_add_right hfl z.1 w) hE3
-    ((0 : ℝ), t) (mem_closedBall_of_mem_Icc (Ico_subset_Icc_self ht))
-  rw [hvd] at h
-  simpa [← heq] using h
+    ((0 : ℝ), t) (by
+      simp only [mem_closedBall, Prod.dist_eq, Real.dist_eq, sub_self, abs_zero, max_le_iff,
+        abs_le]
+      exact ⟨by norm_num, by constructor <;> linarith [ht.1, ht.2]⟩)
+  rwa [hvd] at h
 
 /-- **Floer cylinders of bounded energy in a symplectic vector space are uniformly Lipschitz.**
 Under the hypotheses of
