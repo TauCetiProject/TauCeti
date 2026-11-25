@@ -294,6 +294,60 @@ theorem lift_of {G : Type*} [Monoid G] (f : ∀ n, GL (Fin n) A →* G)
     lift f hf (of A n u) = f n u :=
   DirectLimit.Monoid.lift_of f hf n u
 
+/-! ## Stable subgroups from compatible families -/
+
+section Family
+
+variable {H : ∀ n, Subgroup (GL (Fin n) A)}
+
+/-- For a family of subgroups compatible with stabilization, the images in `GL_∞(A)` increase with
+the size. -/
+private theorem monotone_map_of
+    (hH : ∀ m n (h : m ≤ n), (H m).map (stabilizeGL A h) ≤ H n) :
+    Monotone fun n ↦ (H n).map (of A n) := by
+  intro m n h
+  dsimp only
+  rw [← of_comp_stabilizeGL h, ← Subgroup.map_map]
+  exact Subgroup.map_mono (hH m n h)
+
+/-- For a family of subgroups `H n` of `GL (Fin n) A` compatible with stabilization, an element of
+`GL_∞(A)` lies in the union of the images of the `H n` exactly when it comes from some `H n`. -/
+theorem mem_iSup_map_of_iff (hH : ∀ m n (h : m ≤ n), (H m).map (stabilizeGL A h) ≤ H n)
+    {x : StableGeneralLinearGroup A} :
+    x ∈ ⨆ n, (H n).map (of A n) ↔ ∃ n, ∃ u ∈ H n, of A n u = x := by
+  rw [Subgroup.mem_iSup_of_directed (monotone_map_of hH).directed_le]
+  simp only [Subgroup.mem_map]
+
+/-- For a family of subgroups `H n` of `GL (Fin n) A` compatible with stabilization, the image of
+an invertible matrix lies in the union of the images of the `H n` exactly when some stabilization
+of it lies in the family. -/
+theorem of_mem_iSup_map_of_iff (hH : ∀ m n (h : m ≤ n), (H m).map (stabilizeGL A h) ≤ H n)
+    {n : ℕ} {u : GL (Fin n) A} :
+    of A n u ∈ ⨆ k, (H k).map (of A k) ↔ ∃ k, ∃ h : n ≤ k, stabilizeGL A h u ∈ H k := by
+  refine ⟨fun hu ↦ ?_, fun ⟨k, h, hu⟩ ↦ (mem_iSup_map_of_iff hH).2 ⟨k, _, hu, of_stabilizeGL h u⟩⟩
+  obtain ⟨m, v, hv, hvu⟩ := (mem_iSup_map_of_iff hH).1 hu
+  obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
+  rw [← of_stabilizeGL hmk, ← of_stabilizeGL hnk] at hvu
+  exact ⟨k, hnk, of_injective k hvu ▸ hH m k hmk ⟨v, hv, rfl⟩⟩
+
+/-- For a family of subgroups `H n` of `GL (Fin n) A` compatible with stabilization, the union of
+their images in `GL_∞(A)` is normal as soon as each conjugate `g e g⁻¹` of an element of `H n`
+lies in `H (n + n)` after stabilization. -/
+theorem normal_iSup_map_of (hH : ∀ m n (h : m ≤ n), (H m).map (stabilizeGL A h) ≤ H n)
+    (hconj : ∀ n (g e : GL (Fin n) A), e ∈ H n →
+      stabilizeGL A (Nat.le_add_right n n) (g * e * g⁻¹) ∈ H (n + n)) :
+    (⨆ n, (H n).map (of A n)).Normal where
+  conj_mem x hx g := by
+    obtain ⟨m, e, he, rfl⟩ := (mem_iSup_map_of_iff hH).1 hx
+    obtain ⟨n, g, rfl⟩ := exists_of g
+    -- Move `g` and `e` to a common size `k`.
+    obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
+    rw [← of_stabilizeGL hmk e, ← of_stabilizeGL hnk g, ← map_inv, ← map_mul, ← map_mul,
+      ← of_stabilizeGL (Nat.le_add_right k k)]
+    exact (mem_iSup_map_of_iff hH).2 ⟨_, _, hconj k _ _ (hH m k hmk ⟨e, he, rfl⟩), rfl⟩
+
+end Family
+
 /-! ## The stable elementary subgroup -/
 
 variable (A) in
@@ -302,21 +356,13 @@ elementary subgroups of `GL (Fin n) A`. -/
 def elementarySubgroup : Subgroup (StableGeneralLinearGroup A) :=
   ⨆ n, (TauCeti.elementarySubgroup (Fin n) A).map (of A n)
 
-/-- The images of the elementary subgroups increase with the size. -/
-private theorem monotone_map_elementarySubgroup :
-    Monotone fun n ↦ (TauCeti.elementarySubgroup (Fin n) A).map (of A n) := by
-  intro m n h
-  dsimp only
-  rw [← of_comp_stabilizeGL h, ← Subgroup.map_map]
-  exact Subgroup.map_mono (map_stabilizeGL_elementarySubgroup_le h)
-
 /-- An element of `GL_∞(A)` is stably elementary exactly when it comes from an elementary matrix
 of some size. -/
 theorem mem_elementarySubgroup_iff {x : StableGeneralLinearGroup A} :
     x ∈ elementarySubgroup A ↔
       ∃ n, ∃ u ∈ TauCeti.elementarySubgroup (Fin n) A, of A n u = x := by
-  rw [elementarySubgroup, Subgroup.mem_iSup_of_directed monotone_map_elementarySubgroup.directed_le]
-  simp only [Subgroup.mem_map]
+  rw [elementarySubgroup]
+  exact mem_iSup_map_of_iff fun _ _ ↦ map_stabilizeGL_elementarySubgroup_le
 
 /-- Elementary matrices are stably elementary. -/
 theorem of_mem_elementarySubgroup {n : ℕ} {u : GL (Fin n) A}
@@ -328,11 +374,8 @@ elementary. -/
 theorem of_mem_elementarySubgroup_iff {n : ℕ} {u : GL (Fin n) A} :
     of A n u ∈ elementarySubgroup A ↔
       ∃ k, ∃ h : n ≤ k, stabilizeGL A h u ∈ TauCeti.elementarySubgroup (Fin k) A := by
-  refine ⟨fun hu ↦ ?_, fun ⟨k, h, hu⟩ ↦ of_stabilizeGL h u ▸ of_mem_elementarySubgroup hu⟩
-  obtain ⟨m, v, hv, hvu⟩ := mem_elementarySubgroup_iff.1 hu
-  obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
-  rw [← of_stabilizeGL hmk, ← of_stabilizeGL hnk] at hvu
-  exact ⟨k, hnk, of_injective k hvu ▸ map_stabilizeGL_elementarySubgroup_le hmk ⟨v, hv, rfl⟩⟩
+  rw [elementarySubgroup]
+  exact of_mem_iSup_map_of_iff fun _ _ ↦ map_stabilizeGL_elementarySubgroup_le
 
 /-- An invertible matrix `u` whose block diagonal stabilization `u ⊕ 1` of size `n + n` is
 elementary is stably elementary. -/
@@ -345,15 +388,12 @@ private theorem of_mem_elementarySubgroup_of_fromBlocksGL {n : ℕ} {u : GL (Fin
 
 /-- **The stable elementary subgroup is normal.** This is Whitehead's lemma in the limit: a
 conjugate `g e g⁻¹` becomes elementary after stabilization. -/
-instance elementarySubgroup_normal : (elementarySubgroup A).Normal where
-  conj_mem x hx g := by
-    obtain ⟨m, e, he, rfl⟩ := mem_elementarySubgroup_iff.1 hx
-    obtain ⟨n, g, rfl⟩ := exists_of g
-    -- Move `g` and `e` to a common size `k`.
-    obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
-    rw [← of_stabilizeGL hmk e, ← of_stabilizeGL hnk g, ← map_inv, ← map_mul, ← map_mul]
-    exact of_mem_elementarySubgroup_of_fromBlocksGL (fromBlocksGL_conj_mem_elementarySubgroup _
-      (map_stabilizeGL_elementarySubgroup_le hmk ⟨e, he, rfl⟩))
+instance elementarySubgroup_normal : (elementarySubgroup A).Normal := by
+  rw [elementarySubgroup]
+  refine normal_iSup_map_of (fun _ _ ↦ map_stabilizeGL_elementarySubgroup_le) fun n g e he ↦ ?_
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
+  exact finSumFinEquiv.map_reindexGL_elementarySubgroup (A := A) ▸
+    ⟨_, fromBlocksGL_conj_mem_elementarySubgroup g he, rfl⟩
 
 /-- The commutator subgroup of `GL_∞(A)` is contained in the stable elementary subgroup. -/
 theorem commutator_le_elementarySubgroup :
