@@ -153,8 +153,7 @@ theorem toMatrix_linearMap (μ : ℂ) :
 
 /-- The affine normalizer has the real Jacobian `1 - |μ|²`. -/
 theorem det_linearMap (μ : ℂ) : (linearMap μ).toLinearMap.det = 1 - Complex.normSq μ := by
-  rw [linearMap_eq_wirtingerPartsCLM, det_wirtingerPartsCLM, norm_one, Complex.normSq_eq_norm_sq,
-    one_pow]
+  simp [linearMap_eq_wirtingerPartsCLM, Complex.normSq_eq_norm_sq]
 
 /-- The standard area form changes by the actual real Jacobian factor. -/
 theorem area_linearMap (μ z w : ℂ) :

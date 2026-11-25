@@ -90,8 +90,8 @@ theorem norm_wirtingerPartsCLM_apply_exp_pi_div_two (a b : ℂ) :
   have e2 : exp (-↑(Real.pi / 2) * I) = -I := by
     push_cast; rw [← neg_div]; exact exp_neg_pi_div_two_mul_I
   have h : (‖a‖ : ℂ) * I + ‖b‖ * -I = ↑(‖a‖ - ‖b‖) * I := by push_cast; ring
-  rw [norm_wirtingerPartsCLM_apply_exp, e1, e2, h, norm_mul, norm_I, mul_one, norm_real,
-    Real.norm_eq_abs]
+  rw [norm_wirtingerPartsCLM_apply_exp, e1, e2, h]
+  simp only [norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs]
 
 /-- The operator norm of `z ↦ z a + conj z b` is `|a| + |b|`. -/
 @[simp]
@@ -120,7 +120,12 @@ theorem minimalStretch_wirtingerPartsCLM (a b : ℂ) :
 theorem det_wirtingerPartsCLM (a b : ℂ) :
     (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ).det = ‖a‖ ^ 2 - ‖b‖ ^ 2 := by
   rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
-  simp [LinearMap.toMatrix_apply, ← normSq_eq_norm_sq, normSq_apply]
+  simp only [Fin.isValue, LinearMap.toMatrix_apply, coe_basisOneI, Matrix.cons_val_zero,
+    ContinuousLinearMap.coe_coe, wirtingerPartsCLM_apply, smul_eq_mul, one_mul, map_one, map_add,
+    Finsupp.coe_add, coe_basisOneI_repr, Pi.add_apply, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, conj_I, neg_mul, map_neg, mul_re, I_re, zero_mul, I_im, zero_sub,
+    mul_im, zero_add, Finsupp.coe_neg, Matrix.neg_cons, neg_neg, Matrix.neg_empty,
+    ← normSq_eq_norm_sq, normSq_apply]
   ring
 
 /-! ### Checks -/
