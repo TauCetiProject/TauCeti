@@ -15,7 +15,8 @@ Let `C` be a column turn at the columns `a` and `b = finRotate n a` of a grid di
 in row `s`, and let `s'` be a second row. The homotopy equations of a column commutation and of a
 crossing change both compare a hexagon-counting map `H`, whose hexagons have corners in the rows
 `s` and `s'`, with the round trip `Ψ ∘ Φ` of two pentagon-counting maps: `Φ` counts the pentagons
-of `G` turning in row `s`, and `Ψ` those of `G' = G.swapColumns a b` at `C.withTurnRow s'`. After the cancellations on the left-hand side, what remains
+of `G` turning in row `s`, and `Ψ` those of `G' = G.swapColumns a b` at `C.withTurnRow s'`. After the
+cancellations on the left-hand side, what remains
 of `∂ ∘ H + H ∘ ∂` off the diagonal are the counted hexagon composites whose recut underlies no
 counted composite. Such a composite has a
 mixed-side overlap, so its two rectangles lie on opposite sides of their common column. This file
@@ -853,7 +854,8 @@ rows from `s'` up to the turn row `s` of `C`, and that of column `b` in the rows
 counted hexagon composite with a mixed-side overlap whose recut underlies no counted composite is
 then the partner of a pentagon pair, made of a counted pentagon of `G` turning in row `s` and a
 counted pentagon of `G.swapColumns a b` at the same columns in row `s'`: either both pentagons turn
-on the same side of the replaced grid line and the pair recuts the composite, or they turn on opposite sides and the pair has the rectangles of the composite. -/
+on the same side of the replaced grid line and the pair recuts the composite, or they turn on
+opposite sides and the pair has the rectangles of the composite. -/
 theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n}
     {F : GridHexagonCompositeDecomposition a C.turnRow s' x z}
     (hF : F ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
