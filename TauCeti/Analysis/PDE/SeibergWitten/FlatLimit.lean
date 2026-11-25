@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Complex.Euclidean.Four
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
@@ -334,33 +335,21 @@ theorem norm_baseCoord_sq_add_norm_normalCoord_sq (y : V) :
   ring
 
 variable (e) in
-include e in
-private theorem finrank_eq_finrank_withLp :
-    finrank ℝ V = finrank ℝ (WithLp 2 (ℂ × ℂ)) := by
-  rw [finrank_eq_card_basis e.toBasis, (WithLp.linearEquiv 2 ℝ (ℂ × ℂ)).finrank_eq,
-    finrank_prod, Complex.finrank_real_complex, Fintype.card_fin]
-
-variable (e) in
 /-- The **frame coordinates** `y ↦ (w(y), z(y))`, the base and normal coordinates of the frame
-`e`, as a linear isometric equivalence of `V` with the `L²` product `ℂ × ℂ`. -/
+`e`, as a linear isometric equivalence of `V` with the `L²` product `ℂ × ℂ`: the coordinates of `y`
+in the frame, read as a point of `ℂ²` through `TauCeti.complexProdToEuclideanFour`. -/
 def baseNormalCoordEquiv : V ≃ₗᵢ[ℝ] WithLp 2 (ℂ × ℂ) :=
-  letI := e.toBasis.finiteDimensional_of_finite
-  LinearIsometry.toLinearIsometryEquiv
-    { toFun y := WithLp.toLp 2 (baseCoord e y, normalCoord e y)
-      map_add' y y' := by rw [← WithLp.toLp_add]; simp
-      map_smul' c y := by rw [← WithLp.toLp_smul]; simp [Complex.real_smul]
-      norm_map' y := by
-        rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2]
-        exact norm_baseCoord_sq_add_norm_normalCoord_sq y }
-    (finrank_eq_finrank_withLp e)
+  e.repr.trans complexProdToEuclideanFour.symm
 
 @[simp]
 theorem baseNormalCoordEquiv_apply (y : V) :
-    baseNormalCoordEquiv e y = WithLp.toLp 2 (baseCoord e y, normalCoord e y) :=
-  (rfl)
+    baseNormalCoordEquiv e y = WithLp.toLp 2 (baseCoord e y, normalCoord e y) := by
+  rw [baseNormalCoordEquiv, LinearIsometryEquiv.trans_apply, complexProdToEuclideanFour_symm_apply]
+  congr 2 <;> apply Complex.ext <;> simp [OrthonormalBasis.repr_apply_apply]
 
 /-- The point with base coordinate `w` and normal coordinate `n` is
 `Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
 theorem baseNormalCoordEquiv_symm_apply (w n : ℂ) :
     (baseNormalCoordEquiv e).symm (WithLp.toLp 2 (w, n)) =
       w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
@@ -374,13 +363,13 @@ def baseNormalCoordHomeomorph : V ≃ₜ ℂ × ℂ :=
 
 @[simp]
 theorem baseNormalCoordHomeomorph_apply (y : V) :
-    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) := by
-  rw [baseNormalCoordHomeomorph, Homeomorph.trans_apply, ← Homeomorph.coe_toEquiv,
-    WithLp.toEquiv_homeomorphProd, WithLp.equiv_apply, LinearIsometryEquiv.coe_toHomeomorph,
-    baseNormalCoordEquiv_apply, WithLp.ofLp_toLp]
+    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) :=
+  -- The composite unfolds definitionally to `WithLp.ofLp ∘ baseNormalCoordEquiv e`.
+  congrArg WithLp.ofLp (baseNormalCoordEquiv_apply y)
 
 /-- The point with base coordinate `w` and normal coordinate `n` is
 `Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
 theorem baseNormalCoordHomeomorph_symm_apply (w n : ℂ) :
     (baseNormalCoordHomeomorph e).symm (w, n) =
       w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by

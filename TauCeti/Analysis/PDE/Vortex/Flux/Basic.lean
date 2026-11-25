@@ -426,6 +426,13 @@ theorem sq_norm_sectionValue_le_one (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equat
   rw [sq_norm_sectionValue]
   exact normSq_le_one_of_tendsto ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol hlim z
 
+/-- The modulus defect `1 - |α|²` of a `C²` vortex on the whole plane with `|α| → 1` at infinity is
+nonnegative. -/
+theorem one_sub_sq_norm_sectionValue_nonneg (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
+    0 ≤ 1 - ‖sectionValue x z‖ ^ 2 :=
+  sub_nonneg.2 (sq_norm_sectionValue_le_one hx hsol hlim z)
+
 /-- The modulus defect `1 - |α|²` of a `C²` vortex on the whole plane with `|α| → 1` at infinity
 is integrable. -/
 theorem integrable_one_sub_sq_norm_sectionValue {μ : Measure ℂ} [μ.IsAddHaarMeasure]
@@ -434,6 +441,47 @@ theorem integrable_one_sub_sq_norm_sectionValue {μ : Measure ℂ} [μ.IsAddHaar
     Integrable (fun z ↦ 1 - ‖sectionValue x z‖ ^ 2) μ := by
   simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq μ ((contDiff_piLp 2).1 hx 2)
     ((contDiff_piLp 2).1 hx 3) hsol hlim
+
+/-- The second moment of the modulus defect about any point is finite: for a `C²` vortex on the
+whole plane with `|α| → 1` at infinity, `|z - z₀|² (1 - |α|²)` is integrable. -/
+theorem integrable_norm_sub_sq_mul_one_sub_sq_norm_sectionValue {μ : Measure ℂ}
+    [μ.IsAddHaarMeasure] (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z₀ : ℂ) :
+    Integrable (fun z ↦ ‖z - z₀‖ ^ 2 * (1 - ‖sectionValue x z‖ ^ 2)) μ := by
+  have hcont : Continuous fun z ↦ 1 - ‖sectionValue x z‖ ^ 2 := by
+    have := continuous_sectionValue hx.continuous
+    fun_prop
+  have hf : Integrable (fun z ↦ 1 - ‖sectionValue x z‖ ^ 2) μ :=
+    integrable_one_sub_sq_norm_sectionValue hx hsol hlim
+  have hf2 : Integrable (fun z ↦ ‖z‖ ^ 2 * (1 - ‖sectionValue x z‖ ^ 2)) μ := by
+    simp_rw [sq_norm_sectionValue, mul_comm (‖_‖ ^ 2)]
+    exact integrable_one_sub_normSq_smul_of_isBigO μ ((contDiff_piLp 2).1 hx 2)
+      ((contDiff_piLp 2).1 hx 3) hsol hlim (g := fun z ↦ ‖z‖ ^ 2) (by fun_prop) (k := 2)
+      (isBigO_refl _ _)
+  -- `|z - z₀|² ≤ 2 |z|² + 2 |z₀|²`.
+  refine ((hf2.const_mul 2).add (hf.const_mul (2 * ‖z₀‖ ^ 2))).mono'
+    (((continuous_norm.comp (continuous_sub_right z₀)).pow 2).mul hcont).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  have h := one_sub_sq_norm_sectionValue_nonneg hx hsol hlim z
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (by positivity) h)]
+  have : ‖z - z₀‖ ^ 2 ≤ 2 * ‖z‖ ^ 2 + 2 * ‖z₀‖ ^ 2 := by
+    nlinarith [norm_sub_le z z₀, norm_nonneg (z - z₀), norm_nonneg z, norm_nonneg z₀,
+      sq_nonneg (‖z‖ - ‖z₀‖)]
+  have := mul_le_mul_of_nonneg_right this h
+  simp only [Pi.add_apply]
+  linarith
+
+/-- The modulus defect `1 - |α|²` of a `C²` vortex on the whole plane with `|α| → 1` at infinity
+beats every polynomial weight: `|z|ʲ (1 - |α|²) → 0` at infinity. -/
+theorem tendsto_norm_pow_mul_one_sub_sq_norm_sectionValue (hx : ContDiff ℝ 2 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
+    Tendsto (fun z ↦ ‖z‖ ^ j * (1 - ‖sectionValue x z‖ ^ 2)) (cocompact ℂ) (𝓝 0) := by
+  have hexp : Tendsto (fun z : ℂ ↦ Real.exp (-(1 / 8 * ‖z‖))) (cocompact ℂ) (𝓝 0) :=
+    Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      ((tendsto_norm_cocompact_atTop (E := ℂ)).const_mul_atTop (by norm_num))
+  simpa only [sq_norm_sectionValue] using (isBigO_norm_pow_mul_one_sub_normSq
+    ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol hlim j).trans_tendsto hexp
 
 /-- **The flux identity in terms of `|α|`.** For a `C²` vortex on the whole plane with `|α| → 1`
 at infinity and zero divisor `D`, `∫ (1 - |α|²) = 16π deg D`. -/

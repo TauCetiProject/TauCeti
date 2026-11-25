@@ -589,10 +589,10 @@ private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff 
     simpa only [sq_norm_sectionValue] using hy₂lim
   have hbound (a z : ℂ) : ‖(1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)‖ ≤
       1 - ‖sectionValue y₁ z‖ ^ 2 := by
-    have h₁ := sq_norm_sectionValue_le_one hy₁ hy₁sol hy₁lim z
-    have h₂ := sq_norm_sectionValue_le_one hy₂ hy₂sol hy₂lim (z + a)
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂))]
-    exact mul_le_of_le_one_right (sub_nonneg.2 h₁)
+    have h₁ := one_sub_sq_norm_sectionValue_nonneg hy₁ hy₁sol hy₁lim z
+    have h₂ := one_sub_sq_norm_sectionValue_nonneg hy₂ hy₂sol hy₂lim (z + a)
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg h₁ h₂)]
+    exact mul_le_of_le_one_right h₁
       (by nlinarith [sq_nonneg ‖sectionValue y₂ (z + a)‖])
   have hpt (z : ℂ) : Tendsto (fun a ↦
       (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)) (cocompact ℂ) (𝓝 0) := by
@@ -676,8 +676,8 @@ theorem exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp (μ 
   have hlim₂ := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₂
   have h := integral_mul_le_mul_exp_of_forall_le_norm_sub μ hc₀ hcb
     (f := fun z ↦ 1 - ‖sectionValue y₁ z‖ ^ 2) (g := fun z ↦ 1 - ‖sectionValue y₂ z‖ ^ 2)
-    (fun z ↦ sub_nonneg.2 (sq_norm_sectionValue_le_one (hy₁.of_le (by simp)) hy₁sol hlim₁ z))
-    (fun z ↦ sub_nonneg.2 (sq_norm_sectionValue_le_one (hy₂.of_le (by simp)) hy₂sol hlim₂ z))
+    (one_sub_sq_norm_sectionValue_nonneg (hy₁.of_le (by simp)) hy₁sol hlim₁)
+    (one_sub_sq_norm_sectionValue_nonneg (hy₂.of_le (by simp)) hy₂sol hlim₂)
     (fun z ρ hρ ↦ by
       simpa only [sq_norm_sectionValue] using hK₁ y₁ D₁ hy₁ hy₁sol hframe₁ hD₁ z ρ hρ)
     (fun z ρ hρ ↦ by

@@ -9,14 +9,12 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Integral.PeakFunction
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
-import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.PDE.Vortex.Flux.Basic
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -222,37 +220,6 @@ theorem setIntegral_ball_mul_abs_one_sub_norm_sq_eq {α : ℂ → ℂ} (hα : Co
 
 variable {X : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
 
-/-- The second moment of the vortex defect about any point is finite: `|u - u₀|² (1 - |α|²)` is
-integrable. -/
-private theorem integrable_norm_sub_sq_mul_defect (hX : ContDiff ℝ 2 X)
-    (hsol : ∀ z, Vortex.equation X z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (X z 2 ^ 2 + X z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (u₀ : ℂ) :
-    Integrable (fun u ↦ ‖u - u₀‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2)) := by
-  have hXi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ X w i := (contDiff_piLp 2).1 hX i
-  have hcont : Continuous fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2 := by
-    have := Vortex.continuous_sectionValue hX.continuous
-    fun_prop
-  have hf : Integrable (fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2) :=
-    Vortex.integrable_one_sub_sq_norm_sectionValue hX hsol hlim
-  have hf2 : Integrable (fun u ↦ ‖u‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2)) := by
-    simp_rw [Vortex.sq_norm_sectionValue, mul_comm (‖_‖ ^ 2)]
-    exact Vortex.integrable_one_sub_normSq_smul_of_isBigO
-      (μ := volume) (hXi 2) (hXi 3) hsol hlim (g := fun u ↦ ‖u‖ ^ 2) (by fun_prop) (k := 2)
-      (Asymptotics.isBigO_refl _ _)
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
-  -- `|u - u₀|² ≤ 2 |u|² + 2 |u₀|²`.
-  refine ((hf2.const_mul 2).add (hf.const_mul (2 * ‖u₀‖ ^ 2))).mono'
-    (((continuous_norm.comp (continuous_sub_right u₀)).pow 2).mul hcont).aestronglyMeasurable
-    (.of_forall fun u ↦ ?_)
-  have h := hnn u
-  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (by positivity) h)]
-  have : ‖u - u₀‖ ^ 2 ≤ 2 * ‖u‖ ^ 2 + 2 * ‖u₀‖ ^ 2 := by
-    nlinarith [norm_sub_le u u₀, norm_nonneg (u - u₀), norm_nonneg u, norm_nonneg u₀,
-      sq_nonneg (‖u‖ - ‖u₀‖)]
-  have := mul_le_mul_of_nonneg_right this h
-  simp only [Pi.add_apply]
-  linarith
-
 /-- The defect energy of a ball for the pulled-back vortex, with the absolute value removed. -/
 private theorem setIntegral_ball_defect_eq (hX : ContDiff ℝ 2 X)
     (hsol : ∀ z, Vortex.equation X z = 0)
@@ -266,7 +233,7 @@ private theorem setIntegral_ball_defect_eq (hX : ContDiff ℝ 2 X)
   rw [setIntegral_ball_mul_abs_one_sub_norm_sq_eq e (Vortex.continuous_sectionValue hX.continuous)
     hr c hσ]
   congr 2 with u
-  rw [abs_of_nonneg (sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u))]
+  rw [abs_of_nonneg (Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim u)]
 
 /-- For `r ≥ 0` the weight `max (σ² - |u - u₀|² / (2 r)) 0` lies between `σ² - |u - u₀|² / (2 r)`
 and `σ²`. -/
@@ -281,7 +248,7 @@ private theorem integrable_max_mul_defect (hX : ContDiff ℝ 2 X)
     (hr : 0 ≤ r) (σ : ℝ) (u₀ : ℂ) :
     Integrable fun u ↦ max (σ ^ 2 - ‖u - u₀‖ ^ 2 / (2 * r)) 0 *
       (1 - ‖Vortex.sectionValue X u‖ ^ 2) := by
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
+  have hnn := Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim
   have hf := Vortex.integrable_one_sub_sq_norm_sectionValue (μ := volume) hX hsol hlim
   have hα := Vortex.continuous_sectionValue hX.continuous
   refine (hf.const_mul (σ ^ 2)).mono' (by fun_prop) (.of_forall fun u ↦ ?_)
@@ -307,7 +274,7 @@ theorem setIntegral_ball_defect_le {r : ℝ} (hr : 0 < r) (c : V) (σ : ℝ) :
   · -- A ball of negative radius is empty.
     rw [ball_eq_empty.2 hσ.le, Measure.restrict_empty, integral_zero_measure]
     positivity
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
+  have hnn := Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim
   have hf := Vortex.integrable_one_sub_sq_norm_sectionValue (μ := volume) hX hsol hlim
   have hflux := Vortex.integral_one_sub_sq_norm_sectionValue_eq_mul_card hX hsol hlim hD
   rw [setIntegral_ball_defect_eq e hX hsol hlim hr c hσ]
@@ -329,10 +296,11 @@ theorem sub_le_setIntegral_ball_defect {r : ℝ} (hr : 0 < r) (c : V) {σ : ℝ}
         ∫ u, ‖u - √(2 * r) • normalCoord e c‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2) ≤
       ∫ y in ball c σ, r / 4 *
         |1 - ‖Vortex.sectionValue (Vortex.dilateField √(2 * r) X) (normalCoord e y)‖ ^ 2| := by
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
+  have hnn := Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim
   have hf := Vortex.integrable_one_sub_sq_norm_sectionValue (μ := volume) hX hsol hlim
   have hflux := Vortex.integral_one_sub_sq_norm_sectionValue_eq_mul_card hX hsol hlim hD
-  have hf2 := integrable_norm_sub_sq_mul_defect hX hsol hlim
+  have hf2 := Vortex.integrable_norm_sub_sq_mul_one_sub_sq_norm_sectionValue (μ := volume) hX hsol
+    hlim
   set u₀ := √(2 * r) • normalCoord e c
   rw [setIntegral_ball_defect_eq e hX hsol hlim hr c hσ]
   have h : ∫ u, (σ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2) -
@@ -369,7 +337,7 @@ theorem abs_setIntegral_ball_defect_sub_le {r : ℝ} (hr : 0 < r) {c : V}
         r / 4 * |1 - ‖Vortex.sectionValue (Vortex.dilateField √(2 * r) X) (normalCoord e y)‖ ^ 2|) -
       2 * π ^ 2 * D.card * σ ^ 2| ≤
       π / (16 * r) * ∫ u, ‖u‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2) := by
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
+  have hnn := Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim
   have hlow := sub_le_setIntegral_ball_defect e hX hsol hlim hD hr c hσ
   have hup := setIntegral_ball_defect_le e hX hsol hlim hD hr c σ
   rw [hc, smul_zero] at hlow
@@ -413,19 +381,6 @@ private theorem tendsto_integral_mul_comp_sqrt_smul_mul {f Ψ : ℂ → ℝ} {m 
   field_simp
   ring
 
-/-- The defect of a vortex decays faster than `|u|⁻²`. -/
-private theorem tendsto_norm_sq_mul_defect {X : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hX : ContDiff ℝ 2 X) (hsol : ∀ z, Vortex.equation X z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (X z 2 ^ 2 + X z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun u ↦ ‖u‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2)) (cocompact ℂ) (𝓝 0) := by
-  have hXi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ X w i := (contDiff_piLp 2).1 hX i
-  have hexp : Tendsto (fun u : ℂ ↦ Real.exp (-(1 / 8 * ‖u‖))) (cocompact ℂ) (𝓝 0) :=
-    Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      ((tendsto_norm_cocompact_atTop (E := ℂ)).const_mul_atTop (by norm_num))
-  have hO := Vortex.isBigO_norm_pow_mul_one_sub_normSq (hXi 2) (hXi 3) hsol hlim 2
-  refine (hO.trans_tendsto hexp).congr fun u ↦ ?_
-  rw [Vortex.sq_norm_sectionValue]
-
 /-! ### The curvature current -/
 
 /-- The base component `ζ(e₀, e₁)` of a continuous compactly supported two-form, read on `ℂ × ℂ`
@@ -435,7 +390,7 @@ private theorem continuous_and_hasCompactSupport_apply_baseNormalCoordHomeomorph
     Continuous (fun p ↦ ζ ((baseNormalCoordHomeomorph e).symm p) ![e 0, e 1]) ∧
       HasCompactSupport (fun p ↦ ζ ((baseNormalCoordHomeomorph e).symm p) ![e 0, e 1]) :=
   ⟨(continuous_eval_const _).comp (hζ.comp (baseNormalCoordHomeomorph e).symm.continuous),
-    (hζc.comp_left (g := fun β : V [⋀^Fin 2]→L[ℝ] ℝ ↦ β ![e 0, e 1]) rfl).comp_homeomorph
+    (hζc.comp_left (g := fun β : V [⋀^Fin 2]→L[ℝ] ℝ ↦ β ![e 0, e 1]) (by simp)).comp_homeomorph
       (baseNormalCoordHomeomorph e).symm⟩
 
 section Current
@@ -526,7 +481,7 @@ theorem tendsto_integral_wedge_neg_extDeriv_normalConnection_dilateField (hX : C
     Tendsto (fun r ↦ (2 * π)⁻¹ * ∫ y, (-extDeriv (normalConnection e
         (Vortex.dilateField √(2 * r) X)) y).wedge (ζ y) (e ∘ finCongr (hkl.trans Fact.out)))
       atTop (𝓝 (D.card * ∫ w : ℂ, ζ (w.re • e 0 + w.im • e 1) ![e 0, e 1])) := by
-  have hnn (u : ℂ) := sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
+  have hnn := Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim
   have hf := Vortex.integrable_one_sub_sq_norm_sectionValue (μ := volume) hX hsol hlim
   have hflux := Vortex.integral_one_sub_sq_norm_sectionValue_eq_mul_card hX hsol hlim hD
   have hα : Continuous (Vortex.sectionValue X) := Vortex.continuous_sectionValue hX.continuous
@@ -553,7 +508,7 @@ theorem tendsto_integral_wedge_neg_extDeriv_normalConnection_dilateField (hX : C
         volume continuous_const).1 ((integral_eq_zero_iff_of_nonneg hnn hf).1 hflux)
     simp [funext_iff.1 hf0, hm]
   · exact tendsto_integral_mul_comp_sqrt_smul_mul (Nat.cast_pos.2 (Nat.pos_of_ne_zero hm)) hnn
-      hflux (tendsto_norm_sq_mul_defect hX hsol hlim) hΨ hΨc
+      hflux (Vortex.tendsto_norm_pow_mul_one_sub_sq_norm_sectionValue hX hsol hlim 2) hΨ hΨc
 
 end Current
 
