@@ -108,7 +108,7 @@ example {ι κ : Type*} [Preorder ι] {X Y : SpectralObject C ι} (φ : X ⟶ Y)
   simpa using (X.spectralSequence data).cyclesSubobject_le_pullback pq
     (spectralSequenceMap data φ) r hr
 
--- Not the permanent cycles: replacing the target `H^{n+1}(q - r + 2 ≤ q)` of `δ` by
+-- Contained in every cycle subobject: replacing the target `H^{n+1}(q - r + 2 ≤ q)` of `δ` by
 -- `H^{n+1}(⊥ ≤ q)` gives a subobject contained in every `Z_r`.
 example (X : SpectralObject C EInt) [X.HasSpectralSequence coreE₂Cohomological] (p q r : ℤ)
     (hr : 2 ≤ r) :
