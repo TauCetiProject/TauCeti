@@ -8,25 +8,18 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 
 /-!
-# The group action on the valuation spectrum of a finite étale torsor
+# The group action on a valuation spectrum by algebra automorphisms
 
 Let a group `G` act on an `A`-algebra `B` by `A`-algebra automorphisms, for instance on a finite
 étale `G`-torsor over `A` (`TauCeti.Algebra.IsFiniteEtaleTorsor G A B`). The group `G` acts on
 `Spv B` by transport of structure, `(g • y)(b) = y(g⁻¹ • b)`, that is `g • y = comap (g⁻¹ • ·) y`.
 This file shows that points in one orbit have the same image in `Spv A`
-(`TauCeti.ValuationSpectrum.comap_algebraMap_comap_toRingHom`), since `G` fixes `A`.
+(`TauCeti.ValuationSpectrum.comap_algebraMap_comap_toRingHom`), since `G` fixes `A`. No
+finiteness or torsor hypothesis is needed.
 
-Conversely, a finite étale torsor satisfies `Algebra.IsInvariant A B G`
-(`TauCeti.Algebra.IsFiniteEtaleTorsor.isInvariant`), so the fibres of `Spv B → Spv A` are exactly
-the `G`-orbits by
-`TauCeti.ValuationSpectrum.comap_algebraMap_eq_comap_algebraMap_iff_of_isInvariant`. No topology
-is involved, and the valuations may have arbitrary rank. This is the valuation-theoretic content
-of the description of the adic spectrum of a finite étale torsor over a Tate ring as a quotient
-by `G`.
-
-## References
-
-* P. Scholze, *Étale cohomology of diamonds*, proof of Proposition 15.4.
+For the converse, that the fibres of `Spv B → Spv A` are exactly the `G`-orbits when `G` is
+finite and `Algebra.IsInvariant A B G` holds, see
+`TauCeti.ValuationSpectrum.comap_algebraMap_eq_comap_algebraMap_iff_of_isInvariant`.
 -/
 
 public section
