@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.CartanType
 
 /-!
 # The rational root system of a Dynkin type
@@ -229,11 +230,8 @@ instance instIsReducedRationalRootSystem : (t.rationalRootSystem ht).IsReduced :
 pinned base and every Cartan integer alone, so the relabelling exhibited by the integral datum
 still works. -/
 theorem hasCartanType_rationalRootSystem :
-    HasCartanType (t.rationalRootSystem ht) (t.rationalBase ht) t := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff _ _).1 (hasCartanType_simplyConnectedRootDatum t ht)
-  refine (hasCartanType_iff _ _).2 ⟨(supportEquivRootPairingBaseChangeBase ℚ _ _ _).trans e,
-    fun i j => ?_⟩
-  exact (cartanMatrix_rootPairingBaseChangeBase ℚ _ _ _ i j).trans (he _ _)
+    HasCartanType (t.rationalRootSystem ht) (t.rationalBase ht) t :=
+  (hasCartanType_simplyConnectedRootDatum t ht).rootPairingBaseChange ℚ _
 
 /-- **The rational system is irreducible.** The pinned Dynkin diagram of a valid type is connected,
 which over a field of characteristic zero forces irreducibility. -/
