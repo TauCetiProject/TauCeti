@@ -13,9 +13,9 @@ import Mathlib.Analysis.Real.Sqrt
 
 Let `S` be the `L²` projection of a statistic `T` onto a closed linear space of statistics
 containing the constants. Then the residual `T - S` is orthogonal to `S` and to `1`, that is
-`E((T - S) S) = 0` and `E(T - S) = 0`. These two relations alone give `cov(T, S) = Var S` and
-the Pythagorean identity `Var T = Var(T - S) + Var S`, and hence
-`E((T - E T)/sd T - (S - E S)/sd S)² = 2 - 2 sd S / sd T`.
+`E((T - S) S) = 0` and `E(T - S) = 0`. For square-integrable `T` and `S` these two relations
+give `cov(T, S) = Var S` and the Pythagorean identity `Var T = Var(T - S) + Var S`, and, when
+`Var S ≠ 0`, `E((T - E T)/sd T - (S - E S)/sd S)² = 2 - 2 sd S / sd T`.
 
 Consequently, if `Var Tₙ / Var Sₙ → 1` along a filter, then the standardized statistics are
 asymptotically equivalent in `L²`: `(Tₙ - E Tₙ)/sd Tₙ - (Sₙ - E Sₙ)/sd Sₙ → 0` in squared `L²`
@@ -30,7 +30,7 @@ The identities need only a finite measure, with integrals in place of expectatio
 * `TauCeti.variance_eq_variance_sub_add_variance_of_isProjection`:
   `Var T = Var(T - S) + Var S`.
 * `TauCeti.integral_sq_standardized_sub_of_isProjection`: the squared `L²` distance of the
-  standardized statistics is `2 - 2 √(Var S / Var T)`.
+  standardized statistics is `2 - 2 √(Var S / Var T)` when `Var S ≠ 0`.
 * `TauCeti.tendsto_integral_sq_standardized_sub_of_isProjection`: the projection theorem.
 
 ## References
