@@ -180,12 +180,18 @@ theorem toPowerSeries_inv_pTypicalStrictCoordinate (F : FormalGroup R) (p : ℕ)
       (F.pTypicalStrictCurve p t).toPowerSeries := by
   rw [pTypicalStrictCoordinate, inv_inv]
 
+/-- `F.pTypicalStrictCoordinate p t` is the identity coordinate `1` if and only if
+`F.pTypicalStrictCurve p t` is `F.tautologicalCurve`. -/
+theorem pTypicalStrictCoordinate_eq_one_iff (F : FormalGroup R) (p : ℕ) (t : ℕ+ → R) :
+    F.pTypicalStrictCoordinate p t = 1 ↔ F.pTypicalStrictCurve p t = F.tautologicalCurve := by
+  rw [← inv_inj, inv_one, TauCeti.FormalCoordinate.ext_iff, Curve.ext_iff,
+    toPowerSeries_inv_pTypicalStrictCoordinate, TauCeti.FormalCoordinate.toPowerSeries_one,
+    toPowerSeries_tautologicalCurve]
+
 /-- When `p ≤ 1`, `F.pTypicalStrictCoordinate p t` is the identity coordinate `1`. -/
 theorem pTypicalStrictCoordinate_of_le_one (F : FormalGroup R) {p : ℕ} (hp : p ≤ 1) (t : ℕ+ → R) :
-    F.pTypicalStrictCoordinate p t = 1 := by
-  apply inv_injective; ext1
-  rw [toPowerSeries_inv_pTypicalStrictCoordinate, F.pTypicalStrictCurve_of_le_one hp, inv_one,
-    TauCeti.FormalCoordinate.toPowerSeries_one, toPowerSeries_tautologicalCurve]
+    F.pTypicalStrictCoordinate p t = 1 :=
+  (F.pTypicalStrictCoordinate_eq_one_iff p t).mpr (F.pTypicalStrictCurve_of_le_one hp t)
 
 /-- `F.pTypicalStrictCoordinate p t` has linear coefficient `1` as a unit. -/
 @[simp] theorem linearCoeff_pTypicalStrictCoordinate (F : FormalGroup R) (p : ℕ) (t : ℕ+ → R) :
@@ -219,10 +225,8 @@ theorem pTypicalStrictCoordinate_mem_ker_linearCoeff (F : FormalGroup R) (p : �
 
 /-- At `t = 0`, `F.pTypicalStrictCoordinate p 0` is the identity coordinate `1`. -/
 @[simp] theorem pTypicalStrictCoordinate_zero (F : FormalGroup R) (p : ℕ) :
-    F.pTypicalStrictCoordinate p 0 = 1 := by
-  apply inv_injective; ext1
-  rw [toPowerSeries_inv_pTypicalStrictCoordinate, F.pTypicalStrictCurve_zero, inv_one,
-    TauCeti.FormalCoordinate.toPowerSeries_one, toPowerSeries_tautologicalCurve]
+    F.pTypicalStrictCoordinate p 0 = 1 :=
+  (F.pTypicalStrictCoordinate_eq_one_iff p 0).mpr (F.pTypicalStrictCurve_zero p)
 
 /-- `pTypicalStrictCurve` commutes with arbitrary ring homomorphisms. -/
 @[simp] theorem map_pTypicalStrictCurve (F : FormalGroup R) (p : ℕ) (t : ℕ+ → R) (f : R →+* S) :

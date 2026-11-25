@@ -264,12 +264,19 @@ private theorem pTypicalParams_mem_range_of_injective
       hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
         simp only [t_trunc, Function.comp_apply, dite_eq_left hj]
         exact (ih j hj).choose_spec.symm
-    have ht_n : (ι ∘ t_trunc) n.succPNat = 0 := by simp [t_trunc]
-    rw [ht_n, sub_zero, ← hcurveB, ← map_inv,
-      FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
-      ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
-      ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
-    exact ⟨_, hsub⟩
+    have hφ : PowerSeries.map ι φ⁻¹.toPowerSeries =
+        ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p tB).toPowerSeries := by
+      rw [← FormalCoordinate.toPowerSeries_map]; simp [hcurveB]
+    have hc : PowerSeries.map ι
+        ((hazewinkelIntegralFormalGroup p v).pTypicalStrictCurve p t_trunc).toPowerSeries =
+        ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p
+          (ι ∘ t_trunc)).toPowerSeries := by
+      rw [← FormalGroup.Curve.toPowerSeries_map, FormalGroup.map_pTypicalStrictCurve,
+        map_hazewinkelIntegralFormalGroup]
+    refine ⟨PowerSeries.coeff (p ^ (n + 1)) (φ⁻¹.toPowerSeries -
+      ((hazewinkelIntegralFormalGroup p v).pTypicalStrictCurve p t_trunc).toPowerSeries), ?_⟩
+    rw [← PowerSeries.coeff_map, map_sub, hφ, hc, hsub]
+    simp [t_trunc]
 
 /-- **Integral descent of `p`-typical strict coordinates** along an injection into a ring `B` in
 which every prime `q ≠ p` is a unit. -/
@@ -280,10 +287,7 @@ theorem existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective
     (hsmul : φ • hazewinkelIntegralFormalGroup p v = hazewinkelIntegralFormalGroup p w) :
     ∃! t : ℕ+ → A, φ = (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p t := by
   obtain ⟨tB, htB, _⟩ := existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocalB
-    (φ := FormalCoordinate.map ι φ)
-    (by ext; rw [FormalCoordinate.val_linearCoeff, FormalCoordinate.toPowerSeries_map,
-      PowerSeries.coeff_map, ← FormalCoordinate.val_linearCoeff, hφ, Units.val_one, map_one,
-      Units.val_one])
+    (φ := FormalCoordinate.map ι φ) (by simp [hφ])
     (by simpa only [FormalGroup.map_smul, map_hazewinkelIntegralFormalGroup] using
       congrArg (fun F : FormalGroup A ↦ F.map ι) hsmul)
   have hmem := pTypicalParams_mem_range_of_injective p v φ
