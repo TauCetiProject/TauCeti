@@ -72,8 +72,9 @@ compared with `F`, so Rouché's principle
   count of the preimages of a regular value.
 * `TauCeti.HomologicalOrientation.degree_eq_ncard_of_det_pos`: when every preimage of a value has
   positive Jacobian determinant, the degree is the number of preimages.
-* `TauCeti.HomologicalOrientation.degree_pos_of_hasFDerivAt`: a proper map with nonnegative
-  Jacobian determinant on a neighbourhood of a regular fibre has positive degree.
+* `TauCeti.HomologicalOrientation.degree_pos_of_hasFDerivAt`: a proper map differentiable on a set
+  containing all fibres near `G x` has positive degree if its Jacobian determinant is nonnegative
+  on that set and nonzero at `x`.
 * `TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`,
   `TauCeti.HomologicalOrientation.degree_comap_eq_sum_sign_det`: the same for maps between open
   subsets of `E`.
@@ -277,8 +278,7 @@ theorem degree_eq_ncard_of_det_pos {f : C(E, E)} (hf : IsProperMap f) {f' : E �
   rw [o.degree_eq_ncard_sub_ncard hE hf hderiv (fun x hx ↦ (hpos x hx).ne'), h₁, h₂,
     ncard_empty, Nat.cast_zero, sub_zero]
 
-/-- **A proper map with nonnegative Jacobian on a neighbourhood of a regular fibre has positive
-degree.** Let `G : E → E` be proper and differentiable on `U`, with derivatives `D z` of
+/-- Let `G : E → E` be proper and differentiable on `U`, with derivatives `D z` of
 nonnegative determinant, such that `U` contains the fibres of all values near `G x`. If `D x` has
 nonzero determinant, then the degree of `G` is positive. -/
 theorem degree_pos_of_hasFDerivAt {G : C(E, E)} (hG : IsProperMap G) {U : Set E}
