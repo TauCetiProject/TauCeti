@@ -113,11 +113,15 @@ theorem shiftedResolventTransform_eq_sub (h : ((c : 𝕜) • ι - A).IsInvertib
     one_apply_eq_self]
   module
 
-/-- An eigenvector `ι x` of the operator, with `A x = μ ι x` for `μ ≠ c`, is an eigenvector of the
-shifted resolvent transform at `c` with eigenvalue `c μ / (c - μ)`. -/
+/-- An eigenvector `ι x` of the operator, with `A x = μ ι x`, is an eigenvector of the shifted
+resolvent transform at a shift `c` with `c ι - A` invertible, with eigenvalue `c μ / (c - μ)`. When
+`μ = c` the invertibility forces `x = 0`, so both sides vanish. -/
 theorem shiftedResolventTransform_apply_of_apply_eq_smul (h : ((c : 𝕜) • ι - A).IsInvertible)
-    {x : D} {μ : ℝ} (hμ : μ ≠ c) (hx : A x = (μ : 𝕜) • ι x) :
+    {x : D} {μ : ℝ} (hx : A x = (μ : 𝕜) • ι x) :
     ι.shiftedResolventTransform A c (ι x) = ((c * μ / (c - μ) : ℝ) : 𝕜) • ι x := by
+  rcases eq_or_ne μ c with rfl | hμ
+  · obtain rfl : x = 0 := h.injective (by simp [hx])
+    simp
   have hcμ : ((c - μ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (sub_ne_zero.2 hμ.symm)
   have hR : ((c : 𝕜) • ι - A).inverse (ι x) = ((c - μ : ℝ) : 𝕜)⁻¹ • x := by
     refine h.injective ?_
