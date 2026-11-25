@@ -29,9 +29,10 @@ is the Fricke function `f_{(a₀, d a₁)}` when `σ (ζ_N) = ζ_N ^ d`
 So the automorphism group of `ℂ` acts on `ℂ(X(N))` by ring automorphisms
 (`TauCeti.modularFunctionCoeffAction`), semilinearly: `(c F)^σ = σ(c) F^σ`. For a modular form
 `f` of level `N` and weight `k ≥ 0`, the quotient `f ^ 12 / Δ ^ k` has weight zero and is an
-element of `ℂ(X(N))`, so this action is the starting point for conjugating modular forms of level
-`N` through their Fourier coefficients, as in Shimura's proof that spaces of cusp forms have bases
-with rational Fourier coefficients.
+element of `ℂ(X(N))`, so this action is the starting point for constructing Galois conjugates of
+modular forms of level `N` through their Fourier coefficients, following Shimura (see the
+reference below). Neither the conjugation of modular forms nor any rationality statement for
+their Fourier coefficients is proved in this file.
 
 The action interacts with the rest of the structure as follows.
 
