@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.RingTheory.RootsOfUnity.Ultrametric
 public import Mathlib.Analysis.Normed.Ring.Finite
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
 public import Mathlib.Topology.Algebra.Valued.NormedValued
@@ -41,7 +42,8 @@ field it lies in the valuation ring (`TauCeti.mem_integer_of_sq_eq_neg_one`).
 
 * `IsPrimitiveRoot.norm_sub_one_pow_totient`: `‖ζ - 1‖ ^ φ(n)` is the norm of the value of the
   `n`th cyclotomic polynomial at one.
-* `IsPrimitiveRoot.norm_sub_one_pow_totient_prime_pow`: in order `p ^ (k + 1)` it is `‖p‖`.
+* `IsPrimitiveRoot.norm'_sub_one_pow_totient_prime_pow` (in
+  `TauCeti.RingTheory.RootsOfUnity.Ultrametric`): in order `p ^ (k + 1)` it is `‖p‖`.
 * `IsPrimitiveRoot.norm_sub_one_eq_one_of_ne_pow`: if `‖p‖ < 1`, a primitive root whose order is
   not a power of `p` lies at distance one from one.
 * `IsPrimitiveRoot.norm_natCast_le_norm_sub_one_pow`: if `‖p‖ < 1`, then
@@ -100,12 +102,6 @@ theorem norm_sub_one_pow_prime_sub_one {p : ℕ} [Fact p.Prime]
   simpa [Nat.totient_prime (Fact.out : p.Prime), Polynomial.eval_one_cyclotomic_prime]
     using hζ.norm_sub_one_pow_totient
 
-/-- In prime-power order `p ^ (k + 1)`, the `φ(p ^ (k + 1))`th power of the distance from a
-primitive root to one is the norm of `p`. -/
-theorem norm_sub_one_pow_totient_prime_pow {p k : ℕ} [Fact p.Prime]
-    (hζ : IsPrimitiveRoot ζ (p ^ (k + 1))) : ‖ζ - 1‖ ^ (p ^ (k + 1)).totient = ‖(p : K)‖ := by
-  rw [hζ.norm_sub_one_pow_totient, Polynomial.eval_one_cyclotomic_prime_pow]
-
 /-- A primitive root whose order is neither one nor a prime power lies at distance one from
 one, since the cyclotomic polynomial of such an order takes the value one at one. -/
 theorem norm_sub_one_of_not_isPrimePow (hζ : IsPrimitiveRoot ζ n) (hn1 : n ≠ 1)
@@ -130,7 +126,7 @@ theorem norm_sub_one_eq_one_of_ne_pow {p : ℕ} (hp : p.Prime) (hpK : ‖(p : K)
       rintro rfl
       exact hn k rfl
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-    have h := hζ.norm_sub_one_pow_totient_prime_pow
+    have h := hζ.norm'_sub_one_pow_totient_prime_pow
     rw [IsUltrametricDist.norm_natCast_eq_one_of_coprime hpK
       ((Nat.coprime_primes hp hq').2 hqp.symm)] at h
     exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) (Nat.totient_pos.2 (NeZero.pos _)).ne').1 h
@@ -149,7 +145,7 @@ theorem norm_natCast_le_norm_sub_one_pow {p : ℕ} (hp : p.Prime) (hpK : ‖(p :
     have : Fact p.Prime := ⟨hp⟩
     have hle : ‖ζ - 1‖ ≤ 1 := Subring.mem_unitClosedBall.1 <| sub_mem
       (Subring.mem_unitClosedBall.2 (hζ.isOfFinOrder (NeZero.ne _)).norm_eq_one.le) (one_mem _)
-    rw [← hζ.norm_sub_one_pow_totient_prime_pow, Nat.totient_prime_pow_succ hp]
+    rw [← hζ.norm'_sub_one_pow_totient_prime_pow, Nat.totient_prime_pow_succ hp]
     exact pow_le_pow_of_le_one (norm_nonneg _) hle
       (Nat.le_mul_of_pos_left _ (pow_pos hp.pos k))
   · rw [hζ.norm_sub_one_eq_one_of_ne_pow hp hpK (not_exists.mp hpow), one_pow]
