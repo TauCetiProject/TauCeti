@@ -141,7 +141,7 @@ end ThreePlan
 
 section Diagonal
 
-variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] {p : ℝ≥0∞}
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X] [MeasurableSpace X] {p : ℝ≥0∞}
   {π : Measure (X × X)} {μ ν : Measure X}
 
 /-- **Optimal couplings out of the base law are generalized-geodesic plans.** If `π` is a coupling
