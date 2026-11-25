@@ -54,18 +54,17 @@ Integrating by parts against this pairing gives the **formal adjoint**
   `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
   (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
   `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
-  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). Integrated against a continuous weight
-  `w ≥ 0`, a cutoff `β` with values in `[0, 1]` costs
+  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
+  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
+  `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
+  (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
+  both conjugated operators are `D - δ` and its adjoint `D^* - δ`. Integrated against a
+  continuous weight `w ≥ 0`, a cutoff `β` with values in `[0, 1]` costs
   `∫ w ‖D^* (β η)‖² ≤ 2 ∫ w ‖D^* η‖² + C ∫_K ‖η‖²`, with `K` a compact set off which `dβ`
   vanishes (`exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le`, the weighted adjoint
   counterpart of `exists_integral_norm_floerLinearization_smul_sq_le`); the weighted square norm
   of `D^* η` is integrable for `η` of compact support in an open set on which the data and the
-  weight are regular (`integrable_mul_norm_floerLinearizationAdjoint_sq`). In particular the
-  weight `e^{δ s}` shifts
-  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
-  `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
-  (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
-  both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
+  weight are regular (`integrable_mul_norm_floerLinearizationAdjoint_sq`).
 * **Green's formula.** Pointwise,
   `η(D ξ) = (D^* η)(ξ) + ∂s (η(ξ)) + ∂t ((η ∘ J)(ξ))`
   (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, when the
