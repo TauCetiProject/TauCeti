@@ -30,6 +30,11 @@ solution there, hence continuous.
 * `TauCeti.exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith`: the integral equation has a
   solution continuous on `I`.
 * `TauCeti.eqOn_of_forall_mem_eq_picard_of_lipschitzWith`: two such solutions agree on `I`.
+* `TauCeti.absolutelyContinuousOnInterval_of_forall_mem_eq_picard_of_lipschitzWith`: a solution is
+  absolutely continuous on every compact subinterval of `I`.
+* `TauCeti.norm_sub_le_mul_exp_of_forall_mem_eq_picard_of_lipschitzWith` and
+  `TauCeti.dist_le_mul_exp_of_forall_mem_eq_picard_of_lipschitzWith`: the a priori bound
+  `‖x t - x₀‖ ≤ |∫ m| exp |∫ L|` and the dependence `dist x₀ y₀ exp |∫ L|` on the initial value.
 
 ## References
 
@@ -123,5 +128,65 @@ theorem eqOn_of_forall_mem_eq_picard_of_lipschitzWith (hI : I.OrdConnected) (ht�
   obtain ⟨h₀, htJ, hsub⟩ := mem_Icc_min_max hI ht₀ ht
   exact eqOn_inter_of_Icc_subset hF hL hLip hsub h₀ h₀ (hx₁.mono hsub) (hx₂.mono hsub)
     (fun s hs ↦ h₁ s (hsub hs)) (fun s hs ↦ h₂ s (hsub hs)) ⟨htJ, htJ⟩
+
+/-- **Absolute continuity on an interval.** Under the hypotheses of
+`TauCeti.exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith`, a curve continuous on `I` that
+solves `x t = x₀ + ∫ s in t₀..t, F s (x s)` on `I` is absolutely continuous on every compact
+subinterval `[a, b] ⊆ I`. -/
+theorem absolutelyContinuousOnInterval_of_forall_mem_eq_picard_of_lipschitzWith
+    (hI : I.OrdConnected) (ht₀ : t₀ ∈ I) {x : ℝ → E} (hx : ContinuousOn x I)
+    (h : ∀ t ∈ I, x t = ODE.picard F t₀ x₀ x t) {a b : ℝ} (ha : a ∈ I) (hb : b ∈ I) :
+    AbsolutelyContinuousOnInterval x a b := by
+  -- Work on the compact interval spanned by `a`, `b` and `t₀`.
+  set a' := min (min a b) t₀
+  set b' := max (max a b) t₀
+  have ha' : a' ∈ I := by simp only [a', min_def]; split_ifs <;> assumption
+  have hb' : b' ∈ I := by simp only [b', max_def]; split_ifs <;> assumption
+  have hsub : Icc a' b' ⊆ I := hI.out ha' hb'
+  have ht₀' : t₀ ∈ Icc a' b' := ⟨min_le_right _ _, le_max_right _ _⟩
+  have hac := absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard_of_lipschitzWith
+    (fun y ↦ (hF y).integrableOn_compact_subset hsub isCompact_Icc)
+    (hL.integrableOn_compact_subset hsub isCompact_Icc)
+    (ae_restrict_of_ae_restrict_of_subset hsub hLip) ht₀' (hx.mono hsub)
+    (fun t ht ↦ h t (hsub ht))
+  have hab' : a' ≤ b' := ht₀'.1.trans ht₀'.2
+  refine hac.mono ?_
+  rw [uIcc_of_le hab']
+  exact uIcc_subset_Icc ⟨(min_le_left _ _).trans (min_le_left _ _),
+      (le_max_left _ _).trans (le_max_left _ _)⟩
+    ⟨(min_le_left _ _).trans (min_le_right _ _), (le_max_right _ _).trans (le_max_left _ _)⟩
+
+omit hF in
+/-- **The a priori bound on an interval.** Under the hypotheses of
+`TauCeti.exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith`, if `‖F t x₀‖ ≤ m t` for almost
+every `t ∈ I` with `m` integrable on compact subsets of `I`, then a solution on `I` satisfies
+`‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for `t ∈ I`. -/
+theorem norm_sub_le_mul_exp_of_forall_mem_eq_picard_of_lipschitzWith (hI : I.OrdConnected)
+    (ht₀ : t₀ ∈ I) {m : ℝ → ℝ} (hm : LocallyIntegrableOn m I)
+    (hFm : ∀ᵐ t ∂volume.restrict I, ‖F t x₀‖ ≤ m t) {x : ℝ → E} (hx : ContinuousOn x I)
+    (h : ∀ t ∈ I, x t = ODE.picard F t₀ x₀ x t) {t : ℝ} (ht : t ∈ I) :
+    ‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| * Real.exp |∫ s in t₀..t, (L s : ℝ)| := by
+  obtain ⟨h₀, htJ, hsub⟩ := mem_Icc_min_max hI ht₀ ht
+  exact norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith
+    (hL.integrableOn_compact_subset hsub isCompact_Icc)
+    (ae_restrict_of_ae_restrict_of_subset hsub hLip) h₀
+    (hm.integrableOn_compact_subset hsub isCompact_Icc)
+    (ae_restrict_of_ae_restrict_of_subset hsub hFm) (hx.mono hsub) (fun s hs ↦ h s (hsub hs)) htJ
+
+/-- **Dependence on the initial value on an interval.** Under the hypotheses of
+`TauCeti.exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith`, solutions on `I` from initial
+values `x₀` and `y₀` satisfy `dist (x t) (y t) ≤ dist x₀ y₀ exp |∫ s in t₀..t, L s|` for
+`t ∈ I`. -/
+theorem dist_le_mul_exp_of_forall_mem_eq_picard_of_lipschitzWith (hI : I.OrdConnected)
+    (ht₀ : t₀ ∈ I) {y₀ : E} {x y : ℝ → E} (hx : ContinuousOn x I) (hy : ContinuousOn y I)
+    (hxe : ∀ t ∈ I, x t = ODE.picard F t₀ x₀ x t) (hye : ∀ t ∈ I, y t = ODE.picard F t₀ y₀ y t)
+    {t : ℝ} (ht : t ∈ I) :
+    dist (x t) (y t) ≤ dist x₀ y₀ * Real.exp |∫ s in t₀..t, (L s : ℝ)| := by
+  obtain ⟨h₀, htJ, hsub⟩ := mem_Icc_min_max hI ht₀ ht
+  exact dist_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith
+    (fun y ↦ (hF y).integrableOn_compact_subset hsub isCompact_Icc)
+    (hL.integrableOn_compact_subset hsub isCompact_Icc)
+    (ae_restrict_of_ae_restrict_of_subset hsub hLip) h₀ (hx.mono hsub) (hy.mono hsub)
+    (fun s hs ↦ hxe s (hsub hs)) (fun s hs ↦ hye s (hsub hs)) htJ
 
 end TauCeti
