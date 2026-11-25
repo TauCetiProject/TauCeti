@@ -152,6 +152,11 @@ lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
   obtain rfl : q = p := by lia
   simp
 
+/-- The inclusion `mappingCone.inr f` of `L` into the mapping cone of `f : K ⟶ L` is a
+monomorphism, since it is split in each degree by the projection `mappingCone.snd f`. -/
+instance mono_inr : Mono (inr f) :=
+  mono_of_mono_f _ fun n ↦ mono_of_mono_fac (inr_f_snd_v f n)
+
 end HasHomotopyCofiber
 
 variable [HasBinaryBiproducts C]
