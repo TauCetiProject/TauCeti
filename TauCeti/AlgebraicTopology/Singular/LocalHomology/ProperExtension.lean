@@ -11,6 +11,7 @@ import Mathlib.Topology.Homotopy.Affine
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Topology.Maps.Proper.Metric
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Proper radial extensions preserving local index and local surjectivity
@@ -107,9 +108,10 @@ theorem image_mem_nhds_of_localIndex_ne_zero (hF : finrank ℝ F = n) {f : C(E, 
     by_contra h
     exact hf (o.localIndex_of_frequently_eq o' f (by simpa using not_eventually.1 h))
   obtain ⟨r, hr, δ, hδ, hrU, hfδ, hiso'⟩ :=
-    f.continuous.continuousOn.exists_closedBall_subset_and_le_norm_sub hU hiso
+    f.continuous.continuousOn.exists_closedBall_subset_and_le_dist hU hiso
   obtain ⟨g, hgp, -, -, hgfib, hidx⟩ := o.exists_isProperMap_eqOn_localIndex_eq_degree o' hE hF
-    hr.le hδ hfδ fun z hz ↦ hiso' z (ball_subset_closedBall hz)
+    hr.le hδ (fun z hz ↦ dist_eq_norm (f z) (f x) ▸ hfδ z hz)
+    fun z hz ↦ hiso' z (ball_subset_closedBall hz)
   refine mem_of_superset (ball_mem_nhds (f x) hδ) fun y hy ↦ ?_
   obtain ⟨z, hz⟩ := o.surjective_of_degree_ne_zero o' hE hF hgp (hidx ▸ hf) y
   have hmem : z ∈ g ⁻¹' {y} := hz

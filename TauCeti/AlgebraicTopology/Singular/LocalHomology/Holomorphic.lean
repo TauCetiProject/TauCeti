@@ -14,10 +14,10 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.ProperExtension
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 import TauCeti.LinearAlgebra.Complex.Determinant
 import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Local indices of holomorphic maps are positive
@@ -186,7 +186,7 @@ theorem localIndex_pos_of_analyticAt (hE : finrank ℝ E = n) {f : C(E, E)} {x :
   -- A ball of radius `r` about `x` on which `f` is analytic and `x` is the only solution of
   -- `f z = f x`, and a lower bound `δ` for `‖f - f x‖` on its boundary sphere.
   obtain ⟨r, hr, δ, hδ, hfa, hfδ, hiso'⟩ :=
-    f.continuous.continuousOn.exists_closedBall_subset_and_le_norm_sub
+    f.continuous.continuousOn.exists_closedBall_subset_and_le_dist
       (U := {z | AnalyticAt ℂ f z}) hf.eventually_analyticAt hiso
   -- A small `ε` with `ε r < δ` such that `-ε` is not an eigenvalue of `Df(x)`.
   obtain ⟨ε, ⟨hε, hεδ⟩, hεA⟩ : ∃ ε ∈ Ioo 0 (δ / r),
@@ -199,7 +199,8 @@ theorem localIndex_pos_of_analyticAt (hE : finrank ℝ E = n) {f : C(E, E)} {x :
     exact (lt_div_iff₀ hr).1 hεδ
   -- The local index of `f` is the degree of a proper map `G`, equal to `f + ε (· - x)` near `x`,
   -- complex differentiable there with derivative `Df + ε`, which is invertible at `x`.
-  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree o hE hr.le hfδ
+  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree o hE hr.le
+    (fun z hz ↦ dist_eq_norm (f z) (f x) ▸ hfδ z hz)
     (fun z hz ↦ hiso' z (ball_subset_closedBall hz)) hεr
   have hGeq {z : E} (hz : z ∈ ball x r) :
       (G : E → E) =ᶠ[𝓝 z] fun w ↦ f w + (ε : ℂ) • (w - x) :=
