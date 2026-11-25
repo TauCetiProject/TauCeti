@@ -47,9 +47,7 @@ theorem coe_iterate_sqMap_snd (n : ℕ) (p : AddCircle (1 : ℝ) × I) :
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    rw [iterate_succ_apply']
-    change ((sqMap^[n] p).2 : ℝ) * (sqMap^[n] p).2 = _
-    rw [ih, ← pow_add, pow_succ, mul_two]
+    rw [iterate_succ_apply', sqMap, Set.Icc.coe_mul, ih, ← pow_add, pow_succ, mul_two]
 
 /-- **The non-wandering set of `(x, y) ↦ (x, y²)`** on `AddCircle 1 × [0, 1]` is the union of the
 two boundary circles `y = 0` and `y = 1`. -/
@@ -71,8 +69,7 @@ theorem nonwanderingSet_sqMap :
     have hb2 : b ^ 2 < y := by simp only [b]; nlinarith
     have ha : a < y := by simp only [a]; linarith
     have hU : {p : AddCircle (1 : ℝ) × I | (p.2 : ℝ) ∈ Ioo a b} ∈ 𝓝 (x, y) :=
-      (isOpen_Ioo.preimage (continuous_subtypeVal.comp continuous_snd)).mem_nhds
-        (show a < (y : ℝ) ∧ (y : ℝ) < b from ⟨ha, hb⟩)
+      (isOpen_Ioo.preimage (continuous_subtypeVal.comp continuous_snd)).mem_nhds ⟨ha, hb⟩
     obtain ⟨n, hn, q, hq, hnq⟩ := mem_nonwanderingSet_iff_exists_iterate_mem.1 h _ hU
     have hq0 : 0 ≤ (q.2 : ℝ) := q.2.property.1
     have hq1 : (q.2 : ℝ) ≤ 1 := q.2.property.2
@@ -88,14 +85,6 @@ theorem nonwanderingSet_sqMap :
       gcongr
     have : b ^ 2 < a := by simp only [a]; linarith
     linarith [hnq'.1]
-  · rintro (h | h)
-    · refine Function.IsFixedPt.mem_nonwanderingSet ?_
-      simp only [IsFixedPt, sqMap, Prod.mk.injEq, true_and]
-      ext
-      simp [h]
-    · refine Function.IsFixedPt.mem_nonwanderingSet ?_
-      simp only [IsFixedPt, sqMap, Prod.mk.injEq, true_and]
-      ext
-      simp [h]
+  · rintro (h | h) <;> exact IsFixedPt.mem_nonwanderingSet (by ext <;> simp [sqMap, h])
 
 end TauCeti.Examples.NonwanderingSet
