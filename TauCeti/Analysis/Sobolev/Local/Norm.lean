@@ -217,6 +217,20 @@ theorem MemWkpLoc.eLpNormWkp_ne_top_of_closure_subset (hf : MemWkpLoc p U k f)
   ne_top_of_le_ne_top (hf.eLpNormWkp_ne_top_of_isCompact hVU hV)
     (eLpNormWkp_mono_set subset_closure)
 
+/-- A local estimate `‖v‖_{Lᵗ(V)} ≤ C ‖v‖_{W^{k,r}(W)}` on every `V` with compact closure in an
+open `W` makes every `u ∈ W^{k,r}_loc(Ω, F)` locally `Lᵗ`. -/
+theorem MemWkpLoc.memLpLoc_of_forall_exists_eLpNorm_le {Ω : Opens ℂ} {r t : ℝ≥0∞}
+    (hf : MemWkpLoc r Ω k f)
+    (hest : ∀ {V : Set ℂ} {W : Opens ℂ}, IsCompact (closure V) → closure V ⊆ W →
+      ∃ C : ℝ≥0, ∀ v : ℂ → F, eLpNorm v t (volume.restrict V) ≤ C * eLpNormWkp r W k v) :
+    MemLpLoc t Ω f := by
+  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
+  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  have hKc : closure K = K := hK.isClosed.closure_eq
+  obtain ⟨C, hC⟩ := hest (W := W) (by rwa [hKc]) (by rwa [hKc])
+  exact memLp_iff.2 ((hC f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (lt_top_iff_ne_top.2 (hf.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
 theorem eLpNormWkp_zero_fun [CompleteSpace F] : eLpNormWkp p U k (0 : ℂ → F) = 0 := by

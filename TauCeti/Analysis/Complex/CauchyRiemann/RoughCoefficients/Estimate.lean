@@ -44,7 +44,7 @@ gives, for `1/p + 1/q < 1` and any `1 < r < ∞` with `r ≤ p`, the same bound
 (`TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le`), again uniformly in bounded
 `(J, S)`. Each rung applies the order-zero estimate at `1/r' = 1/p + 1/s` and then the local
 Sobolev or Morrey estimate
-(`TauCeti.exists_inv_le_inv_sub_and_memLpLoc_and_eLpNorm_le_mul_eLpNormWkp_one`) on a smaller open
+(`TauCeti.exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one`) on a smaller open
 set, so the rungs run through nested open sets `U ⋐ ⋯ ⋐ Ω`.
 
 ## The argument at order zero
@@ -239,7 +239,6 @@ order-zero estimate bounds `ξ` in `W^{1,r'}`, and the Sobolev estimate bounds i
 nested open sets `U ⋐ W₁ ⋐ W ⋐ W₀ ⋐ Ω`. -/
 private theorem hasCREstimate_of_rung [FiniteDimensional ℝ V] (hp : 2 < p) (hr_top : r ≠ ⊤)
     (M : ℝ≥0) {s s' : ℝ≥0∞} (hr'1 : 1 < (p⁻¹ + s⁻¹)⁻¹) (hr'r : (p⁻¹ + s⁻¹)⁻¹ ≤ r)
-    (hmem : ∀ {Ω : Opens ℂ} {u : ℂ → V}, MemWkpLoc (p⁻¹ + s⁻¹)⁻¹ Ω 1 u → MemLpLoc s' Ω u)
     (hest : ∀ {U : Set ℂ} {W : Opens ℂ}, IsCompact (closure U) → closure U ⊆ W →
       ∃ C : ℝ≥0, ∀ u : ℂ → V,
         eLpNorm u s' (volume.restrict U) ≤ C * eLpNormWkp (p⁻¹ + s⁻¹)⁻¹ W 1 u)
@@ -267,8 +266,9 @@ private theorem hasCREstimate_of_rung [FiniteDimensional ℝ V] (hp : 2 < p) (hr
     Measure.restrict_mono (hW₁W₀.trans hW₀le) le_rfl
   have hηr' : MemLpLoc (p⁻¹ + s⁻¹)⁻¹ W₀ η := (hη.mono_set hW₀le).mono_exponent hr'r
   -- The solution is in `L^{s'}_loc` on `W₀`, by the qualitative order-zero lemma.
-  have hξs' : MemLpLoc s' W₀ ξ := hmem ((h.mono hW₀le).memWkpLoc_one (hco.mono hW₀le) hp
-    (ae_mono hμ₀ hJ2) hr'1 hr'_top (by rw [inv_inv]) hηr')
+  have hξs' : MemLpLoc s' W₀ ξ := MemWkpLoc.memLpLoc_of_forall_exists_eLpNorm_le
+    ((h.mono hW₀le).memWkpLoc_one (hco.mono hW₀le) hp
+    (ae_mono hμ₀ hJ2) hr'1 hr'_top (by rw [inv_inv]) hηr') hest
   have h₁ := hC₁ J S DJ ξ η ((h.mono (hW₁W₀.trans hW₀le)).of_memLpLoc (hξs'.mono_set hW₁W₀))
     (hco.mono (hW₁W₀.trans hW₀le)) (ae_mono hμ₁ hJ2)
     ((eLpNormWkp_mono_set (hW₁W₀.trans hW₀le)).trans hJM)
@@ -316,10 +316,10 @@ private theorem hasCREstimate_of_inv_le_add_mul [FiniteDimensional ℝ V] (hp : 
     · exact exists_eLpNormWkp_one_le_of_isWeakCRSolution hp hsr hr hr_top hUc hUΩ M
     rw [not_le] at hsr
     have hr'1 : 1 < (p⁻¹ + s⁻¹)⁻¹ := ENNReal.one_lt_inv.2 ((add_le_add le_rfl hsq).trans_lt hpq)
-    obtain ⟨s', hs's, hmem, hest⟩ :=
-      exists_inv_le_inv_sub_and_memLpLoc_and_eLpNorm_le_mul_eLpNormWkp_one (F := V) hp hr'1.le
+    obtain ⟨s', hs's, hest⟩ :=
+      exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one (F := V) hp hr'1.le
     refine hasCREstimate_of_rung hp hr_top M hr'1
-      (ENNReal.inv_le_inv.1 (by rw [inv_inv]; exact hsr.le)) hmem hest
+      (ENNReal.inv_le_inv.1 (by rw [inv_inv]; exact hsr.le)) hest
       (fun Ω' U' hU'c hU'Ω' => ih Ω' s' U' (hs's.trans (tsub_le_self.trans hsq)) ?_ hU'c hU'Ω')
       hUc hUΩ
     refine hs's.trans ?_
