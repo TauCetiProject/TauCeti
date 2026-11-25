@@ -14,7 +14,8 @@ Let `(V, ω)` be a finite-dimensional real symplectic vector space and `b` a Dar
 with `m + 2f` planes. For a set `u` of planes among the first `m`, the Williamson blocks
 `williamsonBlocks b u` are `k_e = |u|` elliptic blocks, `k_h = m - |u|` hyperbolic blocks and
 `k_f = f` focus-focus pairs. Williamson's classification of mixed type puts the span of a
-nondegenerate family of quadratic forms into the span of such blocks
+nondegenerate family of quadratic forms into the span of such blocks when that span contains a
+regular element
 (`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks`). This file
 proves that the **type** `(k_e, k_h, k_f)` is determined by the span alone: two normal forms with
 the same span have the same numbers of elliptic, hyperbolic and focus-focus blocks
@@ -27,8 +28,9 @@ real eigenvalues `μ ∈ s`, and `A_P` itself has distinct eigenvalues `z = a + 
 `a, b > 0`, where `2 |s| + 4 |t| = dim V`. Then `|s| = m`, `|t| = f`, and exactly `|u|` of the
 `μ ∈ s` are negative
 (`IsDarbouxBasis.card_eq_and_card_eq_and_card_filter_eq_of_mem_span_williamsonBlocks`). The span
-contains such a form (`IsDarbouxBasis.exists_mem_span_williamsonBlocks`), and these conditions on
-`P` do not mention the basis, which gives the invariance.
+contains such a form
+(`IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank`), and
+these conditions on `P` do not mention the basis, which gives the invariance.
 
 To count, write `P = ∑ cᵢ Bᵢ` in the blocks. In the coordinates of `b`, the endomorphism `A_P` acts
 on the coordinate plane of an elliptic block `Bₖ` as multiplication by the complex number `-i cₖ`,
@@ -135,19 +137,6 @@ section Darboux
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {m f : ℕ}
   {b : Basis (Fin (m + f * 2) × Fin 2) ℝ V} {u : Finset (Fin m)}
   (c : Fin m ⊕ Fin f × Fin 2 → ℝ)
-
-/-- In a Darboux basis, the `q`-coordinate of `A_P w` is `ω(A_P pₙ, w)`. -/
-private theorem IsDarbouxBasis.repr_hamiltonianEnd_apply_fst (hb : ω.IsDarbouxBasis b)
-    (P : QuadraticForm ℝ V) (n : Fin (m + f * 2)) (w : V) :
-    b.repr (ω.hamiltonianEnd P w) (n, 0) = ω (ω.hamiltonianEnd P (b (n, 1))) w := by
-  rw [apply_hamiltonianEnd, ← neg_neg (b.repr _ _), ← hb.apply_snd, apply_hamiltonianEnd_right,
-    neg_neg]
-
-/-- In a Darboux basis, the `p`-coordinate of `A_P w` is `-ω(A_P qₙ, w)`. -/
-private theorem IsDarbouxBasis.repr_hamiltonianEnd_apply_snd (hb : ω.IsDarbouxBasis b)
-    (P : QuadraticForm ℝ V) (n : Fin (m + f * 2)) (w : V) :
-    b.repr (ω.hamiltonianEnd P w) (n, 1) = -ω (ω.hamiltonianEnd P (b (n, 0))) w := by
-  rw [← hb.apply_fst, apply_hamiltonianEnd_right, apply_hamiltonianEnd]
 
 /-- In a Darboux basis, a form `∑ cᵢ Bᵢ` in the span of the Williamson blocks acts on the
 coordinates `(x, y)` of the plane `k < m` by `(x, y) ↦ (c y, -c x)` if the block is elliptic and by
@@ -414,7 +403,8 @@ theorem IsDarbouxBasis.eq_and_eq_and_card_eq_of_span_williamsonBlocks_eq
     (h : Submodule.span ℝ (Set.range (williamsonBlocks b u)) =
       Submodule.span ℝ (Set.range (williamsonBlocks b' u'))) :
     m = m' ∧ f = f' ∧ u.card = u'.card := by
-  obtain ⟨P, hP, s, t, hst, hs0, hPs, ht0, hPt⟩ := hb.exists_mem_span_williamsonBlocks (t := u)
+  obtain ⟨P, hP, s, t, hst, hs0, hPs, ht0, hPt⟩ :=
+    hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank (t := u)
   obtain ⟨hs, ht, hu⟩ :=
     hb.card_eq_and_card_eq_and_card_filter_eq_of_mem_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
   obtain ⟨hs', ht', hu'⟩ := hb'.card_eq_and_card_eq_and_card_filter_eq_of_mem_span_williamsonBlocks

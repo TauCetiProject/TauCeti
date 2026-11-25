@@ -66,7 +66,7 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   this characterizes the nondegenerate families spanning the Williamson blocks of a Darboux basis.
   Conversely, the form `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`, `Bₖ` the elliptic or hyperbolic
   block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus pair, has such eigenvalues
-  (`IsDarbouxBasis.exists_mem_span_williamsonBlocks`).
+  (`IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank`).
 
 The proof of the classification splits `V` along `P`. The vectors `L` killed by a power of
 `∏_{μ ∈ s} (A_P² - μ)` form a symplectic subspace preserved by the family, since this polynomial is
@@ -601,7 +601,8 @@ has distinct eigenvalues `z = a + bi ∈ t'` with `a, b > 0`, each with an eigen
 `v ≠ 0`, where `2 |s| + 4 |t'| = dim V`. One such form is `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`,
 `Bₖ` the elliptic or hyperbolic block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus
 pair. -/
-theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks (hb : ω.IsDarbouxBasis b) :
+theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank
+    (hb : ω.IsDarbouxBasis b) :
     ∃ P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)), ∃ (s : Finset ℝ) (t' : Finset ℂ),
       s.card * 2 + t'.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
         (∀ μ ∈ s, (ω.hamiltonianEnd P ^ 2).HasEigenvalue μ) ∧ (∀ z ∈ t', 0 < z.re ∧ 0 < z.im) ∧
@@ -671,7 +672,8 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
     let ⟨_, _, hb, hspan⟩ :=
       h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
     ⟨_, _, _, _, hb, hspan⟩,
-  fun ⟨_, _, _, _, hb, hspan⟩ ↦ hspan ▸ hb.exists_mem_span_williamsonBlocks⟩
+  fun ⟨_, _, _, _, hb, hspan⟩ ↦
+    hspan ▸ hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank⟩
 
 end IsNondegenerateQuadraticFamily
 
