@@ -69,8 +69,7 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
   refine isNPositive_iff.mpr fun M hM => ?_
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact isNPositive_iff.mp (isNPositive_zero _) M hM
-  have hcont : Continuous φ :=
-    (map_continuous (hφ.toPositiveLinearMap hn)).congr (hφ.toPositiveLinearMap_apply hn)
+  have hcont : Continuous φ := hφ.continuous hn
   have hl := CStarAlgebra.increasingApproximateUnit A
   refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun w => ?_
   have hlim : Tendsto (fun e => ∑ i, ∑ j, star (w i) *
@@ -144,8 +143,7 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
         (_root_.map_nonneg (hψ.toPositiveLinearMap two_pos)
           (he0.isSelfAdjoint.conjugate_nonneg hp0))
   · filter_upwards [hl.eventually_norm] with e he
-    exact (ψ.le_opNorm e).trans_lt <|
-      (mul_le_of_le_one_right (norm_nonneg _) he).trans_lt hs
+    exact (ψ.unit_le_opNorm e he).trans_lt hs
 
 end TauCeti
 
@@ -189,6 +187,16 @@ theorem toLinearMap_unitization (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ �
 theorem unitization_apply (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
     φ.unitization hφ x = Unitization.inl x.fst + (φ x.snd : B⁺¹) := by
   simp [unitization, Unitization.linearMap_apply]
+
+@[simp]
+theorem fst_unitization (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
+    (φ.unitization hφ x).fst = x.fst := by
+  simp [unitization_apply]
+
+@[simp]
+theorem snd_unitization (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
+    (φ.unitization hφ x).snd = φ x.snd := by
+  simp [unitization_apply]
 
 @[simp]
 theorem unitization_apply_inr (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (a : A) :
