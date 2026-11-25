@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.FreeProbability.Distribution.Free
 public import TauCeti.Probability.FreeProbability.Law.Basic
 import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
+import TauCeti.Analysis.RCLike.ContinuousMap
 import TauCeti.Probability.FreeProbability.FreeProduct.Reduced
 
 /-!
