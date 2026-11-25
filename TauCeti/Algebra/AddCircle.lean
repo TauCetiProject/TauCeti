@@ -500,6 +500,9 @@ exactly when `m` and `n` are congruent modulo the denominator of `q`. -/
 theorem _root_.Int.fract_natCast_mul_ratCast_eq_iff [FloorRing 𝕜] (q : ℚ) {m n : ℕ} :
     Int.fract (m * (q : 𝕜)) = Int.fract (n * (q : 𝕜)) ↔ m ≡ n [MOD q.den] := by
   have : Fact ((0 : 𝕜) < 1) := ⟨one_pos⟩
+  -- Route: `m ≡ n [MOD q.den]` is `m • ↑q = n • ↑q` in `AddCircle 1`, as `q.den` is the order of
+  -- `↑q`; that is `↑(m * q) = ↑(n * q)`, i.e. `m * q - n * q` is an integer, which is the equality
+  -- of fractional parts.
   rw [← addOrderOf_coe_rat (p := (1 : 𝕜)) (q := q), ← nsmul_eq_nsmul_iff_modEq, ← coe_nsmul,
     ← coe_nsmul, Int.fract_eq_fract, ← sub_eq_zero, ← coe_sub, coe_eq_zero_iff]
   simp [eq_comm]
