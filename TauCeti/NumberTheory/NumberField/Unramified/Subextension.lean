@@ -65,8 +65,11 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
   have h : L₁ ⊔ L₂ ≤ M := le_normalClosure _
   have h₁ : L₁ ≤ M := le_sup_left.trans h
   have h₂ : L₂ ≤ M := le_sup_right.trans h
-  rw [← isUnramifiedIn_restrict_iff h, ← isUnramifiedIn_restrict_iff h₁,
-    ← isUnramifiedIn_restrict_iff h₂, restrict_sup h₁ h₂, Ideal.isUnramifiedIn_sup_iff]
+  calc Algebra.IsUnramifiedIn (𝓞 ↥(L₁ ⊔ L₂)) p
+      ↔ Algebra.IsUnramifiedIn (𝓞 ↥(restrict h₁ ⊔ restrict h₂)) p := by
+        rw [← restrict_sup, isUnramifiedIn_restrict_iff]
+    _ ↔ _ := Ideal.isUnramifiedIn_sup_iff p _ _
+    _ ↔ _ := and_congr (isUnramifiedIn_restrict_iff h₁ p) (isUnramifiedIn_restrict_iff h₂ p)
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
 ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`. -/
@@ -85,11 +88,15 @@ theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
     (restrictAlgEquiv h).trans ((restrict h).equivMap ι)
   have : FiniteDimensional K ((restrict h₁).map ι) := (e h₁).toLinearEquiv.finiteDimensional
   have : FiniteDimensional K ((restrict h₂).map ι) := (e h₂).toLinearEquiv.finiteDimensional
-  rw [← isUnramifiedIn_restrict_iff (le_refl E), ← isUnramifiedIn_restrict_iff h₁,
-    ← isUnramifiedIn_restrict_iff h₂, ← Ideal.isUnramifiedIn_map_iff p _ ι,
-    ← Ideal.isUnramifiedIn_map_iff p (restrict h₁) ι,
-    ← Ideal.isUnramifiedIn_map_iff p (restrict h₂) ι, restrict_sup h₁ h₂,
-    IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
+  -- unramifiedness in `L ≤ E` is read on the image of `L` in `Ω'`
+  have key {L : IntermediateField K Ω} (h : L ≤ E) :
+      Algebra.IsUnramifiedIn (𝓞 ↥((restrict h).map ι)) p ↔ Algebra.IsUnramifiedIn (𝓞 L) p :=
+    (Ideal.isUnramifiedIn_map_iff p _ ι).trans (isUnramifiedIn_restrict_iff h p)
+  calc Algebra.IsUnramifiedIn (𝓞 E) p
+      ↔ Algebra.IsUnramifiedIn (𝓞 ↥((restrict h₁).map ι ⊔ (restrict h₂).map ι)) p := by
+        rw [← IntermediateField.map_sup, ← restrict_sup, key]
+    _ ↔ _ := isUnramifiedIn_sup_iff_of_isGalois _ _ p
+    _ ↔ _ := and_congr (key h₁) (key h₂)
 
 /-- **Unramifiedness descends to subextensions.** For `L ≤ E` with `E` finite over `K`, an ideal of
 `𝓞 K` unramified in `E` is unramified in `L`. -/
