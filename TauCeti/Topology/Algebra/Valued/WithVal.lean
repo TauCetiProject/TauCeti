@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.Topology.Algebra.Valued.WithVal
 public import TauCeti.Algebra.GroupWithZero.Range
+public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.RingEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
@@ -36,6 +37,9 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/Transport.lean`.
 
 ## Main definitions
+
+* `ValuationRing.equivIntegerWithVal`: identifies a valuation domain with the integer subring in
+  its fraction field equipped with the canonical valuation.
 
 * `Valuation.Completion.congr`: the isomorphism of completions `v.Completion ≃+* w.Completion`
   extending `σ`.
@@ -72,6 +76,28 @@ theorem Valuation.Integers.withVal {O R Γ₀ : Type*} [CommRing O] [CommRing R]
   exists_of_le_one := fun {x} hx ↦ by
     obtain ⟨a, ha⟩ := hv.exists_of_le_one (r := x.ofVal) hx
     exact ⟨a, WithVal.ofVal_injective v ha⟩
+
+namespace ValuationRing
+
+variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O]
+  (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
+
+variable (O) in
+/-- The canonical ring isomorphism from `O` to the valuation subring `(Valued.v).integer` of
+`WithVal (ValuationRing.valuation O K)`. -/
+noncomputable def equivIntegerWithVal :
+    O ≃+* (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer :=
+  (ValuationRing.integers O K).withVal.equivInteger
+
+@[simp]
+theorem coe_equivIntegerWithVal (a : O) :
+    ((equivIntegerWithVal O K a :
+      (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer) :
+        WithVal (ValuationRing.valuation O K)) =
+      algebraMap O (WithVal (ValuationRing.valuation O K)) a :=
+  (ValuationRing.integers O K).withVal.coe_equivInteger_apply a
+
+end ValuationRing
 
 namespace WithVal
 

@@ -34,7 +34,7 @@ with pseudouniformiser `ϖ`, and let `K` be a fraction field of `O` with canonic
 * On the valued field `WithVal v`, the subgroups `ϖⁿ O` form a neighbourhood basis of zero, so
   `WithVal v` is complete (`IsCompleteRankOneBase.completeSpace_withVal`) and `O` is isomorphic
   as a topological ring to its valuation subring `(Valued.v).integer`
-  (`IsCompleteRankOneBase.equivIntegerWithVal`).
+  (`ValuationRing.equivIntegerWithVal`).
 
 Equipping `WithVal (ValuationRing.valuation O (FractionRing O))` with a `Valuation.RankOne`
 instance therefore realises `O` as the closed unit ball of a complete nontrivially normed
@@ -55,30 +55,9 @@ open scoped nonZeroDivisors
 
 namespace TauCeti.Huber.IsCompleteRankOneBase
 
-variable {O : Type*} [CommRing O]
+open ValuationRing (equivIntegerWithVal coe_equivIntegerWithVal)
 
-section IntegerSubring
-
-variable [IsDomain O] [ValuationRing O] (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
-
-variable (O) in
-/-- The canonical ring isomorphism from `O` to the valuation subring `(Valued.v).integer` of
-`WithVal (ValuationRing.valuation O K)`. -/
-noncomputable def equivIntegerWithVal :
-    O ≃+* (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer :=
-  (ValuationRing.integers O K).withVal.equivInteger
-
-@[simp]
-theorem coe_equivIntegerWithVal (a : O) :
-    ((equivIntegerWithVal O K a :
-      (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer) :
-        WithVal (ValuationRing.valuation O K)) =
-      algebraMap O (WithVal (ValuationRing.valuation O K)) a :=
-  (ValuationRing.integers O K).withVal.coe_equivInteger_apply a
-
-end IntegerSubring
-
-variable [TopologicalSpace O] (ϖ : O) [IsCompleteRankOneBase O ϖ]
+variable {O : Type*} [CommRing O] [TopologicalSpace O] (ϖ : O) [IsCompleteRankOneBase O ϖ]
 
 include ϖ
 
@@ -246,6 +225,8 @@ theorem continuous_equivIntegerWithVal : Continuous (equivIntegerWithVal O K) :=
   rw [ContinuousAt, map_zero, nhds_subtype_eq_comap, tendsto_comap_iff]
   refine ((isAdic (O := O) (ϖ := ϖ)).hasBasis_nhds_zero.tendsto_iff
     (hasBasis_nhds_zero_withVal ϖ K)).mpr fun n _ ↦ ⟨n, trivial, fun a ha ↦ ?_⟩
+  -- The subtype neighborhood uses the composite of the equivalence as an additive map with
+  -- subtype inclusion. Expose its value so the coercion formula rewrites it to the algebra map.
   change (equivIntegerWithVal O K a).val ∈ _
   rw [coe_equivIntegerWithVal]
   rw [Ideal.span_singleton_pow, SetLike.mem_coe, Ideal.mem_span_singleton] at ha
