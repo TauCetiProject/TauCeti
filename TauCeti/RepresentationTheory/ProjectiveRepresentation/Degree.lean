@@ -26,6 +26,8 @@ by `Representation.finrank_dvd_index_of_le_center`.
 
 ## Main results
 
+* `TauCeti.isIrreducible_of_apply_eq_smul`: a representation agreeing up to scalars with an
+  irreducible projective representation is irreducible.
 * `TauCeti.IsProjectiveRep.finrank_dvd_card`: Schur's theorem.
 
 ## References
@@ -41,8 +43,27 @@ namespace TauCeti
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable {k G V : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite G]
-  [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **A representation agreeing up to scalars with an irreducible projective representation is
+irreducible.** If `σ x` acts as a nonzero scalar multiple of `ρ (f x)` for a surjective `f`, then a
+subspace stable under every `σ x` is stable under every `ρ g`, so it is `0` or the whole space. -/
+theorem isIrreducible_of_apply_eq_smul [Nontrivial V] {E : Type*} [Monoid E] {f : E →* G}
+    (hf : Function.Surjective f) {σ : Representation k E V} {ρ : G → V ≃ₗ[k] V} {c : E → kˣ}
+    (hσ : ∀ x v, σ x v = (c x : k) • ρ (f x) v)
+    (hirr : ∀ W : Submodule k V, (∀ g, ∀ w ∈ W, ρ g w ∈ W) → W = ⊥ ∨ W = ⊤) :
+    σ.IsIrreducible := by
+  refine ⟨fun T => ?_⟩
+  have hT : ∀ g, ∀ w ∈ T.toSubmodule, ρ g w ∈ T.toSubmodule := fun g w hw => by
+    obtain ⟨x, rfl⟩ := hf g
+    have h := T.apply_mem_toSubmodule x hw
+    rw [hσ] at h
+    simpa using T.toSubmodule.smul_mem ((c x)⁻¹ : kˣ) h
+  refine (hirr _ hT).imp (fun h => ?_) fun h => ?_
+  · exact Subrepresentation.toSubmodule_injective (h.trans Subrepresentation.toSubmodule_bot.symm)
+  · exact Subrepresentation.toSubmodule_injective (h.trans Subrepresentation.toSubmodule_top.symm)
+
+variable [IsAlgClosed k] [CharZero k] [Finite G]
 
 /-- **Schur's theorem on projective representations.** Over an algebraically closed field of
 characteristic zero, the dimension of a nonzero projective representation of a finite group `G`,
@@ -54,20 +75,9 @@ theorem IsProjectiveRep.finrank_dvd_card [Nontrivial V]
   obtain ⟨π, c, -, hπ⟩ := hρ.exists_commonExtension_linearization
   let σ : Representation k (projectiveLiftingFactorSet k G).Extension V :=
     LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp π
-  have hσ (x : (projectiveLiftingFactorSet k G).Extension) (v : V) :
-      σ x v = (c x : k) • ρ (FactorSet.rightHom (projectiveLiftingFactorSet k G) x) v := by
-    rw [MonoidHom.comp_apply, LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply,
-      LinearEquiv.coe_coe, hπ, LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply]
-  have : σ.IsIrreducible := by
-    refine ⟨fun T => ?_⟩
-    have hT : ∀ g, ∀ w ∈ T.toSubmodule, ρ g w ∈ T.toSubmodule := fun g w hw => by
-      obtain ⟨x, rfl⟩ := FactorSet.rightHom_surjective (projectiveLiftingFactorSet k G) g
-      have h := T.apply_mem_toSubmodule x hw
-      rw [hσ] at h
-      simpa using T.toSubmodule.smul_mem ((c x)⁻¹ : kˣ) h
-    refine (hirr _ hT).imp (fun h => ?_) fun h => ?_
-    · exact Subrepresentation.toSubmodule_injective (h.trans Subrepresentation.toSubmodule_bot.symm)
-    · exact Subrepresentation.toSubmodule_injective (h.trans Subrepresentation.toSubmodule_top.symm)
+  have : σ.IsIrreducible :=
+    isIrreducible_of_apply_eq_smul (FactorSet.rightHom_surjective _) (c := c)
+      (fun x v => by simp [σ, hπ]) hirr
   have h := Representation.finrank_dvd_index_of_le_center σ _
     (projectiveLiftingFactorSet_ker_le_center k G)
   rwa [Subgroup.index_ker,
