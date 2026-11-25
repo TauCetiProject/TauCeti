@@ -92,31 +92,29 @@ theorem secondOrderEulerianPolynomial_succ (k : ℕ) :
 
 /-- DLMF 8.11.9: `b₁(X) = X`. -/
 theorem secondOrderEulerianPolynomial_one : secondOrderEulerianPolynomial 1 = X := by
-  rw [show (1 : ℕ) = 0 + 1 from rfl]
-  simp
+  simp [secondOrderEulerianPolynomial]
 
 /-- DLMF 8.11.9: `b₂(X) = X + 2 X²`. -/
 theorem secondOrderEulerianPolynomial_two :
     secondOrderEulerianPolynomial 2 = X + 2 * X ^ 2 := by
-  rw [show (2 : ℕ) = 1 + 1 from rfl, secondOrderEulerianPolynomial_succ,
-    secondOrderEulerianPolynomial_one]
-  simp
+  rw [secondOrderEulerianPolynomial, secondOrderEulerianPolynomial_one]
+  simp only [derivative_X, Nat.cast_one, map_add, map_mul, map_ofNat, map_one]
   ring
 
 /-- DLMF 8.11.9: `b₃(X) = X + 8 X² + 6 X³`. -/
 theorem secondOrderEulerianPolynomial_three :
     secondOrderEulerianPolynomial 3 = X + 8 * X ^ 2 + 6 * X ^ 3 := by
-  rw [show (3 : ℕ) = 2 + 1 from rfl, secondOrderEulerianPolynomial_succ,
-    secondOrderEulerianPolynomial_two]
-  simp
+  rw [secondOrderEulerianPolynomial, secondOrderEulerianPolynomial_two]
+  simp only [derivative_X, derivative_mul, derivative_ofNat, derivative_X_pow_succ, Nat.cast_one,
+    Nat.cast_ofNat, map_add, map_mul, map_ofNat, map_one]
   ring
 
 /-- DLMF 8.11.9: `b₄(X) = X + 22 X² + 58 X³ + 24 X⁴`. -/
 theorem secondOrderEulerianPolynomial_four :
     secondOrderEulerianPolynomial 4 = X + 22 * X ^ 2 + 58 * X ^ 3 + 24 * X ^ 4 := by
-  rw [show (4 : ℕ) = 3 + 1 from rfl, secondOrderEulerianPolynomial_succ,
-    secondOrderEulerianPolynomial_three]
-  simp
+  rw [secondOrderEulerianPolynomial, secondOrderEulerianPolynomial_three]
+  simp only [derivative_X, derivative_mul, derivative_ofNat, derivative_X_pow_succ, Nat.cast_one,
+    Nat.cast_ofNat, map_add, map_mul, map_ofNat, map_one]
   ring
 
 /-- For `k ≥ 1`, `b_k` vanishes at `0`. -/

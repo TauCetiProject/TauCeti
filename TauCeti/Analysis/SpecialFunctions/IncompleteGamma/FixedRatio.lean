@@ -142,6 +142,27 @@ private theorem one_sub_mul_pos {r x : ℝ} (hr1 : r < 1) (hx : x ∈ Icc (0 : �
 private theorem one_sub_ofReal_ne_zero {r : ℝ} (hr1 : r < 1) : 1 - (r : ℂ) ≠ 0 :=
   sub_ne_zero.mpr (ofReal_inj.not.mpr hr1.ne')
 
+private theorem ofReal_aeval (p : ℤ[X]) (r : ℝ) :
+    (aeval r p : ℂ) = aeval (r : ℂ) p := by
+  rw [← coe_algebraMap, Polynomial.aeval_algebraMap_apply, coe_algebraMap]
+
+private theorem ofReal_sum_secondOrderEulerianPolynomial_div (r a : ℝ) (n : ℕ)
+    (e₁ e₂ : ℕ → ℕ) :
+    ((∑ k ∈ Finset.range n,
+        (-1 : ℝ) ^ k * aeval r (TauCeti.secondOrderEulerianPolynomial k) /
+          ((1 - r) ^ e₁ k * a ^ e₂ k) : ℝ) : ℂ) =
+      ∑ k ∈ Finset.range n,
+        (-1 : ℂ) ^ k * aeval (r : ℂ) (TauCeti.secondOrderEulerianPolynomial k) /
+          ((1 - (r : ℂ)) ^ e₁ k * (a : ℂ) ^ e₂ k) := by
+  push_cast
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [ofReal_aeval]
+
+private theorem ofReal_cpow_eq_cpow_sub_one_mul {x : ℝ} (hx : 0 < x) (a : ℂ) :
+    (x : ℂ) ^ a = (x : ℂ) ^ (a - 1) * (x : ℂ) := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  rw [cpow_sub _ _ hx0, cpow_one, div_mul_cancel₀ _ hx0]
+
 /-- Auxiliary `k`-th remainder integral `∫₀¹ f_k(r, x) (1 - x)^{a - 1} e^{a r x} dx` on `[0, 1]`. -/
 private def fixedRatioRemIntegral (a : ℂ) (r : ℝ) (k : ℕ) : ℂ :=
   ∫ x in (0 : ℝ)..1,
@@ -184,10 +205,7 @@ private theorem hasDerivAt_one_sub_cpow_mul_cexp {a : ℂ} (ha0 : a ≠ 0) (r : 
     have hc := ((Complex.hasDerivAt_exp (a * r * (x : ℂ))).comp (x : ℂ) hlin).comp_ofReal
     exact hc.congr_deriv (by ring)
   refine (hpow1.mul hexp1).congr_deriv ?_
-  have hsplit : ((1 - x : ℝ) : ℂ) ^ a = ((1 - x : ℝ) : ℂ) ^ (a - 1) * ((1 - x : ℝ) : ℂ) := by
-    conv_rhs => enter [2]; rw [← cpow_one ((1 - x : ℝ) : ℂ)]
-    rw [← cpow_add _ _ (ofReal_ne_zero.mpr hx1.ne'), sub_add_cancel]
-  rw [hsplit]
+  rw [ofReal_cpow_eq_cpow_sub_one_mul hx1 a]
   push_cast
   ring
 
@@ -248,10 +266,6 @@ private theorem integral_ratioKernelDeriv_mul (a : ℂ) (r : ℝ) (k : ℕ) :
   filter_upwards [volume.ae_ne (1 : ℝ)] with x hxne hx
   rw [Set.uIoc_of_le zero_le_one] at hx
   have hxpos : 0 < 1 - x := sub_pos.mpr (lt_of_le_of_ne hx.2 hxne)
-  have hsplit : ((1 - x : ℝ) : ℂ) ^ a = ((1 - x : ℝ) : ℂ) * ((1 - x : ℝ) : ℂ) ^ (a - 1) := by
-    conv_rhs => enter [1]; rw [← cpow_one ((1 - x : ℝ) : ℂ)]
-    rw [← cpow_add _ _ (ofReal_ne_zero.mpr hxpos.ne')]
-    congr 1; ring
   have hreal : ratioKernelDeriv r k x * (1 - x) =
       (-1 : ℝ) ^ (k + 1) * aeval (r * (1 - x)) (TauCeti.secondOrderEulerianPolynomial (k + 1)) /
         (1 - r * (1 - x)) ^ (2 * (k + 1)) := by
@@ -266,7 +280,7 @@ private theorem integral_ratioKernelDeriv_mul (a : ℂ) (r : ℝ) (k : ℕ) :
   calc _
     _ = ((ratioKernelDeriv r k x * (1 - x) : ℝ) : ℂ) *
         ((1 - x : ℝ) : ℂ) ^ (a - 1) * cexp (a * r * x) := by
-      rw [hsplit]; push_cast; ring
+      rw [ofReal_cpow_eq_cpow_sub_one_mul hxpos a]; push_cast; ring
     _ = _ := by rw [hreal]
 
 private theorem hasDerivAt_ratioKernel {r : ℝ} (hr1 : r < 1) (k : ℕ) {x : ℝ}
@@ -337,8 +351,9 @@ private theorem fixedRatioRemIntegral_step {a : ℂ} (ha : 0 < a.re) {r : ℝ} (
   have hu0 : u 0 = (-1 : ℂ) ^ k * aeval (r : ℂ) (TauCeti.secondOrderEulerianPolynomial k) /
       (1 - (r : ℂ)) ^ (2 * k + 1) := by
     dsimp only [u]
-    rw [sub_zero, mul_one, ← coe_algebraMap, Polynomial.aeval_algebraMap_apply, coe_algebraMap]
-    simp only [ofReal_div, ofReal_mul, ofReal_pow, ofReal_neg, ofReal_sub, ofReal_one]
+    rw [sub_zero, mul_one, ← ofReal_aeval]
+    push_cast
+    rfl
   rw [integral_ratioKernel_mul_deriv a hr1 k, hv1, hv0, mul_zero, mul_one, zero_sub,
     integral_ratioKernelDeriv_mul a r k, hu0] at hibp
   have heq := congr_arg (fun z : ℂ => (-a)⁻¹ * z) hibp
@@ -356,9 +371,7 @@ theorem mul_lowerIncompleteGamma_mul_eq_integral {a : ℂ} (ha : 0 < a.re) {r : 
   have ha0 : a ≠ 0 := by intro h; simp [h] at ha
   have hra0 : (r : ℂ) * a ≠ 0 := mul_ne_zero (ofReal_ne_zero.mpr hr) ha0
   have hcpow : ((r : ℂ) * a) ^ (-a) * ((r : ℂ) * a) ^ a = 1 := by
-    rw [cpow_neg, inv_mul_cancel₀]
-    rw [cpow_def_of_ne_zero hra0]
-    exact Complex.exp_ne_zero _
+    rw [cpow_neg, inv_mul_cancel₀ (cpow_ne_zero_iff.mpr (.inl hra0))]
   rw [lowerIncompleteGamma_eq_integral ha (r * a), ← mul_assoc,
     mul_right_comm (((r : ℂ) * a) ^ (-a)) (cexp (r * a)) (((r : ℂ) * a) ^ a),
     hcpow, one_mul, ← intervalIntegral.integral_const_mul]
@@ -479,7 +492,7 @@ private theorem norm_fixedRatioRemIntegral_le {a : ℂ} (ha : 0 < a.re) {r : ℝ
       ((-1 : ℂ) ^ k * aeval (r : ℂ) (TauCeti.secondOrderEulerianPolynomial k) /
         ((1 - (r : ℂ)) ^ (2 * k + 1) * (a.re : ℂ)))).re =
       aeval r (TauCeti.secondOrderEulerianPolynomial k) / ((1 - r) ^ (2 * k + 1) * a.re) := by
-    rw [← coe_algebraMap, Polynomial.aeval_algebraMap_apply, coe_algebraMap]
+    rw [← ofReal_aeval]
     have hcast : (-1 : ℂ) ^ k *
         ((-1 : ℂ) ^ k * (aeval r (TauCeti.secondOrderEulerianPolynomial k) : ℂ) /
           ((1 - (r : ℂ)) ^ (2 * k + 1) * (a.re : ℂ))) =
@@ -654,8 +667,7 @@ theorem lowerIncompleteGamma_fixedRatio_isEquivalent {r : ℝ} (hr0 : 0 < r) (hr
     inf_le_left] with a ha_norm
   have ha0 : a ≠ 0 := norm_pos_iff.mp ha_norm
   have hra0 : (r : ℂ) * a ≠ 0 := mul_ne_zero (ofReal_ne_zero.mpr hr0.ne') ha0
-  have hc1 : ((r : ℂ) * a) ^ a ≠ 0 := by
-    rw [cpow_def_of_ne_zero hra0]; exact Complex.exp_ne_zero _
+  have hc1 : ((r : ℂ) * a) ^ a ≠ 0 := cpow_ne_zero_iff.mpr (.inl hra0)
   dsimp [Pi.div_apply]
   rw [cpow_neg, Complex.exp_neg]
   field_simp [ha0, one_sub_ofReal_ne_zero hr1, hc1, Complex.exp_ne_zero ((r : ℂ) * a)]
@@ -686,19 +698,22 @@ theorem regularizedGamma_fixedRatio_isEquivalent {r : ℝ} (hr0 : 0 < r) (hr1 : 
   · rw [EventuallyEq, eventually_inf_principal]
     filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with a ha_norm _
     have ha0 : a ≠ 0 := norm_pos_iff.mp ha_norm
-    have hra0 : (r : ℂ) * a ≠ 0 := mul_ne_zero (ofReal_ne_zero.mpr hr0.ne') ha0
-    dsimp [Pi.div_apply]
-    rw [cpow_def_of_ne_zero hra0, Complex.log_ofReal_mul hr0 ha0, add_mul, Complex.exp_add,
-      cpow_def_of_ne_zero (ofReal_ne_zero.mpr hr0.ne'), ← Complex.ofReal_log hr0.le,
-      cpow_def_of_ne_zero ha0, cpow_def_of_ne_zero ha0]
-    have hl : a = cexp (Complex.log a) := (Complex.exp_log ha0).symm
-    conv_lhs => enter [1, 2, 2]; rw [hl]
+    have ha_split : a ^ a = a * a ^ (a - 1 / 2) / a ^ (1 / 2 : ℂ) := by
+      calc a ^ a
+        _ = a ^ (1 + (a - 1 / 2) - 1 / 2) := by congr 1; ring
+        _ = a * a ^ (a - 1 / 2) / a ^ (1 / 2 : ℂ) := by
+          rw [cpow_sub _ _ ha0, cpow_add _ _ ha0, cpow_one]
+    have hexp : cexp ((1 - (r : ℂ)) * a) = cexp (-((r : ℂ) * a)) / cexp (-a) := by
+      rw [← Complex.exp_sub]
+      congr 1
+      ring
+    have ha_sub0 : a ^ (a - 1 / 2) ≠ 0 := cpow_ne_zero_iff.mpr (.inl ha0)
+    have ha_half0 : a ^ (1 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (.inl ha0)
     have hsq0 : (Real.sqrt (2 * Real.pi) : ℂ) ≠ 0 :=
       ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr (by positivity))
-    field_simp [one_sub_ofReal_ne_zero hr1, hsq0, Complex.exp_ne_zero _]
-    simp only [← Complex.exp_add]
-    congr 1
-    ring
+    dsimp [Pi.div_apply]
+    rw [ofReal_mul_cpow hr0.le, ha_split, hexp]
+    field_simp [ha0, ha_sub0, ha_half0, one_sub_ofReal_ne_zero hr1, hsq0, Complex.exp_ne_zero _]
 
 end Complex
 
@@ -724,25 +739,13 @@ theorem neg_one_pow_mul_mul_lowerIncompleteGamma_fixedRatio_sub_sum_nonneg {a r 
       ((a ^ n)⁻¹ : ℝ) * ((-1 : ℂ) ^ n * Complex.fixedRatioRemIntegral a r n) := by
     have hmain := Complex.mul_lowerIncompleteGamma_mul_eq_sum_add_integral hare hr0.ne' hr1 n
     have hra : 0 < r * a := mul_pos hr0 ha
-    have hpow : (((r * a) ^ (-a) : ℝ) : ℂ) = ((r : ℂ) * a) ^ (-(a : ℂ)) := by
-      rw [Complex.ofReal_cpow hra.le, Complex.ofReal_mul, Complex.ofReal_neg]
-    have hexp_ra : (Real.exp (r * a) : ℂ) = Complex.exp ((r : ℂ) * a) := by
-      rw [Complex.ofReal_exp, Complex.ofReal_mul]
-    have hsum : ((∑ k ∈ Finset.range n,
-          (-1 : ℝ) ^ k * aeval r (secondOrderEulerianPolynomial k) /
-            ((1 - r) ^ (2 * k + 1) * a ^ (k + 1)) : ℝ) : ℂ) =
-        ∑ k ∈ Finset.range n,
-          (-1 : ℂ) ^ k * aeval (r : ℂ) (secondOrderEulerianPolynomial k) /
-            ((1 - (r : ℂ)) ^ (2 * k + 1) * (a : ℂ) ^ (k + 1)) := by
-      rw [Complex.ofReal_sum]
-      refine Finset.sum_congr rfl fun k _ => ?_
-      rw [← Complex.coe_algebraMap, Polynomial.aeval_algebraMap_apply, Complex.coe_algebraMap]
-      simp only [Complex.ofReal_div, Complex.ofReal_mul, Complex.ofReal_pow, Complex.ofReal_neg,
-        Complex.ofReal_sub, Complex.ofReal_one]
-    rw [Complex.ofReal_mul, Complex.ofReal_sub, Complex.ofReal_mul, Complex.ofReal_mul, hpow,
-      hexp_ra, ← Complex.lowerIncompleteGamma_ofReal ha hra.le, Complex.ofReal_mul, hsum, hmain,
-      add_sub_cancel_left, ← Complex.fixedRatioRemIntegral_eq]
+    have hsum := Complex.ofReal_sum_secondOrderEulerianPolynomial_div r a n
+      (fun k => 2 * k + 1) (fun k => k + 1)
+    rw [Complex.ofReal_mul, Complex.ofReal_sub, hsum]
     push_cast
+    rw [Complex.ofReal_cpow hra.le, ← Complex.lowerIncompleteGamma_ofReal ha hra.le]
+    push_cast
+    rw [hmain, add_sub_cancel_left, ← Complex.fixedRatioRemIntegral_eq]
     ring
   have hre := congr_arg Complex.re hcast
   rw [Complex.ofReal_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
@@ -868,23 +871,14 @@ theorem isBigO_sub_mul_lowerIncompleteGamma_fixedRatio {r : ℝ} (hr0 : 0 < r) (
     refine hce.congr' ?_ ?_
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
       have hra : 0 < r * a := mul_pos hr0 ha
-      have hsum :
-          (∑ k ∈ Finset.range n,
-              (-1 : ℂ) ^ k * aeval (r : ℂ) (secondOrderEulerianPolynomial k) /
-                ((1 - (r : ℂ)) ^ (2 * k) * (a : ℂ) ^ k)) =
-            ((∑ k ∈ Finset.range n,
-              (-1 : ℝ) ^ k * aeval r (secondOrderEulerianPolynomial k) /
-                ((1 - r) ^ (2 * k) * a ^ k) : ℝ) : ℂ) := by
-        rw [Complex.ofReal_sum]
-        refine Finset.sum_congr rfl fun k _ => ?_
-        rw [← Complex.coe_algebraMap, Polynomial.aeval_algebraMap_apply, Complex.coe_algebraMap]
-        simp only [Complex.ofReal_div, Complex.ofReal_mul, Complex.ofReal_pow, Complex.ofReal_neg,
-          Complex.ofReal_sub, Complex.ofReal_one]
+      have hsum := Complex.ofReal_sum_secondOrderEulerianPolynomial_div r a n
+        (fun k => 2 * k) (fun k => k)
       dsimp only [Function.comp_def]
-      rw [← Complex.ofReal_mul, Complex.lowerIncompleteGamma_ofReal ha hra.le,
-        ← Complex.ofReal_neg, ← Complex.ofReal_cpow hra.le, ← Complex.ofReal_exp,
-        ← Complex.ofReal_sub, ← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_mul,
-        hsum, ← Complex.ofReal_sub]
+      rw [Complex.ofReal_sub, hsum]
+      push_cast
+      rw [Complex.ofReal_cpow hra.le, ← Complex.lowerIncompleteGamma_ofReal ha hra.le]
+      push_cast
+      rfl
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
       simp only [Function.comp_def, Complex.norm_real, Real.norm_of_nonneg ha.le]
   rw [← isBigO_norm_left] at hcast ⊢
@@ -907,9 +901,8 @@ theorem lowerIncompleteGamma_fixedRatio_isEquivalent {r : ℝ} (hr0 : 0 < r) (hr
       rw [← Complex.ofReal_mul, Complex.lowerIncompleteGamma_ofReal ha (mul_pos hr0 ha).le]
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
       dsimp only [Function.comp_def]
-      rw [← Complex.ofReal_mul, ← Complex.ofReal_cpow (mul_pos hr0 ha).le, ← Complex.ofReal_neg,
-        ← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub, ← Complex.ofReal_mul,
-        ← Complex.ofReal_mul, ← Complex.ofReal_div]
+      push_cast
+      rw [Complex.ofReal_cpow (mul_pos hr0 ha).le, Complex.ofReal_mul]
   rw [IsEquivalent, ← isLittleO_norm_norm] at hcast ⊢
   simpa only [Pi.sub_apply, ← Complex.ofReal_sub, Complex.norm_real] using hcast
 
@@ -932,13 +925,12 @@ theorem regularizedGamma_fixedRatio_isEquivalent {r : ℝ} (hr0 : 0 < r) (hr1 : 
       dsimp only [Function.comp_def]
       rw [← Complex.ofReal_mul, Complex.regularizedGamma_ofReal ha (mul_pos hr0 ha).le]
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-      have hsqrt : (a : ℂ) ^ (1 / 2 : ℂ) = (Real.sqrt a : ℂ) := by
-        rw [Real.sqrt_eq_rpow, Complex.ofReal_cpow ha.le, Complex.ofReal_div, Complex.ofReal_one,
-          Complex.ofReal_ofNat]
       dsimp only [Function.comp_def]
-      rw [hsqrt, ← Complex.ofReal_cpow hr0.le, ← Complex.ofReal_one, ← Complex.ofReal_sub,
-        ← Complex.ofReal_mul, ← Complex.ofReal_exp, ← Complex.ofReal_mul,
-        ← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_div]
+      rw [Real.sqrt_eq_rpow a]
+      push_cast
+      rw [Complex.ofReal_cpow hr0.le, Complex.ofReal_cpow ha.le]
+      push_cast
+      rfl
   rw [IsEquivalent, ← isLittleO_norm_norm] at hcast ⊢
   simpa only [Pi.sub_apply, ← Complex.ofReal_sub, Complex.norm_real] using hcast
 
