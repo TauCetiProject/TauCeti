@@ -26,12 +26,17 @@ topology when `B` is a topological semiring.
 * `TauCeti.TensorAlong f M`: the extension of scalars `B ⊗[A, f] M` as a `B`-module.
 * `TauCeti.TensorAlong.tmul`: the pure tensor `b ⊗ m`.
 * `TauCeti.TensorAlong.basis`: the basis `1 ⊗ b i` extending a basis `b` of `M`.
+* `TauCeti.TensorAlong.liftAddHom`: the lift of a biadditive map balanced along `f`.
+* `TauCeti.TensorAlong.algebraMapEquiv`: extension of scalars along `algebraMap A B` is
+  `B ⊗[A] M`.
 
 ## Main statements
 
 * `TauCeti.TensorAlong.inductionOn`: induction over sums of pure tensors.
 * `TauCeti.TensorAlong.ext`: `B`-linear maps out of `B ⊗[A, f] M` agree once they agree on the
   tensors `1 ⊗ m`.
+* `TauCeti.TensorAlong.addHom_ext`: additive maps out of `B ⊗[A, f] M` agree once they agree on
+  pure tensors.
 -/
 
 public section
@@ -176,6 +181,109 @@ theorem basis_repr_tmul {ι : Type*} (b : Module.Basis ι A M) (c : B) (m : M) :
     (basis f b).repr (tmul c m) = c • Finsupp.mapRange f (map_zero f) (b.repr m) :=
   letI := f.toAlgebra
   Algebra.TensorProduct.basis_repr_tmul b c m
+
+section Lift
+
+variable (f M) in
+/-- The biadditive map `(b, m) ↦ b ⊗ m` into `B ⊗[A, f] M`: Mathlib's `TensorProduct.mk` for
+`f.toAlgebra`, as an additive map. -/
+def mkAddHom : B →+ M →+ TensorAlong f M :=
+  letI := f.toAlgebra
+  (LinearMap.toAddMonoidHom'.comp (TensorProduct.mk A B M).toAddMonoidHom :
+    B →+ M →+ B ⊗[A] M)
+
+@[simp]
+theorem mkAddHom_apply (b : B) (m : M) : mkAddHom f M b m = tmul b m :=
+  (rfl)
+
+variable {P : Type*} [AddCommMonoid P]
+
+variable (f) in
+/-- **The universal property of `B ⊗[A, f] M` for additive maps**: a biadditive map `φ` that is
+balanced along `f`, `φ (f a * b) m = φ b (a • m)`, lifts to `B ⊗[A, f] M`. This is
+`TensorProduct.liftAddHom` for `f.toAlgebra`. -/
+def liftAddHom (φ : B →+ M →+ P) (hφ : ∀ (a : A) (b : B) (m : M), φ (f a * b) m = φ b (a • m)) :
+    TensorAlong f M →+ P :=
+  letI := f.toAlgebra
+  TensorProduct.liftAddHom φ fun a b m => by rw [Algebra.smul_def]; exact hφ a b m
+
+@[simp]
+theorem liftAddHom_tmul (φ : B →+ M →+ P)
+    (hφ : ∀ (a : A) (b : B) (m : M), φ (f a * b) m = φ b (a • m)) (b : B) (m : M) :
+    liftAddHom f φ hφ (tmul b m) = φ b m :=
+  letI := f.toAlgebra
+  TensorProduct.liftAddHom_tmul _ _ b m
+
+/-- Additive maps out of `B ⊗[A, f] M` agree once they agree on pure tensors: the uniqueness
+half of the universal property `liftAddHom`. -/
+@[ext]
+theorem addHom_ext {φ ψ : TensorAlong f M →+ P}
+    (h : ∀ (b : B) (m : M), φ (tmul b m) = ψ (tmul b m)) : φ = ψ :=
+  AddMonoidHom.ext fun x => inductionOn x h fun x y hx hy => by rw [map_add, map_add, hx, hy]
+
+end Lift
+
+section AlgebraMap
+
+variable [Algebra A B]
+
+/-- The map `B ⊗[A] M → B ⊗[A, algebraMap A B] M` that is the identity on pure tensors. -/
+private def toAlgebraMap : B ⊗[A] M →+ TensorAlong (algebraMap A B) M :=
+  TensorProduct.liftAddHom (mkAddHom (algebraMap A B) M) fun a b m => by
+    rw [mkAddHom_apply, mkAddHom_apply, tmul_smul, Algebra.smul_def]
+
+/-- The map `B ⊗[A, algebraMap A B] M → B ⊗[A] M` that is the identity on pure tensors. -/
+private def ofAlgebraMap : TensorAlong (algebraMap A B) M →+ B ⊗[A] M :=
+  liftAddHom (algebraMap A B)
+    (LinearMap.toAddMonoidHom'.comp (TensorProduct.mk A B M).toAddMonoidHom) fun a b m => by
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
+        LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply, ← Algebra.smul_def,
+        TensorProduct.smul_tmul]
+
+private theorem toAlgebraMap_tmul (b : B) (m : M) :
+    toAlgebraMap (b ⊗ₜ[A] m) = (tmul b m : TensorAlong (algebraMap A B) M) :=
+  TensorProduct.liftAddHom_tmul _ _ b m
+
+private theorem ofAlgebraMap_tmul (b : B) (m : M) :
+    ofAlgebraMap (tmul b m : TensorAlong (algebraMap A B) M) = b ⊗ₜ[A] m :=
+  liftAddHom_tmul _ _ b m
+
+variable (A B M) in
+/-- **Extension of scalars along `algebraMap A B` is `B ⊗[A] M`**: the `B`-linear equivalence
+`B ⊗[A] M ≃ B ⊗[A, algebraMap A B] M` that is the identity on pure tensors. It is not the
+identity map, because the `A`-module structure on `B` from `(algebraMap A B).toAlgebra` agrees
+with the given one only propositionally. -/
+def algebraMapEquiv : B ⊗[A] M ≃ₗ[B] TensorAlong (algebraMap A B) M :=
+  AddEquiv.toLinearEquiv
+    { toFun := toAlgebraMap
+      invFun := ofAlgebraMap
+      left_inv x := by
+        induction x using TensorProduct.inductionOn with
+        | tmul b m => rw [toAlgebraMap_tmul, ofAlgebraMap_tmul]
+        | add x y hx hy => rw [map_add, map_add, hx, hy]
+      right_inv x := by
+        induction x using inductionOn with
+        | tmul b m => rw [ofAlgebraMap_tmul, toAlgebraMap_tmul]
+        | add x y hx hy => rw [map_add, map_add, hx, hy]
+      map_add' := map_add _ }
+    fun c x => by
+      induction x using TensorProduct.inductionOn with
+      | tmul b m =>
+        simp only [AddEquiv.coe_mk, Equiv.coe_fn_mk, TensorProduct.smul_tmul', toAlgebraMap_tmul,
+          smul_tmul', smul_eq_mul]
+      | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy, smul_add]
+
+@[simp]
+theorem algebraMapEquiv_tmul (b : B) (m : M) :
+    algebraMapEquiv A B M (b ⊗ₜ[A] m) = tmul b m :=
+  toAlgebraMap_tmul b m
+
+@[simp]
+theorem algebraMapEquiv_symm_tmul (b : B) (m : M) :
+    (algebraMapEquiv A B M).symm (tmul b m) = b ⊗ₜ[A] m :=
+  ofAlgebraMap_tmul b m
+
+end AlgebraMap
 
 end TensorAlong
 

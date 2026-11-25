@@ -89,7 +89,7 @@ theorem exists_norm_sub_le_mul_norm_sub_of_contDiffOn
   -- Every point is the image of a point of the closed simplex spanned by its carrier.
   have hpt (x : Realization K) :
       faceInclusion K (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩ = x :=
-    Subtype.ext (faceInclusion_val _ _ _)
+    faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
   have hmem (x : Realization K) :
       (x.val : ι → ℝ) ∈ range fun t : StandardSimplex (carrier K x).val => (t.val : ι → ℝ) :=
     ⟨⟨_, mem_convexHull_carrier K x⟩, rfl⟩

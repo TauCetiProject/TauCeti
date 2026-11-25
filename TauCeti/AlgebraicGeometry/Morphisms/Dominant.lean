@@ -37,7 +37,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 
 ## Main results
 
-* `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
+* `AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap` and
+  `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
   along a morphism with open underlying map (for instance an étale morphism) is dominant, without
   reducedness or irreducibility assumptions.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_isOpenMap`: a morphism with open underlying map
@@ -50,6 +51,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
   schemes sending the generic point to the generic point is dominant.
+* `AlgebraicGeometry.eq_genericPoint_of_mem_range_fromSpecStalk`: the only point in the image of
+  the canonical morphism `Spec K(Y) ⟶ Y` is the generic point of `Y`.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible
   schemes whose action on the generic point is given by a homomorphism of generic stalks is
   dominant.
@@ -99,11 +102,22 @@ universe u
 
 open CategoryTheory.Limits in
 /-- Base change of a dominant morphism along a morphism whose underlying map is open is
+dominant, for any cartesian square. No flatness or reducedness assumption is needed. -/
+theorem IsDominant.of_isPullback_of_isOpenMap {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ S} {g : Y ⟶ S} (H : IsPullback fst snd f g) [IsDominant f] (hg : IsOpenMap g) :
+    IsDominant snd := by
+  rw [← H.isoPullback_hom_snd]
+  have : IsDominant (pullback.snd f g) := by
+    rw [isDominant_iff, DenseRange, Scheme.Pullback.range_snd]
+    exact f.denseRange.preimage hg
+  infer_instance
+
+open CategoryTheory.Limits in
+/-- Base change of a dominant morphism along a morphism whose underlying map is open is
 dominant. No flatness or reducedness assumption is needed. -/
 theorem IsDominant.pullback_fst_of_isOpenMap {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
-    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) := by
-  rw [isDominant_iff, DenseRange, Scheme.Pullback.range_fst]
-  exact g.denseRange.preimage hf
+    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) :=
+  of_isPullback_of_isOpenMap (IsPullback.of_hasPullback f g).flip hf
 
 /-- The target of a dominant morphism from an irreducible scheme is irreducible. -/
 theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [IrreducibleSpace X]
@@ -176,6 +190,13 @@ instance isDominant_fromSpecStalk_genericPoint :
   ⟨(dense_iff_closure_eq.mpr (genericPoint_closure _)).mono
     (Set.singleton_subset_iff.mpr ⟨IsLocalRing.closedPoint _, Scheme.fromSpecStalk_closedPoint⟩)⟩
 
+/-- The only point in the image of the canonical morphism `Spec K(Y) ⟶ Y` of an irreducible
+scheme is the generic point: the points of the image are generizations of the generic point. -/
+theorem eq_genericPoint_of_mem_range_fromSpecStalk {y : Y}
+    (hy : y ∈ Set.range (Y.fromSpecStalk (genericPoint Y))) : y = genericPoint Y := by
+  rw [Scheme.range_fromSpecStalk] at hy
+  exact (hy.antisymm (genericPoint_specializes _)).eq
+
 namespace Scheme.Hom
 
 /-- A morphism `f : X ⟶ Y` of irreducible schemes is dominant when the canonical morphism
@@ -188,13 +209,12 @@ theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField 
     (h : Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y) = X.fromSpecStalk (genericPoint X) ≫ f) :
     IsDominant f := by
   -- evaluating `h` at the closed point of `Spec K(X)`, `f` sends the generic point of `X` into the
-  -- image of `Spec K(Y)`, whose points are generizations of the generic point, hence equal to it
+  -- image of `Spec K(Y)`, whose only point is the generic point
   have hf : f (genericPoint X) ∈ Set.range (Y.fromSpecStalk (genericPoint Y)) :=
     ⟨Spec.map φ (IsLocalRing.closedPoint _), (Scheme.Hom.comp_apply _ _ _).symm.trans <|
       congr($h _).trans <| (Scheme.Hom.comp_apply _ _ _).trans
         (congrArg f Scheme.fromSpecStalk_closedPoint)⟩
-  rw [Scheme.range_fromSpecStalk] at hf
-  exact isDominant_iff_genericPoint_eq.mpr (hf.antisymm (genericPoint_specializes _)).eq
+  exact isDominant_iff_genericPoint_eq.mpr (eq_genericPoint_of_mem_range_fromSpecStalk hf)
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant morphism
 `f : X ⟶ Y` of irreducible schemes: the map of stalks of `f` at the generic point of `X`, which `f`
