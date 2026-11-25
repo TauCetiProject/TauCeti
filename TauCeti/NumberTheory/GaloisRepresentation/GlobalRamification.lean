@@ -218,25 +218,29 @@ theorem isUnramifiedOutside_iff_ramificationSet_subset {S : Set (HeightOneSpectr
 
 /-- `ρ` is unramified outside `S` exactly when it is unramified at every finite place not in `S`. -/
 theorem isUnramifiedOutside_iff {S : Set (HeightOneSpectrum (𝓞 F))} :
-    ρ.IsUnramifiedOutside S ↔ ∀ v ∉ S, ρ.IsUnramifiedAt v :=
-  ⟨fun h _ hv ↦ not_not.1 fun h' ↦ hv (h h'), fun h v hv ↦ by_contra fun h' ↦ hv (h v h')⟩
+    ρ.IsUnramifiedOutside S ↔ ∀ v ∉ S, ρ.IsUnramifiedAt v := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset]
+  refine forall_congr' fun v ↦ ?_
+  rw [mem_ramificationSet_iff, not_imp_comm]
 
 /-- A representation is unramified outside its own ramification set. -/
 theorem isUnramifiedOutside_ramificationSet : ρ.IsUnramifiedOutside ρ.ramificationSet :=
-  subset_rfl
+  isUnramifiedOutside_iff_ramificationSet_subset.2 subset_rfl
 
 /-- Being unramified outside `S` is inherited by larger sets of places. -/
 theorem IsUnramifiedOutside.mono {S T : Set (HeightOneSpectrum (𝓞 F))}
-    (h : ρ.IsUnramifiedOutside S) (hST : S ⊆ T) : ρ.IsUnramifiedOutside T :=
-  h.trans hST
+    (h : ρ.IsUnramifiedOutside S) (hST : S ⊆ T) : ρ.IsUnramifiedOutside T := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h ⊢
+  exact h.trans hST
 
 /-- If every element acting trivially in `ρ` acts trivially in `τ`, then `τ` is unramified
 outside every set outside which `ρ` is. -/
 theorem IsUnramifiedOutside.of_ker_le {B P : Type*} [Semiring B] [AddCommMonoid P] [Module B P]
     [TopologicalSpace P] {τ : ContinuousRep (Field.absoluteGaloisGroup F) B P}
     {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S)
-    (hker : ρ.toRepresentation.ker ≤ τ.toRepresentation.ker) : τ.IsUnramifiedOutside S :=
-  (ramificationSet_subset_of_ker_le hker).trans h
+    (hker : ρ.toRepresentation.ker ≤ τ.toRepresentation.ker) : τ.IsUnramifiedOutside S := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h ⊢
+  exact (ramificationSet_subset_of_ker_le hker).trans h
 
 /-- A product is unramified outside `S` exactly when both factors are. -/
 @[simp]
@@ -259,8 +263,9 @@ theorem isUnramifiedOutside_trivial (S : Set (HeightOneSpectrum (𝓞 F))) :
 /-- An equivariant quotient of a representation unramified outside `S` is unramified outside `S`. -/
 theorem IsUnramifiedOutside.of_surjective {S : Set (HeightOneSpectrum (𝓞 F))}
     (h : ρ.IsUnramifiedOutside S) (f : Hom ρ ρ') (hf : Function.Surjective f) :
-    ρ'.IsUnramifiedOutside S :=
-  (ramificationSet_subset_of_surjective f hf).trans h
+    ρ'.IsUnramifiedOutside S := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h ⊢
+  exact (ramificationSet_subset_of_surjective f hf).trans h
 
 end Predicates
 
@@ -292,8 +297,9 @@ theorem ramificationSet_tprod_subset (ρ : ContinuousRep (Field.absoluteGaloisGr
 theorem IsUnramifiedOutside.tprod {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
     {ρ' : ContinuousRep (Field.absoluteGaloisGroup F) A N} {S : Set (HeightOneSpectrum (𝓞 F))}
     (h : ρ.IsUnramifiedOutside S) (h' : ρ'.IsUnramifiedOutside S) :
-    (ρ.tprod ρ').IsUnramifiedOutside S :=
-  (ramificationSet_tprod_subset ρ ρ').trans (Set.union_subset h h')
+    (ρ.tprod ρ').IsUnramifiedOutside S := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h h' ⊢
+  exact (ramificationSet_tprod_subset ρ ρ').trans (Set.union_subset h h')
 
 end Tensor
 
@@ -319,8 +325,9 @@ theorem ramificationSet_dual_subset (ρ : ContinuousRep (Field.absoluteGaloisGro
 /-- The contragredient of a representation unramified outside `S` is unramified outside `S`. -/
 theorem IsUnramifiedOutside.dual {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
     {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S) :
-    ρ.dual.IsUnramifiedOutside S :=
-  (ramificationSet_dual_subset ρ).trans h
+    ρ.dual.IsUnramifiedOutside S := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h ⊢
+  exact (ramificationSet_dual_subset ρ).trans h
 
 end Dual
 
@@ -349,8 +356,9 @@ theorem ramificationSet_baseChange_subset (ρ : ContinuousRep (Field.absoluteGal
 outside `S`. -/
 theorem IsUnramifiedOutside.baseChange {ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M}
     {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S) :
-    (ρ.baseChange B).IsUnramifiedOutside S :=
-  (ramificationSet_baseChange_subset B ρ).trans h
+    (ρ.baseChange B).IsUnramifiedOutside S := by
+  rw [isUnramifiedOutside_iff_ramificationSet_subset] at h ⊢
+  exact (ramificationSet_baseChange_subset B ρ).trans h
 
 end BaseChange
 
