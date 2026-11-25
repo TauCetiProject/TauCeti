@@ -42,9 +42,13 @@ isomorphism `p⁻¹(Z) ⟶ Z` along `Z' ⟶ Z`.
   cover `X = U ∪ V`, whose `p` is the open immersion of `V`.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.pullback`: the base change of a
   square along a morphism `Y ⟶ X`.
+* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isoOverComplement`: the
+  isomorphism `p⁻¹(Z) ≅ Z`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isPullback`: the square
+  `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` is cartesian.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isNisnevichCovering`: `{j, p}` is
   a Nisnevich covering.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.ofArrows_mem_nisnevichTopology`:
@@ -59,6 +63,7 @@ isomorphism `p⁻¹(Z) ⟶ Z` along `Z' ⟶ Z`.
 public section
 
 open CategoryTheory Limits AlgebraicGeometry TopologicalSpace
+open AlgebraicGeometry.Scheme.IdealSheafData (mem_range_subschemeι_vanishingIdeal_compl_iff)
 
 universe u
 
@@ -94,15 +99,6 @@ variable {X : AlgebraicGeometry.Scheme.{u}} (Q : ElementaryDistinguishedSquare X
 abbrev arrows : ∀ b : Bool, (Bool.rec Q.V Q.U b : AlgebraicGeometry.Scheme.{u}) ⟶ X :=
   Bool.rec (motive := fun b ↦ (Bool.rec Q.V Q.U b : AlgebraicGeometry.Scheme.{u}) ⟶ X) Q.p Q.j
 
-/-- A point of `X` lies in the reduced closed complement of an open `U` if and only if it lies
-outside `U`. -/
-lemma mem_range_subschemeι_vanishingIdeal_compl_iff (U : X.Opens) (x : X) :
-    x ∈ Set.range
-      (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal U.compl).subschemeι ↔ x ∉ U := by
-  rw [AlgebraicGeometry.Scheme.IdealSheafData.range_subschemeι,
-    AlgebraicGeometry.Scheme.IdealSheafData.coe_support_vanishingIdeal]
-  simp
-
 /-- Every point of `X` outside the image of `j` has a preimage under `p` at which `p` induces an
 isomorphism of residue fields. -/
 theorem exists_isIso_residueFieldMap_p (x : X) (hx : x ∉ Set.range Q.j) :
@@ -121,6 +117,23 @@ theorem exists_isIso_residueFieldMap_p (x : X) (hx : x ∉ Set.range Q.j) :
       rw [pullback.condition]
       infer_instance
     exact AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_comp _ _ w
+
+/-- The square `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` of an elementary distinguished square is
+cartesian. -/
+theorem isPullback : IsPullback (pullback.fst Q.j Q.p) (pullback.snd Q.j Q.p) Q.j Q.p :=
+  IsPullback.of_hasPullback _ _
+
+/-- The isomorphism `p⁻¹(Z) ≅ Z` of an elementary distinguished square, where `Z` is the reduced
+closed complement of `U`: the base change of `p` to `Z`. -/
+noncomputable def isoOverComplement :
+    Limits.pullback Q.p
+        (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl).subschemeι ≅
+      (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl).subscheme :=
+  asIso (pullback.snd _ _)
+
+@[simp]
+lemma isoOverComplement_hom : Q.isoOverComplement.hom = pullback.snd _ _ :=
+  (rfl)
 
 /-- **An elementary distinguished square is a Nisnevich covering**: `{j, p}` is a Nisnevich
 covering of `X`. -/

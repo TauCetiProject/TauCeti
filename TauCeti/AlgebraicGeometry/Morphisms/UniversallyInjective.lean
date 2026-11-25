@@ -55,12 +55,12 @@ theorem UniversallyInjective.of_comp_surjective {X Y Z : Scheme.{u}} (f : X ⟶ 
     MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
   exact Function.Injective.of_comp_right (f := g'.base) this hs.surj
 
-/-- An injective morphism inducing isomorphisms of residue fields is universally injective: its
-diagonal is surjective, since a point of `X ×_Y X` lies over a pair `(x, x)` and is the unique
-point over it. -/
+/-- An injective morphism inducing isomorphisms of residue fields is universally injective. -/
 theorem UniversallyInjective.of_injective_of_isIso_residueFieldMap {X Y : Scheme.{u}} (f : X ⟶ Y)
     (hf : Function.Injective f.base) (hres : ∀ x, IsIso (f.residueFieldMap x)) :
     UniversallyInjective f := by
+  -- The diagonal is surjective: a point of `X ×_Y X` lies over a pair `(x, x)`, and it is the
+  -- unique point over that pair because `f` preserves the residue field at `x`.
   rw [UniversallyInjective.iff_diagonal]
   refine ⟨fun t ↦ ⟨pullback.fst f f t, ?_⟩⟩
   have h : pullback.fst f f t = pullback.snd f f t := hf <| by
@@ -68,7 +68,7 @@ theorem UniversallyInjective.of_injective_of_isIso_residueFieldMap {X Y : Scheme
   have := hres (pullback.snd f f t)
   apply Scheme.Pullback.eq_of_fst_eq_snd_eq_of_isIso
   · rw [← Scheme.Hom.comp_apply, pullback.diagonal_fst]
-    rfl
+    simp
   · rw [← Scheme.Hom.comp_apply, pullback.diagonal_snd]
     exact h
 

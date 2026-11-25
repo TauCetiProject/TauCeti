@@ -32,8 +32,6 @@ immersion, and it is surjective.
 
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.ofPointwise`: the elementary
   distinguished square of `j` and `p` under the pointwise hypotheses.
-* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isoOverComplement`: the
-  isomorphism `p⁻¹(Z) ≅ Z` of an elementary distinguished square.
 
 ## Main results
 
@@ -41,18 +39,17 @@ immersion, and it is surjective.
   pointwise criterion.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.eq_of_p_eq`: over the complement
   of `U`, the étale morphism of an elementary distinguished square is injective.
-* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isPullback`: the square
-  `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` is cartesian.
 
 ## References
 
 * F. Morel and V. Voevodsky, *𝔸¹-homotopy theory of schemes*, Publ. Math. IHÉS 90 (1999),
-  §3.1, Definition 1.3.
+  §3.1, Definition 1.3: the defining condition that the criterion here characterises.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
+open AlgebraicGeometry.Scheme.IdealSheafData (mem_range_subschemeι_vanishingIdeal_compl_iff)
 
 universe u
 
@@ -65,9 +62,10 @@ section Pointwise
 variable {X U V : AlgebraicGeometry.Scheme.{u}} (j : U ⟶ X) (p : V ⟶ X) [IsOpenImmersion j]
   [Etale p]
 
-/-- **The pointwise criterion** (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open
-immersion `j` and an étale `p`, the base change of `p` to the reduced closed complement of `U` is
-an isomorphism if every point outside `U` has exactly one preimage under `p`, at which `p` induces
+/-- **The pointwise criterion**, characterising the defining condition of an elementary
+distinguished square (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open immersion `j` and an
+étale `p`, the base change of `p` to the reduced closed complement of `U` is an isomorphism if every
+point outside `U` has exactly one preimage under `p`, at which `p` induces
 an isomorphism of residue fields. -/
 theorem isIso_pullback_snd_of_pointwise (h : ∀ x ∉ Set.range j, ∃! v, p v = x)
     (hres : ∀ v, p v ∉ Set.range j → IsIso (p.residueFieldMap v)) :
@@ -76,11 +74,11 @@ theorem isIso_pullback_snd_of_pointwise (h : ∀ x ∉ Set.range j, ∃! v, p v 
   set ι := (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal j.opensRange.compl).subschemeι
   have hι (z) : ι z ∉ Set.range j := by
     simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
-  -- Every point of `p⁻¹(Z)` lies over a point outside `U`.
-  have hw (w) : p (pullback.fst p ι w) ∉ Set.range j := by
+  have hcond (w) : p (pullback.fst p ι w) = ι (pullback.snd p ι w) := by
     rw [← AlgebraicGeometry.Scheme.Hom.comp_apply, pullback.condition,
       AlgebraicGeometry.Scheme.Hom.comp_apply]
-    exact hι _
+  -- Every point of `p⁻¹(Z)` lies over a point outside `U`.
+  have hw (w) : p (pullback.fst p ι w) ∉ Set.range j := hcond w ▸ hι _
   have hsurj : Surjective (pullback.snd p ι) := ⟨fun z ↦ by
     obtain ⟨v, hv, -⟩ := h (ι z) (hι z)
     obtain ⟨w, -, hw⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback v z hv
@@ -89,20 +87,11 @@ theorem isIso_pullback_snd_of_pointwise (h : ∀ x ∉ Set.range j, ∃! v, p v 
     intro w₁ w₂ hw₁₂
     have hfst : pullback.fst p ι w₁ = pullback.fst p ι w₂ := by
       refine (h _ (hw w₂)).unique ?_ rfl
-      rw [← AlgebraicGeometry.Scheme.Hom.comp_apply, pullback.condition,
-        AlgebraicGeometry.Scheme.Hom.comp_apply, hw₁₂, ← AlgebraicGeometry.Scheme.Hom.comp_apply,
-        ← pullback.condition, AlgebraicGeometry.Scheme.Hom.comp_apply]
+      rw [hcond, hw₁₂, hcond]
     exact AlgebraicGeometry.Scheme.Pullback.eq_of_fst_eq_snd_eq_of_isIso hfst hw₁₂
-  have hres' (w) : IsIso ((pullback.snd p ι).residueFieldMap w) := by
-    have h₁ : IsIso ((pullback.fst p ι ≫ p).residueFieldMap w) := by
-      rw [AlgebraicGeometry.Scheme.residueFieldMap_comp]
-      exact IsIso.comp_isIso' (hres _ (hw w))
-        (AlgebraicGeometry.Scheme.Pullback.isIso_residueFieldMap_fst w)
-    have h₂ : IsIso ((pullback.snd p ι ≫ ι).residueFieldMap w) := by
-      rw [← pullback.condition]
-      exact h₁
-    rw [AlgebraicGeometry.Scheme.residueFieldMap_comp] at h₂
-    exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι.residueFieldMap _) _ inferInstance h₂
+  have hres' (w) : IsIso ((pullback.snd p ι).residueFieldMap w) :=
+    have := hres _ (hw w)
+    AlgebraicGeometry.Scheme.Pullback.isIso_residueFieldMap_snd w
   have := UniversallyInjective.of_injective_of_isIso_residueFieldMap _ hinj hres'
   exact isIso_of_etale_of_universallyInjective_of_surjective _
 
@@ -135,24 +124,6 @@ end Pointwise
 
 variable {X : AlgebraicGeometry.Scheme.{u}} (Q : ElementaryDistinguishedSquare X)
 
-/-- The square `U ×_X V ⟶ V`, `U ×_X V ⟶ U`, `j`, `p` of an elementary distinguished square is
-cartesian. -/
-theorem isPullback : IsPullback (pullback.fst Q.j Q.p) (pullback.snd Q.j Q.p) Q.j Q.p :=
-  IsPullback.of_hasPullback _ _
-
-/-- The isomorphism `p⁻¹(Z) ≅ Z` of an elementary distinguished square, where `Z` is the reduced
-closed complement of `U`: the base change of `p` to `Z`. -/
-@[expose]
-noncomputable def isoOverComplement :
-    Limits.pullback Q.p
-        (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl).subschemeι ≅
-      (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl).subscheme :=
-  asIso (pullback.snd _ _)
-
-@[simp]
-lemma isoOverComplement_hom : Q.isoOverComplement.hom = pullback.snd _ _ :=
-  rfl
-
 /-- Over the complement of `U`, the étale morphism of an elementary distinguished square is
 injective. -/
 theorem eq_of_p_eq {v₁ v₂ : Q.V} (h : Q.p v₁ = Q.p v₂) (hv : Q.p v₂ ∉ Set.range Q.j) :
@@ -182,9 +153,10 @@ theorem isIso_residueFieldMap_p (v : Q.V) (hv : Q.p v ∉ Set.range Q.j) :
   obtain rfl := Q.eq_of_p_eq hv' (hv' ▸ hv)
   exact hiso
 
-/-- **The pointwise criterion** (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open
-immersion `j` and an étale `p`, the base change of `p` to the reduced closed complement of `U` is
-an isomorphism if and only if every point outside `U` has exactly one preimage under `p`, and `p`
+/-- **The pointwise criterion**, characterising the defining condition of an elementary
+distinguished square (Morel–Voevodsky 1999, §3.1, Definition 1.3): for an open immersion `j` and an
+étale `p`, the base change of `p` to the reduced closed complement of `U` is an isomorphism if and
+only if every point outside `U` has exactly one preimage under `p`, and `p`
 induces an isomorphism of residue fields at it. -/
 theorem isIso_pullback_snd_iff {U V : AlgebraicGeometry.Scheme.{u}} (j : U ⟶ X) (p : V ⟶ X)
     [IsOpenImmersion j] [Etale p] :
