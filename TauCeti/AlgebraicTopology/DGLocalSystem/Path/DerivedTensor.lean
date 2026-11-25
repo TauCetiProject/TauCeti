@@ -238,7 +238,7 @@ theorem nonempty_localizedFunctor_iso_derivedTensor {P : Type (max uB uR)} {ind 
       (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra B b R)
         (loopChainAugmentation B b R).bimoduleGrading
         (loopChainAugmentation B b R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
-  rw [derivedTensorLocalizerMorphism_eq]
+  rw [derivedTensorLocalizerMorphism_def]
   exact M.nonempty_rowFiniteHomologous_semifreeResolution.map fun E ↦
     E.localizedFunctorIso L₁ L₂ M.wellFounded wellFounded_mem_support_semifreeResolution
 

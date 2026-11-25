@@ -253,7 +253,7 @@ def derivedTensorLocalizerMorphism :
 /-- The derived tensor product is the morphism of localizers of the semi-free resolution, through
 which homologous cocycles give isomorphic localized functors
 (`TauCeti.RowFiniteHomologous.localizedFunctorIso`). -/
-theorem derivedTensorLocalizerMorphism_eq :
+theorem derivedTensorLocalizerMorphism_def :
     derivedTensorLocalizerMorphism.{uR, uA, uM} hA 𝒩 dN =
       (semifreeResolution 𝒜 d 𝒩 dN).coefficientLocalizerMorphism hA
         wellFounded_mem_support_semifreeResolution :=

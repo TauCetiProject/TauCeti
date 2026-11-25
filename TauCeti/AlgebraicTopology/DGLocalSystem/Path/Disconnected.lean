@@ -120,7 +120,7 @@ def derivedTensorLocalizerMorphism :
 /-- The derived tensor product over the path components is the morphism of localizers of the
 family of semi-free resolutions, through which families of homologous cocycles give isomorphic
 localized functors (`TauCeti.DGLocalSystemFamily.twistedComplexLocalizedFunctorIso`). -/
-theorem derivedTensorLocalizerMorphism_eq :
+theorem derivedTensorLocalizerMorphism_def :
     DGLocalSystemFamily.derivedTensorLocalizerMorphism β R =
       twistedComplexLocalizerMorphism
         (fun c ↦ semifreeResolution (R := R) (A := loopChainAlgebra B (β.point c) R)
