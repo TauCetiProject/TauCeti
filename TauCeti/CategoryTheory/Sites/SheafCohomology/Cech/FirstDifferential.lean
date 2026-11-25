@@ -37,8 +37,9 @@ of `I`.
   (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso`), which
   for an injective resolution of `F` is the cohomology presheaf of `F`.
 
-The objects of the second page are not identified here with the Čech cohomology groups of `U`
-with coefficients in `Hᵏ(F)`, the cohomology of the Čech complexes `Č(U, Hᵏ(F))`.
+The objects of the second page are identified with the Čech cohomology groups of `U` with
+coefficients in `Hᵏ(F)`, the cohomology of the Čech complexes `Č(U, Hᵏ(F))`, in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.SecondPage`.
 
 ## References
 
