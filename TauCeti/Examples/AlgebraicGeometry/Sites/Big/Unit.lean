@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.Algebra.QuadraticAlgebra.Defs
 public import TauCeti.AlgebraicGeometry.Sites.Big.Unit
 
 /-!
@@ -22,10 +22,10 @@ so its value on an affine test scheme `Spec R ⟶ S` is `R`, as a module over th
   `AlgebraicGeometry.Scheme.bigSheafUnitObjSpecEquiv`; this file specialises them:
 * for `S = Spec k` and a ring `L` over `k`, `(𝒪_S)^a(Spec L) = L`: the value at `Spec k` over
   itself is `k`, and the value at `Spec k[t]` is `k[t]`;
-* over `Spec ℚ`, `(𝒪_S)^a(Spec ℚ(i)) = ℚ(i)`, here `ℚ(i) = ℚ[X]/(X² + 1)`, a two-dimensional
-  `ℚ`-vector space. The topological inverse image of `𝒪_{Spec ℚ}` along `Spec ℚ(i) ⟶ Spec ℚ` has
-  global sections `ℚ`, while the big-site value is not even additively isomorphic to `ℚ`, so the
-  big-site module is not computed by the topological inverse image.
+* over `Spec ℚ`, `(𝒪_S)^a(Spec ℚ(i)) = ℚ(i)`, here `ℚ(i) = ℚ ⊕ ℚi` with `i² = -1`, a
+  two-dimensional `ℚ`-vector space. The topological inverse image of `𝒪_{Spec ℚ}` along
+  `Spec ℚ(i) ⟶ Spec ℚ` has global sections `ℚ`, while the big-site value is not even additively
+  isomorphic to `ℚ`, so the big-site module is not computed by the topological inverse image.
 -/
 
 public section
@@ -65,8 +65,8 @@ noncomputable def bigSheafUnitObjSpecPolynomialEquiv (k : Type u) [CommRing k] :
       k[X] :=
   bigSheafUnitObjSpecAlgebraEquiv k k[X]
 
-/-- The Gaussian rationals `ℚ(i) = ℚ[X]/(X² + 1)`. -/
-abbrev GaussianRat : Type := AdjoinRoot (X ^ 2 + 1 : ℚ[X])
+/-- The Gaussian rationals `ℚ(i) = ℚ ⊕ ℚi`, `i² = -1`, as Mathlib's quadratic algebra. -/
+abbrev GaussianRat : Type := QuadraticAlgebra ℚ (-1) 0
 
 /-- **`(𝒪_{Spec ℚ})^a(Spec ℚ(i)) = ℚ(i)`.** -/
 noncomputable def bigSheafUnitObjSpecGaussianRatEquiv :
@@ -75,12 +75,6 @@ noncomputable def bigSheafUnitObjSpecGaussianRatEquiv :
         RingHomClass.toRingHom (Scheme.bigRingCatSheafObjSpecRingEquiv _ (.of GaussianRat)
           (Spec.map (CommRingCat.ofHom (algebraMap ℚ GaussianRat))))] GaussianRat :=
   bigSheafUnitObjSpecAlgebraEquiv ℚ GaussianRat
-
-/-- `ℚ(i)` is two-dimensional over `ℚ`. -/
-theorem finrank_gaussianRat : Module.finrank ℚ GaussianRat = 2 := by
-  have hm : (X ^ 2 + 1 : ℚ[X]).Monic := by monicity!
-  rw [(AdjoinRoot.powerBasis' hm).finrank, AdjoinRoot.powerBasis'_dim]
-  compute_degree!
 
 /-- **`(𝒪_{Spec ℚ})^a(Spec ℚ(i))` is not the topological inverse image's `ℚ`.** The topological
 inverse image of `𝒪_{Spec ℚ}` along `Spec ℚ(i) ⟶ Spec ℚ` has global sections `ℚ` (the underlying
@@ -93,7 +87,7 @@ theorem isEmpty_bigSheafUnitObjSpecGaussianRat_addEquiv_rat :
   refine ⟨fun e ↦ ?_⟩
   let f : GaussianRat ≃+ ℚ := bigSheafUnitObjSpecGaussianRatEquiv.toAddEquiv.symm.trans e
   have := (LinearEquiv.ofBijective f.toAddMonoidHom.toRatLinearMap f.bijective).finrank_eq
-  rw [finrank_gaussianRat, Module.finrank_self] at this
+  rw [QuadraticAlgebra.finrank_eq_two, Module.finrank_self] at this
   exact absurd this (by norm_num)
 
 end TauCeti.AlgebraicGeometry.BigSheafUnitExamples

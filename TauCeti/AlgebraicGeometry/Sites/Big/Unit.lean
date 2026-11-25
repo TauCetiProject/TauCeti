@@ -123,6 +123,12 @@ lemma bigSheafUnitObjLinearEquiv_apply (S : Scheme.{u}) (T : Over S)
     bigSheafUnitObjLinearEquiv S T x = (Modules.pullbackObjUnitIso T.hom).hom.app ⊤ x :=
   bigSheafUnitIso_hom_val_app_apply S T x
 
+/-- The inverse of `bigSheafUnitObjLinearEquiv` is the inverse of the identification
+`h^* 𝒪_S ≅ 𝒪_T` on global sections. -/
+lemma bigSheafUnitObjLinearEquiv_symm_apply (S : Scheme.{u}) (T : Over S) (r : Γ(T.left, ⊤)) :
+    (bigSheafUnitObjLinearEquiv S T).symm r = (Modules.pullbackObjUnitIso T.hom).inv.app ⊤ r :=
+  unitToBigSheafUnit_val_app_apply S T r
+
 /-- **`(𝒪_S)^a(Spec R) = R`.** On an affine test scheme `h : Spec R ⟶ S`, the big-site module of
 the structure sheaf has value `R`, semilinearly along `bigRingCatSheafObjSpecRingEquiv`. -/
 noncomputable def bigSheafUnitObjSpecEquiv (S : Scheme.{u}) (R : CommRingCat.{u})
@@ -140,5 +146,15 @@ lemma bigSheafUnitObjSpecEquiv_apply (S : Scheme.{u}) (R : CommRingCat.{u}) (h :
       (Scheme.ΓSpecIso R).hom ((Modules.pullbackObjUnitIso h).hom.app ⊤ x) :=
   (bigRingCatSheafObjSpecRingEquiv_apply S R h _).trans
     (congrArg (Scheme.ΓSpecIso R).hom (bigSheafUnitObjLinearEquiv_apply S (Over.mk h) x))
+
+/-- The inverse of `bigSheafUnitObjSpecEquiv` is `R ≅ Γ(Spec R, 𝒪)` followed by the inverse of the
+identification `h^* 𝒪_S ≅ 𝒪_{Spec R}` on global sections. -/
+lemma bigSheafUnitObjSpecEquiv_symm_apply (S : Scheme.{u}) (R : CommRingCat.{u})
+    (h : Spec R ⟶ S) (r : R) :
+    (bigSheafUnitObjSpecEquiv S R h).symm r =
+      (Modules.pullbackObjUnitIso h).inv.app ⊤ ((Scheme.ΓSpecIso R).inv r) :=
+  (congrArg (bigSheafUnitObjLinearEquiv S (Over.mk h)).symm
+    (bigRingCatSheafObjSpecRingEquiv_symm_apply S R h r)).trans
+    (bigSheafUnitObjLinearEquiv_symm_apply S (Over.mk h) _)
 
 end AlgebraicGeometry.Scheme

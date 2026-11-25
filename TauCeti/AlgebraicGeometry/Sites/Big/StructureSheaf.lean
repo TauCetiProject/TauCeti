@@ -166,7 +166,7 @@ lemma Ga_map_apply {T T' : Over S} (f : T ⟶ T') (a : Γ(T'.left, ⊤)) :
 noncomputable def gaObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
     (Ga S).obj.obj (op (Over.mk h)) ≃+ R :=
   -- By `Ga_obj` (`rfl`), the value of `𝔾_a` is the additive group of the big structure sheaf.
-  (bigStructureSheafObjSpecIso S R h).commRingCatIsoToRingEquiv.toAddEquiv
+  (bigRingCatSheafObjSpecRingEquiv S R h).toAddEquiv
 
 @[simp]
 lemma gaObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (a : Γ(Spec R, ⊤)) :
