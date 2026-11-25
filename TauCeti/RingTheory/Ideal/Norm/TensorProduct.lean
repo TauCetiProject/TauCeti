@@ -19,13 +19,17 @@ Let `R → S` be a finite torsion-free extension of Dedekind domains, both free 
 this is `N(I S) = N(I) ^ n` (Mathlib's `Ideal.absNorm_algebraMap`); the general case follows by
 induction on `#T`, since `S` is flat over `R`.
 
-So for an element `s` of an `R`-module `E` with `E / R s` finite, the index of `S (1 ⊗ s)` in
-`S ⊗ E` is `#(E / R s) ^ n` (`TauCeti.cardQuot_span_one_tmul`).
+So for a submodule `N` of an `R`-module `E` with `E / N` finite, the index of the base change
+`S ⊗ N` in `S ⊗ E` is `#(E / N) ^ n` (`Submodule.cardQuot_baseChange`). In particular, for an
+element `s` with `E / R s` finite, the index of `S (1 ⊗ s)` is `#(E / R s) ^ n`
+(`TauCeti.cardQuot_span_one_tmul`).
 
 ## Main statements
 
 * `TauCeti.natCard_tensorProduct_quotient`: `#(S ⊗ R / I) = #(R / I) ^ finrank R S`.
 * `TauCeti.natCard_tensorProduct`: `#(S ⊗ T) = #T ^ finrank R S` for a finite `R`-module `T`.
+* `Submodule.cardQuot_baseChange`: `#(S ⊗ E / N.baseChange S) = #(E / N) ^ finrank R S` when
+  `E / N` is finite.
 * `TauCeti.cardQuot_span_one_tmul`: `#(S ⊗ E / S (1 ⊗ s)) = #(E / R s) ^ finrank R S` when
   `E / R s` is finite.
 -/
@@ -35,11 +39,11 @@ public section
 open scoped TensorProduct
 open Module
 
-namespace TauCeti
-
 variable {R : Type*} (S : Type*) [CommRing R] [IsDedekindDomain R] [CommRing S]
   [IsDedekindDomain S] [Algebra R S] [Module.Finite R S] [IsTorsionFree R S]
   [Module.Free ℤ R] [Module.Free ℤ S] [Module.Finite ℤ R] [Module.Finite ℤ S]
+
+namespace TauCeti
 
 /-- `#(S ⊗ R / I) = #(R / I) ^ finrank R S`: the tensor product is `S / I S`, whose cardinality
 is the norm `N(I S) = N(I) ^ finrank R S`. -/
@@ -80,13 +84,35 @@ theorem natCard_tensorProduct (T : Type*) [AddCommGroup T] [Module R T] [Finite 
     nlinarith
   have hQ := ih _ hlt (T ⧸ C) rfl
   -- Flatness: `S ⊗ C ↪ S ⊗ T` with cokernel `S ⊗ (T / C)`.
-  set f := TensorProduct.map (LinearMap.id : S →ₗ[R] S) C.subtype
-  have hf : Function.Injective f :=
+  have hf : Function.Injective (C.subtype.lTensor S) :=
     Module.Flat.lTensor_preserves_injective_linearMap C.subtype C.injective_subtype
-  have := (LinearMap.range f).card_eq_card_quotient_mul_card
-  rw [Nat.card_congr (LinearEquiv.ofInjective f hf).toEquiv.symm,
+  have := (LinearMap.range (C.subtype.lTensor S)).card_eq_card_quotient_mul_card
+  rw [Nat.card_congr (LinearEquiv.ofInjective _ hf).toEquiv.symm, LinearMap.lTensor_def,
     ← Nat.card_congr (TensorProduct.tensorQuotientEquiv S C).toEquiv, hC, hQ] at this
   rw [this, C.card_eq_card_quotient_mul_card, mul_pow]
+
+end TauCeti
+
+namespace Submodule
+
+/-- **The index of a submodule under base change.** If `E / N` is finite, then
+`#(S ⊗ E / N.baseChange S) = #(E / N) ^ finrank R S`. -/
+theorem cardQuot_baseChange {E : Type*} [AddCommGroup E] [Module R E] (N : Submodule R E)
+    [Finite (E ⧸ N)] : (N.baseChange S).cardQuot = N.cardQuot ^ finrank R S := by
+  -- The `R`-submodule cut out by `S ⊗ N → S ⊗ E` is the base change of `N`, viewed over `R`.
+  have hrange : LinearMap.range (N.subtype.lTensor S) = (N.baseChange S).restrictScalars R := by
+    have hmap : (N.subtype.baseChange S).restrictScalars R = N.subtype.lTensor S :=
+      LinearMap.ext fun x ↦ by
+        rw [LinearMap.restrictScalars_apply, LinearMap.baseChange_eq_lTensor]
+    rw [Submodule.baseChange, ← LinearMap.range_restrictScalars, hmap]
+  rw [Submodule.cardQuot_apply, Submodule.cardQuot_apply,
+    ← Nat.card_congr (Submodule.Quotient.restrictScalarsEquiv R (N.baseChange S)).toEquiv,
+    ← hrange, ← TauCeti.natCard_tensorProduct S (E ⧸ N),
+    Nat.card_congr (TensorProduct.tensorQuotientEquiv S N).toEquiv, LinearMap.lTensor_def]
+
+end Submodule
+
+namespace TauCeti
 
 /-- **The index of an element under base change.** If `E / R s` is finite, then
 `#(S ⊗ E / S (1 ⊗ s)) = #(E / R s) ^ finrank R S`. -/
@@ -94,17 +120,7 @@ theorem cardQuot_span_one_tmul {E : Type*} [AddCommGroup E] [Module R E] {s : E}
     [Finite (E ⧸ Submodule.span R {s})] :
     (Submodule.span S {(1 : S) ⊗ₜ[R] s}).cardQuot =
       (Submodule.span R {s}).cardQuot ^ finrank R S := by
-  set C := Submodule.span R {s}
-  have hbc : C.baseChange S = Submodule.span S {(1 : S) ⊗ₜ[R] s} := by
-    rw [Submodule.baseChange_span, Set.image_singleton, TensorProduct.mk_apply]
-  -- The `R`-submodule cut out by `S ⊗ C → S ⊗ E` is the base change of `C`, viewed over `R`.
-  have hrange : LinearMap.range (C.subtype.lTensor S) = (C.baseChange S).restrictScalars R := by
-    rw [Submodule.baseChange, ← LinearMap.range_restrictScalars]
-    exact congrArg LinearMap.range
-      (LinearMap.coe_injective (LinearMap.baseChange_eq_lTensor _).symm)
-  rw [← hbc, Submodule.cardQuot_apply, Submodule.cardQuot_apply,
-    ← Nat.card_congr (Submodule.Quotient.restrictScalarsEquiv R (C.baseChange S)).toEquiv,
-    ← hrange, ← natCard_tensorProduct S (E ⧸ C),
-    Nat.card_congr (TensorProduct.tensorQuotientEquiv S C).toEquiv, LinearMap.lTensor_def]
+  rw [← Submodule.cardQuot_baseChange S, Submodule.baseChange_span, Set.image_singleton,
+    TensorProduct.mk_apply]
 
 end TauCeti
