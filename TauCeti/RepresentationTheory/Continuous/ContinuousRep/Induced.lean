@@ -57,6 +57,7 @@ coset of `H`.
   the induced module is the module topology.
 * `TauCeti.ContinuousRep.finrank_indV`: the induced module has rank `[Γ : H] · rank U`.
 * `TauCeti.ContinuousRep.ind_apply_indSingle`: `h • e_u = e_{σ h u}` for `h ∈ H`.
+* `TauCeti.ContinuousRep.Hom.ind_indSingle`: naturality of `e_u`, `f.ind e_u = e_{f u}`.
 * `TauCeti.ContinuousRep.finsum_ind_indSingle`: every element of the induced module is the sum of
   its pieces on the cosets of `H`.
 -/
@@ -287,29 +288,29 @@ section Single
 variable (σ : ContinuousRep H A U) (hH : IsOpen (H : Set Γ))
 
 /-- The equivariant function supported on `H` with value `σ h u` at `h ∈ H`. -/
-noncomputable def indSingleFun (u : U) (x : Γ) : U :=
+private noncomputable def indSingleFun (u : U) (x : Γ) : U :=
   open Classical in if hx : x ∈ H then σ ⟨x, hx⟩ u else 0
 
 omit [IsTopologicalGroup Γ] [TopologicalSpace A]
   [IsTopologicalAddGroup U] [ContinuousSMul A U] in
-theorem indSingleFun_of_mem (u : U) {x : Γ} (hx : x ∈ H) :
+private theorem indSingleFun_of_mem (u : U) {x : Γ} (hx : x ∈ H) :
     indSingleFun σ u x = σ ⟨x, hx⟩ u := by
   simp [indSingleFun, hx]
 
 omit [IsTopologicalGroup Γ] [TopologicalSpace A]
   [IsTopologicalAddGroup U] [ContinuousSMul A U] in
-theorem indSingleFun_of_notMem (u : U) {x : Γ} (hx : x ∉ H) : indSingleFun σ u x = 0 := by
+private theorem indSingleFun_of_notMem (u : U) {x : Γ} (hx : x ∉ H) : indSingleFun σ u x = 0 := by
   simp [indSingleFun, hx]
 
 omit [IsTopologicalGroup Γ] [TopologicalSpace A]
   [IsTopologicalAddGroup U] [ContinuousSMul A U] in
-theorem indSingleFun_mul (u : U) (h : H) (x : Γ) :
+private theorem indSingleFun_mul (u : U) (h : H) (x : Γ) :
     indSingleFun σ u (h * x) = σ h (indSingleFun σ u x) := by
   by_cases hx : x ∈ H
   · rw [indSingleFun_of_mem σ u (H.mul_mem h.property hx), indSingleFun_of_mem σ u hx,
       ← mul_apply_eq_comp, ← map_mul, show (⟨h * x, _⟩ : H) = h * ⟨x, hx⟩ from Subtype.ext rfl]
   · rw [indSingleFun_of_notMem σ u hx, map_zero,
-      indSingleFun_of_notMem σ u fun hm => hx (by simpa using H.mul_mem (inv_mem h.property) hm)]
+      indSingleFun_of_notMem σ u fun hm => hx ((H.mul_mem_cancel_left h.property).1 hm)]
 
 /-- The element `e_u` of the induced module supported on the open subgroup `H`, with value `σ h u`
 at `h ∈ H`. -/
@@ -329,7 +330,7 @@ noncomputable def indSingle : U →L[A] indV H σ where
     · simpa [indSingleFun, hx] using σ.continuous_apply ⟨x, hx⟩
     · simpa [indSingleFun, hx] using continuous_const
 
-theorem indSingle_apply (u : U) (x : Γ) :
+private theorem indSingle_apply (u : U) (x : Γ) :
     (indSingle σ hH u : C(Γ, U)) x = indSingleFun σ u x :=
   indVMk_apply σ hH _ (indSingleFun_mul σ u) x
 
@@ -346,6 +347,7 @@ theorem indSingle_apply_of_notMem (u : U) {x : Γ} (hx : x ∉ H) :
 variable [LocallyCompactSpace Γ]
 
 /-- An element `h ∈ H` acts on `e_u` by acting on `u`: `h • e_u = e_{σ h u}`. -/
+@[simp]
 theorem ind_apply_indSingle (h : H) (u : U) :
     ind H σ h (indSingle σ hH u) = indSingle σ hH (σ h u) := by
   refine Subtype.ext (ContinuousMap.ext fun x => ?_)
@@ -354,7 +356,20 @@ theorem ind_apply_indSingle (h : H) (u : U) :
   · rw [indSingle_apply_of_mem σ hH u (H.mul_mem hx h.property), indSingle_apply_of_mem σ hH _ hx,
       ← mul_apply_eq_comp, ← map_mul, show (⟨x * h, _⟩ : H) = ⟨x, hx⟩ * h from Subtype.ext rfl]
   · rw [indSingle_apply_of_notMem σ hH _ hx, indSingle_apply_of_notMem σ hH u fun hm =>
-      hx (by simpa using H.mul_mem hm (inv_mem h.property))]
+      hx ((H.mul_mem_cancel_right h.property).1 hm)]
+
+variable {σ} in
+/-- **Naturality of `e_u`.** The morphism induced by `f : σ ⟶ τ` sends `e_u` to `e_{f u}`. -/
+@[simp]
+theorem Hom.ind_indSingle {V : Type*} [AddCommGroup V] [Module A V] [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [ContinuousSMul A V] {τ : ContinuousRep H A V} (f : Hom σ τ)
+    (u : U) :
+    f.ind (indSingle σ hH u) = indSingle τ hH (f u) := by
+  refine Subtype.ext (ContinuousMap.ext fun x => ?_)
+  rw [Hom.ind_apply_apply]
+  by_cases hx : x ∈ H
+  · rw [indSingle_apply_of_mem σ hH u hx, indSingle_apply_of_mem τ hH _ hx, f.isIntertwining]
+  · rw [indSingle_apply_of_notMem σ hH u hx, indSingle_apply_of_notMem τ hH _ hx, map_zero]
 
 /-- **Decomposition along the cosets.** For `H` open of finite index, every element `φ` of the
 induced module is the sum over `x H ∈ Γ / H` of the translates `x • e_{φ x⁻¹}`, the piece of `φ`
