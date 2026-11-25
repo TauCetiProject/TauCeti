@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Determinant.Projective.Operations
 public import TauCeti.LinearAlgebra.Determinant.Projective.TensorProduct
 
 /-!
-# Determinant characters of restrictions, sums, twists and duals
+# Determinant characters of restrictions, sums, twists, duals and tensor products
 
 For continuous representations on finite projective modules, the determinant character
 `TauCeti.ContinuousRep.det` satisfies:
@@ -78,13 +78,5 @@ theorem det_tprod [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A
     (ρ.tprod σ).det = ρ.det ^ n * σ.det ^ m := by
   ext g
   simp [tprod_apply, LinearMap.projectiveDet_tensorProductMap hM hN]
-
-/-- On free carriers, `det (ρ ⊗ σ) = (det ρ) ^ rank N · (det σ) ^ rank M`. -/
-theorem det_tprod_of_free [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A M]
-    [IsModuleTopology A N] [TopologicalSpace (M ⊗[A] N)] [IsModuleTopology A (M ⊗[A] N)]
-    [Module.Free A M] [Module.Free A N] (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    (ρ.tprod σ).det = ρ.det ^ finrank A N * σ.det ^ finrank A M := by
-  ext g
-  simp [tprod_apply, LinearMap.det_tensorProductMap]
 
 end TauCeti.ContinuousRep
