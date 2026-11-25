@@ -69,6 +69,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   characters.
 * `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
+* `TauCeti.fourier_add_eq_mul`, `TauCeti.star_fourier`, `TauCeti.star_fourier_mul_fourier`: in
+  `C(AddCircle T, ℂ)`, `fourier (m + n) = fourier m * fourier n`, `(fourier n)⋆ = fourier (-n)`,
+  and `fourier n` is unitary.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `TauCeti.fourier_apply_eq_coe_toCircle_zpow`: `fourier n` is the `n`-th power of the point of
@@ -192,6 +195,22 @@ theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 :=
 /-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
 theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
   rw [← fourier_add, neg_add_cancel, fourier_zero]
+
+/-- The Fourier monomials are multiplicative in the index as elements of `C(AddCircle T, ℂ)`. -/
+theorem fourier_add_eq_mul (m n : ℤ) : fourier (T := T) (m + n) = fourier m * fourier n := by
+  ext x
+  rw [fourier_add, ContinuousMap.mul_apply]
+
+/-- The adjoint of the Fourier monomial `fourier n` in `C(AddCircle T, ℂ)` is `fourier (-n)`. -/
+@[simp]
+theorem star_fourier (n : ℤ) : star (fourier (T := T) n) = fourier (-n) := by
+  ext x
+  rw [ContinuousMap.star_apply, Complex.star_def, ← fourier_neg]
+
+/-- The Fourier monomials are unitary elements of `C(AddCircle T, ℂ)`. -/
+theorem star_fourier_mul_fourier (n : ℤ) : star (fourier (T := T) n) * fourier n = 1 := by
+  ext x
+  rw [star_fourier, ContinuousMap.mul_apply, fourier_neg_mul_fourier, ContinuousMap.one_apply]
 
 /-- The Fourier monomial `fourier n` is the `n`-th power of the point `toCircle x` of the unit
 circle. -/
