@@ -252,6 +252,17 @@ lemma baseRingToGlobalSections_apply (r : R) :
       (X ↘ Spec (.of R)).appTop ((Scheme.ΓSpecIso (.of R)).inv r) :=
   (rfl)
 
+/-- Through `f ≫ Y.toSpecΓ`, a global function `r` on `Y` acts on `X` as `f^* r`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.baseRingToGlobalSections_eq_appTop
+    {X Y : Scheme.{u}} (f : X ⟶ Y) (r : Γ(Y, ⊤)) :
+    letI : X.Over (Spec (.of Γ(Y, ⊤))) := ⟨f ≫ Y.toSpecΓ⟩
+    baseRingToGlobalSections Γ(Y, ⊤) X r = f.appTop r := by
+  rw [baseRingToGlobalSections_apply]
+  -- The structure morphism of the local `Over` instance is `f ≫ Y.toSpecΓ` by definition.
+  change (f ≫ Y.toSpecΓ).appTop ((Scheme.ΓSpecIso _).inv r) = _
+  simp only [Scheme.Hom.comp_appTop, Scheme.toSpecΓ_appTop, ConcreteCategory.comp_apply,
+    Iso.inv_hom_id_apply]
+
 end AlgebraicGeometry.Scheme.Modules
 
 namespace AlgebraicGeometry.Scheme
