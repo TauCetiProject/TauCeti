@@ -48,7 +48,7 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
-* `SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_of_iteratedFDeriv_eq_zero`: if the
+* `SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero`: if the
   derivatives of `f` of order at most `N` vanish at `x`, the seminorms of order at most `N` of the
   products `φ (t • (· - x)) • f` with shrinking cutoffs tend to zero as `t → ∞`.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
@@ -227,7 +227,7 @@ at `x`, the Schwartz seminorms of order `n ≤ N` of the products of `f` with th
 `φ (t • (· - x))` tend to zero as `t → ∞`: by `TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`
 their derivatives of order at most `N` are `O(t⁻¹)`, and they are supported in
 `closedBall x t⁻¹`. -/
-theorem tendsto_seminorm_smulLeftCLM_comp_smul_sub_of_iteratedFDeriv_eq_zero {φ : E → ℝ}
+theorem tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero {φ : E → ℝ}
     (hφ : ContDiff ℝ ∞ φ) (hφs : tsupport φ ⊆ closedBall 0 1) (f : 𝓢(E, F)) {x : E} {N : ℕ}
     (hf : ∀ i ≤ N, iteratedFDeriv ℝ i f x = 0) (k : ℕ) {n : ℕ} (hn : n ≤ N) :
     Tendsto (fun t : ℝ ↦ (smulLeftCLM F (fun y ↦ φ (t • (y - x))) f).seminorm ℝ k n)

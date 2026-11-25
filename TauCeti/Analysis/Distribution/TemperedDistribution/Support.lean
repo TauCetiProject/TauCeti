@@ -21,10 +21,10 @@ import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 
 Mathlib's support `dsupport T` of a tempered distribution `T` is the complement of the union of
 the open sets on which `T` vanishes. On a finite-dimensional real space `T` vanishes on that union
-(`TemperedDistribution.isVanishingOn_compl_dsupport`, the localization principle). A Schwartz
-function whose closed support avoids `dsupport T` is the limit of its products with dilated
-compactly supported cutoffs, whose supports also avoid `dsupport T`, and on compactly supported
-functions the localization principle for test functions applies. In particular `T` is zero
+(`Distribution.TemperedDistribution.isVanishingOn_compl_dsupport`, the localization principle).
+A Schwartz function whose closed support avoids `dsupport T` is the limit of its products with
+dilated compactly supported cutoffs, whose supports also avoid `dsupport T`, and on compactly
+supported functions the localization principle for test functions applies. In particular `T` is zero
 exactly when its support is empty.
 
 The main results describe the tempered distributions supported at a point `x`.
@@ -35,7 +35,7 @@ The main results describe the tempered distributions supported at a point `x`.
   value `T f` does not change when `f` is multiplied by a cutoff `φ (t • (· - x))` equal to one
   near `x`, and the seminorms of order at most `N` of these products tend to zero as `t → ∞`,
   since their derivatives of order at most `N` are `O(t⁻¹)`
-  (`SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_of_iteratedFDeriv_eq_zero`).
+  (`SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero`).
 * Consequently a scalar tempered distribution is supported in `{x}` exactly when it is a finite
   linear combination of derivatives `∂^m δ_x` of the Dirac distribution. In coordinates on `ℝⁿ`
   these are the combinations `∑_{|α| ≤ N} c_α ∂^α δ_x`.
@@ -50,15 +50,16 @@ in Tate's local theory at the archimedean places.
 
 ## Main results
 
-* `TemperedDistribution.isVanishingOn_compl_dsupport`: the localization principle.
-* `TemperedDistribution.isVanishingOn_iff_disjoint_dsupport`,
-  `TemperedDistribution.dsupport_eq_empty_iff`: its consequences for open sets and for the zero
-  distribution.
-* `TemperedDistribution.exists_apply_eq_zero_of_dsupport_subset_singleton`: a tempered
+* `Distribution.TemperedDistribution.isVanishingOn_compl_dsupport`: the localization principle.
+* `Distribution.TemperedDistribution.isVanishingOn_iff_disjoint_dsupport`,
+  `Distribution.TemperedDistribution.dsupport_eq_empty_iff`: its consequences for open sets and
+  for the zero distribution.
+* `Distribution.TemperedDistribution.exists_apply_eq_zero_of_dsupport_subset_singleton`: a tempered
   distribution supported at `x` vanishes on the Schwartz functions whose derivatives of order at
   most some `N` vanish at `x`.
-* `TemperedDistribution.dsupport_subset_singleton_iff_mem_span`: a scalar tempered distribution
-  is supported in `{x}` if and only if it lies in the span of the derivatives `∂^m δ_x`.
+* `Distribution.TemperedDistribution.dsupport_subset_singleton_iff_mem_span`: a scalar tempered
+  distribution is supported in `{x}` if and only if it lies in the span of the derivatives
+  `∂^m δ_x`.
 
 ## References
 
@@ -73,7 +74,7 @@ public section
 open Filter Set Function TopologicalSpace Distribution
 open scoped Topology ContDiff SchwartzMap Distributions LineDeriv
 
-namespace TemperedDistribution
+namespace Distribution.TemperedDistribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -172,8 +173,9 @@ theorem exists_apply_eq_zero_of_dsupport_subset_singleton {T : 𝓢'(E, F)} {x :
       (𝓝 0) := by
     -- The Schwartz seminorms do not depend on the scalar field.
     simpa [SchwartzMap.seminorm_apply] using (tendsto_finsetSum S fun i hi ↦
-      SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_of_iteratedFDeriv_eq_zero b.contDiff
-        b.tsupport_eq.subset f hf i.1 (Finset.le_sup (f := Prod.snd) hi)).const_mul (c : ℝ)
+      SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero
+        b.contDiff b.tsupport_eq.subset f hf i.1 (Finset.le_sup (f := Prod.snd) hi)).const_mul
+        (c : ℝ)
   refine norm_le_zero_iff.1 (ge_of_tendsto hlim ?_)
   filter_upwards [eventually_gt_atTop 0] with t ht
   rw [heq t ht]
@@ -186,14 +188,15 @@ finite-dimensional space is supported in `{x}` if and only if it is a finite lin
 iterated directional derivatives `∂^m δ_x` of the Dirac distribution at `x`. -/
 theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
     dsupport T ⊆ {x} ↔
-      T ∈ Submodule.span ℂ (⋃ n : ℕ, range fun m : Fin n → E ↦ ∂^{m} (delta x)) := by
+      T ∈ Submodule.span ℂ
+        (⋃ n : ℕ, range fun m : Fin n → E ↦ ∂^{m} (TemperedDistribution.delta x)) := by
   constructor
   · intro hT
     obtain ⟨N, hN⟩ := exists_apply_eq_zero_of_dsupport_subset_singleton hT
     -- Derivatives of `δ_x` along tuples of basis vectors, of order at most `N`.
     let b := Module.finBasis ℝ E
     let D : (Σ n : Fin (N + 1), Fin n → Fin (Module.finrank ℝ E)) → 𝓢'(E, ℂ) :=
-      fun i ↦ ∂^{b ∘ i.2} (delta x)
+      fun i ↦ ∂^{b ∘ i.2} (TemperedDistribution.delta x)
     -- Tempered distributions as linear functionals.
     let toLin := PointwiseConvergenceCLM.coeLM ℂ 𝓢(E, ℂ) ℂ
     -- Applying `toLin S` is applying `S` itself.
@@ -205,7 +208,7 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
         (Module.Basis.ext_multilinear (fun _ ↦ b) fun v ↦ ?_)
       have := hf ⟨⟨n, Nat.lt_succ_of_le hn⟩, v ∘ Fin.rev⟩
       simp only [htoLin, D] at this
-      rw [iteratedLineDerivOp_delta_apply, mul_eq_zero] at this
+      rw [TemperedDistribution.iteratedLineDerivOp_delta_apply, mul_eq_zero] at this
       simpa only [ContinuousMultilinearMap.coe_coe, ContinuousMultilinearMap.toMultilinearMap_zero,
         zero_apply, Function.comp_def, Fin.rev_rev] using
         this.resolve_left (pow_ne_zero _ (by norm_num))
@@ -224,10 +227,10 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
       | mem S hS =>
         obtain ⟨n, m, rfl⟩ := mem_iUnion.1 hS
         exact Distribution.TemperedDistribution.IsVanishingOn.iteratedLineDerivOp
-          (isVanishingOn_delta x) m
+          (TemperedDistribution.isVanishingOn_delta x) m
       | zero => intro f _; simp
       | add S S' _ _ hS hS' => intro f hf; simp [hS f hf, hS' f hf]
       | smul a S _ hS => intro f hf; simp [hS f hf]
     exact disjoint_compl_left_iff_subset.1 (hvan.disjoint_dsupport isOpen_compl_singleton)
 
-end TemperedDistribution
+end Distribution.TemperedDistribution
