@@ -7,13 +7,17 @@ module
 
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 import Mathlib.RingTheory.Polynomial.Vieta
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
 import TauCeti.FieldTheory.RealClosure.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
 /-!
 # Newton's and Maclaurin's inequalities
@@ -32,6 +36,12 @@ corresponding elementary symmetric mean, so that `S_0 = 1`, `S_1` is the arithme
   theory of Hessian equations, on which `S_1, …, S_l` are positive
   (`Multiset.esymm_div_choose_pos`). Off this cone Maclaurin's inequalities fail: for
   `s = {-1, -1, -1}`, `S_1 = -1 < 1 = S_2^{1/2}`.
+* **The equality case of Newton's inequalities**: if `σ_{k+2}(s) ≠ 0` and
+  `S_k S_{k+2} = S_{k+1}²`, then all elements of `s` are equal
+  (`Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq`).
+* **Rolle's theorem for the elementary symmetric means**: over a real closed field, if `n ≥ 1`,
+  there is a multiset `r` of `n - 1` elements with the same `S_0, …, S_{n-1}` as `s`
+  (`Multiset.exists_esymm_div_choose_eq_of_card_eq_succ`).
 
 Over `ℝ`, the equivalent root form `S_l^{1/l} ≤ S_k^{1/k}` and the case of nonnegative reals are
 in `TauCeti.Analysis.MeanInequalities` (`Multiset.esymm_div_choose_rpow_le_rpow` and
@@ -52,6 +62,13 @@ reflecting the result at degree `k + 2` and differentiating `k` more times gives
 quadratic over `R` has a nonnegative discriminant, which is Newton's inequality. Maclaurin's
 inequalities follow from Newton's by induction: on the cone, the sequence `S_0 = 1, S_1, …, S_l`
 is positive and log-concave.
+
+The Rolle step takes for `r` the roots of the derivative of `∏_{a ∈ s} (X - a)`
+(`TauCeti.PolynomialRolle.card_roots_le_derivative`). In the equality case, iterating it lowers
+`n` to `k + 2`. Replacing `s` by the inverses of its elements then reverses the sequence
+`S_0, …, S_{k+2}` up to the factor `S_{k+2}`, which reduces the equality case to that of
+`S_0 S_2 ≤ S_1²`, the equality case of the inequality between the arithmetic and the quadratic
+mean. Over a general ordered field the equality case is again transferred from a real closure.
 
 ## References
 
@@ -259,5 +276,215 @@ theorem esymm_div_choose_pow_le_pow {k l : ℕ} (hkl : k ≤ l)
       _ = (S k ^ (l + 1)) ^ l := by ring
 
 end OrderedField
+
+/-! ### The equality case of Newton's inequalities
+
+Write `mNorm s k = e_k(s) / binom(card s, k)` for the elementary symmetric mean `S_k`. -/
+
+section EqualityCase
+
+variable {K : Type*} [Field K]
+
+/-- The normalized elementary symmetric function `e_k(s) / binom(card s, k)` of a multiset. -/
+private noncomputable def mNorm (s : Multiset K) (k : ℕ) : K :=
+  s.esymm k / (card s).choose k
+
+private theorem mNorm_card (s : Multiset K) : mNorm s (card s) = s.prod := by
+  rw [mNorm, Multiset.esymm_card_eq_prod, Nat.choose_self, Nat.cast_one, div_one]
+
+private theorem mNorm_of_card_lt {s : Multiset K} {k : ℕ} (h : card s < k) :
+    mNorm s k = 0 := by
+  rw [mNorm, Multiset.esymm_of_card_lt h, zero_div]
+
+/-- Reversal: for `i + j = card s` and `0 ∉ s`, `S_j(s⁻¹) ∏ s = S_i(s)`. -/
+private theorem mNorm_map_inv_mul_prod (s : Multiset K) (hs : (0 : K) ∉ s) {i j : ℕ}
+    (hij : i + j = card s) :
+    mNorm (s.map (·⁻¹)) j * s.prod = mNorm s i := by
+  obtain rfl : i = card s - j := by omega
+  rw [mNorm, mNorm, card_map, ← Nat.choose_symm (by omega), div_mul_eq_mul_div,
+    Multiset.esymm_map_inv_mul_prod s hs (by omega)]
+
+/-- For `card s = k + 2` and `0 ∉ s`, inverting the elements of `s` expresses `S_{k+2}`, `S_{k+1}`
+and `S_k` through `∏ s` and `S_0`, `S_1`, `S_2` of the inverses. -/
+private theorem mNorm_eq_mul_prod_of_card_eq {s : Multiset K} {k : ℕ} (hcard : card s = k + 2)
+    (h0 : (0 : K) ∉ s) :
+    mNorm s (k + 2) = s.prod ∧ mNorm s (k + 1) = mNorm (s.map (·⁻¹)) 1 * s.prod ∧
+      mNorm s k = mNorm (s.map (·⁻¹)) 2 * s.prod :=
+  ⟨by rw [← hcard, mNorm_card], (mNorm_map_inv_mul_prod s h0 (by omega)).symm,
+    (mNorm_map_inv_mul_prod s h0 (by omega)).symm⟩
+
+private theorem mNorm_one_eq (s : Multiset K) : mNorm s 1 = s.sum / card s := by
+  rw [mNorm, Multiset.esymm_one, Nat.choose_one_right]
+
+variable [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- The second normalized elementary symmetric function in terms of the first and the second
+power sum. -/
+private theorem mNorm_two_eq (s : Multiset K) (hs : 2 ≤ card s) :
+    mNorm s 2 = (s.sum ^ 2 - (s.map (· ^ 2)).sum) / (card s * (card s - 1)) := by
+  have h := Multiset.sum_map_pow_two_eq_esymm s
+  rw [Multiset.esymm_one] at h
+  have he : s.esymm 2 = (s.sum ^ 2 - (s.map (· ^ 2)).sum) / 2 := by linarith
+  rw [mNorm, Nat.cast_choose_two, he]
+  have hn : (2 : K) ≤ card s := by exact_mod_cast hs
+  have : (card s : K) - 1 ≠ 0 := by linarith
+  have : (card s : K) ≠ 0 := by positivity
+  field_simp
+
+private theorem eq_of_mNorm_two_eq (s : Multiset K) (hs : 2 ≤ card s)
+    (h : mNorm s 2 = mNorm s 1 ^ 2) : ∀ x ∈ s, ∀ y ∈ s, x = y := by
+  have hn : (2 : K) ≤ card s := by exact_mod_cast hs
+  rw [mNorm_two_eq s hs, mNorm_one_eq, div_pow, div_eq_div_iff (by nlinarith) (by positivity)] at h
+  refine Multiset.eq_of_sq_sum_eq_card_mul_sum_sq s ?_
+  have : (card s : K) * (s.sum ^ 2 - card s * (s.map (· ^ 2)).sum) = 0 := by
+    linear_combination h
+  rcases mul_eq_zero.mp this with h0 | h0
+  · linarith
+  · linarith
+
+private theorem mNorm_replicate (n : ℕ) (hn : 2 ≤ n) (c : K) :
+    mNorm (Multiset.replicate n c) 1 = c ∧ mNorm (Multiset.replicate n c) 2 = c ^ 2 := by
+  have hn' : (2 : K) ≤ n := by exact_mod_cast hn
+  have hsum : (Multiset.replicate n c).sum = n * c := by simp
+  have hsq : ((Multiset.replicate n c).map (· ^ 2)).sum = n * c ^ 2 := by simp
+  refine ⟨?_, ?_⟩
+  · rw [mNorm_one_eq, hsum, card_replicate]
+    field_simp
+  · rw [mNorm_two_eq _ (by simpa using hn), hsum, hsq, card_replicate,
+      div_eq_iff (by nlinarith)]
+    ring
+
+end EqualityCase
+
+section EqualityCaseRealClosed
+
+variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
+
+/-- Rolle's theorem: the roots `r` of the derivative of `∏_{a ∈ s} (X - a)` lie in `R`, and they
+have the same normalized elementary symmetric functions as `s` up to degree `card r`. -/
+private theorem exists_mNorm_eq (s : Multiset R) {m : ℕ} (hs : card s = m + 1) :
+    ∃ r : Multiset R, card r = m ∧ ∀ j ≤ m, mNorm s j = mNorm r j := by
+  -- `p = ∏_{a ∈ s} (X - a)` is monic of degree `m + 1` with roots `s`.
+  set p : R[X] := (s.map fun a ↦ X - C a).prod
+  have hroots : p.roots = s := roots_multiset_prod_X_sub_C s
+  have hmonic : p.Monic := monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a
+  have hdeg : p.natDegree = m + 1 := by rw [natDegree_multiset_prod_X_sub_C_eq_card, hs]
+  have hcardp : card p.roots = p.natDegree := by rw [hroots, hdeg, hs]
+  -- Its derivative `q` has degree `m` and leading coefficient `m + 1`.
+  set q : R[X] := derivative p with hq
+  have hqm : q.coeff m = m + 1 := by
+    rw [hq, coeff_derivative, ← hdeg, hmonic.coeff_natDegree, one_mul]
+  have hqdeg : q.natDegree = m := by
+    have hle : q.natDegree ≤ p.natDegree - 1 := natDegree_derivative_le p
+    exact le_antisymm (by omega) (le_natDegree_of_ne_zero (by rw [hqm]; positivity))
+  have hqlead : q.leadingCoeff = m + 1 := by rw [leadingCoeff, hqdeg, hqm]
+  -- Rolle's theorem: `q` has `m` roots in `R`, counted with multiplicity.
+  have hcardq : card q.roots = q.natDegree := by
+    have hrolle : card p.roots ≤ card q.roots + 1 :=
+      TauCeti.RealClosure.polynomialRolle_of_isRealClosed.card_roots_le_derivative p
+    exact le_antisymm (card_roots' q) (by omega)
+  refine ⟨q.roots, hcardq.trans hqdeg, fun j hj ↦ ?_⟩
+  -- Vieta: compare the coefficient of `X^(m - j)` in `q` with that of `X^(m - j + 1)` in `p`.
+  have hqj : m - (m - j) = j := by omega
+  have hpj : m + 1 - (m - j + 1) = j := by omega
+  have hqv := coeff_eq_esymm_roots_of_card hcardq (k := m - j) (by omega)
+  have hpv := coeff_eq_esymm_roots_of_card hcardp (k := m - j + 1) (by omega)
+  rw [hqlead, hqdeg, hqj] at hqv
+  rw [hmonic.leadingCoeff, hdeg, hpj, hroots, one_mul] at hpv
+  have hcoeff : q.coeff (m - j) = p.coeff (m - j + 1) * ((m - j : ℕ) + 1) := coeff_derivative p _
+  -- Cancelling the sign `(-1) ^ j` gives `(m + 1) e_j(r) = (m - j + 1) e_j(s)`.
+  have E : (m + 1 : R) * q.roots.esymm j = s.esymm j * ((m - j : ℕ) + 1 : R) := by
+    refine mul_left_cancel₀ (pow_ne_zero j (neg_ne_zero.mpr one_ne_zero)) ?_
+    linear_combination -hqv + hcoeff + ((m - j : ℕ) + 1 : R) * hpv
+  -- The binomial identity `binom(m, j) (m + 1) = binom(m + 1, j) (m - j + 1)`.
+  have hsub : m + 1 - j = m - j + 1 := by omega
+  have Ch : (m.choose j : R) * (m + 1) = ((m + 1).choose j : R) * ((m - j : ℕ) + 1 : R) := by
+    have := Nat.choose_mul_succ_eq m j
+    rw [hsub] at this
+    exact_mod_cast this
+  have hc₁ : ((m + 1).choose j : R) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  have hc₀ : (m.choose j : R) ≠ 0 := by exact_mod_cast (Nat.choose_pos hj).ne'
+  rw [mNorm, mNorm, hs, hcardq, hqdeg, div_eq_div_iff hc₁ hc₀]
+  refine mul_right_cancel₀ (b := (m + 1 : R)) (by positivity) ?_
+  linear_combination s.esymm j * Ch - ((m + 1).choose j : R) * E
+
+/-- Iterated Rolle's theorem: if `m ≤ card s`, there is a multiset `r` of `m` elements of `R` with
+the same normalized elementary symmetric functions as `s` up to degree `m`. -/
+private theorem exists_mNorm_eq_of_le (s : Multiset R) {m : ℕ} (hm : m ≤ card s) :
+    ∃ r : Multiset R, card r = m ∧ ∀ j ≤ m, mNorm s j = mNorm r j := by
+  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hm
+  induction d generalizing s with
+  | zero => exact ⟨s, hd, fun _ _ ↦ rfl⟩
+  | succ d ih =>
+    obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq s (m := m + d) (by omega)
+    obtain ⟨t, ht, hrt⟩ := ih r (by omega) hr
+    exact ⟨t, ht, fun j hj ↦ (hsr j (by omega)).trans (hrt j hj)⟩
+
+/-- The equality case of Newton's inequality for a multiset with `S_{k+2} ≠ 0`, over a real
+closed field. -/
+private theorem eq_of_mNorm_mul_eq_sq (s : Multiset R) (k : ℕ) (hne : mNorm s (k + 2) ≠ 0)
+    (heq : mNorm s k * mNorm s (k + 2) = mNorm s (k + 1) ^ 2) :
+    ∀ x ∈ s, ∀ y ∈ s, x = y := by
+  have hge : k + 2 ≤ card s := by
+    by_contra h
+    exact hne (mNorm_of_card_lt (by omega))
+  -- Lower `card s` to `k + 2` by Rolle's theorem.
+  obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq_of_le s hge
+  rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) le_rfl] at heq
+  rw [hsr (k + 2) le_rfl] at hne
+  -- Invert the elements of `r` to reduce to `S_0 S_2 = S_1²`.
+  have h0 : (0 : R) ∉ r := fun h0 ↦ hne (by rw [← hr, mNorm_card, Multiset.prod_eq_zero h0])
+  have hP : r.prod ≠ 0 := Multiset.prod_ne_zero h0
+  obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hr h0
+  rw [h0', h1, h2] at heq
+  have ht : mNorm (r.map (·⁻¹)) 2 = mNorm (r.map (·⁻¹)) 1 ^ 2 := by
+    refine mul_right_cancel₀ (pow_ne_zero 2 hP) ?_
+    linear_combination heq
+  have hrr : ∀ x ∈ r, ∀ y ∈ r, x = y := fun x hx y hy ↦
+    inv_inj.mp (eq_of_mNorm_two_eq _ (by rw [card_map]; omega) ht _
+      (Multiset.mem_map_of_mem _ hx) _ (Multiset.mem_map_of_mem _ hy))
+  -- So `r` is constant, and `s` shares its `S_1` and `S_2`.
+  have hpos : 0 < card r := by omega
+  obtain ⟨c, hc⟩ := card_pos_iff_exists_mem.mp hpos
+  have hrep : r = Multiset.replicate (k + 2) c :=
+    Multiset.eq_replicate.mpr ⟨hr, fun b hb ↦ hrr b hb c hc⟩
+  obtain ⟨h1, h2⟩ := mNorm_replicate (k + 2) le_add_self c
+  rw [← hrep, ← hsr 1 (by omega)] at h1
+  rw [← hrep, ← hsr 2 (by omega)] at h2
+  exact eq_of_mNorm_two_eq s (by omega) (by rw [h1, h2])
+
+/-- Rolle's theorem for the normalized elementary symmetric functions: if `card s = m + 1` for a
+multiset `s` in a real closed field `R`, there is a multiset `r` of `m` elements of `R` with
+`e_j(s) / binom(m + 1, j) = e_j(r) / binom(m, j)` for every `j ≤ m`. -/
+theorem exists_esymm_div_choose_eq_of_card_eq_succ (s : Multiset R) {m : ℕ}
+    (hs : card s = m + 1) :
+    ∃ r : Multiset R, card r = m ∧
+      ∀ j ≤ m, s.esymm j / (m + 1).choose j = r.esymm j / m.choose j := by
+  obtain ⟨r, hr, h⟩ := exists_mNorm_eq s hs
+  refine ⟨r, hr, fun j hj ↦ ?_⟩
+  have := h j hj
+  rwa [mNorm, mNorm, hs, hr] at this
+
+end EqualityCaseRealClosed
+
+/-- The equality case of Newton's inequalities: if `e_{k+2}(s) ≠ 0` and `S_k S_{k+2} = S_{k+1}²`
+for `S_k = e_k(s) / binom(card s, k)`, then all elements of `s` are equal. -/
+theorem eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {s : Multiset K} {k : ℕ} (hne : s.esymm (k + 2) ≠ 0)
+    (h : s.esymm k / (card s).choose k * (s.esymm (k + 2) / (card s).choose (k + 2)) =
+      (s.esymm (k + 1) / (card s).choose (k + 1)) ^ 2) :
+    ∀ x ∈ s, ∀ y ∈ s, x = y := by
+  have hk : k + 2 ≤ card s := by
+    by_contra hlt
+    exact hne (esymm_of_card_lt (by omega))
+  have hc : ((card s).choose (k + 2) : K) ≠ 0 := by exact_mod_cast (Nat.choose_pos hk).ne'
+  -- Transfer the real closed case along an order embedding `ι` into a real closure.
+  obtain ⟨R, _, _, _, _, ι, hι, -⟩ := TauCeti.RealClosure.exists_realClosure K
+  have hmap (j : ℕ) : mNorm (s.map ι) j = ι (s.esymm j / (card s).choose j) := by
+    rw [mNorm, card_map, esymm_map, map_div₀, map_natCast]
+  have hR := eq_of_mNorm_mul_eq_sq (s.map ι) k
+    (by rw [hmap]; exact (map_ne_zero ι).mpr (div_ne_zero hne hc))
+    (by rw [hmap, hmap, hmap, ← map_mul, ← map_pow, h])
+  exact fun x hx y hy ↦ hι.injective (hR _ (mem_map_of_mem _ hx) _ (mem_map_of_mem _ hy))
 
 end Multiset
