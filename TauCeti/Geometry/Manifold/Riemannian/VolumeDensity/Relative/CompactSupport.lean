@@ -81,17 +81,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
 
-omit [LindelofSpace M] in
-/-- Two maps that agree near `x` induce the same pullback metric at `x`. -/
-private theorem pullback_inner_eq_of_eventuallyEq {f₁ f₂ : M → N}
-    (hf₁ : ContMDiff I J (n + 1) f₁) (hf₂ : ContMDiff I J (n + 1) f₂)
-    (hinj₁ : ∀ x, Injective (mfderiv I J f₁ x)) (hinj₂ : ∀ x, Injective (mfderiv I J f₂ x))
-    {x : M} (hx : f₁ =ᶠ[𝓝 x] f₂) :
-    (h.pullback f₁ hf₁ hinj₁).inner x = (h.pullback f₂ hf₂ hinj₂).inner x := by
-  ext v w
-  rw [pullback_inner, pullback_inner, hx.mfderiv_eq, hx.eq_of_nhds]
-  rfl
-
 /-- **Regularity of the relative volume of a compactly supported family of immersions.** Let
 `F_t : M → N` be a jointly `C^(n+1)` family of immersions of a manifold `M`, not necessarily
 compact, into a manifold with a `C^n` metric `h`, with `F_t = F_{t₀}` outside a compact set `K`
@@ -110,7 +99,7 @@ theorem contDiffAt_relativeVolume_pullback_of_isCompact [T2Space M] {k : ℕ∞}
       (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hk
   · exact (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hk
   · filter_upwards [hΦK] with t ht x hx
-    refine h.pullback_inner_eq_of_eventuallyEq _ _ _ _ ?_
+    refine h.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
     filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hx] with y hy
     exact ht y hy
 
