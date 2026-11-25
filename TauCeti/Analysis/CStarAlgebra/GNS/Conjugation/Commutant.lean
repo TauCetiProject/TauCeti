@@ -142,11 +142,7 @@ theorem gnsConjOperator_mem_commutant {x : f.GNS →L[ℂ] f.GNS}
     have := congrArg (gnsConjOperator f hf) hc
     rw [gnsConjOperator_mul, gnsConjOperator_mul, gnsConjOperator_gnsConjOperator] at this
     exact this.symm
-  rw [← SetLike.mem_coe, gnsVonNeumannAlgebra_def, VonNeumannAlgebra.coe_commutant_adjoin]
-  rintro y (⟨a, rfl⟩ | ⟨a, ha⟩)
-  · exact key a
-  · rw [← star_star y, ← ha, ← map_star]
-    exact key _
+  exact (f.mem_gnsVonNeumannAlgebra_commutant_iff).2 key
 
 section Unital
 
@@ -166,10 +162,9 @@ theorem gnsConj_apply_gnsVector_of_mem {x : g.GNS →L[ℂ] g.GNS} (hx : x ∈ g
     | ih u =>
       rw [← g.toPreGNS_ofPreGNS u]
       generalize g.ofPreGNS u = b
-      rw [gnsConj_apply_coe, gnsNonUnitalStarAlgHom_apply_gnsVector, ← toGNS_apply g b,
-        gnsNonUnitalStarAlgHom_apply_toGNS, toGNS_apply, inner_gnsVector_coe,
-        UniformSpace.Completion.inner_coe, preGNS_inner_def, ofPreGNS_toPreGNS,
-        ofPreGNS_toPreGNS, star_star]
+      simp only [gnsConj_apply_coe, gnsNonUnitalStarAlgHom_apply_gnsVector,
+        gnsNonUnitalStarAlgHom_apply_coe, leftMulMapPreGNS_apply, inner_gnsVector_coe,
+        UniformSpace.Completion.inner_coe, preGNS_inner_def, ofPreGNS_toPreGNS, star_star]
       -- traciality: `g (b c) = g (c b)`
       exact hg b c
   refine ext_inner_left ℂ fun u ↦ ?_
