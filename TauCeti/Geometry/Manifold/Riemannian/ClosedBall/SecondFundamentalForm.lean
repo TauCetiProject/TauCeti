@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Hessian
+public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
 /-!
@@ -26,8 +27,7 @@ field of `E`. The inclusion is a local Riemannian isometry
 radial field in the direction `v` is `v`, and `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` is the induced
 metric.
 
-This is the closed-ball Check of the second fundamental form, which fixes its sign convention:
-the unit sphere has `II = h`, and the Weingarten map is the identity.
+With the outward-normal convention, the unit sphere therefore has `II = h`.
 -/
 
 public section
@@ -74,8 +74,9 @@ theorem boundarySecondFundamentalForm_closedBall
     (x := ((q : closedBall (0 : E) 1) : E)) differentiableAt_id
     (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) Subtype.val (q : closedBall (0 : E) 1)
       (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) Subtype.val q u))
-  rw [show fderiv ℝ Y ((q : closedBall (0 : E) 1) : E) = ContinuousLinearMap.id ℝ E from
-    fderiv_id] at hΓ
+  -- `Y` is the identity function of `E`, so its Fréchet derivative is the identity.
+  rw [show fderiv ℝ Y ((q : closedBall (0 : E) 1) : E) = ContinuousLinearMap.id ℝ E by
+    simp only [Y]; exact fderiv_fun_id] at hΓ
   exact congrArg (fun v ↦ ⟪v, _⟫) hΓ
 
 end TauCeti
