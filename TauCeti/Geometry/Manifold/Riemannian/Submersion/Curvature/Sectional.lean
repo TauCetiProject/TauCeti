@@ -33,6 +33,8 @@ is `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv` and its companion
 * `TauCeti.IsRiemannianSubmersion.sectionalCurvature_horizontal_vertical` and
   `TauCeti.IsRiemannianSubmersion.sectionalCurvature_horizontal_vertical_of_norm_eq_one`:
   O'Neill's mixed sectional-curvature formula.
+* `inner_curvatureTensor_horizontal_vertical_self_of_eventually_oneillT_eq_zero`: the mixed
+  numerator `‖A_u v‖²` for totally geodesic fibres.
 * `IsRiemannianSubmersion.sectionalCurvature_horizontal_vertical_of_eventually_oneillT_eq_zero`
   and `TauCeti.IsRiemannianSubmersion.sectionalCurvature_nonneg_of_eventually_oneillT_eq_zero`:
   mixed sectional curvature and its non-negativity for totally geodesic fibres.
@@ -130,15 +132,12 @@ theorem sectionalCurvature_horizontal_vertical_of_norm_eq_one
         ‖h.oneillA x u v‖ ^ 2 - ‖h.oneillT x v u‖ ^ 2 := by
   rw [h.sectionalCurvature_horizontal_vertical hu hv, hu₁, hv₁, one_pow, mul_one, div_one]
 
-/-- **O'Neill's Corollary 2 (totally geodesic fibres, formula).** When `T` vanishes near `x`, a
-mixed plane spanned by horizontal `u` and vertical `v` has sectional curvature
-`‖A_u v‖² / (‖u‖² ‖v‖²)`. -/
-theorem sectionalCurvature_horizontal_vertical_of_eventually_oneillT_eq_zero
+/-- **Mixed curvature numerator for totally geodesic fibres.** When `T` vanishes near `x`, for a
+horizontal vector `u` and a vertical vector `v`, `⟪R(u, v) v, u⟫ = ‖A_u v‖²`. -/
+theorem inner_curvatureTensor_horizontal_vertical_self_of_eventually_oneillT_eq_zero
     (hT : ∀ᶠ y in 𝓝 x, h.oneillT y = 0) {u v : TangentSpace I x}
     (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).ker) :
-    (leviCivitaConnection I M).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection I) x u v =
-      ‖h.oneillA x u v‖ ^ 2 / (‖u‖ ^ 2 * ‖v‖ ^ 2) := by
+    ⟪(leviCivitaConnection I M).curvatureTensor x u v v, u⟫_ℝ = ‖h.oneillA x u v‖ ^ 2 := by
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
   let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
@@ -151,8 +150,21 @@ theorem sectionalCurvature_horizontal_vertical_of_eventually_oneillT_eq_zero
         |>.congr_of_eventuallyEq (h.contMDiff_oneillT.mdifferentiableAt (by simp))
           (mdifferentiableAt_zeroSection ..) univ_mem hT]
     exact congrFun (CovariantDerivative.zero _) x
-  rw [h.sectionalCurvature_horizontal_vertical hu hv, hDTx, hTx]
+  rw [h.inner_curvatureTensor_horizontal_vertical_self hu hv, hDTx, hTx]
   simp
+
+/-- **O'Neill's Corollary 2 (totally geodesic fibres, formula).** When `T` vanishes near `x`, a
+mixed plane spanned by horizontal `u` and vertical `v` has sectional curvature
+`‖A_u v‖² / (‖u‖² ‖v‖²)`. -/
+theorem sectionalCurvature_horizontal_vertical_of_eventually_oneillT_eq_zero
+    (hT : ∀ᶠ y in 𝓝 x, h.oneillT y = 0) {u v : TangentSpace I x}
+    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).ker) :
+    (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u v =
+      ‖h.oneillA x u v‖ ^ 2 / (‖u‖ ^ 2 * ‖v‖ ^ 2) := by
+  rw [h.sectionalCurvature_horizontal_vertical hu hv,
+    ← h.inner_curvatureTensor_horizontal_vertical_self hu hv,
+    h.inner_curvatureTensor_horizontal_vertical_self_of_eventually_oneillT_eq_zero hT hu hv]
 
 /-- **O'Neill's Corollary 2 (totally geodesic fibres, non-negativity).** When `T` vanishes near
 `x`, every mixed horizontal-vertical plane at `x` has non-negative sectional curvature. -/

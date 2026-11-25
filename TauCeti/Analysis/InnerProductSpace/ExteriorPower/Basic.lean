@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
@@ -55,6 +55,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
+* `Orthonormal.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal triple `v`, the wedges
+  `v 1 ∧ v 2`, `v 2 ∧ v 0`, `v 0 ∧ v 1` are orthonormal.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers;
@@ -68,6 +70,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
+* `OrthonormalBasis.wedgeTwoBasis`: the orthonormal basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` indexed
+  by `Fin 6`.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
   `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
@@ -146,6 +150,18 @@ theorem orthonormal_ιMulti_two_of_orthonormal {e x y : E} (h : Orthonormal ℝ 
     simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] <;>
     rw [inner_ιMulti_two] <;>
     simp [he, hx, hy, hex, hey, hxy, hyx]
+
+/-- For an orthonormal family `v` indexed by `Fin 3`, the wedges `v (k + 1) ∧ v (k + 2)` of
+cyclically consecutive vectors, namely `v 1 ∧ v 2`, `v 2 ∧ v 0` and `v 0 ∧ v 1`, are
+orthonormal. -/
+theorem _root_.Orthonormal.orthonormal_ιMulti_two_add_one_add_two {v : Fin 3 → E}
+    (hv : Orthonormal ℝ v) :
+    Orthonormal ℝ fun k : Fin 3 ↦ ιMulti ℝ 2 ![v (k + 1), v (k + 2)] := by
+  have hv' := orthonormal_iff_ite.mp hv
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [inner_ιMulti_two]
+  fin_cases i <;> fin_cases j <;> simp [hv', hv.1]
 
 /-- Elements of `⋀ⁿ E` are determined by their inner products with wedges of vectors, since these
 wedges span `⋀ⁿ E`. -/
@@ -433,6 +449,44 @@ theorem eq_sum_inner_smul_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E) (x : 
   simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
   ring
 
+/-- The six wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4`, in
+lexicographic order. -/
+private noncomputable def wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) : Fin 6 → ⋀[ℝ]^2 E :=
+  ![ιMulti ℝ 2 ![b 0, b 1], ιMulti ℝ 2 ![b 0, b 2], ιMulti ℝ 2 ![b 0, b 3],
+    ιMulti ℝ 2 ![b 1, b 2], ιMulti ℝ 2 ![b 1, b 3], ιMulti ℝ 2 ![b 2, b 3]]
+
+/-- The wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4` are
+orthonormal. -/
+private theorem orthonormal_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) :
+    Orthonormal ℝ b.wedgeTwoFamily := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  fin_cases i <;> fin_cases j <;> simp [wedgeTwoFamily, inner_ιMulti_two, b.inner_eq_ite]
+
+/-- The wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4` span `⋀² E`. -/
+private theorem top_le_span_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) :
+    ⊤ ≤ Submodule.span ℝ (Set.range b.wedgeTwoFamily) := by
+  intro x _
+  -- Rewrite the expansion `eq_sum_inner_smul_ιMulti_two` as a sum over the family.
+  have hx : x = ∑ i, ⟪x, b.wedgeTwoFamily i⟫ • b.wedgeTwoFamily i := by
+    rw [Fin.sum_univ_six]
+    simpa only [wedgeTwoFamily, Matrix.cons_val] using b.eq_sum_inner_smul_ιMulti_two x
+  rw [hx]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- The orthonormal basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal basis `b`
+indexed by `Fin 4`, indexed by `Fin 6` in lexicographic order. -/
+noncomputable def wedgeTwoBasis (b : OrthonormalBasis (Fin 4) ℝ E) :
+    OrthonormalBasis (Fin 6) ℝ (⋀[ℝ]^2 E) :=
+  OrthonormalBasis.mk b.orthonormal_wedgeTwoFamily b.top_le_span_wedgeTwoFamily
+
+/-- The vectors of `b.wedgeTwoBasis` are the wedges `bᵢ ∧ bⱼ`, `i < j`. -/
+@[simp]
+theorem coe_wedgeTwoBasis (b : OrthonormalBasis (Fin 4) ℝ E) :
+    ⇑b.wedgeTwoBasis = ![ιMulti ℝ 2 ![b 0, b 1], ιMulti ℝ 2 ![b 0, b 2], ιMulti ℝ 2 ![b 0, b 3],
+      ιMulti ℝ 2 ![b 1, b 2], ιMulti ℝ 2 ![b 1, b 3], ιMulti ℝ 2 ![b 2, b 3]] :=
+  OrthonormalBasis.coe_mk _ _
+
 /-- The squared norm of a two-vector is the sum of the squares of its coordinates in the
 basis `bᵢ ∧ bⱼ`, `i < j`, induced by an orthonormal basis `b` indexed by `Fin 4`. -/
 theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
@@ -580,14 +634,14 @@ endomorphisms for the inner product, whose sign is chosen to match the Clifford 
 theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]^2 V) :
     twoVectorContraction F =
       -(LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-        (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner) F : Module.End ℝ V) := by
+        isSymm_innerₗ F : Module.End ℝ V) := by
   let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
   let : LieAlgebra ℝ (Module.End ℝ V) := LieAlgebra.ofAssociativeAlgebra
   -- Both sides are linear in `F`, so it suffices to compare them on pure wedges.
   have key : (twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V) =
       -((skewAdjointLieSubalgebra (innerₗ V)).toSubmodule.subtype ∘ₗ
         (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-          (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).toLinearMap) := by
+          isSymm_innerₗ).toLinearMap) := by
     refine linearMap_ext_ιMulti_two fun a b ↦ ?_
     ext u
     simp [real_inner_comm u]
@@ -597,7 +651,7 @@ theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]
 theorem twoVectorContraction_injective :
     Function.Injective (twoVectorContraction : ⋀[ℝ]^2 V → Module.End ℝ V) := fun X Y h ↦ by
   refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-    (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).injective (Subtype.ext ?_)
+    isSymm_innerₗ).injective (Subtype.ext ?_)
   rw [← neg_inj, ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint,
     ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, h]
 

@@ -54,6 +54,12 @@ finitely many of a family of pairwise non-isomorphic simple modules
 * `IsSemisimpleModule.exists_forall_smul_eq_ite`: for a semisimple module finite over its
   endomorphism ring, an element of the ring acts as the identity on the simple submodules of a
   given type and as zero on all the others, by Jacobson density.
+
+* `TauCeti.iSupIndep_isotypicComponents_restrictScalars`: the isotypic components of a module
+  stay independent after restricting scalars.
+
+* `IsIsotypic.isotypicComponents_eq_singleton_top`: a nonzero isotypic semisimple module is its
+  only isotypic component.
 -/
 
 public section
@@ -156,6 +162,22 @@ theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
   let e := LinearEquiv.ofInjective f hinj
   have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
   exact ⟨e.trans (h (LinearMap.range f)).some⟩
+
+/-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
+modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`. -/
+theorem _root_.LinearEquiv.nonempty_linearEquiv_of_finsupp {V V' ι ι' : Type*}
+    [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
+    [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
+    Nonempty (V ≃ₗ[R] V') := by
+  -- The direct sum of copies of `V'` is isotypic of type `V'`, so a copy of `V` maps to zero in
+  -- it unless `V ≅ V'`.
+  obtain ⟨j⟩ := ‹Nonempty ι›
+  by_contra hne
+  have h0 := ((IsIsotypicOfType.of_isSimpleModule R V').finsupp ι').linearMap_eq_zero hne
+    (e.toLinearMap ∘ₗ Finsupp.lsingle j)
+  have : Nontrivial V := IsSimpleModule.nontrivial R V
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact hv (by simpa using LinearMap.congr_fun h0 v)
 
 end IsIsotypicOfType
 
@@ -337,4 +359,31 @@ theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
     (IsIsotypicOfType.isotypicComponent R M S') N (hN.trans inf_le_right)
   exact h ⟨e.symm.trans e'⟩
 
+variable {R M} in
+/-- The isotypic components of an `R`-module `M` stay independent after restricting scalars to
+`k`. -/
+theorem iSupIndep_isotypicComponents_restrictScalars (k : Type*) [Semiring k] [Module k M]
+    [SMul k R] [IsScalarTower k R M] :
+    iSupIndep fun c : isotypicComponents R M ↦ c.val.restrictScalars k := by
+  intro c
+  simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
+    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M) c
+
 end TauCeti
+
+namespace IsIsotypic
+
+/-- The only isotypic component of a nonzero isotypic semisimple module is the whole module. -/
+theorem isotypicComponents_eq_singleton_top {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [IsSemisimpleModule R M] [Nontrivial M] (h : IsIsotypic R M) :
+    isotypicComponents R M = {⊤} := by
+  ext m
+  refine ⟨?_, ?_⟩
+  · rintro ⟨S, _, rfl⟩
+    exact isotypicComponent_eq_top_iff.mpr (h S)
+  · rintro rfl
+    obtain ⟨S, -, _⟩ :=
+      (IsSemisimpleModule.eq_bot_or_exists_simple_le (⊤ : Submodule R M)).resolve_left top_ne_bot
+    exact ⟨S, inferInstance, (isotypicComponent_eq_top_iff.mpr (h S)).symm⟩
+
+end IsIsotypic

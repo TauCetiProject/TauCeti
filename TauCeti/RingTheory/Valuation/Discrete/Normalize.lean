@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Normalizing a `ℤᵐ⁰`-valued valuation of a division ring
@@ -40,6 +41,10 @@ extension.
   particular, for a valuation of a field, the two have the same valuation subring.
 * `Valuation.normalization_surjective`: the normalization of a nontrivial valuation is
   surjective.
+* `Valuation.IsEquiv.ordIndex_pos`: a valuation equivalent to a surjective one has positive
+  index.
+* `Valuation.IsEquiv.ord_eq_ordIndex_mul`: a valuation equivalent to a surjective one has order
+  function its index times the order function of the surjective one.
 * `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base semiring.
 -/
 
@@ -316,6 +321,23 @@ theorem normalization_surjective (hv : ordIndex v ≠ 0) :
   have he : (ordIndex v : ℤ) ≠ 0 := by exact_mod_cast hv
   apply surjective_of_map_eq_exp_neg_one (normalization v) (t := t)
   rw [normalization_apply v ht0, ht, Int.ediv_self he]
+
+/-- A valuation equivalent to a surjective one has positive index: it is nonzero at an element
+of order one for the surjective valuation. -/
+theorem IsEquiv.ordIndex_pos {u w : _root_.Valuation F ℤᵐ⁰} (h : u.IsEquiv w)
+    (hw : Function.Surjective w) : 0 < ordIndex u := by
+  obtain ⟨t, ht⟩ := ord_surjective w hw 1
+  exact Valuation.ordIndex_pos u (f := t) ((h.ord_eq_zero_iff t).not.mpr (by omega))
+
+/-- **A valuation equivalent to a surjective one is a power of it**: if `u` is equivalent to the
+surjective valuation `w`, then the order function of `u` is the index of `u` times that of `w`.
+This is how the restriction of a normalized valuation along a field extension is read off as the
+ramification index times the normalized valuation of the base. -/
+theorem IsEquiv.ord_eq_ordIndex_mul {u w : _root_.Valuation F ℤᵐ⁰} (h : u.IsEquiv w)
+    (hw : Function.Surjective w) (f : F) : ord u f = ordIndex u * ord w f := by
+  rw [← ord_normalization_mul_ordIndex u f, eq_of_isEquiv_of_surjective
+    (normalization_surjective u (h.ordIndex_pos hw).ne') hw ((isEquiv_normalization u).trans h),
+    mul_comm]
 
 /-- Normalization preserves triviality on a base semiring. -/
 theorem IsTrivialOn.normalization {A : Type*} [CommSemiring A] [Algebra A F]
