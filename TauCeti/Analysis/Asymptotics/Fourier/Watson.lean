@@ -37,6 +37,8 @@ separately over `(0, ∞)`.
 
 * `Asymptotics.hasAsymptoticExpansion_fourier`: the expansion.
 * `Asymptotics.eventually_exists_tendsto_integral_cexp_mul`: existence of the improper integral.
+* `Asymptotics.eventually_exists_tendsto_integral_cexp_mul_of_isBigO`: existence under the
+  hypotheses of `Asymptotics.hasAsymptoticExpansion_fourier`.
 
 ## Implementation notes
 
@@ -501,7 +503,8 @@ private theorem isBigO_I_div_pow {β : ℝ} {n : ℕ} (hβn : β ≤ n) :
 `(0, ∞)`, and `∫ e^{ixt} q(t) dt` converges at `∞` uniformly for all large `x`, then the improper
 integral `∫₀^∞ e^{ixt} q(t) dt` exists for all large `x`. Under the hypotheses of
 `Asymptotics.hasAsymptoticExpansion_fourier`, the integrability on `(0, 1)` follows from
-`q(t) = O(t^{Re α₀ - 1})` as `t → 0+`. -/
+`q(t) = O(t^{Re α₀ - 1})` as `t → 0+`; see
+`Asymptotics.eventually_exists_tendsto_integral_cexp_mul_of_isBigO`. -/
 theorem eventually_exists_tendsto_integral_cexp_mul {q : ℝ → ℂ} (hq : ContinuousOn q (Ioi 0))
     (hint : IntervalIntegrable q volume 0 1)
     (hunif : ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
@@ -521,6 +524,43 @@ theorem eventually_exists_tendsto_integral_cexp_mul {q : ℝ → ℂ} (hq : Cont
   filter_upwards [eventually_ge_atTop 1] with T hT
   exact intervalIntegral.integral_add_adjacent_intervals (hint.continuousOn_mul hc.continuousOn)
     ((hc.continuousOn.mul (hq1.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hT)
+
+/-- A function continuous on `(0, ∞)` with `q(t) = O(t^a)` as `t → 0+`, where `a > -1`, is
+integrable on `(0, 1)`. -/
+private theorem intervalIntegrable_of_isBigO_rpow {q : ℝ → ℂ} (hq : ContinuousOn q (Ioi 0))
+    {a : ℝ} (ha : -1 < a) (hq0 : q =O[𝓝[>] 0] fun t => t ^ a) :
+    IntervalIntegrable q volume 0 1 := by
+  obtain ⟨C, hC⟩ := hq0.bound
+  obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 (hC.and self_mem_nhdsWithin)
+  have hu : 0 < u := hu
+  have hb : 0 < min (u / 2) 1 := by positivity
+  have h0 : IntervalIntegrable q volume 0 (min (u / 2) 1) := by
+    refine IntervalIntegrable.mono_fun' ((intervalIntegral.intervalIntegrable_rpow' ha).const_mul
+      C) ?_ ?_
+    · rw [uIoc_of_le hb.le]
+      exact (hq.mono Ioc_subset_Ioi_self).aestronglyMeasurable measurableSet_Ioc
+    · rw [uIoc_of_le hb.le]
+      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+      have h := (hsub ⟨ht.1, ht.2.trans_lt ((min_le_left _ _).trans_lt (half_lt_self hu))⟩).1
+      rwa [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le _)] at h
+  have h1 : ContinuousOn q (Set.Icc (min (u / 2) 1) 1) := hq.mono fun t ht => hb.trans_le ht.1
+  exact h0.trans (h1.intervalIntegrable_of_Icc (min_le_right _ _))
+
+/-- **Existence of the Fourier integral** under the hypotheses of
+`Asymptotics.hasAsymptoticExpansion_fourier`. If `q` is continuous on `(0, ∞)` with
+`q(t) = O(t^a)` as `t → 0+` for some `a > -1`, and `∫ e^{ixt} q(t) dt` converges at `∞` uniformly
+for all large `x`, then the improper integral `∫₀^∞ e^{ixt} q(t) dt` exists for all large `x`.
+The bound at `0+` is the case `k = N = 0` of the expansion hypothesis of
+`Asymptotics.hasAsymptoticExpansion_fourier`, with `a = Re α₀ - 1`. -/
+theorem eventually_exists_tendsto_integral_cexp_mul_of_isBigO {q : ℝ → ℂ}
+    (hq : ContinuousOn q (Ioi 0)) {a : ℝ} (ha : -1 < a) (hq0 : q =O[𝓝[>] 0] fun t => t ^ a)
+    (hunif : ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) * q t‖ ≤ ε) :
+    ∀ᶠ x : ℝ in atTop, ∃ F : ℂ,
+      Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop
+        (𝓝 F) :=
+  eventually_exists_tendsto_integral_cexp_mul hq (intervalIntegrable_of_isBigO_rpow hq ha hq0)
+    hunif
 
 /-- The part beyond `b > 0` of the Fourier integral: `F'(x) = ∫_b^∞ e^{ixt} q(t) dt` minus its
 first `n` endpoint terms at `b` is `O(x^{-β})` for `β ≤ n + 1`, by DLMF 2.3.5. -/
@@ -586,8 +626,8 @@ private theorem isBigO_nearZero_inv {g : ℕ → ℝ → ℂ} {b β C : ℝ} {n 
   rwa [inv_inv, Real.inv_rpow hx0.le, ← Real.rpow_neg hx0.le,
     ← Real.norm_of_nonneg (Real.rpow_nonneg hx0.le (-β))] at h
 
-/-- The model family `t^{α_s - 1}` and its derivatives have integrable Fourier integrands on
-`(0, b)`. -/
+/-- The undifferentiated model term `t^{α - 1}`, `Re α > 0`, has integrable Fourier integrand on
+`(0, b)`. Its derivatives are integrated only over intervals bounded away from `0`. -/
 private theorem intervalIntegrable_cexp_mul_cpow {α : ℂ} (hα : 0 < α.re) (x : ℝ) {b : ℝ}
     (hb : 0 ≤ b) : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) *
       ((descPochhammer ℂ 0).eval (α - 1) * (t : ℂ) ^ (α - 1 - ((0 : ℕ) : ℂ)))) volume 0 b :=
@@ -702,7 +742,8 @@ let `q` be smooth on `(0, ∞)` with, for all `k` and `N`,
 `q^{(k)}(t) - ∑_{s<N} c_s (α_s - 1)⋯(α_s - k) t^{α_s - 1 - k} = O(t^{Re α_N - 1 - k})` as
 `t → 0+`, the derivatives taken within `(0, ∞)`. Suppose each `∫ e^{ixt} q^{(k)}(t) dt` converges
 at `∞` uniformly for all large `x`. If `F x` is the improper integral `∫₀^∞ e^{ixt} q(t) dt` for
-all large `x` (it exists by `Asymptotics.eventually_exists_tendsto_integral_cexp_mul`), then
+all large `x` (it exists under these hypotheses by
+`Asymptotics.eventually_exists_tendsto_integral_cexp_mul_of_isBigO`), then
 `F x ∼ ∑ e^{iπα_s/2} Γ(α_s) c_s x^{-α_s}` as `x → +∞`, in the sense of `HasAsymptoticExpansion`:
 for every `N` the remainder after `N` terms is `O(x^{-Re α_N})`. -/
 theorem hasAsymptoticExpansion_fourier {q : ℝ → ℂ} {α c : ℕ → ℂ} {F : ℝ → ℂ}
