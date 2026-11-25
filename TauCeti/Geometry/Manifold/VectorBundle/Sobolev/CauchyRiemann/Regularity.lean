@@ -144,12 +144,7 @@ theorem isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
   rw [h₂, h₃] at h₁
   have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h₁
   simp only [Pi.zero_apply, zero_apply, add_apply, complexAntilinearPartL_apply_one] at h1
-  have key : Du y 1 + lsmul ℝ ℂ Complex.I (Du y Complex.I) =
-      (2 : ℝ) • ((2⁻¹ : ℝ) • (Du y 1 + lsmul ℝ ℂ Complex.I (Du y Complex.I)) +
-        A.chartZeroOrder D i y (A.coord i (SobolevSection.toSection w) y) 1) -
-      (2 : ℝ) • A.chartZeroOrder D i y (A.coord i (SobolevSection.toSection w) y) 1 := by
-    module
-  rw [key, ← h1, smul_zero, zero_sub, neg_smul]
+  linear_combination (norm := module) (-2 : ℝ) • h1
 
 include hD hDs in
 /-- **Kernel elements are smooth in every chart.** For `2 < p ≤ ∞` and `w ∈ W^{1,p}(Σ, V)` with
@@ -160,7 +155,7 @@ theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
     ContDiffOn ℝ ∞ (A.coord i (SobolevSection.toSection w)) (A.image i) := by
   -- The zeroth-order term is smooth on an open set containing the chart image.
   set U := (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet
-  have hZ : ContDiffOn ℝ ∞ (A.chartZeroOrder D i) U := A.contDiffOn_chartZeroOrder_univ hD hDs i
+  have hZ : ContDiffOn ℝ ∞ (A.chartZeroOrder D i) U := A.contDiffOn_chartZeroOrder_of_univ hD hDs i
   have hη : ContDiffOn ℝ (⊤ : ℕ∞) (fun x : ℂ × F ↦ -(2 : ℝ) • A.chartZeroOrder D i x.1 x.2 1)
       (U ×ˢ univ) :=
     (((hZ.comp contDiffOn_fst fun x (hx : x ∈ U ×ˢ (univ : Set F)) ↦ hx.1).clm_apply

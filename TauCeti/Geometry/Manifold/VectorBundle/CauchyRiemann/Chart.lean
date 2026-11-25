@@ -154,7 +154,7 @@ theorem contDiffOn_chartZeroOrder (hD : IsRealCauchyRiemannOperator F j D) {u : 
 operator is `C^n` on `M`, its zeroth-order term in chart `i` is `C^n` on the open set of points of
 the chart target lying over the base set of the trivialization of chart `i`, which contains the
 chart image. -/
-theorem contDiffOn_chartZeroOrder_univ (hD : IsRealCauchyRiemannOperator F j D)
+theorem contDiffOn_chartZeroOrder_of_univ (hD : IsRealCauchyRiemannOperator F j D)
     (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
     ContDiffOn ℝ n (A.chartZeroOrder D i)
       ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
@@ -165,7 +165,7 @@ theorem contDiffOn_chartZeroOrder_univ (hD : IsRealCauchyRiemannOperator F j D)
 theorem contDiffOn_chartZeroOrder_image (hD : IsRealCauchyRiemannOperator F j D)
     (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
     ContDiffOn ℝ n (A.chartZeroOrder D i) (A.image i) :=
-  (A.contDiffOn_chartZeroOrder_univ hD hDs i).mono
+  (A.contDiffOn_chartZeroOrder_of_univ hD hDs i).mono
     ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
 
 /-- **Boundedness of the zeroth-order term.** The zeroth-order term in chart `i` of a real
