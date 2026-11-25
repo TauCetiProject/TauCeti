@@ -73,7 +73,11 @@ None of these identities uses a property of `C`.
   the similitude group scheme and its closed immersion into `GLₙ × 𝔾_m`.
 * `TauCeti.ConstantFormSimilitude.multiplier` and
   `TauCeti.ConstantFormSimilitude.multiplierCoordinateMap`: the multiplier character
-  `GSim(C) → 𝔾_m` and its coordinate morphism.
+  `GSim(C) → 𝔾_m` and its coordinate morphism, the right tensor inclusion followed by the
+  quotient map (`multiplier_def`, `multiplierCoordinateMap_def`).
+* `TauCeti.ConstantFormSimilitude.multiplierPoints`: the multiplier on points, `(h, r) ↦ r`,
+  which is the multiplier character under the points identification
+  (`multiplierPoints_pointsMulEquiv`).
 * `TauCeti.ConstantFormSimilitude.pointsSubgroup` and
   `TauCeti.ConstantFormSimilitude.pointsMulEquiv`: the points are the pairs `(h, r)` with
   `h C hᵀ = r C`, with `pointsMulEquiv_fst` and `pointsMulEquiv_snd` computing the two
@@ -419,6 +423,13 @@ noncomputable def multiplierCoordinateMap :
     _root_.CommHopfAlgCat.of R R[T;T⁻¹] ⟶ coordinateHopfAlgebra R n C :=
   inr R n ≫ coordinateMap R n C
 
+/-- The multiplier coordinate morphism is the right tensor inclusion followed by the quotient
+map. -/
+theorem multiplierCoordinateMap_def :
+    multiplierCoordinateMap R n C = inr R n ≫ coordinateMap R n C := by
+  unfold multiplierCoordinateMap
+  rfl
+
 /-- **The multiplier character** `ν : GSim(C) ⟶ 𝔾_m` of group schemes over `R`. -/
 noncomputable def multiplier :
     groupScheme R n C ⟶
@@ -426,31 +437,27 @@ noncomputable def multiplier :
         (Opposite.op (_root_.CommHopfAlgCat.of R R[T;T⁻¹])) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (multiplierCoordinateMap R n C).op
 
+/-- The multiplier character is the image under `hopfSpec` of its coordinate morphism. -/
+theorem multiplier_def :
+    multiplier R n C =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (multiplierCoordinateMap R n C).op := by
+  unfold multiplier
+  rfl
+
 /-! ### Algebra-valued points -/
 
 section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- The points of the ambient coordinate Hopf algebra, read as algebra maps out of the tensor
-product. -/
-private noncomputable def castPoints (A : Type w) [CommRing A] [Algebra R A] :
-    HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A) ≃*
-      WithConv ((GeneralLinear.coordinateHopfAlgebra R n ⊗[R] R[T;T⁻¹]) →ₐ[R] A) :=
-  MulEquiv.refl _
-
-private theorem castPoints_apply (A : Type w) [CommRing A] [Algebra R A]
-    (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
-    castPoints R n A g = g :=
-  rfl
-
 /-- The points of `GLₙ × 𝔾_m`: the product-points equivalence followed by the points
 equivalences of the two factors. -/
 noncomputable def ambientPointsMulEquiv (A : Type w) [CommRing A] [Algebra R A] :
     HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A) ≃*
       GL (Fin n) A × Aˣ :=
-  (castPoints R n A).trans (AffineGroup.Product.pointsMulEquiv.trans
-    (MulEquiv.prodCongr (GeneralLinear.pointsMulEquiv n) MultiplicativeGroup.pointsMulEquiv))
+  (AffineGroup.Product.pointsMulEquiv (H₁ := GeneralLinear.coordinateHopfAlgebra R n)
+    (H₂ := R[T;T⁻¹]) (A := A)).trans
+    (MulEquiv.prodCongr (GeneralLinear.pointsMulEquiv n) MultiplicativeGroup.pointsMulEquiv)
 
 /-- An ambient point corresponds to the pair of its restrictions to the two factors, read as an
 invertible matrix and a unit. -/
@@ -459,10 +466,10 @@ theorem ambientPointsMulEquiv_apply
     ambientPointsMulEquiv R n A g =
       (GeneralLinear.pointsMulEquiv n (BialgHom.mapDomain (inl R n).hom g),
         MultiplicativeGroup.pointsMulEquiv (BialgHom.mapDomain (inr R n).hom g)) := by
-  rw [ambientPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    AffineGroup.Product.pointsMulEquiv_apply]
-  -- `castPoints` is `MulEquiv.refl` and `MulEquiv.prodCongr` acts componentwise.
-  rfl
+  rw [ambientPointsMulEquiv]
+  -- `ambientHopfAlgebra R n` is the tensor product `O(GLₙ) ⊗[R] R[T;T⁻¹]` of the two factors,
+  -- `inl` and `inr` are its two inclusions, and `MulEquiv.prodCongr` acts componentwise.
+  exact congrArg (MulEquiv.prodCongr _ _) (AffineGroup.Product.pointsMulEquiv_apply g)
 
 /-- The matrix of an ambient point is its value on the generic matrix of the product. -/
 @[simp]
@@ -564,7 +571,7 @@ theorem pointsMulEquiv_snd
     (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
       f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
   rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoordinateMap, coordinateMap_def]
+    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoordinateMap_def, coordinateMap_def]
   simp [multiplierCoord]
 
 /-- The matrix of a point, read through the points identification, is its value on the image of
@@ -579,6 +586,25 @@ theorem pointsMulEquiv_fst
   rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
     coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
 
+variable (A) in
+/-- **The multiplier on points**, `(h, r) ↦ r`, on the similitudes of `C`. -/
+def multiplierPoints : pointsSubgroup R n C A →* Aˣ :=
+  (MonoidHom.snd _ _).comp (pointsSubgroup R n C A).subtype
+
+/-- The multiplier of a similitude is its unit component. -/
+@[simp]
+theorem multiplierPoints_apply (p : pointsSubgroup R n C A) :
+    multiplierPoints R n C A p = (p : GL (Fin n) A × Aˣ).2 := by
+  unfold multiplierPoints
+  rfl
+
+/-- Under the points identification, the multiplier on points is the multiplier character. -/
+theorem multiplierPoints_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A)) :
+    ((multiplierPoints R n C A (pointsMulEquiv R n C (A := A) f) : Aˣ) : A) =
+      f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
+  rw [multiplierPoints_apply, pointsMulEquiv_snd]
+
 variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The ambient points equivalence is natural in the value algebra. -/
@@ -588,8 +614,6 @@ theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
       Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
         (ambientPointsMulEquiv R n A g) := by
   unfold ambientPointsMulEquiv
-  rw [MulEquiv.trans_apply, MulEquiv.trans_apply, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    castPoints_apply, castPoints_apply]
   -- `ambientHopfAlgebra R n` is the tensor product `O(GLₙ) ⊗[R] R[T;T⁻¹]` of the two factors.
   exact (congrArg (MulEquiv.prodCongr _ _)
     (AffineGroup.Product.pointsMulEquiv_mapValue phi g)).trans
@@ -608,6 +632,9 @@ def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n C A →* points
       have h := congrArg (Matrix.map · phi) ((mem_pointsSubgroup_iff R n C _).mp p.property)
       rw [Matrix.map_mul, Matrix.map_mul, Matrix.map_smul' _ _ _ (map_mul phi), hC,
         Matrix.transpose_map] at h
+      rw [mem_pointsSubgroup_iff, MonoidHom.comp_apply, Subgroup.coe_subtype,
+        MonoidHom.coe_prodMap, Prod.map_fst, Prod.map_snd, Units.coe_map, MonoidHom.coe_ofClass,
+        Matrix.GeneralLinearGroup.val_map_apply, RingHom.coe_coe]
       exact h
 
 /-- The similitude `pointsSubgroupMap phi p` is `p` with `phi` applied to both components. -/

@@ -128,17 +128,15 @@ noncomputable def pointsMulEquiv :
   ConstantFormSimilitude.pointsMulEquiv R (m + m) (JFin m R)
 
 /-- The multiplier on points, `GSp₂ₘ(A) → Aˣ`, `(h, r) ↦ r`. -/
-def multiplierPoints : pointsSubgroup R m A →* Aˣ :=
-  (MonoidHom.snd _ _).comp (pointsSubgroup R m A).subtype
+abbrev multiplierPoints : pointsSubgroup R m A →* Aˣ :=
+  ConstantFormSimilitude.multiplierPoints R (m + m) (JFin m R) A
 
 variable {R m A}
 
 /-- The multiplier of a point is its unit component. -/
-@[simp]
 theorem multiplierPoints_apply (p : pointsSubgroup R m A) :
-    multiplierPoints R m A p = (p : GL (Fin (m + m)) A × Aˣ).2 := by
-  unfold multiplierPoints
-  rfl
+    multiplierPoints R m A p = (p : GL (Fin (m + m)) A × Aˣ).2 :=
+  ConstantFormSimilitude.multiplierPoints_apply R (m + m) (JFin m R) p
 
 /-- Under the points identification, the multiplier on points is the multiplier character. -/
 theorem multiplierPoints_pointsMulEquiv
@@ -146,7 +144,7 @@ theorem multiplierPoints_pointsMulEquiv
     ((multiplierPoints R m A (pointsMulEquiv R m A f) : Aˣ) : A) =
       f.ofConv ((ConstantFormSimilitude.multiplierCoordinateMap R (m + m) (JFin m R)).hom
         (LaurentPolynomial.T 1)) :=
-  ConstantFormSimilitude.pointsMulEquiv_snd R (m + m) (JFin m R) f
+  ConstantFormSimilitude.multiplierPoints_pointsMulEquiv R (m + m) (JFin m R) f
 
 /-- **The points identification is natural in the value algebra**: post-composing a point with
 `phi` maps its similitude `(h, r)` to `(phi h, phi r)`. -/
