@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
+import TauCeti.Analysis.Fourier.AddCircle
+
 /-!
 # The characters `θ ↦ e^{iℓθ}` of the real line are distinct
 
 For `ℓ ∈ ℤ`, the function `θ ↦ e^{iℓθ}` is a character of `ℝ` trivial on `2πℤ`, that is a
-character of the circle. Distinct integers give distinct characters: if `ℓ ≠ ℓ'`, the two
-functions differ at `θ = π / (ℓ - ℓ')`, where their ratio is `e^{iπ} = -1`.
+character of the circle, namely the Fourier monomial `fourier ℓ` on `AddCircle (2 * π)`. Distinct
+integers give distinct characters, by `TauCeti.fourier_injective`.
 
 ## Main results
 
@@ -29,20 +31,13 @@ namespace TauCeti
 theorem injective_exp_intCast_mul_mul_I :
     Function.Injective fun (ℓ : ℤ) (θ : ℝ) ↦ exp (ℓ * θ * I) := by
   intro ℓ ℓ' h
-  by_contra hne
-  set x : ℝ := Real.pi / (ℓ - ℓ' : ℤ)
-  have hd : ((ℓ - ℓ' : ℤ) : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (sub_ne_zero.mpr hne)
-  have hx : ((ℓ - ℓ' : ℤ) : ℝ) * x = Real.pi := by
-    simp only [x]
+  -- On the circle `ℝ / 2πℤ` the Fourier monomial `fourier n` is `θ ↦ e^{inθ}`.
+  have key (n : ℤ) (x : ℝ) :
+      2 * (Real.pi : ℂ) * I * n * x / ((2 * Real.pi : ℝ) : ℂ) = n * x * I := by
+    push_cast
     field_simp
-  have h1 : exp (ℓ * x * I) = exp (ℓ' * x * I) := congrFun h x
-  have h2 : exp (ℓ * x * I) = exp (ℓ' * x * I) * exp (Real.pi * I) := by
-    rw [← exp_add]
-    congr 1
-    have := congrArg (fun r : ℝ ↦ (r : ℂ) * I) hx
-    push_cast at this
-    linear_combination this
-  rw [h2, exp_pi_mul_I] at h1
-  exact exp_ne_zero _ (by linear_combination (-1 / 2 : ℂ) * h1)
+  refine fourier_injective (T := 2 * Real.pi) Real.two_pi_pos.ne' (ContinuousMap.ext fun x ↦ ?_)
+  induction x using QuotientAddGroup.induction_on with
+  | H x => rw [fourier_coe_apply, fourier_coe_apply, key, key]; exact congrFun h x
 
 end TauCeti
