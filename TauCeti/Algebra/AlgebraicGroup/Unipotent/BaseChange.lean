@@ -12,7 +12,7 @@ import Mathlib.RingTheory.Etale.Descent
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
+import TauCeti.Algebra.Coalgebra.Comodule.Character
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!

@@ -25,7 +25,9 @@ regular as the coefficients allow:
 * for Sobolev coefficients `J ∈ W^{1,p}_loc`, `S ∈ Lᵖ_loc` with `p > 2` and `J² = -1` a.e., a
   vector field `η` in a real inner product space, paired with `D φ` by `∫ ⟪D φ, η⟫`, is in
   `W^{1,r}_loc(Ω)` for every finite `r > 1` with `r ≤ p`
-  (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`);
+  (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`), and in
+  `W^{k+1,q}_loc` when moreover `J ∈ W^{k+1,p}_loc` and `S ∈ W^{k,p}_loc`, for its own exponent
+  `q ≤ p` (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_succ_of_forall_integral_inner_eq_zero`);
 * for a `C^{k+1}` field `J` and a `Cᵏ` field `S`, such a vector field is in `W^{k+1,r}_loc(Ω)` for
   every finite `r` (`TauCeti.memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero`);
 * the same holds for a covector field `η : Ω → V →L[ℝ] ℝ` on a finite-dimensional normed space,
@@ -37,7 +39,10 @@ After the reflection `ρ(z) = -conj z`, an annihilator of `D` is a weak solution
 real Cauchy–Riemann equation whose leading coefficient again squares to `-1`
 (`TauCeti.IsSobolevCRCoefficients.forall_integral_inner_eq_zero_iff`,
 `TauCeti.crReflectedAdjointCoeff_mul_self_eq_neg_one_iff`). Interior regularity of order one
-(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`) applies to it for Sobolev coefficients. For
+(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`) applies to it for Sobolev coefficients, and of
+higher order (`TauCeti.IsWeakCRSolution.memWkpLoc_succ`) for Sobolev coefficients of higher order:
+the reflected coefficients `J' = -(J ∘ ρ)ᵀ` and `S' = (S ∘ ρ)ᵀ - (∂_t J ∘ ρ)ᵀ` lose one derivative
+of `J`, which is why `J` needs one derivative more than `S`. For
 smooth coefficients the reflected coefficients `J'` and `S'` are `C^{k+1}` and `Cᵏ`, the
 annihilator is locally `Lᵖ` for every finite `p` by the first case, and interior regularity of
 every order (`TauCeti.IsWeakCRSolution.memWkpLoc_succ`) applies. The covector form follows from the
@@ -100,6 +105,36 @@ theorem IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero {
   -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
   simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
 
+/-- **Higher regularity of the annihilator of a real Cauchy–Riemann operator with Sobolev
+coefficients.** Let `Ω ⊆ ℂ` be open, `V` a finite-dimensional real inner product space, and
+`(J, DJ, S)` Sobolev coefficients on `Ω` with finite `p > 2` and `J² = -1` almost everywhere on
+`Ω`. If moreover `J ∈ W^{k+1,p}_loc` and `S ∈ W^{k,p}_loc`, then a locally `L^q` field `v` with
+`1/p + 1/q < 1` and `q ≤ p` satisfying `∫ ⟪∂_s φ + J ∂_t φ + S φ, v⟫ = 0` for every test function
+`φ` on `Ω` is in `W^{k+1,q}_loc(Ω)`. For `k = 0` this is the case `r = q` of
+`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`. -/
+theorem IsSobolevCRCoefficients.memWkpLoc_succ_of_forall_integral_inner_eq_zero {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+    {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {p q : ℝ≥0} {k : ℕ}
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hp : 2 < p)
+    (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1)
+    (hqp : q ≤ p) (hJ : MemWkpLoc p Ω (k + 1) J) (hS : MemWkpLoc p Ω k S) {v : ℂ → V}
+    (hv : MemLpLoc q Ω v)
+    (h : ∀ φ : 𝓓(Ω, V), ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
+      S z ((φ : ℂ → V) z), v z⟫_ℝ = 0) :
+    MemWkpLoc q Ω (k + 1) v := by
+  -- After the reflection `ρ z = -conj z`, `v` solves a homogeneous Cauchy–Riemann equation.
+  set Ω' : Opens ℂ := ⟨(fun z ↦ -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
+  have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
+  have hweak := (hc.forall_integral_inner_eq_zero_iff hpq.le (Ω' := Ω') (fun _ ↦ Iff.rfl) hv).1 h
+  -- The reflected coefficients `J'` and `S'` are in `W^{k,p}_loc`; `S'` involves `DJ`.
+  have hDJ : MemWkpLoc p Ω k DJ := hJ.memWkpLoc_of_hasWeakFDerivOn hc.hasWeakFDerivOn
+  have hW := hweak.memWkpLoc_succ (hc.crReflectedAdjoint hρ) hp
+    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq hqp
+    (hJ.of_succ.crReflectedAdjointCoeff hρ) (hDJ.crReflectedAdjointZeroth hS hρ)
+    memWkpLoc_zero_fun
+  -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
+  simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
+
 /-- **The annihilator of a real Cauchy–Riemann operator is `W^{k+1,r}_loc`.** Let `Ω ⊆ ℂ` be
 open, `V` a finite-dimensional real inner product space, `J` a `C^{k+1}` field of complex structures
 on `V` and `S` a `Cᵏ` field of endomorphisms over `Ω`. If a locally `L^q` field `v` (`q > 1`)
@@ -113,42 +148,31 @@ theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*
     (h : ∀ φ : 𝓓(Ω, V), ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
       S z ((φ : ℂ → V) z), v z⟫_ℝ = 0)
     (hr_top : r ≠ ⊤) : MemWkpLoc r Ω (k + 1) v := by
-  -- Work with the exponent `p = max r 3 > 2`, which bounds `r`.
-  set p : ℝ≥0 := max r.toNNReal 3
-  have hp : 2 < p := lt_of_lt_of_le (by norm_num) (le_max_right _ _)
-  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 :=
-    ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)
   have hJ1 : ContDiffOn ℝ 1 J Ω := hJ.of_le le_add_self
-  have hc := IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn ⊤
-  have hJ2' : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1 :=
-    ae_restrict_of_forall_mem Ω.isOpen.measurableSet hJ2
-  have hqinv : (⊤ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 := by simpa using ENNReal.inv_lt_one.2 hq
-  -- First `v` is locally `Lᵖ`, by regularity of order one for Sobolev coefficients.
-  have h1 : MemWkpLoc p Ω 1 v := hc.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp) hJ2'
-    hqinv hv h (by exact_mod_cast one_lt_two.trans hp) ENNReal.coe_ne_top le_top
-  -- After the reflection `ρ z = -conj z`, `v` solves a homogeneous Cauchy–Riemann equation.
-  set Ω' : Opens ℂ := ⟨(fun z ↦ -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
-  have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
-  have hweak := ((hc.forall_integral_inner_eq_zero_iff hqinv.le (Ω' := Ω') (fun _ ↦ Iff.rfl)
-    hv).1 h).of_memLpLoc (h1.comp_neg_conj hρ).memLpLoc
-  -- The reflected coefficients are `C^{k+1}` and `Cᵏ`, so interior regularity of every order
-  -- (`IsWeakCRSolution.memWkpLoc_succ`) applies.
-  have hDJ : ContDiffOn ℝ k (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen Ω.isOpen le_rfl
-  have hJk : MemWkpLoc p Ω' k (crReflectedAdjointCoeff J) :=
-    ((hJ.of_le le_self_add).crReflectedAdjointCoeff hρ).memWkpLoc subset_rfl
-  have hSk : MemWkpLoc p Ω' k (crReflectedAdjointZeroth (fderiv ℝ J) S) :=
-    (hDJ.crReflectedAdjointZeroth hS hρ).memWkpLoc subset_rfl
-  have hc' := (IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn p).crReflectedAdjoint hρ
-  have hW := hweak.memWkpLoc_succ hc' hp (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2')
-    hpp le_rfl hJk hSk memWkpLoc_zero_fun
-  -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`, and lowering the exponent to `r`.
-  have hrp : r ≤ p := by
+  have hJ2' := ae_restrict_of_forall_mem (μ := volume) Ω.isOpen.measurableSet hJ2
+  -- A finite exponent `P ≥ max r 4`, so that `1/P + 1/P < 1`.
+  set P : ℝ≥0 := max r.toNNReal 4
+  have hP4 : (4 : ℝ≥0) ≤ P := le_max_right _ _
+  have hrP : r ≤ P := by
     rw [← ENNReal.coe_toNNReal hr_top]
-    exact_mod_cast le_max_left _ _
-  simpa using (hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz).mono_exponent hrp
+    exact ENNReal.coe_le_coe.2 (le_max_left _ _)
+  have hP2 : (2 : ℝ≥0∞) < P := lt_of_lt_of_le (by norm_num) (ENNReal.coe_le_coe.2 hP4)
+  -- Continuous coefficients are Sobolev coefficients for the exponent `∞`, so at order one `v`
+  -- is in `W^{1,P}_loc`, hence locally `L^P`.
+  have hvP : MemLpLoc P Ω v :=
+    ((IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn ⊤)
+      |>.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp) hJ2'
+      (by simpa using ENNReal.inv_lt_one.2 hq) hv h
+      (ENNReal.one_lt_two.trans hP2) ENNReal.coe_ne_top le_top).memLpLoc
+  -- Smooth coefficients are Sobolev coefficients of every finite exponent and every order.
+  have hW := (IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn P)
+    |>.memWkpLoc_succ_of_forall_integral_inner_eq_zero
+      (by exact_mod_cast hP2) hJ2' (ENNReal.inv_add_inv_lt_one_of_two_lt hP2) le_rfl
+      (hJ.memWkpLoc (by exact_mod_cast le_rfl)) (hS.memWkpLoc le_rfl) hvP h
+  exact hW.mono_exponent hrP
 
 /-- **The annihilator of a real Cauchy–Riemann operator, for covector fields.** Let `Ω ⊆ ℂ` be
-open, `V` a finite-dimensional real normed space, `J` a `C^{k+1}` field of complex structures on `V`
+open, `V` a finite-dimensional real normed space, `J` a `Cᵏ⁺¹` field of complex structures on `V`
 and `S` a `Cᵏ` field of endomorphisms over `Ω`. If a locally `L^q` covector field `η` (`q > 1`)
 satisfies `∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω`, then
 `η ∈ W^{k+1,r}_loc(Ω)` for every finite `r`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
@@ -34,8 +35,8 @@ components of a reducible root system acts on the orthogonal sum of their root l
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.piForm`: the summed ambient form on `Π i, V i`.
-* `TauCeti.IntegralLattice.pi`: the orthogonal sum of a finite family of integral lattices.
+* `TauCeti.IntegralLattice.pi`: the orthogonal sum of a finite family of integral lattices, whose
+  form is the orthogonal sum `LinearMap.BilinForm.pi` of the summand forms.
 * `TauCeti.IntegralLattice.isEven_pi_iff`, `TauCeti.IntegralLattice.isPosDef_pi_iff`: evenness
   and positive-definiteness are detected summandwise.
 * `TauCeti.IntegralLattice.finrank_pi`: the rank of the orthogonal sum is the sum of the ranks.
@@ -61,31 +62,6 @@ variable {ι : Type v} [Fintype ι] {V : ι → Type u} [∀ i, AddCommGroup (V 
   [∀ i, Module ℚ (V i)]
 variable (L : ∀ i, IntegralLattice (V i))
 
-/-! ## The summed form -/
-
-/-- The ambient form of an orthogonal sum: the sum of the pairings of corresponding
-coordinates. -/
-def piForm : LinearMap.BilinForm ℚ (∀ i, V i) :=
-  ∑ i, (L i).form.compl₁₂ (LinearMap.proj i) (LinearMap.proj i)
-
-/-- Evaluation of the orthogonal-sum form is the sum of the coordinate pairings. -/
-@[simp]
-theorem piForm_apply (x y : ∀ i, V i) : piForm L x y = ∑ i, (L i).form (x i) (y i) := by
-  simp [piForm, LinearMap.sum_apply]
-
-/-- Pairing with a family supported at one index extracts that coordinate pairing. -/
-theorem piForm_single_right [DecidableEq ι] (x : ∀ i, V i) (i : ι) (v : V i) :
-    piForm L x (Pi.single i v) = (L i).form (x i) v := by
-  rw [piForm_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
-    rw [Pi.single_eq_of_ne hji, map_zero]) (by simp), Pi.single_eq_same]
-
-/-- Pairing a family supported at one index with an arbitrary family extracts that coordinate
-pairing. -/
-theorem piForm_single_left [DecidableEq ι] (i : ι) (v : V i) (y : ∀ i, V i) :
-    piForm L (Pi.single i v) y = (L i).form v (y i) := by
-  rw [piForm_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
-    rw [Pi.single_eq_of_ne hji, map_zero, LinearMap.zero_apply]) (by simp), Pi.single_eq_same]
-
 /-! ## The orthogonal sum -/
 
 /-- **The orthogonal sum of a finite family of integral lattices**: the integral lattice in
@@ -93,16 +69,14 @@ theorem piForm_single_left [DecidableEq ι] (i : ι) (v : V i) (y : ∀ i, V i) 
 form `∑ i, L_i(x i, y i)`. -/
 def pi : IntegralLattice (∀ i, V i) where
   carrier := Submodule.pi Set.univ fun i ↦ (L i).carrier
-  form := piForm L
+  form := LinearMap.BilinForm.pi fun i ↦ (L i).form
   isFullLattice := inferInstance
-  isSymm := ⟨fun x y ↦ by
-    simp only [piForm_apply]
-    exact Finset.sum_congr rfl fun i _ ↦ (L i).isSymm.eq (x i) (y i)⟩
+  isSymm := LinearMap.BilinForm.isSymm_pi_iff.mpr fun i ↦ (L i).isSymm
   le_dual := by
     intro x hx
     rw [LinearMap.BilinForm.mem_dualSubmodule]
     intro y hy
-    rw [piForm_apply]
+    rw [LinearMap.BilinForm.pi_apply]
     exact Submodule.sum_mem _ fun i _ ↦
       (L i).le_dual (hx i (Set.mem_univ i)) (y i) (hy i (Set.mem_univ i))
 
@@ -113,7 +87,7 @@ theorem pi_carrier : (pi L).carrier = Submodule.pi Set.univ fun i ↦ (L i).carr
 
 /-- The form of an orthogonal sum is the summed coordinate form. -/
 @[simp]
-theorem pi_form : (pi L).form = piForm L :=
+theorem pi_form : (pi L).form = LinearMap.BilinForm.pi fun i ↦ (L i).form :=
   (rfl)
 
 /-- A family lies in the orthogonal sum exactly when each of its values lies in its summand. -/
@@ -134,31 +108,14 @@ theorem norm_pi_apply (x : ∀ i, V i) : (pi L).norm x = ∑ i, (L i).norm (x i)
 -- Use explicitly: the simplifier first expands norms by `norm_pi_apply`.
 theorem norm_pi_single [DecidableEq ι] (i : ι) (x : V i) :
     (pi L).norm (Pi.single i x) = (L i).norm x := by
-  simp only [norm_apply, pi_form, piForm_single_left, Pi.single_eq_same]
+  simp only [norm_apply, pi_form, LinearMap.BilinForm.pi_apply_single_left, Pi.single_eq_same]
 
 /-! ## Nondegeneracy -/
-
-/-- A vector which pairs trivially with every family is zero, provided every summand form is
-nondegenerate. -/
-private theorem eq_zero_of_forall_piForm (hL : ∀ i, (L i).form.Nondegenerate)
-    {x : ∀ i, V i} (hx : ∀ y, piForm L x y = 0) : x = 0 := by
-  classical
-  funext i
-  exact (hL i).1 (x i) fun v ↦ by rw [← piForm_single_right]; exact hx _
 
 /-- The orthogonal-sum form is nondegenerate exactly when every summand form is. -/
 theorem nondegenerate_pi_iff :
     (pi L).form.Nondegenerate ↔ ∀ i, (L i).form.Nondegenerate := by
-  classical
-  constructor
-  · intro h i
-    refine (L i).isSymm.isRefl.nondegenerate_iff_separatingLeft.mpr fun v hv ↦ ?_
-    have hzero : (Pi.single i v : ∀ i, V i) = 0 :=
-      h.1 _ fun y ↦ by rw [pi_form, piForm_single_left]; exact hv (y i)
-    simpa using congrFun hzero i
-  · intro hL
-    exact (pi L).isSymm.isRefl.nondegenerate_iff_separatingLeft.mpr fun _ hx ↦
-      eq_zero_of_forall_piForm L hL hx
+  rw [pi_form, LinearMap.BilinForm.nondegenerate_pi_iff]
 
 /-- An orthogonal sum of nondegenerate integral lattices is nondegenerate. -/
 instance instIsNondegeneratePi [∀ i, (L i).IsNondegenerate] : (pi L).IsNondegenerate :=
@@ -193,10 +150,7 @@ theorem isEven_pi {L : ∀ i, IntegralLattice (V i)} (hL : ∀ i, (L i).IsEven) 
 /-- An orthogonal sum is positive definite exactly when every summand is. -/
 @[simp]
 theorem isPosDef_pi_iff : (pi L).IsPosDef ↔ ∀ i, (L i).IsPosDef := by
-  have h : (pi L).form.toQuadraticMap = QuadraticMap.pi fun i ↦ (L i).form.toQuadraticMap := by
-    ext x
-    simp
-  rw [IsPosDef, h, QuadraticMap.posDef_pi_iff]
+  rw [IsPosDef, pi_form, LinearMap.BilinForm.toQuadraticMap_pi, QuadraticMap.posDef_pi_iff]
 
 /-! ## Rank -/
 
@@ -224,7 +178,7 @@ def pi (f : ∀ i, Isometry (L i) (M i)) :
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piCongrRight fun i ↦ (f i : V i ≃ₗ[ℚ] W i)
       map_app' x y := by
-        simp only [pi_form, piForm_apply]
+        simp only [pi_form, LinearMap.BilinForm.pi_apply]
         exact Finset.sum_congr rfl fun i _ ↦ (f i).map_app (x i) (y i) }
   map_carrier := by
     ext y
@@ -274,7 +228,7 @@ def piCongrLeft (σ : κ ≃ ι) :
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piCongrLeft ℚ V σ
       map_app' x y := by
-        simp only [pi_form, piForm_apply]
+        simp only [pi_form, LinearMap.BilinForm.pi_apply]
         rw [← σ.sum_comp]
         -- `LinearEquiv.piCongrLeft` is `Equiv.piCongrLeft` with its linear structure, and Mathlib
         -- states its evaluation only for the underlying equivalence.
@@ -324,7 +278,7 @@ variable [Unique ι]
 def piUnique : Isometry (IntegralLattice.pi L) (L default) where
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.piUnique ℚ V
-      map_app' x y := by simp [pi_form, piForm_apply] }
+      map_app' x y := by simp [pi_form, LinearMap.BilinForm.pi_apply] }
   map_carrier := by
     ext y
     rw [Submodule.mem_map_equiv, mem_pi_carrier_iff]
