@@ -98,6 +98,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   the span of a linearly independent family exactly when its product with the exterior product of
   the family vanishes.
 
+* `LinearEquiv.coe_exteriorPower_apply`: the exterior-algebra action of an induced equivalence.
+* `exteriorPower.coe_eq_algebraMap_zeroEquiv`: the scalar empty-product coordinate in degree zero.
+
 ## References
 
 The results use Mathlib's exterior-power basis and dimension formula from
@@ -362,6 +365,18 @@ theorem oneEquiv_ofEq_map {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (h
 
 end OfEq
 
+/-- A degree-zero exterior vector is the scalar empty product in the exterior algebra. -/
+theorem coe_eq_algebraMap_zeroEquiv {K : Type*} [CommRing K]
+    {V : Type*} [AddCommGroup V] [Module K V]
+    (a : ⋀[K]^0 V) :
+    (a : ExteriorAlgebra K V) =
+      algebraMap K (ExteriorAlgebra K V) (exteriorPower.zeroEquiv K V a) := by
+  obtain ⟨r, rfl⟩ := (exteriorPower.zeroEquiv K V).symm.surjective a
+  simp only [exteriorPower.zeroEquiv_symm_apply, Submodule.coe_smul_of_tower,
+    exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_zero_apply,
+    map_smul, exteriorPower.zeroEquiv_ιMulti, smul_eq_mul, mul_one,
+    Algebra.algebraMap_eq_smul_one]
+
 end exteriorPower
 
 /-! ### Exterior powers of linear equivalences -/
@@ -408,7 +423,22 @@ theorem exteriorPower_trans (e : M ≃ₗ[R] N) (e' : N ≃ₗ[R] P) (n : ℕ) :
   toLinearMap_injective <| by
     simp only [coe_trans, exteriorPower_toLinearMap, _root_.exteriorPower.map_comp]
 
+/-- The induced equivalence of exterior powers acts by the exterior-algebra map. -/
+@[simp]
+theorem coe_exteriorPower_apply {R : Type u} [CommRing R]
+    {U : Type w₁} [AddCommGroup U] [Module R U]
+    {V : Type w₂} [AddCommGroup V] [Module R V]
+    (e : U ≃ₗ[R] V) (n : ℕ) (a : ⋀[R]^n U) :
+    (e.exteriorPower n a : ExteriorAlgebra R V) = ExteriorAlgebra.map e.toLinearMap a := by
+  have h : e.exteriorPower n a = exteriorPower.map n e.toLinearMap a := by
+    simpa only [LinearEquiv.coe_coe] using
+      LinearMap.congr_fun (LinearEquiv.exteriorPower_toLinearMap e n) a
+  exact (congrArg (fun v : ⋀[R]^n V ↦ (v : ExteriorAlgebra R V)) h).trans
+    (exteriorPower.coe_map _ _)
+
 end LinearEquiv
+
+
 
 /-! ### Exterior products with factors in a subspace -/
 

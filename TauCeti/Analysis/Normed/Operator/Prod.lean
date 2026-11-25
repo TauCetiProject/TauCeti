@@ -28,7 +28,10 @@ endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L
 so `L` moves each coordinate of `v` little when it is close to the identity.
 
 The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
-`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`). Padding a map with the zero second
+component does not change its norm (`ContinuousLinearMap.opNorm_prod_zero`), and projecting a map
+into a product to its first component does not increase it
+(`ContinuousLinearMap.opNorm_fst_comp_le`).
 -/
 
 public section
@@ -80,6 +83,14 @@ theorem opNorm_id_prod_le (f : E →L[𝕜] F) :
     ‖(ContinuousLinearMap.id 𝕜 E).prod f‖ ≤ max 1 ‖f‖ := by
   rw [opNorm_prod, Prod.norm_def]
   exact max_le_max norm_id_le le_rfl
+
+/-- The operator norm of `x ↦ (f x, 0)` is that of `f`. -/
+theorem opNorm_prod_zero (f : E →L[𝕜] F) : ‖f.prod (0 : E →L[𝕜] G)‖ = ‖f‖ := by
+  rw [opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg f)]
+
+/-- The first component of a map into a product has operator norm at most that of the map. -/
+theorem opNorm_fst_comp_le (f : E →L[𝕜] F × G) : ‖(fst 𝕜 F G).comp f‖ ≤ ‖f‖ :=
+  (opNorm_comp_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (norm_fst_le 𝕜 F G))
 
 /-- The map `(x, y) ↦ (x, c • y)` on a product has operator norm at most `1` when `‖c‖ ≤ 1`. -/
 theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 1) :

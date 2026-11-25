@@ -29,6 +29,13 @@ finite covers.
 * `Metric.div_two_le_of_externalCoveringNumber_lt_card` and `Metric.IsCover.div_two_le_of_card_lt`:
   if `A` contains a finite subset of mutual distance at least `δ` strictly larger than an
   `ε`-cover, then `δ / 2 ≤ ε`.
+* `Metric.IsCover.exists_finset_subset_isCover_two_mul`: a finite `ε`-cover of `A` by arbitrary
+  points gives a `2ε`-cover by points of `A` of no larger cardinality.
+
+## References
+
+* M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
+  matrices*, Adv. Math. 218 (2008), Lemma 5.7.
 -/
 
 public section
@@ -125,5 +132,19 @@ theorem IsCover.div_two_le_of_card_lt {X : Type*} [PseudoMetricSpace X] {ε : �
     δ / 2 ≤ ε :=
   div_two_le_of_externalCoveringNumber_lt_card hsA hsep <|
     hcov.externalCoveringNumber_le_encard.trans_lt (by simpa using hcard)
+
+/-- A finite `ε`-cover `N` of `A`, whose points need not lie in `A`, yields a `2ε`-cover by points
+of `A` with no more points than `N`. -/
+theorem IsCover.exists_finset_subset_isCover_two_mul {X : Type*} [PseudoEMetricSpace X]
+    {ε : ℝ≥0} {A : Set X} {N : Finset X} (hN : IsCover ε A N) :
+    ∃ N' : Finset X, (N' : Set X) ⊆ A ∧ IsCover (2 * ε) A N' ∧ N'.card ≤ N.card := by
+  have hle : coveringNumber (2 * ε) A ≤ N.card :=
+    (coveringNumber_two_mul_le_externalCoveringNumber ε A).trans
+      (hN.externalCoveringNumber_le_encard.trans_eq (encard_coe_eq_coe_finsetCard N))
+  obtain ⟨C, hCA, hCf, hC, hCcard⟩ :=
+    exists_set_encard_eq_coveringNumber (hle.trans_lt (ENat.natCast_lt_top _)).ne
+  refine ⟨hCf.toFinset, by simpa using hCA, by simpa using hC, ?_⟩
+  rw [← Nat.cast_le (α := ℕ∞), ← hCf.encard_eq_coe_toFinset_card, hCcard]
+  exact hle
 
 end Metric
