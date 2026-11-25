@@ -94,10 +94,12 @@ example : gaussianBetaGasPartitionFunction 2 2 = π := by
   have hGamma : Gamma (3 / 2 : ℝ) = sqrt π / 2 := by
     have h := Real.Gamma_add_one (s := (1 / 2 : ℝ)) (by norm_num)
     rw [Real.Gamma_one_half_eq] at h
-    convert h using 1 <;> norm_num
-    ring
+    norm_num at h ⊢
+    convert h using 1; ring
   rw [gaussianBetaGasPartitionFunction_two_eq (by norm_num : (0 : ℝ) < 2)]
   norm_num [Real.rpow_natCast, Real.rpow_neg, hGamma]
-  nlinarith [Real.sq_sqrt Real.pi_pos.le]
+  calc
+    _ = sqrt π * sqrt π := by ring
+    _ = π := Real.mul_self_sqrt Real.pi_pos.le
 
 end TauCeti.Probability

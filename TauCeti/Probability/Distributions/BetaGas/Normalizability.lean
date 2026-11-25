@@ -89,10 +89,9 @@ theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
       ∏ i : Fin n, ((1 + |x i|) ^ (β * ((n - 1 : ℕ) : ℝ)) *
         exp (-(β * (n : ℝ) / 2) * V (x i))) := by
   classical
-  let pairs := betaGasPairs n
   let a : ℝ := β * (n : ℝ) / 2
   let p : ℝ := β * ((n - 1 : ℕ) : ℝ)
-  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
+  have hvander : (∏ z ∈ betaGasPairs n, |x z.1 - x z.2| ^ β) ≤
       ∏ i : Fin n, (1 + |x i|) ^ p :=
     betaGasVandermonde_le_coord_prod n hβ x
   have hexp : exp (-(β * (n : ℝ) / 2) * ∑ i : Fin n, V (x i)) =
@@ -101,20 +100,16 @@ theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
         ∑ i : Fin n, (-a * V (x i)) := by simp [a, Finset.mul_sum]
     rw [hdistrib]
     exact Real.exp_sum _ _
-  have hpoint : betaGasWeight n β V x ≤
-      ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))) := by
-    rw [betaGasWeight_def]
-    rw [hexp]
-    calc
-      _ ≤ (∏ i : Fin n, exp (-a * V (x i))) *
-          (∏ i : Fin n, (1 + |x i|) ^ p) := by
-        exact mul_le_mul_of_nonneg_left hvander (by positivity)
-      _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))) := by
-        rw [← Finset.prod_mul_distrib]
-        apply Finset.prod_congr rfl
-        intro i _
-        ring
-  exact hpoint
+  rw [betaGasWeight_def, hexp]
+  calc
+    _ ≤ (∏ i : Fin n, exp (-a * V (x i))) *
+        (∏ i : Fin n, (1 + |x i|) ^ p) :=
+      mul_le_mul_of_nonneg_left hvander (by positivity)
+    _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))) := by
+      rw [← Finset.prod_mul_distrib]
+      apply Finset.prod_congr rfl
+      intro i _
+      ring
 
 /-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
 integrable if eventually as `|x| → ∞`, `2 * β' / β < V x / log |x|`. -/
