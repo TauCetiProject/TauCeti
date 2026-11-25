@@ -38,6 +38,7 @@ namespace TauCeti.IsSerreSystem
 open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
@@ -101,11 +102,8 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj
   -- A zero Cartan operator forces all four root operators to vanish at a single bond.
   by_cases hH : H j = 0
-  · have hEi0 : E i = 0 := by simpa [hH, hji] using hs.lie_H_E j i
-    have hFi0 : F i = 0 := by simpa [hH, hji] using (hs.lie_H_F j i).symm
-    have hHi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-    have hEj0 : E j = 0 := by simpa [hHi0, hij] using hs.lie_H_E i j
-    have hFj0 : F j = 0 := by simpa [hHi0, hij] using (hs.lie_H_F i j).symm
+  · obtain ⟨hEi0, hFi0, hEj0, hFj0⟩ :=
+      hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := i) (by omega) (by omega) hH
     apply Units.ext
     simp [hEi0, hFi0, hEj0, hFj0]
   have ht := hs.isSl2Triple hjj hH
@@ -125,17 +123,10 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_F_F_E_of_ne hne
   -- Exponentiate this operator comparison, retaining the units rather than only their action.
-  let d := (c b).comp (c a)
-  have hdE : d (E j) = E i := hE
-  have hdF : d (F j) = F i := hF
-  have hd : d (b : A) = (a : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d,
-      map_neg, hdE, hdF]
-    exact (coe_weylUnit hEi hFi).symm
-  have hu : b * a * b * (b * a)⁻¹ = a := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, hc, Units.val_mul, Units.val_inv, mul_inv_rev,
-      mul_assoc] using hd
+  have hu : b * a * b * (b * a)⁻¹ = a :=
+    conj_weylUnit_eq_of_conj_eq hEj hFj hEi hFi
+      (by simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hE)
+      (by simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hF)
   calc
     _ = (b * a * b * (b * a)⁻¹) * b * a := by rw [hu]
     _ = b * a * b := by group

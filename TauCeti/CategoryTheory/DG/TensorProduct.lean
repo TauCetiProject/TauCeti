@@ -168,10 +168,9 @@ theorem dgDifferential_dgTensorHom {X Y : C × D} {p q n : ℤ} (f : DGHom R p X
       dgTensorHom R (dgDifferential R p f) g (by omega) +
         p.negOnePow • dgTensorHom R f (dgDifferential R q g) (by omega) := by
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (ι_tensorObj_d (dgHomComplex R X.1 Y.1) (dgHomComplex R X.2 Y.2) p q n h)) (f ⊗ₜ g)
+    (ιTensorObj_tensor_d (dgHomComplex R X.1 Y.1) (dgHomComplex R X.2 Y.2) p q n h)) (f ⊗ₜ g)
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
-    ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply, LinearMap.smul_apply,
-    curriedTensor_map_app, curriedTensor_obj_map] at key
+    ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply, LinearMap.smul_apply] at key
   rw [ModuleCat.MonoidalCategory.whiskerRight_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply] at key
   exact key
@@ -224,7 +223,7 @@ tensor product of the identities of its two components. -/
 theorem dgId_tensor (X : C × D) :
     dgId R X = dgTensorHom R (dgId R X.1) (dgId R X.2) (add_zero 0) := by
   rw [dgId_def, eId_tensor_eq, HomologicalComplex.comp_f, leftUnitor_inv_f,
-    leftUnitor'_inv, Category.assoc, Category.assoc, tensorHom_eq_mapBifunctorMap,
+    Category.assoc, Category.assoc, tensorHom_eq_mapBifunctorMap,
     ι_mapBifunctorMap]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, curriedTensor_map_app,
     curriedTensor_obj_map, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,

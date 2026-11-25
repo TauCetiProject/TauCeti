@@ -40,6 +40,14 @@ endomorphism `T`, the orientation that `det T`'s canonical trivialization induce
 differs from the one given by invertibility of `L` by the sign of `det T`. This is how the sign of
 `det (1 - P)` for a linearized return map `P` enters the orientation of periodic orbits.
 
+The canonical trivializations are not continuous in families of endomorphisms as they stand. The
+**normalized generator** `LinearMap.detLineEndGenerator`, the element at which `detLineEndEquiv T`
+takes the value `(-1) ^ (dim (ker T) * (dim V + 1))`, corrects this: over the reals, the
+normalized generators of a family form a continuous orientation of its determinant line bundle
+(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). At a bijective `T` the normalized generator
+is `det T` times the generator of `LinearMap.detLineEquivOfBijective`
+(`LinearMap.detLineEndGenerator_eq_det_smul`).
+
 ## Main declarations
 
 * `LinearMap.detLineEndEquiv`: the canonical trivialization `det T ≃ K` of the determinant line of
@@ -51,6 +59,14 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
   `LinearMap.detLineEquivOfBijective` through the factor `(det T)⁻¹`.
 * `LinearMap.sign_detLineEndEquiv`: over an ordered field, the two trivializations of a bijective
   `T` induce orientations that differ by the sign of `det T`.
+* `LinearMap.detLineEndGenerator`: the normalized generator of `det T`, characterized by
+  `LinearMap.detLineEndEquiv_detLineEndGenerator`.
+* `LinearMap.detLineEndGenerator_eq_det_smul`: for bijective `T`, it is `det T` times the
+  generator of `LinearMap.detLineEquivOfBijective`.
+* `LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul`,
+  `LinearMap.sign_detLineEquivOfBijective_eq_sign_det_of_sameRay`: for a bijective `f` with kernel
+  and cokernel identified with those of `T`, the transported normalized generator is `det T` times
+  the generator of `LinearMap.detLineEquivOfBijective`, so it reads with the sign of `det T`.
 
 ## References
 
@@ -58,6 +74,9 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
   Colloquium Publications **52**, 2012, Appendix A.2 (determinant lines of exact sequences).
 * M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. **14** (2002),
   209–244, Appendix A, for the torsion convention.
+* A. Zinger, *The determinant line bundle for Fredholm operators: construction, properties, and
+  classification*, Math. Scand. **118** (2016), 203–268, arXiv:1304.6368, for the sign
+  normalizations making determinant line identifications continuous.
 -/
 
 public section
@@ -113,6 +132,14 @@ theorem detLineEndEquiv_tmul (u : Fin (finrank K (ker T)) → ker T)
     (ker T).injective_subtype T.exact_subtype_ker_map T.exact_map_mkQ_range
     (range T).mkQ_surjective u v z hβ hγ φ hξ, detLineEndEquiv_detLineFourTermEquiv]
 
+/-- The canonical trivializations of the determinant lines of equal endomorphisms agree through
+the identification `LinearMap.detLineCongrOfEq` of these lines. -/
+@[simp]
+theorem detLineEndEquiv_detLineCongrOfEq {T' : V →ₗ[K] V} (h : T = T') (x : T.detLine) :
+    T'.detLineEndEquiv (detLineCongrOfEq h x) = T.detLineEndEquiv x := by
+  subst h
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
+
 /-- **The canonical and the bijective trivializations differ by the determinant.** For a bijective
 endomorphism `T`, the canonical trivialization of its determinant line is `(det T)⁻¹` times the
 trivialization `LinearMap.detLineEquivOfBijective`, which sends the product of the empty exterior
@@ -156,5 +183,109 @@ theorem sign_detLineEndEquiv [LinearOrder K] [IsStrictOrderedRing K] (hT : Funct
     SignType.sign (T.detLineEndEquiv x) =
       SignType.sign (LinearMap.det T) * SignType.sign (T.detLineEquivOfBijective hT x) := by
   rw [detLineEndEquiv_eq_inv_det_mul T hT, sign_mul, TauCeti.sign_inv]
+
+/-! ### The normalized generator -/
+
+/-- **The normalized generator of the determinant line of an endomorphism.** The element of
+`det T` at which the canonical trivialization `LinearMap.detLineEndEquiv` takes the value
+`(-1) ^ (dim (ker T) * (dim V + 1))`.
+
+The sign makes these generators continuous in families of endomorphisms of a real
+finite-dimensional normed space: a single kernel chart, stabilizing by the whole space, reads them
+all as one fixed vector, so they are coherent
+(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). Without it, when `dim V` is even, the
+elements `T.detLineEndEquiv.symm 1` change sign whenever the parity of `dim (ker T)` jumps. The
+sign is `1` when `T` is injective, when `dim V` is odd, and when `ker T` has even dimension, for
+instance when `T` is the realification of a complex-linear map. -/
+def detLineEndGenerator : T.detLine :=
+  (-1 : K) ^ (finrank K (ker T) * (finrank K V + 1)) • T.detLineEndEquiv.symm 1
+
+theorem detLineEndGenerator_def :
+    T.detLineEndGenerator =
+      (-1 : K) ^ (finrank K (ker T) * (finrank K V + 1)) • T.detLineEndEquiv.symm 1 :=
+  (rfl)
+
+/-- The canonical trivialization takes the value `(-1) ^ (dim (ker T) * (dim V + 1))` at the
+normalized generator. This characterizes it. -/
+@[simp]
+theorem detLineEndEquiv_detLineEndGenerator :
+    T.detLineEndEquiv T.detLineEndGenerator = (-1) ^ (finrank K (ker T) * (finrank K V + 1)) := by
+  rw [detLineEndGenerator_def, map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one]
+
+/-- The identification `LinearMap.detLineCongrOfEq` of the determinant lines of equal
+endomorphisms carries normalized generator to normalized generator. -/
+@[simp]
+theorem detLineCongrOfEq_detLineEndGenerator {T' : V →ₗ[K] V} (h : T = T') :
+    detLineCongrOfEq h T.detLineEndGenerator = T'.detLineEndGenerator := by
+  subst h
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
+
+/-- The normalized generator is nonzero. -/
+theorem detLineEndGenerator_ne_zero : T.detLineEndGenerator ≠ 0 := fun h ↦ by
+  have := T.detLineEndEquiv_detLineEndGenerator
+  rw [h, map_zero] at this
+  exact pow_ne_zero _ (neg_ne_zero.2 one_ne_zero) this.symm
+
+/-- **The normalized generator of a bijective endomorphism** is `det T` times the generator of
+the bijective trivialization `LinearMap.detLineEquivOfBijective`. -/
+theorem detLineEndGenerator_eq_det_smul (hT : Function.Bijective T) :
+    T.detLineEndGenerator = LinearMap.det T • (T.detLineEquivOfBijective hT).symm 1 := by
+  have hdet : LinearMap.det T ≠ 0 := fun h ↦
+    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hT.1)
+  refine T.detLineEndEquiv.injective ?_
+  have hk : finrank K (ker T) * (finrank K V + 1) = 0 := by
+    rw [finrank_ker_eq_zero_of_injective hT.1, zero_mul]
+  rw [detLineEndEquiv_detLineEndGenerator, hk, pow_zero, detLineEndEquiv_eq_inv_det_mul T hT,
+    map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, inv_mul_cancel₀ hdet]
+
+/-! ### Transport to operators with the same kernel and cokernel -/
+
+section CongrKerCoker
+
+variable {M N : Type*} [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  {f : M →ₗ[K] N}
+
+/-- **The transported normalized generator at a bijective operator.** Let `f` be bijective and let
+`e₁`, `e₂` identify the kernel and cokernel of `f` with those of the endomorphism `T`. The element
+of the determinant line of `f` corresponding to the normalized generator of `T` under
+`LinearMap.detLineCongrKerCoker e₁ e₂` is `det T` times the generator of the trivialization given
+by bijectivity of `f`. -/
+theorem detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul (hf : Function.Bijective f)
+    (e₁ : ker f ≃ₗ[K] ker T) (e₂ : (N ⧸ range f) ≃ₗ[K] (V ⧸ range T)) :
+    (detLineCongrKerCoker e₁ e₂).symm T.detLineEndGenerator =
+      LinearMap.det T • (f.detLineEquivOfBijective hf).symm 1 := by
+  -- `T` is injective since its kernel is identified with that of `f`.
+  have hinj : Function.Injective T := by
+    refine ker_eq_bot.1 ((Submodule.eq_bot_iff _).2 fun v hv ↦ ?_)
+    have h0 : e₁.symm ⟨v, hv⟩ = 0 := Subtype.ext (hf.1 (by simp))
+    simpa using congrArg Subtype.val ((LinearEquiv.map_eq_zero_iff _).1 h0)
+  have hT := And.intro hinj (injective_iff_surjective.1 hinj)
+  rw [detLineEndGenerator_eq_det_smul T hT, LinearEquiv.map_smul]
+  congr 1
+  rw [LinearEquiv.symm_apply_eq]
+  refine (detLineEquivOfBijective hT).injective ?_
+  rw [LinearEquiv.apply_symm_apply]
+  exact ((detLineEquivOfBijective_detLineCongrKerCoker hf hT _ _ _).trans
+    (LinearEquiv.apply_symm_apply _ _)).symm
+
+/-- **The sign of the transported normalized generator.** Over an ordered field, in the situation
+of `LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul`, every nonzero element `x`
+of the determinant line of `f` on the ray of the transported normalized generator of `T` reads, in
+the trivialization given by bijectivity of `f`, with the sign of `det T`. -/
+theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay [LinearOrder K]
+    [IsStrictOrderedRing K] (hf : Function.Bijective f) (e₁ : ker f ≃ₗ[K] ker T)
+    (e₂ : (N ⧸ range f) ≃ₗ[K] (V ⧸ range T)) {x : f.detLine} (hx : x ≠ 0)
+    (hxy : SameRay K x ((detLineCongrKerCoker e₁ e₂).symm T.detLineEndGenerator)) :
+    SignType.sign (f.detLineEquivOfBijective hf x) = SignType.sign (LinearMap.det T) := by
+  have hy : (detLineCongrKerCoker e₁ e₂).symm T.detLineEndGenerator ≠ 0 :=
+    (LinearEquiv.map_ne_zero_iff _).2 T.detLineEndGenerator_ne_zero
+  obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := K) (M := f.detLine) hxy hx hy
+  have hx' : x = r⁻¹ • (detLineCongrKerCoker e₁ e₂).symm T.detLineEndGenerator := by
+    rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
+  rw [hx', detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul T hf, smul_smul,
+    LinearEquiv.map_smul, LinearEquiv.apply_symm_apply]
+  simp [sign_mul, inv_pos.2 hr]
+
+end CongrKerCoker
 
 end LinearMap

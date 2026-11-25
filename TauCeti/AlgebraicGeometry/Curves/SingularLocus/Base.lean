@@ -55,11 +55,11 @@ theorem singularLocus_eq_of_formallyUnramified_base
   apply Scheme.IdealSheafData.ext
   funext U
   let : Algebra R Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf R).app (op U.1)).hom.toAlgebra
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
   let : Algebra S Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf S).app (op U.1)).hom.toAlgebra
+    ((X.baseRingToStructurePresheaf S).app (op U.val)).hom.toAlgebra
   have : IsScalarTower R S Γ(X, U) :=
-    .of_algebraMap_eq fun r ↦ (X.baseRingToStructurePresheaf_app_algebraMap h U.1 r).symm
+    .of_algebraMap_eq fun r ↦ (X.baseRingToStructurePresheaf_app_algebraMap h U.val r).symm
   have := TauCeti.AlgebraicGeometry.finiteType_sections_of_locallyOfFiniteType R X U
   have := TauCeti.AlgebraicGeometry.finiteType_sections_of_locallyOfFiniteType S X U
   rw [Scheme.singularLocus_ideal, Scheme.singularLocus_ideal]

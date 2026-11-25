@@ -149,9 +149,9 @@ theorem _root_.TauCeti.singularHomologyMap_cubeBoundaryPairHom_eq {P : TopPair.{
       TopPair.singularHomologyMap (cubeBoundaryPairHom _ hg₁) R k := by
   obtain ⟨F⟩ := h
   let G : C(I × (cubeBoundaryPair.{w} (n + 1)).snd, P.fst) :=
-    ⟨fun x ↦ F (x.1, cubeSplit n x.2.1), by fun_prop⟩
+    ⟨fun x ↦ F (x.1, cubeSplit n x.2.val), by fun_prop⟩
   have hG (x : I × (cubeBoundaryPair.{w} (n + 1)).snd) : G x ∈ Set.range P.map :=
-    F.prop x.1 (cubeSplit_mem_prodBoundary x.2.2)
+    F.prop x.1 (cubeSplit_mem_prodBoundary x.2.property)
   exact TopPair.Homotopy.congr_singularHomologyMap
     { fst := (F.toHomotopy.compContinuousMap (cubeSplit n)).cast
         (cubeBoundaryPairHom_fst_hom _ hg₀).symm (cubeBoundaryPairHom_fst_hom _ hg₁).symm
@@ -245,7 +245,7 @@ private lemma fatTrans_apply_quarter (i : Fin n) (p q : RelGenLoop (Fin n) X) (s
     (t : I^(Fin n)) :
     fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one (t i / 4))) =
       p (s, t) := by
-  have ht := (t i).2
+  have ht := (t i).property
   -- The arithmetic: both reparametrisations stay in `[0, 1/2]` and compose to the identity.
   have h₁ : (t i / 4 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   have h₂ : (2 * (t i / 4) : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
@@ -262,7 +262,7 @@ private lemma fatTrans_apply_upperHalf (i : Fin n) (p q : RelGenLoop (Fin n) X) 
     (t : I^(Fin n)) :
     fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one ((t i + 1) / 2))) =
       q (s, t) := by
-  have ht := (t i).2
+  have ht := (t i).property
   -- The arithmetic: `tᵢ ↦ (tᵢ + 1) / 2` stays in `[0, 1]` and `tᵢ ↦ 2 tᵢ - 1` inverts it.
   have h₁ : ((t i + 1) / 2 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   have h₂ : (2 * ((t i + 1) / 2) : ℝ) = t i + 1 := by ring
@@ -402,7 +402,7 @@ lemma hurewiczIntHom_apply (X : BasedTopPair.{0}) (n : ℕ)
 private def basepointPairHom (X : BasedTopPair.{w}) :
     TopPair.ofSubset ({X.pair.map X.basepoint} : Set (TopCat.of X.pair.fst)) ⟶ X.pair :=
   TopPair.ofHom (𝟙 _) (TopCat.ofHom (ContinuousMap.const _ X.basepoint))
-    (by ext z; exact z.2.symm)
+    (by ext z; exact z.property.symm)
 
 /-- The quotient map `Hₖ(X) ⟶ Hₖ(X, A)` factors through `Hₖ(X, {a₀})`. -/
 private lemma singularHomologyπ_comp_basepointPairHom (X : BasedTopPair.{w}) (k : ℕ) :
