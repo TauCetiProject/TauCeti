@@ -247,7 +247,9 @@ theorem plusDifferential_hatToPlus (hfin : ∀ x y, (H.minusDomains χ x y).Fini
       mem_minusLattice_iff]
     intro y
     refine ⟨Polynomial.C a * (H.minusCoefficient χ x y).divX, ?_⟩
-    simp [← coeff_zero_minusCoefficient (hfin x y)]
+    simp only [Int.reduceNeg, Finsupp.coe_sub, Pi.sub_apply,
+      infinityDifferential_single_apply, Finsupp.mapRange_apply, hatDifferential_single_apply,
+      ← coeff_zero_minusCoefficient (hfin x y), map_mul, toLaurent_C]
     linear_combination (-LaurentPolynomial.C a) *
       toLaurent_mul_T_neg_one (H.minusCoefficient χ x y)
 
