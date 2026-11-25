@@ -62,7 +62,7 @@ Hermitian row orthogonality.
 * `TauCeti.isSome_dixonCyclotomicCharacterTable_specialLinearTwoThree`: the assembled exact solver
   succeeds on the certified data.
 * `TauCeti.isSome_characterTableDixon_specialLinearTwoThree`: the assembled algorithm, searching
-  for its own prime, reaches `13` and succeeds there.
+  for its own prime with budget `2`, returns a character table.
 * `TauCeti.isCyclotomicCharacterTableSpec_specialLinearTwoThree`: the exact tables pass the
   executable cyclotomic certificate.
 * `TauCeti.isCharacterTableSpec_specialLinearTwoThree`: the distinguished complex embedding of the
@@ -71,7 +71,12 @@ Hermitian row orthogonality.
 ## References
 
 The formal declaration order and proof plan follow
-`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFour`.
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFour`, and the
+field-by-field assembly of the certificate follows
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive.Basic`. The candidate
+is the classical `SL(2, 3)` table, the case `q = 3` of the character table of `SL₂(𝔽_q)` in
+W. Fulton and J. Harris, *Representation Theory: A First Course*, §5.2; its first four rows are
+the `A₄` table of J.-P. Serre, *Linear Representations of Finite Groups*, §5.2.
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
@@ -240,7 +245,7 @@ theorem specialLinearTwoThreeExactCharacterTable_row_four_mul
 private theorem specialLinearTwoThreeClassData_index_one :
     specialLinearTwoThreeClassData.index 1 = ⟨0, by simp⟩ := by
   have hrep : specialLinearTwoThreeClassData.rep ⟨0, by simp⟩ = 1 := by
-    -- `ClassData.rep` computes the zeroth entry of the displayed representative list.
+    rw [rep_specialLinearTwoThreeClassData]
     rfl
   rw [← hrep]
   exact specialLinearTwoThreeClassData.index_rep _
@@ -439,12 +444,12 @@ theorem isCharacterTableSpec_specialLinearTwoThree :
       specialLinearTwoThreeComplexCharacterTable :=
   isCyclotomicCharacterTableSpec_specialLinearTwoThree.isCharacterTableSpec
 
-/-- **The Burnside--Dixon--Schneider algorithm computes a character table of `SL(2, 3)` with its
-own choice of prime.** Its search reaches `13`, the least prime congruent to `1` modulo `12` above
-`8`, finds the primitive twelfth root `2` there, and the solver succeeds. -/
+/-- **The Burnside--Dixon--Schneider algorithm, searching for its own prime with budget `2`,
+returns a character table of `SL(2, 3)`.** -/
 theorem isSome_characterTableDixon_specialLinearTwoThree :
     (specialLinearTwoThreeClassData.characterTableDixon? 12
       exponent_specialLinearGroup_two_three.symm 2).isSome = true :=
+  -- The search reaches `13`, finds the primitive twelfth root `2` there, and the solver succeeds.
   specialLinearTwoThreeClassData.isSome_characterTableDixon?_of_isSome 12
     exponent_specialLinearGroup_two_three.symm specialLinearTwoThreeDixonPrimeData
     (DixonPrimeData.ofPrime?_eq_some

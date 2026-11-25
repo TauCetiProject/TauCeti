@@ -37,6 +37,12 @@ structure constants are certified by `decide` on the matrix group itself.
   `1`, `1`, `6`, `4`, `4`, `4` and `4`.
 * `TauCeti.natCard_specialLinearGroup_two_three`: `SL(2, 3)` has order `24`.
 * `TauCeti.exponent_specialLinearGroup_two_three`: the exponent of `SL(2, 3)` is `12`.
+
+## References
+
+The conjugacy classes are the case `q = 3` of those of `SL₂(𝔽_q)` in W. Fulton and J. Harris,
+*Representation Theory: A First Course*, §5.2. The layout follows
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating.Four`.
 -/
 
 public section
@@ -56,6 +62,36 @@ open Matrix
 /-- The unipotent element `!![1, 1; 0, 1]` of order three in `SL(2, 3)`. -/
 @[expose] def specialLinearTwoThreeT : SpecialLinearGroup (Fin 2) (ZMod 3) :=
   ⟨!![1, 1; 0, 1], by decide⟩
+
+/-- The underlying matrix of `TauCeti.specialLinearTwoThreeZ`. -/
+@[simp]
+theorem coe_specialLinearTwoThreeZ :
+    (specialLinearTwoThreeZ : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![-1, 0; 0, -1] := by
+  decide
+
+/-- The underlying matrix of `TauCeti.specialLinearTwoThreeS`. -/
+@[simp]
+theorem coe_specialLinearTwoThreeS :
+    (specialLinearTwoThreeS : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![0, 1; -1, 0] := by
+  decide
+
+/-- The underlying matrix of `TauCeti.specialLinearTwoThreeT`. -/
+@[simp]
+theorem coe_specialLinearTwoThreeT :
+    (specialLinearTwoThreeT : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![1, 1; 0, 1] := by
+  rfl
+
+/-- `TauCeti.specialLinearTwoThreeZ` is the central element `-1` of `SL(2, 3)`. -/
+theorem specialLinearTwoThreeZ_eq_neg_one : specialLinearTwoThreeZ = -1 := by
+  decide
+
+/-- `TauCeti.specialLinearTwoThreeS` has order four. -/
+theorem orderOf_specialLinearTwoThreeS : orderOf specialLinearTwoThreeS = 4 := by
+  apply orderOf_eq_prime_pow (p := 2) (n := 1) <;> decide
+
+/-- `TauCeti.specialLinearTwoThreeT` has order three. -/
+theorem orderOf_specialLinearTwoThreeT : orderOf specialLinearTwoThreeT = 3 := by
+  apply orderOf_eq_prime <;> decide
 
 /-- Executable conjugacy-class data for `SL(2, 3)`, ordered as `1`, `z`, `s`, `t`, `t⁻¹`, `z t`
 and `z t⁻¹`. -/
@@ -81,6 +117,16 @@ theorem reps_specialLinearTwoThreeClassData :
 theorem numClasses_specialLinearTwoThreeClassData :
     specialLinearTwoThreeClassData.numClasses = 7 := by
   rfl
+
+/-- The representative of each numbered conjugacy class of `SL(2, 3)`. -/
+@[simp]
+theorem rep_specialLinearTwoThreeClassData (i : Fin specialLinearTwoThreeClassData.numClasses) :
+    specialLinearTwoThreeClassData.rep i =
+      ![1, specialLinearTwoThreeZ, specialLinearTwoThreeS, specialLinearTwoThreeT,
+        specialLinearTwoThreeT⁻¹, specialLinearTwoThreeZ * specialLinearTwoThreeT,
+        specialLinearTwoThreeZ * specialLinearTwoThreeT⁻¹]
+        (i.cast numClasses_specialLinearTwoThreeClassData) := by
+  fin_cases i <;> rfl
 
 /-- **The seven numbered conjugacy classes of `SL(2, 3)` have sizes `1`, `1`, `6`, `4`, `4`, `4`
 and `4`.** -/
@@ -123,12 +169,6 @@ theorem structureConstantTable_specialLinearTwoThreeClassData :
           [0, 0, 0, 1, 0, 3, 0]]] := by
   decide +kernel
 
-private theorem orderOf_specialLinearTwoThreeS : orderOf specialLinearTwoThreeS = 4 := by
-  apply orderOf_eq_prime_pow (p := 2) (n := 1) <;> decide
-
-private theorem orderOf_specialLinearTwoThreeT : orderOf specialLinearTwoThreeT = 3 := by
-  apply orderOf_eq_prime <;> decide
-
 private theorem rep_pow_twelve :
     ∀ r ∈ specialLinearTwoThreeClassData.reps, r ^ 12 = 1 := by
   decide
@@ -139,17 +179,19 @@ theorem natCard_specialLinearGroup_two_three :
   rw [Nat.card_eq_fintype_card]
   decide
 
-/-- **The exponent of `SL(2, 3)` is `12`**: every element is conjugate to a representative whose
-twelfth power is trivial, and the elements `s` and `t` have orders four and three. -/
+/-- **The exponent of `SL(2, 3)` is `12`.** -/
 theorem exponent_specialLinearGroup_two_three :
     Monoid.exponent (SpecialLinearGroup (Fin 2) (ZMod 3)) = 12 := by
   apply Nat.dvd_antisymm
+  -- Every element is conjugate to a representative whose twelfth power is trivial.
   · rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
     intro g
     obtain ⟨r, hr, hrg⟩ := specialLinearTwoThreeClassData.exists_isConj g
     exact isConj_one_right.mp (rep_pow_twelve r hr ▸ hrg.pow 12)
-  · exact Nat.lcm_dvd (orderOf_specialLinearTwoThreeS ▸
-      Monoid.order_dvd_exponent specialLinearTwoThreeS)
-      (orderOf_specialLinearTwoThreeT ▸ Monoid.order_dvd_exponent specialLinearTwoThreeT)
+  -- The elements `s` and `t` have orders four and three, and `lcm 4 3 = 12`.
+  · have h := Nat.lcm_dvd (Monoid.order_dvd_exponent specialLinearTwoThreeS)
+      (Monoid.order_dvd_exponent specialLinearTwoThreeT)
+    rwa [orderOf_specialLinearTwoThreeS, orderOf_specialLinearTwoThreeT,
+      show Nat.lcm 4 3 = 12 by decide] at h
 
 end TauCeti
