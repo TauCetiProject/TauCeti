@@ -9,13 +9,17 @@ public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 public import TauCeti.GroupTheory.Automorphism.Outer
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Discrete
 
+import Mathlib.Data.Finite.Perm
+
 /-!
 # The outer automorphism group of the quaternion group
 
 The orders of `TauCeti.OuterAut` and `TauCeti.ContinuousOut` for the quaternion group
 `Q₈ = QuaternionGroup 2`: `MulAut Q₈` has order `24`, the centre has order `2`, so the inner
 automorphisms, a quotient of `Q₈` by its centre, form a group of order `4`, and `OuterAut Q₈` has
-order `6`; with the discrete topology `ContinuousOut Q₈` has order `6` too.
+order `6`; with the discrete topology `ContinuousOut Q₈` has order `6` too. Moreover
+`MulAut Q₈ ≃* S₄` (`mulAutMulEquivPerm`), by the action on the four body diagonals of the cube
+whose six faces are the elements of order `4`.
 
 An automorphism `φ` of `Q₈` is determined by the pair `(φ(a 1), φ(xa 0))`, since
 `a i = (a 1) ^ i` and `xa i = xa 0 * (a 1) ^ i`. Conversely a pair `(u, v)` comes from an
@@ -84,6 +88,116 @@ private noncomputable def mulAutEquiv : MulAut Q₈ ≃ {p : Q₈ × Q₈ // IsG
 /-- `MulAut Q₈` has order `24`. -/
 theorem card_mulAut : Nat.card (MulAut Q₈) = 24 := by
   rw [Nat.card_congr mulAutEquiv, Nat.card_eq_fintype_card, card_isGenPair]
+
+/-! ### `MulAut Q₈ ≅ S₄`
+
+The elements of order `4` of `Q₈` are `±a 1`, `±xa 0`, `±xa 1`, the six faces of a cube, with
+`-1 = a 2`. A vertex is a triple of faces `{u, v, w}`, one from each pair, and a body diagonal is a
+pair of opposite vertices `{S, -S}`; there are four. An automorphism permutes the faces and
+commutes with `x ↦ -x`, so it permutes the diagonals, and the only automorphism fixing all four
+is the identity. Each diagonal contains exactly one vertex through `a 1`, which indexes it. -/
+
+/-- The vertex through `a 1` of the `d`-th body diagonal. -/
+private def vertex : Fin 4 → Finset Q₈
+  | 0 => {a 1, xa 0, xa 1}
+  | 1 => {a 1, xa 0, xa 3}
+  | 2 => {a 1, xa 2, xa 1}
+  | 3 => {a 1, xa 2, xa 3}
+
+/-- The body diagonal through a vertex `S`: the index of `S` or of `-S`, whichever contains
+`a 1`. -/
+private def diagonal (S : Finset Q₈) : Fin 4 :=
+  let T := if a 1 ∈ S then S else S.image (a 2 * ·)
+  if xa 0 ∈ T then (if xa 1 ∈ T then 0 else 1) else (if xa 1 ∈ T then 2 else 3)
+
+/-- The eight vertices of the cube. -/
+private def vertices : Finset (Finset Q₈) :=
+  Finset.univ.image vertex ∪ Finset.univ.image fun d ↦ (vertex d).image (a 2 * ·)
+
+/-- The images of the vertices under the map attached to a generating pair are vertices. -/
+private theorem image_vertex_mem_vertices :
+    ∀ p : {p : Q₈ × Q₈ // IsGenPair p}, ∀ d, (vertex d).image (ofGens p.val) ∈ vertices := by
+  decide +kernel
+
+/-- The map attached to a generating pair sends a vertex and its opposite to the same
+diagonal. -/
+private theorem diagonal_image_vertex_diagonal :
+    ∀ p : {p : Q₈ × Q₈ // IsGenPair p}, ∀ S ∈ vertices,
+      diagonal (S.image (ofGens p.val)) =
+        diagonal ((vertex (diagonal S)).image (ofGens p.val)) := by
+  decide +kernel
+
+/-- Only the identity pair fixes all four diagonals. -/
+private theorem eq_of_diagonal_image_vertex :
+    ∀ p : {p : Q₈ × Q₈ // IsGenPair p},
+      (∀ d, diagonal ((vertex d).image (ofGens p.val)) = d) → p.val = (a 1, xa 0) := by
+  decide +kernel
+
+private theorem diagonal_vertex : ∀ d, diagonal (vertex d) = d := by
+  decide
+
+/-- The map of an automorphism `φ` is `ofGens` of the pair `(φ(a 1), φ(xa 0))`. -/
+private theorem coe_eq_ofGens (φ : MulAut Q₈) :
+    ⇑φ = ofGens (φ (a 1), φ (xa 0)) :=
+  (funext (ofGens_apply_eq φ)).symm
+
+/-- The action of an automorphism on the four body diagonals. -/
+private def diagonalMap (φ : MulAut Q₈) (d : Fin 4) : Fin 4 :=
+  diagonal ((vertex d).image φ)
+
+private theorem diagonalMap_mul (φ ψ : MulAut Q₈) (d : Fin 4) :
+    diagonalMap (φ * ψ) d = diagonalMap φ (diagonalMap ψ d) := by
+  have hψ : (vertex d).image ψ ∈ vertices := by
+    rw [coe_eq_ofGens ψ]
+    exact image_vertex_mem_vertices ⟨_, isGenPair_mulAut ψ⟩ d
+  have h := diagonal_image_vertex_diagonal ⟨_, isGenPair_mulAut φ⟩ _ hψ
+  rw [← coe_eq_ofGens φ] at h
+  rw [diagonalMap, diagonalMap, diagonalMap, ← h, Finset.image_image]
+  rfl
+
+private theorem diagonalMap_one (d : Fin 4) : diagonalMap 1 d = d := by
+  simp [diagonalMap, diagonal_vertex]
+
+/-- The permutation of the four body diagonals induced by an automorphism. -/
+private def diagonalPerm (φ : MulAut Q₈) : Equiv.Perm (Fin 4) :=
+  Equiv.mk (diagonalMap φ) (diagonalMap φ⁻¹)
+    (fun d ↦ by rw [← diagonalMap_mul, inv_mul_cancel, diagonalMap_one])
+    (fun d ↦ by rw [← diagonalMap_mul, mul_inv_cancel, diagonalMap_one])
+
+private theorem diagonalPerm_apply (φ : MulAut Q₈) (d : Fin 4) :
+    diagonalPerm φ d = diagonalMap φ d :=
+  rfl
+
+/-- The action of `MulAut Q₈` on the four body diagonals of the cube. -/
+private def toPerm : MulAut Q₈ →* Equiv.Perm (Fin 4) where
+  toFun := diagonalPerm
+  map_one' := Equiv.ext fun d ↦ (diagonalPerm_apply 1 d).trans (diagonalMap_one d)
+  map_mul' φ ψ := Equiv.ext fun d ↦ by
+    rw [Equiv.Perm.mul_apply, diagonalPerm_apply, diagonalPerm_apply, diagonalPerm_apply,
+      diagonalMap_mul]
+
+private theorem toPerm_apply (φ : MulAut Q₈) (d : Fin 4) : toPerm φ d = diagonalMap φ d :=
+  rfl
+
+private theorem toPerm_injective : Function.Injective toPerm := by
+  refine (injective_iff_map_eq_one toPerm).2 fun φ hφ ↦ ?_
+  have h := eq_of_diagonal_image_vertex ⟨_, isGenPair_mulAut φ⟩ fun d ↦ by
+    rw [← coe_eq_ofGens φ]
+    exact (toPerm_apply φ d).symm.trans (DFunLike.congr_fun hφ d)
+  have h1 : φ (a 1) = a 1 := congrArg Prod.fst h
+  have h2 : φ (xa 0) = xa 0 := congrArg Prod.snd h
+  refine MulEquiv.ext fun x ↦ ?_
+  rw [← ofGens_apply_eq φ, h1, h2]
+  cases x with
+  | a i => simp [ofGens, a_one_pow]
+  | xa i => simp [ofGens, a_one_pow, xa_mul_a]
+
+/-- **`MulAut Q₈ ≅ S₄`**: the automorphism group of the quaternion group acts faithfully on the
+four body diagonals of the cube whose faces are the six elements of order `4`, and both groups have
+order `24`. -/
+noncomputable def mulAutMulEquivPerm : MulAut Q₈ ≃* Equiv.Perm (Fin 4) :=
+  MulEquiv.ofBijective toPerm <| (Function.Injective.bijective_of_nat_card_le toPerm_injective
+    (by rw [card_mulAut, Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_fin]; rfl))
 
 /-- The centre of `Q₈` has order `2`. -/
 theorem card_center : Nat.card (Subgroup.center Q₈) = 2 := by
