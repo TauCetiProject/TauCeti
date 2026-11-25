@@ -424,12 +424,11 @@ theorem toDual_symm_comp_inverse_mvfderiv {e₁ e₂ : OpenPartialHomeomorph M E
   rw [hA.fderiv, ContinuousLinearMap.ringInverse_eq_inverse, ContinuousLinearMap.inverse_equiv,
     LinearIsometryEquiv.symm_apply_eq]
   ext v
-  rw [InnerProductSpace.toDual_apply_apply, ContinuousLinearMap.adjoint_inner_left]
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  simp only [InnerProductSpace.toDual_apply_apply, ContinuousLinearMap.adjoint_inner_left,
+    ContinuousLinearMap.comp_apply, innerSL_apply_apply]
   congr 1
   refine A.injective ?_
-  rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-  exact (hD _).trans ((isInvertible_mvfderiv_chart he₂ hx₂).self_apply_inverse v)
+  simpa using (hD _).trans ((isInvertible_mvfderiv_chart he₂ hx₂).self_apply_inverse v)
 
 /-- A covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`. -/
 theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E}
@@ -438,8 +437,7 @@ theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E
     (innerSL ℝ ((InnerProductSpace.toDual ℝ E).symm
       (ξ.comp (mvfderiv 𝓘(ℝ, E) e x).inverse))).comp (mvfderiv 𝓘(ℝ, E) e x) = ξ := by
   ext v
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply,
-    ContinuousLinearMap.comp_apply, (isInvertible_mvfderiv_chart he hx).inverse_apply_self]
+  simp [InnerProductSpace.toDual_symm_apply, (isInvertible_mvfderiv_chart he hx).inverse_apply_self]
 
 end Dual
 

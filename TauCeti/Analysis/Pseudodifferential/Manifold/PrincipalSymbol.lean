@@ -134,9 +134,9 @@ private theorem complexCutoffPullback_eq_of_transition
       simp [e₁.map_source hp₁, e₁.left_inv hp₁, hp₂]
     have hvp := hv _ hpκ
     simp only [OpenPartialHomeomorph.coe_trans, Function.comp_apply, e₁.left_inv hp₁] at hvp
-    rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₂ _ _ hp₂,
+    simp only [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₂ _ _ hp₂,
       OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₁ _ _ hp₁,
-      ContMDiffMap.coe_ofContDiff, ContMDiffMap.coe_ofContDiff, hvp]
+      ContMDiffMap.coe_ofContDiff, hvp]
     by_cases hψ : ψ₁ (e₁ p) = 0
     · simp [hψ]
     · have h1 := hψ₂ _ (subset_tsupport _ hψ)
@@ -145,15 +145,14 @@ private theorem complexCutoffPullback_eq_of_transition
   · -- The point `e₁ p` lies outside the source of `κ`, so outside the support of `ψ₁`.
     have hψ : ψ₁ (e₁ p) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hp₂ <| by
       simpa [e₁.left_inv hp₁] using (hψ₁ h).2
-    rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₂ _ _ hp₂,
-      OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₁ _ _ hp₁, hψ, zero_smul]
+    simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₂ _ _ hp₂,
+      OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₁ _ _ hp₁, hψ]
   · -- The point `e₂ p` lies outside the target of `κ`, where `v` vanishes.
     have hv' : v (e₂ p) = 0 := hv0 _ fun h ↦ hp₁ <| by
       simpa [e₂.left_inv hp₂] using h.2
-    rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₂ _ _ hp₂,
-      OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₁ _ _ hp₁,
-      ContMDiffMap.coe_ofContDiff, hv', smul_zero]
-  · rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₂ _ _ hp₂,
+    simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he₂ _ _ hp₂,
+      OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₁ _ _ hp₁, hv']
+  · simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₂ _ _ hp₂,
       OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he₁ _ _ hp₁]
 
 /-- **Changes of chart for chart symbols.** Let `a₁` and `a₂` be the symbols of the chart
@@ -405,8 +404,7 @@ theorem classicalPrincipalSymbol_add (hP : P ∈ classicalPseudodifferentialOper
   have hb := isChartSymbol_preferredChartSymbol hQ x
   rw [classicalPrincipalSymbol_eq_coefficient_principal (add_mem hP hQ) x
       (a := preferredChartSymbol hP x + preferredChartSymbol hQ x)
-      fun u y ↦ by rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add, ha, hb, map_add,
-        LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply],
+      fun u y ↦ by rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add, ha, hb]; simp,
     classicalPrincipalSymbol_eq_coefficient_principal hP x ha,
     classicalPrincipalSymbol_eq_coefficient_principal hQ x hb]
   simp [ClassicalSymbol.principal_add]
@@ -418,8 +416,7 @@ theorem classicalPrincipalSymbol_smul (hP : P ∈ classicalPseudodifferentialOpe
   have ha := isChartSymbol_preferredChartSymbol hP x
   rw [classicalPrincipalSymbol_eq_coefficient_principal (Submodule.smul_mem _ c hP) x
       (a := c • preferredChartSymbol hP x) fun u y ↦ by
-        rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha, map_smul,
-          LinearMap.smul_apply, ContMDiffMap.complex_smul_apply, smul_eq_mul],
+        rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha]; simp,
     classicalPrincipalSymbol_eq_coefficient_principal hP x ha]
   simp [ClassicalSymbol.principal_smul]
 
