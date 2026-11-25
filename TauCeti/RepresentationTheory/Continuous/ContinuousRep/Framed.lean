@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Basis
-public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Topology.Algebra.Group.Matrix
 
 /-!
 # Framed continuous representations
@@ -15,9 +15,10 @@ public import Mathlib.Topology.Instances.Matrix
 A continuous homomorphism `ρ : Γ →ₜ* GL_n(A)`, for the units topology on
 `GL_n(A) = Matrix.GeneralLinearGroup n A`, is a *framed* representation. It defines the continuous
 representation `TauCeti.ContinuousRep.ofFramed ρ` on `n → A`, by matrix multiplication. Conversely a
-continuous representation `ρ` of a topological group on a module with a finite basis `b` and its
-module topology has a frame `TauCeti.ContinuousRep.frame b ρ : Γ →ₜ* GL_n(A)`, the matrices of the
-`ρ g` in `b`, with `ofFramed (frame b ρ) ≅ ρ` and the change-of-basis formula
+continuous representation `ρ` of a group with continuous inversion on a module with a finite basis
+`b` and its module topology has a frame `TauCeti.ContinuousRep.frame b ρ : Γ →ₜ* GL_n(A)`, the
+matrices of the `ρ g` in `b`, with `ofFramed (frame b ρ) ≅ ρ`, the converse
+`frame (Pi.basisFun A n) (ofFramed ρ) = ρ` and the change-of-basis formula
 `frame b' ρ = (b'.toMatrix b) (frame b ρ) (b.toMatrix b')`.
 
 Two framed representations are isomorphic exactly when they are conjugate under `GL_n(A)`
@@ -25,10 +26,6 @@ Two framed representations are isomorphic exactly when they are conjugate under 
 is `det ∘ ρ` (`TauCeti.ContinuousRep.det_ofFramed`). A continuous ring homomorphism `f : A → B`
 changes the coefficients of a framed representation entrywise (`TauCeti.ContinuousRep.framedMap`),
 functorially in `f`.
-
-For a group hom into `GL_n(A)` from a topological group, continuity for the units topology is
-continuity of the matrix entries (`TauCeti.ContinuousRep.continuous_units_iff`), since `ρ(g)⁻¹` is
-`ρ(g⁻¹)`.
 
 ## Main definitions
 
@@ -41,6 +38,8 @@ continuity of the matrix entries (`TauCeti.ContinuousRep.continuous_units_iff`),
 
 ## Main results
 
+* `TauCeti.ContinuousRep.frame_pi_basisFun_ofFramed`: the frame of `ofFramed ρ` in the standard
+  basis is `ρ`.
 * `TauCeti.ContinuousRep.frame_eq_mul_mul`: the change-of-basis formula.
 * `TauCeti.ContinuousRep.nonempty_iso_ofFramed_iff`: isomorphism classes of framed
   representations are `GL_n(A)`-conjugacy classes.
@@ -61,21 +60,6 @@ noncomputable section
 open Matrix
 
 namespace TauCeti.ContinuousRep
-
-section Units
-
-variable {Γ A : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [Monoid A]
-  [TopologicalSpace A]
-
-/-- **Continuity into the units of a topological monoid**: a homomorphism from a topological group
-into `Aˣ` is continuous for the units topology exactly when its values in `A` are continuous, since
-`ρ(g)⁻¹ = ρ(g⁻¹)`. -/
-theorem continuous_units_iff (ρ : Γ →* Aˣ) :
-    Continuous ρ ↔ Continuous fun g => (ρ g : A) := by
-  refine ⟨fun h => Units.continuous_val.comp h, fun h => Units.continuous_iff.2 ⟨h, ?_⟩⟩
-  exact (h.comp continuous_inv).congr fun g => by rw [Function.comp_apply, map_inv]
-
-end Units
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
   [IsTopologicalRing A] {n : Type*} [Fintype n] [DecidableEq n]
@@ -114,16 +98,6 @@ theorem ofFramed_apply_eq_toLin' (ρ : Γ →ₜ* GL n A) (g : Γ) :
 
 end ofFramed
 
-section Group
-
-variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
-
-/-- **The determinant of a framed representation** is the determinant of its matrices. -/
-theorem det_ofFramed (ρ : Γ →ₜ* GL n A) :
-    (ofFramed ρ).det = Matrix.GeneralLinearGroup.det.comp (ρ : Γ →* GL n A) := by
-  ext g
-  simp [ofFramed_apply_eq_toLin', LinearMap.det_toLin']
-
 /-- **Isomorphism classes of framed representations are conjugacy classes**: `ofFramed ρ` and
 `ofFramed σ` are isomorphic exactly when `σ = P ρ P⁻¹` for some `P ∈ GL_n(A)`. -/
 theorem nonempty_iso_ofFramed_iff (ρ σ : Γ →ₜ* GL n A) :
@@ -131,33 +105,36 @@ theorem nonempty_iso_ofFramed_iff (ρ σ : Γ →ₜ* GL n A) :
   constructor
   · rintro ⟨e⟩
     let L : (n → A) ≃ₗ[A] (n → A) := e.toContinuousLinearEquiv.toLinearEquiv
-    refine ⟨Units.map LinearMap.toMatrixAlgEquiv'.toMonoidHom
-      (LinearMap.GeneralLinearGroup.ofLinearEquiv L), fun g => ?_⟩
+    refine ⟨GeneralLinearGroup.toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv L),
+      fun g => ?_⟩
     rw [eq_mul_inv_iff_mul_eq]
-    ext1
-    apply Matrix.toLin'.injective
-    refine LinearMap.ext fun v => ?_
-    have h := e.isIntertwining g v
-    simp only [ofFramed_apply] at h
-    change Matrix.toLin' ((σ g : Matrix n n A) * LinearMap.toMatrix' (L : Module.End A (n → A))) v =
-      Matrix.toLin' (LinearMap.toMatrix' (L : Module.End A (n → A)) * (ρ g : Matrix n n A)) v
-    rw [Matrix.toLin'_mul_apply, Matrix.toLin'_mul_apply, Matrix.toLin'_toMatrix',
-      Matrix.toLin'_apply, Matrix.toLin'_apply]
-    exact h.symm
+    apply GeneralLinearGroup.toLin.injective
+    refine Units.ext (LinearMap.ext fun v => ?_)
+    simpa [L, ofFramed_apply] using (e.isIntertwining g v).symm
   · rintro ⟨P, hP⟩
     let L : (n → A) ≃ₗ[A] (n → A) := Matrix.GeneralLinearGroup.toLin P |>.toLinearEquiv
     refine ⟨Iso.ofEquiv (.mk L fun g => LinearMap.ext fun v => ?_)⟩
     have hg : (σ g : Matrix n n A) * P = P * ρ g := by simp [hP g, mul_assoc]
     have := congr_arg (fun M => M *ᵥ v) hg
-    simpa [L, Matrix.GeneralLinearGroup.toLin, ofFramed_apply, Matrix.mulVec_mulVec] using
-      this.symm
+    simpa [L, ofFramed_apply, Matrix.mulVec_mulVec] using this.symm
+
+section Group
+
+variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
+
+/-- **The determinant of a framed representation** is the determinant of its matrices. -/
+@[simp]
+theorem det_ofFramed (ρ : Γ →ₜ* GL n A) :
+    (ofFramed ρ).det = Matrix.GeneralLinearGroup.det.comp (ρ : Γ →* GL n A) := by
+  ext g
+  simp [ofFramed_apply_eq_toLin', LinearMap.det_toLin']
 
 end Group
 
 
 section Frame
 
-variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] {M : Type*}
+variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ] {M : Type*}
   [AddCommGroup M] [Module A M] [TopologicalSpace M] [IsModuleTopology A M]
 
 /-- **The frame of a continuous representation** in a finite basis `b`: the matrices of the `ρ g`
@@ -165,12 +142,19 @@ in `b`, a continuous homomorphism into `GL_n(A)`. -/
 def frame (b : Module.Basis n A M) (ρ : ContinuousRep Γ A M) : Γ →ₜ* GL n A where
   toMonoidHom := (Units.map (LinearMap.toMatrixAlgEquiv b).toMonoidHom).comp
     ρ.toRepresentation.asGroupHom
-  continuous_toFun := (continuous_units_iff _).2 (ρ.continuous_toMatrix b)
+  continuous_toFun := (MonoidHom.continuous_iff_continuous_val _).2 (ρ.continuous_toMatrix b)
 
 @[simp]
 theorem coe_frame_apply (b : Module.Basis n A M) (ρ : ContinuousRep Γ A M) (g : Γ) :
     (frame b ρ g : Matrix n n A) = LinearMap.toMatrix b b (ρ g) :=
   (rfl)
+
+/-- **A framed representation is the frame of its representation** in the standard basis. -/
+@[simp]
+theorem frame_pi_basisFun_ofFramed (ρ : Γ →ₜ* GL n A) : frame (Pi.basisFun A n) (ofFramed ρ) = ρ :=
+  ContinuousMonoidHom.ext fun g => Units.ext <| by
+    rw [coe_frame_apply, LinearMap.toMatrix_eq_toMatrix', ofFramed_apply_eq_toLin',
+      LinearMap.toMatrix'_toLin']
 
 /-- **Change of basis for frames**: `frame b' ρ = (b'.toMatrix b) (frame b ρ) (b.toMatrix b')`,
 where `b'.toMatrix b` and `b.toMatrix b'` are inverse matrices. -/
@@ -183,13 +167,12 @@ theorem frame_eq_mul_mul (b b' : Module.Basis n A M) (ρ : ContinuousRep Γ A M)
 isomorphism `n → A ≃ M` of the basis `b` is an isomorphism `ofFramed (frame b ρ) ≅ ρ`. -/
 def ofFramedFrameIso (b : Module.Basis n A M) (ρ : ContinuousRep Γ A M) :
     Iso (ofFramed (frame b ρ)) ρ :=
-  Iso.ofEquiv (.mk b.equivFun.symm fun g => LinearMap.ext fun v => by
-    change b.equivFun.symm (ofFramed (frame b ρ) g v) = ρ g (b.equivFun.symm v)
-    apply b.equivFun.injective
-    rw [LinearEquiv.apply_symm_apply, ofFramed_apply, coe_frame_apply,
-      Module.Basis.equivFun_apply, ← LinearMap.toMatrix_mulVec_repr b b,
-      ← Module.Basis.equivFun_apply,
-      LinearEquiv.apply_symm_apply])
+  Iso.ofEquiv (.mk b.equivFun.symm fun g => LinearMap.ext fun v => b.equivFun.injective <| by
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      coe_toRepresentation, ofFramed_apply, coe_frame_apply]
+    -- The matrix of `ρ g` in `b` acts on the coordinates `v` of `b.equivFun.symm v`.
+    rw [Module.Basis.equivFun_apply, ← LinearMap.toMatrix_mulVec_repr b b,
+      ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply])
 
 @[simp]
 theorem ofFramedFrameIso_apply (b : Module.Basis n A M) (ρ : ContinuousRep Γ A M) (v : n → A) :
@@ -205,10 +188,8 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 /-- **Entrywise coefficient change** of a framed representation along a continuous ring
 homomorphism `f : A → B`. -/
 def framedMap (f : A →+* B) (hf : Continuous f) (ρ : Γ →ₜ* GL n A) : Γ →ₜ* GL n B where
-  toMonoidHom := (Units.map f.mapMatrix.toMonoidHom).comp (ρ : Γ →* GL n A)
-  continuous_toFun := Units.continuous_iff.2
-    ⟨((Units.continuous_val.comp ρ.continuous).matrix_map hf).congr fun _ => by simp,
-      ((Units.continuous_coe_inv.comp ρ.continuous).matrix_map hf).congr fun _ => by simp⟩
+  toMonoidHom := (Matrix.GeneralLinearGroup.map f).comp (ρ : Γ →* GL n A)
+  continuous_toFun := hf.generalLinearGroup_map.comp ρ.continuous
 
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 @[simp]
@@ -219,17 +200,17 @@ theorem coe_framedMap_apply (f : A →+* B) (hf : Continuous f) (ρ : Γ →ₜ*
 omit [IsTopologicalRing A] in
 /-- Coefficient change along the identity changes nothing. -/
 @[simp]
-theorem framedMap_id (ρ : Γ →ₜ* GL n A) : framedMap (RingHom.id A) continuous_id ρ = ρ := by
-  ext g : 2
-  simp
+theorem framedMap_id (ρ : Γ →ₜ* GL n A) : framedMap (RingHom.id A) continuous_id ρ = ρ :=
+  ContinuousMonoidHom.ext fun g => DFunLike.congr_fun Matrix.GeneralLinearGroup.map_id (ρ g)
 
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- Coefficient change is functorial. -/
-theorem framedMap_comp {C : Type*} [CommRing C] [TopologicalSpace C]
+@[simp]
+theorem framedMap_framedMap {C : Type*} [CommRing C] [TopologicalSpace C]
     (f : A →+* B) (hf : Continuous f) (f' : B →+* C) (hf' : Continuous f') (ρ : Γ →ₜ* GL n A) :
-    framedMap (f'.comp f) (hf'.comp hf) ρ = framedMap f' hf' (framedMap f hf ρ) := by
-  ext g : 2
-  simp [Matrix.map_map]
+    framedMap f' hf' (framedMap f hf ρ) = framedMap (f'.comp f) (hf'.comp hf) ρ :=
+  ContinuousMonoidHom.ext fun g =>
+    (DFunLike.congr_fun (Matrix.GeneralLinearGroup.map_comp f f') (ρ g)).symm
 
 end Map
 

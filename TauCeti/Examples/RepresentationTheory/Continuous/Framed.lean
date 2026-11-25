@@ -22,8 +22,9 @@ variable {Γ A : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ]
   [TopologicalSpace A] [IsTopologicalRing A]
 
 -- In rank zero there is exactly one framed representation.
-example : Subsingleton (Γ →ₜ* GL (Fin 0) A) :=
-  ⟨fun _ _ => ContinuousMonoidHom.ext fun _ => Units.ext (Subsingleton.elim _ _)⟩
+example : Unique (Γ →ₜ* GL (Fin 0) A) where
+  default := 1
+  uniq _ := ContinuousMonoidHom.ext fun _ => Units.ext (Subsingleton.elim _ _)
 
 -- The framed representation of rank zero lives on the zero module.
 example : Subsingleton (Fin 0 → A) :=
