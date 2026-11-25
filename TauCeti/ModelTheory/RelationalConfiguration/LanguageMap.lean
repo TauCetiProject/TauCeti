@@ -34,10 +34,8 @@ For symbol sublanguages `symbSublang F R`, the reduct map along `symbSublangIncl
 surjective on configurations (`reductConfiguration_symbSublang_surjective`), and every measurable
 set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a measurable set
 in some countable relational symbol sublanguage (`exists_countable_sublanguage_of_measurableSet`).
-Disjoint analytic classes also have disjoint reducts in a countable sublanguage. The
-coordinate-disagreement argument adapts `exists_countable_relations_separating_continuous`,
-formerly a private theorem in `LopezEscobar.lean`. On a countable carrier the reduction can
-preserve disjointness of orbits.
+Disjoint analytic classes also have disjoint reducts in a countable sublanguage. On a countable
+carrier the reduction can preserve disjointness of orbits.
 
 ## Main definitions
 
@@ -384,6 +382,8 @@ theorem exists_countable_sublanguage_of_measurableSet
       simp [a₀]
   exact hmeas hD
 
+-- The open-cover argument adapts the proof of `exists_countable_relations_separating_continuous`
+-- in `LopezEscobar.lean` at commit `cc7970dd9e9100260478e2a2d469da59fef0e750`.
 /-- Disjoint analytic classes of configurations have disjoint images in some countable relational
 symbol sublanguage. The language and the carrier can both be uncountable. -/
 theorem exists_countable_sublanguage_separating
