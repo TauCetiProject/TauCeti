@@ -15,7 +15,6 @@ public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
-import TauCeti.LinearAlgebra.Charpoly.Quotient
 import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
 /-!
@@ -1078,11 +1077,8 @@ theorem charpoly_apply_eq_subrepresentation_mul_quotient [ContinuousAdd M]
     (ρ : ContinuousRep Γ A M) (W : Submodule A M) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
     [Module.Free A W] [Module.Finite A W] [Module.Free A (M ⧸ W)] [Module.Finite A (M ⧸ W)]
     (g : Γ) :
-    (ρ g).charpoly = (ρ.subrepresentation W hW g).charpoly * (ρ.quotient W hW g).charpoly := by
-  rw [← coe_toRepresentation (ρ.subrepresentation W hW), ← coe_toRepresentation (ρ.quotient W hW),
-    toRepresentation_subrepresentation, toRepresentation_quotient,
-    Representation.subrepresentation_apply, Representation.quotient_apply]
-  exact LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W (ρ g) (hW g)
+    (ρ g).charpoly = (ρ.subrepresentation W hW g).charpoly * (ρ.quotient W hW g).charpoly :=
+  Representation.charpoly_apply_eq_subrepresentation_mul_quotient ρ.toRepresentation W hW g
 
 section BaseChange
 

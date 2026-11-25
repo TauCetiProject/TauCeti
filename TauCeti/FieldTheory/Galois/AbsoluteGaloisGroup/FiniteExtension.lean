@@ -294,6 +294,14 @@ theorem continuousAbsoluteGaloisGroupExtend_apply (τ : Field.absoluteGaloisGrou
     continuousAbsoluteGaloisGroupExtend K L σ τ = absoluteGaloisGroupExtend K L σ τ :=
   (rfl)
 
+/-- `continuousAbsoluteGaloisGroupExtend`, as a homomorphism, is `absoluteGaloisGroupExtend`. -/
+@[simp]
+theorem coe_continuousAbsoluteGaloisGroupExtend :
+    (continuousAbsoluteGaloisGroupExtend K L σ :
+        Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K) =
+      absoluteGaloisGroupExtend K L σ :=
+  (rfl)
+
 /-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
 theorem injective_absoluteGaloisGroupExtend :
     Function.Injective (absoluteGaloisGroupExtend K L σ) :=
@@ -343,7 +351,8 @@ def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
     (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
   haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
   let f := continuousAbsoluteGaloisGroupExtend K L σ
-  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := hU
+  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := by
+    rw [coe_continuousAbsoluteGaloisGroupExtend, hU]
   hf ▸ f.equivRangeOfIsEmbedding ((continuous_absoluteGaloisGroupExtend K L σ).isClosedEmbedding
     (injective_absoluteGaloisGroupExtend K L σ)).isEmbedding
 
