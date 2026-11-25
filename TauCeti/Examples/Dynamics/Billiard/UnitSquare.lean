@@ -41,10 +41,17 @@ namespace TauCeti.Examples.UnitSquare
 /-- The polygon with vertices `0, 1, 1 + i, i`, in counterclockwise order. -/
 def squarePolygon : Polygon ℂ 4 := ⟨![0, 1, 1 + I, I]⟩
 
-/-- The vertices of the square polygon. -/
-theorem squarePolygon_apply :
-    squarePolygon 0 = 0 ∧ squarePolygon 1 = 1 ∧ squarePolygon 2 = 1 + I ∧ squarePolygon 3 = I :=
-  ⟨rfl, rfl, rfl, rfl⟩
+/-- The first vertex of the square polygon is `0`. -/
+@[simp] theorem squarePolygon_zero : squarePolygon 0 = 0 := (rfl)
+
+/-- The second vertex of the square polygon is `1`. -/
+@[simp] theorem squarePolygon_one : squarePolygon 1 = 1 := (rfl)
+
+/-- The third vertex of the square polygon is `1 + I`. -/
+@[simp] theorem squarePolygon_two : squarePolygon 2 = 1 + I := (rfl)
+
+/-- The fourth vertex of the square polygon is `I`. -/
+@[simp] theorem squarePolygon_three : squarePolygon 3 = I := (rfl)
 
 /-- The edges of the square polygon, as horizontal and vertical segments. -/
 theorem edgeSet_squarePolygon (i : Fin 4) :
@@ -64,16 +71,8 @@ theorem isSimple_squarePolygon : squarePolygon.IsSimple ℝ := by
     fin_cases i <;> simp [squarePolygon, Complex.ext_iff]
   · rw [edgeSet_squarePolygon] at hi hj
     rw [finRotate_apply, finRotate_apply]
-    fin_cases i <;> fin_cases j <;> simp at hij <;>
-      simp [mem_reProdIm] at hi hj <;>
-      simp only [squarePolygon_apply, Complex.ext_iff, Fin.mk_one, Fin.isValue, Fin.zero_eta,
-        zero_add, true_and, Fin.reduceAdd, Fin.reduceEq, false_and, or_false, Fin.reduceFinMk,
-        or_self,
-        false_or, one_re, one_im, zero_re, zero_im, add_re, add_im, I_re, I_im,
-        add_zero] <;>
-      first
-        | (exfalso; linarith)
-        | (constructor <;> linarith)
+    fin_cases i <;> fin_cases j <;>
+      simp_all [mem_reProdIm, Complex.ext_iff]
 
 /-- The unit square as a simple polygon. -/
 def squareSimplePolygon : SimplePolygon ℝ ℂ where
@@ -109,6 +108,8 @@ theorem numHoles_unitSquareTable : unitSquareTable.numHoles = 0 :=
 /-- **The carrier of the unit-square table is the closed unit square** `[0, 1] × [0, 1]`. -/
 theorem carrier_unitSquareTable : unitSquareTable.carrier = Rectangle 0 (1 + I) := by
   rw [unitSquareTable, PolygonalTable.ofSimplePolygon_carrier]
+  -- `squareSimplePolygon.toPolygon` is `squarePolygon` by definition; its type
+  -- `Polygon ℂ squareSimplePolygon.numVertices` only unfolds to `Polygon ℂ 4`, so we `change`.
   change filledHull (squarePolygon.boundary ℝ) = _
   rw [boundary_squarePolygon,
     (convex_rectangle 0 (1 + I)).filledHull_frontier
@@ -118,6 +119,8 @@ theorem carrier_unitSquareTable : unitSquareTable.carrier = Rectangle 0 (1 + I) 
 /-- **The unit-square table has four vertices.** -/
 theorem ncard_vertexSet_unitSquareTable : unitSquareTable.vertexSet.ncard = 4 := by
   rw [unitSquareTable, PolygonalTable.vertexSet_ofSimplePolygon]
+  -- As in `carrier_unitSquareTable`, `squareSimplePolygon.toPolygon` is `squarePolygon` by
+  -- definition, up to the dependent vertex count.
   change (range squarePolygon.vertices).ncard = 4
   have hinj : Function.Injective squarePolygon.vertices := by
     intro i j h
@@ -134,6 +137,7 @@ def position : unitSquareTable.PhaseSpace → ℂ :=
     · rw [h1]
 
 /-- The position of the class of a state is its base point. -/
+@[simp]
 theorem position_mk (p : unitSquareTable.carrier × Circle) :
     position (PolygonalTable.PhaseSpace.mk p) = p.1 :=
   PolygonalTable.PhaseSpace.lift_mk _ _ p
@@ -159,18 +163,19 @@ theorem liouville_position_preimage_quarter :
   have hpre : PolygonalTable.PhaseSpace.mk ⁻¹' (position ⁻¹' Q) =
       ((↑) ⁻¹' Q : Set unitSquareTable.carrier) ×ˢ univ := by
     ext p
-    simp [position_mk]
+    simp
   have hvolQ : volume Q = ENNReal.ofReal (1 / 4) := by
     rw [volume_reProdIm, Real.volume_Icc, ← ENNReal.ofReal_mul (by norm_num)]
     norm_num
   have hvol : volume (Rectangle 0 (1 + I)) = 1 := by
     rw [Rectangle, volume_reProdIm]
     simp
+  have h2π : ENNReal.ofReal (2 * π) ≠ 0 := by simp [Real.pi_pos]
   rw [unitSquareTable.liouville_apply (measurable_position hQm), hpre, Measure.prod_prod,
     comap_subtypeVal_apply unitSquareTable.isClosed_carrier.measurableSet,
     image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left.2 hQ, hvolQ,
-    circleArcLength_univ, carrier_unitSquareTable, hvol, mul_one,
-    mul_comm, mul_assoc, ENNReal.mul_inv_cancel (by simp [Real.pi_pos]) ENNReal.ofReal_ne_top,
-    mul_one]
+    circleArcLength_univ, carrier_unitSquareTable, hvol]
+  -- `(2π · 1)⁻¹ · (1/4 · 2π) = 1/4`
+  rw [mul_one, mul_left_comm, ENNReal.inv_mul_cancel h2π ENNReal.ofReal_ne_top, mul_one]
 
 end TauCeti.Examples.UnitSquare
