@@ -144,7 +144,8 @@ theorem HasPrekopaLeindler.lintegral {μ : Measure E} {θ : ℝ}
     (∫⁻ x, f x ∂μ) ^ (1 - θ) * (∫⁻ x, g x ∂μ) ^ θ ≤ ∫⁻ x, h x ∂μ := by
   obtain ⟨f', hf', hle_f, hIf⟩ := exists_measurable_le_lintegral_eq μ f
   obtain ⟨g', hg', hle_g, hIg⟩ := exists_measurable_le_lintegral_eq μ g
-  obtain ⟨h', hh', hle_h, heq_h⟩ := hh.exists_measurable_ge_ae_eq
+  obtain ⟨h', hh', hle_h, heq_h⟩ :=
+    hh.exists_measurable_ge_ae_eq_of_ae_le Filter.EventuallyLE.rfl measurable_const fun _ => le_top
   rw [hIf, hIg, lintegral_congr_ae heq_h]
   exact hμ hf' hg' hh' fun x y =>
     (mul_le_mul' (ENNReal.rpow_le_rpow (hle_f x) (sub_nonneg.mpr hθ₁))

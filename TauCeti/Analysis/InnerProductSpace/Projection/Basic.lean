@@ -154,6 +154,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.starProjection_comp_eq_self_iff`: `P_U T = T` if and only if the range of `T` lies
+  in `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
@@ -556,6 +558,17 @@ theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjec
   ext x
   simpa only [_root_.mul_apply_eq_comp] using
     U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
+
+/-- An operator into `E` is fixed by left composition with `U.starProjection` exactly when its
+range lies in `U`. -/
+theorem starProjection_comp_eq_self_iff {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : F →L[𝕜] E} :
+    U.starProjection ∘L T = T ↔ T.range ≤ U := by
+  refine ⟨?_, fun hT ↦ ContinuousLinearMap.ext fun x ↦
+    U.starProjection_eq_self_iff.mpr (hT ⟨x, rfl⟩)⟩
+  rintro hT _ ⟨x, rfl⟩
+  rw [← hT]
+  exact U.starProjection_apply_mem _
 
 /-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
 `U.starProjection`. -/

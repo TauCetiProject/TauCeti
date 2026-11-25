@@ -11,7 +11,7 @@ public import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
-# Coprimality and nonzero least common multiples
+# Coprimality, divisibility and nonzero least common multiples
 
 Shifting an inner summand by `m` preserves coprimality with `m` (`Nat.coprime_add_self_add_right`).
 For `q ≠ 0` and `N ≠ 0`, the natural numbers `q` and `q ^ N - 1` are coprime, because any common
@@ -19,6 +19,9 @@ divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`. This is t
 needed to view `q` as a unit of `ZMod (q ^ N - 1)`.
 
 The least common multiple of two nonzero naturals is nonzero, also as a `NeZero` instance.
+
+If a nonzero `m` does not divide some `b`, then `m ≠ 1`, so `2 ≤ m`. Conversely, if `b` is prime to
+`m ≥ 2`, then `m ∤ b`, since a divisor of `b` prime to `b` is `1`.
 
 If the products of two finite families of naturals are coprime and one entry of the first family is
 zero, the second family is constantly `1`: a zero entry makes the first product `0`, and `0` is
@@ -32,6 +35,8 @@ coprime only to `1`.
 * `Nat.Coprime.eq_one_of_exists_eq_zero`: coprime products and a zero entry in one family force the
   other family to be `1`.
 * `Nat.gcd_mul_right_div_gcd`: `m.gcd (n * k) = m.gcd n * (m / m.gcd n).gcd k`.
+* `Nat.two_le_of_not_dvd`: if a nonzero `m` does not divide `b`, then `2 ≤ m`.
+* `Nat.Coprime.not_dvd_of_two_le`: if `b` is prime to `m ≥ 2`, then `m ∤ b`.
 -/
 
 public section
@@ -79,5 +84,13 @@ theorem gcd_mul_right_div_gcd (m n k : ℕ) :
           Nat.gcd_mul_left (m.gcd n) (m / m.gcd n) ((n / m.gcd n) * k)
     _ = m.gcd n * (m / m.gcd n).gcd k := by
           rw [hcop.gcd_mul_left_cancel_right k]
+
+/-- If a nonzero `m` does not divide `b`, then `2 ≤ m`. -/
+theorem two_le_of_not_dvd {m b : ℕ} [NeZero m] (hb : ¬m ∣ b) : 2 ≤ m :=
+  (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+
+/-- If `b` is prime to `m ≥ 2`, then `m ∤ b`. -/
+theorem Coprime.not_dvd_of_two_le {m b : ℕ} (hb : b.Coprime m) (hm : 2 ≤ m) : ¬m ∣ b :=
+  fun h ↦ by have := (Nat.coprime_comm.mp hb).eq_one_of_dvd h; lia
 
 end Nat

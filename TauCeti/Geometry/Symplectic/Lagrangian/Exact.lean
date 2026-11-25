@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!

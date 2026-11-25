@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
+import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # Subgroups of pro-p groups
@@ -30,6 +31,8 @@ algebraically and then promoted to a profinite subgroup.
 * `Subgroup.isProP_iff_isPGroup_map_mk'`: a subgroup is pro-`p` exactly when all its images
   in the ambient finite continuous quotients are `p`-groups.
 * `IsProP.subgroup`, `IsProP.mono`: the pro-`p` property passes to subgroups.
+* `IsProP.comap_of_continuousMulEquiv`: the preimage of a pro-`p` subgroup under a homomorphism
+  that is a topological group isomorphism onto a subgroup is pro-`p`.
 * `IsProP.topologicalAbelianization`: the topological abelianization of a subgroup of a pro-`p`
   group is pro-`p`.
 * `IsProP.topologicalClosure`, `Subgroup.isProP_topologicalClosure_iff`: the topological closure
@@ -95,6 +98,18 @@ theorem mono {K H : Subgroup G} (hH : IsProP p H) (hKH : K ≤ H) : IsProP p K :
   intro U
   exact (hH.isPGroup_map_mk' U).of_injective
     (Subgroup.inclusion (Subgroup.map_mono hKH)) (Subgroup.inclusion_injective _)
+
+/-- The preimage of a pro-`p` subgroup `P` of a profinite group under a homomorphism `f : H →* G`
+is pro-`p` when `f` is a topological group isomorphism `e : H ≃ₜ* U` onto a subgroup `U`: the
+isomorphism carries the preimage onto `P ⊓ U`, viewed in `U`. -/
+theorem comap_of_continuousMulEquiv {H : Type*} [Group H] [TopologicalSpace H] {P : Subgroup G}
+    (hP : IsProP p P) {U : Subgroup G} (e : H ≃ₜ* U) {f : H →* G}
+    (hf : ∀ h, (e h : G) = f h) : IsProP p (P.comap f) := by
+  obtain rfl : f = U.subtype.comp ((e : H ≃* U) : H →* U) := MonoidHom.ext fun h ↦ (hf h).symm
+  rw [← Subgroup.comap_comap, Subgroup.comap_subtype, isProP_congr (e.subgroupMap _),
+    Subgroup.map_comap_eq_self_of_surjective e.surjective, ← Subgroup.inf_subgroupOf_right,
+    Subgroup.isProP_subgroupOf_iff inf_le_right]
+  exact hP.mono inf_le_left
 
 /-- The topological abelianization of a subgroup of a pro-`p` group is pro-`p`. -/
 theorem topologicalAbelianization (hG : IsProP p G) (N : Subgroup G) :
