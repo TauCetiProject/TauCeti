@@ -61,9 +61,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`,
-  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`, and
-  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`: the twist acts by the Koszul scalar
-  (or unit sign on an additive group) on each homogeneous piece.
+  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`,
+  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`, and
+  `TauCeti.InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul`: the twist acts by the Koszul
+  scalar (or unit sign on an additive group or module action) on each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
@@ -73,27 +74,27 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `TauCeti.InternalGrading.negOnePow_quadraticExponent_cancel` and
   `TauCeti.InternalGrading.negOnePow_quadraticExponent_neg_add`: the quadratic signs differ under
   addition by the Koszul sign.
-* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
+* `LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
-* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: a degree-zero homogeneous
+* `LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: a degree-zero homogeneous
   equivalence preserves and reflects membership in each piece.
-* `TauCeti.LinearMap.IsHomogeneous.pieceEquiv`: restriction of a degree-zero homogeneous
+* `LinearMap.IsHomogeneous.pieceEquiv`: restriction of a degree-zero homogeneous
   equivalence to one piece.
-* `TauCeti.LinearMap.IsHomogeneous.map_decompose` and
-  `TauCeti.LinearMap.IsHomogeneous.restrict_decompose`: a homogeneous map commutes with homogeneous
+* `LinearMap.IsHomogeneous.map_decompose` and
+  `LinearMap.IsHomogeneous.restrict_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
 * `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
   every element lies in that piece.
-* `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
-  `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
+* `LinearMap.IsHomogeneous.isHomogeneous_ker` and
+  `LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
 * `TauCeti.exists_relative_boundary_of_forall_homogeneous`: for maps of graded modules with
   homogeneous differentials, relative cycles modulo homogeneous submodules are relative boundaries
   once the homogeneous ones are.
-* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_apply` and
-  `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: pointwise and operator forms of commuting a
+* `LinearMap.IsHomogeneous.koszulTwist_apply` and
+  `LinearMap.IsHomogeneous.koszulTwist_comp`: pointwise and operator forms of commuting a
   homogeneous linear map with Koszul twists up to the sign determined by its degree.
-* `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
+* `LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
 
 Later files use Mathlib's decomposition API to define maps of nonzero degree, shifts,
@@ -314,15 +315,15 @@ theorem mem_map_ulift_piece_iff (G : InternalGrading R M ι) (p : ι) (x : ULift
 
 /-- The equivalence used to transport a grading is homogeneous of degree zero. -/
 theorem isHomogeneous_map [AddMonoid ι] (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) :
-    TauCeti.LinearMap.IsHomogeneous e.toLinearMap G.piece (G.map e).piece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    LinearMap.IsHomogeneous e.toLinearMap G.piece (G.map e).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simpa using hx
 
 /-- The inverse of an equivalence used to transport a grading is homogeneous of degree zero. -/
 theorem isHomogeneous_map_symm [AddMonoid ι] (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) :
-    TauCeti.LinearMap.IsHomogeneous e.symm.toLinearMap (G.map e).piece G.piece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    LinearMap.IsHomogeneous e.symm.toLinearMap (G.map e).piece G.piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p y hy
   simpa using hy
 
@@ -369,7 +370,7 @@ theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [Ad
     (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
   DirectSum.mem_of_forall_ne_eq_bot hG x
 
-namespace LinearMap.IsHomogeneous
+section LinearMapIsHomogeneous
 
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
   [AddCommMonoid M] [Module R M] [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
@@ -377,13 +378,13 @@ variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
 /-- The inverse of a degree-zero homogeneous linear equivalence of additive decompositions is
 again homogeneous of degree zero. The homogeneous pieces need only be additive subobjects;
 no scalar closure is required. -/
-theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {σM σN : Type*} [SetLike σM M] [SetLike σN N]
     [AddSubmonoidClass σM M] [AddSubmonoidClass σN N]
     {ℳ : ι → σM} {𝓝 : ι → σN} [DirectSum.Decomposition ℳ]
     [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[S] N}
-    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) :
-    IsHomogeneous e.symm.toLinearMap 𝓝 ℳ 0 := by
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0) :
+    LinearMap.IsHomogeneous e.symm.toLinearMap 𝓝 ℳ 0 := by
   -- The restrictions `ep p : ℳ p → 𝓝 p` assemble to a map of direct sums lying over
   -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
   let ep : (p : ι) → ℳ p →+ 𝓝 p := fun p ↦
@@ -414,12 +415,13 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
 
 /-- A degree-zero equivalence of additive decompositions preserves and reflects each piece.
 The homogeneous pieces need only be additive subobjects. -/
-theorem linearEquiv_mem_piece_iff {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+    {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {σM σN : Type*} [SetLike σM M] [SetLike σN N]
     [AddSubmonoidClass σM M] [AddSubmonoidClass σN N]
     {ℳ : ι → σM} {𝓝 : ι → σN} [DirectSum.Decomposition ℳ]
     [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[S] N}
-    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : M) :
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : M) :
     e x ∈ 𝓝 p ↔ x ∈ ℳ p := by
   constructor
   · intro hx
@@ -429,10 +431,11 @@ theorem linearEquiv_mem_piece_iff {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     simpa only [add_zero, LinearEquiv.coe_coe] using he.map_mem hx
 
 /-- Restrict a degree-zero homogeneous equivalence to one piece of submodule decompositions. -/
-noncomputable def pieceEquiv {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+noncomputable def _root_.LinearMap.IsHomogeneous.pieceEquiv
+    {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
-    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) :
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) :
     ℳ p ≃ₗ[R] 𝓝 p :=
   e.ofSubmodules _ _ (by
     ext y
@@ -441,21 +444,23 @@ noncomputable def pieceEquiv {ι : Type*} [DecidableEq ι] [AddMonoid ι]
 
 /-- The piece equivalence applies the original equivalence to the underlying element. -/
 @[simp]
-theorem coe_pieceEquiv_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.coe_pieceEquiv_apply
+    {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
-    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : ℳ p) :
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : ℳ p) :
     (he.pieceEquiv p x : N) = e x.val := by
-  rw [pieceEquiv, LinearEquiv.ofSubmodules_apply]
+  rw [LinearMap.IsHomogeneous.pieceEquiv, LinearEquiv.ofSubmodules_apply]
 
 /-- The inverse piece equivalence applies the original inverse to the underlying element. -/
 @[simp]
-theorem coe_pieceEquiv_symm_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply
+    {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
-    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : 𝓝 p) :
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : 𝓝 p) :
     ((he.pieceEquiv p).symm x : M) = e.symm x.val := by
-  rw [pieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
+  rw [LinearMap.IsHomogeneous.pieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 section Decompose
 
@@ -469,17 +474,31 @@ variable {ι : Type*} [DecidableEq ι] [AddRightCancelMonoid ι]
 degree-`(p + r)` component of its image.  The gradings are any families of submodules with
 `DirectSum.Decomposition` instances, so this applies to the pieces of internal gradings and to
 Mathlib's graded algebras alike. -/
-theorem map_decompose {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+theorem _root_.LinearMap.IsHomogeneous.map_decompose
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
     {𝓝 : ι → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
     (p : ι) (x : M) :
     f (DirectSum.decompose ℳ x p : M) = (DirectSum.decompose 𝓝 (f x) (p + r) : N) :=
   DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
 
+/-- An injective homogeneous linear map of degree `r` reflects degrees: an element whose image has
+degree `p + r` has degree `p`. -/
+theorem _root_.LinearMap.IsHomogeneous.mem_of_injective
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝓝 : ι → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
+    (hinj : Function.Injective f) {p : ι} {x : M} (hx : f x ∈ 𝓝 (p + r)) : x ∈ ℳ p := by
+  -- `x` and its degree-`p` component have the same image, the degree-`(p + r)` component of
+  -- `f x`, which is `f x` itself.
+  have hxp : (DirectSum.decompose ℳ x p : M) = x :=
+    hinj (by rw [hf.map_decompose, DirectSum.decompose_of_mem_same 𝓝 hx])
+  exact hxp ▸ SetLike.coe_mem _
+
 variable {G : InternalGrading R M ι} {H : InternalGrading R N ι}
 
 /-- The kernel of a homogeneous linear map is a homogeneous submodule. -/
-theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+theorem _root_.LinearMap.IsHomogeneous.isHomogeneous_ker
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous G.piece (_root_.LinearMap.ker f) := fun p x hx ↦ by
   rw [_root_.LinearMap.mem_ker] at hx ⊢
   rw [hf.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
@@ -489,7 +508,7 @@ end Decompose
 /-- Restricting a degree-zero homogeneous map to a graded piece commutes with decomposition into
 homogeneous components, for degrees in any additive monoid. -/
 @[simp]
-theorem restrict_decompose {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.restrict_decompose {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
     {𝒩 : ι → Submodule R N} [DirectSum.Decomposition 𝒩]
     (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (k : ι) (x : M) :
@@ -502,7 +521,7 @@ theorem restrict_decompose {ι : Type*} [DecidableEq ι] [AddMonoid ι]
 
 /-- The image of a homogeneous linear map is a homogeneous submodule, for degrees in any
 additive monoid. -/
-theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+theorem _root_.LinearMap.IsHomogeneous.isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
@@ -518,7 +537,7 @@ theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
       exact Submodule.zero_mem _
   | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
-end LinearMap.IsHomogeneous
+end LinearMapIsHomogeneous
 
 section RelativeBoundary
 
@@ -795,13 +814,14 @@ theorem InternalGrading.map_koszulTwist_of_map_eq_zero {N : Type w} [AddCommMono
   rw [G.map_eq_map_decompose f hf, G.map_eq_map_decompose f hf x, ← h0,
     G.koszulTwist_apply_of_mem_zero (DirectSum.decompose G.piece x 0).property q]
 
-namespace LinearMap.IsHomogeneous
+section LinearMapIsHomogeneous
 
 variable {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- A homogeneous linear map of degree `r` commutes pointwise with the Koszul twist of
 parameter `q` up to the scalar `(-1)^(q * r)`. -/
-theorem koszulTwist_apply {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+theorem _root_.LinearMap.IsHomogeneous.koszulTwist_apply
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
     {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) (x : M) :
     H.koszulTwist q (f x) = (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q x) := by
   induction x using DirectSum.Decomposition.inductionOn G.piece with
@@ -819,7 +839,8 @@ theorem koszulTwist_apply {G : InternalGrading R M ℤ} {H : InternalGrading R N
 the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
 map past a homogeneous input. The sign acts through its central scalar endomorphism, so this
 formula also applies over a noncommutative ring. -/
-theorem koszulTwist_comp {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+theorem _root_.LinearMap.IsHomogeneous.koszulTwist_comp
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
     {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
     H.koszulTwist q ∘ₗ f =
       Module.End.smulLeft (((q * r).negOnePow : ℤ) : R) (Set.intCast_mem_center R _) ∘ₗ
@@ -829,7 +850,8 @@ theorem koszulTwist_comp {G : InternalGrading R M ℤ} {H : InternalGrading R N 
 
 /-- Over a commutative ring, the Koszul compatibility of a homogeneous map is a scalar multiple
 of the composition with the source twist. -/
-theorem koszulTwist_comp_eq_smul {R : Type u} [CommRing R] {M : Type v} {N : Type w}
+theorem _root_.LinearMap.IsHomogeneous.koszulTwist_comp_eq_smul
+    {R : Type u} [CommRing R] {M : Type v} {N : Type w}
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
     {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {f : M →ₗ[R] N} {r : ℤ}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
@@ -837,7 +859,7 @@ theorem koszulTwist_comp_eq_smul {R : Type u} [CommRing R] {M : Type v} {N : Typ
   simpa only [Module.End.smulLeft_eq, LinearMap.smul_comp, LinearMap.id_comp] using
     hf.koszulTwist_comp q
 
-end LinearMap.IsHomogeneous
+end LinearMapIsHomogeneous
 
 /-- Evaluation of `twistedTuple` on an index inside the twisted interval `[a, a + p)`. -/
 @[simp]
@@ -876,7 +898,7 @@ theorem InternalGrading.twistedTuple_apply_eq_twistedTuple_apply (G : InternalGr
       twistedTuple_apply_of_not_mem_Ico G q x a' p' i (mt h.2 hi)]
 
 /-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
-theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
+theorem _root_.LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
     {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {f : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) (q : ℤ) {n : ℕ}
     (x : Fin n → M) (a p : ℕ) :
@@ -920,6 +942,15 @@ theorem InternalGrading.koszulTwist_one_eq_negOnePow_smul (G : InternalGrading R
     {e : ℤ} (hx : x ∈ G.piece e) :
     koszulTwist G 1 x = e.negOnePow • x := by
   rw [InternalGrading.koszulTwist_eq_negOnePow_smul G hx 1, one_mul]
+
+/-- Acting by the Koszul twist of parameter one of a homogeneous element of degree `e` multiplies
+by the unit sign `(-1)^e`, even when the graded acting module `A` is only an `AddCommMonoid`. -/
+theorem InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul {A : Type*} [AddCommMonoid A]
+    [Module R A] [SMul A M] [IsScalarTower R A M] (G : InternalGrading R A ℤ) {a : A} {e : ℤ}
+    (ha : a ∈ G.piece e) (y : M) :
+    koszulTwist G 1 a • y = e.negOnePow • (a • y) := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem G ha, smul_assoc,
+    Int.cast_smul_eq_zsmul R, ← Units.smul_def]
 
 end KoszulTwistNegOnePow
 

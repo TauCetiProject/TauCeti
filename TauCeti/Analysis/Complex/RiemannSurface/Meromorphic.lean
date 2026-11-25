@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Meromorphic functions on a Riemann surface and their orders
@@ -140,7 +141,7 @@ theorem meromorphicOrderAt_congr (h : f =ᶠ[𝓝[≠] x] g) :
 when its order at `x` is positive. -/
 theorem tendsto_zero_iff_meromorphicOrderAt_pos (hf : MeromorphicAt f x) :
     Tendsto f (𝓝[≠] x) (𝓝 0) ↔ 0 < meromorphicOrderAt f x := by
-  rw [← tendsto_comp_chartAt_symm_nhdsNE_iff (H := ℂ)]
+  rw [← (chartAt ℂ x).tendsto_comp_symm_nhdsNE_iff (mem_chart_source ℂ x)]
   exact _root_.tendsto_zero_iff_meromorphicOrderAt_pos hf
 
 section IsManifold

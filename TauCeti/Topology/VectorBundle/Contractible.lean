@@ -61,7 +61,8 @@ needed.
 * `TauCeti.exists_continuous_frame`: a vector bundle has a frame along every continuous map from
   a contractible paracompact R₁ space.
 * `TauCeti.continuous_trans_symm_of_continuous_frame`: two continuous frames of a finite-rank
-  bundle along the same map differ by a continuous family of automorphisms of the model fibre.
+  bundle along the same map differ by a continuous family of automorphisms of their common
+  source, for instance the model fibre.
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -180,10 +181,10 @@ theorem continuousOn_continuousLinearMapAt_comp [CompleteSpace 𝕜] [FiniteDime
   refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [e.coe_linearMapAt_of_mem hy]
 
-/-- **Two frames differ by a continuous family of automorphisms.** If `φ` and `ψ` are continuous
-frames of a finite-rank vector bundle `E` along the same map `f`, the transition
-`y ↦ (ψ y)⁻¹ ∘ φ y` is a continuous map into the automorphisms of the model fibre `F`. -/
-theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+/-- Two continuous frames with the model fibre `F` as their source differ by a continuous family
+of automorphisms of `F`; `TauCeti.continuous_trans_symm_of_continuous_frame` allows any source. -/
+private theorem continuous_trans_symm_of_continuous_frame_aux [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F]
     [VectorBundle 𝕜 F E] {φ ψ : ∀ y, F ≃L[𝕜] E (f y)}
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
@@ -215,6 +216,32 @@ theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDi
     ContinuousLinearMap.inverse_equiv]
   ext v
   simp [e.symm_apply_apply_mk hy]
+
+/-- **Two frames differ by a continuous family of automorphisms.** If `φ` and `ψ` are continuous
+frames of a finite-rank vector bundle `E` along the same map `f`, with source a normed space `W`,
+for instance the model fibre `F`, the transition `y ↦ (ψ y)⁻¹ ∘ φ y` is a continuous map into the
+automorphisms of `W`. -/
+theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [VectorBundle 𝕜 F E] {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    {φ ψ : ∀ y, W ≃L[𝕜] E (f y)}
+    (hφ : Continuous fun q : B × W ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (hψ : Continuous fun q : B × W ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
+    Continuous fun y ↦ (((φ y).trans (ψ y).symm : W ≃L[𝕜] W) : W →L[𝕜] W) := by
+  rcases isEmpty_or_nonempty B with hB | ⟨⟨y₀⟩⟩
+  · exact continuous_of_discreteTopology
+  -- Identify `W` with `F` through the fibre at `f y₀`, and transport both frames to source `F`.
+  let ι : W ≃L[𝕜] F := (φ y₀).trans ((trivializationAt F E (f y₀)).continuousLinearEquivAt 𝕜
+    (f y₀) (FiberBundle.mem_baseSet_trivializationAt' (f y₀)))
+  have hι {χ : ∀ y, W ≃L[𝕜] E (f y)}
+      (hχ : Continuous fun q : B × W ↦ TotalSpace.mk' F (f q.1) (χ q.1 q.2)) :
+      Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) ((ι.symm.trans (χ q.1)) q.2) :=
+    hχ.comp (continuous_fst.prodMk (ι.symm.continuous.comp continuous_snd))
+  refine (((continuous_const (y := (ι.symm : F →L[𝕜] W))).clm_comp
+    (continuous_trans_symm_of_continuous_frame_aux (f := f) (φ := fun y ↦ ι.symm.trans (φ y))
+      (ψ := fun y ↦ ι.symm.trans (ψ y)) (hι hφ) (hι hψ))).clm_comp
+      (continuous_const (y := (ι : W →L[𝕜] F)))).congr fun y ↦ ?_
+  ext v
+  simp
 
 /-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
 paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms

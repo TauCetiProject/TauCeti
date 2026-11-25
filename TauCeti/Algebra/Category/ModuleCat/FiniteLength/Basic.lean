@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
 import TauCeti.RingTheory.Artinian.FiniteLength
 

@@ -20,7 +20,13 @@ truncation `K.stupidTrunc (ComplexShape.embeddingUpIntLE n)` keeps the terms of 
 `≤ n` and replaces the others by zero. The differentials of `K` go up in degree, so this truncation
 is a quotient complex of `K`: Mathlib's projection
 `K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)` is an isomorphism in every degree `≤ n` and
-zero in every degree `> n`.
+zero in every degree `> n`. For any embedding, a term of a brutal truncation vanishes where the
+term of the complex does (`HomologicalComplex.isZero_stupidTrunc_X_of_isZero`), and more generally
+any property of objects invariant under isomorphism and true for zero objects passes from a term
+of the complex to that of the truncation (`HomologicalComplex.prop_stupidTrunc_X`). For a complex
+of complexes, such as a double complex, the truncation keeps the inner complexes exact
+(`HomologicalComplex.acyclic_stupidTrunc_X`) and vanishes in each bidegree where the complex of
+complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`).
 
 When `K` vanishes in degrees `> n + 1`, its top term `K.X (n + 1)` placed in degree `n + 1` is a
 subcomplex, and the two maps form the short complex `CochainComplex.topShortComplex K n`
@@ -35,6 +41,17 @@ give distinguished triangles in the homotopy category, so this is the step of an
 length of a bounded complex: it expresses a bounded complex as an extension of a shorter one by a
 complex concentrated in a single degree.
 
+For any `n`, the inclusion of the brutal truncation `σ^{≥ n + 1} K` in the degrees `> n` and the
+projection onto `σ^{≤ n} K` form the short complex `CochainComplex.stupidTruncShortComplex K n`
+
+```text
+σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K,
+```
+
+which is split in each degree (`CochainComplex.stupidTruncShortComplexSplitting`). For a complex of
+complexes, a double complex, it splits off the columns `> n`, which is how the total complex of a
+double complex is filtered by its columns.
+
 When `C` has equalizers, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
 the subcomplex of the terms of `K` in degrees `> n`. These subcomplexes exhaust `K`: the
 sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ σ^{≥ -2} K ⟶ ⋯` has colimit `K`, because in each degree its
@@ -47,6 +64,9 @@ sequential colimit of bounded complexes.
   `> n`.
 * `CochainComplex.topShortComplex K n` and `CochainComplex.topShortComplexSplitting K n`: the
   degreewise split short complex splitting off the top term.
+* `CochainComplex.stupidTruncShortComplex K n` and
+  `CochainComplex.stupidTruncShortComplexSplitting K n`: the degreewise split short complex
+  `σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K`.
 * `CochainComplex.stupidTruncGESequence K`: the sequence of brutal truncations `σ^{≥ -m} K`,
   realized as the kernels of the projections `K ⟶ σ^{≤ -m-1} K`.
 * `CochainComplex.isColimitStupidTruncGESequenceCocone K`: `K` is the colimit of this sequence.
@@ -55,6 +75,47 @@ sequential colimit of bounded complexes.
 public section
 
 open CategoryTheory Limits HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C] {ι ι' : Type*}
+  {c : ComplexShape ι} {c' : ComplexShape ι'} (K : HomologicalComplex C c') (e : c.Embedding c')
+  [e.IsRelIff]
+
+/-- A property of objects which is invariant under isomorphism and holds for zero objects holds
+for a term of a brutal truncation as soon as it holds for the corresponding term of the complex:
+that term of the truncation is either isomorphic to it or zero. -/
+lemma prop_stupidTrunc_X (P : C → Prop) (hP : ∀ {X Y : C}, (X ≅ Y) → P X → P Y)
+    (hP₀ : ∀ X : C, IsZero X → P X) {i' : ι'} (h : P (K.X i')) :
+    P ((K.stupidTrunc e).X i') := by
+  by_cases h' : ∃ i, e.f i = i'
+  · obtain ⟨i, hi⟩ := h'
+    exact hP (K.stupidTruncXIso e hi).symm h
+  · exact hP₀ _ (K.isZero_stupidTrunc_X e i' (by simpa using h'))
+
+/-- A term of a brutal truncation vanishes where the corresponding term of the complex does. -/
+lemma isZero_stupidTrunc_X_of_isZero {i' : ι'} (h : IsZero (K.X i')) :
+    IsZero ((K.stupidTrunc e).X i') :=
+  K.prop_stupidTrunc_X e IsZero (fun φ h ↦ h.of_iso φ.symm) (fun _ h ↦ h) h
+
+variable {ι₂ : Type*} {c₂ : ComplexShape ι₂} (L : HomologicalComplex (HomologicalComplex C c₂) c')
+
+/-- A term of a brutal truncation of a complex of complexes, such as a double complex, vanishes
+where the corresponding term of the complex of complexes does. -/
+lemma isZero_stupidTrunc_X_X {i' : ι'} {j : ι₂} (h : IsZero ((L.X i').X j)) :
+    IsZero (((L.stupidTrunc e).X i').X j) :=
+  L.prop_stupidTrunc_X e (fun X ↦ IsZero (X.X j))
+    (fun φ h ↦ h.of_iso ((eval C c₂ j).mapIso φ.symm))
+    (fun _ h ↦ (eval C c₂ j).map_isZero h) h
+
+/-- A brutal truncation of a complex of exact complexes, such as a double complex with exact
+columns, is a complex of exact complexes. -/
+lemma acyclic_stupidTrunc_X (hL : ∀ i', (L.X i').Acyclic) (i' : ι') :
+    ((L.stupidTrunc e).X i').Acyclic :=
+  L.prop_stupidTrunc_X e Acyclic (fun φ h n ↦ (h n).of_iso φ) (fun _ h ↦ acyclic_of_isZero _ h)
+    (hL i')
+
+end HomologicalComplex
 
 namespace CochainComplex
 
@@ -102,6 +163,27 @@ lemma isZero_stupidTrunc_embeddingUpIntLE_X {i : ℤ} (hi : n < i) :
 lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) :
     (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i = 0 :=
   (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi).eq_of_tgt _ _
+
+/-- The brutal truncation in degrees `≥ n` vanishes in degrees `< n`. -/
+lemma isZero_stupidTrunc_embeddingUpIntGE_X {i : ℤ} (hi : i < n) :
+    IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) :=
+  K.isZero_stupidTrunc_X _ i ((ComplexShape.notMem_range_embeddingUpIntGE_iff n i).2 hi)
+
+/-- The inclusion of the brutal truncation in degrees `≥ n + 1` followed by the projection onto
+the brutal truncation in degrees `≤ n` is zero. -/
+@[reassoc (attr := simp)]
+lemma ιStupidTruncGE_comp_πStupidTruncLE :
+    K.ιStupidTrunc (ComplexShape.embeddingUpIntGE (n + 1)) ≫
+      K.πStupidTrunc (ComplexShape.embeddingUpIntLE n) = 0 := by
+  ext i
+  by_cases hi : i ≤ n
+  · exact (K.isZero_stupidTrunc_embeddingUpIntGE_X (n + 1) (by omega)).eq_of_src _ _
+  · exact (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).eq_of_tgt _ _
+
+/-- The short complex `σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K` formed by the inclusion of the brutal
+truncation in degrees `> n` and the projection onto the brutal truncation in degrees `≤ n`. -/
+noncomputable abbrev stupidTruncShortComplex : ShortComplex (CochainComplex C ℤ) :=
+  ShortComplex.mk _ _ (K.ιStupidTruncGE_comp_πStupidTruncLE n)
 
 section Top
 
@@ -296,7 +378,22 @@ end HasZeroMorphisms
 
 section Preadditive
 
-variable [Preadditive C] [HasZeroObject C] (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE (n + 1)]
+variable [Preadditive C] [HasZeroObject C] (K : CochainComplex C ℤ) (n : ℤ)
+
+/-- The short complex `σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K` is split in each degree: in degrees `> n`
+its first map is an isomorphism and its third term vanishes, and in degrees `≤ n` its first term
+vanishes and its second map is an isomorphism. -/
+noncomputable def stupidTruncShortComplexSplitting (i : ℤ) :
+    ((K.stupidTruncShortComplex n).map (eval C _ i)).Splitting := by
+  by_cases hi : n < i
+  · refine .ofIsIsoOfIsZero _ ?_ (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi)
+    exact K.isIso_ιStupidTrunc_f (ComplexShape.embeddingUpIntGE (n + 1)) (i := (i - (n + 1)).toNat)
+      (by simp; omega)
+  · refine .ofIsZeroOfIsIso _ (K.isZero_stupidTrunc_embeddingUpIntGE_X (n + 1) (by omega)) ?_
+    exact K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n) (i := (n - i).toNat)
+      (by simp; omega)
+
+variable [K.IsStrictlyLE (n + 1)]
 
 /-- The short complex splitting off the top term is split in each degree: in degree `n + 1` its
 first map is an isomorphism and its third term vanishes, and in every other degree its first term
