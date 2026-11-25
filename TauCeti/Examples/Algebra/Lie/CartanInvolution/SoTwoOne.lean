@@ -41,22 +41,6 @@ theorem killingForm_soTwoOne_apply (X Y : so' (Fin 2) (Fin 1) ℝ) :
   rw [killingForm_so'_apply]
   norm_num
 
-/-- The coordinates `(x, y, z)` are determined by `TauCeti.soTwoOneMatrix x y z`. -/
-theorem soTwoOneMatrix_injective {x y z x' y' z' : ℝ}
-    (h : soTwoOneMatrix x y z = soTwoOneMatrix x' y' z') : x = x' ∧ y = y' ∧ z = z' := by
-  have h₁ := congrFun (congrFun h (.inl 0)) (.inr 0)
-  have h₂ := congrFun (congrFun h (.inl 0)) (.inl 1)
-  have h₃ := congrFun (congrFun h (.inl 1)) (.inr 0)
-  simp only [Fin.isValue, soTwoOneMatrix_def, fromBlocks_apply₁₂, of_apply, cons_val',
-    cons_val_fin_one, cons_val_zero, mul_eq_mul_left_iff, OfNat.ofNat_ne_zero, or_false,
-    fromBlocks_apply₁₁, cons_val_one] at h₁ h₂ h₃
-  refine ⟨h₁, ?_, ?_⟩ <;> linarith
-
-/-- Every element of `𝔰𝔬(2, 1)` is `TauCeti.soTwoOneMatrix x y z` for some `x`, `y`, `z`. -/
-theorem exists_eq_soTwoOneMatrix (X : so' (Fin 2) (Fin 1) ℝ) :
-    ∃ x y z, (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix x y z :=
-  ⟨_, _, _, by rw [← slTwoLieEquivSoTwoOne.apply_symm_apply X, coe_slTwoLieEquivSoTwoOne_apply]⟩
-
 /-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔬(2, 1)`. -/
 noncomputable abbrev soTwoOneCartanInvolution : so' (Fin 2) (Fin 1) ℝ ≃ₗ⁅ℝ⁆ so' (Fin 2) (Fin 1) ℝ :=
   (so' (Fin 2) (Fin 1) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so'
@@ -83,10 +67,10 @@ theorem mem_fixedSubalgebra_soTwoOne_iff {X : so' (Fin 2) (Fin 1) ℝ} :
     coe_soTwoOneCartanInvolution_apply hX, hX]
   constructor
   · intro h
-    obtain ⟨h₁, h₂, -⟩ := soTwoOneMatrix_injective h
+    obtain ⟨h₁, h₂, -⟩ := soTwoOneMatrix_inj.mp h
     exact ⟨y, by rw [show x = 0 by linarith, show z = -y by linarith]⟩
   · rintro ⟨y', h⟩
-    obtain ⟨rfl, rfl, rfl⟩ := soTwoOneMatrix_injective h
+    obtain ⟨rfl, rfl, rfl⟩ := soTwoOneMatrix_inj.mp h
     simp
 
 /-- The `-1`-eigenspace `𝔭` of `X ↦ -Xᵀ` on `𝔰𝔬(2, 1)` in coordinates: `y = z`. -/
@@ -98,11 +82,18 @@ theorem mem_cartanP_soTwoOne_iff {X : so' (Fin 2) (Fin 1) ℝ} :
     NegMemClass.coe_neg, hX, ← soTwoOneMatrix_neg]
   constructor
   · intro h
-    obtain ⟨-, h₂, -⟩ := soTwoOneMatrix_injective h
+    obtain ⟨-, h₂, -⟩ := soTwoOneMatrix_inj.mp h
     exact ⟨x, y, by rw [show z = y by linarith]⟩
   · rintro ⟨x', y', h⟩
-    obtain ⟨rfl, rfl, rfl⟩ := soTwoOneMatrix_injective h
+    obtain ⟨rfl, rfl, rfl⟩ := soTwoOneMatrix_inj.mp h
     rfl
+
+/-- The coordinates `x = 0`, `z = -y` give the block matrix `[[A, 0], [0, 0]]` with
+`A = [[0, 2y], [-2y, 0]]`. -/
+private theorem soTwoOneMatrix_zero_neg (y : ℝ) :
+    soTwoOneMatrix 0 y (-y) = fromBlocks !![0, 2 * y; -(2 * y), 0] 0 0 0 := by
+  rw [soTwoOneMatrix_def]
+  congr 1 <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp <;> ring
 
 /-- `𝔨 = 𝔰𝔬(2)`: the fixed subalgebra of `X ↦ -Xᵀ` on `𝔰𝔬(2, 1)` consists of the block matrices
 `[[A, 0], [0, 0]]` with `A` skew-symmetric of size two. -/
@@ -112,57 +103,61 @@ theorem mem_fixedSubalgebra_soTwoOne_iff_fromBlocks {X : so' (Fin 2) (Fin 1) ℝ
   rw [mem_fixedSubalgebra_soTwoOne_iff]
   constructor
   · rintro ⟨y, hy⟩
-    refine ⟨!![0, 2 * y; -(2 * y), 0], ?_, ?_⟩
-    · rw [mem_so]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp
-    · rw [hy, soTwoOneMatrix_def]
-      congr 1 <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp <;> ring
+    refine ⟨!![0, 2 * y; -(2 * y), 0], ?_, hy.trans (soTwoOneMatrix_zero_neg y)⟩
+    rw [mem_so]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
   · rintro ⟨A, hA, h⟩
-    have hA' := congrFun (congrFun ((mem_so _ _ A).mp hA) 0) 1
-    have hA₀ := congrFun (congrFun ((mem_so _ _ A).mp hA) 0) 0
-    have hA₁ := congrFun (congrFun ((mem_so _ _ A).mp hA) 1) 1
-    simp only [transpose_apply, Matrix.neg_apply] at hA' hA₀ hA₁
+    have hA' := (mem_so _ _ A).mp hA
     refine ⟨A 0 1 / 2, h.trans ?_⟩
-    rw [soTwoOneMatrix_def]
-    congr 1 <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp <;> linarith
+    rw [soTwoOneMatrix_zero_neg]
+    congr 1
+    ext i j
+    have hij := congrFun (congrFun hA' i) j
+    have hji := congrFun (congrFun hA' j) i
+    fin_cases i <;> fin_cases j <;> simp at hij hji ⊢ <;> linarith
 
 /-- The linear map `y ↦ TauCeti.soTwoOneMatrix 0 y (-y)` onto `𝔨`. -/
 private noncomputable def soTwoOneK : ℝ →ₗ[ℝ] so' (Fin 2) (Fin 1) ℝ where
   toFun y := ⟨soTwoOneMatrix 0 y (-y), soTwoOneMatrix_mem_so' _ _ _⟩
   map_add' y y' := Subtype.ext <| by
-    change soTwoOneMatrix 0 (y + y') (-(y + y')) =
-      soTwoOneMatrix 0 y (-y) + soTwoOneMatrix 0 y' (-y')
-    rw [← soTwoOneMatrix_add, add_zero, neg_add]
+    simp [← soTwoOneMatrix_add, add_comm]
   map_smul' r y := Subtype.ext <| by
-    change soTwoOneMatrix 0 (r • y) (-(r • y)) = r • soTwoOneMatrix 0 y (-y)
-    rw [← soTwoOneMatrix_smul, mul_zero, smul_eq_mul, mul_neg]
+    simp [← soTwoOneMatrix_smul]
+
+/-- The coercion of `soTwoOneK y` is `TauCeti.soTwoOneMatrix 0 y (-y)`. -/
+private theorem coe_soTwoOneK_apply (y : ℝ) :
+    (soTwoOneK y : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix 0 y (-y) :=
+  rfl
 
 /-- The linear map `(x, y) ↦ TauCeti.soTwoOneMatrix x y y` onto `𝔭`. -/
 private noncomputable def soTwoOneP : ℝ × ℝ →ₗ[ℝ] so' (Fin 2) (Fin 1) ℝ where
   toFun v := ⟨soTwoOneMatrix v.1 v.2 v.2, soTwoOneMatrix_mem_so' _ _ _⟩
   map_add' v w := Subtype.ext <| by
-    change soTwoOneMatrix (v + w).1 (v + w).2 (v + w).2 =
-      soTwoOneMatrix v.1 v.2 v.2 + soTwoOneMatrix w.1 w.2 w.2
-    rw [← soTwoOneMatrix_add, Prod.fst_add, Prod.snd_add]
+    simp [soTwoOneMatrix_add]
   map_smul' r v := Subtype.ext <| by
-    change soTwoOneMatrix (r • v).1 (r • v).2 (r • v).2 = r • soTwoOneMatrix v.1 v.2 v.2
-    rw [← soTwoOneMatrix_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, smul_eq_mul]
+    simp [soTwoOneMatrix_smul]
+
+/-- The coercion of `soTwoOneP v` is `TauCeti.soTwoOneMatrix v.1 v.2 v.2`. -/
+private theorem coe_soTwoOneP_apply (v : ℝ × ℝ) :
+    (soTwoOneP v : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix v.1 v.2 v.2 :=
+  rfl
 
 /-- `𝔨 = 𝔰𝔬(2)` is one-dimensional. -/
 theorem finrank_fixedSubalgebra_soTwoOne :
     finrank ℝ soTwoOneCartanInvolution.toLieHom.fixedSubalgebra = 1 := by
-  have hinj : Function.Injective soTwoOneK := fun y y' h ↦
-    (soTwoOneMatrix_injective (congrArg Subtype.val h)).2.1
+  have hinj : Function.Injective soTwoOneK := fun y y' h ↦ by
+    rw [← Subtype.coe_inj, coe_soTwoOneK_apply, coe_soTwoOneK_apply, soTwoOneMatrix_inj] at h
+    exact h.2.1
   have hrange : LinearMap.range soTwoOneK =
       soTwoOneCartanInvolution.toLieHom.fixedSubalgebra.toSubmodule := by
     ext X
     rw [LinearMap.mem_range, LieSubalgebra.mem_toSubmodule, mem_fixedSubalgebra_soTwoOne_iff]
     constructor
     · rintro ⟨y, rfl⟩
-      exact ⟨y, rfl⟩
+      exact ⟨y, coe_soTwoOneK_apply y⟩
     · rintro ⟨y, hy⟩
-      exact ⟨y, Subtype.ext hy.symm⟩
+      exact ⟨y, Subtype.ext ((coe_soTwoOneK_apply y).trans hy.symm)⟩
   have := LinearMap.finrank_range_of_inj hinj
   rw [hrange, finrank_self] at this
   exact this
@@ -170,16 +165,16 @@ theorem finrank_fixedSubalgebra_soTwoOne :
 /-- `𝔭` is two-dimensional. -/
 theorem finrank_cartanP_soTwoOne : finrank ℝ soTwoOneCartanInvolution.cartanP = 2 := by
   have hinj : Function.Injective soTwoOneP := fun v w h ↦ by
-    obtain ⟨h₁, h₂, -⟩ := soTwoOneMatrix_injective (congrArg Subtype.val h)
-    exact Prod.ext h₁ h₂
+    rw [← Subtype.coe_inj, coe_soTwoOneP_apply, coe_soTwoOneP_apply, soTwoOneMatrix_inj] at h
+    exact Prod.ext h.1 h.2.1
   have hrange : LinearMap.range soTwoOneP = soTwoOneCartanInvolution.cartanP := by
     ext X
     rw [LinearMap.mem_range, mem_cartanP_soTwoOne_iff]
     constructor
     · rintro ⟨v, rfl⟩
-      exact ⟨v.1, v.2, rfl⟩
+      exact ⟨v.1, v.2, coe_soTwoOneP_apply v⟩
     · rintro ⟨x, y, hxy⟩
-      exact ⟨(x, y), Subtype.ext hxy.symm⟩
+      exact ⟨(x, y), Subtype.ext ((coe_soTwoOneP_apply (x, y)).trans hxy.symm)⟩
   have := LinearMap.finrank_range_of_inj hinj
   rw [hrange, finrank_prod, finrank_self] at this
   exact this
