@@ -128,7 +128,8 @@ theorem adjoin_le_maximalUnramifiedOutside_zeroOneInfty {y : K} {n : ℕ} {c : k
       (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b))
     (hn : n ≠ 0) (hc : c ≠ 0) :
     (RatFunc k)⟮y⟯ ≤ maximalUnramifiedOutside K (Place.zeroOneInfty k) :=
-  (isUnramifiedOutside_adjoin_simple_of_pow_eq (IsFunctionField.ratFunc k) hy hn fun _ hP ↦ by
+  (isUnramifiedOutside_adjoin_simple_of_pow_eq (IsFunctionField.ratFunc k) hy
+    (Nat.cast_ne_zero.mpr hn) fun _ hP ↦ by
     rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
     exact dvd_zero _).le_maximalUnramifiedOutside
 

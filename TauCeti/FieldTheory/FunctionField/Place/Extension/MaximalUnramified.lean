@@ -61,9 +61,9 @@ subextensions of `A / F` unramified outside `S`
   the family is closed under composita, smaller fields and embeddings, and contains `F`.
 * `IntermediateField.IsUnramifiedOutside.mono_set` and `TauCeti.maximalUnramifiedOutside_mono`:
   enlarging `S` keeps a subextension unramified outside it and enlarges the maximal one.
-* `IntermediateField.isUnramifiedOutside_adjoin_simple_of_pow_eq`: in characteristic zero, a
-  radical extension `y ^ n = u` is unramified outside the places where `n` does not divide the
-  order of `u`.
+* `IntermediateField.isUnramifiedOutside_adjoin_simple_of_pow_eq`: over a perfect field of
+  constants in which `n` is invertible, a radical extension `y ^ n = u` is unramified outside the
+  places where `n` does not divide the order of `u`.
 * `TauCeti.le_maximalUnramifiedOutside_iff`: a finite subextension lies in the maximal one
   exactly when it is unramified outside `S`.
 * `TauCeti.mem_maximalUnramifiedOutside_iff`: an element lies in the maximal subextension exactly
@@ -180,26 +180,33 @@ theorem IsUnramifiedOutside.mono_set {T : Set (TauCeti.Place k F)} (h : E.IsUnra
   ⟨h.finiteDimensional, h.isSeparable, h.branchPlaces_subset.trans hST⟩
 
 /-- **A radical extension is unramified outside the places where the exponent fails to divide the
-order of the radicand** (Stichtenoth, Proposition 3.7.3(b)), over a field `k` of characteristic
-zero: if `y ^ n = u` with `u ∈ F` and `n ≠ 0`, and `n` divides `ord_P u` at every place `P` of `F`
-outside `S`, then `F(y)` is unramified outside `S`. -/
-theorem isUnramifiedOutside_adjoin_simple_of_pow_eq [CharZero k] (hF : TauCeti.IsFunctionField k F)
-    {y : A} {n : ℕ} {u : F} (hy : y ^ n = algebraMap F A u) (hn : n ≠ 0)
-    (hdvd : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) : F⟮y⟯.IsUnramifiedOutside S := by
+order of the radicand** (Stichtenoth, Proposition 3.7.3(b)), over a perfect field of constants
+`k`: if `y ^ n = u` with `u ∈ F` and `n` invertible in `k`, and `n` divides `ord_P u` at every
+place `P` of `F` outside `S`, then `F(y)` is unramified outside `S`. -/
+theorem isUnramifiedOutside_adjoin_simple_of_pow_eq [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) {y : A} {n : ℕ} {u : F} (hy : y ^ n = algebraMap F A u)
+    (hn : (n : k) ≠ 0) (hdvd : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) : F⟮y⟯.IsUnramifiedOutside S := by
   have : FiniteDimensional F F⟮y⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral y)
-  have : CharZero F := charZero_of_injective_algebraMap (algebraMap k F).injective
+  -- `y` is a root of `X ^ n - u`, which is separable because `n` is invertible.
+  have : Algebra.IsSeparable F F⟮y⟯ := by
+    refine (isSeparable_adjoin_simple_iff_isSeparable F A).mpr ?_
+    rcases eq_or_ne u 0 with rfl | hu
+    · rw [eq_zero_of_pow_eq_zero (hy.trans (map_zero _)), ← map_zero (algebraMap F A)]
+      exact isSeparable_algebraMap 0
+    have hnF : (n : F) ≠ 0 := by rwa [← map_natCast (algebraMap k F), map_ne_zero]
+    exact (Polynomial.separable_X_pow_sub_C u hnF hu).of_dvd (minpoly.dvd F y (by simp [hy]))
   have hy' : AdjoinSimple.gen F y ^ n = algebraMap F F⟮y⟯ u :=
     Subtype.ext (by simpa only [SubmonoidClass.coe_pow, AdjoinSimple.coe_gen,
       coe_algebraMap_apply] using hy)
+  have hE : TauCeti.IsFunctionField k F⟮y⟯ := hF.finite_extension
   refine .of_isUnramified fun P hP ↦ (TauCeti.Place.isUnramified_iff P).mpr
-    ⟨TauCeti.Place.restrict_surjective_of_finiteDimensional hF hF.finite_extension P,
-      fun P' hP' ↦ ⟨?_, ?_⟩⟩
+    ⟨TauCeti.Place.restrict_surjective_of_finiteDimensional hF hE P, fun P' hP' ↦ ⟨?_, ?_⟩⟩
   · exact TauCeti.Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F
-      (adjoin_adjoinSimple_gen_eq_top y) hy' (Nat.cast_ne_zero.mpr hn) (hP' ▸ hdvd P hP)
-  · -- In characteristic zero the residue fields have characteristic zero, hence are perfect.
-    have : CharZero (P'.restrict k F).ResidueField :=
-      charZero_of_injective_algebraMap (algebraMap k _).injective
-    infer_instance
+      (adjoin_adjoinSimple_gen_eq_top y) hy' hn (hP' ▸ hdvd P hP)
+  · -- Over a perfect `k` the residue field of `P'` is separable over `k`, hence over the residue
+    -- field of `P`.
+    have := P'.isSeparable_residueField_of_perfectField hE
+    exact Algebra.isSeparable_tower_top_of_isSeparable k _ _
 
 end Algebraic
 
