@@ -53,6 +53,8 @@ private theorem ker_stage (n : ℕ)
     rw [Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem.mpr hr, zero_smul]
   let hb := (K.liftQ h hkill).extendScalarsOfSurjective
     (S := R ⧸ I ^ (n + 2)) Ideal.Quotient.mk_surjective
+  have hb_mk (p : P) : hb (Submodule.Quotient.mk p) = h p := by
+    rw [LinearMap.extendScalarsOfSurjective_apply, Submodule.liftQ_apply]
   have hmem (y : B) : y ∈ J • (⊤ : Submodule (R ⧸ I ^ (n + 2)) B) ↔ f y = 0 := by
     dsimp only [J]
     rw [Submodule.mem_map_quotient_mk_smul_top_iff, ← hfk, LinearMap.mem_ker]
@@ -66,28 +68,29 @@ private theorem ker_stage (n : ℕ)
     constructor
     · apply LinearMap.ker_eq_bot.mp
       apply le_antisymm _ bot_le
-      rintro ⟨x⟩ hx
-      obtain ⟨p, rfl⟩ := Submodule.mkQ_surjective K x
+      intro x hx
+      obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective (J • (⊤ : Submodule _ (P ⧸ K))) x
+      obtain ⟨p, rfl⟩ := Submodule.Quotient.mk_surjective K x
       apply (Submodule.Quotient.mk_eq_zero _).mpr
       apply (Submodule.Quotient.mk_mem_map_quotient_mk_smul_top_iff
         (Ideal.pow_le_pow_right (by omega)) p).mpr
       rw [← hgk, LinearMap.mem_ker]
-      have hx' : hb (Submodule.Quotient.mk p) ∈ J • ⊤ :=
-        (Submodule.Quotient.mk_eq_zero _).mp hx
-      have := (hmem _).mp hx'
-      exact (LinearMap.congr_fun hfg p).symm.trans this
-    · rintro ⟨y⟩
+      have hx' : h p ∈ J • (⊤ : Submodule (R ⧸ I ^ (n + 2)) B) := by
+        simpa only [LinearMap.mem_ker, Submodule.mapQ_apply, hb_mk,
+          Submodule.Quotient.mk_eq_zero] using hx
+      exact (LinearMap.congr_fun hfg p).symm.trans ((hmem _).mp hx')
+    · intro y
+      obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective (J • (⊤ : Submodule _ B)) y
       obtain ⟨p, hp⟩ := hg (f y)
       refine ⟨Submodule.Quotient.mk (Submodule.Quotient.mk p), ?_⟩
+      rw [Submodule.mapQ_apply, hb_mk]
       apply (Submodule.Quotient.eq _).mpr
       apply (hmem _).mpr
       simp only [map_sub]
       exact sub_eq_zero.mpr ((LinearMap.congr_fun hfg p).trans hp)
-  apply le_antisymm _ hkill
-  intro p hp
-  apply (Submodule.Quotient.mk_eq_zero K).mp
+  refine le_antisymm (fun p hp ↦ (Submodule.Quotient.mk_eq_zero K).mp ?_) hkill
   apply hbij.injective
-  exact (LinearMap.mem_ker.mp hp).trans (map_zero hb).symm
+  simpa only [hb_mk, map_zero] using LinearMap.mem_ker.mp hp
 
 variable {I} {F : ModuleTower.{v} R} (hF : F.IsAdicSystem I)
   [Module.Finite R (F.obj (op 0))]
