@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Sobolev.Local.Reflection
 
 /-!
 # Order-zero reflection for rough Cauchy–Riemann equations with a totally real boundary condition
@@ -221,6 +222,52 @@ theorem MemLpLoc.of_twistedReflection {U : Set ℂ} {L : F →L[ℝ] F}
     MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f :=
   (hf.mono_set inter_subset_left).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict L f))
+
+/-- The twisted reflection of a map almost everywhere strongly measurable up to the real axis is
+almost everywhere strongly measurable on the conjugation-invariant set `U`. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.twistedReflection {U : Set ℂ}
+    (hU : MapsTo (starRingEnd ℂ) U U) (L : F →L[ℝ] F)
+    (hf : AEStronglyMeasurable f (volume.restrict (U ∩ {z | 0 ≤ z.im}))) :
+    AEStronglyMeasurable (TauCeti.twistedReflection L f) (volume.restrict U) := by
+  have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
+  -- The cutoff of `f` to the open upper half-plane is measurable on `U`.
+  have hg : AEStronglyMeasurable ({z : ℂ | 0 < z.im}.indicator f) (volume.restrict U) := by
+    refine (aestronglyMeasurable_indicator_iff hH).2 ?_
+    rw [Measure.restrict_restrict hH]
+    exact hf.mono_measure (Measure.restrict_mono (show {z : ℂ | 0 < z.im} ∩ U ⊆
+      U ∩ {z | 0 ≤ z.im} from fun z hz => ⟨hz.2, (show 0 < z.im from hz.1).le⟩) le_rfl)
+  have hconj : MeasurePreserving (conjLIE : ℂ → ℂ) (volume.restrict ((conjLIE : ℂ → ℂ) ⁻¹' U))
+      (volume.restrict U) :=
+    conjLIE.measurePreserving.restrict_preimage_emb conjLIE.toHomeomorph.measurableEmbedding U
+  have hgc := ((L.continuous.comp_aestronglyMeasurable hg).comp_measurePreserving
+    hconj).mono_measure (Measure.restrict_mono (fun z hz => by simpa using hU hz) le_rfl)
+  -- The defining formula: the cutoff plus `L` of the cutoff at the conjugate point.
+  rw [funext (twistedReflection_def L f)]
+  exact hg.add (by simpa only [Function.comp_def, conjLIE_apply] using hgc)
+
+/-- **The `Lᵖ` bound for twisted reflections.** On a conjugation-invariant set `U`, the twisted
+reflection by a norm-preserving map `L` at most doubles the `Lᵖ` norm up to the real axis, for
+`1 ≤ p`. Its norm agrees off the null axis with that of the even reflection,
+which `TauCeti.eLpNorm_planarReflection_le` bounds. -/
+theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
+    {L : F →L[ℝ] F} (hL : ∀ v, ‖L v‖ = ‖v‖) (hp : 1 ≤ p) (f : ℂ → F) :
+    eLpNorm (TauCeti.twistedReflection L f) p (volume.restrict U) ≤
+      2 * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  -- The order-one reflection weight is `1` and its node is `-1`, so the bound is `1 + 1`.
+  have hb : higherReflectionBound 1 p = 2 := by
+    norm_num [higherReflectionBound_eq, higherReflectionCoeff_one, higherReflectionNode_eq]
+  by_cases hf : AEStronglyMeasurable f (volume.restrict (U ∩ {z | 0 ≤ z.im}))
+  swap
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  have h := eLpNorm_planarReflection_le hp
+    (imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hU hz)
+    (higherReflectionCoeff 1) f
+  rw [planarReflectionBound_higherReflectionCoeff, hb] at h
+  refine (eLpNorm_mono_ae (hf.twistedReflection hU L) ?_).trans h
+  filter_upwards [ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz
+  rcases lt_or_gt_of_ne hz with hz | hz
+  · simp [hz, hL, imDilation_higherReflectionNode_fin_one, higherReflectionCoeff_one]
+  · simp [hz, hz.le]
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W} {U : Set ℂ}
