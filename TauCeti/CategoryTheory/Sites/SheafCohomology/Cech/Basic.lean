@@ -960,7 +960,7 @@ open TauCeti.CategoryTheory
 /-- Transport of a family equality preserves the native tuple projection, including the
 restriction along the equality of its product objects. -/
 @[reassoc]
-theorem cechComplex_eqToIso_hom_app_f_π (V W : ι → C) (q : V = W)
+theorem cechComplexFunctor_eqToIso_hom_app_f_π (V W : ι → C) (q : V = W)
     (n : ℕ) (a : Fin (n + 1) → ι) :
     ((eqToIso (congrArg (fun V ↦ cechComplexFunctor (A := A) V) q)).hom.app P).f n ≫
         (cechXIso W P n).hom ≫ Pi.π _ a =
@@ -972,7 +972,7 @@ theorem cechComplex_eqToIso_hom_app_f_π (V W : ι → C) (q : V = W)
 /-- Changing the family by equality preserves its augmentation from the supplied terminal
 object; no choice of a different terminal object is involved. -/
 @[reassoc]
-theorem cechAugmentation_comp_cechComplex_eqToIso_hom_app [HasZeroObject A]
+theorem cechAugmentation_comp_cechComplexFunctor_eqToIso_hom_app [HasZeroObject A]
     (V W : ι → C) (q : V = W) {T : C} (hT : IsTerminal T) :
     cechAugmentation V hT P ≫
         (eqToIso (congrArg (cechComplexFunctor (A := A)) q)).hom.app P =

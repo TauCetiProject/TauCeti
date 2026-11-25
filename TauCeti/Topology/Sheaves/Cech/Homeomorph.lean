@@ -114,7 +114,7 @@ private lemma cechComplexIso_hom_app_f_commSq (n : ℕ) (a : Fin (n + 1) → Y) 
     dsimp only [G, V] at hc
     simp only [cechComplexIso, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
       NatIso.ofComponents_hom_app, HomologicalComplex.comp_f, Category.assoc]
-    rw [hc, cechComplex_eqToIso_hom_app_f_π_assoc P (U.opens ∘ h.symm.toEquiv)
+    rw [hc, cechComplexFunctor_eqToIso_hom_app_f_π_assoc P (U.opens ∘ h.symm.toEquiv)
       (fun y ↦ G.obj (V y)) (inverseOpens_mapHomeomorph h U).symm n a,
       reassoc_of% hi]
     simp only [cechTupleComparison, piComparison, op_comp, Functor.map_comp]
@@ -202,7 +202,7 @@ theorem cechAugmentation_comp_cechComplexIso_hom_app [HasZeroObject A] :
         q.hom.app P ≫ c.hom := hr.symm =≫ _
     _ = cechAugmentation B isTerminalTop P ≫ c.hom :=
       (Category.assoc _ _ _).symm.trans
-        (P.cechAugmentation_comp_cechComplex_eqToIso_hom_app _ _
+        (P.cechAugmentation_comp_cechComplexFunctor_eqToIso_hom_app _ _
           (inverseOpens_mapHomeomorph h U).symm isTerminalTop =≫ _)
     _ = ((CochainComplex.single₀ A).map α ≫ cechAugmentation B hGT P) ≫ c.hom := ht.symm =≫ _
     _ = (CochainComplex.single₀ A).map α ≫
@@ -811,7 +811,7 @@ private lemma cechComplexIso_refl_hom_app_comp (U : PointOpenCover X)
       ((cechXIso (U.mapHomeomorph (Homeomorph.refl X)).opens R n).hom ≫ Pi.π _ a)
       ((cechXIso U.opens R n).hom ≫ Pi.π _ a)
       (R.map (eqToHom (congrArg (fun V : X → Opens X ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op) :=
-    ⟨(R.cechComplex_eqToIso_hom_app_f_π
+    ⟨(R.cechComplexFunctor_eqToIso_hom_app_f_π
       (U.mapHomeomorph (Homeomorph.refl X)).opens U.opens q n a).trans
         (Category.assoc _ _ _).symm⟩
   have sg : CommSq g ((cechXIso U.opens R n).hom ≫ Pi.π _ a)

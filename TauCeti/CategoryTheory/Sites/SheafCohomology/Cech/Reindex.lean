@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
 /-!
 # Reindexing Čech complexes across universes
