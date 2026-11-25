@@ -52,6 +52,11 @@ def edgeBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
     Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) :=
   hi.dualBasis hx.basis
 
+/-- The edge basis is the lattice dual basis of the active normals. -/
+theorem edgeBasis_eq_dualBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
+    hx.edgeBasis hi = hi.dualBasis hx.basis := by
+  rw [edgeBasis]
+
 /-- The edge coordinates of a covector are its values on the active normals. -/
 @[simp]
 theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)

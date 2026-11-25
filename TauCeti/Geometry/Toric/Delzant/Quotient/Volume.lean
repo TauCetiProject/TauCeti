@@ -135,19 +135,12 @@ private theorem map_volume_add_weightMomentMap [Finite ι]
         (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
       ENNReal.ofReal (2 * π) ^ Fintype.card (activeSet (facetPairing i u) c v) •
         (hi.dualMeasure.restrict {y | ∀ k, 0 ≤ (hv.edgeBasis hi).repr y k}).map (v + ·) := by
-  -- The edge basis is the dual of a lattice basis, so its Haar measure is the lattice-normalized
-  -- one; `IsSmoothVertex.edgeBasis` is not exposed, so this goes through the coordinates.
-  have hedge : hv.edgeBasis hi = hi.dualBasis hv.basis :=
-    Module.Basis.eq_ofRepr_eq_repr fun y k ↦ by
-      rw [IsSmoothVertex.edgeBasis_repr, IsIntegralLattice.dualBasis_repr, hv.basis_apply]
-  have hhaar : (hv.edgeBasis hi).addHaar = hi.dualMeasure := by
-    rw [hedge, hi.addHaar_dualBasis]
   have hcomp : (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
       (v + ·) ∘ weightMomentMap (-⇑(hv.edgeBasis hi)) := by
     funext w
     rw [Function.comp_apply, Pi.neg_def]
   rw [hcomp, ← Measure.map_map (measurable_const_add v) (continuous_weightMomentMap _).measurable,
-    Module.Basis.map_volume_weightMomentMap_neg, hhaar,
+    Module.Basis.map_volume_weightMomentMap_neg, hv.addHaar_edgeBasis,
     Measure.map_smul _ (measurable_const_add v).aemeasurable]
 
 include hv hvP in
