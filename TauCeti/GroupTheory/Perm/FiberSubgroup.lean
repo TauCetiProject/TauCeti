@@ -42,7 +42,9 @@ The order of `fiberSubgroup f` is the product of the factorials of the fiber siz
 (`TauCeti.natCard_fiberSubgroup`).  Summing these orders over all colourings `α → ι`, each
 weighted by a function of its fiber sizes, therefore gives `(card α)!` times the sum of the weight
 over the fiber-size functions of total `card α` (`TauCeti.sum_natCard_fiberSubgroup_smul`), the
-orbit-stabilizer count that averages power sums over the symmetric group.
+orbit-stabilizer count that averages power sums over the symmetric group.  Since every function
+`ι → ℕ` of total `k` is the fiber-size function of a colouring of `Fin k`, there are at most
+`card ι ^ k` of them (`Finset.card_piAntidiag_univ_le`).
 
 Mathlib already studies these permutations, but through the domain action of `Equiv.Perm α` on
 `α → ι`: `DomMulAct.stabilizerMulEquiv` is the same isomorphism stated on
@@ -203,9 +205,9 @@ synonyms reverse multiplication twice, so `σ ↦ DomMulAct.mk σ` is an isomorp
 def fiberSubgroupMulEquivStabilizer (f : α → ι) :
     fiberSubgroup f ≃* (MulAction.stabilizer (Equiv.Perm α)ᵈᵐᵃ f)ᵐᵒᵖ where
   toFun σ := MulOpposite.op ⟨DomMulAct.mk (σ : Equiv.Perm α),
-    DomMulAct.mem_stabilizer_iff.mpr (funext (mem_fiberSubgroup.mp σ.2))⟩
+    DomMulAct.mem_stabilizer_iff.mpr (funext (mem_fiberSubgroup.mp σ.property))⟩
   invFun g := ⟨DomMulAct.mk.symm (g.unop : (Equiv.Perm α)ᵈᵐᵃ),
-    mem_fiberSubgroup.mpr (congrFun (DomMulAct.mem_stabilizer_iff.mp g.unop.2))⟩
+    mem_fiberSubgroup.mpr (congrFun (DomMulAct.mem_stabilizer_iff.mp g.unop.property))⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -271,7 +273,7 @@ theorem fiberSubgroupMulEquivPiPerm_trans_piCongrRight_apply (f : α → ι)
     (e : ∀ i, {a // f a = i} ≃ β i) (σ : fiberSubgroup f) (i : ι) (a : {a // f a = i}) :
     (fiberSubgroupMulEquivPiPerm f).trans
         (MulEquiv.piCongrRight fun i => (e i).permCongrHom) σ i (e i a) =
-      e i ⟨(σ : Equiv.Perm α) a, (mem_fiberSubgroup.mp σ.2 a).trans a.2⟩ := by
+      e i ⟨(σ : Equiv.Perm α) a, (mem_fiberSubgroup.mp σ.property a).trans a.property⟩ := by
   rw [MulEquiv.trans_apply, MulEquiv.piCongrRight_apply, Equiv.permCongrHom_coe,
     Equiv.permCongr_apply, Equiv.symm_apply_apply]
   exact congrArg (e i) (Subtype.ext (fiberSubgroupMulEquivPiPerm_apply_coe f σ i a))
@@ -318,8 +320,8 @@ noncomputable def quotientFiberSubgroupEquiv (f : α → ι) :
       simpa only [Equiv.Perm.mul_apply, Equiv.Perm.coe_inv, Quotient.lift_mk, Function.comp_apply,
         Equiv.symm_apply_apply] using this,
     fun c => by
-      have hcard : ∀ i, Fintype.card {a // c.1 a = i} = Fintype.card {a // f a = i} := fun i => by
-        rw [Fintype.card_subtype, Fintype.card_subtype, c.2 i]
+      have hcard : ∀ i, Fintype.card {a // c.val a = i} = Fintype.card {a // f a = i} := fun i => by
+        rw [Fintype.card_subtype, Fintype.card_subtype, c.property i]
       -- Matching the fibers of `c` with those of `f` produces `e` with `f ∘ e = c`.
       let e : Equiv.Perm α := Equiv.ofFiberEquiv fun i => Fintype.equivOfCardEq (hcard i)
       refine ⟨Quotient.mk _ e⁻¹, Subtype.ext (funext fun a => ?_)⟩
@@ -368,7 +370,7 @@ theorem card_fixedPoints_quotient_fiberSubgroup [Fintype ι] (f : α → ι)
   classical
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
   refine Nat.card_congr (((quotientFiberSubgroupEquiv f).subtypeEquiv
-    (q := fun c : {c : α → ι // ∀ i, #{a | c a = i} = #{a | f a = i}} => c.1 ∘ π = c.1)
+    (q := fun c : {c : α → ι // ∀ i, #{a | c a = i} = #{a | f a = i}} => c.val ∘ π = c.val)
     fun q =>
       smul_eq_self_iff_quotientFiberSubgroupEquiv f π q).trans ?_)
   exact (Equiv.subtypeSubtypeEquivSubtypeInter _ (fun c : α → ι => c ∘ π = c)).trans
@@ -405,6 +407,17 @@ theorem exists_forall_card_filter_eq {d : ι → ℕ} (hd : ∑ i, d i = Fintype
   rw [← Fintype.card_subtype, Fintype.card_congr (e.subtypeEquiv fun a => Iff.rfl :
       {a // (e a).1 = i} ≃ {x : Σ i, Fin (d i) // x.1 = i}),
     Fintype.card_congr (Equiv.sigmaSubtype i), Fintype.card_fin]
+
+/-- There are at most `card ι ^ k` multi-indices `α : ι → ℕ` of total degree `k`: each is the
+fiber-size function of a colouring of `Fin k` by `ι` (`exists_forall_card_filter_eq`). -/
+theorem _root_.Finset.card_piAntidiag_univ_le (k : ℕ) :
+    #(piAntidiag (univ : Finset ι) k) ≤ Fintype.card ι ^ k := by
+  have h := card_le_card_of_surjOn (s := (univ : Finset (Fin k → ι)))
+    (fun g i ↦ #{j | g j = i}) fun α hα ↦ by
+      obtain ⟨g, hg⟩ := exists_forall_card_filter_eq (α := Fin k)
+        ((mem_piAntidiag.1 hα).1.trans (Fintype.card_fin k).symm)
+      exact ⟨g, mem_coe.2 (mem_univ g), funext hg⟩
+  simpa using h
 
 /-- **Summing the orders of the fiber subgroups over all colourings**, each colouring weighted by
 a function of its fiber sizes: the colourings with a given fiber-size function `d` form one orbit

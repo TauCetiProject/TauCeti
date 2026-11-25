@@ -41,9 +41,9 @@ namespace ReducedTensorWords
 below its input length. -/
 theorem component_gradedCoderiv_of_eq_zero (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (c : ℕ)
-    (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.1 → F ∘ₗ of R M n = 0)
-    (k n : {n : ℕ // 0 < n}) (hn : k.1 + 1 + c ≤ n.1)
-    (z : TensorPower R n.1 M) :
+    (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.val → F ∘ₗ of R M n = 0)
+    (k n : {n : ℕ // 0 < n}) (hn : k.val + 1 + c ≤ n.val)
+    (z : TensorPower R n.val M) :
     component R M k (gradedCoderiv G F q (of R M n z)) = 0 := by
   induction z using PiTensorProduct.induction_on with
   | smul_tprod a x =>
@@ -57,7 +57,7 @@ theorem component_gradedCoderiv_of_eq_zero (G : InternalGrading R M ℤ)
       rw [map_sum]
       apply Finset.sum_eq_zero
       intro d _
-      by_cases hfit : 0 < d ∧ p + d ≤ n.1
+      by_cases hfit : 0 < d ∧ p + d ≤ n.val
       · by_cases hdc : c + 1 < d
         · have hzero : F (subword R x p d) = 0 := by
             rw [subword_eq_of_tprod R x hfit.1 hfit.2]
@@ -80,7 +80,7 @@ namespace TensorWords
 the corresponding uniform length bound. -/
 theorem hasLengthBound_extendReduced_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (c : ℕ)
-    (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.1 →
+    (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.val →
       F ∘ₗ ReducedTensorWords.of R M n = 0) :
     CompletedTensorWords.HasLengthBound c
       (extendReduced (ReducedTensorWords.gradedCoderiv G F q)) := by

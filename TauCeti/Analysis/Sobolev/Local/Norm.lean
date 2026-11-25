@@ -26,10 +26,14 @@ supplies its unfolding, its value through a given weak derivative on an open set
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
 zero norm, monotonicity in the set and in the derivative order, invariance under
-almost-everywhere change, the triangle inequality and the operator-norm bound under a continuous
-linear map of the codomain. An upper bound of the form `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite
-`c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be checked through each weak derivative
-of `f` separately.
+almost-everywhere change, the triangle inequality (also over finite sums) and the operator-norm
+bound under a continuous linear map of the codomain. An upper bound of the form
+`a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
+checked through each weak derivative of `f` separately. A chain bound
+`TauCeti.WeakDerivChainLe p S T C m f g` between the iterated weak derivatives of `f` and `g`,
+with a finite nonzero constant `C`, gives the norm bound `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`
+when `f` has the iterated weak derivatives, for instance when `MemWkpLoc q S m f`
+(`TauCeti.WeakDerivChainLe.eLpNormWkp_le`).
 
 ## References
 
@@ -227,12 +231,18 @@ theorem eLpNormWkp_add_le (hp : 1 ≤ p) :
     · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
         iInf₂_le_of_le (D + D') (hD.add hD') ih
 
+/-- The triangle inequality for the `W^{k,p}` norm over a finite sum. -/
+theorem eLpNormWkp_sum_le [CompleteSpace F] {ι : Type*} {s : Finset ι} {u : ι → ℂ → F}
+    (hp : 1 ≤ p) : eLpNormWkp p U k (∑ i ∈ s, u i) ≤ ∑ i ∈ s, eLpNormWkp p U k (u i) :=
+  Finset.le_sum_of_subadditive (fun u : ℂ → F ↦ eLpNormWkp p U k u) eLpNormWkp_zero_fun.le
+    (fun _ _ ↦ eLpNormWkp_add_le hp) s u
+
 /-- A continuous linear map of the codomain scales the `W^{k,p}` norm by at most its operator
 norm. -/
 theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f := by
   induction k generalizing F G with
-  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
+  | zero => exact A.eLpNorm_comp_le
   | succ k ih =>
     by_cases hA : A = 0
     · subst hA
@@ -244,7 +254,7 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
-    · exact MeasureTheory.eLpNorm_clm_comp_le A
+    · exact A.eLpNorm_comp_le
     · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
       refine le_iInf fun D => ?_
       rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
@@ -254,5 +264,25 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       have hle : ‖ContinuousLinearMap.compL ℝ ℂ F G A‖ ≤ ‖A‖ :=
         ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
       exact eNorm_le_iff_norm_le.2 hle
+
+
+/-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
+weak derivatives of `f` on the interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on
+the interior of `T` in `Lᵖ(T)`, in the sense of `TauCeti.WeakDerivChainLe`, then
+`‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`. The
+derivatives of `f` must exist, which `MemWkpLoc q S m f` provides for any exponent `q`; those of
+`g` need not, the right side being `∞` otherwise. -/
+theorem WeakDerivChainLe.eLpNormWkp_le {S T : Set ℂ} {C : ℝ≥0∞} (hC : C ≠ ∞) (hC0 : C ≠ 0)
+    {m : ℕ} (h : WeakDerivChainLe p S T C m f g) {q : ℝ≥0∞} (hf : MemWkpLoc q S m f) :
+    eLpNormWkp p S m f ≤ C * eLpNormWkp p T m g := by
+  induction m generalizing F with
+  | zero => simpa using h.eLpNorm_le
+  | succ m ih =>
+    obtain ⟨-, Df, hDf, hDfm⟩ := memWkpLoc_succ_iff.1 hf
+    simpa using le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn (a := 0) hC
+      (fun h0 => absurd h0 hC0) fun Dg hDg _ => by
+        rw [zero_add, mul_add]
+        exact (eLpNormWkp_succ_le hDf).trans
+          (add_le_add h.eLpNorm_le (ih (h.weakFDeriv hDf hDg) hDfm))
 
 end TauCeti

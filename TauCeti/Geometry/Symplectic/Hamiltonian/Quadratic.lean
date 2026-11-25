@@ -338,6 +338,26 @@ theorem quadraticPoissonBracket_zero_right (Q : QuadraticForm ℝ V) :
   ext v
   simp
 
+/-- **Forms in the span of a Poisson-commuting family Poisson-commute**, by bilinearity of the
+quadratic Poisson bracket. -/
+theorem quadraticPoissonBracket_eq_zero_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0) {R R' : QuadraticForm ℝ V}
+    (hR : R ∈ Submodule.span ℝ (Set.range Q)) (hR' : R' ∈ Submodule.span ℝ (Set.range Q)) :
+    ω.quadraticPoissonBracket R R' = 0 := by
+  induction hR using Submodule.span_induction with
+  | mem R hR =>
+    obtain ⟨i, rfl⟩ := hR
+    induction hR' using Submodule.span_induction with
+    | mem R' hR' =>
+      obtain ⟨j, rfl⟩ := hR'
+      exact hQ i j
+    | zero => exact ω.quadraticPoissonBracket_zero_right _
+    | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_right, h, h', add_zero]
+    | smul c _ _ h => rw [quadraticPoissonBracket_smul_right, h, smul_zero]
+  | zero => exact ω.quadraticPoissonBracket_zero_left _
+  | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_left, h, h', add_zero]
+  | smul c _ _ h => rw [quadraticPoissonBracket_smul_left, h, smul_zero]
+
 /-! ### Direct sums -/
 
 section Prod

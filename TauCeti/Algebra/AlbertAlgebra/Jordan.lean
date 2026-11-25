@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Jordan.Basic
 public import TauCeti.Algebra.AlbertAlgebra.Determinant
-
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The Jordan identity of the split Albert algebra
@@ -24,11 +21,15 @@ API (`IsJordan`, `commute_lmul_lmul_sq` and the linearized Jordan identities) ap
 Jordan algebra the commutator `⁅L_A, L_B⁆` of two multiplication operators is a derivation, so the
 Jordan identity is what produces derivations of `J` beyond those induced from the octonions.
 
-No coordinate computation of the identity itself is needed. Everything comes from three facts:
+No coordinate computation of the identity itself is needed. The instance is
+`TauCeti.Jordan.IsCubicMinimalPolynomial.isCommJordan` of
+`TauCeti/Algebra/Jordan/CubicMinimalPolynomial.lean`, applied to
+`TauCeti.AlbertAlgebra.isCubicMinimalPolynomial`, and so comes from four facts:
 
 * the **cubic equation** `A³ = T(A) A² - S(A) A + det A · 1` of
   `TauCeti/Algebra/AlbertAlgebra/Determinant.lean` (`TauCeti.AlbertAlgebra.mul_mul_self`), with
   `T` the trace, `S` the spur and `A³ = A ∘ A²`;
+* the **spur formula** `2 S(A) = T(A)² - T(A ∘ A)` (`TauCeti.AlbertAlgebra.two_mul_spur`);
 * the **associativity of the trace form**, `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`
   (`TauCeti.AlbertAlgebra.trace_mul_assoc`);
 * the **gradient of the determinant**: its derivative at `A` in the direction `B` is
@@ -68,24 +69,8 @@ namespace AlbertAlgebra
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 /-- **The split Albert algebra is a Jordan algebra**: `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)`. -/
-instance : IsCommJordan (AlbertAlgebra R) where
-  lmul_comm_rmul_rmul A B := by
-    -- The linearized cubic equation at `(A, A ∘ B)`, and `A` times the one at `(A, B)`, express
-    -- the two sides through `A ∘ (A ∘ (A ∘ B))`, which cancels. What is left is a combination of
-    -- `A²`, `A` and `1`. Its `A²`-coefficient vanishes identically, and its `A`- and
-    -- `1`-coefficients vanish by the cubic equation and the associativity of the trace form.
-    have hL := mul_mul_self_add_two_smul_mul_mul A (A * B)
-    have hM := congrArg (A * ·) (mul_mul_self_add_two_smul_mul_mul A B)
-    simp only [mul_add, mul_sub, mul_smul_comm, mul_one] at hM
-    have hC := mul_mul_self A
-    have hT := congrArg (fun C => trace (C * B)) hC
-    simp only [add_mul, sub_mul, smul_mul_assoc, one_mul, map_add, map_sub, map_smul,
-      smul_eq_mul] at hT
-    have hA₁ := trace_mul_assoc A A B
-    have hA₂ := trace_mul_assoc (A * A) A B
-    rw [mul_comm (A * A) A] at hA₂
-    linear_combination (norm := module)
-      hL - hM - trace B • hC - hA₁ • A + (hT - hA₂ + trace A * hA₁) • (1 : AlbertAlgebra R)
+instance : IsCommJordan (AlbertAlgebra R) :=
+  isCubicMinimalPolynomial.isCommJordan
 
 end AlbertAlgebra
 
