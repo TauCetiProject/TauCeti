@@ -127,12 +127,6 @@ end ChangeOfVariables
 
 /-! ### Affine changes of variables: rigid motions and dilations -/
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- The derivative of the affine map `x ↦ A x + b` is `A` everywhere. -/
-private theorem fderiv_affine (A : E ≃L[ℝ] E) (b x : E) :
-    fderiv ℝ (fun y => A y + b) x = (A : E →L[ℝ] E) := by
-  rw [fderiv_add_const, ContinuousLinearEquiv.fderiv]
-
 /-- **Invariance of `W^{1,p}_Γ` under affine changes of variables**, among them the rigid motions
 and the dilations: for a continuous linear equivalence `A`, `b ∈ E`, `Φ x = A x + b` and
 `U = Φ⁻¹(V)`, the function `u ∘ Φ` lies in `W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in
@@ -158,8 +152,9 @@ theorem W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff {L c : ℝ} (hp : p ≠
     (LinearEquiv.isUnit_det' A.symm.toLinearEquiv).ne_zero
   refine W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp hΦ hinj hmaps hL hc hdet hΦc hΦp hΨc hΨp
     (fun y hy => by rw [hUV]; simpa using hy)
-    (L' := ‖(A.symm : E →L[ℝ] E)‖) (fun y _ => (congrArg norm (fderiv_affine A.symm _ y)).le)
-    (abs_pos.2 hdet') (fun y _ => (fderiv_affine A.symm _ y).symm ▸ le_rfl) fun y => by simp
+    (L' := ‖(A.symm : E →L[ℝ] E)‖)
+    (fun y _ => by rw [fderiv_add_const, ContinuousLinearEquiv.fderiv]) (abs_pos.2 hdet')
+    (fun y _ => by rw [fderiv_add_const, ContinuousLinearEquiv.fderiv]) fun y => by simp
 
 /-! ### Measure-preserving changes of variables and rigid motions at every exponent -/
 
@@ -202,7 +197,8 @@ theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule (g : F ≃ᵃ�
     (hUV : (U : Set F) = g ⁻¹' V) {Γ : Set F'} {u : W1p volume V p}
     (hu : u ∈ w1pVanishingOnSubmodule volume V p Γ) :
     W1p.compAffineIsometryEquivL g hUV u ∈ w1pVanishingOnSubmodule volume U p (g ⁻¹' Γ) := by
-  -- `u ∘ g` is the measure-preserving composite of `u` with `g`.
+  -- `u ∘ g` is the measure-preserving composite of `u` with `g`; the body of
+  -- `W1p.compAffineIsometryEquivL` is not exposed outside its module, so compare values.
   have h : W1p.compAffineIsometryEquivL g hUV u = W1p.compMeasurePreservingL (M := 1)
       g.measurePreserving hUV g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
       (fun x _ => g.norm_fderiv_le x) u :=

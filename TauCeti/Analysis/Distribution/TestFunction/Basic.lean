@@ -56,7 +56,7 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
 * `OpenPartialHomeomorph.tsupport_subset_symm_image_tsupport`: a function on `M` vanishing off the
   source of `e` and wherever `φ ∘ e` vanishes is supported in `e⁻¹(supp φ)`.
 * `TestFunction.compOfIsProperMap`: the composite of a test function with a smooth proper map,
-  with its values, support bound and linearity.
+  with its values, support bound, behaviour under identity and composition, and linearity.
 * `TestFunction.compOfIsClosedEmbedding`: the pullback of a test function along a smooth closed
   embedding, the case of `TestFunction.compOfIsProperMap` with target `f ⁻¹' Ω`, with its support
   bound and linearity, and `TestFunction.lineTestFunction`: its
@@ -193,6 +193,22 @@ theorem tsupport_compOfIsProperMap_subset {D : Type*} [NormedAddCommGroup D] [No
     tsupport (ψ.compOfIsProperMap hf hfp hΩ) ⊆ f ⁻¹' tsupport ψ :=
   tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous
 
+/-- The composite with the identity is the test function itself. -/
+@[simp]
+theorem compOfIsProperMap_id (ψ : 𝓓^{n}(Ω, F)) (hΩ : (id : E → E) ⁻¹' Ω ⊆ Ω) :
+    ψ.compOfIsProperMap contDiff_id isProperMap_id hΩ = ψ :=
+  (rfl)
+
+/-- Composing with `f` and then with `g` is composing with `f ∘ g`. -/
+theorem compOfIsProperMap_compOfIsProperMap {D D' : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup D'] [NormedSpace ℝ D'] {Ω' : Opens D} {Ω'' : Opens D'}
+    (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') {g : D' → D} (hg : ContDiff ℝ n g) (hgp : IsProperMap g)
+    (hΩ' : g ⁻¹' Ω' ⊆ Ω'') :
+    (ψ.compOfIsProperMap hf hfp hΩ).compOfIsProperMap hg hgp hΩ' =
+      ψ.compOfIsProperMap (hf.comp hg) (hfp.comp hgp) ((Set.preimage_mono hΩ).trans hΩ') :=
+  (rfl)
+
 /-- The composite of the zero test function with a proper map is zero. -/
 @[simp]
 theorem compOfIsProperMap_zero {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
@@ -248,7 +264,7 @@ definitionally (`Opens.comap_id`). -/
 @[simp]
 theorem compOfIsClosedEmbedding_id (ψ : 𝓓^{n}(Ω, F)) :
     ψ.compOfIsClosedEmbedding contDiff_id IsClosedEmbedding.id = ψ :=
-  (rfl)
+  ψ.compOfIsProperMap_id _
 
 /-- Pulling back along `f` and then along `g` is pulling back along `f ∘ g`; the open sets agree
 definitionally (`Opens.comap_comp`). -/
@@ -258,7 +274,7 @@ theorem compOfIsClosedEmbedding_compOfIsClosedEmbedding {D D' : Type*} [NormedAd
     (hge : IsClosedEmbedding g) :
     (ψ.compOfIsClosedEmbedding hf hfe).compOfIsClosedEmbedding hg hge =
       ψ.compOfIsClosedEmbedding (hf.comp hg) (hfe.comp hge) :=
-  (rfl)
+  ψ.compOfIsProperMap_compOfIsProperMap hf hfe.isProperMap _ hg hge.isProperMap _
 
 /-- The pullback of the zero test function is zero. -/
 @[simp]
