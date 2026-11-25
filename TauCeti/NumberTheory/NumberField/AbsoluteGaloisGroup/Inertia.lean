@@ -13,10 +13,10 @@ import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 # Inertia groups of the absolute Galois group and finite subextensions
 
 Let `F` be a number field, `G_F` its absolute Galois group and `O` the integral closure of `𝓞 F` in
-`F^alg`. For an intermediate field `E` of `F^alg / F`, the inclusion `E → F^alg` restricts to a ring
-map `𝓞 E → O` (`TauCeti.GaloisRep.ringOfIntegersToIntegralClosure`). It is compatible with the
-`𝓞 F`-algebra structures, and for `E` normal over `F` it intertwines the action of the restriction
-of `σ ∈ G_F` to `E` on `𝓞 E` with the action of `σ` on `O`.
+`F^alg`. For an intermediate field `E` of `F^alg / F`, the inclusion `E → F^alg` restricts to an
+`𝓞 F`-algebra map `𝓞 E → O` (`TauCeti.GaloisRep.ringOfIntegersToIntegralClosure`). For `E` normal
+over `F` it intertwines the action of the restriction of `σ ∈ G_F` to `E` on `𝓞 E` with the action
+of `σ` on `O`.
 
 For a finite normal subextension `E`, the inertia group `I_Q ≤ G_F` at a prime `Q` of `O` therefore
 restricts into the inertia group of `Q ∩ 𝓞 E` in `Gal(E/F)`. When the place `v` of `F` below `Q` is
@@ -25,12 +25,11 @@ so `I_Q` fixes `E` pointwise.
 
 ## Main definitions
 
-* `TauCeti.GaloisRep.ringOfIntegersToIntegralClosure E`: the inclusion `𝓞 E → O`.
+* `TauCeti.GaloisRep.ringOfIntegersToIntegralClosure E`: the inclusion `𝓞 E → O`, as a map of
+  `𝓞 F`-algebras.
 
 ## Main results
 
-* `TauCeti.GaloisRep.ringOfIntegersToIntegralClosure_comp_algebraMap`: the inclusion is compatible
-  with the `𝓞 F`-algebra structures.
 * `TauCeti.GaloisRep.ringOfIntegersToIntegralClosure_smul`: the inclusion intertwines the actions of
   `G_F` on `𝓞 E` (through restriction to `E`) and on `O`.
 * `TauCeti.GaloisRep.inertiaGroup_le_fixingSubgroup`: `I_Q` fixes every finite normal
@@ -48,11 +47,11 @@ namespace TauCeti.GaloisRep
 variable {F : Type*} [Field F]
 
 /-- The inclusion of `𝓞 E` into the integral closure of `𝓞 F` in `F^alg`, for an intermediate field
-`E` of `F^alg / F`. -/
+`E` of `F^alg / F`, as a map of `𝓞 F`-algebras. -/
 def ringOfIntegersToIntegralClosure (E : IntermediateField F (AlgebraicClosure F)) :
-    𝓞 E →+* integralClosure (𝓞 F) (AlgebraicClosure F) :=
-  ((algebraMap E (AlgebraicClosure F)).comp (algebraMap (𝓞 E) E)).codRestrict
-    (integralClosure (𝓞 F) (AlgebraicClosure F)).toSubring fun y ↦
+    𝓞 E →ₐ[𝓞 F] integralClosure (𝓞 F) (AlgebraicClosure F) :=
+  ((E.val.restrictScalars (𝓞 F)).comp (IsScalarTower.toAlgHom (𝓞 F) (𝓞 E) E)).codRestrict
+    (integralClosure (𝓞 F) (AlgebraicClosure F)) fun y ↦
       ((y.isIntegral_coe.map (IsScalarTower.toAlgHom ℤ E (AlgebraicClosure F))).tower_top :
         IsIntegral (𝓞 F) _)
 
@@ -70,25 +69,6 @@ theorem ringOfIntegersToIntegralClosure_injective (E : IntermediateField F (Alge
   simp only [coe_ringOfIntegersToIntegralClosure] at h'
   exact RingOfIntegers.ext (Subtype.val_injective h')
 
-/-- The inclusion `𝓞 E → O` is compatible with the `𝓞 F`-algebra structures of `𝓞 E` and `O`. -/
-@[simp]
-theorem ringOfIntegersToIntegralClosure_algebraMap (E : IntermediateField F (AlgebraicClosure F))
-    (x : 𝓞 F) :
-    ringOfIntegersToIntegralClosure E (algebraMap (𝓞 F) (𝓞 E) x) =
-      algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)) x :=
-  Subtype.ext <| by
-    rw [coe_ringOfIntegersToIntegralClosure, Subalgebra.coe_algebraMap,
-      RingOfIntegers.coe_eq_algebraMap, ← IntermediateField.algebraMap_apply,
-      ← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 E) E, IsScalarTower.algebraMap_apply (𝓞 F) F E,
-      ← IsScalarTower.algebraMap_apply F E, ← IsScalarTower.algebraMap_apply (𝓞 F) F]
-
-/-- The inclusion `𝓞 E → O` is compatible with the `𝓞 F`-algebra structures of `𝓞 E` and `O`. -/
-theorem ringOfIntegersToIntegralClosure_comp_algebraMap
-    (E : IntermediateField F (AlgebraicClosure F)) :
-    (ringOfIntegersToIntegralClosure E).comp (algebraMap (𝓞 F) (𝓞 E)) =
-      algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)) :=
-  RingHom.ext (ringOfIntegersToIntegralClosure_algebraMap E)
-
 /-- For `E` normal over `F`, the inclusion `𝓞 E → O` intertwines the action on `𝓞 E` of the
 restriction of `σ ∈ G_F` to `E` (`AlgEquiv.restrictNormalHom`) with the action of `σ` on `O`. -/
 @[simp]
@@ -98,8 +78,10 @@ theorem ringOfIntegersToIntegralClosure_smul (E : IntermediateField F (Algebraic
       σ • ringOfIntegersToIntegralClosure E y :=
   Subtype.ext <| by
     rw [coe_smul_integralClosure, coe_ringOfIntegersToIntegralClosure,
-      coe_ringOfIntegersToIntegralClosure]
-    exact AlgEquiv.restrictNormal_commutes σ E y
+      coe_ringOfIntegersToIntegralClosure, RingOfIntegers.coe_eq_algebraMap, algebraMap.smul',
+      AlgEquiv.smul_def]
+    -- `G_F` is defined as `Gal(F^alg/F)`, so `σ` is an argument of `restrictNormalHom_apply`
+    exact AlgEquiv.restrictNormalHom_apply E σ _
 
 variable [NumberField F]
 
@@ -119,9 +101,8 @@ theorem inertiaGroup_le_fixingSubgroup (E : IntermediateField F (AlgebraicClosur
   set ι := ringOfIntegersToIntegralClosure E
   let P : Ideal (𝓞 E) := Q.comap ι
   have : P.IsPrime := Ideal.comap_isPrime ι Q
-  have : P.LiesOver v.asIdeal := ⟨by
-    rw [← hQv, Ideal.under, Ideal.under, Ideal.comap_comap,
-      ringOfIntegersToIntegralClosure_comp_algebraMap]⟩
+  have : Q.LiesOver v.asIdeal := ⟨hQv.symm⟩
+  have : P.LiesOver v.asIdeal := Ideal.comap_liesOver Q v.asIdeal ι
   -- the restriction `τ` of `σ` to `E` lies in the inertia group of `P` in `Gal(E/F)`
   set τ : E ≃ₐ[F] E := AlgEquiv.restrictNormalHom E σ with hτ
   have hτP : τ ∈ P.inertia (E ≃ₐ[F] E) := by
