@@ -704,6 +704,24 @@ private lemma integrableOn_weight_add_of_isBigO (hJ : ContinuousOn J (Ioi a))
   rw [Real.norm_of_nonneg (mul_nonneg hQv (norm_nonneg _)), Pi.add_apply, ← mul_add]
   grw [norm_add_le]
 
+/-- By the equation, a solution of the Volterra equation on `[x₀, ∞)` whose weight
+`Q * ‖J + ψ • h‖` is integrable on `(x₀, ∞)` is `O(P)` on `[x₀, ∞)`. -/
+private lemma isBigO_principal_Ici_of_volterra_solution (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
+    (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x) (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
+    {x₀ : ℝ} (hx₀ : a < x₀) {h : ℝ → E}
+    (h_eq : ∀ y ∈ Ici x₀, h y = ∫ v in Ioi y, K y v • (J v + ψ v • h v))
+    (hint : IntegrableOn (fun v ↦ Q v * ‖J v + ψ v • h v‖) (Ioi x₀)) :
+    h =O[𝓟 (Ici x₀)] P := by
+  refine (isBigO_principal_iff_of_nonneg fun v (hv : x₀ ≤ v) ↦ hP0 v (hx₀.trans_le hv)).2
+    ⟨∫ v in Ioi x₀, Q v * ‖J v + ψ v • h v‖, fun v (hv : x₀ ≤ v) ↦ ?_⟩
+  have hva : a < v := hx₀.trans_le hv
+  rw [h_eq v hv]
+  refine (norm_integral_kernel_smul_le hKle hva (hint.mono_set (Ioi_subset_Ioi hv))).trans
+    ((mul_le_mul_of_nonneg_left (setIntegral_mono_set hint ?_
+      (Ioi_subset_Ioi hv).eventuallySubset) (hP0 v hva)).trans_eq (mul_comm _ _))
+  exact (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun u (hu : x₀ < u) ↦
+    mul_nonneg (hQ0 u (hx₀.trans hu)) (norm_nonneg _))
+
 /-- **Volterra integral equations, uniqueness.** Under the hypotheses of
 `exists_volterra_solution`, two solutions of `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that
 are continuous on `(a, ∞)` and `O(P)` at infinity coincide on `(a, ∞)`. -/
@@ -717,38 +735,20 @@ theorem volterra_solution_unique (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧
     (h₁_eq : ∀ x ∈ Ioi a, h₁ x = ∫ v in Ioi x, K x v • (J v + ψ v • h₁ v))
     (h₂_eq : ∀ x ∈ Ioi a, h₂ x = ∫ v in Ioi x, K x v • (J v + ψ v • h₂ v))
     (h₁_isBigO : h₁ =O[atTop] P) (h₂_isBigO : h₂ =O[atTop] P) : EqOn h₁ h₂ (Ioi a) := by
-  have hdint : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖ψ v • (h₁ v - h₂ v)‖) (Ioi x) :=
-    fun x hx ↦ integrableOn_weight_smul_of_isBigO hψ hQ hP0 hQ0 hΨ (h₁_cont.sub h₂_cont)
-      (h₁_isBigO.sub h₂_isBigO) hx
-  -- the difference solves the homogeneous equation
-  have hd : ∀ x ∈ Ioi a, h₁ x - h₂ x = ∫ v in Ioi x, K x v • ψ v • (h₁ v - h₂ v) := by
-    intro x hx
-    have hint {h : ℝ → E} (hc : ContinuousOn h (Ioi a)) (hO : h =O[atTop] P) :
-        IntegrableOn (fun v ↦ K x v • (J v + ψ v • h v)) (Ioi x) :=
-      integrableOn_kernel_smul hK hKle (hJ.add (hψ.smul hc)) hx
-        (integrableOn_weight_add_of_isBigO hJ hψ hQ hP0 hQ0 hΦ hΨ hc hO hx)
-    rw [h₁_eq x hx, h₂_eq x hx,
-      ← integral_sub (hint h₁_cont h₁_isBigO) (hint h₂_cont h₂_isBigO)]
-    simp only [← smul_sub, add_sub_add_left_eq_sub]
-  intro x₀ (hx₀ : a < x₀)
-  -- by the equation, `‖h₁ v - h₂ v‖ ≤ C * P v` beyond `x₀`, so the difference is `O(P)` there
-  have hO : (h₁ - h₂) =O[𝓟 (Ici x₀)] P := by
-    refine (isBigO_principal_iff_of_nonneg fun v (hv : x₀ ≤ v) ↦ hP0 v (hx₀.trans_le hv)).2
-      ⟨∫ v in Ioi x₀, Q v * ‖ψ v • (h₁ v - h₂ v)‖, fun v (hv : x₀ ≤ v) ↦ ?_⟩
-    have hva : a < v := hx₀.trans_le hv
-    rw [Pi.sub_apply, hd v hva]
-    refine (norm_integral_kernel_smul_le hKle hva (hdint v hva)).trans
-      ((mul_le_mul_of_nonneg_left (setIntegral_mono_set (hdint x₀ hx₀) ?_
-        (Ioi_subset_Ioi hv).eventuallySubset) (hP0 v hva)).trans_eq (mul_comm _ _))
-    exact (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun u (hu : x₀ < u) ↦
-      mul_nonneg (hQ0 u (hx₀.trans hu)) (norm_nonneg _))
-  -- so the bound with zero forcing gives `‖h₁ x₀ - h₂ x₀‖ ≤ 0`
-  have hle := norm_volterra_solution_le_of_isBigO_principal_Ici (J := 0) hP0 hKle hx₀
-    (fun y (hy : x₀ ≤ y) ↦ (hd y (hx₀.trans_le hy)).trans
-      (by simp only [Pi.zero_apply, zero_add]))
-    (by simp) (hΨ x₀ hx₀) hO
-  simp only [Pi.zero_apply, norm_zero, mul_zero, integral_zero, zero_mul] at hle
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
+  have hw {h : ℝ → E} (hc : ContinuousOn h (Ioi a)) (hO : h =O[atTop] P) {x : ℝ} (hx : a < x) :
+      IntegrableOn (fun v ↦ Q v * ‖J v + ψ v • h v‖) (Ioi x) :=
+    integrableOn_weight_add_of_isBigO hJ hψ hQ hP0 hQ0 hΦ hΨ hc hO hx
+  have hint {h : ℝ → E} (hc : ContinuousOn h (Ioi a)) (hO : h =O[atTop] P) (x : ℝ) (hx : a < x) :
+      IntegrableOn (fun v ↦ K x v • (J v + ψ v • h v)) (Ioi x) :=
+    integrableOn_kernel_smul hK hKle (hJ.add (hψ.smul hc)) hx (hw hc hO hx)
+  have hray {h : ℝ → E} (hc : ContinuousOn h (Ioi a)) (hO : h =O[atTop] P)
+      (h_eq : ∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)) (x : ℝ) (hx : a < x) :
+      h =O[𝓟 (Ici x)] P :=
+    isBigO_principal_Ici_of_volterra_solution hP0 hQ0 hKle hx
+      (fun y (hy : x ≤ y) ↦ h_eq y (hx.trans_le hy)) (hw hc hO hx)
+  exact volterra_solution_unique_of_integrableOn hP0 hKle hΨ (hint h₁_cont h₁_isBigO)
+    (hint h₂_cont h₂_isBigO) h₁_eq h₂_eq (hray h₁_cont h₁_isBigO h₁_eq)
+    (hray h₂_cont h₂_isBigO h₂_eq)
 
 omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
 /-- A function satisfying the bound `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` of `exists_volterra_solution`
