@@ -30,6 +30,9 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
 * `ContinuousLinearMap.closure_range_proj_comp_le_iff`: for linear maps `L₁`, `L₂` to `ℝ^κ` and
   `ℝ^κ'` on any space, the components of `L₁` lie in the subgroup spanned by those of `L₂` exactly
   when `L₁ = N L₂` for an integer matrix `N`.
+* `ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq`: two
+  linear maps to `ℝ^κ`, the first onto, whose components span the same subgroup of covectors differ
+  by an element of `GL(κ, ℤ)`.
 -/
 
 public section
@@ -90,6 +93,23 @@ theorem transposeLattice_le_iff {L₁ : (ι → ℝ) →L[ℝ] (κ → ℝ)} {L�
     rintro ⟨N, hN⟩ v ⟨n, hn⟩
     exact ⟨n ᵥ* N, fun w ↦ by rw [hn, hN, sum_intCast_mul_map_intCast_mulVec]⟩
 
+omit [Fintype ι] in
+/-- If `L' = M L` and `L = N L'` for integer matrices `M`, `N` and `L` is onto, then `N M = 1`, so
+`M` is an element of `GL(κ, ℤ)`. -/
+private theorem exists_generalLinearGroup_mulVec_eq_of_mulVec_eq [DecidableEq κ] {F : Type*}
+    {L L' : F → κ → ℝ} (hL : Surjective L) {M N : Matrix κ κ ℤ}
+    (hM : ∀ w, L' w = M.map (↑) *ᵥ L w) (hN : ∀ w, L w = N.map (↑) *ᵥ L' w) :
+    ∃ M' : GL κ ℤ, ∀ w, L' w = (M' : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
+  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix κ κ ℤ).map ((↑) : ℤ → ℝ) := by
+    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
+    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
+    obtain ⟨w, rfl⟩ := hL u
+    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
+      Matrix.map_mul (f := Int.castRingHom ℝ)
+    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
+  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
+  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
+
 /-- **Two bases of one lattice differ by an element of `GL(ι, ℤ)`.** If the injective linear map
 `L` and the linear map `L'` have the same transpose lattice `Lᵀ ℤ^ι = L'ᵀ ℤ^ι`, then `L' = M L`
 for an invertible integer matrix `M`. -/
@@ -99,18 +119,8 @@ theorem exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq [DecidableEq 
     ∃ M : GL ι ℤ, ∀ w, L' w = (M : Matrix ι ι ℤ).map (↑) *ᵥ L w := by
   obtain ⟨M, hM⟩ := transposeLattice_le_iff.1 h.ge
   obtain ⟨N, hN⟩ := transposeLattice_le_iff.1 h.le
-  -- `L = N M L` and `L` is onto, so `N M = 1`.
-  have hsurj : Surjective L :=
-    LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL
-  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) := by
-    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
-    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
-    obtain ⟨w, rfl⟩ := hsurj u
-    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
-      Matrix.map_mul (f := Int.castRingHom ℝ)
-    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
-  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
-  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
+  exact exists_generalLinearGroup_mulVec_eq_of_mulVec_eq
+    (LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL) hM hN
 
 /-- **Changing the basis by `GL(κ, ℤ)` preserves the transpose lattice.** For an invertible integer
 matrix `M`, the maps `M L` and `L` have the same transpose lattice. -/
@@ -148,5 +158,19 @@ theorem closure_range_proj_comp_le_iff {F : Type*} [TopologicalSpace F] [AddComm
     rintro _ ⟨i, rfl⟩
     refine AddSubgroup.mem_closure_range_iff_of_fintype.2 ⟨N i, ext fun w ↦ ?_⟩
     simp [hN, mulVec, dotProduct]
+
+omit [Fintype ι] in
+/-- **Two bases of one subgroup of covectors differ by an element of `GL(κ, ℤ)`.** If the linear
+maps `L, L' : F → ℝ^κ`, the first onto, have components spanning the same subgroup of covectors,
+then `L' = M L` for an invertible integer matrix `M`. -/
+theorem exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq [DecidableEq κ]
+    {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module ℝ F] {L L' : F →L[ℝ] (κ → ℝ)}
+    (hL : Surjective L)
+    (h : AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L) =
+      AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L')) :
+    ∃ M : GL κ ℤ, ∀ w, L' w = (M : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
+  obtain ⟨M, hM⟩ := closure_range_proj_comp_le_iff.1 h.ge
+  obtain ⟨N, hN⟩ := closure_range_proj_comp_le_iff.1 h.le
+  exact exists_generalLinearGroup_mulVec_eq_of_mulVec_eq hL hM hN
 
 end ContinuousLinearMap

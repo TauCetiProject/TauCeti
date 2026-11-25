@@ -203,16 +203,22 @@ theorem apply_fiberAction_of_actionAngle (b : B) (c : ι → ℝ) {α : F →L[�
   simp only [zero_smul, add_zero, one_smul] at h0
   exact h0
 
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [DecidableEq ι] in
+include hΦσ in
+/-- A symplectic form with global action–angle coordinates is closed, as the pullback of the closed
+canonical form. -/
+private theorem isClosed_of_actionAngle : σ.IsClosed :=
+  hΦσ ▸ (isSymplectic_symplecticForm (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (M := ι → AddCircle p)).isClosed.mpullback Φ hΦ.contMDiff
+
 include h hΦ hΦσ hΦa in
 /-- **The fibres fill the tori of the actions.** For global action–angle coordinates with actions
 `a ∘ π`, every point `κ(θ, a(b))` of the torus `{I = a(b)}` is the image of a point of the fibre
 over `b`: translating the angles by the fibre action reaches it. -/
 theorem exists_apply_eq_actionAngleCover_of_actionAngle (b : B) (θ : ι → ℝ) :
     ∃ y, π y = b ∧ Φ y = actionAngleCover p (θ, a b) := by
-  -- `σ` is closed, as the pullback of the closed canonical form.
-  have hσc : σ.IsClosed := hΦσ ▸ (isSymplectic_symplecticForm
-    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (M := ι → AddCircle p)).isClosed.mpullback Φ
-    hΦ.contMDiff
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
   obtain ⟨x, θ₀, hθ₀⟩ := h.exists_apply_eq_actionAngleCover p hΦa b
   -- The covector `v ↦ (θ - θ₀) ⬝ᵥ da_b(v)` moves `x` to the point with angles `θ`.
   set α : F →L[ℝ] ℝ := (dotProductCLM (θ - θ₀)).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
@@ -382,9 +388,7 @@ theorem exists_mfderiv_eq_mulVec_of_actionAngle (hΦi : Injective Φ) (hΦ'i : I
     (b : B) :
     ∃ N : GL ι ℤ, ∀ v, mfderiv J 𝓘(ℝ, ι → ℝ) a' b v =
       (N : Matrix ι ι ℤ).map (↑) *ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v := by
-  have hσc : σ.IsClosed := hΦσ ▸ (isSymplectic_symplecticForm
-    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (M := ι → AddCircle p)).isClosed.mpullback Φ
-    hΦ.contMDiff
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
   -- The period lattice at `b` is spanned both by the `p • da_j(b)` and by the `p • da'_j(b)`;
   -- dividing by `p`, the `da_j(b)` and the `da'_j(b)` span the same subgroup of covectors.
   have hcl (D : F →L[ℝ] ι → ℝ) : AddSubgroup.closure (range fun j ↦
@@ -393,7 +397,7 @@ theorem exists_mfderiv_eq_mulVec_of_actionAngle (hΦi : Injective Φ) (hΦ'i : I
         (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp D)).map
         (DistribSMul.toAddMonoidHom (F →L[ℝ] ℝ) p) := by
     rw [AddMonoidHom.map_closure, ← range_comp]
-    rfl
+    simp [Function.comp_def]
   have hL : AddSubgroup.closure (range fun j ↦
       (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)) =
       AddSubgroup.closure (range fun j ↦
@@ -403,23 +407,8 @@ theorem exists_mfderiv_eq_mulVec_of_actionAngle (hΦi : Injective Φ) (hΦ'i : I
     exact (hcl _).symm.trans
       (((h.periodLattice_eq_closure_of_actionAngle p hσc hΦ hΦσ hΦa hΦi b).symm.trans
         (h.periodLattice_eq_closure_of_actionAngle p hσc hΦ' hΦ'σ hΦ'a hΦ'i b)).trans (hcl _))
-  obtain ⟨N, hN⟩ := ContinuousLinearMap.closure_range_proj_comp_le_iff.1 hL.ge
-  obtain ⟨N', hN'⟩ := ContinuousLinearMap.closure_range_proj_comp_le_iff.1 hL.le
-  -- `da = N' N da` and `da` is onto, so `N' N = 1`.
-  have hsurj := (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b).2
-  have hfix (u : ι → ℝ) : (N' * N).map ((↑) : ℤ → ℝ) *ᵥ u = u := by
-    obtain ⟨w, rfl⟩ := hsurj u
-    have hmap : (N' * N).map ((↑) : ℤ → ℝ) = N'.map (↑) * N.map (↑) :=
-      Matrix.map_mul (f := Int.castRingHom ℝ)
-    -- The tangent vector `da_b w` is a vector of `ℝ^ι`; rewrite in term mode.
-    rw [hmap]
-    exact (mulVec_mulVec _ _ _).symm.trans ((congrArg _ (hN w).symm).trans (hN' w).symm)
-  have hcast : (N' * N).map ((↑) : ℤ → ℝ) = (1 : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) := by
-    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
-    exact Matrix.toLin'.injective (LinearMap.ext fun u ↦ by
-      rw [Matrix.toLin'_apply, Matrix.toLin'_apply, one_mulVec, hfix])
-  have hNN : N' * N = 1 := Matrix.map_injective Int.cast_injective hcast
-  exact ⟨⟨N, N', mul_eq_one_comm.1 hNN, hNN⟩, hN⟩
+  exact ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq
+    (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b).2 hL
 
 include h hΦ hΦσ hΦa hΦ' hΦ'a in
 /-- The actions `a` identify the base with the open set `a(B)`, on which `a' ∘ a⁻¹` is the smooth
@@ -566,9 +555,7 @@ theorem exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle [Preco
       ∀ x θ, Φ x = actionAngleCover p (θ, a (π x)) →
         Φ' x = actionAngleCover p
           (θ ᵥ* ((P⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map (↑) + g (π x), a' (π x)) := by
-  have hσc : σ.IsClosed := hΦσ ▸ (isSymplectic_symplecticForm
-    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (M := ι → AddCircle p)).isClosed.mpullback Φ
-    hΦ.contMDiff
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
   obtain ⟨P, b₀, hP, hdP⟩ :=
     h.exists_eq_mulVec_add_of_actionAngle p hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a hΦi hΦ'i
   -- The points `s b` with zero angles in `Φ`, and their angles `g b` in `Φ'`.
@@ -588,13 +575,8 @@ theorem exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle [Preco
   -- The covector `α = θ ⬝ᵥ da` is `θ P⁻¹ ⬝ᵥ da'`, and moves `s b` to `x`.
   set b := π x
   set Q : Matrix ι ι ℝ := ((P⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map (↑)
-  have hQP : Q * (P : Matrix ι ι ℤ).map (↑) = 1 := by
-    have hmap : ((P⁻¹ * P : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) =
-        Q * (P : Matrix ι ι ℤ).map (↑) := by
-      rw [Units.val_mul]
-      exact Matrix.map_mul (f := Int.castRingHom ℝ)
-    rw [← hmap, inv_mul_cancel, Units.val_one]
-    exact Matrix.map_one _ Int.cast_zero Int.cast_one
+  have hQP : Q * (P : Matrix ι ι ℤ).map (↑) = 1 :=
+    congrArg Units.val (Matrix.GeneralLinearGroup.map_inv_mul_map (Int.castRingHom ℝ) P)
   set α : F →L[ℝ] ℝ := (dotProductCLM θ).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
   have hα (v : F) : α v = θ ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v := dotProductCLM_apply _ _
   have hα' (v : F) : α v = (θ ᵥ* Q) ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a' b v := by

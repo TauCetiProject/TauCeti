@@ -412,8 +412,9 @@ theorem eval₂_symplecticForm_eq_dotProduct_sub [DecidableEq ι]
             (actionAngleCover p) x w) = w.2 := by
     rw [← mfderiv_comp_apply x
       ((contMDiff_torusActions p (actionAngleCover p x)).mdifferentiableAt (by simp)) hκ,
-      torusActions_comp_actionAngleCover, mfderiv_eq_fderiv, fderiv_snd]
-    rfl
+      torusActions_comp_actionAngleCover]
+    exact (DFunLike.congr_fun (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt.mfderiv
+      w).trans (congrFun ContinuousLinearMap.coe_snd' w)
   rw [eval₂_symplecticForm_mfderiv_actionAngleCover, hθ, hθ, hI, hI, dotProduct, dotProduct,
     ← Finset.sum_sub_distrib]
 
