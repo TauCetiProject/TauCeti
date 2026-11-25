@@ -9,8 +9,7 @@ public import TauCeti.RingTheory.Node.Jacobian.Locus
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.RingHom.Flat
-import TauCeti.RingTheory.FittingIdeal.BaseChange
-import TauCeti.RingTheory.Flat.Localization
+import TauCeti.RingTheory.FittingIdeal.KaehlerDifferential
 import TauCeti.RingTheory.Kaehler.UnramifiedBase
 
 /-!
@@ -111,25 +110,6 @@ theorem comap_map_fittingIdeal_localization_eq_span [IsLocalRing R] (a : R)
     refine Ideal.mem_map_of_mem _ ?_
     rw [← coord_zero_mul_coord_one]
     exact Ideal.mul_mem_right _ _ (coord_mem_jacobianIdeal a 0)
-
-/-- The ideal of `R` cut out by the singular locus at a prime does not change along a flat,
-formally étale map `S → T`: it is the same at a prime `Q` of `T` and at `Q ∩ S`. The first Fitting
-ideal of the differentials base-changes along `S → T`, and `S_{Q ∩ S} → T_Q` is faithfully
-flat. -/
-private theorem comap_map_fittingIdeal_localization_comap_eq {S T : Type*} [CommRing S]
-    [CommRing T] [Algebra R S] [Module.Finite S Ω[S⁄R]] [Algebra S T] [Algebra.FormallyEtale S T]
-    [Module.Flat S T] [Algebra R T] [IsScalarTower R S T] [Module.Finite T Ω[T⁄R]] (Q : Ideal T)
-    [Q.IsPrime] :
-    ((fittingIdeal S Ω[S⁄R] 1).map
-        (algebraMap S (Localization.AtPrime (Q.comap (algebraMap S T))))).comap
-      (algebraMap R (Localization.AtPrime (Q.comap (algebraMap S T)))) =
-      ((fittingIdeal T Ω[T⁄R] 1).map (algebraMap T (Localization.AtPrime Q))).comap
-        (algebraMap R (Localization.AtPrime Q)) := by
-  have hST : fittingIdeal T Ω[T⁄R] 1 = (fittingIdeal S Ω[S⁄R] 1).map (algebraMap S T) :=
-    IsBaseChange.fittingIdeal_eq_map (KaehlerDifferential.isBaseChange_of_formallyEtale R S T) 1
-  rw [IsScalarTower.algebraMap_eq R S, ← Ideal.comap_comap,
-    ← Ideal.comap_map_localization_atPrime_of_flat, Ideal.comap_comap,
-    ← IsScalarTower.algebraMap_eq, IsScalarTower.algebraMap_eq S T, ← Ideal.map_map, ← hST]
 
 /-- **The singular locus at a point with an étale local node chart.** Let `R'` be a local,
 formally unramified and faithfully flat `R`-algebra, let `T` be a flat, formally étale
