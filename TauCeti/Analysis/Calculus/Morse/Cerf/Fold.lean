@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
 import TauCeti.Analysis.Calculus.Bifurcation
+import TauCeti.Analysis.Calculus.Morse.Cerf.Index
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -71,9 +71,9 @@ Their Morse indices come from the Hessians along the curve. The path
 `s ↦ Hess(f τ(s))_{ξ(s)}` of symmetric forms has derivative `D³(f t₀)_{x₀} (v, ·, ·)` at `0`,
 since `τ'(0) = 0` and `ξ'(0) = v`, so `0` is a crossing whose kernel is the line through `v` and
 whose crossing form is `D³(f t₀)_{x₀} (v, v, v) ≠ 0` there. Its negative index is therefore `k + 1`
-on one side of `0` and `k` on the other
-(`ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span`), and the two critical points of
-`f t` lie on the curve on opposite sides of `0`.
+on one side of `0` and `k` on the other (`TauCeti.eventually_nhdsGT_morseIndex_eq` and
+`TauCeti.eventually_nhdsLT_morseIndex_eq` in `TauCeti.Analysis.Calculus.Morse.Cerf.Index`), and the
+two critical points of `f t` lie on the curve on opposite sides of `0`.
 
 ## Main results
 
@@ -452,52 +452,19 @@ private theorem exists_pos_morseIndex_curve (hf : ContDiffAt ℝ 3 (uncurry f) (
       if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 1 else 0) ∧
     ∀ σ ∈ Ioo (-ε) 0, morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
       if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 0 else 1 := by
-  have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
-  -- The Hessian `H (s, y)` of `f s` at `y`.
-  obtain ⟨H, hHdef⟩ : ∃ H : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ,
-      H = fun w ↦ fderiv ℝ (fderiv ℝ (f w.1)) w.2 := ⟨_, rfl⟩
-  have hG : ContDiffAt ℝ 2 (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) :=
-    hf.fderiv_slice (m := 2) le_rfl
-  have hH : ContDiffAt ℝ 1 H (t, x) := by
-    subst hHdef
-    exact hG.fderiv_slice (m := 1) le_rfl
-  -- The path of Hessians `σ ↦ H (c σ)` and its derivative `D³(f t)_x (v, ·, ·)` at `0`.
-  have hV : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
-    have hH' : HasFDerivAt H (fderiv ℝ H (t, x)) (c 0) :=
-      hc0 ▸ (hH.differentiableAt one_ne_zero).hasFDerivAt
-    simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
-  have hκ' : fderiv ℝ H (t, x) (0, v) v v = fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v := by
-    rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-      (hH.differentiableAt one_ne_zero)]
-    simp [hHdef]
-  have hV0 : (H ∘ c) 0 = fderiv ℝ (fderiv ℝ (f t)) x := by simp [hHdef, hc0]
-  have hmorse : ∀ σ, morseIndex (f (c σ).1) (c σ).2 =
-      sigNeg ((H ∘ c) σ).toBilinForm.toQuadraticMap := fun σ ↦ by
-    rw [morseIndex_def, hessianQuadraticForm_def, hHdef]
-    rfl
-  have hk : morseIndex (f t) x = sigNeg ((H ∘ c) 0).toBilinForm.toQuadraticMap := by
-    rw [hV0, morseIndex_def, hessianQuadraticForm_def]
-  -- At `0` the Hessian is symmetric, with kernel the line through `v`.
-  have hsymm : ((H ∘ c) 0).toBilinForm.IsSymm := by
-    rw [hV0]
-    exact ⟨fun u w ↦ fderiv_fderiv_apply_comm_of_uncurry hf2 u w⟩
-  have hker : ((H ∘ c) 0).ker = ℝ ∙ v := by
-    rw [hV0]
-    refine le_antisymm (fun w hw ↦ ?_)
-      ((Submodule.span_singleton_le_iff_mem _ _).2 (by simpa using hv))
-    obtain ⟨a, rfl⟩ :=
-      exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv (by simpa using hw)
-    exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self v)
-  -- The negative index jumps across this crossing by one, on the side given by the sign of `κ`.
-  obtain ⟨hR, hL⟩ := ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span hsymm hV hker
-    (by rwa [hκ'])
-  rw [hκ', ← hk] at hR hL
-  obtain ⟨ε₁, hε₁, hR⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hR
-  obtain ⟨ε₂, hε₂, hL⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1 hL
-  refine ⟨min ε₁ (-ε₂), lt_min hε₁ (neg_pos.2 hε₂), fun σ hσ ↦ (hmorse σ).trans
-    (hR ⟨hσ.1, hσ.2.trans_le (min_le_left _ _)⟩), fun σ hσ ↦ (hmorse σ).trans (hL ⟨?_, hσ.2⟩)⟩
-  linarith [hσ.1, min_le_right ε₁ (-ε₂)]
+  have hker := ker_fderiv_fderiv_eq_span_singleton (hf.of_le (by norm_num)) hs hv0 hv
+  obtain ⟨ε₁, hε₁, hR⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    (eventually_nhdsGT_morseIndex_eq hf hker hκ hc0 hc')
+  obtain ⟨ε₂, hε₂, hL⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1
+    (eventually_nhdsLT_morseIndex_eq hf hker hκ hc0 hc')
+  refine ⟨min ε₁ (-ε₂), lt_min hε₁ (neg_pos.2 hε₂),
+    fun σ hσ ↦ hR ⟨hσ.1, hσ.2.trans_le (min_le_left _ _)⟩, fun σ hσ ↦ ?_⟩
+  have hσL : morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
+      if 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v then 1 else 0 :=
+    hL ⟨by linarith [hσ.1, min_le_right ε₁ (-ε₂)], hσ.2⟩
+  rw [hσL]
+  rcases hκ.lt_or_gt with h | h <;> simp [h, h.not_gt]
 
 /-! ### Births and deaths -/
 

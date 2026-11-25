@@ -182,6 +182,25 @@ section Operator
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]
 
+/-- Multiplying the height by a real scalar rescales its Laplacian linearly and its
+Hessian evaluated on two copies of its gradient cubically. -/
+theorem nondivergenceOperator_const_smul (u : E → ℝ) (c : ℝ) (x : E) :
+    nondivergenceOperator (c • u) x =
+      c * (1 + c ^ 2 * ‖∇ u x‖ ^ 2) * Δ u x -
+        c ^ 3 * fderiv ℝ (fderiv ℝ u) x (∇ u x) (∇ u x) := by
+  have hlap : Δ (c • u) x = c * Δ u x := by
+    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis (c • u) (stdOrthonormalBasis ℝ E),
+      laplacian_eq_iteratedFDeriv_orthonormalBasis u (stdOrthonormalBasis ℝ E)]
+    simp only [Pi.smul_def]
+    rw [iteratedFDeriv_fun_const_smul_apply]
+    simp only [smul_apply, smul_eq_mul, Finset.mul_sum]
+  rw [nondivergenceOperator_eq, hlap,
+    TauCeti.gradient_const_smul, fderiv_const_smul_field,
+    fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ u)]
+  simp only [conj_trivial, Pi.smul_apply, smul_apply, map_smul, smul_eq_mul, norm_smul,
+    Real.norm_eq_abs, mul_pow, sq_abs]
+  ring
+
 /-- The nondivergence minimal graph operator scales inversely under simultaneous graph dilation. -/
 theorem nondivergenceOperator_dilatedHeight (u : E → ℝ) (r : ℝ) (x : E) :
     nondivergenceOperator (dilatedHeight u r) x =

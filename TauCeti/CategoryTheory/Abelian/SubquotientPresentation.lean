@@ -244,6 +244,11 @@ lemma preimage_le_Z (K : Subobject X) : P.preimage K ≤ P.Z := by
 lemma preimage_bot : P.preimage ⊥ = P.B := by
   rw [preimage, pullback_bot, kernelSubobject_π, map_pullback_arrow_of_le P.le]
 
+/-- A morphism into the larger subobject lands in the smaller one exactly when its composite with
+the projection vanishes. -/
+lemma factors_B_iff (x : W ⟶ P.Z) : P.B.Factors (x ≫ P.Z.arrow) ↔ x ≫ P.π = 0 := by
+  rw [← P.preimage_bot, P.factors_preimage_iff, bot_factors_iff_zero]
+
 @[simp]
 lemma preimage_top : P.preimage ⊤ = P.Z := by
   rw [preimage, pullback_top, Subobject.map_top, mk_arrow]

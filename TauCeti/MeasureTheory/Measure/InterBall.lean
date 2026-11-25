@@ -68,6 +68,8 @@ measure vanishing on points, the integrals of a function integrable on a set `S`
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `TauCeti.isClosed_setOf_forall_measure_inter_ball_le`: the points around which a set fills at
+  most `K r` of every open ball of radius `r < ρ` form a closed set.
 * `MeasureTheory.Measure.measure_eball_eq_iSup_lt`: the measure of an open ball is the supremum of
   the measures of the concentric balls of smaller radius.
 * `MeasureTheory.Measure.lowerSemicontinuous_measure_eball`: for every measure on an extended
@@ -297,11 +299,11 @@ theorem tendsto_measure_closedBall_sdiff_singleton_nhds_zero {z : X}
     Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝 0) (𝓝 0) := by
   have hgt : Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝[>] 0) (𝓝 0) := by
     have hiInter : ⋂ r > (0 : ℝ), closedBall z r \ {z} = ∅ := by
-      calc (⋂ r > (0 : ℝ), closedBall z r \ {z})
-          = ⋂ r ∈ Ioi (0 : ℝ), closedBall z r ∩ {z}ᶜ := by simp only [sdiff_eq, mem_Ioi, gt_iff_lt]
-        _ = (⋂ r > (0 : ℝ), closedBall z r) \ {z} := by
-            rw [biInter_inter nonempty_Ioi, ← sdiff_eq]; rfl
-        _ = ∅ := by rw [biInter_gt_closedBall, closedBall_zero, sdiff_self]
+      refine subset_empty_iff.1 <| Subset.trans
+        (b := (⋂ r > (0 : ℝ), closedBall z r) \ {z})
+        (fun y hy ↦ ⟨mem_iInter₂.2 fun r hr ↦ (mem_iInter₂.1 hy r hr).1,
+          (mem_iInter₂.1 hy 1 one_pos).2⟩) ?_
+      simp [biInter_gt_closedBall]
     simpa only [Function.comp_def, hiInter, measure_empty] using
       tendsto_measure_biInter_gt
         (fun r _ ↦ (measurableSet_closedBall.diff (measurableSet_singleton z)).nullMeasurableSet)
@@ -384,3 +386,27 @@ theorem tendsto_setIntegral_ball_nhds_zero [IsLocallyFiniteMeasure μ] [NullSing
       mem_cthickening_of_dist_le y x ρ _ rfl (mem_ball.1 hy).le
 
 end MeasureTheory.IntegrableOn
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open scoped ENNReal
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- The points around which a set fills at most a prescribed amount `K r` of every open ball of
+radius `r < ρ` form a closed set. -/
+theorem isClosed_setOf_forall_measure_inter_ball_le (μ : Measure X) (A : Set X) (ρ : ℝ)
+    (K : ℝ → ℝ≥0∞) : IsClosed {x | ∀ r ∈ Ioo 0 ρ, μ (A ∩ ball x r) ≤ K r} := by
+  refine closure_subset_iff_isClosed.1 fun x hx r hr => ?_
+  have hrestr (z : X) (ρ' : ℝ) : μ (A ∩ ball z ρ') = μ.restrict A (ball z ρ') := by
+    rw [Measure.restrict_apply measurableSet_ball, inter_comm]
+  rw [hrestr]
+  refine Measure.measure_ball_le_of_forall_lt _ fun r' hr' => ?_
+  obtain ⟨x', hx', hxx'⟩ := Metric.mem_closure_iff.1 hx (r - r') (sub_pos.2 hr')
+  rw [← hrestr]
+  calc μ (A ∩ ball x r') ≤ μ (A ∩ ball x' r) :=
+        measure_mono (inter_subset_inter_right _ (ball_subset_ball' (by linarith)))
+    _ ≤ K r := hx' r hr
+
+end TauCeti

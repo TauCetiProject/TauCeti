@@ -96,9 +96,7 @@ private theorem exists_isolated_reducedBoundary_of_finrank_eq_one {μ : Measure 
   have := Ω.isOpen.locallyCompactSpace
   let x₀ : Ω := ⟨x, reducedBoundary_subset hx⟩
   obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds x₀.property)
-  have hKR : IsCompact (closedBall x₀ R) := by
-    rw [← Subtype.preimage_closedBall]
-    exact isCompact_preimage_coe_closedBall hRΩ
+  have hKR : IsCompact (closedBall x₀ R) := isCompact_closedBall_subtype hRΩ
   have hlim := tendsto_measure_closedBall_sdiff_singleton_nhds_zero
     (μ := variationMeasure μ Ω (s.indicator 1)) (z := x₀)
     ⟨R, hR, ((measure_mono sdiff_subset).trans_lt hKR.measure_lt_top).ne⟩
@@ -154,7 +152,8 @@ private theorem perimeter_Ioo_preimage_eq_zero_of_isolated (hdim : finrank ℝ E
         Real.norm_eq_abs]
     exact ⟨mem_ball.2 (hd ▸ hlt), dist_pos.1 (hd ▸ h0)⟩
   have hUΩ : U ≤ Ω := (hUsub.trans sdiff_subset).trans (ball_subset_closedBall.trans hr₀Ω)
-  rw [← hcomap, f.perimeter_comap hfmp, perimeter_def, ← variationMeasure_preimage_coe hu hfin hUΩ]
+  rw [← hcomap, f.perimeter_comap hfmp f.symm.continuous.measurable, perimeter_def,
+    ← variationMeasure_preimage_coe hu hfin hUΩ]
   refine measure_mono_null ?_ (ae_iff.1 ae_mem_reducedBoundary)
   intro y hy hyB
   exact (hUsub hy).2 (mem_singleton_iff.1 (hiso.subset ⟨hyB, (hUsub hy).1⟩))
@@ -222,9 +221,7 @@ private theorem variationMeasure_singleton_eq_euclideanHausdorffMeasure_of_finra
   obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hy
   obtain ⟨r₀, hr₀, hr₀Ω, hiso, w, hw, hae⟩ :=
     exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one hdim hy
-  have hK : IsCompact (closedBall y r₀) := by
-    rw [← Subtype.preimage_closedBall]
-    exact isCompact_preimage_coe_closedBall hr₀Ω
+  have hK : IsCompact (closedBall y r₀) := isCompact_closedBall_subtype hr₀Ω
   have hlim := (tendsto_measure_closedBall_nhdsGE_zero
     (μ := variationMeasure volume Ω (s.indicator 1)) (z := y)
     ⟨r₀, hr₀, hK.measure_lt_top.ne⟩).mono_left (nhdsWithin_mono (0 : ℝ) Ioi_subset_Ici_self)
