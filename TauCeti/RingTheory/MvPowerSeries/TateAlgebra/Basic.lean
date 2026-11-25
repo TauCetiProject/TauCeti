@@ -672,6 +672,11 @@ instance {S : Type*} [CommSemiring S] [Algebra S R] :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
+/-- The coefficient algebra map sends `r` to the constant restricted series `C r`. -/
+theorem algebraMap_isRestrictedSubring_eq_mk_C (r : R) :
+    algebraMap R (IsRestricted.subring (R := R) c) r = ⟨C r, isRestricted_C c r⟩ :=
+  Subtype.ext (coe_algebraMap_isRestrictedSubring r)
+
 /-- Without variables every restricted series is a constant. -/
 theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
     Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
@@ -728,15 +733,26 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
 @[simp]
 theorem norm_algebraMap_isRestrictedSubring (r : R) :
     ‖algebraMap R (IsRestricted.subring (R := R) c) r‖ = ‖r‖ := by
-  have h : algebraMap R (IsRestricted.subring (R := R) c) r = ⟨C r, isRestricted_C c r⟩ :=
-    Subtype.ext (coe_algebraMap_isRestrictedSubring r)
-  rw [h, norm_C]
+  rw [algebraMap_isRestrictedSubring_eq_mk_C, norm_C]
 
 /-- The coefficient ring acts boundedly for the Gauss norm, without a field hypothesis. -/
 instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=
   IsBoundedSMul.of_norm_smul_le fun a f ↦ by
     simpa only [Algebra.smul_def, norm_algebraMap_isRestrictedSubring] using
       norm_mul_le (algebraMap R (IsRestricted.subring (R := R) c) a) f
+
+/-- A scalar multiple `a Xᵢ` of a variable has Gauss norm `‖a‖ cᵢ`. -/
+@[simp]
+theorem norm_smul_X (a : R) (i : σ) :
+    ‖a • (⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :
+      IsRestricted.subring (R := R) c)‖ = ‖a‖ * c i := by
+  classical
+  have h : a • (⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :
+      IsRestricted.subring (R := R) c) =
+        ⟨monomial (Finsupp.single i 1) a, isRestricted_monomial c _ a⟩ := by
+    rw [mk_monomial_eq_algebraMap_mul_prod, Finsupp.prod_single_index (by simp), pow_one,
+      Algebra.smul_def]
+  rw [h, norm_monomial, Finsupp.prod_single_index (by simp), pow_one]
 
 /-- The constant-series embedding is an isometry. -/
 theorem isometry_algebraMap_isRestrictedSubring :

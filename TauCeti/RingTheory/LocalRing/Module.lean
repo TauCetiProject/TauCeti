@@ -91,6 +91,25 @@ theorem exists_mem_span_singleton_eq_top_of_finrank_eq_one [Module.Free R M]
   exact ⟨m, hm, (Submodule.span_singleton_eq_top_iff R m).mpr fun v ↦
     ⟨e.symm v * hu.unit⁻¹, e.symm.injective (by simp [mul_assoc])⟩⟩
 
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- **An element generates a module with one-dimensional fibre exactly when it does not vanish
+in the fibre.** If `M` is a finite module over the local ring `R` with residue field `k` and
+`k ⊗ M` is one-dimensional over `k`, for instance if `M` is free of rank one, then `m` spans `M` if
+and only if `1 ⊗ m` is nonzero in `k ⊗ M`. -/
+theorem span_singleton_eq_top_iff_one_tmul_ne_zero [Module.Finite R M]
+    (h : Module.finrank (_root_.IsLocalRing.ResidueField R)
+      (_root_.IsLocalRing.ResidueField R ⊗[R] M) = 1) (m : M) :
+    Submodule.span R {m} = ⊤ ↔ (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] m ≠ 0 := by
+  -- By Nakayama, `m` spans `M` exactly when `1 ⊗ m` spans the one-dimensional fibre.
+  rw [← _root_.IsLocalRing.map_tensorProduct_mk_eq_top, Submodule.map_span, Set.image_singleton,
+    ← Submodule.restrictScalars_span R _ _root_.IsLocalRing.residue_surjective,
+    Submodule.restrictScalars_eq_top_iff, TensorProduct.mk_apply]
+  refine ⟨fun hs h0 ↦ ?_, fun h0 ↦ (finrank_eq_one_iff_of_ne_zero _ h0).mp h⟩
+  have := Module.nontrivial_of_finrank_eq_succ h
+  rw [h0, Submodule.span_zero_singleton] at hs
+  exact bot_ne_top hs
+
 /-- **A family with linearly independent residues is a basis.** If `M` has a basis `b` indexed by
 `ι`, and `v` is a family of `|ι|` elements whose coordinates in `b`, read in the residue field,
 are linearly independent, then `v` is a basis of `M`. -/
