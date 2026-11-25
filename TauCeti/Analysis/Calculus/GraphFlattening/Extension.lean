@@ -133,9 +133,7 @@ theorem exists_contDiff_eventually_eq_of_contDiffOn_setOf_le_inner [FiniteDimens
     ∃ g : E → F, ContDiff ℝ k g ∧ ∀ᶠ x in 𝓝 z, γ x ≤ ⟪x, ν⟫_ℝ → g x = u x := by
   -- The coordinates `E ≃ ℝ × ν^⊥`, `x ↦ (⟪ν, x⟫, x - ⟪ν, x⟫ ν)`.
   have hright : Function.RightInverse (ContinuousLinearMap.toSpanSingleton ℝ ν) (innerSL ℝ ν) :=
-    fun t => by
-      rw [ContinuousLinearMap.toSpanSingleton_apply, innerSL_apply_apply, real_inner_smul_right,
-        real_inner_self_eq_norm_sq, hν, one_pow, mul_one]
+    fun t => by simp [hν]
   set T := ContinuousLinearEquiv.equivOfRightInverse _ _ hright
   have hT (x : E) : (T x).1 = ⟪x, ν⟫_ℝ := by
     rw [ContinuousLinearEquiv.fst_equivOfRightInverse, innerSL_apply_apply, real_inner_comm]
@@ -145,7 +143,7 @@ theorem exists_contDiff_eventually_eq_of_contDiffOn_setOf_le_inner [FiniteDimens
   have hχψ (x : E) : χ (ψ x) = x := by
     simp only [χ, ψ, ContinuousLinearEquiv.symm_apply_apply, shearAlong_shearAlong_neg hγν]
   have hψ1 (x : E) : (ψ x).1 = ⟪x, ν⟫_ℝ - γ x := by
-    rw [hT, real_inner_shearAlong hν, Pi.neg_apply, sub_eq_add_neg]
+    rw [hT, inner_shearAlong_neg hν]
   have hχ1 (y) : ⟪χ y, ν⟫_ℝ - γ (χ y) = y.1 := by
     rw [real_inner_shearAlong_sub hν hγν, ← hT, ContinuousLinearEquiv.apply_symm_apply]
   have hχc : ContDiff ℝ k χ := (contDiff_shearAlong hγ).comp T.symm.contDiff

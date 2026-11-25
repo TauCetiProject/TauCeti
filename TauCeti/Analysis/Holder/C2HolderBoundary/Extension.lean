@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ExtendFrom
-public import TauCeti.Analysis.Holder.C2HolderBoundary
+public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.Holder.OpenSet.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -17,6 +17,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Holder.LipschitzDomain
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Topology.ClusterSet
 import TauCeti.Topology.UniformSpace.Complete
 
 /-!
@@ -26,7 +27,8 @@ Let `Ω` be a set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary Ω α`) in 
 real inner product space `E`. This file proves that a `C²` function on `Ω` whose value and first and
 second derivatives have limits at every frontier point is the restriction to `Ω` of a `C²` function
 on all of `E`. In particular every element of `C^{2,α}(Ω)` is such a restriction when `Ω` is
-bounded. This is the qualitative form of Gilbarg–Trudinger's extension lemma for `C^{k,α}` domains.
+bounded and `α > 0`. This is the qualitative form of Gilbarg–Trudinger's extension lemma for
+`C^{k,α}` domains.
 
 Its use is to apply estimates proved for functions that are `C²` on a neighbourhood of
 `closure Ω`, such as the global Schauder estimate on a bounded domain with `C^{2,α}` boundary in
@@ -141,17 +143,6 @@ theorem exists_contDiff_eqOn_closure [FiniteDimensional ℝ E] (h : Ω.HasC2Hold
   obtain ⟨G, hG, -⟩ := isClosed_closure.exists_contMDiffMap_eqOn isOpen_univ (subset_univ _) hloc
   exact ⟨G, contMDiff_iff_contDiff.1 G.contMDiff, hG⟩
 
-/-- A function continuous on a set with `C^{2,α}` boundary, with limits at every frontier point,
-extends continuously to the closure. -/
-private theorem continuousOn_extendFrom {G : Type*} [TopologicalSpace G] [RegularSpace G]
-    (h : Ω.HasC2HolderBoundary α) {g : E → G} (hg : ContinuousOn g Ω)
-    (hlim : ∀ x ∈ frontier Ω, ∃ L, Tendsto g (𝓝[Ω] x) (𝓝 L)) :
-    ContinuousOn (extendFrom Ω g) (closure Ω) := by
-  refine _root_.continuousOn_extendFrom subset_rfl fun x hx => ?_
-  rcases (closure_eq_self_union_frontier Ω).subset hx with hxΩ | hxf
-  · exact ⟨g x, (hg.continuousAt (h.isOpen.mem_nhds hxΩ)).tendsto.mono_left nhdsWithin_le_nhds⟩
-  · exact hlim x hxf
-
 /-- The continuous extension `extendFrom Ω u` of a `C²` function on a set with `C^{2,α}` boundary,
 whose value and first and second derivatives have limits at every frontier point, is `C²` on
 `closure Ω`. -/
@@ -164,9 +155,9 @@ private theorem contDiffOn_extendFrom (h : Ω.HasC2HolderBoundary α) {u : E →
   have hu₁ : ContDiffOn ℝ 1 (fderiv ℝ u) Ω := hu.fderiv_of_isOpen hΩ (by norm_num)
   have hu₂ : ContinuousOn (fderiv ℝ (fderiv ℝ u)) Ω :=
     (hu₁.fderiv_of_isOpen hΩ (by norm_num) : ContDiffOn ℝ 0 _ Ω).continuousOn
-  have hc₀ := h.continuousOn_extendFrom hu.continuousOn h₀
-  have hc₁ := h.continuousOn_extendFrom hu₁.continuousOn h₁
-  have hc₂ := h.continuousOn_extendFrom hu₂ h₂
+  have hc₀ := hu.continuousOn.continuousOn_extendFrom_closure h₀
+  have hc₁ := hu₁.continuousOn.continuousOn_extendFrom_closure h₁
+  have hc₂ := hu₂.continuousOn_extendFrom_closure h₂
   have he₀ (x : E) (hx : x ∈ Ω) : extendFrom Ω u =ᶠ[𝓝 x] u :=
     eventually_of_mem (hΩ.mem_nhds hx) (extendFrom_extends hu.continuousOn)
   have he₁ (x : E) (hx : x ∈ Ω) : extendFrom Ω (fderiv ℝ u) =ᶠ[𝓝 x] fderiv ℝ u :=
@@ -214,32 +205,6 @@ namespace TauCeti.CkHolderSpaceOn
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- On a bounded set with `C^{2,α}` boundary in a finite-dimensional space, a `C²` function whose
-value and first and second derivatives are bounded on `Ω` by `M` is uniformly continuous on `Ω`,
-and so is its derivative: nearby points of such a set are joined inside it by short chains of
-segments. -/
-private theorem uniformContinuousOn_and_uniformContinuousOn_fderiv [FiniteDimensional ℝ E]
-    {β : ℝ≥0} {Ω : Set E} (hΩ : Ω.HasC2HolderBoundary β) (hb : Bornology.IsBounded Ω) {g : E → F}
-    (hg : ContDiffOn ℝ 2 g Ω) {M : ℝ≥0} (h₀ : ∀ x ∈ Ω, ‖g x‖ ≤ M)
-    (h₁ : ∀ x ∈ Ω, ‖fderiv ℝ g x‖ ≤ M) (h₂ : ∀ x ∈ Ω, ‖fderiv ℝ (fderiv ℝ g) x‖ ≤ M) :
-    UniformContinuousOn g Ω ∧ UniformContinuousOn (fderiv ℝ g) Ω := by
-  rcases Nat.eq_zero_or_eq_succ_pred (Module.finrank ℝ E) with hE | hE
-  -- In dimension zero, every function is constant.
-  · have : Subsingleton E := Module.finrank_zero_iff.1 hE
-    exact ⟨(uniformContinuous_of_const fun a b =>
-        congrArg g (Subsingleton.elim a b)).uniformContinuousOn,
-      (uniformContinuous_of_const fun a b =>
-        congrArg (fderiv ℝ g) (Subsingleton.elim a b)).uniformContinuousOn⟩
-  have hL := hΩ.hasLipschitzGraphBoundary.isLipschitzDomain hE
-  obtain ⟨C₀, hC₀⟩ := hL.exists_holderOnWith_of_norm_fderiv_le hb (α := 1) le_rfl
-  obtain ⟨C₁, hC₁⟩ := hL.exists_holderOnWith_of_norm_fderiv_le hb (α := 1) le_rfl
-  have hΩo := hΩ.isOpen
-  have hg₁ : ContDiffOn ℝ 1 (fderiv ℝ g) Ω := hg.fderiv_of_isOpen hΩo (by norm_num)
-  exact ⟨(hC₀ (fun x hx => (hg.differentiableOn (by norm_num) x hx).differentiableAt
-      (hΩo.mem_nhds hx)) h₀ h₁).uniformContinuousOn one_pos,
-    (hC₁ (fun x hx => (hg₁.differentiableOn one_ne_zero x hx).differentiableAt
-      (hΩo.mem_nhds hx)) h₁ h₂).uniformContinuousOn one_pos⟩
-
 /-- **Elements of `C^{2,α}(Ω)` extend to the whole space.** Let `Ω` be a bounded open set with
 `C^{2,β}` boundary in a finite-dimensional real inner product space and let `0 < α`. Every element
 of `C^{2,α}(Ω)` with values in a Banach space is the restriction to `Ω` of a function that is `C²`
@@ -252,10 +217,33 @@ theorem exists_contDiff_eq [FiniteDimensional ℝ E] [CompleteSpace F] {α β : 
   -- The value and the first two derivatives are bounded by the norm of `f`.
   have hbd (i : ℕ) (hi : i ≤ 2) (x : E) (hx : x ∈ (Ω : Set E)) :
       ‖_root_.iteratedFDeriv ℝ i f.extend x‖ ≤ ‖f‖₊ := f.norm_iteratedFDeriv_extend_le hi ⟨x, hx⟩
-  obtain ⟨huc₀, huc₁⟩ := uniformContinuousOn_and_uniformContinuousOn_fderiv hΩ hb hg (M := ‖f‖₊)
-    (fun x hx => by simpa using hbd 0 (by norm_num) x hx)
-    (fun x hx => by simpa using hbd 1 (by norm_num) x hx)
-    (fun x hx => by simpa [norm_fderiv_fderiv] using hbd 2 le_rfl x hx)
+  have hΩo := hΩ.isOpen
+  have hg₁ : ContDiffOn ℝ 1 (fderiv ℝ f.extend) Ω := hg.fderiv_of_isOpen hΩo (by norm_num)
+  -- The value and the first derivative are uniformly continuous: nearby points of the Lipschitz
+  -- domain `Ω` are joined inside it by short chains of segments.
+  have huc : UniformContinuousOn f.extend Ω ∧ UniformContinuousOn (fderiv ℝ f.extend) Ω := by
+    rcases Nat.eq_zero_or_eq_succ_pred (Module.finrank ℝ E) with hE | hE
+    -- In dimension zero, every function is constant.
+    · have : Subsingleton E := Module.finrank_zero_iff.1 hE
+      exact ⟨(uniformContinuous_of_const fun a b =>
+          congrArg f.extend (Subsingleton.elim a b)).uniformContinuousOn,
+        (uniformContinuous_of_const fun a b =>
+          congrArg (fderiv ℝ f.extend) (Subsingleton.elim a b)).uniformContinuousOn⟩
+    have hL := hΩ.hasLipschitzGraphBoundary.isLipschitzDomain hE
+    -- The constant quantifies over codomains in one universe, so it is obtained once for `F` and
+    -- once for `E →L[ℝ] F`.
+    obtain ⟨C₀, hC₀⟩ := hL.exists_holderOnWith_of_norm_fderiv_le hb (α := 1) le_rfl
+    obtain ⟨C₁, hC₁⟩ := hL.exists_holderOnWith_of_norm_fderiv_le hb (α := 1) le_rfl
+    exact ⟨(hC₀ (g := f.extend) (M := ‖f‖₊) (L := ‖f‖₊)
+        (fun x hx => (hg.differentiableOn (by norm_num) x hx).differentiableAt (hΩo.mem_nhds hx))
+        (fun x hx => by simpa using hbd 0 (by norm_num) x hx)
+        (fun x hx => by simpa using hbd 1 (by norm_num) x hx)).uniformContinuousOn one_pos,
+      (hC₁ (g := fderiv ℝ f.extend) (M := ‖f‖₊) (L := ‖f‖₊)
+        (fun x hx => (hg₁.differentiableOn one_ne_zero x hx).differentiableAt (hΩo.mem_nhds hx))
+        (fun x hx => by simpa using hbd 1 (by norm_num) x hx)
+        (fun x hx => by simpa [norm_fderiv_fderiv] using hbd 2 le_rfl x hx)).uniformContinuousOn
+        one_pos⟩
+  obtain ⟨huc₀, huc₁⟩ := huc
   -- The second derivative is `α`-Hölder.
   have huc₂ : UniformContinuousOn (fderiv ℝ (fderiv ℝ f.extend)) Ω :=
     ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two _).2
