@@ -112,8 +112,9 @@ theorem cechCohomologyCup_ι {p q n : ℕ} (h : p + q = n) (j : J)
         (((cechCohomologyι E hE q j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom b) =
       ((cechCohomologyι E hE n j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
         (cechCupHomology (E j).obj F p q n h a b) := by
-  simp only [cechCohomologyι_app]
-  apply TauCeti.ModuleCat.colimitMap₂_ι
+  simp only [cechCohomologyCup, cechCohomologyι_app]
+  -- the diagrams are only determined by the goal, so the universe levels are given explicitly
+  exact TauCeti.ModuleCat.colimitMap₂_ι.{t, w} _ _ j _ _
 
 /-- **The cup product on images of classes of two families.** The cup product of the images of a
 class `a` of `E i` and a class `b` of `E j` is the image of the cup product of their restrictions
@@ -248,18 +249,6 @@ variable {T : C} (hT : IsTerminal T)
   (h : ∀ j, QuasiIsoAt
     (cechAugmentation (E j).obj hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0)
 
-/-- The identification of degree `0` Čech cohomology with sections over `T`, on elements: the
-augmentation for a family of the system, followed by its structure map. -/
-private lemma cechCohomologyZeroIso_hom_apply (j : J) (s : F.obj (op T)) :
-    (cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom s =
-      ((cechCohomologyι E hE 0 j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
-        ((homologyMap (cechAugmentation (E j).obj hT
-          (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
-          ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
-            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s)) := by
-  rw [cechCohomologyZeroIso_hom E hE hT _ h j]
-  rfl
-
 /-- **In degree zero the cup product is the product of sections.** If `F` satisfies the sheaf
 condition for every family of the system, the identification of the degree `0` Čech cohomology
 with the sections of `F` over the terminal object `T` (`cechCohomologyZeroIso`) carries the product
@@ -271,9 +260,9 @@ theorem cechCohomologyZeroIso_hom_mul (s t : F.obj (op T)) :
         ((cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom s)
         ((cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom
           t) := by
-  rw [cechCohomologyZeroIso_hom_apply E hE F hT h (Classical.arbitrary J),
-    cechCohomologyZeroIso_hom_apply E hE F hT h (Classical.arbitrary J),
-    cechCohomologyZeroIso_hom_apply E hE F hT h (Classical.arbitrary J),
+  rw [cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
+    cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
+    cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
     homologyMap_cechAugmentation_mul, cechCohomologyCup_ι]
 
 /-- **In degree zero the unit class is the unit section.** If `F` satisfies the sheaf condition for
@@ -284,7 +273,7 @@ theorem cechCohomologyZeroIso_hom_one :
     (cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom
         (1 : F.obj (op T)) =
       cechCohomologyOne E hE F := by
-  rw [cechCohomologyZeroIso_hom_apply E hE F hT h (Classical.arbitrary J),
+  rw [cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
     homologyMap_cechAugmentation_one, cechCohomologyι_app_cechOneHomology]
 
 end Zero

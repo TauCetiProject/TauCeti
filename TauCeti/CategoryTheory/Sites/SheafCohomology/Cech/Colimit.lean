@@ -65,6 +65,8 @@ elements: over a nonempty directed order every class comes from some family of t
   is natural in the presheaf.
 * `TauCeti.CategoryTheory.exists_cechCohomologyι_app_eq`: over a nonempty directed order, every
   Čech cohomology class of a presheaf of modules comes from some family of the system.
+* `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_apply`: for a presheaf of modules, the
+  identification in degree `0` on elements, through any family of the system.
 
 ## References
 
@@ -376,6 +378,19 @@ theorem exists_cechCohomologyι_app_eq [IsDirectedOrder J] [Nonempty J]
       ((cechCohomologyι E hE n j).app P).hom a = x := by
   simp only [cechCohomologyι_app]
   exact TauCeti.ModuleCat.colimit_exists_rep x
+
+/-- The identification of degree `0` Čech cohomology with `P(T)`, on elements: the augmentation of
+the Čech complex of any family of the system, followed by its structure map. -/
+theorem cechCohomologyZeroIso_hom_apply [IsConnected J] {T : C} (hT : IsTerminal T)
+    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (h : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT P) 0) (j : J)
+    (s : P.obj (op T)) :
+    (cechCohomologyZeroIso E hE hT P h).hom.hom s =
+      ((cechCohomologyι E hE 0 j).app P).hom
+        ((HomologicalComplex.homologyMap (cechAugmentation (E j).obj hT P) 0).hom
+          ((HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            (P.obj (op T))).inv.hom s)) := by
+  rw [cechCohomologyZeroIso_hom E hE hT P h j]
+  exact (ConcreteCategory.comp_apply _ _ s).trans (ConcreteCategory.comp_apply _ _ _)
 
 end ModuleCat
 
