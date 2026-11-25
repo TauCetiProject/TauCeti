@@ -167,13 +167,14 @@ section Prod
 variable {B : Type v} [TopologicalSpace B]
 
 /-- If the Moore loop map of the projection `B × X → B` at `(b, x)` lifts homotopies from a space,
-then so does the length of the Moore loops of `X` at `x`. A homotopy of lengths starting at the
-lengths of loops `f a` is a homotopy of constant loops at `b`, starting at the projections of the
-loops `(b, f a)`, and the second coordinate of a lift of it lifts the lengths. -/
+then so does the length of the Moore loops of `X` at `x`. -/
 theorem hasHomotopyLiftingProperty_length_of_map_fst {A : Type w} [TopologicalSpace A] (b : B)
     (h : HasHomotopyLiftingProperty
       (map (y := b) (.fst : C(B × X, B)) rfl : MooreLoopSpace (B × X) (b, x) → _) A) :
     HasHomotopyLiftingProperty (length : MooreLoopSpace X x → ℝ≥0) A := by
+  -- A homotopy of lengths starting at the lengths of loops `f a` is a homotopy of constant loops
+  -- at `b`, starting at the projections of the loops `(b, f a)`, and the second coordinate of a
+  -- lift of it lifts the lengths.
   intro f H hH
   -- the loop `(b, γ)` of the product attached to a loop `γ` of `X`
   let ι : C(X, B × X) := (ContinuousMap.const X b).prodMk (.id X)
@@ -233,8 +234,7 @@ variable {y : X}
 path leaves the point. Its image is the set of constant loops at `x`
 (`TauCeti.MooreLoopSpace.map_const_apply`), and running a path from `x` to `y ≠ x` up to time `s`
 and back, for `s ∈ [0, 1]`, is a path of Moore loops at `x` from the unit, a constant loop, to a
-loop through `y`, which is not constant. A map with the homotopy lifting property lifts it, so its
-end would lie in the image. -/
+loop through `y`, which is not constant. -/
 theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x) :
     ¬ IsHurewiczFibration.{w}
       (map (y := x) (.const Unit x) rfl : MooreLoopSpace Unit () → MooreLoopSpace X x) := by
@@ -255,6 +255,7 @@ theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x)
       ⟨{ toFun t := δ (toNNReal t)
          source' := by rw [toNNReal_zero]
          target' := by rw [toNNReal_one] }⟩
+  -- a map with the homotopy lifting property lifts this path, so `δ 1` lies in the image
   obtain ⟨⟨u, hu⟩, -⟩ :=
     (h.hasHomotopyLiftingProperty PUnit).exists_joined_of_joined hjoined
   -- but the image consists of constant loops at `x`, while `δ 1` passes through `y ≠ x` at time `1`
@@ -265,8 +266,8 @@ theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x)
       hval.symm
 
 /-- **For the inclusion of a point `z` of the circle, the Moore loop map `[0, ∞) → Ω_z S¹` is not
-a Hurewicz fibration**, and neither is the inclusion itself
-(`TauCeti.not_isHurewiczFibration_const_unit`). -/
+a Hurewicz fibration**. The inclusion `Unit → S¹` of `z` is not one either, by
+`TauCeti.not_isHurewiczFibration_const_unit` applied to any point `y ≠ z`. -/
 theorem not_isHurewiczFibration_map_const_unit_addCircle (z : AddCircle (1 : ℝ)) :
     ¬ IsHurewiczFibration.{w} (map (y := z) (.const Unit z) rfl :
       MooreLoopSpace Unit () → MooreLoopSpace (AddCircle (1 : ℝ)) z) := by
