@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
+import TauCeti.Algebra.Polynomial.EvenComp
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Plane
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Spectrum
+import TauCeti.LinearAlgebra.Eigenspace.Aeval
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 
 /-!
@@ -78,6 +80,10 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   Darboux basis.
 * `IsNondegenerateQuadraticFamily.exists_mem_span_card_mul_two_eq_finrank_iff`: this
   characterizes the nondegenerate families of elliptic–hyperbolic type.
+* `isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C`,
+  `apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C`: for `A ∈ sp(V, ω)`, the vectors
+  killed by a power of `A² - μ` form a symplectic subspace, and these subspaces are pairwise
+  `ω`-orthogonal for distinct `μ`.
 
 ## References
 
@@ -97,19 +103,15 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 
 variable {A : Module.End ℝ V}
 
-/-- The polynomial `X² - μ` is even. -/
-private theorem comp_neg_X_sq_sub_C (μ : ℝ) : (X ^ 2 - C μ : ℝ[X]).comp (-X) = X ^ 2 - C μ := by
-  simp [sub_comp]
-
 /-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace. -/
-private theorem isSymplectic_maxGenEigenspace_sq_sub [FiniteDimensional ℝ V]
+theorem isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C [FiniteDimensional ℝ V]
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (μ : ℝ) :
     ω.IsSymplectic ((aeval A (X ^ 2 - C μ)).maxGenEigenspace 0) :=
   ω.isSymplectic_maxGenEigenspace_aeval hA (comp_neg_X_sq_sub_C μ)
 
 /-- For `A ∈ sp(V, ω)` and `μ ≠ ν`, `ω` pairs the vectors killed by a power of `A² - μ` trivially
 with those killed by a power of `A² - ν`. -/
-private theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
+theorem apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {μ ν : ℝ} (hμν : μ ≠ ν) {v w : V}
     (hv : v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0)
     (hw : w ∈ (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0) : ω v w = 0 := by
@@ -118,11 +120,6 @@ private theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
   rw [comp_neg_X_sq_sub_C]
   exact isCoprime_sub_C_of_isUnit_sub (X ^ 2) (sub_ne_zero.2 hμν).isUnit
 
-/-- An eigenvector of `A²` for `μ` is killed by `A² - μ`. -/
-private theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = μ • v) :
-    v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0 :=
-  (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
-
 /-- For `A ∈ sp(V, ω)`, the vectors killed by powers of `A² - μ` for the distinct `μ ∈ s`, indexed
 by `Fin s.card`, are pairwise `ω`-orthogonal. -/
 private theorem pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
@@ -130,7 +127,7 @@ private theorem pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
     Pairwise fun k l : Fin s.card ↦
       ∀ v ∈ (aeval A (X ^ 2 - C (s.equivFin.symm k : ℝ))).maxGenEigenspace 0,
         ∀ w ∈ (aeval A (X ^ 2 - C (s.equivFin.symm l : ℝ))).maxGenEigenspace 0, ω v w = 0 :=
-  fun _ _ hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
+  fun _ _ hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C hA
     (fun h ↦ hkl (s.equivFin.symm.injective (Subtype.ext h))) hv hw
 
 variable [FiniteDimensional ℝ V]
@@ -147,11 +144,11 @@ private theorem finrank_maxGenEigenspace_sq_sub
   -- `ω(x ν, y ν) = 1`.
   have hx (ν : s) : ∃ x ∈ G ν, x ≠ 0 := by
     obtain ⟨x, hx⟩ := (hAs ν ν.property).exists_hasEigenvector
-    refine ⟨x, mem_maxGenEigenspace_sq_sub ?_, hx.2⟩
+    refine ⟨x, Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C ?_, hx.2⟩
     simpa [sq] using hx.apply_eq_smul
   choose x hxG hx0 using hx
   have hy (ν : s) : ∃ y ∈ G ν, ω (x ν) y = 1 := by
-    have hL := isSymplectic_maxGenEigenspace_sq_sub hA (ν : ℝ)
+    have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA (ν : ℝ)
     obtain ⟨y, hy⟩ := (ω.restrict (G ν) hL.nondegenerate_restrict).exists_apply_eq_one
       (x := ⟨x ν, hxG ν⟩) (by simpa using hx0 ν)
     exact ⟨y, y.property, by simpa using hy⟩
@@ -179,14 +176,9 @@ private theorem finrank_maxGenEigenspace_sq_sub
   -- `G μ` is a nonzero symplectic subspace of dimension at most two, hence a plane.
   have hle2 : finrank ℝ (G μ) ≤ 2 :=
     (Submodule.finrank_mono hle).trans ((finrank_range_le_card _).trans (by simp))
-  obtain ⟨r, hr⟩ := (ω.restrict (G μ)
-    (isSymplectic_maxGenEigenspace_sq_sub hA μ).nondegenerate_restrict).even_finrank
-  have hx' : x ⟨μ, hμ⟩ ∈ G μ := hxG ⟨μ, hμ⟩
-  have hpos : finrank ℝ (G μ) ≠ 0 := fun h0 ↦
-    hx0 _ ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hx'))
-  -- `omega` needs the goal stated with the same atom `G μ` as the hypotheses.
-  change finrank ℝ (G μ) = 2
-  omega
+  exact le_antisymm hle2
+    ((isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ).two_le_finrank_of_mem
+      (hxG ⟨μ, hμ⟩) (hx0 _))
 
 /-- On the plane of vectors killed by a power of `A² - μ`, the square of `A` is `μ`. -/
 private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
@@ -197,7 +189,7 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
         A.restrict (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0 ⊤) =
       μ • 1 := by
   set L := (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0
-  have hL := isSymplectic_maxGenEigenspace_sq_sub hA μ
+  have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ
   obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict L hL.nondegenerate_restrict)
     (finrank_maxGenEigenspace_sq_sub hA hs hAs hμ)
     ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict
@@ -205,7 +197,7 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
   -- An eigenvector of `A²` for `μ` lies in `L`, so `κ = μ`.
   obtain ⟨x, hx⟩ := (hAs μ hμ).exists_hasEigenvector
   have hxμ : A (A x) = μ • x := by simpa [sq] using hx.apply_eq_smul
-  have hxL : x ∈ L := mem_maxGenEigenspace_sq_sub hxμ
+  have hxL : x ∈ L := Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C hxμ
   -- The restriction of `A` evaluates on `L` as `A` does, definitionally.
   have h : A (A x) = κ • x := congrArg Subtype.val (LinearMap.congr_fun hκ ⟨x, hxL⟩)
   rw [hxμ] at h
@@ -227,7 +219,7 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
         (0 < ν → c ^ 2 = ν ∧ A q = c • q ∧ A p = -c • p) := by
   -- Work on the plane `L` with the restrictions `ω'` of `ω` and `A'` of `A`.
   set L := (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0
-  have hL := isSymplectic_maxGenEigenspace_sq_sub hA ν
+  have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA ν
   set ω' := ω.restrict L hL.nondegenerate_restrict
   set A' := A.restrict
     (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C ν) 0 ⊤)
