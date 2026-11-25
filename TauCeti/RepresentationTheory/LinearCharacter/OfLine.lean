@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
-public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.Group.Defs
+public import TauCeti.LinearAlgebra.Dimension.FinrankOne
 
 /-!
 # One-dimensional representations and their characters
@@ -43,27 +42,15 @@ open Module
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
 
-/-- The scalars `k` are the endomorphism algebra of a one-dimensional vector space. -/
-noncomputable def endEquivOfFinrankEqOne (h : finrank k V = 1) : k ≃ₐ[k] Module.End k V :=
-  haveI : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
-  AlgEquiv.ofBijective (Algebra.ofId k (Module.End k V)) <|
-    Module.Free.bijective_algebraMap_of_finrank_eq_one (by rw [Module.finrank_linearMap, h])
-
-/-- A scalar `c` acts on a one-dimensional space as multiplication by `c`. -/
-theorem endEquivOfFinrankEqOne_apply (h : finrank k V = 1) (c : k) (v : V) :
-    endEquivOfFinrankEqOne h c v = c • v := by
-  rw [endEquivOfFinrankEqOne]
-  exact Module.algebraMap_end_apply k k V c v
-
 /-- The **character of a one-dimensional representation**: every `ρ g` is multiplication by the
 unit `lineCharacter ρ h g`. -/
 noncomputable def lineCharacter (ρ : Representation k G V) (h : finrank k V = 1) : G →* kˣ :=
-  (Units.map (endEquivOfFinrankEqOne h).symm.toMonoidHom).comp ρ.asGroupHom
+  (Units.map (TauCeti.endEquivOfFinrankEqOne h).symm.toMonoidHom).comp ρ.asGroupHom
 
 /-- A group acts on a one-dimensional representation by its character. -/
 theorem lineCharacter_smul (ρ : Representation k G V) (h : finrank k V = 1) (g : G) (v : V) :
     ρ g v = (ρ.lineCharacter h g : k) • v := by
-  rw [← endEquivOfFinrankEqOne_apply h]
+  rw [← TauCeti.endEquivOfFinrankEqOne_apply h]
   simp [lineCharacter, asGroupHom_apply]
 
 /-- The character of a one-dimensional representation is the only map `G → k` by which `G`
@@ -72,12 +59,11 @@ theorem lineCharacter_eq_of_forall_smul (ρ : Representation k G V) (h : finrank
     {χ : G → k} (hχ : ∀ g v, ρ g v = χ g • v) (g : G) : (ρ.lineCharacter h g : k) = χ g := by
   have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
   obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.mp (h ▸ Nat.one_pos : 0 < finrank k V)
-  have := (ρ.lineCharacter_smul h g v).symm.trans (hχ g v)
-  rwa [← sub_eq_zero, ← sub_smul, smul_eq_zero, sub_eq_zero, or_iff_left hv] at this
+  exact smul_left_injective k hv ((ρ.lineCharacter_smul h g v).symm.trans (hχ g v))
 
 /-- A one-dimensional representation whose matrix coefficients `g ↦ f (ρ g v)` are continuous has
 a continuous character. -/
-theorem continuous_lineCharacter [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace k]
+theorem continuous_lineCharacter [TopologicalSpace G] [ContinuousInv G] [TopologicalSpace k]
     (ρ : Representation k G V) (h : finrank k V = 1)
     (hρ : ∀ (v : V) (f : Dual k V), Continuous fun g ↦ f (ρ g v)) :
     Continuous (ρ.lineCharacter h) := by

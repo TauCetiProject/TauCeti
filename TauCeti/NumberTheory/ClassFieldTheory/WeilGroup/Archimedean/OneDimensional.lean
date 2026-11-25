@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unique
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Character
-public import TauCeti.RepresentationTheory.LineCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.OfLine
 
 /-!
 # The one-dimensional representations of the archimedean Weil groups
@@ -62,11 +62,11 @@ theorem exists_eq_complexUnitsCharacter_smul (ρ : Representation ℂ WeilGroupC
   obtain ⟨s, k, hsk⟩ :=
     exists_eq_complexUnitsCharacter ⟨ρ.lineCharacter h, ρ.continuous_lineCharacter h hρ⟩
   refine ⟨s, k, fun z v ↦ ?_⟩
-  rw [ρ.lineCharacter_smul h, ← hsk]
-  rfl
+  have hz : ρ.lineCharacter h z = complexUnitsCharacter s k z := DFunLike.congr_fun hsk z
+  rw [ρ.lineCharacter_smul h, hz]
 
-/-- **The continuous irreducible representations of `W_ℂ`** are one-dimensional, and `ℂˣ` acts on
-them by a character `z ↦ |z| ^ s * (z / |z|) ^ k`. -/
+/-- **The continuous irreducible finite-dimensional representations of `W_ℂ`** are
+one-dimensional, and `ℂˣ` acts on them by a character `z ↦ |z| ^ s * (z / |z|) ^ k`. -/
 theorem exists_eq_complexUnitsCharacter_smul_of_isIrreducible [FiniteDimensional ℂ V]
     (ρ : Representation ℂ WeilGroupComplex V) [ρ.IsIrreducible]
     (hρ : ∀ (v : V) (f : Dual ℂ V), Continuous fun z ↦ f (ρ z v)) :
@@ -82,8 +82,8 @@ theorem exists_eq_scalar_complexUnitsCharacter {n : Type*} [Fintype n] [Decidabl
   obtain ⟨s, k, hsk⟩ := exists_eq_complexUnitsCharacter
     ⟨GeneralLinearGroup.det.comp r, GeneralLinearGroup.continuous_det.comp hr⟩
   refine ⟨s, k, fun z ↦ ?_⟩
-  rw [GeneralLinearGroup.eq_scalar_det (r z), ← hsk]
-  rfl
+  have hz : (r z).det = complexUnitsCharacter s k z := DFunLike.congr_fun hsk z
+  rw [GeneralLinearGroup.eq_scalar_det (r z), hz]
 
 end WeilGroupComplex
 
@@ -97,8 +97,8 @@ theorem exists_eq_character_smul (ρ : Representation ℂ WeilGroupReal V) (h : 
     ∃ (s : ℂ) (ε : ZMod 2), ∀ w v, ρ w v = (character s ε w : ℂ) • v := by
   obtain ⟨s, ε, hsε⟩ := exists_eq_character ⟨ρ.lineCharacter h, ρ.continuous_lineCharacter h hρ⟩
   refine ⟨s, ε, fun w v ↦ ?_⟩
-  rw [ρ.lineCharacter_smul h, ← hsε]
-  rfl
+  have hw : ρ.lineCharacter h w = character s ε w := DFunLike.congr_fun hsε w
+  rw [ρ.lineCharacter_smul h, hw]
 
 /-- **The continuous one-dimensional parameters of `W_ℝ`** are the scalar matrices of the
 characters `character s ε` through the norm. -/
@@ -108,8 +108,8 @@ theorem exists_eq_scalar_character {n : Type*} [Fintype n] [DecidableEq n] [Uniq
   obtain ⟨s, ε, hsε⟩ := exists_eq_character
     ⟨GeneralLinearGroup.det.comp r, GeneralLinearGroup.continuous_det.comp hr⟩
   refine ⟨s, ε, fun w ↦ ?_⟩
-  rw [GeneralLinearGroup.eq_scalar_det (r w), ← hsε]
-  rfl
+  have hw : (r w).det = character s ε w := DFunLike.congr_fun hsε w
+  rw [GeneralLinearGroup.eq_scalar_det (r w), hw]
 
 end WeilGroupReal
 
