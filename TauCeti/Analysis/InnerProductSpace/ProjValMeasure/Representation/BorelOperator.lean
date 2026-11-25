@@ -122,7 +122,7 @@ private theorem representationBorelOperatorAux_add (f g : BoundedBorelFunction K
   ContinuousLinearMap.ext fun ξ => ext_inner_left ℂ fun ψ => by
     rw [_root_.add_apply, inner_add_right, inner_representationBorelOperatorAux,
       inner_representationBorelOperatorAux, inner_representationBorelOperatorAux]
-    simp only [BoundedBorelFunction.coe_add, Pi.add_apply]
+    simp only [FunLike.coe_add, Pi.add_apply]
     exact VectorMeasure.integral_add (f.integrable _) (g.integrable _)
 
 private theorem representationBorelOperatorAux_ofContinuousMap (g : C(K, ℂ)) :
@@ -154,7 +154,7 @@ private theorem dist_inner_representationBorelOperatorAux_mul_le (ψ ξ : H)
   rw [one_mul, ← MeasureTheory.integral_const_mul]
   refine integral_mono ((f * a - g * a).integrable _).norm
     (((f - g).integrable _).norm.const_mul _) fun x => ?_
-  simp only [BoundedBorelFunction.mul_apply, ← sub_mul, norm_mul, mul_comm ‖a‖]
+  simp only [_root_.mul_apply, ← sub_mul, norm_mul, mul_comm ‖a‖]
   exact mul_le_mul_of_nonneg_left (a.norm_coe_le_norm x) (norm_nonneg _)
 
 /-- Star preservation of `f ↦ T_f`: it holds for continuous symbols since `π` preserves stars,
@@ -262,7 +262,7 @@ theorem integral_representationPolarizedMeasure_representationBorelOperator
         representationPolarizedMeasure π ψ (representationBorelOperator π g ξ)] =
       ∫ᵛ x, f x * g x ∂[ContinuousLinearMap.mul ℝ ℂ; representationPolarizedMeasure π ψ ξ] := by
   rw [← inner_representationBorelOperator, ← mul_apply_eq_comp, ← map_mul,
-    inner_representationBorelOperator, BoundedBorelFunction.coe_mul]
+    inner_representationBorelOperator, FunLike.coe_mul]
   simp only [Pi.mul_apply]
 
 /-- **Commutant of the Borel extension.** An operator commuting with `π f` for every continuous

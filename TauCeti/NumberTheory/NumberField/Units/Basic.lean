@@ -28,6 +28,8 @@ to see that a non-torsion unit of a field of prime degree generates the field.
 
 * `TauCeti.NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers_subfield`: the image in
   `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`.
+* `TauCeti.NumberField.Units.val_map_algebraMap_ringOfIntegers_subfield`: the image in `Kˣ` of
+  an integral unit of a subfield `F` has the same value in `K`.
 * `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
@@ -88,6 +90,12 @@ theorem val_unitsMap_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (�
       (((u : 𝓞 F) : F) : K) := by
   simp [RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 K) K,
     IsScalarTower.algebraMap_apply (𝓞 F) F K, Subfield.algebraMap_ofSubfield]
+
+/-- The image in `Kˣ` of an integral unit of a subfield `F` has the same value in `K`. -/
+theorem val_map_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (𝓞 F)ˣ) :
+    ((Units.map (algebraMap (𝓞 F) K).toMonoidHom u : Kˣ) : K) = (((u : 𝓞 F) : F) : K) := by
+  rw [← val_unitsMap_algebraMap_ringOfIntegers_subfield]
+  simp [← IsScalarTower.algebraMap_apply]
 
 end Coe
 
