@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Perfectoid.CyclotomicPeriod.Basic
 
+import TauCeti.RingTheory.WittVector.Cyclotomic
 import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
@@ -57,17 +58,16 @@ section Frobenius
 
 variable (p : ℕ) [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p] [PerfectRing S p]
 
-/-- Frobenius on `μ` replaces `ε` by `ε ^ p`. -/
-theorem frobeniusEquiv_mu (ε : S) : frobeniusEquiv p S (mu p ε) = mu p (ε ^ p) := by
-  rw [mu_eq, mu_eq, map_sub, map_one, WittVector.frobeniusEquiv_apply, frobenius_teichmuller,
-    map_pow]
-
 /-- Iterated Frobenius on `μ` replaces `ε` by `ε ^ p ^ j`. -/
 theorem iterate_frobeniusEquiv_mu (ε : S) (j : ℕ) :
     ((frobeniusEquiv p S)^[j]) (mu p ε) = mu p (ε ^ p ^ j) := by
   induction j with
   | zero => simp
-  | succ j ih => rw [Function.iterate_succ_apply', ih, frobeniusEquiv_mu, ← pow_mul, ← pow_succ]
+  | succ j ih =>
+    -- `mu p ε` and `TauCeti.WittVector.cyclotomicMu p ε` are both `[ε] - 1`.
+    rw [Function.iterate_succ_apply', ih, WittVector.frobeniusEquiv_apply, mu_eq, mu_eq,
+      ← TauCeti.WittVector.cyclotomicMu_def, ← TauCeti.WittVector.cyclotomicMu_def,
+      TauCeti.WittVector.frobenius_cyclotomicMu, ← pow_mul, ← pow_succ]
 
 /-- Frobenius on `xiTilde` replaces `ε` by `ε ^ p`. -/
 theorem frobeniusEquiv_xiTilde (ε : S) :
