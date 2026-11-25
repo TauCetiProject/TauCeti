@@ -53,10 +53,11 @@ This file specializes them to a closed ideal.
 
 ## Implementation notes
 
-Existence comes from extending the unitization `τ⁺¹` of `τ` along the injective unital
-star homomorphism `B⁺¹ → A⁺¹` (`TauCeti.surjOn_pullbackFunctional_stateSpace`) and restricting to
-`A`. The rest rests on one estimate: for a positive functional `γ` and a positive contraction `e`,
-the Cauchy–Schwarz inequality for the extension of `γ` to `A⁺¹` and `(1 - e)² ≤ 1 - e` give
+Existence is `exists_apply_map_eq` applied to the inclusion `I.starAlgHom`, which extends the
+state `τ / ‖τ‖` with `TauCeti.surjOn_pullbackFunctional_stateSpace` and rescales (the zero
+functional when `τ = 0`). The rest rests on one estimate: for a positive functional `γ` and a
+positive contraction `e`, the Cauchy–Schwarz inequality for the extension of `γ` to `A⁺¹` and
+`(1 - e)² ≤ 1 - e` give
 `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`. Along an increasing approximate unit of `I`,
 `τ e → ‖τ‖`, so `γ(a) = lim_e γ(eae) = lim_e τ(eae)` for every extension `γ` of norm at most
 `‖τ‖`, which gives uniqueness. Traciality follows from the polarization criterion: for `a ∈ A`,
@@ -129,12 +130,12 @@ theorem existsUnique_apply_coe_eq (τ : I →P[ℂ] ℂ) :
   exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦ eq_of_apply_coe_eq hγ'.le hγ.le h' h⟩
 
 /-- A positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` restricting to a positive functional `τ` of a
-closed ideal `I` with `τ (x * y) = τ (y * x)` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`:
-`γ(a a⋆) = lim_e τ((ea)(ea)⋆) = lim_e τ((ea)⋆(ea)) = lim_e γ(a⋆ e² a) ≤ γ(a⋆ a)`. -/
+closed ideal `I` with `τ (x * y) = τ (y * x)` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`. -/
 theorem re_apply_mul_star_le_of_apply_coe_eq {τ : I →P[ℂ] ℂ}
     (hτ : ∀ x y : I, τ (x * y) = τ (y * x)) {γ : A →P[ℂ] ℂ}
     (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (h : ∀ c : I, γ c = τ c) (a : A) :
     (γ (a * star a)).re ≤ (γ (star a * a)).re := by
+  -- `γ(a a⋆) = lim_e τ((ea)(ea)⋆) = lim_e τ((ea)⋆(ea)) = lim_e γ(a⋆ e² a) ≤ γ(a⋆ a)`
   have hl := CStarAlgebra.increasingApproximateUnit (A := I)
   have := hl.neBot
   have hlim := (Complex.continuous_re.tendsto _).comp
@@ -168,8 +169,7 @@ theorem re_apply_mul_star_le_of_apply_coe_eq {τ : I →P[ℂ] ℂ}
 
 /-- **The extension of a tracial functional is tracial.** If a positive functional `γ` on `A` with
 `‖γ‖ ≤ ‖τ‖` restricts to a positive functional `τ` of a closed ideal `I` with
-`τ (x * y) = τ (y * x)`, then `γ (a * b) = γ (b * a)`. Only the traciality of `τ` on `I` enters,
-through `re_apply_mul_star_le_of_apply_coe_eq`. -/
+`τ (x * y) = τ (y * x)`, then `γ (a * b) = γ (b * a)`. -/
 theorem map_mul_comm_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ∀ x y : I, τ (x * y) = τ (y * x))
     {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (h : ∀ c : I, γ c = τ c)
     (a b : A) : γ (a * b) = γ (b * a) := by

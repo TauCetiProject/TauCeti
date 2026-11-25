@@ -63,6 +63,9 @@ for every `c ∈ A` and vanishes. If `λ ≠ 0`, then `e = -λ⁻¹ b` is a righ
 and a right unit of a star algebra is a two-sided unit (`TauCeti.exists_right_identity_iff`).
 Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺¹` vanishes at `1 - 1_A`.
 
+The approximate unit estimate is the Cauchy–Schwarz inequality for `γ⁺¹` applied to `y` and
+`1 - e`, with `(1 - e)² ≤ 1 - e` for a positive contraction `e`.
+
 ## References
 
 * N. P. Brown, *Invariant means and finite representation theory of C⋆-algebras*, Mem. Amer.
@@ -234,8 +237,7 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
     simp [mul_smul_comm, hc, h0]
 
 /-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
-`e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`: the Cauchy–Schwarz inequality for the extension
-of `γ` to the unitization, with `(1 - e)² ≤ 1 - e`. -/
+`e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`. -/
 theorem norm_apply_sub_apply_mul_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
     (y : A) :
     ‖γ y - γ (y * e)‖ ^ 2 ≤

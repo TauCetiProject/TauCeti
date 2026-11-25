@@ -404,9 +404,10 @@ private theorem exists_apply_map_eq_of_norm_eq_one (f : F) (hf : Function.Inject
 
 /-- **Existence of the extension.** Every positive functional `τ` on `B` is the restriction,
 along an injective star homomorphism `f : B → A`, of a positive functional on `A` of the same
-norm. For `τ ≠ 0` this extends the state `τ / ‖τ‖` and rescales. -/
+norm. -/
 theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) (τ : B →P[ℂ] ℂ) :
     ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ ∧ ∀ b, γ (f b) = τ b := by
+  -- for `τ ≠ 0`, extend the state `τ / ‖τ‖` and rescale
   set c := ‖(τ : B →L[ℂ] ℂ)‖₊ with hc
   rcases eq_zero_or_pos c with h0 | hc0
   · have hτ : (τ : B →L[ℂ] ℂ) = 0 := nnNorm_eq_zero.mp h0

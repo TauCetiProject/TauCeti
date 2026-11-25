@@ -296,12 +296,13 @@ theorem cfcₙ_nnreal_mem_of_isClosed [PartialOrder A] [StarOrderedRing A]
       (I.mem_toNonUnitalStarSubalgebra.mpr ha)
 
 /-- The order of a C⋆-algebra restricted to a closed two-sided ideal `I` is the C⋆-algebra order
-of `I`. Mathlib's `Subtype.starOrderedRing` does not apply to `I` as a `TwoSidedIdeal` (which has
-no `SMulMemClass`), so it is applied to the star subalgebra `I.toNonUnitalStarSubalgebra`. This
-definition relies on `↥I` and `↥I.toNonUnitalStarSubalgebra` being the same subtype of `A`, with
-the same ring, star and order structures (all induced from `A`), so the instance for the
-subalgebra is one for `I` by definitional unfolding. -/
+of `I`. -/
 instance instStarOrderedRingOfIsClosed [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
+  -- Mathlib's `Subtype.starOrderedRing` does not apply to `I` as a `TwoSidedIdeal` (which has no
+  -- `SMulMemClass`), so it is applied to the star subalgebra `I.toNonUnitalStarSubalgebra`. This
+  -- relies on `↥I` and `↥I.toNonUnitalStarSubalgebra` being the same subtype of `A`, with the same
+  -- ring, star and order structures (all induced from `A`), so the instance for the subalgebra is
+  -- one for `I` by definitional unfolding.
   Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
 
 end CStarAlgebra
