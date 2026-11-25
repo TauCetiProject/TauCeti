@@ -36,9 +36,7 @@ cover.
 The same argument applies when the parameter manifold is not compact but `f x` vanishes outside a
 fixed compact set `K` for all `x` near the base point, and `μ K` is finite
 (`IsCompact.contMDiffAt_parametric_integral`), and to the integral over a compact set `K` of
-finite measure (`IsCompact.contMDiffAt_parametric_setIntegral`). On a Lie group this gives
-smoothness of the convolution `x ↦ ∫ y, L (a y) (b (y⁻¹ * x))` of a compactly supported `C^n`
-function `a` with a `C^n` function `b` (`ContinuousLinearMap.contMDiff_integral_inv_mul`).
+finite measure (`IsCompact.contMDiffAt_parametric_setIntegral`).
 
 The manifold `M` is assumed boundaryless, so that its chart targets are open in the model space.
 The parameter manifold `N` may have boundary and corners.
@@ -203,24 +201,5 @@ theorem _root_.ContMDiff.parametric_integral [CompactSpace N] [IsFiniteMeasure �
     (hf : ContMDiff (I.prod J) 𝓘(ℝ, F) n (uncurry f)) :
     ContMDiff I 𝓘(ℝ, F) n (fun x ↦ ∫ a, f x a ∂μ) := fun _ ↦
   contMDiffAt_parametric_integral fun _ ↦ hf _
-
-/-- **Smoothness of a convolution on a Lie group.** If `a` is `C^n` with compact support and `b`
-is `C^n` on a Lie group `G` carrying a measure `ν` for which the support of `a` has finite
-measure, then for a continuous bilinear map `L` the convolution
-`x ↦ ∫ y, L (a y) (b (y⁻¹ * x)) ∂ν` is `C^n`. -/
-theorem _root_.ContinuousLinearMap.contMDiff_integral_inv_mul {G : Type*} [TopologicalSpace G]
-    [ChartedSpace H G] [Group G] [LieGroup I n G] [T2Space G] [MeasurableSpace G]
-    [OpensMeasurableSpace G] {ν : Measure G}
-    {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
-    {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
-    (L : E₁ →L[ℝ] E₂ →L[ℝ] F) {a : G → E₁} {b : G → E₂}
-    (ha : ContMDiff I 𝓘(ℝ, E₁) n a) (ha' : HasCompactSupport a) (hν : ν (tsupport a) ≠ ⊤)
-    (hb : ContMDiff I 𝓘(ℝ, E₂) n b) :
-    ContMDiff I 𝓘(ℝ, F) n (fun x ↦ ∫ y, L (a y) (b (y⁻¹ * x)) ∂ν) := by
-  have hf : ContMDiff (I.prod I) 𝓘(ℝ, F) n (uncurry fun x y : G ↦ L (a y) (b (y⁻¹ * x))) :=
-    (L.contMDiff.comp (ha.comp contMDiff_snd)).clm_apply
-      (hb.comp (contMDiff_snd.inv.mul contMDiff_fst))
-  exact fun x₀ ↦ IsCompact.contMDiffAt_parametric_integral (J := I) ha' hν (fun y _ ↦ hf _)
-    (.of_forall fun x y hy ↦ by simp [image_eq_zero_of_notMem_tsupport hy])
 
 end TauCeti
