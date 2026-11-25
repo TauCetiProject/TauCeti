@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
+import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
 # The Dirichlet series of the square of the Möbius function
@@ -41,7 +42,7 @@ which proves it through the Euler product.
 public section
 
 open Nat Complex
-open scoped ArithmeticFunction.Moebius LSeries.notation
+open scoped ArithmeticFunction.Moebius LSeries.notation ComplexOrder
 
 namespace TauCeti
 
@@ -50,17 +51,6 @@ private theorem norm_term_moebius_sq (s : ℂ) (n : ℕ) :
     ‖LSeries.term (fun n ↦ (μ n : ℂ) ^ 2) s n‖ = ‖LSeries.term ↗μ s n‖ := by
   simp only [LSeries.norm_term_eq]
   rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
-
-/-- At a real point the Möbius-square Dirichlet-series terms are nonnegative reals. -/
-private theorem re_term_moebius_sq (x : ℝ) (n : ℕ) :
-    (LSeries.term (fun n ↦ (μ n : ℂ) ^ 2) x n).re =
-      ‖LSeries.term (fun n ↦ (μ n : ℂ) ^ 2) x n‖ := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  have hpos : 0 ≤ (n : ℝ) ^ x := Real.rpow_nonneg n.cast_nonneg x
-  rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;>
-    simp [h, LSeries.term_of_ne_zero hn, ← ofReal_natCast, ← ofReal_cpow n.cast_nonneg,
-      abs_of_nonneg hpos]
 
 /-- The Dirichlet series of the square of the Möbius function converges absolutely exactly on
 `Re s > 1`. -/
@@ -157,6 +147,8 @@ theorem norm_riemannZeta_two_mul_re_div_le_norm_LFunction [NeZero N] {s : ℂ} (
   have hσ : 1 < (s.re : ℂ).re := by simpa using hs
   have hσ2 : 1 < (2 * (s.re : ℂ)).re := by simpa using (by linarith : (1 : ℝ) < 2 * s.re)
   have hμ2 := TauCeti.LSeriesSummable_moebius_sq_iff.mpr hσ
+  have hnn : 0 ≤ fun n ↦ (μ n : ℂ) ^ 2 := fun n ↦ by
+    rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
   have hinv := LSeries.mul_mu_eq_one χ hs
   have hζ2 : riemannZeta (2 * s.re) ≠ 0 := riemannZeta_ne_zero_of_one_lt_re hσ2
   have hχμ : L (↗χ * ↗μ) s ≠ 0 := right_ne_zero_of_mul_eq_one hinv
@@ -170,7 +162,7 @@ theorem norm_riemannZeta_two_mul_re_div_le_norm_LFunction [NeZero N] {s : ℂ} (
                 rw [← TauCeti.norm_term_moebius_sq, LSeries.norm_term_eq, LSeries.norm_term_eq,
                   ofReal_re]
       _ = (L (fun n ↦ (μ n : ℂ) ^ 2) s.re).re := by
-          simp only [LSeries, re_tsum hμ2, TauCeti.re_term_moebius_sq]
+          rw [TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg hnn, ofReal_re]
       _ ≤ _ := re_le_norm _
   rw [TauCeti.riemannZeta_eq_mul_LSeries_moebius_sq hσ, div_mul_cancel_left₀ hζ2, norm_inv,
     LFunction_eq_LSeries χ hs, eq_inv_of_mul_eq_one_left hinv, norm_inv]
