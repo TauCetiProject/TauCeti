@@ -35,6 +35,8 @@ tree of finite sequences of natural numbers, relabelled along a bijection with `
 
 * `TauCeti.RelationalConfiguration.ofRel r`: the code of a relation `r`.
 * `TauCeti.RelationalConfiguration.linearOrderClass`: the codes of linear orders.
+* `TauCeti.RelationalConfiguration.addDiag c`: the code of the relation of `c` with the diagonal
+  added.
 * `TauCeti.RelationalConfiguration.treeClass`: the codes of trees.
 
 ## Main results
@@ -45,6 +47,10 @@ tree of finite sequences of natural numbers, relabelled along a bijection with `
   exactly when its relation is a linear order.
 * `TauCeti.RelationalConfiguration.isClosed_linearOrderClass`,
   `TauCeti.RelationalConfiguration.isomorphismInvariant_linearOrderClass`.
+* `TauCeti.RelationalConfiguration.addDiag_mem_linearOrderClass`: adding the diagonal to a coded
+  strict total order gives a coded linear order.
+* `TauCeti.RelationalConfiguration.type_eq_of_isoSetoid_addDiag`: isomorphic codes with the
+  diagonal added come from coded strict well-orders of the same type.
 * `TauCeti.RelationalConfiguration.mem_treeClass_iff_mem_modelsOfTheory_and`: `treeClass` is the
   class of models of `Language.order.partialOrderTheory` with a least element and finite chains as
   principal down-sets.
@@ -170,6 +176,55 @@ theorem ofStructure_mem_linearOrderClass [LinearOrder V] :
     @ofStructure Language.order V (orderStructure V) ∈ linearOrderClass := by
   rw [mem_linearOrderClass, codeRel_leSymb_ofStructure_orderStructure]
   infer_instance
+
+/-! ### Adding the diagonal to a coded strict order -/
+
+/-- The code obtained by adding the diagonal to the relation of `c`, written as the order
+`x = y ∨ r x y` of Mathlib's `partialOrderOfSO`. -/
+noncomputable def addDiag (c : RelationalConfiguration Language.order V) :
+    RelationalConfiguration Language.order V :=
+  ofRel fun x y => x = y ∨ codeRel leSymb c x y
+
+/-- The relation of `addDiag c` is the relation of `c` with the diagonal added. -/
+@[simp]
+theorem codeRel_addDiag (c : RelationalConfiguration Language.order V) (x y : V) :
+    codeRel leSymb (addDiag c) x y ↔ x = y ∨ codeRel leSymb c x y := by
+  rw [addDiag, codeRel_ofRel]
+
+/-- Adding the diagonal to a coded strict total order gives a coded linear order: its relation
+is the order of Mathlib's `linearOrderOfSTO`. -/
+theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order V}
+    [IsStrictTotalOrder V (codeRel leSymb c)] : addDiag c ∈ linearOrderClass := by
+  classical
+  have h : codeRel leSymb (addDiag c) = (linearOrderOfSTO (codeRel leSymb c)).le := by
+    ext x y
+    exact codeRel_addDiag c x y
+  rw [mem_linearOrderClass, h]
+  let := linearOrderOfSTO (codeRel leSymb c)
+  infer_instance
+
+/-- Isomorphic codes with the diagonal added come from coded strict well-orders of the same
+type. -/
+theorem type_eq_of_isoSetoid_addDiag {c d : RelationalConfiguration Language.order V}
+    (hc : c ∈ wellOrderClass leSymb) (hd : d ∈ wellOrderClass leSymb)
+    (h : isoSetoid Language.order V (addDiag c) (addDiag d)) :
+    @Ordinal.type V (codeRel leSymb c) (mem_wellOrderClass.1 hc) =
+      @Ordinal.type V (codeRel leSymb d) (mem_wellOrderClass.1 hd) := by
+  have := mem_wellOrderClass.1 hc
+  have := mem_wellOrderClass.1 hd
+  obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
+  -- `σ` carries the reflexive closure of `codeRel leSymb c` to that of `codeRel leSymb d`.
+  have hrefl (x y : V) :
+      σ x = σ y ∨ codeRel leSymb d (σ x) (σ y) ↔ x = y ∨ codeRel leSymb c x y := by
+    have := codeRel_perm_smul leSymb σ (addDiag c) (σ x) (σ y)
+    rw [hσ] at this
+    simpa using this
+  refine RelIso.ordinalType_congr ⟨σ, fun {x y} => ?_⟩
+  by_cases hxy : x = y
+  · subst hxy
+    exact ⟨fun h => absurd h (irrefl _), fun h => absurd h (irrefl _)⟩
+  · have hσxy : σ x ≠ σ y := σ.injective.ne hxy
+    simpa [hxy, hσxy] using hrefl x y
 
 /-! ### Coded trees -/
 

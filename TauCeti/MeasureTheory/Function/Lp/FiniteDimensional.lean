@@ -15,7 +15,9 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 An `Lᵖ` function with finite-dimensional target is the sum of its scalar coordinate functions
 multiplied by the basis vectors. This transports `Module.Basis.sum_repr` through
 `ContinuousLinearMap.compLpL` and permits coordinatewise arguments about vector-valued operators.
-The same decomposition bounds the `Lᵖ` seminorm of a function by those of its coordinates.
+The same decomposition bounds the `Lᵖ` seminorm of a function by those of its coordinates, and a
+function agrees almost everywhere with the sum assembled from almost-everywhere representatives of
+its coordinates (`Module.Basis.ae_eq_sum_smul_of_coord_ae_eq`).
 Consequently, an operator into `Lᵖ` with finite-dimensional target is compact as soon as each of
 its scalar projections is compact
 (`TauCeti.isCompactOperator_of_forall_isCompactOperator_compLpL_comp`).
@@ -92,5 +94,15 @@ theorem eLpNorm_le_sum_enorm_mul_eLpNorm_coord (b : Module.Basis ι 𝕜 F)
       · exact ((b.coord i).continuous_of_finiteDimensional.comp_aestronglyMeasurable
           hg).smul_const (b i)
       · rw [eNorm_smul, mul_comm]
+
+/-- **Reassembling a map from representatives of its coordinates.** If each coordinate
+`z ↦ b.coord l (u z)` of `u` in a finite basis `b` agrees `μ`-almost everywhere with `g l`, then
+`u` agrees `μ`-almost everywhere with `z ↦ ∑ₗ g l z • b l`. -/
+theorem ae_eq_sum_smul_of_coord_ae_eq {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (b : Module.Basis ι R M) {u : α → M} {g : ι → α → R}
+    (h : ∀ l, (fun z => b.coord l (u z)) =ᵐ[μ] g l) :
+    u =ᵐ[μ] fun z => ∑ l, g l z • b l := by
+  filter_upwards [ae_all_iff.2 h] with z hz
+  simp only [← hz, Module.Basis.coord_apply, b.sum_repr]
 
 end Module.Basis
