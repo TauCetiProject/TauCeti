@@ -8,9 +8,14 @@ module
 public import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 
 /-!
-# Invariance of interior and frontier in boundaryless manifolds
+# Topological dimension and invariance of interior in manifolds
+
+Nonempty homeomorphic charted spaces have model vector spaces of equal dimension, even for
+models with boundary or corners. The argument compares an open interior chart with a chart in
+the target, using `Topology.IsOpenEmbedding.finrank_le_of_isEmbedding` in both directions.
 
 Let `M` and `N` be topological spaces charted on boundaryless models with corners `I` and `J`,
 over finite-dimensional real normed spaces of the same dimension. A homeomorphism `e : A ≃ₜ B`
@@ -29,6 +34,8 @@ frontier of `A` those sent to the unit circle.
 
 ## Main results
 
+* `Homeomorph.finrank_le_of_chartedSpace` and `Homeomorph.finrank_eq_of_chartedSpace`:
+  comparison and equality of model dimensions for homeomorphic nonempty charted spaces.
 * `Homeomorph.coe_apply_mem_interior_iff_of_boundaryless` and
   `Homeomorph.coe_apply_mem_frontier_iff_of_boundaryless`: invariance of interior and frontier
   points.
@@ -126,5 +133,53 @@ theorem norm_apply_eq_one_iff_mem_frontier (e : A ≃ₜ Metric.closedBall (0 : 
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   simpa only [dist_zero_right] using
     e.dist_apply_eq_iff_mem_frontier I one_ne_zero (hE.trans Complex.finrank_real_complex.symm) x
+
+end Homeomorph
+
+namespace Homeomorph
+
+/-- A homeomorphism from a nonempty charted space bounds the dimension of its model by that
+of the target model. Models may have boundary or corners; no smooth structure is required. -/
+theorem finrank_le_of_chartedSpace
+    {E H F H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [TopologicalSpace H] [TopologicalSpace H']
+    [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
+    (Φ : M ≃ₜ N) (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ F H') (x : M) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ F := by
+  let c := (chartAt H x).trans I.interiorChart
+  obtain ⟨z, hz⟩ := interior_extChartAt_target_nonempty I x
+  have hz' : z ∈ c.target := by
+    have hzI := interior_mono (extChartAt_target_subset_range (I := I) x) hz
+    have hzt := interior_subset hz
+    rw [extChartAt_target I x] at hzt
+    dsimp only [c]
+    rw [OpenPartialHomeomorph.trans_target, ModelWithCorners.interiorChart_target]
+    exact ⟨hzI, by simpa only [ModelWithCorners.interiorChart_coe_symm] using hzt.1⟩
+  let y := Φ (c.symm z)
+  let e := (c.symm.trans Φ.toOpenPartialHomeomorph).trans (chartAt H' y)
+  have hzΦ : z ∈ (c.symm.trans Φ.toOpenPartialHomeomorph).source := by
+    rw [OpenPartialHomeomorph.trans_source]
+    exact ⟨hz', Set.mem_univ _⟩
+  have hz'' : z ∈ e.source := by
+    rw [OpenPartialHomeomorph.trans_source]
+    exact ⟨hzΦ, mem_chart_source H' y⟩
+  have : Nonempty e.source := ⟨⟨z, hz''⟩⟩
+  exact e.open_source.isOpenEmbedding_subtypeVal.finrank_le_of_isEmbedding
+    (I'.isClosedEmbedding.isEmbedding.comp e.isOpenEmbedding_restrict.isEmbedding)
+
+/-- Nonempty homeomorphic charted spaces have model vector spaces of the same dimension,
+including models with boundary or corners. -/
+theorem finrank_eq_of_chartedSpace
+    {E H F H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [TopologicalSpace H] [TopologicalSpace H']
+    [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
+    [Nonempty M] (Φ : M ≃ₜ N)
+    (I : ModelWithCorners ℝ E H) (I' : ModelWithCorners ℝ F H') :
+    Module.finrank ℝ E = Module.finrank ℝ F := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact (Φ.finrank_le_of_chartedSpace I I' x).antisymm
+    (Φ.symm.finrank_le_of_chartedSpace I' I (Φ x))
 
 end Homeomorph
