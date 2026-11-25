@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.RingTheory.Norm.Basic
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.FieldTheory.Finite.EulerCriterion
 import TauCeti.RingTheory.Norm.Units
 
@@ -16,10 +17,12 @@ import TauCeti.RingTheory.Norm.Units
 # Lifting multiplicative characters through the norm
 
 For an extension `E/F` of commutative rings and a multiplicative character `χ` of `F`, the
-character `χ.liftNorm E` of `E` is `χ ∘ N_{E/F}`, where `N_{E/F} = Algebra.norm F` is the norm.
-For a finite extension of finite fields this is the operation that carries a character of `F` to
-the character of `E` whose Gauss sum (against the trace lift of an additive character) the
-Hasse–Davenport relation compares with the Gauss sum of `χ`.
+character `χ.liftNorm E` of `E` agrees with `χ ∘ N_{E/F}` on the units of `E` and vanishes on the
+non-units, where `N_{E/F} = Algebra.norm F` is the norm. For a finite-dimensional extension of
+fields it is `χ ∘ N_{E/F}` everywhere (`MulChar.liftNorm_apply`). For a finite extension of
+finite fields this is the operation that carries a character of `F` to the character of `E`
+whose Gauss sum (against the trace lift of an additive character) the Hasse–Davenport relation
+compares with the Gauss sum of `χ`.
 
 Lifting is a group homomorphism `MulChar F R →* MulChar E R` (`MulChar.liftNormHom`). For finite
 fields the norm is surjective on units (`FiniteField.unitsMap_norm_surjective`), so lifting is
@@ -33,7 +36,8 @@ characteristic.
 
 ## Main definitions
 
-* `MulChar.liftNorm`: the lift `χ ∘ N_{E/F}` of a multiplicative character of `F` to `E`.
+* `MulChar.liftNorm`: the lift of a multiplicative character of `F` to `E` through the norm,
+  equal to `χ ∘ N_{E/F}` on units (and everywhere for finite-dimensional field extensions).
 * `MulChar.liftNormHom`: lifting as a monoid homomorphism `MulChar F R →* MulChar E R`.
 
 ## Main results
@@ -66,9 +70,10 @@ variable {F : Type*} [CommRing F] (E : Type*) [CommRing E] [Algebra F E]
   {R : Type*} [CommMonoidWithZero R]
 
 /-- The **lift of a multiplicative character through the norm**: for an extension `E/F` and a
-multiplicative character `χ` of `F`, the character `χ ∘ N_{E/F}` of `E`. It is built from the unit
-homomorphism `x ↦ χ (N_{E/F} x)` on `Eˣ`; for a finite-dimensional extension of fields it is
-`χ ∘ N_{E/F}` everywhere (`MulChar.liftNorm_apply`). -/
+multiplicative character `χ` of `F`, the character of `E` that agrees with `χ ∘ N_{E/F}` on the
+units of `E` and vanishes on the non-units. It is built from the unit homomorphism
+`x ↦ χ (N_{E/F} x)` on `Eˣ`; for a finite-dimensional extension of fields it is `χ ∘ N_{E/F}`
+everywhere (`MulChar.liftNorm_apply`). -/
 noncomputable def liftNorm (χ : MulChar F R) : MulChar E R :=
   ofUnitHom (χ.toUnitHom.comp (TauCeti.Algebra.normUnits F))
 
@@ -116,6 +121,7 @@ theorem liftNorm_inv (χ : MulChar F R) : χ⁻¹.liftNorm E = (χ.liftNorm E)�
   map_inv (liftNormHom E) χ
 
 /-- Lifting commutes with changing the values along a ring homomorphism. -/
+@[simp]
 theorem liftNorm_ringHomComp {R R' : Type*} [CommRing R] [CommRing R'] (χ : MulChar F R)
     (f : R →+* R') : (χ.ringHomComp f).liftNorm E = (χ.liftNorm E).ringHomComp f := by
   ext x

@@ -37,10 +37,6 @@ characteristic two where every element is already a square).
   `n`-th powers in a finite field.
 * `TauCeti.FiniteField.pow_card_div_two_eq_neg_one`: a nonsquare `r` satisfies
   `r ^ (#F / 2) = -1`.
-* `TauCeti.FiniteField.card_sub_one_dvd_card_sub_one`: in a finite extension `F'/F` of finite
-  fields, `#F - 1 ∣ #F' - 1`.
-* `TauCeti.FiniteField.card_div_two_eq_mul_card_div_two`: in a finite extension `F'/F` of finite
-  fields of odd order, `#F' / 2 = ((#F' - 1) / (#F - 1)) * (#F / 2)`.
 * `TauCeti.FiniteField.algebraMap_pow_card_sub_one_div`: for `n ∣ #F - 1`, raising `a ∈ F` to the
   Euler exponent `(#F' - 1) / n` in a finite extension `F'/F` agrees with raising
   `a ^ ((#F - 1) / n)` to the extension degree `[F' : F]`.
@@ -100,29 +96,6 @@ theorem pow_card_div_two_eq_neg_one {F : Type*} [Field F] [Finite F] {r : F}
 section Extension
 
 variable {F F' : Type*} [Field F] [Field F'] [Finite F'] [Algebra F F']
-
-variable (F F') in
-/-- In a finite extension `F'/F` of finite fields, `#F - 1` divides `#F' - 1`, since
-`#F' = #F ^ [F' : F]`. -/
-theorem card_sub_one_dvd_card_sub_one : Nat.card F - 1 ∣ Nat.card F' - 1 := by
-  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
-  have : Module.Finite F F' := .of_finite
-  rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
-  exact Nat.sub_one_dvd_pow_sub_one _ _
-
-/-- In a finite extension `F'/F` of finite fields of odd order, the integer `#F' / 2` is
-`((#F' - 1) / (#F - 1)) * (#F / 2)`: raising to the power `#F / 2` after the norm, which is the
-power `(#F' - 1) / (#F - 1)`, is raising to the power `#F' / 2`. -/
-theorem card_div_two_eq_mul_card_div_two (hF : Odd (Nat.card F)) :
-    Nat.card F' / 2 = (Nat.card F' - 1) / (Nat.card F - 1) * (Nat.card F / 2) := by
-  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
-  have : Module.Finite F F' := .of_finite
-  have hF' : Odd (Nat.card F') := by
-    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
-    exact hF.pow
-  have hdiv2 {k : ℕ} (hk : Odd k) : k / 2 = (k - 1) / 2 := by obtain ⟨c, rfl⟩ := hk; omega
-  rw [hdiv2 hF, hdiv2 hF', mul_comm, Nat.div_mul_right_comm (Nat.Odd.sub_odd hF odd_one).two_dvd,
-    Nat.mul_div_cancel' (card_sub_one_dvd_card_sub_one F F')]
 
 /-- In a finite extension `F'/F` of finite fields with `n ∣ #F - 1`, raising `a ∈ F` to the Euler
 exponent `(#F' - 1) / n` in `F'` agrees with raising `a ^ ((#F - 1) / n)` to the extension degree
