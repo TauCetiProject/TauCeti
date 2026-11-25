@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 import Mathlib.Data.Sym.Sym2
 
 /-!
@@ -22,7 +23,7 @@ Imposing the partition condition on an arbitrary commutative ring keeps the defi
 the structure of `E`. It already forces every embedding to differ from its conjugate
 (`TauCeti.CMType.ringHom_star_ne_self`), and CM types exist exactly when no embedding is real
 (`TauCeti.CMType.nonempty_iff`), so a number field carries a CM type exactly when it is totally
-complex.
+complex. In particular `ℚ` has no CM type.
 
 ## Main definitions
 
@@ -31,6 +32,9 @@ complex.
   `Φ`; this makes `CMType E` an `InvolutiveStar`.
 * `TauCeti.CMType.induced Φ₀ f`: the CM type induced along `f : E₀ →+* E` by a CM type `Φ₀` on
   `E₀`, consisting of the embeddings `φ` with `φ ∘ f ∈ Φ₀`.
+* `TauCeti.CMType.StarCompCommute E`: every ring endomorphism of `ℂ` commutes with complex
+  conjugation on the embeddings of `E`, as on a CM field.
+* The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on the CM types of such an `E`.
 
 ## Main results
 
@@ -48,10 +52,13 @@ complex.
 * `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion, a CM type on `E` is
   induced from the subextension `F` exactly when membership depends only on the restriction
   to `F`.
+* `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, and
+  `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`.
 
 ## References
 
-* J. S. Milne, *Complex Multiplication*, §1, Definition 1.8 and the paragraph after it, p.11.
+* J. S. Milne, *Complex Multiplication*, §1, Definition 1.8 and the paragraph after it, p.11, and
+  p.13, footnote 3.
 -/
 
 public section
@@ -132,6 +139,10 @@ theorem nonempty_iff_isTotallyComplex {K : Type*} [Field K] :
 
 instance {K : Type*} [Field K] [IsTotallyComplex K] : Nonempty (CMType K) :=
   nonempty_iff_isTotallyComplex.mpr inferInstance
+
+/-- `ℚ` has no CM type: its only complex embedding is real. -/
+instance : IsEmpty (CMType ℚ) :=
+  ⟨fun Φ ↦ Φ.ringHom_star_ne_self (Rat.castHom ℂ) (Subsingleton.elim _ _)⟩
 
 /-! ### The complementary type -/
 
@@ -217,6 +228,69 @@ theorem induced_induced (Φ₀ : CMType E₀) (f : E₀ →+* E₁) (g : E₁ �
 theorem star_induced (Φ₀ : CMType E₀) (f : E₀ →+* E) :
     star (Φ₀.induced f) = (star Φ₀).induced f := by
   ext; simp
+
+/-! ### The action of `Aut(ℂ)` -/
+
+/-- Every ring endomorphism `σ` of `ℂ` commutes with complex conjugation on the complex embeddings
+of `E`: `conj ∘ σ ∘ φ = σ ∘ conj ∘ φ`. This holds on a CM field
+(`TauCeti.CMType.instStarCompCommuteOfIsCMField`) and makes `Aut(ℂ)` act on CM types. -/
+class StarCompCommute (E : Type*) [CommRing E] : Prop where
+  /-- Complex conjugation commutes with `σ` on embeddings. -/
+  star_comp (σ : ℂ →+* ℂ) (φ : E →+* ℂ) : star (σ.comp φ) = σ.comp (star φ)
+
+/-- On a CM field, complex conjugation commutes with every ring endomorphism of `ℂ` on
+embeddings (`RingHom.star_comp`). -/
+instance instStarCompCommuteOfIsCMField {K : Type*} [Field K] [CharZero K]
+    [Algebra.IsIntegral ℚ K] [IsCMField K] : StarCompCommute K :=
+  ⟨RingHom.star_comp⟩
+
+section StarCompCommute
+
+variable [StarCompCommute E]
+
+/-- `σ ∈ Aut(ℂ)` sends a CM type `Φ` to `σΦ = {σ ∘ φ : φ ∈ Φ}`, written as
+`{ψ | σ⁻¹ ∘ ψ ∈ Φ}`. -/
+instance : SMul (RingAut ℂ) (CMType E) where
+  smul σ Φ :=
+    { carrier := {ψ | (σ.symm : ℂ →+* ℂ).comp ψ ∈ Φ}
+      star_mem_iff' ψ := by
+        rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← StarCompCommute.star_comp, star_mem_iff] }
+
+/-- `ψ ∈ σΦ` exactly when `σ⁻¹ ∘ ψ ∈ Φ`. -/
+theorem mem_smul {σ : RingAut ℂ} {Φ : CMType E} {ψ : E →+* ℂ} :
+    ψ ∈ σ • Φ ↔ (σ.symm : ℂ →+* ℂ).comp ψ ∈ Φ :=
+  Iff.rfl
+
+/-- The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on CM types. -/
+instance : MulAction (RingAut ℂ) (CMType E) where
+  one_smul Φ := ext fun ψ ↦ by simp [mem_smul, RingAut.one_eq_refl]
+  mul_smul σ τ Φ := ext fun ψ ↦ by
+    have h : ((σ * τ).symm : ℂ →+* ℂ).comp ψ =
+        (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ) := by
+      ext; simp [← RingAut.inv_apply]
+    rw [mem_smul, mem_smul, mem_smul, h]
+
+/-- `σ ∘ φ ∈ σΦ` exactly when `φ ∈ Φ`. -/
+@[simp]
+theorem comp_mem_smul_iff {σ : RingAut ℂ} {Φ : CMType E} {φ : E →+* ℂ} :
+    (σ : ℂ →+* ℂ).comp φ ∈ σ • Φ ↔ φ ∈ Φ := by
+  rw [mem_smul, ← RingHom.comp_assoc]
+  simp
+
+/-- As a set, `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`. -/
+theorem coe_smul (σ : RingAut ℂ) (Φ : CMType E) :
+    ((σ • Φ : CMType E) : Set (E →+* ℂ)) = RingHom.comp (σ : ℂ →+* ℂ) '' (Φ : Set (E →+* ℂ)) := by
+  ext ψ
+  refine ⟨fun h ↦ ⟨(σ.symm : ℂ →+* ℂ).comp ψ, mem_smul.mp h, RingHom.ext fun x ↦ by simp⟩, ?_⟩
+  rintro ⟨φ, hφ, rfl⟩
+  exact comp_mem_smul_iff.mpr hφ
+
+/-- Taking the complementary type commutes with the action of `Aut(ℂ)`: `ι(σΦ) = σ(ιΦ)`. -/
+theorem star_smul (σ : RingAut ℂ) (Φ : CMType E) : star (σ • Φ) = σ • star Φ := by
+  ext ψ
+  simp only [mem_star, mem_smul]
+
+end StarCompCommute
 
 end CMType
 
