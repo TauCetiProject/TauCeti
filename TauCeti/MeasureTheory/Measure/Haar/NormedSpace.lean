@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.InterBall
 import Mathlib.MeasureTheory.Measure.Prod
@@ -48,6 +49,9 @@ measure of the image of the closed unit ball under a linear endomorphism `f` wit
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field, and applying this bound
 to a left inverse `g` of `f` bounds `‖det f‖` below by `(‖g‖ ^ n)⁻¹`.
+
+A function bounded by `K s ^ μ` on the closed ball of radius `s r` about the origin and vanishing
+off it has `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)`, since that ball has measure `(s r)ⁿ |B(0, 1)|`.
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
@@ -154,6 +158,9 @@ gives a set of measure one.
 * `MeasureTheory.Measure.finiteDimensional_of_isCompact_measure_ne_zero`: a compact set of
   nonzero measure for a left-invariant measure finite on compact sets forces a normed space over a
   complete nontrivially normed field to be finite-dimensional.
+* `TauCeti.integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall`: a function bounded by
+  `K s ^ μ` on the closed ball of radius `s r` about the origin and vanishing off it has
+  `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)` in dimension `n`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -977,6 +984,21 @@ theorem finiteDimensional_of_isCompact_measure_ne_zero
 end MeasureTheory.Measure
 
 namespace TauCeti
+
+/-- **Integrals at scale `s`.** A function on a finite-dimensional real space with an additive
+Haar measure, bounded by `K s ^ μ` on the closed ball of radius `s r` about the origin and
+vanishing off it, has `∫ ‖f‖ ≤ K rᵈ |B(0, 1)| s ^ (μ + d)` with `d` the dimension: the ball has
+measure `(s r)ᵈ |B(0, 1)|`. -/
+theorem integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall {X E : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X] [MeasurableSpace X]
+    [BorelSpace X] {mu : Measure X} [mu.IsAddHaarMeasure] [SeminormedAddCommGroup E] {f : X → E}
+    {s r K μ : ℝ} (hs : 0 < s) (hr : 0 ≤ r) (hfK : ∀ ξ ∈ closedBall 0 (s * r), ‖f ξ‖ ≤ K * s ^ μ)
+    (hf0 : ∀ ξ ∉ closedBall 0 (s * r), f ξ = 0) :
+    ∫ ξ, ‖f ξ‖ ∂mu ≤ K * r ^ finrank ℝ X * mu.real (ball 0 1) * s ^ (μ + finrank ℝ X) := by
+  refine (integral_norm_le_of_forall_compl_eq_zero measure_closedBall_lt_top hfK hf0).trans_eq ?_
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), Real.rpow_add hs, Real.rpow_natCast,
+    mul_pow]
+  ring
 
 section Rescale
 
