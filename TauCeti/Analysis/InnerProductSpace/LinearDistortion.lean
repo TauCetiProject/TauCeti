@@ -408,8 +408,11 @@ omit [FiniteDimensional ℝ W] in
 theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
     oV.outerDistortion oW (U : V →ₗ[ℝ] W) = 1 := by
-  have hid : oV.outerDistortion oW (U : V →ₗ[ℝ] W) = oV.outerDistortion oV LinearMap.id :=
-    oV.outerDistortion_linearIsometry_comp oV oW U.toLinearIsometry hU LinearMap.id
+  have hUc : U.toLinearIsometry.toLinearMap = (U : V →ₗ[ℝ] W) :=
+    LinearMap.ext fun _ ↦ by simp
+  have hid : oV.outerDistortion oW (U : V →ₗ[ℝ] W) = oV.outerDistortion oV LinearMap.id := by
+    simpa [hUc] using
+      oV.outerDistortion_linearIsometry_comp oV oW U.toLinearIsometry (by rwa [hUc]) LinearMap.id
   rw [hid, oV.outerDistortion_of_pos oV (by simp)]
   rcases n with - | m
   · simp
@@ -423,8 +426,11 @@ theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
 theorem innerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
     (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
     oV.innerDistortion oW (U : V →ₗ[ℝ] W) = 1 := by
-  have hid : oV.innerDistortion oW (U : V →ₗ[ℝ] W) = oV.innerDistortion oV LinearMap.id :=
-    oV.innerDistortion_linearIsometry_comp oV oW U.toLinearIsometry hU LinearMap.id
+  have hUc : U.toLinearIsometry.toLinearMap = (U : V →ₗ[ℝ] W) :=
+    LinearMap.ext fun _ ↦ by simp
+  have hid : oV.innerDistortion oW (U : V →ₗ[ℝ] W) = oV.innerDistortion oV LinearMap.id := by
+    simpa [hUc] using
+      oV.innerDistortion_linearIsometry_comp oV oW U.toLinearIsometry (by rwa [hUc]) LinearMap.id
   rw [hid, oV.innerDistortion_of_pos oV (by simp)]
   rcases n with - | m
   · simp

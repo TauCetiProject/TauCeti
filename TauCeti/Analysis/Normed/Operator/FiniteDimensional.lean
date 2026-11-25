@@ -145,14 +145,20 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜
 /-- Composing a linear map out of a finite-dimensional space on the left with a linear isometry
 leaves its operator norm unchanged. -/
 theorem norm_toContinuousLinearMap_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
-    ‖toContinuousLinearMap (W.toLinearMap ∘ₗ A)‖ = ‖toContinuousLinearMap A‖ :=
-  W.norm_toContinuousLinearMap_comp (g := toContinuousLinearMap A)
+    ‖toContinuousLinearMap (W.toLinearMap ∘ₗ A)‖ = ‖toContinuousLinearMap A‖ := by
+  have h : toContinuousLinearMap (W.toLinearMap ∘ₗ A) =
+      W.toContinuousLinearMap.comp (toContinuousLinearMap A) := by
+    ext; simp
+  rw [h, W.norm_toContinuousLinearMap_comp]
 
 /-- Composing a linear map out of a finite-dimensional space on the right with an isometric
 isomorphism leaves its operator norm unchanged. -/
 theorem norm_toContinuousLinearMap_comp_linearIsometryEquiv [FiniteDimensional 𝕜 G]
     (A : E →ₗ[𝕜] F) (U : G ≃ₗᵢ[𝕜] E) :
-    ‖toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E))‖ = ‖toContinuousLinearMap A‖ :=
-  (toContinuousLinearMap A).opNorm_comp_linearIsometryEquiv U
+    ‖toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E))‖ = ‖toContinuousLinearMap A‖ := by
+  have h : toContinuousLinearMap (A ∘ₗ (U : G →ₗ[𝕜] E)) =
+      (toContinuousLinearMap A).comp (U : G →L[𝕜] E) := by
+    ext; simp
+  rw [h, (toContinuousLinearMap A).opNorm_comp_linearIsometryEquiv]
 
 end LinearMap
