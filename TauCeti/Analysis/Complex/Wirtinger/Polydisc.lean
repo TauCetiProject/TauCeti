@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.PowerSeries.Polydisc
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
 # The `bar∂`-Poincaré lemma on polydiscs
@@ -565,23 +566,6 @@ section WholePolydisc
 open Metric
 
 variable {ι : Type*}
-
-/-- The concentric polydiscs of polyradius `r_i - 1 / (k + 1)` increase strictly and exhaust the
-polydisc of polyradius `r`. -/
-private theorem exists_polyradius_exhaustion [Finite ι] (c : ι → ℂ) (r : ι → ℝ) :
-    ∃ s : ℕ → ι → ℝ, (∀ k i, s k i < s (k + 1) i) ∧ Monotone s ∧ (∀ k i, s k i < r i) ∧
-      ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∃ k, z ∈ univ.pi fun i ↦ ball (c i) (s k i) := by
-  refine ⟨fun k i ↦ r i - 1 / ((k : ℝ) + 1), fun k i ↦ ?_, fun m k hmk i ↦ ?_, fun k i ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · exact sub_lt_sub_left (by exact_mod_cast Nat.one_div_lt_one_div (Nat.lt_succ_self k)) _
-  · exact sub_le_sub_left (Nat.one_div_le_one_div hmk) _
-  · exact sub_lt_self _ Nat.one_div_pos_of_nat
-  · have h (i : ι) : ∀ᶠ k : ℕ in atTop, dist (z i) (c i) < r i - 1 / ((k : ℝ) + 1) := by
-      have ht : Tendsto (fun k : ℕ ↦ r i - 1 / ((k : ℝ) + 1)) atTop (𝓝 (r i)) := by
-        simpa using (tendsto_const_nhds (x := r i)).sub tendsto_one_div_add_atTop_nhds_zero_nat
-      exact ht.eventually_const_lt (hz i (mem_univ i))
-    obtain ⟨k, hk⟩ := (eventually_all.2 h).exists
-    exact ⟨k, fun i _ ↦ hk i⟩
 
 section OneForms
 
