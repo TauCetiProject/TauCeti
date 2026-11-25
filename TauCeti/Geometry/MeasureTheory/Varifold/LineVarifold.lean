@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.MeasureTheory.Varifold.Convergence
 public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
 public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.LinearAlgebra.Trace
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -42,6 +44,10 @@ Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any cl
 
 * `Euclidean.weight_lineVarifold`: the weight of `Euclidean.lineVarifold a u P` is Lebesgue
   measure transported by `t ↦ a + t u`.
+* `Euclidean.lineVarifold_injective`: line varifolds along the same line with different planes
+  are different.
+* `Euclidean.varifoldTendsto_lineVarifold`: line varifolds converge when their unit directions and
+  their planes converge.
 * `Euclidean.firstVariation_lineVarifold_apply`: `δV(X) = ∫ tr (P ∘ DX(a + t u)) dt`.
 * `Euclidean.firstVariation_verticalLift_verticalField`: `δV(X_n) = ∫ ψ(a + t u) dt`.
 * `Euclidean.not_exists_abs_firstVariation_verticalLift_le`: the vertical lift does not have
@@ -57,7 +63,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter Module Metric
-open scoped Distributions RealInnerProductSpace ContDiff
+open scoped Distributions RealInnerProductSpace ContDiff Topology CompactlySupported
 
 namespace Euclidean
 
@@ -228,6 +234,54 @@ theorem isFiniteMeasureOnCompacts_lineVarifold {a u : E} (hu : u ≠ 0) (P : gra
     ((TauCeti.isClosedEmbedding_add_smul_left a hu).isCompact_preimage
       ((hK.image continuous_fst).image continuous_subtypeVal)).measure_lt_top
   exact ⟨_, ⟨_, ht, rfl⟩, rfl⟩
+
+/-- Line varifolds along the same line with different planes are different: the plane `P` is
+recovered as the only plane carrying mass. -/
+theorem lineVarifold_injective (a u : E) : Function.Injective (lineVarifold (k := k) a u) := by
+  intro P Q h
+  by_contra hPQ
+  have hS : MeasurableSet (univ ×ˢ {Q} : Set ((⊤ : Opens E) × grassmannian ℝ E k)) :=
+    MeasurableSet.univ.prod (measurableSet_singleton _)
+  have h' := congrArg (fun V : Measure _ => V (univ ×ˢ {Q})) h
+  simp only [lineVarifold_apply _ _ _ hS] at h'
+  have hP : lineVarifoldParam a u P ⁻¹' (univ ×ˢ {Q}) = ∅ := by
+    ext t
+    simp [hPQ]
+  have hQ : lineVarifoldParam a u Q ⁻¹' (univ ×ˢ {Q}) = univ := by
+    ext t
+    simp
+  rw [hP, hQ, measure_empty, Real.volume_univ] at h'
+  exact ENNReal.zero_ne_top h'
+
+/-- **Convergence of rotating lines.** For unit vectors `u j → u₀` and planes `P j → P₀` in
+`G(E, k)`, the lines `a + ℝ (u j)` carrying `P j` converge to the line `a + ℝ u₀` carrying `P₀`. -/
+theorem varifoldTendsto_lineVarifold {a : E} {u : ℕ → E} {u₀ : E} (hu : ∀ j, ‖u j‖ = 1)
+    (hu₀ : Tendsto u atTop (𝓝 u₀)) {P : ℕ → grassmannian ℝ E k} {P₀ : grassmannian ℝ E k}
+    (hP : Tendsto P atTop (𝓝 P₀)) :
+    TauCeti.VarifoldTendsto (fun j => lineVarifold a (u j) (P j)) (lineVarifold a u₀ P₀) := by
+  rw [TauCeti.varifoldTendsto_iff]
+  intro f
+  have hfc := map_continuous f
+  simp only [integral_lineVarifold _ _ _ hfc.aestronglyMeasurable]
+  obtain ⟨C, hC⟩ := hfc.bounded_above_of_compact_support f.hasCompactSupport
+  obtain ⟨R, hR⟩ := ((f.hasCompactSupport.image (continuous_subtypeVal.comp
+    continuous_fst)).isBounded).subset_closedBall a
+  refine tendsto_integral_of_dominated_convergence ((Icc (-R) R).indicator fun _ => C)
+    (fun j => (hfc.comp (continuous_lineVarifoldParam _ _ _)).aestronglyMeasurable)
+    ((integrableOn_const measure_Icc_lt_top.ne).integrable_indicator measurableSet_Icc)
+    (fun j => Eventually.of_forall fun t => ?_) (Eventually.of_forall fun t => ?_)
+  · by_cases ht : t ∈ Icc (-R) R
+    · rw [indicator_of_mem ht]
+      exact hC _
+    · rw [indicator_of_notMem ht, norm_le_zero_iff]
+      refine image_eq_zero_of_notMem_tsupport fun hmem => ht ?_
+      have := hR ⟨_, hmem, rfl⟩
+      simp only [Function.comp_apply, lineVarifoldParam_apply, mem_closedBall, dist_eq_norm,
+        add_sub_cancel_left, norm_smul, hu, mul_one, Real.norm_eq_abs] at this
+      exact abs_le.1 this
+  · refine (hfc.tendsto _).comp ?_
+    simp only [lineVarifoldParam_apply]
+    exact (tendsto_subtype_rng.2 (tendsto_const_nhds.add (hu₀.const_smul t))).prodMk_nhds hP
 
 /-- **The first variation of a line varifold** is `δV(X) = ∫ tr (P ∘ DX(a + t u)) dt`. -/
 theorem firstVariation_lineVarifold_apply {a u : E} (hu : u ≠ 0) (P : grassmannian ℝ E k)

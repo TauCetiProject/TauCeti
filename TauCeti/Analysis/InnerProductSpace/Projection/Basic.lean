@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.RankOne
 
 /-!
 # Products and norms of orthogonal projections
@@ -117,6 +118,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   onto the line spanned by `ν` does not increase norms, in a seminormed inner product space.
 * `TauCeti.apply_starProjection_singleton`: a linear map `ℓ` at the projection onto the line
   `𝕜 ∙ ν` is `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
+* `Submodule.starProjection_singleton_eq_rankOneDivNormSq`: the projection onto the line `𝕜 ∙ ν`
+  is the normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 ν ν`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -688,6 +691,13 @@ theorem apply_starProjection_singleton {M F : Type*} [AddCommMonoid M] [Module �
     [FunLike F E M] [LinearMapClass F 𝕜 E M] (ℓ : F) (ν a : E) :
     ℓ ((𝕜 ∙ ν).starProjection a) = ⟪ν, a⟫_𝕜 • ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) := by
   rw [Submodule.starProjection_singleton, RCLike.ofReal_pow, div_eq_mul_inv, ← smul_smul, map_smul]
+
+/-- The orthogonal projection onto the line `𝕜 ∙ ν` is the rank-one operator `w ↦ ⟪ν, w⟫ • ν`
+divided by `‖ν‖²`; both sides vanish when `ν = 0`. -/
+theorem _root_.Submodule.starProjection_singleton_eq_rankOneDivNormSq (ν : E) :
+    (𝕜 ∙ ν).starProjection = rankOneDivNormSq 𝕜 ν ν := by
+  ext w
+  simp [Submodule.starProjection_singleton, rankOneDivNormSq_apply, div_eq_inv_mul]
 
 /-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
 of their span is nontrivial. -/
