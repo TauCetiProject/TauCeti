@@ -46,6 +46,8 @@ therefore has length divisible by `12`; conversely `(T B)⁶ = 1` gives one of e
 * `TauCeti.ModularGroup.slRelators`: the relators `s⁴` and `s² r⁻³`.
 * `TauCeti.ModularGroup.slPresentation`: the presentation
   `PresentedGroup slRelators ≃* SL(2, ℤ)`, sending `s` and `r` to `S` and `R`.
+* `TauCeti.ModularGroup.slLift`: its universal property, the homomorphism `SL(2, ℤ) →* G`
+  sending `S` and `R` to `a` and `b` with `a⁴ = 1` and `a² = b³`.
 * `TauCeti.ModularGroup.slAbelianizationMulEquiv`: the abelianization of `SL(2, ℤ)` is
   `Multiplicative (ZMod 12)`, with the class of `T` sent to `1`.
 * `TauCeti.ModularGroup.slAbelianizationMulEquiv_of_isConj_T`: every conjugate of `T` has
@@ -73,16 +75,21 @@ with `s = of 0` and `r = of 1`. -/
 def slRelators : Set (FreeGroup (Fin 2)) :=
   {FreeGroup.of 0 ^ 4, FreeGroup.of 0 ^ 2 * (FreeGroup.of 1 ^ 3)⁻¹}
 
+/-- The relators of `⟨s, r | s⁴, s² r⁻³⟩` are exactly `s⁴` and `s² r⁻³`. -/
+theorem mem_slRelators_iff {r : FreeGroup (Fin 2)} :
+    r ∈ slRelators ↔ r = FreeGroup.of 0 ^ 4 ∨ r = FreeGroup.of 0 ^ 2 * (FreeGroup.of 1 ^ 3)⁻¹ :=
+  Iff.rfl
+
 /-- The first generator of the presented group satisfies `s⁴ = 1`. -/
 private theorem of_zero_pow_four : (PresentedGroup.of 0 : PresentedGroup slRelators) ^ 4 = 1 := by
   rw [PresentedGroup.of, ← map_pow]
-  exact PresentedGroup.one_of_mem (by simp [slRelators])
+  exact PresentedGroup.one_of_mem (mem_slRelators_iff.2 (Or.inl rfl))
 
 /-- The generators of the presented group satisfy `s² = r³`. -/
 private theorem of_zero_sq : (PresentedGroup.of 0 : PresentedGroup slRelators) ^ 2 =
     PresentedGroup.of 1 ^ 3 := by
   rw [PresentedGroup.of, PresentedGroup.of, ← map_pow, ← map_pow]
-  exact PresentedGroup.mk_eq_mk_of_mul_inv_mem (by simp [slRelators])
+  exact PresentedGroup.mk_eq_mk_of_mul_inv_mem (mem_slRelators_iff.2 (Or.inr rfl))
 
 /-- The element `s²` of the presented group is central. -/
 private theorem of_zero_sq_mem_center :
@@ -164,14 +171,10 @@ private noncomputable def pslToQuotient : PSL(2, ℤ) →* PresentedGroup slRela
 private theorem pslToQuotient_comp_slPresentationHom :
     (pslToQuotient.comp (QuotientGroup.mk' _)).comp slPresentationHom =
       QuotientGroup.mk' sqSubgroup := by
-  have hy : modularEquiv.symm (S : PSL(2, ℤ)) = TriangleGroup.y 3 2 0 :=
-    (MulEquiv.symm_apply_eq _).2 modularEquiv_y.symm
-  have hz : modularEquiv.symm (T : PSL(2, ℤ)) = TriangleGroup.z 3 2 0 :=
-    (MulEquiv.symm_apply_eq _).2 modularEquiv_z.symm
   refine PresentedGroup.ext fun j ↦ ?_
   fin_cases j
-  · simp [pslToQuotient, slPresentationHom_of_zero, hy]
-  · simp [pslToQuotient, slPresentationHom_of_one, R_def, hy, hz]
+  · simp [pslToQuotient, slPresentationHom_of_zero]
+  · simp [pslToQuotient, slPresentationHom_of_one, R_def]
 
 /-- The kernel of `s ↦ S`, `r ↦ R` is trivial: it lies in `⟨s²⟩ = {1, s²}`, and `s²` maps to
 `-1`. -/
@@ -183,7 +186,7 @@ private theorem slPresentationHom_injective : Function.Injective slPresentationH
   obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 hmem
   rw [map_zpow, map_pow, slPresentationHom_of_zero, S_sq] at hw
   obtain ⟨m, rfl | rfl⟩ := Int.even_or_odd' k
-  · rw [zpow_mul, zpow_two, ← pow_two, ← pow_mul, of_zero_pow_four, one_zpow]
+  · simp [zpow_mul, ← pow_mul, of_zero_pow_four]
   · rw [zpow_add_one, zpow_mul, show (-1 : SL(2, ℤ)) ^ (2 : ℤ) = 1 by decide, one_zpow,
       one_mul] at hw
     exact absurd hw (by decide)
@@ -196,8 +199,7 @@ private theorem slPresentationHom_surjective : Function.Surjective slPresentatio
   rintro _ (rfl | rfl)
   · exact ⟨_, slPresentationHom_of_zero⟩
   · refine ⟨(PresentedGroup.of 0)⁻¹ * PresentedGroup.of 1, ?_⟩
-    rw [map_mul, map_inv, slPresentationHom_of_zero, slPresentationHom_of_one, R_def,
-      inv_mul_cancel_left]
+    rw [map_mul, map_inv, slPresentationHom_of_zero, slPresentationHom_of_one, S_inv_mul_R]
 
 /-- **The amalgam presentation of the modular group.** `SL(2, ℤ)` is the group
 `⟨s, r | s⁴, s² r⁻³⟩ = ℤ/4 ∗_{ℤ/2} ℤ/6`, with `s` and `r` sent to `S` and `R = S T`. -/
@@ -225,20 +227,43 @@ theorem slPresentation_symm_S : slPresentation.symm S = PresentedGroup.of 0 :=
 theorem slPresentation_symm_R : slPresentation.symm R = PresentedGroup.of 1 :=
   (MulEquiv.symm_apply_eq _).2 slPresentation_of_one.symm
 
+section Lift
+
+variable {G : Type*} [Group G]
+
+/-- **The universal property of the amalgam presentation.** Elements `a` and `b` of a group with
+`a⁴ = 1` and `a² = b³` define a homomorphism from `SL(2, ℤ)` sending `S` and `R = S T` to `a`
+and `b`. -/
+noncomputable def slLift (a b : G) (h4 : a ^ 4 = 1) (h : a ^ 2 = b ^ 3) : SL(2, ℤ) →* G :=
+  (PresentedGroup.toGroup (f := ![a, b]) <| by
+    rintro _ (rfl | rfl) <;> simp [h4, h]).comp slPresentation.symm.toMonoidHom
+
+variable (a b : G) (h4 : a ^ 4 = 1) (h : a ^ 2 = b ^ 3)
+
+/-- The homomorphism `slLift a b h4 h` sends `S` to `a`. -/
+@[simp]
+theorem slLift_S : slLift a b h4 h S = a := by
+  simp [slLift]
+
+/-- The homomorphism `slLift a b h4 h` sends `R = S T` to `b`. -/
+@[simp]
+theorem slLift_R : slLift a b h4 h R = b := by
+  simp [slLift]
+
+end Lift
+
 /-! ### The abelianization -/
 
 /-- The character of `SL(2, ℤ)` with values in `ℤ/12` sending `S` and `R` to `9` and `10`, read
 off the presentation. -/
 private noncomputable def zmodTwelveChar : SL(2, ℤ) →* Multiplicative (ZMod 12) :=
-  (PresentedGroup.toGroup (f := ![Multiplicative.ofAdd 9, Multiplicative.ofAdd 10]) <| by
-    rintro _ (rfl | rfl) <;> decide).comp slPresentation.symm.toMonoidHom
+  slLift (Multiplicative.ofAdd 9) (Multiplicative.ofAdd 10) (by decide) (by decide)
 
-private theorem zmodTwelveChar_S : zmodTwelveChar S = Multiplicative.ofAdd 9 := by
-  simp [zmodTwelveChar]
+private theorem zmodTwelveChar_S : zmodTwelveChar S = Multiplicative.ofAdd 9 :=
+  slLift_S ..
 
 private theorem zmodTwelveChar_T : zmodTwelveChar T = Multiplicative.ofAdd 1 := by
-  have h : zmodTwelveChar R = Multiplicative.ofAdd 10 := by simp [zmodTwelveChar]
-  rw [show T = S⁻¹ * R by rw [R_def, inv_mul_cancel_left], map_mul, map_inv, zmodTwelveChar_S, h]
+  rw [← S_inv_mul_R, map_mul, map_inv, zmodTwelveChar_S, zmodTwelveChar, slLift_R]
   decide
 
 /-- In the abelianization the class of `S` is the inverse cube of the class of `T`: from
@@ -330,7 +355,15 @@ theorem slAbelianizationMulEquiv_of_isConj_T {g : SL(2, ℤ)} (h : IsConj T g) :
 /-- `(T B)⁶ = 1` for `B = S T S⁻¹ = (1 0; -1 1)`: the product `T B = (0 1; -1 1)` has
 order six. -/
 theorem T_mul_S_mul_T_mul_S_inv_pow_six : (T * (S * T * S⁻¹)) ^ 6 = (1 : SL(2, ℤ)) := by
-  decide
+  -- With `T = S⁻¹ R` and `S⁻¹ = S³`, the product `T B = S⁻¹ R² S⁻¹` is the conjugate
+  -- `S⁻¹ R⁵ S` of `R² S² = R⁵`, whose sixth power is `(R⁶)⁵ = 1`.
+  have hS : S ^ 2 * S = S⁻¹ :=
+    eq_inv_of_mul_eq_one_left (by rw [mul_assoc, ← sq, S_sq, neg_one_mul, neg_neg])
+  have h : T * (S * T * S⁻¹) = S⁻¹ * R ^ 5 * S⁻¹⁻¹ := by
+    rw [← S_inv_mul_R, mul_inv_cancel_left, inv_inv, show 5 = 2 + 3 from rfl, pow_add,
+      R_pow_three, ← S_sq, mul_assoc S⁻¹, mul_assoc, mul_assoc (R ^ 2), hS, ← mul_assoc R, ← sq]
+  rw [h, conj_pow, ← pow_mul, show 5 * 6 = 6 * 5 from rfl, pow_mul, R_pow_six, one_pow,
+    mul_one, mul_inv_cancel]
 
 /-- **Positive factorizations of the identity in `SL(2, ℤ)`.** A list of `n` conjugates of `T`
 with product `1` exists if and only if `12 ∣ n`. Each such element has class `1` in
