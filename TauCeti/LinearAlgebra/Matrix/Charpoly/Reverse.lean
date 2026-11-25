@@ -36,6 +36,9 @@ the dimension.
   `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
+* `Matrix.charpolyRev_smul`: `det (1 - X (c A))` is `det (1 - X A)` evaluated at `c X`.
+* `Matrix.aeval_charpolyRev_eq_zero_of_mul_eq_one`: if `B A = 1`, then `B` is a root of
+  `det (1 - X A)`.
 * `Matrix.charpolyRev_eq_charpolyRev_iff`: for matrices of the same size, `det (1 - X A)`
   determines the characteristic polynomial and conversely.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
@@ -159,6 +162,36 @@ theorem charpolyRev_map (A : Matrix ι ι R) (f : R →+* S) :
   congr 1
   ext i j
   by_cases h : i = j <;> simp [h]
+
+/-- Scaling `A` by `c` rescales the variable of `det (1 - X A)`: `det (1 - X (c A))` is
+`det (1 - X A)` evaluated at `c X`. -/
+theorem charpolyRev_smul (c : R) (A : Matrix ι ι R) :
+    (c • A).charpolyRev = A.charpolyRev.comp (C c * X) := by
+  rw [charpolyRev, charpolyRev, ← coe_compRingHom_apply, RingHom.map_det]
+  congr 1
+  refine Matrix.ext fun i j ↦ ?_
+  by_cases h : i = j <;> simp [h] <;> ring
+
+/-- **Cayley–Hamilton for the inverse.** If `B A = 1`, then `B` is a root of `det (1 - X A)`.
+Indeed `det (1 - X A)` is a unit multiple of the characteristic polynomial of `B = A⁻¹`. -/
+theorem aeval_charpolyRev_eq_zero_of_mul_eq_one {A B : Matrix ι ι R} (h : B * A = 1) :
+    aeval B A.charpolyRev = 0 := by
+  have hA : IsUnit A := ⟨⟨A, B, mul_eq_one_comm.1 h, h⟩, rfl⟩
+  have hdet := Ring.mul_inverse_cancel _ ((isUnit_iff_isUnit_det A).1 hA)
+  have hsq : ((-1 : R) ^ Fintype.card ι) * (-1) ^ Fintype.card ι = 1 := by
+    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  have hu : C ((-1) ^ Fintype.card ι * A.det) * ((-1) ^ Fintype.card ι * C (Ring.inverse A.det))
+      = (1 : R[X]) := by
+    have h' : (-1) ^ Fintype.card ι * A.det * ((-1) ^ Fintype.card ι * Ring.inverse A.det) = 1 := by
+      linear_combination (-1 : R) ^ Fintype.card ι * (-1) ^ Fintype.card ι * hdet + hsq
+    calc _ = C ((-1) ^ Fintype.card ι * A.det * ((-1) ^ Fintype.card ι * Ring.inverse A.det)) := by
+          simp only [map_mul, map_pow, map_neg, map_one]
+      _ = 1 := by rw [h', C_1]
+  -- `A.charpolyRev` is the unit `C ((-1) ^ n * det A)` times the characteristic polynomial of `B`
+  have hrev : A.charpolyRev = C ((-1) ^ Fintype.card ι * A.det) * B.charpoly := by
+    rw [← inv_eq_left_inv h, charpoly_inv A hA]
+    linear_combination (-A.charpolyRev) * hu
+  rw [hrev, map_mul, aeval_self_charpoly, mul_zero]
 
 /-- `det (1 - X A)` is unchanged by transposition. -/
 @[simp]
