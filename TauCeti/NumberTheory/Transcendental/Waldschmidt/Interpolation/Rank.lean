@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Matrix
-import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
+import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # The rank of Waldschmidt's interpolation matrix
