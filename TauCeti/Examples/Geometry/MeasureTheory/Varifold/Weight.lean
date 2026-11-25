@@ -81,29 +81,24 @@ theorem norm_e (i : Fin 2) : ‖e i‖ = 1 := by
   simp [e]
 
 /-- The line `ℝ eᵢ` as a point of `G(ℝ², 1)`, the orthogonal projection onto it. -/
-def line (i : Fin 2) : grassmannian ℝ Plane 1 :=
-  ⟨(ℝ ∙ e i).starProjection, grassmannian.starProjection_mem (finrank_span_singleton (e_ne_zero i))⟩
+abbrev line (i : Fin 2) : grassmannian ℝ Plane 1 :=
+  spanLine (e i) (e_ne_zero i)
 
 /-- The value of `line i` is the orthogonal projection onto `ℝ eᵢ`. -/
 theorem coe_line (i : Fin 2) : (line i : Plane →L[ℝ] Plane) =
     (ℝ ∙ e i).starProjection :=
-  (rfl)
+  coe_spanLine _ _
 
 /-- The horizontal lift of the `x`-axis: the line `ℝ e₀`, parametrized by Lebesgue measure, with
 the horizontal plane `ℝ e₀` at every point. -/
 def horizontalLift : Measure ((⊤ : Opens Plane) ×
     grassmannian ℝ Plane 1) :=
-  lineVarifold 0 (e 0) (line 0)
-
-/-- The vertical lift along `eᵢ` is the line varifold carrying the plane `line i`. -/
-theorem verticalLift_eq_lineVarifold_line (a u : Plane) (i : Fin 2) :
-    verticalLift a u (e i) (e_ne_zero i) = lineVarifold a u (line i) := by
-  rw [verticalLift_def, line]
+  verticalLift 0 (e 0) (e 0) (e_ne_zero 0)
 
 /-- The two lifts have the same weight. -/
 theorem weight_horizontalLift_eq_weight_verticalLift :
     weight horizontalLift = weight (verticalLift 0 (e 0) (e 1) (e_ne_zero 1)) := by
-  rw [horizontalLift, verticalLift_eq_lineVarifold_line, weight_lineVarifold,
+  rw [horizontalLift, verticalLift_def, verticalLift_def, weight_lineVarifold,
     weight_lineVarifold]
 
 /-- The two lines are different points of `G(ℝ², 1)`. -/
@@ -126,7 +121,7 @@ theorem horizontalLift_ne_verticalLift :
       grassmannian ℝ Plane 1)) :=
     MeasurableSet.univ.prod (measurableSet_singleton _)
   have h' := congrArg (fun V : Measure _ => V (univ ×ˢ {line 1})) h
-  simp only [horizontalLift, verticalLift_eq_lineVarifold_line, lineVarifold_apply _ _ _ hS] at h'
+  simp only [horizontalLift, verticalLift_def, lineVarifold_apply _ _ _ hS] at h'
   have h₀ : lineVarifoldParam 0 (e 0) (line 0) ⁻¹' (univ ×ˢ {line 1}) = ∅ := by
     ext t
     simp [line_zero_ne_line_one]
@@ -161,7 +156,7 @@ theorem continuous_traceDiag : Continuous traceDiag :=
   (TauCeti.traceCLM ℝ Plane).continuous.comp (continuous_id.clm_comp continuous_const)
 
 /-- The test function `χ(x) tr(P ∘ diag(1, 0))` is continuous for continuous `χ`. -/
-theorem continuous_testFunction {χ : Plane → ℝ} (hχ : Continuous χ) :
+theorem continuous_mul_traceDiag {χ : Plane → ℝ} (hχ : Continuous χ) :
     Continuous fun z : (⊤ : Opens Plane) × grassmannian ℝ Plane 1 =>
       χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) :=
   (hχ.comp (continuous_subtypeVal.comp continuous_fst)).mul
@@ -170,21 +165,22 @@ theorem continuous_testFunction {χ : Plane → ℝ} (hχ : Continuous χ) :
 /-- Against the horizontal lift, `χ(x) tr(P ∘ diag(1, 0))` integrates to `∫ χ(t e₀) dt`. -/
 theorem integral_mul_traceDiag_horizontalLift {χ : Plane → ℝ} (hχ : Continuous χ) :
     ∫ z, χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) ∂horizontalLift = ∫ t : ℝ, χ (t • e 0) := by
-  rw [horizontalLift, integral_lineVarifold _ _ _
-    (continuous_testFunction hχ).aestronglyMeasurable]
+  rw [horizontalLift, verticalLift_def, integral_lineVarifold _ _ _
+    (continuous_mul_traceDiag hχ).aestronglyMeasurable]
   simp only [lineVarifoldParam_apply, traceDiag_line_zero, mul_one, zero_add]
 
 /-- Against the vertical lift, `χ(x) tr(P ∘ diag(1, 0))` integrates to `0`. -/
 theorem integral_mul_traceDiag_verticalLift {χ : Plane → ℝ} (hχ : Continuous χ) :
     ∫ z, χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) ∂verticalLift 0 (e 0) (e 1) (e_ne_zero 1) =
       0 := by
-  rw [verticalLift_eq_lineVarifold_line, integral_lineVarifold _ _ _
-    (continuous_testFunction hχ).aestronglyMeasurable]
+  rw [verticalLift_def, integral_lineVarifold _ _ _
+    (continuous_mul_traceDiag hχ).aestronglyMeasurable]
   simp only [lineVarifoldParam_apply, traceDiag_line_one, mul_zero, integral_zero]
 
 /-- **The horizontal lift of the `x`-axis has mass `2` on the open unit disc.** -/
 theorem weight_horizontalLift_ball : weight horizontalLift (ball 0 1) = 2 := by
-  rw [horizontalLift, weight_lineVarifold, Measure.map_apply (by fun_prop) measurableSet_ball]
+  rw [horizontalLift, verticalLift_def, weight_lineVarifold,
+    Measure.map_apply (by fun_prop) measurableSet_ball]
   have : (fun t : ℝ => (0 : Plane) + t • e 0) ⁻¹' ball 0 1 = ball 0 1 := by
     ext t
     simp [norm_smul]
