@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
-public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Relation
 
 /-!
 # The diagonal reflection on unblocked grid homology
@@ -18,8 +17,9 @@ the permutation `G.O` (`Differential/Transpose.lean`). This file descends that s
 unblocked grid homology: `GH⁻(G)` and `GH⁻(G.transpose)` are identified by a semilinear
 equivalence along the renaming of the variables. The reflection preserves the `O`-Maslov and
 Alexander gradings of grid states, so on chains and on homology it preserves the full bigrading.
-Hence for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules
-(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`).
+Hence for a knot grid the two homologies are isomorphic as bigraded `R[U]`-modules
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_transpose`), and so also as
+Alexander-graded `R[U]`-modules (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`).
 
 The reflection exchanges row and column commutations (`GridDiagram.isColumnCommutation_transpose`).
 So the invariance of `GH⁻` under row commutations follows from its invariance under the
@@ -42,8 +42,10 @@ diagonal reflection and under column commutations
   Alexander grading.
 * `unblockedHomologyTransposeEquiv_mem_bigradedUnblockedHomologyPiece`, in the namespace
   `TauCeti.OddComponentGridDiagram`: it preserves the `O`-Maslov--Alexander bigrading.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`: for a knot grid, `GH⁻` is
-  unchanged by the diagonal reflection as an Alexander-graded `R[U]`-module.
+* `TauCeti.GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_transpose`,
+  `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`: for a knot grid, `GH⁻` is
+  unchanged by the diagonal reflection as a bigraded, and so as an Alexander-graded,
+  `R[U]`-module.
 
 ## References
 
@@ -175,17 +177,20 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
+/-- The diagonal reflection of a knot grid preserves the bigraded `GH⁻`. -/
+theorem bigradedUnblockedHomologyIsomorphic_transpose :
+    hG.BigradedUnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K :=
+  .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
+    (G.unblockedHomologyTransposeEquiv K).toLinearMap
+    (G.unblockedHomologyTransposeEquiv K).bijective fun _ _ hy ↦
+      OddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_bigradedUnblockedHomologyPiece
+        hG.toOddComponentGridDiagram K hy
+
 /-- The diagonal reflection of a knot grid preserves `GH⁻` as an Alexander-graded
 `K[U]`-module. -/
 theorem unblockedHomologyIsomorphic_transpose :
-    hG.UnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K := by
-  refine .of_semilinearMap (fun p => ?_)
-    (G.unblockedHomologyTransposeEquiv K).toLinearMap
-    (G.unblockedHomologyTransposeEquiv K).bijective fun a y hy => ?_
-  · simp [aeval_rename, Function.comp_def]
-  · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-      ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-    exact hG.toOddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_piece K hy
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K :=
+  (hG.bigradedUnblockedHomologyIsomorphic_transpose K).unblockedHomologyIsomorphic
 
 end GridDiagram.IsKnot
 
