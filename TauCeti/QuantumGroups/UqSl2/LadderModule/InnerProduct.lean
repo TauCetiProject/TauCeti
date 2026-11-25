@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 public import TauCeti.QuantumGroups.UqSl2.Star
 public import TauCeti.QuantumGroups.QuantumInteger.Order
@@ -245,10 +246,8 @@ private theorem invariant_e {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0)
 theorem invariantForm_smul {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0)
     (a : UqSl2 (q : ℂ)) (v w : LadderModule (q : ℂ) m 1) :
     letI : Fact ((q : ℂ) ≠ 0) := ⟨by exact_mod_cast hq.ne'⟩
-    letI : Fact (IsSelfAdjoint (q : ℂ)) := ⟨by simp [IsSelfAdjoint]⟩
     invariantForm q m (a • v) w = invariantForm q m v (star a • w) := by
   let : Fact ((q : ℂ) ≠ 0) := ⟨by exact_mod_cast hq.ne'⟩
-  let : Fact (IsSelfAdjoint (q : ℂ)) := ⟨by simp [IsSelfAdjoint]⟩
   induction a using UqSl2.induction generalizing v w with
   | algebraMap c =>
     rw [← algebraMap_star_comm]
@@ -335,7 +334,7 @@ private theorem eq_mul_innerWeight (hq : IsGenericQuantumParameter (q : ℂ)) {d
     refine mul_left_cancel₀ hne ?_
     linear_combination hd j + quantumInteger (q : ℂ) (m - j) * ih - d 0 * hw
 
-variable [Fact ((q : ℂ) ≠ 0)] [Fact (IsSelfAdjoint (q : ℂ))]
+variable [Fact ((q : ℂ) ≠ 0)]
 
 /-- At a generic real parameter the invariant metric is unique up to a scalar: every
 sesquilinear form on the positive ladder module that is invariant for the compact real form is
