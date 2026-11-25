@@ -25,7 +25,7 @@ module (`HasInfinitesimalCharacter.eq`, for a module without `R`-torsion).
 If `L` acts on `M` through a Lie algebra homomorphism `f : L → R`, that is `⁅y, m⁆ = f y • m`,
 then every `u ∈ U(L)` acts by the scalar `lift f u`
 (`TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`, in
-`TauCeti/Algebra/Lie/UniversalEnveloping/InfinitesimalCharacter.lean`), so `M` has the infinitesimal
+`TauCeti/Algebra/Lie/UniversalEnveloping/Basic.lean`), so `M` has the infinitesimal
 character `liftCharacter R L f` extending `f`
 (`HasInfinitesimalCharacter.of_lie_eq_smul`); the trivial module is the case `f = 0`. The values
 of these characters on the trace-form Casimir of `gl n` are computed in

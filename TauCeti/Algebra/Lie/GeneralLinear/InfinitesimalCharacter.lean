@@ -43,13 +43,13 @@ homomorphism `f : gl n → K` takes the value `∑ i, ∑ j, f (Eᵢⱼ) * f (E�
 theorem liftCharacter_glCasimir (f : LieAlgebra.LieCharacter K (Matrix n n K)) :
     liftCharacter K (Matrix n n K) f ⟨glCasimir K n, glCasimir_mem_center K n⟩ =
       ∑ i, ∑ j, f (Matrix.single i j 1) * f (Matrix.single j i 1) := by
-  rw [liftCharacter_apply]
   simp [glCasimir_def, map_sum, map_mul]
 
 /-- **The Casimir acts by `0` on the trivial module.** -/
 theorem liftCharacter_zero_glCasimir :
     liftCharacter K (Matrix n n K) 0 ⟨glCasimir K n, glCasimir_mem_center K n⟩ = 0 := by
-  simp [liftCharacter_glCasimir]
+  rw [liftCharacter_glCasimir]
+  simp
 
 /-- **The Casimir acts by `n` on the module where `X` acts by `tr X`**: on the infinitesimal
 character extending the trace, `∑ i, ∑ j, tr(Eᵢⱼ) tr(Eⱼᵢ) = n`. For `gl₂` this is the value `2`. -/
