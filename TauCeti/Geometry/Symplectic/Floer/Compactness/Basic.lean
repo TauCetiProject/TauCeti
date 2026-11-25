@@ -1161,7 +1161,9 @@ coordinate: a solution `u` for the parameter `p` is the second component of the 
 `z ↦ ((p, 0), u z)` into `(P × P) × F`, which solves the coordinate Floer equation for the
 structure `(a, b) ↦ (-b, a)` on the parameter block, `J` at the parameter `a` on `F`, and the
 one-form `X` at the parameter `a` with values in `F`. The parameter block has zero derivative, so
-the energy density is unchanged. -/
+the energy density is unchanged. The same device gives the `C¹` convergence of solutions over
+converging parameters
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`). -/
 
 section Parameter
 
@@ -1169,7 +1171,7 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 /-- The point of `(P × (ℝ × ℝ)) × F` read off from a point `(z, ((a, b), x))`: the parameter `a`,
 the domain point `z` and the target point `x`. -/
-private noncomputable def augmentedPoint :
+noncomputable def augmentedPoint :
     (ℝ × ℝ) × ((P × P) × F) →L[ℝ] (P × (ℝ × ℝ)) × F :=
   ((ContinuousLinearMap.fst ℝ P P ∘L ContinuousLinearMap.fst ℝ (P × P) F ∘L
       ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F)).prod
@@ -1177,37 +1179,42 @@ private noncomputable def augmentedPoint :
     (ContinuousLinearMap.snd ℝ (P × P) F ∘L ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F))
 
 omit [FiniteDimensional ℝ F] in
+/-- `augmentedPoint` keeps the first parameter coordinate, the domain point and the target
+point. -/
 @[simp]
-private theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
+theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
     augmentedPoint (z, ((a, b), x)) = ((a, z), x) := (rfl)
 
 /-- The structure on `(P × P) × F` adjoining the parameter: the standard structure
 `(a, b) ↦ (-b, a)` on `P × P` and `J` on `F`. -/
-private noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) : (P × P) × F →L[ℝ] (P × P) × F :=
   ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F
     ((SmoothAlmostComplexStructure.product P).toEndomorphism 0, J (augmentedPoint q))
 
 omit [FiniteDimensional ℝ F] in
+/-- The adjoined structure rotates the parameter block and applies `J` on `F`. -/
 @[simp]
-private theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) (ζ : (P × P) × F) :
     augmentedJ J q ζ = ((-ζ.1.2, ζ.1.1), J (augmentedPoint q) ζ.2) :=
   Prod.ext (SmoothAlmostComplexStructure.product_apply 0 ζ.1) rfl
 
 /-- The one-form with values in `(P × P) × F` adjoining the parameter. -/
-private noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) : ℝ × ℝ →L[ℝ] (P × P) × F :=
   ContinuousLinearMap.inr ℝ (P × P) F ∘L X (augmentedPoint q)
 
 omit [FiniteDimensional ℝ F] in
+/-- The adjoined one-form has no component in the parameter block. -/
 @[simp]
-private theorem augmentedX_apply (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+theorem augmentedX_apply (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) (v : ℝ × ℝ) :
     augmentedX X q v = (0, X (augmentedPoint q) v) := (rfl)
 
 omit [FiniteDimensional ℝ F] in
-private theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F}
+/-- The adjoined structure is as regular as `J`. -/
+theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F}
     {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hJ : ContDiffOn ℝ n J W) :
     ContDiffOn ℝ n (augmentedJ J) (augmentedPoint ⁻¹' W) :=
   (ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F).contDiff.comp_contDiffOn
@@ -1215,7 +1222,8 @@ private theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[�
       (mapsTo_preimage _ _)))
 
 omit [FiniteDimensional ℝ F] in
-private theorem contDiffOn_augmentedX {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
+/-- The adjoined one-form is as regular as `X`. -/
+theorem contDiffOn_augmentedX {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
     {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hX : ContDiffOn ℝ n X W) :
     ContDiffOn ℝ n (augmentedX X) (augmentedPoint ⁻¹' W) :=
   contDiffOn_const.clm_comp

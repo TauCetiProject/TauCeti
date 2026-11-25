@@ -596,19 +596,18 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComple
     Trivialization.symmL_continuousLinearMapAt _ hb] at h'
 
 omit [FiniteDimensional ℝ E] in
-/-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
-manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
-every point `α`, be continuous on `U × (extChartAt I α).target` for an open set `U` of the domain.
-Then `(z, x) ↦ X_{K(z)}(x)` is continuous on `U × M` as a map into the tangent bundle. -/
-theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
-    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
-    (hK : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K)
-      (U ×ˢ (extChartAt I α).target)) :
-    ContinuousOn (fun p : (ℝ × ℝ) × M ↦
-      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
-  rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
-  refine ContinuousAt.continuousWithinAt <|
-    (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
+/-- **Continuity of a Hamiltonian vector field at a point from its reading in one chart.** On a
+boundaryless manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in
+the chart at `x₀`, be continuous on `U × (extChartAt I x₀).target` for an open set `U` of the
+domain. Then `(z, x) ↦ X_{K(z)}(x)` is continuous at `(z₀, x₀)` for `z₀ ∈ U`, as a map into the
+tangent bundle. -/
+theorem continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) {z₀ : ℝ × ℝ}
+    (hz₀ : z₀ ∈ U) {x₀ : M}
+    (hK : ContinuousOn (ω.hamiltonianVectorFieldInChartAt x₀ K) (U ×ˢ (extChartAt I x₀).target)) :
+    ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (z₀, x₀) := by
+  refine (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
   -- Near `(z₀, x₀)`, the fibre coordinate in the trivialization at `x₀` is the vector field read
   -- in the chart at `x₀`.
   have hev : (fun p : (ℝ × ℝ) × M ↦ ω.hamiltonianVectorFieldInChartAt x₀ K
@@ -620,9 +619,24 @@ theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundar
       Trivialization.continuousLinearMapAt_apply_of_mem]
     rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
   refine ContinuousAt.congr ?_ hev
-  exact ((hK x₀).continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
+  exact (hK.continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
     ⟨hz₀, mem_extChartAt_target x₀⟩)).comp
     (continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x₀).comp continuousAt_snd))
+
+omit [FiniteDimensional ℝ E] in
+/-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
+manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
+every point `α`, be continuous on `U × (extChartAt I α).target` for an open set `U` of the domain.
+Then `(z, x) ↦ X_{K(z)}(x)` is continuous on `U × M` as a map into the tangent bundle. -/
+theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hK : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K)
+      (U ×ˢ (extChartAt I α).target)) :
+    ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
+  rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
+  exact (ω.continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt hU hz₀
+    (hK x₀)).continuousWithinAt
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of the Floer energy density from chart readings.** On a boundaryless manifold, if
