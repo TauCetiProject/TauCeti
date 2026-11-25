@@ -87,8 +87,10 @@ along every linear isometric embedding.
   `TauCeti.FourTensor.mem_interior_nonnegSectionalCurvatureCone`,
   `TauCeti.FourTensor.mem_interior_nonnegRicciCone` and
   `TauCeti.FourTensor.mem_interior_nonnegScalarCone`: the interiors are the strict conditions.
-* `TauCeti.FourTensor.smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone`: the round
-  ray lies in the interior.
+* `TauCeti.FourTensor.smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone` and its
+  analogues for the other four cones: the round ray lies in each interior.
+* `TauCeti.FourTensor.nonempty_interior_nonnegCurvatureOperatorCone` and its analogues for the
+  other four cones: each cone has nonempty interior.
 * `TauCeti.FourTensor.comap_algebraicCurvaturePullback_eq_of_comp_eq_id`: a cone is invariant under
   pullback along an invertible map once pullback along the map and along its inverse preserve it.
 
@@ -668,8 +670,7 @@ theorem mem_interior_nonnegScalarCone (hn : 2 ≤ Module.finrank ℝ V)
   simp
 
 /-- Every positive multiple of the constant-curvature tensor of the unit sphere lies in the
-interior of the nonnegative-curvature-operator cone. Since this cone is contained in the other
-four basic cones, `interior_mono` places the round ray in each of their interiors as well. -/
+interior of the nonnegative-curvature-operator cone. -/
 theorem smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone {κ : ℝ} (hκ : 0 < κ) :
     (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.mpr
       isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
@@ -678,6 +679,67 @@ theorem smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone {κ : �
     simp only [map_smul, curvatureEndomorphism_constantCurvature, LinearMap.smul_apply,
       LinearMap.id_apply, real_inner_smul_left, real_inner_self_eq_norm_sq]
     exact mul_pos hκ (pow_pos (norm_pos_iff.mpr hω) 2)
+
+/-- Every positive multiple of the constant-curvature tensor of the unit sphere lies in the
+interior of the 2-nonnegative cone. -/
+theorem smul_constantCurvature_mem_interior_twoNonnegCurvatureOperatorCone {κ : ℝ} (hκ : 0 < κ) :
+    (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.mpr
+      isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
+      interior (twoNonnegCurvatureOperatorCone V : Set (algebraicCurvatureSubmodule V)) :=
+  interior_mono nonnegCurvatureOperatorCone_le_twoNonnegCurvatureOperatorCone
+    (smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone hκ)
+
+/-- Every positive multiple of the constant-curvature tensor of the unit sphere lies in the
+interior of the nonnegative-sectional-curvature cone. -/
+theorem smul_constantCurvature_mem_interior_nonnegSectionalCurvatureCone {κ : ℝ} (hκ : 0 < κ) :
+    (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.mpr
+      isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
+      interior (nonnegSectionalCurvatureCone V : Set (algebraicCurvatureSubmodule V)) :=
+  interior_mono nonnegCurvatureOperatorCone_le_nonnegSectionalCurvatureCone
+    (smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone hκ)
+
+/-- Every positive multiple of the constant-curvature tensor of the unit sphere lies in the
+interior of the nonnegative-Ricci cone, in every dimension. -/
+theorem smul_constantCurvature_mem_interior_nonnegRicciCone {κ : ℝ} (hκ : 0 < κ) :
+    (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.mpr
+      isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
+      interior (nonnegRicciCone V : Set (algebraicCurvatureSubmodule V)) :=
+  interior_mono nonnegSectionalCurvatureCone_le_nonnegRicciCone
+    (smul_constantCurvature_mem_interior_nonnegSectionalCurvatureCone hκ)
+
+/-- Every positive multiple of the constant-curvature tensor of the unit sphere lies in the
+interior of the nonnegative-scalar cone, in every dimension. -/
+theorem smul_constantCurvature_mem_interior_nonnegScalarCone {κ : ℝ} (hκ : 0 < κ) :
+    (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.mpr
+      isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
+      interior (nonnegScalarCone V : Set (algebraicCurvatureSubmodule V)) :=
+  interior_mono nonnegRicciCone_le_nonnegScalarCone
+    (smul_constantCurvature_mem_interior_nonnegRicciCone hκ)
+
+/-- The nonnegative-curvature-operator cone has nonempty interior. -/
+theorem nonempty_interior_nonnegCurvatureOperatorCone :
+    (interior (nonnegCurvatureOperatorCone V : Set (algebraicCurvatureSubmodule V))).Nonempty :=
+  ⟨_, smul_constantCurvature_mem_interior_nonnegCurvatureOperatorCone one_pos⟩
+
+/-- The 2-nonnegative cone has nonempty interior. -/
+theorem nonempty_interior_twoNonnegCurvatureOperatorCone :
+    (interior (twoNonnegCurvatureOperatorCone V : Set (algebraicCurvatureSubmodule V))).Nonempty :=
+  ⟨_, smul_constantCurvature_mem_interior_twoNonnegCurvatureOperatorCone one_pos⟩
+
+/-- The nonnegative-sectional-curvature cone has nonempty interior. -/
+theorem nonempty_interior_nonnegSectionalCurvatureCone :
+    (interior (nonnegSectionalCurvatureCone V : Set (algebraicCurvatureSubmodule V))).Nonempty :=
+  ⟨_, smul_constantCurvature_mem_interior_nonnegSectionalCurvatureCone one_pos⟩
+
+/-- The nonnegative-Ricci cone has nonempty interior. -/
+theorem nonempty_interior_nonnegRicciCone :
+    (interior (nonnegRicciCone V : Set (algebraicCurvatureSubmodule V))).Nonempty :=
+  ⟨_, smul_constantCurvature_mem_interior_nonnegRicciCone one_pos⟩
+
+/-- The nonnegative-scalar cone has nonempty interior. -/
+theorem nonempty_interior_nonnegScalarCone :
+    (interior (nonnegScalarCone V : Set (algebraicCurvatureSubmodule V))).Nonempty :=
+  ⟨_, smul_constantCurvature_mem_interior_nonnegScalarCone one_pos⟩
 
 end InnerProductSpace
 
