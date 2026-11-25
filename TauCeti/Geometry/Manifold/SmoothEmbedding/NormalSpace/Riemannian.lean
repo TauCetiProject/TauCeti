@@ -173,11 +173,11 @@ theorem normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace
 section QuotientComparison
 
 /-! The target `T_{f x} N ⧸ LinearMap.range (mfderiv I J f x).toLinearMap` of
-`TauCeti.orthogonalNormalSpaceEquivQuotient` is the normal space `f.NormalSpace x hn` of an
-embedding by definition: `NormalSpace` is the quotient by `tangentRange`, and `tangentRange` is the
-range of the differential, both exposed definitions. The statements below use this definitional
-equality to pass between the two types, and the proofs then rewrite `normalClass` to the quotient
-map by `normalClass_def`. -/
+`TauCeti.orthogonalNormalSpaceEquivQuotient` is the normal space `f.isImmersion.NormalSpace x hn`
+of an embedding by definition: `NormalSpace` is the quotient by `tangentRange`, and `tangentRange`
+is the range of the differential, both exposed definitions. The statements below use this
+definitional equality to pass between the two types, and the proofs then rewrite `normalClass` to
+the quotient map by `Manifold.IsImmersion.normalClass_def`. -/
 
 omit [FiniteDimensional ℝ V] in
 /-- The quotient comparison `TauCeti.orthogonalNormalSpaceEquivQuotient` takes a normal vector to
@@ -186,17 +186,17 @@ theorem orthogonalNormalSpaceEquivQuotient_eq_normalClass (f : SmoothEmbedding I
     (x : M) (hn : n ≠ 0)
     [(LinearMap.range (mfderiv I J (f : M → N) x).toLinearMap).HasOrthogonalProjection]
     (w : orthogonalNormalSpace I J f x) :
-    (orthogonalNormalSpaceEquivQuotient (f : M → N) x w : f.NormalSpace x hn) =
-      f.normalClass x hn w := by
-  rw [normalClass_def]
-  -- `(f.tangentRange x hn).mkQ w` is `Submodule.Quotient.mk w` by definition.
+    (orthogonalNormalSpaceEquivQuotient (f : M → N) x w : f.isImmersion.NormalSpace x hn) =
+      f.isImmersion.normalClass x hn w := by
+  rw [IsImmersion.normalClass_def]
+  -- `(f.isImmersion.tangentRange x hn).mkQ w` is `Submodule.Quotient.mk w` by definition.
   exact orthogonalNormalSpaceEquivQuotient_apply (I := I) (f : M → N) x w
 
 /-- The inverse quotient comparison `TauCeti.orthogonalNormalSpaceEquivQuotient` takes a normal
 class to its normal representative. -/
 @[simp]
 theorem coe_orthogonalNormalSpaceEquivQuotient_symm (f : SmoothEmbedding I J n M N)
-    (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
+    (x : M) (hn : n ≠ 0) (v : f.isImmersion.NormalSpace x hn) :
     ((orthogonalNormalSpaceEquivQuotient (f : M → N) x).symm v : TangentSpace J (f x)) =
       f.normalRepresentative x hn v := by
   symm
