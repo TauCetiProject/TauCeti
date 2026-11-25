@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # The gradient of a spectral function
@@ -341,33 +342,28 @@ weights `∏_{j ≠ i} λⱼ(A)` are the diagonal of the adjugate of `diag(λ(A)
 commutes with unitary conjugation. -/
 theorem spectralGradient_prod (hA : A.IsHermitian) :
     hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.adjugate := by
-  have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∏ k, μ k)
-      (∑ k, (∏ j ∈ univ.erase k, μ j) •
-        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Fintype.card ι) ↦ ℝ) k) μ :=
-    fun μ ↦ HasFDerivAt.finsetProd fun k _ ↦ hasFDerivAt_apply k μ
   have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ ∏ k, μ k) i : 𝕜)) =
       fun i ↦ ∏ j ∈ univ.erase i, (RCLike.ofReal ∘ hA.eigenvalues) j := by
     funext i
-    rw [spectralGradientWeights_def, (hd _).fderiv]
-    simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
-      ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-      sum_ite_eq', mem_univ, ite_true, Function.comp_apply, RCLike.ofReal_prod]
+    have h := TauCeti.fderiv_prod_comp_eval_apply_single (𝕜 := ℝ)
+      (φ := fun _ : Fin (Fintype.card ι) ↦ id) (y := hA.eigenvalues₀)
+      (fun _ ↦ differentiableAt_id) (Fintype.equivOfCardEq (Fintype.card_fin _) |>.symm i)
+    simp only [id] at h
+    rw [spectralGradientWeights_def, h, ← mul_prod_erase _ _ (mem_univ _), Function.update_self,
+      deriv_id, one_mul, RCLike.ofReal_prod]
     -- Reindex the product from sorted indices to matrix indices.
     refine prod_equiv (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))
-      (by simp [Equiv.eq_symm_apply]) fun j _ ↦ ?_
-    rw [hA.eigenvalues_apply_equivOfCardEq]
-  -- For a unitary `U`, `adj U = det U • U*`, and likewise `adj U* = det U* • U`.
+      (by simp [Equiv.eq_symm_apply]) fun j hj ↦ ?_
+    rw [Function.update_of_ne (ne_of_mem_erase hj), Function.comp_apply,
+      hA.eigenvalues_apply_equivOfCardEq, id]
   set U : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
   have hU : U * star U = 1 := Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property
   have hU' : star U * U = 1 := Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.property
-  have hadj : ∀ V W : Matrix ι ι 𝕜, V * W = 1 → V.adjugate = V.det • W := fun V W h ↦ by
-    rw [← Matrix.mul_one V.adjugate, ← h, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
-      Matrix.one_mul]
   rw [spectralGradient_def, hw, ← adjugate_diagonal]
   conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
-  rw [adjugate_mul_distrib, adjugate_mul_distrib, hadj U (star U) hU, hadj (star U) U hU',
-    Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_smul, smul_smul, ← det_mul, hU', det_one, one_smul,
-    Matrix.mul_assoc]
+  rw [adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one hU,
+    adjugate_eq_det_smul_of_mul_eq_one hU', Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_smul,
+    smul_smul, ← det_mul, hU', det_one, one_smul, Matrix.mul_assoc]
 
 /-- The gradient of the determinant times the matrix is `det A • 1`: for `f = σₙ`,
 `∇F_f(A) A = det A • 1`. -/
