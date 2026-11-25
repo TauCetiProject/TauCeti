@@ -41,6 +41,8 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
 
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_mk_reindexGL`: the class of a matrix over a finite index
   type is the class of its reindexing along any enumeration of the index type.
+* `TauCeti.AlgebraicK1.of_ofEquiv`: the class of a matrix over a finite index type is the image in
+  `K₁(A)` of its image in `GL_∞(A)` through any enumeration of the index type.
 * `TauCeti.AlgebraicK1.mkOfFintype_reindexGL`,
   `TauCeti.AlgebraicK1.mkOfFintype_mul_mul_inv`: invariance under relabelling and conjugation.
 * `TauCeti.AlgebraicK1.mkOfFintype_fromBlocksGL`: the block sum formula
@@ -118,6 +120,12 @@ theorem mk_reindexGL_eq_mkOfFintype {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
     mk A n (e.reindexGL A u) = mkOfFintype A ι u :=
   (mkOfFintype_eq_mk_reindexGL e u).symm
 
+/-- The image in `K₁(A)` of the image in `GL_∞(A)` of an invertible matrix through any enumeration
+of its indices is its class `TauCeti.AlgebraicK1.mkOfFintype`. -/
+theorem of_ofEquiv {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
+    Group.Abelianization.of (StableGeneralLinearGroup.ofEquiv A e u) = mkOfFintype A ι u := by
+  rw [StableGeneralLinearGroup.ofEquiv_apply, ← mk_apply, mk_reindexGL_eq_mkOfFintype]
+
 /-- **Relabelling invariance**: reindexing an invertible matrix along an equivalence of finite
 index types does not change its class in algebraic `K₁`. -/
 @[simp]
@@ -182,15 +190,6 @@ theorem elementarySubgroup_le_ker_mkOfFintype :
   intro u hu
   rw [MonoidHom.mem_ker, mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι)]
   exact elementarySubgroup_le_ker_mk _ ((Equiv.reindexGL_mem_elementarySubgroup_iff _).2 hu)
-
-/-- Stabilizing the reindexing of `u` along an enumeration `e` to size `m + k` is the reindexing
-of `u ⊕ 1` along the enumeration of `ι ⊕ Fin k` built from `e`. -/
-private theorem stabilizeGL_reindexGL {m : ℕ} (e : ι ≃ Fin m) (k : ℕ) (u : GL ι A) :
-    stabilizeGL A (Nat.le_add_right m k) (e.reindexGL A u) =
-      ((e.sumCongr (Equiv.refl (Fin k))).trans finSumFinEquiv).reindexGL A
-        (fromBlocksGL (u, 1)) := by
-  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, ← Equiv.reindexGL_trans_reindexGL,
-    MulEquiv.trans_apply, Equiv.reindexGL_sumCongr_fromBlocksGL, map_one]
 
 /-- The class of an invertible matrix is trivial exactly when its block sum `u ⊕ 1` with an
 identity matrix of some size is elementary. -/
