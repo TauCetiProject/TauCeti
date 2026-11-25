@@ -81,42 +81,61 @@ theorem inertialType_mul_N (D : WeilDeligneParameter E W V deg q) (w : deg.ker) 
 /-- A morphism of parameters intertwines the inertial types. -/
 def Hom.inertialType {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Hom D D') :
-    D.inertialType.IntertwiningMap D'.inertialType where
-  toLinearMap := f.toLinearMap
-  isIntertwining' w := f.comp_r w
+    D.inertialType.IntertwiningMap D'.inertialType :=
+  f.toIntertwiningMap.res deg.ker.subtype
 
 @[simp]
 theorem Hom.inertialType_apply {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Hom D D') (v : V) :
     f.inertialType v = f v :=
-  (rfl)
+  congrFun (f.toIntertwiningMap.coe_res _) v
 
 @[simp]
 theorem Hom.inertialType_id (D : WeilDeligneParameter E W V deg q) :
     (Hom.id D).inertialType = .id D.inertialType := by
-  ext
-  simp
+  rw [Hom.inertialType, Hom.id_toIntertwiningMap]
+  exact Representation.IntertwiningMap.res_id _
 
 @[simp]
 theorem Hom.inertialType_comp {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} {D'' : WeilDeligneParameter E W V'' deg q}
     (f : Hom D' D'') (g : Hom D D') :
     (f.comp g).inertialType = f.inertialType.comp g.inertialType := by
-  ext
-  simp
+  rw [Hom.inertialType, Hom.comp_toIntertwiningMap]
+  exact Representation.IntertwiningMap.res_comp _ _ _
 
 /-- An isomorphism of parameters gives an equivalence of inertial types. -/
 def Iso.inertialType {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') :
-    D.inertialType.Equiv D'.inertialType where
-  toLinearEquiv := f.toLinearEquiv
-  isIntertwining' w := f.comp_r w
+    D.inertialType.Equiv D'.inertialType :=
+  f.toRepresentationEquiv.res deg.ker.subtype
 
 @[simp]
 theorem Iso.inertialType_apply {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') (v : V) :
     f.inertialType v = f v :=
-  (rfl)
+  f.toRepresentationEquiv.res_apply _ v
+
+@[simp]
+theorem Iso.inertialType_refl (D : WeilDeligneParameter E W V deg q) :
+    (Iso.refl D).inertialType = .refl D.inertialType := by
+  ext
+  simp
+
+@[simp]
+theorem Iso.inertialType_symm {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') :
+    f.symm.inertialType = f.inertialType.symm := by
+  ext v
+  exact f.inertialType.injective (by simp)
+
+@[simp]
+theorem Iso.inertialType_trans {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W V' deg q} {D'' : WeilDeligneParameter E W V'' deg q}
+    (f : Iso D D') (g : Iso D' D'') :
+    (f.trans g).inertialType = f.inertialType.trans g.inertialType := by
+  ext
+  simp
 
 /-- The inertial type of a transport is the transport of the inertial type. -/
 theorem inertialType_transport (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V')
@@ -131,14 +150,14 @@ variable (D : WeilDeligneParameter E W V deg q) (D' : WeilDeligneParameter E W V
 /-- The inertial type of a direct sum is the direct sum of the inertial types. -/
 @[simp]
 theorem inertialType_prod : (D.prod D').inertialType = D.inertialType.prod D'.inertialType := by
-  ext w : 1
-  simp [inertialType]
+  simp only [inertialType, prod_r]
+  exact Representation.prod_comp D.r D'.r deg.ker.subtype
 
 /-- The inertial type of the dual is the dual of the inertial type. -/
 @[simp]
 theorem inertialType_dual : D.dual.inertialType = D.inertialType.dual := by
-  ext w : 1
-  simp [inertialType]
+  simp only [inertialType, dual_r]
+  exact (Representation.dual_comp D.r deg.ker.subtype).symm
 
 /-- The inertial type of a twist by `χ` is the twist of the inertial type by the restriction of
 `χ` to the kernel of the degree. -/
@@ -147,8 +166,8 @@ theorem inertialType_twist [SeparatelyContinuousMul W] (χ : W →* Eˣ)
     (hχ : IsOpen (χ.ker : Set W)) :
     (D.twist χ hχ).inertialType =
       Representation.charTwist (χ.comp deg.ker.subtype) D.inertialType := by
-  ext w : 1
-  simp [inertialType, Representation.charTwist_apply]
+  simp only [inertialType, twist_r]
+  exact Representation.charTwist_comp χ D.r deg.ker.subtype
 
 /-- The inertial type of a tensor product is the tensor product of the inertial types. -/
 @[simp]
