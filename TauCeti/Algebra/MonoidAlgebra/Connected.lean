@@ -34,11 +34,12 @@ central element `z - 1`, whose `p ^ k`-th power vanishes.
 
 * `TauCeti.isNilpotent_sub_algebraMap_counit_of_isPGroup`: for an abelian `p`-group, every
   element differs from its augmentation by a nilpotent.
-* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup`: a finite abelian group has
-  connected group-algebra spectrum in characteristic `p` exactly when it is a `p`-group.
+* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup`: over a commutative ring with
+  connected spectrum and of prime characteristic `p`, a finite abelian group has connected
+  group-algebra spectrum exactly when it is a `p`-group.
 * `TauCeti.MonoidAlgebra.isNilpotent_of_isNilpotent_mapDomainRingHom_mk'`: in exponential
   characteristic `p`, nilpotence lifts along the quotient by a central element of `p`-power order.
-* `TauCeti.MonoidAlgebra.isNilpotent_of_isPGroup_of_augmentation_eq_zero`: in exponential
+* `IsPGroup.isNilpotent_of_augmentation_eq_zero`: in exponential
   characteristic `p`, elements of augmentation zero in the group algebra of a finite `p`-group are
   nilpotent.
 
@@ -172,7 +173,7 @@ theorem isNilpotent_of_isNilpotent_mapDomainRingHom_mk' {G : Type*} [Group G] {z
 /-- **The augmentation ideal of a finite `p`-group algebra is nil in characteristic `p`.** In the
 group algebra of a finite, possibly noncommutative, `p`-group over a ring of
 exponential characteristic `p`, every element of augmentation zero is nilpotent. -/
-theorem isNilpotent_of_isPGroup_of_augmentation_eq_zero {P : Type*} [Group P] [Finite P]
+theorem _root_.IsPGroup.isNilpotent_of_augmentation_eq_zero {P : Type*} [Group P] [Finite P]
     (hP : IsPGroup p P) {x : MonoidAlgebra S P} (hx : augmentation S P x = 0) : IsNilpotent x := by
   induction h : Nat.card P using Nat.strong_induction_on generalizing P with | _ n ih
   rcases subsingleton_or_nontrivial P with hP₁ | hP₁
