@@ -151,19 +151,21 @@ lemma app_toObjFunctor_map {U : C} {M M' : F.obj (.mk (op U))} (φ : M ⟶ M') �
     Hom.app ((toObjFunctor.{w} J F U).map φ) (i := PUnit.unit) (j := PUnit.unit) a b w =
       (F.map a.op.toLoc).toFunctor.map ((F.map (𝟙 U).op.toLoc).toFunctor.map φ) ≫
         ((toObjFunctor.{w} J F U).obj M').D.hom (i₁ := PUnit.unit) (i₂ := PUnit.unit) (a ≫ 𝟙 U)
-          a b rfl w.symm :=
-  app_ofDescentDataMap (J := J) (hf := ofArrows_id_mem.{w} U)
-    ((F.toDescentData (fun _ : PUnit.{w + 1} ↦ 𝟙 U)).map φ) (i := PUnit.unit) (j := PUnit.unit)
-    a b w
+          a b rfl w.symm := by
+  rw [Functor.comp_map, app_ofDescentDataMap]
+  -- The component of `(F.toDescentData _).map φ` is the pullback of `φ` by definition.
+  rfl
 
 /-- The local evaluations of the image of a morphism under `toObjFunctor` along a single
 morphism `b : T ⟶ U`. -/
 lemma app_toObjFunctor_map_self {U : C} {M M' : F.obj (.mk (op U))} (φ : M ⟶ M') ⦃T : C⦄
     (b : T ⟶ U) (w : b ≫ 𝟙 U = b ≫ 𝟙 U) :
     Hom.app ((toObjFunctor.{w} J F U).map φ) (i := PUnit.unit) (j := PUnit.unit) b b w =
-      (F.map b.op.toLoc).toFunctor.map ((F.map (𝟙 U).op.toLoc).toFunctor.map φ) :=
-  app_ofDescentDataMap_self (hf := ofArrows_id_mem.{w} U)
-    ((F.toDescentData (fun _ : PUnit.{w + 1} ↦ 𝟙 U)).map φ) (i := PUnit.unit) b w
+      (F.map b.op.toLoc).toFunctor.map ((F.map (𝟙 U).op.toLoc).toFunctor.map φ) := by
+  rw [app_toObjFunctor_map, toObjFunctor_obj_hom_self]
+  -- The identity is on an object of `toObjFunctor`, which is `(F.map (𝟙 U)).obj M'` only up to
+  -- unfolding, so `Category.comp_id` is applied by unification rather than by rewriting.
+  exact Category.comp_id _
 
 /-- Morphisms between descent data along the identity of `U` are determined by their local
 evaluations along single morphisms `b : T ⟶ U`. -/

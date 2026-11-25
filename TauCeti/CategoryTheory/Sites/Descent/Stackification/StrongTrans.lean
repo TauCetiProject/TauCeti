@@ -173,12 +173,11 @@ def toObjPullbackData {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) :
     -- The two sides differ only in the proofs of the factorizations.
     rfl
   hom_eq T j j' q' b b' hb hb' c c' h h' := by
+    cases j; cases j'
     obtain rfl : b = q' := by simpa using hb
     obtain rfl : b' = b := by simpa using hb'
     obtain rfl : c' = c := h'.symm.trans h
-    rw [DescentData.hom_self _ _ _ hb]
-    -- The descent datum of `(toObjFunctor J F V).obj _` is `F.toDescentData` only after unfolding.
-    erw [DescentData.hom_self _ _ _ rfl, Category.id_comp]
+    rw [toObjFunctor_obj_hom_self, toObjFunctor_obj_hom_self, Category.id_comp]
     exact (toObjPullbackIso q M b' c' h).hom_inv_id.symm
 
 open PullbackData
@@ -267,7 +266,7 @@ def selfPullbackData {U : C} (A : Obj.{w} J F U) (i : A.ι) :
     have e₃ : b = c := by simpa using h
     have e₄ : b' = c' := by simpa using h'
     subst e₁ e₃ e₄ e₂
-    rw [DescentData.hom_self _ _ _ rfl, DescentData.hom_self _ _ _ hb, Category.id_comp]
+    rw [toObjFunctor_obj_hom_self, DescentData.hom_self _ _ _ rfl, Category.id_comp]
     exact (Iso.hom_inv_id _).symm
 
 /-- The member of the covering family of `A` below the identity of `A.X i` in
