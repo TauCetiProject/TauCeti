@@ -349,20 +349,15 @@ upper half-plane is in every local Sobolev class on the closed upper half-disc
 (`TauCeti.memWkpLoc_halfDisc_indicator_im_pos`), but its composition with `z ↦ i z` is the
 indicator of the right half-plane, which is in no class of positive order there: the interior of
 the half-disc meets the imaginary axis at `i / 2`. -/
-theorem not_memWkpLoc_halfDisc_comp_I_mul (k : ℕ) :
+theorem not_memWkpLoc_halfDisc_indicator_im_pos_comp_I_mul (k : ℕ) :
     ¬ MemWkpLoc p (ball 0 1 ∩ {z : ℂ | 0 ≤ z.im}) (k + 1)
       (fun z => {z : ℂ | 0 < z.im}.indicator (fun _ => (1 : ℝ)) (Complex.I * z)) := by
   have hfun : (fun z => {z : ℂ | 0 < z.im}.indicator (fun _ => (1 : ℝ)) (Complex.I * z)) =
       {z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ) := by
     funext z
     simp [Set.indicator]
-  have hopen : IsOpen (ball (0 : ℂ) 1 ∩ {z : ℂ | 0 < z.im}) :=
-    isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_im)
-  have hsub : ball (0 : ℂ) 1 ∩ {z : ℂ | 0 < z.im} ⊆ ball 0 1 ∩ {z : ℂ | 0 ≤ z.im} :=
-    inter_subset_inter_right _ fun z (hz : 0 < z.im) => hz.le
   have hz₀ : Complex.I / 2 ∈ interior (ball (0 : ℂ) 1 ∩ {z : ℂ | 0 ≤ z.im}) := by
-    refine interior_mono hsub ?_
-    rw [hopen.interior_eq]
+    rw [interior_inter, isOpen_ball.interior_eq, Complex.interior_setOfPred_le_im]
     exact ⟨by norm_num [Complex.norm_div], by simp⟩
   rw [hfun]
   exact not_memWkpLoc_indicator_re_pos hz₀ (by simp)
