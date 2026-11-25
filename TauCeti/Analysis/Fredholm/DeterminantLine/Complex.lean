@@ -78,6 +78,16 @@ path of complex-linear Fredholm operators carries the complex orientation
 (`ContinuousLinearMap.IsFredholm.complexDetLineOrientation`) at one end to the complex
 orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOrientation`).
 
+At a bijective complex-linear operator the complex orientation is the orientation given by
+bijectivity (`LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`), and along a
+path of invertible operators transport preserves the orientations given by invertibility. Hence,
+along a path of invertible operators starting at a complex-linear one, transport carries the
+complex orientation to the orientation given by invertibility at the other end
+(`TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`):
+an operator joined to a complex-linear reference through invertible operators has positive
+determinant sign. This holds for real Banach spaces with compatible complex structures that need
+not come from complex norms.
+
 ## Main definitions
 
 * `ContinuousLinearMap.IsFredholm.complexDetLineOrientation`: the complex orientation of the
@@ -96,6 +106,9 @@ orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOri
   family of complex-linear Fredholm operators are coherent.
 * `TauCeti.detLineOrientationTransport_complexDetLineOrientation`: transport along complex-linear
   paths preserves complex orientations.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`:
+  transport from a complex-linear operator along invertible operators gives the orientation of
+  invertibility.
 
 ## References
 
@@ -562,5 +575,71 @@ theorem detLineOrientationTransport_complexDetLineOrientation {T : ℝ → E →
     (hF b right_mem_uIcc).complexDetLineOrientation_eq (hv b right_mem_uIcc).1
       (hv b right_mem_uIcc).2]
   exact detLineOrientationTransport_rayOfNeZero _ _ hcoh
+
+section Invertible
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [Module ℂ F] [IsScalarTower ℝ ℂ F]
+
+/-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
+underlying real map is an onto operator `A` is nonzero, and so is its image in the determinant line
+of `A`. -/
+theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero {f : E →ₗ[ℂ] F}
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) {A : E →L[ℝ] F}
+    (hf : f.restrictScalars ℝ = A) (hA : Function.Surjective A) :
+    LinearMap.detLineCongrOfEq hf z ≠ 0 := by
+  rw [LinearEquiv.map_ne_zero_iff]
+  refine hz.ne_zero_of_surjective ?_
+  rw [← LinearMap.coe_restrictScalars ℝ f, hf, ContinuousLinearMap.coe_coe]
+  exact hA
+
+/-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
+underlying real map is a Fredholm operator `A` is nonzero, and so is its image in the determinant
+line of `A`. -/
+theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero_of_isFredholm
+    {f : E →ₗ[ℂ] F} {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    {A : E →L[ℝ] F} (hf : f.restrictScalars ℝ = A) (hA : A.IsFredholm) :
+    LinearMap.detLineCongrOfEq hf z ≠ 0 :=
+  have := hA.finiteDimensional_quotient_range_of_restrictScalars_eq hf
+  (LinearEquiv.map_ne_zero_iff _).2 hz.ne_zero
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- **Transport from a complex-linear operator along invertible operators.** Let `T` be a path of
+invertible operators between real Banach spaces with compatible complex structures, continuous
+between `a` and `b`, whose operator `T a` is complex linear: it is the real map underlying `f`.
+Orientation transport carries the complex orientation of `T a`, that of any complex positive
+element `z` of its determinant line (`LinearMap.IsComplexPositiveDetLine`), to the orientation of
+the determinant line of `T b` given by invertibility, that of the element `1` under
+`LinearMap.detLineEquivOfBijective`. So, relative to the complex orientation at `T a`, the
+determinant sign of `T b` is positive. The complex structures need not come from complex norms. -/
+theorem detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine
+    {T : ℝ → E →L[ℝ] F} {a b : ℝ} (hT : ContinuousOn T (uIcc a b))
+    (hinv : ∀ t ∈ uIcc a b, (T t).IsInvertible) {f : E →ₗ[ℂ] F}
+    (hf : f.restrictScalars ℝ = T a) {z : (f.restrictScalars ℝ).detLine}
+    (hz : f.IsComplexPositiveDetLine z) :
+    detLineOrientationTransport a b hT (fun t ht ↦ (hinv t ht).isFredholm)
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero hf (hinv a left_mem_uIcc).surjective)) =
+      rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
+        (hinv b right_mem_uIcc).bijective).symm 1) (by simp) := by
+  have hfb : Function.Bijective (f.restrictScalars ℝ) := by
+    rw [hf, ContinuousLinearMap.coe_coe]
+    exact (hinv a left_mem_uIcc).bijective
+  have : Subsingleton (F ⧸ LinearMap.range f) :=
+    Submodule.Quotient.subsingleton_iff.2 (LinearMap.range_eq_top.2 hfb.2)
+  -- `z` is a positive multiple of the element `1` of invertibility, which is complex positive.
+  obtain ⟨c, hc, rfl⟩ :=
+    (f.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one hfb).exists_pos_smul_eq hz
+  simp_rw [LinearEquiv.map_smul]
+  rw [ray_pos_smul ((LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2
+      one_ne_zero)) hc,
+    ← detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one hT hinv]
+  congr 2
+  apply (LinearMap.detLineEquivOfBijective (hinv a left_mem_uIcc).bijective).injective
+  rw [LinearMap.detLineEquivOfBijective_detLineCongrOfEq, LinearEquiv.apply_symm_apply,
+    LinearEquiv.apply_symm_apply]
+
+end Invertible
 
 end TauCeti

@@ -251,7 +251,7 @@ with the same coordinate matrix over the new base. -/
 /-- Pulling back the forward morphism of `constIso` gives the forward morphism of `constIso`
 on the pulled-back cores. -/
 @[simp] theorem pullbackMap_constIso_hom {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
@@ -259,14 +259,14 @@ on the pulled-back cores. -/
     (f : C(X, Y)) :
     pullbackMap (constIso hbase e he).hom f =
       (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun x => Set.preimage_mono (hbase (f x))) e
         (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).hom :=
   hom_ext fun _ => by simp
 
 /-- Pulling back the inverse morphism of `constIso` gives the inverse morphism of `constIso`
 on the pulled-back cores. -/
 @[simp] theorem pullbackMap_constIso_inv {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
@@ -274,7 +274,7 @@ on the pulled-back cores. -/
     (f : C(X, Y)) :
     pullbackMap (constIso hbase e he).inv f =
       (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun x => Set.preimage_mono (hbase (f x))) e
         (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).inv :=
   hom_ext fun _ => by simp
 

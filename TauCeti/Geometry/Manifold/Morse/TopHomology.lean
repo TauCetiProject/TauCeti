@@ -156,7 +156,7 @@ theorem IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_l
     have : Projective ((TopTriple.innerPair.obj T).singularHomology R d) := h₁.2
     have : Projective ((TopTriple.outerPair.obj T).singularHomology R d) := h₂.2
     exact ⟨T.isZero_singularHomology_totalPair R (d + 1) h₁.1 h₂.1,
-      T.projective_singularHomology_totalPair R d h₂.1⟩
+      T.projective_singularHomology_totalPair R d (h₂.1.eq_of_src _ 0)⟩
 
 /-- **Homology of a compact regular sublevel is projective in the degree of the largest index.**
 Let `f` be a Morse function, let `b` be a regular value of `f` with compact sublevel `{f ≤ b}`, and

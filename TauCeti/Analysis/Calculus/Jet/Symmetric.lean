@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Jet.HigherOrder
 public import TauCeti.Analysis.Calculus.Jet.LinearCoordChange
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.Multilinear.Symmetrize
 
 /-!
@@ -112,6 +113,11 @@ instance : NormedSpace 𝕜 (SymmetricJet 𝕜 E F r) :=
 instance [CompleteSpace F] : CompleteSpace (SymmetricJet 𝕜 E F r) :=
   have : CompleteSpace (symmetricJets 𝕜 E F r) := isClosed_symmetricJets.completeSpace_coe
   inferInstanceAs (CompleteSpace (symmetricJets 𝕜 E F r))
+
+/-- The symmetric jets between finite-dimensional spaces form a finite-dimensional space. -/
+instance [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] :
+    FiniteDimensional 𝕜 (SymmetricJet 𝕜 E F r) :=
+  inferInstanceAs (FiniteDimensional 𝕜 (symmetricJets 𝕜 E F r))
 
 namespace SymmetricJet
 

@@ -32,7 +32,11 @@ topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
 (`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
 
 A one-sided inverse of an invertible map is its inverse
-(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`). A composite
+`g ∘L f` with `g` injective is invertible exactly when both factors are
+(`ContinuousLinearMap.isInvertible_comp_iff_of_injective_left`), without any dimension or
+completeness assumption; this is how invertibility of a derivative of a composite passes to
+the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
@@ -49,6 +53,8 @@ coordinate is block lower triangular, and it is invertible exactly when its diag
 bundles over the same base, read in bundle charts. Two invertible maps on `M₁ × M₂` which agree
 on `M₁` have mutually inverse diagonal blocks `M₂ → M₂`
 (`ContinuousLinearMap.IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr`).
+Pairing a map with the zero map into a one-point module does not change its invertibility
+(`ContinuousLinearMap.isInvertible_zero_prod_iff`).
 For a continuous linear map `B : M → N`, the map `(u, l) ↦ (B u + l, u)` from `M × N` to `N × M`
 is invertible
 (`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
@@ -59,7 +65,10 @@ completeness from the codomain to the domain, because its inverse is a uniform h
 An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
 inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrictOfTower`), and the inverse of
 the restriction is the restriction of the inverse
-(`ContinuousLinearMap.IsInvertible.coe_inverse_restrictOfTower_apply`).
+(`ContinuousLinearMap.IsInvertible.coe_inverse_restrictOfTower_apply`). The same holds for a map
+`f` defined only on a larger submodule `P ⊇ p`, composed with the inclusion of `p` and corestricted
+to `q` (`ContinuousLinearMap.IsInvertible.codRestrictOfTower_comp`,
+`ContinuousLinearMap.IsInvertible.coe_inverse_codRestrictOfTower_comp_apply`).
 
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
@@ -151,6 +160,42 @@ theorem IsInvertible.coe_inverse_restrictOfTower_apply {f : M →L[R] N} (hf : f
   conv_rhs => rw [← (hf.restrictOfTower h hq).self_apply_inverse y]
   simp [hf.inverse_apply_self]
 
+variable {X : Type*} [TopologicalSpace X] [AddCommMonoid X] [Module R X] [Module S X]
+  [IsScalarTower R S X]
+
+/-- Let `p ≤ P` be submodules, `f : P →L[R] N` invertible and `ι : p →L[R] P` the inclusion.
+Suppose that `f` maps `p` into the submodule `q`, and that `x` lies in `p` whenever `f x` lies in
+`q`. Then the corestriction `p →L[R] q` of `f ∘L ι` is invertible: the inverse of `f` maps `q`
+into `p`. This is `ContinuousLinearMap.IsInvertible.restrictOfTower` for a map defined only on the
+larger submodule `P`. -/
+theorem IsInvertible.codRestrictOfTower_comp {P p : Submodule S X} {f : P →L[R] N}
+    (hf : f.IsInvertible) {ι : p →L[R] P} (hι : ∀ x, (ι x : X) = x) {q : Submodule S N}
+    (h : ∀ x, f (ι x) ∈ q) (hq : ∀ x, f x ∈ q → (x : X) ∈ p) :
+    ((f ∘L ι).codRestrictOfTower h).IsInvertible := by
+  have hinj : Function.Injective ι := fun x y hxy ↦ Subtype.ext <| by
+    rw [← hι x, ← hι y, hxy]
+  let g : q →L[R] p := ((P.restrictScalars R).subtypeL ∘L f.inverse ∘L
+    (q.restrictScalars R).subtypeL).codRestrictOfTower fun y ↦
+      hq (f.inverse y) (by rw [hf.self_apply_inverse]; exact y.property)
+  have hg (y : q) : ι (g y) = f.inverse y := Subtype.ext <| by
+    rw [hι]
+    exact coe_codRestrictOfTower_apply _ _ y
+  refine IsInvertible.of_inverse (g := g) ?_ ?_ <;> ext1 y
+  · exact Subtype.ext <| by simp [hg, hf.self_apply_inverse]
+  · exact hinj <| by simp [hg, hf.inverse_apply_self]
+
+/-- The inverse of the corestriction of `f ∘L ι`, for `f` invertible on `P` and `ι` the inclusion
+of `p ≤ P`, is the inverse of `f`. -/
+@[simp]
+theorem IsInvertible.coe_inverse_codRestrictOfTower_comp_apply {P p : Submodule S X}
+    {f : P →L[R] N} (hf : f.IsInvertible) {ι : p →L[R] P} (hι : ∀ x, (ι x : X) = x)
+    {q : Submodule S N} (h : ∀ x, f (ι x) ∈ q) (hq : ∀ x, f x ∈ q → (x : X) ∈ p) (y : q) :
+    (((f ∘L ι).codRestrictOfTower h).inverse y : X) = f.inverse y := by
+  have hy := congrArg Subtype.val ((hf.codRestrictOfTower_comp hι h hq).self_apply_inverse y)
+  have hι' : ι (((f ∘L ι).codRestrictOfTower h).inverse y) = f.inverse y := by
+    rw [← hy, coe_codRestrictOfTower_comp_apply, hf.inverse_apply_self]
+  rw [← hι, hι']
+
 end Restrict
 
 section OneSided
@@ -171,6 +216,31 @@ theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
   rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
 
 end OneSided
+
+section Comp
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R]
+  [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
+
+/-- A composite `g ∘L f` whose outer factor `g` is injective is invertible exactly when both
+factors are. Neither finite-dimensionality nor completeness is required.
+
+The forward implication rests on Mathlib's `Topology.IsQuotientMap.of_comp`, which makes `g` a
+quotient map when `g ∘L f` is invertible, and `isHomeomorph_iff_isQuotientMap_injective`, which
+makes the injective quotient map `g` a homeomorphism. -/
+@[simp]
+theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
+    (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
+  have hgq : Topology.IsQuotientMap g :=
+    .of_comp f.continuous g.continuous h.isHomeomorph.isQuotientMap
+  obtain ⟨e, rfl⟩ : g.IsInvertible :=
+    .of_isHomeomorph (isHomeomorph_iff_isQuotientMap_injective.2 ⟨hgq, hg⟩)
+  exact ⟨isInvertible_equiv_comp.1 h, isInvertible_equiv⟩
+
+end Comp
 
 section CompleteSpace
 
@@ -320,6 +390,18 @@ theorem isInvertible_prodMap_iff {f : M₁ →L[R] M₂} {g : M₃ →L[R] M₄}
       simpa using congrArg Prod.snd (h.inverse_apply_self (0, v))
   · rintro ⟨⟨e, rfl⟩, ⟨e', rfl⟩⟩
     exact ⟨e.prodCongr e', ContinuousLinearEquiv.coe_prodCongr e e'⟩
+
+/-- Pairing a continuous linear map with the zero map into a one-point module does not change its
+invertibility. This reads a single map as a family over a trivial parameter space. -/
+@[simp]
+theorem isInvertible_zero_prod_iff [Unique M₂] {f : M₁ →L[R] M₃} :
+    ((0 : M₁ →L[R] M₂).prod f).IsInvertible ↔ f.IsInvertible := by
+  have h : (0 : M₁ →L[R] M₂).prod f =
+      ((ContinuousLinearEquiv.uniqueProd R M₃ M₂).symm : M₃ →L[R] M₂ × M₃) ∘L f := by
+    ext x
+    · exact Subsingleton.elim _ _
+    · simp
+  rw [h, isInvertible_equiv_comp]
 
 end ProdMap
 

@@ -171,10 +171,10 @@ variable (R : Type*) [CommRing R] (σ τ : Type*) [Fintype σ] [Fintype τ]
 
 /-- The native disjoint-union tensor equivalence preserves the total quantum degree. -/
 theorem isHomogeneous_tmulEquiv :
-    TauCeti.LinearMap.IsHomogeneous (tmulEquiv R R[ε]).toLinearMap
+    LinearMap.IsHomogeneous (tmulEquiv R R[ε]).toLinearMap
       ((circleQuantumGrading R σ).tensorProduct (circleQuantumGrading R τ)).piece
       (circleQuantumGrading R (σ ⊕ τ)).piece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro n z hz
   refine (circleQuantumGrading R σ).tensorProduct_piece_le (circleQuantumGrading R τ)
     (C := ((circleQuantumGrading R (σ ⊕ τ)).piece (n + 0)).comap
@@ -193,7 +193,7 @@ theorem isHomogeneous_tmulEquiv :
 
 /-- Separating a disjoint-union tensor preserves the total quantum degree. -/
 theorem isHomogeneous_tmulEquiv_symm :
-    TauCeti.LinearMap.IsHomogeneous (tmulEquiv R R[ε]).symm.toLinearMap
+    LinearMap.IsHomogeneous (tmulEquiv R R[ε]).symm.toLinearMap
       (circleQuantumGrading R (σ ⊕ τ)).piece
       ((circleQuantumGrading R σ).tensorProduct (circleQuantumGrading R τ)).piece 0 :=
   (isHomogeneous_tmulEquiv R σ τ).linearEquiv_symm
@@ -395,6 +395,34 @@ theorem deleteCircle_true [Fintype σ] [DecidableEq σ] :
   rw [circleDuality_fiberwiseSplit, circleDuality_deleteCircle, Bool.not_true, insertCircle_false,
     AlgHom.toLinearMap_apply]
 
+variable {R} {ρ τ σ' : Type*}
+
+/-- A birth labelled `1`, reindexings and a merge compose to the merge along the composite of
+the circle maps. -/
+theorem reindex_fiberwiseMul_reindex_insertCircle [Fintype σ] [Fintype ρ] [Finite τ]
+    [DecidableEq τ] [DecidableEq σ'] (b : σ ⊕ Unit ≃ ρ) (g : ρ → τ) (a : τ ≃ σ')
+    (x : CircleTensor R σ) :
+    reindex R (fun _ ↦ R[ε]) a (fiberwiseMul (A := fun _ ↦ R[ε]) g
+      (reindex R (fun _ ↦ R[ε]) b (insertCircle R false x))) =
+      fiberwiseMul (A := fun _ ↦ R[ε]) (a ∘ g ∘ b ∘ Sum.inl) x := by
+  classical
+  have := Fintype.ofFinite τ
+  rw [insertCircle_false, AlgHom.toLinearMap_apply,
+    ← fiberwiseMul_equiv_apply, ← fiberwiseMul_equiv_apply]
+  simp only [← AlgHom.comp_apply, fiberwiseMul_comp]
+
+/-- Reindexings, a split and a death of the label `X` compose to the split along the composite of
+the circle maps. -/
+theorem deleteCircle_reindex_fiberwiseSplit_reindex [Fintype σ] [Fintype ρ] [Fintype τ]
+    [DecidableEq τ] [Fintype σ'] [DecidableEq σ'] (a : τ ≃ σ') (g : ρ → τ) (b : σ ⊕ Unit ≃ ρ)
+    (x : CircleTensor R σ') :
+    deleteCircle R true (reindex R (fun _ ↦ R[ε]) b.symm
+      (fiberwiseSplit g (reindex R (fun _ ↦ R[ε]) a.symm x))) =
+      fiberwiseSplit (a ∘ g ∘ b ∘ Sum.inl) x := by
+  classical
+  rw [deleteCircle_true, ← fiberwiseSplit_equiv_apply, ← fiberwiseSplit_equiv_apply]
+  simp only [← LinearMap.comp_apply, fiberwiseSplit_comp, Function.comp_assoc]
+
 end Semiring
 
 section Grading
@@ -404,10 +432,10 @@ variable (R : Type*) [CommRing R] {σ : Type*} [Fintype σ]
 /-- Inserting a circle labelled `1` raises the quantum degree by one, and inserting it labelled
 `X` lowers it by one. -/
 theorem isHomogeneous_insertCircle (b : Bool) :
-    TauCeti.LinearMap.IsHomogeneous (insertCircle R (σ := σ) b)
+    LinearMap.IsHomogeneous (insertCircle R (σ := σ) b)
       (circleQuantumGrading R σ).piece (circleQuantumGrading R (σ ⊕ Unit)).piece
       (bif b then -1 else 1) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   have hb : circleBasis R Unit (fun _ ↦ b) ∈
       (circleQuantumGrading R Unit).piece (bif b then -1 else 1) := by
@@ -420,11 +448,11 @@ theorem isHomogeneous_insertCircle (b : Bool) :
 /-- Deleting a circle labelled `1` lowers the quantum degree by one, and deleting it labelled
 `X` raises it by one. -/
 theorem isHomogeneous_deleteCircle (b : Bool) :
-    TauCeti.LinearMap.IsHomogeneous (deleteCircle R (σ := σ) b)
+    LinearMap.IsHomogeneous (deleteCircle R (σ := σ) b)
       (circleQuantumGrading R (σ ⊕ Unit)).piece (circleQuantumGrading R σ).piece
       (-bif b then -1 else 1) := by
   classical
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [mem_circleQuantumGrading_piece_iff] at hx
   rw [← (circleBasis R (σ ⊕ Unit)).sum_repr x, map_sum]
@@ -490,7 +518,7 @@ variable (S : Type*) [CommRing S]
 
 /-- The actual disjoint-union comparison preserves the total quantum degree. -/
 theorem isHomogeneous_disjointUnionCircleTensorEquiv :
-    TauCeti.LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).toLinearMap
+    LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).toLinearMap
       (Khovanov.circleQuantumGrading S ((D.disjointUnion E).ResolvedCircle s)).piece
       ((Khovanov.circleQuantumGrading S (D.ResolvedCircle (s ∘ Fin.castAdd m))).tensorProduct
         (Khovanov.circleQuantumGrading S (E.ResolvedCircle (s ∘ Fin.natAdd n)))).piece 0 := by
@@ -499,7 +527,7 @@ theorem isHomogeneous_disjointUnionCircleTensorEquiv :
 
 /-- Reassembling the two actual resolved-circle tensors preserves the total quantum degree. -/
 theorem isHomogeneous_disjointUnionCircleTensorEquiv_symm :
-    TauCeti.LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).symm.toLinearMap
+    LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).symm.toLinearMap
       ((Khovanov.circleQuantumGrading S (D.ResolvedCircle (s ∘ Fin.castAdd m))).tensorProduct
         (Khovanov.circleQuantumGrading S (E.ResolvedCircle (s ∘ Fin.natAdd n)))).piece
       (Khovanov.circleQuantumGrading S ((D.disjointUnion E).ResolvedCircle s)).piece 0 :=

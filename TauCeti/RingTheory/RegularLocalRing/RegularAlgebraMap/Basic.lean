@@ -118,22 +118,8 @@ theorem localization_base {R' : Type*} [CommRing R'] [Algebra R R'] [Algebra R' 
     [IsScalarTower R R' B] (M : Submonoid R) [IsLocalization M R'] [RegularAlgebraMap R B] :
     RegularAlgebraMap R' B where
   flat := (Module.flat_iff_of_isLocalization R' M B).mpr inferInstance
-  geometricallyRegular_fiber p' _ := by
-    let p := p'.comap (algebraMap R R')
-    let : Algebra p.ResidueField p'.ResidueField :=
-      (Ideal.ResidueField.map p p' (algebraMap R R') rfl).toAlgebra
-    have : IsScalarTower R p.ResidueField p'.ResidueField := .of_algebraMap_eq fun r ↦
-      (IsScalarTower.algebraMap_apply R R' _ r).trans
-        (Ideal.ResidueField.map_algebraMap p p' _ rfl r).symm
-    have hκ : Function.Bijective (algebraMap p.ResidueField p'.ResidueField) :=
-      (RingHom.surjectiveOnStalks_of_isLocalization M R').residueFieldMap_bijective p p' rfl
-    have := (geometricallyRegular_tensorProduct_iff_of_bijective hκ (p.Fiber B)).mpr inferInstance
-    have : TensorProduct.CompatibleSMul R R' p'.ResidueField B :=
-      IsLocalization.tensorProduct_compatibleSMul M R' _ _
-    -- `κ(p') ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ κ(p') ⊗[R] B ≃ κ(p') ⊗[R'] B` as `κ(p')`-algebras.
-    exact ((Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
-      p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
-        p'.ResidueField p'.ResidueField B).symm).geometricallyRegular
+  geometricallyRegular_fiber p' _ :=
+    (p'.geometricallyRegular_fiber_iff_of_isLocalization M).mpr inferInstance
 
 /-- A Noetherian regular algebra over a regular ring is a regular ring: its fibres are
 geometrically regular, hence regular. -/
