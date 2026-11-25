@@ -92,8 +92,7 @@ instance nilpotentConeιOver_isModHom : IsModHom G (nilpotentConeιOver k H) := 
   let : IsModHom G
       ((algSpec (.of k)).map (CommAlgCat.ofHom (Ideal.Quotient.mkₐ k I)).op) :=
     ComoduleAlgebra.specModObj_isModHom (Ideal.Quotient.mkₐ k I)
-      (ComoduleAlgebra.quotient_coactAlgHom_comp_mk I
-        fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp)
+      (nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk k H)
   refine { smul_hom := ?_ }
   rw [lieAlgebraAdjointAction_smul]
   rw [nilpotentConeιOver_eq]
@@ -199,8 +198,7 @@ theorem nilpotentConePointAction_coordinates (g : WithConv (H →ₐ[k] A))
     (fun _ _ ↦ Commute.all _ _)
     (Comodule.coact (R := k) (C := H) (Ideal.Quotient.mk I
       (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ))) = _
-  rw [ComoduleAlgebra.quotient_coact_mk I
-    (fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp),
+  rw [nilpotentConeComoduleAlgebra_coact_mk,
     lift_nilpotentConePointEquiv]
   generalize Comodule.coact (R := k) (C := H)
     (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ) = q

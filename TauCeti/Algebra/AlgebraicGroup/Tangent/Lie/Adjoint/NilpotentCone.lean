@@ -98,7 +98,9 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: the ideal
   is stable under scaling and under the adjoint action.
 * `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
-  of the nilpotent cone.
+  of the nilpotent cone, with computation and intertwining laws
+  `TauCeti.nilpotentConeComoduleAlgebra_coact_mk` and
+  `TauCeti.nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`.
 * `TauCeti.polynomialCoact_eval_ι`: evaluating the group leg of a linear polynomial coaction at
   `g⁻¹` and the polynomial leg at the coordinates `x` of `z` gives the linear polynomial evaluated
   on `Ad(g) z`.
@@ -326,11 +328,32 @@ local notation "P" => SymmetricAlgebra k (Module.Dual k 𝔤)
 local notation "I" => nilpotentConeIdeal k H
 
 /-- The polynomial coaction descends to the full coordinate ring of the nilpotent cone.
-Its computation and intertwining laws are `ComoduleAlgebra.quotient_coact_mk` and
-`ComoduleAlgebra.quotient_coactAlgHom_comp_mk`. -/
-@[expose, implicit_reducible]
+Its computation and intertwining laws are `nilpotentConeComoduleAlgebra_coact_mk` and
+`nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`. -/
+@[irreducible]
 noncomputable def nilpotentConeComoduleAlgebra : ComoduleAlgebra k H (P ⧸ I) :=
   ComoduleAlgebra.quotient I fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
+
+/-- The descended coaction applies the quotient map to the polynomial tensor factor. -/
+@[simp]
+theorem nilpotentConeComoduleAlgebra_coact_mk (p : P) :
+    letI := nilpotentConeComoduleAlgebra k H
+    Comodule.coact (R := k) (C := H) (Ideal.Quotient.mk I p) =
+      Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)
+        (Comodule.coact (R := k) (C := H) p) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coact_mk I
+    (fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp) p
+
+/-- The quotient map intertwines the polynomial and nilpotent-cone coactions. -/
+theorem nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk :
+    letI := nilpotentConeComoduleAlgebra k H
+    (ComoduleAlgebra.coactAlgHom k H (P ⧸ I)).comp (Ideal.Quotient.mkₐ k I) =
+      (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)).comp
+        (ComoduleAlgebra.coactAlgHom k H P) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coactAlgHom_comp_mk I
+    fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
 
 end Quotient
 
