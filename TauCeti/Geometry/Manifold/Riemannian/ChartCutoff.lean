@@ -239,12 +239,11 @@ theorem setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm
         F (u x) ∂riemannianVolume I M ≤
       ENNReal.ofReal m * ∫⁻ y in ball (extChartAt I c c) b.rIn,
         F (b y * u ((extChartAt I c).symm y)) ∂(Module.finBasis ℝ E).addHaar := by
-  rw [setLIntegral_riemannianVolume_inter_preimage c isOpen_ball hbt,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine setLIntegral_mono' measurableSet_ball fun y hy ↦ ?_
-  rw [b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
-  gcongr
-  exact hρ y hy
+  refine (setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm c isOpen_ball hbt
+    hρ (F ∘ u)).trans_eq ?_
+  congr 1
+  refine setLIntegral_congr_fun measurableSet_ball fun y hy ↦ ?_
+  rw [Function.comp_apply, b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
 
 omit [I.Boundaryless] in
 /-- The `L^{p'}` norm of `u` over the chart preimage of the ball of radius `b.rIn` is at most

@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
-# The centre of a monoid algebra under a coefficient map
+# The centre of a monoid algebra
 
 A ring homomorphism `f : R →+* S` of commutative semirings induces the ring homomorphism
 `MonoidAlgebra.mapRingHom G f : R[G] →+* S[G]` applying `f` to the coefficients. It carries the
@@ -18,15 +19,22 @@ centre of `R[G]` into the centre of `S[G]` (`MonoidAlgebra.mapRingHom_mem_center
 `S[G]` is spanned over its central scalars `S` by the elements `of S G g`, the images of the
 `of R G g`. The restriction is `MonoidAlgebra.centerMapRingHom G f : Z(R[G]) →+* Z(S[G])`.
 
+For `G` finite, `Z(R[G])` is a submodule of the finite `R`-module `R[G]`, so it is a finite
+`R`-module when `R` is Noetherian, and hence an Artinian ring when `R` is Artinian.
+
 ## Main definitions
 
 * `MonoidAlgebra.centerMapRingHom G f`: the ring homomorphism `Z(R[G]) →+* Z(S[G])` induced by
   `f : R →+* S`.
+* `MonoidAlgebra.toCenter`: for a commutative monoid `G`, the isomorphism of `R[G]` with its centre.
 
 ## Main results
 
 * `MonoidAlgebra.mapRingHom_mem_center`: the coefficient map preserves centrality.
 * `MonoidAlgebra.centerMapRingHom_algebraMap`: the map on centres is compatible with the scalars.
+* `TauCeti.moduleFinite_center_monoidAlgebra`, `TauCeti.isArtinianRing_center_monoidAlgebra`: for
+  `G` finite, `Z(R[G])` is a finite `R`-module when `R` is Noetherian, and an Artinian ring when
+  `R` is Artinian (instances).
 -/
 
 public section
@@ -69,4 +77,36 @@ theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
       algebraMap S (Subalgebra.center S S[G]) (f r) :=
   Subtype.ext <| RingHom.congr_fun (mapRingHom_comp_algebraMap f) r
 
+/-- For a commutative monoid `G`, every element of `R[G]` is central, so `R[G]` is isomorphic to its
+centre: the identification sends `x` to `x`, read as an element of the centre. -/
+noncomputable def toCenter {k G : Type*} [CommSemiring k] [CommMonoid G] :
+    MonoidAlgebra k G ≃ₐ[k] Subalgebra.center k (MonoidAlgebra k G) :=
+  ((Subalgebra.equivOfEq _ _ (Subalgebra.center_eq_top k _)).trans Subalgebra.topEquiv).symm
+
+/-- `toCenter x` is `x`, read in the monoid algebra. -/
+@[simp]
+theorem coe_toCenter {k G : Type*} [CommSemiring k] [CommMonoid G] (x : MonoidAlgebra k G) :
+    (toCenter x : MonoidAlgebra k G) = x :=
+  (rfl)
+
 end MonoidAlgebra
+
+namespace TauCeti
+
+variable {R G : Type*}
+
+/-- The centre of `R[G]` is a finite `R`-module, over a Noetherian commutative ring `R` and for a
+finite group (or monoid) `G`. -/
+instance moduleFinite_center_monoidAlgebra [CommRing R] [IsNoetherianRing R] [Monoid G]
+    [Finite G] : Module.Finite R (Subalgebra.center R (MonoidAlgebra R G)) :=
+  have : IsNoetherian R (Subalgebra.center R (MonoidAlgebra R G)) :=
+    isNoetherian_submodule' (Subalgebra.toSubmodule (Subalgebra.center R (MonoidAlgebra R G)))
+  inferInstance
+
+/-- The centre of `R[G]` is an Artinian ring, over an Artinian commutative ring `R` and for a
+finite group (or monoid) `G`. -/
+instance isArtinianRing_center_monoidAlgebra [CommRing R] [IsArtinianRing R] [Monoid G]
+    [Finite G] : IsArtinianRing (Subalgebra.center R (MonoidAlgebra R G)) :=
+  IsArtinianRing.of_finite R _
+
+end TauCeti

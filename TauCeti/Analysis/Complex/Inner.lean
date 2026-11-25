@@ -22,6 +22,8 @@ read in the rotated coordinate `w = conj ζ * z`.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
+* `Complex.real_inner_I_left`, `Complex.real_inner_one_left` -- `⟪i, z⟫_ℝ = z.im` and
+  `⟪1, z⟫_ℝ = z.re`: the imaginary and real parts are height functions.
 * `Complex.inner_one_smul_I_sub_inner_I_smul_one` -- the infinitesimal rotation
   `z ↦ ⟪z, 1⟫_ℝ i - ⟪z, i⟫_ℝ` of the plane is multiplication by `i`.
 * `Complex.I_mul_I_mul` -- `i (i z) = -z`.
@@ -50,6 +52,14 @@ theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ
 theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
   simp [Complex.inner]
 
+/-- The real inner product of `i` with `z` is the imaginary part of `z`. -/
+theorem real_inner_I_left (z : ℂ) : inner ℝ I z = z.im := by
+  simp [Complex.inner]
+
+/-- The real inner product of `1` with `z` is the real part of `z`. -/
+theorem real_inner_one_left (z : ℂ) : inner ℝ 1 z = z.re := by
+  simp [Complex.inner]
+
 /-- The infinitesimal rotation `z ↦ ⟪z, 1⟫ i - ⟪z, i⟫` of the plane `ℂ` is multiplication by `i`. -/
 theorem inner_one_smul_I_sub_inner_I_smul_one (z : ℂ) :
     inner ℝ z 1 • I - inner ℝ z I • (1 : ℂ) = I * z := by
@@ -64,6 +74,15 @@ theorem I_mul_I_mul (z : ℂ) : I * (I * z) = -z := by
 theorem real_inner_I_mul_left (x y : ℂ) : inner ℝ (I * x) y = -inner ℝ x (I * y) := by
   simp only [Complex.inner, mul_re, mul_im, conj_re, conj_im, I_re, I_im]
   ring
+
+/-- The squared norm is the sum of squared real inner products with a unit complex number
+and its rotation by `i`. -/
+theorem norm_sq_eq_real_inner_sq_add_real_inner_mul_I_sq (v w : ℂ) (hw : ‖w‖ = 1) :
+    ‖v‖ ^ 2 = inner ℝ v w ^ 2 + inner ℝ v (w * I) ^ 2 := by
+  have h : w.re * w.re + w.im * w.im = 1 := by
+    rw [← Complex.normSq_apply, ← Complex.sq_norm, hw, one_pow]
+  simp [Complex.sq_norm, Complex.normSq_apply, Complex.inner, Complex.mul_re]
+  linear_combination -(v.re ^ 2 + v.im ^ 2) * h
 
 end Complex
 

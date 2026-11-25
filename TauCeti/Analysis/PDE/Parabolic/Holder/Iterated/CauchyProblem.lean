@@ -14,6 +14,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.OfDeriv
 import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.DirectionalDerivative
 
 /-!
 # Higher regularity for the parabolic Cauchy problem
@@ -97,14 +98,11 @@ private theorem exists_hasLineDerivAt (hα : α ≤ 1) {k : ℕ}
       (∃ A' : ParabolicCkHolderSpace k α E F hab, ⇑A' = ⇑X') ∧
         ∀ (t : Icc a b) x,
           HasLineDerivAt ℝ (fun y ↦ X (slabMk y t)) (X' (slabMk x t)) x e := by
-  set A' := ParabolicCkHolderSpace.compLeftL (ContinuousLinearMap.apply ℝ F e)
-    (ParabolicCkHolderSpace.spatialFDerivL k α E F hab A)
+  set A' := ParabolicCkHolderSpace.spatialLineDerivL e A
   obtain ⟨X', hX'⟩ := ParabolicCkHolderSpace.exists_holderSpace_coe_eq hα A'
   refine ⟨X', ⟨A', hX'.symm⟩, fun t x ↦ ?_⟩
-  have hd := (A.hasSpatialFDerivAt t x).hasLineDerivAt e
-  rw [hA] at hd
-  rw [hX', ParabolicCkHolderSpace.compLeftL_apply, ContinuousLinearMap.apply_apply]
-  exact hd
+  have hd := ParabolicCkHolderSpace.hasSpatialLineDerivAt e A t x
+  rwa [hA, ← hX'] at hd
 
 /-- The directional derivative of an initial datum of order `k + 3` along `e` is an initial
 datum of order `k + 2`. -/

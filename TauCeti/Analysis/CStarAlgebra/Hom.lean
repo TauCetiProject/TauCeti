@@ -17,10 +17,11 @@ two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-homomorphism between complex C⋆-algebras is contractive, so it bundles as a continuous
 linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`.
-A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
-bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear
-isometric equivalence `StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint
-elements is the real-linear isometric equivalence `StarAlgEquiv.selfAdjointLinearIsometryEquiv`.
+A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), and so
+preserves the extended norm (`StarAlgEquiv.eNorm_map`). It therefore bundles as a continuous
+linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear isometric equivalence
+`StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint elements is the
+real-linear isometric equivalence `StarAlgEquiv.selfAdjointLinearIsometryEquiv`.
 
 Since `⋆`-homomorphisms between C⋆-algebras are contractive, any family of them is
 equicontinuous. Pointwise convergence of such a family to a `⋆`-homomorphism, along any filter,
@@ -99,6 +100,11 @@ end NonUnitalStarAlgHom
 namespace StarAlgEquiv
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- A star-algebra equivalence between C⋆-algebras preserves the extended norm. -/
+theorem eNorm_map {F : Type*} [EquivLike F A B] [NonUnitalAlgEquivClass F ℂ A B]
+    [StarHomClass F A B] (φ : F) (a : A) : ‖φ a‖ₑ = ‖a‖ₑ := by
+  simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
 
 /-- A star-algebra equivalence of C⋆-algebras as a continuous linear equivalence. Both directions
 are continuous because star-algebra equivalences of C⋆-algebras are isometric. -/

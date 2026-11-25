@@ -35,6 +35,9 @@ of degree `i` with `i + l = d`.
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
 * `TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap`: an inverse, up to a scalar fixing it, of an
   element of degree `i` is homogeneous of every degree `j` with `i + j = 0`.
+* `TauCeti.GradedAlgebra.proj_mem`: the degree-`i` projection lands in the degree-`i` component.
+* `TauCeti.GradedAlgebra.proj_of_mem_same` and `TauCeti.GradedAlgebra.proj_of_mem_ne`: the
+  degree-`j` projection fixes elements of degree `j` and kills elements of any other degree.
 * `TauCeti.GradedAlgebra.apply_coe_decompose_mul_of_forall_ne`: for a functional vanishing off
   one degree `d`, pairing with an element of degree `l` only sees the component of degree `i`,
   where `i + l = d`.
@@ -184,6 +187,29 @@ theorem mem_of_mul_eq_algebraMap {a b : A} {f : R} {i j : ι} (hij : i + j = 0) 
     exact Submodule.zero_mem _
 
 end Inverse
+
+section Proj
+
+variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Semiring A]
+  [Algebra R A] (𝒜 : ι → Submodule R A) [_root_.GradedAlgebra 𝒜]
+
+/-- The degree-`i` projection of a graded algebra lands in the degree-`i` component. -/
+theorem proj_mem (i : ι) (a : A) : _root_.GradedAlgebra.proj 𝒜 i a ∈ 𝒜 i := by
+  rw [_root_.GradedAlgebra.proj_apply]
+  exact (decompose 𝒜 a i).property
+
+variable {𝒜}
+
+/-- The degree-`i` projection fixes elements of degree `i`. -/
+theorem proj_of_mem_same {i : ι} {a : A} (ha : a ∈ 𝒜 i) : _root_.GradedAlgebra.proj 𝒜 i a = a := by
+  rw [_root_.GradedAlgebra.proj_apply, decompose_of_mem_same 𝒜 ha]
+
+/-- The degree-`j` projection kills elements of degree `i ≠ j`. -/
+theorem proj_of_mem_ne {i j : ι} {a : A} (ha : a ∈ 𝒜 i) (hij : i ≠ j) :
+    _root_.GradedAlgebra.proj 𝒜 j a = 0 := by
+  rw [_root_.GradedAlgebra.proj_apply, decompose_of_mem_ne 𝒜 ha hij]
+
+end Proj
 
 section Functional
 
