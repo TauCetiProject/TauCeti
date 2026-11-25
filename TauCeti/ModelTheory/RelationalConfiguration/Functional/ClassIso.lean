@@ -86,6 +86,11 @@ theorem classIso_def (K : Set (FunctionalConfiguration L V)) :
 theorem classIso_apply {F G : K} : classIso L V K F G ↔ isoSetoid L V F G :=
   Iff.rfl
 
+/-- Isomorphism on a class is the orbit relation of the logic action, pulled back to the class. -/
+theorem classIso_eq_comap_orbitRel :
+    classIso L V K = (MulAction.orbitRel (Equiv.Perm V) _).comap Subtype.val := by
+  rw [classIso_def, isoSetoid_eq_orbitRel]
+
 /-- Two members of a class are related exactly when a permutation of the carrier relabels the
 first into the second. -/
 theorem classIso_iff_exists_perm_smul_eq {F G : K} :

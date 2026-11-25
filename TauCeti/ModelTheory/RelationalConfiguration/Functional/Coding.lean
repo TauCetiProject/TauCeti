@@ -61,7 +61,8 @@ is invariant under permutations and, with countably many symbols on a countable 
 * `TauCeti.FunctionalConfiguration.isoSetoid_eq_orbitRel`: isomorphism is the orbit relation of
   the action of `Equiv.Perm V`.
 * `TauCeti.FunctionalConfiguration.isomorphismInvariant_iff_isInvariantBlock`: isomorphism
-  invariance is invariance under the action of `Equiv.Perm V`.
+  invariance is invariance under the action of `Equiv.Perm V`; isomorphism-invariant sets are
+  closed under complements and arbitrary unions and intersections.
 * `TauCeti.FunctionalConfiguration.instContinuousSMulPerm`: for discrete `V`, the action is jointly
   continuous.
 * `TauCeti.FunctionalConfiguration.continuous_graphCode`,
@@ -363,6 +364,63 @@ theorem isomorphismInvariant_iff_isInvariantBlock {K : Set (FunctionalConfigurat
     exact hK (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) hF
   · obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
     exact hK σ (smul_mem_smul_set hF)
+
+/-- The preimage of any set of isomorphism classes is isomorphism invariant. -/
+theorem isomorphismInvariant_preimage_quotientMk (s : Set (Quotient (isoSetoid L V))) :
+    IsomorphismInvariant (Quotient.mk (isoSetoid L V) ⁻¹' s) :=
+  fun _ _ h hF => by rwa [mem_preimage, ← Quotient.sound h]
+
+/-- A set is isomorphism invariant exactly when it is its own saturation under isomorphism. -/
+theorem isomorphismInvariant_iff_preimage_image_quotientMk
+    {K : Set (FunctionalConfiguration L V)} :
+    IsomorphismInvariant K ↔
+      Quotient.mk (isoSetoid L V) ⁻¹' (Quotient.mk (isoSetoid L V) '' K) = K := by
+  refine ⟨fun hK => (subset_preimage_image _ _).antisymm' ?_, fun h => ?_⟩
+  · rintro G ⟨F, hF, hFG⟩
+    exact hK (Quotient.exact hFG) hF
+  · rw [← h]
+    exact isomorphismInvariant_preimage_quotientMk _
+
+/-- The empty set is isomorphism invariant. -/
+@[simp]
+theorem isomorphismInvariant_empty :
+    IsomorphismInvariant (∅ : Set (FunctionalConfiguration L V)) :=
+  fun _ _ _ h => h
+
+/-- The set of all functional configurations is isomorphism invariant. -/
+@[simp]
+theorem isomorphismInvariant_univ :
+    IsomorphismInvariant (univ : Set (FunctionalConfiguration L V)) :=
+  fun _ _ _ _ => mem_univ _
+
+/-- The complement of an isomorphism-invariant set is isomorphism invariant. -/
+theorem IsomorphismInvariant.compl {K : Set (FunctionalConfiguration L V)}
+    (hK : IsomorphismInvariant K) : IsomorphismInvariant Kᶜ :=
+  fun _ _ h hF hG => hF (hK ((isoSetoid L V).symm h) hG)
+
+/-- The intersection of two isomorphism-invariant sets is isomorphism invariant. -/
+theorem IsomorphismInvariant.inter {K K' : Set (FunctionalConfiguration L V)}
+    (hK : IsomorphismInvariant K) (hK' : IsomorphismInvariant K') :
+    IsomorphismInvariant (K ∩ K') :=
+  fun _ _ h hF => ⟨hK h hF.1, hK' h hF.2⟩
+
+/-- The union of two isomorphism-invariant sets is isomorphism invariant. -/
+theorem IsomorphismInvariant.union {K K' : Set (FunctionalConfiguration L V)}
+    (hK : IsomorphismInvariant K) (hK' : IsomorphismInvariant K') :
+    IsomorphismInvariant (K ∪ K') :=
+  fun _ _ h hF => hF.imp (hK h) (hK' h)
+
+/-- An intersection of isomorphism-invariant sets is isomorphism invariant. -/
+theorem isomorphismInvariant_iInter {ι : Sort*} {K : ι → Set (FunctionalConfiguration L V)}
+    (hK : ∀ i, IsomorphismInvariant (K i)) : IsomorphismInvariant (⋂ i, K i) :=
+  fun _ _ h hF => mem_iInter.2 fun i => hK i h (mem_iInter.1 hF i)
+
+/-- A union of isomorphism-invariant sets is isomorphism invariant. -/
+theorem isomorphismInvariant_iUnion {ι : Sort*} {K : ι → Set (FunctionalConfiguration L V)}
+    (hK : ∀ i, IsomorphismInvariant (K i)) : IsomorphismInvariant (⋃ i, K i) :=
+  fun _ _ h hF => by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hF
+    exact mem_iUnion.2 ⟨i, hK i h hi⟩
 
 /-! ### The graph code -/
 

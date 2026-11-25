@@ -149,7 +149,7 @@ instance countable_relations_graphLanguage [Countable (Σ n, L.Functions n)]
 
 /-- The graph language has countably many relation symbols of each arity when `L` has countably
 many symbols of each sort and arity. -/
-instance countable_graphLanguage_relations [∀ n, Countable (L.Functions n)]
+instance countable_relations_arity_graphLanguage [∀ n, Countable (L.Functions n)]
     [∀ n, Countable (L.Relations n)] (n : ℕ) : Countable (L.graphLanguage.Relations n) :=
   (sigma_mk_injective (i := n)).countable
 
