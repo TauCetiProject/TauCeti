@@ -8,6 +8,9 @@ module
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Order.ConditionallyCompleteLattice.Finset
 public import TauCeti.Algebra.AddCircle
+public import TauCeti.Algebra.BigOperators.Group.List
+public import TauCeti.Algebra.Order.BigOperators.Group.List
+public import TauCeti.Data.List.Zip
 public import TauCeti.NumberTheory.Real.Irrational
 
 /-!
@@ -22,9 +25,12 @@ from the largest point reaches `1`, which is the arc that wraps around to the po
 
 This file sets up the two objects and their basic API: how many points there are (`N` for
 irrational `α`, and `min N q.den` for a rational `α = q`), that the gaps are positive, that
-there is one for each point, and that they sum to `1`. It also names the two lengths that the
-three-gap theorem is stated with: `Rotation.etaPos α N`, the least positive point, and
-`Rotation.etaNeg α N`, the gap from the largest point to `1`. Both are gaps.
+there is one for each point, and that for `0 < N` they sum to `1` (for `N = 0` there is no point
+and no gap). It also names the two lengths that the three-gap theorem is stated with:
+`Rotation.etaPos α N`, the least positive point, and `Rotation.etaNeg α N`, the gap from the
+largest point to `1`. The length `etaNeg α N` is a gap as soon as `0 < N`, and `etaPos α N` is a
+gap when there are at least two distinct points, `2 ≤ #(orbitFract α N)`; with fewer points
+there is no positive point, and `etaPos α N = 0` is not a gap.
 
 ## Main definitions
 
@@ -39,7 +45,19 @@ three-gap theorem is stated with: `Rotation.etaPos α N`, the least positive poi
 * `Rotation.card_gaps`: there are as many gaps as points.
 * `Rotation.sum_gaps`: for `0 < N` the gaps sum to `1`.
 * `Rotation.pos_of_mem_gaps`: every gap is positive.
-* `Rotation.etaPos_mem_gaps`, `Rotation.etaNeg_mem_gaps`: the two named lengths are gaps.
+* `Rotation.isLeast_etaPos`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is the least
+  nonzero point.
+* `Rotation.isGreatest_one_sub_etaNeg`: for `0 < N`, the largest point is `1 - etaNeg α N`.
+* `Rotation.etaPos_mem_gaps`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is a gap.
+* `Rotation.etaNeg_mem_gaps`: for `0 < N`, the length `etaNeg α N` is a gap.
+* `Rotation.etaPos_pos`, `Rotation.etaNeg_pos`: `etaPos α N` is positive when
+  `2 ≤ #(orbitFract α N)`, and `etaNeg α N` is always positive.
+
+`Rotation.gaps_eq_coe` and `Rotation.mem_gaps_iff` unfold `Rotation.gaps` to the list it is
+built from. The statements about lists of consecutive differences that the proofs use are
+`List.sum_zipWith_sub_append_singleton_cons`,
+`List.pos_of_mem_zipWith_sub_tail_append_singleton` and
+`List.apply_getLast_mem_zipWith_tail_append_singleton`.
 
 ## References
 
@@ -117,43 +135,6 @@ theorem sort_orbitFract (α : ℝ) (hN : 0 < N) :
 
 /-! ### The gaps -/
 
-/-- The differences of consecutive entries of the list `a :: l` closed up by an end point `b`
-telescope: they sum to `b - a`. -/
-private theorem sum_zipWith_sub_tail_append {G : Type*} [AddCommGroup G] (a b : G) (l : List G) :
-    (List.zipWith (· - ·) ((a :: l).tail ++ [b]) (a :: l)).sum = b - a := by
-  induction l generalizing a with
-  | nil => simp
-  | cons c l ih =>
-    have h := ih c
-    simp only [List.tail_cons, List.cons_append, List.zipWith_cons_cons, List.sum_cons] at h ⊢
-    rw [h]
-    abel
-
-/-- The gaps of a strictly increasing list closed up by a strict upper bound are positive. -/
-private theorem pos_of_mem_zipWith_sub_tail_append {b : ℝ} :
-    ∀ {l : List ℝ}, l.Pairwise (· < ·) → (∀ x ∈ l, x < b) →
-      ∀ g ∈ List.zipWith (· - ·) (l.tail ++ [b]) l, 0 < g
-  | [], _, _, g, hg => by simp at hg
-  | [a], _, hb, g, hg => by
-    obtain rfl : g = b - a := by simpa using hg
-    exact sub_pos.2 (hb a (by simp))
-  | a :: c :: l, hl, hb, g, hg => by
-    simp only [List.tail_cons, List.cons_append, List.zipWith_cons_cons, List.mem_cons] at hg
-    rcases hg with rfl | hg
-    · exact sub_pos.2 (List.rel_of_pairwise_cons hl (by simp))
-    · exact pos_of_mem_zipWith_sub_tail_append (List.Pairwise.of_cons hl)
-        (fun x hx => hb x (List.mem_cons_of_mem _ hx)) g (by simpa using hg)
-
-/-- The last gap of a nonempty list closed up by `b` is `b` minus the last entry. -/
-private theorem sub_getLast_mem_zipWith_sub_tail_append {b : ℝ} :
-    ∀ {l : List ℝ} (hl : l ≠ []), b - l.getLast hl ∈ List.zipWith (· - ·) (l.tail ++ [b]) l
-  | [a], _ => by simp
-  | a :: c :: l, _ => by
-    have h := sub_getLast_mem_zipWith_sub_tail_append (b := b) (List.cons_ne_nil c l)
-    simp only [List.tail_cons, List.cons_append, List.zipWith_cons_cons, List.mem_cons,
-      List.getLast_cons_cons] at h ⊢
-    exact Or.inr h
-
 /-- The multiset of gaps between consecutive points of `orbitFract α N`: with `s` the sorted list
 of the points, the differences `s[i + 1] - s[i]`, together with the wrap-around gap `1 - s.max`
 from the largest point to `1`. The gap from a point `y` is the distance to the next point above
@@ -162,28 +143,46 @@ noncomputable def gaps (α : ℝ) (N : ℕ) : Multiset ℝ :=
   let s := (orbitFract α N).sort (· ≤ ·)
   ((List.zipWith (· - ·) (s.tail ++ [1]) s : List ℝ) : Multiset ℝ)
 
+/-- The multiset `gaps α N` is the list of the differences of consecutive entries of the sorted
+list of the points, closed up by `1`, read as a multiset. -/
+theorem gaps_eq_coe (α : ℝ) (N : ℕ) :
+    gaps α N = ((List.zipWith (· - ·) (((orbitFract α N).sort (· ≤ ·)).tail ++ [1])
+      ((orbitFract α N).sort (· ≤ ·)) : List ℝ) : Multiset ℝ) := by
+  rw [gaps]
+
+/-- A real number is a gap exactly when it is one of the differences of consecutive entries of
+the sorted list of the points, closed up by `1`. -/
+theorem mem_gaps_iff {g : ℝ} :
+    g ∈ gaps α N ↔ g ∈ List.zipWith (· - ·) (((orbitFract α N).sort (· ≤ ·)).tail ++ [1])
+      ((orbitFract α N).sort (· ≤ ·)) := by
+  rw [gaps_eq_coe, Multiset.mem_coe]
+
 /-- There are as many gaps as points. -/
 theorem card_gaps (α : ℝ) (N : ℕ) : (gaps α N).card = #(orbitFract α N) := by
-  simp only [gaps, Multiset.coe_card, List.length_zipWith, List.length_append, List.length_tail,
+  rw [gaps_eq_coe, Multiset.coe_card, List.length_zipWith, List.length_append, List.length_tail,
     length_sort, List.length_singleton]
   omega
 
 @[simp]
 theorem gaps_zero (α : ℝ) : gaps α 0 = 0 := by
-  simp [gaps]
+  rw [gaps_eq_coe, orbitFract_zero, sort_empty, List.tail_nil, List.nil_append,
+    List.zipWith_nil_right, Multiset.coe_nil]
 
 @[simp]
 theorem gaps_one (α : ℝ) : gaps α 1 = {1} := by
-  simp [gaps]
+  rw [gaps_eq_coe, orbitFract_one, sort_singleton, List.tail_cons, List.nil_append,
+    List.zipWith_cons_cons, List.zipWith_nil_left, sub_zero, Multiset.coe_singleton]
 
 /-- For `0 < N`, the gaps sum to `1`, the length of the circle. -/
 theorem sum_gaps (α : ℝ) (hN : 0 < N) : (gaps α N).sum = 1 := by
-  rw [gaps, sort_orbitFract α hN, Multiset.sum_coe, sum_zipWith_sub_tail_append, sub_zero]
+  rw [gaps_eq_coe, Multiset.sum_coe, sort_orbitFract α hN, List.tail_cons,
+    List.sum_zipWith_sub_append_singleton_cons, sub_zero]
 
 /-- Every gap is positive. -/
 theorem pos_of_mem_gaps {g : ℝ} (hg : g ∈ gaps α N) : 0 < g :=
-  pos_of_mem_zipWith_sub_tail_append (sortedLT_sort _).pairwise
-    (fun _ hx => (coe_orbitFract_subset_Ico α N ((mem_sort _).1 hx)).2) g hg
+  List.pos_of_mem_zipWith_sub_tail_append_singleton (sortedLT_sort _)
+    (fun _ hx => (coe_orbitFract_subset_Ico α N (mem_coe.2 ((mem_sort _).1 hx))).2)
+    (mem_gaps_iff.1 hg)
 
 /-! ### The two return lengths -/
 
@@ -196,23 +195,34 @@ noncomputable def etaPos (α : ℝ) (N : ℕ) : ℝ :=
 noncomputable def etaNeg (α : ℝ) (N : ℕ) : ℝ :=
   1 - sSup ((orbitFract α N : Finset ℝ) : Set ℝ)
 
+/-- When the orbit has at least two points, `etaPos α N` is the least of its nonzero points. -/
+theorem isLeast_etaPos (h : 2 ≤ #(orbitFract α N)) :
+    IsLeast ((orbitFract α N : Set ℝ) \ {0}) (etaPos α N) := by
+  have ht : ((orbitFract α N).erase 0).Nonempty :=
+    card_pos.1 (lt_of_lt_of_le (by omega) pred_card_le_card_erase)
+  rw [← coe_erase, etaPos, ht.csInf_eq_min']
+  exact isLeast_min' _ ht
+
+/-- For `0 < N`, the largest point of the orbit is `1 - etaNeg α N`. -/
+theorem isGreatest_one_sub_etaNeg (α : ℝ) (hN : 0 < N) :
+    IsGreatest (orbitFract α N : Set ℝ) (1 - etaNeg α N) := by
+  have hne : (orbitFract α N).Nonempty := ⟨0, zero_mem_orbitFract α hN⟩
+  rw [etaNeg, sub_sub_cancel, hne.csSup_eq_max']
+  exact isGreatest_max' _ hne
+
 /-- When the orbit has at least two points, its least positive point is a gap: the gap from the
 point `0`. -/
 theorem etaPos_mem_gaps (h : 2 ≤ #(orbitFract α N)) : etaPos α N ∈ gaps α N := by
-  have hN : 0 < N := by
-    rcases Nat.eq_zero_or_pos N with rfl | hN
-    · simp at h
-    · exact hN
-  have ht : ((orbitFract α N).erase 0).Nonempty := by
-    rw [← card_pos, card_erase_of_mem (zero_mem_orbitFract α hN)]
-    omega
-  have hmin : etaPos α N = ((orbitFract α N).erase 0).min' ht := (isLeast_min' _ ht).csInf_eq
-  have hsort : ((orbitFract α N).erase 0).sort (· ≤ ·) = ((orbitFract α N).erase 0).min' ht ::
-      (((orbitFract α N).erase 0).erase (((orbitFract α N).erase 0).min' ht)).sort (· ≤ ·) := by
-    conv_lhs => rw [← insert_erase (min'_mem _ ht)]
-    exact sort_insert _ (fun b hb => min'_le _ _ (mem_of_mem_erase hb)) (notMem_erase _ _)
-  rw [gaps, sort_orbitFract α hN, hsort, hmin]
-  simp
+  have hN : 0 < N := Nat.pos_of_ne_zero (by rintro rfl; simp at h)
+  have hleast := isLeast_etaPos h
+  rw [← coe_erase] at hleast
+  have hsort : ((orbitFract α N).erase 0).sort (· ≤ ·) = etaPos α N ::
+      (((orbitFract α N).erase 0).erase (etaPos α N)).sort (· ≤ ·) := by
+    conv_lhs => rw [← insert_erase (mem_coe.1 hleast.1)]
+    exact sort_insert _ (fun b hb => hleast.2 (mem_coe.2 (mem_of_mem_erase hb))) (notMem_erase _ _)
+  rw [mem_gaps_iff, sort_orbitFract α hN, hsort, List.tail_cons, List.cons_append,
+    List.zipWith_cons_cons, sub_zero]
+  exact List.mem_cons_self
 
 /-- For `0 < N`, the wrap-around gap is a gap: the gap from the largest point. -/
 theorem etaNeg_mem_gaps (α : ℝ) (hN : 0 < N) : etaNeg α N ∈ gaps α N := by
@@ -223,8 +233,8 @@ theorem etaNeg_mem_gaps (α : ℝ) (hN : 0 < N) : etaNeg α N ∈ gaps α N := b
   have hmax : sSup ((orbitFract α N : Finset ℝ) : Set ℝ) =
       ((orbitFract α N).sort (· ≤ ·)).getLast hl := by
     rw [hne.csSup_eq_max', max'_eq_sorted_last, List.getLast_eq_getElem]
-  rw [etaNeg, hmax]
-  exact sub_getLast_mem_zipWith_sub_tail_append hl
+  rw [mem_gaps_iff, etaNeg, hmax]
+  exact List.apply_getLast_mem_zipWith_tail_append_singleton (· - ·) 1 hl
 
 /-- The wrap-around gap is positive. -/
 theorem etaNeg_pos (α : ℝ) (N : ℕ) : 0 < etaNeg α N := by
@@ -233,7 +243,8 @@ theorem etaNeg_pos (α : ℝ) (N : ℕ) : 0 < etaNeg α N := by
   · exact pos_of_mem_gaps (etaNeg_mem_gaps α hN)
 
 /-- When the orbit has at least two points, its least positive point is positive. -/
-theorem etaPos_pos (h : 2 ≤ #(orbitFract α N)) : 0 < etaPos α N :=
-  pos_of_mem_gaps (etaPos_mem_gaps h)
+theorem etaPos_pos (h : 2 ≤ #(orbitFract α N)) : 0 < etaPos α N := by
+  obtain ⟨hmem, hne⟩ := (isLeast_etaPos h).1
+  exact (coe_orbitFract_subset_Ico α N hmem).1.lt_of_ne' fun h0 => hne (Set.mem_singleton_iff.2 h0)
 
 end Rotation
