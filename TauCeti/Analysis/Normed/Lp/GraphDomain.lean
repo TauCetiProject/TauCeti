@@ -30,8 +30,8 @@ elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous
 * `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
 * `ContinuousLinearMap.injective_normalGraphL`: the linear graph map is injective.
 * `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
-* `LipschitzWith.graph`: a `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization
-  `x ↦ (x, f x)`.
+* `LipschitzOnWith.graph`, `LipschitzWith.graph`: a map `K`-Lipschitz on a set, or on the whole
+  space, has a graph parametrization `x ↦ (x, f x)` that is `(K + 1)`-Lipschitz there.
 * `ContinuousLinearMap.graphL`: the continuous linear graph map `v ↦ (v, A v)` of
   `A : E →L[ℝ] F`, in every codimension.
 * `ContinuousLinearMap.injective_graphL`, `ContinuousLinearMap.range_graphL`: it is injective,
@@ -151,11 +151,11 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E �
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
-`L²` product. -/
-theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
-    {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
-    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) := fun x y ↦ by
+/-- A map that is `K`-Lipschitz on a set `s` has a graph parametrization `x ↦ (x, f x)` into the
+`L²` product that is `(K + 1)`-Lipschitz on `s`. -/
+theorem _root_.LipschitzOnWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} {s : Set α} (hf : LipschitzOnWith K f s) :
+    LipschitzOnWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) s := fun x hx y hy ↦ by
   set a := edist (f x) (f y)
   set b := edist x y
   calc
@@ -169,8 +169,15 @@ theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [Pseu
     _ = a + b := by
       rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
       norm_num
-    _ ≤ K * b + b := add_le_add (hf x y) le_rfl
+    _ ≤ K * b + b := add_le_add (hf hx hy) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
+
+/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
+`L²` product. -/
+theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
+    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) :=
+  lipschitzOnWith_univ.1 (lipschitzOnWith_univ.2 hf).graph
 
 /-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
 theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
