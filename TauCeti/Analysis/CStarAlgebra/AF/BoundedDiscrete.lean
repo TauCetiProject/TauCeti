@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.SetTheory.Cardinal.Continuum
 public import Mathlib.Topology.ContinuousMap.Bounded.Star
 public import TauCeti.Analysis.CStarAlgebra.AF.Basic
+public import TauCeti.Topology.ContinuousMap.Bounded.Nonseparable
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -18,23 +18,21 @@ For a discrete space `X`, the C⋆-algebra `X →ᵇ ℂ` (for `X = ℕ`, the al
 local approximation condition for AF algebras: finitely many elements are approximated, to any
 tolerance, by finite-valued functions, and the functions constant on the fibres of the joint
 finite-valued map form a finite-dimensional C⋆-subalgebra
-(`BoundedContinuousFunction.exists_finiteDimensional_approx_of_discrete`). But `ℕ →ᵇ ℂ` is not
-separable: the indicator functions of the subsets of `ℕ` are uncountably many functions at
-mutual distance `1` (`BoundedContinuousFunction.not_separableSpace_nat`). So it is not AF
-(`TauCeti.not_isAF_boundedContinuousFunction_nat`), and separability is a genuine hypothesis of
-the local characterization of AF algebras.
+(`BoundedContinuousFunction.exists_finiteDimensional_approx_of_discrete`). But for infinite `X`,
+`X →ᵇ ℂ` is not separable (`BoundedContinuousFunction.not_separableSpace_of_infinite`). So it is
+not AF (`TauCeti.not_isAF_boundedContinuousFunction_of_infinite`; for `X = ℕ`, `ℓ∞` is not AF),
+and separability is a genuine hypothesis of the local characterization of AF algebras.
 
 ## Main statements
 
 * `BoundedContinuousFunction.exists_finiteDimensional_approx_of_discrete`: the local
   approximation condition for `X →ᵇ ℂ`, `X` discrete.
-* `BoundedContinuousFunction.not_separableSpace_nat`: `ℕ →ᵇ ℂ` is not separable.
-* `TauCeti.not_isAF_boundedContinuousFunction_nat`: `ℕ →ᵇ ℂ` is not AF.
+* `TauCeti.not_isAF_boundedContinuousFunction_of_infinite`: `X →ᵇ ℂ` is not AF for `X`
+  infinite and discrete; in particular `ℓ∞ = ℕ →ᵇ ℂ` is not AF.
 -/
 
 public section
 
-open TopologicalSpace
 open scoped BoundedContinuousFunction
 
 namespace BoundedContinuousFunction
@@ -89,9 +87,7 @@ theorem exists_finiteDimensional_approx_of_discrete {X : Type*} [TopologicalSpac
     obtain ⟨g, hg, hga⟩ := hpart a Complex.re Complex.abs_re_le_norm Complex.sub_re
     obtain ⟨h, hh, hha⟩ := hpart a Complex.im Complex.abs_im_le_norm Complex.sub_im
     refine ⟨g, h, hg, hh, fun x ↦ (Complex.norm_le_abs_re_add_abs_im _).trans ?_⟩
-    simp only [Complex.sub_re, Complex.add_re, Complex.ofReal_re, Complex.mul_re,
-      Complex.ofReal_im, Complex.I_re, Complex.I_im, Complex.sub_im, Complex.add_im,
-      Complex.mul_im, mul_zero, sub_zero, mul_one, zero_add, add_zero]
+    simp
     linarith [hga x, hha x]
   choose G H hG hH hGH using happrox
   -- The joint finite-valued map; the approximants are constant on its fibres.
@@ -112,31 +108,14 @@ theorem exists_finiteDimensional_approx_of_discrete {X : Type*} [TopologicalSpac
   · refine lt_of_le_of_lt ((norm_le (C := ε / 2) (by positivity)).2 fun x ↦ ?_) (by linarith)
     simpa using hGH a x
 
-/-- **`ℓ∞` is not separable**: the indicator functions of the subsets of `ℕ` are uncountably
-many elements of `ℕ →ᵇ ℂ` at mutual distance `1`. -/
-theorem not_separableSpace_nat : ¬ SeparableSpace (ℕ →ᵇ ℂ) := by
-  intro _
-  let f : Set ℕ → ℕ →ᵇ ℂ := fun s ↦
-    mkOfDiscrete (s.indicator 1) 1 fun x y ↦ by
-      by_cases hx : x ∈ s <;> by_cases hy : y ∈ s <;> simp [hx, hy]
-  have hsep {s t : Set ℕ} (hst : s ≠ t) : 1 ≤ dist (f s) (f t) := by
-    obtain ⟨x, hx⟩ := Set.symmDiff_nonempty.2 hst
-    refine le_trans ?_ (dist_coe_le_dist x)
-    rcases hx with ⟨hs, ht⟩ | ⟨ht, hs⟩ <;> simp [f, hs, ht]
-  have hcount : Countable (Set ℕ) :=
-    Pairwise.countable_of_isOpen_disjoint (s := fun s ↦ Metric.ball (f s) (1 / 2))
-      (fun s t hst ↦ Metric.ball_disjoint_ball (by linarith [hsep hst]))
-      (fun _ ↦ Metric.isOpen_ball) (fun _ ↦ ⟨_, Metric.mem_ball_self (by norm_num)⟩)
-  have := Cardinal.mk_le_aleph0_iff.2 hcount
-  rw [Cardinal.mk_set, Cardinal.mk_nat] at this
-  exact (Cardinal.cantor _).not_ge this
-
 end BoundedContinuousFunction
 
 namespace TauCeti
 
-/-- **`ℓ∞` is not AF**: an AF algebra is separable, and `ℕ →ᵇ ℂ` is not. -/
-theorem not_isAF_boundedContinuousFunction_nat : ¬ IsAF (ℕ →ᵇ ℂ) :=
-  fun h ↦ BoundedContinuousFunction.not_separableSpace_nat h.separableSpace
+/-- **Bounded functions on an infinite discrete space are not AF**: an AF algebra is separable,
+and `X →ᵇ ℂ` is not. For `X = ℕ` this says that `ℓ∞` is not AF. -/
+theorem not_isAF_boundedContinuousFunction_of_infinite {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [Infinite X] : ¬ IsAF (X →ᵇ ℂ) :=
+  fun h ↦ BoundedContinuousFunction.not_separableSpace_of_infinite h.separableSpace
 
 end TauCeti
