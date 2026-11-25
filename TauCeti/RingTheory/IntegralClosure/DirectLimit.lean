@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Colimit.CommonStage
 import TauCeti.Algebra.Colimit.Ring.Basic
@@ -119,8 +118,9 @@ theorem isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j → G i →+* G j)
   obtain ⟨p', rfl, -, hp'⟩ := lifts_and_degree_eq_and_monic hlifts hpm
   -- The cleared equation holds at a later stage `j`.
   obtain ⟨j, hij, hj⟩ := hker i ((p'.scaleRoots b').eval a') (by
-    rw [map_eval_scaleRoots _ hp', hrel])
-  rw [map_eval_scaleRoots _ hp'] at hj
+    rw [map_eval_scaleRoots _ (hp'.natDegree_map _), hrel])
+  have : Nontrivial (G j) := (φ j).domain_nontrivial
+  rw [map_eval_scaleRoots _ (hp'.natDegree_map _)] at hj
   set A := f i j hij a'
   set B := f i j hij b'
   set q := p'.map (f i j hij)
