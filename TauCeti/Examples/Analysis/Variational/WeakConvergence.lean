@@ -26,12 +26,12 @@ Checks of the direct method that use the weak convergence `eₙ ⇀ 0` of the un
 * The unbounded sequence `(n + 1) eₙ` does not converge weakly (`not_tendsto_toWeakSpace_smul_e`),
   since weakly convergent sequences are bounded.
 * The unit sphere of `ℓ²` is bounded but not weakly sequentially closed, since `eₙ ⇀ 0`
-  (`not_isSeqClosed_toWeakSpace_sphere`): the closedness hypothesis of the direct method cannot be
-  dropped.
+  (`not_isSeqClosed_toWeakSpace_sphere`), so it does not meet the weak-closedness hypothesis of
+  the direct method.
 * For `E(u) = ‖u‖` on `ℓ²`, `uₙ = eₙ/(n + 1)` is a bounded minimizing sequence: `E(uₙ) → 0`, the
-  infimum, which is attained at the limit `0` (`tendsto_norm_e_div`, `isMinOn_norm`,
-  `tendsto_e_div`); the unbounded `(n + 1) eₙ` is not minimizing, with `E = n + 1`
-  (`norm_smul_e`).
+  infimum, which is attained at the limit `0` (`tendsto_norm_inv_smul_e`, `isMinOn_norm`,
+  `tendsto_inv_smul_e`); the unbounded `(n + 1) eₙ` is not minimizing, with `E = n + 1`
+  (`norm_natCast_add_one_smul_e`, from `norm_smul_e`).
 -/
 
 public section
@@ -43,10 +43,6 @@ namespace TauCeti.VariationalChecks
 
 local notation "L2" => lp (fun _ : ℕ ↦ ℝ) 2
 
-/-- The unit vectors of `ℓ²` have norm `1`. -/
-theorem norm_e (n : ℕ) : ‖e n‖ = 1 :=
-  e.orthonormal.1 n
-
 /-! ### A weakly convergent sequence with two energy levels -/
 
 /-- The sequence `u_{2n} = eₙ`, `u_{2n+1} = 2 eₙ`. -/
@@ -55,7 +51,7 @@ noncomputable def mixed (k : ℕ) : L2 :=
 
 /-- `‖u_{2n}‖² = 1`. -/
 theorem norm_sq_mixed_two_mul (n : ℕ) : ‖mixed (2 * n)‖ ^ 2 = 1 := by
-  simp [mixed, norm_e]
+  simp [mixed]
 
 /-- `‖u_{2n+1}‖² = 4`. -/
 theorem norm_sq_mixed_two_mul_add_one (n : ℕ) : ‖mixed (2 * n + 1)‖ ^ 2 = 4 := by
@@ -70,6 +66,14 @@ theorem norm_sq_mixed_mem (k : ℕ) : ‖mixed k‖ ^ 2 ∈ Icc (1 : ℝ) 4 := b
     norm_num
   · rw [norm_sq_mixed_two_mul_add_one]
     norm_num
+
+/-- The energies `‖uₖ‖²` are bounded above. -/
+theorem isBoundedUnder_le_norm_sq_mixed : IsBoundedUnder (· ≤ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
+  isBoundedUnder_of ⟨4, fun k ↦ (norm_sq_mixed_mem k).2⟩
+
+/-- The energies `‖uₖ‖²` are bounded below. -/
+theorem isBoundedUnder_ge_norm_sq_mixed : IsBoundedUnder (· ≥ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
+  isBoundedUnder_of ⟨1, fun k ↦ (norm_sq_mixed_mem k).1⟩
 
 /-- **The sequence `u_{2n} = eₙ`, `u_{2n+1} = 2 eₙ` converges weakly to `0`.** -/
 theorem tendsto_toWeakSpace_mixed :
@@ -93,22 +97,16 @@ theorem exists_ge_norm_sq_mixed_eq_four (N : ℕ) : ∃ k ≥ N, ‖mixed k‖ ^
 
 /-- `liminf ‖uₖ‖² = 1`, the energy of the subsequence `(eₙ)`. -/
 theorem liminf_norm_sq_mixed : liminf (fun k ↦ ‖mixed k‖ ^ 2) atTop = 1 := by
-  have hb : IsBoundedUnder (· ≤ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
-    isBoundedUnder_of ⟨4, fun k ↦ (norm_sq_mixed_mem k).2⟩
-  have hb' : IsBoundedUnder (· ≥ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
-    isBoundedUnder_of ⟨1, fun k ↦ (norm_sq_mixed_mem k).1⟩
-  refine le_antisymm (liminf_le_of_frequently_le ?_ hb') (le_liminf_of_le hb.isCoboundedUnder_ge
-    (Eventually.of_forall fun k ↦ (norm_sq_mixed_mem k).1))
+  refine le_antisymm (liminf_le_of_frequently_le ?_ isBoundedUnder_ge_norm_sq_mixed)
+    (le_liminf_of_le isBoundedUnder_le_norm_sq_mixed.isCoboundedUnder_ge
+      (Eventually.of_forall fun k ↦ (norm_sq_mixed_mem k).1))
   exact frequently_atTop.2 fun N ↦ ⟨2 * N, by omega, (norm_sq_mixed_two_mul N).le⟩
 
 /-- `limsup ‖uₖ‖² = 4`. -/
 theorem limsup_norm_sq_mixed : limsup (fun k ↦ ‖mixed k‖ ^ 2) atTop = 4 := by
-  have hb : IsBoundedUnder (· ≤ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
-    isBoundedUnder_of ⟨4, fun k ↦ (norm_sq_mixed_mem k).2⟩
-  have hb' : IsBoundedUnder (· ≥ ·) atTop fun k ↦ ‖mixed k‖ ^ 2 :=
-    isBoundedUnder_of ⟨1, fun k ↦ (norm_sq_mixed_mem k).1⟩
-  refine le_antisymm (limsup_le_of_le hb'.isCoboundedUnder_le
-    (Eventually.of_forall fun k ↦ (norm_sq_mixed_mem k).2)) (le_limsup_of_frequently_le ?_ hb)
+  refine le_antisymm (limsup_le_of_le isBoundedUnder_ge_norm_sq_mixed.isCoboundedUnder_le
+      (Eventually.of_forall fun k ↦ (norm_sq_mixed_mem k).2))
+    (le_limsup_of_frequently_le ?_ isBoundedUnder_le_norm_sq_mixed)
   exact frequently_atTop.2 fun N ↦ ⟨2 * N + 1, by omega, (norm_sq_mixed_two_mul_add_one N).ge⟩
 
 /-! ### Weak versus norm convergence -/
@@ -121,9 +119,13 @@ theorem not_tendsto_e : ¬ Tendsto (fun n ↦ e n) atTop (𝓝 0) := by
   simp only [Function.comp_def, norm_e, norm_zero] at h1
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h1)
 
+/-- `‖c eₙ‖ = |c|`. -/
+theorem norm_smul_e (c : ℝ) (n : ℕ) : ‖c • e n‖ = |c| := by
+  simp [norm_smul]
+
 /-- `‖(n + 1) eₙ‖ = n + 1`. -/
-theorem norm_smul_e (n : ℕ) : ‖((n : ℝ) + 1) • e n‖ = n + 1 := by
-  rw [norm_smul, norm_e, mul_one, Real.norm_of_nonneg (by positivity)]
+theorem norm_natCast_add_one_smul_e (n : ℕ) : ‖((n : ℝ) + 1) • e n‖ = n + 1 := by
+  rw [norm_smul_e, abs_of_pos (by positivity)]
 
 /-- **The unbounded sequence `(n + 1) eₙ` does not converge weakly** to any limit, since weakly
 convergent sequences are bounded. -/
@@ -134,7 +136,7 @@ theorem not_tendsto_toWeakSpace_smul_e (x : L2) :
   obtain ⟨C, hC⟩ := (h.isBounded_range_of_toWeakSpace).exists_norm_le
   obtain ⟨n, hn⟩ := exists_nat_gt C
   have := hC _ ⟨n, rfl⟩
-  rw [norm_smul_e] at this
+  rw [norm_natCast_add_one_smul_e] at this
   linarith
 
 /-- **The unit sphere of `ℓ²` is not weakly sequentially closed**: `eₙ` lies on it and `eₙ ⇀ 0`,
@@ -142,7 +144,7 @@ which does not. -/
 theorem not_isSeqClosed_toWeakSpace_sphere :
     ¬ IsSeqClosed (toWeakSpace ℝ L2 '' Metric.sphere 0 1) := by
   intro h
-  have h0 := h (fun n ↦ ⟨e n, by simp [norm_e], rfl⟩) tendsto_toWeakSpace_e
+  have h0 := h (fun n ↦ ⟨e n, by simp, rfl⟩) tendsto_toWeakSpace_e
   obtain ⟨u, hu, hu0⟩ := h0
   rw [(toWeakSpace ℝ L2).injective hu0] at hu
   simp at hu
@@ -155,16 +157,16 @@ theorem isMinOn_norm : IsMinOn (fun u : L2 ↦ ‖u‖) univ 0 :=
 
 /-- **`eₙ/(n + 1)` is a minimizing sequence of the norm**: `‖eₙ/(n + 1)‖ = 1/(n + 1) → 0`, the
 infimum of the norm. -/
-theorem tendsto_norm_e_div :
+theorem tendsto_norm_inv_smul_e :
     Tendsto (fun n : ℕ ↦ ‖((n : ℝ) + 1)⁻¹ • e n‖) atTop (𝓝 0) := by
   have h : (fun n : ℕ ↦ ‖((n : ℝ) + 1)⁻¹ • e n‖) = fun n : ℕ ↦ 1 / ((n : ℝ) + 1) := by
     funext n
-    rw [norm_smul, norm_e, mul_one, Real.norm_of_nonneg (by positivity), one_div]
+    rw [norm_smul_e, abs_of_pos (by positivity), one_div]
   rw [h]
   exact tendsto_one_div_add_atTop_nhds_zero_nat
 
 /-- The minimizing sequence `eₙ/(n + 1)` converges to the minimizer `0`, here even in norm. -/
-theorem tendsto_e_div : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • e n) atTop (𝓝 0) :=
-  tendsto_zero_iff_norm_tendsto_zero.2 tendsto_norm_e_div
+theorem tendsto_inv_smul_e : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • e n) atTop (𝓝 0) :=
+  tendsto_zero_iff_norm_tendsto_zero.2 tendsto_norm_inv_smul_e
 
 end TauCeti.VariationalChecks
