@@ -16,9 +16,9 @@ import TauCeti.Algebra.Order.BigOperators.OneSubOneDivSq
 For an integer `N`, the singular series is
 `𝔖(N) = ∑_{q ≥ 1} μ(q) c_q(N) / φ(q)³`,
 where `c_q` is the Ramanujan sum. It is the arithmetic factor in the asymptotic formula
-`∑_{n₁ + n₂ + n₃ = N} Λ(n₁) Λ(n₂) Λ(n₃) ∼ 𝔖(N) N² / 2` of the circle method: the major arcs
-around the fractions `a/q` with `gcd(a, q) = 1` together contribute `μ(q) c_q(N) / φ(q)³` times the
-singular integral.
+`∑_{n₁ + n₂ + n₃ = N} Λ(n₁) Λ(n₂) Λ(n₃) = 𝔖(N) N² / 2 + O(N² (log N)^{-A})`, for every `A > 0`,
+of the circle method: the major arcs around the fractions `a/q` with `gcd(a, q) = 1` together
+contribute `μ(q) c_q(N) / φ(q)³` times the singular integral.
 
 The `q`-th term is multiplicative in `q`, vanishes off the squarefree integers, and is bounded by
 `φ(q)⁻²` uniformly in `N`, so the series converges absolutely and has an Euler product whose factor
