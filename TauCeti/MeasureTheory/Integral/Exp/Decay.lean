@@ -12,7 +12,9 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Overlap
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Exponential integrals on the real line and radial exponentials
@@ -43,15 +45,25 @@ inclusion.
   `a < 0`.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
+* `TauCeti.not_integrableOn_rpow_mul_exp_mul_Ioi`,
+  `TauCeti.integrableOn_rpow_mul_exp_mul_Ioi_iff`,
+  `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos`: `x ↦ x ^ s * exp (a * x)` is not
+  integrable on `(c, ∞)` for any `c : ℝ` when `0 < a`, and for `0 < c` is integrable on `(c, ∞)`
+  precisely when `a < 0`, or `a = 0` and `s < -1`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_abs`: it lies in every `Lᵖ`.
+* `TauCeti.memLp_exp_neg_mul_Ioi`: the decaying exponential `exp (-a t)` lies in every `Lᵖ` of a
+  right half-line.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
 * `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
   of `c * exp (-(a * |·|))`.
+* `TauCeti.eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs`: an integral operator whose kernel is
+  bounded by `c * exp (-(a * |t - s|))` is bounded on every `Lᵖ` with norm at most `2 c / a`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
 * `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs`: `(1 + |·|) ^ K * exp (-(a * |·|))`
   is integrable for every `K : ℝ` when `0 < a`.
+* `TauCeti.tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs`: it tends to `0` along `cocompact ℝ`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_norm`: it lies in every `Lᵖ`.
@@ -64,6 +76,12 @@ inclusion.
   `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
   nonnegative functions decaying at every rate below a threshold. The pointwise overlap bounds
   are in `TauCeti.Analysis.SpecialFunctions.Exp.Overlap`.
+* `TauCeti.integral_mul_le_mul_exp_of_forall_le_norm_sub`: the same for functions decaying in the
+  distance to two finite multisets of centres at distance at least `δ` from each other: their
+  overlap integral is `O(exp (-(c δ)))`, with a constant depending only on the decay constants and
+  the number of centres. It integrates the radial exponentials about finitely many centres,
+  `TauCeti.integrable_sum_map_exp_neg_mul_norm_sub` and
+  `TauCeti.integral_sum_map_exp_neg_mul_norm_sub`.
 * `TauCeti.integrable_norm_mul_norm_comp_add`, `TauCeti.integrable_mul_comp_add`: the overlap of
   an exponentially decaying function with a translate of a bounded one is integrable, and
   `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
@@ -334,6 +352,62 @@ theorem integrable_mul_comp_add_of_forall_lt {f g : E → ℝ} {r : ℝ}
     (fun z ↦ (Real.norm_of_nonneg (hf₀ z)).trans_le (hKf z))
     (fun z ↦ (Real.norm_of_nonneg (hg₀ z)).trans_le (by simpa using hKg z)) a
 
+/-- **Radial exponentials about finitely many centres are integrable.** For `0 < a` and a finite
+multiset `S` of centres, `z ↦ ∑_{x ∈ S} exp (-(a ‖z - x‖))` is integrable on a finite-dimensional
+space for every additive Haar measure. -/
+theorem integrable_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    Integrable (fun z ↦ (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum) μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons]
+    exact ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x).add ih
+
+/-- **The integral of radial exponentials about finitely many centres.** For `0 < a` and a finite
+multiset `S` of centres, `∫ ∑_{x ∈ S} exp (-(a ‖z - x‖)) = card S ∫ exp (-(a ‖z‖))` on a
+finite-dimensional space, for every additive Haar measure. -/
+theorem integral_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    ∫ z, (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum ∂μ =
+      Multiset.card S * ∫ z, Real.exp (-(a * ‖z‖)) ∂μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons]
+    rw [integral_add ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x)
+      (integrable_sum_map_exp_neg_mul_norm_sub μ ha S), ih,
+      integral_sub_right_eq_self (fun z ↦ Real.exp (-(a * ‖z‖)))]
+    push_cast
+    ring
+
+/-- **Overlap of functions decaying away from separated finite sets of centres, integrated.**
+Let `0 ≤ c < b`. Suppose that `0 ≤ f z ≤ K exp (-(b ρ))` whenever every point of the multiset
+`S` is at distance at least `ρ` from `z`, that `0 ≤ g z ≤ L exp (-(b ρ))` whenever every point of
+`T` is, and that every point of `S` is at distance at least `δ` from every point of `T`. Then on a
+finite-dimensional space, for every additive Haar measure,
+
+`∫ f z g z ≤ K L (card S ∫ exp (-((b - c) ‖z‖))) exp (-(c δ))`.
+
+The constant depends on `f`, `g`, `S` and `T` only through `K`, `L` and the number of points
+of `S`. -/
+theorem integral_mul_le_mul_exp_of_forall_le_norm_sub {f g : E → ℝ} {S T : Multiset E}
+    {b δ : ℝ} (hc : 0 ≤ c) (hcb : c < b) (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ z ρ, (∀ a ∈ S, ρ ≤ ‖z - a‖) → f z ≤ K * Real.exp (-(b * ρ)))
+    (hg : ∀ z ρ, (∀ a ∈ T, ρ ≤ ‖z - a‖) → g z ≤ L * Real.exp (-(b * ρ)))
+    (hST : ∀ a ∈ S, ∀ a' ∈ T, δ ≤ ‖a - a'‖) :
+    ∫ z, f z * g z ∂μ ≤
+      K * L * (Multiset.card S * ∫ z, Real.exp (-((b - c) * ‖z‖)) ∂μ) *
+        Real.exp (-(c * δ)) := by
+  have hint := integrable_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb) S
+  calc ∫ z, f z * g z ∂μ
+      ≤ ∫ z, K * L * Real.exp (-(c * δ)) *
+          (S.map fun a ↦ Real.exp (-((b - c) * ‖z - a‖))).sum ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun z ↦ mul_nonneg (hf₀ z) (hg₀ z))
+          (hint.const_mul _)
+          (.of_forall (mul_le_mul_exp_mul_sum_exp_of_forall_le_norm_sub hc hcb hf₀ hg₀ hf hg hST))
+    _ = _ := by
+      rw [integral_const_mul, integral_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb)]
+      ring
+
 end Overlap
 
 /-- The two-sided exponential is integrable on the line. -/
@@ -360,6 +434,27 @@ theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
   congr 1
   ring
 
+/-- The decaying exponential `exp (-a t)` lies in every `Lᵖ` space of a right half-line
+`(c, ∞)` when `0 < a`. -/
+theorem memLp_exp_neg_mul_Ioi {a : ℝ} (ha : 0 < a) (c : ℝ) (p : ℝ≥0∞) :
+    MemLp (fun t : ℝ ↦ Real.exp (-a * t)) p (volume.restrict (Ioi c)) := by
+  have hm : AEStronglyMeasurable (fun t : ℝ ↦ Real.exp (-a * t)) (volume.restrict (Ioi c)) :=
+    (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-a * t)).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hm (Real.exp (-a * c)) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact Real.exp_le_exp.2 (by nlinarith [ht.out])
+  -- The `p`-th power of `exp (-a t)` is the exponential of rate `-p a`.
+  refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrableOn_exp_mul_Ioi
+    (a := -a * p.toReal) (by nlinarith [ENNReal.toReal_pos hp0 hptop]) c).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioi)
+  simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
+  congr 1
+  ring
+
 /-- The two-sided exponential `exp (-(a * |x|))` has integral `2 / a` when `0 < a`. -/
 theorem integral_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     ∫ x : ℝ, Real.exp (-(a * |x|)) = 2 / a := by
@@ -381,6 +476,40 @@ theorem lintegral_ofReal_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (c : ℝ) :
     simp only [ENNReal.ofReal_of_nonpos hc',
       ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hc (Real.exp_pos _).le),
       lintegral_zero]
+
+/-- **Integral operators with a two-sided exponential kernel are bounded on `Lᵖ`.** If `‖u t‖ₑ` is
+at most the integral of `‖f‖ₑ` against the kernel `c * exp (-(a * |t - s|))` for almost every `t`,
+then `‖u‖_{Lᵖ} ≤ 2 c / a * ‖f‖_{Lᵖ}` for every `1 ≤ p ≤ ∞`. This is Schur's test
+(`TauCeti.eLpNorm_lintegral_mul_le`) for a kernel whose row and column integrals are both
+`2 c / a`. -/
+theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [TopologicalSpace E]
+    [ENorm E] [TopologicalSpace F] [ContinuousENorm F] {a : ℝ} (ha : 0 < a) (c : ℝ) {u : ℝ → E}
+    {f : ℝ → F} (hu : AEStronglyMeasurable u) (hf : AEStronglyMeasurable f)
+    (h : ∀ᵐ t, ‖u t‖ₑ ≤ ∫⁻ s, ENNReal.ofReal (c * Real.exp (-(a * |t - s|))) * ‖f s‖ₑ)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm u p volume ≤ ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
+  set k : ℝ → ℝ → ℝ≥0∞ := fun t s ↦ ENNReal.ofReal (c * Real.exp (-(a * |t - s|)))
+  have hk : AEMeasurable (Function.uncurry k) (volume.prod volume) :=
+    (ENNReal.continuous_ofReal.comp (continuous_const.mul (Real.continuous_exp.comp
+      (continuous_const.mul (continuous_fst.sub continuous_snd).abs).neg))).measurable.aemeasurable
+  have hrow (t : ℝ) : ∫⁻ s, k t s ≤ ENNReal.ofReal (2 * c / a) :=
+    (lintegral_sub_left_eq_self (fun x ↦ ENNReal.ofReal (c * Real.exp (-(a * |x|)))) t).trans
+      (lintegral_ofReal_mul_exp_neg_mul_abs ha c) |>.le
+  have hcol (s : ℝ) : ∫⁻ t, k t s ≤ ENNReal.ofReal (2 * c / a) :=
+    (lintegral_sub_right_eq_self (fun x ↦ ENNReal.ofReal (c * Real.exp (-(a * |x|)))) s).trans
+      (lintegral_ofReal_mul_exp_neg_mul_abs ha c) |>.le
+  have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
+  calc eLpNorm u p volume
+      ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖f s‖ₑ) p volume :=
+        eLpNorm_mono_eNorm_ae hu (h.mono fun t ht ↦ by simpa only [eNorm_eq_self] using ht)
+    _ ≤ ENNReal.ofReal (2 * c / a) ^ (1 - p.toReal⁻¹) *
+          ENNReal.ofReal (2 * c / a) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖f s‖ₑ) p volume :=
+        eLpNorm_lintegral_mul_le hk hf.eNorm hp (ae_of_all _ hrow) (ae_of_all _ hcol)
+    _ = ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
+      have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
+        simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
+      rw [← ENNReal.rpow_add_of_nonneg _ _ h₀ (inv_nonneg.2 ENNReal.toReal_nonneg), hexp,
+        ENNReal.rpow_one, eLpNorm_eNorm _ hf]
 
 /-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
 the line. -/
@@ -437,6 +566,22 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha 
             congr 2
             ring
 
+open Filter Topology in
+/-- Any real power of `1 + |x|` times a two-sided decaying exponential `exp (-(a * |x|))` tends to
+`0` as `|x| → ∞` when `0 < a`. -/
+theorem tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha : 0 < a) :
+    Tendsto (fun x : ℝ ↦ (1 + |x|) ^ K * Real.exp (-(a * |x|))) (cocompact ℝ) (𝓝 0) := by
+  have h1 := tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero K a ha
+  have h2 : Tendsto (fun x : ℝ ↦ 1 + |x|) (cocompact ℝ) atTop :=
+    tendsto_atTop_add_const_left _ 1
+      ((tendsto_norm_cocompact_atTop (E := ℝ)).congr fun x ↦ Real.norm_eq_abs x)
+  have h3 := (h1.comp h2).const_mul (Real.exp a)
+  rw [mul_zero] at h3
+  refine h3.congr fun x ↦ ?_
+  simp only [Function.comp_apply]
+  rw [mul_left_comm, ← Real.exp_add]
+  ring_nf
+
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/
 private theorem not_integrableOn_exp_mul_Ioi {a c : ℝ} (ha : 0 ≤ a) :
@@ -469,5 +614,64 @@ theorem integrableOn_exp_mul_Iic_iff {a c : ℝ} :
       (Homeomorph.neg ℝ).measurableEmbedding]
   simpa only [Function.comp_def, neg_preimage, neg_Iio, neg_neg, mul_neg, neg_mul,
     neg_lt_zero] using (integrableOn_exp_mul_Ioi_iff (a := -a) (c := -c))
+
+/-- At a positive rate `0 < a`, `exp (a * x)` dominates `x ^ (-s)` for large `x`, so
+`x ↦ x ^ s * exp (a * x)` is not integrable on `(c, ∞)` for any `c : ℝ`. -/
+theorem not_integrableOn_rpow_mul_exp_mul_Ioi {a s c : ℝ} (ha : 0 < a) :
+    ¬ IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi c) := by
+  refine MeasureTheory.not_integrableOn_Ioi_of_eventually_le_norm one_pos c ?_
+  filter_upwards [Filter.eventually_gt_atTop (0 : ℝ),
+    (tendsto_exp_mul_div_rpow_atTop (-s) a ha).eventually_ge_atTop 1] with x hx hge
+  rw [Real.rpow_neg hx.le, div_inv_eq_mul, mul_comm] at hge
+  exact hge.trans ((le_abs_self _).trans_eq (Real.norm_eq_abs _).symm)
+
+/-- On a right half-line `(c, ∞)` bounded away from zero (`0 < c`), a real power times an
+exponential `x ↦ x ^ s * exp (a * x)` is integrable precisely when either `a < 0`, or `a = 0` and
+`s < -1`. -/
+@[simp]
+theorem integrableOn_rpow_mul_exp_mul_Ioi_iff {a s c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi c) ↔
+      a < 0 ∨ (a = 0 ∧ s < -1) := by
+  refine ⟨fun hint => ?_, fun h => ?_⟩
+  · rcases lt_trichotomy a 0 with ha | rfl | ha
+    · exact Or.inl ha
+    · refine Or.inr ⟨rfl, (integrableOn_Ioi_rpow_iff hc).mp ?_⟩
+      simpa using hint
+    · exact absurd hint (not_integrableOn_rpow_mul_exp_mul_Ioi ha)
+  · -- For `a < 0`, dominate `(x / c) ^ s ≤ (x / c) ^ max s 0` across `c < x`.
+    rcases h with ha | ⟨rfl, hs⟩
+    · set s' := max s 0
+      have hs' : -1 < s' := lt_of_lt_of_le (by norm_num) (le_max_right s 0)
+      have hbase : IntegrableOn (fun x : ℝ => x ^ s' * Real.exp (a * x)) (Set.Ioi c) := by
+        refine ((integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) hs' one_pos
+          (neg_pos.mpr ha)).mono_set (Set.Ioi_subset_Ioi hc.le)).congr_fun (fun x _ => ?_)
+          measurableSet_Ioi
+        simp
+      refine Integrable.mono' (hbase.const_mul (c ^ s * (c ^ s')⁻¹))
+        (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
+      have hx0 : 0 < x := hc.trans hx
+      have hdiv : (x / c) ^ s ≤ (x / c) ^ s' :=
+        Real.rpow_le_rpow_of_exponent_le ((one_le_div hc).mpr hx.le) (le_max_left s 0)
+      rw [Real.div_rpow hx0.le hc.le, Real.div_rpow hx0.le hc.le,
+        div_le_iff₀ (Real.rpow_pos_of_pos hc s), div_eq_mul_inv] at hdiv
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      calc x ^ s * Real.exp (a * x)
+          ≤ (x ^ s' * (c ^ s')⁻¹ * c ^ s) * Real.exp (a * x) :=
+            mul_le_mul_of_nonneg_right hdiv (Real.exp_nonneg _)
+        _ = c ^ s * (c ^ s')⁻¹ * (x ^ s' * Real.exp (a * x)) := by ring
+    · simpa using integrableOn_Ioi_rpow_of_lt hs hc
+
+/-- Sufficient condition for integrability of `x ↦ x ^ s * exp (-a * x)` on `(c, ∞)` (`0 < c`):
+either positive decay rate `0 < a`, or nonnegative rate `0 ≤ a` with integrable power `s < -1`. -/
+theorem integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos {a s c : ℝ} (hc : 0 < c)
+    (h : 0 < a ∨ (0 ≤ a ∧ s < -1)) :
+    IntegrableOn (fun x : ℝ => x ^ s * Real.exp (-a * x)) (Set.Ioi c) := by
+  rw [integrableOn_rpow_mul_exp_mul_Ioi_iff hc]
+  rcases h with ha | ⟨ha, hs⟩
+  · exact Or.inl (neg_lt_zero.mpr ha)
+  · rcases ha.eq_or_lt with rfl | ha'
+    · exact Or.inr ⟨neg_zero, hs⟩
+    · exact Or.inl (neg_lt_zero.mpr ha')
 
 end TauCeti

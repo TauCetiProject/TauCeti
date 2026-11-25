@@ -146,7 +146,7 @@ private theorem IsMinimum.exists_uncross (hf : IsSymmSubmodular f) {s t a b : V}
       (isAdmissible_singleton.mpr ⟨mem_union_right _ hsX, by simp [htX, htZ]⟩)
       (isAdmissible_singleton.mpr ⟨mem_inter.mpr ⟨haZ, haX⟩, fun h ↦ hbZ (mem_inter.mp h).1⟩)
     refine ⟨Z ∪ X, hmin.1, ?_, fun Y hXY hZY ↦ ?_⟩
-    · exact (NestedOrDisjoint.of_superset subset_union_left).not_crosses
+    · exact (NestedOrDisjoint.of_ge subset_union_left).not_crosses
     · obtain ⟨v, hvX, hvZ⟩ := hmeet
       exact not_crosses_union ⟨v, mem_inter.mpr ⟨hvZ, hvX⟩⟩ hZY hXY
   · -- Shrink `X` away from `Z`; the complement `Xᶜ ∪ Z` is a union of two meeting sets.

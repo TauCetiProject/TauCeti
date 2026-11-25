@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.QuadraticForm.Global.NormForm
 # The ternary case of the Hasse–Minkowski theorem
 
 Let `Q` be a ternary quadratic form over a number field `K`. This file proves that `Q` is isotropic
-over `K` if and only if it is isotropic at every finite and every real place of `K`.
+over `K` as soon as it is isotropic at every finite and every real place of `K`.
 
 For a normalized diagonal ternary form `⟨1, -a, -b⟩` with `a, b ∈ Kˣ`, isotropy over any field of
 characteristic different from two is equivalent to positivity of the Hilbert symbol `(a, b)`
@@ -36,11 +36,9 @@ as `⟨w 0, w 1, w 2⟩` with unit weights and rescales by `(w 0)⁻¹` to `⟨1
 
 * `QuadraticForm.not_anisotropic_weightedSumSquares_one_neg_neg_iff_isLocallyIsotropic`: the
   local-to-global isotropy equivalence for `⟨1, -a, -b⟩` with `a, b ∈ Kˣ`.
-* `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_ternary` and
-  `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_ternary`: the Hasse–Minkowski isotropy
-  theorem for arbitrary three-dimensional quadratic forms over a number field.
-* `QuadraticForm.anisotropic_iff_not_isLocallyIsotropic_ternary`: contrapositive characterization
-  of global anisotropy in dimension three.
+* `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_ternary`: the Hasse–Minkowski isotropy
+  theorem for arbitrary three-dimensional quadratic forms over a number field. The rank-independent
+  equivalence is `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic`.
 
 ## References
 
@@ -142,20 +140,6 @@ theorem not_anisotropic_of_isLocallyIsotropic_ternary
     exact hloc
   rw [QuadraticMap.Equivalent.anisotropic_iff ⟨e⟩, hscale, anisotropic_smul_iff (w 0).isUnit] at hA
   exact (not_anisotropic_weightedSumSquares_one_neg_neg_iff_isLocallyIsotropic a b).mpr hloc' hA
-
-/-- **The ternary Hasse–Minkowski equivalence.** A three-dimensional quadratic form over a number
-field is isotropic if and only if it is isotropic at every finite and every real place. -/
-theorem not_anisotropic_iff_isLocallyIsotropic_ternary
-    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 3) :
-    ¬ Q.Anisotropic ↔ Q.IsLocallyIsotropic :=
-  ⟨isLocallyIsotropic_of_not_anisotropic Q, not_anisotropic_of_isLocallyIsotropic_ternary hrank⟩
-
-/-- A three-dimensional quadratic form over a number field is anisotropic if and only if it is
-anisotropic at some finite or real place. -/
-theorem anisotropic_iff_not_isLocallyIsotropic_ternary
-    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 3) :
-    Q.Anisotropic ↔ ¬ Q.IsLocallyIsotropic :=
-  (not_iff_comm.mp (not_anisotropic_iff_isLocallyIsotropic_ternary hrank)).symm
 
 end Ternary
 

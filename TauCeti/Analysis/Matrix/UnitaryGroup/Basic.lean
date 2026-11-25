@@ -10,8 +10,10 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -25,12 +27,16 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
+* `Matrix.circle_smul_one_mem_specialUnitaryGroup_iff`: the scalar matrix `ζ I`, for `ζ` on the
+  circle, is special unitary exactly when `ζ` is a `card n`-th root of unity.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
   into unitarity.
 * `Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup`: a complex `2 × 2` matrix is
   unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
+* `Matrix.star_dotProduct_eq_zero_of_mem_unitaryGroup`: eigenvectors of a unitary matrix over
+  `ℝ` or `ℂ` for distinct eigenvalues are orthogonal for the Hermitian dot product.
 * `Matrix.UnitaryGroup.transpose_mul_map_star`: the inverse of the transpose of a unitary matrix
   `U` is its entrywise conjugate, `Uᵀ conj(U) = 1`.
 
@@ -39,7 +45,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
   group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
-  (`Matrix.UnitaryGroup.detCircle_sum`).
+  (`Matrix.UnitaryGroup.detCircle_sum`) and inverted by complex conjugation of the entries
+  (`Matrix.UnitaryGroup.detCircle_map_star`).
 -/
 
 public section
@@ -120,6 +127,29 @@ theorem forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup (A : Matrix (Fin 2) (
   · rintro ⟨⟨h00, h01⟩, h10, h11⟩ z
     linear_combination (conj z * z) * h00 + conj z * h01 + z * h10 + h11
 
+open scoped ComplexOrder in
+/-- Eigenvectors of a unitary matrix for distinct eigenvalues are orthogonal for the Hermitian
+dot product. -/
+theorem star_dotProduct_eq_zero_of_mem_unitaryGroup {𝕜 : Type*} [RCLike 𝕜] {A : Matrix n n 𝕜}
+    (hA : A ∈ unitaryGroup n 𝕜) {x y : n → 𝕜} {α β : 𝕜} (hx : A *ᵥ x = α • x)
+    (hy : A *ᵥ y = β • y) (hαβ : α ≠ β) : star x ⬝ᵥ y = 0 := by
+  have key := star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hA x y
+  have keyx := star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hA x x
+  rw [hx, hy, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul] at key
+  rw [hx, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul] at keyx
+  by_cases hx0 : x = 0
+  · simp [hx0]
+  -- The eigenvalue `α` of the nonzero vector `x` has modulus one.
+  have hαα : star α * α = 1 := by
+    have hne : star x ⬝ᵥ x ≠ 0 := dotProduct_star_self_eq_zero.not.mpr hx0
+    exact mul_right_cancel₀ hne (by rw [one_mul, mul_assoc, keyx])
+  by_contra hxy
+  have hαβ' : star α * β = 1 := mul_right_cancel₀ hxy (by rw [one_mul, mul_assoc, key])
+  apply hαβ
+  calc α = α * (star α * β) := by rw [hαβ', mul_one]
+    _ = (star α * α) * β := by ring
+    _ = β := by rw [hαα, one_mul]
+
 /-- `U(n) = Circle · SU(n)`: every complex unitary matrix becomes special unitary after
 multiplication by a suitable scalar of modulus one. The scalar is a `card n`-th root of the inverse
 of the determinant, which has modulus one; the root is taken through `Circle.exp`. -/
@@ -140,6 +170,14 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Circle.exp_neg,
     Circle.coe_inv, hθ]
   exact inv_mul_cancel₀ (Circle.coe_ne_zero _)
+
+/-- The scalar matrix `ζ I`, for `ζ` on the circle, is special unitary exactly when `ζ` is a
+`card n`-th root of unity: it is always unitary, and its determinant is `ζ ^ card n`. -/
+theorem circle_smul_one_mem_specialUnitaryGroup_iff {ζ : Circle} :
+    (ζ : ℂ) • (1 : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ ↔ ζ ^ Fintype.card n = 1 := by
+  rw [mem_specialUnitaryGroup_iff, det_smul, det_one, mul_one, ← Circle.coe_pow,
+    Circle.coe_eq_one, and_iff_right_iff_imp]
+  exact fun _ ↦ Unitary.smul_mem_of_mem ζ.coe_mem_unitary (one_mem _)
 
 end Matrix
 
@@ -192,5 +230,20 @@ theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
   exact det_fromBlocks_zero₂₁ _ _ _
 
 end Sum
+
+/-! ### Complex conjugation -/
+
+/-- Conjugating the entries of a unitary matrix (`Matrix.UnitaryGroup.map_star`) is continuous. -/
+theorem continuous_map_star {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α]
+    [ContinuousStar α] : Continuous (map_star : unitaryGroup n α → unitaryGroup n α) :=
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_map continuous_star) _
+
+/-- The determinant of the complex conjugate of a unitary matrix is the inverse of its
+determinant. -/
+@[simp]
+theorem detCircle_map_star (U : unitaryGroup n ℂ) : detCircle (map_star U) = (detCircle U)⁻¹ := by
+  refine Circle.ext ?_
+  rw [coe_detCircle, map_star_coe, map_star_eq_map_starRingEnd, Circle.coe_inv_eq_conj,
+    coe_detCircle, RingHom.map_det, RingHom.mapMatrix_apply]
 
 end Matrix.UnitaryGroup

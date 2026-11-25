@@ -9,9 +9,10 @@ public import TauCeti.Geometry.Manifold.VectorField.MappingTorus.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Harmonic
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.VerticalArea
-public import TauCeti.Geometry.Symplectic.Manifold.TorusCover
+public import TauCeti.Geometry.Symplectic.Manifold.Torus.Cover
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Horizontal curves in a symplectic suspension lie in one leaf and fill it
@@ -265,16 +266,9 @@ theorem exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_mfderiv_mem_suspensionHo
   -- Its differential is injective, between spaces of dimension two, hence invertible.
   have hloc : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v := by
     refine isLocalDiffeomorph_of_mfderiv_eq hvsmooth (by simp) fun c' ↦ ?_
-    have hchain : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c' =
-        (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c')).comp
-          (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c') := by
-      rw [← hτv]
-      exact mfderiv_comp c' (hemb.contMDiff.mdifferentiableAt (by simp))
-        (hvsmooth.mdifferentiableAt (by simp))
-    have hvinj : Injective (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c') := fun a b hab ↦
-      hinj c' ((DFunLike.congr_fun hchain a).trans
-        ((congrArg (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c'))
-          hab).trans (DFunLike.congr_fun hchain b).symm))
+    have hvinj : Injective (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c') :=
+      injective_mfderiv_of_injective_mfderiv_comp (hemb.contMDiff.mdifferentiableAt (by simp))
+        (hvsmooth.mdifferentiableAt (by simp)) (hτv ▸ hinj c')
     -- The tangent spaces of `C` and of the torus are the model spaces `E'` and `ℝ × ℝ`, by the
     -- definition of `TangentSpace`; the dimension count and the equivalence below use this.
     have hrank : Module.finrank ℝ E' = Module.finrank ℝ (ℝ × ℝ) := by

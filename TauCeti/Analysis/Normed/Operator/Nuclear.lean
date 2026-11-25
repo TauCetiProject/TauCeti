@@ -15,6 +15,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.Normed.Module.Quotient
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Nuclear operators

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # Smooth morphisms of pure relative dimension
@@ -45,13 +46,9 @@ theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
     SmoothOfRelativeDimension n f ↔ Smooth f ∧ PureRelativeDimension n f := by
   refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, inferInstance⟩, fun ⟨_, _⟩ ↦ ⟨?_⟩⟩
   intro x
-  obtain ⟨U, hU, V, hV, hx, e, h⟩ := Smooth.exists_isStandardSmooth f x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
   -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, hm⟩ : ∃ m, (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m := by
-    let := (f.appLE U V e).hom.toAlgebra
-    obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
-    exact ⟨P.dimension, _, _, _, ‹_›, P, rfl⟩
+  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth x
+  refine ⟨U, hU, V, hV, hx, e, ?_⟩
   -- The chart, viewed as a morphism `Spec Γ(X, V) ⟶ Y`, has pure relative dimensions `m` and `n`.
   have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
     rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]

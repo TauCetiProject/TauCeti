@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
@@ -45,8 +46,9 @@ for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling 
 (`AlgebraicGeometry.Scheme.Hom.comap_ker_comm_of_comp_eq_id`).
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
-closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
-change over `S` of the closed subscheme of `I`
+closed subscheme of `I` along `g`. For any commutative square `g ≫ q = q' ≫ f` it lies over the
+closed subscheme of `I` (`AlgebraicGeometry.Scheme.IdealSheafData.comap_subschemeι_comp_comp`);
+when the square is a pullback square, it is the base change over `S` of the closed subscheme of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`, preserving finiteness,
 flatness, and finite presentation over the base), and sections of `V(I)` base-change to sections of
 `V(I.comap g)` via `AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if
@@ -118,12 +120,6 @@ the inverse image of the ideal sheaf of `i`. -/
 theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
-
-/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) :
-    f.ker.comap f = ⊥ :=
-  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
 
 /-- Pushing an ideal sheaf forward along a closed immersion `j` and pulling back along `j` recovers
 the original ideal sheaf, since `j` is a monomorphism so the closed subscheme of `I` is the base
@@ -379,5 +375,44 @@ theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
     ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.val _ hUW le_rfl,
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc]
   exact RingHom.Flat.respectsIso.cancel_right_isIso _ _
+
+/-- Flatness of an affine section map followed by a quotient is module flatness for the
+induced quotient algebra. The ideal may be arbitrary. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff (f : X ⟶ S)
+    (W : S.Opens) (U : X.affineOpens) (hUW : U.val ≤ f ⁻¹ᵁ W)
+    (J : Ideal Γ(X, U)) :
+    (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk J)).hom.Flat ↔
+      let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+      Module.Flat Γ(S, W) (Γ(X, U) ⧸ J) := by
+  let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+  rw [← RingHom.flat_algebraMap_iff, IsScalarTower.algebraMap_eq Γ(S, W) Γ(X, U),
+    Ideal.Quotient.algebraMap_eq, RingHom.algebraMap_toAlgebra,
+    CommRingCat.hom_comp, CommRingCat.hom_ofHom]
+
+/-- Flatness of a closed subscheme can be checked on affine quotient neighbourhoods of its
+points over each affine base open. No neighbourhoods of points outside the subscheme are needed. -/
+theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.flat_subschemeι_comp_of_forall_exists
+    (I : X.IdealSheafData) (f : X ⟶ S)
+    (hI : ∀ (W : S.affineOpens) (x : I.subscheme), f (I.subschemeι x) ∈ W.val →
+      ∃ (U : X.affineOpens) (hUW : U.val ≤ f ⁻¹ᵁ W.val), I.subschemeι x ∈ U.val ∧
+        let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+        Module.Flat Γ(S, W) (Γ(X, U) ⧸ I.ideal U)) :
+    Flat (I.subschemeι ≫ f) := by
+  let : IsZariskiLocalAtSource (@Flat.{u}) :=
+    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
+  let : IsZariskiLocalAtTarget (@Flat.{u}) :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget (@Flat.{u}) (Q := @RingHom.Flat)
+  let : MorphismProperty.RespectsRight (@Flat.{u}) (@IsOpenImmersion.{u}) :=
+    MorphismProperty.Respects.toRespectsRight
+  apply (IsZariskiLocalAtSource.iff_exists_resLE (P := @Flat.{u})).mpr
+  intro x
+  obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
+    (Set.mem_univ (f (I.subschemeι x))) TopologicalSpace.isOpen_univ
+  obtain ⟨U, hUW, hxU, hflat⟩ := hI ⟨W, hW⟩ x hxW
+  refine ⟨W, I.subschemeι ⁻¹ᵁ U.val, hxU,
+    (Scheme.Hom.preimage_mono _ hUW).trans_eq rfl, ?_⟩
+  rw [flat_resLE_subschemeι_iff hW U hUW,
+    Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff f W U hUW]
+  exact hflat
 
 end TauCeti

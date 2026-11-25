@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Monoidal.Pivotal.GlobalDim
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 public import TauCeti.CategoryTheory.Semisimple.Basic
+public import TauCeti.CategoryTheory.Semisimple.Rigid
 
 /-!
 # Squared norms of objects, without a pivotal structure
@@ -39,6 +40,13 @@ invertible: the coevaluation of `X` is a split monomorphism, and Schur's lemma m
 retraction a scalar multiple of the evaluation `b ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ` of the exact pairing
 transported along `b`. So the squared norm of a simple object is invertible.
 
+Since every isomorphism `X ≅ Xᘁᘁ` of a simple object is a nonzero multiple of a given one, and
+`doubleDualTrace a.invᘁ` scales inversely to `a`, there is exactly one isomorphism with
+`doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)`: the *normalized* one. Transporting the pairing of `Xᘁ` with
+`Xᘁᘁ` along it exhibits `X` as a right dual of `Xᘁ` whose evaluation, closed up with the
+coevaluation of `X`, is the squared norm. Normalized evaluations are the weights of the counit of
+the left adjunction for induction into the Drinfeld centre.
+
 Summed over the representatives of the simple classes, the squared norms give the global dimension
 `normGlobalDim C a = ∑ S, squaredNorm (a S)` with no pivotal structure chosen, only a family of
 isomorphisms `a S : S ≅ Sᘁᘁ`; such families exist in a finite semisimple rigid category with
@@ -58,8 +66,15 @@ is the global dimension `TauCeti.globalDim C` of every pivotal structure on `C`.
   structure;
 * `TauCeti.isIso_doubleDualTrace`, `TauCeti.isIso_doubleDualTrace_rightAdjointMate` and
   `TauCeti.squaredNorm_ne_zero`: nonvanishing for simple objects, from Schur's lemma for an
-  exact pairing with a simple member (`TauCeti.isIso_comp_evaluation_of_simple_right` and
-  `TauCeti.isIso_comp_evaluation_of_simple_left`);
+  exact pairing with a member with scalar endomorphisms
+  (`TauCeti.comp_evaluation_ne_zero_of_surjective_right` and
+  `TauCeti.comp_evaluation_ne_zero_of_surjective_left`);
+* `TauCeti.normalizedDoubleDualIso` and `TauCeti.normalizedExactPairing`: for a simple object
+  `X`, the isomorphism `a : X ≅ Xᘁᘁ` normalized by `doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)`, unique by
+  `TauCeti.eq_normalizedDoubleDualIso`, and the
+  pairing of `Xᘁ` and `X` transported along it (`TauCeti.normalizedExactPairing_evaluation` and
+  `TauCeti.normalizedExactPairing_coevaluation`), whose two closed loops are `𝟙 (𝟙_ C)` and the
+  squared norm of `X`;
 * `TauCeti.normGlobalDim`: the global dimension as a sum of squared norms, independent of the
   isomorphisms by `TauCeti.normGlobalDim_congr` and equal to the pivotal global dimension by
   `TauCeti.normGlobalDim_eq_globalDim`.
@@ -256,7 +271,8 @@ theorem isIso_doubleDualTrace [RightRigidCategory C] (b : X ⟶ (Xᘁ : C)ᘁ) [
     IsIso (doubleDualTrace b) := by
   -- `X` is a right dual of `Xᘁ` through `b`, with evaluation `b ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b)
-  have := isIso_comp_evaluation_of_simple_right k (X := (Xᘁ : C))
+  have := isIso_of_hom_simple <| comp_evaluation_ne_zero_of_surjective_right (X := (Xᘁ : C))
+    (bijective_algebraMap_end_of_simple k X).2
     (coevaluation_ne_zero (Y := (Xᘁ : C)) (Simple.not_isZero X))
   rwa [exactPairingCongrRight_evaluation, asIso_hom, ← doubleDualTrace_def] at this
 
@@ -268,7 +284,8 @@ theorem isIso_doubleDualTrace_rightAdjointMate [RigidCategory C] (b : (Xᘁ : C)
     IsIso (doubleDualTrace (bᘁ)) := by
   -- `X` is a right dual of `Xᘁ` through `b⁻¹`, with coevaluation `η_ Xᘁ Xᘁᘁ ≫ Xᘁ ◁ b`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b).symm
-  have := isIso_comp_evaluation_of_simple_left k (X := X) (Y := (Xᘁ : C))
+  have := isIso_of_hom_simple <| comp_evaluation_ne_zero_of_surjective_left (X := X)
+    (Y := (Xᘁ : C)) (bijective_algebraMap_end_of_simple k X).2
     (coevaluation_ne_zero (Y := X) (Simple.not_isZero (Xᘁ : C)))
   rwa [exactPairingCongrRight_coevaluation, Iso.symm_inv, asIso_hom, Category.assoc,
     ← doubleDualTrace_rightAdjointMate] at this
@@ -289,6 +306,107 @@ theorem squaredNorm_ne_zero [RigidCategory C] (a : X ≅ (Xᘁ : C)ᘁ) : square
   (isIso_iff_ne_zero _).mp (isIso_squaredNorm k a)
 
 end Simple
+
+section Normalized
+
+variable (k : Type*) [Field k] [IsAlgClosed k]
+variable [Abelian C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [RigidCategory C]
+  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+
+include k in
+private theorem exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    ∃ a : X ≅ (Xᘁ : C)ᘁ, doubleDualTrace (a.invᘁ) = 𝟙 (𝟙_ C) := by
+  obtain ⟨a⟩ := nonempty_iso_rightDual_rightDual X
+  have hiso := isIso_doubleDualTrace_rightAdjointMate k a.inv
+  obtain ⟨γ, hγ⟩ := endomorphism_simple_eq_smul_id k (doubleDualTrace (a.invᘁ))
+  have hγ0 : γ ≠ 0 := by
+    rintro rfl
+    rw [zero_smul] at hγ
+    exact (isIso_iff_ne_zero _).mp hiso hγ.symm
+  -- Rescale `a` so that the trace of the mate of its inverse becomes one.
+  refine ⟨{ hom := γ • a.hom
+            inv := γ⁻¹ • a.inv
+            hom_inv_id := by simp [smul_smul, hγ0]
+            inv_hom_id := by simp [smul_smul, hγ0] }, ?_⟩
+  simp [rightAdjointMate_smul, ← hγ, smul_smul, hγ0]
+
+/-- The **normalized isomorphism** `X ≅ Xᘁᘁ` of a simple object `X`: the trace
+`doubleDualTrace a.invᘁ` of the right adjoint mate of its inverse is `𝟙 (𝟙_ C)`
+(`TauCeti.doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv`). Any isomorphism
+`X ≅ Xᘁᘁ` is a scalar multiple of it, and rescaling it changes this trace, so the normalization
+pins it down. -/
+noncomputable def normalizedDoubleDualIso (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    X ≅ (Xᘁ : C)ᘁ :=
+  (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose
+
+/-- The trace of the right adjoint mate of the inverse of the normalized isomorphism `X ≅ Xᘁᘁ` is
+the identity of the unit. -/
+@[simp]
+theorem doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    doubleDualTrace ((normalizedDoubleDualIso k X).invᘁ) = 𝟙 (𝟙_ C) :=
+  (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose_spec
+
+/-- **Uniqueness of the normalized isomorphism**: an isomorphism `a : X ≅ Xᘁᘁ` of a simple object
+with `doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)` is `TauCeti.normalizedDoubleDualIso k X`. -/
+theorem eq_normalizedDoubleDualIso {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
+    (a : X ≅ (Xᘁ : C)ᘁ) (ha : doubleDualTrace (a.invᘁ) = 𝟙 (𝟙_ C)) :
+    a = normalizedDoubleDualIso k X := by
+  obtain ⟨s, hs⟩ := endomorphism_simple_eq_smul_id k ((normalizedDoubleDualIso k X).hom ≫ a.inv)
+  have hinv : a.inv = s • (normalizedDoubleDualIso k X).inv := by
+    rw [← Category.id_comp a.inv, ← (normalizedDoubleDualIso k X).inv_hom_id, Category.assoc, ← hs,
+      Linear.comp_smul, Category.comp_id]
+  rw [hinv, rightAdjointMate_smul, doubleDualTrace_smul,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv] at ha
+  rw [smul_left_injective k (id_ne_zero (𝟙_ C)) (ha.trans (one_smul k _).symm), one_smul] at hinv
+  exact Iso.ext ((Iso.inv_eq_inv _ _).mp hinv)
+
+/-- The **normalized exact pairing** of `Xᘁ` and a simple object `X`: the pairing of `Xᘁ` with its
+right dual `Xᘁᘁ`, transported along `TauCeti.normalizedDoubleDualIso k X`. Closing up its
+coevaluation with the evaluation of `X` gives `𝟙 (𝟙_ C)`
+(`TauCeti.normalizedExactPairing_coevaluation_comp_evaluation`). -/
+@[instance_reducible]
+noncomputable def normalizedExactPairing (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    ExactPairing Xᘁ X :=
+  exactPairingCongrRight (normalizedDoubleDualIso k X)
+
+/-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_evaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      (normalizedDoubleDualIso k X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
+  exactPairingCongrRight_evaluation _
+
+/-- The coevaluation `𝟙_ C ⟶ Xᘁ ⊗ X` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_coevaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (normalizedDoubleDualIso k X).inv :=
+  exactPairingCongrRight_coevaluation _
+
+/-- Closing up the coevaluation of `TauCeti.normalizedExactPairing k X` with the evaluation of
+`X` gives the identity of the unit. -/
+@[simp]
+theorem normalizedExactPairing_coevaluation_comp_evaluation (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
+  rw [normalizedExactPairing_coevaluation, Category.assoc,
+    ← doubleDualTrace_rightAdjointMate,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv]
+
+/-- Closing up the coevaluation of `X` with the evaluation of `TauCeti.normalizedExactPairing k X`
+gives the squared norm of `X`. -/
+@[simp]
+theorem coevaluation_comp_normalizedExactPairing_evaluation (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      squaredNorm (normalizedDoubleDualIso k X) := by
+  rw [normalizedExactPairing_evaluation, squaredNorm_def,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv, Category.comp_id,
+    doubleDualTrace_def]
+
+end Normalized
 
 section GlobalDim
 

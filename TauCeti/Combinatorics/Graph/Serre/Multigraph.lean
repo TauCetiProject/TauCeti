@@ -23,8 +23,10 @@ lie in distinct connected components and the component count `Graph.componentCou
 multigraph of the empty graph is not connected and has no component, and that of two isolated
 vertices has two.
 
-The directed paths remain necessary for the fundamental group of a graph: the two darts of a
-loop represent inverse generators, even though they give the same one-edge undirected walk.
+Forgetting directions turns the reverse of a path into the reverse walk
+(`SerreGraph.Path.toWalk_reverse`). The directed paths remain necessary for the fundamental group
+of a graph: the two darts of a loop represent inverse generators, even though they give the same
+one-edge undirected walk (`SerreGraph.Path.toWalk_reverse_toPath_of_loop`).
 
 A set `O` of darts is itself a multigraph on all the vertices, `SerreGraph.endpointGraph`: its
 edges are the darts of `O`, each joining its source to its target, so loops and parallel darts
@@ -212,6 +214,26 @@ def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
 @[simp] theorem Path.toWalk_toPath {u v : Γ.V} (e : Quiver.Hom u v) :
     Path.toWalk Γ e.toPath = (Γ.toGraph_isLink_edge e).toWalk := by
   simp [Quiver.Hom.toPath]
+
+/-- Forgetting directions turns the reverse of a path into the reverse walk. -/
+@[simp] theorem Path.toWalk_reverse {u v : Γ.V} (p : Γ.Path u v) :
+    Path.toWalk Γ p.reverse = (Path.toWalk Γ p).reverse := by
+  induction p with
+  | nil => simp [Quiver.Path.reverse]
+  | cons p e ih =>
+    rw [Quiver.Path.reverse, Path.toWalk_comp, ih, Path.toWalk_toPath, Path.toWalk_cons,
+      Graph.Walk.reverse_append, Graph.IsLink.reverse_toWalk]
+    -- The reverse dart lies on the same undirected edge as the dart.
+    congr 1
+    rw [Graph.IsLink.toWalk_eq_cons, Graph.IsLink.toWalk_eq_cons]
+    congr 1
+    rw [reverse_val, edge_rev]
+
+/-- A loop and its reverse forget to the same walk: the two darts of a loop lie on one
+undirected edge, and the one-edge walk along a loop is its own reverse. -/
+theorem Path.toWalk_reverse_toPath_of_loop {v : Γ.V} (e : Quiver.Hom v v) :
+    Path.toWalk Γ e.toPath.reverse = Path.toWalk Γ e.toPath := by
+  rw [Path.toWalk_reverse, Path.toWalk_toPath, Graph.IsLink.reverse_toWalk]
 
 /-- Forgetting directions preserves the length of a path. -/
 @[simp] theorem Path.length_toWalk {u v : Γ.V} (p : Γ.Path u v) :

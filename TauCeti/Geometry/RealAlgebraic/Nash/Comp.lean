@@ -29,6 +29,9 @@ Nash germ.
 
 * `TauCeti.IsNashAt.comp`: if `f` is a Nash germ at `g x` and the coordinates of `g` are Nash germs
   at `x`, then `f ∘ g` is a Nash germ at `x`.
+* `TauCeti.IsNashAt.comp_linearMap`, `TauCeti.IsNashAt.comp_continuousLinearMap`,
+  `LinearEquiv.isNashAt_comp_iff`, `ContinuousLinearEquiv.isNashAt_comp_iff`: closure of Nash germs
+  under precomposition with linear maps and linear equivalences.
 
 ## References
 
@@ -54,5 +57,32 @@ theorem IsNashAt.comp {f : (τ → ℝ) → ℝ} (hf : IsNashAt f (g x))
   refine (hfV.comp (hgU.mono hW inter_subset_left) fun y hy ↦ hy.2).isNashAt
     (hfa.comp hga) ?_
   exact inter_mem (hUo.mem_nhds hxU) (hga.continuousAt.preimage_mem_nhds (hVo.mem_nhds hgxV))
+
+/-- Precomposing a Nash germ with a linear map yields a Nash germ. -/
+theorem IsNashAt.comp_linearMap {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
+    {L : (σ → ℝ) →ₗ[ℝ] (τ → ℝ)} (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
+  hf.comp fun j ↦ L.isNashAt_apply j
+
+/-- Precomposing a Nash germ with a continuous linear map yields a Nash germ. -/
+theorem IsNashAt.comp_continuousLinearMap {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
+    {L : (σ → ℝ) →L[ℝ] (τ → ℝ)} (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
+  hf.comp_linearMap
+
+/-- Precomposing with a linear equivalence preserves Nash germs in both directions. -/
+@[simp]
+theorem _root_.LinearEquiv.isNashAt_comp_iff {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
+    (L : (σ → ℝ) ≃ₗ[ℝ] (τ → ℝ)) : IsNashAt (f ∘ L) x ↔ IsNashAt f (L x) :=
+  ⟨fun h ↦ by
+    have hx : L.symm.toLinearMap (L x) = x := L.symm_apply_apply x
+    have hcomp : (f ∘ L) ∘ L.symm.toLinearMap = f := by ext y; simp
+    rw [← hcomp]
+    exact (hx ▸ h).comp_linearMap,
+    fun h ↦ h.comp_linearMap⟩
+
+/-- Precomposing with a continuous linear equivalence preserves Nash germs in both directions. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.isNashAt_comp_iff {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
+    (L : (σ → ℝ) ≃L[ℝ] (τ → ℝ)) : IsNashAt (f ∘ L) x ↔ IsNashAt f (L x) :=
+  L.toLinearEquiv.isNashAt_comp_iff
 
 end TauCeti

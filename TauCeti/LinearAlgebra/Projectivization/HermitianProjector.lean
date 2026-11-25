@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 import Mathlib.LinearAlgebra.Matrix.Action
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # The Hermitian projector of a line
@@ -164,10 +165,8 @@ the Hermitian projector of `U x` is `U P U*`, where `P` is that of `x`. -/
 theorem rankOneHermitianProjector_unitary_mulVec [DecidableEq ι] {U : Matrix ι ι K}
     (hU : U ∈ unitaryGroup ι K) (x : ι → K) :
     rankOneHermitianProjector (U *ᵥ x) = U * rankOneHermitianProjector x * star U := by
-  have hdot : star (U *ᵥ x) ⬝ᵥ (U *ᵥ x) = star x ⬝ᵥ x := by
-    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, ← star_eq_conjTranspose,
-      mem_unitaryGroup_iff'.mp hU, one_mulVec]
-  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def, hdot, Matrix.mul_smul,
+  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def,
+    star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hU, Matrix.mul_smul,
     Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, star_mulVec, star_eq_conjTranspose]
 
 variable (ι K) in
@@ -355,3 +354,13 @@ theorem affineChart_eq_hermitianProjector_div {n : ℕ} (i : Fin (n + 1))
 end RCLike
 
 end Projectivization
+
+namespace TauCeti
+
+/-- The Hermitian square norm of the homogeneous coordinates `(t, 1)` of a point `[t : 1]` of the
+projective line over `ℝ` or `ℂ` is `1 + |t|²`. -/
+theorem star_vec2_one_dotProduct_self {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+    star ![z, 1] ⬝ᵥ ![z, 1] = ((1 + ‖z‖ ^ 2 : ℝ) : 𝕜) := by
+  simp [dotProduct, Fin.sum_univ_two, RCLike.conj_mul, add_comm]
+
+end TauCeti

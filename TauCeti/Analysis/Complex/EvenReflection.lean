@@ -52,6 +52,8 @@ mean-value inequality to the interior one
   on the closed upper half-plane and `w ∘ conj` on the closed lower half-plane.
 * `TauCeti.continuousOn_evenReflection`: the reflection of a function continuous up to the axis
   is continuous.
+* `TauCeti.continuousOn_fderivWithin_setOfPred_le_im_inter`: the derivative within the closed
+  upper half-plane of a `C¹` function is continuous up to the axis.
 * `TauCeti.isSymmSndFDerivWithinAt_setOfPred_le_im_inter`: the second derivative within
   `{0 ≤ im z} ∩ U` of a function that is `C²` there is symmetric, also on the real axis.
 * `TauCeti.contDiffOn_evenReflection`: the reflection of a function that is `C²` up to the axis
@@ -127,6 +129,14 @@ theorem isSymmSndFDerivWithinAt_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen
     IsSymmSndFDerivWithinAt ℝ w ({z | 0 ≤ z.im} ∩ U) x :=
   (hw x hx).isSymmSndFDerivWithinAt (by simp) ((uniqueDiffOn_setOfPred_le_im 0).inter hU)
     (by rw [inter_comm]; exact subset_closure_interior_inter_setOf_im_nonneg hU hx.symm) hx
+
+/-- If `w` is `C¹` within `{0 ≤ im z} ∩ U` for an open set `U`, then its derivative within the
+closed upper half-plane is continuous on `{0 ≤ im z} ∩ U`, also at the points on the real axis. -/
+theorem continuousOn_fderivWithin_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U)
+    {n : WithTop ℕ∞} (hw : ContDiffOn ℝ n w ({z | 0 ≤ z.im} ∩ U)) (hn : 1 ≤ n) :
+    ContinuousOn (fderivWithin ℝ w {z | 0 ≤ z.im}) ({z | 0 ≤ z.im} ∩ U) :=
+  (hw.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im 0).inter hU) hn).congr
+    fun _ hy ↦ (fderivWithin_inter (hU.mem_nhds hy.2)).symm
 
 /-- Precomposition with conjugation, `L ↦ L ∘ conj`, on real-linear maps out of `ℂ`. -/
 private noncomputable abbrev conjPrecomp (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] :

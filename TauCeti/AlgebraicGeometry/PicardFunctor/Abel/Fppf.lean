@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -27,6 +27,8 @@ maps induced by the corresponding morphisms of schemes.
   map into the degree-zero Picard fppf sheaf;
 * `TauCeti.AlgebraicGeometry.abelJacobiMapToPicZeroFppf`: the Abel–Jacobi map from the functor of
   points of `X` into that sheaf;
+* `whiskerRight_graphDivisorDegreeOne_comp_abelJacobiMapOfDegreeToPicZeroFppf_one`:
+  its expression as the degree-one map composed with the graph construction;
 * `TauCeti.AlgebraicGeometry.abelJacobiMapToPicZeroFppf_app_basePoint`: the base point maps to
   zero.
 
@@ -93,6 +95,13 @@ def abelJacobiMapToPicZeroFppf :
       (relativePicardDegreeZeroFppfSheaf f).obj ⋙ forget AddCommGrpCat :=
   Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1} ≫
     abelJacobiMapOfDegreeToPicZeroFppf f hx₀ 1
+
+/-- Composing the degree-one Abel map to the Picard fppf sheaf with the graph construction
+gives the Abel–Jacobi map on points. -/
+theorem whiskerRight_graphDivisorDegreeOne_comp_abelJacobiMapOfDegreeToPicZeroFppf_one :
+    Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1} ≫
+      abelJacobiMapOfDegreeToPicZeroFppf f hx₀ 1 = abelJacobiMapToPicZeroFppf f hx₀ := by
+  rw [abelJacobiMapToPicZeroFppf]
 
 /-- The Abel–Jacobi map into the degree-zero Picard fppf sheaf is the existing degree-zero
 Abel–Jacobi class followed by the comparison with the group-valued functor and sheafification. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
-public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Isotropic
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.UnitLattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm
@@ -66,8 +65,8 @@ classification follows from the splitting `L ≅ I_k ⊕ L₀`.
   at most nine a vector of norm two is orthogonal to a nonzero vector of norm at most two.
 * `TauCeti.IntegralLattice.IsPosDef.subsingleton_of_vectorsOfNorm_one_eq_empty_of_finrank_le_seven`:
   without vectors of norm one, a lattice of rank at most seven is zero.
-* `IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`: without vectors
-  of norm one, a nonzero lattice of rank at most nine is `E₈`.
+* `IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`:
+  without vectors of norm one, a nonzero lattice of rank at most nine is `E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_of_isUnimodular_of_finrank_le_nine`: a
   lattice of rank at most nine is `Iₙ`, `E₈` or `I₁ ⊕ E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_isEven`: an even
@@ -176,7 +175,7 @@ six.** -/
 theorem six_le_finrank_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
     (h1 : L.vectorsOfNorm 1 = ∅) : 6 ≤ finrank ℤ L := by
   by_contra! hn
-  exact hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
+  exact hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) h1
     (hL.minimum_eq_one_of_isUnimodular_of_finrank_le_five hU (by omega))
 
 /-- **A nonzero positive definite unimodular lattice of rank at most eight without vectors of norm
@@ -186,7 +185,7 @@ theorem minimum_eq_two_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
   have hle := hL.minimum_le_two_of_isUnimodular_of_finrank_le_eight hU hn
   have hpos := hL.minimum_pos
   have hne :=
-    hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
+    hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) h1
   omega
 
 /-- **A nonzero even positive definite unimodular lattice of rank at most eight has minimum
@@ -406,7 +405,7 @@ theorem nonempty_isometry_typeE₈RootLattice_of_isEven (he : L.IsEven)
     (hn : finrank ℤ L = 8) : Nonempty (Isometry typeE₈RootLattice L) := by
   have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := ℤ) (by omega)
   exact hL.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty hU
-    (by exact_mod_cast IsEven.vectorsOfNorm_eq_empty_of_not_even L he (n := 1) (by decide))
+    (IsEven.vectorsOfNorm_eq_empty_of_not_even L he (n := 1) (by decide))
     (by omega)
 
 end IsPosDef

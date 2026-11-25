@@ -21,6 +21,10 @@ functions on `X` is locally constant as soon as `Function.uncurry f` is
 family of bundled functions, valued in any `FunLike` type. For functions with values in a discrete
 space, local constancy is continuity, so such a family `F : P → C` is continuous, for any topology
 on `C`, as soon as `(p, x) ↦ F p x` is continuous (`Continuous.of_uncurry_coe`).
+
+A locally constant function takes only finitely many values on a compact set
+(`IsLocallyConstant.finite_image_of_isCompact`), extending Mathlib's
+`IsLocallyConstant.range_finite` for compact spaces.
 -/
 
 public section
@@ -28,6 +32,13 @@ public section
 namespace IsLocallyConstant
 
 variable {X P A : Type*} [TopologicalSpace X] [TopologicalSpace P]
+
+/-- A locally constant function takes finitely many values on a compact set. -/
+theorem finite_image_of_isCompact {f : X → A} (hf : IsLocallyConstant f) {K : Set X}
+    (hK : IsCompact K) : (f '' K).Finite := by
+  have := isCompact_iff_compactSpace.1 hK
+  rw [Set.image_eq_range]
+  exact (hf.comp_continuous continuous_subtypeVal).range_finite
 
 /-- A locally constant family is locally constant in its parameter, uniformly on a compact set. -/
 theorem exists_isOpen_forall_mem_eq {f : X × P → A} (hf : IsLocallyConstant f)

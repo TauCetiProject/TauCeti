@@ -49,6 +49,12 @@ theorem polarBilin_quadraticForm (L : IntegralLattice V) (hL : L.IsEven) :
     (L.quadraticForm hL).polarBilin = L.integralForm :=
   LinearMap.BilinForm.polarBilin_halfNormQuadratic _ _ _
 
+/-- The polar of the lattice quadratic form is the integral bilinear form. -/
+@[simp]
+theorem polar_quadraticForm (L : IntegralLattice V) (hL : L.IsEven) (x y : L) :
+    QuadraticMap.polar (L.quadraticForm hL) x y = L.integralForm x y := by
+  rw [← QuadraticMap.polarBilin_apply_apply, polarBilin_quadraticForm]
+
 /-- An integral lattice is even exactly when its integral form is the polar form of an integer
 quadratic form. -/
 theorem isEven_iff_exists_polarBilin_eq_integralForm (L : IntegralLattice V) :
