@@ -9,7 +9,10 @@ public import Mathlib.Topology.UniformSpace.Cauchy
 public import Mathlib.Topology.UniformSpace.CompleteSeparated
 
 /-!
-# Completeness transfer between uniformities
+# Completeness of subsets and transfer between uniformities
+
+A closed subset of a complete subset of a uniform space is complete
+(`IsComplete.of_isClosed_subset`).
 
 A continuous identity transfers limits of Cauchy sequences from a complete reference uniformity.
 A countable basis for the target uniformity allows this sequential criterion to imply completeness.
@@ -67,3 +70,11 @@ theorem completeSpace_of_uniformContinuous {α β : Type*} [UniformSpace α] [Un
   exact ⟨x, hι.isEmbedding.isInducing.tendsto_nhds_iff.mpr hy⟩
 
 end Topology.IsClosedEmbedding
+
+/-- A closed subset of a complete subset of a uniform space is complete. -/
+theorem IsComplete.of_isClosed_subset {α : Type*} [UniformSpace α] {s t : Set α}
+    (ht : IsComplete t) (hs : IsClosed s) (hst : s ⊆ t) : IsComplete s := by
+  intro f hf hfs
+  obtain ⟨y, -, hfy⟩ := ht f hf (hfs.trans (Filter.principal_mono.2 hst))
+  have := hf.1
+  exact ⟨y, hs.mem_of_tendsto hfy (Filter.le_principal_iff.1 hfs), hfy⟩

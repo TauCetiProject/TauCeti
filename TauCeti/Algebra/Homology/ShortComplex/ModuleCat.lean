@@ -35,10 +35,10 @@ dual of a short exact sequence is short exact when every functional on `X₁` ex
 (`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`), and records that any functor
 `(ModuleCat A)ᵒᵖ ⥤ ModuleCat B` naturally isomorphic to `Hom_A(-, E)` with `E` injective sends
 short exact sequences to short exact sequences
-(`CategoryTheory.ShortComplex.ShortExact.op_map_of_lcomp`). Finally, it identifies the first map of
+(`CategoryTheory.ShortComplex.ShortExact.op_map_of_lcomp`). Finally, it identifies the two maps of
 Mathlib's conjugated short complex `ModuleCat.shortComplexOfConj`
-(`ModuleCat.shortComplexOfConj_f`), which is a monomorphism when the original map is injective
-(`ModuleCat.mono_shortComplexOfConj_f`).
+(`ModuleCat.shortComplexOfConj_f`, `ModuleCat.shortComplexOfConj_g`); the first is a monomorphism
+when the original map is injective (`ModuleCat.mono_shortComplexOfConj_f`).
 
 ## References
 
@@ -202,9 +202,17 @@ variable {R : Type u} [Ring R] {M N L : Type v} [AddCommGroup M] [AddCommGroup N
   (eL : L ≃ₗ[R] L') {f : M' →ₗ[R] N'} {g : N' →ₗ[R] L'}
 
 /-- The first map of `ModuleCat.shortComplexOfConj` is `f` conjugated by the equivalences. -/
+@[simp]
 theorem shortComplexOfConj_f (eq0 : g ∘ₗ f = 0) :
     (shortComplexOfConj eM eN eL f g eq0).f =
       ofHom (eN.symm.toLinearMap ∘ₗ f ∘ₗ eM.toLinearMap) :=
+  (rfl)
+
+/-- The second map of `ModuleCat.shortComplexOfConj` is `g` conjugated by the equivalences. -/
+@[simp]
+theorem shortComplexOfConj_g (eq0 : g ∘ₗ f = 0) :
+    (shortComplexOfConj eM eN eL f g eq0).g =
+      ofHom (eL.symm.toLinearMap ∘ₗ g ∘ₗ eN.toLinearMap) :=
   (rfl)
 
 /-- The first map of `ModuleCat.shortComplexOfConj` is a monomorphism when `f` is injective. -/
