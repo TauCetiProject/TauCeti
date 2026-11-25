@@ -30,6 +30,8 @@ for `i < n ≤ j`, and `-(ε_{i'} + ε_j)` for `j < n ≤ i`.
 * `TauCeti.AntidiagonalSpecialOrthogonal.diagonal_mul_rootMatrix_mul_diagonal_inv`: the matrix
   identity.
 * `TauCeti.AntidiagonalSpecialOrthogonal.RootSubgroupIndex.root`: the root `w_i - w_j`.
+* `TauCeti.AntidiagonalSpecialOrthogonal.charOfPoint_weightCharacter_root`: the root evaluated at
+  a point of the split torus.
 * `TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv`: the
   action on algebra-valued points, with the root evaluated as a character of the split torus.
 
@@ -61,27 +63,17 @@ theorem diagonal_mul_rootMatrix_mul_diagonal_inv (d : Fin l → Aˣ)
     (hd : ∀ k, d (Fin.rev k) = (d k)⁻¹) (a : A) :
     diagonal (fun k ↦ (d k : A)) * rootMatrix r a * diagonal (fun k ↦ (((d k)⁻¹ : Aˣ) : A)) =
       rootMatrix r ((d r.i : A) * (((d r.j)⁻¹ : Aˣ) : A) * a) := by
-  ext p q
-  have hi := hd r.i
-  have hj := hd r.j
-  simp only [diagonal_mul, mul_diagonal, rootMatrix_def, rootNilpotent_def]
-  by_cases hpq : p = q
-  · subst hpq
-    have h1 : ¬ (r.i = p ∧ r.j = p) := fun h => r.ne (h.1.trans h.2.symm)
-    have h2 : ¬ (Fin.rev r.j = p ∧ Fin.rev r.i = p) := fun h =>
-      r.ne (Fin.rev_injective (h.2.trans h.1.symm))
-    simp [h1, h2]
-  · by_cases h1 : r.i = p ∧ r.j = q
-    · obtain ⟨rfl, rfl⟩ := h1
-      have h2 : ¬ (Fin.rev r.j = r.i ∧ Fin.rev r.i = r.j) := fun h =>
-        r.j_ne_rev_i (by rw [← h.1, Fin.rev_rev])
-      simp [hpq, h2]
-      ring
-    · by_cases h2 : Fin.rev r.j = p ∧ Fin.rev r.i = q
-      · obtain ⟨rfl, rfl⟩ := h2
-        simp [hpq, hi, hj]
-        ring
-      · simp [hpq, h1, h2]
+  have hv : ∀ k, (d k : A) * (((d k)⁻¹ : Aˣ) : A) = 1 := fun k ↦ Units.mul_inv (d k)
+  have h1 : diagonal (fun k ↦ (((d k)⁻¹ : Aˣ) : A)) * diagonal (fun k ↦ (d k : A)) = 1 := by
+    rw [diagonal_mul_diagonal]
+    exact diagonal_eq_one.2 (funext fun k ↦ Units.inv_mul (d k))
+  rw [rootMatrix_eq_transvection_mul_transvection, rootMatrix_eq_transvection_mul_transvection,
+    ← Matrix.mul_one (transvection r.i r.j a), ← h1]
+  simp only [← Matrix.mul_assoc]
+  rw [diagonal_mul_transvection_mul_diagonal hv, Matrix.mul_assoc _ (diagonal _),
+    Matrix.mul_assoc _ _ (diagonal _), diagonal_mul_transvection_mul_diagonal hv, hd r.i, hd r.j,
+    inv_inv]
+  congr 2 <;> ring
 
 /-- The invertible-matrix form of `diagonal_mul_rootMatrix_mul_diagonal_inv`. -/
 theorem diagGL_mul_rootHom_mul_inv (d : Fin l → Aˣ) (hd : ∀ k, d (Fin.rev k) = (d k)⁻¹)
@@ -90,9 +82,7 @@ theorem diagGL_mul_rootHom_mul_inv (d : Fin l → Aˣ) (hd : ∀ k, d (Fin.rev k
       rootHom r A
         (Multiplicative.ofAdd ((d r.i : A) * (((d r.j)⁻¹ : Aˣ) : A) * a.toAdd)) := by
   apply Units.ext
-  rw [Units.val_mul, Units.val_mul, ← map_inv, diagGL_coe, diagGL_coe, coe_rootHom, coe_rootHom,
-    toAdd_ofAdd]
-  exact diagonal_mul_rootMatrix_mul_diagonal_inv r d hd a.toAdd
+  simpa [← map_inv] using diagonal_mul_rootMatrix_mul_diagonal_inv r d hd a.toAdd
 
 end Matrices
 
@@ -117,6 +107,15 @@ section Points
 variable {R : Type u} [CommRing R] (r : RootSubgroupIndex l) {A : Type v} [CommRing A]
   [Algebra R A]
 
+/-- **The root of `x_ij` as a character of the diagonal torus.** Evaluated at a point `t` of the
+split torus, the root `w_i - w_j` is the quotient of the values of the weights `w_i` and `w_j`. -/
+theorem charOfPoint_weightCharacter_root
+    (t : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin (l / 2)) →₀ ℤ)) →ₐ[R] A)) :
+    DiagonalizableGroup.charOfPoint t.ofConv (SplitTorus.weightCharacter r.root.{u}) =
+      torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight l r.i) /
+        torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight l r.j) := by
+  rw [SplitTorus.charOfPoint_weightCharacter, RootSubgroupIndex.root_def, torusCharacter_sub]
+
 /-- **The diagonal torus of `SO_l^J` acts on each root subgroup through its root.** Conjugation by
 a point `t` of the diagonal torus scales the parameter of `x_ij` by the value at `t` of the
 character `w_i - w_j`. -/
@@ -130,16 +129,19 @@ theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv
             (((DiagonalizableGroup.charOfPoint t.ofConv
                 (SplitTorus.weightCharacter r.root.{u}) : Aˣ) : A) *
               Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv c))) := by
+  have hd (k : Fin l) :
+      torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight l (Fin.rev k)) =
+        (torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight l k))⁻¹ := by
+    rw [diagonalTorusWeight_rev, torusCharacter_neg]
   apply (pointsMulEquiv R l (A := A)).injective
-  rw [map_mul, map_mul, map_inv, pointsMulEquiv_rootSubgroupPoints,
-    pointsMulEquiv_rootSubgroupPoints, MulEquiv.apply_symm_apply,
-    SplitTorus.charOfPoint_weightCharacter, RootSubgroupIndex.root_def, torusCharacter_sub,
-    div_eq_mul_inv, Units.val_mul]
+  simp only [map_mul, map_inv]
+  rw [pointsMulEquiv_rootSubgroupPoints, pointsMulEquiv_rootSubgroupPoints,
+    charOfPoint_weightCharacter_root]
   apply Subtype.ext
-  rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, pointsMulEquiv_diagonalTorusPoints,
-    coe_rootPoints, coe_rootPoints]
-  exact diagGL_mul_rootHom_mul_inv r _ (fun k => by
-    rw [diagonalTorusWeight_rev, torusCharacter_neg]) _
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_rootPoints]
+  -- `simp` does not fire this point-map lemma here, while `rw` matches it up to instances.
+  rw [pointsMulEquiv_diagonalTorusPoints, diagGL_mul_rootHom_mul_inv r _ hd]
+  simp [div_eq_mul_inv]
 
 end Points
 
