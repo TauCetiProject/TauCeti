@@ -40,8 +40,8 @@ whose three components are the conditions `[A [0 : 1]] ∈ H`, `[A [1 : 1]] = p`
 
 `(x₀, x₁) ↦ x₀ φ(v) w + x₁ (φ(w) v - φ(v) w)`,
 
-which sends `[1 : 0]` to `[w]`, `[1 : 1]` to `[φ(w) v] = [v]` and `[0 : 1]` to the point
-`[φ(w) v - φ(v) w]` of the line `[v] [w]` on `H`.
+which, when `φ v ≠ 0` and `φ w ≠ 0`, sends `[1 : 0]` to `[φ(v) w] = [w]`, `[1 : 1]` to
+`[φ(w) v] = [v]` and `[0 : 1]` to the point `[φ(w) v - φ(v) w]` of the line `[v] [w]` on `H`.
 
 * **The solutions.** As soon as `φ v ≠ 0`, the kernel of the incidence map is the line spanned by
   the marked line (`TauCeti.ker_markedLineIncidence`). The marked line is injective when `v` and
@@ -70,11 +70,12 @@ which sends `[1 : 0]` to `[w]`, `[1 : 1]` to `[φ(w) v] = [v]` and `[0 : 1]` to 
 The hypotheses cannot be dropped. If `p` lies on `H` but `q` does not, `φ` vanishes at the marked
 points `0` and `1`, hence at the difference `A [1 : 0]` of their representatives, which lies on the
 line `K w` with `φ w ≠ 0`; so `A [1 : 0] = 0` and no marked line exists
-(`TauCeti.not_exists_markedLine_of_le_ker`). If `q` lies on `H` but `p` does not, the line through
-`p` and `q` meets `H` only at `q`, so the marked points `0` and `∞` would both be sent to `q`, which
-an injective `A` cannot do. If `p` and `q` both lie on `H`, so does the whole line through them,
-and each of its points other than `p` and `q` can be the marked point `0`. If `p = q`, an
-injective `A` cannot send the distinct points `[1 : 1]` and `[1 : 0]` to the same point.
+(`TauCeti.not_exists_markedLine_of_mem_projectivization`). If `q` lies on `H` but `p` does not, the
+line through `p` and `q` meets `H` only at `q`, so the marked points `0` and `∞` would both be sent
+to `q`, which an injective `A` cannot do. If `p` and `q` both lie on `H`, so does the whole line
+through them, and each of its points other than `p` and `q` can be the marked point `0`. If
+`p = q`, an injective `A` cannot send the distinct points `[1 : 1]` and `[1 : 0]` to the same
+point.
 
 ## Main definitions
 
@@ -92,7 +93,8 @@ injective `A` cannot send the distinct points `[1 : 1]` and `[1 : 0]` to the sam
 * `TauCeti.markedLine_injective`: the marked line is a line.
 * `TauCeti.existsUnique_markedLine`: there is exactly one line through `p` and `q` marked at its
   point on `H`.
-* `TauCeti.not_exists_markedLine_of_le_ker`: there is none when `p` lies on `H` and `q` does not.
+* `TauCeti.not_exists_markedLine_of_mem_projectivization`: there is none when `p` lies on `H` and
+  `q` does not.
 
 ## References
 
@@ -102,6 +104,21 @@ injective `A` cannot send the distinct points `[1 : 1]` and `[1 : 0]` to the sam
 -/
 
 public section
+
+namespace LinearMap
+
+variable {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
+
+/-- For a linear map `A : K² → V`, the value at `[0 : 1]` is the difference of the values at
+`[1 : 1]` and `[1 : 0]`. In the homogeneous coordinates `A` of a marked line, the marked point
+`0 = [0 : 1]` is the difference of the marked points `1 = [1 : 1]` and `∞ = [1 : 0]`. -/
+theorem map_single_one_one_eq_sub (A : (Fin 2 → K) →ₗ[K] V) :
+    A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
+  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
+  congr 1
+  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
+
+end LinearMap
 
 namespace TauCeti
 
@@ -114,7 +131,8 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- **The line through `[v]` and `[w]` marked at its point on `ker φ`**, in homogeneous
 coordinates: the linear map `K² → V` sending `(x₀, x₁)` to `x₀ φ(v) w + x₁ (φ(w) v - φ(v) w)`.
-It sends `[1 : 0]` to `[w]`, `[1 : 1]` to `[v]` and `[0 : 1]` into `ker φ`. -/
+It sends `[1 : 0]` to `φ(v) w`, `[1 : 1]` to `φ(w) v` and `[0 : 1]` into `ker φ`; so when
+`φ v ≠ 0` and `φ w ≠ 0` it sends `[1 : 0]` to `[w]` and `[1 : 1]` to `[v]`. -/
 noncomputable def markedLine (φ : Dual K V) (v w : V) : (Fin 2 → K) →ₗ[K] V :=
   Fintype.linearCombination K ![φ v • w, φ w • v - φ v • w]
 
@@ -127,12 +145,12 @@ theorem markedLine_apply (x : Fin 2 → K) :
 
 /-- The marked line sends `[1 : 0]`, the marked point `∞`, to `φ(v) w`. -/
 @[simp]
-theorem markedLine_single_zero : markedLine φ v w (Pi.single 0 1) = φ v • w := by
+theorem markedLine_single_zero_one : markedLine φ v w (Pi.single 0 1) = φ v • w := by
   simp [markedLine]
 
 /-- The marked line sends `[0 : 1]`, the marked point `0`, to `φ(w) v - φ(v) w`. -/
 @[simp]
-theorem markedLine_single_one : markedLine φ v w (Pi.single 1 1) = φ w • v - φ v • w := by
+theorem markedLine_single_one_one : markedLine φ v w (Pi.single 1 1) = φ w • v - φ v • w := by
   simp [markedLine]
 
 /-- The marked line sends `[1 : 1]`, the marked point `1`, to `φ(w) v`. -/
@@ -141,7 +159,7 @@ theorem markedLine_one : markedLine φ v w 1 = φ w • v := by
   simp [markedLine_apply]
 
 /-- The marked point `0` of the marked line lies on the hyperplane `ker φ`. -/
-theorem apply_markedLine_single_one_eq_zero : φ (markedLine φ v w (Pi.single 1 1)) = 0 := by
+theorem apply_markedLine_single_one_one_eq_zero : φ (markedLine φ v w (Pi.single 1 1)) = 0 := by
   simp [mul_comm]
 
 /-- **The marked line is a line.** When `v` and `w` are linearly independent and neither lies in
@@ -161,14 +179,6 @@ theorem markedLine_injective (hvw : LinearIndependent K ![v, w]) (hv : φ v ≠ 
   fin_cases i <;> simp [hx₀, hx₁]
 
 /-! ### The incidence conditions -/
-
-/-- In the homogeneous coordinates `A` of a marked line, the marked point `0 = [0 : 1]` is the
-difference of the marked points `1 = [1 : 1]` and `∞ = [1 : 0]`. -/
-theorem apply_single_one_eq_sub (A : (Fin 2 → K) →ₗ[K] V) :
-    A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
-  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
-  congr 1
-  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
 
 /-- **The incidence conditions of a marked line.** For homogeneous coordinates `A : K² → V` of a
 marked line, the triple `(φ (A [0 : 1]), A [1 : 1] mod K v, A [1 : 0] mod K w)`. It vanishes
@@ -196,7 +206,7 @@ theorem mem_ker_markedLineIncidence_iff {A : (Fin 2 → K) →ₗ[K] V} :
 /-- The marked line satisfies its incidence conditions. -/
 theorem markedLineIncidence_markedLine : markedLineIncidence φ v w (markedLine φ v w) = 0 :=
   mem_ker_markedLineIncidence_iff.2
-    ⟨apply_markedLine_single_one_eq_zero, by simp [mem_span_singleton],
+    ⟨apply_markedLine_single_one_one_eq_zero, by simp [mem_span_singleton],
       by simp [mem_span_singleton]⟩
 
 /-- **The solutions of the incidence conditions.** When `[v]` lies off `ker φ`, the homogeneous
@@ -209,14 +219,14 @@ theorem ker_markedLineIncidence (hv : φ v ≠ 0) :
   obtain ⟨a, ha⟩ := mem_span_singleton.1 ha
   obtain ⟨b, hb⟩ := mem_span_singleton.1 hb
   -- The marked point `0` is `A [1 : 1] - A [1 : 0] = a v - b w`, and it lies on `ker φ`.
-  have h₁ : A (Pi.single 1 1) = a • v - b • w := by rw [apply_single_one_eq_sub, ha, hb]
+  have h₁ : A (Pi.single 1 1) = a • v - b • w := by rw [A.map_single_one_one_eq_sub, ha, hb]
   have hab : a * φ v = b * φ w := by simpa [h₁, sub_eq_zero] using hφ
   -- Solving `hab` for `a`, the marked point `0` is `(b / φ v) (φ w v - φ v w)`.
   have ha' : a = b / φ v * φ w := by field_simp; exact hab
   refine mem_span_singleton.2 ⟨b / φ v, ?_⟩
   refine (Pi.basisFun K (Fin 2)).ext (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · simp [← hb, smul_smul, div_mul_cancel₀ _ hv]
-  · simp only [Pi.basisFun_apply, LinearMap.smul_apply, markedLine_single_one, h₁, ha']
+  · simp only [Pi.basisFun_apply, LinearMap.smul_apply, markedLine_single_one_one, h₁, ha']
     match_scalars <;> field_simp
 
 /-- **Every nonzero solution of the incidence conditions is a line.** When `v` and `w` are
@@ -274,9 +284,10 @@ incidence conditions for the representatives of `p` and `q` exactly when the map
 theorem mem_ker_markedLineIncidence_iff_map {p q : ℙ K V} {A : (Fin 2 → K) →ₗ[K] V}
     (hA : Injective A) :
     A ∈ LinearMap.ker (markedLineIncidence φ p.rep q.rep) ↔
-      (map A hA (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
+      map A hA (mk K (Pi.single 1 1) (by simp)) ∈ (LinearMap.ker φ).projectivization ∧
         map A hA (mk K 1 one_ne_zero) = p ∧ map A hA (mk K (Pi.single 0 1) (by simp)) = q := by
-  rw [mem_ker_markedLineIncidence_iff, map_mk, map_mk, map_mk, submodule_mk_le_ker_iff]
+  rw [mem_ker_markedLineIncidence_iff, map_mk, map_mk, map_mk, mk_mem_projectivization_iff,
+    LinearMap.mem_ker]
   conv_rhs => rw [← mk_rep p, ← mk_rep q, mk_eq_mk_iff_mem_span, mk_eq_mk_iff_mem_span]
 
 /-- **The line through two points, marked at its point on a hyperplane.** Let `p ≠ q` be points of
@@ -287,23 +298,23 @@ hyperplane. Over `ℂ` this says that exactly one three-pointed line of `ℂℙ�
 domain is sent to `H × {p} × {q}` by the evaluation map, the enumerative content of the three-point
 invariant `⟨x, xⁿ, xⁿ⟩_L`; it does not treat stable maps or the invariant itself. -/
 theorem existsUnique_markedLine {p q : ℙ K V} (hpq : p ≠ q)
-    (hp : ¬p.submodule ≤ LinearMap.ker φ) (hq : ¬q.submodule ≤ LinearMap.ker φ) :
+    (hp : p ∉ (LinearMap.ker φ).projectivization) (hq : q ∉ (LinearMap.ker φ).projectivization) :
     ∃! u : ℙ K (Fin 2 → K) → ℙ K V,
       (∃ (A : (Fin 2 → K) →ₗ[K] V) (hA : Injective A), map A hA = u) ∧
-        (u (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
+        u (mk K (Pi.single 1 1) (by simp)) ∈ (LinearMap.ker φ).projectivization ∧
         u (mk K 1 one_ne_zero) = p ∧ u (mk K (Pi.single 0 1) (by simp)) = q := by
-  rw [submodule_le_ker_iff] at hp hq
+  rw [mem_projectivization_iff_rep_mem, LinearMap.mem_ker] at hp hq
   have hpq' : LinearIndependent K ![p.rep, q.rep] := by
     rw [← independent_mk_iff_LinearIndependent p.rep_ne_zero q.rep_ne_zero, mk_rep, mk_rep]
     exact (independent_pair_iff_ne p q).2 hpq
   have hM := markedLine_injective hpq' hp hq
   refine ⟨map _ hM, ⟨⟨_, hM, rfl⟩, ?_, ?_, ?_⟩, ?_⟩
-  · rw [map_mk, submodule_mk_le_ker_iff]
-    exact apply_markedLine_single_one_eq_zero
+  · rw [map_mk, mk_mem_projectivization_iff, LinearMap.mem_ker]
+    exact apply_markedLine_single_one_one_eq_zero
   · simp_rw [map_mk, markedLine_one]
     exact ((mk_eq_mk_iff_mem_span _ p.rep_ne_zero).2
       (smul_mem _ _ (mem_span_singleton_self _))).trans (mk_rep p)
-  · simp_rw [map_mk, markedLine_single_zero]
+  · simp_rw [map_mk, markedLine_single_zero_one]
     exact ((mk_eq_mk_iff_mem_span _ q.rep_ne_zero).2
       (smul_mem _ _ (mem_span_singleton_self _))).trans (mk_rep q)
   · rintro u ⟨⟨A, hA, rfl⟩, h₀, h₁, h₂⟩
@@ -316,20 +327,20 @@ theorem existsUnique_markedLine {p q : ℙ K V} (hpq : p ≠ q)
 /-- **No marked line through a point of the hyperplane.** If `p` lies on the hyperplane
 `ℙ(ker φ)` and `q` does not, no map `ℙ(K²) → ℙ(V)` induced by an injective linear map sends
 `[0 : 1]` into the hyperplane, `[1 : 1]` to `p` and `[1 : 0]` to `q`. -/
-theorem not_exists_markedLine_of_le_ker {p q : ℙ K V} (hp : p.submodule ≤ LinearMap.ker φ)
-    (hq : ¬q.submodule ≤ LinearMap.ker φ) :
+theorem not_exists_markedLine_of_mem_projectivization {p q : ℙ K V}
+    (hp : p ∈ (LinearMap.ker φ).projectivization) (hq : q ∉ (LinearMap.ker φ).projectivization) :
     ¬∃ (A : (Fin 2 → K) →ₗ[K] V) (hA : Injective A),
-      (map A hA (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
+      map A hA (mk K (Pi.single 1 1) (by simp)) ∈ (LinearMap.ker φ).projectivization ∧
         map A hA (mk K 1 one_ne_zero) = p ∧ map A hA (mk K (Pi.single 0 1) (by simp)) = q := by
   rintro ⟨A, hA, h₀, h₁, h₂⟩
-  rw [submodule_le_ker_iff] at hp hq
+  rw [mem_projectivization_iff_rep_mem, LinearMap.mem_ker] at hp hq
   obtain ⟨hφ, ha, hb⟩ :=
     mem_ker_markedLineIncidence_iff.1 ((mem_ker_markedLineIncidence_iff_map hA).2 ⟨h₀, h₁, h₂⟩)
   obtain ⟨a, ha⟩ := mem_span_singleton.1 ha
   obtain ⟨b, hb⟩ := mem_span_singleton.1 hb
   -- `φ` vanishes at `A [1 : 0] = A [1 : 1] - A [0 : 1] = b q.rep`, so `b = 0`.
   have hφb : b * φ q.rep = 0 := by
-    rw [apply_single_one_eq_sub, map_sub, ← ha, ← hb, map_smul, map_smul, hp] at hφ
+    rw [A.map_single_one_one_eq_sub, map_sub, ← ha, ← hb, map_smul, map_smul, hp] at hφ
     simpa using hφ
   have hb₀ : b = 0 := (mul_eq_zero.1 hφb).resolve_right hq
   have : A (Pi.single 0 1) = 0 := by rw [← hb, hb₀, zero_smul]
