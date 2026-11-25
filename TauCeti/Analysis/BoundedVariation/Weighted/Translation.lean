@@ -33,8 +33,9 @@ constant field `w`, whose Gaussian divergence is `−⟨x, w⟩`.
 
 Along the way: the derivative `⟨x, ·⟩` of the Gaussian weight
 (`TauCeti.hasFDerivAt_gaussianWeight`), the translation rule
-`e^{−W(y + v)} = e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)}` (`TauCeti.exp_neg_gaussianWeight_add`), and integrability against `γ` as Lebesgue integrability
-after multiplication by `e^{−W}` (`TauCeti.integrable_stdGaussian_iff`).
+`e^{−W(y + v)} = e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)}` (`TauCeti.exp_neg_gaussianWeight_add`), and
+integrability against `γ` as Lebesgue integrability after multiplication by `e^{−W}`
+(`TauCeti.integrable_stdGaussian_iff`).
 
 ## References
 
