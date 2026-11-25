@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.Propagator.Holomorphic
+public import TauCeti.Analysis.ODE.Propagator.Holomorphic.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Analysis.Complex.WeaklyHolomorphic
 import TauCeti.Analysis.ODE.Propagator.ParameterContinuity
@@ -95,7 +95,8 @@ theorem exists_differentiableOn_continuousMap_propagator [CompactSpace J] (hU : 
       ((continuousOn_propagator_left (hP z hz) hs).mono hJ).domRestrict⟩
     else 0
   have hF : ∀ z ∈ U, ∀ t : J, F z t = propagator (P z) t s := fun z hz t ↦ by
-    simp only [F, dite_eq_left hz]; rfl
+    simp only [F, dite_eq_left hz]
+    exact congrFun (ContinuousMap.coe_mk _ _) t
   exact ⟨F, hF, differentiableOn_continuousMap_propagator hU hP hPd hm hs hJ hF⟩
 
 end TauCeti
