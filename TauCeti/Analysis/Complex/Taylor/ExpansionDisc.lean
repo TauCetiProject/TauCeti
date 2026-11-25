@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.DiscreteSubset
 import Mathlib.Order.Interval.Set.Infinite
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Topology.MetricSpace.NearestPoint
 
 /-!
@@ -29,28 +30,6 @@ windowed Landau theorem.
 public section
 
 open Complex Filter Metric Set
-
-/-- For a finite set on one side of a vertical line, distances to a point on the line distinguish
-all members of the set except at finitely many heights. -/
-theorem Set.Finite.finite_setOf_not_injOn_dist_complex_mk {T : Set ℂ} (hT : T.Finite) {σ : ℝ}
-    (hleft : ∀ p ∈ T, p.re ≤ σ) :
-    {t : ℝ | ¬ InjOn (fun p : ℂ ↦ dist (⟨σ, t⟩ : ℂ) p) T}.Finite := by
-  -- Equate squared distances and solve for the height of the centre.
-  let height (p q : ℂ) := ((σ - p.re) ^ 2 + p.im ^ 2 - ((σ - q.re) ^ 2 + q.im ^ 2)) /
-    (2 * (p.im - q.im))
-  refine ((hT.prod hT).image fun pq : ℂ × ℂ ↦ height pq.1 pq.2).subset ?_
-  intro t ht
-  simp only [mem_ofPred_eq, InjOn, not_forall] at ht
-  obtain ⟨p, hp, q, hq, heq, hne⟩ := ht
-  have hs := congrArg (fun d : ℝ ↦ d ^ 2) heq
-  simp only [Complex.dist_eq, Complex.sq_norm, normSq_apply, sub_re, sub_im] at hs
-  have him : p.im ≠ q.im := by
-    intro hi
-    have hre : (σ - p.re) ^ 2 = (σ - q.re) ^ 2 := by rw [hi] at hs; linarith
-    have hr := (sq_eq_sq₀ (sub_nonneg.mpr (hleft p hp)) (sub_nonneg.mpr (hleft q hq))).mp hre
-    exact hne (Complex.ext (by linarith) hi)
-  refine ⟨(p, q), ⟨hp, hq⟩, ?_⟩
-  exact (div_eq_iff (mul_ne_zero two_ne_zero (sub_ne_zero.mpr him))).2 (by nlinarith only [hs])
 
 namespace TauCeti
 
