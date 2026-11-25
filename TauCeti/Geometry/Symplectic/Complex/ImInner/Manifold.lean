@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 
 /-!
 # Isotropic and Lagrangian maps into a complex inner product space

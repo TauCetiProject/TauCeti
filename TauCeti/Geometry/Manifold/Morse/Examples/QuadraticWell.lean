@@ -26,23 +26,27 @@ trajectories of Morse functions
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient` and
 `TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient`).
 
-* **The trajectories.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
+* **The Morse data.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
   only critical point is `0` (`TauCeti.criticalPoints_sq_real`, `TauCeti.mfderiv_sq_real_zero`),
-  of Morse index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
-  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The trajectory of `-grad f`
+  a minimum of index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
+  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The inverted well `-x²` is a Morse function
+  (`TauCeti.isMorse_neg_sq_real`) with the same critical point
+  (`TauCeti.criticalPoints_neg_sq_real`), a maximum of index `1`
+  (`TauCeti.manifoldMorseIndex_neg_sq_real`).
+* **The trajectories.** The trajectory of `-grad f`
   through `x₀` is `t ↦ x₀ exp (-2 t)`, defined for all time
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq`). For `t ≥ 0` it stays in
   `[-|x₀|, |x₀|]` (`TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_sq`) and it converges to
   `0` (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_sq`).
 * **Energy, tail length and distance.** Along the trajectory the energy `f(γ t) - f(0)` is
   `x₀² exp (-4 t)` (`TauCeti.sq_maximalIntegralCurve_neg_mgradient_sq`). The length of the piece
-  between the times `t ≤ s` is `|x₀| (exp (-2 t) - exp (-2 s))`
-  (`TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_sq`), so the tail length from time `t`
-  on is `|x₀| exp (-2 t)` (`TauCeti.iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq`). This
-  is also the Riemannian distance from `γ t` to `0`
-  (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq`), and it is the square root of
-  the energy. So the trajectory converges at the rate `2`, the Hessian eigenvalue at `0`, and for
-  `x₀ ≠ 0` at no faster rate
+  between the times `t` and `s` is `|x₀| (exp (-2 t) - exp (-2 s))`, both sides vanishing for
+  `s < t` (`TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_sq`), so the tail length from
+  time `t` on is `|x₀| exp (-2 t)`
+  (`TauCeti.iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq`). This is also the Riemannian
+  distance from `γ t` to `0` (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq`),
+  and it is the square root of the energy. So the trajectory converges at the rate `2`, the Hessian
+  eigenvalue at `0`, and for `x₀ ≠ 0` at no faster rate
   (`TauCeti.not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq`). For
   `x₀ = 0` the trajectory is the equilibrium at the critical point: its energy and tail length
   vanish, and the decay bound holds with the constant `0`.
@@ -137,7 +141,26 @@ theorem mfderiv_sq_real_zero : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ) (fun y : ℝ ↦
 theorem manifoldMorseIndex_sq_real_zero :
     manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
   manifoldMorseIndex_eq_zero_of_isLocalMin (contDiff_id.pow 2).contMDiff.contMDiffAt
+    BoundarylessManifold.isInteriorPoint
     (Eventually.of_forall fun y ↦ by simp [sq_nonneg])
+
+/-- The inverted well `x ↦ -x²` is a Morse function on `ℝ`. -/
+theorem isMorse_neg_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) :=
+  isMorse_sq_real.neg
+
+/-- The only critical point of the inverted well is `0`. -/
+theorem criticalPoints_neg_sq_real : criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) = {0} :=
+  (criticalPoints_neg (f := fun x : ℝ ↦ x ^ 2)).trans criticalPoints_sq_real
+
+/-- The critical point `0` of the inverted well is a maximum: its Morse index is `1`. -/
+theorem manifoldMorseIndex_neg_sq_real :
+    manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) 0 = 1 := by
+  have hcrit : (0 : ℝ) ∈ criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
+    simp [criticalPoints_sq_real]
+  have hnd := isMorse_sq_real.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit)
+  have h := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  rwa [manifoldMorseIndex_sq_real_zero, Module.finrank_self] at h
 
 /-! ### The trajectories -/
 
@@ -184,12 +207,20 @@ theorem sq_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
   rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_natCast_mul]
   ring_nf
 
-/-- The length of the trajectory of `-grad x²` through `x₀` between the times `t ≤ s` is
-`|x₀| (exp (-2 t) - exp (-2 s))`. -/
-theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ : ℝ) {t s : ℝ} (hts : t ≤ s) :
+/-- The length of the trajectory of `-grad x²` through `x₀` between the times `t` and `s` is
+`|x₀| (exp (-2 t) - exp (-2 s))`; for `s < t` both sides vanish. -/
+theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t s : ℝ) :
     Manifold.pathELength 𝓘(ℝ, ℝ)
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
       ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s)))) := by
+  rcases lt_or_ge s t with hst | hts
+  · -- Before time `t` the length difference is negative, so its positive part is `0`.
+    have : |x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s))) ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _)
+        (sub_nonpos.2 (Real.exp_le_exp.2 (by linarith)))
+    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
+      ENNReal.ofReal_of_nonpos this]
+    simp
   -- The speed of the trajectory at time `u` is `2 |x₀| exp (-2 u)`.
   have hspeed : ∀ u, ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u ↦ x₀ * Real.exp (-(2 * u))) u 1‖ₑ =
       ENNReal.ofReal (2 * |x₀| * Real.exp (-(2 * u))) := by
@@ -224,31 +255,12 @@ theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
     ⨆ s, Manifold.pathELength 𝓘(ℝ, ℝ)
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
       ENNReal.ofReal (|x₀| * Real.exp (-(2 * t))) := by
-  refine le_antisymm (iSup_le fun s ↦ ?_) ?_
-  · rcases le_or_gt t s with hts | hst
-    · rw [pathELength_maximalIntegralCurve_neg_mgradient_sq x₀ hts]
-      gcongr
-      exact sub_le_self _ (Real.exp_pos _).le
-    · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge]
-      simp
-  · -- The lengths up to time `s` tend to the claimed value as `s → ∞`.
-    have hlim : Tendsto (fun s ↦ ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) -
-        Real.exp (-(2 * s))))) atTop (𝓝 (ENNReal.ofReal (|x₀| * Real.exp (-(2 * t))))) := by
-      refine ENNReal.tendsto_ofReal ?_
-      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp
-        (tendsto_id.const_mul_atTop (by norm_num : (0 : ℝ) < 2))).const_sub
-          (Real.exp (-(2 * t)))).const_mul |x₀|
-    refine le_of_tendsto' hlim fun s ↦ ?_
-    rcases le_or_gt t s with hts | hst
-    · rw [← pathELength_maximalIntegralCurve_neg_mgradient_sq x₀ hts]
-      exact le_iSup (fun s ↦ Manifold.pathELength 𝓘(ℝ, ℝ)
-        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s) s
-    · -- Before time `t` the length difference is negative, so its positive part is `0`.
-      have : |x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s))) ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _)
-          (sub_nonpos.2 (Real.exp_le_exp.2 (by linarith)))
-      rw [ENNReal.ofReal_of_nonpos this]
-      exact bot_le
+  -- The lengths up to the times `s → ∞` increase to the claimed value.
+  refine tendsto_nhds_unique (tendsto_atTop_iSup fun _ _ h ↦ Manifold.pathELength_mono le_rfl h)
+    ((ENNReal.tendsto_ofReal ?_).congr fun s ↦
+      (pathELength_maximalIntegralCurve_neg_mgradient_sq x₀ t s).symm)
+  simpa using (tendsto_const_nhds.sub (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    (tendsto_id.const_mul_atTop two_pos))).const_mul |x₀|
 
 /-- The trajectory of `-grad x²` through `x₀` is at Riemannian distance exactly
 `|x₀| exp (-2 t)` from the critical point `0` at time `t`. -/

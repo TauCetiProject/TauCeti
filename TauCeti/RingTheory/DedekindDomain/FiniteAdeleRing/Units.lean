@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import TauCeti.Topology.Algebra.RestrictedProduct.Units
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # The finite ideles as a restricted product
@@ -23,13 +25,17 @@ ideles is the restricted-product topology of the groups `K_vˣ`. The local integ
 the completions, so this is a case of `ContinuousMulEquiv.restrictedProductUnits`. In particular,
 a map into the finite ideles is continuous as soon as it is continuous into the restricted product
 of the local unit groups, and the finite ideles carry the usual idelic topology. This topology is
-finer than the subspace topology from the finite adeles, and can be strictly finer (for instance
-for the ring of integers of a number field).
+finer than the subspace topology from the finite adeles, and strictly finer as soon as `R` has
+infinitely many height-one primes (for instance for the ring of integers of a number field):
+uniformizers placed at single places tend to `1` in the finite adeles, while their inverses stay
+outside the open set of integral finite adeles.
 
 ## Main results
 
 * `IsDedekindDomain.FiniteAdeleRing.unitsContinuousMulEquiv`: the isomorphism of topological groups
   between the finite ideles and the restricted product of the `K_vˣ` with respect to the `𝒪_vˣ`.
+* `IsDedekindDomain.FiniteAdeleRing.not_isEmbedding_val`: for infinitely many height-one primes,
+  the inclusion of the finite ideles into the finite adeles is not an embedding.
 
 ## References
 
@@ -81,5 +87,35 @@ theorem unitsContinuousMulEquiv_symm_apply_apply
     (v : HeightOneSpectrum R) :
     ((unitsContinuousMulEquiv R K).symm y : 𝔸ᶠ[R, K]) v = y v :=
   ContinuousMulEquiv.restrictedProductUnits_symm_apply_apply _ y v
+
+/-! ### The units topology is strictly finer than the subspace topology -/
+
+section Embedding
+
+open Filter Topology
+
+variable (R K) in
+/-- **The finite ideles do not carry the subspace topology** when `R` has infinitely many
+height-one primes: the inclusion of the units of the finite adele ring, with the units topology,
+is not an embedding. -/
+theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
+    ¬IsEmbedding (Units.val : 𝔸ᶠ[R, K]ˣ → 𝔸ᶠ[R, K]) := by
+  intro h
+  -- uniformizers placed at single places tend to `1`, while their inverses never enter the
+  -- open set of integral finite adeles
+  choose x hx hxinv using fun v : HeightOneSpectrum R ↦
+    v.exists_mem_adicCompletionIntegers_inv_notMem K
+  let u : HeightOneSpectrum R → 𝔸ᶠ[R, K]ˣ := fun v ↦ Units.map (ofAdicCompletion K v) (x v)
+  have hu : Tendsto u cofinite (𝓝 1) := by
+    rw [h.isInducing.tendsto_nhds_iff, Units.val_one]
+    exact tendsto_ofAdicCompletion_cofinite hx
+  have hmem := ((Units.continuous_coe_inv.tendsto 1).comp hu).eventually
+    ((isOpen_integralAdeles R K).mem_nhds (by simp))
+  obtain ⟨v, hv⟩ := hmem.exists
+  have hinv : (((u v)⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v = ((x v)⁻¹ : (v.adicCompletion K)ˣ) := by
+    rw [Units.coe_map_inv, ofAdicCompletion_apply_self]
+  exact hxinv v (hinv ▸ mem_integralAdeles.1 hv v)
+
+end Embedding
 
 end IsDedekindDomain.FiniteAdeleRing

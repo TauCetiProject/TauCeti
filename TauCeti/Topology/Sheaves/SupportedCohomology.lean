@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
 public import TauCeti.Topology.Sheaves.Flasque.Basic
+public import TauCeti.Topology.Sheaves.Stalks.Support
+import Mathlib.Algebra.Category.Grp.FilteredColimits
 
 /-!
 # Sheaf cohomology with closed supports
@@ -125,6 +127,13 @@ lemma mem_supportedSections_iff {S : Closeds X} {W : Opens X} {s : F.obj.obj (op
     s ∈ F.supportedSections S W ↔ F.obj.map (S.complInclusion W).op s = 0 :=
   Iff.rfl
 
+/-- A section is supported in `S` exactly when its support, the set of points at which its germ
+is nonzero, lies in `S`. -/
+lemma mem_supportedSections_iff_sectionSupport_subset {S : Closeds X} {W : Opens X}
+    {s : F.obj.obj (op W)} : s ∈ F.supportedSections S W ↔
+      TopCat.Presheaf.sectionSupport F.obj s ⊆ S :=
+  TopCat.Presheaf.map_eq_zero_iff_sectionSupport_subset F S s
+
 /-- A morphism of sheaves maps sections supported in `S` to sections supported in `S`. -/
 lemma map_mem_supportedSections {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
     (f : F ⟶ G) {S : Closeds X} {W : Opens X} {s : F.obj.obj (op W)}
@@ -163,6 +172,15 @@ def supportedHRestrict (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) (n : ℕ)
     F.supportedH S W n →+ F.supportedH S W' n :=
   relativeH'.map F (S.complInclusion W) (S.complInclusion W')
     (homOfLE (inf_le_inf_right S.compl h)) (homOfLE h) rfl n
+
+/-- Restriction of cohomology with supports is the map of relative cohomology induced by the
+inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)`. -/
+lemma supportedHRestrict_apply (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) {n : ℕ}
+    (x : F.supportedH S W n) :
+    F.supportedHRestrict S h n x =
+      relativeH'.map F (S.complInclusion W) (S.complInclusion W')
+        (homOfLE (inf_le_inf_right S.compl h)) (homOfLE h) rfl n x :=
+  (rfl)
 
 @[simp]
 lemma supportedHRestrict_self (S : Closeds X) (W : Opens X) {n : ℕ} (x : F.supportedH S W n) :

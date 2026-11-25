@@ -36,8 +36,9 @@ From this equivariance three structural consequences follow:
 
 2. **Induced fibre and bundle orientations.** Because `SO(n)` acts by transformations of determinant
    `1`, all points of a fibre `s.P x` transport a model orientation `o` of `ℝⁿ` to the same
-   orientation `s.fiberOrientation o x` of `E x`, compatible with negation, equivalences, and
-   pullbacks (`TauCeti.SpinStructure.fiberOrientation_pullback`). When `E` is a vector bundle, the
+   orientation `s.fiberOrientation o x` of `E x`, compatible with negation, equivalences,
+   pullbacks (`TauCeti.SpinStructure.fiberOrientation_pullback`) and transport along fibrewise
+   isometries (`TauCeti.SpinStructure.fiberOrientation_map`). When `E` is a vector bundle, the
    quotient property of `π : P → X` descends `OrthonormalFrameBundle.toOrientationCover o ∘
    s.toFrame` to a bundle orientation `s.orientation o : TauCeti.VectorBundleOrientation F E
    (Fin n)`. In particular, any vector bundle admitting a Spin structure is orientable
@@ -72,7 +73,7 @@ From this equivariance three structural consequences follow:
 * `TauCeti.OrthonormalFrameLift.Equiv.eq_refl_or_eq_negOne`,
   `TauCeti.OrthonormalFrameLift.Equiv.eq_or_eq_negOne_trans`: classification of equivalences over a
   preconnected base.
-* `TauCeti.SpinStructure.fiberOrientation_pullback`,
+* `TauCeti.SpinStructure.fiberOrientation_pullback`, `TauCeti.SpinStructure.fiberOrientation_map`,
   `TauCeti.SpinStructure.nonempty_vectorBundleOrientation`,
   `TauCeti.OrthonormalFrameLift.Equiv.orientation_eq`: orientability and functoriality of the
   induced orientation.
@@ -118,18 +119,11 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
           specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) :
         unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) • s.toFrame p := by
   obtain ⟨x, p⟩ := p
-  obtain ⟨φ₀, hq₀⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
-  obtain ⟨φ₁, hq₁⟩ := s.exists_toFrame_eq_mk ⟨x, op g • p⟩
-  set u : unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :=
-    (realCliffordSpinToEuclideanSpecialOrthogonal n g).val
-  rw [TotalSpace.smul_mk, hq₀, hq₁,
-    OrthonormalFrameBundle.eq_mk_of_proj_eq (op u • (⟨x, φ₀⟩ : OrthonormalFrameBundle ℝ F E _))
-      (OrthonormalFrameBundle.proj_smul _ _)]
-  refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
-  have hw := s.toFrame_smul_spinVectorAction x p g w.ofLp
-  rw [WithLp.toLp_ofLp, hq₀, hq₁] at hw
-  rw [TotalSpace.mk_inj.1 hw, OrthonormalFrameBundle.frame_smul_apply, unop_op,
-    realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply]
+  refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
+  rw [TotalSpace.smul_mk, s.toFrame_smul_spinVectorAction, OrthonormalFrameBundle.frame_smul_apply,
+    unop_op, realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply, WithLp.ofLp_toLp]
+  -- The two sides differ only in the base point, and acting on a frame keeps its base point.
+  rfl
 
 section NegOne
 
@@ -322,6 +316,18 @@ theorem pullback_negOne {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K 
   ext fun y p ↦ by
     rw [pullback_toEquiv]
     exact (negOne_toEquiv_apply s (f y) p).trans (negOne_toEquiv_apply (s.pullback f) y p).symm
+
+/-- Transporting the sheet-exchange automorphism along fibrewise isometries gives the
+sheet-exchange automorphism of the transport. -/
+@[simp]
+theorem map_negOne {F' : Type*} {E' : X → Type w} [TopologicalSpace (TotalSpace F' E')]
+    [∀ x, NormedAddCommGroup (E' x)] [∀ x, InnerProductSpace ℝ (E' x)]
+    (s : SpinStructure F E n) {Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E')) :
+    (negOne s).map Φ hΦ = negOne (s.map Φ hΦ) :=
+  ext fun x p ↦ by
+    rw [map_toEquiv]
+    exact (negOne_toEquiv_apply s x p).trans (negOne_toEquiv_apply (s.map Φ hΦ) x p).symm
 
 /-- An automorphism of a Spin structure acts on each point of a fibre either as the identity or by
 the central element `-1` of `Spin(n)`. -/
@@ -520,6 +526,29 @@ theorem fiberOrientation_pullback {Y : Type*} [TopologicalSpace Y] {K : Type*} [
     VectorBundleOrientationCover.mk_eq_mk_iff] at h₂
   exact h₁.symm.trans h₂
 
+/-- Transporting a Spin structure along fibrewise isometries `Φ x : E x ≃ₗᵢ[ℝ] E' x` transports
+its induced fibre orientations along `Φ`. -/
+@[simp]
+theorem fiberOrientation_map {F' : Type*} {E' : X → Type w}
+    [TopologicalSpace (TotalSpace F' E')] [∀ x, NormedAddCommGroup (E' x)]
+    [∀ x, InnerProductSpace ℝ (E' x)] (s : SpinStructure F E n) {Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E'))
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
+    fiberOrientation (s.map Φ hΦ) o x =
+      Orientation.map (Fin n) (Φ x).toLinearEquiv (s.fiberOrientation o x) := by
+  obtain ⟨p⟩ := s.nonempty_P x
+  obtain ⟨φ, hfr⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  have hmap : (s.map Φ hΦ).toFrame ⟨x, p⟩ = OrthonormalFrameBundle.map Φ ⟨x, φ⟩ :=
+    (s.toFrame_map ⟨x, p⟩).trans (congrArg _ hfr)
+  have h₁ := toOrientationCover_toFrame (s.map Φ hΦ) o ⟨x, p⟩
+  rw [hmap, OrthonormalFrameBundle.map_mk,
+    OrthonormalFrameBundle.toOrientationCover_eq_mk,
+    VectorBundleOrientationCover.mk_eq_mk_iff] at h₁
+  have h₂ := s.toOrientationCover_toFrame o ⟨x, p⟩
+  rw [hfr, OrthonormalFrameBundle.toOrientationCover_eq_mk,
+    VectorBundleOrientationCover.mk_eq_mk_iff] at h₂
+  rw [← h₁, ← h₂, LinearIsometryEquiv.toLinearEquiv_trans, Orientation.map_trans]
+
 end EquivarianceAndFibers
 
 /-! ### Induced bundle orientation -/
@@ -597,6 +626,18 @@ theorem pullback_orientation_apply {Y : Type*} [TopologicalSpace Y] (s : SpinStr
     (s.orientation o).pullback f y = fiberOrientation (s.pullback f) o y := by
   rw [VectorBundleOrientation.pullback_apply, s.orientation_apply, s.fiberOrientation_pullback]
 
+/-- Transporting a Spin structure along fibrewise isometries of vector bundles transports its
+induced bundle orientation along them. -/
+theorem orientation_map_apply {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    {E' : X → Type w} [TopologicalSpace (TotalSpace F' E')] [∀ x, NormedAddCommGroup (E' x)]
+    [∀ x, InnerProductSpace ℝ (E' x)] [FiberBundle F' E'] [VectorBundle ℝ F' E']
+    (s : SpinStructure F E n) {Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E'))
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
+    orientation (s.map Φ hΦ) o x =
+      Orientation.map (Fin n) (Φ x).toLinearEquiv (s.orientation o x) := by
+  rw [orientation_apply, orientation_apply, fiberOrientation_map]
+
 /-- **Every real vector bundle carrying a Spin structure is orientable.** -/
 theorem nonempty_vectorBundleOrientation (s : SpinStructure F E n) :
     Nonempty (VectorBundleOrientation F E (Fin n)) :=
@@ -611,9 +652,9 @@ theorem range_toFrame_eq_orientedFrames (s : SpinStructure F E n)
     Set.range s.toFrame = OrthonormalFrameBundle.orientedFrames (s.orientation o) o := by
   refine Subset.antisymm (range_subset_iff.2 (s.toFrame_mem_orientedFrames o)) fun q hq ↦ ?_
   obtain ⟨p₀⟩ := s.nonempty_P q.proj
-  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.exists_mem_specialOrthogonalGroup_smul_eq
-    (Fact.out : Fintype.card (Fin n) = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)))
-    (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq (s.proj_toFrame ⟨q.proj, p₀⟩)
+  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.SMulMemIff.exists_mem_smul_eq
+    (H := specialOrthogonalGroup _) (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq
+    (s.proj_toFrame ⟨q.proj, p₀⟩)
   obtain ⟨g, hg⟩ := realCliffordSpinToEuclideanSpecialOrthogonal_surjective n ⟨u, hu⟩
   refine ⟨op g • ⟨q.proj, p₀⟩, ?_⟩
   rw [s.toFrame_op_smul, hg, huq]

@@ -83,6 +83,7 @@ element (`TauCeti.diagGL_const`).
   centralizer is the whole group.
 * `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
   constant family to the corresponding scalar element, and it is scalar *only* there.
+* `TauCeti.diagGL_const_mul`: scaling all diagonal entries by `a` multiplies by the scalar `a`.
 
 ## References
 
@@ -126,6 +127,16 @@ theorem trace_diagGL (t : ι → kˣ) :
     (diagGL t : Matrix ι ι k).trace = ∑ i, (t i : k) := by
   rw [diagGL_coe, Matrix.trace_diagonal]
 
+/-- Applying a ring homomorphism entrywise to `diagGL t` gives the diagonal matrix of the mapped
+units. Unlike `TauCeti.map_diagGL`, this assumes no commutativity. -/
+@[simp]
+theorem _root_.RingHom.unitsMap_mapMatrix_diagGL {S : Type*} [Semiring S] (f : k →+* S)
+    (t : ι → kˣ) :
+    Units.map (f.mapMatrix (m := ι) : Matrix ι ι k →* Matrix ι ι S) (diagGL t) =
+      diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
+  ext i j
+  simp [Matrix.diagonal_apply, apply_ite f]
+
 /-- The diagonal embedding is injective. -/
 theorem diagGL_injective : Function.Injective (diagGL (k := k) (ι := ι)) := fun t s h =>
   funext fun i => Units.ext <| by
@@ -138,6 +149,12 @@ scalar exactly on the constant families. -/
 theorem diagGL_const (a : kˣ) :
     diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
   Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+
+/-- Multiplying every diagonal entry by the same unit `a` multiplies the diagonal element by the
+scalar element `a`. -/
+theorem diagGL_const_mul (a : kˣ) (t : ι → kˣ) :
+    diagGL (fun i => a * t i) = Matrix.GeneralLinearGroup.scalar ι a * diagGL t := by
+  rw [← diagGL_const, ← map_mul, Pi.mul_def]
 
 /-- An invertible diagonal matrix with two distinct diagonal entries is not scalar. -/
 theorem notMem_range_scalar_diagGL {t : ι → kˣ} {i j : ι} (ht : t i ≠ t j) :
@@ -377,11 +394,8 @@ theorem det_diagGL (t : ι → kˣ) :
 mapped units. -/
 @[simp]
 theorem map_diagGL {S : Type*} [CommRing S] (f : k →+* S) (t : ι → kˣ) :
-    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map,
-    MonoidHom.coe_ofClass]
-  split_ifs <;> simp
+    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) :=
+  f.unitsMap_mapMatrix_diagGL t
 
 /-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
 type, every invertible matrix already has determinant one. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.LinearAlgebra.Submodule.Primitive
 
+import TauCeti.LinearAlgebra.Quotient.Basic
+
 /-!
 # Primitive embeddings of integral lattices
 
@@ -90,10 +92,23 @@ theorem comp (hg : IsPrimitiveEmbedding M N g) (hf : IsPrimitiveEmbedding L M f)
 is its image viewed inside the target carrier. -/
 theorem isTorsionFree_quotient (hf : IsPrimitiveEmbedding L M f) :
     Module.IsTorsionFree ℤ
-      (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
-  apply Submodule.isTorsionFree_quotient_of_smul_mem
-  intro k y hk hy
-  exact hf.saturated y y.property k hk hy
+      (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) :=
+  Submodule.isTorsionFree_quotient_iff.mpr fun k y hk hy ↦
+    hf.saturated y y.property k hk.ne_zero <| by
+      simpa only [Submodule.mem_comap, Submodule.coe_subtype, SetLike.val_smul] using hy
+
+/-- A primitive embedding has no additional integral points on its rational image. -/
+theorem apply_mem_carrier_iff (hf : IsPrimitiveEmbedding L M f) (x : V) :
+    f x ∈ M.carrier ↔ x ∈ L.carrier := by
+  constructor
+  · intro hx
+    obtain ⟨k, hk, hkx⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+      (Submodule.IsFullLattice.span_eq_top (A := ℚ)) x
+    obtain ⟨y, hy, hxy⟩ := hf.saturated (f x) hx k hk
+      ⟨k • x, hkx, by simp⟩
+    exact hf.injective hxy ▸ hy
+  · intro hx
+    exact hf.map_carrier ⟨x, hx, rfl⟩
 
 end IsPrimitiveEmbedding
 
@@ -125,10 +140,9 @@ theorem isPrimitiveEmbedding_iff_isTorsionFree_quotient (f : V →ₗ[ℚ] W)
     IsPrimitiveEmbedding L M f ↔ Module.IsTorsionFree ℤ
       (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
   refine ⟨fun hf ↦ hf.isTorsionFree_quotient, fun h ↦ ⟨hi, hB, hL, ?_⟩⟩
-  have := h
   intro y hy k hk hky
-  exact Submodule.mem_of_smul_mem_of_isTorsionFree_quotient
-    ((L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) (z := ⟨y, hy⟩) hk hky
+  exact Submodule.isTorsionFree_quotient_iff.mp h k ⟨y, hy⟩ (.of_ne_zero hk) <| by
+    simpa only [Submodule.mem_comap, Submodule.coe_subtype, SetLike.val_smul] using hky
 
 /-- The integral image of a form-preserving injection is saturated exactly when it has an
 integral-module complement. This does not assert an orthogonal splitting. -/

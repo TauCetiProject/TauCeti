@@ -34,6 +34,10 @@ any universe, independent of the universe of `X`.
   countable fibres have a countable union.
 * `TauCeti.countable_iff_exists_lt_omega_one_forall_lt`: with countable fibres, a set is countable
   iff the rank is bounded below `ω₁` on it.
+* `TauCeti.countable_toType_add_one_of_lt_omega_one`: the successor of a countable ordinal has a
+  countable canonical well-order.
+* `TauCeti.not_countable_Ico_omega_one`: above any countable ordinal there are uncountably many
+  countable ordinals.
 * `TauCeti.exists_surjective_Iio_omega_one`: an uncountable type maps onto the countable ordinals,
   so a rank below `ω₁` can be unbounded on it.
 
@@ -112,6 +116,21 @@ theorem countable_iff_exists_lt_omega_one_forall_lt {s : Set X} (hr : ∀ x ∈ 
   ⟨fun hs ↦ hs.exists_lt_omega_one_forall_lt hr, fun ⟨_, hβ, hs⟩ ↦
     (countable_preimage_Iio_of_lt_omega_one hβ fun o ho ↦ hfib o (ho.trans hβ)).mono
       fun x hx ↦ hs x hx⟩
+
+/-- The successor of a countable ordinal is countable, so its canonical well-order is a countable
+type. -/
+theorem countable_toType_add_one_of_lt_omega_one {α : Ordinal.{w}} (hα : α < ω₁) :
+    Countable (α + 1).ToType :=
+  countable_toType_of_lt_omega_one ((isSuccLimit_omega 1).add_one_lt hα)
+
+/-- For a countable ordinal `a`, the interval `[a, ω₁)` of countable ordinals is uncountable. -/
+theorem not_countable_Ico_omega_one {a : Ordinal.{w}} (ha : a < ω₁) :
+    ¬ (Ico a ω₁ : Set Ordinal.{w}).Countable := by
+  intro h
+  have hIio : (Iio ω₁ : Set Ordinal.{w}).Countable :=
+    Iio_union_Ico_eq_Iio ha.le ▸ (countable_Iio_of_lt_omega_one ha).union h
+  rw [← le_aleph0_iff_set_countable, cardinalMk_Iio, card_omega, lift_le_aleph0] at hIio
+  exact aleph0_lt_aleph_one.not_ge hIio
 
 /-- **An uncountable type maps onto the countable ordinals.** Some rank on an uncountable type
 takes every value below `ω₁`, in any universe of ordinals. -/

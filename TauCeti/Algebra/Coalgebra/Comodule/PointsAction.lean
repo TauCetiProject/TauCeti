@@ -67,6 +67,8 @@ tensor expressions in the regular cocycle identity.
 * `TauCeti.Comodule.mem_fixedSubcomodule_iff_forall_endOfPoint`: the fixed vectors are the
   vectors fixed by every point with values in every commutative algebra.
 * `TauCeti.Comodule.endOfPoint_corestrict`: compatibility with corestriction in the coalgebra.
+* `TauCeti.Comodule.baseChange_comp_endOfPoint_of_coact`: a linear map carrying one coaction to
+  another pushed forward along an algebra map intertwines the corresponding point actions.
 * `TauCeti.Comodule.endOfPoint_tensor`: point actions preserve the diagonal tensor product.
 * `TauCeti.Comodule.endOfPoint_groupLike`: on a group-like comodule a point acts by the scalar
   given by its value on the group-like element.
@@ -78,6 +80,10 @@ tensor expressions in the regular cocycle identity.
 * `TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff`: injective comodule morphisms
   preserve and reflect subspace stabilizers after flat scalar extension.
 * `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
+* `TauCeti.Comodule.endOfPoint_regular_mul`, `TauCeti.Comodule.endOfPoint_regular_one`: a point
+  acts on the regular comodule by an algebra endomorphism.
+* `TauCeti.Comodule.regularEndOfPoint`: right translation by a point, as an algebra
+  endomorphism.
 * `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
   carry it onto itself.
 
@@ -385,6 +391,41 @@ theorem endOfPoint_corestrict (φ : H₁ →ₐc[R] H₂) (g : H₂ →ₐ[R] A)
 
 end Corestrict
 
+section Pushforward
+
+variable {R H₁ H₂ V W A : Type*} [CommSemiring R]
+variable [Semiring H₁] [Algebra R H₁] [Coalgebra R H₁]
+variable [Semiring H₂] [Algebra R H₂] [Coalgebra R H₂]
+variable [AddCommMonoid V] [Module R V] [Comodule R H₂ V]
+variable [AddCommMonoid W] [Module R W] [Comodule R H₁ W]
+variable [CommSemiring A] [Algebra R A]
+
+/-- If a linear map `f : V → W` carries the coaction of `V` to the coaction of `W` pushed forward
+along an algebra map `ψ : H₁ → H₂`, then it intertwines the action of a point `g` on `V` with the
+action of `g ∘ ψ` on `W`. For a bialgebra map `ψ` the hypothesis says that `f` is a comodule map
+to the corestriction of `W` along `ψ`. -/
+theorem baseChange_comp_endOfPoint_of_coact (f : V →ₗ[R] W) (ψ : H₁ →ₐ[R] H₂)
+    (hψ : ∀ x : V, f.rTensor H₂ (coact (R := R) (C := H₂) x) =
+      ψ.toLinearMap.lTensor W (coact (R := R) (C := H₁) (f x)))
+    (g : H₂ →ₐ[R] A) :
+    f.baseChange A ∘ₗ endOfPoint V g = endOfPoint W (g.comp ψ) ∘ₗ f.baseChange A := by
+  have hcol : (f.baseChange A).restrictScalars R ∘ₗ
+      (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap =
+      (TensorProduct.comm R W A).toLinearMap ∘ₗ LinearMap.lTensor W g.toLinearMap ∘ₗ
+        f.rTensor H₂ := by
+    refine TensorProduct.ext' fun w x => ?_
+    simp
+  apply LinearMap.restrictScalars_injective R
+  refine TensorProduct.ext' fun a v => ?_
+  have hc := DFunLike.congr_fun hcol (coact (R := R) (C := H₂) v)
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    LinearEquiv.coe_toLinearMap] at hc
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, hψ, AlgHom.comp_toLinearMap,
+    LinearMap.lTensor_comp]
+
+end Pushforward
+
 section GroupLike
 
 variable {R H V A : Type*} [CommSemiring R] [Semiring H] [Algebra R H] [Coalgebra R H]
@@ -679,6 +720,56 @@ theorem _root_.BialgHom.baseChange_comp_endOfPoint_regular (f : H →ₐc[R] K) 
   rw [ht]
   exact congrArg (fun t ↦ TensorProduct.comm R K A (LinearMap.lTensor K g.toLinearMap t))
     (CoalgHomClass.map_comp_comul_apply f.toCoalgHom h)
+
+/-- The point action on the regular comodule, on a pure tensor: the comultiplication pushed
+through the point, read as an algebra map `H → A ⊗ H`. -/
+private theorem endOfPoint_regular_tmul (g : H →ₐ[R] A) (a : A) (h : H) :
+    endOfPoint H g (a ⊗ₜ[R] h) =
+      a • ((Algebra.TensorProduct.comm R H A).toAlgHom.comp
+        ((Algebra.TensorProduct.map (AlgHom.id R H) g).comp (Bialgebra.comulAlgHom R H))) h := by
+  rw [endOfPoint_tmul, instSelf_coact]
+  refine congrArg (a • ·) ?_
+  simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
+  induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
+  | tmul x y => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **A point acts on the regular comodule by an algebra endomorphism.** Right translation by
+an `A`-point on the scalar extension `A ⊗ H` of the coordinate algebra is multiplicative. -/
+theorem endOfPoint_regular_mul (g : H →ₐ[R] A) (x y : A ⊗[R] H) :
+    endOfPoint H g (x * y) = endOfPoint H g x * endOfPoint H g y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | tmul a h =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | tmul b h' =>
+      rw [Algebra.TensorProduct.tmul_mul_tmul, endOfPoint_regular_tmul, endOfPoint_regular_tmul,
+        endOfPoint_regular_tmul, map_mul, smul_mul_smul_comm]
+
+/-- Right translation by a point fixes the unit of the coordinate algebra. -/
+@[simp]
+theorem endOfPoint_regular_one (g : H →ₐ[R] A) : endOfPoint H g 1 = 1 := by
+  rw [Algebra.TensorProduct.one_def, endOfPoint_regular_tmul, map_one, one_smul,
+    Algebra.TensorProduct.one_def]
+
+/-- Right translation by an `A`-point, as an `A`-algebra endomorphism of the scalar extension
+`A ⊗ H` of the regular comodule. Its underlying linear map is `endOfPoint H g`. -/
+noncomputable def regularEndOfPoint (g : H →ₐ[R] A) : A ⊗[R] H →ₐ[A] A ⊗[R] H :=
+  AlgHom.ofLinearMap (endOfPoint H g) (endOfPoint_regular_one g) (endOfPoint_regular_mul g)
+
+/-- The underlying linear map of `regularEndOfPoint g` is the point action on the regular
+comodule. -/
+@[simp]
+theorem regularEndOfPoint_toLinearMap (g : H →ₐ[R] A) :
+    (regularEndOfPoint g).toLinearMap = endOfPoint H g :=
+  (rfl)
+
+/-- `regularEndOfPoint g` acts as the point action on the regular comodule. -/
+@[simp]
+theorem regularEndOfPoint_apply (g : H →ₐ[R] A) (x : A ⊗[R] H) :
+    regularEndOfPoint g x = endOfPoint H g x :=
+  (rfl)
 
 end Regular
 

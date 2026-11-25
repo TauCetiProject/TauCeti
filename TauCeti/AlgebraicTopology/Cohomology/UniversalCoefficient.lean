@@ -72,6 +72,10 @@ free in that degree and zero above it, while in the top degree it need not be to
   is injective on `H¹` of every space.
 * `TopCat.singularKroneckerEquivOne`: for free coefficients the Kronecker map is an isomorphism
   `H¹(X; R, M) ≃ₗ[k] Hom(H₁(X; R), M)` for every space `X`.
+* `TopCat.singularCohomology_one_ext`: for free coefficients a class of `H¹(X; R, M)` is
+  determined by its Kronecker pairings.
+* `TopCat.isAddTorsionFree_singularCohomology_one`: for free `R` and torsion-free `M`,
+  `H¹(X; R, M)` is torsion-free.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -172,6 +176,27 @@ lemma singularKroneckerEquivOne_apply [Module.Free k R] (M : ModuleCat.{w} k)
     (α : X.singularCohomology R k M 1) :
     X.singularKroneckerEquivOne M α = X.singularKronecker k 1 α :=
   (rfl)
+
+/-- **A class of `H¹` is determined by its Kronecker pairings**: for a free coefficient module `R`,
+two classes of `H¹(X; R, M)` that pair equally with every class of `H₁(X; R)` are equal, because
+the Kronecker map is injective in degree one (`TopCat.singularKroneckerEquivOne`). -/
+theorem singularCohomology_one_ext [Module.Free k R] {M : ModuleCat.{w} k}
+    {α β : X.singularCohomology R k M 1}
+    (h : ∀ c, X.singularKronecker k 1 α c = X.singularKronecker k 1 β c) : α = β :=
+  (X.singularKroneckerEquivOne M).injective (ModuleCat.hom_ext (LinearMap.ext h))
+
+/-- **`H¹` with torsion-free coefficients is torsion-free**: for a free coefficient module `R` and a
+module `M` without additive torsion, `H¹(X; R, M)` has no nonzero element of finite order, because
+the Kronecker map identifies it with `Hom(H₁(X; R), M)`
+(`TopCat.singularKroneckerEquivOne`). For instance `H¹(X; ℤ)` is torsion-free for every space
+`X`. -/
+instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCat.{w} k)
+    [IsAddTorsionFree M] : IsAddTorsionFree (X.singularCohomology R k M 1) :=
+  Function.Injective.isAddTorsionFree
+    { toFun α := ⇑(X.singularKroneckerEquivOne M α).hom
+      map_zero' := by simp
+      map_add' α β := by simp }
+    fun _ _ h ↦ X.singularCohomology_one_ext (congrFun h)
 
 end ProjectiveHomologyBelow
 
@@ -294,10 +319,7 @@ def singularUniversalCoefficientEquiv (n : ℕ) :
     X.singularCohomology R k M (n + 1) ≃ₗ[k]
       Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1 ×
         (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
-  ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-    (X.singularExtToCohomology_injective R M n)
-    ⟨X.singularKroneckerSection R M (n + 1),
-      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).val
+  TauCeti.ChainComplex.universalCoefficientEquiv k ((toSSet.obj X).chainComplex R) M rfl
 
 /-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
 inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
@@ -305,19 +327,17 @@ inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor
 lemma singularUniversalCoefficientEquiv_symm_inl (n : ℕ)
     (e : Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1) :
     (X.singularUniversalCoefficientEquiv R M n).symm (e, 0) = X.singularExtToCohomology R M n e :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.left e).symm
+  TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl (X := (toSSet.obj X).chainComplex R) rfl e
 
 /-- The second component of the splitting `TopCat.singularUniversalCoefficientEquiv` is the
 Kronecker map. -/
 @[simp]
 lemma singularUniversalCoefficientEquiv_apply_snd (n : ℕ)
     (x : X.singularCohomology R k M (n + 1)) :
-    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.right x).symm
+    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x := by
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd
+    (X := (toSSet.obj X).chainComplex R) rfl x
 
 variable {X} in
 /-- **Naturality of the universal coefficient sequence** in the space: for a continuous map

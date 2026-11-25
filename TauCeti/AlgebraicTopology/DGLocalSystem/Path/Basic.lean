@@ -18,10 +18,13 @@ strict morphisms of these modules, and each is a quasi-isomorphism. In particula
 a path from `a` to `b` gives a quasi-isomorphism from the chains on loops at `b` to the chains
 on paths from `a` to `b`.
 
-This identifies the right-module homology of the path carrier used for basepoint change.
-It does not yet equip these chains with the left loop-chain action or construct derived
-basepoint change. Homotopy invariance is the existing cubical-chain comparison theorem;
-no homology calculation is repeated here.
+This identifies the right-module homology of the path carrier used for basepoint change. The
+left loop-chain action is in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule`, and
+basepoint change itself in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange`. For
+points in the same path component, the functor it induces on derived categories is an
+equivalence, shown in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.Equivalence`. Homotopy
+invariance is the existing cubical-chain comparison theorem; no homology calculation is repeated
+here.
 
 The chain objects and maps allow independent universes for the space and coefficient ring.
 The quasi-isomorphism statements require a shared universe, as in the cubical-chain
