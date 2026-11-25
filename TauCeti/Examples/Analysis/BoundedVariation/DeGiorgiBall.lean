@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.DeGiorgi
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Ball
 import TauCeti.Analysis.BoundedVariation.Ball
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # De Giorgi's structure theorem on a ball
@@ -50,7 +51,7 @@ theorem integral_trace_fderiv_mul_indicator_ball_eq_setIntegral_inner (hn : 2 �
     ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * (ball c r).indicator 1 x =
       ∫ x in sphere c r, ⟪φ x, r⁻¹ • (x - c)⟫ ∂μHE[finrank ℝ E - 1] := by
   rw [integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn
-    locallyIntegrableOn_indicator_ball
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top
     hφ hc (by simp), reducedBoundary_ball hr]
   exact setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx => by
@@ -62,7 +63,7 @@ theorem perimeter_ball_eq_euclideanHausdorffMeasure_sphere (hn : 2 ≤ finrank �
     (hr : 0 < r) :
     perimeter volume ⊤ (ball c r) = μHE[finrank ℝ E - 1] (sphere c r) := by
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
-    locallyIntegrableOn_indicator_ball
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top,
     reducedBoundary_ball hr]
 

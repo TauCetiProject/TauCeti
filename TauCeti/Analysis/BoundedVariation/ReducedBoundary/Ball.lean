@@ -11,6 +11,7 @@ import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Poincare
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -75,7 +76,8 @@ private theorem ae_mem_sphere (hr : 0 < r) :
 private theorem variationMeasure_ball_univ :
     variationMeasure μ ⊤ ((ball c r).indicator 1) univ =
       ENNReal.ofReal (finrank ℝ E / r) * μ (ball c r) := by
-  rw [variationMeasure_univ locallyIntegrableOn_indicator_ball
+  rw [variationMeasure_univ (u := (ball c r).indicator 1)
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top, ← perimeter_def,
     perimeter_ball_eq_ofReal_div_mul]
 
@@ -118,7 +120,7 @@ private theorem exists_integral_inner_outerNormal_ball_eq (hr : 0 < r) :
   · simp only [φ]
     rw [θ.one_of_mem_closedBall (sphere_subset_closedBall hy), mul_one]
   rw [← integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal
-    locallyIntegrableOn_indicator_ball
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top
     hφd θ.hasCompactSupport.mul_left.smul_right (by simp), measureReal_def,
     variationMeasure_ball_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
@@ -175,7 +177,8 @@ private theorem variationMeasure_closedBall_ne_zero (hr : 0 < r) (hx : x ∈ sph
     (hρ : 0 < ρ) :
     variationMeasure μ ⊤ ((ball c r).indicator 1) (((↑) : (⊤ : Opens E) → E) ⁻¹'
       closedBall x ρ) ≠ 0 := by
-  have hu := locallyIntegrableOn_indicator_ball (μ := μ) (c := c) (r := r)
+  have hu : LocallyIntegrableOn ((ball c r).indicator (1 : E → ℝ)) (⊤ : Opens E) μ :=
+    locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1
   refine fun h0 => ?_
   have hP := (perimeter_ball_le_variationMeasure_closedBall (x := x) (r := ρ) hu
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top (by simp)).trans_eq h0
@@ -229,7 +232,8 @@ private theorem tendsto_setAverage_polarDensity_ball (hr : 0 < r) (hx : x ∈ sp
     ((ae_restrict_iff' hSm).2 (hpol.mono fun y hy hyS => ?_))
     (Measure.integrableOn_of_bounded (M := 1) (measure_ne_top V _)
       measurable_polarDensity.aestronglyMeasurable
-      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one locallyIntegrableOn_indicator_ball
+      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one (u := (ball c r).indicator 1)
+        (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
         forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top).mono fun y hy => hy.le)))
   · exact (mem_closedBall.1 hmem).trans_lt (half_lt_self hε)
   · rw [hy, mem_closedBall, dist_neg_neg, dist_smul₀, dist_sub_right,
