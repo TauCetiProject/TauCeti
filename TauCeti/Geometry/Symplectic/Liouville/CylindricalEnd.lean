@@ -61,7 +61,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 `log r(x)` at which the trajectory through `x` leaves the boundary of `W`, is smooth at every point
 outside `W`. -/
 theorem contMDiffAt_log_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
     ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) x := by
   -- Write `W = {f ≤ c}` with `df(Z) > 0` along the boundary `f⁻¹(c)`. The trajectory through `x`
   -- meets the boundary at time `-log r(x)`, transversally, so the hitting time `T` of the boundary
@@ -98,7 +98,7 @@ theorem contMDiffAt_log_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω 
 /-- **The radial coordinate is smooth on the cylindrical end.** On a completion of the Liouville
 domain `W`, the radial coordinate is smooth at every point outside `W`. -/
 theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
     ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) x :=
   (Real.contDiff_exp.contMDiff.contMDiffAt.comp x
     (h.contMDiffAt_log_liouvilleRadialCoordinate hZ hx)).congr_of_eventuallyEq
@@ -107,32 +107,25 @@ theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
 
 /-- The radial coordinate of a completion is smooth outside the Liouville domain. -/
 theorem contMDiffOn_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    (hZ : RoughForm.interior Z ω.val = α.val) :
     ContMDiffOn I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) Wᶜ :=
   fun _ hx ↦ (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).contMDiffWithinAt
 
 /-- **The Liouville field is `r ∂_r` on the cylindrical end.** Outside the Liouville domain, the
 Liouville field differentiates the radial coordinate to itself, `dr(Z) = r`. -/
 theorem mvfderiv_liouvilleRadialCoordinate_apply (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
     mvfderiv I (liouvilleRadialCoordinate Z W) x (Z x) = liouvilleRadialCoordinate Z W x := by
   -- Along the trajectory `x = ψ_t(y)` from the boundary, `r(ψ_s x) = e^{s + t} = e^s r(x)` for
   -- `s > -t`, a neighbourhood of `0`.
   obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
-  have hr : MDifferentiableAt I 𝓘(ℝ) (liouvilleRadialCoordinate Z W) (flowOf Z 0 x) := by
-    rw [flowOf_zero Z]
-    exact (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)
-  have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
-    ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hr
-  rw [flowOf_zero Z] at hcurve
-  have heq : (liouvilleRadialCoordinate Z W ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0]
-      fun s ↦ Real.exp s * liouvilleRadialCoordinate Z W x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
-    rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
-      h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
-      h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
-  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
-  simpa using (Real.hasDerivAt_exp 0).mul_const (liouvilleRadialCoordinate Z W x)
+  refine mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq
+    ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    ((h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)) ?_
+  filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
+  rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
+    h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
+    h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
 
 end IsLiouvilleCompletion
 

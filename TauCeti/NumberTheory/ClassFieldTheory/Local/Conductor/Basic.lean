@@ -58,6 +58,8 @@ subextension, which may be unramified while the extension itself is not.
   conductor exponent `0` exactly when it is unramified.
 * `TauCeti.ClassFieldTheory.characterConductorExp_le_iff`: the character conductor exponent of
   `χ` is at most `n` exactly when `χ` is trivial on `U(K,n)`.
+* `TauCeti.ClassFieldTheory.characterConductorExp_mul_of_unitFiltration_zero_le_ker`: twisting by
+  an unramified character does not change the character conductor exponent.
 
 ## References
 
@@ -203,6 +205,22 @@ trivial on the units `U(K,0)` of `𝒪[K]`. -/
 theorem characterConductorExp_eq_zero_iff (χ : Kˣ →ₜ* ℂˣ) :
     characterConductorExp K χ = 0 ↔ unitFiltration K 0 ≤ χ.ker := by
   rw [← Nat.le_zero, characterConductorExp_le_iff]
+
+/-- **Twisting by an unramified character preserves the conductor exponent**: if `χ` is trivial
+on `U(K,0)`, then `c(ω χ) = c(ω)`. -/
+theorem characterConductorExp_mul_of_unitFiltration_zero_le_ker (ω χ : Kˣ →ₜ* ℂˣ)
+    (hχ : unitFiltration K 0 ≤ χ.ker) :
+    characterConductorExp K (ω * χ) = characterConductorExp K ω := by
+  -- On every step `U(K,n) ⊆ U(K,0)` the twist `χ` is trivial, so the two kernels agree there.
+  have h (n : ℕ) : unitFiltration K n ≤ (ω * χ).ker ↔ unitFiltration K n ≤ ω.ker := by
+    refine forall₂_congr fun u hu ↦ ?_
+    have hu' : χ u = 1 := hχ (unitFiltration_antitone (Nat.zero_le n) hu)
+    simp [MonoidHom.mem_ker, hu']
+  refine le_antisymm ?_ ?_
+  · rw [characterConductorExp_le_iff, h]
+    exact unitFiltration_characterConductorExp_le_ker K ω
+  · rw [characterConductorExp_le_iff, ← h]
+    exact unitFiltration_characterConductorExp_le_ker K _
 
 end Character
 

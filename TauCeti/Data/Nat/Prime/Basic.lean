@@ -20,6 +20,8 @@ instance search. Mathlib supplies it only as a local instance
 
 Arguments that treat the primes `2` and `3` separately, as for Weierstrass equations, need the
 complementary fact that every other prime, that is, every prime `p ≥ 5`, does not divide `6`.
+Dually, the only prime that a prime `p` divides is `p` itself, so the primes divisible by `p`
+form the set `{p}`.
 
 If `n ∣ m` but `q * n ∤ m` for a prime `q`, then `m` and `n` have the same `q`-part, hence so do
 `q * m` and `q * n`; this pins down the gcd and lcm of `m` and `q * n`, which are used to compare
@@ -32,6 +34,7 @@ neither base; this ensures that their ratio modulo the prime is a unit.
 
 * `Nat.Primes.instFactPrime`: for `p : Nat.Primes`, the instance `Fact (p : ℕ).Prime`.
 * `Nat.Prime.not_dvd_six_of_five_le`: a prime `p ≥ 5` does not divide `6`.
+* `Nat.Prime.prime_and_dvd_iff_eq`: the only prime divisible by a prime `p` is `p` itself.
 * `Nat.Prime.gcd_mul_eq_of_dvd_of_not_mul_dvd`, `Nat.Prime.lcm_mul_eq_of_dvd_of_not_mul_dvd`:
   if `n ∣ m` and `q * n ∤ m`, then `gcd m (q * n) = n` and `lcm m (q * n) = q * m`.
 * `Nat.Prime.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul`: a prime dividing both
@@ -45,7 +48,7 @@ public section
 /-- A prime, as an element of the subtype `Nat.Primes`, is prime: the `Fact` instance under which
 the prime-indexed API, for instance the `p`-adic integers `ℤ_[p]`, can be used for `p : Nat.Primes`.
 -/
-instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.2⟩
+instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.property⟩
 
 /-- **A prime at least `5` does not divide `6`**: the primes dividing `6` are `2` and `3`. -/
 theorem Nat.Prime.not_dvd_six_of_five_le {p : ℕ} (hp : p.Prime) (h5 : 5 ≤ p) : ¬ p ∣ 6 :=
@@ -54,6 +57,11 @@ theorem Nat.Prime.not_dvd_six_of_five_le {p : ℕ} (hp : p.Prime) (h5 : 5 ≤ p)
     obtain rfl | rfl : p = 5 ∨ p = 6 := by omega
     · omega
     · exact absurd hp (by decide)
+
+/-- The only prime divisible by a prime `p` is `p` itself. -/
+theorem Nat.Prime.prime_and_dvd_iff_eq {p q : ℕ} (hp : p.Prime) : q.Prime ∧ p ∣ q ↔ q = p :=
+  ⟨fun ⟨hq, hpq⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hq).mp hpq).symm,
+    by rintro rfl; exact ⟨hp, dvd_rfl⟩⟩
 
 /-- If `n ∣ m` and `q * n ∤ m` for a prime `q`, then `gcd m (q * n) = n`. -/
 theorem Nat.Prime.gcd_mul_eq_of_dvd_of_not_mul_dvd {q n m : ℕ} (hq : q.Prime) (hnm : n ∣ m)

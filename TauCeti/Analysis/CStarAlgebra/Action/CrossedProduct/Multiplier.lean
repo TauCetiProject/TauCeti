@@ -80,20 +80,23 @@ variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpa
 
 namespace FullCrossedProduct
 
-open ConvolutionAlgebra
+open FullConvolutionAlgebra ConvolutionAlgebra
 
 /-- A linear operator on the twisted convolution algebra that is bounded for the full seminorm,
 extended by continuity to the full crossed product. -/
 private def extendCLM (T : ConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ) (C : ℝ)
     (hT : ∀ f, fullSeminorm α μ (T f) ≤ C * fullSeminorm α μ f) :
     FullCrossedProduct α μ →L[ℂ] FullCrossedProduct α μ :=
-  (fullCStarSeminorm α μ).liftCLM ((of α μ : ConvolutionAlgebra α μ →ₗ[ℂ] _).comp T) C fun f => by
-    simpa [norm_of] using hT f
+  (((toFullStarAlgEquiv α μ : ConvolutionAlgebra α μ →ₗ[ℂ] FullConvolutionAlgebra α μ).comp
+    (T.comp ((toFullStarAlgEquiv α μ).symm :
+      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ))).mkContinuous C fun f => by
+        simpa [FullConvolutionAlgebra.norm_def] using hT (ofFull f)).completion
 
 private theorem extendCLM_of (T : ConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ) (C : ℝ)
     (hT : ∀ f, fullSeminorm α μ (T f) ≤ C * fullSeminorm α μ f) (f : ConvolutionAlgebra α μ) :
-    extendCLM T C hT (of α μ f) = of α μ (T f) :=
-  (fullCStarSeminorm α μ).liftCLM_ofNonUnital _ C _ f
+    extendCLM T C hT (of α μ f) = of α μ (T f) := by
+  rw [← coe_toFull_eq_of, ← coe_toFull_eq_of, extendCLM]
+  exact (ContinuousLinearMap.completion_apply_coe _ _).trans (by simp [-coe_toFull_eq_of])
 
 /-- Extended operators are adjoint for the pairing `(x, y) ↦ x⋆ * y` as soon as their integrated
 forms are adjoint on the twisted convolution algebra. -/

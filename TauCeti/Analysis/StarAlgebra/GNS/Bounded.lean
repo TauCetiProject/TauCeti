@@ -78,12 +78,8 @@ section NonUnital
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
   [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
-/-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`.
-Built over `PseudoMetricSpace.toUniformSpace` (which is definitionally equal to
-`SeparationQuotient.instUniformSpace`) so that nested typeclass inference (such as
-`NonUnitalStarAlgHom.isClosed_ker`) unifies `UniformSpace.Completion.instNormedAddCommGroup` and
-`UniformSpace.Completion.innerProductSpace` directly without metavariable blocking. -/
-abbrev HilbertGNS : Type _ := @Completion φ.GNS PseudoMetricSpace.toUniformSpace
+/-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
+abbrev HilbertGNS : Type _ := Completion φ.GNS
 
 /-- The canonical linear map sending an algebra element to its class in the completed GNS Hilbert
 space. -/
@@ -485,19 +481,20 @@ theorem mem_boundedSubalgebra {a : A} :
 GNS Hilbert space `φ.HilbertGNS`. -/
 def boundedSubalgebraRepresentation :
     φ.boundedSubalgebra →⋆ₐ[ℂ] (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) where
-  toFun x := φ.hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.2)
+  toFun x := φ.hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.property)
   map_one' := φ.hilbertLeftMul_one
-  map_mul' x y := φ.hilbertLeftMul_mul (φ.mem_boundedSubalgebra.mp x.2)
-    (φ.mem_boundedSubalgebra.mp y.2)
+  map_mul' x y := φ.hilbertLeftMul_mul (φ.mem_boundedSubalgebra.mp x.property)
+    (φ.mem_boundedSubalgebra.mp y.property)
   map_zero' := φ.hilbertLeftMul_zero
-  map_add' x y := φ.hilbertLeftMul_add (φ.mem_boundedSubalgebra.mp x.2)
-    (φ.mem_boundedSubalgebra.mp y.2)
+  map_add' x y := φ.hilbertLeftMul_add (φ.mem_boundedSubalgebra.mp x.property)
+    (φ.mem_boundedSubalgebra.mp y.property)
   commutes' r := φ.hilbertLeftMul_algebraMap r
-  map_star' x := (φ.star_hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.2)).symm
+  map_star' x := (φ.star_hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.property)).symm
 
 @[simp]
 theorem boundedSubalgebraRepresentation_apply (x : φ.boundedSubalgebra) :
-    φ.boundedSubalgebraRepresentation x = φ.hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.2) :=
+    φ.boundedSubalgebraRepresentation x = φ.hilbertLeftMul (φ.mem_boundedSubalgebra.mp x.property)
+        :=
   (rfl)
 
 /-- If every element of a star-generating set acts boundedly on `φ.GNS`, then every element of `A`

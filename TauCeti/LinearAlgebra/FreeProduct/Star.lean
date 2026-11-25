@@ -414,20 +414,21 @@ theorem reindexStarAlgEquiv_symm_ι (A : J → Type*)
 def sigmaStarAlgEquiv {κ : J → Type*} [∀ j, DecidableEq (κ j)]
     (B : (j : J) → κ j → Type*) [∀ j k, Semiring (B j k)] [∀ j k, Algebra R (B j k)]
     [∀ j k, StarRing (B j k)] [∀ j k, StarModule R (B j k)] :
-    FreeProduct R (fun p : Σ j, κ j ↦ B p.1 p.2) ≃⋆ₐ[R]
+    FreeProduct R (fun p : Σ j, κ j ↦ B p.fst p.snd) ≃⋆ₐ[R]
       FreeProduct R (fun j ↦ FreeProduct R (B j)) :=
   StarAlgEquiv.ofStarAlgHom
-    (liftStar fun {p} ↦ (ιStar R (fun j ↦ FreeProduct R (B j)) p.1).comp (ιStar R (B p.1) p.2))
+    (liftStar fun {p} ↦
+      (ιStar R (fun j ↦ FreeProduct R (B j)) p.fst).comp (ιStar R (B p.fst) p.snd))
     (liftStar fun {j} ↦ liftStar fun {k} ↦
-      ιStar R (fun p : Σ j, κ j ↦ B p.1 p.2) ⟨j, k⟩)
+      ιStar R (fun p : Σ j, κ j ↦ B p.fst p.snd) ⟨j, k⟩)
     (starAlgHom_ext fun p b ↦ by
       rcases p with ⟨j, k⟩
       simp)
     (starAlgHom_ext fun j x ↦ by
       have hj :
           ((liftStar fun {p : Σ j, κ j} ↦
-              (ιStar R (fun j ↦ FreeProduct R (B j)) p.1).comp (ιStar R (B p.1) p.2)).comp
-            (liftStar fun {k} ↦ ιStar R (fun p : Σ j, κ j ↦ B p.1 p.2) ⟨j, k⟩)) =
+              (ιStar R (fun j ↦ FreeProduct R (B j)) p.fst).comp (ιStar R (B p.fst) p.snd)).comp
+            (liftStar fun {k} ↦ ιStar R (fun p : Σ j, κ j ↦ B p.fst p.snd) ⟨j, k⟩)) =
             ιStar R (fun j ↦ FreeProduct R (B j)) j :=
         starAlgHom_ext fun k b ↦ by simp
       simpa using DFunLike.congr_fun hj x)
@@ -437,7 +438,7 @@ theorem sigmaStarAlgEquiv_ι {κ : J → Type*} [∀ j, DecidableEq (κ j)]
     (B : (j : J) → κ j → Type*) [∀ j k, Semiring (B j k)] [∀ j k, Algebra R (B j k)]
     [∀ j k, StarRing (B j k)] [∀ j k, StarModule R (B j k)]
     (j : J) (k : κ j) (b : B j k) :
-    sigmaStarAlgEquiv R B (ι R (fun p : Σ j, κ j ↦ B p.1 p.2) ⟨j, k⟩ b) =
+    sigmaStarAlgEquiv R B (ι R (fun p : Σ j, κ j ↦ B p.fst p.snd) ⟨j, k⟩ b) =
       ι R (fun j ↦ FreeProduct R (B j)) j (ι R (B j) k b) := by
   simp [sigmaStarAlgEquiv]
 
@@ -447,7 +448,7 @@ theorem sigmaStarAlgEquiv_symm_ι {κ : J → Type*}
     [∀ j k, Algebra R (B j k)] [∀ j k, StarRing (B j k)] [∀ j k, StarModule R (B j k)]
     (j : J) (k : κ j) (b : B j k) :
     (sigmaStarAlgEquiv R B).symm (ι R (fun j ↦ FreeProduct R (B j)) j (ι R (B j) k b)) =
-      ι R (fun p : Σ j, κ j ↦ B p.1 p.2) ⟨j, k⟩ b :=
+      ι R (fun p : Σ j, κ j ↦ B p.fst p.snd) ⟨j, k⟩ b :=
   (sigmaStarAlgEquiv R B).symm_apply_eq.mpr (sigmaStarAlgEquiv_ι R B j k b).symm
 
 /-- Grouping the factors of `FreeProduct R A` along any indexing map `p : I → J` identifies
@@ -456,31 +457,31 @@ theorem sigmaStarAlgEquiv_symm_ι {κ : J → Type*}
 def fiberStarAlgEquiv (A : I → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
     [∀ i, StarRing (A i)] [∀ i, StarModule R (A i)] (p : I → J) :
     FreeProduct R A ≃⋆ₐ[R]
-      FreeProduct R (fun j : J ↦ FreeProduct R (fun i : {i : I // p i = j} ↦ A i.1)) :=
+      FreeProduct R (fun j : J ↦ FreeProduct R (fun i : {i : I // p i = j} ↦ A i.val)) :=
   (reindexStarAlgEquiv R A (Equiv.sigmaFiberEquiv p)).symm.trans
-    (sigmaStarAlgEquiv R fun j (i : {i : I // p i = j}) ↦ A i.1)
+    (sigmaStarAlgEquiv R fun j (i : {i : I // p i = j}) ↦ A i.val)
 
 @[simp]
 theorem fiberStarAlgEquiv_ι (A : I → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
     [∀ i, StarRing (A i)] [∀ i, StarModule R (A i)] (p : I → J)
     (i : I) (a : A i) :
     fiberStarAlgEquiv R A p (ι R A i a) =
-      ι R (fun j : J ↦ FreeProduct R (fun k : {k : I // p k = j} ↦ A k.1)) (p i)
-        (ι R (fun k : {k : I // p k = p i} ↦ A k.1) ⟨i, rfl⟩ a) := by
+      ι R (fun j : J ↦ FreeProduct R (fun k : {k : I // p k = j} ↦ A k.val)) (p i)
+        (ι R (fun k : {k : I // p k = p i} ↦ A k.val) ⟨i, rfl⟩ a) := by
   have h1 : (reindexStarAlgEquiv R A (Equiv.sigmaFiberEquiv p)).symm (ι R A i a) =
       ι R (fun q : Σ j : J, {k : I // p k = j} ↦ A (Equiv.sigmaFiberEquiv p q))
         ⟨p i, ⟨i, rfl⟩⟩ a :=
     reindexStarAlgEquiv_symm_ι R A (Equiv.sigmaFiberEquiv p) ⟨p i, ⟨i, rfl⟩⟩ a
-  exact (congrArg (sigmaStarAlgEquiv R fun j (k : {k : I // p k = j}) ↦ A k.1) h1).trans
-    (sigmaStarAlgEquiv_ι R (fun j (k : {k : I // p k = j}) ↦ A k.1) (p i) ⟨i, rfl⟩ a)
+  exact (congrArg (sigmaStarAlgEquiv R fun j (k : {k : I // p k = j}) ↦ A k.val) h1).trans
+    (sigmaStarAlgEquiv_ι R (fun j (k : {k : I // p k = j}) ↦ A k.val) (p i) ⟨i, rfl⟩ a)
 
 @[simp]
 theorem fiberStarAlgEquiv_symm_ι (A : I → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
     [∀ i, StarRing (A i)] [∀ i, StarModule R (A i)] (p : I → J)
-    (j : J) (i : {i : I // p i = j}) (a : A i.1) :
+    (j : J) (i : {i : I // p i = j}) (a : A i.val) :
     (fiberStarAlgEquiv R A p).symm
-      (ι R (fun j' : J ↦ FreeProduct R (fun k : {k : I // p k = j'} ↦ A k.1)) j
-        (ι R (fun k : {k : I // p k = j} ↦ A k.1) i a)) = ι R A i.1 a := by
+      (ι R (fun j' : J ↦ FreeProduct R (fun k : {k : I // p k = j'} ↦ A k.val)) j
+        (ι R (fun k : {k : I // p k = j} ↦ A k.val) i a)) = ι R A i.val a := by
   obtain ⟨i, rfl⟩ := i
   exact (fiberStarAlgEquiv R A p).symm_apply_eq.mpr (fiberStarAlgEquiv_ι R A p i a).symm
 

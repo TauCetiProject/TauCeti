@@ -13,12 +13,14 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 # Degree-zero action on concentrated graded modules
 
 A graded module concentrated in a single internal degree is its own piece in that degree, and is
-annihilated by positive-degree scalars. Concentration is preserved by graded surjections.
+annihilated by positive-degree scalars. Concentration is preserved by graded surjections,
+and moves with internal shifts.
 Such modules are the test targets for detecting the generating degrees of minimal
 projective resolution terms via Ext. The algebra itself need not be nonnegatively graded.
 For a decomposed graded algebra, every scalar acts through its degree-zero component, so a
 linear map over the degree-zero subalgebra between two modules concentrated in the same degree
-is a graded map over the original algebra.
+is a graded map over the original algebra, and any finitely generated `A`-module concentrated in
+one degree is finite over `k` whenever `𝒜 0` is finite over `k` (`finite_of_concentrated`).
 
 ## References
 
@@ -47,6 +49,13 @@ theorem piece_eq_top_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
   · exact le_rfl
   · rw [hN q hq]
     exact bot_le
+
+/-- The shift `N{j}` of a graded module concentrated in degree `p` is concentrated in degree
+`p + j`. -/
+theorem shiftObj_piece_eq_bot_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (j : ℤ) :
+    ∀ q, q ≠ p + j → (N.shiftObj j).grading.piece q = ⊥ := fun q hq ↦ by
+  simpa [sub_eq_add_neg] using hN (q - j) (by omega)
 
 /-- Positive-degree scalars annihilate any module concentrated in one internal degree. -/
 theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) (p : ℤ)
@@ -112,5 +121,31 @@ theorem ofGradeZeroLinearMapOfConcentrated_apply [GradedAlgebra 𝒜]
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥)
     (f : M →ₗ[SetLike.GradeZero.subalgebra 𝒜] N) (x : M) :
     (ofGradeZeroLinearMapOfConcentrated hM hN f).hom x = f x := (rfl)
+
+/-- Over a decomposed graded algebra whose degree-zero piece is finite over `k`, any finitely
+generated `A`-module concentrated in one internal degree is finite over `k`. -/
+theorem finite_of_concentrated [DirectSum.Decomposition 𝒜] [Module.Finite k (𝒜 0)]
+    {N : GradedModuleCat.{v} 𝒜} [Module.Finite A N] {p : ℤ}
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) : Module.Finite k N := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := N)
+  obtain ⟨t, ht⟩ := Module.Finite.fg_top (R := k) (M := 𝒜 0)
+  have hmem (y : N) : y ∈ N.grading.piece p :=
+    (piece_eq_top_of_concentrated hN).symm ▸ Submodule.mem_top
+  let S : Finset N := (t ×ˢ s).image fun z ↦ (z.fst : A) • z.snd
+  refine ⟨⟨S, eq_top_iff.mpr fun y _ ↦ ?_⟩⟩
+  obtain ⟨f, -, rfl⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top : y ∈ _)
+  refine Submodule.sum_mem _ fun x hx ↦ ?_
+  have hsmul : f x • x = (DirectSum.decompose 𝒜 (f x) 0 : A) • x := by
+    have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 N.grading.piece
+      (a := f x) (i := 0) (hmem x)
+    rwa [zero_add, decompose_of_mem_same N.grading.piece (hmem (f x • x))] at h
+  obtain ⟨g, -, hg⟩ := Submodule.mem_span_finset.mp
+    (ht.symm ▸ Submodule.mem_top : DirectSum.decompose 𝒜 (f x) 0 ∈ _)
+  rw [hsmul, ← hg, AddSubmonoidClass.coe_finsetSum, Finset.sum_smul]
+  refine Submodule.sum_mem _ fun b hb ↦ ?_
+  rw [Submodule.coe_smul_of_tower, smul_assoc]
+  exact Submodule.smul_mem _ (g b) <| Submodule.subset_span <| Finset.mem_coe.mpr <|
+    Finset.mem_image.mpr ⟨(b, x), Finset.mem_product.mpr ⟨hb, hx⟩, rfl⟩
 
 end TauCeti.GradedModuleCat

@@ -49,13 +49,8 @@ theorem exists_countable_subset_Iic_iSup_ae_eq {Y : ι → Ω → ℝ≥0∞} {T
     ∃ S : Set ι, S.Countable ∧ S ⊆ Iic T ∧
       (fun ω ↦ ⨆ t ≤ T, Y t ω) =ᵐ[μ] fun ω ↦ ⨆ t ∈ S, Y t ω := by
   obtain ⟨S, hSc, hST, hS⟩ :=
-    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ≥0∞) T
-  refine ⟨S, hSc, hST, ?_⟩
-  filter_upwards [hcont] with ω hω
-  refine le_antisymm ?_ (iSup₂_le fun s hs ↦ le_iSup₂_of_le s (hST hs) le_rfl)
-  refine iSup₂_le fun t htT ↦ le_of_forall_lt fun a ha ↦ ?_
-  obtain ⟨s, hs, has⟩ := hS hω htT ha
-  exact has.trans_le (le_iSup₂ (f := fun s _ ↦ Y s ω) s hs)
+    TopologicalSpace.exists_countable_subset_Iic_biSup_eq (α := ℝ≥0∞) T
+  exact ⟨S, hSc, hST, hcont.mono fun _ hω ↦ (hS hω).symm⟩
 
 /-- The running supremum `⨆ t ≤ T, Y t ω` of an `ℝ≥0∞`-valued process with almost everywhere
 measurable values on `(-∞, T]` and almost surely right-continuous paths before `T` is almost
@@ -66,7 +61,7 @@ theorem aemeasurable_iSup_le {Y : ι → Ω → ℝ≥0∞} {T : ι}
     AEMeasurable (fun ω ↦ ⨆ t ≤ T, Y t ω) μ := by
   obtain ⟨S, hSc, hST, hae⟩ := exists_countable_subset_Iic_iSup_ae_eq hcont
   have := hSc.to_subtype
-  refine (AEMeasurable.iSup fun s : S ↦ hY s (hST s.2)).congr ?_
+  refine (AEMeasurable.iSup fun s : S ↦ hY s (hST s.property)).congr ?_
   filter_upwards [hae] with ω hω
   rw [hω, iSup_subtype']
 
