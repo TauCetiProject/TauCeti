@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Basic
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.LinearAlgebra.SesquilinearForm.Star
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
 
 /-!
@@ -35,8 +36,6 @@ not of type (1,1) still has a meaning; the results take sesquilinear forms.
 * `TauCeti.IsRelEigenvalueVector.add_smul_self`, `TauCeti.IsRelEigenvalueVector.smul_right` and
   `TauCeti.IsRelEigenvalueVector.smul_left`: the eigenvalue vectors of `a + t·h`, of `s·a`, and
   of `a` relative to `s·h`.
-* `Orthonormal.exists_orthonormalBasis_coe_eq`: an orthonormal family of `dim E` vectors is an
-  orthonormal basis.
 * `LinearMap.IsSymm.isRelEigenvalueVector_relEigenvalues`: relative to an inner product, `λ[a]` is
   an eigenvalue vector of `a`.
 * `TauCeti.exists_isRelEigenvalueVector`: for `h` positive definite Hermitian and `a` Hermitian,
@@ -150,15 +149,6 @@ theorem IsRelEigenvalueVector.smul_left {μ : Fin (finrank 𝕜 E) → ℝ}
 section InnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-
-/-- In a finite-dimensional inner product space, an orthonormal family with as many vectors as the
-dimension is an orthonormal basis. -/
-theorem _root_.Orthonormal.exists_orthonormalBasis_coe_eq {ι : Type*} [Fintype ι]
-    (card_ι : finrank 𝕜 F = Fintype.card ι) {b : ι → F} (hb : Orthonormal 𝕜 b) :
-    ∃ w : OrthonormalBasis ι 𝕜 F, ⇑w = b := by
-  obtain ⟨w, hw⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (s := Set.univ)
-    card_ι (hb.comp _ Subtype.val_injective)
-  exact ⟨w, funext fun i ↦ hw i (Set.mem_univ i)⟩
 
 /-- In a finite-dimensional inner product space, the relative eigenvalue vector `λ[a]` of a
 Hermitian form `a` is an eigenvalue vector of `a` relative to the inner product, through the

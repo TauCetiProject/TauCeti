@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Vector
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
 
 /-!
@@ -29,9 +30,10 @@ positive definite Hermitian `h` and a Hermitian `a` on a finite-dimensional spac
   `λ_h[a]`.
 * `TauCeti.isRelEigenvalueVector_relEigenvalueVector`: `λ_h[a]` is an eigenvalue vector.
 * `TauCeti.relEigenvalueVector_self`, `TauCeti.relEigenvalueVector_zero`,
-  `TauCeti.relEigenvalueVector_add_smul_self`, `TauCeti.relEigenvalueVector_smul_left`:
-  `λ_h[h] = e`, `λ_h[0] = 0`, `λ_h[a + t·h] = λ_h[a] + t·e` and `λ_{s·h}[a] = s⁻¹·λ_h[a]` for
-  `s > 0`; the last two need no hypothesis on `h` beyond sesquilinearity, and `λ_h[0] = 0` none.
+  `TauCeti.relEigenvalueVector_smul_right`, `TauCeti.relEigenvalueVector_add_smul_self`,
+  `TauCeti.relEigenvalueVector_smul_left`: `λ_h[h] = e`, `λ_h[0] = 0`, `λ_h[s·a] = s·λ_h[a]` for
+  `s ≥ 0`, `λ_h[a + t·h] = λ_h[a] + t·e` and `λ_{s·h}[a] = s⁻¹·λ_h[a]` for `s > 0`; the scaling
+  laws need no hypothesis on `h` and `a` beyond sesquilinearity, and `λ_h[0] = 0` none.
 * `TauCeti.sum_relEigenvalueVector_eq_sum_re_apply`: `Σ λ_i = Σ_j Re a(b_j, b_j)` for any
   `h`-orthonormal family `b`, the trace of `a` relative to `h`.
 -/
@@ -106,6 +108,29 @@ theorem relEigenvalueVector_self (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < 
   obtain ⟨μ, hμa, hμ⟩ := exists_isRelEigenvalueVector hh hpos hh
   rw [hμ.relEigenvalueVector_eq hμa, ← isRelEigenvalueVector_self_iff hh hpos]
   exact hμ
+
+/-- **`λ_h[s·a] = s·λ_h[a]`** for `s ≥ 0`. -/
+theorem relEigenvalueVector_smul_right {s : ℝ} (hs : 0 ≤ s) :
+    relEigenvalueVector (h · ·) (((s : 𝕜) • a) · ·) =
+      s • relEigenvalueVector (h · ·) (a · ·) := by
+  rcases hs.eq_or_lt with rfl | hs
+  · simp
+  by_cases hμ : ∃ μ, Antitone μ ∧ IsRelEigenvalueVector (h · ·) (a · ·) μ
+  · exact IsRelEigenvalueVector.relEigenvalueVector_eq
+      (by simpa [RCLike.real_smul_eq_coe_mul] using
+        (isRelEigenvalueVector_relEigenvalueVector_of_exists hμ).smul_right s)
+      fun i j hij ↦ smul_le_smul_of_nonneg_left (antitone_relEigenvalueVector _ _ hij) hs.le
+  · -- rescaling by `s⁻¹`, an eigenvalue vector of `s·a` would give one of `a`
+    have hν : ¬∃ ν, Antitone ν ∧ IsRelEigenvalueVector (h · ·) (((s : 𝕜) • a) · ·) ν := by
+      rintro ⟨ν, hνa, hν⟩
+      have ha : (fun u v ↦ ((s⁻¹ : ℝ) : 𝕜) * ((s : 𝕜) • a) u v) = (a · ·) := by
+        ext u v
+        simp only [LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, ← RCLike.ofReal_mul,
+          inv_mul_cancel₀ hs.ne', RCLike.ofReal_one, one_mul]
+      refine hμ ⟨s⁻¹ • ν, fun i j hij ↦ smul_le_smul_of_nonneg_left (hνa hij)
+        (inv_nonneg.2 hs.le), ?_⟩
+      simpa only [ha] using hν.smul_right s⁻¹
+    simp only [relEigenvalueVector_def, hν, hμ, ↓reduceDIte, smul_zero]
 
 /-- **`λ_h[a + t·h] = λ_h[a] + t·e`** for a positive definite Hermitian `h` and a Hermitian `a`. -/
 theorem relEigenvalueVector_add_smul_self (hh : h.IsSymm)
