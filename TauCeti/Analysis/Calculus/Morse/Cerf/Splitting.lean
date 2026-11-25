@@ -71,124 +71,16 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-! ### A symmetric form with a one-dimensional kernel -/
-
 /-- A vector spanning the kernel of a continuous linear map is killed by it. -/
 private theorem apply_eq_zero_of_ker_eq_span_singleton {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {H : E →L[ℝ] F} {v : E} (hker : H.ker = ℝ ∙ v) : H v = 0 := by
-  have hmem : v ∈ H.ker := hker ▸ Submodule.mem_span_singleton_self v
-  exact hmem
+    [NormedSpace ℝ F] {H : E →L[ℝ] F} {v : E} (hker : H.ker = ℝ ∙ v) : H v = 0 :=
+  LinearMap.mem_ker.1 (hker.ge (Submodule.mem_span_singleton_self v))
 
-/-- Let `H` be a symmetric bilinear form on `E` whose kernel is the line `ℝ v`, and `ℓ` a functional
-with `ℓ v = 1`. A vector `w` of the kernel of `ℓ` that is `H`-orthogonal to the kernel of `ℓ` is
-`0`: `H` is nondegenerate on the kernel of `ℓ`. -/
-private theorem eq_zero_of_forall_apply_eq_zero {H : E →L[ℝ] E →L[ℝ] ℝ} {v : E}
-    {ℓ : StrongDual ℝ E} (hsymm : ∀ u w, H u w = H w u) (hker : H.ker = ℝ ∙ v)
-    (hℓ : ℓ v = 1) {w : E} (hw : ℓ w = 0) (hH : ∀ u, ℓ u = 0 → H w u = 0) : w = 0 := by
-  have hv : H v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
-  have hHw : H w = 0 := by
-    ext y
-    have hy : y = ℓ y • v + (y - ℓ y • v) := by abel
-    rw [hy, map_add, map_smul, hsymm w v, hv, hH _ (by simp [hℓ])]
-    simp
-  have hmem : w ∈ H.ker := hHw
-  rw [hker, Submodule.mem_span_singleton] at hmem
-  obtain ⟨c, rfl⟩ := hmem
-  rw [map_smul, hℓ, smul_eq_mul, mul_one] at hw
-  simp [hw]
-
-/-- The Morse index of `φ` at a critical point `x` whose Hessian has kernel `ℝ v` is the Morse
-index at `0` of the restriction `w ↦ φ (x + w)` to the kernel of a functional `ℓ` with `ℓ v = 1`:
-the line `ℝ v` is null for the Hessian and orthogonal to the kernel of `ℓ`. -/
-private theorem morseIndex_comp_add_coe_ker [FiniteDimensional ℝ E] {φ : E → ℝ} {x v : E}
-    {ℓ : StrongDual ℝ E} (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0)
-    (hker : (fderiv ℝ (fderiv ℝ φ) x).ker = ℝ ∙ v) (hℓ : ℓ v = 1) :
-    morseIndex (fun w : ℓ.ker ↦ φ (x + w)) 0 = morseIndex φ x := by
-  set K := ℓ.ker
-  set H := fderiv ℝ (fderiv ℝ φ) x
-  have hsymm : ∀ u w, H u w = H w u := hφ.isSymmSndFDerivAt (by simp)
-  have hv : H v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
-  -- The Hessian of the restriction is the restriction of the Hessian.
-  have hcomp : hessianQuadraticForm (fun w : K ↦ φ (x + w)) 0 =
-      (hessianQuadraticForm φ x).comp K.subtype := by
-    have hψ : ContDiffAt ℝ 2 (fun w : K ↦ x + (w : E)) 0 :=
-      (contDiff_const.add K.subtypeL.contDiff).contDiffAt
-    have h := hessianQuadraticForm_comp (f := φ) (b := (0 : K)) (by simpa using hφ) hψ
-      (by simpa using hc)
-    have hd : fderiv ℝ (fun w : K ↦ x + (w : E)) 0 = K.subtypeL :=
-      ((K.subtypeL.hasFDerivAt).const_add x).fderiv
-    simp only [hd, Submodule.coe_zero, add_zero] at h
-    exact h
-  -- The splitting `E ≃ ℝ × K`, `(a, w) ↦ a • v + w`.
-  let e : (ℝ × K) ≃ₗ[ℝ] E := LinearEquiv.ofLinearMap
-    ((LinearMap.toSpanSingleton ℝ E v).coprod K.subtype)
-    ((ℓ : E →ₗ[ℝ] ℝ).prod (LinearMap.codRestrict K
-      (LinearMap.id - (LinearMap.toSpanSingleton ℝ E v).comp (ℓ : E →ₗ[ℝ] ℝ))
-      fun y ↦ by simp [K, hℓ]))
-    (by ext y; simp)
-    (by
-      refine LinearMap.ext fun ⟨a, ⟨w, hw⟩⟩ ↦ ?_
-      have hw' : ℓ w = 0 := hw
-      ext <;> simp [hℓ, hw'])
-  have he : (hessianQuadraticForm φ x).comp (e : ℝ × K →ₗ[ℝ] E) =
-      (0 : QuadraticForm ℝ ℝ).prod ((hessianQuadraticForm φ x).comp K.subtype) := by
-    ext ⟨a, w⟩
-    simp only [QuadraticMap.comp_apply, QuadraticMap.prod_apply, hessianQuadraticForm_apply,
-      zero_apply, zero_add, Submodule.subtype_apply, LinearEquiv.coe_coe, e,
-      LinearEquiv.coe_ofLinearMap, LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply]
-    have hHa : H (a • v + w) = H w := by rw [map_add, map_smul, hv, smul_zero, zero_add]
-    rw [hHa, map_add, map_smul, hsymm (w : E) v, hv]
-    simp [H]
-  rw [morseIndex_def, morseIndex_def, hcomp,
-    (QuadraticMap.Equivalent.sigNeg_eq
-      ⟨QuadraticMap.isometryEquivOfCompLinearEquiv (hessianQuadraticForm φ x) e⟩), he,
-    QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero, zero_add]
-
-/-- The Hessian at `0` of the restriction `w ↦ φ (x + w)` of `φ` to the kernel of a functional
-`ℓ` with `ℓ v = 1` is invertible when `x` is a critical point whose Hessian has kernel `ℝ v`. -/
-private theorem isInvertible_fderiv_fderiv_comp_add_coe_ker [FiniteDimensional ℝ E] {φ : E → ℝ}
-    {x v : E} {ℓ : StrongDual ℝ E} (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0)
-    (hker : (fderiv ℝ (fderiv ℝ φ) x).ker = ℝ ∙ v) (hℓ : ℓ v = 1) :
-    (fderiv ℝ (fderiv ℝ fun w : ℓ.ker ↦ φ (x + w)) 0).IsInvertible := by
-  have hψ : ContDiffAt ℝ 2 (fun w : ℓ.ker ↦ x + (w : E)) 0 :=
-    (contDiff_const.add ℓ.ker.subtypeL.contDiff).contDiffAt
-  have hd : fderiv ℝ (fun w : ℓ.ker ↦ x + (w : E)) 0 = ℓ.ker.subtypeL :=
-    ((ℓ.ker.subtypeL.hasFDerivAt).const_add x).fderiv
-  have hcomp (u w : ℓ.ker) : fderiv ℝ (fderiv ℝ fun w : ℓ.ker ↦ φ (x + w)) 0 u w =
-      fderiv ℝ (fderiv ℝ φ) x u w := by
-    have h := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (f := φ) (b := (0 : ℓ.ker))
-      (by simpa using hφ) hψ (by simpa using hc) u w
-    simp only [hd, Submodule.subtypeL_apply, Submodule.coe_zero, add_zero] at h
-    exact h
-  refine ContinuousLinearMap.isInvertible_of_injective
-    ((injective_iff_map_eq_zero _).2 fun u hu ↦ Subtype.ext ?_)
-  refine eq_zero_of_forall_apply_eq_zero (hφ.isSymmSndFDerivAt (by simp)) hker hℓ u.property
-    fun w hw ↦ ?_
-  rw [← hcomp u ⟨w, hw⟩, hu, zero_apply]
-
-/-! ### Iterated derivatives of functions of one variable -/
-
-/-- The second derivative of a function of one real variable, read as an iterated Fréchet
-derivative evaluated at `1`, is the iterated `deriv`. -/
-private theorem fderiv_fderiv_apply_one_one {G : ℝ → ℝ} {a : ℝ}
-    (hG : DifferentiableAt ℝ (fderiv ℝ G) a) : fderiv ℝ (fderiv ℝ G) a 1 1 = deriv (deriv G) a := by
-  have h : deriv G = fun b ↦ fderiv ℝ G b 1 := funext fun b ↦ fderiv_apply_one_eq_deriv.symm
-  rw [h, ← fderiv_apply_one_eq_deriv, fderiv_clm_apply hG (differentiableAt_const (1 : ℝ))]
-  simp
-
-/-- The third derivative of a function of one real variable, read as an iterated Fréchet
-derivative evaluated at `1`, is the iterated `deriv`. -/
-private theorem fderiv_fderiv_fderiv_apply_one_one_one {G : ℝ → ℝ} {a : ℝ}
-    (hG : ∀ᶠ b in 𝓝 a, DifferentiableAt ℝ (fderiv ℝ G) b)
-    (hG' : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ G)) a) :
-    fderiv ℝ (fderiv ℝ (fderiv ℝ G)) a 1 1 1 = deriv (deriv (deriv G)) a := by
-  have hev : (fun b ↦ fderiv ℝ (fderiv ℝ G) b 1 1) =ᶠ[𝓝 a] deriv (deriv G) :=
-    hG.mono fun b hb ↦ fderiv_fderiv_apply_one_one hb
-  rw [← hev.deriv_eq]
-  have hd := (hG'.hasFDerivAt.clm_apply (hasFDerivAt_const (1 : ℝ) a)).clm_apply
-    (hasFDerivAt_const (1 : ℝ) a)
-  rw [← fderiv_apply_one_eq_deriv, hd.fderiv]
-  simp
+/-- A slice `f s` of a family that is jointly `C^m` at `(s, y)` is `C^m` at `y`. -/
+private theorem contDiffAt_slice {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {m : WithTop ℕ∞} {f : ℝ → X → Y} {s : ℝ} {y : X}
+    (hf : ContDiffAt ℝ m (uncurry f) (s, y)) : ContDiffAt ℝ m (f s) y :=
+  hf.comp y (contDiffAt_const.prodMk contDiffAt_id)
 
 /-! ### The reduced family -/
 
@@ -230,7 +122,7 @@ private theorem hasDerivAt_reduced (hU : IsOpen U) (hh : ContDiffOn ℝ 1 h U)
   have hΓ := hasDerivAt_add_smul_add_section (x := x) (v := v)
     ((hh.differentiableOn one_ne_zero).differentiableAt (hU.mem_nhds hp))
   have hfd : DifferentiableAt ℝ (f s) (x + a • v + h (s, a)) :=
-    ((hf _ hp).comp _ (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
+    (contDiffAt_slice (hf _ hp)).differentiableAt one_ne_zero
   have hzero : fderiv ℝ (f s) (x + a • v + h (s, a)) (fderiv ℝ h (s, a) (0, 1) : E) = 0 :=
     congrArg (fun L : ℓ.ker →L[ℝ] ℝ ↦ L (fderiv ℝ h (s, a) (0, 1))) (hcrit _ hp)
   have hg := hfd.hasFDerivAt.comp_hasDerivAt a hΓ
@@ -240,6 +132,12 @@ private theorem hasDerivAt_reduced (hU : IsOpen U) (hh : ContDiffOn ℝ 1 h U)
 /-- Near `t`, the points `(t, b)` with `b` near `0` lie in a neighbourhood `U` of `(t, 0)`. -/
 private theorem eventually_mk_mem (hU : U ∈ 𝓝 (t, 0)) : ∀ᶠ b in 𝓝 (0 : ℝ), (t, b) ∈ U :=
   (continuousAt_const.prodMk continuousAt_id).preimage_mem_nhds hU
+
+/-- A family that is `C^m` along a section `h` through `x` at `(t, 0)` is `C^m` at `(t, x)`. -/
+private theorem contDiffAt_uncurry_of_section {m : WithTop ℕ∞} (htU : (t, 0) ∈ U)
+    (hht : h (t, 0) = 0) (hf : ∀ p ∈ U, ContDiffAt ℝ m (uncurry f) (p.1, x + p.2 • v + h p)) :
+    ContDiffAt ℝ m (uncurry f) (t, x) := by
+  simpa [hht] using hf _ htU
 
 /-- The section of critical points does not move to first order in the direction `v` at
 `(t, 0)`: its derivative there vanishes on `(0, 1)`, since the Hessian of `f t` at `x` is
@@ -253,8 +151,7 @@ private theorem fderiv_section_apply_zero_one (hU : IsOpen U) (htU : (t, 0) ∈ 
   set H := fderiv ℝ (fderiv ℝ (f t)) x
   set η := fderiv ℝ h (t, 0) (0, 1)
   have hx : x + (0 : ℝ) • v + (h (t, 0) : E) = x := by simp [hht]
-  have h1 : ContDiffAt ℝ 2 (uncurry f) (t, x) := by simpa [hht] using hf _ htU
-  have hft : ContDiffAt ℝ 2 (f t) x := h1.comp x (contDiffAt_const.prodMk contDiffAt_id)
+  have hft : ContDiffAt ℝ 2 (f t) x := contDiffAt_slice (contDiffAt_uncurry_of_section htU hht hf)
   have hsymm : ∀ u w, H u w = H w u := hft.isSymmSndFDerivAt (by simp)
   have hv : H v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
   have hD : HasFDerivAt (fderiv ℝ (f t)) H (x + (0 : ℝ) • v + (h (t, 0) : E)) := by
@@ -277,7 +174,9 @@ private theorem fderiv_section_apply_zero_one (hU : IsOpen U) (htU : (t, 0) ∈ 
         ((eventually_mk_mem (hU.mem_nhds htU)).mono fun b hb ↦ by
           simpa using congrArg (fun L : ℓ.ker →L[ℝ] ℝ ↦ L ⟨u, hu⟩) (hcrit _ hb))
     simpa [hv] using hdu.unique hdu0
-  exact (Submodule.coe_eq_zero).1 (eq_zero_of_forall_apply_eq_zero hsymm hker hℓ hη hH)
+  exact (Submodule.coe_eq_zero).1
+    (ContinuousLinearMap.eq_zero_of_forall_apply_eq_zero_of_ker_eq_span_singleton hsymm hker hℓ hη
+      hH)
 
 /-- Near `0`, the derivative of `a ↦ d(f t) v` along the curve `Γ a = x + a v + h (t, a)` is
 `Hess(f t) (Γ', v)` along `Γ`. -/
@@ -288,8 +187,7 @@ private theorem eventuallyEq_deriv_fderiv_reduced (hU : IsOpen U) (htU : (t, 0) 
       fderiv ℝ (fderiv ℝ (f t)) (x + a • v + h (t, a))
         (deriv (fun b ↦ x + b • v + (h (t, b) : E)) a) v := by
   filter_upwards [eventually_mk_mem (hU.mem_nhds htU)] with b hb
-  have hfb : ContDiffAt ℝ 3 (f t) (x + b • v + h (t, b)) :=
-    (hf _ hb).comp _ (contDiffAt_const.prodMk contDiffAt_id)
+  have hfb : ContDiffAt ℝ 3 (f t) (x + b • v + h (t, b)) := contDiffAt_slice (hf _ hb)
   have hD := ((hfb.fderiv_right (m := 2) (by norm_num)).differentiableAt
     (by norm_num)).hasFDerivAt
   have hΓb : HasDerivAt (fun b ↦ x + b • v + (h (t, b) : E))
@@ -314,8 +212,7 @@ private theorem deriv_deriv_reduced (hU : IsOpen U) (htU : (t, 0) ∈ U)
   set Γ : ℝ → E := fun b ↦ x + b • v + (h (t, b) : E)
   have hΓ0 : Γ 0 = x := by simp [Γ, hht]
   have hUt := eventually_mk_mem (hU.mem_nhds htU)
-  have h1 : ContDiffAt ℝ 3 (uncurry f) (t, x) := by simpa [hht] using hf _ htU
-  have hft : ContDiffAt ℝ 3 (f t) x := h1.comp x (contDiffAt_const.prodMk contDiffAt_id)
+  have hft : ContDiffAt ℝ 3 (f t) x := contDiffAt_slice (contDiffAt_uncurry_of_section htU hht hf)
   have hsymm : ∀ u w, fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
     hft.isSymmSndFDerivAt (by norm_num)
   have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
@@ -367,7 +264,7 @@ private theorem deriv_deriv_reduced_param (hU : IsOpen U) (htU : (t, 0) ∈ U)
     (hker : (fderiv ℝ (fderiv ℝ (f t)) x).ker = ℝ ∙ v) :
     deriv (fun s ↦ deriv (fun a ↦ f s (x + a • v + h (s, a))) 0) t =
       deriv (fun s ↦ fderiv ℝ (f s) x) t v := by
-  have h1 : ContDiffAt ℝ 2 (uncurry f) (t, x) := by simpa [hht] using hf _ htU
+  have h1 : ContDiffAt ℝ 2 (uncurry f) (t, x) := contDiffAt_uncurry_of_section htU hht hf
   have hsymm := fderiv_fderiv_apply_comm_of_uncurry h1
   have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
   -- Near `t`, the derivative of the reduced function at `0` is `d(f s) v` along the section.
@@ -432,22 +329,13 @@ private theorem fderiv_reduced (hU : IsOpen U) (htU : (t, 0) ∈ U)
       deriv (fun s ↦ fderiv ℝ (fun a ↦ f s (x + a • v + h (s, a))) 0) t 1 =
         deriv (fun s ↦ fderiv ℝ (f s) x) t v := by
   have hg := contDiffAt_uncurry_reduced hU hh hf htU
-  have hgt : ∀ᶠ b in 𝓝 (0 : ℝ), ContDiffAt ℝ 3 (fun a ↦ f t (x + a • v + h (t, a))) b :=
-    (eventually_mk_mem (hU.mem_nhds htU)).mono fun b hb ↦
-      (contDiffAt_uncurry_reduced hU hh hf hb).comp b (contDiffAt_const.prodMk contDiffAt_id)
-  have hd1 : ∀ᶠ b in 𝓝 (0 : ℝ),
-      DifferentiableAt ℝ (fderiv ℝ fun a ↦ f t (x + a • v + h (t, a))) b :=
-    hgt.mono fun b hb ↦ (hb.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
-  have hd2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ fun a ↦ f t (x + a • v + h (t, a)))) 0 :=
-    ((hgt.self_of_nhds.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1)
-      (by norm_num)).differentiableAt (by norm_num)
   obtain ⟨h2, h3⟩ := deriv_deriv_reduced hU htU hh hht hf hcrit hker hℓ
   refine ⟨ContinuousLinearMap.ext_ring ?_, ContinuousLinearMap.ext_ring ?_, ?_, ?_⟩
   · rw [fderiv_apply_one_eq_deriv, (hasDerivAt_reduced (p := (t, 0)) hU (hh.of_le (by norm_num))
       (fun p hp ↦ (hf p hp).of_le (by norm_num)) hcrit htU).deriv]
     simp [hht, hc]
-  · rw [fderiv_fderiv_apply_one_one hd1.self_of_nhds, h2, zero_apply]
-  · rw [fderiv_fderiv_fderiv_apply_one_one_one hd1 hd2, h3]
+  · rw [fderiv_fderiv_apply_one_one, h2, zero_apply]
+  · rw [fderiv_fderiv_fderiv_apply_one_one_one, h3]
   · have hs : DifferentiableAt ℝ (fun s ↦ fderiv ℝ (fun a ↦ f s (x + a • v + h (s, a))) 0) t :=
       (((hg.fderiv_slice (m := 1) (by norm_num)).comp t
         (contDiffAt_id.prodMk contDiffAt_const)).differentiableAt (by norm_num))
@@ -460,6 +348,14 @@ private theorem fderiv_reduced (hU : IsOpen U) (htU : (t, 0) ∈ U)
 end Reduced
 
 /-! ### The splitting chart -/
+
+/-- In the coordinates `((s, a), w)`, the restriction of the family to `x + ker ℓ` at `(t, 0)` is
+`w ↦ f t (x + w)`. -/
+private theorem slice_mk_zero_eq (f : ℝ → E → ℝ) (t : ℝ) (x v : E) (ℓ : StrongDual ℝ E) :
+    (fun w : ℓ.ker ↦ f (t, (0 : ℝ)).1 (x + (t, (0 : ℝ)).2 • v + w)) =
+      fun w : ℓ.ker ↦ f t (x + w) := by
+  ext w
+  simp
 
 /-- In the coordinates `((s, a), w) ↦ (s, x + a v + w)`, with `w` in the kernel of `ℓ`, a
 `C^{n+3}` family `f` with a critical point `x` of `f t` whose Hessian has kernel `ℝ v` is `C^{n+2}`
@@ -485,15 +381,14 @@ private theorem exists_section_of_ker_eq_span_singleton [FiniteDimensional ℝ E
   have hφ : ContDiffOn ℝ (n + 2 + 1) φ (A ⁻¹' interior W) := by
     rw [add_assoc, show (2 + 1 : WithTop ℕ∞) = 3 by norm_num]
     exact (hf.mono interior_subset).comp hA.contDiffOn fun _ hz ↦ hz
-  have hslice : (fun w : ℓ.ker ↦ φ ((t, 0), w)) = fun w : ℓ.ker ↦ f t (x + w) := by
-    ext w
-    simp [φ]
+  have hslice : (fun w : ℓ.ker ↦ φ ((t, 0), w)) = fun w : ℓ.ker ↦ f t (x + w) :=
+    slice_mk_zero_eq f t x v ℓ
   have hcrit0 : fderiv ℝ (fun w ↦ φ ((t, 0), w)) 0 = 0 := by
     rw [fderiv_comp_add_coe_ker (by simpa using hft.differentiableAt two_ne_zero)]
     simp [hc]
   obtain ⟨h, U, hU, htU, hht, hh, hgraph, hcrit, -⟩ :=
     exists_vertical_critical_section_of_contDiffOn hW' hφ hcrit0
-      (by rw [hslice]; exact isInvertible_fderiv_fderiv_comp_add_coe_ker hft hc hker hℓ)
+      (by rw [hslice]; exact isInvertible_fderiv_fderiv_comp_add_coe_ker hft hker hℓ)
       (by simp)
   exact ⟨h, U, A ⁻¹' interior W, hU, htU, hht, hh, hW', hφ.of_le le_self_add,
     fun p hp ↦ (hf.contDiffAt (mem_interior_iff_mem_nhds.1 (hgraph p hp))).of_le
@@ -536,26 +431,20 @@ theorem exists_normalized_splitting_chart_of_ker_eq_span_singleton [FiniteDimens
     have h1 : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast Order.one_le_iff_ne_zero.2 hn
     calc (3 : WithTop ℕ∞) = 1 + 2 := by norm_num
       _ ≤ n + 2 := add_le_add_left h1 2
-  have hft : ContDiffAt ℝ 2 (f t) x :=
-    ((hf.contDiffAt hW).of_le ((show (2 : WithTop ℕ∞) ≤ 3 by norm_num).trans le_add_self)).comp
-      x (contDiffAt_const.prodMk contDiffAt_id)
-  have hslice : (fun w : ℓ.ker ↦ f (t, (0 : ℝ)).1 (x + (t, (0 : ℝ)).2 • v + w)) =
-      fun w : ℓ.ker ↦ f t (x + w) := by
-    ext w
-    simp
+  have hft : ContDiffAt ℝ 2 (f t) x := contDiffAt_slice
+    ((hf.contDiffAt hW).of_le ((show (2 : WithTop ℕ∞) ≤ 3 by norm_num).trans le_add_self))
   -- The section of critical points along the kernel of `ℓ`, and the splitting chart.
   obtain ⟨h, U, W', hU, htU, hht, hh, hW', hφ, hfU, hcrit⟩ :=
     exists_section_of_ker_eq_span_singleton hW hf hft hc hker hℓ
   obtain ⟨ψ, U', V, -, -, htU', h0V, -, hsrc, -, hψ1, hψh, hψsymm, hψ, hψinv, hψf⟩ :=
     exists_normalized_splitting_chart_of_contDiffOn (n := n) (h := h) (by rwa [hht]) hφ hU htU
       hh hcrit (by
-        rw [hht, hslice]
-        exact isInvertible_fderiv_fderiv_comp_add_coe_ker hft hc hker hℓ) hn
+        rw [hht, slice_mk_zero_eq]
+        exact isInvertible_fderiv_fderiv_comp_add_coe_ker hft hker hℓ) hn
   -- The critical points of `f` along the kernel of `ℓ`, and the reduced family.
   have hcritU (p : ℝ × ℝ) (hp : p ∈ U) :
       (fderiv ℝ (f p.1) (x + p.2 • v + h p)).comp ℓ.ker.subtypeL = 0 := by
-    rw [← fderiv_comp_add_coe_ker (((hfU p hp).comp _
-      (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by simp))]
+    rw [← fderiv_comp_add_coe_ker ((contDiffAt_slice (hfU p hp)).differentiableAt (by simp))]
     exact hcrit p hp
   obtain ⟨hd1, hd2, hd3, hdt⟩ := fderiv_reduced hU htU (hh.of_le h3) hht
     (fun p hp ↦ (hfU p hp).of_le h3) hcritU hc hker hℓ
@@ -565,7 +454,7 @@ theorem exists_normalized_splitting_chart_of_ker_eq_span_singleton [FiniteDimens
     exact ⟨htU', by simpa [hht] using h0V⟩
   · simpa [hht] using hψh (t, 0)
   · have hz' := hψf z hz
-    rw [hht, hslice, morseIndex_comp_add_coe_ker hft hc hker hℓ] at hz'
+    rw [hht, slice_mk_zero_eq, morseIndex_comp_add_coe_ker hft hker hℓ] at hz'
     exact hz'
 
 end TauCeti
