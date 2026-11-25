@@ -61,15 +61,6 @@ open Complex MeasureTheory Set
 
 open scoped Real ENNReal
 
-/-- The nontangential maximal function of the Poisson integral is at most that of the extended
-Poisson integral. -/
-private theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral (α : ℝ)
-    (h : ℝ≥0∞) (ν : Measure ℝ) (x : ℝ) :
-    nontangentialMaximalFunction α h (upperHalfPlanePoissonIntegral ν) x ≤
-      nontangentialMaximalFunction α h (upperHalfPlanePoissonLIntegral ν) x :=
-  nontangentialMaximalFunction_mono_fun fun z hz => by
-    simpa using enorm_upperHalfPlanePoissonIntegral_le ν (mem_nontangentialCone.1 hz).1.le
-
 section Global
 
 variable {F : Type*} [ENorm F]
@@ -108,8 +99,8 @@ theorem lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonIntegra
       ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) ^ p * maximalFunctionConst 1 p *
         ∫⁻ x, ‖g x‖ₑ ^ p :=
   (lintegral_mono fun x => ENNReal.rpow_le_rpow
-    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral α h _ x)
-    (by linarith)).trans
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+      α h _ x) (by linarith)).trans
     (lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h hg hp)
 
 /-- **The strong type bound for aperture one.** For `1 < p`,
@@ -169,7 +160,8 @@ theorem mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral
         (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x} ≤
       4 * ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * ∫⁻ x, ‖g x‖ₑ :=
   (mul_le_mul' le_rfl (measure_mono <| ofPred_subset_ofPred.2 fun x hx => hx.trans_le
-    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral α h _ x))).trans
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+      α h _ x))).trans
     (mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g t)
 
 end Global
@@ -296,7 +288,8 @@ theorem nontangentialMaximalFunction_one_one_upperHalfPlanePoissonIntegral_le {g
       3 * maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator g) x +
         ENNReal.ofReal (2 * (R + 2) ^ 2 / π) *
           ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure :=
-  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral 1 1 _ x).trans
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+    1 1 _ x).trans
     (nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le hg hx)
 
 /-- A point of `[-R, R]` where `M_1 P[|g| dx] > t` has `M(g 1_{[-R-2, R+2]}) > t / 2 / 3` or
@@ -383,7 +376,8 @@ theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonI
       (F := F) R
   refine ⟨C, hC, fun g hg t => (mul_le_mul' le_rfl (measure_mono <|
     ofPred_subset_ofPred.2 fun x hx => ⟨hx.1, hx.2.trans_le
-      (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral 1 1 _ x)⟩)).trans
+      (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+        1 1 _ x)⟩)).trans
     (hbound g hg t)⟩
 
 end Local
