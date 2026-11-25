@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Contour.Curve.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.LogDerivFTC
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
@@ -382,11 +383,7 @@ theorem integral_circleMap_index_lower_arc {s : ℂ} (hR : 0 ≤ R) (him : c.im 
     (fun t _ => (differentiable_circleMap c R) t)
     (Complex.continuous_deriv_circleMap c R).continuousOn
     (fun θ hθ => Or.inr (ne_of_lt ?_)) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
-  have him' : (circleMap c R θ).im = c.im + R * Real.sin θ := by
-    have h := congrArg Complex.im (circleMap_sub_center c R θ)
-    rw [Complex.sub_im, circleMap_zero_im] at h
-    linarith
-  rw [Complex.sub_im, him']
+  rw [Complex.sub_im, circleMap_im]
   have := mul_nonpos_of_nonneg_of_nonpos hR (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)
   linarith
 

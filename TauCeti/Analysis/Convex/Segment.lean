@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.Ray
 public import Mathlib.Order.Interval.Set.ProjIcc
+import Mathlib.Analysis.Normed.Affine.Convex
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Affine segments and membership criteria
@@ -57,9 +59,15 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   ordered field.
 * `Set.image_comp_lineMap_uIcc_zero_one` — reparametrizing a function on `[a, b]` by `lineMap a b`
   from `[0, 1]` does not change its image, in a linear ordered field.
+* `TauCeti.lineMap_div_mem_segment` and `TauCeti.lineMap_div_mem_uIcc` — for `0 ≤ x ≤ y`, the
+  affine point `AffineMap.lineMap a b (x / y)` lies in `segment 𝕜 a b` and `uIcc a b`.
+* `TauCeti.segment_zero_left_eq_image`: `[0 -[𝕜] y]` is the image of `[0, 1]` under
+  `t ↦ t • y`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
+* `TauCeti.norm_mem_Icc_of_mem_segment` — a chord of length at most `r` between two vectors of
+  norm `r` stays in the annulus `r / 2 ≤ ‖z‖ ≤ r`.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
@@ -164,6 +172,24 @@ namespace TauCeti
 open RealInnerProductSpace Set
 open scoped Convex
 
+/-- For `0 ≤ x ≤ y`, the affine point `AffineMap.lineMap a b (x / y)` lies in `segment 𝕜 a b`. -/
+theorem lineMap_div_mem_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] {a b : E} {x y : 𝕜} (hx : 0 ≤ x) (hxy : x ≤ y) :
+    AffineMap.lineMap (k := 𝕜) a b (x / y) ∈ segment 𝕜 a b :=
+  lineMap_mem_segment 𝕜 a b ⟨div_nonneg hx (hx.trans hxy), div_le_one_of_le₀ hxy (hx.trans hxy)⟩
+
+/-- For `0 ≤ x ≤ y`, the affine point `AffineMap.lineMap a b (x / y)` lies in `uIcc a b`. -/
+theorem lineMap_div_mem_uIcc {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {a b x y : 𝕜} (hx : 0 ≤ x) (hxy : x ≤ y) :
+    AffineMap.lineMap a b (x / y) ∈ uIcc a b := by
+  simpa only [segment_eq_uIcc] using lineMap_div_mem_segment (𝕜 := 𝕜) (a := a) (b := b) hx hxy
+
+/-- The segment from the origin to `y` is the image of `[0, 1]` under `t ↦ t • y`. -/
+theorem segment_zero_left_eq_image (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜]
+    [AddRightMono 𝕜] [AddCommGroup E] [Module 𝕜 E] (y : E) :
+    [0 -[𝕜] y] = (fun t : 𝕜 ↦ t • y) '' Icc 0 1 := by
+  simp [segment_eq_image']
+
 /-! ### Segments and rays -/
 
 section Normed
@@ -219,6 +245,17 @@ theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : 0 �
     _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
     _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
       rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀, Real.norm_of_nonneg ht₁]
+
+/-- **Short chords stay in an annulus.** The points of a chord of length at most `r` between two
+vectors of norm `r` have norm between `r / 2` and `r`: the two pieces of the chord add up to its
+length (`dist_add_dist_of_mem_segment`), and closed balls are convex. -/
+theorem norm_mem_Icc_of_mem_segment {r : ℝ} {p q z : E} (hp : ‖p‖ = r) (hq : ‖q‖ = r)
+    (hpq : ‖p - q‖ ≤ r) (hz : z ∈ [p -[ℝ] q]) : r / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ r := by
+  have hd := dist_add_dist_of_mem_segment hz
+  rw [dist_eq_norm, dist_eq_norm, dist_eq_norm] at hd
+  refine ⟨by linarith [norm_sub_norm_le p z, norm_sub_norm_le q z, norm_sub_rev z q], ?_⟩
+  exact mem_closedBall_zero_iff.1 ((convex_closedBall (0 : E) r).segment_subset
+    (mem_closedBall_zero_iff.2 hp.le) (mem_closedBall_zero_iff.2 hq.le) hz)
 
 end Normed
 

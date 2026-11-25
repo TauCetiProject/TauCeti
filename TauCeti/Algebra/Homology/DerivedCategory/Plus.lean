@@ -167,10 +167,7 @@ def triangleOfSESιIso {S : ShortComplex (CochainComplex.Plus C)}
     simp only [Functor.mapTriangle_obj, Triangle.mk_obj₁, Triangle.mk_mor₃,
       ObjectProperty.ι_map, triangleOfSESδ_hom, Iso.app_hom, assoc]
     rw [Iso.inv_hom_id_app_assoc, ← CategoryTheory.Functor.map_comp, Iso.inv_hom_id_app]
-    refine (?_ : _ = (QCompιIso C).hom.app S.X₃ ≫
-        DerivedCategory.triangleOfSESδ hS ≫ 𝟙 _).trans (by simp)
-    congr 2
-    exact (shiftFunctor (DerivedCategory C) (1 : ℤ)).map_id _
+    simp
 
 /-- A short exact sequence of bounded-below complexes induces a distinguished triangle in
 `DerivedCategory.Plus C`. -/

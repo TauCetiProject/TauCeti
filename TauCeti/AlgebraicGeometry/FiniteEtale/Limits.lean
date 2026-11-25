@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Colimits
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import TauCeti.CategoryTheory.Limits.MorphismProperty
 public import Mathlib.AlgebraicGeometry.LimitsOver
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
@@ -41,7 +43,7 @@ the remaining half of (G2), are not treated here.
   the cartesian monoidal structure of `Over S` (Mathlib's
   `CartesianMonoidalCategory.fullSubcategory`), with the fibre product over `S` as tensor product.
 
-The limit and colimit instances are deduced from Mathlib's closure results for
+The limit and colimit instances are deduced from the closure results for
 `MorphismProperty.overObj` and from Mathlib's description of coproducts of schemes by disjoint
 open covers, `AlgebraicGeometry.nonempty_isColimit_binaryCofanMk_of_isCompl`. Openness of
 monomorphisms uses `AlgebraicGeometry.IsOpenImmersion.of_flat_of_mono`. Surjective morphisms are
@@ -91,36 +93,25 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderIsomorphisms := by
 /-- Binary products of finite étale schemes over `S` are finite étale: in `Over S` the product is
 the fibre product over the terminal object `S`. -/
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape (Discrete WalkingPair) := by
-  refine .mk' ?_
-  rintro _ ⟨F, hF⟩
-  have ht : finiteEtaleSchemeProperty S (⊤_ Over S) :=
-    (finiteEtaleSchemeProperty S).prop_limit _ fun j ↦ j.as.elim
-  refine (finiteEtaleSchemeProperty S).prop_of_iso
-    ((HasLimit.isoOfNatIso (diagramIsoPair F)) ≪≫ prodIsoPullback _ _).symm
-    ((finiteEtaleSchemeProperty S).prop_limit _ ?_)
-  rintro (_ | ⟨_ | _⟩)
-  exacts [ht, hF _, hF _]
+  rw [finiteEtaleSchemeProperty_eq_overObj]
+  exact @Over.closedUnderLimitsOfShape_discrete_walkingPair _ _ _ _
+    MorphismProperty.IsMultiplicative.inf.toIsStableUnderComposition .inf
 
 /-- Finite étale schemes over `S` have all finite limits, computed in `Over S`: the terminal
 object is `S` itself and fibre products are fibre products of schemes. -/
 instance : HasFiniteLimits (FiniteEtaleScheme S) :=
   hasFiniteLimits_of_hasTerminal_and_pullbacks
 
-instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete PEmpty.{1}) where
+/-- Finite étale schemes over `S` are closed in `Over S` under coproducts indexed by a finite type:
+finite morphisms and étale morphisms are each closed under them. -/
+instance {ι : Type*} [Finite ι] :
+    (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete ι) where
   colimitsOfShape_le X hX := by
-    obtain ⟨t⟩ := (ObjectProperty.colimitsOfShape_isEmpty_iff _ _ _).mp hX
-    have : IsEmpty X.left := isInitial_iff_isEmpty.mp ⟨t.isInitialObj (Over.forget S) X⟩
-    exact (finiteEtaleSchemeProperty_iff X).mpr ⟨inferInstance, inferInstance⟩
-
-instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete WalkingPair) where
-  colimitsOfShape_le X hX := by
-    -- Finiteness and étaleness are treated separately: binary coproducts of finite morphisms are
-    -- finite, and étaleness is local on the source.
     have hfin : ObjectProperty.IsClosedUnderColimitsOfShape
-        (MorphismProperty.overObj @IsFinite (X := S)) (Discrete WalkingPair) :=
-      IsFinite.isClosedUnderColimitsOfShape_walkingPair (𝟭 Scheme.{u}) S
+        (MorphismProperty.overObj @IsFinite (X := S)) (Discrete ι) :=
+      IsFinite.isClosedUnderColimitsOfShape_discrete (𝟭 Scheme.{u}) S
     have het : ObjectProperty.IsClosedUnderColimitsOfShape
-        (MorphismProperty.overObj @Etale (X := S)) (Discrete WalkingPair) :=
+        (MorphismProperty.overObj @Etale (X := S)) (Discrete ι) :=
       have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
       IsZariskiLocalAtSource.isClosedUnderColimitsOfShape_discrete (𝟭 Scheme.{u}) S
     exact (finiteEtaleSchemeProperty_iff X).mpr ⟨hfin.colimitsOfShape_le X
@@ -132,7 +123,7 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete 
 /-- Finite étale schemes over `S` are closed under finite coproducts in `Over S`: the empty
 scheme and disjoint unions of finite étale schemes are finite étale. -/
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderFiniteCoproducts :=
-  .mk'
+  ⟨fun _ ↦ inferInstance⟩
 
 /-- The inclusion of finite étale schemes over `S` into `Over S` preserves finite limits. -/
 instance : PreservesFiniteLimits (finiteEtaleSchemeProperty S).ι :=
@@ -174,7 +165,7 @@ instance isClosedImmersion_hom_left (i : X ⟶ Y) [Mono i] : IsClosedImmersion i
 étale over `S`: its inclusion is an open and closed immersion. -/
 noncomputable def clopenSubscheme (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
     FiniteEtaleScheme S :=
-  have : IsClosedImmersion U.ι := .of_isPreimmersion _ (by rwa [Scheme.Opens.range_ι])
+  have : IsClosedImmersion U.ι := U.isClosedImmersion_ι_iff.mpr hU
   ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
     ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
 

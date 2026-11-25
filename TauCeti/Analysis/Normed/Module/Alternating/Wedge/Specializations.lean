@@ -71,6 +71,16 @@ theorem wedge_smul_right (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (c • ψ) = c • wedge φ ψ :=
   pairedWedge_smul_right _ _ _ _ _
 
+/-- The real wedge vanishes when its first form is zero. -/
+@[simp]
+theorem wedge_zero_left (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (0 : E [⋀^Fin k]→L[ℝ] ℝ) ψ = 0 :=
+  pairedWedge_zero_left _ _ _
+
+/-- The real wedge vanishes when its second form is zero. -/
+@[simp]
+theorem wedge_zero_right (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ (0 : E [⋀^Fin l]→L[ℝ] ℝ) = 0 :=
+  pairedWedge_zero_right _ _ _
+
 /-- The real wedge obeys the binomial operator-norm bound. -/
 theorem norm_wedge_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ) :
     ‖wedge φ ψ‖ ≤ (k + l).choose k * ‖φ‖ * ‖ψ‖ := by
@@ -94,15 +104,16 @@ theorem wedge_comm (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ
   exact pairedWedge_comm (ContinuousLinearMap.mul ℝ ℝ).continuous₂
     (fun a b : ℝ => mul_comm a b) φ ψ v
 
+/-- The wedge of a real form of odd degree with itself vanishes. -/
+theorem wedge_self_of_odd (hk : Odd k) (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ φ = 0 :=
+  pairedWedge_self_eq_zero_of_odd (ContinuousLinearMap.mul ℝ ℝ).continuous₂ mul_comm hk φ
+
 /-- The real wedge is associative, up to the canonical reassociation of its degree. -/
 theorem wedge_assoc (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
     (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :
     wedge (wedge φ ψ) χ v =
-      wedge φ (wedge ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
-  exact pairedWedge_assoc _ _ _ _
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (fun a b c : ℝ => mul_assoc a b c) φ ψ χ v
+      wedge φ (wedge ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
+  pairedWedge_mul_assoc φ ψ χ v
 
 /-- The wedge of forms valued in a normed real algebra, using multiplication in the algebra. -/
 noncomputable def wedgeMul {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
@@ -180,11 +191,8 @@ theorem wedgeMul_assoc {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
     (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A)
     (χ : E [⋀^Fin m]→L[ℝ] A) (v : Fin (k + l + m) → E) :
     wedgeMul (wedgeMul φ ψ) χ v =
-      wedgeMul φ (wedgeMul ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
-  exact pairedWedge_assoc _ _ _ _
-    (ContinuousLinearMap.mul ℝ A).continuous₂ (ContinuousLinearMap.mul ℝ A).continuous₂
-    (ContinuousLinearMap.mul ℝ A).continuous₂ (ContinuousLinearMap.mul ℝ A).continuous₂
-    (fun a b c : A => mul_assoc a b c) φ ψ χ v
+      wedgeMul φ (wedgeMul ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
+  pairedWedge_mul_assoc φ ψ χ v
 
 /-- For a commutative normed algebra, the algebra-valued wedge is graded commutative. -/
 theorem wedgeMul_comm {A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]

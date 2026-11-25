@@ -25,6 +25,11 @@ the four Frobenius fibres of `ℚ(ζ₅)` are precisely the four invertible resi
 At every nonzero level the symmetric difference is finite, which suffices to transfer density
 from Frobenius fibres to arithmetic progressions.
 
+The same computation in any Galois extension containing a primitive `m`-th root of unity gives
+`natCast_absNorm_eq_of_mem_frobeniusPrimeSet`: away from `m`, the primes of the Frobenius fibre of
+`σ` have norm congruent modulo `m` to that of any prime, possibly ramified, at which `σ` is a
+Frobenius.
+
 ## References
 
 * L. Washington, *Introduction to Cyclotomic Fields*, Chapter 2.
@@ -58,6 +63,28 @@ theorem mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm {ζ : F} (hζ : IsPrimi
   exact and_iff_right (mem_frobeniusPrimeSet_self 𝔭 _)
 
 end Cyclotomic
+
+section Congruence
+
+variable {K N : Type*} [Field K] [NumberField K] [Field N] [NumberField N] [Algebra K N]
+  [IsGalois K N] {m : ℕ} [NeZero m]
+
+/-- **The primes of a Frobenius fibre are congruent modulo the level.** Let `N / K` be Galois,
+let `ζ ∈ N` be a primitive `m`-th root of unity, and let `σ` be an arithmetic Frobenius at a prime
+`Q₀` of `𝓞 N` above a prime `𝔭₀` of `𝓞 K` not dividing `m`; `𝔭₀` may be ramified in `N`. Every
+prime `𝔭` not dividing `m` in the Frobenius fibre of `σ` has norm congruent to that of `𝔭₀`
+modulo `m`: `σ` raises `ζ` to both norms. -/
+theorem natCast_absNorm_eq_of_mem_frobeniusPrimeSet {ζ : N} (hζ : IsPrimitiveRoot ζ m)
+    {𝔭₀ : HeightOneSpectrum (𝓞 K)} (hm₀ : (m : 𝓞 K) ∉ 𝔭₀.asIdeal) (Q₀ : Ideal (𝓞 N))
+    [Q₀.LiesOver 𝔭₀.asIdeal] {σ : N ≃ₐ[K] N} (hσ : IsArithFrobAt (𝓞 K) σ Q₀)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∈ frobeniusPrimeSet K N (ConjClasses.mk σ))
+    (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal) :
+    (Ideal.absNorm 𝔭.asIdeal : ZMod m) = Ideal.absNorm 𝔭₀.asIdeal := by
+  obtain ⟨⟨Q, hQ⟩, hσQ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk h𝔭
+  have := hQ.2
+  rw [← hσQ.autToPow_eq_absNorm hζ 𝔭 hm Q, hσ.autToPow_eq_absNorm hζ 𝔭₀ hm₀ Q₀]
+
+end Congruence
 
 variable (F : Type*) [Field F] [NumberField F] (n : ℕ) [NeZero n]
   [IsCyclotomicExtension {n} ℚ F]
@@ -96,9 +123,7 @@ theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n 
     have hcop := (ZMod.isUnit_iff_coprime (Ideal.absNorm 𝔭.asIdeal) n).mp
       (ha.symm ▸ a.isUnit)
     have hdvd := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
-    have hp := Rat.HeightOneSpectrum.prime_natGenerator 𝔭
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hcop hdvd
-    exact (hp.coprime_iff_not_dvd.mp hcop) hdvd
+    exact ((Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭).coprime_iff_not_dvd.mp hcop) hdvd
   · rw [mem_frobeniusPrimeSet_galEquivZMod_symm_iff F n hm, Set.mem_ofPred_eq]
 
 /-- At every nonzero level, the cyclotomic Frobenius fibre differs from its arithmetic

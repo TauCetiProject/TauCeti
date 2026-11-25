@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.CochainComplexPlus
-public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
+public import TauCeti.Algebra.Homology.Functor.Extend
 import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 
 /-!
@@ -21,7 +24,9 @@ complexes. This file supplies complex-level lifts and functoriality compatibilit
 
 * single-complex and nonnegative-extension functors into `CochainComplex.Plus C`
   (`CochainComplex.Plus.singleFunctor`, `CochainComplex.Plus.extendNat`,
-  `CochainComplex.Plus.extendNatSingle₀Iso`, `CochainComplex.Plus.extendNatHomologyIso`);
+  `CochainComplex.Plus.extendNatSingle₀Iso`), together with degreewise `ObjectProperty`
+  propagation (`CategoryTheory.ObjectProperty.prop_X_of_isStrictlyGE`,
+  `CategoryTheory.ObjectProperty.prop_extendNat_X`, `CategoryTheory.ObjectProperty.prop_shift_X`);
 * canonical downward truncation (`CochainComplex.Plus.truncLE`) and downward stupid truncation
   (`CochainComplex.Plus.stupidTruncLE`) within `CochainComplex.Plus C`, with functoriality laws for
   their lifted maps (`CochainComplex.Plus.truncLEMap`, `CochainComplex.Plus.stupidTruncLEMap`);
@@ -194,17 +199,6 @@ lemma ιTruncLE_naturality (φ : K ⟶ L) (n : ℤ) :
 
 end Trunc
 
-variable (C) in
-/-- Extending a nonnegative complex to `CochainComplex.Plus C` and taking `(n : ℤ)`-th cohomology
-is naturally isomorphic to `n`-th cohomology on `CochainComplex C ℕ`. -/
-def extendNatHomologyIso [CategoryWithHomology C] (n : ℕ) :
-    extendNat C ⋙ ι C ⋙ HomologicalComplex.homologyFunctor C (.up ℤ) (n : ℤ) ≅
-      HomologicalComplex.homologyFunctor C (.up ℕ) n :=
-  NatIso.ofComponents
-    (fun K ↦ K.extendHomologyIso ComplexShape.embeddingUpNat (j := n) (j' := (n : ℤ)) (by simp))
-    fun φ ↦ HomologicalComplex.extendHomologyIso_hom_naturality φ
-      ComplexShape.embeddingUpNat (by simp)
-
 /-- The short complex `0 ⟶ ker(π_{≤ n}) ⟶ K ⟶ K.stupidTruncLE n ⟶ 0` in
 `CochainComplex.Plus C`. -/
 abbrev shortComplexStupidTruncLE [HasEqualizers C] (K : CochainComplex.Plus C) (n : ℤ) :
@@ -274,7 +268,7 @@ def extendNatSingle₀Iso : CochainComplex.single₀ C ⋙ extendNat C ≅ singl
         HomologicalComplex.comp_f]
       rw [HomologicalComplex.extendMap_f _ ComplexShape.embeddingUpNat (i := 0) (by simp),
         HomologicalComplex.extendSingleIso_hom_f, HomologicalComplex.extendSingleIso_hom_f]
-      simp [CochainComplex.single₀, CochainComplex.singleFunctor, HomologicalComplex.single,
+      simp [CochainComplex.singleFunctor, HomologicalComplex.single,
         HomologicalComplex.singleObjXSelf, HomologicalComplex.singleObjXIsoOfEq]
 
 @[simp]
@@ -351,28 +345,49 @@ end MappingCone
 
 end CochainComplex.Plus
 
-namespace CategoryTheory.Functor
+namespace CategoryTheory
+
+section ObjectProperty
+
+variable {C : Type*} [Category* C]
+
+/-- If `P` contains every injective object and `K : CochainComplex C ℤ` is strictly supported in
+degrees `≥ b`, then `P (K.X q)` holds in all degrees `q : ℤ` as soon as it holds for `q ≥ b`,
+because zero objects are injective. -/
+lemma ObjectProperty.prop_X_of_isStrictlyGE [HasZeroMorphisms C] (P : ObjectProperty C)
+    (hinj : ∀ Y : C, Injective Y → P Y) {K : CochainComplex C ℤ} (b : ℤ) [K.IsStrictlyGE b]
+    (hK : ∀ q : ℤ, b ≤ q → P (K.X q)) (q : ℤ) : P (K.X q) := by
+  by_cases hbq : b ≤ q
+  · exact hK q hbq
+  · exact hinj _ (K.isZero_of_isStrictlyGE b q (by lia)).injective
+
+/-- If `P` is closed under isomorphisms and contains every injective object, then extending a
+`ℕ`-indexed complex with terms in `P` to `CochainComplex.Plus C` yields a complex with terms in `P`
+in all integer degrees. -/
+lemma ObjectProperty.prop_extendNat_X [HasZeroMorphisms C] [HasZeroObject C] (P : ObjectProperty C)
+    [P.IsClosedUnderIsomorphisms] (hinj : ∀ Y : C, Injective Y → P Y)
+    {K : CochainComplex C ℕ} (hK : ∀ n : ℕ, P (K.X n)) (q : ℤ) :
+    P (((CochainComplex.Plus.extendNat C).obj K).obj.X q) := by
+  refine P.prop_X_of_isStrictlyGE hinj 0 (fun q hq ↦ ?_) q
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hq
+  exact P.prop_of_iso (K.extendXIso ComplexShape.embeddingUpNat (i := n) (by simp)).symm (hK n)
+
+/-- If `P` is closed under isomorphisms, shifting a bounded-below complex with terms in `P` keeps
+its terms in `P`. -/
+lemma ObjectProperty.prop_shift_X [Preadditive C] (P : ObjectProperty C)
+    [P.IsClosedUnderIsomorphisms] {R : CochainComplex.Plus C} (hR : ∀ q : ℤ, P (R.obj.X q))
+    (k q : ℤ) : P ((R⟦k⟧).obj.X q) :=
+  P.prop_of_iso (((HomologicalComplex.eval C (.up ℤ) q).mapIso
+    (((CochainComplex.Plus.ι C).commShiftIso k).app R)).symm) (hR _)
+
+end ObjectProperty
+
+namespace Functor
 
 section ExtendNat
 
 variable {C D : Type*} [Category* C] [Category* D]
   [HasZeroMorphisms C] [HasZeroObject C] [HasZeroMorphisms D] [HasZeroObject D]
-
-private def extendNatMapComponentIso (F : C ⥤ D) [F.PreservesZeroMorphisms]
-    (K : CochainComplex C ℕ) (i' : ℤ) :
-    F.obj ((K.extend ComplexShape.embeddingUpNat).X i') ≅
-      (((F.mapHomologicalComplex (.up ℕ)).obj K).extend ComplexShape.embeddingUpNat).X i' :=
-  if hi' : 0 ≤ i' then
-    F.mapIso (K.extendXIso ComplexShape.embeddingUpNat (i := i'.toNat) (i' := i')
-        (by simp [Int.toNat_of_nonneg hi'])) ≪≫
-      (((F.mapHomologicalComplex (.up ℕ)).obj K).extendXIso ComplexShape.embeddingUpNat
-        (i := i'.toNat) (i' := i') (by simp [Int.toNat_of_nonneg hi'])).symm
-  else
-    IsZero.iso
-      (F.map_isZero (K.isZero_extend_X ComplexShape.embeddingUpNat i' fun n hn ↦
-        hi' (hn ▸ Int.natCast_nonneg n)))
-      (((F.mapHomologicalComplex (.up ℕ)).obj K).isZero_extend_X ComplexShape.embeddingUpNat i'
-        fun n hn ↦ hi' (hn ▸ Int.natCast_nonneg n))
 
 /-- Extending `ℕ`-indexed complexes to `CochainComplex.Plus` commutes with applying an additive
 (or zero-morphism-preserving) functor degreewise. -/
@@ -380,45 +395,11 @@ def extendNatMapCochainComplexPlusIso (F : C ⥤ D) [F.PreservesZeroMorphisms] :
     CochainComplex.Plus.extendNat C ⋙ F.mapCochainComplexPlus ≅
       F.mapHomologicalComplex (.up ℕ) ⋙ CochainComplex.Plus.extendNat D :=
   NatIso.ofComponents
-    (fun K ↦ (CochainComplex.plus D).isoMk <|
-      HomologicalComplex.Hom.isoOfComponents
-        (C₁ := (F.mapHomologicalComplex (.up ℤ)).obj (K.extend ComplexShape.embeddingUpNat))
-        (C₂ := ((F.mapHomologicalComplex (.up ℕ)).obj K).extend ComplexShape.embeddingUpNat)
-        (extendNatMapComponentIso F K) fun i' j' _ ↦ by
-          by_cases hi' : 0 ≤ i'
-          · by_cases hj' : 0 ≤ j'
-            · dsimp only [Functor.mapHomologicalComplex_obj_d]
-              unfold extendNatMapComponentIso
-              simp only [hi', hj', ↓reduceDIte, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom]
-              rw [K.extend_d_eq ComplexShape.embeddingUpNat (i := i'.toNat) (j := j'.toNat)
-                  (by simp [Int.toNat_of_nonneg hi']) (by simp [Int.toNat_of_nonneg hj']),
-                ((F.mapHomologicalComplex (.up ℕ)).obj K).extend_d_eq ComplexShape.embeddingUpNat
-                  (i := i'.toNat) (j := j'.toNat)
-                  (by simp [Int.toNat_of_nonneg hi']) (by simp [Int.toNat_of_nonneg hj'])]
-              simp only [CategoryTheory.Functor.map_comp, Functor.mapHomologicalComplex_obj_d,
-                assoc, Iso.inv_hom_id_assoc, ← Functor.mapIso_inv, ← Functor.mapIso_hom]
-            · exact (((F.mapHomologicalComplex (.up ℕ)).obj K).isZero_extend_X
-                ComplexShape.embeddingUpNat j' fun n hn ↦
-                  hj' (hn ▸ Int.natCast_nonneg n)).eq_of_tgt _ _
-          · exact (F.map_isZero (K.isZero_extend_X ComplexShape.embeddingUpNat i' fun n hn ↦
-              hi' (hn ▸ Int.natCast_nonneg n))).eq_of_src _ _)
-    fun {K L} φ ↦ by
-      ext i'
-      by_cases hi' : 0 ≤ i'
-      · simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom,
-          ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
-          Functor.mapCochainComplexPlus_map_hom, HomologicalComplex.comp_f,
-          HomologicalComplex.Hom.isoOfComponents_hom_f, Functor.mapHomologicalComplex_map_f]
-        unfold extendNatMapComponentIso
-        simp only [hi', ↓reduceDIte, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom]
-        rw [HomologicalComplex.extendMap_f φ ComplexShape.embeddingUpNat (i := i'.toNat)
-            (by simp [Int.toNat_of_nonneg hi']),
-          HomologicalComplex.extendMap_f ((F.mapHomologicalComplex (.up ℕ)).map φ)
-            ComplexShape.embeddingUpNat (i := i'.toNat) (by simp [Int.toNat_of_nonneg hi'])]
-        simp only [CategoryTheory.Functor.map_comp, Functor.mapHomologicalComplex_map_f, assoc,
-          Iso.inv_hom_id_assoc, ← Functor.mapIso_inv, ← Functor.mapIso_hom]
-      · exact (F.map_isZero (K.isZero_extend_X ComplexShape.embeddingUpNat i' fun n hn ↦
-          hi' (hn ▸ Int.natCast_nonneg n))).eq_of_src _ _
+    (fun K ↦ (CochainComplex.plus D).isoMk
+      (F.mapHomologicalComplexExtendObjIso ComplexShape.embeddingUpNat K))
+    fun φ ↦ by
+      ext : 1
+      exact F.mapHomologicalComplexExtendObjIso_hom_naturality ComplexShape.embeddingUpNat φ
 
 @[simp]
 lemma extendNatMapCochainComplexPlusIso_hom_app_f
@@ -427,12 +408,9 @@ lemma extendNatMapCochainComplexPlusIso_hom_app_f
       F.map (K.extendXIso ComplexShape.embeddingUpNat (i := n) (i' := (n : ℤ)) (by simp)).hom ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj K).extendXIso ComplexShape.embeddingUpNat
           (i := n) (i' := (n : ℤ)) (by simp)).inv := by
-  dsimp only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.mapCochainComplexPlus_obj_obj,
-    Functor.mapHomologicalComplex_obj_X, CochainComplex.Plus.extendNat_obj_obj]
-  simp only [extendNatMapCochainComplexPlusIso, NatIso.ofComponents_hom_app,
-    ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
-    HomologicalComplex.Hom.isoOfComponents_hom_f]
-  unfold extendNatMapComponentIso; simp
+  simp [extendNatMapCochainComplexPlusIso,
+    F.mapHomologicalComplexExtendXIso_hom ComplexShape.embeddingUpNat (i := n) (i' := (n : ℤ))
+      (by simp)]
 
 @[simp]
 lemma extendNatMapCochainComplexPlusIso_inv_app_f
@@ -465,15 +443,17 @@ def extendNatMapCochainComplexPlusHomologyIso [CategoryWithHomology D]
   NatIso.ofComponents
     (fun K ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).mapIso
         ((CochainComplex.Plus.ι D).mapIso (F.extendNatMapCochainComplexPlusIso.app K)) ≪≫
-      (CochainComplex.Plus.extendNatHomologyIso D n).app ((F.mapHomologicalComplex (.up ℕ)).obj K))
+      (ComplexShape.embeddingUpNat.extendFunctorCompHomologyFunctorIso D
+        (j := n) (j' := (n : ℤ)) (by simp)).app ((F.mapHomologicalComplex (.up ℕ)).obj K))
     fun φ ↦ by
       have hExt := congrArg (fun g ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
         ((CochainComplex.Plus.ι D).map g)) (F.extendNatMapCochainComplexPlusIso.hom.naturality φ)
-      have hHom := (CochainComplex.Plus.extendNatHomologyIso D n).hom.naturality
-        ((F.mapHomologicalComplex (.up ℕ)).map φ)
-      dsimp only [Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Functor.mapIso_hom,
-        Iso.app_hom] at hExt hHom ⊢
+      have hHom := (ComplexShape.embeddingUpNat.extendFunctorCompHomologyFunctorIso D
+        (j := n) (j' := (n : ℤ)) (by simp)).hom.naturality ((F.mapHomologicalComplex (.up ℕ)).map φ)
       simp only [CategoryTheory.Functor.map_comp] at hExt
+      dsimp only [Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Functor.mapIso_hom,
+        Iso.app_hom, ObjectProperty.ι_map, ObjectProperty.homMk_hom,
+        ComplexShape.Embedding.extendFunctor_map] at hExt hHom ⊢
       rw [reassoc_of% hExt, hHom, assoc]
 
 /-- Naturality of `Functor.extendNatMapCochainComplexPlusHomologyIso` in morphisms of `ℕ`-indexed
@@ -491,9 +471,9 @@ lemma extendNatMapCochainComplexPlusHomologyIso_hom_naturality [CategoryWithHomo
 
 end ExtendNat
 
-end CategoryTheory.Functor
+end Functor
 
-namespace CategoryTheory.NatTrans
+namespace NatTrans
 
 variable {C D : Type*} [Category* C] [Category* D]
   [Preadditive C] [HasZeroObject C] [Preadditive D] [HasZeroObject D]
@@ -533,12 +513,15 @@ lemma extendNatMapCochainComplexPlusHomologyIso_hom_naturality [CategoryWithHomo
         ((τ.mapHomologicalComplex (.up ℕ)).app K) := by
   have hExt := congrArg (fun g ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
     ((CochainComplex.Plus.ι D).map g)) (τ.mapCochainComplexPlus_extendNat_comp_hom K)
-  have hHom := (CochainComplex.Plus.extendNatHomologyIso D n).hom.naturality
-    ((τ.mapHomologicalComplex (.up ℕ)).app K)
+  have hHom := (ComplexShape.embeddingUpNat.extendFunctorCompHomologyFunctorIso D
+    (j := n) (j' := (n : ℤ)) (by simp)).hom.naturality ((τ.mapHomologicalComplex (.up ℕ)).app K)
   simp only [CategoryTheory.Functor.map_comp] at hExt
   dsimp only [Functor.extendNatMapCochainComplexPlusHomologyIso, NatIso.ofComponents_hom_app,
     Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Functor.mapIso_hom,
-    Iso.app_hom] at hExt hHom ⊢
+    Iso.app_hom, ObjectProperty.ι_map, ObjectProperty.homMk_hom,
+    ComplexShape.Embedding.extendFunctor_map] at hExt hHom ⊢
   rw [reassoc_of% hExt, hHom, assoc]
 
-end CategoryTheory.NatTrans
+end NatTrans
+
+end CategoryTheory
