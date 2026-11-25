@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Group.Completion
 public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.Normed.Ring.Completion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Topology.Algebra.Star.Completion
 
 /-!
@@ -27,10 +26,10 @@ The C⋆-identity `‖x⋆ * x‖ = ‖x‖ * ‖x‖` also extends by continuit
 C⋆-seminorm, such as the full crossed-product seminorm on a twisted convolution algebra, therefore
 gives a C⋆-ring.
 
-A continuous ⋆-homomorphism into a complete normed ⋆-algebra extends by continuity to a
-⋆-homomorphism out of the completion of its domain, `NonUnitalStarAlgHom.fromCompletion` (unital
-when the original is, `StarAlgHom.fromCompletion`). This is how ⋆-homomorphisms bounded by a
-universal C⋆-seminorm pass to the universal C⋆-algebra.
+A continuous unital ⋆-homomorphism into a complete normed ⋆-algebra extends by continuity to a
+⋆-homomorphism out of the completion of its domain (`StarAlgHom.fromCompletion`), building on
+`NonUnitalStarAlgHom.fromCompletion` from `TauCeti.Topology.Algebra.LinearMapCompletion`. This is
+how ⋆-homomorphisms bounded by a universal C⋆-seminorm pass to the universal C⋆-algebra.
 
 ## Main results
 
@@ -38,8 +37,8 @@ universal C⋆-seminorm pass to the universal C⋆-algebra.
   the completion.
 * `UniformSpace.Completion.cstarRing`: the completion of a seminormed ⋆-ring whose seminorm
   satisfies the C⋆-identity is a C⋆-ring.
-* `NonUnitalStarAlgHom.fromCompletion`, `StarAlgHom.fromCompletion`: the extension of a continuous
-  ⋆-homomorphism to the completion of its domain.
+* `StarAlgHom.fromCompletion`: the extension of a continuous unital ⋆-homomorphism to the
+  completion of its domain.
 -/
 
 public section
@@ -68,45 +67,6 @@ theorem UniformSpace.Completion.cstarRing {E : Type*} [NonUnitalSeminormedRing E
 
 noncomputable section
 
-namespace NonUnitalStarAlgHom
-
-variable {𝕜 E D : Type*} [NormedField 𝕜] [NonUnitalSeminormedRing E] [NormedSpace 𝕜 E]
-  [StarRing E] [ContinuousStar E] [NonUnitalNormedRing D] [NormedSpace 𝕜 D] [StarRing D]
-  [ContinuousStar D] [CompleteSpace D]
-
-/-- The extension by continuity of a continuous ⋆-homomorphism `φ : E → D` into a complete normed
-⋆-algebra to the completion of `E`. -/
-def fromCompletion (φ : E →⋆ₙₐ[𝕜] D) (hφ : Continuous φ) : Completion E →⋆ₙₐ[𝕜] D where
-  toFun := (⟨(φ : E →ₗ[𝕜] D), hφ⟩ : E →L[𝕜] D).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x, y using Completion.induction_on₂ with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih a b =>
-      simp only [← Completion.coe_mul', ContinuousLinearMap.fromCompletion_apply_coe]
-      exact map_mul φ a b
-  map_star' x := by
-    induction x using Completion.induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih a =>
-      simp only [← Completion.coe_star, ContinuousLinearMap.fromCompletion_apply_coe]
-      exact map_star φ a
-
-/-- The extension agrees with the original ⋆-homomorphism on `E`. -/
-@[simp]
-theorem fromCompletion_apply_coe (φ : E →⋆ₙₐ[𝕜] D) (hφ : Continuous φ) (x : E) :
-    φ.fromCompletion hφ x = φ x :=
-  ContinuousLinearMap.fromCompletion_apply_coe _ x
-
-/-- The extension is continuous. -/
-@[fun_prop]
-theorem continuous_fromCompletion (φ : E →⋆ₙₐ[𝕜] D) (hφ : Continuous φ) :
-    Continuous (φ.fromCompletion hφ) :=
-  (⟨(φ : E →ₗ[𝕜] D), hφ⟩ : E →L[𝕜] D).fromCompletion.continuous
-
-end NonUnitalStarAlgHom
 
 namespace StarAlgHom
 
