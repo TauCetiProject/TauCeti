@@ -161,8 +161,9 @@ theorem isCompl_formKernel : IsCompl P.formKernel P.kernelOrthogonal := by
   · refine codisjoint_iff_le_sup.2 fun v _ ↦ ?_
     obtain ⟨n, hn, hjn⟩ :=
       mem_formKernelImage.1 (P.formKernelImage.starProjection_apply_mem (P.inclusion v))
-    refine Submodule.mem_sup.2 ⟨n, hn, v - n, ?_, add_sub_cancel _ _⟩
-    simp [map_sub, hjn]
+    refine Submodule.mem_sup.2 ⟨n, hn, v - n, mem_kernelOrthogonal.2 ?_, add_sub_cancel _ _⟩
+    rw [map_sub, hjn]
+    exact P.formKernelImage.sub_starProjection_mem_orthogonal (P.inclusion v)
 
 /-! ### Coercivity on the kernel-orthogonal part -/
 
@@ -277,9 +278,8 @@ theorem exists_forall_form_apply_eq_iff [CompleteSpace V] (hq : ∀ w, 0 ≤ P.e
   simp only [a, kernelOrthogonalForm_form_apply, ContinuousLinearMap.comp_apply,
     Submodule.subtypeL_apply] at hu'
   refine ⟨u', fun v ↦ ?_⟩
-  obtain ⟨n, hn, w, hw, rfl⟩ := Submodule.mem_sup.1
-    ((P.isCompl_formKernel.codisjoint.eq_top ▸ Submodule.mem_top) :
-      v ∈ P.formKernel ⊔ P.kernelOrthogonal)
+  obtain ⟨n, hn, w, hw, rfl⟩ :=
+    Submodule.mem_sup.1 (P.isCompl_formKernel.sup_eq_top.ge (Submodule.mem_top (x := v)))
   rw [map_add, map_add, form_apply_eq_zero_of_mem_formKernel hn, hℓ n hn, zero_add, zero_add]
   exact hu' ⟨w, hw⟩
 
