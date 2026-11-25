@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
 # Norm and trace under scalar extension
@@ -21,8 +22,13 @@ noncommutative algebras.
 
 ## Main results
 
-* `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`: the norm and
-  trace of `1 ⊗ x ∈ A ⊗[K] B` over `A` are the images of those of `x`.
+* `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`, and
+  `TauCeti.Algebra.trace_tmul`: the norm and trace of pure tensors in `A ⊗[K] B` over `A` are
+  computed from those in `B` over `K`.
+* `TauCeti.Algebra.trace_tmul_mul_smul`, `TauCeti.Algebra.sum_trace_mul_smul_tmul_eq`, and
+  `TauCeti.Algebra.trace_map_tmul_mul`: trace-pairing scalar multiplication, trace-dual
+  expansions, and integral-to-field base-change trace pairings pass from `B / K` to the scalar
+  extension `A ⊗[K] B / A`.
 * `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: the matrix of
   multiplication on `P ⊗[K] B` (for a finite `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
   (for a free `K`-algebra `B`, finite or not) are compatible with every `K`-algebra map
@@ -35,9 +41,6 @@ noncommutative algebras.
   form of `B` evaluated at `x`.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: for a finite free `K`-algebra `B`, the characteristic
   polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
-* `TauCeti.Algebra.trace_tmul_mul_smul`, `TauCeti.Algebra.sum_trace_tmul_mul_smul_eq`,
-  `TauCeti.Algebra.trace_map_tmul_mul`: trace pairings and `K`-linear trace-dual expansions
-  commute with scalar extension to `A ⊗[K] B` and integral-to-field base-change maps.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
   `R`-algebra `C` with `S ⊗[R] C` free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
   image of its trace in `S ⊗[R] C`.
@@ -112,9 +115,8 @@ theorem Algebra.charpoly_lmul_eq_norm (x : T ⊗[K] B) :
     Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis (Polynomial T) b), map_sub,
     AlgHom.commutes, Algebra.leftMulMatrix_rTensor, ← Algebra.leftMulMatrix_apply, Matrix.charpoly]
   refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
-  by_cases h : i = j
-  · simp [h, Matrix.charmatrix_apply_eq, Matrix.algebraMap_matrix_apply, Polynomial.algebraMap_eq]
-  · simp [h, Matrix.charmatrix_apply_ne, Matrix.algebraMap_matrix_apply, Polynomial.algebraMap_eq]
+  simp [Matrix.charmatrix_apply, Matrix.diagonal_apply, Matrix.algebraMap_matrix_apply,
+    Polynomial.algebraMap_eq]
 
 end Semiring
 
@@ -185,23 +187,28 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
   by_cases hfin : Module.Finite K B
   · simp only [Algebra.trace_apply, ← Algebra.baseChange_lmul, LinearMap.trace_baseChange]
   · nontriviality A
-    have hfin' : ¬ Module.Finite A (A ⊗[K] B) := mt Module.Finite.of_baseChange hfin
-    rw [Algebra.trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (.of_basis b),
-      Algebra.trace_eq_zero_of_not_exists_basis A fun ⟨_, ⟨b⟩⟩ ↦ hfin' (.of_basis b)]
+    rw [Algebra.trace_eq_zero_of_not_finite hfin,
+      Algebra.trace_eq_zero_of_not_finite (mt Module.Finite.of_baseChange hfin)]
     simp
 
-/-- Trace pairing and scalar multiplication commute with scalar extension on pure tensors. -/
+/-- Trace on a scalar extension evaluates on any pure tensor `a ⊗ₜ x` as
+`a * algebraMap K A (Algebra.trace K B x)`. When `B` is not finite over `K` both sides are `0`. -/
+theorem Algebra.trace_tmul (a : A) (x : B) :
+    Algebra.trace A (A ⊗[K] B) (a ⊗ₜ[K] x) = a * algebraMap K A (Algebra.trace K B x) := by
+  conv_lhs => rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul']
+  rw [map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
+
+/-- Scalar multiplication and the trace pairing commute with scalar extension on pure tensors. -/
 theorem Algebra.trace_tmul_mul_smul (a : A) (x b y : B) :
     Algebra.trace A (A ⊗[K] B) ((a ⊗ₜ[K] x) * (1 ⊗ₜ[K] b)) • ((1 : A) ⊗ₜ[K] y) =
       a ⊗ₜ[K] (Algebra.trace K B (x * b) • y) := by
-  have ha : a ⊗ₜ[K] (x * b) = a • ((1 : A) ⊗ₜ[K] (x * b)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul, Algebra.trace_baseChange_tmul]
-  simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
-    ← Algebra.smul_def, TensorProduct.smul_tmul]
+  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.trace_tmul,
+    TensorProduct.smul_tmul', smul_eq_mul, mul_one, mul_comm a, ← Algebra.smul_def,
+    TensorProduct.smul_tmul]
 
-/-- A `K`-linear trace-dual expansion on `B` extends to `A ⊗[K] B`. -/
-theorem Algebra.sum_trace_tmul_mul_smul_eq {ι : Type*} [Fintype ι] (b y : ι → B)
+/-- **Trace-dual expansions pass to scalar extensions.** If `x = ∑ᵢ Tr_{B/K}(x bᵢ) yᵢ` for every
+`x : B`, then the same expansion holds for every `ξ : A ⊗[K] B` over `A`. -/
+theorem Algebra.sum_trace_mul_smul_tmul_eq {ι : Type*} [Fintype ι] (b y : ι → B)
     (h : ∀ x : B, ∑ i, Algebra.trace K B (x * b i) • y i = x) (ξ : A ⊗[K] B) :
     ∑ i, Algebra.trace A (A ⊗[K] B) (ξ * (1 ⊗ₜ[K] b i)) • ((1 : A) ⊗ₜ[K] y i) = ξ := by
   induction ξ using TensorProduct.inductionOn with
@@ -221,23 +228,19 @@ theorem Algebra.trace_map_tmul_mul {R R' S F : Type*} [CommRing R] [CommRing R']
     (a : R') (x : S) (d : B) :
     Algebra.trace A (A ⊗[K] B) (toField (a ⊗ₜ[R] x) * (1 ⊗ₜ[K] d)) =
       algebraMap R' A a * algebraMap K A (Algebra.trace K B (algebraMap S B x * d)) := by
-  have ha : algebraMap R' A a ⊗ₜ[K] (algebraMap S B x * d) =
-      algebraMap R' A a • ((1 : A) ⊗ₜ[K] (algebraMap S B x * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [ht, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
-    Algebra.trace_baseChange_tmul, smul_eq_mul]
+  rw [ht, Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.trace_tmul]
 
 end Trace
 
 section TraceTower
 
-variable {R S T C : Type*} [CommRing R] [CommRing S] [CommRing T] [CommRing C] [Algebra R S]
-  [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R C]
+variable {R S T C : Type*} [CommSemiring R] [CommRing S] [CommRing T] [CommSemiring C]
+  [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R C]
   [Module.Free S (S ⊗[R] C)]
 
-/-- Let `R → S → T` be a tower of rings and `C` an `R`-algebra with `S ⊗[R] C` free over
-`S`. The trace of `1 ⊗ c` in `T ⊗[R] C` over `T` is the image of the trace of `1 ⊗ c` in
-`S ⊗[R] C` over `S`. -/
+/-- Let `R → S → T` be a tower of commutative semirings, with `S` and `T` rings, and `C` a
+commutative `R`-algebra with `S ⊗[R] C` free over `S`. The trace of `1 ⊗ c` in `T ⊗[R] C` over
+`T` is the image of the trace of `1 ⊗ c` in `S ⊗[R] C` over `S`. -/
 theorem Algebra.trace_baseChange_tmul_of_isScalarTower (c : C) :
     Algebra.trace T (T ⊗[R] C) (1 ⊗ₜ c) =
       algebraMap S T (Algebra.trace S (S ⊗[R] C) (1 ⊗ₜ c)) := by

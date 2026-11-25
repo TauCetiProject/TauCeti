@@ -157,7 +157,7 @@ theorem sum_trace_mul_smul_eq
   -- Extend the `K`-linear expansion to `A ⊗[K] B`, evaluate at `e.symm (Pi.single i z)`,
   -- and read off the `i`-th component.
   have h' := congrArg (fun ξ ↦ e ξ i)
-    (TauCeti.Algebra.sum_trace_tmul_mul_smul_eq (A := A) b y h (e.symm (Pi.single i z)))
+    (TauCeti.Algebra.sum_trace_mul_smul_tmul_eq (A := A) b y h (e.symm (Pi.single i z)))
   simp only [AlgEquiv.apply_symm_apply, Pi.single_eq_same, map_sum, map_smul,
     Finset.sum_apply, Pi.smul_apply, e.trace_symm_single_mul] at h'
   exact h'

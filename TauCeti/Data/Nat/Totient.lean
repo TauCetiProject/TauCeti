@@ -9,18 +9,21 @@ public import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic.IntervalCases
 
 /-!
-# Small values of the totient
+# Euler products and small values of the totient
 
 Mathlib's `Nat.totient_eq_one_iff` says that `φ(n) = 1` exactly for `n = 1` and `n = 2`. This file
 specialises it to prime powers: `φ(p ^ k) = 1` exactly when `k = 0`, or `p = 2` and `k = 1`. It
 also lists the `n` with `φ(n) ≤ 2`, which are the orders of the roots of unity of degree at most
-two over `ℚ`.
+two over `ℚ`. It also writes Mathlib's product formula `Nat.totient_eq_mul_prod_factors` in
+the reciprocal form used for Euler products over a field of characteristic zero.
 
 ## Main results
 
 * `TauCeti.Nat.totient_prime_pow_eq_one_iff`: for a prime `p`, `φ(p ^ k) = 1` iff `k = 0`, or
   `p = 2` and `k = 1`.
 * `TauCeti.Nat.totient_le_two_iff`: `φ(n) ≤ 2` iff `n ∈ {0, 1, 2, 3, 4, 6}`.
+* `TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient`: for `n ≠ 0`,
+  `∏_{p ∣ n} (1 - 1 / p)⁻¹ = n / φ(n)`.
 -/
 
 public section
@@ -63,5 +66,13 @@ theorem totient_le_two_iff {n : ℕ} :
     exact absurd (hdvd 9 (Dvd.dvd.mul_left (Dvd.dvd.mul_right (Nat.pow_dvd_pow 3 hb) _) _))
       (by decide)
   interval_cases a <;> interval_cases b <;> revert h <;> decide
+
+/-- The Euler factor of the primes of `n` is `n / φ(n)`: the reciprocal form of Mathlib's
+`Nat.totient_eq_mul_prod_factors`, in any field of characteristic zero. -/
+theorem prod_inv_one_sub_inv_eq_div_totient {K : Type*} [Field K] [CharZero K] {n : ℕ}
+    (hn : n ≠ 0) : ∏ p ∈ n.primeFactors, (1 - (p : K)⁻¹)⁻¹ = n / n.totient := by
+  have h := congrArg (Rat.cast : ℚ → K) (Nat.totient_eq_mul_prod_factors n)
+  push_cast at h
+  rw [Finset.prod_inv_distrib, h, div_mul_cancel_left₀ (Nat.cast_ne_zero.mpr hn)]
 
 end TauCeti.Nat

@@ -107,7 +107,7 @@ private def curryValue (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) (l : L
       rw [curryFun_zero]
       exact zero_mem _
   | @homogeneous p l =>
-      exact Submodule.mem_iSup_of_mem p (curryFun_mem f l.2)
+      exact Submodule.mem_iSup_of_mem p (curryFun_mem f l.property)
   | add x y hx hy =>
       rw [curryFun_add]
       exact add_mem hx hy
@@ -185,8 +185,8 @@ private def curry (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
         apply DGRightModule.InternalHom.ext
         intro m
         rw [DGRightModule.InternalHom.differential_apply_of_mem _ _
-          (curryValue_mem f l.2), curryValue_apply, curryValue_apply, curryValue_apply,
-          map_d_tmul f l.2]
+          (curryValue_mem f l.property), curryValue_apply, curryValue_apply, curryValue_apply,
+          map_d_tmul f l.property]
         exact add_sub_cancel_right _ _
     | add x y hx hy => rw [curryValue_add, map_add, hx, map_add, curryValue_add, hy]
 
@@ -272,8 +272,9 @@ private def uncurry (g : L ⟶ M.internalHomObj N) :
         | @homogeneous p l =>
             have h := congrArg (fun k ↦ k m) (DGRightModuleCat.map_d g l)
             rw [DGRightModule.InternalHom.differential_apply_of_mem _ _
-              (Graded.map_mem g l.2)] at h
-            rw [uncurryLinearMap_tmul, DGRightModuleCat.tensorBimoduleObj_differential_tmul l.2,
+              (Graded.map_mem g l.property)] at h
+            rw [uncurryLinearMap_tmul, DGRightModuleCat.tensorBimoduleObj_differential_tmul
+                l.property,
               map_add, uncurryLinearMap_tmul, map_zsmul_unit, uncurryLinearMap_tmul]
             exact eq_add_of_sub_eq h
         | add x y hx hy => simp only [add_tmul, map_add, hx, hy]

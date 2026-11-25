@@ -41,6 +41,8 @@ coordinate taking a nontorsion class to its positive divisibility.
 * `TauCeti.IsPrimitive.zsmul_left_injective`, `TauCeti.IsPrimitive.eq_of_pos_zsmul_eq`: integer
   multiples of a primitive vector have distinct multipliers, and primitive vectors with equal
   positive multiples coincide in a module with unique division.
+* `TauCeti.IsPrimitive.exists_pos_zsmul_of_nsmul_eq_zsmul`: cancellation of a natural multiple
+  of a positive integer multiple of a primitive vector.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `Units.isPrimitive_units_mul_iff`, `Units.isPrimitive_mul_units_iff`: in a ring, primitivity is
   invariant under multiplication by a unit.
@@ -124,6 +126,25 @@ theorem IsPrimitive.eq_of_pos_zsmul_eq [HasUniqueDiv M] {v w : M} (hv : IsPrimit
   have hab : a = b := le_antisymm
     (Int.le_of_dvd hb ⟨g v, hg'.symm⟩) (Int.le_of_dvd ha ⟨f w, hf'⟩)
   exact zsmul_right_injective ha.ne' (hab ▸ h)
+
+/-- In an additive group with unique division, if a natural multiple equals a positive integer
+multiple of a primitive vector, then the original vector is itself a positive integer multiple
+of that primitive vector. -/
+theorem IsPrimitive.exists_pos_zsmul_of_nsmul_eq_zsmul [HasUniqueDiv M] {v n : M}
+    (hv : IsPrimitive v) {p : ℕ} {b : ℤ} (hb : 0 < b) (heq : p • n = b • v) :
+    ∃ a : ℤ, 0 < a ∧ n = a • v := by
+  have hb0 : b • v ≠ 0 := by
+    simpa only [zero_zsmul] using hv.zsmul_left_injective.ne hb.ne'
+  have hp : p ≠ 0 := left_ne_zero_of_smul (heq ▸ hb0)
+  lift b to ℕ using hb.le
+  rw [natCast_zsmul] at heq
+  obtain ⟨a, ha⟩ := (hv.exists_eq_nsmul_iff_dvd b p).mp ⟨n, heq.symm⟩
+  have hb' : 0 < b := by exact_mod_cast hb
+  have ha' : 0 < a := Nat.pos_of_mul_pos_left (ha ▸ hb')
+  have hcancel : p • n = p • (a • v) := by simpa only [ha, smul_smul] using heq
+  refine ⟨a, by exact_mod_cast ha', ?_⟩
+  rw [natCast_zsmul]
+  exact nsmul_right_injective hp hcancel
 
 /-- The zero vector is not primitive. -/
 @[simp]
@@ -283,14 +304,14 @@ theorem exists_basis_eq_iff {n : ℕ} (b : Basis (Fin n) ℤ M) (i : Fin n) (v :
       b.linearIndependent.isCompl_span_image b.span_eq (isCompl_compl (x := s))
   have hPf : P ≤ LinearMap.ker f := Submodule.span_le.2 <| by
     rintro _ ⟨j, rfl⟩
-    exact hf j j.2
+    exact hf j j.property
   have : Module.Free ℤ N := Module.Free.of_basis bN
   have : Module.Finite ℤ N := Module.Finite.of_basis bN
   -- Split `v` into its components in `P` and `N`; the component in `N` is primitive there.
   set w := (Submodule.prodEquivOfIsCompl P N hPN).symm v
   have hvw : v = (w.1 : M) + w.2 := by
     rw [← Submodule.coe_prodEquivOfIsCompl' (h := hPN), LinearEquiv.apply_symm_apply]
-  have hw1 : f w.1 = 0 := hPf w.1.2
+  have hw1 : f w.1 = 0 := hPf w.1.property
   have hw2 : f w.2 = 1 := by rw [← hv, hvw, map_add, hw1, zero_add]
   obtain ⟨m, c, k, hck⟩ := TauCeti.IsPrimitive.exists_basis (M := N) ⟨f.comp N.subtype, hw2⟩
   -- Combine `b 0, …, b (i - 1)` with `c`, placing `c k` at position `i`.

@@ -24,8 +24,8 @@ extensions equipped with semilocal algebra isomorphisms
 
 compatible with ring homomorphisms `fField i : L →+* L' i` and `fInt i : S →+* S' i`.
 
-This file extracts the abstract semilocal comparison shared by number-field completions
-(`TauCeti/NumberTheory/NumberField/LocalGlobal/Different/Basic.lean`) and function-field place
+This file extracts the abstract semilocal comparison shared by Dedekind-domain adic completions
+(`TauCeti/RingTheory/DedekindDomain/Different/Completion.lean`) and function-field place
 completions (`TauCeti/FieldTheory/FunctionField/Different/Completion.lean`), combining the
 trace-dual expansion transfer `AlgEquiv.sum_trace_mul_smul_eq` (`TauCeti.RingTheory.NormTrace.Pi`)
 with the single-ring comparison lemmas `RingHom.span_traceDual_one_eq_traceDual_one_of_forall`
