@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Euclidean
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Basic
 public import TauCeti.Analysis.Convex.Topology
 
 /-!
@@ -83,22 +83,17 @@ private theorem bijective_dualityMap_comap_of_starConvex (o : HomologicalOrienta
     Function.Bijective ((o.comap hj).dualityMap hd L p q h) := by
   let j' : C(U, F) := ⟨j, hj.continuous⟩
   refine (o.comap hj).bijective_dualityMap_of_cofinal hd L h fun K₀ ↦ ?_
-  -- The star hull about `y` of the image of `K₀` lies in the image of `j`, so its preimage is a
-  -- compact subset of `U` containing `K₀`, with star-convex image.
-  let S := Compacts.starHull (E := F) ℝ y (K₀.map (TopCat.ofHom j') j'.continuous)
-  have hS : (S : Set F) ⊆ range j := Compacts.starHull_subset hU hy (by
-    rintro _ ⟨u, -, rfl⟩
-    exact ⟨u, rfl⟩)
-  let K : Compacts (TopCat.of U) := ⟨j ⁻¹' S, hj.isInducing.isCompact_preimage' S.isCompact hS⟩
-  have hKS : ((K.map (TopCat.ofHom j') j'.continuous : Compacts F) : Set F) = S :=
-    image_preimage_eq_of_subset hS
-  refine ⟨K, fun u hu ↦ Compacts.le_starHull (E := F) ℝ y _ ⟨u, hu, rfl⟩, ?_⟩
+  -- `K₀` lies in a compact subset of `U` whose image is star-convex about `y`.
+  obtain ⟨K, hK₀K, hKy, hyK⟩ := hj.isInducing.exists_compacts_le_starConvex_image hU hy K₀
+  refine ⟨K, hK₀K, ?_⟩
   rw [o.bijective_capFundamentalClassOn_comap_iff hd L (j := j') hj h
     (ConcreteCategory.bijective_of_isIso _) K]
   refine (congrArg Function.Bijective (funext (o.capFundamentalClassOn_apply hd L _ p q h))).mpr ?_
+  -- The image of `K` under `j'` is `j '' K`.
+  have hjK : ((K.map (TopCat.ofHom j') j'.continuous : Compacts F) : Set F) = j '' K := by
+    simp only [Compacts.coe_map, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, j']
   exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _ (y := y)
-    (hKS ▸ Compacts.starConvex_starHull (E := F) ℝ y _)
-    (hKS ▸ Compacts.mem_starHull_self (E := F) ℝ y _) p q h
+    (hjK ▸ hKy) (hjK ▸ hyK) p q h
 
 /-- **Poincaré duality for a star-convex open subset**: for an open embedding `j : U → F` whose
 image is star-convex, the duality map `Hᵖ_c(U; L) ⟶ H_q(U; L)` of any homological orientation of

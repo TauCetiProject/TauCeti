@@ -94,19 +94,15 @@ theorem sum_placementInjectionCount_of_not_transversal_le_of_card_le
     ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, placementInjectionCount φ ≤
       F.k.choose 2 * m * Fintype.card V ^ (F.k - 1) := by
   classical
-  -- A placement is a map from the pattern vertices to the vertex cells.
-  let e : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) :=
-    { toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
-      invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).2⟩ }
   calc ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, placementInjectionCount φ
       ≤ ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, ∏ i, #(φ.vertexCell i) :=
         sum_le_sum fun φ _ ↦ placementInjectionCount_le_prod φ
     _ = ∑ c : Fin F.k → C.skeleton.vertexPart.parts with ¬Injective c,
           ∏ i, #(c i : Finset V) := by
-        -- The cells of `e φ` are, by construction, the cells of `φ`.
-        refine sum_equiv e (fun φ ↦ ?_) fun φ _ ↦ rfl
-        simp only [mem_filter, mem_univ, true_and, PatternPlacement3.transversal_iff]
-        exact not_congr (Subtype.val_injective.of_comp_iff (e φ))
+        -- A placement is a map from the pattern vertices to the vertex cells.
+        refine sum_equiv PatternPlacement3.equivFun (fun φ ↦ ?_) fun φ _ ↦ by simp
+        simp only [mem_filter, mem_univ, true_and]
+        exact not_congr (PatternPlacement3.injective_equivFun_iff φ).symm
     _ ≤ F.k.choose 2 * m * Fintype.card V ^ (F.k - 1) := by
         simpa using C.skeleton.vertexPart.sum_prod_card_of_not_injective_le_of_card_le
           (ι := Fin F.k) hm

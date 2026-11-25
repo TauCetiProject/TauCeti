@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 import Mathlib.Algebra.FiveLemma
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.Induction
@@ -68,6 +69,10 @@ the flat base change of sections over a quasi-compact quasi-separated open
 * `TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv`: the resulting flat base change
   isomorphism, whose underlying linear map is `cohomologyBaseChange`
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
+* `TauCeti.AlgebraicGeometry.subsingleton_cohomology_pullback_iff_of_isPullback`: for faithfully
+  flat `R → R'`, `Hⁿ(X, M)` vanishes exactly when `Hⁿ(Y, g^* M)` does, and
+  `TauCeti.AlgebraicGeometry.subsingleton_cohomology_unit_iff_of_isPullback`: its specialisation
+  to the structure sheaf;
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
@@ -573,6 +578,28 @@ lemma cohomologyBaseChangeLinearEquiv_tmul [Module.Flat R R'] [CompactSpace X]
     cohomologyBaseChangeLinearEquiv H M n (r' ⊗ₜ x) = r' • g.cohomologyPullback M n x :=
   (rfl)
 
+include H in
+/-- `Hⁿ(X, M)` vanishes exactly when it vanishes after a faithfully flat base change `R → R'`,
+for instance an extension of the base field, for a quasi-coherent sheaf `M` on a quasi-compact
+quasi-separated scheme over `R`. The vanishing is that of the canonical pullback sheaf `g^* M`. -/
+theorem subsingleton_cohomology_pullback_iff_of_isPullback [Module.FaithfullyFlat R R']
+    [CompactSpace X] [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) n) ↔
+      Subsingleton (Cohomology M n) := by
+  rw [← (cohomologyBaseChangeLinearEquiv H M n).toEquiv.subsingleton_congr,
+    Module.FaithfullyFlat.subsingleton_tensorProduct_iff_right]
+
+include H in
+/-- `Hⁿ(X, 𝒪_X)` vanishes exactly when `Hⁿ(Y, 𝒪_Y)` does, for a faithfully flat base change
+`R → R'`, for instance an extension of the base field, on a quasi-compact quasi-separated scheme
+over `R`. -/
+theorem subsingleton_cohomology_unit_iff_of_isPullback [Module.FaithfullyFlat R R']
+    [CompactSpace X] [QuasiSeparatedSpace X] (n : ℕ) :
+    Subsingleton (Cohomology (SheafOfModules.unit Y.ringCatSheaf) n) ↔
+      Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf) n) :=
+  (cohomologyBaseLinearEquivOfIso R' (pullbackObjUnitIso g) n).toEquiv.subsingleton_congr.symm.trans
+    (subsingleton_cohomology_pullback_iff_of_isPullback H _ n)
+
 end FlatBaseChange
 
 section Field
@@ -610,10 +637,7 @@ theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
     [QuasiSeparatedSpace X] (n : ℕ) :
     Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
       Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   rw [← finrank_cohomology_congr K e n, finrank_cohomology_pullback_eq_of_isPullback H]
 
 include H in
@@ -623,10 +647,7 @@ theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
     [QuasiSeparatedSpace X] (n : ℕ)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   exact (finiteDimensional_cohomology_congr K e n).mp
     (finiteDimensional_cohomology_pullback_of_isPullback H _ n)
 

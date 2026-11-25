@@ -309,14 +309,14 @@ theorem exists_ratModelMap_eq_of_mem_dual (hL : IsIntegral L) {y : E} (hy : y �
 private noncomputable def ratModelDualCarrierToDual (hL : IsIntegral L) :
     (ratModel hL).dualCarrier →ₗ[ℤ] dual L :=
   (ratModelMap L ∘ₗ (ratModel hL).dualCarrier.subtype).codRestrict (dual L) fun x ↦
-    (mem_ratModel_dualCarrier_iff hL x).mp x.2
+    (mem_ratModel_dualCarrier_iff hL x).mp x.property
 
 private theorem bijective_ratModelDualCarrierToDual (hL : IsIntegral L) :
     Function.Bijective (ratModelDualCarrierToDual hL) := by
   refine ⟨fun x y hxy ↦ Subtype.ext <| ratModelMap_injective <| congrArg Subtype.val hxy,
     fun y ↦ ?_⟩
-  obtain ⟨x, hx⟩ := exists_ratModelMap_eq_of_mem_dual hL y.2
-  exact ⟨⟨x, (mem_ratModel_dualCarrier_iff hL x).mpr (hx ▸ y.2)⟩, Subtype.ext hx⟩
+  obtain ⟨x, hx⟩ := exists_ratModelMap_eq_of_mem_dual hL y.property
+  exact ⟨⟨x, (mem_ratModel_dualCarrier_iff hL x).mpr (hx ▸ y.property)⟩, Subtype.ext hx⟩
 
 /-- The identification of the dual lattice `L^∨` of an integral full lattice `L` with the dual
 carrier of its rational model; it is inverse to `ratModelMap`. -/
