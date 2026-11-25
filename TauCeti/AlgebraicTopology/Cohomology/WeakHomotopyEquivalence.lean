@@ -19,6 +19,8 @@ singular cohomology, for any chain coefficients `R` and values in any module `M`
 cohomology with local coefficients in any system `L`. It also induces isomorphisms on the relative
 cohomology of a map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
 subspaces, for projective chain coefficients and for local coefficients with projective fibres.
+More generally, for projective chain coefficients, a map of pairs inducing isomorphisms on
+relative singular homology in every degree induces isomorphisms on relative singular cohomology.
 No CW structure is needed.
 
 The proof is at the chain level. The map of singular chains with local coefficients induced by
@@ -41,9 +43,13 @@ it is a chain homotopy equivalence
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquivalences_twistedCochainComplexMap`,
   `ContinuousMap.IsWeakHomotopyEquivalence.isIso_twistedCohomologyMap`: the same with local
   coefficients in any system.
+* `TopPair.homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap`,
+  `TopPair.isIso_singularCohomologyMap_of_isIso_singularHomologyMap`: for projective chain
+  coefficients, a map of pairs inducing isomorphisms on relative homology in every degree induces a
+  cochain homotopy equivalence of relative cochains, and isomorphisms on relative cohomology.
 * `TopPair.homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence`,
-  `TopPair.isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
-  cohomology of pairs.
+  `TopPair.isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence`: the special case of a map
+  of pairs which is a weak homotopy equivalence on the ambient spaces and on the subspaces.
 * `TopPair.homotopyEquivalences_twistedCochainComplexMap_of_isWeakHomotopyEquivalence`,
   `TopPair.isIso_twistedCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
   cohomology of pairs with local coefficients.
@@ -114,6 +120,30 @@ namespace TopPair
 variable {P P' : TopPair.{v}} (f : P ⟶ P') {A : Type u} [Ring A] (R : ModuleCat.{v} A)
   [Projective R] (k : Type*) [Ring k] [Linear k (ModuleCat.{v} A)] (M : ModuleCat.{v} A)
 
+/-- **A map of pairs inducing isomorphisms on relative singular homology induces a cochain
+homotopy equivalence of relative singular cochains**: if `f` induces isomorphisms
+`Hₙ(X, A; R) ≅ Hₙ(Y, B; R)` in every degree, for chain coefficients in a projective module `R`, then
+it induces a cochain homotopy equivalence `Hom(C(Y, B; R), M) ⟶ Hom(C(X, A; R), M)` for values in
+any module `M`. -/
+theorem homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap
+    (hf : ∀ n, IsIso (TopPair.singularHomologyMap f R n)) :
+    HomologicalComplex.homotopyEquivalences _ _
+      (singularCochainComplexMap (R := R) (k := k) (M := M) f) :=
+  have : QuasiIso (singularChainComplexMap f R) :=
+    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2 (hf n)
+  ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective _ k M
+
+/-- **A map of pairs inducing isomorphisms on relative singular homology induces isomorphisms on
+relative singular cohomology**: if `f` induces isomorphisms `Hₙ(X, A; R) ≅ Hₙ(Y, B; R)` in every
+degree, for chain coefficients in a projective module `R`, then it induces isomorphisms
+`Hⁿ(Y, B; R, M) ≅ Hⁿ(X, A; R, M)` for values in any module `M`. -/
+theorem isIso_singularCohomologyMap_of_isIso_singularHomologyMap
+    (hf : ∀ n, IsIso (TopPair.singularHomologyMap f R n)) (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
+  have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
+    (homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap f R k M hf)
+  inferInstance
+
 /-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
 subspaces induces a cochain homotopy equivalence of relative singular cochains**, for chain
 coefficients in a projective module `R` and values in any module `M`. -/
@@ -122,8 +152,8 @@ theorem homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivale
     (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence) :
     HomologicalComplex.homotopyEquivalences _ _
       (singularCochainComplexMap (R := R) (k := k) (M := M) f) :=
-  have := quasiIso_singularChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd R
-  ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective _ k M
+  homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap f R k M
+    (isIso_singularHomologyMap_of_isWeakHomotopyEquivalence f hfst hsnd R)
 
 /-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
 subspaces induces isomorphisms on relative singular cohomology** `Hⁿ(Y, B; R, M) ≅ Hⁿ(X, A; R, M)`,
@@ -132,9 +162,8 @@ theorem isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence
     (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
     (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
-  have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
-    (homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence f R k M hfst hsnd)
-  inferInstance
+  isIso_singularCohomologyMap_of_isIso_singularHomologyMap f R k M
+    (isIso_singularHomologyMap_of_isWeakHomotopyEquivalence f hfst hsnd R) n
 
 section Twisted
 

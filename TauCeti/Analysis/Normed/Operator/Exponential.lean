@@ -19,6 +19,7 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Exponentials of bounded operators
@@ -194,9 +195,7 @@ theorem toMatrix_exp (b : Module.Basis ι 𝕜 X) (L : X →L[𝕜] X) :
     ext i j
     simp [f, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   have hf : Continuous f :=
-    (((LinearMap.toMatrix b b).toLinearMap.comp
-      (ContinuousLinearMap.coeLM 𝕜)).continuous_of_finiteDimensional).congr fun L ↦ by
-        simp [hfg]
+    (ContinuousLinearMap.toMatrixCLM b).continuous.congr fun L ↦ by simp [hfg]
   have : CompleteSpace X := FiniteDimensional.completeSpace 𝕜 X
   let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
   rw [← hfg, NormedSpace.map_exp f hf, hfg]

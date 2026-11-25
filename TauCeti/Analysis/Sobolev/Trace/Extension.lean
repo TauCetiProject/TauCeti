@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 public import TauCeti.Analysis.Sobolev.Trace.ZeroBoundary
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Extension by reflection from a half-space, and the half-space trace
@@ -87,15 +88,6 @@ omit [MeasurableSpace E] [BorelSpace E] in
 private theorem jetFlip_snd (J : Sobolev1Jet (WithLp 2 (ℝ × E))) :
     (jetFlip J).snd = normalLinearReflection E J.snd := by
   simp [jetFlip]
-
-private theorem measurePreserving_normalReflection_top (a : ℝ) :
-    MeasurePreserving (normalReflection E a)
-      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-        Set (WithLp 2 (ℝ × E))))
-      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-        Set (WithLp 2 (ℝ × E)))) := by
-  rw [Measure.restrict_coe_opens_top]
-  exact measurePreserving_normalReflection a
 
 /-- Precomposition with the reflection, followed by flipping the gradient, on whole-space jets. -/
 private def reflectJetL (a : ℝ) :
@@ -287,10 +279,8 @@ theorem W1p.restrictL_extendByReflectionL (a : ℝ)
   apply Lp.ext
   filter_upwards [W1p.value_restrictL_ae le_top (W1p.extendByReflectionL a u),
     ae_restrict_of_ae (W1p.value_extendByReflectionL_ae a u), ae_restrict_mem hH] with x h1 h2 hx
-  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-    rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff, not_lt]
-    exact ((mem_normalHalfSpace a x).1 hx).le
-  rw [h1, h2, indicator_of_mem hx, indicator_of_notMem hρx, add_zero]
+  rw [h1, h2, indicator_of_mem hx,
+    indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx), add_zero]
 
 /-- The reflection extension at most doubles the Sobolev norm. -/
 theorem W1p.norm_extendByReflectionL_le (a : ℝ)
@@ -351,7 +341,7 @@ theorem W1p.norm_halfSpaceTrace_le (hp : p ≠ ∞) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     ‖W1p.halfSpaceTrace hp a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ := by
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+  exact Real.le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _)
     (W1p.norm_value_le u) (W1p.norm_gradient_le u) (W1p.norm_halfSpaceTrace_rpow_le hp a u)
 
 /-- For `1 ≤ p < ∞`, the half-space trace has operator norm at most `p ^ (1 / p)`, which is `1`

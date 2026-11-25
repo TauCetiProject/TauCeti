@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Contraction
-public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.Dual.Basic
 public import TauCeti.Geometry.Hodge.Morphism
 public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 
@@ -156,7 +156,7 @@ private noncomputable def internalHomPiece (hs₁ : HodgeStructureOn W₁ ω₁ 
   LinearMap.homogeneousSubmodule hs₁.piece hs₂.piece r
 
 /-- A map shifts Hodge degree by `r` exactly when it is homogeneous of degree `r` for the two
-Hodge decompositions; `TauCeti.LinearMap.isHomogeneous_def` spells that out elementwise. -/
+Hodge decompositions; `LinearMap.isHomogeneous_def` spells that out elementwise. -/
 @[simp]
 private theorem mem_internalHomPiece_iff (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₂ : HodgeStructureOn W₂ ω₂ n₂) {r : ℤ} {f : W₁ →ₗ[ℂ] W₂} :

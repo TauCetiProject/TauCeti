@@ -22,6 +22,13 @@ slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_c
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
+An updated finite family is analytic exactly when its replacement and its retained components are
+analytic. The pointwise criteria are `TauCeti.analyticWithinAt_update_iff` and
+`TauCeti.analyticAt_update_iff`, and the setwise criteria are `TauCeti.analyticOn_update_iff` and
+`TauCeti.analyticOnNhd_update_iff`. The component replacement rules are
+`AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOn.update`, and `AnalyticOnNhd.update`.
+The restriction of a function to a fixed coordinate value is analytic at the original point if
+the function is analytic at the updated point (`AnalyticAt.comp_update`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -35,6 +42,9 @@ vector-valued series, scalar multiplication `f • g` over a normed algebra, and
 (`HasFPowerSeriesWithinOnBall.clm_apply`, `HasFPowerSeriesOnBall.clm_apply`,
 `HasFPowerSeriesWithinOnBall.smul`, `HasFPowerSeriesOnBall.smul`,
 `HasFPowerSeriesWithinOnBall.mul`, `HasFPowerSeriesOnBall.mul`).
+
+For a fixed pole `w`, the reciprocal kernel `z ↦ (w - z)⁻¹` is analytic near `s` if and only if
+`w ∉ s` (`TauCeti.analyticOnNhd_sub_inv_iff`).
 -/
 
 public section
@@ -83,6 +93,86 @@ theorem analyticAt_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι']
 end TauCeti
 
 end Products
+
+section Update
+
+variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+  {f : E → ∀ i, G i} {x : E} {i : ι} {g : E → G i}
+
+/-- An updated family is analytic within `s` exactly when the replacement and all retained
+components are analytic within `s`. -/
+theorem TauCeti.analyticWithinAt_update_iff {s : Set E} :
+    AnalyticWithinAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) s x ↔
+      AnalyticWithinAt 𝕜 g s x ∧ ∀ j ≠ i, AnalyticWithinAt 𝕜 (fun z ↦ f z j) s x := by
+  have h j : (fun z ↦ Function.update (f z) i (g z) j) =
+      Function.update (fun j z ↦ f z j) i g j :=
+    funext fun z ↦ (Function.apply_update (fun j (h : E → G j) ↦ h z) (fun j z ↦ f z j) i g j).symm
+  simp_rw [analyticWithinAt_pi_iff, h]
+  exact Function.forall_update_iff (fun j z ↦ f z j) fun _ h ↦ AnalyticWithinAt 𝕜 h s x
+
+/-- Updating one component of a finite family analytic within `s` by a function analytic within
+`s` preserves analyticity within `s`. -/
+theorem AnalyticWithinAt.update {s : Set E} (hf : AnalyticWithinAt 𝕜 f s x)
+    (hg : AnalyticWithinAt 𝕜 g s x) :
+    AnalyticWithinAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) s x :=
+  TauCeti.analyticWithinAt_update_iff.2 ⟨hg, fun j _ ↦ analyticWithinAt_pi_iff.mp hf j⟩
+
+/-- An updated family is analytic at `x` exactly when the replacement and all retained
+components are analytic at `x`. -/
+theorem TauCeti.analyticAt_update_iff :
+    AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x ↔
+      AnalyticAt 𝕜 g x ∧ ∀ j ≠ i, AnalyticAt 𝕜 (fun z ↦ f z j) x := by
+  simpa only [analyticWithinAt_univ] using
+    (analyticWithinAt_update_iff (f := f) (g := g) (s := Set.univ) (x := x))
+
+/-- Updating one component of a finite analytic family by an analytic function is analytic. -/
+@[fun_prop]
+theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) :
+    AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
+  simpa only [analyticWithinAt_univ] using
+    (hf.analyticWithinAt (s := Set.univ)).update hg.analyticWithinAt
+
+/-- An updated family is analytic on `s` exactly when the replacement and all retained
+components are analytic on `s`. -/
+theorem TauCeti.analyticOn_update_iff {s : Set E} :
+    AnalyticOn 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
+      AnalyticOn 𝕜 g s ∧ ∀ j ≠ i, AnalyticOn 𝕜 (fun z ↦ f z j) s := by
+  simp only [AnalyticOn, analyticWithinAt_update_iff, forall₂_and]
+  exact and_congr_right fun _ ↦ forall₂_comm
+
+/-- An updated family is analytic near `s` exactly when the replacement and all retained
+components are analytic near `s`. -/
+theorem TauCeti.analyticOnNhd_update_iff {s : Set E} :
+    AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
+      AnalyticOnNhd 𝕜 g s ∧ ∀ j ≠ i, AnalyticOnNhd 𝕜 (fun z ↦ f z j) s := by
+  simp only [AnalyticOnNhd, analyticAt_update_iff, forall₂_and]
+  exact and_congr_right fun _ ↦ forall₂_comm
+
+/-- Updating one component of a finite family analytic on `s` by a function analytic on `s`
+preserves analyticity on `s`. -/
+protected theorem AnalyticOn.update {s : Set E} (hf : AnalyticOn 𝕜 f s)
+    (hg : AnalyticOn 𝕜 g s) :
+    AnalyticOn 𝕜 (fun z ↦ Function.update (f z) i (g z)) s :=
+  fun z hz ↦ (hf z hz).update (hg z hz)
+
+/-- Updating one component of a finite family analytic near `s` by a function analytic near `s`
+preserves analyticity near `s`. -/
+@[fun_prop]
+protected theorem AnalyticOnNhd.update {s : Set E} (hf : AnalyticOnNhd 𝕜 f s)
+    (hg : AnalyticOnNhd 𝕜 g s) :
+    AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s :=
+  fun z hz ↦ (hf z hz).update (hg z hz)
+
+/-- Fixing coordinate `i` at `a` gives an analytic restriction at `y` if the original
+function is analytic at the updated point. -/
+theorem AnalyticAt.comp_update {u : (∀ j, G j) → E} {y : ∀ j, G j} {a : G i}
+    (hu : AnalyticAt 𝕜 u (Function.update y i a)) :
+    AnalyticAt 𝕜 (fun z ↦ u (Function.update z i a)) y :=
+  hu.fun_comp_of_eq (analyticAt_id.update analyticAt_const) rfl
+
+end Update
 
 section FinsetSum
 
@@ -278,3 +368,25 @@ theorem HasFPowerSeriesOnBall.mul
   hf.smul hg
 
 end CauchyProduct
+
+namespace TauCeti
+
+/-- The reciprocal kernel `z ↦ (w - z)⁻¹` is analytic near `s` if and only if `w ∉ s`. -/
+@[simp]
+theorem analyticOnNhd_sub_inv_iff {𝕜 𝕝 : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕝] [NormedAlgebra 𝕜 𝕝] {s : Set 𝕝} {w : 𝕝} :
+    AnalyticOnNhd 𝕜 (fun z ↦ (w - z)⁻¹) s ↔ w ∉ s := by
+  constructor
+  · intro hf hws
+    have hcont : ContinuousAt (fun z : 𝕝 ↦ (w - z)⁻¹) (w - 0) := by
+      rw [sub_zero]
+      exact (hf w hws).continuousAt
+    have h0 : ContinuousAt (Inv.inv : 𝕝 → 𝕝) 0 := by
+      simpa only [Function.comp_def, sub_sub_cancel] using
+        hcont.comp (continuousAt_const.sub continuousAt_id)
+    exact NormedField.continuousAt_inv.mp h0 rfl
+  · intro hws
+    exact (analyticOnNhd_const.sub analyticOnNhd_id).inv fun z hz (h : w - z = 0) ↦
+      hws (sub_eq_zero.mp h ▸ hz)
+
+end TauCeti

@@ -15,7 +15,8 @@ For `m ≥ 2`, Mathlib's `SimpleGraph.cycleGraph m` joins two elements of `Fin m
 differ by one and records the neighbour set of a vertex as the pair `{v - 1, v + 1}`; for `m ≥ 3`,
 it computes the degree to be two. This file derives the weaker fact valid for every nonzero `m`
 that an adjacent vertex is the successor or predecessor, and shows that there are at most the two
-neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are neighbours.
+neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are neighbours. It
+also exhibits the rotations and reflections of `Fin m` as automorphisms of the cycle graph.
 
 ## Main results
 
@@ -24,6 +25,8 @@ neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are
   that is, every degree is at most two.
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
+* `TauCeti.cycleGraphAddRightIso`, `TauCeti.cycleGraphSubLeftIso`: the rotations `v ↦ v + k` and
+  the reflections `v ↦ k - v` are automorphisms of the cycle graph.
 -/
 
 public section
@@ -72,5 +75,39 @@ theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v
     rw [cycleGraph_neighborSet]
     exact Set.mem_insert_of_mem _ rfl
   exact hv
+
+/-! ## Rotations and reflections of a cycle graph -/
+
+/-- **Rotation is an automorphism of a cycle graph**: the map `v ↦ v + k` moves every vertex `k`
+steps around the cycle. -/
+def cycleGraphAddRightIso (k : Fin m) : cycleGraph m ≃g cycleGraph m where
+  toEquiv := Equiv.addRight k
+  map_rel_iff' := by simp [cycleGraph_adj']
+
+@[simp]
+theorem cycleGraphAddRightIso_apply (k v : Fin m) : cycleGraphAddRightIso k v = v + k :=
+  (rfl)
+
+/-- The inverse of the rotation by `k` is the rotation by `-k`. -/
+@[simp]
+theorem cycleGraphAddRightIso_symm (k : Fin m) :
+    (cycleGraphAddRightIso k).symm = cycleGraphAddRightIso (-k) :=
+  RelIso.ext fun v ↦ (cycleGraphAddRightIso k).symm_apply_eq.mpr (by simp)
+
+/-- **Reflection is an automorphism of a cycle graph**: the map `v ↦ k - v` reverses the
+orientation of the cycle. -/
+def cycleGraphSubLeftIso (k : Fin m) : cycleGraph m ≃g cycleGraph m where
+  toEquiv := Equiv.subLeft k
+  map_rel_iff' := by simp [cycleGraph_adj', or_comm]
+
+@[simp]
+theorem cycleGraphSubLeftIso_apply (k v : Fin m) : cycleGraphSubLeftIso k v = k - v :=
+  (rfl)
+
+/-- A reflection of a cycle graph is an involution. -/
+@[simp]
+theorem cycleGraphSubLeftIso_symm (k : Fin m) :
+    (cycleGraphSubLeftIso k).symm = cycleGraphSubLeftIso k :=
+  RelIso.ext fun v ↦ (cycleGraphSubLeftIso k).symm_apply_eq.mpr (by simp)
 
 end TauCeti

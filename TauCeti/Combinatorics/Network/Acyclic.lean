@@ -151,7 +151,8 @@ theorem exists_isAcyclic_le (H : AddSubgroup K) {f : Assignment Q K} (hf : 0 ≤
     ih _ hcard _ hf'₀ hf'H rfl
   refine ⟨g, hg, hg₀, hgf.trans <| sub_le_self _ <|
     walkAssignment_nonneg c hq.le, fun v ↦ ?_, hgH⟩
-  rw [hexc, excessAt_sub, (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), sub_zero]
+  rw [hexc, excessAt_sub_apply,
+    (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), sub_zero]
 
 variable {cap : Assignment Q K} {s t : V}
 

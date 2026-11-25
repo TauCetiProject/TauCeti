@@ -47,16 +47,20 @@ namespace TauCeti.AlmostComplexStructure
 variable {J : AlmostComplexStructure V} (hJ : ∀ u v, ⟪J u, J v⟫ = ⟪u, v⟫)
 include hJ
 
+/-- The alternating form associated to an orthogonal complex structure is the Kähler form
+`ω(u, w) = ⟪J u, w⟫`. -/
+theorem alternatingFormEquiv_kahlerForm_apply (v : Fin 2 → V) :
+    alternatingFormEquiv V 2 J.kahlerForm v = ⟪J (v 0), v 1⟫ := by
+  have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
+  rw [hv, alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+
 /-- The alternating form associated to an orthogonal complex structure has comass at most one.
 This also covers the zero-dimensional space, where the form vanishes. -/
 theorem norm_alternatingFormEquiv_kahlerForm_le :
     ‖alternatingFormEquiv V 2 J.kahlerForm‖ ≤ 1 := by
   refine (alternatingFormEquiv V 2 J.kahlerForm).opNorm_le_bound zero_le_one fun v ↦ ?_
-  have heval : alternatingFormEquiv V 2 J.kahlerForm v = ⟪J (v 0), v 1⟫ := by
-    have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-    rw [hv, alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [heval, Real.norm_eq_abs, Fin.prod_univ_two, one_mul]
+  rw [alternatingFormEquiv_kahlerForm_apply hJ, Real.norm_eq_abs, Fin.prod_univ_two, one_mul]
   simpa only [norm_apply hJ] using abs_real_inner_le_norm (J (v 0)) (v 1)
 
 /-- The dual-comass mass of the Kähler bivector is half the real dimension, including in

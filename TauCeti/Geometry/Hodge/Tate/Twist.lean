@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.Dimension
-public import TauCeti.Geometry.Hodge.Morphism
-public import TauCeti.Geometry.Hodge.Polarization
+public import TauCeti.Geometry.Hodge.WeilOperator
 
 /-!
 # Tate twists of pure Hodge structures
@@ -34,6 +32,8 @@ The convention follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, 
 * `TauCeti.Hodge.HodgeStructureOn.tateTwist`: the Tate twist of a pure Hodge structure.
 * `TauCeti.Hodge.HodgeStructureOn.tateTwist_piece`: its component in degree `p` is the original
   component in degree `p + m`.
+* `TauCeti.Hodge.HodgeStructureOn.tateTwist_weilOperator`: a Tate twist has the same Weil
+  operator.
 * `TauCeti.Hodge.HodgeStructure.Hom.tateTwist`: the induced operation on Hodge morphisms.
 * `TauCeti.Hodge.IsPolarization.tateTwist`: a polarizing form remains polarizing after twisting.
 * `TauCeti.Hodge.IsPolarization.of_F_eq_F_add`: the same for a structure that is a Tate twist only
@@ -143,6 +143,18 @@ theorem isEffective_tateTwist_iff_F_eq_bot (hs : HodgeStructureOn W ω n) (m : �
   rw [isEffective_iff_F_eq_bot, tateTwist_F]
   have hindex : n - 2 * m + 1 + m = n + 1 - m := by ring
   rw [hindex]
+
+/-- A Tate twist has the same Weil operator: on `V(m)^{p, n-2m-p} = V^{p+m, n-m-p}` both act by
+`i^(2p+2m-n)`. -/
+@[simp]
+theorem tateTwist_weilOperator (hs : HodgeStructureOn W ω n) (m : ℤ) :
+    (hs.tateTwist m).weilOperator = hs.weilOperator := by
+  symm
+  refine (hs.tateTwist m).weilOperator_unique _ fun p x hx ↦ ?_
+  rw [tateTwist_piece] at hx
+  rw [hs.weilOperator_apply_of_mem hx]
+  congr 2
+  ring
 
 end HodgeStructureOn
 

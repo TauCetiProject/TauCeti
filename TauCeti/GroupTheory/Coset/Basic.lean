@@ -35,6 +35,8 @@ isomorphism of groups, and under translation:
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
+* `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
+  the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
   action on a type `α` and `V : Set α` mapped onto itself by `H`, the translates `q.out • V`
   cover `⋃ g, g • V`, and they are pairwise disjoint when every `g ∉ H` moves `V` off itself.
@@ -51,9 +53,10 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
-read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
-`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
-`n ≠ 0`.
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
+`Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
+and an index bound from a surjection from a finite type; and `Subgroup.quotientEquivFin` constructs
+a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`.
 -/
 
 public section
@@ -265,6 +268,22 @@ theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup 
   have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
   H.finiteIndex_of_finite_quotient
 
+/-- A subgroup whose coset space admits a surjection from a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space admits a surjection from a finite type
+has finite index. -/]
+theorem finiteIndex_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_surjective f hf
+  H.finiteIndex_of_finite_quotient
+
+/-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by `Nat.card β`. -/
+@[to_additive /-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by
+`Nat.card β`. -/]
+theorem index_le_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.index ≤ Nat.card β := by
+  rw [index_eq_card]
+  exact Nat.card_le_card_of_surjective f hf
+
 /-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
 @[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index
 `n ≠ 0`. -/]
@@ -319,6 +338,41 @@ theorem mk_mul_out_smul {K : Subgroup G} (a : G) (h : H) (k : H ⧸ K.subgroupOf
   -- `(h • k).out` and `h * k.out` differ by an element of `K.subgroupOf H`, i.e. of `K`.
   simpa [QuotientGroup.eq, Subgroup.mem_subgroupOf, mul_assoc] using
     QuotientGroup.eq.mp (mk_out_smul h k)
+
+/-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `(g • q).out⁻¹ * g * q.out` of `H`, so that
+`g * q.out = (g • q).out * outCocycle g q`. -/
+@[to_additive /-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `-(g +ᵥ q).out + g + q.out` of `H`, so that
+`g + q.out = (g +ᵥ q).out + outCocycle g q`. -/]
+noncomputable def outCocycle (g : G) (q : G ⧸ H) : H :=
+  ⟨(g • q).out⁻¹ * g * q.out, by simpa [mul_assoc] using QuotientGroup.eq.mp (mk_out_smul g q)⟩
+
+@[to_additive (attr := simp)]
+theorem coe_outCocycle (g : G) (q : G ⧸ H) :
+    (outCocycle g q : G) = (g • q).out⁻¹ * g * q.out :=
+  (rfl)
+
+-- Not `@[simp]`: `coe_outCocycle` already rewrites the left-hand side.
+/-- Translating a chosen representative by `g` gives the chosen representative of the translated
+coset times the cocycle. -/
+@[to_additive /-- Translating a chosen representative by `g` gives the chosen
+representative of the translated coset plus the cocycle. -/]
+theorem out_mul_outCocycle (g : G) (q : G ⧸ H) :
+    (g • q).out * (outCocycle g q : G) = g * q.out := by
+  simp [mul_assoc]
+
+@[to_additive (attr := simp)]
+theorem outCocycle_one (q : G ⧸ H) : outCocycle 1 q = 1 := by
+  ext
+  simp
+
+/-- The cocycle identity. -/
+@[to_additive /-- The cocycle identity. -/]
+theorem outCocycle_mul (g h : G) (q : G ⧸ H) :
+    outCocycle (g * h) q = outCocycle g (h • q) * outCocycle h q := by
+  ext
+  simp [mul_smul, mul_assoc]
 
 section Action
 

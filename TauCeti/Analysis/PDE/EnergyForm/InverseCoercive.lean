@@ -30,6 +30,8 @@ predicate be applied to inverse-coercive coefficients, with constants depending 
   weak subsolutions and supersolutions.
 * `TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_divergence`: a
   weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` solves the normalized equation with datum `λ⁻¹ F`.
+* `TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence`:
+  the same for `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, with both data divided by `λ`.
 -/
 
 public section
@@ -147,6 +149,30 @@ theorem exists_uniformlyEllipticOn_energyFormH1_eq_divergence
   obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq hratio ha
   refine ⟨a', h', ha', fun v => ?_⟩
   simp only [heq, hu v, inner_smul_left, RCLike.conj_to_real, integral_const_mul, mul_neg]
+
+/-- **Weak solutions with a right-hand side for a normalized coefficient field.** Let `a` be
+measurable and inverse-coercive on `Ω` with constants `λ, Λ`, `Λ ≤ ratio · λ`. A weak solution
+`u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, that is `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every
+`v ∈ H¹₀(Ω)`, is a weak solution of `-∂ᵢ(a'ⁱʲ ∂ⱼu) = λ⁻¹ f + ∂ᵢ(λ⁻¹ Fⁱ)` for a measurable field
+`a'` satisfying the pointwise operator-bound predicate on `Ω` with constants `1` and `ratio`. -/
+theorem exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) {ratio : ℝ}
+    (hratio : Lam ≤ ratio * lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    {u : W1p mu Omega 2} {f : EuclideanSpace ℝ ι → ℝ}
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a' 1 ratio ∧
+      AEStronglyMeasurable a' (mu.restrict Omega) ∧
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a' 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, (lam⁻¹ • f) x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪(lam⁻¹ • F) x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq hratio ha
+  refine ⟨a', h', ha', fun v => ?_⟩
+  simp only [heq, hu v, Pi.smul_apply, smul_eq_mul, real_inner_smul_left, mul_assoc,
+    integral_const_mul, mul_sub]
 
 end IsUniformlyEllipticAE
 
