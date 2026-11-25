@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient.Basic
 public import Mathlib.AlgebraicGeometry.AffineSpace
 
 /-!
