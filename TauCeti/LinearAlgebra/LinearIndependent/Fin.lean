@@ -78,4 +78,18 @@ theorem fin_append_right_append [Semiring R] [AddCommMonoid V] [Module R V] {r :
     LinearIndependent R (Fin.append x z) := by
   simpa [Function.comp_def] using h.fin_append_comp_right (Fin.natAdd_injective r q)
 
+/-- A concatenation is independent when its first block is an independent family in the kernel of
+a linear map `f` and the image of its second block under `f` is independent. -/
+theorem fin_append_of_linearIndependent_comp [Ring R] [AddCommGroup V] [Module R V] {W : Type*}
+    [AddCommGroup W] [Module R W] {x : Fin p → V} {y : Fin q → V} (hx : LinearIndependent R x)
+    (f : V →ₗ[R] W) (hfx : ∀ i, f (x i) = 0) (hy : LinearIndependent R (f ∘ y)) :
+    LinearIndependent R (Fin.append x y) := by
+  refine TauCeti.linearIndependent_fin_append.2
+    ⟨hx, hy.of_comp, Submodule.disjoint_def.2 fun z hzx hzy ↦ ?_⟩
+  have hfz : f z = 0 := (Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦
+    LinearMap.mem_ker.2 (hfx i)) : span R (range x) ≤ LinearMap.ker f) hzx
+  obtain ⟨l, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun R).1 hzy
+  have hl := Fintype.linearIndependent_iff.1 hy l (by simpa [map_sum, map_smul] using hfz)
+  simp [hl]
+
 end LinearIndependent
