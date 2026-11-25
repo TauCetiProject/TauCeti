@@ -5,12 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# The sinc function: nonnegativity and the scaled function `t ↦ t sinc (ω t)`
+# The sinc function: smoothness, nonnegativity and the scaled function `t ↦ t sinc (ω t)`
+
+`sinc` is real analytic, hence smooth, since it is the slope `dslope sin 0` of the analytic
+function `sin`. Away from the origin its derivative is `cos x / x - sin x / x²`
+(`Real.hasDerivAt_sinc_of_ne_zero`).
 
 `sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`, and its
 square has the integrable majorant `2 / (1 + x²)` (`Real.sinc_sq_le_two_div_one_add_sq`). Near
@@ -33,10 +39,30 @@ public section
 
 namespace Real
 
+/-- The function `sinc` is real analytic at every point, including the origin. -/
+@[fun_prop]
+theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
+  simpa only [sinc_eq_dslope] using (analyticAt_sin (x := x)).dslope 0
+
+/-- The function `sinc` is smooth, indeed analytic. -/
+@[fun_prop]
+theorem contDiff_sinc {n : WithTop ℕ∞} : ContDiff ℝ n sinc :=
+  AnalyticOnNhd.contDiff fun x _ => analyticAt_sinc x
+
 /-- `x sinc x = sin x` for every real `x`, including `x = 0`. -/
 @[simp]
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
+
+/-- Away from the origin, the derivative of `sinc` is `cos x / x - sin x / x²`. -/
+theorem hasDerivAt_sinc_of_ne_zero {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt sinc (cos x / x - sin x / x ^ 2) x := by
+  have hd : HasDerivAt (fun t : ℝ => sin t / t) (cos x / x - sin x / x ^ 2) x := by
+    refine ((hasDerivAt_sin x).fun_div (hasDerivAt_id' x) hx).congr_deriv ?_
+    field_simp
+  refine hd.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_ne.mem_nhds hx] with t ht
+  exact sinc_of_ne_zero ht
 
 /-- The bound `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x ≤ 1`. -/
 theorem sinc_sq_le_two_div_one_add_sq (x : ℝ) : sinc x ^ 2 ≤ 2 / (1 + x ^ 2) := by

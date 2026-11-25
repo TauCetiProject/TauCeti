@@ -64,6 +64,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 
 * `TauCeti.isEmbedding_totalSpace_subbundle`: the total space of `V` is a subspace of the total
   space of `E`.
+* `TauCeti.continuous_norm_subbundle`: the fibre norm of a normed bundle stays continuous on the
+  total space of a family of subspaces of its fibres.
 * `TauCeti.isInducing_totalSpaceMk_subbundle`: each fibre `V x` carries the topology induced from
   the total space of `V`.
 * `TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`: the coordinate changes between the
@@ -306,6 +308,22 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
 end Frame
 
 end Semiring
+
+section Norm
+
+omit [TopologicalSpace B] in
+variable {F} in
+/-- On a family `S` of subspaces of the fibres of a normed bundle `E`, with the subspace topology
+of the total space of `E` (`TauCeti.subbundleTopology`), the fibre norm is continuous whenever it
+is continuous on the total space of `E`, for any model fibre `P`. -/
+theorem continuous_norm_subbundle [∀ b, SeminormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
+    (hE : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) (P : Type*) (S : ∀ b, Submodule ℝ (E b)) :
+    letI := subbundleTopology F (F' := P) S
+    Continuous fun v : TotalSpace P (fun b ↦ S b) ↦ ‖v.snd‖ :=
+  letI := subbundleTopology F (F' := P) S
+  hE.comp (isEmbedding_totalSpace_subbundle F P S).continuous
+
+end Norm
 
 section Normed
 

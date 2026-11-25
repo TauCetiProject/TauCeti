@@ -15,7 +15,9 @@ public import Mathlib.Topology.Algebra.Support
 Multiplying a map `u` that is `C^n` on an open set `W` by a scalar cutoff `g` that is `C^n` near
 every point of a set `U` and vanishes near every point of `U` outside `W` gives a map that is
 `C^n` on all of `U` (`TauCeti.contDiffOn_smul_of_eventuallyEq_zero`). This is how a map defined
-on a punctured domain is extended across a puncture by a cutoff vanishing near it.
+on a punctured domain is extended across a puncture by a cutoff vanishing near it. Similarly, if
+no zero of `φ` lies in the closed support of `χ`, the quotient `χ / φ` is as smooth as `χ` and `φ`
+(`ContDiff.mul_inv_of_forall_notMem_tsupport`).
 
 The cutoff perturbation `x ↦ x + χ x • (f x - x)` is `C^n` when `f` is `C^n` near
 `tsupport χ`. Its derivative error is controlled by the value and derivative errors of `f`.
@@ -48,6 +50,18 @@ theorem contDiffOn_smul_of_eventuallyEq_zero {U W : Set E} (hW : IsOpen W) {g : 
   · refine (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq ?_ |>.contDiffWithinAt
     filter_upwards [h z hz hzW] with z' hz'
     rw [hz', zero_smul]
+
+/-- **Smooth quotients.** If no zero of `φ` lies in the closed support of `χ`, then the quotient
+`χ / φ`, which vanishes near the zeros of `φ`, is as smooth as `χ` and `φ`. -/
+theorem _root_.ContDiff.mul_inv_of_forall_notMem_tsupport {𝕜' : Type*} [NormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] {χ φ : E → 𝕜'} (hχ : ContDiff 𝕜 n χ) (hφ : ContDiff 𝕜 n φ)
+    (h : ∀ y, φ y = 0 → y ∉ tsupport χ) : ContDiff 𝕜 n fun y ↦ χ y * (φ y)⁻¹ := by
+  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+  by_cases hy : φ y = 0
+  · refine (contDiffAt_const (c := (0 : 𝕜'))).congr_of_eventuallyEq ?_
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 (h y hy)] with z hz
+    simp [hz]
+  · exact hχ.contDiffAt.mul (hφ.contDiffAt.inv hy)
 
 section Perturbation
 
