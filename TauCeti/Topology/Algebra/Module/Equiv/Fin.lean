@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Splitting and regrouping finite coordinates
@@ -16,7 +17,9 @@ Continuous linear equivalences split vectors indexed by `Fin (n + m)` into two b
 split `Fin n` at an index `d ≤ n`, and regroup the initial blocks of a pair of vectors
 before the remaining blocks. Reindexing lemmas (`splitCoords_cast`, `splitCoords_cast_fst`,
 `splitCoords_cast_snd`, `splitCoords_symm_cast`) describe how `splitCoords` and its inverse
-interact with `Fin.cast` when block sizes are transported along equalities. The vanishing
+interact with `Fin.cast` when block sizes are transported along equalities, and
+`ContinuousLinearEquiv.piCongrLeft_finCongr_apply` reads the coordinates of a vector reindexed
+along an equality of lengths. The vanishing
 characterizations identify products of coordinate subspaces with a single coordinate subspace,
 as needed for product charts.
 
@@ -210,3 +213,34 @@ theorem productCoords_vanishing_iff (hd : d ≤ n) (he : e ≤ m)
   exact Prod.mk_eq_zero
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 M : Type*} [Semiring 𝕜] [AddCommMonoid M] [Module 𝕜 M] [TopologicalSpace M]
+  {a b : ℕ}
+
+/-- Reindexing coordinates along an equality of lengths reads each coordinate at the cast index.
+Not `@[simp]`: `simp` proves it from `ContinuousLinearEquiv.piCongrLeft_const_apply`. -/
+theorem piCongrLeft_finCongr_apply (h : a = b) (x : Fin a → M) (i : Fin b) :
+    piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x i = x (Fin.cast h.symm i) :=
+  piCongrLeft_const_apply 𝕜 M (finCongr h) x i
+
+/-- The inverse of reindexing coordinates along `h` is reindexing along `h.symm`. -/
+@[simp]
+theorem piCongrLeft_finCongr_symm (h : a = b) :
+    (piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h)).symm =
+      piCongrLeft 𝕜 (fun _ : Fin a ↦ M) (finCongr h.symm) := by
+  subst h
+  rfl
+
+/-- Reindexing coordinates along `h` and then along `h'` is reindexing along `h.trans h'`. -/
+@[simp]
+theorem piCongrLeft_finCongr_piCongrLeft_finCongr {c : ℕ} (h : a = b) (h' : b = c)
+    (x : Fin a → M) :
+    piCongrLeft 𝕜 (fun _ : Fin c ↦ M) (finCongr h')
+        (piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x) =
+      piCongrLeft 𝕜 (fun _ : Fin c ↦ M) (finCongr (h.trans h')) x := by
+  subst h h'
+  rfl
+
+end ContinuousLinearEquiv

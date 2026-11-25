@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Poincare
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.CartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.LinearResolution
+import TauCeti.Algebra.Category.GradedModuleCat.Ext.EulerAdmissible
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -106,13 +107,8 @@ theorem subsingleton_gradedExt_gradedVertexSimple_of_ne (i : Q)
     (hY : ∀ p, p ≠ 0 → Y.grading.piece p = ⊥) (n : ℕ) (p : ℤ) (hnp : (n : ℤ) ≠ p) :
     Subsingleton
       (GradedExt.{t} (GradedModuleCat.shift (integerGrade k Q))
-        (gradedVertexSimple k Q i) Y n p) := by
-  have : Subsingleton
-      (Ext.{t} (gradedVertexSimple k Q i) ((GradedModuleCat.shiftFunctor p).obj Y) n) := by
-    rw [GradedModuleCat.shiftFunctor_obj]
-    exact subsingleton_ext_gradedVertexSimple_shiftObj_of_ne k Q i hY n p hnp
-  exact (extAddEquivOfIso (Iso.refl _)
-    ((GradedModuleCat.shiftPowIso (integerGrade k Q) p).app Y) n).injective.subsingleton
+        (gradedVertexSimple k Q i) Y n p) :=
+  (isLinear_gradedVertexSimpleProjectiveResolution k Q i).subsingleton_gradedExt_of_ne hY hnp
 
 /-- Higher Ext from `Sᵢ` into any graded module vanishes from cohomological degree `2` on. -/
 theorem subsingleton_ext_gradedVertexSimple_of_two_le (i : Q)
@@ -134,18 +130,8 @@ def extZeroGradedVertexSimpleShiftObjLinearEquiv (i : Q)
     {Y : GradedModuleCat.{max u v w} (integerGrade k Q)}
     (hY : ∀ p, p ≠ 0 → Y.grading.piece p = ⊥) :
     Ext.{t} (gradedVertexSimple k Q i) (Y.shiftObj 0) 0 ≃ₗ[k]
-      ↥(vertexIdempotent k i • Y.grading.piece 0) := by
-  have hs := shortExact_gradedVertexSimpleResolution k Q i
-  rw [gradedVertexSimpleResolution_def] at hs
-  let aug : (gradedVertexSimple k Q i ⟶ Y.shiftObj 0) ≃ₗ[k]
-      (gradedVertexProjective k Q i ⟶ Y.shiftObj 0) :=
-    LinearEquiv.ofBijective (Linear.leftComp k _ (gradedVertexProjectiveToSimple k Q i))
-      ⟨fun _ _ h => (cancel_epi _).mp h, fun f =>
-        hs.exact.desc' f <|
-          (isLinear_gradedVertexSimpleProjectiveResolution k Q i).hom_eq_zero 1
-            (by simpa [sub_eq_add_neg] using hY 1 one_ne_zero)
-            (gradedArrowSumToVertexProjective k Q i ≫ f)⟩
-  exact (Ext.linearEquiv₀ (R := k)).trans <| aug.trans <|
+      ↥(vertexIdempotent k i • Y.grading.piece 0) :=
+  ((isLinear_gradedVertexSimpleProjectiveResolution k Q i).extZeroLinearEquivShiftObj hY).trans <|
     (Linear.homCongr k (Iso.refl _)
       ((GradedModuleCat.shiftFunctorZeroIso (integerGrade k Q)).app Y)).trans
       (gradedVertexProjectiveHomEquiv k Q i Y)
@@ -161,8 +147,10 @@ theorem coe_extZeroGradedVertexSimpleShiftObjLinearEquiv_apply (i : Q)
       (Ext.linearEquiv₀ (R := k) α).hom
         ((gradedVertexProjectiveToSimple k Q i).hom
           (gradedVertexProjectiveGenerator k Q i)) := by
-  simp [extZeroGradedVertexSimpleShiftObjLinearEquiv, Linear.homCongr_apply]
-  rfl
+  dsimp only [extZeroGradedVertexSimpleShiftObjLinearEquiv, LinearEquiv.trans_apply,
+    Linear.homCongr_apply]
+  rw [coe_gradedVertexProjectiveHomEquiv_apply]
+  simp
 
 /-- On `Ext.mk₀ f`, `extZeroGradedVertexSimpleShiftObjLinearEquiv` evaluates `f` at the head
 generator of `Sᵢ`. -/
@@ -199,6 +187,8 @@ theorem gradedVertexProjectiveToSimple_comp_extZeroGradedVertexSimpleShiftObjLin
     have h1 : extZeroGradedVertexSimpleShiftObjLinearEquiv k Q i hY α = m :=
       LinearEquiv.apply_symm_apply _ m
     simp only [extZeroGradedVertexSimpleShiftObjLinearEquiv, LinearEquiv.trans_apply,
+      GradedProjectiveResolution.IsLinear.extZeroLinearEquivShiftObj_apply,
+      gradedVertexSimpleProjectiveResolution_augmentation,
       Linear.homCongr_apply, Iso.refl_inv, Category.id_comp] at h1
     exact h1
   have hhom : (gradedVertexProjectiveToSimple k Q i ≫ Ext.linearEquiv₀ (R := k) α) ≫
