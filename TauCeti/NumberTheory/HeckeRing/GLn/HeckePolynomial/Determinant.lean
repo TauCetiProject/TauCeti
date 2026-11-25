@@ -91,7 +91,10 @@ theorem charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_one (D : Determinant A
   have hT := D.leading_eq_one_of_charpoly_eq_glnHeckePolynomial h
   have hu : D u = T 1 := by
     simpa using D.apply_eq_of_charpoly_eq_glnHeckePolynomial h
-  have hinv : D ↑u⁻¹ = t := D.apply_inv_eq_of_mul_eq_one u (by rwa [hu])
+  have hinv : D ↑u⁻¹ = t := by
+    simpa only [Units.coe_map_inv, coe_toMonoidHom] using
+      (Units.map D.toMonoidHom u).inv_eq_of_mul_eq_one_right
+        (by rwa [Units.coe_map, coe_toMonoidHom, hu])
   have hC : C t * C (T 1) = 1 := by rw [← C_mul, mul_comm, ht, C_1]
   rw [charpoly_inv, h, hinv, glnHeckePolynomial_one, hT, C_1, one_mul, reflect_sub,
     reflect_C, reflect_one_X]
@@ -107,7 +110,10 @@ theorem charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_two (D : Determinant A
   have hT := D.leading_eq_one_of_charpoly_eq_glnHeckePolynomial h
   have hu : D u = q * T 2 := by
     simpa using D.apply_eq_of_charpoly_eq_glnHeckePolynomial h
-  have hinv : D ↑u⁻¹ = c := D.apply_inv_eq_of_mul_eq_one u (by rwa [hu])
+  have hinv : D ↑u⁻¹ = c := by
+    simpa only [Units.coe_map_inv, coe_toMonoidHom] using
+      (Units.map D.toMonoidHom u).inv_eq_of_mul_eq_one_right
+        (by rwa [Units.coe_map, coe_toMonoidHom, hu])
   have hC : C c * (C q * C (T 2)) = 1 := by rw [← C_mul, ← C_mul, mul_comm, hc, C_1]
   rw [charpoly_inv, h, hinv, glnHeckePolynomial_two, hT, C_1, one_mul]
   have hX : reflect 2 (X : A[X]) = X := by simpa using reflect_monomial (R := A) 2 1
