@@ -82,6 +82,8 @@ symbol is its fibre map.
   function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.sectionPrincipalSymbol_mvfderiv_of_order_one`: a first-order operator has
   `σ_geom(P)(df_x) s(x) = P(f s)(x) - f(x) (P s)(x)`.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_of_order_two`: a second-order operator has
+  `[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
 * `TauCeti.sectionPrincipalSymbol_restrictScalars`: the principal symbol of a `C^∞(M)`-linear map,
   as an operator of order zero, is its fibre map.
@@ -363,6 +365,26 @@ theorem sectionPrincipalSymbol_mvfderiv_of_order_one (hx : I.IsInteriorPoint x)
         f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
   rw [sectionPrincipalSymbol_mvfderiv]
   simp [smulCommutator_apply_apply, ContMDiffSection.smul_apply]
+
+/-- **The commutator symbol of a second-order operator.** For an operator `P` of order at most two,
+`[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`. -/
+theorem sectionCommutatorSymbol_mvfderiv_of_order_two (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P ![mvfderiv I f x, mvfderiv I g x] (s x) =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • g • s) x -
+        f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (g • s) x -
+          g x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • s) x +
+            (f x * g x) • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
+  have hfg : (fun i ↦ mvfderiv I (![f, g] i) x) = ![mvfderiv I f x, mvfderiv I g x] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [← hfg, sectionCommutatorSymbol_mvfderiv, commutatorSymbol_apply_apply]
+  simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
+    mul_apply_eq_comp, smulCommutator_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_succ,
+    Matrix.cons_val_fin_one, ContMDiffSection.coe_sub, Pi.sub_apply,
+    ContMDiffSection.smul_apply, smul_comm g f s]
+  module
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/
