@@ -33,6 +33,9 @@ commutes with base change. For a commutative ring `R`, a commutative additive mo
 * `TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul` and
   `TauCeti.MonoidAlgebra.tensorEquivFinsupp_symm_single`: the equivalence and its inverse on
   generators.
+* `MonoidAlgebra.coeff_tensorEquiv_tmul`, with its additive version: under Mathlib's
+  `MonoidAlgebra.tensorEquiv R : R[M] ⊗[R] R[N] ≃ₗ[R] R[M × N]`, the coefficient of `x ⊗ y` at
+  `(m, n)` is `x(m) y(n)`.
 * `MonoidAlgebra.scalarTensorEquiv_one_tmul` and
   `MonoidAlgebra.scalarTensorEquiv_comp_includeRight`, with their additive versions: Mathlib's
   base change `S ⊗[R] R[M] ≃ₐ[S] S[M]`, restricted to `1 ⊗ R[M]`, is the coefficient change
@@ -81,6 +84,15 @@ end TauCeti.MonoidAlgebra
 namespace MonoidAlgebra
 
 open TensorProduct
+
+/-- The coefficient of `x ⊗ y ∈ R[M × N]` at `(m, n)` is `x(m) y(n)`. -/
+@[to_additive (dont_translate := R)
+/-- The coefficient of `x ⊗ y ∈ R[M × N]` at `(m, n)` is `x(m) y(n)`. -/]
+theorem coeff_tensorEquiv_tmul {R M N : Type*} [CommSemiring R] (x : MonoidAlgebra R M)
+    (y : MonoidAlgebra R N) (g : M × N) :
+    (tensorEquiv R (x ⊗ₜ y)).coeff g = x.coeff g.1 * y.coeff g.2 := by
+  obtain ⟨m, n⟩ := g
+  simp [finsuppTensorFinsupp'_apply_apply]
 
 variable {R M : Type*} [CommSemiring R] [CommMonoid M] (S : Type*) [CommSemiring S] [Algebra R S]
 
