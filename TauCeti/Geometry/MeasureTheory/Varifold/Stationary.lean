@@ -113,22 +113,31 @@ theorem ofReal_firstVariation_le_firstVariationMass {X : 𝓓^{1}(W, E)} (hXU : 
     (hX : ∀ x, ‖X x‖ ≤ 1) : ENNReal.ofReal (firstVariation V X) ≤ firstVariationMass V U :=
   le_iSup₂_of_le X hXU (le_iSup_of_le hX le_rfl)
 
+/-- The total first variation is bounded by `a` if and only if every admissible vector field `X`
+has `δV(X) ≤ a`. -/
+theorem firstVariationMass_le_iff {a : ℝ≥0∞} :
+    firstVariationMass V U ≤ a ↔ ∀ X : 𝓓^{1}(W, E), tsupport X ⊆ U → (∀ x, ‖X x‖ ≤ 1) →
+      ENNReal.ofReal (firstVariation V X) ≤ a := by
+  simp only [firstVariationMass_def, iSup_le_iff]
+
 /-- The total first variation is monotone in the set. -/
 @[gcongr]
 theorem firstVariationMass_mono (h : U ⊆ U') : firstVariationMass V U ≤ firstVariationMass V U' :=
-  iSup_mono fun _ ↦ iSup_mono' fun hXU ↦ ⟨hXU.trans h, le_rfl⟩
+  firstVariationMass_le_iff.2 fun _ hXU hX ↦
+    ofReal_firstVariation_le_firstVariationMass (hXU.trans h) hX
 
 /-- The total first variation of a set `U` only sees `U ∩ W`. -/
 theorem firstVariationMass_inter_opens (V : Measure (W × grassmannian ℝ E k)) (U : Set E) :
     firstVariationMass V (U ∩ W) = firstVariationMass V U :=
   le_antisymm (firstVariationMass_mono inter_subset_left) <|
-    iSup_mono fun X ↦ iSup_mono' fun hXU ↦ ⟨subset_inter hXU X.tsupport_subset, le_rfl⟩
+    firstVariationMass_le_iff.2 fun X hXU hX ↦
+      ofReal_firstVariation_le_firstVariationMass (subset_inter hXU X.tsupport_subset) hX
 
 /-- The total first variation of the empty set is `0`. -/
 @[simp]
 theorem firstVariationMass_empty (V : Measure (W × grassmannian ℝ E k)) :
     firstVariationMass V ∅ = 0 := by
-  refine nonpos_iff_eq_zero.1 (iSup₂_le fun X hX ↦ iSup_le fun _ ↦ ?_)
+  refine nonpos_iff_eq_zero.1 (firstVariationMass_le_iff.2 fun X hX _ ↦ ?_)
   have hX0 : X = 0 := by
     ext x
     exact image_eq_zero_of_notMem_tsupport fun hx ↦ hX hx
@@ -169,7 +178,7 @@ theorem abs_firstVariation_le_mul_firstVariationMass (hU : firstVariationMass V 
 /-- **Stationarity is the vanishing of the total first variation.** -/
 theorem isStationary_iff_firstVariationMass_eq_zero :
     IsStationary V ↔ firstVariationMass V W = 0 := by
-  refine ⟨fun h ↦ nonpos_iff_eq_zero.1 (iSup₂_le fun X _ ↦ iSup_le fun _ ↦ ?_), fun h ↦ ?_⟩
+  refine ⟨fun h ↦ nonpos_iff_eq_zero.1 (firstVariationMass_le_iff.2 fun X _ _ ↦ ?_), fun h ↦ ?_⟩
   · simp [isStationary_iff.1 h X]
   refine isStationary_iff.2 fun X ↦ ?_
   obtain ⟨c, hc⟩ := (map_continuous X).bounded_above_of_compact_support X.hasCompactSupport
@@ -193,7 +202,7 @@ theorem hasLocallyBoundedFirstVariation_iff :
   refine ⟨fun h U _ hUc hUW ↦ ?_, fun h K hK hKW ↦ ?_⟩
   · obtain ⟨C, hC⟩ := h _ hUc hUW
     refine ne_top_of_le_ne_top (ENNReal.ofReal_ne_top (r := C))
-      (iSup₂_le fun X hXU ↦ iSup_le fun hX ↦ ENNReal.ofReal_le_ofReal ?_)
+      (firstVariationMass_le_iff.2 fun X hXU hX ↦ ENNReal.ofReal_le_ofReal ?_)
     exact (le_abs_self _).trans (hC X (hXU.trans subset_closure) hX)
   · obtain ⟨U, hU, hKU, hUW, hUc⟩ :=
       exists_open_between_and_isCompact_closure hK W.isOpen hKW
@@ -217,7 +226,7 @@ theorem firstVariationMass_add_le (U : Set E) :
     firstVariationMass (V₁ + V₂) U ≤ firstVariationMass V₁ U + firstVariationMass V₂ U := by
   by_cases h : IsFiniteMeasureOnCompacts (V₁ + V₂)
   · obtain ⟨_, _⟩ := isFiniteMeasureOnCompacts_add_iff.1 h
-    refine iSup₂_le fun X hXU ↦ iSup_le fun hX ↦ ?_
+    refine firstVariationMass_le_iff.2 fun X hXU hX ↦ ?_
     rw [firstVariation_add_measure, add_apply]
     exact ENNReal.ofReal_add_le.trans (add_le_add
       (ofReal_firstVariation_le_firstVariationMass hXU hX)
@@ -240,7 +249,7 @@ theorem firstVariationMass_le_liminf {V : ℕ → Measure (W × grassmannian ℝ
   by_cases hV₀ : IsFiniteMeasureOnCompacts V₀
   swap
   · simp [(isStationary_of_not_isFiniteMeasureOnCompacts hV₀).firstVariationMass_eq_zero U]
-  refine iSup₂_le fun X hXU ↦ iSup_le fun hX ↦ ?_
+  refine firstVariationMass_le_iff.2 fun X hXU hX ↦ ?_
   have hlim : Tendsto (fun j ↦ ENNReal.ofReal (firstVariation (V j) X)) atTop
       (𝓝 (ENNReal.ofReal (firstVariation V₀ X))) :=
     (ENNReal.continuous_ofReal.tendsto _).comp
