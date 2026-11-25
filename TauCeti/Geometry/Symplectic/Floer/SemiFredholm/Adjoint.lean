@@ -89,8 +89,8 @@ In the namespace `TauCeti.SymplecticForm`:
   continuous weight `w ≥ 0` is positive on the larger disc `‖z‖ ≤ b`. A cutoff between the discs
   costs an `L²` norm of `η` (`exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le`),
   and the compact-set estimate passes to the weighted norm by
-  `setIntegral_sobolevDensity_le_mul_integral_mul_add`, which the core of the pair of pants
-  shares. It is the adjoint counterpart of
+  `setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add`, which the
+  core of the pair of pants shares. It is the adjoint counterpart of
   `exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`, and the estimate on
   the compact core of a plane with one cylindrical end, such as a PSS plane.
 
@@ -1097,8 +1097,9 @@ open Floer
 `L²` estimate `hcore` on covector fields supported in a compact set `K`, and `1 ≤ Λ w` on `K`, then
 a `C²` covector field `θ` of compact support in `K ∩ S` satisfies
 `∫_K (‖∂s θ‖² + ‖∂t θ‖² + ‖θ‖²) ≤ C₀ (Λ ∫ w ‖D_u^* θ‖² + ∫_K ‖θ‖²)`. -/
-theorem setIntegral_sobolevDensity_le_mul_integral_mul_add (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {S : Set (ℝ × ℝ)}
+theorem setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {S : Set (ℝ × ℝ)}
     (hS : IsOpen S) (hJ : ∀ z ∈ S, ContDiffAt ℝ 1 (uncurry J) (z, u z))
     (hKs : ∀ z ∈ S, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z ∈ S, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ S, ContDiffAt ℝ 1 u z)
@@ -1108,11 +1109,11 @@ theorem setIntegral_sobolevDensity_le_mul_integral_mul_add (ω : SymplecticForm 
     (hcore : ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ → tsupport θ ⊆ K →
       ∫ z in K, sobolevDensity θ z ≤
         C₀ * ∫ z in K, (‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2 + ‖θ z‖ ^ 2))
-    {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ)
-    (hθS : tsupport θ ⊆ S) (hθK : tsupport θ ⊆ K) :
+    {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 2 θ) (hθS : tsupport θ ⊆ S) (hθK : tsupport θ ⊆ K) :
     ∫ z in K, sobolevDensity θ z ≤
       C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2) +
         ∫ z in K, ‖θ z‖ ^ 2) := by
+  have hθc : HasCompactSupport θ := hK.of_isClosed_subset (isClosed_tsupport θ) hθK
   have hDc := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu
     (hθ.of_le one_le_two) hθS
   have hW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq hS hJ hKs hKt hu hwc
@@ -1168,21 +1169,16 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizat
   obtain ⟨C₀, hC₀, hcore⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
       (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hc
-  -- `w⁻¹` is bounded on the disc `K`, by `Λ'`, so that `1 ≤ Λ' w` there.
-  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn (hwc.continuousOn.inv₀ fun z hz ↦
-    (hwb z hz).ne')
-  set Λ' := max Λ 0
-  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ Λ' * w z := by
-    rw [← inv_mul_cancel₀ (hwb z hz).ne']
-    exact mul_le_mul_of_nonneg_right
-      ((Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left _ _))) (hwb z hz).le
+  -- `w` is bounded below on the disc `K` by some `m > 0`, so that `1 ≤ m⁻¹ w` there.
+  obtain ⟨m, hm, hmK⟩ := hK.exists_forall_le' hwc.continuousOn hwb
+  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ m⁻¹ * w z := (one_le_inv_mul₀ hm).2 (hmK z hz)
   -- A cutoff `β` equal to `1` near `‖z‖ ≤ a` and vanishing near `‖z‖ ≥ b`.
   obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
   obtain ⟨C₁, hC₁, herr⟩ := ω.exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le
     (J := J') hJ hKs hKt hu hw hwc (hβ.of_le (by simp)) hβ01 hK fun z hz ↦ hβK z (not_le.1 hz)
-  refine ⟨C₀ * (Λ' * (2 + C₁) + 1), by positivity, fun η hη hηc ↦ ?_⟩
+  refine ⟨C₀ * (m⁻¹ * (2 + C₁) + 1), by positivity, fun η hη hηc ↦ ?_⟩
   set η₀ : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ β z • η z
   have hη₀ : ContDiff ℝ 2 η₀ := (hβ.of_le (by simp)).smul hη
   have hη₀K : tsupport η₀ ⊆ K := fun z hz ↦ by
@@ -1200,23 +1196,22 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizat
       fun z _ ↦ by
         simp only [η₀, norm_smul, Real.norm_eq_abs, abs_of_nonneg (hβ01 z).1, mul_pow]
         exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ (hβ01 z).1 (hβ01 z).2)
-  have h : Λ' * (2 * X + C₁ * Y) + Y ≤ (Λ' * (2 + C₁) + 1) * (X + Y) := by
-    nlinarith [mul_nonneg (mul_nonneg (le_max_right Λ 0) hC₁) hX, mul_nonneg (le_max_right Λ 0) hY]
+  have h : m⁻¹ * (2 * X + C₁ * Y) + Y ≤ (m⁻¹ * (2 + C₁) + 1) * (X + Y) := by
+    nlinarith [mul_nonneg (mul_nonneg (inv_pos.2 hm).le hC₁) hX, mul_nonneg (inv_pos.2 hm).le hY]
   calc _ ≤ ∫ z in K, sobolevDensity η₀ z :=
         setIntegral_sobolevDensity_le_of_eventuallyEq_one
-          (measurableSet_le Complex.equivRealProdCLM.symm.continuous.norm.measurable
-            measurable_const) hK (ofPred_subset_ofPred.2 fun _ hz ↦ hz.trans hab.le) hβ1
-          (hη₀.of_le one_le_two)
-    _ ≤ C₀ * (Λ' * (∫ z, w z * ‖ω.floerLinearizationAdjoint J' Ks Kt u η₀ z‖ ^ 2) +
+          (isCompact_setOf_norm_equivRealProdCLM_symm_le a).measurableSet hK
+          (ofPred_subset_ofPred.2 fun _ hz ↦ hz.trans hab.le) hβ1 (hη₀.of_le one_le_two)
+    _ ≤ C₀ * (m⁻¹ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J' Ks Kt u η₀ z‖ ^ 2) +
           ∫ z in K, ‖η₀ z‖ ^ 2) :=
-        ω.setIntegral_sobolevDensity_le_mul_integral_mul_add (J := J') isOpen_univ
-          (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hw
-          hwc.continuousOn hK (le_max_right Λ 0) hΛK hC₀ hcore hη₀
-          (hηc.mono (support_smul_subset_right β η)) (subset_univ _) hη₀K
-    _ ≤ C₀ * (Λ' * (2 * X + C₁ * Y) + Y) := by
+        ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add
+          (J := J') isOpen_univ (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
+          (fun z _ ↦ hu.contDiffAt) hw hwc.continuousOn hK (inv_pos.2 hm).le hΛK hC₀ hcore hη₀
+          (subset_univ _) hη₀K
+    _ ≤ C₀ * (m⁻¹ * (2 * X + C₁ * Y) + Y) := by
         gcongr
         exact herr (hη.of_le one_le_two) hηc
-    _ ≤ C₀ * ((Λ' * (2 + C₁) + 1) * (X + Y)) := mul_le_mul_of_nonneg_left h hC₀
+    _ ≤ C₀ * ((m⁻¹ * (2 + C₁) + 1) * (X + Y)) := mul_le_mul_of_nonneg_left h hC₀
     _ = _ := by ring
 
 end Disc

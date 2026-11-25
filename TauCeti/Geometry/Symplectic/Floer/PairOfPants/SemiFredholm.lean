@@ -882,8 +882,7 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (ω : Symple
     {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w thricePuncturedSphereReal)
     (hwS : ∀ z ∈ thricePuncturedSphereReal, 0 < w z) {Λ : ℝ} (hΛ₀ : 0 ≤ Λ)
     (hΛ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), (w z)⁻¹ ≤ Λ)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
-    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
       C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
           (fun w ↦ coreCutoff R₀ w • η w) z‖ ^ 2) +
@@ -912,10 +911,9 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (ω : Symple
         simpa only [ηc, K] using setIntegral_sobolevDensity_le_coreCutoff R₀ hη hηS
     _ ≤ C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) +
           ∫ z in K, ‖ηc z‖ ^ 2) :=
-        ω.setIntegral_sobolevDensity_le_mul_integral_mul_add isOpen_thricePuncturedSphereReal hJ
-          hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint hηc'
-          (hηc.mono (support_smul_subset_right (coreCutoff R₀) η)) (hηcS.trans hηS)
-          (by simpa only [ηc, K] using tsupport_coreCutoff_smul_subset hR₀ hηS)
+        ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add
+          isOpen_thricePuncturedSphereReal hJ hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint hηc'
+          (hηcS.trans hηS) (by simpa only [ηc, K] using tsupport_coreCutoff_smul_subset hR₀ hηS)
     _ ≤ _ := by gcongr
 
 /-- **Patching the adjoint at one height.** Under the hypotheses of
@@ -982,7 +980,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
   have hcore : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
       C₀ * (Λ * (2 * X + 2 * c ^ 2 * Λ * Y) + Y) :=
     (ω.setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (J := J') hJ hKs hKt hu
-    (by linarith) hC₀ hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηc hηS).trans (by
+    (by linarith) hC₀ hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηS).trans (by
       gcongr
       exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
         (J := J') hJ hKs hKt hu hK (fun z hz ↦ contDiffAt_coreCutoff R₀ hz)
