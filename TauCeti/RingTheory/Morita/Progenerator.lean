@@ -27,7 +27,7 @@ equivalence over a commutative base `R`:
 The first statement does not pass through a tensor product over `End_A P`, nor through matrices.
 Both `A` and `(End_A P)ᵐᵒᵖ` are corners of the single ring `S = End_A(A × P)ᵐᵒᵖ`: the endomorphism
 ring of a retract of a module `M` is the corner of `End_A M` cut out by the idempotent of the
-retract (`TauCeti.cornerEndRetractAlgEquiv`). The corner of `A` is full because `P` is finitely
+retract (`TauCeti.cornerOpEndRetractAlgEquiv`). The corner of `A` is full because `P` is finitely
 generated and projective, a dual basis writing `id_P` as a sum of maps factoring through `A`; the
 corner of `P` is full because `P` is a generator, which writes `id_A` as a sum of maps factoring
 through `P`. Fullness makes `S` Morita equivalent to both corners
@@ -70,7 +70,7 @@ public section
 open CategoryTheory MulOpposite
 open scoped ModuleCat.Algebra Pointwise
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -79,9 +79,9 @@ section Linking
 /-- The restriction of scalars along an isomorphism of `R`-algebras `f : A ≃ B` carries an
 `A`-module `Z` to a `B`-module `W` as soon as an additive isomorphism `Z ≃ W` turns the action of
 `f.symm b` into the action of `b`. -/
-theorem nonempty_ofAlgEquiv_functor_obj_iso (R : Type*) [CommSemiring R] {A B : Type u} [Ring A]
-    [Algebra R A] [Ring B] [Algebra R B] (f : A ≃ₐ[R] B) {Z : ModuleCat.{u} A}
-    {W : ModuleCat.{u} B} (g : Z ≃+ W)
+theorem nonempty_ofAlgEquiv_functor_obj_iso (R : Type*) [CommSemiring R] {A : Type u} {B : Type v}
+    [Ring A] [Algebra R A] [Ring B] [Algebra R B] (f : A ≃ₐ[R] B) {Z : ModuleCat.{max u v} A}
+    {W : ModuleCat.{max u v} B} (g : Z ≃+ W)
     (hg : ∀ (b : B) (z : Z), g (f.symm b • z) = b • g z) :
     Nonempty ((MoritaEquivalence.ofAlgEquiv f).eqv.functor.obj Z ≅ W) :=
   let g' : (MoritaEquivalence.ofAlgEquiv f).eqv.functor.obj Z ≃ₗ[B] W :=
@@ -113,8 +113,8 @@ theorem isMoritaEquivalent_moduleEnd_mulOpposite_of_sum_comp_eq_id
     (span_op_comp_eq_top hX hsum s u v huv)
   have h₂ := (isIdempotentElem_op_comp hY).isMoritaEquivalent_corner R
     (span_op_comp_eq_top hY hsum' t u' v' huv')
-  exact (IsMoritaEquivalent.of_algEquiv R (cornerEndRetractAlgEquiv R hX).symm).trans R
-    ((h₁.symm R).trans R (h₂.trans R (.of_algEquiv R (cornerEndRetractAlgEquiv R hY))))
+  exact (IsMoritaEquivalent.of_algEquiv R (cornerOpEndRetractAlgEquiv R hX).symm).trans R
+    ((h₁.symm R).trans R (h₂.trans R (.of_algEquiv R (cornerOpEndRetractAlgEquiv R hY))))
 
 /-- **Morita equivalence between the endomorphism rings of two modules in each other's additive
 closure.** If each of two `A`-modules `X` and `Y` is a retract of a finite power of the other, a
@@ -130,17 +130,17 @@ theorem exists_moritaEquivalence_moduleEnd_of_comp_eq_id {m n : ℕ}
   have hsum : LinearMap.inl A X Y ∘ₗ LinearMap.fst A X Y +
       LinearMap.inr A X Y ∘ₗ LinearMap.snd A X Y = .id := by
     ext <;> simp
-  have hp := span_comp_eq_top_of_sum_comp_eq_id hX hsum _ _ _ (sum_comp_eq_id_of_comp_eq_id hrs)
-  have hq := span_comp_eq_top_of_sum_comp_eq_id hY ((add_comm _ _).trans hsum) _ _ _
+  have hp := span_comp_eq_top hX hsum _ _ _ (sum_comp_eq_id_of_comp_eq_id hrs)
+  have hq := span_comp_eq_top hY ((add_comm _ _).trans hsum) _ _ _
     (sum_comp_eq_id_of_comp_eq_id hrs')
   -- The `C`-module `N = X × Y`, for `C = Module.End A (X × Y)`, and its two pieces.
   let N := ModuleCat.of (Module.End A (X × Y)) (X × Y)
-  let eX := isIdempotentElem_comp_of_comp_eq_id hX
-  let eY := isIdempotentElem_comp_of_comp_eq_id hY
-  obtain ⟨I₁⟩ := nonempty_ofAlgEquiv_functor_obj_iso R (cornerModuleEndAlgEquiv R hX).symm
+  let eX := isIdempotentElem_comp hX
+  let eY := isIdempotentElem_comp hY
+  obtain ⟨I₁⟩ := nonempty_ofAlgEquiv_functor_obj_iso R (cornerEndRetractAlgEquiv R hX).symm
     (Z := ModuleCat.of _ X) (W := eX.cornerFunctor.obj N) (smulTopRetractAddEquiv hX)
     fun c x ↦ by rw [AlgEquiv.symm_symm]; exact smulTopRetractAddEquiv_smul R hX c x
-  obtain ⟨I₂⟩ := nonempty_ofAlgEquiv_functor_obj_iso R (cornerModuleEndAlgEquiv R hY)
+  obtain ⟨I₂⟩ := nonempty_ofAlgEquiv_functor_obj_iso R (cornerEndRetractAlgEquiv R hY)
     (Z := eY.cornerFunctor.obj N) (W := ModuleCat.of _ Y) (smulTopRetractAddEquiv hY).symm
     fun g z ↦ by exact smulTopRetractAddEquiv_symm_smul R hY g z
   -- The corner equivalences, built directly so that their functors stay `V ↦ eV`.
@@ -148,14 +148,14 @@ theorem exists_moritaEquivalence_moduleEnd_of_comp_eq_id {m n : ℕ}
     ⟨eX.cornerEquivalence.{u, u} hp, inferInstanceAs (eX.cornerFunctor.{u}.Linear R)⟩
   let Cq : MoritaEquivalence R (Module.End A (X × Y)) eY.Corner :=
     ⟨eY.cornerEquivalence.{u, u} hq, inferInstanceAs (eY.cornerFunctor.{u}.Linear R)⟩
-  refine ⟨(MoritaEquivalence.ofAlgEquiv (cornerModuleEndAlgEquiv R hX).symm).trans R
+  refine ⟨(MoritaEquivalence.ofAlgEquiv (cornerEndRetractAlgEquiv R hX).symm).trans R
     ((Cp.symm R).trans R (Cq.trans R
-      (MoritaEquivalence.ofAlgEquiv (cornerModuleEndAlgEquiv R hY)))), ⟨?_⟩⟩
+      (MoritaEquivalence.ofAlgEquiv (cornerEndRetractAlgEquiv R hY)))), ⟨?_⟩⟩
   -- `X ↦ eX ↦ N ↦ eY ↦ Y`, through the unit of the first corner equivalence.
   -- The steps are kept opaque: unfolding them against the goal is slow.
   have J₁ := (Cp.symm R).eqv.functor.mapIso I₁
   have J₂ := (Cp.eqv.unitIso.app N).symm
-  have J₃ := (MoritaEquivalence.ofAlgEquiv (cornerModuleEndAlgEquiv R hY)).eqv.functor.mapIso
+  have J₃ := (MoritaEquivalence.ofAlgEquiv (cornerEndRetractAlgEquiv R hY)).eqv.functor.mapIso
     (Cq.eqv.functor.mapIso (J₁ ≪≫ J₂))
   exact J₃ ≪≫ I₂
 

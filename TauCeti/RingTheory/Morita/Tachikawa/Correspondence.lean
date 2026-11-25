@@ -51,7 +51,7 @@ The multiplicities of `M` are kept: `M` goes to `M'` itself, not only `add M` to
 ## Implementation notes
 
 `TauCeti.RingTheory.Idempotents.Corner.Retract` identifies the endomorphism ring of a retract with
-a corner of the endomorphism ring (`TauCeti.cornerModuleEndAlgEquiv`), not only of its opposite.
+a corner of the endomorphism ring (`TauCeti.cornerEndRetractAlgEquiv`), not only of its opposite.
 The modules `M` and `Y` themselves must be tracked, as modules over `Module.End Γ M` and
 `Module.End Γ Y` acting by evaluation, so step 4 uses these corners. The corner functor of
 `IsIdempotentElem.cornerEquivalence` is explicit, `V ↦ eV`, which computes the image of the
