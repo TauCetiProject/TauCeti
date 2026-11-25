@@ -28,6 +28,11 @@ morphism of commutative `𝒪ₓ`-algebras (`CategoryTheory.CommMon.homOfSection
 lets algebra morphisms and isomorphisms be constructed sectionwise, for instance by extending
 ring maps given on affine opens.
 
+The unit of a commutative `𝒪ₓ`-algebra sends a regular function to its image under the structure
+map (`CategoryTheory.CommMon.one_app_eq_algebraMap`), so when the unit is an isomorphism the
+structure maps on sections are bijective
+(`CategoryTheory.CommMon.bijective_algebraMap_of_isIso_one`).
+
 These constructions use Mathlib's `Functor.mapMon` and `Functor.mapCommMon` and the equivalence
 between monoid objects in modules and algebras, applied to the lax braided sections functor. The
 restriction map `CategoryTheory.CommMon.restrictSections` of a commutative monoid object is that
@@ -420,6 +425,15 @@ lemma _root_.CategoryTheory.CommMon.one_app_eq_algebraMap (A : CommMon X.Modules
     (MonObj.one (X := A.X)).app U r = algebraMap Γ(X, U) Γ(A.X, U) r := by
   rw [CommMon.sections_algebraMap_def, Scheme.Modules.sectionsFunctor_ε]
   rfl
+
+/-- If the unit `𝒪ₓ ⟶ A` is an isomorphism, the structure map `Γ(X, U) ⟶ Γ(A, U)` is bijective
+on every open `U`: it is the unit on sections over `U`. -/
+theorem _root_.CategoryTheory.CommMon.bijective_algebraMap_of_isIso_one (A : CommMon X.Modules)
+    [IsIso (MonObj.one (X := A.X))] (U : X.Opens) :
+    Function.Bijective (algebraMap Γ(X, U) Γ(A.X, U)) := by
+  rw [show (algebraMap Γ(X, U) Γ(A.X, U) : Γ(X, U) → Γ(A.X, U)) = (MonObj.one (X := A.X)).app U
+    from funext fun r ↦ (A.one_app_eq_algebraMap U r).symm]
+  exact ConcreteCategory.bijective_of_isIso _
 
 /-- Scalar multiplication on sections of a commutative `𝒪ₓ`-algebra is multiplication by the
 image under the structure map. -/

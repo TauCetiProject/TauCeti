@@ -14,7 +14,8 @@ If the unit `𝒪_X ⟶ A` of a quasi-coherent commutative `𝒪_X`-algebra `A` 
 structure morphism `Spec_X A ⟶ X` of its relative spectrum is an isomorphism
 (`CategoryTheory.CommMon.isIso_relativeSpecToBase_of_isIso_one`): over every affine open `U` of
 `X`, the relative spectrum is `Spec Γ(A, U)`, and the structure map `Γ(X, U) ⟶ Γ(A, U)` is the
-unit on sections over `U`, hence bijective.
+unit on sections over `U`, hence bijective
+(`CategoryTheory.CommMon.bijective_algebraMap_of_isIso_one`).
 
 ## Main declarations
 
@@ -33,14 +34,6 @@ noncomputable section
 namespace CategoryTheory.CommMon
 
 variable {X : Scheme.{u}} (A : CommMon X.Modules)
-
-/-- If the unit `𝒪_X ⟶ A` is an isomorphism, the structure map `Γ(X, U) ⟶ Γ(A, U)` is bijective
-on every open `U`: it is the unit on sections over `U`. -/
-theorem bijective_algebraMap_of_isIso_one [IsIso η[A.X]] (U : X.Opens) :
-    Function.Bijective (algebraMap Γ(X, U) Γ(A.X, U)) := by
-  rw [show (algebraMap Γ(X, U) Γ(A.X, U) : Γ(X, U) → Γ(A.X, U)) = (η[A.X]).app U from
-    funext fun r ↦ (A.one_app_eq_algebraMap U r).symm]
-  exact ConcreteCategory.bijective_of_isIso _
 
 /-- **The relative spectrum of a trivial algebra is the base.** If the unit `𝒪_X ⟶ A` of a
 quasi-coherent commutative `𝒪_X`-algebra is an isomorphism, the structure morphism
