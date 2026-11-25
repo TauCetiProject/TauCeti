@@ -128,6 +128,12 @@ theorem cast_crossProduct_point_right {p : ℕ} (c : SingularCube X p) (y : Y) :
   rw [cast_apply, crossProduct_zero_right, point_apply]
   rfl
 
+/-- The cross product of two points is the point of the product. -/
+@[simp]
+theorem crossProduct_point_point (x : X) (y : Y) :
+    crossProduct (point x) (point y) = point (x, y) :=
+  ContinuousMap.ext fun _ ↦ by simp
+
 /-- Degeneracy in the first coordinate block is exactly degeneracy of the first factor. -/
 @[simp]
 theorem isDegenerateAt_crossProduct_castAdd_iff (c : SingularCube X p)

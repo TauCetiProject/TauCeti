@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Ideal.IdempotentFG
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Unramified.Finite
 public import Mathlib.RingTheory.Etale.Pi
-public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
@@ -88,6 +87,7 @@ theorem comp_eq_comp_of_isUnit_one_sub_productMap {R S T U : Type*}
   have hidem : IsIdempotentElem (h (Algebra.TensorProduct.productMap f g e)) := (he.map _).map h
   exact hu.mul_left_eq_zero.mp (by simpa only [map_sub, map_one] using hidem.mul_one_sub_self)
 
+open _root_.Algebra.FormallyUnramified in
 /-- Maps out of an essentially finite type unramified algebra are determined modulo any ideal
 contained in the target's Jacobson radical. -/
 theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
@@ -96,14 +96,15 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     {f g : S →ₐ[R] T}
     (hfg : (Ideal.Quotient.mkₐ R J).comp f = (Ideal.Quotient.mkₐ R J).comp g) :
     f = g := by
-  obtain ⟨e, he, hker⟩ := exists_isIdempotentElem_ker_lmul_eq_span R S
-  have hpe := Algebra.TensorProduct.productMap_mem_of_comp_eq
-    (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J hfg
-  have hu : IsUnit (1 - Algebra.TensorProduct.productMap f g e) := by
-    apply Ideal.isUnit_of_sub_one_mem_jacobson
-    simpa only [sub_sub_cancel_left, Ideal.jacobson_bot] using hJ (J.neg_mem hpe)
-  simpa only [AlgHom.id_comp] using comp_eq_comp_of_isUnit_one_sub_productMap he hker.le f g
-    (AlgHom.id R T) hu
+  -- Modulo `J`, the equalizer idempotent of `f` and `g` is that of equal maps, namely `1`, so it
+  -- is a unit. An idempotent unit is `1`, so `f = g`.
+  have h1 : Ideal.Quotient.mk J (equalizerIdempotent f g) = Ideal.Quotient.mk J 1 := by
+    rw [← Ideal.Quotient.mkₐ_eq_mk R, map_equalizerIdempotent, hfg, equalizerIdempotent_self,
+      map_one]
+  have hu : IsUnit (equalizerIdempotent f g) := Ideal.isUnit_of_sub_one_mem_jacobson _
+    (hJ.trans_eq Ideal.jacobson_bot (Ideal.Quotient.eq.mp h1))
+  exact equalizerIdempotent_eq_one_iff.mp <|
+    (IsIdempotentElem.iff_eq_one_of_isUnit hu).mp (isIdempotentElem_equalizerIdempotent f g)
 
 /-- The diagonal idempotent of an essentially finite type, formally unramified algebra is the only
 element of `S ⊗[R] S` that annihilates every `1 ⊗ s - s ⊗ 1` and maps to `1` under multiplication.
@@ -122,11 +123,8 @@ theorem eq_elem {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     induction x using TensorProduct.inductionOn with
     | tmul a b =>
       have hb : (1 ⊗ₜ[R] b) * u = (b ⊗ₜ[R] 1) * u := sub_eq_zero.mp (by rw [← sub_mul, hu])
-      calc a ⊗ₜ[R] b * u = (a ⊗ₜ[R] 1) * ((1 ⊗ₜ[R] b) * u) := by
-            rw [← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-        _ = (Algebra.TensorProduct.lmul' R (a ⊗ₜ[R] b) ⊗ₜ[R] 1) * u := by
-            rw [hb, ← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
-              Algebra.TensorProduct.lmul'_apply_tmul]
+      calc a ⊗ₜ[R] b * u = (a ⊗ₜ[R] 1) * ((1 ⊗ₜ[R] b) * u) := by simp [← mul_assoc]
+        _ = (Algebra.TensorProduct.lmul' R (a ⊗ₜ[R] b) ⊗ₜ[R] 1) * u := by simp [hb, ← mul_assoc]
     | add x y hx hy => rw [add_mul, hx, hy, map_add, TensorProduct.add_tmul, add_mul]
   calc t = (Algebra.TensorProduct.lmul' R (Algebra.FormallyUnramified.elem R S) ⊗ₜ[R] 1) * t := by
         rw [Algebra.FormallyUnramified.lmul_elem, ← Algebra.TensorProduct.one_def, one_mul]
@@ -208,31 +206,29 @@ theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
       one_mul, hs, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sub_self]
   · simp [← Pi.single_mul, Finset.univ_sum_single, Pi.one_def]
 
-/-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
-diagonal and such that, for every `w ∈ W`, the product of `t` with the difference
-`1 ⊗ w - (w mod I) ⊗ 1` lies in the extension of `I` along `includeRight`. So the two images become
-congruent modulo this ideal after inverting `t`. It lifts the element of `S ⊗[A] S` given by
-Mathlib's `Algebra.FormallyUnramified.iff_exists_tensorProduct`. -/
+/-- For a quotient `S = W ⧸ I` unramified over `A`, the diagonal idempotent
+`Algebra.FormallyUnramified.elem A S` of `S ⊗[A] S` lifts to some `t ∈ S ⊗[A] W` such that, for
+every `w ∈ W`, the product of `t` with the difference `1 ⊗ w - (w mod I) ⊗ 1` lies in the extension
+of `I` along `includeRight`. So the two images become congruent modulo this ideal after inverting
+`t`. -/
 theorem exists_mul_tmul_sub_mem_map_includeRight (A : Type*) {W : Type*} [CommRing A]
     [CommRing W] [Algebra A W] (I : Ideal W) [Algebra.FormallyUnramified A (W ⧸ I)]
     [Algebra.EssFiniteType A (W ⧸ I)] :
     ∃ t : (W ⧸ I) ⊗[A] W,
-      Algebra.TensorProduct.lmul' A
-          (Algebra.TensorProduct.map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) t) = 1 ∧
+      Algebra.TensorProduct.map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) t =
+        Algebra.FormallyUnramified.elem A (W ⧸ I) ∧
       ∀ w : W, ((1 : W ⧸ I) ⊗ₜ[A] w - Ideal.Quotient.mk I w ⊗ₜ[A] (1 : W)) * t ∈
         I.map (Algebra.TensorProduct.includeRight : W →ₐ[A] (W ⧸ I) ⊗[A] W) := by
-  obtain ⟨t, ht, ht₁⟩ := Algebra.FormallyUnramified.iff_exists_tensorProduct.mp
-    (inferInstance : Algebra.FormallyUnramified A (W ⧸ I))
-  obtain ⟨t, rfl⟩ := Algebra.TensorProduct.map_surjective (f := AlgHom.id A (W ⧸ I))
-    (g := Ideal.Quotient.mkₐ A I) Function.surjective_id Ideal.Quotient.mk_surjective t
-  refine ⟨t, ht₁, fun w ↦ ?_⟩
+  obtain ⟨t, ht⟩ := Algebra.TensorProduct.map_surjective (f := AlgHom.id A (W ⧸ I))
+    (g := Ideal.Quotient.mkₐ A I) Function.surjective_id Ideal.Quotient.mk_surjective
+    (Algebra.FormallyUnramified.elem A (W ⧸ I))
+  refine ⟨t, ht, fun w ↦ ?_⟩
   -- The kernel of `W ⧸ I ⊗[A] W → W ⧸ I ⊗[A] W ⧸ I` is generated by `I`.
   have hker := Algebra.TensorProduct.lTensor_ker (A := W ⧸ I) (Ideal.Quotient.mkₐ A I)
     Ideal.Quotient.mk_surjective
   have hI : RingHom.ker (Ideal.Quotient.mkₐ A I) = I := Ideal.Quotient.mkₐ_ker A I
   rw [hI] at hker
-  rw [← hker, RingHom.mem_ker, map_mul, map_sub, Algebra.TensorProduct.map_tmul,
-    Algebra.TensorProduct.map_tmul]
-  simpa using ht (Ideal.Quotient.mk I w)
+  rw [← hker, RingHom.mem_ker, map_mul, ht]
+  simpa using Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (Ideal.Quotient.mk I w)
 
 end TauCeti.Algebra.FormallyUnramified

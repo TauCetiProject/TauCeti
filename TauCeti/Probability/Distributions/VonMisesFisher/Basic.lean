@@ -258,11 +258,18 @@ theorem rnDeriv_vonMisesFisherMeasure (m : sphere (0 : E) 1) (κ : ℝ) :
   rw [vonMisesFisherMeasure_eq_withDensity]
   exact Measure.rnDeriv_withDensity _ (measurable_vonMisesFisherPDF m κ)
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- A random variable with a natural-parameter von Mises--Fisher law has its named density
 relative to uniform sphere probability. -/
-theorem hasPDF_of_hasLaw_vonMisesFisherNaturalMeasure {X : Ω → sphere (0 : E) 1} {η : E}
+theorem hasPDF_vonMisesFisherNaturalMeasure {X : Ω → sphere (0 : E) 1} {η : E}
     (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
     HasPDF X P (uniformSphereMeasure E) := by
   apply hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherNaturalPDF η).aemeasurable
@@ -270,7 +277,7 @@ theorem hasPDF_of_hasLaw_vonMisesFisherNaturalMeasure {X : Ω → sphere (0 : E)
 
 /-- The canonical density of a random variable with a natural-parameter von Mises--Fisher law
 agrees almost everywhere with the named density. -/
-theorem pdf_eq_vonMisesFisherNaturalPDF_of_hasLaw {X : Ω → sphere (0 : E) 1} {η : E}
+theorem pdf_eq_vonMisesFisherNaturalPDF {X : Ω → sphere (0 : E) 1} {η : E}
     (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
     pdf X P (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
       vonMisesFisherNaturalPDF η := by
@@ -279,7 +286,7 @@ theorem pdf_eq_vonMisesFisherNaturalPDF_of_hasLaw {X : Ω → sphere (0 : E) 1} 
 
 /-- A random variable with a direction/concentration von Mises--Fisher law has its named density
 relative to uniform sphere probability, including for the totalized negative branch. -/
-theorem hasPDF_of_hasLaw_vonMisesFisherMeasure {X : Ω → sphere (0 : E) 1}
+theorem hasPDF_vonMisesFisherMeasure {X : Ω → sphere (0 : E) 1}
     {m : sphere (0 : E) 1} {κ : ℝ} (hX : HasLaw X (vonMisesFisherMeasure m κ) P) :
     HasPDF X P (uniformSphereMeasure E) := by
   apply hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherPDF m κ).aemeasurable
@@ -287,12 +294,19 @@ theorem hasPDF_of_hasLaw_vonMisesFisherMeasure {X : Ω → sphere (0 : E) 1}
 
 /-- The canonical density of a random variable with a direction/concentration von Mises--Fisher
 law agrees almost everywhere with the named density. -/
-theorem pdf_eq_vonMisesFisherPDF_of_hasLaw {X : Ω → sphere (0 : E) 1}
+theorem pdf_eq_vonMisesFisherPDF {X : Ω → sphere (0 : E) 1}
     {m : sphere (0 : E) 1} {κ : ℝ} (hX : HasLaw X (vonMisesFisherMeasure m κ) P) :
     pdf X P (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
       vonMisesFisherPDF m κ := by
   apply pdf_eq_of_hasLaw_withDensity (measurable_vonMisesFisherPDF m κ).aemeasurable
   rwa [← vonMisesFisherMeasure_eq_withDensity]
+
+end ProbabilityTheory.HasLaw
+
+namespace TauCeti.Probability
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- Zero natural parameter gives the uniform sphere law. -/
 @[simp]

@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Cdf
 import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The Kumaraswamy distribution
@@ -238,7 +239,7 @@ theorem integrable_kumaraswamyMeasure_iff (a b : ℝ) {g : ℝ → E} :
     Integrable g (kumaraswamyMeasure a b) ↔
       Integrable (fun x ↦ kumaraswamyPDFReal a b x • g x) := by
   rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_kumaraswamyPDFReal a b).aemeasurable (ae_of_all _ (kumaraswamyPDFReal_nonneg a b))
 
 /-- **Integral transfer.** An integral against a Kumaraswamy law is the density-weighted Lebesgue
@@ -246,7 +247,7 @@ integral. This holds at every parameter, the zero measure included. -/
 theorem integral_kumaraswamyMeasure_eq (a b : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂kumaraswamyMeasure a b = ∫ x, kumaraswamyPDFReal a b x • g x := by
   rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
-  exact Probability.integral_withDensity_ofReal (measurable_kumaraswamyPDFReal a b).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_kumaraswamyPDFReal a b).aemeasurable
     (ae_of_all _ (kumaraswamyPDFReal_nonneg a b)) g
 
 end Transfer
@@ -280,7 +281,7 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
   have hjac : 0 < a * x ^ (a - 1) := mul_pos ha (Real.rpow_pos_of_pos hx.1 _)
   rw [kumaraswamyPDF_of_mem_Ioo ha hx,
     betaPDF_of_pos_lt_one (Real.rpow_pos_of_pos hx.1 a) hxa, abs_of_pos hjac,
-    ← ENNReal.ofReal_mul hjac.le, beta_one_left hb, sub_self, Real.rpow_zero]
+    ← ENNReal.ofReal_mul hjac.le, beta_one_left hb.le, sub_self, Real.rpow_zero]
   congr 1
   field_simp
 

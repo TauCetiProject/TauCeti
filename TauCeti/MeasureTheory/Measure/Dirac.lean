@@ -45,6 +45,8 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   avoiding a point is a multiple of its Dirac measure.
 * `MeasureTheory.Measure.eq_dirac_of_measure_singleton_eq_one` — a measure of total mass `0` or
   `1` giving full mass to a point is the Dirac measure at that point.
+* `MeasureTheory.Measure.eq_dirac_of_subsingleton` — a probability measure on a subsingleton
+  space is the Dirac measure at any point.
 * `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
   finite set is a convex combination of the Dirac measures at its points.
 * `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
@@ -141,6 +143,14 @@ theorem eq_dirac_of_measure_singleton_eq_one {μ : Measure X} [IsZeroOrProbabili
   have : IsProbabilityMeasure μ :=
     ⟨le_antisymm prob_le_one (h.symm.le.trans (measure_mono (subset_univ _)))⟩
   exact (eq_of_le_of_isProbabilityMeasure ((dirac_le_iff_one_le_apply_singleton μ x).2 h.ge)).symm
+
+/-- A probability measure on a subsingleton space is the Dirac measure at any point. -/
+theorem eq_dirac_of_subsingleton [Subsingleton X] (μ : Measure X) [IsProbabilityMeasure μ]
+    (x : X) : μ = dirac x := by
+  apply eq_dirac_of_measure_singleton_eq_one
+  have hx : ({x} : Set X) = univ :=
+    eq_univ_of_forall fun y ↦ mem_singleton_iff.mpr (Subsingleton.elim y x)
+  rw [hx, measure_univ]
 
 end MeasureTheory.Measure
 

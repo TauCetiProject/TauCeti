@@ -82,33 +82,33 @@ variable {n : ℕ} (hn : 4 ≤ n)
 /-! ### Classical coordinates -/
 
 /-- The simple roots of type `Dₙ` in the standard coordinates `eₘ` of `ℤⁿ`: the column at the
-vertex `k` is the Bourbaki simple root `TauCeti.DynkinType.typeDSimpleRoot n hn k`, that is
+vertex `k` is the Bourbaki simple root `TauCeti.DynkinType.typeDSimpleRoot n _ k`, that is
 `eₖ - eₖ₊₁` for `k + 1 < n` and `e_(n-2) + e_(n-1)` at the fork vertex `n - 1`. -/
 def typeDSimpleRootMatrix (n : ℕ) (hn : 4 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
-  (Matrix.of (typeDSimpleRoot n hn))ᵀ
+  (Matrix.of (typeDSimpleRoot n (le_trans (by norm_num) hn)))ᵀ
 
 @[simp]
 theorem typeDSimpleRootMatrix_apply (m k : Fin n) :
-    typeDSimpleRootMatrix n hn m k = typeDSimpleRoot n hn k m :=
+    typeDSimpleRootMatrix n hn m k = typeDSimpleRoot n (by omega) k m :=
   (rfl)
 
 /-- The classical coordinates of a vector of `Q` are the combination `∑ₖ aₖ αₖ` of the simple
 roots. -/
 theorem typeDSimpleRootMatrix_mulVec (a : Fin n → ℤ) :
-    typeDSimpleRootMatrix n hn *ᵥ a = ∑ k, a k • typeDSimpleRoot n hn k := by
+    typeDSimpleRootMatrix n hn *ᵥ a = ∑ k, a k • typeDSimpleRoot n (by omega) k := by
   rw [typeDSimpleRootMatrix, mulVec_transpose, vecMul_eq_sum]
   rfl
 
 /-- The classical coordinates of the simple root `αₖ` of `Q`. -/
 theorem typeDSimpleRootMatrix_mulVec_single (k : Fin n) :
-    typeDSimpleRootMatrix n hn *ᵥ Pi.single k 1 = typeDSimpleRoot n hn k := by
+    typeDSimpleRootMatrix n hn *ᵥ Pi.single k 1 = typeDSimpleRoot n (by omega) k := by
   ext m
   rw [mulVec_single_one, col_apply, typeDSimpleRootMatrix_apply]
 
 /-- **The Cartan matrix of type `Dₙ` is the Gram matrix of the simple roots.** -/
 theorem transpose_typeDSimpleRootMatrix_mul_self :
     (typeDSimpleRootMatrix n hn)ᵀ * typeDSimpleRootMatrix n hn = CartanMatrix.D n := by
-  rw [typeDSimpleRootMatrix, transpose_transpose, typeDSimpleRoot_mul_transpose_self hn]
+  rw [typeDSimpleRootMatrix, transpose_transpose, typeDSimpleRoot_mul_transpose_self (by omega)]
 
 /-- The Gram pairing of `CartanMatrix.D n` is the dot product of the classical coordinates. -/
 theorem dotProduct_cartanMatrix_D_mulVec (a b : Fin n → ℤ) :
@@ -120,21 +120,21 @@ theorem dotProduct_cartanMatrix_D_mulVec (a b : Fin n → ℤ) :
 /-- The simple-root coefficients of the classical coordinates of `a` are `a`. -/
 @[simp]
 theorem typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec (a : Fin n → ℤ) :
-    typeDSimpleRootCoordinates n hn (typeDSimpleRootMatrix n hn *ᵥ a) = a :=
-  typeDSimpleRootCoordinates_eq_of_sum_smul_eq hn (typeDSimpleRootMatrix_mulVec hn a).symm
+    typeDSimpleRootCoordinates n (by omega) (typeDSimpleRootMatrix n hn *ᵥ a) = a :=
+  typeDSimpleRootCoordinates_eq_of_sum_smul_eq (by omega) (typeDSimpleRootMatrix_mulVec hn a).symm
 
 /-- A classical vector of even coordinate sum is the classical coordinate vector of its simple-root
 coefficients. -/
 theorem typeDSimpleRootMatrix_mulVec_typeDSimpleRootCoordinates {v : Fin n → ℤ}
     (hv : Even (∑ m, v m)) :
-    typeDSimpleRootMatrix n hn *ᵥ typeDSimpleRootCoordinates n hn v = v := by
+    typeDSimpleRootMatrix n hn *ᵥ typeDSimpleRootCoordinates n (by omega) v = v := by
   rw [typeDSimpleRootMatrix_mulVec]
-  exact sum_smul_typeDSimpleRootCoordinates hn hv
+  exact sum_smul_typeDSimpleRootCoordinates (by omega) hv
 
 /-- The classical coordinates determine the vector: `a ↦ D *ᵥ a` is injective. -/
 theorem typeDSimpleRootMatrix_mulVec_injective :
     Function.Injective (typeDSimpleRootMatrix n hn).mulVec :=
-  Function.LeftInverse.injective (g := typeDSimpleRootCoordinates n hn)
+  Function.LeftInverse.injective (g := typeDSimpleRootCoordinates n (by omega))
     (typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec hn)
 
 /-! ### The roots -/
@@ -150,23 +150,24 @@ theorem mem_normTwoShell_cartanMatrix_D_iff {a : Fin n → ℤ} :
 squared length two: a classical root corresponds to its coefficients in the simple roots, and a
 vector of the norm-two shell of `CartanMatrix.D n` to its classical coordinates. -/
 def typeDNormTwoShellEquiv : TypeDRoot n ≃ (CartanMatrix.D n).normTwoShell where
-  toFun x := ⟨typeDSimpleRootCoordinates n hn x.1, by
+  toFun x := ⟨typeDSimpleRootCoordinates n (by omega) x.val, by
     rw [mem_normTwoShell_cartanMatrix_D_iff hn,
       typeDSimpleRootMatrix_mulVec_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x)]
-    exact x.2⟩
-  invFun a := ⟨typeDSimpleRootMatrix n hn *ᵥ a.1, (mem_normTwoShell_cartanMatrix_D_iff hn).mp a.2⟩
+    exact x.property⟩
+  invFun a := ⟨typeDSimpleRootMatrix n hn *ᵥ a.val, (mem_normTwoShell_cartanMatrix_D_iff hn).mp
+      a.property⟩
   left_inv x :=
     Subtype.ext (typeDSimpleRootMatrix_mulVec_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x))
-  right_inv a := Subtype.ext (typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec hn a.1)
+  right_inv a := Subtype.ext (typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec hn a.val)
 
 @[simp]
 theorem coe_typeDNormTwoShellEquiv_apply (x : TypeDRoot n) :
-    (typeDNormTwoShellEquiv hn x : Fin n → ℤ) = typeDSimpleRootCoordinates n hn x.1 :=
+    (typeDNormTwoShellEquiv hn x : Fin n → ℤ) = typeDSimpleRootCoordinates n (by omega) x.val :=
   (rfl)
 
 @[simp]
 theorem coe_typeDNormTwoShellEquiv_symm_apply (a : (CartanMatrix.D n).normTwoShell) :
-    ((typeDNormTwoShellEquiv hn).symm a : Fin n → ℤ) = typeDSimpleRootMatrix n hn *ᵥ a.1 :=
+    ((typeDNormTwoShellEquiv hn).symm a : Fin n → ℤ) = typeDSimpleRootMatrix n hn *ᵥ a.val :=
   (rfl)
 
 /-- **The root of `Dₙ` with index `k` is the coroot with index `k` of the pinned root datum**
@@ -188,14 +189,15 @@ private def typeDSimpleRootPartialSum (n : ℕ) (j : Fin n) (K : ℕ) : ℤ :=
   else (if n ≤ K + 2 then 1 else 0) + (if n ≤ K + 1 then 1 else 0)
 
 private theorem sum_filter_typeDSimpleRoot (j : Fin n) (K : ℕ) :
-    ∑ m : Fin n with m.val ≤ K, typeDSimpleRoot n hn j m = typeDSimpleRootPartialSum n j K := by
+    ∑ m : Fin n with m.val ≤ K, typeDSimpleRoot n (by omega) j m =
+      typeDSimpleRootPartialSum n j K := by
   unfold typeDSimpleRootPartialSum
   by_cases hj : j.val + 1 < n
-  · simp only [typeDSimpleRoot_of_add_one_lt hn hj, hj, ↓reduceIte, Pi.sub_apply,
+  · simp only [typeDSimpleRoot_of_add_one_lt (by omega) hj, hj, ↓reduceIte, Pi.sub_apply,
       Finset.sum_sub_distrib, Pi.single_apply, Finset.sum_ite_eq', Finset.mem_filter,
       Finset.mem_univ, true_and]
     split_ifs <;> omega
-  · simp only [typeDSimpleRoot_of_not_add_one_lt hn hj, hj, ↓reduceIte, Pi.add_apply,
+  · simp only [typeDSimpleRoot_of_not_add_one_lt (by omega) hj, hj, ↓reduceIte, Pi.add_apply,
       Finset.sum_add_distrib, Pi.single_apply, Finset.sum_ite_eq', Finset.mem_filter,
       Finset.mem_univ, true_and]
     split_ifs <;> omega
