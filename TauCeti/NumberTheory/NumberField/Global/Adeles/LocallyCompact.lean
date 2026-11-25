@@ -9,17 +9,19 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 
 /-!
-# Local compactness of adeles
+# Local compactness and second countability of adeles
 
 The adele ring of a number field is locally compact: its archimedean part is a finite product of
 local fields, while its finite part is a restricted product with compact open integer rings.
-It is also σ-compact, which is what the open mapping theorem for topological groups needs.
+It is also σ-compact, which is what the open mapping theorem for topological groups needs, and
+second countable, as the product of the second countable infinite and finite adele rings.
 
 ## Main results
 
 * `NumberField.AdeleRing.instLocallyCompactSpace`: the full adele ring is locally compact.
 * `NumberField.InfiniteAdeleRing.instSigmaCompactSpace`,
   `NumberField.AdeleRing.instSigmaCompactSpace`: the infinite and full adele rings are σ-compact.
+* `NumberField.AdeleRing.instSecondCountableTopology`: the full adele ring is second countable.
 
 ## References
 
@@ -29,7 +31,7 @@ It is also σ-compact, which is what the open mapping theorem for topological gr
 public section
 noncomputable section
 
-open IsDedekindDomain
+open IsDedekindDomain TopologicalSpace
 
 namespace NumberField
 
@@ -51,5 +53,10 @@ instance InfiniteAdeleRing.instSigmaCompactSpace : SigmaCompactSpace (InfiniteAd
 instance AdeleRing.instSigmaCompactSpace [Countable R] : SigmaCompactSpace (AdeleRing R K) :=
   inferInstanceAs <| SigmaCompactSpace
     (InfiniteAdeleRing K × FiniteAdeleRing R K)
+
+/-- The adele ring of a number field is second countable when its Dedekind domain is countable. -/
+instance AdeleRing.instSecondCountableTopology [Countable R] :
+    SecondCountableTopology (AdeleRing R K) :=
+  inferInstanceAs <| SecondCountableTopology (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
 end NumberField

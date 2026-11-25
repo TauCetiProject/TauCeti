@@ -6,16 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+public import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 
 /-!
-# Local compactness of finite adele rings
+# Local compactness and second countability of finite adele rings
 
 The finite adele ring of a Dedekind domain with finite residue fields is locally compact.  Each
 adic completion is a nonarchimedean local field, and its integer ring is compact and open.  The
 result then follows from the local-compactness theorem for restricted products.  If the Dedekind
 domain is moreover countable, the finite adele ring is σ-compact: every finite adele has a common
-denominator `b`, so it lies in one of the countably many compact sets `b⁻¹ · ∏_v 𝒪_v`.
+denominator `b`, so it lies in one of the countably many compact sets `b⁻¹ · ∏_v 𝒪_v`. It is also
+second countable: it is the restricted product over the countably many height-one primes
+(`IsDedekindDomain.HeightOneSpectrum.instCountable`) of the completions `K_v`, which are
+nonarchimedean local fields and hence second countable, with respect to the open integer rings
+`𝒪_v`.
 
 The finite-residue-field hypothesis is stated directly, rather than specialized to rings of
 integers, so this applies to every Dedekind domain for which the same local compactness argument is
@@ -29,16 +36,20 @@ valid.
   compact when all residue fields are finite.
 * `IsDedekindDomain.FiniteAdeleRing.instSigmaCompactSpace`: the finite adele ring is σ-compact
   when moreover the Dedekind domain is countable.
+* `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: the finite adele ring is second
+  countable when moreover the Dedekind domain is countable.
 
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §14.
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
+  2nd ed., Lemma 3.63, pp. 188–189 (the countable restricted-product topology).
 -/
 
 public section
 noncomputable section
 
-open IsDedekindDomain
+open IsDedekindDomain TopologicalSpace
 
 namespace IsDedekindDomain.FiniteAdeleRing
 
@@ -79,5 +90,14 @@ instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finit
   rw [← isSigmaCompact_univ_iff, ← hs]
   exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
     isCompact_integralAdeles.image (continuous_id.mul continuous_const)
+
+/-- The finite adele ring of a countable Dedekind domain with finite residue fields is second
+countable. -/
+instance instSecondCountableTopology [Countable R]
+    [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
+    SecondCountableTopology (FiniteAdeleRing R K) :=
+  RestrictedProduct.instSecondCountableTopology
+    (R := fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
+    (A := fun v ↦ (v.adicCompletionIntegers K : Set (v.adicCompletion K)))
 
 end IsDedekindDomain.FiniteAdeleRing
