@@ -100,32 +100,19 @@ section RestrictScalars
 
 variable (A : Type u) [CommRing A] {B : Type v} [CommRing B] [Algebra A B]
 
-/-- The `A`-module structure `a • v = algebraMap A B a • v` on a representation over `B`. It is
-not an instance: on a base change `B ⊗_A V` it would differ from the tensor product's own
-`A`-module structure. -/
-abbrev restrictModule (V : Rep.{w} B G) : Module A V :=
-  Module.compHom V (algebraMap A B)
-
-/-- The `A`-module structure `restrictModule` is compatible with the `B`-module structure. -/
-lemma isScalarTower_restrictModule (V : Rep.{w} B G) :
-    letI := restrictModule A V
-    IsScalarTower A B V :=
-  letI := restrictModule A V
-  ⟨fun a b v ↦ by rw [Algebra.smul_def]; exact mul_smul _ _ _⟩
-
 /-- **Restriction of scalars** along `A → B`: a representation over `B` read over `A` through
-`a • v = algebraMap A B a • v`, with the same operators (`Representation.restrictScalars`) and the
-same intertwining maps. -/
+`a • v = algebraMap A B a • v` (Mathlib's `Module.restrictScalars`), with the same operators
+(`Representation.restrictScalars`) and the same intertwining maps. -/
 def restrictScalars : Rep.{w} B G ⥤ Rep.{w} A G where
   obj V :=
-    letI := restrictModule A V
-    haveI := isScalarTower_restrictModule A V
+    letI := Module.restrictScalars A B V
+    haveI := IsScalarTower.restrictScalars A B V
     of (V.ρ.restrictScalars A)
   map {V W} f :=
-    letI := restrictModule A V
-    letI := restrictModule A W
-    haveI := isScalarTower_restrictModule A V
-    haveI := isScalarTower_restrictModule A W
+    letI := Module.restrictScalars A B V
+    letI := Module.restrictScalars A B W
+    haveI := IsScalarTower.restrictScalars A B V
+    haveI := IsScalarTower.restrictScalars A B W
     ofHom
       { toLinearMap := f.hom.toLinearMap.restrictScalars A
         isIntertwining' g := LinearMap.ext fun v ↦ by
@@ -140,7 +127,7 @@ instance instModuleRestrictScalarsObj (V : Rep.{w} B G) : Module B ((restrictSca
 /-- On `(restrictScalars A).obj V` the `A`- and `B`-actions form a scalar tower. -/
 instance isScalarTower_restrictScalars_obj (V : Rep.{w} B G) :
     IsScalarTower A B ((restrictScalars A).obj V) :=
-  isScalarTower_restrictModule A V
+  IsScalarTower.restrictScalars A B V
 
 /-- In `(restrictScalars A).obj V`, `a : A` acts as `algebraMap A B a`. -/
 lemma restrictScalars_obj_smul (V : Rep.{w} B G) (a : A) (v : (restrictScalars A).obj V) :
@@ -157,8 +144,8 @@ lemma restrictScalars_obj_smul (V : Rep.{w} B G) (a : A) (v : (restrictScalars A
 @[simp] lemma restrictScalars_obj_ρ_apply (V : Rep.{w} B G) (g : G)
     (v : (restrictScalars A).obj V) :
     ((restrictScalars A).obj V).ρ g v = V.ρ g (v : V) :=
-  letI := restrictModule A V
-  haveI := isScalarTower_restrictModule A V
+  letI := Module.restrictScalars A B V
+  haveI := IsScalarTower.restrictScalars A B V
   Representation.restrictScalars_apply A V.ρ g v
 
 end RestrictScalars
@@ -192,8 +179,8 @@ noncomputable def extendRestrictScalarsAdj :
         exact (IntertwiningMap.baseChange_tmul f.hom B 1 v).symm }
   counit :=
     { app W :=
-        letI := restrictModule A W
-        haveI := isScalarTower_restrictModule A W
+        letI := Module.restrictScalars A B W
+        haveI := IsScalarTower.restrictScalars A B W
         ConcreteCategory.ofHom (C := Rep.{max v w} B G)
           (X := (extendScalars B).obj ((restrictScalars A).obj W)) (Y := W) <|
           (LinearMap.liftBaseChange B
