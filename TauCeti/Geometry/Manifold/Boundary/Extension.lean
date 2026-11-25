@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 /-!
 # Smooth ambient extensions of boundary data
 
-A vector-valued function of class `C^k` on a closed embedded submanifold extends with the
-same regularity to the ambient manifold. Applying this to the boundary inclusion gives
-extensions of boundary data.
+A vector-valued function of class `C^k` on the intrinsic boundary of a smooth manifold
+extends with the same regularity to the ambient manifold, by the extension theorem for
+closed smooth embeddings.
 -/
 
 public section
@@ -21,33 +21,7 @@ public section
 open Set
 open scoped ContDiff ENat Manifold
 
-namespace Manifold.IsSmoothEmbedding
-
-variable {E E' H H' S M V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ∞}
-  [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H] [TopologicalSpace H']
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace S] [ChartedSpace H S] [TopologicalSpace M] [ChartedSpace H' M]
-  [I.Boundaryless] [IsManifold J ∞ M] [T2Space M] [SigmaCompactSpace M]
-
-/-- A vector-valued function of class `C^k` on a closed embedded submanifold extends to
-a function of the same class on the ambient manifold. -/
-theorem exists_contMDiff_extension_of_isClosed_range {i : S → M}
-    (hi : IsSmoothEmbedding I J k i) (hclosed : IsClosed (range i))
-    {f : S → V} (hf : ContMDiff I 𝓘(ℝ, V) k f) :
-    ∃ F : M → V, ContMDiff J 𝓘(ℝ, V) k F ∧ F ∘ i = f := by
-  let e := TauCeti.SmoothEmbedding.ofIsSmoothEmbedding i hi
-  have hK : IsClosed (e '' (univ : Set S)) := by
-    simpa [e] using hclosed
-  obtain ⟨F, hF, -⟩ := e.exists_contMDiffMap_extension ⟨f, hf⟩
-    hK isOpen_univ (subset_univ _)
-  refine ⟨F, F.contMDiff, funext fun x ↦ ?_⟩
-  simpa [e, Function.comp_apply] using hF (mem_univ x)
-
-end Manifold.IsSmoothEmbedding
-
-namespace TauCeti.Manifold
+namespace TauCeti
 
 variable {n : ℕ} {k : ℕ∞} {V M : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) ∞ M]
@@ -63,4 +37,4 @@ theorem exists_contMDiff_extension_boundary {f : (𝓡∂ (n + 1)).boundary M �
   rw [Subtype.range_coe]
   exact (𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero
 
-end TauCeti.Manifold
+end TauCeti
