@@ -31,7 +31,7 @@ subsets of an adic spectrum arise for a discrete Huber ring.
 
 ## Main results
 
-* `IsLocalization.Away.injective_of_eq_mul_self`: a ring homomorphism `B[1/g] → B[1/(g · g)]`
+* `IsLocalization.Away.injective_of_mul_self`: a ring homomorphism `B[1/g] → B[1/(g · g)]`
   compatible with the maps from `B` is injective.
 * `IsLocalization.Away.existsUnique_algebraMap_eq_of_span_eq_top`: compatible elements of the
   localizations `B[1/gᵢ]` come from a unique element of `B`.
@@ -59,7 +59,7 @@ variable {B : Type*} [CommSemiring B] {ι : Type*} {g : ι → B}
 /-- A ring homomorphism `B[1/g] → B[1/(g · g)]` compatible with the maps from `B` is injective:
 `g · g` is already invertible in `B[1/g]`, so both rings are localizations of `B` away from
 `g · g`. -/
-theorem injective_of_eq_mul_self {g : B} {Bg Bgg : Type*} [CommSemiring Bg]
+theorem injective_of_mul_self {g : B} {Bg Bgg : Type*} [CommSemiring Bg]
     [CommSemiring Bgg] [Algebra B Bg] [Algebra B Bgg] [IsLocalization.Away g Bg]
     [IsLocalization.Away (g * g) Bgg] {ρ : Bg →+* Bgg}
     (hρ : ∀ b, ρ (algebraMap B Bg b) = algebraMap B Bgg b) : Function.Injective ρ :=
@@ -79,7 +79,7 @@ private theorem algebraMap_eq_of_eq {x : ∀ i, Bi i} (hx : ∀ i j, ρl i j (x 
   have : IsLocalization.Away (g i * g i) (Bij i k) := by
     rw [← congrArg (g i * ·) hki]
     infer_instance
-  refine injective_of_eq_mul_self (g := g i) (Bg := Bi i) (Bgg := Bij i k) (hρl i k) ?_
+  refine injective_of_mul_self (g := g i) (Bg := Bi i) (Bgg := Bij i k) (hρl i k) ?_
   rw [hx, ← hb, hρl, hρr]
 
 variable (hg : Ideal.span (Set.range g) = ⊤)
