@@ -8,6 +8,10 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.Topology.Algebra.Polynomial
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.RingTheory.Binomial
+import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Finite-order power-series expansions along a filter
@@ -26,6 +30,8 @@ sums and products.
 * `PowerSeries.isBigO_add_sub_eval_trunc_add`, `PowerSeries.isBigO_sum_sub_eval_trunc_sum`,
   `PowerSeries.isBigO_mul_sub_eval_trunc_mul`: expansions add and multiply.
 * `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a function with an expansion is bounded.
+* `TauCeti.isBigO_one_add_mul_cpow_sub_eval_trunc`: `(1 + j w)^c` has the binomial series
+  `∑ C(c, m) jᵐ Xᵐ` as expansion to every order along `w → 0`.
 -/
 
 public section
@@ -109,3 +115,22 @@ theorem isBigO_mul_sub_eval_trunc_mul (hw : Tendsto w l (𝓝 0))
   ring
 
 end PowerSeries
+
+namespace TauCeti
+
+/-- The binomial expansion `(1 + j w)^c = ∑_{m < K} C(c, m) jᵐ wᵐ + O(w^K)` along `w → 0`: the
+function `(1 + j w)^c` has the binomial series `∑ C(c, m) jᵐ Xᵐ` as expansion to order `K`. -/
+theorem isBigO_one_add_mul_cpow_sub_eval_trunc {w : α → ℂ} (hw : Tendsto w l (𝓝 0)) (j c : ℂ)
+    (K : ℕ) :
+    (fun i ↦ (1 + j * w i) ^ c -
+      (PowerSeries.trunc K (PowerSeries.mk fun m ↦ Ring.choose c m * j ^ m)).eval (w i)) =O[l]
+      fun i ↦ w i ^ K := by
+  have hjw : Tendsto (fun i ↦ j * w i) l (𝓝 0) := by simpa using hw.const_mul j
+  have hscale : (fun i ↦ (j * w i) ^ K) =O[l] fun i ↦ w i ^ K :=
+    ((isBigO_refl _ _).const_mul_left (j ^ K)).congr_left fun i ↦ (mul_pow _ _ _).symm
+  refine (((isBigO_one_add_cpow_sub_sum c K).comp_tendsto hjw).trans hscale).congr_left
+    fun i ↦ ?_
+  simp only [Function.comp_apply, PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
+  exact sum_congr rfl fun _ _ ↦ by ring
+
+end TauCeti

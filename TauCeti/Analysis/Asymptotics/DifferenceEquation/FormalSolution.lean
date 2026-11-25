@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
-import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -71,7 +70,8 @@ term is the residual estimated here (Wong and Li).
 ## Implementation notes
 
 The residual is `ρⁿ n^α` times a function of `u = n⁻¹`, built from the binomial
-expansions of `(1 + j u)^{α - s}` for `j = 0, 1, 2` (`TauCeti.isBigO_one_add_cpow_sub_sum`)
+expansions of `(1 + j u)^{α - s}` for `j = 0, 1, 2`
+(`TauCeti.isBigO_one_add_mul_cpow_sub_eval_trunc`)
 and the expansions of `f` and `g`. These are combined as finite-order power-series expansions
 `F - (trunc (N + 1) P).eval u = O(u^{N+1})`, which are compatible with sums and products
 (`PowerSeries.isBigO_mul_sub_eval_trunc_mul` and its companions).
@@ -251,19 +251,16 @@ private lemma coeff_sum_kernelSeries (fs gs : ℕ → ℂ) (ρ α : ℂ) (a : �
   · have hk' : ¬k ≤ t := by have := (mem_Ico.1 hk).1; omega
     simp [hk']
 
-/-- The binomial expansion `(1 + j n⁻¹)^c = ∑_{m ≤ M} C(c, m) jᵐ n⁻ᵐ + O(n^{-M-1})`. -/
-private lemma isBigO_one_add_mul_inv_cpow_sub (j c : ℂ) (M : ℕ) :
-    (fun n : ℕ ↦ (1 + j * (n : ℂ)⁻¹) ^ c -
-      (PowerSeries.trunc (M + 1) (PowerSeries.mk fun m ↦ Ring.choose c m * j ^ m)).eval
-        (n : ℂ)⁻¹) =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (M + 1) := by
-  have hju : Tendsto (fun n : ℕ ↦ j * (n : ℂ)⁻¹) atTop (𝓝 0) := by
-    simpa using tendsto_inv_atTop_nhds_zero_nat.const_mul j
-  have hscale : (fun n : ℕ ↦ (j * (n : ℂ)⁻¹) ^ (M + 1)) =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (M + 1) :=
-    ((isBigO_refl _ _).const_mul_left (j ^ (M + 1))).congr_left fun n ↦ (mul_pow _ _ _).symm
-  refine (((isBigO_one_add_cpow_sub_sum c (M + 1)).comp_tendsto hju).trans hscale).congr_left
-    fun n ↦ ?_
-  simp only [Function.comp_apply, PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
-  exact sum_congr rfl fun _ _ ↦ by ring
+/-- An expansion `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})`, written in the form
+`f n - (trunc (N + 1) (mk fs)).eval n⁻¹ = O(n⁻¹ ^ (N + 1))` of a finite-order power-series
+expansion along `n⁻¹`. -/
+private lemma isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow {f fs : ℕ → ℂ} {N : ℕ}
+    (hf : (fun n : ℕ ↦ f n - ∑ q ∈ range (N + 1), ((n : ℂ) ^ q)⁻¹ • fs q) =O[atTop]
+      fun n ↦ ((n : ℂ) ^ (N + 1))⁻¹) :
+    (fun n : ℕ ↦ f n - (PowerSeries.trunc (N + 1) (PowerSeries.mk fs)).eval (n : ℂ)⁻¹)
+      =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (N + 1) :=
+  (hf.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, mul_comm]).congr_right
+    fun n ↦ (inv_pow _ _).symm
 
 /-- If `f` and `g` have the expansions `∑ f_q n^{-q}` and `∑ g_q n^{-q}` to order `M + 1`, then
 `ρ² (1 + 2n⁻¹)^c + ρ f n (1 + n⁻¹)^c + g n` has the expansion `kernelSeries fs gs ρ c`. -/
@@ -279,14 +276,15 @@ private lemma isBigO_sub_eval_trunc_kernelSeries {f g fs gs : ℕ → ℂ} (ρ c
       fun n ↦ (n : ℂ)⁻¹ ^ (M + 1) := by
   have hu : Tendsto (fun n : ℕ ↦ (n : ℂ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
   have hC (z : ℂ) := Polynomial.isBigO_eval_sub_eval_trunc_coe hu (M + 1) (Polynomial.C z)
+  have hB (j : ℕ) := isBigO_one_add_mul_cpow_sub_eval_trunc hu (j : ℂ) c (M + 1)
   refine (PowerSeries.isBigO_add_sub_eval_trunc_add (PowerSeries.isBigO_add_sub_eval_trunc_add
     (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu (hC (ρ ^ 2))
-      (isBigO_one_add_mul_inv_cpow_sub ((2 : ℕ) : ℂ) c M))
+      (hB 2))
     (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
       (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu (hC ρ) hF)
-      (isBigO_one_add_mul_inv_cpow_sub ((1 : ℕ) : ℂ) c M)))
+      (hB 1)))
     (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu hG
-      (isBigO_one_add_mul_inv_cpow_sub ((0 : ℕ) : ℂ) c M))).congr_left fun n ↦ ?_
+      (hB 0))).congr_left fun n ↦ ?_
   simp only [Polynomial.coe_C, Polynomial.eval_C, kernelSeries]
 
 private lemma norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n ≠ 0) :
@@ -316,14 +314,8 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
           ∑ t ∈ range (N + 1), differenceResidualCoeff fs gs ρ α a t * (n : ℂ)⁻¹ ^ t) =O[atTop]
       fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (N + 1)) := by
   have hu : Tendsto (fun n : ℕ ↦ (n : ℂ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
-  have hF : (fun n : ℕ ↦ f n - (PowerSeries.trunc (N + 1) (PowerSeries.mk fs)).eval (n : ℂ)⁻¹)
-      =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (N + 1) :=
-    (hf.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, mul_comm]).congr_right
-      fun n ↦ (inv_pow _ _).symm
-  have hG : (fun n : ℕ ↦ g n - (PowerSeries.trunc (N + 1) (PowerSeries.mk gs)).eval (n : ℂ)⁻¹)
-      =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (N + 1) :=
-    (hg.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, mul_comm]).congr_right
-      fun n ↦ (inv_pow _ _).symm
+  have hF := isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow hf
+  have hG := isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow hg
   -- each term `aₛ n⁻ˢ (ρ² (1 + 2n⁻¹)^{α-s} + ρ f (1 + n⁻¹)^{α-s} + g)` and its series
   have hterm := PowerSeries.isBigO_sum_sub_eval_trunc_sum (range (N + 1)) fun s _ ↦
     PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
