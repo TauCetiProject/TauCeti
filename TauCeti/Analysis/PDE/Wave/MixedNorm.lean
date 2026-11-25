@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Integral.Dilation
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -712,10 +713,11 @@ private theorem
     (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F z.1))), G z.2⟫_ℂ
   rw [integral_setIntegral_Iio_eq_setIntegral (f := k) hint.integrableOn]
   -- Reflect time: `z ↦ -z` maps the region `{t < s} = -{s < t}` onto `{s < t}`.
-  have hrefl := Measure.setIntegral_comp_smul (volume.prod volume) k
-    ((-1 : ℝ) • {z : ℝ × ℝ | z.1 < z.2}) (by norm_num : (-1 : ℝ) ≠ 0)
-  norm_num [Module.finrank_prod] at hrefl
-  rw [← hrefl]
+  have hR : (-1 : ℝ)⁻¹ • {z : ℝ × ℝ | z.1 < z.2} = {z | z.2 < z.1} := by
+    ext z
+    simp
+  rw [Measure.setIntegral_prod_eq_mul_smul_setIntegral_comp_smul _ _ k (neg_ne_zero.2 one_ne_zero),
+    hR, neg_one_mul, neg_neg, one_smul]
   have hFn : Integrable fun s ↦ F (-s) := hF.comp_neg
   have hGn : Integrable fun t ↦ G (-t) := hG.comp_neg
   have h := hC j m hm {z : ℝ × ℝ | z.2 < z.1} (measurableSet_lt measurable_snd measurable_fst) _ _
@@ -724,7 +726,7 @@ private theorem
     hG.aestronglyMeasurable.eLpNorm_eLpNorm_comp_neg] at h
   refine le_of_eq_of_le (congrArg _ (setIntegral_congr_fun ?_ fun z _ ↦ ?_)) h
   · exact measurableSet_lt measurable_snd measurable_fst
-  · simp only [k, Prod.fst_neg, Prod.snd_neg, neg_sub_neg, neg_sub]
+  · simp only [k, neg_one_smul, Prod.fst_neg, Prod.snd_neg, neg_sub_neg, neg_sub]
 
 /-- The retarded estimate for the frequency-localized half-wave propagator `W₊` with two
 wave-admissible pairs `(q, r)` and `(q₁, r₁)`, `2 ≤ q, q₁ ≤ ∞`, where `q = 2` or `q₁ = 2` only at

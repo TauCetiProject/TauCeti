@@ -13,6 +13,7 @@ import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # The endpoint Strichartz estimate for the frequency-localized wave equation
@@ -495,10 +496,10 @@ integrable `F, G : ℝ → L²(E)`,
 `|∫∫_R ⟪W₊(t - s) Pⱼ Pⱼ* F(s), G(t)⟫ ds dt| ≤ C 2^{2jγ} ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}`.
 
 For the half plane `s < t` this is the retarded endpoint estimate, the weak form of
-`‖∫_{s < t} W₊(t - s) Pⱼ Pⱼ* F(s) ds‖_{L²_t L^r_x} ≤ C 2^{2jγ} ‖F‖_{L²_t L^{r'}_x}`. At the endpoint
-the absolute values of the pairings are not controlled, unlike at the non-endpoint pairs
+`‖∫_{s < t} W₊(t - s) Pⱼ Pⱼ* F(s) ds‖_{L²_t L^r_x} ≤ C 2^{2jγ} ‖F‖_{L²_t L^{r'}_x}`. The constant
+`C` is independent of the region `R`. At the endpoint, unlike at the non-endpoint pairs
 (`TauCeti.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le`),
-so the bound depends on the region only through the Keel–Tao argument. -/
+the absolute values of the pairings are not controlled. -/
 theorem exists_enorm_setIntegral_inner_halfWavePropagator_sub_fourierMultiplierCLM_le_of_endpoint
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ)
     (hn : 3 < Module.finrank ℝ E)
@@ -536,17 +537,9 @@ theorem exists_enorm_setIntegral_inner_halfWavePropagator_sub_fourierMultiplierC
     simp only [g]
     rw [ContinuousLinearMap.adjoint_inner_right,
       halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint]
-  -- Substitute `z = μ z'`: the region becomes `μ⁻¹ R` and `U(μ t) = V(t)`.
-  have hsub : ∫ z in R, g z ∂(volume.prod volume) =
-      (μ * μ) • ∫ z in μ⁻¹ • R, g (μ • z) ∂(volume.prod volume) := by
-    rw [Measure.setIntegral_comp_smul (volume.prod volume) _ _ hμ.ne', smul_inv_smul₀ hμ.ne',
-      smul_smul]
-    -- `finrank ℝ (ℝ × ℝ) = 2`, so the Jacobian `|μ⁻²|` cancels `μ * μ`.
-    convert (one_smul ℝ _).symm using 2
-    simp [Module.finrank_prod, abs_of_pos hμ]
-    field_simp
   simp_rw [hg]
-  rw [hsub, eNorm_smul]
+  -- Substitute `z = μ z'`: the region becomes `μ⁻¹ R` and `U(μ t) = V(t)`.
+  rw [Measure.setIntegral_prod_eq_mul_smul_setIntegral_comp_smul _ _ g hμ.ne', eNorm_smul]
   have h := hC j m hm (μ⁻¹ • R) (hR.const_smul₀ μ⁻¹) (fun s ↦ F (μ * s)) (fun t ↦ G (μ * t))
     (hF.comp_mul_left' hμ.ne') (hG.comp_mul_left' hμ.ne')
   calc _ ≤ ‖μ * μ‖ₑ * (C * eLpNorm (fun s ↦ eLpNorm (F (μ * s)) r' volume) 2 volume *
