@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 import TauCeti.Topology.VectorBundle.Core.Congr
 import TauCeti.Topology.VectorBundle.Core.LocallyConstant
 import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!

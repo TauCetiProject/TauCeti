@@ -152,12 +152,9 @@ theorem pivotalIsoApp_tensorHom_comp_evaluation (X : C) :
       ε_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) = ε_ X Xᘁ := by
   -- The statements below mix `Xᘁᘁ` with `(doubleRightDualFunctor C).obj X`, which agree only up
   -- to unfolding, so they are chained by `Eq.trans` rather than by rewriting.
-  have h₁ : μ (doubleRightDualFunctor C) Xᘁ X ≫ (doubleRightDualFunctor C).map (ε_ X Xᘁ) =
-      ε_ ((Xᘁ : C)ᘁ : C) (((Xᘁ : C)ᘁ : C)ᘁ : C) ≫ ε (doubleRightDualFunctor C) := by
-    rw [doubleRightDualFunctor_map_evaluation, Functor.Monoidal.μ_δ_assoc]
-    rfl
   rw [← cancel_mono (ε (doubleRightDualFunctor C)), Category.assoc]
-  refine (congrArg (_ ≫ ·) h₁.symm).trans ((Category.assoc _ _ _).symm.trans ?_)
+  refine (congrArg (_ ≫ ·) (doubleRightDualFunctor_μ_comp_map_evaluation X).symm).trans
+    ((Category.assoc _ _ _).symm.trans ?_)
   refine (congrArg (· ≫ _) (pivotalIsoApp_tensor_hom Xᘁ X).symm).trans ?_
   exact (pivotalIsoApp_hom_naturality (ε_ X Xᘁ)).symm.trans
     (congrArg (_ ≫ ·) pivotalIsoApp_unit_hom)

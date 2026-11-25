@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
@@ -48,6 +49,8 @@ order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+iterated derivatives of a scalar multiple are the scalar multiples of the iterated derivatives,
+without differentiability assumptions (`TauCeti.iteratedFDeriv_fun_const_smul_apply`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
 most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right translations
@@ -57,7 +60,15 @@ adding `L` to a differentiable function adds them to its derivatives of positive
 (`ContinuousLinearMap.iteratedFDeriv_succ_add_apply`) and does not change their Hölder constants
 (`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`). For `f` of class `C^n` and
 `m < n`, the derivative of `D^m f` is `D^(m + 1) f`, curried on the left
-(`ContDiff.hasFDerivAt_iteratedFDeriv`).
+(`ContDiff.hasFDerivAt_iteratedFDeriv`). The derivative of
+`(D^j g) ∘ f` is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`
+(`TauCeti.fderiv_iteratedFDeriv_comp`), and the derivatives of `(D^0 g) ∘ f` have the same norms as
+those of `g ∘ f` (`TauCeti.norm_iteratedFDeriv_iteratedFDeriv_zero_comp`). Along a filter, the
+zeroth derivative of `f` is `O(ρ)` exactly when `f` is
+(`TauCeti.isBigO_iteratedFDeriv_zero_iff`), and where `Df` agrees locally with a map `g` whose
+`n`-th derivative is `O(ρ)`, the `(n + 1)`-th derivative of `f` is `O(ρ)`
+(`TauCeti.isBigO_iteratedFDeriv_succ_of_eventuallyEq`); for power bounds the order goes up by one
+(`TauCeti.isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq`).
 -/
 
 public section
@@ -264,6 +275,23 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
+/-- Multiplying a function by a scalar multiplies every iterated derivative by that scalar.
+Unlike Mathlib's `iteratedFDeriv_const_smul_apply'`, no differentiability is needed. -/
+theorem iteratedFDeriv_fun_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    iteratedFDeriv 𝕜 i (fun y ↦ a • f y) x = a • iteratedFDeriv 𝕜 i f x := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : F ≃L[𝕜] F)
+      |>.iteratedFDeriv_comp_left (f := f) (x := x) (i := i)
+    ext v
+    simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
+
+/-- Negating a function does not change the norms of its iterated derivatives. -/
+@[simp]
+theorem norm_iteratedFDeriv_fun_neg (f : E → F) (n : ℕ) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun y ↦ -f y) x‖ = ‖iteratedFDeriv 𝕜 n f x‖ := by
+  rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
+
 /-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
 theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :
     ‖iteratedFDeriv 𝕜 n (fun _ : E ↦ c) x‖ ≤ ‖c‖ := by
@@ -357,6 +385,63 @@ theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G 
     0 ≤ G ∧ ∀ x, ‖f x‖ ≤ G :=
   have hf (x : E) : ‖f x‖ ≤ G := by simpa using hfG 0 (Nat.zero_le _) x
   ⟨(norm_nonneg _).trans (hf 0), hf⟩
+
+/-- The chain rule for `(D^j g) ∘ f` at `y`, where `D^j g` is differentiable at `f y` and `f` at
+`y`: the derivative is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`, read through the currying of
+the first variable. -/
+theorem fderiv_iteratedFDeriv_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E → F} {g : F → G} {j : ℕ} {y : E} (hg : DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 j g) (f y))
+    (hf : DifferentiableAt 𝕜 f y) :
+    fderiv 𝕜 (fun z ↦ iteratedFDeriv 𝕜 j g (f z)) y =
+      (ContinuousLinearMap.compL 𝕜 E F (ContinuousMultilinearMap 𝕜 (fun _ : Fin j ↦ F) G)).comp
+        (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (j + 1) ↦ F)
+          G).toContinuousLinearEquiv.toContinuousLinearMap
+        (iteratedFDeriv 𝕜 (j + 1) g (f y)) (fderiv 𝕜 f y) := by
+  rw [fderiv_fun_comp y hg hf]
+  simp [iteratedFDeriv_succ_eq_comp_left]
+
+/-- The derivatives of `(D^0 g) ∘ f` have the same norms as those of `g ∘ f`: `D^0 g` is `g` read
+through the isometry `G ≃ (Fin 0 → F) → G`. -/
+@[simp]
+theorem norm_iteratedFDeriv_iteratedFDeriv_zero_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] (g : F → G) (f : E → F) (i : ℕ) (x : E) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ iteratedFDeriv 𝕜 0 g (f y)) x‖ =
+      ‖iteratedFDeriv 𝕜 i (fun y ↦ g (f y)) x‖ := by
+  have heq : (fun y ↦ iteratedFDeriv 𝕜 0 g (f y)) =
+      (continuousMultilinearCurryFin0 𝕜 F G).symm ∘ fun y ↦ g (f y) := by
+    funext y
+    simp [iteratedFDeriv_zero_eq_comp]
+  rw [heq, LinearIsometryEquiv.norm_iteratedFDeriv_comp_left]
+
+open Asymptotics in
+/-- The zeroth derivative of `f` is `O(ρ)` along a filter exactly when `f` is. -/
+@[simp]
+theorem isBigO_iteratedFDeriv_zero_iff {l : Filter E} {f : E → F} {R : Type*} [Norm R]
+    {ρ : E → R} : iteratedFDeriv 𝕜 0 f =O[l] ρ ↔ f =O[l] ρ := by
+  rw [← isBigO_norm_left, ← isBigO_norm_left (f' := f)]
+  simp only [norm_iteratedFDeriv_zero]
+
+open Asymptotics in
+/-- If `fderiv 𝕜 f` agrees near every point of a set of the filter `l` with a map `g` whose `n`-th
+derivative is `O(ρ)` along `l`, then the `(n + 1)`-th derivative of `f` is `O(ρ)` along `l`: the
+two derivatives have the same norm. -/
+theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {l : Filter E} {f : E → F}
+    {g : E → E →L[𝕜] F} {ρ : E → ℝ} {n : ℕ} (hf : ∀ᶠ x in l, fderiv 𝕜 f =ᶠ[𝓝 x] g)
+    (hg : iteratedFDeriv 𝕜 n g =O[l] ρ) : iteratedFDeriv 𝕜 (n + 1) f =O[l] ρ := by
+  refine IsBigO.of_norm_left (hg.norm_left.congr' ?_ Filter.EventuallyEq.rfl)
+  filter_upwards [hf] with x hx
+  rw [← (hx.iteratedFDeriv 𝕜 n).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+
+open Asymptotics in
+/-- **The inductive step of power bounds on derivatives.** If `fderiv 𝕜 f` agrees near every point
+of a set of `l` with a map `g` whose `n`-th derivative is `O(‖x‖ ^ (a - n))` along `l`, then the
+`(n + 1)`-th derivative of `f` is `O(‖x‖ ^ (b - (n + 1)))` along `l`, for `b = a + 1`. -/
+theorem isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq {l : Filter E} {f : E → F}
+    {g : E → E →L[𝕜] F} {a b : ℝ} {n : ℕ} (hf : ∀ᶠ x in l, fderiv 𝕜 f =ᶠ[𝓝 x] g)
+    (hg : iteratedFDeriv 𝕜 n g =O[l] fun x ↦ ‖x‖ ^ (a - n)) (hab : a + 1 = b) :
+    iteratedFDeriv 𝕜 (n + 1) f =O[l] fun x ↦ ‖x‖ ^ (b - (n + 1 : ℕ)) := by
+  rw [show b - (n + 1 : ℕ) = a - n by push_cast; linarith]
+  exact isBigO_iteratedFDeriv_succ_of_eventuallyEq hf hg
 
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/

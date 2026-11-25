@@ -14,7 +14,7 @@ public import TauCeti.Topology.Sheaves.ExtensionByZero
 public import Mathlib.Topology.Sheaves.Over
 public import TauCeti.Topology.Sheaves.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Cohomology depends only on the restricted sheaf

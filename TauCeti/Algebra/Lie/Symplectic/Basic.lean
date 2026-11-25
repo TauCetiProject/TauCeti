@@ -47,7 +47,8 @@ matrix past `J`.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
-  scalar, over every commutative ring.
+  scalar, over every commutative ring, and `Matrix.scalar_mem_sp_iff`: a scalar symplectic Lie
+  matrix is zero over a ring without zero divisors in which `2 ≠ 0`.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
@@ -270,6 +271,21 @@ theorem mem_range_scalar_of_commute_sp (M : Matrix (l ⊕ l) (l ⊕ l) R)
     | inl i => exact (hd i).symm
     | inr i => exact ((diag_eq_of_commute_single (hp i)).symm.trans (hd i)).symm
   · simp [scalar_apply, diagonal_apply_ne _ hab, hoff a b hab]
+
+/-- **A scalar matrix lies in `sp l R` iff it is zero**, over a ring without zero divisors in
+which `2 ≠ 0`. -/
+theorem scalar_mem_sp_iff [NoZeroDivisors R] [NeZero (2 : R)] (c : R) :
+    scalar (l ⊕ l) c ∈ LieAlgebra.Symplectic.sp l R ↔ scalar (l ⊕ l) c = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
+  cases isEmpty_or_nonempty l with
+  | inl _ => exact Subsingleton.elim _ _
+  | inr hl =>
+  obtain ⟨i⟩ := hl
+  -- The entry `c` at `n + i` is minus the entry `c` at `i`.
+  have hi := ((mem_symplecticLieAlgebra_iff _).mp h).2.2 i i
+  simp only [scalar_apply, diagonal_apply_eq] at hi
+  have hc : (2 : R) * c = 0 := by rw [two_mul, ← neg_eq_iff_add_eq_zero, ← hi]
+  rw [(mul_eq_zero.mp hc).resolve_left two_ne_zero, map_zero]
 
 end Matrix
 

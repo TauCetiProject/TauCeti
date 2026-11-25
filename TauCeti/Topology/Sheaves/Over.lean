@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Sites.Equivalence
 public import Mathlib.Topology.Sheaves.Abelian
 public import TauCeti.CategoryTheory.Sites.Continuous
 public import TauCeti.CategoryTheory.Sites.GlobalSections
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 public import Mathlib.Topology.Sheaves.Over
 public import Mathlib.Topology.Category.TopCat.Opens
