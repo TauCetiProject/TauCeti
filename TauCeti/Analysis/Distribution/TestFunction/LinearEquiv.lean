@@ -38,7 +38,8 @@ reflections.
   postcomposition by a continuous linear map.
 * `ContinuousLinearEquiv.fderiv_transportTestFunction`,
   `ContinuousLinearEquiv.lineDeriv_transportTestFunction`: the Fréchet and line derivatives of a
-  transported test function.
+  transported test function, and `ContinuousLinearEquiv.inner_gradient_transportTestFunction`
+  pairs its gradient with a direction.
 * `LinearIsometryEquiv.laplacian_transportTestFunction`: the Laplacian of a test function
   transported along a linear isometry equivalence.
 * `ContinuousLinearEquiv.divergenceCLM_postcompCLM_transportTestFunction`: the divergence of a
@@ -63,7 +64,7 @@ noncomputable section
 namespace ContinuousLinearEquiv
 
 open Set TestFunction TopologicalSpace
-open scoped Distributions
+open scoped Distributions Gradient InnerProductSpace
 
 variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -160,6 +161,17 @@ theorem fderiv_transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) 
     fderiv ℝ (transportTestFunction e hVO φ : E' → F) y =
       (fderiv ℝ (φ : E → F) (e.symm y)).comp (e.symm : E' →L[ℝ] E) :=
   e.symm.comp_right_fderiv
+
+/-- Pairing the gradient of a transported test function with a direction pulls both the
+point and the direction back along the inverse equivalence. -/
+theorem inner_gradient_transportTestFunction
+    {H H' : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+    [NormedAddCommGroup H'] [InnerProductSpace ℝ H'] [CompleteSpace H']
+    {U : Opens H} {W : Opens H'} (e : H ≃L[ℝ] H') (hUW : MapsTo e U W)
+    (φ : 𝓓^{n}(U, ℝ)) (y v : H') :
+    ⟪v, ∇ (e.transportTestFunction hUW φ : H' → ℝ) y⟫_ℝ =
+      ⟪e.symm v, ∇ (φ : H → ℝ) (e.symm y)⟫_ℝ := by
+  simp [inner_gradient_right]
 
 /-- The line derivative of a transported test function at `y` in the direction `v` is that of the
 original test function at `e.symm y` in the direction `e.symm v`. -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!

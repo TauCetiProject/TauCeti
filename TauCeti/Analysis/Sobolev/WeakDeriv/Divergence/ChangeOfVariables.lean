@@ -79,14 +79,15 @@ theorem HasWeakDivergenceOn.comp_continuousLinearEquiv (hu : HasWeakDivergenceOn
   have hleft :
       ∫ x, ⟪e.symm (u (e x)), ∇ (φ : E → ℝ) x⟫_ℝ ∂μ =
         J • ∫ y, ⟪u y, ∇ (ψ : E → ℝ) y⟫_ℝ ∂μ := by
-    simpa only [J, ψ, inner_gradient_right, ContinuousLinearEquiv.fderiv_transportTestFunction,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_toLinearMap,
-      ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.symm_apply_apply] using
-      μ.integral_comp_linearMap (fun y ↦ ⟪u y, ∇ (ψ : E → ℝ) y⟫_ℝ) (e : E →ₗ[ℝ] E)
+    calc
+      _ = ∫ x, ⟪u (e x), ∇ (ψ : E → ℝ) (e x)⟫_ℝ ∂μ := by
+        congr with x
+        simp [ψ, e.inner_gradient_transportTestFunction]
+      _ = _ := by
+        simpa [J] using
+          μ.integral_comp_linearMap (fun y ↦ ⟪u y, ∇ (ψ : E → ℝ) y⟫_ℝ) (e : E →ₗ[ℝ] E)
   have hright : ∫ x, φ x * g (e x) ∂μ = J • ∫ y, ψ y * g y ∂μ := by
-    simpa only [J, ψ, ContinuousLinearEquiv.transportTestFunction_apply,
-      LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ContinuousLinearEquiv.symm_apply_apply] using
+    simpa [J, ψ] using
       μ.integral_comp_linearMap (fun y ↦ ψ y * g y) (e : E →ₗ[ℝ] E)
   rw [hleft, hright, hu.integral_inner_gradient_eq_neg_integral_mul, smul_neg]
 
@@ -103,12 +104,17 @@ theorem HasWeakDivergenceOn.comp_smul (hu : HasWeakDivergenceOn μ Ω u g)
   rw [hfield] at h
   exact h
 
+/-- Pulling a vector field back along a continuous linear equivalence preserves solenoidality. -/
+theorem IsSolenoidalOn.comp_continuousLinearEquiv (hu : IsSolenoidalOn μ Ω u)
+    (e : E ≃L[ℝ] E) (hV : MapsTo e V Ω) : IsSolenoidalOn μ V (fun x ↦ e.symm (u (e x))) := by
+  rw [isSolenoidalOn_iff_hasWeakDivergenceOn] at hu ⊢
+  simpa only [Pi.zero_def] using hu.comp_continuousLinearEquiv e hV
+
 /-- Orthogonal changes of coordinates preserve solenoidality. For an orthogonal map `e`,
 a field `u` in the original coordinates becomes `x ↦ e (u (e.symm x))`. -/
 theorem IsSolenoidalOn.comp_linearIsometryEquiv (hu : IsSolenoidalOn μ Ω u)
-    (e : E ≃ₗᵢ[ℝ] E) (hV : MapsTo e.symm V Ω) : IsSolenoidalOn μ V (fun x ↦ e (u (e.symm x))) := by
-  rw [isSolenoidalOn_iff_hasWeakDivergenceOn] at hu ⊢
-  simpa [Pi.zero_def] using hu.comp_continuousLinearEquiv e.symm.toContinuousLinearEquiv hV
+    (e : E ≃ₗᵢ[ℝ] E) (hV : MapsTo e.symm V Ω) : IsSolenoidalOn μ V (fun x ↦ e (u (e.symm x))) :=
+  hu.comp_continuousLinearEquiv e.symm.toContinuousLinearEquiv hV
 
 /-- Precomposing a solenoidal field by a nonzero dilation preserves solenoidality. -/
 theorem IsSolenoidalOn.comp_smul (hu : IsSolenoidalOn μ Ω u)

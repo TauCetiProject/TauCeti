@@ -25,9 +25,9 @@ open MeasureTheory Set TopologicalSpace
 /-- On the real line, weak divergence is the weak derivative in the direction `1`. -/
 theorem hasWeakDivergenceOn_real_iff {μ : Measure ℝ} {Ω : Opens ℝ} {u g : ℝ → ℝ} :
     HasWeakDivergenceOn μ Ω u g ↔ HasWeakLineDerivOn μ Ω u g 1 := by
-  rw [hasWeakDivergenceOn_iff, hasWeakLineDerivOn_iff_testFunction]
-  have hcomplete : CompleteSpace ℝ := inferInstance
-  simp [hcomplete, gradient_eq_deriv', lineDeriv_one, smul_eq_mul, mul_comm]
+  rw [hasWeakDivergenceOn_iff, hasWeakLineDerivOn_iff_testFunction,
+    iff_true_intro (inferInstance : CompleteSpace ℝ), true_and]
+  simp only [gradient_eq_deriv', lineDeriv_one, smul_eq_mul, Real.inner_apply, mul_comm]
 
 /-- A solenoidal field on the whole real line agrees almost everywhere with a constant. -/
 theorem IsSolenoidalOn.exists_ae_eq_const {u : ℝ → ℝ} (hu : IsSolenoidalOn volume ⊤ u) :

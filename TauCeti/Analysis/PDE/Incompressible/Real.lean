@@ -11,8 +11,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Real
 /-!
 # Solenoidal `Lᵖ` fields on the real line
 
-A solenoidal field on the real line is almost everywhere constant, and finite `Lᵖ` norm forces
-this constant to vanish.
+A solenoidal field on the real line is almost everywhere constant. Membership in `Lᵖ` for
+`1 ≤ p < ∞` forces this constant to vanish.
 -/
 
 public section

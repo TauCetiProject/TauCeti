@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import Mathlib.Analysis.Distribution.Distribution
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Calculus.Gradient
@@ -28,7 +28,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions Gradient InnerProductSpace
+open scoped BigOperators ContDiff Distributions Gradient InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   {μ : Measure E} {Ω Ω' : Opens E} {u v : E → E} {g h : E → ℝ}
@@ -109,6 +109,12 @@ theorem congr_ae (hu : HasWeakDivergenceOn μ Ω u g) (huv : u =ᵐ[μ.restrict 
     · simp [φ.zero_on_compl hxΩ]
   rw [← hfield, ← hdiv, hu.integral_inner_gradient_eq_neg_integral_mul]
 
+/-- The zero field has weak divergence zero. -/
+@[simp]
+theorem zero : HasWeakDivergenceOn μ Ω (0 : E → E) 0 := by
+  refine ⟨locallyIntegrableOn_zero, locallyIntegrableOn_zero, fun φ ↦ ?_⟩
+  simp
+
 /-- Negating a vector field negates its weak divergence. -/
 theorem neg (hu : HasWeakDivergenceOn μ Ω u g) : HasWeakDivergenceOn μ Ω (-u) (-g) := by
   refine ⟨hu.locallyIntegrableOn.neg, hu.locallyIntegrableOn_divergence.neg, fun φ ↦ ?_⟩
@@ -142,15 +148,30 @@ theorem add (hu : HasWeakDivergenceOn μ Ω u g) (hv : HasWeakDivergenceOn μ Ω
     hu.integral_inner_gradient_eq_neg_integral_mul, hv.integral_inner_gradient_eq_neg_integral_mul,
     neg_add]
 
+/-- The weak divergence of a difference is the difference of the weak divergences. -/
+theorem sub (hu : HasWeakDivergenceOn μ Ω u g) (hv : HasWeakDivergenceOn μ Ω v h) :
+    HasWeakDivergenceOn μ Ω (u - v) (g - h) := by
+  simpa only [sub_eq_add_neg] using hu.add hv.neg
+
+/-- Weak divergence commutes with finite sums. -/
+theorem sum {ι : Type*} {w : ι → E → E} {q : ι → E → ℝ} (s : Finset ι)
+    (hs : ∀ i ∈ s, HasWeakDivergenceOn μ Ω (w i) (q i)) :
+    HasWeakDivergenceOn μ Ω (∑ i ∈ s, w i) (∑ i ∈ s, q i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa only [Finset.sum_empty] using (zero (μ := μ) (Ω := Ω))
+  | insert a s ha ih =>
+    simpa only [Finset.sum_insert ha] using
+      (hs a (Finset.mem_insert_self a s)).add (ih fun i hi ↦ hs i (Finset.mem_insert_of_mem hi))
+
 end HasWeakDivergenceOn
 
 namespace IsSolenoidalOn
 
 /-- The zero field is solenoidal on every open set. -/
 @[simp]
-theorem zero : IsSolenoidalOn μ Ω (0 : E → E) := by
-  refine isSolenoidalOn_iff.mpr ⟨locallyIntegrableOn_zero, fun φ ↦ ?_⟩
-  simp
+theorem zero : IsSolenoidalOn μ Ω (0 : E → E) :=
+  isSolenoidalOn_iff_hasWeakDivergenceOn.mpr HasWeakDivergenceOn.zero
 
 /-- Solenoidality is preserved when restricting the open set. -/
 theorem mono (hu : IsSolenoidalOn μ Ω u) (hΩ : Ω' ≤ Ω) : IsSolenoidalOn μ Ω' u :=
@@ -176,6 +197,20 @@ theorem add [OpensMeasurableSpace E] (hu : IsSolenoidalOn μ Ω u) (hv : IsSolen
     IsSolenoidalOn μ Ω (u + v) := by
   rw [isSolenoidalOn_iff_hasWeakDivergenceOn]
   simpa only [add_zero] using HasWeakDivergenceOn.add hu hv
+
+/-- The difference of two solenoidal fields is solenoidal. -/
+theorem sub [OpensMeasurableSpace E] (hu : IsSolenoidalOn μ Ω u) (hv : IsSolenoidalOn μ Ω v) :
+    IsSolenoidalOn μ Ω (u - v) := by
+  rw [isSolenoidalOn_iff_hasWeakDivergenceOn]
+  simpa only [sub_zero] using HasWeakDivergenceOn.sub hu hv
+
+/-- A finite sum of solenoidal fields is solenoidal. -/
+theorem sum [OpensMeasurableSpace E] {ι : Type*} {w : ι → E → E} (s : Finset ι)
+    (hs : ∀ i ∈ s, IsSolenoidalOn μ Ω (w i)) : IsSolenoidalOn μ Ω (∑ i ∈ s, w i) := by
+  rw [isSolenoidalOn_iff_hasWeakDivergenceOn]
+  simpa only [Finset.sum_const_zero] using
+    (HasWeakDivergenceOn.sum (q := fun _ ↦ 0) s fun i hi ↦
+      isSolenoidalOn_iff_hasWeakDivergenceOn.mp (hs i hi))
 
 end IsSolenoidalOn
 

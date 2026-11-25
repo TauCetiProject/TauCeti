@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.WeakLaplacian
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
 
