@@ -163,12 +163,10 @@ theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
   have hright : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.snd) = π := by
     rw [Measure.map_map (by fun_prop) hg]
     simp [Function.comp_def]
-  have hzero := eLpNorm_edist_graphPlan_id_eq_zero hd p
   refine ⟨by rw [hleft]; exact isCoupling_graphPlan_id μ, ?_, by rw [hright]; exact hπ,
     by rw [hright]; exact hopt⟩
-  rw [hleft, hzero]
-  exact (nonpos_iff_eq_zero.1 ((wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq
-    hzero)).symm
+  rw [hleft, eLpNorm_edist_graphPlan_id_eq_zero hd p,
+    wassersteinEDist_self_of_aemeasurable_edist hd p]
 
 end Diagonal
 
