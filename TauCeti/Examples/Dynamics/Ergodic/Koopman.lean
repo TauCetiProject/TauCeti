@@ -51,9 +51,6 @@ end Identity
 
 section Circle
 
-/-- The period `1` is positive. -/
-instance instFactZeroLtOneReal : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
-
 /-- The translation action of `ℝ` on `AddCircle 1`, `t +ᵥ x = t + x`. -/
 instance instAddActionRealAddCircleOne : AddAction ℝ (AddCircle (1 : ℝ)) :=
   AddAction.compHom _ (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℝ)))
