@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Nat.Set
 import TauCeti.Data.Set.Prod
 import TauCeti.Logic.Function.Fiber
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
@@ -28,7 +32,8 @@ For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n`
 repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
 
 Adding a fresh element to a set removes one element from its complement
-(`Set.encard_compl_insert_add_one`).
+(`Set.encard_compl_insert_add_one`). A set of naturals containing `0` has one more element, in
+`ℕ∞`, than the set of indices whose successor lies in it (`Set.encard_preimage_succ_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
@@ -60,7 +65,14 @@ A set covered by finitely many finite sets `C i` is finite, with at most `∑ i,
 (`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
 of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` for coefficients
 `a i` equal to `|A i|` when `P i` holds and `0` otherwise, and `b i` likewise for `B i` and `Q i`
-(`Set.natCast_ncard_setOf_and_and_mem_and_mem`).
+(`Set.natCast_ncard_setOf_and_and_mem_and_mem`). The same fibrewise regrouping sums weights
+`g i y * k i z` over the triples into `∑ i, a i * b i`, for `a i` the sum of `g i` over `A i` when
+`P i` holds and `0` otherwise, and `b i` likewise (`Set.finsum_mem_setOf_and_and_mem_and_mem`);
+this is the coefficient of a composite of two matrices whose entries are weighted counts, such as
+signed counts.
+A sum of signs `±1` over a finite set, read in a ring of characteristic two, is the number of
+elements of the set (`Set.intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one`): modulo two, a
+signed count is a count.
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -102,6 +114,13 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
     (insert x s)ᶜ.encard + 1 = sᶜ.encard := by
   rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
     inter_comm]
+
+/-- A set of natural numbers containing `0` has one more element than the set of indices `n` with
+`n + 1 ∈ s`; both sides are `⊤` when `s` is infinite. -/
+theorem encard_preimage_succ_add_one {s : Set ℕ} (hs : 0 ∈ s) :
+    (Nat.succ ⁻¹' s).encard + 1 = s.encard := by
+  rw [← Nat.succ_injective.encard_image, image_preimage_eq_inter_range, ← compl_compl (range _),
+    Nat.compl_range_succ, ← sdiff_eq, encard_sdiff_singleton_add_one hs]
 
 /-- The points of the range of an injective map into a sigma type lying over the index `i` are
 counted by the arguments mapped over `i`. -/
@@ -188,6 +207,61 @@ theorem natCast_ncard_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι
     · rw [ite_eq_left ⟨hP, hQ⟩, Nat.cast_mul, ha i hP, hb i hQ]
     · rw [ite_eq_right fun h ↦ hQ h.2, hb₀ i hQ, mul_zero]
   · rw [ite_eq_right fun h ↦ hP h.1, ha₀ i hP, zero_mul]
+
+/-- **Summing over triples fibrewise.** Let `a i` be the sum of `g i` over `A i` when `P i` holds
+and `0` otherwise, and `b i` the sum of `k i` over `B i` when `Q i` holds and `0` otherwise. Over a
+finite index type, when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds, the weights `g i y * k i z` of the triples `(i, y, z)` with `P i`, `Q i`, `y ∈ A i` and
+`z ∈ B i` sum to `∑ i, a i * b i`. This is the coefficient of a composite of two linear maps whose
+matrices are weighted counts of the elements of `A i` and of `B i`. -/
+theorem finsum_mem_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι]
+    [NonUnitalNonAssocSemiring R] {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β}
+    {g : ι → α → R} {k : ι → β → R} {a b : ι → R}
+    (hA : ∀ i, P i → (A i).Finite) (hB : ∀ i, Q i → (B i).Finite)
+    (ha : ∀ i, P i → a i = ∑ᶠ y ∈ A i, g i y) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = ∑ᶠ z ∈ B i, k i z) (hb₀ : ∀ i, ¬Q i → b i = 0) :
+    ∑ᶠ x ∈ {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1},
+        g x.1 x.2.1 * k x.1 x.2.2 =
+      ∑ i, a i * b i := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [finsum_mem_eq_finite_toFinset_sum _ (finite_setOf_and_and_mem_and_mem hA hB),
+    ← Finset.sum_fiberwise _ Prod.fst]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hi : P i ∧ Q i
+  · rw [ha i hi.1, hb i hi.2, finsum_mem_eq_finite_toFinset_sum _ (hA i hi.1),
+      finsum_mem_eq_finite_toFinset_sum _ (hB i hi.2), Finset.sum_mul_sum, ← Finset.sum_product']
+    refine Finset.sum_nbij' (fun x ↦ x.2) (Prod.mk i) (fun x hx ↦ ?_) (fun z hz ↦ ?_)
+      (fun x hx ↦ ?_) (fun _ _ ↦ rfl) fun x hx ↦ ?_
+    · rw [Finset.mem_filter, Finite.mem_toFinset] at hx
+      obtain ⟨⟨-, -, hy, hz⟩, rfl⟩ := hx
+      exact Finset.mem_product.2 ⟨(hA _ hi.1).mem_toFinset.2 hy, (hB _ hi.2).mem_toFinset.2 hz⟩
+    · rw [Finset.mem_product, Finite.mem_toFinset, Finite.mem_toFinset] at hz
+      exact Finset.mem_filter.2 ⟨Finite.mem_toFinset _ |>.2 ⟨hi.1, hi.2, hz⟩, rfl⟩
+    · exact Prod.ext (Finset.mem_filter.1 hx).2.symm rfl
+    · rw [(Finset.mem_filter.1 hx).2]
+  · -- Off the indices with `P i` and `Q i`, the fibre is empty and `a i * b i` vanishes.
+    rw [Finset.sum_eq_zero fun x hx ↦ (hi ?_).elim]
+    · rcases not_and_or.1 hi with hP | hQ
+      · rw [ha₀ i hP, zero_mul]
+      · rw [hb₀ i hQ, mul_zero]
+    · obtain ⟨hmem, rfl⟩ := Finset.mem_filter.1 hx
+      rw [Finite.mem_toFinset] at hmem
+      exact ⟨hmem.1, hmem.2.1⟩
+
+/-- **A signed count reduces to the number of elements in characteristic two.** If `w` takes the
+values `±1` on a finite set `s`, then the integer sum of `w` over `s`, read in a ring `R` of
+characteristic two such as `ZMod 2`, is the number of elements of `s`. -/
+theorem intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one {α R : Type*}
+    [AddCommGroupWithOne R] [CharP R 2] {s : Set α} (hs : s.Finite) {w : α → ℤ}
+    (hw : ∀ x ∈ s, w x = 1 ∨ w x = -1) :
+    ((∑ᶠ x ∈ s, w x : ℤ) : R) = s.ncard := by
+  rw [finsum_mem_eq_finite_toFinset_sum _ hs, Int.cast_sum, ncard_eq_toFinset_card _ hs,
+    Finset.card_eq_sum_ones, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rcases hw x (hs.mem_toFinset.1 hx) with h | h
+  · rw [h, Int.cast_one, Nat.cast_one]
+  · rw [h, Int.cast_neg, Int.cast_one, CharTwo.neg_one_eq_one, Nat.cast_one]
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/

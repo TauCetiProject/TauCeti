@@ -30,8 +30,7 @@ operator is decomposed dyadically, and the pieces are almost orthogonal in the a
 
 The simplest almost-orthogonality bound, for vectors rather than operators, expands a square:
 if `y` is a limit of finite partial sums `∑_{k ∈ s a} xₖ` of a family `x`,
-then `‖y‖² ≤ ∑_{i, j} |⟪xᵢ, xⱼ⟫|`. The `TT*` argument for the endpoint Strichartz estimate
-applies it to the dual integrals of the dyadic layers of a function.
+then `‖y‖² ≤ ∑_{i, j} |⟪xᵢ, xⱼ⟫|`.
 
 ## Main results
 

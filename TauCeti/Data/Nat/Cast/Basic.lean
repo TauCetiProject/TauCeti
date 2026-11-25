@@ -18,6 +18,8 @@ after casting to a ring, including when `c = 0`. In a semiring without zero divi
 
 * `Nat.cast_mod_eq_sub_mul_div`: `((n % c : ℕ) : R) = n - c * (n / c : ℕ)`.
 * `TauCeti.four_eq_zero_iff_two_eq_zero`: without zero divisors, `4 = 0` if and only if `2 = 0`.
+* `TauCeti.add_natCast_ne_neg_natCast`: an element off `−ℕ` stays off `−ℕ` after adding a
+  natural number.
 -/
 
 public section
@@ -39,5 +41,11 @@ does. -/
 theorem four_eq_zero_iff_two_eq_zero {R : Type*} [NonAssocSemiring R] [NoZeroDivisors R] :
     (4 : R) = 0 ↔ (2 : R) = 0 := by
   rw [← two_add_two_eq_four, ← two_mul, mul_self_eq_zero]
+
+/-- In an additive commutative group with one, an element off `−ℕ` stays off `−ℕ` after adding a
+natural number. -/
+theorem add_natCast_ne_neg_natCast {R : Type*} [AddCommGroupWithOne R] {a : R}
+    (ha : ∀ m : ℕ, a ≠ -m) (n m : ℕ) : a + n ≠ -m := fun h =>
+  ha (m + n) (by rw [Nat.cast_add, neg_add, ← h, add_neg_cancel_right])
 
 end TauCeti

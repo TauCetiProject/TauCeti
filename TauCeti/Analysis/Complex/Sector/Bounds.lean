@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Norm and argument bounds in complex sectors
@@ -25,7 +26,9 @@ constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
 `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
 `(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
 These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
-symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, and every
+symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, as does every
+point of an exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` with `0 ≤ r` and `θ ≤ π`
+(`Complex.setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane`), and every
 sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
 (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 
@@ -34,6 +37,17 @@ controlled by `r / ‖c‖`: when `0 ≤ δ ≤ π / 2` and `r ≤ ‖c‖ * sin
 branch cut), every `z ∈ Metric.ball c r` satisfies `|arg z - arg c| < δ`
 (`Complex.abs_arg_sub_arg_lt_of_mem_ball`), placing the whole disc inside an open sector
 (`Complex.arg_mem_Ioo_of_mem_ball`).
+
+Discs whose radii are a fixed multiple `c ≤ 1 / 2` of the norm of their centers, centered at
+the points of a closed sector `|arg z| ≤ θ'`, stay inside every larger open sector `|arg w| < θ`,
+by compactness of the arc of unit directions of the closed sector, and on such discs the norms
+are comparable to the norm of the center (`TauCeti.exists_pos_forall_mem_closedBall_abs_arg_lt`;
+the disc at the vertex is the vertex itself). Discs centered at points with `2 A < ‖z‖` also lie
+in `{A < ‖w‖}`, hence in the truncated sector `{A < ‖w‖, |arg w| < θ}`
+(`TauCeti.closedBall_subset_setOf_lt_norm_and_abs_arg_lt`). The disc statements and proofs are
+adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMFMathlib/Analysis/Complex/Sector.lean`, where
+the sectors may have any bisector.
 -/
 
 public section
@@ -194,6 +208,13 @@ theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
 
+/-- For `0 ≤ r` and `θ ≤ π`, the open exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` lies in
+the slit exterior `{z | r < ‖z‖} ∩ slitPlane`. -/
+theorem setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane {r θ : ℝ} (hr : 0 ≤ r)
+    (hθ : θ ≤ Real.pi) : {z : ℂ | r < ‖z‖ ∧ |z.arg| < θ} ⊆ {z | r < ‖z‖} ∩ slitPlane :=
+  fun _ hz ↦ ⟨hz.1, mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθ)
+    (norm_pos_iff.1 (hr.trans_lt hz.1))⟩
+
 /-- Every sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected. -/
 theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
     IsPreconnected {z : ℂ | |z.arg| < α ∧ r < ‖z‖} := by
@@ -301,3 +322,75 @@ theorem arg_mem_Ioo_of_mem_ball {θ₁ θ₂ : ℝ} {c z : ℂ} {r δ : ℝ}
   exact ⟨by linarith, by linarith⟩
 
 end Complex
+
+namespace TauCeti
+
+open Complex Metric Set
+
+/-- For `θ' < θ ≤ π`, the closed balls of radius `c ‖z‖` around the points `z` of the closed
+sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `0 < c ≤ 1 / 2`. -/
+private theorem exists_pos_forall_mem_closedBall_abs_arg_lt_of_le_pi {θ θ' : ℝ} (hθ : θ ≤ π)
+    (hθ' : θ' < θ) : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, |z.arg| ≤ θ' →
+      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
+  let K : Set ℂ := (fun φ : ℝ => exp (φ * I)) '' Icc (-θ') θ'
+  let U : Set ℂ := slitPlane ∩ (fun z : ℂ => |z.arg|) ⁻¹' Iio θ
+  have hK : IsCompact K := isCompact_Icc.image (by fun_prop)
+  have hU : IsOpen U := continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
+  have hKU : K ⊆ U := by
+    rintro _ ⟨φ, hφ, rfl⟩
+    have ha : (exp (φ * I)).arg = φ := by
+      rw [arg_exp_mul_I, toIocMod_eq_self]
+      constructor <;> linarith [hφ.1, hφ.2]
+    refine ⟨mem_slitPlane_iff_arg.mpr ⟨by linarith [hφ.2], exp_ne_zero _⟩, ?_⟩
+    rw [Set.mem_preimage, ha, Set.mem_Iio, abs_lt]
+    constructor <;> linarith [hφ.1, hφ.2]
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  refine ⟨min δ (1 / 2), lt_min hδ (by norm_num), min_le_right _ _, fun z harg w hw => ?_⟩
+  rcases eq_or_ne z 0 with rfl | hz
+  · rw [norm_zero, mul_zero, closedBall_zero, mem_singleton_iff] at hw
+    rw [hw]
+    exact harg.trans_lt hθ'
+  have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr hz
+  have hzr : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hz0.ne'
+  rw [mem_closedBall, dist_eq_norm] at hw
+  have hunit : z / (‖z‖ : ℂ) ∈ K := by
+    refine ⟨z.arg, abs_le.mp harg, ?_⟩
+    rw [eq_div_iff hzr, mul_comm, norm_mul_exp_arg_mul_I]
+  have hdist : dist (w / (‖z‖ : ℂ)) (z / (‖z‖ : ℂ)) ≤ δ := by
+    rw [dist_eq_norm, ← sub_div, norm_div, norm_real, Real.norm_of_nonneg hz0.le]
+    exact ((div_le_iff₀ hz0).mpr hw).trans (min_le_left _ _)
+  have hwU := (hδU (mem_cthickening_of_dist_le _ _ _ K hunit hdist)).2
+  rwa [Set.mem_preimage, Set.mem_Iio, arg_div_ofReal w hz0] at hwU
+
+/-- For `θ' < θ` there is `0 < c ≤ 1 / 2` such that the closed balls of radius `c ‖z‖` around
+the points `z` of the closed sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, and the
+norms in these balls lie between `‖z‖ / 2` and `2 ‖z‖`. -/
+theorem exists_pos_forall_mem_closedBall_abs_arg_lt {θ θ' : ℝ} (hθ' : θ' < θ) :
+    ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, |z.arg| ≤ θ' → ∀ w ∈ closedBall z (c * ‖z‖),
+      |w.arg| < θ ∧ ‖z‖ / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ‖z‖ := by
+  obtain ⟨c, hc, hc2, h⟩ : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, |z.arg| ≤ θ' →
+      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
+    rcases le_or_gt θ π with hθ | hθ
+    · exact exists_pos_forall_mem_closedBall_abs_arg_lt_of_le_pi hθ hθ'
+    · exact ⟨1 / 2, by norm_num, le_rfl, fun _ _ w _ => (abs_arg_le_pi w).trans_lt hθ⟩
+  refine ⟨c, hc, hc2, fun z harg w hw => ⟨h z harg w hw, ?_⟩⟩
+  rw [mem_closedBall, dist_eq_norm] at hw
+  have hnear : ‖w - z‖ ≤ ‖z‖ / 2 := hw.trans (by nlinarith [norm_nonneg z])
+  have h1 := norm_le_norm_add_norm_sub z w
+  have h2 := norm_le_norm_add_norm_sub w z
+  rw [norm_sub_rev] at h1
+  constructor <;> linarith
+
+/-- If `c ≤ 1 / 2`, the closed ball of radius `c ‖z‖` around `z` lies in the open sector
+`|arg w| < θ`, and `2 A < ‖z‖`, then the ball lies in the truncated sector
+`{A < ‖w‖, |arg w| < θ}`: its points have norm at least `‖z‖ / 2`. -/
+theorem closedBall_subset_setOf_lt_norm_and_abs_arg_lt {θ A c : ℝ} {z : ℂ} (hc : c ≤ 1 / 2)
+    (hball : ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ) (hz : 2 * A < ‖z‖) :
+    closedBall z (c * ‖z‖) ⊆ {w | A < ‖w‖ ∧ |w.arg| < θ} := fun w hw => by
+  refine ⟨?_, hball w hw⟩
+  rw [mem_closedBall, dist_eq_norm, norm_sub_rev] at hw
+  have h := norm_sub_norm_le z w
+  have hcz := mul_le_mul_of_nonneg_right hc (norm_nonneg z)
+  linarith
+
+end TauCeti
