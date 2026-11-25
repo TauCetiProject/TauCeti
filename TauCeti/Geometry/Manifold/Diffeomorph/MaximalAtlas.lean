@@ -30,6 +30,8 @@ maximal atlas is invariant under structomorphisms and diffeomorphisms.
 * `Structomorph.symm_trans_trans_mem_of_mem_maximalAtlas`: read in a chart of `M` and a chart of
   the maximal atlas of `M'`, a structomorphism is in `G`.
 * `Structomorph.trans_mem_maximalAtlas`: the pullback `e ≫ φ` of a chart of the maximal atlas.
+* `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas`: the pullback `f ≫ φ` of a chart of
+  the maximal atlas along a diffeomorphism, with the same target as `φ`.
 * `Structomorph.exists_mem_maximalAtlas_symm_eq_comp`,
   `Diffeomorph.exists_mem_maximalAtlas_comp_symm_eq`,
   `Diffeomorph.exists_mem_maximalAtlas_symm_eq_comp`: corresponding charts of the two maximal
@@ -116,6 +118,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {m n : WithTop ℕ∞}
+
+/-- A chart `φ` of the maximal `C^m` atlas of `N` pulls back along a `C^n` diffeomorphism
+`f : M → N`, for `m ≤ n`, to the chart `f ≫ φ` of the maximal `C^m` atlas of `M`, here in the form
+`Homeomorph.transOpenPartialHomeomorph`, whose target is that of `φ`. -/
+theorem transOpenPartialHomeomorph_mem_maximalAtlas [IsManifold I m M] (f : M ≃ₘ^n⟮I, I⟯ N)
+    (hmn : m ≤ n) {φ : OpenPartialHomeomorph N H} (hφ : φ ∈ IsManifold.maximalAtlas I m N) :
+    f.toHomeomorph.transOpenPartialHomeomorph φ ∈ IsManifold.maximalAtlas I m M := by
+  rw [Homeomorph.transOpenPartialHomeomorph_eq_trans]
+  exact f.trans_mem_maximalAtlas hmn hφ
 
 /-- A chart `φ` of the maximal `C^m` atlas of `N` pulls back along a `C^n` diffeomorphism
 `f : M → N`, for `m ≤ n`, to a chart `φ'` of the maximal `C^m` atlas of `M` with the same target
