@@ -42,9 +42,6 @@ the same theorem.
 * `CovariantDerivative.IsMetricCompatible.hasDerivAt_inner_alongCurve`: the unrestricted form,
   with `CovariantDerivative.IsMetricCompatible.differentiableAt_inner` and
   `CovariantDerivative.IsMetricCompatible.deriv_inner_alongCurve` as consequences.
-* `CovariantDerivative.IsMetricCompatible.hasDerivAt_norm_sq_alongCurve` and
-  `CovariantDerivative.IsMetricCompatible.hasDerivAt_deriv_norm_sq_alongCurve`: first and second
-  derivatives of the squared norm `‖V r‖²` of a field along a curve.
 * `CovariantDerivative.IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq`
   and `CovariantDerivative.IsMetricCompatible.inner_alongCurve_self_eq_zero_of_eventually_norm_eq`:
   a field of locally constant length is orthogonal to its covariant derivative.
@@ -441,41 +438,6 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
       inner ℝ (alongCurve cov γ V t) (W t) +
         inner ℝ (V t) (alongCurve cov γ W t) :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).deriv
-
-/-- The derivative of the squared norm of a differentiable tangent field along a differentiable
-real curve is `2 ⟪D V / dt, V⟫`, for a metric-compatible covariant derivative. -/
-theorem IsMetricCompatible.hasDerivAt_norm_sq_alongCurve
-    (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun x : M ↦ TangentSpace I x) cov)
-    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    {V : ∀ r, TangentSpace I (γ r)}
-    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t) :
-    HasDerivAt (fun r ↦ ‖V r‖ ^ 2)
-      (2 * inner ℝ (alongCurve cov γ V t) (V t)) t := by
-  have h := hcov.hasDerivAt_inner_alongCurve hγ hV hV
-  simp only [real_inner_self_eq_norm_sq] at h
-  refine h.congr_deriv ?_
-  rw [real_inner_comm (V t), two_mul]
-
-/-- The second derivative of the squared norm of a tangent field along a real curve is
-`2 (⟪D² V / dt², V⟫ + ‖D V / dt‖²)`, for a metric-compatible covariant derivative. -/
-theorem IsMetricCompatible.hasDerivAt_deriv_norm_sq_alongCurve
-    (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun x : M ↦ TangentSpace I x) cov)
-    (hγ : ∀ᶠ r in 𝓝 t, MDifferentiableAt 𝓘(ℝ, ℝ) I γ r)
-    {V : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ᶠ r in 𝓝 t, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ r)) r)
-    (hDV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (alongCurve cov γ V) (γ t)) t) :
-    HasDerivAt (deriv fun r ↦ ‖V r‖ ^ 2)
-      (2 * (inner ℝ (alongCurve cov γ (alongCurve cov γ V) t) (V t) +
-        ‖alongCurve cov γ V t‖ ^ 2)) t := by
-  have hd₁ : (deriv fun r ↦ ‖V r‖ ^ 2) =ᶠ[𝓝 t]
-      fun r ↦ 2 * inner ℝ (alongCurve cov γ V r) (V r) := by
-    filter_upwards [hγ, hV] with r hγr hVr
-    exact (hcov.hasDerivAt_norm_sq_alongCurve hγr hVr).deriv
-  have hd₂ := (hcov.hasDerivAt_inner_alongCurve hγ.self_of_nhds hDV hV.self_of_nhds).const_mul 2
-  rw [real_inner_self_eq_norm_sq] at hd₂
-  exact hd₂.congr_of_eventuallyEq hd₁
 
 /-- **A field of locally constant length is orthogonal to its covariant derivative.** If a
 differentiable tangent field `V` along a differentiable real curve has constant metric length on

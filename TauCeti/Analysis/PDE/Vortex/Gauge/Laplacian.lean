@@ -8,12 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Real
 public import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -87,7 +89,12 @@ analytic input for the invertibility of the linearization at the identity of the
 condition
 `d₀* (u · x₀ - x₀) = 0`, as a map `H^(k+1)(ℂ) → H^(k-1)(ℂ)`, for the action of the Sobolev framed
 gauge group `G_(k+1)` (`TauCeti.Vortex.sobolevGaugeGroup`) on `A_m^k`: the input of the
-implicit function theorem for the gauge slice.
+implicit function theorem for the gauge slice. Read through the identification
+`TauCeti.Wkp.toRealSubmodule` of `W^{n,2}(ℂ)` with the real elements of the Bessel-potential space
+`H^n(ℂ)`, the same operator is the isomorphism `TauCeti.Vortex.realGaugeLaplacian` between the real
+elements of `H^(j+2)(ℂ)` and of `H^j(ℂ)` (`TauCeti.Vortex.realGaugeLaplacian_apply`), determined
+by the same weak equation for continuous representatives
+(`TauCeti.Vortex.realGaugeLaplacian_eq_iff`, `TauCeti.Vortex.realGaugeLaplacian_symm_apply_eq_iff`).
 
 ## References
 
@@ -538,6 +545,68 @@ theorem sobolevGaugeLaplacianEquiv_symm_apply_eq_iff (hk : 1 < k) (hjk : j ≤ k
           ∫ z, Wkp.value j g z * φ z := by
   rw [ContinuousLinearEquiv.symm_apply_eq, eq_comm,
     sobolevGaugeLaplacianEquiv_eq_iff hk hjk hx hcont]
+
+/-! ### The gauge Laplacian on the real Bessel-potential scale -/
+
+open BesselPotentialSpace
+
+/-- **The gauge Laplacian on real phases.** At a continuous field `x` of `A_m^k`, `k ≥ 2`, and for
+`j ≤ k`, the gauge Laplacian `d₀* d₀ = -Δ + (p² + q²)` as a continuous real-linear isomorphism from
+the real elements of `H^(j+2)(ℂ)` onto those of `H^j(ℂ)`: the isomorphism
+`sobolevGaugeLaplacianEquiv` of the weak-derivative Sobolev spaces, read through
+`TauCeti.Wkp.toRealSubmodule` (`realGaugeLaplacian_apply`). It is characterized by its weak
+equation `realGaugeLaplacian_eq_iff`. -/
+noncomputable def realGaugeLaplacian (hk : 1 < k) (hjk : j ≤ k)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) :
+    realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ)) ≃L[ℝ]
+      realSubmodule ℂ (Nat.cast_nonneg j : (0 : ℝ) ≤ (j : ℝ)) :=
+  (Wkp.toRealSubmodule (E := ℂ) (j + 2)).symm.trans <|
+    (sobolevGaugeLaplacianEquiv hk hjk hx hcont).trans (Wkp.toRealSubmodule (E := ℂ) j)
+
+/-- The real gauge Laplacian is `sobolevGaugeLaplacianEquiv` read through
+`TauCeti.Wkp.toRealSubmodule`. -/
+theorem realGaugeLaplacian_apply (hk : 1 < k) (hjk : j ≤ k)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    (F : realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))) :
+    realGaugeLaplacian hk hjk hx hcont F = Wkp.toRealSubmodule (E := ℂ) j
+      (sobolevGaugeLaplacianEquiv hk hjk hx hcont
+        ((Wkp.toRealSubmodule (E := ℂ) (j + 2)).symm F)) :=
+  (rfl)
+
+/-- **The real gauge Laplacian is determined by its weak equation**: for `j ≥ 2`, `d₀* d₀ F = G`
+exactly when `∫ F · d₀* d₀ φ = ∫ G φ` for the continuous representatives of `F` and `G` and every
+smooth compactly supported `φ`. -/
+theorem realGaugeLaplacian_eq_iff (hk : 1 < k) (hjk : j ≤ k) (hj : 2 ≤ j)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    {F : realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))}
+    {G : realSubmodule ℂ (Nat.cast_nonneg j : (0 : ℝ) ≤ (j : ℝ))} :
+    realGaugeLaplacian hk hjk hx hcont F = G ↔
+      ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+        ∫ z, continuousRep F z * gaugeAdjoint x (gaugeDirection x φ) z =
+          ∫ z, continuousRep G z * φ z := by
+  have hd (n : ℕ) (hn : 2 ≤ n) : (Module.finrank ℝ ℂ : ℝ) < 2 * (n : ℝ) :=
+    finrank_real_complex_lt_two_mul (by exact_mod_cast hn)
+  -- The values of the Sobolev functions are the continuous representatives.
+  have hw := Wkp.value_toRealSubmodule_symm_ae_eq_continuousRep (hd (j + 2) (by omega)) F
+  have hg := Wkp.value_toRealSubmodule_symm_ae_eq_continuousRep (hd j hj) G
+  rw [realGaugeLaplacian_apply, ← ContinuousLinearEquiv.eq_symm_apply,
+    sobolevGaugeLaplacianEquiv_eq_iff hk hjk hx hcont]
+  refine forall_congr' fun φ ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ Eq.congr
+    (integral_congr_ae (hw.mono fun z hz ↦ ?_)) (integral_congr_ae (hg.mono fun z hz ↦ ?_)) <;>
+  · dsimp only; rw [hz]
+
+/-- **The inverse of the real gauge Laplacian solves the weak equation**: for `j ≥ 2`, the inverse
+image of `G` is the unique real `F` of order `j + 2` with `∫ F · d₀* d₀ φ = ∫ G φ` for the
+continuous representatives and every smooth compactly supported `φ`. -/
+theorem realGaugeLaplacian_symm_apply_eq_iff (hk : 1 < k) (hjk : j ≤ k) (hj : 2 ≤ j)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    {G : realSubmodule ℂ (Nat.cast_nonneg j : (0 : ℝ) ≤ (j : ℝ))}
+    {F : realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))} :
+    (realGaugeLaplacian hk hjk hx hcont).symm G = F ↔
+      ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+        ∫ z, continuousRep F z * gaugeAdjoint x (gaugeDirection x φ) z =
+          ∫ z, continuousRep G z * φ z := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, eq_comm, realGaugeLaplacian_eq_iff hk hjk hj hx hcont]
 
 end Isomorphism
 

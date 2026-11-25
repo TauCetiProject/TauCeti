@@ -68,7 +68,7 @@ theorem exists_contDiff_apply_eq_ge_fderiv_eq_laplacian_le
   obtain ⟨hP, hP0, hPd, hPdd⟩ := hjet
   have htrace : traceL Q = traceL B + (2 * μ) * (Module.finrank ℝ E : ℝ) := by
     have hJtrace : traceL J = (Module.finrank ℝ E : ℝ) := traceL_innerSL
-    simp only [Q, map_add, map_smul, traceL_flip, hJtrace, smul_eq_mul]
+    simp only [Q, map_add, map_smul, ContinuousLinearMap.traceL_flip, hJtrace, smul_eq_mul]
     ring
   refine ⟨P, hP, hP0, ?_, hPd, ?_⟩
   · filter_upwards [hmajor μ hμ] with x hx

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
@@ -80,8 +79,6 @@ merely to be written down, are carried for the same reason.
 * `TauCeti.Manifold.contMDiffWithinAt_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_alongCurve_leviCivitaConnection`: the pointwise forms, with one
   derivative lost from the section lift at a single parameter.
-* `ContMDiffAt.contMDiffAt_acceleration_leviCivitaConnection_fst_slice`: regularity of the sliced
-  transverse Levi-Civita acceleration of a jointly `C^n` two-parameter family.
 * `TauCeti.Manifold.contMDiffWithinAt_accelerationWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_acceleration_leviCivitaConnection`: the acceleration of a
   `C^(n+2)` curve has a `C^n` tangent-bundle lift at a parameter, within a set or unrestricted.
@@ -516,28 +513,5 @@ theorem differentiableAt_sectionCoord_alongCurve_leviCivitaConnection
     funext (alongCurveWithin_univ (leviCivitaConnection I M) γ V)] using
     differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
       uniqueDiffOn_univ hV.contMDiffWithinAt (mem_univ t)
-
-/-- **Regularity of the transverse Levi-Civita acceleration along a slice.** If a two-parameter
-family `F : ℝ → ℝ → M` is jointly `C^n'` at `(u, t)` on a `C^m` manifold with a `C^k` Riemannian
-metric, then the transverse covariant accelerations `r ↦ D_s ∂_s F (u, r)` form a `C^n` section
-along `F u` at `t` whenever `n + 2 ≤ m`, `n + 1 ≤ k`, and `n + 2 ≤ n'`. -/
-theorem _root_.ContMDiffAt.contMDiffAt_acceleration_leviCivitaConnection_fst_slice
-    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {F : ℝ → ℝ → M} {u : ℝ} {n' : ℕ∞ω}
-    (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n' (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t))
-    (hmn : n + 2 ≤ n') :
-    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
-      (fun r ↦ TotalSpace.mk' E (F u r)
-        (acceleration (leviCivitaConnection I M) (fun s ↦ F s r) u)) t := by
-  let : IsManifold I (n + 1 + 1) M :=
-    IsManifold.of_le (n := m) (by rwa [add_assoc, one_add_one_eq_two])
-  let : IsManifold I (n + 1) M :=
-    IsManifold.of_le (n := n + 1 + 1) le_self_add
-  let : ContMDiffVectorBundle (n + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  let : ContMDiffCovariantDerivativeOn E n (leviCivitaConnection I M).toFun
-      (trivializationAt E (TangentSpace I) (F u t)).baseSet :=
-    contMDiffCovariantDerivativeOn_leviCivitaConnection (m := m) (k := k)
-      (trivializationAt E (TangentSpace I) (F u t)).open_baseSet hm hk
-  exact hf.contMDiffAt_acceleration_fst_slice (leviCivitaConnection I M) hmn
 
 end TauCeti.Manifold

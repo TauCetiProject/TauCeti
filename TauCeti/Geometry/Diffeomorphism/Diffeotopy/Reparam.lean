@@ -60,6 +60,8 @@ respect homotopy.
 * `TauCeti.Diffeotopy.isCollared_concat`: every concatenation is collared.
 * `TauCeti.Diffeotopy.reparam_homotopic`: a reparametrization fixing both ends is homotopic to
   the original diffeotopy.
+* `TauCeti.Diffeotopy.exists_homotopic_timeSlice_eq_comp`: every diffeotopy is homotopic to one
+  whose time slices are those of a jointly smooth real-time family.
 * `TauCeti.Diffeotopy.concat_homotopic_trans`, `reverse_homotopic_symm`: the path-class laws of
   concatenation and reversal.
 * `TauCeti.Diffeotopy.concat_reverse_homotopic_refl`: reversal inverts concatenation up to
@@ -369,6 +371,28 @@ theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 
   · simp only [Set.Icc.convexComb_one, cylinderMap_apply]
   · simp only [h₀, Set.Icc.convexComb_eq, apply_zero]
   · simp only [h₁, Set.Icc.convexComb_eq, final_apply, reparam_apply_of_map_zero _ h₀]
+
+/-- **Every diffeotopy is homotopic to the restriction of a real-time family.** There are a
+diffeotopy `Φ'`, homotopic to `Φ` relative to both time ends, and a `C^n` map `c : ℝ → [0, 1]` such
+that the time slices of `Φ'` are `φ_{c t}` and the family `u ↦ φ_{c u}`, `u ∈ ℝ`, and its inverses
+are `C^n` jointly in time and space. Here `c` is the collared smooth transition and `Φ'` is the
+reparametrization of `Φ` by it. -/
+theorem exists_homotopic_timeSlice_eq_comp (hn : n ≤ ∞) :
+    ∃ (Φ' : Diffeotopy J n M) (c : ℝ → I), Φ'.Homotopic Φ ∧ ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n c ∧
+      (∀ t : I, Φ'.timeSlice t = Φ.timeSlice (c t)) ∧
+      ContMDiff (𝓘(ℝ, ℝ).prod J) J n (fun p : ℝ × M ↦ Φ (c p.1, p.2)) ∧
+      ContMDiff (𝓘(ℝ, ℝ).prod J) J n (fun p : ℝ × M ↦ Φ.symm (c p.1, p.2)) := by
+  have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+    contMDiff_collaredSmoothTransitionUnit hn
+  let ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯ :=
+    ⟨fun t ↦ collaredSmoothTransitionUnit t, hc.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
+  have hρ₀ : ρ 0 = 0 := collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)
+  refine ⟨Φ.reparam ρ, collaredSmoothTransitionUnit,
+    Φ.reparam_homotopic hρ₀ (collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)), hc,
+    fun t ↦ _root_.Diffeomorph.ext fun x ↦ ?_, Φ.contMDiff.comp (hc.prodMap contMDiff_id),
+    Φ.symm.contMDiff.comp (hc.prodMap contMDiff_id)⟩
+  rw [timeSlice_apply, timeSlice_apply, reparam_apply_of_map_zero _ hρ₀]
+  rfl
 
 /-- **The path-class law of concatenation.** The concatenation of `Φ` and `Ψ` is homotopic to their
 pointwise composite `ψ_t ∘ φ_t`. -/

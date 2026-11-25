@@ -16,6 +16,7 @@ import Mathlib.RingTheory.LocalProperties.Reduced
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.PolynomialAlgebra
 import TauCeti.RingTheory.FiniteType.Tensor.Product
+import TauCeti.RingTheory.Localization.TensorProduct
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -122,10 +123,7 @@ theorem isReduced_tensorProduct_of_isLocalization {k : Type*} [CommRing k] {A : 
   let φ : A ⊗[k] L →ₐ[k] B ⊗[k] L :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A B) (AlgHom.id k L)
   algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[k] L) (B ⊗[k] L) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have := IsLocalization.tensorProduct_tensorProduct k L M B
-    (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  have := IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq k L M B rfl
   -- `isReduced_localizationPreserves` needs both rings in one universe, so pass through the
   -- `Localization` instance instead
   let e := IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (A ⊗[k] L) M) (B ⊗[k] L)

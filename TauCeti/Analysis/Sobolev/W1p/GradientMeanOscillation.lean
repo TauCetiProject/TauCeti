@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.Campanato
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos

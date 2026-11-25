@@ -40,8 +40,6 @@ this derivative vanishes for every `C^n` variation with fixed endpoints
 
 ## Main definitions and results
 
-* `TauCeti.Manifold.contDiffOn_norm_sq_curveVelocity`: joint `C^m` regularity of the squared speed
-  `(s, t) ↦ ‖∂_t F (s, t)‖²` on an open set where `F` is `C^n` (`m + 1 ≤ n`).
 * `TauCeti.Manifold.hasDerivAt_energy`: **the first variation formula** for the energy, with
   boundary terms.
 * `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy`: the first variation formula for a
@@ -56,6 +54,9 @@ this derivative vanishes for every `C^n` variation with fixed endpoints
   fixed endpoints, which are `C^n` curves by definition; for `2 ≤ n`, criticality is characterized
   through the first variation formula by
   `TauCeti.Manifold.isEnergyCritical_iff_integral_inner_eq_zero`.
+* `TauCeti.Manifold.exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity`: the squared speed of a
+  `C^n` family is jointly `C^(n-1)` near `{0} × [a, b]`, the input to differentiating the energy
+  and the length under the integral sign.
 
 ## References
 
@@ -95,19 +96,6 @@ private theorem inner_mfderiv_snd_self_eq_norm_sq_curveVelocity {s t : ℝ}
       ‖curveVelocity I (F s) t‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_mfderiv_snd hf]
 
-/-- Joint `C^m` regularity of the squared speed `(s, t) ↦ ‖∂_t F (s, t)‖²` on an open set
-`S ⊆ ℝ × ℝ` where `F` is `C^n` (`m + 1 ≤ n`) and the Riemannian metric is `C^m`. -/
-theorem contDiffOn_norm_sq_curveVelocity {m n : ℕ∞ω} [IsManifold I 1 M]
-    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
-    {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hmn : m + 1 ≤ n)
-    (hf : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) S) :
-    ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) S := by
-  have hne : n ≠ 0 := ne_of_gt (lt_of_lt_of_le (by norm_num) (le_add_self.trans hmn))
-  refine (hf.contDiffOn_inner_mfderiv hmn hS ((0 : ℝ), (1 : ℝ)) ((0 : ℝ), (1 : ℝ))).congr
-    fun z hz ↦ ?_
-  exact (inner_mfderiv_snd_self_eq_norm_sq_curveVelocity
-    ((hf.contMDiffAt (hS.mem_nhds hz)).mdifferentiableAt hne)).symm
-
 /-- The pairing of the variation field with the velocity of the central curve, written through
 the differential of the uncurried family. -/
 private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t : ℝ}
@@ -120,14 +108,39 @@ private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t :
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
+omit [FiniteDimensional ℝ E]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- **The squared speed is jointly smooth near `{0} × [a, b]`.** If the family is `C^n` at every
+point of `{0} × [a, b]`, for a finite `n` with `m + 1 ≤ n`, and the metric is `C^m`, then there are
+open sets `U ∋ 0` and `V ⊇ [a, b]` such that the family is `C^n` on `U ×ˢ V` and the squared
+speed `(s, t) ↦ ‖∂_t F (s, t)‖²` is `C^m` there. -/
+theorem exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity {m n : ℕ∞ω} [IsManifold I n M]
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    (hmn : m + 1 ≤ n) (hn : n ≠ ∞) {a b : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
+    ∃ U V, IsOpen U ∧ IsOpen V ∧ (0 : ℝ) ∈ U ∧ uIcc a b ⊆ V ∧
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (U ×ˢ V) ∧
+      ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) (U ×ˢ V) := by
+  obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc hn hF
+  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
+  refine ⟨U, V, hUo, hVo, h0U, hV, hfUV,
+    (hfUV.contDiffOn_inner_mfderiv hmn hUVo (0, 1) (0, 1)).congr fun z hz ↦ ?_⟩
+  exact (inner_mfderiv_snd_self_eq_norm_sq_curveVelocity
+    ((hfUV.contMDiffAt (hUVo.mem_nhds hz)).mdifferentiableAt
+      (ne_of_gt (lt_of_lt_of_le (by simp) hmn)))).symm
+
 /-- **The integrand of the first variation.** At a parameter `t` where the family is `C²`, half
 the `s`-derivative at `s = 0` of the squared speed `‖∂_t F (s, t)‖²` is the `t`-derivative of
 `⟪∂_s F (0, t), ∂_t F (0, t)⟫ = ⟪V(t), γ'(t)⟫` minus `⟪V(t), D_t γ'(t)⟫`.  This is the pointwise
 form of the integration by parts in the first variation formula, with the partial velocities
 written through the differential of the uncurried family. -/
-private theorem fderiv_norm_sq_curveVelocity_eq {t : ℝ}
+private theorem fderiv_inner_mfderiv_fst_eq {t : ℝ}
     (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
-    fderiv ℝ (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) (0, t) (1, 0) / 2 =
+    fderiv ℝ (fun z : ℝ × ℝ ↦
+        inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ))))
+        (0, t) (1, 0) / 2 =
       deriv (fun r ↦
         inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, r) ((1 : ℝ), (0 : ℝ)))
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, r) ((0 : ℝ), (1 : ℝ)))) t -
@@ -141,12 +154,14 @@ private theorem fderiv_norm_sq_curveVelocity_eq {t : ℝ}
       {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) z} :=
     fun _ hz ↦ hz.contMDiffWithinAt
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.mp (hWo.mem_nhds hf)
-  set G : ℝ × ℝ → ℝ := fun z ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
   set K : ℝ × ℝ → ℝ := fun z ↦
     inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((1 : ℝ), (0 : ℝ)))
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
   have hGz : HasFDerivAt G (fderiv ℝ G (0, t)) (0, t) :=
-    (((contDiffOn_norm_sq_curveVelocity hWo (by norm_num) hfW).differentiableOn one_ne_zero _ hf)
+    (((hfW.contDiffOn_inner_mfderiv (by norm_num) hWo _ _).differentiableOn one_ne_zero _ hf)
       |>.differentiableAt (hWo.mem_nhds hf)).hasFDerivAt
   have hKz : HasFDerivAt K (fderiv ℝ K (0, t)) (0, t) :=
     (((hfW.contDiffOn_inner_mfderiv (by norm_num) hWo _ _).differentiableOn one_ne_zero _ hf)
@@ -155,18 +170,23 @@ private theorem fderiv_norm_sq_curveVelocity_eq {t : ℝ}
     (hasDerivAt_id' (x := (0 : ℝ))).prodMk (hasDerivAt_const (0 : ℝ) t)
   have hpathK : HasDerivAt (fun r : ℝ ↦ ((0 : ℝ), r)) ((0 : ℝ), (1 : ℝ)) t :=
     (hasDerivAt_const t (0 : ℝ)).prodMk (hasDerivAt_id' (x := t))
-  have hGs : HasDerivAt (fun s ↦ G (s, t)) (fderiv ℝ G (0, t) (1, 0)) 0 :=
-    HasFDerivAt.comp_hasDerivAt (l := G) (0 : ℝ) hGz hpathG
-  have hKt : HasDerivAt (fun r ↦ K (0, r)) (fderiv ℝ K (0, t) (0, 1)) t :=
-    hKz.comp_hasDerivAt t hpathK
-  -- on `U ×ˢ V`, `K (0, ·)` is `⟪V, γ'⟫`
+  have hGs : HasDerivAt (fun s ↦ G (s, t)) (fderiv ℝ G (0, t) (1, 0)) 0 := by
+    exact hGz.comp_hasDerivAt (0 : ℝ) hpathG
+  have hKt : HasDerivAt (fun r ↦ K (0, r)) (fderiv ℝ K (0, t) (0, 1)) t := by
+    exact hKz.comp_hasDerivAt t hpathK
+  -- on `U ×ˢ V`, `G` is the squared speed and `K (0, ·)` is `⟪V, γ'⟫`
+  have hGeq : (fun s ↦ G (s, t)) =ᶠ[𝓝 0] fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2 := by
+    filter_upwards [hU] with s hs
+    exact inner_mfderiv_snd_self_eq_norm_sq_curveVelocity
+      ((hUV ⟨hs, mem_of_mem_nhds hV⟩ : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 _ (s, t)).mdifferentiableAt
+        two_ne_zero)
   have hKeq : (fun r ↦ K (0, r)) =ᶠ[𝓝 t]
       fun r ↦ inner ℝ (variationField I F r) (curveVelocity I (F 0) r) := by
     filter_upwards [hV] with r hr
     exact inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity
       ((hUV ⟨mem_of_mem_nhds hU, hr⟩ : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 _ ((0 : ℝ), r))
         |>.mdifferentiableAt two_ne_zero)
-  have h1 := hGs.unique (hasDerivAt_norm_sq_curveVelocity hf)
+  have h1 := hGs.unique ((hasDerivAt_norm_sq_curveVelocity hf).congr_of_eventuallyEq hGeq)
   have h2 := hKt.unique
     ((hasDerivAt_inner_variationField_curveVelocity hf).congr_of_eventuallyEq hKeq)
   rw [h1, hKt.deriv, h2]
@@ -186,12 +206,13 @@ theorem continuousAt_inner_variationField_acceleration {t : ℝ}
   have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
   have hfUV : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (U ×ˢ V) :=
     fun z hz ↦ (hUV hz).contMDiffWithinAt
-  set G : ℝ × ℝ → ℝ := fun z ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
   set K : ℝ × ℝ → ℝ := fun z ↦
     inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((1 : ℝ), (0 : ℝ)))
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-  have hG : ContDiffOn ℝ 1 G (U ×ˢ V) :=
-    contDiffOn_norm_sq_curveVelocity hUVo (by norm_num) hfUV
+  have hG : ContDiffOn ℝ 1 G (U ×ˢ V) := hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _
   have hK0 : ContDiffOn ℝ 1 (fun r ↦ K (0, r)) V :=
     (hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _).comp
       (contDiff_prodMk_right (0 : ℝ)).contDiffOn fun r hr ↦ ⟨h0U, hr⟩
@@ -199,7 +220,7 @@ theorem continuousAt_inner_variationField_acceleration {t : ℝ}
   have hpt : ∀ r ∈ V, fderiv ℝ G (0, r) (1, 0) / 2 =
       deriv (fun r ↦ K (0, r)) r - inner ℝ (variationField I F r)
         (acceleration (leviCivitaConnection I M) (F 0) r) :=
-    fun r hr ↦ fderiv_norm_sq_curveVelocity_eq (hUV ⟨h0U, hr⟩)
+    fun r hr ↦ fderiv_inner_mfderiv_fst_eq (hUV ⟨h0U, hr⟩)
   have hGcont : ContinuousAt (fun r ↦ fderiv ℝ G (0, r) (1, 0)) t :=
     (((hG.continuousOn_fderiv_of_isOpen hUVo le_rfl).continuousAt
       (hUVo.mem_nhds ⟨h0U, htV⟩)).comp (Continuous.prodMk_right (0 : ℝ)).continuousAt).clm_apply
@@ -207,7 +228,8 @@ theorem continuousAt_inner_variationField_acceleration {t : ℝ}
   refine (((hK0.continuousOn_deriv_of_isOpen hVo le_rfl).continuousAt (hVo.mem_nhds htV)).sub
     (hGcont.div_const 2)).congr ?_
   filter_upwards [hVo.mem_nhds htV] with r hr
-  simp only [Pi.sub_apply, hpt r hr]; ring
+  simp only [Pi.sub_apply, hpt r hr]
+  ring
 
 /-- **The first variation of energy.** Let `F` be a two-parameter family which is `C²` at every
 point of `{0} × [a, b]`, with central curve `γ = F 0` and variation field `V`.  Then the energy
@@ -231,31 +253,40 @@ theorem hasDerivAt_energy {a b : ℝ}
     fun hs ht ↦ hfUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)
   -- The squared speed `G` and the inner product `K` of the partial velocities, as jointly `C¹`
   -- functions of `(s, t)` on `U ×ˢ V`.
-  set G : ℝ × ℝ → ℝ := fun z ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
   set K : ℝ × ℝ → ℝ := fun z ↦
     inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((1 : ℝ), (0 : ℝ)))
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-  have hG : ContDiffOn ℝ 1 G (U ×ˢ V) :=
-    contDiffOn_norm_sq_curveVelocity hUVo (by norm_num) hfUV
+  have hG : ContDiffOn ℝ 1 G (U ×ˢ V) := hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _
   have hK0 : ContDiffOn ℝ 1 (fun r ↦ K (0, r)) V :=
     (hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _).comp
       (contDiff_prodMk_right (0 : ℝ)).contDiffOn fun r hr ↦ ⟨h0U, hr⟩
+  have hGeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 :=
+    fun hs ht ↦ inner_mfderiv_snd_self_eq_norm_sq_curveVelocity
+      ((hsurf hs ht).mdifferentiableAt two_ne_zero)
   have hKeq : ∀ t ∈ V, K (0, t) = inner ℝ (variationField I F t) (curveVelocity I (F 0) t) :=
     fun t ht ↦ inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity
       ((hsurf h0U ht).mdifferentiableAt two_ne_zero)
-  -- Differentiation under the integral sign: `energy I (F s) a b = (∫ t in a..b, G (s, t)) / 2`.
+  -- Differentiation under the integral sign: near `s = 0` the energy is `½ ∫ G (s, t) dt`.
+  have henergy : (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 0] fun s ↦ (∫ t in a..b, G (s, t)) / 2 := by
+    filter_upwards [hUo.mem_nhds h0U] with s hs
+    rw [energy_def]
+    congr 1
+    exact intervalIntegral.integral_congr fun t ht ↦ (hGeq hs (hV ht)).symm
   obtain ⟨_, hGderiv⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo hG
     (prod_mono (singleton_subset_iff.mpr h0U) hV)
   have hmain : HasDerivAt (fun s ↦ energy I (F s) a b)
-      ((∫ t in a..b, fderiv ℝ G (0, t) (1, 0)) / 2) 0 := by
-    simpa only [energy_def] using hGderiv.div_const 2
+      ((∫ t in a..b, fderiv ℝ G (0, t) (1, 0)) / 2) 0 :=
+    (hGderiv.div_const 2).congr_of_eventuallyEq henergy
   -- Pointwise on `V`, the integrand is `d/dt K (0, t) - ⟪V(t), D_t γ'(t)⟫`; both terms are
   -- continuous on `V`, and the fundamental theorem of calculus evaluates the first at the
   -- endpoints.
   have hpt : ∀ t ∈ V, fderiv ℝ G (0, t) (1, 0) / 2 =
       deriv (fun r ↦ K (0, r)) t - inner ℝ (variationField I F t)
         (acceleration (leviCivitaConnection I M) (F 0) t) :=
-    fun t ht ↦ fderiv_norm_sq_curveVelocity_eq (hsurf h0U ht)
+    fun t ht ↦ fderiv_inner_mfderiv_fst_eq (hsurf h0U ht)
   have hK0cont : ContinuousOn (deriv fun r ↦ K (0, r)) V :=
     hK0.continuousOn_deriv_of_isOpen hVo le_rfl
   have hK'int : IntervalIntegrable (deriv fun r ↦ K (0, r)) volume a b :=

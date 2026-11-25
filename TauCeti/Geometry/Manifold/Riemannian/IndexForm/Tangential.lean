@@ -30,8 +30,6 @@ orthogonal to every differentiable normal field `W` (`⟪W t, γ'(t)⟫ = 0`).
 
 ## Main results
 
-* `TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton`: pointwise
-  bilinear normal-projection identity for the index-form integrand along a geodesic on `s ∈ 𝓝 t`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.indexForm_sub_starProjection_singleton`: integrated bilinear
   normal-projection formula `I(V^⊥, W^⊥) = I(V, W) - ∫ ⟪D_t V, γ'⟫ ⟪D_t W, γ'⟫ / ‖γ'‖²`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal`:
@@ -61,13 +59,7 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- **Pointwise normal-projection identity for the index-form integrand.** Along a geodesic `γ` on
-a parameter set `s ∈ 𝓝 t`, at a parameter `t` where `V` and `W` have differentiable coordinates, the
-integrand `I_t(V^⊥, W^⊥)` of the normal components
-`V^⊥(r) = V(r) - (ℝ ∙ γ'(r)).starProjection (V(r))` and
-`W^⊥(r) = W(r) - (ℝ ∙ γ'(r)).starProjection (W(r))` equals
-`I_t(V, W) - ⟪D_t V(t), γ'(t)⟫ * ⟪D_t W(t), γ'(t)⟫ / ‖γ'(t)‖²`. -/
-theorem IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton
+private theorem indexFormIntegrand_sub_starProjection_singleton_bilinear
     {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
     (hγ : IsGeodesicCurveOn I γ s) (hs : s ∈ 𝓝 t)
     (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
@@ -181,7 +173,8 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
     differentiableAt_sectionCoord γ U ((hU t (uIoo_subset_uIcc_self ht)).contMDiffAt
       (mem_of_superset hmemIoo uIoo_subset_uIcc_self) |>.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  exact hγ.indexFormIntegrand_sub_starProjection_singleton hmemIoo (hdiff V hV) (hdiff W hW)
+  exact indexFormIntegrand_sub_starProjection_singleton_bilinear
+    hγ hmemIoo (hdiff V hV) (hdiff W hW)
 
 /-- **Tangential fields are `indexForm`-orthogonal to normal fields along a geodesic.** If `γ` is a
 geodesic on `uIoo a b`, `V` and `W` have differentiable coordinates on `uIoo a b`, `V t ∈ ℝ ∙ γ'(t)`
@@ -216,7 +209,8 @@ theorem IsGeodesicCurveOn.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogo
     rwa [alongCurveWithin_of_mem_nhds _ γ W hmem, curveVelocityWithin_of_mem_nhds hmem] at h
   -- The normal component of `V` vanishes near `t`, while `⟪D_t W, γ'⟫ = 0` kills the projection
   -- term in the bilinear normal-projection identity.
-  have hsplit := hγ.indexFormIntegrand_sub_starProjection_singleton hmem (hV t ht) (hW t ht)
+  have hsplit :=
+    indexFormIntegrand_sub_starProjection_singleton_bilinear hγ hmem (hV t ht) (hW t ht)
   have hVperp : ∀ᶠ r in 𝓝 t, HEq (V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
       ((0 : ∀ q, TangentSpace I (γ q)) r) :=
     eventually_of_mem hmem fun r hr ↦ by

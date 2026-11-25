@@ -17,9 +17,10 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 This file collects general results about `iteratedDeriv`:
 
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
-* `TauCeti.contDiff_of_finite_derivative_tower` and `TauCeti.contDiff_of_derivative_tower`: a
-  finite or infinite sequence of functions linked by ordinary derivatives gives a `C^m` or smooth
-  initial function.
+* `TauCeti.contDiff_of_finite_derivative_tower`, `TauCeti.iteratedDeriv_eq_of_derivative_tower`,
+  `TauCeti.contDiff_of_derivative_tower`: in a finite or infinite sequence of functions linked by
+  ordinary derivatives, the iterated derivatives of the initial function are the later functions,
+  and the initial function is `C^m` or smooth.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
   family `ζ ↦ fun _ : α ↦ g ζ` is the constant family of `k`-th iterated derivatives.
 * `TauCeti.iteratedDerivInr`: the `k`-th iterated derivative of `f : (σ ⊕ τ → 𝕜) → F` in the
@@ -63,12 +64,22 @@ theorem contDiff_of_finite_derivative_tower (F : ℕ → 𝕜 → E) (m : ℕ)
   · rw [hiter k hk.le]
     exact fun x ↦ (hF k hk x).differentiableAt
 
+/-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
+derivative of the zeroth function is the `k`-th function. -/
+theorem iteratedDeriv_eq_of_derivative_tower {F : ℕ → 𝕜 → E}
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k := by
+  -- `F` semiconjugates the successor to `deriv`, so `F k = deriv^[k] (F 0)`.
+  have h : Function.Semiconj F Nat.succ deriv := fun n => (funext fun x => (hF n x).deriv).symm
+  simpa [iteratedDeriv_eq_iterate, Nat.succ_iterate] using ((h.iterate_right k).eq 0).symm
+
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/
 theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
-    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff 𝕜 ∞ (F 0) :=
-  contDiff_infty.2 fun m ↦ contDiff_of_finite_derivative_tower F m
-    (fun k _ x ↦ hF k x) (Differentiable.continuous fun x ↦ (hF m x).differentiableAt)
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff 𝕜 ∞ (F 0) := by
+  apply contDiff_of_differentiable_iteratedDeriv (n := ⊤)
+  intro k _
+  rw [iteratedDeriv_eq_of_derivative_tower hF k]
+  exact fun x ↦ (hF k x).differentiableAt
 
 variable {σ τ F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 

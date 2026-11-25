@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import TauCeti.Combinatorics.SimpleGraph.Maps
 import Mathlib.Tactic.FinCases
-import TauCeti.Combinatorics.SimpleGraph.Measurable
+import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 
 /-!
 # Simple graphs as relational configurations

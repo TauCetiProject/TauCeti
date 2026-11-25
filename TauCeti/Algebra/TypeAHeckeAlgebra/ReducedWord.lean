@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Finite
 public import TauCeti.GroupTheory.Coxeter.Matsumoto
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Reduced-word elements of the type-A Hecke algebra
@@ -184,13 +185,11 @@ theorem mul_mem_span_image_Tw {J : Set (Fin (n - 1))} {S : Set W}
     (hS : ∀ i ∈ J, ∀ w ∈ S, cs.simple i * w ∈ S) {x y : TypeAHeckeAlgebra R q n}
     (hx : x ∈ Algebra.adjoin R (T q '' J)) (hy : y ∈ Submodule.span R (Tw q cs '' S)) :
     x * y ∈ Submodule.span R (Tw q cs '' S) := by
-  induction hx using Algebra.adjoin_induction generalizing y with
-  | mem _ hx =>
-    obtain ⟨i, hi, rfl⟩ := hx
-    exact T_mul_mem_span_image_Tw cs (hS i hi) hy
-  | algebraMap r => simpa [Algebra.smul_def] using Submodule.smul_mem _ r hy
-  | add _ _ _ _ hx hz => simpa only [add_mul] using add_mem (hx hy) (hz hy)
-  | mul _ _ _ _ hx hz => simpa only [mul_assoc] using hx (hz hy)
+  rw [← smul_eq_mul]
+  refine (Submodule.span R (Tw q cs '' S)).smul_mem_of_mem_adjoin ?_ hx hy
+  rintro _ ⟨i, hi, rfl⟩ z hz
+  rw [smul_eq_mul]
+  exact T_mul_mem_span_image_Tw cs (hS i hi) hz
 
 /-- The elements `T_w` span the type-A Hecke algebra as an `R`-module. -/
 theorem span_range_Tw :
