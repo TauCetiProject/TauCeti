@@ -72,6 +72,10 @@ variable {p : ℕ} (M : DieudonneComplex.{u} p)
 private noncomputable def frobeniusIterate (r : ℕ) (n : ℤ) : M.X n ⟶ M.X n :=
   AddCommGrpCat.ofHom (AddMonoidHom.mk' (⇑(M.F n).hom)^[r] (iterate_map_add _ r))
 
+private lemma frobeniusIterate_apply (r : ℕ) {n : ℤ} (x : M.X n) :
+    (M.frobeniusIterate r n).hom x = (⇑(M.F n).hom)^[r] x :=
+  rfl
+
 /-- The class of `Fʳ x` in `M / pʳ M` is a cocycle, since `d (Fʳ x) = pʳ Fʳ (d x)`. -/
 private lemma frobeniusIterate_comp_toQuotSMulTop_comp_d (r : ℕ) (n : ℤ) :
     (M.frobeniusIterate r n ≫ (M.toQuotSMulTop (p ^ r)).f n) ≫
@@ -93,8 +97,8 @@ noncomputable def frobeniusIterateCycles (r : ℕ) (n : ℤ) :
 lemma iCycles_frobeniusIterateCycles_apply (r : ℕ) {n : ℤ} (x : M.X n) :
     ((M.quotSMulTop (p ^ r)).iCycles n).hom ((M.frobeniusIterateCycles r n).hom x) =
       ((M.toQuotSMulTop (p ^ r)).f n).hom ((⇑(M.F n).hom)^[r] x) := by
-  rw [← AddCommGrpCat.comp_apply, frobeniusIterateCycles, liftCycles_i]
-  rfl
+  rw [← AddCommGrpCat.comp_apply, frobeniusIterateCycles, liftCycles_i, AddCommGrpCat.comp_apply,
+    frobeniusIterate_apply]
 
 variable {M}
 
@@ -107,10 +111,10 @@ lemma frobeniusIterateCycles_naturality {N : DieudonneComplex.{u} p} (f : M ⟶ 
   have hF : Function.Semiconj (f.hom.f n).hom (M.F n).hom (N.F n).hom :=
     fun x ↦ Hom.comm_F_apply f n x
   ext x
-  refine (AddCommGrpCat.mono_iff_injective (iCycles _ n)).1 inferInstance ?_
+  refine addCommGrpCat_iCycles_injective _ n ?_
   simp only [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply]
-  rw [← AddCommGrpCat.comp_apply _ (iCycles _ n), cyclesMap_i, AddCommGrpCat.comp_apply,
-    iCycles_frobeniusIterateCycles_apply, quotSMulTopMap_f_apply,
+  rw [addCommGrpCat_iCycles_cyclesMap_apply, iCycles_frobeniusIterateCycles_apply,
+    quotSMulTopMap_f_apply,
     iCycles_frobeniusIterateCycles_apply, hF.iterate_right]
 
 namespace IsSaturated
@@ -129,8 +133,8 @@ private lemma verschiebungFiltration_le_ker (r : ℕ) (n : ℤ) :
       (M.d (n - 1) n).hom ((⇑(hM.V (n - 1)).hom)^[r] b)) =
       ((M.quotSMulTop (p ^ r)).toCycles (n - 1) n).hom
         (((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom b) := by
-    refine (AddCommGrpCat.mono_iff_injective (iCycles _ n)).1 inferInstance ?_
-    rw [iCycles_frobeniusIterateCycles_apply, ← AddCommGrpCat.comp_apply, toCycles_i,
+    refine addCommGrpCat_iCycles_injective _ n ?_
+    rw [iCycles_frobeniusIterateCycles_apply, addCommGrpCat_iCycles_toCycles_apply,
       quotSMulTop_d_toQuotSMulTop_f_apply, iterate_map_add, hM.F_iterate_V_iterate_apply,
       hM.F_iterate_d_V_iterate_apply, map_add, map_nsmul, smul_toQuotSMulTop_f_apply,
       zero_add]
@@ -145,7 +149,7 @@ private noncomputable def verschiebungQuotientToHomology (r : ℕ) (n : ℤ) :
 private lemma verschiebungQuotientToHomology_bijective (r : ℕ) (n : ℤ) :
     Function.Bijective (hM.verschiebungQuotientToHomology r n) := by
   set Q := M.quotSMulTop (p ^ r)
-  have hi := (AddCommGrpCat.mono_iff_injective (Q.iCycles n)).1 inferInstance
+  have hi := Q.addCommGrpCat_iCycles_injective n
   refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_, fun z ↦ ?_⟩
   · -- If `[Fʳ x] = d [b]` in `M / pʳ M`, then `Fʳ x = d b + pʳ t`, so
     -- `pʳ x = Vʳ (Fʳ x) = pʳ (d (Vʳ b) + Vʳ t)`, and `x ∈ Nʳ Mⁿ`.
@@ -166,7 +170,7 @@ private lemma verschiebungQuotientToHomology_bijective (r : ℕ) (n : ℤ) :
     exact sub_mem (hM.d_V_iterate_mem_verschiebungFiltration r b)
       (hM.V_iterate_mem_verschiebungFiltration r t)
   · -- A cocycle of `M / pʳ M` is the class of some `w` with `d w ∈ pʳ M`, and `w = Fʳ x`.
-    obtain ⟨z, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (Q.homologyπ n)).1 inferInstance z
+    obtain ⟨z, rfl⟩ := Q.addCommGrpCat_homologyπ_surjective n z
     obtain ⟨w, hw, t, ht⟩ := exists_toQuotSMulTop_eq_iCycles (n + 1) z
     obtain ⟨x, rfl⟩ := (hM.mem_range_F_iterate_iff r).2 ⟨t, ht⟩
     refine ⟨((hM.toVerschiebungQuotient r).f n).hom x, ?_⟩
@@ -242,7 +246,7 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
     Function.Injective (homologyMap (hM.quotSMulTopToVerschiebungQuotient r) n).hom := by
   set Q := M.quotSMulTop (p ^ r)
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
-  obtain ⟨z, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (Q.homologyπ n)).1 inferInstance y
+  obtain ⟨z, rfl⟩ := Q.addCommGrpCat_homologyπ_surjective n y
   rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply] at hy
   obtain ⟨y', h⟩ := (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).1 hy
   obtain ⟨w', rfl⟩ := hM.toVerschiebungQuotient_f_surjective r (n - 1) y'
@@ -256,9 +260,9 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
     ⟨t, by rw [ht, ← sub_eq_iff_eq_add.2 huv.symm]; simp⟩
   have hz : z = (Q.toCycles (n - 1) n).hom (((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom
       (w' + (⇑(hM.V (n - 1)).hom)^[r] v)) := by
-    refine (AddCommGrpCat.mono_iff_injective (Q.iCycles n)).1 inferInstance ?_
-    rw [← AddCommGrpCat.comp_apply _ (Q.iCycles n), toCycles_i,
-      quotSMulTop_d_toQuotSMulTop_f_apply, ← hw, toQuotSMulTop_f_apply_eq_iff, map_add]
+    refine Q.addCommGrpCat_iCycles_injective n ?_
+    rw [addCommGrpCat_iCycles_toCycles_apply, quotSMulTop_d_toQuotSMulTop_f_apply, ← hw,
+      toQuotSMulTop_f_apply_eq_iff, map_add]
     exact ⟨u', by rw [hu', ← sub_eq_iff_eq_add'.2 huv.symm]; abel⟩
   rw [hz, ← AddCommGrpCat.comp_apply, toCycles_comp_homologyπ, AddCommGrpCat.zero_apply]
 
@@ -269,7 +273,7 @@ private lemma surjective_homologyMap_quotSMulTopToVerschiebungQuotient :
     Function.Surjective (homologyMap (hM.quotSMulTopToVerschiebungQuotient r) n).hom := by
   set W := hM.verschiebungQuotient r
   intro y
-  obtain ⟨z, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (W.homologyπ n)).1 inferInstance y
+  obtain ⟨z, rfl⟩ := W.addCommGrpCat_homologyπ_surjective n y
   obtain ⟨x, hx⟩ := hM.toVerschiebungQuotient_f_surjective r n ((W.iCycles n).hom z)
   have hdx : (M.d n (n + 1)).hom x ∈ hM.verschiebungFiltration r (n + 1) := by
     rw [← toVerschiebungQuotient_f_apply_eq_zero_iff,
@@ -285,8 +289,8 @@ private lemma surjective_homologyMap_quotSMulTopToVerschiebungQuotient :
   obtain ⟨c, hc⟩ := addCommGrpCat_exists_iCycles_eq _ (CochainComplex.next ℤ n) _ hcyc
   refine ⟨((M.quotSMulTop (p ^ r)).homologyπ n).hom c, ?_⟩
   rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply]
-  refine congrArg _ ((AddCommGrpCat.mono_iff_injective (W.iCycles n)).1 inferInstance ?_)
-  rw [← AddCommGrpCat.comp_apply (cyclesMap _ n), cyclesMap_i, AddCommGrpCat.comp_apply, hc,
+  refine congrArg _ (W.addCommGrpCat_iCycles_injective n ?_)
+  rw [addCommGrpCat_iCycles_cyclesMap_apply, hc,
     quotSMulTopToVerschiebungQuotient_f_apply, ← hx, toVerschiebungQuotient_f_apply_eq_iff,
     sub_sub_cancel_left, neg_mem_iff]
   exact hM.V_iterate_mem_verschiebungFiltration r w

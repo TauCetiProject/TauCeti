@@ -221,6 +221,9 @@ lemma toQuotSMulTop_comp_quotSMulTopProj :
 
 /-- The sequence `K / n₁ K ⟶ K / m K ⟶ K / n₂ K`, for `m = n₁ n₂`, whose maps are multiplication
 by `n₂` and the projection. -/
+-- `@[expose]` is mandated by the module system: the exported `simps` lemmas and the components of
+-- `quotSMulTopShortComplexMap` need the objects of this short complex to unfold to `K.quotSMulTop`.
+@[expose, simps]
 noncomputable def quotSMulTopShortComplex : ShortComplex (HomologicalComplex AddCommGrpCat.{u} c) :=
   ShortComplex.mk (K.quotSMulTopSMul h) (K.quotSMulTopProj h) <| quotSMulTop_hom_ext <| by
     ext i x
@@ -251,6 +254,8 @@ lemma quotSMulTopShortComplex_shortExact (hK : ∀ i, IsSMulRegular (K.X i) n₂
 variable {K} {L : HomologicalComplex AddCommGrpCat.{u} c}
 
 /-- The morphism of short exact sequences induced by a chain map `φ : K ⟶ L`. -/
+-- `@[expose]` is mandated by the module system for the exported `simps` lemmas on its components.
+@[expose, simps]
 noncomputable def quotSMulTopShortComplexMap (φ : K ⟶ L) :
     K.quotSMulTopShortComplex h ⟶ L.quotSMulTopShortComplex h where
   τ₁ := quotSMulTopMap n₁ φ
