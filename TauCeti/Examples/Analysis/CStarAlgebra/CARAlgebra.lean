@@ -51,4 +51,7 @@ example (n : ℕ) : IsSimpleRing (Stage n) := inferInstance
 example (J : TwoSidedIdeal CARAlgebra) (hJ : IsClosed (J : Set CARAlgebra)) : J = ⊥ ∨ J = ⊤ :=
   forall_isClosed_eq_bot_or_eq_top J hJ
 
+/-- Being unital, the CAR algebra is even a simple ring: every two-sided ideal is `⊥` or `⊤`. -/
+example : IsSimpleRing CARAlgebra := inferInstance
+
 end TauCeti.CARAlgebra
