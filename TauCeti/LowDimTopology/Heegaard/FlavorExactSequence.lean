@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.SquareZero.ShortExact
 public import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The short exact sequences relating the flavors of a Heegaard diagram

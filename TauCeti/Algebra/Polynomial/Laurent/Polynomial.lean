@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
+import TauCeti.Algebra.Polynomial.Laurent.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
@@ -102,10 +103,6 @@ theorem smul_eq_toLaurent_mul (p : R[X]) (f : R[T;T⁻¹]) : p • f = toLaurent
 /-- The variable `X` acts on Laurent polynomials as multiplication by `T 1`. -/
 theorem X_smul_eq_T_one_mul (f : R[T;T⁻¹]) : (X : R[X]) • f = T 1 * f := by
   rw [smul_eq_toLaurent_mul, toLaurent_X]
-
-/-- Multiplying by `Tⁿ` and by `T⁻ⁿ` cancel. -/
-theorem T_mul_mul_T_neg (n : ℤ) (f : R[T;T⁻¹]) : T n * f * T (-n) = f := by
-  rw [T_mul, mul_T_assoc, add_neg_cancel, T_zero, mul_one]
 
 /-- Multiplying a polynomial `p` by `T⁻¹` gives the polynomial `divX p` plus the multiple
 `p(0) T⁻¹` of `T⁻¹`. -/
