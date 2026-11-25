@@ -79,14 +79,6 @@ private lemma isCompact_image_tsupport (f : C_c(Ω, ℝ)) :
 
 variable [NormedSpace ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, ℝ) ℝ]
 
-private lemma extendZero_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x : E) :
-    φ.toCompactlySupportedContinuousMap.extendZero Ω.isOpenEmbedding' x = φ x := by
-  by_cases h : x ∈ Ω
-  · exact (extendZero_apply _ _ (⟨x, h⟩ : Ω)).trans
-      (TestFunction.toCompactlySupportedContinuousMap_apply φ ⟨x, h⟩)
-  · rw [extendZero_apply_of_notMem_range _ _ (by simpa using h)]
-    exact (φ.zero_on_compl h).symm
-
 /-- `φ` is a sequence of test functions, supported in a common compact subset of `Ω`, that
 approximates the extension by zero of `f` uniformly, with error at most `ε n` at step `n`. -/
 private def IsApprox (f : C_c(Ω, ℝ)) (φ : ℕ → 𝓓(Ω, ℝ)) (ε : ℕ → ℝ) : Prop :=
@@ -96,7 +88,7 @@ private def IsApprox (f : C_c(Ω, ℝ)) (φ : ℕ → 𝓓(Ω, ℝ)) (ε : ℕ �
 private lemma isApprox_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) :
     IsApprox φ.toCompactlySupportedContinuousMap (fun _ => φ) 0 :=
   ⟨⟨tsupport φ, φ.hasCompactSupport.isCompact, φ.tsupport_subset, fun _ => subset_rfl⟩,
-    fun _ x => by simp [extendZero_toCompactlySupportedContinuousMap]⟩
+    fun _ x => by simp⟩
 
 private lemma IsApprox.add {f g : C_c(Ω, ℝ)} {φ ψ : ℕ → 𝓓(Ω, ℝ)} {ε ε' : ℕ → ℝ}
     (hφ : IsApprox f φ ε) (hψ : IsApprox g ψ ε') :
