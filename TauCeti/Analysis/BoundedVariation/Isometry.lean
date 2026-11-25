@@ -378,9 +378,7 @@ exactly when `u` is BV on `Ω`. -/
 theorem memBV_comp_iff {u : E' → ℝ} (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
     (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) :
     MemBV μ V (u ∘ f) ↔ MemBV ν Ω u := by
-  have hOV : (Ω : Set E') = f.symm ⁻¹' V := by
-    ext y
-    simp [hVO]
+  have hOV : (Ω : Set E') = f.symm ⁻¹' V := hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm
   rw [memBV_iff, memBV_iff, f.totalVariationOn_comp hf hinv
       (mapsTo_iff_subset_preimage.mpr hVO.subset) (mapsTo_iff_subset_preimage.mpr hOV.subset),
     hVO, hf.integrableOn_comp_preimage
@@ -392,13 +390,11 @@ linear isometric equivalence `BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = f �
 transport along `f.symm` (`AffineIsometryEquiv.compBV_symm`). -/
 def compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
     (hVO : (V : Set E) = f ⁻¹' Ω) : BV ν Ω ≃ₗᵢ[ℝ] BV μ V :=
-  have hOV : (Ω : Set E') = f.symm ⁻¹' V := by
-    ext y
-    simp [hVO]
+  have hOV : (Ω : Set E') = f.symm ⁻¹' V := hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm
   BV.compEquivAux (hVO ▸ hf.restrict_preimage Ω.isOpen.measurableSet)
     (hOV ▸ (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩
       hf).restrict_preimage V.isOpen.measurableSet)
-    f.apply_symm_apply f.symm_apply_apply fun w =>
+    f.apply_symm_apply f.symm_apply_apply fun _ =>
       f.totalVariationOn_comp hf hinv (mapsTo_iff_subset_preimage.mpr hVO.subset)
         (mapsTo_iff_subset_preimage.mpr hOV.subset)
 
@@ -457,7 +453,7 @@ theorem compBV_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (
     (hVO : (V : Set E) = f ⁻¹' Ω) :
     (compBV f hf hinv hVO).symm =
       compBV f.symm (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable
-        (show (Ω : Set E') = f.symm ⁻¹' V by ext y; simp [hVO]) := by
+        (hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm) := by
   ext1 v
   exact BV.ext <| (coeFn_compBV_symm f hf hinv hVO v).trans (coeFn_compBV _ _ _ _ v).symm
 
