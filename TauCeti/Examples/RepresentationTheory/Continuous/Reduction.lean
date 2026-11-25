@@ -1,0 +1,162 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.Topology.Algebra.Ring.Compact
+public import TauCeti.RepresentationTheory.Continuous.Reduction
+
+/-!
+# Examples for the raw reduction of a continuous representation
+
+Give the residue field `𝔽_ℓ = ℤ_ℓ ⧸ ℓ` of `ℤ_ℓ` the discrete topology; the residue map is
+continuous because the maximal ideal of `ℤ_ℓ` is open. Let `ℤ` (discrete) act on `ℚ_ℓ²` through
+the unipotent matrix `(1 a; 0 1)` with `a ∈ ℤ_ℓ^×`. The stable lattice `ℤ_ℓ²` has the action
+`n ↦ (1 na; 0 1)` in its standard basis, and the stable lattice `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` has the action
+`n ↦ (1 ℓna; 0 1)` in its basis `e₁, ℓ e₂`. Their raw reductions are not isomorphic: the first is
+the non-split unipotent representation of `ℤ` on `𝔽_ℓ²`, the second is trivial. So the raw
+reduction depends on the lattice, and no semisimplification is applied.
+-/
+
+@[expose] public section
+
+noncomputable section
+
+open IsLocalRing TensorProduct
+
+namespace TauCeti.ContinuousRep.ReductionCheck
+
+variable (ℓ : ℕ) [Fact ℓ.Prime]
+
+/-- The residue field of `ℤ_ℓ` with the discrete topology. -/
+local instance : TopologicalSpace (ResidueField ℤ_[ℓ]) := ⊥
+
+local instance : DiscreteTopology (ResidueField ℤ_[ℓ]) := ⟨rfl⟩
+
+/-- The residue map of `ℤ_ℓ` is continuous for the discrete topology on its residue field: its
+fibres are the cosets of the open maximal ideal. -/
+theorem continuous_residue : Continuous (residue ℤ_[ℓ]) := by
+  refine continuous_discrete_rng.2 fun b ↦ ?_
+  obtain ⟨a, rfl⟩ := residue_surjective b
+  have : residue ℤ_[ℓ] ⁻¹' {residue ℤ_[ℓ] a} = (fun x ↦ x - a) ⁻¹' (maximalIdeal ℤ_[ℓ]) := by
+    ext x
+    rw [Set.mem_preimage, Set.mem_singleton_iff, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
+    rfl
+  rw [this]
+  exact (isOpen_maximalIdeal ℤ_[ℓ]).preimage (continuous_id.sub continuous_const)
+
+local instance : ContinuousSMul ℤ_[ℓ] (ResidueField ℤ_[ℓ]) :=
+  ⟨by
+    simp_rw [Algebra.smul_def, ResidueField.algebraMap_eq]
+    exact ((continuous_residue ℓ).comp continuous_fst).mul continuous_snd⟩
+
+/-- The module topology on `𝔽_ℓ ⊗ ℤ_ℓ²`. -/
+local instance : TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
+  moduleTopology (ResidueField ℤ_[ℓ]) _
+
+local instance :
+    IsModuleTopology (ResidueField ℤ_[ℓ]) (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
+  ⟨rfl⟩
+
+/-- The representation `n ↦ (1 nb; 0 1)` of `ℤ`, written multiplicatively, on `ℤ_ℓ²`. -/
+def unipotentRep (b : ℤ_[ℓ]) : Representation ℤ_[ℓ] (Multiplicative ℤ) (Fin 2 → ℤ_[ℓ]) where
+  toFun n :=
+    { toFun v := ![v 0 + (n.toAdd : ℤ_[ℓ]) * b * v 1, v 1]
+      map_add' v w := by
+        ext i
+        fin_cases i
+        · simp
+          ring
+        · simp
+      map_smul' c v := by
+        ext i
+        fin_cases i
+        · simp
+          ring
+        · simp }
+  map_one' := by ext v i; fin_cases i <;> simp
+  map_mul' m n := by
+    ext v i
+    fin_cases i
+    · simp
+      ring
+    · simp
+
+/-- The continuous representation `n ↦ (1 nb; 0 1)` of the discrete group `ℤ` on `ℤ_ℓ²`. -/
+def unipotent (b : ℤ_[ℓ]) : ContinuousRep (Multiplicative ℤ) ℤ_[ℓ] (Fin 2 → ℤ_[ℓ]) where
+  toRepresentation := unipotentRep ℓ b
+  continuous_action := continuous_prod_of_discrete_left.2 fun g ↦
+    IsModuleTopology.continuous_of_linearMap (R := ℤ_[ℓ]) (unipotentRep ℓ b g)
+
+theorem unipotent_apply (b : ℤ_[ℓ]) (n : Multiplicative ℤ) (v : Fin 2 → ℤ_[ℓ]) :
+    unipotent ℓ b n v = ![v 0 + (n.toAdd : ℤ_[ℓ]) * b * v 1, v 1] :=
+  (rfl)
+
+/-- The identification `𝔽_ℓ ⊗ ℤ_ℓ² ≅ 𝔽_ℓ²`. -/
+noncomputable abbrev coords : ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ]) ≃ₗ[ResidueField ℤ_[ℓ]]
+    (Fin 2 → ResidueField ℤ_[ℓ]) :=
+  piScalarRight ℤ_[ℓ] (ResidueField ℤ_[ℓ]) (ResidueField ℤ_[ℓ]) (Fin 2)
+
+/-- In coordinates, the reduction of `unipotent b` acts by `(1 n·b; 0 1)` with `b`
+reduced modulo `ℓ`. -/
+theorem coords_reduction_unipotent (b : ℤ_[ℓ]) (n : Multiplicative ℤ)
+    (x : ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :
+    coords ℓ ((unipotent ℓ b).reduction n x) =
+      ![coords ℓ x 0 + (n.toAdd : ResidueField ℤ_[ℓ]) * residue ℤ_[ℓ] b * coords ℓ x 1,
+        coords ℓ x 1] := by
+  induction x using TensorProduct.inductionOn with
+  | tmul c v =>
+    ext i
+    fin_cases i
+    · simp [reduction, baseChange_apply, unipotent_apply, Algebra.smul_def,
+        ResidueField.algebraMap_eq]
+      ring
+    · simp [reduction, baseChange_apply, unipotent_apply, Algebra.smul_def,
+        ResidueField.algebraMap_eq]
+  | add x y hx hy =>
+    simp only [map_add, hx, hy]
+    ext i
+    fin_cases i
+    · simp
+      ring
+    · simp
+
+/-- **The lattice `ℤ_ℓ²` reduces to a non-split representation**: for a unit `a`, the
+generator of `ℤ` does not act trivially on the reduction of `(1 a; 0 1)`. -/
+theorem reduction_unipotent_ne_one {a : ℤ_[ℓ]} (ha : IsUnit a) :
+    (unipotent ℓ a).reduction (Multiplicative.ofAdd 1) ≠ 1 := by
+  intro h
+  have h' := congr_arg (fun f ↦ coords ℓ (f ((coords ℓ).symm ![0, 1])) 0) h
+  simp only [coords_reduction_unipotent, LinearEquiv.apply_symm_apply, one_apply_eq_self] at h'
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, toAdd_ofAdd,
+    Int.cast_one, one_mul, mul_one, zero_add] at h'
+  exact (ha.map (residue ℤ_[ℓ])).ne_zero h'
+
+/-- **The lattice `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` reduces to the trivial representation**: in the basis
+`e₁, ℓ e₂` the action is `(1 ℓa; 0 1)`, and `ℓ` vanishes in `𝔽_ℓ`. -/
+theorem reduction_unipotent_ell_mul_eq_one (a : ℤ_[ℓ]) (n : Multiplicative ℤ) :
+    (unipotent ℓ (ℓ * a)).reduction n = 1 := by
+  refine LinearMap.ext fun x ↦ (coords ℓ).injective ?_
+  have hℓ : residue ℤ_[ℓ] ((ℓ : ℤ_[ℓ]) * a) = 0 := by
+    rw [residue_eq_zero_iff]
+    exact Ideal.mul_mem_right _ _ (by simp [PadicInt.maximalIdeal_eq_span_p])
+  rw [coords_reduction_unipotent, hℓ]
+  ext i
+  fin_cases i <;> simp
+
+/-- The raw reductions of the two lattices are not isomorphic. -/
+theorem not_nonempty_iso_reduction {a : ℤ_[ℓ]} (ha : IsUnit a) :
+    IsEmpty (Iso (unipotent ℓ a).reduction (unipotent ℓ (ℓ * a)).reduction) := by
+  refine ⟨fun e ↦ reduction_unipotent_ne_one ℓ ha (LinearMap.ext fun x ↦ e.injective ?_)⟩
+  change e _ = e x
+  rw [e.isIntertwining, reduction_unipotent_ell_mul_eq_one]
+  rfl
+
+end TauCeti.ContinuousRep.ReductionCheck
+
+end
