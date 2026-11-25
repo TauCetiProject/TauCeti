@@ -43,11 +43,6 @@ listing them as exceptions.
 * `TauCeti.LFunctions.allOnCriticalLine_completedLFunction_iff`,
   `TauCeti.LFunctions.allOnCriticalLine_dirichletData_entireCompletion_iff`: the generalized
   Riemann hypothesis for a primitive Dirichlet character.
-* `TauCeti.not_hasZerosInRects_completedRiemannZeta_of_mem`,
-  `TauCeti.hasZerosInRects_zetaEntireCompletion_ofReal`,
-  `TauCeti.hasZerosInRects_zetaEntireCompletion_zero_one`: pole obstruction to `HasZerosInRects`
-  certificates for `completedRiemannZeta` across `0` or `1`, and unconditional zero-free
-  certificates for `zetaEntireCompletion` on real segments.
 -/
 
 public section
@@ -160,63 +155,3 @@ theorem allOnCriticalLine_dirichletData_entireCompletion_iff {N : ℕ} [NeZero N
       h h0 hre⟩
 
 end TauCeti.LFunctions
-
-namespace TauCeti
-
-open LFunctions
-
-/-- Because `completedRiemannZeta` has poles of order `-1` at `0` and `1`, no `HasZerosInRects`
-certificate for `completedRiemannZeta` on `univ` can cover a rectangle containing `0` or `1`. -/
-theorem not_hasZerosInRects_completedRiemannZeta_of_mem {z w : ℂ}
-    {Bs : List (ℂ × ℂ)} {ms : List ℕ}
-    (hpole : (0 : ℂ) ∈ Rectangle z w ∨ (1 : ℂ) ∈ Rectangle z w) :
-    ¬HasZerosInRects completedRiemannZeta univ z w Bs ms := by
-  intro h
-  rcases hpole with h0 | h1
-  · have := h.divisor_nonneg 0 h0
-    rw [divisor_completedRiemannZeta_zero] at this
-    omega
-  · have := h.divisor_nonneg 1 h1
-    rw [divisor_completedRiemannZeta_one] at this
-    omega
-
-/-- **Unconditional zero-free certificate on any real segment.** Because `zetaEntireCompletion` is
-entire and vanishes nowhere on `ℝ` (`zetaEntireCompletion_ofReal_ne_zero`), the empty rectangle list
-certifies `zetaEntireCompletion` on `Rectangle (a : ℂ) (b : ℂ)` for all `a b : ℝ`. -/
-theorem hasZerosInRects_zetaEntireCompletion_ofReal (a b : ℝ) :
-    HasZerosInRects zetaEntireCompletion univ a b [] [] where
-  meromorphicOn := fun z _ ↦ (differentiable_zetaEntireCompletion.analyticAt z).meromorphicAt
-  rectangle_subset := subset_univ _
-  divisor_nonneg s _ :=
-    MeromorphicOn.AnalyticOnNhd.divisor_nonneg
-      (fun z _ ↦ differentiable_zetaEntireCompletion.analyticAt z) s
-  subset_rectangle := by simp
-  pairwise_disjoint_interior := List.Pairwise.nil
-  meromorphicOrderAt_frontier s hs := by
-    have hsR : s ∈ Rectangle (a : ℂ) (b : ℂ) := (isClosed_rectangle _ _).frontier_subset hs
-    have him : s.im = 0 := by simpa [Rectangle] using hsR.2
-    have hs_real : s = (s.re : ℂ) := by apply Complex.ext <;> simp [him]
-    have ha := differentiable_zetaEntireCompletion.analyticAt s
-    rw [ha.meromorphicOrderAt_eq,
-      ha.analyticOrderAt_eq_zero.mpr (hs_real ▸ zetaEntireCompletion_ofReal_ne_zero s.re)]
-    rfl
-  meromorphicOrderAt_frontier_of_mem := by simp
-  map_zeroCount := rfl
-  zeroCount_eq_sum := by
-    rw [List.sum_nil, zeroCount_def]
-    refine finsum_mem_eq_zero_of_forall_eq_zero fun s hs ↦ ?_
-    have him : s.im = 0 := by simpa [Rectangle] using hs.2
-    have hs_real : s = (s.re : ℂ) := by apply Complex.ext <;> simp [him]
-    have ha := differentiable_zetaEntireCompletion.analyticAt s
-    have hmer : MeromorphicOn zetaEntireCompletion univ :=
-      fun z _ ↦ (differentiable_zetaEntireCompletion.analyticAt z).meromorphicAt
-    rw [hmer.divisor_apply (mem_univ s), ha.meromorphicOrderAt_eq,
-      ha.analyticOrderAt_eq_zero.mpr (hs_real ▸ zetaEntireCompletion_ofReal_ne_zero s.re)]
-    rfl
-
-/-- **Unconditional zero-free certificate on `[0, 1]`.** -/
-theorem hasZerosInRects_zetaEntireCompletion_zero_one :
-    HasZerosInRects zetaEntireCompletion univ 0 1 [] [] := by
-  simpa using hasZerosInRects_zetaEntireCompletion_ofReal 0 1
-
-end TauCeti
