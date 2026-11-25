@@ -96,6 +96,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeOfMulActionEquiv_one_tmul`: on `1 ⊗ x` the identification
   `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` to `A`.
+* `TauCeti.coeff_baseChangeOfMulActionEquiv_one_tmul`: the identification `A ⊗_R R[X] ≅ A[X]`
+  maps `1 ⊗ v` to `v` with its coefficients mapped to `A`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
   reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
@@ -813,6 +815,22 @@ theorem baseChangeOfMulActionEquiv_one_tmul (x : MonoidAlgebra R G) :
   | zero => simp
   | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add]
   | single g r => simp [Algebra.smul_def]
+
+/-- The identification `A ⊗_R R[X] ≅ A[X]` maps `1 ⊗ v` to `v` with its coefficients mapped to
+`A`. -/
+@[simp]
+theorem coeff_baseChangeOfMulActionEquiv_one_tmul (v : MonoidAlgebra R X) (x : X) :
+    (baseChangeOfMulActionEquiv R A G X (1 ⊗ₜ v)).coeff x = algebraMap R A (v.coeff x) := by
+  classical
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add v w hv hw =>
+    simp only [TensorProduct.tmul_add, map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply, hv,
+      hw]
+  | single y r =>
+    rw [baseChangeOfMulActionEquiv_tmul_single, MonoidAlgebra.coeff_single,
+      MonoidAlgebra.coeff_single, Finsupp.single_apply, Finsupp.single_apply]
+    split_ifs <;> simp [Algebra.smul_def]
 
 end PermutationModule
 
