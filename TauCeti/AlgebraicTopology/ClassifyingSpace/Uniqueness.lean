@@ -32,12 +32,12 @@ defined up to homotopy equivalence among spaces of CW type.
 When `X` and `Y` carry actual Hausdorff CW structures (possibly in different universes), Hatcher's
 Proposition 1B.9 (`TauCeti.exists_mapOfEq_of_cwComplex` and
 `TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex`) strengthens this to a *based* homotopy
-equivalence (`TauCeti.IsAspherical.exists_basedHomotopyEquiv` and
-`TauCeti.exists_homotopyEquiv_of_isAspherical`): `φ` and `φ⁻¹` are realized on the nose by
-basepoint-preserving maps whose two composites are homotopic to the identity relative to `{x}` and
-`{y}`. Specializing `Y` to `classifyingSpace G` gives a based homotopy equivalence between any
-aspherical Hausdorff CW complex and Milnor's classifying space
-(`TauCeti.IsAspherical.exists_basedHomotopyEquiv_classifyingSpace`).
+equivalence (`TauCeti.IsAspherical.exists_basedHomotopyEquiv`): `φ` and `φ⁻¹` are realized on the
+nose by basepoint-preserving maps whose two composites are homotopic to the identity relative to
+`{x}` and `{y}` (in particular giving a homotopy equivalence whose forward map sends `x` to `y` and
+induces `φ`, `TauCeti.exists_homotopyEquiv_of_isAspherical`). Specializing `Y` to
+`classifyingSpace G` gives a based homotopy equivalence between any aspherical Hausdorff CW complex
+and Milnor's classifying space (`TauCeti.IsAspherical.exists_basedHomotopyEquiv_classifyingSpace`).
 
 For spaces merely of CW type, the cellular classifying space `C` of a presentation of `π₁(X, x)` is
 homotopy equivalent to both spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose
@@ -69,9 +69,11 @@ for abelian `G`, which need not have CW type.
 * `TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`: an aspherical space of CW type
   with fundamental group identified with `G` is homotopy equivalent to `classifyingSpace G`,
   compatibly with the identifications of fundamental groups.
-* `TauCeti.IsAspherical.exists_basedHomotopyEquiv` and
-  `TauCeti.exists_homotopyEquiv_of_isAspherical`: **based homotopy equivalence of aspherical
-  Hausdorff CW complexes** realizing any prescribed isomorphism of fundamental groups.
+* `TauCeti.IsAspherical.exists_basedHomotopyEquiv`: **based homotopy equivalence of aspherical
+  Hausdorff CW complexes** realizing any prescribed isomorphism of fundamental groups (with pointed
+  inverse and homotopies relative to `{x}` and `{y}`).
+* `TauCeti.exists_homotopyEquiv_of_isAspherical`: homotopy equivalence of aspherical Hausdorff CW
+  complexes whose forward map sends `x` to `y` and induces `φ`.
 * `TauCeti.IsAspherical.exists_basedHomotopyEquiv_classifyingSpace`: based homotopy equivalence of
   an aspherical Hausdorff CW complex with `classifyingSpace G`.
 

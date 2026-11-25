@@ -45,10 +45,10 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` and
   `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`: basepoint change as conjugation
   by the path in the path quotient.
-* `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans`,
-  `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans_trans_apply`: basepoint change along a
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans`: basepoint change along a
   concatenated path is the composite of the basepoint changes.
-* `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`,
+  `FundamentalGroup.fundamentalGroupMulEquivOfPath_loop_apply`: basepoint change along a loop is
   conjugation by its class.
 * `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`,
   `FundamentalGroup.mapOfEq_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
@@ -132,6 +132,15 @@ lemma fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
   change g = c⁻¹ * (c * g * c⁻¹) * c
   group
 
+/-- Pointwise form of `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change
+along a loop `γ` conjugates by `fromPath ⟦γ⟧`. -/
+lemma fundamentalGroupMulEquivOfPath_loop_apply {X : Type*} [TopologicalSpace X] {x : X}
+    (γ : Path x x) (g : FundamentalGroup X x) :
+    fundamentalGroupMulEquivOfPath γ g =
+      fromPath (Path.Homotopic.Quotient.mk γ) * g *
+        (fromPath (Path.Homotopic.Quotient.mk γ))⁻¹ := by
+  rw [fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply]
+
 open CategoryTheory in
 /-- Basepoint change along `γ` is represented by conjugation with `γ` in the path quotient: a loop
 `g` at `x₀` goes to the class of `γ⁻¹ ⬝ g ⬝ γ`. This is the forward counterpart of
@@ -180,17 +189,6 @@ lemma fundamentalGroupMulEquivOfPath_trans
       (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)
   rw [h]
   exact CategoryTheory.Iso.trans_conj α β g
-
-/-- Basepoint change along a three-step right-associated composite `p · (q · r)` applies the three
-basepoint-change equivalences in turn. -/
-lemma fundamentalGroupMulEquivOfPath_trans_trans_apply
-    {X : Type*} [TopologicalSpace X] {w₀ w₁ w₂ w₃ : X}
-    (p : Path w₀ w₁) (q : Path w₁ w₂) (r : Path w₂ w₃) (z : FundamentalGroup X w₀) :
-    fundamentalGroupMulEquivOfPath (p.trans (q.trans r)) z =
-      fundamentalGroupMulEquivOfPath r
-        (fundamentalGroupMulEquivOfPath q (fundamentalGroupMulEquivOfPath p z)) := by
-  rw [fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
-    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply]
 
 /-- Reversing a basepoint-change path gives the inverse equivalence of fundamental groups. -/
 @[simp]
@@ -315,12 +313,12 @@ lemma _root_.ContinuousMap.Homotopy.mapOfEq_eq_of_evalAt_basepointChange {X Y : 
     mapOfEq f₁ hf₁v = mapOfEq g hgv := by
   refine MonoidHom.ext fun a ↦ ?_
   obtain ⟨b, rfl⟩ := (fundamentalGroupMulEquivOfPath δ).surjective a
-  rw [H.mapOfEq_eq_fundamentalGroupMulEquivOfPath rfl hf₁v _ heval,
-    mapOfEq_fundamentalGroupMulEquivOfPath f hf rfl δ b,
-    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
+  simpa only [fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
     fundamentalGroupMulEquivOfPath_symm, MulEquiv.symm_apply_apply,
-    DFunLike.congr_fun hfg b,
-    ← mapOfEq_fundamentalGroupMulEquivOfPath g hg hgv δ b]
+    mapOfEq_fundamentalGroupMulEquivOfPath f hf rfl δ b,
+    mapOfEq_fundamentalGroupMulEquivOfPath g hg hgv δ b, hfg] using
+    H.mapOfEq_eq_fundamentalGroupMulEquivOfPath rfl hf₁v _ heval
+      (fundamentalGroupMulEquivOfPath δ b)
 
 /-- **Basepoint change through a homotopy lift.** If `s` lifts `h` through `f` up to the
 homotopy `H`, so that `f ∘ s` is homotopic to `h`, then `g ∘ s` induces on fundamental groups the

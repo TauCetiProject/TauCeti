@@ -33,22 +33,22 @@ a `K(H, 1)`. A map from a CW complex into `Y` is determined up to homotopy by wh
 `1`-skeleton up to homotopy: two maps `f g : C → Y` out of a relative CW complex `(C, D)` that, on
 every path in `C` between points of the `0`-skeleton, agree up to homotopy relative to the
 endpoints, are homotopic relative to the `0`-skeleton
-(`TauCeti.homotopicRel_skeletonLT_one_of_forall_homotopicRel`). For a complex whose only `0`-cell
-is its base point, this says that pointed maps inducing the same homomorphism of fundamental groups
-are homotopic relative to the base point (`TauCeti.homotopicRel_singleton_of_mapOfEq_eq`); for a
-path-connected CW complex the base point may be any `0`-cell
-(`TauCeti.homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT`).
+(`TauCeti.homotopicRel_skeletonLT_one_of_forall_homotopicRel`). For a relative CW complex whose
+relative `0`-skeleton is a single point `x₀`, this says that pointed maps inducing the same
+homomorphism of fundamental groups are homotopic relative to `{x₀}`
+(`TauCeti.homotopicRel_singleton_of_mapOfEq_eq`).
 
 More generally, for any path-connected Hausdorff CW complex `(C, x₀)` — with arbitrary `0`-skeleton
 and arbitrary base point `x₀` — and any target `(Y, y₀)` with `πₙ(Y, y₀) = 0` for `n ≥ 2` (only at
 `y₀`, without requiring `Y` to be path connected), pointed maps `f, g : (C, x₀) → (Y, y₀)` are
 homotopic relative to `{x₀}` if and only if they induce the same homomorphism
 `π₁(C, x₀) →* π₁(Y, y₀)` (`TauCeti.homotopicRel_of_mapOfEq_eq`,
-`TauCeti.homotopicRel_singleton_iff_mapOfEq_eq`). Likewise, unbased maps `f, g : C → Y` out of a
-path-connected Hausdorff CW complex are freely homotopic if and only if their induced homomorphisms
-on `π₁` are intertwined by basepoint change along some path from `f x₀` to `g x₀`
-(`TauCeti.homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath`). This is the uniqueness half of
-Hatcher's Proposition 1B.9 in full generality.
+`TauCeti.homotopicRel_singleton_iff_mapOfEq_eq`). This is the uniqueness half of Hatcher's
+Proposition 1B.9 in full generality. Changing base point along a path at `x₀` then characterizes
+free homotopy: unbased maps `f, g : C → Y` out of a path-connected Hausdorff CW complex are freely
+homotopic if and only if their induced homomorphisms on `π₁` are intertwined by basepoint change
+along some path from `f x₀` to `g x₀`
+(`TauCeti.homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath`).
 
 The proof reads a homotopy from `f` to `g` relative to a set `A` as a deformation, relative to
 `A`, of the map `(f, g) : C → Y × Y` into the diagonal. Since the diagonal `Δ ⊆ Y × Y` is a
@@ -82,12 +82,8 @@ outside the base point's path component.
   without cells of dimension `0` and `1` are homotopic relative to the base.
 * `TauCeti.homotopicRel_skeletonLT_one_of_forall_homotopicRel`: maps agreeing up to homotopy on
   paths between points of the `0`-skeleton are homotopic relative to the `0`-skeleton.
-* `TauCeti.homotopicRel_singleton_of_mapOfEq_eq` and
-  `TauCeti.homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex`: pointed uniqueness for a complex
-  whose `0`-skeleton is `{x₀}`.
-* `TauCeti.homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT` and
-  `TauCeti.homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex`: pointed uniqueness
-  for a path-connected CW complex based at any of its `0`-cells.
+* `TauCeti.homotopicRel_singleton_of_mapOfEq_eq`: pointed uniqueness for a relative CW complex
+  whose relative `0`-skeleton is `{x₀}`.
 * `TauCeti.homotopicRel_of_mapOfEq_eq`, `TauCeti.homotopicRel_singleton_iff_mapOfEq_eq`,
   `TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex`,
   `TauCeti.homotopicRel_singleton_iff_mapOfEq_eq_of_cwComplex`: **pointed maps from any
@@ -256,24 +252,6 @@ theorem homotopicRel_singleton_of_mapOfEq_eq
   obtain ⟨H⟩ := Path.Homotopic.Quotient.exact h
   exact ⟨H⟩
 
-/-- **Maps into a space without higher homotopy are determined by their effect on `π₁`**, for a
-CW structure on the whole space. Let `X` be a CW complex whose `0`-skeleton is a single point
-`x₀`, such as a CW complex with a single `0`-cell, and let `Y` be a space whose homotopy groups
-vanish from degree `2` on, at every point. Two maps `X → Y` sending `x₀` to `y₀` and inducing the
-same homomorphism `π₁(X, x₀) → π₁(Y, y₀)` are homotopic relative to `x₀`. -/
-theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set X)]
-    (hY : ∀ (y : Y) (n : ℕ), Subsingleton (π_ (n + 2) Y y)) {x₀ : X}
-    (hx₀ : (skeletonLT (univ : Set X) 1 : Set X) = {x₀}) {f g : C(X, Y)} {y₀ : Y}
-    (hf : f x₀ = y₀) (hg : g x₀ = y₀)
-    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
-    f.HomotopicRel g {x₀} :=
-  -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `univ ≃ₜ X`.
-  (ContinuousMap.homotopicRel_comp_homeomorph_iff (Homeomorph.Set.univ X)).1 <|
-    (homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
-      (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) hf hg
-      (FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq _ rfl hf hg hfg)).mono
-      fun _ hx ↦ Subtype.ext hx
-
 end RelCWComplex
 
 section Vertex
@@ -351,12 +329,8 @@ private theorem homotopicRel_comp_of_apply_eq_trans {f g f' : C(Z, Y)} {x₀ a b
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C : Set X} [CWComplex C]
 
-/-- **Maps into a space without higher homotopy are determined by their effect on `π₁`**, at a
-`0`-cell. Let `C` be a path-connected CW complex with a base point `x₀` in its `0`-skeleton, and
-let `Y` be a space whose homotopy groups vanish from degree `2` on, at every point, such as a
-`K(H, 1)`. Two maps `C → Y` sending `x₀` to `y₀` and inducing the same homomorphism
-`π₁(C, x₀) → π₁(Y, y₀)` are homotopic relative to `x₀`. -/
-theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT [PathConnectedSpace C]
+/-- Pointed uniqueness at a `0`-cell `x₀`, when higher homotopy groups of `Y` vanish everywhere. -/
+private theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT [PathConnectedSpace C]
     (hY : ∀ (y : Y) (n : ℕ), Subsingleton (π_ (n + 2) Y y)) {x₀ : C}
     (hx₀ : (x₀ : X) ∈ skeletonLT C 1) {f g : C(C, Y)} {y₀ : Y}
     (hf : f x₀ = y₀) (hg : g x₀ = y₀)
@@ -403,28 +377,6 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT [PathConnectedSpa
       (hGK _ (by simpa [A] using ha)) (hGK _ (by simpa [A] using hb)) ⟨γ, rfl, rfl⟩
   · simpa [A] using hx₀A
 
-/-- **Maps into a space without higher homotopy are determined by their effect on `π₁`**, at a
-`0`-cell, for a CW structure on the whole space. Let `X` be a path-connected CW complex with a base
-point `x₀` in its `0`-skeleton, and let `Y` be a space whose homotopy groups vanish from degree `2`
-on, at every point. Two maps `X → Y` sending `x₀` to `y₀` and inducing the same homomorphism
-`π₁(X, x₀) → π₁(Y, y₀)` are homotopic relative to `x₀`. -/
-theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex
-    [CWComplex (univ : Set X)] [PathConnectedSpace X]
-    (hY : ∀ (y : Y) (n : ℕ), Subsingleton (π_ (n + 2) Y y)) {x₀ : X}
-    (hx₀ : x₀ ∈ skeletonLT (univ : Set X) 1) {f g : C(X, Y)} {y₀ : Y}
-    (hf : f x₀ = y₀) (hg : g x₀ = y₀)
-    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
-    f.HomotopicRel g {x₀} := by
-  -- Apply `homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT` to `univ`, through
-  -- `univ ≃ₜ X`.
-  have : PathConnectedSpace (univ : Set X) :=
-    isPathConnected_iff_pathConnectedSpace.1 isPathConnected_univ
-  exact (ContinuousMap.homotopicRel_comp_homeomorph_iff (Homeomorph.Set.univ X)).1 <|
-    (homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT (C := (univ : Set X)) hY
-      (x₀ := ⟨x₀, trivial⟩) hx₀ hf hg
-      (FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq _ rfl hf hg hfg)).mono
-      fun _ hx ↦ Subtype.ext hx
-
 end Vertex
 
 section ArbitraryCWComplex
@@ -458,20 +410,12 @@ private lemma homotopicRel_of_forall_subsingleton {C : Set X} [CWComplex C] [Pat
   -- Step 2: The combined homotopy `H = H₁.trans H₂` has trace `γ_v` at `v₀`, so trace naturality
   -- along `δ` makes `H.evalAt x₀` null-homotopic; straighten `H` at `{x₀}`.
   let H : f.Homotopy g := H₁.trans H₂.toHomotopy
-  refine (hasHomotopyExtensionProperty_singleton
-    (notMem_empty _)).homotopicRel_singleton_of_homotopic_refl isClosed_singleton H rfl hg ?_
-  apply Path.Homotopic.Quotient.exact
   have hH₂ : H₂.toHomotopy.evalAt v₀ = (Path.refl (g v₀)).cast hf₁v rfl :=
     Path.ext <| funext fun t ↦ (H₂.prop t v₀ (mem_singleton v₀)).trans hf₁v
-  have h := Path.Homotopic.Quotient.evalAt_trans_map_of_mk_evalAt_eq H δ hg rfl (by
-    rw [ContinuousMap.Homotopy.evalAt_trans, Path.Homotopic.Quotient.mk_trans, heval₁, hH₂,
-      Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_cast,
-      Path.Homotopic.Quotient.mk_refl, Path.Homotopic.Quotient.trans_cast_refl,
-      Path.Homotopic.Quotient.cast_cast, Path.Homotopic.Quotient.cast_rfl_rfl]
-    simp [γ_v])
-  rw [← Path.Homotopic.Quotient.cast_refl_trans hg] at h
-  simpa using congrArg (fun q ↦ q.cast rfl hg.symm)
-    (Path.Homotopic.Quotient.trans_right_cancel h)
+  exact (hasHomotopyExtensionProperty_singleton
+    (notMem_empty _)).homotopicRel_singleton_of_homotopic_refl isClosed_singleton H rfl hg
+    (Path.Homotopic.Quotient.homotopic_refl_evalAt_of_mk_evalAt_eq H δ hg
+      (by simp [H, heval₁, hH₂]; simp [γ_v]))
 
 /-- **Pointed maps out of a path-connected Hausdorff CW complex are determined by `π₁` (Hatcher,
 Proposition 1B.9, uniqueness).** Let `C` be a path-connected CW complex in a Hausdorff space `X`
@@ -484,37 +428,24 @@ theorem homotopicRel_of_mapOfEq_eq {C : Set X} [CWComplex C] [PathConnectedSpace
     {f g : C(C, Y)} (hf : f x₀ = y₀) (hg : g x₀ = y₀)
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
-  -- Both `f` and `g` land in `pathComponent y₀`, where all higher homotopy groups vanish.
-  let S : Set Y := pathComponent y₀
-  let y₀' : S := ⟨y₀, mem_pathComponent_self y₀⟩
-  let f' : C(C, S) := ⟨fun x ↦ ⟨f x, mem_pathComponent_iff.2 <|
-    hf ▸ (PathConnectedSpace.joined x₀ x).map f.continuous⟩, by fun_prop⟩
-  let g' : C(C, S) := ⟨fun x ↦ ⟨g x, mem_pathComponent_iff.2 <|
-    hg ▸ (PathConnectedSpace.joined x₀ x).map g.continuous⟩, by fun_prop⟩
-  have hf' : f' x₀ = y₀' := Subtype.ext hf
-  have hg' : g' x₀ = y₀' := Subtype.ext hg
-  have hS : ∀ (z : S) (n : ℕ), Subsingleton (π_ (n + 2) S z) := fun z n ↦ by
-    have hz : Subsingleton (π_ (n + 2) Y z) :=
-      (homotopyGroupEquivOfPath (N := Fin (n + 2)) z.property.somePath).subsingleton_congr.1
-        (hY n)
-    have hbij := HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-      (N := Fin (n + 2)) (S := S) (x := z) (fun _ hw ↦ z.property.trans hw) rfl
-    exact hbij.1.subsingleton
-  have hinj : Function.Injective
-      (FundamentalGroup.mapOfEq (ContinuousMap.subtypeVal S)
-        (rfl : ContinuousMap.subtypeVal S y₀' = y₀)) :=
-    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq (ContinuousMap.subtypeVal S) rfl).1
-      (HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-        (N := Fin 1) (S := S) (x := y₀') subset_rfl rfl)).1
+  -- Corestrict `f` and `g` to `pathComponent y₀`, where all higher homotopy groups vanish.
+  let f' := f.codRestrictPathComponent hf
+  let g' := g.codRestrictPathComponent hg
+  have hf' : f' x₀ = pathComponentSelf y₀ := f.codRestrictPathComponent_apply_self hf
+  have hg' : g' x₀ = pathComponentSelf y₀ := g.codRestrictPathComponent_apply_self hg
+  have hinj := (FundamentalGroup.bijective_mapOfEq_subtypeVal_of_pathComponent_subset
+    (x := pathComponentSelf y₀) subset_rfl rfl).1
   have hfg' : FundamentalGroup.mapOfEq f' hf' = FundamentalGroup.mapOfEq g' hg' :=
-    MonoidHom.ext fun a ↦ hinj <| by
-      rw [FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq rfl hf'
-        (rfl : ContinuousMap.subtypeVal S y₀' = y₀) hf a,
-        FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq rfl hg'
-          (rfl : ContinuousMap.subtypeVal S y₀' = y₀) hg a]
-      exact DFunLike.congr_fun hfg a
-  exact (homotopicRel_of_forall_subsingleton hS hf' hg' hfg').comp_continuousMap
-    (ContinuousMap.subtypeVal S)
+    MonoidHom.ext fun a ↦ hinj <|
+      (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq
+        (f.subtypeVal_comp_codRestrictPathComponent hf) hf'
+        (rfl : ContinuousMap.subtypeVal (pathComponent y₀) (pathComponentSelf y₀) = y₀) hf a).trans
+        ((DFunLike.congr_fun hfg a).trans
+          (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq
+            (g.subtypeVal_comp_codRestrictPathComponent hg) hg' _ hg a).symm)
+  simpa [f', g'] using (homotopicRel_of_forall_subsingleton
+    (fun z n ↦ subsingleton_homotopyGroup_pathComponent (hY n) z) hf' hg' hfg').comp_continuousMap
+    (ContinuousMap.subtypeVal (pathComponent y₀))
 
 /-- **Pointed homotopy classification out of a path-connected Hausdorff CW complex.** Pointed maps
 `(C, x₀) → (Y, y₀)` into a space with `πₙ(Y, y₀) = 0` (`n ≥ 2`) are homotopic relative to `{x₀}`
@@ -548,12 +479,12 @@ theorem homotopicRel_singleton_iff_mapOfEq_eq_of_cwComplex [CWComplex (univ : Se
   ⟨FundamentalGroup.mapOfEq_eq_of_homotopicRel hf hg (mem_singleton x₀),
     homotopicRel_of_mapOfEq_eq_of_cwComplex hY hf hg⟩
 
-/-- **Free homotopy classification out of a path-connected Hausdorff CW complex (Hatcher,
-Proposition 1B.9, unbased uniqueness).** Let `C` be a path-connected CW complex in a Hausdorff
-space `X` with base point `x₀`, and let `f, g : C → Y` be continuous maps into a space with
-`πₙ(Y, g x₀) = 0` for all `n ≥ 2`. Then `f` and `g` are freely homotopic if and only if there is a
-path `γ` from `f x₀` to `g x₀` such that changing base point along `γ` intertwines `f_*` and `g_*`
-on `π₁(C, x₀)`. -/
+/-- **Free homotopy criterion out of a path-connected Hausdorff CW complex.** Deduced from
+`TauCeti.homotopicRel_of_mapOfEq_eq` via basepoint change: let `C` be a path-connected CW complex in
+a Hausdorff space `X` with base point `x₀`, and let `f, g : C → Y` be continuous maps into a space
+with `πₙ(Y, g x₀) = 0` for all `n ≥ 2`. Then `f` and `g` are freely homotopic if and only if there
+is a path `γ` from `f x₀` to `g x₀` such that changing base point along `γ` intertwines `f_*` and
+`g_*` on `π₁(C, x₀)`. -/
 theorem homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath {C : Set X} [CWComplex C]
     [PathConnectedSpace C] (x₀ : C) {f g : C(C, Y)}
     (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y (g x₀))) :
@@ -574,8 +505,10 @@ theorem homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath {C : Set X} [CW
   exact ContinuousMap.Homotopic.trans ⟨F⟩
     (homotopicRel_of_mapOfEq_eq hY hf₁ rfl hmap).homotopic
 
-/-- **Free homotopy classification out of a path-connected Hausdorff CW complex on `univ` (Hatcher,
-Proposition 1B.9, unbased uniqueness).** -/
+/-- **Free homotopy criterion out of a path-connected Hausdorff CW complex on `univ`.** Deduced
+from `TauCeti.homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath` via `Set.univ ≃ₜ X`: maps
+`f, g : C(X, Y)` into a space with `πₙ(Y, g x₀) = 0` (`n ≥ 2`) are freely homotopic if and only if
+basepoint change along some path `γ : Path (f x₀) (g x₀)` intertwines `f_*` and `g_*`. -/
 theorem homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath_of_cwComplex
     [CWComplex (univ : Set X)] [PathConnectedSpace X] (x₀ : X) {f g : C(X, Y)}
     (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y (g x₀))) :

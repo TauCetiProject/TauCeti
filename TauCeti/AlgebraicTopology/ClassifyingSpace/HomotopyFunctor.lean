@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 import TauCeti.AlgebraicTopology.ClassifyingSpace.MapsToAspherical
-import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
@@ -57,9 +56,6 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
 
 ## Main results
 
-* `TauCeti.fundamentalGroupFunctor_map_bijective_of_cwComplex`: pointed homotopy classes of maps
-  out of any path-connected Hausdorff CW complex into a based space with no higher homotopy groups
-  at its base point are classified by their effect on `π₁`.
 * `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
   cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
   followed by the strictly functorial map.
@@ -177,36 +173,6 @@ instance (G : GrpCat.{u}) :
 
 instance (G : GrpCat.{u}) : PathConnectedSpace (classifyingSpaceFunctor.obj G).carrier :=
   (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.pathConnectedSpace
-
-/-- **Pointed maps out of a path-connected Hausdorff CW complex are classified by `π₁` (Hatcher,
-Proposition 1B.9).** If the homotopy groups of `Y` at its base point vanish from degree `2` on,
-then sending a pointed homotopy class `X ⟶ Y` in `PointedHomotopyCat` to its induced homomorphism
-on fundamental groups is bijective. -/
-theorem fundamentalGroupFunctor_map_bijective_of_cwComplex
-    {X Y : BasedTopologicalSpace.{u}} [T2Space X.carrier]
-    [Topology.CWComplex (Set.univ : Set X.carrier)] [PathConnectedSpace X.carrier]
-    (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y.carrier Y.basepoint)) :
-    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
-      (X := PointedHomotopyCat.quotient.obj X)
-      (Y := PointedHomotopyCat.quotient.obj Y)) := by
-  refine ⟨fun a b hab ↦ ?_, fun ψ ↦ ?_⟩
-  · obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
-    obtain ⟨g, rfl⟩ := PointedHomotopyCat.quotient.map_surjective b
-    simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map] at hab
-    exact (PointedHomotopyCat.quotient_map_eq_iff f g).2
-      (homotopicRel_of_mapOfEq_eq_of_cwComplex hY f.map_basepoint g.map_basepoint
-        (by
-          have h' := congrArg GrpCat.Hom.hom hab
-          rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-            BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
-          exact h'))
-  · let φ : FundamentalGroup X.carrier X.basepoint →* FundamentalGroup Y.carrier Y.basepoint :=
-      ψ.hom
-    obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_of_cwComplex (x₀ := X.basepoint) hY φ
-    exact ⟨PointedHomotopyCat.quotient.map ⟨f, hf⟩, GrpCat.hom_ext <|
-      (congrArg GrpCat.Hom.hom
-        (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
-        ((BasedTopologicalSpace.fundamentalGroupFunctor_map_hom _).trans hfψ)⟩
 
 /-- **The classifying-space functor to the pointed homotopy category is full** (and hence fully
 faithful): every pointed homotopy class `BG ⟶ BH` is induced by a group homomorphism `G ⟶ H`. -/
