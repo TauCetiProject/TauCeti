@@ -112,7 +112,7 @@ theorem directed_corner :
 /-- An idempotented structure with zero multiplication is trivial: every `x` equals `e * x = 0`
 for a local unit `e`. In particular a nonzero ring with the zero multiplication is not
 idempotented. -/
-theorem subsingleton_of_mul_eq_zero {H : Type*} [MulZeroClass H] [IsIdempotented H]
+theorem subsingleton_of_mul_eq_zero {H : Type*} [Mul H] [Zero H] [IsIdempotented H]
     (h : ∀ x y : H, x * y = 0) : Subsingleton H := by
   classical
   refine ⟨fun x y ↦ ?_⟩

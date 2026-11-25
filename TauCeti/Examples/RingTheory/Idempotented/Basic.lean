@@ -25,7 +25,7 @@ public section
 open TauCeti
 
 /-- A nontrivial structure with the zero multiplication is not idempotented. -/
-example {H : Type*} [MulZeroClass H] [Nontrivial H] (h : ∀ x y : H, x * y = 0) :
+example {H : Type*} [Mul H] [Zero H] [Nontrivial H] (h : ∀ x y : H, x * y = 0) :
     ¬IsIdempotented H := fun _ ↦
   not_subsingleton H (IsIdempotented.subsingleton_of_mul_eq_zero h)
 
