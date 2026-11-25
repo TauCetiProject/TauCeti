@@ -32,8 +32,9 @@ of the Brauer correspondent of `B`, is Brauer's first main theorem, not proved h
 ## Main results
 
 * `TauCeti.coeff_brauerCorrespondent_of_mem`, `TauCeti.coeff_brauerCorrespondent_of_notMem`: its
-  coefficients; `TauCeti.brauerCorrespondent_one`, `TauCeti.brauerCorrespondent_single_of_mem`,
-  `TauCeti.brauerCorrespondent_single_of_notMem`: its values at `1` and at basis elements.
+  coefficients; `TauCeti.brauerCorrespondent_one`, `TauCeti.brauerCorrespondent_single_coe`,
+  `TauCeti.brauerCorrespondent_single_of_mem`, `TauCeti.brauerCorrespondent_single_of_notMem`: its
+  values at `1` and at basis elements.
 * `TauCeti.brauerCorrespondent_eq_zero_iff`: it vanishes exactly when `Br_D(e)` does.
 * `TauCeti.brauerCorrespondent_mul`: it is multiplicative on `R[G]^D` for a `p`-subgroup `D` in
   characteristic `p`.
@@ -107,14 +108,22 @@ theorem brauerCorrespondent_one (D : Subgroup G) :
     brauerCorrespondent D (1 : MonoidAlgebra R G) = 1 := by
   rw [brauerCorrespondent_apply, brauerProjection_one, map_one]
 
+/-- The Brauer correspondent keeps a basis element `single c r` with `c ∈ C_G(D)`. -/
+@[simp]
+theorem brauerCorrespondent_single_coe (D : Subgroup G) (c : Subgroup.centralizer (D : Set G))
+    (r : R) :
+    brauerCorrespondent D (single (c : G) r) =
+      single (Subgroup.inclusion (Subgroup.centralizer_le_normalizer (D : Set G)) c) r := by
+  rw [brauerCorrespondent_apply, brauerProjection_single_coe, mapDomainRingHom_apply,
+    mapDomain_single]
+
 /-- The Brauer correspondent keeps a basis element `single g r` with `g ∈ C_G(D)`. -/
 theorem brauerCorrespondent_single_of_mem (D : Subgroup G) {g : G}
     (hg : g ∈ Subgroup.centralizer (D : Set G)) (r : R) :
     brauerCorrespondent D (single g r) =
-      single ⟨g, Subgroup.centralizer_le_normalizer (D : Set G) hg⟩ r := by
-  rw [brauerCorrespondent_apply, brauerProjection_single_of_mem D hg, mapDomainRingHom_apply,
-    mapDomain_single]
-  exact congrArg (single · r) (Subtype.ext (Subgroup.coe_inclusion _ _))
+      single ⟨g, Subgroup.centralizer_le_normalizer (D : Set G) hg⟩ r :=
+  (brauerCorrespondent_single_coe D ⟨g, hg⟩ r).trans
+    (congrArg (single · r) (Subtype.ext (Subgroup.coe_inclusion _ _)))
 
 /-- The Brauer correspondent discards a basis element `single g r` with `g ∉ C_G(D)`. -/
 theorem brauerCorrespondent_single_of_notMem (D : Subgroup G) {g : G}
