@@ -63,7 +63,6 @@ theorem det_dual [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A 
     [ContinuousInv Γ] [TopologicalSpace (Module.Dual A M)] [IsModuleTopology A (Module.Dual A M)]
     (ρ : ContinuousRep Γ A M) : ρ.dual.det = ρ.det⁻¹ := by
   ext g
-  rw [coe_det_apply, dual_apply, ← LinearMap.dualMap_def, LinearMap.projectiveDet_dualMap,
-    ← coe_det_apply, map_inv, MonoidHom.inv_apply]
+  simp [dual_apply, ← LinearMap.dualMap_def, ← map_inv]
 
 end TauCeti.ContinuousRep
