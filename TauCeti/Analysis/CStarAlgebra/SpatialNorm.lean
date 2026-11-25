@@ -52,6 +52,8 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
   with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap` and
   `TauCeti.spatialTensorLinearMap_injective`.
+* `NonUnitalStarAlgHom.rTensorCompletion` and `NonUnitalStarAlgHom.lTensorCompletion`: the
+  commuting amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` of representations.
 * `NonUnitalStarAlgHom.spatialTensorHom π ρ`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)` of
   representations, with `NonUnitalStarAlgHom.spatialTensorHom_tmul` and
   `NonUnitalStarAlgHom.spatialTensorHom_injective`.
@@ -153,26 +155,69 @@ namespace NonUnitalStarAlgHom
 open TauCeti
 
 variable {𝕜 A B E F : Type*} [RCLike 𝕜] [NonUnitalRing A] [StarRing A] [Module 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarModule 𝕜 A] [NonUnitalRing B] [StarRing B]
-  [Module 𝕜 B] [SMulCommClass 𝕜 B B] [IsScalarTower 𝕜 B B] [StarModule 𝕜 B]
+  [NonUnitalRing B] [StarRing B] [Module 𝕜 B]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [CompleteSpace E] [CompleteSpace F]
+
+variable (F) in
+/-- The **left amplification** `a ↦ π a ⊗ 1` of a representation `π : A → B(E)` to the Hilbert
+tensor product `E ⊗₂ F`. -/
+def rTensorCompletion (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) :
+    A →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
+  (rTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp π
+
+variable (E) in
+/-- The **right amplification** `b ↦ 1 ⊗ ρ b` of a representation `ρ : B → B(F)` to the Hilbert
+tensor product `E ⊗₂ F`. -/
+def lTensorCompletion (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+    B →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
+  (lTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp ρ
+
+omit [CompleteSpace F] in
+/-- The left amplification of `π` sends `a` to `π a ⊗ 1`. -/
+@[simp]
+theorem rTensorCompletion_apply (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (a : A) :
+    π.rTensorCompletion F a = (π a).rTensorCompletion F :=
+  rTensorCompletionStarAlgHom_apply (π a)
+
+omit [CompleteSpace E] in
+/-- The right amplification of `ρ` sends `b` to `1 ⊗ ρ b`. -/
+@[simp]
+theorem lTensorCompletion_apply (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (b : B) :
+    ρ.lTensorCompletion E b = (ρ b).lTensorCompletion E :=
+  lTensorCompletionStarAlgHom_apply (ρ b)
+
+/-- The amplifications `π a ⊗ 1` and `1 ⊗ ρ b` commute. -/
+theorem commute_rTensorCompletion_lTensorCompletion (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E))
+    (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (a : A) (b : B) :
+    Commute (π.rTensorCompletion F a) (ρ.lTensorCompletion E b) := by
+  rw [rTensorCompletion_apply, lTensorCompletion_apply]
+  exact ContinuousLinearMap.commute_rTensorCompletion_lTensorCompletion (π a) (ρ b)
+
+variable [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarModule 𝕜 A] [SMulCommClass 𝕜 B B]
+  [IsScalarTower 𝕜 B B] [StarModule 𝕜 B]
 
 /-- The **spatial tensor homomorphism** of representations `π : A → B(E)` and `ρ : B → B(F)`:
 the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`, `a ⊗ b ↦ π a ⊗ ρ b`, the product of the commuting
 amplifications `π a ⊗ 1` and `1 ⊗ ρ b`. -/
-@[expose] def spatialTensorHom (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+def spatialTensorHom (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
     A ⊗[𝕜] B →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
-  Algebra.TensorProduct.liftNonUnitalStarAlgHom
-    ((rTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp π)
-    ((lTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp ρ)
-    fun a b ↦ by simpa using commute_rTensorCompletion_lTensorCompletion (π a) (ρ b)
+  Algebra.TensorProduct.liftNonUnitalStarAlgHom (π.rTensorCompletion F) (ρ.lTensorCompletion E)
+    (π.commute_rTensorCompletion_lTensorCompletion ρ)
+
+/-- Unfolding `NonUnitalStarAlgHom.spatialTensorHom`. -/
+theorem spatialTensorHom_def (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+    π.spatialTensorHom ρ =
+      Algebra.TensorProduct.liftNonUnitalStarAlgHom (π.rTensorCompletion F)
+        (ρ.lTensorCompletion E) (π.commute_rTensorCompletion_lTensorCompletion ρ) :=
+  (rfl)
 
 /-- The spatial tensor homomorphism of `π` and `ρ` sends `a ⊗ b` to the operator `π a ⊗ ρ b`. -/
 @[simp]
 theorem spatialTensorHom_tmul (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (a : A)
     (b : B) : π.spatialTensorHom ρ (a ⊗ₜ b) = mapLCompletion (π a) (ρ b) := by
-  simp [spatialTensorHom, ContinuousLinearMap.mul_def, rTensorCompletion_comp_lTensorCompletion]
+  simp [spatialTensorHom_def, ContinuousLinearMap.mul_def,
+    rTensorCompletion_comp_lTensorCompletion]
 
 /-- The spatial tensor homomorphism of `π` and `ρ` factors through the full operator algebras. -/
 theorem spatialTensorHom_apply (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F))

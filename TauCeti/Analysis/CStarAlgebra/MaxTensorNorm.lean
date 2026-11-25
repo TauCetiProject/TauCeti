@@ -137,34 +137,37 @@ amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` on the Hilbert tensor p
 @[expose] def spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
     CommutingRepresentationPair A B where
   H := Completion (E ⊗[ℂ] F)
-  left := (rTensorCompletionStarAlgHom ℂ E F).toNonUnitalStarAlgHom.comp π
-  right := (lTensorCompletionStarAlgHom ℂ E F).toNonUnitalStarAlgHom.comp ρ
-  commute a b := by
-    simpa using commute_rTensorCompletion_lTensorCompletion (π a) (ρ b)
+  left := π.rTensorCompletion F
+  right := ρ.lTensorCompletion E
+  commute := π.commute_rTensorCompletion_lTensorCompletion ρ
 
 /-- The left representation of the spatial pair is `a ↦ π a ⊗ 1`. -/
 @[simp]
 theorem spatial_left_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (a : A) :
     (spatial π ρ).left a = (π a).rTensorCompletion F :=
-  rTensorCompletionStarAlgHom_apply (π a)
+  π.rTensorCompletion_apply a
 
 /-- The right representation of the spatial pair is `b ↦ 1 ⊗ ρ b`. -/
 @[simp]
 theorem spatial_right_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (b : B) :
     (spatial π ρ).right b = (ρ b).lTensorCompletion E :=
-  lTensorCompletionStarAlgHom_apply (ρ b)
+  ρ.lTensorCompletion_apply b
 
 /-- The integrated form of the spatial pair is the spatial tensor homomorphism of `π` and `ρ`:
 both are `Algebra.TensorProduct.liftNonUnitalStarAlgHom` of the same two amplifications. -/
 theorem tensorHom_spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
-    (spatial π ρ).tensorHom = π.spatialTensorHom ρ :=
-  (rfl)
+    (spatial π ρ).tensorHom = π.spatialTensorHom ρ := by
+  rw [tensorHom_def, NonUnitalStarAlgHom.spatialTensorHom_def]
+  -- The fields of `spatial π ρ` are, by definition, these two amplifications and their
+  -- commutation lemma.
+  rfl
 
 /-- The integrated form of the spatial pair sends `a ⊗ b` to `π a ⊗ ρ b`. -/
 theorem tensorHom_spatial_tmul (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
     (a : A) (b : B) :
     (spatial π ρ).tensorHom (a ⊗ₜ b) = mapLCompletion (π a) (ρ b) :=
-  NonUnitalStarAlgHom.spatialTensorHom_tmul π ρ a b
+  (DFunLike.congr_fun (tensorHom_spatial π ρ) (a ⊗ₜ b)).trans
+    (NonUnitalStarAlgHom.spatialTensorHom_tmul π ρ a b)
 
 /-- The integrated form of the spatial pair has norm `‖π a‖ ‖ρ b‖` at `a ⊗ b`. -/
 theorem norm_tensorHom_spatial_tmul (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
@@ -182,13 +185,22 @@ theorem tensorHom_spatial_injective {π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)} {
 end Spatial
 
 variable (A B) in
-/-- There is a commuting pair whose integrated form is injective: the spatial pair of faithful
-representations. -/
-theorem exists_tensorHom_injective :
-    ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom := by
+/-- There is a commuting pair whose integrated form is injective and has norm `‖a‖ ‖b‖` at every
+`a ⊗ b`: the spatial pair of faithful representations. -/
+theorem exists_tensorHom_injective_and_norm_tensorHom_tmul :
+    ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom ∧
+      ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
   obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
   obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
-  exact ⟨spatial π ρ, tensorHom_spatial_injective hπ hρ⟩
+  refine ⟨spatial π ρ, tensorHom_spatial_injective hπ hρ, fun a b ↦ ?_⟩
+  rw [norm_tensorHom_spatial_tmul, NonUnitalStarAlgHom.norm_map π hπ,
+    NonUnitalStarAlgHom.norm_map ρ hρ]
+
+variable (A B) in
+/-- There is a commuting pair whose integrated form is injective. -/
+theorem exists_tensorHom_injective :
+    ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom :=
+  (exists_tensorHom_injective_and_norm_tensorHom_tmul A B).imp fun _ ↦ And.left
 
 instance : Nonempty (CommutingRepresentationPair A B) :=
   (exists_tensorHom_injective A B).nonempty
@@ -292,11 +304,8 @@ theorem maxTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : maxTensorNorm A B x = 0 �
 @[simp]
 theorem maxTensorNorm_tmul (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ := by
   refine le_antisymm (maxTensorNorm_tmul_le a b) ?_
-  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
-  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
-  have := norm_tensorHom_le_maxTensorNorm (spatial π ρ) (a ⊗ₜ b)
-  rwa [norm_tensorHom_spatial_tmul, NonUnitalStarAlgHom.norm_map π hπ,
-    NonUnitalStarAlgHom.norm_map ρ hρ] at this
+  obtain ⟨p, -, hp⟩ := exists_tensorHom_injective_and_norm_tensorHom_tmul A B
+  exact hp a b ▸ norm_tensorHom_le_maxTensorNorm p (a ⊗ₜ b)
 
 /-- **Universal bound.** Commuting star homomorphisms `φ : A → C` and `ψ : B → C` into a
 C*-algebra `C` in the universe `max u v` integrate to a star homomorphism `A ⊗[ℂ] B → C` bounded
