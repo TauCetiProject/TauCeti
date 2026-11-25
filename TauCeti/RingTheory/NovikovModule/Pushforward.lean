@@ -37,20 +37,21 @@ pushforward of Novikov series `TauCeti.NovikovSeries.map ρ φ` in each orbit, i
 coordinates of chosen lifts and of their images
 (`TauCeti.NovikovModule.coordinates_pushforward`). Hence it is semilinear over
 `TauCeti.NovikovSeries.mapRingHom ρ φ` for the Novikov module structures
-(`TauCeti.NovikovModule.novikovMap`), and it carries the Novikov-linear map of a matrix `M` of
-Novikov series to the map of the matrix obtained by applying `TauCeti.NovikovSeries.mapRingHom`
-to the entries of `M` (`TauCeti.NovikovModule.pushforward_novikovMapOfMatrix`). Thus identities
-between matrices of Novikov series, such as `D * D = 0` for a differential or a chain homotopy
-equation, transport to identities between the pushed-forward completed complexes. The main
-example is the action-field specialization `TauCeti.NovikovModule.actionFieldMap`, in
+(`TauCeti.NovikovModule.novikovPushforward`), and it carries the Novikov-linear map of a matrix
+`M` of Novikov series to the map of the matrix obtained by applying
+`TauCeti.NovikovSeries.mapRingHom` to the entries of `M`
+(`TauCeti.NovikovModule.pushforward_novikovMapOfMatrix`). Thus identities between matrices of
+Novikov series, such as `D * D = 0` for a differential or a chain homotopy equation, transport to
+identities between the pushed-forward completed complexes. The main example is the action-field
+specialization `TauCeti.NovikovModule.actionFieldMap`, in
 `TauCeti.RingTheory.NovikovModule.ActionField`.
 
 ## Main definitions
 
 * `TauCeti.NovikovModule.pushforward ρ π hπ`: the pushforward along a map of generators preserving
   potentials, as a `ρ`-semilinear map.
-* `TauCeti.NovikovModule.novikovMap`: the same map on finite unions of torsors, as a semilinear
-  map over the pushforward of Novikov rings.
+* `TauCeti.NovikovModule.novikovPushforward`: the same map on finite unions of torsors, as a
+  semilinear map over the pushforward of Novikov rings.
 
 ## Main results
 
@@ -224,11 +225,42 @@ theorem pushforward_id :
     pushforward (RingHom.id R) id (fun _ : S => rfl) = LinearMap.id (M := NovikovModule R F) :=
   (pushforward_id_right (RingHom.id R)).trans <| LinearMap.ext mapRange_id
 
+/-- **Functoriality.** Pushing forward along `π` and then along `π'` is pushing forward along
+`π' ∘ π`, with the composite coefficient map. -/
+@[simp]
+theorem pushforward_pushforward {π' : S' → S''} (hπ' : ∀ s', F'' (π' s') = F' s') (ρ' : R' →+* R'')
+    (a : NovikovModule R F) :
+    pushforward ρ' π' hπ' (pushforward ρ π hπ a) =
+      pushforward (ρ'.comp ρ) (π' ∘ π) (fun s => (hπ' (π s)).trans (hπ s)) a := by
+  classical
+  refine Subtype.ext (funext fun s'' => ?_)
+  have hπ'π : ∀ s, F'' ((π' ∘ π) s) = F s := fun s => (hπ' (π s)).trans (hπ s)
+  set T := (finite_support_inter_preimage_singleton hπ'π a s'').toFinset
+  have hT {s : S} : s ∈ T ↔ a.val s ≠ 0 ∧ π' (π s) = s'' := by simp [T]
+  rw [pushforward_apply_val_eq_sum hπ'π _ a T (fun s hs => hT.2 hs) fun s hs => (hT.1 hs).2,
+    pushforward_apply_val_eq_sum hπ' ρ' _ (T.image π) ?_ ?_]
+  · rw [← Finset.sum_fiberwise_of_maps_to (g := π) (t := T.image π)
+      fun s hs => Finset.mem_image_of_mem π hs]
+    refine Finset.sum_congr rfl fun s' hs' => ?_
+    obtain ⟨s₀, hs₀, rfl⟩ := Finset.mem_image.1 hs'
+    rw [pushforward_apply_val_eq_sum hπ ρ a (T.filter fun s => π s = π s₀)
+      (fun s hs => Finset.mem_filter.2 ⟨hT.2 ⟨hs.1, by rw [mem_singleton_iff.1 hs.2,
+        (hT.1 hs₀).2]⟩, hs.2⟩) fun s hs => (Finset.mem_filter.1 hs).2, map_sum]
+    rfl
+  · rintro s' ⟨hs', hs's''⟩
+    obtain ⟨s, hs, hρ⟩ := exists_ne_zero_of_finsum_mem_ne_zero hs'
+    refine Finset.mem_image.2 ⟨s, hT.2 ⟨fun h => hρ (by rw [h, map_zero]), ?_⟩,
+      mem_singleton_iff.1 hs⟩
+    rw [mem_singleton_iff.1 hs, mem_singleton_iff.1 hs's'']
+  · intro s' hs'
+    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hs'
+    exact (hT.1 hs).2
+
 end Semiring
 
 section Ring
 
-variable [Ring R] [Ring R'] [Ring R''] {F : S → ℝ} {F' : S' → ℝ} {F'' : S'' → ℝ}
+variable [Ring R] [Ring R'] {F : S → ℝ} {F' : S' → ℝ}
   {π : S → S'} (hπ : ∀ s, F' (π s) = F s) (ρ : R →+* R')
 
 /-- The pushforward keeps every potential cutoff: a combination vanishing above `C` is sent to a
@@ -244,22 +276,6 @@ theorem pushforward_mem_potentialFiltration {C : ℝ} {a : NovikovModule R F}
 theorem continuous_pushforward : Continuous (pushforward ρ π hπ) :=
   continuous_of_forall_mem_potentialFiltration (pushforward ρ π hπ) fun C =>
     ⟨C, fun _ ha => pushforward_mem_potentialFiltration hπ ρ ha⟩
-
-/-- **Functoriality.** Pushing forward along `π` and then along `π'` is pushing forward along
-`π' ∘ π`, with the composite coefficient map. -/
-@[simp]
-theorem pushforward_pushforward {π' : S' → S''} (hπ' : ∀ s', F'' (π' s') = F' s') (ρ' : R' →+* R'')
-    (a : NovikovModule R F) :
-    pushforward ρ' π' hπ' (pushforward ρ π hπ a) =
-      pushforward (ρ'.comp ρ) (π' ∘ π) (fun s => (hπ' (π s)).trans (hπ s)) a := by
-  classical
-  have h := addHom_ext
-    (f := (pushforward ρ' π' hπ').toAddMonoidHom.comp (pushforward ρ π hπ).toAddMonoidHom)
-    (g := (pushforward (ρ'.comp ρ) (π' ∘ π) (fun s => (hπ' (π s)).trans (hπ s))).toAddMonoidHom)
-    ((continuous_pushforward hπ' ρ').comp (continuous_pushforward hπ ρ))
-    (continuous_pushforward (fun s => (hπ' (π s)).trans (hπ s)) (ρ'.comp ρ)) fun s r => by
-      simp
-  exact DFunLike.congr_fun h a
 
 end Ring
 
@@ -307,7 +323,7 @@ include hF hF' hπφ in
 /-- The pushforward is semilinear for the Novikov module structures of
 `TauCeti.NovikovModule.module`, over the pushforward `TauCeti.NovikovSeries.mapRingHom ρ φ` of
 Novikov rings. -/
-theorem pushforward_smul_novikov (β : NovikovSeries R H N)
+theorem pushforward_smul (β : NovikovSeries R H N)
     (a : NovikovModule R F) :
     letI := module (R := R) hF
     letI := module (R := R') hF'
@@ -324,7 +340,7 @@ include hF hF' hπφ in
 /-- The pushforward on finite unions of torsors, as a semilinear map over the pushforward
 `TauCeti.NovikovSeries.mapRingHom ρ φ` of Novikov rings, for the Novikov module structures of
 `TauCeti.NovikovModule.module`. -/
-def novikovMap :
+def novikovPushforward :
     letI := module (R := R) hF
     letI := module (R := R') hF'
     NovikovModule R F →ₛₗ[NovikovSeries.mapRingHom ρ φ hφ] NovikovModule R' F' :=
@@ -332,12 +348,12 @@ def novikovMap :
   letI := module (R := R') hF'
   { toFun := pushforward ρ (Sigma.map id π) hπ
     map_add' := map_add _
-    map_smul' := pushforward_smul_novikov hF hF' ρ hφ hπφ hπ }
+    map_smul' := pushforward_smul hF hF' ρ hφ hπφ hπ }
 
 /-- The Novikov-semilinear pushforward evaluates to the pushforward. -/
 @[simp]
-theorem novikovMap_apply (a : NovikovModule R F) :
-    novikovMap hF hF' ρ hφ hπφ hπ a = pushforward ρ (Sigma.map id π) hπ a :=
+theorem novikovPushforward_apply (a : NovikovModule R F) :
+    novikovPushforward hF hF' ρ hφ hπφ hπ a = pushforward ρ (Sigma.map id π) hπ a :=
   (rfl)
 
 end Coordinates

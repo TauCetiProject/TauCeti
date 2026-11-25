@@ -153,7 +153,7 @@ theorem actionFieldMap_smul (r : ∀ i, P i)
     actionFieldMap hF ρ r (β • a) =
       NovikovSeries.actionFieldMap E ρ β • actionFieldMap hF ρ r a := by
   rw [actionFieldMap_apply, actionFieldMap_apply, NovikovSeries.actionFieldMap_eq_mapRingHom]
-  exact pushforward_smul_novikov hF (actionFieldPotential_vadd F r) ρ
+  exact pushforward_smul hF (actionFieldPotential_vadd F r) ρ
     (NovikovSeries.exists_period_rescale_coprod_id E) (vadd_vsub_energy r) _ β a
 
 end Semiring
