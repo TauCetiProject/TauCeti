@@ -155,7 +155,7 @@ variable [T2Space M] [SigmaCompactSpace M]
 
 /-- The model space `E` of a manifold with a fiberwise nondegenerate two-form has even dimension,
 so `ℂⁿ` with `n = dim E / 2` is a complex model fibre for its tangent bundle. -/
-private theorem two_mul_finrank_euclideanSpace (h : σ.IsNondegenerate) (x : M) :
+theorem two_mul_finrank_euclideanSpace (h : σ.IsNondegenerate) (x : M) :
     finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) := by
   rw [finrank_euclideanSpace_fin, Nat.two_mul_div_two_of_even]
   exact ((exists_compatible h).choose.almostComplexStructureAt x).even_finrank_real
