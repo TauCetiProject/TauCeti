@@ -24,8 +24,9 @@ spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), cen
 Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line mass
 `2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
 multiplication by deterministic scalars of unit modulus.
-In particular, integrals against the standard Gaussian measure are invariant under linear isometry
-equivalences (`LinearIsometryEquiv.integral_comp_stdGaussian`), such as the
+In particular, the standard Gaussian measure of a set and integrals against it are invariant under
+linear isometry equivalences (`LinearIsometryEquiv.stdGaussian_image`,
+`LinearIsometryEquiv.integral_comp_stdGaussian`), such as the
 coordinate sign changes `TauCeti.Probability.signFlip` of `EuclideanSpace ℝ ι`, so a standard
 Gaussian integral may be replaced by the integral of the average of the integrand over all sign
 changes (`TauCeti.Probability.integral_eq_integral_expect_signFlip`).
@@ -158,6 +159,15 @@ standard Gaussian measure of the source to that of the target. -/
 theorem measurePreserving_stdGaussian (f : E ≃ₗᵢ[ℝ] F) :
     MeasurePreserving f (stdGaussian E) (stdGaussian F) :=
   ⟨f.continuous.measurable, stdGaussian_map f⟩
+
+/-- **Isometry invariance of the standard Gaussian measure.** For a linear isometry equivalence
+`f : E ≃ₗᵢ[ℝ] F`, `γ_F(f(U)) = γ_E(U)` for every set `U`. This is the image form of Mathlib's
+pushforward identity `ProbabilityTheory.stdGaussian_map`. -/
+@[simp]
+theorem stdGaussian_image (f : E ≃ₗᵢ[ℝ] F) (s : Set E) :
+    stdGaussian F (f '' s) = stdGaussian E s := by
+  rw [f.image_eq_preimage_symm, ← f.symm.coe_toMeasurableEquiv]
+  exact f.symm.measurePreserving_stdGaussian.measure_preimage_equiv s
 
 /-- Integrals against the standard Gaussian measure are invariant under linear isometry
 equivalences between finite-dimensional real inner product spaces. -/

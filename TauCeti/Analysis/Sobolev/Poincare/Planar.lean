@@ -92,10 +92,8 @@ private theorem modularRoot_sq (t : ℝ) : modularRoot t ^ 2 = √(1 + t ^ 2) - 
   nlinarith
 
 private theorem contDiff_modularRoot : ContDiff ℝ ⊤ modularRoot := by
-  have h1 : ContDiff ℝ ⊤ fun t : ℝ ↦ √(1 + t ^ 2) :=
-    (contDiff_const.add (contDiff_id.pow 2)).sqrt fun t ↦ by positivity
   have h2 : ContDiff ℝ ⊤ fun t : ℝ ↦ √(1 + √(1 + t ^ 2)) :=
-    (contDiff_const.add h1).sqrt fun t ↦ by positivity
+    (contDiff_const.add Real.contDiff_sqrt_one_add_sq).sqrt fun t ↦ by positivity
   exact contDiff_id.div h2 fun t ↦ by positivity
 
 /-- The derivative of `r³` is `(3/2) r(t) t / √(1 + t²)`; its absolute value is at most

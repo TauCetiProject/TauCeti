@@ -9,19 +9,25 @@ public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Sites.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.ComparableTopologies
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
-# Covering sieves of the fppf topology, and fpqc sheaves are étale sheaves
+# Covering sieves of the fppf topology, and fppf and fpqc sheaves are étale sheaves
 
 Every point of a scheme lies in the image of some member of any fppf covering sieve, since the
 sieve contains a jointly surjective fppf covering family. On the big fppf site of a scheme `S`,
 the base change `T ×_S S' ⟶ T` of a surjective flat morphism `p : S' ⟶ S`, locally of finite
 presentation, generates a covering sieve of `T`.
 
-The étale topology is coarser than the fpqc topology, so on the big site `Over S` of a scheme `S`
-the identity functor is continuous from the étale to the fpqc topology, and Mathlib's
-`sheafPushforwardContinuous` regards fpqc sheaves on `Over S` as étale sheaves.
+The étale topology is coarser than the fppf topology, since étale morphisms are flat and locally
+of finite presentation, and hence also coarser than the fpqc topology. So on the big site
+`Over S` of a scheme `S` the identity functor is continuous from the étale to the fppf and to the
+fpqc topology, and Mathlib's `sheafPushforwardContinuous` regards fppf and fpqc sheaves on
+`Over S` as étale sheaves. The forgetful functor `S.Etale ⥤ Over S` from the small étale site is
+therefore also continuous for the fpqc topology on `Over S`, so a sheaf on the big fpqc site over
+`S` restricts to a sheaf on the small étale site of `S`.
 
 ## Main results
 
@@ -29,7 +35,11 @@ the identity functor is continuous from the étale to the fpqc topology, and Mat
   scheme are jointly surjective.
 * `AlgebraicGeometry.Scheme.Hom.generate_singleton_counit_mem_fppfTopology_over`: the base change
   `T ×_S S' ⟶ T` of an fppf morphism generates a covering sieve of the big fppf site.
-* the instance `(𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S)`.
+* `AlgebraicGeometry.Scheme.etaleTopology_le_fppfTopology`: étale coverings are fppf coverings.
+* the instances `(𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fppfTopology.over S)` and
+  `(𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S)`.
+* `AlgebraicGeometry.Scheme.restrictSmallEtale S`: the restriction functor from sheaves on the big
+  fpqc site over `S` to sheaves on the small étale site of `S`.
 -/
 
 public section
@@ -38,7 +48,7 @@ open CategoryTheory
 
 namespace AlgebraicGeometry.Scheme
 
-universe u
+universe v u
 
 /-- **Fppf covers are jointly surjective.** Every point of a scheme lies in the image of some
 member of any fppf covering sieve. -/
@@ -52,12 +62,38 @@ theorem exists_mem_range_of_mem_fppfTopology {T : Scheme.{u}} {S : Sieve T}
   cases hg with
   | @of Y g hg => exact ⟨Y, g, hRS Y g hg, ht⟩
 
+/-- **Étale coverings are fppf coverings**: the big étale topology is coarser than the big fppf
+topology, as étale morphisms are flat and locally of finite presentation. -/
+theorem etaleTopology_le_fppfTopology : etaleTopology.{u} ≤ fppfTopology.{u} :=
+  Precoverage.toGrothendieck_mono (precoverage_mono fun _ _ _ _ ↦ ⟨inferInstance, inferInstance⟩)
+
+/-- Every sheaf on the big fppf site `Over S` is a sheaf for the étale topology, which is
+coarser. -/
+instance (S : Scheme.{u}) :
+    (𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fppfTopology.over S) :=
+  TauCeti.CategoryTheory.isContinuous_id_of_le
+    (GrothendieckTopology.over_mono etaleTopology_le_fppfTopology S)
+
 /-- Every sheaf on the big fpqc site `Over S` is a sheaf for the étale topology, which is
 coarser. -/
 instance (S : Scheme.{u}) :
     (𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S) :=
-  TauCeti.CategoryTheory.isContinuous_id_of_le fun _ _ hR ↦
-    (etaleTopology_le_proetaleTopology.trans proetaleTopology_le_fpqcTopology) _ hR
+  TauCeti.CategoryTheory.isContinuous_id_of_le <| GrothendieckTopology.over_mono
+    (etaleTopology_le_proetaleTopology.trans proetaleTopology_le_fpqcTopology) S
+
+/-- The forgetful functor from the small étale site of `S` to the big site `Over S` is continuous
+for the small étale topology and the fpqc topology on `Over S`: it is continuous for the étale
+topology on `Over S`, which is coarser than the fpqc topology. -/
+instance isContinuous_etaleForget_fpqcTopology (S : Scheme.{u}) :
+    (Etale.forget S).IsContinuous (smallEtaleTopology S) (fpqcTopology.over S) :=
+  Functor.isContinuous_comp (Etale.forget S) (𝟭 (Over S)) (smallEtaleTopology S)
+    (etaleTopology.over S) (fpqcTopology.over S)
+
+/-- The restriction of sheaves on the big fpqc site over `S` to the small étale site of `S`, along
+the forgetful functor `S.Etale ⥤ Over S`. -/
+noncomputable abbrev restrictSmallEtale (S : Scheme.{u}) {A : Type*} [Category.{v} A] :
+    Sheaf (fpqcTopology.over S) A ⥤ Sheaf (smallEtaleTopology S) A :=
+  (Etale.forget S).sheafPushforwardContinuous A (smallEtaleTopology S) (fpqcTopology.over S)
 
 end AlgebraicGeometry.Scheme
 

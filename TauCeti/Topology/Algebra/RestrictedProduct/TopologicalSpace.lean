@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # The topology of a restricted product
@@ -15,7 +16,8 @@ topology over the principal stages `Πʳ i, [R i, A i]_[𝓟 S]`. A set is open 
 preimage in every principal stage is open: this is the `Prop`-valued form of Mathlib's universal
 property `RestrictedProduct.continuous_dom`. Inserting a single factor is continuous, the analogue
 of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types, and for Hausdorff
-factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
+factors it is a closed embedding. Over the cofinite filter, factors from the reference sets inserted
+at single indices tend to `1`, and evaluation at an index is an open map.
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
@@ -151,6 +153,27 @@ theorem isClosedEmbedding_restrictedProduct_mulSingle [∀ i, T2Space (G i)] (i 
   Function.LeftInverse.isClosedEmbedding (f := fun x : Πʳ j, [G j, B j] ↦ x i)
     (RestrictedProduct.mulSingle_eq_same B i) (RestrictedProduct.continuous_eval i)
     (continuous_restrictedProduct_mulSingle B i)
+
+/-- **Factors in the reference sets, inserted at single indices, tend to `1` along the cofinite
+filter.** For `x i ∈ B i`, the element `RestrictedProduct.mulSingle B i (x i)`, equal to `x i` at
+`i` and to `1` elsewhere, tends to `1` as `i` leaves every finite set. -/
+@[to_additive
+  /-- **Factors in the reference sets, inserted at single indices, tend to `0` along the cofinite
+  filter.** For `x i ∈ B i`, the element `RestrictedProduct.single B i (x i)`, equal to `x i` at
+  `i` and to `0` elsewhere, tends to `0` as `i` leaves every finite set. -/]
+theorem tendsto_restrictedProduct_mulSingle_cofinite {x : ∀ i, G i} (hx : ∀ i, x i ∈ B i) :
+    Tendsto (fun i ↦ RestrictedProduct.mulSingle B i (x i)) cofinite (𝓝 1) := by
+  -- the inclusion of `∏ i, B i` is continuous, and carries `Pi.mulSingle i (x i)` to the point
+  -- `RestrictedProduct.mulSingle B i (x i)`
+  have hc := (RestrictedProduct.isEmbedding_structureMap (R := G)
+    (A := fun i ↦ (B i : Set (G i))) (𝓕 := cofinite)).continuous
+  refine ((hc.tendsto 1).comp (tendsto_mulSingle_cofinite fun i ↦ (⟨x i, hx i⟩ : B i))).congr
+    fun i ↦ ?_
+  ext j
+  rcases eq_or_ne j i with rfl | hj
+  · simp [RestrictedProduct.structureMap_apply]
+  · simp [RestrictedProduct.structureMap_apply, Pi.mulSingle_eq_of_ne hj,
+      RestrictedProduct.mulSingle_eq_of_ne _ _ hj]
 
 end
 

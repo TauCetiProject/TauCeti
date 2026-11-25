@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Operator.Basic
@@ -19,8 +20,10 @@ For sequences on a Banach space the bound follows automatically from Banach–St
 
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
-passes through inner products. The closedness statement uses Mathlib's
-`PointwiseConvergenceCLM` copy, leaving the norm topology on continuous linear maps unchanged.
+passes through inner products. Positivity also passes to strong limits, on any real or complex
+inner product space (`ContinuousLinearMap.IsPositive.of_tendsto_pointwise`). The closedness
+statement uses Mathlib's `PointwiseConvergenceCLM` copy, leaving the norm topology on continuous
+linear maps unchanged.
 
 For normal operators with a normal strong limit, the adjoints also converge strongly
 (`ContinuousLinearMap.tendsto_adjoint_apply_of_isStarNormal`).
@@ -124,6 +127,26 @@ theorem tendsto_adjoint_apply_of_isStarNormal {α : Type*} {l : Filter α}
       (tendsto_const_nhds (x := ‖(T₀†) y‖ ^ 2))
   rw [h0] at hlim
   simpa [Real.sqrt_sq (norm_nonneg _)] using (hlim.congr' hsq).sqrt
+
+end ContinuousLinearMap
+
+/-! ### Strong limits of positive operators -/
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A strong limit of positive operators is positive. -/
+theorem IsPositive.of_tendsto_pointwise {l : Filter ι} [l.NeBot]
+    {T : ι → E →L[𝕜] E} {T₀ : E →L[𝕜] E} (hT : ∀ᶠ i in l, (T i).IsPositive)
+    (hlim : ∀ x, Tendsto (fun i => T i x) l (𝓝 (T₀ x))) : T₀.IsPositive := by
+  refine ⟨fun x y => ?_, fun x => ?_⟩
+  · exact tendsto_nhds_unique
+      (((hlim x).inner tendsto_const_nhds).congr' (hT.mono fun i hi => hi.isSymmetric x y))
+      (tendsto_const_nhds.inner (hlim y))
+  · rw [reApplyInnerSelf_apply]
+    exact ge_of_tendsto ((RCLike.continuous_re.tendsto _).comp
+      ((hlim x).inner tendsto_const_nhds)) (hT.mono fun i hi => hi.re_inner_nonneg_left x)
 
 end ContinuousLinearMap
 
