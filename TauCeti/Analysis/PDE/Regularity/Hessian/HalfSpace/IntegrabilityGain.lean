@@ -14,7 +14,6 @@ import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
