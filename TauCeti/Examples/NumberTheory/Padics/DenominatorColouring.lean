@@ -58,9 +58,8 @@ example (π : ℚ ≃o ℚ) (hπ : ∀ r, ν (π r) = Equiv.swap 0 1 (ν r)) : �
   rw [hπ, ν_eq_of_den_eq (k := 1) (m := 1) (by decide +kernel) (by decide), Equiv.swap_apply_right]
 
 -- The coloured Cantor theorem applies to the transposition.
-example : ∃ π : ℚ ≃o ℚ, ∀ r, ν (π r) = Equiv.swap 0 1 (ν r) := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  exact Rat.exists_orderIso_multiplicity_den_eq _
+example : ∃ π : ℚ ≃o ℚ, ∀ r, ν (π r) = Equiv.swap 0 1 (ν r) :=
+  Rat.exists_orderIso_multiplicity_den_eq _
 
 /-! ### Density of the colour classes is needed -/
 
@@ -69,10 +68,8 @@ example : ∃ π : ℚ ≃o ℚ, ∀ r, ν (π r) = Equiv.swap 0 1 (ν r) := by
 example : ¬ ∃ π : ℚ ≃o ℚ, ∀ r, (if π r < 0 then 0 else 1) = Equiv.swap 0 1
     (if r < 0 then 0 else 1 : ℕ) := by
   rintro ⟨π, hπ⟩
-  have h₁ := hπ (-1)
-  have h₀ := hπ 0
-  by_cases hn : π (-1) < 0 <;> by_cases hz : π 0 < 0 <;>
-    simp_all [Equiv.swap_apply_left, Equiv.swap_apply_right]
-  linarith [π.lt_iff_lt.2 (show (-1 : ℚ) < 0 by norm_num)]
+  have h₁ : ¬ π (-1) < 0 := by simpa using hπ (-1)
+  have h₀ : π 0 < 0 := by simpa using hπ 0
+  exact h₁ (lt_trans (π.lt_iff_lt.2 (by norm_num)) h₀)
 
 end TauCeti.Examples.DenominatorColouring
