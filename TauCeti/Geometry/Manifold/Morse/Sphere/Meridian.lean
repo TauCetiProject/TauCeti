@@ -295,8 +295,8 @@ private theorem antitone_comp_of_isMIntegralCurve
     Antitone ((φ ∘ sphereHeight v) ∘ γ) :=
   hγ.antitone_comp (fun _ ↦ (hφ.comp_contMDiff (contMDiff_sphereHeight v)).mdifferentiable
       two_ne_zero _) fun t ↦ by
-    simp only [Pi.neg_apply, map_neg, mvfderiv_apply_mgradient, neg_nonpos]
-    exact real_inner_self_nonneg
+    rw [Pi.neg_apply, mvfderiv_apply_neg_mgradient, neg_nonpos]
+    positivity
 
 /-- A gradient trajectory of `φ ∘ h` through a regular point never reaches a critical point. -/
 private theorem notMem_criticalPoints_of_isMIntegralCurve
