@@ -54,14 +54,18 @@ theorem exists_algEquiv_apply_eq_of_isAlgebraic (K : IntermediateField F Ω)
   -- Extend the automorphism of `A` to `Ω`.
   obtain ⟨τ, hτ⟩ := AlgEquiv.exists_algEquiv_apply_algebraMap (R := A) (Ω := Ω) (K := F) e
   refine ⟨τ, fun x ↦ ?_⟩
+  -- Mathlib has no apply lemma for `restrictAlgEquiv`: it is the identity on underlying
+  -- elements of `Ω` by definition.
   have hx : restrictAlgEquiv hKA x =
       ⟨⟨x, hKA x.property⟩, (mem_restrict hKA _).mpr x.property⟩ :=
     rfl
+  -- `e` is `ψ` with codomain restricted to `A`, so it agrees with `ψ` after the inclusion of `A`.
+  have he (a : A) : (e a : Ω) = ψ a := rfl
   have := hτ ⟨x, hKA x.property⟩
   have h2 := AlgHom.congr_fun hψ (restrictAlgEquiv hKA x)
   simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply] at h2
   rw [← h2, hx]
-  exact this
+  simpa [he] using this
 
 /-- **Ring embeddings extend to automorphisms.** In an algebraically closed field `Ω` of
 characteristic zero, a ring homomorphism into `Ω` of a subfield `K` algebraic over `ℚ`, such as a
