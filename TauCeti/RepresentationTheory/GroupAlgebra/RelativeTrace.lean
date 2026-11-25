@@ -154,10 +154,10 @@ theorem conjRepresentation_apply_eq_mul (g : G) (x : MonoidAlgebra R G) :
   ext h
   simp [of_apply, coeff_single_mul_apply, coeff_mul_single_apply, mul_assoc]
 
-/-- Summing the conjugates `g⁻¹ x g` over a finite group gives the sum of the conjugates
-`g x g⁻¹`, reindexed by `g ↦ g⁻¹`. -/
-theorem sum_of_inv_mul_mul_of_eq_sum_conjRepresentation [Fintype G] (x : MonoidAlgebra R G) :
-    ∑ g : G, of R G g⁻¹ * x * of R G g = ∑ g : G, conjRepresentation R G g x := by
+/-- Summing the conjugates `g x g⁻¹` over a finite group gives the sum of the conjugates
+`g⁻¹ x g`, reindexed by `g ↦ g⁻¹`. -/
+theorem sum_conjRepresentation_eq_sum_inv_mul_mul [Fintype G] (x : MonoidAlgebra R G) :
+    ∑ g : G, conjRepresentation R G g x = ∑ g : G, of R G g⁻¹ * x * of R G g := by
   refine Fintype.sum_equiv (Equiv.inv G) _ _ fun g => ?_
   rw [conjRepresentation_apply_eq_mul, Equiv.inv_apply, inv_inv]
 

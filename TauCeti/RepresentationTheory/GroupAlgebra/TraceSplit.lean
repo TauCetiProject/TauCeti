@@ -30,10 +30,10 @@ hypothesis passes to submodules, so over a field `k` every submodule of `V` has 
   a `k`-linear map whose sum of conjugates is the identity.
 * `TauCeti.moduleProjective_of_sumOfConjugates_eq_id`: such a module, projective over `k`, is
   projective over `k[G]`.
-* `TauCeti.sumOfConjugates_toLinearMap_apply`: the sum of conjugates of multiplication by `a` is
-  multiplication by `∑_g g a g⁻¹`.
-* `TauCeti.isSemisimpleModule_of_forall_sum_conj_smul_eq`: over a field, a module on which a
-  trace `∑_g g a g⁻¹` from `1` acts as the identity is semisimple.
+* `TauCeti.sumOfConjugates_distribSMul_toLinearMap_apply`: the sum of conjugates of
+  multiplication by `a` is multiplication by `∑_g g a g⁻¹`.
+* `TauCeti.isSemisimpleModule_of_forall_sum_conjRepresentation_smul_eq_self`: over a field, a
+  module on which a trace `∑_g g a g⁻¹` from `1` acts as the identity is semisimple.
 
 ## References
 
@@ -94,11 +94,10 @@ theorem moduleProjective_of_sumOfConjugates_eq_id [Module.Projective k V]
 
 /-- The sum of the conjugates `∑_g g⁻¹ a (g ·)` of multiplication by `a ∈ k[G]` is multiplication
 by the trace `∑_g g a g⁻¹` from the trivial subgroup. -/
-theorem sumOfConjugates_toLinearMap_apply (a : MonoidAlgebra k G) (v : V) :
+theorem sumOfConjugates_distribSMul_toLinearMap_apply (a : MonoidAlgebra k G) (v : V) :
     (DistribSMul.toLinearMap k V a).sumOfConjugates G v =
       (∑ g : G, conjRepresentation k G g a) • v := by
-  rw [LinearMap.sumOfConjugates_apply, ← sum_of_inv_mul_mul_of_eq_sum_conjRepresentation,
-    Finset.sum_smul]
+  rw [LinearMap.sumOfConjugates_apply, sum_conjRepresentation_eq_sum_inv_mul_mul, Finset.sum_smul]
   refine Finset.sum_congr rfl fun g _ => ?_
   rw [LinearMap.conjugate_apply, DistribSMul.toLinearMap_apply, of_apply, of_apply, mul_smul,
     mul_smul]
@@ -119,7 +118,7 @@ an element `a` of `k[G]` rather than for an arbitrary `k`-linear `φ`, so that t
 passes to submodules. For a general `φ` it fails: `φ(x) = x(1) • 1` on `k[G]` has
 `∑_g g⁻¹ φ(g ·) = id`, but `k[G]` is not semisimple when the characteristic of `k` divides
 `|G|`. -/
-theorem isSemisimpleModule_of_forall_sum_conj_smul_eq
+theorem isSemisimpleModule_of_forall_sum_conjRepresentation_smul_eq_self
     (ha : ∀ v : V, (∑ g : G, conjRepresentation k G g a) • v = v) :
     IsSemisimpleModule (MonoidAlgebra k G) V where
   exists_isCompl N := by
@@ -127,7 +126,7 @@ theorem isSemisimpleModule_of_forall_sum_conj_smul_eq
       (LinearMap.ker_eq_bot.2 Subtype.val_injective)
     obtain ⟨r, hr⟩ := exists_leftInverse_of_sumOfConjugates_eq_id
       (LinearMap.ext fun v : N => by
-        rw [sumOfConjugates_toLinearMap_apply, LinearMap.id_apply]
+        rw [sumOfConjugates_distribSMul_toLinearMap_apply, LinearMap.id_apply]
         exact Subtype.ext (ha v.val))
       N.subtype π fun v => LinearMap.congr_fun hπ v
     exact ⟨LinearMap.ker r, LinearMap.isCompl_of_proj hr⟩

@@ -84,7 +84,8 @@ theorem moduleProjective_of_isDefectGroup_bot (hb : IsBlockIdempotent b)
   have := Fintype.ofFinite G
   obtain ⟨a, ha⟩ := hb.isDefectGroup_bot_iff.1 hD
   exact moduleProjective_of_sumOfConjugates_eq_id (φ := DistribSMul.toLinearMap R V a)
-    (LinearMap.ext fun v => by rw [sumOfConjugates_toLinearMap_apply, ha, hV, LinearMap.id_apply])
+    (LinearMap.ext fun v => by
+      rw [sumOfConjugates_distribSMul_toLinearMap_apply, ha, hV, LinearMap.id_apply])
 
 end Projective
 
@@ -102,7 +103,7 @@ theorem isSemisimpleModule_of_isDefectGroup_bot (hb : IsBlockIdempotent b)
     IsSemisimpleModule (MonoidAlgebra k G) V := by
   have := Fintype.ofFinite G
   obtain ⟨a, ha⟩ := hb.isDefectGroup_bot_iff.1 hD
-  exact isSemisimpleModule_of_forall_sum_conj_smul_eq (a := a) (by rwa [ha])
+  exact isSemisimpleModule_of_forall_sum_conjRepresentation_smul_eq_self (a := a) (by rwa [ha])
 
 /-- **A block of defect zero is semisimple.** If `1` is a defect group of a block idempotent `e`
 of `k[G]`, `k` a field of characteristic `p`, then the block `k[G] e = e k[G]` is a semisimple
