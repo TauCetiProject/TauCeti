@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
@@ -17,16 +16,13 @@ For a basis `b` of `M`, the product basis `Basis.piTensorProduct fun _ ↦ b` of
 tensor product `⨂[R] _ : ι, M` is indexed by words `w : ι → κ`. Reindexing the factors along an
 equivalence `e : ι ≃ ι₂` reindexes these coordinates: the coordinate of `reindex e t` at `w` is the
 coordinate of `t` at `w ∘ e`. Counting the product basis of a tensor product of finite free modules
-shows that its dimension is the product of their dimensions; in particular, over a field, tensoring
-with `k` copies of `K × K` multiplies the dimension by `2 ^ k`.
+shows that its dimension is the product of their dimensions.
 
 ## Main declarations
 
 * `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its
   coordinates in a product basis.
 * `Module.finrank_piTensorProduct`: the dimension of `⨂[R] i, M i` is `∏ i, finrank R (M i)`.
-* `Module.finrank_tensorProduct_piTensorProduct_prod`: the dimension of
-  `V ⊗[K] ⨂[K] _ : Fin k, K × K` is `finrank K V * 2 ^ k`.
 -/
 
 public section
@@ -68,9 +64,3 @@ theorem Module.finrank_piTensorProduct {ι R : Type*} [Fintype ι] [CommSemiring
   rw [finrank_eq_card_basis (Basis.piTensorProduct fun i ↦ Module.Free.chooseBasis R (M i)),
     Fintype.card_pi]
   simp [finrank_eq_card_chooseBasisIndex]
-
-/-- The dimension of `V ⊗ W^{⊗ k}` with `W = K × K` is `dim V * 2 ^ k`. -/
-theorem Module.finrank_tensorProduct_piTensorProduct_prod {K V : Type*} [Field K] [AddCommGroup V]
-    [Module K V] (k : ℕ) :
-    finrank K (V ⊗[K] (⨂[K] _ : Fin k, K × K)) = finrank K V * 2 ^ k := by
-  simp [finrank_tensorProduct, finrank_piTensorProduct]

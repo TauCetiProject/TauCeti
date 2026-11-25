@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
-public import TauCeti.LinearAlgebra.TensorProduct.Kernel
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.LinearMap.RestrictScalars

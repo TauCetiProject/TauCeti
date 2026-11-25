@@ -70,6 +70,8 @@ space diagram with `p = 1`, of class `[𝔽, 1]`, which differs from that of `S�
 
 ## Main results
 
+* `TauCeti.finrank_tensorProduct_piTensorProduct_prod`: `V ⊗ W^{⊗ k}` has dimension
+  `dim V * 2 ^ k`.
 * `TauCeti.stableClass_tensorProduct_prod`: the generating move `(V ⊗ W, b + 1) ~ (V, b)`.
 * `TauCeti.stableClass_tensorProduct_piTensorProduct`: its `k`-fold iterate
   `(V ⊗ W^{⊗ k}, b + k) ~ (V, b)`.
@@ -131,6 +133,11 @@ section Field
 
 variable (K : Type*) [Field K] (V : Type*) [AddCommGroup V] [Module K V]
   {V' : Type*} [AddCommGroup V'] [Module K V']
+
+/-- The dimension of `V ⊗ W^{⊗ k}` with `W = K × K` is `dim V * 2 ^ k`. -/
+theorem finrank_tensorProduct_piTensorProduct_prod (k : ℕ) :
+    finrank K (V ⊗[K] (⨂[K] _ : Fin k, K × K)) = finrank K V * 2 ^ k := by
+  simp [finrank_tensorProduct, finrank_piTensorProduct]
 
 /-- The **generating move** `(V ⊗ W, b + 1) ~ (V, b)` with `W = K × K`. -/
 @[simp]
