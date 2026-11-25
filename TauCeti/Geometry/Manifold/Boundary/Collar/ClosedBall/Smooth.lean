@@ -22,9 +22,12 @@ boundary whose boundary is the unit sphere (`TauCeti.boundary_closedBall`). This
 `(x, t) ↦ (1 - t) x`, for `x` in the boundary sphere and `t ∈ [0, 1)`.
 
 Its image is the punctured closed ball `0 < ‖z‖ ≤ 1`, open in the ball
-(`TauCeti.SmoothCollar.range_closedBall`), and its inverse there is `z ↦ (z / ‖z‖, 1 - ‖z‖)`.
+(`TauCeti.SmoothCollar.range_closedBall`, `TauCeti.SmoothCollar.opensRange_closedBall`), and its
+inverse there is `z ↦ (z / ‖z‖, 1 - ‖z‖)`
+(`TauCeti.SmoothCollar.coe_diffeomorphOpensRange_closedBall_symm_apply_fst`,
+`TauCeti.SmoothCollar.diffeomorphOpensRange_closedBall_symm_apply_snd_coe_apply`).
 For the closed unit disc of `ℂ` this is the polar collar `(θ, t) ↦ (1 - t) e^{iθ}`
-(`TauCeti.SmoothCollar.closedBall_complex_polar`).
+(`TauCeti.SmoothCollar.exists_closedBall_complex_apply_eq_mul_exp`).
 -/
 
 public section
@@ -52,32 +55,34 @@ private theorem normal_mem_Ico (t : D) : (t : EuclideanHalfSpace 1).val 0 ∈ Ic
 private theorem norm_boundary (x : B) : ‖((x : closedBall (0 : E) 1) : E)‖ = 1 :=
   isBoundaryPoint_closedBall_iff.1 x.property
 
+/-- The point `(1 - t) x` has norm `1 - t`. -/
+private theorem norm_sub_smul_boundary (x : B) (t : D) :
+    ‖(1 - (t : EuclideanHalfSpace 1).val 0) • ((x : closedBall (0 : E) 1) : E)‖ =
+      1 - (t : EuclideanHalfSpace 1).val 0 := by
+  obtain ⟨-, h1⟩ := normal_mem_Ico t
+  rw [norm_smul, norm_boundary, mul_one, Real.norm_eq_abs, abs_of_pos (by linarith)]
+
 private theorem polar_mem_closedBall (x : B) (t : D) :
     (1 - (t : EuclideanHalfSpace 1).val 0) • ((x : closedBall (0 : E) 1) : E) ∈
       closedBall (0 : E) 1 := by
-  obtain ⟨h0, h1⟩ := normal_mem_Ico t
-  rw [mem_closedBall_zero_iff, norm_smul, norm_boundary, mul_one, Real.norm_eq_abs,
-    abs_of_pos (by linarith)]
-  linarith
+  rw [mem_closedBall_zero_iff, norm_sub_smul_boundary]
+  linarith [(normal_mem_Ico t).1]
 
 /-- The underlying map of the polar collar of the closed unit ball: `(x, t) ↦ (1 - t) x`. -/
-def closedBallCollarFun (p : B × D) : closedBall (0 : E) 1 :=
+private def closedBallCollarFun (p : B × D) : closedBall (0 : E) 1 :=
   ⟨(1 - (p.2 : EuclideanHalfSpace 1).val 0) • ((p.1 : closedBall (0 : E) 1) : E),
     polar_mem_closedBall p.1 p.2⟩
 
 /-- The polar collar reads as `(1 - t) x` in `E`. -/
-@[simp]
-theorem coe_closedBallCollarFun (p : B × D) :
+private theorem coe_closedBallCollarFun (p : B × D) :
     (closedBallCollarFun p : E) =
       (1 - (p.2 : EuclideanHalfSpace 1).val 0) • ((p.1 : closedBall (0 : E) 1) : E) :=
   (rfl)
 
 /-- The polar collar has norm `1 - t`. -/
 private theorem norm_closedBallCollarFun (p : B × D) :
-    ‖(closedBallCollarFun p : E)‖ = 1 - (p.2 : EuclideanHalfSpace 1).val 0 := by
-  obtain ⟨-, h1⟩ := normal_mem_Ico p.2
-  rw [coe_closedBallCollarFun, norm_smul, norm_boundary, mul_one, Real.norm_eq_abs,
-    abs_of_pos (by linarith)]
+    ‖(closedBallCollarFun p : E)‖ = 1 - (p.2 : EuclideanHalfSpace 1).val 0 :=
+  norm_sub_smul_boundary p.1 p.2
 
 /-- The polar collar misses the centre of the ball. -/
 private theorem closedBallCollarFun_ne_zero (p : B × D) : (closedBallCollarFun p : E) ≠ 0 := by
@@ -88,7 +93,7 @@ private theorem closedBallCollarFun_ne_zero (p : B × D) : (closedBallCollarFun 
   linarith
 
 /-- The polar collar is analytic. -/
-theorem contMDiff_closedBallCollarFun {k : ℕ∞ω} :
+private theorem contMDiff_closedBallCollarFun {k : ℕ∞ω} :
     ContMDiff (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
       (closedBallCollarFun (n := n) (E := E)) := by
   have hx : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) k
@@ -106,11 +111,6 @@ theorem contMDiff_closedBallCollarFun {k : ℕ∞ω} :
 
 /-! ### The inverse on the punctured ball -/
 
-/-- The boundary sphere of the closed unit ball is nonempty. -/
-private theorem nonempty_boundary : Nonempty B :=
-  haveI : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
-  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype.map sphereDiffeomorphBoundaryClosedBall
-
 omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] in
 /-- The radial coordinate `1 - ‖z‖` of a nonzero point of the closed ball lies in `[0, 1)`. -/
 private theorem normalRay_mem {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
@@ -121,7 +121,7 @@ private theorem normalRay_mem {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
 open Classical in
 /-- The inverse of the polar collar on the punctured closed ball: `z ↦ (z / ‖z‖, 1 - ‖z‖)`. -/
 private def closedBallCollarInv (z : closedBall (0 : E) 1) : B × D :=
-  if hz : (z : E) = 0 then ((nonempty_boundary (n := n) (E := E)).some, normalIioOpensZero one_pos)
+  if hz : (z : E) = 0 then (Classical.arbitrary B, normalIioOpensZero one_pos)
   else (sphereDiffeomorphBoundaryClosedBall (ballCollarInv z hz).1, ⟨_, normalRay_mem hz⟩)
 
 /-- Off the centre, the inverse is the sphere point of `TauCeti.ballCollarInv` and the normal
@@ -151,19 +151,6 @@ private theorem contMDiff_closedBallCollarInv {k : ℕ∞ω} :
   have hy : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, E) k
       (fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) :=
     contMDiff_subtypeVal_closedBall.comp contMDiff_subtypeVal
-  have hcoord : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
-      (fun y : puncturedClosedBall E ↦
-        (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
-          (1 - ‖((y : closedBall (0 : E) 1) : E)‖)) := fun y ↦
-    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffAt.comp y
-      (contMDiffAt_const.sub
-        ((contDiffAt_norm ℝ (mem_puncturedClosedBall.1 y.property)).comp_contMDiffAt
-          (f := fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) hy.contMDiffAt))
-  have hrange (y : puncturedClosedBall E) :
-      (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
-        (1 - ‖((y : closedBall (0 : E) 1) : E)‖) ∈ range (𝓡∂ 1) := by
-    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
-    simpa using mem_closedBall_zero_iff.1 y.val.property
   have heq : (fun y : puncturedClosedBall E ↦
       closedBallCollarInv (n := n) (E := E) (y : closedBall (0 : E) 1)) =
       fun y : puncturedClosedBall E ↦
@@ -175,8 +162,10 @@ private theorem contMDiff_closedBallCollarInv {k : ℕ∞ω} :
   refine ContMDiff.prodMk
     (((sphereDiffeomorphBoundaryClosedBall (n := n) (E := E)).contMDiff.of_le le_top).comp
       (contMDiff_ballCollarInv (n := n)).fst) ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).1 ?_)
-  exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun y ↦
-    normalRay_eq_symm _
+  exact ContMDiff.normalRay (fun y ↦ contMDiffAt_const.sub
+      ((contDiffAt_norm ℝ (mem_puncturedClosedBall.1 y.property)).comp_contMDiffAt
+        (f := fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) hy.contMDiffAt))
+    fun y ↦ sub_nonneg.2 (mem_closedBall_zero_iff.1 y.val.property)
 
 /-- The polar collar as a partial diffeomorphism onto the punctured closed ball. -/
 private def closedBallCollarPartialDiffeomorph (k : ℕ∞ω) :
@@ -213,24 +202,24 @@ private def closedBallCollarPartialDiffeomorph (k : ℕ∞ω) :
 /-! ### The polar collar -/
 
 /-- The polar collar is a local diffeomorphism. -/
-theorem isLocalDiffeomorph_closedBallCollarFun {k : ℕ∞ω} :
+private theorem isLocalDiffeomorph_closedBallCollarFun {k : ℕ∞ω} :
     IsLocalDiffeomorph (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
       (closedBallCollarFun (n := n) (E := E)) := fun p ↦
   isLocalDiffeomorphAt_of_eqOn (Φ := closedBallCollarPartialDiffeomorph k) (mem_univ p)
     fun _ _ ↦ rfl
 
 /-- The polar collar is injective. -/
-theorem injective_closedBallCollarFun : Injective (closedBallCollarFun (n := n) (E := E)) :=
+private theorem injective_closedBallCollarFun : Injective (closedBallCollarFun (n := n) (E := E)) :=
   fun p q h ↦ by
     rw [← (closedBallCollarPartialDiffeomorph (n := n) (E := E) ⊤).left_inv (mem_univ p),
       ← (closedBallCollarPartialDiffeomorph (n := n) (E := E) ⊤).left_inv (mem_univ q)]
     exact congrArg _ h
 
 /-- The polar collar sends the zero slice to the boundary sphere. -/
-theorem closedBallCollarFun_zero (x : B) :
+private theorem closedBallCollarFun_zero (x : B) :
     closedBallCollarFun (x, normalIioOpensZero one_pos) = x := by
   apply Subtype.ext
-  simp
+  simp [coe_closedBallCollarFun]
 
 variable (n E) in
 /-- The **polar collar** of the closed unit ball: the smooth collar `(x, t) ↦ (1 - t) x`, for `x`
@@ -258,6 +247,41 @@ theorem SmoothCollar.range_closedBall {k : ℕ∞ω} :
   rintro ⟨p, rfl⟩
   exact mem_puncturedClosedBall.2 (closedBallCollarFun_ne_zero p)
 
+/-- The image of the polar collar of the closed unit ball, as an open subset of the ball, is the
+punctured closed ball. -/
+theorem SmoothCollar.opensRange_closedBall {k : ℕ∞ω} :
+    (SmoothCollar.closedBall n E k).opensRange = puncturedClosedBall E :=
+  SetLike.coe_injective ((coe_opensRange _).trans range_closedBall)
+
+/-- The polar collar of the closed unit ball sends depth `t` to norm `1 - t`. -/
+theorem SmoothCollar.norm_closedBall_apply {k : ℕ∞ω} (p : B × D) :
+    ‖(SmoothCollar.closedBall n E k p : E)‖ = 1 - (p.2 : EuclideanHalfSpace 1).val 0 := by
+  rw [SmoothCollar.coe_closedBall_apply, norm_sub_smul_boundary]
+
+/-- The inverse of the polar collar of the closed unit ball sends `z` to the boundary point
+`z / ‖z‖`. -/
+theorem SmoothCollar.coe_diffeomorphOpensRange_closedBall_symm_apply_fst {k : ℕ∞ω}
+    (z : (SmoothCollar.closedBall n E k).opensRange) :
+    ((((SmoothCollar.closedBall n E k).diffeomorphOpensRange.symm z).1 :
+        Metric.closedBall (0 : E) 1) : E) =
+      ‖((z : Metric.closedBall (0 : E) 1) : E)‖⁻¹ • ((z : Metric.closedBall (0 : E) 1) : E) := by
+  obtain ⟨p, rfl⟩ : ∃ p, (SmoothCollar.closedBall n E k).diffeomorphOpensRange p = z :=
+    (SmoothCollar.closedBall n E k).diffeomorphOpensRange.surjective z
+  obtain ⟨-, h1⟩ := normal_mem_Ico p.2
+  rw [Diffeomorph.symm_apply_apply, SmoothCollar.coe_diffeomorphOpensRange_apply,
+    SmoothCollar.norm_closedBall_apply, SmoothCollar.coe_closedBall_apply, smul_smul,
+    inv_mul_cancel₀ (by linarith), one_smul]
+
+/-- The inverse of the polar collar of the closed unit ball sends `z` to depth `1 - ‖z‖`. -/
+theorem SmoothCollar.diffeomorphOpensRange_closedBall_symm_apply_snd_coe_apply {k : ℕ∞ω}
+    (z : (SmoothCollar.closedBall n E k).opensRange) :
+    (((SmoothCollar.closedBall n E k).diffeomorphOpensRange.symm z).2 :
+        EuclideanHalfSpace 1).val 0 = 1 - ‖((z : Metric.closedBall (0 : E) 1) : E)‖ := by
+  obtain ⟨p, rfl⟩ : ∃ p, (SmoothCollar.closedBall n E k).diffeomorphOpensRange p = z :=
+    (SmoothCollar.closedBall n E k).diffeomorphOpensRange.surjective z
+  rw [Diffeomorph.symm_apply_apply, SmoothCollar.coe_diffeomorphOpensRange_apply,
+    SmoothCollar.norm_closedBall_apply, sub_sub_cancel]
+
 /-! ### The closed unit disc -/
 
 section Disc
@@ -267,7 +291,7 @@ attribute [local instance] finrank_real_complex_fact'
 /-- **The polar collar of the closed unit disc** is `(θ, t) ↦ (1 - t) e^{iθ}`: for every angle
 `θ` and depth `t ∈ [0, 1)`, the boundary point `e^{iθ}` at depth `t` is sent to
 `(1 - t) e^{iθ}`. -/
-theorem SmoothCollar.closedBall_complex_polar {k : ℕ∞ω} (θ : ℝ) (t : D) :
+theorem SmoothCollar.exists_closedBall_complex_apply_eq_mul_exp {k : ℕ∞ω} (θ : ℝ) (t : D) :
     ∃ x : ModelWithCorners.boundary (I := 𝓡∂ (1 + 1)) (Metric.closedBall (0 : ℂ) 1),
       ((x : Metric.closedBall (0 : ℂ) 1) : ℂ) = Complex.exp (θ * Complex.I) ∧
       (SmoothCollar.closedBall 1 ℂ k (x, t) : ℂ) =
@@ -276,9 +300,8 @@ theorem SmoothCollar.closedBall_complex_polar {k : ℕ∞ω} (θ : ℝ) (t : D) 
       Complex.exp (θ * Complex.I) := by
     rw [circleHomeomorphBoundaryClosedBall_apply_coe, Circle.coe_exp]
   refine ⟨circleHomeomorphBoundaryClosedBall (Circle.exp θ), hx, ?_⟩
-  rw [SmoothCollar.coe_closedBall_apply, Complex.real_smul, hx]
-  push_cast
-  rfl
+  rw [SmoothCollar.coe_closedBall_apply, Complex.real_smul, hx, Complex.ofReal_sub,
+    Complex.ofReal_one]
 
 end Disc
 
