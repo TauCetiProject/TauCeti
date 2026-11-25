@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
-public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.HomogeneousLocalization
 
 /-!
 # Closed points of projective space
@@ -21,18 +21,12 @@ a nonzero vector of `V`, so the closed points of the projective space of lines i
 The point is read on the standard chart `D₊(φ)` of a linear coordinate `φ` not vanishing at it.
 This chart is the spectrum of a finitely generated `k`-algebra, so by the Nullstellensatz the
 point is the kernel of a `k`-algebra homomorphism `ψ` on it
-(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`, and
-`ψ` evaluates every homogeneous fraction `a / φⁿ` as `a` at this functional.
+(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`
+(`AlgHom.chartFunctional`), and `ψ` evaluates every homogeneous fraction `a / φⁿ` as `a` at this
+functional (`AlgHom.apply_awayMk_eq_lift_chartFunctional`).
 
 ## Main declarations
 
-* `AlgHom.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
-  linear coordinate `φ` evaluates `a / φⁿ` as `a` at any linear map agreeing with
-  `c ↦ ψ (c / φ)`.
-* `AlgHom.chartFunctional`: the functional `c ↦ ψ (c / φ)` of a `k`-algebra homomorphism `ψ` on
-  the chart of a linear coordinate `φ`.
-* `AlgHom.apply_awayMk_eq_lift_chartFunctional`: such a `ψ` evaluates `a / φⁿ` as `a` at its
-  functional.
 * `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
   point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
 
@@ -45,91 +39,6 @@ point is the kernel of a `k`-algebra homomorphism `ψ` on it
 public section
 
 open CategoryTheory AlgebraicGeometry HomogeneousLocalization
-
-namespace TauCeti.SymmetricAlgebra
-
-universe u
-
-section Chart
-
-variable {k N A : Type u} [CommRing k] [AddCommMonoid N] [Module k N] [CommRing A] [Algebra k A]
-
-/-- On the standard chart `D₊(φ)` of a linear coordinate `φ`, a `k`-algebra homomorphism `ψ`
-evaluates a homogeneous fraction `a / φⁿ` as the polynomial `a` evaluated at a linear map `v`
-that agrees with `c ↦ ψ (c / φ)` on linear coordinates. -/
-theorem _root_.AlgHom.apply_awayMk_eq_lift {φ : N}
-    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) (v : N →ₗ[k] A)
-    (hv : ∀ c, ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N c)
-      (by simp)) = v c)
-    {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :
-    ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) n a (by rwa [smul_eq_mul, mul_one])) =
-      SymmetricAlgebra.lift v a := by
-  have hφ := ι_mem_homogeneousSubmodule k N φ
-  induction ha using Submodule.pow_induction_on_left' with
-  | algebraMap r =>
-    have : Away.mk _ hφ 0 (algebraMap k _ r) (by simp) = algebraMap k (Away _ _) r := by
-      apply val_injective
-      rw [Away.val_mk, val_algebraMap,
-        IsScalarTower.algebraMap_apply k (SymmetricAlgebra k N) (Localization.Away _) r,
-        ← Localization.mk_one_eq_algebraMap]
-      exact congrArg _ (Subtype.ext (pow_zero _))
-    rw [this]
-    simp
-  | add a b i ha hb iha ihb =>
-    have : Away.mk _ hφ i (a + b) (by simpa using add_mem ha hb) =
-        Away.mk _ hφ i a (by simpa using ha) + Away.mk _ hφ i b (by simpa using hb) := by
-      apply val_injective
-      simp [Away.val_mk, Localization.add_mk_self]
-    rw [this, map_add, iha, ihb, map_add]
-  | mem_mul c hc i a ha iha =>
-    obtain ⟨c, rfl⟩ := hc
-    have hc : SymmetricAlgebra.ι k N c ∈ homogeneousSubmodule k N (1 • 1) := by simp
-    have ha' : a ∈ homogeneousSubmodule k N (i • 1) := by simpa using ha
-    have hca : SymmetricAlgebra.ι k N c * a ∈ homogeneousSubmodule k N ((i + 1) • 1) := by
-      simpa [add_comm] using SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule k N c) ha
-    have : Away.mk _ hφ (i + 1) _ hca = Away.mk _ hφ 1 _ hc * Away.mk _ hφ i a ha' := by
-      apply val_injective
-      simp [Away.val_mk, Localization.mk_mul, pow_succ']
-    rw [this, map_mul, iha, map_mul, SymmetricAlgebra.lift_ι_apply, hv]
-
-/-- The linear map `c ↦ ψ (c / φ)` of a `k`-algebra homomorphism `ψ` on the standard chart
-`D₊(φ)` of a linear coordinate `φ`. -/
-noncomputable def _root_.AlgHom.chartFunctional {φ : N}
-    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) : N →ₗ[k] A :=
-  ψ.toLinearMap ∘ₗ Away.mkLinearMap (ι_mem_homogeneousSubmodule k N φ) 1 ∘ₗ
-    (SymmetricAlgebra.ι k N).codRestrict (homogeneousSubmodule k N (1 • 1)) (fun c ↦ by simp)
-
-/-- The functional of `ψ` sends `c` to `ψ (c / φ)`. -/
-theorem _root_.AlgHom.chartFunctional_apply {φ : N}
-    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) (c : N) :
-    ψ.chartFunctional c =
-      ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N c) (by simp)) := by
-  simp [AlgHom.chartFunctional]
-
-/-- The functional of `ψ` takes the value `1` on the chart coordinate `φ`. -/
-@[simp]
-theorem _root_.AlgHom.chartFunctional_self {φ : N}
-    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) :
-    ψ.chartFunctional φ = 1 := by
-  have h1 : Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N φ)
-      (by simp) = 1 := by
-    apply val_injective
-    simp [Away.val_mk]
-  rw [ψ.chartFunctional_apply, h1, map_one]
-
-/-- On the standard chart `D₊(φ)` of a linear coordinate `φ`, a `k`-algebra homomorphism `ψ`
-evaluates a homogeneous fraction `a / φⁿ` as the polynomial `a` evaluated at its functional
-`c ↦ ψ (c / φ)`. -/
-theorem _root_.AlgHom.apply_awayMk_eq_lift_chartFunctional {φ : N}
-    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A)
-    {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :
-    ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) n a (by rwa [smul_eq_mul, mul_one])) =
-      SymmetricAlgebra.lift ψ.chartFunctional a :=
-  ψ.apply_awayMk_eq_lift _ (fun c ↦ (ψ.chartFunctional_apply c).symm) ha
-
-end Chart
-
-end TauCeti.SymmetricAlgebra
 
 namespace ProjectiveSpectrum
 

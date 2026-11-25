@@ -38,7 +38,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
   bounded map of test functions (which does not enlarge supports).
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
 * `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
-  disjoint sets add up to at most the local mass on their union.
+  disjoint sets add up to at most the local mass on their union, and
+  `Distribution.localMass_eq_iSup_ofReal_apply` drops the absolute value from its local mass.
 * `Distribution.mass_add_le`, `Distribution.mass_smul`: the triangle inequality and homogeneity.
 * `Distribution.lowerSemicontinuous_mass`: mass is lower semicontinuous for pointwise
   (weak) convergence; `Distribution.mass_le_liminf` is the corresponding `liminf` bound.
@@ -309,6 +310,25 @@ theorem localMass_add_localMass_le (T : 𝓕) (h : Disjoint U U') :
     _ ≤ localMass T (U ∪ U') := ENNReal.biSup_add_biSup_le' ⟨0, by simp, by simp⟩
         ⟨0, by simp, by simp⟩ key
 
+/-- For a real-valued linear map the absolute value in the local mass can be dropped: `-φ` is a
+test with the same support and bound as `φ`, so the local mass on `U` is the supremum of `T φ`
+over the tests `φ` supported in `U` with `‖φ x‖ ≤ 1`. -/
+theorem localMass_eq_iSup_ofReal_apply (T : 𝓕) (U : Set E) :
+    localMass T U = ⨆ (φ : 𝓓^{n}(Ω, F)) (_ : tsupport φ ⊆ U) (_ : ∀ x, ‖φ x‖ ≤ 1),
+      ENNReal.ofReal (T φ) := by
+  refine le_antisymm (localMass_le_iff.2 fun φ hφU hφ => ?_)
+    (iSup₂_le fun φ hφU => iSup_le fun hφ => ?_)
+  · rw [Real.eNorm_eq_ofReal_abs]
+    rcases le_total 0 (T φ) with h | h
+    · rw [abs_of_nonneg h]
+      exact le_iSup₂_of_le φ hφU (le_iSup_of_le hφ le_rfl)
+    · rw [abs_of_nonpos h, ← map_neg]
+      refine le_iSup₂_of_le (-φ) ?_ (le_iSup_of_le (fun x => ?_) le_rfl)
+      · simpa [tsupport_neg] using hφU
+      · simpa using hφ x
+  · exact (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+      ((Real.eNorm_eq_ofReal_abs _).symm.trans_le (enorm_le_localMass hφU hφ))
+
 end Real
 
 section Semicontinuity
@@ -428,9 +448,8 @@ The testing set `U` need not be open or measurable. -/
 theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :
     localMass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) U =
       localMass f (U ∩ (Ω' : Set E)) := by
-  have hcoe (ψ : 𝓓^{n}(Ω', F)) :
-      ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ := by
-    simp [TestFunction.monoCLM_apply, h]
+  have hcoe (ψ : 𝓓^{n}(Ω', F)) : ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ :=
+    TestFunction.coe_monoCLM_of_le le_rfl h ψ
   refine le_antisymm (localMass_le_iff.2 fun ψ hψU hψ => ?_)
     (localMass_le_iff.2 fun φ hφU hφ => ?_)
   · exact enorm_le_localMass (f := f)
@@ -495,8 +514,8 @@ theorem HasLocallyFiniteMass.comp_monoCLM {Ω' : Opens E} {m : ℕ∞} {f : 𝓓
   intro K hK hKΩ'
   obtain ⟨C, hC, hfC⟩ := hf K hK (hKΩ'.trans h.2)
   refine ⟨C, hC, fun φ hφ => ?_⟩
-  have hcoe : ⇑(TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = φ := by
-    simp [TestFunction.monoCLM_apply, h]
+  have hcoe : ⇑(TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = φ :=
+    TestFunction.coe_monoCLM_of_le h.1 h.2 φ
   simpa [hcoe] using hfC (TestFunction.monoCLM ℝ φ) (by rwa [hcoe])
 
 theorem hasLocallyFiniteMass_zero : HasLocallyFiniteMass (0 : 𝓓^{n}(Ω, F) → V) :=

@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Measure
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+public import Mathlib.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.Mass.Support
+import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 
 /-!
 # Mass of smooth multiples and contractions of currents
@@ -32,6 +35,10 @@ inner product space, the operator norm is the comass and satisfies `‖α ∧ ω
 (`ContinuousAlternatingMap.norm_alternatizeUncurryFin_smulRight_le`), removing the `(k + 1)` factor
 from all contraction and boundary mass bounds.
 
+When `f` vanishes on the support of such a current, `fT` and `f ∂T` vanish, so the Leibniz rule
+gives `T ⌞ df = 0`. In particular a current such that `T` and `∂T` have locally finite mass,
+supported in a hyperplane, is tangent to that hyperplane.
+
 ## Main declarations
 
 * `Distribution.localMass_comp_smulLeftCLM_le`, `Distribution.mass_comp_smulLeftCLM_le`: the mass
@@ -52,6 +59,11 @@ from all contraction and boundary mass bounds.
   `Distribution.mass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace`.
 * `Distribution.HasLocallyFiniteMass.comp_smulLeftCLM_comp_extDerivCLM`: if `T` and `∂T` have
   locally finite mass, so does `∂(fT)`.
+* `Distribution.HasLocallyFiniteMass.comp_oneFormWedgeCLM_eq_zero`: if `T` and `∂T` have locally
+  finite mass and `f` vanishes on the support of `T`, then `T ⌞ df = 0`.
+* `Distribution.HasLocallyFiniteMass.map_postcompCLM_compContinuousLinearMapCLM_id_sub_smulRight`:
+  such a current supported in a hyperplane `{l = c}` is unchanged by pulling its test forms back
+  along `id - l ⊗ e`; it is tangent to the hyperplane.
 
 ## References
 
@@ -196,6 +208,65 @@ theorem HasLocallyFiniteMass.comp_smulLeftCLM_comp_extDerivCLM (hT : HasLocallyF
   exact (hdT.comp_smulLeftCLM hf).sub (hT.comp_oneFormWedgeCLM _)
 
 end Boundary
+
+section Support
+
+variable {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+
+/-- **The contraction with the differential of a function vanishing on the support.** If a
+current `T` and its boundary `∂T` have locally finite mass and the smooth function `f` vanishes on
+the support of `T` in `Ω`, then `T ⌞ df = 0`. Indeed `fT = 0` and `f ∂T = 0`, since a current of
+locally finite mass only sees the values of a test form on its support, so the Leibniz rule
+`∂(fT) = f ∂T - T ⌞ df` leaves `T ⌞ df = 0`. -/
+theorem HasLocallyFiniteMass.comp_oneFormWedgeCLM_eq_zero (hT : HasLocallyFiniteMass T)
+    (hdT : HasLocallyFiniteMass (T ∘L extDerivCLM)) (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+    (hf0 : EqOn f 0 ((Ω : Set E) ∩ dsupport T)) :
+    T ∘L oneFormWedgeCLM (k := k) (contDiff_infty_iff_fderiv.1 hf).2 = 0 := by
+  -- `f ω` vanishes on the support of every functional supported in that of `T`.
+  have hfω {m : ℕ} {S : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) → ℝ} (hS : dsupport S ⊆ dsupport T)
+      (ω : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)) :
+      EqOn (smulLeftCLM hf ω) (0 : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)) ((Ω : Set E) ∩ dsupport S) :=
+    fun x hx ↦ by simp [hf0 ⟨hx.1, hS hx.2⟩]
+  have hfT : T ∘L smulLeftCLM hf = 0 := by
+    ext ω
+    simpa using hT.map_eq_map_of_eqOn_dsupport (hfω subset_rfl ω)
+  have hfdT : (T ∘L extDerivCLM) ∘L smulLeftCLM hf = 0 := by
+    ext ω
+    simpa using hdT.map_eq_map_of_eqOn_dsupport
+      (hfω (dsupport_comp_extDerivCLM_subset (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → ℝ)) ω)
+  have h := ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM T hf
+  rw [hfT, hfdT, ContinuousLinearMap.zero_comp, zero_sub, eq_comm, neg_eq_zero] at h
+  exact h
+
+/-- **Normal currents in a hyperplane are tangent to it.** Let `T` be a current such that `T` and
+`∂T` have locally finite mass, supported in `Ω` in the affine hyperplane `{l = c}`. Then `T` does
+not change when its test forms are pulled back by the linear map `P = id - l ⊗ e`, for any vector
+`e`. When `l e = 1`, `P` is the projection onto `ker l` along `e`, so `T` only sees the restriction
+of test forms to the directions of the hyperplane. -/
+theorem HasLocallyFiniteMass.map_postcompCLM_compContinuousLinearMapCLM_id_sub_smulRight
+    (hT : HasLocallyFiniteMass T) (hdT : HasLocallyFiniteMass (T ∘L extDerivCLM))
+    {l : StrongDual ℝ E} {c : ℝ} (hTl : (Ω : Set E) ∩ dsupport T ⊆ {x | l x = c}) (e : E)
+    (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    T (postcompCLM
+        (ContinuousAlternatingMap.compContinuousLinearMapCLM (.id ℝ E - l.smulRight e)) ω) =
+      T ω := by
+  have hf : ContDiff ℝ (⊤ : ℕ∞) fun x ↦ l x - c := l.contDiff.sub contDiff_const
+  have hdf (x : E) : fderiv ℝ (fun x ↦ l x - c) x = l := by
+    simpa using (l.hasFDerivAt.sub_const c).fderiv
+  have hzero := hT.comp_oneFormWedgeCLM_eq_zero hdT hf fun x hx ↦ sub_eq_zero.2 (hTl hx)
+  -- Pointwise, `ω - ω ∘ P = l ∧ ((ι_e ω) ∘ P)`.
+  have hsplit : ω - postcompCLM
+      (ContinuousAlternatingMap.compContinuousLinearMapCLM (.id ℝ E - l.smulRight e)) ω =
+      oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hf).2 (postcompCLM
+        (ContinuousAlternatingMap.compContinuousLinearMapCLM (.id ℝ E - l.smulRight e) ∘L
+          ContinuousAlternatingMap.curryLeftFlipL e) ω) := by
+    ext x : 1
+    simp [hdf, ContinuousAlternatingMap.curryLeftFlipL_apply_apply,
+      ← ContinuousAlternatingMap.sub_compContinuousLinearMap_id_sub_smulRight]
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, hsplit, ← ContinuousLinearMap.comp_apply, hzero,
+    zero_apply]
+
+end Support
 
 end NormedSpace
 

@@ -17,7 +17,9 @@ quasi-isomorphism in degree `0` makes `X ⟶ K⁰ ⟶ K¹` exact with `X ⟶ K�
 quasi-isomorphism in degree `n + 1` makes `K` exact there. No injectivity of the terms of `K` is
 needed. This is the cochain counterpart of `TauCeti/Algebra/Homology/Single/Cokernel.lean`.
 The coaugmentations are natural in morphisms of coaugmented complexes
-(`CochainComplex.fromSingle₀Equiv_comp_f_zero`).
+(`CochainComplex.fromSingle₀Equiv_comp_f_zero`), and a functor preserving zero morphisms sends the
+coaugmentation into the degree-zero cycles of the image complex
+(`CategoryTheory.Functor.map_fromSingle₀Equiv_val_comp_d`).
 
 The argument uses Mathlib's `ShortComplex.quasiIso_iff_of_zeros`.
 -/
@@ -26,7 +28,7 @@ public section
 
 open CategoryTheory Limits HomologicalComplex
 
-universe v u
+universe v v' u u'
 
 namespace CochainComplex
 
@@ -82,3 +84,19 @@ lemma fromSingle₀Equiv_comp_f_zero (hφ : ι ≫ φ = (single₀ C).map f ≫ 
 end Naturality
 
 end CochainComplex
+
+namespace CategoryTheory.Functor
+
+open CochainComplex
+
+/-- The image under `F` of the coaugmentation `X ⟶ K⁰` of `ι : X[0] ⟶ K` lands in the
+degree-zero cycles of `F(K)`. This is the side condition for the `liftCycles` maps describing the
+degree-zero normalization of computations by resolutions. -/
+lemma map_fromSingle₀Equiv_val_comp_d {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    [HasZeroObject C] {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] {X : C} {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) :
+    F.map (fromSingle₀Equiv K X ι).val ≫ ((F.mapHomologicalComplex _).obj K).d 0 1 = 0 := by
+  dsimp
+  rw [← F.map_comp, (fromSingle₀Equiv K X ι).property, F.map_zero]
+
+end CategoryTheory.Functor
