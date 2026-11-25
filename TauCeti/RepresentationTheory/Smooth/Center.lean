@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Center.Linear
 public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
 public import TauCeti.RepresentationTheory.Smooth.Category
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # The centre of the category of smooth representations
@@ -111,17 +112,6 @@ section Generators
 The permutation representations `A[G ⧸ U]` live in `Type (max u v)`, so the statements of this
 section are about `SmoothCenter.{max u v} A G`. -/
 
-/-- `A[G ⧸ G]` is one-dimensional: each of its elements is the coefficient at the single coset
-`G` times the basis vector there. -/
-private lemma eq_single_coeff_quotient_top (x : MonoidAlgebra A (G ⧸ ((⊤ : OpenSubgroup G) :
-    Subgroup G))) :
-    x = .single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))
-      (x.coeff ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))) := by
-  have : Subsingleton (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) :=
-    QuotientGroup.subsingleton_quotient_top
-  ext q
-  simp [Subsingleton.elim q (1 : G)]
-
 variable [SeparatelyContinuousMul G]
 
 /-- The value of `z` at a vector `v` fixed by an open subgroup `U` is the image of `z` applied to
@@ -180,7 +170,10 @@ noncomputable def scalar : SmoothCenter.{max u v} A G →ₐ[A] A where
     set c := ((z.app X).hom.hom (.single q 1)).coeff q
     have hz : (z.app X).hom.hom (.single q 1) = c • .single q 1 := by
       rw [MonoidAlgebra.smul_single', mul_one]
-      exact eq_single_coeff_quotient_top _
+      -- Instance search does not see `G ⧸ ↑(⊤ : OpenSubgroup G)` as `G ⧸ ⊤`, so the
+      -- `Subsingleton` instance is passed by hand, here and in `app_single_one_top`.
+      exact @MonoidAlgebra.eq_single_of_subsingleton _ _ _
+        QuotientGroup.subsingleton_quotient_top _ _
     rw [CatCenter.mul_app]
     simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp, IntertwiningMap.comp_apply]
     rw [hz]
@@ -200,7 +193,7 @@ lemma app_single_one_top (z : SmoothCenter.{max u v} A G) :
     (z.app (SmoothRep.of (ofMulAction A G (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))))).hom.hom
         (MonoidAlgebra.single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) 1) =
       MonoidAlgebra.single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) (scalar z) :=
-  eq_single_coeff_quotient_top _
+  @MonoidAlgebra.eq_single_of_subsingleton _ _ _ QuotientGroup.subsingleton_quotient_top _ _
 
 /-- **The smooth centre acts on invariant vectors by a scalar**: on a `G`-invariant vector `v`,
 an element `z` of `Z(G, A)` acts as the scalar `scalar z`. -/
