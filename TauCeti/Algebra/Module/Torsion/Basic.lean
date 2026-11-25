@@ -61,6 +61,8 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
+* `Module.isTorsion_pi_self_iff`: over a nontrivial ring `R`, the free module `ι → R` is torsion
+  exactly when `ι` is empty.
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
@@ -332,6 +334,18 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
 
 end Module.IsTorsion
+
+namespace Module
+
+/-- Over a nontrivial commutative semiring `R`, the free module `ι → R` is torsion exactly when
+`ι` is empty. -/
+theorem isTorsion_pi_self_iff {R ι : Type*} [CommSemiring R] [Nontrivial R] :
+    IsTorsion R (ι → R) ↔ IsEmpty ι := by
+  refine ⟨fun h ↦ ⟨fun i ↦ ?_⟩, fun _ _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩
+  obtain ⟨c, hc⟩ := h (x := fun _ ↦ 1)
+  exact nonZeroDivisors.coe_ne_zero c (by simpa [Submonoid.smul_def] using congr_fun hc i)
+
+end Module
 
 namespace LinearEquiv
 

@@ -71,16 +71,6 @@ private theorem pow_smul_quotient_span_C_pow {O : Type*} [CommRing O] (ϖ : O) (
     Submodule.Quotient.mk_eq_zero, smul_eq_mul]
   exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
 
-/-- A product with a free factor `Fin r → A` over a nontrivial ring is torsion only when `r = 0`.
-This removes the free part of an elementary module. -/
-private theorem eq_zero_of_isTorsion_prod {A P : Type*} [CommRing A] [Nontrivial A]
-    [AddCommGroup P] [Module A P] {r : ℕ} (h : Module.IsTorsion A ((Fin r → A) × P)) : r = 0 := by
-  by_contra hr
-  let i : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
-  obtain ⟨c, hc⟩ := h (x := (Pi.single i 1, 0))
-  exact nonZeroDivisors.coe_ne_zero c
-    (by simpa [Submonoid.smul_def] using congr_fun (congrArg Prod.fst hc) i)
-
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K]
   [Algebra O K] [IsFractionRing O K] {M N : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module O M]
   [IsScalarTower O O⟦X⟧ M] [AddCommGroup N] [Module O⟦X⟧ N] [Module O N] [IsScalarTower O O⟦X⟧ N]
@@ -133,7 +123,8 @@ private theorem exists_bijective_baseChange_pi (hM : Module.IsTorsion O⟦X⟧ M
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
   -- The elementary module is torsion, so it has no free part.
-  obtain rfl : r = 0 := eq_zero_of_isTorsion_prod (hf.isTorsion_iff.mp hM)
+  obtain rfl : r = 0 := Fin.isEmpty_iff.mp <| Module.isTorsion_pi_self_iff.mp <|
+    (hf.isTorsion_iff.mp hM).of_injective (f := LinearMap.inl _ _ _) LinearMap.inl_injective
   refine ⟨b, F, n, fun j ↦ (hFn j).1, hf.charPoly_eq_prod hϖ (fun j ↦ (hFn j).1)
     (fun j ↦ (hFn j).2.1), (LinearMap.snd _ _ _ ∘ₗ LinearMap.snd _ _ _) ∘ₗ f, ?_⟩
   rw [LinearMap.restrictScalars_comp, LinearMap.baseChange_comp, LinearMap.coe_comp]
