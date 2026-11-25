@@ -294,10 +294,8 @@ theorem differentiableAt_spectralFunction_iff
     have hΦA : Φ A.property.isHermitian.eigenvalues₀ = A := by
       refine Subtype.ext ?_
       conv_rhs => rw [A.property.isHermitian.spectral_theorem]
-      have he (k : ι) : A.property.isHermitian.eigenvalues₀ (e.symm k) =
-          A.property.isHermitian.eigenvalues k := by
-        rw [← A.property.isHermitian.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
-      simp [Φ, U, Unitary.conjStarAlgAut_apply, he, Function.comp_def]
+      simp [Φ, U, e, Unitary.conjStarAlgAut_apply,
+        A.property.isHermitian.eigenvalues₀_equivOfCardEq_symm, Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
   · obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul
