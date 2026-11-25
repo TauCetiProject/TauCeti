@@ -72,21 +72,15 @@ theorem koszulSign_def (σ : Perm (Fin n)) (d : Fin n → ι) :
 theorem koszulSign_one (d : Fin n → ι) : koszulSign 1 d = 1 := by
   simp [koszulSign_def]
 
-/-- The product over the inversions of `σ` as a double product over all pairs of positions. -/
-private theorem prod_inversions_eq_prod_prod (σ : Perm (Fin n)) (w : Fin n → Fin n → ℤˣ) :
-    ∏ p ∈ univ.inversions σ, w p.1 p.2 =
-      ∏ i, ∏ j, if i < j ∧ σ j < σ i then w i j else 1 := by
-  rw [inversions_univ, prod_filter, ← univ_product_univ, prod_product]
-
 /-- **Insertion of a first letter.** Listing the letter `j` first and the remaining letters in the
 order of `π` costs the Koszul sign of `π` on the remaining letters, times the signs of moving the
 letter `j` past each letter `i < j`. -/
 theorem koszulSign_consFin (j : Fin (n + 1)) (π : Perm (Fin n)) (d : Fin (n + 1) → ι) :
     (consFin j π).koszulSign d =
       (∏ i ∈ Iio j, (-1) ^ (d j * d i)) * π.koszulSign (d ∘ j.succAbove) := by
-  rw [koszulSign_def, koszulSign_def, prod_inversions_eq_prod_prod (w := fun a b =>
+  rw [koszulSign_def, koszulSign_def, prod_univ_inversions (w := fun a b =>
       (-1) ^ (d (consFin j π a) * d (consFin j π b))),
-    prod_inversions_eq_prod_prod (w := fun a b =>
+    prod_univ_inversions (w := fun a b =>
       (-1) ^ ((d ∘ j.succAbove) (π a) * (d ∘ j.succAbove) (π b)))]
   rw [Fin.prod_univ_succ, Fin.prod_univ_succ]
   simp only [Fin.prod_univ_succ (n := n), consFin_zero, consFin_succ, lt_self_iff_false,
@@ -102,7 +96,7 @@ theorem koszulSign_consFin (j : Fin (n + 1)) (π : Perm (Fin n)) (d : Fin (n + 1
 theorem koszulSign_eq_prod_prod_Ioi (σ : Perm (Fin n)) (d : Fin n → ι) :
     σ.koszulSign d =
       ∏ i, ∏ j ∈ Ioi i, if σ i < σ j then 1 else (-1) ^ (d (σ i) * d (σ j)) := by
-  rw [koszulSign_def, prod_inversions_eq_prod_prod (w := fun a b => (-1) ^ (d (σ a) * d (σ b)))]
+  rw [koszulSign_def, prod_univ_inversions (w := fun a b => (-1) ^ (d (σ a) * d (σ b)))]
   refine prod_congr rfl fun i _ => ?_
   rw [← filter_lt_eq_Ioi, prod_filter]
   refine prod_congr rfl fun j _ => ?_

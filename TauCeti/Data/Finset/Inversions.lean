@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.BigOperators.Fin
@@ -33,6 +34,8 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
 
 * `Finset.inversions_univ`: on a whole finite type, the inversions are all pairs `a < b` with
   `f b < f a`.
+* `Finset.prod_univ_inversions`: a product over the inversions of `f` on a whole finite type is the
+  double product over all pairs `(i, j)` of the factors at the inversions, and `1` elsewhere.
 * `Finset.notMem_inversions_iff`: for an injective map, a pair `i < j` of elements of `s` is not an
   inversion exactly when `f i < f j`.
 * `Finset.card_inversions_insert`: adjoining a new element `a` to `s` adds the inversions
@@ -103,6 +106,13 @@ theorem inversions_eq_empty_of_monotone {f : α → β} (hf : Monotone f) (s : F
 theorem inversions_univ [Fintype α] (f : α → β) :
     univ.inversions f = univ.filter fun p : α × α ↦ p.1 < p.2 ∧ f p.2 < f p.1 := by
   rw [inversions, univ_product_univ]
+
+/-- A product over the inversions of `f` on a whole finite type is the double product over all
+pairs `(i, j)` whose factor is `w i j` when `i < j` and `f j < f i`, and `1` otherwise. -/
+theorem prod_univ_inversions {M : Type*} [CommMonoid M] [Fintype α] (f : α → β)
+    (w : α → α → M) :
+    ∏ p ∈ univ.inversions f, w p.1 p.2 = ∏ i, ∏ j, if i < j ∧ f j < f i then w i j else 1 := by
+  rw [inversions_univ, prod_filter, ← univ_product_univ, prod_product]
 
 @[simp]
 theorem inversions_id (s : Finset α) : s.inversions id = ∅ :=

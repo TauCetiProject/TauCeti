@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import TauCeti.GroupTheory.Perm.KoszulSign
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Permuting the factors of a product of homogeneous elements
@@ -61,15 +62,21 @@ theorem mul_list_prod_ofFn_succAbove_of_mul_eq_uzpow_smul_mul
       have h := ih (d := d ∘ Fin.succ) (a := a ∘ Fin.succ) (fun i => ha i.succ) k
       simp only [Function.comp_apply] at h
       have e : List.ofFn (a ∘ k.succ.succAbove) =
-          a 0 :: List.ofFn (a ∘ Fin.succ ∘ k.succAbove) := by
+          a 0 :: List.ofFn ((a ∘ Fin.succ) ∘ k.succAbove) := by
         simp [List.ofFn_succ, Function.comp_def, Fin.succ_succAbove_succ]
-      -- Move `a k.succ` past `a 0`, apply the induction hypothesis to the remaining word, and
-      -- split off the factor `i = 0` of the sign.
-      rw [e, List.ofFn_succ (f := a), ← Function.comp_def a Fin.succ, List.prod_cons,
-        List.prod_cons, ← mul_assoc, hcomm (ha k.succ) (ha 0), smul_mul_assoc, mul_assoc,
-        ← Function.comp_assoc, h, mul_smul_comm, smul_smul, ← filter_gt_eq_Iio, prod_filter,
-        ← filter_gt_eq_Iio, prod_filter, Fin.prod_univ_succ (n := n + 1)]
-      simp [Function.comp_def]
+      -- Move `a k.succ` past `a 0`, then apply the induction hypothesis to the remaining word.
+      calc a k.succ * (List.ofFn (a ∘ k.succ.succAbove)).prod
+          = ((-1 : ℤˣ) ^ (d k.succ * d 0)) •
+              (a 0 * (a k.succ * (List.ofFn ((a ∘ Fin.succ) ∘ k.succAbove)).prod)) := by
+            rw [e, List.prod_cons, ← mul_assoc, hcomm (ha k.succ) (ha 0), smul_mul_assoc,
+              mul_assoc]
+        _ = ((-1 : ℤˣ) ^ (d k.succ * d 0)) • (a 0 *
+              (∏ i ∈ Iio k, (-1 : ℤˣ) ^ (d k.succ * d i.succ)) •
+                (List.ofFn (a ∘ Fin.succ)).prod) := by
+            rw [h]
+        _ = (∏ i ∈ Iio k.succ, (-1 : ℤˣ) ^ (d k.succ * d i)) • (List.ofFn a).prod := by
+            rw [mul_smul_comm, smul_smul, Fin.prod_Iio_succ, List.ofFn_succ (f := a),
+              List.prod_cons, Function.comp_def]
 
 /-- **Permuting the factors of a product.** Under Koszul graded commutativity, listing homogeneous
 factors `a i` of degrees `d i` in the order of a permutation `σ` multiplies their product by the
