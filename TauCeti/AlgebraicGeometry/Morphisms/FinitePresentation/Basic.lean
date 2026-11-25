@@ -33,6 +33,9 @@ scheme is surjective if and only if its range contains every closed point of the
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
   presentation and `g` is locally of finite type, then `f` is locally of finite presentation.
 
+* `AlgebraicGeometry.locallyOfFinitePresentation_SpecMap_algebraMap`: `Spec S ⟶ Spec R` is
+  locally of finite presentation for a finitely presented `R`-algebra `S`.
+
 * `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
   the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
 
@@ -94,6 +97,13 @@ theorem Scheme.Hom.surjective_iff_closedPoints_subset_range {Z Y : Scheme.{u}} (
   have hqc' : q ∈ closedPoints Y := by
     rwa [← hU.isOpenEmbedding_subtypeVal.preimage_closedPoints] at hqc
   exact hq (h hqc')
+
+/-- If `S` is a finitely presented `R`-algebra, then `Spec S ⟶ Spec R` is locally of finite
+presentation. -/
+instance locallyOfFinitePresentation_SpecMap_algebraMap (R S : Type u) [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.FinitePresentation R S] :
+    LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
+  HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr inferInstance)
 
 end AlgebraicGeometry
 

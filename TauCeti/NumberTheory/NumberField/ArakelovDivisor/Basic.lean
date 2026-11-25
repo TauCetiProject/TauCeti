@@ -243,6 +243,11 @@ variable {K}
 @[simp] theorem infinitePart_principal (f : Additive Kˣ) (v : InfinitePlace K) :
     (principal K f).infinitePart v = -(v.mult * Real.log (v (f.toMul : K))) := (rfl)
 
+/-- The coefficient of `(f)` at `v`, divided by the weight `mult(v)`, is `-log |f|_v`. -/
+theorem infinitePart_principal_div_mult (f : Additive Kˣ) (v : InfinitePlace K) :
+    (principal K f).infinitePart v / v.mult = -Real.log (v (f.toMul : K)) := by
+  rw [infinitePart_principal, neg_div, mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr mult_ne_zero)]
+
 /-- **Principal Arakelov divisors have degree zero.** The finite part of `(f)` has norm
 `|N_{K/ℚ}(f)|`, and this is the product formula `∏_v |f|_v ^ mult(v) = |N_{K/ℚ}(f)|`. -/
 @[simp] theorem degree_principal (f : Additive Kˣ) : degree K (principal K f) = 0 := by

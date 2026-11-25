@@ -60,15 +60,21 @@ that is linear in `f`. The general-weight transports on `functionCharSpace` are
 
 * `TauCeti.MaassForms.isAutomorphic_iff`: the relation entrywise,
   `f (γ • z) = χ (γ 1 1) * f z` for `γ ∈ Γ₀(N)`.
+* `TauCeti.MaassForms.IsAutomorphic.apply_smul_smul_of_mul_eq`: transport of the relation through
+  a conjugation `g γ = γ' g` in `GL(2, ℝ)` with `γ' ∈ Γ₀(N)`.
 * `TauCeti.MaassForms.isAutomorphic_one_iff`, `TauCeti.MaassForms.isAutomorphic_const`: at
   trivial character the relation is `Γ₀(N)`-invariance, and constants are automorphic.
+* `TauCeti.MaassForms.isAutomorphic_const_iff`: a nonzero constant is automorphic exactly for the
+  trivial character.
 * `TauCeti.MaassForms.IsAutomorphic.apply_intCast_vadd`: automorphic functions have period `1`.
 * `TauCeti.MaassForms.IsAutomorphic.even`, `TauCeti.MaassForms.IsAutomorphic.eq_zero_of_odd`: the
   parity lemma.
 * `TauCeti.MaassForms.isAutomorphic_reflection_iff`: `ι` preserves the relation.
-* `TauCeti.MaassForms.IsAutomorphic.comp_frickeGL_smul`: the Fricke involution carries `χ` to
-  `χ⁻¹`.
-* `TauCeti.MaassForms.IsAutomorphic.comp_scaleGL_smul`: dilation raises the level.
+* `TauCeti.MaassForms.IsAutomorphic.comp_frickeGL_smul`,
+  `TauCeti.MaassForms.isAutomorphic_comp_frickeGL_smul_iff`: the Fricke involution exchanges `χ`
+  and `χ⁻¹`.
+* `TauCeti.MaassForms.IsAutomorphic.comp_scaleGL_smul`: dilation raises the level, and its case
+  `d = 1`, `TauCeti.MaassForms.IsAutomorphic.changeLevel`.
 
 ## References
 
@@ -127,6 +133,14 @@ theorem IsAutomorphic.apply_smul (hf : IsAutomorphic N χ f) {γ : SL(2, ℤ)} (
     (z : ℍ) : f (γ • z) = χ (γ 1 1) * f z :=
   isAutomorphic_iff.mp hf γ hγ z
 
+/-- **Transport of the automorphy relation through a conjugation**: if `g γ = γ' g` in
+`GL(2, ℝ)` with `γ' ∈ Γ₀(N)`, then `f (g • γ • z) = χ (γ' 1 1) * f (g • z)`. -/
+theorem IsAutomorphic.apply_smul_smul_of_mul_eq (hf : IsAutomorphic N χ f)
+    {g : GL (Fin 2) ℝ} {γ γ' : SL(2, ℤ)} (hg : g * mapGL ℝ γ = mapGL ℝ γ' * g)
+    (hγ' : γ' ∈ Gamma0 N) (z : ℍ) :
+    f (g • γ • z) = χ (γ' 1 1) * f (g • z) := by
+  rw [← mapGL_smul (R := ℤ) γ, ← mul_smul, hg, mul_smul, mapGL_smul, hf.apply_smul hγ']
+
 /-- The zero function is automorphic for every level and nebentypus. -/
 theorem isAutomorphic_zero : IsAutomorphic N χ 0 :=
   Submodule.zero_mem _
@@ -155,13 +169,25 @@ theorem IsAutomorphic.apply_intCast_vadd (hf : IsAutomorphic N χ f) (n : ℤ) (
 theorem isAutomorphic_one_iff :
     IsAutomorphic N 1 f ↔ ∀ γ : SL(2, ℤ), γ ∈ Gamma0 N → ∀ z : ℍ, f (γ • z) = f z := by
   refine isAutomorphic_iff.trans (forall₂_congr fun γ hγ ↦ forall_congr' fun z ↦ ?_)
-  have hu : IsUnit (((γ 1 1 : ℤ) : ZMod N)) := by
-    simpa [Gamma0Map_apply] using ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩).isUnit
-  rw [MulChar.one_apply hu, one_mul]
+  rw [MulChar.one_apply (isUnit_intCast_apply_one_one_of_mem_Gamma0 hγ), one_mul]
 
 /-- Constants are automorphic with trivial nebentypus. -/
 theorem isAutomorphic_const (c : ℂ) : IsAutomorphic N 1 (fun _ ↦ c) :=
   isAutomorphic_one_iff.mpr fun _ _ _ ↦ rfl
+
+/-- **Automorphic constants.** A constant function is automorphic for `Γ₀(N)` with nebentypus
+`χ` exactly when it is zero or `χ` is trivial: every unit modulo `N` is the lower-right entry of
+a matrix in `Γ₀(N)`, so a nonzero constant forces `χ` to be `1` on every unit. -/
+theorem isAutomorphic_const_iff (c : ℂ) :
+    IsAutomorphic N χ (fun _ ↦ c) ↔ c = 0 ∨ χ = 1 := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.mpr fun hc ↦ MulChar.ext fun u ↦ ?_, ?_⟩
+  · obtain ⟨γ, rfl⟩ := Gamma0Map_toHomUnits_surjective u
+    have hγ := h.apply_smul γ.property UpperHalfPlane.I
+    rw [MulChar.one_apply_coe, MonoidHom.coe_toHomUnits, Gamma0Map_apply]
+    exact (mul_eq_right₀ hc).mp hγ.symm
+  · rintro (rfl | rfl)
+    · exact isAutomorphic_iff.mpr fun _ _ _ ↦ (mul_zero _).symm
+    · exact isAutomorphic_const c
 
 /-! ### The parity lemma -/
 
@@ -194,7 +220,7 @@ theorem reflection_apply {α : Type*} (f : ℍ → α) (z : ℍ) : reflection f 
 @[simp]
 theorem reflection_reflection {α : Type*} (f : ℍ → α) : reflection (reflection f) = f := by
   funext z
-  rw [reflection_apply, reflection_apply, smul_smul, ← sq, J_sq, one_smul]
+  rw [reflection_apply, reflection_apply, J_smul_J_smul]
 
 /-- The reflection is an involution, in the form `Function.Involutive` consumes. -/
 theorem reflection_involutive {α : Type*} : Function.Involutive (reflection (α := α)) :=
@@ -205,9 +231,8 @@ theorem reflection_involutive {α : Type*} : Function.Involutive (reflection (α
 theorem IsAutomorphic.reflection (hf : IsAutomorphic N χ f) :
     IsAutomorphic N χ (reflection f) := by
   refine isAutomorphic_iff.mpr fun γ hγ z ↦ ?_
-  have hJ : J • γ • z = conjJ γ • J • z := by
-    rw [← mapGL_smul, ← mapGL_smul, smul_smul, smul_smul, J_mul_mapGL]
-  rw [reflection_apply, reflection_apply, hJ, hf.apply_smul (conjJ_mem_Gamma0 hγ)]
+  rw [reflection_apply, reflection_apply,
+    hf.apply_smul_smul_of_mul_eq (J_mul_mapGL γ) (conjJ_mem_Gamma0 hγ)]
   simp
 
 /-- A function is automorphic exactly when its reflection is. -/
@@ -233,6 +258,13 @@ theorem IsAutomorphic.comp_frickeGL_smul [NeZero N] (hf : IsAutomorphic N χ f) 
   rw [isAutomorphic_iff_mem_functionCharSpace, hχ, hW]
   exact Submodule.smul_mem _ _ (slash_frickeGL_mem_functionCharSpace hf)
 
+/-- **The Fricke involution exchanges `χ` and `χ⁻¹`**: `z ↦ f (-1 / (N z))` is automorphic with
+nebentypus `χ⁻¹` exactly when `f` is automorphic with nebentypus `χ`. -/
+theorem isAutomorphic_comp_frickeGL_smul_iff [NeZero N] :
+    IsAutomorphic N χ⁻¹ (fun z ↦ f (frickeGL ℝ N • z)) ↔ IsAutomorphic N χ f := by
+  refine ⟨fun h ↦ ?_, IsAutomorphic.comp_frickeGL_smul⟩
+  simpa only [inv_inv, frickeGL_smul_frickeGL_smul] using h.comp_frickeGL_smul
+
 /-! ### Dilation -/
 
 /-- **Dilation raises the level.** If `f` is automorphic for `Γ₀(M)` with nebentypus `χ`, and
@@ -245,5 +277,13 @@ theorem IsAutomorphic.comp_scaleGL_smul {M d : ℕ} [NeZero d] {χ : DirichletCh
   rw [isAutomorphic_iff_mem_functionCharSpace, ← smul_slash_scaleGL_eq,
     ← MulChar.toUnitHom_eq, DirichletCharacter.changeLevel_toUnitHom, MulChar.toUnitHom_eq]
   exact Submodule.smul_mem _ _ (slash_scaleGL_mem_functionCharSpace_of_dvd hdvd hf)
+
+/-- **Level raising**: an automorphic function for `Γ₀(M)` with nebentypus `χ` is automorphic for
+`Γ₀(N)` with nebentypus `χ` changed to level `N`, for every multiple `N` of `M`. -/
+theorem IsAutomorphic.changeLevel {M : ℕ} {χ : DirichletCharacter ℂ M}
+    (hf : IsAutomorphic M χ f) (h : M ∣ N) :
+    IsAutomorphic N (DirichletCharacter.changeLevel h χ) f := by
+  simpa only [scaleGL_one, one_smul] using
+    IsAutomorphic.comp_scaleGL_smul (d := 1) (by simpa using h) hf
 
 end TauCeti.MaassForms

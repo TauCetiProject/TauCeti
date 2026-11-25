@@ -255,6 +255,23 @@ theorem injOn_toChart_symm_coord_symm_splitCoord_symm :
   φ.splitCoord.symm.injective (φ.coord.symm.injective
     (φ.toChart.symm.injOn (by simpa using hz) (by simpa using hz') h))
 
+variable (φ) in
+/-- A point of the chart is read back from its split coordinates. -/
+theorem toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart {y : M}
+    (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (φ.splitCoord (φ.coord (φ.toChart y))))) =
+      y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hy]
+
+variable (φ) in
+/-- The point with given split coordinates in the chart has these split coordinates. -/
+theorem splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    φ.splitCoord (φ.coord (φ.toChart (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))))) =
+      z := by
+  rw [φ.toChart.right_inv hz, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
 /-- **Above the critical value on the entrance face.** At a point of the chart whose contracting
 split coordinate has norm `ε` and whose expanding one is small, `f` exceeds `f x`. -/
 theorem lt_apply_of_norm_fst_eq {ε : ℝ}

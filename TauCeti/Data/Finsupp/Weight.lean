@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Set.Card
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
 
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Weights of finitely supported functions
@@ -70,6 +72,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.ncard_setOf_degree_eq`: in `d` variables there are `d.multichoose n` exponent vectors
   of degree `n`.
+* `Finsupp.card_degree_le_eq_choose`: there are `(m + d choose d)` exponent vectors of degree at
+  most `m` in `d` variables.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 * `Finsupp.single_mod_add_single_div`: for `μ 0 < B`, division with remainder by `B` recovers `μ`
@@ -304,6 +308,22 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
     ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+/-- There are `(m + d choose d)` exponent vectors of degree at most `m` in `d = card σ`
+variables. -/
+theorem card_degree_le_eq_choose (σ : Type*) [Fintype σ] (m : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree ≤ m} = (m + Fintype.card σ).choose (Fintype.card σ) := by
+  classical
+  have hset : {s : σ →₀ ℕ | s.degree ≤ m} =
+      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
+    ext s
+    simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+  rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset, Set.ncard_coe_finset, Finset.card_biUnion]
+  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
+  · intro k _ l _ hkl
+    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
+    rw [Finset.mem_finsuppAntidiag] at hk hl
+    exact hk.1.symm.trans hl.1
 
 end Finsupp
 
