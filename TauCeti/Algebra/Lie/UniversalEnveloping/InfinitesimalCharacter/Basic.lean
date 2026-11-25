@@ -322,6 +322,7 @@ noncomputable def liftCharacter (f : LieAlgebra.LieCharacter R L) :
 
 /-- The character extending a Lie algebra homomorphism `f` is the restriction to the centre of
 the algebra homomorphism `U(L) → R` extending `f`. -/
+@[simp]
 theorem liftCharacter_apply (f : LieAlgebra.LieCharacter R L) (z : Subalgebra.center R U) :
     liftCharacter R L f z = _root_.UniversalEnvelopingAlgebra.lift R f (z : U) :=
   (rfl)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter
+public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -38,13 +38,11 @@ therefore needed for extensions of modules with an infinitesimal character.
   square-zero deformation of the character `f` is annihilated by `(ker χ)²`.
 * `TauCeti.UniversalEnvelopingAlgebra.isGeneralizedCharacterFinite_liftCharacter_of_mul_eq_zero`:
   hence it is generalized `χ`-finite.
-* `TauCeti.UniversalEnvelopingAlgebra.toEnd_eq_smul_of_centerEigenspace_eq_top`: if a character
-  of the centre of `U(L)` acts by scalars, every central generator acts by a scalar.
 * `TauCeti.UniversalEnvelopingAlgebra.isGeneralizedCharacterFinite_jordanAction` and
   `TauCeti.UniversalEnvelopingAlgebra.mem_span_one_of_centerEigenspace_jordanAction_eq_top`: the
   Jordan action is generalized `χ_c`-finite, and has an infinitesimal character only when `N`
   is a scalar multiple of the identity.
-* `TauCeti.UniversalEnvelopingAlgebra.centerEigenspace_jordanBlock_ne_top`: the two-by-two
+* `isGeneralizedCharacterFinite_and_centerEigenspace_ne_top_jordanNilpotent`: the two-by-two
   Jordan block is generalized-character-finite, but no centre eigenspace is the whole module.
 
 ## References
@@ -168,23 +166,15 @@ theorem isGeneralizedCharacterFinite_liftCharacter_of_mul_eq_zero
 
 end SquareZero
 
-/-- **If a character of the centre acts by scalars, so does every central generator**: when the
-centre eigenspace for `χ` is the whole module, a generator `x` with `ι x` central acts by the
-scalar `χ (ι x)`. -/
-theorem toEnd_eq_smul_of_centerEigenspace_eq_top {χ : Subalgebra.center R U → R}
-    (h : centerEigenspace R L M χ = ⊤) {x : L}
-    (hx : _root_.UniversalEnvelopingAlgebra.ι R x ∈ Subalgebra.center R U) :
-    toEnd R L M x = χ ⟨_, hx⟩ • LinearMap.id := by
-  ext m
-  rw [centerEigenspace_eq_top_iff] at h
-  have := h ⟨_, hx⟩ m
-  rwa [representation_ι] at this
-
 /-! ### The Jordan action of the one-dimensional abelian Lie algebra -/
 
 section Jordan
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- A commutative ring is an abelian Lie algebra under the commutator bracket. -/
+local instance instIsLieAbelianSelf : IsLieAbelian R :=
+  isMulCommutative_iff_isLieAbelian.mp inferInstance
 
 variable (R M) in
 /-- The **Jordan action** of the one-dimensional abelian Lie algebra `R` on `M`: the scalar `t`
@@ -193,27 +183,21 @@ block with eigenvalue `c`. -/
 noncomputable def jordanAction (c : R) (N : End R M) : R →ₗ⁅R⁆ End R M where
   toLinearMap := LinearMap.smulRight LinearMap.id (c • 1 + N)
   map_lie' {s t} := by
-    change (⁅s, t⁆ : R) • (c • 1 + N) = ⁅s • (c • 1 + N), t • (c • 1 + N)⁆
-    rw [LieRing.of_associative_ring_bracket, mul_comm s t, sub_self, zero_smul, smul_lie,
-      lie_smul, lie_self, smul_zero, smul_zero]
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.smulRight_apply,
+      LinearMap.id_apply, smul_lie, lie_smul, lie_self, smul_zero, trivial_lie_zero, zero_smul]
 
 @[simp]
 theorem jordanAction_apply (c : R) (N : End R M) (t : R) :
     jordanAction R M c N t = t • (c • 1 + N) :=
   (rfl)
 
-variable (R) in
-/-- The Lie character `t ↦ c * t` of the one-dimensional abelian Lie algebra `R`. -/
-noncomputable def jordanCharacter (c : R) : LieAlgebra.LieCharacter R R where
-  toLinearMap := c • LinearMap.id
-  map_lie' {s t} := by
-    change c * ⁅s, t⁆ = ⁅c * s, c * t⁆
-    rw [LieRing.of_associative_ring_bracket, LieRing.of_associative_ring_bracket, mul_comm s t,
-      mul_comm (c * s) (c * t), sub_self, sub_self, mul_zero]
-
-@[simp]
-theorem jordanCharacter_apply (c t : R) : jordanCharacter R c t = c * t :=
-  (rfl)
+/-- Under the Jordan action, the scalar `r` acts on `M` by `r • (c • 1 + N)`. -/
+theorem toEnd_jordanAction (c : R) (N : End R M) (r : R) :
+    letI : LieRingModule R M := LieRingModule.compLieHom M (jordanAction R M c N)
+    letI : LieModule R R M := LieModule.compLieHom M (jordanAction R M c N)
+    toEnd R R M r = r • (c • 1 + N) := by
+  ext m
+  simp [LieRingModule.compLieHom_apply]
 
 /-- **The Jordan action is generalized `χ_c`-finite**: if `N * N = 0`, the module `M` with the
 Jordan action is annihilated by the square of the kernel of the character extending
@@ -221,18 +205,18 @@ Jordan action is annihilated by the square of the kernel of the character extend
 theorem isGeneralizedCharacterFinite_jordanAction (c : R) {N : End R M} (hN : N * N = 0) :
     letI : LieRingModule R M := LieRingModule.compLieHom M (jordanAction R M c N)
     letI : LieModule R R M := LieModule.compLieHom M (jordanAction R M c N)
-    IsGeneralizedCharacterFinite R R M (liftCharacter R R (jordanCharacter R c)) := by
+    IsGeneralizedCharacterFinite R R M
+      (liftCharacter R R (LieAlgebra.lieCharacterEquivLinearDual.symm (c • LinearMap.id))) := by
   let _ : LieRingModule R M := LieRingModule.compLieHom M (jordanAction R M c N)
   let _ : LieModule R R M := LieModule.compLieHom M (jordanAction R M c N)
   refine isGeneralizedCharacterFinite_liftCharacter_of_mul_eq_zero fun s t => ?_
-  have hdev : ∀ r : R, toEnd R R M r - algebraMap R (End R M) (jordanCharacter R c r) =
-      r • N := by
+  have hdev : ∀ r : R, toEnd R R M r - algebraMap R (End R M)
+      (LieAlgebra.lieCharacterEquivLinearDual.symm (c • LinearMap.id) r) = r • N := by
     intro r
-    have hr : toEnd R R M r = r • (c • 1 + N) := by
-      ext m
-      simp [LieRingModule.compLieHom_apply]
-    rw [hr, jordanCharacter_apply, Algebra.algebraMap_eq_smul_one, smul_add, smul_smul,
-      mul_comm r c, add_sub_cancel_left]
+    rw [toEnd_jordanAction, ← LieHom.coe_toLinearMap,
+      ← LieAlgebra.lieCharacterEquivLinearDual_apply, Equiv.apply_symm_apply,
+      Algebra.algebraMap_eq_smul_one, LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul]
+    module
   rw [hdev, hdev, smul_mul_smul_comm, hN, smul_zero]
 
 /-- **The Jordan action has an infinitesimal character only when it is scalar**: if some
@@ -246,13 +230,8 @@ theorem mem_span_one_of_centerEigenspace_jordanAction_eq_top {c : R} {N : End R 
     N ∈ Submodule.span R {(1 : End R M)} := by
   let _ : LieRingModule R M := LieRingModule.compLieHom M (jordanAction R M c N)
   let _ : LieModule R R M := LieModule.compLieHom M (jordanAction R M c N)
-  have _ : IsLieAbelian R :=
-    ⟨fun s t => by rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]⟩
   have h1 := toEnd_eq_smul_of_centerEigenspace_eq_top h (ι_mem_center R R 1)
-  have h2 : toEnd R R M 1 = c • 1 + N := by
-    ext m
-    simp [LieRingModule.compLieHom_apply]
-  rw [h2] at h1
+  rw [toEnd_jordanAction, one_smul] at h1
   rw [eq_sub_of_add_eq' h1, Submodule.mem_span_singleton]
   exact ⟨χ ⟨_, ι_mem_center R R 1⟩ - c, by rw [sub_smul, Module.End.one_eq_id]⟩
 
@@ -270,13 +249,14 @@ theorem jordanNilpotent_mul_self : jordanNilpotent R * jordanNilpotent R = 0 := 
 character.** On `R²` with `t` acting by `t` times the Jordan block with eigenvalue `c`, every
 vector is annihilated by a power of the kernel of `χ_c`, but no character of the centre of
 `U(R)` acts by scalars. -/
-theorem centerEigenspace_jordanBlock_ne_top [Nontrivial R] (c : R)
-    (χ : Subalgebra.center R (_root_.UniversalEnvelopingAlgebra R R) → R) :
+theorem isGeneralizedCharacterFinite_and_centerEigenspace_ne_top_jordanNilpotent [Nontrivial R]
+    (c : R) (χ : Subalgebra.center R (_root_.UniversalEnvelopingAlgebra R R) → R) :
     letI : LieRingModule R (Fin 2 → R) :=
       LieRingModule.compLieHom _ (jordanAction R _ c (jordanNilpotent R))
     letI : LieModule R R (Fin 2 → R) :=
       LieModule.compLieHom _ (jordanAction R _ c (jordanNilpotent R))
-    IsGeneralizedCharacterFinite R R (Fin 2 → R) (liftCharacter R R (jordanCharacter R c)) ∧
+    IsGeneralizedCharacterFinite R R (Fin 2 → R)
+        (liftCharacter R R (LieAlgebra.lieCharacterEquivLinearDual.symm (c • LinearMap.id))) ∧
       centerEigenspace R R (Fin 2 → R) χ ≠ ⊤ := by
   refine ⟨isGeneralizedCharacterFinite_jordanAction c jordanNilpotent_mul_self, fun h => ?_⟩
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp
