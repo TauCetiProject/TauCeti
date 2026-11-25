@@ -31,6 +31,12 @@ namespace AddMonoidAlgebra
 
 variable {M : Type*} {R S T : Type*}
 
+/-- Supported elements are determined by their coefficients at every exponent. -/
+@[ext]
+theorem supported_ext [Semiring R] [Semiring S] [Module R S] {s : Set M}
+    {f g : supported R S s} (h : ∀ m, (f : S[M]).coeff m = (g : S[M]).coeff m) : f = g :=
+  Subtype.ext (AddMonoidAlgebra.ext (Finsupp.ext h))
+
 /-- A monomial whose exponent lies in the allowed set belongs to the support submodule. -/
 theorem single_mem_supported [Semiring R] [Semiring S] [Module R S] {s : Set M} {m : M}
     (r : S) (hm : m ∈ s) : single m r ∈ supported R S s := by
@@ -91,14 +97,12 @@ theorem coe_supportedMap (φ : R →+* S) (f : supported R R s) :
 
 @[simp]
 theorem supportedMap_id (f : supported R R s) : supportedMap s (RingHom.id R) f = f := by
-  apply Subtype.ext
   ext m
   simp
 
 @[simp]
 theorem supportedMap_comp (φ : R →+* S) (ψ : S →+* T) (f : supported R R s) :
     supportedMap s ψ (supportedMap s φ f) = supportedMap s (ψ.comp φ) f := by
-  apply Subtype.ext
   ext m
   simp
 
@@ -223,11 +227,9 @@ noncomputable def supportedAddSingletonEquiv (hs : s = (P : Set M) + {m}) :
     have hsingle := single_mem_supported (R := R) (1 : R) (Set.mem_singleton (-m))
     obtain ⟨g, hg⟩ := (mem_range_mapDomainRingHom_subtype P).2
       (mul_mem_supported_of_add_subset hsub f.property hsingle)
-    have hinv : (single (-m) (1 : R) : R[M]) * single m 1 = 1 := by
-      simpa only [neg_neg] using single_mul_single_neg (R := R) (-m)
     refine ⟨g, Subtype.ext ?_⟩
     rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported, hg,
-      mul_assoc, hinv, mul_one]
+      mul_assoc, single_neg_mul_single, mul_one]
 
 /-- The translate frame sends a scalar to its product with the frame monomial. -/
 @[simp]

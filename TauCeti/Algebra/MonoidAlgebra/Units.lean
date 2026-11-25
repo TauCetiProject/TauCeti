@@ -202,6 +202,12 @@ theorem single_mul_single_neg {R G : Type*} [Semiring R] [AddGroup G] (g : G) :
     (single g (1 : R) : AddMonoidAlgebra R G) * single (-g) 1 = 1 := by
   simp [single_mul_single, one_def]
 
+/-- The monomial at `-g` is also a left inverse to the monomial at `g`. -/
+@[simp high]
+theorem single_neg_mul_single {R G : Type*} [Semiring R] [AddGroup G] (g : G) :
+    (single (-g) (1 : R) : AddMonoidAlgebra R G) * single g 1 = 1 := by
+  simpa only [neg_neg] using single_mul_single_neg (R := R) (-g)
+
 variable {R M : Type*} [Semiring R] [AddMonoid M]
 
 -- The bundled maps are stated separately: to_additive does not insert Multiplicative
