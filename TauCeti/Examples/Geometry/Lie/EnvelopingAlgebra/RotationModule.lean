@@ -112,8 +112,8 @@ theorem centerToEnd_ιOne_sq :
     centerToEnd ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ιOne ^ 2 = -1 := by
   ext v
   apply toComplex.injective
-  rw [pow_two, mul_apply_eq_comp, centerToEnd_ιOne_apply, centerToEnd_ιOne_apply,
-    ← mul_assoc, I_mul_I, LinearMap.neg_apply, one_apply_eq_self, neg_one_mul, map_neg]
+  simp only [pow_two, mul_apply_eq_comp, centerToEnd_ιOne_apply]
+  simp [← mul_assoc]
 
 /-- **The rotation has no real eigenvector.** -/
 theorem not_exists_eigenvector :
@@ -174,8 +174,7 @@ noncomputable def endAlgEquiv :
   map_add' S T := by
     rw [LinearMap.add_apply, map_add]
   commutes' c := by
-    rw [Module.algebraMap_end_apply, map_smul, LinearEquiv.apply_symm_apply,
-      Complex.coe_algebraMap, real_smul, mul_one]
+    simp [Module.algebraMap_end_apply]
 
 end RotationModule
 
