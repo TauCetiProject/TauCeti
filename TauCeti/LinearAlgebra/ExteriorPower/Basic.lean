@@ -76,8 +76,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
-  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
-  degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
+  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`), also in front of a
+  further factor (`ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul`); elements of
+  even degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
   that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
@@ -96,6 +97,9 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
   the span of a linearly independent family exactly when its product with the exterior product of
   the family vanishes.
+
+* `LinearEquiv.coe_exteriorPower_apply`: the exterior-algebra action of an induced equivalence.
+* `exteriorPower.coe_eq_algebraMap_zeroEquiv`: the scalar empty-product coordinate in degree zero.
 
 ## References
 
@@ -352,6 +356,18 @@ theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → M) :
 
 end OfEq
 
+/-- A degree-zero exterior vector is the scalar empty product in the exterior algebra. -/
+theorem coe_eq_algebraMap_zeroEquiv {K : Type*} [CommRing K]
+    {V : Type*} [AddCommGroup V] [Module K V]
+    (a : ⋀[K]^0 V) :
+    (a : ExteriorAlgebra K V) =
+      algebraMap K (ExteriorAlgebra K V) (exteriorPower.zeroEquiv K V a) := by
+  obtain ⟨r, rfl⟩ := (exteriorPower.zeroEquiv K V).symm.surjective a
+  simp only [exteriorPower.zeroEquiv_symm_apply, Submodule.coe_smul_of_tower,
+    exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_zero_apply,
+    map_smul, exteriorPower.zeroEquiv_ιMulti, smul_eq_mul, mul_one,
+    Algebra.algebraMap_eq_smul_one]
+
 end exteriorPower
 
 /-! ### Exterior powers of linear equivalences -/
@@ -398,7 +414,22 @@ theorem exteriorPower_trans (e : M ≃ₗ[R] N) (e' : N ≃ₗ[R] P) (n : ℕ) :
   toLinearMap_injective <| by
     simp only [coe_trans, exteriorPower_toLinearMap, _root_.exteriorPower.map_comp]
 
+/-- The induced equivalence of exterior powers acts by the exterior-algebra map. -/
+@[simp]
+theorem coe_exteriorPower_apply {R : Type u} [CommRing R]
+    {U : Type w₁} [AddCommGroup U] [Module R U]
+    {V : Type w₂} [AddCommGroup V] [Module R V]
+    (e : U ≃ₗ[R] V) (n : ℕ) (a : ⋀[R]^n U) :
+    (e.exteriorPower n a : ExteriorAlgebra R V) = ExteriorAlgebra.map e.toLinearMap a := by
+  have h : e.exteriorPower n a = exteriorPower.map n e.toLinearMap a := by
+    simpa only [LinearEquiv.coe_coe] using
+      LinearMap.congr_fun (LinearEquiv.exteriorPower_toLinearMap e n) a
+  exact (congrArg (fun v : ⋀[R]^n V ↦ (v : ExteriorAlgebra R V)) h).trans
+    (exteriorPower.coe_map _ _)
+
 end LinearEquiv
+
+
 
 /-! ### Exterior products with factors in a subspace -/
 
@@ -512,6 +543,16 @@ theorem ιMulti_mul_ιMulti_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v
   rw [_root_.ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm, Units.smul_def,
     ← Int.cast_smul_eq_zsmul R]
   norm_num
+
+/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)` also in front
+of a further factor `x`: `u ∧ (v ∧ x) = (-1) ^ (j * i) • (v ∧ (u ∧ x))`. -/
+theorem _root_.ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j : ℕ}
+    (u : Fin i → M) (v : Fin j → M) (x : _root_.ExteriorAlgebra R M) :
+    _root_.ExteriorAlgebra.ιMulti R i u * (_root_.ExteriorAlgebra.ιMulti R j v * x) =
+      (-1 : R) ^ (j * i) •
+        (_root_.ExteriorAlgebra.ιMulti R j v * (_root_.ExteriorAlgebra.ιMulti R i u * x)) := by
+  rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
+    mul_assoc]
 
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/

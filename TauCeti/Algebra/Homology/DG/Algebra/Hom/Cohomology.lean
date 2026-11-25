@@ -41,6 +41,9 @@ cohomology of the comparison between differential graded algebras and `A∞` alg
   along a surjective quasi-isomorphism `f`, a cycle `z` whose image is the boundary of `c` is the
   boundary of a preimage of `c`; this is the obstruction step of the lifting lemma for Sullivan
   algebras.
+* `TauCeti.DGAlgHom.cohomologyMap_eq_iff` and `TauCeti.DGAlgHom.cohomologyMap_eq_of_homotopy`: two
+  morphisms agree on cohomology when they differ by boundaries on cycles, in particular when they
+  are chain homotopic.
 
 ## References
 
@@ -205,6 +208,23 @@ theorem exists_mem_d_eq_and_apply_eq (f : DGAlgHom hA hB) (hf : Function.Surject
   refine ⟨DirectSum.decompose 𝒜 a p, SetLike.coe_mem _, ?_, ?_⟩
   · rw [hA.toIsNonUnitalDGAlgebra.map_decompose, DirectSum.decompose_of_mem_same _ hzp]
   · rw [map_directSumDecompose 𝒜 ℬ, DirectSum.decompose_of_mem_same _ hcp]
+
+/-- Two DG algebra morphisms induce the same map on cohomology exactly when their difference sends
+every cycle to a boundary. -/
+theorem cohomologyMap_eq_iff (f g : DGAlgHom hA hB) :
+    f.cohomologyMap = g.cohomologyMap ↔ ∀ z ∈ hA.cycles, f z - g z ∈ LinearMap.range dB := by
+  simp only [GradedAlgHom.ext_iff, Ideal.Quotient.mk_surjective.forall, f.cohomologyMap_mk,
+    g.cohomologyMap_mk, ← sub_eq_zero (b := Ideal.Quotient.mk _ (g.cyclesMap _)), ← map_sub,
+    hB.quotientMk_eq_zero_iff, hB.mem_boundaries, Subalgebra.coe_sub, cyclesMap_apply_coe,
+    Subtype.forall]
+
+/-- **Homotopy invariance.** Chain homotopic DG algebra morphisms induce the same map on
+cohomology: if `f - g = d s + s d` for a linear map `s : A → B`, then `f` and `g` agree on
+cohomology. -/
+theorem cohomologyMap_eq_of_homotopy (f g : DGAlgHom hA hB) (s : A →ₗ[R] B)
+    (hs : ∀ a, f a - g a = dB (s a) + s (dA a)) : f.cohomologyMap = g.cohomologyMap :=
+  (cohomologyMap_eq_iff f g).mpr fun z hz ↦ ⟨s z, by rw [hs, hA.mem_cycles.mp hz, map_zero,
+    add_zero]⟩
 
 end DGAlgHom
 

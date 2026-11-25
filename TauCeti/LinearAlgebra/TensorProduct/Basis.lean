@@ -43,6 +43,8 @@ consists of pure tensors.
   corresponding basis vector.
 * `Module.Basis.baseChange_toMatrix_baseChange`: change-of-basis matrices between base-changed
   bases are obtained by mapping entries.
+* `Module.Basis.toMatrix_map_algebraMap_eq_one`: a change of basis that becomes trivial after
+  extending scalars to `S` maps to `1` over `S`.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 * `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended linear maps
@@ -238,6 +240,16 @@ of the change-of-basis matrix between the original bases. -/
     (b.baseChange S).toMatrix (b'.baseChange S) = (b.toMatrix b').map (algebraMap R S) := by
   ext i j
   simp [toMatrix_apply, baseChange_apply, Algebra.smul_def]
+
+/-- **Changing a lifted basis.** If two bases `b, b'` of `M` agree after extending scalars to `S`,
+that is `1 ⊗ b i = 1 ⊗ b' i` in `S ⊗[R] M`, then the change-of-basis matrix maps to `1` over `S`.
+For `S` the residue field of a local ring, two bases lifting the same residual basis differ by a
+matrix reducing to `1`. -/
+theorem toMatrix_map_algebraMap_eq_one [DecidableEq ι] (b b' : Basis ι R M)
+    (h : ∀ i, (1 : S) ⊗ₜ[R] b i = 1 ⊗ₜ b' i) :
+    (b.toMatrix b').map (algebraMap R S) = 1 := by
+  rw [← baseChange_toMatrix_baseChange,
+    show b'.baseChange S = b.baseChange S from eq_of_apply_eq fun i ↦ by simp [h], toMatrix_self]
 
 variable [Fintype ι] [DecidableEq ι]
 

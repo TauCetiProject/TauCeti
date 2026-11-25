@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
@@ -40,6 +41,9 @@ form into the one of `S⁻¹`.
 
 ## Main results
 
+* `TauCeti.Probability.multivariateGaussianPDFReal_smul` — a scaling formula for the density
+  expression at `c • S`, for every real `c` and every `S`; it is a Lebesgue density of
+  `multivariateGaussian m (c • S)` only when `(c • S).PosDef`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
@@ -58,6 +62,10 @@ form into the one of `S⁻¹`.
   bridge
   and the identification of `MeasureTheory.pdf`;
 * `TauCeti.Probability.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
+* `TauCeti.Probability.multivariateGaussian_absolutelyContinuous` — absolute continuity with
+  respect to Lebesgue measure;
+* `TauCeti.Probability.ae_ne_zero_multivariateGaussian` — hence, in positive dimension, the law is
+  almost surely nonzero;
 * `TauCeti.Probability.mutuallySingular_multivariateGaussian_volume` — singularity at every
   covariance
   parameter that is not positive definite.
@@ -104,6 +112,19 @@ theorem multivariateGaussianPDFReal_def (m : EuclideanSpace ℝ ι) (S : Matrix 
 theorem multivariateGaussianPDF_def (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     multivariateGaussianPDF m S =
       fun x => ENNReal.ofReal (multivariateGaussianPDFReal m S x) := (rfl)
+
+/-- **Scaling formula for the density expression.** For every real scalar `c` and every square
+matrix `S`, `multivariateGaussianPDFReal m (c • S) x` equals
+`(2π)^(-d/2) * (c^d * det S)^(-1/2) * exp (-(c⁻¹ * ⟪x - m, S⁻¹ (x - m)⟫) / 2)`, under Lean's
+conventions `0⁻¹ = 0` for scalars and matrices. It is a Lebesgue density of
+`multivariateGaussian m (c • S)` only when `(c • S).PosDef`
+(`TauCeti.Probability.multivariateGaussian_eq_withDensity`). -/
+theorem multivariateGaussianPDFReal_smul (c : ℝ) (m x : EuclideanSpace ℝ ι) :
+    multivariateGaussianPDFReal m (c • S) x =
+      (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * (c ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) *
+        exp (-(c⁻¹ * ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫) / 2) := by
+  rw [multivariateGaussianPDFReal_def, Matrix.det_smul, Matrix.nonsing_inv_smul]
+  simp [inner_smul_right]
 
 /-- The density is positive wherever the determinant is, in particular at a positive-definite
 covariance, where `Matrix.PosDef.det_pos` supplies the hypothesis. -/
@@ -365,6 +386,19 @@ theorem rnDeriv_multivariateGaussian (hS : S.PosDef) (m : EuclideanSpace ℝ ι)
     (multivariateGaussian m S).rnDeriv volume =ᵐ[volume] multivariateGaussianPDF m S := by
   rw [multivariateGaussian_eq_withDensity hS]
   exact Measure.rnDeriv_withDensity _ (measurable_multivariateGaussianPDF m S)
+
+/-- A nondegenerate multivariate Gaussian law is absolutely continuous with respect to Lebesgue
+measure. -/
+theorem multivariateGaussian_absolutelyContinuous (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    multivariateGaussian m S ≪ volume := by
+  rw [multivariateGaussian_eq_withDensity hS]
+  exact withDensity_absolutelyContinuous _ _
+
+/-- In positive dimension, a multivariate Gaussian vector with positive-definite covariance is
+almost surely nonzero. -/
+theorem ae_ne_zero_multivariateGaussian [Nonempty ι] (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    ∀ᵐ x ∂multivariateGaussian m S, x ≠ 0 :=
+  multivariateGaussian_absolutelyContinuous hS m (by simp)
 
 /-- **Every degenerate multivariate Gaussian law is singular.** A positive-semidefinite but
 singular covariance carries the law on the proper affine subspace `m + range (CFC.sqrt S)`; any

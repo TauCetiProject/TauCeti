@@ -401,6 +401,26 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
+/-- **Young's inequality for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`,
+exponents `1 ≤ c, p` with `1/c + 1/p = 1 + 1/q` and every `f ∈ L²`,
+`‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_c ‖f‖_p`: `T_σ f` is the convolution of `f` with `𝓕⁻ σ`. Neither side is
+assumed finite, so `T_σ` maps `L² ∩ Lᵖ` into `L^q`. For `c = 1` this is
+`SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le`. -/
+theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq (σ : 𝓢(E, ℂ))
+    (f : Lp F 2 (volume : Measure E)) {c p q : ℝ≥0∞} (hc : 1 ≤ c) (hp : 1 ≤ p)
+    (hcpq : c⁻¹ + p⁻¹ = 1 + q⁻¹) :
+    eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) q volume ≤
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) c volume * eLpNorm f p volume := by
+  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
+      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
+    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
+    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
+    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
+  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
+  refine (eLpNorm_convolution_le_of_inv_add_inv_eq _ hc hp hcpq
+    (𝓕⁻ σ).continuous.aestronglyMeasurable (Lp.aestronglyMeasurable f)).trans ?_
+  grw [opENorm_lsmul_le, one_mul]
+
 /-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`, every
 `f ∈ L²` and every `1 ≤ p ≤ ∞`, `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`: `T_σ f` is the convolution of `f`
 with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finite, so `T_σ` maps
@@ -408,16 +428,8 @@ with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finit
 theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ : 𝓢(E, ℂ))
     (f : Lp F 2 (volume : Measure E)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) p volume ≤
-      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume := by
-  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
-      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
-    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
-    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
-    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
-  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
-  refine (eLpNorm_convolution_le _ (𝓕⁻ σ).continuous.aestronglyMeasurable
-    (Lp.aestronglyMeasurable f) hp).trans ?_
-  grw [opENorm_lsmul_le, one_mul]
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume :=
+  σ.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq f le_rfl hp (by rw [inv_one])
 
 /-- **The `L¹ → L^∞` bound** for a multiplier with a Schwartz symbol `σ`: if the kernel `𝓕⁻ σ` is
 bounded by `B`, then `‖T_σ f‖_∞ ≤ B ‖f‖₁` for every integrable `f ∈ L²`. -/

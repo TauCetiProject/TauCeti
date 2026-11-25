@@ -27,8 +27,10 @@ Tensor coinvariants with a projective representation are exact in the other repr
 (`CategoryTheory.ShortComplex.ShortExact.map_coinvariantsTensor_projective`). For a free
 representation the natural identification with finitely supported coefficient families proves
 exactness. A projective representation is a retract of a free one, so the result holds without
-any flatness assumption on the coefficient representations. This supplies coefficient long exact
-sequences for projective-resolution computations of group homology.
+any flatness assumption on the coefficient representations, and tensor coinvariants with a
+projective representation preserve homology
+(`Rep.preservesHomology_coinvariantsTensor_flip_obj_of_projective`). This supplies coefficient long
+exact sequences for projective-resolution computations of group homology.
 
 For a `k`-module `N`, a `k`-linear map `X_G ⟶ N` out of the coinvariants is the same as a
 morphism of representations `X ⟶ N` to the trivial representation (`Rep.coinvariantsAdjunction`);
@@ -43,6 +45,11 @@ map of internal homs) and, contravariantly, in `A` (precomposition with the map 
 group, with precomposition by the compatible coefficient map on the internal-hom side
 (`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`). Being a left adjoint followed by a left
 adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvariantsTensor_obj`).
+The associator of the tensor product gives the natural isomorphism
+`(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` (`Rep.tensorLeftCompCoinvariantsTensorObjIso`).
+
+Tensor coinvariants `(A ⊗ B)_G` are additive in each variable; Mathlib provides additivity in `B`,
+and this file adds it in `A`, both as a functor to the functors of `B` and for each fixed `B`.
 
 ## Main definitions
 
@@ -50,6 +57,10 @@ adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvari
   and `v`.
 * `Rep.coinvariantsHomLinearEquiv`: `Hom(X_G, N) ≃ₗ[k] Hom_G(X, N)`.
 * `Rep.coinvariantsTensorHomLinearEquiv`: `Hom((A ⊗ X)_G, N) ≃ₗ[k] Hom_G(X, Homₖ(A, N))`.
+* `Rep.tensorLeftCompCoinvariantsTensorObjIso`: the natural isomorphism
+  `(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` given by the associator.
+* `Rep.tensorLeftCompCoinvariantsTensorTrivialIso`: `(k ⊗ (A ⊗ X))_G ≅ (A ⊗ X)_G`, naturally in
+  `X`.
 
 ## Main results
 
@@ -171,6 +182,67 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
+
+/-- **Tensor coinvariants against the trivial line absorb a left tensor factor.** For a
+representation `A`, the functor `X ↦ (k ⊗ (A ⊗ X))_G` is `X ↦ (A ⊗ X)_G`, through the associator
+and the left unitor of the trivial line `k`, the unit of the tensor product. -/
+def tensorLeftCompCoinvariantsTensorTrivialIso (A : Rep.{u} k G) :
+    tensorLeft A ⋙ (coinvariantsTensor k G).obj (trivial k G k) ≅
+      (coinvariantsTensor k G).obj A :=
+  NatIso.ofComponents (fun X ↦ (coinvariantsFunctor k G).mapIso
+    ((α_ (trivial k G k) A X).symm ≪≫ whiskerRightIso (λ_ A) X)) fun f ↦ by
+      dsimp
+      simp only [← Functor.map_comp]
+      congr 1
+      rw [whiskerRightIso_hom, whiskerRightIso_hom, associator_inv_naturality_right_assoc,
+        whisker_exchange, Category.assoc]
+
+/-- The identification `tensorLeftCompCoinvariantsTensorTrivialIso` sends the class of
+`r ⊗ (a ⊗ x)` to the class of `r • a ⊗ x`. -/
+-- Match before simplification changes the presentation of the tensor carrier.
+@[simp↓]
+theorem tensorLeftCompCoinvariantsTensorTrivialIso_hom_app_coinvariantsTensorMk
+    (A X : Rep.{u} k G) (r : k) (a : A) (x : X) :
+    ((tensorLeftCompCoinvariantsTensorTrivialIso A).hom.app X).hom
+        (coinvariantsTensorMk (trivial k G k) (A ⊗ X) r (a ⊗ₜ x)) =
+      coinvariantsTensorMk A X (r • a) x :=
+  (rfl)
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A`, as a functor
+to the functors of `B`; Mathlib provides additivity in `B`. -/
+instance : (coinvariantsTensor k G).Additive where
+  map_add {A B f g} := by
+    ext : 2
+    apply coinvariantsTensor_hom_ext
+    ext
+    simp
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A` for a fixed `B`.
+-/
+instance (B : Rep.{u} k G) : ((coinvariantsTensor k G).flip.obj B).Additive where
+
+/-- **Tensor coinvariants of a twisted representation**: for representations `D` and `A` of `G`,
+`(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` naturally in `X`, by the associator of the tensor product
+(Mathlib's `MonoidalCategory.tensorLeftTensor`). -/
+def tensorLeftCompCoinvariantsTensorObjIso (D A : Rep.{u} k G) :
+    tensorLeft A ⋙ (coinvariantsTensor k G).obj D ≅ (coinvariantsTensor k G).obj (D ⊗ A) :=
+  Functor.isoWhiskerRight (tensorLeftTensor D A).symm (coinvariantsFunctor k G)
+
+/-- The component of `Rep.tensorLeftCompCoinvariantsTensorObjIso` at `X` is the map on
+coinvariants induced by the inverse associator. -/
+@[simp]
+theorem tensorLeftCompCoinvariantsTensorObjIso_hom_app (D A X : Rep.{u} k G) :
+    (tensorLeftCompCoinvariantsTensorObjIso D A).hom.app X =
+      (coinvariantsFunctor k G).map (α_ D A X).inv := by
+  simp [tensorLeftCompCoinvariantsTensorObjIso]
+
+/-- The inverse of `Rep.tensorLeftCompCoinvariantsTensorObjIso` at `X` is the map on coinvariants
+induced by the associator. -/
+@[simp]
+theorem tensorLeftCompCoinvariantsTensorObjIso_inv_app (D A X : Rep.{u} k G) :
+    (tensorLeftCompCoinvariantsTensorObjIso D A).inv.app X =
+      (coinvariantsFunctor k G).map (α_ D A X).hom := by
+  simp [tensorLeftCompCoinvariantsTensorObjIso]
 
 end Monoid
 
@@ -359,6 +431,22 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     ((TauCeti.isKernelCokernelPair_iff_shortExact _).mpr hfree) ⟨i, p, hip⟩).shortExact
 
 end CategoryTheory.ShortComplex.ShortExact
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Tensor coinvariants with a projective representation preserve homology in the other
+representation: they preserve short exact sequences
+(`CategoryTheory.ShortComplex.ShortExact.map_coinvariantsTensor_projective`). -/
+instance preservesHomology_coinvariantsTensor_flip_obj_of_projective (P : Rep.{u} k G)
+    [Projective P] : ((coinvariantsTensor k G).flip.obj P).PreservesHomology :=
+  -- An additive functor between abelian categories preserving short exact sequences (the first
+  -- condition of `Functor.exact_tfae`) preserves homology (its third condition).
+  ((Functor.exact_tfae ((coinvariantsTensor k G).flip.obj P)).out 1 3).1
+    fun _ hS ↦ ShortComplex.ShortExact.map_coinvariantsTensor_projective hS P
+
+end Rep
 
 namespace MonoidHom
 
