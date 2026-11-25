@@ -26,6 +26,10 @@ under `stdGaussian E`, so for a unit vector `ν` the half-space `{x | ⟪x, ν�
   onto `F` and `Fᗮ` is `stdGaussian F ⊗ stdGaussian Fᗮ`.
 * `Submodule.map_add_prod_stdGaussian`: the addition map carries
   `stdGaussian F ⊗ stdGaussian Fᗮ` to `stdGaussian E`.
+* `Submodule.preimage_orthogonalProjectionOnto_eq` and
+  `Submodule.stdGaussian_preimage_orthogonalProjectionOnto`: for `U ⊆ F`, the cylinder
+  `U ⊕ Fᗮ = {y + z | y ∈ U, z ∈ Fᗮ}` is the preimage of `U` under the orthogonal projection onto
+  `F`, and its Gaussian measure is `γ_F(U)`.
 * `TauCeti.Probability.map_inner_stdGaussian`: the law of `⟪x, ν⟫` is `gaussianReal 0 ‖ν‖²`,
   and `gaussianReal 0 1` for a unit vector (`map_inner_stdGaussian_of_norm_eq_one`).
 * `TauCeti.Probability.measureReal_stdGaussian_setOf_inner_lt`,
@@ -83,6 +87,26 @@ theorem map_add_prod_stdGaussian (F : Submodule ℝ E) :
   convert Measure.map_id
   funext x
   exact F.starProjection_add_starProjection_orthogonal x
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The cylinder over `U ⊆ F` along `Fᗮ`, the set `{y + z | y ∈ U, z ∈ Fᗮ}`, is the preimage of
+`U` under the orthogonal projection onto `F`. -/
+theorem preimage_orthogonalProjectionOnto_eq (F : Submodule ℝ E) (U : Set F) :
+    F.orthogonalProjectionOnto ⁻¹' U = {x | ∃ y ∈ U, ∃ z ∈ Fᗮ, (y : E) + z = x} := by
+  ext x
+  refine ⟨fun hx => ⟨_, hx, x - F.orthogonalProjectionOnto x,
+    F.sub_starProjection_mem_orthogonal x, add_sub_cancel _ _⟩, ?_⟩
+  rintro ⟨y, hy, z, hz, rfl⟩
+  rwa [Set.mem_preimage, map_add, F.orthogonalProjectionOnto_mem_subspace_eq_self,
+    F.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
+
+/-- **The Gaussian measure of a cylinder.** For `U ⊆ F` null-measurable for `γ_F`, the cylinder
+`U ⊕ Fᗮ` has standard Gaussian measure `γ_E(U ⊕ Fᗮ) = γ_F(U)`. -/
+theorem stdGaussian_preimage_orthogonalProjectionOnto (F : Submodule ℝ E) {U : Set F}
+    (hU : NullMeasurableSet U (stdGaussian F)) :
+    stdGaussian E (F.orthogonalProjectionOnto ⁻¹' U) = stdGaussian F U := by
+  rw [← F.map_orthogonalProjectionOnto_stdGaussian] at hU ⊢
+  exact (Measure.map_apply₀ (by fun_prop) hU).symm
 
 end Submodule
 
