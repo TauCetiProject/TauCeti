@@ -28,11 +28,13 @@ of morphisms of `A`-gerbes (Olsson, Definition 31.1 and Lemma 31.3).
 In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
 * `modificationIso`: a modification into a pseudofunctor with groupoid fibres as an isomorphism,
-  with `modificationIso_hom`, `modificationIso_inv_app`, `modificationIso_id`,
-  `modificationIso_comp`.
+  with `modificationIso_hom`, `modificationIso_inv_app`, `hom_modificationIso_inv`,
+  `modificationIso_inv_hom`, `modificationIso_id`, `modificationIso_comp`.
 * `HomCategory`: the full subcategory of band-preserving transformations, with `HomCategory.mk`,
   `HomCategory.homMk` and `hom_ext`.
-* `homIso`, `homIso_hom`, `homIso_comp`, `isGroupoid_homCategory`, `groupoid`, `groupoid_inv`.
+* `homIso`, `homIso_hom`, `homIso_inv_app`, `hom_homIso_inv`, `homIso_inv_hom`, `homIso_id`,
+  `homIso_comp`, `isGroupoid_homCategory`, `groupoid`, `groupoid_inv`, `groupoid_comp_inv`,
+  `groupoid_inv_comp`.
 * `componentIso`, `componentIso_hom`, `componentIso_id`, `componentIso_comp`,
   `componentIso_homIso_inv`.
 
@@ -75,6 +77,7 @@ theorem modificationIso_hom {η θ : F ⟶ G} (m : η ⟶ θ) : (modificationIso
 
 /-- The `(U, x)` component of the inverse of `modificationIso m` is the inverse of the component
 of `m`. -/
+@[simp]
 theorem modificationIso_inv_app {η θ : F ⟶ G} (m : η ⟶ θ) (U : C)
     (x : F.obj (.mk (op U))) :
     ((modificationIso m).inv.as.app (.mk (op U))).toNatTrans.app x =
@@ -82,6 +85,14 @@ theorem modificationIso_inv_app {η θ : F ⟶ G} (m : η ⟶ θ) (U : C)
   refine IsIso.eq_inv_of_hom_inv_id ?_
   simpa using congrArg (fun φ : η ⟶ η ↦ (φ.as.app (.mk (op U))).toNatTrans.app x)
     (modificationIso m).hom_inv_id
+
+@[simp]
+theorem hom_modificationIso_inv {η θ : F ⟶ G} (m : η ⟶ θ) : m ≫ (modificationIso m).inv = 𝟙 η :=
+  (modificationIso m).hom_inv_id
+
+@[simp]
+theorem modificationIso_inv_hom {η θ : F ⟶ G} (m : η ⟶ θ) : (modificationIso m).inv ≫ m = 𝟙 θ :=
+  (modificationIso m).inv_hom_id
 
 @[simp]
 theorem modificationIso_id (η : F ⟶ G) : modificationIso (𝟙 η) = Iso.refl η :=
@@ -134,6 +145,25 @@ noncomputable def homIso {X Y : HomCategory bF bG} (m : X ⟶ Y) : X ≅ Y :=
 theorem homIso_hom {X Y : HomCategory bF bG} (m : X ⟶ Y) : (homIso m).hom = m :=
   (rfl)
 
+/-- The `(U, x)` component of the inverse of `homIso m` is the inverse of the component of `m`. -/
+@[simp]
+theorem homIso_inv_app {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C) (x : F.obj (.mk (op U))) :
+    ((homIso m).inv.hom.as.app (.mk (op U))).toNatTrans.app x =
+      inv ((m.hom.as.app (.mk (op U))).toNatTrans.app x) := by
+  simp [homIso]
+
+@[simp]
+theorem hom_homIso_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) : m ≫ (homIso m).inv = 𝟙 X :=
+  (homIso m).hom_inv_id
+
+@[simp]
+theorem homIso_inv_hom {X Y : HomCategory bF bG} (m : X ⟶ Y) : (homIso m).inv ≫ m = 𝟙 Y :=
+  (homIso m).inv_hom_id
+
+@[simp]
+theorem homIso_id (X : HomCategory bF bG) : homIso (𝟙 X) = Iso.refl X :=
+  Iso.ext rfl
+
 theorem homIso_comp {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z) :
     homIso (m ≫ n) = homIso m ≪≫ homIso n :=
   Iso.ext rfl
@@ -145,13 +175,24 @@ variable (bF bG) in
 /-- **The groupoid of band-preserving transformations.** -/
 @[expose, instance_reducible]
 noncomputable def groupoid : Groupoid (HomCategory bF bG) :=
-  Groupoid.ofIsIso fun m ↦ homIso_hom m ▸ (homIso m).isIso_hom
+  Groupoid.ofIsGroupoid
 
 /-- The inverse in `groupoid` is the inverse of `homIso`. -/
 theorem groupoid_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) :
     (groupoid bF bG).inv m = (homIso m).inv := by
-  change inv m = _
+  let := groupoid bF bG
+  rw [Groupoid.inv_eq_inv]
   exact IsIso.inv_eq_of_hom_inv_id (homIso m).hom_inv_id
+
+/-- The right inverse law of `groupoid`. -/
+theorem groupoid_comp_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) :
+    m ≫ (groupoid bF bG).inv m = 𝟙 X := by
+  rw [groupoid_inv, hom_homIso_inv]
+
+/-- The left inverse law of `groupoid`. -/
+theorem groupoid_inv_comp {X Y : HomCategory bF bG} (m : X ⟶ Y) :
+    (groupoid bF bG).inv m ≫ m = 𝟙 Y := by
+  rw [groupoid_inv, homIso_inv_hom]
 
 /-- The component isomorphism `X_U x ≅ Y_U x` of an arrow `m : X ⟶ Y` of `HomCategory`. -/
 noncomputable def componentIso {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
@@ -176,10 +217,11 @@ theorem componentIso_comp {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z
   Iso.ext rfl
 
 /-- The component of the inverse of `homIso m` is the inverse of the component of `m`. -/
+@[simp]
 theorem componentIso_homIso_inv {X Y : HomCategory bF bG} (m : X ⟶ Y) (U : C)
     (x : F.obj (.mk (op U))) :
     componentIso (homIso m).inv U x = (componentIso m U x).symm := by
   ext
-  exact modificationIso_inv_app m.hom U x
+  simp [componentIso]
 
 end CategoryTheory.Pseudofunctor.BandedMorphism
