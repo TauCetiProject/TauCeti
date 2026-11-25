@@ -268,7 +268,9 @@ theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
     (coordinateHopfAlgebraBaseChangeIso R K n).symm he
   rw [inclusion_eq_eqToHom_comp_hopfIdealInclusion, inclusion_eq_eqToHom_comp_hopfIdealInclusion,
     groupSchemeBaseChangeIso_def, Functor.map_comp, Category.assoc, h]
-  simp
+  -- The `eqToHom`s of `groupScheme_def` over `R` cancel, the one over `K` meets its inverse.
+  simp only [Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
 
 end GroupScheme
 

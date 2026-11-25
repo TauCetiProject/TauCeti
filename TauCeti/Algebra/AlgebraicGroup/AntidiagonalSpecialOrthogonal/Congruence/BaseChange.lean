@@ -42,6 +42,12 @@ universe u v
 
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
 
+omit [Invertible (2 : R)] in
+/-- The image of a square root of `-1` in an `R`-algebra is a square root of `-1`. -/
+theorem algebraMap_mul_self_eq_neg_one (K : Type*) [CommRing K] [Algebra R K] (hi : i * i = -1) :
+    algebraMap R K i * algebraMap R K i = -1 := by
+  rw [← map_mul, hi, map_neg, map_one]
+
 section Coordinate
 
 variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
@@ -49,8 +55,7 @@ variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
 /-- **The congruence matrix is natural in the base ring.** -/
 theorem map_congrUnit (hi : i * i = -1) :
     GeneralLinearGroup.map (algebraMap R K) (congrUnit l hi) =
-      congrUnit l (by rw [← map_mul, hi, map_neg, map_one] :
-        algebraMap R K i * algebraMap R K i = -1) := by
+      congrUnit l (algebraMap_mul_self_eq_neg_one K hi) := by
   have h2 : algebraMap R K ⅟2 = ⅟2 :=
     (invOf_eq_right_inv (by rw [← map_ofNat (algebraMap R K) 2, ← map_mul, mul_invOf_self,
       map_one])).symm
@@ -68,8 +73,8 @@ theorem baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp (hi : i
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).hom ≫
         (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l).hom =
       (coordinateHopfAlgebraBaseChangeIso R l K).hom ≫
-        (coordinateHopfAlgebraIsoSpecialOrthogonal l (by rw [← map_mul, hi, map_neg, map_one] :
-          algebraMap R K i * algebraMap R K i = -1)).hom := by
+        (coordinateHopfAlgebraIsoSpecialOrthogonal l
+          (algebraMap_mul_self_eq_neg_one K hi)).hom := by
   rw [coordinateHopfAlgebraIsoSpecialOrthogonal_def, coordinateHopfAlgebraIsoSpecialOrthogonal_def]
   have h₁ := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R l K
   have h₂ :=
@@ -100,22 +105,27 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
           (groupSchemeIsoSpecialOrthogonal l hi).hom ≫
         (SpecialOrthogonal.groupSchemeBaseChangeIso R K l).hom =
       (groupSchemeBaseChangeIso R l K).hom ≫
-        (groupSchemeIsoSpecialOrthogonal l (by rw [← map_mul, hi, map_neg, map_one] :
-          algebraMap R K i * algebraMap R K i = -1)).hom := by
+        (groupSchemeIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).hom := by
   have hS := baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp l K hi
   rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
   have hS' := (CommSq.horiz_inv ⟨hS⟩).w
   rw [Functor.mapIso_inv, CommHopfAlgCat.baseChangeFunctor_map] at hS'
   have hN := AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
     (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv
-    (coordinateHopfAlgebraIsoSpecialOrthogonal l (by rw [← map_mul, hi, map_neg, map_one] :
-      algebraMap R K i * algebraMap R K i = -1)).inv
+    (coordinateHopfAlgebraIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).inv
     (coordinateHopfAlgebraBaseChangeIso R l K)
     (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) hS'
   rw [groupSchemeIsoSpecialOrthogonal_def, groupSchemeIsoSpecialOrthogonal_def,
     SpecialOrthogonal.groupSchemeBaseChangeIso_def, groupSchemeBaseChangeIso_def,
     GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
-  simpa using hN =≫ eqToHom (SpecialOrthogonal.groupScheme_def K l).symm
+  -- Postcomposing `hN` with the `eqToHom` of `SpecialOrthogonal.groupScheme_def` over `K` gives
+  -- the goal once the `eqToHom`s of the quotient-spectrum presentations cancel.
+  simpa only [Functor.comp_obj, Functor.leftOp_obj, Functor.mapIso_symm, Iso.trans_hom,
+    Iso.symm_hom, Functor.mapIso_inv, Iso.op_inv, Functor.comp_map, Functor.leftOp_map,
+    Quiver.Hom.unop_op, eqToIso.hom, Functor.map_comp, Iso.op_symm, Iso.trans_assoc,
+    Functor.mapIso_hom, Category.assoc, eqToHom_map_comp_assoc, eqToHom_refl,
+    CategoryTheory.Functor.map_id, Category.id_comp] using
+    hN =≫ eqToHom (SpecialOrthogonal.groupScheme_def K l).symm
 
 end GroupScheme
 
