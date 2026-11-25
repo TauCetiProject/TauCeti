@@ -12,30 +12,29 @@ public import TauCeti.Analysis.CStarAlgebra.TracialFunctional
 /-!
 # Traces on C⋆-algebras and their square-integrable ideal
 
-TracesOnCStarAlgebras Tr1.1. A **trace** on a C⋆-algebra `B` is a map `τ : B → ℝ≥0∞`, of which
-only the values on the positive cone `B₊` matter, that is additive and positively homogeneous on
-`B₊` (with `0 · ∞ = 0`) and satisfies `τ(x⋆x) = τ(xx⋆)` for every `x ∈ B` (Dixmier 1963,
-Définition 2, p. 224). This is `TauCeti.IsTrace`. A trace is faithful (`TauCeti.IsTrace.IsFaithful`)
-if a positive element of trace zero is zero.
+A **trace** on a C⋆-algebra `B` is a map `τ : B → ℝ≥0∞`, of which only the values on the
+positive cone `B₊` matter, that is additive and positively homogeneous on `B₊` (with `0 · ∞ = 0`)
+and satisfies `τ(x⋆x) = τ(xx⋆)` for every `x ∈ B` (Dixmier 1963, Définition 2, p. 224). This is
+`TauCeti.IsTrace`. A trace is faithful (`TauCeti.IsFaithfulTrace`) if a positive element of trace
+zero is zero.
 
-The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` (`TauCeti.IsTrace.finitePart`) is a hereditary
+The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` (`TauCeti.finitePart`) is a hereditary
 convex cone, since a trace is monotone on `B₊`. The **square-integrable elements**
 `𝔫_τ = {x : τ(x⋆x) < ∞}` form a self-adjoint two-sided ideal (`TauCeti.IsTrace.sqIntegrable`,
 Dixmier 1963, Lemme 3, p. 226): it is a left ideal because `x⋆a⋆ax ≤ ‖a⋆a‖ x⋆x`, it is closed
 under addition because `(x + y)⋆(x + y) ≤ (x + y)⋆(x + y) + (x - y)⋆(x - y) = 2(x⋆x + y⋆y)`, it is
 self-adjoint by the trace identity, and so it is also a right ideal.
 
-Traces are stable under the operations of the roadmap's *Constructions* bullet that need no
-limits: the zero map, sums, multiples by `c ∈ [0, ∞]`, and pullback along a star homomorphism,
-which preserves faithfulness for injective homomorphisms. A positive tracial functional
-(`TauCeti.PositiveTracialFunctional`, OperatorKTheory K1.5) defines a trace that is finite
-everywhere (`TauCeti.PositiveTracialFunctional.isTrace_toTrace`).
+Traces are stable under the zero map, sums, multiples by `c ∈ [0, ∞]`, and pullback along a
+star homomorphism, which preserves faithfulness for injective homomorphisms. A positive tracial
+functional (`TauCeti.PositiveTracialFunctional`) defines a trace that is finite everywhere
+(`TauCeti.PositiveTracialFunctional.isTrace_toTrace`).
 
 ## Main definitions
 
 * `TauCeti.IsTrace`: traces `B → ℝ≥0∞`.
-* `TauCeti.IsTrace.IsFaithful`: faithful traces.
-* `TauCeti.IsTrace.finitePart`: the finite part `𝔪_τ⁺`.
+* `TauCeti.IsFaithfulTrace`: faithful traces.
+* `TauCeti.finitePart`: the finite part `𝔪_τ⁺`.
 * `TauCeti.IsTrace.sqIntegrable`: the two-sided ideal `𝔫_τ`.
 * `TauCeti.PositiveTracialFunctional.toTrace`: the trace of a positive tracial functional.
 
@@ -46,7 +45,7 @@ everywhere (`TauCeti.PositiveTracialFunctional.isTrace_toTrace`).
   `TauCeti.IsTrace.smul_mem_finitePart`: `𝔪_τ⁺` is a hereditary convex cone.
 * `TauCeti.IsTrace.star_mem_sqIntegrable`, `TauCeti.IsTrace.smul_mem_sqIntegrable`: `𝔫_τ` is
   self-adjoint and a complex subspace.
-* `TauCeti.IsTrace.comp`, `TauCeti.IsTrace.IsFaithful.comp`: pullback along star homomorphisms.
+* `TauCeti.IsTrace.comp`, `TauCeti.IsFaithfulTrace.comp`: pullback along star homomorphisms.
 
 ## References
 
@@ -73,12 +72,35 @@ structure IsTrace (τ : B → ℝ≥0∞) : Prop where
   /-- The trace identity. -/
   map_star_mul_self (x : B) : τ (star x * x) = τ (x * star x)
 
-namespace IsTrace
-
 variable {τ : B → ℝ≥0∞}
 
+/-- A trace is **faithful** if a positive element of trace zero is zero. -/
+def IsFaithfulTrace (τ : B → ℝ≥0∞) : Prop :=
+  ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0
+
 omit [StarOrderedRing B] in
-/-- A trace vanishes at `0`, by homogeneity with `c = 0`. -/
+theorem isFaithfulTrace_iff : IsFaithfulTrace τ ↔ ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0 :=
+  Iff.rfl
+
+omit [StarOrderedRing B] in
+/-- A positive element of trace zero under a faithful trace is zero. -/
+theorem IsFaithfulTrace.eq_zero (hτ : IsFaithfulTrace τ) {x : B} (hx : 0 ≤ x) (h0 : τ x = 0) :
+    x = 0 :=
+  hτ hx h0
+
+/-- The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` of a trace. -/
+def finitePart (τ : B → ℝ≥0∞) : Set B :=
+  {x | 0 ≤ x ∧ τ x < ∞}
+
+omit [StarOrderedRing B] in
+@[simp]
+theorem mem_finitePart {x : B} : x ∈ finitePart τ ↔ 0 ≤ x ∧ τ x < ∞ :=
+  Iff.rfl
+
+namespace IsTrace
+
+omit [StarOrderedRing B] in
+/-- A trace vanishes at `0`. -/
 theorem map_zero (hτ : IsTrace τ) : τ 0 = 0 := by
   simpa using hτ.map_nnreal_smul_of_nonneg 0 le_rfl
 
@@ -87,29 +109,19 @@ theorem mono (hτ : IsTrace τ) {x y : B} (hy : 0 ≤ y) (hyx : y ≤ x) : τ y 
   rw [← add_sub_cancel y x, hτ.map_add_of_nonneg hy (sub_nonneg.mpr hyx)]
   exact le_self_add
 
-/-- A trace is **faithful** if a positive element of trace zero is zero. -/
-def IsFaithful (τ : B → ℝ≥0∞) : Prop :=
-  ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0
-
-/-- The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` of a trace. -/
-def finitePart (τ : B → ℝ≥0∞) : Set B :=
-  {x | 0 ≤ x ∧ τ x < ∞}
-
-omit [StarOrderedRing B] in
-theorem mem_finitePart {x : B} : x ∈ finitePart τ ↔ 0 ≤ x ∧ τ x < ∞ :=
-  Iff.rfl
-
 /-- The finite part is hereditary: `0 ≤ y ≤ x ∈ 𝔪_τ⁺` gives `y ∈ 𝔪_τ⁺`. -/
 theorem mem_finitePart_of_le (hτ : IsTrace τ) {x y : B} (hx : x ∈ finitePart τ) (hy : 0 ≤ y)
     (hyx : y ≤ x) : y ∈ finitePart τ :=
   ⟨hy, (hτ.mono hy hyx).trans_lt hx.2⟩
 
+/-- `𝔪_τ⁺` is closed under addition. -/
 theorem add_mem_finitePart (hτ : IsTrace τ) {x y : B} (hx : x ∈ finitePart τ)
     (hy : y ∈ finitePart τ) : x + y ∈ finitePart τ :=
   ⟨add_nonneg hx.1 hy.1, by
     rw [hτ.map_add_of_nonneg hx.1 hy.1]
     exact ENNReal.add_lt_top.mpr ⟨hx.2, hy.2⟩⟩
 
+/-- `𝔪_τ⁺` is closed under multiplication by nonnegative reals. -/
 theorem smul_mem_finitePart (hτ : IsTrace τ) (c : ℝ≥0) {x : B} (hx : x ∈ finitePart τ) :
     (c : ℝ) • x ∈ finitePart τ :=
   ⟨smul_nonneg c.property hx.1, by
@@ -117,13 +129,14 @@ theorem smul_mem_finitePart (hτ : IsTrace τ) (c : ℝ≥0) {x : B} (hx : x ∈
     exact ENNReal.mul_lt_top ENNReal.coe_lt_top hx.2⟩
 
 omit [StarOrderedRing B] in
+/-- `0 ∈ 𝔪_τ⁺`. -/
 theorem zero_mem_finitePart (hτ : IsTrace τ) : (0 : B) ∈ finitePart τ :=
   ⟨le_rfl, by simp [hτ.map_zero]⟩
 
 /-! ### The square-integrable ideal -/
 
 /-- The parallelogram bound `τ((x + y)⋆(x + y)) ≤ 2 (τ(x⋆x) + τ(y⋆y))`, written as
-`τ(z) + τ(z)` for `z = x⋆x + y⋆y`. -/
+`(τ(x⋆x) + τ(y⋆y)) + (τ(x⋆x) + τ(y⋆y))`. -/
 theorem map_star_add_mul_add_le (hτ : IsTrace τ) (x y : B) :
     τ (star (x + y) * (x + y)) ≤
       (τ (star x * x) + τ (star y * y)) + (τ (star x * x) + τ (star y * y)) := by
@@ -163,15 +176,15 @@ def sqIntegrable (hτ : IsTrace τ) : TwoSidedIdeal B :=
       have hx' : τ (star (star x) * star x) < ∞ := by
         rw [star_star, ← hτ.map_star_mul_self]
         exact hx
-      change τ (star (x * a) * (x * a)) < ∞
-      rw [hτ.map_star_mul_self]
+      rw [Set.mem_ofPred_eq, hτ.map_star_mul_self]
       exact h.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hx'))
 
+@[simp]
 theorem mem_sqIntegrable (hτ : IsTrace τ) {x : B} :
     x ∈ hτ.sqIntegrable ↔ τ (star x * x) < ∞ :=
   TwoSidedIdeal.mem_mk' ..
 
-/-- `𝔫_τ` is self-adjoint, by the trace identity. -/
+/-- `𝔫_τ` is self-adjoint. -/
 theorem star_mem_sqIntegrable (hτ : IsTrace τ) {x : B} (hx : x ∈ hτ.sqIntegrable) :
     star x ∈ hτ.sqIntegrable := by
   rw [mem_sqIntegrable] at hx ⊢
@@ -183,18 +196,19 @@ theorem smul_mem_sqIntegrable (hτ : IsTrace τ) (c : ℂ) {x : B} (hx : x ∈ h
   rw [mem_sqIntegrable] at hx ⊢
   have : star (c • x) * (c • x) = ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) • (star x * x) := by
     rw [star_smul, smul_mul_smul_comm, ← Complex.coe_smul, NNReal.coe_pow, coe_nnNorm,
-      Complex.ofReal_pow, ← Complex.conj_mul']
-    rfl
+      Complex.ofReal_pow, ← Complex.conj_mul', Complex.star_def]
   rw [this, hτ.map_nnreal_smul_of_nonneg _ (star_mul_self_nonneg x)]
   exact ENNReal.mul_lt_top ENNReal.coe_lt_top hx
 
 /-! ### Constructions -/
 
 omit [StarOrderedRing B] in
+/-- The zero map is a trace. -/
 protected theorem zero : IsTrace (0 : B → ℝ≥0∞) :=
   ⟨by simp, by simp, by simp⟩
 
 omit [StarOrderedRing B] in
+/-- The sum of two traces is a trace. -/
 protected theorem add {σ : B → ℝ≥0∞} (hτ : IsTrace τ) (hσ : IsTrace σ) : IsTrace (τ + σ) where
   map_add_of_nonneg x y hx hy := by
     simp only [Pi.add_apply, hτ.map_add_of_nonneg hx hy, hσ.map_add_of_nonneg hx hy]
@@ -204,15 +218,19 @@ protected theorem add {σ : B → ℝ≥0∞} (hτ : IsTrace τ) (hσ : IsTrace 
   map_star_mul_self x := by simp [hτ.map_star_mul_self, hσ.map_star_mul_self]
 
 omit [StarOrderedRing B] in
+/-- A multiple `c τ` of a trace by `c ∈ [0, ∞]` is a trace. -/
 protected theorem const_mul (hτ : IsTrace τ) (c : ℝ≥0∞) : IsTrace fun x ↦ c * τ x where
   map_add_of_nonneg x y hx hy := by rw [hτ.map_add_of_nonneg hx hy, mul_add]
   map_nnreal_smul_of_nonneg d x hx := by rw [hτ.map_nnreal_smul_of_nonneg d hx, mul_left_comm]
   map_star_mul_self x := by rw [hτ.map_star_mul_self]
 
+end IsTrace
+
 variable [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {F : Type*} [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 /-- The pullback `τ ∘ φ` of a trace along a star homomorphism is a trace. -/
-protected theorem comp (hτ : IsTrace τ) (φ : A →⋆ₙₐ[ℂ] B) : IsTrace (τ ∘ φ) where
+protected theorem IsTrace.comp (hτ : IsTrace τ) (φ : F) : IsTrace (τ ∘ φ) where
   map_add_of_nonneg x y hx hy := by
     simp only [Function.comp_apply, map_add]
     exact hτ.map_add_of_nonneg (map_nonneg φ hx) (map_nonneg φ hy)
@@ -224,11 +242,9 @@ protected theorem comp (hτ : IsTrace τ) (φ : A →⋆ₙₐ[ℂ] B) : IsTrace
     simp only [Function.comp_apply, map_mul, map_star, hτ.map_star_mul_self]
 
 /-- The pullback of a faithful trace along an injective star homomorphism is faithful. -/
-theorem IsFaithful.comp (hτ : IsFaithful τ) {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Injective φ) :
-    IsFaithful (τ ∘ φ) := fun x hx h0 ↦
+theorem IsFaithfulTrace.comp (hτ : IsFaithfulTrace τ) {φ : F} (hφ : Function.Injective φ) :
+    IsFaithfulTrace (τ ∘ φ) := fun x hx h0 ↦
   hφ <| by simpa using hτ (map_nonneg φ hx) h0
-
-end IsTrace
 
 /-! ### Bounded traces -/
 
@@ -237,6 +253,11 @@ namespace PositiveTracialFunctional
 /-- The trace `x ↦ Re ω(x)` of a positive tracial functional `ω`, finite everywhere. -/
 noncomputable def toTrace (ω : PositiveTracialFunctional B) : B → ℝ≥0∞ :=
   fun x ↦ ENNReal.ofReal (ω x).re
+
+@[simp]
+theorem toTrace_apply (ω : PositiveTracialFunctional B) (x : B) :
+    ω.toTrace x = ENNReal.ofReal (ω x).re :=
+  (rfl)
 
 theorem toTrace_lt_top (ω : PositiveTracialFunctional B) (x : B) : ω.toTrace x < ∞ :=
   ENNReal.ofReal_lt_top

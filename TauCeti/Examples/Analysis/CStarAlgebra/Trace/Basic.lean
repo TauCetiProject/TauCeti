@@ -11,9 +11,9 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
 /-!
 # Checks for traces on C⋆-algebras
 
-TracesOnCStarAlgebras Tr1.1, first Check: on `M₂(ℂ)` the positive functional `x ↦ x₁₁` is not a
-trace. With `x = e₁₂`, `x⋆x = e₂₂` has `(1, 1)` entry `0` while `xx⋆ = e₁₁` has `(1, 1)` entry `1`,
-so the trace identity `τ(x⋆x) = τ(xx⋆)` fails.
+On `M₂(ℂ)` the positive functional `x ↦ x₁₁` is not a trace. With `x = e₁₂`, `x⋆x = e₂₂` has
+`(1, 1)` entry `0` while `xx⋆ = e₁₁` has `(1, 1)` entry `1`, so the trace identity
+`τ(x⋆x) = τ(xx⋆)` fails.
 -/
 
 public section
