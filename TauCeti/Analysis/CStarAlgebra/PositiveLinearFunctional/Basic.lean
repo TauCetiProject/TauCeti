@@ -23,6 +23,8 @@ consequences:
 
 * `PositiveContinuousLinearMap.opNorm_add`: the operator norm is additive on positive functionals,
   `‖ω₁ + ω₂‖ = ‖ω₁‖ + ‖ω₂‖`.
+* `PositiveContinuousLinearMap.opNorm_smul`: positive functionals form an `ℝ≥0`-module, and
+  scaling by a nonnegative real multiplies the norm.
 * `PositiveContinuousLinearMap.tendsto_mul_self_nhds_opNorm`: along any increasing approximate unit
   `e`, the squared values `ω (e * e)` also tend to `‖ω‖`.
 
@@ -70,9 +72,40 @@ nonnegative elements, since these span the algebra.
 public section
 
 open Filter
-open scoped ComplexOrder Topology
+open scoped ComplexOrder NNReal Topology
 
 namespace PositiveContinuousLinearMap
+
+section NNRealSMul
+
+variable {E : Type*} [AddCommGroup E] [PartialOrder E] [IsOrderedAddMonoid E] [TopologicalSpace E]
+  [Module ℂ E]
+
+/-- Positive functionals are closed under scaling by a nonnegative real. -/
+noncomputable instance instSMulNNReal : SMul ℝ≥0 (E →P[ℂ] ℂ) where
+  smul c τ := mk₀ (c • (τ : E →L[ℂ] ℂ)) fun x hx ↦ by
+    simpa [NNReal.smul_def] using
+      mul_nonneg (Complex.zero_le_real.mpr c.property) (τ.map_nonneg hx)
+
+instance : IsSMulApply ℝ≥0 (E →P[ℂ] ℂ) where
+
+/-- The continuous linear map underlying `c • τ` is `c • τ`. -/
+@[simp]
+theorem toContinuousLinearMap_smul (c : ℝ≥0) (τ : E →P[ℂ] ℂ) :
+    ((c • τ : E →P[ℂ] ℂ) : E →L[ℂ] ℂ) = c • (τ : E →L[ℂ] ℂ) :=
+  (rfl)
+
+/-- Positive functionals form a module over the nonnegative reals. -/
+noncomputable instance instModuleNNReal : Module ℝ≥0 (E →P[ℂ] ℂ) :=
+  fast_instance% FunLike.module
+
+end NNRealSMul
+
+/-- Scaling a positive functional by a nonnegative real `c` multiplies its norm by `c`. -/
+theorem opNorm_smul {E : Type*} [SeminormedAddCommGroup E] [PartialOrder E]
+    [IsOrderedAddMonoid E] [NormedSpace ℂ E] (c : ℝ≥0) (τ : E →P[ℂ] ℂ) :
+    ‖((c • τ : E →P[ℂ] ℂ) : E →L[ℂ] ℂ)‖ = c * ‖(τ : E →L[ℂ] ℂ)‖ := by
+  rw [toContinuousLinearMap_smul, NNReal.smul_def, norm_smul, NNReal.norm_eq]
 
 section Norm
 

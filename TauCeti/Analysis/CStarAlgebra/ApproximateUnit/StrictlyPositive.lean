@@ -327,7 +327,7 @@ theorem strictlyPositiveApproximateUnit_mul_mem_range (h : A) (n : ℕ) (a : A) 
   let r : A⁺¹ := cfc (fun t : ℝ≥0 => (((n + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹) (h : A⁺¹)
   refine ⟨r.fst • a + r.snd * a, Unitization.inr_injective (R := ℂ) ?_⟩
   rw [Unitization.inr_mul, Unitization.inr_mul,
-    (inr_strictlyPositiveApproximateUnit_eq h n).1, mul_assoc, Unitization.mul_inr_eq_inr r a]
+    (inr_strictlyPositiveApproximateUnit_eq h n).1, mul_assoc, Unitization.mul_inr r a]
 
 /-- Every right multiple `a * strictlyPositiveApproximateUnit h n` belongs to `A * h`. -/
 theorem mul_strictlyPositiveApproximateUnit_mem_range (h : A) (n : ℕ) (a : A) :
@@ -351,7 +351,7 @@ theorem strictlyPositiveApproximateUnit_mul_mul_mem_range (h : A) (n : ℕ) (a :
   simp only [Unitization.inr_mul]
   calc (h : A⁺¹) * (b : A⁺¹) * (h : A⁺¹)
       = (h : A⁺¹) * ((r * (a : A⁺¹)) * r) * (h : A⁺¹) := by
-        rw [Unitization.mul_inr_eq_inr r a, Unitization.inr_mul_eq_inr b₁ r]
+        rw [Unitization.mul_inr r a, Unitization.inr_mul_eq_inr b₁ r]
     _ = ((h : A⁺¹) * r) * (a : A⁺¹) * (r * (h : A⁺¹)) := by noncomm_ring
     _ = ((strictlyPositiveApproximateUnit h n : A) : A⁺¹) * (a : A⁺¹) *
           ((strictlyPositiveApproximateUnit h n : A) : A⁺¹) := by rw [← hL, ← hR]
