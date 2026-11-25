@@ -113,6 +113,10 @@ theorem norm_circlePt (k : Fin 8) : ‖circlePt k‖ = 1 := by
     Complex.normSq_apply]
   fin_cases k <;> norm_num [circlePt]
 
+/-- The points `circlePt k` are nonzero. -/
+theorem circlePt_ne_zero (k : Fin 8) : circlePt k ≠ 0 :=
+  ne_zero_of_norm_ne_zero ((norm_circlePt k).symm ▸ one_ne_zero)
+
 /-- The point `circlePt k` of the closed disc. -/
 def circlePtDisc (k : Fin 8) : CenteredClosedDisc :=
   mk (circlePt k) (norm_circlePt k).le
@@ -178,8 +182,7 @@ theorem fiveDom_succ (j : Fin 4) : fiveDom j.succ = halfDiscDom (circlePt (Fin.c
         simp only [Function.comp_apply, mem_ofPred_eq, hz1, norm_neg, norm_one] at hz
         norm_num at hz
       · simpa [chartCenter_circlePtDisc] using
-          closure_halfDiscDom_subset (ne_zero_of_norm_ne_zero (norm_circlePt (Fin.castAdd 4 j)
-            ▸ one_ne_zero)) 1)
+          closure_halfDiscDom_subset (circlePt_ne_zero (Fin.castAdd 4 j)) 1)
     fun z ↦ by
       by_cases h0 : ‖(z : ℂ)‖ < 1 / 2
       · exact ⟨0, by rw [fiveDom_zero, mem_innerDom]; exact h0⟩
@@ -225,7 +228,7 @@ theorem fiveChartAtlas_dom (k : Fin 5) : (fiveChartAtlas F).dom k = fiveDom k :=
     (fun _ ↦ isOpen_halfDiscDom _ _)
     (fun k ↦ by
       simpa [chartCenter_circlePtDisc] using
-        closure_halfDiscDom_subset (ne_zero_of_norm_ne_zero (norm_circlePt k ▸ one_ne_zero)) 2)
+        closure_halfDiscDom_subset (circlePt_ne_zero k) 2)
     fun z ↦ by
       rcases le_or_gt 0 (z : ℂ).re with hx | hx
       · exact ⟨0, (mem_halfDiscDom_iff two_pos).2 (by norm_num [circlePt]; nlinarith)⟩

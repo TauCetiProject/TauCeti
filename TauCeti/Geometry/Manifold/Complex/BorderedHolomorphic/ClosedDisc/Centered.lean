@@ -120,6 +120,8 @@ theorem chartCenter_of_norm_ne_one {z : CenteredClosedDisc} (hz : ‖(z : ℂ)�
     chartCenter z = Complex.UnitClosedDisc.chartCenter (ofDisc.symm z) := by
   simp [chartCenter_def, hz]
 
+/-- The center of the preferred chart lies on the unit circle. -/
+@[simp]
 theorem norm_chartCenter (z : CenteredClosedDisc) : ‖chartCenter z‖ = 1 := by
   rw [chartCenter_def]
   split_ifs with h
@@ -171,14 +173,11 @@ theorem cayleyChart_target {ζ : ℂ} {hζ : ‖ζ‖ = 1} : (cayleyChart ζ hζ
   Complex.UnitClosedDisc.cayleyChart_target
 
 /-- The image of a point under a Cayley chart has positive imaginary part exactly when the point
-lies in the open unit disc. At `z = -ζ`, outside the source, the chart takes the value `0` and
-`‖z‖ = 1`, so both sides fail there too. -/
+lies in the open unit disc (`Complex.UnitClosedDisc.im_cayleyChart_pos_iff`). -/
 theorem im_cayleyChart_pos_iff {ζ : ℂ} {hζ : ‖ζ‖ = 1} {z : CenteredClosedDisc} :
-    0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 := by
-  by_cases hz : (z : ℂ) = -ζ
-  · simp [hz, hζ]
-  · exact Complex.UnitClosedDisc.im_cayleyChart_pos_iff
-      (show z ∈ (cayleyChart ζ hζ).source by rw [cayleyChart_source]; exact hz)
+    0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 :=
+  -- `CenteredClosedDisc` and its `cayleyChart` are by definition `𝕔𝔻` and its Cayley chart.
+  Complex.UnitClosedDisc.im_cayleyChart_pos_iff
 
 /-- The closed unit disc with the Cayley charts as atlas, the preferred chart at `z` being centered
 at `TauCeti.CenteredClosedDisc.chartCenter z`. -/

@@ -136,11 +136,12 @@ theorem im_cayleyChart_apply (z : 𝕔𝔻) :
   rw [coe_cayleyChart_apply, im_I_mul_sub_div_add, normSq_eq_norm_sq, normSq_eq_norm_sq,
     normSq_eq_norm_sq, hζ, one_pow]
 
-/-- A point of the source of a Cayley chart has image of positive imaginary part exactly when it
-lies in the open unit disc. -/
-theorem im_cayleyChart_pos_iff {z : 𝕔𝔻} (hz : z ∈ (cayleyChart ζ hζ).source) :
-    0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 := by
-  rw [cayleyChart_source] at hz
+/-- The image of a point under a Cayley chart has positive imaginary part exactly when the point
+lies in the open unit disc. At `z = -ζ`, outside the source, the chart takes the value `0` and
+`‖z‖ = 1`, so both sides fail there too. -/
+theorem im_cayleyChart_pos_iff {z : 𝕔𝔻} : 0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 := by
+  by_cases hz : (z : ℂ) = -ζ
+  · simp [hz, hζ]
   have hz0 : ‖ζ + z‖ ≠ 0 := norm_ne_zero_iff.2 (add_ne_zero_of_ne_neg hz)
   rw [im_cayleyChart_apply, div_pos_iff_of_pos_right (by positivity), sub_pos,
     sq_lt_one_iff₀ (norm_nonneg _)]
@@ -272,8 +273,7 @@ instance instHasGroupoid : HasGroupoid 𝕔𝔻 borderedHolomorphicGroupoid wher
 /-- The interior of the closed unit disc is the open unit disc. -/
 @[simp]
 theorem mem_borderedInterior_iff {z : 𝕔𝔻} : z ∈ borderedInterior 𝕔𝔻 ↔ ‖(z : ℂ)‖ < 1 := by
-  rw [mem_borderedInterior_iff_im_chartAt_pos, chartAt_eq,
-    im_cayleyChart_pos_iff (by rw [cayleyChart_source]; exact coe_ne_neg_chartCenter z)]
+  rw [mem_borderedInterior_iff_im_chartAt_pos, chartAt_eq, im_cayleyChart_pos_iff]
 
 /-- The interior of the closed unit disc is the open unit disc. -/
 theorem coe_borderedInterior :
