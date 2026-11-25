@@ -123,6 +123,32 @@ theorem subsingleton_relHomotopyGroup_diagonal
       (HomotopyGroup.map_map_of_comp_eq_id r _ rfl hr hrι))
     (@Function.surjective_to_subsingleton _ _ _ hYY _)
 
+/-- Two maps `X → Y` inducing the same homomorphism on `π₁(X, x₀)` induce the same homomorphism
+on `π₁(univ, x₀)` after composing with `Subtype.val : univ → X`. -/
+private theorem mapOfEq_comp_subtypeVal_univ_eq {X : Type u} [TopologicalSpace X]
+    {f g : C(X, Y)} {x₀ : X} {y₀ : Y} (hf : f x₀ = y₀) (hg : g x₀ = y₀)
+    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
+    FundamentalGroup.mapOfEq (f.comp ⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), Y))
+      (x := ⟨x₀, trivial⟩) hf =
+      FundamentalGroup.mapOfEq (g.comp ⟨Subtype.val, continuous_subtypeVal⟩) hg := by
+  ext p
+  rw [← FundamentalGroup.mapOfEq_comp f _ rfl hf, ← FundamentalGroup.mapOfEq_comp g _ rfl hg, hfg]
+
+/-- Two maps `X → Y` whose composites with `Subtype.val : univ → X` are homotopic relative to
+`x₀` are homotopic relative to `x₀`. -/
+private theorem homotopicRel_singleton_of_comp_subtypeVal_univ {X : Type u} [TopologicalSpace X]
+    {f g : C(X, Y)} {x₀ : X}
+    (h : (f.comp ⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), Y)).HomotopicRel
+      (g.comp ⟨Subtype.val, continuous_subtypeVal⟩) {⟨x₀, trivial⟩}) :
+    f.HomotopicRel g {x₀} := by
+  let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
+  have he : (⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), X)).comp e' =
+      ContinuousMap.id X := rfl
+  have hpre : e' ⁻¹' {⟨x₀, trivial⟩} = {x₀} := by
+    ext
+    simp [e', Subtype.ext_iff]
+  simpa only [ContinuousMap.comp_assoc, he, ContinuousMap.comp_id, hpre] using h.precomp e'
+
 section RelCWComplex
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
@@ -244,21 +270,12 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set
     (hx₀ : (skeletonLT (univ : Set X) 1 : Set X) = {x₀}) {f g : C(X, Y)} {y₀ : Y}
     (hf : f x₀ = y₀) (hg : g x₀ = y₀)
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
-    f.HomotopicRel g {x₀} := by
+    f.HomotopicRel g {x₀} :=
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
-  have h := homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
-    (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) (f := f.comp e) (g := g.comp e)
-    hf hg <| by
-      ext p
-      rw [← FundamentalGroup.mapOfEq_comp f e rfl hf, ← FundamentalGroup.mapOfEq_comp g e rfl hg,
-        hfg]
-  let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
-  have he : e.comp e' = ContinuousMap.id X := rfl
-  have hpre : e' ⁻¹' {⟨x₀, trivial⟩} = {x₀} := by
-    ext
-    simp [e', Subtype.ext_iff]
-  simpa only [ContinuousMap.comp_assoc, he, ContinuousMap.comp_id, hpre] using h.precomp e'
+  homotopicRel_singleton_of_comp_subtypeVal_univ <|
+    homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
+      (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) hf hg
+      (mapOfEq_comp_subtypeVal_univ_eq hf hg hfg)
 
 end RelCWComplex
 
@@ -291,44 +308,6 @@ private theorem mk_eq_inv_comp_of_apply_eq {f g : C(Z, Y)} {x₀ v : Z} (hg : g 
   simp only [eqToHom_refl, Category.comp_id, ← Groupoid.inv_eq_inv]
   -- The inverse in Mathlib's fundamental groupoid is defined as the reversal of path classes.
   rfl
-
-/-- Two maps `f` and `g` with `g x₀ = f x₀` inducing the same homomorphism on `π₁(Z, x₀)` agree,
-up to the identification of `g x₀` with `f x₀`, on the class of every path `α₀ · p · α₁⁻¹`. -/
-private theorem mk_map_comp_eq_of_mapOfEq_eq {f g : C(Z, Y)} {x₀ a b : Z} (hg : g x₀ = f x₀)
-    (hfg : FundamentalGroup.mapOfEq f rfl = FundamentalGroup.mapOfEq g hg) (α₀ : Path x₀ a)
-    (p : Path a b) (α₁ : Path x₀ b) :
-    (Path.Homotopic.Quotient.mk (α₀.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) ≫
-      (Path.Homotopic.Quotient.mk (p.map f.continuous) : FundamentalGroupoid.mk (f a) ⟶ _) ≫
-      inv (Path.Homotopic.Quotient.mk (α₁.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) =
-    eqToHom congr(FundamentalGroupoid.mk $(hg.symm)) ≫
-      ((Path.Homotopic.Quotient.mk (α₀.map g.continuous) : FundamentalGroupoid.mk (g x₀) ⟶ _) ≫
-      (Path.Homotopic.Quotient.mk (p.map g.continuous) : FundamentalGroupoid.mk (g a) ⟶ _) ≫
-      inv (Path.Homotopic.Quotient.mk (α₁.map g.continuous) :
-        FundamentalGroupoid.mk (g x₀) ⟶ _)) ≫
-      eqToHom congr(FundamentalGroupoid.mk $hg) := by
-  -- The loop `α₀ · p · α₁⁻¹` at `x₀`, and its images under `f` and `g`.
-  let L : FundamentalGroupoid.mk x₀ ⟶ FundamentalGroupoid.mk x₀ :=
-    (Path.Homotopic.Quotient.mk α₀ : FundamentalGroupoid.mk x₀ ⟶ _) ≫
-      (Path.Homotopic.Quotient.mk p : FundamentalGroupoid.mk a ⟶ _) ≫
-      inv (Path.Homotopic.Quotient.mk α₁ : FundamentalGroupoid.mk x₀ ⟶ _)
-  have hmap (k : C(Z, Y)) :
-      FundamentalGroupoid.fromPath (x₀ := k x₀) (Path.Homotopic.Quotient.map L k) =
-        (Path.Homotopic.Quotient.mk (α₀.map k.continuous) : FundamentalGroupoid.mk (k x₀) ⟶ _) ≫
-        (Path.Homotopic.Quotient.mk (p.map k.continuous) : FundamentalGroupoid.mk (k a) ⟶ _) ≫
-        inv (Path.Homotopic.Quotient.mk (α₁.map k.continuous) :
-          FundamentalGroupoid.mk (k x₀) ⟶ _) := by
-    -- `Path.Homotopic.Quotient.map L k` is the image of `L` under the functor `map k`, whose
-    -- source and target objects `mk (k x₀)` are those of `(map k).obj (mk x₀)` by definition;
-    -- likewise `map k` sends the class of a path to the class of its image by definition.
-    change (FundamentalGroupoid.map k).map L = _
-    simp only [L, Functor.map_comp, Functor.map_inv]
-    rfl
-  have h := congrArg CategoryTheory.End.asHom <|
-    DFunLike.congr_fun hfg (FundamentalGroup.fromArrow L)
-  simp only [FundamentalGroup.mapOfEq_apply] at h
-  rw [Path.Homotopic.Quotient.cast_rfl_rfl, ← FundamentalGroupoid.conj_eqToHom] at h
-  rw [← hmap f, ← hmap g]
-  exact h
 
 /-- Let `G` be a homotopy from `g` to `f'`, and let `f` be a map with `g x₀ = f x₀` inducing the
 same homomorphism as `g` on `π₁(Z, x₀)`. If at the two ends `a` and `b` of a path `p` the trace of
@@ -364,7 +343,7 @@ private theorem homotopicRel_comp_of_apply_eq_trans {f g f' : C(Z, Y)} {x₀ a b
       (Path.Homotopic.Quotient.mk (p.map f'.continuous) :
         FundamentalGroupoid.mk (f' a) ⟶ FundamentalGroupoid.mk (f' b)) ≫
       eqToHom congr(FundamentalGroupoid.mk $hb) := by
-    have hL := mk_map_comp_eq_of_mapOfEq_eq hg hfg α₀ p α₁
+    have hL := FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq hg hfg α₀ p α₁
     simp only [Category.assoc] at hL
     rw [← hN', mk_eq_inv_comp_of_apply_eq hg α₀ _ ha h₀, mk_eq_inv_comp_of_apply_eq hg α₁ _ hb h₁]
     simp [← reassoc_of% hL]
@@ -441,20 +420,11 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex
     f.HomotopicRel g {x₀} := by
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT` to `univ`, through
   -- `Subtype.val`.
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   have : PathConnectedSpace (univ : Set X) :=
     isPathConnected_iff_pathConnectedSpace.1 isPathConnected_univ
-  have h := homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT (C := (univ : Set X)) hY
-    (x₀ := ⟨x₀, trivial⟩) hx₀ (f := f.comp e) (g := g.comp e) hf hg <| by
-      ext p
-      rw [← FundamentalGroup.mapOfEq_comp f e rfl hf, ← FundamentalGroup.mapOfEq_comp g e rfl hg,
-        hfg]
-  let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
-  have he : e.comp e' = ContinuousMap.id X := rfl
-  have hpre : e' ⁻¹' {⟨x₀, trivial⟩} = {x₀} := by
-    ext
-    simp [e', Subtype.ext_iff]
-  simpa only [ContinuousMap.comp_assoc, he, ContinuousMap.comp_id, hpre] using h.precomp e'
+  exact homotopicRel_singleton_of_comp_subtypeVal_univ <|
+    homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT (C := (univ : Set X)) hY
+      (x₀ := ⟨x₀, trivial⟩) hx₀ hf hg (mapOfEq_comp_subtypeVal_univ_eq hf hg hfg)
 
 end Vertex
 
