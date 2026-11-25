@@ -108,6 +108,9 @@ resolvent-type functions, which are `O(1 / y)` there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
   intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
   `[a, ∞)`, and `‖g‖` does not vanish there.
+* `Asymptotics.IsBigO.isBigO_principal_Ioc_of_continuousOn`: the counterpart at a left endpoint:
+  `f = O(g)` as `x → a⁺` gives `f = O(g)` on `(a, b]` under the same continuity and nonvanishing
+  hypotheses on `(a, b]`.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -310,6 +313,35 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrde
     (fun b ↦ isCompact_Icc.exists_forall_le' (hg.norm.mono Set.Icc_subset_Ici_self)
       fun x hx ↦ (norm_nonneg _).lt_of_ne' (hg0 x hx.1))
     fun b ↦ isCompact_Icc.exists_bound_of_continuousOn (hf.mono Set.Icc_subset_Ici_self)
+
+/-- **A big-O bound at `a⁺` holds on a whole interval `(a, b]`, continuous version.** In a
+linear order with the order topology whose closed intervals are compact, if `f = O(g)` as
+`x → a⁺`, both functions take values in seminormed groups and are continuous on `(a, b]`, and `‖g‖`
+does not vanish there, then `f = O(g)` uniformly on `(a, b]`. This is the counterpart at a left
+endpoint of `IsBigO.isBigO_principal_Ici_of_continuousOn`. -/
+theorem IsBigO.isBigO_principal_Ioc_of_continuousOn {ι E F : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] [CompactIccSpace ι] [SeminormedAddGroup E]
+    [SeminormedAddGroup F] {f : ι → E} {g : ι → F} {a b : ι} (h : f =O[𝓝[>] a] g)
+    (hf : ContinuousOn f (Set.Ioc a b)) (hg : ContinuousOn g (Set.Ioc a b))
+    (hg0 : ∀ x ∈ Set.Ioc a b, ‖g x‖ ≠ 0) : f =O[𝓟 (Set.Ioc a b)] g := by
+  rcases le_or_gt b a with hba | hab
+  · simp only [Set.Ioc_eq_empty hba.not_gt, principal_empty, isBigO_bot]
+  -- near `a` the bound holds on some `(a, u)`; on the compact `[u, b] ⊆ (a, b]` the continuous `f`
+  -- is bounded and the continuous nonvanishing `‖g‖` is bounded below
+  obtain ⟨C, hC⟩ := h.bound
+  obtain ⟨u, hu, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hab).mp hC
+  have hK : Set.Icc u b ⊆ Set.Ioc a b := fun x hx ↦ ⟨lt_of_lt_of_le hu hx.1, hx.2⟩
+  have hfar : f =O[𝓟 (Set.Icc u b)] g :=
+    ((hf.mono hK).isBigO_principal isCompact_Icc (c := (1 : ℝ)) (by norm_num)).trans
+      (((hg.norm.mono hK).isBigO_rev_principal isCompact_Icc (fun x hx ↦ hg0 x (hK hx))
+        (1 : ℝ)).trans (IsBigO.of_bound' (Eventually.of_forall fun x ↦
+          (Real.norm_of_nonneg (norm_nonneg (g x))).le)))
+  obtain ⟨C', hC'⟩ := isBigO_principal.mp hfar
+  refine isBigO_principal.mpr ⟨max C C', fun x hx ↦ ?_⟩
+  rcases lt_or_ge x u with hxu | hux
+  · exact (hsub ⟨hx.1, hxu⟩).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+  · exact (hC' x ⟨hux, hx.2⟩).trans
+      (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
 
 /-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `‖ψ‖` is eventually
 nonnegative and frequently nonzero along `l`, the vector `c` lies in a normed additive group, whose

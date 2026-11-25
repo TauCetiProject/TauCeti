@@ -10,23 +10,28 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Regularization of `∫₀^∞ f(t) h(xt) dt` (DLMF 2.6.54–2.6.62)
 
-Let `f` be locally integrable and `h` continuous on `(0, ∞)`, with expansions
-`f(t) = ∑_{s<n} a_s t^{s+α-1} + f_n(t)`, `f_n(t) = O(t^{n+α-1})` as `t → 0+`, and
-`h(t) = ∑_{s<n} b_s t^{-s-β} + h_n(t)`, `h_n(t) = O(t^{-n-β})` as `t → +∞`, for every `n`. Assume
-moreover `h(t) = O(t^{-c})` as `t → 0+` with `c < α`, and `f(t) = O(t^{-ρ})` as `t → +∞` with
-`1 < ρ + β`, and `0 < |α - β| < 1` (DLMF takes `0 < α, β ≤ 1` and `α ≠ β`). Then for every `x > 0`
-and every `n`, both integrals below converge absolutely and
+Let `f` be locally integrable and `h` continuous on `(0, ∞)`, and fix `n`. Assume the expansions
+of order `n`: `f(t) = ∑_{s<n} a_s t^{s+α-1} + f_n(t)` with `f_n(t) = O(t^{n+α-1})` as `t → 0+`,
+and `h(t) = ∑_{s<n} b_s t^{-s-β} + h_n(t)` with `h_n(t) = O(t^{-n-β})` as `t → +∞`. Asymptotic
+expansions `f(t) ∼ ∑ a_s t^{s+α-1}` and `h(t) ∼ ∑ b_s t^{-s-β}`
+(`Asymptotics.HasAsymptoticExpansion`) give these for every `n`, through
+`Asymptotics.HasAsymptoticExpansion.isBigO`. Assume moreover
+`h(t) = O(t^{-c})` as `t → 0+` with `c < α`, and `f(t) = O(t^{-ρ})` as `t → +∞` with `1 < ρ + β`,
+and `0 < |α - β| < 1` (DLMF takes `0 < α, β ≤ 1` and `α ≠ β`). Then for every `x > 0`, both
+integrals below converge absolutely and
 
 `∫₀^∞ f(t) h(xt) dt = ∑_{j<n} a_j 𝓜h(j + α) x^{-j-α} + ∑_{k<n} b_k 𝓜f(1 - k - β) x^{-k-β}
   + ∫₀^∞ f_n(t) h_n(xt) dt`,
 
 where `𝓜h = mellinContAtTop h b (k ↦ k + β) n` and `𝓜f = mellinContAtZero f a (k ↦ k + α - 1) n`
 are the Mellin transforms continued through the expansions; and the last integral is
-`O(x^{-n-min(α, β)})` as `x → +∞`. Together these give the asymptotic expansion of
+`O(x^{-n-min(α, β)})` as `x → +∞`. For full expansions of `f` and `h`, these give the asymptotic
+expansion of
 `∫₀^∞ f(t) h(xt) dt` as `x → +∞` in the two interleaved scales `x^{-j-α}` and `x^{-k-β}`,
 with coefficients the continued Mellin transforms.
 
@@ -61,16 +66,6 @@ open Filter Set Complex MeasureTheory Asymptotics
 open scoped Topology
 
 namespace TauCeti
-
-/-! ### Preliminaries -/
-
-/-- A power bound survives rescaling of the variable by `x > 0`. -/
-private theorem isBigO_comp_mul_left_rpow {l l' : Filter ℝ} {g : ℝ → ℂ} {p x : ℝ} (hx : 0 < x)
-    (hg : g =O[l] (· ^ p)) (hl : Tendsto (x * ·) l' l) (hpos : ∀ᶠ t in l', 0 < t) :
-    (fun t ↦ g (x * t)) =O[l'] (· ^ p) := by
-  refine (hg.comp_tendsto hl).trans (IsBigO.of_bound (x ^ p) (hpos.mono fun t ht ↦ ?_))
-  simp only [Function.comp_apply, Real.norm_eq_abs, Real.mul_rpow hx.le ht.le]
-  rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hx p)]
 
 /-! ### The algebra of regularization -/
 
@@ -208,28 +203,31 @@ private theorem natCast_add_ne_natCast_add {α β : ℝ} (hαβ : α < β + 1) (
 
 variable {f h : ℝ → ℂ} {a b : ℕ → ℂ} {α β c ρ : ℝ}
 
-/-- The remainder of the expansion of `f` at `0+` after `n` terms is `O(t^{n+α-1})`. -/
-private theorem isBigO_sub_sum_nhdsGT
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (n : ℕ) : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j)
+/-- The remainder bound of `f` at `0+` after `n` terms, with a real power. -/
+private theorem isBigO_sub_sum_nhdsGT {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1)) :
+    (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j)
       =O[𝓝[>] 0] (· ^ ((n : ℝ) + α - 1)) := by
-  convert isBigO_sub_sum_rpow eventually_mem_nhdsWithin (hfa.isBigO n) using 2
+  have := hfn.trans (isBigO_ofReal_cpow_rpow eventually_mem_nhdsWithin _)
+  simpa only [sub_re, add_re, natCast_re, ofReal_re, one_re] using this
 
-/-- The remainder of the expansion of `h` at `+∞` after `n` terms is `O(t^{-n-β})`. -/
-private theorem isBigO_sub_sum_atTop
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
-    (n : ℕ) : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k)
+/-- The remainder bound of `h` at `+∞` after `n` terms, with a real power. -/
+private theorem isBigO_sub_sum_atTop {n : ℕ}
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β))) :
+    (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k)
       =O[atTop] (· ^ (-((n : ℝ) + β))) := by
-  have := isBigO_sub_sum_rpow (eventually_gt_atTop 0) (hhb.isBigO n)
-  simp only [neg_re, add_re, natCast_re, ofReal_re] at this
-  exact this
+  have := hhn.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _)
+  simpa only [neg_re, add_re, natCast_re, ofReal_re] using this
 
 /-- The partial Mellin integrals of `h (x ·)` at `z`, with the expansion of `h (x ·)` at `+∞`
 subtracted on `(1, ∞)`, are `x^{-z}` times the continued transform of `h` plus the principal
 parts of the continued transform of `h (x ·)`. -/
 private theorem integral_Ioc_add_integral_Ioi_comp_mul_left (hh : ContinuousOn h (Ioi 0))
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
-    (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) {n : ℕ} {z : ℂ} (hcz : c < z.re) (hzn : z.re < n + β)
+    {n : ℕ} (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β)))
+    (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) {z : ℂ} (hcz : c < z.re) (hzn : z.re < n + β)
     (hz : ∀ k < n, z ≠ (k : ℂ) + β) {x : ℝ} (hx : 0 < x) :
     (∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) * h (x * t)) +
         (∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) * (h (x * t) - ∑ k ∈ Finset.range n,
@@ -241,7 +239,7 @@ private theorem integral_Ioc_add_integral_Ioi_comp_mul_left (hh : ContinuousOn h
     (integrableOn_Ioc_cpow_smul_of_isBigO (hh.locallyIntegrableOn measurableSet_Ioi) hh0 hcz)
     (integrableOn_Ioi_cpow_smul_of_isBigO
       ((hh.sub (continuousOn_sum_cpow_smul _ b n)).locallyIntegrableOn measurableSet_Ioi)
-      (isBigO_sub_sum_atTop hhb n) hzn) hz hx
+      (isBigO_sub_sum_atTop hhn) hzn) hz hx
   rw [mellinContAtTop_def] at hsc
   simp only [smul_eq_mul] at hsc ⊢
   linear_combination hsc
@@ -265,11 +263,13 @@ private theorem integral_Ioc_add_integral_Ioi_eq_mellinContAtZero {n : ℕ} (k :
 integrand is integrable on `(0, ∞)`, and `∫₀^∞ f(t) h(xt) dt` is the sum of the partial Mellin
 brackets of `h (x ·)` and of `f` plus the remainder integral. -/
 private theorem integrableOn_and_integral_eq_sum_brackets
-    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0))
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1))
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β)))
     (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) (hc : c < α) (hf1 : f =O[atTop] (· ^ (-ρ)))
-    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (n : ℕ) {x : ℝ} (hx : 0 < x) :
+    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) {x : ℝ} (hx : 0 < x) :
     IntegrableOn (fun t ↦ (f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) *
       (h (x * t) - ∑ k ∈ Finset.range n, ((x * t : ℝ) : ℂ) ^ (-((k : ℂ) + β)) • b k)) (Ioi 0) ∧
     ∫ t in Ioi 0, f t * h (x * t) =
@@ -288,65 +288,74 @@ private theorem integrableOn_and_integral_eq_sum_brackets
   set B : ℝ → ℂ := fun t ↦ ∑ k ∈ Finset.range n,
     (t : ℂ) ^ (-((k : ℂ) + β)) • ((x : ℂ) ^ (-((k : ℂ) + β)) • b k)
   have hBx (t : ℝ) : ∑ k ∈ Finset.range n, ((x * t : ℝ) : ℂ) ^ (-((k : ℂ) + β)) • b k = B t :=
-    Finset.sum_congr rfl fun k _ ↦ by
-      simp only [smul_smul, ofReal_mul, ofReal_mul_cpow hx.le, mul_comm]
+    (sum_cpow_smul_cpow_smul_eq_sum_mul_cpow_smul hx.le (fun k ↦ -((k : ℂ) + β)) b n t).symm
+  -- the subtracted sums in the shape of `integral_mul_eq_sum_partialMellin`
+  have hA (t : ℝ) : ∑ j ∈ Finset.range n, a j * (t : ℂ) ^ ((j : ℂ) + α - 1) = A t :=
+    Finset.sum_congr rfl fun j _ ↦ by rw [smul_eq_mul, mul_comm]
+  have hB (t : ℝ) : ∑ k ∈ Finset.range n, (x : ℂ) ^ (-((k : ℂ) + β)) * b k *
+      (t : ℂ) ^ (1 - ((k : ℂ) + β) - 1) = B t :=
+    Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, smul_eq_mul, mul_comm]; ring_nf
   have hhx : ContinuousOn (fun t ↦ h (x * t)) (Ioi 0) :=
     hh.comp (continuousOn_const.mul continuousOn_id) fun t ht ↦ mul_pos hx ht
   have hH1 : (fun t ↦ h (x * t) - B t) =O[atTop] (· ^ (-((n : ℝ) + β))) := by
-    simpa only [hBx] using isBigO_comp_mul_left_rpow hx (isBigO_sub_sum_atTop hhb n)
+    simpa only [hBx] using (isBigO_sub_sum_atTop hhn).comp_mul_left_rpow hx
       (tendsto_id.const_mul_atTop hx) (eventually_gt_atTop 0)
   simp only [hBx]
   exact integral_mul_eq_sum_partialMellin (F := fun t ↦ f t - A t)
     (H := fun t ↦ h (x * t) - B t) (z := fun j ↦ (j : ℂ) + α) (w := fun k ↦ 1 - ((k : ℂ) + β))
     (u := a) (v := fun k ↦ (x : ℂ) ^ (-((k : ℂ) + β)) * b k) (b := 1 - (n + α)) (r := n + β)
-    (fun t ↦ by
-      rw [show ∑ j ∈ Finset.range n, a j * (t : ℂ) ^ ((j : ℂ) + α - 1) = A t from
-        Finset.sum_congr rfl fun j _ ↦ by rw [smul_eq_mul, mul_comm], add_sub_cancel])
-    (fun t ↦ by
-      rw [show ∑ k ∈ Finset.range n, (x : ℂ) ^ (-((k : ℂ) + β)) * b k *
-          (t : ℂ) ^ (1 - ((k : ℂ) + β) - 1) = B t from
-        Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, smul_eq_mul, mul_comm]; ring_nf,
-        add_sub_cancel])
+    (fun t ↦ by rw [hA, add_sub_cancel]) (fun t ↦ by rw [hB, add_sub_cancel])
     hf (hf.sub (locallyIntegrableOn_sum_cpow_smul _ a n))
     hhx (hhx.sub (continuousOn_sum_cpow_smul _ _ n))
-    (by rw [neg_sub]; exact isBigO_sub_sum_nhdsGT hfa n)
-    (isBigO_comp_mul_left_rpow hx hh0 (tendsto_iff_comap.mpr (comap_mulLeft_nhdsGT_zero hx).ge)
+    (by rw [neg_sub]; exact isBigO_sub_sum_nhdsGT hfn)
+    (hh0.comp_mul_left_rpow hx (tendsto_iff_comap.mpr (comap_mulLeft_nhdsGT_zero hx).ge)
       eventually_mem_nhdsWithin) hf1 hH1
-    (fun j _ ↦ by simp; linarith) (fun k hk ↦ by simp; linarith [hlt k hk])
-    (fun k _ ↦ by simp; linarith) (fun j hj ↦ by simp; linarith [hlt j hj])
+    (fun j _ ↦ by simp only [add_re, natCast_re, ofReal_re]; linarith [j.cast_nonneg (α := ℝ)])
+    (fun k hk ↦ by
+      simp only [sub_re, one_re, add_re, natCast_re, ofReal_re]; linarith [hlt k hk])
+    (fun k _ ↦ by
+      simp only [sub_re, one_re, add_re, natCast_re, ofReal_re]
+      linarith [k.cast_nonneg (α := ℝ)])
+    (fun j hj ↦ by simp only [add_re, natCast_re, ofReal_re]; linarith [hlt j hj])
     (by linarith) (by linarith)
 
 /-- **Absolute convergence of the regularization remainder.** Under the hypotheses of
 `TauCeti.integral_mul_comp_mul_eq_sum_mellinCont_add_integral` (except `α ≠ β`), for every `x > 0`
-and `n` the remainder integrand `f_n(t) h_n(xt)` is integrable on `(0, ∞)`, where `f_n` and `h_n`
-are the remainders of the expansions of `f` at `0+` and of `h` at `+∞` after `n` terms. For `n = 0`
-this is the integrability of `t ↦ f(t) h(xt)`. -/
+the remainder integrand `f_n(t) h_n(xt)` is integrable on `(0, ∞)`, where `f_n` and `h_n` are the
+remainders of the expansions of order `n` of `f` at `0+` and of `h` at `+∞`. For `n = 0` this is
+the integrability of `t ↦ f(t) h(xt)`. -/
 theorem integrableOn_mul_comp_mul_sub_sum
-    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0))
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1))
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β)))
     (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) (hc : c < α) (hf1 : f =O[atTop] (· ^ (-ρ)))
-    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (n : ℕ) {x : ℝ} (hx : 0 < x) :
+    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) {x : ℝ} (hx : 0 < x) :
     IntegrableOn (fun t ↦ (f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) *
       (h (x * t) - ∑ k ∈ Finset.range n, ((x * t : ℝ) : ℂ) ^ (-((k : ℂ) + β)) • b k)) (Ioi 0) :=
-  (integrableOn_and_integral_eq_sum_brackets hf hh hfa hhb hh0 hc hf1 hρ hαβ hβα n hx).1
+  (integrableOn_and_integral_eq_sum_brackets hf hh hfn hhn hh0 hc hf1 hρ hαβ hβα hx).1
 
 /-- **Regularization of `∫₀^∞ f(t) h(xt) dt`** (DLMF 2.6.54–2.6.61). Let `f` be locally integrable
-and `h` continuous on `(0, ∞)`, with `f(t) ∼ ∑ a_s t^{s+α-1}` as `t → 0+` and
-`h(t) ∼ ∑ b_s t^{-s-β}` as `t → +∞`, `h(t) = O(t^{-c})` as `t → 0+` with `c < α`, and
-`f(t) = O(t^{-ρ})` as `t → +∞` with `1 < ρ + β`, where `0 < |α - β| < 1`. Then for every `x > 0`
-and `n`,
+and `h` continuous on `(0, ∞)`, with expansions of order `n`:
+`f_n(t) = f(t) - ∑_{j<n} a_j t^{j+α-1} = O(t^{n+α-1})` as `t → 0+` and
+`h_n(t) = h(t) - ∑_{k<n} b_k t^{-k-β} = O(t^{-n-β})` as `t → +∞` (for asymptotic expansions `hfa`,
+`hhb` of `f` and `h`, take `hfa.isBigO n` and `hhb.isBigO n`). Assume `h(t) = O(t^{-c})` as
+`t → 0+` with `c < α`, and `f(t) = O(t^{-ρ})` as `t → +∞` with `1 < ρ + β`, where
+`0 < |α - β| < 1`. Then for every `x > 0`,
 `∫₀^∞ f(t) h(xt) dt = ∑_{j<n} x^{-j-α} a_j 𝓜h(j + α) + ∑_{k<n} x^{-k-β} b_k 𝓜f(1 - k - β)
   + ∫₀^∞ f_n(t) h_n(xt) dt`,
-with `𝓜h`, `𝓜f` the continued Mellin transforms of `h` at `+∞` and of `f` at `0+`, and `f_n`, `h_n`
-the remainders after `n` terms. Both integrals converge absolutely
+with `𝓜h`, `𝓜f` the continued Mellin transforms of `h` at `+∞` and of `f` at `0+`. Both integrals
+converge absolutely
 (`TauCeti.integrableOn_mul_comp_mul_sub_sum`). -/
 theorem integral_mul_comp_mul_eq_sum_mellinCont_add_integral
-    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0))
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1))
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β)))
     (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) (hc : c < α) (hf1 : f =O[atTop] (· ^ (-ρ)))
-    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (hne : α ≠ β) (n : ℕ) {x : ℝ}
+    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (hne : α ≠ β) {x : ℝ}
     (hx : 0 < x) :
     ∫ t in Ioi 0, f t * h (x * t) =
       ∑ j ∈ Finset.range n, (x : ℂ) ^ (-((j : ℂ) + α)) * a j *
@@ -358,10 +367,11 @@ theorem integral_mul_comp_mul_eq_sum_mellinCont_add_integral
   have hlt (j : ℕ) (hj : j < n) : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
   -- the brackets of `h` are rescaled continued transforms of `h`, those of `f` continued
   -- transforms of `f`, and their principal parts cancel
-  rw [(integrableOn_and_integral_eq_sum_brackets hf hh hfa hhb hh0 hc hf1 hρ hαβ hβα n hx).2,
+  rw [(integrableOn_and_integral_eq_sum_brackets hf hh hfn hhn hh0 hc hf1 hρ hαβ hβα hx).2,
     Finset.sum_congr rfl fun j hj ↦ congrArg (a j * ·)
-      (integral_Ioc_add_integral_Ioi_comp_mul_left hh hhb hh0 (z := (j : ℂ) + α)
-        (by simp; linarith) (by simp; linarith [hlt j (Finset.mem_range.mp hj)])
+      (integral_Ioc_add_integral_Ioi_comp_mul_left hh hhn hh0 (z := (j : ℂ) + α)
+        (by simp only [add_re, natCast_re, ofReal_re]; linarith [j.cast_nonneg (α := ℝ)])
+        (by simp only [add_re, natCast_re, ofReal_re]; linarith [hlt j (Finset.mem_range.mp hj)])
         (fun k _ ↦ natCast_add_ne_natCast_add hαβ hβα hne j k) hx),
     Finset.sum_congr rfl fun (k : ℕ) _ ↦ congrArg ((x : ℂ) ^ (-((k : ℂ) + β)) * b k * ·)
       (integral_Ioc_add_integral_Ioi_eq_mellinContAtZero (f := f) (a := a) k),
@@ -370,31 +380,6 @@ theorem integral_mul_comp_mul_eq_sum_mellinCont_add_integral
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-! ### The remainder bound -/
-
-/-- Splitting `(0, ∞)` at `0 < a ≤ δ`: if `‖φ‖` is dominated by integrable `g₁`, `g₂`, `g₃` on
-`(0, a]`, `(a, δ]` and `(δ, ∞)`, then `‖∫₀^∞ φ‖ ≤ ∫₀^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
-private theorem norm_integral_Ioi_le_of_three_pieces {φ : ℝ → ℂ} {g₁ g₂ g₃ : ℝ → ℝ} {a δ : ℝ}
-    (ha : 0 < a) (haδ : a ≤ δ) (hφ : AEStronglyMeasurable φ (volume.restrict (Ioi 0)))
-    (hi₁ : IntegrableOn g₁ (Ioc 0 a)) (hi₂ : IntegrableOn g₂ (Ioc a δ))
-    (hi₃ : IntegrableOn g₃ (Ioi δ)) (hb₁ : ∀ t ∈ Ioc 0 a, ‖φ t‖ ≤ g₁ t)
-    (hb₂ : ∀ t ∈ Ioc a δ, ‖φ t‖ ≤ g₂ t) (hb₃ : ∀ t ∈ Ioi δ, ‖φ t‖ ≤ g₃ t) :
-    ‖∫ t in Ioi 0, φ t‖ ≤ (∫ t in Ioc 0 a, g₁ t) + (∫ t in Ioc a δ, g₂ t) + ∫ t in Ioi δ, g₃ t := by
-  have hφi {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0)
-      (hg : IntegrableOn g s volume) (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : IntegrableOn φ s :=
-    Integrable.mono' hg (hφ.mono_set hs0 : AEStronglyMeasurable φ (volume.restrict s))
-      ((ae_restrict_iff' hs).mpr (Filter.Eventually.of_forall hb))
-  have hφ₁ := hφi measurableSet_Ioc Ioc_subset_Ioi_self hi₁ hb₁
-  have hφ₂ := hφi measurableSet_Ioc (fun t ht ↦ ha.trans ht.1) hi₂ hb₂
-  have hφ₃ := hφi measurableSet_Ioi (Ioi_subset_Ioi (ha.le.trans haδ)) hi₃ hb₃
-  have hn {s : Set ℝ} {g : ℝ → ℝ} (hs : MeasurableSet s) (hg : IntegrableOn g s volume)
-      (hb : ∀ t ∈ s, ‖φ t‖ ≤ g t) : ‖∫ t in s, φ t‖ ≤ ∫ t in s, g t :=
-    norm_integral_le_of_norm_le hg ((ae_restrict_iff' hs).mpr (Filter.Eventually.of_forall hb))
-  rw [← Ioc_union_Ioi_eq_Ioi ha.le, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
-    measurableSet_Ioi hφ₁ (by rw [← Ioc_union_Ioi_eq_Ioi haδ]; exact hφ₂.union hφ₃),
-    ← Ioc_union_Ioi_eq_Ioi haδ, setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
-    hφ₂ hφ₃, ← add_assoc]
-  exact (norm_add₃_le).trans (add_le_add_three (hn measurableSet_Ioc hi₁ hb₁)
-    (hn measurableSet_Ioc hi₂ hb₂) (hn measurableSet_Ioi hi₃ hb₃))
 
 /-- If `‖F t‖ ≤ C₁ t^p` and `‖H (x t)‖ ≤ C (x t)^{-s}`, then
 `‖F t H (x t)‖ ≤ C₁ C x^{-s} t^{p-s}`. -/
@@ -430,7 +415,7 @@ private theorem norm_integral_mul_comp_mul_le {F H : ℝ → ℂ} {C₁ C₂ C�
   have h₂ : IntegrableOn (fun t : ℝ ↦ t ^ (p - r)) (Icc x⁻¹ δ) :=
     (ContinuousOn.rpow_const (s := Icc x⁻¹ δ) continuousOn_id fun t (ht : t ∈ Icc x⁻¹ δ) ↦
       Or.inl (hxi.trans_le ht.1).ne').integrableOn_compact isCompact_Icc
-  refine (norm_integral_Ioi_le_of_three_pieces hxi hxδ
+  refine (norm_integral_Ioi_le_of_three_pieces hxi.le hxδ
     (hF.mul_continuousOn (hH.comp (continuousOn_const.mul continuousOn_id)
       fun t ht ↦ mul_pos hx ht) isOpen_Ioi.isLocallyClosed).aestronglyMeasurable
     ((intervalIntegral.intervalIntegrable_rpow' hpe (a := 0) (b := x⁻¹)).1.const_mul
@@ -454,27 +439,6 @@ private theorem norm_integral_mul_comp_mul_le {F H : ℝ → ℂ} {C₁ C₂ C�
     Real.zero_rpow (by linarith), sub_zero, ← intervalIntegral.integral_of_le hxδ,
     integral_rpow (Or.inr ⟨hpr, notMem_uIcc_of_lt hxi hδ⟩)]
 
-/-- A function continuous on `(0, 1]` and `O(t^p)` at `0+` is `O(t^p)` on all of `(0, 1]`. -/
-private theorem isBigO_principal_Ioc_of_nhdsGT {g : ℝ → ℂ} {p : ℝ} (hg : ContinuousOn g (Ioc 0 1))
-    (h₀ : g =O[𝓝[>] 0] (· ^ p)) : g =O[𝓟 (Ioc 0 1)] (· ^ p) := by
-  obtain ⟨C, hC⟩ := h₀.bound
-  obtain ⟨ε, hε, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp hC
-  set ε' := min (ε / 2) 1
-  have hε' : 0 < ε' := lt_min (half_pos hε) one_pos
-  have hK : Icc ε' 1 ⊆ Ioc 0 1 := fun u hu ↦ ⟨hε'.trans_le hu.1, hu.2⟩
-  have hfar : g =O[𝓟 (Icc ε' 1)] (· ^ p) :=
-    ((hg.mono hK).isBigO_principal isCompact_Icc (c := (1 : ℝ)) (by norm_num)).trans
-      ((ContinuousOn.rpow_const (s := Icc ε' 1) continuousOn_id fun u (hu : u ∈ Icc ε' 1) ↦
-        Or.inl (hε'.trans_le hu.1).ne').isBigO_rev_principal isCompact_Icc
-        (fun u hu ↦ (Real.rpow_pos_of_pos (hε'.trans_le hu.1) p).ne') (1 : ℝ))
-  have hnear : g =O[𝓟 (Ioo 0 ε)] (· ^ p) := isBigO_principal.mpr ⟨C, fun u hu ↦ hsub hu⟩
-  refine (hnear.sup hfar).mono ?_
-  rw [sup_principal, principal_mono]
-  intro u hu
-  by_cases h : u < ε'
-  · exact Or.inl ⟨hu.1, (h.trans_le (min_le_left _ _)).trans (half_lt_self hε)⟩
-  · exact Or.inr ⟨not_lt.mp h, hu.2⟩
-
 /-- The majorant of `norm_integral_mul_comp_mul_le`, as a function of `x`, is
 `O(x^{-m})` whenever `m ≤ p + 1` and `m ≤ r`. -/
 private theorem isBigO_majorant {A₁ A₂ A₃ δ e p r m : ℝ} (hm₁ : m ≤ p + 1) (hm₂ : m ≤ r) :
@@ -488,22 +452,20 @@ private theorem isBigO_majorant {A₁ A₂ A₃ δ e p r m : ℝ} (hm₁ : m ≤
       A₃ * x ^ (-r)) =ᶠ[atTop] fun x ↦ (A₁ / (p - e + 1) - A₂ / (p - r + 1)) * x ^ (-(p + 1)) +
         (A₂ * δ ^ (p - r + 1) / (p - r + 1) + A₃) * x ^ (-r) :=
     (eventually_gt_atTop 0).mono fun x hx ↦ by
-      have hpow (a b : ℝ) : x ^ (-a) * (x⁻¹) ^ b = x ^ (-(a + b)) := by
-        rw [Real.inv_rpow hx.le, ← Real.rpow_neg hx.le, ← Real.rpow_add hx, neg_add]
-      have h₁ := hpow e (p - e + 1)
-      have h₂ := hpow r (p - r + 1)
-      rw [show e + (p - e + 1) = p + 1 by ring] at h₁
-      rw [show r + (p - r + 1) = p + 1 by ring] at h₂
-      linear_combination (A₁ / (p - e + 1)) * h₁ - (A₂ / (p - r + 1)) * h₂
+      have hpow (a : ℝ) : x ^ (-a) * (x⁻¹) ^ (p - a + 1) = x ^ (-(p + 1)) := by
+        rw [Real.inv_rpow hx.le, ← Real.rpow_neg hx.le, ← Real.rpow_add hx]
+        congr 1
+        ring
+      linear_combination (A₁ / (p - e + 1)) * hpow e - (A₂ / (p - r + 1)) * hpow r
   exact (((h₁.const_mul_left _).add (h₂.const_mul_left _))).congr' heq.symm EventuallyEq.rfl
 
 /-- Near `0+`, the remainder of `f` after `n` terms is bounded by `C t^{n+α-1}` on some `(0, δ]`. -/
-private theorem exists_norm_sub_sum_le_rpow_Ioc_nhdsGT
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (n : ℕ) : ∃ C ≥ 0, ∃ δ > 0, ∀ t ∈ Ioc 0 δ,
+private theorem exists_norm_sub_sum_le_rpow_Ioc_nhdsGT {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1)) : ∃ C ≥ 0, ∃ δ > 0, ∀ t ∈ Ioc 0 δ,
       ‖f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j‖ ≤
         C * t ^ ((n : ℝ) + α - 1) := by
-  obtain ⟨C, hC, hw⟩ := (isBigO_sub_sum_nhdsGT hfa n).exists_nonneg
+  obtain ⟨C, hC, hw⟩ := (isBigO_sub_sum_nhdsGT hfn).exists_nonneg
   obtain ⟨ε, hε, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp hw.bound
   refine ⟨C, hC, ε / 2, half_pos hε, fun t ht ↦ ?_⟩
   have : ‖f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j‖ ≤
@@ -524,24 +486,27 @@ private theorem exists_norm_sub_sum_le_rpow_Ioc (hh : ContinuousOn h (Ioi 0))
     have hk : (k : ℝ) + β ≤ max c ((n : ℝ) - 1 + β) := le_max_of_le_right (by
       have : (k : ℝ) + 1 ≤ n := by exact_mod_cast Finset.mem_range.mp hk
       linarith)
-    refine IsBigO.nhdsGT_zero_rpow_of_le (IsBigO.of_bound ‖b k‖ (hpos.mono fun u hu ↦ ?_))
-      (neg_le_neg hk)
-    rw [norm_smul, norm_cpow_eq_rpow_re_of_pos hu, Real.norm_of_nonneg (Real.rpow_nonneg hu.le _),
-      mul_comm]
-    simp
-  obtain ⟨C, hC, hw⟩ := (isBigO_principal_Ioc_of_nhdsGT
-    ((hh.sub (continuousOn_sum_cpow_smul _ b n)).mono Ioc_subset_Ioi_self) hH0).exists_nonneg
+    have hbk : (fun u : ℝ ↦ (u : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[𝓝[>] 0]
+        (· ^ (-((k : ℝ) + β))) := by
+      simpa only [neg_re, add_re, natCast_re, ofReal_re] using
+        (isBigO_smul_const_self (fun u : ℝ ↦ (u : ℂ) ^ (-((k : ℂ) + β))) (b k)
+          fun r ↦ norm_smul_le r (b k)).trans (isBigO_ofReal_cpow_rpow hpos _)
+    exact hbk.nhdsGT_zero_rpow_of_le (neg_le_neg hk)
+  obtain ⟨C, hC, hw⟩ := (hH0.isBigO_principal_Ioc_of_continuousOn
+    ((hh.sub (continuousOn_sum_cpow_smul _ b n)).mono Ioc_subset_Ioi_self)
+    (continuousOn_id.rpow_const fun u (hu : u ∈ Ioc 0 1) ↦ Or.inl hu.1.ne')
+    fun u (hu : u ∈ Ioc 0 1) ↦ norm_ne_zero_iff.mpr (Real.rpow_pos_of_pos hu.1 _).ne').exists_nonneg
   refine ⟨C, hC, fun u hu ↦ ?_⟩
   have := isBigOWith_principal.mp hw u hu
   rwa [Real.norm_of_nonneg (Real.rpow_nonneg hu.1.le _)] at this
 
 /-- On `[1, ∞)`, the remainder of `h` after `n` terms is bounded by `C u^{-n-β}`. -/
-private theorem exists_norm_sub_sum_le_rpow_Ici (hh : ContinuousOn h (Ioi 0))
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
-    (n : ℕ) : ∃ C ≥ 0, ∀ u ∈ Ici 1,
+private theorem exists_norm_sub_sum_le_rpow_Ici (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β))) : ∃ C ≥ 0, ∀ u ∈ Ici 1,
       ‖h u - ∑ k ∈ Finset.range n, (u : ℂ) ^ (-((k : ℂ) + β)) • b k‖ ≤
         C * u ^ (-((n : ℝ) + β)) := by
-  obtain ⟨C, hC, hw⟩ := ((isBigO_sub_sum_atTop hhb n).isBigO_principal_Ici_of_continuousOn
+  obtain ⟨C, hC, hw⟩ := ((isBigO_sub_sum_atTop hhn).isBigO_principal_Ici_of_continuousOn
     ((hh.sub (continuousOn_sum_cpow_smul _ b n)).mono fun u (hu : 1 ≤ u) ↦
       zero_lt_one.trans_le hu)
     (continuousOn_id.rpow_const fun u (hu : 1 ≤ u) ↦ Or.inl (zero_lt_one.trans_le hu).ne')
@@ -560,16 +525,18 @@ private theorem integrableOn_rpow_mul_norm_sub_sum (hf : LocallyIntegrableOn f (
   -- on `(1, ∞)`, both `f` and each term of the subtracted sum have convergent Mellin integrals
   have h₁ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (1 - ((n : ℂ) + β) - 1) • F t) (Ioi 1) := by
     simp only [hF, smul_sub, Finset.smul_sum]
-    refine (integrableOn_Ioi_cpow_smul_of_isBigO hf hf1 (by simp; linarith)).sub
+    refine (integrableOn_Ioi_cpow_smul_of_isBigO hf hf1 (by
+      simp only [sub_re, one_re, add_re, natCast_re, ofReal_re]
+      linarith [n.cast_nonneg (α := ℝ)])).sub
       (integrable_finsetSum _ fun j hj ↦ ?_)
     have hj : (j : ℝ) + 1 ≤ n := by exact_mod_cast Finset.mem_range.mp hj
     refine integrableOn_Ioi_cpow_smul_of_isBigO (a := 1 - (j + α))
       (g := fun t : ℝ ↦ (t : ℂ) ^ ((j : ℂ) + α - 1) • a j)
       (locallyIntegrableOn_cpow_smul (locallyIntegrableOn_const (a j)) _)
-      (IsBigO.of_bound ‖a j‖ ((eventually_gt_atTop 0).mono fun u hu ↦ ?_)) (by simp; linarith)
-    rw [norm_smul, norm_cpow_eq_rpow_re_of_pos hu, Real.norm_of_nonneg (Real.rpow_nonneg hu.le _),
-      mul_comm]
-    simp
+      (by simpa only [sub_re, add_re, natCast_re, ofReal_re, one_re, neg_sub] using
+        (isBigO_smul_const_self (fun u : ℝ ↦ (u : ℂ) ^ ((j : ℂ) + α - 1)) (a j)
+          fun r ↦ norm_smul_le r (a j)).trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _))
+      (by simp only [sub_re, one_re, add_re, natCast_re, ofReal_re]; linarith)
   have h₀ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (1 - ((n : ℂ) + β) - 1) • F t) (Icc δ 1) :=
     (locallyIntegrableOn_cpow_smul (hf.sub (locallyIntegrableOn_sum_cpow_smul _ a n)) _)
       |>.integrableOn_compact_subset (fun t ht ↦ hδ.trans_le ht.1) isCompact_Icc
@@ -579,28 +546,30 @@ private theorem integrableOn_rpow_mul_norm_sub_sum (hf : LocallyIntegrableOn f (
       · exact Or.inl ⟨le_of_lt ht, ht1⟩
       · exact Or.inr (not_le.mp ht1)
   refine IntegrableOn.congr_fun h₂.norm (fun t ht ↦ ?_) measurableSet_Ioi
-  rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hδ.trans ht)]
-  simp [hF]
+  rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hδ.trans ht), sub_sub_cancel_left, neg_re, add_re,
+    natCast_re, ofReal_re]
 
 /-- **The remainder of the regularization is small** (DLMF 2.6.62). Under the hypotheses of
 `TauCeti.integral_mul_comp_mul_eq_sum_mellinCont_add_integral`, the remainder integral
 `∫₀^∞ f_n(t) h_n(xt) dt` is `O(x^{-n-min(α, β)})` as `x → +∞`, where `f_n` and `h_n` are the
-remainders of the expansions of `f` at `0+` and of `h` at `+∞` after `n` terms. -/
+remainders of the expansions of order `n` of `f` at `0+` and of `h` at `+∞`. -/
 theorem isBigO_integral_mul_comp_mul_sub_sum
-    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0))
-    (hfa : HasAsymptoticExpansion (𝓝[>] 0) (fun s (t : ℝ) ↦ (t : ℂ) ^ ((s : ℂ) + α - 1)) a f)
-    (hhb : HasAsymptoticExpansion atTop (fun s (t : ℝ) ↦ (t : ℂ) ^ (-((s : ℂ) + β))) b h)
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
+    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
+      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1))
+    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β)))
     (hh0 : h =O[𝓝[>] 0] (· ^ (-c))) (hc : c < α) (hf1 : f =O[atTop] (· ^ (-ρ)))
-    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (hne : α ≠ β) (n : ℕ) :
+    (hρ : 1 < ρ + β) (hαβ : α < β + 1) (hβα : β < α + 1) (hne : α ≠ β) :
     (fun x : ℝ ↦ ∫ t in Ioi 0, (f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) *
       (h (x * t) - ∑ k ∈ Finset.range n, ((x * t : ℝ) : ℂ) ^ (-((k : ℂ) + β)) • b k))
       =O[atTop] (· ^ (-(n + min α β))) := by
   set F : ℝ → ℂ := fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j
   set H : ℝ → ℂ := fun u ↦ h u - ∑ k ∈ Finset.range n, (u : ℂ) ^ (-((k : ℂ) + β)) • b k
   set e := max c ((n : ℝ) - 1 + β)
-  obtain ⟨C₁, hC₁, δ, hδ, hF₀⟩ := exists_norm_sub_sum_le_rpow_Ioc_nhdsGT hfa n
+  obtain ⟨C₁, hC₁, δ, hδ, hF₀⟩ := exists_norm_sub_sum_le_rpow_Ioc_nhdsGT hfn
   obtain ⟨C₃, -, hH₀⟩ := exists_norm_sub_sum_le_rpow_Ioc (b := b) (β := β) hh hh0 n
-  obtain ⟨C₂, -, hH₁⟩ := exists_norm_sub_sum_le_rpow_Ici hh hhb n
+  obtain ⟨C₂, -, hH₁⟩ := exists_norm_sub_sum_le_rpow_Ici hh hhn
   have hK := integrableOn_rpow_mul_norm_sub_sum (a := a) hf hf1 hρ hαβ n hδ
   have hpe : -1 < (n : ℝ) + α - 1 - e := by
     have : e < n + α := max_lt (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]) (by linarith)
