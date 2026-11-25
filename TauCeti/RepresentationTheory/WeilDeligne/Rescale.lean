@@ -14,8 +14,8 @@ import TauCeti.LinearAlgebra.Monomial
 
 For a raw Weil–Deligne parameter `(V, r, N)` and a scalar `a`, the pair `(r, a N)` is again a
 raw Weil–Deligne parameter (`TauCeti.WeilDeligneParameter.rescale`): `a N` is nilpotent and
-satisfies the same conjugation relation. Rescaling is functorial in morphisms and isomorphisms
-and composes multiplicatively.
+satisfies the same conjugation relation. Rescaling is functorial in morphisms and isomorphisms,
+composes multiplicatively, and commutes with transport and with twists by characters.
 
 For `q ≥ 2` and finite inertia image, `(r, N) ≅ (r, a N)` for every `a ≠ 0` (Deligne 1973, proof
 of §8.4.3). This file proves it for the special parameters `Sp(n)`, where the diagonal matrix
@@ -82,6 +82,17 @@ theorem rescale_one (D : WeilDeligneParameter E W V deg q) : D.rescale 1 = D := 
 theorem rescale_rescale (D : WeilDeligneParameter E W V deg q) (a b : E) :
     (D.rescale a).rescale b = D.rescale (b * a) := by
   ext1 <;> simp [mul_smul]
+
+/-- Rescaling commutes with transport. -/
+theorem rescale_transport (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V') (a : E) :
+    (D.transport e).rescale a = (D.rescale a).transport e := by
+  ext w v <;> simp [transport_r_apply, transport_N_apply]
+
+/-- Rescaling commutes with twisting by a character. -/
+theorem rescale_twist [SeparatelyContinuousMul W] (D : WeilDeligneParameter E W V deg q)
+    (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) (a : E) :
+    (D.twist χ hχ).rescale a = (D.rescale a).twist χ hχ := by
+  ext1 <;> simp
 
 section Functoriality
 
