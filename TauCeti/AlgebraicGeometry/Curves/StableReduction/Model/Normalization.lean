@@ -18,9 +18,7 @@ import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
-import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
-import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
@@ -143,32 +141,13 @@ private lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionL
     letI := M.toBase.sectionsAlgebra U
     Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
   let := M.toBase.sectionsAlgebra U
-  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
-  have : AlgebraicGeometry.RelativeDimensionLE 1
-      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
-    M.toBase.fromSpec_toSpec hU ▸ inferInstance
-  have hdim :=
-    (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
   -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
   have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
       Ideal.span {algebraMap R Γ(M.total, U) π} := by
     rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv
-    (Ideal.Fiber.algEquivQuotientMap (B := Γ(M.total, U)) (maximalIdeal R)).toRingEquiv]
-  exact_mod_cast hdim
-
-/-- The two maps from `R` to the sections of the generic fibre over `U ∩ C`, through the sections
-of the total space over `U` and through the fraction field, agree. -/
-private lemma appLE_comp_app_genericι (U : M.total.Opens) :
-    (Scheme.ΓSpecIso (.of R)).inv ≫ M.toBase.appLE ⊤ U (le_top.trans M.toBase.preimage_top.ge) ≫
-        M.genericι.app U =
-      CommRingCat.ofHom (algebraMap R K) ≫ (Scheme.ΓSpecIso (.of K)).inv ≫
-        toK.appLE ⊤ (M.genericι ⁻¹ᵁ U) (le_top.trans toK.preimage_top.ge) := by
-  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
-  simp only [M.genericι_toBase, Scheme.Hom.comp_appLE]
-  rw [Scheme.ΓSpecIso_inv_naturality_assoc]
-  -- The two sides differ only in writing `⊤` as `Spec.map _ ⁻¹ᵁ ⊤`.
-  rfl
+  rw [← hmap, Ring.krullDimLE_iff]
+  exact_mod_cast
+    AlgebraicGeometry.ringKrullDim_sections_quotient_le_of_relativeDimensionLE M.toBase hU _
 
 /-- **The normalization of a model of a smooth curve is finite.** If the generic fibre `C` is
 smooth of relative dimension one over `K` and the total space has relative dimension at most one
@@ -192,9 +171,8 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
   let := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
   have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
     .of_algebraMap_eq' <| by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, M.toBase.algebraMap_sections,
-        toK.algebraMap_sections]
-      exact congr(($(appLE_comp_app_genericι U)).hom)
+      rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra]
+      exact M.toBase.app_comp_algebraMap_sections toK M.genericι _ M.genericι_toBase U
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
   have := krullDimLE_sections_quotient (M := M) hU hπ

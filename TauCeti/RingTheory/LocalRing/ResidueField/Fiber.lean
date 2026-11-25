@@ -28,7 +28,8 @@ over a maximal ideal `p` is the quotient `B ⧸ p B`.
 * `Ideal.Fiber.map_le_maximalIdeal`: the ideal `p B_q` lies in the maximal ideal of `B_q`.
 * `Ideal.Fiber.isNoetherianRing`: if `B` is Noetherian, so is the fibre ring `κ(p) ⊗[R] B`.
 * `Ideal.Fiber.algEquivQuotientMap`: for a maximal ideal `p`, the fibre ring `κ(p) ⊗[R] B` is
-  `B ⧸ p B`, sending `1 ⊗ b` to the class of `b` (`Ideal.Fiber.algEquivQuotientMap_one_tmul`).
+  `B ⧸ p B` as a `B`-algebra, sending `1 ⊗ b` to the class of `b`
+  (`Ideal.Fiber.algEquivQuotientMap_one_tmul`).
 
 The identification `Ideal.Fiber.algEquivQuotientMap` follows the one in Mathlib's private
 `Algebra.QuasiFinite.finite_of_isArtinianRing_of_isLocalRing`.
@@ -102,13 +103,18 @@ instance isNoetherianRing [IsNoetherianRing B] : IsNoetherianRing (p.Fiber B) :=
   let : Algebra B (p.Fiber B) := rightAlgebra
   isNoetherianRing_of_ringEquiv _ (algEquivQuotient p).symm.toRingEquiv
 
+section Maximal
+
+attribute [local instance] rightAlgebra
+
 /-- The fibre ring `κ(p) ⊗[R] B` over a maximal ideal `p` is the quotient `B ⧸ p B`, since then
-`κ(p) = R ⧸ p`. -/
+`κ(p) = R ⧸ p`. It is an isomorphism of `B`-algebras for the algebra structure
+`Algebra.TensorProduct.rightAlgebra`, as is Mathlib's `Ideal.Fiber.algEquivQuotient`. -/
 noncomputable def algEquivQuotientMap (p : Ideal R) [p.IsMaximal] :
-    p.Fiber B ≃ₐ[R] B ⧸ p.map (algebraMap R B) :=
-  (congr (.symm <| .ofBijective _ (Ideal.bijective_algebraMap_quotient_residueField p)) .refl).trans
-    <| (Algebra.TensorProduct.comm _ _ _).trans
-      ((quotIdealMapEquivTensorQuot B p).symm.restrictScalars _)
+    p.Fiber B ≃ₐ[B] B ⧸ p.map (algebraMap R B) :=
+  (commRight R B p.ResidueField).symm.trans <|
+    (congr .refl <| .symm <| .ofBijective _ <| bijective_algebraMap_quotient_residueField p).trans
+      (quotIdealMapEquivTensorQuot B p).symm
 
 /-- The isomorphism `κ(p) ⊗[R] B ≃ B ⧸ p B` of `Ideal.Fiber.algEquivQuotientMap` sends `1 ⊗ b` to
 the class of `b`. -/
@@ -122,5 +128,7 @@ theorem algEquivQuotientMap_one_tmul (p : Ideal R) [p.IsMaximal] (b : B) :
 theorem algEquivQuotientMap_symm_mk (p : Ideal R) [p.IsMaximal] (b : B) :
     (algEquivQuotientMap p).symm (Ideal.Quotient.mk _ b) = (1 : p.ResidueField) ⊗ₜ[R] b := by
   rw [AlgEquiv.symm_apply_eq, algEquivQuotientMap_one_tmul]
+
+end Maximal
 
 end Ideal.Fiber

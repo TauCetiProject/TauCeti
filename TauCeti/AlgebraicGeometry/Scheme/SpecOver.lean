@@ -44,6 +44,8 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
   algebra structure over `R`.
 * `AlgebraicGeometry.Scheme.Hom.resₐ`: restriction of sections as an algebra homomorphism.
 * `AlgebraicGeometry.Scheme.Hom.resₐ_toRingHom`: the underlying restriction ring homomorphism.
+* `AlgebraicGeometry.Scheme.Hom.app_comp_algebraMap_sections`: the algebras of sections induced
+  by the structure morphisms of a commutative square over `Spec S ⟶ Spec R` are compatible.
 * `AlgebraicGeometry.Scheme.Hom.commSq_specMap_algebraMap_self`: a morphism over `Spec R` forms a
   commutative square with the structure morphisms and
   `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
@@ -110,6 +112,26 @@ theorem resₐ_toRingHom {U V : X.Opens} (h : V ≤ U) :
     letI := sectionsAlgebra π V
     (π.resₐ h).toRingHom = (X.presheaf.map (homOfLE h).op).hom := by
   rfl
+
+/-- The algebras of sections induced by the two structure morphisms of a commutative square
+`g ≫ π = πY ≫ Spec.map φ` are compatible: the two maps from `R` to the sections of `Y` over
+`g ⁻¹ᵁ U`, through `Γ(X, U)` and through `S`, agree. This is the equation needed for
+`IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U)` and `IsScalarTower R S Γ(Y, g ⁻¹ᵁ U)`. -/
+theorem app_comp_algebraMap_sections {S : Type u} [CommRing S] {Y : Scheme.{u}}
+    (πY : Y ⟶ Spec (.of S)) (g : Y ⟶ X) (φ : R →+* S)
+    (h : g ≫ π = πY ≫ Spec.map (CommRingCat.ofHom φ)) (U : X.Opens) :
+    (g.app U).hom.comp (@algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U)) =
+      (@algebraMap S Γ(Y, g ⁻¹ᵁ U) _ _ (sectionsAlgebra πY (g ⁻¹ᵁ U))).comp φ := by
+  -- The same equation, with the inclusions of opens into preimages of `⊤` written as typed terms.
+  have key : (Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U (le_top.trans π.preimage_top.ge) ≫
+      g.app U = CommRingCat.ofHom φ ≫ (Scheme.ΓSpecIso (.of S)).inv ≫
+        πY.appLE ⊤ (g ⁻¹ᵁ U) (le_top.trans πY.preimage_top.ge) := by
+    rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
+    simp only [h, Scheme.Hom.comp_appLE]
+    rw [Scheme.ΓSpecIso_inv_naturality_assoc]
+    -- The two sides differ only in writing `⊤` as `Spec.map _ ⁻¹ᵁ ⊤`.
+    rfl
+  exact congr(($key).hom)
 
 end AlgebraicGeometry.Scheme.Hom
 

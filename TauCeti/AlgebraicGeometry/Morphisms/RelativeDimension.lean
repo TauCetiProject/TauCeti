@@ -9,7 +9,10 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.RingTheory.KrullDimension.Fiber
+
+import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 
 /-!
 # Morphisms of relative dimension at most `d`
@@ -57,6 +60,9 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
   condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
+* `TauCeti.AlgebraicGeometry.ringKrullDim_sections_quotient_le_of_relativeDimensionLE`: over an
+  affine open `U` of a scheme over `Spec R`, the fibre `Γ(X, U) ⧸ 𝔪 Γ(X, U)` over a maximal ideal
+  `𝔪` has Krull dimension at most `d`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
@@ -358,6 +364,24 @@ theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
     (f : X ⟶ Spec (.of K)) [RelativeDimensionLE d f] (x : X) : Order.coheight x ≤ d := by
   exact_mod_cast (coheight_le_topologicalKrullDim x).trans
     ((relativeDimensionLE_iff_of_field f).mp inferInstance)
+
+/-- Over an affine open `U` of a scheme of relative dimension at most `d` over `Spec R`, the fibre
+`Γ(X, U) ⧸ 𝔪 Γ(X, U)` over a maximal ideal `𝔪` of `R` has Krull dimension at most `d`. Here
+`Γ(X, U)` is an `R`-algebra through `f` (`AlgebraicGeometry.Scheme.Hom.sectionsAlgebra`). -/
+theorem ringKrullDim_sections_quotient_le_of_relativeDimensionLE {R : Type u} [CommRing R]
+    (f : X ⟶ Spec (.of R)) [RelativeDimensionLE d f] {U : X.Opens} (hU : IsAffineOpen U)
+    (m : Ideal R) [m.IsMaximal] :
+    letI := f.sectionsAlgebra U
+    ringKrullDim (Γ(X, U) ⧸ m.map (algebraMap R Γ(X, U))) ≤ d := by
+  let := f.sectionsAlgebra U
+  -- `Spec Γ(X, U) ⟶ Spec R` is the restriction of `f` to `U`, and the fibre over `𝔪` is the
+  -- quotient by `𝔪 Γ(X, U)`.
+  have hdim : RelativeDimensionLE d (Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U)))) :=
+    f.fromSpec_toSpec hU ▸ inferInstance
+  let : Algebra Γ(X, U) (m.Fiber Γ(X, U)) := Algebra.TensorProduct.rightAlgebra
+  rw [← ringKrullDim_eq_of_ringEquiv
+    (Ideal.Fiber.algEquivQuotientMap (B := Γ(X, U)) m).toRingEquiv]
+  exact (relativeDimensionLE_SpecMap_iff R Γ(X, U)).mp hdim m
 
 end AlgebraicGeometry
 

@@ -61,6 +61,7 @@ theorem flat_stalkMap_of_isCohenMacaulay_of_quasiFiniteAt {x : X}
   -- quasi-finiteness and nonzero because the stalk map is local.
   let R := Y.presheaf.stalk (f x)
   let S := X.presheaf.stalk x
+  let : Algebra S ((maximalIdeal R).Fiber S) := Algebra.TensorProduct.rightAlgebra
   have : IsArtinianRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
     (Ideal.Fiber.algEquivQuotientMap (B := S) (maximalIdeal R)).toRingEquiv.isArtinianRing
   have : Nontrivial (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
