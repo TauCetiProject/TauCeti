@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Logic.Function.Iterate
 public import Mathlib.Topology.ContinuousOn
-public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Perturbing a map near one point of an orbit
