@@ -238,8 +238,8 @@ theorem specializePoint_fiberBaseChangeMap {X' S' : Scheme.{u}} [IsIntegral S']
 finite presentation and all local rings of `X` are regular, then every specialization of a
 rational point of the generic fibre lies in the smooth locus of `f`. This holds also over
 imperfect residue fields. Regularity of `X` cannot be weakened to normality: over a discrete
-valuation ring with uniformizer `π`, the section `x = y = π` of the normal scheme `xy = π²` passes
-through its singular point. -/
+valuation ring `R` with uniformizer `π`, the conic `xy = π²z²` in `ℙ²_R` is proper and normal,
+and its section `[π : π : 1]` passes through its singular point `x = y = π = 0`. -/
 theorem fiberι_specializePoint_mem_smoothLocus [LocallyOfFinitePresentation f]
     [∀ x : X, IsRegularLocalRing (X.presheaf.stalk x)] (s : S) (p : Spec (S.residueField s)) :
     f.fiberι s (f.specializePoint hS x hx s p) ∈ f.smoothLocus := by
