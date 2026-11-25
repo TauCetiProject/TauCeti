@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Equiv
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -402,22 +403,12 @@ theorem exists_definingFunction [FiniteDimensional 𝕜 P] (f : SmoothEmbedding 
       (∀ y ∈ U, ∀ᶠ z in 𝓝 y, g (f z) = g (f y)) ∧
       (∀ y ∈ U, IsRegularPoint J 𝓘(𝕜, P) g (f y)) := by
   have h := f.isImmersion.isImmersionAt x
-  have : FiniteDimensional 𝕜 (E × h.complement) :=
-    h.equiv.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 E :=
-    Module.Finite.of_surjective (LinearMap.fst 𝕜 E h.complement) LinearMap.fst_surjective
-  have : FiniteDimensional 𝕜 h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd 𝕜 E h.complement) LinearMap.snd_surjective
-  have hC : finrank 𝕜 h.complement = finrank 𝕜 P := by
-    have := h.equiv.toLinearEquiv.finrank_eq
-    rw [Module.finrank_prod] at this
-    omega
+  obtain ⟨c⟩ := h.nonempty_complement_continuousLinearEquiv (Nat.eq_sub_of_add_eq' hdim)
   -- The second coordinate of the chart `h.codChart`, identified with `P`.
-  let T : V →L[𝕜] P := (ContinuousLinearEquiv.ofFinrankEq hC).toContinuousLinearMap ∘L
+  let T : V →L[𝕜] P := c.toContinuousLinearMap ∘L
     ContinuousLinearMap.snd 𝕜 E h.complement ∘L h.equiv.symm.toContinuousLinearMap
   have hT : Surjective T :=
-    (ContinuousLinearEquiv.ofFinrankEq hC).surjective.comp
-      (Prod.snd_surjective.comp h.equiv.symm.surjective)
+    c.surjective.comp (Prod.snd_surjective.comp h.equiv.symm.surjective)
   have hzero (y : M) (hy : y ∈ h.domChart.source) : (T ∘ h.codChart.extend J) (f y) = 0 := by
     have hw := h.writtenInCharts ((h.domChart.extend I).map_source (by simpa using hy))
     simp only [Function.comp_apply, (h.domChart.extend I).left_inv (by simpa using hy)] at hw
