@@ -22,9 +22,9 @@ smooth morphisms of relative dimension one.  These are the closure properties ne
 nodal curves in families over nonaffine bases.
 
 Étale neighbourhoods of nodal relative curves are nodal
-(`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.comp_of_etale`). Conversely, for a
-curve locally of finite presentation, nodality is detected by étale surjections of the source:
-it can be checked after an étale surjection of the source
+(`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.comp_of_etale`). Conversely,
+nodality can be checked after an étale surjection of the source, so it is local on the source for
+the étale topology
 (`TauCeti.AlgebraicGeometry.atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`).
 
 On an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by the
@@ -313,11 +313,9 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
   rw [← Category.assoc] at hc
   exact hc
 
-/-- For a relative curve over an arbitrary base, locally of finite presentation, nodality descends
-along an étale surjection of the source. -/
+/-- Over an arbitrary base, nodality descends along an étale surjection of the source. -/
 theorem AtWorstNodalOfRelativeDimensionOne.of_comp_surjective
-    {X Y S : Scheme.{u}} {f : Y ⟶ S} [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g]
+    {X Y S : Scheme.{u}} {f : Y ⟶ S} (g : X ⟶ Y) [Etale g] [Surjective g]
     (h : AtWorstNodalOfRelativeDimensionOne (g ≫ f)) :
     AtWorstNodalOfRelativeDimensionOne f := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top
@@ -327,27 +325,20 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_comp_surjective
     MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
   have : Surjective (g ∣_ f ⁻¹ᵁ U.val) :=
     MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
-  have hs : LocallyOfFinitePresentation ((f ∣_ U.val) ≫ (U.val : Scheme).isoSpec.hom) :=
-    inferInstance
   have hU := h U
   rw [morphismRestrict_comp] at hU
   have hU' := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mp hU
-  -- The spectrum `Spec Γ(U, ⊤)` is only `Spec (.of Γ(U, ⊤))` up to unfolding, so the finite
-  -- presentation instance is passed explicitly.
   refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mpr
-    (@AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective _ _ _ _ _ hs
-      (g ∣_ f ⁻¹ᵁ U.val) _ _ ?_)
+    (AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective (g ∣_ f ⁻¹ᵁ U.val) ?_)
   -- As in `comp_of_etale`, the two sources of the composite agree definitionally.
   rw [← Category.assoc]
   exact hU'
 
-/-- **For curves locally of finite presentation, nodality is detected by étale surjections of the
-source.** Among relative curves over an arbitrary base locally of finite presentation, nodality
-can be checked after an étale surjection of the source. No quasi-compactness condition is imposed
-on the cover. -/
+/-- **Nodality is detected by étale surjections of the source.** Over an arbitrary base, a
+relative curve is nodal if and only if its composite with an étale surjection onto its source is.
+No quasi-compactness condition is imposed on the cover. -/
 theorem atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective
-    {X Y S : Scheme.{u}} (f : Y ⟶ S) [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g] :
+    {X Y S : Scheme.{u}} (f : Y ⟶ S) (g : X ⟶ Y) [Etale g] [Surjective g] :
     AtWorstNodalOfRelativeDimensionOne f ↔ AtWorstNodalOfRelativeDimensionOne (g ≫ f) :=
   ⟨fun h ↦ h.comp_of_etale g, fun h ↦ h.of_comp_surjective g⟩
 

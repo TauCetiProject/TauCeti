@@ -9,10 +9,8 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Geometry.Symplectic.Prod.Basic
-public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
-import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -58,9 +56,7 @@ a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_of_blocks`).
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
 `ω₂` is a Darboux basis of the direct sum `ω₁ ⊕ ω₂`
-(`TauCeti.SymplecticForm.IsDarbouxBasis.prod`). Hence Darboux bases of a symplectic subspace `L`
-and of its symplectic complement `L^ω` assemble to a Darboux basis of `V = L ⊕ L^ω`
-(`TauCeti.SymplecticForm.IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd`).
+(`TauCeti.SymplecticForm.IsDarbouxBasis.prod`).
 
 ## Main definitions
 
@@ -337,26 +333,13 @@ theorem IsDarbouxBasis.prod {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W
   have hr (i : Fin k) (a : Fin 2) :
       (b.prod c).reindex e (Fin.natAdd m i, a) = (0, c (i, a)) := by
     ext <;> simp [e, Basis.reindex_apply]
+  have hne (i : Fin m) (j : Fin k) : Fin.castAdd k i ≠ Fin.natAdd m j := by
+    simp only [ne_eq, Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd]
+    omega
   refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
     induction i using Fin.addCases <;> induction j using Fin.addCases <;>
-    simp [hl, hr, hb.apply_fst_fst, hb.apply_snd_snd, hb.apply_fst_snd, hc.apply_fst_fst,
-      hc.apply_snd_snd, hc.apply_fst_snd]
-
-/-- **Assembling Darboux bases along `V = L ⊕ L^ω`.** Darboux bases of a symplectic subspace `L`,
-with `m` planes, and of its symplectic complement, with `n` planes, assemble to a Darboux basis of
-`V` whose first `m` planes are those of `L` and whose last `n` planes are those of `L^ω`. -/
-theorem IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd [FiniteDimensional ℝ V]
-    {L : Submodule ℝ V} (hL : ω.IsSymplectic L) {m n : ℕ} {b₁ : Basis (Fin m × Fin 2) ℝ L}
-    (hb₁ : (ω.restrict L hL.nondegenerate_restrict).IsDarbouxBasis b₁)
-    {b₂ : Basis (Fin n × Fin 2) ℝ (ω.orthogonal L)}
-    (hb₂ : (ω.restrict _ hL.orthogonal.nondegenerate_restrict).IsDarbouxBasis b₂) :
-    ∃ b : Basis (Fin (m + n) × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧
-      (∀ i a, b (Fin.castAdd n i, a) = b₁ (i, a)) ∧ ∀ i a, b (Fin.natAdd m i, a) = b₂ (i, a) :=
-  ⟨((b₁.prod b₂).reindex ((Equiv.sumProdDistrib _ _ _).symm.trans
-      (finSumFinEquiv.prodCongr (Equiv.refl _)))).map
-        (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl),
-    (hb₁.prod hb₂).map (ω.isSymplectomorphism_prodEquivOfIsCompl hL.isCompl),
-    fun _ _ ↦ by simp [Basis.reindex_apply], fun _ _ ↦ by simp [Basis.reindex_apply]⟩
+    simp [hl, hr, hne, (hne _ _).symm, hb.apply_fst_fst, hb.apply_snd_snd, hb.apply_fst_snd,
+      hc.apply_fst_fst, hc.apply_snd_snd, hc.apply_fst_snd]
 
 end SymplecticForm
 

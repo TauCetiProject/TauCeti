@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-
 import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
@@ -54,9 +53,9 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
   an almost complex structure tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`: pairwise `ω`-orthogonal
-  symplectic subspaces are independent, and
-  `TauCeti.SymplecticForm.sum_finrank_le_finrank_of_pairwise_apply_eq_zero` bounds the sum of
-  their dimensions.
+  symplectic subspaces are independent, so their dimensions add up to at most that of any subspace
+  containing them (`sum_finrank_le_finrank_of_pairwise_apply_eq_zero`,
+  `card_mul_le_finrank_of_pairwise_apply_eq_zero`).
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
 * `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of the form `B` pulled back
   along a linear map `ι` is the preimage of the symplectic orthogonal of the image of `ι`, and
@@ -353,17 +352,6 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
 
-/-- **Dimensions of pairwise orthogonal symplectic subspaces.** If finitely many symplectic
-subspaces `G j` are pairwise `ω`-orthogonal and all lie in `L`, their dimensions add up to at most
-that of `L`. -/
-theorem sum_finrank_le_finrank_of_pairwise_apply_eq_zero {ι : Type*} [Fintype ι]
-    {G : ι → Submodule ℝ V} (hG : ∀ j, ω.IsSymplectic (G j))
-    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) (hL : ∀ j, G j ≤ L) :
-    ∑ j, finrank ℝ (G j) ≤ finrank ℝ L :=
-  (finrank_iSup_eq_sum_finrank_of_iSupIndep
-    (iSupIndep_of_pairwise_apply_eq_zero hG horth)).symm.trans_le
-      (Submodule.finrank_mono (iSup_le hL))
-
 /-- The symplectic complement has complementary dimension: `dim L^ω = dim V - dim L`. -/
 lemma finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     finrank ℝ (ω.orthogonal L) = finrank ℝ V - finrank ℝ L :=
@@ -450,6 +438,26 @@ lemma isSymplectic_orthogonal_iff : ω.IsSymplectic (ω.orthogonal L) ↔ ω.IsS
 /-- The symplectic complement of a symplectic subspace is symplectic. -/
 lemma IsSymplectic.orthogonal (h : ω.IsSymplectic L) : ω.IsSymplectic (ω.orthogonal L) :=
   isSymplectic_orthogonal_iff.2 h
+
+/-- The dimensions of pairwise `ω`-orthogonal symplectic subspaces `G j` of `W` add up to at most
+the dimension of `W`. -/
+theorem sum_finrank_le_finrank_of_pairwise_apply_eq_zero {ι : Type*} [Fintype ι]
+    {G : ι → Submodule ℝ V} (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) {W : Submodule ℝ V}
+    (hle : ∀ j, G j ≤ W) : ∑ j, finrank ℝ (G j) ≤ finrank ℝ W := by
+  rw [← finrank_iSup_eq_sum_finrank_of_iSupIndep (iSupIndep_of_pairwise_apply_eq_zero hG horth)]
+  exact Submodule.finrank_mono (iSup_le hle)
+
+/-- If pairwise `ω`-orthogonal symplectic subspaces `G j` of `W` each have dimension at least `c`,
+then `W` has dimension at least `c` times their number. -/
+theorem card_mul_le_finrank_of_pairwise_apply_eq_zero {ι : Type*} [Fintype ι]
+    {G : ι → Submodule ℝ V} (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) {c : ℕ}
+    (hc : ∀ j, c ≤ finrank ℝ (G j)) {W : Submodule ℝ V} (hle : ∀ j, G j ≤ W) :
+    Fintype.card ι * c ≤ finrank ℝ W :=
+  calc Fintype.card ι * c = ∑ _j : ι, c := by simp
+    _ ≤ ∑ j, finrank ℝ (G j) := Finset.sum_le_sum fun j _ ↦ hc j
+    _ ≤ finrank ℝ W := sum_finrank_le_finrank_of_pairwise_apply_eq_zero hG horth hle
 
 end FiniteDimensional
 

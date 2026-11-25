@@ -20,11 +20,12 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.nontrivial_of_ne_zero`: the source of a nonzero quadratic map is nontrivial.
 * `QuadraticMap.map_sum_of_pairwise_isOrtho`: a quadratic map is additive across a finite sum of
   pairwise `Q`-orthogonal vectors.
-* `QuadraticMap.comp_mem_span_range_comp`: pulling back along a linear map preserves membership
-  in the span of a family of quadratic maps.
 * `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
 * `QuadraticMap.isSymm_polarBilin`: the polar bilinear form of a scalar-valued quadratic map is
   symmetric.
+* `QuadraticMap.comp_mem_span_range_comp`, `QuadraticMap.comp_mem_span_range_comp_iff`:
+  precomposition with a linear map carries spans of quadratic maps into spans, and with a linear
+  equivalence identifies them.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
 -/
@@ -86,29 +87,47 @@ theorem isSymm_polarBilin {R M : Type*} [CommRing R] [AddCommGroup M] [Module R 
     (Q : QuadraticForm R M) : LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y ↦ polar_comm Q x y⟩
 
-/-- Pulling back along a linear map `f` sends a quadratic map in the span of a family `Q` to the
-span of the pulled back family. -/
-theorem comp_mem_span_range_comp {R M N P ι : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
-    {Q : ι → QuadraticMap R N P} {Q' : QuadraticMap R N P}
-    (hQ' : Q' ∈ Submodule.span R (Set.range Q)) (f : M →ₗ[R] N) :
+section Span
+
+variable {R M N P ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] [AddCommMonoid P] [Module R P] {Q : ι → QuadraticMap R N P}
+  {Q' : QuadraticMap R N P}
+
+/-- Precomposition with a linear map `f` is linear in the quadratic map, so it carries the span of
+a family `Q` into the span of the precomposed family `Q ∘ f`. -/
+theorem comp_mem_span_range_comp (f : M →ₗ[R] N) (hQ' : Q' ∈ Submodule.span R (Set.range Q)) :
     Q'.comp f ∈ Submodule.span R (Set.range fun i ↦ (Q i).comp f) := by
   induction hQ' using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
+  | mem _ h =>
+    obtain ⟨i, rfl⟩ := h
     exact Submodule.subset_span ⟨i, rfl⟩
   | zero =>
-    convert Submodule.zero_mem _ using 1
+    convert zero_mem (Submodule.span R (Set.range fun i ↦ (Q i).comp f)) using 1
     ext
     simp
-  | add x y _ _ hx hy =>
-    convert add_mem hx hy using 1
+  | add F G _ _ hF hG =>
+    convert add_mem hF hG using 1
     ext
     simp
-  | smul a x _ hx =>
-    convert Submodule.smul_mem _ a hx using 1
+  | smul a F _ hF =>
+    convert Submodule.smul_mem _ a hF using 1
     ext
     simp
+
+/-- Precomposition with a linear equivalence `e` identifies spans of quadratic maps: `Q' ∘ e` lies
+in the span of the `Q i ∘ e` exactly when `Q'` lies in the span of the `Q i`. -/
+theorem comp_mem_span_range_comp_iff (e : M ≃ₗ[R] N) :
+    Q'.comp (e : M →ₗ[R] N) ∈ Submodule.span R (Set.range fun i ↦ (Q i).comp (e : M →ₗ[R] N)) ↔
+      Q' ∈ Submodule.span R (Set.range Q) := by
+  refine ⟨fun h ↦ ?_, comp_mem_span_range_comp _⟩
+  -- Precomposing with `e⁻¹` undoes the precomposition with `e`.
+  have hcomp (F : QuadraticMap R N P) :
+      (F.comp (e : M →ₗ[R] N)).comp (e.symm : N →ₗ[R] M) = F := by
+    ext x
+    simp
+  simpa only [hcomp] using comp_mem_span_range_comp (e.symm : N →ₗ[R] M) h
+
+end Span
 
 end QuadraticMap
 

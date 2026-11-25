@@ -43,7 +43,9 @@ range, so the value is a `dite` rather than a plain application.
 ## Main results
 
 * `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations;
+  so a function of a pair that is invariant under the swap is invariant under every permutation
+  (`Equiv.Perm.apply_comp_fin_two`).
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -1189,6 +1191,20 @@ theorem univ_fin_two :
   classical
   ext e
   simpa using e.eq_one_or_swap_fin_two
+
+/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
+permutation of the entries. -/
+theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
+    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
+  · rfl
+  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
+      ext i
+      fin_cases i <;> simp
+    have hμ : μ = ![μ 0, μ 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hswap, ← hf, ← hμ]
 
 end Equiv.Perm
 
