@@ -49,10 +49,10 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
   meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
   of positive order there.
-* The rotation `z ↦ i z` is not admissible on half-discs: it does not preserve the real axis, and
-  the indicator of the open upper half-plane is in every local Sobolev class on the closed upper
-  half-disc, while its composition with `z ↦ i z`, the indicator of the right half-plane, is in
-  no class of positive order there.
+* The rotation `z ↦ i z` is not admissible on half-discs: it does not preserve the real axis
+  (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and the indicator of the open upper half-plane is
+  in every local Sobolev class on the closed upper half-disc, while its composition with
+  `z ↦ i z`, the indicator of the right half-plane, is in no class of positive order there.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
@@ -331,11 +331,6 @@ theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ 
   exact not_hasWeakFDerivOn_indicator_re_pos (Ω := Opens.interior U) hz₀ hre D hD
 
 /-! ### The rotation `z ↦ i z` on the half-disc -/
-
-/-- The rotation `z ↦ i z` does not preserve the real axis, so it is not a change of variables
-between half-discs. -/
-theorem not_forall_im_I_mul_eq_zero : ¬ ∀ z : ℂ, z.im = 0 → (Complex.I * z).im = 0 :=
-  fun h => by simpa using h 1 Complex.one_im
 
 /-- The indicator of the open upper half-plane is in every local Sobolev class on the closed upper
 half-disc `ball 0 1 ∩ {z | 0 ≤ z.im}`: there it agrees with `1` off the real axis. -/

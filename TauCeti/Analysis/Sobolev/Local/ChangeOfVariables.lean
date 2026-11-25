@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
@@ -28,10 +30,11 @@ In particular a `C¹` diffeomorphism of half-discs preserving the real axis and 
 half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` every order is
 preserved, by induction on the order from the first-order formula `Du (A z + b) ∘ A`
 (`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
-weak derivative of order `i` by `2 ^ i` (`TauCeti.HasWeakFDerivOn.pow_smul_comp_two_mul`), and the
-reflection `z ↦ -conj z` preserves the half-disc classes. The rotation `z ↦ i z` does not preserve
-the real axis, and does not preserve the half-disc classes; the counterexample is in
-`TauCeti.Analysis.Sobolev.Local.Examples`.
+weak derivative of order `i` by `2 ^ i`, read on the iterated weak gradients
+(`TauCeti.HasWeakFDerivOn.iteratedGradient_comp_two_mul`), and the reflection `z ↦ -conj z`
+preserves the half-disc classes. The rotation `z ↦ i z` does not preserve the real axis
+(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and does not preserve the half-disc classes; the
+counterexample is in `TauCeti.Analysis.Sobolev.Local.Examples`.
 
 Higher orders for nonlinear `Φ` need the multiplication of local Sobolev maps by smooth
 coefficients and are not treated here.
@@ -220,30 +223,24 @@ theorem HasWeakFDerivOn.ball_one_comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ 
       at hz ⊢
     linarith
 
-/-- The dilation `z ↦ 2 z` scales weak derivatives of multiples: if `Du` is a weak derivative of
-`u` on `V`, then for every `c : ℝ` the map `z ↦ (2 c) • Du (2 z)` is a weak derivative of
-`z ↦ c • u (2 z)` on every open set mapped into `V` by `z ↦ 2 z`. -/
-theorem HasWeakFDerivOn.const_smul_comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F}
-    {U V : Opens ℂ} (hu : HasWeakFDerivOn volume V u Du) (hUV : MapsTo (2 * ·) (U : Set ℂ) V)
-    (c : ℝ) :
-    HasWeakFDerivOn volume U (fun z => c • u (2 * z)) (fun z => (2 * c) • Du (2 * z)) := by
-  simpa only [Pi.smul_def, smul_smul, mul_comm c] using (hu.comp_two_mul hUV).const_smul c
-
-/-- **The dilation `z ↦ 2 z` scales the weak derivative of order `i` by `2 ^ i`.** Let `D i` be
-iterated weak derivatives on `V` through order `n`, written as multilinear maps as in
-`HasFTaylorSeriesUpToOn`: for `i < n`, the weak derivative of `D i` is `D (i + 1)` read through
-`curryLeft`. Then `z ↦ 2 ^ i • D i (2 z)` are iterated weak derivatives through order `n` on every
-open set mapped into `V` by `z ↦ 2 z`. At `i = 0` this is the map `z ↦ D 0 (2 z)` itself. -/
-theorem HasWeakFDerivOn.pow_smul_comp_two_mul {n : ℕ}
-    {D : (i : ℕ) → ℂ → ContinuousMultilinearMap ℝ (fun _ : Fin i => ℂ) F} {U V : Opens ℂ}
-    (hD : ∀ i < n, HasWeakFDerivOn volume V (D i) fun z => (D (i + 1) z).curryLeft)
+/-- **The dilation `z ↦ 2 z` scales the weak derivative of order `i + 1` by `2 ^ (i + 1)`.**
+Let `u` be real with iterated weak gradients `G 0, …, G n` on `V`, in the form of
+`TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient`: the weak derivative of `u` is
+`innerSL ℝ ∘ G 0`, and each `G (i + 1)` is the weak derivative of `G i`. Then on every open set
+mapped into `V` by `z ↦ 2 z`, the map `z ↦ u (2 z)` has the iterated weak gradients
+`z ↦ 2 ^ (i + 1) • G i (2 z)`. -/
+theorem HasWeakFDerivOn.iteratedGradient_comp_two_mul {n : ℕ} {u : ℂ → ℝ}
+    {G : (i : ℕ) → ℂ → IteratedGradient ℂ i} {U V : Opens ℂ}
+    (h0 : HasWeakFDerivOn volume V u fun z => innerSL ℝ (G 0 z))
+    (hG : ∀ i < n, HasWeakFDerivOn volume V (G i) (G (i + 1)))
     (hUV : MapsTo (2 * ·) (U : Set ℂ) V) :
-    ∀ i < n, HasWeakFDerivOn volume U (fun z => (2 : ℝ) ^ i • D i (2 * z))
-      fun z => ((2 : ℝ) ^ (i + 1) • D (i + 1) (2 * z)).curryLeft := by
-  intro i hi
-  convert (hD i hi).const_smul_comp_two_mul hUV ((2 : ℝ) ^ i) using 2 with z
-  ext v w
-  simp [pow_succ, mul_comm]
+    HasWeakFDerivOn volume U (fun z => u (2 * z))
+        (fun z => innerSL ℝ ((2 : ℝ) ^ (0 + 1) • G 0 (2 * z))) ∧
+      ∀ i < n, HasWeakFDerivOn volume U (fun z => (2 : ℝ) ^ (i + 1) • G i (2 * z))
+        fun z => (2 : ℝ) ^ (i + 1 + 1) • G (i + 1) (2 * z) := by
+  refine ⟨by simpa using h0.comp_two_mul hUV, fun i hi => ?_⟩
+  simpa only [Pi.smul_def, smul_smul, ← pow_succ] using
+    ((hG i hi).comp_two_mul hUV).const_smul ((2 : ℝ) ^ (i + 1))
 
 /-- Complex conjugation preserves every local Sobolev class on sets it maps into one another. -/
 theorem MemWkpLoc.comp_conj {u : ℂ → F} (hu : MemWkpLoc p V k u)
