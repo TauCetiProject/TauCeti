@@ -366,6 +366,6 @@ theorem prod_Icc_intCast {M : Type*} [CommMonoid M] (a b : ℕ) (f : ℤ → M) 
   have hmap : (Icc a b).map Nat.castEmbedding = Icc (a : ℤ) b := by
     simpa [← Finset.coe_inj] using Nat.image_cast_int_Icc a b
   rw [← hmap, prod_map]
-  rfl
+  simp only [Nat.castEmbedding_apply]
 
 end Finset

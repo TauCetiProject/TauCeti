@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.Ring.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
@@ -342,10 +343,9 @@ theorem exists_Ioo_sum_Icc_mul_log_sub_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m)
     rw [hrem m]; linarith [hm_eq]
   rw [hsub]
   exact exists_mem_Ioo_eq_mul_of_eq_add (u := (-1 : ℝ) ^ (m + 1)) hstep
-    (neg_one_pow_succ_mul_mulLog_rem_pos hm hn) <| by
-      have h : 0 < (-1 : ℝ) ^ ((m + 1) + 1) * rem (m + 1) :=
-        neg_one_pow_succ_mul_mulLog_rem_pos (k := m + 1) (by omega) hn
-      rw [pow_succ ((-1 : ℝ)) (m + 1), mul_assoc, neg_one_mul, mul_neg, neg_pos] at h; exact h
+    (neg_one_pow_succ_mul_mulLog_rem_pos hm hn)
+    (neg_one_pow_succ_mul_pos_iff.mp
+      (neg_one_pow_succ_mul_mulLog_rem_pos (k := m + 1) (by omega) hn))
 
 /-- **DLMF 2.10.5** for `∑_{j=1}^{n-1} j log j`: for `m ≥ 1` and `n ≥ 1`, there exists `θ ∈ (0, 1)`
 such that the remainder equals `θ` times `-(B_{2m+2} / (2m(2m+1)(2m+2))) n ^ (-2m)`. -/

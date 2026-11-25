@@ -131,15 +131,17 @@ theorem neg_one_pow_mul_bernoulli_sub_bernoulliFun_pos {k : ℕ} (hk : k ≠ 0) 
       (fun n _ => mul_nonneg (by positivity) (sub_nonneg.mpr (Real.cos_le_one _))) hsum
     simp only [Finset.sum_singleton, Nat.cast_one, one_pow, div_one, one_mul, mul_one] at hle
     have hcos : 1 - Real.cos (2 * π * x) = 2 * Real.sin (π * x) ^ 2 := by
-      rw [show 2 * π * x = 2 * (π * x) by ring, Real.cos_two_mul', Real.cos_sq']
+      rw [mul_assoc 2 π x, Real.cos_two_mul', Real.cos_sq']
       ring
     rwa [hcos] at hle
-  have hpos : 0 < (-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! *
-      ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) :=
-    (by positivity : 0 < 2 * Real.sin (π * x) ^ 2).trans_le h1
-  have hfac : (0 : ℝ) < (2 * π) ^ (2 * k) / 2 / (2 * k)! := by positivity
-  exact pos_of_mul_pos_left
-    (by simpa [mul_assoc, mul_left_comm, mul_comm, div_eq_mul_inv] using hpos) hfac.le
+  have hpos : 0 < ((2 * π) ^ (2 * k) / 2 / (2 * k)!) *
+      ((-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x)) :=
+    calc (0 : ℝ) < 2 * Real.sin (π * x) ^ 2 := by positivity
+      _ ≤ (-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! *
+          ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := h1
+      _ = ((2 * π) ^ (2 * k) / 2 / (2 * k)!) *
+          ((-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x)) := by ring
+  exact pos_of_mul_pos_right hpos (by positivity)
 
 /-- **Lehmer's bound** for even Bernoulli polynomials on `[0, 1]` (DLMF 24.9.2):
 `|B_{2k}(x)| ≤ |B_{2k}|` for every `k : ℕ` and `x ∈ [0, 1]`. -/
@@ -162,21 +164,20 @@ theorem abs_bernoulliFun_le_abs_bernoulli (k : ℕ) {x : ℝ}
       rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hpow]
       exact mul_le_of_le_one_right hpow (Real.abs_cos_le_one _))
       hcos.summable.norm hzeta.summable
-  have hfac : (0 : ℝ) < (2 * π) ^ (2 * k) / 2 / (2 * k)! := by positivity
+  set c : ℝ := (2 * π) ^ (2 * k) / 2 / (2 * k)!
+  have hc : 0 < c := by positivity
   have habsB : |(bernoulli (2 * k) : ℝ)| = (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
     exact_mod_cast abs_bernoulli_two_mul hk
-  rw [abs_mul, abs_div, abs_div, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul,
-    abs_of_pos (by positivity : (0 : ℝ) < (2 * π) ^ (2 * k)), abs_of_pos zero_lt_two,
-    abs_of_pos (by positivity : (0 : ℝ) < ((2 * k)! : ℝ))] at hnorm
-  have hnorm' : ((2 * π) ^ (2 * k) / 2 / (2 * k)!) * |bernoulliFun (2 * k) x| ≤
-      ((2 * π) ^ (2 * k) / 2 / (2 * k)!) * |(bernoulli (2 * k) : ℝ)| := by
-    rw [two_pi_pow_two_mul hk] at hnorm ⊢
-    rw [habsB]
-    linarith [show (-1 : ℝ) ^ (k + 1) * (2 : ℝ) ^ (2 * k - 1) * π ^ (2 * k) *
-        bernoulli (2 * k) / (2 * k)! =
-      (2 * (2 : ℝ) ^ (2 * k - 1) * π ^ (2 * k) / 2 / (2 * k)!) *
-        ((-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ)) by ring]
-  exact le_of_mul_le_mul_left hnorm' hfac
+  have hlhs : |(-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! *
+        bernoulliFun (2 * k) x| = c * |bernoulliFun (2 * k) x| := by
+    have hmul : (-1 : ℝ) ^ (k + 1) * (2 * π) ^ (2 * k) / 2 / (2 * k)! * bernoulliFun (2 * k) x =
+        (-1 : ℝ) ^ (k + 1) * (c * bernoulliFun (2 * k) x) := by dsimp [c]; ring
+    rw [hmul, abs_mul, abs_neg_one_pow, one_mul, abs_mul, abs_of_pos hc]
+  have hrhs : (-1 : ℝ) ^ (k + 1) * (2 : ℝ) ^ (2 * k - 1) * π ^ (2 * k) *
+        bernoulli (2 * k) / (2 * k)! = c * |(bernoulli (2 * k) : ℝ)| := by
+    rw [habsB]; dsimp [c]; rw [two_pi_pow_two_mul hk]; ring
+  rw [hlhs, hrhs] at hnorm
+  exact le_of_mul_le_mul_left hnorm hc
 
 /-- Periodic form of `abs_bernoulliFun_le_abs_bernoulli`: `|B_{2k}({x})| ≤ |B_{2k}|` on `ℝ`. -/
 theorem abs_bernoulliFun_fract_le_abs_bernoulli (k : ℕ) (x : ℝ) :

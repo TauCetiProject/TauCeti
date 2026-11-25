@@ -558,9 +558,12 @@ private theorem riemannZeta_eq_eulerMaclaurin_of_one_lt_re {s : ℂ} {m : ℕ} (
   have heq := tendsto_nhds_unique hLHS (hRHS.congr' (by
     filter_upwards [eventually_ge_atTop 1] with N hN1
     exact (sum_Icc_one_div_cpow_eq_eulerMaclaurin hs₁ hm hN1).symm))
-  rw [heq, show -s + 1 = -(s - 1) by ring, zero_sub, div_neg, neg_div, neg_neg, zero_div, add_zero,
-    sub_eq_add_neg (1 / (s - 1) + 1 / 2), ← Finset.sum_neg_distrib]
-  exact congrArg (· + _) (congrArg (1 / (s - 1) + 1 / 2 + ·) (sum_congr rfl fun _ _ => by ring))
+  have hdiv : ((0 : ℂ) - 1) / (-s + 1) = 1 / (s - 1) := by
+    have hsub : -s + 1 = -(s - 1) := by ring
+    rw [hsub, zero_sub, neg_div_neg_eq]
+  rw [heq, hdiv]
+  simp only [zero_sub, zero_div, mul_neg, mul_one, sum_neg_distrib]
+  ring
 
 /-- **Euler–Maclaurin continuation of `riemannZeta`** (DLMF 25.2.9). For `m ≥ 1` and every `s ≠ 1`
 in the half-plane `1 - 2 * m < Re s`,
@@ -664,6 +667,28 @@ theorem riemannZeta_neg_ofReal_re_eq_eulerMaclaurin {α : ℝ} (hα : α ≠ -1)
 
 /-! ### Evaluation of `ζ'(-1)` and DLMF 2.10.6 -/
 
+/-- Order-`4` Euler–Maclaurin expansion of `riemannZeta` near `s = -1`, factoring `(z + 1)` out of
+`(descPochhammer ℂ 4).eval (-z)` so the remainder vanishes to first order at `z = -1`. -/
+private theorem riemannZeta_eventuallyEq_near_neg_one :
+    riemannZeta =ᶠ[𝓝 (-1 : ℂ)] fun z => 1 / (z - 1) + 1 / 2 + z / 12 +
+      (z + 1) * (z * (z + 2) * (z + 3) * ∫ x in Set.Ioi (1 : ℝ),
+        ((bernoulli 4 - bernoulliFun 4 (Int.fract x)) / (4 : ℕ)! : ℂ) *
+          (x : ℂ) ^ (-z - 2 * (2 : ℕ))) := by
+  filter_upwards [((isOpen_lt continuous_const continuous_re).inter
+    isOpen_compl_singleton).mem_nhds
+    ⟨(by norm_num : (1 - 2 * (2 : ℝ)) < (-1 : ℂ).re), (by norm_num : (-1 : ℂ) ≠ 1)⟩] with z hz
+  have hsum : ∑ r ∈ Ico 1 2, (bernoulli (2 * r) / (2 * r)! : ℂ) *
+      (descPochhammer ℂ (2 * r - 1)).eval (-z) = -z / 12 := by
+    rw [Nat.Ico_succ_singleton]
+    simp [descPochhammer_eval_eq_prod_range,
+      bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two, Nat.factorial]
+    ring
+  have hpoch4 : (descPochhammer ℂ 4).eval (-z) = (z + 1) * (z * (z + 2) * (z + 3)) := by
+    simp [descPochhammer_eval_eq_prod_range, Finset.prod_range_succ]; ring
+  have h22 : 2 * 2 = 4 := rfl
+  rw [riemannZeta_eq_eulerMaclaurin (m := 2) (by omega) hz.1 hz.2, hsum, h22, hpoch4]
+  ring
+
 /-- Integral representation of `deriv riemannZeta (-1)` from the order-`4` Euler–Maclaurin
 formula:
 `ζ'(-1) = -1/6 - 1/12 * ∫_1^∞ (B_4 - B_4({x})) * x ^ (-3 : ℤ) dx`. -/
@@ -671,25 +696,10 @@ theorem deriv_riemannZeta_neg_one :
     deriv riemannZeta (-1) = -1 / 6 - (1 / 12 : ℂ) *
       ∫ x in Set.Ioi (1 : ℝ),
         (((bernoulli 4 : ℝ) - bernoulliFun 4 (Int.fract x) : ℝ) : ℂ) * (x : ℂ) ^ (-3 : ℤ) := by
-  set I : ℂ → ℂ := fun z => ∫ x in Set.Ioi (1 : ℝ),
+  set G : ℂ → ℂ := fun z => z * (z + 2) * (z + 3) * ∫ x in Set.Ioi (1 : ℝ),
     ((bernoulli 4 - bernoulliFun 4 (Int.fract x)) / (4 : ℕ)! : ℂ) * (x : ℂ) ^ (-z - 2 * (2 : ℕ))
-  set G : ℂ → ℂ := fun z => z * (z + 2) * (z + 3) * I z
-  have hev : riemannZeta =ᶠ[𝓝 (-1 : ℂ)]
-      fun z => 1 / (z - 1) + 1 / 2 + z / 12 + (z + 1) * G z := by
-    filter_upwards [((isOpen_lt continuous_const continuous_re).inter
-      isOpen_compl_singleton).mem_nhds
-      ⟨(by norm_num : (1 - 2 * (2 : ℝ)) < (-1 : ℂ).re), (by norm_num : (-1 : ℂ) ≠ 1)⟩] with z hz
-    have hsum : ∑ r ∈ Ico 1 2, (bernoulli (2 * r) / (2 * r)! : ℂ) *
-        (descPochhammer ℂ (2 * r - 1)).eval (-z) = -z / 12 := by
-      rw [Nat.Ico_succ_singleton]
-      simp [descPochhammer_eval_eq_prod_range,
-        bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two, Nat.factorial]
-      ring
-    have hpoch4 : (descPochhammer ℂ 4).eval (-z) = (z + 1) * (z * (z + 2) * (z + 3)) := by
-      simp [descPochhammer_eval_eq_prod_range, Finset.prod_range_succ]; ring
-    rw [riemannZeta_eq_eulerMaclaurin (m := 2) (by omega) hz.1 hz.2, hsum, show 2 * 2 = 4 from rfl,
-      hpoch4]
-    dsimp [G, I]; ring
+  -- Differentiate `1 / (z - 1) + 1 / 2 + z / 12 + (z + 1) * G z` at `z = -1`; the factor `z + 1`
+  -- kills the derivative of `G`, leaving `G (-1)`.
   have hd1 : HasDerivAt (fun z : ℂ => 1 / (z - 1)) (-1 / 4) (-1) := by
     simpa [one_div] using
       (((hasDerivAt_id' (-1 : ℂ)).sub_const 1).fun_inv (by norm_num)).congr_deriv (by norm_num)
@@ -702,15 +712,17 @@ theorem deriv_riemannZeta_neg_one :
   have hdG : HasDerivAt (fun z : ℂ => (z + 1) * G z) (G (-1)) (-1) := by
     simpa using ((hasDerivAt_id' (-1 : ℂ)).add_const 1).fun_mul hG_diff.hasDerivAt
   rw [((((hd1.add (hasDerivAt_const (-1 : ℂ) (1 / 2))).add hd2).add hdG).congr_of_eventuallyEq
-    hev).deriv]
+    riemannZeta_eventuallyEq_near_neg_one).deriv]
+  -- Simplify the prefactor `(-1) * 1 * 2 / 4! = -1 / 12` inside `G (-1)`.
   have hG_val : G (-1) = -(1 / 12 : ℂ) * ∫ x in Set.Ioi (1 : ℝ),
       (((bernoulli 4 : ℝ) - bernoulliFun 4 (Int.fract x) : ℝ) : ℂ) * (x : ℂ) ^ (-3 : ℤ) := by
-    dsimp [G, I]
-    rw [show (-1 : ℂ) * (-1 + 2) * (-1 + 3) = -2 by ring, ← MeasureTheory.integral_const_mul,
-      ← MeasureTheory.integral_const_mul]
+    dsimp [G]
+    have hc : (-1 : ℂ) * (-1 + 2) * (-1 + 3) = -2 := by norm_num
+    rw [hc, ← MeasureTheory.integral_const_mul, ← MeasureTheory.integral_const_mul]
     refine setIntegral_congr_fun measurableSet_Ioi fun x _ => ?_
-    rw [show (-(-1 : ℂ) - 2 * 2 : ℂ) = ((-3 : ℤ) : ℂ) by norm_num, cpow_intCast,
-      show (4 : ℕ)! = 24 by decide]
+    have hexp : (-(-1 : ℂ) - 2 * 2 : ℂ) = ((-3 : ℤ) : ℂ) := by norm_num
+    have hfac4 : (4 : ℕ)! = 24 := by decide
+    rw [hexp, cpow_intCast, hfac4]
     push_cast; ring
   rw [hG_val]; ring
 
@@ -734,15 +746,51 @@ theorem deriv_riemannZeta_neg_one_re :
   simp only [sub_re, mul_re, ofReal_re, ofReal_im, h6, h12, h12i, mul_zero, sub_zero] at h
   exact h
 
+/-- Derivative at `z = 2` of the functional-equation prefactor
+`z ↦ 2 * (2 * π) ^ (-z) * Gamma z * cos (π * z / 2)` from `riemannZeta_one_sub`. Since
+`cos (π * z / 2)` has derivative `0` and value `-1` at `z = 2`, only the derivatives of
+`2 * (2 * π) ^ (-z)` and `Gamma` contribute. -/
+private theorem hasDerivAt_two_mul_two_pi_cpow_mul_Gamma_mul_cos_two :
+    HasDerivAt (fun z : ℂ => 2 * (2 * π : ℂ) ^ (-z) * Gamma z * Complex.cos (π * z / 2))
+      ((Real.eulerMascheroniConstant + Complex.log (2 * π) - 1) / (2 * π ^ 2)) 2 := by
+  have h2π : (2 * π : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
+  have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_pos.ne'
+  have hexp : -(2 : ℂ) = ((-2 : ℤ) : ℂ) := by norm_num
+  have hd_pow :
+      HasDerivAt (fun z : ℂ => 2 * (2 * π : ℂ) ^ (-z))
+        (-Complex.log (2 * π) / (2 * π ^ 2)) 2 := by
+    refine (((hasDerivAt_neg' (2 : ℂ)).const_cpow (c := 2 * π) (Or.inl h2π)).const_mul
+      2).congr_deriv ?_
+    rw [hexp, cpow_intCast, zpow_neg, zpow_ofNat]; field_simp
+  have hd_gam : HasDerivAt Gamma (1 - Real.eulerMascheroniConstant) 2 := by
+    have h := Complex.hasDerivAt_Gamma_nat 1
+    simp only [Nat.factorial_one, Nat.cast_one, one_mul, harmonic_succ, zero_add,
+      harmonic_zero, inv_one, Rat.cast_one] at h
+    have hd_eq : (-Real.eulerMascheroniConstant : ℂ) + 1 = 1 - Real.eulerMascheroniConstant := by
+      ring
+    have h2_eq : (1 : ℂ) + 1 = 2 := by norm_num
+    rwa [hd_eq, h2_eq] at h
+  have hd_cos : HasDerivAt (fun z : ℂ => Complex.cos (π * z / 2)) 0 2 := by
+    have hlin : HasDerivAt (fun z : ℂ => π * z / 2) (π / 2) 2 := by
+      simpa using ((hasDerivAt_id' (2 : ℂ)).const_mul (π : ℂ)).div_const 2
+    simpa [mul_div_cancel_right₀ (π : ℂ) two_ne_zero] using hlin.ccos
+  have hval_pow : 2 * (2 * π : ℂ) ^ (-(2 : ℂ)) = 1 / (2 * π ^ 2) := by
+    rw [hexp, cpow_intCast, zpow_neg, zpow_ofNat]; field_simp
+  have hval_gam : Gamma (2 : ℂ) = 1 := by simp
+  have hval_cos : Complex.cos (π * (2 : ℂ) / 2) = -1 := by
+    rw [mul_div_cancel_right₀ (π : ℂ) two_ne_zero, Complex.cos_pi]
+  refine ((hd_pow.fun_mul hd_gam).fun_mul hd_cos).congr_deriv ?_
+  rw [hval_pow, hval_gam, hval_cos]
+  field_simp; ring
+
 /-- **Functional-equation evaluation of `1 / 12 - ζ'(-1)`** (DLMF 2.10.6, complex form):
 `1 / 12 - deriv riemannZeta (-1) = (γ + log(2π)) / 12 - deriv riemannZeta 2 / (2π²)`. -/
 theorem one_div_twelve_sub_deriv_riemannZeta_neg_one :
     1 / 12 - deriv riemannZeta (-1) =
       (Real.eulerMascheroniConstant + Complex.log (2 * π)) / 12 -
         deriv riemannZeta 2 / (2 * π ^ 2) := by
-  set L : ℂ := Complex.log (2 * π)
-  have h2π : (2 * π : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_pos.ne'
+  -- Apply `riemannZeta_one_sub` on `1 < Re z` (a neighborhood of `z = 2`) and differentiate at `2`.
   have hev : (fun z : ℂ => riemannZeta (1 - z)) =ᶠ[𝓝 (2 : ℂ)]
       fun z => 2 * (2 * π) ^ (-z) * Gamma z * Complex.cos (π * z / 2) * riemannZeta z := by
     filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
@@ -753,34 +801,19 @@ theorem one_div_twelve_sub_deriv_riemannZeta_neg_one :
   have hd_lhs : HasDerivAt (fun z : ℂ => riemannZeta (1 - z)) (-deriv riemannZeta (-1)) 2 := by
     have h := (differentiableAt_riemannZeta (s := 1 - (2 : ℂ)) (by norm_num)).hasDerivAt.comp
       (2 : ℂ) ((hasDerivAt_const (2 : ℂ) (1 : ℂ)).sub (hasDerivAt_id' 2))
-    simpa [Function.comp_def, show (1 : ℂ) - 2 = -1 by ring] using h
-  have hd_pow : HasDerivAt (fun z : ℂ => 2 * (2 * π : ℂ) ^ (-z)) (-L / (2 * π ^ 2)) 2 := by
-    have h := ((hasDerivAt_neg' (2 : ℂ)).const_cpow (c := 2 * π) (Or.inl h2π)).const_mul 2
-    refine h.congr_deriv ?_
-    rw [show -(2 : ℂ) = ((-2 : ℤ) : ℂ) by norm_num, cpow_intCast, zpow_neg, zpow_ofNat]
-    dsimp [L]; field_simp
-  have hd_gam : HasDerivAt Gamma (1 - Real.eulerMascheroniConstant) 2 := by
-    have h := Complex.hasDerivAt_Gamma_nat 1
-    simp only [Nat.factorial_one, Nat.cast_one, one_mul, harmonic_succ, zero_add,
-      harmonic_zero] at h
-    simpa [show (-Real.eulerMascheroniConstant : ℂ) + 1 = 1 - Real.eulerMascheroniConstant by ring,
-      show (1 : ℂ) + 1 = 2 by norm_num] using h
-  have hd_cos : HasDerivAt (fun z : ℂ => Complex.cos (π * z / 2)) 0 2 := by
-    have hlin : HasDerivAt (fun z : ℂ => π * z / 2) (π / 2) 2 := by
-      simpa using ((hasDerivAt_id' (2 : ℂ)).const_mul (π : ℂ)).div_const 2
-    simpa [mul_div_cancel_right₀ (π : ℂ) two_ne_zero] using hlin.ccos
-  have hd_zeta : HasDerivAt riemannZeta (deriv riemannZeta 2) 2 :=
-    (differentiableAt_riemannZeta (by norm_num)).hasDerivAt
-  have hval_pow : 2 * (2 * π : ℂ) ^ (-(2 : ℂ)) = 1 / (2 * π ^ 2) := by
-    rw [show -(2 : ℂ) = ((-2 : ℤ) : ℂ) by norm_num, cpow_intCast, zpow_neg, zpow_ofNat]
+    have h12 : (1 : ℂ) - 2 = -1 := by norm_num
+    simpa [Function.comp_def, h12] using h
+  have hval_pre : 2 * (2 * π : ℂ) ^ (-(2 : ℂ)) * Gamma 2 * Complex.cos (π * 2 / 2) =
+      -1 / (2 * π ^ 2) := by
+    have hexp : -(2 : ℂ) = ((-2 : ℤ) : ℂ) := by norm_num
+    have hgam : Gamma (2 : ℂ) = 1 := by simp
+    rw [hexp, cpow_intCast, zpow_neg, zpow_ofNat, hgam,
+      mul_div_cancel_right₀ (π : ℂ) two_ne_zero, Complex.cos_pi]
     field_simp
-  have hval_gam : Gamma (2 : ℂ) = 1 := by simp
-  have hval_cos : Complex.cos (π * (2 : ℂ) / 2) = -1 := by
-    rw [mul_div_cancel_right₀ (π : ℂ) two_ne_zero, Complex.cos_pi]
-  have hd_rhs := (((hd_pow.fun_mul hd_gam).fun_mul hd_cos).fun_mul hd_zeta).congr_of_eventuallyEq
-    hev
+  have hd_rhs := (hasDerivAt_two_mul_two_pi_cpow_mul_Gamma_mul_cos_two.fun_mul
+    (differentiableAt_riemannZeta (by norm_num)).hasDerivAt).congr_of_eventuallyEq hev
   have heq := hd_lhs.unique hd_rhs
-  rw [hval_pow, hval_gam, hval_cos, riemannZeta_two] at heq
+  rw [hval_pre, riemannZeta_two] at heq
   linear_combination (norm := (field_simp; ring)) heq
 
 /-- **DLMF 2.10.6** (real form):

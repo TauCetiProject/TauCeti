@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.Ring.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
@@ -58,6 +59,27 @@ open scoped Nat Real Topology
 
 namespace TauCeti
 
+/-- Advancing the truncation order from `2 * m` to `2 * (m + 1)` (`m ≥ 1`) in the DLMF 2.10.7
+polynomial adds only the `s = 2 * m` term, since `bernoulli (2 * m + 1) = 0`. -/
+private theorem sum_range_two_mul_succ_choose_bernoulli (α : ℝ) {m : ℕ} (hm : 1 ≤ m) (n : ℕ) :
+    ∑ s ∈ range (2 * (m + 1)),
+      Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ)) =
+    ∑ s ∈ range (2 * m), Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ)) +
+      Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ)) := by
+  have hodd : bernoulli (2 * m + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m, rfl⟩ (by omega)
+  have h2m : 2 * (m + 1) = 2 * m + 1 + 1 := by ring
+  rw [h2m, sum_range_succ, sum_range_succ, hodd, Rat.cast_zero, mul_zero, zero_mul, add_zero]
+
+/-- Rearrange the `s`-th term of the DLMF 2.10.7 polynomial into its coefficient times
+`(n : ℝ) ^ (α + 1 - s)`. -/
+private theorem rpow_eulerMaclaurin_term_eq (α : ℝ) {n : ℕ} (hn : 1 ≤ n) (s : ℕ) :
+    (n : ℝ) ^ (α + 1) / (α + 1) *
+      (Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ))) =
+    Ring.choose (α + 1) s * (bernoulli s : ℝ) / (α + 1) * (n : ℝ) ^ (α + 1 - (s : ℝ)) := by
+  have hn0 : (n : ℝ) ≠ 0 := by positivity
+  rw [Real.rpow_sub_natCast hn0, zpow_neg, zpow_natCast]
+  ring
+
 /-- Rewrite the Euler–Maclaurin boundary polynomial in `n` as the DLMF 2.10.7 sum over
 `range (2 * m)` with `Ring.choose (α + 1) s`. -/
 private theorem eulerMaclaurin_rpow_poly_eq_sum_range {α : ℝ} (hα : α ≠ -1) {m n : ℕ}
@@ -68,38 +90,30 @@ private theorem eulerMaclaurin_rpow_poly_eq_sum_range {α : ℝ} (hα : α ≠ -
       (n : ℝ) ^ (α + 1) / (α + 1) *
         ∑ s ∈ range (2 * m),
           Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ)) := by
-  have hn_pos : (0 : ℝ) < n := by positivity
   have hα1 : α + 1 ≠ 0 := fun h => hα (by linarith)
   induction m, hm using Nat.le_induction with
   | base =>
-    simp only [Finset.Ico_self, sum_empty, add_zero, show 2 * 1 = 2 from rfl, sum_range_succ,
-      sum_range_zero, zero_add, Ring.choose_zero_right, bernoulli_zero, Rat.cast_one, Nat.cast_zero,
-      neg_zero, zpow_zero, mul_one, Ring.choose_one_right, bernoulli_one,
-      Rat.cast_neg, Nat.cast_one, zpow_neg_one]
-    have hpow : (n : ℝ) ^ (α + 1) * (n : ℝ)⁻¹ = (n : ℝ) ^ α := by
-      rw [← Real.rpow_neg_one, ← Real.rpow_add hn_pos]; ring_nf
-    rw [← hpow]
+    have h2 : 2 * 1 = 2 := rfl
+    rw [Finset.Ico_self, sum_empty, add_zero, h2, sum_range_succ, sum_range_succ, sum_range_zero,
+      zero_add, mul_add, rpow_eulerMaclaurin_term_eq α hn 0, rpow_eulerMaclaurin_term_eq α hn 1]
+    simp only [Ring.choose_zero_right, bernoulli_zero, Rat.cast_one, Nat.cast_zero, sub_zero,
+      Ring.choose_one_right, bernoulli_one, Rat.cast_neg, Nat.cast_one, add_sub_cancel_right]
+    norm_num
     field_simp
     ring
   | succ m hm ih =>
-    have hodd : bernoulli (2 * m + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m, rfl⟩ (by omega)
-    have hpow : (n : ℝ) ^ (α + 1) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ)) =
-        (n : ℝ) ^ (α - (2 * m - 1 : ℕ)) := by
-      rw [← Real.rpow_intCast, ← Real.rpow_add hn_pos]
-      congr 1
-      have hm1 : 1 ≤ 2 * m := by omega
-      push_cast [hm1]; ring
     have hterm : (bernoulli (2 * m) : ℝ) / (2 * m)! *
           (descPochhammer ℝ (2 * m - 1)).eval α * (n : ℝ) ^ (α - (2 * m - 1 : ℕ)) =
         (n : ℝ) ^ (α + 1) / (α + 1) *
           (Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) *
             (n : ℝ) ^ (-((2 * m : ℕ) : ℤ))) := by
+      have hm1 : 1 ≤ 2 * m := by omega
       have h2m : 2 * m = (2 * m - 1) + 1 := by omega
+      have hexp : α + 1 - ((2 * m : ℕ) : ℝ) = α - (2 * m - 1 : ℕ) := by push_cast [hm1]; ring
+      rw [rpow_eulerMaclaurin_term_eq α hn (2 * m), hexp]
       conv_rhs => rw [h2m, Ring.choose_add_one_succ_eq_div_mul_descPochhammer_eval, ← h2m]
-      rw [← hpow]
       field_simp
-    rw [sum_Ico_succ_top hm, ← add_assoc, ih, show 2 * (m + 1) = 2 * m + 1 + 1 by ring,
-      sum_range_succ, sum_range_succ, hodd, Rat.cast_zero, mul_zero, zero_mul, add_zero,
+    rw [sum_Ico_succ_top hm, ← add_assoc, ih, sum_range_two_mul_succ_choose_bernoulli α hm n,
       mul_add, hterm]
 
 /-- **Euler–Maclaurin formula for sums of real powers** (DLMF 2.10.7, integral-remainder form).
@@ -210,34 +224,32 @@ private theorem exists_Ioo_sum_Ico_rpow_sub_of_lt {α : ℝ} (hα : α ≠ -1) {
       ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) / (2 * k)! * x ^ (α - 2 * k)
   set term : ℝ := (n : ℝ) ^ (α + 1) / (α + 1) *
     (Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ)))
+  -- Compare the order-`2m` and order-`2(m + 1)` formulas to obtain `rem m = term + rem (m + 1)`.
   have hm_eq := sum_Ico_rpow_eq_eulerMaclaurin hα hm hαm hn
   have hm1_eq := sum_Ico_rpow_eq_eulerMaclaurin hα (m := m + 1) (by omega)
     (by push_cast; linarith) hn
-  have hrange : ∑ s ∈ range (2 * (m + 1)),
-        Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ)) =
-      ∑ s ∈ range (2 * m), Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ)) +
-        Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ)) := by
-    have hodd : bernoulli (2 * m + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m, rfl⟩ (by omega)
-    rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring, sum_range_succ, sum_range_succ, hodd,
-      Rat.cast_zero, mul_zero, zero_mul, add_zero]
-  rw [hrange, mul_add] at hm1_eq
+  rw [sum_range_two_mul_succ_choose_bernoulli α hm n, mul_add] at hm1_eq
   have hstep : rem m = term + rem (m + 1) := by dsimp only [rem, term]; linarith [hm_eq, hm1_eq]
+  -- Rescale by `u = (-1)^(m + 1) / Q` to cancel `Q` and show `u * rem m > 0` and
+  -- `u * rem (m + 1) < 0`.
   obtain ⟨hP1, hP2⟩ := neg_descPochhammer_two_mul_eval α hm
   set u : ℝ := (-1 : ℝ) ^ (m + 1) / Q
   have hcancel : ∀ c d : ℝ, (-1 : ℝ) ^ (m + 1) / Q * (Q * c * d) = c * ((-1 : ℝ) ^ (m + 1) * d) :=
     fun c d => by field_simp
+  have hQ_def : (descPochhammer ℝ (2 * m - 1)).eval α = Q := rfl
   have hu_rem : 0 < u * rem m := by
     dsimp only [rem, u]
-    rw [hP1, show (descPochhammer ℝ (2 * m - 1)).eval α = Q from rfl, hcancel]
+    rw [hP1, hQ_def, hcancel]
     exact mul_pos (by linarith) (neg_one_pow_succ_mul_setIntegral_rpow_tail_pos hm hαm hn)
   have hu_rem1 : u * rem (m + 1) < 0 := by
     dsimp only [rem, u]
-    rw [hP2, show (descPochhammer ℝ (2 * m - 1)).eval α = Q from rfl, hcancel]
-    have h1 := neg_one_pow_succ_mul_setIntegral_rpow_tail_pos (α := α) (k := m + 1) (by omega)
-      (by push_cast; linarith) hn
-    rw [pow_succ, mul_assoc, neg_one_mul, mul_neg, neg_pos] at h1
+    rw [hP2, hQ_def, hcancel]
     exact mul_neg_of_pos_of_neg
-      (mul_pos (mul_pos (by linarith) (by linarith)) (by linarith)) h1
+      (mul_pos (mul_pos (by linarith) (by linarith)) (by linarith))
+      (neg_one_pow_succ_mul_pos_iff.mp
+        (neg_one_pow_succ_mul_setIntegral_rpow_tail_pos (α := α) (k := m + 1) (by omega)
+          (by push_cast; linarith) hn))
+  -- Apply `exists_mem_Ioo_eq_mul_of_eq_add` to enclose `rem m = θ * term` with `θ ∈ (0, 1)`.
   have hsub : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α - ((riemannZeta (-α : ℂ)).re +
       (n : ℝ) ^ (α + 1) / (α + 1) * ∑ s ∈ range (2 * m),
         Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ))) = rem m := by
@@ -278,10 +290,7 @@ theorem exists_Icc_sum_Ico_rpow_sub_eulerMaclaurin {α : ℝ} (hα : α ≠ -1) 
       refine prod_eq_zero (i := 2 * m - 1) (mem_range.mpr (by omega)) ?_
       have hm1 : 1 ≤ 2 * m := by omega
       push_cast [hm1]; ring
-    have hodd : bernoulli (2 * m + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m, rfl⟩ (by omega)
-    rw [hP, zero_mul, sub_zero, show 2 * (m + 1) = 2 * m + 1 + 1 by ring,
-      sum_range_succ, sum_range_succ, hodd, Rat.cast_zero, mul_zero, zero_mul, add_zero,
-      mul_add] at hm1_eq
+    rw [hP, zero_mul, sub_zero, sum_range_two_mul_succ_choose_bernoulli _ hm n, mul_add] at hm1_eq
     linarith [hm1_eq]
 
 /-- Magnitude bound for the order-`2m` Euler–Maclaurin expansion of `∑_{j=1}^{n-1} j ^ α`
@@ -297,16 +306,8 @@ theorem abs_sum_Ico_rpow_sub_eulerMaclaurin_le {α : ℝ} (hα : α ≠ -1) {m n
         (n : ℝ) ^ (α + 1 - 2 * (m : ℝ)) := by
   obtain ⟨θ, hθ, heq⟩ := exists_Icc_sum_Ico_rpow_sub_eulerMaclaurin hα hm hαm hn
   have hn_pos : (0 : ℝ) < n := by positivity
-  have hpow : (n : ℝ) ^ (α + 1) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ)) =
-      (n : ℝ) ^ (α + 1 - 2 * (m : ℝ)) := by
-    rw [← Real.rpow_intCast, ← Real.rpow_add hn_pos]
-    congr 1; push_cast; ring
-  have hterm : (n : ℝ) ^ (α + 1) / (α + 1) *
-      (Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ))) =
-      (Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) / (α + 1)) *
-        ((n : ℝ) ^ (α + 1) * (n : ℝ) ^ (-((2 * m : ℕ) : ℤ))) := by ring
-  rw [heq, hterm, hpow, abs_mul, abs_mul, abs_of_nonneg hθ.1,
-    abs_of_pos (Real.rpow_pos_of_pos hn_pos _)]
+  rw [heq, rpow_eulerMaclaurin_term_eq α hn (2 * m), Nat.cast_mul, Nat.cast_ofNat, abs_mul, abs_mul,
+    abs_of_nonneg hθ.1, abs_of_pos (Real.rpow_pos_of_pos hn_pos _)]
   exact mul_le_of_le_one_left (mul_nonneg (abs_nonneg _) (Real.rpow_nonneg hn_pos.le _)) hθ.2
 
 /-- Each individual Euler–Maclaurin term of index `s ≥ N` is `O(n ^ (α + 1 - N))` as `n → ∞`. -/
@@ -319,13 +320,8 @@ private theorem rpow_eulerMaclaurin_term_isBigO (α : ℝ) {N s : ℕ} (hs : N �
   have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
   have hn0 : (0 : ℝ) < n := by positivity
   have hs' : (N : ℝ) ≤ s := by exact_mod_cast hs
-  have hpow : (n : ℝ) ^ (α + 1) * (n : ℝ) ^ (-(s : ℤ)) = (n : ℝ) ^ (α + 1 - (s : ℝ)) := by
-    rw [← Real.rpow_intCast, ← Real.rpow_add hn0]; push_cast; ring_nf
-  have hrearr : (n : ℝ) ^ (α + 1) / (α + 1) *
-      (Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ))) =
-      (Ring.choose (α + 1) s * (bernoulli s : ℝ) / (α + 1)) *
-        ((n : ℝ) ^ (α + 1) * (n : ℝ) ^ (-(s : ℤ))) := by ring
-  simp only [Real.norm_eq_abs, hrearr, hpow, abs_mul, abs_of_pos (Real.rpow_pos_of_pos hn0 _)]
+  simp only [Real.norm_eq_abs, rpow_eulerMaclaurin_term_eq α hn s, abs_mul,
+    abs_of_pos (Real.rpow_pos_of_pos hn0 _)]
   exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hn1 (by linarith))
     (abs_nonneg _)
 
