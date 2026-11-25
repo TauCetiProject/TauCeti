@@ -101,6 +101,9 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
   `b = z* z`; no unit is needed.
+* `CStarMatrix.norm_ofMatrix_diagonal`: a diagonal matrix `diag(d₁, …, dₙ)` over a C⋆-algebra has
+  norm `maxᵢ ‖dᵢ‖`, the sup norm of `d`; `CStarMatrix.norm_ofMatrix_diagonal_fin_two` is the
+  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`.
 
 ## References
 
@@ -789,5 +792,49 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
   nlinarith
 
 end Compression
+
+section DiagonalNorm
+
+open WithCStarModule CStarModule
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- A diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal entries: the
+diagonal matrices form a copy of `Aⁿ` with the sup norm. -/
+theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
+  refine le_antisymm ?_ ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_)
+  · rw [norm_def]
+    refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
+    have hv : toCLM (ofMatrix (diagonal d)) v = (equiv A (n → A)).symm fun j => v j * d j := by
+      simp [toCLM_apply_eq_sum, diagonal_apply]
+    rw [hv, ← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A (x := v),
+      norm_sq_eq A (x := (equiv A (n → A)).symm _), pi_inner, pi_inner]
+    simp only [equiv_symm_pi_apply, inner_def]
+    -- Each term `vⱼ dⱼ (vⱼ dⱼ)⋆` is the conjugate of `dⱼ dⱼ⋆ ≤ ‖d‖²` by `vⱼ`.
+    calc ‖∑ j, v j * d j * star (v j * d j)‖ ≤ ‖∑ j, ‖d‖ ^ 2 • (v j * star (v j))‖ := by
+          refine CStarAlgebra.norm_le_norm_of_le_of_nonneg (Finset.sum_le_sum fun j _ => ?_)
+            (Finset.sum_nonneg fun j _ => mul_star_self_nonneg _)
+          calc v j * d j * star (v j * d j) = v j * (d j * star (d j)) * star (v j) := by
+                simp [star_mul, mul_assoc]
+            _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
+                CStarAlgebra.star_right_conjugate_le_norm_smul _ _
+            _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) := by
+                refine smul_le_smul_of_nonneg_right ?_ (mul_star_self_nonneg _)
+                rw [CStarRing.norm_self_mul_star, ← sq]
+                exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2
+      _ = ‖d‖ ^ 2 * ‖∑ j, v j * star (v j)‖ := by
+          rw [← Finset.smul_sum, norm_smul, Real.norm_of_nonneg (by positivity)]
+  · simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i)
+
+/-- A `2 × 2` diagonal matrix `diag(a, b)` over a C⋆-algebra has norm `max ‖a‖ ‖b‖`. -/
+theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
+    ‖ofMatrix (diagonal ![a, b])‖ = max ‖a‖ ‖b‖ := by
+  rw [norm_ofMatrix_diagonal]
+  refine le_antisymm ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_)
+    (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))
+  fin_cases i <;> simp
+
+end DiagonalNorm
 
 end CStarMatrix
