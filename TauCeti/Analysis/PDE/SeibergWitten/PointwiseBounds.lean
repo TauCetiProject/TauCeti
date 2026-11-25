@@ -27,8 +27,8 @@ gives the scalar inequalities
 `-Δ|α|² / 2 + |∇_a α|² + (r / 4) (|α|² + |β|² - 1) |α|² ≤ c |α| (|∇β| + |α| + |β|)`,
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)`.
 
-This file derives from them, by the maximum principle on a closed manifold, two of Taubes's
-coarse pointwise bounds, with constants depending only on `c`:
+This file derives, by the maximum principle on a closed manifold, three of Taubes's coarse
+pointwise bounds. Two come from the inequalities above, with constants depending only on `c`:
 
 * `|α|² + |β|² ≤ 1 + (c² + 8 c) / r` everywhere
   (`TauCeti.SeibergWitten.norm_sq_add_norm_sq_le_one_add_div`). At a maximum of `|α|² + |β|²` the
@@ -50,9 +50,20 @@ coarse pointwise bounds, with constants depending only on `c`:
   bounds of `TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds`, such as
   `TauCeti.SeibergWitten.integral_norm_sq_le_div_sq`, take it as a hypothesis.
 
+The third comes from the `α` inequality in its `K₁` form. Once `|α|`, `|β|` and `|∇β|` are
+bounded, dropping `|∇_a α|²` and `(r / 4)|β|²|α|²` from the `α` inequality leaves
+`-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` with `K₁` independent of `r`. At a
+maximum of `|α|²`, where `Δ|α|² ≤ 0`, this gives `(r / 4)(|α|² - 1)|α|² ≤ K₁`, hence the coarse
+bound `|α|² ≤ 1 + 4 K₁ / r` everywhere (`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`).
+With `K₃ = 4 K₁` it supplies the hypothesis `|α|² ≤ 1 + K₃ / r` of the `β` bound
+`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div` and of the gradient bound
+`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`.
+
 The same statements hold at a local maximum on any boundaryless Riemannian manifold
 (`TauCeti.SeibergWitten.norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax`,
-`TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax`). The sections `α`,
+`TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax`,
+`TauCeti.SeibergWitten.le_one_add_mul_div_of_isLocalMax`, the last for any scalar function `u`
+satisfying `-Δu / 2 - (r / 4)(1 - u) u ≤ K₁` at the maximum). The sections `α`,
 `β` and their covariant derivatives `∇_a α`, `∇β` are arbitrary families of elements of
 seminormed groups over the manifold satisfying the displayed inequalities; only the squared norms
 `|α|²` and `|β|²` need to be `C²`, and for the local statements only at the maximum. Deriving the
@@ -65,6 +76,10 @@ scalar inequalities from the Seiberg–Witten equations is not done here.
   `|β|² ≤ (4 c² / r) (1 - |α|²) + K / r²`.
 * `TauCeti.SeibergWitten.norm_sq_le_div_mul_max_add_div_sq`:
   `|β|² ≤ (C / r) max (1 - |α|²) 0 + C / r²`.
+* `TauCeti.SeibergWitten.le_one_add_mul_div_of_isLocalMax`: the bound `u ≤ 1 + 4 K₁ / r` at a
+  local maximum of a function `u` satisfying `-Δu / 2 - (r / 4)(1 - u) u ≤ K₁` there.
+* `TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`: `|α|² ≤ 1 + 4 K₁ / r`, from the `α`
+  inequality alone.
 
 ## References
 
@@ -72,6 +87,8 @@ scalar inequalities from the Seiberg–Witten equations is not done here.
   J. Amer. Math. Soc. 9 (1996), 845–918, Section 2.
 * C. H. Taubes, *The Seiberg–Witten invariants and symplectic forms*, Math. Res. Lett. 1 (1994),
   809–822.
+* C. H. Taubes, *The Seiberg–Witten equations and the Weinstein conjecture*, Geom. Topol. 11
+  (2007), 2117–2202, Section 2.
 -/
 
 public section
@@ -233,7 +250,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {A B : M → Type*} [∀ x, SeminormedAddCommGroup (A x)] [∀ x, SeminormedAddCommGroup (B x)]
-  {α : (x : M) → A x} {β : (x : M) → B x} {c r : ℝ}
+  {α : (x : M) → A x} {β : (x : M) → B x} {c r K₁ : ℝ}
 
 section LocalMax
 
@@ -257,7 +274,7 @@ theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ 
     ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r := by
   -- The function `fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2` is the pointwise sum of the two squared norms.
   have hlap : laplaceBeltrami I ((fun x ↦ ‖α x‖ ^ 2) + fun x ↦ ‖β x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂) hmax
+    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂) BoundarylessManifold.isInteriorPoint hmax
   rw [laplaceBeltrami_add_of_contMDiffAt I hα₂ hβ₂] at hlap
   exact sq_add_sq_le_of_weitzenbock hc hr hWα hWβ hlap
 
@@ -286,10 +303,24 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 �
     contMDiffAt_const.mul hα₂
   have hlap : laplaceBeltrami I
       ((fun x ↦ ‖β x‖ ^ 2) + (4 * c ^ 2 / r) • fun x ↦ ‖α x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα) hmax
+    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα) BoundarylessManifold.isInteriorPoint hmax
   rw [laplaceBeltrami_add_of_contMDiffAt I hβ₂ hkα,
     laplaceBeltrami_smul_of_contMDiffAt I _ hα₂] at hlap
   exact sq_le_of_weitzenbock hc hr1 hr32 hrK hs hWα hWβ hlap
+
+/-- **Taubes's coarse bound at a maximum point.** If a function `u` that is `C²` at `x₀` has a
+local maximum there and satisfies `-Δu / 2 - (r / 4)(1 - u) u ≤ K₁` at `x₀`, with `0 < r`, then
+`u(x₀) ≤ 1 + 4 K₁ / r`. For `u = |α|²` this is the projected Weitzenböck inequality for `α` after
+dropping `|∇_a α|²`. -/
+theorem le_one_add_mul_div_of_isLocalMax (hr : 0 < r) {u : M → ℝ} {x₀ : M}
+    (hu : ContMDiffAt I 𝓘(ℝ) 2 u x₀) (hmax : IsLocalMax u x₀)
+    (hW : -(laplaceBeltrami I u x₀ / 2) - r / 4 * (1 - u x₀) * u x₀ ≤ K₁) :
+    u x₀ ≤ 1 + 4 * K₁ / r := by
+  -- The Laplacian is nonpositive at `x₀`, so `(r / 4)(u - 1) u ≤ K₁` there.
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hu BoundarylessManifold.isInteriorPoint hmax
+  -- Since `r (u - 1) ≤ r (u - 1) u`, this gives `r (u - 1) ≤ 4 K₁`.
+  rw [← sub_le_iff_le_add', le_div_iff₀ hr]
+  nlinarith [mul_nonneg hr.le (sq_nonneg (u x₀ - 1))]
 
 end LocalMax
 
@@ -356,5 +387,20 @@ theorem norm_sq_le_div_mul_max_add_div_sq (hc : 0 ≤ c) (hr1 : 1 ≤ r) (hr32 :
     _ ≤ (128 * c ^ 2 + 128 * c ^ 3 + 4 * c ^ 4 + 64 * c ^ 6) / r * max (1 - ‖α x‖ ^ 2) 0 := by
         gcongr
         nlinarith [pow_nonneg hc 3, pow_nonneg hc 4, pow_nonneg hc 6, sq_nonneg c]
+
+/-- **Taubes's coarse bound** `|α|² ≤ 1 + C / r`. On a closed Riemannian manifold, suppose `|α|²`
+is `C²` and satisfies `-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` everywhere, as the projected
+Weitzenböck inequality for `α` gives after dropping `|∇_a α|²`, with `0 < r`. Then
+`|α|² ≤ 1 + 4 K₁ / r` everywhere. -/
+theorem norm_sq_le_one_add_mul_div (hr : 0 < r) (hα₂ : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖α x‖ ^ 2)
+    (hWα : ∀ x, -(laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x / 2) -
+      r / 4 * (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2 ≤ K₁) (x : M) :
+    ‖α x‖ ^ 2 ≤ 1 + 4 * K₁ / r := by
+  -- Apply the bound at a maximum `x₀` of `|α|²`.
+  obtain ⟨x₀, -, hx₀⟩ :=
+    isCompact_univ.exists_isMaxOn ⟨x, Set.mem_univ x⟩ hα₂.continuous.continuousOn
+  exact (hx₀ (Set.mem_univ x)).trans
+    (le_one_add_mul_div_of_isLocalMax (u := fun x ↦ ‖α x‖ ^ 2) hr (hα₂ x₀)
+      (hx₀.isLocalMax Filter.univ_mem) (hWα x₀))
 
 end TauCeti.SeibergWitten

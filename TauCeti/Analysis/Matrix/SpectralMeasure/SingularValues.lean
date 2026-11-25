@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
+import Mathlib.Analysis.InnerProductSpace.NormDet
+
 /-!
 # Empirical singular-value measures
 
@@ -29,6 +31,10 @@ The squared-singular-value measure needs no separate definition: it is the exist
 by the squared Lipschitz constant times the average squared Frobenius error. This controls
 bounded approximations of covariance spectra using only second moments. All singular values come
 from Mathlib's `LinearMap.singularValues` via `Matrix.toEuclideanLin`.
+
+For an invertible square matrix `B`, the mean logarithm of the singular values is
+`(card n)⁻¹ * log ‖det B‖`, and for any matrix the mean logarithm of the Gram eigenvalues is twice
+the mean logarithm of the singular values; these are the inputs to Girko's hermitization.
 
 ## References
 
@@ -134,6 +140,33 @@ theorem ae_nonneg_singularValueMeasure (A : Matrix m n 𝕜) :
   rw [← map_spectralMeasure_conjTranspose_mul_self_sqrt, ProbabilityMeasure.toMeasure_map]
   exact (ae_map_iff Real.continuous_sqrt.measurable.aemeasurable measurableSet_Ici).2
     (Filter.Eventually.of_forall fun _ => Real.sqrt_nonneg _)
+
+/-- For an invertible square matrix, the mean logarithm of its singular values, with multiplicity,
+is the normalized logarithm of the absolute value of its determinant. -/
+theorem integral_log_singularValueMeasure_eq_log_norm_det {B : Matrix n n 𝕜} (hB : B.det ≠ 0) :
+    ∫ s, Real.log s ∂(B.singularValueMeasure : Measure ℝ) =
+      (Fintype.card n : ℝ)⁻¹ * Real.log ‖B.det‖ := by
+  -- `|det B|` is the product of the first `card n` singular values of `B`.
+  have hprod : ‖B.det‖ = ∏ i : Fin (Fintype.card n), (toEuclideanLin B).singularValues i := by
+    rw [← LinearMap.det_toLpLin 2 B, ← LinearMap.normDet_eq_norm_det,
+      LinearMap.normDet_eq_prod_singularValues, finrank_euclideanSpace,
+      Fin.prod_univ_eq_prod_range]
+  have hne : ∀ i ∈ (Finset.univ : Finset (Fin (Fintype.card n))),
+      (toEuclideanLin B).singularValues i ≠ 0 := by
+    intro i _ hi
+    exact hB (norm_eq_zero.mp (hprod.trans (Finset.prod_eq_zero (Finset.mem_univ i) hi)))
+  rw [integral_singularValueMeasure, hprod, Real.log_prod hne, smul_eq_mul]
+
+/-- The mean logarithm of the eigenvalues of the Gram matrix `Aᴴ * A` is twice the mean logarithm
+of the singular values of `A`. Zero singular values contribute `Real.log 0 = 0` on both sides. -/
+theorem integral_log_spectralMeasure_conjTranspose_mul_self (A : Matrix m n 𝕜) :
+    ∫ x, Real.log x ∂((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) :
+        Measure ℝ) =
+      2 * ∫ s, Real.log s ∂(A.singularValueMeasure : Measure ℝ) := by
+  rw [← map_singularValueMeasure_sq, ProbabilityMeasure.toMeasure_map,
+    integral_map (by fun_prop) Real.measurable_log.aestronglyMeasurable]
+  simp_rw [Real.log_pow, Nat.cast_ofNat]
+  exact integral_const_mul _ _
 
 /-- Left unitary multiplication preserves the singular-value measure. -/
 @[simp]

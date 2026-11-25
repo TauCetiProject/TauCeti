@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
 public import TauCeti.Analysis.Contour.Curve.Integrability
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Cycles of piecewise-`C¹` curves
@@ -33,11 +34,14 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle` — the free abelian group on such curves.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
+* `TauCeti.Contour.Cycle.integral_of_not_completeSpace`: in an incomplete codomain every integral
+  over a cycle is `0`.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
-  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_smul`: the integral depends
-  only on the integrand on the trace, and is linear in integrands continuous there.
+  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_finsetSum`,
+  `TauCeti.Contour.Cycle.integral_smul`: the integral depends only on the integrand on the trace,
+  and is linear in integrands continuous there.
 * `TauCeti.Contour.Cycle.integral_smul_const`: the integral of a scalar function times a constant
   vector.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
@@ -305,10 +309,20 @@ theorem IsIn.add {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) 
   rw [isIn_iff] at hC hD ⊢
   exact (trace_add_subset C D).trans (union_subset hC hD)
 
+/-- A cycle in `Ω` lies in every larger set. -/
+theorem IsIn.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsIn C Ω) (hΩ : Ω ⊆ Ω') : IsIn C Ω' :=
+  hC.trans hΩ
+
 /-- Negation preserves containment in a set. -/
 @[simp]
 theorem isIn_neg_iff {C : Cycle} {Ω : Set ℂ} : IsIn (-C) Ω ↔ IsIn C Ω := by
   simp [isIn_iff]
+
+/-- A difference of two cycles in `Ω` is in `Ω`. -/
+theorem IsIn.sub {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) :
+    IsIn (C - D) Ω := by
+  rw [sub_eq_add_neg]
+  exact hC.add (isIn_neg_iff.mpr hD)
 
 /-- Every integer multiple of a cycle in `Ω` is in `Ω`. -/
 theorem IsIn.zsmul {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (n : ℤ) : IsIn (n • C) Ω := by
@@ -351,6 +365,12 @@ theorem integral_eq_sum_support {E : Type*} [NormedAddCommGroup E] [NormedSpace 
       FreeAddCommGroup.coeff γ C • (∫ t in γ.a..γ.b, deriv γ t • f (γ t)) := by
   conv_lhs => rw [FreeAddCommGroup.eq_sum_support_coeff_smul_of C]
   simp only [map_sum, map_zsmul, integral_of]
+
+/-- In an incomplete codomain every integral over a cycle is `0`. -/
+theorem integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (hE : ¬CompleteSpace E) (f : ℂ → E) (C : Cycle) : integral f C = 0 := by
+  simp only [integral_eq_sum_support, _root_.intervalIntegral.integral_of_not_completeSpace hE,
+    smul_zero, Finset.sum_const_zero]
 
 /-- Along every curve in the support of a cycle, the contour integrand of a function continuous on
 the trace of the cycle is interval-integrable. -/
@@ -405,6 +425,18 @@ theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
   rw [← smul_sub, ← intervalIntegral.integral_sub (intervalIntegrable_of_mem_support hf hγ)
     (intervalIntegrable_of_mem_support hg hγ)]
   simp only [smul_sub]
+
+/-- The integral over a cycle commutes with finite sums of integrands continuous on its trace. -/
+@[simp]
+theorem integral_finsetSum {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {s : Finset ι} {f : ι → ℂ → E} {C : Cycle} (hf : ∀ i ∈ s, ContinuousOn (f i) (trace C)) :
+    integral (fun z ↦ ∑ i ∈ s, f i z) C = ∑ i ∈ s, integral (f i) C := by
+  simp only [integral_eq_sum_support]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← Finset.smul_sum, ← intervalIntegral.integral_finsetSum fun i hi ↦
+    intervalIntegrable_of_mem_support (hf i hi) hγ]
+  simp only [Finset.smul_sum]
 
 /-- Scalar multiples can be taken out of the integral over a cycle. -/
 @[simp]
