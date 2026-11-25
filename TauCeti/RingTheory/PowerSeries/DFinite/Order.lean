@@ -205,13 +205,6 @@ theorem dfiniteOrder_C {a : K} (ha : a ≠ 0) : dfiniteOrder k (C a) = 1 := by
 theorem dfiniteOrder_one [Nontrivial K] : dfiniteOrder k (1 : K⟦X⟧) = 1 := by
   simpa only [map_one] using dfiniteOrder_C (k := k) (K := K) one_ne_zero
 
-/-- In characteristic zero the formal exponential has differential order one. -/
-@[simp]
-theorem dfiniteOrder_exp [Nontrivial K] [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
-  apply Nat.le_antisymm _
-    ((isDFinite_exp (k := k) (K := K)).dfiniteOrder_pos (isUnit_exp K).ne_zero)
-  exact dfiniteOrder_le (p := ![-1, 1]) (by simp) sum_smul_iterate_derivative_exp
-
 /-- For `q ∈ k[X]`, the series `q exp` satisfies the first-order equation
 `q f' - (q' + q) f = 0`. -/
 theorem sum_smul_iterate_derivative_polynomial_smul_exp [Algebra ℚ K] (q : k[X]) :
@@ -233,5 +226,10 @@ theorem dfiniteOrder_polynomial_smul_exp [Nontrivial K] [Algebra ℚ K] {q : k[X
   · exact dfiniteOrder_le (by simpa using hq) (sum_smul_iterate_derivative_polynomial_smul_exp q)
   · rw [Ne, smul_eq_zero_iff_right hq]
     exact (isUnit_exp K).ne_zero
+
+/-- In characteristic zero the formal exponential has differential order one. -/
+@[simp]
+theorem dfiniteOrder_exp [Nontrivial K] [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
+  simpa using dfiniteOrder_polynomial_smul_exp (k := k) (K := K) one_ne_zero
 
 end PowerSeries
