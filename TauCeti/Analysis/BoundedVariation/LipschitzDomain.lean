@@ -19,7 +19,6 @@ import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
-import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Global `L¹` compactness of BV functions and sets of finite perimeter on bounded Lipschitz domains
@@ -167,13 +166,9 @@ boundary chart embeds `E` linearly and isometrically into `F`. -/
 theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomain
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
   · exact isCompactOperator_toL1CLM_of_frontier_eq_empty hb hfr
-  obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
-  have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact hb.isCompact_frontier.image g.continuous
-  obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
   exact BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image g hL hb
 
 /-- **Sequential `L¹` compactness for bounded sequences in `BV` on a bounded Lipschitz domain.** -/

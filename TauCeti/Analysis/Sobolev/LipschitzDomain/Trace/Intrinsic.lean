@@ -13,7 +13,6 @@ import TauCeti.Analysis.Normed.Module.DiamFrontier
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # The trace on a bounded Lipschitz domain of a Euclidean space
@@ -49,7 +48,7 @@ A boundary chart of `Ω` is an affine isometry `g : F ≃ᵃⁱ[ℝ] ℝ × E`. 
 (`InnerProductSpace.ofLinearIsometry`), finite dimension and Borel structure that the model-space
 theory needs, with `dim E = dim F - 1`. The image `g '' Ω` is a bounded Lipschitz domain of the
 model space, with compact frontier, so it satisfies the global predicate
-(`Set.IsLipschitzDomain.exists_isLipschitzDomainWith`). Then:
+(`Set.IsLipschitzDomain.exists_isLipschitzDomainWith_image`). Then:
 
 * precomposition with `g⁻¹` carries `W^{1,p}(Ω)` to `W^{1,p}(g '' Ω)`
   (`TauCeti.W1p.compAffineIsometryEquivL`), preserving and reflecting `W^{1,p}_0`;
@@ -210,7 +209,7 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
       (∀ u : W1p volume Ω p, T u = 0 ↔ u ∈ w1p0Submodule volume Ω p) ∧
       DenseRange fun φ : 𝓓((⊤ : Opens F), ℝ) =>
         W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
   · -- `Ω` is empty, so `W^{1,p}(Ω)` is zero and the zero operator is the trace.
     have hΩe := hb.eq_empty_of_frontier_eq_empty hfr
     have hsub (u v : W1p volume Ω p) : u = v :=
@@ -219,11 +218,7 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
       fun u => subset_closure ⟨0, hsub _ u⟩⟩
     simp [hsub u 0]
   -- A boundary chart `g` embeds `E` isometrically in `F`.
-  obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
-  have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact hb.isCompact_frontier.image g.continuous
-  obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
   -- Give `E` the inner product, finite dimension and Borel structure of its image in `F`.
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
   let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
