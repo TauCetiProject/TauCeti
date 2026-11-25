@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Topology.Homeomorph.Quotient
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
@@ -615,23 +616,18 @@ orbit relation `(y, v) ∼ (g • y, ρ g v)`; the homeomorphism sends the class
 point it represents (`IsQuotientCoveringMap.associatedQuotientHomeomorph_mk`). -/
 noncomputable def associatedQuotientHomeomorph :
     Quotient (TauCeti.associatedOrbitRel E ρ) ≃ₜ (hp.associatedCore ρ).TotalSpace :=
-  have hker := Setoid.ext_iff.1 (hp.associatedOrbitRel_eq_ker ρ)
-  have hmk := hp.isOpenQuotientMap_associatedMk ρ
-  IsHomeomorph.homeomorph
-    (Quotient.lift (hp.associatedMk ρ) fun _ _ h ↦ Setoid.ker_def.1 ((hker _ _).1 h))
-    ⟨hmk.continuous.quotient_lift _,
-      .of_comp (f := Quotient.mk _) continuous_quotient_mk' Quotient.mk_surjective
-        (by rw [Quotient.lift_comp_mk]; exact hmk.isOpenMap),
-      fun a b ↦ Quotient.inductionOn₂ a b fun _ _ h ↦
-        Quotient.sound ((hker _ _).2 (Setoid.ker_def.2 h)),
-      .of_comp (g := Quotient.mk _) (by rw [Quotient.lift_comp_mk]; exact hmk.surjective)⟩
+  (Homeomorph.Quotient.congrRight (Setoid.ext_iff.1 (hp.associatedOrbitRel_eq_ker ρ))).trans
+    (Topology.IsQuotientMap.homeomorph (f := ⟨_, (hp.isLocalHomeomorph_associatedMk ρ).continuous⟩)
+      (hp.isOpenQuotientMap_associatedMk ρ).isQuotientMap)
 
 /-- The homeomorphism `associatedQuotientHomeomorph` sends the class of `(y, v)` to the point it
 represents. -/
 @[simp]
 theorem associatedQuotientHomeomorph_mk (q : E × F) :
     hp.associatedQuotientHomeomorph ρ (Quotient.mk _ q) = hp.associatedMk ρ q := by
-  rw [associatedQuotientHomeomorph, IsHomeomorph.homeomorph_apply, Quotient.lift_mk]
+  rw [associatedQuotientHomeomorph, Homeomorph.trans_apply, Homeomorph.Quotient.congrRight_mk,
+    Topology.IsQuotientMap.homeomorph_apply]
+  exact Setoid.kerLift_mk _ q
 
 end AssociatedCore
 
