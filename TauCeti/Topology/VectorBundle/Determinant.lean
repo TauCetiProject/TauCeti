@@ -13,6 +13,7 @@ public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The determinant line bundle of a vector bundle
@@ -645,19 +646,6 @@ itself (`exteriorPower.oneEquiv`). -/
 private def lineLinearEquiv (hF : finrank 𝕜 F = 1) (x : B) : DetBundle 𝕜 F E x ≃ₗ[𝕜] E x :=
   linearEquiv 𝕜 F E x ≪≫ₗ LinearEquiv.ofEq _ _ (by rw [hF]) ≪≫ₗ exteriorPower.oneEquiv 𝕜 (E x)
 
-private theorem lineLinearEquiv_symm_apply (hF : finrank 𝕜 F = 1) (v : E x) :
-    (lineLinearEquiv hF x).symm v =
-      (linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun _ ↦ v) := by
-  -- In degree `n = 1`, the wedge of the single vector `v` is `v` in `⋀¹ (E x) = E x`.
-  have key {n : ℕ} (hn : n = 1) (h : ⋀[𝕜]^n (E x) = ⋀[𝕜]^1 (E x)) :
-      exteriorPower.oneEquiv 𝕜 (E x)
-        (LinearEquiv.ofEq _ _ h (exteriorPower.ιMulti 𝕜 n fun _ ↦ v)) = v := by
-    subst hn
-    simp only [LinearEquiv.ofEq_rfl, LinearEquiv.refl_apply, exteriorPower.oneEquiv_ιMulti]
-  apply (lineLinearEquiv hF x).injective
-  rw [LinearEquiv.apply_symm_apply, lineLinearEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, key hF]
-
 variable [TopologicalSpace B] [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
   [VectorBundle 𝕜 F E]
@@ -679,8 +667,18 @@ def lineEquiv (hF : finrank 𝕜 F = 1) (x : B) : DetBundle 𝕜 F E x ≃L[𝕜
 /-- The inverse of `TauCeti.DetBundle.lineEquiv` sends `v` to `v`, read in `⋀¹ L_x`. -/
 @[simp]
 theorem lineEquiv_symm_apply (hF : finrank 𝕜 F = 1) (v : E x) :
-    (lineEquiv hF x).symm v = (linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun _ ↦ v) :=
-  lineLinearEquiv_symm_apply hF v
+    (lineEquiv hF x).symm v = (linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun _ ↦ v) := by
+  -- In degree `n = 1`, the wedge of the single vector `v` is `v` in `⋀¹ (E x) = E x`.
+  have key {n : ℕ} (hn : n = 1) (h : ⋀[𝕜]^n (E x) = ⋀[𝕜]^1 (E x)) :
+      exteriorPower.oneEquiv 𝕜 (E x)
+        (LinearEquiv.ofEq _ _ h (exteriorPower.ιMulti 𝕜 n fun _ ↦ v)) = v := by
+    subst hn
+    simp only [LinearEquiv.ofEq_rfl, LinearEquiv.refl_apply, exteriorPower.oneEquiv_ιMulti]
+  -- The inverse of `lineEquiv` is, by definition, that of the linear equivalence it bundles.
+  change (lineLinearEquiv hF x).symm v = _
+  apply (lineLinearEquiv hF x).injective
+  rw [LinearEquiv.apply_symm_apply, lineLinearEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, key hF]
 
 /-- `TauCeti.DetBundle.lineEquiv` sends the wedge of the single vector `v 0` to `v 0`. -/
 theorem lineEquiv_ιMulti (hF : finrank 𝕜 F = 1) (v : Fin (finrank 𝕜 F) → E x) :
@@ -701,12 +699,8 @@ theorem trivialization_lineEquiv (hF : finrank 𝕜 F = 1) (e : Trivialization F
   have : Unique (Fin (finrank 𝕜 F)) := (finCongr hF).unique
   obtain ⟨w, rfl⟩ := (lineEquiv hF x).symm.surjective v
   rw [ContinuousLinearEquiv.apply_symm_apply, lineEquiv_symm_apply, chartCoord_ιMulti,
-    Subsingleton.elim (⟨0, _⟩ : Fin (finrank 𝕜 F)) default]
-  -- With a single index, the determinant of the constant family `u` is the coordinate of `u`.
-  set b := Module.finBasis 𝕜 F
-  rw [Basis.det_apply, Matrix.det_unique, Basis.toMatrix_apply,
-    ← Fintype.sum_unique fun i ↦ b.repr (e ⟨x, w⟩).2 i • b i]
-  exact (b.sum_repr _).symm
+    Module.Basis.det_unique, Subsingleton.elim (⟨0, _⟩ : Fin (finrank 𝕜 F)) default]
+  simpa using ((Module.finBasis 𝕜 F).sum_repr (e ⟨x, w⟩).2).symm
 
 /-- The isomorphism `det L ≃ L` is continuous on total spaces. -/
 theorem continuous_lineEquiv (hF : finrank 𝕜 F = 1) :

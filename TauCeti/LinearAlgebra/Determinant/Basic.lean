@@ -83,6 +83,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_unique`: over an index type with a single element, the determinant of a
+  family in a basis `b` is the coordinate in `b` of its single vector.
 * `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
   multiplies their determinant by `r * r'`.
 * `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
@@ -212,6 +214,12 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   have h := (b.prod b').det.map_perm w σ
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
+
+/-- Over an index type with a single element, the determinant of a family `v` in a basis `b` is
+the coordinate in `b` of its single vector. This is `Matrix.det_unique` for `Module.Basis.det`. -/
+theorem det_unique [Unique ι] (b : Basis ι R M) (v : ι → M) :
+    b.det v = b.repr (v default) default := by
+  rw [det_apply, Matrix.det_unique, toMatrix_apply]
 
 /-- Rescaling the first two of three vectors by `r` and `r'` multiplies their determinant in a
 basis by `r * r'`. -/
