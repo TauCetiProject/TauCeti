@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Regularity
 import TauCeti.Geometry.Manifold.Boundary.Charts
 
@@ -26,7 +26,9 @@ is given by the Hessian formula in that one chart
 regular: the normal coordinate is as smooth as the manifold, its Riemannian Hessian pairs `C^k`
 fields along a `C^k` map to a `C^k` function (`TauCeti.Manifold.contMDiffAt_hessian_pair`), the
 differential of the boundary inclusion carries `C^k` fields of `T∂M` to `C^k` fields of `TM`
-along the inclusion, and the norm of the gradient is `C^(k + 1)` and positive at boundary points.
+along the inclusion (`TauCeti.contMDiffAt_mfderiv_subtypeVal_boundary_apply`), and the norm of
+the gradient is positive at boundary points (`TauCeti.mgradient_neg_chartAt_normal_ne_zero`), hence
+`C^(k + 1)` there (`TauCeti.Manifold.contMDiffAt_norm_mgradient`).
 In particular the coefficients of `II` in Tau Ceti's boundary charts are `C^k`.
 -/
 
@@ -49,24 +51,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
   [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)]
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- The differential of the boundary inclusion carries a `C^k` tangent field of the boundary
-manifold to a `C^k` field of `TM` along the inclusion, on a `C^(k + 1)` manifold. -/
-private theorem contMDiffAt_mfderiv_subtypeVal_boundary_apply (hm : k + 1 ≤ m)
-    {U : (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
-    {q₀ : (𝓡∂ (n + 1)).boundary M}
-    (hU : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
-      (T% U) q₀) :
-    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)).tangent k
-      (fun q : (𝓡∂ (n + 1)).boundary M ↦ TotalSpace.mk' (EuclideanSpace ℝ (Fin (n + 1))) (q : M)
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q (U q))) q₀ := by
-  have : IsManifold (𝓡∂ (n + 1)) 1 M := .of_le (le_add_self.trans hm)
-  have hι := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff
-  exact ((hι.contMDiff_tangentMap hm) _).comp q₀ hU
-
 omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
   [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)] in
@@ -82,29 +66,9 @@ private theorem contMDiffAt_inv_norm_mgradient_neg_chartAt_normal (hm : k + 1 �
   have : IsManifold (𝓡∂ (n + 1)) (k + 1) M := .of_le hm
   have : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
       (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := .of_le hl
-  set φ : M → ℝ := fun z ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α z).val 0
-  have hgrad := Manifold.contMDiffAt_mgradient (I := 𝓡∂ (n + 1)) (n := k)
-    (contMDiffAt_neg_chartAt_normal (k := k + 1) hq)
-  have hsq : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k
-      (fun y ↦ ⟪Manifold.mgradient (𝓡∂ (n + 1)) φ y,
-        Manifold.mgradient (𝓡∂ (n + 1)) φ y⟫_ℝ) (q : M) :=
-    ContMDiffAt.inner_bundle (IB := 𝓡∂ (n + 1)) (F := EuclideanSpace ℝ (Fin (n + 1)))
-      (E := fun y : M ↦ TangentSpace (𝓡∂ (n + 1)) y) (b := id) hgrad hgrad
-  have hne : Manifold.mgradient (𝓡∂ (n + 1)) φ q ≠ 0 := by
-    intro h0
-    have hn := (isOutwardUnitNormal_outwardUnitNormal q).norm_eq_one
-    rw [outwardUnitNormal_eq_normalize_mgradient (IsManifold.chart_mem_maximalAtlas α) hq] at hn
-    simp [φ, h0] at hn
-  have hne' : ⟪Manifold.mgradient (𝓡∂ (n + 1)) φ q,
-      Manifold.mgradient (𝓡∂ (n + 1)) φ q⟫_ℝ ≠ 0 := by
-    rwa [real_inner_self_eq_norm_sq, pow_ne_zero_iff two_ne_zero, norm_ne_zero_iff]
-  have hnorm : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k
-      (fun y ↦ ‖Manifold.mgradient (𝓡∂ (n + 1)) φ y‖) (q : M) := by
-    simpa only [Function.comp_def, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using
-      (Real.contDiffAt_sqrt hne').comp_contMDiffAt
-        (f := fun y ↦ ⟪Manifold.mgradient (𝓡∂ (n + 1)) φ y,
-          Manifold.mgradient (𝓡∂ (n + 1)) φ y⟫_ℝ) hsq
-  exact hnorm.inv₀ (norm_ne_zero_iff.mpr hne)
+  have hne := mgradient_neg_chartAt_normal_ne_zero q.property hq
+  exact (Manifold.contMDiffAt_norm_mgradient (contMDiffAt_neg_chartAt_normal (k := k + 1) hq)
+    hne).inv₀ (norm_ne_zero_iff.mpr hne)
 
 /-- **The second fundamental form of the boundary is a `C^k` section** of the bundle of
 bilinear forms on `T∂M`, on a `C^(k + 2)` manifold with a `C^(k + 1)` metric: it pairs two
