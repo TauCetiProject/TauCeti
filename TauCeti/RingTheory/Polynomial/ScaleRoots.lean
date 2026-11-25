@@ -57,11 +57,12 @@ theorem prod_scaleRoots [NoZeroDivisors R] (s : Finset ι) (f : ι → R[X]) (a 
   | @insert i s hi ih =>
     simp only [Finset.prod_insert hi, mul_scaleRoots_of_noZeroDivisors, ih]
 
-/-- A ring map `φ` with nontrivial target sends the evaluation of `p.scaleRoots b` at `a`, for a
-monic `p`, to the evaluation of `(p.map φ).scaleRoots (φ b)` at `φ a`. -/
-theorem map_eval_scaleRoots {S T : Type*} [CommRing S] [CommRing T] [Nontrivial T]
+/-- A ring map `φ` sends the evaluation of `p.scaleRoots b` at `a`, for a monic `p`, to the
+evaluation of `(p.map φ).scaleRoots (φ b)` at `φ a`. -/
+theorem map_eval_scaleRoots {S T : Type*} [CommRing S] [CommRing T]
     (φ : S →+* T) {p : S[X]} (hp : p.Monic) (a b : S) :
     φ ((p.scaleRoots b).eval a) = ((p.map φ).scaleRoots (φ b)).eval (φ a) := by
+  nontriviality T
   rw [← map_scaleRoots _ _ _ (by simp [hp.leadingCoeff]), eval_map, eval₂_at_apply]
 
 end Polynomial
