@@ -29,6 +29,8 @@ specializations feed into `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_toI
 * `TauCeti.ConstantForm.image_relationSet_baseChange`: transport of the relation set.
 * `TauCeti.ConstantForm.map_baseChangeHopfIdeal_definingHopfIdeal`: transport of the defining
   Hopf ideal.
+* `TauCeti.ConstantForm.coordinateHopfAlgebraBaseChangeIso`: base change of the coordinate Hopf
+  algebra of the subgroup scheme preserving `C`, compatibly with the quotient maps from `O(GLₙ)`.
 
 ## References
 
@@ -131,5 +133,35 @@ theorem map_baseChangeHopfIdeal_definingHopfIdeal (hC : C.map (algebraMap R K) =
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
     (definingHopfIdeal_toIdeal R n C) (definingHopfIdeal_toIdeal K n C')
     (image_relationSet_baseChange hC)
+
+/-- **Base change of the coordinate Hopf algebra of a constant-form subgroup scheme.** If `C` maps
+to `C'` over `K`, scalar extension of the coordinate Hopf algebra of the subgroup scheme preserving
+`C` is that of the subgroup scheme preserving `C'`. -/
+noncomputable def coordinateHopfAlgebraBaseChangeIso (hC : C.map (algebraMap R K) = C') :
+    CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R n C) ≅
+      coordinateHopfAlgebra K n C' :=
+  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq (definingHopfIdeal R n C) (definingHopfIdeal K n C')
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
+    (map_baseChangeHopfIdeal_definingHopfIdeal hC)
+
+/-- The base-change isomorphism is compatible with the quotient maps from `O(GLₙ)`. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
+    (hC : C.map (algebraMap R K) = C') :
+    CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n C) ≫
+        (coordinateHopfAlgebraBaseChangeIso hC).hom =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom ≫ coordinateMap K n C' := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
+  exact CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _ _
+
+/-- The inverse base-change isomorphism is compatible with the quotient maps from `O(GLₙ)`. -/
+@[reassoc]
+theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv
+    (hC : C.map (algebraMap R K) = C') :
+    coordinateMap K n C' ≫ (coordinateHopfAlgebraBaseChangeIso hC).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n C) := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
+  exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
 
 end TauCeti.ConstantForm

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Basic
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
 
 /-!
