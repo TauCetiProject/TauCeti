@@ -1107,61 +1107,17 @@ theorem reactionBilinear_constantCurvature_left {r : FourTensor V} (hr : IsAlgeb
     reactionBilinear V (constantCurvature V) r = kulkarniNomizu (ricci r) (innerₗ V) := by
   rw [reactionBilinear_comm, reactionBilinear_constantCurvature_right hr]
 
-private theorem sum_constantCurvature_mul_constantCurvature_24 (u v z w : V) :
-    (∑ p, ∑ q,
-        constantCurvature V ![u, stdOrthonormalBasis ℝ V p, z, stdOrthonormalBasis ℝ V q] *
-          constantCurvature V ![v, stdOrthonormalBasis ℝ V p, w, stdOrthonormalBasis ℝ V q]) =
-      ((Module.finrank ℝ V : ℝ) - 2) * (⟪u, z⟫_ℝ * ⟪v, w⟫_ℝ) + ⟪u, v⟫_ℝ * ⟪z, w⟫_ℝ := by
-  classical
-  set b := stdOrthonormalBasis ℝ V
-  have hq (p : Fin (Module.finrank ℝ V)) :
-      (∑ q, constantCurvature V ![u, b p, z, b q] * constantCurvature V ![v, b p, w, b q]) =
-        ⟪u, z⟫_ℝ * ⟪v, w⟫_ℝ - ⟪u, z⟫_ℝ * (⟪v, b p⟫_ℝ * ⟪b p, w⟫_ℝ) -
-          ⟪v, w⟫_ℝ * (⟪u, b p⟫_ℝ * ⟪b p, z⟫_ℝ) + (⟪z, b p⟫_ℝ * ⟪b p, w⟫_ℝ) * ⟪u, v⟫_ℝ := by
-    simp only [constantCurvature_apply]
-    have hring (q : Fin (Module.finrank ℝ V)) :
-        (⟪u, z⟫_ℝ * ⟪b p, b q⟫_ℝ - ⟪u, b q⟫_ℝ * ⟪b p, z⟫_ℝ) *
-            (⟪v, w⟫_ℝ * ⟪b p, b q⟫_ℝ - ⟪v, b q⟫_ℝ * ⟪b p, w⟫_ℝ) =
-          ⟪u, z⟫_ℝ * ⟪v, w⟫_ℝ * (⟪b p, b q⟫_ℝ * ⟪b p, b q⟫_ℝ) -
-            ⟪u, z⟫_ℝ * ⟪b p, w⟫_ℝ * (⟪v, b q⟫_ℝ * ⟪b p, b q⟫_ℝ) -
-            ⟪v, w⟫_ℝ * ⟪b p, z⟫_ℝ * (⟪u, b q⟫_ℝ * ⟪b p, b q⟫_ℝ) +
-            ⟪z, b p⟫_ℝ * ⟪b p, w⟫_ℝ * (⟪u, b q⟫_ℝ * ⟪b q, v⟫_ℝ) := by
-      rw [real_inner_comm (b q) v, real_inner_comm z (b p)]; ring
-    simp_rw [hring, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-      b.sum_inner_mul_inner u v, orthonormal_iff_ite.mp b.orthonormal]
-    simp only [mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
-    ring
-  simp_rw [hq, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    ← Finset.sum_mul, b.sum_inner_mul_inner]
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-  ring
-
 /-- On the constant-curvature tensor of curvature `1` on an `n`-dimensional space `V`,
 `reactionTensor` acts with eigenvalue `2 (n - 1)`. -/
 @[simp]
 theorem reactionTensor_constantCurvature :
     reactionTensor (constantCurvature V) =
       (2 * ((Module.finrank ℝ V : ℝ) - 1)) • constantCurvature V := by
-  let b := stdOrthonormalBasis ℝ V
+  rw [← reactionBilinear_self,
+    reactionBilinear_constantCurvature_right isAlgebraicCurvature_constantCurvature,
+    ricci_constantCurvature, constantCurvature_eq_half_smul_kulkarniNomizu, smul_smul]
   refine ext_vec fun u v z w ↦ ?_
-  rw [reactionTensor_apply_orthonormalBasis b, smul_apply, smul_eq_mul, constantCurvature_apply]
-  have hS₁ : (∑ p, ∑ q, constantCurvature V ![u, v, b p, b q] *
-      constantCurvature V ![z, w, b p, b q]) =
-        2 * (⟪u, z⟫_ℝ * ⟪v, w⟫_ℝ - ⟪u, w⟫_ℝ * ⟪v, z⟫_ℝ) := by
-    simp only [constantCurvature_apply]
-    have hring (p q : Fin (Module.finrank ℝ V)) :
-        (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ - ⟪u, b q⟫_ℝ * ⟪v, b p⟫_ℝ) *
-            (⟪z, b p⟫_ℝ * ⟪w, b q⟫_ℝ - ⟪z, b q⟫_ℝ * ⟪w, b p⟫_ℝ) =
-          (⟪u, b p⟫_ℝ * ⟪b p, z⟫_ℝ) * (⟪v, b q⟫_ℝ * ⟪b q, w⟫_ℝ) -
-            (⟪u, b p⟫_ℝ * ⟪b p, w⟫_ℝ) * (⟪v, b q⟫_ℝ * ⟪b q, z⟫_ℝ) -
-            (⟪v, b p⟫_ℝ * ⟪b p, z⟫_ℝ) * (⟪u, b q⟫_ℝ * ⟪b q, w⟫_ℝ) +
-            (⟪v, b p⟫_ℝ * ⟪b p, w⟫_ℝ) * (⟪u, b q⟫_ℝ * ⟪b q, z⟫_ℝ) := by
-      simp only [real_inner_comm (b p), real_inner_comm (b q)]; ring
-    simp_rw [hring, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-      b.sum_inner_mul_inner, ← Finset.sum_mul, b.sum_inner_mul_inner]
-    ring
-  rw [hS₁, sum_constantCurvature_mul_constantCurvature_24 u v z w,
-    sum_constantCurvature_mul_constantCurvature_24 u v w z, real_inner_comm z w]
+  simp only [smul_apply, kulkarniNomizu_apply, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 /-- On the constant-curvature tensor of sectional curvature `κ`, `reactionTensor` gives
