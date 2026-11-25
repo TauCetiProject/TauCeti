@@ -16,7 +16,8 @@ The tensor unit `𝟙_ (ModuleCat R)` of the monoidal category of modules over a
 is `R` itself. This file records the consequences that instance search and `Module.finrank` do
 not see through the monoidal structure: the unit is a free, projective, finitely generated
 `R`-module (`ModuleCat.free_tensorUnit`, `ModuleCat.projective_tensorUnit`,
-`ModuleCat.finite_tensorUnit`), of rank one when `R` satisfies the
+`ModuleCat.finite_tensorUnit`), torsion-free as an additive group when `R` is
+(`ModuleCat.isAddTorsionFree_tensorUnit`), of rank one when `R` satisfies the
 strong rank condition (`ModuleCat.finrank_tensorUnit`). Morphisms out of a module isomorphic to
 the unit are determined by their value on the element corresponding to `1`
 (`ModuleCat.hom_ext_of_iso_tensorUnit`).
@@ -51,6 +52,12 @@ instance projective_tensorUnit : Module.Projective R (𝟙_ (ModuleCat.{u} R)) :
 /-- The tensor unit of `ModuleCat R`, which is `R` itself, is a finitely generated `R`-module. -/
 instance finite_tensorUnit : Module.Finite R (𝟙_ (ModuleCat.{u} R)) :=
   inferInstanceAs (Module.Finite R R)
+
+/-- The tensor unit of `ModuleCat R`, which is `R` itself, is torsion-free as an additive group
+when `R` is, for instance for `R = ℤ`. -/
+instance isAddTorsionFree_tensorUnit [IsAddTorsionFree R] :
+    IsAddTorsionFree (𝟙_ (ModuleCat.{u} R)) :=
+  inferInstanceAs (IsAddTorsionFree R)
 
 /-- The tensor unit of `ModuleCat R`, which is `R` itself, has rank one over `R`. -/
 @[simp]

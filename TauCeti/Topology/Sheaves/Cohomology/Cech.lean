@@ -28,6 +28,12 @@ comparison is the composite of the two (`TauCeti.Topology.cechCohomologyIsoRight
 * `TauCeti.Topology.cechCohomologyIsoGodement`: `Hⁿ(X, F) ≅ Hⁿ(Γ(G•(F)))`, naturally in `F`.
 * `TauCeti.Topology.cechCohomologyIsoRightDerivedΓ`: `Hⁿ(X, F) ≅ RⁿΓ(F)`, naturally in `F`.
 
+## Main results
+
+* `TauCeti.Topology.sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app`: in
+  degree `0` the comparison identifies the two normalizations by global sections, the
+  identification `Γ(F) ≅ H⁰(X, F)` and the canonical map `Γ(F) ⟶ R⁰Γ(F)`.
+
 ## References
 
 * The Stacks Project, Cohomology of Sheaves, Lemma 20.16.2 (tag 09V2) and Lemma 20.30.2
@@ -99,5 +105,22 @@ lemma cechCohomologyIsoRightDerivedΓ_hom_app (n : ℕ)
     (cechCohomologyIsoRightDerivedΓ n).hom.app F =
       (cechCohomologyIsoGodement n).hom.app F ≫ (rightDerivedΓIsoGodement n).inv.app F := by
   rw [cechCohomologyIsoRightDerivedΓ, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app]
+
+/-- **Degree-zero normalization of the Čech/derived comparison.** The identification
+`Γ(F) ≅ H⁰(X, F)` of global sections with degree-zero Čech cohomology, followed by the comparison
+`H⁰(X, F) ≅ R⁰Γ(F)`, is the canonical map `Γ(F) ⟶ R⁰Γ(F)` of Mathlib's right derived functors.
+-/
+@[reassoc (attr := simp)]
+theorem sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (sectionsIsoCechZero F).hom ≫ (cechCohomologyIsoRightDerivedΓ 0).hom.app F =
+      (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F := by
+  have h := cechCohomologyObjIsoOfIsFlasque_zero_hom
+    ((toGodementResolution (ModuleCat.{u} R) X).app F)
+    (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F)
+  rw [← cechCohomologyIsoGodement_app, Iso.app_hom, ← sectionsIsoCechZero_hom_assoc] at h
+  rw [cechCohomologyIsoRightDerivedΓ_hom_app, reassoc_of% h,
+    ← toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app_assoc]
+  simp
 
 end TauCeti.Topology
