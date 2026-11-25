@@ -222,14 +222,6 @@ end CategoryTheory
 
 universe u' v' u₂ v₂ u₃ v₃
 
-namespace CategoryTheory.InjectiveResolution
-variable {C : Type*} [Category* C] [Abelian C] {X : C}
-/-- An injective resolution is exact at each positive degree of its actual cocomplex. -/
-lemma exactAt_succ (I : InjectiveResolution X) (j : ℕ) : I.cocomplex.ExactAt (j + 1) := by
-  rw [HomologicalComplex.exactAt_iff' _ j (j + 1) (j + 2) (by simp) (by simp)]
-  exact I.exact_succ j
-end CategoryTheory.InjectiveResolution
-
 namespace CategoryTheory.Functor
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasInjectiveResolutions C]
   {D : Type u'} [Category.{v'} D] [Abelian D]
