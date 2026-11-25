@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Calculus.LogDeriv
 
 /-!
 # Meromorphic Mellin expression for a first Riesz remainder
@@ -69,7 +70,6 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eq_and_analyticAt {L : ℂ → �
       (s * logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀ * (s - 1) -
       (logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1))) / (s * (s - 1)) ∧
       AnalyticAt ℂ (rieszRemainderMellin L) s := by
-  have hlog : AnalyticAt ℂ (logDeriv L) s := ha.deriv.fun_div ha hne
   have hsub := sub_ne_zero.mpr hs₁
   have hden := mul_ne_zero hs₀ hsub
   have hq : AnalyticAt ℂ (fun w ↦
@@ -123,7 +123,7 @@ theorem _root_.Meromorphic.rieszRemainderMellin_one {L : ℂ → ℂ} (hL : Mero
   have heq : (fun s ↦ logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1)) =ᶠ[𝓝[≠] 1]
       logDeriv L := by
     simp [hord]
-  have hlog : AnalyticAt ℂ (logDeriv L) 1 := ha.deriv.fun_div ha h₁
+  have hlog : AnalyticAt ℂ (logDeriv L) 1 := ha.logDeriv h₁
   have h := (hL.rieszRemainderMellin_eventuallyEq_dslope hlog heq).eq_of_nhds
   simpa [hord, dslope_same] using h
 

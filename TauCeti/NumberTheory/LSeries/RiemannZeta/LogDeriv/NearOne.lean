@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.Algebra.Order.GroupWithZero.Basic
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
@@ -57,7 +58,7 @@ theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : rie
 @[simp] theorem logDerivFinitePart_riemannZeta_one :
     logDerivFinitePart riemannZeta 1 = (Real.eulerMascheroniConstant : ℂ) := by
   have ha := differentiable_riemannZeta₁.analyticAt (z := (1 : ℂ))
-  have hlog : AnalyticAt ℂ (logDeriv riemannZeta₁) 1 := ha.deriv.fun_div ha (by simp)
+  have hlog : AnalyticAt ℂ (logDeriv riemannZeta₁) 1 := ha.logDeriv (by simp)
   rw [hlog.logDerivFinitePart_eq, logDeriv_apply]
   · simp
   · filter_upwards [log_deriv_riemannZeta_eq_neg_inv_sub_add] with s hs
