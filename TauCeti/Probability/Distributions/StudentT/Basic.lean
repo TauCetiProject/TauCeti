@@ -41,6 +41,7 @@ hypothesis.
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
 * `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
+* `ProbabilityTheory.HasLaw.neg_studentTMeasure` — the corresponding random-variable reflection;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -338,3 +339,15 @@ theorem measurable_studentTMeasure : Measurable fun ν : ℝ => studentTMeasure 
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+/-- Negating a variable with a Student t law preserves its law. -/
+theorem neg_studentTMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {ν : ℝ} (hX : HasLaw X (studentTMeasure ν) P) :
+    HasLaw (fun ω ↦ -X ω) (studentTMeasure ν) P :=
+  (HasLaw.mk (by fun_prop) (studentTMeasure_map_neg ν)).fun_comp hX
+
+end ProbabilityTheory.HasLaw

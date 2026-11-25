@@ -153,7 +153,6 @@ theorem ContinuousLinearMap.nonempty_path_iff_index_eq
 
 /-- Two Fredholm operators from a complex Hilbert space to a complex normed space define the same
 path component in `ZerothHomotopy` if and only if they have the same Fredholm index. -/
-@[simp]
 theorem ContinuousLinearMap.zerothHomotopy_mk_eq_mk_iff_index_eq
     (S T : {T : E →L[ℂ] F // T.IsFredholm}) :
     ZerothHomotopy.mk S = ZerothHomotopy.mk T ↔ S.val.index = T.val.index :=

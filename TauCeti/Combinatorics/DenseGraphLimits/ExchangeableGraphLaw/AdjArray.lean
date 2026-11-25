@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 
 /-!
 # The adjacency array of a graph and the graph of an array
@@ -16,7 +16,7 @@ An array is read back as a graph by `graphOfArray`, the `SimpleGraph.fromRel` of
 `j` are adjacent when they are distinct and the array is `true` at `(i, j)` or at `(j, i)`. The two
 are mutually inverse on the symmetric arrays with `false` diagonal and intertwine relabelling of the
 graph with the diagonal relabelling of the array. The adjacency array itself, its measurability and
-its injectivity are in `SimpleGraph/Maps.lean` and `SimpleGraph/Measurable.lean`.
+its injectivity are in `SimpleGraph/Maps.lean` and `SimpleGraph/Measurable/Basic.lean`.
 
 ## Main results
 

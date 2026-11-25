@@ -35,8 +35,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
   compares two real numbers exactly as they compare, and is positive on the positive reals.
-* `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
-  `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
+* `Real.tanh_nonneg_iff`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
+  `Real.tanh` is nonnegative exactly on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and
+  smooth.
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
 * `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
@@ -48,8 +49,11 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
   `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
+* `Real.exp_le_two_mul_cosh` — `exp x ≤ 2 * cosh x`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.cosh_add_le_exp_abs_mul_cosh` — `cosh (x + y) ≤ exp |y| * cosh x`: a shift by `y` changes
+  `Real.cosh` by a factor between `exp (-|y|)` and `exp |y|`.
 * `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
@@ -62,6 +66,12 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
+* `Real.cosh_eq_one_add_two_mul_sinh_half_sq` — `cosh x = 1 + 2 * sinh (x / 2) ^ 2`, the
+  half-argument formula that turns `cosh` into a square under the substitution
+  `s = 2 sinh (x / 2)`.
+* `Real.one_add_sq_div_two_le_cosh` — `1 + x ^ 2 / 2 ≤ cosh x`, the lower companion of
+  Mathlib's `Real.cosh_le_exp_half_sq`, which bounds Laplace-type integrals of `exp (-c cosh x)`
+  by Gaussian ones.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
   distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
@@ -94,64 +104,33 @@ formulae `tanh a + tanh b = sinh (a + b) / (cosh a * cosh b)` and
 positive, so dividing cancels `cosh a * cosh b` and leaves `tanh (a + b)`. -/
 theorem tanh_add (a b : ℝ) :
     tanh (a + b) = (tanh a + tanh b) / (1 + tanh a * tanh b) := by
-  have ha : cosh a ≠ 0 := (cosh_pos a).ne'
-  have hb : cosh b ≠ 0 := (cosh_pos b).ne'
-  have hc : cosh (a + b) ≠ 0 := (cosh_pos _).ne'
-  have hnum : tanh a + tanh b
-      = sinh (a + b) / (cosh a * cosh b) := by
-    rw [sinh_add, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
-    field_simp
-  have hden : 1 + tanh a * tanh b
-      = cosh (a + b) / (cosh a * cosh b) := by
-    rw [cosh_add, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
-    field_simp
-  have hne : 1 + tanh a * tanh b ≠ 0 := by
-    rw [hden]
-    exact div_ne_zero hc (mul_ne_zero ha hb)
-  rw [eq_div_iff hne, hnum, hden, tanh_eq_sinh_div_cosh (a + b)]
+  have ha := (cosh_pos a).ne'
+  have hb := (cosh_pos b).ne'
+  -- `cosh (a + b)`, expanded by `Real.cosh_add`, is the denominator left after clearing.
+  have : cosh a * cosh b + sinh a * sinh b ≠ 0 := cosh_add a b ▸ (cosh_pos _).ne'
+  simp only [tanh_eq_sinh_div_cosh, sinh_add, cosh_add]
   field_simp
-
-/-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
-@[simp]
-theorem sqrt_one_sub_tanh_sq (x : ℝ) :
-    √(1 - tanh x ^ 2) = (cosh x)⁻¹ := by
-  simpa only [artanh_tanh, one_div, inv_inv] using
-    (congrArg (fun y : ℝ ↦ y⁻¹)
-      (cosh_artanh ⟨neg_one_lt_tanh x, tanh_lt_one x⟩)).symm
 
 /-- **The hyperbolic tangent is strictly monotone.** It is inverted on its range `(-1, 1)` by
 the strictly monotone `Real.artanh`, so it cannot reverse a strict inequality. -/
-theorem tanh_strictMono : StrictMono tanh := by
-  intro a b hab
-  have ha : tanh a ∈ Set.Ioo (-1 : ℝ) 1 := ⟨neg_one_lt_tanh a, tanh_lt_one a⟩
-  have hb : tanh b ∈ Set.Ioo (-1 : ℝ) 1 := ⟨neg_one_lt_tanh b, tanh_lt_one b⟩
-  by_contra h
-  rw [not_lt] at h
-  have hba := (artanh_le_artanh_iff hb ha).mpr h
-  rw [artanh_tanh, artanh_tanh] at hba
-  exact absurd hab (not_lt.mpr hba)
+theorem tanh_strictMono : StrictMono tanh := fun a b hab ↦
+  (artanh_lt_artanh_iff ⟨neg_one_lt_tanh a, tanh_lt_one a⟩ ⟨neg_one_lt_tanh b, tanh_lt_one b⟩).mp
+    (by rwa [artanh_tanh, artanh_tanh])
 
 /-- The hyperbolic tangent compares two real numbers exactly as they compare. -/
 @[simp]
 theorem tanh_lt_tanh_iff {a b : ℝ} : tanh a < tanh b ↔ a < b :=
   tanh_strictMono.lt_iff_lt
 
-/-- The hyperbolic tangent is nonnegative on the nonnegative reals. -/
-theorem tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ tanh x := by
-  simpa only [tanh_zero] using tanh_strictMono.monotone hx
+/-- The hyperbolic tangent is nonnegative exactly on the nonnegative reals. -/
+@[simp]
+theorem tanh_nonneg_iff {x : ℝ} : 0 ≤ tanh x ↔ 0 ≤ x := by
+  simpa only [tanh_zero] using tanh_strictMono.le_iff_le (a := 0) (b := x)
 
 /-- The hyperbolic tangent is negative exactly on the negative reals. -/
 @[simp]
 theorem tanh_neg_iff {x : ℝ} : tanh x < 0 ↔ x < 0 := by
   simpa only [tanh_zero] using @tanh_lt_tanh_iff x 0
-
-/-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
-positive function `exp x + exp (-x)`. -/
-@[continuity, fun_prop]
-theorem continuous_tanh : Continuous tanh := by
-  simp_rw [funext tanh_eq]
-  exact (by fun_prop : Continuous fun x ↦ exp x - exp (-x)).div (by fun_prop)
-    fun x ↦ (add_pos (exp_pos x) (exp_pos (-x))).ne'
 
 /-- The hyperbolic tangent is smooth: it is the quotient of `sinh` by the positive function
 `cosh`. -/
@@ -159,6 +138,11 @@ theorem continuous_tanh : Continuous tanh := by
 theorem contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n tanh := by
   simp_rw [funext tanh_eq_sinh_div_cosh]
   exact contDiff_sinh.div contDiff_cosh fun x ↦ (cosh_pos x).ne'
+
+/-- The hyperbolic tangent is continuous, being smooth (`Real.contDiff_tanh`). -/
+@[continuity, fun_prop]
+theorem continuous_tanh : Continuous tanh :=
+  (contDiff_tanh (n := 0)).continuous
 
 /-- `1 - tanh x ^ 2 = 1 / cosh x ^ 2`: the derivative of `Real.tanh` written through `Real.tanh`.
 -/
@@ -168,6 +152,12 @@ theorem one_sub_tanh_sq (x : ℝ) : 1 - tanh x ^ 2 = 1 / cosh x ^ 2 := by
   rw [tanh_eq_sinh_div_cosh]
   field_simp
   linarith
+
+/-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
+@[simp]
+theorem sqrt_one_sub_tanh_sq (x : ℝ) :
+    √(1 - tanh x ^ 2) = (cosh x)⁻¹ := by
+  rw [one_sub_tanh_sq, one_div, sqrt_inv, sqrt_sq (cosh_pos x).le]
 
 /-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
 theorem hasDerivAt_tanh (x : ℝ) : HasDerivAt tanh (1 / cosh x ^ 2) x := by
@@ -298,6 +288,24 @@ theorem four_mul_sinh_half_sq (r : ℝ) :
   rw [sinh_eq]
   ring
 
+/-- The half-argument formula `cosh x = 1 + 2 * sinh (x / 2) ^ 2`. -/
+theorem cosh_eq_one_add_two_mul_sinh_half_sq (x : ℝ) : cosh x = 1 + 2 * sinh (x / 2) ^ 2 := by
+  have h := cosh_two_mul (x / 2)
+  rw [show 2 * (x / 2) = x by ring, cosh_sq] at h
+  linarith
+
+/-- `1 + x ^ 2 / 2 ≤ cosh x`: the first two terms of the power series of `Real.cosh` bound it
+from below. -/
+theorem one_add_sq_div_two_le_cosh (x : ℝ) : 1 + x ^ 2 / 2 ≤ cosh x := by
+  -- `cosh x = 1 + 2 sinh (x / 2) ^ 2` and `|x / 2| ≤ |sinh (x / 2)|`
+  have h : |x / 2| ≤ |sinh (x / 2)| := by
+    rw [abs_sinh]
+    exact self_le_sinh_iff.mpr (abs_nonneg _)
+  have hsq := pow_le_pow_left₀ (abs_nonneg _) h 2
+  rw [sq_abs, sq_abs] at hsq
+  rw [cosh_eq_one_add_two_mul_sinh_half_sq]
+  nlinarith
+
 /-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
 The constant `6` is sharp: the cubic terms of the two power series agree. -/
 theorem sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
@@ -343,6 +351,10 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
     rw [div_le_iff₀ hl]
     linarith
 
+/-- `exp x ≤ 2 * cosh x`: the hyperbolic cosine is at least half the exponential. -/
+theorem exp_le_two_mul_cosh (x : ℝ) : exp x ≤ 2 * cosh x := by
+  linarith [cosh_add_sinh x, sinh_lt_cosh x]
+
 /-- The hyperbolic cosine tends to infinity at `+∞`: it is at least `exp x / 2`. -/
 theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
   refine Filter.tendsto_atTop_mono (fun x ↦ ?_) (tendsto_exp_atTop.atTop_div_const two_pos)
@@ -352,6 +364,18 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- A shift by `y` multiplies the hyperbolic cosine by at most `exp |y|`:
+`cosh (x + y) ≤ exp |y| * cosh x`. -/
+theorem cosh_add_le_exp_abs_mul_cosh (x y : ℝ) : cosh (x + y) ≤ exp |y| * cosh x := by
+  have h₁ : exp (x + y) ≤ exp |y| * exp x := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [le_abs_self y])
+  have h₂ : exp (-(x + y)) ≤ exp |y| * exp (-x) := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [neg_abs_le y])
+  rw [cosh_eq, cosh_eq]
+  linarith
 
 /-- The shifted hyperbolic cosine `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`. -/
 theorem bijOn_cosh_sub_one_Ioi :
@@ -364,19 +388,18 @@ theorem bijOn_cosh_sub_one_Ioi :
   rw [cosh_arcosh hτ'.le, add_sub_cancel_right]
 
 /-- The derivative of `log (cosh x)` is `tanh x`. -/
-theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :
-    HasDerivAt (fun x ↦ Real.log (Real.cosh x)) (Real.tanh x) x := by
-  convert (Real.hasDerivAt_cosh x).log (Real.cosh_pos x).ne' using 1
-  rw [Real.tanh_eq_sinh_div_cosh]
+theorem hasDerivAt_log_cosh (x : ℝ) :
+    HasDerivAt (fun x ↦ log (cosh x)) (tanh x) x :=
+  ((hasDerivAt_cosh x).log (cosh_pos x).ne').congr_deriv (tanh_eq_sinh_div_cosh x).symm
 
 /-- `log (cosh x)` is at least `|x| - log 2`, because `cosh x ≥ exp |x| / 2`. -/
-theorem _root_.Real.abs_sub_log_two_le_log_cosh (x : ℝ) :
-    |x| - Real.log 2 ≤ Real.log (Real.cosh x) := by
-  have hcosh : Real.exp |x| / 2 ≤ Real.cosh x := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_abs_le x]
-  have := Real.log_le_log (by positivity) hcosh
-  rwa [Real.log_div (Real.exp_pos _).ne' two_ne_zero, Real.log_exp] at this
+theorem abs_sub_log_two_le_log_cosh (x : ℝ) :
+    |x| - log 2 ≤ log (cosh x) := by
+  have hcosh : exp |x| / 2 ≤ cosh x := by
+    rw [cosh_eq]
+    linarith [exp_abs_le x]
+  have := log_le_log (by positivity) hcosh
+  rwa [log_div (exp_pos _).ne' two_ne_zero, log_exp] at this
 
 /-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
 theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :

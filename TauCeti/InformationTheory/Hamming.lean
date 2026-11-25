@@ -41,6 +41,15 @@ coordinate type along an equivalence, and evaluates a product over the coordinat
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
 factor over the coordinates. For set indicators, weight is cardinality and distance is the
 cardinality of the symmetric difference.
+
+Finally, for a binary word `c : ι → Bool` and any `x` in a commutative semiring,
+`∑ y, x ^ hammingDist y c = (1 + x) ^ card ι` (`TauCeti.sum_pow_hammingDist_eq`), and for every
+radius `D` and word `a` a greedy code through `a` has distinct words at distance more than `D` and
+meets every closed ball of radius `D`
+(`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`). Both are adapted from the
+lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
+`CKSD.exists_hamming_packing`).
 -/
 
 public section
@@ -152,6 +161,12 @@ theorem hammingNorm_add_le {β : ι → Type*} [Fintype ι] [∀ i, AddZeroClass
   refine (Finset.card_le_card fun i ↦ ?_).trans (Finset.card_union_le _ _)
   simp only [Finset.mem_union, Finset.mem_filter_univ, Pi.add_apply]
   grind [add_zero]
+
+/-- The Hamming weight of a difference is at most the sum of the weights. -/
+theorem hammingNorm_sub_le {β : ι → Type*} [Fintype ι] [∀ i, SubtractionMonoid (β i)]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    hammingNorm (x - y) ≤ hammingNorm x + hammingNorm y := by
+  simpa only [sub_eq_add_neg, hammingNorm_neg] using hammingNorm_add_le x (-y)
 
 section AddZeroClass
 
@@ -277,6 +292,49 @@ Hamming weight. -/
   have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
   rw [Finset.card_univ] at h
   rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, hammingNorm, ← h, Nat.add_sub_cancel]
+
+/-! ### Binary words and greedy codes -/
+
+section Codes
+
+open Finset
+
+/-- The exponential moment of the Hamming distance to a fixed binary word:
+`∑ y, x ^ hammingDist y c = (1 + x) ^ n` over the words `y : ι → Bool`, with `n = card ι`. -/
+theorem sum_pow_hammingDist_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R]
+    (c : ι → Bool) (x : R) : ∑ y : ι → Bool, x ^ hammingDist y c = (1 + x) ^ Fintype.card ι := by
+  have h (y : ι → Bool) : x ^ hammingDist y c = ∏ i, if y i ≠ c i then x else 1 := by
+    rw [prod_ite, prod_const, prod_const_one, mul_one, hammingDist]
+  have hb (i : ι) : ∑ b : Bool, (if b ≠ c i then x else 1) = 1 + x := by
+    cases c i <;> simp [add_comm]
+  calc ∑ y : ι → Bool, x ^ hammingDist y c
+      = ∏ i, ∑ b : Bool, (if b ≠ c i then x else 1) := by
+        simp only [h]
+        exact (Fintype.prod_sum fun i (b : Bool) ↦ if b ≠ c i then x else 1).symm
+    _ = (1 + x) ^ Fintype.card ι := by simp only [hb, prod_const, card_univ]
+
+/-- A greedy code: for every radius `D` and word `a`, some finite code containing `a` has distinct
+words at distance more than `D` and meets the closed ball of radius `D` about every word. -/
+theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : ι → Type*}
+    [Fintype ι] [∀ i, Finite (β i)] [∀ i, DecidableEq (β i)] (D : ℕ) (a : ∀ i, β i) :
+    ∃ C : Finset (∀ i, β i), a ∈ C ∧
+      (C : Set (∀ i, β i)).Pairwise (fun x y ↦ D < hammingDist x y) ∧
+      ∀ y, ∃ x ∈ C, hammingDist y x ≤ D := by
+  classical
+  -- A maximal `D`-separated set through `a` is a `D`-cover of the whole space.
+  let R : SetRel (∀ i, β i) (∀ i, β i) := {p | hammingDist p.1 p.2 ≤ D}
+  have : R.IsRefl := ⟨fun x ↦ by simp [R]⟩
+  have : R.IsSymm := ⟨fun x y h ↦ by simpa [R, hammingDist_comm] using h⟩
+  obtain ⟨N, haN, hN⟩ := Finite.exists_le_maximal
+    (p := fun N : Set (∀ i, β i) ↦ N ⊆ Set.univ ∧ R.IsSeparated N) (a := {a})
+    ⟨Set.subset_univ _, .singleton⟩
+  have hcover := SetRel.IsCover.of_maximal_isSeparated hN
+  refine ⟨N.toFinite.toFinset, by simpa using haN rfl, ?_, fun y ↦ ?_⟩
+  · simpa [SetRel.IsSeparated, R] using hN.1.2
+  · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
+    exact ⟨x, by simpa using hx, hxy⟩
+
+end Codes
 
 end TauCeti
 
