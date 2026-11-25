@@ -35,9 +35,10 @@ cover.
 
 The same argument applies when the parameter manifold is not compact but `f x` vanishes outside a
 fixed compact set `K` for all `x` near the base point, and `μ K` is finite
-(`IsCompact.contMDiffAt_parametric_integral`). On a Lie group this gives smoothness of the
-convolution `x ↦ ∫ y, L (a y) (b (y⁻¹ * x))` of a compactly supported `C^n` function `a` with a
-`C^n` function `b` (`ContinuousLinearMap.contMDiff_integral_inv_mul`).
+(`IsCompact.contMDiffAt_parametric_integral`), and to the integral over a compact set `K` of
+finite measure (`IsCompact.contMDiffAt_setIntegral_parametric`). On a Lie group this gives
+smoothness of the convolution `x ↦ ∫ y, L (a y) (b (y⁻¹ * x))` of a compactly supported `C^n`
+function `a` with a `C^n` function `b` (`ContinuousLinearMap.contMDiff_integral_inv_mul`).
 
 The manifold `M` is assumed boundaryless, so that its chart targets are open in the model space.
 The parameter manifold `N` may have boundary and corners.
@@ -124,14 +125,12 @@ private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsManifold I 
 
 variable [T2Space N] {n : ℕ∞} [IsManifold I n M] [IsManifold J n N]
 
-/-- **Smoothness of an integral with compact support in the parameter.** Let `K` be a compact set
-of parameters with `μ K < ∞` such that, for `x` near `x₀`, the function `f x` vanishes outside
-`K`. If `(x, a) ↦ f x a` is `C^n` at every point `(x₀, a)` with `a ∈ K`, then
-`x ↦ ∫ a, f x a ∂μ` is `C^n` at `x₀`. -/
-theorem _root_.IsCompact.contMDiffAt_parametric_integral {K : Set N} (hK : IsCompact K)
-    (hμK : μ K ≠ ⊤) (hf : ∀ a ∈ K, ContMDiffAt (I.prod J) 𝓘(ℝ, F) n (uncurry f) (x₀, a))
-    (hfK : ∀ᶠ x in 𝓝 x₀, ∀ a ∉ K, f x a = 0) :
-    ContMDiffAt I 𝓘(ℝ, F) n (fun x ↦ ∫ a, f x a ∂μ) x₀ := by
+/-- **Smoothness of an integral over a compact set of parameters.** Let `K` be a compact set of
+parameters with `μ K < ∞`. If `(x, a) ↦ f x a` is `C^n` at every point `(x₀, a)` with `a ∈ K`,
+then `x ↦ ∫ a in K, f x a ∂μ` is `C^n` at `x₀`. -/
+theorem _root_.IsCompact.contMDiffAt_setIntegral_parametric {K : Set N} (hK : IsCompact K)
+    (hμK : μ K ≠ ⊤) (hf : ∀ a ∈ K, ContMDiffAt (I.prod J) 𝓘(ℝ, F) n (uncurry f) (x₀, a)) :
+    ContMDiffAt I 𝓘(ℝ, F) n (fun x ↦ ∫ a in K, f x a ∂μ) x₀ := by
   classical
   refine contMDiffAt_iff_nat.2 fun m hm ↦ ?_
   have hm' : (m : ℕ∞ω) ≤ n := by exact_mod_cast hm
@@ -174,7 +173,17 @@ theorem _root_.IsCompact.contMDiffAt_parametric_integral {K : Set N} (hK : IsCom
       refine (h₁.add h₂).congr_of_eventuallyEq ?_
       filter_upwards [hU.mem_nhds hx₀U] with x hx
       exact (integral_inter_add_sdiff hLm ((hint x hx).mono_set hsK)).symm
-  refine (key t K hK.measurableSet subset_rfl hKL.subset).congr_of_eventuallyEq ?_
+  exact key t K hK.measurableSet subset_rfl hKL.subset
+
+/-- **Smoothness of an integral with compact support in the parameter.** Let `K` be a compact set
+of parameters with `μ K < ∞` such that, for `x` near `x₀`, the function `f x` vanishes outside
+`K`. If `(x, a) ↦ f x a` is `C^n` at every point `(x₀, a)` with `a ∈ K`, then
+`x ↦ ∫ a, f x a ∂μ` is `C^n` at `x₀`. -/
+theorem _root_.IsCompact.contMDiffAt_parametric_integral {K : Set N} (hK : IsCompact K)
+    (hμK : μ K ≠ ⊤) (hf : ∀ a ∈ K, ContMDiffAt (I.prod J) 𝓘(ℝ, F) n (uncurry f) (x₀, a))
+    (hfK : ∀ᶠ x in 𝓝 x₀, ∀ a ∉ K, f x a = 0) :
+    ContMDiffAt I 𝓘(ℝ, F) n (fun x ↦ ∫ a, f x a ∂μ) x₀ := by
+  refine (hK.contMDiffAt_setIntegral_parametric hμK hf).congr_of_eventuallyEq ?_
   filter_upwards [hfK] with x hx
   exact (setIntegral_eq_integral_of_forall_compl_eq_zero hx).symm
 
