@@ -38,7 +38,7 @@ forms (`TauCeti.AlmostComplexStructure.IsRiemannForm`) and the weight-one Hodge 
 * `TauCeti.ComplexTorus.hodgeNumber_latticeHodgeStructure`: the Hodge numbers of the associated
   weight-one Hodge structure are `h^{1,0} = h^{0,1} = dim_ℂ E`.
 * `TauCeti.ComplexTorus.realificationEquiv_baseChange_restrict`: the identification
-  `ℝ ⊗[ℤ] Λ ≃ E` is natural in complex-linear maps `f : E → E'` with `f(Λ) ⊆ Λ'`.
+  `ℝ ⊗[ℤ] Λ ≃ E` is natural in real-linear maps `f : E → E'` with `f(Λ) ⊆ Λ'`.
 * `TauCeti.ComplexTorus.isComplexLinearMap_baseChange`: a complex-linear map `f : E → E'` with
   `f(Λ) ⊆ Λ'` is complex linear for the two structures `J` on the realifications.
 
@@ -142,11 +142,11 @@ theorem hodgeNumber_latticeHodgeStructure {Λℂ : Type*} [AddCommGroup Λℂ] [
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
   (Λ' : Submodule ℤ E') [DiscreteTopology Λ'] [IsZLattice ℝ Λ']
 
-/-- **Naturality of `realificationEquiv`**: for a complex-linear map `f : E → E'` carrying `Λ`
+/-- **Naturality of `realificationEquiv`**: for a real-linear map `f : E → E'` carrying `Λ`
 into `Λ'`, the real extension of its restriction `Λ → Λ'` corresponds to `f` under the
 identifications `ℝ ⊗[ℤ] Λ ≃ E` and `ℝ ⊗[ℤ] Λ' ≃ E'`. -/
 @[simp]
-theorem realificationEquiv_baseChange_restrict (f : E →ₗ[ℂ] E')
+theorem realificationEquiv_baseChange_restrict (f : E →ₗ[ℝ] E')
     (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') (x : Hodge.Realification Λ) :
     realificationEquiv Λ' (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) x) =
       f (realificationEquiv Λ x) := by
@@ -161,9 +161,13 @@ theorem isComplexLinearMap_baseChange (f : E →ₗ[ℂ] E')
     (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') :
     IsComplexLinearMap (almostComplexStructure Λ) (almostComplexStructure Λ')
       (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf)) := by
+  have h (y : Hodge.Realification Λ) :
+      realificationEquiv Λ' (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) y) =
+        f (realificationEquiv Λ y) :=
+    realificationEquiv_baseChange_restrict Λ Λ' (f.restrictScalars ℝ) hf y
   rw [isComplexLinearMap_iff_apply]
   intro x
   apply (realificationEquiv Λ').injective
-  simp
+  simp [h]
 
 end TauCeti.ComplexTorus

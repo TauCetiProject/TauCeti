@@ -32,8 +32,8 @@ discrete from their rank and real span, without a separate compactness argument.
   statements and their names follow Kevin H. Wilson's successive-minima proposal for Mathlib,
   `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
   <https://github.com/khwilson/mathlib4>.
-- `ZLattice.finrank_eq_two_mul_finrank_complex`: a full lattice in a finite-dimensional complex
-  space has rank twice the complex dimension.
+- `TauCeti.ZLattice.finrank_eq_two_mul_finrank_complex`: a full lattice in a finite-dimensional
+  complex space has rank twice the complex dimension.
 
 Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
 discreteness from a rank equality `hr`.
@@ -149,9 +149,13 @@ theorem setFinrank_real_eq_finrank_int : Set.finrank ℝ (L : Set E) = Module.fi
   rw [setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology L le_rfl, Set.finrank,
     Submodule.span_eq]
 
+namespace TauCeti
+
 /-- A full lattice in a finite-dimensional complex space `E`, such as the period lattice of a
 complex torus `E / L`, has rank `2 * dim_ℂ E`. -/
 theorem ZLattice.finrank_eq_two_mul_finrank_complex {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] [FiniteDimensional ℂ E] (L : Submodule ℤ E) [DiscreteTopology L]
     [IsZLattice ℝ L] : Module.finrank ℤ L = 2 * Module.finrank ℂ E := by
-  rw [ZLattice.rank ℝ L, TauCeti.finrank_real_eq_two_mul_finrank_complex]
+  rw [_root_.ZLattice.rank ℝ L, finrank_real_eq_two_mul_finrank_complex]
+
+end TauCeti
