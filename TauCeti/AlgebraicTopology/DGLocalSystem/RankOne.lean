@@ -54,7 +54,9 @@ cohomological degree `p = -q`.
 Rank-one local systems form a commutative group under the tensor product, on which loops act by
 the product of the units. Twisting turns products into composites, `Φ^{L L'} = Φ^L ∘ Φ^{L'}`
 (`TauCeti.RankOneLocalSystem.twist_mul`), so `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`
-(`TauCeti.RankOneLocalSystem.tensorMulIso`) and `m^{L L'} = (m^{L'})^L`. The monodromy is an
+(`TauCeti.RankOneLocalSystem.tensorMulIso`) and `m^{L L'} = (m^{L'})^L`, and tensoring with `L` is
+an autoequivalence of DG local systems with inverse tensoring with `L⁻¹`
+(`TauCeti.RankOneLocalSystem.tensorEquivalence`). The monodromy is an
 isomorphism of groups onto the characters `π₁(B, b) →* Rˣ`
 (`TauCeti.RankOneLocalSystem.monodromyEquiv`), with inverse
 `TauCeti.RankOneLocalSystem.ofMonodromy`, so a rank-one local system is a classical local system of
@@ -86,6 +88,7 @@ combined.
 * `TauCeti.RankOneLocalSystem.pullback f hf`: the pullback along a based map.
 * `TauCeti.RankOneLocalSystem.tensorOneIso`, `TauCeti.RankOneLocalSystem.tensorMulIso`:
   `𝓕 ⊗ 1 ≅ 𝓕` and `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`.
+* `TauCeti.RankOneLocalSystem.tensorEquivalence L`: the autoequivalence `𝓕 ↦ 𝓕 ⊗ L`.
 * `TauCeti.RankOneLocalSystem.tensorPullbackIso`: `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`: the same, with `L` absorbed
@@ -320,6 +323,64 @@ theorem tensorMulIso_inv_app (L L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSy
         eqToHom (by rw [tensor, twist_mul]) := by
   simp [tensorMulIso, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
+/-- **Tensoring with `L` is an autoequivalence** of DG local systems, with inverse tensoring with
+`L⁻¹`. This is restriction of scalars along the automorphism `Φ^L`
+(`TauCeti.DGRightModuleCat.restrictScalarsEquivalence`). -/
+@[expose]
+def tensorEquivalence : DGLocalSystem.{uM} B b R ≌ DGLocalSystem.{uM} B b R :=
+  DGRightModuleCat.restrictScalarsEquivalence L.twist L⁻¹.twist (twist_comp_twist_inv L)
+    (twist_inv_comp_twist L)
+
+@[simp]
+theorem tensorEquivalence_functor : L.tensorEquivalence.{uM}.functor = L.tensor :=
+  (rfl)
+
+@[simp]
+theorem tensorEquivalence_inverse : L.tensorEquivalence.{uM}.inverse = L⁻¹.tensor :=
+  (rfl)
+
+/-- The component of the unit of `tensorEquivalence` at `𝓕`: `𝓕 ≅ 𝓕 ⊗ 1 = 𝓕 ⊗ (L L⁻¹) ≅
+(𝓕 ⊗ L) ⊗ L⁻¹`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.hom.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        (tensorMulIso L L⁻¹).hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the inverse of the unit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.inv.app 𝓕 =
+      (tensorMulIso L L⁻¹).inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the counit of `tensorEquivalence` at `𝓕`: `(𝓕 ⊗ L⁻¹) ⊗ L ≅
+𝓕 ⊗ (L⁻¹ L) = 𝓕 ⊗ 1 ≅ 𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.hom.app 𝓕 =
+      (tensorMulIso L⁻¹ L).inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
+/-- The component of the inverse of the counit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.inv.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        (tensorMulIso L⁻¹ L).hom.app 𝓕 := by
+  simp [tensorEquivalence]
+  -- The two remaining `eqToHom`s have definitionally equal endpoints.
+  rfl
+
 /-- Moore loops with the same class in the fundamental group act by the same unit. -/
 theorem ρ_eq_of_fundamentalGroupHom_eq {γ δ : MooreLoopSpace B b}
     (h : MooreLoopSpace.fundamentalGroupHom b γ = MooreLoopSpace.fundamentalGroupHom b δ) :
@@ -427,6 +488,15 @@ theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem
   monodromyEquiv.injective
 
 /-! ### Characters with values in `ℤˣ` -/
+
+/-- A Moore loop acts on the rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`,
+read in `Rˣ`, by the value of `χ` on its class: the inverse in `ofMonodromy` disappears, since `χ`
+takes only the values `±1`. -/
+theorem ofMonodromy_unitsMap_comp_ρ_apply (χ : FundamentalGroup B b →* ℤˣ)
+    (γ : MooreLoopSpace B b) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ)).ρ γ =
+      Units.map (Int.castRingHom R).toMonoidHom (χ (MooreLoopSpace.fundamentalGroupHom b γ)) := by
+  rw [ofMonodromy_ρ_apply, MonoidHom.comp_apply, ← map_inv, Int.units_inv_eq_self]
 
 /-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
 trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
@@ -636,7 +706,8 @@ private theorem cohomologyMap_twist_groupAlgebraToLoopChainCohomology (γ : Moor
     ← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul]
   congr 1
   apply Subtype.ext
-  rw [DGAlgHom.cyclesMap_apply_coe, twist_lof_ofCube, SingularCube.point_apply, SetLike.val_smul]
+  simp only [DGAlgHom.cyclesMap_apply_coe, SetLike.val_smul, cubicalChainPoint_def,
+    twist_lof_ofCube, SingularCube.point_apply]
 
 /-- The class of `Φ^L` applied to the point chain of `γ` acts as `ρ γ` times the point chain. -/
 private theorem cohomologyAction_cohomologyMap_twist

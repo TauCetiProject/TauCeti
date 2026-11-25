@@ -36,7 +36,8 @@ corresponding to `α` itself under the contact flat equivalence
 
 The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
 has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
-(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`).
+(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`). In the normalized rescaling law
+`R_(f α) = (R_α + Z) / f` this is the correction `Z = ∂_y + x ∂_z` of the contact plane.
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -244,27 +245,25 @@ theorem reebVectorField_of_eq_exp_smul_standardContactForm
     (β.reebVectorField p : ℝ × ℝ × ℝ) = Real.exp (-p.1) • (0, 1, p.1 + 1) := by
   have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
     (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
-  -- The rescaling law, with the correction `y = e^(-x) (∂_y + x ∂_z)` in the contact plane.
-  obtain ⟨y, hy⟩ : ∃ y : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p,
-      y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
-  have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
-    hβ y).2 ⟨?_, fun w _ ↦ ?_⟩
-  · rw [key, hy, reebVectorField_standardContactForm, standardReebField_apply]
+  -- The normalized rescaling law, with the correction `z = ∂_y + x ∂_z` in the contact plane.
+  obtain ⟨z, hz⟩ : ∃ z : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, z = ((0, 1, p.1) : ℝ × ℝ × ℝ) :=
+    ⟨_, rfl⟩
+  have key := (isContactForm_standardContactForm.smul_reebVectorField_eq_add_iff hf
+    (Real.exp_pos p.1).ne' hβ z).2 ⟨?_, fun w _ ↦ ?_⟩
+  · rw [(eq_inv_smul_iff₀ (Real.exp_pos p.1).ne').2 key, hz, reebVectorField_standardContactForm,
+      standardReebField_apply]
     -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
     -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
-    change (Real.exp p.1)⁻¹ • ((0, 0, 1) : ℝ × ℝ × ℝ) +
-      Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) = Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
-    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg]
-    ring
-  · rw [standardContactForm_apply, hy]
-    simp only [Prod.smul_snd, Prod.smul_fst, smul_eq_mul, mul_one]
+    change (Real.exp p.1)⁻¹ • (((0, 0, 1) : ℝ × ℝ × ℝ) + ((0, 1, p.1) : ℝ × ℝ × ℝ)) =
+      Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg, add_comm]
+  · rw [standardContactForm_apply, hz]
     ring
   · have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
         (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
       (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
-    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hy, Real.exp_neg]
+    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hz]
     simp [NormedSpace.fromTangentSpace_apply]
-    field_simp
 
 section InnerProductSpace
 

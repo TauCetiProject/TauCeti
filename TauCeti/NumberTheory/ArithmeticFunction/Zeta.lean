@@ -21,7 +21,8 @@ are bounded by powers of the ordinary divisor count. The analytic subpower estim
 `TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds`.
 
 The distinct-prime-factor powers are bounded by the corresponding divisor coefficients,
-and the fourth divisor coefficient dominates the squared ordinary divisor count.
+`2 ^ ω n ≤ n` for `n ≠ 0`, and the fourth divisor coefficient dominates the squared ordinary
+divisor count.
 
 The prime-power argument is adapted from `d_apply_prime_pow` in
 [Alex Kontorovich, Terence Tao and contributors, *Prime Number Theorem and More*][PNT].
@@ -92,6 +93,13 @@ theorem pow_cardDistinctFactors_le_zeta_pow (k : ℕ) {n : ℕ} (hn : n ≠ 0) :
         calc
           k + 1 = (k + 1).choose k := (Nat.choose_succ_self_right k).symm
           _ ≤ _ := Nat.choose_le_choose k (by omega)
+
+/-- A positive integer has at most `log₂ n` distinct prime factors: `2 ^ ω n ≤ n`, since each
+distinct prime factor is at least `2` and their product divides `n`. -/
+theorem two_pow_cardDistinctFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ ω n ≤ n := by
+  rw [cardDistinctFactors_eq_card_primeFactors]
+  exact (pow_card_le_prod _ _ _ fun p hp ↦ (prime_of_mem_primeFactors hp).two_le).trans
+    (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (prod_primeFactors_dvd n))
 
 /-- The fourth fixed-order divisor coefficient dominates the squared divisor count. -/
 theorem sigma_zero_sq_le_zeta_pow_four (n : ℕ) :

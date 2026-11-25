@@ -41,15 +41,21 @@ namespace TauCeti
 
 variable (N : ℕ) [NeZero N] (K : Subfield ℂ)
 
+/-- The pullback of `j` to level `N` has Laurent coefficients in every subfield of `ℂ`. -/
+theorem compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField :
+    Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      ModularGroup.jMeromorphicFunction ∈ coeffIntermediateField (cuspDatumInftyGamma N) K :=
+  mem_coeffIntermediateField.mpr <|
+    (compactifiedQuotientComap_mem_coeffSubfield_iff
+      (D := cuspDatumInftyGamma N) _ (by simp)).mpr
+      (ModularGroup.jMeromorphicFunction_mem_coeffSubfield K)
+
 /-- The modular invariant `j` in the field of level-`N` functions with coefficients in `K`.
 Its coefficients are integers, so every subfield of `ℂ` is allowed. -/
 def modularFunctionJ : coeffIntermediateField (cuspDatumInftyGamma N) K :=
   ⟨Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
       ModularGroup.jMeromorphicFunction,
-    (mem_coeffIntermediateField).mpr <|
-      (compactifiedQuotientComap_mem_coeffSubfield_iff
-        (D := cuspDatumInftyGamma N) _ (by simp)).mpr
-        (ModularGroup.jMeromorphicFunction_mem_coeffSubfield K)⟩
+    compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K⟩
 
 /-- As a complex meromorphic function, `modularFunctionJ` is the pullback of `j` from `X(1)`. -/
 @[simp]
