@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
@@ -446,8 +447,7 @@ theorem exists_tendsto_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : SL
   -- `f(σ τ) / ((√(c τ + d)) ^ (∑_δ r δ) e(L τ)) = C g(q_w)`, and `q_w → 0` as `Im τ → ∞`.
   have hq : Tendsto (fun τ : ℍ ↦ Function.Periodic.qParam (cuspWidthGamma0 N σ) τ) atImInfty
       (𝓝 0) :=
-    ((Function.Periodic.qParam_tendsto (by exact_mod_cast cuspWidthGamma0_pos N σ)).mono_right
-      nhdsWithin_le_nhds).comp UpperHalfPlane.tendsto_coe_atImInfty
+    UpperHalfPlane.qParam_tendsto_atImInfty (by exact_mod_cast cuspWidthGamma0_pos N σ)
   have := ((hg.continuousOn.continuousAt (Metric.ball_mem_nhds 0 one_pos)).tendsto.comp hq)
     |>.const_mul C
   rw [hg0, mul_one] at this
@@ -584,20 +584,14 @@ theorem etaQuotient_slash_qExpansion_order (N : ℕ) [NeZero N] (r : ℕ → ℤ
       exact_mod_cast hn
     push_cast at this
     rw [this, mul_comm (2 * (π : ℂ) * I), exp_nat_mul_two_pi_mul_I, one_mul]
-  have hL : 0 ≤ etaQuotientOrder N r (σ 1 0) := by
-    have : (0 : ℚ) < cuspWidthGamma0 N σ := by exact_mod_cast cuspWidthGamma0_pos N σ
-    nlinarith [hn, (Nat.cast_nonneg n : (0 : ℚ) ≤ n)]
-  have hord := UpperHalfPlane.orderAtInfty_eq_qExpansion_order hw hper
+  have hL : (etaQuotientOrder N r (σ 1 0) : ℝ) = n / cuspWidthGamma0 N σ := by
+    rw [eq_div_iff hw.ne', mul_comm]
+    exact_mod_cast hn
+  refine TauCeti.qExpansion_order_eq_of_orderAtInfty_eq hw hper
     (by rw [ModularForm.SL_slash]; exact (mdifferentiable_etaQuotient N r).slash k _)
-    ((isBoundedAtImInfty_etaQuotient_slash_iff N r hk σ).mpr hL)
-  rw [orderAtInfty_etaQuotient_slash N r hk σ, eq_comm, EReal.div_eq_iff (by simp) (by simp)
-    (by simpa using hw.ne')] at hord
-  have hLw : ((etaQuotientOrder N r (σ 1 0) : ℝ) : EReal) * ((cuspWidthGamma0 N σ : ℝ) : EReal) =
-      (n : EReal) := by
-    rw [← EReal.coe_mul, mul_comm]
-    exact_mod_cast congrArg ((↑) : ℚ → ℝ) hn
-  rw [hLw, ← ENNReal.toEReal_natCast, EReal.coe_ennreal_eq_coe_ennreal_iff] at hord
-  exact_mod_cast hord
+    ((isBoundedAtImInfty_etaQuotient_slash_iff N r hk σ).mpr ?_)
+    (by rw [orderAtInfty_etaQuotient_slash N r hk σ, hL])
+  exact_mod_cast hL ▸ div_nonneg n.cast_nonneg hw.le
 
 /-! ### The transformation under `Γ₀(N)` -/
 
