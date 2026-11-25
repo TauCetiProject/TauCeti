@@ -43,7 +43,7 @@ theorem normalizedTrace_toEuclideanCLM_symm_adjoint_comp_self
   push_cast
   congr 1
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← inner_single_toEuclideanCLM_single (toEuclideanCLM.symm (T.adjoint ∘L T)) i,
+  rw [← inner_single_toEuclideanCLM_single (toEuclideanCLM.symm (T.adjoint ∘L T)) i i,
     StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.comp_apply, adjoint_inner_right,
     inner_self_eq_norm_sq_to_K]
   simp [OrthonormalBasis.coe_toHilbertBasis, ENNReal.toReal_pow]

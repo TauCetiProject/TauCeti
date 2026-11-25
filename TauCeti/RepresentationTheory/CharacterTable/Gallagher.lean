@@ -39,6 +39,8 @@ injectivity; the column orthogonality of `G ⧸ N` gives surjectivity.
   isometry on functions inflated from `G ⧸ N`.
 * `TauCeti.gallagher_bijOn`: **Gallagher's correspondence** `Irr(G ⧸ N) ≃ Irr(G | θ)`,
   `β ↦ χ · (β ∘ π)`.
+* `TauCeti.gallagher_bijOn_bot`: the case `N = 1` for a linear character `χ`, a permutation of
+  the irreducible characters of `G` read through `G ⧸ ⊥`.
 
 ## References
 
@@ -263,6 +265,18 @@ theorem gallagher_bijOn {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
         rw [h]
     rw [h12, h2, mul_zero] at h1
     exact mul_ne_zero hN0 hQ0 h1
+
+/-- **Gallagher's correspondence for `N = 1`.** For a linear character `χ`, every irreducible
+character lies over the trivial character of `⊥`, so multiplication by `χ`, read through `G ⧸ ⊥`,
+maps the irreducible characters of `G ⧸ ⊥` bijectively onto those of `G`. -/
+theorem gallagher_bijOn_bot (hχ : χ ∈ irreducibleCharacters k G) (h1 : χ 1 = 1) :
+    Set.BijOn (fun (β : G ⧸ (⊥ : Subgroup G) → k) (g : G) => χ g * β g)
+      (irreducibleCharacters k (G ⧸ (⊥ : Subgroup G))) (irreducibleCharacters k G) := by
+  have hθ : (fun _ => 1 : (⊥ : Subgroup G) → k) ∈ irreducibleCharacters k (⊥ : Subgroup G) := by
+    simp
+  have h := gallagher_bijOn hχ hθ fun n => by
+    rw [Subgroup.mem_bot.mp n.property, h1]
+  rwa [irreducibleCharactersOver_bot one_ne_zero] at h
 
 end Gallagher
 

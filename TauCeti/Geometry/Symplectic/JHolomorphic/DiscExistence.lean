@@ -1247,11 +1247,6 @@ section EquivariantFamily
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-private theorem lsmul_I_mul_self :
-    (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F) * ContinuousLinearMap.lsmul ℝ ℂ I = -1 := by
-  ext v
-  simp [smul_smul]
-
 private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v) : A * A = -1 := by
   ext v
   simp [hAA]
@@ -1263,7 +1258,7 @@ private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A
     A ((-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v) +
         I • (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v = I • v - A v := by
   have h := congrArg (fun T : F →L[ℝ] F ↦ T v) (add_mul_cayleyCoord
-    ((mul_self_eq_neg_one hAA).trans lsmul_I_mul_self.symm) hA)
+    ((mul_self_eq_neg_one hAA).trans ContinuousLinearMap.lsmul_I_mul_lsmul_I.symm) hA)
   simp only [add_mul, mul_apply_eq_comp, add_apply, sub_apply,
     ContinuousLinearMap.lsmul_apply] at h
   simp only [neg_apply, map_neg, smul_neg]
@@ -1313,7 +1308,7 @@ private theorem exists_neg_cayleyCoord_local [CompleteSpace F] {J : F → F →L
     have h2 := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map (algebraMap ℝ (F →L[ℝ] F))
     rw [map_ofNat] at h2
     rw [hI0, ← two_mul]
-    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 lsmul_I_mul_self
+    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 ContinuousLinearMap.lsmul_I_mul_lsmul_I
   have hAC : ContDiffAt ℝ 2 (fun x ↦ ContinuousLinearMap.lsmul ℝ ℂ I + J x) 0 :=
     contDiffAt_const.add hJ
   have hinv : ContDiffAt ℝ 2 Ring.inverse (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) :=
@@ -1359,8 +1354,9 @@ theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply
   obtain ⟨v, hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by rw [smul_zero]; exact hQ0) hdt hAt hLt
   replace hveq := hveq fun x hx w ↦ by
     -- The Cayley coordinate of a square root of `-1` anticommutes with `i`.
-    have h := congrArg (fun T : F →L[ℝ] F ↦ T w) (cayleyCoord_mul_eq_neg_mul lsmul_I_mul_self
-      (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
+    have h := congrArg (fun T : F →L[ℝ] F ↦ T w)
+      (cayleyCoord_mul_eq_neg_mul ContinuousLinearMap.lsmul_I_mul_lsmul_I
+        (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
     simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
     simp only [Q, neg_apply, h, smul_neg]
   refine ⟨t / 2, by positivity, fun ξ z ↦ t • v ξ (t⁻¹ • z), fun ξ hξ ↦ ?_,

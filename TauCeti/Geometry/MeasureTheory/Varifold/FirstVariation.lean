@@ -12,6 +12,7 @@ public import Mathlib.Topology.ContinuousMap.CompactlySupported
 public import TauCeti.Topology.Grassmannian.StarProjection
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
@@ -54,6 +55,8 @@ supported continuous function on `W × G(E, k)`). In the degenerate dimensions, 
 
 * `Euclidean.abs_tangentialDivergence_le`: `|div_P X (x)| ≤ k ‖DX(x)‖` for `P ∈ G(E, k)`.
 * `Euclidean.firstVariation_apply`: `δV(X) = ∫ div_P X (x) dV(x, P)`.
+* `Euclidean.firstVariation_map_apply`: the first variation of the image `ν.map f` of a measure
+  under a proper map `f`, as an integral against `ν`.
 * `Euclidean.abs_firstVariation_le`: `|δV(X)| ≤ k V(π⁻¹ K) sup ‖DX‖` for `X` supported in a
   compact `K ⊆ W`.
 * `Euclidean.firstVariation_add_measure`, `Euclidean.firstVariation_smul_measure`: additivity and
@@ -273,6 +276,16 @@ def firstVariation (V : Measure (W × grassmannian ℝ E k)) : 𝓓^{1}(W, E) �
 theorem firstVariation_apply [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
     firstVariation V X = ∫ p, tangentialDivergence X p.1 p.2 ∂V := by
   rw [firstVariation, dite_eq_left ‹_›, ContinuousLinearMap.coe_mk', firstVariationLinearMap_apply]
+
+/-- The first variation of the image of a measure `ν` that is finite on compact sets under a proper
+map `f` is `∫ div_{(f a).2} X ((f a).1) dν(a)`. -/
+theorem firstVariation_map_apply {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] (ν : Measure α) [IsFiniteMeasureOnCompacts ν]
+    {f : α → W × grassmannian ℝ E k} (hf : IsProperMap f) (X : 𝓓^{1}(W, E)) :
+    firstVariation (ν.map f) X = ∫ a, tangentialDivergence X (f a).1 (f a).2 ∂ν := by
+  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap ν hf
+  rw [firstVariation_apply, integral_map hf.continuous.aemeasurable
+    (integrable_tangentialDivergence X).aestronglyMeasurable]
 
 /-- A measure that is not finite on compact sets has first variation `0` by convention. -/
 theorem firstVariation_of_not_isFiniteMeasureOnCompacts (hV : ¬IsFiniteMeasureOnCompacts V) :
