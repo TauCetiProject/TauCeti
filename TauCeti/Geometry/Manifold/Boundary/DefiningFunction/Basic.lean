@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.PartitionOfUnity.MVFDeriv
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
@@ -237,44 +238,6 @@ theorem isBoundaryDefiningFunctionOn_one {U : Set M} (hU : IsOpen U)
   mvfderiv_ne_zero _ hx hb := absurd (hUi hx) fun hi ↦
     (ModelWithCorners.disjoint_interior_boundary (I := 𝓡∂ (n + 1))).ne_of_mem hi hb rfl
 
-/-- The differential at a boundary point `q` of the sum `∑ᶠ i, φ i • ρ i`, for a smooth partition
-of unity `φ` subordinate to the domains of boundary defining functions `ρ i`, is positive on the
-inward vectors: it is the finite sum `∑ i, φ i q • dρ_i` over the indices `i` with `q` in the
-topological support (the closure of the support) of `φ i`, since every such `ρ i` vanishes at
-`q`. -/
-private theorem mvfderiv_finsum_smul_pos {ι : Type*}
-    {U : ι → Set M} {ρ : ι → M → ℝ} (hρ : ∀ i, IsBoundaryDefiningFunctionOn n (ρ i) (U i))
-    {φ : SmoothPartitionOfUnity ι (𝓡∂ (n + 1)) M univ} (hφ : φ.IsSubordinate U) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) {v : TangentSpace (𝓡∂ (n + 1)) q}
-    (hv : IsOutwardPointing q (-v)) :
-    0 < mvfderiv (𝓡∂ (n + 1)) (fun x ↦ ∑ᶠ i, φ i x • ρ i x) q v := by
-  have hU {i : ι} (hi : i ∈ φ.fintsupport q) : q ∈ U i :=
-    hφ i ((φ.mem_fintsupport_iff q i).mp hi)
-  -- Near `q` the sum runs over the finite set of `i` with `q` in the topological support of `φ i`.
-  have heq : (fun x ↦ ∑ᶠ i, φ i x • ρ i x) =ᶠ[𝓝 q]
-      fun x ↦ ∑ i ∈ φ.fintsupport q, φ i x • ρ i x := by
-    filter_upwards [φ.eventually_fintsupport_subset q] with y hy
-    refine finsum_eq_sum_of_support_subset _ fun i hi ↦ hy ?_
-    exact (φ.mem_fintsupport_iff y i).mpr (subset_tsupport _ (left_ne_zero_of_smul hi))
-  have hdφ (i : ι) : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (φ i) q :=
-    (φ i).contMDiff.mdifferentiableAt (by simp)
-  have hterm (i : ι) (hi : i ∈ φ.fintsupport q) :
-      mvfderiv (𝓡∂ (n + 1)) (fun x ↦ φ i x • ρ i x) q v =
-        φ i q * mvfderiv (𝓡∂ (n + 1)) (ρ i) q v := by
-    rw [mvfderiv_fun_smul (hdφ i) ((hρ i).mdifferentiableAt (hU hi)),
-      (hρ i).eq_zero q (hU hi) hq]
-    simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
-      mul_zero, add_zero]
-  rw [heq.mvfderiv_eq, mvfderiv_fun_sum (f := fun i x ↦ φ i x • ρ i x) fun i hi ↦
-      (hdφ i).smul ((hρ i).mdifferentiableAt (hU hi)), sum_apply,
-    Finset.sum_congr rfl hterm]
-  obtain ⟨j, hj⟩ := φ.exists_pos_of_mem (mem_univ q)
-  have hjF : j ∈ φ.fintsupport q :=
-    (φ.mem_fintsupport_iff q j).mpr (subset_tsupport _ hj.ne')
-  refine Finset.sum_pos' (fun i hi ↦ mul_nonneg (φ.nonneg i q)
-    ((((hρ i).isOutwardPointing_neg_iff_mvfderiv_pos (hU hi) hq v).mp hv).le))
-    ⟨j, hjF, mul_pos hj (((hρ j).isOutwardPointing_neg_iff_mvfderiv_pos (hU hjF) hq v).mp hv)⟩
-
 /-- **Gluing.** For a smooth partition of unity `φ` on `M` subordinate to the domains of boundary
 defining functions `ρ i`, the sum `∑ᶠ i, φ i • ρ i` is a global boundary defining function. -/
 theorem isBoundaryDefiningFunctionOn_finsum_smul {ι : Type*} {U : ι → Set M} {ρ : ι → M → ℝ}
@@ -289,8 +252,12 @@ theorem isBoundaryDefiningFunctionOn_finsum_smul {ι : Type*} {U : ι → Set M}
       (convex_Ioi 0)
   · exact φ.finsum_smul_mem_convex (g := ρ) (t := {0}) (mem_univ x)
       (fun i hi ↦ (hρ i).eq_zero x (hmem hi) hx) (convex_singleton 0)
-  · -- The differential is positive on the inward vector `e₀` of the preferred chart.
-    have h := mvfderiv_finsum_smul_pos hρ hφ hq (isOutwardPointing_neg_single_zero hq)
+  · -- The differential is positive on the inward vector `e₀` of the preferred chart, since each
+    -- `ρ i` with `q ∈ U i` vanishes at `q` and is positive on inward vectors there.
+    have h := φ.mvfderiv_finsum_smul_pos hφ (mem_univ q) (fun i hi ↦ (hρ i).mdifferentiableAt hi)
+      (fun i hi ↦ (hρ i).eq_zero q hi hq) fun i hi ↦
+        ((hρ i).isOutwardPointing_neg_iff_mvfderiv_pos hi hq _).mp
+          (isOutwardPointing_neg_single_zero hq)
     rw [h0] at h
     exact h.ne rfl
 

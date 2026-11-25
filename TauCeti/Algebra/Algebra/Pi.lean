@@ -58,6 +58,9 @@ and `D` with function algebras, `Algebra.TensorProduct.eq_of_pi_bijective` says 
 `Algebra.TensorProduct.lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: they are the
 coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)`.
 
+A standard basis vector of `ι → A` has its coordinates in the base ring: it is the image of the
+standard basis vector of `ι → R` under `algebraMap R A` (`Pi.single_one_eq_algebraMap_comp`).
+
 The linear map `Pi.algebraMap ι R S : (ι → R) →ₗ[R] (ι → S)` applies `algebraMap R S` to each
 coordinate (`TauCeti.piAlgebraMap_apply`). Mathlib's `Pi.algebraMap_apply` is instead about the
 algebra map `R → (ι → A)` of the product algebra.
@@ -79,11 +82,26 @@ algebra map `R → (ι → A)` of the product algebra.
   algebras give separating characters of `C ⊗[R] D`.
 * `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
   with at least as many characters as its dimension is the algebra of functions on its characters.
+* `Pi.single_one_eq_algebraMap_comp`: a standard basis vector of `ι → A` is the image of a
+  standard basis vector of `ι → R`.
 -/
 
 public section
 
 namespace Pi
+
+section AlgebraMap
+
+variable (R : Type*) {A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
+
+/-- A standard basis vector of `ι → A` has its coordinates in `R`: it is the image of the standard
+basis vector of `ι → R` under `algebraMap R A`. -/
+theorem single_one_eq_algebraMap_comp (k : ι) :
+    (Pi.single k 1 : ι → A) = algebraMap R A ∘ Pi.single k 1 := by
+  ext l
+  by_cases h : l = k <;> simp [h]
+
+end AlgebraMap
 
 variable (R ι : Type*) [CommSemiring R]
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -33,7 +34,8 @@ disagree on the lower half-circle, so the Möbius line bundle is not orientable
 
 ## Main results
 
-* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space.
+* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space, so the
+  Möbius line bundle is a `TauCeti.ContinuousFiberNorm` bundle.
 * `TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`: the Möbius line bundle is not orientable.
 
 ## References
@@ -149,6 +151,16 @@ instance (z : Circle) : NormedAddCommGroup (moebiusCore.Fiber z) :=
 instance (z : Circle) : NormedSpace ℝ (moebiusCore.Fiber z) :=
   inferInstanceAs (NormedSpace ℝ ℝ)
 
+/-- The fibres of the Möbius line bundle carry the inner product of `ℝ`. -/
+instance (z : Circle) : InnerProductSpace ℝ (moebiusCore.Fiber z) :=
+  inferInstanceAs (InnerProductSpace ℝ ℝ)
+
+/-- The norm of a vector in a fibre of the Möbius line bundle is its absolute value as a real
+number. -/
+@[simp]
+theorem norm_moebiusCore_fiber {z : Circle} (u : moebiusCore.Fiber z) : ‖u‖ = (|u| : ℝ) :=
+  rfl
+
 /-- The transition functions of the Möbius line bundle preserve the norm of `ℝ`. -/
 theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
     ‖moebiusCore.coordChange i j z v‖ = ‖v‖ := by
@@ -172,6 +184,9 @@ theorem continuous_norm_moebiusCore :
       (Eventually.of_forall fun v ↦ ?_)
   simp only [Function.comp_apply, e, VectorBundleCore.localTriv_apply]
   exact norm_moebiusCore_coordChange _ _ _ _
+
+instance : ContinuousFiberNorm ℝ moebiusCore.Fiber :=
+  ⟨continuous_norm_moebiusCore⟩
 
 /-- The two chart domains of the Möbius line bundle are connected: each is the circle minus a
 point. -/

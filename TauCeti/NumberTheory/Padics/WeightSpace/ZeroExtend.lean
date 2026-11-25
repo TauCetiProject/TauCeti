@@ -20,9 +20,10 @@ decomposition `ℤ_p = ℤ_pˣ ⊔ pℤ_p` (`PadicInt.unitsClopen p`) via
 
 Because `pℤ_p` is a prime ideal of `ℤ_p`, a product in `ℤ_p` is a unit if and only if both factors
 are units; consequently `κ.zeroExtend` is multiplicative on all of `ℤ_p`
-(`TauCeti.WeightSpace.zeroExtend_apply_mul`). Over a seminormed ring, `κ.zeroExtend` agrees with
-`ContinuousMap.zeroExtendClopen` on `PadicInt.unitsClopen p` and preserves the supremum norm of
-`κ.weightTest`, which equals `1` when the seminorm is multiplicative with `‖1‖ = 1`.
+(`TauCeti.WeightSpace.zeroExtend_apply_mul`). Over a topological semiring with continuous addition,
+`κ.zeroExtend` agrees with `ContinuousMap.zeroExtendClopen` on `PadicInt.unitsClopen p`, and over a
+seminormed ring it preserves the supremum norm of `κ.weightTest`, which equals `1` when the
+seminorm is multiplicative with `‖1‖ = 1`.
 
 ## Main definitions
 
@@ -43,7 +44,7 @@ are units; consequently `κ.zeroExtend` is multiplicative on all of `ℤ_p`
   `TauCeti.WeightSpace.norm_zeroExtend_inclusion_zpow`: evaluation and norm of zero-extended
   algebraic weights.
 * `TauCeti.WeightSpace.zeroExtend_eq_zeroExtendClopen`: agreement with
-  `ContinuousMap.zeroExtendClopen` over a seminormed ring.
+  `ContinuousMap.zeroExtendClopen` over a topological semiring with continuous addition.
 * `TauCeti.WeightSpace.norm_zeroExtend`, `TauCeti.WeightSpace.norm_zeroExtend_eq_one`: supremum norm
   of `κ.zeroExtend`.
 
@@ -163,18 +164,24 @@ theorem zeroExtend_pow (κ : WeightSpace p R) {n : ℕ} (hn : n ≠ 0) :
 
 end CommMonoidWithZero
 
-section Seminormed
+section Semiring
 
-variable {R : Type*} [SeminormedRing R]
+variable {R : Type*} [Semiring R] [TopologicalSpace R] [ContinuousAdd R]
 
-/-- Over a seminormed ring, `WeightSpace.zeroExtend` agrees with `ContinuousMap.zeroExtendClopen`
-on `PadicInt.unitsClopen p`. -/
+/-- Over a topological semiring with continuous addition, `WeightSpace.zeroExtend` agrees with
+`ContinuousMap.zeroExtendClopen` on `PadicInt.unitsClopen p`. -/
 theorem zeroExtend_eq_zeroExtendClopen (S : Type*) [Semiring S] [Module S R]
     [ContinuousConstSMul S R] (κ : WeightSpace p R) :
     κ.zeroExtend = ContinuousMap.zeroExtendClopen S (PadicInt.unitsClopen p)
       ((κ.weightTest : C(ℤ_[p]ˣ, R)).comp
-        ((PadicInt.unitsHomeomorphIsUnit p).symm : C(PadicInt.unitsClopen p, ℤ_[p]ˣ))) := by
-  ext x; by_cases hx : x ∈ PadicInt.unitsClopen p <;> simp [zeroExtend, hx]
+        ((PadicInt.unitsHomeomorphIsUnit p).symm : C(PadicInt.unitsClopen p, ℤ_[p]ˣ))) :=
+  (ContinuousMap.zeroExtendClopen_apply _ _).symm
+
+end Semiring
+
+section Seminormed
+
+variable {R : Type*} [SeminormedRing R]
 
 /-- Zero-extension preserves the supremum norm of the underlying test character on `ℤ_pˣ`. -/
 theorem norm_zeroExtend (κ : WeightSpace p R) :

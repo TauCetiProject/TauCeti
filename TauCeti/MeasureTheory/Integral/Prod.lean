@@ -49,6 +49,10 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   to pass from bilinear to retarded estimates.
 * `TauCeti.integral_setIntegral_Iio_eq_setIntegral` writes the iterated integral
   `∫ ∫_{s < t} f(s, t) ds dt` as the integral of `f` over the region `{(s, t) | s < t}`.
+* `TauCeti.continuous_integral_of_hasCompactSupport_uncurry` and
+  `TauCeti.hasCompactSupport_integral_of_hasCompactSupport_uncurry`: integrating a continuous
+  compactly supported function of `(x, y)` in `y` gives a continuous compactly supported function
+  of `x`.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
@@ -340,5 +344,34 @@ theorem integral_setIntegral_Iio_eq_setIntegral {μ ν : Measure ℝ} [SFinite �
   dsimp only
   rw [← integral_indicator measurableSet_Iio]
   exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
+
+section CompactSupport
+
+variable [TopologicalSpace α] [TopologicalSpace β] {f : β → α → E}
+
+/-- Integrating a compactly supported function of `(x, y)` in `y` gives a compactly supported
+function of `x`. -/
+theorem hasCompactSupport_integral_of_hasCompactSupport_uncurry [R1Space β]
+    (hf : HasCompactSupport (Function.uncurry f)) : HasCompactSupport fun x ↦ ∫ y, f x y ∂μ := by
+  refine HasCompactSupport.intro (hf.image continuous_fst) fun x hx ↦ ?_
+  have h (y : α) : f x y = 0 :=
+    image_eq_zero_of_notMem_tsupport (f := Function.uncurry f) fun h ↦ hx ⟨(x, y), h, rfl⟩
+  simp [h]
+
+/-- **Parametric integrals of compactly supported functions are continuous.** Integrating a
+continuous compactly supported function of `(x, y)` in `y`, against a locally finite measure,
+gives a continuous function of `x`. -/
+theorem continuous_integral_of_hasCompactSupport_uncurry [OpensMeasurableSpace α]
+    [FirstCountableTopology β] [LocallyCompactSpace β] [SecondCountableTopologyEither α E]
+    [IsLocallyFiniteMeasure μ] (hf : Continuous (Function.uncurry f))
+    (hfc : HasCompactSupport (Function.uncurry f)) : Continuous fun x ↦ ∫ y, f x y ∂μ := by
+  -- Each slice vanishes off the compact projection of the support to the second factor.
+  have hset (x : β) : ∫ y in Prod.snd '' tsupport (Function.uncurry f), f x y ∂μ = ∫ y, f x y ∂μ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
+      image_eq_zero_of_notMem_tsupport (f := Function.uncurry f) fun h ↦ hy ⟨(x, y), h, rfl⟩
+  simp_rw [← hset]
+  exact continuous_parametric_integral_of_continuous hf (hfc.image continuous_snd)
+
+end CompactSupport
 
 end TauCeti

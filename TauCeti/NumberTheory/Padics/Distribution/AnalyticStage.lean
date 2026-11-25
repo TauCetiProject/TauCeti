@@ -913,7 +913,8 @@ omit hp in
 
 omit hp in
 /-- Evaluating `(levelZeroEquiv p S).symm c` at `i` projects onto the degree `i.2`. -/
-theorem levelZeroEquiv_symm_apply (c : C₀(ℕ, E)) (i : ZMod (p ^ 0) × ℕ) :
+-- Apply before `simp` normalizes the dependent index `p ^ 0` in the function coercion.
+@[simp↓] theorem levelZeroEquiv_symm_apply (c : C₀(ℕ, E)) (i : ZMod (p ^ 0) × ℕ) :
     (levelZeroEquiv p S).symm c i = c i.2 := by
   rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_symm,
     ZeroAtInftyContinuousMap.congrLeft_apply]; rfl
