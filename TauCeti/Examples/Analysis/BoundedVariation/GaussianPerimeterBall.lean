@@ -39,8 +39,9 @@ example : gaussianPerimeter (ball (0 : ℝ) 1) = ENNReal.ofReal (2 * gaussianPDF
   norm_num
 
 /-- In `ℝ²`, the unit disc has Gaussian perimeter `e^{−1/2}`. -/
-example : gaussianPerimeter (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) =
-    ENNReal.ofReal (Real.exp (-(1 / 2))) := by
+theorem gaussianPerimeter_ball_fin_two :
+    gaussianPerimeter (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) =
+      ENNReal.ofReal (Real.exp (-(1 / 2))) := by
   rw [gaussianPerimeter_ball one_pos, EuclideanSpace.volume_ball_fin_two, finrank_euclideanSpace,
     Fintype.card_fin]
   rw [← ENNReal.ofReal_natCast]
