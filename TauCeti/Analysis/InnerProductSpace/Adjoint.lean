@@ -66,7 +66,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
-  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
+  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`; sandwiched compositions obey
+  `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖` (`ContinuousLinearMap.norm_adjoint_comp_comp_le`).
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
@@ -289,6 +290,14 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   exact opNorm_comp_le _ _
 
 end RealAdjointBilinear
+
+/-- Operator-norm bound `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖`. -/
+theorem norm_adjoint_comp_comp_le {G H : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜 H] [CompleteSpace E] [CompleteSpace F]
+    (P : E →L[𝕜] F) (T : H →L[𝕜] F) (Q : G →L[𝕜] H) : ‖P† ∘L T ∘L Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖ := by
+  calc ‖P† ∘L T ∘L Q‖ ≤ ‖P†‖ * (‖T‖ * ‖Q‖) := (opNorm_comp_le _ _).trans <|
+        mul_le_mul_of_nonneg_left (opNorm_comp_le _ _) (norm_nonneg _)
+    _ = ‖P‖ * ‖T‖ * ‖Q‖ := by rw [adjoint.norm_map]; ring
 
 end ContinuousLinearMap
 
