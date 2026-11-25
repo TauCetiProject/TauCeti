@@ -240,7 +240,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : 
     rw [hsum (u z)]
     exact Finset.sum_congr rfl fun l _ => by rw [hz l]
   · intro z hz
-    refine (norm_iteratedFDeriv_sum_comp_left_le A fun l =>
+    refine (norm_iteratedFDeriv_sum_comp_left_le Finset.univ A fun l _ =>
       ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi)).trans ?_
     calc
       _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', ‖v l'‖) :=

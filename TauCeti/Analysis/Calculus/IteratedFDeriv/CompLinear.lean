@@ -42,8 +42,8 @@ norm at most its own norm (`ContinuousLinearMap.norm_iteratedFDeriv_le_norm`). I
 projections of a product have iterated derivatives of positive order of norm at most one
 (`TauCeti.norm_iteratedFDeriv_fst_le_one`, `TauCeti.norm_iteratedFDeriv_snd_le_one`).
 
-The `n`-th derivative of a finite sum `x ↦ ∑ₗ A l (g l x)` of postcompositions with continuous
-linear maps is bounded pointwise by `∑ₗ ‖A l‖ ‖Dⁿ g l x‖`
+The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded pointwise by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`
 (`TauCeti.norm_iteratedFDeriv_sum_comp_left_le`).
 -/
 
@@ -213,18 +213,17 @@ theorem norm_iteratedFDeriv_snd_le_one {k : ℕ} (hk : 1 ≤ k) (p : E × G) :
   rw [ContinuousLinearMap.coe_snd'] at h
   exact h.trans (ContinuousLinearMap.norm_snd_le 𝕜 E G)
 
-/-- The `n`-th derivative of a finite sum `x ↦ ∑ₗ A l (g l x)` of postcompositions with continuous
-linear maps is bounded at `x` by `∑ₗ ‖A l‖ ‖Dⁿ g l x‖`, when each `g l` is `Cⁿ` at `x`. -/
-theorem norm_iteratedFDeriv_sum_comp_left_le {ι X Y Z : Type*} [Fintype ι]
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {x : X}
-    {n : ℕ} (hg : ∀ l, ContDiffAt ℝ n (g l) x) :
-    ‖iteratedFDeriv ℝ n (fun x ↦ ∑ l, A l (g l x)) x‖ ≤
-      ∑ l, ‖A l‖ * ‖iteratedFDeriv ℝ n (g l) x‖ := by
-  have hc (l : ι) : ContDiffAt ℝ n (fun x ↦ A l (g l x)) x :=
-    (A l).contDiff.contDiffAt.comp x (hg l)
-  rw [iteratedFDeriv_fun_sum_apply fun l _ ↦ hc l]
+/-- The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded at `x` by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`, when each `g l` is `Cᵏ`
+at `x`. -/
+theorem norm_iteratedFDeriv_sum_comp_left_le {ι : Type*} (u : Finset ι) (A : ι → F →L[𝕜] G)
+    {g : ι → E → F} {x : E} {k : ℕ} (hg : ∀ l ∈ u, ContDiffAt 𝕜 k (g l) x) :
+    ‖iteratedFDeriv 𝕜 k (fun x ↦ ∑ l ∈ u, A l (g l x)) x‖ ≤
+      ∑ l ∈ u, ‖A l‖ * ‖iteratedFDeriv 𝕜 k (g l) x‖ := by
+  have hc (l : ι) (hl : l ∈ u) : ContDiffAt 𝕜 k (fun x ↦ A l (g l x)) x :=
+    (A l).contDiff.contDiffAt.comp x (hg l hl)
+  rw [iteratedFDeriv_fun_sum_apply hc]
   exact (norm_sum_le _ _).trans
-    (Finset.sum_le_sum fun l _ ↦ (A l).norm_iteratedFDeriv_comp_left (hg l) le_rfl)
+    (Finset.sum_le_sum fun l hl ↦ (A l).norm_iteratedFDeriv_comp_left (hg l hl) le_rfl)
 
 end TauCeti
