@@ -269,6 +269,7 @@ a smooth field on the whole space.** Let `a` be uniformly elliptic on a set `S` 
 `C ⊆ U` be compact. Then there is a field `a'` on the whole space, uniformly elliptic on `T` with
 the same constants, that agrees with `a` on an open `W` with `C ⊆ W ⊆ U`; its entries are smooth
 with Lipschitz first derivatives, and its bilinear forms are bounded and Lipschitz.
+It equals `λ I` off a compact set `K₀ ⊆ U`.
 
 As in `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter`, `C` need not lie in `S`:
 typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with `Ω ∩ U = T ∩ U`. One may take
@@ -284,15 +285,21 @@ theorem UniformlyEllipticOn.exists_contDiff_eqOn_inter [DecidableEq ι] {lam Lam
         (∀ i j, ContDiff ℝ ∞ fun x => a' x i j) ∧
         LipschitzWith K (fun x => matrixBilinearForm (a' x)) ∧
         (∀ i j, LipschitzWith K' fun x => fderiv ℝ (fun y => a' y i j) x) ∧
-        (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (W : Set (EuclideanSpace ℝ ι)) := by
+        (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (W : Set (EuclideanSpace ℝ ι)) ∧
+        ∃ K₀ : Set (EuclideanSpace ℝ ι), IsCompact K₀ ∧ K₀ ⊆ U ∧
+          EqOn a' (fun _ ↦ lam • (1 : Matrix ι ι ℝ)) K₀ᶜ := by
   classical
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
   obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
     exists_uniformlyEllipticOn_smul_add_one_sub_smul ha hTU hχr hχ1 hχs
   obtain ⟨K, K', M, hsm, hK, hK', hM⟩ :=
     exists_lipschitzWith_contDiff_smul_add_one_sub_smul hsmooth hχ hχc hχs (lam • 1)
-  exact ⟨_, K, K', M, W, hCW, hWU, hT, hsm, hK, hK', hM, fun x hx => by
-    simp only [hW1 x hx, one_smul, sub_self, zero_smul, add_zero]⟩
+  refine ⟨_, K, K', M, W, hCW, hWU, hT, hsm, hK, hK', hM, ?_,
+    tsupport χ, hχc.isCompact, hχs, ?_⟩
+  · intro x hx
+    simp only [hW1 x hx, one_smul, sub_self, zero_smul, add_zero]
+  · intro x hx
+    simp only [image_eq_zero_of_notMem_tsupport hx, zero_smul, zero_add, sub_zero, one_smul]
 
 /-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
 uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and
@@ -322,6 +329,69 @@ theorem UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn [DecidableEq ι]
       exact h.upper_bound hx η ξ
     · rw [piecewise_eq_of_notMem _ _ _ hx]
       exact hI.upper_bound (mem_univ x) η ξ
+
+section CompactPerturbation
+open scoped BigOperators
+variable {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
+local notation "E" => EuclideanSpace ℝ ι
+
+/-- A smooth matrix field constant off a compact set has bounded Lipschitz bilinear forms. -/
+theorem exists_lipschitzWith_and_norm_bound_of_eqOn_const (hK : IsCompact K)
+    (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) :
+    ∃ L : ℝ≥0, ∃ M : ℝ, LipschitzWith L (fun x ↦ matrixBilinearForm (a x)) ∧
+      ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M := by
+  let d (i j : ι) (x : E) := a x i j - A i j
+  have hc (i j : ι) : HasCompactSupport (d i j) := by
+    refine hK.of_isClosed_subset isClosed_closure (closure_minimal ?_ hK.isClosed)
+    intro x hx
+    by_contra h
+    exact hx (by simp [d, hconst h])
+  have hd (i j : ι) : ContDiff ℝ ∞ (d i j) := (hsm i j).sub contDiff_const
+  choose L hL using fun i j ↦ (hd i j).lipschitzWith_of_hasCompactSupport (hc i j) (by simp)
+  choose M hM using fun i j ↦ (hc i j).exists_bound_of_continuous (hd i j).continuous
+  have heq (i j : ι) : (fun x ↦ a x i j) = fun x ↦ d i j x + A i j :=
+    funext fun x ↦ (sub_add_cancel (a x i j) (A i j)).symm
+  have hlip (i j : ι) : LipschitzWith (L i j) (fun x ↦ a x i j) := by
+    rw [heq]
+    simpa using (hL i j).add (LipschitzWith.const (A i j))
+  refine ⟨∑ i, ∑ j, L i j, ∑ i, ∑ j, (M i j + |A i j|),
+    lipschitzWith_matrixBilinearForm_of_forall hlip, fun x ↦ ?_⟩
+  refine (norm_matrixBilinearForm_le_sum_abs (a x)).trans
+    (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [congrFun (heq i j) x]
+  exact (abs_add_le _ _).trans (add_le_add (hM i j x) le_rfl)
+
+end CompactPerturbation
+
+section CompactPatch
+variable {U : Opens (EuclideanSpace ℝ ι)} {lam : ℝ}
+local notation "E" => EuclideanSpace ℝ ι
+
+/-- A positive lower bound for a smooth coefficient field gives uniform ellipticity on
+a relatively compact chart patch; compactness supplies the upper bound. -/
+theorem exists_uniformlyEllipticOn_inter_of_isCompact_closure [DecidableEq ι] {W : Opens E}
+    (hW : IsCompact (closure (W : Set E))) (hWU : closure (W : Set E) ⊆ U)
+    (hlam : 0 < lam) (ha : ∀ x ∈ (Omega : Set E) ∩ U, ∀ v : E,
+      lam * ‖v‖ ^ 2 ≤ matrixBilinearForm (a x) v v)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) U) :
+    ∃ Lam, UniformlyEllipticOn ((Omega : Set E) ∩ W) a lam Lam := by
+  classical
+  choose C hC using fun i j ↦ hW.exists_bound_of_continuousOn
+    ((hsmooth i j).continuousOn.mono hWU)
+  let M := ∑ i, ∑ j, C i j
+  refine ⟨max lam M, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) ?_ ?_⟩
+  · intro x hx v
+    simpa only [matrixBilinearForm_self] using ha x ⟨hx.1, hWU (subset_closure hx.2)⟩ v
+  · intro x hx v w
+    have hB : ‖matrixBilinearForm (a x)‖ ≤ M :=
+      (norm_matrixBilinearForm_le_sum_abs _).trans (Finset.sum_le_sum fun i _ ↦
+        Finset.sum_le_sum fun j _ ↦ by
+          simpa only [Real.norm_eq_abs] using hC i j x (subset_closure hx.2))
+    simpa only [matrixBilinearForm_apply, Real.norm_eq_abs] using
+      (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
+        (hB.trans (le_max_right lam M)) (le_refl ‖v‖) (le_refl ‖w‖)
+
+end CompactPatch
 
 end PDE
 

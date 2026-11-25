@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
-public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
+public import TauCeti.Analysis.PDE.Regularity.Interior.Localization
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.Analysis.Calculus.FDeriv.Const
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
@@ -306,6 +307,70 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
+/-- Differentiate a principal weak equation while retaining the Sobolev order of its
+derivative. The energy density must be bounded, and multiplication by each of the two
+coefficient derivatives in the commutator must preserve `H^k`. These assumptions separate
+the equation argument from compact-domain or compact-perturbation multiplier estimates. -/
+theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_mul
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (k : ℕ)
+    (ha : ∀ i j, ContDiffOn ℝ 2 (fun x ↦ a x i j) Omega)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (F : Wkp mu Omega 2 (k + 1)) {u : W1p mu Omega 2}
+    (U : Wkp mu Omega 2 (k + 2)) (hU : Wkp.value (k + 2) U = W1p.value u)
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, Wkp.value (k + 1) F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (e : EuclideanSpace ℝ ι)
+    (hmul₁ : ∀ i j (w : Wkp mu Omega 2 k), ∃ v : Wkp mu Omega 2 k,
+      Wkp.value k v =ᵐ[mu.restrict Omega]
+        fun x ↦ fderiv ℝ (fun y ↦ a y i j) x e * Wkp.value k w x)
+    (hmul₂ : ∀ i j (w : Wkp mu Omega 2 k), ∃ v : Wkp mu Omega 2 k,
+      Wkp.value k v =ᵐ[mu.restrict Omega]
+        fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ a z i j) y e) x
+          (EuclideanSpace.basisFun ι ℝ i) * Wkp.value k w x) :
+    ∃ (d : Wkp mu Omega 2 (k + 1)) (G : Wkp mu Omega 2 k),
+      HasWeakLineDerivOn mu Omega (W1p.value u) (Wkp.value (k + 1) d) e ∧
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (Wkp.firstOrder k d) (v : W1p mu Omega 2) =
+        ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  let 𝔟 := EuclideanSpace.basisFun ι ℝ
+  choose D hD using fun j ↦ Wkp.exists_hasWeakLineDerivOn_value (k + 1) U (𝔟 j)
+  choose DD hDD using fun i j ↦ Wkp.exists_hasWeakLineDerivOn_value k (D j) (𝔟 i)
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value (k + 1) U e
+  obtain ⟨Fe, hFe⟩ := Wkp.exists_hasWeakLineDerivOn_value k F e
+  rw [hU] at hD hd
+  have hD₁ (j : ι) : HasWeakLineDerivOn mu Omega (W1p.value u)
+      (W1p.value (Wkp.firstOrder k (D j))) (𝔟 j) := by
+    simpa only [Wkp.value_firstOrder] using hD j
+  let C₁ (i j : ι) (x : EuclideanSpace ℝ ι) := fderiv ℝ (fun y ↦ a y i j) x e
+  let C₂ (i j : ι) (x : EuclideanSpace ℝ ι) := fderiv ℝ (C₁ i j) x (𝔟 i)
+  choose M₁ hM₁ using fun i j ↦ hmul₂ i j (Wkp.lowerOrder k (D j))
+  choose M₂ hM₂ using fun i j ↦ hmul₁ i j (DD i j)
+  refine ⟨d, Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j), hd, ?_⟩
+  have hut := (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff _ u).1 hu
+  refine (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff _ _).2 fun φ ↦ ?_
+  have hd₁ : HasWeakLineDerivOn mu Omega (W1p.value u)
+      (W1p.value (Wkp.firstOrder k d)) e := by
+    simpa only [Wkp.value_firstOrder] using hd
+  have heq := energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
+    (d := Wkp.firstOrder k d) (D := fun j ↦ Wkp.firstOrder k (D j)) ha hut hd₁ hD₁ hFe φ
+  simp only [Pi.zero_def] at heq
+  rw [heq]
+  have hv₁ (i j : ι) : ∀ᵐ x ∂mu.restrict Omega, Wkp.value k (M₁ i j) x =
+      C₂ i j x * ⟪W1p.gradient u x, 𝔟 j⟫_ℝ := by
+    filter_upwards [hM₁ i j, (hD j).ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (𝔟 j))]
+      with x h₁ h₂
+    rw [h₁, ← Wkp.value_succ, h₂, innerSL_apply_apply]
+  have hv₂ (i j : ι) : ∀ᵐ x ∂mu.restrict Omega, Wkp.value k (M₂ i j) x =
+      C₁ i j x * ⟪W1p.gradient (Wkp.firstOrder k (D j)) x, 𝔟 i⟫_ℝ := by
+    have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder k (D j))).hasWeakLineDerivOn (𝔟 i)
+    rw [Wkp.value_firstOrder] at h
+    filter_upwards [hM₂ i j, (hDD i j).ae_eq h] with x h₁ h₂
+    rw [h₁, h₂, innerSL_apply_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [Wkp.ae_value_add_sum_eq Fe Finset.univ Finset.univ M₁ M₂
+    ((ae_all_iff.2 fun i ↦ ae_all_iff.2 (hv₁ i)).mono fun x h i _ j _ ↦ h i j)
+    ((ae_all_iff.2 fun i ↦ ae_all_iff.2 (hv₂ i)).mono fun x h i _ j _ ↦ h i j)] with x hx
+  rw [hx]
+
 /-- **The derivative of a weak solution with `C^{k+2}` coefficients.** Let the entries of `a` be
 of class `C^{k+2}` on an open set `U`, let `Ω` have compact closure contained in `U`, let
 `F ∈ W^{k+1,2}(Ω)`, and let `u ∈ H^{k+2}(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω`,
@@ -334,59 +399,23 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
       ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 d (v : W1p mu Omega 2) =
         ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   obtain ⟨w, hw⟩ := hw
-  set b := EuclideanSpace.basisFun ι ℝ
-  have haΩ : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega := fun i j =>
+  have haΩ : ∀ i j, ContDiffOn ℝ 2 (fun x ↦ a x i j) Omega := fun i j ↦
     ((ha i j).mono (subset_closure.trans hΩU)).of_le (by simp)
-  -- The energy integrand of `a` is bounded on `Ω`, so the equation may be tested on test functions.
   have hcoeff := memLp_energyIntegrand_of_continuousOn (mu := mu) (b := 0) (c := 0) hΩ
-    ((continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).continuousOn).mono hΩU)
+    ((continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ (ha i j).continuousOn).mono hΩU)
     continuousOn_const continuousOn_const
-  -- The first and second weak derivatives of `u`, from `u ∈ H^{k+2}(Ω)`.
-  choose D hD using fun j => Wkp.exists_hasWeakLineDerivOn_value (k + 1) w (b j)
-  choose E hE using fun i j => Wkp.exists_hasWeakLineDerivOn_value k (D j) (b i)
-  obtain ⟨De, hDe⟩ := Wkp.exists_hasWeakLineDerivOn_value (k + 1) w e
-  obtain ⟨Fe, hFe⟩ := Wkp.exists_hasWeakLineDerivOn_value k F e
-  rw [hw] at hD hDe
-  have hD' : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u)
-      (W1p.value (Wkp.firstOrder k (D j))) (b j) := fun j => by
-    rw [Wkp.value_firstOrder]; exact hD j
-  -- The commutator terms `∂ᵢ∂ₑaⁱʲ ∂ⱼu` and `∂ₑaⁱʲ ∂ᵢ∂ⱼu` lie in `W^{k,2}(Ω)`.
   have hda : ∀ {n : WithTop ℕ∞} (f : EuclideanSpace ℝ ι → ℝ), ContDiffOn ℝ (n + 1) f U → ∀ v,
-      ContDiffOn ℝ n (fun x => fderiv ℝ f x v) U := fun f hf v =>
+      ContDiffOn ℝ n (fun x ↦ fderiv ℝ f x v) U := fun f hf v ↦
     (hf.fderiv_of_isOpen hU le_rfl).clm_apply contDiffOn_const
-  have ha' : ∀ i j, ContDiffOn ℝ (k + 1 + 1) (fun x => a x i j) U := fun i j => by
+  have ha' : ∀ i j, ContDiffOn ℝ (k + 1 + 1) (fun x ↦ a x i j) U := fun i j ↦ by
     simpa only [add_assoc, one_add_one_eq_two] using ha i j
-  choose M₁ hM₁ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ
-    hΩU k (hda _ (hda _ (ha' i j) e) (b i)) (Wkp.lowerOrder k (D j))
-  choose M₂ hM₂ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ
-    hΩU k ((hda _ (ha' i j) e).of_le le_self_add) (E i j)
-  have hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (Wkp.firstOrder k De)) e := by
-    rw [Wkp.value_firstOrder]; exact hDe
-  refine ⟨Wkp.firstOrder k De, Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j), hd, ?_⟩
-  -- The differentiated equation, tested on test functions.
-  have hut := (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff _ u).1 hu
-  refine (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff _ _).2 fun φ => ?_
-  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn haΩ hut hd hD' hFe φ]
-  refine integral_congr_ae ?_
-  -- Identify the commutator terms with the values of `M₁` and `M₂`.
-  have hu₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₁ i j) x =
-      fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y e) x (b i) *
-        ⟪W1p.gradient u x, b j⟫_ℝ := by
-    refine Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => ?_
-    filter_upwards [hM₁ i j, (hD j).ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j))]
-      with x h₁ h₂
-    rw [h₁, ← Wkp.value_succ, h₂, innerSL_apply_apply]
-  have hu₂ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₂ i j) x =
-      fderiv ℝ (fun y => a y i j) x e *
-        ⟪W1p.gradient (Wkp.firstOrder k (D j)) x, b i⟫_ℝ := by
-    refine Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => ?_
-    have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder k (D j))).hasWeakLineDerivOn (b i)
-    rw [Wkp.value_firstOrder] at h
-    filter_upwards [hM₂ i j, (hE i j).ae_eq h] with x h₁ h₂
-    rw [h₁, h₂, innerSL_apply_apply]
-  filter_upwards [Wkp.ae_value_add_sum_eq Fe Finset.univ Finset.univ M₁ M₂
-    (hu₁.mono fun x h i _ j _ ↦ h i j) (hu₂.mono fun x h i _ j _ ↦ h i j)] with x hx
-  rw [hx]
+  obtain ⟨d, G, hd, hG⟩ :=
+    exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_mul k haΩ hcoeff F w hw hu e
+      (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ hΩU k
+        ((hda _ (ha' i j) e).of_le le_self_add) v)
+      (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ hΩU k
+        (hda _ (hda _ (ha' i j) e) (EuclideanSpace.basisFun ι ℝ i)) v)
+  exact ⟨Wkp.firstOrder k d, G, by simpa only [Wkp.value_firstOrder] using hd, hG⟩
 
 /-! ### Moving differentiable lower-order terms to the right-hand side -/
 
@@ -711,6 +740,78 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL {lam : �
     |>.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn k (fun _ _ => contDiffOn_const)
       hb hc hV hVΩ
 
+section CompactPerturbationMultiplier
+variable {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
+  {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+local notation "E" => EuclideanSpace ℝ ι
+
+/-- Multiplication by a bilinear component of a smooth matrix field constant off a compact
+set preserves every Sobolev order. -/
+theorem exists_value_ae_eq_mul_coefficient (hK : IsCompact K)
+    (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j))
+    (k : ℕ) (p q : E) (w : Wkp mu Omega 2 k) :
+    ∃ W : Wkp mu Omega 2 k, Wkp.value k W =ᵐ[mu.restrict Omega]
+      fun x ↦ matrixBilinearForm (a x) p q * Wkp.value k w x :=
+  Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k isOpen_univ (subset_univ _) hK
+    (contDiff_matrixBilinearForm_apply hsm contDiff_const contDiff_const).contDiffOn
+    (fun _ hx ↦ congrArg (fun B ↦ matrixBilinearForm B p q) (hconst hx.2)) w
+
+end CompactPerturbationMultiplier
+
 end PDE
 
 end TauCeti
+
+section DifferentiatedEquation
+
+open Filter MeasureTheory Set TopologicalSpace
+open scoped BigOperators ContDiff Distributions ENNReal InnerProductSpace NNReal Topology
+
+namespace TauCeti.PDE
+
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+  {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+  {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+
+local notation "E" => EuclideanSpace ℝ ι
+local notation "𝔟" => EuclideanSpace.basisFun ι ℝ
+
+/-- The differentiated principal equation has `H^k` forcing even on an unbounded domain
+if the smooth coefficient field is constant off a compact set. -/
+theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_of_eqOn_const (hK : IsCompact K)
+    (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j))
+    (k : ℕ) (F : Wkp mu Omega 2 (k + 1)) {u : W1p mu Omega 2}
+    (U : Wkp mu Omega 2 (k + 2)) (hU : Wkp.value (k + 2) U = W1p.value u)
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, Wkp.value (k + 1) F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (e : E) :
+    ∃ (d : Wkp mu Omega 2 (k + 1)) (G : Wkp mu Omega 2 k),
+      HasWeakLineDerivOn mu Omega (W1p.value u) (Wkp.value (k + 1) d) e ∧
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (Wkp.firstOrder k d) (v : W1p mu Omega 2) =
+        ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  obtain ⟨_, _, hL, hM⟩ := exists_lipschitzWith_and_norm_bound_of_eqOn_const hK hconst hsm
+  have hcoeff := memLp_energyIntegrand_of_continuous (mu := mu) hM hL.continuous Omega
+  let C₁ (i j : ι) (x : E) := fderiv ℝ (fun y ↦ a y i j) x e
+  let C₂ (i j : ι) (x : E) := fderiv ℝ (C₁ i j) x (𝔟 i)
+  have hs₁ (i j : ι) : ContDiff ℝ ∞ (C₁ i j) :=
+    ((hsm i j).fderiv_right (by simp)).clm_apply contDiff_const
+  have hs₂ (i j : ι) : ContDiff ℝ ∞ (C₂ i j) :=
+    ((hs₁ i j).fderiv_right (by simp)).clm_apply contDiff_const
+  have hc (i j : ι) : EqOn (fun x ↦ a x i j) (fun _ ↦ A i j) Kᶜ :=
+    fun _ hx ↦ congrArg (fun B ↦ B i j) (hconst hx)
+  have hc₁ (i j : ι) : EqOn (C₁ i j) (fun _ ↦ 0) Kᶜ := fun x hx ↦ by
+    simp [C₁, fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl (hc i j) hx]
+  have hc₂ (i j : ι) : EqOn (C₂ i j) (fun _ ↦ 0) Kᶜ := fun x hx ↦ by
+    simp [C₂, fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl (hc₁ i j) hx]
+  exact exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_mul k
+    (fun i j ↦ (hsm i j).contDiffOn.of_le (by simp)) hcoeff F U hU hu e
+    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k
+      isOpen_univ (subset_univ _) hK (hs₁ i j).contDiffOn
+      (fun x hx ↦ hc₁ i j hx.2) v)
+    (fun i j v ↦ Wkp.exists_value_ae_eq_mul_of_eqOn_compl_isCompact k
+      isOpen_univ (subset_univ _) hK (hs₂ i j).contDiffOn
+      (fun x hx ↦ hc₂ i j hx.2) v)
+
+end TauCeti.PDE
+
+end DifferentiatedEquation

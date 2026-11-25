@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
+public import TauCeti.Analysis.PDE.Regularity.Interior.Localization
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
 
@@ -227,53 +227,6 @@ section ThirdOrder
 
 variable {F u : W1p mu Omega 2}
 
-omit [DecidableEq ι] in
-/-- **The localized equation on the whole flat domain.** Let `Ω ⊆ H` and let `u ∈ H²(Ω)` solve
-`-div(a ∇u) = F` in `Ω` with `F ∈ H¹(Ω)`, for a bounded Lipschitz field `a` with smooth entries.
-Let `ψ` be a smooth cutoff with `tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`. Then `ψ u`, extended by
-zero, lies in `H¹₀(H)` and solves `-div(a ∇w) = G` in `H` with `G ∈ H¹(H)`. -/
-private theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {a' : EuclideanSpace ℝ ι →
-    Matrix ι ι ℝ} {M : ℝ} (hM : ∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a' x))
-    (hsm : ∀ i j, ContDiff ℝ ∞ fun x => a' x i j) (hΩH : Omega ≤ H) {F : W1p mu Omega 2}
-    {U : Wkp mu Omega 2 2}
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a' 0 0 (Wkp.lowerOrder 1 U) (v : W1p mu Omega 2) =
-      ∫ x in Omega, W1p.value F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {N : ℝ} (hN : 0 ≤ N)
-    (hψN : ∀ x ∈ Omega, |ψ x| ≤ N) (hgradN : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ N)
-    (hmem : W1p.contDiffSMul ψ hψ hN hψN hgradN (Wkp.lowerOrder 1 U) ∈
-      w1p0Submodule mu Omega 2) :
-    ∃ w : W1p0 mu H 2, ∃ G : W1p mu H 2, IsWeakSolutionDirichlet a' 0 0 (W1p.value G) w ∧
-      ∀ᵐ x ∂mu.restrict H, W1p.value (w : W1p mu H 2) x =
-        (Omega : Set (EuclideanSpace ℝ ι)).indicator
-          (fun y => ψ y * W1p.value (Wkp.lowerOrder 1 U) y) x := by
-  obtain ⟨w, g, hw, hg, hwv, -⟩ :=
-    exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem hM hK hΩH hu hψ hψc hts hN
-      hψN hgradN hmem
-  -- The forcing is in `H¹(Ω)`, vanishes off `tsupport ψ` and so extends by zero to `H¹(H)`.
-  obtain ⟨h, hh⟩ := exists_value_ae_eq_localizedForcing hsm hψ hψc F U
-  have hh0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value h x = 0 := by
-    filter_upwards [hh] with x hx hxψ
-    rw [hx, localizedForcing_def a' ψ _ (Wkp.lowerOrder 1 U : W1p mu Omega 2) x,
-      image_eq_zero_of_notMem_tsupport hxψ, gradient_of_notMem_tsupport hxψ,
-      divMatrixGradient_eq_zero_of_notMem_tsupport hxψ]
-    simp
-  have h1 : Wkp.value (p := 2) 1 h = W1p.value h := Wkp.value_one h
-  obtain ⟨G, hG⟩ := Wkp.exists_value_ae_eq_indicator_of_isClosed (V := H) (p := 2)
-    (isClosed_tsupport ψ) (fun x hx => hts ⟨hx.2, hx.1⟩) 1 h (by simpa only [h1] using hh0)
-  have hG1 : Wkp.value (p := 2) 1 G = W1p.value G := Wkp.value_one G
-  rw [h1, hG1] at hG
-  refine ⟨w, G, ?_, hwv⟩
-  convert hw using 1
-  refine Lp.ext ?_
-  filter_upwards [hG, hg, ae_restrict_of_ae ((ae_restrict_iff' Omega.isOpen.measurableSet).1 hh)]
-    with x h1 h2 h3
-  rw [h1, h2]
-  by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-  · rw [indicator_of_mem hx, indicator_of_mem hx, h3 hx]
-  · rw [indicator_of_notMem hx, indicator_of_notMem hx]
-
 /-- **Local `H³` regularity near a flat part of the boundary, for a smooth field on the whole
 space.** The case of `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo`
 in which the coefficient field is defined on the whole space, uniformly elliptic on `H`, with
@@ -330,7 +283,12 @@ private theorem exists_value_eq_value_restrictL_of_contDiff (hν : ν ≠ 0)
   have hts : tsupport ψ ∩ H ⊆ (Ω₁ : Set (EuclideanSpace ℝ ι)) := fun x hx =>
     ⟨(hΩH x (hWU' (hψs hx.1))).2 hx.2, hψs hx.1⟩
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hsm
-    hΩ₁H hu₁ hψ hψc hts hN _ _ (hψu ▸ v.property)
+    hΩ₁H 1 (W1p.restrictL hΩ₁ F) U2
+      (by simpa only [Wkp.firstOrder_one,
+        Wkp.value_one (W1p.restrictL hΩ₁ F)] using hu₁) hψ hψc hts hN _ _
+      (by simpa only [Wkp.firstOrder_one] using (hψu ▸ v.property))
+  rw [Wkp.value_one] at hw
+  rw [Wkp.firstOrder_one] at hwv
   obtain ⟨W3, hW3⟩ := ha.exists_value_eq_value_of_mapsTo hν hHc hH hK.lipschitzOnWith
     (fun i j => (hsm i j).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
   -- On `Ω ∩ V`, where `ψ = 1`, the function `ψ u` is `u`.
@@ -378,7 +336,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
     exists_open_between_and_isCompact_closure hV U.isOpen hVU
   set U₂ : Opens (EuclideanSpace ℝ ι) := ⟨U₂', hU₂o⟩
   have hU₂U' : (U₂ : Set (EuclideanSpace ℝ ι)) ⊆ U := subset_closure.trans hU₂U
-  obtain ⟨a', K, K', M, W₀, hU₂W₀, -, ha', hsm', hK, hK', hM, haa'⟩ :=
+  obtain ⟨a', K, K', M, W₀, hU₂W₀, -, ha', hsm', hK, hK', hM, haa', -⟩ :=
     ha.exists_contDiff_eqOn_inter (T := H) hsmooth (hΩU ▸ subset_rfl) hU₂c hU₂U
   -- On `Ω₂ = Ω ∩ U₂`, the restriction of `u` solves the equation with `a'`.
   set Ω₂ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ U₂

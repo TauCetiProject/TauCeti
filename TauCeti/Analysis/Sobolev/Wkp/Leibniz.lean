@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
@@ -407,3 +408,48 @@ theorem exists_value_ae_eq_mul_of_hasCompactSupport (k : ℕ) {psi : E → ℝ}
 end Wkp
 
 end TauCeti
+
+section Multipliers
+
+open Filter MeasureTheory Set TopologicalSpace
+open scoped ContDiff ENNReal
+
+namespace TauCeti.Wkp
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {U K : Set E}
+
+/-- Multiplication by a smooth coefficient preserves (W^{k,p}(Ω)) if the coefficient
+is smooth on an open neighbourhood of `closure Ω` and constant off a compact set there. -/
+theorem exists_value_ae_eq_mul_of_eqOn_compl_isCompact (k : ℕ)
+    {ψ : E → ℝ} {c : ℝ} (hU : IsOpen U) (hΩU : closure (Omega : Set E) ⊆ U)
+    (hK : IsCompact K) (hψ : ContDiffOn ℝ ∞ ψ U)
+    (hψc : EqOn ψ (fun _ ↦ c) (U \ K)) (u : Wkp mu Omega p k) :
+    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x ↦ ψ x * value k u x := by
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχU⟩ :=
+    (hK.inter_right isClosed_closure).exists_contDiff_cutoff hU
+      (fun _ hx ↦ hΩU hx.2)
+  let ψ₀ : E → ℝ := fun x ↦ χ x * (ψ x - c)
+  have hψ₀ : ContDiff ℝ ∞ ψ₀ :=
+    (hψ.sub contDiffOn_const).contDiff_smul_of_tsupport_subset hU hχ.contDiffOn hχU
+  have hψ₀c : HasCompactSupport ψ₀ :=
+    hχc.mul_right
+  obtain ⟨v, hv⟩ := exists_value_ae_eq_mul_of_hasCompactSupport k hψ₀ hψ₀c u
+  refine ⟨v + c • u, ?_⟩
+  filter_upwards [value_add_ae k v (c • u), value_smul_ae k c u, hv,
+    ae_restrict_mem Omega.isOpen.measurableSet] with x h₁ h₂ h₃ hx
+  have h : ψ₀ x = ψ x - c := by
+    dsimp only [ψ₀]
+    by_cases hxK : x ∈ K
+    · have hχx : χ x = 1 := interior_subset (hχ1 ⟨hxK, subset_closure hx⟩)
+      rw [hχx, one_mul]
+    · have hψx : ψ x = c := hψc ⟨hΩU (subset_closure hx), hxK⟩
+      rw [hψx, sub_self, mul_zero]
+  rw [h₁, Pi.add_apply, h₂, Pi.smul_apply, h₃, h, smul_eq_mul]
+  ring
+
+end TauCeti.Wkp
+
+end Multipliers
