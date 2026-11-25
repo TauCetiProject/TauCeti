@@ -146,14 +146,14 @@ example :
 
 section Three
 
-/-! ### Checks in dimension three (§1.3) -/
+/-! ### Checks in dimension three -/
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [Fact (finrank ℝ F = 3)] (f : OrthonormalBasis (Fin 3) ℝ F)
 
 omit [Fact (finrank ℝ F = 3)] in
 /-- The singular values of `diag(d₀, d₁, d₂)` with `d₀ ≥ d₁ ≥ d₂ ≥ 0` are `d₀, d₁, d₂`. -/
-theorem singularValues_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂) (h₁₂ : d₂ ≤ d₁)
+theorem singularValues_toLin_diagonal_fin_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂) (h₁₂ : d₂ ≤ d₁)
     (h₀₁ : d₁ ≤ d₀) :
     (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 0 = d₀ ∧
       (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 1 = d₁ ∧
@@ -170,8 +170,8 @@ theorem singularValues_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂)
 
 /-- The outer and inner distortion of `diag(d₀, d₁, d₂)` with `d₀ ≥ d₁ ≥ d₂ > 0`:
 `q_O = d₀³ / (d₀ d₁ d₂)` and `q_I = d₀ d₁ d₂ / d₂³`. -/
-theorem distortion_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂) (h₁₂ : d₂ ≤ d₁)
-    (h₀₁ : d₁ ≤ d₀) :
+theorem outerDistortion_innerDistortion_toLin_diagonal_fin_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂)
+    (h₁₂ : d₂ ≤ d₁) (h₀₁ : d₁ ≤ d₀) :
     f.toBasis.orientation.outerDistortion f.toBasis.orientation
         (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])) =
         ENNReal.ofReal (d₀ ^ 3 / (d₀ * d₁ * d₂)) ∧
@@ -184,7 +184,7 @@ theorem distortion_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂) (h₁
     have : 0 < d₁ := h₂.trans_le h₁₂
     have : 0 < d₀ := this.trans_le h₀₁
     positivity
-  obtain ⟨h0, -, h2⟩ := singularValues_diagonal_three f h₂.le h₁₂ h₀₁
+  obtain ⟨h0, -, h2⟩ := singularValues_toLin_diagonal_fin_three f h₂.le h₁₂ h₀₁
   constructor
   · rw [Orientation.outerDistortion_of_pos _ _ (by rwa [hJ]), hJ,
       norm_toContinuousLinearMap_eq_singularValues_zero, h0]
@@ -193,7 +193,7 @@ theorem distortion_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂) (h₁
     exact congrArg (fun x ↦ d₀ * d₁ * d₂ / x ^ 3) h2
 
 /-- `diag(2, 1, 1)` has `q_O = 8 / 2 = 4` and `q_I = 2 / 1 = 2`, so `q_O = q_I²`: the case
-`σ₂ = σ₃` of equality in `q_O ≤ q_I²`. -/
+`σ₁ = σ₂` of equality in `q_O ≤ q_I²` (singular values indexed from `0`). -/
 example :
     f.toBasis.orientation.outerDistortion f.toBasis.orientation
         (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) = 4 ∧
@@ -203,13 +203,13 @@ example :
           (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) =
         ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
           (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) ^ 2) := by
-  obtain ⟨hO, hI⟩ := distortion_diagonal_three f (d₀ := 2) (d₁ := 1) (d₂ := 1) one_pos le_rfl
-    one_le_two
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 2) (d₁ := 1) (d₂ := 1) one_pos le_rfl one_le_two
   rw [hO, hI]
   norm_num
 
 /-- `diag(1, 1, 1/2)` has `q_O = 1 / (1/2) = 2` and `q_I = (1/2) / (1/8) = 4`, so `q_I = q_O²`:
-the case `σ₁ = σ₂` of equality in `q_I ≤ q_O²`. -/
+the case `σ₀ = σ₁` of equality in `q_I ≤ q_O²` (singular values indexed from `0`). -/
 example :
     f.toBasis.orientation.outerDistortion f.toBasis.orientation
         (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2])) = 2 ∧
@@ -219,8 +219,8 @@ example :
           (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2]))) =
         f.toBasis.orientation.outerDistortion f.toBasis.orientation
           (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2])) ^ 2 := by
-  obtain ⟨hO, hI⟩ := distortion_diagonal_three f (d₀ := 1) (d₁ := 1) (d₂ := 1 / 2)
-    (by norm_num) (by norm_num) le_rfl
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 1) (d₁ := 1) (d₂ := 1 / 2) (by norm_num) (by norm_num) le_rfl
   rw [hO, hI, ← ENNReal.ofReal_pow (by norm_num)]
   norm_num
 
@@ -239,8 +239,8 @@ example :
           (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) <
         ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
           (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) ^ 2) := by
-  obtain ⟨hO, hI⟩ := distortion_diagonal_three f (d₀ := 3) (d₁ := 2) (d₂ := 1) one_pos
-    one_le_two (by norm_num)
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 3) (d₁ := 2) (d₂ := 1) one_pos one_le_two (by norm_num)
   have hO' : ENNReal.ofReal ((3 : ℝ) ^ 3 / (3 * 2 * 1)) = ENNReal.ofReal (9 / 2) := by norm_num
   rw [hO, hI, hO', ← ENNReal.ofReal_pow (by norm_num)]
   refine ⟨rfl, by norm_num, ?_, ?_⟩ <;>
