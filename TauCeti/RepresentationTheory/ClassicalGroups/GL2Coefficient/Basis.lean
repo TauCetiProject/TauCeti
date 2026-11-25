@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Sym.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
 
@@ -18,7 +17,7 @@ For integers `a ≥ b` the coefficient `V_(a,b) = Sym^{a-b}(Std) ⊗ det^b` of `
 (`TauCeti.gl2CoefficientBasis k a b`). The monomial `x^i y^{a-b-i} ⊗ 1` is a weight vector of
 weight `(b + i, a - i)`: the diagonal matrix `diag(t₁, t₂)` scales it by `t₁^{b+i} t₂^{a-i}`.
 When the weight characters of `k` separate weights (for instance over an infinite field), the
-weight spaces of `V_(a,b)` are exactly the lines through the monomials.
+weight space of weight `(b + i, a - i)` is the line through `x^i y^{a-b-i} ⊗ 1`.
 
 ## Main definitions
 
@@ -29,7 +28,7 @@ weight spaces of `V_(a,b)` are exactly the lines through the monomials.
 
 * `TauCeti.gl2CoefficientBasis_apply`: the basis vector `i` is `x^i y^{a-b-i} ⊗ 1`.
 * `TauCeti.gl2CoefficientBasis_mem_weightSpace`: it has weight `(b + i, a - i)`.
-* `TauCeti.gl2CoefficientRep_diagGL_gl2CoefficientBasis`: `diag(t₁, t₂)` acts on it by
+* `TauCeti.gl2CoefficientRep_diagGL_apply_basis`: `diag(t₁, t₂)` acts on it by
   `t₁^{b+i} t₂^{a-i}`.
 * `TauCeti.weightSpace_gl2CoefficientRep_eq_span`: the weight space of weight `(b + i, a - i)` is
   the line through it, when weights are separated by their characters.
@@ -56,17 +55,11 @@ def gl2CoefficientBasis : Basis (Fin ((a - b).toNat + 1)) k (GL2CoefficientSpace
 variable {k a b}
 
 /-- The monomial basis vector `i` is `x^i y^{a-b-i} ⊗ 1`. -/
+@[simp]
 theorem gl2CoefficientBasis_apply (i : Fin ((a - b).toNat + 1)) :
     gl2CoefficientBasis k a b i =
       (Pi.basisFun k (Fin 2)).symmetricPower (a - b).toNat ((symFinTwoEquiv _).symm i) ⊗ₜ 1 := by
   simp [gl2CoefficientBasis]
-
-/-- The exponents of the monomial `x^i y^{d-i}`: `i` copies of `0` and `d - i` copies of `1`. -/
-theorem weightOfMultiset_symFinTwoEquiv_symm (d : ℕ) (i : Fin (d + 1)) :
-    weightOfMultiset (((symFinTwoEquiv d).symm i : Sym (Fin 2) d) : Multiset (Fin 2)) =
-      ![(i : ℤ), ((d - i : ℕ) : ℤ)] := by
-  ext j
-  fin_cases j <;> simp [weightOfMultiset_apply, Multiset.count_replicate]
 
 /-- **The monomial `x^i y^{a-b-i} ⊗ 1` has weight `(b + i, a - i)`.** -/
 theorem gl2CoefficientBasis_mem_weightSpace (hab : b ≤ a) (i : Fin ((a - b).toNat + 1)) :
@@ -86,18 +79,18 @@ theorem gl2CoefficientBasis_mem_weightSpace (hab : b ≤ a) (i : Fin ((a - b).to
   exact hw
 
 /-- **The diagonal matrix `diag(t₁, t₂)` acts on `x^i y^{a-b-i} ⊗ 1` by `t₁^{b+i} t₂^{a-i}`.** -/
-theorem gl2CoefficientRep_diagGL_gl2CoefficientBasis (hab : b ≤ a) (t : Fin 2 → kˣ)
+theorem gl2CoefficientRep_diagGL_apply_basis (hab : b ≤ a) (t : Fin 2 → kˣ)
     (i : Fin ((a - b).toNat + 1)) :
     gl2CoefficientRep k a b (diagGL t) (gl2CoefficientBasis k a b i : GL2CoefficientSpace k a b) =
       ((t 0 ^ (b + i) * t 1 ^ (a - i) : kˣ) : k) • gl2CoefficientBasis k a b i := by
   rw [apply_of_mem_weightSpace (W := GL2CoefficientSpace k a b)
     (gl2CoefficientBasis_mem_weightSpace hab i)]
   rw [weightChar_apply, torusCharacter_def, Fin.prod_univ_two]
-  rfl
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
 
-/-- **The weight spaces of `V_(a,b)` are the lines through the monomials**: the weight space of
-weight `(b + i, a - i)` is spanned by `x^i y^{a-b-i} ⊗ 1`, when the weight characters of `k`
-separate weights (for instance over an infinite field, `TauCeti.weightChar_injective`). -/
+/-- **The weight space of weight `(b + i, a - i)` is the line through `x^i y^{a-b-i} ⊗ 1`**,
+when the weight characters of `k` separate weights (for instance over an infinite field,
+`TauCeti.weightChar_injective`). -/
 theorem weightSpace_gl2CoefficientRep_eq_span [IsCancelMulZero k]
     (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a)
     (i : Fin ((a - b).toNat + 1)) :
