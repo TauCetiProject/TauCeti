@@ -23,14 +23,13 @@ neighbourhood of `x`, and, for differentiability within a set `s`, over `s` at p
 density one of `s`. Hence for a Lipschitz `φ` this holds at almost every point, by Rademacher's
 theorem (`LipschitzWith.ae_approximateTangentPlane_range_graph_eq`), and for a differentiable `φ`,
 for instance a `C¹` one, at every point
-(`Differentiable.approximateTangentPlane_range_graph_eq`).
+(`DifferentiableAt.approximateTangentPlane_range_graph_eq`).
 
 The graph parametrization is `1`-antilipschitz (`TauCeti.antilipschitzWith_graph`) and its
 derivative is the injective linear graph `ContinuousLinearMap.graphL`, so this is
 `HasFDerivWithinAt.approximateTangentPlane_image_eq_range`. For `F = ℝ` and the normal graph
 `x ↦ (φ x, x)` the corresponding statements are in
-`TauCeti.Geometry.MeasureTheory.Rectifiable.Graph`.
-This is the approximate tangent clause of GeometricMeasureTheory §2.2.
+`TauCeti.Geometry.MeasureTheory.Rectifiable.Graph.Basic`.
 
 ## References
 
@@ -41,17 +40,6 @@ public section
 
 open Filter Metric MeasureTheory Set Module TauCeti
 open scoped Topology ENNReal
-
-namespace TauCeti
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
-
-/-- The graph parametrization `x ↦ (x, φ x)` into the `L²` product is `1`-antilipschitz. -/
-theorem antilipschitzWith_graph (φ : E → F) :
-    AntilipschitzWith 1 (fun x => WithLp.toLp 2 (x, φ x)) := fun x y => by
-  simpa using WithLp.edist_fst_le (WithLp.toLp 2 (x, φ x)) (WithLp.toLp 2 (y, φ y))
-
-end TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -90,6 +78,14 @@ namespace HasFDerivAt
 variable (hφ : HasFDerivAt φ A x)
 include hφ
 
+/-- Over a neighbourhood `s` of a point of differentiability `x`, the only approximate tangent
+`(dim E)`-plane of the graph of `φ` at `(x, φ x)` is the graph of the derivative. -/
+theorem isApproximateTangentPlane_graph_image_iff (hs : s ∈ 𝓝 x) :
+    IsApproximateTangentPlane (finrank ℝ E) ((fun y => WithLp.toLp 2 (y, φ y)) '' s)
+        (WithLp.toLp 2 (x, φ x)) Q ↔ Q = LinearMap.range A.graphL.toLinearMap :=
+  hφ.hasFDerivWithinAt.isApproximateTangentPlane_graph_image_iff (mem_of_mem_nhds hs)
+    (tendsto_volume_inter_closedBall_div_of_mem_nhds hs)
+
 /-- The approximate tangent plane of the graph of `φ` over a neighbourhood `s` of a point of
 differentiability `x` is the graph of the derivative. -/
 theorem approximateTangentPlane_graph_image_eq (hs : s ∈ 𝓝 x) :
@@ -104,8 +100,7 @@ theorem isApproximateTangentPlane_range_graph_iff :
     IsApproximateTangentPlane (finrank ℝ E) (range fun y => WithLp.toLp 2 (y, φ y))
         (WithLp.toLp 2 (x, φ x)) Q ↔ Q = LinearMap.range A.graphL.toLinearMap := by
   rw [← image_univ]
-  exact hφ.hasFDerivWithinAt.isApproximateTangentPlane_graph_image_iff (mem_univ x)
-    (tendsto_volume_inter_closedBall_div_of_mem_nhds univ_mem)
+  exact hφ.isApproximateTangentPlane_graph_image_iff univ_mem
 
 /-- The approximate tangent plane of the whole graph at a point of differentiability is the graph
 of the derivative. -/
@@ -117,12 +112,13 @@ theorem approximateTangentPlane_range_graph_eq :
 
 end HasFDerivAt
 
-/-- For a differentiable `φ`, for instance a `C¹` one, the approximate tangent plane of the graph
-at every point `(x, φ x)` is the graph of `Dφ(x)`. -/
-theorem Differentiable.approximateTangentPlane_range_graph_eq (hφ : Differentiable ℝ φ) (x : E) :
+/-- If `φ` is differentiable at `x`, the approximate tangent plane of the graph at `(x, φ x)` is
+the graph of `Dφ(x)`. For a differentiable `φ`, for instance a `C¹` one, this holds at every
+point. -/
+theorem DifferentiableAt.approximateTangentPlane_range_graph_eq (hφ : DifferentiableAt ℝ φ x) :
     approximateTangentPlane (finrank ℝ E) (range fun y => WithLp.toLp 2 (y, φ y))
         (WithLp.toLp 2 (x, φ x)) = LinearMap.range (fderiv ℝ φ x).graphL.toLinearMap :=
-  (hφ x).hasFDerivAt.approximateTangentPlane_range_graph_eq
+  hφ.hasFDerivAt.approximateTangentPlane_range_graph_eq
 
 /-- **Graphs of Lipschitz maps in every codimension.** For a Lipschitz `φ : E → F`, at almost every
 `x` the approximate tangent `(dim E)`-plane of the graph of `φ` at `(x, φ x)` is the graph of
@@ -132,4 +128,4 @@ theorem LipschitzWith.ae_approximateTangentPlane_range_graph_eq {K : NNReal}
     ∀ᵐ x, approximateTangentPlane (finrank ℝ E) (range fun y => WithLp.toLp 2 (y, φ y))
         (WithLp.toLp 2 (x, φ x)) = LinearMap.range (fderiv ℝ φ x).graphL.toLinearMap := by
   filter_upwards [hφ.ae_differentiableAt] with x hx
-  exact hx.hasFDerivAt.approximateTangentPlane_range_graph_eq
+  exact hx.approximateTangentPlane_range_graph_eq
