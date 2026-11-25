@@ -138,7 +138,8 @@ private theorem exists_realization_of_starAlgHom {H : Type u} [NormedAddCommGrou
     rw [← law_integralPositiveLinearMap_comap_restrict_id (hK i),
       ofReal_integral_pow_law _ (ContinuousMap.isSelfAdjoint_realToRCLike ℂ), ← map_pow,
       ContinuousLinearMap.innerPositiveLinearMap_apply, hf, factorState_apply, coord]
-  · have hs : spectrum ℝ (coord K i) = K i := ContinuousMap.spectrum_realToRCLike_restrict_id (K i)
+  · have hs : spectrum ℝ (coord K i) = K i :=
+      ContinuousMap.spectrum_realToRCLike_restrict_id ℂ (K i)
     rw [← hs, ← spectrum.preimage_algebraMap ℂ,
       ← spectrum.preimage_algebraMap ℂ (a := coord K i)]
     exact Set.preimage_mono (AlgHom.spectrum_apply_subset (f i) (coord K i))
