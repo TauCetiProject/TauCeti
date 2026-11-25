@@ -80,28 +80,38 @@ variable {z : F.obj (.mk (op U))}
 action by `AbelianBanding.act_trans`. -/
 def postcomposeActionIso (q : y ≅ z) : b.fibreAction x y ≅ b.fibreAction x z :=
   Action.mkIso (Equiv.toIso (Iso.isoCongrRight (X := x) q)) fun a ↦ by
-    ext p
-    -- `Iso.isoCongrRight q p` is `(Iso.refl x).symm ≪≫ (p ≪≫ q)`.
-    exact (Iso.refl_trans _).trans <|
-      (b.act_trans p q a).trans (congrArg (b.act · a) (Iso.refl_trans (p ≪≫ q))).symm
+    ext (p : x ≅ y)
+    -- The carrier of `fibreAction` is `x ≅ y` only after unfolding `Action.ofMulAction`, which
+    -- simp does not do, so the Mathlib simp lemmas for `Equiv.toIso` and `Iso.isoCongr` do not
+    -- fire. `change` states the goal on isomorphisms, by unfolding `isoCongrRight q p` to
+    -- `(Iso.refl x).symm ≪≫ (p ≪≫ q)`, and simp closes it with `act_trans`.
+    change (Iso.refl x).symm ≪≫ (b.act p a ≪≫ q) = b.act ((Iso.refl x).symm ≪≫ (p ≪≫ q)) a
+    simp
 
 /-- The forward map of `postcomposeActionIso q` sends `p` to `p ≪≫ q`. -/
 @[simp]
 theorem postcomposeActionIso_hom_hom (q : y ≅ z) (p : x ≅ y) :
-    (b.postcomposeActionIso q).hom.hom p = p ≪≫ q :=
-  Iso.refl_trans _
+    (b.postcomposeActionIso q).hom.hom p = p ≪≫ q := by
+  -- The forward map unfolds to `Iso.isoCongrRight q`; see the comment in `postcomposeActionIso`.
+  change (Iso.refl x).symm ≪≫ (p ≪≫ q) = p ≪≫ q
+  simp
 
 /-- The inverse map of `postcomposeActionIso q` sends `p` to `p ≪≫ q.symm`. -/
 @[simp]
 theorem postcomposeActionIso_inv_hom (q : y ≅ z) (p : x ≅ z) :
-    (b.postcomposeActionIso q).inv.hom p = p ≪≫ q.symm :=
-  Iso.refl_trans _
+    (b.postcomposeActionIso q).inv.hom p = p ≪≫ q.symm := by
+  -- The inverse map unfolds to `(Iso.isoCongrRight q).symm`; see the comment in
+  -- `postcomposeActionIso`.
+  change Iso.refl x ≪≫ (p ≪≫ q.symm) = p ≪≫ q.symm
+  simp
 
 /-- Postcomposition with the identity is the identity. -/
 theorem postcomposeActionIso_refl :
     b.postcomposeActionIso (Iso.refl y) = Iso.refl (b.fibreAction x y) := by
   ext p
-  exact (b.postcomposeActionIso_hom_hom _ p).trans p.trans_refl
+  -- `p` lies in the carrier `(b.fibreAction x y).V`, which simp does not identify with `x ≅ y`,
+  -- so the lemmas about `p` are instantiated at `p` explicitly.
+  simp [b.postcomposeActionIso_hom_hom _ p, Iso.trans_refl p]
 
 /-- Postcomposition with `q ≪≫ r` is postcomposition with `q` followed by postcomposition with
 `r`. -/
@@ -109,8 +119,10 @@ theorem postcomposeActionIso_trans {w : F.obj (.mk (op U))} (q : y ≅ z) (r : z
     b.postcomposeActionIso (q ≪≫ r) =
       b.postcomposeActionIso (x := x) q ≪≫ b.postcomposeActionIso r := by
   ext p
-  exact (b.postcomposeActionIso_hom_hom _ p).trans <| (Iso.trans_assoc p q r).symm.trans <|
-    ((b.postcomposeActionIso_hom_hom r _).trans
-      (congrArg (· ≪≫ r) (b.postcomposeActionIso_hom_hom q p))).symm
+  -- As in `postcomposeActionIso_refl`, the lemma about the carrier element `p` is instantiated
+  -- explicitly; what remains is associativity of composition.
+  simp only [TypeCat.Fun.toFun_apply, Iso.trans_hom, Action.comp_hom, comp_apply,
+    b.postcomposeActionIso_hom_hom _ p, postcomposeActionIso_hom_hom]
+  exact (Iso.trans_assoc p q r).symm
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
