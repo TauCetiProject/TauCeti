@@ -73,7 +73,10 @@ Two constructions are developed, together with strict units.
   (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_inl`,
   `TauCeti.UngradedAInfinityRightModule.matrixAct_sumElim_zero_apply_inr`), and a path from `X` to
   `Y` crosses the off-diagonal block exactly once
-  (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`).
+  (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`). On a product
+  `Y × X`, a path is a path in `X` together with one in `Y`, so the matrix module of `Y × X` is
+  the matrix module over `X` of the matrix module of `Y`
+  (`TauCeti.UngradedAInfinityRightModule.matrixAct_prod_apply`).
 
 * **Strict units.** A module is strictly unital for a family `ι` of elements of the algebra
   (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital`) when its operations `m_{n+1}`,
@@ -125,6 +128,8 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   matrix operations restrict along an embedding whose range no path enters, respectively leaves.
 * `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
   upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
+* `TauCeti.UngradedAInfinityRightModule.matrixAct_prod_apply`: the matrix module of `Y × X` is
+  the matrix module over `X` of the matrix module of `Y`.
 * `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`: a unit acting on the output
   of an operation multiplies its last input.
 * `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_twistedDifferential` and
@@ -1001,6 +1006,26 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
     obtain ⟨b, hb⟩ := Sum.isRight_iff.mp h₂
     simp [E, ha, hb]
   · rw [Function.update_of_ne ht, (hoff t ht).2]
+
+/-- **The matrix module of a product.** Row vectors on `Y × X` are row vectors on `X` with entries
+row vectors on `Y`, and matrices on `Y × X` are matrices on `X` with entries matrices on `Y`: a
+path in `Y × X` is a path in `X` together with a path in `Y`. So the operations of the matrix
+module of `Y × X` are those of the matrix module over `X` of the matrix module of `Y`. -/
+theorem matrixAct_prod_apply {n : ℕ} (F : Fin n → Matrix (Y × X) (Y × X) A) (φ : Y × X → M)
+    (y : Y) (z : X) :
+    Mm.matrixAct (Y × X) n F φ (y, z) =
+      (Mm.matrix Y).matrixAct X n (fun l => Matrix.of fun x x' => (F l).submatrix (·, x) (·, x'))
+        (fun x y => φ (y, x)) z y := by
+  rw [(Mm.matrix Y).matrixAct_apply, Mm.matrixAct_apply (Y × X), Finset.sum_apply,
+    ← (Equiv.arrowProdEquivProdArrow _ (fun _ => Y) (fun _ => X)).symm.sum_comp,
+    Fintype.sum_prod_type, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  split_ifs with hv
+  · rw [matrix_act, matrixAct_apply]
+    refine Finset.sum_congr rfl fun u _ => ?_
+    simp [Equiv.arrowProdEquivProdArrow, hv, Prod.ext_iff]
+  · refine Finset.sum_eq_zero fun u _ => ?_
+    simp [Equiv.arrowProdEquivProdArrow, hv, Prod.ext_iff]
 
 end Block
 

@@ -63,13 +63,13 @@ def rationalDiagonal {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ →* G i)
     (U : ∀ i, Subgroup (G i))
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) :
     Γ →* Πʳ i, [G i, (U i : Set (G i))] where
-  toFun γ := ⟨fun i ↦ φ i γ, h γ⟩
+  toFun γ := RestrictedProduct.mk (fun i ↦ φ i γ) (h γ)
   map_one' := by
     ext i
-    exact map_one (φ i)
+    simp only [RestrictedProduct.mk_apply, RestrictedProduct.one_apply, map_one]
   map_mul' a b := by
     ext i
-    exact map_mul (φ i) a b
+    simp only [RestrictedProduct.mk_apply, RestrictedProduct.mul_apply, map_mul]
 
 /-- The `i`-th coordinate of the diagonal at `γ` is `φ i γ`. -/
 @[to_additive (attr := simp) addRationalDiagonal_apply]
@@ -77,7 +77,15 @@ theorem rationalDiagonal_apply {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ �
     (U : ∀ i, Subgroup (G i))
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) (γ : Γ) (i : ι) :
     rationalDiagonal φ U h γ i = φ i γ := by
-  rfl
+  simp only [rationalDiagonal, MonoidHom.coe_mk, OneHom.coe_mk, RestrictedProduct.mk_apply]
+
+/-- The diagonal is the identity exactly when every coordinate is the identity. -/
+@[to_additive (attr := simp) addRationalDiagonal_eq_zero_iff]
+theorem rationalDiagonal_eq_one_iff {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ →* G i)
+    (U : ∀ i, Subgroup (G i))
+    (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) (γ : Γ) :
+    rationalDiagonal φ U h γ = 1 ↔ ∀ i, φ i γ = 1 := by
+  simp only [RestrictedProduct.ext_iff, rationalDiagonal_apply, RestrictedProduct.one_apply]
 
 /-- The kernel of the diagonal is the intersection of the kernels of the coordinate maps. -/
 @[to_additive (attr := simp) ker_addRationalDiagonal]
@@ -86,8 +94,7 @@ theorem ker_rationalDiagonal {Γ : Type w} [Group Γ] (φ : ∀ i, Γ →* G i)
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) :
     (rationalDiagonal φ U h).ker = ⨅ i, (φ i).ker := by
   ext γ
-  simp only [MonoidHom.mem_ker, Subgroup.mem_iInf, RestrictedProduct.ext_iff,
-    rationalDiagonal_apply, RestrictedProduct.one_apply]
+  simp only [MonoidHom.mem_ker, Subgroup.mem_iInf, rationalDiagonal_eq_one_iff]
 
 /-- The diagonal is injective exactly when the coordinate maps jointly separate points. -/
 @[to_additive injective_addRationalDiagonal_iff]

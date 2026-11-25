@@ -1,0 +1,218 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.LFunctions.Continued.Basic
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.FiniteOrder
+import TauCeti.Analysis.Polynomial.Order
+import TauCeti.NumberTheory.LFunctions.GammaFactor.Growth
+
+/-!
+# Pole-cleared continued functions and their order of growth
+
+For a polynomial `P`, `poleClearedContinuedL d P` is the removable extension of
+`s ↦ P(s) · continuedL d s` across the singularities of this product that `P` removes. At a
+pole of the continued function that `P` does not clear, the original representative is kept,
+as in `AnalyticLFunctionData.continuedL`. The raw product is not a substitute: at the pole of
+zeta at `1`, `(1 - 1) · riemannZeta 1 = 0`, while the pole-cleared value is the residue `1`.
+
+The main result is `orderLE_poleClearedContinuedL`: if the entire completion has order at most
+`A ≥ 1`, then so has the pole-cleared function, for every `P`. The proof multiplies the entire
+completion by the reciprocal gamma factor, which has order at most one, and by the conductor
+power `N^(-s/2)`, an exponential of order one. Off the roots of the polar polynomial and the poles
+of the entire completion, the result is `polarPolynomial · poleClearedContinuedL d P` divided by
+`P`, and dividing by a monic polynomial does not increase the order. Since the order only bounds
+growth outside bounded sets and a function of finite order has no poles outside a bounded set,
+neither `P ≠ 0`, nor the clearing of every pole, nor a meromorphic continuation with exact poles
+is needed. The first two make the function entire (`differentiable_poleClearedContinuedL`).
+Taking `P = 1` bounds the order of the continued function itself (`orderLE_continuedL`).
+
+The order bound is the finite-order hypothesis for the Phragmén–Lindelöf principle on vertical
+strips; it holds on the whole plane.
+
+## References
+
+* H. Davenport, *Multiplicative Number Theory*, 3rd ed. (2000), §12.
+* H. Iwaniec and E. Kowalski, *Analytic Number Theory* (2004), §5.1.
+-/
+
+public section
+
+open Complex Filter Asymptotics Bornology Topology Polynomial
+
+namespace TauCeti.LFunctions.AnalyticLFunctionData
+
+private theorem analyticAt_eval (Q : ℂ[X]) (s : ℂ) : AnalyticAt ℂ (fun z ↦ Q.eval z) s :=
+  (AnalyticOnNhd.eval_polynomial Q) s trivial
+
+variable (d : AnalyticLFunctionData) (P : ℂ[X])
+
+/-- The pole-cleared continued function: the removable extension of
+`s ↦ P(s) · continuedL d s` at every point of nonnegative order. At a remaining pole the
+original representative of the product is kept. -/
+noncomputable def poleClearedContinuedL : ℂ → ℂ :=
+  toMeromorphicNFOn (fun s ↦ P.eval s * d.continuedL s)
+    {s | 0 ≤ meromorphicOrderAt (fun z ↦ P.eval z * d.continuedL z) s}
+
+theorem poleClearedContinuedL_def :
+    d.poleClearedContinuedL P = toMeromorphicNFOn (fun s ↦ P.eval s * d.continuedL s)
+      {s | 0 ≤ meromorphicOrderAt (fun z ↦ P.eval z * d.continuedL z) s} :=
+  (rfl)
+
+private theorem meromorphic_eval_mul_continuedL :
+    Meromorphic fun s ↦ P.eval s * d.continuedL s :=
+  fun s ↦ (analyticAt_eval P s).meromorphicAt.mul
+    (d.meromorphic_continuedL s)
+
+variable {d P}
+
+/-- Where the product `P · continuedL d` is analytic, no repair is made. -/
+theorem poleClearedContinuedL_eq_of_analyticAt {s : ℂ}
+    (ha : AnalyticAt ℂ (fun z ↦ P.eval z * d.continuedL z) s) :
+    d.poleClearedContinuedL P s = P.eval s * d.continuedL s := by
+  rw [poleClearedContinuedL_def, toMeromorphicNFOn_eq_toMeromorphicNFAt
+    (meromorphic_eval_mul_continuedL d P).meromorphicOn ha.meromorphicOrderAt_nonneg,
+    toMeromorphicNFAt_eq_self.mpr ha.meromorphicNFAt]
+
+/-- The pole-cleared function has the punctured germs of `P · continuedL d`. -/
+theorem poleClearedContinuedL_eventuallyEq (s : ℂ) :
+    d.poleClearedContinuedL P =ᶠ[𝓝[≠] s] fun z ↦ P.eval z * d.continuedL z := by
+  filter_upwards [(meromorphic_eval_mul_continuedL d P s).eventually_analyticAt] with z hz
+  exact poleClearedContinuedL_eq_of_analyticAt hz
+
+/-- Off the roots of `P`, the pole-cleared function is the product `P · continuedL d`, at poles
+of the continued function too. -/
+theorem poleClearedContinuedL_eq_of_eval_ne_zero {s : ℂ} (hP : P.eval s ≠ 0) :
+    d.poleClearedContinuedL P s = P.eval s * d.continuedL s := by
+  have hPa := analyticAt_eval P s
+  by_cases hs : 0 ≤ meromorphicOrderAt d.continuedL s
+  · exact poleClearedContinuedL_eq_of_analyticAt (hPa.mul (d.analyticAt_continuedL hs))
+  · apply toMeromorphicNFOn_eq_self_on_compl (meromorphic_eval_mul_continuedL d P).meromorphicOn
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
+    rwa [← Pi.mul_def (fun z ↦ P.eval z) d.continuedL,
+      meromorphicOrderAt_mul_of_ne_zero hPa hP]
+
+/-- Clearing by `P ≠ 0` adds the root multiplicity of `P` to the meromorphic order. -/
+theorem meromorphicOrderAt_poleClearedContinuedL (hP : P ≠ 0) (s : ℂ) :
+    meromorphicOrderAt (d.poleClearedContinuedL P) s =
+      meromorphicOrderAt d.continuedL s + (P.rootMultiplicity s : ℕ) := by
+  have hPa := analyticAt_eval P s
+  rw [meromorphicOrderAt_congr (poleClearedContinuedL_eventuallyEq s),
+    fun_meromorphicOrderAt_mul hPa.meromorphicAt (d.meromorphic_continuedL s),
+    hPa.meromorphicOrderAt_eq, Polynomial.analyticOrderAt_eval hP, ENat.map_natCast, add_comm]
+  norm_cast
+
+/-- The pole-cleared function is analytic at every point of nonnegative order. -/
+theorem analyticAt_poleClearedContinuedL {s : ℂ}
+    (hs : 0 ≤ meromorphicOrderAt (d.poleClearedContinuedL P) s) :
+    AnalyticAt ℂ (d.poleClearedContinuedL P) s := by
+  have hr := hs
+  rw [meromorphicOrderAt_congr (poleClearedContinuedL_eventuallyEq s)] at hr
+  have hnf := meromorphicNFOn_toMeromorphicNFOn (fun z ↦ P.eval z * d.continuedL z)
+    {z | 0 ≤ meromorphicOrderAt (fun z ↦ P.eval z * d.continuedL z) z} hr
+  rw [← poleClearedContinuedL_def] at hnf
+  exact hnf.meromorphicOrderAt_nonneg_iff_analyticAt.mp hs
+
+/-- Clearing by the zero polynomial gives the zero function. -/
+@[simp]
+theorem poleClearedContinuedL_zero : d.poleClearedContinuedL 0 = 0 :=
+  funext fun s ↦ by
+    rw [poleClearedContinuedL_eq_of_analyticAt (by simpa using analyticAt_const), eval_zero,
+      zero_mul, Pi.zero_apply]
+
+/-- Clearing by the constant polynomial `1` changes nothing, at poles too. -/
+@[simp]
+theorem poleClearedContinuedL_one : d.poleClearedContinuedL 1 = d.continuedL :=
+  funext fun s ↦ by rw [poleClearedContinuedL_eq_of_eval_ne_zero (by simp), eval_one, one_mul]
+
+/-- If `P` clears every pole of the continued function, the pole-cleared function is entire. -/
+theorem differentiable_poleClearedContinuedL
+    (hclear : ∀ s, 0 ≤ meromorphicOrderAt d.continuedL s + (P.rootMultiplicity s : ℕ)) :
+    Differentiable ℂ (d.poleClearedContinuedL P) := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · rw [poleClearedContinuedL_zero]
+    exact differentiable_const 0
+  exact fun s ↦ (analyticAt_poleClearedContinuedL
+    ((meromorphicOrderAt_poleClearedContinuedL hP s).symm ▸ hclear s)).differentiableAt
+
+private theorem analyticAt_clearedProduct {s : ℂ} (hE : AnalyticAt ℂ d.entireCompletion s) :
+    AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.entireCompletion z *
+      d.invGammaFactor z) s :=
+  ((d.analyticAt_conductor_cpow (g := fun z ↦ -z / 2) (by fun_prop)).mul hE).mul
+    (d.analyticAt_invGammaFactor s)
+
+/-- With a meromorphic completion, the polar polynomial times the continued function is
+`N^(-s/2) · entireCompletion · invGammaFactor`, as punctured germs. -/
+private theorem polarPolynomial_mul_continuedL_eventuallyEq (hm : Meromorphic d.completed)
+    (s : ℂ) :
+    (fun z ↦ d.polarPolynomial.eval z * d.continuedL z) =ᶠ[𝓝[≠] s]
+      fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.entireCompletion z *
+        d.invGammaFactor z := by
+  have hpm : MeromorphicOn (fun z ↦ d.polarPolynomial.eval z * d.completed z) Set.univ :=
+    fun z _ ↦ (analyticAt_eval _ z).meromorphicAt.mul (hm z)
+  filter_upwards [continuedL_eventuallyEq hm s,
+    entireCompletion_def d ▸ hpm.toMeromorphicNFOn_eq_self_on_nhdsNE (Set.mem_univ s)]
+    with z hz hent
+  rw [hz, hent, uncompletedProduct_def]
+  ring
+
+/-- **Order of the pole-cleared continued function.** If the entire completion has order at most
+`A ≥ 1`, then the pole-cleared function has order at most `A`. -/
+theorem orderLE_poleClearedContinuedL {A : ℝ} (hA : OrderLE d.entireCompletion A)
+    (h1 : 1 ≤ A) : OrderLE (d.poleClearedContinuedL P) A := by
+  by_cases hm : ¬ Meromorphic d.completed
+  · have h0 : d.poleClearedContinuedL P = 0 := funext fun s ↦ by
+      rw [poleClearedContinuedL_eq_of_analyticAt
+        (by simpa [continuedL_of_not_meromorphic hm] using analyticAt_const)]
+      simp [continuedL_of_not_meromorphic hm]
+    rw [h0]
+    exact orderLE_const 0 A
+  rw [not_not] at hm
+  have hG : OrderLE (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.entireCompletion z *
+      d.invGammaFactor z) A := by
+    have hN : OrderLE (fun z : ℂ ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) 1 := by
+      convert orderLE_cpow_mul _ (-1 / 2) using 3 with z
+      ring
+    exact ((hN.mono h1).mul hA).mul (d.orderLE_invGammaFactor.mono h1)
+  -- Off a bounded set, the polar polynomial times the cleared function is `P` times a function
+  -- of order `A`.
+  have hbdd : IsBounded {z | d.polarPolynomial.IsRoot z} :=
+    (finite_setOfPred_isRoot d.monic_polarPolynomial.ne_zero).isBounded
+  have heq : (fun z ↦ d.polarPolynomial.eval z * d.poleClearedContinuedL P z) =ᶠ[cobounded ℂ]
+      fun z ↦ P.eval z * (((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.entireCompletion z *
+        d.invGammaFactor z) := by
+    filter_upwards [isBounded_def.mp hbdd, eventually_analyticAt_entireCompletion hA]
+      with s hs hE
+    have hQa := analyticAt_eval d.polarPolynomial s
+    have hpc := polarPolynomial_mul_continuedL_eventuallyEq hm s
+    have hord : 0 ≤ meromorphicOrderAt d.continuedL s := by
+      have h0 := (analyticAt_clearedProduct hE).meromorphicOrderAt_nonneg
+      rwa [← meromorphicOrderAt_congr hpc, ← Pi.mul_def (fun z ↦ d.polarPolynomial.eval z)
+        d.continuedL, meromorphicOrderAt_mul_of_ne_zero hQa hs] at h0
+    have hc := d.analyticAt_continuedL hord
+    have hval := (((hQa.mul hc).continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+      (analyticAt_clearedProduct hE).continuousAt).mp hpc).eq_of_nhds
+    rw [poleClearedContinuedL_eq_of_analyticAt
+      ((analyticAt_eval P s).mul hc), ← hval, Pi.mul_apply]
+    ring
+  exact (orderLE_polynomial_mul_iff d.monic_polarPolynomial.ne_zero (by linarith)).mp
+    (heq.isBigO.orderLE ((P.orderLE_eval.mono (by linarith)).mul hG))
+
+/-- **Finite order of the pole-cleared continued function.** For a record of finite order, every
+pole-cleared continued function has finite order. -/
+theorem isFiniteOrder_poleClearedContinuedL (hfin : d.IsFiniteOrder) :
+    TauCeti.IsFiniteOrder (d.poleClearedContinuedL P) := by
+  obtain ⟨A, -, hA⟩ := TauCeti.IsFiniteOrder.exists_nonneg hfin
+  exact (orderLE_poleClearedContinuedL (hA.mono (le_max_left A 1))
+    (le_max_right A 1)).isFiniteOrder
+
+/-- **Order of the continued function.** If the entire completion has order at most `A ≥ 1`, then
+so has the continued function, whether or not the record has poles. -/
+theorem orderLE_continuedL {A : ℝ} (hA : OrderLE d.entireCompletion A) (h1 : 1 ≤ A) :
+    OrderLE d.continuedL A :=
+  poleClearedContinuedL_one (d := d) ▸ orderLE_poleClearedContinuedL hA h1
+
+end TauCeti.LFunctions.AnalyticLFunctionData

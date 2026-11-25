@@ -42,10 +42,17 @@ is why the base is assumed boundaryless.
   base point it is the tuple of iterated derivatives of the local representative at `x`
   (`TauCeti.JetBundle.toJets_jet`), and in every chart it is the tuple of iterated derivatives of
   the local representative in that chart (`TauCeti.JetBundle.toJets_trivializationAt_jet`). The
-  jet of a `C^(n+r)` section is a `C^n` section of `JᵣV` (`TauCeti.JetBundle.contMDiff_jet`), and
+  jet of a `C^(n+r)` section is a `C^n` section of `JᵣV` (`TauCeti.JetBundle.contMDiff_jet`, and
+  `TauCeti.JetBundle.contMDiff_infty_jet` for smooth sections), and
   every `r`-jet is the jet of a section, `C^n` at the base point for any `n`
-  (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`). For the trivial bundle over a model space it is
-  the tuple of iterated derivatives of the section (`TauCeti.JetBundle.toJets_jet_trivial`).
+  (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`) and `C^n` near it when `M` and `V` are `C^n`
+  (`TauCeti.JetBundle.exists_contMDiffOn_jet_eq`). The jet is local
+  (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`), linear on sections that are `C^r` at the base
+  point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and vanishes exactly
+  when the derivatives of order at most `r` of the local representative do
+  (`TauCeti.JetBundle.jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero`). For the trivial
+  bundle over a model space it is the tuple of iterated derivatives of the section
+  (`TauCeti.JetBundle.toJets_jet_trivial`).
 * `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which reads in every
   chart as the truncation of symmetric jets (`TauCeti.JetBundle.coordChange_truncate`) and sends
   `jʳs(x)` to `jʳ's(x)` (`TauCeti.JetBundle.truncate_jet`).
@@ -329,6 +336,73 @@ theorem toJets_jet {s : ∀ x, V x} {x : M}
   exact toJets_symmetrizeJets_iteratedFDeriv
     (contDiffAt_localRep I F hs (FirstJetBundle.mem_baseSet_self F V x)) (by simp)
 
+/-- **The `r`-jet vanishes exactly when the derivatives do.** The `r`-jet of a section that is
+`C^r` at `x` is zero if and only if its local representative in the chart and trivialization at
+`x` has vanishing derivatives of every order at most `r` at the image of `x`. -/
+theorem jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero {s : ∀ x, V x} {x : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
+    jet I F r s x = 0 ↔ ∀ k ≤ r,
+      iteratedFDeriv 𝕜 k (FirstJetBundle.localRep I F s x) (extChartAt I x x) = 0 := by
+  -- The fibre `JetBundle I F V r x` is by definition the model fibre `SymmetricJet 𝕜 E F r`, so
+  -- `toJets` applies to `r`-jets; its injectivity turns the equation into one of tuples.
+  refine (toJets_injective.eq_iff (a := jet I F r s x) (b := 0)).symm.trans ?_
+  rw [map_zero, toJets_jet hs, funext_iff]
+  exact ⟨fun h k hk ↦ h ⟨k, Nat.lt_succ_of_le hk⟩, fun h k ↦ h k k.is_le⟩
+
+/-- The `r`-jet of a section only depends on its local representative near the image of `x`. -/
+private theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
+    (hg : FirstJetBundle.localRep I F s x =ᶠ[𝓝 (extChartAt I x x)] g) :
+    jet I F r s x = symmetrizeJets 𝕜 E F r fun k : Fin (r + 1) ↦
+      iteratedFDeriv 𝕜 k.val g (extChartAt I x x) := by
+  rw [jet]
+  congr 1
+  funext k
+  exact (hg.iteratedFDeriv 𝕜 k.val).eq_of_nhds
+
+/-- **The `r`-jet is local**: two sections that agree near `x` have the same `r`-jet at `x`. -/
+theorem jet_congr_of_eventuallyEq {s t : ∀ x, V x} {x : M} (hst : ∀ᶠ y in 𝓝 x, s y = t y) :
+    jet I F r s x = jet I F r t x := by
+  have h := (continuousAt_extChartAt_symm (I := I) x).tendsto
+  rw [extChartAt_to_inv] at h
+  have hloc : FirstJetBundle.localRep I F s x =ᶠ[𝓝 (extChartAt I x x)]
+      FirstJetBundle.localRep I F t x := by
+    filter_upwards [h.eventually hst] with z hz
+    simp only [FirstJetBundle.localRep_apply, hz]
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq hloc, jet]
+
+variable (I F V r) in
+/-- The `r`-jet of the zero section is zero. -/
+@[simp]
+theorem jet_zero (x : M) : jet I F r (0 : ∀ x, V x) x = 0 := by
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq
+    (FirstJetBundle.localRep_zero_eventuallyEq I F (FirstJetBundle.mem_baseSet_self F V x))]
+  simp only [iteratedFDeriv_zero, Pi.zero_apply]
+  -- `symmetrizeJets` is linear, with values in the model fibre of `JetBundle I F V r`.
+  exact map_zero (symmetrizeJets 𝕜 E F r)
+
+/-- **The `r`-jet is additive** on sections that are `C^r` at the base point. -/
+theorem jet_add {s t : ∀ x, V x} {x : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x)
+    (ht : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (t x)) x) :
+    jet I F r (s + t) x = jet I F r s x + jet I F r t x := by
+  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq (FirstJetBundle.localRep_add_eventuallyEq I F s t hx)]
+  refine (congrArg (symmetrizeJets 𝕜 E F r) (funext fun k ↦ ?_)).trans (map_add _ _ _)
+  have hk : (k.val : ℕ∞ω) ≤ r := by exact_mod_cast k.is_le
+  exact iteratedFDeriv_add_apply ((contDiffAt_localRep I F hs hx).of_le hk)
+    ((contDiffAt_localRep I F ht hx).of_le hk)
+
+/-- **The `r`-jet is homogeneous** on sections that are `C^r` at the base point. -/
+theorem jet_const_smul (c : 𝕜) {s : ∀ x, V x} {x : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
+    jet I F r (c • s) x = c • jet I F r s x := by
+  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq
+    (FirstJetBundle.localRep_const_smul_eventuallyEq I F c s hx)]
+  refine (congrArg (symmetrizeJets 𝕜 E F r) (funext fun k ↦ ?_)).trans (map_smul _ c _)
+  exact iteratedFDeriv_const_smul_apply
+    ((contDiffAt_localRep I F hs hx).of_le (by exact_mod_cast k.is_le))
+
 /-- The preferred trivialization of `JᵣV` at `i` reads an `r`-jet in the chart and trivialization
 of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
@@ -372,37 +446,70 @@ theorem toJets_trivializationAt_jet {s : ∀ x, V x} {y : M}
   funext k
   exact ((hloc.iteratedFDeriv 𝕜 k.val).eq_of_nhds).symm
 
+variable (I F) in
+/-- The section of `V` that reads, in the chart and trivialization at `x`, as the Taylor
+polynomial at `x` of the `r`-jet `A`. -/
+private def taylorSection (x : M) (A : JetBundle I F V r x) (y : M) : V y :=
+  (trivializationAt F V x).symm y
+    (finiteJetPolynomial r (toJets 𝕜 E F r A) (extChartAt I x x) (extChartAt I x y))
+
+/-- In the trivialization at `x`, the section `taylorSection I F x A` reads as the Taylor
+polynomial of `A` in the chart at `x`. -/
+private theorem trivializationAt_taylorSection {x y : M} (A : JetBundle I F V r x)
+    (hy : y ∈ (trivializationAt F V x).baseSet) :
+    (trivializationAt F V x ⟨y, taylorSection I F x A y⟩).2 =
+      finiteJetPolynomial r (toJets 𝕜 E F r A) (extChartAt I x x) (extChartAt I x y) := by
+  rw [taylorSection, (trivializationAt F V x).apply_mk_symm hy]
+
+/-- The section `taylorSection I F x A` is `C^n` at `x` for every `n`. -/
+private theorem contMDiffAt_taylorSection {n : ℕ∞ω} (x : M) (A : JetBundle I F V r x) :
+    ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (taylorSection I F x A y)) x := by
+  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
+  rw [contMDiffAt_section_iff]
+  exact ((contDiff_finiteJetPolynomial r _ _).contMDiff.contMDiffAt.comp x
+    contMDiffAt_extChartAt).congr_of_eventuallyEq
+    (eventually_of_mem ((trivializationAt F V x).open_baseSet.mem_nhds
+      ((mem_baseSet_iff F V).1 hx).1) fun y hy ↦ trivializationAt_taylorSection A hy)
+
+/-- The `r`-jet at `x` of the section `taylorSection I F x A` is `A`. -/
+private theorem jet_taylorSection (x : M) (A : JetBundle I F V r x) :
+    jet I F r (taylorSection I F x A) x = A := by
+  refine toJets_injective ?_
+  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
+  -- Near the image of `x`, the local representative is the Taylor polynomial of `A`.
+  have hrep : FirstJetBundle.localRep I F (taylorSection I F x A) x
+      =ᶠ[𝓝 (extChartAt I x x)] finiteJetPolynomial r (toJets 𝕜 E F r A) (extChartAt I x x) := by
+    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
+      ((mem_baseSet_iff F V).1 hx).2, extChartAt_target_mem_nhds x] with z hz hzt
+    rw [FirstJetBundle.localRep_apply,
+      trivializationAt_taylorSection A ((mem_baseSet_iff F V).1 hz).1,
+      (extChartAt I x).right_inv hzt]
+  rw [toJets_jet (contMDiffAt_taylorSection x A)]
+  funext k
+  rw [(hrep.iteratedFDeriv 𝕜 k.val).eq_of_nhds]
+  exact iteratedFDeriv_finiteJetPolynomial_self r _ _ k (mem_symmetricJets.1 (toJets_mem A) k)
+
 /-- **Every `r`-jet is the `r`-jet of a section that is `C^n` at the base point.** In the chart
 and trivialization at `x`, the section is the Taylor polynomial of the jet. -/
 theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (A : JetBundle I F V r x) :
     ∃ s : ∀ y, V y, ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (s y)) x ∧
-      jet I F r s x = A := by
-  set e := trivializationAt F V x
-  set P : E → F := finiteJetPolynomial r (toJets 𝕜 E F r A) (extChartAt I x x)
-  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
-  -- In the trivialization at `x`, the section `y ↦ e.symm y (P (φ y))` reads as `P ∘ φ`.
-  have hsg : ∀ y ∈ e.baseSet, (e ⟨y, e.symm y (P (extChartAt I x y))⟩).2 = P (extChartAt I x y) :=
-    fun y hy ↦ by rw [e.apply_mk_symm hy]
-  have hs : ∀ m : ℕ∞ω, ContMDiffAt I (I.prod 𝓘(𝕜, F)) m
-      (fun y ↦ TotalSpace.mk' F y (e.symm y (P (extChartAt I x y)))) x := fun m ↦ by
-    rw [contMDiffAt_section_iff]
-    exact ((contDiff_finiteJetPolynomial r _ _).contMDiff.contMDiffAt.comp x
-      contMDiffAt_extChartAt).congr_of_eventuallyEq
-      (eventually_of_mem (e.open_baseSet.mem_nhds
-        ((mem_baseSet_iff F V).1 hx).1) hsg)
-  refine ⟨fun y ↦ e.symm y (P (extChartAt I x y)), hs n, toJets_injective ?_⟩
-  -- Near the image of `x`, the local representative is the Taylor polynomial `P`.
-  have hloc := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
-    ((mem_baseSet_iff F V).1 hx).2
-  have hrep : FirstJetBundle.localRep I F (fun y ↦ e.symm y (P (extChartAt I x y))) x
-      =ᶠ[𝓝 (extChartAt I x x)] P := by
-    filter_upwards [hloc, extChartAt_target_mem_nhds x] with z hz hzt
-    rw [FirstJetBundle.localRep_apply, hsg _ ((mem_baseSet_iff F V).1 hz).1,
-      (extChartAt I x).right_inv hzt]
-  rw [toJets_jet (hs r)]
-  funext k
-  rw [(hrep.iteratedFDeriv 𝕜 k.val).eq_of_nhds]
-  exact iteratedFDeriv_finiteJetPolynomial_self r _ _ k (mem_symmetricJets.1 (toJets_mem A) k)
+      jet I F r s x = A :=
+  ⟨taylorSection I F x A, contMDiffAt_taylorSection x A, jet_taylorSection x A⟩
+
+/-- **Every `r`-jet is the `r`-jet of a section that is `C^n` near the base point**, when `M` and
+`V` are `C^n`. The section is `C^n` on the domain `TauCeti.FirstJetBundle.baseSet F V x` of the
+chart and trivialization at `x`, an open neighbourhood of `x`, and in these coordinates it is the
+Taylor polynomial of the jet. -/
+theorem exists_contMDiffOn_jet_eq {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVectorBundle n F V I]
+    (x : M) (A : JetBundle I F V r x) :
+    ∃ s : ∀ y, V y, ContMDiffOn I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (s y))
+      (FirstJetBundle.baseSet (H := H) F V x) ∧ jet I F r s x = A := by
+  refine ⟨taylorSection I F x A, ?_, jet_taylorSection x A⟩
+  rw [(trivializationAt F V x).contMDiffOn_section_iff (FirstJetBundle.isOpen_baseSet F V x)
+    fun y hy ↦ ((mem_baseSet_iff F V).1 hy).1]
+  exact ((contDiff_finiteJetPolynomial r _ _).contMDiff.comp_contMDiffOn
+    contMDiffOn_extChartAt).mono (fun y hy ↦ ((mem_baseSet_iff F V).1 hy).2) |>.congr
+    fun y hy ↦ trivializationAt_taylorSection A ((mem_baseSet_iff F V).1 hy).1
 
 end Jet
 
@@ -449,6 +556,16 @@ theorem contMDiff_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBu
       fun x ↦ TotalSpace.mk' (SymmetricJet 𝕜 E F r) x (jet I F r s x) := by
   rw [← contMDiffOn_univ] at hs ⊢
   exact contMDiffOn_jet isOpen_univ hs
+
+/-- **The `r`-jet of a smooth section is a smooth section of `JᵣV`.** -/
+theorem contMDiff_infty_jet [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I] {s : ∀ x, V x}
+    (hs : ContMDiff I (I.prod 𝓘(𝕜, F)) ∞ fun x ↦ TotalSpace.mk' F x (s x)) :
+    ContMDiff I (I.prod 𝓘(𝕜, SymmetricJet 𝕜 E F r)) ∞
+      fun x ↦ TotalSpace.mk' (SymmetricJet 𝕜 E F r) x (jet I F r s x) := by
+  have h : (∞ : ℕ∞ω) + r = ∞ := by exact_mod_cast top_add (r : ℕ∞)
+  have : IsManifold I (∞ + r) M := by rw [h]; infer_instance
+  have : ContMDiffVectorBundle (∞ + r) F V I := by rw [h]; infer_instance
+  exact contMDiff_jet (n := ∞) (by rw [h]; exact hs)
 
 section Truncate
 

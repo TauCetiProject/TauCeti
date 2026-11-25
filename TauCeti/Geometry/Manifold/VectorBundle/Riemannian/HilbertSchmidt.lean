@@ -64,8 +64,8 @@ theorem ContMDiffAt.hilbertSchmidtInner_bundle {x : M}
       =ᶠ[𝓝 x] fun y ↦ (A y).hilbertSchmidtInner (B y) := by
     filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
     simp only [ContinuousLinearMap.hilbertSchmidtInner_def,
-      bilinFormTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
-      ContinuousLinearMap.coe_coe]
+      metricTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
+      ContinuousLinearMap.coe_coe, smul_eq_mul]
   refine ContMDiffAt.congr_of_eventuallyEq ?_ heq.symm
   refine contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦ ?_
   exact ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) x i j).contMDiffAt hbase).mul

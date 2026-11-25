@@ -46,8 +46,10 @@ and for its Hamiltonian monodromy around the focus–focus value `(1, 0)`.
   `TauCeti.apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngle`).
 
 The motions here are integral curves on intervals of times, and no completeness of the flows is
-used. The identity is stated for a motion starting at the lower turning point; it is not proved
-here for other initial points of the same orbit.
+used. The identity is stated for a motion starting at the lower turning point; for the complete
+flows it holds at every point of a regular fibre
+(`TauCeti.sphericalPendulumFlowAction_single_zero_sphericalPendulumPeriod_apply` in
+`SphericalPendulum/PeriodLattice.lean`).
 
 ## Main declarations
 
