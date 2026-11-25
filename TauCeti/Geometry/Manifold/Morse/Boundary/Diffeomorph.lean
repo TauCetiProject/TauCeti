@@ -168,6 +168,22 @@ theorem pullback_orientation (p : criticalPoints 𝓘(ℝ, E) f) :
       (𝔬'.orientation (criticalPointsEquivOfComp hf p)) :=
   rfl
 
+open scoped Classical in
+/-- **Reversing orientations commutes with the pullback**: pulling back the orientations of `𝔬'`
+reversed at the critical points of `S` gives the pulled-back orientations reversed at the critical
+points that `σ` carries into `S`. -/
+theorem pullback_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f')) [DecidablePred (· ∈ S)] :
+    (𝔬'.reverse S).pullback hf hσX =
+      (𝔬'.pullback hf hσX).reverse (criticalPointsEquivOfComp hf ⁻¹' S) := by
+  simp only [pullback, reverse]
+  congr 1
+  funext p
+  by_cases hp : criticalPointsEquivOfComp hf p ∈ S
+  · simp only [Set.mem_preimage, hp, ↓reduceIte]
+    exact Orientation.reindex_neg (R := ℝ) _ _
+  · simp only [Set.mem_preimage, hp, ↓reduceIte]
+    rfl
+
 end MorseOrientation
 
 namespace IsAdaptedPseudoGradient
