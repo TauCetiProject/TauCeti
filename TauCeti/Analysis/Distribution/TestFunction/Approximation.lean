@@ -42,6 +42,8 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 * `ContDiff.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le`: the approximations can
   moreover be chosen to respect a pointwise bound `‖f x‖ ≤ ρ x` by a function `ρ` that is
   continuous and positive near the support.
+* `TestFunction.exists_isCompact_forall_exists_dist_le`: a test function of class `C^n` is a
+  uniform limit of smooth test functions supported in a fixed compact subset of `Ω`.
 
 ## References
 
@@ -224,3 +226,15 @@ theorem ContDiff.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le {f :
       ← hηε]
     exact norm_inv_one_add_div_smul_sub_le hη.le hm (by simpa [dist_eq_norm] using (hφ x).2)
       ((hR₁ x).trans ((le_max_right _ _).trans (le_max_left _ _)))
+
+/-- A test function `φ` of class `C^n` on `Ω` is a uniform limit of smooth test functions supported
+in a fixed compact subset of `Ω`: there is a compact `K ⊆ Ω` containing the support of `φ` such
+that for every `ε > 0` some smooth test function supported in `K` is within `ε` of `φ`
+everywhere. -/
+theorem TestFunction.exists_isCompact_forall_exists_dist_le {n : ℕ∞} (φ : 𝓓^{n}(Ω, F)) :
+    ∃ K : Set E, IsCompact K ∧ K ⊆ Ω ∧ tsupport φ ⊆ K ∧ ∀ ε : ℝ, 0 < ε →
+      ∃ ψ : 𝓓(Ω, F), tsupport ψ ⊆ K ∧ ∀ x, dist (ψ x) (φ x) ≤ ε := by
+  have hK := φ.hasCompactSupport.isCompact
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen φ.tsupport_subset
+  exact ⟨_, hK.cthickening, hδΩ, self_subset_cthickening _, fun ε hε =>
+    φ.continuous.exists_testFunction_dist_le hK subset_rfl hδ hδΩ hε⟩

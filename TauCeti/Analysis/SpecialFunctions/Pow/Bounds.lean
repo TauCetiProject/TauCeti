@@ -31,7 +31,9 @@ For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
 
 For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`. This is
-how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
+how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates. Likewise,
+for `0 < α`, every `c (ε ^ (1 + α) + ε ^ α)` is at most `b > 0` at some scale `ε ∈ (0, ε₀]`, as
+when interpolation inequalities absorb a Hölder constant.
 
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. Conversely,
@@ -187,6 +189,23 @@ theorem exists_pos_le_one_mul_rpow_le (c : ℝ) {α b : ℝ} (hα : 0 < α) (hb 
     (s := Set.Ioi 0) ((ht.eventually (eventually_le_nhds hb)).and (eventually_le_nhds one_pos))).and
     self_mem_nhdsWithin).exists
   exact ⟨r, hr, hr1, hrb⟩
+
+/-- For `0 < α`, `0 < b` and `0 < ε₀`, every `c (ε ^ (1 + α) + ε ^ α)` is at most `b` for some
+scale `ε ∈ (0, ε₀]`. -/
+theorem exists_pos_le_mul_rpow_add_rpow_le (c : ℝ) {α b ε₀ : ℝ} (hα : 0 < α) (hb : 0 < b)
+    (hε₀ : 0 < ε₀) : ∃ ε : ℝ, 0 < ε ∧ ε ≤ ε₀ ∧ c * (ε ^ (1 + α) + ε ^ α) ≤ b := by
+  obtain ⟨ε₁, hε₁, hε₁1, hsmall⟩ := exists_pos_le_one_mul_rpow_le (2 * max c 0) hα hb
+  have hε : 0 < min ε₀ ε₁ := lt_min hε₀ hε₁
+  refine ⟨min ε₀ ε₁, hε, min_le_left _ _, ?_⟩
+  have hq : min ε₀ ε₁ ^ α ≤ ε₁ ^ α := rpow_le_rpow hε.le (min_le_right _ _) hα.le
+  have hq' : min ε₀ ε₁ ^ (1 + α) ≤ min ε₀ ε₁ ^ α := by
+    rw [rpow_add hε, rpow_one]
+    exact mul_le_of_le_one_left (by positivity) ((min_le_right _ _).trans hε₁1)
+  calc c * (min ε₀ ε₁ ^ (1 + α) + min ε₀ ε₁ ^ α)
+      ≤ max c 0 * (min ε₀ ε₁ ^ (1 + α) + min ε₀ ε₁ ^ α) := by gcongr; exact le_max_left _ _
+    _ ≤ max c 0 * (2 * ε₁ ^ α) := by gcongr; linarith
+    _ = 2 * max c 0 * ε₁ ^ α := by ring
+    _ ≤ b := hsmall
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
