@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
 public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 
 /-!
@@ -75,6 +76,7 @@ theorem distribHaarChar_adicCompletion (x : (v.adicCompletion K)ˣ) :
 
 /-- The normalized local Haar measure `μ_v = addHaarMeasure (integerPositiveCompacts K_v)` of the
 local field `K_v` gives `𝒪_v` mass `1`. -/
+@[simp]
 theorem addHaarMeasure_adicCompletionIntegers :
     addHaarMeasure (TauCeti.integerPositiveCompacts (v.adicCompletion K))
       (v.adicCompletionIntegers K) = 1 := by

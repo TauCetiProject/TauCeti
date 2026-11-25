@@ -17,9 +17,6 @@ completion `w.Completion` at an infinite place `w`. Families of local conditions
 places of `K`, such as those cutting out the Shafarevich–Tate group of an elliptic curve, are
 indexed by `Place K` with these fields.
 
-The archimedean completion `K_w` is isometric to `ℝ` or `ℂ`, hence second countable
-(`NumberField.InfinitePlace.Completion.instSecondCountableTopology`).
-
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II.
@@ -47,20 +44,5 @@ noncomputable instance (v : Place K) : Algebra K v.Completion := by
   cases v <;> exact inferInstance
 
 end TauCeti.GlobalNumberFields.Place
-
-namespace NumberField.InfinitePlace
-
-variable {K : Type*} [Field K]
-
-/-- The completion `K_w` of a number field at an infinite place is second countable, being
-isometric to `ℝ` or `ℂ`. -/
-instance Completion.instSecondCountableTopology (w : InfinitePlace K) :
-    SecondCountableTopology w.Completion := by
-  by_cases hw : w.IsReal
-  · exact (Completion.isometryEquivRealOfIsReal hw).toHomeomorph.secondCountableTopology
-  · exact (Completion.isometryEquivComplexOfIsComplex
-      (not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
-
-end NumberField.InfinitePlace
 
 end

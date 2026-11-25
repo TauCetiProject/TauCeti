@@ -32,24 +32,20 @@ and the Borel structures on which the Haar measures of adeles and ideles live.
   countable by `Units.instSecondCountableTopology`, which uses the embedding `u ↦ (u, u⁻¹)` and so
   covers the adelic rings, whose unit groups do not carry the subspace topology.
 
-The infinite adeles carry their Borel σ-algebra. The units of the infinite adeles, the ideles and
-`GL_n` of the infinite adeles and of the adeles get the Borel σ-algebras of their native units
-topologies as definitions, not instances, since Mathlib's `Units.instMeasurableSpace` already
-gives unit groups the pullback σ-algebra along `Units.val`. The local completions `K_v` get
-their Borel σ-algebras in `TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel`, and the finite
-adeles, the finite ideles and `GL_n` of the finite adeles in
+The infinite adeles carry their Borel σ-algebra. The local completions `K_v` get their Borel
+σ-algebras in `TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel`, and the finite adeles in
 `TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Borel`. The adele ring carries the product
 σ-algebra of `K_∞ × 𝔸_{K,f}`, which is its Borel σ-algebra by second countability
-(`NumberField.AdeleRing.instBorelSpace`).
+(`NumberField.AdeleRing.instBorelSpace`). The unit groups (the ideles and `K_∞ˣ`) and `GL_n` of
+the adelic rings carry the Borel σ-algebras of their native units topologies through the general
+definition `Units.borelMeasurableSpace` (`TauCeti.MeasureTheory.Constructions.BorelSpace.Units`),
+not through instances, since Mathlib's `Units.instMeasurableSpace` already gives unit groups the
+pullback σ-algebra along `Units.val`.
 
 ## Main results
 
 * `NumberField.AdeleRing.instSecondCountableTopology`.
 * `NumberField.InfiniteAdeleRing.instBorelSpace`, `NumberField.AdeleRing.instBorelSpace`.
-* `NumberField.InfiniteAdeleRing.measurableSpaceUnits`, `NumberField.IdeleGroup.measurableSpace`,
-  `NumberField.InfiniteAdeleRing.measurableSpaceMatrixUnits`,
-  `NumberField.AdeleRing.measurableSpaceMatrixUnits`: the Borel σ-algebras on the unit groups and
-  on `GL_n`.
 
 ## References
 
@@ -92,56 +88,8 @@ instance InfiniteAdeleRing.instBorelSpace : BorelSpace (InfiniteAdeleRing K) := 
 instance AdeleRing.instMeasurableSpace : MeasurableSpace (AdeleRing R K) :=
   inferInstanceAs <| MeasurableSpace (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
-/-- The Borel σ-algebra on the idele group, for its native units topology. It is not an instance:
-Mathlib's `Units.instMeasurableSpace` already gives the units of a measurable monoid the pullback
-σ-algebra along `Units.val`, and the units topology is not the subspace topology. -/
-@[instance_reducible]
-def IdeleGroup.measurableSpace : MeasurableSpace (IdeleGroup R K) := borel _
-
-/-- `IdeleGroup.measurableSpace R K` is the Borel σ-algebra of the idele group. -/
-theorem IdeleGroup.borelSpace :
-    @BorelSpace (IdeleGroup R K) _ (IdeleGroup.measurableSpace R K) :=
-  @BorelSpace.mk _ _ (IdeleGroup.measurableSpace R K) rfl
-
 /-- The product σ-algebra on the adele ring of a number field is its Borel σ-algebra. -/
 instance AdeleRing.instBorelSpace [NumberField K] : BorelSpace (AdeleRing (𝓞 K) K) :=
   inferInstanceAs <| BorelSpace (InfiniteAdeleRing K × FiniteAdeleRing (𝓞 K) K)
-
-/-- The Borel σ-algebra on the units of the infinite adele ring, for their native topology. Like
-`IdeleGroup.measurableSpace`, it is not an instance. -/
-@[instance_reducible]
-def InfiniteAdeleRing.measurableSpaceUnits : MeasurableSpace (InfiniteAdeleRing K)ˣ :=
-  borel _
-
-/-- `InfiniteAdeleRing.measurableSpaceUnits K` is the Borel σ-algebra of `K_∞ˣ`. -/
-theorem InfiniteAdeleRing.borelSpaceUnits :
-    @BorelSpace (InfiniteAdeleRing K)ˣ _ (InfiniteAdeleRing.measurableSpaceUnits K) :=
-  @BorelSpace.mk _ _ (InfiniteAdeleRing.measurableSpaceUnits K) rfl
-
-variable (n : Type*) [Fintype n] [DecidableEq n]
-
-/-- The Borel σ-algebra on `GL_n` of the infinite adeles, for the native topology of the units of
-the matrix ring. Like `IdeleGroup.measurableSpace`, it is not an instance. -/
-@[instance_reducible]
-def InfiniteAdeleRing.measurableSpaceMatrixUnits :
-    MeasurableSpace (Matrix n n (InfiniteAdeleRing K))ˣ :=
-  borel _
-
-/-- `InfiniteAdeleRing.measurableSpaceMatrixUnits K n` is the Borel σ-algebra of `GL_n(K_∞)`. -/
-theorem InfiniteAdeleRing.borelSpaceMatrixUnits :
-    @BorelSpace (Matrix n n (InfiniteAdeleRing K))ˣ _
-      (InfiniteAdeleRing.measurableSpaceMatrixUnits K n) :=
-  @BorelSpace.mk _ _ (InfiniteAdeleRing.measurableSpaceMatrixUnits K n) rfl
-
-/-- The Borel σ-algebra on `GL_n` of the adeles, for the native topology of the units of the
-matrix ring. Like `IdeleGroup.measurableSpace`, it is not an instance. -/
-@[instance_reducible]
-def AdeleRing.measurableSpaceMatrixUnits : MeasurableSpace (Matrix n n (AdeleRing R K))ˣ :=
-  borel _
-
-/-- `AdeleRing.measurableSpaceMatrixUnits R K n` is the Borel σ-algebra of `GL_n(𝔸_K)`. -/
-theorem AdeleRing.borelSpaceMatrixUnits :
-    @BorelSpace (Matrix n n (AdeleRing R K))ˣ _ (AdeleRing.measurableSpaceMatrixUnits R K n) :=
-  @BorelSpace.mk _ _ (AdeleRing.measurableSpaceMatrixUnits R K n) rfl
 
 end NumberField

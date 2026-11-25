@@ -22,8 +22,9 @@ absolute value on the dense base field, and
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
 completion are determined by their values on it. The normalized value is continuous.
 
-Archimedean completions are nontrivially normed fields of characteristic zero, and the diagonal
-embeddings form scalar towers over any commutative semiring base.
+Archimedean completions are nontrivially normed fields of characteristic zero, second countable
+since they are isometric to `ℝ` or `ℂ`, and the diagonal embeddings form scalar towers over any
+commutative semiring base.
 
 ## References
 
@@ -52,6 +53,14 @@ instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
 /-- An archimedean completion has characteristic zero. -/
 instance Completion.instCharZero (w : InfinitePlace K) : CharZero w.Completion :=
   (Completion.extensionEmbedding w).charZero
+
+/-- An archimedean completion is second countable, being isometric to `ℝ` or `ℂ`. -/
+instance Completion.instSecondCountableTopology (w : InfinitePlace K) :
+    SecondCountableTopology w.Completion := by
+  by_cases hw : w.IsReal
+  · exact (Completion.isometryEquivRealOfIsReal hw).toHomeomorph.secondCountableTopology
+  · exact (Completion.isometryEquivComplexOfIsComplex
+      (not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
 
 /-- The algebra map of `K` into its completion at an infinite place is the coercion. -/
 theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :
