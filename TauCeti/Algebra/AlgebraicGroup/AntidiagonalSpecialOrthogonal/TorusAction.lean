@@ -23,7 +23,7 @@ diagonal entry of `T` (`TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorusWeigh
 `t x_ij(a) t⁻¹ = x_ij(α(t) a)`,  `α = w_i - w_j`.
 
 The character `α` is the root of the root subgroup: `ε_i - ε_j` for `i, j < n`, `ε_i + ε_{j'}`
-for `i < n ≤ j`, and `-(ε_{i'} + ε_j)` for `j < n ≤ i`.
+for `i < n ≤ j`, `-(ε_{i'} + ε_j)` for `j < n ≤ i`, and `ε_{j'} - ε_{i'}` for `n ≤ i, j`.
 
 ## Main declarations
 
