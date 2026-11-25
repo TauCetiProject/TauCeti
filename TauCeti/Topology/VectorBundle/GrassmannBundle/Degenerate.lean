@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.GrassmannBundle
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 /-!
 # The Grassmann bundles of `0`-planes and of full planes
@@ -83,25 +84,12 @@ theorem coe_projHomeomorphOfForallEq_symm_apply {Q : ∀ b, E b →L[ℝ] E b}
       (by rw [coe_projHomeomorphOfForallEq, proj_fiberIncl])
   rw [h, coe_fiberIncl_apply]
 
-omit [FiniteDimensional ℝ F] [∀ b, CompleteSpace (E b)] [ContinuousFiberNorm F E] in
-/-- The fibres of a vector bundle have the dimension of the model fibre. -/
-theorem finrank_fiber (b : B) : finrank ℝ (E b) = finrank ℝ F :=
-  ((trivializationAt F E b).continuousLinearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv.finrank_eq
-
-include F in
-omit [∀ b, CompleteSpace (E b)] [ContinuousFiberNorm F E] in
-/-- The fibres of a vector bundle with finite-dimensional model fibre are finite-dimensional. -/
-theorem finiteDimensional_fiber (b : B) : FiniteDimensional ℝ (E b) :=
-  ((trivializationAt F E b).continuousLinearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv.symm.finiteDimensional
-
 omit [ContinuousFiberNorm F E] in
 /-- The fibre Grassmannian of full planes is the identity. -/
 theorem grassmannian_finrank_fiber (b : B) :
     Euclidean.grassmannian ℝ (E b) (finrank ℝ F) = {1} := by
-  have := finiteDimensional_fiber F E b
-  rw [← finrank_fiber F E b]
+  have := VectorBundle.finiteDimensional ℝ F E b
+  rw [← VectorBundle.finrank_eq ℝ F E b]
   exact Euclidean.grassmannian_finrank
 
 /-- **The bundle of `0`-planes is the base**: `G_0(E) ≃ₜ B`, with inverse `b ↦ (b, 0)`. -/
