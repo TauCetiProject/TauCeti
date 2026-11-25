@@ -22,8 +22,7 @@ namespace `TauCeti.SymplecticForm`). This file proves that the **Williamson type
 `(k_e, k_h, k_f) = (|t|, m - |t|, f)` of a normal form is determined by its span alone
 (`TauCeti.SymplecticForm.eq_and_eq_and_card_eq_of_span_range_williamsonBlocks_eq`): two normal
 forms with the same span have the same numbers of elliptic, hyperbolic and focus-focus blocks. So
-the type is an invariant of a nondegenerate family, and of the Cartan subalgebra of `sp(V, ω)`
-spanned by its Hamiltonian endomorphisms.
+the type is an invariant of the span of a nondegenerate family.
 
 The Williamson blocks are linearly independent
 (`TauCeti.SymplecticForm.linearIndependent_williamsonBlocks`), and two subspaces of their span `S`
@@ -31,13 +30,15 @@ are described without reference to the basis:
 
 * the forms in `S` whose polar bilinear form has rank at most two span the subspace of the
   elliptic and hyperbolic blocks
-  (`TauCeti.SymplecticForm.span_setOf_finrank_range_polarBilin_le_two`), of dimension `m`. Each
-  elliptic or hyperbolic block has rank two, while the polar form of a form with a nonzero
-  focus-focus component `a (x y + x' y') + c (x y' - x' y)` is injective on the four coordinates
-  of that pair;
+  (`span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two`), of
+  dimension `m`. Each elliptic or hyperbolic block has rank two, while the polar form of a form
+  with a nonzero focus-focus component `a (x y + x' y') + c (x y' - x' y)` is injective on the
+  four coordinates of that pair;
 * the positive semidefinite forms in `S` span the subspace of the elliptic blocks
-  (`TauCeti.SymplecticForm.span_setOf_nonneg`), of dimension `|t|`: a hyperbolic block or a
-  focus-focus component takes negative values on its own coordinates.
+  (`span_setOf_mem_span_range_williamsonBlocks_and_nonneg`), of dimension `|t|`: a hyperbolic
+  block or a focus-focus component takes negative values on its own coordinates.
+
+Both are in the namespace `TauCeti.SymplecticForm`.
 
 The dimension of `S` alone only gives `k_e + k_h + 2 k_f`. Neither description uses the symplectic
 form, so the bases need not be Darboux bases.
@@ -212,10 +213,10 @@ private theorem four_le_finrank_range_polarBilin_sum_smul_williamsonBlocks
     _ ≤ finrank ℝ (LinearMap.range L) :=
         Submodule.finrank_mono (LinearMap.range_comp_le_range _ _)
 
-/-- **The elliptic and hyperbolic blocks are the forms of rank at most two.** In the span of the
+/-- **Forms of rank at most two span the elliptic and hyperbolic blocks.** In the span of the
 Williamson blocks, the forms whose polar form has rank at most two span the subspace of the
 elliptic and hyperbolic blocks. -/
-theorem span_setOf_finrank_range_polarBilin_le_two :
+theorem span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two :
     Submodule.span ℝ {P | P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)) ∧
         finrank ℝ (LinearMap.range P.polarBilin) ≤ 2} =
       Submodule.span ℝ (Set.range fun k ↦ williamsonBlocks b t (.inl k)) := by
@@ -233,19 +234,20 @@ theorem span_setOf_finrank_range_polarBilin_le_two :
   simp only [Fin.sum_univ_two, hc, zero_smul, add_zero, Finset.sum_const_zero]
   exact Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
 
-/-- The elliptic and hyperbolic Williamson blocks span a subspace of dimension `m`. -/
-theorem finrank_span_setOf_finrank_range_polarBilin_le_two :
+/-- In the span of the Williamson blocks, the forms whose polar form has rank at most two span a
+subspace of dimension `m`, that of the elliptic and hyperbolic blocks. -/
+theorem finrank_span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two :
     finrank ℝ (Submodule.span ℝ {P | P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)) ∧
         finrank ℝ (LinearMap.range P.polarBilin) ≤ 2}) = m := by
-  rw [span_setOf_finrank_range_polarBilin_le_two]
+  rw [span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two]
   exact (finrank_span_eq_card (linearIndependent_williamsonBlocks.comp _ Sum.inl_injective)).trans
     (Fintype.card_fin m)
 
 /-! ### The elliptic blocks: positive semidefinite forms -/
 
-/-- **The elliptic blocks are the positive semidefinite forms.** In the span of the Williamson
+/-- **Positive semidefinite forms span the elliptic blocks.** In the span of the Williamson
 blocks, the positive semidefinite forms span the subspace of the elliptic blocks. -/
-theorem span_setOf_nonneg :
+theorem span_setOf_mem_span_range_williamsonBlocks_and_nonneg :
     Submodule.span ℝ {P | P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)) ∧
         ∀ x, 0 ≤ P x} =
       Submodule.span ℝ (Set.range fun k : t ↦ williamsonBlocks b t (.inl k)) := by
@@ -276,11 +278,12 @@ theorem span_setOf_nonneg :
   · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨⟨k, hk⟩, rfl⟩)
   · simp [hh k hk]
 
-/-- The elliptic Williamson blocks span a subspace of dimension `|t|`. -/
-theorem finrank_span_setOf_nonneg :
+/-- In the span of the Williamson blocks, the positive semidefinite forms span a subspace of
+dimension `|t|`, that of the elliptic blocks. -/
+theorem finrank_span_setOf_mem_span_range_williamsonBlocks_and_nonneg :
     finrank ℝ (Submodule.span ℝ {P | P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)) ∧
         ∀ x, 0 ≤ P x}) = t.card := by
-  rw [span_setOf_nonneg]
+  rw [span_setOf_mem_span_range_williamsonBlocks_and_nonneg]
   exact (finrank_span_eq_card ((linearIndependent_williamsonBlocks.comp _ Sum.inl_injective).comp _
     Subtype.val_injective)).trans (Fintype.card_coe t)
 
@@ -296,12 +299,14 @@ theorem eq_and_eq_and_card_eq_of_span_range_williamsonBlocks_eq {m' f' : ℕ}
       Submodule.span ℝ (Set.range (williamsonBlocks b' t'))) :
     m = m' ∧ f = f' ∧ t.card = t'.card := by
   have hm : m = m' := by
-    rw [← finrank_span_setOf_finrank_range_polarBilin_le_two (b := b) (t := t),
-      ← finrank_span_setOf_finrank_range_polarBilin_le_two (b := b') (t := t'), h]
+    rw [← finrank_span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two
+        (b := b) (t := t),
+      ← finrank_span_setOf_mem_span_range_williamsonBlocks_and_finrank_range_polarBilin_le_two
+        (b := b') (t := t'), h]
   have hdim := (finrank_eq_card_basis b).symm.trans (finrank_eq_card_basis b')
   simp only [Fintype.card_prod, Fintype.card_fin] at hdim
   refine ⟨hm, by omega, ?_⟩
-  rw [← finrank_span_setOf_nonneg (b := b) (t := t),
-    ← finrank_span_setOf_nonneg (b := b') (t := t'), h]
+  rw [← finrank_span_setOf_mem_span_range_williamsonBlocks_and_nonneg (b := b) (t := t),
+    ← finrank_span_setOf_mem_span_range_williamsonBlocks_and_nonneg (b := b') (t := t'), h]
 
 end TauCeti.SymplecticForm
