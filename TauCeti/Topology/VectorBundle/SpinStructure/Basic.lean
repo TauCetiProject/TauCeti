@@ -69,6 +69,8 @@ nonzero form `Q`, which for the standard form on `ℝⁿ` means `n ≥ 1`
   equivariant along the vector action of `Spin(n)`.
 * `TauCeti.SpinCStructure.toFrame_smul_mk`: the frame map of a `Spinᶜ` structure is equivariant
   along `[s, z] ↦ (v ↦ s v s⁻¹)`.
+* `TauCeti.SpinCStructure.toFrame_smul_toSpecialOrthogonal`: the same equivariance, stated for an
+  arbitrary element of `Spinᶜ(n)` through its rotation.
 * `TauCeti.SpinCStructure.toFrame_smul_ofCircle`: the central circle of `Spinᶜ(n)` acts trivially
   on frames.
 
@@ -146,6 +148,17 @@ theorem toFrame_smul_mk (s : SpinCStructure F E n) (x : X) (p : s.P x)
       TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
         ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2 (spinVectorAction _ g v))) := by
   simpa using s.toFrame_smul x p (spinCGroup.mk _ hQ (g, z)) v
+
+/-- **The frame map of a `Spinᶜ` structure is equivariant along the rotation homomorphism**: the
+frame of `p • g` sends `v` to the frame of `p` applied to the rotation of `g`. -/
+theorem toFrame_smul_toSpecialOrthogonal (s : SpinCStructure F E n) (x : X) (p : s.P x)
+    (g : spinCGroup (realCliffordForm n 0) hQ) (v : Fin n → ℝ) :
+    TotalSpace.mk' F (s.toFrame ⟨x, op g • p⟩).proj
+        ((s.toFrame ⟨x, op g • p⟩).frame (WithLp.toLp 2 v)) =
+      TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
+        ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2
+          ((spinCGroup.toSpecialOrthogonal _ hQ g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v))) := by
+  simpa using s.toFrame_smul x p g v
 
 /-- **The central circle of `Spinᶜ(n)` acts trivially on frames**: the frame of `p • [1, z]` is the
 frame of `p`. -/

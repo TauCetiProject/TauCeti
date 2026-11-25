@@ -12,11 +12,23 @@ public import Mathlib.Data.Bundle
 
 A map of total spaces `Bundle.TotalSpace F₁ E₁ → Bundle.TotalSpace F₂ E₂` covering the identity of
 the base is determined by its fibre maps `E₁ x → E₂ x`. It is bijective exactly when each of
-its fibre maps is (`TauCeti.bijective_totalSpace_map_iff`). No topology or linear structure is
-involved.
+its fibre maps is (`TauCeti.bijective_totalSpace_map_iff`). A vector over `a` is the value of a
+section `σ` at `a` exactly when, as points of the total space, it equals the value of `σ` at any
+`b = a` (`Bundle.TotalSpace.mk_eq_mk_iff_of_eq`). No topology or linear structure is involved.
 -/
 
 public section
+
+namespace Bundle.TotalSpace
+
+/-- A vector over `a = b` is the value of a section `σ` exactly when it equals `σ b` as a point of
+the total space. -/
+theorem mk_eq_mk_iff_of_eq {B F : Type*} {E : B → Type*} (σ : ∀ b, E b) {a b : B} (h : a = b)
+    {v : E a} : (⟨a, v⟩ : TotalSpace F E) = ⟨b, σ b⟩ ↔ v = σ a := by
+  subst h
+  exact mk_inj
+
+end Bundle.TotalSpace
 
 open Bundle
 
