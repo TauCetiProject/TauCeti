@@ -33,24 +33,25 @@ of `Op(a)`:
 * `TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev`: if `u ∈ H^r` and
   `Op(p) u ∈ H^s`, then `ψ u ∈ H^{s + m}`. A distribution gains back near the support of `ψ` the
   `m` derivatives that `Op(a)` takes away.
-* `TauCeti.Symbol.exists_norm_smulLeftCLM_le`: the **interior estimate**
-  `‖ψ u‖_{H^{s + m}} ≤ C (‖Op(p) u‖_{H^s} + ‖u‖_{H^r})` on `H^{s + m}`, for every `r ≤ s + m`,
-  with a constant `C` independent of `u`.
+* `TauCeti.Symbol.exists_norm_sobolev_le_of_toDistr_eq_smulLeftCLM`: the **interior estimate**
+  `‖ψ u‖_{H^{s + m}} ≤ C (‖Op(p) u‖_{H^s} + ‖u‖_{H^r})` for `u ∈ H^r` with `Op(p) u ∈ H^s`, for
+  all real `r` and `s`, with a constant `C` independent of `u`.
 
 The same holds on the `Lᵖ` Bessel-potential spaces `H^{s,p}`, `1 < p < ∞`, for finite-dimensional
-`V` and `W`, with the operators `TauCeti.Symbol.quantizeBesselPotentialSpace` in place of
+`V` and `W`, with the operators `TauCeti.Symbol.quantizeUniformBesselPotentialSpace` in place of
 `TauCeti.Symbol.quantizeSobolev`; there the localized symbol is called `c`, since `p` is the
 exponent:
 
-* `TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace`: if
+* `TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace`: if
   `u ∈ H^{r,p}` and `Op(c) u ∈ H^{s,p}`, then `ψ u ∈ H^{s + m,p}`, and
-  `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace`
-  for a symbol `a` elliptic above some radius.
+  `IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace` in
+  the namespace `TauCeti.Symbol` for a symbol `a` elliptic above some radius.
 * `TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`: the interior estimate
-  `‖ψ u‖_{H^{s + m,p}} ≤ C (‖Op(c) u‖_{H^{s,p}} + ‖u‖_{H^{r,p}})` for `u ∈ H^{s + m,p}`. It bounds
-  every element of `H^{s + m,p}` with the tempered distribution `ψ u`; such an element exists,
-  since `ψ u` is the quantization of the symbol `ψ(x)`
-  (`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`).
+  `‖ψ u‖_{H^{s + m,p}} ≤ C (‖Op(c) u‖_{H^{s,p}} + ‖u‖_{H^{r,p}})` for `u ∈ H^{r,p}` with
+  `Op(c) u ∈ H^{s,p}`, for all real `r` and `s`, and
+  `TauCeti.Symbol.IsEllipticAbove.exists_norm_le_of_toDistr_eq_smulLeftCLM` for a symbol `a`
+  elliptic above some radius. It bounds every element of `H^{s + m,p}` with the tempered
+  distribution `ψ u`.
 
 For a scalar symbol `a`, the same argument runs once on all tempered distributions, with
 `TauCeti.Symbol.quantizeTempered`:
@@ -86,10 +87,10 @@ and `Op(ψ)` is the multiplication by `ψ` (`TauCeti.Symbol.quantizeSobolev_ofSp
 
 The operator `Op(q)` maps `H^s` to `H^{s + m}`, and `Op(R)` maps `H^r` to `H^{s + m}` since `R`
 has order `r - (s + m)`. Both statements follow, and the same identity on `H^{r,p}`
-(`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_sharp`,
-`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`) gives the `Lᵖ` versions.
-On tempered distributions the identity follows from `TauCeti.Symbol.quantizeTempered_sharp` and
-`TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`.
+(`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_sharp`,
+`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id`) gives the `Lᵖ`
+versions. On tempered distributions the identity follows from
+`TauCeti.Symbol.quantizeTempered_sharp` and `TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`.
 
 ## References
 
@@ -235,35 +236,36 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
 /-- **Interior elliptic estimate.** Let `b` be a formal left parametrix of the symbol `a` of order
 `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz function, and `p` a
 symbol with compact spatial support which agrees with `a` at all positions near the support of
-`ψ`. For all real `s` and `r ≤ s + m` there is a constant `C` with
+`ψ`. For all real `r` and `s` there is a constant `C` with
 
 `‖ψ u‖_{H^{s + m}} ≤ C (‖Op(p) u‖_{H^s} + ‖u‖_{H^r})`
 
-for every `u ∈ H^{s + m}`. -/
-theorem exists_norm_smulLeftCLM_le
+for every `u ∈ H^r` with `Op(p) u ∈ H^s`. Here `f` and `v` are elements of `H^s` and `H^{s + m}`
+with the tempered distributions `Op(p) u` and `ψ u`; the latter exists by
+`TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev`. The order `r` is
+arbitrary: `u` need not lie in `H^{s + m}`. -/
+theorem exists_norm_sobolev_le_of_toDistr_eq_smulLeftCLM
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (hψ : HasCompactSupport ψ) (hp : p.HasCompactSpatialSupport)
     (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ))
-    (s : ℝ) {r : ℝ} (hr : r ≤ s + m) :
-    ∃ C, ∀ u : H^{s + m}(CoordinateSpace n, V),
-      ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤
-        C * (‖p.quantizeSobolev hp (s + m) u‖ + ‖BesselPotentialSpace.inclusion hr u‖) := by
+    (r s : ℝ) :
+    ∃ C, ∀ (u : H^{r}(CoordinateSpace n, V)) (f : H^{s}(CoordinateSpace n, W))
+      (v : H^{s + m}(CoordinateSpace n, V)),
+        f.toDistr = (p.quantizeSobolev hp r u).toDistr →
+        v.toDistr = smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr →
+          ‖v‖ ≤ C * (‖f‖ + ‖u‖) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
-  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeSobolev (hasCompactSpatialSupport_smulLeft _ hψ b)
-    (s + m - m)
+  have hq := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b
+  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeSobolev hq s
   set T := R.quantizeSobolev hR r
-  refine ⟨max ‖Q‖ ‖T‖, fun u ↦ ?_⟩
-  -- `ψ u = Q (Op(p) u) - T u`, compared in `H^{s + m}`.
-  set X := BesselPotentialSpace.copy (s + m) (Q (p.quantizeSobolev hp (s + m) u)) (by ring)
-  set Y := BesselPotentialSpace.copy (s + m) (T (BesselPotentialSpace.inclusion hr u)) (by ring)
-  have hXY : BesselPotentialSpace.smulLeftCLM (s + m) ψ u = X - Y := by
+  refine ⟨max ‖Q‖ ‖T‖, fun u f v hf hv ↦ ?_⟩
+  -- `v = ψ u = Q f - T u`, compared in `H^{s + m}`.
+  have hXY : v = (Q f).copy (s + m) (by ring) - (T u).copy (s + m) (by ring) := by
     refine BesselPotentialSpace.ext ?_
-    rw [BesselPotentialSpace.toDistr_smulLeftCLM, BesselPotentialSpace.toDistr_sub,
-      BesselPotentialSpace.toDistr_copy _ (by ring), BesselPotentialSpace.toDistr_copy _ (by ring),
-      hψu (s + m) u]
-    congr 1
-    exact toDistr_quantizeSobolev_congr rfl hR hR (by simp)
+    rw [hv, BesselPotentialSpace.toDistr_sub, BesselPotentialSpace.toDistr_copy _ (by ring),
+      BesselPotentialSpace.toDistr_copy _ (by ring), hψu r u,
+      toDistr_quantizeSobolev_congr rfl hq hq hf.symm]
   exact hXY ▸ norm_copy_sub_copy_le Q T _ _ _ _
 
 end Regularity
@@ -279,7 +281,7 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensi
 
 /-- The parametrix identity `ψ u = Op(ψ b) (Op(c) u) - Op(R) u` on `H^{r,p}`, with a symbol `R`
 of every order, of which `Op(R)` is taken at the order `μ`. -/
-private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
+private theorem exists_toDistr_quantizeUniformBesselPotentialSpace_localize
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
@@ -288,10 +290,10 @@ private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
     ∃ (R : Symbol n V V μ) (hR : R.HasCompactSpatialSupport), ∀ (r : ℝ)
       (u : H^{r, p}(CoordinateSpace n, V)),
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr =
-          ((smulLeft (ψ.smooth ⊤) b).quantizeBesselPotentialSpace
-            (hasCompactSpatialSupport_smulLeft _ hψ b) (r - m) p
-            (c.quantizeBesselPotentialSpace hc r p u)).toDistr -
-          (R.quantizeBesselPotentialSpace hR r p u).toDistr := by
+          ((smulLeft (ψ.smooth ⊤) b).quantizeUniformBesselPotentialSpace
+            (hasCompactSpatialSupport_smulLeft _ hψ b).isUniform (r - m) p
+            (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u)).toDistr -
+          (R.quantizeUniformBesselPotentialSpace hR.isUniform r p u).toDistr := by
   have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
   set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ'.smul contDiff_const)
   have hψs : ψs.HasCompactSpatialSupport :=
@@ -302,16 +304,18 @@ private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
   obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hc hca μ
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   -- `Op(R) u = Op(q # c) u - ψ u = Op(q) (Op(c) u) - ψ u`.
-  have hRu : (R.quantizeBesselPotentialSpace hRc r p u).toDistr =
-      ((smulLeft hψ' b).quantizeBesselPotentialSpace hq (r - m) p
-        (c.quantizeBesselPotentialSpace hc r p u)).toDistr -
+  have hRu : (R.quantizeUniformBesselPotentialSpace hRc.isUniform r p u).toDistr =
+      ((smulLeft hψ' b).quantizeUniformBesselPotentialSpace hq.isUniform (r - m) p
+        (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u)).toDistr -
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr := by
-    rw [toDistr_quantizeBesselPotentialSpace_congr hR hRc (hqc.sub hψs') hp hp_top rfl,
-      quantizeBesselPotentialSpace_sub hqc hψs' _ r hp hp_top, _root_.sub_apply,
+    rw [hRc.toDistr_quantizeUniformBesselPotentialSpace_congr (hqc.sub hψs') hR hp hp_top rfl,
+      hqc.quantizeUniformBesselPotentialSpace_sub hψs' r hp hp_top,
+      _root_.sub_apply,
       BesselPotentialSpace.toDistr_sub,
-      toDistr_quantizeBesselPotentialSpace_sharp hq hc r hp hp_top,
-      toDistr_quantizeBesselPotentialSpace_congr (by simp [coefficient_inclusion]) hψs' hψs hp
-        hp_top rfl, toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id ψ hψs r hp hp_top]
+      toDistr_quantizeUniformBesselPotentialSpace_sharp hq hc r hp hp_top,
+      hψs'.toDistr_quantizeUniformBesselPotentialSpace_congr hψs (by simp [coefficient_inclusion])
+        hp hp_top rfl,
+      toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id ψ hψs r hp hp_top]
   rw [hRu, sub_sub_cancel]
 
 /-- **Interior elliptic regularity on `H^{s,p}`.** Let `1 < p < ∞`, let `V` and `W` be
@@ -320,18 +324,18 @@ finite-dimensional, let `b` be a formal left parametrix of the symbol `a` of ord
 compact spatial support which agrees with `a` at all positions near the support of `ψ`. If
 `u ∈ H^{r,p}` and `Op(c) u ∈ H^{s,p}`, then `ψ u ∈ H^{s + m,p}`. Every symbol elliptic above some
 radius has such a parametrix (`TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm`). -/
-theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
+theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
     (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {r s : ℝ} (u : H^{r, p}(CoordinateSpace n, V))
-    (hu : MemSobolev s p (c.quantizeBesselPotentialSpace hc r p u).toDistr) :
+    (hu : MemSobolev s p (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u).toDistr) :
     MemSobolev (s + m) p (smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr) := by
-  obtain ⟨R, hR, hψu⟩ :=
-    exists_toDistr_quantizeBesselPotentialSpace_localize hab hψ hc hca hp hp_top (r - (s + m))
+  obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeUniformBesselPotentialSpace_localize hab hψ hc hca
+    hp hp_top (r - (s + m))
   have hq := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b
-  rw [hψu r u, toDistr_quantizeBesselPotentialSpace_congr rfl hq hq hp hp_top
+  rw [hψu r u, hq.toDistr_quantizeUniformBesselPotentialSpace_congr hq rfl hp hp_top
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
   exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
     (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring))
@@ -341,54 +345,73 @@ and `W` be finite-dimensional, let `a` be a symbol of order `m` elliptic above s
 be a compactly supported Schwartz function, and `c` a symbol with compact spatial support which
 agrees with `a` at all positions near the support of `ψ`. If `u ∈ H^{r,p}` and
 `Op(c) u ∈ H^{s,p}`, then `ψ u ∈ H^{s + m,p}`. -/
-theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
+theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace
     {R : ℝ} (ha : a.IsEllipticAbove R) (hψ : HasCompactSupport ψ)
     (hc : c.HasCompactSpatialSupport)
     (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {r s : ℝ} (u : H^{r, p}(CoordinateSpace n, V))
-    (hu : MemSobolev s p (c.quantizeBesselPotentialSpace hc r p u).toDistr) :
+    (hu : MemSobolev s p (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u).toDistr) :
     MemSobolev (s + m) p (smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr) :=
   have ⟨_, hab, _⟩ := ha.exists_isAsymptoticSum_sharpTerm
-  Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace hab hψ hc hca hp hp_top
-    u hu
+  Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace hab hψ hc hca hp
+    hp_top u hu
 
 /-- **Interior elliptic estimate on `H^{s,p}`.** Let `1 < p < ∞`, let `V` and `W` be
 finite-dimensional, let `b` be a formal left parametrix of the symbol `a` of order `m`,
 `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz function, and `c` a symbol with
 compact spatial support which agrees with `a` at all positions near the support of `ψ`. For all
-real `s` and `r ≤ s + m` there is a constant `C` with
+real `r` and `s` there is a constant `C` with
 
 `‖ψ u‖_{H^{s + m,p}} ≤ C (‖Op(c) u‖_{H^{s,p}} + ‖u‖_{H^{r,p}})`
 
-for every `u ∈ H^{s + m,p}`, where `ψ u` is any element `v` of `H^{s + m,p}` with the tempered
-distribution `ψ u`. -/
+for every `u ∈ H^{r,p}` with `Op(c) u ∈ H^{s,p}`. Here `f` and `v` are elements of `H^{s,p}` and
+`H^{s + m,p}` with the tempered distributions `Op(c) u` and `ψ u`; the latter exists by
+`TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace`. The
+order `r` is arbitrary: `u` need not lie in `H^{s + m,p}`. -/
 theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
     (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (s : ℝ) {r : ℝ} (hr : r ≤ s + m) :
-    ∃ C, ∀ u v : H^{s + m, p}(CoordinateSpace n, V),
-      v.toDistr = smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr →
-        ‖v‖ ≤ C * (‖c.quantizeBesselPotentialSpace hc (s + m) p u‖ +
-          ‖BesselPotentialSpace.inclusion hr u‖) := by
-  obtain ⟨R, hR, hψu⟩ :=
-    exists_toDistr_quantizeBesselPotentialSpace_localize hab hψ hc hca hp hp_top (r - (s + m))
-  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeBesselPotentialSpace
-    (hasCompactSpatialSupport_smulLeft _ hψ b) (s + m - m) p
-  set T := R.quantizeBesselPotentialSpace hR r p
-  refine ⟨max ‖Q‖ ‖T‖, fun u v hv ↦ ?_⟩
-  -- `v = ψ u = Q (Op(c) u) - T u`, compared in `H^{s + m,p}`.
-  set X := BesselPotentialSpace.copy (s + m)
-    (Q (c.quantizeBesselPotentialSpace hc (s + m) p u)) (by ring)
-  set Y := BesselPotentialSpace.copy (s + m) (T (BesselPotentialSpace.inclusion hr u)) (by ring)
-  have hXY : v = X - Y := by
+    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (r s : ℝ) :
+    ∃ C, ∀ (u : H^{r, p}(CoordinateSpace n, V)) (f : H^{s, p}(CoordinateSpace n, W))
+      (v : H^{s + m, p}(CoordinateSpace n, V)),
+        f.toDistr = (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u).toDistr →
+        v.toDistr = smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr →
+          ‖v‖ ≤ C * (‖f‖ + ‖u‖) := by
+  obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeUniformBesselPotentialSpace_localize hab hψ hc hca
+    hp hp_top (r - (s + m))
+  have hq := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b
+  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeUniformBesselPotentialSpace hq.isUniform s p
+  set T := R.quantizeUniformBesselPotentialSpace hR.isUniform r p
+  refine ⟨max ‖Q‖ ‖T‖, fun u f v hf hv ↦ ?_⟩
+  -- `v = ψ u = Q f - T u`, compared in `H^{s + m,p}`.
+  have hXY : v = (Q f).copy (s + m) (by ring) - (T u).copy (s + m) (by ring) := by
     refine BesselPotentialSpace.ext ?_
     rw [hv, BesselPotentialSpace.toDistr_sub, BesselPotentialSpace.toDistr_copy _ (by ring),
-      BesselPotentialSpace.toDistr_copy _ (by ring), hψu (s + m) u]
-    congr 1
-    exact toDistr_quantizeBesselPotentialSpace_congr rfl hR hR hp hp_top (by simp)
+      BesselPotentialSpace.toDistr_copy _ (by ring), hψu r u,
+      hq.toDistr_quantizeUniformBesselPotentialSpace_congr hq rfl hp hp_top hf]
   exact hXY ▸ norm_copy_sub_copy_le Q T _ _ _ _
+
+/-- **Interior elliptic estimate on `H^{s,p}` for elliptic symbols.** Let `1 < p < ∞`, let `V` and
+`W` be finite-dimensional, let `a` be a symbol of order `m` elliptic above some radius, let `ψ` be a
+compactly supported Schwartz function, and `c` a symbol with compact spatial support which agrees
+with `a` at all positions near the support of `ψ`. For all real `r` and `s` there is a constant `C`
+with `‖ψ u‖_{H^{s + m,p}} ≤ C (‖Op(c) u‖_{H^{s,p}} + ‖u‖_{H^{r,p}})` for every `u ∈ H^{r,p}` with
+`Op(c) u ∈ H^{s,p}`, where `f` and `v` are as in
+`TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`. -/
+theorem IsEllipticAbove.exists_norm_le_of_toDistr_eq_smulLeftCLM
+    {R : ℝ} (ha : a.IsEllipticAbove R) (hψ : HasCompactSupport ψ)
+    (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (r s : ℝ) :
+    ∃ C, ∀ (u : H^{r, p}(CoordinateSpace n, V)) (f : H^{s, p}(CoordinateSpace n, W))
+      (v : H^{s + m, p}(CoordinateSpace n, V)),
+        f.toDistr = (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u).toDistr →
+        v.toDistr = smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr →
+          ‖v‖ ≤ C * (‖f‖ + ‖u‖) :=
+  have ⟨_, hab, _⟩ := ha.exists_isAsymptoticSum_sharpTerm
+  Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM hab hψ hc hca hp hp_top r s
 
 end BesselPotentialSpace
 

@@ -76,6 +76,15 @@ theorem topRegularRefinementBound_mono (t r : ℕ) (η ε : ℝ) :
   refine Monotone.iterate (fun a b hab ↦ ?_) _
   gcongr
 
+/-- The bound on the number of pair colors produced by top regularization is monotone in the
+number of vertex cells. -/
+theorem topRegularRefinementBound_mono_parts (r : ℕ) (η ε : ℝ) (m : ℕ) :
+    Monotone fun t ↦ topRegularRefinementBound t r η ε m := by
+  intro t₁ t₂ ht
+  dsimp only
+  rw [topRegularRefinementBound_def, topRegularRefinementBound_def]
+  exact Monotone.iterate_le_of_le (fun a b hab ↦ by gcongr) (fun a ↦ by gcongr) _ m
+
 /-- Top regularization never lowers the number of pair colors. -/
 theorem le_topRegularRefinementBound (t r : ℕ) (η ε : ℝ) (m : ℕ) :
     m ≤ topRegularRefinementBound t r η ε m :=

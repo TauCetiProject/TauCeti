@@ -29,9 +29,8 @@ exponents `m.leadingExponents A`.
   `MonomialOrder.fg_initialAlgebra_iff_fg_leadingExponents`: over a field, the initial algebra of
   `A` is finitely generated as a `k`-algebra if and only if `m.leadingExponents A` is finitely
   generated as an additive submonoid.
-* `MonomialOrder.exists_finite_isSAGBIBasis_iff_fg` and
-  `MonomialOrder.exists_finset_monic_isSAGBIBasis_iff`: over a field, `A` admits a finite (or
-  finite monic) SAGBI basis if and only if `m.leadingExponents A` is finitely generated.
+* `MonomialOrder.exists_finset_monic_isSAGBIBasis_iff`: over a field, `A` admits a finite monic
+  SAGBI basis if and only if `m.leadingExponents A` is finitely generated.
 
 ## References
 
@@ -103,17 +102,6 @@ theorem fg_initialAlgebra_iff_fg_leadingExponents :
     (m.initialAlgebra A).FG ↔ (m.leadingExponents A).FG :=
   (Subalgebra.fg_iff_finiteType (m.initialAlgebra A)).trans
     finiteType_initialAlgebra_iff_fg_leadingExponents
-
-/-- Over a field, a subalgebra has a finite SAGBI basis if and only if its monoid of leading
-exponents is finitely generated. -/
-theorem exists_finite_isSAGBIBasis_iff_fg :
-    (∃ B : Set (MvPolynomial σ k), B.Finite ∧ m.IsSAGBIBasis B A) ↔
-      (m.leadingExponents A).FG := by
-  classical
-  rw [← fg_initialAlgebra_iff_fg_leadingExponents,
-    ← exists_finset_isSAGBIBasis_iff_fg_initialAlgebra]
-  exact ⟨fun ⟨B, hBfin, hB⟩ ↦ ⟨hBfin.toFinset, by simpa⟩,
-    fun ⟨B, hB⟩ ↦ ⟨B, B.finite_toSet, hB⟩⟩
 
 /-- A finite SAGBI basis over a field witnesses finite generation of the leading exponents. -/
 theorem IsSAGBIBasis.fg_leadingExponents (h : m.IsSAGBIBasis G A) (hG : G.Finite) :

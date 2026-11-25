@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Data.Fintype.Order
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
@@ -89,7 +89,7 @@ theorem exists_norm_sub_le_mul_norm_sub_of_contDiffOn
   -- Every point is the image of a point of the closed simplex spanned by its carrier.
   have hpt (x : Realization K) :
       faceInclusion K (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩ = x :=
-    Subtype.ext (faceInclusion_val _ _ _)
+    faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
   have hmem (x : Realization K) :
       (x.val : ι → ℝ) ∈ range fun t : StandardSimplex (carrier K x).val => (t.val : ι → ℝ) :=
     ⟨⟨_, mem_convexHull_carrier K x⟩, rfl⟩

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Linear
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
+public import TauCeti.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -33,6 +35,8 @@ This is the common chain-level ingredient of the cup product of cochains
 * `TauCeti.ChainComplex.tensorHom_f_comp_tensorCochain`: its naturality in the complexes.
 * `TauCeti.ChainComplex.tensorCochain_comp`, `TauCeti.ChainComplex.tensorCochain_whiskerLeft_comp`
   and `TauCeti.ChainComplex.tensorCochain_whiskerRight_comp`: changing the pairing.
+* `ChainComplex.tensorBraiding_hom_f_comp_tensorCochain`: signed interchange of the tensor product
+  of cochains in a braided category.
 -/
 
 public section
@@ -276,3 +280,38 @@ lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X 
 end Tensor
 
 end TauCeti.ChainComplex
+
+namespace ChainComplex
+
+open TauCeti.ChainComplex
+
+section Braided
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [BraidedCategory C] (A B : ChainComplex C ℕ) [A.HasTensor B] [B.HasTensor A]
+
+/-- Precomposing a tensor product of cochains with the signed interchange swaps the cochains and
+braids their coefficient pairing, with sign `(-1)^(p*q)`. This holds in every output degree,
+including `n ≠ p + q`, where both sides are zero. -/
+@[reassoc]
+lemma tensorBraiding_hom_f_comp_tensorCochain {M N P : C} (μ : N ⊗ M ⟶ P) {p q : ℕ}
+    (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+    (tensorBraiding A B).hom.f n ≫ tensorCochain μ ψ φ n =
+      ((-1 : ℤ) ^ (p * q)) • tensorCochain ((β_ M N).hom ≫ μ) φ ψ n := by
+  refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
+  rw [ιTensorObj_tensorBraiding_hom_f_assoc, Units.smul_def, ComplexShape.val_σ_down_ℕ,
+    Preadditive.comp_zsmul]
+  by_cases hi : i = p
+  · subst i
+    by_cases hj : j = q
+    · subst j
+      simp only [ιTensorObj_tensorCochain, Preadditive.zsmul_comp, Category.assoc]
+      rw [BraidedCategory.braiding_naturality_assoc]
+    · simp [ιTensorObj_tensorCochain_of_ne_left _ _ _ _ hj,
+        ιTensorObj_tensorCochain_of_ne_right _ _ _ _ hj]
+  · simp [ιTensorObj_tensorCochain_of_ne_right _ _ _ _ hi,
+      ιTensorObj_tensorCochain_of_ne_left _ _ _ _ hi]
+
+end Braided
+
+end ChainComplex

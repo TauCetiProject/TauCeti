@@ -7,9 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
-import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.GroupTheory.FiniteAbelian.Generators
-import TauCeti.RepresentationTheory.Intertwining
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RingTheory.Finiteness.Nakayama
 
 /-!
@@ -49,7 +48,9 @@ namespace Rep
 
 open MonoidAlgebra TauCeti.AugmentationIdeal
 
-variable {Q : Type} [CommGroup Q]
+section Group
+
+variable {Q : Type} [Group Q]
 
 /-- An augmentation-ideal morphism intertwines the associated monoid-algebra action. -/
 private theorem augmentationHom_apply_asModule_smul {B : Rep ℤ Q}
@@ -62,56 +63,39 @@ private theorem augmentationHom_apply_asModule_smul {B : Rep ℤ Q}
 /-- Lifts `x i` of the generators `[σ i] - 1` of `I_Q`, together with generators of the kernel of
 `π : B → I_Q`, span `B` as a `ℤ[Q]`-module. -/
 private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
-    (π : B ⟶ augmentationIdeal ℤ Q) {ι : Type} [Finite ι] {σ : ι → Q}
+    (π : B ⟶ augmentationIdeal ℤ Q) {ι : Type} {σ : ι → Q}
     (hσ : Subgroup.closure (Set.range σ) = ⊤) {x : ι → B.ρ.asModule}
     (hx : ∀ i, π.hom (B.ρ.asModuleEquiv (x i)) = singleSub ℤ Q 1 (σ i))
-    {s : Finset B}
-    (hs : Submodule.span ℤ (s : Set B) = LinearMap.ker π.hom.toLinearMap) :
+    {s : Set B} (hs : Submodule.span ℤ s = LinearMap.ker π.hom.toLinearMap) :
     Submodule.span (MonoidAlgebra ℤ Q)
       (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val)) = ⊤ := by
-  classical
-  -- Use the associated module's scalar instance for the linear-equivalence transport.
-  let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
-  have := Fintype.ofFinite ι
-  refine eq_top_iff.2 fun m _ ↦ ?_
-  -- `π m` is a combination of the `[σ i] - 1`, since these generate `I_Q`.
-  have hmem : (augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m)) ∈
-      RingHom.ker (MonoidAlgebra.augmentation ℤ Q) := by
-    have h := sum_coeff_augmentationι ℤ Q (π.hom (B.ρ.asModuleEquiv m))
-    rw [RingHom.mem_ker,
-      ← sum_coeff_single ((augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m))),
-      map_finsuppSum]
-    simpa using h
-  rw [TauCeti.MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top ℤ hσ, ← Set.range_comp]
-    at hmem
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).1 hmem
-  have hπm : π.hom (B.ρ.asModuleEquiv m) =
-      ∑ i, (augmentationIdeal ℤ Q).ρ.asAlgebraHom (c i) (singleSub ℤ Q 1 (σ i)) := by
-    apply augmentationι_injective ℤ Q
-    rw [← hc, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Representation.IntertwiningMap.apply_asAlgebraHom, ι_singleSub,
-      Representation.asAlgebraHom_ofMulAction_smul_eq_mul, smul_eq_mul, one_def]
-    rfl
-  have hm : B.ρ.asModuleEquiv (m - ∑ i, c i • x i) ∈
-      LinearMap.ker π.hom.toLinearMap := by
-    rw [LinearMap.mem_ker]
-    simp only [Representation.IntertwiningMap.toLinearMap_apply, map_sub, map_sum,
-      augmentationHom_apply_asModule_smul, hx]
-    rw [← hπm, sub_self]
-  rw [← hs] at hm
-  rw [← sub_add_cancel m (∑ i, c i • x i)]
-  refine Submodule.add_mem _ ?_ (Submodule.sum_mem _ fun i _ ↦
-    Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩))
-  have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hm
-  rw [Submodule.map_span] at hmem
-  have hle : B.ρ.asModuleEquiv.symm '' (s : Set B) ⊆
-      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val) := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact ⟨Sum.inr ⟨y, hy⟩, rfl⟩
-  have hmem' := Submodule.span_le_restrictScalars ℤ (MonoidAlgebra ℤ Q) _ hmem
-  simpa only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
-    Submodule.span_mono hle hmem'
+  -- `π` as a `ℤ[Q]`-linear map `f`, and the span `N` of the lifts and kernel generators.
+  let f := Representation.IntertwiningMap.equivLinearMapAsModule _ _ π.hom
+  set N := Submodule.span (MonoidAlgebra ℤ Q)
+    (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val))
+  -- `f` maps `N` onto `I_Q`, since the image contains the generators `[σ i] - 1`.
+  have hmap : N.map f = ⊤ := by
+    rw [eq_top_iff, ← span_range_singleSub_eq_top ℤ Q hσ, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact ⟨x i, Submodule.subset_span ⟨Sum.inl i, rfl⟩, hx i⟩
+  -- The kernel of `f` lies in `N`: it is spanned over `ℤ` by the kernel generators.
+  have hker : LinearMap.ker f ≤ N := by
+    -- Use the associated module's scalar instance for the linear-equivalence transport.
+    let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
+    intro v hv
+    have hv' : B.ρ.asModuleEquiv v ∈ Submodule.span ℤ s := hs ▸ hv
+    have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hv'
+    rw [Submodule.map_span] at hmem
+    have hle : B.ρ.asModuleEquiv.symm '' s ⊆
+        Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val) := by
+      rintro _ ⟨y, hy, rfl⟩
+      exact ⟨Sum.inr ⟨y, hy⟩, rfl⟩
+    have hmem' := Submodule.span_le_restrictScalars ℤ (MonoidAlgebra ℤ Q) _ hmem
+    simpa only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
+      Submodule.span_mono hle hmem'
+  -- So `N ⊔ ker f = N` is everything.
+  rwa [LinearMap.map_eq_top_iff (top_unique (hmap ▸ LinearMap.map_le_range)),
+    sup_eq_left.2 hker] at hmap
 
 /-- A lift `x` of the generator `[σ] - 1` of `I_Q`, weighted by the order of `σ`, lies in
 `I • B` for the augmentation ideal `I` of `ℤ[Q]`, once the kernel of `π` lies in `I • B`. -/
@@ -150,9 +134,7 @@ private theorem mul_single_one_eq_self_of_smul_eq_zero {B : Rep ℤ Q}
   have h0 := congrArg (augmentationι ℤ Q).hom
     (congrArg (fun v ↦ π.hom (B.ρ.asModuleEquiv v)) (hγ y))
   rw [augmentationHom_apply_asModule_smul, hy, map_zero, map_zero, map_zero,
-    Representation.IntertwiningMap.apply_asAlgebraHom,
-    ι_singleSub, Representation.asAlgebraHom_ofMulAction_smul_eq_mul, mul_sub,
-    sub_eq_zero] at h0
+    ι_asAlgebraHom_singleSub, mul_sub, sub_eq_zero] at h0
   rw [h0, ← one_def, mul_one]
 
 /-- If `γ ∈ ℤ[Q]` kills `B`, is invariant under multiplication by every `[q]` and has
@@ -161,13 +143,18 @@ private theorem norm_eq_zero_of_smul_eq_zero [Fintype Q] (B : Rep ℤ Q) {γ : M
     (hγ : ∀ y : B.ρ.asModule, γ • y = 0) (hinv : ∀ q : Q, γ * single q 1 = γ)
     (hεγ : MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q) :
     B.ρ.norm = 0 := by
+  -- `γ` is the norm element.
+  have hγnorm := MonoidAlgebra.eq_sum_single_of_mul_single_eq_self
+    (IsSMulRegular.of_ne_zero Fintype.card_ne_zero) hinv (hεγ.trans (nsmul_one _).symm)
   ext v
   have h := congrArg B.ρ.asModuleEquiv (hγ (B.ρ.asModuleEquiv.symm v))
-  rw [Representation.asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply, map_zero,
-    MonoidAlgebra.eq_sum_single_of_mul_single_eq_self hinv hεγ, map_sum, LinearMap.sum_apply] at h
-  simp only [Representation.asAlgebraHom_single_one] at h
-  rw [Representation.norm, LinearMap.sum_apply, LinearMap.zero_apply]
-  exact h
+  rw [Representation.asModuleEquiv_map_smul, hγnorm, Representation.asAlgebraHom_sum_single_one]
+    at h
+  simpa only [LinearEquiv.apply_symm_apply, map_zero, LinearMap.zero_apply] using h
+
+end Group
+
+variable {Q : Type} [CommGroup Q]
 
 /-- **The norm kills an extension of the augmentation ideal by part of `I_Q B`** (Artin–Tate).
 Let `Q` be a finite abelian group and `π : B → I_Q` a surjection of integral representations whose
