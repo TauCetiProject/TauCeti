@@ -42,76 +42,9 @@ section Field
 variable {R : Type*} [Field R] [LinearOrder R] [Module R M] [Module R N]
   {P : RootPairing ι R M N} {D : RootDatum P G}
 
-namespace RootDatum
-
-/-- The subgroup `U (2a)` for the root `a` of index `i`, with value `⊥` when `2a` is absent. -/
-def doubleRootSubgroup (D : RootDatum P G) (i : ι) : Subgroup G :=
-  ⨆ (j) (_ : P.root j = (2 : R) • P.root i), D.U j
-
-/-- The doubled root subgroup is contained in the original root subgroup by (DR3). -/
-theorem doubleRootSubgroup_le (D : RootDatum P G) (i : ι) : D.doubleRootSubgroup i ≤ D.U i :=
-  iSup₂_le (D.le_of_root_eq_two_smul i)
-
-/-- If twice the root of index `i` is the root of index `j`, the doubled subgroup is `U j`. -/
-theorem doubleRootSubgroup_eq (D : RootDatum P G) {i j : ι}
-    (h : P.root j = (2 : R) • P.root i) : D.doubleRootSubgroup i = D.U j := by
-  refine le_antisymm (iSup₂_le fun k hk ↦ ?_) (le_iSup₂
-    (f := fun k (_ : P.root k = (2 : R) • P.root i) ↦ D.U k) j h)
-  rw [P.root.injective (hk.trans h.symm)]
-
-/-- The doubled subgroup is trivial exactly when twice the original root is absent. -/
-theorem doubleRootSubgroup_eq_bot_iff (D : RootDatum P G) (i : ι) :
-    D.doubleRootSubgroup i = ⊥ ↔ ∀ j, P.root j ≠ (2 : R) • P.root i := by
-  refine ⟨fun h j hj ↦ D.U_ne_bot j ((D.doubleRootSubgroup_eq hj).symm.trans h), fun h ↦ ?_⟩
-  exact eq_bot_iff.mpr (iSup₂_le fun j hj ↦ (h j hj).elim)
-
-end RootDatum
-
 namespace Valuation
 
 variable (φ : Valuation D) {i : ι}
-
-/-- The strict filtration subgroup `U (a, k+)` is the union of `U (a, l)` over `k < l`. -/
-def filtrationGT (i : ι) (k : ℝ) : Subgroup G :=
-  ⨆ l : Set.Ioi k, φ.filtration i l
-
-/-- Membership in the strict filtration is equivalent to membership at some strictly larger
-depth. -/
-theorem mem_filtrationGT_iff_exists {k : ℝ} {g : G} :
-    g ∈ φ.filtrationGT i k ↔ ∃ l : ℝ, k < l ∧ g ∈ φ.filtration i l := by
-  let : Nonempty (Set.Ioi k) := (Set.nonempty_Ioi (a := k)).to_subtype
-  have hanti : Antitone (fun l : Set.Ioi k ↦ φ.filtration i l) :=
-    fun _ _ h ↦ φ.filtration_antitone i h
-  have hdir := hanti.directed_le
-  simpa [filtrationGT, SetCoe.exists] using (Subgroup.mem_iSup_of_directed hdir (x := g))
-
-/-- The strict filtration consists of elements of the root subgroup of value strictly above
-the given depth. -/
-@[simp]
-theorem mem_filtrationGT_iff {k : ℝ} {g : G} :
-    g ∈ φ.filtrationGT i k ↔ ∃ h : g ∈ D.U i, (k : WithTop ℝ) < φ i ⟨g, h⟩ := by
-  simp only [φ.mem_filtrationGT_iff_exists, φ.mem_filtration_iff]
-  refine ⟨fun ⟨l, hkl, h, hl⟩ ↦ ⟨h, (WithTop.coe_lt_coe.mpr hkl).trans_le hl⟩, ?_⟩
-  rintro ⟨h, hk⟩
-  obtain ⟨l, hkl, hl⟩ := exists_between hk
-  obtain ⟨r, rfl⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_lt hl)
-  exact ⟨r, WithTop.coe_lt_coe.mp hkl, h, hl.le⟩
-
-/-- For an element of the root subgroup, strict filtration membership tests its value. -/
-theorem coe_mem_filtrationGT_iff {k : ℝ} (u : D.U i) :
-    (u : G) ∈ φ.filtrationGT i k ↔ (k : WithTop ℝ) < φ i u :=
-  (φ.mem_filtrationGT_iff).trans ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.property, h⟩⟩
-
-/-- The strict filtration at a depth is contained in the weak filtration there. -/
-theorem filtrationGT_le_filtration (i : ι) (k : ℝ) :
-    φ.filtrationGT i k ≤ φ.filtration i k :=
-  iSup_le fun l ↦ φ.filtration_antitone i l.property.le
-
-/-- The strict filtration decreases with depth. -/
-theorem filtrationGT_antitone (i : ι) : Antitone (φ.filtrationGT i) := by
-  intro k l hkl g hg
-  obtain ⟨h, hl⟩ := φ.mem_filtrationGT_iff.mp hg
-  exact φ.mem_filtrationGT_iff.mpr ⟨h, (WithTop.coe_le_coe.mpr hkl).trans_lt hl⟩
 
 /-- The value set `Γ'_a` consists of the finite values attained as maxima on cosets
 `u U (2a)` in `U a`. -/
@@ -183,17 +116,6 @@ variable [Module ℝ M] [Module ℝ N] {P : RootPairing ι ℝ M N} {D : RootDat
 namespace Valuation
 
 variable (φ : Valuation D)
-
-/-- Shifting the valuation by `v` subtracts `a(v)` from the threshold in the strict
-filtration. -/
-@[simp]
-theorem filtrationGT_shift (i : ι) (v : N) (k : ℝ) :
-    (φ.shift v).filtrationGT i k = φ.filtrationGT i (k - P.root' i v) := by
-  have hk : ((k - P.root' i v : ℝ) : WithTop ℝ) + ↑(P.root' i v) = ↑k := by
-    rw [← WithTop.coe_add, sub_add_cancel]
-  ext g
-  simp only [mem_filtrationGT_iff, shift_apply, ← hk,
-    WithTop.add_lt_add_iff_right WithTop.coe_ne_top]
 
 /-- A change of valuation by displacement `v` shifts the primed constants at `a` by `a(v)`. -/
 @[simp]
