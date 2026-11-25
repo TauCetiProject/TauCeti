@@ -40,6 +40,8 @@ or target are also sent to locally closed subsets of the ambient space.
   and its inverse preserve locally closed subsets contained in their source or target.
 * `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
   source, as a continuous map.
+* `OpenPartialHomeomorph.isOpenEmbedding_domRestrict`: its restriction to an open subset of the
+  source is an open embedding.
 * `Topology.IsOpenEmbedding.of_continuousOn_inverse`: a continuous map with a continuous inverse
   on an open set containing its range is an open embedding, being an open partial homeomorphism
   with source the whole space.
@@ -94,6 +96,13 @@ theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
 /-- The restriction to the source is an open embedding. -/
 theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestrict :=
   e.isOpenEmbedding_restrict
+
+/-- The restriction of an open partial homeomorphism to an open subset of its source is an open
+embedding. -/
+theorem isOpenEmbedding_domRestrict {U : Set X} (hU : IsOpen U) (hUs : U ⊆ e.source) :
+    Topology.IsOpenEmbedding (U.domRestrict e) :=
+  e.isOpenEmbedding_restrict.comp
+    (Topology.IsOpenEmbedding.inclusion hUs (hU.preimage continuous_subtypeVal))
 
 /-- A point of the source is the only point of the source that `e` sends to its image. -/
 theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :

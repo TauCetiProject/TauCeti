@@ -46,6 +46,9 @@ in `‖n g‖`, uniformly in `g`, and dominate any additive functional, such as 
 * `AddMonoidHom.exists_norm_le_mul_norm_of_injective`: an additive map on a subgroup of an
   integer lattice is bounded by the sup norm.
 * `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`: the winding estimate.
+* `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul`: the winding estimate for regions
+  of multiplicities `p_i(g) + N aᵢ(g)` and `q_i(g) - N aᵢ(g)` with different base terms, beating
+  a real functional at one of them for every nonzero `g`.
 
 ## References
 
@@ -116,5 +119,46 @@ theorem exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le {n : G →+ (κ �
     rw [← Int.norm_eq_abs]
     exact (norm_le_pi_norm (b g) i).trans (hb g)
   refine ⟨i, fun t ↦ ⟨?_, ?_⟩⟩ <;> rw [hi] <;> linarith [abs_le.mp hbi]
+
+omit [Fintype κ] in
+/-- **The winding estimate with separate base terms.** Let the additive coordinates
+`aᵢ : G →+ ℤ` detect the elements of `G`. For additive maps `p_i`, `q_i : G →+ ℤ` and a functional
+`c : G →+ ℝ`, there is `N₀` such that for every `N ≥ N₀` each nonzero `g` has an index `i` with
+`c g < p_i(g) + N aᵢ(g)` or `c g < q_i(g) - N aᵢ(g)`. -/
+theorem exists_forall_exists_lt_add_mul_or_lt_sub_mul [Finite κ] {a : κ → G →+ ℤ}
+    (ha : ∀ g, (∀ i, a i g = 0) → g = 0) (p q : κ → G →+ ℤ) (c : G →+ ℝ) :
+    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → ∀ g, g ≠ 0 → ∃ i,
+      c g < ((p i g + N * a i g : ℤ) : ℝ) ∨ c g < ((q i g - N * a i g : ℤ) : ℝ) := by
+  have := Fintype.ofFinite κ
+  have hA : Function.Injective (pi a) :=
+    (injective_iff_map_eq_zero _).2 fun g hg ↦ ha g fun i ↦ congr_fun hg i
+  -- The sup norm `‖(aᵢ(g))ᵢ‖` bounds `|p_i(g)|`, `|q_i(g)|` and `|c g|` up to constants.
+  obtain ⟨Mp, hMp₀, hMp⟩ := exists_norm_le_mul_norm_of_injective (pi p) hA
+  obtain ⟨Mq, hMq₀, hMq⟩ := exists_norm_le_mul_norm_of_injective (pi q) hA
+  obtain ⟨Mc, -, hMc⟩ := exists_norm_le_mul_norm_of_injective c hA
+  obtain ⟨N₀, hN₀⟩ := exists_nat_gt (Mp + Mq + Mc)
+  refine ⟨N₀, fun N hN g hg ↦ ?_⟩
+  have hg' : pi a g ≠ 0 := (map_ne_zero_iff _ hA).mpr hg
+  obtain ⟨i₀, -⟩ := Function.ne_iff.mp hg'
+  have : Nonempty κ := ⟨i₀⟩
+  -- At a coordinate `i` attaining the sup norm `S`, the winding term `N S` dominates.
+  obtain ⟨i, hi⟩ := Pi.exists_norm_apply_eq_norm (pi a g)
+  set S := ‖pi a g‖
+  have hS : 1 ≤ S := TauCeti.one_le_pi_norm_of_ne_zero hg'
+  rw [pi_apply, Int.norm_eq_abs] at hi
+  have hp : |(p i g : ℝ)| ≤ Mp * S := by
+    simpa [Int.norm_eq_abs] using (norm_le_pi_norm (pi p g) i).trans (hMp g)
+  have hq : |(q i g : ℝ)| ≤ Mq * S := by
+    simpa [Int.norm_eq_abs] using (norm_le_pi_norm (pi q g) i).trans (hMq g)
+  have hc : |c g| ≤ Mc * S := by simpa [Real.norm_eq_abs] using hMc g
+  have hdom : (Mp + Mq + Mc) * S < N * S :=
+    mul_lt_mul_of_pos_right (hN₀.trans_le (by exact_mod_cast hN)) (zero_lt_one.trans_le hS)
+  refine ⟨i, ?_⟩
+  push_cast
+  rcases (abs_eq (zero_le_one.trans hS)).mp hi with hai | hai <;> rw [hai]
+  · left
+    linarith [abs_le.mp hp, abs_le.mp hc, mul_nonneg hMq₀ (zero_le_one.trans hS)]
+  · right
+    linarith [abs_le.mp hq, abs_le.mp hc, mul_nonneg hMp₀ (zero_le_one.trans hS)]
 
 end AddMonoidHom

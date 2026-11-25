@@ -36,6 +36,9 @@ locally profinite group are computed.
   union of left cosets of an open subgroup contained in a given open subgroup.
 * `OpenSubgroup.forall_mul_mem_toCompactOpens`: a compact open subgroup `U` is a union of left
   cosets of each open subgroup `W ≤ U`.
+* `OpenSubgroup.mem_out_smul_toCompactOpens_iff`,
+  `OpenSubgroup.pairwiseDisjoint_out_smul_toCompactOpens`: the translates of `U` by coset
+  representatives are the cosets, pairwise disjoint.
 * `OpenSubgroup.ncard_image_mk_toCompactOpens`: a compact open subgroup `U` meets `[U : W]` left
   cosets of an open subgroup `W ≤ U`.
 -/
@@ -116,5 +119,26 @@ theorem ncard_image_mk_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U 
     (((↑) : G → G ⧸ (W : Subgroup G)) '' (U.toCompactOpens hU)).ncard =
       (W : Subgroup G).relIndex U :=
   Subgroup.ncard_image_mk_eq_relIndex (U := (U : Subgroup G)) h
+
+/-- A point lies in the translate `q.out • U` of a compact open subgroup `U` exactly when it lies in
+the left coset `q`. -/
+theorem mem_out_smul_toCompactOpens_iff [ContinuousConstSMul G G] (U : OpenSubgroup G)
+    (hU : IsCompact (U : Set G)) (q : G ⧸ (U : Subgroup G)) (x : G) :
+    x ∈ q.out • U.toCompactOpens hU ↔ (x : G ⧸ (U : Subgroup G)) = q :=
+  calc x ∈ q.out • U.toCompactOpens hU ↔ q.out⁻¹ * x ∈ (U : Subgroup G) := by
+        rw [TopologicalSpace.CompactOpens.mem_smul_iff_inv_smul_mem, mem_toCompactOpens,
+          smul_eq_mul, ← mem_toSubgroup]
+    _ ↔ (q.out : G ⧸ (U : Subgroup G)) = x := QuotientGroup.eq.symm
+    _ ↔ (x : G ⧸ (U : Subgroup G)) = q := by rw [QuotientGroup.out_eq', eq_comm]
+
+/-- The translates `q.out • U` of a compact open subgroup `U` by representatives of distinct left
+cosets are pairwise disjoint. -/
+theorem pairwiseDisjoint_out_smul_toCompactOpens [ContinuousConstSMul G G] (U : OpenSubgroup G)
+    (hU : IsCompact (U : Set G)) (s : Set (G ⧸ (U : Subgroup G))) :
+    s.PairwiseDisjoint fun q ↦
+      ((q.out • U.toCompactOpens hU : TopologicalSpace.CompactOpens G) : Set G) :=
+  fun q _ q' _ hqq' ↦ Set.disjoint_left.2 fun x hx hx' ↦
+    hqq' (((U.mem_out_smul_toCompactOpens_iff hU q x).1 hx).symm.trans
+      ((U.mem_out_smul_toCompactOpens_iff hU q' x).1 hx'))
 
 end OpenSubgroup

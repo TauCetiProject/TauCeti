@@ -26,8 +26,8 @@ is that both cup products are the Alexander–Whitney formula on the same iterat
 and the identification of the cocycles does not change their values.
 
 The consequence this is for: the explicit low-degree cup products of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product`, given by cochain formulas on
-inhomogeneous cocycles, agree with the canonical cup product of a pairing of *discrete*
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic`, given by cochain
+formulas on inhomogeneous cocycles, agree with the canonical cup product of a pairing of *discrete*
 representations over any scalars, under the comparison isomorphisms
 `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete` and
 `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete`

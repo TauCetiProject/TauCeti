@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic

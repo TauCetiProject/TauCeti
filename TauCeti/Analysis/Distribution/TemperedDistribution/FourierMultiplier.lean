@@ -83,8 +83,7 @@ theorem fourierMultiplierCLM_apply_apply_transpose (g : E → ℂ) (u : 𝓢'(E,
   · rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hgt]
   have hgt' : ¬ (fun ξ ↦ g (-ξ)).HasTemperateGrowth := fun h ↦ hgt <| by
     simpa [Function.comp_def] using h.comp (by fun_prop : (fun ξ : E ↦ -ξ).HasTemperateGrowth)
-  simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
-    SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt']
+  simp [hgt, hgt', SchwartzMap.fourierMultiplierCLM_apply]
 
 /-- **Multipliers with even symbols are symmetric.** If the symbol `g` is even, the Fourier
 multiplier `T_g` on tempered distributions is the transpose of the one on Schwartz functions:
@@ -163,7 +162,7 @@ theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
       by_cases hξ : ξ ∈ s
       · rw [hgs ξ hξ, zero_smul]
       · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
-    · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+    · simp [hg]
   rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
     h, map_zero]
 

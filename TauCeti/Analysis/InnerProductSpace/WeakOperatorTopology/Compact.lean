@@ -13,8 +13,10 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 
 Let `E` be a normed space and `F` a complete inner product space over `ℝ` or `ℂ`. This file proves
 that every closed norm ball of `E →L[𝕜] F` is compact in the weak operator topology, taken on
-Mathlib's copy `E →WOT[𝕜] F` (`ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall`), and
-hence that every norm-bounded set of operators has weak operator compact closure
+Mathlib's copy `E →WOT[𝕜] F` (`ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall`). Hence
+the intersection of a weak operator closed set of operators with a closed norm ball is weak
+operator compact (`ContinuousLinearMapWOT.isCompact_image_ofCLM_inter_closedBall_of_isClosed`),
+and every norm-bounded set of operators has weak operator compact closure
 (`ContinuousLinearMapWOT.isCompact_closure_image_ofCLM_of_isBounded`).
 
 The analytic input is `ContinuousLinearMapWOT.exists_norm_le_tendsto_of_tendsto_inner`: a family of
@@ -118,6 +120,14 @@ theorem isCompact_image_ofCLM_closedBall (A : E →L[𝕜] F) (r : ℝ) :
   · have h := hlimS.add_const (ofCLM A)
     simp only [ofCLM_toCLM, sub_add_cancel, ← ofCLM_add] at h
     exact tendsto_id'.mp h
+
+/-- The intersection of a weak operator closed set of operators from a normed space to a complete
+inner product space with a closed norm ball is compact in the weak operator topology. -/
+theorem isCompact_image_ofCLM_inter_closedBall_of_isClosed {s : Set (E →L[𝕜] F)}
+    (hs : IsClosed (ofCLM '' s : Set (E →WOT[𝕜] F))) (A : E →L[𝕜] F) (r : ℝ) :
+    IsCompact (ofCLM '' (s ∩ closedBall A r) : Set (E →WOT[𝕜] F)) := by
+  rw [Set.image_inter ofCLM_injective]
+  exact (isCompact_image_ofCLM_closedBall A r).inter_left hs
 
 /-- A norm-bounded set of operators from a normed space to a complete inner product space has
 compact closure in the weak operator topology. -/

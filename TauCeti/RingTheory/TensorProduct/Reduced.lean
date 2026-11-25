@@ -16,7 +16,9 @@ import Mathlib.RingTheory.LocalProperties.Reduced
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.PolynomialAlgebra
 import TauCeti.RingTheory.FiniteType.Tensor.Product
+import TauCeti.RingTheory.Localization.TensorProduct
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
+import TauCeti.RingTheory.TensorProduct.IsDomain
 
 /-!
 # Reduced tensor products after separable field extensions
@@ -37,6 +39,10 @@ closure of `k` embeds in `L` and the tensor product over a field preserves injec
 over any commutative ring `R`, geometric reducedness is preserved by arbitrary base change
 (`S ⊗[R] A` and `A ⊗[R] S`) and by localization, and in particular passes to any total quotient ring
 or `FractionRing` of `A ⊗[R] K`.
+
+Separability cannot be dropped: over a field `k` of prime characteristic `p`, if `A` contains an
+element `a ∉ k` with `a ^ p ∈ k`, then `a ⊗ 1 - 1 ⊗ a` is a nonzero nilpotent of `A ⊗[k] A`
+(`TauCeti.not_isReduced_tensorProduct_of_pow_char_mem_range`).
 
 ## References
 
@@ -122,10 +128,7 @@ theorem isReduced_tensorProduct_of_isLocalization {k : Type*} [CommRing k] {A : 
   let φ : A ⊗[k] L →ₐ[k] B ⊗[k] L :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A B) (AlgHom.id k L)
   algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[k] L) (B ⊗[k] L) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have := IsLocalization.tensorProduct_tensorProduct k L M B
-    (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  have := IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq k L M B rfl
   -- `isReduced_localizationPreserves` needs both rings in one universe, so pass through the
   -- `Localization` instance instead
   let e := IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (A ⊗[k] L) M) (B ⊗[k] L)
@@ -256,5 +259,22 @@ theorem isGeometricallyReduced_fractionRing_tensorProduct
   isGeometricallyReduced_of_isFractionRing_tensorProduct (R := R) (A := A)
 
 end RightAlgebra
+
+/-- If `k` has prime characteristic `p` and `A` contains an element `a` not in the image of `k`
+with `a ^ p` in the image of `k`, then `A ⊗[k] A` is not reduced: `a ⊗ 1 - 1 ⊗ a` is a nonzero
+nilpotent, as its `p`-th power is `a ^ p ⊗ 1 - 1 ⊗ a ^ p = 0`. -/
+theorem not_isReduced_tensorProduct_of_pow_char_mem_range {k A : Type*} [Field k] [CommRing A]
+    [Algebra k A] (p : ℕ) [Fact p.Prime] [CharP k p] {a : A}
+    (ha : a ∉ Set.range (algebraMap k A)) (hap : a ^ p ∈ Set.range (algebraMap k A)) :
+    ¬ IsReduced (A ⊗[k] A) := by
+  intro hred
+  have hne := tmul_one_add_smul_one_tmul_ne_zero ha (-1)
+  rw [neg_one_smul, ← sub_eq_add_neg] at hne
+  have : Nontrivial (A ⊗[k] A) := ⟨⟨_, _, hne⟩⟩
+  have : CharP (A ⊗[k] A) p := charP_of_injective_algebraMap' k p
+  refine hne (hred.eq_zero _ ⟨p, ?_⟩)
+  obtain ⟨c, hc⟩ := hap
+  simp [sub_pow_char, Algebra.TensorProduct.tmul_pow, ← hc, Algebra.algebraMap_eq_smul_one,
+    TensorProduct.smul_tmul]
 
 end TauCeti

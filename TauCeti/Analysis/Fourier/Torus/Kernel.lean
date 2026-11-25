@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!

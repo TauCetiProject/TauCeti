@@ -48,6 +48,9 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `ContDiffAt.norm_iteratedFDeriv_exp_comp_le`: the pointwise bound
   `‖Dⁿ (exp f) (x)‖ ≤ n! exp (f x) max ε εⁿ` when the derivatives of `f` of orders `1` to `n` at
   `x` have norm at most `ε`.
+* `ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le`: for `f x ≤ 0`, the pointwise bound
+  `‖Dⁿ (exp f - 1) (x)‖ ≤ n! max 1 K ^ (n + 1) ε` when the derivatives of `f` of order at most `n`
+  at `x` have norm at most `K ε`, with `0 ≤ ε ≤ 1`.
 -/
 
 public section
@@ -261,3 +264,46 @@ theorem ContDiffAt.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGro
     (fun j _ ↦ (TauCeti.norm_iteratedFDeriv_real_exp j _).le)
     (fun i hi hin ↦ (hD i hi hin).trans (hεD i hi hin))
   exact h.trans (mul_le_mul_of_nonneg_left hDn (by positivity))
+
+open scoped Nat in
+/-- **Pointwise bound on the derivatives of `exp f - 1` for `f ≤ 0`.** Let `f` be `Cⁿ` at `x`
+with `f x ≤ 0`, and let its derivatives of order at most `n` at `x` have norm at most `K ε`, with
+`0 ≤ ε ≤ 1`. Then the derivative of order `n` of `y ↦ exp (f y) - 1` at `x` has norm at most
+`n! max 1 K ^ (n + 1) ε`. It is the pointwise counterpart of
+`ContDiff.isBigO_iteratedFDeriv_exp_sub_one`, with the constant explicit in `n` and `K`. -/
+theorem ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → ℝ} {n : ℕ} {x : E} (hf : ContDiffAt ℝ n f x) (hf₀ : f x ≤ 0)
+    {K ε : ℝ} (hε₀ : 0 ≤ ε) (hε₁ : ε ≤ 1) (hD : ∀ j ≤ n, ‖iteratedFDeriv ℝ j f x‖ ≤ K * ε) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ Real.exp (f y) - 1) x‖ ≤ n ! * max 1 K ^ (n + 1) * ε := by
+  set M : ℝ := max 1 K
+  have hM : (1 : ℝ) ≤ M := le_max_left 1 K
+  -- The derivatives of `f` of order at most `n` are at most `M ε`.
+  have hD' : ∀ j ≤ n, ‖iteratedFDeriv ℝ j f x‖ ≤ M * ε := fun j hj ↦
+    (hD j hj).trans (mul_le_mul_of_nonneg_right (le_max_right 1 K) hε₀)
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- Order zero: `0 ≤ 1 - exp f ≤ -f ≤ M ε`.
+    have h₀ := hD' 0 le_rfl
+    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_of_nonpos hf₀] at h₀
+    have hexp := Real.add_one_le_exp (f x)
+    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs,
+      abs_of_nonpos (by linarith [Real.exp_le_one_iff.2 hf₀])]
+    simp only [Nat.factorial_zero, Nat.cast_one, zero_add, pow_one, one_mul]
+    linarith
+  · -- Positive order: the Faà di Bruno bound for `exp f`, with `exp (f x) ≤ 1`.
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    have hexp : ContDiffAt ℝ (k + 1 : ℕ) (fun y ↦ Real.exp (f y)) x :=
+      Real.contDiff_exp.contDiffAt.comp x hf
+    rw [fun_iteratedFDeriv_sub_apply hexp contDiffAt_const,
+      iteratedFDeriv_const_of_ne k.succ_ne_zero, Pi.zero_apply, sub_zero]
+    have hB := hf.norm_iteratedFDeriv_exp_comp_le (by positivity) fun i _ hi ↦ hD' i hi
+    -- `max (M ε) ((M ε)ᵏ⁺¹) ≤ Mᵏ⁺² ε`, since `1 ≤ M` and `ε ≤ 1`.
+    have hmax : max (M * ε) ((M * ε) ^ (k + 1)) ≤ M ^ (k + 2) * ε := by
+      refine max_le (mul_le_mul_of_nonneg_right (le_self_pow₀ hM (by omega)) hε₀) ?_
+      rw [mul_pow]
+      exact mul_le_mul (pow_le_pow_right₀ hM (by omega)) (pow_le_of_le_one hε₀ hε₁ (by omega))
+        (pow_nonneg hε₀ _) (by positivity)
+    calc _ ≤ (k + 1)! * Real.exp (f x) * max (M * ε) ((M * ε) ^ (k + 1)) := hB
+      _ ≤ (k + 1)! * 1 * (M ^ (k + 2) * ε) := by
+        gcongr
+        exact Real.exp_le_one_iff.2 hf₀
+      _ = _ := by ring

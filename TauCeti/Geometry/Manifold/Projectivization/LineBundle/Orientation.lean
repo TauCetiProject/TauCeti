@@ -84,9 +84,11 @@ theorem isEmpty_vectorBundleOrientation_twistCore (hι : Fintype.card ι = 1) (h
     (isPreconnected_affineOpen 1) (twistCore_localTriv_baseSet k 0).ge
     (twistCore_localTriv_baseSet k 1).ge (hp0 1) (hp1 one_ne_zero) (hp0 (-1))
     (hp1 (neg_ne_zero.2 one_ne_zero)) ?_ ?_
-  · rw [det_coordChangeL_localTriv_twistCore k (hp0 1) (hp1 one_ne_zero)]
+  · rw [(twistCore k).det_coordChangeL_localTriv ((twistCore_baseSet k 0).ge (hp0 1))
+      ((twistCore_baseSet k 1).ge (hp1 one_ne_zero))]
     simp [htr]
-  · rw [det_coordChangeL_localTriv_twistCore k (hp0 (-1)) (hp1 (neg_ne_zero.2 one_ne_zero))]
+  · rw [(twistCore k).det_coordChangeL_localTriv ((twistCore_baseSet k 0).ge (hp0 (-1)))
+      ((twistCore_baseSet k 1).ge (hp1 (neg_ne_zero.2 one_ne_zero)))]
     simp [htr, hk.neg_one_zpow]
 
 /-- **Orientability of `𝒪(k)` on `ℝℙⁿ`.** The line bundle `𝒪(k)` on `ℝℙⁿ` is orientable if and
@@ -107,7 +109,7 @@ theorem nonempty_vectorBundleOrientation_twistCore_iff (hι : Fintype.card ι = 
       (S := univ) (fun x ↦ ⟨_, mem_univ _, (twistCore k).mem_baseSet_at x⟩)
       fun i _ j _ x ⟨hi, hj⟩ ↦ ?_⟩
     rw [twistCore_baseSet] at hi hj
-    rw [det_coordChange_twistCore]
+    suffices 0 < twistTransition k i j x by simpa [LinearMap.det_ring]
     rcases h with rfl | hk
     · obtain rfl : i = j := Fin.ext (by lia)
       rw [twistTransition_self k hj]

@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.FieldTower
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.LineBundle.EulerCharacteristic
 
 /-!
 # The Euler-characteristic degree of a line bundle
@@ -41,6 +40,8 @@ that it is additive.
 * `LineBundleClass.eulerDegree` descends the invariant to isomorphism classes of line bundles;
 * `LineBundleClass.eulerDegree_mk` and `LineBundleClass.eulerDegree_one` are its representative
   and normalization formulas;
+* `LineBundleClass.eulerDegree_eq_eulerCharBelow_sub` expresses the degree as the difference
+  of the truncated Euler characteristics of the class and the tensor-unit class;
 * `InvertibleSheaf.eulerDegree_eq_finrank_mul` and `LineBundleClass.eulerDegree_eq_finrank_mul`
   state that, for a scheme over a field `κ` regarded as a scheme over a subfield `k`, the degree
   over `k` is `[κ : k]` times the degree over `κ`;
@@ -150,6 +151,13 @@ lemma eulerDegree_mk (L : InvertibleSheaf X) :
 @[simp]
 lemma eulerDegree_one : eulerDegree k (1 : LineBundleClass X) = 0 := by
   rw [← mk_trivial, eulerDegree_mk, InvertibleSheaf.eulerDegree_trivial]
+
+/-- The Euler-characteristic degree of a line-bundle class is the difference of its truncated
+Euler characteristic and that of the tensor-unit class, using the degree-`2` truncation. -/
+lemma eulerDegree_eq_eulerCharBelow_sub (a : LineBundleClass X) :
+    eulerDegree k a = eulerCharBelow k a 2 - eulerCharBelow k (1 : LineBundleClass X) 2 := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk, InvertibleSheaf.eulerDegree_def, eulerCharBelow_mk, eulerCharBelow_one]
 
 end LineBundleClass
 
