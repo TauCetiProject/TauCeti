@@ -27,17 +27,19 @@ instead of carrying a minimizing edge and a lower-bound property separately.
 * `SimpleGraph.Walk.le_minEdgeWeight_iff`: the universal property of the minimum.
 * `SimpleGraph.Adj.minEdgeWeight_toWalk`: the minimum on a one-edge walk.
 * `SimpleGraph.Walk.minEdgeWeight_reverse`: reversal does not change the minimum.
-* `SimpleGraph.Walk.minEdgeWeight_mapLe`: inclusion into a larger graph does not change it.
+* `SimpleGraph.Walk.minEdgeWeight_map`: mapping a walk pulls the edge weights back.
 * `SimpleGraph.Walk.minEdgeWeight_cons`: the minimum after prepending an edge.
+* `SimpleGraph.Walk.minEdgeWeight_append`: the minimum after appending two nonempty walks.
 -/
 
 public section
 
 namespace SimpleGraph.Walk
 
-universe u v
+universe u v u'
 
-variable {V : Type u} {K : Type v} {G H : SimpleGraph V} {u v w : V}
+variable {V : Type u} {V' : Type u'} {K : Type v} {G H : SimpleGraph V}
+  {G' : SimpleGraph V'} {u v w : V}
 
 /-- The minimum weight of an edge traversed by a nonempty walk.
 
@@ -46,6 +48,13 @@ minimum of the list of edge weights. -/
 def minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) : K :=
   (p.edges.map wt).min (by simpa using (p.edges_eq_nil.not.mpr hp))
+
+/-- The minimum edge weight is the minimum of the list of weights of the traversed edges. -/
+theorem minEdgeWeight_def [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
+    (hp : ¬p.Nil) :
+    p.minEdgeWeight wt hp =
+      (p.edges.map wt).min (by simpa using (p.edges_eq_nil.not.mpr hp)) :=
+  (rfl)
 
 /-- Some edge of a nonempty walk attains its minimum edge weight. -/
 theorem exists_weight_eq_minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
@@ -61,16 +70,14 @@ theorem minEdgeWeight_le [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
   unfold minEdgeWeight
   exact List.min_le_of_mem (List.mem_map.mpr ⟨e, he, rfl⟩)
 
+grind_pattern minEdgeWeight_le => p.minEdgeWeight wt hp, e ∈ p.edges
+
 /-- A value is at most the minimum edge weight exactly when it is at most the weight of every edge
 of the walk. -/
 theorem le_minEdgeWeight_iff [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) (k : K) :
     k ≤ p.minEdgeWeight wt hp ↔ ∀ e ∈ p.edges, k ≤ wt e := by
-  constructor
-  · exact fun hk e he ↦ hk.trans (p.minEdgeWeight_le wt hp he)
-  · intro hk
-    obtain ⟨e, he, hwt⟩ := p.exists_weight_eq_minEdgeWeight wt hp
-    exact (hk e he).trans_eq hwt
+  simp only [minEdgeWeight, List.le_min_iff, List.forall_mem_map]
 
 /-- Two nonempty walks have the same minimum edge weight when they traverse the same edges. -/
 theorem minEdgeWeight_congr [LinearOrder K] {x y : V}
@@ -102,15 +109,14 @@ theorem minEdgeWeight_reverse [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → 
   intro e
   simp
 
-/-- Regarding a nonempty walk as a walk in a larger graph does not change its minimum edge
-weight. -/
+/-- Mapping a nonempty walk pulls its edge weights back along the vertex map. -/
 @[simp]
-theorem minEdgeWeight_mapLe [LinearOrder K] (p : G.Walk u v) (hGH : G ≤ H)
-    (wt : Sym2 V → K) (hp : ¬p.Nil) :
-    (p.mapLe hGH).minEdgeWeight wt (by simpa using hp) = p.minEdgeWeight wt hp := by
-  apply minEdgeWeight_congr wt
-  intro e
-  rw [edges_mapLe_eq_edges]
+theorem minEdgeWeight_map [LinearOrder K] (p : G.Walk u v) (f : G →g G')
+    (wt : Sym2 V' → K) (hp : ¬p.Nil) :
+    (p.map f).minEdgeWeight wt (by simpa using hp) =
+      p.minEdgeWeight (wt ∘ Sym2.map f) hp := by
+  unfold minEdgeWeight
+  simp only [edges_map, List.map_map]
 
 /-- Prepending an edge to a nonempty walk takes the minimum of its weight and the old minimum
 edge weight. -/
@@ -122,5 +128,21 @@ theorem minEdgeWeight_cons [LinearOrder K] (h : G.Adj u v) (p : G.Walk v w)
   intro k
   rw [(p.cons h).le_minEdgeWeight_iff, le_min_iff, p.le_minEdgeWeight_iff]
   simp
+
+/-- Appending two nonempty walks takes the minimum of their minimum edge weights. -/
+@[simp]
+theorem minEdgeWeight_append [LinearOrder K] (p : G.Walk u v) (q : G.Walk v w)
+    (wt : Sym2 V → K) (hp : ¬p.Nil) (hq : ¬q.Nil) :
+    (p.append q).minEdgeWeight wt (by simp [hp]) =
+      min (p.minEdgeWeight wt hp) (q.minEdgeWeight wt hq) := by
+  apply eq_of_forall_le_iff
+  intro k
+  rw [(p.append q).le_minEdgeWeight_iff, le_min_iff, p.le_minEdgeWeight_iff,
+    q.le_minEdgeWeight_iff]
+  constructor
+  · exact fun h ↦ ⟨fun e he ↦ h e (by simp [he]), fun e he ↦ h e (by simp [he])⟩
+  · rintro ⟨hp', hq'⟩ e he
+    rw [edges_append, List.mem_append] at he
+    exact he.elim (hp' e) (hq' e)
 
 end SimpleGraph.Walk
