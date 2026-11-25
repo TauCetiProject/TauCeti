@@ -9,10 +9,12 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Differential operators on a manifold, compressed to a chart
@@ -62,6 +64,12 @@ with no continuity assumed) and computes their principal symbols:
   and `OpenPartialHomeomorph.complexChartCompression`: the same constructions for complex-linear
   operators on complex-valued smooth functions, through which pseudodifferential operators on `M`
   are read in charts.
+
+## Main results
+
+* `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has a finite partition of unity by
+  pullbacks of cutoffs in preferred charts, through which operators on `M` are assembled from
+  operators in charts.
 
 ## References
 
@@ -444,3 +452,62 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
 end Complex
 
 end OpenPartialHomeomorph
+
+/-! ### Partitions of unity by chart cutoffs -/
+
+section ChartPartition
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- **A finite partition of unity by chart cutoffs.** A compact set `K` of a Hausdorff manifold
+modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
+supports in the targets of the preferred charts at the `cᵢ` such that the functions
+`ρᵢ ∘ chartAt cᵢ`, extended by `0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`),
+add up to `1` on `K`. These are the cutoffs through which operators on `M` are assembled from
+operators in charts. -/
+theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K) :
+    ∃ (N : ℕ) (c : Fin N → M)
+      (ρ : ∀ i, 𝓓(⟨(chartAt E (c i)).target, (chartAt E (c i)).open_target⟩, ℝ)),
+      ∀ y ∈ K, ∑ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+        (ρ i) 1 y = 1 := by
+  obtain ⟨ι, _, fs, -⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, E)
+    (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+  set f := fs.toSmoothPartitionOfUnity
+  -- The partition function `fᵢ` is supported in the compact support of the bump function at `cᵢ`,
+  -- which lies in the source of the chart at `cᵢ`.
+  have hf (i : ι) : tsupport (f i) ⊆ tsupport (fs i) :=
+    closure_mono (fs.support_toSmoothPartitionOfUnity_subset i)
+  have hfe (i : ι) : tsupport (f i) ⊆ (chartAt E (fs.c i)).source :=
+    (hf i).trans (fs i).tsupport_subset_chartAt_source
+  have hK' (i : ι) : IsCompact (chartAt E (fs.c i) '' tsupport (f i)) :=
+    ((fs i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _)
+      (hf i)).image_of_continuousOn ((chartAt E (fs.c i)).continuousOn.mono (hfe i))
+  -- In the chart at `cᵢ`, `ρᵢ` is `fᵢ ∘ (chartAt cᵢ)⁻¹` times a cutoff equal to `1` on the image of
+  -- the support of `fᵢ`.
+  choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one
+    (Ω := ⟨(chartAt E (fs.c i)).target, (chartAt E (fs.c i)).open_target⟩) (n := ⊤) (hK' i)
+    (image_subset_iff.2 fun y hy ↦ (chartAt E (fs.c i)).map_source (hfe i hy))
+  have hg (i : ι) : ContDiffOn ℝ ∞ (f i ∘ (chartAt E (fs.c i)).symm) (chartAt E (fs.c i)).target :=
+    contMDiffOn_iff_contDiffOn.1 ((f i).contMDiff.comp_contMDiffOn
+      (contMDiffOn_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (fs.c i))))
+  have hρ (i : ι) (y : M) : (chartAt E (fs.c i)).cutoffPullback
+      (IsManifold.chart_mem_maximalAtlas (fs.c i))
+      (TestFunction.smulLeftCLMOfContDiffOn (hg i) (θ i)) 1 y = f i y := by
+    by_cases hy : y ∈ (chartAt E (fs.c i)).source
+    · rw [OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem _ _ hy,
+        TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
+        (chartAt E (fs.c i)).left_inv hy, smul_eq_mul]
+      by_cases hfy : f i y = 0
+      · rw [hfy, zero_mul]
+      · rw [(hθ i).1.self_of_nhdsSet _ (mem_image_of_mem _ (subset_tsupport _ hfy)), mul_one]
+    · rw [OpenPartialHomeomorph.cutoffPullback_apply_of_notMem _ _ _ hy,
+        image_eq_zero_of_notMem_tsupport fun h ↦ hy (hfe i h)]
+  -- Index the finitely many charts by `Fin N`.
+  set σ := Fintype.equivFin ι
+  refine ⟨Fintype.card ι, fun j ↦ fs.c (σ.symm j),
+    fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)), fun y hy ↦ ?_⟩
+  rw [← f.sum_eq_one hy, finsum_eq_sum_of_fintype, ← σ.symm.sum_comp]
+  exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
+
+end ChartPartition

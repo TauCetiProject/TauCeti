@@ -57,6 +57,12 @@ depends on the cutoffs only through their values at the point.
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
   (`TauCeti.sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq`).
+* `TauCeti.homogeneousCotangentSymbols m`: the smooth positively homogeneous functions of degree
+  `m` on the cotangent bundle, read in charts. Every principal symbol lies there
+  (`TauCeti.classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`), and
+  `TauCeti.classicalPrincipalSymbolLinearMap` is the principal symbol as a linear map from the
+  operators of order `m` to it, with kernel the operators of order `m - 1`
+  (`TauCeti.ker_classicalPrincipalSymbolLinearMap`).
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -239,6 +245,42 @@ private theorem exists_cutoff_chartAt (x : M) :
   let ⟨χ, hχ, _⟩ := TestFunction.exists_eventually_eq_one isCompact_singleton
     (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
   ⟨χ, by simpa only [nhdsSet_singleton] using hχ⟩
+
+/-! ### Smooth homogeneous functions on the cotangent bundle -/
+
+omit [T2Space M] in
+variable (n M) in
+/-- The **smooth positively homogeneous functions of degree `m` on the cotangent bundle** of `M`,
+where the principal symbols of order `m` live: the functions `s(x, ξ)` of a point `x ∈ M` and a
+covector `ξ ∈ T*ₓM` that vanish at the zero covector, satisfy `s(x, t ξ) = t ^ m s(x, ξ)` for
+`t > 0`, and are smooth away from the zero section, in the sense that in every chart `e` of the
+maximal smooth atlas the function `(y, η) ↦ s(e⁻¹ y, ⟪η, ·⟫ ∘ de)` is smooth on the chart target
+times the nonzero frequencies. -/
+def homogeneousCotangentSymbols (m : ℝ) :
+    Submodule ℂ ((x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ) where
+  carrier := {s | (∀ x, s x 0 = 0) ∧ (∀ x ξ (t : ℝ), 0 < t → s x (t • ξ) = (t ^ m : ℝ) * s x ξ) ∧
+    ∀ e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M,
+      ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦
+        s (e.symm p.1) ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))))
+        (e.target ×ˢ {η | η ≠ 0})}
+  zero_mem' := ⟨fun _ ↦ rfl, fun _ _ _ _ ↦ by simp, fun _ _ ↦ contDiffOn_const⟩
+  add_mem' {s s'} hs hs' := ⟨fun x ↦ by simp [hs.1 x, hs'.1 x],
+    fun x ξ t ht ↦ by simp [hs.2.1 x ξ t ht, hs'.2.1 x ξ t ht, mul_add],
+    fun e he ↦ (hs.2.2 e he).add (hs'.2.2 e he)⟩
+  smul_mem' c s hs := ⟨fun x ↦ by simp [hs.1 x],
+    fun x ξ t ht ↦ by simp [hs.2.1 x ξ t ht, mul_left_comm],
+    fun e he ↦ (hs.2.2 e he).const_smul c⟩
+
+omit [T2Space M] in
+theorem mem_homogeneousCotangentSymbols_iff
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ} :
+    s ∈ homogeneousCotangentSymbols n M m ↔ (∀ x, s x 0 = 0) ∧
+      (∀ x ξ (t : ℝ), 0 < t → s x (t • ξ) = (t ^ m : ℝ) * s x ξ) ∧
+      ∀ e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M,
+        ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦
+          s (e.symm p.1) ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))))
+          (e.target ×ˢ {η | η ≠ 0}) :=
+  Iff.rfl
 
 /-! ### The principal symbol on the cotangent bundle -/
 
@@ -507,6 +549,93 @@ theorem sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol
     P - Q ∈ classicalPseudodifferentialOperators (m - 1) :=
   (classicalPrincipalSymbol_eq_zero_iff (sub_mem hP hQ)).1 fun x ξ ↦ by
     rw [classicalPrincipalSymbol_sub hP hQ, h, sub_self]
+
+/-- The principal symbol of a finite sum of operators of order `m` is the sum of their principal
+symbols. -/
+theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
+    {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : ∀ i ∈ s, P i ∈ classicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (∑ i ∈ s, P i) x ξ =
+      ∑ i ∈ s, classicalPrincipalSymbol m (P i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      classicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
+        (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
+
+/-! ### The principal symbol map -/
+
+/-- **The principal symbol is smooth.** The principal symbol of order `m` of every operator is a
+smooth positively homogeneous function of degree `m` on the cotangent bundle. In a chart `e`, near
+every point of the chart target, it is the principal symbol of the symbol of a chart compression
+of `P` by cutoffs equal to `1` there, which is smooth away from the zero frequency. -/
+theorem classicalPrincipalSymbol_mem_homogeneousCotangentSymbols :
+    classicalPrincipalSymbol m P ∈ homogeneousCotangentSymbols n M m := by
+  refine ⟨classicalPrincipalSymbol_zero_covector, fun x ξ t ht ↦
+    classicalPrincipalSymbol_smul_covector x ξ ht, fun e he ↦ ?_⟩
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  swap
+  · simp only [classicalPrincipalSymbol_of_notMem hP]
+    exact contDiffOn_const
+  rintro ⟨y, η⟩ ⟨hy, hη⟩
+  -- A cutoff `χ` in `e`, equal to `1` near `y`, and the symbol `a` of the compression by `χ`.
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩)
+    (n := ⊤) isCompact_singleton (singleton_subset_iff.2 hy)
+  rw [nhdsSet_singleton] at hχ
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he χ χ
+  -- Near `(y, η)`, the function is the value at `1` of the principal symbol of `a`.
+  have hev :
+      (fun p : CoordinateSpace n × CoordinateSpace n ↦ a.principal.coefficient p 1) =ᶠ[𝓝 (y, η)]
+      fun p ↦ classicalPrincipalSymbol m P (e.symm p.1)
+        ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))) := by
+    filter_upwards [continuous_fst.continuousAt.eventually (hχ.and (e.open_target.mem_nhds hy))]
+      with p hp
+    have h := coefficient_principal_eq_classicalPrincipalSymbol hP he χ χ ha
+      (e.map_target hp.2) p.2
+    rw [e.right_inv hp.2, hp.1] at h
+    simp [h]
+  exact ((((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).restrictScalars ℝ).contDiff.comp_contDiffAt _
+    (a.principal.contDiffAt_coefficient hη)).congr_of_eventuallyEq hev.symm).contDiffWithinAt
+
+variable (n M m) in
+/-- **The principal symbol map** `σ_m` from the classical pseudodifferential operators of order
+`m` on `M` to the smooth positively homogeneous functions of degree `m` on the cotangent bundle.
+Its kernel is the operators of order `m - 1` (`TauCeti.ker_classicalPrincipalSymbolLinearMap`). -/
+def classicalPrincipalSymbolLinearMap :
+    classicalPseudodifferentialOperators (n := n) (M := M) m →ₗ[ℂ]
+      homogeneousCotangentSymbols n M m where
+  toFun P :=
+    ⟨classicalPrincipalSymbol m P, classicalPrincipalSymbol_mem_homogeneousCotangentSymbols⟩
+  map_add' P Q := Subtype.ext <| funext fun x ↦ funext fun ξ ↦
+    classicalPrincipalSymbol_add P.property Q.property x ξ
+  map_smul' c P := Subtype.ext <| funext fun x ↦ funext fun ξ ↦
+    classicalPrincipalSymbol_smul P.property c x ξ
+
+@[simp]
+theorem coe_classicalPrincipalSymbolLinearMap_apply
+    (P : classicalPseudodifferentialOperators (n := n) (M := M) m) :
+    (classicalPrincipalSymbolLinearMap n M m P :
+      (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ) =
+      classicalPrincipalSymbol m P :=
+  (rfl)
+
+variable (n M m) in
+/-- **The kernel of the principal symbol map** is the classical pseudodifferential operators of
+order `m - 1`. -/
+theorem ker_classicalPrincipalSymbolLinearMap :
+    LinearMap.ker (classicalPrincipalSymbolLinearMap n M m) =
+      (classicalPseudodifferentialOperators (m - 1)).comap
+        (classicalPseudodifferentialOperators m).subtype := by
+  ext P
+  rw [LinearMap.mem_ker, Submodule.mem_comap, Submodule.subtype_apply,
+    ← classicalPrincipalSymbol_eq_zero_iff P.property, ← Submodule.coe_eq_zero,
+    coe_classicalPrincipalSymbolLinearMap_apply]
+  simp only [funext_iff, Pi.zero_apply]
 
 /-! ### Differential operators -/
 
