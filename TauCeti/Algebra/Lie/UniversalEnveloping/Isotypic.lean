@@ -89,9 +89,7 @@ omit [LieModule R L M] in
 theorem isIsotypic_iff_isIsotypic_of_ι_smul
     (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆) :
     IsIsotypic R L M ↔ _root_.IsIsotypic U M := by
-  have : LieModule R L M :=
-    { smul_lie := fun t x m ↦ by rw [← hM, ← hM, map_smul, smul_assoc]
-      lie_smul := fun t x m ↦ by rw [← hM, ← hM, smul_comm] }
+  have := lieModule_of_ι_smul hM
   rw [isIsotypic_iff]
   simp only [_root_.IsIsotypic]
   constructor
