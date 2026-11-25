@@ -35,12 +35,15 @@ needed.
 Integrating it along the open interval of times at which the flow through `x` is defined: if
 `L_Z α = g • α` for a continuous function `g`, then `(φₜ^* α)ₓ = exp (∫₀ᵗ g (φₛ x) ds) • αₓ`
 (`TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`). This is how the local flow of a contact
-Hamiltonian vector field rescales the contact form. For a closed form `β` with closed contraction
-`ι_Z β`, Cartan's formula gives `L_Z β = 0`, so `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is
-defined at time `t` (`TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`). Likewise a
-one-form `α` taking a constant value on `Z`, with `ι_Z dα = 0`, has `L_Z α = 0` and is preserved
-by the local flow (`TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`); this applies to
-the Reeb flow of a contact form.
+Hamiltonian vector field rescales the contact form. When `αₓ ≠ 0`, the flow preserves `α` at `x`
+at all times at which it is defined exactly when `g` vanishes along the trajectory of `x`
+(`TauCeti.forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul`). For a closed form
+`β` with closed contraction `ι_Z β`, Cartan's formula gives `L_Z β = 0`, so `(φₜ^* β)ₓ = βₓ`
+wherever the flow through `x` is defined at time `t`
+(`TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`). Likewise a one-form `α` taking
+a constant value on `Z`, with `ι_Z dα = 0`, has `L_Z α = 0` and is preserved by the local flow
+(`TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`); this applies to the Reeb flow of
+a contact form.
 
 When `Z` is complete its maximal flow is the global flow `ψ` (`TauCeti.globalFlow`), and these
 statements hold at every time and point (`TauCeti.hasDerivAt_mpullback_globalFlow`,
@@ -84,6 +87,10 @@ and the same conclusion holds (`TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventua
   of `φₜ^* α` is `φₜ^* L_Z α`.
 * `TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
   `(φₜ^* α)ₓ = exp (∫₀ᵗ g (φₛ x) ds) • αₓ` wherever the maximal flow is defined.
+* `TauCeti.forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul`,
+  `TauCeti.forall_mpullback_globalFlow_apply_eq_self_iff_of_mlieDerivForm_eq_smul`: if
+  `L_Z α = g • α` and `αₓ ≠ 0`, the flow preserves `α` at `x` at all times exactly when `g`
+  vanishes along the trajectory of `x`.
 * `TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`: if `β` is closed and `ι_Z β` is
   closed, then `(φₜ^* β)ₓ = βₓ` wherever the maximal flow is defined.
 * `TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`: if `α(Z)` is constant and
@@ -373,6 +380,42 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
   exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F) hJc hcont
     (fun s hs ↦ (hP s hs).hasDerivWithinAt) hJ0 hx
 
+/-- **Preservation of a form along one trajectory.** Let the Lie derivative of a differentiable
+form `α` along a `C¹` vector field `Z` be `g • α` for a continuous function `g`, and let `α` not
+vanish at `x`. Then the maximal flow `φ` of `Z` satisfies `(φₜ^* α)ₓ = αₓ` at every time `t` at
+which the flow through `x` is defined exactly when `g` vanishes along the trajectory of `x`:
+`g (φₜ x) = 0` for all those times. -/
+theorem forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul {g : M → ℝ}
+    (hg : Continuous g)
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)))
+    (hL : mlieDerivForm Z α = fun y ↦ g y • α y) {x : M} (hx : α x ≠ 0) :
+    (∀ t, (t, x) ∈ flowDomain Z → mpullback I I (flowOf Z t) α x = α x) ↔
+      ∀ t, (t, x) ∈ flowDomain Z → g (flowOf Z t x) = 0 := by
+  constructor
+  · intro h t ht
+    -- The pullbacks at `x` are constant near `t`, and their velocity at `t` is
+    -- `(φₜ^* L_Z α)ₓ = g (φₜ x) • (φₜ^* α)ₓ = g (φₜ x) • αₓ`.
+    have hd := hasDerivAt_mpullback_flowOf hZ ht (hα _)
+    rw [hL, mpullback_fun_smul] at hd
+    have hconst : (fun s ↦ mpullback I I (flowOf Z s) α x) =ᶠ[𝓝 t] fun _ ↦ α x := by
+      filter_upwards [((isOpen_flowDomain hZ).preimage
+        (continuous_id.prodMk continuous_const)).mem_nhds ht] with s hs
+      exact h s hs
+    have h0 : (g (flowOf Z t x) • mpullback I I (flowOf Z t) α x : E [⋀^Fin k]→L[ℝ] F) = 0 :=
+      (hd.congr_of_eventuallyEq hconst.symm).unique
+        (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t (α x))
+    rw [h t ht] at h0
+    exact (smul_eq_zero.mp h0).resolve_right hx
+  · intro h t ht
+    -- The rescaling exponent `∫₀ᵗ g (φₛ x) ds` vanishes, since `[0, t]` lies in the domain.
+    have hint : ∫ s in 0..t, g (flowOf Z s x) = 0 := by
+      rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ))
+        fun s hs ↦ h s (uIcc_subset_setOf_mem_flowDomain ht hs)]
+      exact intervalIntegral.integral_zero
+    rw [mpullback_flowOf_apply_eq_exp_integral_smul hZ hg hα hL ht, hint, Real.exp_zero,
+      one_smul]
+
 /-- **Maximal flows preserve closed forms with closed contraction.** For a closed smooth form `β`
 whose contraction `ι_Z β` with a `C¹` vector field `Z` is closed, the time-`t` map of the maximal
 flow `φ` of `Z` satisfies `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is defined at time `t`,
@@ -456,6 +499,20 @@ theorem mpullback_globalFlow_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Co
       Real.exp (∫ s in 0..t, g (globalFlow Z hZ hc s x)) • α x := by
   rw [← flowOf_eq_globalFlow hZ hc]
   exact mpullback_flowOf_apply_eq_exp_integral_smul hZ hg hα hL (hc.mem_flowDomain t x)
+
+/-- **Preservation of a form along one orbit.** Let the Lie derivative of a differentiable form
+`α` along a complete `C¹` vector field `Z` be `g • α` for a continuous function `g`, and let `α`
+not vanish at `x`. Then the flow `ψ` of `Z` satisfies `(ψₜ^* α)ₓ = αₓ` for every time `t` exactly
+when `g` vanishes along the orbit of `x`. -/
+theorem forall_mpullback_globalFlow_apply_eq_self_iff_of_mlieDerivForm_eq_smul {g : M → ℝ}
+    (hg : Continuous g)
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)))
+    (hL : mlieDerivForm Z α = fun y ↦ g y • α y) {x : M} (hx : α x ≠ 0) :
+    (∀ t, mpullback I I (globalFlow Z hZ hc t) α x = α x) ↔
+      ∀ t, g (globalFlow Z hZ hc t x) = 0 := by
+  simpa [← flowOf_eq_globalFlow hZ hc, hc.mem_flowDomain] using
+    forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul hZ hg hα hL hx
 
 /-- **Exponential rescaling along a flow.** If the Lie derivative of a differentiable form `α`
 along a complete `C¹` vector field `Z` is `c • α`, then the time-`t` map of the flow of `Z` pulls

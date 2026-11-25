@@ -181,15 +181,9 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
     [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.val = σ.val) :
     mpullback I J f (τ.volumeForm n).val = (σ.volumeForm n).val := by
-  ext x v
-  have hx : σ.val x = (τ.val (f x)).compContinuousLinearMap (mfderiv I J f x) := by
-    ext w
-    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      Function.comp_def]
-  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
-    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+  funext x
+  rw [volumeForm_apply, ← hf, volumeForm, Submodule.coe_smul, mpullback_smul, Pi.smul_apply,
+    mpullback_wedgePow_apply]
 
 end SmoothTwoForm
 
