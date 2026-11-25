@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.GroupTheory.GroupExtension.ZModFour
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
 import TauCeti.Analysis.Complex.Circle.Basic
 
@@ -20,7 +21,8 @@ homomorphism `f : A → B` from a profinite additive group onto a Hausdorff one 
 
 * the section need not be additive: the reduction `ℤ/4 → ℤ/2` has continuous normalised sections
   (`exists_continuous_section_zmod_four_two`) but no additive one
-  (`not_exists_addMonoidHom_section_zmod_four_two`);
+  (`not_exists_addMonoidHom_section_zmod_four_two`, read off from
+  `TauCeti.isEmpty_splitting_zmodFourExtension`);
 * profiniteness is needed: the squaring map of the circle group is a continuous surjective
   homomorphism of compact groups without a continuous section
   (`not_exists_continuous_section_circle_sq`), since a continuous square root on the circle does
@@ -30,27 +32,28 @@ homomorphism `f : A → B` from a profinite additive group onto a Hausdorff one 
 
 public section
 
-open Real
+open Multiplicative Real
 
 namespace TauCeti
 
-/-- The reduction `ℤ/4 → ℤ/2` as an additive homomorphism. -/
-noncomputable abbrev zmodFourToTwo : ZMod 4 →+ ZMod 2 :=
-  (ZMod.castHom (by norm_num : 2 ∣ 4) (ZMod 2)).toAddMonoidHom
+/-- The reduction `ℤ/4 → ℤ/2` as an additive homomorphism: the projection of
+`TauCeti.zmodFourExtension`, written additively. -/
+abbrev zmodFourToTwo : ZMod 4 →+ ZMod 2 :=
+  AddMonoidHom.toMultiplicative.symm zmodFourExtension.rightHom
 
 /-- The reduction `ℤ/4 → ℤ/2` has a continuous section sending `0` to `0`. -/
 theorem exists_continuous_section_zmod_four_two :
     ∃ s : ZMod 2 → ZMod 4, Continuous s ∧ (∀ b, zmodFourToTwo (s b) = b) ∧ s 0 = 0 :=
   zmodFourToTwo.exists_continuous_section_of_surjective continuous_of_discreteTopology
-    (ZMod.ringHom_surjective _)
+    (toAdd.surjective.comp (zmodFourExtension.rightHom_surjective.comp ofAdd.surjective))
 
 /-- The reduction `ℤ/4 → ℤ/2` has no additive section: the space of additive sections is empty. -/
 theorem not_exists_addMonoidHom_section_zmod_four_two :
     ¬∃ s : ZMod 2 →+ ZMod 4, ∀ b, zmodFourToTwo (s b) = b := by
   rintro ⟨s, hs⟩
-  have h2 : s 1 + s 1 = 0 := by rw [← map_add, show (1 + 1 : ZMod 2) = 0 by decide, map_zero]
-  have key : ∀ a : ZMod 4, a + a = 0 → zmodFourToTwo a ≠ 1 := by decide
-  exact key _ h2 (hs 1)
+  exact isEmpty_splitting_zmodFourExtension.elim
+    { toMonoidHom := AddMonoidHom.toMultiplicative s
+      rightInverse_rightHom := fun b ↦ congrArg ofAdd (hs (toAdd b)) }
 
 /-- **Profiniteness is needed.** The squaring map `z ↦ z²` of the circle group is a continuous
 surjective homomorphism of compact groups, but it has no continuous section: there is no
