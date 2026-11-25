@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
+public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 
@@ -14,11 +15,13 @@ import Mathlib.Analysis.Calculus.LogDeriv
 # Meromorphic Mellin expression for a first Riesz remainder
 
 The kernel of the first Riesz sum is `1 / (s * (s - 1))`. Multiplying the negative
-logarithmic derivative by this kernel and subtracting its principal part at `1` gives the
-meromorphic expression for the Mellin transform of the corresponding smoothed remainder.
-The normalization matters: the total quotient obtained by division by `s - 1` need not take
-its limiting value at `1`. Off `0` and `1`, each nonzero order of the input produces a
-simple pole with residue `ord / (s * (1 - s))`.
+logarithmic derivative by this kernel and subtracting its principal part at `1` gives a
+meromorphic function `TauCeti.rieszRemainderMellin`, the expression that is meant to be
+identified with the Mellin transform of the corresponding smoothed remainder. That
+identification is not proved here; this file records the function itself, its value at `1`,
+and its poles and residues. The normalization matters: the total quotient obtained by
+division by `s - 1` need not take its limiting value at `1`. Off `0` and `1`, each nonzero
+order of the input produces a simple pole with residue `ord / (s * (1 - s))`.
 
 The Dirichlet-character pole formula is used in L. Alpöge's
 `Deduction.poleData_char` (<https://github.com/leanprover-community/riemann-hypothesis>).
@@ -78,6 +81,11 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eq_and_analyticAt {L : ℂ → �
     (hL.rieszRemainderMellin_eventuallyEq s)
   exact ⟨heq.eq_of_nhds, hq.congr heq.symm⟩
 
+/-- The analytic expression for the Mellin germ at `1` in terms of a representative `g`. -/
+private theorem analyticAt_sub_dslope_div {g : ℂ → ℂ} (hg : AnalyticAt ℂ g 1) (c : ℂ) :
+    AnalyticAt ℂ (fun s ↦ (g 1 - c - dslope g 1 s) / s) 1 :=
+  (analyticAt_const.fun_sub (hg.dslope 1)).fun_div analyticAt_id one_ne_zero
+
 /-- The analytic representative of the compensated logarithmic derivative at `1` gives the
 value and the analytic germ of the Riesz remainder Mellin expression there. -/
 theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq_dslope {L g : ℂ → ℂ}
@@ -85,9 +93,7 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq_dslope {L g : ℂ �
       logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1)) =ᶠ[𝓝[≠] 1] g) :
     rieszRemainderMellin L =ᶠ[𝓝 1] fun s ↦
       (g 1 - (meromorphicOrderAt L 1).untop₀ - dslope g 1 s) / s := by
-  have ha : AnalyticAt ℂ (fun s ↦
-      (g 1 - (meromorphicOrderAt L 1).untop₀ - dslope g 1 s) / s) 1 :=
-    (analyticAt_const.fun_sub (hg.dslope 1)).fun_div analyticAt_id one_ne_zero
+  have ha := analyticAt_sub_dslope_div hg (meromorphicOrderAt L 1).untop₀
   have hnf := meromorphicNFOn_rieszRemainderMellin L (mem_univ (1 : ℂ))
   apply (hnf.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds ha.meromorphicNFAt).mp
   refine (hL.rieszRemainderMellin_eventuallyEq 1).trans ?_
@@ -104,10 +110,37 @@ there. -/
 theorem _root_.Meromorphic.analyticAt_rieszRemainderMellin_one {L : ℂ → ℂ}
     (hL : Meromorphic L) : AnalyticAt ℂ (rieszRemainderMellin L) 1 := by
   obtain ⟨g, hg, heq⟩ := (hL 1).exists_analyticAt_logDeriv_sub_order_div
-  have ha : AnalyticAt ℂ (fun s ↦
-      (g 1 - (meromorphicOrderAt L 1).untop₀ - dslope g 1 s) / s) 1 :=
-    (analyticAt_const.fun_sub (hg.dslope 1)).fun_div analyticAt_id one_ne_zero
-  exact ha.congr (hL.rieszRemainderMellin_eventuallyEq_dslope hg heq).symm
+  exact (analyticAt_sub_dslope_div hg _).congr
+    (hL.rieszRemainderMellin_eventuallyEq_dslope hg heq).symm
+
+/-- If `L` is analytic and nonzero at `1`, then with `D = logDeriv L` the Mellin expression
+takes the value `D 1 - D′ 1` at `1`. -/
+theorem _root_.Meromorphic.rieszRemainderMellin_one {L : ℂ → ℂ} (hL : Meromorphic L)
+    (ha : AnalyticAt ℂ L 1) (h₁ : L 1 ≠ 0) :
+    rieszRemainderMellin L 1 = logDeriv L 1 - deriv (logDeriv L) 1 := by
+  have hord : meromorphicOrderAt L 1 = 0 :=
+    ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr h₁
+  have heq : (fun s ↦ logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1)) =ᶠ[𝓝[≠] 1]
+      logDeriv L := by
+    simp [hord]
+  have hlog : AnalyticAt ℂ (logDeriv L) 1 := ha.deriv.fun_div ha h₁
+  have h := (hL.rieszRemainderMellin_eventuallyEq_dslope hlog heq).eq_of_nhds
+  simpa [hord, dslope_same] using h
+
+/-- Where `L` is analytic and nonzero on `1 < re s`, the Mellin expression is the canonical
+meromorphic continuation of the defining quotient from that half-plane. -/
+theorem _root_.Meromorphic.meromorphicContinuation_eq_rieszRemainderMellin {L : ℂ → ℂ}
+    (hL : Meromorphic L) (ha : AnalyticOnNhd ℂ L {s | 1 < s.re})
+    (hne : ∀ s : ℂ, 1 < s.re → L s ≠ 0) :
+    meromorphicContinuation 1 (fun s ↦
+      (s * logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀ * (s - 1) -
+        (logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1))) / (s * (s - 1))) =
+      rieszRemainderMellin L := by
+  refine meromorphicContinuation_eq (meromorphicNFOn_rieszRemainderMellin L) fun s hs ↦ ?_
+  have hs' : 1 < s.re := hs
+  have hs₀ : s ≠ 0 := by rintro rfl; norm_num at hs'
+  have hs₁ : s ≠ 1 := by rintro rfl; simp at hs'
+  exact (hL.rieszRemainderMellin_eq_and_analyticAt hs₀ hs₁ (ha s hs) (hne s hs')).1
 
 /-- Away from `0` and `1`, multiplying the Mellin germ by `s - z` gives an analytic numerator
 whose value at `z` is the order of `L` divided by `z * (1 - z)`. -/

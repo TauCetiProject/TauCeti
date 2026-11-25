@@ -88,8 +88,8 @@ theorem rieszRemainderMellin_LFunction_residue_pos {β : ℝ} (hβ : 0 < β)
   obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp (χ.meromorphicOrderAt_LFunction_ne_top β)
   have hnpos : 0 < n := by simpa [← hn] using hzero
   refine ⟨(n : ℝ) / (β * (1 - β)), by positivity, ?_⟩
-  rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero).2, ← hn]
+  rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero).2, ← hn, WithTop.untop₀_coe]
   push_cast
-  rfl
+  ring
 
 end DirichletCharacter

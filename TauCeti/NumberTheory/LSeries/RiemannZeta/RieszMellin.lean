@@ -34,9 +34,11 @@ theorem rieszRemainderMellin_riemannZeta {s : ℂ} (hs : 1 < s.re) :
         (s * (s - 1)) := by
   have hs₀ : s ≠ 0 := by rintro rfl; norm_num at hs
   have hs₁ : s ≠ 1 := by rintro rfl; simp at hs
-  have h := (meromorphic_riemannZeta.rieszRemainderMellin_eq_and_analyticAt hs₀ hs₁
-    (analyticOn_riemannZeta s hs₁) (riemannZeta_ne_zero_of_one_lt_re hs)).1
-  simpa [neg_div, sub_neg_eq_add, one_div, sub_eq_add_neg, add_comm, add_left_comm, add_assoc]
-    using h
+  rw [(meromorphic_riemannZeta.rieszRemainderMellin_eq_and_analyticAt hs₀ hs₁
+    (analyticOn_riemannZeta s hs₁) (riemannZeta_ne_zero_of_one_lt_re hs)).1,
+    logDerivFinitePart_riemannZeta_one, meromorphicOrderAt_riemannZeta_one, WithTop.untop₀_neg,
+    WithTop.untop₀_one]
+  push_cast
+  ring
 
 end TauCeti

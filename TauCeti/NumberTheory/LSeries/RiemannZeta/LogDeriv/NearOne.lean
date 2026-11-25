@@ -61,9 +61,8 @@ theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : rie
   rw [hlog.logDerivFinitePart_eq, logDeriv_apply]
   · simp
   · filter_upwards [log_deriv_riemannZeta_eq_neg_inv_sub_add] with s hs
-    simp only [logDeriv_apply, hs, meromorphicOrderAt_riemannZeta_one, WithTop.untop₀_neg,
-      WithTop.untop₀_one, Int.cast_neg, Int.cast_one, neg_div, one_div, sub_neg_eq_add,
-      neg_add_cancel_comm]
+    simp [logDeriv_apply, hs, meromorphicOrderAt_riemannZeta_one]
+    ring
 
 end TauCeti
 
