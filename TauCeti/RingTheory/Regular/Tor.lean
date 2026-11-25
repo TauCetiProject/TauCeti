@@ -47,8 +47,10 @@ way.
 * `ModuleCat.Tor_map_app_comp_torOneQuotientSpanSingletonIso_hom`: its naturality in `X`.
 * `ModuleCat.isZero_Tor_add_two_quotientSpanSingleton`: `Torₙ^R(X, R ⧸ (f)) = 0` for `n ≥ 2`.
 * `ModuleCat.torOneQuotientSpanSingletonIsoOfIsTorsionBy`: `Tor₁^R(X, R ⧸ (f)) ≅ X` when `f`
-  kills `X`.
-* `ModuleCat.torOneQuotientSpanSingletonSelfIso`: `Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)`.
+  kills `X`, with `ModuleCat.torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom` relating it to
+  `ModuleCat.torOneQuotientSpanSingletonIso`.
+* `ModuleCat.torOneQuotientSpanSingletonSelfIso`: `Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)`, with
+  `ModuleCat.torOneQuotientSpanSingletonSelfIso_hom`.
 
 ## References
 
@@ -157,6 +159,18 @@ def torOneQuotientSpanSingletonIsoOfIsTorsionBy (hf : IsSMulRegular R f) {X : Mo
   torOneQuotientSpanSingletonIso hf X ≪≫
     (LinearEquiv.ofTop _ ((Module.isTorsionBy_iff_torsionBy_eq_top f).mp hX)).toModuleIso
 
+/-- When `f` kills `X`, the identification `Tor₁^R(X, R ⧸ (f)) ≅ X` is
+`torOneQuotientSpanSingletonIso` followed by the inclusion of the `f`-torsion `X[f] = X`. -/
+@[simp, reassoc]
+theorem torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom (hf : IsSMulRegular R f)
+    {X : ModuleCat.{u} R} (hX : Module.IsTorsionBy R X f) :
+    (torOneQuotientSpanSingletonIsoOfIsTorsionBy hf hX).hom =
+      (torOneQuotientSpanSingletonIso hf X).hom ≫ ofHom (torsionBy R X f).subtype := by
+  simp only [torOneQuotientSpanSingletonIsoOfIsTorsionBy, Iso.trans_hom,
+    LinearEquiv.toModuleIso_hom]
+  exact congrArg _ <| hom_ext <| LinearMap.ext <|
+    LinearEquiv.ofTop_apply (h := (Module.isTorsionBy_iff_torsionBy_eq_top f).mp hX)
+
 /-- **`Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)`** for `f` regular on `R`: the kernel of multiplication by
 `f` on `R ⧸ (f)` is everything. -/
 def torOneQuotientSpanSingletonSelfIso (hf : IsSMulRegular R f) :
@@ -165,5 +179,14 @@ def torOneQuotientSpanSingletonSelfIso (hf : IsSMulRegular R f) :
   torOneQuotientSpanSingletonIsoOfIsTorsionBy hf <|
     (Module.isTorsionBy_quotient_iff _ f).mpr fun x =>
       Ideal.mul_mem_right x _ (Ideal.mem_span_singleton_self f)
+
+/-- The identification `Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)` is `torOneQuotientSpanSingletonIso`
+followed by the inclusion of the `f`-torsion of `R ⧸ (f)`, which is everything. -/
+@[simp, reassoc]
+theorem torOneQuotientSpanSingletonSelfIso_hom (hf : IsSMulRegular R f) :
+    (torOneQuotientSpanSingletonSelfIso hf).hom =
+      (torOneQuotientSpanSingletonIso hf (of R (R ⧸ Ideal.span {f}))).hom ≫
+        ofHom (torsionBy R (R ⧸ Ideal.span {f}) f).subtype := by
+  rw [torOneQuotientSpanSingletonSelfIso, torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom]
 
 end ModuleCat
