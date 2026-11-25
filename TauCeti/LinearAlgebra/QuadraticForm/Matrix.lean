@@ -22,9 +22,11 @@ Without `2` invertible, a quadratic form `q` is still `x ↦ xᵀ M x` in the co
 `b` indexed by a linearly ordered type, for its upper triangular *coefficient matrix* `M`
 (`QuadraticForm.coefficientMatrix`): the diagonal entries are the values `q(bᵢ)`, the entries above
 the diagonal are the polar values `q(bᵢ + bⱼ) - q(bᵢ) - q(bⱼ)`, and the entries below it are `0`
-(`QuadraticForm.coefficientMatrix_apply`). For a form on `R^ι`, reading `M` in an `R`-algebra `A`
-gives the form `q_A` on `A^ι` with the same coefficients (`QuadraticForm.baseChangeForm`).
-Mathlib's `QuadraticForm.baseChange` instead lives on `A ⊗[R] R^ι` and assumes `2` invertible.
+(`QuadraticForm.coefficientMatrix_apply`). The matrix of the full polarization is then `M + Mᵀ`
+(`QuadraticForm.toMatrix_polarBilin_eq_coefficientMatrix_add_transpose`). For a form on `R^ι`,
+reading `M` in an `R`-algebra `A` gives the form `q_A` on `A^ι` with the same coefficients
+(`QuadraticForm.baseChangeForm`). Mathlib's `QuadraticForm.baseChange` instead lives on
+`A ⊗[R] R^ι` and assumes `2` invertible.
 A matrix `P` with `q'(P x) = q(x)` over `R` satisfies `q'_A(P x) = q_A(x)` over every `A`
 (`QuadraticForm.baseChangeForm_map_mulVec`): the matrix `Pᵀ M' P - M` has vanishing quadratic
 expression, so it is alternating (`Matrix.isAltMod_bot_iff`) and stays alternating over `A`. This
@@ -36,6 +38,8 @@ holds in characteristic two, where `q` is not determined by its polar form.
   polar matrix and its determinant.
 * `QuadraticForm.coefficientMatrix` and `QuadraticForm.coefficientMatrix_apply`: the upper
   triangular coefficient matrix of a quadratic form in an ordered basis.
+* `QuadraticForm.toMatrix_polarBilin_eq_coefficientMatrix_add_transpose`: the full polar matrix is
+  `M + Mᵀ`, with no assumption on `2`.
 * `QuadraticForm.baseChangeForm`, `QuadraticForm.baseChangeForm_apply` and
   `QuadraticForm.baseChangeForm_self`: the form with the same coefficients over an `R`-algebra.
 * `QuadraticForm.baseChangeForm_map_mulVec`: a matrix carrying `q` to `q'` over `R` carries `q_A`
@@ -112,6 +116,18 @@ theorem coefficientMatrix_proj (i j : ι) :
     Pi.basisFun_apply, Pi.add_apply, Pi.single_apply, Matrix.single_apply]
   rcases le_total i j with h | h <;> simp only [min_eq_left, min_eq_right, max_eq_left,
     max_eq_right, h] <;> split_ifs <;> grind
+
+/-- Without any assumption on `2`, the matrix of the full polarization of `q` is `M + Mᵀ`, for `M`
+the coefficient matrix of `q`. -/
+theorem toMatrix_polarBilin_eq_coefficientMatrix_add_transpose (q : QuadraticForm R V)
+    (b : Module.Basis ι R V) :
+    LinearMap.BilinForm.toMatrix b q.polarBilin =
+      coefficientMatrix q b + (coefficientMatrix q b)ᵀ := by
+  conv_lhs => rw [← QuadraticMap.toQuadraticMap_toBilin q b]
+  ext i j
+  simp only [LinearMap.BilinMap.polarBilin_toQuadraticMap, LinearMap.BilinForm.toMatrix_apply,
+    Matrix.add_apply, Matrix.transpose_apply, coefficientMatrix, LinearMap.toMatrix₂_apply,
+    LinearMap.add_apply, LinearMap.flip_apply]
 
 /-- The form `q_A` on `A^ι` with the same coefficients as a form `q` on `R^ι`: `x ↦ xᵀ M x` for
 the coefficient matrix `M` of `q` in the standard basis, read in `A`. -/

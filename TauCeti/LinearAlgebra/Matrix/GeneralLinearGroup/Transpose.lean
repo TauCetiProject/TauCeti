@@ -16,7 +16,8 @@ that transposition preserves the positive-determinant subgroup `Matrix.GLPos`.
 
 It also records how an invertible matrix `g` acts by congruence `X ↦ g X gᵀ` on square matrices:
 congruence by `g⁻¹` undoes it, so it is injective, and it intertwines conjugation by `g`, in that
-`(g N g⁻¹) (g C gᵀ) (g N g⁻¹)ᵀ = g (N C Nᵀ) gᵀ`.
+`(g N g⁻¹) (g C gᵀ) (g N g⁻¹)ᵀ = g (N C Nᵀ) gᵀ`. When `C B = 1`, `g` preserves `C` under
+congruence (`g C gᵀ = C`) exactly when its transpose preserves `B` (`gᵀ B g = B`).
 
 ## Main results
 
@@ -25,6 +26,8 @@ congruence by `g⁻¹` undoes it, so it is injective, and it intertwines conjuga
 * `Matrix.GeneralLinearGroup.congruence_injective`: congruence by `g` is injective.
 * `Matrix.GeneralLinearGroup.conj_congruence_congruence`: congruence by a conjugate `g N g⁻¹` of
   a congruate `g C gᵀ` is the congruate of `N C Nᵀ`.
+* `Matrix.GeneralLinearGroup.mul_mul_transpose_eq_iff_transpose_mul_mul_eq`: for `C B = 1`,
+  `g C gᵀ = C` exactly when `gᵀ B g = B`.
 -/
 
 public section
@@ -75,5 +78,32 @@ theorem conj_congruence_congruence (g N : GL n R) (C : Matrix n n R) :
   simp only [Units.val_mul, Matrix.transpose_mul, Matrix.mul_assoc, Units.inv_mul_cancel_left]
   rw [← Matrix.mul_assoc (g : Matrix n n R)ᵀ, coe_transpose_mul_coe_inv_transpose,
     Matrix.one_mul]
+
+/-- **Preserving a form versus preserving its inverse.** For `C B = 1`, an invertible matrix `g`
+satisfies `g C gᵀ = C` exactly when `gᵀ B g = B`. -/
+theorem mul_mul_transpose_eq_iff_transpose_mul_mul_eq {B C : Matrix n n R} (hCB : C * B = 1)
+    (g : GL n R) :
+    (g : Matrix n n R) * C * (g : Matrix n n R)ᵀ = C ↔
+      (g : Matrix n n R)ᵀ * B * (g : Matrix n n R) = B := by
+  -- The forward direction, for every invertible matrix and every pair with `C B = 1`.
+  have key (g : GL n R) {B C : Matrix n n R} (hCB : C * B = 1)
+      (h : (g : Matrix n n R) * C * (g : Matrix n n R)ᵀ = C) :
+      (g : Matrix n n R)ᵀ * B * (g : Matrix n n R) = B := by
+    set G := (g : Matrix n n R)
+    -- `(Gᵀ B G) C Gᵀ = Gᵀ B (G C Gᵀ) = Gᵀ B C = Gᵀ`, so `(Gᵀ B G) C = 1` as `Gᵀ` is invertible.
+    have h1 : Gᵀ * B * G * C * Gᵀ = Gᵀ := by
+      rw [Matrix.mul_assoc (Gᵀ * B * G), Matrix.mul_assoc (Gᵀ * B), ← Matrix.mul_assoc G, h,
+        Matrix.mul_assoc, mul_eq_one_comm.mp hCB, Matrix.mul_one]
+    have h2 : Gᵀ * B * G * C = 1 := by
+      calc Gᵀ * B * G * C = Gᵀ * B * G * C * (Gᵀ * ((g⁻¹ : GL n R) : Matrix n n R)ᵀ) := by
+            rw [coe_transpose_mul_coe_inv_transpose, Matrix.mul_one]
+        _ = 1 := by rw [← Matrix.mul_assoc, h1, coe_transpose_mul_coe_inv_transpose]
+    calc Gᵀ * B * G = Gᵀ * B * G * C * B := by rw [Matrix.mul_assoc _ C, hCB, Matrix.mul_one]
+      _ = B := by rw [h2, Matrix.one_mul]
+  -- The reverse direction is the forward one for `gᵀ`, with `B` and `C` exchanged.
+  refine ⟨key g hCB, fun h ↦ ?_⟩
+  have := key (transposeMulEquiv n g).unop (mul_eq_one_comm.mp hCB)
+    (by rwa [coe_unop_transposeMulEquiv, Matrix.transpose_transpose])
+  rwa [coe_unop_transposeMulEquiv, Matrix.transpose_transpose] at this
 
 end Matrix.GeneralLinearGroup
