@@ -52,7 +52,8 @@ hypothesis on `p` for any fpqc or fppf morphism of schemes, so the results are e
   descended from one on `X ×_S S'` whose structure morphisms satisfy the descent condition.
 * `TauCeti.DescentDatum.Hom.descendMonObj`, `TauCeti.DescentDatum.Hom.descendGrpObj`: the monoid
   (group) object structure on `X₀` descended along an isomorphism `baseChange p X₀ ⟶ D` to a
-  monoid-compatible descent datum `D`.
+  monoid-compatible descent datum `D`, with structure morphisms `Hom.descendMonObj_one`,
+  `Hom.descendMonObj_mul`, `Hom.descendGrpObj_toMonObj`, and `Hom.descendGrpObj_inv`.
 * `TauCeti.DescentDatum.baseChangeGrpHomEquiv`, `TauCeti.DescentDatum.Hom.descendGrpIso`: full
   faithfulness of base change on `Grp (Over S)` into descent data and uniqueness up to unique
   group isomorphism of effective group-object descent.
@@ -305,7 +306,8 @@ descent datum on a monoid object `Y` in `Over S'`, and let `f : baseChange p X�
 isomorphism of descent data. Then `X₀` carries a unique monoid object structure in `Over S` for
 which `f.hom` is a monoid homomorphism (`Hom.isMonHom_hom_descendMonObj`,
 `Hom.eq_descendMonObj`). -/
-noncomputable abbrev Hom.descendMonObj : MonObj X₀ :=
+@[instance_reducible]
+noncomputable def Hom.descendMonObj : MonObj X₀ :=
   letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
   (Over.pullback p).monObjOfFaithful X₀
     (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
@@ -313,13 +315,29 @@ noncomputable abbrev Hom.descendMonObj : MonObj X₀ :=
     (by simpa [MonObj.ofIso_one] using f.map_one_descend)
     (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
 
+/-- The unit of `f.descendMonObj` over `S` is the descent of the transported bundled unit. -/
+@[simp]
+theorem Hom.descendMonObj_one :
+    f.descendMonObj.one = (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend :=
+  (rfl)
+
+/-- The multiplication of `f.descendMonObj` over `S` is the descent of the transported bundled
+multiplication. -/
+@[simp]
+theorem Hom.descendMonObj_mul :
+    f.descendMonObj.mul =
+      (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend :=
+  (rfl)
+
 /-- **Effectiveness of `Hom.descendMonObj`.** Base-changing `f.descendMonObj` along `p` recovers
 the monoid structure on `X₀ ×_S S'` transported from `Y` along `f.hom⁻¹`. -/
 theorem Hom.monObjObj_descendMonObj :
     letI := f.descendMonObj
-    Functor.monObjObj (F := Over.pullback p) (X := X₀) = MonObj.ofIso (asIso f.hom).symm :=
-  letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
-  (Over.pullback p).monObjObj_monObjOfFaithful X₀ _ _ _ _
+    Functor.monObjObj (F := Over.pullback p) (X := X₀) = MonObj.ofIso (asIso f.hom).symm := by
+  let : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
+  exact (Over.pullback p).monObjObj_monObjOfFaithful X₀ _ _
+    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
+    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
 
 /-- With `f.descendMonObj` on `X₀`, the comparison `f.hom : X₀ ×_S S' ⟶ Y` is a monoid
 homomorphism. -/
@@ -378,7 +396,8 @@ descent datum on a group object `G` in `Over S'`, and let `f : baseChange p X₀
 isomorphism of descent data. Then `X₀` carries a unique group object structure in `Over S` for
 which `f.hom` is a monoid homomorphism (`Hom.isMonHom_hom_descendGrpObj`,
 `Hom.eq_descendGrpObj`). -/
-noncomputable abbrev Hom.descendGrpObj : GrpObj X₀ :=
+@[instance_reducible]
+noncomputable def Hom.descendGrpObj : GrpObj X₀ :=
   letI : GrpObj ((Over.pullback p).obj X₀) := GrpObj.ofIso (asIso f.hom).symm
   (Over.pullback p).grpObjOfFaithful X₀
     (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
@@ -389,7 +408,14 @@ noncomputable abbrev Hom.descendGrpObj : GrpObj X₀ :=
     (by simpa [GrpObj.ofIso_inv] using f.map_inv_descend)
 
 /-- The monoid structure underlying `f.descendGrpObj` is `f.descendMonObj`. -/
+@[simp]
 theorem Hom.descendGrpObj_toMonObj : f.descendGrpObj.toMonObj = f.descendMonObj :=
+  (rfl)
+
+/-- The inverse of `f.descendGrpObj` over `S` is the descent of the transported bundled inverse. -/
+@[simp]
+theorem Hom.descendGrpObj_inv :
+    f.descendGrpObj.inv = (f.inv.comp ((invHom D).comp f)).descend :=
   (rfl)
 
 /-- **Effectiveness of `Hom.descendGrpObj`.** Base-changing `f.descendGrpObj` along `p` recovers
@@ -397,8 +423,7 @@ the group structure on `X₀ ×_S S'` transported from `G` along `f.hom⁻¹`. -
 theorem Hom.grpObjObj_descendGrpObj :
     letI := f.descendGrpObj
     Functor.grpObjObj (F := Over.pullback p) (G := X₀) = GrpObj.ofIso (asIso f.hom).symm :=
-  letI : GrpObj ((Over.pullback p).obj X₀) := GrpObj.ofIso (asIso f.hom).symm
-  (Over.pullback p).grpObjObj_grpObjOfFaithful X₀ _ _ _ _ _ _
+  GrpObj.ext _ _ f.monObjObj_descendMonObj
 
 /-- With `f.descendGrpObj` on `X₀`, the comparison `f.hom : X₀ ×_S S' ⟶ G` is a monoid
 homomorphism. -/

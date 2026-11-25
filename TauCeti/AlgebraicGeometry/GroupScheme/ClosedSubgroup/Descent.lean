@@ -218,48 +218,6 @@ section FpqcDescent
 variable {S S' : Scheme.{u}} (p : S' ⟶ S) [Surjective p] [Flat p] [QuasiCompact p]
   {G₀ : Grp (Over S)}
 
-/-- Given a morphism `iOver : K ⟶ G₀ ×_S S'` over `S'` and a morphism `u` between the two pullbacks
-of `K` to `S' ×_S S'` intertwining `iOver` with `Grp.pullbackOverlapIso p G₀`, evaluating `u` on
-`(k, (π k, s₂))` and projecting to `K` yields an action `S' ×_S K ⟶ K` that intertwines `iOver` with
-the canonical descent action on `G₀ ×_S S'`. -/
-private theorem overlap_act_comp_left {p : S' ⟶ S} {G₀ : Grp (Over S)} {K : Over S'}
-    (iOver : K ⟶ (Over.pullback p).obj G₀.X)
-    (u : (Over.pullback (pullback.fst p p)).obj K ⟶
-      (Over.pullback (pullback.snd p p)).obj K)
-    (hu : u.left ≫ ((Over.pullback (pullback.snd p p)).map iOver).left =
-      ((Over.pullback (pullback.fst p p)).map iOver).left ≫
-        (Grp.pullbackOverlapIso p G₀).hom.hom.hom.left) :
-    (pullback.lift (pullback.snd p (K.hom ≫ p))
-        (pullback.lift (pullback.snd p (K.hom ≫ p) ≫ K.hom) (pullback.fst p (K.hom ≫ p))
-          (by rw [Category.assoc, ← pullback.condition]))
-        (by simp) ≫
-      u.left ≫ pullback.fst K.hom (pullback.snd p p)) ≫ iOver.left =
-      pullback.map p (K.hom ≫ p) p (((Over.pullback p).obj G₀.X).hom ≫ p) (𝟙 S') iOver.left
-        (𝟙 S) (by simp) (by rw [← Over.w_assoc iOver, Category.comp_id]) ≫
-        (DescentDatum.baseChange p G₀.X).act := by
-  let θ : pullback p (K.hom ≫ p) ⟶ pullback K.hom (pullback.fst p p) :=
-    pullback.lift (pullback.snd p (K.hom ≫ p))
-      (pullback.lift (pullback.snd p (K.hom ≫ p) ≫ K.hom) (pullback.fst p (K.hom ≫ p))
-        (by rw [Category.assoc, ← pullback.condition]))
-      (by simp)
-  have hf₂_fst : pullback.fst K.hom (pullback.snd p p) ≫ iOver.left =
-      ((Over.pullback (pullback.snd p p)).map iOver).left ≫
-        pullback.fst ((Over.pullback p).obj G₀.X).hom (pullback.snd p p) := by simp
-  have hθ :
-      (θ ≫ u.left ≫ pullback.fst K.hom (pullback.snd p p)) ≫ iOver.left = _ := calc
-    (θ ≫ u.left ≫ pullback.fst K.hom (pullback.snd p p)) ≫ iOver.left
-      = θ ≫ (u.left ≫ ((Over.pullback (pullback.snd p p)).map iOver).left) ≫
-          pullback.fst ((Over.pullback p).obj G₀.X).hom (pullback.snd p p) := by
-        simp only [Category.assoc, hf₂_fst]
-    _ = θ ≫ ((Over.pullback (pullback.fst p p)).map iOver).left ≫
-          ((Grp.pullbackOverlapIso p G₀).hom.hom.hom.left ≫
-            pullback.fst ((Over.pullback p).obj G₀.X).hom (pullback.snd p p)) :=
-        congrArg (θ ≫ ·) ((congrArg (· ≫ _) hu).trans (Category.assoc _ _ _))
-    _ = _ := congrArg (θ ≫ ((Over.pullback (pullback.fst p p)).map iOver).left ≫ ·)
-        (Grp.pullbackOverlapIso_hom_left_fst p G₀)
-  rw [hθ]
-  refine pullback.hom_ext ?_ ?_ <;> simp [θ]
-
 /-- Given a closed subgroup scheme `H'` of `(Over.pullback p).mapGrp.obj G₀` satisfying the overlap
 condition on `S' ×_S S'`, the canonical descent datum on `(Over.pullback p).obj G₀.X` restricts
 along the monomorphism `H'.val.arrow` to `(H'.val : Grp (Over S')).X`. -/
@@ -282,8 +240,19 @@ private theorem exists_restricted_descentDatum {p : S' ⟶ S} {G₀ : Grp (Over 
     rw [baseChange_def, baseChange_def, coe_mapIso, coe_mk, coe_mk, Subobject.map_mk] at heq
     exact heq.le
   let u := Subobject.ofMkLEMk f₁ f₂ hmk
-  have hact := overlap_act_comp_left iOver u.hom.hom
-    (congrArg (fun ψ ↦ ψ.hom.hom.left) (Subobject.ofMkLEMk_comp hmk))
+  have hu : u.hom.hom ≫ (Over.pullback (pullback.snd p p)).map iOver =
+      (Over.pullback (pullback.fst p p)).map iOver ≫
+        (Over.pullbackPullbackIsoOfComm (pullback.condition (f := p) (g := p))).hom.app G₀.X := by
+    have hu_grp : u.hom.hom ≫ (Over.pullback (pullback.snd p p)).map iOver =
+        (Over.pullback (pullback.fst p p)).map iOver ≫
+          ((Grp.pullbackOverlapIso p G₀).hom.hom.hom :
+            (Over.pullback (pullback.fst p p)).obj ((Over.pullback p).obj G₀.X) ⟶
+              (Over.pullback (pullback.snd p p)).obj ((Over.pullback p).obj G₀.X)) :=
+      congrArg (fun ψ ↦ ψ.hom.hom) (Subobject.ofMkLEMk_comp hmk)
+    exact hu_grp.trans
+      (congrArg ((Over.pullback (pullback.fst p p)).map iOver ≫ ·)
+        (Grp.pullbackOverlapIso_hom_hom_hom p G₀))
+  have hact := DescentDatum.overlap_act_comp_left iOver u.hom.hom hu
   exact ⟨DescentDatum.ofMono (DescentDatum.baseChange p G₀.X) iOver _ hact,
     DescentDatum.ofMonoHom (DescentDatum.baseChange p G₀.X) iOver _ hact,
     DescentDatum.ofMonoHom_hom (DescentDatum.baseChange p G₀.X) iOver _ hact⟩

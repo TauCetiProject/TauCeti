@@ -158,22 +158,6 @@ noncomputable def prod (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂)
       convert key₂ using 2 <;> refine pullback.hom_ext ?_ ?_ <;> simp [prodActionSnd]
 
 /-- The first coordinate of the diagonal action on `X₁ ⊗ X₂` is the action of `D₁`. -/
-@[reassoc]
-theorem prod_act_fst (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
-    (D₁.prod D₂).act ≫ (fst X₁ X₂).left =
-      pullback.map p ((X₁ ⊗ X₂).hom ≫ p) p (X₁.hom ≫ p) (𝟙 S') (fst X₁ X₂).left (𝟙 S)
-        (by simp) (by simp) ≫ D₁.act :=
-  pullback.lift_fst _ _ _
-
-/-- The second coordinate of the diagonal action on `X₁ ⊗ X₂` is the action of `D₂`. -/
-@[reassoc]
-theorem prod_act_snd (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
-    (D₁.prod D₂).act ≫ (snd X₁ X₂).left =
-      pullback.map p ((X₁ ⊗ X₂).hom ≫ p) p (X₂.hom ≫ p) (𝟙 S') (snd X₁ X₂).left (𝟙 S)
-        (by simp) (by simp [pullback.condition_assoc]) ≫ D₂.act :=
-  pullback.lift_snd _ _ _
-
-/-- Also rewrite `prod_act_fst` when `(fst X₁ X₂).left` is unfolded to `pullback.fst`. -/
 @[reassoc (attr := simp)]
 theorem prod_act_pullback_fst (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
     (D₁.prod D₂).act ≫ pullback.fst X₁.hom X₂.hom =
@@ -181,7 +165,7 @@ theorem prod_act_pullback_fst (D₁ : DescentDatum p X₁) (D₂ : DescentDatum 
         (𝟙 S) (by simp) (by simp) ≫ D₁.act :=
   pullback.lift_fst _ _ _
 
-/-- Also rewrite `prod_act_snd` when `(snd X₁ X₂).left` is unfolded to `pullback.snd`. -/
+/-- The second coordinate of the diagonal action on `X₁ ⊗ X₂` is the action of `D₂`. -/
 @[reassoc (attr := simp)]
 theorem prod_act_pullback_snd (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
     (D₁.prod D₂).act ≫ pullback.snd X₁.hom X₂.hom =
@@ -193,7 +177,7 @@ theorem prod_act_pullback_snd (D₁ : DescentDatum p X₁) (D₂ : DescentDatum 
 noncomputable def fstHom (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
     Hom (D₁.prod D₂) D₁ where
   hom := fst X₁ X₂
-  map_act := (prod_act_fst D₁ D₂).symm
+  map_act := by simp
 
 /-- The underlying morphism of `fstHom D₁ D₂` is `fst X₁ X₂`. -/
 @[simp]
@@ -205,7 +189,7 @@ theorem fstHom_hom (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
 noncomputable def sndHom (D₁ : DescentDatum p X₁) (D₂ : DescentDatum p X₂) :
     Hom (D₁.prod D₂) D₂ where
   hom := snd X₁ X₂
-  map_act := (prod_act_snd D₁ D₂).symm
+  map_act := by simp
 
 /-- The underlying morphism of `sndHom D₁ D₂` is `snd X₁ X₂`. -/
 @[simp]
@@ -257,6 +241,13 @@ theorem Hom.prod_ext {E : DescentDatum p Z} {D₁ : DescentDatum p X₁} {D₂ :
     (h₂ : (sndHom D₁ D₂).comp f = (sndHom D₁ D₂).comp g) : f = g :=
   Hom.ext (CartesianMonoidalCategory.hom_ext f.hom g.hom
     (by simpa using congrArg Hom.hom h₁) (by simpa using congrArg Hom.hom h₂))
+
+/-- Pairing the two projections of a morphism `f` into `D₁.prod D₂` recovers `f`. -/
+@[simp]
+theorem Hom.lift_fstHom_comp_sndHom_comp {E : DescentDatum p Z} {D₁ : DescentDatum p X₁}
+    {D₂ : DescentDatum p X₂} (f : Hom E (D₁.prod D₂)) :
+    Hom.lift ((fstHom D₁ D₂).comp f) ((sndHom D₁ D₂).comp f) = f :=
+  Hom.prod_ext (by simp) (by simp)
 
 /-- Tensor product `f₁ ⊗ₘ f₂` of two morphisms of descent data. -/
 noncomputable def Hom.prodMap {D₁ : DescentDatum p X₁} {D₂ : DescentDatum p X₂}

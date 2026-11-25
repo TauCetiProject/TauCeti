@@ -18,6 +18,10 @@ Mathlib identifies base change `Over.pullback` along an identity with the identi
 (`Over.pullbackComp`). This file records that these identifications are coherent, up to the
 equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
+* `CategoryTheory.Over.pullbackComp_hom_app_left_fst_fst`,
+  `CategoryTheory.Over.pullbackComp_hom_app_left_fst_snd`,
+  `CategoryTheory.Over.pullbackComp_inv_app_left_fst`, and
+  `CategoryTheory.Over.pullbackComp_inv_app_left_snd`: projection identities for `pullbackComp`;
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
@@ -32,7 +36,9 @@ For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
 `CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
 `i'` with base change along `i` and then along `t`;
 when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
-change along `t` of the fiber at `i`.
+change along `t` of the fiber at `i`. For the self-pullback square of `p : Y ⟶ X`,
+`CategoryTheory.Over.pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst` gives the first
+projection of the resulting canonical overlap identification on `Y ×_X Y`.
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -68,6 +74,44 @@ variable {C : Type u} [Category.{v} C]
 section Coherence
 
 attribute [local instance] hasPullback_of_right_iso
+
+/-- Under `(Over.pullbackComp t s).hom`, the iterated first projection from `(A ×_X Y) ×_Y Z` to
+`A` is the first projection from `A ×_X Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_fst {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s =
+      pullback.fst A.hom (t ≫ s) := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).hom`, the `Y`-coordinate of the first projection from
+`(A ×_X Y) ×_Y Z` to `A ×_X Y` is the `Z`-coordinate of `A ×_X Z` mapped along `t`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_snd {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.snd A.hom s =
+      pullback.snd A.hom (t ≫ s) ≫ t := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the first projection from `A ×_X Z` to `A` is the
+iterated first projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_fst {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).inv.app A).left ≫ pullback.fst A.hom (t ≫ s) =
+      pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s := by
+  simp [pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the second projection from `A ×_X Z` to `Z` is the second
+projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_snd {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((pullbackComp t s).inv.app A).left ≫ pullback.snd A.hom (t ≫ s) =
+      pullback.snd (pullback.snd A.hom s) t := by
+  simp [pullbackComp]
 
 /-- Base change along `f : X ⟶ Y` of the identification `pullbackId` of base change along the
 identity is the composition isomorphism `pullbackComp f (𝟙 Y)`, up to the equality
@@ -159,13 +203,8 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_fst (h : i' ≫ g = t ≫ i) (A :
         pullback.fst A.hom i =
       pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
   simp only [pullbackPullbackIsoOfComm_hom_app, comp_left, eqToHom_left, Category.assoc]
-  have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
-      pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
-    simp [pullbackComp]
-  have h₂ : ((pullbackComp i' g).inv.app A).left ≫ pullback.fst A.hom (i' ≫ g) =
-      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
-    simp [pullbackComp]
-  rw [h₁, eqToHom_comp_pullback_fst A.hom h, h₂]
+  rw [pullbackComp_hom_app_left_fst_fst, eqToHom_comp_pullback_fst A.hom h,
+    pullbackComp_inv_app_left_fst]
 
 /-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
 @[reassoc (attr := simp)]
@@ -175,6 +214,31 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A :
   Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
 end CommSquare
+
+/-- On underlying objects, the canonical overlap identification
+`(Over.pullback (pullback.fst p p)).obj ((Over.pullback p).obj A) ≅
+  (Over.pullback (pullback.snd p p)).obj ((Over.pullback p).obj A)`
+over `Y ×_X Y` sends `((a, y₁), (y₁, y₂))` to `((a, y₂), (y₁, y₂))`: its first projection to
+`A ×_X Y` pairs the `A`-coordinate `a` with the second `Y`-coordinate `y₂`. -/
+@[reassoc]
+theorem pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst [HasPullbacks C] {X Y : C}
+    (p : Y ⟶ X) (A : Over X) :
+    ((pullbackComp (pullback.fst p p) p).inv.app A).left ≫
+        eqToHom (congrArg (fun f ↦ Limits.pullback A.hom f)
+          (pullback.condition (f := p) (g := p))) ≫
+        ((pullbackComp (pullback.snd p p) p).hom.app A).left ≫
+        pullback.fst ((pullback p).obj A).hom (pullback.snd p p) =
+      pullback.lift
+        (pullback.fst ((pullback p).obj A).hom (pullback.fst p p) ≫ pullback.fst A.hom p)
+        (pullback.snd ((pullback p).obj A).hom (pullback.fst p p) ≫ pullback.snd p p)
+        (by
+          rw [Category.assoc, pullback.condition, ← pullback_obj_hom p A,
+            pullback.condition_assoc, pullback.condition, Category.assoc]) := by
+  refine pullback.hom_ext ?_ ?_
+  · rw [pullback.lift_fst]
+    simp [eqToHom_comp_pullback_fst A.hom (pullback.condition (f := p) (g := p))]
+  · rw [pullback.lift_snd]
+    simp [eqToHom_comp_pullback_snd_assoc A.hom (pullback.condition (f := p) (g := p))]
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/
