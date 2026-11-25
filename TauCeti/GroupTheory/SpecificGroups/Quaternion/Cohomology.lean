@@ -39,7 +39,7 @@ subgroup and recognition API of `QuaternionGroup` does not pull in group cohomol
   extension class of `QuaternionGroup n` is nonzero in `H²`.
 * `TauCeti.cohomologyClass_center_quaternionGroup_ne_zero`: for `n ≠ 0` and `n ≠ 1`, the central
   quotient extension class of `QuaternionGroup n` is nonzero in `H²`.
-* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_eq`: that identification is
+* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_def`: that identification is
   `Subgroup.quotientGroupCohomologyIsoNeg` for `xa 0` and the rotation coordinate.
 * `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero`: for nonzero
   `n`, so is the image of the rotation class in `H²(C₂, ZMod (2 * n))`.
@@ -90,7 +90,7 @@ noncomputable def quaternionRotationsGroupCohomologyIsoNeg (n k : ℕ) :
 /-- `TauCeti.quaternionRotationsGroupCohomologyIsoNeg` is `Subgroup.quotientGroupCohomologyIsoNeg`
 for the element `xa 0` outside the rotations and the rotation coordinate
 `quaternionRotationsMulEquiv n`. -/
-theorem quaternionRotationsGroupCohomologyIsoNeg_eq (n k : ℕ) :
+theorem quaternionRotationsGroupCohomologyIsoNeg_def (n k : ℕ) :
     quaternionRotationsGroupCohomologyIsoNeg n k =
       Subgroup.quotientGroupCohomologyIsoNeg (index_quaternionRotations n)
         (xa_notMem_quaternionRotations 0)

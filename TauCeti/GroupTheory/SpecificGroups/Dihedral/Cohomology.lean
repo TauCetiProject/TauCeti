@@ -34,7 +34,7 @@ recognition API of `DihedralGroup` does not pull in group cohomology.
 
 * `TauCeti.cohomologyClass_dihedralRotations_eq_zero`: the quotient extension class of
   `dihedralRotations n` vanishes in `H²` for every `n : ℕ`.
-* `TauCeti.dihedralRotationsGroupCohomologyIsoNeg_eq`: that identification is
+* `TauCeti.dihedralRotationsGroupCohomologyIsoNeg_def`: that identification is
   `Subgroup.quotientGroupCohomologyIsoNeg` for a reflection and the rotation coordinate.
 * `TauCeti.dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero`: the class also
   vanishes in `H²(C₂, ZMod n)`.
@@ -74,7 +74,7 @@ noncomputable def dihedralRotationsGroupCohomologyIsoNeg (m k : ℕ) :
 
 /-- `TauCeti.dihedralRotationsGroupCohomologyIsoNeg` is `Subgroup.quotientGroupCohomologyIsoNeg`
 for the reflection `sr 0` and the rotation coordinate `dihedralRotationsMulEquiv m`. -/
-theorem dihedralRotationsGroupCohomologyIsoNeg_eq (m k : ℕ) :
+theorem dihedralRotationsGroupCohomologyIsoNeg_def (m k : ℕ) :
     dihedralRotationsGroupCohomologyIsoNeg m k =
       Subgroup.quotientGroupCohomologyIsoNeg (index_dihedralRotations m)
         (sr_notMem_dihedralRotations 0)

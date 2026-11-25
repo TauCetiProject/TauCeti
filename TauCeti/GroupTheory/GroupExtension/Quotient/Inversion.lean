@@ -135,7 +135,7 @@ theorem quotientGroupCohomologyIsoNeg_hom (hN : N.index = 2) {s : G} (hs : s ∉
               x.toMul
             rwa [e.apply_symm_apply] at this⟩) n := by
   rw [quotientGroupCohomologyIsoNeg_eq_mapIso hN hs hinv e]
-  rfl
+  exact groupCohomology.mapIso_hom ..
 
 /-- The inverse map of `Subgroup.quotientGroupCohomologyIsoNeg` is the map on cohomology induced by
 any `e : G ⧸ N ≃* C₂` and by the inverse of `φ`. -/
@@ -151,6 +151,6 @@ theorem quotientGroupCohomologyIsoNeg_inv (hN : N.index = 2) {s : G} (hs : s ∉
             refine (LinearMap.ext fun x ↦ ?_).symm
             exact toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ y x.toMul⟩) n := by
   rw [quotientGroupCohomologyIsoNeg_eq_mapIso hN hs hinv e]
-  rfl
+  exact groupCohomology.mapIso_inv ..
 
 end Subgroup
