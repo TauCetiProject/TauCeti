@@ -160,33 +160,30 @@ theorem not_isIntegrallyClosed [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
     ¬ IsIntegrallyClosed (AdjoinRoot (poly c n)) := by
   intro hic
   have := isDomain c hn
-  obtain ⟨m, rfl⟩ := id hn
-  let F := FractionRing (AdjoinRoot (poly c (2 * m + 1)))
-  have hu : AdjoinRoot.of (poly c (2 * m + 1)) (X + C c) ≠ 0 := fun h ↦ by
+  -- `have` rather than `obtain`, so that `hn` stays available for `param c hn`.
+  have ⟨m, hm⟩ := hn
+  set u := AdjoinRoot.of (poly c n) (X + C c)
+  let F := FractionRing (AdjoinRoot (poly c n))
+  have hu : u ≠ 0 := fun h ↦ by
     have := congrArg (fun z ↦ (param c hn z).coeff 2) h
-    simp only [param_of, X_add_C_comp_paramX, map_zero] at this
-    simp at this
-  have hu' : algebraMap _ F (AdjoinRoot.of (poly c (2 * m + 1)) (X + C c)) ≠ 0 := by
+    simp [u] at this
+  have hu' : algebraMap _ F u ≠ 0 := by
     rwa [ne_eq, map_eq_zero_iff _ (IsFractionRing.injective _ F)]
-  have hint : IsIntegral (AdjoinRoot (poly c (2 * m + 1)))
-      (algebraMap _ F (AdjoinRoot.root (poly c (2 * m + 1))) /
-        algebraMap _ F (AdjoinRoot.of (poly c (2 * m + 1)) (X + C c)) ^ m) := by
-    refine ⟨X ^ 2 + C (AdjoinRoot.of (poly c (2 * m + 1)) (X + C c)),
-      monic_X_pow_add_C _ two_ne_zero, ?_⟩
-    rw [eval₂_add, eval₂_X_pow, eval₂_C, div_pow, ← map_pow, root_sq,
-      div_add' _ _ _ (pow_ne_zero _ (pow_ne_zero _ hu')), div_eq_zero_iff]
-    left
-    simp only [map_neg, map_pow]
+  have hint : IsIntegral (AdjoinRoot (poly c n))
+      (algebraMap _ F (AdjoinRoot.root (poly c n)) / algebraMap _ F u ^ m) := by
+    refine ⟨X ^ 2 + C u, monic_X_pow_add_C _ two_ne_zero, ?_⟩
+    simp only [eval₂_add, eval₂_X_pow, eval₂_C, div_pow, ← map_pow, root_sq]
+    simp only [map_neg, map_pow, hm]
+    field_simp
     ring
   obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
-  have hay : a * AdjoinRoot.of (poly c (2 * m + 1)) (X + C c) ^ m =
-      AdjoinRoot.root (poly c (2 * m + 1)) :=
+  have hay : a * u ^ m = AdjoinRoot.root _ :=
     IsFractionRing.injective _ F <| by
       rw [map_mul, ha, map_pow, div_mul_cancel₀ _ (pow_ne_zero _ hu')]
-  have := congrArg (fun z ↦ (param c hn z).coeff (2 * m + 1)) hay
-  simp only [map_mul, map_pow, param_of, param_root, X_add_C_comp_paramX] at this
+  have := congrArg (fun z ↦ (param c hn z).coeff n) hay
+  simp only [u, map_mul, map_pow, param_of, param_root, X_add_C_comp_paramX] at this
   simp only [mul_pow, ← C_pow, ← pow_mul, mul_left_comm _ (C _), coeff_C_mul] at this
-  simp [coeff_mul_X_pow', coeff_param_one c hn h3] at this
+  simp [hm, coeff_mul_X_pow', coeff_param_one c hn h3] at this
 
 /-- The curve `y² + (x + c)ⁿ = 0` over a domain is not normal for odd `n ≥ 3`. -/
 theorem not_isNormalScheme [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
