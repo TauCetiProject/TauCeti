@@ -47,25 +47,22 @@ example (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r�
     Subsingleton (CompletedTensor R S C₀(Empty, R)) :=
   ⟨fun x y ↦ (CompletedTensor.zeroAtInftyBaseChange Empty hS).injective (by ext i; exact i.elim)⟩
 
-private abbrev c0BaseChangeStmt (R S I : Type*) [NormedCommRing R] [NormedCommRing S]
-    [IsUltrametricDist S] [Algebra R S] [TopologicalSpace I] (L : ℝ) : Prop :=
-  ∀ (π : AddGroupSeminorm (S ⊗[R] C₀(I, R))),
-    (∀ z, π z = sInf {c : ℝ | 0 ≤ c ∧ ∃ (n : ℕ) (s : Fin n → S) (x : Fin n → C₀(I, R)),
-      z = ∑ j, s j ⊗ₜ[R] x j ∧ ∀ j, ‖s j‖ * ‖x j‖ ≤ c}) →
-    ∀ (hsmul : ∀ (s : S) (z : S ⊗[R] C₀(I, R)), π (s • z) ≤ ‖s‖ * π z),
-      let _ := π.toSeminormedAddCommGroup; let _ := IsBoundedSMul.of_norm_smul_le hsmul
-      let _ := uniformContinuousConstSMul_of_continuousConstSMul S (S ⊗[R] C₀(I, R))
-      ∃ e : UniformSpace.Completion (S ⊗[R] C₀(I, R)) ≃L[S] C₀(I, S),
-        (∀ s x i, e ((s ⊗ₜ[R] x : S ⊗[R] C₀(I, R)) :
-          UniformSpace.Completion (S ⊗[R] C₀(I, R))) i = s * algebraMap R S (x i)) ∧
-        (∀ z, ‖e z‖ ≤ L * ‖z‖) ∧ (∀ y, ‖e.symm y‖ ≤ ‖y‖)
+private abbrev c0BaseChangeStmt (R S I : Type*) [SeminormedCommRing R] [NormedCommRing S]
+    [Algebra R S] [TopologicalSpace I] (L : ℝ) : Prop :=
+  letI := (productSeminorm R S C₀(I, R)).toSeminormedAddCommGroup
+  letI := IsBoundedSMul.of_norm_smul_le
+    (productSeminorm_smul_le (A := R) (S := S) (V := S) (W := C₀(I, R)))
+  letI := uniformContinuousConstSMul_of_continuousConstSMul S (S ⊗[R] C₀(I, R))
+  ∃ e : UniformSpace.Completion (S ⊗[R] C₀(I, R)) ≃L[S] C₀(I, S),
+    (∀ s x i, e ((s ⊗ₜ[R] x : S ⊗[R] C₀(I, R)) :
+      UniformSpace.Completion (S ⊗[R] C₀(I, R))) i = s * algebraMap R S (x i)) ∧
+    (∀ z, ‖e z‖ ≤ L * ‖z‖) ∧ (∀ y, ‖e.symm y‖ ≤ ‖y‖)
 
 omit [IsUltrametricDist R] [CompleteSpace R] [NormedRing.IsTate R] in
 /-- Product-seminorm base change `c0_completedBaseChange` applies to both `Empty` and `ℕ`. -/
-example {L : ℝ} (hL : 1 ≤ L) (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) :
+example {L : ℝ} (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) :
     c0BaseChangeStmt R S Empty L ∧ c0BaseChangeStmt R S ℕ L :=
-  ⟨fun π hπ hsmul ↦ CompletedTensor.c0_completedBaseChange (zero_le_one.trans hL) hφ π hπ hsmul,
-   fun π hπ hsmul ↦ CompletedTensor.c0_completedBaseChange (zero_le_one.trans hL) hφ π hπ hsmul⟩
+  ⟨CompletedTensor.c0_completedBaseChange Empty hφ, CompletedTensor.c0_completedBaseChange ℕ hφ⟩
 
 omit [NormOneClass R] in
 /-- Identity base change (`S = R`) on `C₀(ℕ, R)` recovers the original operator `u`. -/
