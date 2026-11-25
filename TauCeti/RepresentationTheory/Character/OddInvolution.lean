@@ -471,13 +471,13 @@ private lemma toMatrix_offDiag_eq_zero {ρ : Representation K G V}
       repr_smul_add_repr_smul b hij]
   have hline {r : K} : r • b i ∈ K ∙ b i :=
     Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
-  -- The line through `b i` is a subrepresentation; let `W` be a complement.
-  let L : Subrepresentation ρ := ⟨K ∙ b i, fun g v hv => by
-    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hv
-    rw [map_smul, ← Representation.asAlgebraHom_of, hexp, h, zero_smul, add_zero, smul_smul]
-    exact hline⟩
-  obtain ⟨W, hLW⟩ := exists_isCompl L
-  have hLW' := Subrepresentation.isCompl_toSubmodule.mpr hLW
+  -- The line `L` through `b i` is a subrepresentation; let `W` be a complement.
+  have hL (g : G) : ∃ t : K, ρ g (b i) = t • b i :=
+    ⟨_, by rw [← Representation.asAlgebraHom_of, hexp, h, zero_smul, add_zero]⟩
+  obtain ⟨W, hLW⟩ := exists_isCompl (Subrepresentation.spanSingleton (b i) hL)
+  have hLW' : IsCompl (K ∙ b i) W.toSubmodule := by
+    rw [← Subrepresentation.toSubmodule_spanSingleton (b i) hL]
+    exact Subrepresentation.isCompl_toSubmodule.mpr hLW
   have hsmul {r : K} (hr : r • b i ∈ W) : r = 0 :=
     (smul_eq_zero.mp (Submodule.disjoint_def.mp hLW'.disjoint _ hline hr)).resolve_right
       (b.ne_zero i)

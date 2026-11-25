@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Scalar formal multilinear series
@@ -19,16 +20,19 @@ block. It also evaluates the change-of-origin series of a scalar series on const
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
 zero they recover the coefficients. Termwise differentiation of a scalar series represents the
-derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n` and
-`y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. Inside the disc of convergence, both
-`∑ c n * y ^ n` and `∑ n * c n * y ^ n` converge absolutely; correspondingly, a real series
+derivative on the same ball, and, besides `f y = ∑ c n * y ^ n`, gives the Euler operator
+`y * f' y` as `∑ n * c n * y ^ n` and `y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. Inside
+the disc of convergence, both `∑ c n * y ^ n` and `∑ n * c n * y ^ n` converge absolutely;
+correspondingly, a real series
 summable on `[0, R)` remains summable inside `R` when multiplied by the index `n`
 (`TauCeti.summable_nat_mul_of_forall_lt`). It also computes the scalar series
 of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
 `‖1‖ = 1`. Over a densely normed field, a scalar series that
 converges at every nonzero point of a disk about the origin has radius at least that of the disk;
 in particular a scalar series whose sum has no zero in such a disk converges on it, because the
-sum is `0` wherever the series diverges.
+sum is `0` wherever the series diverges. Correspondingly, a series in powers of `z - z₀` that
+converges on the punctured disc `0 < ‖z - z₀‖ < r` has radius at least `r`
+(`TauCeti.le_radius_ofScalars_of_summable_sub`).
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
@@ -40,7 +44,10 @@ multilinear series is `ofScalars` of its `coeff` sequence
 `FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
 (`TauCeti.mkPiRingSeries_eq_ofScalars`). Shifting a scalar power series around a base point `z₀`
 in a complete normed algebra yields a `HasFPowerSeriesOnBall` expansion around `z₀` whenever the
-convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`), and yields
+convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`); in
+particular the scalar sum `∑ cₙ zⁿ` has its series as power series on every disc about the origin
+of positive radius at most the radius of convergence
+(`TauCeti.hasFPowerSeriesOnBall_tsum_mul_pow`). Shifting also yields
 analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
 (`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
@@ -184,6 +191,13 @@ theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [Nontriviall
       ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
       ContinuousLinearMap.apply_apply]
 
+/-- If `f` is the sum of the scalar power series `∑ c n * z ^ n` on the ball of radius `r` about
+`0`, then for `y` in that ball, `f y = ∑ c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r)
+    {y : 𝕂} (hy : ‖y‖ₑ < r) : HasSum (fun n : ℕ ↦ c n * y ^ n) (f y) := by
+  simpa [ofScalars_apply_eq, mul_comm] using hf.hasSum (mem_eball_zero_iff.mpr hy)
+
 /-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
 `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
 `y * f' y = ∑ n * c n * y ^ n`. -/
@@ -317,6 +331,15 @@ namespace TauCeti
 
 open scoped NNReal Ring
 
+/-- Over a densely normed field, a series in powers of `z - z₀` that converges on the punctured
+disc `0 < ‖z - z₀‖ < r` has radius of convergence at least `r`. -/
+theorem le_radius_ofScalars_of_summable_sub {𝕜 : Type*} [DenselyNormedField 𝕜] {z₀ : 𝕜} {r : ℝ}
+    (a : ℕ → 𝕜)
+    (h : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun n : ℕ ↦ a n * (z - z₀) ^ n) :
+    ENNReal.ofReal r ≤ (FormalMultilinearSeries.ofScalars 𝕜 a).radius :=
+  FormalMultilinearSeries.le_radius_ofScalars_of_summable a fun z hz0 hz ↦ by
+    simpa using h (z + z₀) (by simpa using hz0) (by simpa using eNorm_lt_ofReal_iff.1 hz)
+
 /-- The scalar multilinear series `∑ₙ C(n + k, k) xⁿ` in any normed `𝕜`-algebra `A` has radius of
 convergence at least `1`. -/
 theorem one_le_ofScalars_choose_radius (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
@@ -385,6 +408,17 @@ theorem hasFPowerSeriesOnBall_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNor
       (FormalMultilinearSeries.ofScalars E c).radius := by
   simpa only [FormalMultilinearSeries.ofScalarsSum, zero_add] using
     ((FormalMultilinearSeries.ofScalars E c).hasFPowerSeriesOnBall hr).comp_sub z₀
+
+/-- Over a complete nontrivially normed field, the sum `∑ cₙ zⁿ` of a scalar series has that
+series as power series on every disc about the origin of positive radius at most the radius of
+convergence. -/
+theorem hasFPowerSeriesOnBall_tsum_mul_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] (c : ℕ → 𝕜) {r : ℝ≥0∞} (hr : 0 < r)
+    (hc : r ≤ (FormalMultilinearSeries.ofScalars 𝕜 c).radius) :
+    HasFPowerSeriesOnBall (fun z ↦ ∑' n, c n * z ^ n)
+      (FormalMultilinearSeries.ofScalars 𝕜 c) 0 r := by
+  simpa [FormalMultilinearSeries.ofScalars_sum_eq] using
+    (hasFPowerSeriesOnBall_ofScalarsSum_sub c (0 : 𝕜) (hr.trans_le hc)).mono hr hc
 
 /-- A shifted scalar power series `z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀)` is analytic
 on its open ball of convergence around `z₀`. -/

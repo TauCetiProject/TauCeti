@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Determinant
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.HalfSpin
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.HalfSpinor
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Frame
 import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
@@ -23,7 +25,12 @@ skew-adjoint. In complex rank two their determinant is the weight-two character 
 The central determinant half-parameter path has operator-norm derivative `(ia/2) Id` at the
 identity. No choice of orientation of the frame is needed to descend the action on a fixed
 eigenspace; identifying the two coordinate SU(2) factors with positive and negative chirality
-requires a positively oriented frame separately.
+requires a positively oriented frame separately. Changing between equally oriented orthonormal
+frames conjugates `Orientation.realSpinCHalfSpinSmoothHom` by a compact Spin element
+(`Orientation.exists_realSpinCHalfSpinSmoothHom_eq_conj`), and unitary Clifford intertwiners
+along oriented linear isometries intertwine the descended actions
+(`Orientation.halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply`,
+`Orientation.realSpinCHalfSpinSmoothHom_intertwine_apply`).
 
 The type synonym `Orientation.SpinCHalfSpinor` of a chirality eigenspace carries the descended
 action as a smooth `Spinᶜ(4)`-action. In complex rank two every alternating two-form on it, with
@@ -193,6 +200,23 @@ theorem det_realSpinCHalfSpinSmoothHom (h₂ : finrank ℂ S = 2) (x : SpinC) :
     LinearMap.coe_toContinuousLinearMap, det_spinCGroupHalfSpinRep o ρ ε hQ₀ hQ h₂,
     OrthonormalBasis.det_realSpinCGroupHom]
 
+/-- Changing between two equally oriented orthonormal frames `b` and `b'` conjugates
+`realSpinCHalfSpinSmoothHom` by the image of a compact Spin element in `Spinᶜ(4)`. -/
+theorem exists_realSpinCHalfSpinSmoothHom_eq_conj {b' : OrthonormalBasis (Fin 4) ℝ V}
+    (hb : b.toBasis.orientation = b'.toBasis.orientation) :
+    ∃ s₀ : spinGroup (realCliffordForm 4 0),
+      ∀ (x : SpinC) (ψ : S),
+        realSpinCHalfSpinSmoothHom o hQ b' ρ ε x ψ =
+          realSpinCHalfSpinSmoothHom o hQ b ρ ε (spinCGroup.ofSpin (realCliffordForm 4 0) hpos s₀)
+            (realSpinCHalfSpinSmoothHom o hQ b ρ ε x
+              (realSpinCHalfSpinSmoothHom o hQ b ρ ε
+                (spinCGroup.ofSpin (realCliffordForm 4 0) hpos s₀)⁻¹ ψ)) := by
+  have hconj := b.exists_realSpinCGroupHom_eq_conj b' hQ hb hpos hQ₀
+  refine ⟨hconj.choose, fun x ψ ↦ ?_⟩
+  simp only [realSpinCHalfSpinSmoothHom_apply o hQ b' ρ ε hQ₀,
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀, hconj.choose_spec x, map_mul,
+    LinearMap.coe_toContinuousLinearMap', mul_apply_eq_comp]
+
 /-! ### The half-spinor representation spaces -/
 
 /-- The `ε`-eigenspace of the chirality element on the Clifford module `W`, on which `Spinᶜ(4)`
@@ -318,6 +342,52 @@ theorem inner_realSpinCHalfSpinSmoothHom_apply
   simp only [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
     LinearMap.coe_toContinuousLinearMap']
   exact inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply o ε hρ hQ₀ _ ψ χ
+
+/-- **Equivariance of `realSpinCHalfSpinSmoothHom` along an oriented isometry and unitary Clifford
+intertwiner**: `halfSpinLinearIsometryEquiv` intertwines the smooth `Spinᶜ(4)` action in `b` with
+the smooth `Spinᶜ(4)` action in `b.map f`. -/
+theorem halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply
+    {V' W' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    [Fact (finrank ℝ V' = 4)] {Q' : QuadraticForm ℝ V'} (o' : Orientation ℝ V' (Fin 4))
+    (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
+    [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [FiniteDimensional ℂ W']
+    {ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End ℂ W'}
+    {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
+    {U : W ≃ₗᵢ[ℂ] W'}
+    (hU : ∀ v, U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
+      ρ' (ι Q' (f v)) ∘ₗ U.toLinearEquiv.toLinearMap)
+    (x : SpinC) (ψ : S) :
+    halfSpinLinearIsometryEquiv o' ho hU ε (realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ) =
+      realSpinCHalfSpinSmoothHom o' hQ' (b.map f) ρ' ε x
+        (halfSpinLinearIsometryEquiv o' ho hU ε ψ) := by
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective (realCliffordForm 4 0) hpos x
+  let e : Q →qᵢ Q' :=
+    { toLinearMap := f.toLinearMap
+      map_app' v := by simp [hQ', hQ] }
+  simp [spinCHalfSpinRep_apply, halfSpinRep_apply,
+    b.realEvenCliffordEquiv_map hQ hQ' f e (fun _ ↦ rfl)]
+  simpa using LinearMap.congr_fun
+    (halfSpinLinearIsometryEquiv_comp_evenHalfSpinAction o' ho hU e (fun _ ↦ rfl) ε
+      (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s))) ψ
+
+/-- Specialization of `halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply` to a unitary
+Clifford intertwiner between two representations `ρ` and `ρ'` on the same oriented four-space in a
+fixed frame `b`. -/
+theorem realSpinCHalfSpinSmoothHom_intertwine_apply
+    {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [FiniteDimensional ℂ W']
+    {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'}
+    {U : W ≃ₗᵢ[ℂ] W'}
+    (hU : ∀ v, U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
+      ρ' (ι Q v) ∘ₗ U.toLinearEquiv.toLinearMap)
+    (x : SpinC) (ψ : S) :
+    halfSpinLinearIsometryEquiv o (f := .refl ℝ V) (by simp) hU ε
+        (realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ) =
+      realSpinCHalfSpinSmoothHom o hQ b ρ' ε x
+        (halfSpinLinearIsometryEquiv o (f := .refl ℝ V) (by simp) hU ε ψ) := by
+  have hb_refl : b.map (.refl ℝ V) = b := DFunLike.ext _ _ fun _ ↦ by simp
+  simpa [hb_refl] using
+    halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε o hQ
+      (f := .refl ℝ V) (by simp) hU x ψ
 
 /-- The half-spinor model of a Hermitian Clifford module is a complex inner product space. -/
 instance : InnerProductSpace ℂ (SpinCHalfSpinor o hQ b ρ ε) :=
