@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.Support.DegreeZeroWhole
+public import TauCeti.AlgebraicGeometry.Cohomology.Support
 public import TauCeti.AlgebraicGeometry.Modules.Unit
 public import TauCeti.Examples.Algebra.Homology.LocalCohomology.DegreeZero
 
@@ -45,6 +45,16 @@ noncomputable def cohomologyWithSupportZeroAddEquiv :
   ((Scheme.Modules.unit _).cohomologyWithSupportZeroLinearEquivOfEqUniv _
     (zeroLocus_ideal (k := k))).toAddEquiv.trans
     (Scheme.ΓSpecIso (.of (TruncatedRing k))).commRingCatIsoToRingEquiv.toAddEquiv
+
+@[simp]
+lemma cohomologyWithSupportZeroAddEquiv_apply
+    (x : (Scheme.Modules.unit (Spec (.of (TruncatedRing k)))).cohomologyWithSupport
+      (zeroLocusIdeal k) ⊤ 0) :
+    cohomologyWithSupportZeroAddEquiv k x =
+      (Scheme.ΓSpecIso (.of (TruncatedRing k))).commRingCatIsoToRingEquiv
+        ((Scheme.Modules.unit _).cohomologyWithSupportZeroLinearEquivOfEqUniv _
+          (zeroLocus_ideal (k := k)) x) :=
+  (rfl)
 
 /-- **Geometric `H⁰_{V(I)}(Spec A, 𝒪) ≠ 0`** for a nonzero ring `k`, whereas the native `H⁰_I(A)`
 vanishes (`isZero_localCohomology_zero`). -/
