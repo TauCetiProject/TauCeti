@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 /-!
 # Concatenating independent finite families
@@ -14,6 +15,13 @@ public import Mathlib.Data.Fin.Tuple.Basic
 These are the finite-tuple versions of the sum-type span and independence
 criteria. They allow bases with a common initial block to be used with
 Plücker coordinates, whose row indices are `Fin` types.
+
+Over a division ring, lifting a basis of the range of a linear map `p` gives a family indexed by
+`Fin (finrank (range p))` whose images under `p` are independent
+(`LinearMap.exists_linearIndependent_comp`, and
+`LinearMap.exists_linearIndependent_comp_of_surjective` for a surjective `p`). Together with
+`LinearIndependent.fin_append_of_linearIndependent_comp`, this builds independent concatenations
+adapted to a linear map.
 -/
 
 public section
@@ -93,3 +101,31 @@ theorem fin_append_of_linearIndependent_comp [Ring R] [AddCommGroup V] [Module R
   simp [hl]
 
 end LinearIndependent
+
+namespace LinearMap
+
+open Module
+
+variable {K W : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- Lifts along a linear map `p` of a basis of its range: a family of `dim (range p)` vectors whose
+images under `p` are linearly independent. -/
+theorem exists_linearIndependent_comp (p : V →ₗ[K] W) [FiniteDimensional K (range p)] :
+    ∃ a : Fin (finrank K (range p)) → V, LinearIndependent K (p ∘ a) := by
+  choose a ha using fun i ↦ p.surjective_rangeRestrict (Module.finBasis K (range p) i)
+  refine ⟨a, ?_⟩
+  have : ⇑p ∘ a = Subtype.val ∘ Module.finBasis K (range p) :=
+    funext fun i ↦ congrArg Subtype.val (ha i)
+  rw [this]
+  exact (Module.finBasis K _).linearIndependent.map' _ (Submodule.ker_subtype _)
+
+/-- Lifts along a surjective linear map `p` of a basis of its target: a family of `dim W` vectors
+whose images under `p` are linearly independent. -/
+theorem exists_linearIndependent_comp_of_surjective [FiniteDimensional K W] {p : V →ₗ[K] W}
+    (hp : Function.Surjective p) :
+    ∃ a : Fin (finrank K W) → V, LinearIndependent K (p ∘ a) := by
+  choose a ha using fun i ↦ hp (Module.finBasis K W i)
+  exact ⟨a, by rw [show ⇑p ∘ a = Module.finBasis K W from funext ha]; exact
+    (Module.finBasis K W).linearIndependent⟩
+
+end LinearMap

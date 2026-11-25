@@ -76,8 +76,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
-  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
-  degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
+  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`), also in front of a
+  further factor (`ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul`); elements of
+  even degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
   that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
@@ -708,3 +709,18 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
 end exteriorPower
 
 end TauCeti
+
+namespace ExteriorAlgebra
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)` also in front
+of a further factor `x`: `u ∧ (v ∧ x) = (-1) ^ (j * i) • (v ∧ (u ∧ x))`. -/
+theorem ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v : Fin j → M)
+    (x : ExteriorAlgebra R M) :
+    ιMulti R i u * (ιMulti R j v * x) =
+      (-1 : R) ^ (j * i) • (ιMulti R j v * (ιMulti R i u * x)) := by
+  rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
+    mul_assoc]
+
+end ExteriorAlgebra
