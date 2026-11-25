@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.RingTheory.PowerBasis
+-- Supplies `Valuation.Integers.isIntegrallyClosed_integers` (`IsIntegrallyClosed 𝒪ᵥ[K]`) for
+-- `map_eq_C_leadingCoeff_mul_minpoly`; `Extension.lean` only `import`s (not `public import`s) it.
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
