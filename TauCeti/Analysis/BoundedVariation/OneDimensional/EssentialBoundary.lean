@@ -43,7 +43,7 @@ Lower bound: at a point `x ∈ ∂ᵉs ∩ Ω`, both `s` and its complement fill
 arbitrarily small balls around `x`
 (`TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`), so such a ball inside `Ω`
 contains a Lebesgue point of `s` and one of its complement, and the variation along these two points
-(`TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`) gives `1 ≤ P(s; Ω)`. For finitely many
+(`TauCeti.Real.ofReal_sum_le_perimeter`) gives `1 ≤ P(s; Ω)`. For finitely many
 points of `∂ᵉs ∩ Ω`, split `Ω` into a small ball around one of them and the complement of its
 closure, and add the perimeters over these disjoint open sets
 (`TauCeti.totalVariationOn_sup_of_disjoint`).
@@ -60,6 +60,13 @@ closure, and add the perimeters over these disjoint open sets
 * `TauCeti.Real.perimeter_eq_encard_essentialBoundary_inter`: `P(s; Ω) = #(∂ᵉs ∩ Ω)`.
 * `TauCeti.Real.finite_essentialBoundary_inter_of_perimeter_ne_top`: finite perimeter in `Ω` gives
   finitely many essential boundary points in `Ω`.
+
+## References
+
+* L. Ambrosio, N. Fusco, D. Pallara, *Functions of Bounded Variation and Free Discontinuity
+  Problems*, §3.2 (sets of finite perimeter in one variable).
+* A. Cianchi, N. Fusco, F. Maggi, A. Pratelli, *On the isoperimetric deficit in Gauss space*,
+  Amer. J. Math. (2011) (the one-dimensional characterization of sets of finite perimeter).
 -/
 
 public section
@@ -203,27 +210,6 @@ theorem perimeter_le_encard_frontier_inter (hs : NullMeasurableSet s) (Ω : Open
   (perimeter_le_encard_essentialBoundary_inter hs Ω).trans <| by
     exact_mod_cast encard_le_encard (inter_subset_inter_left _ essentialBoundary_subset_frontier)
 
-/-- Two Lebesgue points of the indicator of a measurable set `t`, one in `t` and one outside it,
-with the segment between them inside `Ω`, give `1 ≤ P(t; Ω)`. -/
-private theorem one_le_perimeter_of_lebesguePoint {t : Set ℝ} (ht : MeasurableSet t)
-    {Ω : Opens ℝ} {p q : ℝ} (hpq : p ≤ q) (hΩ : Icc p q ⊆ Ω)
-    (hxor : (p ∈ t ∧ q ∉ t) ∨ (q ∈ t ∧ p ∉ t))
-    (hp : Tendsto (fun r => ⨍ y in closedBall p r,
-      ‖t.indicator 1 y - t.indicator (1 : ℝ → ℝ) p‖) (𝓝[>] 0) (𝓝 0))
-    (hq : Tendsto (fun r => ⨍ y in closedBall q r,
-      ‖t.indicator 1 y - t.indicator (1 : ℝ → ℝ) q‖) (𝓝[>] 0) (𝓝 0)) :
-    1 ≤ perimeter volume Ω t := by
-  have hu : LocallyIntegrableOn (t.indicator (1 : ℝ → ℝ)) (Ω : Set ℝ) := by
-    rw [Pi.one_def]
-    exact ((locallyIntegrable_const 1).indicator ht).locallyIntegrableOn _
-  have h := ofReal_sum_abs_sub_le_totalVariationOn (Ω := Ω) (m := 1) (x := ![p, q])
-    (v := fun i => t.indicator 1 (![p, q] i)) hu
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq)
-    (by simpa using hΩ) (fun i => by fin_cases i <;> assumption)
-  rw [perimeter_def]
-  refine le_trans (le_of_eq ?_) h
-  rcases hxor with ⟨hpt, hqt⟩ | ⟨hqt, hpt⟩ <;> simp [hpt, hqt]
-
 /-- **An essential boundary point carries perimeter at least one.** If a point `x` of the essential
 boundary of a null-measurable set `s ⊆ ℝ` lies in the open set `Ω`, then `1 ≤ P(s; Ω)`. -/
 theorem one_le_perimeter_of_mem_essentialBoundary (hs : NullMeasurableSet s) {Ω : Opens ℝ}
@@ -248,8 +234,14 @@ theorem one_le_perimeter_of_mem_essentialBoundary (hs : NullMeasurableSet s) {Ω
     fun hu hv => ((convex_closedBall x r).ordConnected.out hu hv).trans
       ((closedBall_subset_ball hrε).trans hεΩ)
   rcases le_total p q with hpq | hqp
-  · exact one_le_perimeter_of_lebesguePoint ht hpq (hsub hpB hqB) (Or.inl ⟨hpt, hqt⟩) hp hq
-  · exact one_le_perimeter_of_lebesguePoint ht hqp (hsub hqB hpB) (Or.inr ⟨hpt, hqt⟩) hq hp
+  · have h := ofReal_sum_le_perimeter ht (x := ![p, q])
+      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq)
+      (by simpa using hsub hpB hqB) (fun i => by fin_cases i <;> assumption)
+    simpa [hpt, hqt] using h
+  · have h := ofReal_sum_le_perimeter ht (x := ![q, p])
+      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hqp)
+      (by simpa using hsub hqB hpB) (fun i => by fin_cases i <;> assumption)
+    simpa [hpt, hqt] using h
 
 /-- **Every finite set of essential boundary points is counted by the perimeter.** If a finite set
 `F` of points of the essential boundary of a null-measurable `s ⊆ ℝ` lies in the open set `Ω`, then
