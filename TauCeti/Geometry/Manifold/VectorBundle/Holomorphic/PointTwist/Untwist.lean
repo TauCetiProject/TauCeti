@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.BumpFunction
 public import TauCeti.Analysis.Calculus.FDeriv.NormComparison
+public import TauCeti.Analysis.Convex.Segment
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Negative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.RealSmooth
@@ -46,6 +47,8 @@ nowhere-zero section of the resulting twist, which is therefore trivial.
 
 ## Main results
 
+* `TauCeti.trivializationAt_untwistSection_ne_zero`: under the estimate, the interpolation has
+  no zero off `x` (by `TauCeti.zero_notMem_segment_of_norm_sub_smul_lt`).
 * `TauCeti.contMDiff_untwistSection`: the interpolation is smooth when `f` is a smooth function
   equal to `1` near `x` and supported in the chart of the twist at `x`.
 * `TauCeti.exists_untwist_section`: untwisting a zero satisfying the estimate above.
@@ -148,9 +151,7 @@ theorem contMDiff_untwistSection {x : X} {s : Bool} {σ : ∀ z, L z} {f : X →
   have hzero {τ : ∀ z, (signedPointTwistCore ℂ L x s).Fiber z} (h : ∀ᶠ z in 𝓝 z₀, τ z = 0) :
       ContMDiffAt 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n (fun z ↦ TotalSpace.mk' ℂ z (τ z)) z₀ :=
     (contMDiffAt_zeroSection ℝ _).congr_of_eventuallyEq (h.mono fun z hz ↦ by
-      change TotalSpace.mk' ℂ z (τ z) = _
-      rw [hz]
-      rfl)
+      simp [hz, Bundle.zeroSection])
   -- The first summand: the twist of `σ` is `C^n` off `x`, and its weight vanishes near `x`.
   have h₁ : ContMDiffAt 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       (fun z ↦ TotalSpace.mk' ℂ z (((1 - f) • t) z)) z₀ := by
@@ -183,26 +184,6 @@ end Smooth
 
 /-! ### Untwisting -/
 
-/-- Interpolating along the segment from `T` to `c` avoids `0` when `T` lies in the open disc of
-radius `μ ‖c‖` about `μ c`, for some `μ > 0`. -/
-private theorem sub_smul_add_smul_ne_zero {T c : ℂ} {μ t : ℝ} (hμ : 0 < μ) (ht₀ : 0 ≤ t)
-    (ht₁ : t ≤ 1) (hT : ‖T - μ • c‖ < μ * ‖c‖) :
-    (1 - t) • T + t • c ≠ 0 := by
-  intro h
-  have hc : 0 < ‖c‖ := pos_of_mul_pos_right ((norm_nonneg _).trans_lt hT) hμ.le
-  -- The value is `((1 - t) μ + t) c` plus `(1 - t)` times the deviation `T - μ c`.
-  have h' : ((1 - t) * μ + t) • c = -((1 - t) • (T - μ • c)) := by
-    rw [← sub_eq_zero, sub_neg_eq_add, smul_sub, ← h]
-    module
-  have hn := congrArg norm h'
-  rw [norm_neg, norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
-    Real.norm_of_nonneg (by linarith)] at hn
-  -- So `t ‖c‖ ≤ 0`, hence `t = 0`, and then `μ ‖c‖ = ‖T - μ c‖ < μ ‖c‖`.
-  have h₁ : t * ‖c‖ ≤ 0 := by nlinarith [mul_le_mul_of_nonneg_left hT.le (sub_nonneg.2 ht₁)]
-  obtain rfl : t = 0 := le_antisymm (by nlinarith) ht₀
-  simp only [sub_zero, one_mul, add_zero] at hn
-  linarith
-
 section Untwist
 
 /-- **The interpolating section has no zero off `x`.** At a point `z ≠ x` of the chart of the twist
@@ -218,9 +199,9 @@ theorem trivializationAt_untwistSection_ne_zero {x z : X} {s : Bool} {σ : ∀ z
         ‖c‖ * ‖chartAt ℂ x z - chartAt ℂ x x‖) :
     (trivializationAt ℂ (signedPointTwistCore ℂ L x s).Fiber x
       ⟨z, untwistSection L x s σ f c z⟩).2 ≠ 0 := by
+  have hzs := mem_chart_source_of_mem_trivializationAt_baseSet hz
   rw [trivializationAt_untwistSection hz]
   rw [signedPointTwistCore_trivializationAt_self] at hz ⊢
-  have hzs : z ∈ (chartAt ℂ x).source := by simpa using (mem_signedPointTwistCore_baseSet.1 hz).2
   have hu : 0 < ‖chartAt ℂ x z - chartAt ℂ x x‖ := by
     rw [← pointTwistCoord_apply]
     exact norm_pos_iff.2 (pointTwistCoord_ne_zero hzs hzx)
@@ -233,7 +214,8 @@ theorem trivializationAt_untwistSection_ne_zero {x z : X} {s : Bool} {σ : ∀ z
     simp only [Bool.false_eq_true, ite_false] at hg
     simp only [signedPointTwistFactor_false, pointTwistFactor_true_false, pointTwistCoord_apply,
       smul_eq_mul]
-    refine sub_smul_add_smul_ne_zero one_pos hf₀ hf₁ ?_
+    refine fun h ↦ zero_notMem_segment_of_norm_sub_smul_lt (T := u⁻¹ * g) one_pos ?_
+      ⟨1 - f z, f z, by linarith, hf₀, by ring, h⟩
     have h : u⁻¹ * g - (1 : ℝ) • c = u⁻¹ * (g - u * c) := by
       rw [one_smul, mul_sub, ← mul_assoc, inv_mul_cancel₀ (norm_pos_iff.1 hu), one_mul]
     rw [h, norm_mul, norm_inv, one_mul, inv_mul_lt_iff₀ hu, mul_comm ‖u‖]
@@ -242,7 +224,8 @@ theorem trivializationAt_untwistSection_ne_zero {x z : X} {s : Bool} {σ : ∀ z
     simp only [ite_true] at hg
     simp only [signedPointTwistFactor_true, pointTwistFactor_false_true, pointTwistCoord_apply,
       smul_eq_mul]
-    refine sub_smul_add_smul_ne_zero (pow_pos hu 2) hf₀ hf₁ ?_
+    refine fun h ↦ zero_notMem_segment_of_norm_sub_smul_lt (T := u * g) (pow_pos hu 2) ?_
+      ⟨1 - f z, f z, by linarith, hf₀, by ring, h⟩
     have h : u * g - (‖u‖ ^ 2 : ℝ) • c = u * (g - conj u * c) := by
       rw [mul_sub, ← mul_assoc, Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.real_smul]
     rw [h, norm_mul]
@@ -288,12 +271,9 @@ theorem exists_untwist_section {x : X} {σ : ∀ z, L z}
   · by_cases hfz : f z = 0
     · -- Off the support of `f` the section is the twist of `σ`, which vanishes only at `x`.
       have hzx : z ≠ x := by rintro rfl; exact one_ne_zero (f.eq_one ▸ hfz)
-      have h₀ : (trivializationAt ℂ L z ⟨z, σ z⟩).2 = (0 : ℂ) :=
-        (untwistSection_of_eq_zero hfz).symm.trans hτ
       refine hzx (hVσ z hz ?_)
-      rw [← (trivializationAt ℂ L z).symm_apply_apply_mk (mem_baseSet_trivializationAt ℂ L z) (σ z),
-        h₀, ← (trivializationAt ℂ L z).symmL_apply (R := ℂ) (mem_baseSet_trivializationAt ℂ L z),
-        map_zero]
+      rw [← pointTwistDiv_untwistSection_of_eq_zero (L := L) (σ := σ) (s := s) (c := c) hfz hzx, hτ]
+      exact map_zero _
     · obtain ⟨⟨hze, -⟩, hzg⟩ := hfS (subset_tsupport _ hfz)
       have h0 : (e ⟨z, untwistSection L x s σ f c z⟩).2 = 0 := by
         rw [hτ]
@@ -302,11 +282,7 @@ theorem exists_untwist_section {x : X} {σ : ∀ z, L z}
       · subst hzx
         rw [trivializationAt_untwistSection hze, f.eq_one] at h0
         simp [hc] at h0
-      · have hzs : z ∈ (chartAt ℂ x).source := by
-          have hze' : z ∈ ((signedPointTwistCore ℂ L x s).localTriv (x, true)).baseSet := by
-            rw [← signedPointTwistCore_trivializationAt_self]
-            exact hze
-          simpa using (mem_signedPointTwistCore_baseSet.1 hze').2
+      · have hzs := mem_chart_source_of_mem_trivializationAt_baseSet hze
         exact trivializationAt_untwistSection_ne_zero hze hzx f.nonneg f.le_one
           (hzg fun h ↦ hzx ((chartAt ℂ x).injOn hzs (mem_chart_source ℂ x) h)) h0
   · have hfz : f z = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hz (hfS h).1.2
