@@ -28,7 +28,14 @@ statement about completed group algebras.
 ## Main results
 
 * `MonoidAlgebra.comapDomain_smul`: `comapDomain` commutes with scalar multiplication.
-* `MonoidAlgebra.comapDomain_mapDomain`: `comapDomain f` is a retraction of `mapDomain f`.
+* `MonoidAlgebra.comapDomain_mapDomain`: `comapDomain f` is a retraction of `mapDomain f`, with
+  additive form `AddMonoidAlgebra.comapDomain_mapDomain`.
+* `MonoidAlgebra.support_coeff_comapDomain_subset`,
+  `MonoidAlgebra.comapDomain_mul_of_support_subset_range`,
+  `MonoidAlgebra.comapDomain_dvd_comapDomain`: along an injective map, `comapDomain` pulls back
+  support bounds `x.coeff.support ⊆ f '' s` to `s`, and for multiplicative/additive homomorphisms
+  preserves products and factorisations of elements supported in `Set.range f` (with additive forms
+  in `AddMonoidAlgebra`).
 * `MonoidAlgebra.mapDomain_comapDomain_eq_comapDomain_mapDomain`: `comapDomain` commutes with
   `mapDomain` along a commutative square in which every point mapped into the range of one
   injection already lies in the range of the other.
@@ -59,10 +66,48 @@ theorem comapDomain_smul {S : Type*} [SMulZeroClass S R] (f : M → N) (hf : f.I
 
 /-- Pulling back along an injective map the coefficients pushed forward along it recovers the
 original element. -/
-@[simp]
+@[to_additive (dont_translate := R) (attr := simp)
+/-- Pulling back along an injective map the coefficients pushed forward along it recovers the
+original element. -/]
 theorem comapDomain_mapDomain (f : M → N) (hf : f.Injective) (x : MonoidAlgebra R M) :
     comapDomain f hf (mapDomain f x) = x :=
   ext <| by rw [coeff_comapDomain, coeff_mapDomain, Finsupp.comapDomain_mapDomain _ hf]
+
+/-- If `x` is supported on the image `f '' s` of an injective map `f`, then `comapDomain f hf x`
+is supported on `s`. -/
+@[to_additive (dont_translate := R)
+/-- If `x` is supported on the image `f '' s` of an injective map `f`, then `comapDomain f hf x`
+is supported on `s`. -/]
+theorem support_coeff_comapDomain_subset {f : M → N} (hf : f.Injective)
+    {x : MonoidAlgebra R N} {s : Set M} (hx : (x.coeff.support : Set N) ⊆ f '' s) :
+    ((comapDomain f hf x).coeff.support : Set M) ⊆ s := by
+  simpa only [coeff_comapDomain, Finsupp.comapDomain_support, Finset.coe_preimage,
+    Set.preimage_image_eq _ hf] using Set.preimage_mono (f := f) hx
+
+/-- Along an injective multiplicative map, `comapDomain` preserves products of elements supported in
+its range. -/
+@[to_additive (dont_translate := R)
+/-- Along an injective additive map, `comapDomain` preserves products of elements supported in its
+range. -/]
+theorem comapDomain_mul_of_support_subset_range [Mul M] [Mul N] {F : Type*} [FunLike F M N]
+    [MulHomClass F M N] {f : F} (hf : Function.Injective f) {x y : MonoidAlgebra R N}
+    (hx : (x.coeff.support : Set N) ⊆ Set.range f)
+    (hy : (y.coeff.support : Set N) ⊆ Set.range f) :
+    comapDomain f hf (x * y) = comapDomain f hf x * comapDomain f hf y := by
+  conv_lhs => rw [← mapDomain_comapDomain hx hf, ← mapDomain_comapDomain hy hf]
+  rw [← mapDomain_mul, comapDomain_mapDomain]
+
+/-- Along an injective monoid map `f`, if `y = x * z` with `x` and `z` supported in `Set.range f`,
+then `comapDomain f hf x` divides `comapDomain f hf y`. -/
+@[to_additive (dont_translate := R)
+/-- Along an injective additive monoid map `f`, if `y = x * z` with `x` and `z` supported in
+`Set.range f`, then `comapDomain f hf x` divides `comapDomain f hf y`. -/]
+theorem comapDomain_dvd_comapDomain [Monoid M] [Monoid N] {F : Type*} [FunLike F M N]
+    [MulHomClass F M N] {f : F} (hf : Function.Injective f) {x y z : MonoidAlgebra R N}
+    (h : y = x * z) (hx : (x.coeff.support : Set N) ⊆ Set.range f)
+    (hz : (z.coeff.support : Set N) ⊆ Set.range f) :
+    comapDomain f hf x ∣ comapDomain f hf y :=
+  ⟨comapDomain f hf z, by rw [h, comapDomain_mul_of_support_subset_range hf hx hz]⟩
 
 /-- A monomial pulled back and pushed forward along an injective map survives exactly when its
 index lies in the range of the map. -/

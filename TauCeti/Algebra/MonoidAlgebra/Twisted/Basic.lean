@@ -51,8 +51,9 @@ a basis and the multiplication table above holds on the nose.
   (`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`);
 * `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`: for a group `G`, the coefficient at the
   identity is a trace on `k_α[G]`;
-* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
-  monoid algebra `MonoidAlgebra k G`;
+* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`,
+  `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
+  monoid algebra `MonoidAlgebra k G` (and `k_1[Multiplicative L]` is `AddMonoidAlgebra k L`);
 * `TauCeti.TwistedMonoidAlgebra.equivOfCoboundary`: two factor sets related by
   `β g h * c (g * h) = α g h * (c g * c h)` for some `c : G → kˣ` have isomorphic twisted monoid
   algebras. For a group `G` that relation is exactly the statement that `α` and `β` are
@@ -550,6 +551,29 @@ noncomputable def monoidAlgebraEquiv :
 theorem monoidAlgebraEquiv_of (g : G) :
     monoidAlgebraEquiv k G (of g) = MonoidAlgebra.single g (1 : k) :=
   toMonoidAlgebra_of k G g
+
+/-- For the trivial factor set `1`, the twisted lattice algebra
+`twistedMonoidAlgebra k (Multiplicative L) 1` is canonically `k`-algebra isomorphic to
+`AddMonoidAlgebra k L`. -/
+noncomputable def addMonoidAlgebraEquiv (L : Type*) [AddMonoid L] :
+    twistedMonoidAlgebra k (Multiplicative L) (1 : Multiplicative L → Multiplicative L → kˣ) ≃ₐ[k]
+      AddMonoidAlgebra k L :=
+  (monoidAlgebraEquiv k (Multiplicative L)).trans
+    (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).symm
+
+@[simp]
+theorem addMonoidAlgebraEquiv_of {L : Type*} [AddMonoid L] (a : L) :
+    addMonoidAlgebraEquiv k L (of (Multiplicative.ofAdd a)) = AddMonoidAlgebra.single a 1 := by
+  rw [addMonoidAlgebraEquiv, AlgEquiv.trans_apply, monoidAlgebraEquiv_of,
+    AlgEquiv.symm_apply_eq, AddMonoidAlgebra.toMultiplicativeAlgEquiv_single]
+
+@[simp]
+theorem addMonoidAlgebraEquiv_symm_single {L : Type*} [AddMonoid L] (a : L) (c : k) :
+    (addMonoidAlgebraEquiv k L).symm (AddMonoidAlgebra.single a c) =
+      c • of (Multiplicative.ofAdd a) := by
+  apply (addMonoidAlgebraEquiv k L).injective
+  rw [AlgEquiv.apply_symm_apply, map_smul, addMonoidAlgebraEquiv_of,
+    AddMonoidAlgebra.smul_single', mul_one]
 
 end Trivial
 

@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Grading
-public import Mathlib.Algebra.Ring.Divisibility.Lemmas
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.Algebra.Ring.Divisibility.Lemmas
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.Module.Torsion.Free
-import Mathlib.Algebra.MonoidAlgebra.MapDomain
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.Algebra.MonoidAlgebra.Support
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
+import TauCeti.Algebra.MonoidAlgebra.ComapDomain
+import TauCeti.Algebra.MonoidAlgebra.Grading
 import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
@@ -30,13 +30,15 @@ exponent supports contained in `AddSubgroup.zmultiples a` and `AddSubgroup.zmult
 `ℤ`-linearly independent pair `![a, b]`.
 
 For every integer weight `w : L →+ ℤ` vanishing on `a`, `P` has width `0` in the `w`-grading
-`AddMonoidAlgebra.gradeBy R w`. Additivity of `TauCeti.GradedAlgebra.width` forces every divisor
-`D ∣ P` to have `w`-width `0` as well, so `w` is constant on `D.coeff.support`. Applying this to
-all weights `w₂ a • w₁ - w₁ a • w₂` (for `P`) and `w₂ b • w₁ - w₁ b • w₂` (for `Q`) on a finitely
-generated free `ℤ`-submodule of `L` containing the supports forces every common divisor `D` of `P`
-and `Q` to have at most one supported exponent, i.e. to be a single monomial. If in addition `P`
-has at least one unit coefficient, the single coefficient of `D` divides that unit coefficient and
-is therefore a unit, making `D` a unit of `AddMonoidAlgebra R L`.
+`AddMonoidAlgebra.gradeBy R w`
+(`AddMonoidAlgebra.width_gradeBy_eq_zero_of_support_subset_zmultiples`). Additivity of
+`TauCeti.GradedAlgebra.width` forces every divisor `D ∣ P` to have `w`-width `0` as well, so `w` is
+constant on `D.coeff.support`. Applying this to all weights `w₂ a • w₁ - w₁ a • w₂` (for `P`) and
+`w₂ b • w₁ - w₁ b • w₂` (for `Q`) on a finitely generated free `ℤ`-submodule of `L` containing the
+supports forces every common divisor `D` of `P` and `Q` to have at most one supported exponent, i.e.
+to be a single monomial. If in addition `P` has at least one unit coefficient, the single
+coefficient of `D` divides that unit coefficient and is therefore a unit, making `D` a unit of
+`AddMonoidAlgebra R L`.
 
 Consequently `P` and `Q` are relatively prime (`IsRelPrime P Q`) without any factoriality
 assumption on `R` or finite-rank assumption on `L`. In particular, binomials `1 + single a c` and
@@ -45,8 +47,9 @@ assumption on `R` or finite-rank assumption on `L`. In particular, binomials `1 
 
 ## Main results
 
-* `AddMonoidAlgebra.width_gradeBy_eq_zero_iff`: `width (gradeBy R w) f = 0` iff `w` is constant on
-  `f.coeff.support`.
+* `AddMonoidAlgebra.weight_sub_eq_of_dvd_of_support_subset_zmultiples`: weight-determinant identity
+  `w₂ a * w₁ (x - y) = w₁ a * w₂ (x - y)` on supported exponents `x, y` of any divisor `D ∣ P` when
+  `P ≠ 0` is supported on `ℤ ∙ a`.
 * `AddMonoidAlgebra.subsingleton_support_of_dvd_of_linearIndependent`: every common divisor of
   nonzero `P, Q` supported on `ℤ ∙ a` and `ℤ ∙ b` (`LinearIndependent ℤ ![a, b]`) has subsingleton
   exponent support.
@@ -67,36 +70,6 @@ public section
 namespace AddMonoidAlgebra
 
 open TauCeti.GradedAlgebra
-
-section Width
-
-variable {R L : Type*} [CommSemiring R]
-
-/-- An element of `AddMonoidAlgebra R L` has width `0` for `gradeBy R w` if and only if `w` takes
-the same value on all exponents in its support. -/
-theorem width_gradeBy_eq_zero_iff [AddMonoid L] (w : L →+ ℤ) (f : R[L]) :
-    width (gradeBy R w) f = 0 ↔
-      ∀ x ∈ f.coeff.support, ∀ y ∈ f.coeff.support, w x = w y := by
-  rw [width_eq_zero_iff]
-  refine ⟨fun ⟨d, hd⟩ x hx y hy ↦ (hd x hx).trans (hd y hy).symm, fun h ↦ ?_⟩
-  rcases f.coeff.support.eq_empty_or_nonempty with hemp | ⟨x₀, hx₀⟩
-  · refine ⟨0, fun x hx ↦ ?_⟩
-    rw [hemp] at hx
-    cases hx
-  · exact ⟨w x₀, fun x hx ↦ h x hx x₀ hx₀⟩
-
-/-- An element supported in `AddSubgroup.zmultiples a` has width `0` under any weight `w : L →+ ℤ`
-with `w a = 0`. -/
-theorem width_gradeBy_eq_zero_of_support_subset_zmultiples [AddGroup L] {a : L} {f : R[L]}
-    (hf : (f.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a) {w : L →+ ℤ} (hw : w a = 0) :
-    width (gradeBy R w) f = 0 := by
-  rw [width_gradeBy_eq_zero_iff]
-  intro x hx y hy
-  obtain ⟨m, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (hf hx)
-  obtain ⟨n, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (hf hy)
-  simp [hw]
-
-end Width
 
 section TorsionFree
 
@@ -166,37 +139,6 @@ private theorem subsingleton_support_of_dvd_of_linearIndependent_free [Module.Fr
   have hca : c • a + (0 : ℤ) • b = 0 := by simp [ha_eq, haj₀]
   exact hc (LinearIndependent.pair_iff.mp hab c 0 hca).1
 
-omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem support_subset_zmultiples_comapDomain {M : Submodule ℤ L} {a₀ : M}
-    {P : R[L]} (hPa : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a₀.val) :
-    ((comapDomain (Subtype.val : M → L) Subtype.val_injective P).coeff.support : Set M) ⊆
-      AddSubgroup.zmultiples a₀ := fun x hx ↦ by
-  have hxP : x.val ∈ P.coeff.support := by
-    simpa [Finsupp.mem_support_iff] using hx
-  obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp (hPa hxP)
-  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, Subtype.ext hn⟩
-
-omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem mapDomain_comapDomain_subtype {M : Submodule ℤ L} {f : R[L]}
-    (hf : (f.coeff.support : Set L) ⊆ M) :
-    mapDomain M.subtype.toAddMonoidHom
-      (comapDomain (Subtype.val : M → L) Subtype.val_injective f) = f :=
-  mapDomain_comapDomain (fun x hx ↦ ⟨⟨x, hf hx⟩, rfl⟩) Subtype.val_injective
-
-omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem dvd_comapDomain_subtype {M : Submodule ℤ L} {D P U : R[L]}
-    (hPU : P = D * U) (hP : (P.coeff.support : Set L) ⊆ M)
-    (hD : (D.coeff.support : Set L) ⊆ M) (hU : (U.coeff.support : Set L) ⊆ M) :
-    comapDomain (Subtype.val : M → L) Subtype.val_injective D ∣
-      comapDomain (Subtype.val : M → L) Subtype.val_injective P := by
-  refine ⟨comapDomain (Subtype.val : M → L) Subtype.val_injective U,
-    mapDomain_injective Subtype.val_injective ?_⟩
-  simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
-    ((mapDomain_comapDomain_subtype hP).trans hPU).trans
-      ((mapDomain_mul M.subtype.toAddMonoidHom _ _).trans
-        (congrArg₂ (· * ·) (mapDomain_comapDomain_subtype hD)
-          (mapDomain_comapDomain_subtype hU))).symm
-
 /-- **Common divisors along independent cyclic directions are monomials.** If `P, Q : R[L]` are
 nonzero with supports in `ℤ ∙ a` and `ℤ ∙ b` for `LinearIndependent ℤ ![a, b]`, every common
 divisor `D` of `P` and `Q` has at most one exponent in its support. -/
@@ -215,34 +157,43 @@ theorem subsingleton_support_of_dvd_of_linearIndependent {a b : L}
   let M : Submodule ℤ L := Submodule.span ℤ (S : Set L)
   have : Module.Finite ℤ M := Module.Finite.span_of_finite ℤ S.finite_toSet
   have : HasUniqueDiv M := .of_isTorsionFree ℤ M
-  have hsub (T : Finset L) (hT : T ⊆ S) : (T : Set L) ⊆ M :=
-    (Finset.coe_subset.mpr hT).trans Submodule.subset_span
-  have hPM : (P.coeff.support : Set L) ⊆ M := hsub P.coeff.support (by grind)
-  have hQM : (Q.coeff.support : Set L) ⊆ M := hsub Q.coeff.support (by grind)
-  have hDM : (D.coeff.support : Set L) ⊆ M := hsub D.coeff.support (by grind)
-  let P₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective P
-  let Q₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective Q
-  let D₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective D
+  let φ : M →+ L := M.toAddSubgroup.subtype
+  have hφ : Function.Injective φ := Subtype.val_injective
+  have hsub (T : Finset L) (hT : T ⊆ S) : (T : Set L) ⊆ Set.range φ := by
+    rw [AddSubgroup.coe_subtype, Subtype.range_val]
+    exact (Finset.coe_subset.mpr hT).trans Submodule.subset_span
+  have hPM : (P.coeff.support : Set L) ⊆ Set.range φ := hsub P.coeff.support (by grind)
+  have hQM : (Q.coeff.support : Set L) ⊆ Set.range φ := hsub Q.coeff.support (by grind)
+  have hDM : (D.coeff.support : Set L) ⊆ Set.range φ := hsub D.coeff.support (by grind)
+  let P₀ : R[M] := comapDomain φ hφ P
+  let Q₀ : R[M] := comapDomain φ hφ Q
+  let D₀ : R[M] := comapDomain φ hφ D
   let a₀ : M := ⟨a, Submodule.subset_span (by simp [S])⟩
   let b₀ : M := ⟨b, Submodule.subset_span (by simp [S])⟩
   have hab₀ : LinearIndependent ℤ ![a₀, b₀] := by
     rw [LinearIndependent.pair_iff] at hab ⊢
     exact fun s t hst ↦ hab s t (by simpa [a₀, b₀] using congrArg Subtype.val hst)
   have hP₀ : P₀ ≠ 0 := fun h0 ↦
-    hP (by simpa [P₀, h0] using (mapDomain_comapDomain_subtype hPM).symm)
+    hP (by simpa [P₀, h0] using (mapDomain_comapDomain hPM hφ).symm)
   have hQ₀ : Q₀ ≠ 0 := fun h0 ↦
-    hQ (by simpa [Q₀, h0] using (mapDomain_comapDomain_subtype hQM).symm)
-  have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀ hP₀ hQ₀
-    (support_subset_zmultiples_comapDomain hPa)
-    (support_subset_zmultiples_comapDomain hQb)
-    (dvd_comapDomain_subtype hPU hPM hDM (hsub U.coeff.support (by grind)))
-    (dvd_comapDomain_subtype hQV hQM hDM (hsub V.coeff.support (by grind)))
+    hQ (by simpa [Q₀, h0] using (mapDomain_comapDomain hQM hφ).symm)
+  have hPa₀ : (P₀.coeff.support : Set M) ⊆ AddSubgroup.zmultiples a₀ :=
+    support_coeff_comapDomain_subset hφ <| by
+      rwa [← AddSubgroup.coe_map, AddMonoidHom.map_zmultiples]
+  have hQb₀ : (Q₀.coeff.support : Set M) ⊆ AddSubgroup.zmultiples b₀ :=
+    support_coeff_comapDomain_subset hφ <| by
+      rwa [← AddSubgroup.coe_map, AddMonoidHom.map_zmultiples]
+  have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀ hP₀ hQ₀ hPa₀ hQb₀
+    (comapDomain_dvd_comapDomain hφ hPU hDM (hsub U.coeff.support (by grind)))
+    (comapDomain_dvd_comapDomain hφ hQV hDM (hsub V.coeff.support (by grind)))
   intro x hx y hy
-  have hx₀ : (⟨x, hDM hx⟩ : M) ∈ (D₀.coeff.support : Set M) := by
+  obtain ⟨x', rfl⟩ := hDM hx
+  obtain ⟨y', rfl⟩ := hDM hy
+  have hx₀ : x' ∈ (D₀.coeff.support : Set M) := by
     simpa [D₀, Finsupp.mem_support_iff] using hx
-  have hy₀ : (⟨y, hDM hy⟩ : M) ∈ (D₀.coeff.support : Set M) := by
+  have hy₀ : y' ∈ (D₀.coeff.support : Set M) := by
     simpa [D₀, Finsupp.mem_support_iff] using hy
-  exact congrArg Subtype.val (hsub₀ hx₀ hy₀)
+  exact congrArg φ (hsub₀ hx₀ hy₀)
 
 /-- **Relative primality along independent cyclic directions.** Let `P, Q : R[L]` be nonzero with
 supports in `ℤ ∙ a` and `ℤ ∙ b` for `LinearIndependent ℤ ![a, b]`. If `P` has a unit coefficient,
@@ -337,12 +288,8 @@ theorem isRelPrime_prod_one_add_single {ι κ : Type*} {a b : L}
     IsRelPrime (∏ r ∈ s, (1 + single a (c r))) (∏ r ∈ t, (1 + single b (d r))) := by
   cases subsingleton_or_nontrivial R
   · exact fun _ _ _ ↦ isUnit_of_subsingleton _
-  have ha : a ≠ 0 := by
-    rintro rfl
-    exact one_ne_zero (LinearIndependent.pair_iff.mp hab 1 0 (by simp)).1
-  have hb : b ≠ 0 := by
-    rintro rfl
-    exact one_ne_zero (LinearIndependent.pair_iff.mp hab 0 1 (by simp)).2
+  have ha : a ≠ 0 := by simpa using hab.ne_zero 0
+  have hb : b ≠ 0 := by simpa using hab.ne_zero 1
   obtain ⟨hPsupp, hP0⟩ := prod_one_add_single_support_and_coeff_zero s ha c
   obtain ⟨hQsupp, hQ0⟩ := prod_one_add_single_support_and_coeff_zero t hb d
   have hP : (∏ r ∈ s, (1 + single a (c r))) ≠ 0 := by

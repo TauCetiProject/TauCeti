@@ -9,15 +9,17 @@ public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.Algebra.MonoidAlgebra.Supported
+public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
-# Bases and ranks of the graded pieces of a monoid algebra
+# Bases, ranks, and degree width of the graded pieces of a monoid algebra
 
 A function `f : M → ι` grades the additive monoid algebra `R[M]` by the submodules
 `AddMonoidAlgebra.gradeBy R f i` of elements supported on the fibre `f ⁻¹' {i}`. This file shows
 that the basis elements `single m 1` with `f m = i` form a basis of the piece of grade `i`, so that
-its rank is the number of elements of `M` of grade `i`.
+its rank is the number of elements of `M` of grade `i`, and characterizes width-zero elements for
+integer weights `w : M →+ ℤ`.
 
 For the semigroup algebra `k[S]` of an additive monoid `S` graded by a degree `deg : S →+ ℕ`, the
 *Hilbert function* of `k[S]` is `n ↦ Module.finrank k (gradeBy k deg n)`, the rank of its
@@ -33,6 +35,10 @@ infinite fibre, as is the rank of a free module of infinite rank.
   `single m 1` with `f m = i`.
 * `AddMonoidAlgebra.finrank_gradeBy`: the rank of the piece of grade `i` is the number of
   elements of `M` of grade `i`.
+* `AddMonoidAlgebra.width_gradeBy_eq_zero_iff`,
+  `AddMonoidAlgebra.width_gradeBy_eq_zero_of_support_subset_zmultiples`: an element of `R[M]` has
+  width `0` for `gradeBy R w` (`w : M →+ ℤ`) iff `w` is constant on its support; in particular
+  elements supported on `ℤ ∙ a` have width `0` whenever `w a = 0`.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
   homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
 -/
@@ -70,6 +76,38 @@ instance (f : M → ι) (i : ι) : Module.Free R (gradeBy R f i) :=
 theorem finrank_gradeBy [StrongRankCondition R] (f : M → ι) (i : ι) :
     Module.finrank R (gradeBy R f i) = Nat.card (f ⁻¹' {i}) :=
   Module.finrank_eq_nat_card_basis (basisGradeBy R f i)
+
+section Width
+
+open TauCeti.GradedAlgebra
+
+variable {R}
+
+/-- An element of `AddMonoidAlgebra R M` has width `0` for `gradeBy R w` if and only if `w` takes
+the same value on all exponents in its support. -/
+theorem width_gradeBy_eq_zero_iff [AddMonoid M] (w : M →+ ℤ) (f : R[M]) :
+    width (gradeBy R w) f = 0 ↔
+      ∀ x ∈ f.coeff.support, ∀ y ∈ f.coeff.support, w x = w y := by
+  rw [width_eq_zero_iff]
+  refine ⟨fun ⟨d, hd⟩ x hx y hy ↦ (hd x hx).trans (hd y hy).symm, fun h ↦ ?_⟩
+  rcases f.coeff.support.eq_empty_or_nonempty with hemp | ⟨x₀, hx₀⟩
+  · refine ⟨0, fun x hx ↦ ?_⟩
+    rw [hemp] at hx
+    cases hx
+  · exact ⟨w x₀, fun x hx ↦ h x hx x₀ hx₀⟩
+
+/-- An element supported in `AddSubgroup.zmultiples a` has width `0` under any weight `w : M →+ ℤ`
+with `w a = 0`. -/
+theorem width_gradeBy_eq_zero_of_support_subset_zmultiples [AddGroup M] {a : M} {f : R[M]}
+    (hf : (f.coeff.support : Set M) ⊆ AddSubgroup.zmultiples a) {w : M →+ ℤ} (hw : w a = 0) :
+    width (gradeBy R w) f = 0 := by
+  rw [width_gradeBy_eq_zero_iff]
+  intro x hx y hy
+  obtain ⟨m, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (hf hx)
+  obtain ⟨n, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (hf hy)
+  simp [hw]
+
+end Width
 
 end AddMonoidAlgebra
 

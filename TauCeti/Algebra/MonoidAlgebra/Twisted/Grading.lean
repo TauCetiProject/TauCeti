@@ -38,9 +38,9 @@ multiplicative extreme homogeneous parts and additive extreme degrees and width.
 * `TauCeti.TwistedMonoidAlgebra.gradedAlgebraOfMap`: `GradedAlgebra (gradeBy k G α f)` for any
   `f : G → M` sending `1` to `0` and products to sums, with automatic instances for
   `f : G →* Multiplicative M` and for `w : L →+ M` on `Multiplicative L`.
-* `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: `twistedMonoidAlgebra k (Multiplicative L) 1
-  ≃ₐ[k] AddMonoidAlgebra k L`, intertwining `gradeBy` with `AddMonoidAlgebra.gradeBy`
-  (`map_gradeBy_addMonoidAlgebraEquiv`).
+* `TauCeti.TwistedMonoidAlgebra.map_gradeBy_addMonoidAlgebraEquiv`: `addMonoidAlgebraEquiv`
+  intertwines `gradeBy` on `twistedMonoidAlgebra k (Multiplicative L) 1` with
+  `AddMonoidAlgebra.gradeBy`.
 
 ## Implementation notes
 
@@ -67,14 +67,6 @@ defined as the `k`-span of the basis elements `of g` with `f g = m`. -/
 noncomputable def gradeBy {M : Type*} (f : G → M) (m : M) :
     Submodule k (twistedMonoidAlgebra k G α) :=
   Submodule.span k (of '' {g : G | f g = m})
-
-theorem gradeBy_eq_span_range {M : Type*} (f : G → M) (m : M) :
-    gradeBy k G α f m =
-      Submodule.span k (Set.range fun g : {g : G // f g = m} ↦
-        (of g.val : twistedMonoidAlgebra k G α)) := by
-  simp only [gradeBy, Set.image_eq_range]
-  -- `↑{g : G | f g = m}` is definitionally `{g : G // f g = m}`.
-  rfl
 
 variable {k G α}
 
@@ -151,26 +143,23 @@ theorem decomposeAlgHom_of [DecidableEq M] {f : G → M} (hf₁ : f 1 = 0)
 
 private theorem decomposeAlgHom_of_mem_aux [DecidableEq M] {f : G → M} (hf₁ : f 1 = 0)
     (hf_mul : ∀ g h : G, f (g * h) = f g + f h) {m : M} {x : twistedMonoidAlgebra k G α}
-    (hx : x ∈ Submodule.span k (Set.range fun g : {g : G // f g = m} ↦
-      (of g.val : twistedMonoidAlgebra k G α))) :
+    (hx : x ∈ gradeBy k G α f m) :
     letI := gradedMonoidOfMap k G α hf₁ hf_mul
-    ∀ h : x ∈ gradeBy k G α f m,
-      decomposeAlgHom k G α hf₁ hf_mul x =
-        DirectSum.of (fun m' ↦ gradeBy k G α f m') m ⟨x, h⟩ := by
+    decomposeAlgHom k G α hf₁ hf_mul x =
+      DirectSum.of (fun m' ↦ gradeBy k G α f m') m ⟨x, hx⟩ := by
   let _ := gradedMonoidOfMap k G α hf₁ hf_mul
+  unfold gradeBy at hx
   induction hx using Submodule.span_induction with
   | mem y hy =>
-    obtain ⟨⟨g, rfl⟩, rfl⟩ := hy
-    exact fun _ ↦ decomposeAlgHom_of k G α hf₁ hf_mul g
-  | zero => exact fun _ ↦ (map_zero _).trans (map_zero _).symm
+    obtain ⟨g, rfl, rfl⟩ := hy
+    exact decomposeAlgHom_of k G α hf₁ hf_mul g
+  | zero => exact (map_zero _).trans (map_zero _).symm
   | add y z hy hz ihy ihz =>
-    refine fun _ ↦ ?_
-    rw [map_add, ihy ((gradeBy_eq_span_range k G α f m).ge hy),
-      ihz ((gradeBy_eq_span_range k G α f m).ge hz), ← map_add, AddMemClass.mk_add_mk]
+    rw [map_add, ihy, ihz, ← map_add]
+    exact congrArg _ (Subtype.ext rfl)
   | smul c y hy ih =>
-    refine fun _ ↦ ?_
-    rw [map_smul, ih ((gradeBy_eq_span_range k G α f m).ge hy), ← DirectSum.of_smul,
-      SetLike.mk_smul_mk]
+    rw [map_smul, ih, ← DirectSum.of_smul]
+    exact congrArg _ (Subtype.ext rfl)
 
 /-- Any weight `f : G → M` with `f 1 = 0` and `f (g * h) = f g + f h` equips
 `twistedMonoidAlgebra k G α` with a `GradedAlgebra` structure. -/
@@ -182,8 +171,7 @@ noncomputable def gradedAlgebraOfMap [DecidableEq M] {f : G → M} (hf₁ : f 1 
   GradedAlgebra.ofAlgHom (gradeBy k G α f) (decomposeAlgHom k G α hf₁ hf_mul)
     (algHom_ext fun g ↦ by
       simp [decomposeAlgHom_of])
-    (fun m x ↦ decomposeAlgHom_of_mem_aux k G α hf₁ hf_mul
-      ((gradeBy_eq_span_range k G α f m).le x.property) x.property)
+    (fun _ x ↦ decomposeAlgHom_of_mem_aux k G α hf₁ hf_mul x.property)
 
 instance gradeBy.instGradedMonoid (f : G →* Multiplicative M) :
     SetLike.GradedMonoid (gradeBy k G α (Multiplicative.toAdd ∘ f)) :=
@@ -205,29 +193,6 @@ end GradedAlgebra
 section MultiplicativeLattice
 
 variable (k L : Type*) [CommSemiring k] [AddMonoid L]
-
-/-- For the trivial factor set `1`, the twisted lattice algebra
-`twistedMonoidAlgebra k (Multiplicative L) 1` is canonically `k`-algebra isomorphic to
-`AddMonoidAlgebra k L`. -/
-noncomputable def addMonoidAlgebraEquiv :
-    twistedMonoidAlgebra k (Multiplicative L) (1 : Multiplicative L → Multiplicative L → kˣ) ≃ₐ[k]
-      AddMonoidAlgebra k L :=
-  (monoidAlgebraEquiv k (Multiplicative L)).trans
-    (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).symm
-
-@[simp]
-theorem addMonoidAlgebraEquiv_of (a : L) :
-    addMonoidAlgebraEquiv k L (of (Multiplicative.ofAdd a)) = AddMonoidAlgebra.single a 1 := by
-  rw [addMonoidAlgebraEquiv, AlgEquiv.trans_apply, monoidAlgebraEquiv_of,
-    AlgEquiv.symm_apply_eq, AddMonoidAlgebra.toMultiplicativeAlgEquiv_single]
-
-@[simp]
-theorem addMonoidAlgebraEquiv_symm_single (a : L) (c : k) :
-    (addMonoidAlgebraEquiv k L).symm (AddMonoidAlgebra.single a c) =
-      c • of (Multiplicative.ofAdd a) := by
-  apply (addMonoidAlgebraEquiv k L).injective
-  rw [AlgEquiv.apply_symm_apply, map_smul, addMonoidAlgebraEquiv_of,
-    AddMonoidAlgebra.smul_single', mul_one]
 
 /-- Under `addMonoidAlgebraEquiv`, the weight grading `gradeBy` of the trivial-twist lattice
 algebra maps onto `AddMonoidAlgebra.gradeBy`. -/
