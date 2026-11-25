@@ -204,6 +204,7 @@ theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j 
 
 /-- **Empty curves.** Every class has intersection number zero with an empty scheme, on which every
 sheaf of modules has trivial cohomology. -/
+@[simp]
 theorem intersectionNumber_eq_zero_of_isEmpty [IsEmpty C] (a : LineBundleClass X) :
     intersectionNumber k ι a = 0 := by
   have (M : C.Modules) (j : ℕ) := M.subsingleton_cohomology_of_isEmpty j

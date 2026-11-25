@@ -14,8 +14,9 @@ import TauCeti.AlgebraicGeometry.Curves.Normalization
 
 Let `X` be a scheme over a field `k`, let `D = V(J)` be an effective Cartier divisor on `X` and let
 `V(I)` be a closed subscheme, for instance a second effective Cartier divisor `E`. The degree of a
-line bundle on the closed subscheme `V(I * J)`, the divisor `D + E` when `I` is effective Cartier,
-is computed from its degrees on `D` and on `E`:
+line bundle `a` on the closed subscheme `V(I * J)`, the divisor `D + E` when `I` is effective
+Cartier, is computed from the degree of `a` on `D` and the degrees on `V(I)` of its twist
+`a · 𝒪_X(-D)` and of `𝒪_X(-D)`:
 
 `(a · V(I * J)) = (a · V(J)) + ((a · 𝒪_X(-D)) · V(I)) - (𝒪_X(-D) · V(I))`
 
@@ -26,7 +27,8 @@ additivity of degrees in the curve,
 
 `(a · (D + E)) = (a · D) + (a · E)`
 
-(`TauCeti.AlgebraicGeometry.LineBundleClass.intersectionNumber_subschemeι_mul_of_isIntegral`). The
+(`TauCeti.AlgebraicGeometry.LineBundleClass.intersectionNumber_subschemeι_mul_of_isIntegral`, for
+`V(I)` an integral proper curve, possibly singular, with no hypothesis on its cohomology). The
 curves are not assumed reduced: by induction, the degree on the effective Cartier divisor
 `Σᵢ mᵢ Cᵢ` is `Σᵢ mᵢ (a · Cᵢ)`
 (`TauCeti.AlgebraicGeometry.LineBundleClass.intersectionNumber_subschemeι_prod_pow`), provided
@@ -46,10 +48,10 @@ projection formula its terms are the direct images of the restrictions of `L ⊗
 
 (`TauCeti.AlgebraicGeometry.InvertibleSheaf.eulerCharBelow_pullback_subschemeι_mul` at `n = 2`), and
 subtracting the same identity for `𝒪_X` gives the formula for degrees. The vanishing of `H²` on
-`V(I)` is what makes the truncated Euler characteristic additive along the sequence. Grothendieck
-vanishing gives it on every Noetherian curve; in Tau Ceti it is currently proved on regular proper
-curves (`AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_two_le_of_isCurveOver`), so
-it is kept as a hypothesis here.
+`V(I)` is what makes the truncated Euler characteristic additive along the sequence, so it is a
+hypothesis of the general formula. On an integral proper curve it holds for every line bundle
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.subsingleton_cohomology_of_isIntegral`), so the
+additivity along such a curve needs no cohomological hypothesis on it.
 
 ## References
 
@@ -134,24 +136,27 @@ include hJ in
 /-- **Additivity of degrees along an integral curve.** Let `J` be the ideal sheaf of an effective
 Cartier divisor `D` on a scheme `X` over `k`, such that line bundles restricted to `D` have
 finite-dimensional `H⁰` and `H¹`, and let `C = V(I)` be an integral proper curve over `k`,
-possibly singular, on which line bundles have no `H²`. Then `(a · V(I * J)) = (a · C) + (a · D)`;
-when `I` is effective Cartier, `V(I * J)` is the divisor `C + D`. -/
+possibly singular. Then `(a · V(I * J)) = (a · C) + (a · D)`; when `I` is effective Cartier,
+`V(I * J)` is the divisor `C + D`. -/
 theorem intersectionNumber_subschemeι_mul_of_isIntegral [IsIntegral I.subscheme]
     [IsProper (I.subscheme ↘ Spec (.of k))] [RelativeDimensionLE 1 (I.subscheme ↘ Spec (.of k))]
-    (hI₂ : ∀ L : InvertibleSheaf X,
-      Subsingleton (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj 2))
     (hJ' : ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
       (Cohomology ((InvertibleSheaf.pullback J.subschemeι).obj L).obj i))
     (a : LineBundleClass X) :
     intersectionNumber k (I * J).subschemeι a =
       intersectionNumber k I.subschemeι a + intersectionNumber k J.subschemeι a := by
-  -- `H⁰` and `H¹` of the structure sheaf of a proper curve are finite-dimensional.
-  have hdim := (relativeDimensionLE_iff_of_field (d := 1) (I.subscheme ↘ Spec (.of k))).mp
-    inferInstance
-  have (n : ℕ) := Scheme.Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one
-    k (X := I.subscheme) (by exact_mod_cast hdim) n
+  -- On a proper integral scheme of dimension at most one, the structure sheaf has
+  -- finite-dimensional cohomology and no `H²`, hence so do line bundles.
+  have hdim : topologicalKrullDim I.subscheme ≤ 1 := by
+    exact_mod_cast (relativeDimensionLE_iff_of_field (d := 1) (I.subscheme ↘ Spec (.of k))).mp
+      inferInstance
+  have (n : ℕ) :=
+    Scheme.Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one k hdim n
+  have hO₂ := Scheme.Modules.subsingleton_cohomology_trivial_of_topologicalKrullDim_le_one k hdim 2
+    le_rfl
   exact intersectionNumber_subschemeι_mul_eq_add k I hJ
-    (fun _ _ hi ↦ InvertibleSheaf.finiteDimensional_cohomology_of_isIntegral k _ hi) hI₂ hJ' a
+    (fun _ _ hi ↦ InvertibleSheaf.finiteDimensional_cohomology_of_isIntegral k _ hi)
+    (fun _ ↦ InvertibleSheaf.subsingleton_cohomology_of_isIntegral k _ le_rfl hO₂) hJ' a
     (intersectionNumber_mul_of_isIntegral k I.subschemeι _ _)
 
 variable {I} in
@@ -188,9 +193,9 @@ private lemma intersectionNumber_subschemeι_pow_mul (hI : I.IsEffectiveCartier)
 /-- **Degrees on a divisor with multiplicities.** Let `X` be a scheme over `k` and `Cᵢ = V(Iᵢ)`,
 for `i ∈ s`, effective Cartier divisors such that line bundles restricted to `Cᵢ` have
 finite-dimensional `H⁰` and `H¹` and no `H²`, and such that the degree on `Cᵢ` is additive on `a`
-and any other class; for instance integral proper curves over `k` on which line bundles have no
-`H²`. Then the degree of the line-bundle class `a` on the divisor `Σᵢ mᵢ Cᵢ`, cut out by
-`∏ᵢ Iᵢ ^ mᵢ`, is `Σᵢ mᵢ (a · Cᵢ)`. The divisor need not be reduced. -/
+and any other class; for instance integral proper curves over `k`. Then the degree of the
+line-bundle class `a` on the divisor `Σᵢ mᵢ Cᵢ`, cut out by `∏ᵢ Iᵢ ^ mᵢ`, is `Σᵢ mᵢ (a · Cᵢ)`. The
+divisor need not be reduced. -/
 theorem intersectionNumber_subschemeι_prod_pow {ι : Type*} (s : Finset ι)
     (I : ι → X.IdealSheafData) (m : ι → ℕ) (hI : ∀ i ∈ s, (I i).IsEffectiveCartier)
     (hIfin : ∀ i ∈ s, ∀ (L : InvertibleSheaf X), ∀ j < 2, FiniteDimensional k

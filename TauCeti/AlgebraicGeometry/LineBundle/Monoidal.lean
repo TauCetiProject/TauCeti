@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Skeleton
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 
 /-!
 # Symmetric monoidal structure on invertible sheaves
@@ -36,6 +37,9 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorProductIsoTensor` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoTensorUnit`: comparisons between the
   explicit line-bundle operations and the inherited monoidal operations;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullbackToFiniteLocallyFreeTensorIso`: the pullback
+  of the vector bundle underlying `M ⊗ N` is the pullback of the line bundle
+  `InvertibleSheaf.tensorProduct M N`;
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorObj`,
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorUnit`, and
   `TauCeti.AlgebraicGeometry.LineBundleClass.skeletonMulEquiv`: compatibility of `LineBundleClass`
@@ -128,6 +132,17 @@ theorem trivialIsoTensorUnit_hom_hom (X : Scheme.{u}) :
 theorem trivialIsoTensorUnit_inv_hom (X : Scheme.{u}) :
     (trivialIsoTensorUnit X).inv.hom = (trivialObjIsoUnit X).inv :=
   (rfl)
+
+/-- Pulling back the vector bundle `M ⊗ N` underlying a tensor product of line bundles along
+`f : Y ⟶ X` gives the sheaf underlying the pullback of the line bundle `M.tensorProduct N`. -/
+def pullbackToFiniteLocallyFreeTensorIso {Y : Scheme.{u}} (f : Y ⟶ X) (M N : InvertibleSheaf X) :
+    ((FiniteLocallyFreeSheaf.pullback f).obj
+        ((toFiniteLocallyFree X).obj M ⊗ (toFiniteLocallyFree X).obj N)).obj ≅
+      ((pullback f).obj (M.tensorProduct N)).obj :=
+  (Scheme.Modules.isFiniteLocallyFree Y).ι.mapIso ((FiniteLocallyFreeSheaf.pullback f).mapIso
+      (Functor.Monoidal.μIso (toFiniteLocallyFree X) M N ≪≫
+        (toFiniteLocallyFree X).mapIso (tensorProductIsoTensor M N).symm)) ≪≫
+    eqToIso (pullback_toFiniteLocallyFree_obj_obj f _)
 
 end InvertibleSheaf
 

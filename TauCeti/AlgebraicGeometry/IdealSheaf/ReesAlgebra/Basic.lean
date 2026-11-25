@@ -102,13 +102,6 @@ variable {X : Scheme.{u}} (I : X.IdealSheafData)
 abbrev reesComponent (n : ℕ) : X.Modules :=
   (I ^ n).sheaf
 
-/-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
-@[reassoc]
-lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
-    eqToHom (congrArg sheaf h) ≫ K.sheafιUnit = J.sheafιUnit := by
-  subst h
-  exact Category.id_comp _
-
 /-- Transport along an equality of exponents commutes with the inclusions of the powers of `I`
 into `𝒪_X`. The equality of exponents is a side condition, so that `simp` can apply this to any
 transport between powers of `I`. -/

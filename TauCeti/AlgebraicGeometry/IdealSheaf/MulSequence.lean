@@ -27,9 +27,10 @@ functions. The sequence is exact with no hypothesis on `X`, `I` or `J`.
 
 When `I` and `J` are the ideal sheaves of effective Cartier divisors `E` and `D`, so that
 `V(I * J)` is the possibly nonreduced divisor `D + E` and `J = 𝒪_X(-D)` is invertible, this is the
-sequence `0 ⟶ 𝒪_E(-D) ⟶ 𝒪_{D + E} ⟶ 𝒪_D ⟶ 0`. Through it Euler characteristics, and hence degrees
-of line bundles, on `D + E` are computed from those on `D` and `E`; that step needs finiteness and
-vanishing hypotheses on the cohomology of `D` and `E`
+sequence `0 ⟶ 𝒪_E(-D) ⟶ 𝒪_{D + E} ⟶ 𝒪_D ⟶ 0`. Over a field, twisting it by a vector bundle `F`
+computes the Euler characteristic of `F` on `D + E`, truncated at `n`, as that of `F` on `D` plus
+that of the twist `F ⊗ 𝒪_X(-D)` on `E`. This needs `H^i` finite-dimensional for `i < n` for both
+of these restrictions, and `Hⁿ` to vanish for the twisted restriction to `E` only
 (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.eulerCharBelow_pullback_subschemeι_mul`).
 
 The first map is a monomorphism because multiplication `I ⊗ J ⟶ I * J` is an epimorphism
@@ -90,22 +91,17 @@ private lemma tensorIdealSequence_f_tensorMul_toPushforwardSubscheme :
   rw [← Category.assoc, ← braiding_sheafMul_sheafιUnit, Category.assoc, Category.assoc,
     sheafιUnit_def, sheafι_toPushforwardSubscheme, comp_zero, comp_zero]
 
-/-- Tensoring with `J` is right exact, being left adjoint to the internal Hom out of `J`, so the
-tensored sequence is exact and ends in an epimorphism. -/
+/-- Tensoring with `J` preserves epimorphisms, so the tensored sequence ends in an epimorphism. -/
 private lemma epi_tensorIdealSequence_g : Epi (tensorIdealSequence I J).g :=
   Functor.map_epi (tensorLeft J.sheaf) I.toPushforwardSubscheme
 
-private lemma exact_tensorIdealSequence : (tensorIdealSequence I J).Exact := by
-  have : PreservesColimitsOfSize.{0, 0} (tensorLeft J.sheaf) :=
-    (ihom.adjunction J.sheaf).leftAdjoint_preservesColimits
-  exact I.shortExact_toPushforwardSubscheme.exact.map_of_epi_of_preservesCokernel
-    (tensorLeft J.sheaf) inferInstance inferInstance
-
-/-- `J ⊗ ι_* 𝒪_{V(I)}` is the cokernel of `J ⊗ I ⟶ J ⊗ 𝒪_X`. -/
+/-- `J ⊗ ι_* 𝒪_{V(I)}` is the cokernel of `J ⊗ I ⟶ J ⊗ 𝒪_X`: tensoring with `J` preserves
+cokernels, being left adjoint to the internal Hom out of `J`. -/
 private def tensorIdealSequenceIsCokernel :
     IsColimit (CokernelCofork.ofπ _ (tensorIdealSequence I J).zero) :=
-  have := epi_tensorIdealSequence_g I J
-  (exact_tensorIdealSequence I J).gIsCokernel
+  have : PreservesColimitsOfSize.{0, 0} (tensorLeft J.sheaf) :=
+    (ihom.adjunction J.sheaf).leftAdjoint_preservesColimits
+  CokernelCofork.mapIsColimit _ I.shortExact_toPushforwardSubscheme.gIsCokernel (tensorLeft J.sheaf)
 
 /-- Multiplication `J ⊗ ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(I * J)}` by the local functions of the ideal
 sheaf `J`: a function on `V(I)` times a local function of `J` is well defined on `V(I * J)`

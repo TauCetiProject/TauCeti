@@ -146,25 +146,6 @@ namespace InvertibleSheaf
 variable (L : InvertibleSheaf X) (I : X.IdealSheafData) {J : X.IdealSheafData}
   (hJ : J.IsEffectiveCartier)
 
-/-- The vector bundle underlying the pullback of a line bundle is the pullback of its underlying
-vector bundle. -/
-private lemma pullback_toFiniteLocallyFree_obj_obj {Y : Scheme.{u}} (f : Y ⟶ X)
-    (M : InvertibleSheaf X) :
-    ((FiniteLocallyFreeSheaf.pullback f).obj ((toFiniteLocallyFree X).obj M)).obj =
-      ((pullback f).obj M).obj := by
-  rw [← toFixedRankOne_obj_obj]
-  exact pullback_toFixedRankOne_obj_obj f M
-
-/-- The restriction of the vector bundle `M ⊗ N` is that of the line bundle `M ⊗ N`. -/
-private def pullbackTensorIso {Y : Scheme.{u}} (f : Y ⟶ X) (M N : InvertibleSheaf X) :
-    ((FiniteLocallyFreeSheaf.pullback f).obj
-        ((toFiniteLocallyFree X).obj M ⊗ (toFiniteLocallyFree X).obj N)).obj ≅
-      ((pullback f).obj (M.tensorProduct N)).obj :=
-  (Scheme.Modules.isFiniteLocallyFree Y).ι.mapIso ((FiniteLocallyFreeSheaf.pullback f).mapIso
-      (Functor.Monoidal.μIso (toFiniteLocallyFree X) M N ≪≫
-        (toFiniteLocallyFree X).mapIso (tensorProductIsoTensor M N).symm)) ≪≫
-    eqToIso (pullback_toFiniteLocallyFree_obj_obj f _)
-
 /-- **Finiteness of cohomology on a sum of divisors**, for a line bundle `L`: if the restrictions of
 `L` to `V(J)` and of `L ⊗ J` to `V(I)` have finite-dimensional `H^i`, where `J` is the ideal sheaf
 of an effective Cartier divisor, then so does the restriction of `L` to `V(I * J)`. -/
@@ -175,7 +156,8 @@ theorem finiteDimensional_cohomology_pullback_subschemeι_mul {i : ℕ}
     FiniteDimensional k (Cohomology ((pullback (I * J).subschemeι).obj L).obj i) := by
   have h := FiniteLocallyFreeSheaf.finiteDimensional_cohomology_pullback_subschemeι_mul k
     ((toFiniteLocallyFree X).obj L) I hJ
-    ((finiteDimensional_cohomology_congr k (pullbackTensorIso _ _ _) i).mpr hI)
+    ((finiteDimensional_cohomology_congr k (pullbackToFiniteLocallyFreeTensorIso _ _ _) i).mpr
+      hI)
     (by rwa [pullback_toFiniteLocallyFree_obj_obj])
   rwa [pullback_toFiniteLocallyFree_obj_obj] at h
 
@@ -194,7 +176,7 @@ theorem eulerCharBelow_pullback_subschemeι_mul (n : ℕ)
       eulerCharBelow k J.subscheme ((pullback J.subschemeι).obj L).obj n +
         eulerCharBelow k I.subscheme
           ((pullback I.subschemeι).obj (L.tensorProduct hJ.toInvertibleSheaf)).obj n := by
-  have e := pullbackTensorIso I.subschemeι L hJ.toInvertibleSheaf
+  have e := pullbackToFiniteLocallyFreeTensorIso I.subschemeι L hJ.toInvertibleSheaf
   have h := FiniteLocallyFreeSheaf.eulerCharBelow_pullback_subschemeι_mul k
     ((toFiniteLocallyFree X).obj L) I hJ n
     (fun i hi ↦ (finiteDimensional_cohomology_congr k e i).mpr (hI i hi))
