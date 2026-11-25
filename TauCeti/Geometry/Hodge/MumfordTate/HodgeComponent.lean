@@ -103,9 +103,9 @@ theorem hodgeComponent_corestrictStandardComodule (he : ∀ i, ω.toEquiv (e i) 
     htop).mp hle
   exact (congrFun hG (p, q)).symm
 
-/-- **`h` carries `H^{p,n-p}` to the Hodge component `(ℝ^d)^{p,n-p}`**: under
-`ℂ ⊗[ℝ] ℝ^d ≃ W`, the Hodge component `(ℝ^d)^{p,n-p}` of the representation of `S` given by `h`
-is `H^{p,n-p}`. -/
+/-- **Under `ℂ ⊗[ℝ] ℝ^d ≃ W`, the Hodge component `(ℝ^d)^{p,n-p}` is `H^{p,n-p}`**: the
+isomorphism `e.tensorPiEquiv ℝ` maps the Hodge component `(ℝ^d)^{p,n-p}` of the representation
+of `S` given by `h` onto `H^{p,n-p}`. -/
 theorem map_hodgeComponent_corestrictStandardComodule (he : ∀ i, ω.toEquiv (e i) = e i)
     (p : ℤ) :
     let _ := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
