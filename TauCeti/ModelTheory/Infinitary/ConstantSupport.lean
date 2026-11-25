@@ -437,7 +437,8 @@ end LHom
 
 namespace BoundedFormula
 
-/-- A finitary formula of `L[[γ]]`, embedded at any carrier, mentions finitely many constants. -/
+/-- A finitary formula of `L[[γ]]`, embedded into `L[[γ]].BoundedFormulaInf ι α n` for any
+conjunction index type `ι`, mentions finitely many constants. -/
 theorem finite_constantSupport_toInf (φ : L[[γ]].BoundedFormula α n) :
     (φ.toInf : L[[γ]].BoundedFormulaInf ι α n).constantSupport.Finite := by
   induction φ with

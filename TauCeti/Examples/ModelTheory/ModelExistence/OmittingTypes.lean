@@ -310,9 +310,8 @@ private theorem not_isolating_of_witness {M : Type*} [Language.empty.Structure M
     exact (BoundedFormula.realize_toInf φ Empty.elim a).1 hω'
   have : Nonempty M := ⟨a 0⟩
   let := hMS'
-  have hNne := (Sentence.realize_alls (φ.imp (neConstFormula N))).1
-    ((himp (neConstFormula N) ⟨N, rfl⟩).realize_sentence M) a
-  have hcontra := (realize_neConstFormula_iff N a).1 (BoundedFormula.realize_imp.1 hNne ha')
+  have hcontra := (realize_neConstFormula_iff N a).1
+    (Theory.realize_of_isolating ha' himp (neConstFormula N) ⟨N, rfl⟩)
   rw [coe_con_constantsOn_structure, Function.update_self] at hcontra
   exact hcontra rfl
 
@@ -324,15 +323,11 @@ theorem not_exists_isolating_unnamedType :
       (insert φ.exs distinctTheory).IsSatisfiable ∧
         ∀ ψ ∈ unnamedType, distinctTheory ⊨ᵇ (φ.imp ψ).alls := by
   rintro ⟨φ, hsat, himp⟩
-  obtain ⟨M⟩ := hsat
-  have hMT : M ⊨ distinctTheory := M.is_model.mono (Set.subset_insert _ _)
-  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
-  let := hMT
-  have hane (k : ℕ) : a 0 ≠ (Language.empty.con k : M) := by
-    have hk := (Sentence.realize_alls (φ.imp (neConstFormula k))).1
-      ((himp (neConstFormula k) ⟨k, rfl⟩).realize_sentence M) a
-    exact (realize_neConstFormula_iff k a).1 (BoundedFormula.realize_imp.1 hk ha)
-  have hinj := (model_distinctTheory_iff M).1 hMT
+  obtain ⟨M, a, haφ⟩ := Theory.exists_modelType_realize_of_isolating (p := {φ}) hsat
+    (Set.forall_mem_singleton.2 (Theory.models_sentence_iff.2 (by simp)))
+  have ha : φ.Realize Empty.elim a := haφ φ rfl
+  have hane := (realize_unnamedType_iff a).1 (Theory.realize_of_isolating ha himp)
+  have hinj := (model_distinctTheory_iff M).1 M.is_model
   have heq := @withConstantsStructure_reduct_eq Language.empty ℕ M inferInstance
   let : Language.empty.Structure M := (Language.empty.lhomWithConstants ℕ).reduct M
   exact not_isolating_of_witness hinj (heq.symm ▸ ha) hane himp

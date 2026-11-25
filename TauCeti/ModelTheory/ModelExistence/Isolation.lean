@@ -53,10 +53,12 @@ coincides with realization in some nonempty model.
 * `FirstOrder.Language.Theoryω.isolatesIn_firstOrder_iff`: in the first-order image fragment,
   isolation of a first-order partial type over a first-order theory is isolation by a first-order
   formula in the sense of Mathlib's `Theory.IsSatisfiable` and `Theory.ModelsBoundedFormula`.
-* `FirstOrder.Language.Theory.exists_modelType_realize_of_isolating` and
-  `FirstOrder.Language.Theory.IsComplete.exists_realize_of_isolating`: a first-order partial type
-  isolated modulo a theory is realized in some nonempty model, and in every nonempty model when the
-  theory is complete.
+* `FirstOrder.Language.Theory.realize_of_isolating`,
+  `FirstOrder.Language.Theory.exists_modelType_realize_of_isolating`, and
+  `FirstOrder.Language.Theory.IsComplete.exists_realize_of_isolating`: any tuple in a nonempty model
+  realizing an isolating formula realizes the partial type, so a first-order partial type isolated
+  modulo a theory is realized in some nonempty model, and in every nonempty model when the theory is
+  complete.
 * `FirstOrder.Language.Theory.exists_isolating_of_finite_of_realize` and
   `FirstOrder.Language.Theory.exists_isolating_iff_of_finite`: a finite first-order partial type is
   isolated modulo a theory if and only if it is realized in some nonempty model.
@@ -202,6 +204,15 @@ end Theoryω
 
 namespace Theory
 
+/-- If `T` entails `(φ.imp ψ).alls` for every `ψ ∈ p`, then any tuple in a nonempty model of `T`
+realizing `φ` realizes every formula of `p`. -/
+theorem realize_of_isolating {T : L.Theory} {M : Type w} [L.Structure M] [Nonempty M] [M ⊨ T]
+    {n : ℕ} {p : Set (L.BoundedFormula Empty n)} {φ : L.BoundedFormula Empty n} {a : Fin n → M}
+    (ha : φ.Realize Empty.elim a) (himp : ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls) :
+    ∀ ψ ∈ p, ψ.Realize Empty.elim a := fun ψ hψ =>
+  BoundedFormula.realize_imp.1
+    ((Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a) ha
+
 /-- A partial type isolated by a first-order formula `φ` modulo `T` is realized in some nonempty
 model of `T`. -/
 theorem exists_modelType_realize_of_isolating {T : L.Theory} {n : ℕ}
@@ -212,9 +223,7 @@ theorem exists_modelType_realize_of_isolating {T : L.Theory} {n : ℕ}
   have hMT : M ⊨ T := M.is_model.mono (Set.subset_insert _ _)
   obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
   let := hMT
-  refine ⟨ModelType.of T M, a, fun ψ hψ => ?_⟩
-  have hψa := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
-  exact BoundedFormula.realize_imp.1 hψa ha
+  exact ⟨ModelType.of T M, a, realize_of_isolating ha himp⟩
 
 /-- A **finite** first-order partial type realized in any nonempty model `M` of `T` (in any
 universe `w`) is isolated by a first-order formula modulo `T`. -/
@@ -256,9 +265,7 @@ theorem IsComplete.exists_realize_of_isolating {T : L.Theory} (hT : T.IsComplete
   have hφT : T ⊨ᵇ φ.exs :=
     (hT.realize_sentence_iff φ.exs N).1 (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
   obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (hφT.realize_sentence M)
-  refine ⟨a, fun ψ hψ => ?_⟩
-  have hψM := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
-  exact BoundedFormula.realize_imp.1 hψM ha
+  exact ⟨a, realize_of_isolating ha himp⟩
 
 end Theory
 

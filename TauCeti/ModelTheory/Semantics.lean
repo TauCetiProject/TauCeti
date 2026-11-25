@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Semantics
+import TauCeti.ModelTheory.Syntax
 
 /-!
 # Realization of first-order terms and closed bounded formulas
@@ -86,8 +87,7 @@ theorem evalAtConstants_def (φ : L.BoundedFormula Empty n) :
 
 @[simp]
 theorem evalAtConstants_falsum : (falsum : L.BoundedFormula Empty n).evalAtConstants = falsum := by
-  simp [evalAtConstants_def, Formula.equivSentence, constantsVarsEquiv, mapTermRelEquiv,
-    relabelEquiv, Formula.relabel, BoundedFormula.relabel, BoundedFormula.mapTermRel]
+  simp only [evalAtConstants_def, toFormula, Formula.relabel_falsum, Formula.equivSentence_falsum]
 
 @[simp]
 theorem evalAtConstants_bot : (⊥ : L.BoundedFormula Empty n).evalAtConstants = ⊥ :=
@@ -96,8 +96,7 @@ theorem evalAtConstants_bot : (⊥ : L.BoundedFormula Empty n).evalAtConstants =
 @[simp]
 theorem evalAtConstants_imp (φ ψ : L.BoundedFormula Empty n) :
     (φ.imp ψ).evalAtConstants = φ.evalAtConstants.imp ψ.evalAtConstants := by
-  simp [evalAtConstants_def, Formula.equivSentence, constantsVarsEquiv, mapTermRelEquiv,
-    relabelEquiv, Formula.relabel, BoundedFormula.relabel, BoundedFormula.mapTermRel]
+  simp only [evalAtConstants_def, toFormula, Formula.relabel_imp, Formula.equivSentence_imp]
 
 @[simp]
 theorem evalAtConstants_not (φ : L.BoundedFormula Empty n) :

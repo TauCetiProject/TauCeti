@@ -15,7 +15,8 @@ that come from the left summand `α`. This file characterizes it through the ful
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
 language map commutes with relabelling the variables of a term, and a language map that is
 injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
+`BoundedFormula.constantsVarsEquiv`, `Formula.relabel`, and `Formula.equivSentence` describe
+variable relabelling and abstraction of constants in finitary formulas.
 
 ## Main results
 
@@ -365,6 +366,33 @@ theorem constantsVarsEquiv_all (φ : L[[γ]].BoundedFormula α (n + 1)) :
     constantsVarsEquiv φ.all = (constantsVarsEquiv φ).all := (rfl)
 
 end BoundedFormula
+
+namespace Formula
+
+variable {L : Language} {α β : Type*}
+
+/-- Relabelling the free variables of `falsum` yields `falsum`. -/
+@[simp]
+theorem relabel_falsum (g : α → β) : Formula.relabel g (.falsum : L.Formula α) = .falsum :=
+  BoundedFormula.relabel_falsum (Sum.inl ∘ g)
+
+/-- Relabelling the free variables of a formula commutes with implication. -/
+@[simp]
+theorem relabel_imp (g : α → β) (φ ψ : L.Formula α) :
+    Formula.relabel g (φ.imp ψ) = (Formula.relabel g φ).imp (Formula.relabel g ψ) :=
+  BoundedFormula.relabel_imp (Sum.inl ∘ g) φ ψ
+
+/-- `Formula.equivSentence` sends `falsum` to `falsum`. -/
+@[simp]
+theorem equivSentence_falsum :
+    equivSentence (.falsum : L.Formula α) = .falsum := (rfl)
+
+/-- `Formula.equivSentence` commutes with implication. -/
+@[simp]
+theorem equivSentence_imp (φ ψ : L.Formula α) :
+    equivSentence (φ.imp ψ) = (equivSentence φ).imp (equivSentence ψ) := (rfl)
+
+end Formula
 
 end Language
 
