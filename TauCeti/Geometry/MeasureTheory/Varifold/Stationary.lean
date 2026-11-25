@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Varifold.Convergence
 public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Topology.Order.LiminfLimsup
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Stationary varifolds and the total first variation in a Euclidean space
@@ -25,10 +26,9 @@ Let `E` be a finite-dimensional real inner product space, `W ⊆ E` open and `V`
   `‖δV‖(U) = sup {δV(X) : X of class C¹ with compact support in U ∩ W, |X| ≤ 1} ∈ [0, ∞]`
   (`Euclidean.firstVariationMass`). It is defined for every varifold.
 
-These are Simon, *Lectures on Geometric Measure Theory*, 39.3, and §4.3 of the Varifolds roadmap
-in Euclidean space. The identification of `‖δV‖` with the total variation measure of the
-extension of `δV` to continuous vector fields needs the Riesz representation for vector fields and
-is not proved here.
+These are Simon, *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space. The
+identification of `‖δV‖` with the total variation measure of the extension of `δV` to continuous
+vector fields needs the Riesz representation for vector fields and is not proved here.
 
 ## Main results
 
@@ -135,17 +135,19 @@ theorem abs_firstVariation_le_mul_firstVariationMass (hU : firstVariationMass V 
   -- Normalise `X` to `Y = c⁻¹ X` with `|Y| ≤ 1`, and test with `Y` and `-Y`.
   set Y : 𝓓^{1}(W, E) := c⁻¹ • X
   have hY (x : E) : ‖Y x‖ ≤ 1 := by
-    rw [show Y x = c⁻¹ • X x from rfl, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hc.le)]
+    rw [smul_apply, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hc.le)]
     exact (inv_mul_le_one₀ hc).2 (hX x)
-  have hYU : tsupport Y ⊆ U := (tsupport_smul_subset_right _ _).trans hXU
+  have hYU : tsupport Y ⊆ U := by
+    rw [FunLike.coe_smul]
+    exact (tsupport_smul_subset_right _ _).trans hXU
   have hnY : tsupport (-Y) ⊆ U := by
-    rw [show ((-Y : 𝓓^{1}(W, E)) : E → E) = -(Y : E → E) from rfl, tsupport_neg]
+    rw [FunLike.coe_neg, tsupport_neg]
     exact hYU
   have h₁ := (ENNReal.ofReal_le_iff_le_toReal hU).1
     (ofReal_firstVariation_le_firstVariationMass hYU hY)
   have h₂ := (ENNReal.ofReal_le_iff_le_toReal hU).1
     (ofReal_firstVariation_le_firstVariationMass (V := V) hnY fun x ↦ by
-      simpa [show (-Y : 𝓓^{1}(W, E)) x = -Y x from rfl] using hY x)
+      simpa using hY x)
   rw [map_neg] at h₂
   have hXY : X = c • Y := by simp [Y, smul_smul, hc.ne']
   rw [hXY, map_smul, smul_eq_mul, abs_mul, abs_of_pos hc]
@@ -197,19 +199,11 @@ theorem isStationary_of_not_isFiniteMeasureOnCompacts (hV : ¬IsFiniteMeasureOnC
     IsStationary V :=
   firstVariation_of_not_isFiniteMeasureOnCompacts hV
 
-omit [BorelSpace E] in
-/-- A sum of measures is finite on compact sets only if both summands are. -/
-private theorem isFiniteMeasureOnCompacts_and_of_add
-    (h : IsFiniteMeasureOnCompacts (V₁ + V₂)) :
-    IsFiniteMeasureOnCompacts V₁ ∧ IsFiniteMeasureOnCompacts V₂ :=
-  ⟨⟨fun _ hK ↦ (Measure.le_add_right le_rfl _).trans_lt (h.lt_top_of_isCompact hK)⟩,
-    ⟨fun _ hK ↦ (Measure.le_add_left le_rfl _).trans_lt (h.lt_top_of_isCompact hK)⟩⟩
-
 /-- **Subadditivity in the varifold.** `‖δ(V₁ + V₂)‖(U) ≤ ‖δV₁‖(U) + ‖δV₂‖(U)`. -/
 theorem firstVariationMass_add_le (U : Set E) :
     firstVariationMass (V₁ + V₂) U ≤ firstVariationMass V₁ U + firstVariationMass V₂ U := by
   by_cases h : IsFiniteMeasureOnCompacts (V₁ + V₂)
-  · obtain ⟨_, _⟩ := isFiniteMeasureOnCompacts_and_of_add h
+  · obtain ⟨_, _⟩ := isFiniteMeasureOnCompacts_add_iff.1 h
     refine iSup₂_le fun X hXU ↦ iSup_le fun hX ↦ ?_
     rw [firstVariation_add_measure, add_apply]
     exact ENNReal.ofReal_add_le.trans (add_le_add
@@ -265,18 +259,26 @@ theorem IsStationary.of_varifoldTendsto {V : ℕ → Measure (W × grassmannian 
     (by simp [isStationary_iff.1 (hV _) X])
 
 /-- A varifold of `0`-planes is stationary. -/
+@[simp]
 theorem isStationary_zero_dim (V : Measure (W × grassmannian ℝ E 0)) : IsStationary V :=
   firstVariation_zero_dim V
 
 /-- The zero varifold is stationary. -/
+@[simp]
 theorem isStationary_zero : IsStationary (0 : Measure (W × grassmannian ℝ E k)) :=
   firstVariation_zero_measure
+
+/-- The zero varifold has total first variation `0` on every set. -/
+@[simp]
+theorem firstVariationMass_zero (U : Set E) :
+    firstVariationMass (0 : Measure (W × grassmannian ℝ E k)) U = 0 :=
+  isStationary_zero.firstVariationMass_eq_zero U
 
 /-- Sums of stationary varifolds are stationary. -/
 theorem IsStationary.add (h₁ : IsStationary V₁) (h₂ : IsStationary V₂) :
     IsStationary (V₁ + V₂) := by
   by_cases h : IsFiniteMeasureOnCompacts (V₁ + V₂)
-  · obtain ⟨_, _⟩ := isFiniteMeasureOnCompacts_and_of_add h
+  · obtain ⟨_, _⟩ := isFiniteMeasureOnCompacts_add_iff.1 h
     rw [IsStationary, firstVariation_add_measure, h₁, h₂, add_zero]
   · exact isStationary_of_not_isFiniteMeasureOnCompacts h
 
