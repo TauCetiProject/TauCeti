@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 
-import TauCeti.Algebra.Module.LinearMap.Iterate
+import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
 import TauCeti.RingTheory.PowerSeries.CoefficientFrobenius
 
 /-!
@@ -95,49 +95,8 @@ local notation "σ" => coefficientFrobenius (k := k) p f
 the difference `Φ - 1` for positive coefficient Frobenius is surjective. -/
 theorem surjective_sub_id_of_coefficientFrobenius_semilinear [Module.Finite k⸨X⸩ V] (hf : 0 < f)
     (Φ : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) : Surjective (fun x => Φ x - x) := by
-  classical
-  intro v
-  -- The first `finrank + 1` iterates of the target vector satisfy a nonzero relation.
-  let n := Module.finrank k⸨X⸩ V
-  let u (i : Fin (n + 1)) := Φ^[n - i.val] v
-  have hu : ¬ LinearIndependent k⸨X⸩ u := by
-    intro h
-    simpa [n] using h.fintype_card_le_finrank
-  obtain ⟨a, ha, i₀, hi₀⟩ := Fintype.not_linearIndependent_iff.mp hu
-  -- Untwist each relation coefficient by the corresponding Frobenius power.
-  let c (i : Fin (n + 1)) := (σ).symm^[n - i.val] (a i)
-  have hinverse : LeftInverse σ (σ).symm := (σ).apply_symm_apply
-  have hinv (i : Fin (n + 1)) : σ^[n - i.val] (c i) = a i := hinverse.iterate _ _
-  let d (i : ℕ) := if hi : i < n + 1 then c ⟨i, hi⟩ else 0
-  have hd : ∃ i ∈ range (n + 1), d i ≠ 0 := by
-    refine ⟨i₀, mem_range.mpr i₀.isLt, ?_⟩
-    simp only [d, i₀.isLt, dite_true, Fin.eta]
-    intro hi
-    apply hi₀
-    rw [← hinv i₀, hi]
-    exact iterate_fixed (map_zero σ) _
-  obtain ⟨z, hz⟩ := surjective_sum_mul_coefficientFrobenius (p := p) hf d hd (-1)
-  let w (i : Fin (n + 1)) := (c i * σ^[i.val] z) • v
-  have hsum : ∑ i, w i = -v := by
-    have hz' : (∑ i : Fin (n + 1), c i * σ^[i.val] z) = -1 := by
-      rw [sum_fin_eq_sum_range]
-      refine (sum_congr rfl fun i hi => ?_).trans hz
-      have hil : i < n + 1 := mem_range.mp hi
-      simp only [d, dite_eq_left hil, coefficientFrobenius_iterate]
-    simp only [w, ← sum_smul, hz', neg_one_smul]
-  have hiter (i : Fin (n + 1)) :
-      Φ^[n - i.val] (w i) = σ^[n] z • (a i • u i) := by
-    rw [iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, iterate_map_mul, hinv, ← iterate_add_apply,
-      Nat.sub_add_cancel (by omega : i.val ≤ n), smul_smul, mul_comm]
-  -- The iterated terms sum to zero, and their starting terms sum to `-v`.
-  refine ⟨∑ i : Fin (n + 1), ∑ j ∈ range (n - i.val), Φ^[j] (w i), ?_⟩
-  dsimp only
-  rw [map_sum, ← sum_sub_distrib]
-  have htel (n : ℕ) (x : V) :
-      Φ (∑ j ∈ range n, Φ^[j] x) - ∑ j ∈ range n, Φ^[j] x = Φ^[n] x - x := by
-    simp only [map_sum, ← sum_sub_distrib, ← iterate_succ_apply']
-    exact sum_range_sub (fun j => Φ^[j] x) n
-  simp_rw [htel, hiter]
-  rw [sum_sub_distrib, ← smul_sum, ha, smul_zero, hsum, zero_sub, neg_neg]
+  apply Φ.surjective_sub_id_of_surjective_sum_mul_iterate σ
+  intro s a ha
+  simpa only [coefficientFrobenius_iterate] using surjective_sum_mul_coefficientFrobenius hf a ha
 
 end TauCeti.LaurentSeries

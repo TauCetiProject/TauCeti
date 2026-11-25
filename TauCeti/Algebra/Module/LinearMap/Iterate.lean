@@ -25,7 +25,7 @@ iterate kills it too.
 * `TauCeti.iterate_map_sum`: the iterates of an additive map preserve finite sums.
 * `TauCeti.iterate_map_smulₛₗ`: the iterates of a map preserving a twisted scalar action
   twist scalars by the corresponding iterates of the scalar map.
-* `TauCeti.iterate_map_smul`: the iterates of a linear map preserve scalar multiplication.
+* `TauCeti.iterate_map_smul`: the iterates of an equivariant map preserve scalar multiplication.
 * `TauCeti.iterate_map_rat_smul`: the iterates of an additive map between `ℚ`-modules preserve
   rational scalar multiplication.
 -/
@@ -57,9 +57,9 @@ theorem iterate_map_sum [AddCommMonoid M] [AddMonoidHomClass F M M] (f : F) {ι 
   | zero => rfl
   | succ n ih => simp only [Function.iterate_succ_apply', ih, map_sum]
 
-/-- The iterates of a linear map preserve scalar multiplication. -/
-theorem iterate_map_smul {R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [LinearMapClass F R M M] (f : F) (n : ℕ) (r : R) (x : M) : f^[n] (r • x) = r • f^[n] x := by
+/-- The iterates of an equivariant map preserve scalar multiplication. -/
+theorem iterate_map_smul {R : Type*} [SMul R M] [MulActionHomClass F R M M]
+    (f : F) (n : ℕ) (r : R) (x : M) : f^[n] (r • x) = r • f^[n] x := by
   simpa only [Function.iterate_id, id_eq] using iterate_map_smulₛₗ (σ := id) f n r x
 
 /-- The iterates of an additive map between `ℚ`-modules preserve rational scalar

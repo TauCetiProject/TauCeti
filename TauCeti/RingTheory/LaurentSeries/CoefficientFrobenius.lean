@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Basic
+public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.HahnSeries.Map
 
 /-!
 # Coefficient Frobenius on Laurent series

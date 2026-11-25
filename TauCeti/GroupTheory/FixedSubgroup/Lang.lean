@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
@@ -117,3 +118,18 @@ theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
 end Group
 
 end MonoidHom
+
+/-- An equivariant surjection of additive groups admits fixed lifts when the difference map
+`t ↦ f t - t` is surjective on a group parametrizing its kernel. -/
+theorem AddMonoidHom.exists_fixed_lift_of_surjective_sub_id {T G H : Type*}
+    [AddGroup T] [AddGroup G] [AddGroup H] (ψ : G →+ H) (j : T →+ G)
+    (hex : Function.Exact j ψ) (f : T →+ T) (F : G →+ G) (F' : H →+ H)
+    (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
+    (hsurj : Function.Surjective ψ) (hf : Function.Surjective (fun t => f t - t))
+    {y : H} (hy : F' y = y) : ∃ x : G, F x = x ∧ ψ x = y := by
+  apply ψ.toMultiplicative.exists_fixed_lift_of_surjective_commutatorMap j.toMultiplicative
+    (Subgroup.ext fun t => (hex t.toAdd).symm) f.toMultiplicative F.toMultiplicative
+    F'.toMultiplicative hψ hj hsurj _ hy
+  intro t
+  obtain ⟨s, hs⟩ := hf (-t.toAdd)
+  exact ⟨Multiplicative.ofAdd s, show s - f s = t.toAdd by simpa using congrArg Neg.neg hs⟩

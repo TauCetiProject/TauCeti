@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.FiniteIsocrystal.Abelian
 public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation
 
 import TauCeti.GroupTheory.FixedSubgroup.Lang
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Splitting extensions of equal-characteristic isocrystals
@@ -22,7 +23,6 @@ kernel gives a fixed lift of this identity, hence an equivariant section.
 
 public section
 
-open AddMonoidHom (toMultiplicative_apply_apply)
 open CategoryTheory Function
 open scoped LaurentSeries
 
@@ -38,24 +38,6 @@ local instance : RingHomInvPair (σ : k⸨X⸩ →+* k⸨X⸩) (σ.symm : k⸨X�
 local instance : RingHomInvPair (σ.symm : k⸨X⸩ →+* k⸨X⸩) (σ : k⸨X⸩ →+* k⸨X⸩) :=
   RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
 
-private theorem surjective_commutatorMap_of_coefficientFrobenius
-    {V : Type*} [AddCommGroup V] [Module k⸨X⸩ V] [Module.Finite k⸨X⸩ V]
-    (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f) (hf : 0 < f)
-    (Ψ : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) :
-    Surjective (MonoidHom.commutatorMap Ψ.toAddMonoidHom.toMultiplicative) := by
-  have h (T : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) : Surjective (fun x => T x - x) := by
-    revert T
-    rw [show (σ : k⸨X⸩ →+* k⸨X⸩) =
-      (LaurentSeries.coefficientFrobenius (k := k) p f : k⸨X⸩ →+* k⸨X⸩) from
-      congrArg RingEquiv.toRingHom hσ]
-    exact LaurentSeries.surjective_sub_id_of_coefficientFrobenius_semilinear p hf
-  intro t
-  obtain ⟨s, hs⟩ := h Ψ (-t.toAdd)
-  refine ⟨Multiplicative.ofAdd s, Multiplicative.toAdd.injective ?_⟩
-  simpa only [MonoidHom.commutatorMap_apply, toAdd_div,
-    toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe, toAdd_ofAdd,
-    neg_sub, neg_neg] using congrArg Neg.neg hs
-
 /-- Every epimorphism of equal-characteristic finite isocrystals over an algebraically
 closed residue field splits when Frobenius fixes `X` and raises each coefficient to
 `p^f` for `f > 0`. In particular, every short exact sequence of such isocrystals splits. -/
@@ -68,44 +50,35 @@ theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobe
   let K := D.sub g.hom.ker (fun _ => frobenius_mem_ker g)
   let Ψ : (D' →ₗ[k⸨X⸩] K) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
       (D' →ₗ[k⸨X⸩] K) := Φ'.arrowCongr (LinearEquiv.ofBijective K.frobenius K.frobenius_bijective)
-  let post := (LinearMap.compRight k⸨X⸩ (M := D') g.hom).toAddMonoidHom.toMultiplicative
-  let incl := (LinearMap.compRight k⸨X⸩ (M := D') g.hom.ker.subtype).toAddMonoidHom.toMultiplicative
-  have hker : incl.range = post.ker := by
-    ext s
-    rw [MonoidHom.mem_range, MonoidHom.mem_ker]
-    simp only [incl, post, toMultiplicative_apply_apply,
-      LinearMap.toAddMonoidHom_coe, LinearMap.compRight_apply, Multiplicative.exists,
-      ← Multiplicative.toAdd_symm_eq, Equiv.symm_apply_eq, toAdd_one]
-    refine ⟨?_, fun h => ⟨s.toAdd.codRestrict _ (DFunLike.congr_fun h), rfl⟩⟩
-    rintro ⟨t, rfl⟩
-    exact LinearMap.ext fun x => (t x).property
   have hpost (t : D' →ₗ[k⸨X⸩] D) : g.hom.comp (F t) = F' (g.hom.comp t) :=
     LinearMap.ext fun x => by
       simpa only [LinearMap.comp_apply, LinearEquiv.arrowCongr_apply, F, F', Φ, Φ',
         LinearEquiv.ofBijective_apply] using g.hom_frobenius (t (Φ'.symm x))
   have hincl (t : D' →ₗ[k⸨X⸩] g.hom.ker) :
       F (g.hom.ker.subtype.comp t) = g.hom.ker.subtype.comp (Ψ t) :=
-    LinearMap.ext fun _ => rfl
+    LinearMap.ext fun x => by
+      simpa only [F, Ψ, Φ, LinearEquiv.arrowCongr_apply, LinearMap.comp_apply,
+        LinearEquiv.ofBijective_apply, subι_hom] using
+        ((D.subι _ (fun _ => frobenius_mem_ker g)).hom_frobenius (t (Φ'.symm x))).symm
   have hid : F' LinearMap.id = LinearMap.id := LinearMap.ext fun x => by
     simpa only [F', LinearEquiv.arrowCongr_apply, LinearMap.id_apply] using Φ'.apply_symm_apply x
-  obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_commutatorMap incl hker
-    Ψ.toLinearMap.toAddMonoidHom.toMultiplicative F.toLinearMap.toAddMonoidHom.toMultiplicative
-    F'.toLinearMap.toAddMonoidHom.toMultiplicative (fun t => by
-      simpa only [post, toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe,
-        LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply, toAdd_ofAdd] using
-        congrArg Multiplicative.ofAdd (hpost t.toAdd))
-    (fun t => by
-      simpa only [incl, toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe,
-        LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply, toAdd_ofAdd] using
-        congrArg Multiplicative.ofAdd (hincl t.toAdd))
-    ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
-    (surjective_commutatorMap_of_coefficientFrobenius hσ hf Ψ.toLinearMap)
-    (y := Multiplicative.ofAdd LinearMap.id) (congrArg Multiplicative.ofAdd hid)
-  apply_fun Multiplicative.toAdd at hfix hsection
-  simp only [post, toMultiplicative_apply_apply,
-    LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply,
-    toAdd_ofAdd] at hfix hsection
-  refine IsSplitEpi.mk' ⟨ofHom s.toAdd (fun x => ?_), hom_ext hsection⟩
+  have hdiff (T : (D' →ₗ[k⸨X⸩] K) →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] (D' →ₗ[k⸨X⸩] K)) :
+      Surjective (fun t => T t - t) := by
+    have hσ' : (σ : k⸨X⸩ →+* k⸨X⸩) = _ := congrArg RingEquiv.toRingHom hσ
+    -- Quantify over the map so rewriting its scalar twist also changes its type.
+    revert T
+    rw [hσ']
+    exact LaurentSeries.surjective_sub_id_of_coefficientFrobenius_semilinear p hf
+  obtain ⟨s, hfix, hsection⟩ :=
+    (g.hom.compRight k⸨X⸩ (M := D')).toAddMonoidHom.exists_fixed_lift_of_surjective_sub_id
+      (g.hom.ker.subtype.compRight k⸨X⸩).toAddMonoidHom
+      ((LinearMap.exact_subtype_ker_map g.hom).compRight_of_injective (T := k⸨X⸩) D'
+        g.hom.ker.injective_subtype)
+      Ψ.toLinearMap.toAddMonoidHom F.toLinearMap.toAddMonoidHom F'.toLinearMap.toAddMonoidHom
+      hpost hincl ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
+      (hdiff Ψ.toLinearMap) hid
+  refine IsSplitEpi.mk' ⟨ofHom s (fun x => ?_), hom_ext hsection⟩
+  change F s = s at hfix
   have h := DFunLike.congr_fun hfix (Φ' x)
   simp only [F, LinearEquiv.arrowCongr_apply, LinearEquiv.symm_apply_apply] at h
   simpa only [Φ, Φ', LinearEquiv.ofBijective_apply] using h.symm
