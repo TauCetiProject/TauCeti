@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+public import TauCeti.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.InnerProductSpace.Dual
@@ -51,6 +52,9 @@ by these integrals.
   compactly supported continuous function on the subspace `Ω`.
 
 ## Main results
+
+* `TestFunction.coe_extendZero_toCompactlySupportedContinuousMap`: extending this restriction by
+  zero (`CompactlySupportedContinuousMap.extendZero`) recovers the test function.
 
 * `TestFunction.exists_nonneg_integral_eq_one`: a nonnegative integral-one test supported in any
   nonempty open subset of the domain.
@@ -124,6 +128,24 @@ theorem toCompactlySupportedContinuousMap_smul {R : Type*} [Semiring R] [Module 
     [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (φ : 𝓓^{n}(Ω, F)) :
     (c • φ).toCompactlySupportedContinuousMap = c • φ.toCompactlySupportedContinuousMap :=
   (rfl)
+
+/-- The restriction of a test function to `Ω` is supported in the preimage of its support. -/
+theorem tsupport_toCompactlySupportedContinuousMap_subset (φ : 𝓓^{n}(Ω, F)) :
+    tsupport φ.toCompactlySupportedContinuousMap ⊆ ((↑) : Ω → E) ⁻¹' tsupport φ := by
+  have h : ⇑φ.toCompactlySupportedContinuousMap = fun x : Ω => φ x :=
+    funext (toCompactlySupportedContinuousMap_apply φ)
+  rw [h]
+  exact tsupport_comp_subset_preimage φ continuous_subtypeVal
+
+/-- Extending the restriction of a test function on `Ω` by zero recovers the test function. -/
+@[simp]
+theorem coe_extendZero_toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) :
+    ⇑(φ.toCompactlySupportedContinuousMap.extendZero Ω.isOpenEmbedding') = ⇑φ := by
+  ext x
+  by_cases h : x ∈ Ω
+  · exact CompactlySupportedContinuousMap.extendZero_apply _ _ (⟨x, h⟩ : Ω)
+  · rw [CompactlySupportedContinuousMap.extendZero_apply_of_notMem_range _ _ (by simpa using h)]
+    exact (φ.zero_on_compl h).symm
 
 variable [MeasurableSpace E]
 
