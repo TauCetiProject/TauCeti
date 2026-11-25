@@ -13,8 +13,6 @@ public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
 
-import TauCeti.Analysis.Matrix.DotProduct
-
 /-!
 # The rank-one projector of a line
 
@@ -324,7 +322,10 @@ theorem exists_projector_eq_vecMulVec (p : ℙ ℝ (ι → ℝ)) :
     lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (v i))
       (Ne.symm (dotProduct_self_eq_zero.not.mpr hv))
   have hc : (√(v ⬝ᵥ v))⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.2 hs).ne'
-  have h1 := Matrix.dotProduct_self_inv_sqrt_smul hv
+  have h1 : ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
+    simp only [dotProduct_smul, smul_dotProduct, smul_eq_mul]
+    field_simp
+    exact (Real.sq_sqrt hs.le).symm
   refine ⟨_, h1, ?_⟩
   rw [projector_mk, ← rankOneProjector_smul hc v, rankOneProjector_def, h1, inv_one, one_smul]
 

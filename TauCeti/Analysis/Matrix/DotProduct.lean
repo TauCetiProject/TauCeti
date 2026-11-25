@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Analysis.Matrix.Hermitian
-import Mathlib.Tactic.FieldSimp
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -32,24 +30,11 @@ A Hermitian matrix is determined by its quadratic form: if `star v ⬝ᵥ A *ᵥ
 then `A = 0` (`Matrix.IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff`). This is
 polarization for Hermitian forms, read from Mathlib's
 `LinearMap.IsSymmetric.inner_map_self_eq_zero` through `Matrix.toEuclideanLin`.
-
-A nonzero real vector `v` rescaled by the inverse `(√(v ⬝ᵥ v))⁻¹` of its length is a unit vector
-(`Matrix.dotProduct_self_inv_sqrt_smul`).
 -/
 
 public section
 
 namespace Matrix
-
-/-- A nonzero real vector `v` rescaled by the inverse `(√(v ⬝ᵥ v))⁻¹` of its length is a unit
-vector. -/
-theorem dotProduct_self_inv_sqrt_smul {n : Type*} [Fintype n] {v : n → ℝ} (hv : v ≠ 0) :
-    ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
-  have hpos : 0 < v ⬝ᵥ v :=
-    (dotProduct_self_nonneg v).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hv)
-  simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
-  field_simp
-  exact (Real.sq_sqrt hpos.le).symm
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 

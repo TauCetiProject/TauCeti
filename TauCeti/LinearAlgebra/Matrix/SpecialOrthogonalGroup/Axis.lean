@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.LinearAlgebra.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -145,7 +144,12 @@ theorem exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGro
     [Fintype n] [DecidableEq n] (hn : Odd (Fintype.card n)) {g : Matrix n n ℝ}
     (hg : g ∈ specialOrthogonalGroup n ℝ) : ∃ v, v ⬝ᵥ v = 1 ∧ g *ᵥ v = v := by
   obtain ⟨v, hv, hgv⟩ := exists_ne_zero_mulVec_eq_self_of_mem_specialOrthogonalGroup hn hg
-  exact ⟨(√(v ⬝ᵥ v))⁻¹ • v, dotProduct_self_inv_sqrt_smul hv, by rw [mulVec_smul, hgv]⟩
+  have hpos : 0 < v ⬝ᵥ v :=
+    (dotProduct_self_nonneg v).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hv)
+  refine ⟨(Real.sqrt (v ⬝ᵥ v))⁻¹ • v, ?_, by rw [mulVec_smul, hgv]⟩
+  simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
+  field_simp
+  exact (Real.sq_sqrt hpos.le).symm
 
 /-- **The unit vectors fixed by a nonidentity rotation of `ℝ³` are a pair `{v, -v}`**, the two
 endpoints of its axis on the unit sphere. -/
