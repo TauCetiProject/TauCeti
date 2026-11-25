@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.TwistMap.Exact
 public import TauCeti.Dynamics.TwistMap.OpenStrip
 public import TauCeti.Geometry.Symplectic.Annulus.TwistBand
 
@@ -49,9 +48,6 @@ namespace IsMonotoneTwistMap
 
 variable {ℓ : ℝ} {J : Set ℝ} {F : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ)}
 
-theorem isOpen_strip (hF : IsMonotoneTwistMap ℓ J F) : IsOpen (univ ×ˢ J : Set (ℝ × ℝ)) :=
-  isOpen_univ.prod hF.isOpen
-
 /-- **The twist coordinates are injective on the strip**, by the twist condition. -/
 theorem injOn_stripTwistCoord (hF : IsMonotoneTwistMap ℓ J F) :
     InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J) :=
@@ -61,26 +57,25 @@ theorem injOn_stripTwistCoord (hF : IsMonotoneTwistMap ℓ J F) :
 /-- **The image `D` of the strip under the twist coordinates is open.** -/
 theorem isOpen_image_stripTwistCoord (hF : IsMonotoneTwistMap ℓ J F) :
     IsOpen (stripTwistCoord F '' (Prod.snd ⁻¹' J)) :=
-  (isLocalDiffeomorphOn_stripTwistCoord le_rfl hF.isOpen
+  TauCeti.isOpen_image_stripTwistCoord le_rfl hF.isOpen
     (fun _ hq => hF.contDiffOn.contDiffAt (hF.isOpen_strip.mem_nhds ⟨mem_univ _, hq⟩))
-    fun q hq => (hF.fderiv_fst_pos q ⟨mem_univ _, hq⟩).ne').isLocalHomeomorphOn.isOpen_image
-    (hF.isOpen.preimage continuous_snd)
+    fun q hq => (hF.fderiv_fst_pos q ⟨mem_univ _, hq⟩).ne'
 
-/-- **The generating function of an exact monotone twist map.** If `S` is a primitive of
-`F*λ − λ` for `λ = g dx`, that is `dS_p = g(F p) (dF_p)₁ − g(p) dx` on the strip, then
-`h = S ∘ Q⁻¹` has derivative `g(F p) dX − g(p) dx` at `Q(p) = (x, F₁(x, y))`:
-`∂₁h(x, F₁(x, y)) = −g(x, y)` and `∂₂h(x, F₁(x, y)) = g(F(x, y))`. -/
+/-- **The generating function of an exact monotone twist map.** If `S` satisfies
+`dS_p = g(F p) (dF_p)₁ − g(p) dx` at a point `p` of the strip, as a primitive of `F*λ − λ` for
+`λ = g dx` does everywhere on the strip, then `h = S ∘ Q⁻¹` has derivative
+`g(F p) dX − g(p) dx` at `Q(p) = (x, F₁(x, y))`: `∂₁h(x, F₁(x, y)) = −g(x, y)` and
+`∂₂h(x, F₁(x, y)) = g(F(x, y))`. -/
 theorem hasFDerivAt_stripBandGeneratingFunction (hF : IsMonotoneTwistMap ℓ J F)
-    {g S : ℝ × ℝ → ℝ}
-    (hS : ∀ p ∈ univ ×ˢ J, HasFDerivAt S (g (F p) • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp
-      (fderiv ℝ F p) - g p • ContinuousLinearMap.fst ℝ ℝ ℝ) p)
-    {p : ℝ × ℝ} (hp : p ∈ univ ×ˢ J) :
+    {g S : ℝ × ℝ → ℝ} {p : ℝ × ℝ} (hp : p ∈ univ ×ˢ J)
+    (hS : HasFDerivAt S (g (F p) • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp
+      (fderiv ℝ F p) - g p • ContinuousLinearMap.fst ℝ ℝ ℝ) p) :
     HasFDerivAt (stripBandGeneratingFunction F J S)
       (g (F p) • ContinuousLinearMap.snd ℝ ℝ ℝ - g p • ContinuousLinearMap.fst ℝ ℝ ℝ)
       (stripTwistCoord F p) :=
   hasFDerivAt_of_eventuallyEq_comp_stripTwistCoord
     (hF.contDiffOn.contDiffAt (hF.isOpen_strip.mem_nhds hp)) one_ne_zero
-    (hF.fderiv_fst_pos p hp).ne' (hS p hp) <|
+    (hF.fderiv_fst_pos p hp).ne' hS <|
     eventually_of_mem (hF.isOpen_strip.mem_nhds hp) fun _ hq =>
       stripBandGeneratingFunction_stripTwistCoord hF.injOn_stripTwistCoord hq.2
 

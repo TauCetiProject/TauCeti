@@ -129,10 +129,12 @@ theorem measurePreserving_shiftedShear (c : ℝ) :
   funext p
   simp
 
-/-- The shear `(x, y) ↦ (x + y, y)` is exact for `λ = y dx`, with `S = y²/2`. -/
-example : IsExactForPrimitive 1 univ (shiftedShear 0) fun p => p.2 := by
-  refine isExactForPrimitive_iff.2
-    ⟨fun p => p.2 ^ 2 / 2, by fun_prop, fun _ _ _ => rfl, fun p _ => ?_⟩
+/-- For the shear `F(x, y) = (x + y, y)`, `S = y²/2` is a primitive of `F*(y dx) − y dx = y dy`:
+`dS_p = (F p)₂ (dF_p)₁ − p₂ dx`. -/
+theorem hasFDerivAt_primitive (p : ℝ × ℝ) :
+    HasFDerivAt (fun p : ℝ × ℝ => p.2 ^ 2 / 2) ((shiftedShear 0 p).2 •
+      (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ (shiftedShear 0) p) -
+        p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
   have hsq : HasDerivAt (fun t : ℝ => t ^ 2 / 2) p.2 p.2 :=
     (HasDerivAt.div_const (hasDerivAt_pow 2 p.2) 2).congr_deriv (by norm_num)
   have hsnd : HasFDerivAt (Prod.snd : ℝ × ℝ → ℝ) (ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
@@ -143,6 +145,11 @@ example : IsExactForPrimitive 1 univ (shiftedShear 0) fun p => p.2 := by
   convert h using 1
   rw [fst_comp_fderiv_shiftedShear]
   ext <;> simp [shiftedShear_apply]
+
+/-- The shear `(x, y) ↦ (x + y, y)` is exact for `λ = y dx`, with `S = y²/2`. -/
+example : IsExactForPrimitive 1 univ (shiftedShear 0) fun p => p.2 :=
+  isExactForPrimitive_iff.2
+    ⟨_, by fun_prop, fun _ _ _ => rfl, fun p _ => hasFDerivAt_primitive p⟩
 
 /-- For `c ≠ 0` the shifted shear is not exact for `λ = y dx`: its flux is `c`. -/
 example {c : ℝ} (hc : c ≠ 0) :
