@@ -23,8 +23,8 @@ Three pairs `(f, Γ)` that test the definition of an admissible pair
   `n = 2` the partials at `(4, 1)` are `1/4` and `1`
   (`TauCeti.SpectralGradientExamples.fderiv_geomMean_four_one`), with product `1/4 = 2⁻²`.
 * `f(λ) = σ_1(λ) − ε|λ|` on `Γ_1`, with `|ε| < 1` and the Euclidean norm `|λ|`, is an admissible
-  pair, since `∂_j f = 1 − ε λ_j / |λ| > 0`. For `0 < δ < ε` its value at `(1, −1 + δ) ∈ Γ_1` is
-  negative, so an admissible pair need not be positive off `Γ_n`.
+  pair, since `∂_j f = 1 − ε λ_j / |λ| > 0`. For `0 < δ < ε < 1` its value at
+  `(1, −1 + δ) ∈ Γ_1` is negative, so an admissible pair need not be positive off `Γ_n`.
 * `f(λ) = max_j λ_j` is symmetric and positively homogeneous of degree one, but in dimension at
   least two it is not differentiable at `e = (1, …, 1)`, so it is no admissible pair on `Γ_n`.
 
@@ -32,15 +32,18 @@ Three pairs `(f, Γ)` that test the definition of an admissible pair
 
 * `TauCeti.Examples.AdmissiblePair.prod_fderiv_prod_rpow_apply_single`: the product of the
   partial derivatives of the Monge–Ampère function is `n⁻ⁿ` on `Γ_n`.
-* `TauCeti.Examples.AdmissiblePair.isAdmissiblePair_sum_sub_mul_sqrt`: the pair
+* `TauCeti.Examples.AdmissiblePair.isAdmissiblePair_sumSubMulSqrt`: the pair
   `(σ_1 − ε|λ|, Γ_1)`.
-* `TauCeti.Examples.AdmissiblePair.sum_sub_mul_sqrt_neg`: its negative value at `(1, −1 + δ)`.
+* `TauCeti.Examples.AdmissiblePair.sumSubMulSqrt_neg`: its negative value at `(1, −1 + δ)`.
 * `TauCeti.Examples.AdmissiblePair.not_isAdmissiblePair_sup'`: `max_j λ_j` is not an admissible
   pair on `Γ_n`.
 
 ## References
 
-* `TauCetiRoadmap/ComplexHessianEquations/README.md`, §2.4, Checks.
+* B. Guo, D. H. Phong and F. Tong, *On L∞ estimates for complex Monge–Ampère equations*,
+  Ann. of Math. 198 (2023), §1, for the Monge–Ampère pair and its structural constant `n⁻ⁿ`.
+* G. Székelyhidi, *Fully non-linear elliptic equations on compact Hermitian manifolds*,
+  J. Differential Geom. 109 (2018), §2, for admissible cones and pairs.
 -/
 
 public section
@@ -52,6 +55,11 @@ open Finset
 namespace TauCeti.Examples.AdmissiblePair
 
 variable {ι : Type*} [Fintype ι]
+
+/-- A nonzero vector has a positive sum of squares. -/
+private theorem sum_sq_pos {μ : ι → ℝ} (hμ : μ ≠ 0) : 0 < ∑ i, μ i ^ 2 :=
+  (sum_nonneg fun _ _ ↦ sq_nonneg _).lt_of_ne fun h ↦
+    hμ (funext fun i ↦ (sum_sq_eq_zero_iff (s := univ) (f := μ)).1 h.symm i (mem_univ i))
 
 section DecidableEq
 
@@ -102,9 +110,7 @@ theorem sumSubMulSqrt_def (ε : ℝ) (μ : ι → ℝ) :
 /-- The partial derivatives `∂_j (σ_1 − ε|μ|) = 1 − ε μ_j / |μ|` away from `0`. -/
 theorem fderiv_sumSubMulSqrt_apply_single (ε : ℝ) {μ : ι → ℝ} (hμ : μ ≠ 0) (j : ι) :
     fderiv ℝ (sumSubMulSqrt ε) μ (Pi.single j 1) = 1 - ε * (μ j / √(∑ i, μ i ^ 2)) := by
-  have hpos : 0 < ∑ i, μ i ^ 2 := by
-    refine lt_of_le_of_ne (sum_nonneg fun i _ ↦ sq_nonneg _) fun h ↦ hμ (funext fun i ↦ ?_)
-    simpa using (sum_eq_zero_iff_of_nonneg (fun i _ ↦ sq_nonneg (μ i))).1 h.symm i (mem_univ i)
+  have hpos := sum_sq_pos hμ
   have hi : ∀ i, HasFDerivAt (fun ν : ι → ℝ ↦ ν i)
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) μ := fun i ↦ hasFDerivAt_apply i μ
   have hsq : HasFDerivAt (fun ν : ι → ℝ ↦ ∑ i, ν i ^ 2) _ μ :=
@@ -113,22 +119,16 @@ theorem fderiv_sumSubMulSqrt_apply_single (ε : ℝ) {μ : ι → ℝ} (hμ : μ
     HasFDerivAt.fun_sum fun i _ ↦ hi i
   have hf : HasFDerivAt (sumSubMulSqrt ε) _ μ := hsum.sub ((hsq.sqrt hpos.ne').const_smul ε)
   rw [hf.fderiv]
-  simp [Pi.single_apply]
-  field_simp
-  simp
+  simp [Pi.single_apply, field]
 
 /-- For `|ε| < 1`, the pair `(σ_1 − ε|λ|, Γ_1)` is an admissible pair: the partial derivatives
 `1 − ε λ_j / |λ|` are positive since `|λ_j| ≤ |λ|`. -/
-theorem isAdmissiblePair_sum_sub_mul_sqrt [Nonempty ι] {ε : ℝ} (hε : |ε| < 1) :
+theorem isAdmissiblePair_sumSubMulSqrt [Nonempty ι] {ε : ℝ} (hε : |ε| < 1) :
     IsAdmissiblePair {μ : ι → ℝ | 0 < ∑ i, μ i} (sumSubMulSqrt ε) where
   isAdmissibleCone := isAdmissibleCone_setOf_sum_pos
   contDiffOn := by
     intro μ hμ
-    have hne : ∑ i, μ i ^ 2 ≠ 0 := by
-      refine (lt_of_le_of_ne (sum_nonneg fun i _ ↦ sq_nonneg _) fun h ↦ ?_).ne'
-      have h0 : ∀ i, μ i = 0 := fun i ↦ by
-        simpa using (sum_eq_zero_iff_of_nonneg (fun i _ ↦ sq_nonneg (μ i))).1 h.symm i (mem_univ i)
-      simp [h0] at hμ
+    have hne : ∑ i, μ i ^ 2 ≠ 0 := (sum_sq_pos (by rintro rfl; simp at hμ)).ne'
     refine ContDiffAt.contDiffWithinAt ?_
     unfold sumSubMulSqrt
     exact (by fun_prop : ContDiff ℝ 1 fun ν : ι → ℝ ↦ ∑ i, ν i).contDiffAt.sub
@@ -146,13 +146,9 @@ theorem isAdmissiblePair_sum_sub_mul_sqrt [Nonempty ι] {ε : ℝ} (hε : |ε| <
       rintro rfl
       simp at hμ
     rw [fderiv_sumSubMulSqrt_apply_single ε hμ0]
-    have hs : 0 < √(∑ i, μ i ^ 2) := by
-      refine Real.sqrt_pos.2 (lt_of_le_of_ne (sum_nonneg fun i _ ↦ sq_nonneg _) fun h ↦ hμ0 ?_)
-      exact funext fun i ↦ by
-        simpa using (sum_eq_zero_iff_of_nonneg (fun i _ ↦ sq_nonneg (μ i))).1 h.symm i (mem_univ i)
-    have hj : |μ j| ≤ √(∑ i, μ i ^ 2) := by
-      rw [← Real.sqrt_sq_eq_abs]
-      exact Real.sqrt_le_sqrt (single_le_sum (fun i _ ↦ sq_nonneg (μ i)) (mem_univ j))
+    have hs : 0 < √(∑ i, μ i ^ 2) := Real.sqrt_pos.2 (sum_sq_pos hμ0)
+    have hj : |μ j| ≤ √(∑ i, μ i ^ 2) :=
+      Real.abs_le_sqrt (single_le_sum (fun i _ ↦ sq_nonneg (μ i)) (mem_univ j))
     have hq : |μ j / √(∑ i, μ i ^ 2)| ≤ 1 := by
       rw [abs_div, abs_of_pos hs]
       exact div_le_one_of_le₀ hj hs.le
@@ -163,9 +159,10 @@ theorem isAdmissiblePair_sum_sub_mul_sqrt [Nonempty ι] {ε : ℝ} (hε : |ε| <
         _ < 1 := by rwa [mul_one]
     linarith
 
-/-- The point `(1, −1 + δ)` lies in `Γ_1 ⊂ ℝ²` for `δ > 0`, and for `0 < δ < ε` the admissible
-pair `σ_1 − ε|λ|` is negative there: `δ − ε √(1 + (1 − δ)²) < 0`. -/
-theorem sum_sub_mul_sqrt_neg {ε δ : ℝ} (hδ : 0 < δ) (hδε : δ < ε) :
+/-- The point `(1, −1 + δ)` lies in `Γ_1 ⊂ ℝ²` for `δ > 0`, and for `0 < δ < ε` the function
+`σ_1 − ε|λ|` is negative there: `δ − ε √(1 + (1 − δ)²) < 0`. When also `ε < 1`, it is an admissible
+pair on `Γ_1` (`isAdmissiblePair_sumSubMulSqrt`). -/
+theorem sumSubMulSqrt_neg {ε δ : ℝ} (hδ : 0 < δ) (hδε : δ < ε) :
     (![1, -1 + δ] : Fin 2 → ℝ) ∈ {μ : Fin 2 → ℝ | 0 < ∑ i, μ i} ∧
       sumSubMulSqrt ε (![1, -1 + δ] : Fin 2 → ℝ) < 0 := by
   refine ⟨by simp [Fin.sum_univ_two, hδ], ?_⟩
