@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Homomorphisms of commutative Lie groups and the kernels of their exponentials
@@ -43,9 +42,8 @@ the exponential it acts as `λ ↦ n λ`.
 * `ContinuousMonoidHom.lieExpQuotientKerContinuousAddEquiv_lieMapQuotient`: the induced map of
   quotients is `f` under the exponential identifications.
 * `ContinuousMonoidHom.lieMap_ofLieLinearMap`: the Lie map of `ofLieLinearMap φ hφ` is `φ`.
-* `ContinuousMonoidHom.lieMap_powContinuousMonoidHom`,
-  `ContinuousMonoidHom.lieMapKer_powContinuousMonoidHom`: the `n`-th power map differentiates to
-  multiplication by `n`, on `𝔤` and on `Λ`.
+* `ContinuousMonoidHom.lieMap_id_pow`, `ContinuousMonoidHom.lieMapKer_id_pow`: the `n`-th power
+  map `ContinuousMonoidHom.id G ^ n` differentiates to multiplication by `n`, on `𝔤` and on `Λ`.
 -/
 
 public section
@@ -259,6 +257,7 @@ end ContinuousMonoidHom
 namespace ContinuousMonoidHom
 
 open TauCeti
+open scoped IsMulCommutative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -266,17 +265,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
   [IsMulCommutative G] [ContinuousMul G]
 
-/-- **The `n`-th power map differentiates to multiplication by `n`.** -/
+/-- **The `n`-th power map `ContinuousMonoidHom.id G ^ n` differentiates to multiplication by
+`n`.** -/
 @[simp]
-theorem lieMap_powContinuousMonoidHom (n : ℕ) (X : LeftInvariantDerivation I G) :
-    lieMap (I := I) (I' := I) (powContinuousMonoidHom G n) X = n • X := by
+theorem lieMap_id_pow (n : ℕ) (X : LeftInvariantDerivation I G) :
+    lieMap (I := I) (I' := I) (ContinuousMonoidHom.id G ^ n) X = n • X := by
   refine lieMap_apply_eq_of_lieExp _ ((n : ℝ) • LinearMap.id) (fun Y ↦ ?_) X |>.trans ?_ <;>
     simp [Nat.cast_smul_eq_nsmul, lieExp_nsmul]
 
 /-- On the kernel of the exponential, the `n`-th power map acts as `λ ↦ n λ`; in particular
 multiplication by two acts as `λ ↦ 2 λ` on the kernel of the exponential. -/
-theorem lieMapKer_powContinuousMonoidHom (n : ℕ) :
-    lieMapKer (I := I) (I' := I) (powContinuousMonoidHom G n) = n • AddMonoidHom.id _ := by
+theorem lieMapKer_id_pow (n : ℕ) :
+    lieMapKer (I := I) (I' := I) (ContinuousMonoidHom.id G ^ n) = n • AddMonoidHom.id _ := by
   ext X
   simp
 
