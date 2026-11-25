@@ -175,7 +175,7 @@ theorem Wkp.memLp_value_and_memLp_gradient_firstOrder_of_isLipschitzDomainWith (
     have hW := (W1p.hasWeakFDerivOn (T u)).congr_ae (w := W1p.value (Wkp.firstOrder k u))
       (by rw [Wkp.value_firstOrder]; exact hT u)
     filter_upwards [hW.ae_eq (W1p.hasWeakFDerivOn _)] with x hx
-    exact ext_inner_right ℝ fun v => by simpa using congrArg (fun T => T v) hx
+    exact innerSL_inj.1 hx
   exact ⟨(Lp.memLp (W1p.value (T u))).ae_eq (hT u), (Lp.memLp (W1p.gradient (T u))).ae_eq hg⟩
 
 /-- **Higher-order Sobolev embedding into Lebesgue spaces on bounded Lipschitz domains.** If
