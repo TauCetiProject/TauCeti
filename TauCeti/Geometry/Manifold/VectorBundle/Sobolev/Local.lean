@@ -48,7 +48,7 @@ the atlas `A`. When `M` is a `Cⁿ` manifold and `V` a `Cⁿ` vector bundle, `n 
 Riemann surface, and every trivialization of the trivialization atlas is
 `TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`, with converse
 `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`, in
-`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic`.
 
 ## Main results
 

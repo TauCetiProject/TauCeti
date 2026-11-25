@@ -29,6 +29,10 @@ Combining the convergent and growing regimes yields the single-scale characteriz
 `∑_{j=1}^{n-1} j^α = O(n^{α+1} + 1) ↔ α ≠ -1`, which bounds discrete remainder sums without
 splitting into `α < -1` and `-1 < α` cases.
 
+For complex exponents, a power sum `∑_{n=1}^{N} n ^ (-s)` whose weights `n ^ (1 - Re s)` are at
+most `M ≥ 0` has norm at most `M (1 + log N)`, the bound used for Dirichlet polynomials near the
+line `Re s = 1`.
+
 ## Main results
 
 * `TauCeti.sum_Ico_rpow_le`: `∑ j ∈ Ico 1 n, (j : ℝ) ^ α ≤ (n : ℝ) ^ (α + 1) / (α + 1)` for
@@ -42,6 +46,8 @@ splitting into `α < -1` and `-1 < α` cases.
   (`-1 < α`).
 * `TauCeti.isBigO_sum_Ico_rpow_rpow_add_one_add_one_iff`:
   `∑ j ∈ Ico 1 n, (j : ℝ) ^ α = O(n^{α+1} + 1)` iff `α ≠ -1`.
+* `TauCeti.norm_sum_Icc_cpow_neg_le_mul_one_add_log`: `‖∑_{n=1}^{N} n ^ (-s)‖ ≤ M (1 + log N)`
+  when every weight `n ^ (1 - Re s)`, `1 ≤ n ≤ N`, is at most `M ≥ 0`.
 
 ## References
 
@@ -313,5 +319,25 @@ theorem isBigO_sum_Ico_rpow_rpow_add_one_add_one_iff {α : ℝ} :
       have hnn : 0 ≤ (n : ℝ) ^ (α + 1) := by positivity
       rw [Real.norm_of_nonneg hnn, Real.norm_of_nonneg (by positivity), one_mul]
       linarith
+
+/-- **Harmonic bound for a complex power sum.** If `0 ≤ M` and every weight `n ^ (1 - Re s)` with
+`1 ≤ n ≤ N` is at most `M`, then `‖∑_{n=1}^{N} n ^ (-s)‖ ≤ M (1 + log N)`. -/
+theorem norm_sum_Icc_cpow_neg_le_mul_one_add_log {s : ℂ} {N : ℕ} {M : ℝ} (hM₀ : 0 ≤ M)
+    (hM : ∀ n : ℕ, 0 < n → n ≤ N → (n : ℝ) ^ (1 - s.re) ≤ M) :
+    ‖∑ n ∈ Icc 1 N, (n : ℂ) ^ (-s)‖ ≤ M * (1 + Real.log N) := by
+  refine (norm_sum_le _ _).trans ?_
+  have hsum : ∑ n ∈ Icc 1 N, ‖(n : ℂ) ^ (-s)‖ ≤ ∑ n ∈ Icc 1 N, M * (n : ℝ)⁻¹ := by
+    refine sum_le_sum fun n hn ↦ ?_
+    obtain ⟨hn₁, hnN⟩ := mem_Icc.mp hn
+    rw [Complex.norm_natCast_cpow_of_pos hn₁, Complex.neg_re, show -s.re = 1 - s.re - 1 by ring,
+      Real.rpow_sub_one (by positivity), div_eq_mul_inv]
+    exact mul_le_mul_of_nonneg_right (hM n hn₁ hnN) (by positivity)
+  have hH : ∑ n ∈ Icc 1 N, (n : ℝ)⁻¹ ≤ 1 + Real.log N := by
+    have := harmonic_le_one_add_log N
+    rw [harmonic_eq_sum_Icc] at this
+    push_cast at this
+    exact this
+  rw [← mul_sum] at hsum
+  exact hsum.trans (mul_le_mul_of_nonneg_left hH hM₀)
 
 end TauCeti

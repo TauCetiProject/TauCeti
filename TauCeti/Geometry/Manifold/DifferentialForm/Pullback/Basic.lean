@@ -260,6 +260,16 @@ theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
   funext i
   fin_cases i <;> rfl
 
+/-- Evaluation of the pullback of a one-form on a tangent vector. -/
+theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
+    (v : TangentSpace I x) :
+    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i
+  rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -377,6 +387,14 @@ theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughFor
   funext x
   ext v
   simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
+/-- Pullback commutes with finite sums. -/
+@[simp]
+theorem mpullback_sum [ContinuousAdd F] (f : M → M') {ι : Type*} (s : Finset ι)
+    (ω : ι → RoughForm I' M' F k) :
+    mpullback I I' f (∑ i ∈ s, ω i) = ∑ i ∈ s, mpullback I I' f (ω i) :=
+  map_sum (⟨⟨mpullback I I' f, mpullback_zero f⟩, mpullback_add f⟩ :
+    RoughForm I' M' F k →+ RoughForm I M F k) ω s
 
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/

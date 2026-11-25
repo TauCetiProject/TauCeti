@@ -213,6 +213,13 @@ theorem integralNorm_sub (L : IntegralLattice V) (x y : L) :
       L.integralNorm x + L.integralNorm y - 2 * L.integralForm x y := by
   rw [sub_eq_add_neg, L.integralNorm_add, L.integralNorm_neg, map_neg, mul_neg, sub_eq_add_neg]
 
+/-- Translating by twice a lattice vector changes the norm by four times an integer. -/
+theorem integralNorm_add_two_smul (L : IntegralLattice V) (x w : L) :
+    L.integralNorm (x + (2 : ℤ) • w) =
+      L.integralNorm x + 4 * (L.integralForm x w + L.integralNorm w) := by
+  rw [integralNorm_add, QuadraticMap.map_smul, map_smul, smul_eq_mul, smul_eq_mul]
+  ring
+
 /-! ## Vectors of prescribed norm -/
 
 /-- The lattice vectors having the prescribed rational norm. -/
