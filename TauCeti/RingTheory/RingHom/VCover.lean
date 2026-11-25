@@ -239,8 +239,10 @@ theorem isVCover_iff_exists_isPrime_le (f : A →+* B) :
   -- the structure maps of `φ.toAlgebra` and `f.toAlgebra` are `φ` and `f`
   refine forall_congr' fun V => forall_congr' fun _ => forall_congr' fun _ =>
     forall_congr' fun _ => forall_congr' fun φ => ?_
+  let := φ.toAlgebra
+  let := f.toAlgebra
   simpa only [RingHom.algebraMap_toAlgebra] using
-    @exists_lift_iff_exists_isPrime_le A B _ _ V _ _ _ φ.toAlgebra f.toAlgebra
+    exists_lift_iff_exists_isPrime_le (A := A) (B := B) V
 
 namespace IsVCover
 
@@ -252,7 +254,7 @@ theorem of_faithfullyFlat {f : A →+* B} (hf : f.FaithfullyFlat) : f.IsVCover :
   intro V _ _ _ φ
   let := φ.toAlgebra
   let := f.toAlgebra
-  have : Module.FaithfullyFlat A B := hf
+  have : Module.FaithfullyFlat A B := RingHom.faithfullyFlat_algebraMap_iff.mp hf
   obtain ⟨Q, _, hQ⟩ := Ideal.exists_isPrime_liesOver_of_faithfullyFlat (B := V ⊗[A] B)
     (maximalIdeal V)
   obtain ⟨P, hPQ, _, hP⟩ := Q.exists_ideal_le_liesOver_of_le (p := ⊥) (q := maximalIdeal V)
@@ -270,7 +272,7 @@ theorem of_isIntegral_of_comap_surjective {f : A →+* B} (hf : f.IsIntegral)
   intro V _ _ _ φ
   let := φ.toAlgebra
   let := f.toAlgebra
-  have : Algebra.IsIntegral A B := ⟨hf⟩
+  have : Algebra.IsIntegral A B := algebraMap_isIntegral_iff.mp hf
   have hgen : (⟨⊥, Ideal.isPrime_bot⟩ : PrimeSpectrum V) ∈
       Set.range (PrimeSpectrum.comap (algebraMap V (V ⊗[A] B))) := by
     rw [PrimeSpectrum.range_comap_algebraMap_tensorProduct]

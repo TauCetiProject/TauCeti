@@ -224,8 +224,7 @@ theorem exists_valuationRing_of_isPrime_le {V : Type*} {T : Type v} [CommRing V]
     exact (maximalIdeal.isMaximal V).ne_top (by rw [← hQ, Ideal.comap_top])
   obtain ⟨W, hW, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits hQtop
     (hker.trans_le hPQ)
-  -- `W` and `W.toSubring` have the same carrier, so this corestriction lands in `W`
-  let g : T →+* W := ψ.codRestrict W.toSubring hW
+  let g : T →+* W := ψ.codRestrict W hW
   refine ⟨W, inferInstance, inferInstance, inferInstance, g, ?_, ⟨fun x hx => ?_⟩⟩
   · -- the kernel of `V → T → K` is the preimage of `P`, which is zero
     rw [injective_iff_map_eq_zero]
