@@ -109,7 +109,7 @@ variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensi
 include hΦ hΦi hΦJ in
 /-- A unitary frame `Φ` of the structures `J_t(x(t))` makes them continuous in `t`, since
 `J_t(x(t)) = Φ_t i Φ_t⁻¹`. -/
-private theorem continuous_toContinuousLinearMap_of_frame :
+theorem continuous_toContinuousLinearMap_of_frame :
     Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap := by
   refine (hΦ.continuous.clm_comp ((continuous_const (y := (AlmostComplexStructure.ofComplexModule
     F).toLinearMap.toContinuousLinearMap)).clm_comp (hΦ.clm_inverse hΦi).continuous)).congr

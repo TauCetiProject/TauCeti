@@ -41,9 +41,6 @@ the Alexander grading. For a knot, every variable acts as `U`; the resulting deg
   `V_c` lowers the Alexander grading of grid homology by one.
 * `TauCeti.OddComponentGridDiagram.X_smul_mem_alexanderUnblockedHomologyGrading_piece`: the
   same degree rule on categorical `GH⁻`.
-* `TauCeti.OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`: if an
-  equivalence intertwining two unblocked differentials preserves the Alexander grading of chains,
-  the induced equivalence of `GH⁻` preserves the Alexander grading.
 
 ## References
 
@@ -125,35 +122,5 @@ theorem X_smul_mem_alexanderUnblockedHomologyGrading_piece (i : Fin n) {a : ℤ}
   rw [G.mem_alexanderUnblockedHomologyGrading_piece_iff R] at hy ⊢
   rw [map_smul]
   exact G.X_smul_mem_alexanderHomologyGrading_piece i hy
-
-/-! ### Equivalences induced by intertwining maps -/
-
-section Intertwining
-
-variable (G' : OddComponentGridDiagram n)
-  {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R} [RingHomInvPair σ σ']
-  [RingHomInvPair σ' σ] (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
-  (he : ∀ c, G'.val.unblockedDifferential R (e c) = e (G.val.unblockedDifferential R c))
-
-/-- If an equivalence intertwining two unblocked differentials preserves the Alexander grading of
-chains, the induced equivalence of unblocked homologies preserves the Alexander grading. -/
-theorem unblockedHomologyEquivOfIntertwining_mem_piece
-    (hA : ∀ a c, c ∈ G.alexanderChainMinusPiece R a → e c ∈ G'.alexanderChainMinusPiece R a)
-    {a : ℤ} {y : G.val.unblockedHomology R}
-    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.val.unblockedHomologyEquivOfIntertwining R G'.val e he y ∈
-      (G'.alexanderUnblockedHomologyGrading R).piece a := by
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
-    at hy ⊢
-  obtain ⟨z, hz, hzy⟩ := hy
-  obtain rfl : y = G.val.unblockedHomologyClass R z := by
-    apply (ModuleCat.mono_iff_injective (G.val.unblockedHomologyIso R).hom).mp inferInstance
-    rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
-  refine ⟨⟨e z, G.val.map_mem_ker_unblockedDifferential_of_intertwining R G'.val e he z.property⟩,
-    hA a _ hz, ?_⟩
-  rw [GridDiagram.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass,
-    GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass]
-
-end Intertwining
 
 end TauCeti.OddComponentGridDiagram

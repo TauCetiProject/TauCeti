@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Functoriality
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.CategoryTheory.Galois.ContAction
+public import TauCeti.CategoryTheory.Galois.Topology
 public import TauCeti.CategoryTheory.Galois.Transport
 
 /-!
@@ -20,8 +21,11 @@ public import TauCeti.CategoryTheory.Galois.Transport
 Let `K` be a field, `Ω` a separable closure of `K`, and `x : Spec Ω ⟶ Spec K` the geometric point
 given by the inclusion `K → Ω`. The étale fundamental group `π₁(Spec K, x)` is the automorphism
 group `Aut (FiniteEtaleScheme.fiber x)` of the geometric fibre functor at `x`, a profinite group.
-This file identifies it with the absolute Galois group `Gal(Ω/K)`, as topological groups
-(`TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber`).
+This file identifies it with the absolute Galois group `Gal(Ω/K)`, as topological groups:
+`Gal(Ω/K)` is a fundamental group of the fibre functor
+(`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
+`CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv (fiber x) Gal(Ω/K)` is an isomorphism of
+topological groups `Gal(Ω/K) ≃ₜ* π₁(Spec K, x)`.
 
 The identification is compatible with Grothendieck's Galois theory for `K`. The geometric fibre
 functor at `x` is isomorphic to the functor sending a finite étale `K`-scheme with coordinate
@@ -40,13 +44,12 @@ Galois categories and isomorphisms of fibre functors.
 On lifts of the geometric point, `σ ∈ Gal(Ω/K)` acts by precomposition with `Spec σ`
 (`fiberCompInclIso_hom_app_smul_left`). Consequently, for a tower `K → L → Ω`, the homomorphism
 `π₁(Spec L, x) → π₁(Spec K, x)` induced by `Spec L ⟶ Spec K` is the restriction
-`Gal(Ω/L) → Gal(Ω/K)` (`mapAutFiber_galContinuousMulEquivAutFiber`).
+`Gal(Ω/L) → Gal(Ω/K)` (`mapAutFiber_toAutContinuousMulEquiv`).
 
 ## Main definitions
 
 * `TauCeti.FiniteEtaleScheme.fiberIsoFiniteEtaleFiber`: the geometric fibre functor at `x` is the
   functor of `Ω`-valued points of coordinate algebras.
-* `TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber`: `Gal(Ω/K) ≃ₜ* π₁(Spec K, x)`.
 
 ## Main results
 
@@ -54,11 +57,9 @@ On lifts of the geometric point, `σ ∈ Gal(Ω/K)` acts by precomposition with 
   attached to a point of the geometric fibre has the corresponding lift of `x` as spectrum.
 * `TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`: `Gal(Ω/K)` is a fundamental group of
   the geometric fibre functor at `x`.
-* `TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber_hom_app_apply`: the automorphism of
-  the fibre functor attached to `σ` acts on each fibre by `σ`.
 * `TauCeti.FiniteEtaleScheme.fiberCompInclIso_hom_app_smul_left`: `σ` acts on lifts of the
   geometric point by precomposition with `Spec σ`.
-* `TauCeti.FiniteEtaleScheme.mapAutFiber_galContinuousMulEquivAutFiber`: for fields
+* `TauCeti.FiniteEtaleScheme.mapAutFiber_toAutContinuousMulEquiv`: for fields
   `K → L → Ω`, the homomorphism of fundamental groups induced by `Spec L ⟶ Spec K` is
   restriction of scalars `Gal(Ω/L) → Gal(Ω/K)`.
 
@@ -227,29 +228,11 @@ instance instIsFundamentalGroupFiber :
         (AlgEquiv.smul_algHom_def σ _).symm).trans <|
         (galoisFiber_obj_ρ_apply K Ω _ σ _).symm.trans (Action.ρ_apply_eq_smul _ σ _)
 
-/-- **The étale fundamental group of a field is its absolute Galois group.** For a separable
-closure `Ω` of `K`, the automorphism group of the geometric fibre functor of finite étale
-`K`-schemes at `Spec Ω ⟶ Spec K` is `Gal(Ω/K)`, as topological groups. -/
-noncomputable def galContinuousMulEquivAutFiber :
-    Gal(Ω/K) ≃ₜ* Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))) where
-  toMulEquiv := toAutMulEquiv _ _
-  continuous_toFun := (toAutMulEquiv_isHomeomorph _ _).continuous
-  continuous_invFun := (toAutMulEquiv_isHomeomorph _ _).homeomorph.symm.continuous
-
-/-- The automorphism of the geometric fibre functor attached to `σ ∈ Gal(Ω/K)` acts on every
-fibre by `σ`. -/
-@[simp]
-theorem galContinuousMulEquivAutFiber_hom_app_apply (σ : Gal(Ω/K))
-    (X : FiniteEtaleScheme (Spec (.of K)))
-    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj X) :
-    (galContinuousMulEquivAutFiber K Ω σ).asIso.hom.app X y = σ • y :=
-  toAut_hom_app_apply _ σ y
-
 /-- Over a separably closed field `K`, the étale fundamental group at the geometric point
 `Spec K ⟶ Spec K` is trivial. -/
 instance [IsSepClosed K] :
     Subsingleton (Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K K))))) :=
-  (galContinuousMulEquivAutFiber K K).toEquiv.symm.subsingleton
+  (toAutContinuousMulEquiv _ Gal(K/K)).toEquiv.symm.subsingleton
 
 section Restriction
 
@@ -259,17 +242,17 @@ variable (L : Type u) [Field L] [Algebra K L] [Algebra L Ω] [IsScalarTower K L 
 automorphisms.** For fields `K → L → Ω` with `Ω` separably closed and Galois over `K`, the
 homomorphism `π₁(Spec L, x) → π₁(Spec K, x)` induced by `Spec L ⟶ Spec K` sends the loop of
 `σ ∈ Gal(Ω/L)` to the loop of `σ` viewed in `Gal(Ω/K)`. -/
-theorem mapAutFiber_galContinuousMulEquivAutFiber
+theorem mapAutFiber_toAutContinuousMulEquiv
     (h : Spec.map (CommRingCat.ofHom (algebraMap L Ω)) ≫
       Spec.map (CommRingCat.ofHom (algebraMap K L)) =
         Spec.map (CommRingCat.ofHom (algebraMap K Ω))) (σ : Gal(Ω/L)) :
     mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L))) h
-        (galContinuousMulEquivAutFiber L Ω σ) =
-      galContinuousMulEquivAutFiber K Ω (σ.restrictScalars K) := by
+        (toAutContinuousMulEquiv _ Gal(Ω/L) σ) =
+      toAutContinuousMulEquiv _ Gal(Ω/K) (σ.restrictScalars K) := by
   refine mapAutFiber_eq_of_fiberCompInclIso_left _ h _ _
     (Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω))) (fun Z z ↦ ?_) (fun X w ↦ ?_)
-  · rw [galContinuousMulEquivAutFiber_hom_app_apply, fiberCompInclIso_hom_app_smul_left]
-  · rw [galContinuousMulEquivAutFiber_hom_app_apply, fiberCompInclIso_hom_app_smul_left]
+  · rw [toAutContinuousMulEquiv_apply, toAut_hom_app_apply, fiberCompInclIso_hom_app_smul_left]
+  · rw [toAutContinuousMulEquiv_apply, toAut_hom_app_apply, fiberCompInclIso_hom_app_smul_left]
     -- `σ` and its restriction of scalars have the same underlying ring map.
     rfl
 

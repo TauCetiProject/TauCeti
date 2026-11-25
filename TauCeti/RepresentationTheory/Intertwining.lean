@@ -40,6 +40,8 @@ taking invariants under it.
   intertwining maps into the factors.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.intertwiningDefectAt`: the intertwining defect `σ g ∘ₗ f - f ∘ₗ ρ g` at `g`,
+  a linear map on `V →ₗ[K] W` that vanishes exactly on the maps intertwining the action of `g`.
 * `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
   intertwining map or an equivalence along a monoid homomorphism `H →* G`.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
@@ -71,6 +73,8 @@ taking invariants under it.
 * `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
   representation acts trivially in each of its quotients.
+* `Representation.mul_mul_inv_eq_smul_of_mul_eq_smul_mul`: a relation `ρ g * f = c • (f * ρ g)`
+  says that conjugation by `ρ g` scales `f` by `c`.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
 * `Representation.exists_unit_smul_of_intertwines`: if the equivariant endomorphisms of a
@@ -289,6 +293,45 @@ theorem ker_le_ker_of_surjective (f : IntertwiningMap ρ σ) (hf : Function.Surj
 end Kernel
 
 end Representation.IntertwiningMap
+
+namespace Representation
+
+section IntertwiningDefect
+
+variable {K G V W : Type*} [CommRing K] [Monoid G]
+  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- The **intertwining defect at `g`** of a linear map `f : V →ₗ[K] W`: `σ g ∘ₗ f - f ∘ₗ ρ g`,
+which vanishes exactly when `f` intertwines the actions of `g`. -/
+def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
+    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
+  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
+
+@[simp]
+theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
+    (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
+  (rfl)
+
+/-- The intertwining defect at `g` vanishes exactly when `f` intertwines the actions of `g`. -/
+theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Representation K G W}
+    {g : G} {f : V →ₗ[K] W} : intertwiningDefectAt ρ σ g f = 0 ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
+  rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
+
+end IntertwiningDefect
+
+section Conjugation
+
+variable {K G V : Type*} [CommSemiring K] [Group G] [AddCommMonoid V] [Module K V]
+
+/-- If `ρ g * f = c • (f * ρ g)` for an endomorphism `f`, then conjugation by `ρ g` scales `f`
+by `c`: `ρ g * f * ρ g⁻¹ = c • f`. -/
+theorem mul_mul_inv_eq_smul_of_mul_eq_smul_mul {ρ : Representation K G V} {f : Module.End K V}
+    {g : G} {c : K} (h : ρ g * f = c • (f * ρ g)) : ρ g * f * ρ g⁻¹ = c • f := by
+  simp [h, mul_assoc, ← map_mul]
+
+end Conjugation
+
+end Representation
 
 namespace Representation.Equiv
 
