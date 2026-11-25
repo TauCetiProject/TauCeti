@@ -139,11 +139,11 @@ section CompactSupport
 
 variable {K : Set N}
 
-/-- **Differentiation under the integral sign with compact support in the parameter.** Let `K` be
-a compact measurable set of finite measure such that, for `z` near `z₀`, the function `g z`
-vanishes outside `K`. If `(z, a) ↦ g z a` is `C¹` at every point `(z₀, a)` with `a ∈ K`, for a
-parameter `z` in a normed space, then the derivative of `z ↦ ∫ a, g z a ∂μ` at `z₀` is the
-integral of the derivatives of the functions `z ↦ g z a`. -/
+/-- **Differentiation under the integral sign for an integrand vanishing outside a fixed compact
+set.** Let `K` be a compact measurable set of finite measure such that, for `z` near `z₀`, the
+function `g z` vanishes outside `K`. If `(z, a) ↦ g z a` is `C¹` at every point `(z₀, a)` with
+`a ∈ K`, for a parameter `z` in a normed space, then the derivative of `z ↦ ∫ a, g z a ∂μ` at `z₀`
+is the integral of the derivatives of the functions `z ↦ g z a`. -/
 theorem _root_.IsCompact.hasFDerivAt_integral_of_contMDiffAt {g : E' → N → F} {z₀ : E'}
     (hK : IsCompact K) (hKm : MeasurableSet K) (hμK : μ K ≠ ⊤)
     (hg : ∀ a ∈ K, ContMDiffAt (𝓘(ℝ, E').prod J) 𝓘(ℝ, F) 1 (uncurry g) (z₀, a))
@@ -171,10 +171,10 @@ theorem _root_.IsCompact.hasFDerivAt_integral_of_contMDiffAt {g : E' → N → F
 
 variable {f : ℝ → N → F} {t₀ : ℝ}
 
-/-- **Differentiation under the integral sign with compact support in the parameter.** Let `K` be
-a compact measurable set of finite measure such that, for `t` near `t₀`, the function `f t`
-vanishes outside `K`. If `(t, a) ↦ f t a` is `C¹` at every point `(t₀, a)` with `a ∈ K`, then
-`t ↦ ∫ a, f t a ∂μ` has derivative `∫ a, ∂_t f t₀ a ∂μ` at `t₀`. -/
+/-- **Differentiation under the integral sign for an integrand vanishing outside a fixed compact
+set.** Let `K` be a compact measurable set of finite measure such that, for `t` near `t₀`, the
+function `f t` vanishes outside `K`. If `(t, a) ↦ f t a` is `C¹` at every point `(t₀, a)` with
+`a ∈ K`, then `t ↦ ∫ a, f t a ∂μ` has derivative `∫ a, ∂_t f t₀ a ∂μ` at `t₀`. -/
 theorem _root_.IsCompact.hasDerivAt_parametric_integral (hK : IsCompact K)
     (hKm : MeasurableSet K) (hμK : μ K ≠ ⊤)
     (hf : ∀ a ∈ K, ContMDiffAt (𝓘(ℝ).prod J) 𝓘(ℝ, F) 1 (uncurry f) (t₀, a))
@@ -187,10 +187,10 @@ theorem _root_.IsCompact.hasDerivAt_parametric_integral (hK : IsCompact K)
   rw [e]
   exact (hK.hasFDerivAt_integral_of_contMDiffAt hKm hμK hf hfK).hasDerivAt
 
-/-- **The second derivative of an integral with compact support in the parameter.** Let `K` be a
-compact measurable set of finite measure such that, for `t` near `t₀`, the function `f t`
-vanishes outside `K`. If `(t, a) ↦ f t a` is `C²` at every point `(t₀, a)` with `a ∈ K`, then the
-derivative of `t ↦ ∫ a, f t a ∂μ` has derivative `∫ a, ∂_t² f t₀ a ∂μ` at `t₀`. -/
+/-- **The second derivative of the integral of an integrand vanishing outside a fixed compact
+set.** Let `K` be a compact measurable set of finite measure such that, for `t` near `t₀`, the
+function `f t` vanishes outside `K`. If `(t, a) ↦ f t a` is `C²` at every point `(t₀, a)` with
+`a ∈ K`, then the derivative of `t ↦ ∫ a, f t a ∂μ` has derivative `∫ a, ∂_t² f t₀ a ∂μ` at `t₀`. -/
 theorem _root_.IsCompact.hasDerivAt_deriv_parametric_integral (hK : IsCompact K)
     (hKm : MeasurableSet K) (hμK : μ K ≠ ⊤)
     (hf : ∀ a ∈ K, ContMDiffAt (𝓘(ℝ).prod J) 𝓘(ℝ, F) 2 (uncurry f) (t₀, a))
