@@ -158,7 +158,7 @@ theorem memWkpLoc_halfCoord_extChartAt_target (hn : 1 ≤ n) (hkn : k ≤ n) {s 
     have hzA : eB.symm z ∈ (A.chart i).source := A.dom_subset_chart_source i hzO.1
     refine ⟨⟨⟨hz, by rw [extChartAt_source]; exact hzA⟩, ?_⟩, hz, hzO⟩
     simpa only [e, eA, mem_preimage, SetLike.mem_coe, mem_halfOpen, PartialEquiv.coe_trans,
-      Function.comp_apply, closedUpperHalfPlaneModel_symm_extChartAt] using
+      Function.comp_apply, extChartAt_coe, ModelWithCorners.left_inv] using
       A.mem_image.2 ⟨_, hzO.1, rfl⟩
   · -- On `U`, the reading in chart `j` is the coordinate change of the reading in chart `i`.
     obtain ⟨-, -, hi, -, hzb⟩ := hz
@@ -168,7 +168,7 @@ theorem memWkpLoc_halfCoord_extChartAt_target (hn : 1 ≤ n) (hkn : k ≤ n) {s 
     beta_reduce
     rw [halfCoord_def, A.coord_eq_coordChangeL_coord B s hzb hi]
     simp only [halfCoord_def, PartialEquiv.coe_trans, Function.comp_apply,
-      closedUpperHalfPlaneModel_symm_extChartAt, extChartAt_coe_symm, hy,
+      extChartAt_coe, ModelWithCorners.left_inv, extChartAt_coe_symm, hy,
       ContinuousLinearEquiv.coe_coe]
 
 end FiniteBundleAtlas
