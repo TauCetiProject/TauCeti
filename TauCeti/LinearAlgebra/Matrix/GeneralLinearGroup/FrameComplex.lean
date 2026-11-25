@@ -205,9 +205,6 @@ theorem d_hom_single {p : ℕ} (A : F.carrier (p + 1)) (r : k) :
 members with `p` columns in degree `p`, with the alternating sum of the faces as differential. Its
 degree `0` holds the chains on the empty `m × 0` matrix, when it is a member, and the differential
 out of degree `1` is the augmentation. -/
--- The body is exposed so that the objects of the complex are the permutation representations
--- `Rep.ofMulAction k G (F.carrier p)` by definition.
-@[expose]
 def chainComplex : ChainComplex (Rep.{max w u u'} k G) ℕ :=
   ChainComplex.of (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) (F.d_comp_d k)
 
@@ -215,9 +212,26 @@ theorem chainComplex_X (p : ℕ) :
     (F.chainComplex k).X p = Rep.ofMulAction k G (F.carrier p) :=
   (rfl)
 
-@[simp]
-theorem chainComplex_d (p : ℕ) : (F.chainComplex k).d (p + 1) p = F.d k p :=
+/-- The object of the augmented chain complex in degree `p` is the permutation representation on
+the members with `p` columns. -/
+def chainComplexXIso (p : ℕ) : (F.chainComplex k).X p ≅ Rep.ofMulAction k G (F.carrier p) :=
+  Iso.refl _
+
+/-- The differential of the augmented chain complex is the alternating sum of the faces, by
+definition of the complex. -/
+private theorem chainComplex_d_eq (p : ℕ) : (F.chainComplex k).d (p + 1) p = F.d k p :=
   ChainComplex.of_d (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) p
+
+/-- The differential of the augmented chain complex is the alternating sum of the faces, through
+the identifications `chainComplexXIso` of its objects. -/
+@[simp]
+theorem chainComplex_d (p : ℕ) :
+    (F.chainComplex k).d (p + 1) p =
+      (F.chainComplexXIso k (p + 1)).hom ≫ F.d k p ≫ (F.chainComplexXIso k p).inv := by
+  -- The identifications are identities, which the category laws then remove.
+  change _ = 𝟙 _ ≫ F.d k p ≫ 𝟙 _
+  rw [Category.id_comp, Category.comp_id]
+  exact F.chainComplex_d_eq k p
 
 /-- Two members with one column are **adjacent** when they are the two faces of a member with two
 columns: `x` is its first column and `y` its second, `x = face 1 e` and `y = face 0 e`. -/
@@ -244,7 +258,7 @@ theorem chainComplex_exactAt_zero (h : (F.carrier 1).Nonempty) :
   have hg : (F.chainComplex k).d 0 0 = 0 := (F.chainComplex k).shape _ _ (by simp)
   intro x
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
-    HomologicalComplex.shortComplexFunctor'_obj_f, hg, chainComplex_d]
+    HomologicalComplex.shortComplexFunctor'_obj_f, hg, chainComplex_d_eq]
   exact ⟨fun _ => hsurj x, fun _ => rfl⟩
 
 /-- A boundary is a cycle. -/
@@ -300,7 +314,7 @@ theorem chainComplex_exactAt_one (x₀ : F.carrier 1)
     (h : ∀ x, Relation.EqvGen F.Adjacent x₀ x) : (F.chainComplex k).ExactAt 1 := by
   rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp), Rep.exact_iff_function_exact]
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
-    HomologicalComplex.shortComplexFunctor'_obj_f, chainComplex_d]
+    HomologicalComplex.shortComplexFunctor'_obj_f, chainComplex_d_eq]
   exact F.exact_d_one_d_zero k x₀ h
 
 end ColumnSystem
@@ -375,7 +389,11 @@ omit [DecidableEq m] in
 /-- A vector `v` with `b ⬝ᵥ v = 1` for some functional `b` is a unimodular `1`-frame. -/
 theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
     (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m 1 :=
-  ⟨of ![b], by ext i j; fin_cases i; fin_cases j; rw [mul_apply', one_apply_eq]; exact hb⟩
+  ⟨of ![b], by
+    ext i j
+    rw [Subsingleton.elim i 0, Subsingleton.elim j 0]
+    simpa only [Matrix.mul_apply, one_apply_eq, transpose_apply, of_apply, cons_val_zero,
+      dotProduct] using hb⟩
 
 omit [DecidableEq m] in
 /-- A vector `v` is a unimodular `1`-frame exactly when `b ⬝ᵥ v = 1` for some functional `b`. -/
@@ -384,7 +402,8 @@ theorem transpose_of_cons_mem_unimodularFrames_iff {v : m → R} :
   refine ⟨fun ⟨B, hB⟩ => ⟨fun r => B 0 r, ?_⟩,
     fun ⟨b, hb⟩ => transpose_of_cons_mem_unimodularFrames b hb⟩
   have h := congrFun (congrFun hB 0) 0
-  rwa [mul_apply', one_apply_eq] at h
+  simpa only [Matrix.mul_apply, one_apply_eq, transpose_apply, of_apply, cons_val_zero,
+    dotProduct] using h
 
 omit [DecidableEq m] in
 /-- Two vectors `v, w` with a dual pair of functionals `r₁, r₂` form a unimodular `2`-frame. -/
@@ -394,7 +413,10 @@ theorem transpose_of_cons_cons_mem_unimodularFrames {v w : m → R} (r₁ r₂ :
   ⟨of ![r₁, r₂], by
     rw [one_fin_two]
     ext i j
-    fin_cases i <;> fin_cases j <;> rw [mul_apply']
+    simp only [dotProduct] at h₁₁ h₁₂ h₂₁ h₂₂
+    fin_cases i <;> fin_cases j <;>
+      simp only [Matrix.mul_apply, transpose_apply, of_apply, Fin.zero_eta, Fin.mk_one,
+        cons_val_zero, cons_val_one, cons_val', empty_val', cons_val_fin_one]
     exacts [h₁₁, h₁₂, h₂₁, h₂₂]⟩
 
 /-- Two columns `v` and `w` are adjacent in a column system containing the matrix with columns
