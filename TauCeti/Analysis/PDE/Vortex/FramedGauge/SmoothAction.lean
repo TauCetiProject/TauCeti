@@ -71,8 +71,10 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
 * `TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`: the action is smooth in
   exponential coordinates, jointly in the phase and the field.
 * `TauCeti.Vortex.SobolevFieldSpace.contMDiff_realSubRef_smul_ofRealSubRef`,
+  `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_smul_ofRealSubRef`,
   `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`: the action is
-  smooth in the real coordinates of the fields, jointly with the gauge or its exponential phase.
+  smooth in the real coordinates of the fields, jointly with the gauge or its exponential phase,
+  and for a fixed gauge.
 * `TauCeti.Vortex.SobolevFieldSpace.coe_expGauge_smul`: `exp (i F)` acts as the phase gauge of the
   continuous representative of `F`.
 * `TauCeti.Vortex.SobolevFieldSpace.gaugeDirectionCoord`: the infinitesimal gauge action `d₀` in
@@ -180,6 +182,15 @@ theorem contMDiff_realSubRef_smul_ofRealSubRef :
   exact (realPartPi ℂ _).contDiff.contMDiff.comp
     ((contMDiff_smulCoord_reSubOne_imPart f m hs).comp
       (contMDiff_fst.prodMk ((coordInclusion ℂ _).contDiff.contMDiff.comp contMDiff_snd)))
+
+/-- **A gauge acts smoothly in the real coordinates**: for `u ∈ G_(k+1)`, the real coordinates of
+`u · x` are a smooth function of the real coordinates of `x`. -/
+theorem contDiff_realSubRef_smul_ofRealSubRef (u : SobolevTopologicalGaugeGroup hs) :
+    ContDiff ℝ ∞ fun v : Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k) ↦
+      (u • ofRealSubRef (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k)) v).realSubRef
+        (Nat.cast_nonneg k) :=
+  contMDiff_iff_contDiff.1 ((contMDiff_realSubRef_smul_ofRealSubRef f m hs).comp
+    (contMDiff_const.prodMk contMDiff_id))
 
 /-- **The action in exponential and real coordinates is smooth**: the real coordinates of
 `exp (i F) · x` depend smoothly on the real phase `F ∈ H^(k+1)` and on the real coordinates `u` of

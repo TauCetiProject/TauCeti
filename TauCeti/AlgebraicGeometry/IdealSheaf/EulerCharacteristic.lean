@@ -35,16 +35,20 @@ More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring t
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
 direct image of the pullback of `E` to `D` (`Scheme.IdealSheafData.tensorPushforwardSubschemeIso`),
 so its cohomology is that of the pullback of `E` to `D`
-(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff` and
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff`,
+`Scheme.IdealSheafData.subsingleton_cohomology_tensor_pushforwardSubscheme_iff` and
 `Scheme.IdealSheafData.eulerCharBelow_tensor_pushforwardSubscheme`). The pullback is
 a vector bundle of rank `r` on a scheme finite over `k`
 and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`), so the last
-term has finite-dimensional `H⁰`, vanishing `H¹` and Euler characteristic `r · dim_k Γ(D, 𝒪_D)`
+term has finite-dimensional `H⁰`, no cohomology in positive degrees and Euler characteristic
+`r · dim_k Γ(D, 𝒪_D)`
 (`Scheme.IdealSheafData.finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme`,
-`Scheme.IdealSheafData.subsingleton_cohomology_one_tensor_pushforwardSubscheme` and
+`Scheme.IdealSheafData.subsingleton_cohomology_succ_tensor_pushforwardSubscheme` and
 `Scheme.IdealSheafData.eulerCharBelow_tensor_pushforwardSubscheme_eq_mul_finrank`). So `E ⊗ I` has
 finite-dimensional `H⁰` and `H¹` exactly when `E` does
-(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), and then
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), has vanishing `Hⁿ` for
+a given `n ≥ 2` exactly when `E` does
+(`Scheme.IdealSheafData.subsingleton_cohomology_tensor_sheaf_iff`), and then
 
   `χ(E ⊗ I) = χ(E) - r · dim_k Γ(D, 𝒪_D)`
 
@@ -127,6 +131,18 @@ theorem finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff
         (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj i) :=
   (finiteDimensional_cohomology_congr k (I.tensorPushforwardSubschemeIso E) i).trans
     (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k _ i)
+
+/-- `H^i(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes exactly when `H^i(V(I), ι^* E)` does, for a vector bundle
+`E` on `X`: by the projection formula `E ⊗ ι_* 𝒪_{V(I)}` is the direct image of `ι^* E` along the
+closed immersion `ι`. -/
+theorem subsingleton_cohomology_tensor_pushforwardSubscheme_iff (E : FiniteLocallyFreeSheaf X)
+    (i : ℕ) : Subsingleton (Cohomology (E.obj ⊗ I.pushforwardSubscheme) i) ↔
+      Subsingleton
+        (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj i) :=
+  Equiv.subsingleton_congr <|
+    ((cohomologyFunctor X i).mapIso
+      (I.tensorPushforwardSubschemeIso E)).addCommGroupIsoToAddEquiv.toEquiv.trans
+        (cohomologyPushforwardIso I.subschemeι _ i).addCommGroupIsoToAddEquiv.toEquiv
 
 section Finite
 
@@ -217,14 +233,15 @@ private lemma finiteDimensional_cohomology_zero_freePushforward :
     cohomologyBaseLinearEquivOfIso k e 0)
 
 include k in
-/-- `H¹` of `ι_* 𝒪_{V(I)}^r` vanishes, the closed subscheme being affine. -/
-private lemma subsingleton_cohomology_one_freePushforward :
-    Subsingleton (Cohomology (freePushforward I r) 1) := by
+/-- `ι_* 𝒪_{V(I)}^r` has no cohomology in positive degrees, the closed subscheme being affine. -/
+private lemma subsingleton_cohomology_succ_freePushforward (n : ℕ) :
+    Subsingleton (Cohomology (freePushforward I r) (n + 1)) := by
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   let M := (FiniteLocallyFreeSheaf.FixedRank.free I.subscheme r).obj.obj
-  have := subsingleton_cohomology_succ_of_isAffineHom (I.subscheme ↘ Spec (.of k)) M 0
-  exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
+  have := subsingleton_cohomology_succ_of_isAffineHom (I.subscheme ↘ Spec (.of k)) M n
+  exact (cohomologyPushforwardIso I.subschemeι M
+    (n + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 /-- The truncated Euler characteristic of `ι_* 𝒪_{V(I)}^r` is `r` times the rank of the closed
 subscheme `V(I)` over `k`. -/
@@ -270,12 +287,12 @@ theorem finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme :
 
 include k in
 /-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
-`H¹(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes, as `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`. -/
-theorem subsingleton_cohomology_one_tensor_pushforwardSubscheme :
-    Subsingleton (Cohomology (E.obj.obj ⊗ I.pushforwardSubscheme) 1) := by
+`H^(n + 1)(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes, as `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`. -/
+theorem subsingleton_cohomology_succ_tensor_pushforwardSubscheme (n : ℕ) :
+    Subsingleton (Cohomology (E.obj.obj ⊗ I.pushforwardSubscheme) (n + 1)) := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
-  have := subsingleton_cohomology_one_freePushforward k I (r := r)
-  exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
+  have := subsingleton_cohomology_succ_freePushforward k I (r := r) n
+  exact (cohomologyBaseLinearEquivOfIso k e₃ (n + 1)).subsingleton
 
 /-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank `r`, then
 `χ(X, E ⊗ ι_* 𝒪_{V(I)}) = r · dim_k Γ(V(I), 𝒪_{V(I)})`, the dimension being the rank of
@@ -298,7 +315,7 @@ theorem finiteDimensional_cohomology_tensor_sheaf_iff :
   have : FiniteDimensional k (Cohomology (tensorSequence I E).X₃ 0) :=
     finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme k I E
   have : Subsingleton (Cohomology (tensorSequence I E).X₃ 1) :=
-    subsingleton_cohomology_one_tensor_pushforwardSubscheme k I E
+    subsingleton_cohomology_succ_tensor_pushforwardSubscheme k I E 0
   -- The first term `(tensorLeft E.obj.obj).obj I.sheaf` of the sequence is `E.obj.obj ⊗ I.sheaf`
   -- by `tensorLeft_obj`, which holds by `rfl`.
   refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩ <;> obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
@@ -313,6 +330,24 @@ theorem finiteDimensional_cohomology_tensor_sheaf_iff :
   · have : FiniteDimensional k (Cohomology (tensorSequence I E).X₂ 1) := (h₂ 1).mpr (h 1 hi)
     exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
 
+variable {E} in
+include k in
+/-- **Twisting by an ideal sheaf preserves vanishing of higher cohomology.** If `I ⊆ 𝒪_X` cuts out
+a closed subscheme finite over the field `k` and `E` is a vector bundle of constant rank on `X`,
+then for `n ≥ 2` the cohomology `Hⁿ(E ⊗ I)` vanishes exactly when `Hⁿ(E)` does. -/
+theorem subsingleton_cohomology_tensor_sheaf_iff {n : ℕ} (hn : 2 ≤ n) :
+    Subsingleton (Cohomology (E.obj.obj ⊗ I.sheaf) n) ↔ Subsingleton (Cohomology E.obj.obj n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩
+  have hS := shortExact_tensorSequence I E
+  -- The last term `E ⊗ ι_* 𝒪_{V(I)}` of the sequence has no cohomology in positive degrees, and
+  -- the middle term is `E ⊗ 𝒪_X ≅ E`.
+  have h₃ (j : ℕ) : Subsingleton (Cohomology (tensorSequence I E).X₃ (j + 1)) :=
+    subsingleton_cohomology_succ_tensor_pushforwardSubscheme k I E j
+  have h₂ := (cohomologyBaseLinearEquivOfIso k (tensorUnitIso E)
+    (m + 1 + 1)).toEquiv.subsingleton_congr
+  exact ⟨fun h ↦ h₂.mp (subsingleton_cohomology_X₂ hS _ h (h₃ _)),
+    fun h ↦ subsingleton_cohomology_X₁ hS (m + 1) (m + 1 + 1) rfl (h₃ m) (h₂.mpr h)⟩
+
 /-- **The Euler characteristic of a twisted ideal sheaf.** If `I ⊆ 𝒪_X` cuts out a closed
 subscheme `D` finite over the field `k` and `E` is a vector bundle of constant rank `r` on `X`
 with finite-dimensional `H⁰(X, E)` and `H¹(X, E)`, then `χ(E ⊗ I) = χ(E) - r · dim_k Γ(D, 𝒪_D)`,
@@ -324,7 +359,7 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology E.obj.obj 0
       eulerCharBelow k X E.obj.obj 2 - r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
   have hS := shortExact_tensorSequence I E
   have : Subsingleton (Cohomology (tensorSequence I E).X₃ 1) :=
-    subsingleton_cohomology_one_tensor_pushforwardSubscheme k I E
+    subsingleton_cohomology_succ_tensor_pushforwardSubscheme k I E 0
   have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology (tensorSequence I E).X₂ i) := by
     refine (finiteDimensional_cohomology_tensorSequence_X₂_iff k I E i).mpr ?_
     interval_cases i <;> infer_instance
@@ -485,7 +520,7 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
   have hS := shortExact_tensorMayerVietoris E I J
   have h₃ : Subsingleton (Cohomology (tensorMayerVietoris E I J).X₃ 1) := by
     rw [ShortComplex.map_X₃, mayerVietoris_X₃]
-    exact subsingleton_cohomology_one_tensor_pushforwardSubscheme k (I ⊔ J) E
+    exact subsingleton_cohomology_succ_tensor_pushforwardSubscheme k (I ⊔ J) E 0
   -- The connecting map out of `H¹` of the last term, which vanishes, is zero.
   have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
     LinearMap.ext fun x ↦ by
