@@ -70,12 +70,12 @@ variable [IsAlgClosed k] {b : Subalgebra.center k (MonoidAlgebra k G)}
 algebraically closed field `k`: the unique `k`-algebra homomorphism with `λ_B(e_B) = 1`. -/
 noncomputable def centralCharacter (hb : IsBlockIdempotent b) :
     Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k :=
-  (hb.isIdempotentElem.exists_algHom_apply_eq_one hb.ne_zero).choose
+  (hb.isIdempotentElem.exists_algHom_apply_eq_one (K := k) hb.ne_zero).choose
 
 /-- The central character of `B` takes the value `1` at `e_B`. -/
 @[simp]
 theorem centralCharacter_self (hb : IsBlockIdempotent b) : hb.centralCharacter b = 1 :=
-  (hb.isIdempotentElem.exists_algHom_apply_eq_one hb.ne_zero).choose_spec
+  (hb.isIdempotentElem.exists_algHom_apply_eq_one (K := k) hb.ne_zero).choose_spec
 
 /-- **Characterization of the central character.** Over an algebraically closed field, the
 central character of `B` is the only `k`-algebra homomorphism `Z(k[G]) → k` taking the value `1`

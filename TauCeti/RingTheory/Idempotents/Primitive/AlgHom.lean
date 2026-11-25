@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.RingTheory.FiniteType.PointSeparation
 public import TauCeti.RingTheory.Idempotents.Corner.Local
 
 /-!
@@ -20,18 +20,20 @@ When `A` is Artinian and `e` is primitive there is at most one
 `w e` and `(1 - w) e` is invertible there (`TauCeti.IsPrimitiveIdempotent.exists_mul_mul_eq_or`),
 and both homomorphisms send `e` to `1`.
 
-When `A` is finite-dimensional and `k` is algebraically closed there is one for every nonzero
-idempotent (`IsIdempotentElem.exists_algHom_apply_eq_one`): `e` is not nilpotent, so it lies
-outside some prime ideal `𝔪` of the Artinian ring `A`, which is maximal with residue field finite
-over `k`, hence `k`.
+When `A` is of finite type over `k` and `k` is algebraically closed there is one for every
+nonzero idempotent (`IsIdempotentElem.exists_algHom_apply_eq_one`, which more generally allows
+values in any algebraically closed extension `K` of `k`): `e` is not nilpotent, so by the weak
+Nullstellensatz
+(`TauCeti.exists_algHom_apply_ne_zero_of_not_isNilpotent`) some `φ` has `φ(e) ≠ 0`, and the
+idempotent `φ(e)` of a field is then `1`.
 
 ## Main results
 
 * `TauCeti.IsPrimitiveIdempotent.algHom_ext`: two `k`-algebra homomorphisms `A → k` taking the
   value `1` at a primitive idempotent of the Artinian ring `A` are equal.
-* `IsIdempotentElem.exists_algHom_apply_eq_one`: over an algebraically closed field, a nonzero
-  idempotent of a finite-dimensional commutative algebra takes the value `1` under some
-  `k`-algebra homomorphism `A → k`.
+* `IsIdempotentElem.exists_algHom_apply_eq_one`: a nonzero idempotent of a commutative
+  `k`-algebra of finite type takes the value `1` under some `k`-algebra homomorphism `A → K` to an
+  algebraically closed extension `K` of `k`.
 
 ## References
 
@@ -43,34 +45,15 @@ public section
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] {e : A}
 
-/-- **Existence of a character at an idempotent.** Over an algebraically closed field `k`, some
-`k`-algebra homomorphism `A → k` takes the value `1` at a nonzero idempotent `e` of a
-finite-dimensional commutative `k`-algebra `A`. -/
-theorem IsIdempotentElem.exists_algHom_apply_eq_one [IsAlgClosed k] [Module.Finite k A]
-    (he : IsIdempotentElem e) (hne : e ≠ 0) : ∃ φ : A →ₐ[k] k, φ e = 1 := by
-  have := IsArtinianRing.of_finite k A
-  -- `e` is not nilpotent, so it lies outside some prime ideal `𝔪`, which is maximal.
-  have hnil : e ∉ nilradical A := by
-    rw [mem_nilradical]
-    rintro ⟨n, hn⟩
-    have h := he.pow_succ_eq n
-    rw [pow_succ, hn, zero_mul] at h
-    exact hne h.symm
-  rw [nilradical_eq_sInf, Submodule.mem_sInf] at hnil
-  simp only [not_forall] at hnil
-  obtain ⟨𝔪, h𝔪, he𝔪⟩ := hnil
-  have : Ideal.IsPrime 𝔪 := h𝔪
-  have : Ideal.IsMaximal 𝔪 := IsArtinianRing.isMaximal_of_isPrime 𝔪
-  let := Ideal.Quotient.field 𝔪
-  let ι : k ≃ₐ[k] A ⧸ 𝔪 :=
-    AlgEquiv.ofBijective (Algebra.ofId k _) IsAlgClosed.algebraMap_bijective_of_isIntegral
-  refine ⟨ι.symm.toAlgHom.comp (Ideal.Quotient.mkₐ k 𝔪), ?_⟩
-  have hidem : IsIdempotentElem (ι.symm (Ideal.Quotient.mkₐ k 𝔪 e)) :=
-    he.map (ι.symm.toAlgHom.comp (Ideal.Quotient.mkₐ k 𝔪))
-  refine (IsIdempotentElem.iff_eq_zero_or_one.1 hidem).resolve_left fun h ↦ he𝔪 ?_
-  have h' := ι.symm.injective (h.trans (map_zero ι.symm).symm)
-  rw [Ideal.Quotient.mkₐ_eq_mk] at h'
-  exact Ideal.Quotient.eq_zero_iff_mem.1 h'
+/-- **Existence of a character at an idempotent.** For an algebraically closed extension `K` of
+`k`, some `k`-algebra homomorphism `A → K` takes the value `1` at a nonzero idempotent `e` of a
+commutative `k`-algebra `A` of finite type. -/
+theorem IsIdempotentElem.exists_algHom_apply_eq_one {K : Type*} [Field K] [Algebra k K]
+    [IsAlgClosed K] [Algebra.FiniteType k A] (he : IsIdempotentElem e) (hne : e ≠ 0) :
+    ∃ φ : A →ₐ[k] K, φ e = 1 := by
+  obtain ⟨φ, hφ⟩ := TauCeti.exists_algHom_apply_ne_zero_of_not_isNilpotent (k := k) (K := K)
+    (mt he.eq_zero_of_isNilpotent hne)
+  exact ⟨φ, (IsIdempotentElem.iff_eq_zero_or_one.1 (he.map φ)).resolve_left hφ⟩
 
 namespace TauCeti
 
