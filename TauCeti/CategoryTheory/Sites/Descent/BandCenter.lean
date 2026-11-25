@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Functor.Pseudofunctor
 public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.Category.Cat
-public import TauCeti.CategoryTheory.Center.Basic
+public import TauCeti.CategoryTheory.Endomorphism
 
 /-!
 # Intrinsic central sections of a fibred category
@@ -44,8 +44,9 @@ section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, 
   object.
 * `IntrinsicBandSections.ext`: sections with the same component automorphisms are equal.
 * `IntrinsicBandSections.mul_comm` and the `CommGroup` instance: `ZF(U)` is commutative.
-* `IntrinsicBandSections.subsingleton_of_thin`: with thin (for instance terminal) fibres, the
-  group of central sections is trivial.
+* `IntrinsicBandSections.subsingleton_of_subsingleton_end`: when every object of every fibre has
+  only the identity endomorphism (for instance thin fibres), the group of central sections is
+  trivial.
 * `IntrinsicBandSections.restrict_id` and `IntrinsicBandSections.restrict_comp`: restriction along
   the identity is the identity, and restriction is compatible with composition.
 
@@ -88,7 +89,7 @@ def IntrinsicBandSections (U : C) :
       hb f g x]
   inv_mem' := by
     intro a ha V W f g x
-    simp only [Pi.inv_apply, CatCenter.inv_val_app, Functor.map_inv, ha f g x]
+    simp only [Pi.inv_apply, NatTrans.inv_val_app, Functor.map_inv, ha f g x]
 
 variable {F}
 
@@ -187,12 +188,12 @@ theorem restrict_comp {V W : C} (f : V ⟶ U) (g : W ⟶ V) (s : IntrinsicBandSe
   ext T a x
   rw [val_restrict, val_restrict, val_restrict, Category.assoc]
 
-/-- If every fibre is thin, for instance the terminal category, the only intrinsic central
-section is the identity. -/
-theorem subsingleton_of_thin
-    (h : ∀ (V : C) (x y : F.obj (.mk (op V))), Subsingleton (x ⟶ y)) :
+/-- If every object of every fibre has only the identity endomorphism, for instance when the
+fibres are thin, the only intrinsic central section is the identity. -/
+theorem subsingleton_of_subsingleton_end
+    (h : ∀ (V : C) (x : F.obj (.mk (op V))), Subsingleton (x ⟶ x)) :
     Subsingleton (IntrinsicBandSections F U) :=
-  ⟨fun _ _ ↦ ext fun V _ x ↦ (h V x x).elim _ _⟩
+  ⟨fun _ _ ↦ ext fun V _ x ↦ (h V x).elim _ _⟩
 
 end IntrinsicBandSections
 
