@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
+import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Transitivity
 import TauCeti.RepresentationTheory.BaseChange
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Intertwining
@@ -28,17 +29,23 @@ product, of a contragredient, of an equivariant quotient and of a scalar extensi
 of a raw reduction) are contained in the expected sets. The trivial representation is unramified
 everywhere, and isomorphic representations have the same ramification set.
 
-The definition quantifies over all maximal ideals above `v`. Since `G_F` permutes them
-transitively and `I_{σQ} = σ I_Q σ⁻¹`, one of them suffices; that comparison, and the finiteness of
-the ramification set for a representation with open kernel, are not proved here.
+The definition quantifies over all maximal ideals above `v`. Over a perfect field `G_F` permutes
+them transitively and `I_{σQ} = σ I_Q σ⁻¹`, so one of them suffices
+(`isUnramifiedAt_iff_of_isMaximal`, `isUnramifiedAt_iff_exists`). A representation is
+**unramified outside** a set `S` of finite places if its ramification set is contained in `S`. The
+finiteness of the ramification set for a representation with open kernel is not proved here.
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep.IsUnramifiedAt ρ v`: `ρ(I_Q) = 1` for every maximal `Q` of `O` above `v`.
 * `TauCeti.ContinuousRep.ramificationSet ρ`: the finite places at which `ρ` is ramified.
+* `TauCeti.ContinuousRep.IsUnramifiedOutside ρ S`: `ρ` is unramified at every finite place outside
+  `S`.
 
 ## Main results
 
+* `TauCeti.ContinuousRep.isUnramifiedAt_iff_of_isMaximal`, `isUnramifiedAt_iff_exists`: over a
+  perfect field, respectively a number field, one maximal ideal above `v` suffices.
 * `TauCeti.ContinuousRep.ramificationSet_trivial`: the trivial representation is unramified
   everywhere.
 * `TauCeti.ContinuousRep.ramificationSet_prod`: `Ram(ρ × ρ') = Ram ρ ∪ Ram ρ'`.
@@ -163,6 +170,89 @@ theorem IsUnramifiedAt.of_surjective (h : ρ.IsUnramifiedAt v) (f : Hom ρ ρ')
 theorem ramificationSet_subset_of_surjective (f : Hom ρ ρ') (hf : Function.Surjective f) :
     ρ'.ramificationSet ⊆ ρ.ramificationSet :=
   fun _ hv h ↦ hv (h.of_surjective f hf)
+
+/-! ### One prime above `v` suffices -/
+
+/-- Over a perfect field (for instance a number field), unramifiedness at `v` can be tested at a
+single maximal ideal `Q` of the integral closure of `𝓞 F` in `F^alg` above `v`: the primes above `v`
+are `G_F`-conjugate (`TauCeti.GaloisRep.exists_smul_eq_of_under_eq`), their inertia groups are
+conjugate, and the kernel of `ρ` is normal. -/
+theorem isUnramifiedAt_iff_of_isMaximal [PerfectField F]
+    {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))} (hQ : Q.IsMaximal)
+    (hQv : Q.under (𝓞 F) = v.asIdeal) :
+    ρ.IsUnramifiedAt v ↔ GaloisRep.inertiaGroup F Q ≤ ρ.toRepresentation.ker := by
+  refine ⟨fun h ↦ h Q hQ hQv, fun h Q' hQ' hQ'v ↦ ?_⟩
+  have := hQ.isPrime
+  have := hQ'.isPrime
+  obtain ⟨σ, hσ⟩ := GaloisRep.exists_inertiaGroup_eq_map_conj Q Q' (hQv.trans hQ'v.symm)
+  rw [hσ, Subgroup.map_le_iff_le_comap]
+  exact fun g hg ↦ (MonoidHom.normal_ker ρ.toRepresentation).conj_mem g (h hg) σ
+
+/-- **`isUnramifiedAt_iff_exists`**: over a number field, `ρ` is unramified at `v` exactly when the
+inertia group at some maximal ideal of the integral closure of `𝓞 F` in `F^alg` above `v` acts
+trivially. Such a maximal ideal exists because the integral closure is integral over `𝓞 F` and `v`
+is a maximal ideal of `𝓞 F`. -/
+theorem isUnramifiedAt_iff_exists [NumberField F] :
+    ρ.IsUnramifiedAt v ↔ ∃ Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)),
+      Q.IsMaximal ∧ Q.under (𝓞 F) = v.asIdeal ∧
+        GaloisRep.inertiaGroup F Q ≤ ρ.toRepresentation.ker := by
+  refine ⟨fun h ↦ ?_, fun ⟨Q, hQ, hQv, h⟩ ↦ (isUnramifiedAt_iff_of_isMaximal hQ hQv).2 h⟩
+  have hinj : Function.Injective
+      (algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))) := by
+    intro a b hab
+    apply FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F)
+    simpa using congrArg Subtype.val hab
+  obtain ⟨Q, hQ, hQv⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral v.asIdeal
+    (((RingHom.injective_iff_ker_eq_bot _).1 hinj).symm ▸ bot_le)
+  exact ⟨Q, hQ, hQv, h Q hQ hQv⟩
+
+/-! ### Unramified outside a set of places -/
+
+/-- A continuous representation of `G_F` is **unramified outside** a set `S` of finite places if
+it is unramified at every finite place not in `S`, that is, if its ramification set is contained
+in `S`. The roadmap's intended use has `S` finite. -/
+def IsUnramifiedOutside (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
+    (S : Set (HeightOneSpectrum (𝓞 F))) : Prop :=
+  ρ.ramificationSet ⊆ S
+
+/-- `ρ` is unramified outside `S` exactly when it is unramified at every finite place not in `S`. -/
+theorem isUnramifiedOutside_iff {S : Set (HeightOneSpectrum (𝓞 F))} :
+    ρ.IsUnramifiedOutside S ↔ ∀ v ∉ S, ρ.IsUnramifiedAt v :=
+  ⟨fun h _ hv ↦ not_not.1 fun h' ↦ hv (h h'), fun h v hv ↦ by_contra fun h' ↦ hv (h v h')⟩
+
+/-- A representation is unramified outside its own ramification set. -/
+theorem isUnramifiedOutside_ramificationSet : ρ.IsUnramifiedOutside ρ.ramificationSet :=
+  subset_rfl
+
+/-- Being unramified outside `S` is inherited by larger sets of places. -/
+theorem IsUnramifiedOutside.mono {S T : Set (HeightOneSpectrum (𝓞 F))}
+    (h : ρ.IsUnramifiedOutside S) (hST : S ⊆ T) : ρ.IsUnramifiedOutside T :=
+  h.trans hST
+
+/-- If every element acting trivially in `ρ` acts trivially in `τ`, then `τ` is unramified
+outside every set outside which `ρ` is. -/
+theorem IsUnramifiedOutside.of_ker_le {B P : Type*} [Semiring B] [AddCommMonoid P] [Module B P]
+    [TopologicalSpace P] {τ : ContinuousRep (Field.absoluteGaloisGroup F) B P}
+    {S : Set (HeightOneSpectrum (𝓞 F))} (h : ρ.IsUnramifiedOutside S)
+    (hker : ρ.toRepresentation.ker ≤ τ.toRepresentation.ker) : τ.IsUnramifiedOutside S :=
+  (ramificationSet_subset_of_ker_le hker).trans h
+
+/-- A product is unramified outside `S` exactly when both factors are. -/
+@[simp]
+theorem isUnramifiedOutside_prod_iff {S : Set (HeightOneSpectrum (𝓞 F))} :
+    (ρ.prod ρ').IsUnramifiedOutside S ↔ ρ.IsUnramifiedOutside S ∧ ρ'.IsUnramifiedOutside S := by
+  simp only [IsUnramifiedOutside, ramificationSet_prod, Set.union_subset_iff]
+
+/-- Isomorphic representations are unramified outside the same sets of places. -/
+theorem Iso.isUnramifiedOutside_iff (e : Iso ρ ρ') {S : Set (HeightOneSpectrum (𝓞 F))} :
+    ρ.IsUnramifiedOutside S ↔ ρ'.IsUnramifiedOutside S := by
+  rw [IsUnramifiedOutside, IsUnramifiedOutside, e.ramificationSet_eq]
+
+/-- The trivial representation is unramified outside every set of places. -/
+@[simp]
+theorem isUnramifiedOutside_trivial (S : Set (HeightOneSpectrum (𝓞 F))) :
+    (trivial (Field.absoluteGaloisGroup F) A M).IsUnramifiedOutside S := by
+  simp [IsUnramifiedOutside]
 
 end Predicates
 
