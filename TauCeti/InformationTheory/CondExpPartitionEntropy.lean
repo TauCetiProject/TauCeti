@@ -30,7 +30,8 @@ hypothesis is placed on `X`.
 * `TauCeti.condExpPartitionEntropy_congr`: the value does not depend on the representatives of
   the conditional probabilities.
 * `TauCeti.condExpPartitionEntropy_nonneg` and `TauCeti.condExpPartitionEntropy_le`:
-  `0 ≤ H(P | m) ≤ H(P) = ∑ i, negMulLog (μ.real (a ⁻¹' {i}))`.
+  `0 ≤ H(P | m)`, and for a probability measure
+  `H(P | m) ≤ H(P) = ∑ i, negMulLog (μ.real (a ⁻¹' {i}))`.
 * `TauCeti.condExpPartitionEntropy_anti`: enlarging the σ-algebra decreases the conditional
   entropy, by the conditional Jensen inequality.
 * `TauCeti.condExpPartitionEntropy_bot`: conditioning on the trivial σ-algebra gives `H(P)`.
@@ -89,6 +90,14 @@ theorem condAtomProb_eq_zero_or (a : X → ι) (i : ι) :
   · exact .inr ⟨hm, hσ, hi⟩
   · exact .inl (condExp_of_not_integrable hi)
 
+/-- Given a sub-σ-algebra `m`, the conditional probability of an `m`-measurable atom with
+integrable indicator is its indicator. -/
+theorem condAtomProb_of_measurableSet (hm : m ≤ mX) [SigmaFinite (μ.trim hm)] {a : X → ι}
+    {i : ι} (hi : Integrable ((a ⁻¹' {i}).indicator (1 : X → ℝ)) μ)
+    (hs : MeasurableSet[m] (a ⁻¹' {i})) :
+    condAtomProb μ m a i = (a ⁻¹' {i}).indicator 1 :=
+  condExp_of_stronglyMeasurable hm (stronglyMeasurable_one.indicator hs) hi
+
 /-- The conditional probability of an `m`-measurable atom is its indicator, or `0` in the
 degenerate cases. -/
 theorem condAtomProb_eq_indicator_or_zero_of_measurableSet {a : X → ι} {i : ι}
@@ -96,7 +105,7 @@ theorem condAtomProb_eq_indicator_or_zero_of_measurableSet {a : X → ι} {i : �
     condAtomProb μ m a i = (a ⁻¹' {i}).indicator 1 ∨ condAtomProb μ m a i = 0 := by
   rcases condAtomProb_eq_zero_or (μ := μ) a i with h | ⟨hm, hσ, hi⟩
   · exact .inr h
-  · exact .inl (condExp_of_stronglyMeasurable hm (stronglyMeasurable_one.indicator hs) hi)
+  · exact .inl (condAtomProb_of_measurableSet hm hi hs)
 
 /-- The conditional probabilities of the atoms lie in `[0, 1]` almost everywhere. No hypothesis is
 needed: in the degenerate cases the conditional expectation is `0`. -/
@@ -127,10 +136,20 @@ theorem setIntegral_condAtomProb (hm : m ≤ mX) [SigmaFinite (μ.trim hm)] {a :
   rw [condAtomProb_def, setIntegral_condExp hm hi hs, integral_indicator₀ ha]
   simp [measureReal_restrict_apply₀ ha, inter_comm]
 
+/-- For a probability measure, the conditional probability of a null-measurable atom given the
+trivial σ-algebra `⊥` is the constant mass of the atom. -/
+theorem condAtomProb_bot [IsProbabilityMeasure μ] {a : X → ι} {i : ι}
+    (hs : NullMeasurableSet (a ⁻¹' {i}) μ) :
+    condAtomProb μ ⊥ a i = fun _ ↦ μ.real (a ⁻¹' {i}) := by
+  rw [condAtomProb_def, condExp_bot, integral_indicator₀ hs]
+  simp
+
 variable [Fintype ι]
 
 /-- The conditional entropy of the finite partition given by `a`, given the σ-algebra `m`: the
-integral of `∑ i, negMulLog pᵢ` for the conditional probabilities `pᵢ` of the atoms. -/
+integral of `∑ i, negMulLog pᵢ` for the conditional probabilities `pᵢ` of the atoms. It is
+meaningful for a sub-σ-algebra `m ≤ mX` on which `μ` is σ-finite; otherwise every conditional
+probability is `0`, as for `condExp`, and the value is `0`. -/
 noncomputable def condExpPartitionEntropy (μ : Measure X) (m : MeasurableSpace X) (a : X → ι) :
     ℝ :=
   ∫ x, ∑ i, negMulLog (condAtomProb μ m a i x) ∂μ
@@ -243,7 +262,7 @@ theorem condExpPartitionEntropy_bot [IsProbabilityMeasure μ] {a : X → ι}
     condExpPartitionEntropy μ ⊥ a = ∑ i, negMulLog (μ.real (a ⁻¹' {i})) := by
   rw [condExpPartitionEntropy_eq_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [condAtomProb_def, condExp_bot, integral_indicator₀ (ha i)]
+  rw [condAtomProb_bot (ha i)]
   simp
 
 /-- **Measurable atoms.** If the atoms are measurable for `m`, they are known given `m`, and the
