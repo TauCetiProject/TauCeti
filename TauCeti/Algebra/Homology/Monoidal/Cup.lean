@@ -33,8 +33,8 @@ diagonal of a space; there `φ ⌣ ψ` evaluates a singular simplex on its front
 When the terms of `A` and `B` are projective, a short exact sequence of coefficients
 `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` gives a short exact sequence of cochain complexes `Hom(A, Mᵢ)` and a
 connecting morphism `δ`, which for singular cochains is the Bockstein homomorphism. For two such
-sequences and pairings `μ₁₃ : M₁ ⊗ N₃ ⟶ P'` and `μ₃₁ : M₃ ⊗ N₁ ⟶ P'` which both come from one
-pairing `μ : M₂ ⊗ N₂ ⟶ P` followed by `g : P ⟶ P'`, the Leibniz rule applied to lifts of two
+sequences and pairings `μ₁₃ : M₁ ⊗ N₃ ⟶ P` and `μ₃₁ : M₃ ⊗ N₁ ⟶ P` which both come from one
+pairing `μ : M₂ ⊗ N₂ ⟶ P`, the Leibniz rule applied to lifts of two
 cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
 (`TauCeti.ChainComplex.cup_δ_eq_zsmul`).
 
@@ -43,7 +43,7 @@ cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
 * `TauCeti.ChainComplex.cupCochain`: the cup product of cochains.
 * `TauCeti.ChainComplex.d_comp_cupCochain`: the Leibniz rule.
 * `TauCeti.ChainComplex.cupCochain_naturality`: naturality along a map of diagonals.
-* `TauCeti.ChainComplex.cupCochain_comp`, `TauCeti.ChainComplex.cupCochain_whiskerLeft_comp` and
+* `TauCeti.ChainComplex.cupCochain_whiskerLeft_comp` and
   `TauCeti.ChainComplex.cupCochain_whiskerRight_comp`: changing the pairing along maps of
   coefficients.
 * `TauCeti.ChainComplex.cupCycles`: the cup product of cocycles.
@@ -116,14 +116,6 @@ lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
     cupCochain k D' μ p q n h (f.f p ≫ φ) (g.f q ≫ ψ) = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
   rw [cupCochain_apply, cupCochain_apply, ← tensorHom_f_comp_tensorCochain, ← Category.assoc,
     ← HomologicalComplex.comp_f, ← hD, HomologicalComplex.comp_f, Category.assoc]
-
-/-- Postcomposing the cup product of cochains with `g : P ⟶ P'` is the cup product of the same
-cochains along the pairing `μ ≫ g`. -/
-@[reassoc]
-lemma cupCochain_comp {P' : C} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M)
-    (ψ : B.X q ⟶ N) :
-    cupCochain k D μ p q n h φ ψ ≫ g = cupCochain k D (μ ≫ g) p q n h φ ψ := by
-  rw [cupCochain_apply, cupCochain_apply, Category.assoc, tensorCochain_comp]
 
 /-- The cup product of cochains along the pairing `(M ◁ f) ≫ μ'` is the cup product along `μ'` with
 the second cochain postcomposed with `f`. -/
@@ -257,21 +249,21 @@ section Connecting
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
   [A.HasTensor B] [∀ i, Projective (A.X i)] [∀ i, Projective (B.X i)] {k : Type*} [CommRing k]
   [Linear k C] [MonoidalLinear k C] (D : E ⟶ HomologicalComplex.tensorObj A B)
-  {S S' : ShortComplex C} (hS : S.ShortExact) (hS' : S'.ShortExact) {P P' : C} (g : P ⟶ P')
-  (μ : S.X₂ ⊗ S'.X₂ ⟶ P) (μ₁₃ : S.X₁ ⊗ S'.X₃ ⟶ P') (μ₃₁ : S.X₃ ⊗ S'.X₁ ⟶ P')
+  {S S' : ShortComplex C} (hS : S.ShortExact) (hS' : S'.ShortExact) {P : C}
+  (μ : S.X₂ ⊗ S'.X₂ ⟶ P) (μ₁₃ : S.X₁ ⊗ S'.X₃ ⟶ P) (μ₃₁ : S.X₃ ⊗ S'.X₁ ⟶ P)
 
 /-- **Moving a connecting morphism across a cup product.** Let
 `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` and `0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0` be short exact sequences of coefficients, with
 connecting morphisms `δ` on the cohomology of `Hom(A, -)` and `Hom(B, -)`, whose terms are
-projective. Let `μ : M₂ ⊗ N₂ ⟶ P` be a pairing and `g : P ⟶ P'` a morphism such that, after `g`,
-`μ` restricted to `M₁ ⊗ N₂` factors through `μ₁₃ : M₁ ⊗ N₃ ⟶ P'` and `μ` restricted to `M₂ ⊗ N₁`
-factors through `μ₃₁ : M₃ ⊗ N₁ ⟶ P'`. Then for `x ∈ Hᵖ(Hom(A, M₃))` and `y ∈ H^q(Hom(B, N₃))`,
+projective. Let `μ : M₂ ⊗ N₂ ⟶ P` be a pairing whose restriction to `M₁ ⊗ N₂` factors through
+`μ₁₃ : M₁ ⊗ N₃ ⟶ P` and whose restriction to `M₂ ⊗ N₁` factors through `μ₃₁ : M₃ ⊗ N₁ ⟶ P`.
+Then for `x ∈ Hᵖ(Hom(A, M₃))` and `y ∈ H^q(Hom(B, N₃))`,
 
-`δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`   in `H^(p + q + 1)(Hom(E, P'))`,
+`δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`   in `H^(p + q + 1)(Hom(E, P))`,
 
 the cup products being taken along `D` with the pairings `μ₁₃` and `μ₃₁`. -/
-theorem cup_δ_eq_zsmul (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ ◁ S'.g) ≫ μ₁₃)
-    (hμ₃₁ : (S.X₂ ◁ S'.f) ≫ μ ≫ g = (S.g ▷ S'.X₁) ≫ μ₃₁) (p q p' q' n : ℕ) (hp : p + 1 = p')
+theorem cup_δ_eq_zsmul (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ = (S.X₁ ◁ S'.g) ≫ μ₁₃)
+    (hμ₃₁ : (S.X₂ ◁ S'.f) ≫ μ = (S.g ▷ S'.X₁) ≫ μ₃₁) (p q p' q' n : ℕ) (hp : p + 1 = p')
     (hq : q + 1 = q') (h₁ : p' + q = n) (h₂ : p + q' = n)
     (x : (A.linearYonedaObj k S.X₃).homology p) (y : (B.linearYonedaObj k S'.X₃).homology q) :
     cup k D μ₁₃ p' q n h₁ ((A.shortExact_map_linearYonedaObjFunctor k hS).δ p p' hp x) y =
@@ -287,29 +279,28 @@ theorem cup_δ_eq_zsmul (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ �
   obtain ⟨β, hβ⟩ := (B.linearYonedaObj k S'.X₁).moduleCat_homologyπ_surjective (q + 1)
     ((B.shortExact_map_linearYonedaObjFunctor k hS').δ q (q + 1) rfl y)
   obtain ⟨ψ, b, hψ, hb, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS' q (q + 1) rfl y β hβ
-  -- The coboundary of `(φ ⌣ ψ) ≫ g` is `α ⌣ b + (-1)ᵖ a ⌣ β`, by the Leibniz rule.
+  -- The coboundary of `φ ⌣ ψ` is `α ⌣ b + (-1)ᵖ a ⌣ β`, by the Leibniz rule.
   have key : cupCycles k D μ₁₃ (p + 1) q (p + q + 1) h₁ α b +
       ((-1 : ℤ) ^ p) • cupCycles k D μ₃₁ p (q + 1) (p + q + 1) h₂ a β =
-        (E.linearYonedaObj k P').toCycles (p + q) (p + q + 1)
-          (cupCochain k D μ p q (p + q) rfl φ ψ ≫ g) := by
-    refine (E.linearYonedaObj k P').moduleCat_iCycles_injective (p + q + 1) ?_
+        (E.linearYonedaObj k P).toCycles (p + q) (p + q + 1)
+          (cupCochain k D μ p q (p + q) rfl φ ψ) := by
+    refine (E.linearYonedaObj k P).moduleCat_iCycles_injective (p + q + 1) ?_
     -- The underlying cochains of `α` and `β`, named to fix their types for the rewrites below.
     set iα : A.X (p + 1) ⟶ S.X₁ := (A.linearYonedaObj k S.X₁).iCycles (p + 1) α
     set iβ : B.X (q + 1) ⟶ S'.X₁ := (B.linearYonedaObj k S'.X₁).iCycles (q + 1) β
     rw [map_add, map_zsmul, iCycles_cupCycles, iCycles_cupCycles]
     refine Eq.trans ?_ (linearYonedaObj_iCycles_toCycles_apply (p + q) (p + q + 1) _).symm
-    rw [← Category.assoc, d_comp_cupCochain,
-      Preadditive.add_comp, Preadditive.zsmul_comp, hφ, hψ, cupCochain_comp, cupCochain_comp,
-      ← ha, ← hb, ← cupCochain_whiskerLeft_comp D S'.g μ₁₃ _ _ _ h₁ iα ψ,
+    rw [d_comp_cupCochain, hφ, hψ, ← ha, ← hb,
+      ← cupCochain_whiskerLeft_comp D S'.g μ₁₃ _ _ _ h₁ iα ψ,
       ← cupCochain_whiskerRight_comp D S.g μ₃₁ _ _ _ h₂ φ iβ, ← hμ₁₃, ← hμ₃₁,
-      cupCochain_whiskerLeft_comp D S'.f (μ ≫ g) _ _ _ h₂ φ iβ,
-      cupCochain_whiskerRight_comp D S.f (μ ≫ g) _ _ _ h₁ iα ψ]
+      cupCochain_whiskerLeft_comp D S'.f μ _ _ _ h₂ φ iβ,
+      cupCochain_whiskerRight_comp D S.f μ _ _ _ h₁ iα ψ]
     -- The two sides differ only in the proofs of the degree equations.
     rfl
   -- So the classes satisfy `[α ⌣ b] + (-1)ᵖ [a ⌣ β] = 0`.
-  have hkey := congrArg ((E.linearYonedaObj k P').homologyπ (p + q + 1)) key
+  have hkey := congrArg ((E.linearYonedaObj k P).homologyπ (p + q + 1)) key
   rw [map_add, map_zsmul, linearYonedaObj_homologyπ_toCycles_apply (p + q) (p + q + 1)
-    (cupCochain k D μ p q (p + q) rfl φ ψ ≫ g)] at hkey
+    (cupCochain k D μ p q (p + q) rfl φ ψ)] at hkey
   rw [← hα, ← hβ, cup_homologyπ, cup_homologyπ, eq_neg_of_add_eq_zero_left hkey, pow_succ,
     mul_neg_one, neg_smul]
 
