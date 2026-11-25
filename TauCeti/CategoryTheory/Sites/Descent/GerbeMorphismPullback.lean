@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism
 
 /-!
@@ -13,7 +14,7 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism
 Let `η : F ⟶ G` be a strong transformation of pseudofunctors `LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat`, with
 component functors `η_U`. For `f : V ⟶ U` and `x` over `U`, the strong naturality isomorphism
 `η(f) : F(f) ⋙ η_V ≅ η_U ⋙ G(f)` has the component `c_f(x) : η_V (F(f) x) ≅ G(f) (η_U x)`
-(`GerbeMorphismPullback.comparison`). Conjugating by these components carries isomorphisms and
+(`StrongTrans.naturalityObjIso`). Conjugating by these components carries isomorphisms and
 morphisms `F(f) x ⟶ F(f) y` between restrictions of objects over `U` to isomorphisms and
 morphisms `G(f) (η_U x) ⟶ G(f) (η_U y)` (`GerbeMorphismPullback.mapIso`,
 `GerbeMorphismPullback.homMap`). On restrictions of global morphisms `p : x ⟶ y` this is
@@ -25,14 +26,14 @@ action of the coefficients `A(V)` (`mapIso_act`), keeps differences (`mapIso_dif
 injective (`mapIso_injective`); given a local anchor `p : F(f) x ≅ F(f) y` it has the inverse
 `GerbeMorphismPullback.preimageIso`, independent of the anchor, and is a bijection
 (`GerbeMorphismPullback.isomEquiv`). These are the local forms of the statements of
-`BandedMorphism`, used to show that a band-preserving morphism of gerbes induces isomorphisms of
-the sheaves of morphisms (Olsson, Lemma 31.3).
+`BandedMorphism`, derived from them over `V` by conjugating with `c_f`. They are used to show that
+a band-preserving morphism of gerbes induces isomorphisms of the sheaves of morphisms
+(Olsson, Lemma 31.3).
 
 ## Main declarations
 
 In the namespace `CategoryTheory.Pseudofunctor.GerbeMorphismPullback`:
 
-* `comparison`: the strong naturality component `c_f(x)`.
 * `mapIso`, `homMap`: transport of local isomorphisms and morphisms, with `mapIso_hom`,
   `homMap_restrict`, `mapIso_restrict`, `homMap_id`, `homMap_comp`, `mapIso_refl`, and
   `homMap_id_trans`, `mapIso_id_trans` for the identity transformation.
@@ -60,37 +61,20 @@ variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat
 
 /-! ### Transport without bands -/
 
-/-- The component `c_f(x) : η_V (F(f) x) ≅ G(f) (η_U x)` of the strong naturality isomorphism
-`η(f) : F(f) ⋙ η_V ≅ η_U ⋙ G(f)`. -/
-def comparison (x : F.obj (.mk (op U))) :
-    (η.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x) ≅
-      (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) :=
-  (Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x
-
-theorem comparison_eq (x : F.obj (.mk (op U))) :
-    comparison η f x = (Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x :=
-  (rfl)
-
-/-- The comparison is natural in global morphisms `p : x ⟶ y`. -/
-@[reassoc]
-theorem comparison_hom_naturality (p : x ⟶ y) :
-    (η.app (.mk (op V))).toFunctor.map ((F.map f.op.toLoc).toFunctor.map p) ≫
-        (comparison η f y).hom =
-      (comparison η f x).hom ≫
-        (G.map f.op.toLoc).toFunctor.map ((η.app (.mk (op U))).toFunctor.map p) :=
-  (Cat.Hom.toNatIso (η.naturality f.op.toLoc)).hom.naturality p
-
 /-- The transport `h_f(p) = c_f(x)⁻¹ ≫ η_V(p) ≫ c_f(y)` of a local morphism
 `p : F(f) x ⟶ F(f) y`. -/
-def homMap (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
+noncomputable def homMap
+    (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
     (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ⟶
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y) :=
-  (comparison η f x).inv ≫ (η.app (.mk (op V))).toFunctor.map p ≫ (comparison η f y).hom
+  (η.naturalityObjIso f.op.toLoc x).inv ≫ (η.app (.mk (op V))).toFunctor.map p ≫
+    (η.naturalityObjIso f.op.toLoc y).hom
 
 theorem homMap_def
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
     homMap η f p =
-      (comparison η f x).inv ≫ (η.app (.mk (op V))).toFunctor.map p ≫ (comparison η f y).hom :=
+      (η.naturalityObjIso f.op.toLoc x).inv ≫ (η.app (.mk (op V))).toFunctor.map p ≫
+        (η.naturalityObjIso f.op.toLoc y).hom :=
   (rfl)
 
 /-- On the restriction of a global morphism `p : x ⟶ y`, the transport is `G(f) (η_U p)`. -/
@@ -98,7 +82,8 @@ theorem homMap_def
 theorem homMap_restrict (p : x ⟶ y) :
     homMap η f ((F.map f.op.toLoc).toFunctor.map p) =
       (G.map f.op.toLoc).toFunctor.map ((η.app (.mk (op U))).toFunctor.map p) := by
-  rw [homMap_def, comparison_hom_naturality, Iso.inv_hom_id_assoc]
+  rw [homMap_def, StrongTrans.naturalityObjIso_hom, StrongTrans.naturalityObjIso_inv]
+  exact StrongTrans.naturality_naturality_1 η f.op.toLoc p
 
 @[simp]
 theorem homMap_id (x : F.obj (.mk (op U))) :
@@ -114,10 +99,12 @@ theorem homMap_comp
 
 /-- The transport `M_f(p) = c_f(x)⁻¹ ≪≫ η_V(p) ≪≫ c_f(y)` of a local isomorphism
 `p : F(f) x ≅ F(f) y`. -/
-def mapIso (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
+noncomputable def mapIso
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y) :=
-  (comparison η f x).symm ≪≫ (η.app (.mk (op V))).toFunctor.mapIso p ≪≫ comparison η f y
+  (η.naturalityObjIso f.op.toLoc x).symm ≪≫ (η.app (.mk (op V))).toFunctor.mapIso p ≪≫
+    η.naturalityObjIso f.op.toLoc y
 
 /-- The transported isomorphism has the transported morphism as its underlying morphism. -/
 @[simp]
@@ -150,18 +137,12 @@ theorem mapIso_trans
     mapIso η f (p ≪≫ q) = mapIso η f p ≪≫ mapIso η f q :=
   Iso.ext (homMap_comp η f p.hom q.hom)
 
-/-- For the identity transformation, the comparison is the identity. -/
-@[simp]
-theorem comparison_id_hom (x : F.obj (.mk (op U))) :
-    (comparison (StrongTrans.id F) f x).hom = 𝟙 _ := by
-  simp [comparison, StrongTrans.id]
-
 /-- For the identity transformation, the transport of a local morphism is the morphism itself. -/
 @[simp]
 theorem homMap_id_trans
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
     homMap (StrongTrans.id F) f p = p := by
-  simp [homMap_def, comparison, StrongTrans.id]
+  simp [homMap_def, StrongTrans.id]
 
 /-- For the identity transformation, the transport of a local isomorphism is the isomorphism
 itself. -/
@@ -176,15 +157,6 @@ theorem mapIso_id_trans
 variable {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{w}}
   (bF : F.AbelianBanding J A) (bG : G.AbelianBanding J A)
 
-/-- Conjugation by `c_f(x)` keeps the band automorphism of every coefficient of `A(V)`. -/
-theorem autMulEquivOfIso_comparison_mulEquiv (x : F.obj (.mk (op U)))
-    (a : Multiplicative (A.obj.obj (op V))) :
-    Aut.autMulEquivOfIso (comparison η f x)
-        (bG.mulEquiv V ((η.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x))
-          a) =
-      bG.mulEquiv V ((G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x)) a :=
-  bG.autMulEquivOfIso_mulEquiv _ a
-
 variable [BandPreserving bF bG η]
 
 /-- **Compatibility with the action.** The transport of the action of `a ∈ A(V)` on a local
@@ -193,17 +165,16 @@ theorem mapIso_act
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (a : Multiplicative (A.obj.obj (op V))) :
     mapIso η f (bF.act p a) = bG.act (mapIso η f p) a := by
-  ext
-  simp only [mapIso_hom, AbelianBanding.act_hom, homMap_def, Functor.map_comp, Category.assoc,
-    BandPreserving.map_mulEquiv_hom bG η]
-  rw [bG.mulEquiv_hom_comp (comparison η f y) a]
+  rw [mapIso, BandedMorphism.map_act bF bG η, AbelianBanding.act_trans,
+    AbelianBanding.trans_act, mapIso]
 
 /-- **Compatibility with the difference.** The difference of transported local isomorphisms is the
 difference of the local isomorphisms. -/
 theorem mapIso_difference
     (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     bG.difference (mapIso η f p) (mapIso η f q) = bF.difference p q := by
-  rw [AbelianBanding.difference_eq_iff, ← mapIso_act η f bF bG, AbelianBanding.act_difference]
+  rw [← BandedMorphism.map_difference bF bG η p q, AbelianBanding.difference_eq_iff, mapIso,
+    mapIso, ← AbelianBanding.trans_act, ← AbelianBanding.act_trans, AbelianBanding.act_difference]
 
 include bF bG in
 /-- **Injectivity on local isomorphisms**, with no anchor. -/
@@ -212,10 +183,9 @@ theorem mapIso_injective :
       p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y ↦
         mapIso η f p := by
   intro p q h
-  have hd := mapIso_difference η f bF bG p q
-  simp only at h
-  rw [h, AbelianBanding.difference_self] at hd
-  rw [← bF.act_difference p q, ← hd, AbelianBanding.act_one]
+  refine BandedMorphism.mapIso_injective bF bG η (Iso.ext ?_)
+  have h' := congrArg Iso.hom h
+  rwa [mapIso_hom, mapIso_hom, homMap_def, homMap_def, cancel_epi, cancel_mono] at h'
 
 include bF bG in
 /-- **Injectivity on local morphisms** when the fibre of `F` over `V` is a groupoid, for instance
@@ -225,17 +195,20 @@ theorem homMap_injective [IsGroupoid (F.obj (.mk (op V)))] :
       p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y ↦
         homMap η f p := by
   intro p q h
-  have h' : mapIso η f (asIso p) = mapIso η f (asIso q) := Iso.ext (by simpa using h)
-  simpa using congrArg Iso.hom (mapIso_injective η f bF bG h')
+  simp only at h
+  rw [homMap_def, homMap_def, cancel_epi, cancel_mono] at h
+  exact (BandedMorphism.faithful bF bG η).map_injective h
 
 /-- **The anchored inverse on local isomorphisms.** Given a local anchor
 `p : F(f) x ≅ F(f) y`, the preimage of `q : G(f) (η_U x) ≅ G(f) (η_U y)` is the
 `BandedMorphism.preimageIso` of `c_f(x) ≪≫ q ≪≫ c_f(y)⁻¹`. -/
-def preimageIso (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
+noncomputable def preimageIso
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
     (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y :=
-  BandedMorphism.preimageIso bF bG η p (comparison η f x ≪≫ q ≪≫ (comparison η f y).symm)
+  BandedMorphism.preimageIso bF bG η p
+    (η.naturalityObjIso f.op.toLoc x ≪≫ q ≪≫ (η.naturalityObjIso f.op.toLoc y).symm)
 
 /-- `M_f` maps the preimage of `q` to `q`. -/
 @[simp]
@@ -285,7 +258,8 @@ theorem preimageIso_restrict (p : x ≅ y)
 /-- **The anchored bijection on local isomorphisms.** Given a local anchor
 `p : F(f) x ≅ F(f) y`, `M_f` is a bijection `(F(f) x ≅ F(f) y) ≃ (G(f) (η_U x) ≅ G(f) (η_U y))`
 with inverse `preimageIso p`. -/
-def isomEquiv (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
+noncomputable def isomEquiv
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) ≃
       ((G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
         (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) where
