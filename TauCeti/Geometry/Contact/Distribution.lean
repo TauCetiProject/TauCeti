@@ -246,6 +246,13 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
 
+/-- A smooth one-form whose kernel at `x` is the contact structure `D` does not vanish at `x`,
+since `D x` is a hyperplane. -/
+theorem IsContactDistribution.val_ne_zero_of_kerDistribution_eq (hD : IsContactDistribution I n D)
+    {α : SmoothForm I M ℝ 1} {x : M} (hα : α.kerDistribution x = D x) : α.val x ≠ 0 := by
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hα]
+  exact hD.ne_top x
+
 /-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
 the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
 `α` is a contact form at `x`. -/
@@ -256,9 +263,7 @@ theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
   refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
     (hV.mem_nhds hxV) (α.mdifferentiableAt x)
     (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
-    ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
-  exact hD.ne_top x
+    ⟨hD.val_ne_zero_of_kerDistribution_eq hαD.self_of_nhds, hD.bijective_distributionLeviForm x⟩
 
 /-! ### Kernels of contact forms -/
 
