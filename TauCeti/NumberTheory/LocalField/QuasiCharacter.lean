@@ -79,18 +79,12 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-! ### Positivity of `q` -/
 
-private theorem one_lt_natCard_residueField_real : (1 : ℝ) < Nat.card 𝓀[K] := by
-  exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K])
-
-private theorem natCard_residueField_pos_real : (0 : ℝ) < Nat.card 𝓀[K] :=
-  zero_lt_one.trans (one_lt_natCard_residueField_real K)
-
 private theorem natCard_residueField_ne_zero_complex : (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
-  exact_mod_cast (natCard_residueField_pos_real K).ne'
+  exact_mod_cast (natCard_residueField_pos (K := K) (R := ℝ)).ne'
 
 private theorem log_natCard_residueField_ne_zero : Real.log (Nat.card 𝓀[K]) ≠ 0 :=
-  Real.log_ne_zero_of_pos_of_ne_one (natCard_residueField_pos_real K)
-    (one_lt_natCard_residueField_real K).ne'
+  Real.log_ne_zero_of_pos_of_ne_one (natCard_residueField_pos (K := K) (R := ℝ))
+    (one_lt_natCard_residueField (K := K) (R := ℝ)).ne'
 
 private theorem log_natCard_residueField_complex :
     log (Nat.card 𝓀[K] : ℂ) = Real.log (Nat.card 𝓀[K]) := by
@@ -274,8 +268,8 @@ theorem existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow (ω : Kˣ �
     ∃! σ : ℝ, ∀ x : Kˣ,
       ‖(ω x : ℂ)‖ = ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ σ := by
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
-  have hq := one_lt_natCard_residueField_real K
-  have hq₀ := natCard_residueField_pos_real K
+  have hq := one_lt_natCard_residueField (K := K) (R := ℝ)
+  have hq₀ := natCard_residueField_pos (K := K) (R := ℝ)
   have hϖabs : ((normalizedAbsoluteValue K (ϖ : K) : ℚ≥0) : ℝ) = (Nat.card 𝓀[K] : ℝ)⁻¹ := by
     rw [coe_normalizedAbsoluteValue_eq_zpow, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd,
       zpow_neg_one]

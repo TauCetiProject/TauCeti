@@ -263,13 +263,9 @@ theorem closure_image_strongStar_ofCLM (S : StarSubalgebra 𝕜 (H →L[𝕜] H)
     closure (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H))) =
       ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
   have hclosed : IsClosed (ContinuousLinearMapStrongStar.ofCLM ''
-      (S : Set (H →L[𝕜] H)).centralizer.centralizer) := by
-    -- The preimage is along the continuous identity to the WOT copy.
-    convert ((S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer).preimage
-      ContinuousLinearMapStrongStar.continuous_toWOT using 1
-    ext A
-    rw [Set.mem_preimage, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image]
-    exact ⟨by rintro ⟨x, hx, rfl⟩; exact hx, fun hA ↦ ⟨A.toCLM, hA, rfl⟩⟩
+      (S : Set (H →L[𝕜] H)).centralizer.centralizer) :=
+    ContinuousLinearMapStrongStar.isClosed_image_ofCLM_of_isClosed_image_wot
+      (S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer
   refine subset_antisymm
     (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer) hclosed) ?_
   -- Split a general element of `S''` into its self-adjoint and skew-adjoint parts, which lie
@@ -331,10 +327,9 @@ particular, so is its unit ball. -/
 theorem isCompact_image_ofCLM_inter_closedBall (M : VonNeumannAlgebra H) (A : H →L[ℂ] H)
     (r : ℝ) :
     IsCompact (ContinuousLinearMapWOT.ofCLM ''
-      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) := by
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-  exact (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall A r).inter_left
-    M.isClosed_image_ofCLM
+      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) :=
+  ContinuousLinearMapWOT.isCompact_image_ofCLM_inter_closedBall_of_isClosed M.isClosed_image_ofCLM
+    A r
 
 /-- A concrete von Neumann algebra is strong operator closed. -/
 theorem isClosed_image_toPointwiseConvergenceCLM (M : VonNeumannAlgebra H) :

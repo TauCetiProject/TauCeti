@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Category.HopfModuleCat.Monoidal
+public import TauCeti.Algebra.HopfAlgebra.Frobenius
 public import TauCeti.Algebra.HopfAlgebra.Module.Projective
 public import TauCeti.CategoryTheory.Monoidal.Envelope.Quotient.FactorThrough
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
 # Projective modules form a tensor ideal
@@ -41,6 +43,9 @@ asks that `H` be small relative to the universe of `k`, which holds for finite-d
 * `TauCeti.HopfModuleCat.projective_tensorObj_left`,
   `TauCeti.HopfModuleCat.projective_tensorObj_right`: tensoring with a projective module on
   either side gives a projective module.
+* `TauCeti.HopfModuleCat.projective_tensorObj_right_of_finiteDimensional`: for a
+  finite-dimensional Hopf algebra the antipode is bijective (`TauCeti.antipode_bijective`), so
+  `M ⊗ P` is projective with no further hypothesis, registered as an instance.
 * `TauCeti.HopfModuleCat.projectiveIdeal`: the tensor ideal of morphisms factoring through a
   projective module, whose members are exactly the morphisms factoring through a projective module
   (`TauCeti.HopfModuleCat.mem_projectiveIdeal_iff`).
@@ -68,6 +73,8 @@ variable {k : Type u} {H : Type v} [Ring H]
 instance projective_of_module_projective (M : HopfModuleCat k H) [Module.Projective H M] :
     Projective M :=
   ModuleCat.projective_of_categoryTheory_projective (R := H) M
+
+section Small
 
 variable [Small.{u} H]
 
@@ -115,5 +122,16 @@ theorem mem_projectiveIdeal_iff (hS : Function.Bijective (antipode k : H →ₗ[
     {X Y : HopfModuleCat k H} (f : X ⟶ Y) :
     f ∈ (projectiveIdeal hS).toMorphismIdeal.hom X Y ↔ (isProjective _).FactorsThrough f := by
   simp
+
+end Small
+
+variable [Field k] [_root_.HopfAlgebra k H]
+
+/-- Over a finite-dimensional Hopf algebra, the tensor product `M ⊗ P` of any module `M` with a
+projective module `P` is projective: the antipode is bijective by `TauCeti.antipode_bijective`. -/
+instance projective_tensorObj_right_of_finiteDimensional [FiniteDimensional k H]
+    (M P : HopfModuleCat k H) [Projective P] : Projective (M ⊗ P) := by
+  have := Module.Finite.small k H
+  exact projective_tensorObj_right (antipode_bijective k H) M P
 
 end TauCeti.HopfModuleCat

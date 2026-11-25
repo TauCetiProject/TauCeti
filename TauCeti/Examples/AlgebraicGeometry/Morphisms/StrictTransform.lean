@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.AlgebraicGeometry.Blowup.Restriction
-public import TauCeti.AlgebraicGeometry.Morphisms.Modification.StrictTransform
+public import TauCeti.AlgebraicGeometry.Morphisms.Modification.StrictTransform.Basic
 
 /-!
 # Strict transforms of the origin of `𝔸¹` and along blowups away from `X`

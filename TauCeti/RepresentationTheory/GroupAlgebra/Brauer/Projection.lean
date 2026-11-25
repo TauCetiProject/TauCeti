@@ -56,6 +56,8 @@ is nonzero; this is not formalized here.
 * `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
   nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
+* `TauCeti.brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq`: if `g x g⁻¹ = x`, for
+  instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
 * `TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`: `Br_P` of an element invariant
   under conjugation by `N_G(P)`, for instance a central one, is invariant under `N_G(P)`.
@@ -156,6 +158,13 @@ theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAl
     rw [coeff_conjRepresentation]
     refine h _ ((Subgroup.smul_mem_pointwise_smul_iff (a := MulAut.conj g)).1 ?_)
     simpa [mul_assoc] using hc
+
+/-- **The Brauer projection of a conjugation-fixed element.** If conjugation by `g` fixes `x`, for
+instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0` exactly when `Br_P(x) = 0`. -/
+theorem brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq {g : G} {P : Subgroup G}
+    {x : MonoidAlgebra R G} (hx : conjRepresentation R G g x = x) :
+    brauerProjection (MulAut.conj g • P) x = 0 ↔ brauerProjection P x = 0 := by
+  rw [← brauerProjection_conj_eq_zero_iff g (P := P) (x := x), hx]
 
 /-- `Br_P` keeps a basis element `single c r` with `c ∈ C_G(P)`. -/
 @[simp]

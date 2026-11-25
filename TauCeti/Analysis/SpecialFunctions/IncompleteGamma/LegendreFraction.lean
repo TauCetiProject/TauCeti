@@ -735,9 +735,11 @@ theorem kummerLaplace_zero_eq_cpow_neg_mul_exp_mul_upperIncompleteGamma (a : ℂ
     rw [mul_comm, add_comm]
   have hint : MeasureTheory.IntegrableOn
       (fun t : ℝ => cexp (-(t : ℂ)) * ((t : ℂ) + 1) ^ (a - 1)) (Set.Ioi 0) := by
-    refine (integrableOn_upperIncompleteGamma_integrand a one_mem_slitPlane).congr_fun
+    refine MeasureTheory.IntegrableOn.congr_fun
+      ((integrableOn_upperIncompleteGamma_integrand a one_mem_slitPlane).const_mul (cexp 1))
       (fun t _ => ?_) measurableSet_Ioi
-    simp only [mul_comm, add_comm]
+    rw [neg_add, Complex.exp_add, Complex.exp_neg 1, add_comm (1 : ℂ)]
+    field_simp
   have hI := TauCeti.differentiableOn_integral_mul_ofReal_add_cpow one_mem_slitPlane hint
   have hg : AnalyticOnNhd ℂ (fun w => w ^ (-a) *
       ∫ t in Set.Ioi (0 : ℝ), cexp (-(t : ℂ)) * ((t : ℂ) + w) ^ (a - 1)) slitPlane :=
