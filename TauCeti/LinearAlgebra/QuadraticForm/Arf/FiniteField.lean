@@ -89,8 +89,8 @@ private theorem sum_binaryQuadraticForm_eq_zero [CharP k 2] {ι : Type*} [Fintyp
         ring
     _ = 0 := by
         rw [hsq, hS, hb]
-        field_simp
-        linear_combination (t ^ 2 * (z ^ 2 + z)) * CharTwo.two_eq_zero (R := k)
+        linear_combination (t ^ 2 * z ^ 2 * a₀⁻¹) * mul_inv_cancel₀ ha₀ +
+          (t ^ 2 * (z ^ 2 + z) * a₀⁻¹) * CharTwo.two_eq_zero (R := k)
 
 /-- The case `a i₀ ≠ 0` of
 `TauCeti.exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_of_trace_eq_zero`. Writing
@@ -155,17 +155,8 @@ theorem exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_of_trace_eq_
     exact exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_of_ne_zero a b h ha₀
   -- If every `a i` vanishes, the first coordinates span a quadratic Lagrangian.
   push Not at ha
-  let f : (ι → k) →ₗ[k] (ι → Fin 2 → k) :=
-    { toFun := fun c i ↦ ![c i, 0]
-      map_add' := fun x y ↦ by ext i j; fin_cases j <;> simp
-      map_smul' := fun r x ↦ by ext i j; fin_cases j <;> simp }
-  have hf : Function.Injective f := fun x y hxy ↦ funext fun i ↦ by
-    simpa [f] using congrFun (congrFun hxy i) 0
-  refine ⟨LinearMap.range f, ?_, ?_⟩
-  · rw [QuadraticMap.isTotallyIsotropic_iff]
-    rintro _ ⟨c, rfl⟩
-    simp [f, QuadraticMap.pi_apply, binaryQuadraticForm_apply, ha]
-  · rw [LinearMap.finrank_range_of_inj hf, Module.finrank_fintype_fun_eq_card]
+  obtain rfl : a = fun _ ↦ 0 := funext ha
+  exact exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_zero_left b
 
 end TauCeti
 
@@ -194,12 +185,8 @@ theorem traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq [Finit
     obtain ⟨U, hU, hUm⟩ :=
       exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_of_trace_eq_zero _ _ h
     let e := Q.isometryEquivPiBinaryQuadraticForm b hb
-    refine ⟨U.map e.symm.toLinearEquiv.toLinearMap, ?_, ?_⟩
-    · rw [isTotallyIsotropic_iff]
-      rintro _ ⟨u, hu, rfl⟩
-      rw [LinearEquiv.coe_coe, IsometryEquiv.coe_toLinearEquiv, e.symm.map_app]
-      exact hU.apply_eq_zero hu
-    · rw [e.symm.toLinearEquiv.finrank_map_eq, hUm, Fintype.card_fin, hdim]
+    exact ⟨_, hU.map_isometryEquiv e.symm, by
+      rw [e.symm.toLinearEquiv.finrank_map_eq, hUm, Fintype.card_fin, hdim]⟩
   · rintro ⟨U, hU, hU2⟩
     obtain hequiv :=
       (equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq

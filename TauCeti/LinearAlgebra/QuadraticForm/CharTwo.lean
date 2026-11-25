@@ -192,6 +192,25 @@ theorem isometryEquivBinaryQuadraticFormOneProd_symm_apply [CharP R 2]
         ![q.1 0 + q.1 1 + q.2 0, q.2 0 + q.2 1]) :=
   (rfl)
 
+/-- An orthogonal sum of binary forms `[0, b i]` vanishes on a subspace of dimension
+`Fintype.card ι`, spanned by the first coordinate vectors `![1, 0]` of the summands. -/
+theorem exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_zero_left
+    [StrongRankCondition R] {ι : Type*} [Fintype ι] (b : ι → R) :
+    ∃ U : Submodule R (ι → Fin 2 → R),
+      (QuadraticMap.pi fun i ↦ binaryQuadraticForm R 0 (b i)).IsTotallyIsotropic U ∧
+        Module.finrank R U = Fintype.card ι := by
+  let f : (ι → R) →ₗ[R] (ι → Fin 2 → R) :=
+    { toFun := fun c i ↦ ![c i, 0]
+      map_add' := fun x y ↦ by ext i j; fin_cases j <;> simp
+      map_smul' := fun r x ↦ by ext i j; fin_cases j <;> simp }
+  have hf : Function.Injective f := fun x y hxy ↦ funext fun i ↦ by
+    simpa [f] using congrFun (congrFun hxy i) 0
+  refine ⟨LinearMap.range f, ?_, ?_⟩
+  · rw [QuadraticMap.isTotallyIsotropic_iff]
+    rintro _ ⟨c, rfl⟩
+    simp [f, QuadraticMap.pi_apply]
+  · rw [LinearMap.finrank_range_of_inj hf, Module.finrank_fintype_fun_eq_card]
+
 end CommRing
 
 end TauCeti
@@ -335,18 +354,11 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_fin
     Q.Equivalent (QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm K 0 0) ↔
       ∃ U : Submodule K V, Q.IsTotallyIsotropic U ∧ Module.finrank K U = m := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨U, hU, hUm⟩ ↦ ?_⟩
-  · let f : (Fin m → K) →ₗ[K] (Fin m → Fin 2 → K) :=
-      { toFun := fun c i ↦ ![c i, 0]
-        map_add' := fun x y ↦ by ext i k; fin_cases k <;> simp
-        map_smul' := fun r x ↦ by ext i k; fin_cases k <;> simp }
-    have hf : Function.Injective f := fun x y hxy ↦ funext fun i ↦ by
-      simpa [f] using congrFun (congrFun hxy i) 0
-    refine ⟨(LinearMap.range f).map e.symm.toLinearMap, ?_, ?_⟩
-    · rw [isTotallyIsotropic_iff]
-      rintro _ ⟨_, ⟨c, rfl⟩, rfl⟩
-      simp [f]
-    · rw [e.symm.toLinearEquiv.finrank_map_eq, ← (LinearEquiv.ofInjective f hf).finrank_eq,
-        Module.finrank_fin_fun]
+  · obtain ⟨U, hU, hUm⟩ :=
+      exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_zero_left
+        (fun _ : Fin m ↦ (0 : K))
+    exact ⟨_, hU.map_isometryEquiv e.symm, by
+      rw [e.symm.toLinearEquiv.finrank_map_eq, hUm, Fintype.card_fin]⟩
   · have hrad : Q.radical = ⊥ :=
       eq_bot_mono Q.radical_le_ker_polarBilin (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hQ)
     have hU_orth : U = LinearMap.BilinForm.orthogonal Q.polarBilin U :=
