@@ -20,7 +20,9 @@ family of word seminorms `P_k = ContRepresentation.wordSeminorm I π X k`, `k : 
 the topology of this family on `ContRepresentation.LieSmoothSpace I π X`, a copy (a one-field
 structure) of the smooth vectors, rather than on `lieSmoothVectors I π` itself, which keeps the
 subspace topology of `V`. The linear equivalence `ContRepresentation.LieSmoothSpace.linearEquiv`
-moves between the two.
+moves between the two. The elements are the smooth vectors for every `X`, but the topology depends
+on `X`: it is the usual topology of the smooth vectors only when `X` spans the Lie algebra (for
+an empty family, every `P_k` is the norm of `V`).
 
 The word seminorm of order zero is the norm of `V`
 (`ContRepresentation.wordSeminorm_zero`). So the family separates points and the topology is
@@ -79,7 +81,8 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 /-- The smooth vectors `lieSmoothVectors I π` of a continuous representation, as a type carrying
 the topology of the word seminorms `P_k` of the family `X` (`LieSmoothSpace.withSeminorms`). It
 is a copy of the smooth vectors: the submodule `lieSmoothVectors I π` itself keeps the subspace
-topology of `V`. -/
+topology of `V`. The topology depends on `X`, and is the topology of the smooth vectors only when
+`X` spans the Lie algebra, for instance when `X` is a basis. -/
 @[ext]
 structure LieSmoothSpace (X : ι → LeftInvariantDerivation I G) where
   /-- A smooth vector, as an element of `LieSmoothSpace I π X`. -/
@@ -244,6 +247,9 @@ variable [NormedSpace ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
 /-- **The topology of the word seminorms is locally convex.** -/
 instance instLocallyConvexSpace : LocallyConvexSpace ℝ (LieSmoothSpace I π X) :=
   (withSeminorms I π X).toLocallyConvexSpace
+
+instance instContinuousSMulReal : ContinuousSMul ℝ (LieSmoothSpace I π X) :=
+  IsScalarTower.continuousSMul 𝕜
 
 end LocallyConvex
 
