@@ -21,13 +21,6 @@ obtained from the universal property of the extension
 preserves frames (`TauCeti.SpinCStructure.toFrame_pullback_precompIsometry_inl`). In particular
 orientation reversal commutes with pullback (`TauCeti.SpinCStructure.reversePullbackEquiv`).
 
-`TauCeti.SpinCStructure.precompIsometry` needs the pulled-back bundle `g *ᵖ V` to be a vector
-bundle whose fibres carry the topology of their norms. Mathlib's `FiberBundle.pullback` gives the
-fibres the pulled-back fibre topology, which agrees with the norm topology only after unfolding
-instances, so this file uses the restatements of the fibre and vector bundle structures of the
-pullback for the norm topologies (`Bundle.Pullback.normedFiberBundle`,
-`Bundle.Pullback.normedVectorBundle`) as local instances.
-
 ## Main definitions
 
 * `TauCeti.SpinCStructure.precompIsometryPullbackEquiv`:
@@ -63,8 +56,6 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
   {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ} [NeZero n]
   {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
-
-attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
 
 /-- **The frame of `[p, 1]`** in the pullback of the precomposition of a `Spinᶜ` structure `s`
 with `f` is the frame of `p` in the pullback of `s`, precomposed with `f`. -/
