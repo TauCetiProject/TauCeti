@@ -91,15 +91,6 @@ section UnsignedTensorProduct
 
 namespace InternalGrading
 
-/-- The pieces of `ofDecomposition 𝒜` are those of `𝒜`, so they inherit its graded-monoid
-structure. -/
-instance instGradedMonoidOfDecompositionPiece {R : Type uR} {A : Type uA} {ι : Type uι}
-    [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι] [AddMonoid ι]
-    (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedMonoid 𝒜] :
-    SetLike.GradedMonoid (ofDecomposition 𝒜).piece := by
-  rw [ofDecomposition_piece]
-  infer_instance
-
 /-- On the ordinary tensor product `A ⊗[R] B`, if `1 ∈ GA.piece 0` and `1 ∈ GB.piece 0`, then
 `1 ∈ (GA.tensorProduct GB).piece 0`. -/
 instance instGradedOneTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB} {ι : Type uι}

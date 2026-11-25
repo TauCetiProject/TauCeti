@@ -57,7 +57,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 section Criterion
 
-variable {R : Type} {L : Type*} [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable {R L : Type*} [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
   (ℒ : ℕ → Submodule R L) [GradedLieAlgebra ℒ]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
