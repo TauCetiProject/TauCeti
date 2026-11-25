@@ -111,54 +111,47 @@ theorem domDomCongr_treeBranch_binary_leaf_corolla_zero_apply
     ((𝒜.treeBranch incl h GH (.binary .leaf (.corolla 0))).domDomCongr
       (finCongr (by simp))) ![x, y, z] =
       h (𝒜.m 2 ![incl (GH.koszulTwist 1 x), h (𝒜.m 2 ![incl y, incl z])]) := by
-  have houter (u v : A) : -h (𝒜.m 2 ![u, -v]) = h (𝒜.m 2 ![u, v]) := by
-    rw [← mul_apply, map_neg, map_neg, neg_neg, mul_apply]
-  suffices ∀ hn : (binary .leaf (.corolla 0)).numLeaves = 3,
-      ((𝒜.treeBranch incl h GH (.binary .leaf (.corolla 0))).domDomCongr (finCongr hn)) ![x, y, z] =
-        h (𝒜.m 2 ![incl (GH.koszulTwist 1 x), h (𝒜.m 2 ![incl y, incl z])]) from this _
-  rw [binary_def]; intro _
+  -- Unlike the left comb, `h` acts only at the root and on the right child `corolla 0`, where
+  -- `suspendedM 2` applies `koszulTwist 0 = id`; unfolding at the root avoids `hh`.
   have hsum : (∑ a : Fin 2, (![leaf, corolla 0] a).numLeaves) = 3 := by simp [Fin.sum_univ_two]
-  have hlen : ((node 0 ![leaf, corolla 0]).numLeaves : ℤ) = 3 := by
+  have hbin {t : ReducedPlanarTree} (e : t = node 0 ![leaf, corolla 0]) (ht : t.numLeaves = 3) :
+      ((𝒜.treeBranch incl h GH t).domDomCongr (finCongr ht)) ![x, y, z] =
+        𝒜.treeBranch incl h GH (node 0 ![leaf, corolla 0])
+          (fun i ↦ ![x, y, z] (finCongr hsum i)) := by
+    subst e; exact MultilinearMap.domDomCongr_apply ..
+  have hneg_r (u v : A) : -h (𝒜.m 2 ![u, -v]) = h (𝒜.m 2 ![u, v]) := by
+    rw [← mul_apply, map_neg, map_neg, neg_neg, mul_apply]
+  have h3 : ((node 0 ![leaf, corolla 0]).numLeaves : ℤ) = 3 := by
     rw [numLeaves_node, hsum, Nat.cast_ofNat]
-  have hval (p : Σ a : Fin 2, Fin (![leaf, corolla 0] a).numLeaves) :
-      (finCongr hsum (finCongr (numLeaves_node 0 ![leaf, corolla 0]) (finSigmaFinEquiv p)) : ℕ) =
-        finSigmaFinEquiv p :=
-    (finCongr_apply_coe hsum _).trans (finCongr_apply_coe (numLeaves_node 0 ![leaf, corolla 0]) _)
-  rw [← MultilinearMap.domDomCongr_finCongr_domDomCongr_finCongr _
-      (numLeaves_node 0 ![leaf, corolla 0]) hsum,
-    MultilinearMap.domDomCongr_apply, MultilinearMap.domDomCongr_apply, treeBranch_apply,
-    suspendedTreeBranch_node_apply, suspendedM_apply, ← houter, hlen]
+  rw [hbin (binary_def .leaf (.corolla 0)), ← hneg_r, treeBranch_apply,
+    suspendedTreeBranch_node_apply, suspendedM_apply, h3]
   refine congrArg (fun v ↦ -h (𝒜.m 2 v))
-    (funext fun i ↦ Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ Fin.elim0 j) i) i)
-  · have hexp0 : ((2 : ℕ) : ℤ) - 1 - ((0 : Fin 2) : ℕ) = 1 := by simp
-    let p₀ : Σ a : Fin 2, Fin (![leaf, corolla 0] a).numLeaves :=
-      ⟨0, ⟨0, leaf.numLeaves_pos⟩⟩
-    have htw0 : (3 : ℤ) - 1 - (finSigmaFinEquiv p₀ : ℕ) = 2 := by simp [p₀]
-    have hidx0 := Fin.ext (b := (0 : Fin 3)) ((hval p₀).trans (by simp [p₀]))
+    (funext fun i ↦ Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ j.elim0) i) i)
+  · have hexp0 : (((0 + 2 : ℕ) : ℤ) - 1 - ((0 : Fin 2) : ℕ)) = 1 := by simp
+    have h0 : finCongr hsum (finSigmaFinEquiv
+        (n := fun a : Fin (0 + 2) ↦ (![leaf, corolla 0] a).numLeaves)
+        ⟨0, ⟨0, (![leaf, corolla 0] (0 : Fin (0 + 2))).numLeaves_pos⟩⟩) = (0 : Fin 3) :=
+      Fin.ext (by simp)
     rw [hexp0]
-    refine (congrArg (𝒜.grading.koszulTwist 1)
-      (𝒜.suspendedTreeBranch_leaf_apply incl h _)).trans ?_
-    refine (congrArg (fun a ↦ 𝒜.grading.koszulTwist 1 (incl a))
-      (congr (congrArg (fun q ↦ (GH.koszulTwist q : H → H)) htw0)
-        (congrArg ![x, y, z] hidx0))).trans ?_
-    simp [hincl.koszulTwist_apply 1 x]
-  · have hexp1 : ((2 : ℕ) : ℤ) - 1 - (((0 : Fin 1).succ : Fin 2) : ℕ) = 0 := by simp
-    have hrhs : ((𝒜.treeBranch incl h GH (.corolla 0)).domDomCongr
-        (finCongr (numLeaves_corolla 0))) ![y, z] = -h (𝒜.m 2 ![incl y, incl z]) := by
-      rw [𝒜.domDomCongr_treeBranch_corolla_apply incl h hincl 0 ![y, z]]
-      exact congrArg (fun v ↦ -h (𝒜.m 2 v)) (funext fun a ↦ by fin_cases a <;> simp)
-    rw [hexp1, 𝒜.grading.koszulTwist_zero, LinearMap.id_apply]
-    refine Eq.trans ?_ (hrhs.trans (by simp))
-    rw [MultilinearMap.domDomCongr_apply, treeBranch_apply]
+    exact (congrArg (𝒜.grading.koszulTwist 1) (𝒜.suspendedTreeBranch_leaf_apply incl h _)).trans
+      (by simp [finCongr_apply] at h0; simp [h0, hincl.koszulTwist_apply 1 x])
+  · have hexp1 : (((0 + 2 : ℕ) : ℤ) - 1 - (((0 : Fin 1).succ : Fin 2) : ℕ)) = 0 := by simp
+    have hrhs : 𝒜.treeBranch incl h GH (.corolla 0)
+        (fun j ↦ ![y, z] (finCongr (numLeaves_corolla 0) j)) = -h (𝒜.m 2 ![incl y, incl z]) := by
+      simpa using 𝒜.treeBranch_corolla_zero_apply incl h hincl
+        (fun j ↦ ![y, z] (finCongr (numLeaves_corolla 0) j))
+    rw [hexp1, 𝒜.grading.koszulTwist_zero, LinearMap.id_apply, ← hrhs, treeBranch_apply]
     refine congrArg (𝒜.suspendedTreeBranch incl h (.corolla 0)) (funext fun j ↦ ?_)
-    let p₁ : Σ a : Fin 2, Fin (![leaf, corolla 0] a).numLeaves := ⟨(0 : Fin 1).succ, j⟩
-    have hp₁ : (finSigmaFinEquiv p₁ : ℕ) = (j : ℕ) + 1 := by simp [p₁, add_comm]
-    have htw1 : (3 : ℤ) - 1 - (finSigmaFinEquiv p₁ : ℕ) =
-        ((corolla 0).numLeaves : ℤ) - 1 - (j : ℕ) := by rw [hp₁, numLeaves_corolla]; omega
-    have hidx1 := Fin.ext (b := (finCongr (numLeaves_corolla 0) j).succ) ((hval p₁).trans
-      (by rw [hp₁, Fin.val_succ, finCongr_apply_coe (numLeaves_corolla 0) j]))
-    exact congr (congrArg (fun q ↦ (GH.koszulTwist q : H → H)) htw1)
-      ((congrArg ![x, y, z] hidx1).trans (Matrix.cons_val_succ _ _ _))
+    have hj : (finSigmaFinEquiv (n := fun a ↦ (![leaf, corolla 0] a).numLeaves)
+        ⟨(0 : Fin 1).succ, j⟩ : ℕ) = j.val + 1 := by simp [add_comm]
+    have htw : (3 : ℤ) - 1 - (j.val + 1 : ℕ) = ((corolla 0).numLeaves : ℤ) - 1 - j.val := by
+      rw [numLeaves_corolla]; omega
+    have hidx : finCongr hsum (finSigmaFinEquiv (n := fun a ↦ (![leaf, corolla 0] a).numLeaves)
+        ⟨(0 : Fin 1).succ, j⟩) = (finCongr (numLeaves_corolla 0) j).succ :=
+      Fin.ext <| by
+        rw [finCongr_apply_coe, hj, Fin.val_succ, finCongr_apply_coe (numLeaves_corolla 0) j]
+    rw [hj, htw]
+    exact congrArg _ ((congrArg ![x, y, z] hidx).trans (Matrix.cons_val_succ _ _ _))
 
 end ThreeLeaf
 

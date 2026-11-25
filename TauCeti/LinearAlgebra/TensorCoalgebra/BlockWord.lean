@@ -296,7 +296,7 @@ theorem blockWord_eq_sum_composition (a : ℕ) {b : ℕ} (hb : 0 < b) :
       rw [prepend_of_tprod]
       dsimp only [term]
       rw [Composition.coe_neSingleSuccEquiv_apply]
-      refine of_tprod_congr R M _ (by simp) fun i ↦ ?_
+      refine of_tprod_congr R M _ (by simp [← Composition.blocks_length]) fun i ↦ ?_
       induction i using Fin.cases with
       | zero => simp [Composition.blocksFun_eq_getElem]
       | succ j => simp [Composition.blocksFun_eq_getElem, add_assoc]

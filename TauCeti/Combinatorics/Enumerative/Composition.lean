@@ -23,10 +23,10 @@ at planar-tree vertices.
   preserves `length`, `blocksFun`, and `sizeUpTo`.
 * `Composition.sizeUpTo_eq_sum_blocksFun` and `Composition.coe_embedding_eq_finSigmaFinEquiv`:
   `c.sizeUpTo i` is the `Fin`-indexed sum of `c.blocksFun`, matching `finSigmaFinEquiv`.
-* `Composition.cons` and `Composition.neSingleSuccEquiv`: prepending a positive first block
-  identifies `(k : Fin b) × Composition (b - k)` with non-single compositions of `b + 1`, with
-  inverse projections `Composition.val_fst_neSingleSuccEquiv_symm` and
-  `Composition.snd_neSingleSuccEquiv_symm_blocks`.
+* `Composition.neSingleSuccEquiv`: prepending a positive first block via
+  `(Composition.single _ _).append` identifies `(k : Fin b) × Composition (b - k)` with non-single
+  compositions of `b + 1`, with inverse projections `Composition.val_fst_neSingleSuccEquiv_symm`
+  and `Composition.snd_neSingleSuccEquiv_symm_blocks`.
 -/
 
 public section
@@ -77,49 +77,21 @@ theorem two_le_length_iff_ne_single {n : ℕ} (hn : 0 < n) (c : Composition n) :
   rw [ne_eq, eq_single_iff_length hn]
   omega
 
-/-- Prepend a positive first block of size `k` to a composition of `n`, producing a composition of
-`k + n`. -/
-def cons {k n : ℕ} (hk : 0 < k) (c : Composition n) : Composition (k + n) where
-  blocks := k :: c.blocks
-  blocks_pos {m} hm := by
-    rcases List.mem_cons.mp hm with rfl | hm
-    exacts [hk, c.blocks_pos hm]
-  blocks_sum := by
-    rw [List.sum_cons, c.blocks_sum]
-
-@[simp] theorem cons_blocks {k n : ℕ} (hk : 0 < k) (c : Composition n) :
-    (cons hk c).blocks = k :: c.blocks := (rfl)
-
-@[simp] theorem cons_length {k n : ℕ} (hk : 0 < k) (c : Composition n) :
-    (cons hk c).length = c.length + 1 := by
-  rw [← blocks_length, cons_blocks, List.length_cons, blocks_length]
-
-/-- Prepending a positive block via `cons` to a composition of a positive integer yields a
-composition of length at least two. -/
-theorem two_le_cons_length {k n : ℕ} (hk : 0 < k) (hn : 0 < n) (c : Composition n) :
-    2 ≤ (cons hk c).length := by
-  have := c.length_pos_of_pos hn
-  rw [cons_length]
-  omega
-
-/-- A composition formed by prepending a positive block to a composition of a positive integer is
-never the single-block composition. -/
-theorem cons_ne_single {k n : ℕ} (hk : 0 < k) (hn : 0 < n) (c : Composition n) :
-    cons hk c ≠ single (k + n) (Nat.add_pos_left hk n) :=
-  (two_le_length_iff_ne_single (Nat.add_pos_left hk n) (cons hk c)).mp
-    (two_le_cons_length hk hn c)
-
-@[simp] theorem cons_blocksFun_zero {k n : ℕ} (hk : 0 < k) (c : Composition n) :
-    (cons hk c).blocksFun ⟨0, by rw [cons_length]; omega⟩ = k := by
+@[simp] theorem single_append_blocksFun_zero {k n : ℕ} (hk : 0 < k) (c : Composition n) :
+    ((single k hk).append c).blocksFun
+      ⟨0, ((single k hk).append c).length_pos_of_pos (Nat.add_pos_left hk n)⟩ = k := by
   simp [blocksFun_eq_getElem]
 
-@[simp] theorem cons_blocksFun_succ {k n : ℕ} (hk : 0 < k) (c : Composition n)
+@[simp] theorem single_append_blocksFun_succ {k n : ℕ} (hk : 0 < k) (c : Composition n)
     (j : Fin c.length) :
-    (cons hk c).blocksFun ⟨j.val + 1, by rw [cons_length]; omega⟩ = c.blocksFun j := by
+    ((single k hk).append c).blocksFun
+      ⟨j.val + 1, by
+        rw [← blocks_length ((single k hk).append c), append_blocks, single_blocks]
+        exact Nat.succ_lt_succ j.isLt⟩ = c.blocksFun j := by
   simp [blocksFun_eq_getElem]
 
-@[simp] theorem cons_sizeUpTo_succ {k n : ℕ} (hk : 0 < k) (c : Composition n) (m : ℕ) :
-    (cons hk c).sizeUpTo (m + 1) = k + c.sizeUpTo m := by
+@[simp] theorem single_append_sizeUpTo_succ {k n : ℕ} (hk : 0 < k) (c : Composition n) (m : ℕ) :
+    ((single k hk).append c).sizeUpTo (m + 1) = k + c.sizeUpTo m := by
   simp [sizeUpTo]
 
 private theorem cons_blocksFun_zero_tail {n : ℕ} (c : Composition n) (h : 0 < c.length) :
@@ -152,15 +124,17 @@ def neSingleSuccEquiv (b : ℕ) :
     (Σ k : Fin b, Composition (b - k.val)) ≃
       {c : Composition (b + 1) // c ≠ single (b + 1) (Nat.succ_pos b)} where
   toFun p :=
-    ⟨(cons (k := p.1.val + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.isLt; omega),
+    ⟨((single (p.1.val + 1) p.1.val.succ_pos).append p.2).cast (by have := p.1.isLt; omega),
       (two_le_length_iff_ne_single (Nat.succ_pos b) _).mp <| by
-        rw [cast_length]
-        exact two_le_cons_length (Nat.zero_lt_succ _) (by have := p.1.isLt; omega) p.2⟩
+        have := p.2.length_pos_of_pos (by have := p.1.isLt; omega)
+        rw [cast_length, ← blocks_length, append_blocks, single_blocks, List.singleton_append,
+          List.length_cons, blocks_length]
+        omega⟩
   invFun q := neSingleSuccInv q.val q.property
   left_inv := fun ⟨k, c⟩ ↦ by
     dsimp only
     rcases hq : neSingleSuccInv
-      ((cons (k := k.val + 1) (Nat.zero_lt_succ _) c).cast (by have := k.isLt; omega)) _ with
+      (((single (k.val + 1) k.val.succ_pos).append c).cast (by have := k.isLt; omega)) _ with
       ⟨k', c'⟩
     have hk' : k' = k := Fin.ext <| by
       simpa [neSingleSuccInv] using
@@ -172,7 +146,7 @@ def neSingleSuccEquiv (b : ℕ) :
   right_inv := fun ⟨c, hc⟩ ↦ by
     apply Subtype.ext
     apply Composition.ext
-    rw [cast_blocks, cons_blocks]
+    rw [cast_blocks, append_blocks, single_blocks, List.singleton_append]
     dsimp only [neSingleSuccInv]
     have hlen : 0 < c.length := c.length_pos_of_pos (Nat.succ_pos b)
     rw [Nat.sub_add_cancel (c.one_le_blocksFun ⟨0, hlen⟩)]
@@ -180,7 +154,8 @@ def neSingleSuccEquiv (b : ℕ) :
 
 @[simp] theorem coe_neSingleSuccEquiv_apply (b : ℕ) (p : Σ k : Fin b, Composition (b - k.val)) :
     (neSingleSuccEquiv b p).val =
-      (cons (k := p.1.val + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.isLt; omega) := (rfl)
+      ((single (p.1.val + 1) p.1.val.succ_pos).append p.2).cast
+        (by have := p.1.isLt; omega) := (rfl)
 
 @[simp] theorem val_fst_neSingleSuccEquiv_symm (b : ℕ)
     (q : {c : Composition (b + 1) // c ≠ single (b + 1) (Nat.succ_pos b)}) :
