@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Normed.Module.Multilinear.Asymptotics
 import TauCeti.Analysis.Normed.Operator.Basic
@@ -91,13 +92,7 @@ private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
     set w : E → E := fun y => f^[j] (p + y) - p with hw_def
     have hwy : (fun y => w y - y) =O[𝓝 0] fun y => ‖y‖ ^ k := by
       simpa only [hw_def, sub_sub] using q.isBigO_of_isBigO_sub_smul_apply_const ih
-    have hw1 : w =O[𝓝 0] fun y => ‖y‖ := by
-      have : w = fun y => (w y - y) + y := by
-        ext y
-        abel
-      rw [this]
-      exact (hwy.trans (by simpa using (isLittleO_norm_pow_norm_pow (E' := E)
-        (show 1 < k by omega)).isBigO)).add (isBigO_norm_right.2 (isBigO_refl _ _))
+    have hw1 : w =O[𝓝 0] fun y => ‖y‖ := isBigO_norm_of_isBigO_sub_norm_pow (by omega) hwy
     have hw0 : Tendsto w (𝓝 0) (𝓝 0) := hw1.trans_tendsto tendsto_norm_zero
     have key : (fun y => f^[j + 1] (p + y) - (p + y) - ((j + 1 : ℕ) : ℂ) • q fun _ => y) =
         fun y => (f (p + w y) - (p + w y) - q fun _ => w y) +

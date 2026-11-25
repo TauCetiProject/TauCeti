@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 import Mathlib.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Asymptotic bounds for homogeneous polynomials
@@ -46,11 +47,7 @@ theorem isBigO_apply_const_sub (hk : 2 ≤ k)
     (q : ContinuousMultilinearMap 𝕜 (fun _ : Fin k => E) F) {w : E → E}
     (hwy : (fun y => w y - y) =O[𝓝 0] fun y => ‖y‖ ^ k) :
     (fun y => (q fun _ => w y) - q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1) := by
-  -- `w y = (w y - y) + y` with `w y - y = O(‖y‖ ^ k) = O(‖y‖)`, so `w = O(‖y‖)`.
-  have hk1 : (fun y : E => ‖y‖ ^ k) =O[𝓝 0] fun y => ‖y‖ := by
-    simpa using (isLittleO_norm_pow_norm_pow (E' := E) (show 1 < k by omega)).isBigO
-  have hw1 : w =O[𝓝 0] fun y => ‖y‖ := by
-    simpa using (hwy.trans hk1).add (isBigO_norm_right.2 (isBigO_refl (fun y => y) (𝓝 0)))
+  have hw1 : w =O[𝓝 0] fun y => ‖y‖ := isBigO_norm_of_isBigO_sub_norm_pow (by omega) hwy
   have h1 : (fun y => (q fun _ => w y) - q fun _ => y) =O[𝓝 0]
       fun y => (‖w y‖ + ‖y‖) ^ (k - 1) * ‖w y - y‖ := by
     refine IsBigO.of_bound (‖q‖ * k) (Eventually.of_forall fun y => ?_)
