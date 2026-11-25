@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.Log.Factorial
+import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.Chebyshev.Asymptotics
 
 /-!
@@ -69,17 +70,12 @@ private theorem abs_moebius_mul_le (n : ℕ) (t : ℝ) : |(μ n : ℝ) * t| ≤ 
   rw [abs_mul]
   exact mul_le_of_le_one_left (abs_nonneg t) (mod_cast ArithmeticFunction.abs_moebius_le_one)
 
-/-- `|∑_{n ≤ N} μ(n) (x / n - ⌊x / n⌋)| ≤ N` for `x ≥ 0`, as each fractional part lies in
-`[0, 1)`. -/
-private theorem abs_sum_moebius_mul_sub_natFloor_le (hx : 0 ≤ x) (N : ℕ) :
-    |∑ n ∈ Icc 1 N, (μ n : ℝ) * (x / n - ⌊x / n⌋₊)| ≤ N := by
-  refine (abs_sum_le_sum_abs _ _).trans ?_
-  calc ∑ n ∈ Icc 1 N, |(μ n : ℝ) * (x / n - ⌊x / n⌋₊)|
-      ≤ ∑ _n ∈ Icc 1 N, (1 : ℝ) := sum_le_sum fun n _ ↦ by
-        refine (abs_moebius_mul_le n _).trans (abs_le.mpr ⟨?_, ?_⟩)
-        · linarith [Nat.floor_le (div_nonneg hx n.cast_nonneg)]
-        · linarith [Nat.lt_floor_add_one (x / n)]
-    _ = N := by simp
+/-- `|μ(n) (x / n - ⌊x / n⌋)| ≤ 1` for `x ≥ 0`, as the fractional part lies in `[0, 1)`. -/
+private theorem abs_moebius_mul_sub_natFloor_le (hx : 0 ≤ x) (n : ℕ) :
+    |(μ n : ℝ) * (x / n - ⌊x / n⌋₊)| ≤ 1 := by
+  refine (abs_moebius_mul_le n _).trans (abs_le.mpr ⟨?_, ?_⟩)
+  · linarith [Nat.floor_le (div_nonneg hx n.cast_nonneg)]
+  · linarith [Nat.lt_floor_add_one (x / n)]
 
 /-- `∑_{n ≤ x} μ(n) log n = -∑_{k ≤ x} μ(k) ψ(x / k)`, the sum over `n ≤ x` of
 `μ · log = -(μ * Λ)`. -/
@@ -126,7 +122,7 @@ private theorem abs_sum_moebius_mul_div_le (hx1 : 1 ≤ x) :
     exact sum_congr rfl fun _ _ ↦ by ring
   rw [hsplit]
   refine (abs_add_le _ _).trans ?_
-  linarith [abs_sum_moebius_mul_sub_natFloor_le hx0 ⌊x⌋₊, Nat.floor_le hx0]
+  linarith [abs_sum_Icc_one_natFloor_le (abs_moebius_mul_sub_natFloor_le hx0) hx0]
 
 /-- If `|ψ(y) - y| ≤ ε y + C` for every `y ≥ 0`, then
 `|M(x)| log x ≤ ε x log x + (2 + ε + C) x + 1` for every `x ≥ 1`. For `ε > 0` such a `C` exists by
@@ -246,7 +242,9 @@ theorem mul_abs_moebiusDivSum_le (N K : ℕ) :
     rw [Nat.floor_div_eq_div]
     push_cast
     ring
-  have herr := abs_sum_moebius_mul_sub_natFloor_le (x := ((K * N : ℕ) : ℝ)) (by positivity) N
+  have herr := abs_sum_Icc_one_natFloor_le
+    (abs_moebius_mul_sub_natFloor_le (x := ((K * N : ℕ) : ℝ)) (by positivity)) N.cast_nonneg
+  rw [Nat.floor_natCast] at herr
   have hj : |∑ j ∈ Ico 1 K, (moebiusSum ↑(K * N / j) - moebiusSum N)| ≤
       ∑ j ∈ Ico 1 K, (|moebiusSum ↑(K * N / j)| + |moebiusSum N|) :=
     (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun _ _ ↦ abs_sub _ _)
