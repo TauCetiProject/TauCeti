@@ -115,34 +115,6 @@ theorem inChartAt_add (μ ν : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α
   · rw [Pi.add_apply, inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy,
       inChartAt_of_notMem_target _ b α hy, add_zero]
 
-@[simp]
-theorem inChartAt_smul (c : ℝ) (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (c • μ).inChartAt b α = c • μ.inChartAt b α := by
-  funext y
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [Pi.smul_apply, inChartAt_of_mem_target _ b α hy, inChartAt_of_mem_target _ b α hy,
-      Pi.smul_apply, Density.smul_apply]
-  · rw [Pi.smul_apply, inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy,
-      smul_zero]
-
-/-- The chart coefficients of the negative of a density are the negatives of its coefficients. -/
-@[simp]
-theorem inChartAt_neg (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (-μ).inChartAt b α = -μ.inChartAt b α := by
-  funext y
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [Pi.neg_apply, inChartAt_of_mem_target _ b α hy, inChartAt_of_mem_target _ b α hy,
-      Pi.neg_apply, Density.neg_apply]
-  · rw [Pi.neg_apply, inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy,
-      neg_zero]
-
-/-- The chart coefficients of a difference of densities are the differences of their
-coefficients. -/
-@[simp]
-theorem inChartAt_sub (μ ν : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (μ - ν).inChartAt b α = μ.inChartAt b α - ν.inChartAt b α := by
-  rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, ← sub_eq_add_neg]
-
 /-- Multiplying a density by a function multiplies its chart coefficient by the value of the
 function at the chart preimage. -/
 theorem inChartAt_fun_smul (f : M → ℝ) (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
@@ -153,6 +125,24 @@ theorem inChartAt_fun_smul (f : M → ℝ) (μ : RoughDensity I M m) (b : Basis 
   · rw [inChartAt_of_mem_target _ b α hy, inChartAt_of_mem_target _ b α hy, Density.smul_apply,
       smul_eq_mul]
   · rw [inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy, mul_zero]
+
+@[simp]
+theorem inChartAt_smul (c : ℝ) (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
+    (c • μ).inChartAt b α = c • μ.inChartAt b α :=
+  funext (inChartAt_fun_smul (fun _ ↦ c) μ b α)
+
+/-- The chart coefficients of the negative of a density are the negatives of its coefficients. -/
+@[simp]
+theorem inChartAt_neg (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
+    (-μ).inChartAt b α = -μ.inChartAt b α := by
+  rw [← neg_one_smul ℝ μ, inChartAt_smul, neg_one_smul]
+
+/-- The chart coefficients of a difference of densities are the differences of their
+coefficients. -/
+@[simp]
+theorem inChartAt_sub (μ ν : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
+    (μ - ν).inChartAt b α = μ.inChartAt b α - ν.inChartAt b α := by
+  rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, ← sub_eq_add_neg]
 
 /-- The constant top form given by the determinant of a model basis. Its chart coefficients
 are the determinants of the derivatives of the inverse charts. -/
@@ -440,8 +430,6 @@ private def coverSum [MeasurableSpace E] [BorelSpace E] (μ : RoughDensity I M m
     {n : ℕ} (α : Fin n → M) (u : Fin n → Set M) : ℝ :=
   ∑ i, ∫ y in (extChartAt I (α i)) '' disjointed u i, μ.inChartAt b (α i) y ∂b.addHaar
 
-variable [FiniteDimensional ℝ E]
-
 /-- `coverSum` for the chosen finite open chart cover of a compact set `K`. -/
 private def chosenCoverSum [MeasurableSpace E] [BorelSpace E] (μ : RoughDensity I M m)
     (b : Basis (Fin m) ℝ E) (K : Set M) (hK : IsCompact K) : ℝ :=
@@ -552,21 +540,20 @@ theorem integralDensity_add [IsManifold I 1 M] {μ ν : RoughDensity I M m}
     integralDensity (μ + ν) = integralDensity μ + integralDensity ν := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  let : LocallyCompactSpace H := I.locallyCompactSpace
   obtain ⟨b⟩ := hμ.nonempty_basis
-  obtain ⟨n, α, u, _, hp, hc⟩ :=
-    exists_finite_precompact_chart_cover (I := I) (hμ.isCompact.union hν.isCompact)
-  have hu (i : Fin n) : IsChartMeasurable I (u i) := (hp i).1.isChartMeasurable
-  rw [integralDensity_eq_sum_disjointed_chart_integrals (hμ.add hν) b α u hu (fun i ↦ (hp i).2.1)
-      fun x hx ↦ hc (tsupport_add (α := Density E m) μ ν (subset_closure hx)),
-    integralDensity_eq_sum_disjointed_chart_integrals hμ b α u hu (fun i ↦ (hp i).2.1)
-      fun x hx ↦ hc (Or.inl (subset_closure hx)),
-    integralDensity_eq_sum_disjointed_chart_integrals hν b α u hu (fun i ↦ (hp i).2.1)
-      fun x hx ↦ hc (Or.inr (subset_closure hx)), ← Finset.sum_add_distrib]
+  let c := chooseChartCover (I := I) _ (hμ.isCompact.union hν.isCompact)
+  have hu (i : Fin c.n) : IsChartMeasurable I (c.domain i) :=
+    (c.isOpen_domain i).isChartMeasurable
+  rw [integralDensity_eq_sum_disjointed_chart_integrals (hμ.add hν) b c.center c.domain hu
+      c.domain_subset fun x hx ↦ c.covers (tsupport_add (α := Density E m) μ ν (subset_closure hx)),
+    integralDensity_eq_sum_disjointed_chart_integrals hμ b c.center c.domain hu c.domain_subset
+      fun x hx ↦ c.covers (Or.inl (subset_closure hx)),
+    integralDensity_eq_sum_disjointed_chart_integrals hν b c.center c.domain hu c.domain_subset
+      fun x hx ↦ c.covers (Or.inr (subset_closure hx)), ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [RoughDensity.inChartAt_add]
-  exact integral_add (hμ.integrable_inChartAt b (α i)).integrableOn
-    (hν.integrable_inChartAt b (α i)).integrableOn
+  exact integral_add (hμ.integrable_inChartAt b (c.center i)).integrableOn
+    (hν.integrable_inChartAt b (c.center i)).integrableOn
 
 /-- Integration of densities commutes with finite sums of integrable densities. -/
 theorem integralDensity_sum [IsManifold I 1 M] {ι : Type*} (μ : ι → RoughDensity I M m)
@@ -616,7 +603,7 @@ theorem integralDensity_sub [IsManifold I 1 M] {μ ν : RoughDensity I M m}
 
 section TopForm
 
-variable [IsManifold I 1 M]
+variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
 
 /-- In a preferred chart, the coefficient of the density of a top form is its signed coefficient
 against an orientation lift, weighted by the relative sign of the model basis. -/

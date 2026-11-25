@@ -55,13 +55,18 @@ structure ChartCover (I : ModelWithCorners ℝ E H) (s : Set M) where
   covers : s ⊆ ⋃ i, domain i
 
 /-- A chosen finite open chart cover of a compact set. -/
-noncomputable def chooseChartCover [ProperSpace E] (s : Set M) (hc : IsCompact s) :
-    ChartCover I s := by
-  let : LocallyCompactSpace H := I.locallyCompactSpace
-  let h := exists_finite_precompact_chart_cover (I := I) hc
-  have hp := h.choose_spec.choose_spec.choose_spec.choose_spec
-  exact ⟨h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose, fun i ↦ (hp.1 i).1,
-    fun i ↦ (hp.1 i).2.1, hp.2⟩
+noncomputable def chooseChartCover (s : Set M) (hc : IsCompact s) : ChartCover I s :=
+  let h := hc.elim_finite_subcover (fun x : M ↦ (extChartAt I x).source)
+    (fun x ↦ isOpen_extChartAt_source x) fun y _ ↦ mem_iUnion.2 ⟨y, mem_extChartAt_source y⟩
+  let e := h.choose.equivFin
+  { n := h.choose.card
+    center := fun i ↦ e.symm i
+    domain := fun i ↦ (extChartAt I (e.symm i : M)).source
+    isOpen_domain := fun _ ↦ isOpen_extChartAt_source _
+    domain_subset := fun _ ↦ subset_rfl
+    covers := fun y hy ↦ by
+      obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (h.choose_spec hy)
+      exact mem_iUnion.2 ⟨e ⟨x, hx⟩, by rwa [Equiv.symm_apply_apply]⟩ }
 
 namespace ChartCover
 
