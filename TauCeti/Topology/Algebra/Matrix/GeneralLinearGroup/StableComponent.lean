@@ -50,6 +50,8 @@ of complex matrices out of this file.
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.continuous_scalar`: the scalar matrix `(u)` depends continuously on
+  the unit `u`.
 * `TauCeti.elementarySubgroup_le_connectedComponentOfOne`: over a connected topological ring,
   elementary matrices lie in the identity component of `GLₙ`.
 * `TauCeti.StableGeneralLinearGroup.identityComponent_normal`: the stable identity component is
@@ -61,6 +63,8 @@ of complex matrices out of this file.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_surjective`,
   `TauCeti.AlgebraicK1.ker_toStableComponentGroup`: the comparison is surjective, with kernel the
   image of the stable identity component.
+* `TauCeti.AlgebraicK1.toStableComponentGroup_ofUnits_eq_one_of_mem_connectedComponentOfOne`: a
+  unit in the identity component of `Aˣ` has trivial class in the stable component group.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_map`: naturality of the comparison.
 
 ## References
@@ -76,6 +80,19 @@ public section
 noncomputable section
 
 open Matrix
+
+namespace Matrix.GeneralLinearGroup
+
+/-- The scalar matrix `u ↦ (u)` in `GL n R` depends continuously on the unit `u`. -/
+theorem continuous_scalar {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
+    [TopologicalSpace R] : Continuous (scalar n : Rˣ → GL n R) := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩
+  · simp only [Function.comp_def, coe_scalar, Matrix.scalar_apply]
+    fun_prop
+  · simp only [← map_inv, coe_scalar, Matrix.scalar_apply]
+    fun_prop
+
+end Matrix.GeneralLinearGroup
 
 namespace TauCeti
 
@@ -386,6 +403,17 @@ theorem ker_toStableComponentGroup :
   rw [← Subgroup.map_comap_eq_self_of_surjective (Group.Abelianization.surjective_of _)
       (toStableComponentGroup A).ker,
     MonoidHom.comap_ker, toStableComponentGroup_comp_of, QuotientGroup.ker_mk']
+
+/-- A unit in the identity component of `Aˣ` has trivial class in the stable component group: the
+`1 × 1` scalar matrix `(u)` depends continuously on `u`, so it lies in the identity component of
+`GL₁(A)`. -/
+theorem toStableComponentGroup_ofUnits_eq_one_of_mem_connectedComponentOfOne {u : Aˣ}
+    (hu : u ∈ Subgroup.connectedComponentOfOne Aˣ) :
+    toStableComponentGroup A (ofUnits A u) = 1 := by
+  rw [ofUnits_apply, toStableComponentGroup_mk]
+  exact StableComponentGroup.mk_eq_one_of_mem_connectedComponentOfOne
+    (Subgroup.map_connectedComponentOfOne_le GeneralLinearGroup.continuous_scalar
+      (Subgroup.mem_map_of_mem _ hu))
 
 /-- The comparison of algebraic `K₁` with the stable component group is natural for continuous
 ring homomorphisms. -/
