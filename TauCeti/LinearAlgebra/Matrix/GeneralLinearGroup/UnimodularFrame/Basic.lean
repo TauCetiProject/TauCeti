@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.LinearAlgebra.Unimodular
+public import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # Unimodular frames and their faces
@@ -75,17 +75,15 @@ theorem submatrix_one_mem_unimodularFrames {f : k → n} (hf : Function.Injectiv
     rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one _ hf]⟩
 
 /-- A frame with a single column is a unimodular vector: an `n × 1` matrix has a left inverse if
-and only if some linear functional on `Rⁿ` takes the value `1` at its column. -/
+and only if its entries generate the unit ideal, which `TauCeti.Module.isUnimodular_pi_iff`
+identifies with unimodularity of its column. -/
 theorem mem_unimodularFrames_iff_isUnimodular [Unique k] {A : Matrix n k R} :
     A ∈ unimodularFrames R n k ↔ Module.IsUnimodular R fun i ↦ A i default := by
-  rw [Module.isUnimodular_iff]
-  refine ⟨fun ⟨B, hB⟩ ↦ ⟨LinearMap.proj default ∘ₗ B.mulVecLin, ?_⟩, fun ⟨f, hf⟩ ↦ ?_⟩
-  · simpa [mulVec, dotProduct, Matrix.mul_apply] using
-      congrFun (congrFun hB default) default
-  · refine ⟨Matrix.of fun _ j ↦ f fun l ↦ if j = l then 1 else 0, Matrix.ext fun i j ↦ ?_⟩
-    rw [Subsingleton.elim i default, Subsingleton.elim j default, one_apply_eq]
-    refine Eq.trans ?_ hf
-    rw [f.pi_apply_eq_sum_univ fun i ↦ A i default]
+  rw [TauCeti.Module.isUnimodular_pi_iff]
+  refine ⟨fun ⟨B, hB⟩ ↦ ⟨fun i ↦ B default i, ?_⟩, fun ⟨b, hb⟩ ↦
+    ⟨Matrix.of fun _ j ↦ b j, Matrix.ext fun i j ↦ ?_⟩⟩
+  · simpa [Matrix.mul_apply, mul_comm] using congrFun₂ hB default default
+  · rw [Subsingleton.elim i default, Subsingleton.elim j default, one_apply_eq, ← hb]
     simp [Matrix.mul_apply, mul_comm]
 
 /-- Deleting some columns of a frame leaves a frame. -/
