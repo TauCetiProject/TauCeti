@@ -26,6 +26,7 @@ recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c 
 ## Main results
 
 * `EReal.iInf_sub_coe` — subtracting a real constant commutes with an infimum in `EReal`;
+* `EReal.iSup_add_coe` — adding a real constant commutes with a supremum in `EReal`;
 * `EReal.coe_sub_add_coe` — subtracting a sum whose final term is real can be reassociated when
   the minuend is real;
 * `EReal.coe_sub_le_comm` — the two subtrahends of a real minuend can be exchanged across an
@@ -145,6 +146,14 @@ theorem iInf_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
     (⨅ i, (f i - (a : EReal))) = (⨅ i, f i) - (a : EReal) :=
   -- subtracting `a` is right adjoint to adding `a`
   (GaloisConnection.u_iInf (l := (· + (a : EReal))) (u := (· - (a : EReal))) fun _ _ ↦
+    (le_sub_iff_add_le (.inl (coe_ne_bot a)) (.inl (coe_ne_top a))).symm).symm
+
+/-- Adding a real constant commutes with a supremum in `EReal`; both sides are `⊥` when the index
+type is empty. -/
+theorem iSup_add_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
+    (⨆ i, (f i + (a : EReal))) = (⨆ i, f i) + (a : EReal) :=
+  -- adding `a` is left adjoint to subtracting `a`
+  (GaloisConnection.l_iSup (l := (· + (a : EReal))) (u := (· - (a : EReal))) fun _ _ ↦
     (le_sub_iff_add_le (.inl (coe_ne_bot a)) (.inl (coe_ne_top a))).symm).symm
 
 /-- Subtracting a sum whose final term is real can be reassociated when the minuend is real. -/
