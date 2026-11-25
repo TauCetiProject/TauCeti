@@ -152,15 +152,14 @@ cocycle on the orientation cover.** Let `E → B` be a real vector bundle of ran
 orientation double cover and `E'` the pull-back of `E` to `B'`, and let `k` be a commutative ring.
 A relative cocycle `φ` of degree `r` of `(E', E'₀)` which the deck involution negates
 (`TopPair.IsSemiInvariantCocycle` for the sign character of `ℤˣ`, acting through its copy
-`ULift ℤˣ`) and whose class is a Thom class of `E'` gives `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`, with
-coefficients in the orientation local system `o(E)`
+`ULift ℤˣ`: `TauCeti.uliftIntUnitsSign`) and whose class is a Thom class of `E'` gives
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`, with coefficients in the orientation local system `o(E)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). -/
 def thomPairSingularHomologyIsoTwistedHomology
     {φ : (TopPair.singularCochainComplex
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
       (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
-    (hφ : TopPair.IsSemiInvariantCocycle (G := ULift.{w} ℤˣ)
-      ((Units.map (Int.castRingHom k).toMonoidHom).comp MulEquiv.ulift.toMonoidHom) φ)
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ)
     (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
       ((TopPair.singularCochainComplex
         (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
@@ -174,9 +173,7 @@ def thomPairSingularHomologyIsoTwistedHomology
   haveI := quasiIso_singularChainsRepCap_thomPair (F := F)
     (E := (projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (G := ULift.{w} ℤˣ)
     (B := VectorBundleOrientationCover F E ι) (fun _ ↦ thomPair_map_smul _)
-    (fun _ ↦ thomPairProj_smul _)
-    ((Units.map (Int.castRingHom k).toMonoidHom).comp
-      (MulEquiv.ulift : ULift.{w} ℤˣ ≃* ℤˣ).toMonoidHom) hφ hu
+    (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ hu
   ((thomPair F E).twistedHomologyConstantIso (ModuleCat.of k k) _).symm ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso
       ((thomPair F E).twistedChainComplexCoefficientIso
@@ -189,21 +186,16 @@ def thomPairSingularHomologyIsoTwistedHomology
       -- `thomPairProj_smul` reads the zeros of the fibres through `pullbackFiberZero` instead
       (Rep.trivial k (ULift.{w} ℤˣ) k) (TopPair.singularChainsRepCap
         (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _)
-        ((Units.map (Int.castRingHom k).toMonoidHom).comp
-          (MulEquiv.ulift : ULift.{w} ℤˣ ≃* ℤˣ).toMonoidHom) hφ (fun _ ↦ thomPair_map_smul _))
+        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ
+        (fun _ ↦ thomPair_map_smul _))
       (p + finrank ℝ F) ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso (HomologicalComplex.mapExtendIso _ _ _) ≪≫
     HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingDownNatAdd_f _ p) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       ((NatIso.mapHomologicalComplex (Rep.tensorLeftCompCoinvariantsTensorTrivialIso _ ≪≫
         (Rep.coinvariantsTensor k (ULift.{w} ℤˣ)).mapIso
-          (Rep.mkIso (Representation.ofLinearCharacterEquivOfDistribMulAction (G := ULift.{w} ℤˣ)
-            ((Units.map (Int.castRingHom k).toMonoidHom).comp
-              (MulEquiv.ulift : ULift.{w} ℤˣ ≃* ℤˣ).toMonoidHom)
-            -- `MulEquiv.ulift ⟨u⟩` is `u`, and `⟨u⟩` acts on `k` as `u` does, by definition.
-            fun ⟨u⟩ x ↦ show ((Units.map (Int.castRingHom k).toMonoidHom u : kˣ) : k) * x = u • x by
-              simp [Units.smul_def]))) _).app _) ≪≫
+          (Rep.mkIso (Representation.ofLinearCharacterEquivOfDistribMulAction
+            (uliftIntUnitsSign k) fun _ _ ↦ by simp [Units.smul_def]))) _).app _) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       (coinvariantsTensorSingularChainsRepIsoTwisted hι k)
 

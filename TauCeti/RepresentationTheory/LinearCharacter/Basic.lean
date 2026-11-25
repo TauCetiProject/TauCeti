@@ -32,11 +32,14 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
+* `TauCeti.uliftIntUnitsSign`: the sign character `ULift ℤˣ →* kˣ` of the copy `ULift ℤˣ` of `ℤˣ`
+  in any universe.
 * `Representation.ofLinearCharacterEquivOfDistribMulAction`: the line of a character by which `G`
   acts on `k`, such as the sign character `ℤˣ →* kˣ`, is that action.
 
 ## Main results
 
+* `TauCeti.uliftIntUnitsSign_apply`: the sign character sends `g` to the image of `g.down` in `k`.
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
@@ -82,7 +85,25 @@ public section
 
 open CategoryTheory
 
-universe u v
+universe u v w
+
+namespace TauCeti
+
+variable (k : Type u) [Ring k]
+
+/-- **The sign character of `ULift ℤˣ`.** The character `ULift ℤˣ →* kˣ` sending `⟨u⟩` to the
+image of `u` in `k`: the sign character `ℤˣ →* kˣ` induced by `ℤ → k`, read on the copy
+`ULift ℤˣ` of `ℤˣ` in any universe through `MulEquiv.ulift`. -/
+def uliftIntUnitsSign : ULift.{w} ℤˣ →* kˣ :=
+  (Units.map (Int.castRingHom k).toMonoidHom).comp MulEquiv.ulift.toMonoidHom
+
+/-- The sign character of `ULift ℤˣ` sends `g` to the image of `g.down` in `k`. -/
+@[simp]
+theorem uliftIntUnitsSign_apply (g : ULift.{w} ℤˣ) :
+    (uliftIntUnitsSign k g : k) = ((g.down : ℤ) : k) :=
+  (rfl)
+
+end TauCeti
 
 namespace Representation
 
@@ -138,8 +159,9 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
 /-- **A linear character by which `G` acts on `k` is that action.** If every `g : G` acts on `k` by
 multiplication by `χ g`, the line of `χ` is the action `g • x` of `G` on `k`
 (`Representation.ofDistribMulAction`), through the identity of `k`. For instance the sign character
-`ℤˣ →* kˣ` induced by `ℤ → k` is the action of `ℤˣ` on `k` by signs, and so is its composite with
-`MulEquiv.ulift`, for the copy `ULift ℤˣ` of `ℤˣ` acting through `ULift.down`. -/
+`ℤˣ →* kˣ` induced by `ℤ → k` is the action of `ℤˣ` on `k` by signs, and so is its composite
+`TauCeti.uliftIntUnitsSign` with `MulEquiv.ulift`, for the copy `ULift ℤˣ` of `ℤˣ` acting through
+`ULift.down`. -/
 def ofLinearCharacterEquivOfDistribMulAction [CommSemiring k] [Monoid G] [DistribMulAction G k]
     [SMulCommClass G k k] (χ : G →* kˣ) (hχ : ∀ g x, (χ g : k) * x = g • x) :
     (ofLinearCharacter χ).Equiv (ofDistribMulAction k G k) :=

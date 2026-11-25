@@ -43,7 +43,7 @@ which `2` is invertible the twisted Thom isomorphism is proved by a transfer ins
 
 The base, the fibres and the ring lie in any common universe `w`. The cap product with a
 semi-invariant cocycle needs the acting group in that universe, so the units act through their copy
-`ULift ℤˣ`, and the sign character is `ULift ℤˣ ≃* ℤˣ →* Rˣ`.
+`ULift ℤˣ`, and the sign character is `TauCeti.uliftIntUnitsSign : ULift ℤˣ →* Rˣ`.
 
 ## Main results
 
@@ -120,8 +120,7 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
       (ModuleCat.of R R)).cycles n) :
     TopPair.IsSemiInvariantCocycle (P := thomPair F
-        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (G := ULift.{w} ℤˣ)
-      ((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom)
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (uliftIntUnitsSign.{w} R)
       (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R)) n
         φ) := by
   refine (TopPair.isSemiInvariantCocycle_iff _ _).2 fun ⟨g⟩ ↦ ?_
@@ -129,12 +128,9 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
   rcases Int.units_eq_one_or g with rfl | rfl
   · have h1 : TopCat.ofHom ⟨((⟨1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
         ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
-        continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul ℤˣ v
+        continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul (ULift.{w} ℤˣ) v
     rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp,
-      -- `MulEquiv.ulift ⟨u⟩` is `u` by definition.
-      show (((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom ⟨1⟩ : Rˣ) :
-        R) = 1 from (show ((Units.map (Int.castRingHom R : ℤ →* R) 1 : Rˣ) : R) = 1 by simp),
-      one_smul]
+      uliftIntUnitsSign_apply, Units.val_one, Int.cast_one, one_smul]
     -- The two sides differ only in the instance composing the quotient onto the relative chains:
     -- the category of chain complexes of the singular simplicial set or of `singularChains R`.
     rfl
@@ -151,12 +147,11 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     -- `ULift ℤˣ` acts through `ULift.down`, so `⟨-1⟩` acts as `-1` does.
     have hδ : TopCat.ofHom ⟨((⟨-1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
         ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
-        continuous_const_smul _⟩ = TopPair.Hom.fst (deckThomPairMap F E ι) :=
-      neg_one_smul_eq_deckThomPairMap_fst
-    -- `MulEquiv.ulift ⟨u⟩` is `u` by definition.
-    rw [hδ, show (((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom ⟨-1⟩ :
-      Rˣ) : R) = -1 from (show ((Units.map (Int.castRingHom R : ℤ →* R) (-1) : Rˣ) : R) = -1 by
-        simp), neg_one_smul]
+        continuous_const_smul _⟩ = TopPair.Hom.fst (deckThomPairMap F E ι) := by
+      simp only [ULift.smul_def]
+      exact neg_one_smul_eq_deckThomPairMap_fst
+    rw [hδ, uliftIntUnitsSign_apply, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
+      neg_one_smul]
     erw [reassoc_of% hd, reassoc_of% hΛ, Preadditive.neg_comp, Preadditive.comp_neg]
     -- As in the case `1`, the two sides differ only in the instances of the composites.
     rfl
@@ -196,8 +191,7 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
           (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
     QuasiIso (TopPair.singularChainsRepCap
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (G := ULift.{w} ℤˣ) (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _)
-      ((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom)
+      (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign.{w} R)
       (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) :=
   quasiIso_singularChainsRepCap_thomPair _ _ _ _
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R hφ)
