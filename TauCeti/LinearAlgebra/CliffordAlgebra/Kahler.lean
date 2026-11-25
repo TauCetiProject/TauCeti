@@ -405,6 +405,67 @@ end Frame
 
 end TauCeti.AlmostComplexStructure
 
+namespace OrthonormalBasis
+
+open CliffordAlgebra
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+  {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+  (e : OrthonormalBasis (Fin 4) ℝ V) (u : W)
+
+/-- The complex subspace `span {u, c(e₀) c(e₂) u, c(e₀) u, c(e₂) u}` generated
+by a spinor and its Clifford translates. -/
+noncomputable abbrev canonicalSubmodule : Submodule ℂ W :=
+  Submodule.span ℂ {u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u}
+
+/-- The canonical submodule contains its generating spinor. -/
+@[simp]
+theorem self_mem_canonicalSubmodule : u ∈ e.canonicalSubmodule (ρ := ρ) u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the double Clifford translate of its generating spinor. -/
+@[simp]
+theorem ι_zero_apply_ι_two_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ e.canonicalSubmodule (ρ := ρ) u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the translate by the zeroth frame vector. -/
+@[simp]
+theorem ι_zero_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 0)) u ∈ e.canonicalSubmodule (ρ := ρ) u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the translate by the second frame vector. -/
+@[simp]
+theorem ι_two_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 2)) u ∈ e.canonicalSubmodule (ρ := ρ) u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule is the least submodule containing the four Clifford translates. -/
+theorem canonicalSubmodule_le_iff {P : Submodule ℂ W} :
+    e.canonicalSubmodule (ρ := ρ) u ≤ P ↔ u ∈ P ∧ ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ P ∧
+      ρ (ι Q (e 0)) u ∈ P ∧ ρ (ι Q (e 2)) u ∈ P := by
+  simp [canonicalSubmodule, Submodule.span_le, Set.insert_subset_iff]
+
+/-- Membership in the canonical submodule amounts to writing the vector in the four generators. -/
+theorem mem_canonicalSubmodule_iff {w : W} :
+    w ∈ e.canonicalSubmodule (ρ := ρ) u ↔ ∃ a b c d : ℂ,
+      w = a • u + b • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) +
+        c • ρ (ι Q (e 0)) u + d • ρ (ι Q (e 2)) u := by
+  constructor
+  · intro hw
+    obtain ⟨a, _, hx, rfl⟩ := Submodule.mem_span_insert.1 hw
+    obtain ⟨b, _, hy, rfl⟩ := Submodule.mem_span_insert.1 hx
+    obtain ⟨c, _, hz, rfl⟩ := Submodule.mem_span_insert.1 hy
+    obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.1 hz
+    exact ⟨a, b, c, d, by simp only [add_assoc]⟩
+  · rintro ⟨a, b, c, d, rfl⟩
+    exact Submodule.add_mem _ (Submodule.add_mem _ (Submodule.add_mem _
+      (Submodule.smul_mem _ _ (by simp)) (Submodule.smul_mem _ _ (by simp)))
+      (Submodule.smul_mem _ _ (by simp))) (Submodule.smul_mem _ _ (by simp))
+
+end OrthonormalBasis
+
 namespace TauCeti.AlmostComplexStructure
 
 noncomputable section
@@ -497,73 +558,14 @@ theorem exists_ne_zero_bivectorExterior_apply [Nontrivial W] (hQ : ∀ v, Q v = 
     · simpa using bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply
         hQ h₀ h₂ hzω
 
-/-- The complex subspace `span {u, c(e₀) c(e₂) u, c(e₀) u, c(e₂) u}` generated
-by a spinor and its Clifford translates. -/
-abbrev canonicalSubmodule (e : OrthonormalBasis (Fin 4) ℝ V) (u : W) : Submodule ℂ W :=
-  Submodule.span ℂ {u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u}
-
-section Generators
-
-omit [Fact (finrank ℝ V = 4)]
-
-variable (e : OrthonormalBasis (Fin 4) ℝ V) (u : W)
-
-/-- The canonical submodule contains its generating spinor. -/
-@[simp]
-theorem self_mem_canonicalSubmodule : u ∈ canonicalSubmodule (ρ := ρ) e u :=
-  Submodule.subset_span (by simp)
-
-/-- The canonical submodule contains the double Clifford translate of its generating spinor. -/
-@[simp]
-theorem ι_zero_apply_ι_two_apply_mem_canonicalSubmodule :
-    ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ canonicalSubmodule (ρ := ρ) e u :=
-  Submodule.subset_span (by simp)
-
-/-- The canonical submodule contains the translate by the zeroth frame vector. -/
-@[simp]
-theorem ι_zero_apply_mem_canonicalSubmodule :
-    ρ (ι Q (e 0)) u ∈ canonicalSubmodule (ρ := ρ) e u :=
-  Submodule.subset_span (by simp)
-
-/-- The canonical submodule contains the translate by the second frame vector. -/
-@[simp]
-theorem ι_two_apply_mem_canonicalSubmodule :
-    ρ (ι Q (e 2)) u ∈ canonicalSubmodule (ρ := ρ) e u :=
-  Submodule.subset_span (by simp)
-
-/-- The canonical submodule is the least submodule containing the four Clifford translates. -/
-theorem canonicalSubmodule_le_iff {P : Submodule ℂ W} :
-    canonicalSubmodule (ρ := ρ) e u ≤ P ↔ u ∈ P ∧ ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ P ∧
-      ρ (ι Q (e 0)) u ∈ P ∧ ρ (ι Q (e 2)) u ∈ P := by
-  simp [canonicalSubmodule, Submodule.span_le, Set.insert_subset_iff]
-
-/-- Membership in the canonical submodule amounts to writing the vector in the four generators. -/
-theorem mem_canonicalSubmodule_iff {w : W} :
-    w ∈ canonicalSubmodule (ρ := ρ) e u ↔ ∃ a b c d : ℂ,
-      w = a • u + b • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) +
-        c • ρ (ι Q (e 0)) u + d • ρ (ι Q (e 2)) u := by
-  constructor
-  · intro hw
-    obtain ⟨a, _, hx, rfl⟩ := Submodule.mem_span_insert.1 hw
-    obtain ⟨b, _, hy, rfl⟩ := Submodule.mem_span_insert.1 hx
-    obtain ⟨c, _, hz, rfl⟩ := Submodule.mem_span_insert.1 hy
-    obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.1 hz
-    exact ⟨a, b, c, d, by simp only [add_assoc]⟩
-  · rintro ⟨a, b, c, d, rfl⟩
-    exact Submodule.add_mem _ (Submodule.add_mem _ (Submodule.add_mem _
-      (Submodule.smul_mem _ _ (by simp)) (Submodule.smul_mem _ _ (by simp)))
-      (Submodule.smul_mem _ _ (by simp))) (Submodule.smul_mem _ _ (by simp))
-
-end Generators
-
-/-- Each frame generator `c(e k)` maps the four generators of `canonicalSubmodule e u` back into
-`canonicalSubmodule e u`. -/
+/-- Each frame generator `c(e k)` maps the four generators of `e.canonicalSubmodule u` back into
+`e.canonicalSubmodule u`. -/
 private theorem canonicalSubmodule_le_comap_ι_basis {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (k : Fin 4) : canonicalSubmodule (ρ := ρ) e u ≤
-      (canonicalSubmodule (ρ := ρ) e u).comap (ρ (ι Q (e k))) := by
-  set M := canonicalSubmodule (ρ := ρ) e u
+    (k : Fin 4) : e.canonicalSubmodule (ρ := ρ) u ≤
+      (e.canonicalSubmodule (ρ := ρ) u).comap (ρ (ι Q (e k))) := by
+  set M := e.canonicalSubmodule (ρ := ρ) u
   have hb₀M : u ∈ M := by simp [M]
   have hb₁M : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ M := by simp [M]
   have hb₂M : ρ (ι Q (e 0)) u ∈ M := by simp [M]
@@ -576,7 +578,7 @@ private theorem canonicalSubmodule_le_comap_ι_basis {e : OrthonormalBasis (Fin 
     AlmostComplexStructure.ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
   obtain ⟨p102, p302⟩ :=
     AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  apply (canonicalSubmodule_le_iff e u).2
+  apply (e.canonicalSubmodule_le_iff u).2
   refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [Submodule.mem_comap] <;>
     match k with
     | 0 => ?_
@@ -603,13 +605,13 @@ private theorem canonicalSubmodule_le_comap_ι_basis {e : OrthonormalBasis (Fin 
   · rw [e.map_ι_apply_map_ι_apply hQ ρ]; exact M.neg_mem hb₀M
   · rw [p32]; exact M.smul_mem _ hb₀M
 
-/-- `canonicalSubmodule e u` is invariant under every Clifford element `a : CliffordAlgebra Q`. -/
+/-- `e.canonicalSubmodule u` is invariant under every Clifford element `a : CliffordAlgebra Q`. -/
 theorem mapsTo_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
     (a : CliffordAlgebra Q) :
-    ∀ w ∈ canonicalSubmodule (ρ := ρ) e u, ρ a w ∈ canonicalSubmodule (ρ := ρ) e u := by
-  set M := canonicalSubmodule (ρ := ρ) e u
+    ∀ w ∈ e.canonicalSubmodule (ρ := ρ) u, ρ a w ∈ e.canonicalSubmodule (ρ := ρ) u := by
+  set M := e.canonicalSubmodule (ρ := ρ) u
   induction a using CliffordAlgebra.induction with
   | algebraMap r =>
     intro w hw
@@ -629,30 +631,30 @@ theorem mapsTo_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
     rw [map_add, LinearMap.add_apply]
     exact M.add_mem (ha _ hw) (hb _ hw)
 
-/-- The Clifford action `ρ` restricted to `canonicalSubmodule e u`. -/
+/-- The Clifford action `ρ` restricted to `e.canonicalSubmodule u`. -/
 noncomputable def canonicalSubmoduleAlgHom {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u) :
-    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (canonicalSubmodule (ρ := ρ) e u) :=
+    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (e.canonicalSubmodule (ρ := ρ) u) :=
   ρ.restrictEnd _ (mapsTo_canonicalSubmodule hQ h₀ h₂ hu)
 
-/-- The restricted Clifford action on `canonicalSubmodule e u` agrees with `ρ` on underlying
+/-- The restricted Clifford action on `e.canonicalSubmodule u` agrees with `ρ` on underlying
 vectors. -/
 @[simp]
 theorem coe_canonicalSubmoduleAlgHom_apply {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (a : CliffordAlgebra Q) (w : canonicalSubmodule (ρ := ρ) e u) :
+    (a : CliffordAlgebra Q) (w : e.canonicalSubmodule (ρ := ρ) u) :
     (canonicalSubmoduleAlgHom hQ h₀ h₂ hu a w : W) = ρ a w :=
   AlgHom.coe_restrictEnd_apply ρ _ _ a w
 
-/-- Every positive half-spinor in `canonicalSubmodule e u` is a linear combination of `u` and
+/-- Every positive half-spinor in `e.canonicalSubmodule u` is a linear combination of `u` and
 `c(e₀) c(e₂) u`. -/
 theorem mem_span_positive_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
-    {u : eigenspace (ρ (chirality Q o)) 1} {w : W} (hwM : w ∈ canonicalSubmodule (ρ := ρ) e u)
+    {u : eigenspace (ρ (chirality Q o)) 1} {w : W} (hwM : w ∈ e.canonicalSubmodule (ρ := ρ) u)
     (hwΓ : ρ (chirality Q o) w = w) :
     ∃ c₀ c₁ : ℂ, w = c₀ • (u : W) + c₁ • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-  obtain ⟨c₀, c₁, c₂, c₃, rfl⟩ := (mem_canonicalSubmodule_iff e (u : W)).1 hwM
+  obtain ⟨c₀, c₁, c₂, c₃, rfl⟩ := (e.mem_canonicalSubmodule_iff (u : W)).1 hwM
   have hΓ0 : ρ (chirality Q o) u = u := by simpa using mem_eigenspace_iff.1 u.property
   have hΓ1 : ρ (chirality Q o) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)) =
       ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
@@ -670,14 +672,14 @@ theorem mem_span_positive_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V
   exact ⟨c₀, c₁, by linear_combination (norm := module) h23⟩
 
 /-- For a nonzero `-2i`-eigenvector `u ∈ W⁺(o)` of `c₂(ω)`, `(u, c(e₀) c(e₂) u)` is a `ℂ`-basis of
-the positive half-spinors of `canonicalSubmodule e u`. -/
+the positive half-spinors of `e.canonicalSubmodule u`. -/
 noncomputable def canonicalSubmodulePositiveBasis {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
     (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
     Basis (Fin 2) ℂ
       (eigenspace (canonicalSubmoduleAlgHom hQ h₀ h₂ hu (chirality Q o)) 1) := by
-  let M := canonicalSubmodule (ρ := ρ) e u
+  let M := e.canonicalSubmodule (ρ := ρ) u
   let ρM := canonicalSubmoduleAlgHom hQ h₀ h₂ hu
   let b₁ : W := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)
   have hb₁ω : ρ (bivectorExterior Q J.kahlerForm) b₁ = (2 * Complex.I) • b₁ := by
@@ -729,7 +731,7 @@ theorem coe_canonicalSubmodulePositiveBasis_zero {e : OrthonormalBasis (Fin 4) �
     {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
     (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
     ((canonicalSubmodulePositiveBasis hQ h₀ h₂ hu₀ hu 0 :
-        canonicalSubmodule (ρ := ρ) e u) : W) = u := by
+        e.canonicalSubmodule (ρ := ρ) u) : W) = u := by
   simp [canonicalSubmodulePositiveBasis]
 
 /-- The first vector of `canonicalSubmodulePositiveBasis` has underlying vector `c(e₀) c(e₂) u`. -/
@@ -739,7 +741,7 @@ theorem coe_canonicalSubmodulePositiveBasis_one {e : OrthonormalBasis (Fin 4) �
     {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
     (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
     ((canonicalSubmodulePositiveBasis hQ h₀ h₂ hu₀ hu 1 :
-        canonicalSubmodule (ρ := ρ) e u) : W) = ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
+        e.canonicalSubmodule (ρ := ρ) u) : W) = ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
   simp [canonicalSubmodulePositiveBasis]
 
 /-- Applying `c(A e₀) c(A e₂)` to a `-2i`-eigenvector `u` of `c₂(ω)`, for

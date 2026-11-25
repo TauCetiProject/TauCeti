@@ -287,7 +287,7 @@ theorem spinCCircle_mem_canonicalLineFixingSubgroup {e : OrthonormalBasis (Fin 4
 
 section InvariantSubmodule
 
-/-- The half-spin representation on `canonicalSubmodule e u` agrees with that on `W`. -/
+/-- The half-spin representation on `e.canonicalSubmodule u` agrees with that on `W`. -/
 private theorem coe_spinCGroupHalfSpinRep_canonicalSubmoduleAlgHom
     {e : OrthonormalBasis (Fin 4) ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hQ₀ : Q ≠ 0)
@@ -295,9 +295,9 @@ private theorem coe_spinCGroupHalfSpinRep_canonicalSubmoduleAlgHom
     (x : spinCGroup Q hQ₀)
     (ψ : eigenspace (canonicalSubmoduleAlgHom hQ h₀ h₂ hu (chirality Q o)) 1)
     (ψ' : eigenspace (ρ (chirality Q o)) 1)
-    (hψ : ((ψ : canonicalSubmodule (ρ := ρ) e u) : W) = ψ') :
+    (hψ : ((ψ : e.canonicalSubmodule (ρ := ρ) u) : W) = ψ') :
     ((spinCGroupHalfSpinRep o (canonicalSubmoduleAlgHom hQ h₀ h₂ hu) 1 hQ₀ x ψ :
-        canonicalSubmodule (ρ := ρ) e u) : W) =
+        e.canonicalSubmodule (ρ := ρ) u) : W) =
       (spinCGroupHalfSpinRep o ρ 1 hQ₀ x ψ' : W) := by
   obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
   rw [spinCGroupHalfSpinRep_mk, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply,
