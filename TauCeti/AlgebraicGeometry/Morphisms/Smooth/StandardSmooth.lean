@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Standard smooth charts over an affine target
@@ -30,6 +31,9 @@ It also records that smoothness on an open subscheme `U ⊆ X` yields standard s
   morphism has standard smooth charts of some relative dimension around every point.
 * `AlgebraicGeometry.Scheme.Hom.exists_smoothOfRelativeDimension_ι_comp_of_smooth`: a smooth
   morphism is, near every point of its source, smooth of some relative dimension.
+* `AlgebraicGeometry.Scheme.Hom.locally_isStandardSmoothOfRelativeDimension_sections`: for
+  `f : X ⟶ Spec R` smooth of relative dimension `n`, the sections over every affine open of `X`
+  form a locally standard smooth `R`-algebra of relative dimension `n`.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`, in Mathlib's
   `AlgebraicGeometry` namespace: standard smooth charts whose ring map starts at the global
   sections of the affine target.
@@ -83,6 +87,20 @@ theorem exists_smoothOfRelativeDimension_ι_comp_of_smooth {Y S : Scheme.{u}} (f
   have h := (inferInstance :
     SmoothOfRelativeDimension (0 + k) (hV.isoSpec.hom ≫ hV.fromSpec ≫ f))
   rwa [Nat.zero_add, ← Category.assoc, hV.isoSpec_hom_fromSpec] at h
+
+/-- If `f : X ⟶ Spec R` is smooth of relative dimension `n`, then over every affine open `V` of `X`
+the `R`-algebra of sections `Γ(X, V)` induced by `f` is locally standard smooth of relative
+dimension `n`. -/
+theorem locally_isStandardSmoothOfRelativeDimension_sections {R : Type u} [CommRing R]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of R)) (n : ℕ) [SmoothOfRelativeDimension n f]
+    {V : X.Opens} (hV : IsAffineOpen V) :
+    letI := f.sectionsAlgebra V
+    RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension n) (algebraMap R Γ(X, V)) :=
+  f.algebraMap_sections V ▸
+  (RingHom.locally_respectsIso RingHom.isStandardSmoothOfRelativeDimension_respectsIso).right _
+    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm
+    (HasRingHomProperty.appLE (@SmoothOfRelativeDimension n) f inferInstance
+      ⟨⊤, isAffineOpen_top _⟩ ⟨V, hV⟩ _)
 
 end AlgebraicGeometry.Scheme.Hom
 

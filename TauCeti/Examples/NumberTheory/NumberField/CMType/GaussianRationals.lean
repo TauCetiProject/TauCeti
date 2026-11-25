@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.RingTheory.RootsOfUnity.Complex
-public import TauCeti.NumberTheory.NumberField.CMType.ReflexField
+public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!

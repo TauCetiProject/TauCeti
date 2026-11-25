@@ -129,6 +129,14 @@ theorem toCompactlySupportedContinuousMap_smul {R : Type*} [Semiring R] [Module 
     (c • φ).toCompactlySupportedContinuousMap = c • φ.toCompactlySupportedContinuousMap :=
   (rfl)
 
+/-- The restriction of a test function to `Ω` is supported in the preimage of its support. -/
+theorem tsupport_toCompactlySupportedContinuousMap_subset (φ : 𝓓^{n}(Ω, F)) :
+    tsupport φ.toCompactlySupportedContinuousMap ⊆ ((↑) : Ω → E) ⁻¹' tsupport φ := by
+  have h : ⇑φ.toCompactlySupportedContinuousMap = fun x : Ω => φ x :=
+    funext (toCompactlySupportedContinuousMap_apply φ)
+  rw [h]
+  exact tsupport_comp_subset_preimage φ continuous_subtypeVal
+
 /-- Extending the restriction of a test function on `Ω` by zero recovers the test function. -/
 @[simp]
 theorem coe_extendZero_toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) :
