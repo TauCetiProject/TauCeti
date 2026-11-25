@@ -8,7 +8,8 @@ module
 public import Mathlib.Dynamics.BirkhoffSum.Basic
 public import Mathlib.Dynamics.TopologicalEntropy.NetEntropy
 import Mathlib.Algebra.Order.Floor.Extended
-import TauCeti.Data.EReal.Operations
+import TauCeti.Analysis.Asymptotics.ExpGrowth
+import TauCeti.Data.EReal.Quantale
 
 /-!
 # Topological pressure of maps
@@ -39,6 +40,10 @@ n x)` are all `1` for `φ = 0`.
 * `TauCeti.topologicalPressure_zero` — `P(T, 0)` is the topological entropy `coverEntropy T univ`.
 * `TauCeti.topologicalPressure_mono` — pressure is monotone in the potential.
 * `TauCeti.topologicalPressure_add_const` — `P(T, φ + c) = P(T, φ) + c`.
+
+The net-based definitions and their antitonicity lemmas are modelled on `netMaxcard` and
+`netEntropyEntourage` in Mathlib's `Mathlib/Dynamics/TopologicalEntropy/NetEntropy.lean`
+(D. Thomine, P. Monticone).
 
 ## References
 
@@ -79,6 +84,17 @@ theorem _root_.Dynamics.IsDynNetIn.sum_le_pressureNetSum {s : Finset X}
     ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) ≤ pressureNetSum T φ U n :=
   le_iSup₂ (f := fun (s : Finset X) (_ : IsDynNetIn T univ U n s) ↦
     ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x))) s hs
+
+/-- The pressure sum is at most `a` exactly when every net sum is. -/
+theorem pressureNetSum_le_iff {a : ℝ≥0∞} :
+    pressureNetSum T φ U n ≤ a ↔ ∀ s : Finset X, IsDynNetIn T univ U n s →
+      ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) ≤ a :=
+  iSup₂_le_iff
+
+/-- The pressure at an entourage is the upper exponential growth rate of the pressure sums. -/
+theorem netPressureEntourage_def :
+    netPressureEntourage T φ U = expGrowthSup (pressureNetSum T φ U) :=
+  (rfl)
 
 /-- The pressure sums are antitone in the entourage. -/
 theorem pressureNetSum_antitone (T : X → X) (φ : X → ℝ) (n : ℕ) :
@@ -148,26 +164,16 @@ theorem pressureNetSum_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : S
 /-- Adding a constant `c` to the potential adds `c` to the pressure at every entourage. -/
 theorem netPressureEntourage_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X) :
     netPressureEntourage T (fun x ↦ φ x + c) U = netPressureEntourage T φ U + c := by
-  have hfn : (fun n : ℕ ↦ ENNReal.ofReal (Real.exp (n * c))) =
-      fun n : ℕ ↦ EReal.exp ((c : EReal) * n) := funext fun n ↦ by
-    rw [show ((c : EReal) * (n : EReal)) = ((n * c : ℝ) : EReal) by norm_cast; rw [mul_comm],
-      EReal.exp_coe]
-  have hexp : expGrowthSup (fun n : ℕ ↦ ENNReal.ofReal (Real.exp (n * c))) = c :=
-    hfn ▸ expGrowthSup_exp
-  have hexp' : expGrowthInf (fun n : ℕ ↦ ENNReal.ofReal (Real.exp (n * c))) = c :=
-    hfn ▸ expGrowthInf_exp
   have hfun : pressureNetSum T (fun x ↦ φ x + c) U =
-      (fun n : ℕ ↦ ENNReal.ofReal (Real.exp (n * c))) * pressureNetSum T φ U :=
-    funext fun n ↦ pressureNetSum_add_const T φ c U n
-  rw [netPressureEntourage, netPressureEntourage, hfun, add_comm]
-  refine le_antisymm ?_ ?_
-  · refine (expGrowthSup_mul_le ?_ ?_).trans_eq (by rw [hexp]) <;>
-      simp [hexp, EReal.coe_ne_top, EReal.coe_ne_bot]
-  · exact (le_expGrowthSup_mul').trans_eq' (by rw [hexp'])
+      fun n : ℕ ↦ EReal.exp (c * n) * pressureNetSum T φ U n := funext fun n ↦ by
+    rw [pressureNetSum_add_const, ← EReal.exp_coe, EReal.coe_mul, EReal.coe_natCast,
+      mul_comm (n : EReal)]
+  rw [netPressureEntourage_def, netPressureEntourage_def, hfun, expGrowthSup_exp_mul, add_comm]
 
 /-- Adding a constant `c` to the potential adds `c` to the pressure. -/
 theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X → ℝ) (c : ℝ) :
     topologicalPressure T (fun x ↦ φ x + c) = topologicalPressure T φ + c := by
-  simp only [topologicalPressure, netPressureEntourage_add_const, EReal.iSup_add_coe]
+  simp only [topologicalPressure, netPressureEntourage_add_const, iSup_subtype',
+    AddQuantale.iSup_add_distrib]
 
 end TauCeti
