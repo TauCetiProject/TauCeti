@@ -28,8 +28,11 @@ canonical scheme projection `representedQuotientProjection`.
   `P` over every algebra exactly when `g⁻¹Pg ⊆ Q` as subgroup schemes.
 * `CommHopfAlgCat.representedQuotientRightMul`: the scheme morphism `xP ↦ xgQ` associated to
   such an inclusion.
+* `CommHopfAlgCat.representedQuotientEquivariant_iff_exists_eq_rightMul_of_surjective`: over a
+  commutative ring, every equivariant scheme morphism has this form if all `R`-points of the
+  target quotient lift to `G(R)`.
 * `CommHopfAlgCat.representedQuotientEquivariant_iff_exists_eq_rightMul`: over an algebraically
-  closed field, every equivariant scheme morphism has this form.
+  closed field, the lifting hypothesis holds, so every equivariant scheme morphism has this form.
 * `CommHopfAlgCat.representedQuotientRightMul_eq_iff`: two representatives give the same scheme
   morphism exactly when they give the same point of `Y`.
 
@@ -165,24 +168,51 @@ theorem representedQuotientRightMul_eq_iff
     fppfHomogeneousQuotientRightMul_eq_fppfHomogeneousQuotientRightMul_iff]
   exact (mapMulEquiv_comp_representedQuotientProjection_eq_iff G Q eQ g g').symm
 
+/-- **Equivariant morphisms when rational quotient points lift.** If every `R`-point of the
+fppf quotient `G/Q` lifts to `G(R)`, the equivariant scheme morphisms `G/P ⟶ G/Q` are exactly
+the morphisms `xP ↦ xgQ` with `g⁻¹Pg ⊆ Q` as subgroup schemes. -/
+theorem representedQuotientEquivariant_iff_exists_eq_rightMul_of_surjective
+    (hs : Function.Surjective
+      ((fppfHomogeneousQuotientProjection G Q).app (op (op (CommAlgCat.of R R)))))
+    (f : X ⟶ Y) :
+    IsFppfHomogeneousQuotientEquivariant
+      (eP.hom ≫ (CommAlgCat.pointsSheafFunctor R).map f ≫ eQ.inv) ↔
+    ∃ (g : HopfAlgebra.points (R := R) (H := G) (CommAlgCat.of R R))
+      (h : Q.conjugate g ≤ P), f = representedQuotientRightMul eP eQ g h := by
+  constructor
+  · intro hf
+    obtain ⟨⟨g⟩, hg⟩ := hs
+      ((eP.hom ≫ (CommAlgCat.pointsSheafFunctor R).map f ≫ eQ.inv).hom.app
+        (op (op (CommAlgCat.of R R)))
+        ((fppfHomogeneousQuotientProjection G P).app (op (op (CommAlgCat.of R R)))
+          (ULift.up (1 : HopfAlgebra.points (R := R) (H := G) (CommAlgCat.of R R)))))
+    have h : Q.conjugate g ≤ P :=
+      (projection_mem_fppfHomogeneousQuotientFixedPoints_iff G g).mp
+        (hg ▸ hf.app_projection_one_mem)
+    refine ⟨g, h, (eq_representedQuotientRightMul_iff eP eQ g h f).mpr ?_⟩
+    exact hf.ext (isFppfHomogeneousQuotientEquivariant_rightMul G g h)
+      (hg.symm.trans (fppfHomogeneousQuotientRightMul_app_projection_one G g h).symm)
+  · rintro ⟨g, h, hfg⟩
+    rw [(eq_representedQuotientRightMul_iff eP eQ g h f).mp hfg]
+    exact isFppfHomogeneousQuotientEquivariant_rightMul G g h
+
 section AlgClosed
 
-variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k}
-  {I J : HopfIdeal k H} {U V : Over (Spec (CommRingCat.of k))}
-  (eI : fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf U)
-  (eJ : fppfHomogeneousQuotient H J ≅ CommAlgCat.pointsSheaf V)
+variable {k : Type u} [Field k] [IsAlgClosed k] {G : _root_.CommHopfAlgCat.{u} k}
+  {P Q : HopfIdeal k G} {X Y : Over (Spec (CommRingCat.of k))}
+  (eP : fppfHomogeneousQuotient G P ≅ CommAlgCat.pointsSheaf X)
+  (eQ : fppfHomogeneousQuotient G Q ≅ CommAlgCat.pointsSheaf Y)
 
 /-- **Equivariant morphisms between representing schemes over an algebraically closed field.**
 Every equivariant scheme morphism `G/P ⟶ G/Q` is `xP ↦ xgQ` for a rational group point `g`
 with `g⁻¹Pg ⊆ Q` as subgroup schemes, and every such morphism is equivariant. -/
-theorem representedQuotientEquivariant_iff_exists_eq_rightMul (f : U ⟶ V) :
+theorem representedQuotientEquivariant_iff_exists_eq_rightMul (f : X ⟶ Y) :
     IsFppfHomogeneousQuotientEquivariant
-      (eI.hom ≫ (CommAlgCat.pointsSheafFunctor k).map f ≫ eJ.inv) ↔
-    ∃ (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
-      (h : J.conjugate g ≤ I), f = representedQuotientRightMul eI eJ g h := by
-  rw [isFppfHomogeneousQuotientEquivariant_iff_exists_eq_rightMul]
-  exact exists_congr fun g ↦ exists_congr fun h ↦
-    (eq_representedQuotientRightMul_iff eI eJ g h f).symm
+      (eP.hom ≫ (CommAlgCat.pointsSheafFunctor k).map f ≫ eQ.inv) ↔
+    ∃ (g : HopfAlgebra.points (R := k) (H := G) (CommAlgCat.of k k))
+      (h : Q.conjugate g ≤ P), f = representedQuotientRightMul eP eQ g h :=
+  representedQuotientEquivariant_iff_exists_eq_rightMul_of_surjective eP eQ
+    (fppfHomogeneousQuotientProjection_app_surjective G Q) f
 
 end AlgClosed
 
