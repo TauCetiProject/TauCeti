@@ -30,6 +30,8 @@ of `ad 𝔞` for linear eigenvalue functions are nonzero, since `ad` is linear.
 
 * `LieEquiv.IsCartanInvolution.iSup_restrictedRootSpace_eq_top`: the restricted root spaces of an
   abelian subspace of `𝔭` span `𝔤₀`.
+* `LieEquiv.IsCartanInvolution.isNilpotent_ad_of_mem_restrictedRootSpace`: consequently `ad x`
+  is nilpotent for `x` in the restricted root space of a nonzero functional.
 * `LieEquiv.IsCartanInvolution.isInternal_restrictedRootSpace`: `𝔤₀` is their internal direct sum.
 * `LieEquiv.IsCartanInvolution.restrictedRootSpace_zero_sup_iSup_restrictedRoots_eq_top`:
   `𝔤₀ = 𝔤_0 + ∑_{λ ∈ Σ} 𝔤_λ`.
@@ -67,6 +69,15 @@ theorem iSup_restrictedRootSpace_eq_top (hθ : θ.IsCartanInvolution) (h𝔞 : �
   · exact hχ.le.trans bot_le
   obtain ⟨μ, rfl⟩ := exists_dual_eq_of_iInf_eigenspace_ne_bot hχ
   exact le_iSup_of_le μ restrictedRootSpace_eq_iInf.ge
+
+/-- For a Cartan involution `θ` of a real Lie algebra and an abelian subspace `𝔞` of `𝔭`, `ad x`
+is nilpotent for `x` in the restricted root space of a nonzero functional. -/
+theorem isNilpotent_ad_of_mem_restrictedRootSpace (hθ : θ.IsCartanInvolution)
+    (h𝔞 : 𝔞 ≤ θ.cartanP) (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) {μ : Dual ℝ 𝔞} (hμ : μ ≠ 0)
+    {x : L} (hx : x ∈ 𝔞.restrictedRootSpace μ) : IsNilpotent (ad ℝ L x) :=
+  have := hθ.finiteDimensional
+  Submodule.isNilpotent_ad_of_mem_restrictedRootSpace (hθ.iSup_restrictedRootSpace_eq_top h𝔞 hab)
+    hμ hx
 
 open scoped Classical in
 /-- **The restricted root space decomposition.** For a Cartan involution `θ` of a real Lie algebra

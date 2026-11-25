@@ -40,6 +40,8 @@ directions, the multiples of a restricted root that are restricted roots are amo
 * `LieEquiv.IsCartanInvolution.apply_restrictedCoroot`: `λ(H'_λ) = 2` for `λ ≠ 0`.
 * `LieEquiv.IsCartanInvolution.isSl2Triple_restrictedCoroot`: `(H'_λ, E, c θE)` is an `𝔰𝔩₂`
   triple for nonzero `E ∈ 𝔤_λ`.
+* `LieEquiv.IsCartanInvolution.exists_isSl2Triple_restrictedCoroot`: some `F ∈ 𝔤_{-λ}` completes
+  `(H'_λ, E)` to an `𝔰𝔩₂` triple.
 * `LieEquiv.IsCartanInvolution.exists_isSl2Triple_neg_apply`: over `ℝ`, a positive multiple `E'`
   of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`.
 * `LieEquiv.IsCartanInvolution.exists_int_apply_restrictedCoroot`: `ν(H'_λ) ∈ ℤ` for every `ν`
@@ -151,6 +153,15 @@ theorem isSl2Triple_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) {E : L}
       hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hθE]
     simp only [LinearMap.neg_apply, h2, two_nsmul]
     module
+
+/-- For a nonzero `E` in the root space `𝔤_λ` of a nonzero `λ`, some `F ∈ 𝔤_{-λ}` completes
+`(H'_λ, E)` to an `𝔰𝔩₂` triple. -/
+theorem exists_isSl2Triple_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) {E : L}
+    (hE : E ∈ 𝔞.restrictedRootSpace μ) (hE0 : E ≠ 0) :
+    ∃ F ∈ 𝔞.restrictedRootSpace (-μ),
+      IsSl2Triple (hθ.restrictedCoroot h𝔞.le_cartanP μ : L) E F :=
+  ⟨_, Submodule.smul_mem _ _ (apply_mem_restrictedRootSpace_neg h𝔞.le_cartanP hE),
+    hθ.isSl2Triple_restrictedCoroot h𝔞 hμ hE hE0⟩
 
 /-- **The symmetric `𝔰𝔩₂` triple of a restricted root**, over `ℝ`: for a nonzero `E ∈ 𝔤_λ`,
 `λ ≠ 0`, some positive multiple `E'` of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`
