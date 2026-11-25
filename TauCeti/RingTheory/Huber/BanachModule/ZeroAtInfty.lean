@@ -340,7 +340,10 @@ private theorem comm_smul_eq_map_smul (s : S) (z : CompletedTensor R S C₀(I, R
 
 variable [DiscreteTopology I] [TauCeti.HasZeroSequenceOfUnits R]
   [IsUltrametricDist S] [CompleteSpace S]
-  (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖)
+
+section BaseChange
+
+variable (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖)
 
 /-- **Compatibility with the action of `S`.** For an `R`-algebra `S`, multiplication by `s ∈ S` on
 the second factor of `C₀(I, R) ⊗̂_R S` corresponds to the action of `s` on `C₀(I, S)`. -/
@@ -397,9 +400,19 @@ theorem zeroAtInftyBaseChange_tmul_apply (s : S) (x : C₀(I, R)) (i : I) :
   rw [zeroAtInftyBaseChange_apply, comm_tmul, zeroAtInftyEquiv_tmul_apply, Algebra.smul_def,
     mul_comm]
 
+end BaseChange
+
+/-- Joint continuity of the `S`-action on `S ⊗̂_R C₀(I, R)`. -/
+theorem continuousSMul_completedTensor_zeroAtInfty
+    (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖) :
+    ContinuousSMul S (CompletedTensor R S C₀(I, R)) :=
+  let e := zeroAtInftyBaseChange I hS
+  ⟨(e.symm.continuous.comp <|
+    continuous_smul.comp (continuous_id.prodMap e.continuous)).congr fun _ ↦ by simp [e]⟩
+
 section Coordinates
 
-variable [DecidableEq I]
+variable (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖) [DecidableEq I]
 
 /-- **The inverse of `zeroAtInftyBaseChange`** sends `y` to `∑' i, y i ⊗ eᵢ`. -/
 theorem hasSum_zeroAtInftyBaseChange_symm (y : C₀(I, S)) :
@@ -431,15 +444,6 @@ variable (I : Type*) [TopologicalSpace I] [DiscreteTopology I]
 section Self
 
 variable [TauCeti.HasZeroSequenceOfUnits R]
-
-/-- Joint continuity of the `S`-action on `S ⊗̂_R C₀(I, R)`. -/
-theorem continuousSMul_completedTensor_zeroAtInfty {S : Type*} [NormedCommRing S] [Algebra R S]
-    [IsUltrametricDist S] [CompleteSpace S]
-    (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖) :
-    ContinuousSMul S (CompletedTensor R S C₀(I, R)) :=
-  let e := zeroAtInftyBaseChange I hS
-  ⟨(e.symm.continuous.comp <|
-    continuous_smul.comp (continuous_id.prodMap e.continuous)).congr fun _ ↦ by simp [e]⟩
 
 /-- **Identity base change of `C₀(I, R)`.** When `S = R`, `zeroAtInftyBaseChange` coincides with the
 unit isomorphism `lid R C₀(I, R)`. -/
@@ -523,19 +527,6 @@ variable (I : Type*) [TopologicalSpace I]
   {R : Type*} [SeminormedCommRing R]
   {S : Type*} [NormedCommRing S] [Algebra R S]
 
-private theorem exists_norm_smul_le_of_norm_algebraMap_le
-    (hφ : ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖) :
-    ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖ :=
-  hφ.imp fun C hC r s ↦ by
-    rw [Algebra.smul_def]
-    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hC r) (norm_nonneg s))
-
-private theorem exists_nnreal_bound_of_norm_algebraMap_le {L : ℝ}
-    (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) :
-    ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
-  ⟨⟨max L 0, le_max_right L 0⟩, fun r ↦
-    (hφ r).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg r))⟩
-
 private noncomputable def c0AlgForward
     (hφ : ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖) :
     S ⊗[R] C₀(I, R) →ₗ[S] C₀(I, S) :=
@@ -558,12 +549,12 @@ private theorem c0AlgForward_tmul_apply
 
 private theorem norm_c0AlgForward_le [IsUltrametricDist S] {L : ℝ}
     (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) (z : S ⊗[R] C₀(I, R)) :
-    ‖c0AlgForward I (exists_nnreal_bound_of_norm_algebraMap_le hφ) z‖ ≤
+    ‖c0AlgForward I (exists_nnreal_norm_le_of_norm_le hφ) z‖ ≤
       L * BanachModule.productSeminorm R S C₀(I, R) z := by
   rcases le_or_gt 0 L with hL | hL
   · exact BanachModule.norm_lift_le_mul_productSeminorm
       (coeffBilin I (exists_norm_smul_le_of_norm_algebraMap_le
-        (exists_nnreal_bound_of_norm_algebraMap_le hφ))).flip hL
+        (exists_nnreal_norm_le_of_norm_le hφ))).flip hL
       (fun s x ↦ (norm_le (by positivity)).2 fun i ↦ by
         rw [LinearMap.flip_apply, coeffBilin_apply, Algebra.smul_def, mul_comm]
         calc ‖s * algebraMap R S (x i)‖ ≤ ‖s‖ * ‖algebraMap R S (x i)‖ := norm_mul_le _ _
@@ -638,6 +629,11 @@ private noncomputable def c0CompletedInverseCLM [DiscreteTopology I] [DecidableE
           Completion.coe_smul]
         exact (summable_c0CoordTensor I y).tsum_const_smul s }
   ⟨invₗ, AddMonoidHomClass.continuous_of_bound invₗ ‖(1 : R)‖ (norm_tsum_c0CoordTensor_le I)⟩
+
+private theorem c0CompletedInverseCLM_apply [DiscreteTopology I] [DecidableEq I] (y : C₀(I, S)) :
+    c0CompletedInverseCLM I (R := R) y =
+      ∑' i : I, ((y i ⊗ₜ[R] single i 1 : S ⊗[R] C₀(I, R)) : Completion (S ⊗[R] C₀(I, R))) :=
+  rfl
 
 private theorem hasSum_c0Coord_tmul [DiscreteTopology I] [DecidableEq I]
     (s : S) (x : C₀(I, R)) :
@@ -732,19 +728,19 @@ elementary tensors `y i ⊗ₜ eᵢ` sum unconditionally to `(c0CompletedBaseCha
 theorem hasSum_c0CompletedBaseChangeEquiv_symm [DecidableEq I] (y : C₀(I, S)) :
     HasSum (fun i : I ↦ ((y i ⊗ₜ[R] single i 1 : S ⊗[R] C₀(I, R)) :
       Completion (S ⊗[R] C₀(I, R)))) ((c0CompletedBaseChangeEquiv I hφ).symm y) := by
-  rw [(c0CompletedBaseChangeEquiv I hφ).symm_apply_eq.mpr
-    (c0CompletedForward_inverse I hφ y).symm]
+  have hinv : (c0CompletedBaseChangeEquiv I hφ).symm y = c0CompletedInverseCLM I y := by
+    rw [ContinuousLinearEquiv.symm_apply_eq, c0CompletedBaseChangeEquiv_apply,
+      c0CompletedForward_inverse]
+  rw [hinv, c0CompletedInverseCLM_apply]
   exact (summable_c0CoordTensor I (R := R) y).hasSum
 
 /-- Forward norm bound `‖e z‖ ≤ L * ‖z‖` on the product-seminorm completion. -/
 theorem norm_c0CompletedBaseChangeEquiv_le {L : ℝ}
     (hφ' : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) (z : Completion (S ⊗[R] C₀(I, R))) :
-    ‖c0CompletedBaseChangeEquiv I ⟨⟨max L 0, le_max_right L 0⟩, fun r ↦
-      (hφ' r).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg r))⟩ z‖ ≤
-      L * ‖z‖ := by
+    ‖c0CompletedBaseChangeEquiv I (exists_nnreal_norm_le_of_norm_le hφ') z‖ ≤ L * ‖z‖ := by
   refine Completion.induction_on z
     (isClosed_le (continuous_norm.comp
-      (c0CompletedBaseChangeEquiv I (exists_nnreal_bound_of_norm_algebraMap_le hφ')).continuous)
+      (c0CompletedBaseChangeEquiv I (exists_nnreal_norm_le_of_norm_le hφ')).continuous)
       (continuous_const.mul continuous_norm)) fun u ↦ ?_
   rw [c0CompletedBaseChangeEquiv_apply, c0CompletedForwardCLM_coe, Completion.norm_coe]
   exact norm_c0AlgForward_le I hφ' u
@@ -767,7 +763,7 @@ theorem c0_completedBaseChange [NormOneClass R] {L : ℝ}
         e ((s ⊗ₜ[R] x : S ⊗[R] C₀(I, R)) : Completion (S ⊗[R] C₀(I, R))) i =
           s * algebraMap R S (x i)) ∧
       (∀ z, ‖e z‖ ≤ L * ‖z‖) ∧ (∀ y, ‖e.symm y‖ ≤ ‖y‖) := by
-  have hφ₀ := exists_nnreal_bound_of_norm_algebraMap_le hφ'
+  have hφ₀ := exists_nnreal_norm_le_of_norm_le hφ'
   exact ⟨c0CompletedBaseChangeEquiv I hφ₀, c0CompletedBaseChangeEquiv_coe_tmul_apply I hφ₀,
     norm_c0CompletedBaseChangeEquiv_le I hφ', fun y ↦ by
       simpa using norm_c0CompletedBaseChangeEquiv_symm_le_mul I hφ₀ y⟩
@@ -806,14 +802,14 @@ variable [DiscreteTopology I] [IsUltrametricDist S] [CompleteSpace S] [NormOneCl
 `[NormOneClass R]`, `c0CompletedBaseChangeEquiv` upgrades to an isometric equivalence. -/
 noncomputable def c0CompletedBaseChangeIsometry : Completion (S ⊗[R] C₀(I, R)) ≃ₗᵢ[S] C₀(I, S) :=
   have hφ1 : ∀ r : R, ‖algebraMap R S r‖ ≤ (1 : ℝ) * ‖r‖ := fun r ↦ by simpa using hφ r
-  let e := c0CompletedBaseChangeEquiv I (exists_nnreal_bound_of_norm_algebraMap_le hφ1)
+  let e := c0CompletedBaseChangeEquiv I (exists_nnreal_norm_le_of_norm_le hφ1)
   { e.toLinearEquiv with
     norm_map' := fun z ↦ le_antisymm
       (by simpa [e] using norm_c0CompletedBaseChangeEquiv_le I hφ1 z)
       (by
         simpa [e] using
           norm_c0CompletedBaseChangeEquiv_symm_le_mul I
-            (exists_nnreal_bound_of_norm_algebraMap_le hφ1) (e z)) }
+            (exists_nnreal_norm_le_of_norm_le hφ1) (e z)) }
 
 /-- `c0CompletedBaseChangeIsometry` sends `s ⊗ₜ x` to `(s * algebraMap R S (x i))ᵢ`. -/
 @[simp]
