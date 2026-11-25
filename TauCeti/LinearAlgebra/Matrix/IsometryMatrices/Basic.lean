@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Ideal
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.LinearAlgebra.Matrix.Alternating
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
