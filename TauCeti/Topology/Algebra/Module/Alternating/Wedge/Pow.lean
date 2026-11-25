@@ -135,11 +135,7 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
       pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
         (fun w ↦ by rw [curryLeftTopological_apply_apply, ih, smul_eq_mul]),
-      pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (fun a b c ↦ by simp [mul_assoc]),
+      pairedWedge_mul_assoc,
       pairedWedge_comm _ (fun a b ↦ mul_comm a b) (wedgePow ω (m + 1))]
     have h₁ : (-1 : ℝ) ^ (2 * m + 1 + 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩
     have h₂ : (-1 : ℝ) ^ (2 * (m + 1) * 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩
