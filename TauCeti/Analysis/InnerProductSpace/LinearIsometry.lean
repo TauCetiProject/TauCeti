@@ -70,6 +70,8 @@ diffeomorphisms.
   `LinearIsometryEquiv.forall_orthonormal_sum_re_inner_conj_iff`: a condition on the diagonal sums
   `∑ᵢ ⟪T wᵢ, wᵢ⟫` (resp. on their real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫`) of an operator along all
   orthonormal families is invariant under conjugation by a linear isometry equivalence.
+* `LinearIsometryEquiv.inner_map_left_eq_of_involutive`: an involutive linear isometry equivalence
+  is self-adjoint, and it is its own inverse (`LinearIsometryEquiv.symm_apply_of_involutive`).
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -269,6 +271,27 @@ theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : 
         P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
       ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
   simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
+
+section Involutive
+
+variable {R : E ≃ₗᵢ[𝕜] E}
+
+/-- An involutive linear isometry equivalence is its own inverse. -/
+theorem symm_apply_of_involutive (hR : Function.Involutive R) (v : E) : R.symm v = R v :=
+  R.symm_apply_eq.2 (hR v).symm
+
+/-- An involutive linear isometry equivalence is its own inverse, as a continuous linear
+equivalence. -/
+theorem symm_toContinuousLinearEquiv_apply_of_involutive (hR : Function.Involutive R) (v : E) :
+    R.toContinuousLinearEquiv.symm v = R v :=
+  symm_apply_of_involutive hR v
+
+/-- An involutive linear isometry equivalence is self-adjoint. -/
+theorem inner_map_left_eq_of_involutive (hR : Function.Involutive R) (v w : E) :
+    ⟪R v, w⟫_𝕜 = ⟪v, R w⟫_𝕜 := by
+  rw [R.inner_map_eq_flip, symm_apply_of_involutive hR]
+
+end Involutive
 
 end LinearIsometryEquiv
 

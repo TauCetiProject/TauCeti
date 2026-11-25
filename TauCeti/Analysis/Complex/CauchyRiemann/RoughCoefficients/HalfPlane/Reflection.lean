@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.LaplaceReflection
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -29,13 +30,13 @@ image of its values at the conjugate point below it, and `0` on the null axis):
   `DJ(conj z) h = -R DJ(z)(conj h) R⁻¹` (`TauCeti.crReflectionDeriv`),
 * `S(conj z) = R S(z) R⁻¹` (`TauCeti.crReflectionZeroth`).
 
-The coefficient reflections only need a continuous linear equivalence `R` of a normed space; the
-isometry and the involution enter in the reflection theorem.
-
-and proves that the reflected solution is a weak solution of the reflected equation on all of
-`Ω` (`TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution_crReflection`). The sign in the reflection of
+The file then proves that the reflected solution is a weak solution of the reflected equation on
+all of `Ω` (`TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution_crReflection`). The coefficient
+reflections only need a continuous linear equivalence `R` of a normed space; the isometry and the
+involution enter in the reflection theorem. The sign in the reflection of
 `J` is forced by `∂_t (ξ(conj z)) = -(∂_t ξ)(conj z)`. For `J = i` and `R = conj` the reflected
-coefficient is `i` again off the axis (`TauCeti.crReflectionCoeff_conj_I`), and the reflection
+coefficient is `i` again off the axis
+(`TauCeti.crReflectionCoeff_conjLIE_const_I_smul_id_ae_eq`), and the reflection
 of `ξ = z` by `conj` is `z` (`TauCeti.twistedReflection_conjCLE_id`): this is the setting of
 McDuff–Salamon, where `J(s) = i` on `ℝ` makes the reflected coefficient continuous across the
 axis. The weak identity itself needs no condition on `J` along `ℝ`.
@@ -94,14 +95,14 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ]
 reflection (`TauCeti.twistedReflection`) of `J` by `M ↦ -R M R⁻¹`, so `J` above the axis and
 `-R J(conj z) R⁻¹` below it. Then `∂_s + J' ∂_t`, for this reflected coefficient `J'`, maps
 fields reflected by `R` to fields reflected by `R`. -/
-@[expose] def crReflectionCoeff (R : W ≃L[ℝ] W) (J : ℂ → W →L[ℝ] W) : ℂ → W →L[ℝ] W :=
+def crReflectionCoeff (R : W ≃L[ℝ] W) (J : ℂ → W →L[ℝ] W) : ℂ → W →L[ℝ] W :=
   twistedReflection (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
     (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)) J
 
 /-- The **reflection of the derivative of the leading coefficient**: the twisted reflection of
 `DJ` by `D ↦ (h ↦ -R D(conj h) R⁻¹)`, the derivative of `TauCeti.crReflectionCoeff R J` below the
 axis when `DJ` is that of `J`. -/
-@[expose] def crReflectionDeriv (R : W ≃L[ℝ] W) (DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W) :
+def crReflectionDeriv (R : W ≃L[ℝ] W) (DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W) :
     ℂ → ℂ →L[ℝ] W →L[ℝ] W :=
   twistedReflection (-((ContinuousLinearMap.compL ℝ ℂ (W →L[ℝ] W) (W →L[ℝ] W)
     (R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)).comp
@@ -109,11 +110,43 @@ axis when `DJ` is that of `J`. -/
 
 /-- The **reflection of the zeroth-order coefficient**: the twisted reflection of `S` by
 `M ↦ R M R⁻¹`. -/
-@[expose] def crReflectionZeroth (R : W ≃L[ℝ] W) (S : ℂ → W →L[ℝ] W) : ℂ → W →L[ℝ] W :=
+def crReflectionZeroth (R : W ≃L[ℝ] W) (S : ℂ → W →L[ℝ] W) : ℂ → W →L[ℝ] W :=
   twistedReflection (R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
     (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W) S
 
+/-- `TauCeti.crReflectionCoeff` as a twisted reflection. -/
+theorem crReflectionCoeff_def (R : W ≃L[ℝ] W) (J : ℂ → W →L[ℝ] W) :
+    crReflectionCoeff R J = twistedReflection (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
+      (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)) J :=
+  (rfl)
+
+/-- `TauCeti.crReflectionDeriv` as a twisted reflection. -/
+theorem crReflectionDeriv_def (R : W ≃L[ℝ] W) (DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W) :
+    crReflectionDeriv R DJ = twistedReflection (-((ContinuousLinearMap.compL ℝ ℂ (W →L[ℝ] W)
+      (W →L[ℝ] W) (R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
+        (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)).comp
+        ((ContinuousLinearMap.compL ℝ ℂ ℂ (W →L[ℝ] W)).flip (conjCLE : ℂ →L[ℝ] ℂ)))) DJ :=
+  (rfl)
+
+/-- `TauCeti.crReflectionZeroth` as a twisted reflection. -/
+theorem crReflectionZeroth_def (R : W ≃L[ℝ] W) (S : ℂ → W →L[ℝ] W) :
+    crReflectionZeroth R S = twistedReflection (R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
+      (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W) S :=
+  (rfl)
+
 variable {z : ℂ}
+
+@[simp]
+theorem crReflectionCoeff_of_im_eq_zero (hz : z.im = 0) : crReflectionCoeff R J z = 0 := by
+  rw [crReflectionCoeff_def, twistedReflection_of_im_eq_zero hz]
+
+@[simp]
+theorem crReflectionDeriv_of_im_eq_zero (hz : z.im = 0) : crReflectionDeriv R DJ z = 0 := by
+  rw [crReflectionDeriv_def, twistedReflection_of_im_eq_zero hz]
+
+@[simp]
+theorem crReflectionZeroth_of_im_eq_zero (hz : z.im = 0) : crReflectionZeroth R S z = 0 := by
+  rw [crReflectionZeroth_def, twistedReflection_of_im_eq_zero hz]
 
 @[simp]
 theorem crReflectionCoeff_of_im_pos (hz : 0 < z.im) : crReflectionCoeff R J z = J z :=
@@ -195,20 +228,20 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ]
 /-- Local `Lᵖ` bounds pass between `J` up to the axis and its reflection on the doubled domain. -/
 theorem memLpLoc_crReflectionCoeff_iff (hU : MapsTo (starRingEnd ℂ) U U) :
     MemLpLoc p U (crReflectionCoeff R J) ↔ MemLpLoc p (U ∩ {z | 0 ≤ z.im}) J := by
-  unfold crReflectionCoeff
+  rw [crReflectionCoeff_def]
   exact ⟨MemLpLoc.of_twistedReflection, fun h => h.twistedReflection hU _⟩
 
 /-- Local `Lᵖ` bounds pass between `DJ` up to the axis and its reflection on the doubled
 domain. -/
 theorem memLpLoc_crReflectionDeriv_iff (hU : MapsTo (starRingEnd ℂ) U U) :
     MemLpLoc p U (crReflectionDeriv R DJ) ↔ MemLpLoc p (U ∩ {z | 0 ≤ z.im}) DJ := by
-  unfold crReflectionDeriv
+  rw [crReflectionDeriv_def]
   exact ⟨MemLpLoc.of_twistedReflection, fun h => h.twistedReflection hU _⟩
 
 /-- Local `Lᵖ` bounds pass between `S` up to the axis and its reflection on the doubled domain. -/
 theorem memLpLoc_crReflectionZeroth_iff (hU : MapsTo (starRingEnd ℂ) U U) :
     MemLpLoc p U (crReflectionZeroth R S) ↔ MemLpLoc p (U ∩ {z | 0 ≤ z.im}) S := by
-  unfold crReflectionZeroth
+  rw [crReflectionZeroth_def]
   exact ⟨MemLpLoc.of_twistedReflection, fun h => h.twistedReflection hU _⟩
 
 end Integrability
@@ -219,23 +252,33 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 variable [CompleteSpace V]
 
+/-- **The reflected coefficient squares to `-1`.** If `J² = -1` almost everywhere on
+`Ω ∩ {0 ≤ t}` for a conjugation-invariant `Ω`, then the reflected coefficient squares to `-1`
+almost everywhere on `Ω`: below the axis it squares to `R J² R⁻¹ = -1`. -/
+theorem ae_crReflectionCoeff_mul_self {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+    {R : W ≃L[ℝ] W} {J : ℂ → W →L[ℝ] W} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1) :
+    ∀ᵐ z ∂volume.restrict Ω, crReflectionCoeff R J z * crReflectionCoeff R J z = -1 := by
+  have hJ2' : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → J z * J z = -1 :=
+    (ae_restrict_iff' (Ω.isOpen.measurableSet.inter
+      (measurableSet_le measurable_const measurable_im))).1 hJ2
+  have hJ2c := conjLIE.measurePreserving.quasiMeasurePreserving.ae hJ2'
+  refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+  filter_upwards [hJ2', hJ2c, measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)]
+    with z hz hzc hz0 hzΩ
+  rcases lt_or_gt_of_ne hz0 with h0 | h0
+  · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
+    simp only [conjLIE_apply] at hJz
+    exact crReflectionCoeff_mul_self_of_im_neg h0 hJz
+  · rw [crReflectionCoeff_of_im_pos h0]
+    exact hz ⟨hzΩ, h0.le⟩
+
 /-! ### The reflection theorem -/
 
 section Reflection
 
-variable (hR : ∀ v, R (R v) = v)
+variable (hR : Function.Involutive R)
 include hR
-
-omit [CompleteSpace V] in
-/-- The inverse of an involution, as a continuous linear equivalence, is the involution. -/
-private theorem symm_toContinuousLinearEquiv_apply_of_involutive (v : V) :
-    R.toContinuousLinearEquiv.symm v = R v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, LinearIsometryEquiv.coe_toContinuousLinearEquiv, hR]
-
-omit [CompleteSpace V] in
-/-- An isometric involution is self-adjoint. -/
-private theorem inner_map_left_eq_of_involutive (v w : V) : ⟪R v, w⟫_ℝ = ⟪v, R w⟫_ℝ := by
-  rw [R.inner_map_eq_flip, R.symm_apply_eq.2 (hR w).symm]
 
 /-- The test function `z ↦ R φ(conj z)` on a conjugation-invariant open set. -/
 private def reflectTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, V)) : 𝓓(Ω, V) :=
@@ -279,15 +322,13 @@ private theorem inner_crFormalAdjoint_crReflection_add (hΩ : MapsTo (starRingEn
       ((reflectTest hΩ φ).contDiff.differentiable (by simp) z),
       add_apply, fderiv_reflectTest]
   rw [inner_crFormalAdjoint, inner_crFormalAdjoint, inner_crFormalAdjoint, hd, hd]
-  simp only [twistedReflection_of_im_pos hz, crReflectionCoeff_of_im_pos hz,
-    crReflectionDeriv_of_im_pos hz, crReflectionZeroth_of_im_pos hz,
-    twistedReflection_of_im_neg hz', crReflectionCoeff_apply_of_im_neg hz',
-    crReflectionDeriv_apply_of_im_neg hz', crReflectionZeroth_apply_of_im_neg hz', conj_conj,
-    FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_I, map_one, map_neg, neg_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    symm_toContinuousLinearEquiv_apply_of_involutive hR, inner_add_left, inner_neg_right,
-    inner_neg_left]
-  simp only [← inner_map_left_eq_of_involutive hR, hR]
+  simp [twistedReflection_of_im_pos hz, twistedReflection_of_im_neg hz',
+    crReflectionCoeff_of_im_pos hz, crReflectionDeriv_of_im_pos hz,
+    crReflectionZeroth_of_im_pos hz, crReflectionCoeff_apply_of_im_neg hz',
+    crReflectionDeriv_apply_of_im_neg hz',
+    crReflectionZeroth_apply_of_im_neg hz', reflectTest_apply,
+    LinearIsometryEquiv.symm_toContinuousLinearEquiv_apply_of_involutive hR, inner_add_left]
+  simp only [← LinearIsometryEquiv.inner_map_left_eq_of_involutive hR, hR _]
   ring
 
 /-- **Order-zero reflection for rough Cauchy–Riemann equations.** Let `Ω`
@@ -318,7 +359,7 @@ theorem IsWeakCRSolutionHalf.isWeakCRSolution_crReflection
   -- `φ + R φ(conj ·)` takes values in the fixed space of `R` on the real axis.
   have hψΛ (s : ℝ) : ((φ + reflectTest (R := R) hΩ φ : 𝓓(Ω, V)) : ℂ → V) s ∈ Λ := by
     refine hΛ _ ?_
-    simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_ofReal, map_add, hR]
+    simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_ofReal, map_add, hR _]
     exact add_comm _ _
   rw [Complex.integral_eq_setIntegral_add_comp_conj (hint φ),
     Complex.integral_eq_setIntegral_add_comp_conj (φ.integrable_inner hη),
@@ -327,9 +368,8 @@ theorem IsWeakCRSolutionHalf.isWeakCRSolution_crReflection
   refine setIntegral_congr_fun hH fun z hz => ?_
   have hz0 : 0 < z.im := hz.out
   have hz' : (conj z).im < 0 := by simpa using hz0
-  simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, twistedReflection_of_im_pos hz0,
-    twistedReflection_of_im_neg hz', conj_conj, inner_add_left, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, inner_map_left_eq_of_involutive hR]
+  simp [reflectTest_apply, twistedReflection_of_im_pos hz0, twistedReflection_of_im_neg hz',
+    inner_add_left, LinearIsometryEquiv.inner_map_left_eq_of_involutive hR]
 
 /-! ### Regularity up to the boundary -/
 
@@ -354,23 +394,7 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one [FiniteDimensional ℝ V]
     ((memLpLoc_crReflectionCoeff_iff hΩ).1 hc.memLpLoc_coeff)
     ((memLpLoc_crReflectionDeriv_iff hΩ).1 hc.memLpLoc_deriv)
     ((memLpLoc_crReflectionZeroth_iff hΩ).1 hc.memLpLoc_zeroth) hpq.le
-  -- The reflected coefficient squares to `-1`: below the axis it squares to `R J² R = -R² = -1`.
-  have hJ2' : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → J z * J z = -1 :=
-    (ae_restrict_iff' (Ω.isOpen.measurableSet.inter
-      (measurableSet_le measurable_const measurable_im))).1 hJ2
-  have hJ2c := conjLIE.measurePreserving.quasiMeasurePreserving.ae hJ2'
-  have hJJ : ∀ᵐ z ∂volume.restrict Ω,
-      crReflectionCoeff R.toContinuousLinearEquiv J z *
-        crReflectionCoeff R.toContinuousLinearEquiv J z = -1 := by
-    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hJ2', hJ2c, measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)]
-      with z hz hzc hz0 hzΩ
-    rcases lt_or_gt_of_ne hz0 with h0 | h0
-    · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
-      simp only [conjLIE_apply] at hJz
-      exact crReflectionCoeff_mul_self_of_im_neg h0 hJz
-    · rw [crReflectionCoeff_of_im_pos h0]
-      exact hz ⟨hzΩ, h0.le⟩
+  have hJJ := ae_crReflectionCoeff_mul_self (R := R.toContinuousLinearEquiv) hΩ hJ2
   exact ((hw.memWkpLoc_one_of_le hc hp hJJ hpq hr hr_top hrp
     (hη.twistedReflection hΩ _)).mono hsub).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict _ ξ))
@@ -382,7 +406,7 @@ end Reflection
 /-- For `J = i` and `R = conj` on `V = ℂ`, the reflected coefficient is `i` again, off the null
 real axis. The twisted reflection of `z` by `conj` is `z` off the axis
 (`TauCeti.twistedReflection_conjCLE_id`). -/
-theorem crReflectionCoeff_conj_I :
+theorem crReflectionCoeff_conjLIE_const_I_smul_id_ae_eq :
     crReflectionCoeff conjLIE.toContinuousLinearEquiv (fun _ => I • ContinuousLinearMap.id ℝ ℂ)
       =ᵐ[volume] fun _ => I • ContinuousLinearMap.id ℝ ℂ := by
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
@@ -414,10 +438,11 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one_of_I {ξ η : ℂ → ℂ}
         continuousOn_const ⊤
     have hae : crReflectionCoeff conjLIE.toContinuousLinearEquiv
         (fun _ => I • ContinuousLinearMap.id ℝ ℂ) =ᵐ[volume.restrict Ω]
-          fun _ => I • ContinuousLinearMap.id ℝ ℂ := ae_restrict_of_ae crReflectionCoeff_conj_I
+          fun _ => I • ContinuousLinearMap.id ℝ ℂ :=
+      ae_restrict_of_ae crReflectionCoeff_conjLIE_const_I_smul_id_ae_eq
     exact ⟨h0.hasWeakFDerivOn.congr_ae hae.symm, h0.memLpLoc_coeff.congr_ae hae.symm,
       h0.memLpLoc_deriv, h0.memLpLoc_zeroth⟩
-  have hR (v : ℂ) : conjLIE (conjLIE v) = v := by simp
+  have hR : Function.Involutive conjLIE := fun v => by simp
   have hΛ (v : ℂ) (hv : conjLIE v = v) : v ∈ Submodule.span ℝ {(1 : ℂ)} :=
     Submodule.mem_span_singleton.2 ⟨v.re, by
       simpa [Complex.real_smul] using Complex.conj_eq_iff_re.1 (by simpa using hv)⟩

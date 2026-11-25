@@ -414,10 +414,8 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
         star (∫ z in {z : ℂ | 0 ≤ z.im}, a (conj z) • f z) := by
   have hH : MeasurableSet {z : ℂ | 0 < z.im} :=
     measurableSet_lt measurable_const Complex.measurable_im
-  have hc : Integrable (fun z ↦ a (conj z) • starSchwarzReflection f (conj z)) := by
-    simpa [Function.comp_def] using conjLIE.measurePreserving.integrable_comp_of_integrable ha
   rw [Complex.integral_eq_setIntegral_add_comp_conj ha,
-    integral_add ha.integrableOn hc.integrableOn,
+    integral_add ha.integrableOn (Complex.integrable_comp_conj ha).integrableOn,
     setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
     setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0), ← integral_star]
   congr 1 <;> refine setIntegral_congr_fun hH fun z hz ↦ ?_
