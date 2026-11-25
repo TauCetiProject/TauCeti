@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Module.Torsion.Tensor
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Reduction
 public import TauCeti.RepresentationTheory.TorsionBy
 -- Non-public: `DistribMulActionHom.toIntertwiningMap` is used only in proofs.
 import TauCeti.RepresentationTheory.Intertwining
@@ -24,7 +24,8 @@ a finitely generated abelian group, it has a class
 
 `TauCeti.reductionK0 k ρ = [k ⊗_ℤ W] ∈ G₀(k[G])`
 
-in the exact Grothendieck group of finitely generated `k[G]`-modules.
+in the exact Grothendieck group of finitely generated `k[G]`-modules. The class and its basic
+API are defined, for a representation over any commutative ring, in a separate file.
 
 For a `G`-module `V` (an abelian group with a distributive `G`-action) and a natural number `ℓ`
 such that `V ⧸ ℓV` and the `ℓ`-torsion `V[ℓ]` are finite, the **lattice defect** is
@@ -51,12 +52,10 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 
 ## Main definitions
 
-* `TauCeti.reductionK0`: the class in `G₀(k[G])` of the reduction `k ⊗_ℤ W`.
 * `TauCeti.latticeDefect`: the class `[k ⊗_ℤ (V ⧸ ℓV)] - [k ⊗_ℤ V[ℓ]]`.
 
 ## Main results
 
-* `TauCeti.reductionK0_congr`: equivalent representations have equal reduction classes.
 * `TauCeti.reductionK0_quotSMulTop`: in characteristic `ℓ`, the reduction class of `W ⧸ ℓW` is
   that of `W`.
 * `TauCeti.latticeDefect_eq_reductionK0_sub`: in characteristic `ℓ`, the lattice defect is
@@ -86,59 +85,6 @@ universe u
 
 variable (k : Type u) [CommRing k] {G : Type u} [Monoid G]
 
-/-! ### The reduction class -/
-
-section Reduction
-
-/-- The module of a reduction `k ⊗_ℤ W` that is finitely generated over `k`, for instance because
-`W` is a finitely generated abelian group, is finitely generated over `k[G]`. -/
-instance instModuleFiniteAsModuleBaseChange {W : Type u} [AddCommGroup W] [Module ℤ W]
-    [Module.Finite k (k ⊗[ℤ] W)] (ρ : Representation ℤ G W) :
-    Module.Finite k[G] (Representation.baseChange k ρ).asModule :=
-  Module.Finite.of_restrictScalars_finite k k[G] _
-
-variable {W : Type u} [AddCommGroup W] [Module ℤ W] [Module.Finite k (k ⊗[ℤ] W)]
-
-/-- **The reduction class** of a representation `ρ` of `G` on an abelian group `W` whose reduction
-`k ⊗_ℤ W` is finitely generated over `k`, for instance because `W` is finitely generated: the class
-in `G₀(k[G])` of its scalar extension `k ⊗_ℤ W`, with `G` acting on the second factor. -/
-noncomputable def reductionK0 (ρ : Representation ℤ G W) :
-    ExactK0 (finiteModulesExactStructure k[G]) :=
-  ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule)
-
-/-- The reduction class is the class of the `k[G]`-module of the base-changed representation. -/
-theorem reductionK0_def (ρ : Representation ℤ G W) :
-    reductionK0 k ρ = ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
-  (rfl)
-
-/-- Equivalent scalar extensions have equal reduction classes. -/
-theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
-    [Module.Finite k (k ⊗[ℤ] W')] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
-    (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
-    reductionK0 k ρ = reductionK0 k σ := by
-  rw [reductionK0_def, reductionK0_def]
-  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
-
-/-- Equivalent representations have equal reduction classes. -/
-theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W']
-    [Module.Finite k (k ⊗[ℤ] W')]
-    {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
-    reductionK0 k ρ = reductionK0 k σ :=
-  reductionK0_congr_baseChange k (e.baseChange k)
-
-/-- The reduction class of a zero module is zero. -/
-@[simp]
-theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representation ℤ G W) :
-    reductionK0 k ρ = 0 := by
-  have : Subsingleton (Representation.baseChange k ρ).asModule :=
-    (Representation.baseChange k ρ).asModuleEquiv.injective.subsingleton
-  exact ExactK0.of_eq_zero_of_isZero <| CategoryTheory.Limits.IsZero.of_full_of_faithful_of_isZero
-    (ModuleCat.isFG k[G]).ι _
-      (ModuleCat.isZero_of_subsingleton
-        (ModuleCat.of k[G] (Representation.baseChange k ρ).asModule))
-
-end Reduction
-
 /-- **The reduction of `W ⧸ ℓW` is that of `W`** in characteristic `ℓ`: the reduction classes of
 `ρ.quotSMulTop ℓ` and of `ρ` agree. Here `k ⊗_ℤ W` is finitely generated over `k` as soon as
 `k ⊗_ℤ (W ⧸ ℓW)` is, even when `W` is not. -/
@@ -151,8 +97,7 @@ theorem reductionK0_quotSMulTop (ℓ : ℕ) [CharP k ℓ] {W : Type u} [AddCommG
   haveI : Module.Finite k (k ⊗[ℤ] W) :=
     Module.Finite.equiv
       (ρ.baseChangeQuotSMulTopEquiv (A := k) (r := (ℓ : ℤ)) (by simp)).symm.toLinearEquiv
-  ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
-    (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm).toFGModuleCatIso
+  reductionK0_congr_baseChange k (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm
 
 /-! ### The six-term sequence of reductions -/
 
@@ -169,12 +114,6 @@ private noncomputable abbrev reductionLinearMap {ρ : Representation ℤ G W}
     {σ : Representation ℤ G W'} (f : IntertwiningMap ρ σ) :
     reductionModule k ρ →ₗ[k[G]] reductionModule k σ :=
   IntertwiningMap.equivLinearMapAsModule _ _ (f.baseChange k)
-
-private theorem coe_reductionLinearMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
-    (f : IntertwiningMap ρ σ) : ⇑(reductionLinearMap k f) = f.toLinearMap.lTensor k := by
-  -- `equivLinearMapAsModule` keeps the underlying function of an intertwining map
-  have h : ⇑(reductionLinearMap k f) = ⇑(f.baseChange k).toLinearMap := rfl
-  rw [h, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_lTensor]
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}
@@ -199,33 +138,40 @@ private theorem reductionK0_six_term (hfg : Exact f g) (hf : Injective f) (hg : 
     Submodule.torsionBy_isTorsionBy _
   -- Exactness of each of the five reduced maps, from the tensored snake sequence.
   have h₁ : Injective (reductionLinearMap k (f.torsionBy ℓ)) := by
-    rw [coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy]
     exact LinearMap.lTensor_injective_of_isTorsionBy k _ ℓ (injective_torsionByMap hf) htors
   have h₁₂ : Exact (reductionLinearMap k (f.torsionBy ℓ))
       (reductionLinearMap k (g.torsionBy ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy,
-      IntertwiningMap.toLinearMap_torsionBy]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy, IntertwiningMap.toLinearMap_torsionBy]
     exact lTensor_exact_of_isTorsionBy k ℓ (exact_torsionByMap hfg hf) htors
   have h₂₃ : Exact (reductionLinearMap k (g.torsionBy ℓ))
       (reductionLinearMap k (IntertwiningMap.torsionByδ (ℓ : ℤ) hfg hf hg)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy,
-      IntertwiningMap.toLinearMap_torsionByδ]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy, IntertwiningMap.toLinearMap_torsionByδ]
     exact lTensor_exact_torsionByMap_torsionByδ k ℓ hfg hf hg
   have h₃₄ : Exact (reductionLinearMap k (IntertwiningMap.torsionByδ (ℓ : ℤ) hfg hf hg))
       (reductionLinearMap k (f.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionByδ,
-      IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionByδ, IntertwiningMap.toLinearMap_quotSMulTop]
     exact lTensor_exact_torsionByδ_quotSMulTop_map k ℓ hfg hf hg
   have h₄₅ : Exact (reductionLinearMap k (f.quotSMulTop ℓ))
       (reductionLinearMap k (g.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_quotSMulTop,
-      IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_quotSMulTop, IntertwiningMap.toLinearMap_quotSMulTop]
     exact lTensor_exact k (QuotSMulTop.map_exact _ hfg hg) (QuotSMulTop.map_surjective _ hg)
   have h₅ : Surjective (reductionLinearMap k (g.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_quotSMulTop]
     exact LinearMap.lTensor_surjective k (QuotSMulTop.map_surjective _ hg)
   -- The module types are given explicitly: the instances of `Representation.asModule` used by
   -- `reductionLinearMap` differ syntactically from those `FGModuleCat.of` asks for.
+  simp only [reductionK0_def]
   exact exactK0_add_add_eq_add_add_of_exact (R := k[G])
     (M₁ := reductionModule k (ρ₁.torsionBy ℓ)) (M₂ := reductionModule k (ρ₂.torsionBy ℓ))
     (M₃ := reductionModule k (ρ₃.torsionBy ℓ)) (M₄ := reductionModule k (ρ₁.quotSMulTop ℓ))
