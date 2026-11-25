@@ -29,6 +29,9 @@ multiplication by predictable processes that are essentially bounded on each fin
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
+The pathwise domain transfers to an absolutely continuous measure and is unchanged under
+an equivalent measure on the same filtration. This does not assert preservation of expected
+square energy or that the original driver remains Brownian.
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
@@ -40,7 +43,7 @@ Bochner integral.
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  §3.2.
+  §§3.2 and 3.5.
 -/
 
 public section
@@ -74,6 +77,19 @@ structure LocallyBrownianIntegrable (ℱ : Filtration ℝ≥0 mΩ) (P : Measure 
   /-- Almost every path is square integrable on every finite horizon. -/
   ae_memLp : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, MemLp (fun t ↦ H t ω) 2
     ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
+
+/-- Finite pathwise Brownian energy on all horizons survives an absolutely continuous
+change of measure, on the same filtration. No moment or probability hypothesis is needed. -/
+theorem LocallyBrownianIntegrable.mono_ac {Q : Measure Ω}
+    (hH : LocallyBrownianIntegrable ℱ P H) (hQP : Q ≪ P) : LocallyBrownianIntegrable ℱ Q H :=
+  ⟨hH.isStronglyPredictable, hQP.ae_le hH.ae_memLp⟩
+
+/-- Equivalent measures have the same predictable pathwise-square-energy domain. Unlike
+expected-square-energy membership, this needs no bound on either Radon–Nikodym density. -/
+theorem locallyBrownianIntegrable_iff_of_mutuallyAbsolutelyContinuous {Q : Measure Ω}
+    (hPQ : P ≪ Q) (hQP : Q ≪ P) :
+    LocallyBrownianIntegrable ℱ P H ↔ LocallyBrownianIntegrable ℱ Q H :=
+  ⟨fun h ↦ h.mono_ac hQP, fun h ↦ h.mono_ac hPQ⟩
 
 /-- A single a.e. statement for all finite horizons is equivalent to a separate a.e.
 statement for each integer horizon, together with predictability. -/

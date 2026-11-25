@@ -15,6 +15,7 @@ import Mathlib.Topology.Instances.NNReal.Lemmas
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
@@ -65,6 +66,9 @@ almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`)
 particular an `ℱ s`-measurable random height held on `(s, u]` integrates against `W` as
 `ξ * (W (min u ·) - W (min s ·))` (`TauCeti.Probability.isItoIntegral_indicator_Ioc`).
 
+The predicate transfers to an absolutely continuous finite measure with the same driver
+and approximants; this does not assert that the driver is still Brownian.
+
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -107,6 +111,16 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
       ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
+
+/-- An Itô integral with respect to a fixed driver is still an Itô integral under an
+absolutely continuous finite measure. The same simple holdings witness the approximation. -/
+theorem IsItoIntegral.mono_ac {Q : Measure Ω} [IsFiniteMeasure Q]
+    (hI : IsItoIntegral ℱ P W H I) (hQP : Q ≪ P) : IsItoIntegral ℱ Q W H I where
+  isStronglyPredictable := hI.isStronglyPredictable
+  ae_continuous := hQP.ae_le hI.ae_continuous
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hE, hG⟩ := hI.exists_approx t
+    exact ⟨n, τ, a, hτ, ha, fun ε hε ↦ hQP.tendsto_measure_zero (hE ε hε), hG.mono_ac hQP⟩
 
 /-! ### Private helper for `timeMeasure` square energy -/
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -48,6 +49,9 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   measure spaces multiplication by a fixed almost-everywhere strongly measurable factor preserves
   vanishing upper tails of extended nonnegative functions
   (`MeasureTheory.tendsto_measure_le_enorm_mul`), such as square energies in probability.
+
+Convergence in measure transfers to an absolutely continuous finite measure, and is unchanged
+between equivalent finite measures.
 
 ## Main results
 
@@ -337,6 +341,25 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
+
+/-- Convergence in measure transfers to an absolutely continuous finite measure. No
+measurability of the functions, finiteness of the original measure, or countability of the
+index filter is required. In particular, convergence in probability survives an absolutely
+continuous change of probability measure. -/
+theorem TendstoInMeasure.mono_ac {α E ι : Type*} {_ : MeasurableSpace α}
+    {μ ν : Measure α} [IsFiniteMeasure ν] [EDist E] {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (hf : TendstoInMeasure μ f l g) (hνμ : ν ≪ μ) :
+    TendstoInMeasure ν f l g :=
+  fun ε hε ↦ hνμ.tendsto_measure_zero (hf ε hε)
+
+/-- Equivalent finite measures have the same convergent-in-measure families. This does not
+assert preservation of any Lᵖ moment. -/
+theorem tendstoInMeasure_iff_of_mutuallyAbsolutelyContinuous {α E ι : Type*}
+    {_ : MeasurableSpace α} {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [EDist E] {l : Filter ι} {f : ι → α → E} {g : α → E}
+    (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
+    TendstoInMeasure μ f l g ↔ TendstoInMeasure ν f l g :=
+  ⟨fun h ↦ h.mono_ac hνμ, fun h ↦ h.mono_ac hμν⟩
 
 /-- If the mean norms tend to zero, every positive norm tail has vanishing measure, even
 on varying measure spaces. Integrability of the norms is only needed eventually. -/
