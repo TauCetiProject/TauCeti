@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Data.Matrix.Block
+import TauCeti.RingTheory.MvPolynomial.Block.Dehomogenize
+import TauCeti.RingTheory.MvPolynomial.Block.Homogenize
 import TauCeti.RingTheory.MvPolynomial.LinearSubst
 import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
@@ -28,7 +30,8 @@ the coefficient modules of Hilbert and quaternionic modular forms of weight `n�
 embedding `i`, the exponent `sᵢ` fixing the normalization of the determinant.
 
 The slash is defined on all polynomials by its value on monomials, and is an action only on
-`L_n(K)`. The composition law `P ∣ (γ δ) = (P ∣ γ) ∣ δ` is proved by homogenizing: writing
+`L_n(K)`. The composition law `P ∣ (γ δ) = (P ∣ γ) ∣ δ` is proved by block homogenization
+(`MvPolynomial.blockHomogenize`, with one block `{Xᵢ, Yᵢ}` for each `i`): writing
 `zᵢ^{mᵢ}` as `Xᵢ^{mᵢ} Yᵢ^{nᵢ - mᵢ}` identifies `L_n(K)` with the polynomials in `Xᵢ, Yᵢ` that are
 homogeneous of degree `nᵢ` in each pair `(Xᵢ, Yᵢ)`, and on these the slash is
 `det(γᵢ)^{sᵢ} · P(aᵢ Xᵢ + bᵢ Yᵢ, cᵢ Xᵢ + dᵢ Yᵢ)`, a linear change of variables by the block-diagonal
@@ -116,150 +119,89 @@ theorem algWeightSlash_monomial (n : ι → ℕ) (s : ι → ℤ) (γ : ι → G
 
 /-! ### The homogeneous model
 
-The variables `X (0, i)` and `X (1, i)` of `MvPolynomial (Fin 2 × ι) K` play the roles of `Xᵢ`
-and `Yᵢ`. -/
-
-/-- The homogenization `z^m ↦ ∏ᵢ Xᵢ^{mᵢ} Yᵢ^{nᵢ - mᵢ}`. -/
-private noncomputable def algWeightHom (n : ι → ℕ) :
-    MvPolynomial ι K →ₗ[K] MvPolynomial (Fin 2 × ι) K :=
-  (basisMonomials ι K).constr K fun m ↦ ∏ i, X (0, i) ^ m i * X (1, i) ^ (n i - m i)
+We use the block homogenization `MvPolynomial.blockHomogenize id n`, with one block for every
+`i : ι`: the variables `X (.inr i)` and `X (.inl i)` of `MvPolynomial (ι ⊕ ι) K` play the roles of
+`Xᵢ` and `Yᵢ`, and `zᵢ^{mᵢ}` becomes `Xᵢ^{mᵢ} Yᵢ^{nᵢ - mᵢ}`. -/
 
 omit [Fintype ι] in
-/-- The dehomogenization `Xᵢ ↦ zᵢ`, `Yᵢ ↦ 1`. -/
-private noncomputable def algWeightDehom : MvPolynomial (Fin 2 × ι) K →ₐ[K] MvPolynomial ι K :=
-  aeval fun p ↦ ![X p.2, 1] p.1
+/-- The indexing `Xᵢ ↦ (0, i)`, `Yᵢ ↦ (1, i)` of the homogeneous variables by the rows and
+columns of the block-diagonal matrix of the `γᵢ`. -/
+private def algWeightIndex : ι ⊕ ι ≃ Fin 2 × ι where
+  toFun := Sum.elim (fun i ↦ (1, i)) fun i ↦ (0, i)
+  invFun p := if p.1 = 0 then .inr p.2 else .inl p.2
+  left_inv v := by cases v <;> simp
+  right_inv := fun ⟨a, i⟩ ↦ by fin_cases a <;> simp
 
 /-- The change of variables `Xᵢ ↦ aᵢ Xᵢ + bᵢ Yᵢ`, `Yᵢ ↦ cᵢ Xᵢ + dᵢ Yᵢ`. -/
 private noncomputable def algWeightSubst [DecidableEq ι] (γ : ι → GL (Fin 2) K) :
-    MvPolynomial (Fin 2 × ι) K →ₐ[K] MvPolynomial (Fin 2 × ι) K :=
-  linearSubst (blockDiagonal fun i ↦ (γ i : Matrix (Fin 2) (Fin 2) K))
+    MvPolynomial (ι ⊕ ι) K →ₐ[K] MvPolynomial (ι ⊕ ι) K :=
+  linearSubst ((blockDiagonal fun i ↦ (γ i : Matrix (Fin 2) (Fin 2) K)).submatrix
+    algWeightIndex algWeightIndex)
 
-omit [Fintype ι] in
-/-- The multidegree: `Xᵢ` and `Yᵢ` have weight the `i`-th standard vector. -/
-private def algWeightWeight [DecidableEq ι] (p : Fin 2 × ι) : ι → ℕ :=
-  Pi.single p.2 1
+private theorem algWeightSubst_X [DecidableEq ι] (γ : ι → GL (Fin 2) K) (v : ι ⊕ ι) :
+    algWeightSubst γ (X v) = C (γ (Sum.elim id id v) (algWeightIndex v).1 0) *
+      X (.inr (Sum.elim id id v)) + C (γ (Sum.elim id id v) (algWeightIndex v).1 1) *
+        X (.inl (Sum.elim id id v)) := by
+  have h1 (i : ι) : algWeightIndex (.inl i) = (1, i) := rfl
+  have h0 (i : ι) : algWeightIndex (.inr i) = (0, i) := rfl
+  rcases v with i | i <;>
+  simp [algWeightSubst, linearSubst_X, Fintype.sum_sum_type, blockDiagonal_apply, h0, h1,
+    apply_ite C, ite_mul, add_comm]
 
-omit [Fintype ι] in
-private theorem weight_algWeightWeight_apply [Finite ι] [DecidableEq ι] (e : Fin 2 × ι →₀ ℕ)
-    (i : ι) : Finsupp.weight algWeightWeight e i = e (0, i) + e (1, i) := by
-  cases nonempty_fintype ι
-  simp [Finsupp.weight_apply, Finsupp.sum_fintype, Finset.sum_apply, Fintype.sum_prod_type,
-    algWeightWeight, Pi.single_apply, Fin.sum_univ_two]
-
-omit [Fintype ι] in
-@[simp]
-private theorem algWeightDehom_X_zero (i : ι) :
-    algWeightDehom (X (0, i) : MvPolynomial _ K) = X i := by
-  simp [algWeightDehom]
-
-omit [Fintype ι] in
-@[simp]
-private theorem algWeightDehom_X_one (i : ι) :
-    algWeightDehom (X (1, i) : MvPolynomial _ K) = 1 := by
-  simp [algWeightDehom]
-
-private theorem algWeightHom_monomial (n : ι → ℕ) (m : ι →₀ ℕ) (r : K) :
-    algWeightHom n (monomial m r) = C r * ∏ i, X (0, i) ^ m i * X (1, i) ^ (n i - m i) := by
-  have h : monomial m r = r • basisMonomials ι K m := by
-    rw [coe_basisMonomials, smul_monomial, smul_eq_mul, mul_one]
-  rw [h, map_smul, algWeightHom, Module.Basis.constr_basis, smul_eq_C_mul]
-
-omit [Fintype ι] in
-private theorem algWeightDehom_monomial [Finite ι] (d : Fin 2 × ι →₀ ℕ) (r : K) :
-    algWeightDehom (monomial d r) =
-      monomial (Finsupp.equivFunOnFinite.symm fun i ↦ d (0, i)) r := by
-  cases nonempty_fintype ι
-  simp [algWeightDehom, monomial_eq, Finsupp.prod_fintype, Fintype.prod_prod_type,
-    Fin.prod_univ_two]
-
-private theorem algWeightSubst_X [DecidableEq ι] (γ : ι → GL (Fin 2) K) (a : Fin 2) (i : ι) :
-    algWeightSubst γ (X (a, i)) = C (γ i a 0) * X (0, i) + C (γ i a 1) * X (1, i) := by
-  simp [algWeightSubst, linearSubst_X, Fintype.sum_prod_type, blockDiagonal_apply,
-    Fin.sum_univ_two, apply_ite C, ite_mul]
-
-/-- The homogenization of a polynomial of degree at most `nᵢ` in each `zᵢ` is homogeneous of
-degree `nᵢ` in each pair `(Xᵢ, Yᵢ)`. -/
-private theorem isWeightedHomogeneous_algWeightHom [DecidableEq ι] {n : ι → ℕ}
-    {P : MvPolynomial ι K} (hP : P ∈ algWeightModule K n) :
-    (algWeightHom n P).IsWeightedHomogeneous algWeightWeight n := by
-  rw [P.as_sum, map_sum]
-  refine IsWeightedHomogeneous.sum _ _ _ fun m hm ↦ ?_
-  rw [algWeightHom_monomial]
-  have hn : ∑ i, (m i • algWeightWeight (0, i) + (n i - m i) • algWeightWeight (1, i)) = n := by
-    ext j
-    have := mem_algWeightModule.mp hP m hm j
-    simp [Finset.sum_apply, algWeightWeight, Pi.single_apply, Finset.sum_add_distrib]
-    omega
-  have h := (IsWeightedHomogeneous.prod Finset.univ _ _ fun i _ ↦
-    ((isWeightedHomogeneous_X K algWeightWeight (0, i)).pow (m i)).mul
-      ((isWeightedHomogeneous_X K algWeightWeight (1, i)).pow (n i - m i))).C_mul (P.coeff m)
-  rwa [hn] at h
-
-/-- The change of variables preserves the multidegree. -/
+/-- The change of variables preserves the degree in each block `{Xᵢ, Yᵢ}`. -/
 private theorem isWeightedHomogeneous_algWeightSubst [DecidableEq ι]
-    {Q : MvPolynomial (Fin 2 × ι) K} {n : ι → ℕ} (hQ : Q.IsWeightedHomogeneous algWeightWeight n)
+    {Q : MvPolynomial (ι ⊕ ι) K} {h : ι} {k : ℕ}
+    (hQ : Q.IsWeightedHomogeneous (fun v ↦ if Sum.elim id id v = h then 1 else 0) k)
     (γ : ι → GL (Fin 2) K) :
-    (algWeightSubst γ Q).IsWeightedHomogeneous algWeightWeight n := by
+    (algWeightSubst γ Q).IsWeightedHomogeneous
+      (fun v ↦ if Sum.elim id id v = h then 1 else 0) k := by
   rw [aeval_unique (algWeightSubst γ)]
-  refine hQ.aeval fun ⟨a, i⟩ ↦ ?_
+  refine hQ.aeval fun v ↦ ?_
   rw [Function.comp_apply, algWeightSubst_X]
   exact ((isWeightedHomogeneous_X K _ _).C_mul _).add ((isWeightedHomogeneous_X K _ _).C_mul _)
 
 omit [Fintype ι] in
-/-- Dehomogenizing a polynomial homogeneous of degree `nᵢ` in each pair `(Xᵢ, Yᵢ)` gives a
+/-- Dehomogenizing a polynomial homogeneous of degree `nᵢ` in each block `{Xᵢ, Yᵢ}` gives a
 polynomial of degree at most `nᵢ` in each `zᵢ`. -/
-private theorem algWeightDehom_mem [Finite ι] [DecidableEq ι] {Q : MvPolynomial (Fin 2 × ι) K}
-    {n : ι → ℕ} (hQ : Q.IsWeightedHomogeneous algWeightWeight n) :
-    algWeightDehom Q ∈ algWeightModule K n := by
-  induction hQ using IsWeightedHomogeneous.induction_on with
-  | zero => simp
-  | add p q _ _ hp hq => simpa using add_mem hp hq
-  | monomial d r hr =>
-    rw [algWeightDehom_monomial, monomial_mem_algWeightModule]
-    refine Or.inl fun i ↦ ?_
-    have := congrFun hr i
-    rw [weight_algWeightWeight_apply] at this
-    rw [Finsupp.coe_equivFunOnFinite_symm]
-    omega
+private theorem aeval_mem_algWeightModule [DecidableEq ι] {Q : MvPolynomial (ι ⊕ ι) K}
+    {n : ι → ℕ}
+    (hQ : ∀ h, Q.IsWeightedHomogeneous (fun v ↦ if Sum.elim id id v = h then 1 else 0) (n h)) :
+    aeval (Sum.elim (fun _ ↦ 1) X) Q ∈ algWeightModule K n := by
+  have hR : IsMultiHomogeneous n (rename (Sum.elim (·, (0 : Fin 2)) (·, 1)) Q) := by
+    refine isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦ ?_
+    rw [rename_eq_aeval]
+    refine (hQ h).aeval fun v ↦ ?_
+    rcases v with i | i <;> exact isWeightedHomogeneous_X K _ _
+  rw [← blockDehomogenize_rename_sumElim, mem_algWeightModule_iff_degreeOf_le]
+  exact hR.degreeOf_blockDehomogenize_le
 
-/-- Homogenizing in degree `n` undoes dehomogenization on polynomials homogeneous of degree `nᵢ`
-in each pair `(Xᵢ, Yᵢ)`. -/
-private theorem algWeightHom_algWeightDehom [DecidableEq ι] {Q : MvPolynomial (Fin 2 × ι) K}
-    {n : ι → ℕ} (hQ : Q.IsWeightedHomogeneous algWeightWeight n) :
-    algWeightHom n (algWeightDehom Q) = Q := by
-  induction hQ using IsWeightedHomogeneous.induction_on with
-  | zero => simp
-  | add p q _ _ hp hq => simp [hp, hq]
-  | monomial d r hr =>
-    have hd : ∀ i, n i - d (0, i) = d (1, i) := fun i ↦ by
-      have := congrFun hr i
-      rw [weight_algWeightWeight_apply] at this
-      omega
-    rw [algWeightDehom_monomial, algWeightHom_monomial]
-    simp [hd, monomial_eq, Finsupp.prod_fintype,
-      Fintype.prod_prod_type, Fin.prod_univ_two, Finset.prod_mul_distrib]
-
-/-- The slash is the dehomogenization of a change of variables of the homogenization. -/
+/-- On `L_n(K)`, the slash is the dehomogenization of a change of variables of the block
+homogenization. -/
 private theorem algWeightSlash_apply_eq [DecidableEq ι] (n : ι → ℕ) (s : ι → ℤ)
-    (γ : ι → GL (Fin 2) K) (P : MvPolynomial ι K) :
+    (γ : ι → GL (Fin 2) K) {P : MvPolynomial ι K} (hP : P ∈ algWeightModule K n) :
     algWeightSlash n s γ P = ((∏ i, GeneralLinearGroup.det (γ i) ^ s i : Kˣ) : K) •
-      algWeightDehom (algWeightSubst γ (algWeightHom n P)) := by
-  induction P using MvPolynomial.induction_on' with
-  | monomial m r =>
-    simp only [algWeightSlash_monomial, algWeightHom_monomial, map_mul, map_prod, map_pow,
-      algHom_C, algebraMap_eq, algWeightSubst_X, map_add, algWeightDehom_X_zero,
-      algWeightDehom_X_one, mul_one, smul_eq_C_mul]
-    ring
-  | add p q hp hq => simp [hp, hq]
+      aeval (Sum.elim (fun _ ↦ 1) X) (algWeightSubst γ (blockHomogenize id n P)) := by
+  conv_lhs => rw [P.as_sum]
+  conv_rhs => rw [P.as_sum]
+  rw [map_sum, blockHomogenize_finsetSum, map_sum, map_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  have hmn := mem_algWeightModule.mp hP m hm
+  rw [algWeightSlash_monomial, blockHomogenize_monomial, Finsupp.mapDomain_id, ite_eq_left hmn,
+    monomial_eq, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _, Fintype.prod_sum_type]
+  simp only [blockHomogenizeExponent_inl, blockHomogenizeExponent_inr, Finsupp.mapDomain_id]
+  simp only [map_mul, map_prod, map_pow, algHom_C, algebraMap_eq, algWeightSubst_X,
+    map_add, aeval_X, Sum.elim_inl, Sum.elim_inr, id_eq, algWeightIndex, Equiv.coe_fn_mk,
+    mul_one, smul_eq_C_mul, Finset.prod_mul_distrib]
+  ring
 
 /-- The weight-`(n, s)` slash preserves the polynomials of degree at most `nᵢ` in each `zᵢ`. -/
 theorem algWeightSlash_mem (n : ι → ℕ) (s : ι → ℤ) (γ : ι → GL (Fin 2) K)
     {P : MvPolynomial ι K} (hP : P ∈ algWeightModule K n) :
     algWeightSlash n s γ P ∈ algWeightModule K n := by
   classical
-  rw [algWeightSlash_apply_eq]
-  exact Submodule.smul_mem _ _ <| algWeightDehom_mem <|
-    isWeightedHomogeneous_algWeightSubst (isWeightedHomogeneous_algWeightHom hP) γ
+  rw [algWeightSlash_apply_eq n s γ hP]
+  exact Submodule.smul_mem _ _ <| aeval_mem_algWeightModule fun h ↦
+    isWeightedHomogeneous_algWeightSubst (isWeightedHomogeneous_blockHomogenize id n P h) γ
 
 /-- The identity acts trivially. -/
 @[simp]
@@ -279,11 +221,14 @@ theorem algWeightSlash_mul (n : ι → ℕ) (s : ι → ℤ) (γ δ : ι → GL 
       fun i ↦ (γ i : Matrix (Fin 2) (Fin 2) K) * (δ i : Matrix (Fin 2) (Fin 2) K) :=
     funext fun i ↦ by rw [Pi.mul_apply, Units.val_mul]
   have hsubst : algWeightSubst (γ * δ) = (algWeightSubst δ).comp (algWeightSubst γ) := by
-    rw [algWeightSubst, algWeightSubst, algWeightSubst, hmat, blockDiagonal_mul, linearSubst_mul]
-  simp only [algWeightSlash_apply_eq]
-  rw [map_smul, map_smul, map_smul, algWeightHom_algWeightDehom
-      (isWeightedHomogeneous_algWeightSubst (isWeightedHomogeneous_algWeightHom hP) γ), hsubst,
-    AlgHom.comp_apply, smul_smul, Pi.mul_def]
+    rw [algWeightSubst, algWeightSubst, algWeightSubst, hmat, blockDiagonal_mul,
+      submatrix_mul _ _ _ _ _ algWeightIndex.bijective, linearSubst_mul]
+  rw [algWeightSlash_apply_eq n s _ hP,
+    algWeightSlash_apply_eq n s _ (algWeightSlash_mem n s γ hP),
+    algWeightSlash_apply_eq n s _ hP, blockHomogenize_smul, map_smul, map_smul,
+    blockHomogenize_aeval_one_X id n fun h ↦
+      isWeightedHomogeneous_algWeightSubst (isWeightedHomogeneous_blockHomogenize id n P h) γ,
+    hsubst, AlgHom.comp_apply, smul_smul, Pi.mul_def]
   simp only [map_mul, mul_zpow, Finset.prod_mul_distrib, Units.val_mul, mul_comm]
 
 /-- The scalar `uᵢ` in each factor acts on `L_n(K)` by `∏ᵢ uᵢ^{nᵢ + 2 sᵢ}`. -/
@@ -335,7 +280,8 @@ noncomputable def algWeightAction (n : ι → ℕ) (s : ι → ℤ) :
     Representation K (ι → GL (Fin 2) K)ᵐᵒᵖ (algWeightModule K n) where
   toFun γ := (algWeightSlash n s γ.unop).restrict fun _ hP ↦ algWeightSlash_mem n s γ.unop hP
   map_one' := LinearMap.ext fun P ↦ Subtype.ext <| by simp
-  map_mul' γ δ := LinearMap.ext fun P ↦ Subtype.ext <| algWeightSlash_mul n s δ.unop γ.unop P.2
+  map_mul' γ δ := LinearMap.ext fun P ↦ Subtype.ext <|
+    algWeightSlash_mul n s δ.unop γ.unop P.property
 
 /-- `op γ` acts on `L_n(K)` by the slash `P ↦ P ∣ γ`. -/
 @[simp]
