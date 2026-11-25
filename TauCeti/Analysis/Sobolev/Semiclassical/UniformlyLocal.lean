@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Semiclassical.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 /-!
@@ -53,6 +54,19 @@ of `h` and of the centre:
   `‖f g‖_{k,h,η} ≤ C ‖f‖_{k,h,η} ‖g‖_{k,h,η}`
   (`TauCeti.exists_uniformlyLocalSemiclassicalSobolevNorm_mul_le`).
 
+Multiplication by a scalar function `g` with the semiclassical bounds `hⁱ ‖Dⁱ g‖ ≤ B` for `i ≤ k`
+commutes with the localizations, so it is bounded on the uniformly local norm for every `k`,
+`‖g • f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h,η}`
+(`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_smul_le`). A function `f` with these bounds itself
+has localizations bounded independently of `h` and of the centre,
+`‖f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖η‖_{k,1}`
+(`TauCeti.semiclassicalSobolevNorm_smul_le_mul_semiclassicalSobolevNorm_one`,
+`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm_one`). For a
+**gauge transformation**, a function `u` with values in `ℝ` or `ℂ` and `‖u‖ = 1`, the inverse `ū`
+has derivatives of the same norms, so `u` and `ū` both act boundedly and the uniformly local norms
+of `f` and `u • f` are equivalent with constant `(k + 1) 2ᵏ B`
+(`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_le_mul_smul_of_norm_eq_one`).
+
 The equivalence of cutoffs writes `χ` as a finite combination `∑ₐ gₐ η(· - a)` of translates of
 `η` with compactly supported coefficients (`TauCeti.exists_finset_forall_eq_sum_mul_comp_sub`).
 Placed at scale `h` about `x`, the translate `η(· - a)` becomes the cutoff about `x + h a`, and
@@ -88,6 +102,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Module Set
+open scoped ComplexConjugate
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -398,5 +413,116 @@ theorem exists_uniformlyLocalSemiclassicalSobolevNorm_mul_le (hk : finrank ℝ E
         (semiclassicalSobolevNorm_le_uniformlyLocalSemiclassicalSobolevNorm hbf x) hC0)
         (uniformlyLocalSemiclassicalSobolevNorm_nonneg k hh.le η g))
   exact ⟨⟨_, forall_mem_range.2 hle⟩, uniformlyLocalSemiclassicalSobolevNorm_le hle⟩
+
+/-! ### Multipliers and gauge equivalence -/
+
+section Multiplier
+
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+  {B : ℝ}
+
+/-- **Multipliers with semiclassical `Cᵏ` bounds on the uniformly local norm.** Let `η` be a
+compactly supported cutoff of class `Cᵏ`, `h > 0`, and `g` a scalar function of class `Cᵏ` with
+`hⁱ ‖Dⁱ g‖ ≤ B` everywhere for `i ≤ k`, such as a gauge transformation or a cutoff varying on the
+scale `h`. For `f` of class `Cᵏ` whose localizations are bounded above, the localizations of
+`g • f` are bounded above and
+
+`‖g • f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h,η}`.
+
+The constant depends only on `k` and `B`. -/
+theorem uniformlyLocalSemiclassicalSobolevNorm_smul_le {g : E → 𝕜} (hη : ContDiff ℝ k η)
+    (hηc : HasCompactSupport η) (hg : ContDiff ℝ k g) (hf : ContDiff ℝ k f) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i g x‖ ≤ B)
+    (hb : BddAbove (range fun x ↦ semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • f y)) :
+    BddAbove (range fun x ↦
+        semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • g y • f y) ∧
+      uniformlyLocalSemiclassicalSobolevNorm k h η (fun y ↦ g y • f y) ≤
+        (k + 1) * 2 ^ k * B * uniformlyLocalSemiclassicalSobolevNorm k h η f := by
+  have hB0 : 0 ≤ (k + 1) * 2 ^ k * B :=
+    mul_nonneg (by positivity) (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
+  have hle (x : E) : semiclassicalSobolevNorm k h (fun y ↦ η (h⁻¹ • (y - x)) • g y • f y) ≤
+      (k + 1) * 2 ^ k * B * uniformlyLocalSemiclassicalSobolevNorm k h η f := by
+    -- Multiplication by `g` commutes with the localization.
+    have hcomm : (fun y ↦ η (h⁻¹ • (y - x)) • g y • f y) =
+        fun y ↦ g y • η (h⁻¹ • (y - x)) • f y := funext fun y ↦ smul_comm _ _ _
+    obtain ⟨hloc, hm⟩ := contDiff_and_memLp_localization hη hηc hf hh.ne' x
+    rw [hcomm]
+    exact (semiclassicalSobolevNorm_smul_le_of_le_left hg hloc hm hh hB).2.trans
+      (mul_le_mul_of_nonneg_left
+        (semiclassicalSobolevNorm_le_uniformlyLocalSemiclassicalSobolevNorm hb x) hB0)
+  exact ⟨⟨_, forall_mem_range.2 hle⟩, uniformlyLocalSemiclassicalSobolevNorm_le hle⟩
+
+/-- **The localizations of a function with semiclassical `Cᵏ` bounds.** Let `η` be a compactly
+supported cutoff of class `Cᵏ` and `h > 0`. If `f` is of class `Cᵏ` with `hⁱ ‖Dⁱ f‖ ≤ B`
+everywhere for `i ≤ k`, then at every centre `x`
+
+`‖η (h⁻¹ • (· - x)) f‖_{k,h} ≤ (k + 1) 2ᵏ B ‖η‖_{k,1}`,
+
+a bound independent of `h` and of the centre. -/
+theorem semiclassicalSobolevNorm_smul_le_mul_semiclassicalSobolevNorm_one (hη : ContDiff ℝ k η)
+    (hηc : HasCompactSupport η) (hf : ContDiff ℝ k f) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i f x‖ ≤ B) (x : E) :
+    semiclassicalSobolevNorm k h (fun y ↦ η (h⁻¹ • (y - x)) • f y) ≤
+      (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k 1 η := by
+  obtain ⟨hηx, hηm⟩ := contDiff_and_memLp_of_hasCompactSupport (hη.comp_inv_smul_sub h x)
+    (hηc.comp_inv_smul_sub hh.ne' x)
+  rw [← semiclassicalSobolevNorm_comp_inv_smul_sub hη hh x]
+  exact (semiclassicalSobolevNorm_smul_le_of_le_right hηx hf hηm hh hB).2
+
+/-- **The uniformly local norm of a function with semiclassical `Cᵏ` bounds.** Let `η` be a
+compactly supported cutoff of class `Cᵏ` and `h > 0`. If `f` is of class `Cᵏ` with
+`hⁱ ‖Dⁱ f‖ ≤ B` everywhere for `i ≤ k`, then the localizations of `f` are bounded above and
+`‖f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖η‖_{k,1}`, a bound independent of `h`. -/
+theorem uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm_one
+    (hη : ContDiff ℝ k η) (hηc : HasCompactSupport η) (hf : ContDiff ℝ k f) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i f x‖ ≤ B) :
+    BddAbove (range fun x ↦ semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • f y) ∧
+      uniformlyLocalSemiclassicalSobolevNorm k h η f ≤
+        (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k 1 η := by
+  have hle := semiclassicalSobolevNorm_smul_le_mul_semiclassicalSobolevNorm_one hη hηc hf hh hB
+  exact ⟨⟨_, forall_mem_range.2 hle⟩, uniformlyLocalSemiclassicalSobolevNorm_le hle⟩
+
+end Multiplier
+
+section Gauge
+
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {B : ℝ}
+
+/-- **Gauge equivalence of the uniformly local norms.** Let `η` be a compactly supported cutoff of
+class `Cᵏ`, `h > 0`, and `u` a gauge transformation of class `Cᵏ`, a function with `‖u‖ = 1`
+everywhere, with `hⁱ ‖Dⁱ u‖ ≤ B` for `i ≤ k`. For `f` of class `Cᵏ` such that the localizations of
+`u • f` are bounded above, the localizations of `f` are bounded above and
+
+`‖f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖u • f‖_{k,h,η}`.
+
+Together with the bound `‖u • f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h,η}`
+(`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_smul_le`), gauge transformations with
+semiclassical `Cᵏ` bounds preserve the uniformly local norms up to a constant depending only on
+`k` and `B`. -/
+theorem uniformlyLocalSemiclassicalSobolevNorm_le_mul_smul_of_norm_eq_one {u : E → 𝕜}
+    (hη : ContDiff ℝ k η) (hηc : HasCompactSupport η) (hu : ContDiff ℝ k u)
+    (hu1 : ∀ x, ‖u x‖ = 1) (hf : ContDiff ℝ k f) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i u x‖ ≤ B)
+    (hb : BddAbove (range fun x ↦
+      semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • u y • f y)) :
+    BddAbove (range fun x ↦ semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • f y) ∧
+      uniformlyLocalSemiclassicalSobolevNorm k h η f ≤
+        (k + 1) * 2 ^ k * B * uniformlyLocalSemiclassicalSobolevNorm k h η (fun y ↦ u y • f y) := by
+  -- The inverse gauge is the conjugate `ū`, whose derivatives have the norms of those of `u`.
+  have hu' : ContDiff ℝ k fun y ↦ conj (u y) := by
+    simpa [Function.comp_def] using (RCLike.conjCLE (K := 𝕜)).contDiff.comp hu
+  have hB' (i : ℕ) (hi : i ≤ k) (x : E) :
+      h ^ i * ‖iteratedFDeriv ℝ i (fun y ↦ conj (u y)) x‖ ≤ B := by
+    have e := (RCLike.conjLIE (K := 𝕜)).norm_iteratedFDeriv_comp_left u x i
+    simp only [Function.comp_def, RCLike.conjLIE_apply] at e
+    rw [e]
+    exact hB i hi x
+  have hinv (y : E) : conj (u y) • u y • f y = f y := by
+    rw [smul_smul, RCLike.conj_mul, hu1, RCLike.ofReal_one, one_pow, one_smul]
+  have := uniformlyLocalSemiclassicalSobolevNorm_smul_le (f := fun y ↦ u y • f y) hη hηc hu'
+    (hu.smul hf) hh hB' hb
+  simpa only [hinv] using this
+
+end Gauge
 
 end TauCeti
