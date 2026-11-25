@@ -18,7 +18,9 @@ operators of the GNS space, `PositiveLinearMap.gnsConjOperator`. It is multiplic
 involutive, and it exchanges the two representations: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)` and
 `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`, so `πᵒᵖ(bᵒᵖ) = J π(b⋆) J`. Consequently `J M_f J ⊆ M_f'` for the GNS von
 Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes with `π(a)` because
-`x` commutes with `J π(a) J = πᵒᵖ(a⋆ᵒᵖ)`, which lies in `M_f'`.
+`x` commutes with `J π(a) J = πᵒᵖ(a⋆ᵒᵖ)`, which lies in `M_f'`. For unital `A`, with GNS vector
+`Ω = [1]`, `J` acts on `M_f Ω` by `J x Ω = x⋆ Ω`: the vector functionals `x ↦ ⟪J u, x Ω⟫` and
+`x ↦ ⟪Ω, x u⟫` agree on `π(A)` by traciality, hence on `M_f`.
 
 ## Main definitions
 
@@ -30,6 +32,7 @@ Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes 
 * `PositiveLinearMap.gnsConjOperator_gnsRightNonUnitalStarAlgHom`: `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`.
 * `PositiveLinearMap.gnsRightNonUnitalStarAlgHom_eq_gnsConjOperator`: `πᵒᵖ(bᵒᵖ) = J π(b⋆) J`.
 * `PositiveLinearMap.gnsConjOperator_mem_commutant`: `J M_f J ⊆ M_f'`.
+* `PositiveLinearMap.gnsConj_apply_gnsVector_of_mem`: `J x Ω = x⋆ Ω` for `x ∈ M_f`.
 
 ## References
 
@@ -116,5 +119,36 @@ theorem gnsConjOperator_mem_commutant {x : f.GNS →L[ℂ] f.GNS}
   · exact key a
   · rw [← star_star y, ← ha, ← map_star]
     exact key _
+
+section Unital
+
+variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  (g : B →ₚ[ℂ] ℂ) (hg : ∀ a b, g (a * b) = g (b * a))
+
+/-- **`J x Ω = x⋆ Ω` on the GNS von Neumann algebra.** For a tracial positive functional on a
+unital C⋆-algebra and `x ∈ M_g`, the modular conjugation sends `x Ω` to `x⋆ Ω`. -/
+theorem gnsConj_apply_gnsVector_of_mem {x : g.GNS →L[ℂ] g.GNS} (hx : x ∈ g.gnsVonNeumannAlgebra) :
+    gnsConj g hg (x g.gnsVector) = star x g.gnsVector := by
+  -- The vector functionals `x ↦ ⟪J u, x Ω⟫` and `x ↦ ⟪Ω, x u⟫` agree on `π(B)`, by traciality
+  -- on classes `u = [b]` and by continuity in `u`, hence on `M_g`.
+  have hπ (u : g.GNS) (c : B) : inner ℂ (gnsConj g hg u) (g.gnsStarAlgHom c g.gnsVector) =
+      inner ℂ g.gnsVector (g.gnsStarAlgHom c u) := by
+    induction u using UniformSpace.Completion.induction_on with
+    | hp => apply isClosed_eq <;> fun_prop
+    | ih u =>
+      rw [← g.toPreGNS_ofPreGNS u, gnsConj_apply_coe]
+      simp [gnsVector_def, gnsStarAlgHom, preGNS_inner_def, hg]
+  refine ext_inner_left ℂ fun u ↦ ?_
+  have h := g.inner_apply_eq_of_mem_gnsVonNeumannAlgebra (u₁ := gnsConj g hg u)
+    (v₁ := g.gnsVector) (u₂ := g.gnsVector) (v₂ := u) (hπ u) hx
+  rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
+  calc inner ℂ u (gnsConj g hg (x g.gnsVector))
+      = inner ℂ (gnsConj g hg (gnsConj g hg u)) (gnsConj g hg (x g.gnsVector)) := by
+        rw [gnsConj_gnsConj]
+    _ = starRingEnd ℂ (inner ℂ (gnsConj g hg u) (x g.gnsVector)) := by
+        rw [inner_gnsConj_gnsConj, inner_conj_symm]
+    _ = inner ℂ (x u) g.gnsVector := by rw [h, inner_conj_symm]
+
+end Unital
 
 end PositiveLinearMap
