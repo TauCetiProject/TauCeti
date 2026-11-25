@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.LinearAlgebra.Pi.Map
 public import TauCeti.LinearAlgebra.Quotient.Prod
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.RingTheory.Flat.Equalizer
@@ -18,7 +19,8 @@ import TauCeti.LinearAlgebra.Prod
 
 This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing with
 a linear equivalence or transporting along linear equivalences (`LinearMap.index_arrowCongr`), its
-additivity under products with finite free kernels and cokernels, and its behaviour under
+additivity under binary products and finite coordinatewise maps (`LinearMap.index_prodMap`,
+`LinearMap.index_piMap`) with finite free kernels and cokernels, and its behaviour under
 restriction of scalars along a tower of division rings `K → L`: the index gets multiplied by
 `finrank K L`. For instance, the realification of a complex-linear map has twice its complex index.
 
@@ -97,6 +99,17 @@ lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankConditi
     (f.prodMap g).index = f.index + g.index := by
   simp only [index_eq_finrank_sub, finrank_ker_prodMap, finrank_quotient_range_prodMap]
   omega
+
+/-- The index is additive under finite coordinatewise maps when the kernels and cokernels are
+finite free modules. -/
+@[simp]
+lemma index_piMap {ι : Type*} [Fintype ι] {φ ψ : ι → Type*} [∀ i, AddCommGroup (φ i)]
+    [∀ i, Module R (φ i)] [∀ i, AddCommGroup (ψ i)] [∀ i, Module R (ψ i)] [StrongRankCondition R]
+    (f : ∀ i, φ i →ₗ[R] ψ i) [∀ i, Module.Free R (f i).ker] [∀ i, Module.Finite R (f i).ker]
+    [∀ i, Module.Free R (ψ i ⧸ (f i).range)] [∀ i, Module.Finite R (ψ i ⧸ (f i).range)] :
+    (piMap f).index = ∑ i, (f i).index := by
+  simp only [index_eq_finrank_sub, finrank_ker_piMap, finrank_quotient_range_piMap, Nat.cast_sum,
+    Finset.sum_sub_distrib]
 
 section Regularity
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.FiniteBaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.InfiniteBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
@@ -213,7 +213,6 @@ def adeleBaseChangeEquiv :
   -- The tensor product is σ-compact, as a finite free module over a σ-compact ring. The
   -- additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (AdeleRing (𝓞 K) K) (AdeleRing (𝓞 K) K ⊗[K] L)
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   letI := TauCeti.ModuleTopology.sigmaCompactSpace
     ((Module.finBasis K L).baseChange (AdeleRing (𝓞 K) K))
   have ho : IsOpenMap e := e.toAddMonoidHom.isOpenMap_of_sigmaCompact e.surjective hc

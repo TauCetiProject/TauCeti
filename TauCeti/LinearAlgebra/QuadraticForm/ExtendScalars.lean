@@ -42,6 +42,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 ## Main definitions
 
 * `QuadraticForm.extendScalars L Q`: the coordinate scalar extension of `Q` to `L`.
+* `QuadraticForm.extendScalarsOfBasis L Q b`: for a form `Q` on a space `V` with a finite basis
+  `b`, the extension of its coordinate form, read on `L ⊗[K] V`.
 * `QuadraticMap.IsometryEquiv.extendScalars`: the isometry of extensions induced by an isometry.
 
 ## Main results
@@ -52,7 +54,10 @@ derived from this characterization. Anisotropy is not preserved in general: the 
   matrix of `B` mapped into `L`, for every bilinear form `B`.
 * `QuadraticForm.extendScalars_apply`, `QuadraticForm.toMvPolynomial_extendScalars`: the
   coordinate formula for the extension; its coordinate polynomial is that of `Q` with the
-  coefficients mapped into `L`.
+  coefficients mapped into `L`, and the extension evaluates the coordinate polynomial of `Q`
+  (`QuadraticForm.extendScalars_apply_eq_aeval`).
+* `QuadraticForm.map_extendScalars`: algebra homomorphisms carry values of the extension to `L`
+  to values of the extension to their codomain.
 * `QuadraticForm.extendScalars_apply_algebraMap_comp`,
   `QuadraticForm.extendScalars_apply_smul_algebraMap_comp`: the extension agrees with `Q` on
   `K`-points and scales by `c²` along scalars.
@@ -60,6 +65,7 @@ derived from this characterization. Anisotropy is not preserved in general: the 
   extension is the image of the Gram matrix of the polar form of `Q`.
 * `QuadraticForm.extendScalars_self`, `QuadraticForm.extendScalars_extendScalars`: extension to
   `K` is the identity, and extensions along a tower `K → L → M` compose.
+* `QuadraticForm.extendScalars_comp`: precomposition with a linear map commutes with extension.
 * `QuadraticForm.extendScalars_prod`: the extension of an orthogonal sum is the orthogonal sum of
   the extensions.
 * `QuadraticForm.extendScalars_binaryQuadraticForm`: the extension of `[a, b]` is `[a, b]`; in
@@ -73,10 +79,14 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 * `QuadraticMap.Equivalent.extendScalars`: isometric forms have isometric extensions.
 * `QuadraticForm.nondegenerate_polarBilin_extendScalars_iff`: along an injective map of domains,
   in particular over fields, extension preserves and reflects nonsingularity.
-* `QuadraticForm.equivalent_extendScalars_basisRepr`: independence of the chosen basis.
+* `QuadraticForm.equivalent_extendScalars_basisRepr`, `QuadraticForm.extendScalarsOfBasis_eq`:
+  independence of the chosen basis, up to isometry in coordinates and as an equality on
+  `L ⊗[K] V`, where `a ⊗ v` goes to `a² Q(v)` (`QuadraticForm.extendScalarsOfBasis_tmul`).
 * `QuadraticForm.not_anisotropic_extendScalars`: isotropy persists under extension.
-* `QuadraticForm.isometryEquivBaseChangeExtendScalars`: with `2` invertible, the extension is
-  isometric to Mathlib's `QuadraticForm.baseChange`.
+* `QuadraticForm.extendScalars_comp_piScalarRight`,
+  `QuadraticForm.isometryEquivBaseChangeExtendScalars`,
+  `QuadraticForm.extendScalarsOfBasis_eq_baseChange`: with `2` invertible, the extension agrees
+  with Mathlib's `QuadraticForm.baseChange`.
 
 ## References
 
@@ -236,6 +246,19 @@ theorem toMvPolynomial_extendScalars (Q : QuadraticForm K (ι → K)) :
         Pi.single_one_eq_algebraMap_comp K j, polar_extendScalars_algebraMap_comp]
       simp
 
+/-- The extension evaluates the coordinate polynomial of `Q` at points of `L`. -/
+theorem extendScalars_apply_eq_aeval (Q : QuadraticForm K (ι → K)) (x : ι → L) :
+    extendScalars L Q x = MvPolynomial.aeval x Q.toMvPolynomial := by
+  rw [MvPolynomial.aeval_def, ← MvPolynomial.eval_map, ← toMvPolynomial_extendScalars,
+    eval_toMvPolynomial]
+
+/-- An algebra homomorphism `L →ₐ[K] M` carries values of the extension to `L` to values of the
+extension to `M`. -/
+theorem map_extendScalars {M : Type*} [CommRing M] [Algebra K M] (Q : QuadraticForm K (ι → K))
+    (f : L →ₐ[K] M) (x : ι → L) : f (extendScalars L Q x) = extendScalars M Q (f ∘ x) := by
+  rw [extendScalars_apply_eq_aeval, extendScalars_apply_eq_aeval, MvPolynomial.comp_aeval_apply]
+  rfl
+
 /-- Extending scalars from `K` to itself does nothing. -/
 @[simp]
 theorem extendScalars_self (Q : QuadraticForm K (ι → K)) : extendScalars K Q = Q :=
@@ -282,6 +305,25 @@ theorem extendScalars_binaryQuadraticForm (a b : K) :
     extendScalars L (TauCeti.binaryQuadraticForm K a b) =
       TauCeti.binaryQuadraticForm L (algebraMap K L a) (algebraMap K L b) :=
   ((eq_extendScalars_iff L).2 fun v ↦ by simp [TauCeti.binaryQuadraticForm_apply]).symm
+
+/-- Read on `L ⊗[K] (ι → K)`, the extension sends `c ⊗ v` to `c² Q(v)`. -/
+theorem extendScalars_piScalarRight_tmul (Q : QuadraticForm K (ι → K)) (c : L) (v : ι → K) :
+    extendScalars L Q (TensorProduct.piScalarRight K L L ι (c ⊗ₜ v)) =
+      c ^ 2 * algebraMap K L (Q v) := by
+  rw [TensorProduct.piScalarRight_tmul_eq_smul, extendScalars_apply_smul_algebraMap_comp]
+
+/-- Precomposition with a linear map commutes with extension: the extension of `Q ∘ f` is the
+extension of `Q` composed with the base change of `f`, read in coordinates. -/
+theorem extendScalars_comp (Q : QuadraticForm K (κ → K)) (f : (ι → K) →ₗ[K] κ → K) :
+    extendScalars L (Q.comp f) = (extendScalars L Q).comp
+      ((TensorProduct.piScalarRight K L L κ).toLinearMap ∘ₗ f.baseChange L ∘ₗ
+        (TensorProduct.piScalarRight K L L ι).symm.toLinearMap) := by
+  refine ((eq_extendScalars_iff L).2 fun v ↦ ?_).symm
+  rw [QuadraticMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.coe_toLinearMap,
+    TensorProduct.piScalarRight_symm_algebraMap_comp, LinearMap.baseChange_tmul,
+    TensorProduct.piScalarRight_one_tmul, extendScalars_apply_algebraMap_comp,
+    QuadraticMap.comp_apply]
 
 /-- The extension of an orthogonal sum `Q₁ ⊥ Q₂`, written in the coordinates `ι ⊕ κ`, is the
 orthogonal sum of the extensions. -/
@@ -380,20 +422,23 @@ theorem not_anisotropic_extendScalars [FaithfulSMul K L] {Q : QuadraticForm K (�
   ext i
   exact hinj (by simpa using congr_fun this i)
 
+/-- With `2` invertible, the coordinate extension, read on `L ⊗[K] (ι → K)`, is Mathlib's
+`QuadraticForm.baseChange`. -/
+theorem extendScalars_comp_piScalarRight [Invertible (2 : K)] (Q : QuadraticForm K (ι → K)) :
+    (extendScalars L Q).comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
+      Q.baseChange L :=
+  baseChange_ext fun v ↦ by
+    rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      TensorProduct.piScalarRight_one_tmul,
+      extendScalars_apply_algebraMap_comp, baseChange_tmul, mul_one,
+      Algebra.algebraMap_eq_smul_one]
+
 /-- With `2` invertible, the coordinate extension is isometric to Mathlib's
 `QuadraticForm.baseChange`, through the identification `L ⊗[K] (ι → K) ≃ (ι → L)`. -/
 def isometryEquivBaseChangeExtendScalars [Invertible (2 : K)] (Q : QuadraticForm K (ι → K)) :
     (Q.baseChange L).IsometryEquiv (extendScalars L Q) where
   toLinearEquiv := TensorProduct.piScalarRight K L L ι
-  map_app' x := by
-    have h : (extendScalars L Q).comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
-        Q.baseChange L :=
-      baseChange_ext fun v ↦ by
-        rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
-          TensorProduct.piScalarRight_one_tmul,
-          extendScalars_apply_algebraMap_comp, baseChange_tmul, mul_one,
-          Algebra.algebraMap_eq_smul_one]
-    exact DFunLike.congr_fun h x
+  map_app' x := DFunLike.congr_fun (extendScalars_comp_piScalarRight L Q) x
 
 @[simp]
 theorem isometryEquivBaseChangeExtendScalars_tmul [Invertible (2 : K)]
@@ -404,6 +449,44 @@ theorem isometryEquivBaseChangeExtendScalars_tmul [Invertible (2 : K)]
   ext i
   simp [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
     Algebra.smul_def, mul_comm]
+
+section Basis
+
+variable {V : Type*} [AddCommGroup V] [Module K V]
+
+/-- The scalar extension of a quadratic form `Q` on a space `V` with a finite basis `b` to
+`L ⊗[K] V`: the coordinate extension of `Q.basisRepr b`, transported along the base change of the
+coordinates of `b`. It does not depend on `b` (`QuadraticForm.extendScalarsOfBasis_eq`). -/
+def extendScalarsOfBasis (Q : QuadraticForm K V) (b : Module.Basis ι K V) :
+    QuadraticForm L (L ⊗[K] V) :=
+  (extendScalars L (Q.basisRepr b)).comp
+    ((TensorProduct.piScalarRight K L L ι).toLinearMap ∘ₗ b.equivFun.toLinearMap.baseChange L)
+
+/-- The scalar extension through a basis sends `c ⊗ v` to `c² Q(v)`. -/
+@[simp]
+theorem extendScalarsOfBasis_tmul (Q : QuadraticForm K V) (b : Module.Basis ι K V) (c : L)
+    (v : V) : extendScalarsOfBasis L Q b (c ⊗ₜ v) = c ^ 2 * algebraMap K L (Q v) := by
+  rw [extendScalarsOfBasis, QuadraticMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.baseChange_tmul, LinearEquiv.coe_toLinearMap, LinearEquiv.coe_toLinearMap,
+    extendScalars_piScalarRight_tmul, ← (Q.isometryEquivBasisRepr b).map_app v]
+  rfl
+
+/-- **Independence of the basis.** The scalar extension through a basis does not depend on the
+basis: both extensions send `c ⊗ v` to `c² Q(v)`, and quadratic forms on `L ⊗[K] V` agreeing on
+pure tensors are equal. -/
+theorem extendScalarsOfBasis_eq (Q : QuadraticForm K V) (b : Module.Basis ι K V)
+    (b' : Module.Basis κ K V) : extendScalarsOfBasis L Q b = extendScalarsOfBasis L Q b' :=
+  baseChange_ext fun v ↦ by rw [extendScalarsOfBasis_tmul, extendScalarsOfBasis_tmul]
+
+/-- With `2` invertible, the scalar extension through a basis is Mathlib's
+`QuadraticForm.baseChange`. -/
+theorem extendScalarsOfBasis_eq_baseChange [Invertible (2 : K)] (Q : QuadraticForm K V)
+    (b : Module.Basis ι K V) : extendScalarsOfBasis L Q b = Q.baseChange L :=
+  baseChange_ext fun v ↦ by
+    rw [extendScalarsOfBasis_tmul, baseChange_tmul, one_pow, one_mul, mul_one,
+      Algebra.algebraMap_eq_smul_one]
+
+end Basis
 
 end CommRing
 
