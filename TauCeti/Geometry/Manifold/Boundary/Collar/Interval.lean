@@ -112,6 +112,11 @@ private theorem sign_mul_self (x : B) :
     (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) = 1 := by
   rcases boundary_coe_eq x with hx | hx <;> rw [hx] <;> norm_num
 
+/-- The sign `1 - 2 x` of an endpoint `x ∈ {0, 1}` has absolute value one. -/
+private theorem abs_sign (x : B) : |1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)| = 1 :=
+  (mul_self_eq_one_iff.1 ((abs_mul_abs_self _).trans (sign_mul_self x))).resolve_right
+    fun h ↦ by linarith [abs_nonneg (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ))]
+
 /-- A point `z` of `[0, 1]` lies on the inward side of the endpoint `x`: `(1 - 2 x) (z - x) ≥ 0`. -/
 private theorem sign_mul_sub_nonneg (x : B) (z : Icc (0 : ℝ) 1) :
     0 ≤ (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)) := by
@@ -161,9 +166,9 @@ private theorem unitIntervalCollarFun_mem_nearEnd (p : B × D) :
   simp only [nearEnd, mem_ofPred_eq]
   obtain ⟨h0, h1⟩ := (homeomorphNormalIioOpens 1 p.2).property
   rw [coe_homeomorphNormalIioOpens] at h0 h1
-  rw [coe_unitIntervalCollarFun, add_sub_cancel_left]
-  rcases boundary_coe_eq p.1 with hx | hx <;> rw [hx] <;> norm_num <;>
-    rw [abs_of_nonneg (by linarith)] <;> linarith
+  rw [coe_unitIntervalCollarFun, add_sub_cancel_left, abs_mul, abs_sign, one_mul,
+    abs_of_nonneg (by linarith)]
+  linarith
 
 /-- The regions near the two endpoints are disjoint: a point near both `x` and `y` forces
 `x = y`. -/
@@ -197,8 +202,7 @@ private theorem normalPoint_mem (x : B) {z : Icc (0 : ℝ) 1} (hz : z ∈ nearEn
   have h := sign_mul_sub_nonneg x z
   have habs : |(1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) *
       ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ))| < 1 / 2 := by
-    rcases boundary_coe_eq x with hx | hx <;> simp only [nearEnd, mem_ofPred_eq] at hz <;>
-      rw [hx] at hz ⊢ <;> norm_num <;> simpa [abs_sub_comm] using hz
+    rwa [abs_mul, abs_sign, one_mul]
   rw [abs_of_nonneg h] at habs
   linarith
 
@@ -243,6 +247,16 @@ private def localCollar (k : ℕ∞ω) (x : B) :
       filter_upwards [(isOpen_nearEnd x).mem_nhds hz] with w hw
       simp [localInv, hw]
     exact (contMDiffAt_const.prodMk h).contMDiffWithinAt
+
+/-- The map of `localCollar k x` is the interval collar. -/
+private theorem localCollar_apply (k : ℕ∞ω) (x : B) (p : B × D) :
+    (localCollar k x).toPartialEquiv p = unitIntervalCollarFun p :=
+  rfl
+
+/-- The inverse of `localCollar k x` is `localInv x`. -/
+private theorem localCollar_symm_apply (k : ℕ∞ω) (x : B) (z : Icc (0 : ℝ) 1) :
+    (localCollar k x).toPartialEquiv.symm z = localInv x z :=
+  rfl
 
 /-- The interval collar is a local diffeomorphism. -/
 private theorem isLocalDiffeomorph_unitIntervalCollarFun {k : ℕ∞ω} :
@@ -298,7 +312,10 @@ theorem SmoothCollar.range_unitInterval {k : ℕ∞ω} :
     rcases boundary_coe_eq p.1 with hx | hx <;> rw [hx] at h <;> norm_num at h
   · intro hz
     obtain ⟨x, hx⟩ := exists_mem_nearEnd hz
-    exact ⟨localInv x z, (localCollar k x).right_inv hx⟩
+    refine ⟨localInv x z, ?_⟩
+    rw [SmoothCollar.unitInterval, SmoothCollar.coe_mk, ← localCollar_symm_apply k,
+      ← localCollar_apply k x]
+    exact (localCollar k x).right_inv hx
 
 /-- **The factor `1/2` is needed.** Without it, the map `(x, t) ↦ x + (1 - 2 x) t`, that is
 `(0, t) ↦ t` and `(1, t) ↦ 1 - t`, sends `(0, 1/2)` and `(1, 1/2)` to the same point. -/
