@@ -69,6 +69,8 @@ a prior formalisation of this theory; its proofs were not used.
   `TauCeti.Huber.isIntegrallyClosedIn_powerBoundedSubring` (Wedhorn Proposition 5.30(4)): `A°` is
   integrally closed in `A`, elementwise and as a Mathlib instance.
 * `TauCeti.Huber.IsPowerBounded.of_isTopologicallyNilpotent`: `A°° ⊆ A°`.
+* `TauCeti.Huber.IsPowerBounded.of_sub_pow`: an approximate root with power-bounded input
+  and power-bounded error is power-bounded.
 * `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient` and
   `TauCeti.Huber.powerBoundedSubring_eq_of_isReduced_quotient` (Fujiwara–Kato Proposition
   B.1.3(1)): if `B` is an open bounded subring and `ϖ ∈ B` is topologically nilpotent and regular
@@ -504,6 +506,17 @@ def powerBoundedSubring : Subring A where
 @[simp]
 theorem mem_powerBoundedSubring {a : A} : a ∈ powerBoundedSubring A ↔ IsPowerBounded a := Iff.rfl
 
+/-- If `x` and the error `x - y ^ k` are power-bounded, then the approximate root `y` is
+power-bounded for every nonzero exponent `k`. -/
+theorem IsPowerBounded.of_sub_pow [ContinuousConstSMul Aᵐᵒᵖ A] {x y : A} {k : ℕ}
+    (hx : IsPowerBounded x) (hk : k ≠ 0) (he : IsPowerBounded (x - y ^ k)) :
+    IsPowerBounded y := by
+  apply IsPowerBounded.of_pow hk
+  apply mem_powerBoundedSubring.mp
+  simpa only [sub_sub_cancel] using
+    (powerBoundedSubring A).sub_mem (mem_powerBoundedSubring.mpr hx)
+      (mem_powerBoundedSubring.mpr he)
+
 /-- The underlying set of `A°` is the set of power-bounded elements. -/
 @[simp, norm_cast]
 theorem coe_powerBoundedSubring : (powerBoundedSubring A : Set A) = {a | IsPowerBounded a} :=
@@ -525,7 +538,7 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
       ∀ i, IsPowerBounded (p.coeff i) :=
     ⟨q.map (algebraMap (powerBoundedSubring A) A), hq.map _,
       by rw [Polynomial.eval_map]; exact hqx,
-      fun i ↦ by rw [Polynomial.coeff_map]; exact (q.coeff i).2⟩
+      fun i ↦ by rw [Polynomial.coeff_map]; exact (q.coeff i).property⟩
   refine isPowerBounded_of_isBounded_of_monic
     (isBounded_subringClosure p.coeffs.finite_toSet ?_) hmonic (fun i ↦ ?_) hroot
   · intro c hc
@@ -601,7 +614,7 @@ theorem isPowerBounded_iff_mem_of_isReduced_quotient (hBo : IsOpen (B : Set A))
         Ideal.Quotient.eq_zero_iff_mem.mp (hred.eq_zero _ ⟨2, hz2⟩)
       have hb : (ϖ : A) * b = (ϖ : A) * ((ϖ : A) ^ m * x ^ k) := by
         rw [mul_comm, ← Subring.coe_mul, hb, ← mul_assoc, ← pow_succ']
-      exact hϖr hb ▸ b.2
+      exact hϖr hb ▸ b.property
   simpa using key n hn 1
 
 /-- Under the hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`, `A° = B`. -/
@@ -626,7 +639,7 @@ def topologicallyNilpotentIdeal : Ideal (powerBoundedSubring A) where
   carrier := {a | IsTopologicallyNilpotent (a : A)}
   add_mem' := isTopologicallyNilpotent_add
   zero_mem' := IsTopologicallyNilpotent.zero
-  smul_mem' a _ hb := a.2.isTopologicallyNilpotent_mul hb
+  smul_mem' a _ hb := a.property.isTopologicallyNilpotent_mul hb
 
 /-- Membership in `A°°` is topological nilpotence. -/
 @[simp]

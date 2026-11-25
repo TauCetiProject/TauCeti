@@ -25,13 +25,13 @@ equivalence already entail almost-everywhere measurability of `X n` and `X'`.
 
 ## Main results
 
-* `TauCeti.tendstoInDistribution_iff_forall_tendstoInDistribution_inner`: the Cramér–Wold theorem
+* `TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner`: the Cramér–Wold theorem
   for sequences `X : (n : ℕ) → Ω n → E` on varying probability spaces `(Ω n, P n)`, without
   external measurability hypotheses.
 
 ## Implementation notes
 
-On the right-hand side of `tendstoInDistribution_iff_forall_tendstoInDistribution_inner`, each
+On the right-hand side of `tendstoInDistribution_iff_tendstoInDistribution_inner`, each
 projection `ω ↦ ⟪X n ω, t⟫` is almost everywhere measurable by
 `TendstoInDistribution.forall_aemeasurable`; Pettis' measurability theorem
 (`TauCeti.aestronglyMeasurable_iff_forall_inner`) reconstructs almost-everywhere strong
@@ -61,7 +61,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 vectors `X n : Ω n → E` on probability spaces `(Ω n, P n)` to `X' : Ω' → E` on `(Ω', P')`, where
 `E` is a finite-dimensional real inner product space with its Borel σ-algebra, is equivalent to
 convergence in distribution of all scalar projections `ω ↦ ⟪X n ω, t⟫` to `ω' ↦ ⟪X' ω', t⟫`. -/
-theorem tendstoInDistribution_iff_forall_tendstoInDistribution_inner
+theorem tendstoInDistribution_iff_tendstoInDistribution_inner
     {Ω : ℕ → Type*} {mΩ : ∀ n, MeasurableSpace (Ω n)} {P : (n : ℕ) → Measure (Ω n)}
     [∀ n, IsProbabilityMeasure (P n)]
     {Ω' : Type*} {mΩ' : MeasurableSpace Ω'} {P' : Measure Ω'} [IsProbabilityMeasure P']
@@ -71,11 +71,11 @@ theorem tendstoInDistribution_iff_forall_tendstoInDistribution_inner
   mp h t := h.continuous_comp (continuous_id.inner continuous_const)
   mpr h := by
     have hX (n : ℕ) : AEMeasurable (X n) (P n) :=
-      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).2 fun t ↦ by
+      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).mpr fun t ↦ by
         simpa only [real_inner_comm t] using
           ((h t).forall_aemeasurable n).aestronglyMeasurable).aemeasurable
     have hX' : AEMeasurable X' P' :=
-      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).2 fun t ↦ by
+      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).mpr fun t ↦ by
         simpa only [real_inner_comm t] using
           (h t).aemeasurable_limit.aestronglyMeasurable).aemeasurable
     refine .of_tendsto_charFun hX hX' fun t ↦ ?_

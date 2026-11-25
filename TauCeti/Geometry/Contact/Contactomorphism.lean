@@ -103,7 +103,7 @@ point the pulled-back covector `(e^* β)_x` is a positive multiple of `α_x`. Fo
 forms this says that `e` is a contactomorphism carrying the coorientation of `ker α` given by `α`
 to the coorientation of `ker β` given by `β`. -/
 def PreservesCoorientation : Prop :=
-  ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).1 x = c • α.1 x
+  ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).val x = c • α.val x
 
 /-- A diffeomorphism `e : M ≃ N` is a **strict contactomorphism** from `α` to `β` when it pulls
 `β` back to `α`. -/
@@ -122,7 +122,7 @@ theorem isContactomorphism_def :
 every point. -/
 theorem preservesCoorientation_def :
     e.PreservesCoorientation α β ↔
-      ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).1 x = c • α.1 x :=
+      ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).val x = c • α.val x :=
   Iff.rfl
 
 /-- A strict contactomorphism is a diffeomorphism pulling `β` back to `α`. -/
@@ -199,10 +199,10 @@ theorem isContactomorphism_smul_right {c : ℝ} (hc : c ≠ 0) :
 
 /-- For a nowhere vanishing form `α`: a diffeomorphism is a contactomorphism exactly when it pulls
 `β` back to `f α` for a unique nowhere vanishing smooth function `f`. -/
-theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
+theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.val x ≠ 0) :
     e.IsContactomorphism α β ↔
       ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, f x ≠ 0) ∧
-        ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x :=
+        ∀ x, (SmoothForm.mpullback e e.contMDiff β).val x = f x • α.val x :=
   SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
 
 /-- A contactomorphism preserves and reflects contactness. -/
@@ -246,10 +246,10 @@ theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
 
 /-- For a nowhere vanishing form `α`: a diffeomorphism preserves the coorientation exactly when
 it pulls `β` back to `f α` for a positive smooth function `f`. -/
-theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
+theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.val x ≠ 0) :
     e.PreservesCoorientation α β ↔
       ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, 0 < f x) ∧
-        ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x := by
+        ∀ x, (SmoothForm.mpullback e e.contMDiff β).val x = f x • α.val x := by
   refine ⟨fun h ↦ ?_, fun ⟨f, _, hf, hmul⟩ x ↦ ⟨f x, hf x, hmul x⟩⟩
   obtain ⟨f, ⟨hf, -, hmul⟩, -⟩ :=
     (isContactomorphism_iff_existsUnique_fun_smul hα).mp h.isContactomorphism
@@ -262,7 +262,7 @@ theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
 the coorientation given by `β` or the opposite coorientation given by `-β`: its multiplier is a
 continuous nowhere vanishing function, so it has constant sign. -/
 theorem IsContactomorphism.preservesCoorientation_or_neg [PreconnectedSpace M]
-    (h : e.IsContactomorphism α β) (hα : ∀ x, α.1 x ≠ 0) :
+    (h : e.IsContactomorphism α β) (hα : ∀ x, α.val x ≠ 0) :
     e.PreservesCoorientation α β ∨ e.PreservesCoorientation α (-β) := by
   obtain ⟨f, ⟨hf, hf₀, hmul⟩, -⟩ := (isContactomorphism_iff_existsUnique_fun_smul hα).mp h
   by_cases hpos : ∀ x, 0 < f x
@@ -330,7 +330,9 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-private theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
+/-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space pulls the standard
+contact form back to `c` times itself. -/
+theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
     {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) :
     SmoothForm.mpullback e e.contMDiff (innerProductContactForm V) =
       c • innerProductContactForm V := by
@@ -365,7 +367,7 @@ theorem isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq {c : ℝ}
       c = 1 := by
   rw [Diffeomorph.IsStrictContactomorphism, mpullback_innerProductContactForm_of_coe_eq he]
   refine ⟨fun h ↦ ?_, fun hc ↦ by rw [hc, one_smul]⟩
-  have h₀ := congrArg (fun β : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 ↦ β.1 0) h
+  have h₀ := congrArg (fun β : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 ↦ β.val 0) h
   rw [SmoothForm.smul_toRoughForm, Pi.smul_apply] at h₀
   exact smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0)
     (h₀.trans (one_smul ℝ _).symm)

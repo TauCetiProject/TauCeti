@@ -8,6 +8,8 @@ module
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Coefficients
 
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+
 /-!
 # The coefficient model of the unit-radius Tate algebra
 
@@ -57,6 +59,35 @@ theorem isRestricted_const_iff {f : MvPowerSeries σ R} {ρ : ℝ} :
       Tendsto (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * ρ ^ t.degree) cofinite (𝓝 0) := by
   simp only [IsRestricted, Finsupp.prod_pow_eq_pow_degree]
 
+section NormBound
+
+variable {σ R : Type*} [Semiring R] [Norm R]
+
+/-- **Geometric decay gives a radius.** The decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` of the coefficients of a
+series, for `0 < q < 1` and `c > 0`, gives a radius `ρ > 1` and a constant `C` with
+`‖aᵥ‖ ≤ C ρ^{-|ν|}`. -/
+theorem exists_norm_coeff_le_mul_inv_pow_of_le_pow {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1)
+    {c : ℕ} (hc : 0 < c) {f : MvPowerSeries σ R} (h : ∀ t, ‖coeff t f‖ ≤ q ^ (t.degree / c)) :
+    ∃ ρ : ℝ, 1 < ρ ∧ ∃ C : ℝ, ∀ t, ‖coeff t f‖ ≤ C * (ρ ^ t.degree)⁻¹ := by
+  -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
+  have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
+  set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
+  have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
+  have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
+  refine ⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩
+  rw [le_mul_inv_iff₀ (by positivity)]
+  calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
+        rw [← pow_mul]
+        gcongr
+        · exact h t
+        · exact hρ.le
+        · exact (Nat.lt_mul_div_succ _ hc).le
+    _ = q⁻¹ := by
+        rw [hρc, inv_pow, pow_succ]
+        field_simp
+
+end NormBound
+
 end MvPowerSeries
 
 namespace TauCeti.MvPowerSeries
@@ -69,15 +100,9 @@ variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 module to the space of coefficient families vanishing at infinity on the discrete exponent set. -/
 noncomputable def restrictedCoeffLinearIsometryEquiv :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) ≃ₗᵢ[R]
-      C₀(WithDiscreteTopology (σ →₀ ℕ), R) where
-  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
-    ((IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv R).symm.trans
-      (IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv (σ := σ) (E := R) R).toLinearEquiv)
-  norm_map' f := by
-    simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
-      LinearIsometryEquiv.norm_map, IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
+      C₀(WithDiscreteTopology (σ →₀ ℕ), R) :=
+  (IsRestrictedFamily.Gauss.subringLinearIsometryEquiv R).trans
+    (IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv R)
 
 /-- The coefficient isometry evaluates a restricted series at each exponent by taking that
 coefficient. -/
@@ -86,12 +111,9 @@ theorem restrictedCoeffLinearIsometryEquiv_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
     restrictedCoeffLinearIsometryEquiv f (.toTopology ⊥ t) =
       coeff t (f : _root_.MvPowerSeries σ R) := by
-  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
-  simp only [restrictedCoeffLinearIsometryEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.restrictScalars_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+  simp only [restrictedCoeffLinearIsometryEquiv, LinearIsometryEquiv.trans_apply,
     IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv_apply,
-    IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
-    IsRestrictedFamily.coe_subringLinearEquiv]
+    IsRestrictedFamily.Gauss.subringLinearIsometryEquiv_apply]
 
 /-- The inverse coefficient isometry builds the restricted series with the prescribed null
 coefficient family. -/

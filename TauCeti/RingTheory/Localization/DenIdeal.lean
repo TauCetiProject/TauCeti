@@ -71,7 +71,7 @@ lemma Algebra.denIdeal_ne_bot [Nontrivial R] (M : Submonoid R) [IsLocalization M
   have hb : (b : R) ∈ Algebra.denIdeal K x :=
     (Algebra.mem_denIdeal_iff K).2 ⟨a, by rw [mul_comm, hab]⟩
   rw [h0, Ideal.mem_bot] at hb
-  have := IsLocalization.uniqueOfZeroMem (M := M) (S := K) (hb ▸ b.2)
+  have := IsLocalization.uniqueOfZeroMem (M := M) (S := K) (hb ▸ b.property)
   have h1 : (1 : R) ∈ Algebra.denIdeal K x :=
     (Algebra.mem_denIdeal_iff K).2 ⟨0, Subsingleton.elim _ _⟩
   simp [h0] at h1

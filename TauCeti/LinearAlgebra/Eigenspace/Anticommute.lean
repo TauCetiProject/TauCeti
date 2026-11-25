@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # Eigenspaces of anticommuting endomorphisms
@@ -26,8 +27,6 @@ complex structure `J`: its principal curvatures come in pairs `±κ`.
 
 * `Module.End.genEigenspace_neg`: the generalized eigenspaces of `-f` are those of `f` at the
   negated eigenvalue.
-* `Module.End.genEigenspace_smul`: over a field, the generalized eigenspaces of `t • f` for
-  `t ≠ 0` are those of `f` at the rescaled eigenvalue.
 * `Module.End.mapsTo_genEigenspace_neg_of_anticommute`: an endomorphism anticommuting with `f`
   maps the generalized `μ`-eigenspace of `f` into its generalized `-μ`-eigenspace.
 * `Module.End.map_genEigenspace_of_anticommute`: for an invertible such endomorphism this is an
@@ -56,18 +55,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 eigenvalue. -/
 @[simp]
 theorem genEigenspace_neg (f : End R M) (μ : R) (k : ℕ∞) :
-    (-f).genEigenspace μ k = f.genEigenspace (-μ) k :=
-  le_antisymm (by simpa using genEigenspace_le_smul (-f) μ (-1) k)
-    (by simpa using genEigenspace_le_smul f (-μ) (-1) k)
-
-/-- Over a field, the generalized eigenspaces of a nonzero multiple `t • f` are the generalized
-eigenspaces of `f` at the eigenvalue divided by `t`. -/
-theorem genEigenspace_smul {K V : Type*} [Field K] [AddCommGroup V] [Module K V] (f : End K V)
-    {t : K} (ht : t ≠ 0) (μ : K) (k : ℕ∞) :
-    (t • f).genEigenspace μ k = f.genEigenspace (t⁻¹ * μ) k :=
-  le_antisymm
-    (by simpa [smul_smul, inv_mul_cancel₀ ht] using genEigenspace_le_smul (t • f) μ t⁻¹ k)
-    (by simpa [mul_inv_cancel_left₀ ht] using genEigenspace_le_smul f (t⁻¹ * μ) t k)
+    (-f).genEigenspace μ k = f.genEigenspace (-μ) k := by
+  simpa using genEigenspace_smul f (isUnit_one.neg.isSMulRegular M) (-μ) k
 
 variable {f : End R M}
 

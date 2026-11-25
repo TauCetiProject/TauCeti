@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -63,6 +65,11 @@ the Fourier change of variables `ContinuousLinearEquiv.fourier_comp`, which intr
 * `SchwartzMap.tsum_eq_tsum_dual_fourier_neg`: its reflected form, for every `f`.
 * `SchwartzMap.tsum_eq_tsum_dual_fourier_of_even`: the form with phase `exp (-2πi ⟪v, m⟫)`, for
   even `f`.
+* `SchwartzMap.summable_norm_apply_sum_intCast_smul`: a Schwartz function is absolutely summable
+  over the points `∑ i, n i • o i` of the lattice spanned by `o`.
+* `SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`: the Fourier series on the torus with
+  coefficients `𝓕 f` at those points, which is the periodization of `f`, has `L¹` norm at most
+  `‖f‖_{L¹(E)}`. This bounds the kernels of Fourier multipliers on the torus.
 
 ## References
 
@@ -98,7 +105,7 @@ private theorem toTorus_eq_toTorus_iff {x y : E} :
 
 private theorem toTorus_add (x : E) (ℓ : span ℤ (range o.toBasis)) :
     o.toTorus (x + ℓ) = o.toTorus x :=
-  o.toTorus_eq_toTorus_iff.2 (by rw [add_sub_cancel_left]; exact ℓ.2)
+  o.toTorus_eq_toTorus_iff.2 (by rw [add_sub_cancel_left]; exact ℓ.property)
 
 /-- The torus is the quotient of `E` by the lattice spanned by `o`. -/
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
@@ -109,18 +116,14 @@ private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
 private noncomputable def latticeEquiv : (ι → ℤ) ≃ₗ[ℤ] span ℤ (range o.toBasis) :=
   (o.toBasis.restrictScalars ℤ).equivFun.symm
 
-private theorem repr_latticeEquiv (n : ι → ℤ) (i : ι) : o.repr (o.latticeEquiv n : E) i = n i := by
-  rw [← o.coe_toBasis_repr_apply, ← o.toBasis.restrictScalars_repr_apply ℤ, latticeEquiv,
-    ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  simp
-
 /-- The exponential monomial of index `n` on the torus is the character `x ↦ exp (2πi ⟪x, m⟫)`
 of the lattice vector `m` with coordinates `n`. -/
 private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
     mFourier n (o.toTorus x) = 𝐞 ⟪x, (o.latticeEquiv n : E)⟫ := by
   have h : ⟪x, (o.latticeEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
     rw [← o.sum_inner_mul_inner]
-    simp only [real_inner_comm _ x, ← o.repr_apply_apply, repr_latticeEquiv]
+    simp only [real_inner_comm _ x, ← o.repr_apply_apply, ← o.coe_toBasis_repr_apply,
+      latticeEquiv, Basis.repr_restrictScalars_equivFun_symm, eq_intCast]
   rw [h, toTorus_def, TauCeti.UnitAddTorus.mFourier_coe_apply, Real.fourierChar_apply]
   congr 1
   push_cast
@@ -290,6 +293,63 @@ theorem tsum_eq_tsum_fourier_span_orthonormalBasis (v : E) :
   congr 2
   push_cast
   ring
+
+/-! ### The lattice Fourier series on the torus -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The lattice vector with coordinates `n` in the basis `o` is `∑ i, n i • o i`. -/
+private theorem coe_latticeEquiv (n : ι → ℤ) : (o.latticeEquiv n : E) = ∑ i, (n i : ℝ) • o i := by
+  rw [latticeEquiv, Basis.equivFun_symm_apply, Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Submodule.coe_smul_of_tower, Basis.restrictScalars_apply, o.coe_toBasis,
+    Int.cast_smul_eq_zsmul]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A Schwartz function is absolutely summable over the points `∑ i, n i • o i`, `n ∈ ℤ^ι`, of the
+lattice spanned by an orthonormal basis `o`. -/
+theorem summable_norm_apply_sum_intCast_smul :
+    Summable fun n : ι → ℤ ↦ ‖f (∑ i, (n i : ℝ) • o i)‖ := by
+  have h := ZLattice.summable_norm_poisson_left (span ℤ (range o.toBasis)) f 0
+  simp only [zero_add] at h
+  simpa only [Function.comp_def, LinearEquiv.coe_toEquiv, coe_latticeEquiv] using
+    o.latticeEquiv.toEquiv.summable_iff.2 h
+
+-- Mathlib's Fourier analysis on the torus `(ℝ/ℤ)^ι` uses the product of the Haar probability
+-- measures on the circle factors, given by this instance; integrate for that same measure.
+attribute [local instance 2000] instMeasureSpaceUnitAddCircle in
+/-- **The `L¹` norm of the periodization.** The Fourier series on the torus `(ℝ/ℤ)^ι` whose
+coefficients are the values of `𝓕 f` at the points `∑ i, n i • o i` of the lattice spanned by an
+orthonormal basis `o` has `L¹` norm at most `‖f‖_{L¹(E)}`. By Poisson summation this series is the
+periodization `∑ ℓ, f (· + ℓ)` of `f`, and the translates of a fundamental domain tile `E`. -/
+theorem lintegral_eNorm_tsum_fourier_mul_mFourier_le :
+    ∫⁻ z, ‖∑' n : ι → ℤ, 𝓕 (f : E → ℂ) (∑ i, (n i : ℝ) • o i) * mFourier n z‖ₑ ≤
+      ∫⁻ x, ‖f x‖ₑ := by
+  have : VAddInvariantMeasure (span ℤ (range o.toBasis)) E volume :=
+    inferInstanceAs (VAddInvariantMeasure (span ℤ (range o.toBasis)).toAddSubgroup E volume)
+  -- The series is the periodization, by its convergent Fourier series.
+  have hper (z : UnitAddTorus ι) :
+      ∑' n : ι → ℤ, 𝓕 (f : E → ℂ) (∑ i, (n i : ℝ) • o i) * mFourier n z = periodization f o z := by
+    rw [← (hasSum_mFourier_series_apply_of_summable
+      (summable_mFourierCoeff_periodization f o) z).tsum_eq]
+    exact tsum_congr fun n ↦ by rw [mFourierCoeff_periodization, coe_latticeEquiv, smul_eq_mul]
+  simp_rw [hper]
+  rw [lintegral_preimage _ 0,
+    ← o.measurePreserving_coords.setLIntegral_comp_preimage_emb o.coords.measurableEmbedding,
+    setLIntegral_congr o.coords_preimage_ae_eq_fundamentalDomain,
+    (ZSpan.isAddFundamentalDomain o.toBasis volume).lintegral_eq_tsum'']
+  calc ∫⁻ x in ZSpan.fundamentalDomain o.toBasis, ‖periodization f o (fun i ↦ o.coords x i)‖ₑ
+      = ∫⁻ x in ZSpan.fundamentalDomain o.toBasis,
+          ‖∑' ℓ : span ℤ (range o.toBasis), f (x + ℓ)‖ₑ := by
+        simp only [coords_apply, ← toTorus_def, periodization_toTorus]
+    _ ≤ ∫⁻ x in ZSpan.fundamentalDomain o.toBasis,
+          ∑' ℓ : span ℤ (range o.toBasis), ‖f (x + ℓ)‖ₑ :=
+        lintegral_mono fun _ ↦ eNorm_tsum_le_tsum_eNorm
+    _ = ∑' ℓ : span ℤ (range o.toBasis),
+          ∫⁻ x in ZSpan.fundamentalDomain o.toBasis, ‖f (ℓ +ᵥ x)‖ₑ := by
+        rw [lintegral_tsum (f := fun (ℓ : span ℤ (range o.toBasis)) (x : E) ↦ ‖f (x + ℓ)‖ₑ)
+          fun ℓ ↦ (f.continuous.comp (continuous_id.add continuous_const)).eNorm.aemeasurable]
+        refine tsum_congr fun ℓ ↦ lintegral_congr fun x ↦ ?_
+        rw [Submodule.vadd_def, vadd_eq_add, add_comm]
 
 end SchwartzMap
 

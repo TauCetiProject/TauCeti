@@ -46,7 +46,7 @@ matrices throughout and imposing no global measurability hypotheses beyond squar
 ## Implementation notes
 
 Via the varying-space Cramér–Wold theorem
-`TauCeti.tendstoInDistribution_iff_forall_tendstoInDistribution_inner`, both main theorems reduce to
+`TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner`, both main theorems reduce to
 one dimension along every projection `z ↦ ⟪z, t⟫`. In each direction `t`, Cauchy–Schwarz transfers
 the Euclidean Lindeberg condition to the scalar Lindeberg condition at threshold `δ` via radius
 `δ / (2 ‖t‖)`, `TauCeti.variance_inner_eq_inner_covMatrix_map` identifies the projected variance as
@@ -99,7 +99,7 @@ private theorem tendsto_sum_indicator_inner_sq_of_lindeberg
   rw [Finset.mul_sum]
   refine Finset.sum_le_sum fun i _ ↦ ?_
   have hY_sq : Integrable (fun ω ↦ ‖Y n i ω‖ ^ 2) (μ n) :=
-    (memLp_two_iff_integrable_sq_norm (hL2 n i).aestronglyMeasurable).1 (hL2 n i)
+    (memLp_two_iff_integrable_sq_norm (hL2 n i).aestronglyMeasurable).mp (hL2 n i)
   have hs : NullMeasurableSet {ω | ε < ‖Y n i ω‖} (μ n) :=
     nullMeasurableSet_lt aemeasurable_const (hL2 n i).aestronglyMeasurable.norm.aemeasurable
   rw [← integral_indicator₀ hs, ← integral_const_mul]
@@ -108,7 +108,7 @@ private theorem tendsto_sum_indicator_inner_sq_of_lindeberg
   by_cases hω : δ ≤ |⟪Y n i ω, t⟫|
   · have hcs : |⟪Y n i ω, t⟫| ≤ ‖Y n i ω‖ * ‖t‖ := abs_real_inner_le_norm (Y n i ω) t
     have hεlt : ε < ‖Y n i ω‖ := by
-      have hdiv : δ / ‖t‖ ≤ ‖Y n i ω‖ := (div_le_iff₀ ht_pos).2 (hω.trans hcs)
+      have hdiv : δ / ‖t‖ ≤ ‖Y n i ω‖ := (div_le_iff₀ ht_pos).mpr (hω.trans hcs)
       have hhalf : ε < δ / ‖t‖ := by
         rw [div_lt_div_iff₀ (by positivity) ht_pos]; nlinarith
       exact hhalf.trans_le hdiv
@@ -144,7 +144,7 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
   have hS : S.PosSemidef :=
     isClosed_setOfPred_posSemidef.mem_of_tendsto hcov (.of_forall fun n ↦
       (Matrix.PosSemidef.addSubmonoid κ ℝ).sum_mem fun i _ ↦ posSemidef_covMatrix_map (hL2 n i))
-  refine tendstoInDistribution_iff_forall_tendstoInDistribution_inner.2 fun t ↦ ?_
+  refine tendstoInDistribution_iff_tendstoInDistribution_inner.mpr fun t ↦ ?_
   simp_rw [sum_inner]
   have hZt : HasLaw (fun ω' ↦ ⟪Z ω', t⟫)
       (gaussianReal 0 (⟪t, S.toEuclideanLin t⟫).toNNReal) μ' := by
@@ -160,7 +160,7 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
     ?_ (fun δ hδ ↦ tendsto_sum_indicator_inner_sq_of_lindeberg hL2 hlind t hδ)
   have hSt_nn : 0 ≤ ⟪t, S.toEuclideanLin t⟫ := by
     simpa only [RCLike.re_to_real, real_inner_comm] using
-      (Matrix.isPositive_toEuclideanLin_iff.mpr hS).2 t
+      (Matrix.isPositive_toEuclideanLin_iff.mpr hS).right t
   rw [Real.coe_toNNReal _ hSt_nn]
   have hquad_cont : Continuous (fun A : Matrix κ κ ℝ ↦ ⟪t, A.toEuclideanLin t⟫) := by
     simp_rw [Matrix.toLpLin_apply]
@@ -177,32 +177,33 @@ private theorem setIntegral_norm_smul_sq_le
     {Ω₀ : Type*} [MeasurableSpace Ω₀] {μ₀ : Measure Ω₀}
     {ξ₀ : Ω₀ → ℝ} {w₀ : EuclideanSpace ℝ κ} {ν : Measure ℝ}
     (hlaw : HasLaw ξ₀ ν μ₀) (hL2 : MemLp id 2 ν)
-    {ε R : ℝ} (hε : 0 < ε) (hRpos : 0 < R) (hw : ‖w₀‖ ≤ ε / R) :
+    {ε : ℝ} {R : ℝ≥0} (hε : 0 < ε) (hRpos : 0 < (R : ℝ)) (hw : ‖w₀‖ ≤ ε / (R : ℝ)) :
     ∫ ω in {ω | ε < ‖ξ₀ ω • w₀‖}, ‖ξ₀ ω • w₀‖ ^ 2 ∂μ₀ ≤
-      ‖w₀‖ ^ 2 * ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν := by
+      ‖w₀‖ ^ 2 * ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν := by
   have hξm : AEMeasurable ξ₀ μ₀ := hlaw.aemeasurable
-  have hξ2 : Integrable (fun ω ↦ ξ₀ ω ^ 2) μ₀ := (hlaw.memLp hL2).integrable_sq
+  have hξ2 : Integrable (fun ω ↦ ‖ξ₀ ω‖ ^ 2) μ₀ :=
+    (hlaw.memLp hL2).integrable_norm_pow two_ne_zero
   have hs : NullMeasurableSet {ω | ε < ‖ξ₀ ω • w₀‖} μ₀ :=
     nullMeasurableSet_lt aemeasurable_const (by fun_prop)
-  have hmap_ind : ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν =
-      ∫ ω, ({ω | R ≤ |ξ₀ ω|}.indicator fun ω ↦ ξ₀ ω ^ 2) ω ∂μ₀ := by
+  have hmap_ind : ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν =
+      ∫ ω, {ω | (R : ℝ) < ‖ξ₀ ω‖}.indicator (fun ω ↦ ‖ξ₀ ω‖ ^ 2) ω ∂μ₀ := by
     rw [← hlaw.map_eq]
     exact integral_map hξm
-      ((by fun_prop : Measurable fun u : ℝ ↦ u ^ 2).aestronglyMeasurable.indicator
-        (measurableSet_le measurable_const (by fun_prop : Measurable fun u : ℝ ↦ |u|)))
+      ((by fun_prop : Measurable fun u : ℝ ↦ ‖u‖ ^ 2).aestronglyMeasurable.indicator
+        (measurableSet_lt measurable_const (by fun_prop : Measurable fun u : ℝ ↦ ‖u‖)))
   rw [← integral_indicator₀ hs, hmap_ind, ← integral_const_mul]
   refine integral_mono
     (((hξ2.mul_const (‖w₀‖ ^ 2)).congr (.of_forall fun ω ↦ ?_)).indicator₀ hs)
-    ((hξ2.indicator₀ (nullMeasurableSet_le aemeasurable_const hξm.norm)).const_mul _) fun ω ↦ ?_
+    ((hξ2.indicator₀ (nullMeasurableSet_lt aemeasurable_const hξm.norm)).const_mul _) fun ω ↦ ?_
   · simp [norm_smul, mul_pow]
   · by_cases hω : ε < ‖ξ₀ ω • w₀‖
-    · have hω' : ε < |ξ₀ ω| * ‖w₀‖ := by rwa [norm_smul, Real.norm_eq_abs] at hω
-      have hw_pos : 0 < ‖w₀‖ := pos_of_mul_pos_right (hε.trans hω') (abs_nonneg _)
-      have hRle : R ≤ |ξ₀ ω| :=
-        (lt_of_mul_lt_mul_right (((le_div_iff₀' hRpos).1 hw).trans_lt hω') hw_pos.le).le
+    · have hω' : ε < ‖ξ₀ ω‖ * ‖w₀‖ := by rwa [norm_smul] at hω
+      have hw_pos : 0 < ‖w₀‖ := pos_of_mul_pos_right (hε.trans hω') (norm_nonneg _)
+      have hRlt : (R : ℝ) < ‖ξ₀ ω‖ :=
+        lt_of_mul_lt_mul_right (((le_div_iff₀' hRpos).mp hw).trans_lt hω') hw_pos.le
       rw [Set.indicator_of_mem (s := {ω | ε < ‖ξ₀ ω • w₀‖}) hω,
-        Set.indicator_of_mem (s := {ω | R ≤ |ξ₀ ω|}) hRle,
-        norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, mul_comm]
+        Set.indicator_of_mem (s := {ω | (R : ℝ) < ‖ξ₀ ω‖}) hRlt,
+        norm_smul, mul_pow, mul_comm]
     · rw [Set.indicator_of_notMem (s := {ω | ε < ‖ξ₀ ω • w₀‖}) hω]
       exact mul_nonneg (sq_nonneg _) (Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
 
@@ -218,7 +219,7 @@ private theorem tendsto_sum_setIntegral_norm_smul_sq
     (hmax : ∀ δ > 0, ∀ᶠ n in atTop, ∀ i, ‖w n i‖ ≤ δ) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun n ↦ ∑ i, ∫ ω in {ω | ε < ‖ξ n i ω • w n i‖}, ‖ξ n i ω • w n i‖ ^ 2 ∂(μ n))
       atTop (𝓝 0) := by
-  have htail := hL2.tendsto_integral_indicator_sq_atTop
+  have htail := hL2.tendsto_integral_indicator_norm_sq
   have htrace : Tendsto (fun n ↦ ∑ i, ‖w n i‖ ^ 2) atTop (𝓝 Q.trace) := by
     have hcont : Continuous (fun A : Matrix κ κ ℝ ↦ A.trace) := continuous_id.matrix_trace
     refine ((hcont.tendsto Q).comp hgram).congr fun n ↦ ?_
@@ -229,24 +230,25 @@ private theorem tendsto_sum_setIntegral_norm_smul_sq
   intro η hη
   set M : ℝ := |Q.trace| + 1
   have hM : 0 < M := by positivity
-  obtain ⟨R, hRpos, hRtail⟩ : ∃ R > 0,
-      ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν < η / (2 * M) :=
-    ((eventually_gt_atTop (0 : ℝ)).and
+  obtain ⟨R, hRpos, hRtail⟩ : ∃ R : ℝ≥0, 0 < R ∧
+      ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν < η / (2 * M) :=
+    ((eventually_gt_atTop (0 : ℝ≥0)).and
       (htail (Iio_mem_nhds (div_pos hη (mul_pos two_pos hM))))).exists
-  filter_upwards [hmax (ε / R) (div_pos hε hRpos),
+  have hRpos' : 0 < (R : ℝ) := R.coe_pos.mpr hRpos
+  filter_upwards [hmax (ε / (R : ℝ)) (div_pos hε hRpos'),
     htrace (Iio_mem_nhds (by linarith [le_abs_self Q.trace] : Q.trace < M))] with n hwn hsum
   have hsum_lt : ∑ i, ‖w n i‖ ^ 2 < M := hsum
-  have htail0 : 0 ≤ ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν :=
+  have htail0 : 0 ≤ ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν :=
     integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
   have hnonneg : 0 ≤ ∑ i, ∫ ω in {ω | ε < ‖ξ n i ω • w n i‖}, ‖ξ n i ω • w n i‖ ^ 2 ∂(μ n) :=
     Finset.sum_nonneg fun i _ ↦ integral_nonneg fun _ ↦ sq_nonneg _
   rw [Real.dist_eq, sub_zero, abs_of_nonneg hnonneg]
   refine (le_trans (b := (∑ i, ‖w n i‖ ^ 2) *
-    ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν) ?_ ?_).trans_lt (half_lt_self hη)
+    ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν) ?_ ?_).trans_lt (half_lt_self hη)
   · rw [Finset.sum_mul]
     exact Finset.sum_le_sum fun i _ ↦
-      setIntegral_norm_smul_sq_le (hlaw n i) hL2 hε hRpos (hwn i)
-  · calc (∑ i, ‖w n i‖ ^ 2) * ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν
+      setIntegral_norm_smul_sq_le (hlaw n i) hL2 hε hRpos' (hwn i)
+  · calc (∑ i, ‖w n i‖ ^ 2) * ∫ u, {u | (R : ℝ) < ‖u‖}.indicator (fun u ↦ ‖u‖ ^ 2) u ∂ν
         ≤ M * (η / (2 * M)) := mul_le_mul hsum_lt.le hRtail.le htail0 hM.le
       _ = η / 2 := by field_simp [hM.ne']
 
@@ -321,7 +323,7 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean
       (fun (n : ℕ) ω ↦ (√(n : ℝ))⁻¹ • ∑ i ∈ Finset.range n, (X i ω - ∫ ω', X 0 ω' ∂μ))
       atTop Z (fun _ ↦ μ) μ' := by
   have hS : (covMatrix (μ.map (X 0))).PosSemidef := posSemidef_covMatrix_map hL2
-  refine tendstoInDistribution_iff_forall_tendstoInDistribution_inner.2 fun t ↦ ?_
+  refine tendstoInDistribution_iff_tendstoInDistribution_inner.mpr fun t ↦ ?_
   set U : ℕ → Ω → ℝ := fun i ω ↦ ⟪t, X i ω⟫
   have hU_var : Var[U 0; μ] = ⟪t, (covMatrix (μ.map (X 0))).toEuclideanLin t⟫ :=
     variance_inner_eq_inner_covMatrix_map hL2 t

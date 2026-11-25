@@ -176,20 +176,20 @@ theorem algebraMap_typeDSpinWeight {K : Type*} [CommRing K] [Invertible (2 : K)]
 
 /-- For a valid type `Dₙ`, the integral coordinate of a spin weight is its pairing with the
 corresponding Bourbaki simple coroot in orthonormal coordinates. Type `D` is simply laced, so the
-simple coroot is `typeDSimpleRoot n hn i`. -/
+simple coroot is `typeDSimpleRoot n _ i`. -/
 theorem algebraMap_typeDSpinWeight_eq_dotProduct {K : Type*} [CommRing K]
     [Invertible (2 : K)] {n : ℕ} (hn : 4 ≤ n) (s : Finset (Fin n)) (i : Fin n) :
     algebraMap ℤ K (typeDSpinWeight s i) =
       spinWeight K s ⬝ᵥ
-        fun j => algebraMap ℤ K (typeDSimpleRoot n hn i j) := by
+        fun j => algebraMap ℤ K (typeDSimpleRoot n (by omega) i j) := by
   rw [algebraMap_typeDSpinWeight_apply]
   by_cases hnext : (i : ℕ) + 1 < n
   · rw [dite_eq_left hnext]
     have hmap :
-        (fun j => algebraMap ℤ K (typeDSimpleRoot n hn i j)) =
+        (fun j => algebraMap ℤ K (typeDSimpleRoot n (by omega) i j)) =
           (Pi.single i 1 - Pi.single (⟨(i : ℕ) + 1, hnext⟩ : Fin n) 1 :
             Fin n → K) := by
-      rw [typeDSimpleRoot_of_add_one_lt hn hnext]
+      rw [typeDSimpleRoot_of_add_one_lt (by omega) hnext]
       funext j
       simp [Pi.sub_apply, Pi.single_apply]
     rw [hmap]
@@ -205,10 +205,10 @@ theorem algebraMap_typeDSpinWeight_eq_dotProduct {K : Type*} [CommRing K]
       omega
     rw [dite_eq_right hnext]
     have hmap :
-        (fun j => algebraMap ℤ K (typeDSimpleRoot n hn i j)) =
+        (fun j => algebraMap ℤ K (typeDSimpleRoot n (by omega) i j)) =
           (Pi.single (⟨n - 2, by omega⟩ : Fin n) 1 +
             Pi.single (⟨n - 1, by omega⟩ : Fin n) 1 : Fin n → K) := by
-      rw [typeDSimpleRoot_of_not_add_one_lt hn hnext]
+      rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hnext]
       funext j
       simp [Pi.add_apply, Pi.single_apply]
     rw [hmap]
@@ -615,9 +615,9 @@ private theorem two_mul_typeDSpinWeight_of_not_add_one_lt {n : ℕ} {i : Fin n}
 the integral form of `TauCeti.DynkinType.algebraMap_typeDSpinWeight_eq_dotProduct`. -/
 private theorem typeDSpinSign_dotProduct_typeDSimpleRoot {n : ℕ} (hn : 4 ≤ n)
     (s : Finset (Fin n)) (j : Fin n) :
-    typeDSpinSign s ⬝ᵥ typeDSimpleRoot n hn j = 2 * typeDSpinWeight s j := by
+    typeDSpinSign s ⬝ᵥ typeDSimpleRoot n (by omega) j = 2 * typeDSpinWeight s j := by
   by_cases hj : (j : ℕ) + 1 < n
-  · rw [typeDSimpleRoot_of_add_one_lt hn hj, two_mul_typeDSpinWeight_of_add_one_lt hj,
+  · rw [typeDSimpleRoot_of_add_one_lt (by omega) hj, two_mul_typeDSpinWeight_of_add_one_lt hj,
       dotProduct_sub, dotProduct_single, dotProduct_single, mul_one, mul_one]
   · have hjlast : j = (⟨n - 1, by omega⟩ : Fin n) := by
       apply Fin.ext
@@ -630,7 +630,8 @@ private theorem typeDSpinSign_dotProduct_typeDSimpleRoot {n : ℕ} (hn : 4 ≤ n
       dsimp only
       have := j.isLt
       omega
-    rw [typeDSimpleRoot_of_not_add_one_lt hn hj, two_mul_typeDSpinWeight_of_not_add_one_lt hj,
+    rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hj,
+      two_mul_typeDSpinWeight_of_not_add_one_lt hj,
       dotProduct_add, dotProduct_single, dotProduct_single, mul_one, mul_one]
     exact congrArg₂ (· + ·) (congrArg (typeDSpinSign s) hjprev.symm)
       (congrArg (typeDSpinSign s) hjlast.symm)
@@ -671,7 +672,7 @@ which is twice the `i`-th spin weight coordinate, times the root. -/
 private theorem typeDSpinSign_typeDSpinReflection {n : ℕ} (hn : 4 ≤ n) (i : Fin n)
     (s : Finset (Fin n)) :
     typeDSpinSign (typeDSpinReflection i s) =
-      typeDSpinSign s - (2 * typeDSpinWeight s i) • typeDSimpleRoot n hn i := by
+      typeDSpinSign s - (2 * typeDSpinWeight s i) • typeDSimpleRoot n (by omega) i := by
   funext x
   by_cases hi : (i : ℕ) + 1 < n
   · have hne : (⟨(i : ℕ) + 1, hi⟩ : Fin n) ≠ i := fun h => by
@@ -679,7 +680,7 @@ private theorem typeDSpinSign_typeDSpinReflection {n : ℕ} (hn : 4 ≤ n) (i : 
       simp only at this
       omega
     rw [typeDSpinSign_typeDSpinReflection_of_add_one_lt hi,
-      two_mul_typeDSpinWeight_of_add_one_lt hi, typeDSimpleRoot_of_add_one_lt hn hi]
+      two_mul_typeDSpinWeight_of_add_one_lt hi, typeDSimpleRoot_of_add_one_lt (by omega) hi]
     by_cases hx : x = i
     · subst hx
       simp only [Equiv.swap_apply_left, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
@@ -710,9 +711,9 @@ private theorem typeDSpinSign_typeDSpinReflection {n : ℕ} (hn : 4 ≤ n) (i : 
       simp only at hv
       have := i.isLt
       omega
-    have hroot : typeDSimpleRoot n hn i =
+    have hroot : typeDSimpleRoot n (by omega) i =
         Pi.single (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) 1 + Pi.single i 1 := by
-      rw [typeDSimpleRoot_of_not_add_one_lt hn hi]
+      rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hi]
       exact congrArg₂ (· + ·) (congrArg (fun y : Fin n => Pi.single y (1 : ℤ)) hiprev.symm)
         (congrArg (fun y : Fin n => Pi.single y (1 : ℤ)) hilast.symm)
     rw [typeDSpinReflection_of_not_add_one_lt hi, typeDSpinSign_symmDiff_pair_map_swap hne s x,
@@ -731,7 +732,7 @@ theorem typeDSpinWeight_typeDSpinReflection_apply {n : ℕ} (hn : 4 ≤ n) (i j 
       2 * (typeDSpinWeight s j - typeDSpinWeight s i * CartanMatrix.D n i j) := by
     rw [← typeDSpinSign_dotProduct_typeDSimpleRoot hn, typeDSpinSign_typeDSpinReflection hn,
       sub_dotProduct, smul_dotProduct, typeDSpinSign_dotProduct_typeDSimpleRoot hn,
-      typeDSimpleRoot_dotProduct_typeDSimpleRoot hn]
+      typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega)]
     ring
   exact mul_left_cancel₀ (by norm_num) h2
 

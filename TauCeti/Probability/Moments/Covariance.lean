@@ -8,14 +8,18 @@ module
 public import Mathlib.Probability.Moments.CovarianceBilin
 import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Covariances and covariance matrices
 
-Covariance is unchanged by almost-everywhere changes to either observable. This file also
-packages the coordinate covariances of a measure on a finite-dimensional Euclidean space as a
-matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
+Covariance is unchanged by almost-everywhere changes to either observable. For integrable
+observables with integrable product, for instance two square-integrable ones, under a finite
+measure of mass `m` it is `∫ XY + (m - 2) (∫ X) (∫ Y)`, which for a probability measure is
+Mathlib's `covariance_eq_sub`. This file also packages the coordinate
+covariances of a measure on a finite-dimensional Euclidean space as a matrix and connects that
+matrix to Mathlib's basis-free `covarianceBilin`.
 
 The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib deliberately sets
 `covarianceBilin μ` to zero when this hypothesis fails, whereas its scalar `covariance` is
@@ -64,6 +68,27 @@ theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
   apply integral_congr_ae
   filter_upwards [hX, hY] with x hx hy
   rw [hx, hy]
+
+/-- Mathlib's covariance of two integrable observables with integrable product under a finite
+measure, expanded in terms of the total mass: it is the integral of the product plus the mass
+minus `2`, times the product of the integrals. This covers two square-integrable observables, and
+an integrable observable paired with an essentially bounded one. For a probability measure this is
+`covariance_eq_sub`. -/
+theorem covariance_eq_integral_mul_add {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω}
+    [IsFiniteMeasure ν] {X Y : Ω → ℝ} (hX : Integrable X ν) (hY : Integrable Y ν)
+    (hXY : Integrable (X * Y) ν) :
+    covariance X Y ν = ν[X * Y] + (ν.real Set.univ - 2) * (ν[X] * ν[Y]) := by
+  have hXY' : Integrable (fun ω ↦ X ω * Y ω) ν := hXY
+  have hXc : Integrable (fun ω ↦ X ω * ν[Y]) ν := hX.mul_const _
+  have hcY : Integrable (fun ω ↦ ν[X] * Y ω) ν := hY.const_mul _
+  have hc : Integrable (fun _ ↦ ν[X] * ν[Y]) ν := integrable_const _
+  have hl : Integrable (fun ω ↦ X ω * Y ω - X ω * ν[Y]) ν := hXY'.sub hXc
+  have hr : Integrable (fun ω ↦ ν[X] * Y ω - ν[X] * ν[Y]) ν := hcY.sub hc
+  simp_rw [covariance, sub_mul, mul_sub]
+  rw [integral_sub hl hr, integral_sub hXY' hXc, integral_sub hcY hc]
+  simp_rw [integral_mul_const, integral_const_mul, integral_const, smul_eq_mul]
+  simp only [Pi.mul_apply]
+  ring
 
 variable {ι : Type*}
 
@@ -127,19 +152,12 @@ theorem posSemidef_covMatrix [Fintype ι]
   rw [covarianceBilin_eq_covMatrix μ hμ x x] at hnonneg
   simpa only [RCLike.re_to_real, real_inner_comm] using hnonneg
 
-/-- If `X` is square-integrable, the identity is square-integrable under its pushforward law
-`P.map X`. -/
-private lemma memLp_id_map [Fintype ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) :
-    MemLp id 2 (P.map X) :=
-  (memLp_map_measure_iff aestronglyMeasurable_id hX.aestronglyMeasurable.aemeasurable).2 hX
-
 /-- The covariance matrix of the law of a square-integrable random vector on a finite measure
 space is positive semidefinite. -/
 theorem posSemidef_covMatrix_map [Fintype ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [IsFiniteMeasure P] {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) :
     (covMatrix (P.map X)).PosSemidef :=
-  posSemidef_covMatrix _ (memLp_id_map hX)
+  posSemidef_covMatrix _ hX.id_map
 
 /-- Pushing forward a real measure along `u ↦ u • v` yields the rank-one covariance matrix
 `Var[id; μ] • Matrix.vecMulVec v v`. -/
@@ -182,7 +200,7 @@ theorem covariance_inner_eq_inner_covMatrix_map [Fintype ι] [DecidableEq ι]
     {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) (x y : EuclideanSpace ℝ ι) :
     cov[fun ω ↦ ⟪x, X ω⟫, fun ω ↦ ⟪y, X ω⟫; P] =
       ⟪x, (covMatrix (P.map X)).toEuclideanLin y⟫ := by
-  rw [← covariance_inner_eq_inner_covMatrix _ (memLp_id_map hX),
+  rw [← covariance_inner_eq_inner_covMatrix _ hX.id_map,
     covariance_map_fun (by fun_prop) (by fun_prop) hX.aestronglyMeasurable.aemeasurable]
 
 /-- For a square-integrable random vector `X` on a finite measure space, the variance of the
@@ -235,7 +253,7 @@ theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map [F
       (B * covMatrix (P.map X)).trace := by
   have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
   have hmean : ∫ y, y ∂(P.map X) = ∫ ω', X ω' ∂P := integral_map hXm aestronglyMeasurable_id
-  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ (memLp_id_map hX),
+  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hX.id_map,
     hmean, integral_map hXm (by fun_prop)]
 
 /-- The second moment of a Euclidean-valued probability measure about a point `c` is the squared
@@ -310,7 +328,7 @@ theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
   -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
   have hm : ∫ x, x ∂μ = 0 := by
     have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
-    exact integral_eq_zero_of_odd fun x ↦ rfl
+    exact integral_eq_zero_of_odd (Filter.Eventually.of_forall fun _ ↦ rfl)
   set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
   set d := Module.finrank ℝ E
   have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'

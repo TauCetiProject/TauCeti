@@ -95,7 +95,7 @@ theorem metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact {K : Set E} (hse
   refine Metric.PiNatEmbed.TopologicalSpace.MetrizableSpace.of_countable_separating
     (fun n (w : toWeakSpace 𝕜 E '' K) ↦ f n ((toWeakSpace 𝕜 E).symm w))
     (fun n ↦ (WeakBilin.eval_continuous (topDualPairing 𝕜 E).flip (f n)).comp
-      continuous_subtype_val) ?_
+      continuous_subtypeVal) ?_
   rintro ⟨-, x, hx, rfl⟩ ⟨-, y, hy, rfl⟩ hne
   by_contra! h
   exact hne <| Subtype.ext <| congrArg (toWeakSpace 𝕜 E) <|
@@ -129,7 +129,7 @@ theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
     metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact (hYsep.mono inter_subset_right) hKY
   obtain ⟨⟨a, ha⟩, φ, hφ, hlim⟩ := SeqCompactSpace.tendsto_subseq
     (fun n ↦ (⟨u n, v n, ⟨hvK n, hvY n⟩, hv n⟩ : toWeakSpace 𝕜 E '' (K ∩ Y)))
-  exact ⟨a, image_mono inter_subset_left ha, φ, hφ, (continuous_subtype_val.tendsto _).comp hlim⟩
+  exact ⟨a, image_mono inter_subset_left ha, φ, hφ, (continuous_subtypeVal.tendsto _).comp hlim⟩
 
 /-- **Šmulian's theorem**, relative form: every sequence in a relatively weakly compact subset of
 a real or complex normed space has a subsequence converging weakly to some point of the space. -/

@@ -99,16 +99,16 @@ private theorem morseCellReattachment_morseCellAttachmentCell_of_stationary
         (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
       morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i
         ((h i).hom (TopCat.diskRadialPush (k i) (by norm_num : (0 : ℝ) ≤ 1 / 2) (1, w))) := by
-  by_cases hw : 1 / 2 ≤ ‖w.down.1‖
-  · have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
+  by_cases hw : 1 / 2 ≤ ‖w.down.val‖
+  · have hw₁ : ‖w.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.property
     -- The point `x / ‖x‖` of the boundary sphere reached by the radial push.
     obtain ⟨s, hs⟩ := (mem_range_diskBoundaryInclusion_iff _).2
       (TopCat.norm_diskRadialPush_one (by norm_num : (0 : ℝ) < 1 / 2) hw)
-    obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖w.down.1‖ :=
-      ⟨⟨2 - 2 * ‖w.down.1‖, by linarith, by linarith⟩, rfl⟩
+    obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖w.down.val‖ :=
+      ⟨⟨2 - 2 * ‖w.down.val‖, by linarith, by linarith⟩, rfl⟩
     rw [morseCellReattachment_morseCellAttachmentCell_of_le_norm φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
       hf₁ _ _ K hK i hw ht ((TopCat.coe_diskBoundaryInclusion_apply_down (k i) s).symm.trans
-        ((congrArg (fun v ↦ v.down.1) hs).trans
+        ((congrArg (fun v ↦ v.down.val) hs).trans
           (TopCat.coe_diskRadialPush_one_of_le_norm (by norm_num) hw))), ← hs]
     exact (congrArg _ (Subtype.ext (hKb i t s))).trans (ConcreteCategory.congr_hom
       (hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ h hb hhb i) s)

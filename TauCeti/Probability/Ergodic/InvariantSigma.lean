@@ -6,17 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Ergodic.FixedSpace
+public import Mathlib.Dynamics.Ergodic.Ergodic
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 import Mathlib.Data.EReal.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
-# Invariant measurable representatives
+# Invariant measurable representatives and pre-ergodic conditional expectations
 
 Within the ambient-almost-everywhere strongly measurable real-valued functions, this file
 identifies almost-everywhere invariance under a nonsingular endomorphism with almost-everywhere
-strong measurability for Mathlib's invariant σ-algebra.
+strong measurability for Mathlib's invariant σ-algebra. It also records that for a pre-ergodic map
+on a finite measure space, the invariant σ-algebra is `μ`-trivial, so conditional expectation given
+`MeasurableSpace.invariants T` collapses almost everywhere to the constant space average.
 
 The nontrivial direction replaces an almost invariant real-valued function by a pointwise
 invariant representative.  For an ambient-measurable representative `g`, the replacement is the
@@ -34,10 +39,14 @@ a.e. equal to `g`.
   a.e. invariant function has an invariant measurable representative;
 * `aestronglyMeasurable_invariants_iff_comp_ae_eq` — the characteristic equivalence;
 * `fixedSpace_eq_lpMeas_invariants` — the `Lᵖ` fixed space is exactly Mathlib's `lpMeas` subspace
-  for the invariant σ-algebra.
+  for the invariant σ-algebra;
+* `PreErgodic.condExp_invariants_ae_eq_average` and
+  `PreErgodic.condExp_invariants_ae_eq_integral` — conditional expectation given the invariant
+  σ-algebra of a pre-ergodic map is almost everywhere the space average / integral (requiring no
+  integrability hypothesis).
 
-The construction and proof are adapted from `cameronfreer/exchangeability`,
-`Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
+The invariant-representative construction and `Lᵖ` fixed-space proofs are adapted from
+`cameronfreer/exchangeability`, `Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
 `Exchangeability/Ergodic/InvariantSigma.lean`, at commit
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.  This version is generalized from the path-space shift
 to an arbitrary nonsingular endomorphism at the function level (and a measure-preserving one on
@@ -179,3 +188,39 @@ theorem fixedSpace_eq_lpMeas_invariants (T : Ω → Ω) (hT : MeasurePreserving 
 end Probability
 
 end TauCeti
+
+/-! ## Conditional expectation for pre-ergodic maps -/
+
+namespace PreErgodic
+
+variable {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E] {μ : Measure Ω} {T : Ω → Ω}
+
+/-- On a finite measure space, the conditional expectation of any function given the invariant
+σ-algebra of a pre-ergodic map is almost everywhere the constant space average `⨍ y, f y ∂μ`.
+No integrability hypothesis is needed: when `f` is not integrable, both sides vanish. -/
+theorem condExp_invariants_ae_eq_average [IsFiniteMeasure μ] (hT : PreErgodic T μ) (f : Ω → E) :
+    μ[f | MeasurableSpace.invariants T] =ᵐ[μ] fun _ ↦ ⨍ y, f y ∂μ := by
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · simp [Filter.EventuallyEq, ae_zero]
+  have : NeZero μ := ⟨hμ⟩
+  by_cases hf : Integrable f μ
+  case neg =>
+    rw [condExp_of_not_integrable hf, average_eq, integral_undef hf, smul_zero, Pi.zero_def]
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (MeasurableSpace.invariants_le T) hf
+    (fun _ _ _ ↦ integrableOn_const) (fun s hs _ ↦ ?_)
+    stronglyMeasurable_const.aestronglyMeasurable).symm
+  rcases hT.measure_self_or_compl_eq_zero hs.1.nullMeasurableSet (Eq.eventuallyEqSet hs.2) with
+    h0 | hfull
+  · rw [setIntegral_measure_zero _ h0, setIntegral_measure_zero _ h0]
+  · rw [Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.mpr hfull), integral_const, average_eq,
+      smul_inv_smul₀ (measureReal_univ_ne_zero (μ := μ))]
+
+/-- On a probability space, the conditional expectation of any function given the invariant
+σ-algebra of a pre-ergodic map is almost everywhere the constant integral `∫ y, f y ∂μ`. -/
+theorem condExp_invariants_ae_eq_integral [IsProbabilityMeasure μ] (hT : PreErgodic T μ)
+    (f : Ω → E) :
+    μ[f | MeasurableSpace.invariants T] =ᵐ[μ] fun _ ↦ ∫ y, f y ∂μ := by
+  simpa only [average_eq_integral] using hT.condExp_invariants_ae_eq_average f
+
+end PreErgodic

@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -185,7 +185,7 @@ def uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i
   ⟨Units.mk0 ((σ : G) • (ϖ : L) / (ϖ : L)) (by
       have hϖne : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
       exact div_ne_zero ((smul_ne_zero_iff_ne _).mpr hϖne) hϖne),
-    mem_unitFiltration_of_val_eq_smul_div hϖ σ.2 rfl⟩
+    mem_unitFiltration_of_val_eq_smul_div hϖ σ.property rfl⟩
 
 @[simp]
 theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
@@ -208,7 +208,7 @@ theorem smul_div_mem_unitFiltration (hσ : σ ∈ ramificationGroup G 𝒪[L] (i
   have h₁ : f (Units.mk0 _ hϖ0) ∈ unitFiltration L i :=
     mem_unitFiltration_of_val_eq_smul_div hϖ hσ (hf _)
   have h₂ : f u ∈ unitFiltration L i := unitFiltration_antitone (Nat.le_succ i)
-    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.2 (hf _))
+    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.property (hf _))
   rw [show z = f (Units.mk0 _ hϖ0 ^ k * u) from Units.ext (by rw [hz, hf]), map_mul, map_zpow]
   exact mul_mem (zpow_mem h₁ k) h₂
 
@@ -229,8 +229,8 @@ def ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
     rw [← QuotientGroup.mk_mul]
     refine QuotientGroup.eq.mpr ?_
     rw [Subgroup.mem_subgroupOf, ← Subgroup.inv_mem_iff]
-    refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.2
-      (unitFiltration_antitone (Nat.zero_le i) (uniformizerRatio i hϖ τ).2) ?_
+    refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.property
+      (unitFiltration_antitone (Nat.zero_le i) (uniformizerRatio i hϖ τ).property) ?_
     have hsmul : (σ : G) • ((τ : G) • (ϖ : L) / (ϖ : L))
         = ((σ : G) * (τ : G)) • (ϖ : L) / (σ : G) • (ϖ : L) := by
       rw [div_eq_mul_inv, smul_mul', smul_inv'', ← div_eq_mul_inv, ← mul_smul]
@@ -258,7 +258,7 @@ theorem ramificationGroupToUnitFiltrationGraded_eq_of_irreducible {ϖ' : 𝒪[L]
   rw [ramificationGroupToUnitFiltrationGraded_apply, ramificationGroupToUnitFiltrationGraded_apply]
   refine QuotientGroup.eq.mpr ?_
   rw [Subgroup.mem_subgroupOf]
-  refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.2
+  refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.property
     (x := Units.map (Subring.subtype 𝒪[L]).toMonoidHom u) (mem_unitFiltration_iff_exists.mpr
       ⟨u, by simp, rfl⟩) ?_
   have hϖ'L : (ϖ' : L) = (ϖ : L) * ((u : 𝒪[L]) : L) := by
@@ -419,7 +419,7 @@ theorem ker_ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
   refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker hϖ)
   rw [mem_ker_ramificationGroupToUnitFiltrationGraded_iff hϖ] at hσ
   have hσ₀ : (σ : G) ∈ ramificationGroup G 𝒪[L] 0 :=
-    ramificationGroup_antitone G 𝒪[L] (Int.natCast_nonneg i) σ.2
+    ramificationGroup_antitone G 𝒪[L] (Int.natCast_nonneg i) σ.property
   rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
     mem_ramificationGroup_natCast_iff_smul_sub_mem hϖ hσ₀, sub_mem_maximalIdeal_pow_iff hϖ]
   exact hσ

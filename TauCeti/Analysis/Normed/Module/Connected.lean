@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Connectedness of punctured balls
+# Connectedness of punctured balls and thickenings
 
 In an affine space over a real seminormed space of dimension greater than one, removing a countable
 set from an open ball of positive radius leaves a path-connected set; in particular so does
@@ -20,6 +24,10 @@ the local input for showing that removing a discrete set from a connected manifo
 greater than one keeps it connected: through a partial homeomorphism to the affine space, every
 point of its source has arbitrarily small neighbourhoods whose punctured versions are connected.
 
+In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
+(`IsPreconnected.thickening`), because `thickening δ s = s + ball 0 δ` is the continuous sum image
+of the product of two preconnected sets.
+
 ## Main declarations
 
 * `Set.Countable.isPathConnected_ball_sdiff`: an open ball with a countable set removed is path
@@ -29,11 +37,16 @@ point of its source has arbitrarily small neighbourhoods whose punctured version
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
   source of a partial homeomorphism to the affine space has arbitrarily small neighbourhoods whose
   punctured versions are connected.
+* `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
+  is preconnected.
+* `TauCeti.instConnectedSpaceNonZero`: the nonzero vectors of a nontrivial complex normed space are
+  connected, since as a real vector space it has dimension at least two.
 -/
 
 public section
 
 open Metric Set Topology
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -67,6 +80,12 @@ theorem isConnected_ball_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : P) {r 
     (hr : 0 < r) : IsConnected (ball x r \ {x}) :=
   (isPathConnected_ball_sdiff_singleton h x hr).isConnected
 
+/-- The `δ`-thickening of a preconnected set in a real seminormed space is preconnected. -/
+theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ : ℝ) :
+    IsPreconnected (thickening δ s) := by
+  rw [← add_ball_zero, ← image2_add, ← image_uncurry_prod]
+  exact (hs.prod (convex_ball (0 : E) δ).isPreconnected).image _ continuous_add.continuousOn
+
 variable {X : Type*} [TopologicalSpace X]
 
 /-- If `P` is an affine space over a real seminormed space of dimension greater than one, every
@@ -87,5 +106,21 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
   rw [hsdiff]
   exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
     (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+end TauCeti
+
+namespace TauCeti
+
+/-- The nonzero vectors of a nontrivial complex normed space are connected: as a real vector space
+it has dimension at least two. -/
+instance instConnectedSpaceNonZero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [Nontrivial E] : ConnectedSpace {v : E // v ≠ 0} := by
+  have h1 : 1 ≤ Module.rank ℂ E := Cardinal.one_le_iff_pos.mpr rank_pos
+  have h : 1 < Module.rank ℝ E := by
+    rw [rank_real_of_complex]
+    calc (1 : Cardinal) < 2 := Cardinal.one_lt_two
+      _ = 2 * 1 := (mul_one 2).symm
+      _ ≤ 2 * Module.rank ℂ E := by gcongr
+  exact isConnected_iff_connectedSpace.mp (isConnected_compl_singleton_of_one_lt_rank h 0)
 
 end TauCeti

@@ -30,6 +30,8 @@ origin.
 * `NormedSpace.logSeries_apply`: the homogeneous terms of `NormedSpace.logSeries`.
 * `NormedSpace.logSeries_partialSum_three`: its third partial sum, `u - 2⁻¹ • u ^ 2`.
 * `NormedSpace.one_le_logSeries_radius`: the radius of convergence is at least one.
+* `NormedSpace.hasSum_log_of_norm_sub_one_lt_one`: the series converges to `NormedSpace.log y`
+  for `‖y - 1‖ < 1`.
 * `NormedSpace.log_hasFPowerSeriesOnBall`: the series represents `NormedSpace.log` on the
   unit ball about one.
 * `NormedSpace.analyticAt_log_one`: `NormedSpace.log` is analytic at one.
@@ -77,7 +79,7 @@ variable [NormedRing A] [NormedAlgebra 𝕂 A]
 theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
   refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
   have hr1 : (r : ℝ) < 1 := by exact_mod_cast ENNReal.coe_lt_one_iff.1 hr
-  obtain ⟨B, hB⟩ := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕂 r.2 hr1).bddAbove_range
+  obtain ⟨B, hB⟩ := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕂 r.property hr1).bddAbove_range
   refine FormalMultilinearSeries.le_radius_of_bound _ (max B ‖logSeries 𝕂 A 0‖) fun n ↦ ?_
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
@@ -106,6 +108,14 @@ theorem log_hasFPowerSeriesOnBall :
     (one_pos.trans_le (one_le_logSeries_radius 𝕂 A))).mono one_pos (one_le_logSeries_radius 𝕂 A)
   rw [log_eq_logSeries_sum 𝕂]
   simpa only [zero_add] using h.comp_sub 1
+
+variable {A} in
+/-- **The logarithm series on the open unit ball about one.** For `‖y - 1‖ < 1`,
+`log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`. -/
+theorem hasSum_log_of_norm_sub_one_lt_one {y : A} (hy : ‖y - 1‖ < 1) :
+    HasSum (fun n : ℕ ↦ ((-1) ^ (n + 1) / n : 𝕂) • (y - 1) ^ n) (log y) := by
+  rw [log_eq_tsum 𝕂]
+  exact (logSeries_summable_of_norm_lt_one 𝕂 A hy).hasSum
 
 omit [CharZero 𝕂] in
 /-- `log` is analytic at one. Outside characteristic zero a nontrivial `𝕂`-algebra admits no

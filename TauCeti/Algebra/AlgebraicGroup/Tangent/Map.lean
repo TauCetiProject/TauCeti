@@ -52,7 +52,7 @@ noncomputable def tangentKerMap (φ : A' →ₐc[R] A) :
   (((BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ).comp
       (tangentKer R A B).subtype).codRestrict (tangentKer R A' B)) fun ψ => by
     have hψ : dualNumberReduction R A B ψ.val = 1 := by
-      have h : ψ.val ∈ tangentKer R A B := ψ.2
+      have h : ψ.val ∈ tangentKer R A B := ψ.property
       generalize ψ.val = v at h ⊢
       rwa [tangentKer_def, MonoidHom.mem_ker] at h
     rw [tangentKer_def, MonoidHom.mem_ker, dualNumberReduction_def]
@@ -128,9 +128,9 @@ theorem tangentKerMap_derivationMulEquivTangentKer (φ : A' →ₐc[R] A)
   refine Subtype.ext (WithConv.ofConv_injective (AlgHom.ext fun a => ?_))
   refine TrivSqZeroExt.ext ?_ ?_
   · rw [fst_apply_of_mem_tangentKer (tangentKerMap (B := B) φ
-        (derivationMulEquivTangentKer R A B d)).2 a,
+        (derivationMulEquivTangentKer R A B d)).property a,
       fst_apply_of_mem_tangentKer (derivationMulEquivTangentKer R A' B
-        (Multiplicative.ofAdd (derivationComp φ d.toAdd))).2 a]
+        (Multiplicative.ofAdd (derivationComp φ d.toAdd))).property a]
   · rw [tangentKerMap_apply_val_ofConv, derivationMulEquivTangentKer_apply_snd,
       toAdd_ofAdd, derivationComp_apply]
     exact derivationMulEquivTangentKer_apply_snd d ((φ : A' →ₐ[R] A) a)
