@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Star.Projection
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
 
@@ -33,6 +34,10 @@ part of the theory.
 * `TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self`: in a ring with a proper star,
   conversely, `u` is a partial isometry once `star u * u` is a star projection;
   `isPartialIsometry_iff_isStarProjection_mul_star_self` is the version for `u * star u`.
+* `TauCeti.IsPartialIsometry.mul_eq_self_of_mul_star_self_le`: a partial isometry `u` is fixed by
+  left multiplication by any star projection `p ≥ u * star u`.
+* `TauCeti.IsPartialIsometry.star_mul_eq_zero_iff`: two partial isometries `v`, `w` have
+  orthogonal final projections exactly when `star v * w = 0`.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
   `IsStarProjection.isPartialIsometry`: isometries, unitaries and star projections are partial
   isometries.
@@ -91,6 +96,16 @@ theorem isStarProjection_mul_star_self (hu : IsPartialIsometry u) :
     IsStarProjection (u * star u) := by
   simpa only [star_star] using hu.star.isStarProjection_star_mul_self
 
+/-- The defining equation of a partial isometry, reassociated: `u * (star u * u) = u`. -/
+theorem mul_star_mul_self_assoc (hu : IsPartialIsometry u) : u * (star u * u) = u := by
+  rw [← mul_assoc, hu.mul_star_mul_self]
+
+/-- If `p` fixes the final projection of a partial isometry `u` from the left, then it fixes `u`:
+`p * (u * star u) = u * star u` implies `p * u = u`. -/
+theorem mul_eq_self_of_mul_mul_star_self_eq (hu : IsPartialIsometry u) {p : R}
+    (hp : p * (u * star u) = u * star u) : p * u = u := by
+  rw [← hu.mul_star_mul_self, ← mul_assoc, hp]
+
 end IsPartialIsometry
 
 /-- An element is a partial isometry iff its adjoint is. -/
@@ -99,6 +114,20 @@ theorem isPartialIsometry_star_iff : IsPartialIsometry (star u) ↔ IsPartialIso
   ⟨fun h => by simpa only [star_star] using h.star, IsPartialIsometry.star⟩
 
 end Semigroup
+
+/-- Two partial isometries `v`, `w` have orthogonal final projections,
+`(v * star v) * (w * star w) = 0`, if and only if `star v * w = 0`. -/
+theorem IsPartialIsometry.star_mul_eq_zero_iff [SemigroupWithZero R] [StarMul R] {v w : R}
+    (hv : IsPartialIsometry v) (hw : IsPartialIsometry w) :
+    star v * w = 0 ↔ v * star v * (w * star w) = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [mul_assoc, ← mul_assoc (star v), h, zero_mul, mul_zero]
+  · have hv' : star v * v * star v = star v := by
+      simpa only [star_star] using hv.star.mul_star_mul_self
+    calc star v * w = star v * v * star v * (w * star w * w) := by
+          rw [hv', hw.mul_star_mul_self]
+      _ = star v * (v * star v * (w * star w)) * w := by simp only [mul_assoc]
+      _ = 0 := by rw [h, mul_zero, zero_mul]
 
 namespace IsPartialIsometry
 
@@ -151,6 +180,15 @@ theorem isPartialIsometry_iff_isStarProjection_mul_star_self [NonUnitalRing R] [
     [IsProperStar R] {w : R} : IsPartialIsometry w ↔ IsStarProjection (w * star w) := by
   simpa only [isPartialIsometry_star_iff, star_star] using
     isPartialIsometry_iff_isStarProjection_star_mul_self (w := star w)
+
+/-- In a star-ordered ring with a proper star, a partial isometry `u` is fixed by left
+multiplication by any star projection `p` above its final projection: `u * star u ≤ p` implies
+`p * u = u`. -/
+theorem IsPartialIsometry.mul_eq_self_of_mul_star_self_le [NonUnitalRing R] [StarRing R]
+    [PartialOrder R] [StarOrderedRing R] [IsProperStar R] {u p : R} (hu : IsPartialIsometry u)
+    (hp : IsStarProjection p) (h : u * star u ≤ p) : p * u = u :=
+  hu.mul_eq_self_of_mul_mul_star_self_eq
+    ((hu.isStarProjection_mul_star_self.le_iff_mul_eq_right hp).mp h)
 
 end TauCeti
 
