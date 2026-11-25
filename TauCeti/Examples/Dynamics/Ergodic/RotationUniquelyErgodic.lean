@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.RotationUniquelyErgodic
+public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 public import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -23,10 +24,6 @@ public section
 open MeasureTheory TauCeti
 
 namespace TauCeti.RotationUniquelyErgodicExamples
-
-instance instIsProbabilityMeasureVolumeUnitAddCircle :
-    IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  ⟨by simp [AddCircle.measure_univ]⟩
 
 /-- An irrational rotation of the circle is uniquely ergodic. -/
 theorem uniquelyErgodic_irrational {a : ℝ} (ha : Irrational a) :

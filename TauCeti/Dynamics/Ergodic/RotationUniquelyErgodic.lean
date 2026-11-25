@@ -35,7 +35,7 @@ invariant probability.
 public section
 
 open MeasureTheory Measure Topology Set TopologicalSpace
-open scoped BoundedContinuousFunction ENNReal
+open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -115,17 +115,10 @@ theorem uniquelyErgodic_add_left [CompactSpace G] [MetrizableSpace G] {a : G}
     isAddLeftInvariant_of_map_add_left_eq ha (mem_invariantProbabilities.mp hν).map_eq
   have := hinv ν₁ h₁
   have := hinv ν₂ h₂
-  set μ : Measure G := addHaar
-  have e₁ := isAddLeftInvariant_eq_smul (ν₁ : Measure G) μ
-  have e₂ := isAddLeftInvariant_eq_smul (ν₂ : Measure G) μ
-  have hμ0 : μ univ ≠ 0 := (NeZero.ne _)
-  have hμt : μ univ ≠ ∞ := measure_ne_top μ univ
-  have hc : (addHaarScalarFactor (ν₁ : Measure G) μ : ℝ≥0∞) =
-      addHaarScalarFactor (ν₂ : Measure G) μ := by
-    have m₁ := congrArg (· univ) e₁
-    have m₂ := congrArg (· univ) e₂
-    simp only [measure_univ, smul_apply] at m₁ m₂
-    exact (ENNReal.mul_left_inj hμ0 hμt).mp (m₁.symm.trans m₂)
-  rw [e₁, e₂, ENNReal.coe_inj.mp hc]
+  have := isAddHaarMeasure_of_isCompact_nonempty_interior (ν₁ : Measure G) univ isCompact_univ
+    (by simp) (by simp) (by simp)
+  have := isAddHaarMeasure_of_isCompact_nonempty_interior (ν₂ : Measure G) univ isCompact_univ
+    (by simp) (by simp) (by simp)
+  exact isAddHaarMeasure_eq_of_isProbabilityMeasure _ _
 
 end TauCeti
