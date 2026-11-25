@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 import Mathlib.RingTheory.SimpleRing.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry.Rescale
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
@@ -89,23 +90,6 @@ section Intertwiners
 variable {V V' W W' : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
   [AddCommGroup V'] [Module ℝ V'] {Q' : QuadraticForm ℝ V'}
 
-/-- If a `ℂ`-linear endomorphism of `W` commutes with `ρ (ι Q v)` for every `v : V`, then it
-commutes with `liftBaseChange ℂ Q ρ a` for every `a` in the complexified Clifford algebra. -/
-private theorem commute_liftBaseChange_of_forall_ι [AddCommGroup W] [Module ℂ W]
-    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} {A : Module.End ℂ W}
-    (hA : ∀ v, A ∘ₗ ρ (ι Q v) = ρ (ι Q v) ∘ₗ A) (a : CliffordAlgebra (Q.baseChange ℂ)) :
-    Commute A (liftBaseChange ℂ Q ρ a) := by
-  induction a using CliffordAlgebra.induction with
-  | algebraMap z => rw [AlgHom.commutes]; exact (Algebra.commutes z A).symm
-  | ι w =>
-    induction w using TensorProduct.inductionOn with
-    | tmul z v =>
-      rw [liftBaseChange_ι_tmul]
-      exact Commute.smul_right ((mul_eq_comp A _).trans ((hA v).trans (mul_eq_comp _ A).symm)) z
-    | add x y hx hy => simpa only [map_add] using hx.add_right hy
-  | mul x y hx hy => simpa only [map_mul] using hx.mul_right hy
-  | add x y hx hy => simpa only [map_add] using hx.add_right hy
-
 /-- **Uniqueness of unitary Clifford intertwiners up to `Circle`.** If `liftBaseChange ℂ Q ρ` is
 surjective onto `Module.End ℂ W` on a nontrivial complex inner product space `W`, any two unitary
 intertwiners `U₁, U₂ : W ≃ₗᵢ[ℂ] W'` along a map `f : V → V'` differ by a unique phase in `Circle`.
@@ -123,8 +107,8 @@ theorem existsUnique_circle_smul_intertwiner [NormedAddCommGroup W] [InnerProduc
     ∃! z : Circle, ∀ w, U₂ w = (z : ℂ) • U₁ w := by
   let L : W ≃ₗᵢ[ℂ] W := U₂.trans U₁.symm
   have hU₁L (w : W) : U₁ (L w) = U₂ w := U₁.apply_symm_apply (U₂ w)
-  have hcomm_ι (v : V) : L.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
-      ρ (ι Q v) ∘ₗ L.toLinearEquiv.toLinearMap := by
+  have hcomm_ι (v : V) : Commute L.toLinearEquiv.toLinearMap (ρ (ι Q v)) := by
+    rw [Commute, SemiconjBy, mul_eq_comp, mul_eq_comp]
     ext w
     apply U₁.injective
     have hw₂ : U₂ (ρ (ι Q v) w) = ρ' (ι Q' (f v)) (U₂ w) := LinearMap.congr_fun (hU₂ v) w
@@ -171,10 +155,8 @@ theorem exists_unitary_intertwiner_of_finrank_eq
       U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
         ρ' (ι Q' (f v)) ∘ₗ U.toLinearEquiv.toLinearMap := by
   have : FiniteDimensional ℝ V' := f.toLinearEquiv.finiteDimensional
-  have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
-    simpa [hQ] using hv
-  have hQ'nd : Q'.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
-    simpa [hQ'] using hv
+  have hQnd : Q.Nondegenerate := QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ
+  have hQ'nd : Q'.Nondegenerate := QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ'
   let eQ : Q.IsometryEquiv Q' :=
     { f.toLinearEquiv with map_app' v := by simp [hQ', hQ] }
   let eCl : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] CliffordAlgebra (Q'.baseChange ℂ) :=
@@ -192,12 +174,10 @@ theorem exists_unitary_intertwiner_of_finrank_eq
     have h := congr($hT (α (ι (Q.baseChange ℂ) (1 ⊗ₜ v))) (T w))
     simp only [AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply, LinearEquiv.conjAlgEquiv_apply,
       LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] at h
-    have h' : T (ρ (ι Q v) w) = ρ' (ι Q' (eQ v)) (T w) := by
-      simpa [α, α', eCl] using h.symm
-    exact h'
+    simpa [α, α', eCl, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, eQ] using h.symm
   have : Nontrivial W := Module.nontrivial_of_finrank_pos (by rw [hW]; positivity)
   let H : W →ₗ⋆[ℂ] W →ₗ[ℂ] ℂ := ((innerₛₗ ℂ).comp T.toLinearMap).compl₂ T.toLinearMap
-  have hH_apply (a b : W) : H a b = ⟪T a, T b⟫_ℂ := rfl
+  have hH_apply (a b : W) : H a b = ⟪T a, T b⟫_ℂ := by simp [H]
   obtain ⟨r, ⟨hr, hrH⟩, _⟩ := existsUnique_pos_mul_inner_of_surjective (liftBaseChange ℂ Q ρ)
     α.surjective (fun v ↦ by simpa using hρ v) H
     ⟨fun x ↦ by rw [hH_apply, inner_self_eq_norm_sq_to_K]; positivity⟩

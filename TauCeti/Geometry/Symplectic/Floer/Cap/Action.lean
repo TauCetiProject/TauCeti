@@ -71,7 +71,21 @@ based cap (`TauCeti.Floer.IsSmoothBasedCap`), through the area of raw caps
   with their actions, are generators with an equivariant potential for the periods
   `PeriodGroup.area`, in the sense of `TauCeti.NovikovModule`. When the area is injective on `Γ`,
   for instance when `c` vanishes on spherical classes, a cap class is determined by its action
-  (`TauCeti.Floer.SphericalCapClass.action_injective`).
+  (`TauCeti.Floer.SphericalCapClass.action_injective`). In general a cap class is determined by
+  its action and the first Chern number of the class by which it differs from another
+  (`TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_chern_vsub_eq_zero`).
+* **The action and the area of a cap class.** The action of a cap class is minus its area
+  `TauCeti.Floer.SphericalCapClass.area`, the descent of the area of raw caps in
+  `TauCeti/Geometry/Symplectic/Floer/Cap/Area.lean`, plus the Hamiltonian term
+  (`TauCeti.Floer.SphericalCapClass.action_eq_neg_area_add`). Its recapping and gluing laws are
+  those of the area.
+* **Gluing a smooth cylinder or pair of pants.** Gluing a smooth based homotopy `w` from `γ₀` to
+  `γ` to a cap class of `γ` adds the integral of `σ` over `w` to its area
+  (`TauCeti.Floer.SphericalCapClass.area_glue`), so it lowers the capped action by that integral,
+  up to the change of the Hamiltonian term (`TauCeti.Floer.SphericalCapClass.action_glue`).
+  Likewise, gluing cap classes to a smooth pair of pants gives the sum of their actions minus the
+  integral of `σ` over the pair of pants, up to the change of the Hamiltonian terms
+  (`TauCeti.Floer.SphericalCapClass.action_pantsGlue`).
 
 The sign in the recapping law comes from the orientation of the torsor of raw caps:
 `a +ᵥ D` glues `a` with the orientation of the cap, from `γ` to its centre, while the capped action
@@ -111,6 +125,10 @@ since the integral over spheres factors through their Hurewicz classes in `H₂(
   minus the area of the class by which they differ.
 * `TauCeti.Floer.SphericalCapClass.action_injective`: when the area is injective on the period
   group, a cap class is determined by its action.
+* `TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_chern_vsub_eq_zero`: a cap class is
+  determined by its action and the Chern number of the class by which it differs from another.
+* `TauCeti.Floer.SphericalCapClass.action_glue`,
+  `TauCeti.Floer.SphericalCapClass.action_pantsGlue`: the gluing laws of the action of cap classes.
 
 ## References
 
@@ -371,32 +389,75 @@ variable {M : Type} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- The **capped action** of a loop `γ` with a cap class, for a closed `C¹` two-form `σ`, a
 time-dependent Hamiltonian `Ham` and a homomorphism `ω` on `H₂(M; ℤ)` that agrees with the
-integral of `σ` on the Hurewicz classes of spheres (`hω`): the action of any raw cap in the class.
-It is well defined because raw caps in the same class differ by a sphere whose Hurewicz class has
-zero `ω`, hence zero integral. -/
+integral of `σ` on the Hurewicz classes of spheres (`hω`): minus the area
+`TauCeti.Floer.SphericalCapClass.area` of the cap class plus `∫₀¹ Ham(t, γ(t)) dt`, as for raw caps
+in `TauCeti.Floer.RawCap.action`. It is the action of any raw cap in the class
+(`TauCeti.Floer.SphericalCapClass.action_mk`). -/
 def action (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0)
     (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a) (Ham : ℝ → M → ℝ)
-    (h : ∃ u, IsSmoothBasedCap I γ u) : SphericalCapClass ω c γ → ℝ :=
-  lift (-PeriodGroup.area _ _) (RawCap.action σ Ham h) fun a D ↦ by
-    rw [RawCap.action_vadd hσ hdσ, AddMonoidHom.neg_apply,
-      SphericalPeriodGroup.area_ofHomotopyGroup, hω]
+    (h : ∃ u, IsSmoothBasedCap I γ u) (q : SphericalCapClass ω c γ) : ℝ :=
+  -area hσ hdσ hω h q + ∫ t in 0..1, Ham t (γ.extend t)
 
 variable (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a)
   (Ham : ℝ → M → ℝ) (h : ∃ u, IsSmoothBasedCap I γ u)
 
+/-- The capped action of a cap class is minus its area plus the Hamiltonian term. -/
+theorem action_eq_neg_area_add (q : SphericalCapClass ω c γ) :
+    action hσ hdσ hω Ham h q = -area hσ hdσ hω h q + ∫ t in 0..1, Ham t (γ.extend t) :=
+  (rfl)
+
 /-- The action of the cap class of a raw cap is the action of the raw cap. -/
 @[simp]
-theorem action_mk (D : RawCap γ) : action hσ hdσ hω Ham h (mk ω c D) = RawCap.action σ Ham h D :=
-  lift_mk _ _ _ D
+theorem action_mk (D : RawCap γ) :
+    action hσ hdσ hω Ham h (mk ω c D) = RawCap.action σ Ham h D := by
+  rw [action_eq_neg_area_add, area_mk, RawCap.action_def]
 
 /-- **Two cap classes differ by a class of the period group.** The actions of two cap classes of
 `γ` differ by minus the area of the class by which they differ. -/
 theorem action_sub_action (q' q : SphericalCapClass ω c γ) :
     action hσ hdσ hω Ham h q' - action hσ hdσ hω Ham h q = -PeriodGroup.area _ _ (q' -ᵥ q) := by
-  induction q' using induction_on with | h D' =>
-  induction q using induction_on with
-  | h D => rw [action_mk, action_mk, mk_vsub_mk, SphericalPeriodGroup.area_ofHomotopyGroup, hω,
-      RawCap.action_sub_action hσ hdσ]
+  rw [action_eq_neg_area_add, action_eq_neg_area_add, ← area_sub_area hω h]
+  ring
+
+/-- **A cap class is determined by its action and Chern number.** Two cap classes of `γ` are equal
+exactly when they have the same capped action and the class of the period group by which they
+differ has zero first Chern number. -/
+theorem eq_iff_action_eq_and_chern_vsub_eq_zero {q' q : SphericalCapClass ω c γ} :
+    q' = q ↔ action hσ hdσ hω Ham h q' = action hσ hdσ hω Ham h q ∧
+      PeriodGroup.chern _ _ (q' -ᵥ q) = 0 := by
+  rw [← SphericalCapClass.vsub_eq_zero_iff_eq, PeriodGroup.ext_iff, map_zero, map_zero,
+    ← sub_eq_zero (a := action _ _ _ _ _ _), action_sub_action, neg_eq_zero]
+
+/-- **Transport of the capped action along a smooth cylinder.** Gluing a smooth based homotopy `w`
+from `γ₀` to `γ` to a cap class of `γ` changes its capped action by minus the integral of `σ` over
+`w`, and by the change of the Hamiltonian term from `γ` to `γ₀`. -/
+theorem action_glue {γ₀ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₀ γ w)
+    (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u) (q : SphericalCapClass ω c γ) :
+    action hσ hdσ hω Ham h₀ (glue hw.homotopyClass q) =
+      action hσ hdσ hω Ham h q - rectangleIntegral σ w (0, 0) (1, 1) +
+        ((∫ t in 0..1, Ham t (γ₀.extend t)) - ∫ t in 0..1, Ham t (γ.extend t)) := by
+  rw [action_eq_neg_area_add, action_eq_neg_area_add, area_glue hω h hw h₀]
+  ring
+
+/-- **The capped action of cap classes glued to a smooth pair of pants.** Let `w` be a smooth based
+homotopy from `γ₀` to the collared concatenation of `γ₁` and `γ₂`. Gluing cap classes `q₁` of `γ₁`
+and `q₂` of `γ₂` to it gives a cap class of `γ₀` whose action, for the Hamiltonian `Ham₀` at the
+output, is the sum of the actions of `q₁` and `q₂`, for the Hamiltonians `Ham₁` and `Ham₂` at the
+inputs, minus the integral of `σ` over `w`, plus the change of the Hamiltonian terms. -/
+theorem action_pantsGlue {γ₀ γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M}
+    (hw : IsSmoothBasedHomotopy I γ₀ (γ₁.collaredTrans γ₂) w) (Ham₀ Ham₁ Ham₂ : ℝ → M → ℝ)
+    (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u) (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u)
+    (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u) (q₁ : SphericalCapClass ω c γ₁)
+    (q₂ : SphericalCapClass ω c γ₂) :
+    action hσ hdσ hω Ham₀ h₀
+        (pantsGlue (hw.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂)) q₁ q₂) =
+      action hσ hdσ hω Ham₁ h₁ q₁ + action hσ hdσ hω Ham₂ h₂ q₂ -
+          rectangleIntegral σ w (0, 0) (1, 1) +
+        ((∫ t in 0..1, Ham₀ t (γ₀.extend t)) - (∫ t in 0..1, Ham₁ t (γ₁.extend t)) -
+          ∫ t in 0..1, Ham₂ t (γ₂.extend t)) := by
+  rw [action_eq_neg_area_add, action_eq_neg_area_add, action_eq_neg_area_add,
+    area_pantsGlue hω hw h₀ h₁ h₂]
+  ring
 
 variable [PathConnectedSpace M]
 
@@ -404,8 +465,9 @@ variable [PathConnectedSpace M]
 lowers its action by the area of `B`. -/
 @[simp]
 theorem action_vadd (B : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    action hσ hdσ hω Ham h (B +ᵥ q) = -PeriodGroup.area _ _ B + action hσ hdσ hω Ham h q :=
-  lift_vadd _ _ _ B q
+    action hσ hdσ hω Ham h (B +ᵥ q) = -PeriodGroup.area _ _ B + action hσ hdσ hω Ham h q := by
+  rw [action_eq_neg_area_add, action_eq_neg_area_add, area_vadd hω h]
+  ring
 
 /-- **A cap class is determined by its action when the area is injective on the period group**, as
 when the first Chern number vanishes on spherical classes

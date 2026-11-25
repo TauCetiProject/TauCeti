@@ -171,7 +171,7 @@ theorem halfSpinRep_one_realSpinGroupEquiv_eq (hb : b.toBasis.orientation = o)
     AlgHom.prodFirst_apply, ← AlgHom.map_eq_map_fst φ hφ
       ((realSpinFourEquivQuaternionUnitaryProd s).snd,
         (realSpinFourEquivQuaternionUnitaryProd s).fst)]
-  rfl
+  simp [φ]
 
 include hQ in
 /-- **Factorization of the negative half-spin representation**: along a positively oriented frame
@@ -285,15 +285,6 @@ section Hermitian
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
-private theorem reverseEven_symm_quaternionProd (p q : ℍ[ℝ]) :
-    reverseEven (realCliffordForm 4 0)
-        (realCliffordFourZeroEvenEquivQuaternionProd.symm (p, q)) =
-      realCliffordFourZeroEvenEquivQuaternionProd.symm (star p, star q) :=
-  realCliffordFourZeroEvenEquivQuaternionProd.injective <| by
-    rw [realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
-      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
-    exact Prod.ext rfl rfl
-
 include hQ in
 /-- On a Hermitian Clifford module, `positiveQuaternionAction` carries quaternion conjugation to
 the Hilbert-space adjoint. -/
@@ -303,7 +294,8 @@ theorem adjoint_positiveQuaternionAction
     LinearMap.adjoint (positiveQuaternionAction o hQ b ρ hb q) =
       positiveQuaternionAction o hQ b ρ hb (star q) := by
   rw [positiveQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← b.realEvenCliffordEquiv_reverseEven hQ, reverseEven_symm_quaternionProd, star_zero,
+    ← b.realEvenCliffordEquiv_reverseEven hQ,
+    realCliffordFourZeroEvenEquivQuaternionProd_symm_reverseEven, Prod.star_def, star_zero,
     ← positiveQuaternionAction_apply]
 
 include hQ in
@@ -315,7 +307,8 @@ theorem adjoint_negativeQuaternionAction
     LinearMap.adjoint (negativeQuaternionAction o hQ b ρ hb q) =
       negativeQuaternionAction o hQ b ρ hb (star q) := by
   rw [negativeQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← b.realEvenCliffordEquiv_reverseEven hQ, reverseEven_symm_quaternionProd, star_zero,
+    ← b.realEvenCliffordEquiv_reverseEven hQ,
+    realCliffordFourZeroEvenEquivQuaternionProd_symm_reverseEven, Prod.star_def, star_zero,
     ← negativeQuaternionAction_apply]
 
 include hQ in

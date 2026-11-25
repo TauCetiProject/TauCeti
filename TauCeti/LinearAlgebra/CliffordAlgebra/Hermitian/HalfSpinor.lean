@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Intertwiner
 import Mathlib.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
@@ -70,12 +71,11 @@ theorem liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two
     (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
     Function.Bijective (liftBaseChange ℂ Q ρ) := by
-  have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
-    simpa [hQ] using hv
-  refine liftBaseChange_bijective_of_finrank_eq ρ hQnd (m := 2)
+  refine liftBaseChange_bijective_of_finrank_eq ρ
+    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ) (m := 2)
     (Fact.out : finrank ℝ V = 4) ?_
   rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o ρ hQ, h₂]
-  rfl
+  norm_num
 
 section HermitianModule
 

@@ -25,12 +25,11 @@ Clifford module, and realizes it concretely on the diamond-free Fock carrier
 * `Orientation.halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply` and
   `Orientation.realSpinCHalfSpinSmoothHom_intertwine_apply`: equivariance of
   `realSpinCHalfSpinSmoothHom` along an oriented linear isometry and unitary Clifford intertwiner.
-* `Orientation.finrank_eigenspace_fockSpinorAction_chirality`,
-  `Orientation.exists_unitary_intertwiner_fock_realSpinCHalfSpinSmoothHom`, and
+* `Orientation.exists_unitary_intertwiner_fock_realSpinCHalfSpinSmoothHom` and
   `Orientation.det_fock_realSpinCHalfSpinSmoothHom`: for every `Q`-orthogonal complex structure `J`
-  on `(V, o)`, both chirality eigenspaces (`ε = ±1`) of `J.FockSpinors` have complex dimension two,
-  carry smooth isometric `Spinᶜ(4)` representations intertwined unitarily across polarizations, and
-  have determinant equal to `spinCGroup.det`.
+  on `(V, o)`, the chirality eigenspaces (`ε = ±1`) of `J.FockSpinors` carry smooth isometric
+  `Spinᶜ(4)` representations intertwined unitarily across polarizations, with determinant equal to
+  `spinCGroup.det`.
 
 ## References
 
@@ -78,8 +77,8 @@ theorem exists_realSpinCHalfSpinSmoothHom_eq_conj {b' : OrthonormalBasis (Fin 4)
   have hconj := b.exists_realSpinCGroupHom_eq_conj b' hQ hb hpos hQ₀
   refine ⟨hconj.choose, fun x ψ ↦ ?_⟩
   simp only [realSpinCHalfSpinSmoothHom_apply o hQ b' ρ ε hQ₀,
-    realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀, hconj.choose_spec x, map_mul]
-  rfl
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀, hconj.choose_spec x, map_mul,
+    LinearMap.coe_toContinuousLinearMap', mul_apply_eq_comp]
 
 end Normed
 
@@ -112,11 +111,12 @@ theorem halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply
   let e : Q →qᵢ Q' :=
     { toLinearMap := f.toLinearMap
       map_app' v := by simp [hQ', hQ] }
+  have he (v : V) : e v = f v := by simp [← QuadraticMap.Isometry.coe_toLinearMap, e]
   have he_comp : ((b.map f).negRealCliffordFormIsometryEquiv hQ').toIsometry =
       e.comp (b.negRealCliffordFormIsometryEquiv hQ).toIsometry := by
     ext c
-    simp [e, OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply, map_sum, map_smul]
-    rfl
+    simp [QuadraticMap.Isometry.comp_apply, OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply,
+      map_sum, map_smul, OrthonormalBasis.map_apply, he]
   have heven : (⟨CliffordAlgebra.map e
       (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s)),
       map_mem_even e (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s)).property⟩ : even Q') =
@@ -151,9 +151,7 @@ theorem realSpinCHalfSpinSmoothHom_intertwine_apply
         (realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ) =
       realSpinCHalfSpinSmoothHom o hQ b ρ' ε x
         (halfSpinLinearIsometryEquiv o (f := .refl ℝ V) (by simp) hU ε ψ) := by
-  have hb_refl : b.map (.refl ℝ V) = b := by
-    cases b
-    congr
+  have hb_refl : b.map (.refl ℝ V) = b := DFunLike.ext _ _ fun _ ↦ by simp
   simpa [hb_refl] using
     halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε o hQ
       (f := .refl ℝ V) (by simp) hU x ψ
@@ -166,25 +164,6 @@ section Fock
 
 /-- Four-dimensionality gives `FiniteDimensional ℝ V`. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
-
-include hQ in
-/-- In dimension four with `Q v = -‖v‖²`, both chirality eigenspaces (`ε = 1` and `ε = -1`) of
-`J.FockSpinors` have complex dimension two for every `Q`-orthogonal complex structure `J`. -/
-theorem finrank_eigenspace_fockSpinorAction_chirality
-    (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
-    {ε : ℂ} (hε : ε = 1 ∨ ε = -1) :
-    finrank ℂ (eigenspace (J.fockSpinorAction hQJ hQnd (chirality Q o)) ε) = 2 := by
-  have hpos_two : finrank ℂ (positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd)) = 2 := by
-    have h4 : finrank ℂ (J.FockSpinors hQJ hQnd) = 4 := by
-      rw [J.finrank_fockSpinors hQJ hQnd, (Fact.out : finrank ℝ V = 4)]
-      rfl
-    rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd) hQ] at h4
-    omega
-  rcases hε with rfl | rfl
-  · rwa [← positiveHalfSpinors_eq_eigenspace]
-  · rw [finrank_eigenspace_chirality_neg o (J.fockSpinorAction hQJ hQnd) 1,
-      ← positiveHalfSpinors_eq_eigenspace]
-    exact hpos_two
 
 /-- **Polarization independence of the smooth Fock `Spinᶜ(4)` half-spin representation**: for any
 two `Q`-orthogonal complex structures `J₁` and `J₂` on `(V, o)`, any orthonormal frame `b`, and

@@ -67,10 +67,10 @@ order of vanishing.
   factor has the empty polygon, so does the product.
 * `Polynomial.supportingValue_addValuation_coeff_mul`: supporting values of coefficient heights
   add under multiplication of polynomials, at every slope.
-* `Polynomial.newtonSlopes_mul`, `Polynomial.newtonSlopes_prod` and
-  `Polynomial.newtonSlopes_finprod`: when the factors have nonempty Newton polygons, the finite
-  slope multiset of a product of polynomials is the sum of the finite slope multisets of the
-  factors.
+* `Polynomial.newtonSlopes_mul`, `Polynomial.newtonSlopes_multiset_prod`,
+  `Polynomial.newtonSlopes_prod` and `Polynomial.newtonSlopes_finprod`: when the factors have
+  nonempty Newton polygons, the finite slope multiset of a product of polynomials is the sum of
+  the finite slope multisets of the factors.
 * `Polynomial.newtonSlopes_le_of_dvd`: the finite slopes of a factor of a polynomial with a
   nonempty Newton polygon are among those of the polynomial, with multiplicity.
 
@@ -409,33 +409,50 @@ section CommRing
 
 variable {ι R : Type*} [CommRing R] (v : AddValuation R (WithTop ℝ))
 
+/-- A product of a multiset of polynomials with nonempty Newton polygons has a nonempty Newton
+polygon. -/
+theorem newtonPolygon_ne_top_multiset_prod (s : Multiset R[X])
+    (hs : ∀ p ∈ s, p.newtonPolygon v ≠ ⊤) : s.prod.newtonPolygon v ≠ ⊤ := by
+  induction s using Multiset.induction_on with
+  | empty => simpa using monic_one.newtonPolygon_ne_top v
+  | cons a s ih =>
+    rw [Multiset.prod_cons, newtonPolygon_mul]
+    obtain ⟨m, hm⟩ := Function.ne_iff.mp (hs a (Multiset.mem_cons_self a s))
+    obtain ⟨n, hn⟩ := Function.ne_iff.mp (ih fun p hp => hs p (Multiset.mem_cons_of_mem hp))
+    intro htop
+    exact (minkowskiSum_ne_top_iff.mpr ⟨m, n, rfl, hm, hn⟩) (congrFun htop (m + n))
+
 /-- A finite product of polynomials with nonempty Newton polygons has a nonempty Newton polygon. -/
 theorem newtonPolygon_ne_top_prod (s : Finset ι) (g : ι → R[X])
     (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) : (∏ i ∈ s, g i).newtonPolygon v ≠ ⊤ := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using monic_one.newtonPolygon_ne_top v
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha, newtonPolygon_mul]
-    obtain ⟨m, hm⟩ := Function.ne_iff.mp (hg a (Finset.mem_insert_self a s))
-    obtain ⟨n, hn⟩ := Function.ne_iff.mp (ih fun i hi => hg i (Finset.mem_insert_of_mem hi))
-    intro htop
-    exact (minkowskiSum_ne_top_iff.mpr ⟨m, n, rfl, hm, hn⟩) (congrFun htop (m + n))
+  rw [Finset.prod_eq_multiset_prod]
+  exact newtonPolygon_ne_top_multiset_prod v _ fun p hp => by
+    obtain ⟨i, hi, rfl⟩ := Multiset.mem_map.mp hp
+    exact hg i hi
+
+/-- The finite slope multiset of the product of a multiset of polynomials with nonempty Newton
+polygons is the sum of the finite slope multisets of the factors. -/
+theorem newtonSlopes_multiset_prod (s : Multiset R[X]) (hs : ∀ p ∈ s, p.newtonPolygon v ≠ ⊤) :
+    s.prod.newtonSlopes v = (s.map (·.newtonSlopes v)).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simpa using newtonSlopes_C v (1 : R)
+  | cons a s ih =>
+    have hs' : ∀ p ∈ s, p.newtonPolygon v ≠ ⊤ := fun p hp => hs p (Multiset.mem_cons_of_mem hp)
+    rw [Multiset.prod_cons, Multiset.map_cons, Multiset.sum_cons,
+      newtonSlopes_mul _ _ v (hs a (Multiset.mem_cons_self a s))
+        (newtonPolygon_ne_top_multiset_prod v s hs'), ih hs']
 
 /-- The finite slope multiset of a finite product of polynomials with nonempty Newton polygons is
 the sum of the finite slope multisets of the factors. -/
 theorem newtonSlopes_prod (s : Finset ι) (g : ι → R[X])
     (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) :
     (∏ i ∈ s, g i).newtonSlopes v = ∑ i ∈ s, (g i).newtonSlopes v := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using newtonSlopes_C v (1 : R)
-  | insert a s ha ih =>
-    have hs : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤ := fun i hi => hg i (Finset.mem_insert_of_mem hi)
-    rw [Finset.prod_insert ha, Finset.sum_insert ha,
-      newtonSlopes_mul _ _ v (hg a (Finset.mem_insert_self a s))
-        (newtonPolygon_ne_top_prod v s g hs),
-      ih hs]
+  rw [Finset.prod_eq_multiset_prod, Finset.sum_eq_multiset_sum, newtonSlopes_multiset_prod,
+    Multiset.map_map]
+  · rfl
+  · intro p hp
+    obtain ⟨i, hi, rfl⟩ := Multiset.mem_map.mp hp
+    exact hg i hi
 
 /-- The finite slope multiset of a finitely supported product `∏ᶠ i, g i`, whose nontrivial
 factors have nonempty Newton polygons, is the sum of their finite slope multisets. -/

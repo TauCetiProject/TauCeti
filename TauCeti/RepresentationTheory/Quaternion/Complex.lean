@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Quaternion.ComplexMatrix
 import Mathlib.Algebra.QuaternionBasis
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Complex representations of the real quaternions
@@ -39,12 +40,11 @@ open scoped InnerProductSpace Matrix Quaternion
 
 /-- An `ℝ`-algebra action of `ℍ[ℝ]` on a complex module commutes with real scalar multiplication via
 the canonical coercion `ℝ → ℂ`. -/
-theorem quaternionAlgHom_map_smul {S : Type*} [AddCommMonoid S] [Module ℂ S]
+theorem quaternionAlgHom_map_smul {S : Type*} [AddCommGroup S] [Module ℂ S]
     (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (r : ℝ) (q : ℍ[ℝ]) :
     ψ (r • q) = ((r : ℝ) : ℂ) • ψ q := by
   rw [Algebra.smul_def, map_mul, AlgHom.commutes, Algebra.algebraMap_eq_smul_one, smul_mul_assoc,
-    one_mul]
-  rfl
+    one_mul, ← Complex.coe_smul]
 
 /-- On any complex module `S`, the complex trace of `ψ q` is `q.re * finrank ℂ S`, since the
 imaginary quaternion units are commutators in `ℍ[ℝ]`. -/
@@ -53,9 +53,8 @@ theorem trace_quaternionAlgHom {S : Type*} [AddCommGroup S] [Module ℂ S]
     LinearMap.trace ℂ S (ψ q) = (q.re : ℂ) * finrank ℂ S := by
   by_cases hfin : FiniteDimensional ℂ S
   swap
-  · have hb : ¬∃ s : Finset S, Nonempty (Basis s ℂ S) :=
-      fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b)
-    simp [LinearMap.trace, hb, Module.finrank_of_not_finite hfin]
+  · rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply,
+      Module.finrank_of_not_finite hfin, Nat.cast_zero, mul_zero]
   have h0 {a b c : ℍ[ℝ]} (h : c = (2⁻¹ : ℝ) • (a * b - b * a)) :
       LinearMap.trace ℂ S (ψ c) = 0 := by
     rw [h, quaternionAlgHom_map_smul, map_smul, map_sub, map_mul, map_mul, map_sub,
