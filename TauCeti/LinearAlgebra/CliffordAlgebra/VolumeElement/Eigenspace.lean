@@ -83,6 +83,8 @@ orientation-reversing isometry exchanges the labels.
   vectors along an orientation-preserving isometry of the quadratic forms that also preserves the
   norms intertwines `Γ`, so it maps each eigenspace into, and for an equivalence onto, the
   corresponding eigenspace.
+* `CliffordAlgebra.eigenspace_complexVolume_eq_bot_of_forall_eq_zero`: in positive dimension, when
+  `Q = 0`, every nonzero eigenvalue of `Γ` has trivial eigenspace.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_neg`: in even positive dimension, for every
   quadratic form, the `-μ`- and `μ`-eigenspaces of `Γ` have equal dimension; in particular
   `dim E⁻ = dim E⁺`.
@@ -264,6 +266,17 @@ theorem projection_eigenspace_complexVolume_neg_one_apply (ψ : E) :
       (halfOneAdd_neg_smul_mem_eigenspace_complexVolume o hQ ψ), zero_add]
 
 omit hQ in
+/-- **Negative control for `Q = 0`**: in positive dimension, when `Q = 0`, `Γ² = 0`, so every
+nonzero eigenvalue of `Γ` has trivial eigenspace. -/
+theorem eigenspace_complexVolume_eq_bot_of_forall_eq_zero (hn0 : n ≠ 0) (hQ0 : ∀ v, Q v = 0)
+    {μ : ℂ} (hμ : μ ≠ 0) :
+    (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ = ⊥ := by
+  have hnil : IsNilpotent (Algebra.lsmul ℂ ℂ E (complexVolume Q o)) := ⟨2, by
+    rw [pow_two, ← map_mul, complexVolume_mul_self_of_forall_eq_zero o hn0 hQ0, map_zero]⟩
+  exact by_contra fun h ↦ hμ <| isNilpotent_iff_eq_zero.1 <|
+    (Module.End.hasEigenvalue_iff.2 h).isNilpotent_of_isNilpotent hnil
+
+omit hQ in
 /-- **The half-spinors have equal dimension**: in even positive dimension, for every quadratic
 form `Q` and every `μ : ℂ`, the `-μ`- and `μ`-eigenspaces of `Γ` on `E` have the same dimension.
 For `Q v = -‖v‖²` and `μ = 1` this is `dim E⁻ = dim E⁺`. -/
@@ -271,16 +284,10 @@ theorem finrank_eigenspace_complexVolume_neg (hn : Even n) (hn0 : n ≠ 0) (μ :
     finrank ℂ ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace (-μ)) =
       finrank ℂ ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ) := by
   by_cases hQ0 : ∀ v, Q v = 0
-  · -- `Q = 0`: `Γ² = 0`, so the eigenspaces for nonzero eigenvalues are trivial.
-    have hnil : IsNilpotent (Algebra.lsmul ℂ ℂ E (complexVolume Q o)) := ⟨2, by
-      rw [pow_two, ← map_mul, complexVolume_mul_self_of_forall_eq_zero o hn0 hQ0, map_zero]⟩
-    have hker : ∀ ν : ℂ, ν ≠ 0 →
-        (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace ν = ⊥ := fun ν hν ↦
-      by_contra fun h ↦ hν <| isNilpotent_iff_eq_zero.1 <|
-        (Module.End.hasEigenvalue_iff.2 h).isNilpotent_of_isNilpotent hnil
-    by_cases hμ : μ = 0
+  · by_cases hμ : μ = 0
     · rw [hμ, neg_zero]
-    · rw [hker μ hμ, hker (-μ) (neg_ne_zero.2 hμ)]
+    · rw [eigenspace_complexVolume_eq_bot_of_forall_eq_zero o hn0 hQ0 hμ,
+        eigenspace_complexVolume_eq_bot_of_forall_eq_zero o hn0 hQ0 (neg_ne_zero.2 hμ)]
   · obtain ⟨u, hu⟩ := not_forall.1 hQ0
     set c := ι (Q.baseChange ℂ) (1 ⊗ₜ u)
     -- The vector `u` has `Q u ≠ 0`, so `c` is a unit and acts invertibly on `E`.
