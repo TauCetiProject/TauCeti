@@ -82,8 +82,8 @@ theorem pairing_apply (A : PosDefForm n) (x y : Fin n → ℝ) :
     A.pairing x y = x ⬝ᵥ (A.val *ᵥ y) :=
   Matrix.toLinearMap₂'_apply' A.val x y
 
-theorem eval_apply (A : PosDefForm n) (x : Fin n → ℝ) : A.eval x = x ⬝ᵥ (A.val *ᵥ x) :=
-  Matrix.toLinearMap₂'_apply' A.val x x
+theorem eval_apply (A : PosDefForm n) (x : Fin n → ℝ) : A.eval x = x ⬝ᵥ (A.val *ᵥ x) := by
+  simp [eval, Matrix.toQuadraticForm', Matrix.toLinearMap₂'_apply']
 
 @[simp]
 theorem pairing_self (A : PosDefForm n) (x : Fin n → ℝ) : A.pairing x x = A.eval x := by
@@ -103,17 +103,15 @@ theorem eval_add (A : PosDefForm n) (x y : Fin n → ℝ) :
 theorem eval_pos (A : PosDefForm n) {x : Fin n → ℝ} (hx : x ≠ 0) : 0 < A.eval x := by
   simpa [eval_apply] using A.prop.dotProduct_mulVec_pos hx
 
-theorem eval_nonneg (A : PosDefForm n) (x : Fin n → ℝ) : 0 ≤ A.eval x := by
-  simpa [eval_apply] using A.prop.posSemidef.dotProduct_mulVec_nonneg x
-
-@[simp]
-theorem eval_eq_zero_iff (A : PosDefForm n) {x : Fin n → ℝ} : A.eval x = 0 ↔ x = 0 := by
-  refine ⟨fun h => ?_, fun h => h ▸ map_zero A.eval⟩
-  by_contra hx
-  exact (A.eval_pos hx).ne' h
-
 /-- The quadratic form of a form is positive definite. -/
 theorem posDef_eval (A : PosDefForm n) : A.eval.PosDef := fun _ hx => A.eval_pos hx
+
+theorem eval_nonneg (A : PosDefForm n) (x : Fin n → ℝ) : 0 ≤ A.eval x :=
+  A.posDef_eval.nonneg x
+
+@[simp]
+theorem eval_eq_zero_iff (A : PosDefForm n) {x : Fin n → ℝ} : A.eval x = 0 ↔ x = 0 :=
+  A.posDef_eval.anisotropic.eq_zero_iff
 
 /-! ### The action of `GL_n(ℤ)` -/
 
