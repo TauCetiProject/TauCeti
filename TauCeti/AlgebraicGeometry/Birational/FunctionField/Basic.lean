@@ -45,6 +45,8 @@ dominant morphism in `TauCeti.AlgebraicGeometry.Morphisms.Dominant`:
 * `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_comp`: functoriality, for dominant `f`
   and `g`.
+* `AlgebraicGeometry.Scheme.RationalMap.comp_eq_id_of_comp_eq_id`: a one-sided inverse of a
+  dominant rational map of integral schemes by a dominant rational map is two-sided.
 
 ## References
 
@@ -193,5 +195,20 @@ theorem RationalMap.eq_of_functionFieldMap_eq [IsIntegral X] [IrreducibleSpace Y
     [f.IsDominant] [g.IsDominant] (h : f.functionFieldMap = g.functionFieldMap) : f = g :=
   eq_of_fromFunctionField_eq f g <| by
     rw [← SpecMap_functionFieldMap_fromSpecStalk, h, SpecMap_functionFieldMap_fromSpecStalk]
+
+/-- **One-sided inverses are two-sided.** If `g ∘ f = id` for dominant rational maps
+`f : X ⤏ Y` and `g : Y ⤏ X` of integral schemes, then `f ∘ g = id`: `f^*` is bijective with
+inverse `g^*`, and a dominant rational map is determined by its pullback. -/
+theorem RationalMap.comp_eq_id_of_comp_eq_id [IsIntegral X] [IsIntegral Y] (f : X ⤏ Y)
+    [f.IsDominant] (g : Y ⤏ X) [g.IsDominant] (h : f.comp g = RationalMap.id X) :
+    g.comp f = RationalMap.id Y := by
+  have hfg : f.functionFieldMap.hom.comp g.functionFieldMap.hom = RingHom.id _ := by
+    rw [← CommRingCat.hom_comp, ← functionFieldMap_comp, functionFieldMap_congr h,
+      functionFieldMap_id, CommRingCat.hom_id]
+  refine eq_of_functionFieldMap_eq ?_
+  rw [functionFieldMap_comp, functionFieldMap_id]
+  ext x
+  exact Function.LeftInverse.rightInverse_of_injective (f := f.functionFieldMap.hom)
+    (g := g.functionFieldMap.hom) (fun y => congr($hfg y)) f.functionFieldMap.hom.injective x
 
 end AlgebraicGeometry.Scheme

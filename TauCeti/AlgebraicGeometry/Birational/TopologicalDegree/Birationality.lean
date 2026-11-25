@@ -18,10 +18,9 @@ dimensions is needed.
 
 A dominant rational map with a dominant inverse on one side has topological degree `1`, and so has
 the inverse: by multiplicativity `e(f) · e(g) = e(g ∘ f) = e(id) = 1`. The inverse is then
-two-sided, because `f^*` is bijective and a dominant rational map is determined by its pullback
-(`AlgebraicGeometry.Scheme.RationalMap.eq_of_functionFieldMap_eq`). These are the directions of
-the birationality criterion of the topological degree that need no realization of field maps by
-rational maps.
+two-sided (`AlgebraicGeometry.Scheme.RationalMap.comp_eq_id_of_comp_eq_id`). These are the
+directions of the birationality criterion of the topological degree that need no realization of
+field maps by rational maps.
 
 ## Main results
 
@@ -32,8 +31,6 @@ rational maps.
   when `f^*` is an isomorphism of fields.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_of_comp_eq_id`: if `g ∘ f = id`
   for dominant `f` and `g`, then `e(f) = e(g) = 1`.
-* `AlgebraicGeometry.Scheme.RationalMap.comp_eq_id_of_comp_eq_id`: a one-sided inverse of a
-  dominant rational map by a dominant rational map is two-sided.
 
 ## References
 
@@ -80,19 +77,5 @@ theorem RationalMap.topologicalDegree_eq_one_of_comp_eq_id (f : X ⤏ Y) [f.IsDo
     f.topologicalDegree = 1 ∧ g.topologicalDegree = 1 :=
   mul_eq_one.1 <| (topologicalDegree_comp f g).symm.trans <|
     (topologicalDegree_congr h).trans topologicalDegree_id
-
-/-- **One-sided inverses are two-sided.** If `g ∘ f = id` for dominant rational maps
-`f : X ⤏ Y` and `g : Y ⤏ X` of integral schemes, then `f ∘ g = id`: `f^*` is bijective with
-inverse `g^*`, and a dominant rational map is determined by its pullback. -/
-theorem RationalMap.comp_eq_id_of_comp_eq_id (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ X)
-    [g.IsDominant] (h : f.comp g = RationalMap.id X) : g.comp f = RationalMap.id Y := by
-  have hfg : f.functionFieldMap.hom.comp g.functionFieldMap.hom = RingHom.id _ := by
-    rw [← CommRingCat.hom_comp, ← functionFieldMap_comp, functionFieldMap_congr h,
-      functionFieldMap_id, CommRingCat.hom_id]
-  refine eq_of_functionFieldMap_eq ?_
-  rw [functionFieldMap_comp, functionFieldMap_id]
-  ext x
-  exact Function.LeftInverse.rightInverse_of_injective (g := g.functionFieldMap.hom)
-    (fun y => congr($hfg y)) f.functionFieldMap.hom.injective x
 
 end AlgebraicGeometry.Scheme
