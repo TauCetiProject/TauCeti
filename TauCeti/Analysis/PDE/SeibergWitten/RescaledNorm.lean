@@ -131,16 +131,14 @@ theorem rescaledTargetNormSq_def (s : ℕ) (h : ℝ) (y : V → T) :
       ∑ j ∈ Finset.range s, h ^ (2 * j) * lpNorm (iteratedFDeriv ℝ j y) 2 volume ^ 2 :=
   (rfl)
 
-/-- The rescaled norm as a sum of squares of the scaled `L²` norms of the derivatives:
-`‖(b, ζ)‖_(E_(r,s))² = h² ∑_{j ≤ s} (hʲ ‖Dʲ b‖₂)² + (∑_{j ≤ s} (hʲ ‖Dʲ ζ‖₂)²) / 4`. -/
-theorem rescaledFieldNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+/-- The rescaled norm in terms of the target norm through order `s`:
+`‖(b, ζ)‖_(E_(r,s))² = h² ‖b‖_(F_(r,s))² + ‖ζ‖_(F_(r,s))² / 4`. -/
+theorem rescaledFieldNormSq_eq_rescaledTargetNormSq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
     rescaledFieldNormSq s h b ζ =
-      h ^ 2 * ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j b) 2 volume) ^ 2 +
-        (∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume) ^ 2) /
-          4 := by
-  rw [rescaledFieldNormSq, Finset.mul_sum, Finset.sum_div, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  ring
+      h ^ 2 * rescaledTargetNormSq (s + 1) h b + rescaledTargetNormSq (s + 1) h ζ / 4 := by
+  rw [rescaledFieldNormSq, rescaledTargetNormSq, rescaledTargetNormSq, Finset.mul_sum,
+    Finset.sum_div, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- The target norm as a sum of squares of the scaled `L²` norms of the derivatives:
 `‖y‖_(F_(r,s-1))² = ∑_{j < s} (hʲ ‖Dʲ y‖₂)²`. -/
@@ -149,35 +147,34 @@ theorem rescaledTargetNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (y : V → T) :
       ∑ j ∈ Finset.range s, (h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume) ^ 2 :=
   Finset.sum_congr rfl fun j _ ↦ by ring
 
-@[simp]
-theorem rescaledFieldNormSq_zero (s : ℕ) (h : ℝ) :
-    rescaledFieldNormSq s h (0 : V → B) (0 : V → S) = 0 := by
-  simp [rescaledFieldNormSq]
+/-- The rescaled norm as a sum of squares of the scaled `L²` norms of the derivatives:
+`‖(b, ζ)‖_(E_(r,s))² = h² ∑_{j ≤ s} (hʲ ‖Dʲ b‖₂)² + (∑_{j ≤ s} (hʲ ‖Dʲ ζ‖₂)²) / 4`. -/
+theorem rescaledFieldNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h b ζ =
+      h ^ 2 * ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j b) 2 volume) ^ 2 +
+        (∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume) ^ 2) /
+          4 := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq, rescaledTargetNormSq_eq_sum_sq,
+    rescaledTargetNormSq_eq_sum_sq]
 
 @[simp]
 theorem rescaledTargetNormSq_zero (s : ℕ) (h : ℝ) : rescaledTargetNormSq s h (0 : V → T) = 0 := by
   simp [rescaledTargetNormSq]
 
 @[simp]
-theorem rescaledFieldNormSq_neg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
-    rescaledFieldNormSq s h (-b) (-ζ) = rescaledFieldNormSq s h b ζ := by
-  simp [rescaledFieldNormSq, iteratedFDeriv_neg]
+theorem rescaledFieldNormSq_zero (s : ℕ) (h : ℝ) :
+    rescaledFieldNormSq s h (0 : V → B) (0 : V → S) = 0 := by
+  simp [rescaledFieldNormSq_eq_rescaledTargetNormSq]
 
 @[simp]
 theorem rescaledTargetNormSq_neg (s : ℕ) (h : ℝ) (y : V → T) :
     rescaledTargetNormSq s h (-y) = rescaledTargetNormSq s h y := by
   simp [rescaledTargetNormSq, iteratedFDeriv_neg]
 
-/-- Scaling both increments by `c` scales the rescaled norm by `c²`. -/
-theorem rescaledFieldNormSq_smul (s : ℕ) (h c : ℝ) (b : V → B) (ζ : V → S) :
-    rescaledFieldNormSq s h (c • b) (c • ζ) = c ^ 2 * rescaledFieldNormSq s h b ζ := by
-  have hb (j : ℕ) : iteratedFDeriv ℝ j (c • b) = c • iteratedFDeriv ℝ j b :=
-    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply b c x j
-  have hζ (j : ℕ) : iteratedFDeriv ℝ j (c • ζ) = c • iteratedFDeriv ℝ j ζ :=
-    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply ζ c x j
-  simp only [rescaledFieldNormSq, hb, hζ, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs,
-    mul_pow, sq_abs, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun j _ ↦ by ring
+@[simp]
+theorem rescaledFieldNormSq_neg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h (-b) (-ζ) = rescaledFieldNormSq s h b ζ := by
+  simp [rescaledFieldNormSq_eq_rescaledTargetNormSq]
 
 /-- Scaling the field by `c` scales the target norm by `c²`. -/
 theorem rescaledTargetNormSq_smul (s : ℕ) (h c : ℝ) (y : V → T) :
@@ -188,18 +185,25 @@ theorem rescaledTargetNormSq_smul (s : ℕ) (h c : ℝ) (y : V → T) :
     sq_abs, Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
-theorem rescaledFieldNormSq_nonneg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
-    0 ≤ rescaledFieldNormSq s h b ζ := by
-  rw [rescaledFieldNormSq]
-  refine Finset.sum_nonneg fun j _ ↦ ?_
-  rw [pow_mul]
-  positivity
+/-- Scaling both increments by `c` scales the rescaled norm by `c²`. -/
+theorem rescaledFieldNormSq_smul (s : ℕ) (h c : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h (c • b) (c • ζ) = c ^ 2 * rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq, rescaledFieldNormSq_eq_rescaledTargetNormSq,
+    rescaledTargetNormSq_smul, rescaledTargetNormSq_smul]
+  ring
 
 theorem rescaledTargetNormSq_nonneg (s : ℕ) (h : ℝ) (y : V → T) :
     0 ≤ rescaledTargetNormSq s h y := by
   rw [rescaledTargetNormSq]
   refine Finset.sum_nonneg fun j _ ↦ ?_
   rw [pow_mul]
+  positivity
+
+theorem rescaledFieldNormSq_nonneg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    0 ≤ rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq]
+  have := rescaledTargetNormSq_nonneg (s + 1) h b
+  have := rescaledTargetNormSq_nonneg (s + 1) h ζ
   positivity
 
 /-! ### The scaling check -/
@@ -218,29 +222,6 @@ private theorem pow_mul_lpNorm_sq_eq {j : ℕ} {ζ : V → S} (hζ : ContDiff �
   push_cast
   ring
 
-/-- **The scaling check for the rescaled norm.** In the rescaled coordinate `w = λ y`,
-`λ = h⁻¹`, the connection increment has plane coefficient `b_w(w) = h b(h w)` and the spinor
-increment is `ζ_w(w) = ζ(h w)`, and
-`‖(b, ζ)‖_(E_(r,s))² = hⁿ ∑_{j ≤ s} (‖Dʲ b_w‖₂² + ‖Dʲ ζ_w‖₂² / 4)`, for `b` and `ζ` of class
-`Cˢ` and `n = dim V`: the unit-scale norm of the rescaled fields, in the coefficient metric
-`|b|² + |δα|² / 4`, times the volume factor `hⁿ`. -/
-theorem rescaledFieldNormSq_eq_rpow_mul {s : ℕ} {b : V → B} {ζ : V → S} (hb : ContDiff ℝ s b)
-    (hζ : ContDiff ℝ s ζ) {h : ℝ} (hh : 0 < h) :
-    rescaledFieldNormSq s h b ζ = h ^ (finrank ℝ V : ℝ) *
-      rescaledFieldNormSq s 1 (fun w ↦ h • b (h • w)) (fun w ↦ ζ (h • w)) := by
-  rw [rescaledFieldNormSq, rescaledFieldNormSq, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j hj ↦ ?_
-  have hjs : (j : ℕ∞) ≤ s := by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-  have hbj : ContDiff ℝ j b := hb.of_le (by exact_mod_cast hjs)
-  have hζj : ContDiff ℝ j ζ := hζ.of_le (by exact_mod_cast hjs)
-  -- The derivatives of `h • b (h • ·)` are `h` times those of `b (h • ·)`.
-  have hD : iteratedFDeriv ℝ j (fun w ↦ h • b (h • w)) =
-      h • iteratedFDeriv ℝ j (fun w ↦ b (h • w)) :=
-    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply (fun w ↦ b (h • w)) h x j
-  rw [hD, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, abs_of_pos hh]
-  simp only [one_pow, one_mul]
-  linear_combination h ^ 2 * pow_mul_lpNorm_sq_eq hbj hh + pow_mul_lpNorm_sq_eq hζj hh / 4
-
 /-- **The scaling check for the target norm.** For `y` of class `C^(s-1)` and `h > 0`,
 `‖y‖_(F_(r,s-1))² = hⁿ ∑_{j < s} ‖Dʲ y_w‖₂²` with `y_w(w) = y(h w)`, `n = dim V`. -/
 theorem rescaledTargetNormSq_eq_rpow_mul {s : ℕ} {y : V → T} (hy : ContDiff ℝ (s - 1 : ℕ) y)
@@ -252,6 +233,22 @@ theorem rescaledTargetNormSq_eq_rpow_mul {s : ℕ} {y : V → T} (hy : ContDiff 
   have hjs : j ≤ s - 1 := Nat.le_sub_one_of_lt (Finset.mem_range.1 hj)
   rw [one_pow, one_mul]
   exact pow_mul_lpNorm_sq_eq (hy.of_le (by exact_mod_cast hjs)) hh
+
+/-- **The scaling check for the rescaled norm.** In the rescaled coordinate `w = λ y`,
+`λ = h⁻¹`, the connection increment has plane coefficient `b_w(w) = h b(h w)` and the spinor
+increment is `ζ_w(w) = ζ(h w)`, and
+`‖(b, ζ)‖_(E_(r,s))² = hⁿ ∑_{j ≤ s} (‖Dʲ b_w‖₂² + ‖Dʲ ζ_w‖₂² / 4)`, for `b` and `ζ` of class
+`Cˢ` and `n = dim V`: the unit-scale norm of the rescaled fields, in the coefficient metric
+`|b|² + |δα|² / 4`, times the volume factor `hⁿ`. -/
+theorem rescaledFieldNormSq_eq_rpow_mul {s : ℕ} {b : V → B} {ζ : V → S} (hb : ContDiff ℝ s b)
+    (hζ : ContDiff ℝ s ζ) {h : ℝ} (hh : 0 < h) :
+    rescaledFieldNormSq s h b ζ = h ^ (finrank ℝ V : ℝ) *
+      rescaledFieldNormSq s 1 (fun w ↦ h • b (h • w)) (fun w ↦ ζ (h • w)) := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq, rescaledFieldNormSq_eq_rescaledTargetNormSq,
+    rescaledTargetNormSq_eq_rpow_mul hb hh, rescaledTargetNormSq_eq_rpow_mul hζ hh]
+  -- The rescaled connection `h • b (h • ·)` is `h` times `b (h • ·)`.
+  linear_combination
+    -h ^ (finrank ℝ V : ℝ) * rescaledTargetNormSq_smul (s + 1) 1 h fun w ↦ b (h • w)
 
 /-! ### Equivalence with the fixed-order norms -/
 
