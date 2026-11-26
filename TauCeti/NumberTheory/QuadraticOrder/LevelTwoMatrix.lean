@@ -47,19 +47,13 @@ theorem _root_.TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective (b
   have hn : IsUnit (u.val.re ^ 2 + (b : ZMod 2) * u.val.re * u.val.im +
       u.val.im ^ 2) := by
     simpa [norm_def, sq, sub_eq_add_neg, ZMod.neg_eq_self_mod_two] using hu
-  have hω : Units.map (mapRingHom (Int.castRingHom (ZMod 2)) (-1) b).toMonoidHom
-      (TauCeti.QuadraticAlgebra.omegaUnit b) =
-      TauCeti.QuadraticAlgebra.omegaUnit ((Int.castRingHom (ZMod 2)) b) :=
-    TauCeti.QuadraticAlgebra.omegaUnit_map (Int.castRingHom (ZMod 2)) b rfl
+  have hωval := mapRingHom_omega (Int.castRingHom (ZMod 2)) (-1) b
   rcases key _ _ _ hn with h | h | h
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
-  · refine ⟨TauCeti.QuadraticAlgebra.omegaUnit b, ?_⟩
-    rw [hω]
-    apply Units.ext
-    ext <;> simp [h.1, h.2]
+  · refine ⟨TauCeti.QuadraticAlgebra.omegaUnit b, Units.ext ?_⟩
+    ext <;> simp [hωval, h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.omegaUnit b ^ 2, Units.ext ?_⟩
-    have hωval := mapRingHom_omega (Int.castRingHom (ZMod 2)) (-1) b
     ext <;> simp [hωval, h.1, h.2.1, h.2.2, sq, ZMod.neg_eq_self_mod_two]
 
 /-- Every unit modulo `2` in the Gaussian integer algebra lifts to an integral unit. -/
