@@ -43,20 +43,20 @@ Both halves are elementary, but neither is formal:
 * `TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C` and
   `Sym.analyticAt_coeffEquiv_ofFn`: the same forward coefficient map is analytic over any
   nontrivially normed field.
-* `Sym.norm_le_norm_coeffEquiv_ofFn_add_one`: Cauchy's bound on the symmetric power, that
-  an ordered tuple is bounded by one more than the norm of its coefficient tuple.
 * `Sym.continuous_esymm`: the elementary symmetric functions of an unordered tuple depend
   continuously on it, over any topological semiring.
 * `Sym.continuous_sum_map_mul_esymm_erase`: so does the weighted sum
   `∑_{w ∈ s} f(w) e_k(s ∖ w)`, for a continuous weight `f`, over any topological ring.
+* `Sym.norm_le_norm_coeffEquiv_ofFn_add_one`: Cauchy's bound on the symmetric power, that
+  an ordered tuple is bounded by one more than the norm of its coefficient tuple.
 * `Sym.isProperMap_coeffEquiv_comp_ofFn`: consequently the coefficient map
   `(Fin n → K) → (Fin n → K)` is proper.
 * `Sym.coeffHomeomorph`: the **elementary symmetric chart** `Sym K n ≃ₜ (Fin n → K)`.
 * `Sym.continuous_ofEsymm`: the unordered tuple with prescribed elementary symmetric functions
   depends continuously on them.
-* `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: its inverse read on ordered tuples,
-  that nearby coefficient tuples come from ordered tuples close coordinate by coordinate; this is
-  continuity of roots with multiplicity, stated for polynomials in
+* `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: the inverse of `Sym.coeffHomeomorph` read on
+  ordered tuples, that nearby coefficient tuples come from ordered tuples close coordinate by
+  coordinate; this is continuity of roots with multiplicity, stated for polynomials in
   `TauCeti/Analysis/Polynomial/ContinuityOfRoots/Basic.lean`.
 * `Sym.isOpenEmbedding_coeffEquiv_comp_map`: the chart induced by an open coordinate
   embedding, whose symmetric power is an open subspace of affine space.
