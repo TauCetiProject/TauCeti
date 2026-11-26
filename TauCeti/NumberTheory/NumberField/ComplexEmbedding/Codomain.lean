@@ -208,9 +208,10 @@ def exteriorPowerEquiv (n : ℕ) :
 theorem exteriorPowerEquiv_tmul_ιMulti {n : ℕ} (c : Codomain σ) (x : Fin n → E) :
     exteriorPowerEquiv σ E n (c ⊗ₜ exteriorPower.ιMulti (𝓞 K) n x) =
       equiv σ c • exteriorPower.ιMulti ℂ n (fun i ↦ (1 : Codomain σ) ⊗ₜ[𝓞 K] x i) := by
-  rw [exteriorPowerEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
-    TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, ← algebraMap_equiv σ c,
-    algebraMap_smul, map_smul, exteriorPower.restrictScalarsEquiv_symm_ιMulti, algebraMap_equiv]
+  -- Write the scalar `c` as a complex number, which the comparison over `ℂ` commutes with.
+  obtain ⟨c, rfl⟩ := (bijective_algebraMap σ).2 c
+  simp [exteriorPowerEquiv, TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti,
+    algebraMap_smul]
 
 end Codomain
 

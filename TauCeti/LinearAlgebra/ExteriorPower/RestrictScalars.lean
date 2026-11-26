@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
+
 /-!
 # Exterior powers along a bijective change of scalars
 
@@ -47,13 +49,11 @@ theorem restrictScalars_ιMulti (n : ℕ) (m : Fin n → M) :
     restrictScalars R S M n (ιMulti R n m) = ιMulti S n m :=
   alternatingMapLinearEquiv_apply_ιMulti _ _
 
-/-- The image of the comparison is stable under `S` when `algebraMap R S` is surjective. -/
+/-- The comparison `⋀[R]^n M → ⋀[S]^n M` is surjective when `algebraMap R S` is surjective. -/
 theorem restrictScalars_surjective (h : Surjective (algebraMap R S)) (n : ℕ) :
     Surjective (restrictScalars R S M n) := by
   intro y
-  have hy : y ∈ Submodule.span S (Set.range (ιMulti S n)) := by
-    rw [ιMulti_span]; exact Submodule.mem_top
-  induction hy using Submodule.span_induction with
+  induction mem_span_ιMulti y using Submodule.span_induction with
   | mem _ hx =>
     obtain ⟨m, rfl⟩ := hx
     exact ⟨_, restrictScalars_ιMulti n m⟩
@@ -85,17 +85,11 @@ theorem restrictScalars_injective (h : Bijective (algebraMap R S)) (n : ℕ) :
   let _ : Module S (⋀[R]^n M) := Module.compHom _ (RingEquiv.ofBijective _ h).symm.toRingHom
   have hs (r : R) (z : ⋀[R]^n M) : algebraMap R S r • z = r • z :=
     congrArg (· • z) ((RingEquiv.ofBijective _ h).symm_apply_apply r)
-  refine LeftInverse.injective (g := restrictScalarsInv n hs h.2) fun x ↦ ?_
-  have hx : x ∈ Submodule.span R (Set.range (ιMulti R n)) := by
-    rw [ιMulti_span]; exact Submodule.mem_top
-  induction hx using Submodule.span_induction with
-  | mem _ hx =>
-    obtain ⟨m, rfl⟩ := hx
-    rw [restrictScalars_ιMulti]
-    exact alternatingMapLinearEquiv_apply_ιMulti _ _
-  | zero => rw [map_zero, map_zero]
-  | add _ _ _ _ hx hy => rw [map_add, map_add, hx, hy]
-  | smul r x _ hx => rw [map_smul, ← algebraMap_smul S r, map_smul, hx, hs]
+  have : IsScalarTower R S (⋀[R]^n M) := ⟨fun r s z ↦ by rw [Algebra.smul_def, mul_smul, hs]⟩
+  have hinv : (restrictScalarsInv n hs h.2).restrictScalars R ∘ₗ restrictScalars R S M n =
+      LinearMap.id :=
+    linearMap_ext <| AlternatingMap.ext fun m ↦ by simp [restrictScalarsInv]
+  exact LeftInverse.injective (g := restrictScalarsInv n hs h.2) (LinearMap.congr_fun hinv)
 
 variable (h : Bijective (algebraMap R S))
 

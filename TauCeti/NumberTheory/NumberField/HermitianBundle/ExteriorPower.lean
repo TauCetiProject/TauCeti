@@ -23,8 +23,8 @@ the complex fibre `(⋀ⁿ E)_σ = ⋀ⁿ_ℂ E_σ`, identified by
   `(⋀ⁿ h)_σ(x₁ ∧ ⋯ ∧ xₙ, y₁ ∧ ⋯ ∧ yₙ) = det (h_σ(xᵢ, yⱼ))`,
 
 and these values determine it. The top exterior power of a hermitian vector bundle `Ē` of rank `r`
-is the hermitian line `det Ē = Λʳ Ē`; the Arakelov degree of a hermitian vector bundle is, by
-definition, the Arakelov degree of its determinant.
+is the hermitian line `det Ē = Λʳ Ē`, the input for defining the Arakelov degree of a hermitian
+vector bundle of higher rank.
 
 ## Main definitions
 
@@ -65,46 +65,54 @@ variable {K : Type*} [Field K]
 variable {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E] [AddCommGroup F] [Module (𝓞 K) F]
 variable (h : HermitianMetric K E)
 
-/-- Every element of `⋀ⁿ E` is in the `𝓞 K`-span of the decomposable vectors. -/
-private theorem mem_span_ιMulti {n : ℕ} (x : ⋀[𝓞 K]^n E) :
-    x ∈ Submodule.span (𝓞 K) (Set.range (exteriorPower.ιMulti (𝓞 K) n)) := by
-  rw [exteriorPower.ιMulti_span]
-  exact Submodule.mem_top
-
 section Gram
+
+/-- The complex fibre of `E` at `σ` as a normed group, with the norm of `h_σ`. -/
+private abbrev fiberNormedAddCommGroup (σ : K →+* ℂ) : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) :=
+  (h.toCore σ).toNormedAddCommGroup
+
+/-- The complex fibre of `E` at `σ` as an inner product space, with the inner product `h_σ`. -/
+private abbrev fiberInnerProductSpace (σ : K →+* ℂ) :
+    letI := h.fiberNormedAddCommGroup σ
+    InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) :=
+  .ofCore (h.toCore σ).toCore
 
 variable [Module.Finite (𝓞 K) E]
 
-/-- The Gram form of `h_σ` on the `n`-th complex exterior power of the complex fibre of `E`. -/
+/-- The complex fibre of `E` at `σ` is finite-dimensional. -/
+private local instance finiteDimensional_fiber (σ : K →+* ℂ) :
+    FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) :=
+  Module.Finite.trans (Codomain σ) _
+
+/-- The Gram form of `h_σ` on the `n`-th complex exterior power of the complex fibre of `E`.
+This definition and the lemmas below about it all install the same fibre instances
+`fiberNormedAddCommGroup` and `fiberInnerProductSpace`, so the Gram-form lemmas apply to it as
+stated. -/
 private def fiberGram (σ : K →+* ℂ) (n : ℕ) :
     ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E) →ₗ⋆[ℂ] ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E) →ₗ[ℂ] ℂ :=
-  letI : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
-  letI : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  haveI : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
+  letI := h.fiberNormedAddCommGroup σ
+  letI := h.fiberInnerProductSpace σ
   exteriorPower.gramSesqForm n
 
 private theorem fiberGram_ιMulti_ιMulti (σ : K →+* ℂ) {n : ℕ}
     (u v : Fin n → Codomain σ ⊗[𝓞 K] E) :
     h.fiberGram σ n (exteriorPower.ιMulti ℂ n u) (exteriorPower.ιMulti ℂ n v) =
       (Matrix.of fun i j ↦ h.form σ (u i) (v j)).det := by
-  let _ : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
-  let _ : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  have : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
+  let _ := h.fiberNormedAddCommGroup σ
+  let _ := h.fiberInnerProductSpace σ
   refine (exteriorPower.gramSesqForm_ιMulti_ιMulti n u v).trans ?_
   -- The inner product of the local inner product space is the form `h_σ`.
   simp only [← h.inner_toCore]
 
 private theorem isSymm_fiberGram (σ : K →+* ℂ) (n : ℕ) : (h.fiberGram σ n).IsSymm :=
-  letI : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
-  letI : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  haveI : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
+  letI := h.fiberNormedAddCommGroup σ
+  letI := h.fiberInnerProductSpace σ
   exteriorPower.isSymm_gramSesqForm n
 
 private theorem fiberGram_self_pos (σ : K →+* ℂ) {n : ℕ} {u : ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E)}
     (hu : u ≠ 0) : 0 < h.fiberGram σ n u u :=
-  letI : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
-  letI : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  haveI : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
+  letI := h.fiberNormedAddCommGroup σ
+  letI := h.fiberInnerProductSpace σ
   exteriorPower.gramSesqForm_self_pos hu
 
 /-- The Gram form at `σ` on vectors `1 ⊗ (x₁ ∧ ⋯ ∧ xₙ)` of the complex fibre of `⋀ⁿ E`. -/
@@ -121,10 +129,10 @@ private theorem fiberGram_conjugate (σ : K →+* ℂ) {n : ℕ} (x y : ⋀[𝓞
         (Codomain.exteriorPowerEquiv _ E n (1 ⊗ₜ y)) =
       conj (h.fiberGram σ n (Codomain.exteriorPowerEquiv σ E n (1 ⊗ₜ x))
         (Codomain.exteriorPowerEquiv σ E n (1 ⊗ₜ y))) := by
-  induction mem_span_ιMulti x using Submodule.span_induction generalizing y with
+  induction exteriorPower.mem_span_ιMulti x using Submodule.span_induction generalizing y with
   | mem _ hx =>
     obtain ⟨a, rfl⟩ := hx
-    induction mem_span_ιMulti y using Submodule.span_induction with
+    induction exteriorPower.mem_span_ιMulti y using Submodule.span_induction with
     | mem _ hy =>
       obtain ⟨b, rfl⟩ := hy
       rw [fiberGram_exteriorPowerEquiv_tmul_ιMulti, fiberGram_exteriorPowerEquiv_tmul_ιMulti,
@@ -184,10 +192,10 @@ theorem form_tmul_map_eq_of_ιMulti {n : ℕ} {g : HermitianMetric K (⋀[𝓞 K
         g.form σ (1 ⊗ₜ exteriorPower.ιMulti (𝓞 K) n a) (1 ⊗ₜ exteriorPower.ιMulti (𝓞 K) n b))
     (x y : ⋀[𝓞 K]^n E) :
     g'.form σ (1 ⊗ₜ f x) (1 ⊗ₜ f y) = g.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
-  induction mem_span_ιMulti x using Submodule.span_induction generalizing y with
+  induction exteriorPower.mem_span_ιMulti x using Submodule.span_induction generalizing y with
   | mem _ hx =>
     obtain ⟨a, rfl⟩ := hx
-    induction mem_span_ιMulti y using Submodule.span_induction with
+    induction exteriorPower.mem_span_ιMulti y using Submodule.span_induction with
     | mem _ hy =>
       obtain ⟨b, rfl⟩ := hy
       exact hf a b
@@ -218,9 +226,8 @@ theorem exteriorPower_rescale (c : ℝ) (n : ℕ) :
     ext i j
     simp
   rw [exteriorPower_form_tmul_ιMulti, rescale_form_apply, exteriorPower_form_tmul_ιMulti, hmat,
-    Matrix.det_smul, Fintype.card_fin, ← Complex.ofReal_pow, ← Real.exp_natCast_mul]
-  congr 3
-  ring
+    Matrix.det_smul, Fintype.card_fin, ← Complex.ofReal_pow, ← Real.exp_natCast_mul,
+    show (n : ℝ) * (-2 * c) = -2 * (n * c) by ring]
 
 /-- The zeroth exterior power of any hermitian metric is the trivial line: `⋀⁰ E ≅ Ō_K` through
 `exteriorPower.zeroEquiv`. -/
