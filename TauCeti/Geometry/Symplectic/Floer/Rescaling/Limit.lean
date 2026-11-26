@@ -718,7 +718,8 @@ theorem IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eva
     by_contra! hconst
     have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I v 0 stdComplexLineReal = 0 := by
       rw [show v = fun _ ↦ v 0 from funext fun w ↦ hconst w 0, mfderiv_const]
-      rfl
+      -- `exact` rather than `rw`: `stdComplexLineReal` is typed in `ℝ × ℝ`, not `TangentSpace`.
+      exact zero_apply _
     rw [hd, SmoothBundleForm.eval₂_zero_left] at hv0
     exact zero_ne_one hv0
   exact ⟨φ, c', ε, v, hφ, hε, hc', hε0, hconv,
