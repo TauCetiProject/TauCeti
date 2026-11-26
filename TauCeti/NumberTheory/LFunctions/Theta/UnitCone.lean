@@ -9,7 +9,9 @@ public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Algebra.Group.Units.Countable
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.NumberTheory.NumberField.Countable
 
 /-!
 # Unit-orbit unfolding and the Mellin transform over a unit cone
@@ -65,8 +67,6 @@ theorem torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace
     (Units.torsionOrder K : ℝ≥0∞) * ∫⁻ y, f y ∂archHaar K =
       ∑' u : (𝓞 K)ˣ, ∫⁻ y in unitCone D, f (unitScale u y) ∂archHaar K := by
   classical
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
-  have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   have := Fintype.ofFinite (Units.torsion K)
   rw [← (Subgroup.groupEquivQuotientProdSubgroup (s := Units.torsion K)).symm.tsum_eq,
     tsum_prod']
@@ -142,8 +142,6 @@ theorem setLIntegral_unitCone_eq {D₁ D₂ : Set (realSpace K)}
     (f : realSpace K → ℝ≥0∞) (hf : ∀ u : (𝓞 K)ˣ, ∀ ⦃y⦄, (∀ w, 0 < y w) → f (unitScale u y) = f y) :
     ∫⁻ y in unitCone D₁, f y ∂archHaar K = ∫⁻ y in unitCone D₂, f y ∂archHaar K := by
   classical
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
-  have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
   calc ∫⁻ y in unitCone D₁, f y ∂archHaar K
       = ∫⁻ y in unitCone D₁, P.indicator f y ∂archHaar K :=
@@ -165,8 +163,6 @@ theorem setIntegral_unitCone_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     (hf : ∀ u : (𝓞 K)ˣ, ∀ ⦃y⦄, (∀ w, 0 < y w) → f (unitScale u y) = f y) :
     ∫ y in unitCone D₁, f y ∂archHaar K = ∫ y in unitCone D₂, f y ∂archHaar K := by
   classical
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
-  have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
   calc ∫ y in unitCone D₁, f y ∂archHaar K
       = ∫ y in unitCone D₁, P.indicator f y ∂archHaar K :=

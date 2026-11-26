@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Volume
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The Mellin pair of the theta kernel of a lattice
@@ -107,11 +108,8 @@ variable (K) in
 theorem two_mul_mellinConstant :
     2 * mellinConstant K =
       2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K / torsionOrder K := by
-  have hcard : 0 < nrRealPlaces K + nrComplexPlaces K := by
-    rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
-  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hcard.ne'
-  rw [mellinConstant_def, hm, Nat.succ_sub_one, pow_succ']
+  rw [mellinConstant_def]
+  conv_rhs => rw [← Nat.sub_add_cancel (nrRealPlaces_add_nrComplexPlaces_pos K), pow_succ]
   ring
 
 /-- Over a unit fundamental domain `D` the constant term `(2^r₂ / w) vol(D)` of the Mellin kernel
