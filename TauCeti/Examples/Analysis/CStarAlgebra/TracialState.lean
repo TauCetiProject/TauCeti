@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Matrix.CompletelyPositive
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
 
 /-!
@@ -137,25 +138,9 @@ abbrev e01 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.matrixUnit 0 1
 /-- Off-diagonal matrix unit `e₁₀ = [[0, 0], [1, 0]]` in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 abbrev e10 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.matrixUnit 1 0
 
-/-- Diagonal entry functional `M ↦ M i i` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-def diagFunctional (i : Fin 2) : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
-  let L : CStarMatrix (Fin 2) (Fin 2) ℂ →ₗ[ℂ] ℂ :=
-    { toFun := fun M => M i i
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => by simp }
-  .ofClass <| PositiveLinearMap.mk₀ L fun M hM => by
-    -- Positivity is the quadratic-form criterion evaluated at the standard basis vector `e_i`.
-    have h := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp hM (Pi.single i (1 : ℂ))
-    fin_cases i <;> simpa [L, Fin.sum_univ_two] using h
-
-/-- `diagFunctional i` reads the `(i, i)` entry. -/
-@[simp]
-theorem diagFunctional_apply (i : Fin 2) (M : CStarMatrix (Fin 2) (Fin 2) ℂ) :
-    diagFunctional i M = M i i :=
-  (rfl)
-
 /-- The top-left corner state `M ↦ M 0 0` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-abbrev cornerState : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ := diagFunctional 0
+abbrev cornerState : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
+  PositiveContinuousLinearMap.ofClass (CStarMatrix.diagEntry 0)
 
 /-- `cornerState` has operator norm `1`, hence defines a state on `CStarMatrix (Fin 2) (Fin 2) ℂ`.
 -/
@@ -164,7 +149,7 @@ theorem opNorm_cornerState :
     ‖(cornerState : CStarMatrix (Fin 2) (Fin 2) ℂ →L[ℂ] ℂ)‖ = 1 := by
   apply Complex.ofReal_injective
   rw [cornerState.ofReal_opNorm_eq_map_one]
-  simp [diagFunctional_apply]
+  simp
 
 /-- `cornerState` belongs to `stateSpace (CStarMatrix (Fin 2) (Fin 2) ℂ)`. -/
 theorem cornerState_mem_stateSpace :
@@ -199,7 +184,8 @@ theorem not_right_ideal_null_cornerState :
 
 /-- The unnormalized matrix trace `M ↦ M 0 0 + M 1 1` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 def rawTrace₂ : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
-  diagFunctional 0 + diagFunctional 1
+  PositiveContinuousLinearMap.ofClass (CStarMatrix.diagEntry 0) +
+    PositiveContinuousLinearMap.ofClass (CStarMatrix.diagEntry 1)
 
 /-- `rawTrace₂` evaluates as `M 0 0 + M 1 1`. -/
 @[simp]
