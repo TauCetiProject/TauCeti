@@ -48,6 +48,9 @@ nonzero vector of weight `μ`.
 
 * `TauCeti.KacMoody.cartanElement_injective`: Cartan injectivity of the Kac–Moody algebra of a
   realization of a generalized Cartan matrix.
+* `TauCeti.KacMoody.exists_highestWeightVector`: for every functional `μ` on `H`, the class of `1`
+  in this representation is a nonzero vector of weight `μ` killed by every `eᵢ`. This is what
+  makes the Verma modules of `TauCeti.Algebra.Lie.KacMoody.Verma` nonzero.
 * `TauCeti.KacMoody.cartanElement_coroot_ne_zero`, `TauCeti.KacMoody.positiveGenerator_ne_zero`
   and `TauCeti.KacMoody.negativeGenerator_ne_zero`: the simple coroots `hᵢ` and the generators
   `eᵢ`, `fᵢ` are nonzero in the Kac–Moody algebra.
@@ -73,8 +76,10 @@ namespace TauCeti
 
 namespace KacMoody
 
-variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
-  {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
+universe u v
+
+variable {I : Type u} {K : Type v} {H : Type*} [Field K] [AddCommGroup H] [Module K H]
+  {A : Matrix I I ℤ} {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
 
 /-! ## Lowering kills the raising Serre elements -/
 
@@ -601,6 +606,11 @@ private theorem quotientCartan_mk_one (x : H) :
   rw [quotientCartan_apply, quotientAction_mk, MonoidAlgebra.one_def,
     cartanAction_single, rootSum_one, LinearMap.zero_apply, sub_zero, map_smul]
 
+private theorem quotientRaising_mk_one (k : I) :
+    quotientRaising R μ hdiag hneg hzero k (LieSubmodule.Quotient.mk' _ 1) = 0 := by
+  rw [quotientRaising, quotientAction_mk, MonoidAlgebra.one_def, raising_single_one,
+    raisingWord_one, map_zero]
+
 end TensorAlgebra
 
 /-- **Cartan injectivity.** For a generalized Cartan matrix `A`, that is `Aᵢᵢ = 2`, `Aᵢⱼ ≤ 0`
@@ -629,6 +639,28 @@ algebra. -/
 theorem cartanElement_coroot_ne_zero (i : I) : cartanElement R (R.coroot i) ≠ 0 :=
   (map_ne_zero_iff _ (cartanElement_injective hdiag hneg hzero)).2
     (R.coroot_linearIndependent.ne_zero i)
+
+/-- **A highest-weight vector of every weight.** For a generalized Cartan matrix and every
+functional `μ` on `H`, the Kac–Moody algebra has a module with a nonzero vector on which each
+`h ∈ H` acts by `μ(h)` and which every raising generator `eᵢ` kills. -/
+theorem exists_highestWeightVector (μ : Module.Dual K H) :
+    ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V)
+      (_ : LieRingModule (PresentedLieAlgebra R) V) (_ : LieModule K (PresentedLieAlgebra R) V)
+      (w : V), w ≠ 0 ∧ (∀ x, ⁅cartanElement R x, w⁆ = μ x • w) ∧
+        ∀ i, ⁅positiveGenerator R i, w⁆ = 0 := by
+  classical
+  let ρ := lift (satisfiesRelations_quotient R μ hdiag hneg hzero)
+  let _ : LieRingModule (PresentedLieAlgebra R) (SerreQuotient R μ hdiag hneg hzero) :=
+    LieRingModule.compLieHom _ ρ
+  have : LieModule K (PresentedLieAlgebra R) (SerreQuotient R μ hdiag hneg hzero) :=
+    LieModule.compLieHom _ ρ
+  refine ⟨SerreQuotient R μ hdiag hneg hzero, inferInstance, inferInstance, inferInstance,
+    inferInstance, LieSubmodule.Quotient.mk' _ 1, fun h1 => one_notMem_serreIdeal (K := K) (A := A)
+      ((LieSubmodule.Quotient.mk_eq_zero _).mp h1), fun x => ?_, fun i => ?_⟩
+  · rw [LieRingModule.compLieHom_apply, lift_cartanElement, Module.End.lie_apply,
+      quotientCartan_mk_one]
+  · rw [LieRingModule.compLieHom_apply, lift_positiveGenerator, Module.End.lie_apply,
+      quotientRaising_mk_one]
 
 /-- For a generalized Cartan matrix, the raising generator `eᵢ` is nonzero in the Kac–Moody
 algebra. -/

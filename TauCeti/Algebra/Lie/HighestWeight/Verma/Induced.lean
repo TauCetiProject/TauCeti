@@ -37,7 +37,7 @@ nonzero.
 * `TauCeti.balancedExtensionEquivVermaModule_tmul` and
   `TauCeti.balancedExtensionEquivVermaModule_tmul_one_one`: the equivalence sends `u ⊗ a` to
   `a • [u]`, and `1 ⊗ 1` to the canonical generator.
-* `TauCeti.balancedExtensionEquivVermaModule_symm_vermaMk` and
+* `TauCeti.balancedExtensionEquivVermaModule_symm_cyclicMk` and
   `TauCeti.balancedExtensionEquivVermaModule_symm_vermaGenerator`: its inverse sends `[u]` to
   `u ⊗ 1`, and the canonical generator to `1 ⊗ 1`.
 
@@ -73,15 +73,16 @@ noncomputable def balancedExtensionEquivVermaModule :
     BalancedExtension Φ K ≃ₗ[U] VermaModule b lam :=
   ((borelSubalgebra H b).balancedExtensionEquivQuotient (borelCharacter H b lam)).trans <|
     (Submodule.quotEquivOfEq _ _ <| (vermaIdeal_eq_span_range_ι_sub_algebraMap b lam).symm.trans <|
-      Submodule.ext fun _ ↦ (vermaMk_eq_zero_iff b lam).symm).trans <|
-    (vermaMk b lam).quotKerEquivOfSurjective (vermaMk_surjective b lam)
+      Submodule.ext fun _ ↦ (UniversalEnvelopingAlgebra.cyclicMk_eq_zero_iff _).symm).trans <|
+    (UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam)).quotKerEquivOfSurjective
+      (UniversalEnvelopingAlgebra.cyclicMk_surjective _)
 
 /-- The induced-module comparison sends `u ⊗ a` to `a • [u]`. -/
 @[simp]
 theorem balancedExtensionEquivVermaModule_tmul (w : U) (a : K) :
     letI := (borelCharacter H b lam).envelopingModule
     balancedExtensionEquivVermaModule b lam (BalancedExtension.tmul Φ w a) =
-      a • vermaMk b lam w := by
+      a • UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam) w := by
   let := (borelCharacter H b lam).envelopingModule
   rw [balancedExtensionEquivVermaModule, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     LieSubalgebra.balancedExtensionEquivQuotient_tmul, Submodule.quotEquivOfEq_mk,
@@ -93,13 +94,14 @@ theorem balancedExtensionEquivVermaModule_tmul_one_one :
     balancedExtensionEquivVermaModule b lam (BalancedExtension.tmul Φ 1 1) =
       vermaGenerator b lam := by
   let := (borelCharacter H b lam).envelopingModule
-  rw [balancedExtensionEquivVermaModule_tmul, one_smul, ← smul_vermaGenerator, one_smul]
+  rw [balancedExtensionEquivVermaModule_tmul, one_smul, UniversalEnvelopingAlgebra.cyclicMk_one]
 
 /-- The inverse of the induced-module comparison sends `[u]` to `u ⊗ 1`. -/
 @[simp]
-theorem balancedExtensionEquivVermaModule_symm_vermaMk (w : U) :
+theorem balancedExtensionEquivVermaModule_symm_cyclicMk (w : U) :
     letI := (borelCharacter H b lam).envelopingModule
-    (balancedExtensionEquivVermaModule b lam).symm (vermaMk b lam w) =
+    (balancedExtensionEquivVermaModule b lam).symm
+      (UniversalEnvelopingAlgebra.cyclicMk (vermaIdeal b lam) w) =
       BalancedExtension.tmul Φ w 1 := by
   let := (borelCharacter H b lam).envelopingModule
   rw [LinearEquiv.symm_apply_eq, balancedExtensionEquivVermaModule_tmul, one_smul]

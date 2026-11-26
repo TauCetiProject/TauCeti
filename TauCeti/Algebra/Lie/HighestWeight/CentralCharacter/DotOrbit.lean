@@ -106,7 +106,8 @@ theorem isHighestWeightVector_pow_toEnd_vermaGenerator {i : H.root} (hi : i ∈ 
     mem_negativeNilradical_of_mem_rootSpace H b (neg_mem_negRoots_of_mem_posRoots b
       (support_subset_posRoots (IsKilling.rootSystem H) b hi)) hf
   exact isHighestWeightVector_pow_toEnd_of_lieSpan_eq_top_of_ne_zero
-    (isHighestWeightVector_vermaGenerator b lam) (lieSpan_vermaGenerator_eq_top b lam) hi hn hf
+    (isHighestWeightVector_vermaGenerator b lam)
+    (UniversalEnvelopingAlgebra.lieSpan_cyclicGenerator_eq_top _) hi hn hf
     (pow_toEnd_vermaGenerator_ne_zero b lam hfneg hf0 _)
 
 /-- The central character is unchanged by the dot reflection in a simple root `αᵢ` along which the
@@ -123,7 +124,7 @@ private theorem vermaCentralCharacter_sub_nsmul_root {i : H.root} (hi : i ∈ b.
   have h := hw.representation_eq_vermaCentralCharacter_smul z
   rw [(isHighestWeightVector_vermaGenerator b
     lam).representation_eq_vermaCentralCharacter_smul_of_lieSpan_eq_top
-    (lieSpan_vermaGenerator_eq_top b lam)] at h
+    (UniversalEnvelopingAlgebra.lieSpan_cyclicGenerator_eq_top _)] at h
   exact (smul_left_injective K hw.ne_zero h).symm
 
 /-! ### Invariance under a simple reflection -/
