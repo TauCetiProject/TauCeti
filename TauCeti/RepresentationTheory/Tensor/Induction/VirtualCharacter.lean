@@ -200,23 +200,31 @@ private noncomputable def stabilizerRep {k G : Type*} [Field k] [Group G] (U : S
     subsetWreathRep U s _ S (fun x ↦ MulAction.mem_stabilizer_iff.mp x.property) B ⊗
     subsetWreathRep U s _ Sᶜ (fun x ↦ MulAction.smul_compl_eq_of_smul_eq x.property) A
 
+private noncomputable def evalOrbitFactor {k G : Type*} [Field k] [Group G] (U : Subgroup G)
+    [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
+    (A B : FDRep k U) (g : G)
+    [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))]
+    (T : Finset (G ⧸ U)) : k :=
+  (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
+      ω.out ∈ T),
+    -B.character
+      ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
+          U.leftTransversalRep s ω.out,
+        conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩) *
+  (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
+      ω.out ∈ Tᶜ),
+    A.character
+      ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
+          U.leftTransversalRep s ω.out,
+        conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩)
+
 private theorem neg_one_pow_mul_stabilizerRep_character {k G : Type*} [Field k] [Group G]
     (U : Subgroup G) [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
     (S : Finset (G ⧸ U)) (A B : FDRep k U) (y : MulAction.stabilizer G S)
     [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers y.val) (G ⧸ U))] :
     (-1 : k) ^ S.card * (stabilizerRep U s S A B).character y =
-      (∏ ω ∈ Finset.univ.filter (fun ω :
-          MulAction.orbitRel.Quotient (Subgroup.zpowers y.val) (G ⧸ U) ↦ ω.out ∈ S),
-        -B.character
-          ⟨(U.leftTransversalRep s ω.out)⁻¹ * y.val ^ Function.minimalPeriod (y.val • ·) ω.out *
-              U.leftTransversalRep s ω.out,
-            conj_pow_minimalPeriod_mem U y.val (U.leftTransversalRep_mk s ω.out)⟩) *
-      (∏ ω ∈ Finset.univ.filter (fun ω :
-          MulAction.orbitRel.Quotient (Subgroup.zpowers y.val) (G ⧸ U) ↦ ω.out ∈ Sᶜ),
-        A.character
-          ⟨(U.leftTransversalRep s ω.out)⁻¹ * y.val ^ Function.minimalPeriod (y.val • ·) ω.out *
-              U.leftTransversalRep s ω.out,
-            conj_pow_minimalPeriod_mem U y.val (U.leftTransversalRep_mk s ω.out)⟩) := by
+      evalOrbitFactor U s A B y.val S := by
+  rw [evalOrbitFactor]
   let := Fintype.ofFinite
     (MulAction.orbitRel.Quotient
       (Subgroup.zpowers
@@ -256,20 +264,9 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
     [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))]
     (hr : r⁻¹ * g * r ∈ MulAction.stabilizer G S) :
     (-1 : k) ^ S.card * (stabilizerRep U s S A B).character ⟨r⁻¹ * g * r, hr⟩ =
-      (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
-          ω.out ∈ r • S),
-        -B.character
-          ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
-              U.leftTransversalRep s ω.out,
-            conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩) *
-      (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
-          ω.out ∈ (r • S)ᶜ),
-        A.character
-          ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
-              U.leftTransversalRep s ω.out,
-            conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩) := by
+      evalOrbitFactor U s A B g (r • S) := by
   let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers (r⁻¹ * g * r)) (G ⧸ U))
-  rw [neg_one_pow_mul_stabilizerRep_character]
+  rw [neg_one_pow_mul_stabilizerRep_character, evalOrbitFactor, evalOrbitFactor]
   simp_rw [Finset.prod_filter]
   congr 1
   · refine Fintype.prod_equiv (MulAction.conjOrbitEquiv (α := G ⧸ U) g r) _ _ fun ω ↦ ?_
@@ -289,24 +286,6 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
       simp only [Finset.mem_compl, hω, hmr, not_false_eq_true, ↓reduceIte,
         apply_conj_pow_minimalPeriod_conjOrbitEquiv (fun u v ↦ A.char_conj u v)
           (U.leftTransversalRep s) (U.leftTransversalRep_mk s) g r ω]
-
-private noncomputable def evalOrbitFactor {k G : Type*} [Field k] [Group G] (U : Subgroup G)
-    [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
-    (A B : FDRep k U) (g : G)
-    [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))]
-    (T : Finset (G ⧸ U)) : k :=
-  (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
-      ω.out ∈ T),
-    -B.character
-      ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
-          U.leftTransversalRep s ω.out,
-        conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩) *
-  (∏ ω ∈ Finset.univ.filter (fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ↦
-      ω.out ∈ Tᶜ),
-    A.character
-      ⟨(U.leftTransversalRep s ω.out)⁻¹ * g ^ Function.minimalPeriod (g • ·) ω.out *
-          U.leftTransversalRep s ω.out,
-        conj_pow_minimalPeriod_mem U g (U.leftTransversalRep_mk s ω.out)⟩)
 
 private theorem indClassFun_stabilizerRep_apply {k G : Type*} [Field k] [Group G] (U : Subgroup G)
     [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
@@ -333,30 +312,29 @@ private theorem indClassFun_stabilizerRep_apply {k G : Type*} [Field k] [Group G
     rw [MulAction.mem_stabilizer_iff, mul_smul, mul_smul, hr_smul, inv_smul_eq_iff, hr_smul]
   split_ifs with hg hmem hmem
   · rw [neg_one_pow_mul_stabilizerRep_character_conj, ← hr_smul]
-    rfl
   · exact absurd (hiff.mpr hg) hmem
   · exact absurd (hiff.mp hmem) hg
   · simp
 
 private noncomputable def orbitStabTerm {k G : Type*} [Field k] [Group G] (U : Subgroup G)
-    [U.FiniteIndex] [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
+    [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
     (A B : FDRep k U) (O : MulAction.orbitRel.Quotient G (Finset (G ⧸ U))) : G → k :=
-  let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
+  let := MulAction.finiteIndex_stabilizer (G := G) O.out
   (-1 : k) ^ O.out.card • (MulAction.stabilizer G O.out).indClassFun
     (stabilizerRep U s O.out A B).character
 
 private theorem orbitStabTerm_mem_virtualCharacters {k G : Type*} [Field k] [Group G]
-    (U : Subgroup G) [U.FiniteIndex] [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
+    (U : Subgroup G) [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
     (s : U.LeftTransversal) (A B : FDRep k U)
     (O : MulAction.orbitRel.Quotient G (Finset (G ⧸ U))) :
     orbitStabTerm U s A B O ∈ TauCeti.virtualCharacters k G := by
-  let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
+  let := MulAction.finiteIndex_stabilizer (G := G) O.out
   dsimp only [orbitStabTerm]
   rw [Subgroup.indClassFun_ofFDRep_character]
   exact TauCeti.neg_one_pow_smul_mem_virtualCharacters _ (TauCeti.character_mem_virtualCharacters _)
 
 private theorem sum_orbitStabTerm_apply {k G : Type*} [Field k] [Group G] (U : Subgroup G)
-    [U.FiniteIndex] [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
+    [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
     (A B : FDRep k U) (g : G)
     [Fintype (MulAction.orbitRel.Quotient G (Finset (G ⧸ U)))]
     [Fintype (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))] :
@@ -370,7 +348,7 @@ private theorem sum_orbitStabTerm_apply {k G : Type*} [Field k] [Group G] (U : S
           ∑ T : MulAction.orbit G O.out,
             if g • T.val = T.val then evalOrbitFactor U s A B g T.val else 0 := by
     refine Finset.sum_congr rfl fun O _ ↦ ?_
-    let := MulAction.finiteIndex_stabilizer_finset (G := G) O.out
+    let := MulAction.finiteIndex_stabilizer (G := G) O.out
     let := Fintype.ofFinite (MulAction.orbit G O.out)
     exact indClassFun_stabilizerRep_apply U s O.out A B g
   have hsig :

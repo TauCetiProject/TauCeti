@@ -69,8 +69,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
-* `MulAction.finiteIndex_stabilizer_finset`: the setwise stabilizer of a finset in a finite type
-  has finite index.
+* `MulAction.finiteIndex_stabilizer`: the stabilizer of a point of a finite type has finite
+  index.
 * `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
@@ -665,13 +665,11 @@ namespace MulAction
 
 open scoped Pointwise
 
-/-- The setwise stabilizer of any finset under a group action on a finite type has finite index. -/
-theorem finiteIndex_stabilizer_finset {G α : Type*} [Group G] [MulAction G α] [Finite α]
-    [DecidableEq α] (S : Finset α) : (stabilizer G S).FiniteIndex := by
-  let := Fintype.ofFinite α
-  have : Finite (orbit G S) := Subtype.finite
-  have : Finite (G ⧸ stabilizer G S) :=
-    Finite.of_equiv (orbit G S) (orbitEquivQuotientStabilizer G S)
+/-- The stabilizer of any point under a group action on a finite type has finite index. -/
+theorem finiteIndex_stabilizer {G X : Type*} [Group G] [MulAction G X] [Finite X] (x : X) :
+    (stabilizer G x).FiniteIndex := by
+  have : Finite (G ⧸ stabilizer G x) :=
+    Finite.of_equiv (orbit G x) (orbitEquivQuotientStabilizer G x)
   exact Subgroup.finiteIndex_of_finite_quotient
 
 end MulAction

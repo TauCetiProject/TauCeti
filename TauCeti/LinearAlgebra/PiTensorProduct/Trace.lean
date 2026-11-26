@@ -15,10 +15,8 @@ import Mathlib.Dynamics.PeriodicPts.Defs
 import Mathlib.GroupTheory.GroupAction.Defs
 import Mathlib.GroupTheory.GroupAction.Period
 import Mathlib.RingTheory.Finiteness.Cardinality
-import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Colouring
-import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 import TauCeti.LinearAlgebra.Trace.Basic
