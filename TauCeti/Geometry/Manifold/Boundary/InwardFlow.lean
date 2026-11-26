@@ -39,6 +39,8 @@ of `TauCeti.exists_isOutwardPointingField`, is the classical construction of a c
 * `TauCeti.exists_contMDiffOn_localFlow_of_isOutwardPointing_neg`: an inward-pointing smooth
   vector field has smooth local forward integral curves through the points near a boundary point,
   which enter the interior at once.
+* `TauCeti.exists_isOpen_contDiffOn_chartField`: a vector field smooth near a point is
+  smooth in the preferred chart there, on the half-space part of an open set of coordinates.
 
 ## References
 
@@ -105,7 +107,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalf
 /-- The field `v` read in the preferred chart at `a` is smooth on the part in the model half-space
 of an open neighbourhood `O` of the chart point of `a`, which lies in the chart target over a
 neighbourhood `V` of `a` on which `v` is smooth. -/
-private theorem exists_isOpen_contDiffOn_chartField
+theorem exists_isOpen_contDiffOn_chartField
     (v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x) {a : M} {V : Set M}
     (hv : ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (fun x ↦ (⟨x, v x⟩ :
       TangentBundle (𝓡∂ (n + 1)) M)) V)
