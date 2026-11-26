@@ -188,9 +188,9 @@ theorem one_sub_smul_transMatrix_mulVec_policyValue (hγ : γ < 1) (hπ : IsPoli
 /-- The **evaluation equation**: at a policy and for `γ < 1`, `V^π = r^π + γ P^π V^π`. -/
 theorem policyValue_eq_meanReward_add (hγ : γ < 1) (hπ : IsPolicy π) :
     M.policyValue γ π = M.meanReward π + (γ : ℝ) • (M.transMatrix π *ᵥ M.policyValue γ π) := by
-  have h := one_sub_smul_transMatrix_mulVec_policyValue (M := M) hγ hπ
-  rw [sub_mulVec, one_mulVec, smul_mulVec] at h
-  exact sub_eq_iff_eq_add.1 h
+  conv_lhs =>
+    rw [policyValue_def, ringInverse_one_sub_smul_eq (isUnit_one_sub_smul_transMatrix hγ hπ)]
+  rw [add_mulVec, one_mulVec, smul_mulVec, ← mulVec_mulVec, ← policyValue_def]
 
 /-- At a policy and for `γ < 1`, the `π`-mean of the Q-function is the value. -/
 theorem sum_mul_policyQ_eq_policyValue (hγ : γ < 1) (hπ : IsPolicy π) (s : S) :
@@ -212,6 +212,7 @@ theorem visitation_nonneg (hγ : γ < 1) (hπ : IsPolicy π) {μ : S → ℝ} (h
   have hP := transMatrix_mem_rowStochastic (M := M) hπ
   have hγ' : (γ : ℝ) < 1 := by exact_mod_cast hγ
   rw [visitation_def, Pi.smul_apply, smul_eq_mul]
+  simp only [vecMul, dotProduct]
   refine mul_nonneg (sub_nonneg.2 hγ'.le) (Finset.sum_nonneg fun s _ ↦ ?_)
   exact mul_nonneg (hμ s) (ringInverse_one_sub_smul_nonneg hP γ.coe_nonneg hγ' s s')
 
@@ -234,16 +235,13 @@ theorem smul_le_visitation (hγ : γ < 1) (hπ : IsPolicy π) {μ : S → ℝ} (
   have hP : P ∈ rowStochastic ℝ S := transMatrix_mem_rowStochastic hπ
   have hγ' : (γ : ℝ) < 1 := by exact_mod_cast hγ
   -- The resolvent satisfies `N = 1 + γ P N`, and `P N` has nonnegative entries.
-  have hN : N = 1 + (γ : ℝ) • (P * N) := by
-    have h := Ring.mul_inverse_cancel _ (isUnit_one_sub_smul_transMatrix (M := M) hγ hπ)
-    rw [sub_mul, one_mul, smul_mul_assoc] at h
-    exact sub_eq_iff_eq_add.1 h
-  have hPN (i j : S) : 0 ≤ (P * N) i j :=
-    Finset.sum_nonneg fun k _ ↦
-      mul_nonneg (hP.1 i k) (ringInverse_one_sub_smul_nonneg hP γ.coe_nonneg hγ' k j)
+  have hN : N = 1 + (γ : ℝ) • (P * N) :=
+    ringInverse_one_sub_smul_eq (isUnit_one_sub_smul_transMatrix hγ hπ)
+  have hPN := mul_ringInverse_one_sub_smul_nonneg hP γ.coe_nonneg hγ'
   intro s
-  have hsum : 0 ≤ (μ ᵥ* (P * N)) s :=
-    Finset.sum_nonneg fun i _ ↦ mul_nonneg (hμ i) (hPN i s)
+  have hsum : 0 ≤ (μ ᵥ* (P * N)) s := by
+    simp only [vecMul, dotProduct]
+    exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (hμ i) (hPN i s)
   have hγ₀ : (0 : ℝ) ≤ γ := γ.coe_nonneg
   rw [hN, vecMul_add, vecMul_one, vecMul_smul]
   simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul]
