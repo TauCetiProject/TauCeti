@@ -21,14 +21,14 @@ morphisms `G(f) (η_U x) ⟶ G(f) (η_U y)` (`GerbeMorphismPullback.mapIso`,
 `G(f) (η_U p)` (`homMap_restrict`, `mapIso_restrict`), but it is defined on every local morphism,
 whether or not it comes from `U`.
 
-When `η` preserves `A`-bandings `bF` and `bG`, the map on isomorphisms is compatible with the
-action of the coefficients `A(V)` (`mapIso_act`), keeps differences (`mapIso_difference`) and is
-injective (`mapIso_injective`); given a local anchor `p : F(f) x ≅ F(f) y` it has the inverse
-`GerbeMorphismPullback.preimageIso`, independent of the anchor, and is a bijection
-(`GerbeMorphismPullback.isomEquiv`). These are the local forms of the statements of
-`BandedMorphism`, derived from them over `V` by conjugating with `c_f`. They are used to show that
-a band-preserving morphism of gerbes induces isomorphisms of the sheaves of morphisms
-(Olsson, Lemma 31.3).
+When `η` preserves `A`-bandings `bF` and `bG`, the maps on isomorphisms and on morphisms are
+compatible with the action of the coefficients `A(V)` (`mapIso_act`, `homMap_homAct`); the map on
+isomorphisms keeps differences (`mapIso_difference`) and is injective (`mapIso_injective`); given
+a local anchor `p : F(f) x ≅ F(f) y` it has the inverse `GerbeMorphismPullback.preimageIso`,
+independent of the anchor, and is a bijection (`GerbeMorphismPullback.isomEquiv`). These are the
+local forms of the statements of `BandedMorphism`, derived from them over `V` by conjugating with
+`c_f`. They are used to show that a band-preserving morphism of gerbes induces isomorphisms of the
+sheaves of morphisms (Olsson, Lemma 31.3).
 
 ## Main declarations
 
@@ -38,8 +38,9 @@ In the namespace `CategoryTheory.Pseudofunctor.GerbeMorphismPullback`:
   `Iso.homCongr`, with `mapIso_hom`, `homMap_restrict`, `mapIso_restrict`, `homMap_id`,
   `homMap_comp`, `mapIso_refl`, `mapIso_trans`, `mapIso_symm`, and `id_homMap`, `id_mapIso` for
   the identity transformation.
-* `mapIso_act`, `mapIso_difference`, `mapIso_injective`, `homMap_injective`: compatibility with
-  the bands.
+* `exists_covering_iso_map`: local isomorphy of `x` and `y` gives that of `η_U x` and `η_U y`.
+* `mapIso_act`, `homMap_homAct`, `mapIso_difference`, `mapIso_injective`, `homMap_injective`:
+  compatibility with the bands.
 * `preimageIso`, `mapIso_preimageIso`, `preimageIso_mapIso`, `preimageIso_eq`, `preimageIso_act`,
   `preimageIso_restrict`, `isomEquiv`, `homMap_surjective_of_anchor`: the anchored inverse.
 
@@ -145,6 +146,17 @@ theorem mapIso_symm
     mapIso η f p.symm = (mapIso η f p).symm := by
   ext; simp
 
+/-- **Local isomorphy transfers along `η`.** If `x` and `y` become isomorphic after pullback along
+every arrow of a covering sieve of `U`, then so do `η_U x` and `η_U y`, by the transports
+`mapIso`. -/
+theorem exists_covering_iso_map {J : GrothendieckTopology C}
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
+        (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :=
+  h.imp fun _ ⟨hR, hxy⟩ ↦ ⟨hR, fun _ f hf ↦ (hxy f hf).map (mapIso η f)⟩
+
 /-- For the identity transformation, the transport of a local morphism is the morphism itself. -/
 @[simp]
 theorem id_homMap
@@ -175,6 +187,19 @@ theorem mapIso_act
     mapIso η f (bF.act p a) = bG.act (mapIso η f p) a := by
   rw [mapIso, BandedMorphism.map_act bF bG η]
   simp [mapIso, AbelianBanding.act_trans]
+
+/-- **Compatibility with the action on morphisms.** The transport of the action `homAct` of
+`a ∈ A(V)` on a local morphism is the action of `a` on its transport. -/
+theorem homMap_homAct
+    (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y)
+    (a : Multiplicative (A.obj.obj (op V))) :
+    homMap η f (bF.homAct p a) = bG.homAct (homMap η f p) a := by
+  -- The transport of the band automorphism of `a` at `F(f) y` is the band automorphism of `a` at
+  -- `G(f) (η_U y)`: this is `mapIso_act` on the identity of `F(f) y`.
+  have h := congrArg Iso.hom
+    (mapIso_act η f bF bG (Iso.refl ((F.map f.op.toLoc).toFunctor.obj y)) a)
+  simp only [mapIso_hom, mapIso_refl, AbelianBanding.act_refl] at h
+  rw [AbelianBanding.homAct_def, AbelianBanding.homAct_def, homMap_comp, h]
 
 /-- **Compatibility with the difference.** The difference of transported local isomorphisms is the
 difference of the local isomorphisms. -/
