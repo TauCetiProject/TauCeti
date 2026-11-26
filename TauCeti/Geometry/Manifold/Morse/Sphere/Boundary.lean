@@ -16,7 +16,8 @@ public import TauCeti.Geometry.Manifold.Morse.Sphere.PseudoGradient
 Let `v` be a unit vector in an `(n + 1)`-dimensional real inner product space and `X` any
 pseudo-gradient adapted to the height function `sphereHeight v` on the unit sphere `Sⁿ`. The
 critical points of the height function are the north pole `v`, of index `n`, and the south pole
-`-v`, of index `0`. This file computes the mod-two Morse complex of the pair `(sphereHeight v, X)`.
+`-v`, of index `0`. This file computes the mod-two and the integral Morse complexes of the pair
+`(sphereHeight v, X)`.
 
 * `X` is Morse–Smale, whatever its choice, since both critical points have extremal index.
 * The trajectories from the north pole to the south pole cross the middle level on the equator
