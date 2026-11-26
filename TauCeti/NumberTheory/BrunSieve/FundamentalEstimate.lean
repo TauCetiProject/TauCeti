@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.BrunSieve.Basic
 public import TauCeti.NumberTheory.SieveDimension.BoundingSieve
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Stirling
 import TauCeti.Algebra.Order.BigOperators.Ring.Powerset
+import TauCeti.Analysis.SpecialFunctions.Exp.Factorial
 import TauCeti.NumberTheory.SelbergSieve.Legendre
 
 /-!
@@ -18,7 +18,7 @@ import TauCeti.NumberTheory.SelbergSieve.Legendre
 
 When a `BoundingSieve` satisfies `BoundingSieve.HasProductDimension κ K` on
 `s.prodPrimes.primeFactors` with `0 < κ`, `1 < y`, and `9 * κ + 1 ≤ u` (which automatically forces
-`1 ≤ K` via `BoundingSieve.HasProductDimension.one_le_const`), evaluating the combinatorial
+`1 ≤ K` via `TauCeti.HasProductSieveDimension.one_le_const`), evaluating the combinatorial
 main-sum defect bound `BoundingSieve.brun_mainSum_defect_le` at parameter `β = 9 * κ + 1` and prime
 threshold `z = y ^ (1 / u)` bounds each failure-length summand by a geometric series with ratio
 `exp (10 / 9) / 9 < exp (-1)`. Summing the tail yields Kedlaya's Theorem 12.2 (with the corrected
@@ -47,19 +47,22 @@ namespace BoundingSieve
 
 /-! ### Numerical and single-step estimates for `β = 9 * κ + 1` -/
 
+private theorem exp_div_nine_lt {k : ℕ} {c : ℝ} (hk : k ≠ 0) (hc0 : 0 ≤ c)
+    (hc : (2.72 : ℝ) ^ k < c ^ 9) : Real.exp ((k : ℝ) / 9) < c := by
+  refine lt_of_pow_lt_pow_left₀ 9 hc0 ?_
+  rw [← Real.exp_natCast_mul, show ((9 : ℕ) : ℝ) * ((k : ℝ) / 9) = (k : ℝ) * 1 by ring,
+    Real.exp_natCast_mul]
+  exact (pow_lt_pow_left₀ (Real.exp_one_lt_d9.trans (by norm_num)) (Real.exp_nonneg 1) hk).trans hc
+
 private theorem brun_geom_ratio_bounds :
     let a : ℝ := Real.exp (10 / 9) / 9
     0 < a ∧ a < (Real.exp 1)⁻¹ ∧ (Real.exp 1)⁻¹ / (1 - a) ≤ 1 := by
   intro a
-  have hexp_lt : Real.exp 1 < 2.72 := Real.exp_one_lt_d9.trans (by norm_num)
   have hexp_gt : (2.71 : ℝ) < Real.exp 1 := (by norm_num : (2.71 : ℝ) < 2.7182818283).trans
     Real.exp_one_gt_d9
   have ha_pos : 0 < a := by positivity
   have h19 : Real.exp (19 / 9) < 9 := by
-    refine lt_of_pow_lt_pow_left₀ 9 (by norm_num) ?_
-    rw [← Real.exp_natCast_mul, show ((9 : ℕ) : ℝ) * (19 / 9) = ((19 : ℕ) : ℝ) * 1 by norm_num,
-      Real.exp_natCast_mul]
-    exact (pow_lt_pow_left₀ hexp_lt (Real.exp_nonneg 1) (by norm_num)).trans (by norm_num)
+    simpa using exp_div_nine_lt (k := 19) (c := 9) (by norm_num) (by norm_num) (by norm_num)
   have ha_lt_inv : a < (Real.exp 1)⁻¹ := by
     rw [lt_inv_comm₀ ha_pos (Real.exp_pos 1)]
     calc Real.exp 1 < 9 / Real.exp (10 / 9) := by
@@ -67,10 +70,7 @@ private theorem brun_geom_ratio_bounds :
           simpa [show (1 : ℝ) + 10 / 9 = 19 / 9 by norm_num] using h19
       _ = a⁻¹ := by simp [a]
   have h10 : Real.exp (10 / 9) < 3.1 := by
-    refine lt_of_pow_lt_pow_left₀ 9 (by norm_num) ?_
-    rw [← Real.exp_natCast_mul, show ((9 : ℕ) : ℝ) * (10 / 9) = ((10 : ℕ) : ℝ) * 1 by norm_num,
-      Real.exp_natCast_mul]
-    exact (pow_lt_pow_left₀ hexp_lt (Real.exp_nonneg 1) (by norm_num)).trans (by norm_num)
+    simpa using exp_div_nine_lt (k := 10) (c := 3.1) (by norm_num) (by norm_num) (by norm_num)
   have hsum : (Real.exp 1)⁻¹ + a < 1 :=
     calc (Real.exp 1)⁻¹ + a
         < (2.71 : ℝ)⁻¹ + 3.1 / 9 := add_lt_add (inv_strictAnti₀ (by norm_num) hexp_gt)
@@ -181,20 +181,6 @@ private theorem slice_term_le (s : BoundingSieve) {κ K z : ℝ} {n : ℕ}
     have hexp_eq : (Real.exp 1) ^ n * Real.exp ((n : ℝ) / 9) = (Real.exp (10 / 9)) ^ n := by
       rw [← Real.exp_natCast_mul, ← Real.exp_natCast_mul, ← Real.exp_add]
       congr 1; ring
-    -- Bound `(n / e) ^ n / n! ≤ e⁻¹` via equality at `n = 1` and Stirling for `n ≥ 2`.
-    have hfac : ((n : ℝ) / Real.exp 1) ^ n / n.factorial ≤ (Real.exp 1)⁻¹ := by
-      rw [div_le_iff₀ (Nat.cast_pos.mpr n.factorial_pos), le_inv_mul_iff₀ (Real.exp_pos 1)]
-      rcases hn.eq_or_lt with rfl | hn2
-      · simp
-      · have hn2' : (2 : ℝ) ≤ n := by exact_mod_cast hn2
-        have hexp_le : Real.exp 1 ≤ √(2 * Real.pi * n) := by
-          refine Real.le_sqrt_of_sq_le ?_
-          have hexp : Real.exp 1 < 2.72 := Real.exp_one_lt_d9.trans (by norm_num)
-          have hpi : (2 : ℝ) ≤ Real.pi := Real.two_le_pi
-          nlinarith [Real.exp_pos 1]
-        exact (mul_le_mul_of_nonneg_right hexp_le
-          (pow_nonneg (div_nonneg (Nat.cast_nonneg n) (Real.exp_nonneg 1)) n)).trans
-          (Stirling.le_factorial_stirling n)
     calc (∏ p ∈ S, (1 - s.nu p)⁻¹) * (∑ B ∈ S.powersetCard n, ∏ p ∈ B, s.nu p)
         ≤ (K * Real.exp ((n : ℝ) / 9)) * ((((n : ℝ) / 9) ^ n * K ^ 9) / n.factorial) :=
           mul_le_mul hprod hsym
@@ -205,7 +191,8 @@ private theorem slice_term_le (s : BoundingSieve) {κ K z : ℝ} {n : ℕ}
           rw [div_pow, div_pow, div_pow, ← hexp_eq]
           field_simp [hexp_ne]
       _ ≤ K ^ 10 * ((Real.exp 1)⁻¹ * (Real.exp (10 / 9) / 9) ^ n) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hfac (by positivity))
+          mul_le_mul_of_nonneg_left
+            (mul_le_mul_of_nonneg_right (Real.div_exp_one_pow_div_factorial_le hn) (by positivity))
             (by positivity)
   · have hS : S = ∅ := filter_eq_empty_iff.mpr fun p _ h ↦
       not_lt_of_ge ((le_of_not_gt hz2).trans ((le_max_left 2 _).trans h.1)) h.2
@@ -292,12 +279,12 @@ theorem brun_mainSum_bounds (s : BoundingSieve) (κ K y u : ℝ)
   have hV_nn : 0 ≤ V :=
     prod_nonneg fun _ hp ↦ (s.one_sub_nu_pos_of_mem_primeFactors hp).le
   have htail := s.brun_tail_sum_le hκ hy hu hdim
-  have hd0 := (s.brun_mainSum_defect_le 0 hy hβ1 hz1 hzy hprimes).trans
-    (mul_le_mul_of_nonneg_left htail hV_nn)
-  have hd1 := (s.brun_mainSum_defect_le 1 hy hβ1 hz1 hzy hprimes).trans
-    (mul_le_mul_of_nonneg_left htail hV_nn)
-  rw [zero_add, pow_one, neg_one_mul] at hd0
-  rw [one_add_one_eq_two, neg_one_sq, one_mul] at hd1
+  have hd0 : V - s.mainSum (TauCeti.brunWeights s.prodPrimes y β 0) ≤ V * δ :=
+    (le_of_eq (by ring)).trans ((s.brun_mainSum_defect_le 0 hy hβ1 hz1 hzy hprimes).trans
+      (mul_le_mul_of_nonneg_left htail hV_nn))
+  have hd1 : s.mainSum (TauCeti.brunWeights s.prodPrimes y β 1) - V ≤ V * δ :=
+    (le_of_eq (by ring)).trans ((s.brun_mainSum_defect_le 1 hy hβ1 hz1 hzy hprimes).trans
+      (mul_le_mul_of_nonneg_left htail hV_nn))
   exact ⟨by linarith, s.mainSum_brunWeights_zero_le y β,
     s.le_mainSum_brunWeights_one y β, by linarith⟩
 

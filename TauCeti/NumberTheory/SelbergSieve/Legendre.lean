@@ -9,11 +9,12 @@ public import Mathlib.NumberTheory.SelbergSieve
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
-# The Legendre identity and lower sieve coefficients
+# The Legendre identity and sieve coefficient brackets
 
 For a Mathlib bounding sieve with sifting product `P`, approximate mass `X`, density `ν`,
 divisor sums `A_d` and remainders `R_d = A_d - ν(d) X`, this file proves the finite
-inclusion-exclusion identities and inequalities underlying combinatorial sieves.
+inclusion-exclusion identities and lower and upper divisor-sum brackets underlying combinatorial
+sieves.
 
 * `BoundingSieve.sum_mul_multSum_eq_sum_support_mul_sum_divisors_gcd`: for an arbitrary signed
   coefficient function `c`, `∑_{d ∣ P} c(d) A_d = ∑_{n} w(n) ∑_{d ∣ gcd(P, n)} c(d)`.
@@ -26,7 +27,10 @@ inclusion-exclusion identities and inequalities underlying combinatorial sieves.
 * `BoundingSieve.sum_mul_multSum_le_siftedSum` and
   `BoundingSieve.totalMass_mul_mainSum_sub_errSum_le_siftedSum`: lower sieve coefficients,
   those with `∑_{d ∣ r} c(d) ≤ 1_{r = 1}` for every `r ∣ P`, bound the sifted sum below.
-  These are the lower counterparts of Mathlib's
+* `BoundingSieve.isUpperMoebius_ite_dvd`, `BoundingSieve.siftedSum_le_sum_mul_multSum`, and
+  `BoundingSieve.siftedSum_le_totalMass_mul_mainSum_add_errSum`: upper sieve coefficients local to
+  divisors `r ∣ P` (`1_{r = 1} ≤ ∑_{d ∣ r} c(d)`) extend by `0` outside `P` to
+  `BoundingSieve.IsUpperMoebius` and bound the sifted sum above, refining Mathlib's
   `BoundingSieve.siftedSum_le_sum_of_upperMoebius` and
   `BoundingSieve.siftedSum_le_mainSum_errSum_of_upperMoebius`.
 * `BoundingSieve.errSum_le_mul_sum_abs_rem`: the error of coefficients supported on `d ≤ D`
@@ -121,6 +125,52 @@ theorem totalMass_mul_mainSum_sub_errSum_le_siftedSum (s : BoundingSieve) {c : �
   refine sum_le_sum fun d _ ↦ ?_
   rw [multSum_eq_main_err, ← abs_mul]
   linarith [neg_abs_le (c d * s.rem d)]
+
+/-- Extending `muPlus` by `0` outside divisors of `s.prodPrimes` turns upper-Möbius bounds local to
+divisors `r ∣ s.prodPrimes` into a global `BoundingSieve.IsUpperMoebius` sequence. -/
+theorem isUpperMoebius_ite_dvd (s : BoundingSieve) {muPlus : ℕ → ℝ}
+    (h : ∀ r, r ∣ s.prodPrimes → (if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, muPlus d) :
+    IsUpperMoebius (fun d ↦ if d ∣ s.prodPrimes then muPlus d else 0) := by
+  classical
+  intro n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hdiv : {d ∈ n.divisors | d ∣ s.prodPrimes} = (Nat.gcd s.prodPrimes n).divisors := by
+    ext d
+    simp [Nat.mem_divisors, Nat.dvd_gcd_iff, hn, Nat.gcd_ne_zero_left s.prodPrimes_ne_zero,
+      and_comm]
+  rw [← sum_filter, hdiv]
+  refine le_trans ?_ (h (Nat.gcd s.prodPrimes n) (Nat.gcd_dvd_left _ _))
+  split_ifs with hn1 hgcd <;> simp_all
+
+/-- Upper sieve coefficients local to divisors `r ∣ s.prodPrimes` bound `s.siftedSum` above in
+terms of `s.multSum`, refining `BoundingSieve.siftedSum_le_sum_of_upperMoebius` and matching
+`BoundingSieve.sum_mul_multSum_le_siftedSum`. -/
+theorem siftedSum_le_sum_mul_multSum (s : BoundingSieve) {c : ℕ → ℝ}
+    (hc : ∀ r, r ∣ s.prodPrimes → (if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, c d) :
+    s.siftedSum ≤ ∑ d ∈ s.prodPrimes.divisors, c d * s.multSum d := by
+  classical
+  let w : ℕ → ℝ := fun d ↦ if d ∣ s.prodPrimes then c d else 0
+  have hsum : ∑ d ∈ s.prodPrimes.divisors, w d * s.multSum d =
+      ∑ d ∈ s.prodPrimes.divisors, c d * s.multSum d :=
+    sum_congr rfl fun d hd ↦ by simp [w, Nat.dvd_of_mem_divisors hd]
+  simpa only [hsum] using s.siftedSum_le_sum_of_upperMoebius w (s.isUpperMoebius_ite_dvd hc)
+
+/-- Upper sieve coefficients local to divisors `r ∣ s.prodPrimes` yield
+`s.siftedSum ≤ s.totalMass * s.mainSum c + s.errSum c`, refining
+`BoundingSieve.siftedSum_le_mainSum_errSum_of_upperMoebius` and matching
+`BoundingSieve.totalMass_mul_mainSum_sub_errSum_le_siftedSum`. -/
+theorem siftedSum_le_totalMass_mul_mainSum_add_errSum (s : BoundingSieve) {c : ℕ → ℝ}
+    (hc : ∀ r, r ∣ s.prodPrimes → (if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, c d) :
+    s.siftedSum ≤ s.totalMass * s.mainSum c + s.errSum c := by
+  classical
+  let w : ℕ → ℝ := fun d ↦ if d ∣ s.prodPrimes then c d else 0
+  have hmain : s.mainSum w = s.mainSum c :=
+    sum_congr rfl fun d hd ↦ by simp [w, Nat.dvd_of_mem_divisors hd]
+  have herr : s.errSum w = s.errSum c :=
+    sum_congr rfl fun d hd ↦ by simp [w, Nat.dvd_of_mem_divisors hd]
+  simpa only [hmain, herr] using
+    s.siftedSum_le_mainSum_errSum_of_upperMoebius w (s.isUpperMoebius_ite_dvd hc)
 
 /-- The error of coefficients supported on the divisors `d ≤ D` and bounded by `C` in absolute
 value there is at most `C ∑_{d ∣ P, d ≤ D} |R_d|`. -/

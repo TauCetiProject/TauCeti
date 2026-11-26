@@ -572,23 +572,29 @@ private theorem sum_minFailing_one_nonneg (S₀ : Finset ℕ) (y β : ℝ) (pari
   · obtain ⟨q, hq⟩ := ne_empty_iff_nonempty.mp hemp
     rw [prod_eq_zero hq rfl]
 
+private theorem le_of_sub_eq_neg_one_pow_zero {x y S : ℝ}
+    (h : x - y = (-1 : ℝ) ^ (0 + 1) * S) (hS : 0 ≤ S) : x ≤ y := by
+  rw [zero_add, pow_one, neg_one_mul] at h
+  linarith
+
+private theorem le_of_sub_eq_neg_one_pow_one {x y S : ℝ}
+    (h : x - y = (-1 : ℝ) ^ (1 + 1) * S) (hS : 0 ≤ S) : y ≤ x := by
+  rw [one_add_one_eq_two, neg_one_sq, one_mul] at h
+  linarith
+
 /-- **Brun lower divisor bracket**: for squarefree `P` and every `r ∣ P`,
 `∑ d ∈ r.divisors, brunWeights P y β 0 d ≤ if r = 1 then 1 else 0`. -/
 theorem sum_divisors_brunWeights_zero_le {P r : ℕ} (hP : Squarefree P) (hr : r ∣ P) (y β : ℝ) :
-    ∑ d ∈ r.divisors, brunWeights P y β 0 d ≤ if r = 1 then 1 else 0 := by
-  have hid := sum_divisors_brunWeights_sub_ite_eq hP hr y β 0
-  have hnn := sum_minFailing_one_nonneg r.primeFactors y β 0
-  rw [zero_add, pow_one, neg_one_mul] at hid
-  linarith
+    ∑ d ∈ r.divisors, brunWeights P y β 0 d ≤ if r = 1 then 1 else 0 :=
+  le_of_sub_eq_neg_one_pow_zero (sum_divisors_brunWeights_sub_ite_eq hP hr y β 0)
+    (sum_minFailing_one_nonneg r.primeFactors y β 0)
 
 /-- **Brun upper divisor bracket**: for squarefree `P` and every `r ∣ P`,
 `(if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, brunWeights P y β 1 d`. -/
 theorem le_sum_divisors_brunWeights_one {P r : ℕ} (hP : Squarefree P) (hr : r ∣ P) (y β : ℝ) :
-    (if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, brunWeights P y β 1 d := by
-  have hid := sum_divisors_brunWeights_sub_ite_eq hP hr y β 1
-  have hnn := sum_minFailing_one_nonneg r.primeFactors y β 1
-  rw [one_add_one_eq_two, neg_one_sq, one_mul] at hid
-  linarith
+    (if r = 1 then 1 else 0) ≤ ∑ d ∈ r.divisors, brunWeights P y β 1 d :=
+  le_of_sub_eq_neg_one_pow_one (sum_divisors_brunWeights_sub_ite_eq hP hr y β 1)
+    (sum_minFailing_one_nonneg r.primeFactors y β 1)
 
 /-! ### Prefix induction for minimal-failing prime sets -/
 
@@ -809,8 +815,8 @@ theorem siftedSum_le_sum_brunWeights_one (s : BoundingSieve) (y β : ℝ) :
 error sum `s.errSum (brunWeights s.prodPrimes y β parity)` is at most `s.remainderMass y`. -/
 theorem errSum_brunWeights_le_remainderMass (s : BoundingSieve) {y β : ℝ} (parity : ℕ)
     (hy : 1 < y) (hβ : 1 < β) (hprimes : ∀ p ∈ s.prodPrimes.primeFactors, (p : ℝ) < y) :
-    s.errSum (TauCeti.brunWeights s.prodPrimes y β parity) ≤ s.remainderMass y :=
-  s.errSum_le_remainderMass _ y
+    s.errSum (TauCeti.brunWeights s.prodPrimes y β parity) ≤ s.remainderMass y := by
+  simpa only [one_mul] using s.errSum_le_mul_remainderMass _ y 1
     (fun d _ ↦ TauCeti.abs_brunWeights_le_one s.prodPrimes y β parity d)
     (fun _ _ hge ↦ by_contra fun hne ↦ not_lt_of_ge hge
       (TauCeti.lt_of_brunWeights_ne_zero s.prodPrimes_squarefree hy hβ hprimes hne))
@@ -841,22 +847,16 @@ private theorem sum_minFailing_nu_nonneg (s : BoundingSieve) (y β : ℝ) (parit
 /-- The lower Brun main sum never exceeds the Euler product `∏ p ∈ P.primeFactors, (1 - s.nu p)`. -/
 theorem mainSum_brunWeights_zero_le (s : BoundingSieve) (y β : ℝ) :
     s.mainSum (TauCeti.brunWeights s.prodPrimes y β 0) ≤
-      ∏ p ∈ s.prodPrimes.primeFactors, (1 - s.nu p) := by
-  classical
-  have hid := s.mainSum_brunWeights_sub_prod_eq y β 0
-  have hnn := s.sum_minFailing_nu_nonneg y β 0
-  rw [zero_add, pow_one, neg_one_mul] at hid
-  linarith
+      ∏ p ∈ s.prodPrimes.primeFactors, (1 - s.nu p) :=
+  TauCeti.le_of_sub_eq_neg_one_pow_zero (s.mainSum_brunWeights_sub_prod_eq y β 0)
+    (s.sum_minFailing_nu_nonneg y β 0)
 
 /-- The upper Brun main sum is at least the Euler product `∏ p ∈ P.primeFactors, (1 - s.nu p)`. -/
 theorem le_mainSum_brunWeights_one (s : BoundingSieve) (y β : ℝ) :
     ∏ p ∈ s.prodPrimes.primeFactors, (1 - s.nu p) ≤
-      s.mainSum (TauCeti.brunWeights s.prodPrimes y β 1) := by
-  classical
-  have hid := s.mainSum_brunWeights_sub_prod_eq y β 1
-  have hnn := s.sum_minFailing_nu_nonneg y β 1
-  rw [one_add_one_eq_two, neg_one_sq, one_mul] at hid
-  linarith
+      s.mainSum (TauCeti.brunWeights s.prodPrimes y β 1) :=
+  TauCeti.le_of_sub_eq_neg_one_pow_one (s.mainSum_brunWeights_sub_prod_eq y β 1)
+    (s.sum_minFailing_nu_nonneg y β 1)
 
 /-- Removing a subset `S ⊆ s.prodPrimes.primeFactors` from the Euler product divides by the
 corresponding subproduct. -/
