@@ -43,13 +43,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y]
   (A : FiniteRankAtlas 𝕜 Y) {f₀ f₁ : C(X, Y)}
 
-/-- The rank-`n` stratum of `Y` contains the path component of each of its points, since the rank
-of `A` is locally constant. -/
-private theorem pathComponent_subset_rank_fiber (n : ℕ) :
-    ∀ y ∈ {y | A.rank y = n}, pathComponent y ⊆ {y | A.rank y = n} := fun _ hy ↦
-  (pathComponent_subset_component _).trans
-    ((A.rank.isLocallyConstant.isClopen_fiber n).connectedComponent_subset hy)
-
 variable [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜] [R1Space X] [ParacompactSpace X]
 
 /-- On the locus where both pulled-back ranks are `n`, the pullbacks of the rank-`n` stratum core
@@ -69,7 +62,7 @@ private theorem nonempty_stratumIso (H : f₀.Homotopy f₁) (n : ℕ) :
   -- composite (`FiniteRankBundleCore.pullback_comp`); both hold by `rfl`. On this locus, `H`
   -- runs inside the rank-`n` stratum of `Y`, so it restricts to a homotopy into that stratum.
   exact (A.stratumCore n).nonempty_pullback_iso_pullback_of_homotopic <|
-    .codRestrict (A.pathComponent_subset_rank_fiber n)
+    .codRestrict (A.rank.isLocallyConstant.isClopen_fiber n).pathComponent_subset
       (f₀ := (f₀.restrictPreimage _).comp (stratumPairFst (A.pullback f₀) (A.pullback f₁) n n))
       (f₁ := (f₁.restrictPreimage _).comp (stratumPairSnd (A.pullback f₀) (A.pullback f₁) n n))
       ⟨(H.compContinuousMap ⟨Subtype.val, continuous_subtypeVal⟩).cast
@@ -90,7 +83,8 @@ private theorem bijective_fiberMap_stratumHom (H : f₀.Homotopy f₁) (m n : �
     (x : StratumPair (A.pullback f₀) (A.pullback f₁) m n) :
     Function.Bijective ((A.stratumHom H m n).fiberMap x) := by
   obtain rfl : m = n :=
-    (ContinuousMap.Homotopic.apply_mem ⟨H⟩ (A.pathComponent_subset_rank_fiber m)
+    (ContinuousMap.Homotopic.apply_mem ⟨H⟩
+      (A.rank.isLocallyConstant.isClopen_fiber m).pathComponent_subset
       x.property.1 : A.rank (f₁ x.val) = m).symm.trans x.property.2
   simp only [stratumHom, ↓reduceDIte]
   exact (FiniteRankBundleCore.isIso_iff_bijective _).1 inferInstance x

@@ -28,6 +28,8 @@ homotopies of paths in a single path component is
 
 ## Main results
 
+* `IsClopen.pathComponent_subset`: a clopen set is a union of path components, so it supplies the
+  hypothesis of the results below.
 * `ContinuousMap.Homotopy.apply_mem`: a homotopy starting in `S` stays in `S`.
 * `ContinuousMap.Homotopic.apply_mem`: a map homotopic to a map with values in `S` takes its values
   in `S` as well.
@@ -38,6 +40,12 @@ homotopies of paths in a single path component is
 public section
 
 open unitInterval
+
+/-- **A clopen set is a union of path components.** A clopen set contains the connected component,
+hence the path component, of each of its points. -/
+theorem IsClopen.pathComponent_subset {Y : Type*} [TopologicalSpace Y] {S : Set Y}
+    (hS : IsClopen S) : ∀ y ∈ S, pathComponent y ⊆ S := fun _ hy ↦
+  (pathComponent_subset_component _).trans (hS.connectedComponent_subset hy)
 
 namespace ContinuousMap
 
