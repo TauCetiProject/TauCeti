@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.Convex.PolyhedralCochain.Pairing.Basic
-import TauCeti.Analysis.Convex.Segment
-import Mathlib.Analysis.Convex.Between
+import TauCeti.Analysis.Convex.Between
 
 /-!
 # Subdivision of one-dimensional intersection tests
@@ -34,6 +33,11 @@ namespace TauCeti.OrientedCell
 
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
+
+private theorem evalSign_fin_one_smul_of_pos
+    (o : Module.Ray ℝ (V [⋀^Fin 1]→ₗ[ℝ] ℝ)) (v : Fin 1 → V) {c : ℝ} (hc : 0 < c) :
+    o.evalSign (fun j => c • v j) = o.evalSign v := by
+  simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos hc, one_mul]
 
 private theorem intersectionIndex_subdivide_lineMap (σ : OrientedCell h 1) {x y : V} {t : ℝ}
     (ht : t ∈ Ioo (0 : ℝ) 1) (hmiss : AffineMap.lineMap x y t ∉ σ.carrier) :
@@ -64,14 +68,14 @@ private theorem intersectionIndex_subdivide_lineMap (σ : OrientedCell h 1) {x y
       rw [hz]
       simpa only [vsub_eq_sub] using AffineMap.lineMap_vsub_left x y t
     rw [hdiff]
-    simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos ht.1, one_mul]
+    exact evalSign_fin_one_smul_of_pos _ _ ht.1
   have hsignright : σ.orientation.evalSign (fun _ : Fin 1 => y - z) =
       σ.orientation.evalSign (fun _ : Fin 1 => y - x) := by
     have hdiff : y - z = (1 - t) • (y - x) := by
       rw [hz]
       simpa only [vsub_eq_sub] using AffineMap.right_vsub_lineMap x y t
     rw [hdiff]
-    simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos (sub_pos.mpr ht.2), one_mul]
+    exact evalSign_fin_one_smul_of_pos _ _ (sub_pos.mpr ht.2)
   rw [intersectionIndex_pair, intersectionIndex_pair, intersectionIndex_pair,
     hsignleft, hsignright, hpartition]
   by_cases hleft : (segment ℝ x z ∩ σ.carrier).Nonempty
@@ -93,7 +97,7 @@ theorem intersectionIndex_subdivide (σ : OrientedCell h 1) {x y z : V}
     obtain ⟨t, ht, rfl⟩ := hz
     exact σ.intersectionIndex_subdivide_lineMap ht hzσ
 
-variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E]
+variable {R E : Type*} [Semiring R] [AddCommGroup E] [Module R E]
 
 /-- Subdividing a segment at a point outside every cell with nonzero coefficient
 preserves its pairing with a finite presentation. Cells with zero coefficient
@@ -103,8 +107,8 @@ theorem intersectionPairing_subdivide (f : OrientedCell h 1 →₀ E) {x y z : V
     (hzf : ∀ σ ∈ f.support, z ∉ σ.carrier) :
     intersectionPairing (R := R) ![x, y] f =
       intersectionPairing (R := R) ![x, z] f + intersectionPairing (R := R) ![z, y] f := by
-  simp only [intersectionPairing_apply, Finsupp.sum, ← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
+  simp only [intersectionPairing_apply, ← Finsupp.sum_add]
+  apply Finsupp.sum_congr
   intro σ hσ
   rw [σ.intersectionIndex_subdivide hz (hzf σ hσ), add_zsmul]
 

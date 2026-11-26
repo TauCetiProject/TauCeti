@@ -449,6 +449,19 @@ theorem intersectionIndex_of_disjoint (hdisj : Disjoint (convexHull ℝ (range v
     σ.intersectionIndex v = 0 := by
   rw [intersectionIndex, ite_eq_right (not_nonempty_iff_eq_empty.mpr hdisj.inter_eq)]
 
+/-- A test with a linearly dependent edge frame has zero intersection index. -/
+theorem intersectionIndex_eq_zero_of_not_linearIndependent
+    (hdep : ¬ LinearIndependent ℝ (fun j : Fin k => v j.succ - v 0)) :
+    σ.intersectionIndex v = 0 := by
+  rw [intersectionIndex]
+  split_ifs
+  · have heval := Module.Ray.evalSign_rayOfNeZero σ.orientation.someVector_ne_zero
+      (fun j : Fin k => v j.succ - v 0)
+    rw [σ.orientation.someVector_ray] at heval
+    rw [heval, σ.orientation.someVector.map_linearDependent _ hdep]
+    simp
+  · rfl
+
 open Classical in
 /-- A point test on a full-dimensional cell reads its orientation sign when
 the point belongs to the cell, and is zero otherwise. -/
@@ -487,12 +500,16 @@ theorem intersectionIndex_pair_swap (σ : OrientedCell h 1) (a b : V) :
     Module.Ray.evalSign_smul]
   split_ifs <;> simp
 
+private theorem not_linearIndependent_pair_same (a : V) :
+    ¬ LinearIndependent ℝ (fun j : Fin 1 => (![a, a] : Fin 2 → V) j.succ - ![a, a] 0) := by
+  intro hli
+  exact (linearIndependent_unique_iff.mp hli) (by simp)
+
 /-- A stationary segment has zero intersection index. -/
 @[simp]
 theorem intersectionIndex_pair_same (σ : OrientedCell h 1) (a : V) :
-    σ.intersectionIndex ![a, a] = 0 := by
-  have hswap := σ.intersectionIndex_pair_swap a a
-  omega
+    σ.intersectionIndex ![a, a] = 0 :=
+  σ.intersectionIndex_eq_zero_of_not_linearIndependent (not_linearIndependent_pair_same a)
 
 /-- Reversing the orientation of a cell negates its intersection index. -/
 @[simp]
@@ -533,7 +550,9 @@ theorem IsWeaklyTransverse.intersectionIndex_eq_one_or_neg_one (hv : σ.IsWeakly
   cases hs : σ.orientation.evalSign (fun j : Fin k => v j.succ - v 0) <;>
     simp [hs] at hne ⊢
 
-variable {R : Type*} [Ring R] {E : Type*} [AddCommGroup E] [Module R E]
+section pairing
+
+variable {R : Type*} [Semiring R] {E : Type*} [AddCommGroup E] [Module R E]
 
 /-- The intersection pairing of the affine test simplex with vertices `v` with finite formal sums
 of oriented cells: the sum of the coefficients weighted by the local intersection indices. -/
@@ -552,11 +571,18 @@ theorem intersectionPairing_apply (v : Fin (k + 1) → V) (x : OrientedCell h k 
   rw [intersectionPairing, Finsupp.lsum_apply]
   exact Finsupp.sum_congr fun σ _ => by rw [LinearMap.smul_apply, LinearMap.id_apply]
 
-/-- Pairing a stationary segment with a finite presentation gives zero. -/
+/-- A test with a linearly dependent edge frame gives the zero pairing map. -/
+theorem intersectionPairing_eq_zero_of_not_linearIndependent
+    (hdep : ¬ LinearIndependent ℝ (fun j : Fin k => v j.succ - v 0)) :
+    (intersectionPairing v : (OrientedCell h k →₀ E) →ₗ[R] E) = 0 := by
+  ext σ c
+  simp [σ.intersectionIndex_eq_zero_of_not_linearIndependent hdep]
+
+/-- The pairing map of a stationary segment is zero. -/
 @[simp]
-theorem intersectionPairing_pair_same (a : V) (f : OrientedCell h 1 →₀ E) :
-    intersectionPairing (R := R) ![a, a] f = 0 := by
-  simp [intersectionPairing_apply, Finsupp.sum]
+theorem intersectionPairing_pair_same (a : V) :
+    (intersectionPairing ![a, a] : (OrientedCell h 1 →₀ E) →ₗ[R] E) = 0 :=
+  intersectionPairing_eq_zero_of_not_linearIndependent (not_linearIndependent_pair_same a)
 
 /-- Reversing a segment negates its pairing with a finite wall presentation. -/
 theorem intersectionPairing_pair_swap (a b : V) (f : OrientedCell h 1 →₀ E) :
@@ -573,6 +599,10 @@ theorem intersectionPairing_comp_mapRange {E' : Type*} [AddCommGroup E'] [Module
       f ∘ₗ intersectionPairing (R := R) (h := h) v := by
   ext σ c
   simp
+
+end pairing
+
+variable {R : Type*} [Ring R] {E : Type*} [AddCommGroup E] [Module R E]
 
 section relations
 

@@ -61,7 +61,6 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   from `[0, 1]` does not change its image, in a linear ordered field.
 * `TauCeti.lineMap_div_mem_segment` and `TauCeti.lineMap_div_mem_uIcc` — for `0 ≤ x ≤ y`, the
   affine point `AffineMap.lineMap a b (x / y)` lies in `segment 𝕜 a b` and `uIcc a b`.
-* `TauCeti.segment_eq_union_of_mem_segment`: splitting a closed segment at one of its points.
 * `TauCeti.segment_zero_left_eq_image`: `[0 -[𝕜] y]` is the image of `[0, 1]` under
   `t ↦ t • y`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
@@ -104,32 +103,6 @@ under an affine regular projection.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- A closed segment is the union of its two subsegments at any point on it. -/
-theorem segment_eq_union_of_mem_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {x y z : E}
-    (hz : z ∈ segment 𝕜 x y) :
-    segment 𝕜 x y = segment 𝕜 x z ∪ segment 𝕜 z y := by
-  apply Set.Subset.antisymm
-  · have hzline : z ∈ Set.range (AffineMap.lineMap x y : 𝕜 → E) := by
-      rw [segment_eq_image_lineMap] at hz
-      exact Set.image_subset_range _ _ hz
-    intro p hp
-    rw [← insert_endpoints_openSegment] at hp
-    rcases hp with rfl | rfl | hp
-    · exact Or.inl (left_mem_segment 𝕜 _ _)
-    · exact Or.inr (right_mem_segment 𝕜 _ _)
-    · rcases openSegment_subset_union x y hzline hp with rfl | hp | hp
-      · exact Or.inl (right_mem_segment 𝕜 _ _)
-      · exact Or.inl (openSegment_subset_segment 𝕜 _ _ hp)
-      · exact Or.inr (openSegment_subset_segment 𝕜 _ _ hp)
-  · exact Set.union_subset
-      ((convex_segment x y).segment_subset (left_mem_segment 𝕜 x y) hz)
-      ((convex_segment x y).segment_subset hz (right_mem_segment 𝕜 x y))
-
-end TauCeti
 
 namespace Set
 
