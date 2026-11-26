@@ -32,6 +32,14 @@ diffeomorphism `Θ` of the source of `Ψ` which fixes `i(Q)`, has the identity a
 it, and pulls `Ψ^* σ` back to `θ` near `i(Q)`. The correction is `φ = Ψ ∘ Θ`, and the chain rule
 gives `dφ = dΨ ∘ dΘ = dΨ` along `i(Q)`.
 
+The same correction works under weaker hypotheses, at the price of the first-order statement:
+it suffices that `Ψ^* σ` and `θ` have the same pullback to `Q` and that the affine path
+`θ + s (Ψ^* σ - θ)`, `s ∈ [0, 1]`, is nondegenerate at every point of `i(Q)`
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_eq_of_eval₂_mfderiv_eq`). Then `φ` still agrees
+with `Ψ` along `i(Q)`, and it has the differential of `Ψ` at the points of `i(Q)` where `dΨ`
+carries `σ` to `θ`. This is the form used for coisotropic submanifolds, along which a partial
+diffeomorphism extending a given identification need not be symplectic to first order.
+
 Together with the realization of a bundle isomorphism along `i(Q)` as the differential of a
 partial diffeomorphism (`TauCeti.SmoothEmbedding.exists_partialDiffeomorph_mfderiv_eq`), this gives
 symplectic neighbourhood germs with a prescribed ambient derivative
@@ -49,6 +57,10 @@ this kind, so these conditions characterize them
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_eq_of_eval₂_mfderiv_eq`: a partial
+  diffeomorphism pulling `σ` back to a form with the same pullback to a compact embedded
+  submanifold `i(Q)` as `θ`, joined to `θ` by a path nondegenerate along `i(Q)`, agrees along
+  `i(Q)` with a diffeomorphism of neighbourhoods pulling `σ` back to `θ`.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`: a partial
   diffeomorphism whose differential carries `σ` to `θ` along a compact embedded submanifold
   `i(Q)` agrees to first order along `i(Q)` with a diffeomorphism of neighbourhoods pulling `σ`
@@ -88,46 +100,156 @@ variable {E' H' Q : Type*} [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifol
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q] [CompactSpace Q]
 
 /-- The Moser step: on the source `U` of `Ψ`, there is a diffeomorphism `Θ` of `U` which fixes
-`f(Q)`, has the identity as differential there, and pulls `Ψ^* σ` back to `θ` near `f(Q)`. -/
+`f(Q)` and pulls `Ψ^* σ` back to `θ` near `f(Q)`, provided `Ψ^* σ` and `θ` have the same pullback
+to `Q` and their affine path is nondegenerate along `f(Q)`. Its differential is the identity at
+every point of `f(Q)` where `Ψ^* σ` and `θ` agree on the full ambient tangent space. -/
 private theorem exists_diffeomorph_source_eventually_mpullback_eq (f : SmoothEmbedding J I ∞ Q M)
-    {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) (hnd : ∀ q, (θ.bilinFormAt (f q)).Nondegenerate)
-    {σ : SmoothTwoForm K N} (hσ : σ.IsClosed) (Ψ : PartialDiffeomorph I K M N ∞)
-    (hsrc : ∀ q, f q ∈ Ψ.source)
-    (heq : ∀ q (v w : TangentSpace I (f q)),
-      SmoothBundleForm.eval₂ σ (Ψ (f q)) (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) =
-        SmoothBundleForm.eval₂ θ (f q) v w)
+    {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) {σ : SmoothTwoForm K N} (hσ : σ.IsClosed)
+    (Ψ : PartialDiffeomorph I K M N ∞) (hsrc : ∀ q, f q ∈ Ψ.source)
+    (hpull : ∀ q (u w : TangentSpace J q),
+      SmoothBundleForm.eval₂ σ (Ψ (f q)) (mfderiv I K Ψ (f q) (mfderiv J I f q u))
+          (mfderiv I K Ψ (f q) (mfderiv J I f q w)) =
+        SmoothBundleForm.eval₂ θ (f q) (mfderiv J I f q u) (mfderiv J I f q w))
+    (hnd : ∀ q, ∀ s ∈ Icc (0 : ℝ) 1, ∀ v : TangentSpace I (f q),
+      (∀ w, SmoothBundleForm.eval₂ θ (f q) v w + s * (SmoothBundleForm.eval₂ σ (Ψ (f q))
+        (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) - SmoothBundleForm.eval₂ θ (f q) v w) =
+          0) → v = 0)
     (hΨU : ContMDiff I K ∞ (Ψ ∘ (Subtype.val : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) → M))) :
     ∃ Θ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) ≃ₘ⟮I, I⟯
         (⟨Ψ.source, Ψ.open_source⟩ : Opens M),
       (∀ q, Θ ⟨f q, hsrc q⟩ = ⟨f q, hsrc q⟩) ∧
-      (∀ q, mfderiv I I Θ ⟨f q, hsrc q⟩ = ContinuousLinearMap.id ℝ
-        (TangentSpace I (⟨f q, hsrc q⟩ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M)))) ∧
+      (∀ q, (∀ v w : TangentSpace I (f q), SmoothBundleForm.eval₂ σ (Ψ (f q))
+          (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) = SmoothBundleForm.eval₂ θ (f q) v w) →
+        mfderiv I I Θ ⟨f q, hsrc q⟩ = ContinuousLinearMap.id ℝ
+          (TangentSpace I (⟨f q, hsrc q⟩ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M)))) ∧
       ∀ᶠ z in 𝓝ˢ (range fun q ↦ (⟨f q, hsrc q⟩ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M))),
         (SmoothForm.mpullback Θ Θ.contMDiff (SmoothForm.mpullback _ hΨU σ)).val z =
           (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal θ).val z := by
   let U : Opens M := ⟨Ψ.source, Ψ.open_source⟩
   let fU : SmoothEmbedding J I ∞ Q U := f.codRestrict U hsrc
   have hfU : ⇑fU = fun q ↦ ⟨f q, hsrc q⟩ := funext fun q ↦ Subtype.ext (by simp [fU])
-  -- Along `f(Q)` the forms `Ψ^* σ` and `θ` agree on `U`, so the relative Moser theorem applies.
-  obtain ⟨Θ, hΘf, -, hΘ, hΘ1⟩ := exists_diffeomorph_fix_embedding_eventually_mpullback_eq fU
-    (σ₀ := SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal θ)
-    (σ₁ := SmoothForm.mpullback _ hΨU σ) (hθ.mpullback _ _) (hσ.mpullback _ _)
-    (fun q ↦ by
-      rw [nondegenerate_bilinFormAt_mpullback_subtype_val_iff, hfU]
-      exact hnd q)
-    fun q ↦ by
-      rw [congrFun hfU q]
-      refine SmoothBundleForm.apply_eq_of_eval₂_eq fun v w ↦ ?_
-      rw [SmoothForm.eval₂_mpullback, Manifold.mfderiv_comp_subtype_val_apply,
-        Manifold.mfderiv_comp_subtype_val_apply, Function.comp_apply]
-      -- `v` and `w` are tangent vectors of `U`, so `θ` and its restriction are compared through
-      -- `eval₂_apply` rather than by rewriting.
-      have h := congrArg (fun φ ↦ φ ![v, w])
-        (SmoothForm.coe_mpullback_subtype_val_apply θ ⟨f q, hsrc q⟩)
-      exact (heq q v w).trans ((SmoothBundleForm.eval₂_apply θ (f q) _ _).trans
-        (h.symm.trans (SmoothBundleForm.eval₂_apply _ _ _ _).symm))
+  set θU := SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal θ
+  set σU := SmoothForm.mpullback _ hΨU σ
+  -- At `f q`, the forms `θU` and `σU = Ψ^* σ` on `U` evaluate as `θ` and as `σ` through `dΨ`.
+  -- Tangent vectors of `U` are compared with those of `M` through `eval₂_apply`, not by rewriting.
+  have hθU (q : Q) (v w : TangentSpace I (⟨f q, hsrc q⟩ : U)) :
+      SmoothBundleForm.eval₂ θU ⟨f q, hsrc q⟩ v w = SmoothBundleForm.eval₂ θ (f q) v w :=
+    (SmoothBundleForm.eval₂_apply _ _ _ _).trans ((congrArg (fun φ ↦ φ ![v, w])
+      (SmoothForm.coe_mpullback_subtype_val_apply θ ⟨f q, hsrc q⟩)).trans
+        (SmoothBundleForm.eval₂_apply θ (f q) _ _).symm)
+  have hσU (q : Q) (v w : TangentSpace I (⟨f q, hsrc q⟩ : U)) :
+      SmoothBundleForm.eval₂ σU ⟨f q, hsrc q⟩ v w = SmoothBundleForm.eval₂ σ (Ψ (f q))
+        (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) := by
+    rw [SmoothForm.eval₂_mpullback, Manifold.mfderiv_comp_subtype_val_apply,
+      Manifold.mfderiv_comp_subtype_val_apply, Function.comp_apply]
+  -- Both forms pull back along `f` through `U`, where `Ψ^* σ` and `θ` agree.
+  have hpullU : SmoothForm.mpullback fU fU.contMDiff σU =
+      SmoothForm.mpullback fU fU.contMDiff θU := by
+    have hΨf : ContMDiff J K ∞ (Ψ ∘ f) := by
+      rw [← f.val_comp_codRestrict U hsrc, ← Function.comp_assoc]
+      exact hΨU.comp fU.contMDiff
+    rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback,
+      SmoothForm.mpullback_congr _ hΨf (by rw [Function.comp_assoc, f.val_comp_codRestrict]),
+      SmoothForm.mpullback_congr _ f.contMDiff (f.val_comp_codRestrict U hsrc)]
+    refine SmoothBundleForm.ext_eval₂ fun q u w ↦ ?_
+    have hΨ : MDifferentiableAt I K Ψ (f q) :=
+      (Ψ.contMDiffOn.contMDiffAt (Ψ.open_source.mem_nhds (hsrc q))).mdifferentiableAt (by simp)
+    rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
+      mfderiv_comp_apply q hΨ (f.contMDiff.mdifferentiableAt (by simp)),
+      mfderiv_comp_apply q hΨ (f.contMDiff.mdifferentiableAt (by simp))]
+    exact hpull q u w
+  -- The relative Moser theorem applies on `U`.
+  obtain ⟨Θ, hΘf, -, hΘ, hΘ1⟩ :=
+    exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq fU
+      (hθ.mpullback _ _) (hσ.mpullback _ _) hpullU fun q s hs ↦ by
+        rw [congrFun hfU q]
+        refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+          (SmoothForm.isAlt_bilinFormAt _ _).isRefl).2 fun v hv ↦ hnd q s hs v fun w ↦ ?_
+        -- Read `w` as a tangent vector of `U`, so that `hv` applies to it.
+        let w' : TangentSpace I (⟨f q, hsrc q⟩ : U) := w
+        have h := hv w'
+        rw [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_smul,
+          sub_eq_add_neg, SmoothBundleForm.eval₂_add, SmoothBundleForm.eval₂_neg,
+          ← sub_eq_add_neg, smul_eq_mul, hθU, hσU] at h
+        exact h
   rw [hfU] at hΘf hΘ hΘ1
-  exact ⟨Θ, hΘf, hΘ1, hΘ⟩
+  refine ⟨Θ, hΘf, fun q hq ↦ hΘ1 q (SmoothBundleForm.apply_eq_of_eval₂_eq fun v w ↦ ?_), hΘ⟩
+  rw [hσU, hθU]
+  exact hq v w
+
+/-- **Correcting a partial diffeomorphism to pull `σ` back to `θ` near `f(Q)`.** Let `θ` and `σ`
+be closed two-forms on `M` and `N`, with `M` boundaryless, Hausdorff and second countable, let
+`f : Q → M` be a compact embedded submanifold, and let `Ψ` be a partial diffeomorphism from `M` to
+`N` whose source contains `f(Q)`. Suppose that `Ψ^* σ` and `θ` have the same pullback to `Q`, and
+that their affine path `θ + s (Ψ^* σ - θ)`, `s ∈ [0, 1]`, is nondegenerate at every point of
+`f(Q)`. Then there are open neighbourhoods `U₀` of `f(Q)` and `U₁` of `Ψ(f(Q))` and a
+diffeomorphism `φ : U₀ → U₁` pulling the restriction of `σ` back to the restriction of `θ`, which
+agrees with `Ψ` at every point of `f(Q)`. At every point of `f(Q)` where the differential of `Ψ`
+carries `σ` to `θ` on the full ambient tangent space, `φ` has the same differential as `Ψ`. -/
+theorem exists_diffeomorph_opens_eq_of_eval₂_mfderiv_eq (f : SmoothEmbedding J I ∞ Q M)
+    {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) {σ : SmoothTwoForm K N} (hσ : σ.IsClosed)
+    (Ψ : PartialDiffeomorph I K M N ∞) (hsrc : ∀ q, f q ∈ Ψ.source)
+    (hpull : ∀ q (u w : TangentSpace J q),
+      SmoothBundleForm.eval₂ σ (Ψ (f q)) (mfderiv I K Ψ (f q) (mfderiv J I f q u))
+          (mfderiv I K Ψ (f q) (mfderiv J I f q w)) =
+        SmoothBundleForm.eval₂ θ (f q) (mfderiv J I f q u) (mfderiv J I f q w))
+    (hnd : ∀ q, ∀ s ∈ Icc (0 : ℝ) 1, ∀ v : TangentSpace I (f q),
+      (∀ w, SmoothBundleForm.eval₂ θ (f q) v w + s * (SmoothBundleForm.eval₂ σ (Ψ (f q))
+        (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) - SmoothBundleForm.eval₂ θ (f q) v w) =
+          0) → v = 0) :
+    ∃ (U₀ : Opens M) (U₁ : Opens N) (φ : U₀ ≃ₘ⟮I, K⟯ U₁),
+      (∀ q, ∃ h : f q ∈ U₀, (φ ⟨f q, h⟩ : N) = Ψ (f q) ∧
+        ((∀ v w : TangentSpace I (f q), SmoothBundleForm.eval₂ σ (Ψ (f q))
+          (mfderiv I K Ψ (f q) v) (mfderiv I K Ψ (f q) w) = SmoothBundleForm.eval₂ θ (f q) v w) →
+          ∀ v, mfderiv I K φ ⟨f q, h⟩ v = mfderiv I K Ψ (f q) v)) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : U₁ → N) contMDiff_subtypeVal σ) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal θ := by
+  let U : Opens M := ⟨Ψ.source, Ψ.open_source⟩
+  have hΨU : ContMDiff I K ∞ (Ψ ∘ (Subtype.val : U → M)) :=
+    Ψ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property
+  obtain ⟨Θ, hΘf, hΘ1, hΘ⟩ :=
+    exists_diffeomorph_source_eventually_mpullback_eq f hθ hσ Ψ hsrc hpull hnd hΨU
+  -- Restrict to an open neighbourhood `U₀ ⊆ U` of `f(Q)` on which `Θ` pulls `Ψ^* σ` back to `θ`,
+  -- and correct `Ψ` there to `φ = Ψ ∘ Θ`.
+  obtain ⟨A, ⟨hA, hfA⟩, hAΘ⟩ := (hasBasis_nhdsSet _).mem_iff.1 hΘ
+  let U₀ : Opens M := ⟨Subtype.val '' A, U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap A hA⟩
+  have hU₀ : U₀ ≤ U := Subtype.coe_image_subset (U : Set M) A
+  have hιval : Subtype.val ∘ Opens.inclusion hU₀ = Subtype.val := Set.val_comp_inclusion hU₀
+  have hι : ContMDiff I I ∞ (Opens.inclusion hU₀) := contMDiff_inclusion hU₀
+  have hq (q : Q) : f q ∈ U₀ := ⟨⟨f q, hsrc q⟩, hfA (mem_range_self q), rfl⟩
+  have hιq (q : Q) : Opens.inclusion hU₀ ⟨f q, hq q⟩ = ⟨f q, hsrc q⟩ :=
+    Subtype.ext (congrFun hιval _)
+  obtain ⟨U₁, φ, hφ⟩ := Ψ.exists_diffeomorph_opens_comp_eq Θ hU₀
+  refine ⟨U₀, U₁, φ, fun q ↦ ⟨hq q, ?_, fun heq v ↦ ?_⟩, ?_⟩
+  · rw [← Function.comp_apply (f := Subtype.val), hφ]
+    simp only [Function.comp_apply]
+    rw [hιq, hΘf]
+  · -- By the chain rule, `dφ = dΨ ∘ dΘ ∘ dι`, where `dΘ` and `dι` are identities at `f q`.
+    rw [← Manifold.mfderiv_subtype_val_comp_apply, hφ,
+      mfderiv_comp_apply _ (hΨU.mdifferentiableAt (by simp))
+        ((Θ.contMDiff.comp hι).mdifferentiableAt (by simp)),
+      mfderiv_comp_apply _ (Θ.contMDiff.mdifferentiableAt (by simp))
+        (hι.mdifferentiableAt (by simp)),
+      Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_inclusion_apply, hιq,
+      hΘ1 q heq]
+    -- The base point `Θ (ι ⟨f q, _⟩)` is `f q` only propositionally; `mfderiv_congr_point`
+    -- compares the differentials of `Ψ` at the two points as maps of model spaces.
+    have hpt : (((Θ ∘ Opens.inclusion hU₀) ⟨f q, hq q⟩ : U) : M) = f q := by
+      rw [Function.comp_apply, hιq, hΘf]
+    exact DFunLike.congr_fun (mfderiv_congr_point (I := I) (I' := K) (f := Ψ) hpt) v
+  · -- On `U₀`, the pullback by `φ` is the pullback along `ι` of the pullback by `Θ` of `Ψ^* σ`.
+    rw [SmoothForm.mpullback_mpullback_of_comp_eq φ.contMDiff contMDiff_subtypeVal
+      (Θ.contMDiff.comp hι) hΨU hφ, ← SmoothForm.mpullback_mpullback _ _ hι Θ.contMDiff]
+    refine Subtype.ext (funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
+    have hzA : Opens.inclusion hU₀ z ∈ A := by
+      obtain ⟨a, ha, h⟩ := z.property
+      rwa [show Opens.inclusion hU₀ z = a from Subtype.ext ((congrFun hιval z).trans h.symm)]
+    rw [SmoothForm.mpullback_apply _ hι, hAΘ hzA, SmoothForm.coe_mpullback_subtype_val_apply,
+      SmoothForm.coe_mpullback_subtype_val_apply]
+    simp only [Manifold.mfderiv_inclusion_apply]
+    -- The base point `ι z` of `U` is `z` in `M`, by `hιval`.
+    exact congrArg (fun x : M ↦ θ.val x v) (congrFun hιval z)
 
 /-- **Correcting a partial diffeomorphism to pull `σ` back to `θ` near `f(Q)`, keeping its
 differential along `f(Q)`.** Let `θ` and `σ` be
@@ -151,50 +273,11 @@ theorem exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq (f : SmoothEmbedding J
       SmoothForm.mpullback φ φ.contMDiff
           (SmoothForm.mpullback (Subtype.val : U₁ → N) contMDiff_subtypeVal σ) =
         SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal θ := by
-  let U : Opens M := ⟨Ψ.source, Ψ.open_source⟩
-  have hΨU : ContMDiff I K ∞ (Ψ ∘ (Subtype.val : U → M)) :=
-    Ψ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property
-  obtain ⟨Θ, hΘf, hΘ1, hΘ⟩ :=
-    exists_diffeomorph_source_eventually_mpullback_eq f hθ hnd hσ Ψ hsrc heq hΨU
-  -- Restrict to an open neighbourhood `U₀ ⊆ U` of `f(Q)` on which `Θ` pulls `Ψ^* σ` back to `θ`,
-  -- and correct `Ψ` there to `φ = Ψ ∘ Θ`.
-  obtain ⟨A, ⟨hA, hfA⟩, hAΘ⟩ := (hasBasis_nhdsSet _).mem_iff.1 hΘ
-  let U₀ : Opens M := ⟨Subtype.val '' A, U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap A hA⟩
-  have hU₀ : U₀ ≤ U := Subtype.coe_image_subset (U : Set M) A
-  have hιval : Subtype.val ∘ Opens.inclusion hU₀ = Subtype.val := Set.val_comp_inclusion hU₀
-  have hι : ContMDiff I I ∞ (Opens.inclusion hU₀) := contMDiff_inclusion hU₀
-  have hq (q : Q) : f q ∈ U₀ := ⟨⟨f q, hsrc q⟩, hfA (mem_range_self q), rfl⟩
-  have hιq (q : Q) : Opens.inclusion hU₀ ⟨f q, hq q⟩ = ⟨f q, hsrc q⟩ :=
-    Subtype.ext (congrFun hιval _)
-  obtain ⟨U₁, φ, hφ⟩ := Ψ.exists_diffeomorph_opens_comp_eq Θ hU₀
-  refine ⟨U₀, U₁, φ, fun q ↦ ⟨hq q, ?_, fun v ↦ ?_⟩, ?_⟩
-  · rw [← Function.comp_apply (f := Subtype.val), hφ]
-    simp only [Function.comp_apply]
-    rw [hιq, hΘf]
-  · -- By the chain rule, `dφ = dΨ ∘ dΘ ∘ dι`, where `dΘ` and `dι` are identities along `f(Q)`.
-    rw [← Manifold.mfderiv_subtype_val_comp_apply, hφ,
-      mfderiv_comp_apply _ (hΨU.mdifferentiableAt (by simp))
-        ((Θ.contMDiff.comp hι).mdifferentiableAt (by simp)),
-      mfderiv_comp_apply _ (Θ.contMDiff.mdifferentiableAt (by simp))
-        (hι.mdifferentiableAt (by simp)),
-      Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_inclusion_apply, hιq, hΘ1]
-    -- The base point `Θ (ι ⟨f q, _⟩)` is `f q` only propositionally; `mfderiv_congr_point`
-    -- compares the differentials of `Ψ` at the two points as maps of model spaces.
-    have hpt : (((Θ ∘ Opens.inclusion hU₀) ⟨f q, hq q⟩ : U) : M) = f q := by
-      rw [Function.comp_apply, hιq, hΘf]
-    exact DFunLike.congr_fun (mfderiv_congr_point (I := I) (I' := K) (f := Ψ) hpt) v
-  · -- On `U₀`, the pullback by `φ` is the pullback along `ι` of the pullback by `Θ` of `Ψ^* σ`.
-    rw [SmoothForm.mpullback_mpullback_of_comp_eq φ.contMDiff contMDiff_subtypeVal
-      (Θ.contMDiff.comp hι) hΨU hφ, ← SmoothForm.mpullback_mpullback _ _ hι Θ.contMDiff]
-    refine Subtype.ext (funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
-    have hzA : Opens.inclusion hU₀ z ∈ A := by
-      obtain ⟨a, ha, h⟩ := z.property
-      rwa [show Opens.inclusion hU₀ z = a from Subtype.ext ((congrFun hιval z).trans h.symm)]
-    rw [SmoothForm.mpullback_apply _ hι, hAΘ hzA, SmoothForm.coe_mpullback_subtype_val_apply,
-      SmoothForm.coe_mpullback_subtype_val_apply]
-    simp only [Manifold.mfderiv_inclusion_apply]
-    -- The base point `ι z` of `U` is `z` in `M`, by `hιval`.
-    exact congrArg (fun x : M ↦ θ.val x v) (congrFun hιval z)
+  -- Along `f(Q)` the path `θ + s (Ψ^* σ - θ)` is constantly `θ`.
+  obtain ⟨U₀, U₁, φ, hφ, hpull⟩ := exists_diffeomorph_opens_eq_of_eval₂_mfderiv_eq f hθ hσ Ψ hsrc
+    (fun q u w ↦ heq q _ _) fun q s _ v hv ↦ (hnd q).1 v fun w ↦ by
+      simpa only [heq, sub_self, mul_zero, add_zero, SmoothForm.bilinFormAt_apply] using hv w
+  exact ⟨U₀, U₁, φ, fun q ↦ (hφ q).imp fun _ h ↦ ⟨h.1, h.2 (heq q)⟩, hpull⟩
 
 section PrescribedDerivative
 
