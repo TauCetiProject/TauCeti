@@ -70,10 +70,10 @@ theorem rankOneOperator_apply (g : ℝ → ℝ) (y : ℝ) :
     rankOneOperator g y = (∫⁻ x in Icc 0 1, ‖g x‖ₑ) * ‖y‖ₑ ^ (-(1 / 2 : ℝ)) :=
   (rfl)
 
-/-- For `y ≠ 0`, the power `‖y‖ₑ ^ s` is the real power `|y| ^ s`. -/
-private theorem eNorm_rpow_eq_ofReal_abs_rpow {y : ℝ} (hy : y ≠ 0) (s : ℝ) :
-    ‖y‖ₑ ^ s = ENNReal.ofReal (|y| ^ s) := by
-  rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
+/-- For `y ≠ 0`, the extended norm of the real power `|y| ^ s` is `‖y‖ₑ ^ s`. -/
+private theorem eNorm_abs_rpow {y : ℝ} (hy : y ≠ 0) (s : ℝ) : ‖|y| ^ s‖ₑ = ‖y‖ₑ ^ s := by
+  rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _), Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
 
 /-- The rank-one operator dominates the modulus of the linear operator
 `f ↦ (∫_0^1 f) |y|^{-1/2}`. -/
@@ -84,8 +84,7 @@ theorem eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator (g : ℝ → ℝ) (y :
   · simp
   · gcongr
     · exact eNorm_integral_le_lintegral_eNorm _
-    · rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _),
-        eNorm_rpow_eq_ofReal_abs_rpow hy]
+    · rw [eNorm_abs_rpow hy]
 
 /-- The rank-one operator is subadditive. -/
 theorem rankOneOperator_add_le {g : ℝ → ℝ} (hg : AEMeasurable g (volume.restrict (Icc 0 1)))
@@ -104,43 +103,26 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le (g : ℝ → ℝ) (r : ℝ≥0
       2 * (∫⁻ x in Icc 0 1, ‖g x‖ₑ) ^ (2 : ℝ) := by
   simp only [rankOneOperator_apply]
   generalize ∫⁻ x in Icc 0 1, ‖g x‖ₑ = I
-  -- The degenerate cases `I = ∞`, `r = 0` and `r = ∞` are immediate.
-  rcases eq_or_ne I ⊤ with rfl | hI
-  · simp [ENNReal.top_rpow_of_pos two_pos]
+  -- The degenerate cases `r = 0` and `r = ∞` are immediate.
   rcases eq_or_ne r 0 with rfl | hr
   · simp [ENNReal.zero_rpow_of_pos two_pos]
   rcases eq_or_ne r ⊤ with rfl | hr'
   · simp
-  -- Otherwise, with `I = a` and `r = b` real, `b < a |y|^{-1/2}` forces `|y| ≤ (a / b)²`.
-  set a := I.toReal
-  set b := r.toReal
-  have hb : 0 < b := ENNReal.toReal_pos hr hr'
-  have hsub : {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))} ⊆ Icc (-(a / b) ^ 2) ((a / b) ^ 2) := by
+  -- Otherwise `r < I ‖y‖^{-1/2}` forces `‖y‖ < (I / r)²`.
+  have hsub : {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))} ⊆ Metric.eball 0 ((I / r) ^ (2 : ℝ)) := by
     intro y hy
-    rw [mem_Icc, ← abs_le]
-    rcases eq_or_ne y 0 with rfl | hy0
-    · simp [sq_nonneg]
-    have hyp : 0 < |y| := abs_pos.2 hy0
-    rw [mem_ofPred_eq, ← ENNReal.ofReal_toReal hr', ← ENNReal.ofReal_toReal hI,
-      eNorm_rpow_eq_ofReal_abs_rpow hy0, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
-      ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg] at hy
-    have hs : 0 < |y| ^ (1 / 2 : ℝ) := Real.rpow_pos_of_pos hyp _
-    rw [Real.rpow_neg hyp.le, ← div_eq_mul_inv, lt_div_iff₀ hs, ← lt_div_iff₀' hb] at hy
-    calc |y| = (|y| ^ (1 / 2 : ℝ)) ^ 2 := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hyp.le]; norm_num
-      _ ≤ (a / b) ^ 2 := pow_le_pow_left₀ hs.le hy.le 2
+    rw [mem_ofPred_eq, ENNReal.rpow_neg, ← div_eq_mul_inv,
+      ENNReal.lt_div_iff_mul_lt (Or.inr hr') (Or.inr hr), mul_comm,
+      ← ENNReal.lt_div_iff_mul_lt (Or.inl hr) (Or.inl hr'), one_div,
+      ENNReal.rpow_inv_lt_iff two_pos] at hy
+    rwa [Metric.mem_eball, edist_zero_right]
   calc r ^ (2 : ℝ) * volume {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))}
-      ≤ r ^ (2 : ℝ) * volume (Icc (-(a / b) ^ 2) ((a / b) ^ 2)) := by
+      ≤ r ^ (2 : ℝ) * volume (Metric.eball (0 : ℝ) ((I / r) ^ (2 : ℝ))) := by
         gcongr
     _ = 2 * I ^ (2 : ℝ) := by
-      -- `b² · 2 (a / b)² = 2 a²`, computed in `ℝ`.
-      rw [ENNReal.rpow_two, ENNReal.rpow_two, Real.volume_Icc, ← ENNReal.ofReal_toReal hr',
-        ← ENNReal.ofReal_toReal hI, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg,
-        ← ENNReal.ofReal_pow ENNReal.toReal_nonneg, ← ENNReal.ofReal_mul (sq_nonneg _),
-        ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
-      congr 1
-      field_simp
-      ring
+      rw [Real.volume_eball, ENNReal.div_rpow_of_nonneg _ _ zero_le_two, mul_left_comm,
+        ENNReal.mul_div_cancel (ENNReal.rpow_pos (pos_iff_ne_zero.2 hr) hr').ne'
+          (ENNReal.rpow_ne_top_of_nonneg zero_le_two hr')]
 
 /-- **Weak type `(1, 2)`.** The rank-one operator satisfies the weak type `(1, 2)` bound with
 constant `2`, in the form of the hypotheses of the off-diagonal Marcinkiewicz theorem. -/
@@ -244,9 +226,7 @@ theorem not_exists_lintegral_eNorm_setIntegral_mul_abs_rpow_le :
   rw [← lintegral_eNorm_rpow_neg_one_eq_top]
   refine lintegral_congr_ae ((Measure.ae_ne volume 0).mono fun y hy => ?_)
   simp only [hint, one_mul]
-  rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _),
-    eNorm_rpow_eq_ofReal_abs_rpow hy, ENNReal.ofReal_rpow_of_nonneg
-      (Real.rpow_nonneg (abs_nonneg y) _) two_pos.le, ← Real.rpow_mul (abs_nonneg y)]
+  rw [eNorm_abs_rpow hy, ← ENNReal.rpow_mul]
   norm_num
 
 end TauCeti.Examples.MarcinkiewiczRankOne
