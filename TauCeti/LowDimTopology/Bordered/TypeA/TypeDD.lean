@@ -422,6 +422,14 @@ private theorem typeABoxDifferential_toBoxRow_mem_typeABoxTensor
     Mm hB hMm) (fun st => by simp [ungradedTensorDifferential_tmul, hιA, hιB])
     (toBoxRow_mem_typeABoxTensor hB hbM hφ)
 
+omit [CharP R 2] [DecidableEq Y] in
+/-- A function on the generators of `M ⊠ N` in the induced module of their `B`-idempotents is fixed
+by them on the right. -/
+private theorem mul_idem_of_mem_inducedModule_ofIdem {φ : N.boxGenerators σ → B}
+    (hφ : φ ∈ (ofIdem dB ιB fun p : N.boxGenerators σ => (N.idem p.val.2).2).inducedModule)
+    (p : N.boxGenerators σ) : φ p * ιB (N.idem p.val.2).2 = φ p := by
+  simpa only [ofIdem_idem] using mem_inducedModule_iff.1 hφ p
+
 include hMm hιA hιB hbM in
 /-- The differential of the induced module of `M ⊠ N`, transported from the box tensor
 differential of `B ⊗ M` with `N` on `B ⊗ (M ⊗_{I_A} N)` through the coordinates in the basis. -/
@@ -432,7 +440,7 @@ private noncomputable def boxInducedDifferential :
     mem_inducedModule_iff.2 fun p => by
       simpa only [ofIdem_idem] using ofBoxRow_mul_idem hB hbM
         (typeABoxDifferential_toBoxRow_mem_typeABoxTensor hB hMm hιA hιB hbM
-          (by simpa only [ofIdem_idem] using mem_inducedModule_iff.1 φ.property)) p⟩
+          (mul_idem_of_mem_inducedModule_ofIdem φ.property)) p⟩
   map_add' φ ψ := Subtype.ext (by simp)
   map_smul' r φ := Subtype.ext (by simp)
 
@@ -441,6 +449,16 @@ private theorem coe_boxInducedDifferential_apply
     (boxInducedDifferential hB hMm hιA hιB hbM φ : N.boxGenerators σ → B) =
       N.ofBoxRow σ bM (N.typeABoxDifferential (Mm.lTensor hB) (N.toBoxRow σ bM φ)) :=
   (rfl)
+
+/-- The row vector of the transported differential is the box tensor differential of `B ⊗ M` with
+`N` applied to the row vector. -/
+private theorem toBoxRow_coe_boxInducedDifferential
+    (φ : (ofIdem dB ιB fun p : N.boxGenerators σ => (N.idem p.val.2).2).inducedModule) :
+    N.toBoxRow σ bM (boxInducedDifferential hB hMm hιA hιB hbM φ) =
+      N.typeABoxDifferential (Mm.lTensor hB) (N.toBoxRow σ bM φ) := by
+  rw [coe_boxInducedDifferential_apply, toBoxRow_ofBoxRow hB hbM
+    (typeABoxDifferential_toBoxRow_mem_typeABoxTensor hB hMm hιA hιB hbM
+      (mul_idem_of_mem_inducedModule_ofIdem φ.property))]
 
 include hbd in
 private theorem boxInducedDifferential_smul (b : B)
@@ -457,10 +475,7 @@ private theorem boxInducedDifferential_boxInducedDifferential
     (φ : (ofIdem dB ιB fun p : N.boxGenerators σ => (N.idem p.val.2).2).inducedModule) :
     boxInducedDifferential hB hMm hιA hιB hbM (boxInducedDifferential hB hMm hιA hιB hbM φ) = 0 :=
   Subtype.ext (by
-    rw [coe_boxInducedDifferential_apply, coe_boxInducedDifferential_apply,
-      toBoxRow_ofBoxRow hB hbM
-        (typeABoxDifferential_toBoxRow_mem_typeABoxTensor hB hMm hιA hιB hbM
-          (by simpa only [ofIdem_idem] using mem_inducedModule_iff.1 φ.property)),
+    rw [coe_boxInducedDifferential_apply, toBoxRow_coe_boxInducedDifferential,
       typeABoxDifferential_typeABoxDifferential_lTensor_of_or hB hbd, map_zero,
       ZeroMemClass.coe_zero])
 
@@ -537,9 +552,7 @@ theorem toBoxRow_boxDifferential_typeABoxTypeD {φ : N.boxGenerators σ → B}
       N.typeABoxDifferential (Mm.lTensor hB) (N.toBoxRow σ bM φ) := by
   rw [typeABoxTypeD, inducedModule_ofInducedDifferential] at hφ
   rw [typeABoxTypeD, boxDifferential_ofInducedDifferential_of_mem _ _ _ _ _ _ hφ,
-    coe_boxInducedDifferential_apply,
-    toBoxRow_ofBoxRow hB hbM (typeABoxDifferential_toBoxRow_mem_typeABoxTensor hB hMm hιA hιB hbM
-      (by simpa only [ofIdem_idem] using mem_inducedModule_iff.1 hφ))]
+    toBoxRow_coe_boxInducedDifferential]
 
 /-- **`M ⊠ N` is the only type `D` structure on its generators with their `B`-idempotents whose box
 tensor differential is that of `B ⊗ M` with `N`**, under the identification

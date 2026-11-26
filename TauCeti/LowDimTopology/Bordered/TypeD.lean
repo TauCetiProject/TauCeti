@@ -164,8 +164,9 @@ namespace TypeDStructure
 
 /-- The type `D` structure on the generators `X` with idempotents `idem` and vanishing structure
 map, `δ¹ = 0`. Its induced module `A ⊗_I ⟨X⟩` (`TauCeti.TypeDStructure.inducedModule`) depends
-only on the idempotents, and every square-zero Leibniz differential on it is the box tensor
-differential of a type `D` structure (`TauCeti.TypeDStructure.ofInducedDifferential`). -/
+only on the idempotents, and when `d` makes `A` a differential algebra and the `ι s` are
+idempotent cycles, every square-zero Leibniz differential on it is the box tensor differential of a
+type `D` structure (`TauCeti.TypeDStructure.ofInducedDifferential`). -/
 def ofIdem {X : Type*} [Fintype X] (idem : X → S) : TypeDStructure d ι X where
   idem := idem
   coeff := 0
