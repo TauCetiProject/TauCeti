@@ -27,6 +27,14 @@ cover with at most `card α ^ (n + c)` points; agreeing at the coordinate `0` fo
 agreeing on `0, …, n - 1`, which needs at least `card α ^ n` points. Both bounds grow like
 `card α ^ n`.
 
+## Main definitions
+
+* `TauCeti.agreeOn S`: the relation "agree on the coordinates of `S`" on `G → α`; for a discrete
+  alphabet these relations for finite `S` form a basis of the product uniformity
+  (`TauCeti.hasBasis_agreeOn`), and `TauCeti.dynEntourage_shift_agreeOn` describes them for `n`
+  steps of the shift.
+* `TauCeti.extendWord S w`: a configuration extending the word `w` on `S`.
+
 ## Main results
 
 * `TauCeti.coverEntropy_shift_nat`, `TauCeti.coverEntropyInf_shift_nat`: the one-sided full shift
@@ -45,21 +53,29 @@ open scoped Uniformity ENNReal
 variable {α G : Type*}
 
 /-- Configurations agreeing on the coordinates of `S`. -/
-private def agreeOn (S : Set G) : SetRel (G → α) (G → α) := {p | ∀ i ∈ S, p.1 i = p.2 i}
+def agreeOn (S : Set G) : SetRel (G → α) (G → α) := {p | ∀ i ∈ S, p.1 i = p.2 i}
 
-private lemma agreeOn_anti {S S' : Set G} (h : S ⊆ S') :
+@[simp]
+theorem mem_agreeOn {S : Set G} {x y : G → α} : (x, y) ∈ agreeOn S ↔ ∀ i ∈ S, x i = y i :=
+  Iff.rfl
+
+/-- Agreeing on a larger set of coordinates implies agreeing on a smaller one. -/
+theorem agreeOn_anti {S S' : Set G} (h : S ⊆ S') :
     (agreeOn S' : SetRel (G → α) (G → α)) ⊆ agreeOn S :=
   fun _ hp i hi ↦ hp i (h hi)
 
-private lemma hasBasis_agreeOn [UniformSpace α] [DiscreteUniformity α] :
+/-- For a discrete alphabet, agreement on finite sets of coordinates is a basis of the product
+uniformity. -/
+theorem hasBasis_agreeOn [UniformSpace α] [DiscreteUniformity α] :
     (𝓤 (G → α)).HasBasis Set.Finite (agreeOn : Set G → SetRel (G → α) (G → α)) :=
   Pi.hasBasis_uniformity_of_discreteUniformity
 
 /-- Extend a word on `S` to a configuration, by an arbitrary symbol off `S`. -/
-private noncomputable def extendWord [Nonempty α] (S : Finset G) (w : S → α) : G → α :=
+noncomputable def extendWord [Nonempty α] (S : Finset G) (w : S → α) : G → α :=
   open Classical in fun i ↦ if h : i ∈ S then w ⟨i, h⟩ else Classical.arbitrary α
 
-private lemma extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (hi : i ∈ S) :
+/-- On `S`, the extension of a word on `S` is the word. -/
+theorem extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (hi : i ∈ S) :
     extendWord S w i = w ⟨i, hi⟩ := by
   simp [extendWord, hi]
 
@@ -101,7 +117,7 @@ section Shift
 variable [AddMonoidWithOne G]
 
 /-- Agreeing on `S` for `n` steps of the shift is agreeing on the translates `k + S`, `k < n`. -/
-private lemma dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
+theorem dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
     dynEntourage (shift (1 : G)) (agreeOn S : SetRel (G → α) (G → α)) n =
       agreeOn (⋃ k < n, (fun i ↦ (k : G) + i) '' S) := by
   ext ⟨x, y⟩

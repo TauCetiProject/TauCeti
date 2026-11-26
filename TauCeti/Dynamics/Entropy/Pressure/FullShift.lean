@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
+public import TauCeti.Dynamics.Entropy.FullShift
 public import TauCeti.Dynamics.Entropy.Pressure
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
@@ -26,8 +27,8 @@ coordinates.
 * Lower bound: for agreement at the coordinate `0`, one point for each word of length `n` gives a
   net whose sum is `(∑ a, exp (f a)) ^ n`.
 
-For two symbols with `f 0 = a`, `f 1 = b` this is `log (exp a + exp b)`, and for `f = 0` it is the
-topological entropy `log (card α)` of the full shift.
+For `α = Bool` with `f false = a`, `f true = b` this is `log (exp a + exp b)`, and for `f = 0` it
+is the topological entropy `log (card α)` of the full shift.
 
 ## Main results
 
@@ -45,17 +46,10 @@ open scoped Uniformity ENNReal
 
 variable {α : Type*}
 
-/-- Agreement on the first `c` coordinates. -/
-private def agreeBelow (c : ℕ) : SetRel (ℕ → α) (ℕ → α) := {p | ∀ i < c, p.1 i = p.2 i}
-
-private lemma shift_one_iterate_apply (x : ℕ → α) (k i : ℕ) :
-    (shift (1 : ℕ))^[k] x i = x (k + i) := by
-  simp
-
 /-- The Birkhoff sums of a one-coordinate potential on the full shift. -/
 private lemma birkhoffSum_shift_comp_eval_zero (f : α → ℝ) (n : ℕ) (x : ℕ → α) :
     birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x = ∑ k ∈ Finset.range n, f (x k) := by
-  simp [birkhoffSum, shift_one_iterate_apply]
+  simp [birkhoffSum]
 
 /-- The weight `exp (birkhoffSum ...)` as a product over the first `n` coordinates. -/
 private lemma ofReal_exp_birkhoffSum_shift (f : α → ℝ) (n : ℕ) (x : ℕ → α) :
@@ -77,8 +71,8 @@ private lemma sum_prod_ofReal_exp (f : α → ℝ) (n c : ℕ) :
 
 /-- Upper bound: the pressure sums at agreement on the first `c` coordinates grow at most like
 `card α ^ c * (∑ a, exp (f a)) ^ n`. -/
-private lemma pressureNetSum_agreeBelow_le (f : α → ℝ) (c n : ℕ) :
-    pressureNetSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) (agreeBelow c) n ≤
+private lemma pressureNetSum_agreeOn_Iio_le (f : α → ℝ) (c n : ℕ) :
+    pressureNetSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) (agreeOn (Iio c)) n ≤
       (Fintype.card α : ℝ≥0∞) ^ c * (∑ a, ENNReal.ofReal (Real.exp (f a))) ^ n := by
   classical
   rw [pressureNetSum_le_iff]
@@ -88,15 +82,15 @@ private lemma pressureNetSum_agreeBelow_le (f : α → ℝ) (c n : ℕ) :
   have hinj : Set.InjOn r s := by
     intro x hx y hy hxy
     by_contra hne
-    have hxy' : (x, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeBelow c) n := by
-      rw [mem_dynEntourage]
-      intro k hk i hi
-      simp only [shift_one_iterate_apply]
-      exact congrFun hxy ⟨k + i, by omega⟩
-    have hyy : (y, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeBelow c) n :=
-      mem_dynEntourage.mpr fun _ _ _ _ ↦ rfl
-    exact Set.disjoint_left.mp (hs.2 hx hy hne) (show y ∈ _ by simpa using hxy')
-      (show y ∈ _ by simpa using hyy)
+    have hxy' : (x, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n := by
+      rw [dynEntourage_shift_agreeOn, mem_agreeOn]
+      rintro _ ⟨_, ⟨k, rfl⟩, _, ⟨hk, rfl⟩, i, hi, rfl⟩
+      exact congrFun hxy ⟨k + i, by simp only [mem_Iio] at hi; omega⟩
+    have hyy : (y, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n := by
+      rw [dynEntourage_shift_agreeOn, mem_agreeOn]
+      exact fun _ _ ↦ rfl
+    exact Set.disjoint_left.mp (hs.2 hx hy hne) (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hxy'))
+      (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hyy))
   calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x))
       = ∑ x ∈ s, ∏ k : Fin n, ENNReal.ofReal (Real.exp (f (r x (Fin.castAdd c k)))) :=
         Finset.sum_congr rfl fun x _ ↦ ofReal_exp_birkhoffSum_shift f n x
@@ -112,31 +106,41 @@ variable [Nonempty α]
 
 /-- Lower bound: at agreement on the coordinate `0`, the pressure sums are at least
 `(∑ a, exp (f a)) ^ n`. -/
-private lemma pow_le_pressureNetSum_agreeBelow_one (f : α → ℝ) (n : ℕ) :
+private lemma pow_le_pressureNetSum_agreeOn_zero (f : α → ℝ) (n : ℕ) :
     (∑ a, ENNReal.ofReal (Real.exp (f a))) ^ n ≤
-      pressureNetSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) (agreeBelow 1) n := by
+      pressureNetSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) (agreeOn {0}) n := by
   classical
-  let e : (Fin n → α) → (ℕ → α) := fun w i ↦ if h : i < n then w ⟨i, h⟩ else Classical.arbitrary α
-  have he : ∀ w (k : Fin n), e w k = w k := fun w k ↦ by simp [e, k.isLt]
+  let e := extendWord (α := α) (Finset.range n)
   have heinj : Function.Injective e := fun w w' h ↦ funext fun k ↦ by
-    rw [← he w k, ← he w' k, h]
-  have hnet : IsDynNetIn (shift (1 : ℕ)) univ (agreeBelow 1) n
+    rw [← extendWord_of_mem w k.property, ← extendWord_of_mem w' k.property]
+    exact congrFun h k
+  have hnet : IsDynNetIn (shift (1 : ℕ)) univ (agreeOn {0}) n
       ((Finset.univ.image e : Finset (ℕ → α)) : Set (ℕ → α)) := by
     refine ⟨subset_univ _, fun x hx y hy hne ↦ Set.disjoint_left.mpr fun z hzx hzy ↦ hne ?_⟩
     simp only [Finset.coe_image, Finset.coe_univ, image_univ, mem_range] at hx hy
     obtain ⟨w, rfl⟩ := hx
     obtain ⟨w', rfl⟩ := hy
-    congr 1
-    refine funext fun k ↦ ?_
-    have h1 := (mem_dynEntourage.mp hzx) k k.isLt 0 one_pos
-    have h2 := (mem_dynEntourage.mp hzy) k k.isLt 0 one_pos
-    simp only [shift_one_iterate_apply, add_zero] at h1 h2
-    rw [← he w k, ← he w' k]
-    exact h1.trans h2.symm
-  refine le_trans (le_of_eq ?_) hnet.sum_le_pressureNetSum
-  rw [Finset.sum_image fun w _ w' _ h ↦ heinj h]
-  simp only [ofReal_exp_birkhoffSum_shift, he]
-  exact Fintype.sum_pow _ n
+    simp only [SetRel.mem_ball, SetRel.mem_inv, dynEntourage_shift_agreeOn, mem_agreeOn] at hzx hzy
+    refine congrArg e (funext fun k ↦ ?_)
+    have hk : (k : ℕ) ∈ ⋃ j < n, (fun i ↦ (j : ℕ) + i) '' ({0} : Set ℕ) :=
+      mem_iUnion₂.mpr ⟨k, Finset.mem_range.mp k.property, 0, rfl, add_zero _⟩
+    rw [← extendWord_of_mem w k.property, ← extendWord_of_mem w' k.property]
+    exact (hzx k hk).trans (hzy k hk).symm
+  have hw (w : Finset.range n → α) :
+      ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n (e w))) =
+        ∏ i, ENNReal.ofReal (Real.exp (f (w i))) := by
+    rw [ofReal_exp_birkhoffSum_shift, Fin.prod_univ_eq_prod_range
+      (fun k ↦ ENNReal.ofReal (Real.exp (f (e w k)))), ← Finset.prod_coe_sort]
+    exact Fintype.prod_congr _ _ fun i ↦ by
+      rw [show e w i = w i from extendWord_of_mem w i.property]
+  calc (∑ a, ENNReal.ofReal (Real.exp (f a))) ^ n
+      = ∏ _i : Finset.range n, ∑ a, ENNReal.ofReal (Real.exp (f a)) := by simp
+    _ = ∑ w : Finset.range n → α, ∏ i, ENNReal.ofReal (Real.exp (f (w i))) := Fintype.prod_sum _
+    _ = ∑ x ∈ Finset.univ.image e,
+          ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x)) := by
+        rw [Finset.sum_image fun w _ w' _ h ↦ heinj h]
+        exact Fintype.sum_congr _ _ fun w ↦ (hw w).symm
+    _ ≤ _ := hnet.sum_le_pressureNetSum
 
 variable [UniformSpace α] [DiscreteUniformity α]
 
@@ -152,23 +156,22 @@ theorem topologicalPressure_shift_nat_comp_eval_zero (f : α → ℝ) :
     Finset.sum_pos (fun a _ ↦ Real.exp_pos _) Finset.univ_nonempty
   rw [← ENNReal.log_ofReal_of_pos hpos, ← hZ, ← expGrowthSup_pow]
   refine le_antisymm (topologicalPressure_le_iff.mpr fun U hU ↦ ?_) ?_
-  · obtain ⟨S, hS, hSU⟩ := Pi.hasBasis_uniformity_of_discreteUniformity.mem_iff.mp hU
+  · obtain ⟨S, hS, hSU⟩ := hasBasis_agreeOn.mem_iff.mp hU
     obtain ⟨c, hc⟩ := hS.bddAbove
-    have hsub : (agreeBelow (c + 1) : SetRel (ℕ → α) (ℕ → α)) ⊆ U := fun p hp ↦
-      hSU fun i hi ↦ hp i (Nat.lt_succ_of_le (hc hi))
+    have hsub : (agreeOn (Iio (c + 1)) : SetRel (ℕ → α) (ℕ → α)) ⊆ U :=
+      (agreeOn_anti fun i hi ↦ Nat.lt_succ_of_le (hc hi)).trans hSU
     refine (netPressureEntourage_antitone _ _ hsub).trans ?_
     rw [netPressureEntourage_def]
     exact expGrowthSup_le_of_eventually_le (by simp)
-      (Eventually.of_forall (pressureNetSum_agreeBelow_le f (c + 1)))
-  · have hU : (agreeBelow 1 : SetRel (ℕ → α) (ℕ → α)) ∈ 𝓤 (ℕ → α) :=
-      Pi.hasBasis_uniformity_of_discreteUniformity.mem_iff.mpr ⟨{0}, finite_singleton 0,
-        fun p hp i hi ↦ hp i (by simpa using hi)⟩
+      (Eventually.of_forall (pressureNetSum_agreeOn_Iio_le f (c + 1)))
+  · have hU : (agreeOn {0} : SetRel (ℕ → α) (ℕ → α)) ∈ 𝓤 (ℕ → α) :=
+      hasBasis_agreeOn.mem_of_mem (finite_singleton 0)
     refine le_trans ?_ (netPressureEntourage_le_topologicalPressure hU)
     rw [netPressureEntourage_def]
-    exact expGrowthSup_monotone (pow_le_pressureNetSum_agreeBelow_one f)
+    exact expGrowthSup_monotone (pow_le_pressureNetSum_agreeOn_zero f)
 
-/-- **The two-symbol Check.** On the one-sided full shift on two symbols, the potential equal to
-`a` where the first symbol is `false` and to `b` where it is `true` has pressure
+/-- **Pressure on the two-symbol full shift.** On the one-sided full shift on two symbols, the
+potential equal to `a` where the first symbol is `false` and to `b` where it is `true` has pressure
 `log (exp a + exp b)`. -/
 theorem topologicalPressure_shift_nat_two (a b : ℝ) :
     topologicalPressure (shift (1 : ℕ)) (fun x : ℕ → Bool ↦ if x 0 then b else a) =
