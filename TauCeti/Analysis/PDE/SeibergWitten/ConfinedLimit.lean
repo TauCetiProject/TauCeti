@@ -305,7 +305,9 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
     rw [quadraticTwoForm_sqrt_smul o ρ hkl (by norm_num), Submodule.coe_smul, hF y]
     norm_num
   have hdbar (y : V) : covariantDBar J b α y = 0 :=
-    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ h₀ h₂₃ hρ hu₀ hu₀' b α y).1 (hD y)
+    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) hu₀ hu₀' b α y).1
+      (hD y)
   -- The curvature is `J`-invariant, since its self-dual part is a multiple of `ω`.
   have hJF (y u w : V) : extDeriv b y ![J u, J w] = extDeriv b y ![u, w] := by
     have hP : cliffordProjection o ρ J.kahlerForm (α y • u₀) = α y • u₀ := by

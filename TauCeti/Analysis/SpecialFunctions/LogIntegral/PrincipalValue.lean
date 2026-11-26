@@ -23,16 +23,16 @@ import TauCeti.NumberTheory.Harmonic.EulerMascheroni
 # Principal value and integral representations of `li`
 
 This file records the exponential principal value and absolutely convergent integral representations
-of the unoffset logarithmic integral `TauCeti.Real.unoffsetLogIntegral`:
+of the unoffset logarithmic integral `TauCeti.Real.li`:
 
 * `TauCeti.Real.integral_Iic_exp_div`: for `y < 0`, `∫ u in Iic y, exp u / u = li (exp y)`.
 * `TauCeti.Real.tendsto_principalValue_exp_div`,
   `TauCeti.Real.tendsto_principalValue_exp_div_log`: for `y > 0`, the Cauchy principal value
   `∫ u in (-1 / ε)..(-ε), exp u / u + ∫ u in ε..y, exp u / u →`
   `γ + log y + ∫ u in 0..y, (exp u - 1) / u`, which equals `li x` at `y = log x` (`x > 1`).
-* `TauCeti.Real.unoffsetLogIntegral_eq_log_abs_sub_one_add_integral`: for `x > 0`, `x ≠ 1`,
+* `TauCeti.Real.li_eq_log_abs_sub_one_add_integral`: for `x > 0`, `x ≠ 1`,
   `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`.
-* `TauCeti.Real.unoffsetLogIntegral_two_eq_integral`,
+* `TauCeti.Real.li_two_eq_integral`,
   `TauCeti.Real.abs_inv_log_one_add_add_inv_log_one_sub_le`:
   `li 2 = ∫ u in 0..1, ((log (1 + u))⁻¹ + (log (1 - u))⁻¹)` and the bound
   `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3` on `(0, 1 / 2]`.
@@ -49,7 +49,7 @@ namespace TauCeti.Real
 
 /-- For `y < 0`, `∫ u in Iic y, exp u / u = li (exp y)`. -/
 theorem integral_Iic_exp_div {y : ℝ} (hy : y < 0) :
-    ∫ u in Iic y, Real.exp u / u = unoffsetLogIntegral (Real.exp y) := by
+    ∫ u in Iic y, Real.exp u / u = li (Real.exp y) := by
   set z : ℝ := -y
   have hz : 0 < z := neg_pos.mpr hy
   -- Step 1: Reflect `u ↦ -t` to write `∫_{Iic y} e^u/u` as `-∫_{Ioi z} e^{-t}/t`.
@@ -83,7 +83,7 @@ theorem integral_Iic_exp_div {y : ℝ} (hy : y < 0) :
   have hzy : -z = y := by simp [z]
   have hlogabs : Real.log y = Real.log z := by simp [z]
   simp only [hzy] at h0z_tsum
-  rw [unoffsetLogIntegral_def, unoffsetLogIntegralSeries_def, Real.log_exp y, hlogabs]
+  rw [li_def, Real.log_exp y, hlogabs]
   linarith
 
 /-- **Exponential form of the Cauchy principal value** (`y > 0`):
@@ -138,10 +138,10 @@ theorem tendsto_principalValue_exp_div {y : ℝ} (hy : 0 < y) :
 theorem tendsto_principalValue_exp_div_log {x : ℝ} (hx : 1 < x) :
     Tendsto (fun ε : ℝ ↦ (∫ u in (-1 / ε)..(-ε), Real.exp u / u) +
         ∫ u in ε..(Real.log x), Real.exp u / u)
-      (𝓝[>] 0) (𝓝 (unoffsetLogIntegral x)) := by
+      (𝓝[>] 0) (𝓝 (li x)) := by
   have h := tendsto_principalValue_exp_div (Real.log_pos hx)
-  rw [Real.integral_exp_sub_one_div_eq_tsum (Real.log x), ← unoffsetLogIntegralSeries_def,
-    ← unoffsetLogIntegral_def] at h
+  rw [Real.integral_exp_sub_one_div_eq_tsum (Real.log x), ← liSeries_def,
+    ← li_eq_add_liSeries] at h
   exact h
 
 /-! ### Absolutely convergent integral representations -/
@@ -228,8 +228,8 @@ private theorem integral_invLogSubInvSubOneExt (a b : ℝ) :
   simp [invLogSubInvSubOneExt, ht0, ht1]
 
 /-- For `x > 1`, `li x = log (x - 1) + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`. -/
-private theorem unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt {x : ℝ} (hx : 1 < x) :
-    unoffsetLogIntegral x =
+private theorem li_eq_log_sub_one_add_integral_of_one_lt {x : ℝ} (hx : 1 < x) :
+    li x =
       Real.log (x - 1) + ∫ t in (0 : ℝ)..x, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
   -- Step 1: Continuity of the filled-in integrand passes the symmetric limit to
   -- `∫ 0..x, invLogSubInvSubOneExt`.
@@ -238,7 +238,7 @@ private theorem unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt {x : �
   -- Step 2: Subtract `∫ (t - 1)⁻¹` from the principal value on `(0, 1 - ε)` and `(1 + ε, x)`.
   have hrhs : Tendsto (fun ε : ℝ ↦ (∫ t in (0 : ℝ)..(1 - ε), invLogSubInvSubOneExt t) +
       ∫ t in (1 + ε)..x, invLogSubInvSubOneExt t) (𝓝[>] 0)
-      (𝓝 (unoffsetLogIntegral x - Real.log (x - 1))) := by
+      (𝓝 (li x - Real.log (x - 1))) := by
     refine ((tendsto_principalValue_inv_log hx).sub
       (tendsto_const_nhds (x := Real.log (x - 1)))).congr' ?_
     filter_upwards [Ioo_mem_nhdsGT (lt_min zero_lt_one (sub_pos.mpr hx))] with ε hε
@@ -269,8 +269,8 @@ private theorem unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt {x : �
 
 /-- **Absolutely convergent integral for `li x`** (`0 < x`, `x ≠ 1`):
 `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`. -/
-theorem unoffsetLogIntegral_eq_log_abs_sub_one_add_integral {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≠ 1) :
-    unoffsetLogIntegral x =
+theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≠ 1) :
+    li x =
       Real.log |x - 1| + ∫ t in (0 : ℝ)..x, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
   rcases hx₁.lt_or_gt with hx_lt | hx_gt
   · have hlog_abs : Real.log |x - 1| = Real.log (1 - x) := by
@@ -282,10 +282,10 @@ theorem unoffsetLogIntegral_eq_log_abs_sub_one_add_integral {x : ℝ} (hx₀ : 0
     rw [hlog_abs, ← hsub_val, intervalIntegral.integral_sub
       (Real.intervalIntegrable_inv_log_of_Ico hx₀.le hx_lt)
       (intervalIntegrable_sub_inv_iff.mpr (Or.inr hnot)),
-      ← unoffsetLogIntegral_eq_integral hx₀ hx_lt]
+      ← li_eq_integral hx₀ hx_lt]
     ring
   · rw [abs_of_pos (sub_pos.mpr hx_gt)]
-    exact unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt hx_gt
+    exact li_eq_log_sub_one_add_integral_of_one_lt hx_gt
 
 /-- As `u → 0⁺`, `(log (1 + u))⁻¹ + (log (1 - u))⁻¹ → 1`. -/
 theorem tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsGT_zero :
@@ -404,8 +404,8 @@ theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu₀ : 0 < u) (hu
 
 /-- **Symmetric integral for `li 2`**:
 `li 2 = ∫ u in 0..1, ((log (1 + u))⁻¹ + (log (1 - u))⁻¹)`. -/
-theorem unoffsetLogIntegral_two_eq_integral :
-    unoffsetLogIntegral 2 =
+theorem li_two_eq_integral :
+    li 2 =
       ∫ u in (0 : ℝ)..1, ((Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹) := by
   -- Step 1: Pass `∫ u in ε..1` to `∫ u in 0..1` using the continuous extension on `[0, 1]`.
   have hne1 : ∀ᵐ u : ℝ ∂volume, u ≠ 1 := ae_iff.mpr (by simp)
@@ -418,7 +418,7 @@ theorem unoffsetLogIntegral_two_eq_integral :
   -- Step 2: Fold the principal value at `x = 2` via `t = 1 - u` and `t = 1 + u`.
   have heq_pv : Tendsto
       (fun ε : ℝ ↦ ∫ u in ε..1, ((Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹))
-      (𝓝[>] 0) (𝓝 (unoffsetLogIntegral 2)) := by
+      (𝓝[>] 0) (𝓝 (li 2)) := by
     refine (tendsto_principalValue_inv_log one_lt_two).congr' ?_
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
     have hleft : ∫ t in (0 : ℝ)..(1 - ε), (Real.log t)⁻¹ = ∫ u in ε..1, (Real.log (1 - u))⁻¹ := by

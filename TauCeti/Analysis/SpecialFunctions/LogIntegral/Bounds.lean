@@ -15,21 +15,19 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 # Explicit bounds for the logarithmic integral
 
 This file establishes explicit numerical enclosures and analytical inequalities for both the
-unoffset logarithmic integral `TauCeti.Real.unoffsetLogIntegral` (`li`) and the offset logarithmic
-integral `TauCeti.Real.logIntegral` (`Li`):
+unoffset logarithmic integral `TauCeti.Real.li` (`li`) and the offset logarithmic integral
+`TauCeti.Real.logIntegral` (`Li`):
 
 * `TauCeti.Real.tsum_pow_div_mul_factorial_log_two_ge`,
   `TauCeti.Real.tsum_pow_div_mul_factorial_log_two_le`,
   `TauCeti.Real.log_log_two_ge`, `TauCeti.Real.log_log_two_le`: unconditional rational
   enclosures `0.834438 ≤ ∑_{n ≥ 1} (log 2)^n / (n · n!) ≤ 0.834462` and
   `-0.366513 ≤ log (log 2) ≤ -0.366512`.
-* `TauCeti.Real.unoffsetLogIntegral_two_gt`, `TauCeti.Real.unoffsetLogIntegral_two_lt`,
-  `TauCeti.Real.unoffsetLogIntegral_two_mem_Icc`: unconditional bounds `0.96 < li 2 < 1.14`, and
+* `TauCeti.Real.li_two_gt`, `TauCeti.Real.li_two_lt`,
+  `TauCeti.Real.li_two_mem_Icc`: unconditional bounds `0.96 < li 2 < 1.14`, and
   the sharp enclosure `1.0451 ≤ li 2 ≤ 1.0452` (hence `1.039 ≤ li 2 ≤ 1.06`) conditional on
   `|γ - 0.5772156649| < 1e-9`.
-* `TauCeti.Real.unoffsetLogIntegral_three_div_two_gt`,
-  `TauCeti.Real.unoffsetLogIntegral_pos_of_le`: `0.04 < li (3 / 2)` and `0 < li x` for every
-  `3 / 2 ≤ x`.
+* `TauCeti.Real.li_three_div_two_gt`: `0.04 < li (3 / 2)`.
 * `TauCeti.Real.integral_inv_log_rpow_lt_div_add`,
   `TauCeti.Real.integral_inv_log_pow_seven_lt`: strict explicit upper bounds for
   `∫ t in 2..x, (log t ^ k)⁻¹` for real exponents `k ≥ 0`, together with the `k = 7`
@@ -53,31 +51,32 @@ open scoped Nat Topology
 
 /-! ### Enclosures of `li 2` and `li (3 / 2)` -/
 
-private theorem unoffsetLogIntegralSeries_log_two_lower :
-    (0.834461034 : ℝ) ≤ unoffsetLogIntegralSeries (Real.log 2) := by
+private theorem liSeries_log_two_lower :
+    (0.834461034 : ℝ) ≤ liSeries (Real.log 2) := by
   have hq : (0.69314718 : ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
-  have hmono : unoffsetLogIntegralSeries (0.69314718 : ℝ) ≤
-      unoffsetLogIntegralSeries (Real.log 2) :=
-    strictMono_unoffsetLogIntegralSeries.monotone hq
-  have hpart : (0.834461034 : ℝ) ≤ unoffsetLogIntegralSeriesPartial 10 (0.69314718 : ℝ) := by
-    simp only [unoffsetLogIntegralSeriesPartial_def, Finset.sum_range_succ, Finset.sum_range_zero,
+  have hmono : liSeries (0.69314718 : ℝ) ≤
+      liSeries (Real.log 2) :=
+    strictMono_liSeries.monotone hq
+  have hpart : (0.834461034 : ℝ) ≤ liSeriesPartial 10 (0.69314718 : ℝ) := by
+    simp only [liSeriesPartial_def, Finset.sum_range_succ, Finset.sum_range_zero,
       Nat.factorial_succ, Nat.factorial_zero]
     norm_num
   exact hpart.trans
-    ((unoffsetLogIntegralSeriesPartial_le_unoffsetLogIntegralSeries 10 (by norm_num)).trans hmono)
+    (((by rw [liSeriesPartial_def]; exact sum_range_le_liSeries (by norm_num) 10) :
+      liSeriesPartial 10 (0.69314718 : ℝ) ≤ liSeries (0.69314718 : ℝ)).trans hmono)
 
-private theorem unoffsetLogIntegralSeries_log_two_upper :
-    unoffsetLogIntegralSeries (Real.log 2) ≤ (0.834461037 : ℝ) := by
+private theorem liSeries_log_two_upper :
+    liSeries (Real.log 2) ≤ (0.834461037 : ℝ) := by
   have hq : Real.log 2 ≤ (0.693147181 : ℝ) := by linarith [Real.log_two_lt_d9]
-  have hmono : unoffsetLogIntegralSeries (Real.log 2) ≤
-      unoffsetLogIntegralSeries (0.693147181 : ℝ) :=
-    strictMono_unoffsetLogIntegralSeries.monotone hq
-  have htail := unoffsetLogIntegralSeries_le_partial_add 10 (y := (0.693147181 : ℝ))
+  have hmono : liSeries (Real.log 2) ≤
+      liSeries (0.693147181 : ℝ) :=
+    strictMono_liSeries.monotone hq
+  have htail := liSeries_le_partial_add 10 (y := (0.693147181 : ℝ))
     (by norm_num) (by norm_num)
-  have hnum : unoffsetLogIntegralSeriesPartial 10 (0.693147181 : ℝ) +
+  have hnum : liSeriesPartial 10 (0.693147181 : ℝ) +
       ((0.693147181 : ℝ) ^ (10 + 1) / (((10 : ℝ) + 1) * ((10 + 1)! : ℝ))) *
         (((10 : ℝ) + 2) / ((10 : ℝ) + 2 - (0.693147181 : ℝ))) ≤ (0.834461037 : ℝ) := by
-    simp only [unoffsetLogIntegralSeriesPartial_def, Finset.sum_range_succ, Finset.sum_range_zero,
+    simp only [liSeriesPartial_def, Finset.sum_range_succ, Finset.sum_range_zero,
       Nat.factorial_succ, Nat.factorial_zero]
     norm_num
   exact hmono.trans (htail.trans hnum)
@@ -86,15 +85,15 @@ private theorem unoffsetLogIntegralSeries_log_two_upper :
 theorem tsum_pow_div_mul_factorial_log_two_ge :
     (0.834438 : ℝ) ≤
       ∑' n : ℕ, Real.log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
-  rw [← unoffsetLogIntegralSeries_def]
-  exact (by norm_num : (0.834438 : ℝ) ≤ 0.834461034).trans unoffsetLogIntegralSeries_log_two_lower
+  rw [← liSeries_def]
+  exact (by norm_num : (0.834438 : ℝ) ≤ 0.834461034).trans liSeries_log_two_lower
 
 /-- Upper bound `∑' n, (log 2) ^ (n + 1) / ((n + 1) * (n + 1)!) ≤ 0.834462`. -/
 theorem tsum_pow_div_mul_factorial_log_two_le :
     ∑' n : ℕ, Real.log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) ≤
       (0.834462 : ℝ) := by
-  rw [← unoffsetLogIntegralSeries_def]
-  exact unoffsetLogIntegralSeries_log_two_upper.trans (by norm_num)
+  rw [← liSeries_def]
+  exact liSeries_log_two_upper.trans (by norm_num)
 
 private theorem log_log_two_lower_tight : (-0.36651295 : ℝ) ≤ Real.log (Real.log 2) := by
   have hq : (0.69314718 : ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
@@ -130,39 +129,39 @@ theorem log_log_two_ge : (-0.366513 : ℝ) ≤ Real.log (Real.log 2) :=
 theorem log_log_two_le : Real.log (Real.log 2) ≤ (-0.366512 : ℝ) :=
   log_log_two_upper_tight.trans (by norm_num)
 
-private theorem unoffsetLogIntegral_two_eq :
-    unoffsetLogIntegral 2 = Real.eulerMascheroniConstant + Real.log (Real.log 2) +
+private theorem li_two_eq :
+    li 2 = Real.eulerMascheroniConstant + Real.log (Real.log 2) +
       ∑' n : ℕ, Real.log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
-  rw [unoffsetLogIntegral_def, unoffsetLogIntegralSeries_def]
+  rw [li_eq_add_liSeries, liSeries_def]
 
 /-- Unconditional lower bound `0.96 < li 2`. -/
-theorem unoffsetLogIntegral_two_gt : (0.96 : ℝ) < unoffsetLogIntegral 2 := by
-  rw [unoffsetLogIntegral_two_eq]
+theorem li_two_gt : (0.96 : ℝ) < li 2 := by
+  rw [li_two_eq]
   linarith [Real.one_half_lt_eulerMascheroniConstant, log_log_two_ge,
     tsum_pow_div_mul_factorial_log_two_ge]
 
 /-- Unconditional upper bound `li 2 < 1.14`. -/
-theorem unoffsetLogIntegral_two_lt : unoffsetLogIntegral 2 < (1.14 : ℝ) := by
-  rw [unoffsetLogIntegral_two_eq]
+theorem li_two_lt : li 2 < (1.14 : ℝ) := by
+  rw [li_two_eq]
   linarith [Real.eulerMascheroniConstant_lt_two_thirds, log_log_two_le,
     tsum_pow_div_mul_factorial_log_two_le]
 
 /-- Conditional sharp enclosure of `li 2` from `|γ - 0.5772156649| < 1e-9`:
 `1.0451 ≤ li 2 ≤ 1.0452`. -/
-theorem unoffsetLogIntegral_two_mem_Icc
+theorem li_two_mem_Icc
     (hγ : |Real.eulerMascheroniConstant - 0.5772156649| < 1e-9) :
-    unoffsetLogIntegral 2 ∈ Icc (1.0451 : ℝ) 1.0452 := by
-  rw [mem_Icc, unoffsetLogIntegral_two_eq]
+    li 2 ∈ Icc (1.0451 : ℝ) 1.0452 := by
+  rw [mem_Icc, li_two_eq]
   have hγ_bounds := abs_lt.mp hγ
   refine ⟨?_, ?_⟩ <;>
     linarith [hγ_bounds.1, hγ_bounds.2, log_log_two_ge, log_log_two_le,
       tsum_pow_div_mul_factorial_log_two_ge, tsum_pow_div_mul_factorial_log_two_le]
 
 /-- Coarse conditional enclosure `1.039 ≤ li 2 ≤ 1.06` from `|γ - 0.5772156649| < 1e-9`. -/
-theorem unoffsetLogIntegral_two_mem_Icc_coarse
+theorem li_two_mem_Icc_coarse
     (hγ : |Real.eulerMascheroniConstant - 0.5772156649| < 1e-9) :
-    unoffsetLogIntegral 2 ∈ Icc (1.039 : ℝ) 1.06 := by
-  have h := unoffsetLogIntegral_two_mem_Icc hγ
+    li 2 ∈ Icc (1.039 : ℝ) 1.06 := by
+  have h := li_two_mem_Icc hγ
   exact ⟨by linarith [h.1], by linarith [h.2]⟩
 
 private theorem log_three_div_two_lower : (0.40546 : ℝ) ≤ Real.log (3 / 2) := by
@@ -192,12 +191,11 @@ private theorem log_log_three_div_two_gt : (-0.903 : ℝ) < Real.log (Real.log (
   linarith
 
 /-- Unconditional lower bound `0.04 < li (3 / 2)`. -/
-theorem unoffsetLogIntegral_three_div_two_gt : (0.04 : ℝ) < unoffsetLogIntegral (3 / 2) := by
+theorem li_three_div_two_gt : (0.04 : ℝ) < li (3 / 2) := by
   have hlog32 : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
-  have hser_lo : (0.446 : ℝ) < unoffsetLogIntegralSeries (Real.log (3 / 2)) := by
-    have hge := unoffsetLogIntegralSeriesPartial_le_unoffsetLogIntegralSeries 2 hlog32.le
-    rw [unoffsetLogIntegralSeriesPartial_def, Finset.sum_range_succ, Finset.sum_range_succ,
-      Finset.sum_range_zero] at hge
+  have hser_lo : (0.446 : ℝ) < liSeries (Real.log (3 / 2)) := by
+    have hge := sum_range_le_liSeries hlog32.le 2
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero] at hge
     norm_num at hge
     have hq := log_three_div_two_lower
     have h2 : (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 ≤
@@ -205,18 +203,8 @@ theorem unoffsetLogIntegral_three_div_two_gt : (0.04 : ℝ) < unoffsetLogIntegra
       gcongr
     have hnum : (0.446 : ℝ) < (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 := by norm_num
     linarith [hge, h2, hnum]
-  rw [unoffsetLogIntegral_def]
+  rw [li_def, ← liSeries_def]
   linarith [Real.one_half_lt_eulerMascheroniConstant, log_log_three_div_two_gt]
-
-/-- For every `x ≥ 3 / 2`, `li x > 0`. -/
-theorem unoffsetLogIntegral_pos_of_le {x : ℝ} (hx : (3 / 2 : ℝ) ≤ x) :
-    0 < unoffsetLogIntegral x := by
-  have hpos : (0 : ℝ) < unoffsetLogIntegral (3 / 2) :=
-    (by norm_num : (0 : ℝ) < 0.04).trans unoffsetLogIntegral_three_div_two_gt
-  rcases hx.eq_or_lt with rfl | hlt
-  · exact hpos
-  · exact hpos.trans (strictMonoOn_unoffsetLogIntegral_Ioi (mem_Ioi.mpr (by norm_num))
-      (mem_Ioi.mpr (by linarith)) hlt)
 
 /-! ### Strict explicit upper bounds for integrals of `(log t ^ k)⁻¹` -/
 
@@ -326,10 +314,9 @@ theorem logIntegral_sub_div_log_lt {x : ℝ} (hx : 2 ≤ x) :
 
 private theorem logIntegral_sub_div_log_eq_series_diff {x : ℝ} (hx : 1 < x) :
     logIntegral x - x / Real.log x =
-      (Real.log (Real.log x) + unoffsetLogIntegralSeries (Real.log x)) -
-        (Real.log (Real.log 2) + unoffsetLogIntegralSeries (Real.log 2)) - x / Real.log x := by
-  rw [logIntegral_eq_unoffsetLogIntegral_sub hx, unoffsetLogIntegral_def,
-    unoffsetLogIntegral_def]
+      (Real.log (Real.log x) + liSeries (Real.log x)) -
+        (Real.log (Real.log 2) + liSeries (Real.log 2)) - x / Real.log x := by
+  rw [logIntegral_eq_li_sub_li_two hx, li_eq_add_liSeries, li_eq_add_liSeries]
   ring
 
 private theorem log_x_enclosure {x d_lo d_hi : ℝ} (hx : 4 ≤ x)
@@ -371,44 +358,44 @@ private theorem log_log_x_enclosure {lx lx_lo lx_hi dlx_lo dlx_hi : ℝ}
   rw [hsplit]
   exact ⟨by linarith [Real.log_two_gt_d9], by linarith [Real.log_two_lt_d9]⟩
 
-private theorem unoffsetLogIntegralSeries_fourteen_lower {y lx_lo c : ℝ} (hy : lx_lo ≤ y)
-    (h0 : 0 ≤ lx_lo) (hc : c ≤ unoffsetLogIntegralSeriesPartial 14 lx_lo) :
-    c ≤ unoffsetLogIntegralSeries y :=
-  hc.trans ((unoffsetLogIntegralSeriesPartial_le_unoffsetLogIntegralSeries 14 h0).trans
-    (strictMono_unoffsetLogIntegralSeries.monotone hy))
+private theorem liSeries_fourteen_lower {y lx_lo c : ℝ} (hy : lx_lo ≤ y)
+    (h0 : 0 ≤ lx_lo) (hc : c ≤ liSeriesPartial 14 lx_lo) :
+    c ≤ liSeries y :=
+  hc.trans (((by rw [liSeriesPartial_def]; exact sum_range_le_liSeries h0 14) :
+    liSeriesPartial 14 lx_lo ≤ liSeries lx_lo).trans (strictMono_liSeries.monotone hy))
 
-private theorem unoffsetLogIntegralSeries_fourteen_upper {y lx_hi c : ℝ} (hy0 : 0 ≤ y)
+private theorem liSeries_fourteen_upper {y lx_hi c : ℝ} (hy0 : 0 ≤ y)
     (hy : y ≤ lx_hi) (hlx : lx_hi < 16)
-    (hc : unoffsetLogIntegralSeriesPartial 14 lx_hi +
+    (hc : liSeriesPartial 14 lx_hi +
       (lx_hi ^ (14 + 1) / (((14 : ℝ) + 1) * ((14 + 1)! : ℝ))) *
         (((14 : ℝ) + 2) / ((14 : ℝ) + 2 - lx_hi)) ≤ c) :
-    unoffsetLogIntegralSeries y ≤ c :=
-  (strictMono_unoffsetLogIntegralSeries.monotone hy).trans
-    ((unoffsetLogIntegralSeries_le_partial_add 14 (hy0.trans hy) (by push_cast; linarith)).trans hc)
+    liSeries y ≤ c :=
+  (strictMono_liSeries.monotone hy).trans
+    ((liSeries_le_partial_add 14 (hy0.trans hy) (by push_cast; linarith)).trans hc)
 
 private theorem logIntegral_sub_div_log_lower_of_bounds {x lx_lo llx_lo Sx_lo : ℝ}
     (hx : 4 < x) (hlx_lo : lx_lo ≤ Real.log x)
     (hlx_lo0 : 0 < lx_lo) (hllx_lo : llx_lo ≤ Real.log (Real.log x))
-    (hSx_lo : Sx_lo ≤ unoffsetLogIntegralSeries (Real.log x)) :
+    (hSx_lo : Sx_lo ≤ liSeries (Real.log x)) :
     (llx_lo + Sx_lo) - ((-0.36651290 : ℝ) + (0.834461037 : ℝ)) - x / lx_lo ≤
       logIntegral x - x / Real.log x := by
   rw [logIntegral_sub_div_log_eq_series_diff (by linarith)]
   have hdiv : x / Real.log x ≤ x / lx_lo := div_le_div_of_nonneg_left (by linarith) hlx_lo0 hlx_lo
-  have h2 : unoffsetLogIntegralSeries (Real.log 2) ≤ (0.834461037 : ℝ) :=
-    unoffsetLogIntegralSeries_log_two_upper
+  have h2 : liSeries (Real.log 2) ≤ (0.834461037 : ℝ) :=
+    liSeries_log_two_upper
   have hll2 : Real.log (Real.log 2) ≤ (-0.36651290 : ℝ) := log_log_two_upper_tight
   linarith
 
 private theorem logIntegral_sub_div_log_upper_of_bounds {x lx_hi llx_hi Sx_hi : ℝ}
     (hx : 4 < x) (hlx_hi : Real.log x ≤ lx_hi) (hllx_hi : Real.log (Real.log x) ≤ llx_hi)
-    (hSx_hi : unoffsetLogIntegralSeries (Real.log x) ≤ Sx_hi) :
+    (hSx_hi : liSeries (Real.log x) ≤ Sx_hi) :
     logIntegral x - x / Real.log x ≤
       (llx_hi + Sx_hi) - ((-0.36651295 : ℝ) + (0.834461034 : ℝ)) - x / lx_hi := by
   rw [logIntegral_sub_div_log_eq_series_diff (by linarith)]
   have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
   have hdiv : x / lx_hi ≤ x / Real.log x := div_le_div_of_nonneg_left (by linarith) hlogx hlx_hi
-  have h2 : (0.834461034 : ℝ) ≤ unoffsetLogIntegralSeries (Real.log 2) :=
-    unoffsetLogIntegralSeries_log_two_lower
+  have h2 : (0.834461034 : ℝ) ≤ liSeries (Real.log 2) :=
+    liSeries_log_two_lower
   have hll2 : (-0.36651295 : ℝ) ≤ Real.log (Real.log 2) := log_log_two_lower_tight
   linarith
 
@@ -427,7 +414,7 @@ private theorem logIntegral_sub_div_log_lt_of_cert
         (1 - ((1 - lx_lo / 2) / (1 + lx_lo / 2)) ^ 2)))
     (hdlx_hi : -2 * artanhPartial 3 ((1 - lx_hi / 2) / (1 + lx_hi / 2)) ≤ dlx_hi)
     (hllx_hi_bd : (6931471808 / 10000000000 : ℝ) + dlx_hi ≤ llx_hi)
-    (hSx_hi_bd : unoffsetLogIntegralSeriesPartial 14 lx_hi +
+    (hSx_hi_bd : liSeriesPartial 14 lx_hi +
       (lx_hi ^ (14 + 1) / (((14 : ℝ) + 1) * ((14 + 1)! : ℝ))) *
         (((14 : ℝ) + 2) / ((14 : ℝ) + 2 - lx_hi)) ≤ Sx_hi)
     (hc : (llx_hi + Sx_hi) - ((-0.36651295 : ℝ) + (0.834461034 : ℝ)) - x / lx_hi < c) :
@@ -437,8 +424,8 @@ private theorem logIntegral_sub_div_log_lt_of_cert
   have hlx_hi : Real.log x ≤ lx_hi := hxenc.2.trans hlx_hi_bd
   have hllx := log_log_x_enclosure hlx_lo hlx_hi hlx_lo0 hlx_hi2 hdlx_lo hdlx_hi
   have hllx_hi : Real.log (Real.log x) ≤ llx_hi := hllx.2.trans hllx_hi_bd
-  have hSx_hi : unoffsetLogIntegralSeries (Real.log x) ≤ Sx_hi :=
-    unoffsetLogIntegralSeries_fourteen_upper (Real.log_pos (by linarith)).le hlx_hi
+  have hSx_hi : liSeries (Real.log x) ≤ Sx_hi :=
+    liSeries_fourteen_upper (Real.log_pos (by linarith)).le hlx_hi
       (by linarith) hSx_hi_bd
   exact (logIntegral_sub_div_log_upper_of_bounds hx hlx_hi hllx_hi hSx_hi).trans_lt hc
 
@@ -457,7 +444,7 @@ private theorem lt_logIntegral_sub_div_log_of_cert
         (1 - ((1 - lx_lo / 2) / (1 + lx_lo / 2)) ^ 2)))
     (hdlx_hi : -2 * artanhPartial 3 ((1 - lx_hi / 2) / (1 + lx_hi / 2)) ≤ dlx_hi)
     (hllx_lo_bd : llx_lo ≤ (6931471803 / 10000000000 : ℝ) + dlx_lo)
-    (hSx_lo_bd : Sx_lo ≤ unoffsetLogIntegralSeriesPartial 14 lx_lo)
+    (hSx_lo_bd : Sx_lo ≤ liSeriesPartial 14 lx_lo)
     (hc : c < (llx_lo + Sx_lo) - ((-0.36651290 : ℝ) + (0.834461037 : ℝ)) - x / lx_lo) :
     c < logIntegral x - x / Real.log x := by
   have hxenc := log_x_enclosure hx.le hd_lo hd_hi
@@ -465,8 +452,8 @@ private theorem lt_logIntegral_sub_div_log_of_cert
   have hlx_hi : Real.log x ≤ lx_hi := hxenc.2.trans hlx_hi_bd
   have hllx := log_log_x_enclosure hlx_lo hlx_hi hlx_lo0 hlx_hi2 hdlx_lo hdlx_hi
   have hllx_lo : llx_lo ≤ Real.log (Real.log x) := hllx_lo_bd.trans hllx.1
-  have hSx_lo : Sx_lo ≤ unoffsetLogIntegralSeries (Real.log x) :=
-    unoffsetLogIntegralSeries_fourteen_lower hlx_lo hlx_lo0.le hSx_lo_bd
+  have hSx_lo : Sx_lo ≤ liSeries (Real.log x) :=
+    liSeries_fourteen_lower hlx_lo hlx_lo0.le hSx_lo_bd
   exact hc.trans_le (logIntegral_sub_div_log_lower_of_bounds hx hlx_lo hlx_lo0 hllx_lo hSx_lo)
 
 private theorem logIntegral_sub_div_log_at_65797 :
@@ -476,7 +463,7 @@ private theorem logIntegral_sub_div_log_at_65797 :
     (dlx_lo := -0.05975577) (dlx_hi := -0.05975574) (llx_hi := 0.63339145)
     (Sx_hi := 3.32697870)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · try simp only [unoffsetLogIntegralSeriesPartial_def, artanhPartial_def,
+    · try simp only [liSeriesPartial_def, artanhPartial_def,
         Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial_succ, Nat.factorial_zero]
       norm_num
 
@@ -487,7 +474,7 @@ private theorem logIntegral_sub_div_log_at_65798 :
     (dlx_lo := -0.05974771) (dlx_hi := -0.05974768) (llx_lo := 0.63339947)
     (Sx_lo := 3.32702358)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · try simp only [unoffsetLogIntegralSeriesPartial_def, artanhPartial_def,
+    · try simp only [liSeriesPartial_def, artanhPartial_def,
         Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial_succ, Nat.factorial_zero]
       norm_num
 
@@ -498,7 +485,7 @@ private theorem logIntegral_sub_div_log_at_658 :
     (dlx_lo := -0.05973157) (dlx_hi := -0.05973154) (llx_lo := 0.63341561)
     (Sx_lo := 3.32711361)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    · try simp only [unoffsetLogIntegralSeriesPartial_def, artanhPartial_def,
+    · try simp only [liSeriesPartial_def, artanhPartial_def,
         Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial_succ, Nat.factorial_zero]
       norm_num
 

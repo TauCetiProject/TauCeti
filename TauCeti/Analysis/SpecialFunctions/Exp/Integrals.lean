@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
@@ -42,7 +43,7 @@ This file records integrability and interval-integral identities for `(e^u - 1) 
   `∫ u in a..b, e^u / u = log b - log a + ∫ u in a..b, (e^u - 1) / u`.
 * `Real.integral_neg_exp_div`: reflection identity
   `∫ u in (-b)..(-a), e^u / u = -∫ t in a..b, e^{-t} / t`.
-* `Real.summable_pow_div_mul_factorial`, `Real.tsum_pow_div_factorial_succ_eq`,
+* `Real.summable_pow_div_mul_factorial`,
   `Real.hasDerivAt_tsum_pow_div_mul_factorial`, `Real.integral_exp_sub_one_div_eq_tsum`,
   `Real.integral_one_sub_exp_neg_div_eq`: power series for `(e^u - 1) / u`, its termwise
   antiderivative `∑' y ^ (n + 1) / ((n + 1) * (n + 1)!)`, and the integrals of `(e^u - 1) / u`
@@ -281,28 +282,6 @@ theorem summable_pow_div_mul_factorial (y : ℝ) :
         rw [pow_succ']
         ring
 
-/-- Evaluation of the termwise derivative series `∑' n, y ^ n / (n + 1)! = (e^y - 1) / y`
-for `y ≠ 0`. -/
-theorem tsum_pow_div_factorial_succ_eq {y : ℝ} (hy : y ≠ 0) :
-    ∑' n : ℕ, y ^ n / ((n + 1)! : ℝ) = (exp y - 1) / y := by
-  have hsumm : Summable fun n : ℕ ↦ y ^ n / ((n + 1)! : ℝ) := by
-    refine .of_norm_bounded (summable_pow_div_factorial |y|) fun n ↦ ?_
-    rw [norm_eq_abs, abs_div, abs_of_pos (by positivity : (0 : ℝ) < ((n + 1)! : ℝ)), ← pow_abs]
-    gcongr
-    exact Nat.le_succ n
-  have hexp : ∑' n : ℕ, y ^ n / (n ! : ℝ) = exp y := by
-    rw [exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div]
-  have hsplit := (summable_pow_div_factorial y).tsum_eq_zero_add
-  rw [hexp, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one] at hsplit
-  have hmul : y * ∑' n : ℕ, y ^ n / ((n + 1)! : ℝ) = exp y - 1 := by
-    rw [← hsumm.tsum_mul_left]
-    have hcongr : (fun n : ℕ ↦ y * (y ^ n / ((n + 1)! : ℝ))) =
-        fun n : ℕ ↦ y ^ (n + 1) / ((n + 1)! : ℝ) := by
-      ext n; rw [pow_succ']; ring
-    rw [hcongr]
-    linarith
-  exact (eq_div_iff hy).mpr (by linarith)
-
 /-- The derivative of `z ↦ ∑' n, z ^ (n + 1) / ((n + 1) * (n + 1)!)` is
 `Function.update (fun u : ℝ ↦ (e^u - 1) / u) 0 1 y`. -/
 theorem hasDerivAt_tsum_pow_div_mul_factorial (y : ℝ) :
@@ -339,7 +318,7 @@ theorem hasDerivAt_tsum_pow_div_mul_factorial (y : ℝ) :
     · simp
     · intro n hn; simp [zero_pow hn]
   · simp only [Function.update_of_ne hy, g']
-    exact tsum_pow_div_factorial_succ_eq hy
+    exact Real.tsum_pow_div_factorial_succ hy
 
 /-- Integrating `(e^u - 1) / u` from `0` to `y` gives the entire series
 `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/

@@ -47,6 +47,8 @@ not belong to any particular application.
   `[a, b]` and `a < c < b`, the symmetric excision integral
   `∫ t in a..(c - ε), g t ∂μ + ∫ t in (c + ε)..b, g t ∂μ` tends to `∫ t in a..b, g t ∂μ` as
   `ε → 0⁺`.
+* `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
+  `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
 * `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
   on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
@@ -80,6 +82,8 @@ not belong to any particular application.
   integral is `0`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
+* `PiLp.ofLp_intervalIntegral`: `WithLp.ofLp` commutes with interval integrals of `PiLp`-valued
+  functions, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
   on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
   interval.
@@ -465,6 +469,15 @@ theorem tendsto_principalValue_of_continuousOn {E : Type*} [NormedAddCommGroup E
     (hg_int.mono_set (uIcc_subset_uIcc hcp right_mem_uIcc))
   rw [← hadj, add_sub_cancel_left]
 
+open Filter Topology in
+/-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
+the averages are eventually equal to `c`. -/
+theorem eq_zero_of_tendsto_average_const {c : ℝ}
+    (h : Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ _ in (0 : ℝ)..T, c) atTop (𝓝 0)) : c = 0 := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+  filter_upwards [eventually_gt_atTop 0] with T hT
+  rw [_root_.intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
+
 /-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
 vanishing on `(-∞, a)` is zero. -/
 theorem integral_eq_zero_of_forall_lt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -673,6 +686,14 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
     (L : E ≃L[𝕜] F) (f : ℝ → E) :
     ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
+
+/-- `WithLp.ofLp` commutes with interval integrals of arbitrary `PiLp`-valued functions. -/
+@[simp]
+theorem PiLp.ofLp_intervalIntegral {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι]
+    {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace ℝ (β i)]
+    {μ : Measure ℝ} {a b : ℝ} (f : ℝ → PiLp p β) :
+    WithLp.ofLp (∫ x in a..b, f x ∂μ) = ∫ x in a..b, WithLp.ofLp (f x) ∂μ :=
+  ((PiLp.continuousLinearEquiv p ℝ β).intervalIntegral_comp_comm f).symm
 
 /-- If `f` is locally integrable on `[c, ∞)` for a locally finite measure, then its constant
 extension `x ↦ f (max x c)` to all of `ℝ` is interval integrable between any two points. -/

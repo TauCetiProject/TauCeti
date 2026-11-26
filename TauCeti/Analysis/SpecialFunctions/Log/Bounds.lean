@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -16,7 +17,10 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. From `e² < (3 / 2) ^ 5`
+(Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
+(`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
+integral below `3 / 2`.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -37,6 +41,7 @@ in explicit prime-counting estimates.
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
+* `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -62,6 +67,15 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   rw [h4, log_pow]
   norm_num
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5` and `e < 2.7182818286`. -/
+theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  refine (pow_lt_pow_iff_left₀ (exp_pos _).le (by norm_num) (by norm_num : (5 : ℕ) ≠ 0)).1 ?_
+  rw [← exp_natCast_mul, show ((5 : ℕ) : ℝ) * (2 / 5) = (2 : ℕ) * 1 by norm_num, exp_natCast_mul]
+  have h := exp_one_lt_d9
+  have h0 := (exp_pos 1).le
+  nlinarith
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by

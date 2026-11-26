@@ -19,10 +19,10 @@ This file defines the offset logarithmic integral `Li x = ∫ t in 2..x, (log t)
 prime-number-theorem normalisation `Li x ~ x / log x` as `x → ∞`.
 
 The lower endpoint is `2` rather than `0`: the integrand has a nonintegrable singularity at
-`t = 1`, so the unshifted `li` exists only as a principal value, while every arithmetic
-application compares a prime count with `Li`. The endpoint agrees with the one used by the
-partial-summation identities for prime counts, so the two can be combined without a shift of
-origin.
+`t = 1`, so the unshifted `li` exists only as a principal value; it is defined by its series in
+`TauCeti/Analysis/SpecialFunctions/LogIntegral/Unoffset.lean`, where `Li x = li x - li 2` for
+`x > 1`. The endpoint agrees with the one used by the partial-summation identities for prime
+counts, so the two can be combined without a shift of origin.
 
 The asymptotic is proved from the exact identity
 `Li x = x / log x - 2 / log 2 + ∫ t in 2..x, ((log t) ^ 2)⁻¹`,
