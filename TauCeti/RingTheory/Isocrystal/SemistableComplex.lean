@@ -46,12 +46,15 @@ Rham components.
 * `TauCeti.semistableComplexMap`: the morphism of semistable complexes induced by linear maps
   compatible with `φ`, `ι` and `N`.
 * `TauCeti.semistableComplexRescale`: the chain map `(id, id × id × c, c)` from the complex of `N`
-  to that of `c • N`, and `TauCeti.semistableComplexRescaleIso`, its inverse for `c ≠ 0`.
+  to that of `c • N`, and `TauCeti.semistableComplexRescaleIso`, which upgrades it to an
+  isomorphism when `c ≠ 0`.
 
 ## Main results
 
-* `TauCeti.comp_one_sub_smul_eq_of_comp_eq_smul_comp`: the relation `N φ = p φ N` gives
+* `LinearMap.comp_one_sub_smul_eq_of_comp_eq_smul_comp`: the relation `N φ = p φ N` gives
   `N (1 - a φ) = (1 - a p φ) N` for every scalar `a`.
+* `LinearMap.smul_comp_eq_smul_comp_of_comp_eq`: the relation `N φ = p φ N` is preserved by
+  rescaling `N`.
 * `TauCeti.semistableComplexD₁_comp_semistableComplexD₀`: the differentials compose to zero
   when `p ≠ 0` and `N φ = p φ N`, for every `r : ℤ`.
 * `TauCeti.semistableComplexD₀_smul`, `TauCeti.semistableComplexD₁_smul_comp`: the two squares of
@@ -72,19 +75,31 @@ open CategoryTheory
 
 universe u v
 
+namespace LinearMap
+
+variable {K D : Type*} [CommSemiring K]
+
+/-- The Frobenius–monodromy relation `N φ = p φ N` makes `N` intertwine `1 - a φ` with
+`1 - a p φ`, for every scalar `a`. -/
+theorem comp_one_sub_smul_eq_of_comp_eq_smul_comp [AddCommGroup D] [Module K D] {p : K}
+    {φ N : D →ₗ[K] D} (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (a : K) :
+    N ∘ₗ (1 - a • φ) = (1 - (a * p) • φ) ∘ₗ N := by
+  ext x
+  simpa [mul_smul] using congrArg (a • ·) (LinearMap.congr_fun h x)
+
+/-- The Frobenius–monodromy relation `N φ = p φ N` is preserved by rescaling the monodromy. -/
+theorem smul_comp_eq_smul_comp_of_comp_eq [AddCommMonoid D] [Module K D] {p : K}
+    {φ N : D →ₗ[K] D} (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (c : K) :
+    (c • N) ∘ₗ φ = p • (φ ∘ₗ (c • N)) := by
+  rw [LinearMap.smul_comp, h, LinearMap.comp_smul, smul_comm]
+
+end LinearMap
+
 namespace TauCeti
 
 section Linear
 
 variable {K D E : Type*} [Field K] [AddCommGroup D] [Module K D] [AddCommGroup E] [Module K E]
-
-/-- The Frobenius–monodromy relation `N φ = p φ N` makes `N` intertwine `1 - a φ` with
-`1 - a p φ`, for every scalar `a`. -/
-theorem comp_one_sub_smul_eq_of_comp_eq_smul_comp {p : K} {φ N : D →ₗ[K] D}
-    (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (a : K) :
-    N ∘ₗ (1 - a • φ) = (1 - (a * p) • φ) ∘ₗ N := by
-  ext x
-  simpa [mul_smul] using congrArg (a • ·) (LinearMap.congr_fun h x)
 
 variable (p : K) (r : ℤ) (φ : D →ₗ[K] D) (ι : D →ₗ[K] E) (N : D →ₗ[K] D)
 
@@ -113,7 +128,8 @@ theorem semistableComplexD₁_comp_semistableComplexD₀ (hp : p ≠ 0)
   have hpow : p ^ (-r) * p = p ^ (1 - r) := by
     rw [← zpow_add_one₀ hp, neg_add_eq_sub]
   ext x
-  have hx := LinearMap.congr_fun (comp_one_sub_smul_eq_of_comp_eq_smul_comp h (p ^ (-r))) x
+  have hx :=
+    LinearMap.congr_fun (LinearMap.comp_one_sub_smul_eq_of_comp_eq_smul_comp h (p ^ (-r))) x
   simp only [hpow, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.smul_apply,
     one_apply_eq_self] at hx
   simp only [LinearMap.comp_apply, semistableComplexD₀_apply, semistableComplexD₁_apply,
@@ -174,23 +190,16 @@ noncomputable def semistableComplex (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ 
   X₃ := ModuleCat.of K D
   f := ModuleCat.ofHom (semistableComplexD₀ p r φ ι N)
   g := ModuleCat.ofHom (semistableComplexD₁ p r φ N)
-  zero := by
-    rw [← ModuleCat.ofHom_comp, semistableComplexD₁_comp_semistableComplexD₀ p r φ ι N hp h]
-    rfl
+  zero := ModuleCat.hom_ext (semistableComplexD₁_comp_semistableComplexD₀ p r φ ι N hp h)
 
 variable {p r φ ι N}
-
-/-- The Frobenius–monodromy relation is preserved by rescaling the monodromy. -/
-theorem smul_comp_eq_smul_comp_smul (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (c : K) :
-    (c • N) ∘ₗ φ = p • (φ ∘ₗ (c • N)) := by
-  rw [LinearMap.smul_comp, h, LinearMap.comp_smul, smul_comm]
 
 /-- The chain map `(id, id × id × c, c)` from the semistable complex of `N` to that of `c • N`. It
 is the identity on the Frobenius and de Rham components, and is defined for every scalar `c`. -/
 @[expose, simps]
 noncomputable def semistableComplexRescale (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (c : K) :
     semistableComplex p r φ ι N hp h ⟶
-      semistableComplex p r φ ι (c • N) hp (smul_comp_eq_smul_comp_smul h c) where
+      semistableComplex p r φ ι (c • N) hp (LinearMap.smul_comp_eq_smul_comp_of_comp_eq h c) where
   τ₁ := 𝟙 _
   τ₂ := ModuleCat.ofHom (LinearMap.id.prodMap (LinearMap.id.prodMap (c • LinearMap.id)))
   τ₃ := ModuleCat.ofHom (c • LinearMap.id)
@@ -203,28 +212,41 @@ noncomputable def semistableComplexRescale (hp : p ≠ 0) (h : N ∘ₗ φ = p �
 
 /-- For `c ≠ 0`, rescaling the monodromy by `c` gives an isomorphism of semistable complexes,
 with hom `semistableComplexRescale`. -/
-@[expose, simps! hom]
+@[expose]
 noncomputable def semistableComplexRescaleIso (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) :
     semistableComplex p r φ ι N hp h ≅
-      semistableComplex p r φ ι (c • N) hp (smul_comp_eq_smul_comp_smul h c) where
-  hom := semistableComplexRescale hp h c
-  inv :=
-    { τ₁ := 𝟙 _
-      τ₂ := ModuleCat.ofHom (LinearMap.id.prodMap (LinearMap.id.prodMap (c⁻¹ • LinearMap.id)))
-      τ₃ := ModuleCat.ofHom (c⁻¹ • LinearMap.id)
-      comm₁₂ := by
-        simp only [semistableComplex_f, Category.id_comp, ← ModuleCat.ofHom_comp]
-        rw [← semistableComplexD₀_smul, inv_smul_smul₀ hc]
-      comm₂₃ := by
-        simp only [semistableComplex_g, ← ModuleCat.ofHom_comp]
-        have h₁ := semistableComplexD₁_smul_comp p r φ (E := E) (c • N) c⁻¹
-        rw [inv_smul_smul₀ hc] at h₁
-        rw [h₁, LinearMap.smul_comp, LinearMap.id_comp] }
-  hom_inv_id := by
-    ext x : 3 <;> simp [smul_smul, hc]
-  inv_hom_id := by
-    ext x : 3 <;> simp [smul_smul, hc]
+      semistableComplex p r φ ι (c • N) hp (LinearMap.smul_comp_eq_smul_comp_of_comp_eq h c) :=
+  ShortComplex.isoMk (Iso.refl _)
+    ((LinearEquiv.refl K D).prodCongr
+      ((LinearEquiv.refl K E).prodCongr (LinearEquiv.smulOfNeZero K D c hc))).toModuleIso
+    (LinearEquiv.smulOfNeZero K D c hc).toModuleIso
+    (semistableComplexRescale hp h c).comm₁₂ (semistableComplexRescale hp h c).comm₂₃
+
+@[simp]
+lemma semistableComplexRescaleIso_hom (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
+    (hc : c ≠ 0) :
+    (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).hom = semistableComplexRescale hp h c :=
+  rfl
+
+@[simp]
+lemma semistableComplexRescaleIso_inv_τ₁ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
+    (hc : c ≠ 0) : (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₁ = 𝟙 _ :=
+  rfl
+
+@[simp]
+lemma semistableComplexRescaleIso_inv_τ₂ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
+    (hc : c ≠ 0) :
+    (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₂ =
+      ModuleCat.ofHom (LinearMap.id.prodMap (LinearMap.id.prodMap (c⁻¹ • LinearMap.id))) :=
+  rfl
+
+@[simp]
+lemma semistableComplexRescaleIso_inv_τ₃ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
+    (hc : c ≠ 0) :
+    (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₃ =
+      ModuleCat.ofHom (c⁻¹ • LinearMap.id) :=
+  rfl
 
 variable {D' E' D'' E'' : Type v} [AddCommGroup D'] [Module K D'] [AddCommGroup E'] [Module K E']
   [AddCommGroup D''] [Module K D''] [AddCommGroup E''] [Module K E'']
@@ -276,8 +298,8 @@ theorem semistableComplexMap_comp_semistableComplexRescale (hp : p ≠ 0)
     (c : K) :
     semistableComplexMap (r := r) hp h h' f g hφ hι hN ≫ semistableComplexRescale hp h' c =
       semistableComplexRescale hp h c ≫
-        semistableComplexMap hp (smul_comp_eq_smul_comp_smul h c)
-          (smul_comp_eq_smul_comp_smul h' c) f g hφ hι
+        semistableComplexMap hp (LinearMap.smul_comp_eq_smul_comp_of_comp_eq h c)
+          (LinearMap.smul_comp_eq_smul_comp_of_comp_eq h' c) f g hφ hι
           (by rw [LinearMap.comp_smul, hN, LinearMap.smul_comp]) := by
   ext x : 3 <;> simp
 

@@ -88,10 +88,12 @@ example :
 example (r : ℤ) :
     semistableComplexD₀ (2 : ℚ) r frob LinearMap.id (-(2 : ℚ)⁻¹ • (0 : ℚ × ℚ →ₗ[ℚ] ℚ × ℚ)) =
         semistableComplexD₀ (2 : ℚ) r frob LinearMap.id 0 ∧
+      semistableComplexD₁ (2 : ℚ) r frob (-(2 : ℚ)⁻¹ • (0 : ℚ × ℚ →ₗ[ℚ] ℚ × ℚ)) (E := ℚ × ℚ) =
+        semistableComplexD₁ (2 : ℚ) r frob 0 ∧
       (semistableComplexRescale (r := r) (ι := LinearMap.id) (two_ne_zero : (2 : ℚ) ≠ 0)
         (by simp : (0 : ℚ × ℚ →ₗ[ℚ] ℚ × ℚ) ∘ₗ frob = (2 : ℚ) • (frob ∘ₗ 0))
           (-(2 : ℚ)⁻¹)).τ₃.hom (1, 0) ≠ (1, 0) := by
-  refine ⟨by simp, ?_⟩
+  refine ⟨by simp, by simp, ?_⟩
   simp only [semistableComplexRescale_τ₃, ModuleCat.hom_ofHom, LinearMap.smul_apply,
     LinearMap.id_apply, ne_eq]
   rw [Prod.ext_iff]
