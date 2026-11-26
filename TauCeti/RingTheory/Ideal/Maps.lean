@@ -118,6 +118,13 @@ theorem map_mem_pow_of_le_comap {R S : Type*} [CommSemiring R] [CommSemiring S] 
     f x ∈ J ^ n :=
   le_comap_pow f n (pow_right_mono h n hx)
 
+/-- Along a surjective ring homomorphism, the powers of the image of an ideal lie in the image of
+its powers. Unlike `Ideal.map_pow`, neither ring need be commutative. -/
+theorem pow_map_le_map_pow_of_surjective {R S F : Type*} [Semiring R] [Semiring S]
+    [FunLike F R S] [RingHomClass F R S] {f : F} (hf : Function.Surjective f) (I : Ideal R)
+    (n : ℕ) : I.map f ^ n ≤ (I ^ n).map f :=
+  (map_pow_of_surjective f hf I n).ge
+
 /-- A ring endomorphism `φ` that is congruent modulo a radical ideal `P` to a power map
 `a ↦ a ^ q` with `q ≠ 0`, as a Frobenius lift is, has `φ⁻¹ P = P`. -/
 theorem comap_eq_self_of_forall_sub_pow_mem {R : Type*} [CommRing R] {P : Ideal R}

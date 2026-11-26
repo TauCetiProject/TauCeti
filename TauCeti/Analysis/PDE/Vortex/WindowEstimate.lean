@@ -65,6 +65,11 @@ Sobolev norms are those of the coordinates in Mathlib's Bessel-potential spaces 
   `TauCeti.Vortex.exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add`: the
   a priori elliptic estimates for `L_x - A` and `L_x* - A`, with constants depending only on the
   order and on a bound for the derivatives of `x` and `A`.
+* `TauCeti.Vortex.exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`:
+  the weighted elliptic estimate
+  `‖exp(c ρ) y‖_(H^(k+1)) ≤ K (‖exp(c ρ) f‖_(H^k) + ‖exp(c ρ) y‖_(L²))` for weak solutions of
+  `L_x y = f`, with `K` depending only on the order, the rate and a bound for the derivatives of
+  `x`.
 * `TauCeti.Vortex.exists_forall_norm_exp_mul_smul_le_mul_norm_of_forall_mem_norm_le`: the weighted
   Sobolev estimate for the right inverse, uniformly over the vortices of degree `m` with zeros in
   a fixed disc and derivatives bounded by `B`.
@@ -113,7 +118,7 @@ private theorem norm_inclusion_eq_and_ae_eq {r s : ℝ} (h : r = s) (hr : 0 ≤ 
 following property. If `A` is a matrix of smooth coefficients with derivatives bounded by `B`
 through order `j`, `u` are coordinates of `y` in `H^j(ℂ)` and `v` coordinates of `f` in `H^k(ℂ)`,
 then `f + A y` has coordinates `W` in `H^j(ℂ)` with `‖W‖ ≤ ‖v‖ + C B ‖u‖`. -/
-private theorem exists_forall_exists_inclusionLp_ae_eq_add_mulVec {j k : ℕ} (hjk : j ≤ k) :
+theorem exists_forall_exists_inclusionLp_ae_eq_add_mulVec {j k : ℕ} (hjk : j ≤ k) :
     ∃ C ≥ 0, ∀ (A : Fin 4 → Fin 4 → ℂ → ℝ), (∀ i j, ContDiff ℝ ∞ (A i j)) → ∀ B : ℝ,
       (∀ i i', ∀ n ≤ j, ∀ z, ‖iteratedFDeriv ℝ n (A i i') z‖ ≤ B) →
       ∀ (y f : ℂ → EuclideanSpace ℝ (Fin 4)) (u : Fin 4 → H^{(j : ℝ)}(ℂ))
@@ -165,7 +170,8 @@ private theorem contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix
       ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
         (fun z ↦ g z - gaugeFixedZerothOrderMatrix (x z - vacuumField z) a b) z‖ ≤
           2 * B + ‖vacuumField 0‖ := by
-  obtain ⟨hZ, hZb⟩ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb a b
+  obtain ⟨hZ, hZb⟩ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb a b
   refine ⟨hg.sub hZ, fun n hn z ↦ ?_⟩
   rw [fun_iteratedFDeriv_sub_apply (hg.contDiffAt.of_le (mod_cast le_top))
       (hZ.contDiffAt.of_le (mod_cast le_top))]
@@ -371,7 +377,8 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add
     k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb y f u v hu hv hweak ↦ ?_⟩
   -- `y` is a weak solution of `L₀ y = f + (A - Z) y`, where `Z` is the matrix of `L_x - L₀`.
-  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
+  have hZ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) i j
   have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
@@ -422,7 +429,8 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
     k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb η g u v hu hv hweak ↦ ?_⟩
   -- `η` is a weak solution of `L₀* η = g + (A - Zᵀ) η`, where `Z` is the matrix of `L_x - L₀`.
-  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
+  have hZ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) j i
   have hη : MemLp η 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
@@ -439,6 +447,43 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
       (memLp_mulVec_of_norm_iteratedFDeriv_le hA hAb hη)
       (memLp_mulVec_of_norm_iteratedFDeriv_le (fun i j ↦ (hZ j i).1) (fun i j ↦ (hZ j i).2) hη)
       hweak hw hwc
+
+/-- **The weighted elliptic estimate, uniformly in the field.** For every order `k`, bound `B` and
+rate `c` there is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let `x`
+be a smooth field whose coordinates have derivatives bounded by `B` through order `k`, and let `y`
+be a square-integrable weak solution of `L_x y = f` with `f ∈ L²` such that `exp(c ρ) y` is square
+integrable. If the coordinates of `exp(c ρ) f` are given by `v : Fin 4 → H^k(ℂ)`, then those of
+`exp(c ρ) y` are given by some `u : Fin 4 → H^(k+1)(ℂ)` with
+
+`‖u‖ ≤ K (‖v‖ + ‖exp(c ρ) y‖_(L²))`.
+
+For a single field this is `exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`; here
+the constant depends on `x` only through `B`. -/
+theorem exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul (k : ℕ)
+    (B c : ℝ) :
+    ∃ K ≥ 0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      ∀ f y : ℂ → EuclideanSpace ℝ (Fin 4), MemLp f 2 volume → MemLp y 2 volume →
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) →
+      MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume →
+      ∀ v : Fin 4 → H^{(k : ℝ)}(ℂ),
+      (∀ a, ⇑(inclusionLp (Nat.cast_nonneg k) (v a)) =ᵐ[volume]
+        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) a : ℂ)) →
+      ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) a : ℂ)) ∧
+        ‖u‖ ≤ K * (‖v‖ +
+          (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume).toReal) := by
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add k (max B M)
+  exact ⟨K₁, hK₁, fun x hx hxb f y hf hy hweak hwy v hv ↦
+    exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k hx
+      (fun i n hn ↦ ⟨B, hxb i n hn⟩)
+      (hK₁b x (expWeightCoeff c) hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
+        (contDiff_expWeightCoeff c) fun i j n hn z ↦ (hM i j n hn z).trans (le_max_right _ _))
+      hf hy hweak hwy hv⟩
 
 /-! ### The weighted estimates over a window of divisors -/
 

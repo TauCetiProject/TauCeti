@@ -259,11 +259,9 @@ theorem natCard_ker_smulVecHom (A : Matrix ι ι ℤ) (hp : p ≠ 0) :
   by_cases hA : A.det = 0
   · have := infinite_ker_smulVecHom p hA
     rw [hA, Int.natAbs_zero, Nat.card_eq_zero_of_infinite]
-  have hindex : (LinearMap.range A.mulVecLin).toAddSubgroup.index = A.det.natAbs := by
-    rw [← toLin'_apply', LinearMap.index_range_eq_natAbs_det_toMatrix (Pi.basisFun ℤ ι)
-      (Pi.basisFun ℤ ι), LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
-  rw [← Nat.card_congr (quotientRangeEquivKerSmulVecHom p A hA hp).toEquiv, ← AddSubgroup.index,
-    hindex]
+  rw [← Nat.card_congr (quotientRangeEquivKerSmulVecHom p A hA hp).toEquiv]
+  -- the quotient group by `(range A.mulVecLin).toAddSubgroup` is the quotient module by the range
+  exact A.natCard_quotient_range_mulVecLin_eq_natAbs_det
 
 /-- A square integer matrix `A` kills finitely many points of the torus `ι → AddCircle p` exactly
 when `det A ≠ 0`. -/

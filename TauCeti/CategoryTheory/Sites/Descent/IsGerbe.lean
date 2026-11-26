@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Sites.Descent.Over
 
 /-!
 # Gerbes over a site
@@ -26,6 +27,8 @@ pullback along every arrow of some `J`-covering sieve.
   stack, then the other is a gerbe.
 * `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for such a transformation between
   stacks `F` and `G`, `F` is a gerbe if and only if `G` is.
+* `CategoryTheory.Pseudofunctor.isGerbe_over`: the restriction `F.over U` of a gerbe for `J` to
+  the slice site `(Over U, J.over U)` is a gerbe for `J.over U`.
 
 ## References
 
@@ -130,5 +133,18 @@ theorem isGerbe_iff_of_isEquivalence [F.IsStack J] [G.IsStack J] (η : StrongTra
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
     F.IsGerbe J ↔ G.IsGerbe J :=
   ⟨fun _ ↦ isGerbe_target_of_isEquivalence η hη, fun _ ↦ isGerbe_source_of_isEquivalence η hη⟩
+
+/-- The restriction `F.over U` of a gerbe for `J` to the slice site `(Over U, J.over U)` is a gerbe
+for `J.over U`. Its fibre over `X : Over U` is the fibre of `F` over `X.left`. -/
+instance isGerbe_over [F.IsGerbe J] (U : C) : (F.over U).IsGerbe (J.over U) where
+  isGroupoid X := IsGerbe.isGroupoid (F := F) (J := J) X.left
+  exists_covering_nonempty X := by
+    obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) X.left
+    exact ⟨(Sieve.overEquiv X).symm R, J.overEquiv_symm_mem_over X R hR,
+      fun _ g hg ↦ h g.left ((Sieve.overEquiv_symm_iff R g).1 hg)⟩
+  exists_covering_iso {X} x y := by
+    obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (F := F) (J := J) (U := X.left) x y
+    exact ⟨(Sieve.overEquiv X).symm R, J.overEquiv_symm_mem_over X R hR,
+      fun _ g hg ↦ h g.left ((Sieve.overEquiv_symm_iff R g).1 hg)⟩
 
 end CategoryTheory.Pseudofunctor
