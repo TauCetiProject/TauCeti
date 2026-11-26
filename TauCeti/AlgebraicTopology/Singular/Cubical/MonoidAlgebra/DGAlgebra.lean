@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Graded
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.Order.WellFounded.Basic
 
 /-!
 # The DG algebra of normalized cubical chains of a topological monoid
@@ -42,6 +43,8 @@ are also those of the DG right modules of chains of a space with a right action 
 * `TauCeti.cubicalChainSumMap_cubicalChainPoint`: the push-forward sends `[x]` to `[f x]`.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
+* `TauCeti.exists_forall_mem_cubicalChainGrading_of_forall_exists`: families of chains of
+  prescribed degrees are built one degree at a time, downwards from the largest.
 
 ## References
 
@@ -181,6 +184,47 @@ theorem cubicalChainPoint_sub_one_mem (g : G) :
   sub_mem (cubicalChainPoint_mem g) (SetLike.one_mem_graded (cubicalChainGrading G R))
 
 end Grading
+
+/-! ### Families of chains built by recursion on the degree -/
+
+section Recursion
+
+variable {P Q : Type*} [Finite P] [Finite Q] {N : P → Q → Type*} [∀ x y, TopologicalSpace (N x y)]
+  {k : Type*} [CommRing k] {deg : P → Q → ℤ}
+
+/-- **Families of chains built one degree at a time.** Let `deg x y` be the cohomological degree
+of the chain of the pair `(x, y)`, and let `V s x y c` be a condition on the chain `c` of `(x, y)`
+which only depends on the chains of the family `s` at the pairs of larger degree. If it can be met
+at `(x, y)` as soon as it holds at all the pairs of larger degree, some family of chains of these
+degrees meets it everywhere. -/
+theorem exists_forall_mem_cubicalChainGrading_of_forall_exists
+    (V : (∀ x y, normalizedCubicalChainAlgebra (N x y) k) → ∀ x y,
+      normalizedCubicalChainAlgebra (N x y) k → Prop)
+    (hV : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y c,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → V s x y c → V s' x y c)
+    (hex : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → V s x' y' (s x' y')) →
+      ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
+    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
+  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
+  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
+  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
+  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
+  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
+  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
+    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
+    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
+    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
+      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
+    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
+      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
+  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
+
+end Recursion
 
 section Differential
 
