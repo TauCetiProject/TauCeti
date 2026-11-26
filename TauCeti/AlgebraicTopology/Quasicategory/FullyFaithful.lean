@@ -346,17 +346,6 @@ private lemma range_componentMap_le [Y.Quasicategory] (α : Edge F G) (hα : α.
   rw [Edge.mk'_edge, ihomObj₀Equiv_componentMap_app, h, ← yonedaEquiv_comp, Category.id_comp,
     yonedaEquiv_comp, Equiv.apply_symm_apply, Edge.map_edge]
 
-/-- The vertices of `Δ[1]` correspond to the endpoints of a natural transformation. -/
-private lemma yonedaEquiv_symm_app_obj₀Equiv_symm (α : Edge F G) :
-    (yonedaEquiv.symm α.edge).app _ (stdSimplex.obj₀Equiv.symm 0) = F ∧
-      (yonedaEquiv.symm α.edge).app _ (stdSimplex.obj₀Equiv.symm 1) = G := by
-  rw [← Equiv.apply_symm_apply yonedaEquiv (stdSimplex.obj₀Equiv.symm 0),
-    ← Equiv.apply_symm_apply yonedaEquiv (stdSimplex.obj₀Equiv.symm 1), ← yonedaEquiv_comp,
-    ← yonedaEquiv_comp, yonedaEquiv_symm_zero, yonedaEquiv_symm_zero, ← stdSimplex.δ_one_eq_const,
-    ← stdSimplex.δ_zero_eq_const, stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp,
-    Equiv.apply_symm_apply]
-  exact ⟨α.src_eq, α.tgt_eq⟩
-
 /-- For a natural transformation `α : F ⟶ G` of maps `X ⟶ Y` into a quasicategory whose
 components are equivalences, and vertices `x` and `y` of `X`, the maps of right mapping spaces
 `Hom^R_X(x, y) ⟶ Hom^R_Y(F x, F y)` and `Hom^R_X(x, y) ⟶ Hom^R_Y(G x, G y)` induced by `F` and
@@ -369,9 +358,9 @@ private lemma exists_map_eq [Y.Quasicategory] (α : Edge F G) (hα : α.IsEquiva
       ihomObj₀Equiv X Y G = H ≫ (isom Y).ι ≫ evalAt (stdSimplex.obj₀Equiv.symm 1) Y := by
   refine ⟨Subcomplex.lift _ (range_componentMap_le α hα), ?_, ?_⟩
   · rw [← Category.assoc, Subcomplex.lift_ι, componentMap_evalAt,
-      (yonedaEquiv_symm_app_obj₀Equiv_symm α).1]
+      α.yonedaEquiv_symm_edge_app_zero]
   · rw [← Category.assoc, Subcomplex.lift_ι, componentMap_evalAt,
-      (yonedaEquiv_symm_app_obj₀Equiv_symm α).2]
+      α.yonedaEquiv_symm_edge_app_one]
 
 /-- For a natural transformation `α : F ⟶ G` of maps `X ⟶ Y` into a quasicategory which is an
 equivalence of `Fun(X, Y)`, **`F` and `G` induce weak homotopy equivalences
