@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Calculus.Deriv.InvPow
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.NonIntegrable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
@@ -49,6 +50,11 @@ it exists at two different frequencies (`Asymptotics.eq_zero_of_tendsto_cexp_smu
 * `Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc`: that criterion is not
   necessary: `q(t) = sin t / t` on `[1, ∞)` has the expansion although `q'` is not integrable
   there (`Asymptotics.not_integrableOn_iteratedDerivWithin_one_sinc`).
+* `Asymptotics.exists_tendsto_integral_cexp_smul_of_intervalIntegrable`,
+  `Asymptotics.exists_tendsto_integral_cexp_smul_of_isBigO`: existence of the improper integral
+  `∫₀^∞ e^{ixt} q(t) dt` for an amplitude integrable at `0`, or `O(t^a)` there with `a > -1`.
+* `Asymptotics.tendsto_integral_cexp_smul_sub`: the improper integral over `(b, ∞)` is the one
+  over `(0, ∞)` minus the integral over `(0, b)`.
 -/
 
 public section
@@ -720,5 +726,66 @@ theorem hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc {F : ℝ → �
 end SincCheck
 
 end HalfLine
+
+section FromZero
+
+/-- **Existence of the Fourier integral.** If `q` is integrable on `(0, 1)` and continuous on
+`(0, ∞)`, and `∫ e^{ixt} q(t) dt` converges at `∞`, then the improper integral
+`∫₀^∞ e^{ixt} q(t) dt` exists. When `q(t) = O(t^a)` as `t → 0+` for some `a > -1`, the
+integrability on `(0, 1)` is automatic; see
+`Asymptotics.exists_tendsto_integral_cexp_smul_of_isBigO`. -/
+theorem exists_tendsto_integral_cexp_smul_of_intervalIntegrable [CompleteSpace E] {q : ℝ → E}
+    {x : ℝ} (hq : ContinuousOn q (Ioi 0)) (hint : IntervalIntegrable q volume 0 1)
+    (hu : ∀ ε > 0, ∃ T₀ : ℝ, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) • q t‖ ≤ ε) :
+    ∃ F : E, Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) • q t) atTop
+      (𝓝 F) := by
+  have hc := continuous_cexp_mul_I x
+  have hq1 : ContinuousOn q (Ici 1) := hq.mono fun t (ht : 1 ≤ t) => zero_lt_one.trans_le ht
+  obtain ⟨L, hL⟩ := exists_tendsto_integral_cexp_smul hq1 hu
+  refine ⟨(∫ t in (0 : ℝ)..1, cexp (((x * t : ℝ) : ℂ) * I) • q t) + L,
+    (tendsto_const_nhds.add hL).congr' ?_⟩
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  exact intervalIntegral.integral_add_adjacent_intervals (hint.continuousOn_smul hc.continuousOn)
+    ((hc.continuousOn.smul (hq1.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hT)
+
+/-- **Existence of the Fourier integral** for an amplitude with a power bound at `0`. If `q` is
+continuous on `(0, ∞)` with `q(t) = O(t^a)` as `t → 0+` for some `a > -1`, and
+`∫ e^{ixt} q(t) dt` converges at `∞`, then the improper integral `∫₀^∞ e^{ixt} q(t) dt` exists.
+Under the hypotheses of `Asymptotics.hasAsymptoticExpansion_fourier` this applies at every large
+`x`: the bound at `0+` is the case `k = N = 0` of its expansion hypothesis, with
+`a = Re α₀ - 1`, and the convergence at `∞` is the case `k = 0` of its uniform convergence
+hypothesis. -/
+theorem exists_tendsto_integral_cexp_smul_of_isBigO [CompleteSpace E] {q : ℝ → E} {x a : ℝ}
+    (hq : ContinuousOn q (Ioi 0)) (ha : -1 < a) (hq0 : q =O[𝓝[>] 0] fun t => t ^ a)
+    (hu : ∀ ε > 0, ∃ T₀ : ℝ, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) • q t‖ ≤ ε) :
+    ∃ F : E, Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) • q t) atTop
+      (𝓝 F) := by
+  -- `q = t^{1-1} q` on `(0, 1]`, so the Mellin power-bound criterion at `z = 1` applies.
+  have h := TauCeti.integrableOn_Ioc_cpow_smul_of_isBigO (hq.locallyIntegrableOn measurableSet_Ioi)
+    (b := -a) (by simpa using hq0) (z := 1) (by simp only [one_re]; linarith)
+  simp only [sub_self, cpow_zero, one_smul] at h
+  exact exists_tendsto_integral_cexp_smul_of_intervalIntegrable hq
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).2 h) hu
+
+/-- **Splitting off the integral near `0`.** If `∫₀^T e^{ixt} q(t) dt → L` as `T → ∞`, `q` is
+continuous on `[b, ∞)` and `e^{ixt} q(t)` is integrable on `(0, b)`, then
+`∫_b^T e^{ixt} q(t) dt → L - ∫₀^b e^{ixt} q(t) dt`. -/
+theorem tendsto_integral_cexp_smul_sub {q : ℝ → E} {x b : ℝ} {L : E}
+    (hq : ContinuousOn q (Ici b))
+    (hint : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) • q t) volume 0 b)
+    (hL : Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) • q t) atTop
+      (𝓝 L)) :
+    Tendsto (fun T : ℝ => ∫ t in b..T, cexp (((x * t : ℝ) : ℂ) * I) • q t) atTop
+      (𝓝 (L - ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) • q t)) := by
+  refine (hL.sub_const _).congr' ?_
+  filter_upwards [eventually_ge_atTop b] with T hT
+  rw [← intervalIntegral.integral_add_adjacent_intervals hint
+    (ContinuousOn.intervalIntegrable_of_Icc hT ((continuous_cexp_mul_I x).continuousOn.smul
+      (hq.mono Icc_subset_Ici_self)))]
+  simp
+
+end FromZero
 
 end Asymptotics

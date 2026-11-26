@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
@@ -29,6 +30,11 @@ interval integrable; without any measurability assumption, the norm of its integ
 is at most `K * ((b - a) ^ (u + 1) / (u + 1))`. Both use `TauCeti.intervalIntegrable_sub_const_rpow`
 and `TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
 `K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
+
+For a power integrable at infinity,
+`TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_of_lt_neg_one` bounds the integral
+over `[a, b]`, `0 < a ≤ b`, of a function with `‖f s‖ ≤ K * s ^ u`, `u < -1`, by
+`K * ∫_a^∞ s ^ u ds = K * (-a ^ (u + 1) / (u + 1))`, uniformly in `b`.
 
 `TauCeti.norm_intervalIntegral_sub_le_of_sub_le` compares two oriented interval integrals, with
 respect to any measure on `ℝ`, that start at a common endpoint, by splitting both at a common
@@ -91,6 +97,25 @@ theorem norm_integral_le_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u :
     ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
     ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K)).trans_eq ?_
   rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_rpow hu]
+
+/-- A function whose norm is bounded almost everywhere on `(a, b]`, `0 < a ≤ b`, by `K * s ^ u`
+with `u < -1` and `0 ≤ K` has integral over `[a, b]` of norm at most
+`K * ∫_a^∞ s ^ u ds = K * (-a ^ (u + 1) / (u + 1))`, a bound independent of `b`. -/
+theorem norm_integral_le_of_norm_le_mul_rpow_of_lt_neg_one {f : ℝ → E} {a b K u : ℝ}
+    (hu : u < -1) (ha : 0 < a) (hab : a ≤ b) (hK : 0 ≤ K)
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * s ^ u) :
+    ‖∫ s in a..b, f s‖ ≤ K * (-a ^ (u + 1) / (u + 1)) := by
+  have hint := integrableOn_Ioi_rpow_of_lt hu ha
+  refine (intervalIntegral.norm_integral_le_of_norm_le hab
+    ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
+      ((hint.mono_set Ioc_subset_Ioi_self).const_mul K))).trans ?_
+  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hab,
+    ← integral_Ioi_rpow_of_lt hu ha]
+  refine mul_le_mul_of_nonneg_left (setIntegral_mono_set hint ?_
+    (Filter.Eventually.of_forall Ioc_subset_Ioi_self)) hK
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : a < s)
+  exact Real.rpow_nonneg (ha.trans hs).le u
 
 end intervalIntegral
 
