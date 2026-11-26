@@ -214,8 +214,7 @@ end RingHom
 
 namespace Algebra
 
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
-  [Algebra R B]
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
 /-- If `R → A × B` is surjective, then so is the structure map `R → A`. -/
 theorem algebraMap_surjective_fst_of_surjective_prod

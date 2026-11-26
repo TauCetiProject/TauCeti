@@ -71,22 +71,18 @@ theorem prodRightRid_symm_apply (x : M₁ ⊗[R] M₂) (m₁ : M₁) :
       (LinearMap.inl R M₂ R).lTensor M₁ x + m₁ ⊗ₜ (0, 1) := by
   simp [prodRightRid, prodRight]
 
-section Surjective
-
 /-! ### Tensor products over a product of rings
 
 If the structure maps of two `R`-algebras `A` and `B` make `R → A × B` surjective, then an
 `A`-module and a `B`-module have trivial tensor product over `R`. -/
 
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
-  [Algebra R B] (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B)))
-
-include h
-
 /-- If `R → A × B` is surjective, an `A`-module and a `B`-module have trivial tensor product
 over `R`. -/
-theorem subsingleton_of_surjective_prod {P Q : Type*} [AddCommMonoid P] [Module R P] [Module A P]
-    [IsScalarTower R A P] [AddCommMonoid Q] [Module R Q] [Module B Q] [IsScalarTower R B Q] :
+theorem subsingleton_of_surjective_prod {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Semiring B] [Algebra R A] [Algebra R B]
+    (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B))) {P Q : Type*}
+    [AddCommMonoid P] [Module R P] [Module A P] [IsScalarTower R A P] [AddCommMonoid Q]
+    [Module R Q] [Module B Q] [IsScalarTower R B Q] :
     Subsingleton (P ⊗[R] Q) := by
   obtain ⟨e, he⟩ := h (1, 0)
   have hA : algebraMap R A e = 1 := congr_arg Prod.fst he
@@ -97,6 +93,13 @@ theorem subsingleton_of_surjective_prod {P Q : Type*} [AddCommMonoid P] [Module 
     rw [← one_smul A p, ← hA, algebraMap_smul, smul_tmul, ← algebraMap_smul B, hB, zero_smul,
       tmul_zero]
   | add x y hx hy => rw [hx, hy, add_zero]
+
+section Surjective
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
+  [Algebra R B] (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B)))
+
+include h
 
 variable (P Q : Type*) [AddCommMonoid P] [Module R P] [Module A P] [IsScalarTower R A P]
   [AddCommMonoid Q] [Module R Q] [Module B Q] [IsScalarTower R B Q]
