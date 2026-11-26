@@ -277,18 +277,13 @@ integrable on `[0, t]` (or `[t, 0]`), then `|X₀(t, z)|² + |X₁(t, z)|² > 0`
 theorem norm_sq_add_norm_sq_diracFundamentalMatrix_pos (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ)
     (j : Fin 2) :
     0 < ‖diracFundamentalMatrix q t z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q t z 1 j‖ ^ 2 := by
-  by_contra! h
-  have h0 : diracFundamentalMatrix q t z 0 j = 0 := by
-    rw [← norm_eq_zero]
-    nlinarith [sq_nonneg ‖diracFundamentalMatrix q t z 0 j‖,
-      sq_nonneg ‖diracFundamentalMatrix q t z 1 j‖, norm_nonneg (diracFundamentalMatrix q t z 0 j)]
-  have h1 : diracFundamentalMatrix q t z 1 j = 0 := by
-    rw [← norm_eq_zero]
-    nlinarith [sq_nonneg ‖diracFundamentalMatrix q t z 0 j‖,
-      sq_nonneg ‖diracFundamentalMatrix q t z 1 j‖, norm_nonneg (diracFundamentalMatrix q t z 1 j)]
+  refine (add_nonneg (sq_nonneg _) (sq_nonneg _)).lt_of_ne fun h ↦ ?_
+  -- A vanishing sum of squares forces both entries of the column to vanish, against `det M = 1`.
+  obtain ⟨h0, h1⟩ := (add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).1 h.symm
+  rw [sq_eq_zero_iff, norm_eq_zero] at h0 h1
   have hdet := det_diracFundamentalMatrix hq z
   rw [det_fin_two] at hdet
-  fin_cases j <;> simp_all
+  fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one] at h0 h1 <;> simp [h0, h1] at hdet
 
 /-- For `t > 0` and `q` integrable on `[0, t]`, the `j`-th column `X` of the fundamental matrix
 satisfies `∫₀ᵗ |X(s, z)|² ds > 0`. -/

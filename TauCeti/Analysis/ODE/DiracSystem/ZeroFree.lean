@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.HermiteBiehler
 public import TauCeti.Analysis.ODE.DiracSystem.ChristoffelDarboux
 public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The Hermite–Biehler property of the Dirac system
@@ -90,11 +91,9 @@ theorem norm_sub_I_mul_sq_sub_norm_conj_sq_diracFundamentalMatrix
           I * diracFundamentalMatrix q t (conj z) 1 j)‖ ^ 2 =
       4 * z.im * ∫ s in (0 : ℝ)..t,
         (‖diracFundamentalMatrix q s z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q s z 1 j‖ ^ 2) := by
-  have hqt : IntegrableOn q (uIcc 0 t) := by
-    rw [uIcc_of_le ht]
-    exact hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [conj_diracFundamentalMatrix_sub_I_mul_conj hq ht]
-  exact norm_sub_I_mul_sq_sub_norm_add_I_mul_sq_diracFundamentalMatrix hqt z j
+  exact norm_sub_I_mul_sq_sub_norm_add_I_mul_sq_diracFundamentalMatrix
+    (hq.integrableOn_uIcc_of_Ici ht) z j
 
 /-- **The Hermite–Biehler property of the Dirac system.** For a potential `q` locally integrable on
 `[0, ∞)` and `t > 0`, the function `z ↦ X₀(t, z) - i X₁(t, z)` built from the `j`-th column of the
@@ -104,9 +103,8 @@ theorem isHermiteBiehler_diracFundamentalMatrix (hq : LocallyIntegrableOn q (Ici
     (j : Fin 2) :
     IsHermiteBiehler fun z ↦
       diracFundamentalMatrix q t z 0 j - I * diracFundamentalMatrix q t z 1 j := by
-  have hqt : IntegrableOn q (Icc 0 t) :=
-    hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
-  have hqt' : IntegrableOn q (uIcc 0 t) := by rwa [uIcc_of_le ht.le]
+  have hqt' : IntegrableOn q (uIcc 0 t) := hq.integrableOn_uIcc_of_Ici ht.le
+  have hqt : IntegrableOn q (Icc 0 t) := hqt'.mono_set Icc_subset_uIcc
   refine isHermiteBiehler_iff.2 ⟨(differentiable_diracFundamentalMatrix_apply hqt' 0 j).sub
     ((differentiable_diracFundamentalMatrix_apply hqt' 1 j).const_mul I), fun z hz ↦ ?_⟩
   have key := norm_sub_I_mul_sq_sub_norm_conj_sq_diracFundamentalMatrix hq ht.le z j
@@ -131,14 +129,11 @@ theorem diracFundamentalMatrix_sub_I_mul_ne_zero (hq : LocallyIntegrableOn q (Ic
   have hreal (i : Fin 2) : (diracFundamentalMatrix q t z i j).im = 0 := by
     rw [hx, ← conj_eq_iff_im]
     exact conj_diracFundamentalMatrix_ofReal hq ht z.re i j
-  have hqt : IntegrableOn q (uIcc 0 t) := by
-    rw [uIcc_of_le ht]
-    exact hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   intro h
   have hre := congrArg re h
   have him := congrArg im h
   simp only [sub_re, sub_im, mul_re, mul_im, I_re, I_im, zero_re, zero_im, hreal] at hre him
-  have := norm_sq_add_norm_sq_diracFundamentalMatrix_pos hqt z j
+  have := norm_sq_add_norm_sq_diracFundamentalMatrix_pos (hq.integrableOn_uIcc_of_Ici ht) z j
   rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq, normSq_apply, normSq_apply, hreal, hreal] at this
   nlinarith
 
