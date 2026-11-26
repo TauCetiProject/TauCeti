@@ -67,6 +67,11 @@ instance : (nnGraph R).LocallyFinite := fun v =>
   ((toFinite {v - 1, v + 1}).subset fun w hw => by
     rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
 
+/-- Adjacency in the nearest-neighbour graph of a ring with decidable equality is decidable, so
+Mathlib's `SimpleGraph.fintypeEdgeSet` makes the edges of a finite ring a `Fintype`. -/
+instance [DecidableEq R] : DecidableRel (nnGraph R).Adj :=
+  inferInstanceAs (DecidableRel (SimpleGraph.fromRel fun a b : R => b = a + 1).Adj)
+
 variable [Nontrivial R]
 
 theorem nnGraph_adj_add_one (a : R) : (nnGraph R).Adj a (a + 1) := by
@@ -230,7 +235,7 @@ instance instMulActionMultiplicativeIntEdgeSetNNGraph :
   MulAction.compHom _ (zpowersHom _ shiftTwo)
 
 /-- The subshift of dimer configurations of the line, for `2ℤ` acting by translations. -/
-@[expose] def dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
+def dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
   (nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
     (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo))
 
@@ -415,9 +420,5 @@ theorem setOf_isDimerConfiguration_zmod_six :
 theorem isDimerConfiguration_hexConfig (b : Bool) :
     (nnGraph (ZMod 6)).IsDimerConfiguration (hexConfig b) :=
   (Set.ext_iff.1 setOf_isDimerConfiguration_zmod_six _).2 (by cases b <;> simp)
-
-/-- The edges of the hexagon are finite. -/
-instance instFintypeEdgeSetNNGraphZModSix : Fintype (nnGraph (ZMod 6)).edgeSet :=
-  Fintype.ofFinite _
 
 end TauCeti.Examples.DimerConfiguration

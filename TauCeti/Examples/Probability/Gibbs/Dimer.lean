@@ -89,7 +89,8 @@ theorem dimerBoltzmann_int {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < 
 dimer specification are the point masses `γ^w_F(· | ω) = δ_ω`, so resampling changes nothing. In
 particular `(δ_even + δ_odd)/2` is Gibbs. -/
 theorem isGibbs_dimerSpecification_int {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < w e)
-    (μ : Measure dimerSubshiftInt) :
+    (μ : Measure ((nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)))) :
     ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
       (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).IsGibbs μ := by
   refine TauCeti.Specification.isGibbs_iff.2 fun F => ?_
