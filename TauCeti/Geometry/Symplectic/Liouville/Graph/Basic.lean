@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Contact.ClosedOrbit.Rescale
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Contact.Transition
 
 /-!
 # Graphs over the boundary of a Liouville domain
@@ -71,9 +72,9 @@ Every contact form `β` defining the contact structure `ker ι^* α`, with eithe
 of this form up to a nonzero constant factor on each component of `S`: when `S` is compact,
 `c β = f ι^* α` for a locally constant `c` and a smooth `f > 1`
 (`TauCeti.SmoothForm.exists_isLocallyConstant_smul_eq_smul`), and this rescaling only changes the
-speed and possibly the direction of the Reeb orbits. So if the graph of every smooth `f > 1`
-carries a closed characteristic contractible in `V`, every such `β` has a closed Reeb orbit whose
-loop on `Σ` is contractible in `M`; see
+speed and possibly the direction of the Reeb orbits. So if the graph of every smooth `f > 1` is a
+regular level of a `C²` function and carries a closed characteristic contractible in `V`, every
+such `β` has a closed Reeb orbit whose loop on `Σ` is contractible in `M`; see
 `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_kerDistribution_eq`.
 
 ## Main definitions
@@ -102,9 +103,9 @@ loop on `Σ` is contractible in `M`; see
   in `TauCeti`: a contractible closed characteristic of a graph which is a regular level comes
   from a closed Reeb orbit `γ` of `f ι^* α` whose loop `ι ∘ γ` is contractible in `M`.
 * `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_kerDistribution_eq` in
-  `TauCeti`: if the graphs of all smooth `f > 1` carry contractible closed characteristics, every
-  one-form with the kernel of `ι^* α` has a closed Reeb orbit whose loop on `Σ` is contractible in
-  `M`.
+  `TauCeti`: if the graphs of all smooth `f > 1` are regular levels of `C²` functions and carry
+  contractible closed characteristics, every one-form with the kernel of `ι^* α` has a closed Reeb
+  orbit whose loop on `Σ` is contractible in `M`.
 
 ## References
 

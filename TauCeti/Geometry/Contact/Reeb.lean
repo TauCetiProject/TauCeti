@@ -365,12 +365,9 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_of_isLocallyConstant (hα : α
     {β : SmoothForm I M ℝ 1} {c : M → ℝ} (hc : IsLocallyConstant c)
     (hβ : ∀ y, β.val y = c y • α.val y) (x : M) :
     β.reebVectorField x = (c x)⁻¹ • α.reebVectorField x := by
-  have hdc : mvfderiv I c x = 0 :=
-    (Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ c x)
-      ((IsLocallyConstant.iff_eventually_eq c).1 hc x)).trans (mvfderiv_const _)
   simpa using (hα.reebVectorField_eq_inv_smul_add_iff (hc.contMDiff x) hβ 0).2
     ⟨(α.val x).map_coord_zero (m := ![0]) 0 rfl, fun w _ ↦ by
-      rw [hdc, zero_apply, zero_div]
+      rw [hc.mvfderiv_eq_zero x, zero_apply, zero_div]
       exact (mextDeriv α.val x).map_coord_zero (m := ![0, w]) 0 rfl⟩
 
 omit [FiniteDimensional ℝ E] in

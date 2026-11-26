@@ -14,34 +14,38 @@ import Mathlib.Basic.Sign.Basic
 /-!
 # The sign of a nowhere-vanishing continuous function
 
-A continuous real function `g` that vanishes nowhere has a locally constant sign
-(`Continuous.isLocallyConstant_sign`): it keeps one sign on each connected component. On a compact
-space `|g|` is moreover bounded below by a positive constant, so multiplying `g` by a suitable
-nonzero constant on each of the sets where its sign is constant makes it exceed any given bound
+A continuous function `g` that vanishes nowhere, with values in a linear order carrying the order
+topology such as `ℝ`, has a locally constant sign (`Continuous.isLocallyConstant_sign`): it keeps
+one sign on each connected component. For a real function on a compact space, `|g|` is moreover
+bounded below by a positive constant, so multiplying `g` by a suitable nonzero constant on each of
+the sets where its sign is constant makes it exceed any given bound
 (`Continuous.exists_isLocallyConstant_lt_mul`).
 
-This is the rescaling by which a contact form on a compact manifold, multiplied by a locally
-constant factor, is made larger than any given form with the same kernel.
+This is the rescaling by which a form `β` with the kernel of a nowhere-vanishing form `α` on a
+compact manifold, multiplied by a locally constant factor, becomes `f α` with `f` above any given
+bound.
 -/
 
 public section
 
 namespace Continuous
 
-variable {X : Type*} [TopologicalSpace X] {g : X → ℝ}
+variable {X : Type*} [TopologicalSpace X]
 
-/-- The sign of a continuous real function that vanishes nowhere is locally constant. -/
-theorem isLocallyConstant_sign (hg : Continuous g) (h₀ : ∀ x, g x ≠ 0) :
+/-- The sign of a continuous function that vanishes nowhere, with values in a linear order with the
+order topology, is locally constant. -/
+theorem isLocallyConstant_sign {α : Type*} [Zero α] [TopologicalSpace α] [LinearOrder α]
+    [OrderTopology α] {g : X → α} (hg : Continuous g) (h₀ : ∀ x, g x ≠ 0) :
     IsLocallyConstant fun x ↦ SignType.sign (g x) :=
   (IsLocallyConstant.iff_continuous _).2 <| continuous_iff_continuousAt.2 fun x ↦
     (continuousAt_sign_of_ne_zero (h₀ x)).comp hg.continuousAt
 
 /-- **Making a nowhere-vanishing function large by a locally constant factor.** On a compact
 space, a continuous real function `g` that vanishes nowhere becomes larger than any given bound `a`
-after multiplication by a suitable locally constant function `c` that vanishes nowhere: `c` is a
-positive multiple of the sign of `g`. -/
-theorem exists_isLocallyConstant_lt_mul [CompactSpace X] (hg : Continuous g) (h₀ : ∀ x, g x ≠ 0)
-    (a : ℝ) : ∃ c : X → ℝ, IsLocallyConstant c ∧ (∀ x, c x ≠ 0) ∧ ∀ x, a < c x * g x := by
+after multiplication by a suitable locally constant function `c` that vanishes nowhere. -/
+theorem exists_isLocallyConstant_lt_mul [CompactSpace X] {g : X → ℝ} (hg : Continuous g)
+    (h₀ : ∀ x, g x ≠ 0) (a : ℝ) :
+    ∃ c : X → ℝ, IsLocallyConstant c ∧ (∀ x, c x ≠ 0) ∧ ∀ x, a < c x * g x := by
   -- `|g|` is bounded below by a positive constant `m` on the compact space.
   obtain ⟨m, hm, hmg⟩ : ∃ m : ℝ, 0 < m ∧ ∀ x, m ≤ |g x| := by
     rcases isEmpty_or_nonempty X with hX | hX
