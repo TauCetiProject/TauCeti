@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -101,10 +100,6 @@ both its tempered distribution and this `Lᵖ` data.
   `2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖` when
   `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block that is a sum of boundedly many pieces of nearby index is
   controlled by the weighted pieces.
-* `TauCeti.tendsto_tsum_rpow_rpow_of_dominated` and `TauCeti.tendsto_iSup_of_dominated`:
-  dominated convergence for the `ℓ^r` norm, `r > 0`, and for the supremum of a null sequence, by
-  which operators converging blockwise and bounded blockwise converge strongly on the Besov spaces
-  (`q < ∞`) and on the little Besov spaces (`q = ∞`).
 * `Memℓp.two_rpow_mul_mono` and `Memℓp.two_rpow_mul_of_lt`: for `a ≥ 0`, `(2^{js} aⱼ)ⱼ ∈ ℓ^q`
   implies `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` when `s' ≤ s` and `q ≤ q'`, or when `s' < s` and `q' ≠ 0`; the
   monotonicity of the Besov scale, here and on the torus, is this statement for `aⱼ = ‖Δⱼ u‖_p`.
@@ -147,47 +142,6 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
         · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
         · exact (hg j).trans (by gcongr; exact le_max_left C 0)
     _ = _ := by ring
-
-open Filter Topology in
-/-- **Dominated convergence for `ℓ^r` norms.** If `0 ≤ b t j ≤ a j` with `∑ⱼ (a j)^r < ∞`, `r > 0`,
-and each `b t j → 0` along `l`, then `(∑ⱼ (b t j)^r)^{1/r} → 0` along `l`. Applied to the weighted
-blocks of `T t u - u`, this is strong continuity of a family of operators `T t` on a Besov space
-with `q < ∞` that converge blockwise and are bounded blockwise. -/
-theorem TauCeti.tendsto_tsum_rpow_rpow_of_dominated {α ι : Type*} {l : Filter α}
-    {b : α → ι → ℝ} {a : ι → ℝ} {r : ℝ} (hr : 0 < r) (hb0 : ∀ t j, 0 ≤ b t j)
-    (hba : ∀ t j, b t j ≤ a j) (hb : ∀ j, Tendsto (fun t ↦ b t j) l (𝓝 0))
-    (ha : Summable fun j ↦ a j ^ r) :
-    Tendsto (fun t ↦ (∑' j, b t j ^ r) ^ (1 / r)) l (𝓝 0) := by
-  have hsum : Tendsto (fun t ↦ ∑' j, b t j ^ r) l (𝓝 (∑' _ : ι, (0 : ℝ))) := by
-    refine tendsto_tsum_of_dominated_convergence ha (fun j ↦ ?_) (.of_forall fun t j ↦ ?_)
-    · have h := (hb j).rpow_const (Or.inr hr.le)
-      rwa [Real.zero_rpow hr.ne'] at h
-    · rw [Real.norm_of_nonneg (Real.rpow_nonneg (hb0 t j) r)]
-      exact Real.rpow_le_rpow (hb0 t j) (hba t j) hr.le
-  rw [tsum_zero] at hsum
-  have h := hsum.rpow_const (Or.inr (one_div_pos.2 hr).le)
-  rwa [Real.zero_rpow (one_div_pos.2 hr).ne'] at h
-
-open Filter Topology in
-/-- **Dominated convergence for `ℓ^∞` norms of null sequences.** If `0 ≤ b t j ≤ a j` with
-`a j → 0` as `j → ∞`, and each `b t j → 0` along `l`, then `⨆ⱼ b t j → 0` along `l`: beyond some
-`N` every `b t j` is small uniformly in `t`, and the finitely many others converge. -/
-theorem TauCeti.tendsto_iSup_of_dominated {α : Type*} {l : Filter α} {b : α → ℕ → ℝ}
-    {a : ℕ → ℝ} (hb0 : ∀ t j, 0 ≤ b t j) (hba : ∀ t j, b t j ≤ a j)
-    (hb : ∀ j, Tendsto (fun t ↦ b t j) l (𝓝 0)) (ha : Tendsto a atTop (𝓝 0)) :
-    Tendsto (fun t ↦ ⨆ j, b t j) l (𝓝 0) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ha (ε / 2) (half_pos hε)
-  have hlow : ∀ᶠ t in l, ∀ j ∈ Finset.range N, b t j < ε / 2 :=
-    (Finset.range N).eventually_all.2 fun j _ ↦ (hb j).eventually (gt_mem_nhds (half_pos hε))
-  filter_upwards [hlow] with t ht
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (Real.iSup_nonneg (hb0 t))]
-  refine lt_of_le_of_lt (ciSup_le fun j ↦ ?_) (half_lt_self hε)
-  rcases lt_or_ge j N with hj | hj
-  · exact (ht j (Finset.mem_range.2 hj)).le
-  · have hNj := hN j hj
-    rw [Real.dist_0_eq_abs] at hNj
-    exact (hba t j).trans ((le_abs_self _).trans hNj.le)
 
 /-- **Monotonicity of dyadically weighted sequences.** If `a ≥ 0` and `(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then
 `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' ≤ s` and `q ≤ q'`. -/

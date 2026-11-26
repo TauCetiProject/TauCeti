@@ -10,6 +10,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Semigroups.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 
 /-!

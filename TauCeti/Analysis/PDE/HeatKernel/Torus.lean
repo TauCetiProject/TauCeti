@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.PDE.HeatKernel.Basic
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 
