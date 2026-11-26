@@ -834,41 +834,29 @@ theorem m_one_m_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) :
   -- iterated applications of linear maps, on which `map_add` and `map_smul` act input by input.
   -- Both sides are additive in each of the first three inputs, so the identity extends from
   -- homogeneous inputs one slot at a time; the last input is arbitrary in `stasheff_arity_four`.
-  induction a using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_zero, zero_apply,
-      add_zero, sub_self]
-  | add _ _ h h' =>
-    have h₂ := congrArg₂ (· + ·) h h'
-    simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_add, add_apply, add_zero]
-      at h₂ ⊢
-    exact Eq.trans (by abel) h₂
-  | homogeneous a =>
-  induction b using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_zero, zero_apply,
-      add_zero, sub_self]
-  | add _ _ h h' =>
-    have h₂ := congrArg₂ (· + ·) h h'
-    simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_add, add_apply, add_zero]
-      at h₂ ⊢
-    exact Eq.trans (by abel) h₂
-  | homogeneous b =>
-  induction c using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_zero, zero_apply,
-      add_zero, sub_self]
-  | add _ _ h h' =>
-    have h₂ := congrArg₂ (· + ·) h h'
-    simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_add, add_apply, add_zero]
-      at h₂ ⊢
-    exact Eq.trans (by abel) h₂
-  | homogeneous c =>
-    -- On homogeneous inputs the twists are the signs of the evaluated arity-four identity.
-    have h := 𝒜.stasheff_arity_four a b c d _ _ _ a.property b.property c.property
-    simp only [𝒜.grading.koszulTwist_one_apply_of_mem a.property,
-      𝒜.grading.koszulTwist_one_apply_of_mem b.property,
-      𝒜.grading.koszulTwist_one_apply_of_mem c.property, ← negOnePowCast_eq_intCast,
-      negOnePowCast_add, mul_smul, Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_smul,
-      smul_apply] at h ⊢
-    exact Eq.trans (by abel) h
+  induction a using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+  case' homogeneous a =>
+    induction b using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+    case' homogeneous b =>
+      induction c using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+      case homogeneous c =>
+        -- On homogeneous inputs the twists are the signs of the evaluated arity-four identity.
+        have h := 𝒜.stasheff_arity_four a b c d _ _ _ a.property b.property c.property
+        simp only [𝒜.grading.koszulTwist_one_apply_of_mem a.property,
+          𝒜.grading.koszulTwist_one_apply_of_mem b.property,
+          𝒜.grading.koszulTwist_one_apply_of_mem c.property, ← negOnePowCast_eq_intCast,
+          negOnePowCast_add, mul_smul, Matrix.vecCons, ← MultilinearMap.curryLeft_apply,
+          map_smul, smul_apply] at h ⊢
+        exact Eq.trans (by abel) h
+  -- The `zero` and `add` cases of the three inductions.
+  all_goals first
+    | simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_zero, zero_apply,
+        add_zero, sub_self]; done
+    | next _ _ h h' =>
+      have h₂ := congrArg₂ (· + ·) h h'
+      simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_add, add_apply, add_zero]
+        at h₂ ⊢
+      exact Eq.trans (by abel) h₂
 
 end AInfinityAlgebra
 
