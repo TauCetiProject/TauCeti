@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # The second fundamental form of the boundary
@@ -49,6 +50,8 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 * `TauCeti.boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal`: for every vector
   field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
   `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
+* `TauCeti.boundarySecondFundamentalForm_eq_zero_of_dim_one`: in dimension one the tangent space
+  of the boundary is zero, so `II_q = 0`.
 
 ## References
 
@@ -331,5 +334,26 @@ theorem boundaryInducedForm_eq_inner_boundaryTangentEquiv (q : (𝓡∂ (n + 1))
     boundaryInducedForm_apply]
 
 end InducedForm
+
+/-! ### Dimension one -/
+
+section DimOne
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+  [IsManifold (𝓡∂ (0 + 1)) 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) 1 (EuclideanSpace ℝ (Fin (0 + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+
+/-- On a one-dimensional Riemannian manifold with boundary, the second fundamental form of the
+boundary is the zero form: the tangent space of the boundary is zero. -/
+@[simp]
+theorem boundarySecondFundamentalForm_eq_zero_of_dim_one (q : (𝓡∂ (0 + 1)).boundary M) :
+    boundarySecondFundamentalForm q = 0 := by
+  ext u w
+  rw [Subsingleton.elim w 0]
+  exact map_zero (boundarySecondFundamentalForm q u)
+
+end DimOne
 
 end TauCeti
