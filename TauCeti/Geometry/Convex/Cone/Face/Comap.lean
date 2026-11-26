@@ -43,11 +43,11 @@ theorem exists_inf_comap_eq (hF : F.IsFaceOf (σ ⊓ τ.comap f)) (hσ : σ.FG) 
       σ' ⊓ τ'.comap f = F := by
   obtain ⟨ℓ, hℓ, rfl⟩ := hF.exists_nonneg_linear_inf_ker (hσ.cone_inf (hτ.cone_comap f))
   have hℓmem : ℓ ∈ dual (LinearMap.id : Module.Dual K V →ₗ[K] Module.Dual K V).flip
-      (σ ⊓ τ.comap f) := fun x hx ↦ hℓ x hx
+      (σ ⊓ τ.comap f) := mem_dual.2 fun x hx ↦ by simpa using hℓ x hx
   rw [dual_flip_inf_comap hσ hτ f] at hℓmem
   obtain ⟨a, ha, _, ⟨b, hb, rfl⟩, rfl⟩ := Submodule.mem_sup.1 hℓmem
-  have ha' : ∀ x ∈ σ, 0 ≤ a x := fun x hx ↦ ha hx
-  have hb' : ∀ y ∈ τ, 0 ≤ b y := fun y hy ↦ hb hy
+  have ha' : ∀ x ∈ σ, 0 ≤ a x := fun x hx ↦ by simpa using ha hx
+  have hb' : ∀ y ∈ τ, 0 ≤ b y := fun y hy ↦ by simpa using hb hy
   refine ⟨_, _, isFaceOf_inf_ker ha', isFaceOf_inf_ker hb', ?_⟩
   ext x
   simp only [Submodule.mem_inf, mem_comap, mem_ofSubmodule_iff, LinearMap.mem_ker,

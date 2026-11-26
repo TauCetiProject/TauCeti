@@ -17,6 +17,12 @@ directions combine finite generation under halfspace cuts with the algebraic
 separation theorem for finitely generated cones. No topological closedness is
 assumed in this argument, and cones with lineality are allowed.
 
+Consequently finitely generated cones are closed under intersection
+(`Submodule.FG.cone_inf`) and under preimages by linear maps
+(`Submodule.FG.cone_comap`). Farkas' lemma for an intersection with a preimage,
+`PointedCone.dual_flip_inf_comap`, describes the dual of `σ ⊓ τ.comap f` as
+`dual σ ⊔ f.dualMap (dual τ)`.
+
 ## Provenance
 
 Adapted from `Mei/Geometry/Convex/Cone/MinkowskiWeyl.lean` in

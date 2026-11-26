@@ -47,8 +47,8 @@ refinement is `Φ` itself (`TauCeti.Toric.ArithmeticFan.commonRefinement_self`).
   Thus each cone of the refinement lies in a cone of each input, and every system with this
   property refines the common refinement: it is the coarsest common refinement.
 * `TauCeti.Toric.ArithmeticFan.support_commonRefinement`: the support is
-  `Φ.support ∩ g⁻¹(Ψ.support)`, so the refinement of complete systems is complete
-  (`TauCeti.Toric.ArithmeticFan.isComplete_commonRefinement`).
+  `Φ.support ∩ g⁻¹(Ψ.support)`, so the refinement of complete systems along a map carrying
+  `Cstar` into `Cstar'` is complete (`TauCeti.Toric.ArithmeticFan.isComplete_commonRefinement`).
 
 ## References
 
@@ -64,20 +64,6 @@ namespace TauCeti.Toric.ArithmeticFan
 
 variable {N V N' V' : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
-
-/-- Transporting `σ ⊓ g⁻¹(τ)` by `γ` gives `γ(σ) ⊓ g⁻¹(γ'(τ))` when `g ∘ γ = γ' ∘ g`. -/
-private theorem map_inf_comap {g : V →ₗ[ℝ] V'} {γ : V ≃ₗ[ℝ] V} {γ' : V' ≃ₗ[ℝ] V'}
-    (h : ∀ x, g (γ x) = γ' (g x)) (σ : PointedCone ℝ V) (τ : PointedCone ℝ V') :
-    (σ ⊓ τ.comap g).map (γ : V →ₗ[ℝ] V) =
-      σ.map (γ : V →ₗ[ℝ] V) ⊓ (τ.map (γ' : V' →ₗ[ℝ] V')).comap g := by
-  ext x
-  simp only [Submodule.mem_inf, PointedCone.mem_comap, PointedCone.mem_map]
-  constructor
-  · rintro ⟨y, ⟨hyσ, hyτ⟩, rfl⟩
-    exact ⟨⟨y, hyσ, rfl⟩, g y, hyτ, (h y).symm⟩
-  · rintro ⟨⟨y, hyσ, rfl⟩, z, hzτ, hz⟩
-    rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, h, γ'.injective.eq_iff] at hz
-    exact ⟨y, ⟨hyσ, hz ▸ hzτ⟩, rfl⟩
 
 variable [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
   [TopologicalSpace V'] [IsTopologicalAddGroup V'] [ContinuousSMul ℝ V'] [T2Space V']
@@ -120,7 +106,8 @@ def commonRefinement : ArithmeticFan i Γ C Cstar where
   map_mem := by
     rintro γ hγ _ ⟨σ, hσ, τ, hτ, rfl⟩
     obtain ⟨γ', hγ', h⟩ := hΓ γ hγ
-    exact ⟨_, Φ.map_mem hγ hσ, _, Ψ.map_mem hγ' hτ, (map_inf_comap h σ τ).symm⟩
+    exact ⟨_, Φ.map_mem hγ hσ, _, Ψ.map_mem hγ' hτ,
+      (PointedCone.map_inf_comap_of_comm h σ τ).symm⟩
   exists_finite_orbit_representatives := by
     obtain ⟨S, hS, hrep⟩ := Φ.exists_finite_orbit_representatives
     refine ⟨⋃ σ ∈ S ∩ Φ.cones, {ρ | ∃ τ ∈ Ψ.cones, σ ⊓ τ.comap g = ρ},
@@ -132,7 +119,7 @@ def commonRefinement : ArithmeticFan i Γ C Cstar where
     have hτ' : τ.map ((γ'⁻¹ : V' ≃ₗ[ℝ] V') : V' →ₗ[ℝ] V') ∈ Ψ.cones :=
       Ψ.map_mem (inv_mem hγ') hτ
     refine ⟨_, Set.mem_biUnion ⟨hσ₀, (Φ.map_mem_iff hγ).1 hσ⟩ ⟨_, hτ', rfl⟩, γ, hγ, ?_⟩
-    rw [map_inf_comap h, ← PointedCone.map_linearEquiv_mul, mul_inv_cancel,
+    rw [PointedCone.map_inf_comap_of_comm h, ← PointedCone.map_linearEquiv_mul, mul_inv_cancel,
       LinearEquiv.coe_toLinearMap_one, PointedCone.map_id]
   finite_setOf_inter_nonempty := by
     intro K hK hKC
