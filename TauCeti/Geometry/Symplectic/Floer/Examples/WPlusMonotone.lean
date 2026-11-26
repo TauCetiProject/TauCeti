@@ -15,12 +15,13 @@ the `i`-th factor, with its standard orientation, the area `a i > 0`. Its spheri
 `ℤ^ι`, with area `ω(A) = ∑ i, a i * A i` (`TauCeti.Floer.WPlusMonotoneExample.area`) and first
 Chern number `c₁(A) = 2 ∑ i, A i` (`TauCeti.Floer.WPlusMonotoneExample.chern`), since
 `c₁(TS²)[S²] = 2`. This file decides for which positive areas these data are w⁺-monotone
-(`TauCeti.Floer.IsWPlusMonotone`), the hypothesis under which Lee constructs the Floer–Novikov
-torsion. It works with the class group `ℤ^ι` and these two homomorphisms directly; the homology of
-the product is not computed here. The homomorphisms are defined for every `a : ι → ℝ`, but only
-positive `a` are the data of a product symplectic form: a factor of negative area would carry the
-conjugate complex structure and first Chern number `-2`. Statements without a positivity
-hypothesis are about the pair `(area a, chern)` as abstract period data.
+(`TauCeti.Floer.IsWPlusMonotone`), the strict form of the condition, which implies the weak form
+under which Lee constructs the Floer–Novikov torsion. It works with the class group `ℤ^ι` and
+these two homomorphisms directly; the homology of the product is not computed here. The
+homomorphisms are defined for every `a : ι → ℝ`, but only positive `a` are the data of a product
+symplectic form: a factor of negative area would carry the conjugate complex structure and first
+Chern number `-2`. Statements without a positivity hypothesis are about the pair
+`(area a, chern)` as abstract period data.
 
 * In dimension at most `6`, that is `n ≤ 3`, they always are, because every first Chern number is
   even (`TauCeti.Floer.WPlusMonotoneExample.isWPlusMonotone_of_le_three`).
@@ -38,8 +39,9 @@ For `(S²)⁴` with areas `1, 3, 1, 1` the class `A₁ - A₂ + A₃` has first 
 `2 - 2 + 2 = 2 = n - 2` and area `1 - 3 + 1 = -1`
 (`TauCeti.Floer.WPlusMonotoneExample.chern_one_neg_one_one_zero`,
 `TauCeti.Floer.WPlusMonotoneExample.area_one_three_one_one`), so this form is not w⁺-monotone
-(`TauCeti.Floer.WPlusMonotoneExample.not_isWPlusMonotone_one_three_one_one`). So in dimension `8`
-w⁺-monotonicity is a genuine restriction, unlike in dimensions `2`, `4` and `6`.
+(`TauCeti.Floer.WPlusMonotoneExample.not_isWPlusMonotone_one_three_one_one`). So for products of
+two-spheres, w⁺-monotonicity is a genuine restriction in dimension `8`, unlike in dimensions `2`,
+`4` and `6`.
 
 ## References
 
@@ -102,8 +104,9 @@ theorem isWPlusMonotone_of_le_three (a : ι → ℝ) {n : ℕ} (hn : n ≤ 3) :
     IsWPlusMonotone (area a) chern n :=
   isWPlusMonotone_of_even_of_le_three even_chern hn
 
-/-- **Equal areas give a positively monotone product**: if every factor has area `τ`, the area of
-a class is `τ / 2` times its first Chern number. -/
+/-- **Equal areas make the area proportional to the first Chern number**: if every factor has area
+`τ`, the area of a class is `τ / 2` times its first Chern number. For `τ > 0` the data are
+positively monotone. -/
 theorem area_const_eq_mul_chern (τ : ℝ) (A : ι → ℤ) :
     area (fun _ ↦ τ) A = τ / 2 * chern A := by
   simp only [area_apply, chern_apply]
