@@ -106,17 +106,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-! ### The commutator symbol in two covectors -/
 
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
-/-- The commutator symbol of an operator of order at most two is symmetric in its two covectors. -/
-private theorem sectionCommutatorSymbol_comm (hx : I.IsInteriorPoint x)
-    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
-    (ξ η : TangentSpace I x →L[ℝ] ℝ) :
-    sectionCommutatorSymbol I hx P ![ξ, η] = sectionCommutatorSymbol I hx P ![η, ξ] := by
-  have h : ![η, ξ] ∘ Equiv.swap (0 : Fin 2) 1 = ![ξ, η] := by
-    funext i
-    fin_cases i <;> simp
-  rw [← sectionCommutatorSymbol_comp_perm hx P ![η, ξ] (Equiv.swap 0 1), h]
-
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
 /-- The commutator symbol of an operator of order at most two, as a bilinear map in the two
 covectors. -/
 private def sectionCommutatorSymbolBilin (hx : I.IsInteriorPoint x)
@@ -366,14 +355,12 @@ private theorem hom_covariantDerivative_smul_smul_sub (f g : C^∞⟮I, M; ℝ�
         g x • covT.hom cov (cov ⇑(f • σ)) x + (f x * g x) • covT.hom cov (cov σ) x =
       (mvfderiv I f x).smulRight ((mvfderiv I g x).smulRight (σ x)) +
         (mvfderiv I g x).smulRight ((mvfderiv I f x).smulRight (σ x)) := by
-  have hfun (a : C^∞⟮I, M; ℝ⟯) (τ : Cₛ^∞⟮I; F, V⟯) : ⇑(a • τ) = ⇑a • ⇑τ :=
-    funext fun y ↦ ContMDiffSection.smul_apply a τ y
   ext u v
   have h := secondCovariantDerivative_smul_smul_sub cov covT f.contMDiff g.contMDiff
     σ.contMDiff x u v
   simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     hom_apply_eq_secondCovariantDerivative]
-  simp only [hfun]
+  simp only [ContMDiffSection.coe_smul_contMDiffMap]
   rw [h]
   module
 

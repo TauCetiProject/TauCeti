@@ -128,9 +128,9 @@ omit [IsManifold I 1 M] in
 and a smooth section `σ`. -/
 theorem apply_smul (cov : CovariantDerivative I F V) (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯)
     (x : M) : cov ⇑(a • σ) x = a x • cov σ x + (mvfderiv I a x).smulRight (σ x) := by
-  have hfun : ⇑(a • σ) = (⇑a : M → 𝕜) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
-  rw [hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
-    (a.contMDiff.mdifferentiableAt (by simp))]
+  rw [ContMDiffSection.coe_smul_contMDiffMap,
+    cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
+      (a.contMDiff.mdifferentiableAt (by simp))]
 
 /-- **The Leibniz rule for `∇_X`**: `∇_X (a σ) = a ∇_X σ + X(a) σ` for a smooth function `a`. -/
 theorem alongVectorField_smul (cov : CovariantDerivative I F V)

@@ -151,9 +151,8 @@ theorem smulCommutator_smoothRoughLaplacian_apply (f : C^∞⟮I, M; ℝ⟯) (σ
     smulCommutator ℝ f (cov.smoothRoughLaplacian (leviCivitaConnection I M)) σ x =
       -(2 : ℝ) • cov σ x (TauCeti.Manifold.mgradient I f x) -
         TauCeti.Manifold.laplaceBeltrami I f x • σ x := by
-  have hfun : ⇑(f • σ) = ⇑f • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply f σ y
   simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    smoothRoughLaplacian_apply, hfun, ContMDiffSection.smul_apply,
+    smoothRoughLaplacian_apply, ContMDiffSection.coe_smul_contMDiffMap, Pi.smul_apply',
     roughLaplacian_smul cov f.contMDiff σ.contMDiff x]
   module
 
@@ -164,11 +163,10 @@ theorem smulCommutator_smulCommutator_smoothRoughLaplacian_apply (f g : C^∞⟮
     (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     smulCommutator ℝ g (smulCommutator ℝ f (cov.smoothRoughLaplacian covT)) σ x =
       -(2 * ⟪TauCeti.Manifold.mgradient I f x, TauCeti.Manifold.mgradient I g x⟫) • σ x := by
-  have hfun (a : C^∞⟮I, M; ℝ⟯) (τ : Cₛ^∞⟮I; F, V⟯) : ⇑(a • τ) = ⇑a • ⇑τ :=
-    funext fun y ↦ ContMDiffSection.smul_apply a τ y
   rw [← roughLaplacian_smul_smul_sub cov covT f.contMDiff g.contMDiff σ.contMDiff x]
-  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, hfun, Pi.sub_apply,
-    Pi.smul_apply', smoothRoughLaplacian_apply]
+  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub,
+    ContMDiffSection.coe_smul_contMDiffMap, Pi.sub_apply, Pi.smul_apply',
+    smoothRoughLaplacian_apply]
   module
 
 /-- The rough Laplacian is a differential operator of order at most two on the smooth sections. -/

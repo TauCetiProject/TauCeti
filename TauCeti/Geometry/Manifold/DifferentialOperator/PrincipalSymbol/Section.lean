@@ -64,6 +64,8 @@ symbol is its fibre map.
 * `TauCeti.eq_sectionCommutatorSymbol_iff`: the commutator symbol is the multilinear map with
   these values.
 * `TauCeti.sectionCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
+  For an operator of order at most two this reads `[[P, ξ], η] = [[P, η], ξ]`
+  (`TauCeti.sectionCommutatorSymbol_comm`).
 * `TauCeti.smoothSectionFiberEquiv_cotangentSymbol`: comparison with the cotangent symbol of the
   vanishing ideal, through `I_x / I_x² ≃ T_x*M` and `Γ(V) / I_x Γ(V) ≃ V_x`.
 * `TauCeti.sectionPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of degree
@@ -303,6 +305,16 @@ theorem sectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
     ((sectionCommutatorSymbol I hx P).domDomCongr σ)).2 fun f s ↦ by
       rw [MultilinearMap.domDomCongr_apply, ← commutatorSymbol_comp_perm _ _ σ]
       exact sectionCommutatorSymbol_mvfderiv hx P (f ∘ σ) s) ξ)
+
+/-- The commutator symbol of an operator of order at most two is symmetric in its two covectors. -/
+theorem sectionCommutatorSymbol_comm (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (ξ η : TangentSpace I x →L[ℝ] ℝ) :
+    sectionCommutatorSymbol I hx P ![ξ, η] = sectionCommutatorSymbol I hx P ![η, ξ] := by
+  have h : ![η, ξ] ∘ Equiv.swap (0 : Fin 2) 1 = ![ξ, η] := by
+    funext i
+    fin_cases i <;> simp
+  rw [← sectionCommutatorSymbol_comp_perm hx P ![η, ξ] (Equiv.swap 0 1), h]
 
 /-- The commutator symbol of an operator of order at most `m + 1` vanishes at every interior point
 if the operator has order at most `m`. -/

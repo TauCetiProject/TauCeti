@@ -328,6 +328,12 @@ instance instSMulContMDiffMap : SMul C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ :=
 theorem smul_apply (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
     (f • s) x = f x • s x := (rfl)
 
+/-- The coercion of a section multiplied by a smooth function is the pointwise product. This is
+not a simp lemma: `ContMDiffSection.smul_apply` already evaluates such products pointwise, and
+lemmas such as `CovariantDerivative.apply_smul` are stated with `⇑(f • s)` on the left. -/
+theorem coe_smul_contMDiffMap (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) : ⇑(f • s) = ⇑f • ⇑s :=
+  (rfl)
+
 /-- The scalar-localization linear map agrees with smooth-function multiplication. -/
 @[simp]
 theorem smulLinearMap_eq_smul (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
