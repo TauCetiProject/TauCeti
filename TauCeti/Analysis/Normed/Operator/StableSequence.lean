@@ -65,16 +65,22 @@ private theorem ringInverse_continuousLinearEquiv_comp (e₁ : F ≃L[𝕜] E) (
       (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E) := by
   simp [ContinuousLinearMap.ringInverse_eq_inverse, ContinuousLinearMap.comp_assoc]
 
+private theorem norm_coe_linearIsometryEquiv_le (e : E ≃ₗᵢ[𝕜] F) :
+    ‖(e : E →L[𝕜] F)‖ ≤ 1 := by
+  rw [← e.toContinuousLinearMap_toLinearIsometry]
+  exact e.toLinearIsometry.norm_toContinuousLinearMap_le
+
 /-- Transporting an operator on both sides by linear isometric equivalences preserves its condition
 number. -/
 @[simp]
 theorem conditionNumber_linearIsometryEquiv_comp (e₁ : F ≃ₗᵢ[𝕜] E) (e₂ : E ≃ₗᵢ[𝕜] F)
     (T : E →L[𝕜] E) :
     conditionNumber ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) = conditionNumber T := by
-  have hinv : Ring.inverse ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) =
-      (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E) :=
-    ringInverse_continuousLinearEquiv_comp e₁.toContinuousLinearEquiv e₂.toContinuousLinearEquiv T
-  rw [conditionNumber_def, hinv, conditionNumber_def]
+  -- `(e : E →L[𝕜] F)` is `((e : E ≃L[𝕜] F) : E →L[𝕜] F)` syntactically via
+  -- `instCoeTCContinuousLinearMap`.
+  rw [conditionNumber_def,
+    ringInverse_continuousLinearEquiv_comp (e₁ : F ≃L[𝕜] E) (e₂ : E ≃L[𝕜] F) T,
+    ← e₁.toContinuousLinearEquiv_symm, ← e₂.toContinuousLinearEquiv_symm, conditionNumber_def]
   simp only [ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
@@ -154,13 +160,19 @@ theorem isStableSequence_linearIsometryEquiv_comp_iff
     (e₁ : ∀ n, F n ≃ₗᵢ[𝕜] E n) (e₂ : ∀ n, E n ≃ₗᵢ[𝕜] F n) {A : ∀ n, E n →L[𝕜] E n} :
     IsStableSequence (fun n ↦ (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)) ↔
       IsStableSequence A :=
+  -- `(e : E →L[𝕜] F)` is `((e : E ≃L[𝕜] F) : E →L[𝕜] F)` syntactically via
+  -- `instCoeTCContinuousLinearMap`.
   isStableSequence_continuousLinearEquiv_comp_iff
-    (e₁ := fun n ↦ (e₁ n).toContinuousLinearEquiv)
-    (e₂ := fun n ↦ (e₂ n).toContinuousLinearEquiv)
-    ⟨1, Eventually.of_forall fun n ↦ (e₁ n).toLinearIsometry.norm_toContinuousLinearMap_le⟩
-    ⟨1, Eventually.of_forall fun n ↦ (e₁ n).symm.toLinearIsometry.norm_toContinuousLinearMap_le⟩
-    ⟨1, Eventually.of_forall fun n ↦ (e₂ n).toLinearIsometry.norm_toContinuousLinearMap_le⟩
-    ⟨1, Eventually.of_forall fun n ↦ (e₂ n).symm.toLinearIsometry.norm_toContinuousLinearMap_le⟩
+    (e₁ := fun n ↦ (e₁ n : F n ≃L[𝕜] E n))
+    (e₂ := fun n ↦ (e₂ n : E n ≃L[𝕜] F n))
+    ⟨1, Eventually.of_forall fun n ↦ norm_coe_linearIsometryEquiv_le (e₁ n)⟩
+    ⟨1, Eventually.of_forall fun n ↦ by
+      rw [← (e₁ n).toContinuousLinearEquiv_symm]
+      exact norm_coe_linearIsometryEquiv_le (e₁ n).symm⟩
+    ⟨1, Eventually.of_forall fun n ↦ norm_coe_linearIsometryEquiv_le (e₂ n)⟩
+    ⟨1, Eventually.of_forall fun n ↦ by
+      rw [← (e₂ n).toContinuousLinearEquiv_symm]
+      exact norm_coe_linearIsometryEquiv_le (e₂ n).symm⟩
 
 end Operator
 

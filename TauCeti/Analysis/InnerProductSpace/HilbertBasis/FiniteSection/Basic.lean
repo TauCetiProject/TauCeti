@@ -203,13 +203,11 @@ theorem norm_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem norm_one_sub_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     ‖(1 : H →L[𝕜] H) - b.finiteProjection n‖ = 1 := by
-  set Q : H →L[𝕜] H := 1 - b.finiteProjection n
-  have hstar : star Q = Q := by simp [Q, ContinuousLinearMap.star_eq_adjoint]
-  have hidem : Q * Q = Q := by simp [Q, sub_mul, mul_sub, ContinuousLinearMap.mul_def]
-  have hsq : ‖Q‖ * ‖Q‖ = ‖Q‖ := by rw [← CStarRing.norm_star_mul_self, hstar, hidem]
-  have hle : (1 : ℝ) ≤ ‖Q‖ := by
-    simpa [Q, b.orthonormal.norm_eq_one] using Q.le_opNorm (b (n + 1))
-  nlinarith
+  refine le_antisymm ?_ ?_
+  · rw [b.finiteProjection_eq_projection]
+    exact IsStarProjection.norm_le _ (b.isStarProjection_projection _).one_sub
+  · simpa [b.orthonormal.norm_eq_one] using
+      ((1 : H →L[𝕜] H) - b.finiteProjection n).le_opNorm (b (n + 1))
 
 /-- The difference `b.finiteProjection n - 1` has operator norm one. -/
 @[simp]

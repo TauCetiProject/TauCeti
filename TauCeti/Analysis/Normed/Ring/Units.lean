@@ -63,33 +63,21 @@ element invertible, with an explicit bound on its inverse: if `‖1 - a * b‖ <
 theorem isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt {a b : R}
     (hr : ‖1 - a * b‖ < 1) (hl : ‖1 - b * a‖ < 1) :
     IsUnit a ∧ ‖Ring.inverse a‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖) := by
-  set ur : Rˣ := Units.oneSub (1 - a * b) hr with hur_def
-  set ul : Rˣ := Units.oneSub (1 - b * a) hl with hul_def
-  have hur : (ur : R) = a * b := by
-    rw [hur_def, Units.val_oneSub, sub_sub_cancel]
-  have hul : (ul : R) = b * a := by
-    rw [hul_def, Units.val_oneSub, sub_sub_cancel]
-  have haR : a * (b * ↑ur⁻¹) = 1 := by
-    rw [← mul_assoc, ← hur, Units.mul_inv]
-  have haL : (↑ul⁻¹ * b) * a = 1 := by
-    rw [mul_assoc, ← hul, Units.inv_mul]
-  have hLR : ↑ul⁻¹ * b = b * ↑ur⁻¹ := by
-    rw [← mul_one (↑ul⁻¹ * b), ← haR, ← mul_assoc, haL, one_mul]
-  have haL' : (b * ↑ur⁻¹) * a = 1 := hLR ▸ haL
-  set u : Rˣ := Units.mk a (b * ↑ur⁻¹) haR haL' with hu_def
-  have hu_val : (u : R) = a := by
-    rw [hu_def, Units.val_mk]
-  have hu_inv : (↑u⁻¹ : R) = b * ↑ur⁻¹ := by
-    rw [hu_def, Units.inv_mk, Units.val_mk]
+  obtain ⟨ur, hur⟩ := IsUnit.one_sub_of_norm_lt_one hr
+  obtain ⟨ul, hul⟩ := IsUnit.one_sub_of_norm_lt_one hl
+  simp only [sub_sub_cancel] at hur hul
+  have haR : a * (b * ↑ur⁻¹) = 1 := by simp [← mul_assoc, ← hur]
+  have haL : (↑ul⁻¹ * b) * a = 1 := by simp [mul_assoc, ← hul]
+  have hu : IsUnit a := ⟨⟨a, b * ↑ur⁻¹, haR, left_inv_eq_right_inv haL haR ▸ haL⟩, rfl⟩
+  have hinv : Ring.inverse a = b * ↑ur⁻¹ :=
+    left_inv_eq_right_inv (Ring.inverse_mul_cancel a hu) haR
   have hu_eq : (b * ↑ur⁻¹ : R) = b + (b * ↑ur⁻¹) * (1 - a * b) := by
-    have hmul : (b * ↑ur⁻¹) * (a * b) = b := by
-      rw [← hur, mul_assoc, Units.inv_mul, mul_one]
-    rw [mul_sub, mul_one, hmul, add_sub_cancel]
+    simp [mul_sub, ← hur, mul_assoc]
   have hstep : ‖(b * ↑ur⁻¹ : R)‖ ≤ ‖b‖ + ‖(b * ↑ur⁻¹ : R)‖ * ‖1 - a * b‖ :=
     (congrArg norm hu_eq).le.trans <| (norm_add_le _ _).trans <|
       add_le_add_right (norm_mul_le _ _) _
-  refine ⟨hu_val ▸ u.isUnit, ?_⟩
-  rw [← hu_val, Ring.inverse_unit, hu_inv, le_div_iff₀ (sub_pos.mpr hr)]
+  refine ⟨hu, ?_⟩
+  rw [hinv, le_div_iff₀ (sub_pos.mpr hr)]
   linarith
 
 /-- A two-sided `1 / 2`-approximate inverse in a normed ring with summable geometric series makes
