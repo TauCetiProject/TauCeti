@@ -163,10 +163,7 @@ theorem kineticEnergy_flowOf_vectorBundleEulerField [IsManifold I ∞ M] [I.Boun
     [T2Space M] (t : ℝ) (z : CotangentBundle I M) :
     kineticEnergy I M (flowOf (vectorBundleEulerField I) t z) =
       Real.exp (2 * t) * kineticEnergy I M z := by
-  rw [flowOf_vectorBundleEulerField, kineticEnergy_apply, kineticEnergy_apply]
-  -- This is `norm_smul`, supplied from the `NormedSpace` instance as in
-  -- `TauCeti.CotangentBundle.isLiouvilleCompletion_codiscBundle`.
-  rw [(NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul,
+  rw [flowOf_vectorBundleEulerField, kineticEnergy_apply, kineticEnergy_apply, norm_smul_snd,
     Real.norm_of_nonneg (Real.exp_pos _).le, two_mul, Real.exp_add]
   ring
 

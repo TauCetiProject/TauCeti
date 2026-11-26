@@ -237,6 +237,7 @@ theorem isCompleteVectorField_vectorBundleEulerField :
 
 /-- **The flow of the Euler vector field is fibre dilation.** At time `t` the flow of the Euler
 vector field of a real vector bundle is `z ↦ e^t • z`. -/
+@[simp high]
 theorem flowOf_vectorBundleEulerField [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
     [T2Space (TotalSpace F V)] [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] (t : ℝ)
     (z : TotalSpace F V) :
