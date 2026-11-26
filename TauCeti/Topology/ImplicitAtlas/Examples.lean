@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.ImplicitAtlas.DeformationSpace.Basic
 public import TauCeti.Topology.ImplicitAtlas.Boundary
+public import TauCeti.Topology.ImplicitAtlas.CellLike
 public import TauCeti.Topology.ImplicitAtlas.Smooth
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.UnitInterval
@@ -15,6 +16,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Boundary.Invariance
+import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 import TauCeti.Topology.Homeomorph.Prod
 
 /-!
@@ -40,7 +42,11 @@ for the virtual fundamental class.
   `[0, 1]` is an implicit atlas with boundary `{0, 1}` of virtual dimension `1` with an empty index
   set: the manifold atlas with boundary of `[0, 1]`, whose manifold boundary is `{0, 1}`. Its
   boundary restriction, an atlas of virtual dimension `0` on `{0, 1}`, is regular everywhere
-  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`).
+  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`). Stratified by
+  `{0} < (0, 1) > {1}` (`TauCeti.unitIntervalStratum`), with the two endpoints as boundary faces,
+  it is a cell-like stratified atlas
+  (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`, Pardon,
+  Definition 6.1.6).
 * **Single-chart atlases on a point** (`TauCeti.ImplicitAtlas.pointAtlas`). Let a finite group
   `Γ` act on a Hausdorff topological `n`-manifold `Y` and on a finite-dimensional real
   representation `E`, and let `s : Y → E` be a continuous equivariant map whose only zero is
@@ -292,9 +298,7 @@ noncomputable def unitIntervalAtlas :
   boundary_empty := (rfl)
   footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
   exists_openPartialHomeomorph _ _ h x hx := by
-    let : ChartedSpace (EuclideanHalfSpace (0 + 1)) unitInterval := instIccChartedSpace 0 1
-    -- The manifold boundary of `[0, 1]` is `{0, 1}`.
-    have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_Icc
+    have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_unitInterval
     rcases (ofChartedSpace Γ E ρ 0 unitInterval).exists_openPartialHomeomorph h x hx with
       ⟨n, hn, e, hxe, hdisj, he⟩ | ⟨n, hn, e, hxe, hbde, he⟩
     · exact Or.inl ⟨n, by simpa using hn, e, hxe, hbd ▸ hdisj, he⟩
@@ -314,6 +318,37 @@ theorem boundary_unitIntervalAtlas (I : Finset A) :
 theorem regLocus_boundaryAtlas_unitIntervalAtlas (I : Finset A) :
     (unitIntervalAtlas Γ E ρ).boundaryAtlas.regLocus I = univ := by
   simp
+
+/-- **The interval as a cell-like stratified atlas.** The interval atlas `[0, 1]`, stratified by
+`{0} < (0, 1) > {1}` (`TauCeti.unitIntervalStratum`, indexed by the subsets of `Bool` with dimension
+one less than their cardinality), with the proper subsets as boundary faces. -/
+noncomputable def unitIntervalCellLikeStratification :
+    (unitIntervalAtlas Γ E ρ).CellLikeStratification (Set Bool) (fun P ↦ (P.ncard : ℤ) - 1)
+      (LowerSet.Iio univ) where
+  stratum _ := unitIntervalStratum
+  isStratification_stratum _ := isCellLike_unitIntervalStratum.isStratification
+  stratum_act _ _ _ := rfl
+  boundary_eq_preimage _ := by
+    rw [boundary_unitIntervalAtlas, LowerSet.coe_Iio, preimage_unitIntervalStratum_Iio_univ]
+  stratum_footprintMap I J _ x := by
+    -- The only finite set of indices is `∅`, and `ψ_∅∅` is the identity.
+    obtain rfl := Finset.eq_empty_of_isEmpty I
+    obtain rfl := Finset.eq_empty_of_isEmpty J
+    exact congrArg unitIntervalStratum ((unitIntervalAtlas Γ E ρ).footprintMap_self ∅ x.val)
+  isCellLikeOn_regLocus I := by
+    simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum.isCellLikeOn_univ
+  exists_openPartialHomeomorph_stratum I J _ x _ := by
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
+    refine ⟨unitInterval, inferInstance, unitIntervalStratum,
+      by simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum,
+      (Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm.toOpenPartialHomeomorph,
+      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ by simp⟩
+
+/-- The interval atlas is stratified by `TauCeti.unitIntervalStratum` in each thickening. -/
+@[simp]
+theorem stratum_unitIntervalCellLikeStratification (I : Finset A) :
+    (unitIntervalCellLikeStratification Γ E ρ).stratum I = unitIntervalStratum :=
+  (rfl)
 
 end UnitInterval
 

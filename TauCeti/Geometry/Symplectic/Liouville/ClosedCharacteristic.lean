@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
 public import TauCeti.Geometry.Symplectic.Liouville.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Liouville.VectorField
 import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
+import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import TauCeti.Geometry.Symplectic.Liouville.Scaling
 
 /-!
@@ -33,6 +34,19 @@ characteristic of `F⁻¹(c)` itself, contractible in `ψ_{c - c'}(W)`
 `W` is the whole manifold, the closed characteristic is contractible in it
 (`TauCeti.IsLiouvilleVectorField.hasContractibleClosedCharacteristic_univ`).
 
+None of this needs `Z` to be complete. The maximal flow `φ` of a Liouville field that is not
+complete is still conformally symplectic wherever it is defined
+(`TauCeti.IsLiouvilleVectorField.mpullback_flowOf_apply_eq_exp_smul`). So where the time-`t` map
+translates `F` by `t`, its differential carries the Hamiltonian vector field of `F` to `eᵗ` times
+itself (`TauCeti.IsLiouvilleVectorField.mfderiv_flowOf_hamiltonianVectorField`), and carries
+closed characteristics of `F⁻¹(c')` to closed characteristics of `F⁻¹(c' + t)`. If `φ` translates
+`F` across a band around `c`, and the motions of the band preserve `W`, almost existence for the
+level `c` in `W` gives a closed characteristic of `F⁻¹(c)` contractible in `W`
+(`TauCeti.IsLiouvilleVectorField.hasContractibleClosedCharacteristic`):
+the times between `0` and `c - c'` move the nearby closed characteristic to the new one inside `W`.
+For `W` the whole manifold this is the contact-type step from almost existence to existence; for a
+complete field it gives `TauCeti.IsLiouvilleVectorField.hasContractibleClosedCharacteristic_univ`.
+
 On the completion `M` of a Liouville domain `W`, the function translated by the Liouville flow is
 the time coordinate `log r` of the cylindrical end, where `r` is the radial coordinate
 (`TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`); it is smooth outside `W`.
@@ -43,6 +57,11 @@ characteristic contractible in `M` as soon as it has the contractible almost exi
 
 ## Main results
 
+* `TauCeti.IsLiouvilleVectorField.mfderiv_flowOf_hamiltonianVectorField`: the local Liouville flow
+  rescales the Hamiltonian vector field of a function it translates.
+* `TauCeti.IsLiouvilleVectorField.hasContractibleClosedCharacteristic`:
+  almost existence gives existence for a level whose neighbours are swept out by the local
+  Liouville flow, with no completeness assumption.
 * `TauCeti.IsLiouvilleVectorField.hasContractibleClosedCharacteristic_image_flowOf_iff`: the
   Liouville flow conjugates closed characteristics of levels.
 * `TauCeti.IsLiouvilleVectorField.exists_hasContractibleClosedCharacteristic_image_flowOf`:
@@ -75,6 +94,124 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {σ : SmoothTwoForm I M} {Z : (x : M) → TangentSpace I x} {W : Set M} {F : M → ℝ} {c : ℝ}
 
 namespace IsLiouvilleVectorField
+
+/-! ### The local Liouville flow -/
+
+section Local
+
+variable (hZσ : IsLiouvilleVectorField σ.val Z) (hσ : σ.IsNondegenerate)
+  (hZ : ContMDiff I I.tangent 1 (T% Z))
+include hZσ hσ hZ
+
+/-- **The local Liouville flow rescales Hamiltonian vector fields.** Let `Z` be a `C¹` Liouville
+vector field of a nondegenerate two-form `σ`, with maximal flow `φ`, and let `φₜ` be defined at `x`
+and translate `F` near `x`: `F(φₜ y) = F(y) + t` for `y` near `x`. If `F` is differentiable at
+`φₜ x`, then `dφₜ(X_F(x)) = eᵗ X_F(φₜ x)`, since `φₜ^* σ = eᵗ σ` at `x`. No completeness of
+`Z` is needed. -/
+theorem mfderiv_flowOf_hamiltonianVectorField {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z)
+    (hFtx : MDifferentiableAt I 𝓘(ℝ) F (flowOf Z t x))
+    (hFt : ∀ᶠ y in 𝓝 x, F (flowOf Z t y) = F y + t) :
+    mfderiv I I (flowOf Z t) x (σ.hamiltonianVectorField F x) =
+      Real.exp t • σ.hamiltonianVectorField F (flowOf Z t x) := by
+  have hexp : Real.exp t ≠ 0 := (Real.exp_pos t).ne'
+  have hφ : MDifferentiableAt I I (flowOf Z t) x :=
+    (contMDiffAt_flowOf_comp le_rfl hZ contMDiffAt_const contMDiffAt_id hx).mdifferentiableAt
+      one_ne_zero
+  -- `dφₜ` is onto: the differential of `φ_{-t}` at `φₜ x` is a right inverse.
+  have hrange : σ.hamiltonianVectorField F (flowOf Z t x) ∈
+      (mfderiv I I (flowOf Z t) x).range := by
+    have h := mfderiv_flowOf_add_apply hZ (neg_mem_flowDomain_flowOf hZ hx)
+      (flowOf_neg_flowOf hZ hx) hx (σ.hamiltonianVectorField F (flowOf Z t x))
+    rw [neg_add_cancel] at h
+    exact ⟨_, h.trans (mfderiv_flowOf_zero_apply_eq_self Z _ _)⟩
+  -- `dφₜ` pulls `σ` back to `eᵗ σ` at `x`.
+  have hD (u v : TangentSpace I x) : SmoothBundleForm.eval₂ σ (flowOf Z t x)
+      (mfderiv I I (flowOf Z t) x u) (mfderiv I I (flowOf Z t) x v) =
+        SmoothBundleForm.eval₂ (Real.exp t • σ) x u v := by
+    rw [SmoothBundleForm.eval₂_apply, ← mpullback_apply_pair,
+      hZσ.mpullback_flowOf_apply_eq_exp_smul hZ σ.mdifferentiable hx, SmoothForm.eval₂_smul,
+      SmoothBundleForm.eval₂_apply, ContinuousAlternatingMap.smul_apply]
+  -- `dF ∘ dφₜ = dF` at `x`, since `F ∘ φₜ = F + t` near `x`.
+  have hF : mvfderiv I (F ∘ flowOf Z t) x = mvfderiv I (fun y ↦ F y + t) x :=
+    Filter.EventuallyEq.mvfderiv_eq hFt
+  have hmap := (hσ.smul _ hexp).map_hamiltonianVectorField_of_eval₂ (f := F) (g := F) hσ hrange hD
+    fun u ↦ by
+      rw [← mvfderiv_comp_apply x hFtx hφ, hF, mvfderiv_add_const]
+  rw [hσ.hamiltonianVectorField_smul hexp, Pi.smul_apply, map_smul] at hmap
+  rw [← hmap, smul_inv_smul₀ hexp]
+
+/-- **Almost existence gives existence along a local Liouville flow.** Let `Z` be a `C¹`
+Liouville vector field of a nondegenerate two-form `σ`, not necessarily complete, with maximal flow
+`φ`. Let `F` be differentiable on the band `c - ε < F < c + ε`, and let the flow translate `F`
+across the band: whenever `F x` and `F x + t` lie in the band, `φₜ x` is defined and
+`F(φₜ x) = F(x) + t`. Let these motions preserve `W`, as they do when `W` is the whole manifold. If
+the level `F⁻¹(c)` has the contractible almost existence property in `W`, then it carries a closed
+characteristic contractible in `W`.
+
+Some nearby level `F⁻¹(c')` carries a closed characteristic contractible in `W`, and `φ_{c - c'}`
+carries it to one of `F⁻¹(c)`; the times between `0` and `c - c'` move the first loop to the
+second inside `W`. -/
+theorem hasContractibleClosedCharacteristic {ε : ℝ}
+    (hε : 0 < ε) (hF : ∀ x, F x ∈ Ioo (c - ε) (c + ε) → MDifferentiableAt I 𝓘(ℝ) F x)
+    (hFZ : ∀ x t, F x ∈ Ioo (c - ε) (c + ε) → F x + t ∈ Ioo (c - ε) (c + ε) →
+      (t, x) ∈ flowDomain Z ∧ F (flowOf Z t x) = F x + t)
+    (hW : ∀ x t, x ∈ W → F x ∈ Ioo (c - ε) (c + ε) → F x + t ∈ Ioo (c - ε) (c + ε) →
+      flowOf Z t x ∈ W)
+    (h : σ.HasContractibleAlmostExistence W F c) :
+    σ.HasContractibleClosedCharacteristic W F c := by
+  -- Some nearby level `F⁻¹(c')` carries a closed characteristic `γ` contractible in `W`.
+  obtain ⟨c', hc', hcc⟩ := h.exists_hasContractibleClosedCharacteristic hε fun _ ↦
+    isRegularValue_of_apply_flowOf_eq_add hZ hF fun x t hx hxt ↦ (hFZ x t hx hxt).2
+  obtain ⟨T, γ, hT, hγ, -, ⟨s₀, hs₀⟩, hlev, g, hg, hgγ⟩ :=
+    SmoothTwoForm.hasContractibleClosedCharacteristic_iff.1 hcc
+  -- It is flowed to the level `c` for the time `t = c - c'`; the times `u t`, `u ∈ [0, 1]`, keep
+  -- `F` in the band.
+  set t := c - c'
+  have hcJ : c ∈ Ioo (c - ε) (c + ε) := ⟨by linarith, by linarith⟩
+  have hJ (u : ℝ) (hu : u ∈ Icc (0 : ℝ) 1) : c' + u * t ∈ Ioo (c - ε) (c + ε) :=
+    (convex_Ioo _ _).add_smul_sub_mem hc' hcJ hu
+  have hγJ (s : ℝ) : F (γ s) ∈ Ioo (c - ε) (c + ε) := by rw [hlev]; exact hc'
+  have hγtJ (s : ℝ) : F (γ s) + t ∈ Ioo (c - ε) (c + ε) := by
+    rw [hlev, add_sub_cancel]; exact hcJ
+  have hdom (s : ℝ) : (t, γ s) ∈ flowDomain Z ∧ F (flowOf Z t (γ s)) = c := by
+    obtain ⟨hd, he⟩ := hFZ (γ s) t (hγJ s) (hγtJ s)
+    rw [hlev, add_sub_cancel] at he
+    exact ⟨hd, he⟩
+  -- Near each point of `γ`, the time-`t` map translates `F` by `t`.
+  have hloc (s : ℝ) : ∀ᶠ y in 𝓝 (γ s), F (flowOf Z t y) = F y + t := by
+    have hband : IsOpen {y : ℝ | y ∈ Ioo (c - ε) (c + ε) ∧ y + t ∈ Ioo (c - ε) (c + ε)} :=
+      isOpen_Ioo.inter (isOpen_Ioo.preimage (by fun_prop))
+    filter_upwards [(hF _ (hγJ s)).continuousAt.preimage_mem_nhds
+      (hband.mem_nhds ⟨hγJ s, hγtJ s⟩)] with y hy
+    exact (hFZ y t hy.1 hy.2).2
+  -- So `φₜ ∘ γ` is an integral curve of `eᵗ X_F`.
+  have hγt : IsMIntegralCurve (flowOf Z t ∘ γ)
+      ((Real.exp (-t))⁻¹ • σ.hamiltonianVectorField F) := by
+    rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+    refine hγ.map_of_mfderiv_eq (fun s _ ↦ (contMDiffAt_flowOf_comp le_rfl hZ contMDiffAt_const
+      contMDiffAt_id (hdom s).1).mdifferentiableAt one_ne_zero) fun s _ ↦ ?_
+    rw [Real.exp_neg, inv_inv, Pi.smul_apply]
+    exact hZσ.mfderiv_flowOf_hamiltonianVectorField hσ hZ (hdom s).1 (hF _ ((hdom s).2 ▸ hcJ))
+      (hloc s)
+  -- Its loop is contractible in `W`.
+  have hgF (z : AddCircle T) : F (g z) = c' := by
+    obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective z
+    exact (congrArg F (hgγ s)).trans (hlev s)
+  obtain ⟨g', hg', hgg'⟩ := exists_nullhomotopic_flowOf_comp hZ hg
+    (fun z ↦ (hFZ _ t (by rw [hgF]; exact hc') (by simpa [hgF] using hJ 1 ⟨zero_le_one, le_rfl⟩)).1)
+    (fun z u hu ↦ hW _ _ (g z).property (by rw [hgF]; exact hc') (by rw [hgF]; exact hJ u hu))
+  refine (SmoothTwoForm.hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
+    (Real.exp_pos (-t)).ne' hγt ⟨s₀, fun h ↦ hs₀ ?_⟩ (fun s ↦ (hdom s).2)
+    ⟨g', hg', fun s ↦ by rw [hgg', hgγ, Function.comp_apply]⟩).hasContractibleClosedCharacteristic
+  -- `φₜ` is injective along `γ`, since `φ_{-t}` undoes it.
+  rw [← flowOf_neg_flowOf hZ (hdom s₀).1, ← flowOf_neg_flowOf hZ (hdom 0).1]
+  exact congrArg (flowOf Z (-t)) h
+
+end Local
+
+/-! ### The complete Liouville flow -/
+
+section Complete
 
 variable (hZσ : IsLiouvilleVectorField σ.val Z) (hσ : σ.IsNondegenerate)
   (hc : IsCompleteVectorField Z) (hZ : ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z))
@@ -119,9 +256,7 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
   have hψ := flowOf_eq_globalFlow hZ1 hc
   -- Every value in the band is regular: `F` grows at unit speed along the flow, so `dF(Z) = 1`.
   have hreg : ∀ c' ∈ Ioo (c - ε) (c + ε), IsRegularValue I 𝓘(ℝ) F c' :=
-    fun _ ↦ isRegularValue_of_apply_globalFlow_eq_add hZ1 hc hF fun x t hx hxt ↦ by
-      rw [← hψ]
-      exact hFZ x t hx hxt
+    fun _ ↦ isRegularValue_of_apply_flowOf_eq_add hZ1 hF hFZ
   -- Some nearby level `F⁻¹(c')` carries a closed characteristic contractible in `W`.
   obtain ⟨c', hc'ε, hcc'⟩ := h.exists_hasContractibleClosedCharacteristic hε hreg
   -- Flow it back to the level `c`, for time `t = c - c'`.
@@ -155,20 +290,22 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
       SmoothTwoForm.hamiltonianVectorField_comp (by fun_prop) hG]
     simp
 
+omit hZ in
 /-- **Almost existence gives existence along a Liouville flow**, for contractibility in the whole
 manifold. Under the hypotheses of
-`TauCeti.IsLiouvilleVectorField.exists_hasContractibleClosedCharacteristic_image_flowOf`, if the
-level `F⁻¹(c)` has the contractible almost existence property in `M`, then it carries a closed
-characteristic contractible in `M`. -/
-theorem hasContractibleClosedCharacteristic_univ {ε : ℝ}
+`TauCeti.IsLiouvilleVectorField.exists_hasContractibleClosedCharacteristic_image_flowOf`, with `Z`
+only `C¹`, if the level `F⁻¹(c)` has the contractible almost existence property in `M`, then it
+carries a closed characteristic contractible in `M`. -/
+theorem hasContractibleClosedCharacteristic_univ (hZ : ContMDiff I I.tangent 1 (T% Z)) {ε : ℝ}
     (hε : 0 < ε) (hF : ∀ x, F x ∈ Ioo (c - ε) (c + ε) → MDifferentiableAt I 𝓘(ℝ) F x)
     (hFZ : ∀ x t, F x ∈ Ioo (c - ε) (c + ε) → F x + t ∈ Ioo (c - ε) (c + ε) →
       F (flowOf Z t x) = F x + t)
     (h : σ.HasContractibleAlmostExistence univ F c) :
-    σ.HasContractibleClosedCharacteristic univ F c := by
-  obtain ⟨t, -, ht⟩ := hZσ.exists_hasContractibleClosedCharacteristic_image_flowOf hσ hc hZ hε hF
-    hFZ h
-  rwa [image_univ_of_surjective (flowOf_surjective (hZ.of_le (by simp)) hc t)] at ht
+    σ.HasContractibleClosedCharacteristic univ F c :=
+  hZσ.hasContractibleClosedCharacteristic hσ hZ hε hF
+    (fun x t hx hxt ↦ ⟨hc.mem_flowDomain t x, hFZ x t hx hxt⟩) (fun _ _ _ _ _ ↦ mem_univ _) h
+
+end Complete
 
 end IsLiouvilleVectorField
 
