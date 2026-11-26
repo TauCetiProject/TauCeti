@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealOrCMSubfield
 
 /-!
-# Place-constant functions with the conjugation relation take the value `w / 2`
+# `2 m(τ) = w` at places where some `δ` acts as complex conjugation on `E_K`
 
 Let `K` be a number field, `Ω` a normal extension of `ℚ`, and `m` a function on the embeddings
 `τ : K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c`. Suppose that `m(τ)`
@@ -31,9 +31,9 @@ unramified over `ℚ` at which, when `E_K` is CM, such a `δ` exists.
 
 * `TauCeti.NumberField.two_nsmul_eq_of_apply_comp_eq`: `2 m(τ₀) = w` from one `δ` with
   `m(δ τ₀) = m(τ₀)` acting on `E_K` as its complex conjugation.
-* `TauCeti.NumberField.two_nsmul_eq_of_forall_isCMField`: for `m` constant on the fibres of `v`,
-  if (when `E_K` is CM) some `δ` fixing `v(τ₀)` acts on `E_K` as its complex conjugation, then
-  `2 m(τ) = w` for every `τ` with `v(τ) = v(τ₀)`.
+* `TauCeti.NumberField.two_nsmul_eq_of_isCMField_imp_exists_comp_eq_complexConj`: for `m`
+  constant on the fibres of `v`, if (when `E_K` is CM) some `δ` fixing `v(τ₀)` acts on `E_K` as
+  its complex conjugation, then `2 m(τ) = w` for every `τ` with `v(τ) = v(τ₀)`.
 
 ## References
 
@@ -70,13 +70,14 @@ theorem two_nsmul_eq_of_apply_comp_eq
         (τ.comp (maximalRealOrCMSubfield K).subtype) ⟨x, hx⟩).symm
   rw [two_nsmul, ← hm c hc τ, ← hδc, hδm]
 
-/-- **Place-constant functions with the conjugation relation take the value `w / 2`.** Let `m` be
-a function on embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c`,
-constant on the fibres of a function `v` on embeddings. Suppose that, if `E_K` is CM, some
-`δ ∈ Gal(Ω/ℚ)` with `v(δ ∘ τ₀) = v(τ₀)` satisfies `δ ∘ τ₀ = τ₀ ∘ s` on `E_K`, for the complex
-conjugation `s` of `E_K`. Then `2 m(τ) = w` for every `τ` with `v(τ) = v(τ₀)` (Lawrence–Venkatesh,
-§2.4, proof of Lemma 2.8). -/
-theorem two_nsmul_eq_of_forall_isCMField {P : Type*} {v : (K →+* Ω) → P}
+/-- **`2 m(τ) = w` on the fibre of `v(τ₀)` when some `δ` fixing `v(τ₀)` acts on `E_K` as its
+complex conjugation.** Let `m` be a function on embeddings `K →+* Ω` with
+`m(c ∘ τ) + m(τ) = w` for every complex conjugation `c`, constant on the fibres of a function `v`
+on embeddings. Suppose that, if `E_K` is CM, some `δ ∈ Gal(Ω/ℚ)` with `v(δ ∘ τ₀) = v(τ₀)`
+satisfies `δ ∘ τ₀ = τ₀ ∘ s` on `E_K`, for the complex conjugation `s` of `E_K`. Then `2 m(τ) = w`
+for every `τ` with `v(τ) = v(τ₀)` (Lawrence–Venkatesh, §2.4, proof of Lemma 2.8). -/
+theorem two_nsmul_eq_of_isCMField_imp_exists_comp_eq_complexConj {P : Type*}
+    {v : (K →+* Ω) → P}
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     (hv : ∀ τ τ', v τ = v τ' → m τ = m τ') {τ₀ : K →+* Ω}
     (hδ : ∀ _ : IsCMField (maximalRealOrCMSubfield K), ∃ δ : Gal(Ω/ℚ),
