@@ -432,7 +432,7 @@ theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz (hp : p ≠ (∞ : �
       exact image_eq_zero_of_notMem_tsupport hxK)
   rwa [W1p.restrictL_eq_of_value_ae_eq le_top ((hw.filter_mono ae_restrict_le).trans hu.symm)] at h
 
-/-- **Constants vanish on no boundary part of a bounded set.** For `1 ≤ p < ∞` and a bounded open
+/-- **Constants lie in `W^{1,p}_∅(Ω)` on a bounded set.** For `1 ≤ p < ∞` and a bounded open
 set `Ω`, every constant function lies in `W^{1,p}_∅(Ω)`. -/
 theorem W1p.const_mem_w1pVanishingOnSubmodule_empty (hp : p ≠ (∞ : ℝ≥0∞))
     (hb : Bornology.IsBounded (Omega : Set E)) [IsFiniteMeasure (mu.restrict (Omega : Set E))]
