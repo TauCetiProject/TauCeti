@@ -304,6 +304,16 @@ theorem twistChargeConjEquivTwist_toEquiv_mk_mk (x : X) (p : s.P x) (q : Q x) (k
     (Extend.mk_smul χ hχ _ k h))).trans ?_
   exact twistChargeConjEquivTwist_toEquiv_mk s Q x p q _
 
+/-- **The comparison of the charge conjugate of a twist with a twist at `[[(p, q), k], 1]`**: it
+sends `[[(p, q), k], 1]` to `[(p, [(p, q), 1]), χ k]`. -/
+@[simp]
+theorem twistChargeConjEquivTwist_toEquiv_inl_mk (x : X) (p : s.P x) (q : Q x) (k : SpinC) :
+    (s.twistChargeConjEquivTwist Q).toEquiv x
+        (Extend.inl χ hχ (Extend.mk μ hμ (P := (s.fiberProd Circle Q).P) (FiberProd.mk p q) k)) =
+      Extend.mk μ hμ (P := (s.fiberProd Circle (s.inverseDeterminantTwistBundle Q)).P)
+        (FiberProd.mk p (Extend.inl ψ hψ (FiberProd.mk p q))) (χ k) := by
+  rw [Extend.inl_def, twistChargeConjEquivTwist_toEquiv_mk_mk, mul_one]
+
 end SpinCStructure
 
 end TauCeti
