@@ -145,7 +145,7 @@ variable {φ}
 
 /-- `ψⱼ` vanishes outside the finite set of frequencies of norm at most `2^j φ.rOut`, the
 frequencies summed over in the definition of `littlewoodPaleyBlockLp`. -/
-private theorem inhomogeneousLittlewoodPaley_eq_zero_of_notMem (j : ℕ) {n : d → ℤ}
+theorem inhomogeneousLittlewoodPaley_eq_zero_of_notMem (j : ℕ) {n : d → ℤ}
     (hn : n ∉ (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset) :
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
@@ -176,17 +176,7 @@ theorem coeFn_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p)] {j : ℕ}
     littlewoodPaleyBlockLp φ p j c =ᵐ[volume] fun x ↦
       ∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n * mFourier n x := by
   rw [littlewoodPaleyBlockLp_eq_sum hs]
-  set g : (d → ℤ) → Lp ℂ p (volume : Measure (UnitAddTorus d)) := fun n ↦
-    ((φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n) • mFourierLp p n
-  have h : ∀ n ∈ s, ∀ᵐ x ∂volume,
-      g n x = (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n * mFourier n x :=
-    fun n _ ↦ by
-      filter_upwards [Lp.coeFn_smul (((φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) *
-        c n)) (mFourierLp p n), coeFn_mFourierLp p n] with x hx hx'
-      rw [hx, Pi.smul_apply, hx', smul_eq_mul]
-  filter_upwards [Lp.coeFn_finsetSum s g, (eventually_all_finset s).2 h] with x hx hx'
-  rw [hx, Finset.sum_apply]
-  exact Finset.sum_congr rfl hx'
+  exact coeFn_sum_smul_mFourierLp p s _
 
 /-- The Fourier coefficients of the block `Δⱼ c` are `ψⱼ(n) c(n)`. -/
 @[simp]

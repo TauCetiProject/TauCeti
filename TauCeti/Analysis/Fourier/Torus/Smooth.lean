@@ -64,6 +64,8 @@ converges in every `C^N` norm, so it is a smooth function, with Fourier coeffici
   converges to it in every `C^N` norm.
 * `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq`: a smooth function is determined by its Fourier
   coefficients.
+* `TauCeti.UnitAddTorus.hasSum_mFourierCoeff_mul`: the Fourier coefficients of the product of a
+  smooth and an integrable function are the convolution of their coefficients.
 * `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions` and
   `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions_of_bounded`: a trigonometric series
   with rapidly decreasing coefficients is a smooth function.
@@ -443,6 +445,44 @@ theorem eq_of_mFourierCoeff_eq {f g : UnitAddTorus d → ℂ} (hf : f ∈ smooth
     (hg : g ∈ smoothFunctions d) (h : ∀ n, mFourierCoeff f n = mFourierCoeff g n) : f = g :=
   (hasSum_mFourierCoeff_smul_mFourier hf).unique <| by
     simpa only [h] using hasSum_mFourierCoeff_smul_mFourier hg
+
+/-- **Fourier coefficients of a product with a smooth function.** If `g` is smooth and `f` is
+integrable on the torus, the Fourier coefficients of `g f` are the convolution of those of `g` and
+`f`, the series converging absolutely: `(g f)^(n) = ∑ₘ ĝ(m) f̂(n - m)`. -/
+theorem hasSum_mFourierCoeff_mul {g f : UnitAddTorus d → ℂ} (hg : g ∈ smoothFunctions d)
+    (hf : MeasureTheory.Integrable f) (n : d → ℤ) :
+    HasSum (fun m ↦ mFourierCoeff g m * mFourierCoeff f (n - m))
+      (mFourierCoeff (fun x ↦ g x * f x) n) := by
+  have hc : Summable fun m ↦ ‖mFourierCoeff g m‖ := by
+    simpa using summable_norm_mFourierCoeff_mul_pow hg le_rfl 0
+  -- Expanding `g` in its Fourier series, the integrand of `(g f)^(n)` is the sum of the
+  -- `F m = ĝ(m) e_{m - n} f`, whose integrals are `ĝ(m) f̂(n - m)`.
+  set F : (d → ℤ) → UnitAddTorus d → ℂ := fun m x ↦
+    mFourierCoeff g m * (mFourier (-(n - m)) x * f x)
+  have hF_int (m : d → ℤ) : MeasureTheory.Integrable (F m) :=
+    (hf.bdd_mul (mFourier (-(n - m))).continuous.aestronglyMeasurable
+      (.of_forall fun x ↦ (norm_mFourier_apply _ x).le)).const_mul _
+  have hF_norm (m : d → ℤ) :
+      ∫ x, ‖F m x‖ = ‖mFourierCoeff g m‖ * ∫ x, ‖f x‖ := by
+    simp only [F, norm_mul, norm_mFourier_apply, one_mul]
+    exact MeasureTheory.integral_const_mul _ _
+  have hF : HasSum (fun m ↦ ∫ x, F m x) (∫ x, ∑' m, F m x) :=
+    MeasureTheory.hasSum_integral_of_summable_integral_norm hF_int
+      (by simpa only [hF_norm] using hc.mul_right (∫ x, ‖f x‖))
+  have hF_eq (m : d → ℤ) : ∫ x, F m x = mFourierCoeff g m * mFourierCoeff f (n - m) := by
+    rw [MeasureTheory.integral_const_mul, mFourierCoeff_eq_integral_volume f]
+    simp only [smul_eq_mul]
+  have hsum (x : UnitAddTorus d) : ∑' m, F m x = mFourier (-n) x • (g x * f x) := by
+    have hx : HasSum (fun m ↦ mFourierCoeff g m * mFourier m x) (g x) := by
+      simpa using Pi.hasSum.1 (hasSum_mFourierCoeff_smul_mFourier hg) x
+    refine (HasSum.tsum_eq ?_)
+    convert hx.mul_right (mFourier (-n) x * f x) using 1
+    · funext m
+      simp only [F, show -(n - m) = m + -n by abel, mFourier_add]
+      ring
+    · rw [smul_eq_mul]
+      ring
+  simpa only [hF_eq, hsum, mFourierCoeff_eq_integral_volume] using hF
 
 /-! ### Smooth functions from rapidly decreasing coefficients -/
 

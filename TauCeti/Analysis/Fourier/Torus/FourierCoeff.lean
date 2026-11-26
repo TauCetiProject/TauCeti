@@ -37,6 +37,11 @@ each Fourier coefficient is a continuous linear functional of norm at most one.
 * `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`.
 * `TauCeti.UnitAddTorus.mFourierCoeffCLM`: the `n`-th Fourier coefficient as a continuous linear
   functional on `Lᵖ(𝕋ᵈ)`.
+* `TauCeti.UnitAddTorus.coeFn_sum_smul_mFourierLp` and
+  `TauCeti.UnitAddTorus.mFourierCoeff_sum_smul_mFourierLp`: a trigonometric polynomial in
+  `Lᵖ(𝕋ᵈ)` as a function, and its Fourier coefficients.
+* `TauCeti.UnitAddTorus.norm_sum_smul_mFourierLp_add`: multiplying a trigonometric polynomial by
+  a monomial `eₘ` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -204,6 +209,54 @@ noncomputable def mFourierCoeffCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : d → 
 theorem mFourierCoeffCLM_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
     mFourierCoeffCLM p n f = mFourierCoeff f n := (rfl)
+
+/-! ### Trigonometric polynomials in `Lᵖ` -/
+
+/-- A trigonometric polynomial `∑ n ∈ s, a n • eₙ` in `Lᵖ(𝕋ᵈ)` agrees almost everywhere with the
+function `x ↦ ∑ n ∈ s, a n eₙ(x)`. -/
+theorem coeFn_sum_smul_mFourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) :
+    (∑ n ∈ s, a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d))) =ᵐ[volume]
+      fun x ↦ ∑ n ∈ s, a n * mFourier n x := by
+  have h : ∀ n ∈ s, ∀ᵐ x ∂(volume : Measure (UnitAddTorus d)),
+      (a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d))) x =
+        a n * mFourier n x := fun n _ ↦ by
+    filter_upwards [Lp.coeFn_smul (a n) (mFourierLp p n), coeFn_mFourierLp p n] with x hx hx'
+    rw [hx, Pi.smul_apply, hx', smul_eq_mul]
+  filter_upwards [Lp.coeFn_finsetSum s fun n ↦ a n • mFourierLp p n,
+    (Filter.eventually_all_finset s).2 h] with x hx hx'
+  rw [hx, Finset.sum_apply]
+  exact Finset.sum_congr rfl hx'
+
+/-- The Fourier coefficients of a trigonometric polynomial `∑ n ∈ s, a n • eₙ` in `Lᵖ(𝕋ᵈ)` are `a`
+on `s` and zero elsewhere. -/
+theorem mFourierCoeff_sum_smul_mFourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) (n : d → ℤ) :
+    mFourierCoeff (∑ k ∈ s, a k • mFourierLp p k : Lp ℂ p (volume : Measure (UnitAddTorus d))) n =
+      if n ∈ s then a n else 0 := by
+  rw [mFourierCoeff_congr_ae (coeFn_sum_smul_mFourierLp p s a)]
+  exact mFourierCoeff_sum_mul_mFourier s a n
+
+/-- **Modulation preserves `Lᵖ` norms.** Multiplying a trigonometric polynomial by the monomial
+`eₘ`, which shifts its frequencies by `m`, does not change its `Lᵖ` norm, since `|eₘ| = 1`. -/
+theorem norm_sum_smul_mFourierLp_add (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) (m : d → ℤ) :
+    ‖(∑ n ∈ s, a n • mFourierLp p (n + m) : Lp ℂ p (volume : Measure (UnitAddTorus d)))‖ =
+      ‖(∑ n ∈ s, a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d)))‖ := by
+  have h : ∀ n ∈ s, ∀ᵐ x ∂(volume : Measure (UnitAddTorus d)),
+      (a n • mFourierLp p (n + m) : Lp ℂ p (volume : Measure (UnitAddTorus d))) x =
+        mFourier m x * (a n * mFourier n x) := fun n _ ↦ by
+    filter_upwards [Lp.coeFn_smul (a n) (mFourierLp p (n + m)), coeFn_mFourierLp p (n + m)]
+      with x hx hx'
+    rw [hx, Pi.smul_apply, hx', smul_eq_mul, mFourier_add]
+    ring
+  rw [Lp.norm_def, Lp.norm_def]
+  refine congrArg ENNReal.toReal
+    (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_)
+  filter_upwards [Lp.coeFn_finsetSum s fun n ↦ a n • mFourierLp p (n + m),
+    (Filter.eventually_all_finset s).2 h, coeFn_sum_smul_mFourierLp p s a] with x hx hx' hx''
+  rw [hx, Finset.sum_apply, Finset.sum_congr rfl hx', ← Finset.mul_sum, hx'', norm_mul,
+    norm_mFourier_apply, one_mul]
 
 end Lp
 
