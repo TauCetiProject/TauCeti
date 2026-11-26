@@ -95,8 +95,8 @@ the oriented one-dimensional moduli spaces, which are not constructed here.
 
 ## Main definitions
 
-* `TauCeti.NovikovModule.signTwist`: the twist of a functional by the signs `(-1)^(e(q, p₀))`;
-  both regradings below are sign twists.
+Both regradings are sign twists (`TauCeti.NovikovModule.signTwist`).
+
 * `TauCeti.NovikovModule.regradeProductFunctional`: the regrading of a functional on
   `C₁ ⊗ C₂ ⊗ C₀^∨` from the raw to the cochain grading.
 * `TauCeti.NovikovModule.regradeTripleFunctional`: the regrading of a functional on
@@ -171,72 +171,6 @@ theorem kernelReadout_cochain (n : ℤ) (μ₀ : S₀ → ℤ) (φ : S → S₀ 
 
 end Unary
 
-section SignTwist
-
-variable (e : S → S₀ → ℤ)
-
-/-- The **sign twist** of a functional `ψ` on `X ⊗ C₀^∨` by exponents `e`: the functional
-`(-1)^(e(q, p₀)) ψ(q, p₀)`. The regradings of functionals from the raw to the cochain grading
-(`TauCeti.NovikovModule.regradeProductFunctional`,
-`TauCeti.NovikovModule.regradeTripleFunctional`) are sign twists. -/
-def signTwist (ψ : S → S₀ → R) (q : S) (p₀ : S₀) : R :=
-  negOnePowCast R (e q p₀) * ψ q p₀
-
-/-- A value of a sign twist. -/
-theorem signTwist_apply (ψ : S → S₀ → R) (q : S) (p₀ : S₀) :
-    signTwist e ψ q p₀ = negOnePowCast R (e q p₀) * ψ q p₀ :=
-  (rfl)
-
-/-- A sign twist is an involution. -/
-@[simp]
-theorem signTwist_signTwist (ψ : S → S₀ → R) : signTwist e (signTwist e ψ) = ψ := by
-  funext q p₀
-  rw [signTwist_apply, signTwist_apply, ← mul_assoc, negOnePowCast_mul_self, one_mul]
-
-/-- A sign twist is injective. -/
-theorem signTwist_injective : Injective (signTwist (R := R) e) :=
-  LeftInverse.injective (g := signTwist e) (signTwist_signTwist e)
-
-/-- Two functionals have equal sign twists exactly when they are equal. -/
-@[simp]
-theorem signTwist_inj {ψ ψ' : S → S₀ → R} : signTwist e ψ = signTwist e ψ' ↔ ψ = ψ' :=
-  (signTwist_injective e).eq_iff
-
-/-- The sign twist of the zero functional is zero. -/
-@[simp]
-theorem signTwist_zero : signTwist (R := R) e 0 = 0 := by
-  funext q p₀
-  simp [signTwist_apply]
-
-/-- A sign twist is additive. -/
-@[simp]
-theorem signTwist_add (ψ ψ' : S → S₀ → R) :
-    signTwist e (ψ + ψ') = signTwist e ψ + signTwist e ψ' := by
-  funext q p₀
-  simp [signTwist_apply, mul_add]
-
-/-- A sign twist commutes with negation. -/
-@[simp]
-theorem signTwist_neg (ψ : S → S₀ → R) : signTwist e (-ψ) = -signTwist e ψ := by
-  funext q p₀
-  simp [signTwist_apply]
-
-/-- A sign twist commutes with subtraction. -/
-@[simp]
-theorem signTwist_sub (ψ ψ' : S → S₀ → R) :
-    signTwist e (ψ - ψ') = signTwist e ψ - signTwist e ψ' := by
-  funext q p₀
-  simp [signTwist_apply, mul_sub]
-
-/-- A sign twist commutes with scalar multiplication. -/
-@[simp]
-theorem signTwist_smul (c : R) (ψ : S → S₀ → R) : signTwist e (c • ψ) = c • signTwist e ψ := by
-  funext q p₀
-  simp only [signTwist_apply, Pi.smul_apply, smul_eq_mul]
-  ring
-
-end SignTwist
-
 section Regrade
 
 variable (n : ℤ) (μ₂ : S₂ → ℤ) (μ₀ : S₀ → ℤ)
@@ -253,7 +187,7 @@ abbrev regradeProductFunctional (ψ : S₁ × S₂ → S₀ → R) : S₁ × S�
 /-- A value of the regrading of a product functional. -/
 theorem regradeProductFunctional_apply (ψ : S₁ × S₂ → S₀ → R) (q : S₁ × S₂) (p₀ : S₀) :
     regradeProductFunctional n μ₂ μ₀ ψ q p₀ = negOnePowCast R (n * (μ₂ q.2 + μ₀ p₀)) * ψ q p₀ :=
-  (rfl)
+  signTwist_apply _ ψ q p₀
 
 end Regrade
 
@@ -505,7 +439,7 @@ abbrev regradeTripleFunctional (ψ : (S₁ × S₂) × S₃ → S₀ → R) : (S
 /-- A value of the regrading of a functional on a triple tensor product. -/
 theorem regradeTripleFunctional_apply (ψ : (S₁ × S₂) × S₃ → S₀ → R) (q : (S₁ × S₂) × S₃)
     (p₀ : S₀) : regradeTripleFunctional n μ₂ ψ q p₀ = negOnePowCast R (n * μ₂ q.1.2) * ψ q p₀ :=
-  (rfl)
+  signTwist_apply _ ψ q p₀
 
 variable {n μ₂} {μ₁ : S₁ → ℤ} {μ₃ : S₃ → ℤ} {μ₀ : S₀ → ℤ}
 
