@@ -18,9 +18,11 @@ Let `z = ⟪e₀, γ'⟫ + i ⟪e₁, γ'⟫` be the velocity coordinates of a c
 frame of a surface, and let `ω(X) = ⟪e₁, ∇_X e₀⟫` be the connection one-form of a metric
 connection `∇`. Differentiating the coordinates gives
 `z' = (∇_t γ')₀ + i (∇_t γ')₁ - i ω(γ') z`
-(`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`). The curve only needs to be differentiable
-at `t`, with its velocity differentiable in the tangent-bundle trivialization centered at `γ t`,
-and the frame only needs to be differentiable at `γ t`.
+(`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`). The computation uses that the
+connection coefficients of a frame orthonormal along the curve are skew-symmetric
+(`IsLocalFrameOn.coeff_covariantDerivative_curveVelocity_add_eq_zero`). The curve only needs to
+be differentiable at `t`, with its velocity differentiable in the tangent-bundle trivialization
+centered at `γ t`, and the frame only needs to be differentiable at `γ t`.
 
 ## References
 
@@ -41,8 +43,36 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M}
-  {γ : ℝ → M} {t : ℝ}
+  {n : ℕ∞ω} {u : Set M} {γ : ℝ → M} {t : ℝ}
+
+/-- **Curvewise skewness of the connection matrix.** For a metric connection, the coefficient of
+`∇_{γ'} sⱼ` along `sᵢ` at `γ t` is minus the coefficient of `∇_{γ'} sᵢ` along `sⱼ`, when the
+local frame is orthonormal along `γ` near `t`. Only `γ` differentiable at `t` and the two frame
+sections differentiable at `γ t` are needed. -/
+theorem coeff_covariantDerivative_curveVelocity_add_eq_zero {ι : Type*} [Finite ι]
+    {s : ι → Π x : M, TangentSpace I x} (hs : IsLocalFrameOn I E n s u) (hu : γ t ∈ u)
+    (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
+    {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ) I γ t) {i j : ι}
+    (hsi : MDiffAt (T% (s i)) (γ t)) (hsj : MDiffAt (T% (s j)) (γ t)) :
+    hs.coeff i (γ t) (cov (s j) (γ t) (curveVelocity I γ t)) +
+      hs.coeff j (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) = 0 := by
+  classical
+  have hc : (fun r ↦ inner ℝ (s i (γ r)) (s j (γ r))) =ᶠ[𝓝 t]
+      fun _ ↦ if i = j then (1 : ℝ) else 0 :=
+    ho.mono fun r hr ↦ (orthonormal_iff_ite.mp hr) i j
+  have hm := hcov.inner_alongCurve_add_inner_alongCurve_eq_zero_of_eventuallyEq_const hγ
+    (differentiableAt_sectionCoord γ (fun r ↦ s i (γ r)) (hsi.comp t hγ)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+    (differentiableAt_sectionCoord γ (fun r ↦ s j (γ r)) (hsj.comp t hγ)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))) hc
+  rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) hsi,
+    alongCurve_pullback cov γ (s j) (hasMFDerivAt_curveVelocity hγ) hsj] at hm
+  rw [hs.coeff_eq_inner hu ho.self_of_nhds, hs.coeff_eq_inner hu ho.self_of_nhds]
+  linarith [real_inner_comm (cov (s i) (γ t) (curveVelocity I γ t)) (s j (γ t))]
+
+variable {s : Fin 2 → Π x : M, TangentSpace I x}
 
 /-- The derivative of the complex velocity coordinates in an orthonormal local frame is the
 coordinate covariant acceleration minus `i ω(γ') z`. This holds for any metric connection, and
@@ -63,18 +93,8 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E n s u)
             frameVelocityCoordinates s γ t) t := by
   have hcoord (i : Fin 2) := differentiableAt_sectionCoord γ (fun r ↦ s i (γ r))
     ((hsd i).comp t hγ) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  have hskew (i j : Fin 2) :
-      hs.coeff i (γ t) (cov (s j) (γ t) (curveVelocity I γ t)) +
-        hs.coeff j (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) = 0 := by
-    have hc : (fun r ↦ inner ℝ (s i (γ r)) (s j (γ r))) =ᶠ[𝓝 t]
-        fun _ ↦ if i = j then (1 : ℝ) else 0 :=
-      ho.mono fun r hr ↦ (orthonormal_iff_ite.mp hr) i j
-    have hm := hcov.inner_alongCurve_add_inner_alongCurve_eq_zero_of_eventuallyEq_const
-      hγ (hcoord i) (hcoord j) hc
-    rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) (hsd i),
-      alongCurve_pullback cov γ (s j) (hasMFDerivAt_curveVelocity hγ) (hsd j)] at hm
-    rw [hs.coeff_eq_inner hu ho.self_of_nhds, hs.coeff_eq_inner hu ho.self_of_nhds]
-    linarith [real_inner_comm (cov (s i) (γ t) (curveVelocity I γ t)) (s j (γ t))]
+  have hskew (i j : Fin 2) := hs.coeff_covariantDerivative_curveVelocity_add_eq_zero hu ho hcov
+    hγ (hsd i) (hsd j)
   have hdiag (i : Fin 2) : hs.coeff i (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) = 0 := by
     linarith [hskew i i]
   have hswap := eq_neg_of_add_eq_zero_left (hskew 0 1)
