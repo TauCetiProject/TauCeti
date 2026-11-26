@@ -96,14 +96,12 @@ private lemma isIso_pullbackSnd_lift_relativeSpecLift_id {X T : Scheme.{u}} (U :
   let Wa : X.AffineZariskiSite := ⟨W, hW⟩
   let c := A.relativeSpecCover.f Wa
   have hc : Set.range c = p ⁻¹' W := by
-    rw [← Scheme.Hom.coe_opensRange, ← A.relativeSpecToBase_preimage Wa]
-    rfl
+    rw [← Scheme.Hom.coe_opensRange, ← A.relativeSpecToBase_preimage Wa, Scheme.Hom.coe_preimage]
   let m := Oi.ι ≫ pullback.fst p U.ι
   have hm : Set.range m = p ⁻¹' W := by
-    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, Scheme.Opens.range_ι]
-    -- The open `Oi`, as a set, is the preimage of `p⁻¹ W` under the first projection.
-    change pullback.fst p U.ι '' (pullback.fst p U.ι ⁻¹' (p ⁻¹' W)) = _
-    rw [Set.image_preimage_eq_inter_range, Scheme.Pullback.range_fst, Scheme.Opens.range_ι]
+    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, Scheme.Opens.range_ι,
+      Scheme.Hom.coe_preimage, Scheme.Hom.coe_preimage, Set.image_preimage_eq_inter_range,
+      Scheme.Pullback.range_fst, Scheme.Opens.range_ι]
     exact Set.inter_eq_left.mpr (Set.preimage_mono hWU)
   let e₂ := IsOpenImmersion.isoOfRangeEq c m (hc.trans hm.symm)
   let k := a ≫ e₂.hom
@@ -122,14 +120,14 @@ private lemma isIso_pullbackSnd_lift_relativeSpecLift_id {X T : Scheme.{u}} (U :
   have hr : Set.range (pullback.fst s Oi.ι) = Set.range (q ⁻¹ᵁ W).ι := by
     rw [Scheme.Pullback.range_fst, Scheme.Opens.range_ι, Scheme.Opens.range_ι]
     ext v
-    -- Membership in the opens `Oi` and `q⁻¹ W` unfolds to membership of image points in `W`.
-    change p (pullback.fst p U.ι (s v)) ∈ W ↔ q v ∈ W
-    rw [← Scheme.Hom.comp_apply s, pullback.lift_fst, ← Scheme.Hom.comp_apply, ht]
+    rw [Set.mem_preimage, SetLike.mem_coe, Scheme.Hom.mem_preimage, Scheme.Hom.mem_preimage,
+      SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply s, pullback.lift_fst,
+      ← Scheme.Hom.comp_apply, ht]
   let e₁ := IsOpenImmersion.isoOfRangeEq (pullback.fst s Oi.ι) (q ⁻¹ᵁ W).ι hr
   have hsnd : pullback.snd s Oi.ι = e₁.hom ≫ k := by
     rw [← cancel_mono Oi.ι, Category.assoc, hk, ← pullback.condition,
       IsOpenImmersion.isoOfRangeEq_hom_fac_assoc]
-  have : IsIso k := @IsIso.comp_isIso _ _ _ _ _ a e₂.hom ha e₂.isIso_hom
+  have : IsIso k := IsIso.comp_isIso' ha e₂.isIso_hom
   rw [hsnd]
   infer_instance
 

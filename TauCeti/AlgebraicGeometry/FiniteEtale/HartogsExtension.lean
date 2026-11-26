@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.SpreadingOut
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Restrict
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.Scheme.Depth
 
 /-!
@@ -24,25 +25,29 @@ is then also fully faithful (`TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackιO
 it is an equivalence of categories: in the language of SGA 2, the pair `(X, X ∖ U)` is pure. For
 `X` Noetherian the depth hypothesis is not needed
 (`TauCeti.FiniteEtaleScheme.essSurj_pullback_ι_of_purityHolds`, Stacks 0EY7), but a locally
-Noetherian scheme admits no Noetherian induction, and the extensions obtained over its affine
-opens are glued by their uniqueness, which is where the depth enters.
+Noetherian scheme admits no Noetherian induction. The depth hypothesis replaces it: by the
+algebraic Hartogs principle, it makes the sections over each affine open of the function algebra
+of a finite étale cover of `U`, described below, equal to the finite étale algebra given by
+Stacks 0EY7 on that chart. Nothing is glued.
 
 The extension of a finite étale cover `V` of `U` is built at once, without choices: it is the
 relative spectrum over `X` of the function algebra `A = q_* 𝒪_V` of `q : V ⟶ U ⟶ X`, which is
 quasi-coherent because `q` is quasi-compact and quasi-separated. Over `U` this relative spectrum is
 `V` (`TauCeti.AlgebraicGeometry.isIso_pullbackLift_relativeSpecLift_id`). It is finite étale over
 `X` because, over every affine open `W` of `X`, the sections `Γ(V, q⁻¹ W)` of `A` form a finite
-étale `Γ(X, W)`-algebra (`TauCeti.FiniteEtaleScheme.finite_etale_app_of_purityHolds`). To see this,
-write `W = Spec R`. By extension across points where purity holds on the Noetherian scheme
-`Spec R`, the part of `V` over `W` is the restriction of `Spec C` for a finite étale `R`-algebra
-`C`, and by the algebraic Hartogs principle, as the complement of `U` in `W` has depth at least
-two, `C` is the ring of functions of this restriction.
+étale `Γ(X, W)`-algebra
+(`TauCeti.FiniteEtaleScheme.finite_etale_app_of_purityHolds_of_two_le_depth`). To see this, write
+`W = Spec R`. By extension across points where purity holds on the Noetherian scheme `Spec R`,
+the part of `V` over `W` is the restriction of `Spec C` for a finite étale `R`-algebra `C`, and
+by the algebraic Hartogs principle, as the complement of `U` in `W` has depth at least two, `C`
+is the ring of functions of this restriction.
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.finite_etale_app_of_purityHolds`: over an affine open `W` with
-  Noetherian ring of sections, the sections over `W` of a finite étale cover of `U` are finite
-  étale over `Γ(X, W)` when purity and depth at least two hold at the points of `W ∖ U`.
+* `TauCeti.FiniteEtaleScheme.finite_etale_app_of_purityHolds_of_two_le_depth`: over an affine
+  open `W` with Noetherian ring of sections, the sections over `W` of a finite étale cover of `U`
+  are finite étale over `Γ(X, W)` when purity and depth at least two hold at the points of
+  `W ∖ U`.
 * `TauCeti.FiniteEtaleScheme.essSurj_pullback_ι_of_purityHolds_of_two_le_depth`: restriction of
   finite étale schemes from a locally Noetherian `X` to `U` is essentially surjective.
 * `TauCeti.FiniteEtaleScheme.isEquivalence_pullback_ι_of_purityHolds_of_two_le_depth`: it is an
@@ -71,8 +76,8 @@ namespace TauCeti.FiniteEtaleScheme
 /-- Let `R` be a Noetherian ring and `W` an open subset of `Spec R` such that, at every point
 outside `W`, purity holds and the local ring has depth at least two. Then the global sections of
 a finite étale cover of `W` form a finite étale `R`-algebra. -/
-private theorem finite_etale_appTop_of_purityHolds {R : CommRingCat.{u}} [IsNoetherianRing R]
-    (W : (Spec R).Opens)
+private theorem finite_etale_appTop_of_purityHolds_of_two_le_depth {R : CommRingCat.{u}}
+    [IsNoetherianRing R] (W : (Spec R).Opens)
     (hpur : ∀ x ∉ W, IsLocalRing.PurityHolds ((Spec R).presheaf.stalk x))
     (hdepth : ∀ p : PrimeSpectrum R, p ∉ W →
       2 ≤ IsLocalRing.depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
@@ -96,17 +101,20 @@ private theorem finite_etale_appTop_of_purityHolds {R : CommRingCat.{u}} [IsNoet
   -- `ψ` maps `V` to the extension, identifying it with the part of the extension over `W`.
   let ψ : V.obj.left ⟶ ((spec R).obj C).obj.left :=
     e.inv.hom.left ≫ pullback.fst ((spec R).obj C).obj.hom W.ι
+  -- The source of `pullback.fst` is `((pullback W.ι).obj _).obj.left` only up to unfolding the
+  -- base change functor, so `ψ` is not type correct at reducible transparency and `rw` or `simp`
+  -- cannot rewrite inside it; the equation is assembled from its two squares instead.
   have hψ : ψ ≫ ((spec R).obj C).obj.hom = V.obj.hom ≫ W.ι :=
-    (Category.assoc _ _ _).trans <| (congrArg (e.inv.hom.left ≫ ·) pullback.condition).trans <|
-      (Category.assoc _ _ _).symm.trans (congrArg (· ≫ W.ι) (Over.w e.inv.hom))
-  have : IsIso e.inv.hom.left :=
-    inferInstanceAs (IsIso ((Over.forget _).map ((ObjectProperty.ι _).map e.inv)))
-  have : IsIso e.inv.hom.left.appTop := inferInstanceAs (IsIso (e.inv.hom.left.app ⊤))
+    calc ψ ≫ ((spec R).obj C).obj.hom
+        = e.inv.hom.left ≫ pullback.fst _ _ ≫ ((spec R).obj C).obj.hom := Category.assoc _ _ _
+      _ = e.inv.hom.left ≫ pullback.snd _ _ ≫ W.ι := congrArg (_ ≫ ·) pullback.condition
+      _ = V.obj.hom ≫ W.ι := (Category.assoc _ _ _).symm.trans (congrArg (· ≫ W.ι) (Over.w _))
+  have : IsIso e.inv.hom.left := ((ObjectProperty.ι _ ⋙ Over.forget _).mapIso e.symm).isIso_hom
   have : IsIso ψ.appTop := by
-    have h : ψ.appTop = _ :=
-      Scheme.Hom.comp_appTop e.inv.hom.left (pullback.fst ((spec R).obj C).obj.hom W.ι)
-    rw [h]
-    exact @IsIso.comp_isIso _ _ _ _ _ _ _ hH ‹_›
+    rw [show ψ.appTop = _ from
+      Scheme.Hom.comp_appTop e.inv.hom.left (pullback.fst ((spec R).obj C).obj.hom W.ι)]
+    -- `Scheme.Hom.appTop` is the abbreviation `app ⊤`, which has Mathlib's `IsIso` instance.
+    exact IsIso.comp_isIso' hH (inferInstanceAs (IsIso (e.inv.hom.left.app ⊤)))
   have : IsAffine ((spec R).obj C).obj.left := isAffine_of_isAffineHom ((spec R).obj C).obj.hom
   rw [← hψ, Scheme.Hom.comp_appTop, CommRingCat.hom_comp,
     RingHom.RespectsIso.cancel_right_isIso RingHom.finite_respectsIso,
@@ -114,35 +122,12 @@ private theorem finite_etale_appTop_of_purityHolds {R : CommRingCat.{u}} [IsNoet
   exact ⟨Scheme.Hom.finite_appTop _,
     HasRingHomProperty.iff_of_isAffine (P := @Etale) |>.mp inferInstance⟩
 
-/-- Let `f : S ⟶ X` be an open immersion and `r : T ⟶ U` a morphism to an open `U` of `X`. The
-base change of `r` along the restriction `f⁻¹ U ⟶ U` of `f` includes into `T` with image the part
-of `T` over the image of `f`. -/
-private lemma range_pullbackFst_resLE {X S T : Scheme.{u}} (U : X.Opens) (f : S ⟶ X)
-    (r : T ⟶ U.toScheme) :
-    Set.range (pullback.fst r (f.resLE U (f ⁻¹ᵁ U) le_rfl)) = (r ≫ U.ι) ⁻¹' Set.range f := by
-  set g := f.resLE U (f ⁻¹ᵁ U) le_rfl
-  have hg (o : (f ⁻¹ᵁ U).toScheme) : U.ι (g o) = f ((f ⁻¹ᵁ U).ι o) := by
-    rw [← Scheme.Hom.comp_apply, f.resLE_comp_ι, Scheme.Hom.comp_apply]
-  ext v
-  rw [Scheme.Pullback.range_fst, Set.mem_preimage, Set.mem_preimage, Scheme.Hom.comp_apply]
-  refine ⟨?_, fun hv ↦ ?_⟩
-  · rintro ⟨o, ho⟩
-    rw [← ho, hg]
-    exact ⟨_, rfl⟩
-  · obtain ⟨x, hx⟩ := hv
-    have hxO : x ∈ f ⁻¹ᵁ U := by
-      -- Membership in the preimage `f⁻¹ U` is membership of the image point in `U`.
-      change f x ∈ U
-      rw [hx]
-      exact (r v).property
-    exact ⟨(⟨x, hxO⟩ : (f ⁻¹ᵁ U).toScheme), U.ι.isOpenEmbedding.injective ((hg _).trans hx)⟩
-
 /-- Let `U` be an open subscheme of `X`, and `W` an affine open of `X` whose ring of sections is
 Noetherian, such that at every point of `W` outside `U` purity holds and the local ring has depth
 at least two. Then for a finite étale cover `V` of `U`, the sections `Γ(V, q⁻¹ W)` of `V` over `W`,
 where `q : V ⟶ U ⟶ X`, form a finite étale `Γ(X, W)`-algebra. -/
-theorem finite_etale_app_of_purityHolds {X : Scheme.{u}} (U : X.Opens) {W : X.Opens}
-    (hW : IsAffineOpen W) [IsNoetherianRing Γ(X, W)]
+theorem finite_etale_app_of_purityHolds_of_two_le_depth {X : Scheme.{u}} (U : X.Opens)
+    {W : X.Opens} (hW : IsAffineOpen W) [IsNoetherianRing Γ(X, W)]
     (hpur : ∀ x ∈ W, x ∉ U → IsLocalRing.PurityHolds (X.presheaf.stalk x))
     (hdepth : ∀ x ∈ W, x ∉ U →
       2 ≤ IsLocalRing.depth (ModuleCat.of (X.presheaf.stalk x) (X.presheaf.stalk x)))
@@ -154,11 +139,9 @@ theorem finite_etale_app_of_purityHolds {X : Scheme.{u}} (U : X.Opens) {W : X.Op
   set q := V.obj.hom ≫ U.ι
   let O := f ⁻¹ᵁ U
   let g : O.toScheme ⟶ U.toScheme := f.resLE U O le_rfl
-  have : IsOpenImmersion g := by
-    simp only [g, Scheme.Hom.resLE]
-    infer_instance
+  have : IsOpenImmersion g := by simp only [g, Scheme.Hom.resLE]; infer_instance
   let V' := (pullback g).obj V
-  have hloc := finite_etale_appTop_of_purityHolds O
+  have hloc := finite_etale_appTop_of_purityHolds_of_two_le_depth O
     (fun x hx ↦ IsLocalRing.purityHolds_of_ringEquiv
       (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
         (hpur (f x) (hW.range_fromSpec.subset ⟨x, rfl⟩) hx))
@@ -167,15 +150,19 @@ theorem finite_etale_app_of_purityHolds {X : Scheme.{u}} (U : X.Opens) {W : X.Op
   -- The inclusion `j` of `V'` into `V` has image the part `q⁻¹ W` of `V` over `W`.
   let j : V'.obj.left ⟶ V.obj.left := pullback.fst V.obj.hom g
   have : IsOpenImmersion j := inferInstanceAs (IsOpenImmersion (pullback.fst V.obj.hom g))
+  -- As for `ψ` above, `j ≫ q` is type correct only up to unfolding the base change functor, so the
+  -- equation is assembled from the pullback square and `resLE_comp_ι` instead of rewritten.
   have hj : j ≫ q = (V'.obj.hom ≫ O.ι) ≫ f :=
-    ((pullback.condition_assoc (f := V.obj.hom) (g := g) U.ι).trans
-      (congrArg (pullback.snd V.obj.hom g ≫ ·) (f.resLE_comp_ι le_rfl))).trans
-        (Category.assoc _ _ _).symm
+    calc j ≫ q = (pullback.snd V.obj.hom g ≫ g ≫ U.ι : V'.obj.left ⟶ X) :=
+          pullback.condition_assoc _
+      _ = (pullback.snd V.obj.hom g ≫ O.ι ≫ f : V'.obj.left ⟶ X) :=
+          congrArg (_ ≫ ·) (f.resLE_comp_ι le_rfl)
+      _ = (V'.obj.hom ≫ O.ι) ≫ f := (Category.assoc _ _ _).symm
   have hrange : j ''ᵁ ⊤ = q ⁻¹ᵁ W := by
     refine TopologicalSpace.Opens.ext ?_
     rw [Scheme.Hom.image_top_eq_opensRange, Scheme.Hom.coe_opensRange, Scheme.Hom.coe_preimage,
       ← hW.range_fromSpec]
-    exact range_pullbackFst_resLE U f V.obj.hom
+    exact f.range_pullbackFst_resLE U V.obj.hom
   -- The sections of `V` over `W` are the global sections of `V'`: both are identified with the
   -- sections of `V'` over the preimage of `W`, by the isomorphisms of sections `J` of `j` onto
   -- its image and `F` of `f` onto its image.
@@ -217,8 +204,9 @@ theorem essSurj_pullback_ι_of_purityHolds_of_two_le_depth {X : Scheme.{u}}
   refine ⟨fun V ↦ ?_⟩
   let q := V.obj.hom ≫ U.ι
   let A := q.pushforwardStructureAlgebra
-  have : A.X.IsQuasicoherent :=
-    inferInstanceAs ((Scheme.Modules.pushforward q).obj (𝟙_ V.obj.left.Modules)).IsQuasicoherent
+  have : A.X.IsQuasicoherent := by
+    rw [Scheme.Hom.pushforwardStructureAlgebra_X]
+    infer_instance
   -- Over an affine open `W`, the sections of `A` are those of `V` over `q⁻¹ W`.
   have hA {W : X.Opens} (hW : IsAffineOpen W) :
       (algebraMap Γ(X, W) Γ(A.X, W)).Finite ∧ (algebraMap Γ(X, W) Γ(A.X, W)).Etale := by
@@ -228,8 +216,8 @@ theorem essSurj_pullback_ι_of_purityHolds_of_two_le_depth {X : Scheme.{u}}
       exact (Scheme.Hom.pushforwardStructureAlgebra_algebraMap q W r).trans
         (q.pushforwardStructureAlgebraSectionsRingEquiv_symm_apply W _).symm
     have := IsLocallyNoetherian.component_noetherian (X := X) ⟨W, hW⟩
-    obtain ⟨hfin, het⟩ := finite_etale_app_of_purityHolds U hW (fun x _ ↦ hpur x)
-      (fun x _ ↦ hdepth x) V
+    obtain ⟨hfin, het⟩ := finite_etale_app_of_purityHolds_of_two_le_depth U hW
+      (fun x _ ↦ hpur x) (fun x _ ↦ hdepth x) V
     rw [h]
     exact ⟨RingHom.finite_respectsIso.left _ _ hfin, RingHom.Etale.respectsIso.left _ _ het⟩
   have : IsFinite A.relativeSpecToBase :=
