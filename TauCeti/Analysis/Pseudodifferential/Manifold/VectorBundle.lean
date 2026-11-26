@@ -350,9 +350,9 @@ theorem sectionClassicalPseudodifferentialOperators_le {m' : ℝ} (k : ℕ) (hk 
     classicalPseudodifferentialOperators_le k hk (hP.2 t ψ hψ v t' χ hχ ℓ)⟩
 
 /-- **Differential operators between bundles are classical pseudodifferential operators.** A
-complex-linear operator `P : Γ(E) → Γ(F)` which is a differential operator of order at most `m` in
+complex-linear operator `P : Γ(E) → Γ(F)` which is a differential operator of order at most `k` in
 Grothendieck's sense, for commutators with multiplication by complex-valued smooth functions, is a
-classical pseudodifferential operator of order `m` between the bundles. This is the bundle form
+classical pseudodifferential operator of order `k` between the bundles. This is the bundle form
 of `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`. -/
 theorem mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {k : ℕ}
@@ -360,7 +360,8 @@ theorem mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOpera
       Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k) :
     P ∈ sectionClassicalPseudodifferentialOperators k :=
   -- `P` is local, hence properly supported, and its entries are complex differential operators.
-  ⟨.of_local fun _ _ hs ↦ apply_eq_zero_of_mem_differentialOperators hP hs,
+  ⟨.of_local fun _ _ hs ↦
+      complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq hP hs,
     fun t _ ψ hψ v t' _ χ hχ ℓ ↦
       mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
         (sectionEntry_mem_differentialOperators t ψ hψ v t' χ hχ ℓ hP)⟩

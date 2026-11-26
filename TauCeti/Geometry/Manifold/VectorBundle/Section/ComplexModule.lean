@@ -37,8 +37,8 @@ real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ
 A complex differential operator between sections of complex bundles, of finite order in
 Grothendieck's sense for commutators with multiplication by elements of `A_ℂ`, is local: `P s`
 vanishes near every point near which `s` vanishes
-(`TauCeti.apply_eq_zero_of_mem_differentialOperators`). In particular an `A_ℂ`-linear operator is
-local (`TauCeti.apply_eq_zero_of_map_smul`).
+(`TauCeti.complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq`). In particular an
+`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`).
 
 ## References
 
@@ -198,7 +198,7 @@ open scoped Topology
 `P : Γ(V) → Γ(W)` between sections of complex bundles which is a differential operator of order at
 most `m` in Grothendieck's sense, for commutators with multiplication by complex-valued smooth
 functions, is local: `P s` vanishes at every point near which `s` vanishes. -/
-theorem apply_eq_zero_of_mem_differentialOperators {m : ℕ}
+theorem complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq {m : ℕ}
     {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
     (hP : P ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
@@ -232,6 +232,7 @@ theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^�
     (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s)
     {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
     P s x = 0 :=
-  apply_eq_zero_of_mem_differentialOperators (m := 0) (mem_differentialOperators_zero_iff.2 hP) hs
+  complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq (m := 0)
+    (mem_differentialOperators_zero_iff.2 hP) hs
 
 end TauCeti
