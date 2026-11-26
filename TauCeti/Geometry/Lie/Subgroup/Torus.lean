@@ -423,6 +423,8 @@ theorem IsMaximalTorus.center_le_lieSubalgebraOfSubgroup {T : Subgroup G} (hT : 
     (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ≤
       (lieSubalgebraOfSubgroup (I := I) T).toSubmodule := fun X hX ↦
   hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun Y _ ↦ by
-    rw [← lie_skew, (LieModule.mem_maxTrivSubmodule ℝ _ _ X).mp hX Y, neg_zero]
+    rw [LieSubmodule.mem_toSubmodule, ← LieAlgebra.self_module_ker_eq_center,
+      LieModule.mem_ker] at hX
+    exact hX Y
 
 end TauCeti.Lie

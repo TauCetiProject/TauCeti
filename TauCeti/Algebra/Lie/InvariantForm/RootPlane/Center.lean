@@ -125,10 +125,10 @@ central. -/
 theorem mem_center_of_forall_lie_eq_zero [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
     {H : t} (h : ∀ i (v : E i), ⁅(H : L), (v : L)⁆ = 0) : (H : L) ∈ center K L := by
   have := Fintype.ofFinite ι
-  rw [center, LieModule.mem_maxTrivSubmodule]
+  rw [← self_module_ker_eq_center, LieModule.mem_ker]
   intro x
   obtain ⟨H', hH', a, rfl⟩ := hD.exists_eq_add_sum x
-  rw [← lie_skew, neg_eq_zero, lie_add, hD.lie_eq_zero H.property hH', zero_add, lie_sum]
+  rw [lie_add, hD.lie_eq_zero H.property hH', zero_add, lie_sum]
   exact Finset.sum_eq_zero fun i _ ↦ h i (a i)
 
 /-- **An element of the torus killed by every root is central.** In a root-plane decomposition,
@@ -143,10 +143,9 @@ an element `H ∈ t` is central exactly when every root vanishes at `H`. -/
 theorem mem_center_iff [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
     (hE : ∀ i, E i ≠ ⊥) (H : t) : (H : L) ∈ center K L ↔ ∀ i, α i H = 0 := by
   refine ⟨fun h i ↦ ?_, hD.mem_center_of_forall_apply_eq_zero⟩
-  rw [center, LieModule.mem_maxTrivSubmodule] at h
+  rw [← self_module_ker_eq_center, LieModule.mem_ker] at h
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hE i)
-  have hHv : ⁅(H : L), v⁆ = 0 := by rw [← lie_skew, h v, neg_zero]
-  exact ((hD.isRootPlane i).lie_eq_zero_iff H ⟨v, hv⟩ |>.mp hHv).resolve_right
+  exact ((hD.isRootPlane i).lie_eq_zero_iff H ⟨v, hv⟩ |>.mp (h v)).resolve_right
     fun h0 ↦ hv0 (congrArg Subtype.val h0)
 
 /-- **The common kernel of the roots is the centre.** In a root-plane decomposition with nonzero
@@ -156,9 +155,8 @@ theorem dualCoannihilator_span_range [Finite ι] (hD : IsRootPlaneDecomposition 
     (Submodule.span K (Set.range α)).dualCoannihilator =
       (center K L).toSubmodule.comap t.subtype := by
   ext H
-  rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span, Set.mem_ofPred_eq,
-    Set.forall_mem_range, Submodule.mem_comap, Submodule.subtype_apply,
-    LieSubmodule.mem_toSubmodule, hD.mem_center_iff hE]
+  rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span]
+  simp [hD.mem_center_iff hE]
 
 /-- **The roots span the annihilator of the centre.** In a finite-dimensional Lie algebra with a
 root-plane decomposition with nonzero planes, the roots span the linear forms on `t` vanishing on
