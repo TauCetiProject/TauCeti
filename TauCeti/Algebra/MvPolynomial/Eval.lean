@@ -34,7 +34,9 @@ positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
 When the coordinates of an evaluation lie in the base semiring of an algebra, applying a
 base-linear functional to the resulting value is again polynomial in those coordinates.
 
-Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
+Evaluation at a family `x` is surjective exactly when `x` generates the algebra, and its
+bijectivity, which says that the `x i` are polynomial generators, is preserved by algebra
+isomorphisms.
 
 ## Main results
 
@@ -47,6 +49,8 @@ Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
   the `x i` generate the algebra.
+* `MvPolynomial.bijective_aeval_algEquiv_comp_iff`: an algebra isomorphism carries polynomial
+  generators to polynomial generators.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 -/
@@ -126,6 +130,16 @@ theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] 
     [Algebra R A] {x : σ → A} :
     Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
   rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
+
+/-- Composing a family with an algebra isomorphism `e` does not change whether evaluation at it is
+bijective, since `aeval (e ∘ x) = e ∘ aeval x`. In particular `e` carries a family of polynomial
+generators, algebraically independent and generating, to one. -/
+theorem bijective_aeval_algEquiv_comp_iff {R A B : Type*} [CommSemiring R] [CommSemiring A]
+    [CommSemiring B] [Algebra R A] [Algebra R B] (e : A ≃ₐ[R] B) {x : σ → A} :
+    Function.Bijective (aeval (R := R) (e ∘ x)) ↔ Function.Bijective (aeval (R := R) x) := by
+  have h : (aeval (R := R) (e ∘ x) : MvPolynomial σ R → B) = e ∘ aeval x :=
+    funext fun p ↦ (comp_aeval_apply x (e : A →ₐ[R] B) p).symm
+  rw [h, e.bijective.of_comp_iff']
 
 private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}
