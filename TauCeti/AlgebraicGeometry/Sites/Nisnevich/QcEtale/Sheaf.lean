@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.QcEtale
 
 /-!
@@ -18,13 +17,12 @@ between sheaves on the small Nisnevich site and sheaves on the quasi-compact sma
 (Stacks, Lemma 7.29.1 (03A0)), whose underlying functor is restriction
 (`AlgebraicGeometry.Scheme.QcEtale.nisnevichSheafEquiv_inverse`).
 
-The small Nisnevich topology is coarser than the small étale topology, hence subcanonical, and so
-is the induced topology on `X.QcEtale`: every representable presheaf on the basis is a sheaf.
+The small Nisnevich topology is subcanonical
+(`AlgebraicGeometry.Scheme.smallNisnevichTopology_subcanonical`), and so is the induced topology
+on `X.QcEtale`: every representable presheaf on the basis is a sheaf.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.smallNisnevichTopology_subcanonical`: the small Nisnevich topology is
-  subcanonical.
 * `AlgebraicGeometry.Scheme.QcEtale.nisnevichSheafEquiv X A`: for quasi-separated `X`, the
   equivalence `Sheaf X.qcNisnevichTopology A ≌ Sheaf X.smallNisnevichTopology A`.
 * `AlgebraicGeometry.Scheme.qcNisnevichTopology_subcanonical`: for quasi-separated `X`, the
@@ -42,12 +40,6 @@ universe v' u' u
 open CategoryTheory Limits
 
 namespace AlgebraicGeometry.Scheme
-
-/-- Representable presheaves on the small étale site of a scheme are sheaves for the small
-Nisnevich topology, because it is coarser than the subcanonical small étale topology. -/
-instance smallNisnevichTopology_subcanonical (X : Scheme.{u}) :
-    X.smallNisnevichTopology.Subcanonical :=
-  .of_le (smallNisnevichTopology_le_smallEtaleTopology X)
 
 variable (X : Scheme.{u}) [QuasiSeparatedSpace X]
 
