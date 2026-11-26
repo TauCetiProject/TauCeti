@@ -30,7 +30,10 @@ is a multiple of `⁅x, y⁆` (`TauCeti.lie_lie_eq_zero_of_mem_span` and
 `TauCeti.lie_mem_span_singleton_of_mem_span`). The quotient `L ⧸ C k` is nilpotent of class at most
 `k`, and a Lie homomorphism into a Lie algebra whose `k`-th lower central term vanishes kills `C k`.
 These are the facts used to evaluate universal elements of free nilpotent Lie algebras in a
-nilpotent Lie algebra.
+nilpotent Lie algebra. Every quotient of a nilpotent Lie algebra is nilpotent. Once a term of the
+lower central series vanishes, so do all later ones (`LieModule.lowerCentralSeries_eq_bot_of_le`);
+for a nilpotent module the series vanishes at its nilpotency length
+(`LieModule.lowerCentralSeries_nilpotencyLength_eq_bot`).
 
 ## References
 
@@ -184,7 +187,33 @@ theorem lowerCentralSeries_quotient_lowerCentralSeries_eq_bot (k : ℕ) :
 instance (k : ℕ) : LieRing.IsNilpotent (L ⧸ lowerCentralSeries R L L k) :=
   (isNilpotent_iff R _ _).mpr ⟨k, lowerCentralSeries_quotient_lowerCentralSeries_eq_bot R L k⟩
 
+/-- A quotient of a nilpotent Lie algebra is nilpotent. -/
+instance [LieRing.IsNilpotent L] (I : LieIdeal R L) : LieRing.IsNilpotent (L ⧸ I) :=
+  (LieIdeal.surjective_mkQ I).lieAlgebra_isNilpotent
+
 end Quotient
+
+section NilpotencyLength
+
+variable (R L M : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M]
+
+omit [LieModule R L M] in
+variable {R L M} in
+/-- Once a term of the lower central series vanishes, so do all later terms. -/
+theorem _root_.LieModule.lowerCentralSeries_eq_bot_of_le {k l : ℕ} (h : k ≤ l)
+    (hk : lowerCentralSeries R L M k = ⊥) : lowerCentralSeries R L M l = ⊥ :=
+  eq_bot_iff.mpr (hk ▸ LieModule.antitone_lowerCentralSeries R L M h)
+
+/-- The lower central series of a nilpotent Lie module vanishes at its nilpotency length. -/
+theorem _root_.LieModule.lowerCentralSeries_nilpotencyLength_eq_bot [LieModule.IsNilpotent L M] :
+    lowerCentralSeries R L M (nilpotencyLength L M) = ⊥ := by
+  rcases h : nilpotencyLength L M with _ | k
+  · rw [nilpotencyLength_eq_zero_iff] at h
+    exact ((LieSubmodule.subsingleton_iff R L M).mpr h).elim _ _
+  · exact ((nilpotencyLength_eq_succ_iff R L M k).mp h).1
+
+end NilpotencyLength
 
 section Basis
 
