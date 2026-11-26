@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 An algebra map to a field determines a prime ideal and an embedding of its
 residue field. Conversely, these data determine the algebra map. For a map to the residue field
 `κ(P)` of a prime `P` of the base, the embedding is an isomorphism
-(`AlgHom.residueFieldMap_bijective`).
+(`AlgHom.residueFieldMap_bijective`). In particular the residue field at a `k`-point of a
+`k`-algebra is `k` (`AlgHom.algebraMap_residueField_bijective`).
 The forward map from residue-field data is defined for any commutative target algebra.
 
 ## References
@@ -73,6 +74,12 @@ theorem residueFieldMap_bijective {P : Ideal R} [P.IsPrime] (point : S →ₐ[R]
       simp [Ideal.ResidueField.map_algebraMap, β, h]
   refine ⟨RingHom.injective _, fun y ↦ ⟨β y, β.toRingHom.injective ?_⟩⟩
   exact congr($hβ (β y))
+
+/-- The residue field of a `k`-algebra at the kernel of a `k`-point is `k`. -/
+theorem algebraMap_residueField_bijective {k A : Type*} [Field k] [CommRing A] [Algebra k A]
+    (point : A →ₐ[k] k) : Function.Bijective (algebraMap k (RingHom.ker point).ResidueField) :=
+  ⟨(algebraMap k _).injective, fun y ↦ ⟨point.residueEmbedding y,
+    point.residueEmbedding.toRingHom.injective (by simp [AlgHom.commutes])⟩⟩
 
 end AlgHom
 

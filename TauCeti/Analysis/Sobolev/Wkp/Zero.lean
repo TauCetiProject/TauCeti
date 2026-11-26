@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -419,6 +420,18 @@ theorem wkp0Submodule_one : wkp0Submodule mu Omega p 1 = w1p0Submodule mu Omega 
   apply SetLike.coe_injective
   rw [coe_wkp0Submodule, Wkp.ofTestFunctionₗ_one]
   exact (coe_w1p0Submodule (mu := mu) (Omega := Omega) (p := p)).symm
+
+/-- If the value of `u ∈ W^{k+1,p}(Ω)` agrees almost everywhere on `Ω` with that of an element
+of `W^{1,p}_0(Ω)`, then the first-order part of `u` lies in `W^{1,p}_0(Ω)`. -/
+theorem Wkp.firstOrder_mem_w1p0Submodule_of_value_ae_eq {k : ℕ} {u : Wkp mu Omega p (k + 1)}
+    {v : W1p mu Omega p} (hv : v ∈ w1p0Submodule mu Omega p)
+    (h : W1p.value v =ᵐ[mu.restrict Omega] Wkp.value (k + 1) u) :
+    Wkp.firstOrder k u ∈ w1p0Submodule mu Omega p := by
+  have hu : Wkp.firstOrder k u = v := by
+    refine W1p.ext_value (Lp.ext ?_)
+    rw [Wkp.value_firstOrder]
+    exact h.symm
+  exact hu ▸ hv
 
 /-- The Sobolev space `W^{k,p}_0(Ω)`, the closure of `C_c^∞(Ω)` in `W^{k,p}(Ω)`. -/
 noncomputable abbrev Wkp0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)

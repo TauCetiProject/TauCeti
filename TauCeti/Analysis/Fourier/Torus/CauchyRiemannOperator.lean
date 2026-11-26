@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ConjugateLinearForm
 public import TauCeti.Analysis.Fourier.Torus.ConjWirtinger
 public import TauCeti.Analysis.Fourier.Torus.ContMDiff
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 
 /-!

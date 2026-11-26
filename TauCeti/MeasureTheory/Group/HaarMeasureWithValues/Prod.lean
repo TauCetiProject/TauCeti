@@ -36,6 +36,8 @@ the same sum `∑ i, μ (W i) * ν (S i)`, which proves additivity and invarianc
   sum over its slices or over any presentation by rectangles with pairwise disjoint bases.
 * `TauCeti.HaarMeasureWithValues.eq_prod_of_apply_prod`: an `A`-valued Haar measure on `G × H`
   with these volumes on rectangles is `μ.prod ν`.
+* `TauCeti.HaarMeasureWithValues.prod_apply_swap`: for a commutative `A`, exchanging the factors
+  carries `ν.prod μ` to `μ.prod ν`, `(ν.prod μ) (K.swap) = (μ.prod ν) K`.
 
 ## References
 
@@ -105,6 +107,8 @@ private theorem sum_eq_sum [T2Space G] {K : CompactOpens (G × H)} {ι κ : Type
 end Presentation
 
 /-! ### The product measure -/
+
+section Prod
 
 variable {A G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [T2Space G]
   [Group H] [TopologicalSpace H] [ContinuousMul H] [T2Space H] [NonUnitalNonAssocSemiring A]
@@ -230,5 +234,39 @@ theorem zero_prod : (0 : HaarMeasureWithValues A G).prod ν = 0 :=
 @[simp]
 theorem prod_zero : μ.prod (0 : HaarMeasureWithValues A H) = 0 :=
   (eq_prod_of_apply_prod _ _ 0 fun _ _ ↦ by simp).symm
+
+end Prod
+
+/-! ### Exchanging the factors -/
+
+section Swap
+
+variable {A G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [T2Space G]
+  [Group H] [TopologicalSpace H] [ContinuousMul H] [T2Space H] [NonUnitalNonAssocCommSemiring A]
+
+/-- The volume `K ↦ (ν.prod μ)(K.swap)` on `G × H`, an `A`-valued Haar measure. -/
+private noncomputable def swapProd (μ : HaarMeasureWithValues A G)
+    (ν : HaarMeasureWithValues A H) : HaarMeasureWithValues A (G × H) where
+  toFun K := ν.prod μ K.swap
+  map_bot' := (congrArg (ν.prod μ) CompactOpens.swap_bot).trans (apply_bot _)
+  map_sup' K L hKL := (congrArg (ν.prod μ) (CompactOpens.swap_sup K L)).trans <|
+    apply_sup _ (by simpa only [CompactOpens.coe_swap] using hKL.preimage Prod.swap)
+  map_smul' x K := (congrArg (ν.prod μ) (CompactOpens.swap_smul x K)).trans (apply_smul _ _ _)
+
+private theorem swapProd_apply (μ : HaarMeasureWithValues A G) (ν : HaarMeasureWithValues A H)
+    (K : CompactOpens (G × H)) : swapProd μ ν K = ν.prod μ K.swap := by
+  rw [swapProd, coe_mk]
+
+/-- **Exchanging the factors of a product measure.** For a commutative `A`, the volume under
+`ν.prod μ` of the image `K.swap` of `K ⊆ G × H` under `(g, h) ↦ (h, g)` is the volume of `K` under
+`μ.prod ν`. -/
+theorem prod_apply_swap (μ : HaarMeasureWithValues A G) (ν : HaarMeasureWithValues A H)
+    (K : CompactOpens (G × H)) : ν.prod μ K.swap = μ.prod ν K := by
+  -- `K ↦ (ν.prod μ)(K.swap)` is a Haar measure on `G × H` with the volumes of `μ.prod ν` on
+  -- rectangles.
+  rw [← swapProd_apply, eq_prod_of_apply_prod μ ν (swapProd μ ν) fun U V ↦ by
+    rw [swapProd_apply, CompactOpens.swap_prod, prod_apply_prod, mul_comm]]
+
+end Swap
 
 end TauCeti.HaarMeasureWithValues

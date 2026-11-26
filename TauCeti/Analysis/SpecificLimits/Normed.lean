@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Data.PNat.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
@@ -28,6 +29,9 @@ Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n
 when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
 a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
 
+In a normed division ring, a geometric series indexed by positive integers sums to `r / (1 - r)`
+for `‖r‖ < 1`.
+
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm; the affine case `∑ (a k + b) xᵏ` holds more generally in a normed division ring.
@@ -38,7 +42,8 @@ power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowl
 to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
-field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`. For `‖d‖ > 1` the
+shifted series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`, the bound behind Tate's limit.
 
 Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
 lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -49,6 +54,13 @@ lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 public section
 
 namespace TauCeti
+
+/-- In a normed division ring, the geometric series over the positive integers sums to
+`r / (1 - r)` whenever `‖r‖ < 1`. -/
+theorem hasSum_geometric_pnat {K : Type*} [NormedDivisionRing K] {r : K} (hr : ‖r‖ < 1) :
+    HasSum (fun n : ℕ+ ↦ r ^ (n : ℕ)) (r / (1 - r)) := by
+  refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ r ^ n)).2 ?_
+  simpa only [pow_succ', div_eq_mul_inv] using (hasSum_geometric_of_norm_lt_one hr).mul_left r
 
 /-- The norms of the powers of an element in the open unit ball are summable in a seminormed
 ring, without requiring a normalized seminorm. -/
@@ -431,6 +443,19 @@ theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B 
   · ext k; ring
   · field_simp
     ring
+
+/-- For `‖d‖ > 1` the shifted geometric series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`. -/
+theorem hasSum_mul_inv_pow_succ_of_one_lt_norm {d : K} (hd : 1 < ‖d‖) (C : K) :
+    HasSum (fun m : ℕ ↦ C * d⁻¹ ^ (m + 1)) (C / (d - 1)) := by
+  have hd0 : d ≠ 0 := norm_pos_iff.mp (one_pos.trans hd)
+  have hd1 : d - 1 ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [h] at hd
+  have hinv : ‖d⁻¹‖ < 1 := by
+    rw [norm_inv]
+    exact inv_lt_one_of_one_lt₀ hd
+  convert (hasSum_geometric_of_norm_lt_one hinv).mul_left (C * d⁻¹) using 1
+  · ext m
+    ring
+  · field_simp
 
 variable [CompleteSpace K]
 

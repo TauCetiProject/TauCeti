@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -79,16 +78,9 @@ is a smooth function `g`: it pairs with every Schwartz function `ψ` as `∫ ψ 
 theorem exists_contDiff_cutoffTempered_eq_integral {φ : 𝓓(Ω, ℂ)}
     (h : ∀ s, ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) :
     ∃ g : E → ℂ, ContDiff ℝ ∞ g ∧ ∀ ψ : 𝓢(E, ℂ), T.cutoffTempered φ ψ = ∫ x, ψ x • g x := by
-  refine exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦ ?_
-  -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
-  choose U hU hUs using fun x : tsupport φ ↦
-    (h s x x.property).exists_nhds_forall_memSobolev_cutoffTempered
-  -- Split `φ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψφ, cutoffTempered_sum_cutoff]
-  exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+  exact exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
+    cutoffTempered_induction _ (memSobolev_fun_zero E ℂ s 2) (fun _ _ ↦ MemSobolev.add)
+      fun x hx ↦ (h s x hx).exists_nhds_forall_memSobolev_cutoffTempered
 
 /-- **Smoothness from every Sobolev order.** A complex distribution is a smooth function near a
 point `x ∈ Ω` exactly when, for every real `s`, it is `H^s` near every point of a neighbourhood

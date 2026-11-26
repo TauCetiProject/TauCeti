@@ -34,6 +34,12 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `TauCeti.sum_mul_const_of_sum_eq_one`: weights of total weight `1` average a constant to itself.
 
+## Coefficients of a Cauchy product
+
+`TauCeti.sum_range_mul_pow_mul_mul_pow_sub`: the `n`-th term
+`∑_{k ≤ n} uₖ ζᵏ v_{n-k} ζ^{n-k}` of the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ` is
+`ζⁿ ∑_{k ≤ n} uₖ v_{n-k}`.
+
 ## Restricting a weighted sum to the points in a set
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
@@ -87,6 +93,18 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
 theorem sum_mul_const_of_sum_eq_one {ι α : Type*} [NonAssocSemiring α] {s : Finset ι}
     {p : ι → α} (hp : ∑ i ∈ s, p i = 1) (c : α) : ∑ i ∈ s, p i * c = c := by
   rw [← Finset.sum_mul, hp, one_mul]
+
+open Finset in
+/-- The coefficient of `ζⁿ` in the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ`, written as `ζⁿ`
+times a sum of coefficients. -/
+theorem sum_range_mul_pow_mul_mul_pow_sub {R : Type*} [CommSemiring R] (ζ : R)
+    (u v : ℕ → R) (n : ℕ) :
+    ∑ k ∈ range (n + 1), u k * ζ ^ k * (v (n - k) * ζ ^ (n - k)) =
+      ζ ^ n * ∑ k ∈ range (n + 1), u k * v (n - k) := by
+  rw [mul_sum]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [← pow_mul_pow_sub ζ (mem_range_succ_iff.mp hk)]
+  ring
 
 end TauCeti
 

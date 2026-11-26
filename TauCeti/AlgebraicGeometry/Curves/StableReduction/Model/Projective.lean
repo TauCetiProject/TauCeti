@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Closure
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Pi
 
 /-!
 # Projective models by closure in projective space
@@ -124,7 +125,7 @@ theorem exists_isClosedImmersion_isProper (V : Type u) [AddCommGroup V] [Module 
       (ι : X.total ⟶ Proj (homogeneousSubmodule R (Fin (Module.finrank K V) → R))),
       IsClosedImmersion ι ∧ ι ≫ projToSpec R _ = X.toBase ∧ X.IsProper := by
   let e : (K ⊗[R] (Fin (Module.finrank K V) → R)) ≃ₗ[K] V :=
-    TensorProduct.piScalarRight R K K _ ≪≫ₗ (Module.finBasis K V).equivFun.symm
+    (Module.finBasis K V).tensorPiEquiv R
   let j' := j ≫ (Proj.symmetricAlgebraMapIso K e).hom
   have hj' : j' ≫ projToSpec K _ = toK := by
     rw [Category.assoc, Proj.symmetricAlgebraMapIso_hom_projToSpec, hj]

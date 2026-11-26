@@ -121,15 +121,15 @@ correspond to global sections `𝒪_T ⟶ q^* E` of the pullback of `E`.
 
 It is the linear-functional form `relativeSpecSymmetricAlgebraPullbackHomEquiv` of the universal
 property of `Spec_X (Sym E^∨)`, followed by the base-change isomorphism
-`q^* 𝓗om(E, 𝒪_X) ≅ 𝓗om(q^* E, 𝒪_T)` (the canonical comparison `pullbackIhomComparison`, invertible
-for finite locally free `E`, and `Scheme.Modules.pullbackObjUnitIso`) and the identification
+`q^* 𝓗om(E, 𝒪_X) ≅ 𝓗om(q^* E, 𝒪_T)` (using `Functor.ihomComparison` for the finite locally free
+source `E` and `Scheme.Modules.pullbackObjUnitIso`) and the identification
 `Scheme.Modules.dualHomUnitEquiv` of linear functionals on `𝓗om(q^* E, 𝒪_T)` with sections of
 `q^* E`. -/
 def totalSpaceHomEquiv (E : FiniteLocallyFreeSheaf X) (T : Over X) :
     (T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E)) ≃
       (𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj E.obj) :=
   (relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T).trans <|
-    ((asIso ((pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules) ≫
+    ((asIso (((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
       (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
         (Scheme.Modules.pullbackObjUnitIso T.hom).hom)).homCongr (Iso.refl _)).trans
       (Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback T.hom).obj E.obj))
@@ -140,7 +140,7 @@ theorem totalSpaceHomEquiv_apply (E : FiniteLocallyFreeSheaf X) (T : Over X)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E)) :
     totalSpaceHomEquiv E T t =
       Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback T.hom).obj E.obj)
-        (inv ((pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules) ≫
+        (inv (((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
             (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
               (Scheme.Modules.pullbackObjUnitIso T.hom).hom) ≫
           relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T t) :=
@@ -153,7 +153,7 @@ theorem totalSpaceHomEquiv_symm_apply (E : FiniteLocallyFreeSheaf X) (T : Over X
     (s : 𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj E.obj) :
     (totalSpaceHomEquiv E T).symm s =
       (relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T).symm
-        ((pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules) ≫
+        (((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom ≫
           (λ_ _).inv ≫
@@ -184,17 +184,17 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
   -- The base-change isomorphism of duals is natural, so the pulled-back dual map becomes the
   -- dual map of `q^* a`.
   have hdual : (Scheme.Modules.pullback T.hom).map ((pre a.hom).app (𝟙_ X.Modules)) ≫
-        (pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules) ≫
+        ((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom =
-      ((pullbackIhomComparison F.obj T.hom).app (𝟙_ X.Modules) ≫
+      (((Scheme.Modules.pullback T.hom).ihomComparison F.obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj F.obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom) ≫
         (pre ((Scheme.Modules.pullback T.hom).map a.hom)).app (𝟙_ T.left.Modules) :=
-    ((reassoc_of% (pullback_map_pre_app_comp_pullbackIhomComparison_app T.hom a.hom
-      (𝟙_ X.Modules))) _).trans ((congrArg (_ ≫ ·)
-        ((pre ((Scheme.Modules.pullback T.hom).map a.hom)).naturality
-          (Scheme.Modules.pullbackObjUnitIso T.hom).hom).symm).trans (Category.assoc _ _ _).symm)
+    ((Scheme.Modules.pullback T.hom).map_pre_app_comp_ihomComparison_app_assoc a.hom
+      (𝟙_ X.Modules) _).trans ((congrArg (_ ≫ ·)
+      ((pre ((Scheme.Modules.pullback T.hom).map a.hom)).naturality
+        (Scheme.Modules.pullbackObjUnitIso T.hom).hom).symm).trans (Category.assoc _ _ _).symm)
   have hinv := (IsIso.inv_comp_eq _).2
     (((IsIso.eq_comp_inv _).2 hdual).trans (Category.assoc _ _ _))
   rw [totalSpaceHomEquiv_apply, totalSpaceHomEquiv_apply]
@@ -205,7 +205,7 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
     (Scheme.Modules.dualHomUnitEquiv_pre_comp
       (M := (Scheme.Modules.pullback T.hom).obj E.obj)
       (N := (Scheme.Modules.pullback T.hom).obj F.obj)
-      (inv ((pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules) ≫
+      (inv (((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom) ≫
         relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T t)
@@ -324,7 +324,8 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
     relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E))
       ((Over.map f).obj T) ((Over.map f).map t ≫ totalSpacePullbackFst f E) =
         (Scheme.Modules.pullbackComp T.hom f).inv.app ((ihom E.obj).obj (𝟙_ X.Modules)) ≫
-          (Scheme.Modules.pullback T.hom).map ((pullbackIhomComparison E.obj f).app (𝟙_ X.Modules) ≫
+          (Scheme.Modules.pullback T.hom).map
+            (((Scheme.Modules.pullback f).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
             (ihom ((Scheme.Modules.pullback f).obj E.obj)).map
               (Scheme.Modules.pullbackObjUnitIso f).hom ≫
             eqToHom (congrArg (fun M : Y.Modules ↦ (ihom M).obj (𝟙_ Y.Modules))
@@ -357,37 +358,38 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
 -- The equation `M' = f^* M` is a hypothesis so that it can be eliminated: the sheaf underlying a
 -- pulled-back finite locally free sheaf is equal, but not syntactically equal, to the pullback
 -- of the underlying sheaf.
-/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp` for a sheaf `M'` equal
+/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp` for a sheaf `M'` equal
 to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional `ψ` on `q^* M'^∨`
 corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`. -/
 private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q : T ⟶ Y)
-    (M : X.Modules) [M.IsQuasicoherent] [M.IsLocallyFree] [M.IsFiniteType]
-    (M' : Y.Modules) [M'.IsQuasicoherent] [M'.IsLocallyFree] [M'.IsFiniteType]
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType]
+    (M' : Y.Modules) [M'.IsLocallyFree] [M'.IsFiniteType]
     (h : M' = (Scheme.Modules.pullback f).obj M)
-    [IsIso ((pullbackIhomComparison M (q ≫ f)).app (𝟙_ X.Modules) ≫
+    [IsIso (((Scheme.Modules.pullback (q ≫ f)).ihomComparison M).app (𝟙_ X.Modules) ≫
       (ihom ((Scheme.Modules.pullback (q ≫ f)).obj M)).map
         (Scheme.Modules.pullbackObjUnitIso (q ≫ f)).hom)]
-    [IsIso ((pullbackIhomComparison M' q).app (𝟙_ Y.Modules) ≫
+    [IsIso (((Scheme.Modules.pullback q).ihomComparison M').app (𝟙_ Y.Modules) ≫
       (ihom ((Scheme.Modules.pullback q).obj M')).map (Scheme.Modules.pullbackObjUnitIso q).hom)]
     (ψ' : (Scheme.Modules.pullback (q ≫ f)).obj ((ihom M).obj (𝟙_ X.Modules)) ⟶ 𝟙_ T.Modules)
     (ψ : (Scheme.Modules.pullback q).obj ((ihom M').obj (𝟙_ Y.Modules)) ⟶ 𝟙_ T.Modules)
     (hψ : ψ' = (Scheme.Modules.pullbackComp q f).inv.app ((ihom M).obj (𝟙_ X.Modules)) ≫
-      (Scheme.Modules.pullback q).map ((pullbackIhomComparison M f).app (𝟙_ X.Modules) ≫
+      (Scheme.Modules.pullback q).map
+        (((Scheme.Modules.pullback f).ihomComparison M).app (𝟙_ X.Modules) ≫
         (ihom ((Scheme.Modules.pullback f).obj M)).map (Scheme.Modules.pullbackObjUnitIso f).hom ≫
         eqToHom (congrArg (fun N : Y.Modules ↦ (ihom N).obj (𝟙_ Y.Modules)) h.symm)) ≫ ψ) :
     Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback (q ≫ f)).obj M)
-        (inv ((pullbackIhomComparison M (q ≫ f)).app (𝟙_ X.Modules) ≫
+        (inv (((Scheme.Modules.pullback (q ≫ f)).ihomComparison M).app (𝟙_ X.Modules) ≫
             (ihom ((Scheme.Modules.pullback (q ≫ f)).obj M)).map
               (Scheme.Modules.pullbackObjUnitIso (q ≫ f)).hom) ≫ ψ') =
       Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback q).obj M')
-          (inv ((pullbackIhomComparison M' q).app (𝟙_ Y.Modules) ≫
+          (inv (((Scheme.Modules.pullback q).ihomComparison M').app (𝟙_ Y.Modules) ≫
             (ihom ((Scheme.Modules.pullback q).obj M')).map
               (Scheme.Modules.pullbackObjUnitIso q).hom) ≫ ψ) ≫
         eqToHom (congrArg (Scheme.Modules.pullback q).obj h) ≫
           (Scheme.Modules.pullbackComp q f).hom.app M := by
   subst hψ h
   simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
-  exact Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp q f M ψ
+  exact Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp q f M ψ
 
 /-- **Base change of the total space on points.** For a scheme `q : T ⟶ Y` over `Y` and a point
 `t : T ⟶ 𝕍(f^* E)` over `Y`, the section of `(q ≫ f)^* E` of the projection of `t` to `𝕍(E)` is

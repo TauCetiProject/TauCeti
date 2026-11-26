@@ -9,7 +9,9 @@ public import Mathlib.FieldTheory.Normal.Closure
 public import Mathlib.RingTheory.Unramified.Locus
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 import Mathlib.NumberTheory.RamificationInertia.Unramified
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Splitting
+import TauCeti.RingTheory.Ideal.PrimesOver
 import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
@@ -56,6 +58,9 @@ criterion rests likewise on `e(Q ∩ E / 𝔭) = [I(Q) : I(Q) ∩ Gal(M/E)]`.
   splits completely in the normal closure of `E`.
 * `Ideal.ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top`: the same, when `M` is the
   normal closure of `E`.
+* `Ideal.ncard_primesOver_span_eq_finrank_iff_forall_stabilizer_le`: a rational prime splits
+  completely in a number field `F` embedded in a Galois extension `N / ℚ` iff every decomposition
+  group above it fixes `F`.
 * `Ideal.isUnramifiedIn_iff_forall_inertia_le`: `𝔭` is unramified in `E` iff every inertia group
   above `𝔭` lies in `Gal(M/E)`.
 * `Ideal.isUnramifiedIn_sup_iff`, `Ideal.isUnramifiedIn_iSup_iff`,
@@ -187,6 +192,32 @@ theorem ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top (p : Ideal (𝓞
     ncard_primesOver_eq_finrank_iff_forall_stabilizer_eq_bot]
   simp only [le_bot_iff]
 
+/-- **Complete splitting of a rational prime in a subfield of a Galois extension of `ℚ`.** Let
+`N / ℚ` be a finite Galois extension and `F` a number field with an embedding `F → N`. A rational
+prime `p` splits completely in `F` exactly when the decomposition group in `Gal(N/ℚ)` of every
+prime of `𝓞 N` above `p` fixes the image of `F` pointwise.
+
+This is `Ideal.ncard_primesOver_eq_finrank_iff_forall_stabilizer_le` for the image of `F`, an
+intermediate field of `N / ℚ`, read with base ring `ℤ` and transported back to `F`. -/
+theorem ncard_primesOver_span_eq_finrank_iff_forall_stabilizer_le {F N : Type*} [Field F]
+    [NumberField F] [Field N] [NumberField N] [Algebra F N] [IsGalois ℚ N] (p : ℕ)
+    [Fact p.Prime] :
+    ((span {(p : ℤ)}).primesOver (𝓞 F)).ncard = finrank ℚ F ↔
+      ∀ Q ∈ (span {(p : ℤ)}).primesOver (𝓞 N),
+        MulAction.stabilizer (N ≃ₐ[ℚ] N) Q ≤
+          (IsScalarTower.toAlgHom ℚ F N).fieldRange.fixingSubgroup := by
+  set f := IsScalarTower.toAlgHom ℚ F N
+  have : (span {(p : ℤ)}).IsMaximal := Int.ideal_span_isMaximal_of_prime p
+  obtain ⟨Q₀, hQ₀⟩ : ((span {(p : ℤ)}).primesOver (𝓞 N)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ₀.1
+  have := hQ₀.2
+  have hE := ncard_primesOver_eq_finrank_iff_forall_stabilizer_le (Q₀.under (𝓞 ℚ)) f.fieldRange
+  rw [primesOver_under_ringOfIntegers_rat_eq (p := span {(p : ℤ)}) Q₀,
+    primesOver_under_ringOfIntegers_rat_eq (p := span {(p : ℤ)}) Q₀] at hE
+  rw [f.equivFieldRange.toLinearEquiv.finrank_eq, ← ncard_primesOver_congr
+    (NumberField.RingOfIntegers.mapRingEquiv f.equivFieldRange.toRingEquiv).toIntAlgEquiv, hE]
+
 /-! ### Unramifiedness -/
 
 /-- **Unramifiedness through inertia groups.** For `M / K` Galois and `E` an intermediate field,
@@ -229,12 +260,13 @@ theorem isUnramifiedIn_iSup_iff (p : Ideal (𝓞 K)) {ι : Sort*} (E : ι → In
   exact ⟨fun h i Q hQ ↦ h Q hQ i, fun h Q hQ i ↦ h i Q hQ⟩
 
 omit [NumberField K] [NumberField M] [IsGalois K M] in
-/-- **Unramifiedness in a conjugate field.** An ideal `p` of `𝓞 K` is unramified in `σ E` exactly
-when it is unramified in `E`. -/
-theorem isUnramifiedIn_map_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) (σ : M ≃ₐ[K] M) :
-    Algebra.IsUnramifiedIn (𝓞 ↥(E.map (σ : M →ₐ[K] M))) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
-  ((NumberField.RingOfIntegers.mapAlgEquiv (k := K)
-    (E.equivMap (σ : M →ₐ[K] M))).isUnramifiedIn_iff p).symm
+/-- **Unramifiedness in an image field.** For a `K`-embedding `f : M →ₐ[K] M'`, in particular a
+conjugation `σ : M ≃ₐ[K] M`, an ideal `p` of `𝓞 K` is unramified in `f E` exactly when it is
+unramified in `E`. -/
+theorem isUnramifiedIn_map_iff {M' : Type*} [Field M'] [Algebra K M'] (p : Ideal (𝓞 K))
+    (E : IntermediateField K M) (f : M →ₐ[K] M') :
+    Algebra.IsUnramifiedIn (𝓞 ↥(E.map f)) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
+  ((NumberField.RingOfIntegers.mapAlgEquiv (k := K) (E.equivMap f)).isUnramifiedIn_iff p).symm
 
 /-! ### Normal closures in a normal extension -/
 

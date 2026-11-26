@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.ModelTheory.ModelExistence.Types
-import TauCeti.ModelTheory.BackAndForth.DiscreteOrder
+import TauCeti.ModelTheory.BackAndForth.LinearOrder
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.FinCases
 

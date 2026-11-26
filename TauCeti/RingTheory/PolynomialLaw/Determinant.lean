@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
+public import TauCeti.RingTheory.PolynomialLaw.MatrixDet
 public import TauCeti.RingTheory.PolynomialLaw.Power
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -42,11 +46,24 @@ to be a ring.
   `TauCeti.Determinant.toFun_tmul_add_tmul_one` and `TauCeti.Determinant.map_smul_add_algebraMap`
   computing `D(s x + t)` from them.
 * `TauCeti.Determinant.trace`: the trace `Λ₁` as an `A`-linear map, with `D.trace 1 = d`.
+* `TauCeti.Determinant.charCoeff_smul`, `TauCeti.Determinant.coeff_charpoly_smul`: the
+  characteristic coefficients are homogeneous, `Λᵢ(a x) = aⁱ Λᵢ(x)`.
+* `TauCeti.Determinant.charCoeff_inv_mul_apply`: `Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)` for a unit `u`.
 * `TauCeti.Determinant.charpoly`: the characteristic polynomial, monic of degree `d`, with
   `χ(x, 0) = (-1)ᵈ D x` and `χ(1, X) = (X - 1)ᵈ`.
+* `TauCeti.Determinant.apply_eq_prod_of_charpoly_eq_prod`: a determinant whose characteristic
+  polynomial at `r` is `∏ⱼ (X - aⱼ)` takes the value `∏ⱼ aⱼ` at `r`.
+* `TauCeti.Determinant.coeff_charpoly_inv_mul_eval_zero`,
+  `TauCeti.Determinant.C_eval_zero_mul_charpoly_inv`, `TauCeti.Determinant.charpoly_inv`: the
+  characteristic polynomial of the inverse of a unit is the normalized reciprocal
+  `χ(u, 0)⁻¹ Xᵈ χ(u, X⁻¹)`.
 * `TauCeti.Determinant.algHomPow`: the `d`-th power of an algebra map `R →ₐ[A] A`, a
   `d`-dimensional determinant with characteristic coefficients `d.choose i * φ x ^ i` and
   characteristic polynomial `(X - φ x)ᵈ`.
+* `TauCeti.Determinant.algHomDet`: the determinant `det ∘ ρ` of a matrix representation
+  `ρ : R →ₐ[A] Matrix n n A`, a `card n`-dimensional determinant with value `det (ρ x)`,
+  characteristic polynomial `(ρ x).charpoly` and trace `(ρ x).trace`; conjugate representations
+  have the same determinant (`TauCeti.Determinant.algHomDet_innerAut_comp`).
 
 ## References
 
@@ -270,12 +287,19 @@ theorem charCoeff_one_eq_choose (i : ℕ) : D.charCoeff i 1 = d.choose i := by
   rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi, ← add_tmul, toFun_tmul_one,
     Algebra.TensorProduct.rid_tmul, one_smul, coeff_one_add_X_pow, Nat.choose_symm hi]
 
+/-- The characteristic coefficients are homogeneous: `Λᵢ(a x) = aⁱ Λᵢ(x)` for `a ∈ A`. This is the
+coefficient form of the characteristic polynomial of a twist by a character. -/
+@[simp]
+theorem charCoeff_smul (i : ℕ) (a : A) (x : R) :
+    D.charCoeff i (a • x) = a ^ i * D.charCoeff i x := by
+  rw [charCoeff_def, charCoeff_def, PolynomialLaw.coeff_optionElim_smul, smul_eq_mul]
+
 /-- The trace of a determinant, its first characteristic coefficient `Λ₁`, as an `A`-linear map.
 It is `0` for a determinant of dimension zero. -/
 def trace : R →ₗ[A] A where
   toFun := D.charCoeff 1
   map_add' x y := PolynomialLaw.coeff_optionElim_add_of_exponent_one x y _ _ _
-  map_smul' a x := by simpa [charCoeff] using PolynomialLaw.coeff_optionElim_smul 1 a x _ D.toLaw _
+  map_smul' a x := by simp
 
 /-- The trace is the first characteristic coefficient. -/
 theorem trace_apply (x : R) : D.trace x = D.charCoeff 1 x :=
@@ -290,6 +314,22 @@ theorem trace_one : D.trace 1 = d := by
 @[simp]
 theorem trace_eq_zero_of_dim_zero (D : Determinant A R 0) : D.trace = 0 :=
   LinearMap.ext fun x ↦ D.charCoeff_eq_zero zero_lt_one x
+
+/-- **Characteristic coefficients of an inverse.** For a unit `u` and `i ≤ d`,
+`Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)`: the characteristic polynomial of `u⁻¹` is the normalized reciprocal
+of that of `u` (`charpoly_inv`). -/
+theorem charCoeff_inv_mul_apply (u : Rˣ) {i : ℕ} (hi : i ≤ d) :
+    D.charCoeff (d - i) ↑u⁻¹ * D u = D.charCoeff i u := by
+  have hfac : (1 : A[X]) ⊗ₜ[A] (u : R) + X ⊗ₜ 1 =
+      (1 ⊗ₜ (u : R)) * (X ⊗ₜ ((u⁻¹ : Rˣ) : R) + 1 ⊗ₜ 1) := by
+    simp [mul_add, Algebra.TensorProduct.tmul_mul_tmul, add_comm]
+  rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi, hfac, D.isMultiplicative.toFun_mul,
+    ← PolynomialLaw.one_tmul_ground, ground_toLaw, toFun_tmul_add_tmul_one, _root_.map_mul,
+    map_sum]
+  simp only [one_pow, mul_one, Algebra.TensorProduct.rid_tmul, smul_eq_C_mul, coeff_C_mul,
+    finsetSum_coeff, coeff_X_pow]
+  rw [Finset.sum_eq_single_of_mem (d - i) (Finset.mem_range.mpr (by omega)) fun j _ hj ↦ by
+    rw [ite_eq_right hj.symm, mul_zero], ite_eq_left rfl, mul_one, mul_comm]
 
 end CommSemiring
 
@@ -354,6 +394,20 @@ theorem eval_zero_charpoly (x : R) : (D.charpoly x).eval 0 = (-1) ^ d * D x := b
   rw [← coeff_zero_eq_eval_zero, coeff_charpoly, ite_eq_left (Nat.zero_le d), Nat.sub_zero,
     charCoeff_dim]
 
+/-- The value of a determinant is `(-1) ^ d` times the constant term of the characteristic
+polynomial. -/
+theorem apply_eq_neg_one_pow_mul_eval_zero_charpoly (x : R) :
+    D x = (-1) ^ d * (D.charpoly x).eval 0 := by
+  rw [eval_zero_charpoly, neg_one_pow_mul_neg_one_pow_mul]
+
+/-- A determinant whose characteristic polynomial at `r` is `∏ⱼ (X - aⱼ)` takes the value
+`∏ⱼ aⱼ` at `r`. -/
+theorem apply_eq_prod_of_charpoly_eq_prod {r : R} {a : Fin d → A}
+    (h : D.charpoly r = ∏ j, (X - C (a j))) : D r = ∏ j, a j := by
+  rw [apply_eq_neg_one_pow_mul_eval_zero_charpoly, h, eval_prod]
+  simp only [eval_sub, eval_X, eval_C, zero_sub, Finset.prod_neg, Finset.card_univ,
+    Fintype.card_fin, neg_one_pow_mul_neg_one_pow_mul]
+
 /-- In positive dimension, the trace is minus the coefficient of `X ^ (d - 1)` in the
 characteristic polynomial. -/
 theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
@@ -361,11 +415,67 @@ theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
   rw [coeff_charpoly, ite_eq_left (Nat.sub_le d 1), Nat.sub_sub_self hd, pow_one, neg_one_mul,
     neg_neg, trace_apply]
 
+/-- The trace is minus the second coefficient (`Polynomial.nextCoeff`) of the characteristic
+polynomial, in every dimension, including zero. -/
+theorem trace_eq_neg_charpoly_nextCoeff (x : R) : D.trace x = -(D.charpoly x).nextCoeff := by
+  nontriviality A
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply,
+      nextCoeff_eq_zero.mpr (Or.inl (D.charpoly_natDegree_eq_dim x)), neg_zero]
+  · rw [trace_eq_neg_charpoly_coeff D hd,
+      nextCoeff_of_natDegree_pos (by rw [charpoly_natDegree_eq_dim]; omega),
+      charpoly_natDegree_eq_dim]
+
 /-- The characteristic polynomial of `1` is `(X - 1) ^ d`. -/
 @[simp]
 theorem charpoly_one : D.charpoly 1 = (X - 1) ^ d := by
   rw [charpoly, ← sub_tmul, PolynomialLaw.toFun'_eq_toFun, toFun_tmul_one,
     Algebra.TensorProduct.rid_tmul, one_smul]
+
+/-- **Characteristic polynomial under scaling.** The coefficient of `X ^ j` in `χ(a x, X)` is
+`a^(d - j)` times that in `χ(x, X)`: scaling by `a` scales the roots by `a`. -/
+@[simp]
+theorem coeff_charpoly_smul (a : A) (x : R) (j : ℕ) :
+    (D.charpoly (a • x)).coeff j = a ^ (d - j) * (D.charpoly x).coeff j := by
+  rw [coeff_charpoly, coeff_charpoly]
+  split_ifs
+  · rw [charCoeff_smul]
+    ring
+  · rw [mul_zero]
+
+/-- **Normalized reciprocal characteristic polynomial**, coefficientwise. For a unit `u` and
+`i ≤ d`, the coefficient of `X ^ i` in `χ(u⁻¹, X)`, multiplied by `χ(u, 0)`, is the coefficient of
+`X ^ (d - i)` in `χ(u, X)`. -/
+theorem coeff_charpoly_inv_mul_eval_zero (u : Rˣ) {i : ℕ} (hi : i ≤ d) :
+    (D.charpoly ↑u⁻¹).coeff i * (D.charpoly u).eval 0 = (D.charpoly u).coeff (d - i) := by
+  rw [eval_zero_charpoly, coeff_charpoly, coeff_charpoly, ite_eq_left hi,
+    ite_eq_left (Nat.sub_le d i),
+    Nat.sub_sub_self hi, ← D.charCoeff_inv_mul_apply u hi]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hi
+  rw [Nat.add_sub_cancel_left, pow_add]
+  calc (-1) ^ k * D.charCoeff k ↑u⁻¹ * ((-1) ^ i * (-1) ^ k * D u)
+      = (-1) ^ k * ((-1) ^ k * ((-1) ^ i * (D.charCoeff k ↑u⁻¹ * D u))) := by ring
+    _ = (-1) ^ i * (D.charCoeff k ↑u⁻¹ * D u) := neg_one_pow_mul_neg_one_pow_mul _ _
+
+/-- **Normalized reciprocal characteristic polynomial.** For a unit `u`,
+`χ(u, 0) χ(u⁻¹, X) = X^d χ(u, X⁻¹)`, the reflection of `χ(u, X)` in degree `d`: the roots of
+`χ(u⁻¹, X)` are the inverses of those of `χ(u, X)`. -/
+theorem C_eval_zero_mul_charpoly_inv (u : Rˣ) :
+    C ((D.charpoly u).eval 0) * D.charpoly ↑u⁻¹ = (D.charpoly u).reflect d := by
+  ext j
+  rw [coeff_C_mul, coeff_reflect, mul_comm]
+  rcases le_or_gt j d with hj | hj
+  · rw [revAt_le hj, coeff_charpoly_inv_mul_eval_zero _ _ hj]
+  · rw [revAt_eq_self_of_lt hj, coeff_charpoly, coeff_charpoly, ite_eq_right hj.not_ge,
+      ite_eq_right hj.not_ge, zero_mul]
+
+/-- **Normalized reciprocal characteristic polynomial**, solved for `χ(u⁻¹, X)`: it is
+`χ(u, 0)⁻¹ X^d χ(u, X⁻¹)`, where `χ(u, 0)⁻¹ = (-1)ᵈ D(u⁻¹)`. -/
+theorem charpoly_inv (u : Rˣ) :
+    D.charpoly ↑u⁻¹ = C ((-1) ^ d * D ↑u⁻¹) * (D.charpoly u).reflect d := by
+  rw [← C_eval_zero_mul_charpoly_inv, ← mul_assoc, ← C_mul, mul_right_comm,
+    ← apply_eq_neg_one_pow_mul_eval_zero_charpoly, ← map_mul, Units.mul_inv, map_one, C_1,
+    one_mul]
 
 end CommRing
 
@@ -437,6 +547,84 @@ theorem charpoly_algHomPow (φ : R →ₐ[A] A) (d : ℕ) (x : R) :
   simp [charpoly, algHomPow_toFun', Algebra.TensorProduct.rid_tmul, smul_eq_C_mul]
 
 end AlgHomPowCharpoly
+
+section AlgHomDet
+
+variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {n : Type*} [Fintype n]
+  [DecidableEq n]
+
+/-- The determinant `det ∘ ρ` of a matrix representation `ρ : R →ₐ[A] Matrix n n A`, a
+`card n`-dimensional determinant. After scalar extension to a commutative ring `S`, it is the
+determinant of `ρ` extended to `S` (`algHomDet_toFun`). -/
+def algHomDet (ρ : R →ₐ[A] Matrix n n A) : Determinant A R (Fintype.card n) where
+  toLaw := (PolynomialLaw.det n A).comp ρ.toLinearMap.toPolynomialLaw
+  isHomogeneousOfDegree := by
+    simpa using (PolynomialLaw.isHomogeneousOfDegree_det (n := n) (A := A)).comp
+      ρ.toLinearMap.isHomogeneousOfDegree_toPolynomialLaw
+  isMultiplicative := PolynomialLaw.isMultiplicative_det.comp ρ.isMultiplicative_toPolynomialLaw
+
+/-- The law of `algHomDet ρ` is the determinant law composed with `ρ`. -/
+theorem toLaw_algHomDet (ρ : R →ₐ[A] Matrix n n A) :
+    (algHomDet ρ).toLaw = (PolynomialLaw.det n A).comp ρ.toLinearMap.toPolynomialLaw :=
+  (rfl)
+
+/-- After scalar extension to a commutative ring `S`, the law of `algHomDet ρ` is the determinant
+of `ρ` extended to `S`, read in `Matrix n n S`. -/
+@[simp]
+theorem algHomDet_toFun (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommRing S] [Algebra A S]
+    (x : S ⊗[A] R) :
+    (algHomDet ρ).toLaw.toFun S x =
+      (TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
+        (Algebra.TensorProduct.map (AlgHom.id A S) ρ x)).det ⊗ₜ 1 := by
+  simp [toLaw_algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.baseChange_eq_lTensor,
+    AlgHom.lTensor_toLinearMap_apply]
+
+/-- After scalar extension to any commutative `A`-algebra `S`, the law of `algHomDet ρ` is the
+Leibniz formula, with the signs acting through `A`, for `ρ` extended to `S`. Over a commutative
+ring this is `algHomDet_toFun`. -/
+theorem algHomDet_toFun_eq_leibniz (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommSemiring S]
+    [Algebra A S] (x : S ⊗[A] R) :
+    (algHomDet ρ).toLaw.toFun S x = (∑ σ : Equiv.Perm n, ((Equiv.Perm.sign σ : ℤ) : A) •
+      ∏ i, TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
+        (Algebra.TensorProduct.map (AlgHom.id A S) ρ x) (σ i) i) ⊗ₜ 1 := by
+  simp [toLaw_algHomDet, PolynomialLaw.toFun_comp_apply, PolynomialLaw.det_toFun_eq_leibniz,
+    LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
+
+/-- The value of `algHomDet ρ` at `x` is `det (ρ x)`. -/
+@[simp]
+theorem algHomDet_apply (ρ : R →ₐ[A] Matrix n n A) (x : R) : algHomDet ρ x = (ρ x).det := by
+  simp [apply_eq_lid_toFun]
+
+/-- The characteristic polynomial of `algHomDet ρ` at `x` is that of the matrix `ρ x`. -/
+@[simp]
+theorem charpoly_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
+    (algHomDet ρ).charpoly x = (ρ x).charpoly := by
+  rw [charpoly, PolynomialLaw.toFun'_eq_toFun, algHomDet_toFun]
+  simp only [Algebra.TensorProduct.rid_tmul, one_smul, Matrix.charpoly]
+  congr 1
+  ext i j
+  simp [Matrix.charmatrix_apply, Matrix.diagonal_apply, Matrix.algebraMap_matrix_apply,
+    Algebra.smul_def]
+
+/-- The trace of `algHomDet ρ` at `x` is the trace of the matrix `ρ x`. -/
+@[simp]
+theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
+    (algHomDet ρ).trace x = (ρ x).trace := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · rw [trace_apply, charCoeff_eq_zero _ (by simp), Matrix.trace, Finset.univ_eq_empty,
+      Finset.sum_empty]
+  · rw [trace_eq_neg_charpoly_coeff _ Fintype.card_pos, charpoly_algHomDet,
+      Matrix.trace_eq_neg_charpoly_coeff]
+
+/-- Conjugate matrix representations have the same determinant: `algHomDet` does not change when
+`ρ` is followed by conjugation by an invertible matrix. -/
+@[simp]
+theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
+    algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
+  ext1
+  simp [toLaw_algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
+
+end AlgHomDet
 
 end Determinant
 

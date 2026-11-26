@@ -55,6 +55,8 @@ classification will be stated about.
 
 ## Main results
 
+* `TauCeti.nonempty_iso_tensorUnit_rationalWeylFDRep_zero`: the rational Weyl module of the zero
+  dominant weight is isomorphic to the tensor unit of `FDRep k (GL n k)`.
 * `TauCeti.isIrreducible_rationalWeylRep` and `TauCeti.simple_rationalWeylFDRep`: over a field of
   characteristic zero, **the rational Weyl module of a dominant weight is irreducible**, for every
   dominant weight.
@@ -171,6 +173,27 @@ variable (k : Type u) [CommRing k] [Algebra ℚ k] [IsNoetherianRing k] (n : ℕ
 tensor power being finitely generated as soon as the base ring is Noetherian. -/
 noncomputable abbrev rationalWeylFDRep (l : DominantWeight n) : FDRep k (GL (Fin n) k) :=
   FDRep.of (V := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule) (rationalWeylRep k n l)
+
+open CategoryTheory MonoidalCategory in
+/-- **The tensor unit of `FDRep k (GL n k)` is isomorphic to `rationalWeylFDRep k n 0`**: at
+weight `0`, the polynomial part is `⊥` and `detShift = 0`, giving the `0`-th tensor power `k`. -/
+theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero :
+    Nonempty (𝟙_ (FDRep k (GL (Fin n) k)) ≅ rationalWeylFDRep k n 0) := by
+  set μ : YoungDiagram := (0 : DominantWeight n).detShiftShape
+  have : IsEmpty (Fin μ.card) := (by simp [μ] : μ.card = 0) ▸ inferInstanceAs (IsEmpty (Fin 0))
+  have hsym : YoungTableau.youngSymmetrizerOver k
+      (StandardYoungTableau.rowSuperstandard μ).toTableau = 1 := by
+    rw [YoungTableau.youngSymmetrizerOver_eq_sum_of_rowSubgroup_eq_top _ _
+      (by ext σ; simp [Subsingleton.elim σ 1]), Fintype.sum_subsingleton _ 1, map_one]
+  have htop : (weylModuleOfShape k n μ).toSubmodule = ⊤ := by
+    rw [weylModuleOfShape_toSubmodule, hsym, map_one]; exact LinearMap.range_id
+  let e := (PiTensorProduct.isEmptyEquiv (R := k) (Fin μ.card)).symm.trans
+    (LinearEquiv.ofTop _ htop).symm
+  refine ⟨e.toFDRepIso fun g x => Subtype.ext ?_⟩
+  rw [FDRep.tensorUnit_ρ, LinearMap.id_apply, FDRep.of_ρ',
+    rationalWeylRep_eq_weylRepOfShape_of_detShift_eq_zero k n DominantWeight.detShift_zero,
+    weylRepOfShape_apply_coe, Representation.tensorPower_apply,
+    TauCeti.PiTensorProduct.map_of_isEmpty, LinearMap.id_apply]
 
 end Bundled
 

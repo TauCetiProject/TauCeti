@@ -22,6 +22,7 @@ public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -147,6 +148,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
   complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
   degree `0` when `n = 0`) and `0` in every other degree.
+* `TauCeti.nontrivial_singularHomology_sphere`: with coefficients in a nontrivial ring, the top
+  homology of the unit sphere of a real normed space of dimension at least two is nontrivial.
 
 ## References
 
@@ -627,12 +630,8 @@ theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
           (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩) = -𝟙 _ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis `b` with `b 0 = ‖v‖⁻¹ • v`.
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-    (ι := Fin (n + 1)) (by simpa using hE) (v := fun _ ↦ ‖v‖⁻¹ • v) (s := {0})
-    (orthonormal_iff_ite.2 fun i j ↦ by
-      rw [Subsingleton.elim i j]
-      simp [hv])
-  have hb₀ : b 0 = ‖v‖⁻¹ • v := hb 0 rfl
+  obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hE
+    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hv)
   rw [← cancel_mono (reducedSingularHomologySphereIso R b).hom, Preadditive.neg_comp,
     Category.id_comp]
   refine reducedSingularHomologySphereIso_hom_neg_zero R b _ ?_ fun i hi ↦ ?_
@@ -1207,5 +1206,16 @@ theorem bettiNumber_compl_singleton (hE : finrank ℝ E = n + 1) (y : E) (j : �
   rw [(complSingletonHomotopyEquivSphere y).bettiNumber_eq k j, bettiNumber_sphere k hE]
 
 end BettiNumber
+
+/-- **The top homology of a sphere is nontrivial.** With coefficients in a nontrivial ring `k`, the
+unit sphere `Sⁿ⁺¹` of a real normed space of dimension `n + 2` has `Hₙ₊₁(Sⁿ⁺¹; k) ≅ k`
+(`ContinuousMap.HomotopyEquiv.singularHomologySphereIso`), which is nontrivial. For `k = 𝔽₂`, a
+sphere of positive dimension does not have the mod-two homology of a point. -/
+theorem nontrivial_singularHomology_sphere (k : Type w) [Ring k] [Nontrivial k] {E : Type w}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    Nontrivial (((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :=
+  have : Nontrivial (ModuleCat.of k k) := inferInstanceAs (Nontrivial k)
+  ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of k k) hE
+    (Nat.le_add_left 1 n)).toLinearEquiv.toEquiv.nontrivial
 
 end TauCeti

@@ -138,6 +138,12 @@ theorem harmonicDegree_def (χ : Grossencharacter K 𝔪) :
     χ.harmonicDegree = ∑ w : InfinitePlace K, χ.harmonicExponent w :=
   (rfl)
 
+/-- If the total harmonic degree is zero, the local harmonic degree is zero at every place. -/
+theorem harmonicExponent_eq_zero_of_harmonicDegree_eq_zero (χ : Grossencharacter K 𝔪)
+    (h : χ.harmonicDegree = 0) (w : InfinitePlace K) : χ.harmonicExponent w = 0 := by
+  rw [harmonicDegree_def, Finset.sum_eq_zero_iff] at h
+  exact h w (Finset.mem_univ _)
+
 /-- `Grossencharacter.harmonicDegree` agrees with the `ContinuousInfinityType` harmonic degree of
 `χ.toHeckeCharacter.infinityType`. -/
 theorem harmonicDegree_eq_infinityType (χ : Grossencharacter K 𝔪) :
@@ -215,6 +221,13 @@ theorem norm_harmonicFactor (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
   simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.norm_harmonicFactor,
     harmonicExponent_eq_infinityType]
 
+/-- When the total harmonic degree vanishes, `χ.harmonicFactor` is the constant `1`. -/
+theorem harmonicFactor_eq_one_of_harmonicDegree_eq_zero (χ : Grossencharacter K 𝔪)
+    (h : χ.harmonicDegree = 0) (x : mixedSpace K) : χ.harmonicFactor x = 1 := by
+  rw [harmonicFactor_eq_infinityType]
+  exact ContinuousInfinityType.harmonicFactor_eq_one_of_harmonicDegree_eq_zero _
+    (by rwa [← harmonicDegree_eq_infinityType]) x
+
 /-- At `0`, `χ.harmonicFactor` takes the value `1` if `χ.harmonicDegree = 0` and `0` otherwise. -/
 theorem harmonicFactor_zero_right (χ : Grossencharacter K 𝔪) :
     χ.harmonicFactor 0 = if χ.harmonicDegree = 0 then 1 else 0 := by
@@ -261,6 +274,14 @@ theorem archWeight_nonneg (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy :
     0 ≤ χ.archWeight y := by
   rw [archWeight_eq_infinityType]
   exact χ.toHeckeCharacter.infinityType.archWeight_nonneg hy
+
+/-- A common upper bound for nonnegative parameter coordinates bounds the archimedean weight. -/
+theorem archWeight_le_of_le_const (χ : Grossencharacter K 𝔪) {y : realSpace K} {C : ℝ}
+    (hy : ∀ w, 0 ≤ y w) (hC : ∀ w, y w ≤ C) :
+    χ.archWeight y ≤ ∏ w : InfinitePlace K, C ^ ((χ.harmonicExponent w : ℝ) / 2) := by
+  rw [archWeight_def]
+  exact Finset.prod_le_prod₀ (fun w _ ↦ Real.rpow_nonneg (hy w) _)
+    (fun w _ ↦ Real.rpow_le_rpow (hy w) (hC w) (by positivity))
 
 /-- For positive parameters, `χ.archWeight` is strictly positive. -/
 theorem archWeight_pos (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : ∀ w, 0 < y w) :
@@ -309,10 +330,24 @@ theorem heckeEpsilon_def (χ : Grossencharacter K 𝔪) :
       if χ.toHeckeCharacter.finiteConductor = ⊤ ∧ χ.harmonicDegree = 0 then 1 else 0 :=
   (rfl)
 
+/-- The constant term of the twisted theta series is either zero or one. -/
+theorem heckeEpsilon_eq_zero_or_eq_one (χ : Grossencharacter K 𝔪) :
+    χ.heckeEpsilon = 0 ∨ χ.heckeEpsilon = 1 := by
+  rw [heckeEpsilon_def]
+  split <;> simp
+
 @[simp]
 theorem heckeEpsilon_eq_one_iff (χ : Grossencharacter K 𝔪) :
     χ.heckeEpsilon = 1 ↔ χ.toHeckeCharacter.finiteConductor = ⊤ ∧ χ.harmonicDegree = 0 := by
   simp [heckeEpsilon_def]
+
+/-- The archimedean weight fixes the constant term of the twisted theta series. -/
+theorem archWeight_mul_heckeEpsilon (χ : Grossencharacter K 𝔪) (y : realSpace K) :
+    (χ.archWeight y : ℂ) * χ.heckeEpsilon = χ.heckeEpsilon := by
+  rcases χ.heckeEpsilon_eq_zero_or_eq_one with h | h
+  · simp [h]
+  have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
+  simp [h, archWeight_def, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg]
 
 @[simp]
 theorem heckeEpsilon_eq_zero_iff (χ : Grossencharacter K 𝔪) :
@@ -406,6 +441,35 @@ theorem heckeEpsilon_of_toHeckeCharacter_eq_inv {χ : Grossencharacter K 𝔪}
 end Congruence
 
 /-! ### Hecke's Fourier lemma, Poisson summation, and gamma integral -/
+
+/-- Uniformly over all positive parameters, the archimedean weight times the harmonic
+Gaussian of `χ` is bounded in norm by a constant times the Gaussian at half the parameter. -/
+theorem exists_norm_archWeight_mul_harmonicFactor_mul_archGaussian_le
+    (χ : Grossencharacter K 𝔪) :
+    ∃ C ≥ 0, ∀ (y : realSpace K), (∀ w, 0 < y w) → ∀ x : mixedSpace K,
+      ‖(χ.archWeight y : ℂ) * χ.harmonicFactor x * archGaussian y x‖ ≤
+        C * ‖archGaussian ((1 / 2 : ℝ) • y) x‖ := by
+  classical
+  let f := harmonicArchGaussianSchwartz χ.toHeckeCharacter.infinityType
+    (fun _ ↦ 1 / 2) (fun _ ↦ by norm_num)
+  refine ⟨SchwartzMap.seminorm ℝ 0 0 f, apply_nonneg _ _, fun y hy x ↦ ?_⟩
+  let z := archGaussianDilation y hy x
+  have hpoly : χ.harmonicFactor z = (χ.archWeight y : ℂ) * χ.harmonicFactor x := by
+    simp only [z, archGaussianDilation_apply, harmonicFactor_mixedSpaceOfRealSpace_mul,
+      archWeight_def, Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (hy _).le, one_div, inv_mul_eq_div]
+  have hhalf : archGaussian (fun _ ↦ 1 / 2) z = archGaussian ((1 / 2 : ℝ) • y) x := by
+    simp only [z, archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.smul_apply,
+      smul_eq_mul, mul_assoc]
+  have hsplit : archGaussian y x =
+      archGaussian (fun _ ↦ 1 / 2) z * archGaussian ((1 / 2 : ℝ) • y) x := by
+    rw [← hhalf, ← archGaussian_one_archGaussianDilation y hy, archGaussian_one,
+      archGaussian_const, mixedGaussian_apply, ← Complex.ofReal_mul, ← Real.exp_add]
+    congr 2
+    ring
+  rw [← hpoly, hsplit, ← mul_assoc, norm_mul]
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+  simpa only [f, harmonicArchGaussianSchwartz_apply, harmonicFactor_eq_infinityType] using
+    SchwartzMap.norm_le_seminorm ℝ f z
 
 /-- For positive parameters `y`, a shifted harmonic-weighted archimedean Gaussian of `χ` is
 summable over any discrete `ℤ`-submodule of `mixedSpace K`. -/

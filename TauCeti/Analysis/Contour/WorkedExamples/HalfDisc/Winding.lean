@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Contour.LogDerivFTC
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
-import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
 
 /-!
 # The winding numbers of the half-disc contour
@@ -32,9 +32,9 @@ half-plane, hence never leaves `Complex.slitPlane`, so the principal branch of `
 single-valued primitive along each and both integrals telescope to the same value
 `log (R - s) - log (-R - s)`. Hence `n(Λ) + n(A) = n(B) + n(A) = 1`.
 
-The vanishing statements go through `IsPiecewiseC1On.windingNumber_eq_zero_of_ray`: a point below
-the axis escapes to infinity straight downwards, and a point outside the closed disc escapes
-radially, in both cases without meeting the contour.
+The vanishing statements go through `AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_ray`:
+a point below the axis escapes to infinity straight downwards, and a point outside the closed disc
+escapes radially, in both cases without meeting the contour.
 
 Together with `windingNumber_halfDiscBoundary`, this settles every point except those *on* the
 contour other than the origin -- a real `t` with `|t| < R`, or a point of the upper semicircle.
@@ -158,8 +158,8 @@ without meeting it. -/
 theorem windingNumber_halfDiscBoundary_eq_zero_of_im_neg (hR : 0 < R) {s : ℂ} (him : s.im < 0) :
     windingNumber (halfDiscBoundary R) (-R) (R + Real.pi) s = 0 := by
   have hpi := Real.pi_pos
-  refine (isPwC1ImmersionOn_halfDiscBoundary hR).isPiecewiseC1On.windingNumber_eq_zero_of_ray
-    (halfDiscBoundary_closed hR.le) (v := -Complex.I) (by simp) ?_
+  refine (isPwC1ImmersionOn_halfDiscBoundary hR).isPiecewiseC1On.absolutelyContinuousOnInterval
+    |>.windingNumber_eq_zero_of_ray (halfDiscBoundary_closed hR.le) (v := -Complex.I) (by simp) ?_
   rintro c hc ⟨t, ht, hteq⟩
   rw [uIcc_of_le (by linarith)] at ht
   have him' : 0 ≤ (halfDiscBoundary R t).im := im_halfDiscBoundary_nonneg hR.le ht.2
@@ -179,8 +179,8 @@ theorem windingNumber_halfDiscBoundary_eq_zero_of_lt_norm (hR : 0 < R) {s : ℂ}
     rw [h] at hs
     simp at hs
     linarith
-  refine (isPwC1ImmersionOn_halfDiscBoundary hR).isPiecewiseC1On.windingNumber_eq_zero_of_ray
-    (halfDiscBoundary_closed hR.le) (v := s) hs0 ?_
+  refine (isPwC1ImmersionOn_halfDiscBoundary hR).isPiecewiseC1On.absolutelyContinuousOnInterval
+    |>.windingNumber_eq_zero_of_ray (halfDiscBoundary_closed hR.le) (v := s) hs0 ?_
   rintro c hc ⟨t, ht, hteq⟩
   rw [uIcc_of_le (by linarith)] at ht
   have hle : ‖halfDiscBoundary R t‖ ≤ R := norm_halfDiscBoundary_le hR.le ht.1

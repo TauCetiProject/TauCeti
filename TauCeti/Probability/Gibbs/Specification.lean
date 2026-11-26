@@ -34,13 +34,17 @@ finite `Λ`. These are the DLR equations of statistical mechanics: for probabili
 `μ` is Gibbs iff each `γ_Λ (C | ·)` is a version of the conditional probability of `C` given the
 configuration outside `Λ` (`TauCeti.Specification.isGibbs_iff_ae_eq_condExp`). By consistency it
 suffices to check the equations on a cofinal family of finite sets
-(`TauCeti.Specification.isGibbs_of_forall_exists_subset`).
+(`TauCeti.Specification.isGibbs_of_forall_exists_subset`), and for a finite measure it
+suffices to check `∫ γ_Λ (C | ω) dμ(ω) = μ(C)` on the measurable cylinder events `C`
+(`TauCeti.Specification.isGibbs_iff_forall_lintegral_eq`).
 
 The Gibbs probability measures form a convex set (`TauCeti.Specification.convex_gibbsMeasures`),
 as do the invariant ones (`TauCeti.Specification.gibbsInvariant`, a subset of Tau Ceti's convex
 set `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq` of invariant probability measures).
 For an equivariant specification the action of `Γ` preserves the Gibbs measures
 (`TauCeti.Specification.IsGibbs.map_smul`).
+A specification is quasilocal (`TauCeti.Specification.IsQuasilocal`) when the mass
+`γ_Λ (C | ω)` of every cylinder event `C` is a continuous function of `ω`.
 Reweighting a Gibbs measure by a density measurable for every exterior σ-algebra, such as a
 tail-measurable density, gives a Gibbs measure (`TauCeti.Specification.IsGibbs.withDensity`);
 this is the step of the face property of invariant Gibbs measures that involves the
@@ -169,6 +173,23 @@ theorem IsGibbs.lintegral_kernel (hμ : γ.IsGibbs μ) (Λ : Finset I) {C : Set 
     (hC : MeasurableSet C) : ∫⁻ ω, γ.kernel Λ ω C ∂μ = μ C := by
   simpa using hμ.setLIntegral_kernel Λ hC (@MeasurableSet.univ _ (X.exterior Λ))
 
+/-- **The DLR equations on cylinder events.** A finite measure is Gibbs for `γ` iff
+`∫ γ_Λ (C | ω) dμ(ω) = μ(C)` for every finite `Λ` and every measurable cylinder `C`. -/
+theorem isGibbs_iff_forall_lintegral_eq [IsFiniteMeasure μ] :
+    γ.IsGibbs μ ↔ ∀ (Λ : Finset I), ∀ A ∈ measurableCylinders (fun _ : I => S),
+      ∫⁻ ω, γ.kernel Λ ω ((↑) ⁻¹' A) ∂μ = μ ((↑) ⁻¹' A) := by
+  have hmeas (A : Set (I → S)) (hA : A ∈ measurableCylinders fun _ : I => S) :
+      MeasurableSet ((↑) ⁻¹' A : Set X) :=
+    measurable_subtypeVal (MeasurableSet.of_mem_measurableCylinders hA)
+  refine ⟨fun h Λ A hA => h.lintegral_kernel Λ (hmeas A hA), fun h Λ => ?_⟩
+  refine (ext_of_generate_finite _ Subshift.measurableSpace_eq_generateFrom_measurableCylinders
+    ((isPiSystem_measurableCylinders).comap _) (fun B hB => ?_) ?_).symm
+  · obtain ⟨A, hA, rfl⟩ := hB
+    rw [Measure.bind_apply (hmeas A hA) (γ.measurable_kernel Λ).aemeasurable, h Λ A hA]
+  · have := h Λ univ (univ_mem_measurableCylinders _)
+    rw [preimage_univ] at this
+    rw [Measure.bind_apply MeasurableSet.univ (γ.measurable_kernel Λ).aemeasurable, this]
+
 /-- **Gibbs measures are those whose conditional probabilities are given by the specification.**
 A finite measure `μ` is Gibbs for `γ` iff for every finite `Λ` and every measurable `C`, the
 function `γ_Λ (C | ·)` is a version of the conditional expectation of `1_C` given the exterior
@@ -217,27 +238,34 @@ theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ
 theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) :=
   isGibbs_iff_invariant.2 fun Λ => (isGibbs_iff_invariant.1 hμ Λ).smul c
 
-/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
-σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
-theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
-    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) := by
-  intro Λ
-  have hfm : Measurable f := (hf Λ).mono (X.exterior_le Λ) le_rfl
+/-- **Reweighting by an exterior density, one finite set at a time.** If `μ.bind γ_Λ = μ` and `f`
+is measurable for the exterior σ-algebra `𝓕_{Λᶜ}`, then `f • μ` also satisfies
+`(f • μ).bind γ_Λ = f • μ`. -/
+theorem bind_kernel_withDensity {Λ : Finset I} (hμ : μ.bind (γ.kernel Λ) = μ) {f : X → ℝ≥0∞}
+    (hf : Measurable[X.exterior Λ] f) :
+    (μ.withDensity f).bind (γ.kernel Λ) = μ.withDensity f := by
+  have hfm : Measurable f := hf.mono (X.exterior_le Λ) le_rfl
   ext C hC
   have hCf : Measurable fun ω => f ω * C.indicator 1 ω := hfm.mul (measurable_one.indicator hC)
   -- Properness pulls the exterior-measurable density inside each kernel.
   have hprop (ω : X) :
       f ω * γ.kernel Λ ω C = ∫⁻ ω', f ω' * C.indicator 1 ω' ∂(γ.kernel Λ ω) := by
-    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) (hf Λ),
+    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) hf,
       lintegral_indicator_one hC]
   rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable,
     lintegral_withDensity_eq_lintegral_mul _ hfm (γ.measurable_kernel_apply Λ hC),
     withDensity_apply _ hC]
   simp only [Pi.mul_apply, hprop]
-  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ Λ,
+  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ,
     ← lintegral_indicator hC]
   congr 1 with ω
   by_cases hω : ω ∈ C <;> simp [hω]
+
+/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
+σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
+theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
+    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) :=
+  fun Λ => bind_kernel_withDensity (hμ Λ) (hf Λ)
 
 /-- The zero measure is Gibbs. -/
 @[simp]
@@ -312,6 +340,18 @@ theorem map_smul_mem_gibbsMeasures [DecidableEq I] (hγ : γ.IsEquivariant)
     (hμ : μ ∈ γ.gibbsMeasures) (g : Γ) : μ.map (g • ·) ∈ γ.gibbsMeasures :=
   have := hμ.1
   ⟨inferInstance, hμ.2.map_smul hγ g⟩
+
+variable (γ) in
+/-- A specification is quasilocal when the mass `γ_Λ (C | ω)` of every cylinder event `C` is a
+continuous function of the boundary condition `ω`. -/
+def IsQuasilocal : Prop :=
+  ∀ (Λ s : Finset I) (t : Set (s → S)), MeasurableSet t →
+    Continuous fun ω : X => γ.kernel Λ ω ((↑) ⁻¹' cylinder (α := fun _ : I => S) s t)
+
+theorem isQuasilocal_iff :
+    γ.IsQuasilocal ↔ ∀ (Λ s : Finset I) (t : Set (s → S)), MeasurableSet t →
+      Continuous fun ω : X => γ.kernel Λ ω ((↑) ⁻¹' cylinder (α := fun _ : I => S) s t) :=
+  Iff.rfl
 
 end Specification
 

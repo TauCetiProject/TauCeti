@@ -43,7 +43,8 @@ extending along `τ ∘ σ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`: the frame of `[p, 1]` is the frame of `p`.
+* `TauCeti.OrthonormalFrameLift.toFrame_extend_inl` and
+  `TauCeti.OrthonormalFrameLift.frameAt_extend_inl`: the frame of `[p, 1]` is the frame of `p`.
 * `TauCeti.OrthonormalFrameLift.toFrame_extend_mk`: the frame of `[p, h]` is the frame of `p`
   composed with `ρ' h`.
 
@@ -181,6 +182,14 @@ theorem toFrame_extend_inl (x : X) (p : s.P x) :
   OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ by
     rw [Extend.inl_def, toFrame_extend_mk, map_one, FunLike.coe_one_eq_id, id_eq]
 
+/-- **The frame of `E x` at `[p, 1]`** in the extension of a lift is the frame at `p`. -/
+@[simp]
+theorem frameAt_extend_inl {x : X} (p : s.P x) :
+    (s.extend σ hσ hσρ hρ'n hρ'c).frameAt (Extend.inl σ hσ p) = s.frameAt p := by
+  have h := ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_mk (Extend.inl σ hσ p)).symm.trans
+    ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c x p).trans (s.toFrame_mk p))
+  exact OrthonormalFrameBundle.mk_eq_mk_iff.1 h
+
 end Construction
 
 /-! ### The universal property -/
@@ -262,6 +271,37 @@ theorem Equiv.extend_toEquiv_inl {s t : OrthonormalFrameLift F E n G ρ} (φ : s
     (φ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x (Extend.inl σ hσ p) =
       Extend.inl σ hσ (φ.toEquiv x p) :=
   s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p
+
+/-- Extending the identity equivalence of a lift gives the identity equivalence. -/
+@[simp]
+theorem Equiv.extend_refl (s : OrthonormalFrameLift F E n G ρ) :
+    (refl s).extend σ hσ hσρ hρ'n hρ'c = refl (s.extend σ hσ hσρ hρ'n hρ'c) := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, extend_toEquiv_mk, refl_toEquiv, refl_toEquiv]
+  rfl
+
+/-- Extending the inverse of an equivalence of lifts gives the inverse of its extension. -/
+@[simp]
+theorem Equiv.extend_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    φ.symm.extend σ hσ hσρ hρ'n hρ'c = (φ.extend σ hσ hσρ hρ'n hρ'c).symm := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := t.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, symm_toEquiv]
+  refine (_root_.Equiv.eq_symm_apply _).2 ?_
+  rw [extend_toEquiv_mk, extend_toEquiv_mk, symm_toEquiv, _root_.Equiv.apply_symm_apply]
+
+/-- Extending a composite of equivalences of lifts gives the composite of their extensions. -/
+@[simp]
+theorem Equiv.extend_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (ψ : t.Equiv u) :
+    (φ.trans ψ).extend σ hσ hσρ hρ'n hρ'c =
+      (φ.extend σ hσ hσρ hρ'n hρ'c).trans (ψ.extend σ hσ hσρ hρ'n hρ'c) := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, trans_toEquiv, extend_toEquiv_mk, trans_toEquiv]
+  exact ((congrArg ((ψ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x)
+    (extend_toEquiv_mk _ _ _ _ _ φ x p h)).trans (extend_toEquiv_mk _ _ _ _ _ ψ x _ h)).symm
 
 end Universal
 
