@@ -8,9 +8,11 @@ module
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 
-import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # Inversion of Dirichlet theta series
@@ -42,7 +44,8 @@ theorem hasSum_gaussianMonomial_add_mul (j : Fin 2) (a : ℝ) {v : ℝ} (hv : 0 
   have hp₁ : (v ^ 2) ^ (1 / 2 : ℝ) = v := by
     rw [← Real.sqrt_eq_rpow, Real.sqrt_sq hv.le]
   have hp₃ : (v ^ 2) ^ (3 / 2 : ℝ) = v ^ 3 := by
-    rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, Real.rpow_add hv2, Real.rpow_one, hp₁]
+    have hsplit : (3 / 2 : ℝ) = 1 + 1 / 2 := by norm_num
+    rw [hsplit, Real.rpow_add hv2, Real.rpow_one, hp₁]
     ring
   have hj : j = 0 ∨ j = 1 := by omega
   rcases hj with rfl | rfl
@@ -85,19 +88,6 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N]
 
-private theorem gaussSum_intCast_mulShift (χ : DirichletCharacter ℂ N) (n : ℤ) :
-    (∑ a : ZMod N, χ a * exp (2 * π * I * (a.val / (N : ℝ) : ℝ) * n)) =
-      gaussSum χ (ZMod.stdAddChar.mulShift (n : ZMod N)) := by
-  rw [gaussSum]
-  refine sum_congr rfl fun a _ ↦ ?_
-  congr 1
-  have hcast : ((a.val * n : ℤ) : ZMod N) = n * a := by
-    simp [mul_comm (n : ZMod N)]
-  rw [AddChar.mulShift_apply, ← hcast, ZMod.stdAddChar_coe, ofReal_div, ofReal_natCast]
-  push_cast
-  congr 1
-  ring1
-
 omit [NeZero N] in
 private theorem tsum_int_gaussianChar (χ : DirichletCharacter ℂ N) (j : Fin 2)
     (hpar : χ (-1) = (-1 : ℂ) ^ j.val) {u : ℝ} (hu : 0 < u) (hzero : χ 0 = 0) :
@@ -137,8 +127,12 @@ private theorem sum_mul_tsum_gaussian_eq_gaussSum_mul (χ : DirichletCharacter �
       rw [← Summable.tsum_finsetSum (fun a _ ↦
         summable_mul_gaussianMonomial_int j hv _ (hc a)), ← tsum_mul_left]
       refine tsum_congr fun n ↦ ?_
-      have hsum : (∑ a, c a n) = gaussSum χ (ZMod.stdAddChar.mulShift (n : ZMod N)) :=
-        gaussSum_intCast_mulShift χ n
+      have hsum : (∑ a, c a n) = gaussSum χ (ZMod.stdAddChar.mulShift (n : ZMod N)) := by
+        rw [gaussSum]
+        refine sum_congr rfl fun a _ ↦ ?_
+        simp only [c, AddChar.mulShift_apply, mul_comm (n : ZMod N)]
+        rw [← ZMod.fourier_val_div_eq_stdAddChar, fourier_coe_apply, ofReal_one, div_one,
+          mul_right_comm]
       rw [← sum_mul, hsum, gaussSum_mulShift_of_isPrimitive _ hχ]
       ring
 
@@ -150,29 +144,21 @@ private theorem gaussianTheta_int_functional_equation (χ : DirichletCharacter �
   let v : ℝ := (N : ℝ) * u
   have hN : 0 < (N : ℝ) := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne N)
   have hv : 0 < v := mul_pos hN hu
-  let e := (Int.divModEquiv N).trans
-    ((Equiv.prodCongr (Equiv.refl ℤ) (ZMod.finEquiv N).toEquiv).trans (Equiv.prodComm _ _))
-  have he (a : ZMod N) (n : ℤ) : e.symm (a, n) = n * N + a.val := by
-    cases N with
-    | zero => exact (NeZero.ne 0 rfl).elim
-    | succ N => rfl
   let f : ℤ → ℂ := fun n ↦ χ n * gaussianMonomial j (n * u)
   have hs : Summable f :=
     summable_mul_gaussianMonomial_int j hu (fun n ↦ χ n) (fun n ↦ χ.norm_le_one n)
   calc
-    ∑' n : ℤ, f n = ∑ a : ZMod N, ∑' n : ℤ, f (e.symm (a, n)) := by
-      calc
-        _ = ∑' p : ZMod N × ℤ, (f ∘ e.symm) p := (e.symm.tsum_eq f).symm
-        _ = _ := by
-          rw [((e.symm.summable_iff).mpr hs).tsum_prod, tsum_fintype]
-          rfl
+    ∑' n : ℤ, f n = ∑ a : ZMod N, ∑' n : ℤ, f (n * N + a.val) := by
+      rw [tsum_int_eq_sum_fin_tsum hs N, ← (ZMod.finEquiv N).toEquiv.sum_comp]
+      exact sum_congr rfl fun a _ ↦ by
+        simp only [RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv, ZMod.finEquiv_apply,
+          ZMod.val_natCast_of_lt a.isLt]
     _ = ∑ a : ZMod N, χ a * ((v : ℂ)⁻¹ * (-I) ^ j.val *
         ∑' n : ℤ, exp (2 * π * I * (a.val / (N : ℝ) : ℝ) * n) *
           gaussianMonomial j (n * v⁻¹)) := by
       refine sum_congr rfl fun a _ ↦ ?_
       rw [← ((hasSum_gaussianMonomial_add_mul j (a.val / (N : ℝ)) hv).mul_left (χ a)).tsum_eq]
       refine tsum_congr fun n ↦ ?_
-      rw [he]
       simp only [f, Int.cast_add, Int.cast_mul, Int.cast_natCast, ZMod.natCast_self, mul_zero,
         zero_add, ZMod.natCast_zmod_val]
       congr 2
@@ -181,15 +167,6 @@ private theorem gaussianTheta_int_functional_equation (χ : DirichletCharacter �
     _ = (v : ℂ)⁻¹ * (-I) ^ j.val * gaussSum χ ZMod.stdAddChar *
         ∑' n : ℤ, χ⁻¹ n * gaussianMonomial j (n * v⁻¹) :=
       sum_mul_tsum_gaussian_eq_gaussSum_mul χ hχ j (inv_pos.mpr hv) _
-
-omit [NeZero N] in
-/-- The Gaussian theta sum of the inverse character is the conjugate of the original sum. -/
-theorem gaussianTheta_inv (χ : DirichletCharacter ℂ N) (j : Fin 2) (u : ℝ) :
-    gaussianTheta j (fun n : ℕ ↦ χ⁻¹ n) u =
-      conj (gaussianTheta j (fun n : ℕ ↦ χ n) u) := by
-  rw [gaussianTheta_def, gaussianTheta_def, Complex.conj_tsum]
-  refine tsum_congr fun n ↦ ?_
-  rw [map_mul, conj_ofReal, starRingEnd_apply, MulChar.star_apply']
 
 /-- The normalized theta series of a nonprincipal primitive character, with matching
 parity, has the same norm at `u` and `1 / (N * u)`. Both sides vanish if `u ≤ 0`. -/
@@ -210,8 +187,8 @@ theorem norm_gaussianThetaSeries_inv (χ : DirichletCharacter ℂ N) (hχ : χ.I
     simp
   have h := gaussianTheta_int_functional_equation χ hχ j hu
   rw [tsum_int_gaussianChar χ j hpar hu (χ.map_zero' hN₁),
-    tsum_int_gaussianChar χ⁻¹ j hpar' (inv_pos.mpr hv) (χ⁻¹.map_zero' hN₁),
-    gaussianTheta_inv] at h
+    tsum_int_gaussianChar χ⁻¹ j hpar' (inv_pos.mpr hv) (χ⁻¹.map_zero' hN₁)] at h
+  simp only [← MulChar.star_apply', Complex.star_def, gaussianTheta_conj] at h
   have hn := congrArg norm h
   have hnorm : ‖((N * u : ℝ) : ℂ)‖ = N * u := Complex.norm_of_nonneg hv.le
   simp only [norm_mul, norm_inv, hnorm, norm_pow, norm_neg, norm_I, one_pow, mul_one,
@@ -221,7 +198,8 @@ theorem norm_gaussianThetaSeries_inv (χ : DirichletCharacter ℂ N) (hχ : χ.I
   simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_eq_abs,
     Real.sqrt_inv, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _), hraw]
   suffices (√((N : ℝ) * u))⁻¹ = √u * ((N * u)⁻¹ * √(N : ℝ)) by rw [this, mul_assoc]
-  rw [mul_left_comm, mul_comm (√u), ← Real.sqrt_mul hN.le, inv_mul_eq_div,
-    Real.sqrt_div_self', one_div]
+  rw [Real.sqrt_mul hN.le]
+  field_simp [hN.ne', hu.ne', (Real.sqrt_pos.mpr hN).ne', (Real.sqrt_pos.mpr hu).ne']
+  rw [Real.sq_sqrt hN.le, Real.sq_sqrt hu.le]
 
 end DirichletCharacter

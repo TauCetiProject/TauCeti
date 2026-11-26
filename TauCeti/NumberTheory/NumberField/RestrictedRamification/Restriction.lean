@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.NumberTheory.NumberField.RestrictedRamification.Basic
+import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # Restriction to `G_{K,S}`
@@ -17,17 +18,23 @@ unramified outside `S` is a continuous surjection `Gal(Ω / K) → G_{K,S}`
 (`TauCeti.RestrictedRamification.restrictionS`) whose kernel is the closed normal subgroup
 `H_S = Gal(Ω / K_S)` fixing `K_S`. It is an open quotient map; the induced isomorphism of
 topological groups `Gal(Ω / K) ⧸ H_S ≃ₜ* G_{K,S}` is `TauCeti.quotientFixingSubgroupEquiv`
-applied to `K_S`.
+applied to `K_S`. For `S ⊆ T`, restricting from `K_T` to `K_S` gives the
+surjective transition homomorphism `G_{K,T} →ₜ* G_{K,S}`.
 
 ## Main definitions
 
 * `TauCeti.RestrictedRamification.restrictionS`: the restriction `Gal(Ω / K) →ₜ* G_{K,S}`.
+
+* `TauCeti.RestrictedRamification.galoisGroupSMap`: the transition map `G_{K,T} →ₜ* G_{K,S}`.
 
 ## Main results
 
 * `TauCeti.RestrictedRamification.restrictionS_surjective`: restriction is surjective.
 * `TauCeti.RestrictedRamification.ker_restrictionS`: its kernel is the fixing subgroup of `K_S`.
 * `TauCeti.RestrictedRamification.isQuotientMap_restrictionS`: it is a quotient map.
+
+* `TauCeti.RestrictedRamification.ext_restrictionS`: maps out of `G_{K,S}` are determined by
+  composition with `restrictionS`.
 
 ## References
 
@@ -93,5 +100,76 @@ theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) :=
 `Gal(Ω / K)`. -/
 theorem isQuotientMap_restrictionS : Topology.IsQuotientMap (restrictionS K Ω S) :=
   isQuotientMap_restrictNormalHom (maxUnramifiedOutside K Ω S)
+
+variable {S}
+
+/-- Two continuous homomorphisms out of `G_{K,S}` agree if they agree after composing with
+`restrictionS`. -/
+@[ext]
+theorem ext_restrictionS {S : Set (HeightOneSpectrum (𝓞 K))}
+    {H : Type*} [Monoid H] [TopologicalSpace H] {ψ₁ ψ₂ : galoisGroupS K Ω S →ₜ* H}
+    (h : ψ₁.comp (restrictionS K Ω S) = ψ₂.comp (restrictionS K Ω S)) :
+    ψ₁ = ψ₂ := by
+  ext y
+  obtain ⟨σ, rfl⟩ := restrictionS_surjective K Ω S y
+  exact DFunLike.congr_fun h σ
+
+private theorem restrictNormalHom_inclusion_comp_restrictionS
+    {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
+    (IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom.comp
+      (restrictionS K Ω T).toMonoidHom = (restrictionS K Ω S).toMonoidHom := by
+  apply MonoidHom.ext
+  intro σ
+  have hST := maxUnramifiedOutside_mono (Ω := Ω) h
+  exact AlgEquiv.restrictNormalHom_of_compatible
+    (inclusion hST).restrictNormalHom (inclusion hST)
+    (inclusion hST).restrictNormalHom_commutes (coe_inclusion hST) σ
+
+/-- **Functoriality of `G_{K,S}` in `S`.** For `S ⊆ T`, restricting from `K_T` to `K_S` gives a
+continuous group homomorphism `G_{K,T} →ₜ* G_{K,S}`. -/
+def galoisGroupSMap {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
+    galoisGroupS K Ω T →ₜ* galoisGroupS K Ω S where
+  toMonoidHom := (IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom
+  continuous_toFun := by
+    refine (isQuotientMap_restrictionS K Ω T).continuous_iff.2 ?_
+    convert (restrictionS K Ω S).continuous using 1
+    exact funext (DFunLike.congr_fun (restrictNormalHom_inclusion_comp_restrictionS K Ω h))
+
+/-- The transition map `G_{K,T} → G_{K,S}` acts on `K_S` by applying the element of `G_{K,T}`. -/
+@[simp]
+theorem galoisGroupSMap_apply {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T)
+    (σ : galoisGroupS K Ω T) (x : maxUnramifiedOutside K Ω S) :
+    (galoisGroupSMap K Ω h σ x : Ω) =
+      (σ (IntermediateField.inclusion (maxUnramifiedOutside_mono h) x) : Ω) :=
+  congrArg Subtype.val
+    ((IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom_commutes σ x)
+
+/-- The transition map `G_{K,T} → G_{K,S}` is surjective. -/
+theorem galoisGroupSMap_surjective {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
+    Function.Surjective (galoisGroupSMap K Ω h) :=
+  AlgHom.restrictNormalHom_surjective _
+
+/-- Restricting from `Gal(Ω / K)` to `G_{K,T}` and then to `G_{K,S}` equals restricting directly
+to `G_{K,S}`. -/
+@[simp]
+theorem galoisGroupSMap_comp_restrictionS {S T : Set (HeightOneSpectrum (𝓞 K))}
+    (h : S ⊆ T) :
+    (galoisGroupSMap K Ω h).comp (restrictionS K Ω T) = restrictionS K Ω S :=
+  ContinuousMonoidHom.ext fun σ ↦
+    DFunLike.congr_fun (restrictNormalHom_inclusion_comp_restrictionS K Ω h) σ
+
+/-- The transition map for `S ⊆ S` is the identity homomorphism. -/
+@[simp]
+theorem galoisGroupSMap_refl (S : Set (HeightOneSpectrum (𝓞 K))) :
+    galoisGroupSMap K Ω (Set.Subset.refl S) = ContinuousMonoidHom.id (galoisGroupS K Ω S) := by
+  ext σ x
+  simp
+
+/-- Transition maps compose along chains `S ⊆ T ⊆ U`. -/
+@[simp]
+theorem galoisGroupSMap_comp {S T U : Set (HeightOneSpectrum (𝓞 K))} (h₁ : S ⊆ T) (h₂ : T ⊆ U) :
+    (galoisGroupSMap K Ω h₁).comp (galoisGroupSMap K Ω h₂) = galoisGroupSMap K Ω (h₁.trans h₂) := by
+  ext σ x
+  simp
 
 end TauCeti.RestrictedRamification
