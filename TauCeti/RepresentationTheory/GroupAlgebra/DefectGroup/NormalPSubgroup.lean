@@ -30,6 +30,8 @@ block `r + r²` is `1`.
 
 ## Main results
 
+* `TauCeti.IsDefectGroup.le_of_normal`: a normal `p`-subgroup lies in every defect group of a
+  primitive idempotent of `Z(k[G])`.
 * `TauCeti.IsBlockIdempotent.le_of_isDefectGroup_of_isPGroup_of_normal`: a normal `p`-subgroup
   lies in every defect group of a block.
 * `TauCeti.IsBlockIdempotent.piCore_le_of_isDefectGroup`: `O_p(G)` lies in every defect group of
@@ -54,6 +56,22 @@ open scoped Pointwise
 variable {k G : Type*} [Field k] [Group G] [Finite G] {p : ℕ} [Fact p.Prime] [CharP k p]
   {Q : Subgroup G} [Q.Normal]
 
+/-- **A normal `p`-subgroup lies in every defect group.** Let `e` be a primitive idempotent of
+`k[G]^G = Z(k[G])`, `k` a field of characteristic `p`. Every normal `p`-subgroup `Q` of `G` lies
+in every defect group `D` of `e` (Webb, Corollary 12.3.4, pp. 236–237): `Br_Q(e) ≠ 0` by
+`TauCeti.brauerProjection_ne_zero_of_isPGroup_of_normal`, so `Q` lies in a conjugate of `D`, hence
+in `D`. -/
+theorem IsDefectGroup.le_of_normal {e : conjInvariants k (⊤ : Subgroup G)}
+    (he : IsPrimitiveIdempotent e) {D : Subgroup G}
+    (hD : IsDefectGroup k p (e : MonoidAlgebra k G) D) (hQ : IsPGroup p Q) : Q ≤ D := by
+  have hQe : brauerProjection Q (e : MonoidAlgebra k G) ≠ 0 :=
+    brauerProjection_ne_zero_of_isPGroup_of_normal hQ (conjInvariants_anti le_top e.property)
+      (he.isIdempotentElem.map (conjInvariants k ⊤).val) (fun h => he.ne_zero (Subtype.ext h))
+  obtain ⟨g, hg⟩ :=
+    exists_le_conj_of_mem_relTraceIdeal ((isDefectGroup_iff_minimal he).1 hD).prop hQ hQe
+  rw [← Subgroup.Normal.conj_smul_eq_self g Q] at hg
+  exact Subgroup.pointwise_smul_le_pointwise_smul_iff.1 hg
+
 namespace IsBlockIdempotent
 
 variable {b : Subalgebra.center k (MonoidAlgebra k G)}
@@ -62,19 +80,8 @@ variable {b : Subalgebra.center k (MonoidAlgebra k G)}
 pp. 236–237). Let `Q` be a normal `p`-subgroup of a finite group `G` and `k` a field of
 characteristic `p`. Then `Q` lies in every defect group of every block idempotent of `k[G]`. -/
 theorem le_of_isDefectGroup_of_isPGroup_of_normal (hb : IsBlockIdempotent b) (hQ : IsPGroup p Q)
-    {D : Subgroup G} (hD : IsDefectGroup k p (b : MonoidAlgebra k G) D) : Q ≤ D := by
-  have he := hb.isPrimitiveIdempotent_conjInvariants
-  have hBr : brauerProjection Q (b : MonoidAlgebra k G) ≠ 0 :=
-    brauerProjection_ne_zero_of_isPGroup_of_normal hQ
-      (center_le_conjInvariants Q b.property) hb.isIdempotentElem_val
-      (fun h => he.ne_zero (Subtype.ext h))
-  obtain ⟨g, hg⟩ := exists_le_conj_of_mem_relTraceIdeal
-    ((TauCeti.isDefectGroup_iff_minimal he).1 hD).prop hQ hBr
-  -- `Q = g⁻¹ Q g ≤ g⁻¹ (g D g⁻¹) g = D`.
-  calc Q = MulAut.conj g⁻¹ • Q := (Subgroup.Normal.conj_smul_eq_self _ _).symm
-    _ ≤ MulAut.conj g⁻¹ • (MulAut.conj g • D) :=
-      Subgroup.pointwise_smul_le_pointwise_smul_iff.2 hg
-    _ = D := by rw [map_inv, inv_smul_smul]
+    {D : Subgroup G} (hD : IsDefectGroup k p (b : MonoidAlgebra k G) D) : Q ≤ D :=
+  IsDefectGroup.le_of_normal hb.isPrimitiveIdempotent_conjInvariants hD hQ
 
 /-- **`O_p(G)` lies in every defect group of a block** (Webb, Corollary 12.3.4, pp. 236–237;
 Martínez, Corollary 3.9, p. 21, over an algebraically closed field): for a finite group `G` and a
