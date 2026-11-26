@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.ShortExact
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
@@ -16,7 +17,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
-# The triangle of mapping cones of two monomorphisms, up to quasi-isomorphism
+# Mapping cones and short exact sequences of cochain complexes
 
 For composable morphisms `a : X ⟶ Y` and `b : Y ⟶ Z` of cochain complexes in an abelian category,
 Mathlib's triangle of mapping cones `cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧`
@@ -45,13 +46,10 @@ Finally, mapping cones carry short exact sequences to short exact sequences. For
 `φ : S₁ ⟶ S₂` of short exact sequences of cochain complexes, the mapping cones of its three
 components, with the maps of mapping cones induced by `S₁` and `S₂`, form a short exact sequence
 (`CochainComplex.mappingCone.shortExact_mapShortComplex`): in degree `n` it is the direct sum of
-the sequences of `S₁` in degree `n + 1` and of `S₂` in degree `n`. And for `φ : K ⟶ L`, the
-inclusion of `L` in the mapping cone of `φ` is followed by the degreewise split epimorphism onto
-the mapping cone of `K ⟶ 0`, which is `K` shifted by one
-(`CochainComplex.mappingCone.shortExact_inrShortComplex`, from
-`HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact`). Objectwise, for a natural
-transformation `τ : F ⟶ G` of functors with values in cochain complexes, this gives the short exact
-sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors
+the sequences of `S₁` in degree `n + 1` and of `S₂` in degree `n`. And for a natural
+transformation `τ : F ⟶ G` of functors with values in cochain complexes, Mathlib's degreewise split
+short exact sequences `L ⟶ cone φ ⟶ K⟦1⟧` (`CochainComplex.mappingCone.triangleRotateShortComplex`)
+of the components of `τ` form the short exact sequence `G ⟶ cone τ ⟶ F⟦1⟧` of functors
 (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
 -/
 
@@ -260,94 +258,45 @@ lemma shortExact_mapShortComplex (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExac
 
 end MapShortComplex
 
-section Inr
-
-variable {K L Z : CochainComplex C ℤ} (φ : K ⟶ L) (α : K ⟶ Z) (hZ : IsZero Z)
-
-/-- For `φ : K ⟶ L` and a map `α` from `K` to a zero complex, the sequence
-`L ⟶ cone φ ⟶ cone α`: the inclusion of `L`, followed by the map of cones which forgets the summand
-`L`. The mapping cone `cone α` is `K` shifted by one, with negated differential. -/
-@[expose, simps]
-noncomputable def inrShortComplex : ShortComplex (CochainComplex C ℤ) :=
-  ShortComplex.mk (inr φ) (map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) (by ext n; simp)
-
-open ZeroObject in
-/-- The sequence `L ⟶ cone φ ⟶ cone α` of a mapping cone, for `α` a map from `K` to a zero
-complex, is short exact: it is isomorphic to the sequence
-`HomologicalComplex.homotopyCofiber.coneShortComplex φ`. -/
-lemma shortExact_inrShortComplex : (inrShortComplex φ α hZ).ShortExact := by
-  -- the sequence `L ⟶ homotopyCofiber φ ⟶ homotopyCofiber (K ⟶ 0)`, through `cone 0 ≅ cone α`
-  have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
-  open HomologicalComplex.homotopyCofiber in
-  have comm : mapArrowHom φ (0 : K ⟶ 0) hc (Arrow.homMk (𝟙 K) 0) ≫
-      mapArrowHom (0 : K ⟶ 0) α hc (Arrow.homMk (𝟙 K) hZ.isoZero.symm.hom (hZ.eq_of_tgt _ _)) =
-      mapArrowHom φ α hc (Arrow.homMk (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) := by
-    rw [← mapArrowHom_comp]
-    congr 1
-    exact Arrow.hom_ext _ _ (Category.comp_id _) (hZ.eq_of_tgt _ _)
-  exact ShortComplex.shortExact_of_iso
-    (ShortComplex.isoMk (S₁ := HomologicalComplex.homotopyCofiber.coneShortComplex φ hc)
-      (Iso.refl _) (Iso.refl _) (mapIso (Iso.refl K) hZ.isoZero.symm (hZ.eq_of_tgt _ _))
-      ((Category.id_comp _).trans (Category.comp_id _).symm)
-      (by
-        simp only [mapIso_hom, Iso.refl_hom, inrShortComplex_g, map_eq_mapArrowHom _ _ _ _ _ hc]
-        exact (Category.id_comp _).trans comm.symm))
-    (HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact φ hc)
-
-end Inr
-
 end CochainComplex.mappingCone
 
 namespace CategoryTheory.NatTrans
 
-open CochainComplex Limits ZeroObject
+open CochainComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D]
   {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
 
 /-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
-sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors: objectwise, the inclusion of `G` in the mapping
-cone, followed by the map of mapping cones which forgets the summand `G`. -/
+sequence `G ⟶ cone τ ⟶ F⟦1⟧` of functors: objectwise, the rotation
+`CochainComplex.mappingCone.triangleRotateShortComplex` of the mapping cone triangle, that is, the
+inclusion of `G` in the mapping cone followed by the projection onto the shift of `F`. -/
 @[expose, simps]
 noncomputable def mappingConeInrShortComplex : ShortComplex (D ⥤ CochainComplex C ℤ) where
   X₁ := G
   X₂ := mappingConeFunctor τ
-  X₃ := mappingConeFunctor (0 : F ⟶ 0)
+  X₃ := F ⋙ shiftFunctor _ (1 : ℤ)
   f :=
     { app X := mappingCone.inr (τ.app X)
-      naturality X X' f := by
-        have key : G.map f ≫ mappingCone.inr (τ.app X') =
-            mappingCone.inr (τ.app X) ≫
-              mappingCone.map (τ.app X) (τ.app X') (F.map f) (G.map f) (τ.naturality f).symm := by
-          ext n
-          simp
-        exact key }
+      naturality X X' f :=
+        ((mappingCone.triangleMap (τ.app X) (τ.app X') (F.map f) (G.map f)
+          (τ.naturality f).symm).comm₂).symm }
   g :=
-    { app X := mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp)
-      naturality X X' f := by
-        have key :
-            mappingCone.map (τ.app X) (τ.app X') (F.map f) (G.map f) (τ.naturality f).symm ≫
-              mappingCone.map (τ.app X') ((0 : F ⟶ 0).app X') (𝟙 _) 0 (by simp) =
-            mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp) ≫
-              mappingCone.map ((0 : F ⟶ 0).app X) ((0 : F ⟶ 0).app X') (F.map f)
-                ((0 : D ⥤ CochainComplex C ℤ).map f) (by simp) := by
-          rw [← mappingCone.map_comp, ← mappingCone.map_comp]
-          congr 1 <;> simp
-        exact key }
+    { app X := (mappingCone.triangle (τ.app X)).mor₃
+      naturality X X' f :=
+        ((mappingCone.triangleMap (τ.app X) (τ.app X') (F.map f) (G.map f)
+          (τ.naturality f).symm).comm₃).symm }
   zero := by
     ext X : 2
-    have key : mappingCone.inr (τ.app X) ≫
-        mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp) = 0 := by
-      ext n
-      simp
-    exact key
+    exact (mappingCone.triangleRotateShortComplex (τ.app X)).zero
 
 /-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
-sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors is short exact: objectwise it is the short exact
-sequence `CochainComplex.mappingCone.shortExact_inrShortComplex`. -/
+sequence `G ⟶ cone τ ⟶ F⟦1⟧` of functors is short exact: objectwise it is the degreewise split
+sequence `CochainComplex.mappingCone.triangleRotateShortComplex`. -/
 lemma shortExact_mappingConeInrShortComplex : (mappingConeInrShortComplex τ).ShortExact :=
   ShortComplex.shortExact_of_forall_evaluation _ fun X ↦
-    mappingCone.shortExact_inrShortComplex (τ.app X) ((0 : F ⟶ 0).app X)
-      ((isZero_zero _).obj X)
+    HomologicalComplex.shortExact_of_degreewise_shortExact
+      (mappingCone.triangleRotateShortComplex (τ.app X)) fun n ↦
+        (mappingCone.triangleRotateShortComplexSplitting (τ.app X) n).shortExact
 
 end CategoryTheory.NatTrans

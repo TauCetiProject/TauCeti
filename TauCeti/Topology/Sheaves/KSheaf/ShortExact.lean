@@ -38,7 +38,7 @@ length two of Pardon's Lemma A.2.11.
   quasi-isomorphism.
 * **Mapping cones** (`TopCat.KPresheaf.isHomotopyKSheaf_mappingConeFunctor`). The mapping cone
   `K ↦ cone (τ_K)` of a morphism `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. It sits
-  in the short exact sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)`, whose third term, the shift of `F`, is
+  in the short exact sequence `G ⟶ cone τ ⟶ F⟦1⟧`, whose third term, the shift of `F`, is
   the cokernel of `F ⟶ cone (𝟙 F)` into the acyclic mapping cone of the identity
   (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
 
@@ -263,8 +263,7 @@ variable {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
 `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. -/
 theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.IsHomotopyKSheaf) :
     IsHomotopyKSheaf (NatTrans.mappingConeFunctor τ) := by
-  -- the shift `cone (F ⟶ 0)` of `F` is the cokernel of `F ⟶ cone (𝟙 F)`, whose middle term is
-  -- acyclic
+  -- the shift `F⟦1⟧` of `F` is the cokernel of `F ⟶ cone (𝟙 F)`, whose middle term is acyclic
   have hcone : IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
     isHomotopyKSheaf_of_acyclic fun K ↦
       (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
