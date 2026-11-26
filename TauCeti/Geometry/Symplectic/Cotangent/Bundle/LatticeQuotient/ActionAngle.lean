@@ -37,7 +37,8 @@ developing map, `Φ(z)(e_i) = a_i(π z)` (`torusActions_actionAngleChart`), and:
 * `Φ` is a local diffeomorphism (`isLocalDiffeomorph_actionAngleChart`);
 * `Φ` pulls the canonical form of `T*Tⁿ` back to the symplectic form of `T*B/Λ`
   (`mpullback_actionAngleChart_symplecticForm`);
-* `Φ` is injective exactly when `a` is (`actionAngleChart_injective_iff`);
+* `Φ` is injective on every fibre of `T*B/Λ → B` (`injOn_actionAngleChart`), and injective
+  exactly when `a` is (`actionAngleChart_injective_iff`);
 * its range is the set of covectors whose actions are values of `a`
   (`range_actionAngleChart`).
 
@@ -61,6 +62,7 @@ the Liouville forms are related by `Ψ^* λ = G^* λ + d (p c ⬝ a)`, where `Ψ
 * `contMDiff_actionAngleChart`, `isLocalDiffeomorph_actionAngleChart`: `Φ` is a smooth local
   diffeomorphism.
 * `mpullback_actionAngleChart_symplecticForm`: `Φ` is symplectic.
+* `injOn_actionAngleChart`: `Φ` is injective on every fibre.
 * `actionAngleChart_injective_iff`, `range_actionAngleChart`: `Φ` is injective exactly when `a`
   is, with image the covectors whose actions lie in `a(B)`.
 
@@ -359,22 +361,21 @@ private theorem actionAngleChart_comp_mk_comp_frameCover :
     actionAngleChart hα p a ∘ (mk hα ∘ frameCover α) = actionAngleCover p ∘ anglesActions p a :=
   funext fun x ↦ actionAngleChart_mk_sum_smul hα p a x.2 x.1
 
-/-- **The action–angle chart is injective exactly when the developing map `a` is.** -/
-theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) ↔ Injective a := by
-  refine ⟨fun h x y hxy ↦ ?_, fun h z z' hzz' ↦ ?_⟩
-  · -- Two base points with the same value of `a` carry zero covectors with the same image.
-    have hz := actionAngleChart_mk_sum_smul hα p a x 0
-    rw [hxy, ← actionAngleChart_mk_sum_smul hα p a y 0] at hz
-    simpa using congrArg (proj hα) (h hz)
-  -- Two classes with the same image have the same actions, hence base points with the same value
-  -- of `a`, and angles differing by `p ℤ^ι`, hence frame coordinates differing by an integer
-  -- vector.
+/-- **The action–angle chart is injective on every fibre** of `T*B/Λ → B`, whether or not `a` is
+injective: on the fibre over `b` it is `[ξ] ↦ κ(-p c(ξ), a(x))`, and the angles `-p c(ξ)` determine
+the class of `ξ` modulo the lattice. -/
+theorem injOn_actionAngleChart (b : B) :
+    InjOn (actionAngleChart hα p a) (proj hα ⁻¹' {b}) := by
+  intro z hz z' hz' hzz'
+  -- Classes in one fibre with the same image have angles differing by `p ℤ^ι`, hence frame
+  -- coordinates differing by an integer vector.
   obtain ⟨⟨c, x⟩, rfl⟩ := surjective_mk_comp_frameCover hα z
   obtain ⟨⟨c', x'⟩, rfl⟩ := surjective_mk_comp_frameCover hα z'
+  simp only [mem_preimage, mem_singleton_iff, comp_apply, frameCover, proj_mk] at hz hz'
   simp only [comp_apply, frameCover, actionAngleChart_mk_sum_smul,
     actionAngleCover_eq_actionAngleCover_iff] at hzz' ⊢
-  obtain ⟨hxx', m, hm⟩ := hzz'
-  obtain rfl := h hxx'
+  obtain ⟨-, m, hm⟩ := hzz'
+  obtain rfl : x = x' := hz.trans hz'.symm
   refine (mk_mk_eq_mk_mk_iff hα).2 ⟨m, ?_⟩
   -- The angles `-p c'` and `-p c + m p` agree, so `c = c' + m`.
   have hc : c = c' + fun i ↦ (m i : ℝ) := by
@@ -385,6 +386,20 @@ theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) �
     apply mul_left_cancel₀ hp
     linarith
   simp [hc, add_smul, Finset.sum_add_distrib]
+
+/-- **The action–angle chart is injective exactly when the developing map `a` is.** -/
+theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) ↔ Injective a := by
+  classical
+  refine ⟨fun h x y hxy ↦ ?_, fun h z z' hzz' ↦ ?_⟩
+  · -- Two base points with the same value of `a` carry zero covectors with the same image.
+    have hz := actionAngleChart_mk_sum_smul hα p a x 0
+    rw [hxy, ← actionAngleChart_mk_sum_smul hα p a y 0] at hz
+    simpa using congrArg (proj hα) (h hz)
+  -- Two classes with the same image have the same actions, hence base points with the same value
+  -- of `a`, so they lie in one fibre.
+  have hzz'a := congrArg (torusActions p) hzz'
+  rw [torusActions_actionAngleChart, torusActions_actionAngleChart] at hzz'a
+  exact injOn_actionAngleChart hα (proj hα z') (h hzz'a) rfl hzz'
 
 /-- **The range of the action–angle chart** is the set of covectors of `T*Tⁿ` whose actions are
 values of the developing map `a`. -/

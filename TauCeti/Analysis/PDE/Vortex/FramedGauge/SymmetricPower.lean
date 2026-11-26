@@ -119,6 +119,22 @@ theorem vortexModuliDivisor_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
   obtain ⟨u, hu, hux⟩ := orbitRel_iff.1 (Quotient.exact hy.symm)
   exact sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.2 ⟨⟨u, hu⟩, Subtype.ext hux⟩
 
+/-- Gauges of the topological group `G_(k+1)` keep the divisor of a continuous vortex of `A_m^k`,
+`k ≥ 4`: the form of `TauCeti.Vortex.sobolevVortexDivisor_smul` for its action on
+`SobolevFieldSpace`. -/
+theorem sobolevVortexDivisor_toFramedFieldSpace_smul (hk : 3 < k)
+    (g : SobolevTopologicalGaugeGroup hs) {x : SobolevFieldSpace f m k}
+    (hx : ∀ z, equation x z = 0) :
+    sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk
+        fun z ↦ (equation_smul_eq_zero_iff hk.le g x z).2 (hx z)⟩ =
+      sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hx⟩ := by
+  -- `g • x` is the action of an element `u` of `G_(k+1)` on the field of `x`.
+  obtain ⟨u, hu, hux⟩ :=
+    orbitRel_iff.1 (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨g⁻¹, inv_smul_smul g x⟩))
+  rw [← TauCeti.Vortex.sobolevVortexDivisor_smul hk ⟨u, hu⟩
+    ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hx⟩]
+  exact congrArg sobolevVortexDivisor (Subtype.ext (Subtype.ext hux)).symm
+
 /-- **Taubes's uniqueness theorem on the Sobolev moduli space**: for `k ≥ 4`, two vortex orbits of
 `A_m^k / G_(k+1)` with the same divisor coincide. -/
 theorem vortexModuliDivisor_injective (hk : 3 < k) :

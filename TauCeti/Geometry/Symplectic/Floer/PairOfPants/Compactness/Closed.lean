@@ -26,11 +26,11 @@ namespace `TauCeti.SmoothTwoForm` (`TauCeti.Geometry.Symplectic.Floer.Compactnes
 once its hypotheses are checked for the pair of pants.
 
 * **The data in the charts of `M`.** The Hamiltonian vector fields of the perturbation, read in the
-  chart at any point of `M`, are `C²` on `S` times the chart target: this is
-  `TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt` for the `C³`
-  family `z ↦ K_z(v)`, which is smooth jointly in `z ∈ S` and the target point
-  (`TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`). The almost complex structures read in the
-  charts are assumed `C²`.
+  chart at any point of `M`, are `C²` on `S` times the chart target
+  (`IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation` in the
+  namespace `TauCeti.SmoothTwoForm`), since the family `z ↦ K_z(v)` is `C³` jointly in `z ∈ S`
+  and the target point (`TauCeti.Floer.contMDiffAt_uncurry_pairOfPantsPerturbation`). The
+  almost complex structures read in the charts are assumed `C²`.
 * **The energy bound.** The energy of a solution over any part of `S` is at most its topological
   energy `∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt` plus `B₀ + B₁ + B_∞`
   (`IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le` in the namespace
@@ -58,6 +58,10 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 * `exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_positiveEndChart`: the
   same for the translated ends of Floer pairs of pants of energy at most `E`, on a compact window
   of the positive end chart, with `#Z * δ ≤ E`.
+* `exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbation_le`: on a compact
+  part of `S`, the bounds on the pushforwards of the Hamiltonian vector fields of the perturbation
+  that the first theorem takes hold for every `C¹` map `e` and `C¹` Hamiltonians `H_q`, since each
+  component of the perturbation is a combination of the `H_q` with coefficients continuous on `S`.
 
 The regularity of the limits, the bubbles at the points of `Z` and the assembly of the limits at the
 ends into a broken configuration are not treated here.
@@ -153,17 +157,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairO
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
   -- Each component `z ↦ K_z(w)` of the perturbation is `C³` jointly in `z ∈ S` and the target
   -- point, so its Hamiltonian vector field is `C²` in every chart.
-  have hK (w : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal hD hDS hJ
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I)) (fun z hz ↦ hJt z (hDS hz))
-    hc hJc hLs hLt
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hH hHs 1)
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hH hHs Complex.I)
+    (fun z hz ↦ hJt z (hDS hz)) hc hJc hLs hLt
   refine ⟨δ, hδ, fun Ω u x A hΩ hΩD hu hfl hx hE hA htop ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
   -- The energy over `Ω` is at most the topological energy plus `B₀ + B₁ + B_∞`.
@@ -261,5 +259,50 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
       fun _ _ ↦ mem_univ _
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
+
+omit [I.Boundaryless] in
+/-- **The Hamiltonian vector fields of the perturbation are bounded on compact parts of `S`.** Let
+`M` be compact and let `H_q` be period-one `C¹` Hamiltonians. On a compact part `D` of
+`S = ℂ ∖ {0, 1}`, the pushforwards through a `C¹` map `e : M → F` of the Hamiltonian vector fields
+of a component `K(v)` of the pair-of-pants perturbation are bounded, uniformly in the target point.
+These are the bounds that
+`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairOfPantsPerturbation` takes
+on its window. -/
+theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {D : Set (ℝ × ℝ)} (hD : IsCompact D)
+    (hDS : D ⊆ thricePuncturedSphereReal) (v : ℂ) :
+    ∃ L, ∀ z ∈ D, ∀ x, ‖mvfderiv I e x (ω.hamiltonianVectorField
+      (fun y ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) y v) x)‖ ≤ L := by
+  choose LH hLH using fun q ↦ hω.exists_forall_norm_mvfderiv_hamiltonianVectorField_le (hHs q)
+    (hH q) he
+  -- The coefficient of `H_q` in `K(v)` is continuous on `S`, so bounded on `D`.
+  set a : Puncture → ℝ × ℝ → ℝ := fun q z ↦
+    Real.smoothTransition (q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re - 1) *
+      q.endAngularForm (equivRealProdCLM.symm z) v
+  have ha (q : Puncture) : ContinuousOn (a q) D := fun z hz ↦ by
+    have hw := Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hDS hz)) q
+    have hsymm := (equivRealProdCLM.symm.contDiff (n := 0)).contMDiff.contMDiffAt (x := z)
+    exact ((contMDiffAt_smoothTransition_endCoord_comp q (n := 0) hsymm contMDiffAt_const
+      hw).continuousAt.mul (((Puncture.contDiffAt_endAngularForm q hw (n := 0)).continuousAt.comp
+        hsymm.continuousAt).clm_apply continuousAt_const)).continuousWithinAt
+  choose C hC using fun q ↦ hD.exists_bound_of_continuousOn (ha q)
+  refine ⟨∑ q, C q * LH q, fun z hz x ↦ ?_⟩
+  have hHd (q : Puncture) (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
+    ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
+  have hK : (fun y ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) y v) =
+      fun y ↦ ∑ q, (a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im) y := by
+    funext y
+    simp only [pairOfPantsPerturbation_def, FunLike.coe_sum, Finset.sum_apply,
+      FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, a]
+    exact Finset.sum_congr rfl fun q _ ↦ by ring
+  rw [hK, ω.hamiltonianVectorField_fun_sum
+    (F := fun q ↦ a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im)
+    fun q _ ↦ (hHd q _ x).const_smul (a q z), map_sum]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun q _ ↦ ?_)
+  rw [hamiltonianVectorField_const_smul, map_smul, norm_smul]
+  exact mul_le_mul (hC q z hz) (hLH q _ x) (norm_nonneg _) ((norm_nonneg _).trans (hC q z hz))
+
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

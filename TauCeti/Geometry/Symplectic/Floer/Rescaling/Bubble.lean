@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Basic
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.InnerProductSpace.ProdL2
-import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -43,10 +41,10 @@ Arzelà–Ascoli on exhausting discs
 (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`), and the
 convergence of the derivatives is the interior estimate for the Floer equation, applied to the
 rescaled equations as one family over the parameters `(cₙ, εₙ)`
-(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`), read in the complex
-coordinate `Complex.equivRealProdCLM`. The limit is only shown to be `C¹`; its smoothness, the
-removal of its singularity at infinity, which makes it a sphere, and the lower bound on its energy
-by the minimal energy of nonconstant spheres need elliptic regularity of the limit.
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`). The
+limit is only shown to be `C¹`; its smoothness, the removal of its singularity at infinity, which
+makes it a sphere, and the lower bound on its energy by the minimal energy of nonconstant spheres
+need elliptic regularity of the limit.
 
 ## References
 
@@ -70,128 +68,16 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V} {U : Set (ℝ × ℝ)}
   {z₀ : ℝ × ℝ}
 
-/-! ### The rescaled equations as one family
-
-In the complex coordinate `e = Complex.equivRealProdCLM`, the rescaled maps `y ↦ u(c + ε e(y))`
-solve the Floer equation for the data `J(c + ε e(y), x)` and `ε X_K(c + ε e(y), x) ∘ e`. With the
-parameter `p = (e⁻¹ c, ε) ∈ ℂ × ℝ`, these form one family of data, jointly `C¹` in `p` and in the
-point `(y, x)`. -/
-
-/-- The point `(c + ε y, x)` of `(ℝ × ℝ) × V`, in the complex coordinate, for the parameter
-`p = (c, ε)` and the point `q = (y, x)`. -/
-private noncomputable def rescalePoint (q : WithLp 2 (ℂ × ℝ) × (ℂ × V)) : (ℝ × ℝ) × V :=
-  (equivRealProdCLM (q.1.ofLp.1 + q.1.ofLp.2 • q.2.1), q.2.2)
-
-private theorem contDiff_rescalePoint {k : WithTop ℕ∞} :
-    ContDiff ℝ k (rescalePoint (V := V)) := by
-  unfold rescalePoint
-  exact (equivRealProdCLM.contDiff.comp ((WithLp.contDiff_ofLp.comp contDiff_fst).fst.add
-    ((WithLp.contDiff_ofLp.comp contDiff_fst).snd.smul contDiff_snd.fst))).prodMk contDiff_snd.snd
-
-omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] in
-private theorem rescalePoint_toLp (c : ℝ × ℝ) (ε : ℝ) (y : ℂ) (x : V) :
-    rescalePoint (WithLp.toLp 2 (equivRealProdCLM.symm c, ε), (y, x)) =
-      (c + ε • equivRealProdCLM y, x) := by
-  simp only [rescalePoint, map_add, map_smul, ContinuousLinearEquiv.apply_symm_apply]
-
 variable [FiniteDimensional ℝ V]
-
-/-- The rescaled almost complex structures. -/
-private noncomputable def rescaleJ (J : ℝ × ℝ → V → AlmostComplexStructure V)
-    (p : WithLp 2 (ℂ × ℝ)) (q : ℂ × V) : V →L[ℝ] V :=
-  (J (rescalePoint (p, q)).1 q.2).toLinearMap.toContinuousLinearMap
-
-private theorem contDiffOn_rescaleJ
-    (hJ : ContDiffOn ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (U ×ˢ univ)) :
-    ContDiffOn ℝ 1 (uncurry (rescaleJ J)) (rescalePoint ⁻¹' (U ×ˢ univ)) :=
-  hJ.comp contDiff_rescalePoint.contDiffOn (mapsTo_preimage _ _)
-
-/-- The rescaled Hamiltonian one-forms. -/
-private noncomputable def rescaleX (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (p : WithLp 2 (ℂ × ℝ)) (q : ℂ × V) : ℂ →L[ℝ] V :=
-  p.ofLp.2 • (ω.hamiltonianOneForm Ks Kt (rescalePoint (p, q)).1 q.2 ∘L
-    (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ))
-
-private theorem contDiffOn_rescaleX (ω : SymplecticForm V) (hU : IsOpen U)
-    (hKs : ContDiffOn ℝ 2 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContDiffOn ℝ 2 (uncurry Kt) (U ×ˢ univ)) :
-    ContDiffOn ℝ 1 (uncurry (rescaleX ω Ks Kt)) (rescalePoint ⁻¹' (U ×ˢ univ)) := by
-  -- The Hamiltonian one-form of `K` is `C¹`, as a constant family over `Unit`.
-  have hlift {H : ℝ × ℝ → V → ℝ} (hH : ContDiffOn ℝ 2 (uncurry H) (U ×ˢ univ)) :
-      ContDiffOn ℝ (1 + 1) (fun q : Unit × ((ℝ × ℝ) × V) ↦ H q.2.1 q.2.2)
-        (univ ×ˢ (U ×ˢ univ)) := by
-    rw [one_add_one_eq_two]
-    exact hH.comp contDiffOn_snd fun _ hq ↦ hq.2
-  have h := ω.contDiffOn_hamiltonianOneForm (P := Unit) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
-    (isOpen_univ.prod (hU.prod isOpen_univ)) (hlift hKs) (hlift hKt)
-  have hX : ContDiffOn ℝ 1 (fun q : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2)
-      (U ×ˢ univ) :=
-    h.comp ((contDiff_const (c := ())).prodMk contDiff_id).contDiffOn
-      fun q hq ↦ ⟨mem_univ _, hq⟩
-  exact ((WithLp.contDiff_ofLp.comp contDiff_fst).snd.contDiffOn).smul
-    ((hX.comp contDiff_rescalePoint.contDiffOn (mapsTo_preimage _ _)).clm_comp contDiffOn_const)
 
 /-! ### Convergence of the derivatives -/
 
-/-- The derivatives of rescaled Floer solutions converge, in the complex coordinate
-`e = Complex.equivRealProdCLM`, on the preimage `Ω` of an open set `B` of `ℝ × ℝ`. Let `uₙ` be
-smooth on an open `U ∋ z₀`, and let the rescaled maps `vₙ(w) = uₙ(cₙ + εₙ w)`, with `cₙ → z₀` and
-`εₙ → 0`, solve the rescaled Floer equation on `B` with derivatives of norm at most `M` there, and
-converge pointwise there to `v`. Then `v ∘ e` is `C¹` on `Ω` and `d(vₙ ∘ e) → d(v ∘ e)` locally
-uniformly on `Ω`. -/
-private theorem tendstoLocallyUniformlyOn_fderiv_rescale_comp_equivRealProdCLM
-    (ω : SymplecticForm V) (hU : IsOpen U) (hz₀ : z₀ ∈ U)
-    (hKs : ContDiffOn ℝ 2 (uncurry Ks) (U ×ˢ univ)) (hKt : ContDiffOn ℝ 2 (uncurry Kt) (U ×ˢ univ))
-    (hJ : ContDiffOn ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (U ×ˢ univ))
-    {u : ℕ → ℝ × ℝ → V} (hu : ∀ n, ContDiffOn ℝ (⊤ : ℕ∞) (u n) U) {c : ℕ → ℝ × ℝ} {ε : ℕ → ℝ}
-    (hc : Tendsto c atTop (𝓝 z₀)) (hε : Tendsto ε atTop (𝓝 0)) {B : Set (ℝ × ℝ)} (hB : IsOpen B)
-    {M : ℝ} {v : ℝ × ℝ → V} (hmem : ∀ n, ∀ w ∈ B, c n + ε n • w ∈ U)
-    (hbd : ∀ n, ∀ w ∈ B, ‖fderiv ℝ (fun w ↦ u n (c n + ε n • w)) w‖ ≤ M)
-    (hsol : ∀ n, ∀ w ∈ B, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (c n + ε n • w) (u n (c n + ε n • w)))
-      (ω.perturbedFDeriv (fun w x ↦ ε n * Ks (c n + ε n • w) x)
-        (fun w x ↦ ε n * Kt (c n + ε n • w) x) (fun w ↦ u n (c n + ε n • w)) w :
-        ℝ × ℝ →ₗ[ℝ] V))
-    (hlim : ∀ w ∈ B, Tendsto (fun n ↦ u n (c n + ε n • w)) atTop (𝓝 (v w))) :
-    ContDiffOn ℝ 1 (v ∘ equivRealProdCLM) (equivRealProdCLM ⁻¹' B) ∧ TendstoLocallyUniformlyOn
-      (fun n ↦ fderiv ℝ ((fun w ↦ u n (c n + ε n • w)) ∘ equivRealProdCLM))
-      (fderiv ℝ (v ∘ equivRealProdCLM)) atTop (equivRealProdCLM ⁻¹' B) := by
-  -- Apply `tendstoLocallyUniformlyOn_fderiv_of_floer_parametric` to the data `rescaleJ J` and
-  -- `rescaleX ω Ks Kt` with the parameters `(e⁻¹ cₙ, εₙ) → (e⁻¹ z₀, 0)`.
-  obtain ⟨hvc, hconv, -⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer_parametric
-    (J := rescaleJ J) (X := rescaleX ω Ks Kt) ((hU.prod isOpen_univ).preimage
-      (contDiff_rescalePoint (k := 0)).continuous) (contDiffOn_rescaleJ hJ)
-    (contDiffOn_rescaleX ω hU hKs hKt) (hB.preimage equivRealProdCLM.continuous)
-    (p := fun n ↦ WithLp.toLp 2 (equivRealProdCLM.symm (c n), ε n))
-    (p₀ := WithLp.toLp 2 (equivRealProdCLM.symm z₀, 0))
-    (u := fun n ↦ (fun w ↦ u n (c n + ε n • w)) ∘ equivRealProdCLM) (v := v ∘ equivRealProdCLM)
-    (((WithLp.prod_continuous_toLp 2 ℂ ℝ).tendsto _).comp
-      ((equivRealProdCLM.symm.continuous.tendsto z₀ |>.comp hc).prodMk_nhds hε))
-    (fun y _ ↦ by
-      simp only [mem_preimage, rescalePoint_toLp, zero_smul, add_zero, mem_prod, mem_univ,
-        and_true]
-      exact hz₀)
-    (fun n ↦ (hu n).comp ((contDiff_const.add
-      (equivRealProdCLM.contDiff.const_smul (ε n))).contDiffOn) fun y hy ↦ hmem n _ hy)
-    (fun n y _ w ↦ by simp [rescaleJ])
-    (fun n y hy ↦ by
-      have h := (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
-        (J := fun w x ↦ J (c n + ε n • w) x)).1 (hsol n _ hy)
-      rw [hamiltonianOneForm_rescale] at h
-      simp only [rescaleJ, rescaleX, rescalePoint_toLp, LinearMap.coe_toContinuousLinearMap']
-      exact h)
-    (fun C _ hCΩ ↦ ⟨M * ‖(equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)‖, fun n y hy ↦ by
-      rw [equivRealProdCLM.comp_right_fderiv]
-      exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-        (mul_le_mul_of_nonneg_right (hbd n _ (hCΩ hy)) (norm_nonneg _))⟩)
-    (fun y hy ↦ hlim _ hy)
-  exact ⟨hvc, hconv⟩
-
-/-- The derivatives of rescaled Floer solutions converge on an open set `B` of `ℝ × ℝ`: the
-statement of `tendstoLocallyUniformlyOn_fderiv_rescale_comp_equivRealProdCLM` read back in the
-coordinate `ℝ × ℝ`. -/
+/-- The derivatives of rescaled Floer solutions converge on an open set `B` of `ℝ × ℝ`. Let `uₙ`
+be smooth on an open `U ∋ z₀`, and let the rescaled maps `vₙ(w) = uₙ(cₙ + εₙ w)`, with `cₙ → z₀`
+and `εₙ → 0`, solve the rescaled Floer equation on `B` with derivatives of norm at most `M` there,
+and converge pointwise there to `v`. Then `v` is `C¹` on `B` and `dvₙ → dv` locally uniformly on
+`B`. The rescaled equations form one family of data `J(c + ε w, x)` and `ε X_K(c + ε w, x)` over
+the parameter `(c, ε)`, jointly `C¹` in the parameter and the point `(w, x)`. -/
 private theorem tendstoLocallyUniformlyOn_fderiv_rescale (ω : SymplecticForm V) (hU : IsOpen U)
     (hz₀ : z₀ ∈ U) (hKs : ContDiffOn ℝ 2 (uncurry Ks) (U ×ˢ univ))
     (hKt : ContDiffOn ℝ 2 (uncurry Kt) (U ×ˢ univ))
@@ -209,24 +95,38 @@ private theorem tendstoLocallyUniformlyOn_fderiv_rescale (ω : SymplecticForm V)
     (hlim : ∀ w ∈ B, Tendsto (fun n ↦ u n (c n + ε n • w)) atTop (𝓝 (v w))) :
     ContDiffOn ℝ 1 v B ∧ TendstoLocallyUniformlyOn
       (fun n ↦ fderiv ℝ (fun w ↦ u n (c n + ε n • w))) (fderiv ℝ v) atTop B := by
-  obtain ⟨hvc, hconv⟩ := tendstoLocallyUniformlyOn_fderiv_rescale_comp_equivRealProdCLM ω hU hz₀
-    hKs hKt hJ hu hc hε hB hmem hbd hsol hlim
-  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM
-  have hsymm : MapsTo e.symm B (e ⁻¹' B) := fun w hw ↦ by simpa using hw
-  -- `f = (f ∘ e) ∘ e⁻¹`, so `df(w) = d(f ∘ e)(e⁻¹ w) ∘ e⁻¹`.
-  have hcomp (f : ℝ × ℝ → V) : (f ∘ e) ∘ e.symm = f := by
-    funext x
-    simp
-  have hd (f : ℝ × ℝ → V) (w : ℝ × ℝ) :
-      fderiv ℝ f w = fderiv ℝ (f ∘ e) (e.symm w) ∘L (e.symm : ℝ × ℝ →L[ℝ] ℂ) := by
-    rw [← e.symm.comp_right_fderiv (f := f ∘ e), hcomp]
-  refine ⟨hcomp v ▸ hvc.comp e.symm.contDiff.contDiffOn hsymm, ?_⟩
-  have h := ((ContinuousLinearMap.compL ℝ (ℝ × ℝ) ℂ V).flip
-    (e.symm : ℝ × ℝ →L[ℝ] ℂ)).uniformContinuous.comp_tendstoLocallyUniformlyOn
-    (hconv.comp e.symm hsymm e.symm.continuous.continuousOn)
-  refine h.congr_right (fun w _ ↦ by simp [hd v w]) |>.congr fun n w _ ↦ ?_
-  simp only [comp_apply, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply]
-  rw [hd (fun w ↦ u n (c n + ε n • w)) w]
+  -- The Hamiltonian one-form of `K` is `C¹`, as a constant family over `Unit`.
+  have hlift {H : ℝ × ℝ → V → ℝ} (hH : ContDiffOn ℝ 2 (uncurry H) (U ×ˢ univ)) :
+      ContDiffOn ℝ (1 + 1) (fun q : Unit × ((ℝ × ℝ) × V) ↦ H q.2.1 q.2.2)
+        (univ ×ˢ (U ×ˢ univ)) := by
+    rw [one_add_one_eq_two]
+    exact hH.comp contDiffOn_snd fun _ hq ↦ hq.2
+  have hX : ContDiffOn ℝ 1 (fun q : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2)
+      (U ×ˢ univ) :=
+    (ω.contDiffOn_hamiltonianOneForm (P := Unit) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+      (isOpen_univ.prod (hU.prod isOpen_univ)) (hlift hKs) (hlift hKt)).comp
+      ((contDiff_const (c := ())).prodMk contDiff_id).contDiffOn fun q hq ↦ ⟨mem_univ _, hq⟩
+  -- The data at the parameter `(c, ε)` and the point `(w, x)`.
+  set g : (((ℝ × ℝ) × ℝ) × (ℝ × ℝ)) × V → (ℝ × ℝ) × V :=
+    fun q ↦ (q.1.1.1 + q.1.1.2 • q.1.2, q.2)
+  have hg : ContDiff ℝ 1 g := by fun_prop
+  obtain ⟨hvc, hconv, -⟩ := tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric
+    (J := fun q ↦ (J (g q).1 (g q).2).toLinearMap.toContinuousLinearMap)
+    (X := fun q ↦ q.1.1.2 • ω.hamiltonianOneForm Ks Kt (g q).1 (g q).2)
+    ((hU.prod isOpen_univ).preimage hg.continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage _ _))
+    (contDiff_fst.fst.snd.contDiffOn.smul (hX.comp hg.contDiffOn (mapsTo_preimage _ _))) hB
+    (p := fun n ↦ (c n, ε n)) (p₀ := (z₀, 0)) (u := fun n w ↦ u n (c n + ε n • w)) (v := v)
+    (hc.prodMk_nhds hε) (fun w _ ↦ ⟨by simpa [g] using hz₀, mem_univ _⟩)
+    (fun n ↦ (hu n).comp (contDiff_const.add (contDiff_id.const_smul (ε n))).contDiffOn
+      fun w hw ↦ hmem n w hw)
+    (fun n w _ ζ ↦ by simp [g])
+    (fun n w hw ↦ by
+      have h := (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub
+        (J := fun w x ↦ J (c n + ε n • w) x)).1 (hsol n w hw)
+      rw [hamiltonianOneForm_rescale] at h
+      simpa [g] using h)
+    (fun C _ hCB ↦ ⟨M, fun n w hw ↦ hbd n w (hCB hw)⟩) hlim
+  exact ⟨hvc, hconv⟩
 
 /-- The rescaled Floer solutions `vₙ(w) = uₙ(cₙ + εₙ w)` of a sequence of smooth solutions `uₙ`
 on `U ∋ z₀`, with `cₙ → z₀` and `εₙ → 0`, that eventually solve the rescaled equation with

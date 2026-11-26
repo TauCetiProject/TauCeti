@@ -81,7 +81,10 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
   `Spinᶜ(Q) → SO(Q) × U(1)`.
 * `CliffordAlgebra.spinCGroup.det_chargeConj`,
   `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj`: charge conjugation inverts the
-  determinant character and covers the identity rotation.
+  determinant character and covers the identity rotation;
+  `CliffordAlgebra.spinCGroup.chargeConj_comp_chargeConj` and
+  `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_comp_chargeConj` are the involution and
+  rotation identities as identities of homomorphisms.
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
@@ -543,6 +546,20 @@ theorem toSpecialOrthogonal_chargeConj (x : spinCGroup Q hQ) :
     toSpecialOrthogonal Q hQ (chargeConj Q hQ x) = toSpecialOrthogonal Q hQ x := by
   obtain ⟨p, rfl⟩ := mk_surjective Q hQ x
   simp
+
+/-- Charge conjugation is an involution, as a homomorphism: `chargeConj ∘ chargeConj = id`. -/
+theorem chargeConj_comp_chargeConj :
+    (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ).comp (chargeConj Q hQ) =
+      MonoidHom.id _ :=
+  (chargeConj Q hQ).toMonoidHom_comp_toMonoidHom_symm
+
+/-- **Charge conjugation covers the identity rotation**, as a homomorphism: `π ∘ chargeConj = π`,
+where `π : Spinᶜ(Q) → SO(Q)` is the rotation homomorphism. This is the compatibility that makes
+the charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure on the same oriented bundle. -/
+theorem toSpecialOrthogonal_comp_chargeConj :
+    (toSpecialOrthogonal Q hQ).comp (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
+      toSpecialOrthogonal Q hQ :=
+  MonoidHom.ext (toSpecialOrthogonal_chargeConj Q hQ)
 
 /-- **Charge conjugation is twisting by the inverse determinant**:
 `chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a

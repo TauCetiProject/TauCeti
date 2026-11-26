@@ -72,8 +72,8 @@ def tangent : LieAlgebroid I E (TangentSpace I : M → Type _) where
     leibniz_identity_mlieBracket_apply (X.contMDiff.of_le (by simp)).contMDiffAt
       (Y.contMDiff.of_le (by simp)).contMDiffAt (Z.contMDiff.of_le (by simp)).contMDiffAt
   bracket_smul_apply X Y f x := by
-    have hfY : ⇑(f • Y) = ⇑f • ⇑Y := funext (ContMDiffSection.smul_apply f Y)
-    simp only [LinearMap.mk₂_apply, ContMDiffSection.coeFn_mk, hfY]
+    simp only [LinearMap.mk₂_apply, ContMDiffSection.coeFn_mk,
+      ContMDiffSection.coe_smul_contMDiffMap]
     exact (mlieBracket_smul_right (f.contMDiff.mdifferentiableAt (by simp))
       (Y.contMDiff.mdifferentiableAt (by simp))).trans (add_comm _ _)
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
+public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.CategoryTheory.Comma.Over
 import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
@@ -47,6 +48,9 @@ base changes (`TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent`
   inverse image `V(D.comap g)`, stated in terms of `D`.
 * `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap`: inverse images of closed subgroup schemes
   are closed subgroup schemes.
+* `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_pullback_fst_iff`: the inverse image of `V(D)`
+  in the base change of `G` is a subgroup scheme exactly when the base change of `V(D)` is one, with
+  the base change of the inclusion as homomorphism.
 -/
 
 public section
@@ -149,5 +153,30 @@ theorem exists_grpObj_isMonHom_comap
   obtain ⟨he, hm, hj⟩ := (exists_grpObj_isMonHom_iff_le D).mp hD
   exact (exists_grpObj_isMonHom_comap_iff_le w hμ D).mpr ⟨he.trans (Scheme.Hom.le_ker_comp _ _),
     hm.trans (Scheme.Hom.le_ker_comp _ _), hj.trans (Scheme.Hom.le_ker_comp _ _)⟩
+
+omit hμ [GrpObj G] in
+open scoped Obj in
+/-- **Inverse images in a base change are base changes.** For a monoid object `G` over `S`, such as
+a group scheme, a closed subscheme `V(D)` of `G` and a morphism `f : S' ⟶ S`, the inverse image of
+`V(D)` in the base change `G ×_S S'` is a subgroup scheme exactly when the base change of `V(D)`
+along `f` carries a group law for which the base change of the inclusion of `V(D)` is a
+homomorphism. The two are identified by the canonical isomorphism of the inverse image with the base
+change of `V(D)`. -/
+theorem exists_grpObj_isMonHom_comap_pullback_fst_iff [MonObj G] (f : S' ⟶ S) :
+    (∃ _ : GrpObj (Over.mk ((D.comap (pullback.fst G.hom f)).subschemeι ≫
+        ((Over.pullback f).obj G).hom)),
+      IsMonHom (Over.homMk (D.comap (pullback.fst G.hom f)).subschemeι :
+        Over.mk ((D.comap (pullback.fst G.hom f)).subschemeι ≫ ((Over.pullback f).obj G).hom) ⟶
+          (Over.pullback f).obj G)) ↔
+      ∃ _ : GrpObj ((Over.pullback f).obj (Over.mk (D.subschemeι ≫ G.hom))),
+        IsMonHom ((Over.pullback f).map
+          (Over.homMk D.subschemeι : Over.mk (D.subschemeι ≫ G.hom) ⟶ G)) := by
+  have hD := D.isPullback_subschemeMap_comap G.hom (IsPullback.of_hasPullback G.hom f)
+  refine Iso.exists_grpObj_isMonHom_iff
+    (Over.isoMk (f := Over.mk ((D.comap (pullback.fst G.hom f)).subschemeι ≫
+      ((Over.pullback f).obj G).hom)) (g := (Over.pullback f).obj (Over.mk (D.subschemeι ≫ G.hom)))
+      hD.isoPullback (by simp)) ?_
+  ext1
+  apply pullback.hom_ext <;> simp
 
 end TauCeti.GroupScheme

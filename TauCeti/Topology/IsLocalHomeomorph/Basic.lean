@@ -73,6 +73,9 @@ groupoid.
   pullback square of embeddings, such as the restriction to the full preimage of any subspace.
 * `IsLocalHomeomorph.of_comp_of_surjective`: if `g ∘ f` and a surjective `f` are local
   homeomorphisms, so is `g`.
+* `IsLocalHomeomorph.isClosedEmbedding_of_injective`: an injective local homeomorphism with closed
+  range is a closed embedding. `IsLocalHomeomorph.isClosedEmbedding_of_isCompl_range` gets the
+  closed range from an open map with complementary range.
 * `TauCeti.isLocalHomeomorph_of_discreteTopology`: every map between discrete spaces is a local
   homeomorphism.
 -/
@@ -389,6 +392,21 @@ theorem of_comp_of_surjective {X Y Z : Type*}
   have h := hgf.isLocalHomeomorphOn.of_comp_right hf.isLocalHomeomorphOn
     (s := Set.univ)
   rwa [Set.image_univ, hsurj.range_eq, ← isLocalHomeomorph_iff_isLocalHomeomorphOn_univ] at h
+
+/-- An injective local homeomorphism with closed range is a closed embedding. -/
+theorem isClosedEmbedding_of_injective {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} (hf : IsLocalHomeomorph f) (hi : Function.Injective f)
+    (hc : IsClosed (Set.range f)) : IsClosedEmbedding f where
+  toIsEmbedding := (hf.isOpenEmbedding_of_injective hi).isEmbedding
+  isClosed_range := hc
+
+/-- If an injective local homeomorphism and an open map have complementary ranges, the first is a
+closed embedding: the range of the open map is open, so the range of the first is closed. -/
+theorem isClosedEmbedding_of_isCompl_range {X X' Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y] {f : X → Y} {g : X' → Y} (hf : IsLocalHomeomorph f)
+    (hi : Function.Injective f) (hg : IsOpenMap g)
+    (hc : IsCompl (Set.range f) (Set.range g)) : IsClosedEmbedding f :=
+  hf.isClosedEmbedding_of_injective hi (hc.eq_compl ▸ hg.isOpen_range.isClosed_compl)
 
 /-- Every map between discrete spaces is a local homeomorphism. -/
 theorem _root_.TauCeti.isLocalHomeomorph_of_discreteTopology {X Y : Type*} [TopologicalSpace X]
