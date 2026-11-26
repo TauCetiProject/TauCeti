@@ -129,6 +129,9 @@ theorem faceSign_def (f : TriFace) : faceSign f = if f.isWhite then 1 else -1 :=
   simp only [faceSign_def, TriFace.isWhite_across]
   cases f.isWhite <;> simp
 
+@[simp] theorem faceSum_zero (f : TriFace) : faceSum 0 f = 0 := by
+  simp [faceSum_def]
+
 @[simp] theorem faceSum_add (c c' : TriEdge → ℤ) (f : TriFace) :
     faceSum (c + c') f = faceSum c f + faceSum c' f := by
   simp only [faceSum_def, Pi.add_apply]

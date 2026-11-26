@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
-public import TauCeti.Combinatorics.Tiling.Lozenge.HexGraph
 public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 /-!
@@ -26,8 +24,6 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 * The neutral cochain `c₀` is not closed on any face; the cochain of the all-type-1 tiling `M₁`
   (`1` along `e₁` and `e₃`, `0` along `e₂`) has primitive `x`, and that of the all-type-3 tiling
   `M₃` is `0`, with primitive `0`.
-* `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
-  `TauCeti.not_isSimplyConnectedRegion_of_hole`, which shows again that it is not simply connected.
 -/
 
 public section
@@ -68,7 +64,7 @@ example : ¬ IsSimplyConnectedRegion {f | f ≠ ⟨(0, 0), true⟩} := fun h =>
     (h.isExactCochainOn_of_isClosedCochainOn _ isClosedCochainOn_rayCochain_whiteZero)
 
 /-- The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)`. -/
-def ringRegion : Set TriFace :=
+@[expose] def ringRegion : Set TriFace :=
   {⟨(-1, 0), true⟩, ⟨(-1, -1), true⟩, ⟨(0, -1), true⟩, ⟨(1, 0), true⟩, ⟨(1, 1), true⟩,
     ⟨(0, 1), true⟩, ⟨(0, 0), false⟩, ⟨(0, -1), false⟩, ⟨(-1, -1), false⟩, ⟨(1, -1), false⟩,
     ⟨(1, 0), false⟩, ⟨(1, 1), false⟩}
@@ -111,19 +107,5 @@ example : IsCochainPrimitiveOn Set.univ (fun e => if e.k = 1 then 0 else 1) fun 
 
 /-- The cochain of the all-type-3 tiling `M₃` is `0`, with primitive `0`. -/
 example : IsCochainPrimitiveOn Set.univ 0 0 := isCochainPrimitiveOn_def.2 fun _ _ => by simp
-
-/-- `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
-`not_isSimplyConnectedRegion_of_hole`, so it is not simply connected. -/
-example : ¬ IsSimplyConnectedRegion ringRegion :=
-  not_isSimplyConnectedRegion_of_hole (Q := {⟨(0, 0), true⟩}) (Finset.singleton_nonempty _)
-    (fun q hq => by rw [Finset.mem_singleton.1 hq]; simp [ringRegion])
-    (fun q hq g e he hg => by
-      rw [Finset.mem_singleton.1 hq] at he
-      by_cases hne : g = ⟨(0, 0), true⟩
-      · exact Or.inl (Finset.mem_singleton.2 hne)
-      have hadj := hexGraph_adj_of_mem_edges (Ne.symm hne) he hg
-      rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true] at hadj
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hadj
-      rcases hadj with rfl | rfl | rfl <;> simp [ringRegion])
 
 end TauCeti.Examples.Cochain

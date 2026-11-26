@@ -361,7 +361,8 @@ theorem across_def (f : TriFace) (k : Fin 3) :
   rw [across_def]
   cases f.isWhite <;> simp
 
-theorem edge_mem_edges_across (f : TriFace) (k : Fin 3) : f.edge k ∈ (f.across k).edges := by
+@[simp] theorem edge_mem_edges_across (f : TriFace) (k : Fin 3) :
+    f.edge k ∈ (f.across k).edges := by
   rw [across_def]
   split_ifs
   · exact (f.edge k).mem_blackFace_edges

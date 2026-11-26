@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Tiling.Lozenge.HexGraph
 public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
+public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Cochain
 
 /-!
 # Checks: holes obstruct simple connectivity
 
-* For the ring `R_ring` round `W(0)` with `Q = {W(0)}`, see
-  `TauCeti/Examples/Combinatorics/Tiling/Lozenge/Cochain.lean`, where `R_ring` is defined.
+* The ring `R_ring` round `W(0)` (defined in the `Cochain` examples) with the hole `Q = {W(0)}`
+  satisfies the hypothesis of `TauCeti.not_isSimplyConnectedRegion_of_hole`, which shows again that
+  it is not simply connected.
 * The five faces at the origin other than `W(0)` with `Q = {W(0)}` do not: `B(e₁)` shares the edge
   `(e₁, 2)` with `W(0)` and lies in neither set. That region is simply connected, by shelling.
 * For `R = ∅` the conclusion holds trivially, since simple connectivity includes nonemptiness.
@@ -22,6 +25,20 @@ public section
 namespace TauCeti.Examples.HoleChecks
 
 open TauCeti
+
+/-- `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
+`not_isSimplyConnectedRegion_of_hole`, so it is not simply connected. -/
+example : ¬ IsSimplyConnectedRegion Examples.Cochain.ringRegion :=
+  not_isSimplyConnectedRegion_of_hole (Q := {⟨(0, 0), true⟩}) (Finset.singleton_nonempty _)
+    (fun q hq => by rw [Finset.mem_singleton.1 hq]; simp [Examples.Cochain.ringRegion])
+    (fun q hq g e he hg => by
+      rw [Finset.mem_singleton.1 hq] at he
+      by_cases hne : g = ⟨(0, 0), true⟩
+      · exact Or.inl (Finset.mem_singleton.2 hne)
+      have hadj := hexGraph_adj_of_mem_edges (Ne.symm hne) he hg
+      rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true] at hadj
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hadj
+      rcases hadj with rfl | rfl | rfl <;> simp [Examples.Cochain.ringRegion])
 
 /-- The five faces at the origin other than `W(0)`: `B(0)`, `W(−e₁)`, `B(−e₃)`, `W(−e₃)`,
 `B(−e₂)`. -/
