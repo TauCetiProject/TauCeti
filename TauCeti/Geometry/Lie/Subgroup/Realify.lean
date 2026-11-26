@@ -39,11 +39,11 @@ group `Sp(2n, ℝ) ∩ O(2n)` of orthogonal symplectic matrices.
   diffeomorphism of Lie groups from `GL n 𝕜` onto `C`
   (`Matrix.GeneralLinearGroup.realifyDiffeomorph`): it is the topological group isomorphism
   `Matrix.GeneralLinearGroup.realifyEquivRange`, which is smooth in both directions by automatic
-  smoothness of continuous homomorphisms of Lie groups
-  (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`). In the same way the topological group
-  isomorphism `Matrix.unitaryGroupEquivSymplecticInfOrthogonal` gives a diffeomorphism of Lie
-  groups from the unitary subgroup of `GL n ℂ` onto `Sp(2n, ℝ) ∩ O(2n)`, both with their
-  closed-subgroup structures (`Matrix.unitarySubgroupDiffeomorphSymplecticInfOrthogonal`).
+  smoothness of continuous homomorphisms of Lie groups (`ContinuousMulEquiv.toDiffeomorph`). In
+  the same way the topological group isomorphism
+  `Matrix.unitarySubgroupEquivSymplecticInfOrthogonal` gives a diffeomorphism of Lie groups from
+  the unitary subgroup of `GL n ℂ` onto `Sp(2n, ℝ) ∩ O(2n)`, both with their closed-subgroup
+  structures (`Matrix.unitarySubgroupDiffeomorphSymplecticInfOrthogonal`).
 
 The general linear Lie groups carry the topology of the `L∞` operator norm. To state or use these
 results, `open scoped Matrix.Norms.Operator` and enable
@@ -171,27 +171,23 @@ variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [RCLike 𝕜]
 /-- **Realification is a diffeomorphism of Lie groups** from `GL n 𝕜` onto its image in
 `GL (n ⊕ n) ℝ`, with the closed-subgroup structure of the image. It is the topological group
 isomorphism `Matrix.GeneralLinearGroup.realifyEquivRange`, smooth in both directions because
-continuous homomorphisms of Lie groups are smooth. -/
+continuous homomorphisms of Lie groups are smooth (`ContinuousMulEquiv.toDiffeomorph`). -/
 def realifyDiffeomorph :
-    GL n 𝕜 ≃ₘ⟮𝓘(ℝ, Matrix n n 𝕜), 𝓘(ℝ, RealifyRangeModel n 𝕜)⟯ (realify n 𝕜).range where
-  toEquiv := (realifyEquivRange n 𝕜).toEquiv
-  -- The continuity statements of `realifyEquivRange` are for the entrywise topologies, which
-  -- are definitionally the operator-norm topologies selected above
-  -- (`Matrix.linftyOpTopologicalSpace_eq`).
-  contMDiff_toFun :=
-    contMDiff_of_continuous_monoidHom (realifyEquivRange n 𝕜) (realifyEquivRange n 𝕜).continuous
-  contMDiff_invFun := contMDiff_of_continuous_monoidHom (realifyEquivRange n 𝕜).symm
-    (realifyEquivRange n 𝕜).symm.continuous
+    GL n 𝕜 ≃ₘ⟮𝓘(ℝ, Matrix n n 𝕜), 𝓘(ℝ, RealifyRangeModel n 𝕜)⟯ (realify n 𝕜).range :=
+  -- The topologies of `realifyEquivRange` are the entrywise ones, which are definitionally the
+  -- operator-norm topologies selected above (`Matrix.linftyOpTopologicalSpace_eq`).
+  let e : GL n 𝕜 ≃ₜ* (realify n 𝕜).range := realifyEquivRange n 𝕜
+  e.toDiffeomorph _ _
 
 @[simp]
 theorem realifyDiffeomorph_apply (A : GL n 𝕜) :
     realifyDiffeomorph n 𝕜 A = realifyEquivRange n 𝕜 A :=
-  (rfl)
+  congrFun (ContinuousMulEquiv.coe_toDiffeomorph _) A
 
 @[simp]
 theorem realifyDiffeomorph_symm_apply (M : (realify n 𝕜).range) :
     (realifyDiffeomorph n 𝕜).symm M = (realifyEquivRange n 𝕜).symm M :=
-  (rfl)
+  congrFun (ContinuousMulEquiv.coe_toDiffeomorph_symm _) M
 
 end Matrix.GeneralLinearGroup
 
@@ -201,66 +197,34 @@ open TauCeti TauCeti.Lie
 
 variable (n : Type*) [Fintype n] [DecidableEq n]
 
-/-- Realification as a group isomorphism from the unitary subgroup of `GL n ℂ` onto the orthogonal
-symplectic matrices `Sp(2n, ℝ) ∩ O(2n)`. -/
-private def unitarySubgroupMulEquivSymplecticInfOrthogonal :
-    unitarySubgroup (GL n ℂ) ≃* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
-  unitarySubgroupUnitsEquiv.trans unitaryGroupEquivSymplecticInfOrthogonal.toMulEquiv
-
-private theorem coe_unitarySubgroupMulEquivSymplecticInfOrthogonal_apply
-    (U : unitarySubgroup (GL n ℂ)) :
-    ((unitarySubgroupMulEquivSymplecticInfOrthogonal n U : GL (n ⊕ n) ℝ) :
-        Matrix (n ⊕ n) (n ⊕ n) ℝ) = ((U : GL n ℂ) : Matrix n n ℂ).realify := by
-  rw [unitarySubgroupMulEquivSymplecticInfOrthogonal, MulEquiv.trans_apply]
-  -- `toMulEquiv` applies as the continuous group isomorphism itself.
-  refine (congrArg Units.val (unitaryGroupEquivSymplecticInfOrthogonal_apply (n := n)
-    (unitarySubgroupUnitsEquiv U))).trans ?_
-  rw [GeneralLinearGroup.coe_realify, Unitary.val_toUnits_apply,
-    unitarySubgroupUnitsEquiv_apply_coe]
-
--- The continuity statements are for the entrywise topologies of `GL n ℂ` and `GL (n ⊕ n) ℝ`, in
--- which `Matrix.unitaryGroupEquivSymplecticInfOrthogonal` is stated.
-private theorem continuous_unitarySubgroupMulEquivSymplecticInfOrthogonal :
-    Continuous (unitarySubgroupMulEquivSymplecticInfOrthogonal n) := by
-  have h := (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n))).comp
-    (unitarySubgroupUnitsHomeomorph (Matrix n n ℂ)).continuous
-  rwa [show ⇑(unitarySubgroupUnitsHomeomorph (Matrix n n ℂ)) = unitarySubgroupUnitsEquiv from
-    funext unitarySubgroupUnitsHomeomorph_apply] at h
-
-private theorem continuous_unitarySubgroupMulEquivSymplecticInfOrthogonal_symm :
-    Continuous (unitarySubgroupMulEquivSymplecticInfOrthogonal n).symm := by
-  have h := (unitarySubgroupUnitsHomeomorph (Matrix n n ℂ)).symm.continuous.comp
-    (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)).symm)
-  rwa [show ⇑(unitarySubgroupUnitsHomeomorph (Matrix n n ℂ)).symm =
-    unitarySubgroupUnitsEquiv.symm from funext unitarySubgroupUnitsHomeomorph_symm_apply] at h
-
 -- Select the matrix topologies underlying the operator norms used for the general linear Lie
 -- groups, which are definitionally the entrywise topologies (`Matrix.linftyOpTopologicalSpace_eq`).
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 /-- **Realification is a diffeomorphism of Lie groups from `U(n)` onto `Sp(2n, ℝ) ∩ O(2n)`**, the
 unitary subgroup of `GL n ℂ` and the orthogonal symplectic matrices carrying their closed-subgroup
-structures. On the underlying unitary matrices it is the topological group isomorphism
-`Matrix.unitaryGroupEquivSymplecticInfOrthogonal`. -/
+structures. It is the topological group isomorphism
+`Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`, smooth in both directions because continuous
+homomorphisms of Lie groups are smooth. -/
 def unitarySubgroupDiffeomorphSymplecticInfOrthogonal :
     unitarySubgroup (GL n ℂ) ≃ₘ⟮𝓘(ℝ, (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
         (unitarySubgroup (GL n ℂ))).toSubmodule), 𝓘(ℝ, CompactSymplecticModel n ℝ)⟯
-      ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) where
-  toEquiv := (unitarySubgroupMulEquivSymplecticInfOrthogonal n).toEquiv
-  contMDiff_toFun := contMDiff_of_continuous_monoidHom
-    (unitarySubgroupMulEquivSymplecticInfOrthogonal n)
-    (continuous_unitarySubgroupMulEquivSymplecticInfOrthogonal n)
-  contMDiff_invFun := contMDiff_of_continuous_monoidHom
-    (unitarySubgroupMulEquivSymplecticInfOrthogonal n).symm
-    (continuous_unitarySubgroupMulEquivSymplecticInfOrthogonal_symm n)
+      ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
+  -- The topologies of `unitarySubgroupEquivSymplecticInfOrthogonal` are the entrywise ones.
+  let e : unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
+    unitarySubgroupEquivSymplecticInfOrthogonal
+  e.toDiffeomorph _ _
 
 /-- The diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` realifies the unitary matrix. -/
 @[simp]
 theorem coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_apply
     (U : unitarySubgroup (GL n ℂ)) :
     ((unitarySubgroupDiffeomorphSymplecticInfOrthogonal n U : GL (n ⊕ n) ℝ) :
-        Matrix (n ⊕ n) (n ⊕ n) ℝ) = ((U : GL n ℂ) : Matrix n n ℂ).realify :=
-  coe_unitarySubgroupMulEquivSymplecticInfOrthogonal_apply n U
+        Matrix (n ⊕ n) (n ⊕ n) ℝ) = ((U : GL n ℂ) : Matrix n n ℂ).realify := by
+  have h : unitarySubgroupDiffeomorphSymplecticInfOrthogonal n U =
+      unitarySubgroupEquivSymplecticInfOrthogonal U :=
+    congrFun (ContinuousMulEquiv.coe_toDiffeomorph _) U
+  rw [h, unitarySubgroupEquivSymplecticInfOrthogonal_apply, GeneralLinearGroup.coe_realify]
 
 /-- The inverse diffeomorphism `Sp(2n, ℝ) ∩ O(2n) ≃ U(n)` returns the unitary matrix whose
 realification is the given orthogonal symplectic matrix. -/
