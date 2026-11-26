@@ -12,6 +12,7 @@ import TauCeti.Algebra.Lie.IndefiniteUnitary
 import TauCeti.Algebra.Lie.CartanInvolution.Matrix
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Perfect
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The Killing form, centre and derived algebra of `𝔲(n)`
@@ -40,12 +41,13 @@ whose Killing form is `TauCeti.killingForm_indefiniteUnitaryLieAlgebra_apply`. I
 reverse inclusion holds because commutators are trace-free.
 
 The sign of the Killing form comes from the positive-definite invariant form `Re tr(X Yᴴ)`
-(`TauCeti.reTraceForm`) on `𝔲(n)`: for such a form, `ad X` is skew-adjoint, so `tr((ad X)²) ≤ 0`
-with equality exactly when `ad X = 0`
+(`LieSubalgebra.reTraceForm`) on `𝔲(n)`: for such a form, `ad X` is skew-adjoint, so
+`tr((ad X)²) ≤ 0` with equality exactly when `ad X = 0`
 (`LinearMap.BilinForm.killingForm_self_nonpos_of_posDef`,
 `LinearMap.BilinForm.killingForm_self_eq_zero_iff_of_posDef`). The centre is computed directly: a
 matrix commuting with every skew-Hermitian matrix commutes with every matrix, since every matrix is
-`-i (i ℜ M) + i ℑ M` with `i ℜ M` and `i ℑ M` skew-Hermitian, so it is scalar
+`-i (i ℜ M) + i ℑ M` with `i ℜ M` and `i ℑ M` skew-Hermitian
+(`TauCeti.commute_of_forall_mem_skewAdjoint_commute`), so it is scalar
 (`Matrix.mem_range_scalar_of_commute_single`), and a skew-Hermitian scalar is imaginary.
 
 Compactness of `U(n)` is what makes the Killing form semidefinite: on the Lie algebra `𝔰𝔩(2, ℝ)` of
@@ -76,7 +78,6 @@ public section
 noncomputable section
 
 open LieAlgebra LieAlgebra.Orthogonal Matrix Complex
-open scoped ComplexStarModule
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -135,20 +136,6 @@ theorem killingForm_unitaryLieAlgebra_apply (X Y : unitaryLieAlgebra ι) :
 
 /-! ### The centre -/
 
-omit [DecidableEq ι] in
-/-- A matrix commuting with every skew-Hermitian matrix commutes with every matrix: for the
-Hermitian real and imaginary parts `ℜ M` and `ℑ M` of `M`, the matrices `i ℜ M` and `i ℑ M` are
-skew-Hermitian, and `M = -i (i ℜ M) + i ℑ M`. -/
-private theorem commute_of_forall_conjTranspose_eq_neg {X : Matrix ι ι ℂ}
-    (h : ∀ Y : Matrix ι ι ℂ, Yᴴ = -Y → Commute Y X) (M : Matrix ι ι ℂ) : Commute M X := by
-  have hskew (H : selfAdjoint (Matrix ι ι ℂ)) : (I • (H : Matrix ι ι ℂ))ᴴ = -(I • H) := by
-    rw [conjTranspose_smul, ← star_eq_conjTranspose, H.property.star_eq, Complex.star_def,
-      conj_I, neg_smul]
-  have hM : M = (-I) • (I • (ℜ M : Matrix ι ι ℂ)) + I • (ℑ M : Matrix ι ι ℂ) := by
-    rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul, realPart_add_I_smul_imaginaryPart]
-  rw [hM]
-  exact ((h _ (hskew _)).smul_left _).add_left (h _ (hskew _))
-
 /-- A scalar matrix of `𝔲(n)` is central. -/
 private theorem mem_center_of_coe_eq_smul_one {X : unitaryLieAlgebra ι} {c : ℂ}
     (h : (X : Matrix ι ι ℂ) = c • 1) : X ∈ center ℝ (unitaryLieAlgebra ι) := by
@@ -162,12 +149,12 @@ theorem mem_center_unitaryLieAlgebra_iff {X : unitaryLieAlgebra ι} :
     X ∈ center ℝ (unitaryLieAlgebra ι) ↔ ∃ t : ℝ, (X : Matrix ι ι ℂ) = (t * I) • 1 := by
   refine ⟨fun h ↦ ?_, fun ⟨t, ht⟩ ↦ mem_center_of_coe_eq_smul_one ht⟩
   rw [LieModule.mem_maxTrivSubmodule] at h
-  have hc (Y : Matrix ι ι ℂ) (hY : Yᴴ = -Y) : Commute Y X := by
-    have := congrArg Subtype.val (h ⟨Y, mem_unitaryLieAlgebra_iff.2 hY⟩)
+  have hc (Y : Matrix ι ι ℂ) (hY : Y ∈ skewAdjoint (Matrix ι ι ℂ)) : Commute Y X := by
+    have := congrArg Subtype.val (h ⟨Y, mem_unitaryLieAlgebra_iff.2 (skewAdjoint.mem_iff.1 hY)⟩)
     exact (by simpa [LieSubalgebra.coe_bracket, Ring.lie_def, sub_eq_zero] using this :
       Y * X = X * Y)
   obtain ⟨c, hcX⟩ := mem_range_scalar_of_commute_single fun _ _ _ ↦
-    commute_of_forall_conjTranspose_eq_neg hc _
+    commute_of_forall_mem_skewAdjoint_commute hc _
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
   · exact ⟨0, Subsingleton.elim _ _⟩
   have hX := congrFun (congrFun (mem_unitaryLieAlgebra_iff.1 X.property) i) i
@@ -186,14 +173,11 @@ theorem mem_derivedSeries_one_unitaryLieAlgebra_iff {X : unitaryLieAlgebra ι} :
     X ∈ derivedSeries ℝ (unitaryLieAlgebra ι) 1 ↔ (X : Matrix ι ι ℂ).trace = 0 := by
   constructor
   · intro hX
-    rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero] at hX
-    have hX' : X ∈ (⁅(⊤ : LieIdeal ℝ (unitaryLieAlgebra ι)), ⊤⁆ :
-      LieIdeal ℝ (unitaryLieAlgebra ι)).toSubmodule := hX
-    rw [LieSubmodule.lieIdeal_oper_eq_linear_span'] at hX'
-    clear hX
-    induction hX' using Submodule.span_induction with
+    rw [← LieSubmodule.mem_toSubmodule, ← LieIdeal.toLieSubalgebra_toSubmodule,
+      coe_derivedSeries_one_eq] at hX
+    induction hX using Submodule.span_induction with
     | mem x hx =>
-      obtain ⟨a, -, b, -, rfl⟩ := hx
+      obtain ⟨a, b, rfl⟩ := hx
       rw [LieSubalgebra.coe_bracket]
       exact matrix_trace_commutator_zero _ _ _ _
     | zero => simp
@@ -210,57 +194,54 @@ theorem mem_derivedSeries_one_unitaryLieAlgebra_iff {X : unitaryLieAlgebra ι} :
     have hY : Y ∈ derivedSeries ℝ (specialIndefiniteUnitaryLieAlgebra ι Empty) 1 := by
       rw [derivedSeries_one_eq_top_of_isKilling]
       exact LieSubmodule.mem_top _
-    have hfY : f Y = X :=
-      unitaryLieAlgebraEquivIndefinite.symm_apply_apply X
+    have hfY : f Y = X := by
+      simp [f, Y, LieSubalgebra.inclusion_apply]
     exact hfY ▸ LieIdeal.derivedSeries_map_le (f := f) 1 (LieIdeal.mem_map hY)
 
 /-! ### The sign of the Killing form -/
 
-/-- The real trace form `(X, Y) ↦ Re tr(X Yᴴ)` restricted to `𝔲(n)`. -/
-private def unitaryReTraceForm : LinearMap.BilinForm ℝ (unitaryLieAlgebra ι) :=
-  (reTraceForm ℂ ι ι).compl₁₂ (unitaryLieAlgebra ι).incl.toLinearMap
-    (unitaryLieAlgebra ι).incl.toLinearMap
-
-private theorem isSymm_unitaryReTraceForm : (unitaryReTraceForm (ι := ι)).IsSymm :=
-  ⟨fun X Y ↦ (isSymm_reTraceForm ℂ ι ι).eq (X : Matrix ι ι ℂ) Y⟩
-
-private theorem posDef_unitaryReTraceForm : (unitaryReTraceForm (ι := ι)).toQuadraticMap.PosDef :=
-  fun X hX ↦ posDef_reTraceForm ℂ ι ι (X : Matrix ι ι ℂ) (by simpa using hX)
-
 /-- `Re tr(X Yᴴ)` is invariant on `𝔲(n)`, since `ad X` has adjoint `ad Xᴴ = -ad X`. -/
-private theorem lieInvariant_unitaryReTraceForm :
-    (unitaryReTraceForm (ι := ι)).lieInvariant (unitaryLieAlgebra ι) := by
+private theorem lieInvariant_reTraceForm_unitaryLieAlgebra :
+    (unitaryLieAlgebra ι).reTraceForm.lieInvariant (unitaryLieAlgebra ι) := by
   intro X Y Z
-  simp only [unitaryReTraceForm, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap,
-    LieSubalgebra.coe_incl, LieSubalgebra.coe_bracket]
-  rw [reTraceForm_lie_apply, mem_unitaryLieAlgebra_iff.1 X.property, neg_lie, map_neg]
+  have hX : (X : Matrix ι ι ℂ)ᴴ ∈ unitaryLieAlgebra ι := by
+    rw [conjTranspose_coe_unitaryLieAlgebra]
+    exact neg_mem X.property
+  have h := (unitaryLieAlgebra ι).isAdjointPair_reTraceForm_ad X hX Y Z
+  rwa [show (⟨_, hX⟩ : unitaryLieAlgebra ι) = -X from
+    Subtype.ext (conjTranspose_coe_unitaryLieAlgebra X), ad_apply, ad_apply, neg_lie,
+    map_neg] at h
 
 /-- **The Killing form of `𝔲(n)` is negative semidefinite.** -/
 theorem killingForm_unitaryLieAlgebra_self_nonpos (X : unitaryLieAlgebra ι) :
     killingForm ℝ (unitaryLieAlgebra ι) X X ≤ 0 :=
-  unitaryReTraceForm.killingForm_self_nonpos_of_posDef isSymm_unitaryReTraceForm
-    posDef_unitaryReTraceForm lieInvariant_unitaryReTraceForm X
+  LinearMap.BilinForm.killingForm_self_nonpos_of_posDef _
+    (unitaryLieAlgebra ι).isSymm_reTraceForm
+    (unitaryLieAlgebra ι).posDef_reTraceForm lieInvariant_reTraceForm_unitaryLieAlgebra X
 
 /-- **The kernel of the Killing form of `𝔲(n)` is its centre**: `κ(X, X) = 0` exactly when `X`
 lies in the centre `iℝ · 1` (`TauCeti.mem_center_unitaryLieAlgebra_iff`). -/
 @[simp]
 theorem killingForm_unitaryLieAlgebra_self_eq_zero_iff {X : unitaryLieAlgebra ι} :
     killingForm ℝ (unitaryLieAlgebra ι) X X = 0 ↔ X ∈ center ℝ (unitaryLieAlgebra ι) :=
-  unitaryReTraceForm.killingForm_self_eq_zero_iff_of_posDef isSymm_unitaryReTraceForm
-    posDef_unitaryReTraceForm lieInvariant_unitaryReTraceForm X
+  LinearMap.BilinForm.killingForm_self_eq_zero_iff_of_posDef _
+    (unitaryLieAlgebra ι).isSymm_reTraceForm
+    (unitaryLieAlgebra ι).posDef_reTraceForm lieInvariant_reTraceForm_unitaryLieAlgebra X
 
 /-- The Killing form of `𝔲(n)` is strictly negative off the centre. -/
 theorem killingForm_unitaryLieAlgebra_self_neg {X : unitaryLieAlgebra ι}
     (hX : X ∉ center ℝ (unitaryLieAlgebra ι)) : killingForm ℝ (unitaryLieAlgebra ι) X X < 0 :=
-  unitaryReTraceForm.killingForm_self_neg_of_posDef_of_notMem_center isSymm_unitaryReTraceForm
-    posDef_unitaryReTraceForm lieInvariant_unitaryReTraceForm X hX
+  LinearMap.BilinForm.killingForm_self_neg_of_posDef_of_notMem_center _
+    (unitaryLieAlgebra ι).isSymm_reTraceForm
+    (unitaryLieAlgebra ι).posDef_reTraceForm lieInvariant_reTraceForm_unitaryLieAlgebra X hX
 
 /-- **`𝔲(n) = 𝔷 ⊕ [𝔲(n), 𝔲(n)]`**: the centre `iℝ · 1` and the derived algebra `𝔰𝔲(n)` of `𝔲(n)`
 are complementary. -/
 theorem isCompl_center_derivedSeries_one_unitaryLieAlgebra :
     IsCompl (center ℝ (unitaryLieAlgebra ι)) (derivedSeries ℝ (unitaryLieAlgebra ι) 1) :=
-  unitaryReTraceForm.isCompl_center_derivedSeries_one_of_anisotropic
-    isSymm_unitaryReTraceForm.isRefl posDef_unitaryReTraceForm.anisotropic
-    lieInvariant_unitaryReTraceForm
+  LinearMap.BilinForm.isCompl_center_derivedSeries_one_of_anisotropic _
+    (unitaryLieAlgebra ι).isSymm_reTraceForm.isRefl
+    (unitaryLieAlgebra ι).posDef_reTraceForm.anisotropic
+    lieInvariant_reTraceForm_unitaryLieAlgebra
 
 end TauCeti

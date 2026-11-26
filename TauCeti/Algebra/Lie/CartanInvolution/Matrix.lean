@@ -32,6 +32,9 @@ The applications to `𝔰𝔬(p, q)`, `𝔰𝔲(p, q)` and `𝔰𝔭(2n, ℝ)` a
 ## Main results
 
 * `TauCeti.reTraceForm_lie_apply`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`.
+* `LieSubalgebra.reTraceForm`: the restriction of `⟪X, Y⟫` to a real Lie subalgebra, a
+  positive-definite symmetric form (`LieSubalgebra.posDef_reTraceForm`) for which `ad X` has
+  adjoint `ad Xᴴ` (`LieSubalgebra.isAdjointPair_reTraceForm_ad`).
 * `LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff`,
   `LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff`: for `θ X = -Xᴴ`, `𝔨` is the
   skew-Hermitian and `𝔭` the Hermitian elements of `𝔤₀`.
@@ -73,6 +76,34 @@ open TauCeti
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
 
+/-- The real inner product `⟪X, Y⟫ = Re tr(X Yᴴ)` (`TauCeti.reTraceForm`) restricted to a real
+Lie subalgebra `L` of `𝔤𝔩_n(𝕜)`. -/
+noncomputable def reTraceForm : LinearMap.BilinForm ℝ L :=
+  (TauCeti.reTraceForm 𝕜 n n).compl₁₂ L.incl.toLinearMap L.incl.toLinearMap
+
+@[simp]
+theorem reTraceForm_apply (x y : L) :
+    L.reTraceForm x y = TauCeti.reTraceForm 𝕜 n n (x : Matrix n n 𝕜) y := by
+  simp [reTraceForm]
+
+/-- `Re tr(X Yᴴ)` is symmetric on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
+theorem isSymm_reTraceForm : L.reTraceForm.IsSymm :=
+  ⟨fun y z ↦ by
+    rw [reTraceForm_apply, reTraceForm_apply]
+    exact (TauCeti.isSymm_reTraceForm 𝕜 n n).eq y z⟩
+
+/-- `Re tr(X Yᴴ)` is positive definite on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
+theorem posDef_reTraceForm : L.reTraceForm.toQuadraticMap.PosDef := fun y hy ↦ by
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply, reTraceForm_apply] using
+    TauCeti.posDef_reTraceForm 𝕜 n n (y : Matrix n n 𝕜) (by simpa using hy)
+
+/-- For `x` in `L` with `xᴴ` in `L`, the adjoint of `ad x` for `Re tr(X Yᴴ)` on `L` is `ad xᴴ`. -/
+theorem isAdjointPair_reTraceForm_ad (x : L) (hx : (x : Matrix n n 𝕜)ᴴ ∈ L) :
+    LinearMap.IsAdjointPair L.reTraceForm L.reTraceForm (ad ℝ L x) (ad ℝ L ⟨_, hx⟩) :=
+  fun y z ↦ by
+    simp only [ad_apply, reTraceForm_apply, LieSubalgebra.coe_bracket]
+    exact reTraceForm_lie_apply _ _ _
+
 /-- The fixed subalgebra `𝔨` of `θ X = -Xᴴ` consists of the skew-Hermitian elements. -/
 theorem mem_fixedSubalgebra_restrictNegConjTranspose_iff {X : L} :
     X ∈ (L.restrictNegConjTranspose hL).toLieHom.fixedSubalgebra ↔
@@ -97,24 +128,13 @@ theorem killingForm_restrictNegConjTranspose (x y : L) :
 noncentral `X` in `L`. -/
 private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ center ℝ L) :
     killingForm ℝ L x (L.restrictNegConjTranspose hL x) < 0 := by
-  let x' : L := ⟨(x : Matrix n n 𝕜)ᴴ, hL _ x.property⟩
-  let P : LinearMap.BilinForm ℝ L :=
-    (reTraceForm 𝕜 n n).compl₁₂ L.toSubmodule.subtype L.toSubmodule.subtype
-  have hP (y z : L) : P y z = reTraceForm 𝕜 n n y z := by
-    -- `L.toSubmodule.subtype` is the inclusion `Subtype.val` of `L`.
-    simp only [P, LinearMap.compl₁₂_apply]
-    rfl
-  have hsymm : P.IsSymm := ⟨fun y z ↦ by rw [hP, hP]; exact (isSymm_reTraceForm 𝕜 n n).eq y z⟩
-  have hpos : P.toQuadraticMap.PosDef := fun y hy ↦ by
-    simpa only [LinearMap.BilinMap.toQuadraticMap_apply, hP] using
-      posDef_reTraceForm 𝕜 n n (y : Matrix n n 𝕜) (by simpa using hy)
-  have hadj : LinearMap.IsAdjointPair P P (ad ℝ L x) (ad ℝ L x') := fun y z ↦ by
-    simp only [ad_apply, hP, LieSubalgebra.coe_bracket]
-    exact reTraceForm_lie_apply _ _ _
   have hne : ad ℝ L x ≠ 0 := fun h ↦ hx (TauCeti.LieAlgebra.ad_eq_zero_iff.mp h)
   rw [killingForm_restrictNegConjTranspose, neg_lt_zero]
-  exact (LinearMap.BilinForm.trace_mul_nonneg_of_isAdjointPair P hsymm hpos hadj).lt_of_ne'
-    ((LinearMap.BilinForm.trace_mul_eq_zero_iff_of_isAdjointPair P hsymm hpos hadj).not.mpr hne)
+  have hadj := L.isAdjointPair_reTraceForm_ad x (hL _ x.property)
+  exact (LinearMap.BilinForm.trace_mul_nonneg_of_isAdjointPair _ L.isSymm_reTraceForm
+    L.posDef_reTraceForm hadj).lt_of_ne'
+    ((LinearMap.BilinForm.trace_mul_eq_zero_iff_of_isAdjointPair _ L.isSymm_reTraceForm
+      L.posDef_reTraceForm hadj).not.mpr hne)
 
 /-- **Knapp, Prop. 6.28.** For a real Lie subalgebra `L` of `𝔤𝔩_n(𝕜)` closed under conjugate
 transpose, `X ↦ -Xᴴ` is a Cartan involution of `L` exactly when the centre of `L` is trivial. -/
