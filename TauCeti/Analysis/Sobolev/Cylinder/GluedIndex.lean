@@ -111,11 +111,11 @@ theorem norm_coprod_translate_cutoffL_le {M N : ℝ × ℝ → V × V × V →L[
     (hζ : ∀ᵐ z ∂stripMeasure, (-translateLp a (ι σ)) z =
       β z.1 • jetOperator stripMeasure N (ξ : Lp (V × V × V) 2 stripMeasure) z) :
     ‖(((jetOperator stripMeasure M).comp (H1 V).subtypeL).coprod ι)
-        (translate (testSection V) (-a) (cutoffL hβ hβ1 hβ'1 ξ), σ)‖ ≤ (ε + d * B) * ‖ξ‖ := by
+        (translate 2 (testSection V) (-a) (cutoffL hβ hβ1 hβ'1 ξ), σ)‖ ≤ (ε + d * B) * ‖ξ‖ := by
   have hG := hM.comp_measurePreserving (measurePreserving_add_strip a)
   rw [← (translateLp (E := W) (p := 2) a).norm_map]
   have key : translateLp a ((((jetOperator stripMeasure M).comp (H1 V).subtypeL).coprod ι)
-      (translate (testSection V) (-a) (cutoffL hβ hβ1 hβ'1 ξ), σ)) =
+      (translate 2 (testSection V) (-a) (cutoffL hβ hβ1 hβ'1 ξ), σ)) =
       jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))
         (cutoffL hβ hβ1 hβ'1 ξ : Lp (V × V × V) 2 stripMeasure) - -translateLp a (ι σ) := by
     simp [translateLp_jetOperator hM, translateLp_translateLp]
@@ -136,17 +136,17 @@ theorem norm_jetOperator_cutoffL_translate_add_le {M N : ℝ × ℝ → V × V �
     (hξ : (((jetOperator stripMeasure M).comp (H1 V).subtypeL).coprod ι) (ξ, σ) = 0)
     (hβι : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 1 → translateLp a (ι σ) z = 0) :
     ‖jetOperator stripMeasure N
-        (cutoffL hβ hβ1 hβ'1 (translate (testSection V) a ξ) : Lp (V × V × V) 2 stripMeasure) +
+        (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) a ξ) : Lp (V × V × V) 2 stripMeasure) +
       translateLp a (ι σ)‖ ≤ (ε + d * B) * ‖ξ‖ := by
   have hG := hM.comp_measurePreserving (measurePreserving_add_strip a)
   -- `D_{M(· + a)}` of the translate of `ξ` is the translate of `D_M ξ = -ι σ`.
   have hD : jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))
-      (translate (testSection V) a ξ : Lp (V × V × V) 2 stripMeasure) = -translateLp a (ι σ) := by
+      (translate 2 (testSection V) a ξ : Lp (V × V × V) 2 stripMeasure) = -translateLp a (ι σ) := by
     have h : jetOperator stripMeasure M (ξ : Lp (V × V × V) 2 stripMeasure) = -ι σ :=
       eq_neg_of_add_eq_zero_left (by simpa using hξ)
     rw [coe_translate, ← translateLp_jetOperator hM, h, map_neg]
   have hζ : ∀ᵐ z ∂stripMeasure, (-translateLp a (ι σ)) z = β z.1 • jetOperator stripMeasure
-      (fun z ↦ M (z + (a, 0))) (translate (testSection V) a ξ : Lp (V × V × V) 2 stripMeasure)
+      (fun z ↦ M (z + (a, 0))) (translate 2 (testSection V) a ξ : Lp (V × V × V) 2 stripMeasure)
         z := by
     rw [hD]
     filter_upwards [Lp.coeFn_neg (translateLp a (ι σ)), hβι] with z h₁ h₂
@@ -182,9 +182,9 @@ private theorem norm_coprod_cut_le {M₁ M₂ : ℝ × ℝ → V × V × V →L[
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
         (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) (ξ, σ) = 0) :
     ‖(((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
-        (translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 ξ), σ.1)‖ ≤ (ε + d * B) * ‖ξ‖ ∧
+        (translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 ξ), σ.1)‖ ≤ (ε + d * B) * ‖ξ‖ ∧
       ‖(((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
-        (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 ξ), σ.2)‖ ≤ (ε + d * B) * ‖ξ‖ := by
+        (translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 ξ), σ.2)‖ ≤ (ε + d * B) * ‖ξ‖ := by
   set G := Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R)
   have hG := (memLp_uncurry_gluedCoeff hM₁ hM₂ R).1
   -- `D_G ξ = -j_R σ`.
@@ -253,8 +253,8 @@ private theorem norm_coprod_preglue_le {M₁ M₂ : ℝ × ℝ → V × V × V �
     ‖(((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
         (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))
-        (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R ξ₁) +
-          cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) ξ₂), (σ₁, σ₂))‖ ≤
+        (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R ξ₁) +
+          cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) ξ₂), (σ₁, σ₂))‖ ≤
       (ε + d * B) * (‖ξ₁‖ + ‖ξ₂‖) := by
   set G := Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R)
   have hG := (memLp_uncurry_gluedCoeff hM₁ hM₂ R).1
@@ -269,9 +269,9 @@ private theorem norm_coprod_preglue_le {M₁ M₂ : ℝ × ℝ → V × V × V �
       by_contra hz'
       exact hz (by simp only [hβR z.1 (by linarith), sub_zero])))
   calc _ = ‖(jetOperator stripMeasure G
-          (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R ξ₁) : Lp (V × V × V) 2 stripMeasure) +
+          (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R ξ₁) : Lp (V × V × V) 2 stripMeasure) +
           translateLp R (ι₁ σ₁)) + (jetOperator stripMeasure G
-          (cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) ξ₂) :
+          (cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) ξ₂) :
             Lp (V × V × V) 2 stripMeasure) + translateLp (-R) (ι₂ σ₂))‖ := by
         simp only [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.comp_apply,
           Submodule.subtypeL_apply, map_add, gluedStabilizer_apply]
@@ -367,24 +367,24 @@ private theorem eq_zero_of_cut {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ]
     (hv : (((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
         (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) v = 0)
-    (h₁ : ((translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) : H1 V × S₁) =
+    (h₁ : ((translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) : H1 V × S₁) =
       Q₁ ((((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
-        (translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1)))
-    (h₂ : ((translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) : H1 V × S₂) =
+        (translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1)))
+    (h₂ : ((translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) : H1 V × S₂) =
       Q₂ ((((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
-        (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2))) :
+        (translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2))) :
     v = 0 := by
   obtain ⟨e₁, e₂⟩ := norm_coprod_cut_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1
     hβ0 hβR hB₁ hB₂ hβd hγd hε hn₁ hn₂ (ξ := v.1) (σ := v.2) (by simpa using hv)
   have hδ : 0 ≤ ε + d * B := add_nonneg hε (mul_nonneg ((abs_nonneg _).trans (hβd 0)) hB0)
   -- The cutoffs add up to `1` and the translations are isometries, so `v` is bounded by the pieces.
-  have hξ : ‖v.1‖ ≤ ‖translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1)‖ +
-      ‖translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1)‖ := by
+  have hξ : ‖v.1‖ ≤ ‖translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1)‖ +
+      ‖translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1)‖ := by
     rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
     conv_lhs => rw [← cutoffL_add_cutoffL hβ hβ1 hβ'1 hγ hγ1 hγ'1 (funext fun s ↦ by simp) v.1]
     exact norm_add_le _ _
-  set p₁ : H1 V × S₁ := (translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1)
-  set p₂ : H1 V × S₂ := (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2)
+  set p₁ : H1 V × S₁ := (translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1)
+  set p₂ : H1 V × S₂ := (translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2)
   have key : ‖v‖ ≤ (‖Q₁‖ + ‖Q₂‖) * (ε + d * B) * ‖v‖ :=
     calc ‖v‖ ≤ ‖p₁‖ + ‖p₂‖ := norm_mk_mk_le v.2.1 v.2.2 hξ
       _ ≤ ‖Q₁‖ * ((ε + d * B) * ‖v.1‖) + ‖Q₂‖ * ((ε + d * B) * ‖v.1‖) :=
@@ -441,18 +441,18 @@ private theorem finiteDimensional_and_finrank_ker_le {M₁ M₂ : ℝ × ℝ →
       (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)
   -- The cut pieces, translated back to the pieces.
   set c₁ : H1 V × (S₁ × S₂) →L[ℝ] H1 V × S₁ :=
-    ((translate (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    ((translate 2 (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
       ((cutoffL hβ hβ1 hβ'1).comp (ContinuousLinearMap.fst ℝ _ _))).prod
       ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _)) with hc₁def
   set c₂ : H1 V × (S₁ × S₂) →L[ℝ] H1 V × S₂ :=
-    ((translate (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    ((translate 2 (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
       ((cutoffL hγ hγ1 hγ'1).comp (ContinuousLinearMap.fst ℝ _ _))).prod
       ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _)) with hc₂def
   have hc₁ (v : H1 V × (S₁ × S₂)) :
-      c₁ v = (translate (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) := by
+      c₁ v = (translate 2 (testSection V) (-R) (cutoffL hβ hβ1 hβ'1 v.1), v.2.1) := by
     simp [hc₁def]
   have hc₂ (v : H1 V × (S₁ × S₂)) :
-      c₂ v = (translate (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) := by
+      c₂ v = (translate 2 (testSection V) R (cutoffL hγ hγ1 hγ'1 v.1), v.2.2) := by
     simp [hc₂def]
   have hr₁ := ContinuousLinearMap.rightInverse_of_comp hQ₁
   have hr₂ := ContinuousLinearMap.rightInverse_of_comp hQ₂
@@ -484,13 +484,13 @@ private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : Con
     (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1) (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s)
     (hγ1 : ∀ s, |1 - β s| ≤ 1) (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
     (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0) (f₁ f₂ : H1 V) :
-    ‖f₁‖ ≤ ‖cutoffL hβ hβ1 hβ'1 (translate (testSection V) R f₁) +
-        cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) f₂)‖ +
+    ‖f₁‖ ≤ ‖cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R f₁) +
+        cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) f₂)‖ +
         ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
           (measurableSet_le measurable_const measurable_fst))
           (f₁ : Lp (V × V × V) 2 stripMeasure)‖ ∧
-      ‖f₂‖ ≤ ‖cutoffL hβ hβ1 hβ'1 (translate (testSection V) R f₁) +
-        cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) f₂)‖ +
+      ‖f₂‖ ≤ ‖cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R f₁) +
+        cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) f₂)‖ +
         ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | z.1 ≤ -(R / 2)}
           (measurableSet_le measurable_fst measurable_const))
           (f₂ : Lp (V × V × V) 2 stripMeasure)‖ := by
@@ -500,8 +500,8 @@ private theorem norm_le_norm_preglue_add {R : ℝ} {β : ℝ → ℝ} (hβ : Con
     (eventually_gt_nhds hs).mono fun t ht ↦ hβR t ht.le
   obtain ⟨l₁, l₂⟩ := norm_le_norm_cutoffL_add_cutoffL (V := V) hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ₀
     (fun s hs ↦ (hβ₀ s hs).mono fun t ht ↦ by simp [ht]) hβR'
-    (fun s hs ↦ (hβR' s hs).mono fun t ht ↦ by simp [ht]) (translate (testSection V) R f₁)
-    (translate (testSection V) (-R) f₂)
+    (fun s hs ↦ (hβR' s hs).mono fun t ht ↦ by simp [ht]) (translate 2 (testSection V) R f₁)
+    (translate 2 (testSection V) (-R) f₂)
   -- The parts of the translates beyond the neck are the tails of the original sections.
   rw [LinearIsometryEquiv.norm_map, coe_translate,
     ← translateLp_multiplicationOperator_linftyIndicator (A := {z : ℝ × ℝ | R ≤ z.1})
@@ -547,16 +547,16 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     (hsmall : 2 * ‖Q‖ * (ε + d * B) + θ < 1) {k₁ : H1 V × S₁} {k₂ : H1 V × S₂}
     (hk₁ : k₁ ∈ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker)
     (hk₂ : k₂ ∈ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker)
-    (h : ((cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
-        cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) :
+    (h : ((cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
+        cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) :
           H1 V × (S₁ × S₂)) = Q ((((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
         (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))
-          (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
-            cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1), (k₁.2, k₂.2)))) :
+          (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
+            cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)))) :
     k₁ = 0 ∧ k₂ = 0 := by
-  set g := cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
-    cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1)
+  set g := cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
+    cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1)
   have eA := norm_coprod_preglue_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1
     hβ0 hβR hB hβd hγd hε hn₁ hn₂ (ξ₁ := k₁.1) (σ₁ := k₁.2) (ξ₂ := k₂.1)
     (σ₂ := k₂.2) (by simpa using hk₁) (by simpa using hk₂)
@@ -641,16 +641,16 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
   -- The pregluing of two elements of `W^{1,2} × Sᵢ`.
   set pre : (H1 V × S₁) × (H1 V × S₂) →L[ℝ] H1 V × (S₁ × S₂) :=
     (((cutoffL hβ hβ1 hβ'1).comp
-      ((translate (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
+      ((translate 2 (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
         ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)))) +
       ((cutoffL hγ hγ1 hγ'1).comp
-      ((translate (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
+      ((translate 2 (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
         ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))))).prod
       (((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)).prod
         ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))) with hpredef
   have hpre (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) : pre (k₁, k₂) =
-      (cutoffL hβ hβ1 hβ'1 (translate (testSection V) R k₁.1) +
-        cutoffL hγ hγ1 hγ'1 (translate (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
+      (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
+        cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
     simp [hpredef]
   have hr := ContinuousLinearMap.rightInverse_of_comp hQ
   clear_value A₁ A₂ A pre

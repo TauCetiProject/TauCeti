@@ -670,12 +670,12 @@ section. -/
 theorem endTransfer_jetLp_ae_eq (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
     (hN : MemLp (endTransferCoeff (V := V) q β) ∞ StripSobolev.stripMeasure)
     (ξ : CylinderSobolev.testSection V) :
-    endTransfer q β (StripSobolev.jetLp (CylinderSobolev.testSection V) ξ)
+    endTransfer q β (StripSobolev.jetLp 2 (CylinderSobolev.testSection V) ξ)
       =ᵐ[volume.restrict thricePuncturedSphereReal]
         ConformalSobolev.jet cylindricalWeight (endTransferSection q β ξ) := by
   obtain ⟨hξ2, hξp, -⟩ := CylinderSobolev.mem_testSection_iff.1 ξ.property
   filter_upwards [coeFn_endTransfer q hN _,
-    (quasiMeasurePreserving_endBandCoord q).ae (StripSobolev.coeFn_jetLp ξ),
+    (quasiMeasurePreserving_endBandCoord q).ae (StripSobolev.coeFn_jetLp 2 ξ),
     ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ hz
   have hzc := ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q
   set ζ := endBandCoord q z
