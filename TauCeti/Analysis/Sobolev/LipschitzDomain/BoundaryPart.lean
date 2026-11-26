@@ -416,8 +416,7 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmiss
   obtain ⟨e, φ, K, a, b, B, hc, hB, hex⟩ := hΓ.exists_isBoundaryPartChart x hxF
   have hxC : e x ∈ normalCylinder a b := hex ▸ zero_mem_normalCylinder
     hc.isLipschitzChart.height_pos hc.isLipschitzChart.radius_pos
-  have hφ : φ 0 = 0 := by
-    simpa [hex] using (hc.isLipschitzChart.fst_apply_eq_of_mem_frontier hxF hxC).symm
+  have hφ : φ 0 = 0 := hc.isLipschitzChart.apply_zero_of_mem_frontier hxF hex
   exact ⟨e ⁻¹' normalCylinder a b,
     ((isOpen_normalCylinder a b).preimage e.continuous).mem_nhds hxC,
     fun ψ hψ M hM hψM hgM hs => W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_isBoundaryPartChart
