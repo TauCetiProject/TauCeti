@@ -18,7 +18,8 @@ finite-dimensional manifold, and let `L` be the connected component of a point `
 `f⁻¹(f x)`. The level need not be a regular fibre: other components may contain critical points.
 Suppose that `L` lies in an open set `U` of regular points of `f`. Then the fibre
 `{y : U // f y = f x}` of the restriction of `f` to `U` is a regular fibre, carrying its
-regular-fibre atlas (`TauCeti.regularFiberChartedSpace`, applicable by
+regular-fibre atlas (`TauCeti.regularFiberComponentChartedSpace`, which is
+`TauCeti.regularFiberChartedSpace` for the restriction, applicable by
 `TauCeti.isRegularValue_restrict_of_forall_isRegularPoint`), and `L` is an open subset of it
 (`TauCeti.regularFiberComponent`). Indeed `L`, read in this fibre, is the connected component of
 `x` there (`TauCeti.coe_regularFiberComponent`), and a manifold is locally connected. This gives
@@ -35,6 +36,8 @@ manifold, for instance a regular component of a level of an integrable system wi
 
 ## Main definitions
 
+* `TauCeti.regularFiberComponentChartedSpace`: the regular-fibre atlas of the fibre of the
+  restriction of `f` to `U`.
 * `TauCeti.regularFiberComponent`: the component of `x` in its level, as an open subset of the
   regular fibre of the restriction of `f` to `U`.
 * `TauCeti.regularFiberComponentHomeomorph`: its identification with the component as a subspace
@@ -76,6 +79,14 @@ variable {E H M F G N : Type*}
 variable (hm : 1 ≤ m) (hf : ContMDiff I J m f) (hc : J.IsInteriorPoint (f x))
   (hU : ∀ y : U, IsRegularPoint I J f y) (hLU : connectedComponentIn (f ⁻¹' {f x}) x ⊆ U)
 
+/-- The regular-fibre atlas of the fibre `{y : U // f y = f x}` of the restriction of `f` to an
+open set `U` of regular points, of dimension `dim M - dim N`. It is not a global instance; every
+statement about `TauCeti.regularFiberComponent` installs it locally. -/
+abbrev regularFiberComponentChartedSpace :
+    ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {y : U // f y = f x} :=
+  regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
+    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+
 omit [TopologicalSpace N] in
 /-- Read in the fibre `{y : U // f y = f x}`, the component of `x` in its level is the connected
 component of `x` there: every point of the component lies in `U` and in the level, so it is a point
@@ -96,8 +107,7 @@ to `U`. With the regular-fibre atlas of that fibre, this open subset is a manifo
 def regularFiberComponent : Opens {y : U // f y = f x} where
   carrier := {z | ((z : U) : M) ∈ connectedComponentIn (f ⁻¹' {f x}) x}
   is_open' := by
-    let := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+    let := regularFiberComponentChartedSpace hm hf hc hU
     have := ChartedSpace.locallyConnectedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ)
       {y : U // f y = f x}
     -- Read in the fibre, the component is the connected component of `x` there.
@@ -146,20 +156,17 @@ variable [IsManifold I m M]
 /-- The inclusion in `M` of the component of a level, with its structure of an open submanifold of
 the regular fibre of the restriction of `f` to `U`, is a smooth embedding. -/
 theorem isSmoothEmbedding_coe_regularFiberComponent :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+    letI := regularFiberComponentChartedSpace hm hf hc hU
     IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I m
       (fun z : regularFiberComponent hm hf hc hU hLU ↦ (((z : {y : U // f y = f x}) : U) : M)) := by
-  let := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
-  have := isManifold_regularFiber (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+  let := regularFiberComponentChartedSpace hm hf hc hU
+  have hreg := isRegularValue_restrict_of_forall_isRegularPoint hU (f x)
+  have := isManifold_regularFiber (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc hreg
   -- The inclusion factors through the open inclusion of the component into the fibre, the fibre
   -- inclusion into `U` and the open inclusion of `U` into `M`.
   exact isSmoothEmbedding_subtypeVal_comp_iff.2
     ((isSmoothEmbedding_coe_regularFiber (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal)
-      hc (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))).comp_subtypeVal
-        (regularFiberComponent hm hf hc hU hLU))
+      hc hreg).comp_subtypeVal (regularFiberComponent hm hf hc hU hLU))
 
 variable {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {K : ModelWithCorners ℝ E' H'} [TopologicalSpace P] [ChartedSpace H' P] {g : P → M}
@@ -171,11 +178,9 @@ the restriction of `f` to an open set `U` of regular points containing `L`
 (`TauCeti.regularFiberComponent`). -/
 def _root_.Manifold.IsSmoothEmbedding.regularFiberComponentDiffeomorph
     (hg : IsSmoothEmbedding K I m g) (hrange : range g = connectedComponentIn (f ⁻¹' {f x}) x) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+    letI := regularFiberComponentChartedSpace hm hf hc hU
     P ≃ₘ^m⟮K, 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)⟯ regularFiberComponent hm hf hc hU hLU :=
-  letI := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+  letI := regularFiberComponentChartedSpace hm hf hc hU
   ((hg.isEmbedding.toHomeomorph.trans (Homeomorph.setCongr hrange)).trans
     (regularFiberComponentHomeomorph hm hf hc hU hLU).symm).diffeomorphOfImmersions
       hg.isImmersion (isSmoothEmbedding_coe_regularFiberComponent hm hf hc hU hLU).isImmersion
@@ -187,12 +192,10 @@ def _root_.Manifold.IsSmoothEmbedding.regularFiberComponentDiffeomorph
 theorem _root_.Manifold.IsSmoothEmbedding.coe_regularFiberComponentDiffeomorph_apply
     (hg : IsSmoothEmbedding K I m g) (hrange : range g = connectedComponentIn (f ⁻¹' {f x}) x)
     (p : P) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+    letI := regularFiberComponentChartedSpace hm hf hc hU
     (((hg.regularFiberComponentDiffeomorph hm hf hc hU hLU hrange p :
       {y : U // f y = f x}) : U) : M) = g p := by
-  let := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+  let := regularFiberComponentChartedSpace hm hf hc hU
   rw [Manifold.IsSmoothEmbedding.regularFiberComponentDiffeomorph,
     Homeomorph.diffeomorphOfImmersions_apply]
   -- Each homeomorphism in the composite keeps the underlying point of `M`.
@@ -203,12 +206,10 @@ to its preimage under `g`. -/
 theorem _root_.Manifold.IsSmoothEmbedding.apply_regularFiberComponentDiffeomorph_symm_apply
     (hg : IsSmoothEmbedding K I m g) (hrange : range g = connectedComponentIn (f ⁻¹' {f x}) x)
     (z : regularFiberComponent hm hf hc hU hLU) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+    letI := regularFiberComponentChartedSpace hm hf hc hU
     g ((hg.regularFiberComponentDiffeomorph hm hf hc hU hLU hrange).symm z) =
       (((z : {y : U // f y = f x}) : U) : M) := by
-  let := regularFiberChartedSpace (f := fun y : U ↦ f y) hm (hf.comp contMDiff_subtypeVal) hc
-    (isRegularValue_restrict_of_forall_isRegularPoint hU (f x))
+  let := regularFiberComponentChartedSpace hm hf hc hU
   rw [← hg.coe_regularFiberComponentDiffeomorph_apply hm hf hc hU hLU hrange,
     Diffeomorph.apply_symm_apply]
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -202,10 +201,8 @@ theorem mem_flowDomain_and_flowOf_mem_connectedComponentIn_of_isCompact [T2Space
     ((hσ.mpullback_subtype_val W).contMDiff_hamiltonianVectorField (n := 1) (by simp)
       ((hFi i).comp contMDiff_subtypeVal))).1 (hcW i) ⟨y, hLW hy⟩
   have hγM : IsMIntegralCurve (fun s ↦ (γ s : M)) (σ.hamiltonianVectorField (F · i)) :=
-    isMIntegralCurve_iff_isMIntegralCurveOn.2 <| (hγ.isMIntegralCurveOn univ).map_of_mfderiv_eq
-      (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun _ _ ↦ by
-        rw [Manifold.mfderiv_subtype_val_apply, hamiltonianVectorField_comp_subtype_val,
-          Manifold.tangentSpaceOpenEquiv_symm_apply]
+    isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (hγ.isMIntegralCurveOn univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
   have hγ0' : (γ 0 : M) = y := congrArg Subtype.val hγ0
   refine ⟨mem_flowDomain.2 ?_, ?_⟩
   · rw [hγM.maximalIntegralCurveInterval_eq_univ hγ0']

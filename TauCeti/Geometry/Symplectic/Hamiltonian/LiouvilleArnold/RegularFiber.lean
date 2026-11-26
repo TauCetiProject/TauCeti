@@ -98,9 +98,8 @@ submanifold of the regular fibre over `F x` of the restriction of `F` to `U`
 def quotientHamiltonianFlowStabilizerDiffeomorph (hdim : 2 * Fintype.card ι = finrank ℝ E)
     {x : M} (hLU : connectedComponentIn (F ⁻¹' {F x}) x ⊆ U)
     [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)] :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ F y) (by simp)
-      (hF.comp contMDiff_subtypeVal) BoundarylessManifold.isInteriorPoint
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (F x))
+    letI := regularFiberComponentChartedSpace (x := x) (by simp) hF
+      BoundarylessManifold.isInteriorPoint hU
     AddAction.orbitRel.Quotient (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule
         (ι → ℝ) ≃ₘ⟮𝓘(ℝ, ι → ℝ), 𝓘(ℝ, Fib)⟯
       regularFiberComponent (by simp) hF BoundarylessManifold.isInteriorPoint hU hLU :=
@@ -119,9 +118,8 @@ theorem coe_quotientHamiltonianFlowStabilizerDiffeomorph_apply
     [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)]
     (p : AddAction.orbitRel.Quotient (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule
       (ι → ℝ)) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ F y) (by simp)
-      (hF.comp contMDiff_subtypeVal) BoundarylessManifold.isInteriorPoint
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (F x))
+    letI := regularFiberComponentChartedSpace (x := x) (by simp) hF
+      BoundarylessManifold.isInteriorPoint hU
     (((hσ.quotientHamiltonianFlowStabilizerDiffeomorph hF hcomm hc hU hdim hLU p :
       {y : U // F y = F x}) : U) : M) = hσ.ofQuotientHamiltonianFlowStabilizer hF hcomm hc x p :=
   Manifold.IsSmoothEmbedding.coe_regularFiberComponentDiffeomorph_apply _ hF _ hU hLU _ _ p
@@ -134,9 +132,8 @@ theorem ofQuotientHamiltonianFlowStabilizer_quotientHamiltonianFlowStabilizerDif
     (hLU : connectedComponentIn (F ⁻¹' {F x}) x ⊆ U)
     [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)]
     (z : regularFiberComponent (by simp) hF BoundarylessManifold.isInteriorPoint hU hLU) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ F y) (by simp)
-      (hF.comp contMDiff_subtypeVal) BoundarylessManifold.isInteriorPoint
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (F x))
+    letI := regularFiberComponentChartedSpace (x := x) (by simp) hF
+      BoundarylessManifold.isInteriorPoint hU
     hσ.ofQuotientHamiltonianFlowStabilizer hF hcomm hc x
         ((hσ.quotientHamiltonianFlowStabilizerDiffeomorph hF hcomm hc hU hdim hLU).symm z) =
       (((z : {y : U // F y = F x}) : U) : M) :=
@@ -156,9 +153,8 @@ theorem exists_diffeomorph_regularFiberComponent_of_isCompact
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hLU : connectedComponentIn (F ⁻¹' {F x}) x ⊆ U)
     (hL : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
-    letI := regularFiberChartedSpace (f := fun y : U ↦ F y) (by simp)
-      (hF.comp contMDiff_subtypeVal) BoundarylessManifold.isInteriorPoint
-      (isRegularValue_restrict_of_forall_isRegularPoint hU (F x))
+    letI := regularFiberComponentChartedSpace (x := x) (by simp) hF
+      BoundarylessManifold.isInteriorPoint hU
     ∃ (Λ : AddSubgroup (ι → ℝ)) (_ : DiscreteTopology Λ)
       (e : AddAction.orbitRel.Quotient Λ.toIntSubmodule (ι → ℝ) ≃ₘ⟮𝓘(ℝ, ι → ℝ), 𝓘(ℝ, Fib)⟯
         regularFiberComponent (by simp) hF BoundarylessManifold.isInteriorPoint hU hLU),
