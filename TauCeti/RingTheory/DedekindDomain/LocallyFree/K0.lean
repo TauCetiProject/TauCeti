@@ -109,9 +109,7 @@ theorem rankSteinitz_idealClassHom (c : Additive (ClassGroup A)) :
   have : Module.Projective A (I : Ideal A) := .of_equiv
     (FractionalIdeal.coeIdealEquiv (S := nonZeroDivisors A) (P := FractionRing A) (I : Ideal A))
   have hrank : Module.finrank A (I : Ideal A) = 1 :=
-    Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ (I : Ideal A))
-      (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.property)
-      (LinearEquiv.piUnique A fun _ : Unit ↦ (I : Ideal A)).symm
+    Ideal.finrank_eq_one_of_ne_bot (mem_nonZeroDivisors_iff_ne_zero.mp I.property)
   rw [← ofMul_toMul c, ← hI]
   simp [classOf_def, hrank]
 

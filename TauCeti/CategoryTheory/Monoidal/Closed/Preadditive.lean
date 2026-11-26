@@ -23,12 +23,14 @@ This applies to categories such as sheaves of modules, whose monoidal structure 
 abstractly (for instance by localization) rather than from a bilinear formula on morphisms.
 
 In a linear category with a monoidal structure, currying and uncurrying preserve scalars whenever
-tensoring on the left by the individual closed object is linear.
+tensoring on the left by the individual closed object is linear. Likewise, uncurrying commutes with
+subtraction whenever tensoring on the left by the closed object is additive, and so does currying.
 
 ## Main declarations
 
 * `TauCeti.monoidalPreadditive_of_isLeftAdjoint`.
 * `TauCeti.uncurry_smul` and `TauCeti.curry_smul`: scalar compatibility of the closed adjunction.
+* `TauCeti.uncurry_sub` and `TauCeti.curry_sub`: (un)currying commutes with subtraction.
 * `TauCeti.tensorSwapCurryEquiv`: additive currying after braiding the tensor factors.
 -/
 
@@ -78,6 +80,20 @@ lemma curry_smul (r : R) (f : A ⊗ B ⟶ X) :
   rw [uncurry_smul, uncurry_curry, uncurry_curry]
 
 end Linear
+
+/-- Uncurrying commutes with subtraction when tensoring on the left by the closed object is
+additive. -/
+lemma uncurry_sub {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C] {A B X : C}
+    [Closed A] [(tensorLeft A).Additive] (f g : B ⟶ A ⟶[C] X) :
+    uncurry (f - g) = uncurry f - uncurry g :=
+  (ihom.adjunction A).homAddEquiv_symm_sub _ _ f g
+
+/-- Currying commutes with subtraction when tensoring on the left by the closed object is
+additive. -/
+lemma curry_sub {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C] {A B X : C}
+    [Closed A] [(tensorLeft A).Additive] (f g : A ⊗ B ⟶ X) :
+    curry (f - g) = curry f - curry g :=
+  (ihom.adjunction A).homAddEquiv_sub _ _ f g
 
 variable {C : Type*} [Category* C] [MonoidalCategory C] [BraidedCategory C] [Preadditive C]
 variable (X Y Z : C) [Closed Y] [(tensorLeft Y).Additive]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 
 /-!
@@ -25,7 +26,9 @@ complex C⋆-algebra. They are the estimates that keep a map built from square r
 inside an order interval `[α, β]` of scalars.
 
 In a non-unital algebra with a continuous functional calculus, the square root also commutes with
-passing to the opposite algebra `Aᵐᵒᵖ`, which has the same order and the same squares.
+passing to the opposite algebra `Aᵐᵒᵖ`, which has the same order and the same squares, and
+`CFC.sqrt x` commutes with every element commuting with `x` (`Commute.cfcSqrt`). In a unital
+algebra the same holds for `√(1 - x)` and `√(1 - x²)`.
 
 For a strictly positive element `c`, conjugation by the square root `CFC.conjSqrt c` is an order
 isomorphism with inverse `CFC.conjSqrt c⁻¹ʳ` (`CFC.conjSqrt_le_conjSqrt_iff`). Consequently,
@@ -39,6 +42,7 @@ bounds on `CFC.conjSqrt c⁻¹ʳ a` are equivalent to `a ≤ r • c` and `r •
 * `CFC.algebraMap_le_sqrt`: if `algebraMap ℝ A r ≤ a`, then
   `algebraMap ℝ A √r ≤ CFC.sqrt a`.
 * `CFC.unop_sqrt`, `CFC.op_sqrt`: the square root may be computed in `A` or in `Aᵐᵒᵖ`.
+* `Commute.cfcSqrt`: `CFC.sqrt x` commutes with every element commuting with `x`.
 * `CFC.conjSqrt_algebraMap`: `CFC.conjSqrt c (algebraMap ℝ A r) = r • c` for `0 ≤ c`.
 * `CFC.conjSqrt_le_conjSqrt_iff`: for strictly positive `c`, `CFC.conjSqrt c` reflects order.
 * `CFC.conjSqrt_le_iff`, `CFC.le_conjSqrt_iff`, `CFC.conjSqrt_ringInverse_le_iff`,
@@ -50,6 +54,31 @@ bounds on `CFC.conjSqrt c⁻¹ʳ a` are equivalent to `a ≤ r • c` and `r •
 public section
 
 open MulOpposite
+
+section Commute
+
+/-- The square root `CFC.sqrt x` commutes with every element that commutes with `x`. -/
+protected theorem Commute.cfcSqrt {A : Type*} [PartialOrder A] [NonUnitalRing A]
+    [TopologicalSpace A] [StarRing A] [Module ℝ A] [SMulCommClass ℝ A A] [IsScalarTower ℝ A A]
+    [StarOrderedRing A] [NonUnitalContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+    [NonnegSpectrumClass ℝ A] [IsTopologicalRing A] [T2Space A] {x b : A} (h : Commute x b) :
+    Commute (CFC.sqrt x) b :=
+  h.cfcₙ_nnreal NNReal.sqrt
+
+variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
+  [StarOrderedRing A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+  [NonnegSpectrumClass ℝ A] [IsTopologicalRing A] [T2Space A]
+
+/-- The square root `√(1 - x)` commutes with every element that commutes with `x`. -/
+theorem Commute.cfcSqrt_one_sub {x b : A} (h : Commute x b) : Commute (CFC.sqrt (1 - x)) b :=
+  ((Commute.one_left b).sub_left h).cfcSqrt
+
+/-- The square root `√(1 - x²)` commutes with every element that commutes with `x`. -/
+theorem Commute.cfcSqrt_one_sub_mul_self {x b : A} (h : Commute x b) :
+    Commute (CFC.sqrt (1 - x * x)) b :=
+  (h.mul_left h).cfcSqrt_one_sub
+
+end Commute
 
 namespace CFC
 

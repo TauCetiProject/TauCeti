@@ -15,7 +15,8 @@ The Bernoulli numbers here are Mathlib's `bernoulli`, with `B₁ = -1/2`. Mathli
 up to `B₆`, and `TauCeti.bernoulli_twelve` in `TauCeti.NumberTheory.Bernoulli.Basic` evaluates
 `B₁₂`. This file continues the list of the even ones up to `B₃₈`, and proves that they
 alternate in sign, `(-1)^(k+1) B_{2k} > 0` for `k ≥ 1`; in particular no even Bernoulli number
-vanishes.
+vanishes. Since the odd ones beyond `B₁` vanish, a power sum `∑_{s=1}^{2m} B'ₛ/s · y^s`
+reduces to its even terms and the term `y/2`.
 
 Each value is obtained from Mathlib's recursion `bernoulli'_def`, after substituting the values
 already proved, by exact rational arithmetic. The sign comes from Euler's evaluation
@@ -29,6 +30,8 @@ Bernoulli index is `n - 2`.
 
 * `TauCeti.neg_one_pow_mul_bernoulli_two_mul_pos`: `(-1)^(k+1) B_{2k} > 0` for `k ≠ 0`.
 * `TauCeti.bernoulli_two_mul_ne_zero`: `B_{2k} ≠ 0` for every `k`.
+* `TauCeti.sum_Icc_two_mul_bernoulli'_div_mul_pow`: since the odd `B'ₛ` with `s ≥ 3` vanish,
+  `∑_{s=1}^{2m} B'ₛ/s · y^s = y/2 + ∑_{s=1}^m B_{2s}/(2s) · y^{2s}`.
 * `TauCeti.bernoulli_eight`, …, `TauCeti.bernoulli_thirtyEight`: the values of `B₈, …, B₃₈`
   other than `B₁₂`.
 
@@ -67,6 +70,27 @@ theorem bernoulli_two_mul_ne_zero (k : ℕ) : bernoulli (2 * k) ≠ 0 := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   · exact right_ne_zero_of_mul (neg_one_pow_mul_bernoulli_two_mul_pos hk).ne'
+
+/-- **The odd Bernoulli terms collapse.** The sum `∑_{s=1}^{2m} B'ₛ/s · y^s` equals
+`y/2 + ∑_{s=1}^m B_{2s}/(2s) · y^{2s}`, since `B'₁ = 1/2` and `B'ₛ = 0` for odd `s ≥ 3`. -/
+theorem sum_Icc_two_mul_bernoulli'_div_mul_pow {K : Type*} [Field K] [CharZero K] {m : ℕ}
+    (hm : 1 ≤ m) (y : K) :
+    ∑ s ∈ Icc 1 (2 * m), (bernoulli' s / s : K) * y ^ s =
+      y / 2 + ∑ s ∈ Icc 1 m, (bernoulli (2 * s) / (2 * s) : K) * y ^ (2 * s) := by
+  induction m, hm using Nat.le_induction with
+  | base =>
+    rw [show 2 * 1 = 1 + 1 by rfl, sum_Icc_succ_top (by norm_num), Icc_self, sum_singleton,
+      sum_singleton, bernoulli'_one, bernoulli'_two, bernoulli_two]
+    push_cast
+    ring
+  | succ m hm ih =>
+    rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring, sum_Icc_succ_top (by omega),
+      sum_Icc_succ_top (by omega), ih, sum_Icc_succ_top (by omega),
+      bernoulli'_eq_zero_of_odd ⟨m, rfl⟩ (by omega),
+      bernoulli_eq_bernoulli'_of_ne_one (by omega : 2 * (m + 1) ≠ 1)]
+    rw [show 2 * m + 1 + 1 = 2 * (m + 1) by ring]
+    push_cast
+    ring
 
 /-! ### The values of `B₈, …, B₃₈`
 

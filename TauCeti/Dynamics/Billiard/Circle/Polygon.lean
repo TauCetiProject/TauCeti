@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.SpherePolygon
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Data.ZMod.Periodic
 
 /-!
@@ -325,11 +326,9 @@ private theorem circleCurve_step_third_eq (o : Orientation ℝ E (Fin 2)) (c e :
     o.circleCurve c e R (t + 2 * Real.pi * R / 3) - o.circleCurve c e R t =
       (√3 * R) • (o.circleBilliardTable c e R he hR).outgoingDir t (1 / 2) := by
   have hv : (1 / 2 : ℝ) ∈ Ioo (-1) 1 := by norm_num
-  have harc : Real.arccos (1 / 2) = Real.pi / 3 :=
-    Real.arccos_eq_of_eq_cos (by positivity) (by linarith [Real.pi_pos]) Real.cos_pi_div_three.symm
   have hparam : t + 2 * Real.pi * R / 3 =
       (o.circleBilliardTable c e R he hR).nextParam t (1 / 2) := by
-    rw [o.circleBilliardTable_nextParam c e he hR hv, harc]
+    rw [o.circleBilliardTable_nextParam c e he hR hv, Real.arccos_one_half]
     ring
   have hlen : ‖o.circleCurve c e R (t + 2 * Real.pi * R / 3) - o.circleCurve c e R t‖ =
       √3 * R := by
@@ -414,11 +413,9 @@ theorem inner_incoming_circleEquilateralTriangle (o : Orientation ℝ E (Fin 2))
   set t := circleEquilateralTriangle R s₀ k - 2 * Real.pi * R / 3
   have ht : t + 2 * Real.pi * R / 3 = circleEquilateralTriangle R s₀ k := sub_add_cancel _ _
   have hv : (1 / 2 : ℝ) ∈ Ioo (-1) 1 := by norm_num
-  have harc : Real.arccos (1 / 2) = Real.pi / 3 :=
-    Real.arccos_eq_of_eq_cos (by positivity) (by linarith [Real.pi_pos]) Real.cos_pi_div_three.symm
   have hparam : circleEquilateralTriangle R s₀ k =
       (o.circleBilliardTable c e R he hR).nextParam t (1 / 2) := by
-    rw [o.circleBilliardTable_nextParam c e he hR hv, harc, ← ht]
+    rw [o.circleBilliardTable_nextParam c e he hR hv, Real.arccos_one_half, ← ht]
     ring
   have hstep := o.circleCurve_step_third_eq c e he hR t
   rw [ht] at hstep

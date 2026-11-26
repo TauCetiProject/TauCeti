@@ -35,6 +35,10 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.apply_vecCons_swap`: an alternating map of two vectors changes sign
   when they are exchanged.
+* `ContinuousAlternatingMap.apply_vecCons_add_right`,
+  `ContinuousAlternatingMap.apply_vecCons_smul_right` and
+  `ContinuousAlternatingMap.apply_vecCons_neg_right`: an alternating map of two vectors is linear in
+  the second vector.
 * `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
   `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
   a basis, and its six-term form on a four-dimensional space.
@@ -98,6 +102,30 @@ theorem apply_vecCons_swap {R M N : Type*} [Semiring R]
     [AddCommGroup N] [Module R N] [TopologicalSpace N]
     (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
   simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- A continuous alternating map of two vectors is additive in the second vector. -/
+theorem apply_vecCons_add_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v v' : M) : f ![u, v + v'] = f ![u, v] + f ![u, v'] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_add ![u] v v'
+
+/-- A continuous alternating map of two vectors is homogeneous in the second vector. -/
+theorem apply_vecCons_smul_right {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (r : R) (u v : M) : f ![u, r • v] = r • f ![u, v] := by
+  simpa using f.toContinuousMultilinearMap.toMultilinearMap.snoc_smul ![u] r v
+
+/-- A continuous alternating map of two vectors is odd in the second vector. -/
+theorem apply_vecCons_neg_right {R M N : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (u v : M) : f ![u, -v] = -f ![u, v] := by
+  have h := f.apply_vecCons_add_right u (-v) v
+  have h0 : f ![u, 0] = 0 := by simpa using f.apply_vecCons_smul_right (0 : R) u v
+  rw [neg_add_cancel, h0] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
 
 section Coordinates
 

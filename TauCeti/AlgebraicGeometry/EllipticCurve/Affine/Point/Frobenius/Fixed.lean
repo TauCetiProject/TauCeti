@@ -27,6 +27,8 @@ coordinate, and is proved from it one coordinate at a time.
 
 ## Main results
 
+* `WeierstrassCurve.Affine.Point.map_map_frobeniusAlgHom`: a `K`-algebra map of fields commutes
+  with the `q`-power maps on points.
 * `WeierstrassCurve.Affine.Point.map_frobeniusAlgHom_eq_self_iff_mem_range_baseChange`: the
   fixed points are the base-changed ones.
 * `WeierstrassCurve.Affine.Point.ncard_setOf_map_frobeniusAlgHom_eq_self`: the fixed locus has
@@ -95,6 +97,16 @@ namespace WeierstrassCurve.Affine.Point
 
 variable {K L : Type*} [Field K] [Fintype K] [Field L] [DecidableEq L] [Algebra K L]
   (W : WeierstrassCurve K)
+
+/-- **A `K`-algebra map of fields commutes with the `q`-power maps on points**, where `q` is the
+cardinality of `K`: on coordinates this is `AlgHom.frobeniusAlgHom_comm`. -/
+theorem map_map_frobeniusAlgHom {L' : Type*} [Field L'] [DecidableEq L'] [Algebra K L']
+    (g : L →ₐ[K] L') (P : (W.baseChange L).toAffine.Point) :
+    Affine.Point.map (W' := W) g
+        (Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K L) P) =
+      Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K L')
+        (Affine.Point.map (W' := W) g P) := by
+  rw [Affine.Point.map_map, Affine.Point.map_map, g.frobeniusAlgHom_comm]
 
 /-- **A point over an extension of a finite field is fixed by the `q`-power map exactly when it
 comes from the base field**, where `q` is the cardinality of the base.

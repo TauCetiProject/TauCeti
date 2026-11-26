@@ -308,7 +308,7 @@ theorem derivTL_jetH1 (ξ : testSection F₀ F₁) :
 section Value
 
 /-- The open strip `ℝ × (0, 1)`, of full measure in the closed strip. -/
-private theorem ae_mem_openStrip : ∀ᵐ z ∂stripMeasure, z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 := by
+theorem ae_mem_openStrip : ∀ᵐ z ∂stripMeasure, z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 := by
   rw [ae_restrict_iff' (MeasurableSet.univ.prod measurableSet_Icc)]
   have h : (volume : Measure (ℝ × ℝ)) ((univ : Set ℝ) ×ˢ ({0, 1} : Set ℝ)) = 0 := by
     rw [Measure.volume_eq_prod, Measure.prod_prod]

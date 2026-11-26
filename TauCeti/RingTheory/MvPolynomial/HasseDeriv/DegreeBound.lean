@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Wronskian
-import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 
 /-!
 # Partial-degree bounds for generalized Wronskians

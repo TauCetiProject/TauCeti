@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
@@ -15,6 +16,7 @@ public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
 /-!
@@ -59,6 +61,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
   quotient topology.
 * `TauCeti.ContinuousRep.prod`: the componentwise action on a product.
+* `TauCeti.ContinuousRep.ofDistribMulAction`: the representation given by a jointly continuous
+  distributive action commuting with the scalars.
 * `TauCeti.ContinuousRep.Hom`: equivariant continuous linear maps, with `id` and `comp`;
   `TauCeti.ContinuousRep.Hom.ofIntertwiningMap` builds one from an intertwining map.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
@@ -71,6 +75,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.baseChangeSelfIso` and `TauCeti.ContinuousRep.baseChangeTransIso`:
   extension of scalars to `A` itself is trivial, and extension along `A → B → C` is extension
   along `A → C`.
+* `TauCeti.ContinuousRep.unitsMapCharacter`: the image `Γ →ₜ* Bˣ` of a character `Γ →ₜ* Aˣ`
+  under the coefficient map `A → B`.
 * `TauCeti.ContinuousRep.baseChangeOfCharacterIso`: the base change of a character line is the
   line of the character composed with `Aˣ → Bˣ`.
 * `TauCeti.ContinuousRep.baseChangeTrivialIso`: the base change of the trivial representation is
@@ -95,6 +101,11 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.Iso.charpoly_apply_eq` and
   `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
+* `TauCeti.ContinuousRep.charpoly_prod_apply`: on finite free carriers the characteristic
+  polynomial is multiplicative on products.
+* `TauCeti.ContinuousRep.charpoly_apply_eq_subrepresentation_mul_quotient`: when an invariant
+  submodule and its quotient are free of finite rank, the characteristic polynomial is the product
+  of those on the submodule and on the quotient.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
   characteristic polynomial and the determinant of `g` on a base change are the images of those
@@ -276,6 +287,20 @@ end Subquotient
 
 section Constructions
 
+/-- **The continuous representation of a jointly continuous action**: a distributive action of
+`Γ` on `M` commuting with the scalars `A` and continuous as a map `Γ × M → M` is a continuous
+representation, with underlying representation `Representation.ofDistribMulAction`. -/
+def ofDistribMulAction (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
+    [AddCommMonoid M] [Module A M] [TopologicalSpace M] [DistribMulAction Γ M]
+    [SMulCommClass Γ A M] [ContinuousSMul Γ M] : ContinuousRep Γ A M where
+  toRepresentation := Representation.ofDistribMulAction A Γ M
+  continuous_action := continuous_smul
+
+@[simp]
+theorem ofDistribMulAction_apply [DistribMulAction Γ M] [SMulCommClass Γ A M]
+    [ContinuousSMul Γ M] (g : Γ) (x : M) : ofDistribMulAction Γ A M g x = g • x :=
+  (rfl)
+
 /-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with
 the product topology. -/
 noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
@@ -287,8 +312,18 @@ noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     fun_prop
 
 @[simp]
+theorem toRepresentation_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.prod σ).toRepresentation = ρ.toRepresentation.prod σ.toRepresentation :=
+  (rfl)
+
+@[simp]
 theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
     ρ.prod σ g x = (ρ g x.1, σ g x.2) :=
+  (rfl)
+
+/-- Each operator of a direct sum is the product of the operators of the summands. -/
+theorem prod_apply_eq_prodMap (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    ρ.prod σ g = (ρ g).prodMap (σ g) :=
   (rfl)
 
 end Constructions
@@ -798,6 +833,15 @@ theorem baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     ρ.baseChange B g = (ρ g).baseChange B :=
   Representation.baseChange_apply ρ.toRepresentation g
 
+/-- If `g` acts on `M` by the scalar `c`, it acts on the base change `B ⊗[A] M` by the image of
+`c` in `B`. -/
+theorem baseChange_apply_of_forall_apply_eq_smul (ρ : ContinuousRep Γ A M) {g : Γ} {c : A}
+    (h : ∀ x, ρ g x = c • x) (y : B ⊗[A] M) : ρ.baseChange B g y = algebraMap A B c • y := by
+  rw [baseChange_apply]
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => rw [map_add, hy, hz, smul_add]
+  | tmul b x => rw [LinearMap.baseChange_tmul, h, TensorProduct.tmul_smul, algebraMap_smul]
+
 section Iso
 
 variable {N : Type*} [AddCommMonoid N] [Module A N] [TopologicalSpace N] [IsModuleTopology A N]
@@ -930,26 +974,66 @@ end BaseChangeTransTrans
 section BaseChangeOfCharacter
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
-  [IsTopologicalSemiring A]
 
 variable (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B]
-  [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
+  [ContinuousSMul A B]
+
+/-- The image `χ_B : Γ →ₜ* Bˣ` of a continuous character `χ : Γ →ₜ* Aˣ` under the coefficient
+map `A → B`. -/
+@[expose] def unitsMapCharacter (χ : Γ →ₜ* Aˣ) : Γ →ₜ* Bˣ :=
+  (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ
+
+omit [IsTopologicalSemiring B] in
+@[simp]
+theorem coe_unitsMapCharacter_apply (χ : Γ →ₜ* Aˣ) (g : Γ) :
+    (unitsMapCharacter B χ g : B) = algebraMap A B (χ g) :=
+  ContinuousMonoidHom.coe_unitsMap_apply _ _
+
+omit [IsTopologicalSemiring B] in
+/-- Extending the coefficients of a character commutes with precomposition. -/
+theorem unitsMapCharacter_comp {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (χ : Γ →ₜ* Aˣ)
+    (f : Γ' →ₜ* Γ) : unitsMapCharacter B (χ.comp f) = (unitsMapCharacter B χ).comp f := by
+  ext g
+  simp
+
+omit [IsTopologicalSemiring B] in
+/-- **Extending coefficients in two steps** `A → B → C` is extending them along `A → C`. -/
+@[simp]
+theorem unitsMapCharacter_unitsMapCharacter (C : Type*) [CommRing C] [TopologicalSpace C]
+    [Algebra A C] [ContinuousSMul A C] [Algebra B C] [ContinuousSMul B C] [IsScalarTower A B C]
+    (χ : Γ →ₜ* Aˣ) : unitsMapCharacter C (unitsMapCharacter B χ) = unitsMapCharacter C χ := by
+  ext g
+  simp [← IsScalarTower.algebraMap_apply]
+
+omit [IsTopologicalSemiring B] in
+/-- Extending the coefficients of the trivial character gives the trivial character. -/
+@[simp]
+theorem unitsMapCharacter_one : unitsMapCharacter B (1 : Γ →ₜ* Aˣ) = 1 := by
+  ext g
+  simp
+
+/-- Extending the coefficients of a character commutes with products. -/
+@[simp]
+theorem unitsMapCharacter_mul [ContinuousMul A] (χ ψ : Γ →ₜ* Aˣ) :
+    unitsMapCharacter B (χ * ψ) = unitsMapCharacter B χ * unitsMapCharacter B ψ := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_mul]
+
+/-- Extending the coefficients of a character commutes with integer powers. -/
+@[simp]
+theorem unitsMapCharacter_zpow [ContinuousMul A] (χ : Γ →ₜ* Aˣ) (n : ℤ) :
+    unitsMapCharacter B (χ ^ n) = unitsMapCharacter B χ ^ n := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_zpow]
+
+variable [IsTopologicalSemiring A] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
 
 /-- **Extension of scalars of a character line is the line of the extended character**: the
-base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the image of `χ g`
-in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
+base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the image
+`unitsMapCharacter B χ g` of `χ g` in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
 def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
-    Iso ((ofCharacter χ).baseChange B)
-      (ofCharacter ((ContinuousMonoidHom.unitsMap
-        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ)) :=
+    Iso ((ofCharacter χ).baseChange B) (ofCharacter (unitsMapCharacter B χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
-    -- The extended character takes the value `algebraMap A B (χ g)` at `g`.
-    have hχ : ((ContinuousMonoidHom.unitsMap
-        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ g : B) =
-        algebraMap A B (χ g) :=
-      ContinuousMonoidHom.coe_unitsMap_apply _ _
     ext
-    simpa [Algebra.smul_def] using hχ.symm)
+    simp [Algebra.smul_def])
 
 @[simp]
 theorem baseChangeOfCharacterIso_tmul (χ : Γ →ₜ* Aˣ) (b : B) (a : A) :
@@ -1030,6 +1114,12 @@ theorem charpoly_trivial_apply (g : Γ) :
     (trivial Γ A M g).charpoly = (X - 1) ^ Module.finrank A M :=
   Representation.charpoly_trivial_apply A Γ M g
 
+/-- The characteristic polynomial is multiplicative on products of continuous representations. -/
+@[simp]
+theorem charpoly_prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    (ρ.prod σ g).charpoly = (ρ g).charpoly * (σ g).charpoly :=
+  Representation.charpoly_prod_apply ρ.toRepresentation σ.toRepresentation g
+
 /-- **The characteristic polynomial of a character line.** The element `g` acts on
 `ofCharacter χ` with characteristic polynomial `X - χ g`; the contragredient action would give
 `X - (χ g)⁻¹` instead. -/
@@ -1037,6 +1127,16 @@ theorem charpoly_trivial_apply (g : Γ) :
 theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ)
     (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) :=
   Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
+
+/-- **The characteristic polynomial on an invariant submodule and its quotient.** If `W` and
+`M ⧸ W` are free of finite rank, `g` acts on `M` with characteristic polynomial the product of
+those of its actions on `W` and on `M ⧸ W`. No complement of `W` is needed. -/
+theorem charpoly_apply_eq_subrepresentation_mul_quotient [ContinuousAdd M]
+    (ρ : ContinuousRep Γ A M) (W : Submodule A M) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
+    [Module.Free A W] [Module.Finite A W] [Module.Free A (M ⧸ W)] [Module.Finite A (M ⧸ W)]
+    (g : Γ) :
+    (ρ g).charpoly = (ρ.subrepresentation W hW g).charpoly * (ρ.quotient W hW g).charpoly :=
+  Representation.charpoly_apply_eq_subrepresentation_mul_quotient ρ.toRepresentation W hW g
 
 section BaseChange
 

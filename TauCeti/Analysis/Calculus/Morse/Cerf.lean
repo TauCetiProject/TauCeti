@@ -77,7 +77,8 @@ perturbations by quadratic and cubic functions as well and is proved in
   vector is killed by both the Hessian and the parameter derivative of the differential.
 * `TauCeti.finrank_ker_fderiv_fderiv_le_one`: at a transverse point the Hessian has corank at most
   one.
-* `TauCeti.exists_eq_smul_of_fderiv_fderiv_apply_eq_zero`: at a transverse point the kernel of the
+* `TauCeti.ker_fderiv_fderiv_eq_span_singleton`,
+  `TauCeti.exists_eq_smul_of_fderiv_fderiv_apply_eq_zero`: at a transverse point the kernel of the
   Hessian is spanned by any of its nonzero vectors.
 * `TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`: for almost every
   member `P p` of a linear family of perturbations realizing every differential, the family
@@ -186,19 +187,24 @@ theorem finrank_ker_fderiv_fderiv_le_one (hf : ContDiffAt ℝ 2 (uncurry f) (t, 
 
 /-- **At a transverse point the kernel of the Hessian is the line spanned by any of its nonzero
 vectors.** If the derivative of the parametrized differential `(t, x) ↦ d(f t)_x` is onto at
-`(t, x)` and `v ≠ 0` lies in the kernel of the Hessian of `f t` at `x`, every vector of that
-kernel is a multiple of `v`. -/
+`(t, x)` and `v ≠ 0` lies in the kernel of the Hessian of `f t` at `x`, that kernel is `ℝ ∙ v`. -/
+theorem ker_fderiv_fderiv_eq_span_singleton (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
+    (hv0 : v ≠ 0) (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) :
+    (fderiv ℝ (fderiv ℝ (f t)) x).ker = ℝ ∙ v :=
+  (Submodule.eq_of_le_of_finrank_le
+    ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hv))
+    ((finrank_ker_fderiv_fderiv_le_one hf hs).trans (finrank_span_singleton hv0).ge)).symm
+
+/-- At a transverse point every vector of the kernel of the Hessian is a multiple of any nonzero
+kernel vector `v`; see `TauCeti.ker_fderiv_fderiv_eq_span_singleton`. -/
 theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
     (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
     (hv0 : v ≠ 0) (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) {u : E}
     (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0) : ∃ c : ℝ, u = c • v := by
-  set K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
-  have hK : ℝ ∙ v = K := Submodule.eq_of_le_of_finrank_le
-    ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hv))
-    ((finrank_ker_fderiv_fderiv_le_one hf hs).trans (finrank_span_singleton hv0).ge)
-  have huK : u ∈ K := LinearMap.mem_ker.2 hu
-  rw [← hK] at huK
+  have huK : u ∈ (fderiv ℝ (fderiv ℝ (f t)) x).ker := hu
+  rw [ker_fderiv_fderiv_eq_span_singleton hf hs hv0 hv] at huK
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 huK
   exact ⟨c, hc.symm⟩
 

@@ -26,6 +26,8 @@ localizations of affine source charts as `R`-algebras.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_iff_formallySmooth_stalkMap_toAlgebra`: a
+  morphism is smooth at a point exactly when its stalk map there is formally smooth.
 * `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_iff_isSmoothAt`: the affine-base chart criterion.
 * `AlgebraicGeometry.Scheme.Hom.smooth_smoothLocus_ι_comp`: the restriction of `f` to its smooth
   locus is smooth.
@@ -35,6 +37,8 @@ localizations of affine source charts as `R`-algebras.
   scheme over `S`, regarded as a scheme over `S`.
 * `AlgebraicGeometry.Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd`: the preimage
   of the smooth locus of `f` in `X ×_S T` lies in the smooth locus of `X ×_S T ⟶ T`.
+* `AlgebraicGeometry.Scheme.Hom.smooth_of_closedPoints_subset_smoothLocus`: on a Jacobson scheme,
+  a morphism locally of finite presentation that is smooth at every closed point is smooth.
 * `AlgebraicGeometry.Scheme.Hom.smooth_of_transitive_on_closedPoints`: a reduced scheme
   locally of finite type over a perfect field is smooth if its automorphisms over the field
   act transitively on closed points.
@@ -79,6 +83,18 @@ theorem preimage_smoothLocus_le_smoothLocus_pullback_snd (f : X ⟶ S) (g : T �
     (smoothLocus_eq_top (V.ι ≫ pullback.snd f g)).ge trivial
   rwa [← preimage_smoothLocus_eq] at this
 
+/-- **Smoothness on a Jacobson scheme is tested at closed points.** If `X` is a Jacobson scheme
+and `f : X ⟶ S` is locally of finite presentation and smooth at every closed point of `X`, then
+`f` is smooth. -/
+theorem smooth_of_closedPoints_subset_smoothLocus (f : X ⟶ S) [LocallyOfFinitePresentation f]
+    [JacobsonSpace X] (h : closedPoints X ⊆ f.smoothLocus) : Smooth f := by
+  rw [← smoothLocus_eq_top_iff, ← TopologicalSpace.Opens.coe_eq_univ,
+    ← not_ne_iff, ← Set.nonempty_compl]
+  intro hne
+  obtain ⟨x, hx, hxc⟩ := nonempty_inter_closedPoints hne
+    f.smoothLocus.isOpen.isClosed_compl.isLocallyClosed
+  exact hx (h hxc)
+
 /-- A reduced scheme locally of finite type over a perfect field is smooth if its
 automorphisms over the field act transitively on closed points. Empty schemes are allowed. -/
 theorem smooth_of_transitive_on_closedPoints {k : Type u} [Field k] [PerfectField k]
@@ -86,11 +102,7 @@ theorem smooth_of_transitive_on_closedPoints {k : Type u} [Field k] [PerfectFiel
     (htrans : ∀ y ∈ closedPoints X, ∀ z ∈ closedPoints X,
       ∃ e : X ≅ X, e.hom ≫ f = f ∧ e.hom y = z) : Smooth f := by
   have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
-  rw [← smoothLocus_eq_top_iff, ← TopologicalSpace.Opens.coe_eq_univ,
-    ← not_ne_iff, ← Set.nonempty_compl]
-  intro h
-  obtain ⟨y, hy, hyc⟩ := nonempty_inter_closedPoints h
-    f.smoothLocus.isOpen.isClosed_compl.isLocallyClosed
+  refine f.smooth_of_closedPoints_subset_smoothLocus fun y hyc ↦ ?_
   have : Nonempty X := ⟨y⟩
   obtain ⟨z, hz, hzc⟩ := nonempty_inter_closedPoints
     f.dense_smoothLocus_of_perfectField.nonempty f.smoothLocus.isOpen.isLocallyClosed
@@ -98,7 +110,17 @@ theorem smooth_of_transitive_on_closedPoints {k : Type u} [Field k] [PerfectFiel
   have hz' : y ∈ e.hom ⁻¹ᵁ f.smoothLocus := by
     rw [mem_preimage, hyz]
     exact hz
-  exact hy (by simpa only [preimage_smoothLocus_eq, he, SetLike.mem_coe] using hz')
+  simpa only [preimage_smoothLocus_eq, he, SetLike.mem_coe] using hz'
+
+/-- A morphism `f` locally of finite presentation is smooth at `x` exactly when the stalk map at
+`x`, as an algebra, is formally smooth. -/
+theorem mem_smoothLocus_iff_formallySmooth_stalkMap_toAlgebra (f : X ⟶ S)
+    [LocallyOfFinitePresentation f] {x : X} :
+    letI := (f.stalkMap x).hom.toAlgebra
+    x ∈ f.smoothLocus ↔ Algebra.FormallySmooth (S.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  rw [← RingHom.formallySmooth_algebraMap, RingHom.algebraMap_toAlgebra]
+  exact f.mem_smoothLocus
 
 /-- Over an affine base, membership in the smooth locus is smoothness of the local algebra
 of any affine source neighbourhood, with scalars restricted along `R ≅ Γ(Spec R, ⊤)`. -/

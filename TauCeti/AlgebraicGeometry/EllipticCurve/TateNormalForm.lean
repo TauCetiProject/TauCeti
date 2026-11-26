@@ -484,6 +484,47 @@ theorem map_curveULift {S : Type*} [CommRing S] (φ : ULift.{u} Ring →+* S) :
     curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by
   simp [curveULift]
 
+/-- The classifying homomorphism of an elliptic Tate normal form, on the universe-lifted
+universal coefficient ring. -/
+noncomputable def liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    ULift.{u} Ring →+* R :=
+  (lift h).comp ULift.ringEquiv.toRingHom
+
+/-- The lifted classifying homomorphism is the classifying homomorphism on the underlying element
+of `ℤ[A, B][Δ⁻¹]`. -/
+@[simp]
+theorem liftULift_apply {a b : R} (h : IsUnit (tateNormalForm a b).Δ) (x : ULift.{u} Ring) :
+    liftULift h x = lift h x.down :=
+  (rfl)
+
+/-- Specializing the universe-lifted universal curve gives the classified Tate normal form. -/
+theorem map_liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    curveULift.map (liftULift h) = tateNormalForm a b := by
+  simp
+
+/-- The lifted classifying homomorphism sends the first coefficient to `a`. -/
+theorem liftULift_algebraMap_X_zero {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    liftULift h (ULift.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 0)) : ULift.{u} Ring) = a :=
+  by simp
+
+/-- The lifted classifying homomorphism sends the third coefficient to `b`. -/
+theorem liftULift_algebraMap_X_one {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    liftULift h (ULift.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 1)) : ULift.{u} Ring) = b :=
+  by simp
+
+/-- Two ring homomorphisms out of `ULift.{u} ℤ[A, B][Δ⁻¹]` are equal as soon as they agree on the
+coefficients `a₁ = A` and `a₃ = B` of the universal Tate normal form. -/
+theorem ringHom_ext_uLift {S : Type*} [Semiring S] {f g : ULift.{u} Ring →+* S}
+    (h₁ : f curveULift.a₁ = g curveULift.a₁) (h₃ : f curveULift.a₃ = g curveULift.a₃) : f = g := by
+  have h : f.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom =
+      g.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom := by
+    -- `ULift.ringEquiv.symm` is `ULift.up`, and `curveULift.a₁ = .up A`, `curveULift.a₃ = .up B`
+    ext
+    · exact h₁
+    · exact h₃
+  ext x
+  exact RingHom.congr_fun h x.down
+
 /-- The universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is elliptic. -/
 instance : curveULift.{u}.IsElliptic := by
   rw [curveULift_eq]
