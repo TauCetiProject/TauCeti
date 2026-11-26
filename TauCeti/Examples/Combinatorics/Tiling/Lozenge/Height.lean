@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
+public import TauCeti.Combinatorics.Tiling.Lozenge.RowTiling
+public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Int.Interval
+public import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -17,6 +21,9 @@ import Mathlib.Tactic.FinCases
 * `H(x, y) = ⌊(x + y)/2⌋` is a height function, and its tiling has no lozenge of type 3, since
   `H(v + e₃) − H(v) = 1` everywhere.
 * `H(x, y) = x + y` is not a height function: its increment along `e₃` is `2`.
+* The row tiling `M_ε` has height `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i` for `x ≥ 0` and
+  `−Σ_{x ≤ i < 0} ε_i` for `x < 0`, independent of `y`; for the alternating `ε_x = [x odd]` this
+  is `⌊x/2⌋`.
 -/
 
 public section
@@ -92,5 +99,64 @@ example (e : TriEdge) (he : e ∈ tilingOfHeight halfSumHeight) : e.k ≠ 2 := b
 /-- `x + y` is not a height function: its increment along `e₃` is `2`. -/
 example : ¬ IsHeightFunction fun v => v.1 + v.2 := fun h => by
   rcases isHeightFunction_def.1 h ⟨0, 2⟩ with h | h <;> simp at h
+
+/-! ### Row tilings -/
+
+/-- The number of `i` with `0 ≤ i < x` and `ε i`, minus the number of `i` with `x ≤ i < 0` and
+`ε i`: one of the two sums is empty. -/
+def rowHeight (ε : ℤ → Bool) (x : ℤ) : ℤ :=
+  ∑ i ∈ Finset.Ico 0 x, (if ε i then 1 else 0) - ∑ i ∈ Finset.Ico x 0, (if ε i then 1 else 0)
+
+theorem rowHeight_add_one (ε : ℤ → Bool) (x : ℤ) :
+    rowHeight ε (x + 1) = rowHeight ε x + if ε x then 1 else 0 := by
+  rcases le_or_gt 0 x with hx | hx
+  · rw [rowHeight, rowHeight, Finset.Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ x + 1),
+      Finset.Ico_eq_empty_of_le hx, ← Finset.sum_Ico_add_eq_sum_Ico_add_one hx]
+    simp
+  · rw [rowHeight, rowHeight, Finset.Ico_eq_empty_of_le (by omega : x + 1 ≤ 0),
+      Finset.Ico_eq_empty_of_le hx.le, ← Finset.insert_Ico_add_one_left_eq_Ico hx,
+      Finset.sum_insert (by simp)]
+    ring
+
+/-- **The height of a row tiling**: `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i − Σ_{x ≤ i < 0} ε_i`. -/
+theorem tilingHeight_rowTiling (ε : ℤ → Bool) :
+    tilingHeight {e | rowTiling ε e = true} = fun v => rowHeight ε v.1 := by
+  refine ((isTiling_rowTiling ε).eq_tilingHeight
+    (isCochainPrimitiveOn_univ_iff.2 fun e => ?_) (by simp [rowHeight])).symm
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  by_cases he : rowTiling ε ⟨(x, y), k⟩ = true
+  · rw [heightCochain_of_mem he]
+    fin_cases k <;> simp_all [rowHeight_add_one]
+  · rw [heightCochain_of_notMem he]
+    fin_cases k <;> simp_all [rowHeight_add_one]
+
+/-- For `x ≥ 0`, `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i`. -/
+example (ε : ℤ → Bool) {x : ℤ} (hx : 0 ≤ x) (y : ℤ) :
+    tilingHeight {e | rowTiling ε e = true} (x, y) =
+      ∑ i ∈ Finset.Ico 0 x, if ε i then 1 else 0 := by
+  simp [tilingHeight_rowTiling, rowHeight, Finset.Ico_eq_empty_of_le hx]
+
+/-- For `x < 0`, `H_{M_ε}(x, y) = −Σ_{x ≤ i < 0} ε_i`. -/
+example (ε : ℤ → Bool) {x : ℤ} (hx : x < 0) (y : ℤ) :
+    tilingHeight {e | rowTiling ε e = true} (x, y) =
+      -∑ i ∈ Finset.Ico x 0, if ε i then 1 else 0 := by
+  simp [tilingHeight_rowTiling, rowHeight, Finset.Ico_eq_empty_of_le hx.le]
+
+/-- For the alternating `ε_x = [x odd]`, `H_{M_ε}(x, y) = ⌊x/2⌋`. -/
+example : tilingHeight {e | rowTiling (fun x => decide (Odd x)) e = true} = fun v => v.1 / 2 := by
+  rw [tilingHeight_rowTiling]
+  funext v
+  induction v.1 using Int.induction_on with
+  | zero => simp [rowHeight]
+  | succ n ih =>
+    rw [rowHeight_add_one, ih]
+    simp only [Int.odd_iff]
+    split_ifs <;> simp_all <;> omega
+  | pred n ih =>
+    have := rowHeight_add_one (fun x => decide (Odd x)) (-(n : ℤ) - 1)
+    rw [show -(n : ℤ) - 1 + 1 = -n by ring, ih] at this
+    by_cases hp : Odd (-(n : ℤ) - 1) <;>
+      simp only [hp, decide_true, decide_false, ite_true, ite_false, Bool.false_eq_true] at this <;>
+      simp only [Int.odd_iff] at hp <;> omega
 
 end TauCeti.Examples.LozengeHeightChecks
