@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.InnerProductSpace.Variational.FormKernel
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
@@ -47,6 +48,10 @@ the least positive eigenvalue.
 * `TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero_of_isLipschitzDomainWith`:
   the same on a bounded connected Lipschitz domain, where Rellich–Kondrachov
   (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`) supplies the Rellich property.
+* `TauCeti.PDE.exists_isLeast_spectrum_mixedOperator_laplacian_empty_pos_rayleigh_meanZero`: the
+  same for the spectrum of the mixed Laplacian `-Δ_∅` (`TauCeti.PDE.mixedOperator` with `Γ = ∅`)
+  on `Ω ⊆ ℝⁿ`, when `H¹_∅(Ω) = H¹(Ω)`, so that `-Δ_∅` is the Neumann Laplacian: its least
+  positive spectral value exists and is the least Rayleigh quotient of mean zero.
 
 Connectedness cannot be dropped: on `(0, 1) ∪ (2, 3)` the function equal to `1` on the first
 interval and `-1` on the second has mean zero and zero gradient, so the Rayleigh quotient of mean
@@ -246,6 +251,54 @@ theorem exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero_of_isLipschitzDom
   exact exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hconn.isPreconnected
     hconn.nonempty
+
+end PDE
+
+namespace PDE
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
+
+/-- When `H¹_∅(Ω) = H¹(Ω)`, the positive part of the spectrum of the mixed Laplacian `-Δ_∅` is
+the set of positive Neumann eigenvalues. -/
+private theorem spectrum_mixedOperator_laplacian_empty_inter_Ioi
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+    (htop : w1pVanishingOnSubmodule mu Omega 2 ∅ = ⊤) :
+    (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) ∅).spectrum ∩ Ioi 0 =
+      {kappa | 0 < kappa ∧ ∃ u : W1p mu Omega 2, u ≠ 0 ∧ ∀ v : W1p mu Omega 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ} := by
+  have hmem (u : W1p mu Omega 2) : u ∈ w1pVanishingOnSubmodule mu Omega 2 ∅ := by
+    rw [htop]
+    exact ClosedSubmodule.mem_top
+  ext kappa
+  rw [Set.mem_inter_iff, mem_spectrum_mixedOperator_laplacian_iff (Set.empty_disjoint _) hK,
+    and_comm]
+  refine and_congr_right fun _ ↦ ⟨fun ⟨u, hu, h⟩ ↦ ⟨u, fun h0 ↦ hu (Subtype.ext h0),
+    fun v ↦ h ⟨v, hmem v⟩⟩, fun ⟨u, hu, h⟩ ↦ ⟨⟨u, hmem u⟩, fun h0 ↦ hu (congrArg Subtype.val h0),
+    fun v ↦ h v⟩⟩
+
+/-- **The second eigenvalue of the Neumann Laplacian `-Δ_∅` is the least Rayleigh quotient of
+mean zero.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with
+compact value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`, as on a bounded Lipschitz domain
+(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`), so that the mixed Laplacian
+`-Δ_∅` is the Neumann Laplacian. Then the spectrum of `-Δ_∅` has a least positive element `κ`, and
+`κ` is the minimum of the Rayleigh quotient `‖∇u‖² / ‖u‖²` over the `u ∈ H¹(Ω)` with `u ≠ 0` and
+`∫_Ω u = 0`. -/
+theorem exists_isLeast_spectrum_mixedOperator_laplacian_empty_pos_rayleigh_meanZero
+    [Nonempty ι] [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+    (htop : w1pVanishingOnSubmodule mu Omega 2 ∅ = ⊤)
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hne : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
+    ∃ kappa : ℝ,
+      IsLeast ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+        (1 : Matrix ι ι ℝ)) ∅).spectrum ∩ Ioi 0) kappa ∧
+      IsLeast {r | ∃ u : W1p mu Omega 2, W1p.value u ≠ 0 ∧
+        ∫ x in Omega, W1p.value u x ∂mu = 0 ∧ r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2}
+        kappa := by
+  rw [spectrum_mixedOperator_laplacian_empty_inter_Ioi hK htop]
+  exact exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero hK hconn hne
 
 end PDE
 
