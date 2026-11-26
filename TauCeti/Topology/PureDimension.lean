@@ -35,6 +35,8 @@ is irreducible of dimension one, while its generic point is an open subspace of 
 * `TauCeti.IsPureDimensional.of_isOpenEmbedding` and
   `TauCeti.isPureDimensional_iff_forall_of_isOpenEmbedding`: locality of pure dimension on spaces
   whose irreducible components have all nonempty open parts of full dimension.
+* `TauCeti.IsPureDimensional.topologicalKrullDim_eq_of_isOpenEmbedding`: on such a space, an
+  irreducible component meeting an open subspace of pure dimension `d` has Krull dimension `d`.
 * `TauCeti.isPureDimensional_iff_topologicalKrullDim_eq`: an irreducible space is pure of
   dimension `d` exactly when its Krull dimension is `d`.
 * `TauCeti.IsPureDimensional.of_isOpenEmbedding_of_irreducibleSpace`: on such a space, if it is
@@ -136,6 +138,17 @@ theorem IsPureDimensional.of_isOpenEmbedding (hX : IsPureDimensional d X)
     he.isEmbedding.topologicalKrullDim_preimage, hdim Z hZ _ he.isOpen_range hne, hX Z hZ]
 
 /-- Let `X` be a space in which every nonempty open part of an irreducible component has the
+Krull dimension of the component. If an open subspace of `X` is pure-dimensional of dimension `d`,
+then every irreducible component of `X` meeting it has Krull dimension `d`. -/
+theorem IsPureDimensional.topologicalKrullDim_eq_of_isOpenEmbedding (hY : IsPureDimensional d Y)
+    (hdim : ∀ Z ∈ irreducibleComponents X, ∀ U : Set X, IsOpen U → (Z ∩ U).Nonempty →
+      topologicalKrullDim ↥(Z ∩ U) = topologicalKrullDim Z)
+    {e : Y → X} (he : IsOpenEmbedding e) {Z : Set X} (hZ : Z ∈ irreducibleComponents X)
+    (hne : (Z ∩ Set.range e).Nonempty) : topologicalKrullDim Z = d := by
+  rw [← hdim Z hZ _ he.isOpen_range hne, ← he.isEmbedding.topologicalKrullDim_preimage,
+    hY _ (preimage_mem_irreducibleComponents hZ he hne)]
+
+/-- Let `X` be a space in which every nonempty open part of an irreducible component has the
 Krull dimension of the component. Given open embeddings whose ranges cover `X`, the space `X` is
 pure-dimensional exactly when each of their domains is. -/
 theorem isPureDimensional_iff_forall_of_isOpenEmbedding {ι : Type*} {Y : ι → Type*}
@@ -148,9 +161,7 @@ theorem isPureDimensional_iff_forall_of_isOpenEmbedding {ι : Type*} {Y : ι →
   refine ⟨fun hX i ↦ hX.of_isOpenEmbedding hdim (he i), fun hY Z hZ ↦ ?_⟩
   obtain ⟨x, hx⟩ := hZ.1.nonempty
   obtain ⟨i, hi⟩ := hcover x
-  have hne : (Z ∩ Set.range (e i)).Nonempty := ⟨x, hx, hi⟩
-  rw [← hdim Z hZ _ (he i).isOpen_range hne, ← (he i).isEmbedding.topologicalKrullDim_preimage,
-    hY i _ (preimage_mem_irreducibleComponents hZ (he i) hne)]
+  exact (hY i).topologicalKrullDim_eq_of_isOpenEmbedding hdim (he i) hZ ⟨x, hx, hi⟩
 
 omit [TopologicalSpace Y] in
 /-- An irreducible space is pure-dimensional of dimension `d` exactly when its Krull dimension
@@ -173,7 +184,6 @@ theorem IsPureDimensional.of_isOpenEmbedding_of_irreducibleSpace [IrreducibleSpa
   have hne : (Z ∩ Set.range e).Nonempty := by
     rw [irreducibleComponents_eq_singleton, Set.mem_singleton_iff] at hZ
     exact ⟨e y, hZ ▸ Set.mem_univ _, y, rfl⟩
-  rw [← hdim Z hZ _ he.isOpen_range hne, ← he.isEmbedding.topologicalKrullDim_preimage,
-    hY _ (preimage_mem_irreducibleComponents hZ he hne)]
+  exact hY.topologicalKrullDim_eq_of_isOpenEmbedding hdim he hZ hne
 
 end TauCeti
