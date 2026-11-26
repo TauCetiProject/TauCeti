@@ -46,6 +46,8 @@ for `v ∈ V` span the skew-adjoint endomorphisms
 * `LinearMap.BilinForm.smulRight_flip_mem_skewAdjointSubmodule`: `N(δ)` is skew-adjoint.
 * `LinearMap.BilinForm.smulRight_flip_mul_self`: `N(δ) * N(δ) = 0`.
 * `LinearMap.BilinForm.smulRight_flip_smul`: `N(t • δ) = (t * t) • N(δ)`.
+* `LinearMap.BilinForm.smulRight_flip_add`: `N(a + b)` is `N(a) + N(b)` plus the polarization
+  `x ↦ B x b • a + B x a • b`.
 * `LinearMap.BilinForm.lie_smulRight_flip`: the bracket of `N(a)` and `N(b)`.
 * `LinearMap.BilinForm.span_smulRight_flip_eq_skewAdjointSubmodule`: for a nondegenerate form on
   a finite-dimensional space, the `N(v)` span the skew-adjoint endomorphisms.
@@ -101,7 +103,7 @@ theorem smulRight_flip_smul (t : R) (δ : M) :
 
 /-- The endomorphism `x ↦ B x δ • δ` is quadratic in `δ`: the value at a sum is the sum of the
 values plus the polarization `x ↦ B x b • a + B x a • b`. -/
-private theorem smulRight_flip_add (a b : M) :
+theorem smulRight_flip_add (a b : M) :
     (B.flip (a + b)).smulRight (a + b) = (B.flip a).smulRight a + (B.flip b).smulRight b +
       ((B.flip b).smulRight a + (B.flip a).smulRight b) := by
   ext x
@@ -227,13 +229,13 @@ private theorem exists_ne_zero_of_isIrreducible (hB : B.IsAlt) (hnd : B.Nondegen
   obtain ⟨w, hw⟩ : ∃ w, B v w ≠ 0 := by
     by_contra! h
     exact hv (hnd.1 v h)
-  let Lv : LieSubmodule K L V :=
-    { K ∙ v with lie_mem := fun {Y} {u} _ ↦ by simp [hL Y Y.property] }
-  rcases hirr.eq_bot_or_eq_top Lv with h | h
-  · exact hv (span_singleton_eq_bot.1 (congrArg LieSubmodule.toSubmodule h))
+  -- The line `K ∙ v` is an `L`-submodule, since every element of `L` is zero.
+  rcases hirr.eq_bot_or_eq_top (⟨K ∙ v, fun {Y} {u} _ ↦ by simp [hL Y Y.property]⟩ :
+      LieSubmodule K L V) with h | h
+  · exact hv (span_singleton_eq_bot.1 (LieSubmodule.mk_eq_bot_iff.1 h))
   · have hw' : w ∈ K ∙ v := by
-      rw [show (K ∙ v) = (Lv : Submodule K V) from rfl, h]
-      trivial
+      rw [LieSubmodule.mk_eq_top_iff.1 h]
+      exact mem_top
     obtain ⟨c, rfl⟩ := mem_span_singleton.1 hw'
     simp [hB.self_eq_zero v] at hw
 
@@ -280,9 +282,9 @@ theorem lieSpan_smulRight_flip_eq_skewAdjointLieSubalgebra [FiniteDimensional K 
         mul_apply_eq_comp]
       exact sub_mem (h₁ _ (h₂ u hu)) (h₂ _ (h₁ u hu))
   -- So `U` is an `L`-submodule; it is not zero, as then every `δ i` would vanish.
-  let U' : LieSubmodule K L V := { U with lie_mem := fun {Y} {u} hu ↦ hstab Y Y.property u hu }
-  rcases hirr.eq_bot_or_eq_top U' with hbot | htop
-  · have hU0 : U = ⊥ := congrArg LieSubmodule.toSubmodule hbot
+  rcases hirr.eq_bot_or_eq_top (⟨U, fun {Y} {u} hu ↦ hstab Y Y.property u hu⟩ :
+      LieSubmodule K L V) with hbot | htop
+  · have hU0 : U = ⊥ := LieSubmodule.mk_eq_bot_iff.1 hbot
     obtain ⟨Y, hY, hY0⟩ := exists_ne_zero_of_isIrreducible hB hnd L hirr
     refine absurd ((LieSubalgebra.mem_bot (R := K) Y).1 ((LieSubalgebra.lieSpan_le.2 ?_) hY)) hY0
     rintro _ ⟨i, rfl⟩
@@ -295,7 +297,7 @@ theorem lieSpan_smulRight_flip_eq_skewAdjointLieSubalgebra [FiniteDimensional K 
       simpa [hU0] using hmax hline (by simp [hU0]) (mem_span_singleton_self (δ i))
     simp [h0]
   · intro v
-    exact hU v (by simp [show U = ⊤ from congrArg LieSubmodule.toSubmodule htop])
+    exact hU v (by simp [LieSubmodule.mk_eq_top_iff.1 htop])
 
 end Field
 
