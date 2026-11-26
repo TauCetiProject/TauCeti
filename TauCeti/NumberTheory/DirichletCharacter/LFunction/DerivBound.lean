@@ -125,8 +125,9 @@ theorem LFunction_eq_sum_Icc_add_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0
   have hexp : -(s + 1) + 1 = -s := by ring
   have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
     (g := fun y : ℝ ↦ (y : ℂ) ^ (-(s + 1) + 1) / (-(s + 1) + 1))
-    (fun t ht ↦ hasDerivAt_ofReal_cpow_const' (zero_lt_one.trans_le ht).ne'
-      (by intro h; exact hs0 (by linear_combination -h))) hcont
+    (fun t ht ↦ hasDerivAt_ofReal_cpow_const' (zero_lt_one.trans_le ht.1).ne'
+      (by intro h; exact hs0 (by linear_combination -h)))
+    (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc
   simp only [ofReal_natCast] at hhead
   rw [χ.LFunction_eq_mul_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
     setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
@@ -155,9 +156,9 @@ theorem deriv_LFunction_eq_neg_sum_Icc_add_integral (hχ : χ ≠ 1) {s : ℂ} (
   have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
     (g := fun y : ℝ ↦ (y : ℂ) ^ (-s) * Real.log y)
     (fun t ht ↦ (TauCeti.hasDerivAt_ofReal_cpow_mul_log (-s)
-      (zero_lt_one.trans_le ht).ne').congr_deriv (by
+      (zero_lt_one.trans_le ht.1).ne').congr_deriv (by
         rw [← neg_add']
-        ring)) hcont
+        ring)) (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc
   simp only [ofReal_natCast, ← mul_assoc] at hhead
   rw [χ.deriv_LFunction_eq_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
     setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi

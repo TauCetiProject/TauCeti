@@ -405,12 +405,13 @@ open MeasureTheory
 variable {N : ℕ} (χ : DirichletCharacter ℂ N)
 
 /-- **Abel summation over one period.** For a nonprincipal character `χ` of level `N` and a
-function `g` with continuous derivative `g'` on `[1, ∞)`, integrating `g'` against the partial
-sums `S(t) = ∑_{k=1}^{⌊t⌋} χ(k)` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`: Abel's summation
-formula has the boundary term `S(N) g(N)`, which vanishes since `S(N) = 0`
+function `g` with derivative `g'` on `[1, N]`, `g'` integrable there, integrating `g'` against
+the partial sums `S(t) = ∑_{k=1}^{⌊t⌋} χ(k)` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`: Abel's
+summation formula has the boundary term `S(N) g(N)`, which vanishes since `S(N) = 0`
 (`intervalSum_level_eq_zero`). -/
 theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → ℂ}
-    (hg : ∀ t : ℝ, 1 ≤ t → HasDerivAt g (g' t) t) (hcont : ContinuousOn g' (Set.Ici 1)) :
+    (hg : ∀ t ∈ Set.Icc (1 : ℝ) N, HasDerivAt g (g' t) t)
+    (hint : IntegrableOn g' (Set.Icc (1 : ℝ) N)) :
     ∫ t in Set.Ioc (1 : ℝ) (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
       -∑ k ∈ Icc 1 N, χ k * g (k : ℕ) := by
   let c : ℕ → ℂ := fun k ↦ if k = 0 then 0 else χ k
@@ -422,17 +423,16 @@ theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → ℂ}
   have hsum1 (m : ℕ) : ∑ k ∈ Icc 0 m, c k = ∑ k ∈ Icc 1 m, χ k := by
     simpa using hsum (fun _ ↦ 1) m
   have hdiff : ∀ t ∈ Set.Icc (1 : ℝ) N, DifferentiableAt ℝ g t :=
-    fun t ht ↦ (hg t ht.1).differentiableAt
+    fun t ht ↦ (hg t ht).differentiableAt
   have hderiv_eq : Set.EqOn (deriv g) g' (Set.Icc (1 : ℝ) N) :=
-    fun t ht ↦ (hg t ht.1).deriv
-  have hint : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) N) :=
-    (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc.congr_fun hderiv_eq.symm measurableSet_Icc
-  have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff hint
+    fun t ht ↦ (hg t ht).deriv
+  have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff
+    (hint.congr_fun hderiv_eq.symm measurableSet_Icc)
   rw [hsum, hsum1, ← χ.intervalSum_zero_eq_sum_Icc, χ.intervalSum_level_eq_zero hχ, mul_zero,
     zero_sub] at habel
   refine (setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_).trans
     (neg_eq_iff_eq_neg.mp habel.symm)
-  rw [(hg t ht.1.le).deriv, hsum1, mul_comm]
+  rw [(hg t (Set.Ioc_subset_Icc_self ht)).deriv, hsum1, mul_comm]
 
 end AbelSummation
 
