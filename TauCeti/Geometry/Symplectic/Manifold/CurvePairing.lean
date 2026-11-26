@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.Family.Block
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -15,6 +16,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
 import TauCeti.Geometry.Manifold.DeRham.Map
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
+import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -60,11 +62,21 @@ and `u^* θ` is exact, Stokes' theorem gives `∫_C u^* θ = 0`, so `u` is const
 on a real normed space (`TauCeti.apply_eq_of_mem_closedForms_normedSpace`). In particular a closed
 connected curve that is pseudoholomorphic for a constant linear complex structure `J₀` on a normed
 space, tamed by an alternating bilinear form, is constant
-(`TauCeti.apply_eq_of_isPseudoholomorphicAt_const`). This is motivated by curves contained in one
-normal fibre of an embedded pseudoholomorphic curve: the normal linearization
-`TauCeti.normalLinearization` acts on vertical vectors `(0, n)` by the constant block
-`J_NN(z, 0)`, a linear complex structure when `J(z, 0)` preserves `E × {0}`. Applying the constant
-case to such a vertical curve needs that reduction, which is not formalized here.
+(`TauCeti.apply_eq_of_isPseudoholomorphicAt_const`).
+
+The same argument excludes closed curves in the fibres of a product `B × W` with a block almost
+complex structure `J`, one for which the projection to `B` is pseudoholomorphic for a constant
+structure `i` (`TauCeti.ComplexStructureFamily`). The fibres are then `J`-complex, and the fibre
+component of a curve in the fibre over `b` is pseudoholomorphic for the fibre structure
+`TauCeti.ComplexStructureFamily.fiberAlmostComplexStructure` over `b`. So a closed connected curve
+in one fibre is constant as soon as the fibre structure is tamed by a closed two-form
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq`). If moreover
+`i` is tamed, the base component of every closed connected curve is constant, so the curve lies in
+one fibre: closed connected curves in `B × W` are constant
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`). This applies to the
+vertical curves of the normal model of an embedded pseudoholomorphic curve, whose almost complex
+structure `J_N` is a block structure over the base with the standard structure on every normal
+fibre.
 
 ## References
 
@@ -201,11 +213,8 @@ theorem apply_eq_of_mpullback_mem_exactForms (hu : ContMDiff I' I ∞ u)
     (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
     (hex : SmoothForm.mpullback u hu θ ∈ exactForms I' C 2) (c c' : C) : u c = u c' := by
-  obtain ⟨α, hα⟩ := (exactForms_succ I' (M := C) 1).le hex
-  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 := by
-    rw [← hα, mextDerivₗ_apply]
-    exact integralTopForm_mextDeriv_eq_zero o ((SmoothForm.isSmoothForm α).of_le (by simp))
-      (isClosed_tsupport _).isCompact
+  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 :=
+    integralTopForm_eq_zero_of_mem_exactForms o hex
   exact hu.mdifferentiable (by simp) |>.apply_eq_of_mfderiv_eq_zero
     (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ hint) c c'
 
@@ -243,10 +252,9 @@ theorem apply_eq_of_mem_closedForms_normedSpace {V : Type*} [NormedAddCommGroup 
 form `B`: `B v (Jc v) > 0` for `v ≠ 0`. Every smooth map from a closed connected surface that is
 pseudoholomorphic for the constant structure `Jc` is constant.
 
-This is motivated by vertical curves along an embedded pseudoholomorphic curve: the normal
-linearization `TauCeti.normalLinearization` acts on vertical vectors `(0, n)` by the constant block
-`J_NN(z, 0)`, which is a linear complex structure when `J(z, 0)` preserves `E × {0}`. Applying
-this theorem to a curve in one normal fibre needs that reduction, which is not formalized here. -/
+For curves in the fibres of a block almost complex structure on a product, see
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq` and
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`. -/
 theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] {Jc : V →L[ℝ] V} (hJc : ∀ v, Jc (Jc v) = -v) {B : V →L[ℝ] V →L[ℝ] ℝ}
     (hB : ∀ v, B v v = 0) (hBJ : ∀ v, v ≠ 0 → 0 < B v (Jc v)) {u : C → V}
@@ -264,5 +272,64 @@ theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup 
     exact hBJ v hv
   · exact (mem_closedForms _ _).mpr
       ((SmoothForm.isClosed_def _).mp (SmoothTwoForm.isClosed_const B))
+
+/-! ### Closed curves in block almost complex structures -/
+
+namespace ComplexStructureFamily
+
+/-- **Closed vertical curves are constant.** Let `K` be a block almost complex structure on
+`B × W`, one for which the projection to `B` is pseudoholomorphic for a constant structure `i`, and
+let `v` be a smooth pseudoholomorphic map from a closed connected surface into the fibre over `b`.
+If the fibre structure over `b` is tamed along `v` by a closed two-form on `W`, then `v` is
+constant. -/
+theorem apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq {B W : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    {K : SmoothAlmostComplexStructure 𝓘(ℝ, B × W) (B × W)} {i : B →L[ℝ] B}
+    {hi : ∀ a, i (i a) = -a}
+    (hK : IsPseudoholomorphic K (SmoothAlmostComplexStructure.const i hi) Prod.fst) {b : B}
+    {v : C → B × W} (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
+    (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
+      e.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j K v c) (hb : ∀ c, (v c).1 = b)
+    {θ : SmoothTwoForm 𝓘(ℝ, W) W}
+    (hθ : ∀ c (w : TangentSpace 𝓘(ℝ, W) (v c).2), w ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (v c).2 w
+        (fiberAlmostComplexStructure K hK b (v c).2 w))
+    (hcl : θ ∈ closedForms 𝓘(ℝ, W) W 2) (c c' : C) : v c = v c' := by
+  have hsnd : ContMDiff I' 𝓘(ℝ, W) ∞ (fun c ↦ (v c).2) :=
+    (ContinuousLinearMap.snd ℝ B W).contDiff.contMDiff.comp hv
+  exact Prod.ext ((hb c).trans (hb c').symm) (apply_eq_of_mem_closedForms_normedSpace hsnd ho
+    (fun c ↦ (hhol c).snd_of_forall_fst_eq hK hb) hθ hcl c c')
+
+/-- **Closed curves in a tamed block structure are constant.** Let `K` be a block almost
+complex structure on `B × W`, one for which the projection to `B` is pseudoholomorphic for a
+constant structure `i`. Suppose that `i` is tamed by an alternating bilinear form and that the
+fibre structure over every point of `B` is tamed by a closed two-form on `W`. Then every smooth
+pseudoholomorphic map from a closed connected surface to `B × W` is constant: its base component
+is a closed curve for the constant structure `i`, hence constant, and the map is then a closed
+curve in one fibre. -/
+theorem apply_eq_of_isPseudoholomorphic_fst {B W : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    {K : SmoothAlmostComplexStructure 𝓘(ℝ, B × W) (B × W)} {i : B →L[ℝ] B}
+    {hi : ∀ a, i (i a) = -a}
+    (hK : IsPseudoholomorphic K (SmoothAlmostComplexStructure.const i hi) Prod.fst)
+    {β : B →L[ℝ] B →L[ℝ] ℝ} (hβ : ∀ a, β a a = 0) (hβi : ∀ a, a ≠ 0 → 0 < β a (i a))
+    {θ : B → SmoothTwoForm 𝓘(ℝ, W) W}
+    (hθ : ∀ b (w : W) (w' : TangentSpace 𝓘(ℝ, W) w), w' ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (θ b) w w'
+        (fiberAlmostComplexStructure K hK b w w'))
+    (hcl : ∀ b, θ b ∈ closedForms 𝓘(ℝ, W) W 2) {v : C → B × W}
+    (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
+    (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
+      e.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j K v c) (c c' : C) : v c = v c' := by
+  have hfst : ∀ c c', (v c).1 = (v c').1 :=
+    apply_eq_of_isPseudoholomorphicAt_const hi hβ hβi
+      ((ContinuousLinearMap.fst ℝ B W).contDiff.contMDiff.comp hv) ho
+      (fun c ↦ (hK.isPseudoholomorphicAt (v c)).comp (hhol c))
+  exact apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq hK hv ho hhol (fun c'' ↦ hfst c'' c)
+    (fun c'' w hw ↦ hθ _ _ w hw) (hcl _) c c'
+
+end ComplexStructureFamily
 
 end TauCeti

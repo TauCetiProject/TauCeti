@@ -28,8 +28,6 @@ namespace TensorPlusChecks
 /-- The discrete uniformity on the rational check fixture. -/
 local instance rationalDiscreteUniformSpace : UniformSpace ℚ := ⊥
 local instance : DiscreteTopology ℚ := ⟨rfl⟩
-local instance : IsAdicHom (algebraMap ℚ ℚ) := by
-  simpa using IsAdicHom.id (A := ℚ)
 
 private noncomputable def integralPair : Pair ℚ where
   plus := (Rat.padicValuation 2).integer

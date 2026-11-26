@@ -115,6 +115,19 @@ theorem InterlacedBy.mem_of_lt (h : InterlacedBy μ ν) {i₁ i₂ j : ℕ} (hi 
     ((_root_.YoungDiagram.mem_iff_lt_rowLen.mp hc).trans_le
       ((μ.rowLen_anti (i₁ + 1) i₂ hi).trans (h.rowLen_succ_le i₁)))
 
+/-- **A horizontal strip is no longer than the first row of the larger shape**: if `ν` interlaces
+`μ`, then `μ / ν` has at most `μ₀` cells, since it has at most one cell in each column. -/
+theorem InterlacedBy.card_le_card_add_rowLen_zero (h : InterlacedBy μ ν) :
+    μ.card ≤ ν.card + μ.rowLen 0 := by
+  obtain ⟨L, hL⟩ : ∃ L, μ.colLen 0 ≤ L + 1 := ⟨μ.colLen 0, Nat.le_succ _⟩
+  have hν : ∑ i ∈ Finset.range L, ν.rowLen i ≤ ν.card := by
+    rw [sum_range_rowLen_eq_card_filter_fst]
+    exact Finset.card_filter_le _ _
+  have hle : ∑ i ∈ Finset.range L, μ.rowLen (i + 1) ≤ ∑ i ∈ Finset.range L, ν.rowLen i :=
+    Finset.sum_le_sum fun i _ => h.rowLen_succ_le i
+  rw [μ.card_eq_sum_range_rowLen hL, Finset.sum_range_succ']
+  omega
+
 /-- **The shapes interlacing `μ` with at most `n` rows.**  These index the summands of the
 `GLₙ₊₁ ↓ GLₙ` branching rule; the row bound is genuine, since a shape may interlace `μ` and still
 be too tall to be written in `n` letters. -/
@@ -145,8 +158,8 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
   · refine rowLen_injective (funext fun i => ?_)
     rcases lt_or_ge i n with hi | hi
     · exact congrFun h ⟨i, hi⟩
-    · rw [rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₁).2.trans hi),
-        rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₂).2.trans hi)]
+    · rw [rowLen_eq_zero_iff.mpr ((mem_interlacingShapes.mp hν₁).2.trans hi),
+        rowLen_eq_zero_iff.mpr ((mem_interlacingShapes.mp hν₂).2.trans hi)]
   · have hr' : ∀ j : Fin n, μ.rowLen ((j : ℕ) + 1) ≤ r j ∧ r j ≤ μ.rowLen j := fun j =>
       Finset.mem_Icc.mp (Fintype.mem_piFinset.mp hr j)
     have hanti : Antitone r := fun j k hjk => by
@@ -162,7 +175,7 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
       rw [h]
       exact hr' ⟨i, hi⟩
     · rw [rowLen_ofRowLensFin_eq_zero_of_le r hanti hi,
-        rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+        rowLen_eq_zero_iff.mpr (hμ.trans (by omega))]
       exact ⟨le_rfl, Nat.zero_le _⟩
 
 end YoungDiagram
@@ -187,12 +200,12 @@ theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
     · by_cases hi : i + 1 < N
       · have hlt := ((h' (i + 1) i hi (by omega)).not).mpr (by omega)
         omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+      · rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (by omega))]
         exact Nat.zero_le _
     · by_cases hi : i < N
       · have := (h' i i hi hi).mpr le_rfl
         omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hν.trans (by omega))]
+      · rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hν.trans (by omega))]
         exact Nat.zero_le _
   · intro h i j
     rw [Fin.le_def]
@@ -242,7 +255,7 @@ carries an entry at most `n`, so column strictness makes the entry of the cell d
 smaller than `n`, and that cell is therefore small: this is the inequality `μᵢ₊₁ ≤ νᵢ`. -/
 theorem interlacedBy_restrictShape (T : BoundedSSYT (n + 1) μ) :
     YoungDiagram.InterlacedBy μ (restrictShape T) :=
-  fun i => ⟨YoungDiagram.le_rowLen_of_forall_mem fun j hj => by
+  fun i => ⟨YoungDiagram.le_rowLen_iff_forall_mem.mpr fun j hj => by
       have hc : ((i + 1, j) : ℕ × ℕ) ∈ μ := _root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj
       have hlt : T.val i j < T.val (i + 1) j := T.val.col_strict (Nat.lt_succ_self i) hc
       have hbound : T.val (i + 1) j < n + 1 := entry_lt T hc

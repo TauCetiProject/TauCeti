@@ -84,9 +84,6 @@ noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul �
     GradedModuleCat.{uA} 𝒜 where
   carrier := A
   grading := InternalGrading.ofDecomposition 𝒜
-  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
-    rw [InternalGrading.ofDecomposition_piece] at hx ⊢
-    exact SetLike.GradedMul.mul_mem ha hx⟩
 
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
@@ -225,6 +222,10 @@ instance : Preadditive (GradedModuleCat.{v} 𝒜) where
 instance : Linear k (GradedModuleCat.{v} 𝒜) where
   smul_comp _ _ _ _ _ _ := by ext; simp
   comp_smul _ _ _ _ _ _ := by ext; simp
+
+/-- A graded module with subsingleton underlying type is a zero object. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] : Limits.IsZero M :=
+  (Limits.IsZero.iff_id_eq_zero M).2 (hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _))
 
 end Linear
 

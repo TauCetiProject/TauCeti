@@ -20,6 +20,15 @@ Hausdorff convergence to zero passes along chains of sets: if `A i` approaches `
 approaches `Z` in the Hausdorff extended distance, then `A i` approaches `Z`
 (`Metric.tendsto_hausdorffEDist_of_tendsto_of_tendsto`). If sets `A i` approach a closed set `Z`,
 every limit of points `y i ∈ A i` lies in `Z` (`Metric.mem_of_tendsto_hausdorffEDist`).
+
+A continuous map from a nonempty compact space into a pseudometric space has a nearest point to
+every point: some value of the map minimises the distance to it
+(`Continuous.exists_isMinOn_dist`).
+
+For an isometry `ι : Z → E` and a dense set `D ⊆ Z`, every point `y : E` has a point `z ∈ D`
+whose distance to each `s : Z` is at most `2 * dist (ι s) y` plus any prescribed positive slack
+(`Isometry.exists_mem_dist_le_two_mul_dist_add`). This brings an approximation made in the ambient
+space `E` back to `D`.
 -/
 
 public section
@@ -78,3 +87,30 @@ theorem mem_of_tendsto_hausdorffEDist [l.NeBot] {A : ι → Set X} {Z : Set X} (
     (add_le_add le_rfl (infEDist_le_hausdorffEDist_of_mem hi))
 
 end Metric
+
+/-- A continuous map `g` from a nonempty compact space into a pseudometric space has a nearest point
+to every `y`: some value `g x` minimises the distance from `y` to the values of `g`. -/
+theorem Continuous.exists_isMinOn_dist {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [Nonempty X] [PseudoMetricSpace Y] {g : X → Y} (hg : Continuous g) (y : Y) :
+    ∃ x, IsMinOn (fun z => dist y (g z)) univ x := by
+  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty
+    ((continuous_const (y := y)).dist hg).continuousOn
+  exact ⟨x, hx⟩
+
+/-- For an isometry `ι : Z → E` of a nonempty space, a dense set `D ⊆ Z`, every `y : E` and every
+`r > 0`, there is `z ∈ D` with `dist s z ≤ 2 * dist (ι s) y + r` for every `s : Z`. -/
+theorem Isometry.exists_mem_dist_le_two_mul_dist_add {Z E : Type*} [PseudoMetricSpace Z]
+    [PseudoMetricSpace E] [Nonempty Z] {ι : Z → E} (hι : Isometry ι) {D : Set Z} (hD : Dense D)
+    (y : E) {r : ℝ} (hr : 0 < r) :
+    ∃ z ∈ D, ∀ s, dist s z ≤ 2 * dist (ι s) y + r := by
+  obtain ⟨_, ⟨s₀, rfl⟩, hs₀⟩ := (Metric.infDist_lt_iff (range_nonempty ι)).1
+    (lt_add_of_pos_right (Metric.infDist y (range ι)) (half_pos hr))
+  obtain ⟨z, hzD, hz⟩ := hD.exists_dist_lt s₀ (half_pos hr)
+  refine ⟨z, hzD, fun s ↦ ?_⟩
+  have h₁ := dist_triangle s s₀ z
+  have h₂ := hι.dist_eq s s₀
+  have h₃ := dist_triangle (ι s) y (ι s₀)
+  have h₄ : Metric.infDist y (range ι) ≤ dist (ι s) y := by
+    rw [dist_comm]
+    exact Metric.infDist_le_dist_of_mem (mem_range_self s)
+  linarith

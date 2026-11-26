@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Parallel fields along geodesics

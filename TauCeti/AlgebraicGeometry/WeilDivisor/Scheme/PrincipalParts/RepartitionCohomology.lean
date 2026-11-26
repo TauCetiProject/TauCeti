@@ -34,7 +34,9 @@ also identifies the dual of `H¹(X, 𝒪_X(D))` with the space `Ω(D)` of such d
 * `SchemeWeilDivisor.diagonalRationalFunctionsToRepartitions` embeds global rational functions
   as diagonal repartitions;
 * `SchemeWeilDivisor.repartitionToCohomologyOne` sends a repartition to its first cohomology
-  class;
+  class, naturally in the divisor (`SchemeWeilDivisor.repartitionToCohomologyOne_naturality`) and
+  under multiplication by a nonzero rational function
+  (`SchemeWeilDivisor.repartitionToCohomologyOne_sheafMul`);
 * `SchemeWeilDivisor.repartitionQuotientEquivCohomologyOne` identifies the quotient by the
   divisor filtration and diagonal rational functions with `H¹(X, 𝒪_X(D))`;
 * `SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration` identifies the dual of
@@ -169,23 +171,50 @@ lemma repartitionToCohomologyOne_apply (D : SchemeWeilDivisor X)
   by
     rw [repartitionToCohomologyOne, LinearMap.comp_apply]
 
+/-- A morphism of divisor sheaves `φ : 𝒪(D) ⟶ 𝒪(E)`, compatible with a map `ψ` of rational
+functions, acts on first cohomology through the induced map on principal parts: if that map
+sends the principal parts of the repartition `a` to those of `b`, the map induced by `φ` on
+`H¹` sends the class of `a` to the class of `b`. -/
+lemma cohomologyMapBaseLinear_repartitionToCohomologyOne {D E : SchemeWeilDivisor X}
+    [Epi (toPrincipalParts D)] (φ : sheaf D ⟶ sheaf E)
+    (ψ : Scheme.rationalFunctions X ⟶ Scheme.rationalFunctions X)
+    (hcomm : sheafι D ≫ ψ = φ ≫ sheafι E) {a b : repartitionSpace k X.functionField}
+    (hab : (principalPartsMap φ ψ hcomm).app ⊤ (repartitionToPrincipalParts hex hdim D a) =
+      repartitionToPrincipalParts hex hdim E b) :
+    Scheme.Modules.cohomologyMapBaseLinear k X φ 1 (repartitionToCohomologyOne hex hdim D a) =
+      repartitionToCohomologyOne hex hdim E b := by
+  have hn := principalPartsBoundary_naturality k
+    (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property)
+    (principalPartsShortComplexMap φ ψ hcomm) (repartitionToPrincipalParts hex hdim D a)
+  rw [principalPartsShortComplexMap_τ₁, principalPartsShortComplexMap_τ₃] at hn
+  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply]
+  exact hn.trans (congrArg _ hab)
+
 /-- The actual map on first sheaf cohomology induced by `𝒪(D) ⟶ 𝒪(E)` preserves the
 repartition representing a class. -/
 lemma repartitionToCohomologyOne_naturality {D E : SchemeWeilDivisor X} (h : D ≤ E)
     (a : repartitionSpace k X.functionField) :
     Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1
         (repartitionToCohomologyOne hex hdim D a) =
-      repartitionToCohomologyOne hex hdim E a := by
-  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply]
-  have hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X) :=
-    fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property
-  have : Epi (toPrincipalParts D) := epi_toPrincipalParts hclosed D
-  have hn := principalPartsBoundary_naturality k hclosed
-    (principalPartsShortComplexMap (sheafHomOfLE h) (𝟙 _) (by simp))
-    (repartitionToPrincipalParts hex hdim D a)
-  erw [principalPartsShortComplexMap_τ₁, principalPartsShortComplexMap_τ₃,
-    principalPartsMap_ofLE, repartitionToPrincipalParts_naturality] at hn
-  exact hn
+      repartitionToCohomologyOne hex hdim E a :=
+  have : Epi (toPrincipalParts D) := epi_toPrincipalParts
+    (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property) D
+  cohomologyMapBaseLinear_repartitionToCohomologyOne hex hdim _ (𝟙 _) (by simp) <| by
+    rw [principalPartsMap_ofLE, repartitionToPrincipalParts_naturality]
+
+/-- The map on first sheaf cohomology induced by multiplication by a nonzero rational function,
+`𝒪(D) ⟶ 𝒪(D - div g)`, multiplies the repartition representing a class by `g`. -/
+lemma repartitionToCohomologyOne_sheafMul (hF : IsFunctionField k X.functionField)
+    (g : Additive X.functionFieldˣ) (D : SchemeWeilDivisor X)
+    (a : repartitionSpace k X.functionField) :
+    Scheme.Modules.cohomologyMapBaseLinear k X (sheafMul g D) 1
+        (repartitionToCohomologyOne hex hdim D a) =
+      repartitionToCohomologyOne hex hdim _
+        (repartitionMul hF ((Additive.toMul g : X.functionFieldˣ) : X.functionField) a) :=
+  have : Epi (toPrincipalParts D) := epi_toPrincipalParts
+    (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property) D
+  cohomologyMapBaseLinear_repartitionToCohomologyOne hex hdim _ _ (sheafMul_ι g D).symm <| by
+    rw [principalPartsMap_sheafMul, repartitionToPrincipalParts_principalPartsMul hex hdim hF]
 
 /-- Every first cohomology class is represented by a repartition. -/
 theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :

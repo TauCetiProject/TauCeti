@@ -244,10 +244,9 @@ theorem isOpenMap_polyEvalHom {k : ℕ} (t : Fin k → A)
     fun x hx ↦ ?_
   obtain ⟨p, hp, hpx⟩ := exists_polynomial_coeff_mem_idealImage P T s S t hTt n hx
   refine ⟨weightedPolynomialsEquiv isWeightFamily_one_weight p, hWV (hUW ?_), ?_⟩
-  · rw [SetLike.mem_coe, mem_weightedNhd]
+  · rw [SetLike.mem_coe, coe_weightedPolynomialsEquiv, weightedPolynomialHom_mem_weightedNhd]
     intro ν
-    rw [weightMul_one_weight, coe_weightedPolynomialsEquiv, coe_weightedPolynomialHom,
-      MvPolynomial.coeff_coe]
+    rw [weightMul_one_weight]
     exact hn (hp ν)
   · simpa only [polyEvalHom_weightedPolynomialsEquiv_apply] using hpx
 
@@ -298,9 +297,9 @@ theorem continuous_polyEvalHom {k : ℕ} (t : Fin k → A)
     ⟨(weightedPolynomialsEquiv isWeightFamily_one_weight).symm x, by simp⟩
   have hcoeff : ∀ m, p.coeff m ∈ P.idealImage n := by
     intro m
-    have hx' := (mem_weightedNhd).mp hx m
-    rwa [weightMul_one_weight, coe_weightedPolynomialsEquiv, coe_weightedPolynomialHom,
-      MvPolynomial.coeff_coe] at hx'
+    rw [coe_weightedPolynomialsEquiv] at hx
+    have hx' := weightedPolynomialHom_mem_weightedNhd.mp hx m
+    rwa [weightMul_one_weight] at hx'
   simpa only [polyEvalHom_weightedPolynomialsEquiv_apply, SetLike.mem_coe] using
     aeval_mem_locIdealImage_of_coeff_mem P T s S t hmem n hcoeff
 

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.Finite.Perm
 import Mathlib.GroupTheory.Perm.Cycle.Type
 public import TauCeti.GroupTheory.Coxeter.Artin
 public import TauCeti.GroupTheory.Coxeter.Matrix
 public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The Artin braid group
@@ -53,6 +55,8 @@ cause.
   on the bottom or the top strands of a larger braid group, the other strands uncrossed.
 * `TauCeti.BraidGroup.permHom n`: the underlying-permutation homomorphism.
 * `TauCeti.BraidGroup.pureSubgroup n`: the pure braid group, its kernel.
+* `TauCeti.BraidGroup.quotientPureSubgroupEquiv n`: the braid group modulo the pure braids is the
+  symmetric group on the strands.
 
 ## Main results
 
@@ -66,6 +70,16 @@ cause.
   strands as before and fixes the new one.
 * `TauCeti.BraidGroup.permHom_sigma_last`: the last elementary braid transposes the last two
   strands.
+* `TauCeti.BraidGroup.sign_permHom`: the sign of the strand permutation of a braid is `(-1)` to
+  its exponent sum.
+* `TauCeti.BraidGroup.exponentParity_surjective` and
+  `TauCeti.BraidGroup.index_ker_exponentParity`: from two strands on, the exponent parity is onto
+  the group of order two.
+* `TauCeti.BraidGroup.exponentSum_bijective_two`: the exponent sum identifies `B 2` with `ℤ`.
+* `TauCeti.BraidGroup.index_pureSubgroup`: the pure braid group has index `n !`.
+* `TauCeti.BraidGroup.strandIncl_mem_pureSubgroup` and
+  `TauCeti.BraidGroup.comap_strandIncl_pureSubgroup`: adding an uncrossed strand neither creates
+  nor destroys pure braids.
 * `TauCeti.BraidGroup.not_commute_sigma` and `TauCeti.BraidGroup.exists_not_commute`: generators
   sharing a strand do not commute, so `BraidGroup n` is nonabelian for `n ≥ 3`.
 * `TauCeti.BraidGroup.revPerm_mul_transposition` and
@@ -115,6 +129,13 @@ universal property `TauCeti.ArtinGroup.lift` and its computation rule over to `B
 theorem sigma_eq_gen (i : Fin (n - 1)) :
     sigma i = ArtinGroup.gen (CoxeterMatrix.A (n - 1)) i :=
   (rfl)
+
+/-- Transport along an equality of strand counts sends each generator to the same crossing. -/
+theorem cast_sigma {k : ℕ} (h : n = k) (i : Fin (n - 1)) :
+    MulEquiv.cast (M := BraidGroup) h (sigma i) =
+      sigma (Fin.cast (congrArg (· - 1) h) i) := by
+  subst k
+  simp [MulEquiv.cast_apply]
 
 /-- Disjoint crossings commute. -/
 theorem sigma_mul_sigma_comm {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
@@ -303,6 +324,12 @@ theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
   rw [transposition_eq_swap, Equiv.swap_apply_def]
   split_ifs <;> simp_all [Fin.ext_iff]
 
+/-- The inverse equivalence of an adjacent transposition is itself. -/
+@[simp]
+theorem symm_transposition (i : Fin (n - 1)) :
+    (transposition i).symm = transposition i := by
+  rw [transposition_eq_swap, Equiv.symm_swap]
+
 /-- An adjacent transposition is an involution. -/
 @[simp]
 theorem transposition_mul_self (i : Fin (n - 1)) :
@@ -440,6 +467,58 @@ theorem exponentSum_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
       rw [MonoidHom.comp_apply, strandIncl_sigma i, exponentSum_sigma, exponentSum_sigma]
   exact DFunLike.congr_fun h b
 
+/-- The exponent parity of an elementary braid is the nonidentity element. -/
+@[simp]
+theorem exponentParity_sigma (i : Fin (n - 1)) :
+    ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1)) (sigma i) = Multiplicative.ofAdd 1 := by
+  rw [sigma_eq_gen, ArtinGroup.exponentParity_gen]
+
+/-- Adding an uncrossed strand does not change the exponent parity of a braid.
+
+Not `@[simp]`, for the reason given at `TauCeti.BraidGroup.exponentSum_strandIncl`. -/
+theorem exponentParity_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    ArtinGroup.exponentParity _ (strandIncl b) = ArtinGroup.exponentParity _ b := by
+  rw [ArtinGroup.exponentParity_apply, ArtinGroup.exponentParity_apply, exponentSum_strandIncl]
+
+/-- **The sign of the strand permutation is the exponent sum modulo `2`**: the sign of the
+permutation of a braid is `(-1)` to its exponent sum. -/
+theorem sign_permHom (b : BraidGroup n) :
+    Equiv.Perm.sign (permHom n b) =
+      (-1) ^ (ArtinGroup.exponentSum (CoxeterMatrix.A (n - 1)) b).toAdd := by
+  have h : Equiv.Perm.sign.comp (permHom n) =
+      (zpowersHom ℤˣ (-1)).comp (ArtinGroup.exponentSum (CoxeterMatrix.A (n - 1))) :=
+    hom_ext fun i ↦ by
+      simp [transposition_eq_swap, Equiv.Perm.sign_swap (strand_ne_strandSucc i)]
+  simpa only [MonoidHom.comp_apply, zpowersHom_apply] using DFunLike.congr_fun h b
+
+/-- A braid has an even strand permutation exactly when its exponent parity is trivial. -/
+theorem sign_permHom_eq_one_iff (b : BraidGroup n) :
+    Equiv.Perm.sign (permHom n b) = 1 ↔
+      ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1)) b = 1 := by
+  rw [sign_permHom, ArtinGroup.exponentParity_eq_one_iff]
+  rcases Int.even_or_odd (ArtinGroup.exponentSum (CoxeterMatrix.A (n - 1)) b).toAdd with h | h
+  · simp [h, h.neg_one_zpow]
+  · simp [h.neg_one_zpow, Int.not_even_iff_odd.2 h]
+
+/-- From two strands on, the exponent parity is onto the group of order two. -/
+theorem exponentParity_surjective (hn : 2 ≤ n) :
+    Function.Surjective (ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1))) := by
+  have : Nonempty (Fin (n - 1)) := ⟨⟨0, by omega⟩⟩
+  exact ArtinGroup.exponentParity_surjective _
+
+/-- From two strands on, the braids of trivial exponent parity form a subgroup of index two. -/
+theorem index_ker_exponentParity (hn : 2 ≤ n) :
+    (ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1))).ker.index = 2 := by
+  have : Nonempty (Fin (n - 1)) := ⟨⟨0, by omega⟩⟩
+  exact ArtinGroup.index_ker_exponentParity _
+
+/-- **The braid group on two strands is infinite cyclic**: the exponent sum identifies it with
+`ℤ`. -/
+theorem exponentSum_bijective_two :
+    Function.Bijective (ArtinGroup.exponentSum (CoxeterMatrix.A (2 - 1))) := by
+  have : Subsingleton (Fin (2 - 1)) := inferInstanceAs (Subsingleton (Fin 1))
+  exact ArtinGroup.exponentSum_bijective _
+
 /-- The added strand does not interfere: on the old strands, `strandIncl b` permutes exactly as
 `b` does. -/
 @[simp]
@@ -486,6 +565,18 @@ theorem permHom_strandIncl_last {n : ℕ} (b : BraidGroup (n + 1)) :
     refine (permHom (n + 2) (strandIncl b)).injective ?_
     rw [hb]
     simp
+
+/-- Adding an uncrossed strand to a braid gives the trivial permutation exactly when the braid
+already permuted its strands trivially. -/
+@[simp]
+theorem permHom_strandIncl_eq_one_iff {n : ℕ} {b : BraidGroup (n + 1)} :
+    permHom (n + 2) (strandIncl b) = 1 ↔ permHom (n + 1) b = 1 := by
+  refine ⟨fun h ↦ Equiv.ext fun i ↦ ?_, fun h ↦ Equiv.ext fun i ↦ ?_⟩
+  · have hi := DFunLike.congr_fun h i.castSucc
+    rwa [permHom_strandIncl_castSucc, Equiv.Perm.one_apply, Fin.castSucc_inj] at hi
+  · induction i using Fin.lastCases with
+    | last => rw [permHom_strandIncl_last, Equiv.Perm.one_apply]
+    | cast i => rw [permHom_strandIncl_castSucc, h, Equiv.Perm.one_apply, Equiv.Perm.one_apply]
 
 /-- A braid on the first `n + 1` strands, with two uncrossed strands added above it, commutes with
 the crossing of those two new strands. -/
@@ -534,10 +625,51 @@ theorem natAdd_sigma (n : ℕ) {m : ℕ} (i : Fin m) :
 /-- The pure braid group: the braids that return every strand to its own position. -/
 def pureSubgroup (n : ℕ) : Subgroup (BraidGroup n) := (permHom n).ker
 
+/-- The defining equation of `TauCeti.BraidGroup.pureSubgroup`. -/
+theorem pureSubgroup_eq_ker (n : ℕ) : pureSubgroup n = (permHom n).ker :=
+  (rfl)
+
 @[simp]
 theorem mem_pureSubgroup {b : BraidGroup n} : b ∈ pureSubgroup n ↔ permHom n b = 1 := Iff.rfl
 
 instance : (pureSubgroup n).Normal := (permHom n).normal_ker
+
+/-- The pure braid group has index `n !`, the order of the symmetric group on the strands. -/
+@[simp]
+theorem index_pureSubgroup (n : ℕ) : (pureSubgroup n).index = n.factorial := by
+  rw [pureSubgroup_eq_ker, Subgroup.index_ker, MonoidHom.range_eq_top.2 (permHom_surjective n),
+    Subgroup.card_top, Nat.card_perm, Nat.card_fin]
+
+instance : (pureSubgroup n).FiniteIndex :=
+  ⟨by rw [index_pureSubgroup]; exact n.factorial_ne_zero⟩
+
+/-- The braid group modulo the pure braids is the symmetric group on the strands, by the strand
+permutation. -/
+noncomputable def quotientPureSubgroupEquiv (n : ℕ) :
+    BraidGroup n ⧸ pureSubgroup n ≃* Equiv.Perm (Fin n) :=
+  (QuotientGroup.quotientMulEquivOfEq (pureSubgroup_eq_ker n)).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (permHom_surjective n))
+
+/-- The isomorphism `TauCeti.BraidGroup.quotientPureSubgroupEquiv` sends the class of a braid to
+its strand permutation. -/
+@[simp]
+theorem quotientPureSubgroupEquiv_mk (b : BraidGroup n) :
+    quotientPureSubgroupEquiv n b = permHom n b := by
+  rw [quotientPureSubgroupEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+
+/-- **Pure braids are compatible with strand inclusion.** A braid is pure exactly when it stays
+pure after adding an uncrossed strand. -/
+theorem strandIncl_mem_pureSubgroup {n : ℕ} {b : BraidGroup (n + 1)} :
+    strandIncl b ∈ pureSubgroup (n + 2) ↔ b ∈ pureSubgroup (n + 1) := by
+  rw [mem_pureSubgroup, mem_pureSubgroup, permHom_strandIncl_eq_one_iff]
+
+/-- The pure braids on `n + 1` strands are those which stay pure after adding an uncrossed
+strand. -/
+@[simp]
+theorem comap_strandIncl_pureSubgroup (n : ℕ) :
+    (pureSubgroup (n + 2)).comap strandIncl = pureSubgroup (n + 1) :=
+  Subgroup.ext fun _ ↦ strandIncl_mem_pureSubgroup
 
 /-- An integer power of an elementary braid is pure exactly when its exponent is even. -/
 theorem sigma_zpow_mem_pureSubgroup_iff (i : Fin (n - 1)) (k : ℤ) :

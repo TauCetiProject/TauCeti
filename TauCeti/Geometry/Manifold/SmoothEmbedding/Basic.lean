@@ -48,10 +48,15 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
 * `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
+* `Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn`: a complemented linear
+  normal form in preferred charts makes an embedding a smooth embedding, including corners.
 * `ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding`,
   `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
   linear left inverse, for instance an injective one into a finite-dimensional space over a
   complete field, is a `C^n` embedding.
+* `Manifold.IsSmoothEmbedding.tangentMap_injective`,
+  `TauCeti.SmoothEmbedding.tangentMap_injective`: injectivity of `tangentMap` for positive-order
+  smooth embeddings.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -111,6 +116,12 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+/-- A `C^n` smooth embedding (`n ≠ 0`) has injective `tangentMap`. -/
+theorem tangentMap_injective {f : M → N}
+    (hf : Manifold.IsSmoothEmbedding I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) :=
+  (hf.isImmersion.tangentMap_injective_iff hn).2 hf.isEmbedding.injective
 
 end Manifold.IsSmoothEmbedding
 
@@ -188,6 +199,11 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
+
+/-- A bundled `C^n` smooth embedding (`n ≠ 0`) has injective `tangentMap`. -/
+theorem tangentMap_injective (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J (f : M → N)) :=
+  f.isSmoothEmbedding.tangentMap_injective hn
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
@@ -346,6 +362,17 @@ theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
     (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
+
+/-- An embedding with a complemented linear normal form in the preferred charts is a
+smooth embedding. Source and target may have corners; the complement is explicit. -/
+theorem _root_.Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn
+    [IsManifold I n M] [IsManifold J n N] {f : M → N} (hf : IsEmbedding f)
+    (L : (E × F) ≃L[𝕜] E')
+    (hL : ∀ x, Set.EqOn (writtenInExtChartAt I J x f) (L ∘ fun v ↦ (v, 0))
+      (extChartAt I x).target) : Manifold.IsSmoothEmbedding I J n f := by
+  refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := F) fun x ↦ ?_, hf⟩
+  exact Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+    hf.continuous.continuousAt L (hL x)
 
 /-- A continuous linear map with a continuous linear left inverse is a `C^n` embedding. -/
 theorem _root_.ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding {f : E →L[𝕜] E'}

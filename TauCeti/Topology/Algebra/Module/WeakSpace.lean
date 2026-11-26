@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sequences
@@ -14,12 +15,16 @@ import TauCeti.Topology.Sequences.Basic
 # Convergence in the weak topology
 
 A family converges in `WeakSpace 𝕜 E` exactly when its values under every continuous linear
-functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
+functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`); over `RCLike`
+scalars the real parts of these values suffice
+(`TauCeti.tendsto_toWeakSpace_iff_forall_re_eval_tendsto`). This lets
 weak convergence be used without unfolding the definition of `WeakSpace` as a `WeakBilin` space.
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
 evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
 to closure of `s` under limits of weakly convergent sequences
-(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`), and a weakly Cauchy sequence converges weakly as
+soon as one of its subsequences does
+(`TauCeti.tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -67,6 +72,44 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isCompact [T2Space (WeakSpace 𝕜 E)]
   have hy' : MapClusterPt (toWeakSpace 𝕜 E y) l (fun n ↦ toWeakSpace 𝕜 E (u n)) :=
     hy.tendsto_comp ((toWeakSpaceCLM 𝕜 E).continuous.tendsto y)
   exact eq_of_nhds_neBot (hy'.neBot.mono (inf_le_inf_left _ h))
+
+section RCLike
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- Over `RCLike` scalars, a family converges weakly exactly when the real parts of its values
+under every continuous linear functional converge: the imaginary part of `f` is the negated real
+part of `I • f`. -/
+theorem tendsto_toWeakSpace_iff_forall_re_eval_tendsto {α : Type*} {l : Filter α} {u : α → E}
+    {x : E} :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
+      ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ RCLike.re (f (u n))) l (𝓝 (RCLike.re (f x))) := by
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto]
+  refine ⟨fun h f ↦ (RCLike.continuous_re.tendsto _).comp (h f), fun h f ↦ ?_⟩
+  have him : Tendsto (fun n ↦ RCLike.im (f (u n))) l (𝓝 (RCLike.im (f x))) := by
+    simpa [RCLike.I_mul_re] using (h ((RCLike.I : 𝕜) • f)).neg
+  simpa [RCLike.re_add_im] using
+    ((RCLike.continuous_ofReal.tendsto _).comp (h f)).add
+      (((RCLike.continuous_ofReal.tendsto _).comp him).mul_const (RCLike.I : 𝕜))
+
+end RCLike
+
+section Uniform
+
+variable {𝕜 E : Type*} [CommSemiring 𝕜] [UniformSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- A weakly Cauchy sequence, one whose values under every continuous linear functional form a
+Cauchy sequence, converges weakly to the weak limit of any of its subsequences. -/
+theorem tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq {u : ℕ → E}
+    (hu : ∀ f : StrongDual 𝕜 E, CauchySeq fun n ↦ f (u n)) {φ : ℕ → ℕ}
+    (hφ : Tendsto φ atTop atTop) {x : E}
+    (hlim : Tendsto (fun n ↦ toWeakSpace 𝕜 E (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at hlim ⊢
+  exact fun f ↦ tendsto_nhds_of_cauchySeq_of_subseq (hu f) hφ (hlim f)
+
+end Uniform
 
 section Field
 

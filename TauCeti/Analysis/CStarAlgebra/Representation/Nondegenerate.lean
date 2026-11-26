@@ -239,4 +239,11 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
 
+/-- Precomposing a representation with a star homomorphism of dense range preserves and reflects
+nondegeneracy. -/
+theorem isNondegenerate_comp_iff {B : Type*} [NonUnitalCStarAlgebra B] {φ : B →⋆ₙₐ[ℂ] A}
+    (hφ : DenseRange φ) : (π.comp φ).IsNondegenerate ↔ π.IsNondegenerate := by
+  rw [isNondegenerate_iff_dense_span_comp hφ, isNondegenerate_iff_dense]
+  simp only [comp_apply]
+
 end NonUnitalStarAlgHom

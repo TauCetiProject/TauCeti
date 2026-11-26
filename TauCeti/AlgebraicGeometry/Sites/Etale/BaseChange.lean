@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -17,7 +17,7 @@ For a morphism of schemes `f : X ⟶ Y`, the base-change functor
 `smallEtaleBaseChangeId`, `smallEtaleBaseChangeCongr` and `smallEtaleBaseChangeComp`, and, for étale
 `f`, the post-composition functor `f.smallEtaleMap` and the adjunction
 `f.smallEtaleMapBaseChangeAdj : f.smallEtaleMap ⊣ f.smallEtaleBaseChange` are defined in
-`TauCeti/AlgebraicGeometry/Sites/Etale/Over.lean`; finite-limit preservation and continuity of
+`TauCeti/AlgebraicGeometry/Sites/Etale/Over/Basic.lean`; finite-limit preservation and continuity of
 `f.smallEtaleBaseChange` are in `TauCeti/AlgebraicGeometry/Sites/Etale/Pullback.lean`. This file
 develops further API for these functors.
 
@@ -28,7 +28,8 @@ surjective. When `f` is surjective, `f.smallEtaleBaseChange` is faithful.
 When `f : X ⟶ Y` is étale, `f.smallEtaleMap` is faithful and preserves compatible families for any
 Grothendieck topology on `Y.Etale`; if `f` is also a monomorphism (for instance an open immersion),
 `f.smallEtaleMap` is full as well and the adjunction unit identifies
-`f.smallEtaleMap ⋙ f.smallEtaleBaseChange` with `𝟭 X.Etale`. When `X` is empty,
+`f.smallEtaleMap ⋙ f.smallEtaleBaseChange` with `𝟭 X.Etale`. The essential image of
+`f.smallEtaleMap` is closed under morphisms into it (`smallEtaleMap_essImage`). When `X` is empty,
 `f.smallEtaleBaseChange` is isomorphic to the constant functor at `Etale.mk (𝟙 X)`.
 
 We also give projection lemmas for `smallEtaleBaseChangeCongr` and for `smallEtaleBaseChangeComp`
@@ -262,6 +263,17 @@ instance full_smallEtaleMap [Mono f] : f.smallEtaleMap.Full where
     ⟨MorphismProperty.Over.homMk (φ.left : W₁.left ⟶ W₂.left)
       ((cancel_mono f).mp ((Category.assoc _ _ _).trans (MorphismProperty.Over.w φ))),
       by ext1; rfl⟩
+
+/-- An étale `Y`-scheme admitting a `Y`-morphism to an étale `X`-scheme lies in the essential image
+of postcomposition with the étale morphism `f : X ⟶ Y`. -/
+lemma smallEtaleMap_essImage {V : Y.Etale} {W : X.Etale} (g : V ⟶ f.smallEtaleMap.obj W) :
+    f.smallEtaleMap.essImage V := by
+  have hg : (g.left ≫ W.hom) ≫ f = V.hom :=
+    (Category.assoc _ _ _).trans (MorphismProperty.Over.w g)
+  have : Etale ((g.left ≫ W.hom) ≫ f) := by rw [hg]; infer_instance
+  have : Etale (g.left ≫ W.hom) := Etale.of_comp _ f
+  exact ⟨Etale.mk (g.left ≫ W.hom),
+    ⟨MorphismProperty.Over.isoMk (Iso.refl V.left) ((Category.id_comp _).trans hg.symm)⟩⟩
 
 /-- When `f : X ⟶ Y` is an étale monomorphism (such as an open immersion `j : U ⟶ Y`), restricting
 `f.smallEtaleMap.obj W` back along `f` canonically recovers `W`: the unit of

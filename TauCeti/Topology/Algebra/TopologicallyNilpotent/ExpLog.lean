@@ -71,7 +71,8 @@ logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (l
   turns convergent sums into convergent products.
 * `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
   `u * D (log u) = D u`.
-* `IsTopologicallyNilpotent.map_log`: continuous ring homomorphisms commute with the logarithm.
+* `IsTopologicallyNilpotent.map_exp`, `IsTopologicallyNilpotent.map_log`: continuous ring
+  homomorphisms commute with the exponential and the logarithm.
 -/
 
 public section
@@ -315,6 +316,16 @@ theorem map_log {S' : Type*} [CommRing S'] [TopologicalSpace S'] [IsTopologicalR
   refine (hu.hasSum_log.map ψ hψ).tsum_eq.symm.trans ?_
   rw [NormedSpace.log_eq_tsum ℚ]
   exact tsum_congr fun k => by simp [map_rat_smul]
+
+variable [CompleteSpace S] {a : S} [Algebra ℚ S] in
+/-- A continuous ring homomorphism `ψ` commutes with the exponential: `ψ (exp a) = exp (ψ a)` when
+`a` is topologically nilpotent. -/
+theorem map_exp {S' : Type*} [CommRing S'] [TopologicalSpace S'] [IsTopologicalRing S']
+    [T2Space S'] [Algebra ℚ S'] (ha : IsTopologicallyNilpotent a) (ψ : S →+* S')
+    (hψ : Continuous ψ) : ψ (NormedSpace.exp a) = NormedSpace.exp (ψ a) := by
+  refine (ha.hasSum_exp.map ψ hψ).tsum_eq.symm.trans ?_
+  rw [NormedSpace.exp_eq_tsum_rat]
+  exact tsum_congr fun n => by simp [map_rat_smul]
 
 end IsTopologicallyNilpotent
 

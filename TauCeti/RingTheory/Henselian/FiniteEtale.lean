@@ -278,9 +278,8 @@ theorem exists_etale_and_finite_and_tensorProduct_algEquiv {R : Type u} [CommRin
     Module.Finite.equiv
       ((Algebra.TensorProduct.quotIdealMapEquivQuotTensor A I).trans eA).symm.toLinearEquiv
   have : Module.Finite R (A ⧸ I.map (algebraMap R A)) := Module.Finite.trans (R ⧸ I) _
-  obtain ⟨A', s, hfg, hsA', hspan, hZ⟩ :=
+  obtain ⟨A', s, _, hsA', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := R) (A := A)
-  have : Module.Finite R A' := ⟨(Submodule.fg_top _).mpr hfg⟩
   obtain ⟨a, ha1, has, ha_idem⟩ := exists_mem_span_and_mul_sub_one_mem I A' s hsA' hspan hZ
   obtain ⟨e, he, hea⟩ := Ideal.exists_isIdempotentElem_sub_mem_map_of_isIntegral I
     (by simpa only [mul_sub, mul_one] using ha_idem)

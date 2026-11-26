@@ -44,6 +44,18 @@ the model fibre used to read it (`Orientation.singularCohomologyMap_localCohomol
 The characterization `TauCeti.VectorBundleOrientation.eq_thomClass_iff` then identifies it with the
 Thom class of `o'`.
 
+The same holds, in every rank and with arbitrary coefficients, for the Thom class
+`TauCeti.VectorBundleOrientation.thomClassOfModel` normalized by an orientation `ω` and a class
+`c ∈ Hʳ(F, F ∖ {0})` of the common model fibre `F` of `E` and `E'`: an orientation-preserving `φ`
+pulls the class of `o` back to the class of `o'`
+(`TauCeti.VectorBundleOrientation.singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel`),
+and an orientation-reversing one to its negative (in the same namespace,
+`singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel_of_map_eq_neg`).
+Here the fibre over `b'` is read along `φ b'` followed by a trivialization of `E` at `g b'`, which
+differs from a trivialization of `E'` at `b'` by an automorphism of `F` acting on `c` by the sign of
+its determinant
+(`ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`).
+
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
@@ -192,5 +204,80 @@ theorem eulerClass_comap_id :
   o.eulerClass_eq_of_fiberwise hF _ hF' hφ (map_comap_apply (g := ContinuousMap.id B) _ o hφ)
 
 end Isomorphism
+
+section ThomClassOfModel
+
+variable [FiniteDimensional ℝ F] {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
+  {B' : Type w} [TopologicalSpace B'] {E' : B' → Type w} [TopologicalSpace (TotalSpace F E')]
+  [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)] [∀ b, TopologicalSpace (E' b)]
+  [FiberBundle F E'] [VectorBundle ℝ F E'] (o : VectorBundleOrientation F E ι)
+  (o' : VectorBundleOrientation F E' ι) (ω : Orientation ℝ F ι) {K : Type*} [CommRing K]
+  {R' M' : ModuleCat.{w} K} [Module.Projective K R']
+  (c : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+    (finrank ℝ F))
+  {g : C(B', B)} {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
+  (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
+
+include hφ
+
+/-- **Naturality of the normalized Thom class under orientation-preserving bundle maps.** For a
+fibrewise isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over `g` carrying the orientation `o' b'` to
+`o (g b')` for every `b'`, the map of Thom pairs of `φ` pulls the class `thomClassOfModel o hι ω c`
+back to `thomClassOfModel o' hι ω c`. -/
+theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel
+    (ho : ∀ b', Orientation.map ι (φ b').toLinearEquiv (o' b') = o (g b')) :
+    TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) _ (o.thomClassOfModel hι ω c) =
+      o'.thomClassOfModel hι ω c := by
+  refine eq_thomClassOfModel_of_forall_exists o' hι ω c fun b' ↦ ?_
+  let e := trivializationAt F E (g b')
+  have hb : g b' ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
+  let e' := trivializationAt F E' b'
+  have hb' : b' ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
+  -- Over `b'` the pulled-back class is read along `L = φ b' ≫ e`, which differs from the chart
+  -- `e'` by the automorphism `A = e'⁻¹ ≫ L` of `F`.
+  let L := (φ b').trans (e.continuousLinearEquivAt ℝ (g b') hb)
+  let A := (e'.continuousLinearEquivAt ℝ b' hb').symm.trans L
+  obtain ⟨c₁, hc₁, hU⟩ :=
+    o.exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel hι ω c e hb
+  have hr : e.mapOrientation ι hb (o (g b')) =
+      Orientation.map ι A.toLinearEquiv (e'.mapOrientation ι hb' (o' b')) := by
+    have hL : (e'.linearEquivAt ℝ b' hb').trans A.toLinearEquiv =
+        (φ b').toLinearEquiv.trans (e.linearEquivAt ℝ (g b') hb) := by
+      ext v
+      simp [A, L, e'.symm_apply_apply_mk hb']
+    rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply, ← ho,
+      ← Orientation.map_trans, ← Orientation.map_trans, hL]
+  refine ⟨e', inferInstance, hb', (SignType.sign (A : F →L[ℝ] F).det : ℤ) • c₁, ?_, ?_⟩
+  · have hdet : (A : F →L[ℝ] F).det ≠ 0 := (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
+    rcases hdet.lt_or_gt with hneg | hpos
+    · rw [((e'.mapOrientation ι hb' (o' b')).map_eq_neg_iff_det_neg _ hι).2 hneg] at hr
+      rw [sign_neg hneg, SignType.coe_neg_one, neg_one_smul]
+      rw [hr] at hc₁
+      rcases hc₁ with ⟨h, rfl⟩ | ⟨h, rfl⟩
+      · exact Or.inr ⟨by rw [← h]; exact (neg_neg (G := Orientation ℝ F ι) _).symm, rfl⟩
+      · exact Or.inl ⟨neg_injective h, neg_neg c⟩
+    · rw [((e'.mapOrientation ι hb' (o' b')).map_eq_iff_det_pos _ hι).2 hpos] at hr
+      rw [sign_pos hpos, SignType.coe_one, one_smul, ← hr]
+      exact hc₁
+  · rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairMap_comp_thomPairMapOfFiberwise,
+      TopPair.singularCohomologyMap_comp_apply, hU, ← TopPair.singularCohomologyMap_comp_apply,
+      ← Iso.trans_hom, ← ContinuousLinearEquiv.complZeroPairIso_trans,
+      ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul
+        (e'.continuousLinearEquivAt ℝ b' hb') L, map_zsmul]
+
+/-- **Orientation-reversing bundle maps negate the normalized Thom class.** For a fibrewise
+isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over `g` carrying the orientation `o' b'` to `-o (g b')` for
+every `b'`, the map of Thom pairs of `φ` pulls the class `thomClassOfModel o hι ω c` back to the
+negative of `thomClassOfModel o' hι ω c`. -/
+theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel_of_map_eq_neg
+    (ho : ∀ b', Orientation.map ι (φ b').toLinearEquiv (o' b') = -o (g b')) :
+    TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) _ (o.thomClassOfModel hι ω c) =
+      -o'.thomClassOfModel hι ω c := by
+  have h := (-o).singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel hι o' ω c hφ
+    fun b' ↦ (ho b').trans (neg_apply o (g b')).symm
+  rw [thomClassOfModel_neg, map_neg] at h
+  exact neg_eq_iff_eq_neg.1 h
+
+end ThomClassOfModel
 
 end TauCeti.VectorBundleOrientation

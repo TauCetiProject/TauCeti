@@ -122,13 +122,10 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_curveVel
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
-  have hskew := hm.inner_curvatureTensor_eq_neg (γ t) (J t) (curveVelocityWithin I γ s t)
-    (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)
-  rw [real_inner_comm (curveVelocityWithin I γ s t)] at hskew
   rw [hJ.alongCurveWithin_alongCurveWithin_eq ht, ← accelerationWithin_def,
     hγ.accelerationWithin_eq_zero t ht, inner_neg_left, inner_zero_right,
-    real_inner_comm (curveVelocityWithin I γ s t)]
-  linarith
+    hm.inner_curvatureTensor_self_eq_zero (γ t) (J t) (curveVelocityWithin I γ s t)
+      (curveVelocityWithin I γ s t), neg_zero, add_zero]
 
 /-- The derivative of `⟨J, γ'⟩` is `⟨DJ, γ'⟩`, since `γ'` is parallel. -/
 private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_curveVelocityWithin
