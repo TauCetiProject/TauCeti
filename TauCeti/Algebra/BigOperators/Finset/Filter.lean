@@ -39,6 +39,8 @@ level `m ≥ 1`.
   or sum over `k` of filtered products or sums over `i` counts, for each `i`, the `k` selecting it.
 * `Finset.prod_ite_one_eq_pow`, `Finset.sum_ite_zero_eq_nsmul`: multiplying (or summing) a constant
   gated by `p` over `s` raises it to (or scales it by) `#{i ∈ s | p i}`.
+* `Finset.sum_ite_eq_card_nsmul_add`: a two-valued sum counts a baseline at every index and
+  a correction at the indices satisfying the predicate.
 -/
 
 public section
@@ -53,6 +55,16 @@ theorem prod_ite_one_eq_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (p : �
     [DecidablePred p] (a : M) :
     (∏ i ∈ s, if p i then a else 1) = a ^ #{i ∈ s | p i} := by
   rw [← prod_filter, prod_const]
+
+/-- In a two-valued sum, count `v` at every index and add `u - v` at the indices satisfying `p`. -/
+theorem sum_ite_eq_card_nsmul_add {ι M : Type*} [AddCommGroup M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (u v : M) :
+    (∑ i ∈ s, if p i then u else v) = s.card • v + (s.filter p).card • (u - v) := by
+  calc
+    _ = ∑ i ∈ s, (v + if p i then u - v else 0) := by
+      refine sum_congr rfl fun i _ ↦ ?_
+      split_ifs <;> simp
+    _ = _ := by rw [sum_add_distrib, sum_const, sum_ite_zero_eq_nsmul]
 
 /-- Adjoining a point `c` with `¬P c` to the condition `P` of a filtered product over `s`
 multiplies it by the factor at `c` exactly when `c ∈ s`. -/

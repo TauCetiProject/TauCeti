@@ -97,11 +97,10 @@ theorem sum_mul_expect_max_eq_sum_mul_rieszSum_expect [DecidableEq G]
       refine sum_congr rfl fun g hg ↦ ?_
       rw [rieszSum_eq_sum_max_of_floor_le _ (hN g hg), mul_sum]
       refine sum_congr rfl fun n _ ↦ ?_
-      have hscale : w g * (a / w g / (n : ℝ) - 1) = a / (n : ℝ) - w g := by
-        rw [mul_sub, ← mul_div_assoc, mul_div_cancel₀ _ (hw g hg).ne', mul_one]
-      have hmax := mul_max_of_nonneg (a / w g / (n : ℝ) - 1) 0 (hw g hg).le
-      rw [hscale, mul_zero] at hmax
-      rw [← hmax, Complex.ofReal_mul]
-      ring
+      have hramp : w g * max (a / w g / (n : ℝ) - 1) 0 = max (a / n - w g) 0 := by
+        rw [mul_max_of_nonneg _ _ (hw g hg).le]
+        simp [mul_sub, ← mul_div_assoc, (hw g hg).ne']
+      rw [← hramp, Complex.ofReal_mul]
+      exact mul_left_comm ..
 
 end TauCeti

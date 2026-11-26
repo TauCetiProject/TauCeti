@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
@@ -28,12 +29,12 @@ open Finset TauCeti
 
 namespace MonoidHom
 
-variable {G H : Type*} [Group G] [Group H] [Fintype G] [DecidableEq G] [DecidableEq H]
+variable {G H : Type*} [Group G] [Fintype G] [DecidableEq G] [DecidableEq H]
 
 /-- Sum capped ramps over the kernel of a class map. The default cutoff is `X`; the
 correction for cutoff `x` occurs `#B` times at each index whose translate has class `c`.
 The coefficients may have either sign, and the two cutoffs need not be ordered. -/
-theorem sum_capped_riesz_two_cutoffs (π : G →* H) (B : Finset G) {c : H}
+theorem sum_sum_mul_max_eq_rieszSum [MulOneClass H] (π : G →* H) (B : Finset G) {c : H}
     (hB : ∀ b ∈ B, π b = c) (g : ℕ → G) (w : ℕ → ℝ) {a x X : ℝ} {N : ℕ}
     (ha : 0 ≤ a) (hx : 0 < x) (hX : 0 < X) (hN : ⌊max x X⌋₊ ≤ N) :
     let A := univ.filter fun t : G ↦ π t = 1
@@ -50,9 +51,10 @@ theorem sum_capped_riesz_two_cutoffs (π : G →* H) (B : Finset G) {c : H}
         a * (rieszSum (fun n ↦ (v n : ℂ)) y).re / y := by
     rw [rieszSum_eq_sum_max_of_floor_le _ hyN, Complex.re_sum, mul_div_right_comm, mul_sum]
     refine sum_congr rfl fun n _ ↦ ?_
-    have hscale : a / y * (y / (n : ℝ) - 1) = a / n - a / y := by
-      rw [mul_sub, ← mul_div_assoc, div_mul_cancel₀ _ hy.ne', mul_one]
-    rw [← hscale, ← mul_zero (a / y), ← mul_max_of_nonneg _ _ (div_nonneg ha hy.le)]
+    have hramp : a / y * max (y / (n : ℝ) - 1) 0 = max (a / n - a / y) 0 := by
+      rw [mul_max_of_nonneg _ _ (div_nonneg ha hy.le)]
+      simp [mul_sub, ← mul_div_assoc, hy.ne']
+    rw [← hramp]
     simp [Complex.mul_re, mul_left_comm]
   rw [sum_comm]
   have hs (n : ℕ) :
@@ -80,9 +82,9 @@ theorem sum_capped_riesz_two_cutoffs (π : G →* H) (B : Finset G) {c : H}
 `R_c(x) - R_c(X)`, weighted by the sizes of the kernel and `B` respectively.
 Here `C` is the baseline constant. The constant `Cc` for the residue class cancels in
 `R_c(x) - R_c(X)`, so it can be chosen independently. -/
-theorem sum_capped_riesz_sub_main_eq (π : G →* H) [Fintype H] (hπ : Function.Surjective π)
-    (B : Finset G) {c : H} (hB : ∀ b ∈ B, π b = c) (g : ℕ → G) (w : ℕ → ℝ)
-    (C Cc : ℝ) {a x X : ℝ} {N : ℕ} (ha : 0 ≤ a) (hx : 0 < x) (hX : 0 < X)
+theorem sum_sub_log_eq_rieszSum_sub_log [Group H] (π : G →* H) [Fintype H]
+    (hπ : Function.Surjective π) (B : Finset G) {c : H} (hB : ∀ b ∈ B, π b = c)
+    (g : ℕ → G) (w : ℕ → ℝ) (C Cc : ℝ) {a x X : ℝ} {N : ℕ} (ha : 0 ≤ a) (hx : 0 < x) (hX : 0 < X)
     (hN : ⌊max x X⌋₊ ≤ N) :
     let A := univ.filter fun t : G ↦ π t = 1
     let κ := fun t ↦ if t ∈ B then a / x else a / X
@@ -111,15 +113,10 @@ theorem sum_capped_riesz_sub_main_eq (π : G →* H) [Fintype H] (hπ : Function
       (Fintype.card G : ℝ) * (Real.log a - Real.log X) +
         (B.card : ℝ) * (Real.log X - Real.log x) := by
     simp_rw [apply_ite Real.log, Real.log_div ha.ne' hx.ne', Real.log_div ha.ne' hX.ne']
-    calc
-      _ = ∑ b : G, ((Real.log a - Real.log X) +
-          if b ∈ B then Real.log X - Real.log x else 0) := by
-        refine sum_congr rfl fun b _ ↦ ?_
-        split_ifs <;> ring
-      _ = _ := by
-        rw [sum_add_distrib, ← sum_filter, sum_const, sum_const]
-        simp [nsmul_eq_mul]
-  rw [sum_sub_distrib, sum_capped_riesz_two_cutoffs π B hB g w ha.le hx hX hN, sum_const,
+    rw [sum_ite_eq_card_nsmul_add]
+    simp only [card_univ, filter_mem_eq_inter, univ_inter, nsmul_eq_mul]
+    ring
+  rw [sum_sub_distrib, sum_sum_mul_max_eq_rieszSum π B hB g w ha.le hx hX hN, sum_const,
     nsmul_eq_mul, hlog, add_div, mul_div_cancel_left₀ _ hG]
   -- Regroup the main term to expose the kernel-to-group ratio.
   have hmain : (A.card : ℝ) * (a * (Real.log a - (Real.log a - Real.log X +

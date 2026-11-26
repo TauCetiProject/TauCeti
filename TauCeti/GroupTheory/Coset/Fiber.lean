@@ -12,6 +12,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Module.End
 -- Proof-only: `Set.Finite.preimage'`, for the kernel of a composite.
 import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # A nonempty fiber of a group homomorphism is a copy of the kernel
@@ -220,13 +221,7 @@ theorem sum_ite_mul_mem_over_ker {M : Type*} [AddCommGroup M] (π : G →* H) (B
     ∑ t ∈ A, (if g * t ∈ B then u else v) =
       A.card • v + (if π g = c then B.card else 0) • (u - v) := by
   dsimp only
-  let A := univ.filter fun t ↦ π t = 1
-  calc
-    _ = ∑ t ∈ A, (v + if g * t ∈ B then u - v else 0) := by
-      refine sum_congr rfl fun t _ ↦ ?_
-      split_ifs <;> simp
-    _ = _ := by
-      rw [sum_add_distrib, ← sum_filter, sum_const, sum_const, π.card_filter_ker_mul_mem B hB]
+  rw [sum_ite_eq_card_nsmul_add, π.card_filter_ker_mul_mem B hB]
 
 end MonoidHom
 
