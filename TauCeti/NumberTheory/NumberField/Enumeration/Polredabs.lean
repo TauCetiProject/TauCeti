@@ -136,16 +136,14 @@ theorem getElem?_signVector_two_mul_add_one {k : ℕ} (hk : k < P.natDegree) :
     P.signVector[2 * k + 1]? = some (P.coeff (P.natDegree - (k + 1))) := by
   have hlen : k + 1 < P.coeffList.length := by
     simp [ne_zero_of_natDegree_gt hk, hk]
-  rw [signVector_def, getElem?_flatMap_abs_two_mul_add_one, List.getElem?_tail,
-    List.getElem?_eq_getElem hlen, TauCeti.Polynomial.getElem_coeffList]
+  simp [signVector_def, getElem?_flatMap_abs_two_mul_add_one, List.getElem?_eq_getElem hlen]
 
 /-- The entry of the sign vector at position `2 k` is `|a_{k+1}|`. -/
 theorem getElem?_signVector_two_mul {k : ℕ} (hk : k < P.natDegree) :
     P.signVector[2 * k]? = some |P.coeff (P.natDegree - (k + 1))| := by
   have hlen : k + 1 < P.coeffList.length := by
     simp [ne_zero_of_natDegree_gt hk, hk]
-  rw [signVector_def, getElem?_flatMap_abs_two_mul, List.getElem?_tail,
-    List.getElem?_eq_getElem hlen, TauCeti.Polynomial.getElem_coeffList, Option.map_some]
+  simp [signVector_def, getElem?_flatMap_abs_two_mul, List.getElem?_eq_getElem hlen]
 
 @[simp]
 theorem signVector_intCast (a : ℤ) : (a : ℤ[X]).signVector = [] := by
