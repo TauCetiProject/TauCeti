@@ -332,12 +332,13 @@ theorem IsNumericalSemigroup.numericalGenus_eq_finsum_aperySet_div (h : S.IsNume
     exact eq_of_mem_aperySet_of_modEq hn (hA.mem_toFinset.mp hv) (hA.mem_toFinset.mp hw)
       (hxv.2.symm.trans hxw.2)
 
-/-- **Selmer's formula** for the genus: for a numerical semigroup `S` and `0 < n ∈ S`,
+/-- **Selmer's formula** for the genus: for a numerical semigroup `S` and `n ∈ S`,
 `2 Σ_{w ∈ Ap(S, n)} w = 2 n g(S) + n (n - 1)`, that is
-`g(S) = (1 / n) Σ_{w ∈ Ap(S, n)} w - (n - 1) / 2`. -/
-theorem IsNumericalSemigroup.two_mul_finsum_aperySet (h : S.IsNumericalSemigroup) (hn : n ∈ S)
-    (hpos : n ≠ 0) :
+`g(S) = (1 / n) Σ_{w ∈ Ap(S, n)} w - (n - 1) / 2` when `n ≠ 0`. At `n = 0` both sides vanish. -/
+theorem IsNumericalSemigroup.two_mul_finsum_aperySet (h : S.IsNumericalSemigroup) (hn : n ∈ S) :
     2 * ∑ᶠ w ∈ S.aperySet n, w = 2 * n * S.numericalGenus + n * (n - 1) := by
+  rcases eq_or_ne n 0 with rfl | hpos
+  · simp [aperySet_zero]
   have hA := h.finite_aperySet (n := n)
   -- Split each `w` as `n * (w / n) + w % n`; the residues `w % n` run once over `{0, …, n - 1}`.
   have hmod : ∑ᶠ w ∈ S.aperySet n, w % n = ∑ i ∈ Finset.range n, i := by

@@ -139,7 +139,7 @@ theorem two_mul_numericalGenus_closure_pair (hab : a.Coprime b) :
   · obtain rfl : b = 1 := Nat.coprime_zero_left _ |>.mp hab
     simp
   -- Compare Selmer's formula with the sum `Σ_{j < a} j b` over the Apéry set, then cancel `a`.
-  have hS := h.two_mul_finsum_aperySet (subset_closure (Set.mem_insert a _)) hpos
+  have hS := h.two_mul_finsum_aperySet (subset_closure (Set.mem_insert a _))
   rw [two_mul_finsum_aperySet_closure_pair hab] at hS
   refine Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hpos) ?_
   rcases Nat.eq_zero_or_pos b with rfl | hb
