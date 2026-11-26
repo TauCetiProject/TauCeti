@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Homotopy
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 
 /-!
@@ -25,6 +26,17 @@ The continuation map is then a morphism of filtered complexes, and so induces a 
 index spectral sequences (`TauCeti.TwistingCocycle.indexSpectralSequence`), compatibly with the
 Kronecker cocycle and with composition of continuation cocycles.
 
+Continuation cocycles joined by a parametrized cocycle `η` give chain homotopic continuation maps
+(`TauCeti.ParametrizedCocycle.homotopy`). The entry `η.h x y` has degree `indQ y - ind x - 1`, so
+over an algebra concentrated in degrees `≤ 0` it vanishes as soon as `ind x + 1 < indQ y`
+(`TauCeti.ParametrizedCocycle.h_eq_zero_of_add_one_lt_of_nonpos`). The homotopy then raises the
+index filtration by at most one (`TauCeti.ParametrizedCocycle.isFiltered_homotopy`), like a cellular
+homotopy, which carries the `p`-skeleton into the `(p + 1)`-skeleton. Such a homotopy does not
+change the induced maps of spectral sequences from the second page `E₂` on, page `3` in Mathlib's
+numbering (`CochainComplex.spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy`), so the
+two continuation cocycles induce the same maps there
+(`TauCeti.ParametrizedCocycle.indexSpectralSequenceMap_hom_eq`). On the first page they may differ.
+
 ## Main definitions
 
 * `TauCeti.ContinuationCocycle.indexFiltrationMap`: the morphism of filtered complexes induced by
@@ -38,6 +50,10 @@ Kronecker cocycle and with composition of continuation cocycles.
   the level of filtered complexes.
 * `TauCeti.ContinuationCocycle.indexSpectralSequenceMap_refl`,
   `TauCeti.ContinuationCocycle.indexSpectralSequenceMap_comp`: functoriality.
+* `TauCeti.ParametrizedCocycle.isFiltered_homotopy`: the homotopy of a parametrized cocycle without
+  entries raising the index by more than one raises the index filtration by at most one.
+* `TauCeti.ParametrizedCocycle.indexSpectralSequenceMap_hom_eq`: continuation cocycles joined by
+  such a parametrized cocycle induce the same morphisms on the pages `r ≥ 3`.
 
 ## References
 
@@ -55,8 +71,6 @@ namespace TauCeti
 
 universe uR uA uM uP
 
-namespace ContinuationCocycle
-
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
   {P Q S : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ} [Fintype P] [Fintype Q]
@@ -68,6 +82,8 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   {mS : TwistingCocycle 𝒜 d S indS}
 
 variable (hM : IsDGRightModule h ℳ dM)
+
+namespace ContinuationCocycle
 
 /-- **The morphism of filtered complexes of a continuation cocycle**: for a continuation cocycle
 with no entries strictly increasing the index, the continuation map as a morphism between the
@@ -154,5 +170,44 @@ theorem indexSpectralSequenceMap_comp (ν₁ : ContinuationCocycle mP mQ)
   rfl
 
 end ContinuationCocycle
+
+namespace ParametrizedCocycle
+
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
+/-- **The homotopy of a parametrized cocycle raises the index filtration by at most one** when the
+parametrized cocycle has no entries raising the index by more than one: it sends the piece `F_n`
+of the index filtration into the piece `F_(n + 1)`. -/
+theorem isFiltered_homotopy (η : ParametrizedCocycle ν₀ ν₁)
+    (hη : ∀ x y, ind x + 1 < indQ y → η.h x y = 0) :
+    (η.homotopy hM).IsFiltered (mP.twistedIndexSubobject hM)
+      fun n ↦ mQ.twistedIndexSubobject hM (n + 1) := by
+  refine Homotopy.isFiltered_iff.2 fun n i j ↦ ?_
+  by_cases hij : j + 1 = i
+  · subst hij
+    refine Subobject.exists_comp_arrow_f_eq_of_forall_mem_range _ _ fun x ↦ ?_
+    rw [mQ.mem_range_twistedIndexSubobject_arrow_f_iff, ModuleCat.hom_comp, LinearMap.comp_apply,
+      homotopy_hom_apply]
+    exact (mem_twistedIndexFiltration_iff _).1 (homotopyMap_mem_twistedIndexFiltration η.h hη
+      ((mem_twistedIndexFiltration_iff _).2
+        ((mP.mem_range_twistedIndexSubobject_arrow_f_iff hM n _ _).1 ⟨x, rfl⟩)))
+  · exact ⟨0, by rw [η.homotopy_hom_eq_zero hM hij, comp_zero, zero_comp]⟩
+
+/-- **Homotopic continuation cocycles induce the same maps of index spectral sequences from the
+second page on.** If the parametrized cocycle `η` joining `ν₀` to `ν₁` has no entries raising the
+index by more than one, as over an algebra concentrated in degrees `≤ 0`
+(`TauCeti.ParametrizedCocycle.h_eq_zero_of_add_one_lt_of_nonpos`), then `ν₀` and `ν₁` induce the
+same morphism on every page `r ≥ 3`, that is from `E₂` on. -/
+theorem indexSpectralSequenceMap_hom_eq (η : ParametrizedCocycle ν₀ ν₁)
+    (hν₀ : ∀ x y, ind x < indQ y → ν₀.ν x y = 0) (hν₁ : ∀ x y, ind x < indQ y → ν₁.ν x y = 0)
+    (hη : ∀ x y, ind x + 1 < indQ y → η.h x y = 0) (r : ℤ) (hr : 3 ≤ r) :
+    (ν₀.indexSpectralSequenceMap hM hν₀).hom r = (ν₁.indexSpectralSequenceMap hM hν₁).hom r := by
+  rw [ContinuationCocycle.indexSpectralSequenceMap_eq,
+    ContinuationCocycle.indexSpectralSequenceMap_eq, ContinuationCocycle.indexFiltrationMap,
+    ContinuationCocycle.indexFiltrationMap]
+  exact (CochainComplex.spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy
+    (η.homotopy hM) 1 (η.isFiltered_homotopy hM hη) r (by lia) (by lia)).symm
+
+end ParametrizedCocycle
 
 end TauCeti
