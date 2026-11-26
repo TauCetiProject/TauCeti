@@ -94,9 +94,11 @@ Complex orientations split over direct sums
 orientation transport commutes with direct sums (`TauCeti.detLineOrientationTransport_prodMap`).
 Together, along paths `T` and `T'` starting at complex-linear operators, transport along `T ⊕ T'`
 carries the complex orientation at the start to the direct sum of the orientations transported
-along `T` and `T'`
-(`TauCeti.detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine`): determinant signs
-relative to complex-linear references multiply over direct sums.
+along `T` and `T'`, normalized by the sign `(-1) ^ (dim coker T b * dim coker T' b)` of
+`TauCeti.detLineOrientationTransport_prodMap`
+(`TauCeti.detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine`): up to this sign at
+the end of the paths, determinant signs relative to complex-linear references multiply over direct
+sums.
 
 ## Main definitions
 
@@ -120,7 +122,8 @@ relative to complex-linear references multiply over direct sums.
   transport from a complex-linear operator along invertible operators gives the orientation of
   invertibility.
 * `TauCeti.detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine`: transport of the
-  complex orientation of a direct sum is the direct sum of the transports.
+  complex orientation of a direct sum is the direct sum of the transports, normalized by the sign
+  `(-1) ^ (dim coker T b * dim coker T' b)`.
 
 ## References
 
@@ -709,14 +712,8 @@ theorem detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine
   have hh' : (f.restrictScalars ℝ).prodMap (f'.restrictScalars ℝ) = h.restrictScalars ℝ := by
     rw [hh, hf, hf', ContinuousLinearMap.coe_prodMap]
   -- The kernels and cokernels of `f` and `f'` are finite-dimensional over `ℂ`.
-  have : FiniteDimensional ℂ (LinearMap.ker f) := by
-    have : FiniteDimensional ℝ (LinearMap.ker (f.restrictScalars ℝ)) := by rw [hf]; infer_instance
-    have := (f.kerRestrictScalarsEquiv ℝ).symm.finiteDimensional
-    exact Module.Finite.of_restrictScalars_finite ℝ ℂ _
-  have : FiniteDimensional ℂ (LinearMap.ker f') := by
-    have : FiniteDimensional ℝ (LinearMap.ker (f'.restrictScalars ℝ)) := by rw [hf']; infer_instance
-    have := (f'.kerRestrictScalarsEquiv ℝ).symm.finiteDimensional
-    exact Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have := (hF a left_mem_uIcc).finiteDimensional_ker_of_restrictScalars_eq hf
+  have := (hF' a left_mem_uIcc).finiteDimensional_ker_of_restrictScalars_eq hf'
   have := (hF a left_mem_uIcc).finiteDimensional_quotient_range_of_restrictScalars_eq hf
   have := (hF' a left_mem_uIcc).finiteDimensional_quotient_range_of_restrictScalars_eq hf'
   have := ((hF a left_mem_uIcc).prodMap
@@ -726,8 +723,8 @@ theorem detLineOrientationTransport_prodMap_of_isComplexPositiveDetLine
     (hz₁.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul hh' hz₁').exists_pos_smul_eq hz
   -- The normalizing sign at `a` is `1`, since the cokernel of `T a` is a complex vector space.
   have heven : Even (finrank ℝ (F ⧸ (T a).range)) := by
-    rw [← hf, (f.cokerRestrictScalarsEquiv ℝ).finrank_eq, finrank_real_eq_two_mul_finrank_complex]
-    exact even_two_mul _
+    rw [← hf]
+    exact f.even_finrank_quotient_range_restrictScalars
   -- Read through `hh`, the direct sum of `z₁` and `z₁'` is the normalized direct sum of their
   -- images in the determinant lines of `T a` and `T' a`.
   have key : LinearMap.detLineCongrOfEq hh (LinearMap.detLineCongrOfEq hh'

@@ -187,9 +187,44 @@ variable {M N M' N' : Type*} [AddCommGroup M] [Module ℂ M] [Module ℝ M] [IsS
   [AddCommGroup N] [Module ℂ N] [Module ℝ N] [IsScalarTower ℝ ℂ N]
   [AddCommGroup M'] [Module ℂ M'] [Module ℝ M'] [IsScalarTower ℝ ℂ M']
   [AddCommGroup N'] [Module ℂ N'] [Module ℝ N'] [IsScalarTower ℝ ℂ N']
-  {f : M →ₗ[ℂ] N} {g : M' →ₗ[ℂ] N'} [FiniteDimensional ℂ (ker f)]
-  [FiniteDimensional ℂ (N ⧸ range f)] [FiniteDimensional ℂ (ker g)]
-  [FiniteDimensional ℂ (N' ⧸ range g)] {h : M × M' →ₗ[ℂ] N × N'}
+  {f : M →ₗ[ℂ] N} {g : M' →ₗ[ℂ] N'}
+
+/-- Read through the identifications of the complex kernels of `f`, `g` and `f ⊕ g` with the real
+ones, the splitting of the kernel of the real direct sum is the complex splitting. -/
+private theorem kerRestrictScalarsEquiv_prodCongr_trans_kerProdMapEquiv_symm
+    (hk : (ker ((f.restrictScalars ℝ).prodMap (g.restrictScalars ℝ))).map
+      (LinearEquiv.refl ℝ (M × M') : M × M' →ₗ[ℝ] M × M') =
+        ker ((f.prodMap g).restrictScalars ℝ)) :
+    (kerRestrictScalarsEquiv ℝ f).prodCongr (kerRestrictScalarsEquiv ℝ g) ≪≫ₗ
+      (((f.restrictScalars ℝ).kerProdMapEquiv (g.restrictScalars ℝ)).symm ≪≫ₗ
+        ((LinearEquiv.refl ℝ (M × M')).ofSubmodules _ _ hk ≪≫ₗ
+          (kerRestrictScalarsEquiv ℝ (f.prodMap g)).symm)) =
+      (kerProdMapEquiv f g).symm.restrictScalars ℝ :=
+  LinearEquiv.ext fun _ ↦ Subtype.ext (by
+    simp only [LinearEquiv.trans_apply, coe_kerRestrictScalarsEquiv_symm_apply,
+      LinearEquiv.ofSubmodules_apply, coe_kerProdMapEquiv_symm_apply, LinearEquiv.prodCongr_apply,
+      coe_kerRestrictScalarsEquiv_apply, LinearEquiv.refl_apply, LinearEquiv.restrictScalars_apply])
+
+/-- Read through the identifications of the complex cokernels of `f`, `g` and `f ⊕ g` with the
+real ones, the splitting of the cokernel of the real direct sum is the complex splitting. -/
+private theorem cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv
+    (hc : (range ((f.restrictScalars ℝ).prodMap (g.restrictScalars ℝ))).map
+      (LinearEquiv.refl ℝ (N × N') : N × N' →ₗ[ℝ] N × N') =
+        range ((f.prodMap g).restrictScalars ℝ)) :
+    (cokerRestrictScalarsEquiv ℝ (f.prodMap g)).symm ≪≫ₗ
+      ((Submodule.Quotient.equiv _ _ (LinearEquiv.refl ℝ (N × N')) hc).symm ≪≫ₗ
+        ((f.restrictScalars ℝ).cokerProdMapEquiv (g.restrictScalars ℝ) ≪≫ₗ
+          (cokerRestrictScalarsEquiv ℝ f).prodCongr (cokerRestrictScalarsEquiv ℝ g))) =
+      (cokerProdMapEquiv f g).restrictScalars ℝ := by
+  refine LinearEquiv.ext fun q ↦ ?_
+  induction q using Submodule.Quotient.induction_on
+  simp only [LinearEquiv.trans_apply, cokerRestrictScalarsEquiv_symm_mk,
+    Submodule.Quotient.equiv_symm, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
+    LinearEquiv.refl_symm, LinearEquiv.coe_coe, LinearEquiv.refl_apply, cokerProdMapEquiv_mk,
+    LinearEquiv.prodCongr_apply, cokerRestrictScalarsEquiv_mk, LinearEquiv.restrictScalars_apply]
+
+variable [FiniteDimensional ℂ (ker f)] [FiniteDimensional ℂ (N ⧸ range f)]
+  [FiniteDimensional ℂ (ker g)] [FiniteDimensional ℂ (N' ⧸ range g)] {h : M × M' →ₗ[ℂ] N × N'}
   {x : (f.restrictScalars ℝ).detLine} {y : (g.restrictScalars ℝ).detLine}
 
 /-- **The direct sum of complex orientations is the complex orientation of the direct sum.** Let
@@ -210,8 +245,7 @@ theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
   have : FiniteDimensional ℝ (N' ⧸ range g) := Module.Finite.trans ℂ (N' ⧸ range g)
   -- The Koszul sign `(-1) ^ (dim (coker f) * dim (ker g))` is `1`: complex cokernels are
   -- even-dimensional over `ℝ`.
-  have hf : Even (finrank ℝ (N ⧸ range (f.restrictScalars ℝ))) := by
-    simp [(f.cokerRestrictScalarsEquiv ℝ).finrank_eq, finrank_real_eq_two_mul_finrank_complex]
+  have hf := f.even_finrank_quotient_range_restrictScalars
   obtain ⟨a₁, φ₁, ha₁, hφ₁, h₁⟩ :=
     isComplexPositiveTMulDual_iff.1 (isComplexPositiveDetLine_iff.1 hx)
   obtain ⟨a₂, φ₂, ha₂, hφ₂, h₂⟩ :=
@@ -232,14 +266,9 @@ theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
     rw [← TensorProduct.congr_tmul, ← detLineCongr_prodCongr_detLineProdEquiv,
       ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply,
       ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans,
-      ← LinearEquiv.detLineCongr_trans]
-    convert (isComplexPositive_detLineProdEquiv_tmul ha₁ ha₂).detLineCongr
-      (kerProdMapEquiv f g).symm using 2
-    exact congrArg _ (LinearEquiv.ext fun _ ↦ Subtype.ext (by
-      simp only [LinearEquiv.trans_apply, coe_kerRestrictScalarsEquiv_symm_apply,
-        LinearEquiv.ofSubmodules_apply, coe_kerProdMapEquiv_symm_apply, LinearEquiv.prodCongr_apply,
-        coe_kerRestrictScalarsEquiv_apply, LinearEquiv.refl_apply,
-        LinearEquiv.restrictScalars_apply]))
+      ← LinearEquiv.detLineCongr_trans,
+      kerRestrictScalarsEquiv_prodCongr_trans_kerProdMapEquiv_symm]
+    exact (isComplexPositive_detLineProdEquiv_tmul ha₁ ha₂).detLineCongr _
   · -- The cokernel factor is the product of `φ₁` and `φ₂` pulled back along the complex splitting
     -- of the cokernel.
     convert (isComplexPositiveDual_comp_detLineCongr_iff (cokerProdMapEquiv f g)).2
@@ -250,14 +279,9 @@ theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
       LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.detLineCongr_symm,
       LinearEquiv.detLineCongr_symm, ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply,
       ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
-      ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans]
-    refine congrArg _ (congrArg (LinearEquiv.detLineCongr · w) (LinearEquiv.ext fun q ↦ ?_))
-    induction q using Submodule.Quotient.induction_on
-    simp only [LinearEquiv.trans_apply, cokerRestrictScalarsEquiv_symm_mk,
-      Submodule.Quotient.equiv_symm, Submodule.Quotient.equiv_apply, LinearEquiv.symm_symm,
-      Submodule.mapQ_apply, LinearEquiv.refl_symm, LinearEquiv.coe_coe, LinearEquiv.refl_apply,
-      cokerProdMapEquiv_mk, LinearEquiv.prodCongr_apply, cokerRestrictScalarsEquiv_mk,
-      LinearEquiv.restrictScalars_apply]
+      ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans, LinearEquiv.symm_symm,
+      cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv]
+    rfl
 
 /-- **The complex orientation of a direct sum splits.** Let `f` and `g` be complex-linear maps
 with finite-dimensional kernels and cokernels, and `h` a complex-linear map whose underlying real

@@ -59,9 +59,10 @@ intended throughout.
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
   `ContinuousLinearMap.index_restrictScalars`.
-* `ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq`: a
-  `𝕜'`-linear map whose underlying `𝕜`-linear map is Fredholm has finite-dimensional cokernel
-  over `𝕜'`.
+* `ContinuousLinearMap.IsFredholm.finiteDimensional_ker_of_restrictScalars_eq`,
+  `ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq`: a
+  `𝕜'`-linear map whose underlying `𝕜`-linear map is Fredholm has finite-dimensional kernel and
+  cokernel over `𝕜'`.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -251,6 +252,21 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
     have : FiniteDimensional 𝕜 (F ⧸ T.range) := Module.Finite.trans 𝕜' _
     exact (Submodule.Quotient.restrictScalarsEquiv 𝕜 T.range).symm.finiteDimensional
   closedComplemented_ker := hT.closedComplemented_ker.restrictScalars 𝕜
+
+variable {𝕜} in
+omit [Module.Finite 𝕜 𝕜'] in
+/-- The kernel of a `𝕜'`-linear map `f` whose underlying `𝕜`-linear map is a Fredholm operator
+`A` is finite-dimensional over `𝕜'`. For instance, the complex kernel of a complex-linear map
+whose realification is Fredholm is finite-dimensional. -/
+theorem IsFredholm.finiteDimensional_ker_of_restrictScalars_eq {A : E →L[𝕜] F}
+    (hA : A.IsFredholm) {f : E →ₗ[𝕜'] F} (hf : f.restrictScalars 𝕜 = A) :
+    FiniteDimensional 𝕜' (LinearMap.ker f) := by
+  -- The kernel of `f`, with its `𝕜`-structure, is the kernel of `A`.
+  have : FiniteDimensional 𝕜 (LinearMap.ker (f.restrictScalars 𝕜)) := by
+    rw [hf]
+    exact hA.finite_ker
+  have : FiniteDimensional 𝕜 (LinearMap.ker f) := this
+  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (LinearMap.ker f)
 
 variable {𝕜} in
 omit [Module.Finite 𝕜 𝕜'] in
