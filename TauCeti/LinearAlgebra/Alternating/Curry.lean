@@ -20,14 +20,12 @@ for every `x` assembles into the alternating map `AlternatingMap.uncurryLeft g h
 So an alternating map may be defined by giving its value with the first argument fixed, and
 checking only that it vanishes when the first two arguments agree. This is how the
 Chevalley–Eilenberg differential, defined degree by degree through its interior products, is
-shown to be alternating. In two arguments this reads: a bilinear map `B` with `B x x = 0` is the
-alternating map `AlternatingMap.ofBilin B hB`, `v ↦ B (v 0) (v 1)`. The file also records that
-alternating maps are determined by their interior products (`AlternatingMap.curryLeft_injective`)
-and that interior products anticommute (`AlternatingMap.curryLeft_curryLeft_eq_neg`). If
-`ι_x f = 0`, then `f` vanishes on every family with `x` in some slot
-(`AlternatingMap.map_eq_zero_of_curryLeft_eq_zero`) and does not see the components of its
-arguments along `x` (`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`): this is how a form
-whose contraction with a vector field vanishes descends along that field.
+shown to be alternating. The file also records that alternating maps are determined by their
+interior products (`AlternatingMap.curryLeft_injective`) and that interior products anticommute
+(`AlternatingMap.curryLeft_curryLeft_eq_neg`). If `ι_x f = 0`, then `f` vanishes on every family
+with `x` in some slot (`AlternatingMap.map_eq_zero_of_curryLeft_eq_zero`) and does not see the
+components of its arguments along `x` (`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`): this
+is how a form whose contraction with a vector field vanishes descends along that field.
 
 Fixing the arguments of an alternating map `f` on `ι ⊕ κ` indexed by `ι` leaves an alternating map
 of the arguments indexed by `κ`, and this depends alternatingly on the fixed arguments:
@@ -147,25 +145,6 @@ theorem map_add_smul_of_curryLeft_eq_zero {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {
     _ = f v := by
       rw [Finset.sum_eq_single Finset.univ (fun s _ hs ↦ hterm s hs) (by simp)]
       simp
-
-/-- A bilinear map vanishing on the diagonal, `B x x = 0`, as an alternating map in two arguments,
-`v ↦ B (v 0) (v 1)`. -/
-def ofBilin (B : M →ₗ[R] M →ₗ[R] N) (hB : ∀ x, B x x = 0) : M [⋀^Fin 2]→ₗ[R] N where
-  toFun v := B (v 0) (v 1)
-  map_update_add' := by
-    intro _ v i x y
-    fin_cases i <;> simp
-  map_update_smul' := by
-    intro _ v i c x
-    fin_cases i <;> simp
-  map_eq_zero_of_eq' := by
-    intro v i j hv hij
-    fin_cases i <;> fin_cases j <;> simp_all
-
-/-- `AlternatingMap.ofBilin B hB` evaluates `B` on its two arguments. -/
-@[simp]
-theorem ofBilin_apply (B : M →ₗ[R] M →ₗ[R] N) (hB : ∀ x, B x x = 0) (v : Fin 2 → M) :
-    ofBilin B hB v = B (v 0) (v 1) := (rfl)
 
 section CurrySum
 

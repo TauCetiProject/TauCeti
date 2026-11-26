@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Bianchi
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
-public import TauCeti.LinearAlgebra.Alternating.Curry
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
@@ -98,8 +98,8 @@ with values in the endomorphisms of `V x`: `u ∧ w ↦ (∇_v R)(u, w)`, depend
 def derivCurvatureForm (x : M) :
     TangentSpace I x →ₗ[ℝ] ⋀[ℝ]^2 (TangentSpace I x) →ₗ[ℝ] (V x →ₗ[ℝ] V x) where
   toFun v := alternatingMapLinearEquiv
-    (AlternatingMap.ofBilin (cov.derivCurvatureTensor covT x v)
-      (cov.derivCurvatureTensor_self covT x v))
+    (LinearMap.IsAlt.toAlternatingMap
+      (show (cov.derivCurvatureTensor covT x v).IsAlt from cov.derivCurvatureTensor_self covT x v))
   map_add' v v' := by
     rw [← map_add]
     congr 1
