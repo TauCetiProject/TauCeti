@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.LinearMap
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
@@ -53,6 +54,9 @@ with no continuity assumed) and computes their principal symbols:
   `x` of the chart target, the principal symbol of the compression at a covector `η` is
   `φ(x) ψ(x) σ(D)(e⁻¹ x)(η ∘ de)`: the principal symbol transforms as a function on the cotangent
   bundle, multiplied by the cutoffs.
+* `OpenPartialHomeomorph.complexChartCompression_intrinsicStar`: the chart compression of the
+  complex conjugate `f ↦ star (D (star f))` of an operator is the complex conjugate of its chart
+  compression, since the cutoffs are real.
 * `OpenPartialHomeomorph.complexChartCompression_conj`: for a diffeomorphism `Φ : M → N`, the chart
   compression in a chart `e` of `M` of the transport `f ↦ (D (f ∘ Φ⁻¹)) ∘ Φ` of an operator `D` on
   `N` is the chart compression of `D` in the chart `e ∘ Φ⁻¹` of `N`, by the same cutoffs.
@@ -530,6 +534,26 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
       ContMDiffMap.complexifyLinearMap (e.chartCompression he φ ψ D) := by
   ext f y
   apply Complex.ext <;> simp
+
+/-- The complex pullback of the complex conjugate of a function is the conjugate of its complex
+pullback, since the cutoff is real. -/
+theorem complexCutoffPullback_star (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexCutoffPullback he ψ (star f) = star (e.complexCutoffPullback he ψ f) := by
+  ext x
+  by_cases hx : x ∈ e.source
+  · simp [complexCutoffPullback_apply_of_mem he _ _ hx, Complex.real_smul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- **Chart compression commutes with complex conjugation.** The chart compression of the complex
+conjugate `f ↦ star (D (star f))` of an operator `D` (its intrinsic star as a linear map) by real
+cutoffs `φ` and `ψ` is the complex conjugate of the chart compression of `D`. -/
+theorem complexChartCompression_intrinsicStar (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ (star (WithConv.toConv D)).ofConv =
+      (star (WithConv.toConv (e.complexChartCompression he φ ψ D))).ofConv := by
+  ext f y
+  simp [complexCutoffPullback_star, Complex.real_smul]
 
 section Diffeomorph
 
