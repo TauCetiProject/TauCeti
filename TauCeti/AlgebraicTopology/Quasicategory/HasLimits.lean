@@ -27,22 +27,27 @@ indexed by a simplicial set `K` of the universe `w` is therefore a map from the 
 `SSet.uliftFunctor.obj K` to `C`, and `C` lives in the universe `max w u`. For `C : SSet.{u}`,
 `C.HasLimitsOfSize.{u}` asks for limits of all diagrams indexed by simplicial sets of the universe
 of `C`, and `C.HasLimitsOfSize.{0}` for limits of diagrams indexed by simplicial sets of the
-lowest universe.
+lowest universe. When the indexing universe is the universe of `C`, the universe lift is
+isomorphic to the identity (`SSet.uliftFunctorTrivial`), so the four properties can be stated and
+used on ordinary diagrams `p : K ⟶ C` (`SSet.hasLimitsOfSize_iff_forall_exists_isLimit` and its
+analogues). Each property passes to smaller indexing universes (`SSet.hasLimitsOfSize_shrink` and
+its analogues), since iterated universe lifts collapse to a single lift
+(`SSet.uliftFunctorCompIso`).
 
 Having limits or colimits of size `w` is invariant under isomorphism, and isomorphisms, in
 particular identities, as well as composites of maps preserving limits or colimits of size `w`
 preserve them. Colimits in `C` are limits in the opposite simplicial set `Cᵒᵖ`
-(`SSet.coslice.isColimit_iff_isLimit_op`), so `C` has colimits of size `w` exactly when `Cᵒᵖ`
-has limits of size `w` (`SSet.hasColimitsOfSize_iff_hasLimitsOfSize_op`), and a map preserves
-colimits of size `w` exactly when its opposite preserves limits of size `w`
-(`SSet.preservesColimitsOfSize_iff_preservesLimitsOfSize_op`). The limit of the empty diagram is a
-terminal vertex, so a quasicategory with limits of size `w` has a terminal vertex
-(`SSet.HasLimitsOfSize.exists_isTerminalVertex`), and a map preserving limits of size `w` sends
-terminal vertices to terminal vertices (`SSet.PreservesLimitsOfSize.isTerminalVertex_map`);
-dually for colimits and initial vertices. In particular an empty simplicial set has neither limits
-nor colimits. In a terminal simplicial set, such as `Δ[0]`, every cone
-is a limit cone and every cocone a colimit cocone, so `Δ[0]` has limits and colimits of every
-size, and every map to `Δ[0]` preserves them.
+(`SSet.coslice.isColimit_iff_isLimit_op`), so `Cᵒᵖ` has limits of size `w` exactly when `C` has
+colimits of size `w` (`SSet.hasLimitsOfSize_op_iff`), and the opposite of a map preserves limits
+of size `w` exactly when the map preserves colimits of size `w`
+(`SSet.preservesLimitsOfSize_op_iff`). These duality statements are simp lemmas removing an
+opposite. The limit of the empty diagram is a terminal vertex, so a quasicategory with limits of
+size `w` has a terminal vertex (`SSet.HasLimitsOfSize.exists_isTerminalVertex`), and a map
+preserving limits of size `w` sends terminal vertices to terminal vertices
+(`SSet.PreservesLimitsOfSize.isTerminalVertex_map`); dually for colimits and initial vertices. In
+particular an empty simplicial set has neither limits nor colimits. In a terminal simplicial set,
+such as `Δ[0]`, every cone is a limit cone and every cocone a colimit cocone, so `Δ[0]` has limits
+and colimits of every size, and every map to `Δ[0]` preserves them.
 
 ## Main definitions
 
@@ -54,13 +59,18 @@ size, and every map to `Δ[0]` preserves them.
 ## Main results
 
 * `SSet.HasLimitsOfSize.of_iso`, `SSet.HasColimitsOfSize.of_iso`: invariance under isomorphism.
-* `SSet.hasColimitsOfSize_iff_hasLimitsOfSize_op`, `SSet.hasLimitsOfSize_iff_hasColimitsOfSize_op`:
-  the duality between limits and colimits.
+* `SSet.hasLimitsOfSize_op_iff`, `SSet.hasColimitsOfSize_op_iff`: the duality between limits and
+  colimits.
 * `SSet.PreservesLimitsOfSize.of_isIso`, `SSet.PreservesLimitsOfSize.id`,
   `SSet.PreservesLimitsOfSize.comp`, and the same for colimits: isomorphisms, identities and
   composites.
-* `SSet.preservesColimitsOfSize_iff_preservesLimitsOfSize_op`,
-  `SSet.preservesLimitsOfSize_iff_preservesColimitsOfSize_op`: the duality for preservation.
+* `SSet.preservesLimitsOfSize_op_iff`, `SSet.preservesColimitsOfSize_op_iff`: the duality for
+  preservation.
+* `SSet.hasLimitsOfSize_iff_forall_exists_isLimit`,
+  `SSet.preservesLimitsOfSize_iff_forall_isLimit_map`, and their duals: the properties for diagrams
+  indexed by simplicial sets of the universe of `C`.
+* `SSet.hasLimitsOfSize_shrink`, `SSet.preservesLimitsOfSize_shrink`, and their duals: passing to
+  smaller indexing universes.
 * `SSet.hasLimitsOfSize_stdSimplex_zero`, `SSet.hasColimitsOfSize_stdSimplex_zero`: `Δ[0]` has
   limits and colimits of every size.
 * `SSet.HasLimitsOfSize.exists_isTerminalVertex`, `SSet.PreservesLimitsOfSize.isTerminalVertex_map`,
@@ -75,7 +85,7 @@ size, and every map to `Δ[0]` preserves them.
 
 public section
 
-universe w u
+universe w w' u
 
 open CategoryTheory Limits Simplicial
 
@@ -113,11 +123,6 @@ class PreservesColimitsOfSize {C D : SSet.{max w u}} (F : C ⟶ D) : Prop where
 
 variable {C D E : SSet.{max w u}}
 
-/-- The empty diagram: the universe lift of a simplicial set of the universe `w` can be empty. -/
-private lemma exists_not_nonempty_uliftFunctor_obj :
-    ∃ K : SSet.{w}, ¬ (uliftFunctor.{u}.obj K).Nonempty :=
-  ⟨(⊥ : (Δ[0] : SSet.{w}).Subcomplex), by simp⟩
-
 namespace HasLimitsOfSize
 
 /-- Having limits of size `w` is invariant under isomorphism. -/
@@ -128,10 +133,12 @@ lemma of_iso [C.HasLimitsOfSize.{w}] (e : C ≅ D) : D.HasLimitsOfSize.{w} where
 /-- A simplicial set with limits of size `w` has a terminal vertex, the limit of the empty
 diagram. -/
 lemma exists_isTerminalVertex [C.HasLimitsOfSize.{w}] :
-    ∃ x, C.IsTerminalVertex x :=
-  have ⟨_, hK⟩ := exists_not_nonempty_uliftFunctor_obj.{w, u}
+    ∃ x, C.IsTerminalVertex x := by
+  -- The empty diagram is indexed by the universe lift of the empty subcomplex of `Δ[0]`.
+  have hK : ¬ (uliftFunctor.{u}.obj ((⊥ : (Δ[0] : SSet.{w}).Subcomplex) : SSet.{w})).Nonempty := by
+    simp
   have ⟨c, hc⟩ := exists_isLimit ((isInitialOfNotNonempty hK).to C)
-  ⟨_, (slice.isLimit_iff_isTerminalVertex_π _ hK c).1 hc⟩
+  exact ⟨_, (slice.isLimit_iff_isTerminalVertex_π _ hK c).1 hc⟩
 
 end HasLimitsOfSize
 
@@ -149,10 +156,12 @@ lemma of_iso [C.HasColimitsOfSize.{w}] (e : C ≅ D) : D.HasColimitsOfSize.{w} w
 /-- A simplicial set with colimits of size `w` has an initial vertex, the colimit of the empty
 diagram. -/
 lemma exists_isInitialVertex [C.HasColimitsOfSize.{w}] :
-    ∃ x, C.IsInitialVertex x :=
-  have ⟨_, hK⟩ := exists_not_nonempty_uliftFunctor_obj.{w, u}
+    ∃ x, C.IsInitialVertex x := by
+  -- The empty diagram is indexed by the universe lift of the empty subcomplex of `Δ[0]`.
+  have hK : ¬ (uliftFunctor.{u}.obj ((⊥ : (Δ[0] : SSet.{w}).Subcomplex) : SSet.{w})).Nonempty := by
+    simp
   have ⟨c, hc⟩ := exists_isColimit ((isInitialOfNotNonempty hK).to C)
-  ⟨_, (coslice.isColimit_iff_isInitialVertex_π _ hK c).1 hc⟩
+  exact ⟨_, (coslice.isColimit_iff_isInitialVertex_π _ hK c).1 hc⟩
 
 end HasColimitsOfSize
 
@@ -160,9 +169,11 @@ end HasColimitsOfSize
 lemma not_hasColimitsOfSize_of_not_nonempty (hC : ¬ C.Nonempty) : ¬ C.HasColimitsOfSize.{w} :=
   fun _ ↦ (HasColimitsOfSize.exists_isInitialVertex.{w, u} (C := C)).elim fun x _ ↦ hC ⟨x⟩
 
-/-- A simplicial set has colimits of size `w` exactly when its opposite has limits of size `w`. -/
-theorem hasColimitsOfSize_iff_hasLimitsOfSize_op :
-    C.HasColimitsOfSize.{w} ↔ C.op.HasLimitsOfSize.{w} := by
+/-- The opposite of a simplicial set has limits of size `w` exactly when the simplicial set has
+colimits of size `w`. -/
+@[simp]
+theorem hasLimitsOfSize_op_iff : C.op.HasLimitsOfSize.{w} ↔ C.HasColimitsOfSize.{w} := by
+  rw [Iff.comm]
   refine ⟨fun _ ↦ ⟨fun K p ↦ ?_⟩, fun _ ↦ ⟨fun K p ↦ ?_⟩⟩
   · -- The diagram `p` in `Cᵒᵖ` is, up to the isomorphism `f`, the opposite of a diagram in `C`
     -- indexed by the universe lift of `Kᵒᵖ`, whose colimit cocone gives a limit cone over `p`.
@@ -180,21 +191,22 @@ theorem hasColimitsOfSize_iff_hasLimitsOfSize_op :
       ((slice.exists_isLimit_iff_of_isIso (opFunctorCompUliftFunctorIso.app K).hom (𝟙 _)
         (by simp)).1 this)
 
-/-- A simplicial set has limits of size `w` exactly when its opposite has colimits of size `w`. -/
-theorem hasLimitsOfSize_iff_hasColimitsOfSize_op :
-    C.HasLimitsOfSize.{w} ↔ C.op.HasColimitsOfSize.{w} := by
-  rw [hasColimitsOfSize_iff_hasLimitsOfSize_op]
+/-- The opposite of a simplicial set has colimits of size `w` exactly when the simplicial set has
+limits of size `w`. -/
+@[simp]
+theorem hasColimitsOfSize_op_iff : C.op.HasColimitsOfSize.{w} ↔ C.HasLimitsOfSize.{w} := by
+  rw [← hasLimitsOfSize_op_iff, Iff.comm]
   -- The double opposite `Cᵒᵖᵒᵖ` is isomorphic to `C`.
   exact ⟨fun _ ↦ .of_iso (C := C) (D := C.op.op) (opFunctorCompOpFunctorIso.app C).symm,
     fun _ ↦ .of_iso (C := C.op.op) (D := C) (opFunctorCompOpFunctorIso.app C)⟩
 
 /-- The opposite of a simplicial set with colimits of size `w` has limits of size `w`. -/
 instance hasLimitsOfSize_op [C.HasColimitsOfSize.{w}] : C.op.HasLimitsOfSize.{w} :=
-  hasColimitsOfSize_iff_hasLimitsOfSize_op.1 ‹_›
+  hasLimitsOfSize_op_iff.2 ‹_›
 
 /-- The opposite of a simplicial set with limits of size `w` has colimits of size `w`. -/
 instance hasColimitsOfSize_op [C.HasLimitsOfSize.{w}] : C.op.HasColimitsOfSize.{w} :=
-  hasLimitsOfSize_iff_hasColimitsOfSize_op.1 ‹_›
+  hasColimitsOfSize_op_iff.2 ‹_›
 
 /-- A terminal simplicial set, such as `Δ[0]`, has limits of every size: every cone in it is a
 limit cone. -/
@@ -247,7 +259,9 @@ lemma of_isTerminal (F : C ⟶ D) (hD : IsTerminal D) : PreservesLimitsOfSize.{w
 cone points of the limit cones over the empty diagram. -/
 lemma isTerminalVertex_map (F : C ⟶ D) [PreservesLimitsOfSize.{w} F] {x : C _⦋0⦌}
     (hx : C.IsTerminalVertex x) : D.IsTerminalVertex (F.app _ x) := by
-  obtain ⟨K, hK⟩ := exists_not_nonempty_uliftFunctor_obj.{w, u}
+  -- The empty diagram `p` is indexed by the universe lift of the empty subcomplex of `Δ[0]`.
+  have hK : ¬ (uliftFunctor.{u}.obj ((⊥ : (Δ[0] : SSet.{w}).Subcomplex) : SSet.{w})).Nonempty := by
+    simp
   let p := (isInitialOfNotNonempty hK).to C
   -- Over the empty diagram `p`, cones are their cone points, and limit cones are the cones whose
   -- cone point is terminal.
@@ -294,7 +308,9 @@ lemma of_isTerminal (F : C ⟶ D) (hD : IsTerminal D) : PreservesColimitsOfSize.
 cone points of the colimit cocones under the empty diagram. -/
 lemma isInitialVertex_map (F : C ⟶ D) [PreservesColimitsOfSize.{w} F] {x : C _⦋0⦌}
     (hx : C.IsInitialVertex x) : D.IsInitialVertex (F.app _ x) := by
-  obtain ⟨K, hK⟩ := exists_not_nonempty_uliftFunctor_obj.{w, u}
+  -- The empty diagram `p` is indexed by the universe lift of the empty subcomplex of `Δ[0]`.
+  have hK : ¬ (uliftFunctor.{u}.obj ((⊥ : (Δ[0] : SSet.{w}).Subcomplex) : SSet.{w})).Nonempty := by
+    simp
   let p := (isInitialOfNotNonempty hK).to C
   -- Under the empty diagram `p`, cocones are their cone points, and colimit cocones are the
   -- cocones whose cone point is initial.
@@ -308,9 +324,12 @@ lemma isInitialVertex_map (F : C ⟶ D) [PreservesColimitsOfSize.{w} F] {x : C _
 
 end PreservesColimitsOfSize
 
-/-- A map preserves colimits of size `w` exactly when its opposite preserves limits of size `w`. -/
-theorem preservesColimitsOfSize_iff_preservesLimitsOfSize_op (F : C ⟶ D) :
-    PreservesColimitsOfSize.{w} F ↔ PreservesLimitsOfSize.{w} (opFunctor.map F) := by
+/-- The opposite of a map preserves limits of size `w` exactly when the map preserves colimits of
+size `w`. -/
+@[simp]
+theorem preservesLimitsOfSize_op_iff (F : C ⟶ D) :
+    PreservesLimitsOfSize.{w} (opFunctor.map F) ↔ PreservesColimitsOfSize.{w} F := by
+  rw [Iff.comm]
   refine ⟨fun _ ↦ ⟨fun K p q h c hc ↦ ?_⟩, fun _ ↦ ⟨fun K p q h c hc ↦ ?_⟩⟩
   · -- Up to the isomorphism `f`, the diagram `p` in `Cᵒᵖ` is the opposite of a diagram `p₀` in
     -- `C`. Restricting `c` along `f` gives a limit cone over `p₀ᵒᵖ`, that is a colimit cocone
@@ -345,10 +364,12 @@ theorem preservesColimitsOfSize_iff_preservesLimitsOfSize_op (F : C ⟶ D) :
         (q' := e ≫ opFunctor.map q) (by simp [← h])]
     exact PreservesLimitsOfSize.isLimit_map _ hv'
 
-/-- A map preserves limits of size `w` exactly when its opposite preserves colimits of size `w`. -/
-theorem preservesLimitsOfSize_iff_preservesColimitsOfSize_op (F : C ⟶ D) :
-    PreservesLimitsOfSize.{w} F ↔ PreservesColimitsOfSize.{w} (opFunctor.map F) := by
-  rw [preservesColimitsOfSize_iff_preservesLimitsOfSize_op]
+/-- The opposite of a map preserves colimits of size `w` exactly when the map preserves limits of
+size `w`. -/
+@[simp]
+theorem preservesColimitsOfSize_op_iff (F : C ⟶ D) :
+    PreservesColimitsOfSize.{w} (opFunctor.map F) ↔ PreservesLimitsOfSize.{w} F := by
+  rw [← preservesLimitsOfSize_op_iff, Iff.comm]
   -- The double opposite of `F` is `F`, up to the isomorphisms `Cᵒᵖᵒᵖ ≅ C` and `Dᵒᵖᵒᵖ ≅ D`.
   let eC : C.op.op ≅ C := opFunctorCompOpFunctorIso.app C
   let eD : D.op.op ≅ D := opFunctorCompOpFunctorIso.app D
@@ -363,5 +384,95 @@ theorem preservesLimitsOfSize_iff_preservesColimitsOfSize_op (F : C ⟶ D) :
   · have hF' : F = eC.inv ≫ opFunctor.map (opFunctor.map F) ≫ eD.hom := by simp [hF]
     rw [hF']
     exact PreservesLimitsOfSize.comp _ _
+
+/-! ### Diagrams in the universe of `C` and smaller indexing universes -/
+
+/-- For a simplicial set `C` in the universe `max w u`, having limits indexed by simplicial sets of
+this universe means that every diagram `p : K ⟶ C` indexed by a simplicial set `K` of the universe
+of `C` has a limit cone: the universe lift of such a `K` is isomorphic to `K`
+(`SSet.uliftFunctorTrivial`). -/
+theorem hasLimitsOfSize_iff_forall_exists_isLimit :
+    C.HasLimitsOfSize.{max w u, u} ↔
+      ∀ ⦃K : SSet.{max w u}⦄ (p : K ⟶ C), ∃ c, slice.IsLimit p c :=
+  ⟨fun _ _ _ ↦ (slice.exists_isLimit_iff_of_isIso (uliftFunctorTrivial.{w, u}.hom.app _) (𝟙 C)
+    rfl).1 (HasLimitsOfSize.exists_isLimit _), fun h ↦ ⟨fun _ p ↦ h p⟩⟩
+
+/-- For a simplicial set `C` in the universe `max w u`, having colimits indexed by simplicial sets
+of this universe means that every diagram `p : K ⟶ C` indexed by a simplicial set `K` of the
+universe of `C` has a colimit cocone. -/
+theorem hasColimitsOfSize_iff_forall_exists_isColimit :
+    C.HasColimitsOfSize.{max w u, u} ↔
+      ∀ ⦃K : SSet.{max w u}⦄ (p : K ⟶ C), ∃ c, coslice.IsColimit p c :=
+  ⟨fun _ _ _ ↦ (coslice.exists_isColimit_iff_of_isIso (uliftFunctorTrivial.{w, u}.hom.app _)
+    (𝟙 C) rfl).1 (HasColimitsOfSize.exists_isColimit _), fun h ↦ ⟨fun _ p ↦ h p⟩⟩
+
+/-- For a map `F : C ⟶ D` in the universe `max w u`, preserving limits indexed by simplicial sets
+of this universe means that `F` sends limit cones over every diagram `p : K ⟶ C`, indexed by a
+simplicial set `K` of this universe, to limit cones over `p ≫ F`. -/
+theorem preservesLimitsOfSize_iff_forall_isLimit_map (F : C ⟶ D) :
+    PreservesLimitsOfSize.{max w u, u} F ↔
+      ∀ ⦃K : SSet.{max w u}⦄ ⦃p : K ⟶ C⦄ ⦃q : K ⟶ D⦄ (h : 𝟙 _ ≫ p ≫ F = q)
+        ⦃c : (slice p) _⦋0⦌⦄, slice.IsLimit p c →
+          slice.IsLimit q ((slice.map (𝟙 _) F h).app _ c) := by
+  refine ⟨fun _ K p q h c hc ↦ ?_, fun H ↦ ⟨fun _ _ _ h _ hc ↦ H h hc⟩⟩
+  -- Restrict `c` along the isomorphism `i` from the universe lift of `K` to `K`.
+  let i : uliftFunctor.{u}.obj K ⟶ K := uliftFunctorTrivial.{w, u}.hom.app K
+  have hp : i ≫ p ≫ 𝟙 C = i ≫ p := by simp
+  rw [← slice.isLimit_map_map_iff i F hp h (q' := i ≫ q) (by simp [← h])]
+  exact PreservesLimitsOfSize.isLimit_map _ ((slice.isLimit_iff _).2
+    ((isTerminalVertex_iff_of_iso (asIso (slice.map i (𝟙 C) hp)) c).2 ((slice.isLimit_iff _).1 hc)))
+
+/-- For a map `F : C ⟶ D` in the universe `max w u`, preserving colimits indexed by simplicial
+sets of this universe means that `F` sends colimit cocones under every diagram `p : K ⟶ C`,
+indexed by a simplicial set `K` of this universe, to colimit cocones under `p ≫ F`. -/
+theorem preservesColimitsOfSize_iff_forall_isColimit_map (F : C ⟶ D) :
+    PreservesColimitsOfSize.{max w u, u} F ↔
+      ∀ ⦃K : SSet.{max w u}⦄ ⦃p : K ⟶ C⦄ ⦃q : K ⟶ D⦄ (h : 𝟙 _ ≫ p ≫ F = q)
+        ⦃c : (coslice p) _⦋0⦌⦄, coslice.IsColimit p c →
+          coslice.IsColimit q ((coslice.map (𝟙 _) F h).app _ c) := by
+  refine ⟨fun hF K p q h c hc ↦ ?_, fun H ↦ ⟨fun _ _ _ h _ hc ↦ H h hc⟩⟩
+  -- Pass to the opposite: `Fᵒᵖ` preserves the limit cone over `pᵒᵖ` corresponding to `c`.
+  rw [← preservesLimitsOfSize_op_iff, preservesLimitsOfSize_iff_forall_isLimit_map] at hF
+  rw [coslice.isColimit_map_iff_isLimit_op (𝟙 _) F h (CategoryTheory.Functor.map_id _ _) rfl]
+  exact hF _ ((coslice.isColimit_iff_isLimit_op c).1 hc)
+
+section shrink
+
+variable {C D : SSet.{max w w' u}}
+
+/-- Having limits of size `max w w'` implies having limits of the smaller size `w`: the universe
+lift of a simplicial set of the universe `w` is, up to isomorphism, the universe lift of a
+simplicial set of the universe `max w w'` (`SSet.uliftFunctorCompIso`). -/
+theorem hasLimitsOfSize_shrink [C.HasLimitsOfSize.{max w w', u}] :
+    C.HasLimitsOfSize.{w, max w' u} where
+  exists_isLimit K _ := (slice.exists_isLimit_iff_of_isIso
+    (uliftFunctorCompIso.{w, w', u}.hom.app K) (𝟙 C) rfl).1 (HasLimitsOfSize.exists_isLimit _)
+
+/-- Having colimits of size `max w w'` implies having colimits of the smaller size `w`. -/
+theorem hasColimitsOfSize_shrink [C.HasColimitsOfSize.{max w w', u}] :
+    C.HasColimitsOfSize.{w, max w' u} where
+  exists_isColimit K _ := (coslice.exists_isColimit_iff_of_isIso
+    (uliftFunctorCompIso.{w, w', u}.hom.app K) (𝟙 C) rfl).1 (HasColimitsOfSize.exists_isColimit _)
+
+/-- A map preserving limits of size `max w w'` preserves limits of the smaller size `w`. -/
+theorem preservesLimitsOfSize_shrink (F : C ⟶ D) [PreservesLimitsOfSize.{max w w', u} F] :
+    PreservesLimitsOfSize.{w, max w' u} F where
+  isLimit_map K p q h c hc := by
+    -- Restrict `c` along the isomorphism `i` from the iterated universe lift of `K` to its single
+    -- universe lift.
+    let i := uliftFunctorCompIso.{w, w', u}.hom.app K
+    have hp : i ≫ p ≫ 𝟙 C = i ≫ p := by simp
+    rw [← slice.isLimit_map_map_iff i F hp h (q' := i ≫ q) (by simp [← h])]
+    exact PreservesLimitsOfSize.isLimit_map _ ((slice.isLimit_iff _).2
+      ((isTerminalVertex_iff_of_iso (asIso (slice.map i (𝟙 C) hp)) c).2
+        ((slice.isLimit_iff _).1 hc)))
+
+/-- A map preserving colimits of size `max w w'` preserves colimits of the smaller size `w`. -/
+theorem preservesColimitsOfSize_shrink (F : C ⟶ D) [PreservesColimitsOfSize.{max w w', u} F] :
+    PreservesColimitsOfSize.{w, max w' u} F := by
+  have := (preservesLimitsOfSize_op_iff.{max w w', u} F).2 ‹_›
+  exact (preservesLimitsOfSize_op_iff.{w, max w' u} F).1 (preservesLimitsOfSize_shrink.{w, w', u} _)
+
+end shrink
 
 end SSet
