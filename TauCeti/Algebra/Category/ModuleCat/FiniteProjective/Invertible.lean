@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Ring
 import Mathlib.Algebra.Module.StablyFree.FreeOfInvertible
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.RingTheory.PicardGroup.RankOne
@@ -37,6 +38,8 @@ induced by `f` is the map of Picard groups.
   submodule has zero reduced class exactly when it is principal.
 * `TauCeti.FiniteProjectiveModules.classOf_ideal_eq_zero_iff_isPrincipal`: a nonzero finite
   projective ideal of a domain has zero reduced class exactly when it is principal.
+* `TauCeti.FiniteProjectiveModules.splitK0_of_pic_one`: the invertible module of the trivial
+  Picard class has class `1` in projective `K₀`.
 * `TauCeti.FiniteProjectiveModules.map_extendScalars_of_pic`: extension of scalars on the class
   of the invertible module of a Picard class.
 
@@ -103,6 +106,14 @@ theorem classOf_fractionalIdeal_eq_zero_iff_isPrincipal {S : Submonoid A} {P : T
     classOf A (I : FractionalIdeal S P) 1 = 0 ↔ (I : Submodule A P).IsPrincipal :=
   classOf_submodule_eq_zero_iff_isPrincipal (I : Submodule A P)
 
+/-- The invertible module of the trivial Picard class has class `1 = [A]` in projective `K₀(A)`:
+it is free of rank one. -/
+@[simp]
+theorem splitK0_of_pic_one : SplitK0.of.{u} (of A (1 : CommRing.Pic A)) = 1 := by
+  rw [← splitK0_of_self]
+  exact SplitK0.of_congr (CategoryTheory.ObjectProperty.isoMk _
+    (Module.Invertible.free_iff_linearEquiv.mp inferInstance).some.toModuleIso)
+
 open scoped TensorProduct in
 /-- **Extension of scalars of an invertible module.** Along a ring homomorphism `f : A →+* B`,
 extension of scalars sends the class in projective `K₀(A)` of the invertible module of a Picard
@@ -112,8 +123,8 @@ theorem map_extendScalars_of_pic {B : Type u} [CommRing B] (f : A →+* B) (L : 
     SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (SplitK0.of.{u} (of A L)) =
       SplitK0.of.{u} (of B (CommRing.Pic.mapRingHom f L)) := by
   let _ : Algebra A B := f.toAlgebra
-  have hf : f = algebraMap A B := rfl
-  rw [SplitK0.map_of, hf, CommRing.Pic.mapRingHom_algebraMap, CommRing.Pic.mapAlgebra_apply]
+  rw [SplitK0.map_of, ← RingHom.algebraMap_toAlgebra f, CommRing.Pic.mapRingHom_algebraMap,
+    CommRing.Pic.mapAlgebra_apply]
   -- The balanced extension of `L` is Mathlib's `B ⊗[A] L`, which represents `mapAlgebra A B L`.
   exact SplitK0.of_extendScalars_obj
     (((BalancedExtension.extendScalarsIso (algebraMap A B)).app (ModuleCat.of A L) ≪≫

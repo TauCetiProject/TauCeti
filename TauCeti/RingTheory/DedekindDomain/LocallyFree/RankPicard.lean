@@ -327,11 +327,9 @@ theorem map_extendScalars_eq_rankSteinitz_fst [Subsingleton (Pic B)] (f : A →+
   -- Any central right action of `ℤ` serves to form the square-zero extension.
   let : Module ℤᵐᵒᵖ (Additive (Pic A)) := Module.compHom _ ((RingHom.id ℤ).fromOpposite mul_comm)
   have : IsCentralScalar ℤ (Additive (Pic A)) := ⟨fun _ _ ↦ rfl⟩
-  -- The trivial line `f* L` of `B` is isomorphic to `B`.
+  -- The line `f* L` of `B` is trivial.
   have hL : SplitK0.of.{u} (of B (Pic.mapRingHom f ((rankPicRingEquiv A x).snd.toMul))) = 1 := by
-    rw [Subsingleton.elim (Pic.mapRingHom f _) 1, ← splitK0_of_self]
-    exact SplitK0.of_congr (ObjectProperty.isoMk _
-      (Module.Invertible.free_iff_linearEquiv.mp inferInstance).some.toModuleIso)
+    rw [Subsingleton.elim (Pic.mapRingHom f _) 1, splitK0_of_pic_one]
   conv_lhs => rw [← (rankPicRingEquiv A).symm_apply_apply x]
   rw [map_extendScalars_rankPicRingEquiv_symm, hL, fst_rankPicRingEquiv]
   push_cast
