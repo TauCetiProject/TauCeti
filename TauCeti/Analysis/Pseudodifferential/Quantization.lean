@@ -94,6 +94,10 @@ frequency derivative of its Fourier transform.
   maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
 * `TauCeti.Symbol.quantizeSchwartzValue_map_singleEntryMap`: a scalar symbol placed into
   `V →L[ℂ] W` by `w ∘ a(x, ξ) ∘ K` quantizes to `Op(a) (K ∘ u) • w`.
+* `TauCeti.Symbol.quantizeSchwartzValue_map_entryMap` and
+  `TauCeti.Symbol.sum_quantizeSchwartzValue_map_entryMap_smul`: the scalar entry `ℓ ∘ a(x, ξ) ∘ v`
+  quantizes to `ℓ (Op(a) (u v))`, and in bases of `V` and `W` the quantizations of the entries
+  recombine to the quantization of `a`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -1054,6 +1058,44 @@ theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpac
       quantizeSchwartzValue a.coefficient (u.postcompCLM K) x • w := by
   rw [coefficient_map_eq_comp_comp _ K (singleEntryMap_apply K w),
     quantizeSchwartzValue_comp_comp, ContinuousLinearMap.toSpanSingleton_apply]
+
+/-- Quantizing the scalar entry `ℓ ∘ a ∘ v` of a symbol, taken by
+`TauCeti.Symbol.entryMap ℓ v`, on a scalar input `u` gives `ℓ` of the quantization of `a` on the
+input `u v`. -/
+theorem quantizeSchwartzValue_map_entryMap [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n V W m) (ℓ : W →L[ℂ] ℂ) (v : V) (u : 𝓢(CoordinateSpace n, ℂ))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (entryMap ℓ v)).coefficient u x =
+      ℓ (quantizeSchwartzValue a.coefficient
+        (u.postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)) x) := by
+  rw [coefficient_map_eq_comp_comp _ _ (entryMap_apply ℓ v), quantizeSchwartzValue_comp_comp]
+
+/-- **Quantization through the scalar entries of a symbol.** For bases `(vᵢ)` of `V` and `(wₖ)` of
+`W` with coordinate functionals `vᵢ*` and `wₖ*`, quantizing the entries `wₖ* ∘ a ∘ vᵢ` of a symbol
+on the coordinates `vᵢ*(u)` of the input and recombining along the `wₖ` gives the quantization of
+`a` on `u`. -/
+theorem sum_quantizeSchwartzValue_map_entryMap_smul [FiniteDimensional ℂ V]
+    [FiniteDimensional ℂ W] (a : Symbol n V W m) {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (bV : Module.Basis ι ℂ V) (bW : Module.Basis κ ℂ W) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    ∑ k, (∑ i, quantizeSchwartzValue
+      (a.map (entryMap (bW.coord k).toContinuousLinearMap (bV i))).coefficient
+        (u.postcompCLM (bV.coord i).toContinuousLinearMap) x) • bW k =
+      quantizeSchwartzValue a.coefficient u x := by
+  have := FiniteDimensional.completeSpace ℂ V
+  have := FiniteDimensional.completeSpace ℂ W
+  -- The input `u` is the sum of its coordinates placed along the basis vectors.
+  have hu : u = ∑ i, (u.postcompCLM (bV.coord i).toContinuousLinearMap).postcompCLM
+      (ContinuousLinearMap.toSpanSingleton ℂ (bV i)) := by
+    ext z
+    simp [bV.sum_repr]
+  conv_rhs => rw [← bW.sum_repr (quantizeSchwartzValue a.coefficient u x)]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  congr 1
+  rw [← bW.coord_apply]
+  conv_rhs => rw [hu, quantizeSchwartzValue_sum_right, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [quantizeSchwartzValue_map_entryMap, LinearMap.coe_toContinuousLinearMap']
 
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol

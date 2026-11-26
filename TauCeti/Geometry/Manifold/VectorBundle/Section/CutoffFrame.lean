@@ -34,7 +34,10 @@ and a cutoff `ψ` with compact support in the chart target give the **chart cut-
 `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` (`Bundle.Trivialization.chartCutoffSection`), on which chart
 compressions of operators between bundles are evaluated. In terms of cut-off frames, it is the sum
 of the cut-off frame sections `ρ t⁻¹ bᵢ` with the pulled back coefficients `(ψ bᵢ*(u)) ∘ e`
-(`Bundle.Trivialization.chartCutoffSection_eq_sum`).
+(`Bundle.Trivialization.chartCutoffSection_eq_sum`). In the opposite direction, a smooth section
+`s` of `V` is read in the chart as the Schwartz function `y ↦ ψ(y) t (s (e⁻¹ y))`
+(`Bundle.Trivialization.cutoffPushforwardSchwartz`), on which quantizations of matrix-valued
+symbols act.
 -/
 
 public section
@@ -192,6 +195,71 @@ theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
     conv_lhs => rw [← b.sum_repr (u (e x)), Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     simp [← smul_assoc, Complex.real_smul]
+  · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
+      e.complexCutoffPullback_apply_of_notMem he _ _ hx]
+
+omit [T2Space M] in
+include he hE in
+/-- The chart reading `y ↦ ψ(y) t (s (e⁻¹ y))` of a smooth section `s` is a smooth function on the
+model space: on the chart target it is a product of smooth coordinate expressions, and it vanishes
+outside the support of `ψ`, a compact subset of the chart target. -/
+private theorem contDiff_cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (s : Cₛ^∞⟮𝓘(ℝ, EM); F, V⟯) :
+    ContDiff ℝ ∞ fun y ↦ ψ y • t.continuousLinearMapAt ℂ (e.symm y) (s (e.symm y)) := by
+  have hs := (contMDiffOn_section_iff t t.open_baseSet subset_rfl).1 s.contMDiff.contMDiffOn
+  have h : ContMDiffOn 𝓘(ℝ, EM) 𝓘(ℝ, F) ∞
+      (fun y ↦ t.continuousLinearMapAt ℂ (e.symm y) (s (e.symm y))) e.target := by
+    refine (hs.comp (contMDiffOn_symm_of_mem_maximalAtlas he)
+      fun y hy ↦ hE (e.map_target hy)).congr fun y hy ↦ ?_
+    simp [continuousLinearMapAt_apply_of_mem ℂ t (hE (e.map_target hy))]
+  exact contMDiff_iff_contDiff.1 (h.contMDiff_smul_of_tsupport_subset e.open_target
+    ψ.contDiff.contMDiff.contMDiffOn ψ.tsupport_subset)
+
+/-- **Reading a section in a chart.** For a chart `e` whose source lies in the base set of the
+trivialization `t` and a cutoff `ψ` with compact support in the chart target, the frame
+coefficients of a smooth section `s` of `V`, read in the chart and cut off by `ψ`: the Schwartz
+function `y ↦ ψ(y) t (s (e⁻¹ y))` on the model space, where `t` is read on the fibre over `e⁻¹ y`,
+complex-linear in `s`. This is the bundle version of
+`OpenPartialHomeomorph.cutoffPushforwardSchwartz`. Extending it back by
+`Bundle.Trivialization.chartCutoffSection` recovers `s` multiplied by a cutoff
+(`Bundle.Trivialization.chartCutoffSection_cutoffPushforwardSchwartz`). -/
+def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    Cₛ^∞⟮𝓘(ℝ, EM); F, V⟯ →ₗ[ℂ] 𝓢(EM, F) where
+  toFun s := HasCompactSupport.toSchwartzMap
+    (f := fun y ↦ ψ y • t.continuousLinearMapAt ℂ (e.symm y) (s (e.symm y)))
+    ψ.hasCompactSupport.smul_right (t.contDiff_cutoffPushforwardSchwartz he hE ψ s)
+  map_add' s s' := by
+    ext y
+    simp
+  map_smul' c s := by
+    ext y
+    simp [smul_comm (ψ y)]
+
+omit [T2Space M] in
+@[simp]
+theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (s : Cₛ^∞⟮𝓘(ℝ, EM); F, V⟯) (y : EM) :
+    t.cutoffPushforwardSchwartz he hE ψ s y =
+      ψ y • t.continuousLinearMapAt ℂ (e.symm y) (s (e.symm y)) :=
+  (rfl)
+
+/-- **Reading a section and extending it back.** If a cutoff `ψ₁` equals `1` on the support of `ψ`,
+the chart cut-off section by `ψ` of the reading of `s` by `ψ₁` is `s` multiplied by `ψ` read on
+`M` through the chart. -/
+theorem chartCutoffSection_cutoffPushforwardSchwartz {ψ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hψ₁ : ∀ y ∈ tsupport ψ, ψ₁ y = 1) (s : Cₛ^∞⟮𝓘(ℝ, EM); F, V⟯) :
+    t.chartCutoffSection he hE ψ (t.cutoffPushforwardSchwartz he hE ψ₁ s) =
+      e.complexCutoffPullback he ψ 1 • s := by
+  ext x
+  rw [ContMDiffSection.smul_apply_of_normedAlgebra]
+  by_cases hx : x ∈ e.source
+  · rw [t.chartCutoffSection_apply_of_mem he hE _ _ hx, cutoffPushforwardSchwartz_apply,
+      e.left_inv hx, e.complexCutoffPullback_apply_of_mem he _ _ hx]
+    by_cases hψx : ψ (e x) = 0
+    · simp [hψx, ← t.symmL_apply (R := ℂ) (hE hx)]
+    rw [hψ₁ _ (subset_tsupport _ hψx), one_smul, ← t.symmL_apply (R := ℂ) (hE hx),
+      ← Complex.coe_smul, map_smul, t.symmL_continuousLinearMapAt (hE hx)]
+    simp
   · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
       e.complexCutoffPullback_apply_of_notMem he _ _ hx]
 

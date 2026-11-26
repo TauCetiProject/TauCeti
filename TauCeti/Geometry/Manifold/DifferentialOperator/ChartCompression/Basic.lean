@@ -181,6 +181,23 @@ theorem tsupport_cutoffPullback_one (ψ : 𝓓(⟨e.target, e.open_target⟩, �
   rwa [Function.mem_support, cutoffPullback_one_apply_of_mem he _ (e.map_target hzt),
     e.right_inv hzt]
 
+/-- **A function on `M` equal to `1` over two chart cutoffs.** For cutoffs `φ` and `ψ` with compact
+supports in the target of the chart `e`, some smooth function `ρ` on `M`, supported in the chart
+source, equals `1` at `e⁻¹ y` for every `y` in the supports of `φ` and `ψ`. Such a `ρ` turns a
+trivialization over the chart source into cut-off frames which are frames over these supports. -/
+theorem exists_tsupport_subset_source_and_eq_one [FiniteDimensional ℝ E]
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    ∃ ρ : C^∞⟮𝓘(ℝ, E), M; ℝ⟯, tsupport ρ ⊆ e.source ∧
+      ∀ y ∈ tsupport φ ∪ tsupport ψ, ρ (e.symm y) = 1 := by
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
+  refine ⟨e.cutoffPullback he χ 1, ?_, fun y hy ↦ ?_⟩
+  · rw [tsupport_cutoffPullback_one]
+    rintro _ ⟨y, hy, rfl⟩
+    exact e.map_target (χ.tsupport_subset hy)
+  · have hyt : y ∈ e.target := (union_subset φ.tsupport_subset ψ.tsupport_subset) hy
+    rw [cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
+    exact hχ.self_of_nhdsSet y hy
+
 /-- **Pushing a function on the manifold forward to a chart.** For a cutoff `φ` with compact
 support in the target of the chart `e`, the smooth function `φ · (h ∘ e⁻¹)` on `E`, which vanishes
 outside the chart target, as a linear map `C^∞(M) → C^∞(E)` in `h`. -/
