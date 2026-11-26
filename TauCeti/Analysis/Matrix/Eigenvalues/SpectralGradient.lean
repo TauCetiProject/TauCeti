@@ -11,9 +11,9 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -389,40 +389,14 @@ theorem spectralGradient_comp (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) �
     hA.spectralGradient (fun μ ↦ g (f μ)) =
       ((deriv g (f hA.eigenvalues₀) : ℝ) : 𝕜) • hA.spectralGradient f := by
   have hd := (hg.hasDerivAt.comp_hasFDerivAt hA.eigenvalues₀ hf.hasFDerivAt).fderiv
+  rw [Function.comp_def] at hd
   have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ g (f μ)) i : 𝕜)) =
       ((deriv g (f hA.eigenvalues₀) : ℝ) : 𝕜) • fun i ↦ (hA.spectralGradientWeights f i : 𝕜) := by
     funext i
     simp only [spectralGradientWeights_def, Pi.smul_apply, smul_eq_mul]
-    rw [show (fun μ ↦ g (f μ)) = g ∘ f from rfl, hd, smul_apply, smul_eq_mul,
-      RCLike.ofReal_mul]
+    rw [hd, smul_apply, smul_eq_mul, RCLike.ofReal_mul]
   rw [spectralGradient_def, spectralGradient_def, hw, diagonal_smul, Matrix.mul_smul,
     Matrix.smul_mul]
-
-/-- If `f` is continuous at `x` with `f x = 0`, then `log ∘ f` has derivative `0` at `x`: either it
-is not differentiable there, or it is continuous at `x` with value `log 0 = 0`, which forces
-`f = 0` near `x` since `log |f|` tends to `-∞` along the points where `f ≠ 0`. -/
-private theorem fderiv_log_comp_eq_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : E → ℝ} {x : E} (hf : ContinuousAt f x) (hx : f x = 0) :
-    fderiv ℝ (fun y ↦ Real.log (f y)) x = 0 := by
-  by_cases hd : DifferentiableAt ℝ (fun y ↦ Real.log (f y)) x
-  swap
-  · exact fderiv_zero_of_not_differentiableAt hd
-  have hc : Filter.Tendsto (fun y ↦ Real.log (f y)) (𝓝 x) (𝓝 0) := by
-    simpa [hx] using hd.continuousAt.tendsto
-  have hf0 : Filter.Tendsto f (𝓝 x) (𝓝 0) := by simpa [hx] using hf.tendsto
-  have h0 : (fun y ↦ Real.log (f y)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
-    filter_upwards [hc.eventually (Ioo_mem_nhds (by norm_num : (-1 : ℝ) < 0) one_pos),
-      hf0.eventually (Ioo_mem_nhds (neg_lt_zero.2 (Real.exp_pos (-1))) (Real.exp_pos (-1)))]
-      with y (hy : Real.log (f y) ∈ Set.Ioo (-1) 1)
-        (hy' : f y ∈ Set.Ioo (-Real.exp (-1)) (Real.exp (-1)))
-    by_contra hne
-    have hfy : f y ≠ 0 := fun h ↦ hne (by simp [h])
-    have : Real.log |f y| < -1 := by
-      rw [Real.log_lt_iff_lt_exp (abs_pos.2 hfy)]
-      exact abs_lt.2 hy'
-    rw [Real.log_abs] at this
-    exact (lt_irrefl _ (this.trans hy.1))
-  exact h0.fderiv_eq.trans (fderiv_const_apply 0)
 
 /-- **The gradient of `log F_f`** is `∇F_f / F_f`: if `f` is differentiable at `λ(A)`, then
 `∇F_{log ∘ f}(A) = f(λ(A))⁻¹ ∇F_f(A)`. Where `f(λ(A)) = 0` both sides vanish, with the
@@ -433,7 +407,8 @@ theorem spectralGradient_log (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) �
       ((f hA.eigenvalues₀)⁻¹ : 𝕜) • hA.spectralGradient f := by
   by_cases hf0 : f hA.eigenvalues₀ = 0
   · rw [spectralGradient_def]
-    simp [hf0, spectralGradientWeights_def, fderiv_log_comp_eq_zero hf.continuousAt hf0]
+    simp [hf0, spectralGradientWeights_def,
+      TauCeti.fderiv_log_comp_eq_zero_of_continuousAt hf.continuousAt hf0]
   rw [hA.spectralGradient_comp (Real.differentiableAt_log hf0) hf, Real.deriv_log,
     RCLike.ofReal_inv]
 
