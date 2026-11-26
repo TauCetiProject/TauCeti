@@ -20,6 +20,9 @@ For a domain restriction `u.domRestrict f`, the preimage of `{y}` lies in `{⟨x
 `x` is the only point of `u` sent to `y` (`Set.preimage_domRestrict_singleton_subset_iff`), and
 the preimage of `s` under the inclusion of `(s \ {x})ᶜ` lies in `{x}`
 (`Set.preimage_val_compl_diff_singleton_subset`).
+
+For `h : MapsTo f s t`, the image in `α` of the preimage of `A ⊆ t` under `h.restrict` is
+`s ∩ f ⁻¹' A` (`Set.MapsTo.image_val_preimage_restrict`).
 -/
 
 public section
@@ -59,5 +62,12 @@ theorem preimage_domRestrict_singleton_subset_iff {u : Set α} {f : α → β} {
 theorem preimage_val_compl_diff_singleton_subset (s : Set α) (x : α) :
     (Subtype.val : ↥(s \ {x})ᶜ → α) ⁻¹' s ⊆ {⟨x, fun h ↦ h.2 rfl⟩} :=
   fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.property ⟨hz, h⟩)
+
+/-- For `h : MapsTo f s u`, the image in `α` of the preimage of `A ⊆ u` under `h.restrict` is the
+set of points of `s` that `f` sends into `A`. -/
+theorem MapsTo.image_val_preimage_restrict {s : Set α} {u : Set β} (h : MapsTo f s u)
+    (A : Set u) : Subtype.val '' (h.restrict f s u ⁻¹' A) = s ∩ f ⁻¹' (Subtype.val '' A) := by
+  rw [← Subtype.image_preimage_coe, ← preimage_comp, ← h.restrict_commutes, preimage_comp,
+    preimage_image_eq _ Subtype.val_injective]
 
 end Set

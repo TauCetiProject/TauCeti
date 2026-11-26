@@ -106,7 +106,8 @@ theorem map_projectionConjugacyUnitary {B F : Type*} [CStarAlgebra B] [FunLike F
   have hu' : ((hp.map φ).isIdempotentElem.isUnit_intertwiner
       (hq.map φ).isIdempotentElem hφ).unit = Units.map (φ : A →* B) u := Units.ext <| by
     simp only [u, Units.coe_map, MonoidHom.coe_ofClass, IsUnit.unit_spec, map_intertwiner]
-  rw [projectionConjugacyUnitary, projectionConjugacyUnitary, hu']; exact u.map_polarUnitary φ
+  rw [projectionConjugacyUnitary, projectionConjugacyUnitary, hu']
+  exact (u.coe_polarUnitary_map φ).symm
 /-- Intertwining identity `q * u = u * p` for `IsStarProjection.projectionConjugacyUnitary`. -/
 theorem mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul
     (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :

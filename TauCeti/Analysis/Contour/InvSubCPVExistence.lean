@@ -5,10 +5,9 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import TauCeti.Analysis.Contour.Chord.QuotientAsymptotics
 import TauCeti.Analysis.Contour.Crossing.Finiteness
@@ -101,22 +100,15 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
     exists_one_sided_tangents h_imm ht₀
   obtain ⟨R, hR_pos, hc_R, hc_L, hc_plus, hc_minus⟩ :=
     exists_crossing_slitPlane_radius h_dR h_dL h_at hL_R hL_L
-  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
   refine ⟨R, hR_pos, L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
     fun l u hRl hlt htu huR h_lo h_hi => ?_⟩
   have h_endpoint_R : t₀ + (u - t₀) = u := by ring
   have h_endpoint_L : t₀ - (t₀ - l) = l := by ring
   exact perWindow_truncated_integral_tendsto hlt htu h_at
-      (h_imm.continuousOn.mono (by
-        rw [uIcc_of_le hab.le]
-        exact Icc_subset_Icc (by linarith) h_hi))
-      h_tend_R h_tend_L p.countable_toSet
-      (fun t ht => hp t ⟨by
-        rw [min_eq_left hab.le, max_eq_right hab.le]
-        exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)
-      (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
+      (h_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.mono (by
         rw [uIcc_of_le (hlt.le.trans htu.le), uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
+      h_tend_R h_tend_L
       (fun a' b' h1 h2 h3 => hc_R a' b' h1 h2 (h3.trans huR))
       (fun b' h1 h2 => hc_L l b' hRl h1 h2)
       (by simpa only [h_endpoint_R] using

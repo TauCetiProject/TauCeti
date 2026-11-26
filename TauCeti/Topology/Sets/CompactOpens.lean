@@ -35,6 +35,8 @@ space contained in `U` (`TopologicalSpace.CompactOpens.exists_subset_preimage_su
   `K ⊆ X × Y` at `x : X`.
 * `TopologicalSpace.CompactOpens.slices`: the finitely many slices of `K` over its projection.
 * `TopologicalSpace.CompactOpens.sliceFiber`: the compact open set `{x | K_x = T}`, for `T ≠ ⊥`.
+* `TopologicalSpace.CompactOpens.swap`: the compact open set `{(y, x) | (x, y) ∈ K}` for
+  `K ⊆ X × Y`.
 
 ## Main results
 
@@ -197,6 +199,43 @@ theorem eq_finsetSup_sliceFiber_prod (K : CompactOpens (X × Y)) :
   exact K.mem_iff_exists_sliceFiber x y
 
 end T2Space
+
+section Swap
+
+/-- The compact open set `{(y, x) | (x, y) ∈ K}` obtained from `K ⊆ X × Y` by exchanging the
+factors. -/
+def swap (K : CompactOpens (X × Y)) : CompactOpens (Y × X) where
+  carrier := Prod.swap ⁻¹' K
+  isCompact' := by
+    rw [← image_swap_eq_preimage_swap]
+    exact K.isCompact.image continuous_swap
+  isOpen' := K.isOpen.preimage continuous_swap
+
+@[simp, norm_cast]
+theorem coe_swap (K : CompactOpens (X × Y)) : (K.swap : Set (Y × X)) = Prod.swap ⁻¹' K :=
+  (rfl)
+
+@[simp]
+theorem mem_swap {K : CompactOpens (X × Y)} {p : Y × X} : p ∈ K.swap ↔ p.swap ∈ K :=
+  Iff.rfl
+
+@[simp]
+theorem swap_swap (K : CompactOpens (X × Y)) : K.swap.swap = K :=
+  CompactOpens.ext <| by simp only [coe_swap, preimage_preimage, Prod.swap_swap, preimage_id']
+
+@[simp]
+theorem swap_bot : (⊥ : CompactOpens (X × Y)).swap = ⊥ :=
+  CompactOpens.ext <| by rw [coe_swap, coe_bot, coe_bot, preimage_empty]
+
+@[simp]
+theorem swap_sup (K L : CompactOpens (X × Y)) : (K ⊔ L).swap = K.swap ⊔ L.swap :=
+  CompactOpens.ext <| by rw [coe_swap, coe_sup, coe_sup, coe_swap, coe_swap, preimage_union]
+
+@[simp]
+theorem swap_prod (U : CompactOpens X) (V : CompactOpens Y) : (U ×ˢ V).swap = V ×ˢ U :=
+  CompactOpens.ext <| by rw [coe_swap, coe_prod, coe_prod, preimage_swap_prod]
+
+end Swap
 
 section Prespectral
 

@@ -38,6 +38,8 @@ factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)`
 * `Units.exists_unitary_joined`: every invertible element is joined in `Aˣ` to a unitary.
 * `Units.norm_polarUnitary_sub_one_le_sq_add`, `Units.norm_polarUnitary_sub_one_le`,
   `Units.joined_one_polarUnitary`, `Units.fst_polarUnitary_eq_one`.
+* `IsConj.exists_mem_unitary_mul_mul_star_eq`: similar self-adjoint elements are unitarily
+  equivalent.
 
 ## References
 
@@ -97,6 +99,19 @@ theorem Units.exists_unitary_joined (x : Aˣ) : ∃ v : unitary A, Joined x (Uni
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   ⟨_, x.joined_polarUnitary⟩
 
+/-- **Similar self-adjoint elements are unitarily equivalent.** If an invertible element of a unital
+C⋆-algebra conjugates a self-adjoint `x` to a self-adjoint `y`, then so does a unitary, namely its
+polar unitary. Stated without `Units.polarUnitary` and an order on `A`, so that it applies to
+`CStarMatrix`. -/
+theorem IsConj.exists_mem_unitary_mul_mul_star_eq {x y : A} (h : IsConj x y)
+    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) : ∃ u ∈ unitary A, u * x * star u = y := by
+  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
+  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
+  obtain ⟨a, ha⟩ := h
+  refine ⟨a.polarUnitary, a.polarUnitary.property, ?_⟩
+  rw [a.polarUnitary_mul_eq_mul_polarUnitary hx hy ha, mul_assoc,
+    Unitary.mul_star_self_of_mem a.polarUnitary.property, mul_one]
+
 end
 
 end Polar
@@ -144,6 +159,6 @@ theorem fst_polarUnitary_eq_one {A : Type*} [NonUnitalCStarAlgebra A]
     (a.polarUnitary : Unitization ℂ A).fst = 1 := by
   let _ := CStarAlgebra.spectralOrder ℂ; let _ := CStarAlgebra.spectralOrderedRing ℂ
   have hmap : Units.map (Unitization.fstHom ℂ A : Unitization ℂ A →* ℂ) a = 1 := by ext; simp [ha]
-  simpa [hmap, polarUnitary_one] using a.map_polarUnitary (Unitization.fstHom ℂ A)
+  simpa [hmap, polarUnitary_one] using (a.coe_polarUnitary_map (Unitization.fstHom ℂ A)).symm
 
 end Units
