@@ -56,8 +56,8 @@ subspaces `W` of `V_a`.
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
   `New.Hall.blockAverage`, `New.Hall.IsCuspidal`, `New.Hall.blockAverage_simClassOf`,
   `New.Hall.blockAverage_mul` and `New.Hall.blockAverage_of_dim_eq_zero`, here with the
-  invariant block first. The block maps `TauCeti.blockTriangularEnd` (`New.blockTriangularEnd`)
-  and the shears `TauCeti.shear` are in `TauCeti.LinearAlgebra.End.Invariant`, and the lifting
+  invariant block first. The block maps `Module.End.blockTriangular` (`New.blockTriangularEnd`)
+  and the shears `LinearMap.shear` are in `TauCeti.LinearAlgebra.End.Invariant`, and the lifting
   lemma `Submodule.exists_restrict_eq_and_mapQ_eq` (`New.Hall.exists_restrict_eq_and_mapQ_eq`) is
   in `TauCeti.LinearAlgebra.Quotient.Lift`.
 -/
@@ -66,6 +66,9 @@ public section
 
 open Module TauCeti.SimilarityClass
 open scoped BigOperators
+
+open Module.End (blockTriangular blockTriangular_apply)
+open LinearMap (shear)
 
 namespace TauCeti
 
@@ -79,7 +82,7 @@ of `a` and `b` and upper right block `X`. By `blockAverage_ofEnd` any representa
 same mean. -/
 noncomputable def blockAverage (F : HallAlgebra k) (a : SimilarityClass k) : HallAlgebra k :=
   fun b ↦ 𝔼 X : Matrix (Fin a.dim) (Fin b.dim) k,
-    F (ofEnd (blockTriangularEnd a.rep b.rep (Matrix.toLin' X)))
+    F (ofEnd (blockTriangular a.rep b.rep (Matrix.toLin' X)))
 
 /-- A class function is *cuspidal* if its block averages vanish whenever both blocks have
 positive size. -/
@@ -105,7 +108,7 @@ variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 theorem blockAverage_ofEnd (F : HallAlgebra k) (a : Module.End k V) (b : Module.End k W)
     [Fintype (W →ₗ[k] V)] :
     blockAverage F (ofEnd a) (ofEnd b) =
-      𝔼 x : W →ₗ[k] V, F (ofEnd (blockTriangularEnd a b x)) := by
+      𝔼 x : W →ₗ[k] V, F (ofEnd (blockTriangular a b x)) := by
   -- Isomorphisms `e`, `f` carry the chosen representatives to `a` and `b`, and `e × f`
   -- conjugates the block maps.
   obtain ⟨e, he⟩ := ofEnd_eq_iff.1 (ofEnd_rep (ofEnd a))
@@ -122,7 +125,7 @@ theorem blockAverage_of_dim_eq_zero_left (F : HallAlgebra k) {o : SimilarityClas
   have : IsEmpty (Fin o.dim) := by rw [h]; infer_instance
   -- Each block map is similar to the representative of `a`.
   have h_class (X : Matrix (Fin o.dim) (Fin a.dim) k) :
-      ofEnd (blockTriangularEnd o.rep a.rep (Matrix.toLin' X)) = a := by
+      ofEnd (blockTriangular o.rep a.rep (Matrix.toLin' X)) = a := by
     conv_rhs => rw [← ofEnd_rep a]
     exact ofEnd_eq_of_apply_eq LinearEquiv.uniqueProd fun p ↦ by
       simp [Subsingleton.elim (o.rep p.1 + _) 0]
@@ -138,7 +141,7 @@ theorem blockAverage_of_dim_eq_zero_right (F : HallAlgebra k) {o : SimilarityCla
     (h : o.dim = 0) (a : SimilarityClass k) : blockAverage F a o = F a := by
   have : IsEmpty (Fin o.dim) := by rw [h]; infer_instance
   have h_class (X : Matrix (Fin a.dim) (Fin o.dim) k) :
-      ofEnd (blockTriangularEnd a.rep o.rep (Matrix.toLin' X)) = a := by
+      ofEnd (blockTriangular a.rep o.rep (Matrix.toLin' X)) = a := by
     conv_rhs => rw [← ofEnd_rep a]
     exact ofEnd_eq_of_apply_eq (LinearEquiv.prodUnique) fun p ↦ by
       simp [Subsingleton.elim p.2 0]
@@ -171,7 +174,7 @@ private abbrev compat (P : a.invtSubmodule × b.invtSubmodule) : Submodule k (W 
 omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
 /-- For `y` taking `B` into `A`, the product `A × B` is invariant under the block map of `y`. -/
 private theorem prod_mem_invtSubmodule (P : a.invtSubmodule × b.invtSubmodule)
-    (y : compat a b P) : P.1.val.prod P.2.val ∈ (blockTriangularEnd a b y.val).invtSubmodule := by
+    (y : compat a b P) : P.1.val.prod P.2.val ∈ (blockTriangular a b y.val).invtSubmodule := by
   refine (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun p hp ↦ ?_
   rw [Submodule.mem_prod] at hp ⊢
   have hA := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 P.1.prop
@@ -180,9 +183,9 @@ private theorem prod_mem_invtSubmodule (P : a.invtSubmodule × b.invtSubmodule)
 
 omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
 /-- The shear by `s` intertwines the block map of `a s - s b + y` with the block map of `y`. -/
-private theorem shear_blockTriangularEnd (s y : W →ₗ[k] V) (p : V × W) :
-    shear s (blockTriangularEnd a b (a ∘ₗ s - s ∘ₗ b + y) p) =
-      blockTriangularEnd a b y (shear s p) := by
+private theorem shear_blockTriangular (s y : W →ₗ[k] V) (p : V × W) :
+    shear s (blockTriangular a b (a ∘ₗ s - s ∘ₗ b + y) p) =
+      blockTriangular a b y (shear s p) := by
   ext <;> simp; abel
 
 /-- The parametrisation of the pairs `(x, U)`, `U` invariant under the block map of `x`: a pair
@@ -190,10 +193,10 @@ private theorem shear_blockTriangularEnd (s y : W →ₗ[k] V) (p : V × W) :
 `x = a s - s b + y` and the preimage of `A × B` under the shear by `s`. -/
 private noncomputable def mackeyParam :
     (Σ P : a.invtSubmodule × b.invtSubmodule, compat a b P × ((W →ₗ[k] V) ⧸ compat a b P)) →
-      Σ x : W →ₗ[k] V, (blockTriangularEnd a b x).invtSubmodule
+      Σ x : W →ₗ[k] V, (blockTriangular a b x).invtSubmodule
   | ⟨P, y, s⟩ => ⟨a ∘ₗ s.out - s.out ∘ₗ b + y.val,
       ⟨_, Submodule.comap_mem_invtSubmodule (shear s.out).toLinearMap
-        (shear_blockTriangularEnd a b _ _)
+        (shear_blockTriangular a b _ _)
         (prod_mem_invtSubmodule a b P y)⟩⟩
 
 omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
@@ -266,7 +269,7 @@ private theorem mackeyParam_surjective : Function.Surjective (mackeyParam a b) :
   have hy : x - (a ∘ₗ s.out - s.out ∘ₗ b) ∈ compat a b (A, B) := fun w hw ↦ by
     have h_mem := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 U.prop _
       (graph_mem w hw)
-    rw [blockTriangularEnd_apply] at h_mem
+    rw [blockTriangular_apply] at h_mem
     have h_eq : a (-s.out w) + x w + s.out (b w) = (x - (a ∘ₗ s.out - s.out ∘ₗ b)) w := by
       simp only [map_neg, LinearMap.sub_apply, LinearMap.comp_apply]
       abel
@@ -291,9 +294,9 @@ private theorem induced_surjective (P : a.invtSubmodule × b.invtSubmodule) :
 
 /-- The term of the pair `(x, U)` in the expansion of the left side of Mackey's formula. -/
 private noncomputable def mackeyTerm (F H : HallAlgebra k)
-    (j : Σ x : W →ₗ[k] V, (blockTriangularEnd a b x).invtSubmodule) : ℂ :=
-  F (ofEnd ((blockTriangularEnd a b j.1).invtRestrict j.2.prop)) *
-    H (ofEnd ((blockTriangularEnd a b j.1).invtQuot j.2.prop))
+    (j : Σ x : W →ₗ[k] V, (blockTriangular a b x).invtSubmodule) : ℂ :=
+  F (ofEnd ((blockTriangular a b j.1).invtRestrict j.2.prop)) *
+    H (ofEnd ((blockTriangular a b j.1).invtQuot j.2.prop))
 
 omit [Fintype k] in
 /-- On the pair `(x, U)` given by `P = (A, B)`, `y` and `s`, the block map of `x` on `U` and on
@@ -302,31 +305,31 @@ the maps induced by `y`. -/
 private theorem mackeyTerm_mackeyParam (F H : HallAlgebra k) (P : a.invtSubmodule × b.invtSubmodule)
     (z : compat a b P × ((W →ₗ[k] V) ⧸ compat a b P)) :
     mackeyTerm a b F H (mackeyParam a b ⟨P, z⟩) =
-      F (ofEnd (blockTriangularEnd (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
+      F (ofEnd (blockTriangular (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
         (induced a b P z).1)) *
-      H (ofEnd (blockTriangularEnd (a.invtQuot P.1.prop) (b.invtQuot P.2.prop)
+      H (ofEnd (blockTriangular (a.invtQuot P.1.prop) (b.invtQuot P.2.prop)
         (induced a b P z).2)) := by
   obtain ⟨y, s⟩ := z
-  have h_sh := shear_blockTriangularEnd a b s.out y.val
+  have h_sh := shear_blockTriangular a b s.out y.val
   have h_prod := prod_mem_invtSubmodule a b P y
   -- The shear identifies the block map of `x` on `U` with the block map of `y` on `A × B`.
-  have h_sub : ofEnd ((blockTriangularEnd a b (mackeyParam a b ⟨P, y, s⟩).1).invtRestrict
+  have h_sub : ofEnd ((blockTriangular a b (mackeyParam a b ⟨P, y, s⟩).1).invtRestrict
       (mackeyParam a b ⟨P, y, s⟩).2.prop) =
-      ofEnd ((blockTriangularEnd a b y.val).invtRestrict h_prod) :=
+      ofEnd ((blockTriangular a b y.val).invtRestrict h_prod) :=
     ofEnd_invtRestrict_comap (shear s.out).toLinearMap h_sh (shear s.out).injective h_prod
       (by simp [LinearEquiv.range])
-  have h_quot : ofEnd ((blockTriangularEnd a b (mackeyParam a b ⟨P, y, s⟩).1).invtQuot
+  have h_quot : ofEnd ((blockTriangular a b (mackeyParam a b ⟨P, y, s⟩).1).invtQuot
       (mackeyParam a b ⟨P, y, s⟩).2.prop) =
-      ofEnd ((blockTriangularEnd a b y.val).invtQuot h_prod) :=
+      ofEnd ((blockTriangular a b y.val).invtQuot h_prod) :=
     ofEnd_invtQuot_comap (shear s.out).toLinearMap h_sh (shear s.out).surjective h_prod
   rw [mackeyTerm, h_sub, h_quot, ofEnd_invtRestrict_eq_of_injective
-    (g := blockTriangularEnd (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
+    (g := blockTriangular (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
       (induced a b P (y, s)).1)
     (P.1.val.subtype.prodMap P.2.val.subtype) (fun _ ↦ by ext <;> simp [induced]) h_prod
     (Prod.map_injective.2 ⟨P.1.val.injective_subtype, P.2.val.injective_subtype⟩)
     (by simp [LinearMap.range_prodMap]),
     ofEnd_invtQuot_eq_of_surjective
-    (g' := blockTriangularEnd (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) (induced a b P (y, s)).2)
+    (g' := blockTriangular (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) (induced a b P (y, s)).2)
     (P.1.val.mkQ.prodMap P.2.val.mkQ) (fun _ ↦ by ext <;> simp [induced]) h_prod
     (Prod.map_surjective.2 ⟨P.1.val.mkQ_surjective, P.2.val.mkQ_surjective⟩)
     (by simp [LinearMap.ker_prodMap])]
@@ -363,8 +366,8 @@ private theorem sum_blockAverage_mul_blockAverage_eq (F H : HallAlgebra k) :
           blockAverage H (ofEnd (a.invtQuot A.prop))) (ofEnd b) =
       ∑ P : a.invtSubmodule × b.invtSubmodule,
         𝔼 z : (P.2.val →ₗ[k] P.1.val) × (W ⧸ P.2.val →ₗ[k] V ⧸ P.1.val),
-          F (ofEnd (blockTriangularEnd (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop) z.1)) *
-          H (ofEnd (blockTriangularEnd (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) z.2)) := by
+          F (ofEnd (blockTriangular (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop) z.1)) *
+          H (ofEnd (blockTriangular (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) z.2)) := by
   rw [Fintype.sum_prod_type]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   rw [mul_ofEnd_eq_sum]
@@ -388,8 +391,8 @@ theorem blockAverage_mul (F H : HallAlgebra k) :
   refine Finset.sum_congr rfl fun P _ ↦ ?_
   simp_rw [mackeyTerm_mackeyParam]
   exact (induced a b P).expect_comp_of_surjective (induced_surjective a b P)
-    (fun z ↦ F (ofEnd (blockTriangularEnd (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
-      z.1)) * H (ofEnd (blockTriangularEnd (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) z.2)))
+    (fun z ↦ F (ofEnd (blockTriangular (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
+      z.1)) * H (ofEnd (blockTriangular (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) z.2)))
 
 end Mackey
 

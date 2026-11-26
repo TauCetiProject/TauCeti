@@ -12,6 +12,7 @@ import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
 
 /-!
@@ -61,6 +62,9 @@ public section
 
 open Module TauCeti.SimilarityClass ComplexConjugate
 open scoped BigOperators
+
+open Module.End (blockTriangular blockTriangular_apply)
+open Submodule (blockUnit blockUnit_apply blockUnit_mem_stabilizer)
 
 namespace TauCeti.HallAlgebra
 
@@ -141,91 +145,6 @@ variable {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 
 variable {U Z : Submodule k V} (hUZ : IsCompl U Z)
 
-/-- The automorphism of `V = U ⊕ Z` with diagonal blocks `a`, `b` and upper right block `x`. -/
-private noncomputable def blockUnit (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
-    (x : Z →ₗ[k] U) : (Module.End k V)ˣ :=
-  LinearMap.GeneralLinearGroup.ofLinearEquiv
-    ((U.prodEquivOfIsCompl Z hUZ).symm ≪≫ₗ LinearEquiv.prodComm k U Z ≪≫ₗ
-      (LinearMap.GeneralLinearGroup.toLinearEquiv b).skewProd
-        (LinearMap.GeneralLinearGroup.toLinearEquiv a) x ≪≫ₗ
-      LinearEquiv.prodComm k Z U ≪≫ₗ U.prodEquivOfIsCompl Z hUZ)
-
-omit [Fintype k] [DecidableEq k] [Module.Finite k V] in
-private theorem blockUnit_apply (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
-    (x : Z →ₗ[k] U) (v : V) :
-    (blockUnit hUZ a b x : Module.End k V) v = U.prodEquivOfIsCompl Z hUZ
-      (blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x
-        ((U.prodEquivOfIsCompl Z hUZ).symm v)) := by
-  simp [blockUnit]
-
-omit [Fintype k] [DecidableEq k] in
-private theorem blockUnit_mem_stabilizer (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
-    (x : Z →ₗ[k] U) : blockUnit hUZ a b x ∈ stabilizer (Module.End k V)ˣ U := by
-  refine mem_stabilizer_iff.2 (Submodule.units_smul_eq_of_forall_mem _ ?_ rfl)
-  intro v hv
-  obtain ⟨u, rfl⟩ : ∃ u : U, (u : V) = v := ⟨⟨v, hv⟩, rfl⟩
-  rw [blockUnit_apply, Submodule.prodEquivOfIsCompl_symm_apply_left]
-  simp
-
-/-- The block parametrisation of the stabiliser of `U` in `GL(V)`. -/
-private noncomputable def blockParam
-    (t : (Module.End k U)ˣ × (Module.End k Z)ˣ × (Z →ₗ[k] U)) :
-    stabilizer (Module.End k V)ˣ U :=
-  ⟨blockUnit hUZ t.1 t.2.1 t.2.2, blockUnit_mem_stabilizer hUZ _ _ _⟩
-
-omit [Fintype k] [DecidableEq k] in
-private theorem blockParam_injective : Function.Injective (blockParam hUZ) := by
-  rintro ⟨a, b, x⟩ ⟨a', b', x'⟩ h
-  have h_blk (p : U × Z) : blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x p =
-      blockTriangularEnd (a' : Module.End k U) (b' : Module.End k Z) x' p := by
-    have := congrArg (fun g : stabilizer (Module.End k V)ˣ U ↦
-      ((g : (Module.End k V)ˣ) : Module.End k V) (U.prodEquivOfIsCompl Z hUZ p)) h
-    simp only [blockParam, blockUnit_apply, LinearEquiv.symm_apply_apply] at this
-    exact (U.prodEquivOfIsCompl Z hUZ).injective this
-  have ha : a = a' :=
-    Units.ext (LinearMap.ext fun u ↦ by simpa using congrArg Prod.fst (h_blk (u, 0)))
-  have hb : b = b' :=
-    Units.ext (LinearMap.ext fun z ↦ by simpa using congrArg Prod.snd (h_blk (0, z)))
-  have hx : x = x' := LinearMap.ext fun z ↦ by simpa using congrArg Prod.fst (h_blk (0, z))
-  subst ha hb hx
-  rfl
-
-omit [Fintype k] [DecidableEq k] in
-private theorem blockParam_surjective : Function.Surjective (blockParam hUZ) := by
-  rintro ⟨g, hg⟩
-  let e := U.prodEquivOfIsCompl Z hUZ
-  have hU := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
-    (Submodule.mem_invtSubmodule_of_mem_stabilizer hg)
-  have hg_inj : Function.Injective (g : Module.End k V) :=
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V) g).injective
-  -- The three blocks of `g`: `g` on `U`, and the two components of `g` on `Z`.
-  let a₀ : Module.End k U := (g : Module.End k V).restrict hU
-  let b₀ : Module.End k Z := LinearMap.snd k U Z ∘ₗ e.symm.toLinearMap ∘ₗ
-    (g : Module.End k V) ∘ₗ Z.subtype
-  let x₀ : Z →ₗ[k] U := LinearMap.fst k U Z ∘ₗ e.symm.toLinearMap ∘ₗ
-    (g : Module.End k V) ∘ₗ Z.subtype
-  have ha₀ : IsUnit a₀ := (LinearMap.isUnit_iff_ker_eq_bot _).2 <| LinearMap.ker_eq_bot.2
-    fun u u' h ↦ Subtype.ext (hg_inj (congrArg Subtype.val h))
-  -- If `g z ∈ U` then `g z = g u` for some `u ∈ U`, so `z ∈ U ∩ Z = 0`.
-  have hb₀ : IsUnit b₀ := by
-    refine (LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun z hz ↦ ?_)
-    have h_mem : (g : Module.End k V) z ∈ U :=
-      (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero U Z hUZ).1 hz
-    rw [← mem_stabilizer_iff.1 hg] at h_mem
-    obtain ⟨u, hu, h_eq⟩ := h_mem
-    have : (z : V) ∈ U := hg_inj h_eq ▸ hu
-    exact Subtype.ext ((Submodule.disjoint_def.1 hUZ.disjoint) _ this z.prop)
-  refine ⟨(ha₀.unit, hb₀.unit, x₀), Subtype.ext (Units.ext (LinearMap.ext fun v ↦ ?_))⟩
-  -- On `v = u + z`, the block map gives `g u + (x₀ z + b₀ z) = g u + g z`.
-  obtain ⟨⟨u, z⟩, rfl⟩ := e.surjective v
-  have h_split (w : V) : ((e.symm w).1 : V) + (e.symm w).2 = w := by
-    rw [← Submodule.coe_prodEquivOfIsCompl' U Z hUZ, LinearEquiv.apply_symm_apply]
-  simp only [blockParam, blockUnit_apply, Submodule.coe_prodEquivOfIsCompl',
-    blockTriangularEnd_apply, IsUnit.unit_spec, Submodule.coe_add]
-  simp only [e, a₀, b₀, x₀, LinearMap.coe_restrict_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, Submodule.subtype_apply, LinearMap.fst_apply, LinearMap.snd_apply]
-  rw [add_assoc, h_split, LinearEquiv.symm_apply_apply, Submodule.coe_prodEquivOfIsCompl', map_add]
-
 /-- The term of a pair `(g, U)` in the expansion of `⟨A ∗ B, X⟩`. -/
 private noncomputable def pairTerm (A B X : HallAlgebra k) (g : (Module.End k V)ˣ)
     {U : Submodule k V} (hU : U ∈ (g : Module.End k V).invtSubmodule) : ℂ :=
@@ -240,7 +159,7 @@ private theorem pairTerm_blockUnit (A B X : HallAlgebra k) (a : (Module.End k U)
     pairTerm A B X (blockUnit hUZ a b x)
         (Submodule.mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)) =
       conj (A (ofEnd (a : Module.End k U))) * conj (B (ofEnd (b : Module.End k Z))) *
-        X (ofEnd (blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x)) := by
+        X (ofEnd (blockTriangular (a : Module.End k U) (b : Module.End k Z) x)) := by
   let e := U.prodEquivOfIsCompl Z hUZ
   have h_mem := Submodule.mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)
   rw [pairTerm, ofEnd_invtRestrict_eq_of_injective (g := (a : Module.End k U)) U.subtype
@@ -248,7 +167,7 @@ private theorem pairTerm_blockUnit (A B X : HallAlgebra k) (a : (Module.End k U)
     ofEnd_invtQuot_eq_of_surjective (g' := (b : Module.End k Z))
       (LinearMap.snd k U Z ∘ₗ e.symm.toLinearMap) (fun v ↦ by simp [e, blockUnit_apply]) h_mem
       ((LinearMap.snd_surjective (R := k) (M := U) (M₂ := Z)).comp e.symm.surjective) ?_,
-    ofEnd_eq_of_apply_eq (g' := blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x)
+    ofEnd_eq_of_apply_eq (g' := blockTriangular (a : Module.End k U) (b : Module.End k Z) x)
       e.symm fun v ↦ by simp [e, blockUnit_apply]]
   ext v
   simp [e]
@@ -261,11 +180,13 @@ private theorem expect_stabilizer (A B X : HallAlgebra k) :
         pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (M := V) (U := U) g.prop) =
       rankInner (finrank k U) A (mulAdjoint (finrank k Z) B X) := by
   have : Finite (Z →ₗ[k] U) := Module.finite_of_finite k
-  rw [← Fintype.expect_bijective (blockParam hUZ)
-    ⟨blockParam_injective hUZ, blockParam_surjective hUZ⟩
+  rw [← Fintype.expect_bijective (Submodule.stabilizerBlockEquiv hUZ)
+    (Submodule.stabilizerBlockEquiv hUZ).bijective
     (fun t ↦ conj (A (ofEnd (t.1 : Module.End k U))) * conj (B (ofEnd (t.2.1 : Module.End k Z))) *
-      X (ofEnd (blockTriangularEnd (t.1 : Module.End k U) (t.2.1 : Module.End k Z) t.2.2))) _
-    fun t ↦ (pairTerm_blockUnit hUZ A B X _ _ _).symm]
+      X (ofEnd (blockTriangular (t.1 : Module.End k U) (t.2.1 : Module.End k Z) t.2.2))) _
+    fun t ↦ by
+      rw [← pairTerm_blockUnit hUZ A B X t.1 t.2.1 t.2.2]
+      simp only [Submodule.coe_stabilizerBlockEquiv_apply]]
   simp_rw [rankInner_finrank_eq_expect, mulAdjoint_apply, rankInner_finrank_eq_expect,
     blockAverage_ofEnd, Finset.mul_expect, ← Finset.univ_product_univ, Finset.expect_product,
     mul_assoc]

@@ -43,7 +43,7 @@ These classes index the class functions on all square matrices of the Hall algeb
 * `TauCeti.SimilarityClass.ofEnd_dualMap`: every endomorphism of a finite-dimensional vector
   space is similar to its transpose. The proof identifies `V` with a product of cyclic
   `k[X]`-modules `k[X] ⧸ (p)` and each of these with its dual through a nondegenerate form
-  `(x, y) ↦ L (x * y)` (`TauCeti.exists_nondegenerate_mul_form`).
+  `(x, y) ↦ L (x * y)` (`Ideal.exists_nondegenerate_mul_form`).
 
 ## References
 
@@ -262,7 +262,7 @@ theorem SimilarityClass.ofEnd_dualMap {V : Type*} [AddCommGroup V] [Module k V]
   have _ : ∀ i, Module.Finite k (k[X] ⧸ k[X] ∙ p i ^ n i) := Module.Finite.pi_iff.mp (.equiv E)
   -- Each factor is identified with its dual by a pairing `L i (x * y)`; summing over the factors
   -- identifies `V` with its dual.
-  choose L hL using fun i ↦ exists_nondegenerate_mul_form (k[X] ∙ p i ^ n i)
+  choose L hL using fun i ↦ Ideal.exists_nondegenerate_mul_form (k[X] ∙ p i ^ n i)
   let D : V ≃ₗ[k] Dual k V :=
     E ≪≫ₗ LinearEquiv.piCongrRight (fun i ↦ LinearMap.BilinForm.toDual _ (hL i)) ≪≫ₗ
       LinearMap.lsum k _ k ≪≫ₗ E.dualMap

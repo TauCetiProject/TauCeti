@@ -16,7 +16,7 @@ import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 A finite-dimensional quotient `A = k[X] ⧸ I` of the polynomial ring over a field carries a linear
 form `L` for which the pairing `(x, y) ↦ L (x * y)` on `A` is nondegenerate
-(`TauCeti.exists_nondegenerate_mul_form`). Over the principal ideal domain `k[X]`, some linear form
+(`Ideal.exists_nondegenerate_mul_form`). Over the principal ideal domain `k[X]`, some linear form
 on `A` has the same annihilator as the whole dual of `A`; such a form pairs nondegenerately.
 
 ## References
@@ -29,7 +29,7 @@ public section
 
 open Module Polynomial
 
-namespace TauCeti
+namespace Ideal
 
 variable {k : Type*} [Field k]
 
@@ -61,4 +61,4 @@ theorem exists_nondegenerate_mul_form (I : Ideal k[X]) [Module.Finite k (k[X] �
   have h_eval : φ (q • 1) = 0 := LinearMap.congr_fun (Module.mem_annihilator.mp h_ann φ) 1
   rwa [← mul_one q]
 
-end TauCeti
+end Ideal
