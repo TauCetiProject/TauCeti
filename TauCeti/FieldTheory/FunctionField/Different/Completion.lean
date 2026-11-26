@@ -44,7 +44,7 @@ structures `TauCeti.Place.completionExtensionAlgebra` and `completionIntegersExt
   complementary-module and different-ideal comparisons read directly from an affine model `B ⊆ C`.
 * `length_traceDual_completionIntegers_quotient`,
   `length_quotient_differentIdeal_completionIntegers`, `ord_discr_completionIntegers`,
-  `completionPlace_ord_discr_completionIntegers`, `length_traceDual_completionIntegers_quotient_eq`,
+  `length_traceDual_completionIntegers_quotient_eq`,
   `ord_discr_completionIntegers_eq`: length and discriminant valuation formulas and invariance under
   completion.
 
@@ -198,7 +198,7 @@ theorem extended_dual_one_eq_dual_one_completionIntegers (P : Place k F) (P' : P
   have _ := P.finiteDimensional_completion P' hP
   have _ := P.isSeparable_completion P' hP
   have _ := P.isIntegralClosure_completionIntegers P' hP
-  exact TauCeti.extended_dual_one_eq_dual_one_of_span_traceDual_one
+  exact RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one
     (P'.completionEmbedding : F' →+* P'.Completion)
     (fun y ↦ by
       rw [AlgHom.coe_toRingHom,
@@ -450,28 +450,6 @@ theorem length_quotient_differentIdeal_completionIntegers (P : Place k F) (P' : 
   rw [← TauCeti.length_traceDual_quotient_eq_length_quotient_differentIdeal
       (K := P.Completion) (L := P'.Completion),
     P.length_traceDual_completionIntegers_quotient P' hP]
-
-/-- **The completed discriminant valuation formula (`Place.ord` form)**: for any `𝒪̂_P`-basis `b`
-of `𝒪̂_{P'}`, `ord_{P̂} (discr 𝒪̂_P b) = d(P' ∣ P) · f(P' ∣ P)`, with `f(P' ∣ P)` the full
-relative residue degree, including its inseparable factor. -/
-theorem completionPlace_ord_discr_completionIntegers (P : Place k F) (P' : Place k' F')
-    (hP : P'.restrict k F = P) {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    letI := P.completionIntegersExtensionAlgebra P' hP
-    ∀ b : Module.Basis ι P.completionPlace.integers P'.completionPlace.integers,
-      P.completionPlace.ord (Algebra.discr P.completionPlace.integers b : P.Completion) =
-        differentExponent k F P' * relativeDegree k F P' := by
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  intro b
-  have hord := P.ord_discr_completionIntegers P' hP b
-  set d := Algebra.discr P.completionPlace.integers b
-  have hd0 : d ≠ 0 := by
-    intro h
-    rw [h, Ring.ord_eq_addVal, AddValuation.map_zero, ← Nat.cast_mul] at hord
-    exact ENat.top_ne_natCast _ hord
-  rw [Ring.ord_eq_addVal, P.completionPlace.addVal_integers hd0, ← Nat.cast_mul,
-    Nat.cast_inj] at hord
-  rw [← Int.toNat_of_nonneg (P.completionPlace.mem_integers_iff_ord_nonneg.mp d.property), hord,
-    Nat.cast_mul]
 
 section AffineModel
 

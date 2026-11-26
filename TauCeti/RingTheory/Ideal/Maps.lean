@@ -134,11 +134,7 @@ theorem map_eq_pi_of_map_evalRingHom {ι : Type*} [Finite ι] {A : Type*} {R : �
     [Semiring A] [∀ i, Semiring (R i)] (I : Ideal A) (f : A →+* ∀ i, R i)
     (J : ∀ i, Ideal (R i)) (h : ∀ i, I.map ((Pi.evalRingHom R i).comp f) = J i) :
     I.map f = pi J := by
-  have hpi : I.map f = pi (piOrderIso (I.map f)) := by
-    conv_lhs => rw [← RelIso.symm_apply_apply piOrderIso (I.map f)]
-    ext x
-    rw [← SetLike.mem_coe, coe_piOrderIso_symm_apply]
-    simp [mem_pi]
+  have hpi : I.map f = pi (piOrderIso (I.map f)) := (piOrderIso.symm_apply_apply (I.map f)).symm
   rw [hpi]
   congr 1
   ext i : 1

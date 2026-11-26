@@ -114,7 +114,6 @@ theorem coe_completionIntegersIntegralClosureHom (b : integralClosure P.integers
 
 /-- `P'.completionEmbedding` intertwines `algebraMap 𝒪'_P F'` and `algebraMap 𝒪̂_{P'} F̂_{P'}`
 via `TauCeti.Place.completionIntegersIntegralClosureHom`. -/
-@[simp]
 theorem completionEmbedding_algebraMap_eq_completionIntegersIntegralClosureHom
     (b : integralClosure P.integers F') :
     P'.completionEmbedding (algebraMap (integralClosure P.integers F') F' b) =

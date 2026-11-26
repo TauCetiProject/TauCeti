@@ -45,9 +45,7 @@ integrally closed, then swallows everything integral over `k[x]`.
 * `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement,
   `TauCeti.Place.valuationSubringAtPrime_eq_integers`, and
   `TauCeti.Place.isLocalization_integers_center`: the valuation ring of the place is the
-  localization of the model at the centre, using the `R`-algebra `TauCeti.Place.integersAlgebra`
-  and its scalar-tower lemmas `TauCeti.Place.isScalarTower_integers` and
-  `TauCeti.Place.isScalarTower_integers_extension`.
+  localization of the model at the centre (for the `R`-algebra `TauCeti.Place.integersAlgebra`).
 * `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`: the coefficient formula
   `ord_P r = mult_(centre) (r)`, which reads an order at the place off the factorization of an
   ideal of the model.
@@ -79,35 +77,6 @@ theorem mem_integers_of_isIntegral_adjoin {x : F} (hx : x ∈ P.integers) {y : F
     (hy : IsIntegral (Algebra.adjoin k ({x} : Set F)) y) : y ∈ P.integers :=
   P.mem_integers_of_isIntegral
     (fun r ↦ P.adjoin_le_integers_iff.mpr hx r.val r.property) hy
-
-/-- The `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`. -/
-@[instance_reducible]
-noncomputable def integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
-    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
-    Algebra R P.integers :=
-  ((algebraMap R F).codRestrict P.integers hR).toAlgebra
-
-/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with the inclusion into
-`F`. -/
-theorem isScalarTower_integers {R : Type*} [CommRing R] [Algebra R F]
-    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
-    letI := P.integersAlgebra hR
-    IsScalarTower R P.integers F :=
-  letI := P.integersAlgebra hR
-  .of_algebraMap_eq fun r ↦ by
-    rw [ValuationSubring.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
-
-/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with any field
-extension `F' / F` over `R` and `𝒪_P`. -/
-theorem isScalarTower_integers_extension {R F' : Type*} [CommRing R] [Field F']
-    [Algebra F F'] [Algebra R F] [Algebra R F'] [IsScalarTower R F F']
-    [Algebra P.integers F'] [IsScalarTower P.integers F F']
-    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
-    letI := P.integersAlgebra hR
-    IsScalarTower R P.integers F' :=
-  letI := P.integersAlgebra hR
-  have := P.isScalarTower_integers hR
-  IsScalarTower.to₁₂₄ R P.integers F F'
 
 end Integers
 

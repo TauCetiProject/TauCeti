@@ -269,7 +269,8 @@ variable [FiniteDimensional K' L'] [Algebra.IsSeparable K' L']
 do: if compatible ring homomorphisms `f : S →+* S'` and `g : L →+* L'` carry the trace dual of
 `S` over `R` to a generating set of the trace dual of `S'` over `R'`, then extending
 `FractionalIdeal.dual R K 1` along `f` yields `FractionalIdeal.dual R' K' 1`. -/
-theorem extended_dual_one_eq_dual_one_of_span_traceDual_one [IsDomain S] [IsDomain S']
+theorem _root_.RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one
+    [IsDomain S] [IsDomain S']
     {f : S →+* S'} {hf : S⁰ ≤ Submonoid.comap f S'⁰} (g : L →+* L')
     (hfg : ∀ s : S, g (algebraMap S L s) = algebraMap S' L' (f s))
     (hspan : Submodule.span S' (g '' (Submodule.traceDual R K (1 : Submodule S L) : Set L)) =

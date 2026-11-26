@@ -156,7 +156,7 @@ theorem dual_one_adicCompletionIntegers_eq_extended :
           (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
   symm
-  exact TauCeti.extended_dual_one_eq_dual_one_of_span_traceDual_one
+  exact RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one
     (R := R) (S := B) (K := K) (L := L)
     (R' := v.adicCompletionIntegers K) (S' := w.adicCompletionIntegers L)
     (K' := v.adicCompletion K) (L' := w.adicCompletion L)

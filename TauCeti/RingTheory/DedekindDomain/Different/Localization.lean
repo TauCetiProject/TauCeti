@@ -180,7 +180,7 @@ theorem extended_dual_one_eq_dual_one [IsDomain S] :
         (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) =
       FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L) := by
   intro _ _ hMS _ _ _ _
-  exact TauCeti.extended_dual_one_eq_dual_one_of_span_traceDual_one (RingHom.id L)
+  exact RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one (RingHom.id L)
     (fun s ↦ (RingHom.id_apply (algebraMap S L s)).trans (IsScalarTower.algebraMap_apply S Sₘ L s))
     (by simpa using span_traceDual_one_eq_traceDual_one (M := M))
 

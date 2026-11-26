@@ -378,6 +378,17 @@ noncomputable def integralClosureAlgebra {k F F' B C : Type*}
     Algebra C (integralClosure P.integers F') :=
   (integralClosureHom P hB).toAlgebra
 
+/-- The `C`-algebra map of `TauCeti.Place.integralClosureAlgebra` is
+`TauCeti.Place.integralClosureHom`. -/
+theorem algebraMap_integralClosureAlgebra {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
+    algebraMap C (integralClosure P.integers F') = integralClosureHom P hB :=
+  RingHom.algebraMap_toAlgebra _
+
 /-- The `C`-algebra `TauCeti.Place.integralClosureAlgebra` on `𝒪'_P` is compatible with the
 inclusion into `F'`. -/
 theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
@@ -389,7 +400,7 @@ theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
     IsScalarTower C (integralClosure P.integers F') F' :=
   letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
   .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, Subalgebra.algebraMap_apply, coe_integralClosureHom]
+    rw [algebraMap_integralClosureAlgebra, Subalgebra.algebraMap_apply, coe_integralClosureHom]
 
 /-- The local integral closure `𝒪'_P` is the localization of `C` at the complement of the centre
 of `P` on `B`. -/
