@@ -484,6 +484,7 @@ theorem singularKronecker_baseClass_eq_zero_iff
 /-- **The base class corresponds to `-1`.** Under the hypotheses of `cohomologyOneEquiv`, the
 identification `H¹(T_φ; ℤ) ≃ ℤ`, under which a class evaluates to `ε(δ h)` times its image, sends
 the base class `[dt]` to `-1`. -/
+@[simp]
 theorem cohomologyOneEquiv_baseClass
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :

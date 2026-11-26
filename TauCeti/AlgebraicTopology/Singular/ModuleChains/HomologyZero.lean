@@ -41,6 +41,7 @@ variable {k : Type u} [Ring k]
 /-- **The augmentation of the class of a `0`-chain.** The class in zeroth singular homology of a
 `0`-chain `c` has augmentation the sum `singularAugment k X c` of the coefficients of `c`: on
 homology, `singularAugment` induces Mathlib's augmentation `TopCat.singularHomology₀ε`. -/
+@[simp]
 theorem singularHomology₀ε_homologyπ_cyclesMk {X : TopCat.{u}}
     (c : ((singularChains k).obj X).X 0) (hc : ((singularChains k).obj X).d 0 0 c = 0) :
     X.singularHomology₀ε (ModuleCat.of k k) (((singularChains k).obj X).homologyπ 0
