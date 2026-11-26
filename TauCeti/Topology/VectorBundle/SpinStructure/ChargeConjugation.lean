@@ -37,11 +37,13 @@ charge conjugation is involutive: `[[p, h], k] ↦ p • χ(h) k` is an equivale
 
 **Relation to twisting.** Twisting a `Spinᶜ` structure by a principal `U(1)`-bundle is
 `TauCeti.SpinCStructure.twist`. Since `χ x = x [1, (det x)⁻¹]`
-(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` should be
-equivalent to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line. On a
-symplectic four-manifold this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, whose group-level input
-is `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`. Neither equivalence is proved here; the
-identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
+(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` is equivalent to
+the twist of `s` by the inverse determinant bundle `P ×_{det⁻¹} U(1)`, and
+`(s.twist E).chargeConj` is equivalent to `s.twist ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)`; these equivalences
+are in `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`. On a symplectic
+four-manifold the second would give `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` once the determinant line of
+`s_ω` is identified with `K⁻¹`, which is not proved here. The identity
+`c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 ## Main definitions
 
@@ -182,15 +184,13 @@ theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
     (h k : spinCGroup (realCliffordForm n 0) hQ) :
     (chargeConjChargeConjEquiv s).toEquiv x (Extend.mk χ hχ (Extend.mk χ hχ p h) k) =
       op (spinCGroup.chargeConj _ hQ h * k) • p := by
-  simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
-    OrthonormalFrameLift.Equiv.symm_toEquiv]
-  -- `[[p, h], k] = [[p, 1], χ(h) k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
-  have hcomp := (Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk χ hχ hπχ
-    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
-    χ hχ hπχ spinCGroup.norm_toLp_toSpecialOrthogonal_apply
-    spinCGroup.continuous_toSpecialOrthogonal_apply x p (χ h * k)).trans
-      (Extend.mk_mk χ hχ χ hχ p h k).symm).symm
-  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
+  simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv]
+  -- `[[p, h], k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
+  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ (s.extendCompEquiv_symm_toEquiv_mk_mk χ hχ
+    hπχ spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+    spinCGroup.continuous_toSpecialOrthogonal_apply χ hχ hπχ
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+    spinCGroup.continuous_toSpecialOrthogonal_apply x p h k)).trans <|
     OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
 
 end SpinCStructure
