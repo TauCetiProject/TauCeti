@@ -293,9 +293,8 @@ variable {X : Type*} {ρ L : ℝ → ℝ} {K : ℝ × ℝ → X → ℝ} {x : X}
 derivative `a` and right derivative `b ≠ a` at `R₀`, let the cutoff `ρ` be differentiable at `R₀`
 with `ρ(R₀) ≠ 0`, and let `(s, t)` lie beyond the neck, `c ≤ s` and `c + L(R₀) < s`, at a point
 where `σ ↦ K(σ, t)` at the target point `x` has nonzero derivative `d` at `s - L(R₀)`. Then the
-family at `(s, t)` and `x` is not differentiable in `R` at `R₀`. Near `R₀` it is
-`ρ(R) K(s - L(R), t)` (`TauCeti.Floer.cutoffNeckFamily_of_add_lt`), and after division by `ρ` its
-one-sided derivatives at `R₀` are `-d a` and `-d b`. -/
+family at `(s, t)` and `x` is not differentiable in `R` at `R₀`: the one-sided derivatives of
+`R ↦ K(s - L(R), t)` at `R₀` are `-d a` and `-d b`. -/
 theorem not_differentiableAt_cutoffNeckFamily_of_hasDerivWithinAt
     (hρ : DifferentiableAt ℝ ρ R₀) (hρ₀ : ρ R₀ ≠ 0) (hLl : HasDerivWithinAt L a (Iic R₀) R₀)
     (hLr : HasDerivWithinAt L b (Ici R₀) R₀) (hab : a ≠ b) (hc : c ≤ s) (hs : c + L R₀ < s)
@@ -324,7 +323,8 @@ with constant speed, `L(R) = max (R - 1) 0`, then for every cutoff `ρ` differen
 differentiable in `R` at `R = 1` at every point `(s, t)` with `c < s` at which `σ ↦ K(σ, t)` has
 nonzero derivative at `s`: the neck length has derivative `0` from the left and `1` from the right.
 The neck length `TauCeti.Floer.comparisonNeckLength`, which vanishes near `1` and is `R - 1` only
-for `R ≥ 2`, gives a smooth family instead (`TauCeti.Floer.contDiff_cutoffNeckFamily`). -/
+for `R ≥ 2`, gives a smooth family instead for a smooth `K` independent of `s` near `s = c`
+(`TauCeti.Floer.contDiff_cutoffNeckFamily`). -/
 theorem not_differentiableAt_cutoffNeckFamily_max_sub_one (hρ : DifferentiableAt ℝ ρ 1)
     (hρ₁ : ρ 1 ≠ 0) (hs : c < s) (hK : HasDerivAt (fun σ ↦ K (σ, t) x) d s) (hd : d ≠ 0) :
     ¬ DifferentiableAt ℝ (fun R ↦ cutoffNeckFamily ρ (fun R ↦ max (R - 1) 0) c K R (s, t) x) 1 :=
