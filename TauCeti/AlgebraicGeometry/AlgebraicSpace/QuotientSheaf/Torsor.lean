@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AlgebraicSpace.QuotientSheaf.Represented
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Torsor
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Generated
-import TauCeti.AlgebraicGeometry.Descent.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 
 /-!
 # Quotient sheaves of pre-relations through the graphs of a torsor
