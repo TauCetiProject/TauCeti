@@ -22,9 +22,15 @@ weight less than the sum of their weights. This is the weight bound needed to st
 monomials without lowering weight, and to construct finite weighted enveloping-algebra quotients.
 No characteristic or algebraic-closure hypothesis is used.
 
-The quotient `L ⧸ C k` is nilpotent of class at most `k`, and a Lie homomorphism into a Lie
-algebra whose `k`-th lower central term vanishes kills `C k`. These are the facts used to evaluate
-universal elements of free nilpotent Lie algebras in a nilpotent Lie algebra.
+For a Lie module `M`, a submodule contains the `(k + 1)`-st lower central term of `M` as soon as it
+contains every bracket `⁅x, m⁆` with `m` in the `k`-th term
+(`TauCeti.toSubmodule_lowerCentralSeries_succ_le`). If `⁅x, y⁆` commutes with `x` and `y`, then it
+commutes with the whole span of `x`, `y` and `⁅x, y⁆`, and the bracket of two elements of that span
+is a multiple of `⁅x, y⁆` (`TauCeti.lie_lie_eq_zero_of_mem_span` and
+`TauCeti.lie_mem_span_singleton_of_mem_span`). The quotient `L ⧸ C k` is nilpotent of class at most
+`k`, and a Lie homomorphism into a Lie algebra whose `k`-th lower central term vanishes kills `C k`.
+These are the facts used to evaluate universal elements of free nilpotent Lie algebras in a
+nilpotent Lie algebra.
 
 ## References
 

@@ -21,6 +21,11 @@ elements can be studied through the homogeneous pieces of the free Lie algebra. 
 of degree tails, `TauCeti.FreeLieAlgebra.degreeTail_eq_lowerCentralSeries` states that the degree
 tail of word length at least `c + 1` is the `c`-th term of the lower central series.
 
+On the free Lie algebra on two generators, evaluation at a pair `(x, y)` whose bracket `⁅x, y⁆`
+commutes with `x` and `y` kills the second term of the lower central series
+(`TauCeti.FreeLieAlgebra.lowerCentralSeries_two_le_ker_lift`). This is what reduces the BCH
+product of such a pair to its terms of degree at most two.
+
 Adapted from `Mei/Algebra/Lie/Free/LowerCentral.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `68536122a97fed8e87bc6870b9427151971b9ab2` (Apache 2.0). The degree-tail form
@@ -141,7 +146,7 @@ theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ =
   have hK (a : _root_.FreeLieAlgebra R (Fin 2)) : f a ∈ Submodule.span R {x, y, ⁅x, y⁆} := by
     have hφ : f = K.incl.comp (_root_.FreeLieAlgebra.lift R
         ![⟨x, Submodule.subset_span (by simp)⟩, ⟨y, Submodule.subset_span (by simp)⟩]) := by
-      rw [comp_lift, ← FinVec.map_eq]
+      rw [comp_lift_pair]
       rfl
     rw [hφ]
     exact SetLike.coe_mem _
@@ -156,7 +161,7 @@ theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ =
       rw [LieSubmodule.mem_toSubmodule, LieHom.mem_ker, LieHom.map_lie]
       rw [LieHom.coe_toLinearMap] at hq
       rw [← hq, lie_smul, lie_lie_eq_zero_of_mem_span hx hy (hK a), smul_zero]
-  exact fun m hm => h₂ hm
+  exact (LieSubmodule.toSubmodule_le_toSubmodule _ _).mp h₂
 
 end ClassTwo
 

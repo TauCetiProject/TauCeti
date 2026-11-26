@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.HopfAlgebra
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The augmentation ideal of a universal enveloping algebra
@@ -222,20 +223,11 @@ theorem augmentation_toIdeal_pow_le_comap_map {L' : Type*} [LieRing L'] [LieAlge
     (HopfIdeal.augmentation R U).toIdeal ^ n ≤
       ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ n).comap
         (map R f) := by
-  induction n with
-  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
-  | succ n ih =>
-    have h₁ : (HopfIdeal.augmentation R U).toIdeal ≤
-        (HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal.comap
-          (map R f) := by
-      rw [augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
-      rintro _ ⟨x, rfl⟩
-      rw [SetLike.mem_coe, Ideal.mem_comap, map_ι]
-      exact HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L' (f x))
-    rw [Submodule.pow_succ, Submodule.mul_le]
-    intro a ha b hb
-    rw [Ideal.mem_comap, map_mul, Submodule.pow_succ]
-    exact Ideal.mul_mem_mul (ih ha) (h₁ hb)
+  refine Ideal.pow_le_comap_pow_of_le_comap _ ?_ n
+  rw [augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
+  rintro _ ⟨x, rfl⟩
+  rw [SetLike.mem_coe, Ideal.mem_comap, map_ι]
+  exact HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L' (f x))
 
 variable {L} in
 /-- The map of truncated enveloping algebras induced by a Lie homomorphism `f` sends the class of
