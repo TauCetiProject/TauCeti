@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.ImplicitFunction.ProdDomain
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The analytic inverse and implicit function theorems
@@ -167,14 +168,8 @@ theorem AnalyticAt.exists_analyticAt_eventually_eq_zero_iff [CompleteSpace 𝕜]
     ∃ g : E → 𝕜, AnalyticAt 𝕜 g u.1 ∧ g u.1 = u.2 ∧ (∀ᶠ w in 𝓝 u.1, f (w, g w) = 0) ∧
       ∀ᶠ v in 𝓝 u, f v = 0 ↔ g v.1 = v.2 := by
   have dfu := hf.hasStrictFDerivAt
-  -- the partial derivative in `z` is multiplication by `deriv (fun z ↦ f (u.1, z)) u.2`
-  have hpartial : fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜 =
-      ContinuousLinearEquiv.unitsEquivAut 𝕜 (.mk0 _ h) := by
-    have hd : HasFDerivAt (fun z ↦ f (u.1, z)) (fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜) u.2 :=
-      hf.differentiableAt.hasFDerivAt.comp u.2 (hasFDerivAt_prodMk_right u.1 u.2)
-    ext
-    simp [hd.hasDerivAt.deriv]
-  have if₂u : (fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜).IsInvertible := ⟨_, hpartial.symm⟩
+  have if₂u : (fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜).IsInvertible :=
+    hf.differentiableAt.isInvertible_fderiv_comp_inr_iff.2 h
   refine ⟨dfu.implicitFunctionOfProdDomain if₂u,
     dfu.analyticAt_implicitFunctionOfProdDomain if₂u hf,
     eq_of_tendsto_nhds (dfu.tendsto_implicitFunctionOfProdDomain if₂u), ?_, ?_⟩
