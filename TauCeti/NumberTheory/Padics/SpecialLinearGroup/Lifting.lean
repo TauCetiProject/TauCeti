@@ -293,10 +293,7 @@ theorem eq_comap_map_det_of_isClosed (hℓ5 : 5 ≤ ℓ) {H : Subgroup (GL (Fin 
   -- The closure `C` of the commutator subgroup of `H` lies in `H`, and its determinant-one part
   -- `K`, a closed subgroup of `SL₂(ℤ_ℓ)`, reduces onto the perfect group `SL₂(𝔽_ℓ)`.
   set C := ⁅H, H⁆.topologicalClosure
-  have hCH : C ≤ H := Subgroup.topologicalClosure_minimal _
-    (Subgroup.commutator_le.2 fun g₁ h₁ g₂ h₂ ↦ by
-      rw [commutatorElement_def]
-      exact H.mul_mem (H.mul_mem (H.mul_mem h₁ h₂) (H.inv_mem h₁)) (H.inv_mem h₂)) hH
+  have hCH : C ≤ H := Subgroup.topologicalClosure_minimal _ H.commutator_le_self hH
   set K := C.comap SpecialLinearGroup.toGL
   have hK : IsClosed (K : Set SL(2, ℤ_[ℓ])) :=
     (Subgroup.isClosed_topologicalClosure ⁅H, H⁆).preimage SpecialLinearGroup.continuous_toGL
