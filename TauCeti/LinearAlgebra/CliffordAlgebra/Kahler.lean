@@ -48,17 +48,21 @@ where `c(e₀) c(e₂) ψ` lies in the `2i`-eigenspace.
 
 * `TauCeti.AlmostComplexStructure.bivectorExterior_kahlerForm`:
   `c₂(ω) = c(e₀) c(e₁) + c(e₂) c(e₃)` in a unitary frame.
-* `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`
+* `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`,
+  `TauCeti.AlmostComplexStructure.bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply`,
   and `TauCeti.AlmostComplexStructure.two_smul_ι_apply_apply_of_bivectorExterior_apply_eq_smul`:
   `c(e₁) ψ = -(μ / 2) c(e₀) ψ`, `c(e₃) ψ = -(μ / 2) c(e₂) ψ` and `2 c(J v) ψ = -μ c(v) ψ` for
-  `c₂(ω) ψ = μ ψ` with `μ ≠ 0`.
+  `c₂(ω) ψ = μ ψ` with `μ ≠ 0`, and conversely `c(e₁) ψ = μ c(e₀) ψ`, `c(e₃) ψ = μ c(e₂) ψ` imply
+  `c₂(ω) ψ = (-2 μ) ψ`.
 * `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply`:
   `c(e₁) ψ = i c(e₀) ψ` and `c(e₃) ψ = i c(e₂) ψ` for `c₂(ω) ψ = -2i ψ`, with the resulting
   frame products `TauCeti.AlmostComplexStructure.ι_apply_ι_zero_apply_of_bivectorExterior_apply`,
   `TauCeti.AlmostComplexStructure.ι_apply_ι_two_apply_of_bivectorExterior_apply` and
   `TauCeti.AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply`.
-* `TauCeti.AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply`:
-  `∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ` for `c₂(ω) ψ = -2i ψ`.
+* `TauCeti.AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply` and
+  `TauCeti.AlmostComplexStructure.sum_smul_ι_apply_eq_zero_iff_of_bivectorExterior_apply`:
+  `∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ` for `c₂(ω) ψ = -2i ψ`, vanishing
+  iff `ψ = 0` or `x₀ + i x₁ = x₂ + i x₃ = 0`.
 * `TauCeti.AlmostComplexStructure.ι_apply_of_bivectorExterior_apply` and
   `TauCeti.AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply`:
   `c(v) ψ = z₀(v) c(e₀) ψ + z₂(v) c(e₂) ψ` and `c(J v) ψ = i c(v) ψ` for `c₂(ω) ψ = -2i ψ`.
@@ -153,6 +157,18 @@ theorem ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul {μ : 
     (μ / 2) • ψ by linear_combination (norm := module) (2⁻¹ : ℂ) • (hab - heq))
   rw [e.map_ι_apply_map_ι_apply hQ ρ, map_smul] at h01 h23
   exact ⟨by linear_combination (norm := module) -h01, by linear_combination (norm := module) -h23⟩
+
+include hQ h₀ h₂ in
+/-- Conversely to `ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`, if
+`c(e₁) ψ = μ c(e₀) ψ` and `c(e₃) ψ = μ c(e₂) ψ` in a unitary frame, then
+`c₂(ω) ψ = (-2 μ) ψ`. No chirality or orientation is needed. -/
+theorem bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply {μ : ℂ} {ψ : W}
+    (h1 : ρ (ι Q (e 1)) ψ = μ • ρ (ι Q (e 0)) ψ)
+    (h3 : ρ (ι Q (e 3)) ψ = μ • ρ (ι Q (e 2)) ψ) :
+    ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * μ) • ψ := by
+  rw [map_bivectorExterior_kahlerForm_apply hQ h₀ h₂, h1, h3, map_smul, map_smul,
+    e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ]
+  module
 
 include hQ h₀ h₂ in
 /-- On a `-2i`-eigenvector `ψ ∈ W` of `c₂(ω)`, `c(e₁) ψ = i c(e₀) ψ` and `c(e₃) ψ = i c(e₂) ψ`
@@ -330,6 +346,42 @@ theorem bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_
   rw [map_bivectorExterior_kahlerForm_apply hQ h₀ h₂, h1, h3, map_smul, map_smul,
     e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide)]
   module
+
+include hQ h₀ h₂ in
+/-- **The Dirac symbol on the canonical eigenspace vanishes exactly on `∂bar`-closed covectors**:
+if `c₂(ω) ψ = -2i ψ`, then `∑ₖ x_k c(e_k) ψ = 0` if and only if `ψ = 0` or
+`x₀ + i x₁ = x₂ + i x₃ = 0`. No Hermitian structure, chirality or orientation is needed. -/
+theorem sum_smul_ι_apply_eq_zero_iff_of_bivectorExterior_apply {ψ : W}
+    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) (x : Fin 4 → ℂ) :
+    ∑ k, x k • ρ (ι Q (e k)) ψ = 0 ↔
+      ψ = 0 ∨ (x 0 + Complex.I * x 1 = 0 ∧ x 2 + Complex.I * x 3 = 0) := by
+  rw [sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- Applying `c(e₀)` sends `c(e₀) ψ` to `-ψ` (eigenvalue `-2i`) and `c(e₂) ψ` to `c(e₀) c(e₂) ψ`
+    -- (eigenvalue `2i`), which lie in disjoint eigenspaces of `c₂(ω)`.
+    have h1 := congrArg (ρ (ι Q (e 0))) h
+    simp only [map_add, map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ] at h1
+    have h20 := bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply
+      hQ h₀ h₂ hψ
+    set T := ρ (bivectorExterior Q J.kahlerForm)
+    have hmem0 : (x 0 + Complex.I * x 1) • (-ψ) ∈ T.genEigenspace (-2 * Complex.I) 1 :=
+      Submodule.smul_mem _ _ (Submodule.neg_mem _ (Module.End.mem_genEigenspace_one.2 hψ))
+    have hmem2 : (x 2 + Complex.I * x 3) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) ∈
+        T.genEigenspace (2 * Complex.I) 1 :=
+      Submodule.smul_mem _ _ (Module.End.mem_genEigenspace_one.2 h20)
+    have hne : (-2 * Complex.I : ℂ) ≠ 2 * Complex.I := by norm_num [Complex.ext_iff]
+    obtain ⟨hz0, hz2'⟩ :=
+      (Submodule.disjoint_iff_add_eq_zero.1 (T.disjoint_genEigenspace hne 1 1))
+        hmem0 hmem2 h1
+    have hz2 : (x 2 + Complex.I * x 3) • ψ = 0 := by
+      have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) hz2'
+      simpa only [map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg] using this
+    rw [smul_neg, neg_eq_zero, smul_eq_zero] at hz0
+    rw [smul_eq_zero] at hz2
+    tauto
+  · rintro (h | ⟨h0, h2'⟩)
+    · simp [h]
+    · simp [h0, h2']
 
 end ComplexModule
 

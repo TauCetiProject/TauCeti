@@ -40,13 +40,18 @@ eigenvalues `(a, b)` from the factorisation `(X - a)(X - b)`, and
 `Matrix.IsHermitian.eigenvalues₀_diagonal_two` and
 `Matrix.IsHermitian.eigenvalues₀_diagonal_two_swap` evaluate them on `diag(a, b)` and `diag(b, a)`.
 The sorted eigenvalues sum to the real part of the trace
-(`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their product is the determinant
-(`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts each of them
-by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`). In general the eigenvalue list of a real
-diagonal matrix is its diagonal sorted decreasingly
+(`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their `m`-th powers sum to the real part of
+`tr(Aᵐ)` (`Matrix.IsHermitian.sum_eigenvalues₀_pow_eq_re_trace_pow`), their product is the
+determinant (`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts
+each of them by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`). In general the eigenvalue
+list of a real diagonal matrix is its diagonal sorted decreasingly
 (`Matrix.IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc`). An orthonormal eigenbasis can be
 ordered as the sorted eigenvalues
 (`Matrix.IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul`).
+On the real vector space `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)` of Hermitian matrices, the
+sorted eigenvalues of a real combination `a • A + b • B` are those of the same combination of the
+Euclidean operators (`Matrix.eigenvalues₀_smul_add_smul`), so operator statements on
+`LinearMap.IsSymmetric.eigenvalues` transfer to matrices.
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -96,6 +101,21 @@ theorem IsHermitian.eigenvalues₀_congr (h : A = B) (hA : A.IsHermitian) (hB : 
     hA.eigenvalues₀ = hB.eigenvalues₀ := by
   subst h
   rfl
+
+/-- The sorted eigenvalues of a real combination `a • A + b • B` of Hermitian matrices are those
+of the same combination of their Euclidean operators. This transfers the operator statements on
+`LinearMap.IsSymmetric.eigenvalues` to the real vector space of Hermitian matrices. -/
+theorem eigenvalues₀_smul_add_smul (A B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) (a b : ℝ) :
+    (a • A + b • B).property.isHermitian.eigenvalues₀ =
+      (((isSymmetric_toEuclideanLin_iff.mpr A.property.isHermitian).smul
+        (RCLike.conj_ofReal a)).add
+        ((isSymmetric_toEuclideanLin_iff.mpr B.property.isHermitian).smul
+          (RCLike.conj_ofReal b))).eigenvalues finrank_euclideanSpace := by
+  rw [IsHermitian.eigenvalues₀]
+  refine LinearMap.IsSymmetric.eigenvalues_congr ?_ _ _ _
+  rw [Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜) a, RCLike.real_smul_eq_coe_smul (K := 𝕜) b, map_add,
+    map_smul, map_smul]
 
 /-- **The characteristic polynomial determines the sorted eigenvalues**: two Hermitian matrices
 have the same decreasing eigenvalue list exactly when they have the same characteristic
@@ -185,6 +205,14 @@ theorem IsHermitian.sum_eigenvalues₀_eq_re_trace (hA : A.IsHermitian) :
   rw [hA.trace_eq_sum_eigenvalues, map_sum]
   simp only [RCLike.ofReal_re]
   exact (hA.sum_comp_eigenvalues fun x ↦ x).symm
+
+/-- **The trace of a power is the spectral function of the power sum**: the `m`-th powers of the
+sorted eigenvalues of a Hermitian matrix sum to the real part of `tr(Aᵐ)`. -/
+theorem IsHermitian.sum_eigenvalues₀_pow_eq_re_trace_pow (hA : A.IsHermitian) (m : ℕ) :
+    ∑ k, hA.eigenvalues₀ k ^ m = RCLike.re (A ^ m).trace := by
+  rw [hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
+  simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+  exact (hA.sum_comp_eigenvalues (· ^ m)).symm
 
 /-- **The determinant is the spectral function of the product**: the determinant of a Hermitian
 matrix is the product of its sorted eigenvalues. -/
@@ -311,15 +339,22 @@ theorem IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
 
 end
 
+/-- Mathlib's `Matrix.IsHermitian.eigenvectorBasis`, reindexed by `Fin (Fintype.card ι)`, is
+ordered as the sorted eigenvalues. -/
+theorem IsHermitian.mulVec_eigenvectorBasis_reindex_eq_eigenvalues₀_smul (hA : A.IsHermitian)
+    (j : Fin (Fintype.card ι)) :
+    A *ᵥ hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm j =
+      (hA.eigenvalues₀ j : 𝕜) •
+        ⇑(hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm j) := by
+  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
+
 /-- A Hermitian matrix has an orthonormal eigenbasis ordered as its sorted eigenvalues: Mathlib's
 `Matrix.IsHermitian.eigenvectorBasis`, reindexed by `Fin (Fintype.card ι)`. -/
 theorem IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul (hA : A.IsHermitian) :
     ∃ u : OrthonormalBasis (Fin (Fintype.card ι)) 𝕜 (EuclideanSpace 𝕜 ι),
-      ∀ j, A *ᵥ u j = (hA.eigenvalues₀ j : 𝕜) • ⇑(u j) := by
-  refine ⟨hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm,
-    fun j ↦ ?_⟩
-  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
+      ∀ j, A *ᵥ u j = (hA.eigenvalues₀ j : 𝕜) • ⇑(u j) :=
+  ⟨_, hA.mulVec_eigenvectorBasis_reindex_eq_eigenvalues₀_smul⟩
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :
@@ -328,7 +363,7 @@ theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :
   rw [hA.rank_eq_card_non_zero_eigs]
   exact Fintype.card_congr
     ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm.subtypeEquiv
-      (fun _ ↦ by rw [← hA.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]))
+      (fun _ ↦ by rw [hA.eigenvalues₀_equivOfCardEq_symm]))
 
 /-- Every entry of the sorted eigenvalue list of a positive-semidefinite matrix is nonnegative. -/
 theorem PosSemidef.eigenvalues₀_nonneg

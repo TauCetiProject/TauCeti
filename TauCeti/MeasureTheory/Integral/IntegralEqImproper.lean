@@ -32,6 +32,9 @@ integrability it suffices that `f` be continuous on `[-A, A]` for `A = ∫ u in 
 particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
 (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
 `exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
+If `f` is only integrable on each `(y, ∞)` with `y > a` and continuous on `(a, ∞)`, the tail
+integral still has derivative `-f x` at every `x > a`
+(`MeasureTheory.hasDerivAt_integral_Ioi_of_continuousOn`).
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
 (`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
 and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
@@ -219,6 +222,16 @@ end Real
 end MeasureTheory.IntegrableOn
 
 namespace MeasureTheory
+
+/-- If `f` is continuous on `(a, ∞)` and integrable on `(y, ∞)` for every `y > a`, then its tail
+integral has derivative `-f x` at every `x > a`. Unlike `IntegrableOn.hasDerivAt_integral_Ioi`,
+`f` need not be integrable on `(a, ∞)` itself. -/
+theorem hasDerivAt_integral_Ioi_of_continuousOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} {a x : ℝ}
+    (hint : ∀ y ∈ Ioi a, IntegrableOn f (Ioi y)) (hcont : ContinuousOn f (Ioi a))
+    (hx : x ∈ Ioi a) : HasDerivAt (fun t ↦ ∫ s in Ioi t, f s) (-f x) x := by
+  obtain ⟨y, hay, hyx⟩ := exists_between (mem_Ioi.1 hx)
+  exact (hint y hay).hasDerivAt_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hx)) hyx
 
 /-- If `f` is nonnegative on `(a, ∞)` and integrable on `(x, ∞)` for every `x > a`, then its tail
 integral `x ↦ ∫ v in Ioi x, f v` is antitone on `(a, ∞)`. -/

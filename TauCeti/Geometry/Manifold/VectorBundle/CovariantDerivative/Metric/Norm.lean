@@ -47,6 +47,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V]
   {cov : CovariantDerivative I F V} {σ : Π x : M, V x} {x : M}
 
+/-- The differential of the squared norm of a section: `d|σ|²(v) = 2 ⟪∇_v σ, σ⟫`. -/
+theorem mvfderiv_norm_sq (hcov : cov.IsMetricCompatible) (hσ : MDiffAt (T% σ) x)
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ ‖σ y‖ ^ 2) x v = 2 * ⟪cov σ x v, σ x⟫ := by
+  simpa only [real_inner_self_eq_norm_sq, real_inner_comm (σ x), two_mul] using
+    hcov.mvfderiv_inner_eq (fun _ ↦ v) hσ hσ
+
 /-- The differential of the norm of a section away from its zero locus. -/
 theorem mvfderiv_norm (hcov : cov.IsMetricCompatible) (hσ : MDiffAt (T% σ) x)
     (hσx : σ x ≠ 0) (v : TangentSpace I x) :
@@ -61,10 +68,7 @@ theorem mvfderiv_norm (hcov : cov.IsMetricCompatible) (hσ : MDiffAt (T% σ) x)
     ((Real.hasDerivAt_sqrt (pow_ne_zero 2 hn)).differentiableAt)]
   simp only [smul_apply, smul_eq_mul,
     (Real.hasDerivAt_sqrt (pow_ne_zero 2 hn)).deriv, Real.sqrt_sq (norm_nonneg _)]
-  have hd : mvfderiv I (fun y ↦ ‖σ y‖ ^ 2) x v = 2 * ⟪cov σ x v, σ x⟫ := by
-    simpa only [real_inner_self_eq_norm_sq, real_inner_comm (σ x), two_mul] using
-      hcov.mvfderiv_inner_eq (fun _ ↦ v) hσ hσ
-  rw [hd]
+  rw [hcov.mvfderiv_norm_sq hσ]
   field_simp
 
 /-- The differential of a positive regularization of the norm of a section. -/
@@ -84,10 +88,7 @@ theorem mvfderiv_sqrt_norm_sq_add (hcov : cov.IsMetricCompatible)
   simp only [smul_apply, smul_eq_mul,
     (Real.hasDerivAt_sqrt (ne_of_gt hpos)).deriv,
     TauCeti.mvfderiv_add_const]
-  have hd : mvfderiv I (fun y ↦ ‖σ y‖ ^ 2) x v = 2 * ⟪cov σ x v, σ x⟫ := by
-    simpa only [real_inner_self_eq_norm_sq, real_inner_comm (σ x), two_mul] using
-      hcov.mvfderiv_inner_eq (fun _ ↦ v) hσ hσ
-  rw [hd]
+  rw [hcov.mvfderiv_norm_sq hσ]
   field_simp
 
 variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
@@ -103,11 +104,7 @@ theorem norm_sq_mgradient_norm_sq_le (hcov : cov.IsMetricCompatible)
   rw [← b.sum_sq_inner_left, cov.innerCovariantDerivative_eq_sum σ σ x b, Finset.mul_sum]
   simp only [TauCeti.Manifold.inner_mgradient, real_inner_self_eq_norm_sq]
   refine Finset.sum_le_sum fun i _ ↦ ?_
-  have hd : mvfderiv I (fun y ↦ ‖σ y‖ ^ 2) x (b i) =
-      2 * ⟪cov σ x (b i), σ x⟫ := by
-    simpa only [real_inner_self_eq_norm_sq, real_inner_comm (σ x), two_mul] using
-      hcov.mvfderiv_inner_eq (fun _ ↦ b i) hσ hσ
-  rw [hd]
+  rw [hcov.mvfderiv_norm_sq hσ]
   have h := real_inner_mul_inner_self_le (cov σ x (b i)) (σ x)
   simp only [real_inner_self_eq_norm_sq] at h
   nlinarith only [h]

@@ -53,7 +53,7 @@ private def normalCoordinateOn (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hU : U ⊆ (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) : M × P := by
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) : M × P := by
   classical
   exact if hp : p.proj ∈ U then
       (p.proj, f.normalSpaceEquivOfComplement hn (hU hp).1 (hU hp).2 B (hB p.proj hp) p.snd)
@@ -64,19 +64,19 @@ private def normalCoordinateOnInv (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hU : U ⊆ (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (p : M × P) : TotalSpace P (fun x ↦ f.NormalSpace x hn) := by
+    (p : M × P) : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) := by
   classical
   exact if hp : p.1 ∈ U then
       ⟨p.1, (f.normalSpaceEquivOfComplement hn (hU hp).1 (hU hp).2 B
         (hB p.1 hp)).symm p.2⟩
-    else zeroSection P (fun x ↦ f.NormalSpace x hn) p.1
+    else zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) p.1
 
 private theorem normalCoordinateOn_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (x₀ : M) (U : Set M) (B : P →L[𝕜] F)
     (hU : U ⊆ (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source)
     (hB : ∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ U) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) (hp : p.proj ∈ U) :
     normalCoordinateOn f hn x₀ U B hU hB p =
       (p.proj, f.normalSpaceEquivOfComplement hn (hU hp).1 (hU hp).2 B
         (hB p.proj hp) p.snd) := by
@@ -104,7 +104,7 @@ private noncomputable def normalSourceHomeomorphOfComplement
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
-    {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U} ≃ₜ U × P := by
+    {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U} ≃ₜ U × P := by
   letI := f.instTopologicalSpaceNormalBundle (K := P) hn
   let A : U → E →L[𝕜] F := fun x =>
     inTangentCoordinates I J _root_.id (f : M → N)
@@ -116,16 +116,16 @@ private noncomputable def normalSourceHomeomorphOfComplement
     eq_coinduced := rfl
     surjective := rangeQuotientMap_surjective A
   }
-  let normalToQ : {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U} → Q :=
+  let normalToQ : {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U} → Q :=
     fun p => ⟨⟨p.val.proj, p.property⟩,
       f.normalSpaceEquivInTangentCoordinates hn (hU p.property).1 (hU p.property).2 p.val.snd⟩
-  let qToNormal : Q → {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U} :=
+  let qToNormal : Q → {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U} :=
     fun p => ⟨⟨p.proj.val,
       (f.normalSpaceEquivInTangentCoordinates hn (hU p.proj.property).1
           (hU p.proj.property).2).symm p.snd⟩,
       p.proj.property⟩
   have hnormalToQ : Continuous normalToQ := by
-    let source := π P (fun x ↦ f.NormalSpace x hn) ⁻¹' U
+    let source := π P (fun x ↦ f.isImmersion.NormalSpace x hn) ⁻¹' U
     rw [((f.isQuotientMap_normalQuotientMap (K := P) hn).restrictPreimage_isOpen
       (hUopen.preimage (f.continuous_normalBundle_proj hn))).continuous_iff]
     let e := trivializationAt F (TangentSpace J) (f x₀)
@@ -157,7 +157,7 @@ private noncomputable def normalSourceHomeomorphOfComplement
     have hxU : x ∈ U := by
       simpa only [source, mem_preimage, normalQuotientMap_apply] using hx
     have hrestrict : source.restrictPreimage (f.normalQuotientMap (K := P) hn)
-        ⟨⟨x, v⟩, hx⟩ = ⟨⟨x, f.normalClass x hn v⟩, hxU⟩ := by
+        ⟨⟨x, v⟩, hx⟩ = ⟨⟨x, f.isImmersion.normalClass x hn v⟩, hxU⟩ := by
       apply Subtype.ext
       exact f.normalQuotientMap_apply hn ⟨x, v⟩
     simp only [Function.comp_apply]
@@ -186,12 +186,12 @@ private noncomputable def normalSourceHomeomorphOfComplement
     have hnq : Continuous (fun p : U × F =>
         (⟨f.normalQuotientMap (K := P) hn (q p), by
           simpa only [q, normalQuotientMap_apply] using p.1.property⟩ :
-          {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U})) := by
+          {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U})) := by
       exact ((f.isQuotientMap_normalQuotientMap (K := P) hn).continuous.comp hq').subtype_mk _
     refine hnq.congr ?_
     rintro ⟨⟨x, hx⟩, v⟩
     have hnqapply : f.normalQuotientMap (K := P) hn (q (⟨x, hx⟩, v)) =
-        ⟨x, f.normalClass x hn
+        ⟨x, f.isImmersion.normalClass x hn
           ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v)⟩ := by
       exact f.normalQuotientMap_apply hn _
     simp only [Function.comp_apply]
@@ -202,7 +202,7 @@ private noncomputable def normalSourceHomeomorphOfComplement
       (qToNormal ⟨⟨x, hx⟩, Submodule.Quotient.mk v⟩).val
     simp only [qToNormal]
     calc
-      _ = ⟨x, f.normalClass x hn
+      _ = ⟨x, f.isImmersion.normalClass x hn
           ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v)⟩ := hnqapply
       _ = ⟨x, (f.normalSpaceEquivInTangentCoordinates hn
           (hU hx).1 (hU hx).2).symm (Submodule.Quotient.mk v)⟩ :=
@@ -211,7 +211,7 @@ private noncomputable def normalSourceHomeomorphOfComplement
             (hU hx).1 (hU hx).2 v).symm
       _ = _ := by congr
   let normalQHomeomorph :
-      {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U} ≃ₜ Q := {
+      {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U} ≃ₜ Q := {
     toFun := normalToQ
     invFun := qToNormal
     left_inv := by
@@ -240,7 +240,7 @@ private theorem normalSourceHomeomorphOfComplement_apply
     (hcoord : Continuous (fun p : U × F ↦
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ U) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) (hp : p.proj ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     normalSourceHomeomorphOfComplement f hn x₀ U hUopen hU B hB hcoord ⟨p, hp⟩ =
       (⟨p.proj, hp⟩, f.normalSpaceEquivOfComplement hn
@@ -257,7 +257,7 @@ private theorem normalSourceHomeomorphOfComplement_apply
       (hU hp).1 (hU hp).2 B (hB p.proj hp) p.snd) : U × P)
   apply Prod.ext
   · rfl
-  obtain ⟨v, hv⟩ := f.normalClass_surjective p.proj hn p.snd
+  obtain ⟨v, hv⟩ := f.isImmersion.normalClass_surjective p.proj hn p.snd
   rw [← hv]
   rw [f.normalSpaceEquivInTangentCoordinates_normalClass hn (hU hp).1 (hU hp).2]
   rw [ContinuousLinearMap.quotientRangeEquiv_apply_mk]
@@ -285,7 +285,7 @@ private theorem normalSourceHomeomorphOfComplement_symm_apply
   -- Compare the two inverse formulas after the generic quotient homeomorphism is evaluated.
   change (⟨⟨p.1, (f.normalSpaceEquivInTangentCoordinates hn
       (hU hp).1 (hU hp).2).symm (Submodule.Quotient.mk (B p.2))⟩, hp⟩ :
-        {p : TotalSpace P (fun x ↦ f.NormalSpace x hn) // p.proj ∈ U}) =
+        {p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) // p.proj ∈ U}) =
     ⟨⟨p.1, (f.normalSpaceEquivOfComplement hn
       (hU hp).1 (hU hp).2 B (hB p.1 hp)).symm p.2⟩, hp⟩
   apply Subtype.ext
@@ -313,12 +313,12 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2)) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
-    Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) := by
+    Trivialization P (π P (fun x ↦ f.isImmersion.NormalSpace x hn)) := by
   letI := f.instTopologicalSpaceNormalBundle (K := P) hn
   exact {
   toFun := normalCoordinateOn f hn x₀ U B hU hB
   invFun := normalCoordinateOnInv f hn x₀ U B hU hB
-  source := π P (fun x ↦ f.NormalSpace x hn) ⁻¹' U
+  source := π P (fun x ↦ f.isImmersion.NormalSpace x hn) ⁻¹' U
   target := U ×ˢ univ
   map_source' p hp := by
     rw [mem_preimage] at hp
@@ -406,7 +406,7 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
     (hcoord : Continuous (fun p : U × F ↦
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate B p.2))
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ U) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) (hp : p.proj ∈ U) :
     letI := f.instTopologicalSpaceNormalBundle (K := P) hn
     f.normalSpaceTrivializationOfComplement hn x₀ U hUopen hU B hB hcoord p =
       (p.proj, f.normalSpaceEquivOfComplement hn (hU hp).1 (hU hp).2 B

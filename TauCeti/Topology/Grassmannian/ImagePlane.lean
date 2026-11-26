@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!

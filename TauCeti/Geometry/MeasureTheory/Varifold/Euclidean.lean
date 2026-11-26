@@ -7,9 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Subtype
 public import TauCeti.MeasureTheory.Measure.Support
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 public import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -269,17 +270,11 @@ theorem support_weight_restrictOpens_inter (h : W' ≤ W) :
 theorem ext_of_restrictOpens [SecondCountableTopology E] {ι : Type*} {U : ι → Opens E}
     (hU : ∀ i, U i ≤ W) (hcover : W ≤ ⨆ i, U i)
     (h : ∀ i, restrictOpens V₁ (hU i) = restrictOpens V₂ (hU i)) : V₁ = V₂ := by
-  obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable (fun i ↦ (U i : Set E)) fun i ↦ (U i).isOpen
-  have : Countable T := hT.to_subtype
-  refine (Measure.ext_iff_of_iUnion_eq_univ
-    (s := fun i : T ↦ Prod.fst ⁻¹' (Subtype.val ⁻¹' (U i : Set E))) ?_).mpr fun i ↦ ?_
-  · refine eq_univ_of_forall fun p ↦ ?_
-    have hp : (p.1 : E) ∈ ⋃ i ∈ T, (U i : Set E) := by
-      rw [hTU, ← Opens.coe_iSup]
-      exact hcover p.1.property
-    simp only [mem_iUnion] at hp ⊢
-    obtain ⟨i, hi, hpi⟩ := hp
-    exact ⟨⟨i, hi⟩, hpi⟩
+  refine Measure.ext_of_restrict_preimage (Prod.fst : W × grassmannian ℝ E k → W)
+    (U := fun i ↦ Subtype.val ⁻¹' (U i : Set E))
+    (fun i ↦ (U i).isOpen.preimage continuous_subtypeVal)
+    (eq_univ_of_forall fun x ↦ ?_) fun i ↦ ?_
+  · simpa [← SetLike.mem_coe, Opens.coe_iSup] using hcover x.property
   · rw [← map_restrictOpens (hU i), ← map_restrictOpens (hU i), h]
 
 end Euclidean

@@ -22,11 +22,13 @@ random variables, without choosing measurable eigenvectors.
 
 We use the subtype of Hermitian matrices, with its inherited topology and measurable
 structure. For a family of Hermitian matrices, continuity of the entries at a point gives
-continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀`), and
-differentiability of the entries at a point makes the ordered eigenvalues move by `O(‖x - x₀‖)`
-(`Matrix.isBigO_eigenvalues₀_sub`). Along any filter, if `‖A i - B i‖ → 0` in the Euclidean
-operator norm for Hermitian `A i` and `B i`, then selected ordered eigenvalues of `A i` converge
-to the limit of the corresponding eigenvalues of `B i`
+continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀`), so a spectral
+gap of `M x₀` persists near `x₀` (`Matrix.eventually_eigenvalues₀_lt`), and differentiability of
+the entries at a point makes the ordered eigenvalues move by `O(‖x - x₀‖)`
+(`Matrix.isBigO_eigenvalues₀_sub`). On the real vector space of Hermitian matrices the ordered
+eigenvalues are continuous (`Matrix.continuous_eigenvalues₀_selfAdjoint`). Along any filter, if
+`‖A i - B i‖ → 0` in the Euclidean operator norm for Hermitian `A i` and `B i`, then selected
+ordered eigenvalues of `A i` converge to the limit of the corresponding eigenvalues of `B i`
 (`Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero`); the sizes may vary. Continuity
 uses the usual entrywise topology: Mathlib's Euclidean operator norm induces this same topology.
 Empty index types are allowed. On all index types (with value `0` on empty carriers), the extreme
@@ -88,6 +90,30 @@ theorem continuousAt_eigenvalues₀ {X : Type*} [TopologicalSpace X] {M : X → 
   ((continuous_apply i).comp continuous_eigenvalues₀).continuousAt.comp
     (f := fun x ↦ (⟨M x, hM x⟩ : {A : Matrix n n 𝕜 // A.IsHermitian}))
     (tendsto_subtype_rng.2 (continuousAt_pi.2 fun a ↦ continuousAt_pi.2 fun b ↦ h a b))
+
+/-- The ordered eigenvalues are continuous on the real vector space of Hermitian matrices. -/
+@[fun_prop]
+theorem continuous_eigenvalues₀_selfAdjoint :
+    Continuous (fun A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      A.property.isHermitian.eigenvalues₀) :=
+  continuous_eigenvalues₀.comp (continuous_subtypeVal.subtype_mk fun A ↦ A.property.isHermitian)
+
+open Filter Topology in
+/-- **Spectral gaps persist.** For a family of Hermitian matrices whose entries are continuous at
+`x₀`, if the `k` largest eigenvalues of `M x₀` are separated from the others, `λⱼ < λᵢ` for
+`i < k ≤ j`, then the same holds for `M x` for every `x` near `x₀`. -/
+theorem eventually_eigenvalues₀_lt {X : Type*} [TopologicalSpace X] {M : X → Matrix n n 𝕜}
+    (hM : ∀ x, (M x).IsHermitian) {x₀ : X} (h : ∀ a b, ContinuousAt (fun x ↦ M x a b) x₀)
+    {k : ℕ} (hgap : ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
+      (hM x₀).eigenvalues₀ j < (hM x₀).eigenvalues₀ i) :
+    ∀ᶠ x in 𝓝 x₀, ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
+      (hM x).eigenvalues₀ j < (hM x).eigenvalues₀ i := by
+  refine eventually_all.2 fun i ↦ eventually_all.2 fun j ↦ ?_
+  by_cases hij : i.val < k ∧ k ≤ j.val
+  · filter_upwards [(continuousAt_eigenvalues₀ hM h j).eventually_lt
+      (continuousAt_eigenvalues₀ hM h i) (hgap i j hij.1 hij.2)] with x hx
+    exact fun _ _ ↦ hx
+  · exact Eventually.of_forall fun _ hi hj ↦ absurd ⟨hi, hj⟩ hij
 
 open Asymptotics Filter Finset Topology in
 /-- The sorted eigenvalues of a family of Hermitian matrices whose entries are differentiable at

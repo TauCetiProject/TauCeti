@@ -24,8 +24,10 @@ half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner
 foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the hyperplane
 `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
 (`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that hyperplane lies at distance at
-least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. Moving by `c ν` along a unit normal `ν` raises the height
-`⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`). In rigid coordinates
+least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. For `ν ≠ 0`, the half-space `{x | ⟪x, ν⟫ < c}` is the
+half-space `{x | ⟪x, ‖ν‖⁻¹ • ν⟫ < c / ‖ν‖}` of a unit vector
+(`TauCeti.setOf_inner_lt_eq_smul_inv_norm`). Moving by `c ν` along a unit normal `ν` raises the
+height `⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`). In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -147,6 +149,16 @@ theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
     ∃ z, ⟪z, ν⟫_ℝ = c ∧ dist w z = |⟪w, ν⟫_ℝ - c| / ‖ν‖ :=
   ⟨w - ((⟪w, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, real_inner_sub_div_norm_sq_smul_self_eq hν w c, by
     rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self]⟩
+
+/-- For a nonzero `ν`, `{x | ⟪x, ν⟫ < c}` is the half-space of the unit vector `‖ν‖⁻¹ • ν` at
+level `c / ‖ν‖`. -/
+theorem setOf_inner_lt_eq_smul_inv_norm {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ν : E} (hν : ν ≠ 0) (c : ℝ) :
+    {x : E | ⟪x, ν⟫_ℝ < c} = {x | ⟪x, ‖ν‖⁻¹ • ν⟫_ℝ < c / ‖ν‖} := by
+  have hn : 0 < ‖ν‖ := norm_pos_iff.2 hν
+  ext x
+  simp only [Set.mem_ofPred_eq, real_inner_smul_right, lt_div_iff₀ hn]
+  field_simp
 
 end TauCeti
 
