@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fin.Tuple.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Letter counts, duplicates, and permutations in `List.ofFn`
@@ -20,6 +21,10 @@ only if the map `Sum.elim f g` out of the sum of their index types is injective
 (`List.nodup_ofFn_append_ofFn`), and similarly for three tuples
 (`List.nodup_ofFn_append_ofFn_append_ofFn`). Inserting an element via `Fin.insertNth` yields a
 permutation of `a :: List.ofFn f` (`List.ofFn_insertNth_perm`).
+
+The list operation `List.contractNth l op`, which combines the entries `l` and `l + 1` of a list
+with `op`, is the list analogue of `Fin.contractNth`: `List.ofFn (Fin.contractNth l op a)` is
+`List.contractNth l op (List.ofFn a)` (`List.ofFn_contractNth`).
 -/
 
 public section
@@ -76,5 +81,56 @@ theorem ofFn_insertNth_perm :
       conv_rhs => rw [← Fin.cons_self_tail f, ofFn_succ]
       simpa only [Fin.cons_zero, Fin.cons_succ] using
         ((ofFn_insertNth_perm q a (Fin.tail f)).cons (f 0)).trans (Perm.swap a (f 0) _)
+
+/-- Combine the entries `l` and `l + 1` of a list with `op`, leaving the list unchanged when it has
+no entry `l + 1`. This is the list analogue of `Fin.contractNth`. -/
+def contractNth : ℕ → (α → α → α) → List α → List α
+  | 0, op, x :: y :: L => op x y :: L
+  | l + 1, op, x :: L => x :: contractNth l op L
+  | _, _, L => L
+
+/-- Contracting at position `0` combines the first two entries. -/
+@[simp]
+theorem contractNth_zero_cons_cons (op : α → α → α) (x y : α) (L : List α) :
+    contractNth 0 op (x :: y :: L) = op x y :: L := by
+  rw [contractNth]
+
+/-- Contracting at position `l + 1` keeps the first entry and contracts the tail at `l`. -/
+@[simp]
+theorem contractNth_succ_cons (l : ℕ) (op : α → α → α) (x : α) (L : List α) :
+    contractNth (l + 1) op (x :: L) = x :: contractNth l op L := by
+  rw [contractNth]
+
+/-- Contracting the empty list gives the empty list. -/
+@[simp]
+theorem contractNth_nil (l : ℕ) (op : α → α → α) : contractNth l op [] = [] := by
+  cases l <;> simp [contractNth]
+
+/-- Contracting a list of length one leaves it unchanged. -/
+@[simp]
+theorem contractNth_singleton (l : ℕ) (op : α → α → α) (x : α) : contractNth l op [x] = [x] := by
+  cases l <;> simp [contractNth]
+
+/-- Contracting two entries of a nonempty list leaves it nonempty. -/
+theorem contractNth_cons_ne_nil (l : ℕ) (op : α → α → α) (x : α) (L : List α) :
+    contractNth l op (x :: L) ≠ [] := by
+  cases l <;> cases L <;> simp
+
+/-- The list of entries of `Fin.contractNth l op a` is `List.contractNth l op` of the list of
+entries of `a`. -/
+theorem ofFn_contractNth {n : ℕ} (op : α → α → α) (a : Fin (n + 1) → α) (l : Fin n) :
+    ofFn (Fin.contractNth l.castSucc op a) = contractNth l op (ofFn a) := by
+  induction n with
+  | zero => exact l.elim0
+  | succ n ih =>
+    cases l using Fin.cases with
+    | zero =>
+      rw [ofFn_succ, ofFn_succ (f := a), ofFn_succ (f := fun i ↦ a i.succ)]
+      simp [Fin.contractNth]
+    | succ l =>
+      rw [ofFn_succ, ofFn_succ (f := a), Fin.val_succ, contractNth_succ_cons, ← ih]
+      congr 2
+      rw [← Fin.succ_castSucc]
+      exact Fin.tail_contractNth_succ _ l.castSucc a
 
 end List

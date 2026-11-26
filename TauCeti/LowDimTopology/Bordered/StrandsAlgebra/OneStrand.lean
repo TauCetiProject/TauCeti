@@ -177,6 +177,7 @@ private theorem oneStrandIdemCoord_basis_mul_basis (p : Set.range M)
 
 /-- **The idempotent coordinates are multiplicative**: the coefficient of `I({p})` in a product is
 the product of the coefficients of `I({p})` in the factors. -/
+@[simp]
 theorem oneStrandIdemCoord_mul (p : Set.range M) (x y : matchedSummand R M 1) :
     oneStrandIdemCoord R M p (x * y) = oneStrandIdemCoord R M p x * oneStrandIdemCoord R M p y := by
   have := LinearMap.ext_basis (oneStrandSummandBasis R M) (oneStrandSummandBasis R M)

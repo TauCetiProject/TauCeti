@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.OneStrand
 import Mathlib.Data.Fin.Tuple.Take
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.List.OfFn
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -18,7 +19,7 @@ Let `M` be a matching on a finite linearly ordered set `α`, and `A` the summand
 `TauCeti.StrandsAlgebra.matchedSummand R M 1` of the matched algebra with one strand, over a ring
 `R` of characteristic two. Fix three points `k < i < j` such that `i` is the only point strictly
 between `k` and `j`, and `k` and `j` are matched. The three chords `ρ_ij`, `ρ_kj` and `ρ_ki` then
-satisfy `ρ_ki ρ_ij = ρ_kj`, and `ρ_kj` is not the product of two other chords.
+satisfy `ρ_ki ρ_ij = ρ_kj`, and `ρ_kj` has no other factorization into two chords.
 
 This file constructs the `A∞` right module structure on `R` with one generator `x`
 (`TauCeti.StrandsAlgebra.threePointTypeA`) whose only nonzero operations are
@@ -96,16 +97,6 @@ section Word
 
 variable {A S : Type*} [Mul A] [CommRing S]
 
-/-- Multiply the entries `l` and `l + 1` of a list. -/
-private def contractAt : ℕ → List A → List A
-  | 0, x :: y :: L => (x * y) :: L
-  | l + 1, x :: L => x :: contractAt l L
-  | _, L => L
-
-private theorem contractAt_cons_ne_nil (l : ℕ) (x : A) (L : List A) :
-    contractAt l (x :: L) ≠ [] := by
-  cases l <;> cases L <;> simp [contractAt]
-
 variable (e p q r : A → S)
 
 /-- The weight `q(a₁) ⋯ q(aₙ₋₁) r(aₙ)` of a nonempty word. -/
@@ -158,12 +149,13 @@ private theorem tailWeight_relation (y z : A) (L : List A) :
     f y * tailWeight q r (z :: L) +
         ∑ s ∈ range (L.length + 2), wordWeight e p q r ((y :: z :: L).drop (s + 1)) *
           tailWeight q r ((y :: z :: L).take (s + 1)) +
-      ∑ l ∈ range (L.length + 1), tailWeight q r (contractAt l (y :: z :: L)) = 0 := by
+      ∑ l ∈ range (L.length + 1), tailWeight q r (List.contractNth l (· * ·) (y :: z :: L)) =
+        0 := by
   have h2 : (2 : S) = 0 := CharTwo.two_eq_zero
   induction L generalizing y z with
   | nil =>
     simp only [List.length_nil, zero_add, sum_range_succ, range_zero, sum_empty]
-    simp only [tailWeight, wordWeight, contractAt, List.drop, List.take, hr]
+    simp only [tailWeight, wordWeight, List.contractNth_zero_cons_cons, List.drop, List.take, hr]
     linear_combination (f y * r z + r y * e z) * h2
   | cons w L ih =>
     -- Split off the first letter `y` from the splittings and from the contractions.
@@ -179,12 +171,15 @@ private theorem tailWeight_relation (y z : A) (L : List A) :
       · refine sum_congr rfl fun s _ ↦ ?_
         rw [List.drop_succ_cons, List.take_succ_cons, List.take_succ_cons, tailWeight]
         ring
-    have hB : ∑ l ∈ range ((w :: L).length + 1), tailWeight q r (contractAt l (y :: z :: w :: L)) =
-        q (y * z) * tailWeight q r (w :: L) +
-          q y * ∑ l ∈ range (L.length + 1), tailWeight q r (contractAt l (z :: w :: L)) := by
+    have hB : ∑ l ∈ range ((w :: L).length + 1),
+          tailWeight q r (List.contractNth l (· * ·) (y :: z :: w :: L)) =
+        q (y * z) * tailWeight q r (w :: L) + q y * ∑ l ∈ range (L.length + 1),
+          tailWeight q r (List.contractNth l (· * ·) (z :: w :: L)) := by
       rw [List.length_cons, sum_range_succ', add_comm, mul_sum]
+      simp only [List.contractNth_succ_cons, List.contractNth_zero_cons_cons]
       congr 1
-      exact sum_congr rfl fun l _ ↦ tailWeight_cons_of_ne_nil q r y (contractAt_cons_ne_nil l z _)
+      exact sum_congr rfl fun l _ ↦
+        tailWeight_cons_of_ne_nil q r y (List.contractNth_cons_ne_nil l _ z _)
     rw [hA, hB, hq, tailWeight.eq_3]
     linear_combination q y * ih z w + (f y * q z + r y * p z) * tailWeight q r (w :: L) * h2
 
@@ -194,7 +189,7 @@ into two words of the products of their weights, plus the weights of the words o
 multiplying two adjacent letters, vanishes. -/
 private theorem wordWeight_relation (L : List A) :
     ∑ s ∈ range (L.length + 1), wordWeight e p q r (L.drop s) * wordWeight e p q r (L.take s) +
-      ∑ l ∈ range (L.length - 1), wordWeight e p q r (contractAt l L) = 0 := by
+      ∑ l ∈ range (L.length - 1), wordWeight e p q r (List.contractNth l (· * ·) L) = 0 := by
   have h2 : (2 : S) = 0 := CharTwo.two_eq_zero
   match L with
   | [] => simp [wordWeight]
@@ -213,14 +208,15 @@ private theorem wordWeight_relation (L : List A) :
       congr 1
       exact sum_congr rfl fun s _ ↦ by ring
     have hB : ∑ l ∈ range ((x :: y :: L).length - 1),
-        wordWeight e p q r (contractAt l (x :: y :: L)) =
+        wordWeight e p q r (List.contractNth l (· * ·) (x :: y :: L)) =
         wordWeight e p q r ((x * y) :: L) +
-          p x * ∑ l ∈ range L.length, tailWeight q r (contractAt l (y :: L)) := by
+          p x * ∑ l ∈ range L.length, tailWeight q r (List.contractNth l (· * ·) (y :: L)) := by
       rw [List.length_cons, List.length_cons, Nat.add_sub_cancel, sum_range_succ', add_comm,
         mul_sum]
+      simp only [List.contractNth_succ_cons, List.contractNth_zero_cons_cons]
       congr 1
       exact sum_congr rfl fun l _ ↦
-        wordWeight_cons_of_ne_nil e p q r x (contractAt_cons_ne_nil l y _)
+        wordWeight_cons_of_ne_nil e p q r x (List.contractNth_cons_ne_nil l _ y _)
     rw [hA, hB]
     match L with
     | [] =>
@@ -237,30 +233,6 @@ private theorem wordWeight_relation (L : List A) :
 
 end Word
 
-/-! ### Words of inputs as lists -/
-
-section OfFn
-
-variable {A : Type*} [Mul A]
-
-private theorem ofFn_contractNth {n : ℕ} (a : Fin (n + 1) → A) (l : Fin n) :
-    List.ofFn (Fin.contractNth l.castSucc (· * ·) a) = contractAt l (List.ofFn a) := by
-  induction n with
-  | zero => exact l.elim0
-  | succ n ih =>
-    cases l using Fin.cases with
-    | zero =>
-      rw [List.ofFn_succ, List.ofFn_succ (f := a), List.ofFn_succ (f := fun i ↦ a i.succ)]
-      simp [Fin.contractNth, contractAt]
-    | succ l =>
-      rw [List.ofFn_succ, List.ofFn_succ (f := a)]
-      simp only [Fin.val_succ, contractAt]
-      rw [← ih]
-      congr 2
-      rw [← Fin.succ_castSucc]
-      exact Fin.tail_contractNth_succ _ l.castSucc a
-
-end OfFn
 
 /-! ### The module -/
 
@@ -381,14 +353,14 @@ private theorem threePointAct_stasheff [CharP R 2] (N : ℕ) (a : Fin N → matc
       (∑ l ∈ range (N - 1), wordWeight
         (oneStrandIdemCoord R M ⟨M i, i, rfl⟩) (oneStrandChordCoord R M hij)
         (oneStrandChordCoord R M (hki.trans hij)) (oneStrandChordCoord R M hki)
-        (contractAt l (List.ofFn a))) * x := by
+        (List.contractNth l (· * ·) (List.ofFn a))) * x := by
     match N, a with
     | 0, a => simp
     | n + 1, a =>
       rw [ungradedStasheffMul_succ_apply, Nat.add_sub_cancel, sum_mul,
         ← Fin.sum_univ_eq_sum_range]
       refine sum_congr rfl fun l _ ↦ ?_
-      rw [threePointAct_apply, ofFn_contractNth]
+      rw [threePointAct_apply, List.ofFn_contractNth]
   have h := wordWeight_relation (oneStrandIdemCoord R M ⟨M k, k, rfl⟩)
     (oneStrandIdemCoord_mul M _) (chordCoord_ij_mul (hki := hki) (hij := hij) hM hbetween)
     (chordCoord_kj_mul (hki := hki) (hij := hij) hM hbetween)
