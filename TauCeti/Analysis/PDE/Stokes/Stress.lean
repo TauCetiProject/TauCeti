@@ -187,7 +187,7 @@ theorem trace_transpose_newtonianStress_mul_eq_of_trace_eq_zero [Fintype n] (μ 
 
 /-- **Dissipative contraction.** For a trace-free gradient `A`, `σ(A,p) : A = 2μ e(A) : e(A)`,
 whatever the pressure. -/
-theorem trace_transpose_newtonianStress_mul_self_of_trace_eq_zero [Fintype n] (μ p : ℝ)
+theorem trace_transpose_newtonianStress_mul_of_trace_eq_zero [Fintype n] (μ p : ℝ)
     {A : Matrix n n ℝ} (hA : A.trace = 0) :
     ((newtonianStress μ p A)ᵀ * A).trace =
       2 * μ * ((coefficientSymmetricPart A)ᵀ * coefficientSymmetricPart A).trace := by
@@ -195,27 +195,27 @@ theorem trace_transpose_newtonianStress_mul_self_of_trace_eq_zero [Fintype n] (�
 
 /-- For nonnegative viscosity the dissipative contraction `σ(A,p) : A` of a trace-free gradient
 is nonnegative. -/
-theorem trace_transpose_newtonianStress_mul_self_nonneg [Fintype n] {μ : ℝ} (hμ : 0 ≤ μ)
-    (p : ℝ) {A : Matrix n n ℝ} (hA : A.trace = 0) :
+theorem trace_transpose_newtonianStress_mul_nonneg_of_trace_eq_zero [Fintype n] {μ : ℝ}
+    (hμ : 0 ≤ μ) (p : ℝ) {A : Matrix n n ℝ} (hA : A.trace = 0) :
     0 ≤ ((newtonianStress μ p A)ᵀ * A).trace := by
-  rw [trace_transpose_newtonianStress_mul_self_of_trace_eq_zero μ p hA]
+  rw [trace_transpose_newtonianStress_mul_of_trace_eq_zero μ p hA]
   exact mul_nonneg (mul_nonneg zero_le_two hμ) (trace_transpose_mul_self_nonneg _)
 
 /-! ### Orthogonal covariance -/
 
 /-- The Newtonian stress is covariant under an orthogonal change of frame `A ↦ O A Oᵀ`. -/
-theorem newtonianStress_conj [Fintype n] {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
-    (μ p : ℝ) (A : Matrix n n ℝ) :
+theorem newtonianStress_mul_mul_transpose [Fintype n] {O : Matrix n n ℝ}
+    (hO : O ∈ orthogonalGroup n ℝ) (μ p : ℝ) (A : Matrix n n ℝ) :
     newtonianStress μ p (O * A * Oᵀ) = O * newtonianStress μ p A * Oᵀ := by
   simp [newtonianStress_eq_coefficientSymmetricPart, coefficientSymmetricPart_mul_mul_transpose,
     Matrix.mul_sub, Matrix.sub_mul, (mem_orthogonalGroup_iff n ℝ).mp hO]
 
 /-- The traction is covariant under an orthogonal change of frame: the stress of `O A Oᵀ` on the
 normal `O n` is `O` applied to the traction `σ(A,p) n`. -/
-theorem newtonianStress_conj_mulVec [Fintype n] {O : Matrix n n ℝ}
+theorem newtonianStress_mul_mul_transpose_mulVec [Fintype n] {O : Matrix n n ℝ}
     (hO : O ∈ orthogonalGroup n ℝ) (μ p : ℝ) (A : Matrix n n ℝ) (ν : n → ℝ) :
     newtonianStress μ p (O * A * Oᵀ) *ᵥ (O *ᵥ ν) = O *ᵥ (newtonianStress μ p A *ᵥ ν) := by
-  rw [newtonianStress_conj hO, mulVec_mulVec, Matrix.mul_assoc, mulVec_mulVec,
+  rw [newtonianStress_mul_mul_transpose hO, mulVec_mulVec, Matrix.mul_assoc, mulVec_mulVec,
     (mem_orthogonalGroup_iff' n ℝ).mp hO, Matrix.mul_one]
 
 end TauCeti.Stokes
