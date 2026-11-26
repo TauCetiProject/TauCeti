@@ -378,7 +378,9 @@ theorem add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
 /-- **A uniform lower bound from IMS localization at a finite set of points.** Under the hypotheses
 of `TauCeti.add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`, if the
 quadratic form of `Δ_t` at `J₀ φ` and at every `J p φ` is at least `κ` times its squared norm, then
-`(κ - K) ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`: the squared norms of the pieces add up to that of `φ`. -/
+`(κ - K) ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`. This is
+`TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` for the partition of unity
+indexed by `P.insertNone`, with `none` for `J₀`. -/
 theorem sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one
     {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {P : Finset (ι → ℝ)} {J₀ : (ι → ℝ) → ℝ}
     {J : (ι → ℝ) → (ι → ℝ) → ℝ} (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
@@ -392,25 +394,13 @@ theorem sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_
     (hκ : ∀ p ∈ P, κ * ∫ x, ∑ s, (J p • φ) x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t (J p • φ) x s * (J p • φ) x s) :
     (κ - K) * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have key := add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf hJ₀ hJ hφ
-    hφc hJ1 hK h₀ hκ
-  -- The squared norms of the pieces `J₀ φ` and `J p φ` add up to `∫ |φ|²`.
-  have hsq : ∀ (g : (ι → ℝ) → ℝ) x, ∑ s, (g • φ) x s ^ 2 = g x ^ 2 * ∑ s, φ x s ^ 2 :=
-    fun g x ↦ by simp only [Pi.smul_apply', Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
-  have hint : ∀ g : (ι → ℝ) → ℝ, (∀ x ∈ tsupport φ, ContDiffAt ℝ 2 g x) →
-      Integrable fun x ↦ g x ^ 2 * ∑ s, φ x s ^ 2 := fun g hg ↦
-    hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl fun x hx ↦
-      ((hg x hx).continuousAt.pow 2).continuousWithinAt
-  have hN : (∫ x, J₀ x ^ 2 * ∑ s, φ x s ^ 2) + ∑ p ∈ P, ∫ x, J p x ^ 2 * ∑ s, φ x s ^ 2 =
-      ∫ x, ∑ s, φ x s ^ 2 := by
-    rw [← integral_finsetSum _ fun p hp ↦ hint _ (hJ p hp),
-      ← integral_add (hint _ hJ₀) (integrable_finsetSum _ fun p hp ↦ hint _ (hJ p hp))]
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    by_cases hx : φ x = 0
-    · simp [hx]
-    simp only [← Finset.sum_mul, ← add_mul, hJ1 x hx, one_mul]
-  simp only [hsq, ← Finset.mul_sum, ← mul_add, hN] at key
-  linarith
+  simpa [Finset.sum_insertNone] using
+    sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul (A := P.insertNone)
+      (J := fun o ↦ o.elim J₀ J) hf
+      (by rintro (_ | p) hp; exacts [hJ₀, hJ p (Finset.some_mem_insertNone.1 hp)]) hφ hφc
+      (fun x hx ↦ by simpa [Finset.sum_insertNone] using hJ1 x hx)
+      (fun x hx ↦ by simpa [Finset.sum_insertNone] using hK x hx)
+      (by rintro (_ | p) hp; exacts [h₀, hκ p (Finset.some_mem_insertNone.1 hp)])
 
 /-! ### The lower bound away from the critical points -/
 
