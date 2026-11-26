@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.LinearPMap
@@ -14,8 +15,10 @@ import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Normed.Module.Dual
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.Lp
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
@@ -36,8 +39,10 @@ The function `g` is then unique almost everywhere, so these pairs `(f, g)` form 
 unbounded operator `TauCeti.weakLaplacianLp` on `Lᵖ(E; F)`, whose domain is
 `{f ∈ Lᵖ : Δf ∈ Lᵖ}`. It is the natural `Lᵖ` realization of the Laplacian on the whole space,
 with Mathlib's sign: on functions of class `C²` it is the classical Laplacian
-(`TauCeti.mem_graph_weakLaplacianLp_of_contDiff`). For `1 ≤ p < ∞` it is the generator of the
-heat semigroup (`TauCeti.generator_heatSemigroup_eq_weakLaplacianLp`).
+(`TauCeti.mem_graph_weakLaplacianLp_of_contDiff`), and it extends the Laplacian of tempered
+distributions (`TauCeti.mem_graph_weakLaplacianLp_of_laplacian_toTemperedDistribution_eq`).
+For `1 ≤ p < ∞` it is the generator of the heat semigroup
+(`TauCeti.generator_heatSemigroup_eq_weakLaplacianLp`).
 
 The second result of the file is that `c - Δ` is injective on this domain for every `c > 0`
 (`TauCeti.smul_sub_weakLaplacianLp_injective`): an `Lᵖ` solution of `Δf = c f` vanishes. For a
@@ -56,6 +61,8 @@ the scalar case by continuous linear functionals.
   `TauCeti.integral_laplacian_smul_eq_integral_smul_weakLaplacianLp`: its graph, its domain and
   its defining identity.
 * `TauCeti.mem_graph_weakLaplacianLp_of_contDiff`: it extends the classical Laplacian.
+* `TauCeti.mem_graph_weakLaplacianLp_of_laplacian_toTemperedDistribution_eq`: it extends the
+  Laplacian of tempered distributions.
 * `TauCeti.eq_zero_of_mem_graph_weakLaplacianLp_smul`: an `Lᵖ` solution of `Δf = c f`, `c > 0`,
   is zero.
 * `TauCeti.smul_sub_weakLaplacianLp_injective`: `c - Δ` is injective on the domain for `c > 0`.
@@ -75,7 +82,7 @@ noncomputable section
 namespace TauCeti
 
 open ContinuousLinearMap InnerProductSpace Laplacian MeasureTheory Metric Set TopologicalSpace
-open scoped Convolution Distributions ENNReal
+open scoped Convolution Distributions ENNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -168,6 +175,19 @@ theorem mem_graph_weakLaplacianLp_of_contDiff {u : E → F} (hu : ContDiff ℝ 2
         integral_congr_ae (hf.mono fun x hx ↦ by simp only [hx])
     _ = ∫ x, φ x • Δ u x := hu.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian φ
     _ = ∫ x, φ x • g x := integral_congr_ae (hg.mono fun x hx ↦ by simp only [hx])
+
+/-- **On `Lᵖ` the distributional Laplacian extends the Laplacian of tempered distributions.** If
+`f, g ∈ Lᵖ(E; G)` satisfy `Δf = g` as tempered distributions, then `(f, g)` lies in the graph of
+`TauCeti.weakLaplacianLp`: real test functions are Schwartz functions. -/
+theorem mem_graph_weakLaplacianLp_of_laplacian_toTemperedDistribution_eq {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] {f g : Lp G p (volume : Measure E)}
+    (h : Δ (f : 𝓢'(E, G)) = (g : 𝓢'(E, G))) :
+    (f, g) ∈ (weakLaplacianLp E G p).graph := by
+  refine mem_graph_weakLaplacianLp_iff.2 fun φ ↦ ?_
+  have hφ := congrArg (fun T : 𝓢'(E, G) ↦
+    T ((TestFunction.toSchwartzMapCLM ℝ φ).postcompCLM Complex.ofRealCLM)) h
+  rw [TemperedDistribution.laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM] at hφ
+  simpa [SchwartzMap.laplacian_apply] using hφ
 
 /-! ### `c - Δ` is injective -/
 

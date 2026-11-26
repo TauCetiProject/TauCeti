@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
 # Elliptic homogeneous symbols and their inverses
@@ -24,6 +25,9 @@ degree:
 
 * `TauCeti.HomogeneousSymbol.IsElliptic`: invertibility at every nonzero frequency; between
   Banach spaces it is the same as bijectivity (`HomogeneousSymbol.isElliptic_iff_bijective`).
+* `TauCeti.HomogeneousSymbol.exists_isInvertible_and_norm_inverse_le_rpow`: invertibility at one
+  point `(x₀, ξ₀)` with `ξ₀ ≠ 0` persists, with `‖a (x, ξ)⁻¹‖ ≤ B ‖ξ‖^(-m)`, for `x` near `x₀` and
+  nonzero `ξ` in an open cone around `ξ₀`.
 * `TauCeti.HomogeneousSymbol.inverse`: for an elliptic `a` of degree `m` and a complete `V`, the
   homogeneous symbol `(x, ξ) ↦ a (x, ξ)⁻¹` of degree `-m`. It is a two-sided inverse of `a` for
   `HomogeneousSymbol.comp` (`inverse_comp`, `comp_inverse`) and the only one-sided inverse
@@ -149,6 +153,89 @@ over the zero frequency space every symbol is elliptic
 theorem IsElliptic.finrank_eq [Nontrivial E] {a : HomogeneousSymbol X E V W m}
     (ha : a.IsElliptic) : Module.finrank ℂ V = Module.finrank ℂ W :=
   ha.nonempty_continuousLinearEquiv.some.toLinearEquiv.finrank_eq
+
+/-! ### Invertibility on conic neighbourhoods -/
+
+/-- Near `(x₀, ξ₀)` with `ξ₀ ≠ 0`, a homogeneous symbol read on the sphere of radius `‖ξ₀‖` is
+close to its value at `(x₀, ξ₀)`, on a neighbourhood of `x₀` times an open cone around `ξ₀`. -/
+private theorem exists_cone_norm_sub_lt (h : HomogeneousSymbol X E V W m) {x₀ : X} {ξ₀ : E}
+    (hξ₀ : ξ₀ ≠ 0) {ε : ℝ} (hε : 0 < ε) :
+    ∃ U ∈ 𝓝 x₀, ∃ Γ : Set E, IsOpen Γ ∧ ξ₀ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ x ∈ U, ∀ ξ ∈ Γ,
+        ‖h.coefficient (x, (‖ξ₀‖ * ‖ξ‖⁻¹) • ξ) - h.coefficient (x₀, ξ₀)‖ < ε := by
+  have hn₀ : 0 < ‖ξ₀‖ := norm_pos_iff.2 hξ₀
+  -- The point `ν(x, ξ)` of the sphere of radius `‖ξ₀‖` on the ray through `ξ`, unchanged by
+  -- positive rescalings of `ξ`.
+  set ν : X × E → X × E := fun q ↦ (q.1, (‖ξ₀‖ * ‖q.2‖⁻¹) • q.2)
+  have hν₀ : ν (x₀, ξ₀) = (x₀, ξ₀) := by simp [ν, hn₀.ne']
+  have hν (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) : ν (x, t • ξ) = ν (x, ξ) := by
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · simp [ν]
+    have hξ' : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 hξ
+    simp only [ν, norm_smul, Real.norm_of_nonneg ht.le, smul_smul, Prod.mk.injEq, true_and]
+    congr 1
+    field_simp
+  have hc : ContinuousAt (fun q ↦ ‖h.coefficient (ν q) - h.coefficient (x₀, ξ₀)‖) (x₀, ξ₀) := by
+    refine (ContinuousAt.comp (f := ν) ?_ (continuousAt_fst.prodMk ((continuousAt_const.mul
+      (continuous_snd.norm.continuousAt.inv₀ hn₀.ne')).smul continuousAt_snd))).sub
+      continuousAt_const |>.norm
+    rw [hν₀]
+    exact h.continuousOn_coefficient.continuousAt
+      ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hξ₀)
+  -- A product neighbourhood `u × v` where the bound holds, and the cone `Γ` of the rays through
+  -- the interior of `v`.
+  obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.1 <|
+    hc.eventually_lt (continuousAt_const (y := ε)) (by simpa [hν₀] using hε)
+  obtain ⟨Γ, hΓ, hξ₀Γ, hcone, hΓv⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hv)
+  refine ⟨u, hu, Γ, hΓ, hξ₀Γ, hcone, fun x hx ξ hξ ↦ ?_⟩
+  obtain ⟨t, ht, htξ⟩ := hΓv ξ hξ
+  have h' : ‖h.coefficient (ν (x, t • ξ)) - h.coefficient (x₀, ξ₀)‖ < ε :=
+    huv (Set.mk_mem_prod hx (interior_subset htξ))
+  rwa [hν x ξ ht] at h'
+
+/-- **A homogeneous symbol invertible at a point is invertible on a conic neighbourhood.** If a
+homogeneous symbol `h` of degree `m` is invertible at `(x₀, ξ₀)` with `ξ₀ ≠ 0`, then for some
+neighbourhood `U` of `x₀`, some open cone `Γ` containing `ξ₀` and some constant `B`, the value
+`h(x, ξ)` is invertible with `‖h(x, ξ)⁻¹‖ ≤ B ‖ξ‖^(-m)` for all `x ∈ U` and nonzero `ξ ∈ Γ`. -/
+theorem exists_isInvertible_and_norm_inverse_le_rpow [CompleteSpace V]
+    (h : HomogeneousSymbol X E V W m) {x₀ : X} {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0)
+    (ha : (h.coefficient (x₀, ξ₀)).IsInvertible) :
+    ∃ U ∈ 𝓝 x₀, ∃ Γ : Set E, IsOpen Γ ∧ ξ₀ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ B : ℝ, ∀ x ∈ U, ∀ ξ ∈ Γ, ξ ≠ 0 → (h.coefficient (x, ξ)).IsInvertible ∧
+        ‖(h.coefficient (x, ξ)).inverse‖ ≤ B * ‖ξ‖ ^ (-m) := by
+  set A := h.coefficient (x₀, ξ₀)
+  set M := ‖A.inverse‖ + 1
+  have hAM : ‖A.inverse‖ ≤ M := le_add_of_nonneg_right zero_le_one
+  have hM : 0 < M := by positivity
+  have hn₀ : 0 < ‖ξ₀‖ := norm_pos_iff.2 hξ₀
+  obtain ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, hUΓ⟩ :=
+    h.exists_cone_norm_sub_lt hξ₀ (ε := (2 * M)⁻¹) (by positivity)
+  refine ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, 2 * M * ‖ξ₀‖ ^ m, fun x hx ξ hξ hξ0 ↦ ?_⟩
+  -- `B = h(x, ‖ξ₀‖ ‖ξ‖⁻¹ ξ)` is within `(2 M)⁻¹` of `A`, so it is invertible with `‖B⁻¹‖ ≤ 2 M`;
+  -- and `h(x, ξ) = s^m B` for `s = ‖ξ‖ / ‖ξ₀‖`, so `‖h(x, ξ)⁻¹‖ = s^(-m) ‖B⁻¹‖`.
+  set B := h.coefficient (x, (‖ξ₀‖ * ‖ξ‖⁻¹) • ξ)
+  have hsmall : M * ‖B - A‖ < 1 / 2 :=
+    calc M * ‖B - A‖ < M * (2 * M)⁻¹ := mul_lt_mul_of_pos_left (hUΓ x hx ξ hξ) hM
+      _ = 1 / 2 := by field_simp
+  have hB : B.IsInvertible := ha.of_mul_norm_sub_lt hAM (by linarith)
+  have hBM : ‖B.inverse‖ ≤ 2 * M := by
+    refine (ha.norm_inverse_le_of_mul_norm_sub_lt hAM (by linarith)).trans ?_
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith
+  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ0
+  set s := ‖ξ‖ / ‖ξ₀‖ with hs_def
+  have hs : 0 < s := div_pos hn hn₀
+  have hsm : (0 : ℝ) < s ^ m := Real.rpow_pos_of_pos hs m
+  have hP : h.coefficient (x, ξ) = ((s ^ m : ℝ) : ℂ) • B := by
+    rw [Complex.coe_smul, ← h.homogeneous x _ s hs, smul_smul,
+      show s * (‖ξ₀‖ * ‖ξ‖⁻¹) = 1 by rw [hs_def]; field_simp, one_smul]
+  refine ⟨hP ▸ (ContinuousLinearMap.isInvertible_smul_iff
+    (Complex.ofReal_ne_zero.2 hsm.ne')).2 hB, ?_⟩
+  rw [hP, ContinuousLinearMap.inverse_smul, norm_smul, norm_inv, Complex.norm_real,
+    Real.norm_of_nonneg hsm.le, Real.div_rpow hn.le hn₀.le, inv_div, Real.rpow_neg hn.le]
+  calc ‖ξ₀‖ ^ m / ‖ξ‖ ^ m * ‖B.inverse‖ ≤ ‖ξ₀‖ ^ m / ‖ξ‖ ^ m * (2 * M) := by gcongr
+    _ = _ := by ring
 
 /-! ### The inverse of an elliptic symbol -/
 

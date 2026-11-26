@@ -51,6 +51,7 @@ Witt ring.
   element of `S` is a unit of `R`.
 * `TauCeti.BigWittVector.ghostMap_map` and `TauCeti.BigWittVector.ghostMap_restrict`: ghost
   components commute with coefficient maps and with restriction.
+* `TauCeti.BigWittVector.map_restrict`: coefficient maps commute with restriction.
 
 ## Implementation notes
 
@@ -604,6 +605,11 @@ theorem map_comp_restrict (h : T ≤ S) (f : R →+* R') :
   by_cases hn : n ∈ T
   · simp [hn]
   · simp [coeff_eq_zero_of_notMem _ n hn]
+
+/-- Coefficient maps commute with restriction to smaller truncation sets. -/
+theorem map_restrict (h : T ≤ S) (f : R →+* R') (x : BigWittVector S R) :
+    map f (restrict h x) = restrict h (map f x) :=
+  DFunLike.congr_fun (map_comp_restrict h f) x
 
 end BigWittVector
 

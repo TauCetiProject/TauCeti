@@ -207,16 +207,8 @@ theorem isCompletion_of : IsExponentialGroup.IsCompletion.{w} A (of : G →* Com
 
 /-- If the semiring `A` has a ring homomorphism to `ℤ`, every group embeds in its tensor
 `A`-completion. For `A = ℤ[t]`, take the evaluation at `1`. -/
-theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) := by
-  -- `G` is an `A`-group with `g ^ a = g ^ f a`
-  let : Pow G A := ⟨fun g a => g ^ f a⟩
-  have : IsExponentialGroup A G :=
-    { pow_one g := (congrArg (g ^ ·) (map_one f)).trans (zpow_one g)
-      pow_add g a b := (congrArg (g ^ ·) (map_add f a b)).trans (zpow_add g _ _)
-      pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (zpow_mul g _ _)
-      conj_pow _ _ _ := conj_zpow
-      mul_pow hc a := hc.mul_zpow (f a) }
-  exact isCompletion_of.injective_of_injective (φ := .id G) Function.injective_id
+theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) :=
+  Function.LeftInverse.injective (isCompletion_of.retraction_apply f)
 
 end Completion
 
