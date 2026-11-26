@@ -30,7 +30,9 @@ handles identity and composite transport cells. The file also evaluates the natu
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
 (`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
-the naturality isomorphisms of a strong transformation. When the values of the target
+the naturality isomorphisms of a strong transformation, and computes the image of a morphism
+between pullbacks along an identity transported back along `mapId'`
+(`Pseudofunctor.StrongTrans.map_mapId'_inv_comp_comp_mapId'_hom`). When the values of the target
 pseudofunctor are groupoids, every modification between strong transformations into it is
 invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
@@ -190,6 +192,21 @@ lemma naturality_naturality_1 {B : Type u₁} [Bicategory.{w₁, v₁} B]
           (η.naturality f).hom.toNatTrans.app Y =
       (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
   NatIso.naturality_1 (Cat.Hom.toNatIso (η.naturality f)) φ
+
+/-- For a `1`-morphism `f` equal to an identity, the image under a strong transformation `η` into
+`Cat` of a morphism `φ` between pullbacks along `f`, transported back along `F.mapId' f`, is the
+image of `φ` conjugated by the naturality isomorphism of `η` at `f` and by `G.mapId' f`. -/
+lemma map_mapId'_inv_comp_comp_mapId'_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) {X Y : F.obj a}
+    (φ : (F.map f).toFunctor.obj X ⟶ (F.map f).toFunctor.obj Y) :
+    (η.app a).toFunctor.map ((F.mapId' f hf).inv.toNatTrans.app X ≫ φ ≫
+        (F.mapId' f hf).hom.toNatTrans.app Y) =
+      (G.mapId' f hf).inv.toNatTrans.app ((η.app a).toFunctor.obj X) ≫
+        (η.naturality f).inv.toNatTrans.app X ≫ (η.app a).toFunctor.map φ ≫
+          (η.naturality f).hom.toNatTrans.app Y ≫
+            (G.mapId' f hf).hom.toNatTrans.app ((η.app a).toFunctor.obj Y) := by
+  subst hf
+  simp [mapId'_eq_mapId, naturality_id_inv_app, naturality_id_hom_app]
 
 /-- If the values of `G` are groupoids, every modification between strong transformations
 `F ⟶ G` is invertible, so strong transformations `F ⟶ G` and their modifications form a
