@@ -19,8 +19,8 @@ lattices. The module invariant `Module.freeClassIndex` is defined independently 
 `TauCeti.Algebra.Module.FreeClassIndex`. Thus the class-index definition does not assume the
 finiteness theorem for class indices.
 
-The finite-index embedding below clears one common integer denominator in the standard free
-lattice. All indices are indices of additive groups.
+Every full stable lattice admits an embedding of the standard free module of positive finite
+index. All indices are indices of additive groups.
 
 ## References
 
@@ -93,7 +93,7 @@ attribute [local instance] RingHomInvPair.of_ringEquiv
 
 /-- Coordinate transport over the image order preserves and reflects full lattices after
 restriction to the integers. -/
-theorem isFullLattice_map_piCongrRightₛₗ_iff {E : Type*} [Ring E] [Algebra ℚ E]
+theorem isFullLattice_map_equivMapPiSemilinear_iff {E : Type*} [Ring E] [Algebra ℚ E]
     {ι : Type*} (f : D ≃ₐ[ℚ] E) (M : Submodule O (ι → D)) :
     Submodule.IsFullLattice ℚ
       ((M.map (O.equivMapPiSemilinear (f.restrictScalars ℤ) ι).toLinearMap).restrictScalars ℤ) ↔
@@ -119,7 +119,7 @@ theorem classIndex_map {E : Type*} [Ring E] [Algebra ℚ E] (f : D ≃ₐ[ℚ] E
   rw [classIndex_def, classIndex_def]
   rw [← (Submodule.orderIsoMapComapOfBijective a.toLinearMap a.bijective).toEquiv.iSup_comp]
   refine iSup_congr fun M => ?_
-  exact iSup_congr_Prop (O.isFullLattice_map_piCongrRightₛₗ_iff f M) fun _ =>
+  exact iSup_congr_Prop (O.isFullLattice_map_equivMapPiSemilinear_iff f M) fun _ =>
     (Module.freeClassIndex_equiv (a.submoduleMap M)).symm
 
 end Transport
@@ -134,7 +134,7 @@ variable {D : Type*} [Ring D] [Algebra ℚ D]
   {O : Subalgebra ℤ D} {e : ℕ}
 
 /-- Every full stable lattice contains an injective image of `O^e` of positive finite additive
-index. A single nonzero integer clears denominators in the standard free lattice. -/
+index. -/
 theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
     (M : Submodule O (Fin e → D)) [(M.restrictScalars ℤ).IsFullLattice ℚ] :
     ∃ f : (Fin e → O) →ₗ[O] M,
@@ -189,12 +189,12 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
 
 /-- The least free index of a full stable lattice is attained by an injective map of positive
 finite additive index. -/
-theorem IsOrder.freeClassIndex_exists_eq (hO : IsOrder ℚ O)
+theorem IsOrder.exists_index_eq_freeClassIndex (hO : IsOrder ℚ O)
     (M : Submodule O (Fin e → D)) [(M.restrictScalars ℤ).IsFullLattice ℚ] :
     ∃ f : (Fin e → O) →ₗ[O] M, Function.Injective f ∧
       (LinearMap.range f).toAddSubgroup.index ≠ 0 ∧
       ((LinearMap.range f).toAddSubgroup.index : ℕ∞) = Module.freeClassIndex O e M :=
-  Module.freeClassIndex_exists_eq (hO.exists_injective_index_ne_zero M)
+  Module.exists_index_eq_freeClassIndex (hO.exists_injective_index_ne_zero M)
 
 /-- The least free index of an individual full stable lattice is finite. This does not assert a
 uniform bound over all lattices. -/

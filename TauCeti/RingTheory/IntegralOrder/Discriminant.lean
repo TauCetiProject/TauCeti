@@ -11,8 +11,9 @@ public import TauCeti.RingTheory.IntegralOrder.Basic
 /-!
 # The regular discriminant of an opposite order
 
-An order in a finite-dimensional division `ℚ`-algebra and its opposite have the same
-regular discriminant, as used for the right class-index bound in Masser and Wüstholz,
+An order over a fraction ring and its opposite have the same regular discriminant when the
+ambient regular trace form is nondegenerate. This applies to orders in finite-dimensional
+division `ℚ`-algebras, as used for the right class-index bound in Masser and Wüstholz,
 *Factorization estimates for abelian varieties*, §3, last paragraph.
 -/
 
@@ -26,10 +27,8 @@ variable {R K E ι : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing
   [Ring E] [Algebra K E] [Algebra R E] [IsScalarTower R K E]
   {Λ : Subalgebra R E} [Fintype ι] [DecidableEq ι]
 
-/-- **An order and its opposite have the same regular discriminant.** The bases are transported
-through the canonical linear equivalence with the opposite order. The nondegeneracy hypothesis
-holds for semisimple algebras in characteristic zero, in particular for division algebras over
-`ℚ`. -/
+/-- When the ambient regular trace form is nondegenerate, an order and its opposite have the
+same regular discriminant for corresponding bases. -/
 theorem regularDiscr_op (hΛ : IsOrder K Λ)
     (hB : (Algebra.regularTraceForm K E).Nondegenerate) (b : Basis ι R Λ) :
     Algebra.regularDiscr R (b.map Λ.linearEquivOp) = Algebra.regularDiscr R b := by
