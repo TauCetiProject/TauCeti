@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Index
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Symplectic.CompatibleMetric
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 
@@ -28,8 +28,9 @@ declarations below are in the namespace `TauCeti.SymplecticForm`.
   `-J dX_{H + Q} = -J dX_H - δ`
   (`neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`). Hence `D - c(s)` is the
   linearized operator of the Hamiltonians `H_s + (c(s) / 2) ‖·‖²` along the same cylinder
-  (`floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq`). The curve `γ`
-  need not be a solution for either family.
+  (`floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq`, in
+  `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`). The curve `γ` need not be a solution
+  for either family.
 * **Fredholm property and index.** In a unitary trivialization, where `V = F` is a complex inner
   product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator of a jointly `C²` family
   along `(s, t) ↦ γ(s)` with `‖dX_{H_s}(γ(s))‖ ≤ a < 2π` for every `s` has the index of its
@@ -80,52 +81,6 @@ open TauCeti.CylinderSobolev
 open scoped RealInnerProductSpace ENNReal
 
 namespace TauCeti.SymplecticForm
-
-section Quadratic
-
-/-! ### A weight slope as a quadratic Hamiltonian -/
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ × ℝ → V → ℝ}
-
-/-- **A weight slope is a quadratic Hamiltonian, on coefficients.** If the inner product of `V` is
-the metric `ω(·, J ·)`, then for the constant structure `J`, the perturbation `K = H dt` of
-Hamiltonians `H_z` and any map `u`, the coefficient field at `z = (s, t)` of `D_u - c(s)` on jets
-is that of the linearized operator of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²`, as soon as `H_z`
-is differentiable and `X_{H_z}` is differentiable at `u z`. -/
-theorem floerJetCoeff_add_div_two_mul_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    {u : ℝ × ℝ → V} {z : ℝ × ℝ} (hH : Differentiable ℝ (H z))
-    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
-    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u z =
-      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u z -
-        c z.1 • fst ℝ V (V × V) := by
-  rw [floerJetCoeff_const_eq, floerJetCoeff_const_eq,
-    neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX (c z.1)]
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [sub_eq_add_neg, add_assoc]
-
-/-- **A weight slope is a quadratic Hamiltonian.** If the inner product of `V` is the metric
-`ω(·, J ·)`, the Hamiltonians `H_z` are differentiable and their Hamiltonian vector fields are
-differentiable along a map `u`, then the linearized Floer operator of the data `(J, 0, H dt)` along
-`u`, conjugated by the exponential weight `e^{κ(s)}` of slope `c = κ'`, is the linearized operator
-of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²` along `u`, on `W^{1,2}(ℝ × S¹, V)`. -/
-theorem floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ∀ z, Differentiable ℝ (H z)) {u : ℝ × ℝ → V}
-    (hX : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
-    ω.floerWeightedSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        H u c =
-      ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
-  have hcoeff : (fun z ↦ ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) H u z - c z.1 • fst ℝ V (V × V)) =
-      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
-    funext z
-    exact (floerJetCoeff_add_div_two_mul_norm_sq hg (hH z) (hX z) c).symm
-  rw [floerWeightedSobolevOperator_def, floerSobolevOperator_def, hcoeff]
-
-end Quadratic
 
 section Unitary
 
@@ -182,8 +137,7 @@ private theorem isFredholm_floerWeightedSobolevOperator_and_index_eq
       (c s)).trans (haγ s)
   -- `A(s) = -i dX_{H_s}(γ(s))` is continuous, and `A(s) - c(s)` is bounded.
   set A : ℝ → F →L[ℝ] F := fun s ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))
-  have hAc : Continuous A :=
-    (continuous_const.clm_comp (ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ)).neg
+  have hAc : Continuous A := continuous_neg_comp_fderiv_hamiltonianVectorField_comp hH hγ
   have hshift (s : ℝ) : A s - c s • ContinuousLinearMap.id ℝ F =
       -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H s x + c s / 2 * ‖x‖ ^ 2) (γ s))) :=
     (neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg (hH₁ s) (hX s _)
@@ -200,15 +154,12 @@ private theorem isFredholm_floerWeightedSobolevOperator_and_index_eq
     isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator hω hH' hγ ha haγ' hB,
     index_floerSobolevOperator_eq_index_trajectoryOperator hω hH' hγ ha haγ' hB]
   -- Near the ends `A` tends to `A(p±)`, the symmetric negative of the Hessian of `H±` at `p±`.
-  have hend {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) : ContDiff ℝ 2 G :=
-    let ⟨s, hs⟩ := hl.exists; hs ▸ hHs s
-  have hlim {G : F → ℝ} {l : Filter ℝ} [l.NeBot] {p : F} (hl : ∀ᶠ s in l, H s = G)
-      (hγl : Tendsto γ l (𝓝 p)) :
-      Tendsto A l (𝓝 (-(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField G) p)))) :=
-    ((continuous_neg_comp_fderiv_hamiltonianVectorField (hend hl)).tendsto p |>.comp hγl).congr'
-      (hl.mono fun s hs ↦ by simp only [A, Jc, Function.comp_apply, hs])
   have hsym {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) (p : F) :=
-    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω (hend hl).contDiffAt (p := p)
+    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω
+      (contDiff_of_contDiff_uncurry_of_eventually_eq hH hl).contDiffAt (p := p)
+  have hlim {G : F → ℝ} {l : Filter ℝ} [l.NeBot] {p : F} (hl : ∀ᶠ s in l, H s = G)
+      (hγl : Tendsto γ l (𝓝 p)) :=
+    tendsto_neg_comp_fderiv_hamiltonianVectorField_comp (ω := ω) hH hl hγl
   exact ⟨WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id hAc (hsym hHm pminus)
       (hsym hHp pplus) (hlim hHm hbot) (hlim hHp htop) hc.continuous hcbot hctop hδminus hδplus _
       hBL.coeFn_toLp,
