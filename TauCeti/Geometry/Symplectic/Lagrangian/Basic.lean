@@ -66,6 +66,9 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
   `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
   of half the dimension. Isotropic subspaces have at most and coisotropic subspaces at least half
   the dimension (`IsIsotropic.two_mul_finrank_le`, `IsCoisotropic.finrank_le_two_mul_finrank`).
+* `TauCeti.SymplecticForm.isCoisotropic_of_finrank_le_finrank_add_one`: a subspace of codimension
+  at most one is coisotropic, since its symplectic orthogonal has dimension at most one and every
+  such subspace is isotropic (`isIsotropic_of_finrank_le_one`).
 * `TauCeti.SymplecticForm.isLagrangian_bot_iff` and `isLagrangian_top_iff`: the zero subspace, or
   the whole space, is Lagrangian exactly when the ambient space is zero.
 * `TauCeti.SymplecticForm.isLagrangian_prod_top_bot` and `isLagrangian_prod_bot_top`: the two
@@ -361,6 +364,29 @@ lemma finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
 lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
+
+/-- A subspace of dimension at most one is isotropic, since `ω` vanishes on every pair of
+proportional vectors. -/
+theorem isIsotropic_of_finrank_le_one (hL : finrank ℝ L ≤ 1) : ω.IsIsotropic L := by
+  obtain ⟨u, hu⟩ := finrank_le_one_iff.1 hL
+  rw [isIsotropic_iff]
+  intro v hv w hw
+  obtain ⟨a, ha⟩ := hu ⟨v, hv⟩
+  obtain ⟨b, hb⟩ := hu ⟨w, hw⟩
+  have hv' : v = a • (u : V) := (congrArg Subtype.val ha).symm.trans (Submodule.coe_smul a u)
+  have hw' : w = b • (u : V) := (congrArg Subtype.val hb).symm.trans (Submodule.coe_smul b u)
+  subst hv' hw'
+  simp [ω.isAlt.self_eq_zero]
+
+/-- **A subspace of codimension at most one is coisotropic.** Its symplectic orthogonal has
+dimension at most one, so it is isotropic, and is therefore contained in its own symplectic
+orthogonal, which is the subspace itself. -/
+theorem isCoisotropic_of_finrank_le_finrank_add_one (hL : finrank ℝ V ≤ finrank ℝ L + 1) :
+    ω.IsCoisotropic L := by
+  have h : ω.IsIsotropic (ω.orthogonal L) :=
+    isIsotropic_of_finrank_le_one (by rw [finrank_orthogonal]; omega)
+  rw [isCoisotropic_iff_le]
+  exact (isIsotropic_iff_le.1 h).trans (ω.orthogonal_orthogonal L).le
 
 /-- The complement of an intersection is the sum of the complements. -/
 lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
