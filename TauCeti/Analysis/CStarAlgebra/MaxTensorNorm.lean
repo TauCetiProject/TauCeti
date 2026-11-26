@@ -231,12 +231,6 @@ abbrev toCommutingRepresentationPair (p : RepresentationPair A B) :
     CommutingRepresentationPair A B :=
   CommutingRepresentationPair.spatial p.left p.right
 
-/-- The integrated form of the commuting spatial pair of `p` is the spatial tensor homomorphism
-of `p`. -/
-theorem tensorHom_toCommutingRepresentationPair (p : RepresentationPair A B) :
-    p.toCommutingRepresentationPair.tensorHom = p.left.spatialTensorHom p.right :=
-  CommutingRepresentationPair.tensorHom_spatial p.left p.right
-
 variable (A B) in
 /-- There is a pair of representations whose spatial tensor homomorphism is injective and has
 norm `‖a‖ ‖b‖` at every `a ⊗ b`: a pair of faithful representations. -/
@@ -264,7 +258,7 @@ theorem exists_tensorHom_injective_and_norm_tensorHom_tmul :
   obtain ⟨p, h⟩ :=
     RepresentationPair.exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B
   refine ⟨p.toCommutingRepresentationPair, ?_⟩
-  rwa [p.tensorHom_toCommutingRepresentationPair]
+  rwa [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
 
 /-- There is a commuting pair whose integrated form is injective. -/
 theorem exists_tensorHom_injective :

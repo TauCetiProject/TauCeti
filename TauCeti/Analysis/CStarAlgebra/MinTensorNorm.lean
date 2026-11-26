@@ -65,14 +65,14 @@ open RepresentationPair
 pairs of representations `π` of `A` and `ρ` of `B` on Hilbert spaces in the universes of `A` and
 `B`, where `π ⊗ ρ : A ⊗[ℂ] B → B(E ⊗₂ F)` is the spatial tensor homomorphism, written as the
 integrated form of the commuting spatial pair
-(`TauCeti.RepresentationPair.tensorHom_toCommutingRepresentationPair`). -/
+(`TauCeti.CommutingRepresentationPair.tensorHom_spatial`). -/
 def minTensorNorm (x : A ⊗[ℂ] B) : ℝ :=
   supTensorNorm (toCommutingRepresentationPair (A := A) (B := B)) x
 
 /-- Unfolding `TauCeti.minTensorNorm`. -/
 theorem minTensorNorm_def (x : A ⊗[ℂ] B) :
     minTensorNorm A B x = ⨆ p : RepresentationPair A B, ‖p.left.spatialTensorHom p.right x‖ := by
-  simp_rw [minTensorNorm, supTensorNorm_def, tensorHom_toCommutingRepresentationPair]
+  simp_rw [minTensorNorm, supTensorNorm_def, CommutingRepresentationPair.tensorHom_spatial]
 
 variable {A B}
 
@@ -141,7 +141,7 @@ theorem minTensorNorm_star_mul_self (x : A ⊗[ℂ] B) :
 theorem minTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : minTensorNorm A B x = 0 ↔ x = 0 :=
   supTensorNorm_eq_zero_iff _
     ((exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B).imp fun p h ↦ by
-      rw [tensorHom_toCommutingRepresentationPair]
+      rw [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
       exact h.1)
 
 /-- The minimal norm is a **cross norm**: `‖a ⊗ b‖_min = ‖a‖ ‖b‖`. -/
@@ -149,7 +149,7 @@ theorem minTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : minTensorNorm A B x = 0 �
 theorem minTensorNorm_tmul (a : A) (b : B) : minTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ :=
   supTensorNorm_tmul _
     ((exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B).imp fun p h ↦ by
-      rw [tensorHom_toCommutingRepresentationPair]
+      rw [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
       exact h.2 a b)
 
 end TauCeti
@@ -170,7 +170,7 @@ theorem spatialNorm_le_minTensorNorm (x : A ⊗[ℂ] B) : A.spatialNorm B x ≤ 
   exact norm_spatialTensorHom_le_minTensorNorm _ _ x
 
 /-- **The spatial norm is at most the maximal norm**: for closed concrete operator algebras
-`A ⊆ B(E)` and `B ⊆ B(F)`, `‖x‖_min ≤ ‖x‖_max`. -/
+`A ⊆ B(E)` and `B ⊆ B(F)`, the spatial norm `A.spatialNorm B x` is at most `‖x‖_max`. -/
 theorem spatialNorm_le_maxTensorNorm (x : A ⊗[ℂ] B) : A.spatialNorm B x ≤ maxTensorNorm A B x :=
   (spatialNorm_le_minTensorNorm A B x).trans (minTensorNorm_le_maxTensorNorm x)
 
