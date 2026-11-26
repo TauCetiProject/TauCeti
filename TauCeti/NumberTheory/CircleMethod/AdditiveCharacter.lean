@@ -28,11 +28,14 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
   (`TauCeti.two_mul_distInt_le_abs_sin`).
 * `TauCeti.sum_expTwoPiI_eq`: the geometric sum
   `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers, and
-  `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`.
+  `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`, with its
+  form `TauCeti.norm_sum_Ioc_expTwoPiI_le` over an interval `A < m ≤ B`.
 
 The bound `1 / (2‖β‖)` is stated with the value `N` when `‖β‖ = 0`, by an explicit `if`: with
 Lean's convention `1 / 0 = 0` the minimum would be `0` there, while the sum has norm exactly `N`
-at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`).
+at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`). The capped minimum
+`if ‖x‖ = 0 then Y else min(Y, 1 / ‖x‖)` is monotone in the cap `Y`
+(`TauCeti.ite_min_inv_distInt_le_of_le`).
 
 ## References
 
@@ -312,6 +315,33 @@ theorem norm_sum_expTwoPiI_le (N : ℕ) (β : ℝ) :
   · exact norm_sum_expTwoPiI_le_natCast N β
   · exact le_min (norm_sum_expTwoPiI_le_natCast N β)
       (norm_sum_expTwoPiI_le_one_div N hβ)
+
+/-- Raising the cap `Y` raises the capped minimum `min(Y, 1 / ‖x‖)`, taken to be `Y` when
+`‖x‖ = 0`. -/
+theorem ite_min_inv_distInt_le_of_le {x Y Y' : ℝ} (h : Y ≤ Y') :
+    (if distInt x = 0 then Y else min Y (distInt x)⁻¹) ≤
+      if distInt x = 0 then Y' else min Y' (distInt x)⁻¹ := by
+  split_ifs
+  exacts [h, min_le_min_right _ h]
+
+/-- The geometric-sum bound over an interval of naturals:
+`|∑_{A < m ≤ B} e(mβ)| ≤ min(B - A, 1 / (2‖β‖))`, with the value `B - A` when `‖β‖ = 0`. -/
+theorem norm_sum_Ioc_expTwoPiI_le (A B : ℕ) (β : ℝ) :
+    ‖∑ m ∈ Finset.Ioc A B, expTwoPiI (m * β)‖ ≤
+      if distInt β = 0 then ((B - A : ℕ) : ℝ)
+      else min ((B - A : ℕ) : ℝ) (1 / (2 * distInt β)) := by
+  have hI : Finset.Ioc A B = (Finset.Icc 1 (B - A)).map (addRightEmbedding A) := by
+    rw [Finset.map_add_right_Icc]
+    ext m
+    simp only [Finset.mem_Ioc, Finset.mem_Icc]
+    omega
+  have h : ∑ m ∈ Finset.Ioc A B, expTwoPiI (m * β) =
+      expTwoPiI (A * β) * ∑ k ∈ Finset.Icc 1 (B - A), expTwoPiI (k * β) := by
+    rw [hI, Finset.sum_map, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [← expTwoPiI_add, addRightEmbedding_apply, Nat.cast_add, add_mul, add_comm]
+  rw [h, norm_mul, norm_expTwoPiI, one_mul]
+  exact norm_sum_expTwoPiI_le _ β
 
 /-! ### Checks -/
 

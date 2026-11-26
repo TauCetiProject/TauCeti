@@ -23,6 +23,15 @@ the fundamental matrix `M = M_q` of the Dirac system `Ω X' = z X - Q_q X`
 the right side vanishes, so the matrix `M(t, x)` is `Ω`-unitary
 (`TauCeti.conjTranspose_diracFundamentalMatrix_mul_mul_ofReal`).
 
+Entrywise (`TauCeti.diracFundamentalMatrix_christoffelDarboux_apply`), the diagonal entries give
+the kernel identity of each column `(X₀, X₁)` of `M`, namely of the Neumann solution `Θ = (A, C)`
+and of the Dirichlet solution `Φ = (B, D)`:
+`X₀(t, z) conj X₁(t, w) - X₁(t, z) conj X₀(t, w) = (conj w - z) ∫₀ᵗ X(s, w)* X(s, z) ds`
+(`TauCeti.diracFundamentalMatrix_mul_conj_sub_mul_conj`). At `w = z` this reads
+`Im (conj X₀(t, z) X₁(t, z)) = Im z ∫₀ᵗ |X(s, z)|² ds`
+(`TauCeti.im_conj_mul_diracFundamentalMatrix`), the identity behind the Hermite–Biehler property
+of `A - iC` and `B - iD`.
+
 The proof differentiates `G(s) = M(s, λ)* Ω M(s, z)`. Writing `P_w(s) = -Ω(w - Q_q(s))` for the
 coefficient, at almost every `s` the derivative is `M(s, λ)* (P_λ(s)* Ω + Ω P_z(s)) M(s, z)`, and
 `P_λ* Ω + Ω P_z = z - conj λ` because `Ω* = -Ω` and `Q_q(s)` is Hermitian
@@ -34,6 +43,8 @@ the fundamental theorem of calculus for absolutely continuous curves gives the i
 ## References
 
 * R. Romanov, *Canonical systems and de Branges spaces*, arXiv:1408.6022, §1, identity (12).
+* A. Poltoratski, *Pointwise convergence of the non-linear Fourier transform*, Ann. of Math. (2)
+  199 (2024), 741–793, §2.
 -/
 
 public section
@@ -114,5 +125,74 @@ theorem conjTranspose_diracFundamentalMatrix_mul_mul_ofReal (hq : IntegrableOn q
   rw [Complex.conj_ofReal, sub_self, h0] at h
   rw [map_mul, map_mul, ← star_eq_conjTranspose, map_star]
   exact sub_eq_zero.1 h
+
+/-- **The Christoffel–Darboux identity, entrywise.** If `q` is integrable on `[0, t]` (or
+`[t, 0]`), then for all `λ, z ∈ ℂ` and indices `i, j`,
+`(M(t, λ)ᴴ Ω M(t, z))ᵢⱼ - Ωᵢⱼ = (z - conj λ) ∫₀ᵗ (M(s, λ)ᴴ M(s, z))ᵢⱼ ds`, with
+`Ω = [[0, 1], [-1, 0]]`. -/
+theorem diracFundamentalMatrix_christoffelDarboux_apply (hq : IntegrableOn q (uIcc 0 t))
+    (lam z : ℂ) (i j : Fin 2) :
+    ((diracFundamentalMatrix q t lam)ᴴ * !![0, 1; -1, 0] * diracFundamentalMatrix q t z :
+          Matrix (Fin 2) (Fin 2) ℂ) i j - !![(0 : ℂ), 1; -1, 0] i j =
+      (z - conj lam) * ∫ s in (0 : ℝ)..t,
+        ((diracFundamentalMatrix q s lam)ᴴ * diracFundamentalMatrix q s z) i j := by
+  have hc (w : ℂ) : ContinuousOn
+      (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s w)) (uIcc 0 t) := by
+    simp only [toEuclideanCLM_diracFundamentalMatrix]
+    exact continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq w) left_mem_uIcc
+  -- The integrand of the operator identity is continuous, so the evaluation at the basis vector
+  -- `eⱼ` followed by the `i`-th coordinate commutes with the integral.
+  have hFc : ContinuousOn (fun s ↦
+      star (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s lam)) *
+        toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q s z)) (uIcc 0 t) :=
+    ((star_isometry (E := EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2))).continuous
+      |>.comp_continuousOn (hc lam)).mul (hc z)
+  have h := congrArg (fun X ↦ EuclideanSpace.proj (𝕜 := ℂ) i (X (EuclideanSpace.single j 1)))
+    (diracFundamentalMatrix_christoffelDarboux hq lam z)
+  simp only [sub_apply, smul_apply,
+    ContinuousLinearMap.intervalIntegral_apply hFc.intervalIntegrable, map_sub, map_smul] at h
+  rw [← (EuclideanSpace.proj (𝕜 := ℂ) i).intervalIntegral_comp_comm
+    (hFc.clm_apply continuousOn_const).intervalIntegrable] at h
+  have he (X : Matrix (Fin 2) (Fin 2) ℂ) :
+      EuclideanSpace.proj (𝕜 := ℂ) i (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) X
+        (EuclideanSpace.single j 1)) = X i j := by
+    simp
+  have hs (X : Matrix (Fin 2) (Fin 2) ℂ) :
+      star (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) X) = toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) Xᴴ := by
+    rw [← star_eq_conjTranspose, map_star]
+  simp only [hs, ← map_mul, he] at h
+  simpa using h
+
+/-- **The kernel identity of a column.** If `q` is integrable on `[0, t]` (or `[t, 0]`), the `j`-th
+column `X = (X₀, X₁)` of the fundamental matrix (the Neumann solution `Θ = (A, C)` for `j = 0`,
+the Dirichlet solution `Φ = (B, D)` for `j = 1`) satisfies, for all `w, z ∈ ℂ`,
+`X₀(t, z) conj X₁(t, w) - X₁(t, z) conj X₀(t, w) = (conj w - z) ∫₀ᵗ X(s, w)* X(s, z) ds`. -/
+theorem diracFundamentalMatrix_mul_conj_sub_mul_conj (hq : IntegrableOn q (uIcc 0 t))
+    (w z : ℂ) (j : Fin 2) :
+    diracFundamentalMatrix q t z 0 j * conj (diracFundamentalMatrix q t w 1 j) -
+        diracFundamentalMatrix q t z 1 j * conj (diracFundamentalMatrix q t w 0 j) =
+      (conj w - z) * ∫ s in (0 : ℝ)..t,
+        (conj (diracFundamentalMatrix q s w 0 j) * diracFundamentalMatrix q s z 0 j +
+          conj (diracFundamentalMatrix q s w 1 j) * diracFundamentalMatrix q s z 1 j) := by
+  have h := diracFundamentalMatrix_christoffelDarboux_apply hq w z j j
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, conjTranspose_apply] at h
+  fin_cases j <;> simp at h ⊢ <;> linear_combination -h
+
+/-- **The kernel identity on the diagonal.** If `q` is integrable on `[0, t]` (or `[t, 0]`), the
+`j`-th column `X = (X₀, X₁)` of the fundamental matrix satisfies
+`Im (conj X₀(t, z) X₁(t, z)) = Im z ∫₀ᵗ (|X₀(s, z)|² + |X₁(s, z)|²) ds`. -/
+theorem im_conj_mul_diracFundamentalMatrix (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ)
+    (j : Fin 2) :
+    (conj (diracFundamentalMatrix q t z 0 j) * diracFundamentalMatrix q t z 1 j).im =
+      z.im * ∫ s in (0 : ℝ)..t,
+        (‖diracFundamentalMatrix q s z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q s z 1 j‖ ^ 2) := by
+  have h := diracFundamentalMatrix_mul_conj_sub_mul_conj hq z z j
+  simp only [Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_add,
+    intervalIntegral.integral_ofReal] at h
+  have := congrArg Complex.im h
+  simp only [Complex.sub_im, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.sub_re,
+    Complex.ofReal_re, Complex.ofReal_im] at this
+  rw [Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  linarith
 
 end TauCeti

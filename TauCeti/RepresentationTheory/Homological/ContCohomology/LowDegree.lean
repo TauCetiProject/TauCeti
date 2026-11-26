@@ -882,6 +882,10 @@ theorem H1pi_eq_iff {f f' : Z1 G M} :
     (f : H1 G M) = (f' : H1 G M) ↔ (f : G → M) - f' ∈ B1 G M := by
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
 
+/-- The kernel of the class map in degree `1` is the group of `1`-coboundaries. -/
+theorem ker_H1pi : (H1pi G M).ker = (B1 G M).addSubgroupOf (Z1 G M) :=
+  QuotientAddGroup.ker_mk' _
+
 /-- **`H¹` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
 then it kills every class in `H¹(G, M)`. -/
 theorem nsmul_H1_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H1 G M) : n • x = 0 := by

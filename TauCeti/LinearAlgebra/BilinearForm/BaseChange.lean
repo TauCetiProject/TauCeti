@@ -63,6 +63,10 @@ compared with its real extension.
 * `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_add`,
   `LinearMap.BilinForm.baseChange_neg`, `LinearMap.BilinForm.baseChange_sub`: scalar extension
   commutes with scalar multiplication, addition, negation and subtraction of forms.
+* `LinearMap.BilinForm.baseChange_compl₁₂`: scalar extension commutes with composing a form with
+  linear maps on both sides.
+* `LinearMap.BilinForm.compl₁₂_baseChange_eq_smul`: a similitude `B.compl₁₂ f f = c • B`
+  base-changes to a similitude of `B.baseChange A` with multiplier `algebraMap R A c`.
 * `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms, using
   `LinearMap.BilinForm.IsAlt.add_flip_eq_zero` (an alternating form is skew-symmetric over a
   semiring).
@@ -259,6 +263,23 @@ theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
   | add x x' hx hx' =>
     simp only [map_add, LinearMap.add_apply, hx, hx', zero_add, add_zero]
     simpa using congr($hskew x' x)
+
+/-- Scalar extension commutes with composing a bilinear form with linear maps on both sides. -/
+@[simp]
+theorem baseChange_compl₁₂ {M' : Type*} [AddCommMonoid M'] [Module R M']
+    (B : LinearMap.BilinForm R M) (f g : M' →ₗ[R] M) :
+    LinearMap.BilinForm.baseChange A (B.compl₁₂ f g) =
+      (B.baseChange A).compl₁₂ (f.baseChange A) (g.baseChange A) := by
+  ext a x
+  simp
+
+/-- A similitude of `B` with multiplier `c` is a similitude of the scalar extension of `B`, with
+multiplier the image of `c`. -/
+theorem compl₁₂_baseChange_eq_smul {B : LinearMap.BilinForm R M} {f : M →ₗ[R] M} {c : R}
+    (h : B.compl₁₂ f f = c • B) :
+    (B.baseChange A).compl₁₂ (f.baseChange A) (f.baseChange A) =
+      algebraMap R A c • B.baseChange A := by
+  rw [← baseChange_compl₁₂, h, baseChange_smul]
 
 end Arithmetic
 

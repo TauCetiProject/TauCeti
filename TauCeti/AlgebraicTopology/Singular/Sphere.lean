@@ -148,6 +148,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
   complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
   degree `0` when `n = 0`) and `0` in every other degree.
+* `TauCeti.nontrivial_singularHomology_sphere`: with coefficients in a nontrivial ring, the top
+  homology of the unit sphere of a real normed space of dimension at least two is nontrivial.
 
 ## References
 
@@ -1204,5 +1206,16 @@ theorem bettiNumber_compl_singleton (hE : finrank ℝ E = n + 1) (y : E) (j : �
   rw [(complSingletonHomotopyEquivSphere y).bettiNumber_eq k j, bettiNumber_sphere k hE]
 
 end BettiNumber
+
+/-- **The top homology of a sphere is nontrivial.** With coefficients in a nontrivial ring `k`, the
+unit sphere `Sⁿ⁺¹` of a real normed space of dimension `n + 2` has `Hₙ₊₁(Sⁿ⁺¹; k) ≅ k`
+(`ContinuousMap.HomotopyEquiv.singularHomologySphereIso`), which is nontrivial. For `k = 𝔽₂`, a
+sphere of positive dimension does not have the mod-two homology of a point. -/
+theorem nontrivial_singularHomology_sphere (k : Type w) [Ring k] [Nontrivial k] {E : Type w}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    Nontrivial (((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :=
+  have : Nontrivial (ModuleCat.of k k) := inferInstanceAs (Nontrivial k)
+  ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of k k) hE
+    (Nat.le_add_left 1 n)).toLinearEquiv.toEquiv.nontrivial
 
 end TauCeti
