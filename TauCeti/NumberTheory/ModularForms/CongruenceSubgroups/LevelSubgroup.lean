@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.Data.ZMod.Units
 -- `TauCeti.GL2Borel` and `TauCeti.GL2Gamma1` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+-- `TauCeti.GL2Mirabolic` occurs in the statements below.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Mirabolic
 -- `Subgroup.projectiveIndex` occurs in the statements below.
 public import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 -- The indices of `Γ₀(N)` and `Γ₁(N)` in `SL(2, ℤ)`, and strong approximation for `SL₂`.
@@ -28,12 +30,15 @@ following subgroups, whose preimages in `SL(2, ℤ)` are the congruence subgroup
 
 * the trivial subgroup, for `Γ(N)` (full level);
 * `TauCeti.GL2Gamma1 (ZMod N) = {a = 1, c = 0}`, the stabiliser of `P`, for `Γ₁(N)`;
-* `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`.
+* `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`;
+* `TauCeti.GL2Mirabolic (ZMod N) = {c = 0, d = 1}`, the level `Γ₁^μ(N)`, whose structures are the
+  embeddings `μ_N → E[N]`.
 
 This file checks these against Mathlib's congruence subgroups: the preimage of each under the
-reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)` and `Γ₀(N)` respectively. The reduction has
-image `SL₂(ℤ / N)` (strong approximation), so for a level `H` whose determinant is surjective onto
-`(ℤ / N)ˣ` the index of `H` in `GL₂(ℤ / N)` is the index of its preimage in `SL(2, ℤ)`. Hence
+reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)`, `Γ₀(N)` and `Γ₁(N)` respectively. The
+reduction has image `SL₂(ℤ / N)` (strong approximation), so for a level `H` whose determinant is
+surjective onto `(ℤ / N)ˣ` the index of `H` in `GL₂(ℤ / N)` is the index of its preimage in
+`SL(2, ℤ)`. Hence
 `[GL₂(ℤ / N) : B] = [SL(2, ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)` and
 `[GL₂(ℤ / N) : Γ₁] = [SL(2, ℤ) : Γ₁(N)]`.
 
@@ -50,6 +55,10 @@ image is the full preimage of that of `H` under `(ℤ / m)ˣ → (ℤ / n)ˣ`
 (`TauCeti.GL2.map_det_comap_map_castHom`); these are subgroups at different moduli and are not
 equal in general.
 
+Conjugate levels `H` and `g⁻¹ H g` have the same index (`Subgroup.index_smul`), the same
+projective index (`Subgroup.projectiveIndex_pointwise_smul`) and the same determinant image
+(`Subgroup.map_conjAct_smul`, as `det` takes values in a commutative group).
+
 ## Main results
 
 * `TauCeti.range_mapGL_zmod`: the reduction `SL(2, ℤ) → GL₂(ℤ / N)` has image `SL₂(ℤ / N)`.
@@ -57,9 +66,11 @@ equal in general.
   its preimage in `SL(2, ℤ)`.
 * `TauCeti.comap_mapGL_GL2Borel`, `TauCeti.comap_mapGL_GL2Gamma1`, `TauCeti.ker_mapGL_zmod`: the
   preimages of the standard levels are `Γ₀(N)`, `Γ₁(N)` and `Γ(N)`.
-* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`: their indices.
+* `TauCeti.comap_mapGL_GL2Mirabolic`: the preimage of the level `Γ₁^μ(N)` is also `Γ₁(N)`.
+* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`, `TauCeti.index_GL2Mirabolic_zmod`:
+  their indices.
 * `TauCeti.projectiveIndex_GL2Borel_zmod_prime`, `TauCeti.two_mul_projectiveIndex_GL2Gamma1_zmod`:
-  their projective indices.
+  their projective indices; `TauCeti.two_mul_projectiveIndex_GL2Mirabolic_zmod` for `Γ₁^μ(N)`.
 * `TauCeti.GL2.map_castHom_surjective`: the reduction `GL₂(ℤ / m) → GL₂(ℤ / n)` is surjective for
   `n ∣ m` and `m ≠ 0`.
 * `TauCeti.GL2.projectiveIndex_comap_map_castHom`, `TauCeti.GL2.map_det_comap_map_castHom`: the
@@ -175,6 +186,32 @@ theorem two_mul_projectiveIndex_GL2Gamma1_zmod_prime {p : ℕ} (hp : p.Prime) (h
   rw [two_mul_projectiveIndex_GL2Gamma1_zmod p (by have := hp.two_le; omega), Gamma1_index,
     Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
     Nat.totient_prime hp]
+
+/-- The preimage in `SL(2, ℤ)` of the level `Γ₁^μ(N) = TauCeti.GL2Mirabolic (ZMod N)` is `Γ₁(N)`.
+In `SL(2, ℤ)` the two conditions `c ≡ 0` and `d ≡ 1` force the third condition `a ≡ 1` of
+`Γ₁(N)` through the determinant. -/
+@[simp]
+theorem comap_mapGL_GL2Mirabolic : (GL2Mirabolic (ZMod N)).comap (mapGL (ZMod N)) = Gamma1 N := by
+  ext γ
+  simp only [Subgroup.mem_comap, GL2Mirabolic.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
+    map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, Gamma1_mem]
+  refine ⟨fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₁, h₀⟩, fun ⟨_, h₁, h₀⟩ ↦ ⟨h₀, h₁⟩⟩
+  have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
+    rw [← det_fin_two, γ.det_coe, Int.cast_one]
+  push_cast at hdet
+  simpa [h₀, h₁] using hdet
+
+/-- **`[GL₂(ℤ / N) : Γ₁^μ] = [SL(2, ℤ) : Γ₁(N)]`**, the index of `TauCeti.GL2Gamma1 (ZMod N)`. -/
+theorem index_GL2Mirabolic_zmod : (GL2Mirabolic (ZMod N)).index = (Gamma1 N).index := by
+  rw [← comap_mapGL_GL2Mirabolic, index_comap_mapGL_zmod GL2Mirabolic.map_det]
+
+/-- **The degree over the `j`-line of the modular curve of level `Γ₁^μ(N)`, for `N ≥ 3`**: as for
+`Γ₁`, there `-1 ∉ Γ₁^μ`, so the index `[SL(2, ℤ) : Γ₁(N)]` is twice the projective index. -/
+theorem two_mul_projectiveIndex_GL2Mirabolic_zmod (hN : 3 ≤ N) :
+    2 * (GL2Mirabolic (ZMod N)).projectiveIndex = (Gamma1 N).index := by
+  have : Fact (2 < N) := ⟨hN⟩
+  rw [Subgroup.two_mul_projectiveIndex (GL2Mirabolic.neg_one_mem_iff.not.mpr ZMod.neg_one_ne_one),
+    index_GL2Mirabolic_zmod]
 
 end Reduction
 
