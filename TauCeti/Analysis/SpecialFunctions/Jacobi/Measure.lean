@@ -81,21 +81,33 @@ private theorem jacobiWeight_two_mul_sub_one (a b : ℝ) {t : ℝ} (ht : t ∈ I
     rpow_add two_pos, add_sub_cancel_right, add_sub_cancel_right]
   ring
 
+/-- The substitution `x = 2t - 1` carries `[0, 1]` onto `[-1, 1]`: interval integrability on
+`[-1, 1]` is interval integrability of the composite on `[0, 1]`. -/
+private theorem intervalIntegrable_comp_two_mul_sub_one_iff {f : ℝ → ℝ} :
+    IntervalIntegrable (fun t => f (2 * t - 1)) volume 0 1 ↔
+      IntervalIntegrable f volume (-1) 1 := by
+  have h := (IntervalIntegrable.comp_mul_left_iff (f := fun x => f (x - 1)) (a := -1 + 1)
+    (b := 1 + 1) two_ne_zero).trans
+    (IntervalIntegrable.comp_sub_right_iff (f := f) (a := -1) (b := 1) (c := 1))
+  rwa [show (-1 + 1 : ℝ) / 2 = 0 by norm_num, show (1 + 1 : ℝ) / 2 = 1 by norm_num] at h
+
+/-- The substitution `x = 2t - 1` carries `[0, 1]` onto `[-1, 1]`: an integral over `[-1, 1]` is
+twice the integral of the composite over `[0, 1]`. -/
+private theorem integral_comp_two_mul_sub_one (f : ℝ → ℝ) :
+    ∫ x in (-1)..1, f x = 2 * ∫ t in 0..1, f (2 * t - 1) := by
+  have h := intervalIntegral.smul_integral_comp_mul_add f (a := 0) (b := 1) 2 (-1)
+  rw [show (2 : ℝ) * 0 + -1 = -1 by norm_num, show (2 : ℝ) * 1 + -1 = 1 by norm_num] at h
+  simpa only [smul_eq_mul, ← sub_eq_add_neg] using h.symm
+
 /-- The substitution `x = 2t - 1` identifies interval integrability of the Jacobi weight on
 `[-1, 1]` with that of the Beta integrand on `[0, 1]`. -/
 private theorem intervalIntegrable_jacobiWeight_iff (a b : ℝ) :
     IntervalIntegrable (fun x : ℝ => (1 - x) ^ a * (1 + x) ^ b) volume (-1) 1 ↔
       IntervalIntegrable (fun t : ℝ => t ^ (b + 1 - 1) * (1 - t) ^ (a + 1 - 1)) volume 0 1 := by
-  set w : ℝ → ℝ := fun x => (1 - x) ^ a * (1 + x) ^ b
-  have h := (IntervalIntegrable.comp_mul_left_iff (f := fun x => w (x - 1)) (a := -1 + 1)
-    (b := 1 + 1) two_ne_zero).trans
-    (IntervalIntegrable.comp_sub_right_iff (f := w) (a := -1) (b := 1) (c := 1))
-  have e0 : (-1 + 1 : ℝ) / 2 = 0 := by norm_num
-  have e1 : (1 + 1 : ℝ) / 2 = 1 := by norm_num
-  rw [e0, e1] at h
-  rw [← h, intervalIntegrable_congr (g := fun t => 2 ^ (a + b) *
-    (t ^ (b + 1 - 1) * (1 - t) ^ (a + 1 - 1))) fun t ht => jacobiWeight_two_mul_sub_one a b
-      (Ioc_subset_Icc_self ((uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1)) ▸ ht))]
+  rw [← intervalIntegrable_comp_two_mul_sub_one_iff, intervalIntegrable_congr (g := fun t =>
+    2 ^ (a + b) * (t ^ (b + 1 - 1) * (1 - t) ^ (a + 1 - 1))) fun t ht =>
+      jacobiWeight_two_mul_sub_one a b
+        (Ioc_subset_Icc_self ((uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1)) ▸ ht))]
   refine ⟨fun hg => ?_, fun hg => hg.const_mul _⟩
   have := hg.const_mul (2 ^ (a + b))⁻¹
   simp_rw [← mul_assoc, inv_mul_cancel₀ (rpow_pos_of_pos two_pos (a + b)).ne', one_mul] at this
@@ -116,19 +128,14 @@ theorem integrableOn_jacobiWeight_iff {a b : ℝ} :
 `x = 2t - 1` in Euler's Beta integral. -/
 theorem integral_jacobiWeight {a b : ℝ} (ha : -1 < a) (hb : -1 < b) :
     ∫ x in Ioo (-1) 1, (1 - x) ^ a * (1 + x) ^ b = 2 ^ (a + b + 1) * beta (a + 1) (b + 1) := by
-  have h := intervalIntegral.smul_integral_comp_mul_add
-    (fun x : ℝ => (1 - x) ^ a * (1 + x) ^ b) (a := 0) (b := 1) 2 (-1)
-  have e0 : (2 : ℝ) * 0 + -1 = -1 := by norm_num
-  have e1 : (2 : ℝ) * 1 + -1 = 1 := by norm_num
-  rw [e0, e1] at h
-  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le (by norm_num), ← h,
-    intervalIntegral.integral_congr (g := fun t => 2 ^ (a + b) *
-      (t ^ (b + 1 - 1) * (1 - t) ^ (a + 1 - 1))) fun t ht => by
-        simpa only [← sub_eq_add_neg] using jacobiWeight_two_mul_sub_one a b
-          ((uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)) ▸ ht),
-    intervalIntegral.integral_const_mul,
-    TauCeti.integral_rpow_mul_one_sub_rpow (by linarith) (by linarith), beta_comm, smul_eq_mul,
-    rpow_add two_pos (a + b) 1, rpow_one]
+  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le (by norm_num),
+    integral_comp_two_mul_sub_one]
+  rw [intervalIntegral.integral_congr (g := fun t => 2 ^ (a + b) *
+    (t ^ (b + 1 - 1) * (1 - t) ^ (a + 1 - 1))) fun t ht => jacobiWeight_two_mul_sub_one a b
+      ((uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)) ▸ ht)]
+  rw [intervalIntegral.integral_const_mul,
+    TauCeti.integral_rpow_mul_one_sub_rpow (by linarith) (by linarith), beta_comm]
+  rw [rpow_add two_pos (a + b) 1, rpow_one]
   ring
 
 /-! ### The measure -/
