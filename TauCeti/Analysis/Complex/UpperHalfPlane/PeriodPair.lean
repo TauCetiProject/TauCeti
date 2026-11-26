@@ -139,9 +139,9 @@ so it is finite.
   multiplier `α` has determinant `|α|²`, and `α² - (2 Re α) α + |α|² = 0` with
   integer trace and norm.
 * `PeriodPair.isIntegral_of_mem_leftOrder_lattice`: every multiplier is an algebraic integer.
-* `PeriodPair.exists_intCast_eq_of_im_eq_zero`, `PeriodPair.leftOrder_lattice_eq_bot_iff`: the
-  real multipliers are the integers, and the multiplier order is `ℤ` exactly when all multipliers
-  are real.
+* `PeriodPair.exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero`,
+  `PeriodPair.leftOrder_lattice_eq_bot_iff`: the real multipliers are the integers, and the
+  multiplier order is `ℤ` exactly when all multipliers are real.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
 * `UpperHalfPlane.lattice_I_smul_periodPair_I`, `UpperHalfPlane.lattice_ρ_smul_periodPair_ρ`: the
@@ -1292,7 +1292,8 @@ theorem isIntegral_of_mem_leftOrder_lattice {α : ℂ} (hα : α ∈ L.lattice.l
     (Submodule.fg_span (Set.toFinite _)) α (Submodule.mem_leftOrder_iff.mp hα)
 
 /-- The real multipliers are the integers. -/
-theorem exists_intCast_eq_of_im_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) (him : α.im = 0) :
+theorem exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero {α : ℂ}
+    (hα : α ∈ L.lattice.leftOrder) (him : α.im = 0) :
     ∃ m : ℤ, (m : ℂ) = α := by
   obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
   obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
@@ -1308,7 +1309,7 @@ theorem leftOrder_lattice_eq_bot_iff :
     obtain ⟨m, rfl⟩ := hα
     simp
   · refine le_antisymm (fun α hα ↦ ?_) bot_le
-    obtain ⟨m, hm⟩ := exists_intCast_eq_of_im_eq_zero hα (h α hα)
+    obtain ⟨m, hm⟩ := exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero hα (h α hα)
     exact Algebra.mem_bot.mpr ⟨m, by simpa using hm⟩
 
 end Multipliers
