@@ -22,7 +22,16 @@ The eta multiplier `ε(γ) = TauCeti.ModularForm.etaMultiplier γ` is the 24th r
 `η(γ τ) ^ (2 k) = ε(γ) ^ (2 k) (c τ + d) ^ k η(τ) ^ (2 k)` for every integer `k`, so `η ^ (2 k)`
 transforms in weight `k` with the character `ε ^ (2 k)` of `SL(2, ℤ)`.
 
-This file determines principal congruence subgroups on which that character is trivial: for an
+That `ε²` is a character, `ε(γ δ)² = ε(γ)² ε(δ)²`, follows from the slash action being an
+action, although `ε` itself is not multiplicative. Its values are explicit: since `c` and `d` are
+coprime, one of them is odd, and squaring the Kronecker-symbol form of `ε` removes the symbol, so
+
+* `ε(γ)² = exp(π i (b d (1 - c²) + c (a + d - 3)) / 6)` if `c` is odd,
+* `ε(γ)² = -i exp(π i (a c (1 - d²) + d (b - c + 3)) / 6)` if `d` is odd,
+
+for `γ = (a b; c d)` with `c` of either sign. These are the multipliers of the Siegel functions.
+
+The file also determines principal congruence subgroups on which that character is trivial: for an
 even integer `r` and `γ ∈ Γ(N)` with `24 ∣ r N`, `ε(γ) ^ r = 1`. Hence `η ^ (2 k)` is invariant
 under the weight-`k` slash action of `Γ(N)` whenever `12 ∣ k N`, and `τ ↦ η(τ / m) ^ (2 k)` is
 invariant under that of `Γ(m N)`. Two cases occur in the unbounded denominators theorem of
@@ -44,6 +53,10 @@ The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerS
 * `TauCeti.ModularForm.eta_smul_zpow_two_mul`:
   `η(γ τ) ^ (2 k) = ε(γ) ^ (2 k) (c τ + d) ^ k η(τ) ^ (2 k)`.
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash`: `η ^ (2 k) ∣[k] γ = ε(γ) ^ (2 k) • η ^ (2 k)`.
+* `TauCeti.ModularForm.etaMultiplier_mul_sq`: `ε(γ δ)² = ε(γ)² ε(δ)²`, and
+  `TauCeti.ModularForm.etaMultiplier_neg_sq`: `ε(-γ)² = -ε(γ)²`.
+* `TauCeti.ModularForm.etaMultiplier_sq_eq_exp_of_odd_c`,
+  `TauCeti.ModularForm.etaMultiplier_sq_eq_neg_I_mul_exp_of_odd_d`: `ε(γ)²` in closed form.
 * `TauCeti.ModularForm.etaMultiplier_zpow_eq_one_of_mem_Gamma`: `ε(γ) ^ r = 1` for `γ ∈ Γ(N)`,
   `r` even and `24 ∣ r N`.
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash_of_mem_Gamma`: `η ^ (2 k)` is invariant under the
@@ -59,6 +72,8 @@ The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerS
   J. Amer. Math. Soc. 38 (2025), reduction to weight zero following (1.0.2), p.628, and (1.0.3).
 * F. Strömberg, *Computation of Maass waveforms with non-trivial multiplier systems*,
   arXiv:math/0611146, Remark 2.5, for the Kronecker-symbol form of the multiplier.
+* D. H. Shin, *Generation of class fields by Siegel–Ramachandra invariants*, §2,
+  Proposition 2.3, for the closed form of `ε²` as the multiplier of the Siegel functions.
 -/
 
 public section
@@ -88,6 +103,103 @@ theorem eta_zpow_two_mul_slash (k : ℤ) (γ : SL(2, ℤ)) :
   rw [ModularForm.SL_slash_apply, eta_smul_zpow_two_mul, ModularGroup.denom_apply,
     Pi.smul_apply, smul_eq_mul, zpow_neg, mul_right_comm,
     mul_inv_cancel_right₀ (zpow_ne_zero _ hden)]
+
+/-! ### The character `ε²` and its explicit values -/
+
+/-- **`ε²` is a character of `SL(2, ℤ)`**: `ε(γ δ)² = ε(γ)² ε(δ)²`. The multiplier `ε` itself
+is not multiplicative, because of the principal square root in `η(γ τ) = ε(γ) √(c τ + d) η(τ)`,
+but `ε²` is the multiplier of `η²`, which transforms in weight one without a square root. -/
+theorem etaMultiplier_mul_sq (γ δ : SL(2, ℤ)) :
+    etaMultiplier (γ * δ) ^ 2 = etaMultiplier γ ^ 2 * etaMultiplier δ ^ 2 := by
+  have h := congrFun (eta_zpow_two_mul_slash 1 (γ * δ)) UpperHalfPlane.I
+  rw [SlashAction.slash_mul, eta_zpow_two_mul_slash, ModularForm.SL_smul_slash,
+    eta_zpow_two_mul_slash, smul_smul] at h
+  simp only [Pi.smul_apply, smul_eq_mul, mul_one, zpow_ofNat] at h
+  exact mul_right_cancel₀ (pow_ne_zero _ (ModularForm.eta_ne_zero UpperHalfPlane.I.im_pos)) h.symm
+
+/-- `ε(-γ)² = -ε(γ)²`: negating `γ` multiplies `ε` by `±i`. -/
+theorem etaMultiplier_neg_sq (γ : SL(2, ℤ)) : etaMultiplier (-γ) ^ 2 = -etaMultiplier γ ^ 2 := by
+  rw [← neg_one_mul, etaMultiplier_mul_sq, etaMultiplier_neg_one, neg_sq, I_sq, neg_one_mul]
+
+/-- `exp(π i m / 6) = e(2 m / 24)`. -/
+private theorem exp_pi_mul_I_mul_div_six (m : ℤ) : cexp (π * I * m / 6) = e24 (2 * m) := by
+  rw [e24_def]
+  congr 1
+  push_cast
+  ring
+
+/-- `-e(m / 24) = e((m + 12 (2 k + 1)) / 24)`. -/
+private theorem neg_e24 (m k : ℤ) : -e24 m = e24 (m + 12 * (2 * k + 1)) := by
+  rw [e24_add, e24_congr (show 12 * (2 * k + 1) ≡ 12 * (1 : ℕ) [ZMOD 24] from
+    Int.modEq_iff_dvd.2 ⟨-k, by push_cast; ring⟩), e24_twelve_mul, pow_one, mul_neg_one]
+
+/-- The square of the eta multiplier for odd `c > 0`, read off its Kronecker-symbol form. -/
+private theorem etaMultiplier_sq_eq_e24_of_odd_c_of_pos (γ : SL(2, ℤ)) (hc : Odd (γ 1 0))
+    (hpos : 0 < γ 1 0) :
+    etaMultiplier γ ^ 2 =
+      e24 (2 * (γ 0 1 * γ 1 1 * (1 - γ 1 0 ^ 2) + γ 1 0 * (γ 0 0 + γ 1 1 - 3))) := by
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hpos hc, mul_pow,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1).symm),
+    one_mul, ← e24_def, sq, ← e24_add]
+  congr 1
+  ring
+
+/-- The square of the eta multiplier for odd `d` and `c ≥ 0`, read off its Kronecker-symbol form
+and `a d - b c = 1`. -/
+private theorem etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg (γ : SL(2, ℤ)) (hd : Odd (γ 1 1))
+    (hc : 0 ≤ γ 1 0) :
+    etaMultiplier γ ^ 2 =
+      e24 (2 * (γ 0 0 * γ 1 0 * (1 - γ 1 1 ^ 2) + γ 1 1 * (γ 0 1 - γ 1 0 + 3)) - 6) := by
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d γ hc hd, mul_pow,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)),
+    one_mul, ← e24_def, sq, ← e24_add]
+  congr 1
+  linear_combination (2 * γ 1 0 * γ 1 1) * Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+
+/-- **The square of the eta multiplier, odd `c`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with `c` odd,
+`ε(γ)² = exp(π i (b d (1 - c²) + c (a + d - 3)) / 6)`. This is the multiplier of the Siegel
+functions in the form of Kubert and Lang; it holds for odd `c` of either sign. -/
+theorem etaMultiplier_sq_eq_exp_of_odd_c (γ : SL(2, ℤ)) (hc : Odd (γ 1 0)) :
+    etaMultiplier γ ^ 2 = cexp (π * I *
+      ((γ 0 1 * γ 1 1 * (1 - γ 1 0 ^ 2) + γ 1 0 * (γ 0 0 + γ 1 1 - 3) : ℤ) : ℂ) / 6) := by
+  rw [exp_pi_mul_I_mul_div_six]
+  rcases lt_or_gt_of_ne (show γ 1 0 ≠ 0 from fun h ↦ Int.not_odd_zero (h ▸ hc)) with hneg | hpos
+  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive: `ε(γ)² = -ε(-γ)²`.
+    have h := etaMultiplier_sq_eq_e24_of_odd_c_of_pos (-γ) (by simpa using hc)
+      (by simpa using hneg)
+    obtain ⟨k, hk⟩ := hc
+    rw [etaMultiplier_neg_sq, neg_eq_iff_eq_neg, neg_e24 _ (-k - 1)] at h
+    rw [h]
+    congr 1
+    simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
+    rw [hk]
+    ring
+  · exact etaMultiplier_sq_eq_e24_of_odd_c_of_pos γ hc hpos
+
+/-- **The square of the eta multiplier, odd `d`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with `d` odd,
+`ε(γ)² = -i exp(π i (a c (1 - d²) + d (b - c + 3)) / 6)`. This is the multiplier of the Siegel
+functions in the form of Kubert and Lang; it holds for every such `γ`, including `c ≤ 0`. -/
+theorem etaMultiplier_sq_eq_neg_I_mul_exp_of_odd_d (γ : SL(2, ℤ)) (hd : Odd (γ 1 1)) :
+    etaMultiplier γ ^ 2 = -I * cexp (π * I *
+      ((γ 0 0 * γ 1 0 * (1 - γ 1 1 ^ 2) + γ 1 1 * (γ 0 1 - γ 1 0 + 3) : ℤ) : ℂ) / 6) := by
+  have hI : -I = e24 (-6) := by
+    rw [e24_def, ← exp_neg_pi_div_two_mul_I]
+    congr 1
+    push_cast
+    ring
+  rw [exp_pi_mul_I_mul_div_six, hI, ← e24_add, neg_add_eq_sub]
+  rcases lt_or_ge (γ 1 0) 0 with hneg | hc
+  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive: `ε(γ)² = -ε(-γ)²`.
+    have h := etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg (-γ) (by simpa using hd)
+      (by simpa using hneg.le)
+    obtain ⟨k, hk⟩ := hd
+    rw [etaMultiplier_neg_sq, neg_eq_iff_eq_neg, neg_e24 _ k] at h
+    rw [h]
+    congr 1
+    simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
+    rw [hk]
+    ring
+  · exact etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg γ hd hc
 
 /-! ### The multiplier on principal congruence subgroups -/
 
