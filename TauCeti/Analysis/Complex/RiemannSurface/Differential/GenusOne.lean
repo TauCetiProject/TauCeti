@@ -71,7 +71,7 @@ theorem OneForm.apply_ne_zero_of_genus_eq_one (hg : genus X = 1) {ω : OneForm X
     WeilDivisor.eq_of_le_of_degree_eq (divisor_nonneg hhol) (by rw [hdeg]; simp)
   have hx := coe_coeff_divisor (meromorphicAt_of_mem_holomorphicOneForms hω) (htop x)
   rw [← hdiv, WeilDivisor.coeff_zero] at hx
-  exact ((hhol x).order_eq_zero_iff).1 (by rw [← hx]; rfl)
+  exact ((hhol x).order_eq_zero_iff).1 (by rw [← hx, WithTop.coe_zero])
 
 /-- **Genus one and nowhere vanishing `1`-forms.** A compact connected Hausdorff Riemann surface
 carries a nowhere vanishing holomorphic `1`-form exactly when it has genus one. -/
