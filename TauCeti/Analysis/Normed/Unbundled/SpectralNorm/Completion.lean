@@ -170,6 +170,7 @@ variable {L : Type*} [NormedField L] [IsUltrametricDist L] [CompleteSpace L] [Al
 /-- **The extension does not depend on the base field.** For a tower `K → L → E`, the extension of
 an `L`-algebra isomorphism `φ` computed over `L` is the extension of `φ` viewed as a `K`-algebra
 isomorphism. -/
+@[simp]
 theorem coe_completion_restrictScalars (φ : E ≃ₐ[L] E') :
     ⇑((φ.restrictScalars K).completion) = ⇑φ.completion :=
   funext fun x ↦ by rw [completion_apply, completion_apply, coe_restrictScalars]

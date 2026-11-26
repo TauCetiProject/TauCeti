@@ -47,8 +47,10 @@ compatible with the two choices made in defining it.
 
 * `Field.absoluteGaloisGroup.completion_toContinuousAlgEquiv_apply`: change of algebraic closure,
   `τ_C ∘ σ_C = (τ σ τ⁻¹)_C ∘ τ_C`.
-* `TauCeti.SpectralAlgClosure.mapOfAlgebra_algebraMap`: the embedding `K^alg → L^alg` is
-  `K`-linear; `TauCeti.SpectralAlgClosure.isometry_mapOfAlgebra`: it is an isometry;
+* `TauCeti.SpectralAlgClosure.mapOfAlgebra_algebraMap` and
+  `TauCeti.SpectralAlgClosure.completionMapOfAlgebra_algebraMap`: the embedding `K^alg → L^alg`
+  and its extension `C_K → C_L` are `K`-linear;
+  `TauCeti.SpectralAlgClosure.isometry_mapOfAlgebra`: the embedding is an isometry;
   `TauCeti.SpectralAlgClosure.mapOfAlgebra_bijective` and
   `TauCeti.SpectralAlgClosure.completionMapOfAlgebra_bijective`: it and its extension `C_K → C_L`
   are bijective when `L` is algebraic over `K`.
@@ -146,19 +148,11 @@ Through the embedding, `L^alg` is a normed `K`-algebra, since the norm of `L` re
 `K`, and a `K`-algebra map out of the algebraic extension `K^alg` preserves the norm
 (`AlgHom.isometry`). -/
 theorem isometry_mapOfAlgebra : Isometry (mapOfAlgebra K L) := by
-  -- `SpectralAlgClosure L` is a synonym of `AlgebraicClosure L`, whose `K`-algebra structure
-  -- comes from that of `L`.
-  let : Algebra K (SpectralAlgClosure L) := inferInstanceAs (Algebra K (AlgebraicClosure L))
-  have h (c : K) : algebraMap K (SpectralAlgClosure L) c =
-      algebraMap L (SpectralAlgClosure L) (algebraMap K L c) :=
-    IsScalarTower.algebraMap_apply K L (AlgebraicClosure L) c
-  let : NormedAlgebra K (SpectralAlgClosure L) :=
-    { norm_smul_le c x := by
-        -- `K` acts on `L^alg` through `L`, and `‖algebraMap L L^alg l‖ = ‖l‖`.
-        rw [Algebra.smul_def, norm_mul, h, norm_algebraMap', norm_algebraMap'] }
+  -- `L^alg` is a normed `K`-algebra through `L`.
+  let := NormedAlgebra.restrictScalars K L (SpectralAlgClosure L)
   let f : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure L :=
     { toRingHom := mapOfAlgebra K L
-      commutes' c := (mapOfAlgebra_algebraMap K L c).trans (h c).symm }
+      commutes' := mapOfAlgebra_algebraMap K L }
   exact f.isometry
 
 /-- The extension `C_K →+* C_L` of the embedding `K^alg → L^alg`: the completion of
@@ -177,6 +171,14 @@ theorem completionMapOfAlgebra_coe (a : SpectralAlgClosure K) :
     completionMapOfAlgebra K L a = (mapOfAlgebra K L a : CompletedAlgClosure L) := by
   rw [completionMapOfAlgebra_apply,
     Completion.map_coe (isometry_mapOfAlgebra K L).uniformContinuous]
+
+/-- `SpectralAlgClosure.completionMapOfAlgebra K L` is `K`-linear: it sends the image of `c : K`
+in `C_K` to the image of `c` in `C_L`, through `L`. -/
+theorem completionMapOfAlgebra_algebraMap (c : K) :
+    completionMapOfAlgebra K L (algebraMap K (CompletedAlgClosure K) c) =
+      algebraMap L (CompletedAlgClosure L) (algebraMap K L c) := by
+  rw [Completion.algebraMap_def, completionMapOfAlgebra_coe, mapOfAlgebra_algebraMap,
+    Completion.algebraMap_def]
 
 /-- `SpectralAlgClosure.completionMapOfAlgebra K L` is an isometry. -/
 theorem isometry_completionMapOfAlgebra : Isometry (completionMapOfAlgebra K L) :=
