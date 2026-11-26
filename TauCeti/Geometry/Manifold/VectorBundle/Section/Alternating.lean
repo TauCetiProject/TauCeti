@@ -31,7 +31,8 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
 
 * evaluation `ContMDiffSection.evalAlternating` on tuples of `C^n` sections of `V`, bundled as a
   `C^n(M)`-multilinear alternating map (and evaluation extensionality
-  `ContMDiffSection.eq_of_evalAlternating_eq` for `n ≤ ∞`);
+  `ContMDiffSection.eq_of_evalAlternating_eq` and contraction extensionality
+  `ContMDiffSection.eq_of_interior_eq` for `n ≤ ∞`);
 * the degree-zero `C^n(M)`-linear equivalence `ContMDiffSection.constOfIsEmptyEquiv` between scalar
   functions `C^n⟮I, M; 𝕜⟯` and sections of `fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜` for `[IsEmpty ι]`;
 * the interior product `ContMDiffSection.interior` contracting the first slot of a
@@ -39,9 +40,10 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
   `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interior_tail` and
   `ContMDiffSection.interior_interior_anticomm`;
 * the canonical `C^n` paired wedge product `ContMDiffSection.wedgeWith` for arbitrary target bundles
-  and smooth fibrewise bilinear pairings, and its scalar specialization `ContMDiffSection.wedge`
-  together with graded commutativity, associativity, and interior-product antiderivation laws on
-  sections via `LinearEquiv.cast`;
+  and smooth fibrewise bilinear pairings (with its graded antiderivation law
+  `ContMDiffSection.interior_wedgeWith_succ`), and its scalar specialization
+  `ContMDiffSection.wedge` together with graded commutativity, associativity, and
+  interior-product antiderivation laws on sections via `LinearEquiv.cast`;
 * the tensoriality equivalence `ContMDiffSection.evalAlternatingEquiv` identifying `C^n` sections
   of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank `C^n` real vector bundle over a
   finite-dimensional Hausdorff `C^n` manifold (`n ≤ ∞`) with `C^n(M)`-multilinear alternating maps
@@ -504,6 +506,52 @@ theorem wedgeWith_smul_right {k l : ℕ}
     wedgeWith μ hμ hpair φ (f • ψ) = f • wedgeWith μ hμ hpair φ ψ := by
   ext x v; simp [wedgeWith_apply]
 
+/-- Pointwise graded antiderivation law for `ContMDiffSection.interior` across `wedgeWith` of two
+sections of positive degree:
+`ι_a (wedgeWith μ φ ψ) = wedgeWith μ (ι_a φ) ψ + (-1)^(k + 1) wedgeWith μ φ (ι_a ψ)` up to
+`Fin.cast (Nat.add_right_comm k 1 l).symm`. -/
+theorem interior_wedgeWith_succ_apply {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin (k + 1)]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin (k + 1)]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin (l + 1)]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin (l + 1)]→L[ℝ] V₂ x⟯)
+    (a : Cₛ^n⟮I; F₀, V₀⟯) (x : M) (w : Fin (k + 1 + l) → V₀ x) :
+    (wedgeWith μ hμ hpair φ ψ).interior a x w =
+      wedgeWith μ hμ hpair (φ.interior a) ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
+        (-1 : ℝ) ^ (k + 1) • wedgeWith μ hμ hpair φ (ψ.interior a) x w := by
+  have hLHS : (wedgeWith μ hμ hpair φ ψ).interior a x w =
+      ((ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)).curryLeftTopological
+        (a x)) w := by
+    rw [interior_apply, wedgeWith_apply, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  have hφ : φ.interior a x = (φ x).curryLeftTopological (a x) := rfl
+  have hψ : ψ.interior a x = (ψ x).curryLeftTopological (a x) := rfl
+  rw [hLHS, wedgeWith_apply, wedgeWith_apply, hφ, hψ]
+  exact ContinuousAlternatingMap.curryLeftTopological_pairedWedge (μ x) (hμ x) (φ x) (ψ x) (a x) w
+
+/-- Graded antiderivation law for `ContMDiffSection.interior` across `wedgeWith` of two sections of
+positive degree:
+`ι_a (wedgeWith μ φ ψ) = LinearEquiv.cast ... (Nat.add_right_comm k 1 l).symm`
+`  (wedgeWith μ (ι_a φ) ψ) + (-1)^(k + 1) • wedgeWith μ φ (ι_a ψ)`. -/
+theorem interior_wedgeWith_succ {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin (k + 1)]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin (k + 1)]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin (l + 1)]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin (l + 1)]→L[ℝ] V₂ x⟯)
+    (a : Cₛ^n⟮I; F₀, V₀⟯) :
+    (wedgeWith μ hμ hpair φ ψ).interior a =
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯)
+          (M := fun q : ℕ ↦
+            Cₛ^n⟮I; F₀ [⋀^Fin q]→L[ℝ] F₃, fun x ↦ V₀ x [⋀^Fin q]→L[ℝ] V₃ x⟯)
+          (Nat.add_right_comm k 1 l).symm (wedgeWith μ hμ hpair (φ.interior a) ψ) +
+        (-1 : ℝ) ^ (k + 1) • wedgeWith μ hμ hpair φ (ψ.interior a) := by
+  ext x w
+  rw [add_cast_smul_apply]
+  exact interior_wedgeWith_succ_apply μ hμ hpair φ ψ a x w
+
 end WedgeWith
 
 noncomputable section Wedge
@@ -726,8 +774,10 @@ theorem interior_wedge_succ_apply {k l : ℕ}
     (φ.wedge ψ).interior a x w =
       (φ.interior a).wedge ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior a) x w :=
-  ContinuousAlternatingMap.curryLeftTopological_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) (a x) w
+  interior_wedgeWith_succ_apply (F₀ := F) (V₀ := V) (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ)
+    (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ) (V₃ := Bundle.Trivial M ℝ)
+    (fun _ ↦ ContinuousLinearMap.mul ℝ ℝ) (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
+    (TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ)) φ ψ a x w
 
 /-- Graded antiderivation law for `ContMDiffSection.interior` across a fibrewise wedge of two
 sections of positive degree:
@@ -738,10 +788,11 @@ theorem interior_wedge_succ {k l : ℕ}
     (φ.wedge ψ).interior a =
       LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
           (Nat.add_right_comm k 1 l).symm ((φ.interior a).wedge ψ) +
-        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior a) := by
-  ext x w
-  rw [add_cast_smul_apply]
-  exact interior_wedge_succ_apply φ ψ a x w
+        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior a) :=
+  interior_wedgeWith_succ (F₀ := F) (V₀ := V) (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ)
+    (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ) (V₃ := Bundle.Trivial M ℝ)
+    (fun _ ↦ ContinuousLinearMap.mul ℝ ℝ) (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
+    (TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ)) φ ψ a
 
 end Wedge
 
@@ -766,6 +817,22 @@ theorem eq_of_evalAlternating_eq {ι : Type*} [Fintype ι]
   choose s hs using fun i ↦ evalLinearMap_surjective (I := I) (F := F) (V := V) n x (v i)
   have hs' : (fun i ↦ s i x) = v := funext fun i ↦ by simpa using hs i
   simpa only [evalAlternating_apply, hs'] using congr($h s x)
+
+/-- Two positive-degree `C^n` bundle-valued alternating sections (`n ≤ ∞`) on a `C^n` real vector
+bundle over a finite-dimensional Hausdorff `C^n` manifold are equal whenever all their interior
+products agree. -/
+theorem eq_of_interior_eq
+    {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] {V₂ : M → Type*}
+    [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)]
+    [∀ x, TopologicalSpace (V₂ x)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+    {k : ℕ}
+    {φ ψ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[ℝ] F₂, fun x ↦ V x [⋀^Fin (k + 1)]→L[ℝ] V₂ x⟯}
+    (h : ∀ a : Cₛ^n⟮I; F, V⟯, φ.interior a = ψ.interior a) : φ = ψ := by
+  ext x v
+  obtain ⟨a, ha⟩ := evalLinearMap_surjective (I := I) (F := F) n x (v 0)
+  have hax : a x = v 0 := by simpa using ha
+  rw [apply_eq_interior_tail _ hax, apply_eq_interior_tail _ hax, h a]
 
 end EvalExt
 

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Topology.VectorBundle.Hom
 
 /-!
@@ -33,7 +34,8 @@ built from a smooth bilinear tensor field without repeating a coordinate computa
 Given a `C^n` fibrewise bilinear pairing of target bundles, the fibrewise paired wedge of two `C^n`
 alternating-bundle sections on an arbitrary source vector bundle is again `C^n`
 (`ContMDiffWithinAt.pairedWedge_bundle`, `ContMDiffOn.pairedWedge_bundle`,
-`ContMDiffAt.pairedWedge_bundle`), computed in coordinates by `TauCeti.inCoordinates_pairedWedge`.
+`ContMDiffAt.pairedWedge_bundle`), computed in coordinates by
+`ContinuousAlternatingMap.inCoordinates_pairedWedge`.
 
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
@@ -225,36 +227,6 @@ variable {E H M F₀ F₁ F₂ F₃ : Type*}
   [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
   {k l : ℕ} {n : WithTop ℕ∞} {s : Set M} {x : M}
 
-/-- In valid coefficient trivializations, coordinates of a fibrewise paired wedge on an arbitrary
-source bundle are the paired wedge of the coordinates, with the pairing itself also expressed in
-coordinates. -/
-theorem inCoordinates_pairedWedge
-    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
-    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
-    (φ : ∀ y : M, V₀ y [⋀^Fin k]→L[ℝ] V₁ y)
-    (ψ : ∀ y : M, V₀ y [⋀^Fin l]→L[ℝ] V₂ y) (x₀ y : M)
-    (h₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
-    (h₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
-    (h₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
-    ContinuousAlternatingMap.inCoordinates F₀ F₃ x₀ y x₀ y
-        (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y)) =
-      ContinuousAlternatingMap.pairedWedgeCLM
-        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
-          (fun z ↦ V₂ z →L[ℝ] V₃ z) x₀ y x₀ y (μ y))
-        (ContinuousAlternatingMap.inCoordinates F₀ F₁ x₀ y x₀ y (φ y))
-        (ContinuousAlternatingMap.inCoordinates F₀ F₂ x₀ y x₀ y (ψ y)) := by
-  ext v
-  simp only [ContinuousAlternatingMap.pairedWedgeCLM_apply,
-    ContinuousAlternatingMap.inCoordinates, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
-    ContinuousAlternatingMap.pairedWedge_apply, map_smul, map_sum]
-  congr 2
-  funext σ
-  rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
-  simp only [Trivialization.continuousLinearMapAt_apply,
-    Trivialization.symm_linearMapAt _ h₁, Trivialization.symm_linearMapAt _ h₂,
-    Function.comp_def]
-
 section Regularity
 
 variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
@@ -295,7 +267,7 @@ theorem _root_.ContMDiffWithinAt.pairedWedge_bundle
         (FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x),
       (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds
         (FiberBundle.mem_baseSet_trivializationAt F₃ V₃ x)] with y h₁ h₂ h₃
-    exact inCoordinates_pairedWedge μ hμ φ ψ x y h₁ h₂ h₃
+    exact ContinuousAlternatingMap.inCoordinates_pairedWedge μ hμ φ ψ x y h₁ h₂ h₃
   exact h.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
 /-- A `C^n` bundle pairing takes `C^n` alternating-bundle sections on an arbitrary source bundle

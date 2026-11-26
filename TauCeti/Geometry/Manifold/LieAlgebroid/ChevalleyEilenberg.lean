@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
 public import TauCeti.LinearAlgebra.Alternating.RestrictScalars
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # The Chevalley–Eilenberg complex of a Lie algebroid
@@ -601,45 +602,22 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) (ψ 
     sub_mul, mul_sub, Finset.sum_mul, Finset.mul_sum]
   ring
 
-omit [FiniteDimensional ℝ F] in
-/-- Section equality in positive degree follows from equality of all interior products. -/
-private theorem eq_of_interior_eq {m : ℕ} {φ ψ : Ω[m + 1]}
-    (h : ∀ a : Cₛ^∞⟮I; F, V⟯, φ.interior a = ψ.interior a) : φ = ψ := by
-  ext x v
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  have hax : a x = v 0 := by simpa using ha
-  rw [ContMDiffSection.apply_eq_interior_tail _ hax,
-    ContMDiffSection.apply_eq_interior_tail _ hax, h a]
-
 private theorem neg_one_pow_mul_self (k : ℕ) : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
   rw [← mul_pow]; norm_num
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
-  [ContMDiffVectorBundle ∞ F V I] in
-private theorem cast_cast {k l m : ℕ} (h₁ : k = l) (h₂ : l = m) (φ : Ω[k]) :
-    LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h₂
-        (LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h₁ φ) =
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (h₁.trans h₂) φ := by
-  subst h₁ h₂; rfl
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
-  [ContMDiffVectorBundle ∞ F V I] in
-private theorem cast_eq_self {k : ℕ} (h : k = k) (φ : Ω[k]) :
-    LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h φ = φ := rfl
 
 private theorem extDeriv_wedge_zero_zero (φ ψ : Ω[0]) :
     A.extDeriv (0 + 0) (φ.wedge ψ) =
       LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add 0 0)
           ((A.extDeriv 0 φ).wedge ψ) +
         (-1 : ℝ) ^ 0 • φ.wedge (A.extDeriv 0 ψ) := by
-  refine eq_of_interior_eq fun a ↦ ?_
+  refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
   have hL : A.lieDeriv 0 a (φ.wedge ψ) =
       (A.lieDeriv 0 a φ).wedge ψ + φ.wedge (A.lieDeriv 0 a ψ) :=
     A.lieDeriv_wedge (k := 0) (l := 0) a φ ψ
   rw [A.interior_extDeriv_zero, hL, ContMDiffSection.interior_add_left,
-    ContMDiffSection.interior_cast, cast_eq_self, ContMDiffSection.interior_wedge_zero_right,
-    A.interior_extDeriv_zero, pow_zero, one_smul, ContMDiffSection.interior_wedge_zero_left,
-    A.interior_extDeriv_zero]
+    ContMDiffSection.interior_cast, LinearEquiv.cast_refl_apply,
+    ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_zero, pow_zero, one_smul,
+    ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_zero]
 
 private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
     (ih : ∀ φ' : Ω[k], A.extDeriv (k + 0) (φ'.wedge ψ) =
@@ -650,7 +628,7 @@ private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
       LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add (k + 1) 0)
           ((A.extDeriv (k + 1) φ).wedge ψ) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (A.extDeriv 0 ψ) := by
-  refine eq_of_interior_eq fun a ↦ ?_
+  refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
   have hL : A.lieDeriv (k + 1) a (φ.wedge ψ) =
       (A.lieDeriv (k + 1) a φ).wedge ψ + φ.wedge (A.lieDeriv 0 a ψ) :=
     A.lieDeriv_wedge (k := k + 1) (l := 0) a φ ψ
@@ -662,9 +640,10 @@ private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
   rw [A.interior_extDeriv_succ, hL, ContMDiffSection.interior_wedge_zero_right, hIH]
   rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
     ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_succ,
-    ContMDiffSection.wedge_sub_left, map_sub, cast_eq_self, cast_eq_self,
-    ContMDiffSection.interior_const_smul_left, ContMDiffSection.interior_wedge_succ,
-    A.interior_extDeriv_zero, smul_add, smul_smul, neg_one_pow_mul_self, one_smul]
+    ContMDiffSection.wedge_sub_left, map_sub, LinearEquiv.cast_refl_apply,
+    LinearEquiv.cast_refl_apply, ContMDiffSection.interior_const_smul_left,
+    ContMDiffSection.interior_wedge_succ, A.interior_extDeriv_zero, smul_add, smul_smul,
+    neg_one_pow_mul_self, one_smul]
   rw [pow_succ (-1 : ℝ), mul_neg_one, neg_smul, sub_eq_add_neg, sub_eq_add_neg, neg_add]
   abel
 
@@ -677,7 +656,7 @@ private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
       LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add 0 (l + 1))
           ((A.extDeriv 0 φ).wedge ψ) +
         (-1 : ℝ) ^ 0 • φ.wedge (A.extDeriv (l + 1) ψ) := by
-  refine eq_of_interior_eq fun a ↦ ?_
+  refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
   have hC : ((A.extDeriv (0 + (l + 1))) (φ.wedge ψ)).interior a =
       A.lieDeriv (0 + (l + 1)) a (φ.wedge ψ) -
         A.extDeriv (0 + l) ((φ.wedge ψ).interior a) :=
@@ -685,16 +664,11 @@ private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
   have hL : A.lieDeriv (0 + (l + 1)) a (φ.wedge ψ) =
       (A.lieDeriv 0 a φ).wedge ψ + φ.wedge (A.lieDeriv (l + 1) a ψ) :=
     A.lieDeriv_wedge (k := 0) (l := l + 1) a φ ψ
-  have hc1 (h : 0 + l + 1 = 0 + (l + 1)) (η : Ω[0 + l + 1]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h η = η := rfl
-  have hc2 (η : Ω[0 + 1 + l]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.succ_add 0 l) η =
-        LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.succ.inj (Nat.succ_add 0 (l + 1))) η := rfl
   rw [hC, hL, ContMDiffSection.interior_wedge_zero_left, ih (ψ.interior a)]
   rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
-    ContMDiffSection.interior_wedge_succ, map_add, cast_cast, hc1, hc2,
+    ContMDiffSection.interior_wedge_succ, map_add, LinearEquiv.cast_cast,
+    LinearEquiv.cast_refl_apply,
+    LinearEquiv.cast_congr _ (Nat.succ.inj (Nat.succ_add 0 (l + 1))),
     A.interior_extDeriv_zero, LinearMapClass.map_smul_of_tower, pow_zero, one_smul,
     ContMDiffSection.interior_const_smul_left, one_smul,
     ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_succ,
@@ -715,7 +689,7 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
       LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.succ_add (k + 1) (l + 1))
           ((A.extDeriv (k + 1) φ).wedge ψ) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (A.extDeriv (l + 1) ψ) := by
-  refine eq_of_interior_eq fun a ↦ ?_
+  refine ContMDiffSection.eq_of_interior_eq fun a ↦ ?_
   have hC : ((A.extDeriv ((k + 1) + (l + 1))) (φ.wedge ψ)).interior a =
       A.lieDeriv ((k + 1) + (l + 1)) a (φ.wedge ψ) -
         A.extDeriv ((k + 1) + l) ((φ.wedge ψ).interior a) :=
@@ -725,11 +699,6 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
           ((A.extDeriv k (φ.interior a)).wedge ψ) +
         (-1 : ℝ) ^ k • (φ.interior a).wedge (A.extDeriv (l + 1) ψ) :=
     ih₁ (φ.interior a)
-  have hcast2 (η : Ω[(k + 1 + 1) + l]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.succ_add (k + 1) l) η =
-        LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.succ.inj (Nat.succ_add (k + 1) (l + 1))) η := rfl
   have hIH₂ :
       (-1 : ℝ) ^ (k + 1) • A.extDeriv ((k + 1) + l) (φ.wedge (ψ.interior a)) =
         -((-1 : ℝ) ^ k •
@@ -737,34 +706,27 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
               (Nat.succ.inj (Nat.succ_add (k + 1) (l + 1)))
               ((A.extDeriv (k + 1) φ).wedge (ψ.interior a))) +
           φ.wedge (A.extDeriv l (ψ.interior a)) := by
-    rw [ih₂ (ψ.interior a), hcast2]
+    rw [ih₂ (ψ.interior a),
+      LinearEquiv.cast_congr _ (Nat.succ.inj (Nat.succ_add (k + 1) (l + 1)))]
     ext x v
     simp only [ContMDiffSection.coe_add, ContMDiffSection.coe_neg, ContMDiffSection.coe_smul,
       Pi.add_apply, Pi.neg_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
       ContinuousAlternatingMap.neg_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
     rw [mul_add, ← mul_assoc, neg_one_pow_mul_self, one_mul, pow_succ, mul_neg_one, neg_mul]
   rw [hC, A.lieDeriv_wedge, ContMDiffSection.interior_wedge_succ, map_add,
-    A.extDeriv_cast, hIH₁, map_add, LinearMapClass.map_smul_of_tower, cast_cast,
+    A.extDeriv_cast, hIH₁, map_add, LinearMapClass.map_smul_of_tower, LinearEquiv.cast_cast,
     map_smul, hIH₂]
   rw [ContMDiffSection.interior_add_left, ContMDiffSection.interior_cast,
-    ContMDiffSection.interior_wedge_succ, map_add, LinearMapClass.map_smul_of_tower, cast_cast,
-    A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_left,
+    ContMDiffSection.interior_wedge_succ, map_add, LinearMapClass.map_smul_of_tower,
+    LinearEquiv.cast_cast, A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_left,
     ContMDiffSection.interior_const_smul_left, ContMDiffSection.interior_wedge_succ,
     A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_right, smul_add, smul_smul,
     neg_one_pow_mul_self, one_smul]
-  have hc_self (h : (k + 1) + l + 1 = (k + 1) + (l + 1)) (η : Ω[(k + 1) + l + 1]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h η = η := rfl
-  have hc_self' (h : (k + 1) + (l + 1) = (k + 1) + l + 1) (η : Ω[(k + 1) + (l + 1)]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h η = η := rfl
-  have hcast1 (η : Ω[k + (l + 1) + 1]) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (congrArg (· + 1) (Nat.add_right_comm k 1 l).symm) η =
-        LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.add_right_comm k 1 (l + 1)).symm η := rfl
   have hp1 : (-1 : ℝ) ^ (k + 1) = -((-1 : ℝ) ^ k) := by rw [pow_succ, mul_neg_one]
   have hp2 : (-1 : ℝ) ^ (k + 1 + 1) = (-1 : ℝ) ^ k := by
     rw [pow_succ, pow_succ, mul_neg_one, mul_neg_one, neg_neg]
-  rw [hc_self, hc_self', hcast1, hp1, hp2, neg_smul]
+  rw [LinearEquiv.cast_refl_apply, LinearEquiv.cast_refl_apply,
+    LinearEquiv.cast_congr _ (Nat.add_right_comm k 1 (l + 1)).symm, hp1, hp2, neg_smul]
   simp only [sub_eq_add_neg, neg_add]
   abel
 

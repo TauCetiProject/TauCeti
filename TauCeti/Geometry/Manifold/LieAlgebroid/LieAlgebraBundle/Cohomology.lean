@@ -5,28 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
 public import TauCeti.Algebra.Lie.Cohomology.Map
 public import TauCeti.Geometry.Manifold.LieAlgebroid.ChevalleyEilenberg
-public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle
+public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle.Basic
+import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Chevalley–Eilenberg cohomology of a trivial Lie algebra bundle over a point
 
 Over a one-point base manifold `[Unique M]`, sections of the trivial Lie algebra bundle
 algebroid `TauCeti.LieAlgebroid.trivialLieAlgebra I M 𝔤` identify Lie-algebra-linearly with `𝔤`
-via evaluation (`trivialLieAlgebraEval`) and constant sections (`trivialLieAlgebraConst`), smooth
-real functions `C^∞⟮I, M; ℝ⟯` identify with the trivial `𝔤`-module `TrivialLieModule ℝ 𝔤 ℝ`, and
-every `ℝ`-multilinear alternating map on sections is automatically `C^∞(M)`-multilinear.
+via `TauCeti.LieAlgebroid.trivialLieAlgebraEvalEquiv`, smooth real functions `C^∞⟮I, M; ℝ⟯` identify
+with the trivial `𝔤`-module `TrivialLieModule ℝ 𝔤 ℝ` (`trivialLieAlgebraFunctionEquiv`), and every
+`ℝ`-multilinear alternating map on sections is automatically `C^∞(M)`-multilinear.
 
 Consequently:
 * `TauCeti.LieAlgebroid.trivialLieAlgebraCochainEquiv`: degree-`k` cochains of
   `trivialLieAlgebra I M 𝔤` identify `ℝ`-linearly with the Chevalley–Eilenberg cochains
   `𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ`;
 * `TauCeti.LieAlgebroid.trivialLieAlgebraCochainComplexIso`: the algebroid cochain complex
-  `(trivialLieAlgebra I M 𝔤).cochainComplex` is canonically isomorphic to
-  `TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)` (when `E`, `H`, `M`,
-  and `𝔤` share a universe so the two complexes live in the same `ModuleCat ℝ`);
+  `(trivialLieAlgebra I M 𝔤).cochainComplex` is canonically isomorphic to the universe lift along
+  `ModuleCat.uliftFunctor` of
+  `TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)` for arbitrary universes
+  of the base manifold and Lie algebra;
 * `TauCeti.LieAlgebroid.trivialLieAlgebraCohomologyIso`: induced isomorphism on degree-`k`
   cohomology.
 
@@ -55,31 +58,11 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤]
   [FiniteDimensional ℝ 𝔤]
 
-/-- Over a one-point manifold, evaluation at `default` and constant sections establish a Lie
-algebra isomorphism between sections of `trivialLieAlgebra I M 𝔤` and `𝔤`. -/
-@[expose] def trivialLieAlgebraEvalEquiv : (trivialLieAlgebra I M 𝔤).Sections ≃ₗ⁅ℝ⁆ 𝔤 :=
-  { trivialLieAlgebraEval I M 𝔤 default with
-    invFun := trivialLieAlgebraConst I M 𝔤
-    left_inv s := (trivialLieAlgebra I M 𝔤).sectionsEquiv.injective <|
-      ContMDiffSection.ext fun x ↦ by rw [Unique.eq_default x]; simp
-    right_inv ξ := trivialLieAlgebraEval_trivialLieAlgebraConst default ξ }
-
-omit [FiniteDimensional ℝ E] in
-/-- Evaluating `trivialLieAlgebraEvalEquiv` on a section evaluates it at `default`. -/
-@[simp]
-theorem trivialLieAlgebraEvalEquiv_apply (s : (trivialLieAlgebra I M 𝔤).Sections) :
-    trivialLieAlgebraEvalEquiv I M 𝔤 s = trivialLieAlgebraEval I M 𝔤 default s := rfl
-
-omit [FiniteDimensional ℝ E] in
-/-- The inverse of `trivialLieAlgebraEvalEquiv` sends an element of `𝔤` to the corresponding
-constant section. -/
-@[simp]
-theorem trivialLieAlgebraEvalEquiv_symm_apply (ξ : 𝔤) :
-    (trivialLieAlgebraEvalEquiv I M 𝔤).symm ξ = trivialLieAlgebraConst I M 𝔤 ξ := rfl
-
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤]
+  [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤] in
 /-- Over a one-point manifold, evaluation at `default` identifies `C^∞⟮I, M; ℝ⟯` linearly with
 the trivial `𝔤`-module `TrivialLieModule ℝ 𝔤 ℝ`. -/
-@[expose] def trivialLieAlgebraFunctionEquiv : C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ where
+def trivialLieAlgebraFunctionEquiv : C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ where
   toFun f := (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm (f default)
   invFun m := algebraMap ℝ C^∞⟮I, M; ℝ⟯ (TrivialLieModule.equiv ℝ 𝔤 ℝ m)
   map_add' _ _ := by simp
@@ -95,7 +78,8 @@ omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [LieRing 𝔤] [LieAlgebra �
 /-- Evaluating `trivialLieAlgebraFunctionEquiv` on a smooth function evaluates it at `default`. -/
 @[simp]
 theorem trivialLieAlgebraFunctionEquiv_apply (f : C^∞⟮I, M; ℝ⟯) :
-    trivialLieAlgebraFunctionEquiv I M 𝔤 f = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm (f default) := rfl
+    trivialLieAlgebraFunctionEquiv I M 𝔤 f = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm (f default) :=
+  (rfl)
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤]
   [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤] in
@@ -103,7 +87,7 @@ omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [LieRing 𝔤] [LieAlgebra �
 @[simp]
 theorem trivialLieAlgebraFunctionEquiv_symm_apply (m : TrivialLieModule ℝ 𝔤 ℝ) :
     (trivialLieAlgebraFunctionEquiv I M 𝔤).symm m =
-      algebraMap ℝ C^∞⟮I, M; ℝ⟯ (TrivialLieModule.equiv ℝ 𝔤 ℝ m) := rfl
+      algebraMap ℝ C^∞⟮I, M; ℝ⟯ (TrivialLieModule.equiv ℝ 𝔤 ℝ m) := (rfl)
 
 /-- `trivialLieAlgebraFunctionEquiv` intertwines the anchor-derivation action of constant sections
 with the trivial `𝔤`-module action. -/
@@ -174,8 +158,6 @@ theorem trivialLieAlgebraCochainEquiv_symm_apply (k : ℕ)
     (α : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) (x : M) (v : Fin k → 𝔤) :
     ((trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α) x v =
       TrivialLieModule.equiv ℝ 𝔤 ℝ (α v) := by
-  let φ := (trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α
-  change φ x v = _
   have h2 := congrArg (fun ψ ↦ (TrivialLieModule.equiv ℝ 𝔤 ℝ) (ψ v))
     ((trivialLieAlgebraCochainEquiv I M 𝔤 k).apply_symm_apply α)
   rw [trivialLieAlgebraCochainEquiv_apply, LinearEquiv.apply_symm_apply,
@@ -209,125 +191,109 @@ end Point
 
 section Complex
 
-universe u
+universe uM uG
 
-variable {E H : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (M : Type u) [TopologicalSpace M]
-  [ChartedSpace H M] [Unique M] [IsManifold I ∞ M] (𝔤 : Type u) [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (M : Type uM) [TopologicalSpace M]
+  [ChartedSpace H M] [Unique M] [IsManifold I ∞ M] (𝔤 : Type uG) [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
   [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤]
   [FiniteDimensional ℝ 𝔤]
 
+private def uliftCochainComplexXIso (𝔤 : Type uG) [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (k : ℕ) :
+    (((ModuleCat.uliftFunctor.{uM, uG} ℝ).mapHomologicalComplex (ComplexShape.up ℕ)).obj
+      (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ))).X k ≅
+        ModuleCat.of ℝ (ULift.{uM, uG} (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ)) :=
+  Iso.refl _
+
+private theorem uliftCochainComplexXIso_inv_apply (𝔤 : Type uG) [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
+    (k : ℕ) (x : ULift.{uM, uG} (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ)) :
+    (uliftCochainComplexXIso.{uM, uG} 𝔤 k).inv x = x := rfl
+
 /-- Over a one-point manifold, the Chevalley–Eilenberg cochain complex of `trivialLieAlgebra I M 𝔤`
-is canonically isomorphic to the Lie-algebra Chevalley–Eilenberg cochain complex of `𝔤` with
-trivial coefficients `ℝ`. -/
+is canonically isomorphic to the universe lift of the Lie-algebra Chevalley–Eilenberg cochain
+complex of `𝔤` with trivial coefficients `ℝ`. -/
 def trivialLieAlgebraCochainComplexIso :
     (trivialLieAlgebra I M 𝔤).cochainComplex ≅
-      TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) where
-  hom := CochainComplex.ofHom
-    (fun k ↦ ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom ≫
-      (trivialLieAlgebraCochainEquiv I M 𝔤 k).toModuleIso.hom) <| by
-    intro k
-    have hd (y : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) :
-        (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤
-            (TrivialLieModule ℝ 𝔤 ℝ)).d k (k + 1) y =
-          TauCeti.LieModule.Cohomology.d ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k y := by
-      dsimp only [TauCeti.LieModule.Cohomology.cochainComplex]
-      simp; rfl
-    refine ModuleCat.hom_ext <| LinearMap.ext fun x ↦ ?_
-    change (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤
-          (TrivialLieModule ℝ 𝔤 ℝ)).d k (k + 1)
-        (trivialLieAlgebraCochainEquiv I M 𝔤 k
-          (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom x)) =
-      trivialLieAlgebraCochainEquiv I M 𝔤 (k + 1)
-        (((trivialLieAlgebra I M 𝔤).cochainComplexXIso (k + 1)).hom
-          ((trivialLieAlgebra I M 𝔤).cochainComplex.d k (k + 1) x))
-    rw [hd, (trivialLieAlgebra I M 𝔤).cochainComplex_d_succ_apply k x, Iso.inv_hom_id_apply]
-    exact (trivialLieAlgebra_extDeriv_cochainEquiv I M 𝔤 k _).symm
-  inv := CochainComplex.ofHom
-    (fun k ↦ (trivialLieAlgebraCochainEquiv I M 𝔤 k).toModuleIso.inv ≫
-      ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv) <| by
-    intro k
-    have hd (y : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) :
-        (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤
-            (TrivialLieModule ℝ 𝔤 ℝ)).d k (k + 1) y =
-          TauCeti.LieModule.Cohomology.d ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k y := by
-      dsimp only [TauCeti.LieModule.Cohomology.cochainComplex]
-      simp; rfl
-    refine ModuleCat.hom_ext <| LinearMap.ext fun α ↦ ?_
-    dsimp only [TauCeti.LieModule.Cohomology.cochainComplex] at α ⊢
-    change (trivialLieAlgebra I M 𝔤).cochainComplex.d k (k + 1)
-        (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv
-          ((trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α)) =
-      ((trivialLieAlgebra I M 𝔤).cochainComplexXIso (k + 1)).inv
-        ((trivialLieAlgebraCochainEquiv I M 𝔤 (k + 1)).symm
-          ((TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤
-            (TrivialLieModule ℝ 𝔤 ℝ)).d k (k + 1) α))
-    rw [hd, (trivialLieAlgebra I M 𝔤).cochainComplex_d_succ_apply, Iso.inv_hom_id_apply]
-    congr 1
-    apply (trivialLieAlgebraCochainEquiv I M 𝔤 (k + 1)).injective
-    rw [trivialLieAlgebra_extDeriv_cochainEquiv, LinearEquiv.apply_symm_apply]
-    exact (LinearEquiv.apply_symm_apply _ _).symm
-  hom_inv_id := by
-    ext k x
-    change ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv
-        ((trivialLieAlgebraCochainEquiv I M 𝔤 k).symm
-          (trivialLieAlgebraCochainEquiv I M 𝔤 k
-            (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom x))) = x
-    rw [LinearEquiv.symm_apply_apply, Iso.hom_inv_id_apply]
-  inv_hom_id := by
-    ext k α
-    change trivialLieAlgebraCochainEquiv I M 𝔤 k
-        (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom
-          (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv
-            ((trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α))) = α
-    rw [Iso.inv_hom_id_apply]
-    exact LinearEquiv.apply_symm_apply _ _
+      ((ModuleCat.uliftFunctor.{uM, uG} ℝ).mapHomologicalComplex (ComplexShape.up ℕ)).obj
+        (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)) :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun k ↦ (trivialLieAlgebra I M 𝔤).cochainComplexXIso k ≪≫
+      ((trivialLieAlgebraCochainEquiv I M 𝔤 k).trans ULift.moduleEquiv.symm).toModuleIso ≪≫
+      (uliftCochainComplexXIso.{uM, uG} 𝔤 k).symm) <| by
+    rintro k _ rfl
+    simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc]
+    rw [(trivialLieAlgebra I M 𝔤).cochainComplex_d_succ_assoc k]
+    simp only [Functor.mapHomologicalComplex_obj_d,
+      TauCeti.LieModule.Cohomology.cochainComplex_d_succ]
+    refine ModuleCat.hom_ext <| LinearMap.ext fun φ ↦ ?_
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+      LinearEquiv.toModuleIso_hom, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      ULift.moduleEquiv_symm_apply]
+    have h := trivialLieAlgebra_extDeriv_cochainEquiv I M 𝔤 k
+      (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom φ)
+    exact congrArg ULift.up h.symm
 
-/-- On degree-`k` components, `(trivialLieAlgebraCochainComplexIso I M 𝔤).hom.f k` maps a cochain
-(read via `cochainComplexXIso`) by `trivialLieAlgebraCochainEquiv I M 𝔤 k`. -/
-@[simp]
+/-- On degree-`k` components, `(trivialLieAlgebraCochainComplexIso I M 𝔤).hom.f k` lifts
+`trivialLieAlgebraCochainEquiv I M 𝔤 k` applied to `cochainComplexXIso.hom`. -/
 theorem trivialLieAlgebraCochainComplexIso_hom_f_apply (k : ℕ)
     (x : (trivialLieAlgebra I M 𝔤).cochainComplex.X k) :
     (trivialLieAlgebraCochainComplexIso I M 𝔤).hom.f k x =
-      trivialLieAlgebraCochainEquiv I M 𝔤 k
-        (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom x) := by
-  change (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom ≫
-    (trivialLieAlgebraCochainEquiv I M 𝔤 k).toModuleIso.hom) x = _
-  rw [ModuleCat.comp_apply, LinearEquiv.toModuleIso_hom, ConcreteCategory.hom_ofHom,
-    LinearEquiv.coe_coe]
+      ULift.up (trivialLieAlgebraCochainEquiv I M 𝔤 k
+        (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom x)) := by
+  simp only [trivialLieAlgebraCochainComplexIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
+    Iso.trans_hom, Iso.symm_hom]
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, LinearEquiv.toModuleIso_hom,
+    ModuleCat.ofHom_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+    ULift.moduleEquiv_symm_apply, uliftCochainComplexXIso_inv_apply]
 
-/-- On degree-`k` components read through `cochainComplexXIso`,
-`(trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k` is
-`(trivialLieAlgebraCochainEquiv I M 𝔤 k).symm`. -/
-@[simp]
+/-- On degree-`k` components, `(trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k` inserts
+`(trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α.down` via `cochainComplexXIso.inv`. -/
 theorem trivialLieAlgebraCochainComplexIso_inv_f_apply (k : ℕ)
-    (α : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) :
-    ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom
-        ((trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k α) =
-      (trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α := by
-  change ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom
-      (((trivialLieAlgebraCochainEquiv I M 𝔤 k).toModuleIso.inv ≫
-        ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv) α) = _
-  rw [ModuleCat.comp_apply, Iso.inv_hom_id_apply, LinearEquiv.toModuleIso_inv,
-    ConcreteCategory.hom_ofHom, LinearEquiv.coe_coe]
+    (α : ULift.{uM, uG} (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ)) :
+    (trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k α =
+      ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv
+        ((trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α.down) := by
+  have h1 :
+      (trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k α =
+        ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv
+          (((trivialLieAlgebraCochainEquiv I M 𝔤 k).trans
+            ULift.moduleEquiv.symm).toModuleIso.inv α) := by
+    simp only [trivialLieAlgebraCochainComplexIso, HomologicalComplex.Hom.isoOfComponents_inv_f,
+      Iso.trans_inv, Iso.symm_inv, Category.assoc]
+    -- `uliftCochainComplexXIso` is `Iso.refl _`, identifying `(...).X k` with `ULift`.
+    rfl
+  rw [h1, LinearEquiv.toModuleIso_inv, ModuleCat.ofHom_apply]
+  simp
 
 /-- Evaluating `(trivialLieAlgebraCochainComplexIso I M 𝔤).hom.f k` on a section inserted via
-`cochainComplexXIso` gives `trivialLieAlgebraCochainEquiv I M 𝔤 k`. -/
+`cochainComplexXIso` gives `ULift.up` of `trivialLieAlgebraCochainEquiv I M 𝔤 k`. -/
 theorem trivialLieAlgebraCochainComplexIso_hom_f_inv_apply (k : ℕ)
     (φ : Cₛ^∞⟮I; TrivialModel ℝ 𝔤 [⋀^Fin k]→L[ℝ] ℝ,
       fun x ↦ Bundle.Trivial M 𝔤 x [⋀^Fin k]→L[ℝ] ℝ⟯) :
     (trivialLieAlgebraCochainComplexIso I M 𝔤).hom.f k
         (((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).inv φ) =
-      trivialLieAlgebraCochainEquiv I M 𝔤 k φ := by
+      ULift.up (trivialLieAlgebraCochainEquiv I M 𝔤 k φ) := by
   rw [trivialLieAlgebraCochainComplexIso_hom_f_apply, Iso.inv_hom_id_apply]
 
+/-- Reading `(trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k α` through `cochainComplexXIso.hom`
+gives `(trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α.down`. -/
+theorem cochainComplexXIso_hom_trivialLieAlgebraCochainComplexIso_inv_f (k : ℕ)
+    (α : ULift.{uM, uG} (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ)) :
+    ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom
+        ((trivialLieAlgebraCochainComplexIso I M 𝔤).inv.f k α) =
+      (trivialLieAlgebraCochainEquiv I M 𝔤 k).symm α.down := by
+  rw [trivialLieAlgebraCochainComplexIso_inv_f_apply, Iso.inv_hom_id_apply]
+
 /-- Over a one-point manifold, the `k`-th Lie algebroid cohomology of `trivialLieAlgebra I M 𝔤`
-is canonically isomorphic to the `k`-th Lie algebra cohomology of `𝔤` with trivial coefficients
-`ℝ`. -/
+is canonically isomorphic to the universe lift of the `k`-th Lie algebra cohomology of `𝔤` with
+trivial coefficients `ℝ`. -/
 def trivialLieAlgebraCohomologyIso (k : ℕ) :
     (trivialLieAlgebra I M 𝔤).cohomology k ≅
-      TauCeti.LieModule.Cohomology.cohomology ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k :=
-  (HomologicalComplex.homologyFunctor _ _ k).mapIso (trivialLieAlgebraCochainComplexIso I M 𝔤)
+      (ModuleCat.uliftFunctor.{uM, uG} ℝ).obj
+        (TauCeti.LieModule.Cohomology.cohomology ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k) :=
+  (HomologicalComplex.homologyFunctor _ _ k).mapIso (trivialLieAlgebraCochainComplexIso I M 𝔤) ≪≫
+    ((TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)).sc k).mapHomologyIso
+      (ModuleCat.uliftFunctor.{uM, uG} ℝ)
 
 end Complex
 

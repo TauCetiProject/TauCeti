@@ -8,9 +8,10 @@ module
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 
 /-!
-# Composition in alternating-bundle coordinates
+# Composition and paired wedges in alternating-bundle coordinates
 
 Precomposing a fibrewise alternating map with a fibrewise linear map commutes with passing
 into bundle coordinates wherever the intermediate trivialization is valid. This identity
@@ -21,6 +22,10 @@ In degree one, the identification `ContinuousAlternatingMap.ofSubsingleton` of l
 alternating maps of one variable also commutes with passing into coordinates, with no base-set
 hypothesis. This compares regularity of degree-one forms with regularity of sections of the
 bundle of fibrewise linear maps.
+
+On valid coefficient trivializations, the paired wedge of two fibrewise alternating maps is
+the paired wedge of their coordinates with the pairing expressed in coordinates
+(`ContinuousAlternatingMap.inCoordinates_pairedWedge`).
 
 When the codomain is a fixed space, a fibre alternating map read in the trivialization at `x₀`
 is precomposed with the inverse, at its base point, of the trivialization of the domain bundle at
@@ -73,6 +78,54 @@ theorem inCoordinates_ofSubsingleton [Subsingleton ι] (i : ι) {x₀ x : B₁} 
       ofSubsingleton 𝕜 F₁ F₂ i (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x₀ x y₀ y φ) := by
   ext v
   simp [inCoordinates, ContinuousLinearMap.inCoordinates]
+
+section PairedWedge
+
+/-- In valid coefficient trivializations, coordinates of a fibrewise paired wedge on an arbitrary
+source bundle are the paired wedge of the coordinates, with the pairing itself also expressed in
+coordinates. -/
+theorem inCoordinates_pairedWedge
+    {B F₀ F₁ F₂ F₃ : Type*} [TopologicalSpace B]
+    [NormedAddCommGroup F₀] [NormedSpace ℝ F₀]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    {V₀ V₁ V₂ V₃ : B → Type*}
+    [∀ x, AddCommGroup (V₀ x)] [∀ x, Module ℝ (V₀ x)] [∀ x, TopologicalSpace (V₀ x)]
+    [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+    [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+    [TopologicalSpace (TotalSpace F₀ V₀)] [FiberBundle F₀ V₀] [VectorBundle ℝ F₀ V₀]
+    [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
+    [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+    [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
+    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
+    {k l : ℕ}
+    (μ : (y : B) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (φ : ∀ y : B, V₀ y [⋀^Fin k]→L[ℝ] V₁ y)
+    (ψ : ∀ y : B, V₀ y [⋀^Fin l]→L[ℝ] V₂ y) (x₀ y : B)
+    (h₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
+    (h₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
+    (h₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
+    inCoordinates F₀ F₃ x₀ y x₀ y (pairedWedge (μ y) (hμ y) (φ y) (ψ y)) =
+      pairedWedgeCLM
+        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
+          (fun z ↦ V₂ z →L[ℝ] V₃ z) x₀ y x₀ y (μ y))
+        (inCoordinates F₀ F₁ x₀ y x₀ y (φ y))
+        (inCoordinates F₀ F₂ x₀ y x₀ y (ψ y)) := by
+  ext v
+  simp only [pairedWedgeCLM_apply, inCoordinates, compContinuousLinearMap_apply,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
+    pairedWedge_apply, map_smul, _root_.map_sum]
+  congr 2
+  funext σ
+  rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
+  simp only [Trivialization.continuousLinearMapAt_apply,
+    Trivialization.symm_linearMapAt _ h₁, Trivialization.symm_linearMapAt _ h₂,
+    Function.comp_def]
+
+end PairedWedge
 
 end ContinuousAlternatingMap
 

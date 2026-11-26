@@ -108,11 +108,7 @@ def tangentCochainComplexIso : (tangent I M).cochainComplex ≅ deRhamComplex I 
       ext s : 2
       apply SmoothForm.toContMDiffSection_injective
       simp only [ModuleCat.hom_comp, LinearEquiv.toModuleIso_hom, LinearMap.comp_apply,
-        ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
-        SmoothBundleForm.toContMDiffSectionEquiv_symm_apply]
-      change SmoothForm.toContMDiffSection (mextDerivₗ I k (SmoothForm.ofContMDiffSection s)) =
-        SmoothForm.toContMDiffSection
-          (SmoothForm.ofContMDiffSection ((tangent I M).extDeriv k s))
+        ModuleCat.hom_ofHom, LinearEquiv.coe_coe, SmoothForm.toContMDiffSectionEquiv_symm_apply]
       rw [← tangent_extDeriv_toContMDiffSection, SmoothForm.toContMDiffSection_ofContMDiffSection,
         SmoothForm.toContMDiffSection_ofContMDiffSection]
     rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k),
@@ -125,7 +121,8 @@ forward isomorphism `(tangentCochainComplexIso I M).hom.f k` is `SmoothForm.ofCo
 theorem tangentCochainComplexIso_hom_f_apply (k : ℕ) (x : (tangent I M).cochainComplex.X k) :
     (deRhamComplexXIso I k).hom ((tangentCochainComplexIso I M).hom.f k x) =
       SmoothForm.ofContMDiffSection (((tangent I M).cochainComplexXIso k).hom x) := by
-  simp [tangentCochainComplexIso]; rfl
+  simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_symm_apply,
+    SmoothForm.toContMDiffSectionEquiv_symm_apply]
 
 /-- On degree-`k` components read through `deRhamComplexXIso` and `cochainComplexXIso`, the
 inverse isomorphism `(tangentCochainComplexIso I M).inv.f k` is `SmoothForm.toContMDiffSection`. -/
@@ -133,7 +130,8 @@ inverse isomorphism `(tangentCochainComplexIso I M).inv.f k` is `SmoothForm.toCo
 theorem tangentCochainComplexIso_inv_f_apply (k : ℕ) (x : (deRhamComplex I M).X k) :
     ((tangent I M).cochainComplexXIso k).hom ((tangentCochainComplexIso I M).inv.f k x) =
       SmoothForm.toContMDiffSection ((deRhamComplexXIso I k).hom x) := by
-  simp [tangentCochainComplexIso]; rfl
+  simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_apply,
+    SmoothForm.toContMDiffSectionEquiv_apply]
 
 /-- Evaluating `(tangentCochainComplexIso I M).hom.f k` on a section inserted via
 `cochainComplexXIso` yields `SmoothForm.ofContMDiffSection` inserted via `deRhamComplexXIso`. -/
@@ -142,7 +140,8 @@ theorem tangentCochainComplexIso_hom_f_inv_apply (k : ℕ)
     (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ⟯) :
     (tangentCochainComplexIso I M).hom.f k (((tangent I M).cochainComplexXIso k).inv s) =
       (deRhamComplexXIso I k).inv (SmoothForm.ofContMDiffSection s) := by
-  simp [tangentCochainComplexIso]; rfl
+  simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_symm_apply,
+    SmoothForm.toContMDiffSectionEquiv_symm_apply]
 
 /-- Evaluating `(tangentCochainComplexIso I M).inv.f k` on a smooth form inserted via
 `deRhamComplexXIso` yields `SmoothForm.toContMDiffSection` inserted via `cochainComplexXIso`. -/
@@ -150,7 +149,8 @@ theorem tangentCochainComplexIso_hom_f_inv_apply (k : ℕ)
 theorem tangentCochainComplexIso_inv_f_inv_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
     (tangentCochainComplexIso I M).inv.f k ((deRhamComplexXIso I k).inv φ) =
       ((tangent I M).cochainComplexXIso k).inv (SmoothForm.toContMDiffSection φ) := by
-  simp [tangentCochainComplexIso]; rfl
+  simp [tangentCochainComplexIso, -SmoothBundleForm.toContMDiffSectionEquiv_apply,
+    SmoothForm.toContMDiffSectionEquiv_apply]
 
 variable (I M) in
 /-- The `k`-th Chevalley–Eilenberg cohomology of the tangent Lie algebroid `tangent I M` is
