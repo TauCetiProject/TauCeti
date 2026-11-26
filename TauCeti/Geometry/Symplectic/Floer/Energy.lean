@@ -97,12 +97,13 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   component. Its local form along a line near which the perturbation is cylindrical is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, the constant-form case of the
   manifold statement in `TauCeti.Geometry.Symplectic.Floer.Manifold`.
-* `SymplecticForm.hamiltonianCurvature_eq_neg_poissonBracket`,
+* `SymplecticForm.hamiltonianCurvature_autonomous`,
   `SymplecticForm.floerEnergyDensity_fun_const`,
-  `SymplecticForm.floerEnergyDensity_fun_const_add_hamiltonianCurvature`: in the opposite case of
-  a perturbation `F ds + G dt` that does not depend on the domain point, the curvature is
-  `-{F, G}`; a constant map has energy density `{K_s, K_t}`, so at constant maps the energy
-  identity holds with no regularity assumption.
+  `SymplecticForm.floerEnergyDensity_fun_const_add_hamiltonianCurvature`: for a perturbation
+  `F ds + G dt` that does not depend on the domain point (as opposed to the target-independent
+  case `SymplecticForm.hamiltonianCurvature_const`), the curvature is `-{F, G}`; a constant map
+  has energy density `{K_s, K_t}`, so at constant maps the energy identity holds with no
+  regularity assumption.
 * `SymplecticForm.perturbedFDeriv_add_const`, `SymplecticForm.floerEnergyDensity_add_const`,
   `SymplecticForm.hamiltonianCurvature_add_const`: adding a target-independent one-form
   `k = k_s ds + k_t dt` to `K` changes neither the perturbed derivative nor the energy density,
@@ -296,7 +297,7 @@ theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
 /-- A perturbation `K = F ds + G dt` that does not depend on the domain point has curvature
 `R_K = -{F, G}`: only the Poisson bracket term remains. -/
 @[simp]
-theorem hamiltonianCurvature_eq_neg_poissonBracket (ω : SymplecticForm V) (F G : V → ℝ)
+theorem hamiltonianCurvature_autonomous (ω : SymplecticForm V) (F G : V → ℝ)
     (z : ℝ × ℝ) (x : V) :
     ω.hamiltonianCurvature (fun _ ↦ F) (fun _ ↦ G) z x = -ω.poissonBracket F G x := by
   simp [hamiltonianCurvature_def]
@@ -484,8 +485,9 @@ theorem floerEnergyDensity_fun_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ
 
 /-- **The energy identity at a constant map.** The Floer energy density of a constant map plus the
 curvature is the exterior derivative `∂_s K_t - ∂_t K_s` of the perturbation at its value, with no
-regularity assumption. This is the pointwise energy identity `floerEnergyDensity_eq` for a map
-with `ω(∂_s u, ∂_t u) = 0`. -/
+regularity assumption. This is the constant-map case of the pointwise energy identity
+`floerEnergyDensity_eq`, where `∂_s u = ∂_t u = 0`, holding without its differentiability
+hypotheses. -/
 theorem floerEnergyDensity_fun_const_add_hamiltonianCurvature (ω : SymplecticForm V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (x : V) (z : ℝ × ℝ) :
     ω.floerEnergyDensity Ks Kt (fun _ ↦ x) z + ω.hamiltonianCurvature Ks Kt z x =
