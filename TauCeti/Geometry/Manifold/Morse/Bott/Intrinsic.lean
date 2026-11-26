@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
 import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Morse–Bott functions, intrinsically
@@ -20,12 +21,9 @@ of critical submanifolds (`TauCeti.IsMorseBott`): every critical point `x` lies 
 smooth chart `q : M → E` of `M` with smooth inverse which flattens the critical set onto a linear
 subspace `V` of the model space, so that on the source of `q` a point is critical exactly when its
 coordinates lie in `V`, and at every critical point `z` in the source of `q` the kernel of the
-critical Hessian has the dimension of `V`. The flattened critical set has tangent space
-`(dq_z)⁻¹ V` at `z`, of the dimension of `V`, and the tangent space of a critical submanifold
-always lies in the kernel of the critical Hessian
-(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.tangentRange_le_ker_criticalHessian`), so the
-dimension count says that the two are equal. Different components of the critical set may have
-different dimensions.
+critical Hessian is `(dq_z)⁻¹ V`, the tangent space at `z` of the flattened critical set. The
+condition is stated without any assumption on the dimension of the model space. Different
+components of the critical set may have different dimensions.
 
 The Morse–Bott theory of `TauCeti.Geometry.Manifold.Morse.Bott` runs on a family of smooth
 embeddings `i a : S a → M` presenting the critical submanifolds (`TauCeti.IsMorseBottFamily`).
@@ -36,13 +34,15 @@ finite-dimensional space.
   point of a nondegenerate critical submanifold `i : S → M`, the slice chart of the embedding
   (`TauCeti.exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement`) flattens
   the image of `i`, which near that point is the whole critical set
-  (`IsNondegenerateCriticalSubmanifold.exists_isOpen_criticalPoints_inter_eq_range`), and the
-  kernel of the critical Hessian at each of its points has the dimension of `S`
+  (`IsNondegenerateCriticalSubmanifold.exists_isOpen_criticalPoints_inter_eq_range`). The
+  kernel of the critical Hessian at each of its points is the tangent space of `S`, which the
+  derivative of the chart carries into the slice, and both have the dimension of `S`
   (`IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff_finrank_ker`, both in the
   namespace `TauCeti.SmoothEmbedding`). This is
   `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart`.
 * **The intrinsic condition gives a family** (`TauCeti.IsMorseBott.exists_isMorseBottFamily`).
-  The dimension of the kernel of the critical Hessian is locally constant along the critical set
+  The derivative of a slice chart is invertible, so the kernel of the critical Hessian has the
+  dimension of the slice, which is therefore locally constant along the critical set
   (`TauCeti.IsMorseBott.eventually_finrank_ker_criticalHessian_eq`), hence constant on each of its
   connected components
   (`TauCeti.IsMorseBott.finrank_ker_criticalHessian_eq_of_mem_connectedComponentIn`). Near each
@@ -85,24 +85,37 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A function `f` on `M` is **Morse–Bott** when it is smooth and, near each critical point `x`,
 a smooth chart `q : M → E` with smooth inverse flattens the critical set onto a linear subspace
-`V` of the model space, such that at every critical point in the source of `q` the kernel of the
-critical Hessian has the dimension of `V`. Since the tangent space `(dq_z)⁻¹ V` of the critical set
-at such a point `z` lies in the kernel of the critical Hessian, this says that the two are equal.
-The equivalent description by a family of critical submanifolds is
-`TauCeti.isMorseBott_iff_exists_isMorseBottFamily`. -/
+`V` of the model space, such that at every critical point `z` in the source of `q` the kernel of
+the critical Hessian is `(dq_z)⁻¹ V`, the tangent space of the critical set at `z`. On a
+boundaryless manifold modelled on a finite-dimensional space, the equivalent description by a
+family of critical submanifolds is `TauCeti.isMorseBott_iff_exists_isMorseBottFamily`. -/
 structure IsMorseBott (I : ModelWithCorners ℝ E H) (f : M → ℝ) : Prop where
   /-- The function is smooth. -/
   contMDiff : ContMDiff I 𝓘(ℝ) ∞ f
   /-- Near each critical point, a smooth chart flattens the critical set onto a linear subspace
-  whose dimension is that of the kernel of the critical Hessian at each critical point of the
-  chart. -/
+  whose preimage under the derivative of the chart is the kernel of the critical Hessian at each
+  critical point of the chart. -/
   exists_sliceChart (x : M) (hx : x ∈ criticalPoints I f) :
     ∃ (q : OpenPartialHomeomorph M E) (V : Submodule ℝ E), x ∈ q.source ∧
       (∀ z ∈ q.source, ContMDiffAt I 𝓘(ℝ, E) ∞ q z) ∧
       (∀ z ∈ q.target, ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z) ∧
       (∀ z ∈ q.source, z ∈ criticalPoints I f ↔ q z ∈ V) ∧
       ∀ z ∈ q.source, z ∈ criticalPoints I f →
-        Module.finrank ℝ (criticalHessian I f z).ker = Module.finrank ℝ V
+        (criticalHessian I f z).ker = V.comap (mfderiv I 𝓘(ℝ, E) q z).toLinearMap
+
+/-- The derivative of a chart `q` with smooth inverse is invertible, so the preimage under it of
+a subspace `V` of the model space has the dimension of `V`. -/
+private theorem finrank_comap_mfderiv {q : OpenPartialHomeomorph M E}
+    (hq : ∀ z ∈ q.source, ContMDiffAt I 𝓘(ℝ, E) ∞ q z)
+    (hqs : ∀ z ∈ q.target, ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z) (V : Submodule ℝ E)
+    (hx : x ∈ q.source) :
+    Module.finrank ℝ (V.comap (mfderiv I 𝓘(ℝ, E) q x).toLinearMap) = Module.finrank ℝ V := by
+  have he : q.MDifferentiable I 𝓘(ℝ, E) :=
+    ⟨fun z hz ↦ ((hq z hz).mdifferentiableAt (by simp)).mdifferentiableWithinAt,
+      fun z hz ↦ ((hqs z hz).mdifferentiableAt (by simp)).mdifferentiableWithinAt⟩
+  let e : TangentSpace I x ≃ₗ[ℝ] E := (he.mfderiv hx).toLinearEquiv
+  change Module.finrank ℝ (V.comap (e : TangentSpace I x →ₗ[ℝ] E)) = _
+  rw [Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
 
 /-- `f` is Morse–Bott exactly when `-f` is: the two functions have the same critical points, and
 their critical Hessians are opposite, with the same kernels. -/
@@ -132,9 +145,9 @@ variable [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 2 M]
 
 /-- **A Morse–Bott critical submanifold is flattened by a slice chart of the critical set.** Near
 each point of a smooth nondegenerate critical submanifold `i : S → M` modelled without boundary,
-a smooth chart of `M` with values in the model space flattens the critical set onto a linear
-subspace of dimension `dim S`, which is the dimension of the kernel of the critical Hessian at every
-critical point of the chart. -/
+a smooth chart `q` of `M` with values in the model space flattens the critical set onto a linear
+subspace `V`, whose preimage under the derivative of `q` at every critical point of the chart is the
+kernel of the critical Hessian. -/
 theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
     (hi : i.IsNondegenerateCriticalSubmanifold f) (hn : ∞ ≤ n) (s : S) :
     ∃ (q : OpenPartialHomeomorph M E) (V : Submodule ℝ E), i s ∈ q.source ∧
@@ -142,7 +155,7 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
       (∀ z ∈ q.target, ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z) ∧
       (∀ z ∈ q.source, z ∈ criticalPoints I f ↔ q z ∈ V) ∧
       ∀ z ∈ q.source, z ∈ criticalPoints I f →
-        Module.finrank ℝ (criticalHessian I f z).ker = Module.finrank ℝ V := by
+        (criticalHessian I f z).ker = V.comap (mfderiv I 𝓘(ℝ, E) q z).toLinearMap := by
   have hn0 : n ≠ 0 := ne_bot_of_le_ne_bot (by simp) hn
   have h2 : (2 : ℕ∞ω) ≤ n := le_trans (by simp) hn
   -- The slice chart of the embedding, valued in the splitting `E' × F` of `E`, cut down to an
@@ -152,38 +165,46 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
   obtain ⟨Φ, hsΦ, hslice, hΦ, hΦs⟩ :=
     exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement i.isEmbedding hI
   obtain ⟨U, hUo, hU⟩ := hi.exists_isOpen_criticalPoints_inter_eq_range h2
-  have hsU : i s ∈ U := (hU.ge (mem_range_self s)).2
   set Ψ := Φ.restrOpen U hUo
+  set q := Ψ.transHomeomorph L.toHomeomorph
   -- The slice `E' × {0}`, read in `E` through `L`, has dimension `dim E'`.
-  have hVdim : Module.finrank ℝ (LinearMap.ker
-      ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)) = Module.finrank ℝ E' := by
+  set π := (ContinuousLinearMap.snd ℝ E' _).comp L.symm.toContinuousLinearMap
+  set V : Submodule ℝ E := LinearMap.ker π.toLinearMap
+  have hVdim : Module.finrank ℝ V = Module.finrank ℝ E' := by
+    change Module.finrank ℝ (LinearMap.ker
+      ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)) = _
     rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq,
       LinearMap.ker_snd, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
-  set V : Submodule ℝ E :=
-    LinearMap.ker ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)
-  have hV (p : E' × _) : L p ∈ V ↔ p.2 = 0 := by
-    simp [V]
   have hcrit (z : M) (hz : z ∈ Ψ.source) : z ∈ criticalPoints I f ↔ z ∈ range i := by
     rw [← hU, OpenPartialHomeomorph.restrOpen_source] at *
     exact ⟨fun h ↦ ⟨h, hz.2⟩, And.left⟩
-  refine ⟨Ψ.transHomeomorph L.toHomeomorph, V, ⟨hsΦ, hsU⟩, fun z hz ↦ ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ?_, fun z hz hzc ↦ ?_⟩
-  · -- The chart is `L ∘ Φ` on an open subset of the source of `Φ`.
-    have hz' : z ∈ Φ.source := by simpa [Ψ] using hz.1
-    exact L.contDiff.contMDiff.contMDiffAt.comp z
-      ((hΦ.contMDiffAt (Φ.open_source.mem_nhds hz')).of_le hn)
-  · -- Its inverse is `Φ⁻¹ ∘ L⁻¹`, and `L⁻¹` carries its target into the target of `Φ`.
-    have hz' : L.symm z ∈ Φ.target := by
-      simp only [OpenPartialHomeomorph.transHomeomorph_target, mem_preimage, Ψ] at hz
-      exact hz.1
-    exact ((hΦs.contMDiffAt (Φ.open_target.mem_nhds hz')).of_le hn).comp z
+  -- The chart is `L ∘ Φ` on an open subset of the source of `Φ`, and its inverse is `Φ⁻¹ ∘ L⁻¹`.
+  have hq (z : M) (hz : z ∈ q.source) : ContMDiffAt I 𝓘(ℝ, E) ∞ q z :=
+    L.contDiff.contMDiff.contMDiffAt.comp z ((hΦ.contMDiffAt (Φ.open_source.mem_nhds
+      (by simpa [q, Ψ] using hz.1))).of_le hn)
+  have hqs (z : E) (hz : z ∈ q.target) : ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z :=
+    ((hΦs.contMDiffAt (Φ.open_target.mem_nhds hz.1)).of_le hn).comp z
       L.symm.contDiff.contMDiff.contMDiffAt
-  · rw [hcrit z hz |>.trans (isSliceChart_iff.1 hslice z hz.1)]
-    simp [hV, J.range_eq_univ, Ψ]
-  · -- Every critical point of the chart lies on the submanifold, which has dimension `dim E'`.
-    obtain ⟨t, rfl⟩ := (hcrit z hz).1 hzc
-    rw [(hi.toIsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff_finrank_ker hn0).1 hi t,
-      hVdim]
+  have hflat (z : M) (hz : z ∈ q.source) : z ∈ criticalPoints I f ↔ q z ∈ V := by
+    rw [hcrit z hz |>.trans (isSliceChart_iff.1 hslice z hz.1)]
+    simp [V, π, q, J.range_eq_univ, Ψ, L]
+  refine ⟨q, V, ⟨hsΦ, (hU.ge (mem_range_self s)).2⟩, hq, hqs, hflat, fun z hz hzc ↦ ?_⟩
+  -- Every critical point of the chart lies on the submanifold, whose tangent space is the kernel
+  -- of the critical Hessian. The chart carries it into `V`, and both have dimension `dim E'`.
+  obtain ⟨t, rfl⟩ := (hcrit z hz).1 hzc
+  have hle : (criticalHessian I f (i t)).ker ≤ V.comap (mfderiv I 𝓘(ℝ, E) q (i t)).toLinearMap := by
+    have hπ := range_mfderiv_le_ker_mfderiv_of_eventually_eq (K := J) (I := I)
+      (J := 𝓘(ℝ, (i.isImmersion.isImmersionAt s).complement)) (f := π ∘ q) (g := i) (y := 0)
+      (p := t) <| by
+      filter_upwards [i.isEmbedding.continuous.continuousAt.preimage_mem_nhds
+        (q.open_source.mem_nhds hz)] with r hr
+      exact (hflat _ hr).1 (hi.mem_criticalPoints r)
+    rw [mfderiv_comp _ π.mdifferentiableAt ((hq _ hz).mdifferentiableAt (by simp)),
+      π.mfderiv_eq] at hπ
+    exact fun v hv ↦ hπ ((hi.ker_criticalHessian hn0 t).le hv)
+  refine Submodule.eq_of_le_of_finrank_le hle ?_
+  rw [finrank_comap_mfderiv hq hqs V hz, hVdim,
+    (hi.toIsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff_finrank_ker hn0).1 hi t]
 
 variable {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)]
   [∀ a, NormedSpace ℝ (E' a)] {H' : ι → Type*} [∀ a, TopologicalSpace (H' a)]
@@ -214,9 +235,10 @@ Morse–Bott function: it is the dimension of the critical set. -/
 theorem eventually_finrank_ker_criticalHessian_eq (hx : x ∈ criticalPoints I f) :
     ∀ᶠ z in 𝓝[criticalPoints I f] x, Module.finrank ℝ (criticalHessian I f z).ker =
       Module.finrank ℝ (criticalHessian I f x).ker := by
-  obtain ⟨q, V, hxq, -, -, -, hdim⟩ := hf.exists_sliceChart x hx
+  obtain ⟨q, V, hxq, hq, hqs, -, hker⟩ := hf.exists_sliceChart x hx
   filter_upwards [inter_mem_nhdsWithin _ (q.open_source.mem_nhds hxq)] with z hz
-  rw [hdim z hz.2 hz.1, hdim x hxq hx]
+  rw [hker z hz.2 hz.1, hker x hxq hx, finrank_comap_mfderiv hq hqs V hz.2,
+    finrank_comap_mfderiv hq hqs V hxq]
 
 /-- **The nullity of the critical Hessian is constant on each connected component of the
 critical set** of a Morse–Bott function. -/
@@ -240,7 +262,7 @@ theorem exists_sliceChart_connectedComponentIn (hx : x ∈ criticalPoints I f) :
       (∀ z ∈ q.target, ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z) ∧
       (∀ z ∈ q.source, z ∈ connectedComponentIn (criticalPoints I f) x ↔ q z ∈ V) ∧
       Module.finrank ℝ V = Module.finrank ℝ (criticalHessian I f x).ker := by
-  obtain ⟨q, V, hxq, hq, hqs, hcrit, hdim⟩ := hf.exists_sliceChart x hx
+  obtain ⟨q, V, hxq, hq, hqs, hcrit, hker⟩ := hf.exists_sliceChart x hx
   -- Cut the chart down to a coordinate ball, whose slice is convex, hence connected.
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 q.open_target (q x) (q.map_source hxq)
   set N := q.source ∩ q ⁻¹' Metric.ball (q x) r
@@ -254,11 +276,12 @@ theorem exists_sliceChart_connectedComponentIn (hx : x ∈ criticalPoints I f) :
     rintro _ ⟨w, ⟨hwb, hwV⟩, rfl⟩
     exact (hcrit _ (q.map_target (hball hwb))).2 (by rwa [q.right_inv (hball hwb)])
   refine ⟨q.restrOpen N hNo, V, ⟨hxq, hxq, Metric.mem_ball_self hr⟩,
-    fun z hz ↦ hq z hz.1, fun z hz ↦ hqs z ?_, fun z hz ↦ ?_, (hdim x hxq hx).symm⟩
+    fun z hz ↦ hq z hz.1, fun z hz ↦ hqs z ?_, fun z hz ↦ ?_, ?_⟩
   · exact hz.1
   · simp only [OpenPartialHomeomorph.coe_restrOpen]
     refine ⟨fun hz' ↦ (hcrit z hz.1).1 (connectedComponentIn_subset _ _ hz'), fun hzV ↦ ?_⟩
     exact hsub ⟨q z, ⟨hz.2.2, hzV⟩, q.left_inv hz.1⟩
+  · rw [hker x hxq hx, finrank_comap_mfderiv hq hqs V hxq]
 
 end IsMorseBott
 
