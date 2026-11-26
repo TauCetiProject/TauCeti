@@ -28,9 +28,12 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 
 `∫₀ᵗ a dX = ∑_{j < n} a j · (X (τ (j + 1) ⊓ t) - X (τ j ⊓ t))`  (`TauCeti.Finance.simpleGains`),
 
-which is continuous along continuous price paths (`TauCeti.Finance.continuous_simpleGains`),
-monotone along monotone price paths when holdings are nonnegative
-(`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`, `TauCeti.Finance.monotone_simpleGains`),
+which is linear in the strategy (`TauCeti.Finance.simpleGains_add`,
+`TauCeti.Finance.simpleGains_sub`, `TauCeti.Finance.simpleGains_smul`) with polarized product gains
+(`TauCeti.Finance.simpleGains_mul_eq_inv_four_mul_sub`), continuous along continuous price paths
+(`TauCeti.Finance.continuous_simpleGains`), monotone along monotone price paths when holdings are
+nonnegative (`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`,
+`TauCeti.Finance.monotone_simpleGains`),
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`), strongly progressive when `X` is strongly
 progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`), and a
@@ -278,6 +281,22 @@ theorem simpleGains_add (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → 
 theorem simpleGains_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω → ℝ) (X : ι → Ω → ℝ) (t : ι)
     (ω : Ω) : simpleGains τ n (c • a) X t ω = c * simpleGains τ n a X t ω := by
   simp only [simpleGains_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc]
+
+/-- The gains preserve subtraction in the strategy. -/
+@[simp]
+theorem simpleGains_sub (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) :
+    simpleGains τ n (a₁ - a₂) X t ω = simpleGains τ n a₁ X t ω - simpleGains τ n a₂ X t ω := by
+  simp only [simpleGains_def, Pi.sub_apply, sub_mul, sum_sub_distrib]
+
+/-- Polarization identity for elementary gains: gains under a product strategy `a₁ * a₂` equal
+one quarter of the difference of gains under `(a₁ + a₂) ^ 2` and `(a₁ - a₂) ^ 2`. -/
+theorem simpleGains_mul_eq_inv_four_mul_sub (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ)
+    (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleGains τ n (a₁ * a₂) X t ω =
+      4⁻¹ * (simpleGains τ n ((a₁ + a₂) ^ 2) X t ω - simpleGains τ n ((a₁ - a₂) ^ 2) X t ω) := by
+  have h : a₁ * a₂ = (4⁻¹ : ℝ) • ((a₁ + a₂) ^ 2 - (a₁ - a₂) ^ 2) := by ext; simp; ring
+  rw [h, simpleGains_smul, simpleGains_sub]
 
 /-- The simple holding is additive in the strategy. -/
 @[simp]

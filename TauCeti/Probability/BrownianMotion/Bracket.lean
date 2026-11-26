@@ -88,27 +88,24 @@ theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     IsCovariation ℱ P (Finance.simpleGains τ n a W) (Finance.simpleGains τ n b W)
       (fun t ω ↦ ∑ i ∈ Finset.range n,
         a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) := by
-  let C := Finance.simpleGains τ n (fun i ω ↦ a i ω * b i ω) (fun t _ ↦ (t : ℝ))
+  let C := Finance.simpleGains τ n (a * b) (fun t _ ↦ (t : ℝ))
   have htime : IsStronglyProgressive ℱ (fun t (_ : Ω) ↦ (t : ℝ)) :=
     NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ
   have hC : (fun t ω ↦ ∑ i ∈ Finset.range n,
       a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) = C :=
-    funext₂ fun t ω ↦ (Finance.simpleGains_def τ n (fun i ω ↦ a i ω * b i ω)
-      (fun u _ ↦ (u : ℝ)) t ω).symm
+    funext₂ fun t ω ↦ (Finance.simpleGains_def τ n (a * b) (fun u _ ↦ (u : ℝ)) t ω).symm
   rw [hC]; refine IsCovariation.mk
     (Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).mul (hb i hi)) htime)
     (ae_of_all P fun _ ↦ Finance.continuous_simpleGains NNReal.continuous_coe)
     (ae_of_all P fun ω ↦ ?_) (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
   · have hmono (c : ℕ → Ω → ℝ) : LocallyBoundedVariationOn
-        (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ :=
-      ((Finance.monotone_simpleGains (a := fun i ω ↦ c i ω ^ 2) (X := fun (u : ℝ≥0) _ ↦ (u : ℝ))
+        (Finance.simpleGains τ n (c ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ :=
+      ((Finance.monotone_simpleGains (a := c ^ 2) (X := fun (u : ℝ≥0) _ ↦ (u : ℝ))
         (ω := ω) hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono).monotoneOn
         Set.univ).locallyBoundedVariationOn
-    refine ((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
-      ((hmono (a + b)).sub (hmono (a - b)))).congr fun t _ ↦ ?_
-    simp only [C, Finance.simpleGains_def, Function.comp_apply, Pi.sub_apply, Pi.add_apply,
-      smul_eq_mul, ← Finset.sum_sub_distrib, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    exact ((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
+      ((hmono (a + b)).sub (hmono (a - b)))).congr fun t _ ↦
+      (Finance.simpleGains_mul_eq_inv_four_mul_sub τ n a b (fun u _ ↦ (u : ℝ)) t ω).symm
   · convert Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
       (hW.martingale_mul_simpleGains_sub hτ ha hb ha₂ hb₂) using 1
     ext t ω; simp [C, Finance.simpleGains_def]

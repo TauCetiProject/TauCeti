@@ -172,14 +172,10 @@ theorem martingale_mul_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
       (fun i hi ↦ (ha i hi).sub (hb i hi)) fun i hi ↦ (ha₂ i hi).sub (hb₂ i hi))).smul
     (4⁻¹ : ℝ) using 1
   ext t ω
-  have hsub : Finance.simpleGains τ n (a - b) W t ω =
-      Finance.simpleGains τ n a W t ω - Finance.simpleGains τ n b W t ω := by
-    simp only [Finance.simpleGains_def, Pi.sub_apply, sub_mul, sum_sub_distrib]
-  have hsum : ∑ i ∈ range n, a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t)) =
-      4⁻¹ * (∑ i ∈ range n, (a i ω + b i ω) ^ 2 * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t)) -
-        ∑ i ∈ range n, (a i ω - b i ω) ^ 2 * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) := by
-    rw [← sum_sub_distrib, mul_sum]; exact sum_congr rfl fun _ _ ↦ by ring
-  simp only [Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Finance.simpleGains_add, hsub, Pi.add_apply,
-    hsum]; ring
+  have hsum := Finance.simpleGains_mul_eq_inv_four_mul_sub τ n a b (fun u _ ↦ (u : ℝ)) t ω
+  simp only [Finance.simpleGains_def, Pi.mul_apply, Pi.pow_apply] at hsum
+  simp only [Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Finance.simpleGains_add,
+    Finance.simpleGains_sub, hsum]
+  ring
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

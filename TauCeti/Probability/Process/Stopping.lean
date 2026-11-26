@@ -126,7 +126,7 @@ private lemma stoppedProcess_eq_or_min {ι Ω E : Type*} [LinearOrder ι] [Nonem
     rcases le_total t u with htu | hut
     · rw [MeasureTheory.stoppedProcess_eq_of_le (hτ ▸ WithTop.coe_le_coe.2 htu), min_eq_left htu]
     · rw [MeasureTheory.stoppedProcess_eq_of_ge (hτ ▸ WithTop.coe_le_coe.2 hut),
-        min_eq_right hut, hτ, WithTop.untopA, WithTop.untopD_coe]
+        min_eq_right hut, hτ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
 
 /-- Stopping preserves continuity of a path, without any measurability or stopping-time
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
