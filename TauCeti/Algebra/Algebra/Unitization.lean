@@ -21,6 +21,9 @@ A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital alg
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 
+For a unital algebra `B`, the forced unitization is the product algebra `B × R`, through
+`(r, b) ↦ (r • 1 + b, r)`: forcing a new unit onto `B` adds a copy of the scalars.
+
 For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicative map
 `B → Unitization R B` (a star monoid homomorphism when `B` is a star algebra). It acts on
 `B ⊆ Unitization R B` by multiplication as `x` does, so it carries unitaries of `B` to unitaries
@@ -44,6 +47,10 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
+* `Unitization.prodAlgEquiv`: for a unital algebra `A`, the splitting
+  `Unitization R A ≃ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`, whose components are the lift of the
+  identity and the augmentation (`Unitization.fst_comp_prodAlgEquiv`,
+  `Unitization.snd_comp_prodAlgEquiv`).
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
@@ -222,6 +229,71 @@ theorem fstStarAlgEquivOfSubsingleton_symm_apply [Star R] [Star A] (r : R) :
     (fstStarAlgEquivOfSubsingleton R A).symm r = inl r := (rfl)
 
 end Subsingleton
+
+section Unital
+
+variable (R A : Type*) [CommSemiring R] [Ring A] [Algebra R A]
+
+/-- For a unital algebra `A`, the forced unitization splits as a product:
+`Unitization R A ≃ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`, with inverse
+`(b, r) ↦ (r, b - r • 1)`. Its components are `Unitization.lift` of the identity and the
+augmentation `Unitization.fstHom`. -/
+def prodAlgEquiv : Unitization R A ≃ₐ[R] A × R where
+  toFun x := (lift (NonUnitalAlgHom.id R A) x, x.fst)
+  invFun y := inl y.2 + inr (y.1 - algebraMap R A y.2)
+  left_inv x := by ext <;> simp
+  right_inv y := by ext <;> simp
+  map_mul' x y := Prod.ext (map_mul (lift (NonUnitalAlgHom.id R A)) x y) (fst_mul x y)
+  map_add' x y := Prod.ext (map_add (lift (NonUnitalAlgHom.id R A)) x y) (fst_add x y)
+  commutes' r := Prod.ext (by simp) (by simp)
+
+variable {R A}
+
+/-- The splitting `Unitization R A ≃ₐ[R] A × R` sends `(r, a)` to `(r • 1 + a, r)`. -/
+@[simp]
+theorem prodAlgEquiv_apply (x : Unitization R A) :
+    prodAlgEquiv R A x = (algebraMap R A x.fst + x.snd, x.fst) := by
+  simp [prodAlgEquiv]
+
+/-- The inverse of the splitting `Unitization R A ≃ₐ[R] A × R` sends `(b, r)` to
+`(r, b - r • 1)`. -/
+@[simp]
+theorem prodAlgEquiv_symm_apply (y : A × R) :
+    (prodAlgEquiv R A).symm y = inl y.2 + inr (y.1 - algebraMap R A y.2) :=
+  (rfl)
+
+/-- The first component of the splitting `Unitization R A ≃ₐ[R] A × R` is the map
+`(r, a) ↦ r • 1 + a`, the lift of the identity of `A`. -/
+@[simp]
+theorem fst_comp_prodAlgEquiv :
+    (RingHom.fst A R).comp (prodAlgEquiv R A : Unitization R A →+* A × R) =
+      (lift (NonUnitalAlgHom.id R A) : Unitization R A →+* A) :=
+  RingHom.ext fun x ↦ by simp
+
+/-- The second component of the splitting `Unitization R A ≃ₐ[R] A × R` is the augmentation. -/
+@[simp]
+theorem snd_comp_prodAlgEquiv :
+    (RingHom.snd A R).comp (prodAlgEquiv R A : Unitization R A →+* A × R) =
+      (fstHom R A : Unitization R A →+* R) :=
+  RingHom.ext fun x ↦ by simp
+
+/-- Through the splitting `Unitization R A ≃ₐ[R] A × R`, the lift of the identity of `A` is the
+first projection. -/
+-- Not `@[simp]`: `Unitization.lift_apply` rewrites the left-hand side.
+theorem lift_comp_prodAlgEquiv_symm :
+    (lift (NonUnitalAlgHom.id R A) : Unitization R A →+* A).comp
+        ((prodAlgEquiv R A).symm : A × R →+* Unitization R A) = RingHom.fst A R :=
+  RingHom.ext fun y ↦ by simp
+
+/-- Through the splitting `Unitization R A ≃ₐ[R] A × R`, the augmentation is the second
+projection. -/
+@[simp]
+theorem fstHom_comp_prodAlgEquiv_symm :
+    (fstHom R A : Unitization R A →+* R).comp
+        ((prodAlgEquiv R A).symm : A × R →+* Unitization R A) = RingHom.snd A R :=
+  RingHom.ext fun y ↦ by simp
+
+end Unital
 
 end Unitization
 
