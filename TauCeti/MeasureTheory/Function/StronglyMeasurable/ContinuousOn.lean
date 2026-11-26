@@ -73,9 +73,7 @@ theorem Continuous.comp_finStronglyMeasurable [TopologicalSpace β] [Zero β]
     FinStronglyMeasurable (fun a ↦ g (f a)) μ := by
   refine ⟨fun n ↦ (hf.approx n).map g, fun n ↦ ?_,
     fun a ↦ (hg.tendsto _).comp (hf.tendsto_approx a)⟩
-  refine lt_of_le_of_lt (measure_mono ?_) (hf.fin_support_approx n)
-  intro a ha
-  exact fun h ↦ ha (by simpa [h] using hg0)
+  exact SimpleFunc.FinMeasSupp.map (hf.fin_support_approx n) hg0
 
 /-- A zero-preserving continuous map preserves a.e. finite strong measurability for an
 arbitrary measure. -/
