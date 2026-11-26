@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.SpecificDegree
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
@@ -13,8 +14,9 @@ public import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 # The coordinate ring of the circle
 
 For a commutative ring `k`, `TauCeti.CircleRing k = k[x, y] ⧸ (x² + y² - 1)` is the coordinate
-ring of the affine unit circle over `k`. For `k = ℝ` it is the ring of the real algebraic circle,
-over which the rotation matrix `!![x, -y; y, x]` has determinant one.
+ring of the affine unit circle over `k`. For `k = ℝ` it is the ring of the real algebraic circle.
+Over every `k` the rotation matrix `!![x, -y; y, x]` has determinant one
+(`TauCeti.CircleRing.rotation`).
 
 A `k`-algebra map out of `CircleRing k` is the same as a point `(a, b)` with `a² + b² = 1`
 (`TauCeti.CircleRing.lift`, `TauCeti.CircleRing.algHom_ext`).
@@ -39,6 +41,7 @@ criterion for plane curves (`MvPolynomial.isDedekindDomain_quotient_span_singlet
 
 * `TauCeti.CircleRing k`: the coordinate ring `k[x, y] ⧸ (x² + y² - 1)`.
 * `TauCeti.CircleRing.x`, `TauCeti.CircleRing.y`: the two coordinate functions.
+* `TauCeti.CircleRing.rotation`: the rotation matrix `!![x, -y; y, x]` in `SL₂(CircleRing k)`.
 * `TauCeti.CircleRing.lift`: the `k`-algebra map sending `x, y` to a point `(a, b)` of the circle.
 * `TauCeti.CircleRing.stereographicEquiv`: the chart `1 + εx ≠ 0` is `k[t, (1 + t²)⁻¹]`.
 
@@ -142,6 +145,20 @@ private theorem map_x_sq_add_map_y_sq {S F : Type*} [CommRing S] [FunLike F (Cir
 inverse to each other. -/
 theorem y_sq : (y : CircleRing k) ^ 2 = (1 - x) * (1 + x) := by
   linear_combination (x_sq_add_y_sq (k := k))
+
+/-- **The rotation matrix** `!![x, -y; y, x]` over the circle, which has determinant
+`x² + y² = 1`. Over `k = ℝ`, evaluated at a point `z` of the unit circle it is the rotation of
+the plane by `z`. -/
+noncomputable def rotation : Matrix.SpecialLinearGroup (Fin 2) (CircleRing k) :=
+  ⟨!![x, -y; y, x], by
+    rw [Matrix.det_fin_two_of]
+    linear_combination (x_sq_add_y_sq (k := k))⟩
+
+/-- The entries of the rotation matrix. -/
+@[simp]
+theorem coe_rotation :
+    (rotation (k := k) : Matrix (Fin 2) (Fin 2) (CircleRing k)) = !![x, -y; y, x] :=
+  (rfl)
 
 variable {S : Type*} [CommRing S] [Algebra k S]
 

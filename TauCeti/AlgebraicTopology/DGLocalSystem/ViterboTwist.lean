@@ -101,6 +101,13 @@ theorem viterboTwist_def (γ : MooreFreeLoopSpace M) :
     viterboTwist R hd c γ = torusSign R c γ * viterboOrientationTwist R hd γ :=
   (rfl)
 
+/-- A loop of free loops acts on the Viterbo twist by the product of its actions on the torus sign
+and on the orientation part. -/
+theorem viterboTwist_ρ_apply (γ : MooreFreeLoopSpace M)
+    (Λ : MooreLoopSpace (MooreFreeLoopSpace M) γ) :
+    (viterboTwist R hd c γ).ρ Λ = (torusSign R c γ).ρ Λ * (viterboOrientationTwist R hd γ).ρ Λ := by
+  rw [viterboTwist_def, mul_ρ, MonoidHom.mul_apply]
+
 /-- For `c = 0` the Viterbo twist is its orientation part. -/
 @[simp]
 theorem viterboTwist_zero (γ : MooreFreeLoopSpace M) :
@@ -114,8 +121,8 @@ itself sweeps out a torus that factors through the circle, so the torus sign is 
 @[simp]
 theorem viterboTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace M) :
     (viterboTwist R hd c γ).ρ γ.rotationLoop = 1 := by
-  rw [viterboTwist_def, mul_ρ, MonoidHom.mul_apply, torusSign_ρ_rotationLoop,
-    viterboOrientationTwist_ρ_rotationLoop, mul_one]
+  rw [viterboTwist_ρ_apply, torusSign_ρ_rotationLoop, viterboOrientationTwist_ρ_rotationLoop,
+    mul_one]
 
 /-- **The Viterbo twist is its own inverse.** -/
 @[simp]
