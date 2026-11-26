@@ -16,8 +16,8 @@ import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 This file constructs `TauCeti.realAddValuation K : AddValuation K (WithTop ℝ)` on a nonarchimedean
 local field `K`, sending `0` to `⊤` and nonzero `x` to
-`((WithZero.log (normalizedValuationWithZero K x) : ℤ) : ℝ) = (addValInt K x : ℝ)`, so uniformizers
-have valuation `1` and units of `𝒪[K]` have valuation `0`.
+`((WithZero.log (normalizedValuationWithZero K x) : ℤ) : ℝ)`, so uniformizers have valuation `1` and
+units of `𝒪[K]` have valuation `0`.
 
 ## Main definitions
 
@@ -25,11 +25,11 @@ have valuation `1` and units of `𝒪[K]` have valuation `0`.
 
 ## Main results
 
-* `TauCeti.realAddValuation_of_ne_zero`, `TauCeti.realAddValuation_eq_addValInt_of_ne_zero`,
+* `TauCeti.realAddValuation_of_ne_zero`,
   `TauCeti.realAddValuation_eq_map_normalizedIntAddValuation`, `TauCeti.untop₀_realAddValuation`,
-  `TauCeti.realAddValuation_zpow_of_ne_zero`, `TauCeti.eq_realAddValuation`, and
-  `TauCeti.eq_realAddValuation_of_addValInt`: values on nonzero elements, comparison with
-  `addValInt` and `normalizedIntAddValuation`, `untop₀` decoding, integer powers, and uniqueness.
+  `TauCeti.realAddValuation_zpow_of_ne_zero`, and `TauCeti.eq_realAddValuation`: values on nonzero
+  elements, comparison with `normalizedIntAddValuation`, `untop₀` decoding, integer powers, and
+  uniqueness.
 * `TauCeti.realAddValuation_irreducible`, `TauCeti.realAddValuation_coe_integer`,
   `TauCeti.realAddValuation_natCast` and `TauCeti.realAddValuation_natCast_eq_nsmul`: values at
   uniformizers, integers and natural-number casts.
@@ -95,18 +95,13 @@ theorem realAddValuation_of_ne_zero {x : K} (hx : x ≠ 0) :
   rw [hcoe, ← WithZero.toAdd_unzero_eq_log WithZero.coe_ne_zero, WithZero.unzero_coe]
   exact realAddValuation_coe_unit (Units.mk0 x hx)
 
-/-- On nonzero `x : K`, `realAddValuation` is `addValInt K x` cast to `ℝ`. -/
-theorem realAddValuation_eq_addValInt_of_ne_zero {x : K} (hx : x ≠ 0) :
-    realAddValuation K x = ((addValInt K x : ℝ) : WithTop ℝ) := by
-  rw [realAddValuation_of_ne_zero hx, ← addValInt_def]
-
 /-- `realAddValuation K` is `normalizedIntAddValuation K` cast from `WithTop ℤ` to `WithTop ℝ`. -/
 theorem realAddValuation_eq_map_normalizedIntAddValuation (x : K) :
     realAddValuation K x = (normalizedIntAddValuation K x).map ((↑) : ℤ → ℝ) := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  · rw [realAddValuation_eq_addValInt_of_ne_zero hx, normalizedIntAddValuation_of_ne_zero hx,
-      WithTop.map_coe]
+  · rw [realAddValuation_of_ne_zero hx, normalizedIntAddValuation_of_ne_zero hx,
+      ord_intValuation_eq_log_normalizedValuationWithZero, WithTop.map_coe]
 
 /-- Decoding `realAddValuation K x` via `WithTop.untop₀` gives `WithZero.log` cast to `ℝ`. -/
 @[simp]
@@ -129,13 +124,6 @@ theorem eq_realAddValuation {v : AddValuation K (WithTop ℝ)}
   ext x; rcases eq_or_ne x 0 with rfl | hx
   · simp
   · rw [hv x hx, realAddValuation_of_ne_zero hx]
-
-/-- `realAddValuation K` is the unique `AddValuation K (WithTop ℝ)` matching `addValInt K` off `0`.
--/
-theorem eq_realAddValuation_of_addValInt {v : AddValuation K (WithTop ℝ)}
-    (hv : ∀ x : K, x ≠ 0 → v x = ((addValInt K x : ℝ) : WithTop ℝ)) :
-    v = realAddValuation K :=
-  eq_realAddValuation fun x hx ↦ by rw [hv x hx, addValInt_def]
 
 /-- A uniformizer of `𝒪[K]` has `realAddValuation` equal to `1`. -/
 @[simp]

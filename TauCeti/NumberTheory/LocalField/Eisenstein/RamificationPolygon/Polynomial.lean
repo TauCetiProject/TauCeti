@@ -50,7 +50,8 @@ coefficients whose valuations come from expanding `φ(α X + α)` without cancel
   `TauCeti.realAddValuation_coeff_one_ramificationPolynomial`,
   `TauCeti.realAddValuation_coeff_one_ramificationPolynomial_eq_height`,
   `TauCeti.addVal_coeff_one_ramificationPolynomial`, and
-  `TauCeti.addValInt_coeff_one_ramificationPolynomial`: coefficient valuations and `v_L(ρ₁) = H`.
+  `TauCeti.ord_intValuation_coeff_one_ramificationPolynomial`: coefficient valuations and
+  `v_L(ρ₁) = H`.
 
 ## References
 
@@ -363,17 +364,17 @@ theorem realAddValuation_coeff_natDegree_ramificationPolynomial {φ : 𝒪[K][X]
     isUnit_iff_realAddValuation_eq_zero.mp (hu.map (algebraMap 𝒪[K] 𝒪[L]))]
 
 /-- When `φ.leadingCoeff` is a unit of `𝒪[K]` and `α ≠ 0`,
-`(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff φ.natDegree` has `addValInt`
-equal to `0`. -/
-theorem addValInt_coeff_natDegree_ramificationPolynomial {φ : 𝒪[K][X]}
+`(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff φ.natDegree` has
+`Valuation.ord (intValuation L)` equal to `0`. -/
+theorem ord_intValuation_coeff_natDegree_ramificationPolynomial {φ : 𝒪[K][X]}
     (hu : IsUnit φ.leadingCoeff) {α : L} (hα : α ≠ 0) :
-    addValInt L
+    Valuation.ord (intValuation L)
       ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff φ.natDegree) = 0 := by
   have hinj : Function.Injective (algebraMap 𝒪[K] K) := FaithfulSMul.algebraMap_injective 𝒪[K] K
   rw [← natDegree_map_eq_of_injective hinj, coeff_natDegree_ramificationPolynomial _ hα,
     leadingCoeff_map_of_injective hinj, Algebra.algebraMap_ofSubsemiring_apply,
     ← Valuation.HasExtension.val_algebraMap (vA := valuation L),
-    addValInt_eq_zero_of_isUnit_integer (hu.map (algebraMap 𝒪[K] 𝒪[L]))]
+    ord_intValuation_eq_zero_of_isUnit_integer (hu.map (algebraMap 𝒪[K] 𝒪[L]))]
 
 end LeadingValuation
 
@@ -633,11 +634,12 @@ theorem addVal_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
         ENat.map_natCast, WithTop.coe_natCast]
 
 /-- **The linear-term integer valuation of `ramificationPolynomial` is `height K L`.** -/
-theorem addValInt_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
+theorem ord_intValuation_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
     (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤) :
-    addValInt L ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff 1) = height K L :=
-  addValInt_of_addVal_eq_natCast (addVal_coeff_one_ramificationPolynomial hφ hroot hgen)
+    Valuation.ord (intValuation L)
+      ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff 1) = height K L :=
+  ord_intValuation_of_addVal_eq_natCast (addVal_coeff_one_ramificationPolynomial hφ hroot hgen)
 
 end Separable
 
