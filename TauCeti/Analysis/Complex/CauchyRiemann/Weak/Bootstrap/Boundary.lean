@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.HigherOrder
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap.HalfPlane
+import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.ChainRule.HalfDisc
@@ -60,6 +63,10 @@ axis, and away from it to the interior theorem `TauCeti.memWkpLoc_of_isWeakCauch
   boundary condition is in `W^{ℓ+1,p}_loc` up to the boundary for `C^ℓ` data.
 * `TauCeti.forall_memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane`: for smooth data it is in
   `W^{k,p}_loc` up to the boundary for every `k`, also for `p = ∞`.
+* `TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod`: the same bootstrap in the adapted
+  coordinates `F × F` of a totally real submanifold, for a finite-dimensional normed space `F`,
+  with boundary values on the zero section `F × {0}` and the standard structure
+  `(v, w) ↦ (-w, v)` there.
 
 ## References
 
@@ -183,6 +190,72 @@ theorem forall_memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (hp : 2 < p)
     exact (hfin (q := 3) (by norm_num) (by norm_num) le_top k).memWkpLoc_top_inter_setOf_im_nonneg
       (by norm_num)
   · exact (hfin hp hp' le_rfl k).of_succ
+
+/-! ### Adapted coordinates -/
+
+section Adapted
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {W' : Set (ℂ × (F × F))} {J' : ℂ → F × F → (F × F) →L[ℝ] (F × F)} {η' : ℂ → F × F → F × F}
+  {w : ℂ → F × F}
+
+/-- **Elliptic bootstrapping at a totally real boundary, in adapted coordinates.** Let
+`2 < p < ∞` and `ℓ : ℕ`, and let `F` be a finite-dimensional real normed space. On `F × F` the
+zero section `F × {0}` plays the role of `ℝⁿ ⊆ ℂⁿ` and `(v, w) ↦ (-w, v)` that of multiplication
+by `i`. Let `J'` and `η'` be of class `C^ℓ` jointly in `(z, x)` on `W' ∩ {0 ≤ z.im}`, for an open
+set `W'` containing the graph of `w` over `H = Ω ∩ {0 ≤ t}`, with `J'(z, w z)² = -1` for almost
+every `z ∈ H`. Suppose that, for real `s ∈ Ω`, `w(s)` lies on the zero section and `J'(s, w s)` is
+the standard structure. A weak solution `w` on `H` of `∂ₛw + J'(z, w) ∂ₜw = η'(z, w)` then lies in
+`W^{ℓ+1,p}_loc(H)`. These are the coordinates of the adapted charts of a totally real submanifold
+(`TauCeti.IsAdaptedChart`). -/
+theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod (hp : 2 < p) (hp' : p ≠ ⊤) {ℓ : ℕ}
+    (hW : IsOpen W')
+    (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × (F × F) => J' x.1 x.2) (W' ∩ {x | 0 ≤ x.1.im}))
+    (hη : ContDiffOn ℝ ℓ (fun x : ℂ × (F × F) => η' x.1 x.2) (W' ∩ {x | 0 ≤ x.1.im}))
+    (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, w z) ∈ W')
+    (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}),
+      J' z (w z) * J' z (w z) = -1)
+    (hw : ∀ s : ℝ, (s : ℂ) ∈ Ω → (w s).2 = 0)
+    (hJs : ∀ s : ℝ, (s : ℂ) ∈ Ω →
+      J' s (w s) = (-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F))
+    (h : IsWeakCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J' η' w) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (ℓ + 1) w := by
+  -- Read `F × F` in the Euclidean model `G × G` with the `L²` product norm. There
+  -- `R (a, b) = (a, -b)` is an isometric involution that fixes the zero section and anticommutes
+  -- with the standard structure, so the boundary bootstrap for `R` applies.
+  let G := EuclideanSpace ℝ (Fin (Module.finrank ℝ F))
+  let T : (F × F) ≃L[ℝ] WithLp 2 (G × G) :=
+    ((toEuclidean (E := F)).prodCongr (toEuclidean (E := F))).trans
+      (WithLp.prodContinuousLinearEquiv 2 ℝ G G).symm
+  let R : WithLp 2 (G × G) ≃ₗᵢ[ℝ] WithLp 2 (G × G) :=
+    LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.refl ℝ G)
+      (LinearIsometryEquiv.neg ℝ)
+  have hT : ContDiff ℝ ⊤ (Prod.map id T.symm : ℂ × WithLp 2 (G × G) → ℂ × (F × F)) :=
+    contDiff_id.prodMap T.symm.contDiff
+  -- `Prod.map id T.symm` fixes the first coordinate.
+  have hmaps : MapsTo (Prod.map id T.symm) (Prod.map id T.symm ⁻¹' W' ∩ {x | 0 ≤ x.1.im})
+      (W' ∩ {x | 0 ≤ x.1.im}) := fun x hx => ⟨mem_preimage.1 hx.1, by simpa using hx.2⟩
+  have hconj := T.conjContinuousAlgEquiv.toContinuousLinearEquiv.contDiff (n := ℓ)
+  have key := memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (W := Prod.map id T.symm ⁻¹' W')
+    (J := fun z y => (T : F × F →L[ℝ] WithLp 2 (G × G)) ∘L J' z (T.symm y) ∘L
+      (T.symm : WithLp 2 (G × G) →L[ℝ] F × F))
+    (η := fun z y => T (η' z (T.symm y))) (R := R) (u := fun z => T (w z)) hp hp'
+    (hW.preimage hT.continuous)
+    ((hconj.comp_contDiffOn (hJ.comp (hT.of_le le_top).contDiffOn hmaps)).congr fun x _ => ?_)
+    (T.contDiff.comp_contDiffOn (hη.comp (hT.of_le le_top).contDiffOn hmaps))
+    (fun z hz => by simpa using huW z hz) ?_
+    (fun x => (WithLp.ext_iff 2).2 (Prod.ext (by simp [R]) (by simp [R]))) (fun s hs => ?_)
+    (fun s hs v => ?_) (h.continuousLinearEquiv_comp T)
+  · simpa using key.clm_comp (T.symm : WithLp 2 (G × G) →L[ℝ] F × F)
+  · ext v
+    simp
+  · filter_upwards [hJ2] with z hz
+    simp only [ContinuousLinearEquiv.symm_apply_apply,
+      ← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, ← map_mul, hz, map_neg, map_one]
+  · exact (WithLp.ext_iff 2).2 (Prod.ext (by simp [R, T]) (by simp [R, T, hw s hs]))
+  · exact (WithLp.ext_iff 2).2 (Prod.ext (by simp [R, T, hJs s hs]) (by simp [R, T, hJs s hs]))
+
+end Adapted
 
 /-! ### Checks -/
 

@@ -46,7 +46,7 @@ at `f x`.
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
   and its inverse are differentiable, their differentials are mutually inverse.
 * `OpenPartialHomeomorph.mvfderiv_eq_fderiv_symm_trans_comp`: for open partial homeomorphisms
-  `ψ₁`, `ψ₂` into a normed space, the differential of `ψ₂` is that of `ψ₁` followed by the
+  `ψ₁`, `ψ₂` into normed spaces, the differential of `ψ₂` is that of `ψ₁` followed by the
   derivative of the transition `ψ₂ ∘ ψ₁⁻¹`.
 * `OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans`: dually, the
   differential of `ψ₁⁻¹` is the derivative of the transition `ψ₂ ∘ ψ₁⁻¹` followed by the
@@ -197,21 +197,22 @@ theorem contDiffOn_symm_trans_and_symm_of_contMDiffOn {ψ₁ : OpenPartialHomeom
 end Transition
 
 /-- **The chain rule for a change of chart into a normed space.** Let `ψ₁` and `ψ₂` be open
-partial homeomorphisms from `M` into a normed space `F`, and let `w` lie in the source of the
-transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₁` is differentiable at `ψ₁⁻¹ w` and the transition at `w`, then the
-differential of `ψ₂` at `ψ₁⁻¹ w`, read in `F`, is that of `ψ₁` followed by the derivative of the
-transition at `w`. -/
-theorem mvfderiv_eq_fderiv_symm_trans_comp {ψ₁ ψ₂ : OpenPartialHomeomorph M F} {w : F}
+partial homeomorphisms from `M` into normed spaces `F` and `F'`, and let `w` lie in the source of
+the transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₁` is differentiable at `ψ₁⁻¹ w` and the transition at `w`, then
+the differential of `ψ₂` at `ψ₁⁻¹ w`, read in `F'`, is that of `ψ₁` followed by the derivative of
+the transition at `w`. -/
+theorem mvfderiv_eq_fderiv_symm_trans_comp {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] {ψ₁ : OpenPartialHomeomorph M F} {ψ₂ : OpenPartialHomeomorph M F'} {w : F}
     (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(𝕜, F) ψ₁ (ψ₁.symm w))
     (hΘ : DifferentiableAt 𝕜 (ψ₁.symm.trans ψ₂) w) :
     mvfderiv I ψ₂ (ψ₁.symm w) =
       (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w).comp (mvfderiv I ψ₁ (ψ₁.symm w)) := by
   have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
   -- Near `ψ₁⁻¹ w`, the chart `ψ₂` is the transition after `ψ₁`.
-  have hev : (ψ₂ : M → F) =ᶠ[𝓝 (ψ₁.symm w)] (ψ₁.symm.trans ψ₂) ∘ ψ₁ := by
+  have hev : (ψ₂ : M → F') =ᶠ[𝓝 (ψ₁.symm w)] (ψ₁.symm.trans ψ₂) ∘ ψ₁ := by
     filter_upwards [ψ₁.open_source.mem_nhds (ψ₁.map_target hw'.1)] with y hy
     simp [ψ₁.left_inv hy]
-  have hΘ' : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (ψ₁.symm.trans ψ₂) (ψ₁ (ψ₁.symm w)) := by
+  have hΘ' : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F') (ψ₁.symm.trans ψ₂) (ψ₁ (ψ₁.symm w)) := by
     rw [ψ₁.right_inv hw'.1]
     exact hΘ.mdifferentiableAt
   ext v
@@ -223,16 +224,17 @@ theorem mvfderiv_eq_fderiv_symm_trans_comp {ψ₁ ψ₂ : OpenPartialHomeomorph 
   rfl
 
 /-- **The chain rule for the inverse of a change of chart.** Let `ψ₁` and `ψ₂` be open partial
-homeomorphisms from `M` into a normed space `F`, and let `w` lie in the source of the transition
-`ψ₂ ∘ ψ₁⁻¹`. If `ψ₂⁻¹` is differentiable at the image of `w` under the transition and the
+homeomorphisms from `M` into normed spaces `F` and `F'`, and let `w` lie in the source of the
+transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₂⁻¹` is differentiable at the image of `w` under the transition and the
 transition at `w`, then the differential of `ψ₁⁻¹` at `w` is the derivative of the transition at
 `w` followed by the differential of `ψ₂⁻¹`. -/
-theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {ψ₁ ψ₂ : OpenPartialHomeomorph M F}
+theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] {ψ₁ : OpenPartialHomeomorph M F} {ψ₂ : OpenPartialHomeomorph M F'}
     {w : F} (hw : w ∈ (ψ₁.symm.trans ψ₂).source)
-    (hψ₂s : MDifferentiableAt 𝓘(𝕜, F) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hψ₂s : MDifferentiableAt 𝓘(𝕜, F') I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
     (hΘ : DifferentiableAt 𝕜 (ψ₁.symm.trans ψ₂) w) :
     mfderiv 𝓘(𝕜, F) I ψ₁.symm w =
-      (mfderiv 𝓘(𝕜, F) I ψ₂.symm (ψ₁.symm.trans ψ₂ w)).comp (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w) := by
+      (mfderiv 𝓘(𝕜, F') I ψ₂.symm (ψ₁.symm.trans ψ₂ w)).comp (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w) := by
   -- Near `w`, the inverse of `ψ₁` is the inverse of `ψ₂` after the transition.
   have hev : (ψ₁.symm : F → M) =ᶠ[𝓝 w] ψ₂.symm ∘ (ψ₁.symm.trans ψ₂) := by
     filter_upwards [(ψ₁.symm.trans ψ₂).open_source.mem_nhds hw] with q hq
