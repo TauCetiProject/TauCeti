@@ -54,6 +54,8 @@ an irreducibility assumption on the group.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec`: the Krull dimension of an affine scheme
+  `Spec R` equals `ringKrullDim R`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
   scheme is the supremum of the Krull dimensions of the members of an open cover.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion`: the image of a
@@ -100,6 +102,14 @@ namespace AlgebraicGeometry
 
 universe u
 
+/-- The Krull dimension of an affine scheme `Spec R` equals `ringKrullDim R`. -/
+@[simp]
+theorem topologicalKrullDim_Spec (R : CommRingCat.{u}) :
+    topologicalKrullDim (Spec R) = ringKrullDim R :=
+  -- The carrier of `Spec R` is `PrimeSpectrum R` by definition (`Scheme.Spec_carrier`), and no
+  -- lemma bridges `topologicalKrullDim` across this equality.
+  PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R
+
 /-- The Krull dimension of a scheme is the supremum of the Krull dimensions of the members of an
 open cover. -/
 theorem topologicalKrullDim_eq_iSup_openCover {X : Scheme.{u}} (𝒰 : X.OpenCover) :
@@ -137,12 +147,8 @@ theorem topologicalKrullDim_ne_top_of_locallyOfFiniteType {K : Type u} [Field K]
     let := φ.hom.toAlgebra
     have : Algebra.FiniteType K (X.affineOpenCover.X j) :=
       (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ hft)
-    rw [show 𝒰.X i = X.affineOpenCover.openCover.X j from
-      X.affineOpenCover.openCover.finiteSubcover_X i]
-    -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
-    rw [show topologicalKrullDim (X.affineOpenCover.openCover.X j) =
-      ringKrullDim (X.affineOpenCover.X j) from
-        PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _]
+    rw [show 𝒰.X i = Spec (X.affineOpenCover.X j) from
+      X.affineOpenCover.openCover.finiteSubcover_X i, topologicalKrullDim_Spec]
     cases subsingleton_or_nontrivial (X.affineOpenCover.X j)
     · rw [ringKrullDim_eq_bot_of_subsingleton]
       exact bot_ne_top
@@ -163,8 +169,7 @@ theorem topologicalKrullDim_pullback_Spec_algebraMap (K L A : Type u) [Field K] 
     topologicalKrullDim (pullback (Spec.map (CommRingCat.ofHom (algebraMap K A)))
       (Spec.map (CommRingCat.ofHom (algebraMap K L))) : Scheme.{u}) = ringKrullDim A := by
   rw [(pullbackSpecIso K A L).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq]
-  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
-  exact (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).trans <|
+  exact (topologicalKrullDim_Spec _).trans <|
     (ringKrullDim_eq_of_ringEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv).trans
       (ringKrullDim_tensorProduct_field_of_finiteType L A)
 
@@ -173,9 +178,7 @@ theorem topologicalKrullDim_pullback_Spec_algebraMap (K L A : Type u) [Field K] 
 theorem topologicalKrullDim_Spec_mvPolynomial (σ R : Type*) [Finite σ] [CommRing R]
     [IsNoetherianRing R] :
     topologicalKrullDim (Spec (.of (MvPolynomial σ R))) = ringKrullDim R + Nat.card σ :=
-  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
-  (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).trans
-    MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite
+  (topologicalKrullDim_Spec _).trans MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite
 
 /-- The Krull dimension of an affine scheme locally of finite type over a field `K` is invariant
 under extension of the base field. -/
@@ -188,7 +191,7 @@ private theorem topologicalKrullDim_pullback_Spec_of_field {K L : Type u} [Field
   have : Algebra.FiniteType K A :=
     (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp ‹_›
   exact (topologicalKrullDim_pullback_Spec_algebraMap K L A).trans
-    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim A).symm
+    (topologicalKrullDim_Spec A).symm
 
 /-- The Krull dimension of a scheme locally of finite type over a field `K` is invariant under
 extension of the base field. -/
@@ -327,7 +330,7 @@ theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Fiel
     rwa [← Set.image_singleton, g.isOpenEmbedding.injective.preimage_image] at this
   have : y.asIdeal.IsMaximal := (PrimeSpectrum.isClosed_singleton_iff_isMaximal y).mp hy
   rw [ringKrullDim_stalk_eq_coheight, coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
-    height_eq_ringKrullDim_of_isMaximal K, ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
+    height_eq_ringKrullDim_of_isMaximal K, ← topologicalKrullDim_Spec]
   exact topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f g.isOpenEmbedding
 
 /-- A locally closed subset of a finite-type scheme over a field has the dimension of its
