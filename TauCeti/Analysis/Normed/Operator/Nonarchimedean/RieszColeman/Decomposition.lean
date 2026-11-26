@@ -67,7 +67,7 @@ identities `H_(uE) = Q(0)⁻¹ Q` and `H_(u(1-E)) = Q(0) S` (which simplify to `
 
 ## Main results
 
-* `ContinuousLinearMap.IsRowCompact.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse`,
+* `IsRowCompact.isGoodZero_charPowerSeries_matrixCoeff_aeval_one_sub_C_mul_reverse`,
   `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszColemanProjection`,
   `ContinuousLinearMap.IsRowCompact.isRieszColemanProjection_rieszColemanProjection`, and
   `ContinuousLinearMap.IsRowCompact.exists_isRieszColemanProjection`: good Fredholm zero after
@@ -151,7 +151,7 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 /-- **Good zero after Coleman's polynomial transform.** For a row-compact `u` under a coprime
 factorisation `H_u = Q * S` with `IsUnit Q.leadingCoeff`, the operator `B(u)` for
 `B = 1 - lc(Q)⁻¹ Q*` has a good Fredholm zero at `1` of order `Q.natDegree`. -/
-theorem IsRowCompact.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse
+theorem IsRowCompact.isGoodZero_charPowerSeries_matrixCoeff_aeval_one_sub_C_mul_reverse
     {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {Q : R[X]} {S : R⟦X⟧}
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S)
@@ -205,7 +205,8 @@ theorem IsRowCompact.isRieszProjection_rieszColemanProjection
       (Polynomial.aeval u (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse))
       1 Q.natDegree (u.rieszColemanProjection Q) := by
   have hv := hu.aeval (coeff_zero_one_sub_C_mul_reverse (Ring.inverse_mul_cancel _ hQ))
-  have hGood := hu.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hQ hS hQS hcop
+  have hGood :=
+    hu.isGoodZero_charPowerSeries_matrixCoeff_aeval_one_sub_C_mul_reverse hQ hS hQS hcop
   exact hv.isRieszProjection_rieszProjection
     (fun _ ↦ hGood.evalAt_hasseDeriv_eq_zero) hGood.isUnit_evalAt_hasseDeriv
 
@@ -311,7 +312,8 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
   set v := Polynomial.aeval u B
   set E := u.rieszColemanProjection Q
   have hv : v.IsRowCompact := hu.aeval (coeff_zero_one_sub_C_mul_reverse hc)
-  have hv_good := hu.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hQ hS hQS hcop
+  have hv_good :=
+    hu.isGoodZero_charPowerSeries_matrixCoeff_aeval_one_sub_C_mul_reverse hQ hS hQS hcop
   have hEv : IsRieszProjection v 1 Q.natDegree E :=
     hu.isRieszProjection_rieszColemanProjection hQ hS hQS hcop
   have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
