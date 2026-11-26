@@ -39,13 +39,19 @@ the identity, and the change of coordinates flattening `f` is built from its squ
 naturality makes that change of coordinates independent of the linear coordinates in which it is
 computed. Nothing here is a substitute for the continuous functional calculus: `CFC.sqrt` computes
 the *positive* square root of a positive element of a C⋆-algebra, whereas what is needed here is a
-square root near `1` in a bare Banach algebra, with smooth dependence on the element.
+square root near `1` in a bare Banach algebra, with smooth dependence on the element. On the reals
+it is the usual square root on `(0, 2)` (`TauCeti.sqrtNearOne_real_eq_sqrt`), and on the nonnegative
+elements of the unit ball about `1` in an algebra with an isometric continuous functional calculus
+it is `CFC.sqrt` (`CFC.sqrt_eq_sqrtNearOne`, in
+`TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Analytic`), which is how the
+analyticity of `CFC.sqrt` at strictly positive elements is proved.
 
 ## Main declarations
 
 * `TauCeti.sqrtNearOne`: the binomial-series square root near the identity.
 * `TauCeti.mul_self_sqrtNearOne`: it is a square root on the open unit ball about `1`.
 * `TauCeti.analyticOnNhd_sqrtNearOne`: it is analytic on the open unit ball about `1`.
+* `TauCeti.sqrtNearOne_real_eq_sqrt`: on the reals it is the usual square root.
 * `TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`: uniqueness of
   square roots near `1`.
 * `TauCeti.eventually_mul_self_sqrtNearOne`, `TauCeti.eventually_sqrtNearOne_mul_self`: near `1`
@@ -144,6 +150,26 @@ theorem analyticOnNhd_sqrtNearOne : AnalyticOnNhd ℝ (sqrtNearOne A) (Metric.ba
       (mem_eball_binomialSeries_radius hx _)
   have hsub : AnalyticAt ℝ (fun z : A ↦ z - 1) x := analyticAt_id.sub analyticAt_const
   simpa only [Function.comp_def, ← sqrtNearOne_def] using hsum.comp_of_eq hsub rfl
+
+/-- **On the reals, the square root near the identity is the usual square root**: `√t` for
+`0 < t < 2`. -/
+theorem sqrtNearOne_real_eq_sqrt {t : ℝ} (ht : |t - 1| < 1) : sqrtNearOne ℝ t = √t := by
+  have hball : ∀ u : ℝ, |u - 1| < 1 → sqrtNearOne ℝ u * sqrtNearOne ℝ u = u := fun u hu ↦
+    mul_self_sqrtNearOne (by rwa [Real.norm_eq_abs])
+  -- The square root near the identity is continuous and has no zero on `(0, 2)`, and it is
+  -- positive at `1`, so it is positive on all of `(0, 2)`.
+  have hpos : 0 ≤ sqrtNearOne ℝ t := by
+    by_contra hneg
+    have hIoo : Metric.ball (1 : ℝ) 1 = Set.Ioo 0 2 := by norm_num [Real.ball_eq_Ioo]
+    obtain ⟨u, hu, hu0⟩ := isPreconnected_Ioo.intermediate_value
+      (⟨by linarith [(abs_lt.1 ht).1], by linarith [(abs_lt.1 ht).2]⟩ : t ∈ Set.Ioo (0 : ℝ) 2)
+      (by norm_num : (1 : ℝ) ∈ Set.Ioo 0 2)
+      (hIoo ▸ analyticOnNhd_sqrtNearOne.continuousOn)
+      (by rw [sqrtNearOne_one]; exact ⟨(not_le.1 hneg).le, zero_le_one⟩)
+    have hu' := hball u (by rw [abs_lt]; constructor <;> linarith [hu.1, hu.2])
+    rw [hu0, mul_zero] at hu'
+    exact hu.1.ne hu'
+  rw [← Real.sqrt_mul_self hpos, hball t ht]
 
 /-- The square root near the identity is analytic at the identity.  This gives a single
 neighborhood on which it is smooth to every finite order. -/

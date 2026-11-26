@@ -25,6 +25,11 @@ C⋆-structure, so they apply, for instance, to real matrices with the Loewner o
 complex C⋆-algebra. They are the estimates that keep a map built from square roots of congruences
 inside an order interval `[α, β]` of scalars.
 
+The square root is positively homogeneous, `√(c • a) = √c • √a` for real `c ≥ 0`
+(`CFC.sqrt_smul`); here nonnegative elements are closed under nonnegative real scalars because
+`c • a` is computed by the functional calculus of `a` (`CFC.smul_nonneg`), with no `StarModule`
+hypothesis.
+
 In a non-unital algebra with a continuous functional calculus, the square root also commutes with
 passing to the opposite algebra `Aᵐᵒᵖ`, which has the same order and the same squares, and
 `CFC.sqrt x` commutes with every element commuting with `x` (`Commute.cfcSqrt`). In a unital
@@ -41,6 +46,8 @@ bounds on `CFC.conjSqrt c⁻¹ʳ a` are equivalent to `a ≤ r • c` and `r •
   `CFC.sqrt a ≤ algebraMap ℝ A √r`.
 * `CFC.algebraMap_le_sqrt`: if `algebraMap ℝ A r ≤ a`, then
   `algebraMap ℝ A √r ≤ CFC.sqrt a`.
+* `CFC.smul_nonneg`: `0 ≤ c • a` for real `c ≥ 0` and `0 ≤ a`.
+* `CFC.sqrt_smul`: `√(c • a) = √c • √a` for real `c ≥ 0`.
 * `CFC.unop_sqrt`, `CFC.op_sqrt`: the square root may be computed in `A` or in `Aᵐᵒᵖ`.
 * `Commute.cfcSqrt`: `CFC.sqrt x` commutes with every element commuting with `x`.
 * `CFC.conjSqrt_algebraMap`: `CFC.conjSqrt c (algebraMap ℝ A r) = r • c` for `0 ≤ c`.
@@ -104,6 +111,35 @@ theorem op_sqrt (a : A) : op (sqrt a) = sqrt (op a) := by
   rw [← unop_inj, unop_sqrt, unop_op, unop_op]
 
 end MulOpposite
+
+section Smul
+
+variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
+  [StarOrderedRing A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+  [NonnegSpectrumClass ℝ A]
+
+/-- Nonnegative elements are closed under multiplication by nonnegative real scalars. Unlike
+`smul_nonneg`, this needs no `StarModule ℝ A`, since `c • a` is computed by the continuous
+functional calculus of `a`. -/
+protected theorem smul_nonneg {c : ℝ} (hc : 0 ≤ c) {a : A} (ha : 0 ≤ a) : 0 ≤ c • a := by
+  rw [← cfc_const_mul_id c a ha.isSelfAdjoint]
+  exact cfc_nonneg fun x hx ↦ mul_nonneg hc (spectrum_nonneg_of_nonneg ha hx)
+
+/-- The square root is positively homogeneous: `√(c • a) = √c • √a` for every real `c ≥ 0`. No
+nonnegativity hypothesis on `a` is needed: for `c > 0`, the element `c • a` is nonnegative exactly
+when `a` is, and otherwise both sides are `0`. -/
+theorem sqrt_smul [IsSemitopologicalRing A] [T2Space A] {c : ℝ} (hc : 0 ≤ c) (a : A) :
+    sqrt (c • a) = √c • sqrt a := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp
+  by_cases ha : 0 ≤ a
+  · refine sqrt_unique ?_ (CFC.smul_nonneg (Real.sqrt_nonneg c) (sqrt_nonneg a))
+    rw [smul_mul_smul_comm, Real.mul_self_sqrt hc.le, sqrt_mul_sqrt_self a ha]
+  · have hca : ¬0 ≤ c • a := fun h ↦ ha <| by
+      simpa [smul_smul, hc.ne'] using CFC.smul_nonneg (_root_.inv_nonneg.2 hc.le) h
+    rw [sqrt_of_not_nonneg ha, sqrt_of_not_nonneg hca, smul_zero]
+
+end Smul
 
 section Scalar
 
