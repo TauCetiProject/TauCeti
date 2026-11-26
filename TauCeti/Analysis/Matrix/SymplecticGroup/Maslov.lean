@@ -43,8 +43,11 @@ It satisfies the axioms of McDuff and Salamon, Theorem 2.2.12:
   matrices `t ↦ e^{2π i t} I` in `U(n) ⊆ Sp(2n)` has Maslov index `n`
   (`TauCeti.GLSymplectic.maslovIndex_scalarRotationLoop`).
 
-Concatenation adds Maslov indices, reversal and pointwise inversion negate them, and a loop has
-the Maslov index of its loop of orthogonal polar factors.
+Concatenation adds Maslov indices, reversal and pointwise inversion negate them, conjugation by a
+fixed symplectic matrix keeps them (`TauCeti.GLSymplectic.maslovIndex_map_conj`), and a loop has
+the Maslov index of its loop of orthogonal polar factors. A loop along which `ρ` takes only the
+values `1` and `-1` has Maslov index zero
+(`TauCeti.GLSymplectic.maslovIndex_eq_zero_of_forall_maslovPhase_sq_eq_one`).
 
 The map `ρ` is not multiplicative on the whole symplectic group, so the product axiom is proved
 by a homotopy: contracting the positive factors of both loops through symplectic matrices
@@ -168,6 +171,18 @@ theorem maslovIndex_eq_of_homotopic {A : GLSymplectic n ℝ} {γ₀ γ₁ : Path
 theorem maslovIndex_refl (A : GLSymplectic n ℝ) : maslovIndex (Path.refl A) = 0 :=
   (Circle.degree_congr _ (Path.refl (maslovPhase A)) fun _ ↦ by simp).trans (Circle.degree_refl _)
 
+/-- **A loop with `ρ = ±1` has Maslov index zero.** If `ρ` takes only the values `1` and `-1`
+along a loop of symplectic matrices, the loop `t ↦ ρ(γ t)` avoids `i`, so it has degree zero. -/
+theorem maslovIndex_eq_zero_of_forall_maslovPhase_sq_eq_one {A : GLSymplectic n ℝ}
+    (γ : Path A A) (h : ∀ t, maslovPhase (γ t) ^ 2 = 1) : maslovIndex γ = 0 := by
+  rw [maslovIndex_def]
+  refine Circle.degree_eq_zero_of_forall_ne _ (c := Circle.exp (Real.pi / 2)) fun t ht ↦ ?_
+  have hI : (Circle.exp (Real.pi / 2) : ℂ) = Complex.I := by simp
+  have h' := congrArg ((↑) : Circle → ℂ) (h t)
+  rw [Path.map_coe, Function.comp_apply] at ht
+  rw [ht, Circle.coe_pow, hI] at h'
+  norm_num at h'
+
 /-- The Maslov index is additive under concatenation of loops. -/
 @[simp]
 theorem maslovIndex_trans {A : GLSymplectic n ℝ} (γ₁ γ₂ : Path A A) :
@@ -238,6 +253,14 @@ theorem maslovIndex_inv {A : GLSymplectic n ℝ} (γ : Path A A) :
   have h1 : maslovIndex (γ.inv.mul γ) = 0 :=
     (Circle.degree_congr _ (Path.refl 1) fun t ↦ by simp).trans (Circle.degree_refl 1)
   omega
+
+/-- **Conjugation invariance.** Conjugating a loop of symplectic matrices by a fixed symplectic
+matrix `P` does not change its Maslov index: the loop `t ↦ P γ(t) P⁻¹` is the product of `γ` with
+two constant loops. -/
+theorem maslovIndex_map_conj (P : GLSymplectic n ℝ) {A : GLSymplectic n ℝ} (γ : Path A A) :
+    maslovIndex (γ.map (f := fun X ↦ P * X * P⁻¹) (by fun_prop)) = maslovIndex γ := by
+  rw [maslovIndex_congr _ (((Path.refl P).mul γ).mul (Path.refl P⁻¹)) fun t ↦ by simp,
+    maslovIndex_mul, maslovIndex_mul, maslovIndex_refl, maslovIndex_refl, zero_add, add_zero]
 
 /-! ### The loop of scalar rotations -/
 
