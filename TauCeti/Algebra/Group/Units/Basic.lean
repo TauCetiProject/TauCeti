@@ -24,6 +24,8 @@ ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow
   homomorphism exactly when it is the image of a unit under `Units.map`.
 * `Units.mul_mul_inv_eq_iff_eq_of_commute`: for `z` commuting with a unit `u`, the conjugate of
   `a` by `u` equals `z` exactly when `a` does.
+* `Units.bijective_map_coeHom`: `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective: the
+  units of the group `Mˣ` are the units of `M`.
 * `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
 * `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
   `(l * a)⁻¹ * l⁻¹ * b = 1`.
@@ -44,6 +46,12 @@ theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
 end TauCeti
 
 namespace Units
+
+/-- `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective: the units of the group `Mˣ` are the
+units of `M`. -/
+theorem bijective_map_coeHom (M : Type*) [Monoid M] : Function.Bijective (map (coeHom M)) :=
+  ⟨fun u v h => Units.ext (Units.ext (by simpa using congrArg Units.val h)),
+    fun u => ⟨⟨u, u⁻¹, mul_inv_cancel u, inv_mul_cancel u⟩, Units.ext (by simp)⟩⟩
 
 /-- For an element `z` commuting with a unit `u`, the conjugate of `a` by `u` equals `z` exactly
 when `a` does. -/
