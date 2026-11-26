@@ -462,6 +462,14 @@ theorem orientationLineComplexChartIso_hom_f_apply (n : ℕ) (c : orientationLin
       orientationLineChartEquivAt φ φ' R n c :=
   (rfl)
 
+/-- The inverse of the isomorphism of the Morse complexes on orientation lines for two families of
+Morse charts is the inverse of the transport of the chains. -/
+@[simp]
+theorem orientationLineComplexChartIso_inv_f_apply (n : ℕ) (c : orientationLineChainsAt φ' R n) :
+    (hX.orientationLineComplexChartIso hf R hφ hφ' hsq hsq').inv.f n c =
+      (orientationLineChartEquivAt φ φ' R n).symm c :=
+  (rfl)
+
 /-- The isomorphism of the Morse complexes on orientation lines from a family of Morse charts to
 itself is the identity. -/
 @[simp]
