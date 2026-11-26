@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 
@@ -23,7 +24,7 @@ When the series converges in operator norm, it evaluates pointwise
 dominates every summand on nonnegative elements (`PositiveContinuousLinearMap.le_tsum_apply`), and
 vanishes at a nonnegative element if and only if every summand vanishes there
 (`PositiveContinuousLinearMap.tsum_apply_eq_zero_iff`). The bundled sum satisfies `tsum_zero`,
-`tsum_eq_zero_of_not_summable`, `tsum_eq_sum`, and `tsum_add`.
+`tsum_eq_zero_of_not_summable`, `tsum_eq_sum`, `tsum_add`, `tsum_comp`, and `comp_tsum`.
 
 ## Main declarations
 
@@ -33,8 +34,10 @@ vanishes at a nonnegative element if and only if every summand vanishes there
 * `PositiveContinuousLinearMap.tsum_zero`,
   `PositiveContinuousLinearMap.tsum_eq_zero_of_not_summable`,
   `PositiveContinuousLinearMap.tsum_eq_sum`,
-  `PositiveContinuousLinearMap.tsum_add`: algebraic, finite-support, and nonsummable
-  simplification laws.
+  `PositiveContinuousLinearMap.tsum_add`,
+  `PositiveContinuousLinearMap.tsum_comp`,
+  `PositiveContinuousLinearMap.comp_tsum`: algebraic, composition, finite-support, and
+  nonsummable simplification laws.
 * `PositiveContinuousLinearMap.hasSum_tsum_apply`, `PositiveContinuousLinearMap.tsum_apply`:
   pointwise evaluation of a summable positive series.
 * `PositiveContinuousLinearMap.le_tsum_apply`,
@@ -49,6 +52,8 @@ noncomputable section
 open Filter Topology
 
 namespace PositiveContinuousLinearMap
+
+section
 
 variable {ι 𝕜 E₁ E₂ : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [PartialOrder E₁]
@@ -134,5 +139,38 @@ theorem tsum_apply_eq_zero_iff {f : ι → E₁ →P[𝕜] E₂} (hf : Summable 
     rw [hasSum_zero_iff_of_nonneg fun i => (f i).map_nonneg ha]
     exact ⟨fun hf0 => congrFun hf0, fun hf0 => funext hf0⟩
   exact ⟨fun ha0 => h0.1 (ha0 ▸ h), fun ha0 => h.unique (h0.2 ha0)⟩
+
+end
+
+section Comp
+
+variable {ι 𝕜 E₁ E₂ E₃ : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [PartialOrder E₁]
+  [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [PartialOrder E₂]
+  [SeminormedAddCommGroup E₃] [NormedSpace 𝕜 E₃] [PartialOrder E₃]
+  [IsOrderedAddMonoid E₃] [OrderClosedTopology E₃]
+
+/-- Precomposition with a positive continuous linear map distributes over `tsum` of a summable
+family. -/
+theorem tsum_comp {g : ι → E₂ →P[𝕜] E₃} (hg : Summable fun i => (g i : E₂ →L[𝕜] E₃))
+    (f : E₁ →P[𝕜] E₂) :
+    (tsum g).comp f = tsum (fun i => (g i).comp f) := by
+  refine toContinuousLinearMap_injective ?_
+  have hL := ((ContinuousLinearMap.compL 𝕜 E₁ E₂ E₃).flip (f : E₁ →L[𝕜] E₂)).map_tsum hg
+  simpa only [toContinuousLinearMap_comp, toContinuousLinearMap_tsum,
+    ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply] using hL
+
+/-- Postcomposition with a positive continuous linear map distributes over `tsum` of a summable
+family. -/
+theorem comp_tsum [IsOrderedAddMonoid E₂] [OrderClosedTopology E₂]
+    (g : E₂ →P[𝕜] E₃) {f : ι → E₁ →P[𝕜] E₂}
+    (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂)) :
+    g.comp (tsum f) = tsum (fun i => g.comp (f i)) := by
+  refine toContinuousLinearMap_injective ?_
+  have hL := (ContinuousLinearMap.compL 𝕜 E₁ E₂ E₃ (g : E₂ →L[𝕜] E₃)).map_tsum hf
+  simpa only [toContinuousLinearMap_comp, toContinuousLinearMap_tsum,
+    ContinuousLinearMap.compL_apply] using hL
+
+end Comp
 
 end PositiveContinuousLinearMap
