@@ -37,7 +37,7 @@ Neumann problem (`TauCeti.PDE.exists_forall_energyFormH1_eq_iff`).
 * **A mass term restores coercivity.** With `Γ = ∅`, `-u'' + u = 1` has the constant `1` as its
   unique weak solution (`forall_energyFormH1_eq_setIntegral_iff`): the energy form
   `∫ (u' v' + u v)` is the `H¹` inner product
-  (`TauCeti.PDE.energyFormH1_one_zero_one`), coercive with no Poincaré inequality.
+  (`TauCeti.PDE.energyFormH1_one_zero_const`), coercive with no Poincaré inequality.
 
 The Sobolev functions on the interval domain are compared with those on the real interval
 `(0, 1)` along the isometry `t ↦ t e₀` of `ℝ` onto the Euclidean line
@@ -139,7 +139,7 @@ private theorem exists_solution :
   · filter_upwards [value_intervalDomainEquivL_symm_ae w, hmp.quasiMeasurePreserving.ae hw]
       with x h1 h2
     rw [h1]
-    simpa [lineEquiv_symm_apply] using h2
+    simpa using h2
   · -- It vanishes at `0`, since its continuous representative is `t - t² / 2`.
     rw [singleton_zero_eq, ← intervalDomainEquivL_mem_w1pVanishingOnSubmodule_singleton_iff,
       ContinuousLinearEquiv.apply_symm_apply,
@@ -218,8 +218,8 @@ theorem forall_energyFormH1_eq_setIntegral_iff
   have hconst (v : W1p volume (intervalDomain 0 1) 2) :
       energyFormH1 (fun _ => 1) 0 (fun _ => 1) (W1p.const 1) v =
         ∫ x in intervalDomain 0 1, W1p.value v x := by
-    rw [energyFormH1_one_zero_one, energyFormH1_one_zero_zero_eq_inner, W1p.gradient_const,
-      inner_zero_left, zero_add, W1p.inner_value_eq_setIntegral]
+    rw [energyFormH1_one_zero_const, one_mul, energyFormH1_one_zero_zero_eq_inner,
+      W1p.gradient_const, inner_zero_left, zero_add, W1p.inner_value_eq_setIntegral]
     refine integral_congr_ae ?_
     filter_upwards [W1p.value_const_ae (mu := volume) (Omega := intervalDomain 0 1) (p := 2) 1]
       with x hx
@@ -231,9 +231,9 @@ theorem forall_energyFormH1_eq_setIntegral_iff
       (volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1)))) :=
     memLp_top_const (energyIntegrand (1 : Matrix (Fin 1) (Fin 1) ℝ) 0 1)
   have hw := energyFormH1_sub_left hcoeff u (u - W1p.const 1) (W1p.const 1)
-  rw [hu, hconst, sub_self, energyFormH1_one_zero_one, energyFormH1_one_zero_zero_eq_inner,
-    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, add_comm,
-    ← W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq] at hw
+  rw [hu, hconst, sub_self, energyFormH1_one_zero_const, one_mul,
+    energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
+    add_comm, ← W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq] at hw
   exact sub_eq_zero.1 (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hw))
 
 end TauCeti.Examples.MixedProblemUnitInterval
