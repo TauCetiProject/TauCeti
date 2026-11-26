@@ -8,9 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RingTheory.OrzechProperty
 public import TauCeti.LinearAlgebra.FixedSubmodule
+public import TauCeti.LinearAlgebra.Semisimple
 
 /-!
 # Weak semisimplicity at the eigenvalue one
@@ -41,9 +41,9 @@ semisimple.
 * `LinearEquiv.isWeaklySemisimple_iff`: an intertwining linear equivalence preserves it.
 * `Module.End.isWeaklySemisimple_prodMap_iff`, `Module.End.isWeaklySemisimple_piMap_iff`: a
   product of endomorphisms is weakly semisimple exactly when every factor is.
-* `Module.End.IsSemisimple.isCompl_ker_range`, `Module.End.IsSemisimple.isWeaklySemisimple`: the
-  kernel and range of a semisimple endomorphism are complements, so semisimple endomorphisms are
-  weakly semisimple.
+* `Module.End.IsSemisimple.isWeaklySemisimple`: semisimple endomorphisms are weakly semisimple,
+  since the kernel and range of a semisimple endomorphism are complements
+  (`Module.End.IsSemisimple.isCompl_ker_range`).
 * `Module.End.isWeaklySemisimple_iff_surjective`: on a finite module over a ring with the Orzech
   property (for instance any commutative ring), surjectivity of the invariants-to-coinvariants
   map already implies bijectivity; in particular vanishing coinvariants force vanishing
@@ -134,7 +134,7 @@ theorem isWeaklySemisimple_iff_isCompl (f : End R M) :
 endomorphism. -/
 noncomputable def IsWeaklySemisimple.invariantCoinvariantEquiv {f : End R M}
     (hf : f.IsWeaklySemisimple) : f.fixedSubmodule ≃ₗ[R] M ⧸ range (f - 1) :=
-  (quotientEquivOfIsCompl _ _ ((isWeaklySemisimple_iff_isCompl f).mp hf).symm).symm
+  LinearEquiv.ofBijective f.invariantCoinvariantMap hf.bijective
 
 @[simp]
 theorem IsWeaklySemisimple.invariantCoinvariantEquiv_apply {f : End R M}
@@ -156,11 +156,14 @@ theorem IsWeaklySemisimple.invariantCoinvariantEquiv_symm_mk {f : End R M}
     (hf : f.IsWeaklySemisimple) (x : M) :
     hf.invariantCoinvariantEquiv.symm (Submodule.Quotient.mk x) =
       f.fixedSubmodule.projectionOnto (range (f - 1))
-        ((isWeaklySemisimple_iff_isCompl f).mp hf) x :=
-  (rfl)
+        ((isWeaklySemisimple_iff_isCompl f).mp hf) x := by
+  rw [LinearEquiv.symm_apply_eq, invariantCoinvariantEquiv_apply, Submodule.Quotient.eq,
+    coe_projectionOnto_apply]
+  exact sub_projection_mem _ x
 
 /-- The identity is weakly semisimple: everything is invariant and the coinvariants are the
 whole module. -/
+@[simp]
 theorem isWeaklySemisimple_one : (1 : End R M).IsWeaklySemisimple := by
   rw [isWeaklySemisimple_iff_isCompl, sub_self, LinearMap.range_zero,
     fixedSubmodule_eq_top_iff.mpr one_eq_id]
@@ -189,6 +192,7 @@ protected theorem _root_.LinearEquiv.isWeaklySemisimple_iff (f : End R M) (g : E
     e.map_fixedSubmodule he, hrange]
 
 /-- A product of two endomorphisms is weakly semisimple exactly when both factors are. -/
+@[simp]
 theorem isWeaklySemisimple_prodMap_iff (f : End R M) (g : End R N) :
     IsWeaklySemisimple (f.prodMap g) ↔ f.IsWeaklySemisimple ∧ g.IsWeaklySemisimple := by
   have hsub : f.prodMap g - 1 = (f - 1).prodMap (g - 1) := by
@@ -200,6 +204,7 @@ theorem isWeaklySemisimple_prodMap_iff (f : End R M) (g : End R N) :
 
 /-- A componentwise endomorphism of a product is weakly semisimple exactly when every component
 is. The index type need not be finite. -/
+@[simp]
 theorem isWeaklySemisimple_piMap_iff {ι : Type*} {W : ι → Type*} [∀ i, AddCommGroup (W i)]
     [∀ i, Module R (W i)] (g : ∀ i, End R (W i)) :
     IsWeaklySemisimple (LinearMap.piMap g) ↔ ∀ i, (g i).IsWeaklySemisimple := by
@@ -272,39 +277,6 @@ end Finite
 section CommRing
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- The kernel and the range of a semisimple endomorphism are complementary submodules. No
-finiteness assumption is needed. -/
-theorem IsSemisimple.isCompl_ker_range {g : End R M} (hg : g.IsSemisimple) :
-    IsCompl (LinearMap.ker g) (LinearMap.range g) := by
-  have hker : LinearMap.ker g ∈ g.invtSubmodule := by
-    rw [mem_invtSubmodule]
-    intro x hx
-    rw [Submodule.mem_comap, LinearMap.mem_ker, LinearMap.mem_ker.mp hx, map_zero]
-  have hrange (p : Submodule R M) : LinearMap.range g ≤ p → p ∈ g.invtSubmodule := by
-    intro hp
-    rw [mem_invtSubmodule]
-    exact fun x _ ↦ hp (mem_range_self g x)
-  rw [isCompl_iff]
-  refine ⟨?_, ?_⟩
-  · -- `x = g y` with `g x = 0`; decompose `y` along an invariant complement `q` of `ker g`.
-    obtain ⟨q, hq, hkq⟩ := isSemisimple_iff.mp hg _ hker
-    rw [Submodule.disjoint_def]
-    rintro _ hx ⟨y, rfl⟩
-    obtain ⟨k, z, hk, hz, rfl⟩ := codisjoint_iff_exists_add_eq.mp hkq.codisjoint y
-    have hgz : g (k + z) = g z := by simp [LinearMap.mem_ker.mp hk]
-    rw [hgz] at hx ⊢
-    exact Submodule.disjoint_def.mp hkq.disjoint _ hx ((mem_invtSubmodule g).mp hq hz)
-  · -- An invariant complement `q` of `ker g ⊔ range g` satisfies `g q = 0`, so `q = 0`.
-    obtain ⟨q, hq, hpq⟩ :=
-      isSemisimple_iff.mp hg _ (hrange (LinearMap.ker g ⊔ LinearMap.range g) le_sup_right)
-    have hq_bot : q = ⊥ := by
-      rw [eq_bot_iff]
-      intro z hz
-      have hgz : g z = 0 := Submodule.disjoint_def.mp hpq.disjoint _
-        (mem_sup_right (mem_range_self g z)) ((mem_invtSubmodule g).mp hq hz)
-      exact Submodule.disjoint_def.mp hpq.disjoint _ (mem_sup_left hgz) hz
-    rw [codisjoint_iff, ← hpq.sup_eq_top, hq_bot, sup_bot_eq]
 
 /-- A semisimple endomorphism is weakly semisimple. No finiteness assumption is needed. -/
 theorem IsSemisimple.isWeaklySemisimple {f : End R M} (hf : f.IsSemisimple) :
