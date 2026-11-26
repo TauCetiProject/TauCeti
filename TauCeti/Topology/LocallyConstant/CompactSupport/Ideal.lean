@@ -76,8 +76,7 @@ theorem mem_compactlySupportedIdeal {f : LocallyConstant X R} :
 /-- The characteristic function of a compact clopen set has compact support. -/
 theorem charFn_mem_compactlySupportedIdeal {U : Set X} (hU : IsClopen U) (hUc : IsCompact U) :
     charFn R hU ∈ compactlySupportedIdeal X R :=
-  HasCompactSupport.intro' hUc hU.isClosed fun x hx => by
-    rw [coe_charFn, Set.indicator_of_notMem hx]
+  mem_compactlySupported.1 (indicator_mem_compactlySupported (R := R) 1 hU hUc)
 
 /-- A locally constant function is fixed by multiplication with the characteristic function of its
 support, which is clopen. -/
@@ -91,8 +90,10 @@ theorem charFn_support_mul (f : LocallyConstant X R) : charFn R f.isClopen_suppo
 support. -/
 theorem _root_.TopologicalSpace.CompactOpens.charFn_mem_compactlySupportedIdeal [T2Space X]
     (U : CompactOpens X) : U.charFn R ∈ compactlySupportedIdeal X R :=
-  HasCompactSupport.intro' U.isCompact U.isCompact.isClosed fun _ hx =>
-    CompactOpens.charFn_apply_of_notMem hx
+  mem_compactlySupportedIdeal.2 <| by
+    rw [CompactOpens.coe_charFn]
+    exact LocallyConstant.charFn_mem_compactlySupportedIdeal (R := R) U.toClopens.isClopen
+      U.isCompact
 
 /-- In a Hausdorff space, every `f ∈ C_c(X, R)` is fixed by `1_U` for some compact open `U`, for
 instance its support. -/
@@ -101,8 +102,7 @@ theorem exists_charFn_mul_eq_of_mem_compactlySupportedIdeal [T2Space X] {f : Loc
   let U : CompactOpens X :=
     ⟨⟨support f, hasCompactSupport_iff_isCompact_support.1 hf⟩, f.isClopen_support.isOpen⟩
   have hU : U.charFn R = charFn R f.isClopen_support :=
-    coe_injective <| by
-      rw [CompactOpens.coe_charFn, coe_charFn, CompactOpens.coe_mk, Compacts.coe_mk]
+    ext fun x => by simp [CompactOpens.coe_charFn, coe_charFn, U]
   exact ⟨U, by rw [hU, charFn_support_mul]⟩
 
 end Semiring
