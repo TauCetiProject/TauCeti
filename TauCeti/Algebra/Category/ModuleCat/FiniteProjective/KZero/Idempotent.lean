@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid
 
 import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 import TauCeti.RingTheory.GrothendieckRing
+import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # The idempotent monoid and projective `K₀`
@@ -23,7 +24,9 @@ identifies the group completions of `V(R)` with split projective `K₀` for righ
 `toKZero`, `toKZero_mk`, `map_toKZero`, `map_comp_kZeroEquiv`, `toKZero_mk_eq_toKZero_mk_iff`,
 `mem_mrange_toKZero_iff`, `toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left
 modules via `opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
-`extendScalarsOfIdempotentIso`.
+`extendScalarsOfIdempotentIso`. The principal right ideal `eR` of an idempotent `e`
+(`TauCeti.KZero.principalRightIdeal`) has the class of the `1 × 1` matrix `(e)`
+(`TauCeti.IdempotentMonoid.toKZero_mk_of_unique`).
 
 ## References
 
@@ -428,6 +431,34 @@ theorem toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv {ι : Type*} [Fi
 end PresentationAndCone
 
 end IdempotentMonoid
+
+section PrincipalRightIdeal
+
+variable {R : Type u} [Ring R] {e : R}
+
+/-- **The principal right ideal** `eR` of an idempotent `e` of `R`, as a finitely generated
+projective right `R`-module: the submodule of `Rᵐᵒᵖ` spanned by `op e`. It is a direct summand of
+the regular module, the image of left multiplication by `e`. -/
+def KZero.principalRightIdeal (he : IsIdempotentElem e) : FiniteProjectiveRight R :=
+  ⟨ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}), finiteProjectiveModules_iff.2
+    ⟨inferInstance, IsIdempotentElem.projective_span_singleton (congrArg op he.eq)⟩⟩
+
+/-- The underlying module of `TauCeti.KZero.principalRightIdeal he` is the right ideal spanned by
+`e`. -/
+@[simp]
+theorem KZero.principalRightIdeal_obj (he : IsIdempotentElem e) :
+    (KZero.principalRightIdeal he).obj = ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}) :=
+  (rfl)
+
+/-- **The class of a principal right ideal.** The principal right ideal `eR` of an idempotent `e`
+has the class of the `1 × 1` idempotent matrix with entry `e`. -/
+theorem IdempotentMonoid.toKZero_mk_of_unique {m : Type*} [Unique m] (he : IsIdempotentElem e) :
+    IdempotentMonoid.toKZero R (IdempotentMonoid.mk (of fun _ _ : m ↦ e) he.matrix_of_unique) =
+      SplitK0.of.{u} (KZero.principalRightIdeal he) :=
+  (IdempotentMonoid.kZeroEquiv_of R _).symm.trans
+    (IdempotentMonoid.kZeroEquiv_of_mk _ _ (rangeMulVecBilinOfUniqueEquivSpan R m e).symm)
+
+end PrincipalRightIdeal
 
 end ScalarExtension
 

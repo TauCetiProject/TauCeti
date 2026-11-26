@@ -27,8 +27,9 @@ cancellativity hypothesis is used.
 ## Main definitions
 
 * `Algebra.GrothendieckAddGroup.liftAddEquiv`: Mathlib's `lift` as an additive isomorphism.
-* `Algebra.GrothendieckAddGroup.prodEquiv`: the Grothendieck group of a product is the product of
-  the Grothendieck groups.
+* `Algebra.GrothendieckAddGroup.prodEquiv`, `Algebra.GrothendieckAddGroup.piEquiv`: the
+  Grothendieck group of a product, binary or of an arbitrary family, is the product of the
+  Grothendieck groups.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
   `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
   as the Grothendieck group of `ℕ`.
@@ -176,6 +177,50 @@ theorem prodEquiv_symm_of (a : M) (b : N) : prodEquiv.symm (of a, of b) = of (a,
   prodEquiv.symm_apply_eq.2 (prodEquiv_of a b).symm
 
 end Prod
+
+section Pi
+
+variable {ι : Type*} {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
+
+/-- Taking all components, on group completions. -/
+private noncomputable abbrev piHom :
+    GrothendieckAddGroup (∀ i, P i) →+ ∀ i, GrothendieckAddGroup (P i) :=
+  lift (AddMonoidHom.pi fun i ↦ (of : P i →+ _).comp (Pi.evalAddMonoidHom P i))
+
+private theorem piHom_of (a : ∀ i, P i) : piHom (of a) = fun i ↦ of (a i) :=
+  lift_apply_of _ a
+
+private theorem piHom_bijective : Function.Bijective (piHom (P := P)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
+    rw [map_sub, piHom_of, piHom_of, sub_eq_zero] at hx
+    -- Componentwise, `a i` and `b i` agree after adding some `c i`; then `a + c = b + c`.
+    choose c hc using fun i ↦ of_eq_of_iff.1 (congr_fun hx i)
+    exact sub_eq_zero.2 (of_eq_of_iff.2 ⟨c, funext hc⟩)
+  · choose a b hab using fun i ↦ exists_eq_sub_of (x i)
+    exact ⟨of a - of b, by rw [map_sub, piHom_of, piHom_of]; exact funext fun i ↦ (hab i).symm⟩
+
+/-- **The Grothendieck group of a product.** The group completion of `Π i, P i` is the product of
+the group completions of the `P i`, `of a ↦ (of (a i))ᵢ`
+(`Algebra.GrothendieckAddGroup.piEquiv_of`). No finiteness of the index type is needed: two
+families become equal in the completion exactly when they do componentwise, each after adding
+its own element. -/
+noncomputable def piEquiv :
+    GrothendieckAddGroup (∀ i, P i) ≃+ ∀ i, GrothendieckAddGroup (P i) :=
+  AddEquiv.ofBijective piHom piHom_bijective
+
+-- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.prodEquiv_of`: the simp normal form of
+-- `of a` is `AddLocalization.addMonoidOf ⊤ a`.
+/-- `Algebra.GrothendieckAddGroup.piEquiv` sends `of a` to the family `(of (a i))ᵢ`. -/
+theorem piEquiv_of (a : ∀ i, P i) : piEquiv (of a) = fun i ↦ of (a i) :=
+  piHom_of a
+
+/-- The inverse of `Algebra.GrothendieckAddGroup.piEquiv` sends the family `(of (a i))ᵢ` to
+`of a`. -/
+theorem piEquiv_symm_of (a : ∀ i, P i) : piEquiv.symm (fun i ↦ of (a i)) = of a :=
+  piEquiv.symm_apply_eq.2 (piEquiv_of a).symm
+
+end Pi
 
 /-! ### The multiplication -/
 

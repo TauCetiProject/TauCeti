@@ -55,6 +55,8 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_submatrix`, `Matrix.idempotentEquivalent_conj`,
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
+* `Matrix.idempotentEquivalent_prod_iff`, `Matrix.idempotentEquivalent_pi_iff`: over a product
+  of semirings, equivalence of idempotents is checked componentwise.
 * `Matrix.idempotentEquivalent_zero_iff`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
@@ -105,6 +107,11 @@ theorem IsIdempotentElem.matrix_prodEquiv_symm {e₁ : Matrix ι ι A} {e₂ : M
     (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
     IsIdempotentElem ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) :=
   IsIdempotentElem.map (e := (e₁, e₂)) (Prod.ext he₁.eq he₂.eq) (Matrix.prodRingEquiv ι A B).symm
+
+/-- The `1 × 1` matrix whose entry is an idempotent `a` is idempotent. -/
+theorem IsIdempotentElem.matrix_of_unique {m : Type*} [Unique m] {a : A}
+    (ha : IsIdempotentElem a) : IsIdempotentElem (Matrix.of fun _ _ : m ↦ a) := by
+  ext; simp [Matrix.mul_apply, ha.eq]
 
 end NonUnitalNonAssocSemiring
 
@@ -286,6 +293,21 @@ theorem idempotentEquivalent_prod_iff {B : Type*} [NonUnitalNonAssocSemiring B]
     ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   apply Matrix.mul_eq_of_map_fst_of_map_snd <;>
   simp only [Matrix.map_fst_prodEquiv_symm, Matrix.map_snd_prodEquiv_symm, h₁, h₂]
+
+/-- **Products of families of semirings.** Idempotent matrices over `Π j, B j` are equivalent
+exactly when all their components are: the rectangular matrices witnessing the component
+equivalences assemble to a witness over the product. -/
+theorem idempotentEquivalent_pi_iff {J : Type*} {B : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (B j)] {e : Matrix ι ι (∀ j, B j)}
+    {f : Matrix κ κ (∀ j, B j)} :
+    IdempotentEquivalent e f ↔ ∀ j, IdempotentEquivalent (e.map (· j)) (f.map (· j)) := by
+  refine ⟨fun h j ↦ h.map (Pi.evalNonUnitalRingHom B j), fun h ↦ ?_⟩
+  choose x y hxy hyx hex hxf hfy hye using h
+  -- The witnesses over the product are assembled from the component witnesses.
+  have hx (j : J) : (of fun a b j ↦ x j a b).map (· j) = x j := (rfl)
+  have hy (j : J) : (of fun a b j ↦ y j a b).map (· j) = y j := (rfl)
+  refine ⟨of fun a b j ↦ x j a b, of fun a b j ↦ y j a b, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    exact Matrix.mul_eq_of_forall_map_apply fun j ↦ by simp only [*]
 
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/
 theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
