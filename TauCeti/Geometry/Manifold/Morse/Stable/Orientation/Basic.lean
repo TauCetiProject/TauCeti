@@ -168,6 +168,37 @@ theorem map_orientationAt_eq_of_tendsto (o : Manifold.Orientation 𝓘(ℝ, E) M
     (hPz.comp (hX.isOrientationPreservingAt_flow o τ y))).trans
     (Manifold.Orientation.orientationAt_model _ _ _)
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Read in the model space through `eDy` and `eDx`, two short exact sequences
+`0 → A → T_y M → C → 0` and `0 → A → T_x M → C → 0` induce the same orientation when `eDx⁻¹ ∘ eDy`
+rescales the first sequence positively into the second. -/
+private theorem map_ofExact_eq_of_map_eq_smul {y : M}
+    (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] E) (eDx : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] E)
+    {A C : Type*} [AddCommGroup A] [Module ℝ A] [AddCommGroup C] [Module ℝ C]
+    [FiniteDimensional ℝ A] [FiniteDimensional ℝ C] {m n : ℕ}
+    {fy : A →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) y} {gy : TangentSpace 𝓘(ℝ, E) y →ₗ[ℝ] C}
+    {fx : A →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x} {gx : TangentSpace 𝓘(ℝ, E) x →ₗ[ℝ] C}
+    (hfy : Injective fy) (hfgy : Exact fy gy) (hgy : Surjective gy)
+    (hfx : Injective fx) (hfgx : Exact fx gx) (hgx : Surjective gx)
+    (oA : Orientation ℝ A (Fin m)) (oC : Orientation ℝ C (Fin n)) (hm : Module.finrank ℝ A = m)
+    (hn : Module.finrank ℝ C = n) {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hfe : ∀ c, eDy (fy c) = a • eDx (fx c)) (hge : ∀ w, gx (eDx.symm (eDy w)) = b • gy w) :
+    Orientation.map _ (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E)
+        (Orientation.ofExact hfy hfgy hgy oA oC hm hn) =
+      Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
+        (Orientation.ofExact hfx hfgx hgx oA oC hm hn) := by
+  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
+  let Lx : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E := eDx.toLinearEquiv
+  have hL : (Ly.trans Lx.symm).trans Lx = Ly := LinearEquiv.ext fun v ↦ by simp
+  -- The statement coerces `eDy` and `eDx` to linear equivalences into `E`; name them to rewrite.
+  change Orientation.map _ Ly _ = Orientation.map _ Lx _
+  rw [← hL, Orientation.map_trans]
+  congr 1
+  refine Orientation.map_ofExact_of_pos _ _ _ _ _ _ _ ha hb (fun c ↦ Lx.injective ?_)
+    (fun w ↦ hge w) _ _ _ _
+  rw [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, map_smul]
+  exact hfe c
+
 variable (hφ : ∀ y ∈ φ.toChart.source,
     φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -326,19 +357,12 @@ theorem map_unstableFrameOrientation_eq (hf : IsMorse 𝓘(ℝ, E) f)
       Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
         (unstableFrameOrientation hφ hf hx op op' hxu) := by
   have hx0 := mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints
-  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
-  let Lx : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E := eDx.toLinearEquiv
-  have hL : (Ly.trans Lx.symm).trans Lx = Ly := LinearEquiv.ext fun v ↦ by simp
-  -- The statement coerces `eDy` and `eDx` to linear equivalences into `E`; name them to rewrite.
-  change Orientation.map _ Ly _ = Orientation.map _ Lx _
-  rw [← hL, Orientation.map_trans, unstableFrameOrientation_def, unstableFrameOrientation_def]
-  congr 1
+  rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
   -- Read in the model space, the frame and the normal coordinates at `y` are positive multiples
   -- of those at `x`.
-  refine Orientation.map_ofExact_of_pos _ _ _ _ _ _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
-    (fun c ↦ Lx.injective ?_) (fun w ↦ ?_) _ _ _ _
-  · rw [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, map_smul]
-    have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hx0 hT c
+  refine map_ofExact_eq_of_map_eq_smul eDy eDx _ _ _ _ _ _ _ _ _ _ (Real.exp_pos (-T))
+    (Real.exp_pos T) (fun c ↦ ?_) (fun w ↦ ?_)
+  · have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hx0 hT c
     rw [← heDy, ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
     exact h
   · have hT' : T ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) y := by
@@ -346,7 +370,7 @@ theorem map_unstableFrameOrientation_eq (hf : IsMorse 𝓘(ℝ, E) f)
     have h0' : (0 : ℝ) ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) x := by
       rw [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
       exact mem_linearBackwardTimes_self hx0 0
-    simp only [LinearEquiv.trans_apply, ContinuousLinearMap.coe_coe]
+    simp only [ContinuousLinearMap.coe_coe]
     rw [stableNormal_apply (φ.coord_mfderiv_neg hφ hx) hT',
       stableNormal_apply (φ.coord_mfderiv_neg hφ hx) h0',
       neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_toChart_comp_neg_flow (hX := hX) hf hx,
@@ -376,24 +400,17 @@ theorem map_stableNormalOrientation_eq (hf : IsMorse 𝓘(ℝ, E) f)
         (stableNormalOrientation hφ hf hx op' op hxs) := by
   have h0 : (0 : ℝ) ∈ hX.linearForwardTimes φ x :=
     mem_linearForwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
-  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
-  let Lx : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E := eDx.toLinearEquiv
-  have hL : (Ly.trans Lx.symm).trans Lx = Ly := LinearEquiv.ext fun v ↦ by simp
-  -- The statement coerces `eDy` and `eDx` to linear equivalences into `E`; name them to rewrite.
-  change Orientation.map _ Ly _ = Orientation.map _ Lx _
-  rw [← hL, Orientation.map_trans, stableNormalOrientation_def, stableNormalOrientation_def]
-  congr 1
-  refine Orientation.map_ofExact_of_pos _ _ _ _ _ _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
-    (fun c ↦ Lx.injective ?_) (fun w ↦ ?_) _ _ _ _
-  · rw [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, map_smul]
-    have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by
+  rw [stableNormalOrientation_def, stableNormalOrientation_def]
+  refine map_ofExact_eq_of_map_eq_smul eDy eDx _ _ _ _ _ _ _ _ _ _ (Real.exp_pos (-T))
+    (Real.exp_pos T) (fun c ↦ ?_) (fun w ↦ ?_)
+  · have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by
       rwa [neg_linearBackwardTimes (hX := hX) (φ := φ) hf hx]
     have h := mfderiv_unstableFrame_eq_exp_smul_self (φ.coord_mfderiv_neg hφ hx)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.neg.mem_criticalPoints) hT' c
     rw [neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_neg, MorseChart.neg_toChart, ← heDy,
       ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
     exact h
-  · simp only [LinearEquiv.trans_apply, ContinuousLinearMap.coe_coe]
+  · simp only [ContinuousLinearMap.coe_coe]
     rw [stableNormal_apply hφ hT, stableNormal_apply hφ h0, Flow.map_zero, comp_id, ← heDy,
       ← heDx]
     simp only [smul_smul, ← Real.exp_add, add_neg_cancel, neg_zero, Real.exp_zero, one_smul]

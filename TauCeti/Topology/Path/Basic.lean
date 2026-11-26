@@ -82,6 +82,7 @@ theorem secondHalf_apply (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm
   (rfl)
 
 /-- A path is the concatenation of its two halves. -/
+@[simp]
 theorem firstHalf_trans_secondHalf (γ : Path a b)
     (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m) :
     (γ.firstHalf hm).trans (γ.secondHalf hm) = γ := by
