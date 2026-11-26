@@ -44,7 +44,9 @@ for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub
 correction by a power of a cycle for a permutation commuting with it. The set of points on the
 cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
-for a single cycle through every point). Points over distinct classes of the cycle quotient are
+for a single cycle through every point), and on a finite type its periodic orbit contains the same
+points (`Equiv.Perm.mem_periodicOrbit_iff_sameCycle`). Points over distinct classes of the cycle
+quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
@@ -364,6 +366,22 @@ theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
+
+/-- On a finite type, a point lies in the periodic orbit of `x` under a permutation `σ`
+if and only if it lies in the same cycle of `σ` as `x`. -/
+theorem mem_periodicOrbit_iff_sameCycle [Finite α] {x y : α} :
+    y ∈ Function.periodicOrbit σ x ↔ σ.SameCycle x y := by
+  obtain ⟨m, n, hmn, heq⟩ := Finite.exists_ne_map_eq_of_infinite (fun k : ℕ ↦ σ^[k] x)
+  have hx : x ∈ Function.periodicPts σ := by
+    rcases lt_or_gt_of_ne hmn with hlt | hlt
+    · exact Function.mk_mem_periodicPts (Nat.sub_pos_of_lt hlt)
+        (Function.iterate_cancel σ.injective heq.symm)
+    · exact Function.mk_mem_periodicPts (Nat.sub_pos_of_lt hlt)
+        (Function.iterate_cancel σ.injective heq)
+  rw [Function.mem_periodicOrbit_iff hx]
+  refine ⟨fun ⟨k, hk⟩ ↦ ⟨k, by simpa [iterate_eq_pow] using hk⟩, fun h ↦ ?_⟩
+  obtain ⟨k, -, hk⟩ := h.exists_pos_pow_eq_of_mem_periodicPts hx
+  exact ⟨k, by simpa [iterate_eq_pow] using hk⟩
 
 variable {σ} in
 /-- A permutation that fixes every point other than `x` also fixes `x`, and is therefore the

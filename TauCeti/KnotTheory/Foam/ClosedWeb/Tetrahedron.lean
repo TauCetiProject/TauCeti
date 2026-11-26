@@ -182,74 +182,27 @@ theorem existsUnique_edge_tetWeb (c : Bool) {u v : Fin 4} (huv : u ≠ v) :
         ((tetWeb c).source e = v ∧ (tetWeb c).target e = u) := by
   unfold ExistsUnique
   simp only [source_tetWeb, target_tetWeb]
-  fin_cases u <;> fin_cases v <;> dsimp only at huv ⊢ <;>
-    [exact (huv rfl).elim; decide; decide; decide;
-     decide; exact (huv rfl).elim; decide; decide;
-     decide; decide; exact (huv rfl).elim; decide;
-     decide; decide; decide; exact (huv rfl).elim]
+  revert huv u v
+  decide
 
-private theorem iso_tetWeb_vertex_zero {c₁ c₂ : Bool} (f : (tetWeb c₁).Iso (tetWeb c₂)) :
-    f.vertex 0 = 0 := by
-  have hm0 : (f.vertex 0).val < 2 :=
-    (isMerge_tetWeb c₂ _).mp ((f.isMerge_vertex 0).mpr (by simp))
-  have ht := f.map_target ((tetWeb c₁).ends (0, 0)).1
-  have he : ((tetWeb c₂).ends (f.vertex 0, 0)).1 = f.edge ((tetWeb c₁).ends (0, 0)).1 :=
-    congrArg Prod.fst (f.map_ends_apply 0 0)
-  rw [← he] at ht
-  have hmerge : (tetWeb c₂).IsMerge ((tetWeb c₂).target ((tetWeb c₂).ends (f.vertex 0, 0)).1) :=
-    ht ▸ (f.isMerge_vertex _).mpr (by
-      rw [tetWeb_ends_zero, target_tetWeb, isMerge_tetWeb]
-      simp [tetrahedronPosEndsFun, tetrahedronPosEndsInv])
-  obtain ⟨v0, hv0⟩ : ∃ v0, f.vertex 0 = v0 := ⟨_, rfl⟩
-  rw [hv0] at hm0 hmerge ⊢
-  fin_cases v0 <;> dsimp only at hm0 hmerge ⊢
-  · rfl
-  · rw [tetWeb_ends_zero, target_tetWeb, isMerge_tetWeb] at hmerge
-    simp [tetrahedronPosEndsFun, tetrahedronPosEndsInv] at hmerge
-  · omega
-  · omega
-
-private theorem iso_tetWeb_vertex_two {c₁ c₂ : Bool} (f : (tetWeb c₁).Iso (tetWeb c₂)) :
-    f.vertex 2 = 2 := by
-  have hs2 : 2 ≤ (f.vertex 2).val :=
-    (isSplit_tetWeb c₂ _).mp ((f.isSplit_vertex 2).mpr (by simp))
-  have hs := f.map_source ((tetWeb c₁).ends (2, 0)).1
-  have he : ((tetWeb c₂).ends (f.vertex 2, 0)).1 = f.edge ((tetWeb c₁).ends (2, 0)).1 :=
-    congrArg Prod.fst (f.map_ends_apply 2 0)
-  rw [← he] at hs
-  have hmerge : (tetWeb c₂).IsMerge ((tetWeb c₂).source ((tetWeb c₂).ends (f.vertex 2, 0)).1) :=
-    hs ▸ (f.isMerge_vertex _).mpr (by
-      rw [tetWeb_ends_zero, source_tetWeb, isMerge_tetWeb]
-      simp [tetrahedronPosEndsFun, tetrahedronPosEndsInv])
-  obtain ⟨v2, hv2⟩ : ∃ v2, f.vertex 2 = v2 := ⟨_, rfl⟩
-  rw [hv2] at hs2 hmerge ⊢
-  fin_cases v2 <;> dsimp only at hs2 hmerge ⊢
-  · omega
-  · omega
-  · rfl
-  · rw [tetWeb_ends_zero, source_tetWeb, isMerge_tetWeb] at hmerge
-    simp [tetrahedronPosEndsFun, tetrahedronPosEndsInv] at hmerge
-
-private theorem iso_tetWeb_vertex_eq {c₁ c₂ : Bool} (f : (tetWeb c₁).Iso (tetWeb c₂)) :
-    ∀ v : Fin 4, f.vertex v = v := by
-  have h0 := iso_tetWeb_vertex_zero f
-  have h2 := iso_tetWeb_vertex_two f
-  have hm1 : (f.vertex 1).val < 2 :=
-    (isMerge_tetWeb c₂ _).mp ((f.isMerge_vertex 1).mpr (by simp))
-  have hs3 : 2 ≤ (f.vertex 3).val :=
-    (isSplit_tetWeb c₂ _).mp ((f.isSplit_vertex 3).mpr (by simp))
-  have h1 : f.vertex 1 = 1 := by
-    have hne : f.vertex 1 ≠ 0 := h0 ▸ f.vertex.injective.ne (by simp)
-    obtain ⟨v1, hv1⟩ : ∃ v1, f.vertex 1 = v1 := ⟨_, rfl⟩
-    rw [hv1] at hm1 hne ⊢
-    fin_cases v1 <;> dsimp only at hm1 hne ⊢ <;> [exact (hne rfl).elim; rfl; omega; omega]
-  have h3 : f.vertex 3 = 3 := by
-    have hne : f.vertex 3 ≠ 2 := h2 ▸ f.vertex.injective.ne (by simp)
-    obtain ⟨v3, hv3⟩ : ∃ v3, f.vertex 3 = v3 := ⟨_, rfl⟩
-    rw [hv3] at hs3 hne ⊢
-    fin_cases v3 <;> dsimp only at hs3 hne ⊢ <;> [omega; omega; exact (hne rfl).elim; rfl]
-  intro v
-  fin_cases v <;> assumption
+private theorem iso_tetWeb_vertex_eq {c₁ c₂ : Bool} (f : (tetWeb c₁).Iso (tetWeb c₂))
+    (v : Fin 4) : f.vertex v = v := by
+  have hm : (tetWeb c₂).IsMerge (f.vertex v) ↔ (tetWeb c₁).IsMerge v := f.isMerge_vertex v
+  have hi : (tetWeb c₂).incident
+      (((tetWeb c₂).ends (f.vertex v, 0)).1, !((tetWeb c₂).ends (f.vertex v, 0)).2) =
+      f.vertex ((tetWeb c₁).incident
+        (((tetWeb c₁).ends (v, 0)).1, !((tetWeb c₁).ends (v, 0)).2)) := by
+    rw [f.map_ends_apply v 0, f.map_incident]
+  have hopp : (tetWeb c₂).IsMerge ((tetWeb c₂).incident
+      (((tetWeb c₂).ends (f.vertex v, 0)).1, !((tetWeb c₂).ends (f.vertex v, 0)).2)) ↔
+      (tetWeb c₁).IsMerge ((tetWeb c₁).incident
+        (((tetWeb c₁).ends (v, 0)).1, !((tetWeb c₁).ends (v, 0)).2)) := by
+    rw [hi, f.isMerge_vertex]
+  rw [isMerge_tetWeb, isMerge_tetWeb] at hm
+  rw [tetWeb_ends_zero, tetWeb_ends_zero, incident_tetWeb, incident_tetWeb,
+    isMerge_tetWeb, isMerge_tetWeb] at hopp
+  generalize f.vertex v = w at hm hopp ⊢
+  fin_cases v <;> fin_cases w <;> simp [tetrahedronPosEndsFun, tetrahedronPosEndsInv] at hm hopp ⊢
 
 /-- Each oriented tetrahedral web is rigid: its only self-isomorphism is the identity. -/
 instance instUniqueIsoTetWeb (c : Bool) : Unique ((tetWeb c).Iso (tetWeb c)) where
@@ -399,24 +352,12 @@ private theorem isMonochromeEdgeSelection_tetrahedronPos_iff (p : Fin 6 → Bool
     rw [tetWeb_ends_apply, tetWeb_ends_apply, tetWeb_ends_apply] at h0 h1 h2 h3
     dsimp [tetrahedronPosEndsFun] at h0 h1 h2 h3
     cases hp3 : p 3 <;> cases hp4 : p 4 <;> cases hp5 : p 5 <;>
-      rw [hp3] at h0 h2 <;> rw [hp4] at h0 h3 <;> rw [hp5] at h1 h3
-    · have hp2 : p 2 = false := h0.1; have hp1 : p 1 = false := h3.1
-      rw [hp2] at h1; have hp0 : p 0 = false := h1.1
-      left; funext e; fin_cases e <;> assumption
-    · have hp2 : p 2 = false := h0.1; have hp1 : p 1 = true := h3.1
-      rw [hp2] at h1; have hp0 : p 0 = true := h1.1
-      right; refine ⟨2, funext fun e ↦ ?_⟩; fin_cases e <;> assumption
-    · have hp2 : p 2 = true := h0.1; have hp1 : p 1 = true := h3.1
-      rw [hp2] at h1; have hp0 : p 0 = true := h1.1
-      right; refine ⟨1, funext fun e ↦ ?_⟩; fin_cases e <;> assumption
-    · exact absurd rfl h3.2
-    · have hp2 : p 2 = true := h0.1; have hp1 : p 1 = false := h3.1
-      rw [hp2] at h1; have hp0 : p 0 = true := h1.1
-      right; refine ⟨0, funext fun e ↦ ?_⟩; fin_cases e <;> assumption
-    · have hp1 : p 1 = true := h3.1
-      rw [hp1] at h2; exact absurd rfl h2.2
-    · exact absurd rfl h0.2
-    · exact absurd rfl h0.2
+      first
+      | (solve | simp_all)
+      | (solve | left; funext e; fin_cases e <;> simp_all)
+      | (solve | right; refine ⟨0, funext fun e ↦ ?_⟩; fin_cases e <;> simp_all)
+      | (solve | right; refine ⟨1, funext fun e ↦ ?_⟩; fin_cases e <;> simp_all)
+      | (solve | right; refine ⟨2, funext fun e ↦ ?_⟩; fin_cases e <;> simp_all)
   · rintro (rfl | ⟨i, rfl⟩)
     · rw [isMonochromeEdgeSelection_def]
       intro v; fin_cases v <;> decide
@@ -430,9 +371,11 @@ theorem isMonochromeEdgeSelection_tetWeb_iff (c : Bool) (p : Fin 6 → Bool) :
     (tetWeb c).IsMonochromeEdgeSelection p ↔
       p = (fun _ ↦ false) ∨ ∃ i : Fin 3, p = tetPigmentCycle i := by
   cases c
-  · rw [← isMonochromeEdgeSelection_tetrahedronPos_iff p, ← isMonochromeEdgeSelection_mirror,
-      isMonochromeEdgeSelection_def, isMonochromeEdgeSelection_def]
-    rfl
+  · have hm : tetrahedronPos.mirror.IsMonochromeEdgeSelection p ↔
+        tetrahedronNeg.IsMonochromeEdgeSelection p :=
+      iff_of_eq (by congr! (config := { closePost := false }) 1; exact mirror_tetrahedronPos)
+    exact hm.symm.trans ((tetrahedronPos.isMonochromeEdgeSelection_mirror p).trans
+      (isMonochromeEdgeSelection_tetrahedronPos_iff p))
   · exact isMonochromeEdgeSelection_tetrahedronPos_iff p
 
 /-- The three elementary pigment cycles on `tetWeb c` have edge counts `3`, `4`, and `3`. -/

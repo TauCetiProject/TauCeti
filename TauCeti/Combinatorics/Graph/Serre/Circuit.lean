@@ -195,15 +195,6 @@ private theorem sameCycle_of_path {e : Γ.E} {x : Γ.V} (p : Γ.Path (Γ.src e) 
 private noncomputable def orbit (e : Γ.E) : List Γ.E :=
   (List.range (Function.minimalPeriod (next hΓ) e)).map fun k => (next hΓ)^[k] e
 
-private theorem mem_orbit_iff [Finite Γ.E] {e d : Γ.E} :
-    d ∈ orbit hΓ e ↔ (next hΓ).SameCycle e d := by
-  rw [orbit, ← Cycle.mem_coe_iff, ← Function.periodicOrbit_def,
-    Function.mem_periodicOrbit_iff ((next hΓ).injective.mem_periodicPts e)]
-  refine ⟨fun ⟨k, hk⟩ => ⟨k, ?_⟩, fun h => ?_⟩
-  · rw [← hk, zpow_natCast, Equiv.Perm.iterate_eq_pow]
-  · obtain ⟨k, hk⟩ := h.exists_nat_pow_eq
-    exact ⟨k, by rw [Equiv.Perm.iterate_eq_pow, hk]⟩
-
 private theorem nodup_orbit (e : Γ.E) : (orbit hΓ e).Nodup := by
   rw [orbit, ← Cycle.nodup_coe_iff, ← Function.periodicOrbit_def]
   exact Function.nodup_periodicOrbit
@@ -237,10 +228,12 @@ private theorem exists_path_nodup_map_toGeomEdge_darts_and_mem_of_forall [Finite
   refine ⟨p, hp ▸ (nodup_orbit hΓ e).map_on fun x hx y hy hxy => ?_, fun d ⟨q⟩ => hp ▸ ?_⟩
   · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hxy with h | h
     · exact h.symm
-    · rw [mem_orbit_iff] at hx hy
+    · rw [orbit, ← Cycle.mem_coe_iff, ← Function.periodicOrbit_def,
+        (next hΓ).mem_periodicOrbit_iff_sameCycle] at hx hy
       exact absurd (hx.symm.trans (h ▸ hy)) (not_sameCycle_rev hΓ x)
-  · exact (toGeomEdge_mem_map_iff Γ).2 <|
-      (sameCycle_of_path hΓ q rfl).imp (mem_orbit_iff hΓ).2 (mem_orbit_iff hΓ).2
+  · rw [toGeomEdge_mem_map_iff]
+    simpa only [orbit, ← Cycle.mem_coe_iff, ← Function.periodicOrbit_def,
+      (next hΓ).mem_periodicOrbit_iff_sameCycle] using sameCycle_of_path hΓ q rfl
 
 end TwoRegular
 

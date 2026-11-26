@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.List.Cycle
-public import Mathlib.Dynamics.PeriodicPts.Defs
+public import TauCeti.Dynamics.PeriodicPts.Orbit
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.KnotTheory.Foam.ClosedWeb.Tetrahedron
 import Mathlib.Data.Fintype.Basic
@@ -80,9 +80,9 @@ private theorem ends_snd_eq_iff (T : ClosedWeb.{u}) (k : T.Vertex) (i : Fin 3) (
   generalize (T.ends (k, i)).2 = x, (T.ends (k, 0)).2 = y, decide (i = 0) = z
   cases x <;> cases y <;> cases z <;> cases b <;> decide
 
-/-- Forward map sending each interior or boundary corner to the side incident in direction `dir`
-(`true` for incoming, `false` for outgoing). -/
-@[expose] def cornerSideFun (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
+-- Forward map sending each interior or boundary corner to the side incident in direction `dir`
+-- (`true` for incoming, `false` for outgoing).
+private def cornerSideFun (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
     (chirality : Vertex → Bool) (seamEnds : (Vertex × Fin 4) ⊕ W.Vertex ≃ Seam × Bool) :
     (Vertex × Fin 6) ⊕ (W.Vertex × Fin 3) → (Seam × Fin 3) ⊕ W.Edge
   | Sum.inl (v, e) =>
@@ -92,9 +92,9 @@ private theorem ends_snd_eq_iff (T : ClosedWeb.{u}) (k : T.Vertex) (i : Fin 3) (
     let eb := W.ends (w, i)
     if eb.2 == dir then Sum.inr eb.1 else Sum.inl ((seamEnds (Sum.inr w)).1, i)
 
-/-- Inverse map sending each side to the corner it meets in direction `dir` (`true` for incoming,
-`false` for outgoing) along its facet boundary orientation. -/
-@[expose] def cornerSideInv (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
+-- Inverse map sending each side to the corner it meets in direction `dir` (`true` for incoming,
+-- `false` for outgoing) along its facet boundary orientation.
+private def cornerSideInv (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
     (chirality : Vertex → Bool) (seamEnds : (Vertex × Fin 4) ⊕ W.Vertex ≃ Seam × Bool) :
     (Seam × Fin 3) ⊕ W.Edge → (Vertex × Fin 6) ⊕ (W.Vertex × Fin 3)
   | Sum.inr e => Sum.inr (W.ends.symm (e, dir))
@@ -186,7 +186,7 @@ private theorem rightInverse_cornerSideInv (dir : Bool) {Vertex Seam : Type u} {
 
 /-- Equivalence between corners and their incident facet-boundary sides in direction `dir`
 (`true` for incoming, `false` for outgoing). -/
-@[expose] def cornerSideEquiv (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
+def cornerSideEquiv (dir : Bool) {Vertex Seam : Type u} {W : ClosedWeb.{u}}
     (chirality : Vertex → Bool) (seamEnds : (Vertex × Fin 4) ⊕ W.Vertex ≃ Seam × Bool)
     (h_inl : ∀ v k,
       (seamEnds (Sum.inl (v, k))).2 = !((ClosedWeb.tetWeb (chirality v)).ends (k, 0)).2)
@@ -197,25 +197,9 @@ private theorem rightInverse_cornerSideInv (dir : Bool) {Vertex Seam : Type u} {
   left_inv := by exact leftInverse_cornerSideInv dir chirality seamEnds h_inl h_inr
   right_inv := by exact rightInverse_cornerSideInv dir chirality seamEnds h_inl h_inr
 
-/-- Forward map sending each interior or boundary corner to the side entering that corner. -/
-abbrev cornerIncomingFun {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
-  @cornerSideFun true Vertex Seam W
-
-/-- Inverse map sending each side to the corner it enters along its facet boundary orientation. -/
-abbrev cornerIncomingInv {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
-  @cornerSideInv true Vertex Seam W
-
 /-- Equivalence between corners and their incoming facet-boundary sides. -/
 abbrev cornerIncomingEquiv {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
   @cornerSideEquiv true Vertex Seam W
-
-/-- Forward map sending each interior or boundary corner to the side leaving that corner. -/
-abbrev cornerOutgoingFun {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
-  @cornerSideFun false Vertex Seam W
-
-/-- Inverse map sending each side to the corner it leaves along its facet boundary orientation. -/
-abbrev cornerOutgoingInv {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
-  @cornerSideInv false Vertex Seam W
 
 /-- Equivalence between corners and their outgoing facet-boundary sides. -/
 abbrev cornerOutgoingEquiv {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
@@ -223,7 +207,7 @@ abbrev cornerOutgoingEquiv {Vertex Seam : Type u} {W : ClosedWeb.{u}} :=
 
 /-- Successor permutation advancing each side along the oriented boundary of its facet through the
 corner it enters. -/
-@[expose] def nextSidePerm {Vertex Seam : Type u} {W : ClosedWeb.{u}}
+def nextSidePerm {Vertex Seam : Type u} {W : ClosedWeb.{u}}
     (chirality : Vertex → Bool) (seamEnds : (Vertex × Fin 4) ⊕ W.Vertex ≃ Seam × Bool)
     (h_inl : ∀ v k,
       (seamEnds (Sum.inl (v, k))).2 = !((ClosedWeb.tetWeb (chirality v)).ends (k, 0)).2)
@@ -604,11 +588,8 @@ private theorem mem_periodicPts_nextSide (x : F.Side) : x ∈ Function.periodicP
 /-- Membership in `F.sideCycle x` characterizes sides on the same boundary component as `x`. -/
 theorem mem_sideCycle_iff (x y : F.Side) :
     y ∈ F.sideCycle x ↔ F.sideBoundary x = F.sideBoundary y := by
-  rw [sideCycle_def, Function.mem_periodicOrbit_iff (F.mem_periodicPts_nextSide x),
-    F.sideBoundary_eq_iff, ← F.nextSide_def]
-  refine ⟨fun ⟨n, hn⟩ ↦ ⟨n, by simpa [Equiv.Perm.iterate_eq_pow] using hn⟩, fun hxy ↦ ?_⟩
-  obtain ⟨n, hn⟩ := hxy.exists_nat_pow_eq
-  exact ⟨n, by simpa [Equiv.Perm.iterate_eq_pow] using hn⟩
+  rw [sideCycle_def, F.nextSide.mem_periodicOrbit_iff_sameCycle, F.sideBoundary_eq_iff,
+    F.nextSide_def]
 
 @[simp] theorem sideCycle_nextSide (x : F.Side) :
     F.sideCycle (F.nextSide x) = F.sideCycle x :=
@@ -626,10 +607,8 @@ theorem sideCycle_eq_iff (x y : F.Side) :
 
 /-- A fixed point of `F.nextSide` forms a singleton cyclic side orbit. -/
 theorem sideCycle_of_nextSide_eq {x : F.Side} (hx : F.nextSide x = x) :
-    F.sideCycle x = ([x] : List F.Side) := by
-  have hm : Function.minimalPeriod F.nextSide x = 1 :=
-    Function.minimalPeriod_eq_one_iff_isFixedPt.mpr hx
-  simp [sideCycle_def, Function.periodicOrbit_def, hm]
+    F.sideCycle x = ([x] : List F.Side) :=
+  Function.IsFixedPt.periodicOrbit_eq hx
 
 /-- Every adjacent pair in `F.sideCycle x` steps by `F.nextSide`. -/
 theorem chain_sideCycle (x : F.Side) :
@@ -640,27 +619,8 @@ theorem chain_sideCycle (x : F.Side) :
 
 /-- Stepping along `F.sideCycle x` via `Cycle.next` agrees with `F.nextSide`. -/
 @[simp] theorem next_sideCycle [DecidableEq F.Side] (x y : F.Side) (hy : y ∈ F.sideCycle x) :
-    (F.sideCycle x).next (F.nodup_sideCycle x) y hy = F.nextSide y := by
-  have hcongr : ∀ {c₁ c₂ : Cycle F.Side} (_ : c₁ = c₂) (hn₁ : c₁.Nodup) (hn₂ : c₂.Nodup)
-      (hy₁ : y ∈ c₁) (hy₂ : y ∈ c₂), c₁.next hn₁ y hy₁ = c₂.next hn₂ y hy₂ := by
-    rintro _ _ rfl _ _ _ _; rfl
-  have hxy : F.sideCycle x = F.sideCycle y :=
-    (F.sideCycle_eq_iff x y).mpr ((F.mem_sideCycle_iff x y).mp hy)
-  rw [hcongr hxy _ (F.nodup_sideCycle y) _ (F.mem_sideCycle_self y)]
-  have hp := Function.minimalPeriod_pos_of_mem_periodicPts (F.mem_periodicPts_nextSide y)
-  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hp.ne'
-  rcases k with _ | d
-  · have hfix : F.nextSide y = y := Function.minimalPeriod_eq_one_iff_isFixedPt.mp hk
-    rw [hcongr (F.sideCycle_of_nextSide_eq hfix) _ (by simp) _ (by simp)]
-    exact hfix.symm
-  · have hcyc : F.sideCycle y =
-        (y :: F.nextSide y :: (List.range d).map (fun m ↦ F.nextSide^[m + 2] y) :
-          List F.Side) := by
-      rw [sideCycle_def, Function.periodicOrbit_def, hk, List.range_succ_eq_map, List.map_cons,
-        List.map_map, List.range_succ_eq_map, List.map_cons, List.map_map]
-      rfl
-    rw [hcongr hcyc _ (hcyc ▸ F.nodup_sideCycle y) _ (by simp)]
-    exact List.next_cons_cons_eq _ y (F.nextSide y) (List.mem_cons_self ..)
+    (F.sideCycle x).next (F.nodup_sideCycle x) y hy = F.nextSide y :=
+  Function.next_periodicOrbit hy
 
 /-- Nonempty signed cyclic word of seams and boundary edges along the segmented boundary component
 containing `x`. -/

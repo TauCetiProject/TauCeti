@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Foam.FoamWithBoundary.Basic
-import Mathlib.Dynamics.PeriodicPts.Lemmas
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -44,31 +43,37 @@ universe u v w t
 
 namespace FoamWithBoundary
 
-private theorem cornerSideFun_comp (dir : Bool)
+private theorem cornerSideEquiv_comp (dir : Bool)
     {Vertex₁ Seam₁ : Type u} {W₁ : ClosedWeb.{u}}
     {Vertex₂ Seam₂ : Type v} {W₂ : ClosedWeb.{v}}
     (φ : W₁.Iso W₂) (eV : Vertex₁ ≃ Vertex₂) (eS : Seam₁ ≃ Seam₂)
     (chirality₁ : Vertex₁ → Bool) (chirality₂ : Vertex₂ → Bool)
     (seamEnds₁ : (Vertex₁ × Fin 4) ⊕ W₁.Vertex ≃ Seam₁ × Bool)
     (seamEnds₂ : (Vertex₂ × Fin 4) ⊕ W₂.Vertex ≃ Seam₂ × Bool)
+    (h_inl₁ : ∀ v k,
+      (seamEnds₁ (Sum.inl (v, k))).2 = !((ClosedWeb.tetWeb (chirality₁ v)).ends (k, 0)).2)
+    (h_inr₁ : ∀ w, (seamEnds₁ (Sum.inr w)).2 = (W₁.ends (w, 0)).2)
+    (h_inl₂ : ∀ v k,
+      (seamEnds₂ (Sum.inl (v, k))).2 = !((ClosedWeb.tetWeb (chirality₂ v)).ends (k, 0)).2)
+    (h_inr₂ : ∀ w, (seamEnds₂ (Sum.inr w)).2 = (W₂.ends (w, 0)).2)
     (h_chir : ∀ v, chirality₂ (eV v) = chirality₁ v)
     (h_seam : ∀ x,
       seamEnds₂ (Sum.map (Prod.map eV id) φ.vertex x) = Prod.map eS id (seamEnds₁ x))
     (c : (Vertex₁ × Fin 6) ⊕ (W₁.Vertex × Fin 3)) :
-    cornerSideFun dir chirality₂ seamEnds₂
+    cornerSideEquiv dir chirality₂ seamEnds₂ h_inl₂ h_inr₂
         (((eV.prodCongr (Equiv.refl (Fin 6))).sumCongr
           (φ.vertex.prodCongr (Equiv.refl (Fin 3)))) c) =
       ((eS.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.edge)
-        (cornerSideFun dir chirality₁ seamEnds₁ c) := by
+        (cornerSideEquiv dir chirality₁ seamEnds₁ h_inl₁ h_inr₁ c) := by
   rcases c with ⟨v, e⟩ | ⟨w, i⟩
   · simp only [Equiv.sumCongr_apply, Equiv.prodCongr_apply, Equiv.refl_apply, Sum.map_inl,
-      Prod.map_apply, cornerSideFun, h_chir v]
+      Prod.map_apply, cornerSideEquiv_inl, h_chir v]
     set ki := (ClosedWeb.tetWeb (chirality₁ v)).ends.symm (e, dir)
     have hse := congrArg Prod.fst (h_seam (Sum.inl (v, ki.1)))
     simp only [Sum.map_inl, Prod.map_apply, Prod.map_fst, id_eq] at hse
     rw [hse]
   · simp only [Equiv.sumCongr_apply, Equiv.prodCongr_apply, Equiv.refl_apply, Sum.map_inr,
-      Prod.map_apply, cornerSideFun, φ.map_ends_apply w i]
+      Prod.map_apply, cornerSideEquiv_inr, φ.map_ends_apply w i]
     have hse := congrArg Prod.fst (h_seam (Sum.inr w))
     simp only [Sum.map_inr, Prod.map_fst] at hse
     cases (W₁.ends (w, i)).2 == dir <;> simp [hse]
@@ -96,14 +101,10 @@ private theorem nextSidePerm_eq_permCongr
   ext y
   obtain ⟨x, rfl⟩ := eSide.surjective y
   obtain ⟨c, rfl⟩ := (cornerSideEquiv true chirality₁ seamEnds₁ h_inl₁ h_inr₁).surjective x
-  have hcs (dir : Bool) : cornerSideEquiv dir chirality₂ seamEnds₂ h_inl₂ h_inr₂
-      (((eV.prodCongr (Equiv.refl (Fin 6))).sumCongr
-        (φ.vertex.prodCongr (Equiv.refl (Fin 3)))) c) =
-      eSide (cornerSideEquiv dir chirality₁ seamEnds₁ h_inl₁ h_inr₁ c) :=
-    cornerSideFun_comp dir φ eV eS chirality₁ chirality₂ seamEnds₁ seamEnds₂ h_chir h_seam c
-  rw [Equiv.permCongr_apply, eSide.symm_apply_apply, ← hcs true]
-  dsimp only [nextSidePerm, cornerIncomingEquiv, cornerOutgoingEquiv, Equiv.trans_apply]
-  rw [Equiv.symm_apply_apply, Equiv.symm_apply_apply, hcs false]
+  have hcs (dir : Bool) := cornerSideEquiv_comp dir φ eV eS chirality₁ chirality₂
+    seamEnds₁ seamEnds₂ h_inl₁ h_inr₁ h_inl₂ h_inr₂ h_chir h_seam c
+  rw [Equiv.permCongr_apply, eSide.symm_apply_apply, ← hcs true, nextSidePerm_apply,
+    nextSidePerm_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply, hcs false]
 
 
 /-! ### Isomorphisms, relabelling, boundary transport, and empty prefoam -/
@@ -373,7 +374,8 @@ variable {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V} (ψ : 
 @[simp] theorem map_cornerSide (dir : Bool) (c : F.Corner) :
     G.cornerSide dir (ψ.cornerEquiv c) = ψ.sideEquiv (F.cornerSide dir c) := by
   rw [cornerSide_def, cornerSide_def]
-  exact cornerSideFun_comp dir φ ψ.vertex ψ.seam F.chirality G.chirality F.seamEnds G.seamEnds
+  exact cornerSideEquiv_comp dir φ ψ.vertex ψ.seam F.chirality G.chirality F.seamEnds G.seamEnds
+    F.seamEnds_inl_snd F.seamEnds_inr_snd G.seamEnds_inl_snd G.seamEnds_inr_snd
     ψ.map_chirality ψ.map_seamEnds c
 
 /-- Every isomorphism commutes with `cornerIncoming`. -/
@@ -407,17 +409,9 @@ preserving orientation signs. -/
 /-- Every isomorphism transports cyclic side orbits via `sideEquiv`. -/
 @[simp] theorem map_sideCycle (x : F.Side) :
     G.sideCycle (ψ.sideEquiv x) = (F.sideCycle x).map ψ.sideEquiv := by
-  have hsc : Function.Semiconj ψ.sideEquiv F.nextSide G.nextSide :=
-    fun y ↦ (ψ.map_nextSide y).symm
-  have hiter : ∀ n, G.nextSide^[n] (ψ.sideEquiv x) = ψ.sideEquiv (F.nextSide^[n] x) :=
-    fun n ↦ (hsc.iterate_right n x).symm
-  have hper : Function.minimalPeriod G.nextSide (ψ.sideEquiv x) =
-      Function.minimalPeriod F.nextSide x :=
-    Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
-      simp [Function.IsPeriodicPt, Function.IsFixedPt, hiter]
-  rw [sideCycle_def, sideCycle_def, Function.periodicOrbit_def, Function.periodicOrbit_def,
-    hper, Cycle.map_coe, List.map_map]
-  exact congrArg ((↑) : List G.Side → Cycle G.Side) (List.map_congr_left fun n _ ↦ hiter n)
+  rw [sideCycle_def, sideCycle_def]
+  exact Function.Semiconj.periodicOrbit_apply (fun y ↦ (ψ.map_nextSide y).symm)
+    ψ.sideEquiv.injective x
 
 /-- Every isomorphism transports signed cyclic boundary words by relabelling seams and boundary
 edges while preserving orientation signs. -/
@@ -454,7 +448,7 @@ def facetBoundaryEquiv (f : F.Facet) : F.FacetBoundary f ≃ G.FacetBoundary (ψ
   simp only [facetEulerChar_def, ψ.map_genus, ψ.map_numBoundaryComponents]
 
 /-- Isomorphisms preserve nilvalence. -/
-theorem isNilvalent_iff (ψ : F.IsoOver φ G) : F.IsNilvalent ↔ G.IsNilvalent := by
+theorem isNilvalent_congr (ψ : F.IsoOver φ G) : F.IsNilvalent ↔ G.IsNilvalent := by
   rw [isNilvalent_def, isNilvalent_def]
   exact and_congr ψ.vertex.isEmpty_congr
     (and_congr ψ.seam.isEmpty_congr ψ.seamCircle.isEmpty_congr)
@@ -526,6 +520,23 @@ private theorem relabel_map_seamEnds {W : ClosedWeb.{u}} {V : ClosedWeb.{v}}
       Prod.map eS id (F.seamEnds x) := by
   rcases x with ⟨v, k⟩ | w <;> simp [Prod.map]
 
+private theorem relabel_seamEnds_inl_snd {W : ClosedWeb.{u}} {V : ClosedWeb.{v}}
+    (F : FoamWithBoundary W) (φ : W.Iso V) {Vertex' Seam' : Type v}
+    (eV : F.Vertex ≃ Vertex') (eS : F.Seam ≃ Seam') (v : Vertex') (k : Fin 4) :
+    (((((eV.symm.prodCongr (Equiv.refl (Fin 4))).sumCongr φ.vertex.symm).trans F.seamEnds).trans
+      (eS.prodCongr (Equiv.refl Bool))) (Sum.inl (v, k))).2 =
+      !((ClosedWeb.tetWeb ((F.chirality ∘ eV.symm) v)).ends (k, 0)).2 := by
+  simp [F.seamEnds_inl_snd (eV.symm v) k]
+
+private theorem relabel_seamEnds_inr_snd {W : ClosedWeb.{u}} {V : ClosedWeb.{v}}
+    (F : FoamWithBoundary W) (φ : W.Iso V) {Vertex' Seam' : Type v}
+    (eV : F.Vertex ≃ Vertex') (eS : F.Seam ≃ Seam') (w : V.Vertex) :
+    (((((eV.symm.prodCongr (Equiv.refl (Fin 4))).sumCongr φ.vertex.symm).trans F.seamEnds).trans
+      (eS.prodCongr (Equiv.refl Bool))) (Sum.inr w)).2 = (V.ends (w, 0)).2 := by
+  have hw := congrArg Prod.snd (φ.map_ends_apply (φ.vertex.symm w) 0)
+  rw [φ.vertex.apply_symm_apply] at hw
+  simpa [hw] using F.seamEnds_inr_snd (φ.vertex.symm w)
+
 /-- Relabel all internal carrier types of `F` and transport its boundary along `φ : W.Iso V`. -/
 abbrev relabelOver {W : ClosedWeb.{u}} {V : ClosedWeb.{v}} (F : FoamWithBoundary W) (φ : W.Iso V)
     {Vertex' Seam' SeamCircle' Facet' Boundary' : Type v}
@@ -544,11 +555,8 @@ abbrev relabelOver {W : ClosedWeb.{u}} {V : ClosedWeb.{v}} (F : FoamWithBoundary
   chirality := F.chirality ∘ eV.symm
   seamEnds := (((eV.symm.prodCongr (Equiv.refl (Fin 4))).sumCongr φ.vertex.symm).trans
     F.seamEnds).trans (eS.prodCongr (Equiv.refl Bool))
-  seamEnds_inl_snd v k := by simp [F.seamEnds_inl_snd (eV.symm v) k]
-  seamEnds_inr_snd w := by
-    have hw := congrArg Prod.snd (φ.map_ends_apply (φ.vertex.symm w) 0)
-    rw [φ.vertex.apply_symm_apply] at hw
-    simpa [hw] using F.seamEnds_inr_snd (φ.vertex.symm w)
+  seamEnds_inl_snd := by exact relabel_seamEnds_inl_snd F φ eV eS
+  seamEnds_inr_snd := by exact relabel_seamEnds_inr_snd F φ eV eS
   genus := F.genus ∘ eF.symm
   boundaryFacet := eF ∘ F.boundaryFacet ∘ eB.symm
   sideBoundary :=
@@ -558,11 +566,7 @@ abbrev relabelOver {W : ClosedWeb.{u}} {V : ClosedWeb.{v}} (F : FoamWithBoundary
   sideBoundary_eq_iff x y := by
     have hnp := nextSidePerm_eq_permCongr φ eV eS F.chirality (F.chirality ∘ eV.symm) F.seamEnds _
       F.seamEnds_inl_snd F.seamEnds_inr_snd
-      (fun v k ↦ by simp [F.seamEnds_inl_snd (eV.symm v) k])
-      (fun w ↦ by
-        have hw := congrArg Prod.snd (φ.map_ends_apply (φ.vertex.symm w) 0)
-        rw [φ.vertex.apply_symm_apply] at hw
-        simpa [hw] using F.seamEnds_inr_snd (φ.vertex.symm w))
+      (relabel_seamEnds_inl_snd F φ eV eS) (relabel_seamEnds_inr_snd F φ eV eS)
       (fun v ↦ by simp) (relabel_map_seamEnds F φ eV eS)
     rw [hnp]
     set eSide := (eS.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.edge
