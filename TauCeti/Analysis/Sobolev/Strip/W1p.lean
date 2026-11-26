@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Sobolev.Strip.Basic
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Sobolev.Strip.Morrey
 
 /-!
@@ -225,22 +224,11 @@ strip with its image under the Sobolev embedding, read on the closed strip throu
 theorem fst_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p F₀ F₁ p) :
     (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure]
       fun z ↦ continuousValue F₀ F₁ p x (z.1, projIcc 0 1 zero_le_one z.2) := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
-  -- The jets converge in `Lᵖ`, so a subsequence converges almost everywhere.
-  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
-    ((continuous_subtypeVal.tendsto x).comp hξ)).exists_seq_tendsto_ae
-  -- The continuous representatives converge uniformly, so pointwise.
-  have hcont := ((continuousValue F₀ F₁ p).continuous.tendsto x).comp hξ
-  filter_upwards [hns, ae_all_iff.2 fun n ↦ coeFn_jetLp p (ξ (ns n)),
-    ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz hzn hzs
-  refine tendsto_nhds_unique ((continuous_fst.tendsto _).comp hz) ?_
-  have hev := (((BoundedContinuousFunction.evalCLM ℝ
-    (z.1, projIcc 0 1 zero_le_one z.2)).continuous.tendsto _).comp
-    (hcont.comp hmono.tendsto_atTop))
-  refine hev.congr fun n ↦ ?_
-  simp only [Function.comp_apply, BoundedContinuousFunction.evalCLM_apply,
-    continuousValue_toW1p_apply hp hpt, projIcc_of_mem zero_le_one hzs.2, coe_toJetClosure,
-    hzn n, jet_apply]
+  refine fst_ae_eq_of_forall_toJetClosure (continuousValue F₀ F₁ p).continuous (fun ξ ↦ ?_) x
+  filter_upwards [coeFn_jetLp p ξ, ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)]
+    with z hz hzs
+  simp only [continuousValue_toW1p_apply hp hpt, projIcc_of_mem zero_le_one hzs.2, coe_toJetClosure,
+    hz, jet_apply]
 
 /-- **Uniqueness of the continuous representative.** For `2 < p < ∞`, a function continuous on the
 closed strip whose restriction agrees almost everywhere with the value of an element of
@@ -304,13 +292,10 @@ theorem jetLp_mem_W1p_iff (hp : 2 < p) (hpt : p ≠ ∞) (hF₀ : IsClosed (F₀
 theorem tendsto_continuousValue_comap_fst_cocompact (hp : 2 < p) (hpt : p ≠ ∞)
     (x : W1p F₀ F₁ p) :
     Tendsto (continuousValue F₀ F₁ p x) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
-  have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
-    (((continuousValue F₀ F₁ p).continuous.tendsto x).comp hξ)
-  refine hunif.tendsto_of_eventually_tendsto (L := fun _ ↦ 0)
-    (Eventually.of_forall fun n ↦ ?_) tendsto_const_nhds
-  simpa only [Function.comp_apply, continuousValue_toW1p hp hpt] using
-    tendsto_testSectionToBCF_comap_fst_cocompact (ξ n)
+  refine tendsto_of_forall_tendsto_toJetClosure (continuousValue F₀ F₁ p).continuous
+    (fun ξ ↦ ?_) x
+  rw [continuousValue_toW1p hp hpt]
+  exact tendsto_testSectionToBCF_comap_fst_cocompact ξ
 
 /-- **The Sobolev embedding commutes with translation**: the continuous representative of the
 translate of an element of `W1p F₀ F₁ p` is the translate of its continuous representative. -/
