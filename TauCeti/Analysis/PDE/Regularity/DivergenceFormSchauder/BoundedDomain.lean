@@ -156,8 +156,10 @@ private theorem exists_interior_piece {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : �
 /-- **The `C^{1,β}` estimate near a boundary point for zero boundary values.** Let `x` be a
 frontier point of a bounded open set `Ω`, near which `Ω` is, in rigid coordinates centred at `x`,
 the region above the graph of a `C¹` function with `α`-Hölder derivative. Then there is a ball
-`B(x, ρ)` and a constant `κ`, depending on the chart, `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, such
-that for every weak solution `u ∈ H¹₀(Ω)` of
+`B(x, ρ)` and a constant `κ`, depending on the chart, `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, with
+the following property. Let the coefficients `a` be uniformly elliptic on `closure Ω` with
+constants `λ, Λ` and `α`-Hölder there with constant `Ka ≤ M`, and let `G` be `α`-Hölder on
+`closure Ω` with constant `K_G`. Then for every weak solution `u ∈ H¹₀(Ω)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` in `Ω` the gradient `∇u` agrees almost everywhere on `Ω ∩ B(x, ρ)`
 with a function that is `β`-Hölder with constant `κ Q` and bounded by `κ Q` on
 `B(x, ρ) ∩ closure Ω`, where `Q = K_G + ‖f‖_{L^q(Ω)} + ‖u‖_{H¹(Ω)}`. -/

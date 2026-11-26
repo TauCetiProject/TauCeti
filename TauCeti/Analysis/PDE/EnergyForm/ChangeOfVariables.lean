@@ -999,20 +999,13 @@ theorem matrixBilinearForm_pullbackPrincipal_smul_add_const {ε : ℝ} (hε : 0 
     (c : EuclideanSpace ℝ ι) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (z : EuclideanSpace ℝ ι) :
     matrixBilinearForm (pullbackPrincipal (fun z => ε • z + c) a z) =
       (ε ^ Fintype.card ι * (ε⁻¹ * ε⁻¹)) • matrixBilinearForm (a (ε • z + c)) := by
-  have hd : fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + c) z =
-      ε • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) :=
-    (((hasFDerivAt_id z).const_smul ε).add_const c).fderiv
   have hT : (ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)) ∘L
       fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + c) z =
       ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
-    rw [hd, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul,
+    rw [Wkp.fderiv_smul_add_const, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul,
       ContinuousLinearMap.id_comp, smul_smul, inv_mul_cancel₀ hε.ne', one_smul]
-  have hdet : |(fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + c) z).det| =
-      ε ^ Fintype.card ι := by
-    rw [hd, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
-      ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one,
-      finrank_euclideanSpace, abs_of_pos (pow_pos hε _)]
-  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hT, hdet]
+  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hT,
+    Wkp.abs_det_fderiv_smul_add_const hε, finrank_euclideanSpace]
   ext η ξ
   simp [ContinuousLinearMap.adjoint_id, mul_assoc]
 

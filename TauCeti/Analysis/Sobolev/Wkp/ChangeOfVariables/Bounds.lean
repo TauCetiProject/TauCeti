@@ -21,6 +21,8 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
 
 ## Main declarations
 
+* `TauCeti.Wkp.fderiv_smul_add_const` and `TauCeti.Wkp.abs_det_fderiv_smul_add_const`: the
+  derivative and the absolute Jacobian determinant of a homothety.
 * `TauCeti.Wkp.IsChangeOfVariables.smul_add_const`: a homothety is a change of variables.
 * `TauCeti.Wkp.IsChangeOfVariables.mono_const` and
   `TauCeti.Wkp.IsChangeOfVariables.norm_fderiv_fderiv_le`: weakening the constants of a change of
@@ -56,6 +58,24 @@ open scoped InnerProductSpace ENNReal ContDiff
 
 namespace TauCeti.Wkp
 
+section Homothety
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The derivative of the homothety `x ↦ ε x + a` is `ε • id` at every point. -/
+theorem fderiv_smul_add_const (ε : ℝ) (a : E) :
+    fderiv ℝ (fun x : E => ε • x + a) = fun _ => ε • ContinuousLinearMap.id ℝ E :=
+  funext fun x => (((hasFDerivAt_id x).const_smul ε).add_const a).fderiv
+
+/-- The Jacobian determinant of the homothety `x ↦ ε x + a`, `ε > 0`, has absolute value
+`ε ^ finrank ℝ E` at every point. -/
+theorem abs_det_fderiv_smul_add_const {ε : ℝ} (hε : 0 < ε) (a x : E) :
+    |(fderiv ℝ (fun x : E => ε • x + a) x).det| = ε ^ Module.finrank ℝ E := by
+  rw [fderiv_smul_add_const]
+  simp [ContinuousLinearMap.det, abs_of_pos (pow_pos hε _)]
+
+end Homothety
+
 namespace IsChangeOfVariables
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -83,8 +103,7 @@ theorem norm_fderiv_fderiv_le (h : IsChangeOfVariables (k + 2) U V Φ L c) :
 order, with constants `ε` and `ε ^ finrank ℝ E`. -/
 theorem smul_add_const {ε : ℝ} (hε : 0 < ε) (a : E) (hA : MapsTo (fun x : E => ε • x + a) U V) :
     IsChangeOfVariables k U V (fun x : E => ε • x + a) ε (ε ^ Module.finrank ℝ E) := by
-  have hd : fderiv ℝ (fun x : E => ε • x + a) = fun _ => ε • ContinuousLinearMap.id ℝ E :=
-    funext fun x => (((hasFDerivAt_id x).const_smul ε).add_const a).fderiv
+  have hd := fderiv_smul_add_const ε a
   exact
     { contDiffOn := ((contDiff_id.const_smul ε).add contDiff_const).contDiffOn
       differentiableOn := ((differentiable_id.const_smul ε).add_const a).differentiableOn
@@ -99,10 +118,7 @@ theorem smul_add_const {ε : ℝ} (hε : 0 < ε) (a : E) (hA : MapsTo (fun x : E
         · rw [hd, iteratedFDeriv_const_of_ne n.succ_ne_zero]
           simpa using hε.le
       pos := pow_pos hε _
-      le_abs_det := fun x _ => by
-        rw [hd, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
-          ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one,
-          abs_of_pos (pow_pos hε _)] }
+      le_abs_det := fun x _ => (abs_det_fderiv_smul_add_const hε a x).ge }
 
 /-- **The chart between the two sides.** If mutually inverse changes of variables `Φ` and `Ψ`
 between `U` and `V` satisfy `Φ '' (H ∩ U) = Ω ∩ V`, then `Φ` restricts to a change of variables

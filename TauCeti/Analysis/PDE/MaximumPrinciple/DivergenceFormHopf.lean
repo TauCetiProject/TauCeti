@@ -281,42 +281,34 @@ private theorem contDiff_gaussBarrier (κ : ℝ) {k : WithTop ℕ∞} :
   have h : ContDiff ℝ k fun z : E => -κ * ‖z‖ ^ 2 := contDiff_const.mul (contDiff_norm_sq ℝ)
   exact (Real.contDiff_exp.comp h).sub contDiff_const
 
-/-- The constant-coefficient operator `div (A ∇·)` applied to the Gaussian barrier. -/
-private theorem divMatrixGradient_gaussBarrier (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
-    (κ : ℝ) (z : E) :
-    divMatrixGradient (fun _ => A) (gaussBarrier κ) z =
-      (4 * κ ^ 2 * A.toQuadraticForm' z - 2 * κ * A.trace) * Real.exp (-κ * ‖z‖ ^ 2) := by
-  have h := sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq A κ 0 z 0
-  simp only [sub_zero, map_zero, add_zero, inner_zero_right, mul_zero, WithLp.ofLp_zero] at h
-  have hD : fderiv ℝ (gaussBarrier (n := n) κ) = fderiv ℝ fun y : E => Real.exp (-κ * ‖y‖ ^ 2) :=
-    funext fun _ => fderiv_sub_const _
-  have hc : ContDiff ℝ 2 fun y : E => -κ * ‖y‖ ^ 2 := contDiff_const.mul (contDiff_norm_sq ℝ)
-  have hdiff : Differentiable ℝ (fderiv ℝ fun y : E => Real.exp (-κ * ‖y‖ ^ 2)) :=
-    ((Real.contDiff_exp.comp hc).fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero
-  rw [divMatrixGradient_eq_sum_fderiv_fderiv_apply (Omega := ⊤)
-    ((contDiff_gaussBarrier κ).contDiffOn) (mem_univ z), ← h]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [hD, fderiv_clm_apply (hdiff z) (differentiableAt_const _)]
-  simp
-
-/-- On the annulus the Gaussian barrier is a classical subsolution of `div (A ∇·)` once `κ` is
+/-- On the annulus the Gaussian barrier is a classical subsolution of `div (A ∇·)` once `κ ≥ 1` is
 large compared with the trace of `A` over its ellipticity constant. -/
 private theorem divMatrixGradient_gaussBarrier_nonneg {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {lam T κ : ℝ} (hlam : 0 ≤ lam) (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hT : A.trace ≤ T) (hκ : 0 ≤ κ) (hκT : 2 * T ≤ lam * κ) {z : E} (hz : 1 / 2 ≤ ‖z‖) :
+    (hT : A.trace ≤ T) (hκ : 1 ≤ κ) (hκT : 2 * |T| ≤ lam * κ) {z : E} (hz : 1 / 2 ≤ ‖z‖)
+    (hz1 : ‖z‖ ≤ 1) :
     0 ≤ divMatrixGradient (fun _ => A) (gaussBarrier κ) z := by
-  rw [divMatrixGradient_gaussBarrier]
-  refine mul_nonneg ?_ (Real.exp_pos _).le
-  have hQ : lam * (1 / 4) ≤ A.toQuadraticForm' z :=
-    (mul_le_mul_of_nonneg_left (by nlinarith) hlam).trans (hA z)
-  nlinarith [mul_le_mul_of_nonneg_left hQ (by positivity : (0 : ℝ) ≤ 4 * κ ^ 2),
-    mul_le_mul_of_nonneg_left hκT hκ, mul_le_mul_of_nonneg_left hT hκ]
+  have h : 0 ≤ ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (gaussBarrier κ)) z
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+    unfold gaussBarrier
+    simpa using mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
+      (y := 0) (x := z) (v := 0) (β := 0) (γ := 0) (R := 1) (c := 0) hlam hA hT (by simp) le_rfl
+      le_rfl (by norm_num : (0 : ℝ) ≤ 1 / 2) (by simpa using hz) (by simpa using hz1) hκ
+      (by norm_num; linarith)
+  have hdiff : Differentiable ℝ (fderiv ℝ (gaussBarrier (n := n) κ)) :=
+    ((contDiff_gaussBarrier κ (k := 2)).fderiv_right (m := 1) (by norm_num)).differentiable
+      one_ne_zero
+  rw [divMatrixGradient_eq_sum_fderiv_fderiv_apply (Omega := ⊤)
+    ((contDiff_gaussBarrier κ).contDiffOn) (mem_univ z)]
+  refine h.trans_eq (Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_)
+  rw [fderiv_clm_apply (hdiff z) (differentiableAt_const _)]
+  simp
 
 /-- **The barrier is a weak subsolution.** A Sobolev function on the annulus equal to the Gaussian
 barrier satisfies `∫ ⟨A ∇Φ, ∇v⟩ ≤ 0` for every nonnegative `v ∈ H¹₀`. -/
 private theorem energyFormH1_gaussBarrier_nonpos {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {lam T κ : ℝ} (hlam : 0 ≤ lam) (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hT : A.trace ≤ T) (hκ : 0 ≤ κ) (hκT : 2 * T ≤ lam * κ)
+    (hT : A.trace ≤ T) (hκ : 1 ≤ κ) (hκT : 2 * |T| ≤ lam * κ)
     {W : W1p volume (unitAnnulus (n := n)) 2}
     (hW : W1p.value W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] gaussBarrier κ)
     (v : W1p0 volume (unitAnnulus (n := n)) 2)
@@ -344,7 +336,7 @@ private theorem energyFormH1_gaussBarrier_nonpos {A : Matrix (Fin (n + 1)) (Fin 
     with z hz hvz hzD
   rw [hz]
   exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (divMatrixGradient_gaussBarrier_nonneg hlam
-    hA hT hκ hκT (mem_unitAnnulus.1 hzD).2.le)) hvz
+    hA hT hκ hκT (mem_unitAnnulus.1 hzD).2.le (mem_unitAnnulus.1 hzD).1.le)) hvz
 
 /-! ### The correction of the frozen barrier -/
 
@@ -430,11 +422,11 @@ private theorem div_ten_mul_norm_sq_le_energyFormH1 {b : E → Matrix (Fin (n + 
   have h := hb.mul_norm_sq_le_energyFormH1_self_of_subset_ball (b := 0) (c := 0) (beta := 0)
     (gamma := 0) hm aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) (fun _ _ => le_rfl) unitAnnulus_subset_ball w.property
-  have hc : (lam ^ 2 - 0 ^ 2 * (2 * 1) ^ 2) / (2 * lam * ((2 * 1) ^ 2 + 1)) = lam / 10 := by
-    have := hb.pos
-    field_simp
-    ring
-  rwa [hc] at h
+  refine (le_of_eq ?_).trans h
+  have := hb.pos
+  congr 1
+  field_simp
+  ring
 
 /-- **The correction.** For coefficients `b`, uniformly elliptic and continuous on the closed unit
 ball, there is `ψ ∈ H¹₀` of the annulus solving `-div (b ∇ψ) = div ((b - A) ∇Φ)`, with
@@ -663,13 +655,7 @@ linearly: `κ e^{-κ} t ≤ Φ((1 - t) ν)` for `0 ≤ t ≤ 1`. -/
 private theorem mul_le_gaussBarrier_smul {κ : ℝ} (hκ : 0 ≤ κ) {ν : E} (hν : ‖ν‖ = 1) {t : ℝ}
     (ht0 : 0 ≤ t) (ht1 : t ≤ 1) : κ * Real.exp (-κ) * t ≤ gaussBarrier κ ((1 - t) • ν) := by
   rw [gaussBarrier, norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
-  have hsplit : Real.exp (-κ * (1 - t) ^ 2) = Real.exp (-κ) * Real.exp (κ * (2 * t - t ^ 2)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  have h1 := Real.add_one_le_exp (κ * (2 * t - t ^ 2))
-  have h2 : κ * t ≤ κ * (2 * t - t ^ 2) := mul_le_mul_of_nonneg_left (by nlinarith) hκ
-  rw [hsplit]
-  nlinarith [Real.exp_pos (-κ)]
+  simpa using mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub hκ ht0 ht1
 
 /-- **The comparison on the annulus.** Let `uε ∈ H¹` of the annulus be a weak supersolution for
 coefficients `b`, uniformly elliptic and continuous on the closed unit ball, equal almost
@@ -680,7 +666,7 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {κ lam Lam T : ℝ}
     (hb : UniformlyEllipticOn (closedBall (0 : E) 1) b lam Lam)
     (hbc : ContinuousOn b (closedBall 0 1)) (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hT : A.trace ≤ T) (hκ : 0 ≤ κ) (hκT : 2 * T ≤ lam * κ)
+    (hT : A.trace ≤ T) (hκ : 1 ≤ κ) (hκT : 2 * |T| ≤ lam * κ)
     {ψ : W1p0 volume (unitAnnulus (n := n)) 2}
     (hψ : ∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
       energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (v : W1p volume unitAnnulus 2) =
@@ -758,7 +744,7 @@ supersolution on the annulus whose continuous representative `ĝ` is at least `s
 sphere and at least `s₀ + θ Φ` on the inner sphere grows linearly into the annulus along the
 inward normal at `ν`: `s₀ + θ κ e^{-κ} t / 2 ≤ ĝ ((1 - t) ν)` for small `t > 0`. -/
 private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (hα : 0 < α)
-    (hα1 : α ≤ 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) {κ : ℝ} (hκ : 0 < κ) :
+    (hα1 : α ≤ 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) {κ : ℝ} (hκ : 1 ≤ κ) :
     ∃ ρ > 0, ∃ C : ℝ, 0 ≤ C ∧ ∀ {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
       {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Kb : ℝ≥0} {η T : ℝ}
       {uε : W1p volume (unitAnnulus (n := n)) 2} {ĝ : E → ℝ} {s₀ θ : ℝ},
@@ -767,7 +753,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
       η ≤ 1 → (∀ z ∈ closedBall (0 : E) 1,
         ‖matrixBilinearForm (b z) - matrixBilinearForm A‖ ≤ η) →
       C * η ≤ κ * Real.exp (-κ) / 2 → (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
-      A.trace ≤ T → 2 * T ≤ lam * κ →
+      A.trace ≤ T → 2 * |T| ≤ lam * κ →
       (∀ v : W1p0 volume (unitAnnulus (n := n)) 2,
         (∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
           0 ≤ W1p.value (v : W1p volume unitAnnulus 2) z) →
@@ -782,7 +768,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
     hθ h1 h2 t ht => ?_⟩
   obtain ⟨ψ, ψ', hψ, hae, hLip, h0⟩ := H hb hbh hKb hη1 hbA
   have hcomp := ae_add_mul_le_of_supersolution hb
-    (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα)) hA hT hκ.le hκT hψ
+    (continuousOn_of_continuousOn_matrixBilinearForm (hbh.continuousOn hα)) hA hT hκ hκT hψ
     huε hĝ huĝ hθ h1 h2
   -- On the open set `O = annulus ∩ B(ν, ρ)` the comparison holds pointwise, by continuity.
   set O : Set E := (unitAnnulus (n := n) : Set E) ∩ ball ν ρ
@@ -814,7 +800,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have hFz := hF0 hzt
   simp only [F, Pi.zero_apply, max_eq_right_iff, sub_nonpos] at hFz
   -- The barrier grows like `κ e^{-κ} t`, and the correction is `C η`-Lipschitz and vanishes at `ν`.
-  have hΦ := mul_le_gaussBarrier_smul hκ.le hν ht0.le (by linarith)
+  have hΦ := mul_le_gaussBarrier_smul (zero_le_one.trans hκ) hν ht0.le (by linarith)
   have hψ' : -(C * η * t) ≤ ψ' ((1 - t) • ν) := by
     have hd := hLip.dist_le_mul ((1 - t) • ν) hzt.2 ν (mem_ball_self hρ)
     have hdist : dist ((1 - t) • ν) ν = t := by
@@ -988,11 +974,12 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
   have hA := (hell₃ (sphere_subset_closedBall hx₀)).1
   set κ := 2 * |(a x₀).trace| / lam + 1
   have hκ : 0 < κ := by positivity
+  have hκ1 : 1 ≤ κ := le_add_of_nonneg_left (by positivity)
   have hκT : 2 * |(a x₀).trace| ≤ lam * κ := by
     rw [mul_add, mul_div_cancel₀ _ hlam.ne', mul_one]
     linarith
   obtain ⟨ρ, hρ, C, hC, HF⟩ := exists_add_mul_le_of_supersolution (n := n) ν hν hα₁
-    (min_le_right _ _) hlam Lam hκ
+    (min_le_right _ _) hlam Lam hκ1
   -- A scale `ε` at which the rescaled coefficients are close enough to the frozen matrix.
   obtain ⟨ε, hε, hεR, hη1, hCη⟩ := exists_scale K₁.coe_nonneg hC (by positivity : 0 < κ *
     Real.exp (-κ)) hR (NNReal.coe_pos.2 hα₁)
@@ -1013,8 +1000,8 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
     rw [NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal _ hε.le]
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hε.le (by linarith) α₁.coe_nonneg)
       K₁.coe_nonneg
-  have hlin := HF hbell hbh hKb hη1 (by rw [hx₀ν] at hbA; exact hbA) hCη hA (le_abs_self _) hκT
-    huε (hg.comp hT.continuousOn hmaps) huĝ hθ.le h1 h2
+  have hlin := HF hbell hbh hKb hη1 (by rw [hx₀ν] at hbA; exact hbA) hCη hA (le_abs_self _)
+    (by rwa [abs_abs]) huε (hg.comp hT.continuousOn hmaps) huĝ hθ.le h1 h2
   -- Undo the rescaling: the point `(1 - t) ν` of the annulus is `x₀ - ε t ν`.
   refine exists_pos_mul_le_sub_of_rescaled (c := θ * (κ * Real.exp (-κ) / 2))
     (τ := min ρ (1 / 2)) hε (lt_min hρ (by norm_num)) (by positivity) fun t ht => ?_

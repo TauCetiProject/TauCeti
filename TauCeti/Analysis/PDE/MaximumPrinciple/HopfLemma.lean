@@ -59,6 +59,9 @@ over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
 
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: `L` applied to the
   Gaussian `exp (-α ‖· - y‖²)`.
+* `TauCeti.PDE.mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub` and
+  `TauCeti.PDE.mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub`: the shifted Gaussian barrier is
+  a subsolution on an annulus and grows at least linearly inward from its outer sphere.
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: **Hopf's
   boundary-point lemma**, the inward difference quotients are bounded below by a positive
   constant.
@@ -133,7 +136,7 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq (A : Matrix ι 
 /-- On the annulus `ρ ≤ ‖x - y‖ ≤ R`, the shifted Gaussian barrier
 `w = exp (-α ‖· - y‖²) - exp (-α R²)` is a subsolution, `c w ≤ ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼw + ∂_v w`, once
 `α ≥ 1` is large compared with `tr A / λ`, `R ‖v‖ / λ` and `c / λ`, all measured against `ρ²`. -/
-private theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
+theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
     {A : Matrix ι ι ℝ} {y x v : EuclideanSpace ℝ ι} {lam Λ β γ ρ R α c : ℝ} (hlam : 0 ≤ lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) (htr : A.trace ≤ Λ)
     (hv : ‖v‖ ≤ β) (hc : 0 ≤ c) (hcγ : c ≤ γ) (hρ : 0 ≤ ρ) (hρx : ρ ≤ ‖x - y‖)
@@ -164,6 +167,22 @@ private theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_
   nlinarith [mul_le_mul_of_nonneg_left hQ (by positivity : (0 : ℝ) ≤ 4 * α ^ 2),
     mul_le_mul_of_nonneg_left hαbig hα0, mul_le_mul_of_nonneg_left (le_abs_self Λ) hα0,
     mul_le_mul_of_nonneg_left hinner hα0, mul_le_mul_of_nonneg_right hα (abs_nonneg γ)]
+
+/-- Moving inward from radius `r`, the Gaussian `exp (-α s²)` grows at least linearly:
+`α r e^{-α r²} t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and `0 ≤ t ≤ r`. -/
+theorem mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub {α r t : ℝ} (hα : 0 ≤ α) (ht : 0 ≤ t)
+    (htr : t ≤ r) :
+    α * r * Real.exp (-α * r ^ 2) * t ≤ Real.exp (-α * (r - t) ^ 2) - Real.exp (-α * r ^ 2) := by
+  have hexp : Real.exp (-α * (r - t) ^ 2) =
+      Real.exp (-α * r ^ 2) * Real.exp (α * (r ^ 2 - (r - t) ^ 2)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have h1 := Real.add_one_le_exp (α * (r ^ 2 - (r - t) ^ 2))
+  have h2 : α * r * t ≤ α * (r ^ 2 - (r - t) ^ 2) := by
+    have : r * t ≤ r ^ 2 - (r - t) ^ 2 := by nlinarith
+    nlinarith
+  rw [hexp]
+  nlinarith [Real.exp_pos (-α * r ^ 2)]
 
 variable {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c u : EuclideanSpace ℝ ι → ℝ} {y x₀ : EuclideanSpace ℝ ι} {R lam Λ β γ : ℝ}
@@ -296,16 +315,9 @@ private theorem exists_pos_mul_le_sub_of_mul_le_of_nonneg (hR : 0 < R) (hx₀ : 
   have hw := hmax hxK
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] at hw
   have hvx : α * r * Real.exp (-α * r ^ 2) * t ≤ v x := by
-    have hexp : Real.exp (-α * ‖x - y'‖ ^ 2) =
-        Real.exp (-α * r ^ 2) * Real.exp (α * (r ^ 2 - (r - t) ^ 2)) := by
-      rw [← Real.exp_add, ← dist_eq_norm, hxy']
-      ring_nf
-    have h1 := Real.add_one_le_exp (α * (r ^ 2 - (r - t) ^ 2))
-    have h2 : α * r * t ≤ α * (r ^ 2 - (r - t) ^ 2) := by
-      have : r * t ≤ r ^ 2 - (r - t) ^ 2 := by nlinarith [ht.1, ht.2]
-      nlinarith
-    simp only [hv, hexp]
-    nlinarith [Real.exp_pos (-α * r ^ 2)]
+    simp only [hv, ← dist_eq_norm, hxy']
+    exact mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub (by linarith) ht.1.le
+      (by linarith [ht.2])
   nlinarith [mul_le_mul_of_nonneg_left hvx hm₀pos.le]
 
 /-- **Hopf's boundary-point lemma** for the elliptic operator in non-divergence form
