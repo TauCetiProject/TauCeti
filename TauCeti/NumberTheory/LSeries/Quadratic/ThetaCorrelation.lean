@@ -31,28 +31,6 @@ open Real
 
 namespace TauCeti
 
-/-- Multiply two pointwise Gaussian bounds and separate the index and scale powers. -/
-private theorem gaussianPair_le {a C : ℝ} {j : ℕ}
-    (h : ∀ x : ℝ, 0 < x → x ^ j * exp (-π * x ^ 2) ≤ C * x ^ (-a))
-    {u m n : ℝ} (hu : 0 ≤ u) (hm : 0 < m) (hn : 0 < n) :
-    u * (((m * u) ^ j * exp (-π * (m * u) ^ 2)) * ((n * u) ^ j * exp (-π * (n * u) ^ 2))) ≤
-      C ^ 2 * (m * n) ^ (-a) * u ^ (1 - 2 * a) := by
-  rcases hu.eq_or_lt with rfl | hu
-  · simp only [zero_mul]
-    positivity
-  have hm' := h _ (mul_pos hm hu)
-  have hn' := h _ (mul_pos hn hu)
-  have hm₀ : 0 ≤ (m * u) ^ j * exp (-π * (m * u) ^ 2) := by positivity
-  calc
-    _ ≤ u * ((C * (m * u) ^ (-a)) * (C * (n * u) ^ (-a))) :=
-      mul_le_mul_of_nonneg_left
-        (mul_le_mul hm' hn' (by positivity) (hm₀.trans hm')) hu.le
-    _ = _ := by
-      rw [mul_rpow hm.le hu.le, mul_rpow hn.le hu.le, mul_rpow hm.le hn.le,
-        sub_eq_add_neg, rpow_add hu, rpow_one,
-        (by ring : -(2 * a) = -a + -a), rpow_add hu]
-      ring
-
 /-- Off the exceptional set, the stronger Gaussian power bound absorbs the correlation
 weight and leaves two inverse powers of the scale. -/
 private theorem gaussianPair_mul_correlation_le {δ E T u : ℝ} {j : ℕ}
@@ -91,7 +69,7 @@ private theorem gaussianPair_mul_correlation_le {δ E T u : ℝ} {j : ℕ}
   calc
     _ ≤ (E ^ 2 * (m * n) ^ (-(3 / 2 + δ)) * u ^ (1 - 2 * (3 / 2 + δ))) *
         (2 * (1 + (δ / 2)⁻¹) * (m * n) ^ (1 / 2 + δ / 2)) :=
-      mul_le_mul (gaussianPair_le h hu.le hm hn) hcorr (by positivity) (by positivity)
+      mul_le_mul (mul_gaussian_pair_le h hu.le hm hn) hcorr (by positivity) (by positivity)
     _ = (E ^ 2 * (2 * (1 + (δ / 2)⁻¹))) * (m * n) ^ (-1 - δ / 2) *
         u ^ (-2 : ℝ) * u ^ (-2 * δ) := by
       have hprod : (m * n) ^ (-1 - δ / 2) = (m * n) ^ (-(3 / 2 + δ)) *
@@ -107,7 +85,7 @@ private theorem gaussianPair_mul_correlation_le {δ E T u : ℝ} {j : ℕ}
 (typically the square pairs) the correlation bound is `X`. Outside `D` it is
 `2√(mn)(1 + log(mn))`. With `X ≤ T²` and scale `u ≥ 1/T`, the weighted bound at every pair
 is at most a summable coefficient times `T² u⁻²ᵟ`. -/
-theorem exists_summable_gaussian_correlation_majorant (j : ℕ) {δ : ℝ} (hδ : 0 < δ)
+theorem _root_.Nat.exists_summable_gaussian_correlation_majorant (j : ℕ) {δ : ℝ} (hδ : 0 < δ)
     (D : Set (ℕ+ × ℕ+)) [DecidablePred (· ∈ D)]
     (hD : Summable fun p : ℕ+ × ℕ+ ↦ if p ∈ D then
       ((p.1 : ℝ) * (p.2 : ℝ)) ^ (-(1 / 2 + δ)) else 0) :
@@ -150,7 +128,7 @@ theorem exists_summable_gaussian_correlation_majorant (j : ℕ) {δ : ℝ} (hδ 
       _ ≤ u * (((p.1 * u) ^ j * exp (-π * (p.1 * u) ^ 2)) *
           ((p.2 * u) ^ j * exp (-π * (p.2 * u) ^ 2))) * T ^ 2 := by gcongr
       _ ≤ (C ^ 2 * ((p.1 : ℝ) * p.2) ^ (-a) * u ^ (1 - 2 * a)) * T ^ 2 :=
-        mul_le_mul_of_nonneg_right (gaussianPair_le hsmall hu.le hm hn) (sq_nonneg T)
+        mul_le_mul_of_nonneg_right (mul_gaussian_pair_le hsmall hu.le hm hn) (sq_nonneg T)
       _ ≤ _ := by
         rw [(by dsimp [a]; ring : 1 - 2 * a = -2 * δ), mul_right_comm]
         gcongr
