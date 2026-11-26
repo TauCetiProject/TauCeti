@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere.Hopf
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
+import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Geometry.Manifold.Submersion.Split
 import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
@@ -159,7 +160,7 @@ theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
       rw [← range_mvfderiv_subtypeVal (n := 3) z]
       rintro _ ⟨w, rfl⟩
       have hw := eval₂_sphereAreaForm_mfderiv_hopfMap z v w
-      rw [h, SmoothBundleForm.eval₂_zero_left, EuclideanSpace.im_inner_eq_real_inner_I_smul,
+      rw [h, SmoothBundleForm.eval₂_zero_left, im_inner_eq_real_inner_I_smul,
         real_inner_comm] at hw
       exact (mul_eq_zero.1 hw.symm).resolve_left four_ne_zero
     rw [Submodule.orthogonal_orthogonal, Submodule.mem_span_singleton] at horth
@@ -172,7 +173,7 @@ theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
     obtain ⟨w, rfl⟩ := mfderiv_hopfMap_surjective z u
     have hn : I • t • I • (z : ℂ²) = (-t) • (z : ℂ²) := by
       simp [smul_comm I t, smul_smul]
-    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, EuclideanSpace.im_inner_eq_real_inner_I_smul, hn,
+    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, im_inner_eq_real_inner_I_smul, hn,
       real_inner_smul_left, inner_coe_mvfderiv_subtypeVal_sphere]
     simp
 

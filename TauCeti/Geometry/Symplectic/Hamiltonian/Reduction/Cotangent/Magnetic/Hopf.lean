@@ -63,9 +63,9 @@ the canonical symplectic form of `T*S³`. This is
 
 ## References
 
-* Juan-Pablo Ortega and Tudor S. Ratiu, *Cotangent bundle reduction*, in Handbook of Global
-  Analysis, Elsevier, 2008, pp. 1–3 (the magnetic term of cotangent reduction at a
-  coadjoint-invariant value).
+* Juan-Pablo Ortega and Tudor S. Ratiu, *Cotangent bundle reduction*, in *Encyclopedia of
+  Mathematical Physics*, Elsevier, 2006 (the embedding version of cotangent reduction at a
+  coadjoint-invariant value, with its magnetic term).
 * Jerrold Marsden and Tudor Ratiu, *Introduction to Mechanics and Symmetry*, second edition,
   Springer, 1999, Section 6.6 (magnetic terms).
 -/

@@ -254,7 +254,7 @@ theorem mpullback_smul_sphereContactForm (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_�
       L.mvfderiv_comp_apply ((contMDiff_coe_sphere (n := d) (m := 1) z).mdifferentiableAt
         one_ne_zero)]
   rw [hv, SmoothForm.mpullback_apply_one, sphereContactForm_apply, sphereContactForm_apply, hd, hL,
-    hΩ, hΩ, Circle.coe_smul_sphere, inner_smul_smul_circle]
+    hΩ, hΩ, Circle.coe_smul_sphere, inner_smul_smul_of_norm_eq_one (Circle.norm_coe u)]
 
 /-- **The contact form on the generator of the circle action.** For the Kähler form
 `Ω(v, w) = Im ⟪v, w⟫_ℂ` of `ℂ^ι`, the contact form `λ|S` takes the value `1 / 2` on a tangent

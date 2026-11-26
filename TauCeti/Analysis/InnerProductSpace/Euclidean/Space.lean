@@ -30,9 +30,7 @@ The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
 closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
 disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
-part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`), and the imaginary part
-of the complex inner product `⟪x, y⟫_ℂ` is the real inner product of `i x` with `y`
-(`EuclideanSpace.im_inner_eq_real_inner_I_smul`).
+part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`).
 -/
 
 public section
@@ -44,13 +42,6 @@ coordinates, is the real part of the complex inner product. -/
 theorem EuclideanSpace.real_inner_eq_re_inner {ι : Type*} [Fintype ι]
     (x y : EuclideanSpace ℂ ι) : ⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re := by
   simp [PiLp.inner_apply, Complex.inner, Complex.re_sum]
-
-/-- On `EuclideanSpace ℂ ι`, the imaginary part of the complex inner product `⟪x, y⟫_ℂ` is the real
-inner product of `i x` with `y`. -/
-theorem EuclideanSpace.im_inner_eq_real_inner_I_smul {ι : Type*} [Fintype ι]
-    (x y : EuclideanSpace ℂ ι) : (⟪x, y⟫_ℂ).im = ⟪Complex.I • x, y⟫_ℝ := by
-  rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left]
-  simp
 
 namespace TauCeti
 
