@@ -73,7 +73,7 @@ theorem isHeightFunctionOn_def : IsHeightFunctionOn R H ↔
 theorem tilingOfHeightOn_def (R : Set TriFace) (H : ℤ × ℤ → ℤ) :
     tilingOfHeightOn R H = tilingOfHeight H ∩ regionEdges R := (rfl)
 
-theorem mem_tilingOfHeightOn {e : TriEdge} : e ∈ tilingOfHeightOn R H ↔
+@[simp] theorem mem_tilingOfHeightOn {e : TriEdge} : e ∈ tilingOfHeightOn R H ↔
     H e.target - H e.v = 1 - neutralIncrement e ∧ e ∈ regionEdges R := by
   rw [tilingOfHeightOn_def, Set.mem_inter_iff, mem_tilingOfHeight]
 
@@ -88,11 +88,17 @@ theorem IsHeightFunctionOn.mono {S : Set TriFace} (hH : IsHeightFunctionOn S H) 
     IsHeightFunctionOn R H :=
   fun e he => hH e (regionEdges_mono hRS he)
 
+/-- Two functions agreeing on the vertices of `R` have the same increment along every edge of
+`R`. -/
+theorem _root_.Set.EqOn.target_sub_v_eq (hHH' : Set.EqOn H H' (regionVertices R)) {e : TriEdge}
+    (he : e ∈ regionEdges R) : H e.target - H e.v = H' e.target - H' e.v := by
+  rw [hHH' (mem_regionVertices_of_mem_endpoints he (TriEdge.mem_endpoints.2 (Or.inr rfl))),
+    hHH' (mem_regionVertices_of_mem_endpoints he (TriEdge.mem_endpoints.2 (Or.inl rfl)))]
+
 /-- Two functions agreeing on the vertices of `R` are height functions on `R` together. -/
 theorem IsHeightFunctionOn.congr (hH : IsHeightFunctionOn R H)
     (hHH' : Set.EqOn H H' (regionVertices R)) : IsHeightFunctionOn R H' := fun e he => by
-  rw [← hHH' (mem_regionVertices_of_mem_endpoints he (by simp [TriEdge.endpoints_def])),
-    ← hHH' (mem_regionVertices_of_mem_endpoints he (by simp [TriEdge.endpoints_def]))]
+  rw [← hHH'.target_sub_v_eq he]
   exact hH e he
 
 /-- Two functions agreeing on the vertices of `R` have the same free tiling on `R`. -/
@@ -100,9 +106,7 @@ theorem tilingOfHeightOn_congr (hHH' : Set.EqOn H H' (regionVertices R)) :
     tilingOfHeightOn R H = tilingOfHeightOn R H' := by
   ext e
   simp only [mem_tilingOfHeightOn]
-  refine and_congr_left fun he => ?_
-  rw [hHH' (mem_regionVertices_of_mem_endpoints he (by simp [TriEdge.endpoints_def])),
-    hHH' (mem_regionVertices_of_mem_endpoints he (by simp [TriEdge.endpoints_def]))]
+  exact and_congr_left fun he => by rw [hHH'.target_sub_v_eq he]
 
 namespace IsHeightFunctionOn
 
@@ -130,6 +134,12 @@ theorem isCochainPrimitiveOn :
     · rcases hH e he with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
         omega
     · exact absurd he hm
+
+/-- Along an edge of `R`, the height cochain of the free tiling of a height function on `R` is
+the increment of the height function. -/
+theorem heightCochain_tilingOfHeightOn {e : TriEdge} (he : e ∈ regionEdges R) :
+    heightCochain (tilingOfHeightOn R H) e = H e.target - H e.v :=
+  isCochainPrimitiveOn_def.1 hH.isCochainPrimitiveOn e he
 
 end IsHeightFunctionOn
 
