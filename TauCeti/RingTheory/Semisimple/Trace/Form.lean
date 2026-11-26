@@ -59,8 +59,8 @@ in the parameter, and the algebra is semisimple wherever that polynomial does no
 
 * `TauCeti.trace_lsmul_mul_eq_zero_of_mem_jacobson`: an element of the Jacobson radical is in
   the kernel of the trace form of every module.
-* `TauCeti.isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero`: **an algebra which has a module
-  with trace form nondegenerate on the right is semisimple.**
+* `TauCeti.isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero`: **an algebra which
+  has a module with trace form nondegenerate on the right is semisimple.**
 * `TauCeti.isSemisimpleRing_of_nondegenerate_regularTraceForm`: **an algebra with nondegenerate
   regular trace form is semisimple.**
 * `TauCeti.nondegenerate_regularTraceForm`: in characteristic zero, the regular trace form of a
@@ -122,7 +122,7 @@ theorem trace_lsmul_mul_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobso
 which `K` acts compatibly. If the trace form `(x, y) ↦ tr_M(x y)` of `M` is nondegenerate on the
 right, that is, no nonzero `x` has `tr_M(y x) = 0` for every `y`, then `A` is semisimple. This holds
 over every field; `A` and `M` need not be finite-dimensional. -/
-theorem isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero
+theorem isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero
     (h : ∀ x : A, (∀ y : A, trace K M (lsmul K K M (y * x)) = 0) → x = 0) :
     IsSemisimpleRing A := by
   by_cases H : ∃ s : Finset M, Nonempty (Basis s K M)
@@ -150,10 +150,11 @@ theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A}
   exact trace_lsmul_mul_eq_zero_of_mem_jacobson A hx y
 
 /-- **An algebra whose regular trace form is nondegenerate is semisimple.** This holds over every
-field, and is the case `M = A` of `isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero`. -/
+field, and is the case `M = A` of
+`isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero`. -/
 theorem isSemisimpleRing_of_nondegenerate_regularTraceForm
     (h : (regularTraceForm K A).Nondegenerate) : IsSemisimpleRing A :=
-  isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero (K := K) A fun x hx =>
+  isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero (K := K) A fun x hx =>
     h.2 x fun y => by rw [regularTraceForm_apply]; exact hx y
 
 variable [FiniteDimensional K A]
