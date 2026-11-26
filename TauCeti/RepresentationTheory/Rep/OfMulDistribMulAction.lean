@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Additive representations from multiplicative distributive actions
@@ -100,9 +101,7 @@ theorem mem_ker_applyAsHom_sub_of_smul_eq_self [CommMonoid G] [CommGroup M]
     [MulDistribMulAction G M] {g : G} {a : M} (ha : g • a = a) :
     (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a) ∈ LinearMap.ker
       (Rep.applyAsHom (Rep.ofMulDistribMulAction G M) g - 𝟙 _).hom.toLinearMap := by
-  rw [LinearMap.mem_ker, Rep.sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
-    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
-    Representation.IntertwiningMap.id_apply]
+  rw [LinearMap.mem_ker, Rep.applyAsHom_sub_id_apply]
   apply (Rep.toAdditive (M := G) (G := M)).injective
   rw [map_sub, map_zero, toAdditive_ofMulDistribMulAction_ρ_apply, AddEquiv.apply_symm_apply,
     toMul_ofMul, ha, sub_self]

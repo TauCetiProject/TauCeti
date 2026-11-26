@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
+import TauCeti.Data.ZMod.Two
 
 /-!
 # The inversion action of `C₂` on a commutative group
@@ -37,31 +38,30 @@ public section
 
 namespace TauCeti
 
+private def invMulAutHom (M : Type*) [CommGroup M] :
+    Multiplicative (ZMod 2) →* MulAut M where
+  toFun g := if g = 1 then 1 else MulEquiv.inv M
+  map_one' := by simp
+  map_mul' g h := by
+    have hmul : Multiplicative.ofAdd (1 : ZMod 2) * Multiplicative.ofAdd 1 = 1 := by
+      rw [← ofAdd_add]
+      simp [CharTwo.add_self_eq_zero]
+    rcases Multiplicative.eq_one_or_eq_ofAdd_one g with rfl | rfl <;>
+      rcases Multiplicative.eq_one_or_eq_ofAdd_one h with rfl | rfl
+    · simp
+    · simp
+    · simp
+    · simp only [hmul, ↓reduceIte, ofAdd_eq_one, one_ne_zero]
+      ext m
+      simp
+
 /-- **The inversion action of `C₂ = Multiplicative (ZMod 2)` on a commutative group `M`**: the
 identity fixes every element and the generator `ofAdd 1` inverts it. Deliberately not a global
 instance; install locally where needed. -/
 @[instance_reducible]
 def invMulDistribMulAction (M : Type*) [CommGroup M] :
-    MulDistribMulAction (Multiplicative (ZMod 2)) M where
-  smul g a := if g = 1 then a else a⁻¹
-  one_smul a := by
-    simp only [HSMul.hSMul, SMul.smul, ↓reduceIte]
-  mul_smul g h a := by
-    have h2 : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
-    have eq_one_or (x : Multiplicative (ZMod 2)) : x = 1 ∨ x = Multiplicative.ofAdd 1 := by
-      rcases h2 (Multiplicative.toAdd x) with hx | hx
-      · left; exact Multiplicative.toAdd.injective hx
-      · right; exact Multiplicative.toAdd.injective hx
-    have hmul : Multiplicative.ofAdd (1 : ZMod 2) * Multiplicative.ofAdd 1 = 1 := by decide
-    have hne : Multiplicative.ofAdd (1 : ZMod 2) ≠ 1 := by decide
-    rcases eq_one_or g with rfl | rfl <;> rcases eq_one_or h with rfl | rfl <;>
-      simp [HSMul.hSMul, SMul.smul, hmul, hne]
-  smul_one g := by
-    simp only [HSMul.hSMul, SMul.smul]
-    split_ifs <;> simp
-  smul_mul g a b := by
-    simp only [HSMul.hSMul, SMul.smul]
-    split_ifs <;> simp [mul_comm]
+    MulDistribMulAction (Multiplicative (ZMod 2)) M :=
+  MulDistribMulAction.compHom M (invMulAutHom M)
 
 section InvActionSmul
 
@@ -72,16 +72,15 @@ attribute [local instance] invMulDistribMulAction
 /-- Under `TauCeti.invMulDistribMulAction`, the identity fixes `a` and the nontrivial element
 inverts `a`. -/
 theorem invMulDistribMulAction_smul (g : Multiplicative (ZMod 2)) (a : M) :
-    g • a = if g = 1 then a else a⁻¹ :=
-  (rfl)
+    g • a = if g = 1 then a else a⁻¹ := by
+  rw [invMulDistribMulAction, MulAction.compHom_smul_def]
+  split_ifs with h <;> simp [invMulAutHom, h]
 
 /-- Under `TauCeti.invMulDistribMulAction`, the generator `ofAdd 1` of `C₂` acts by inversion. -/
 @[simp]
 theorem invMulDistribMulAction_ofAdd_one_smul (a : M) :
     (Multiplicative.ofAdd (1 : ZMod 2)) • a = a⁻¹ := by
-  have h : Multiplicative.ofAdd (1 : ZMod 2) ≠ 1 := by decide
-  rw [invMulDistribMulAction_smul]
-  simp [h]
+  simp [invMulDistribMulAction_smul]
 
 /-- Any monoid homomorphism intertwines the inversion actions of `C₂`. -/
 theorem _root_.MonoidHom.map_invMulDistribMulAction_smul {N : Type*} [CommGroup N]

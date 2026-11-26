@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Cohomology
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Cohomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicAutomorphism
+import TauCeti.Data.ZMod.Two
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
 /-!
@@ -144,8 +145,8 @@ theorem eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass (n : ℕ) [
     (c : groupCohomology
       (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2) :
     c = dihedralEvenExtensionClass n ∨ c = quaternionExtensionClass n := by
-  have h2 : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
-  rcases h2 (Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n c) with h | h
+  rcases ZMod.eq_zero_or_eq_one (Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n c) with
+    h | h
   · left
     exact (Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n).injective (by simp [h])
   · right

@@ -65,24 +65,11 @@ section Negation
 
 variable [AddCommGroup V] [Module k V] (ρ : Representation k G V) {g : G}
 
-@[instance_reducible]
-private def distribMulActionOfRep : DistribMulAction G V :=
-  DistribMulAction.compHom V
-    ({ toFun := fun x ↦ (ρ x).toAddMonoidHom
-       map_one' := by
-         ext x
-         change (ρ 1) x = x
-         simp
-       map_mul' := fun x y ↦ by
-         ext z
-         change (ρ (x * y)) z = (ρ x) ((ρ y) z)
-         simp } : G →* AddMonoid.End V)
-
 /-- If `g` acts by negation, then `g ^ j` fixes every vector for even `j` and negates it for
 odd `j`. -/
 theorem pow_apply_of_apply_eq_neg (hneg : ∀ v : V, ρ g v = -v) (j : ℕ) (v : V) :
     ρ (g ^ j) v = if Even j then v else -v := by
-  let _ : DistribMulAction G V := distribMulActionOfRep ρ
+  let _ : DistribMulAction G V := DistribMulAction.compHom V ρ
   exact TauCeti.pow_smul_of_smul_eq_neg (G := G) (M := V) hneg j v
 
 /-- **The norm vanishes for a negation action of an even-order cyclic group.** If `G` is generated
@@ -92,7 +79,7 @@ theorem norm_apply_eq_zero_of_apply_eq_neg [Fintype G] (hg : ∀ x, x ∈ Subgro
     (hord : Even (orderOf g)) (hneg : ∀ v : V, ρ g v = -v) (v : V) :
     ρ.norm v = 0 := by
   rw [Representation.norm, LinearMap.sum_apply]
-  let _ : DistribMulAction G V := distribMulActionOfRep ρ
+  let _ : DistribMulAction G V := DistribMulAction.compHom V ρ
   exact TauCeti.sum_smul_eq_zero_of_smul_eq_neg (G := G) (M := V) hg hord hneg v
 
 end Negation
