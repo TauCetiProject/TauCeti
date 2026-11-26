@@ -84,6 +84,8 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isSquare`: over a linearly ordered ring, an isometry
+  of a left-separating form that is the square of an endomorphism has determinant `1`.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
   form on a vector space has determinant `1` (by convention when the space is
   infinite-dimensional).
@@ -552,6 +554,25 @@ theorem bijective (hB : B.SeparatingLeft) (hf : IsIsometry B f) : Function.Bijec
 end IsIsometry
 
 end SeparatingLeft
+
+section LinearOrder
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Module.Free R M] [Module.Finite R M]
+
+/-- Over a linearly ordered commutative ring, an isometry of a left-separating form on a finite
+free module that is the square of an endomorphism has determinant `1`. For a representation of a
+group in which every element is a square, such as the unitary group `U(n)`, by isometries of such
+a form, this says the representation preserves every orientation. -/
+theorem IsIsometry.det_eq_one_of_isSquare (hB : B.SeparatingLeft) (hf : IsIsometry B f)
+    (hsq : IsSquare f) : LinearMap.det f = 1 := by
+  have h1 : LinearMap.det f ^ 2 = 1 :=
+    hf.det_sq_eq_one (Module.Free.chooseBasis R M)
+      (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hB))
+  obtain ⟨g, rfl⟩ := hsq
+  rw [map_mul] at h1 ⊢
+  exact (pow_eq_one_iff_of_nonneg (mul_self_nonneg _) two_ne_zero).mp h1
+
+end LinearOrder
 
 end CommRing
 
