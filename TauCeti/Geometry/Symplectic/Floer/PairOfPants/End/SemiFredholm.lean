@@ -432,7 +432,8 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) := by
   refine contDiff_covectorPullback_of_eqOn
     (Je := fun ζ y ↦ (Je ζ.2 y).toLinearMap.toContinuousLinearMap)
-    (isOpen_lt continuous_const continuous_fst) (contDiff_positiveEndChart q 3)
+    (isOpen_lt continuous_const continuous_fst)
+    (fun _ _ ↦ (contDiff_positiveEndChart q 3).contDiffAt)
     (hJe.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd))
     (fun ζ hζ ↦ by simp only [Function.comp_apply, hJeq ζ hζ.le]) (fun ζ hζ ↦ hu ζ hζ.le)
     (hη.comp (contDiff_positiveEndChart q 2)) fun ζ hζ ↦ ?_
