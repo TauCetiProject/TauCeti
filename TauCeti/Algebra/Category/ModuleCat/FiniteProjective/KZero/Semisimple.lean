@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Pi
+public import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.RingTheory.Idempotents.Matrix
 
 /-!
@@ -96,18 +97,16 @@ variable {D n}
 the simple module of that block, goes to the basis vector at `j`. -/
 theorem piMatrixRankEquiv_of_principalRightIdeal [DecidableEq J] (j : J) (k : n j) :
     piMatrixRankEquiv D n (SplitK0.of.{max w u}
-      (principalRightIdeal (e := Pi.single j (single k k (1 : D j))) (by
-        simpa using (isIdempotentElem_single_one (α := D j) k).map
-          (NonUnitalRingHom.single (fun j ↦ Matrix (n j) (n j) (D j)) j)))) =
+      (principalRightIdeal (e := Pi.single j (single k k (1 : D j)))
+        ((isIdempotentElem_single_one (α := D j) k).piSingle j))) =
       Pi.single j 1 := by
   have hk := isIdempotentElem_single_one (α := D j) k
   -- The principal right ideal is the class of the `1 × 1` matrix `(Eₖₖ)` in the block `j`, which
   -- `piEquiv` places at `j`.
   rw [← IdempotentMonoid.toKZero_mk_of_unique (m := Unit)]
-  have hcls : IdempotentMonoid.toKZero _ (IdempotentMonoid.mk (of fun _ _ : Unit ↦
-      Pi.single (M := fun j ↦ Matrix (n j) (n j) (D j)) j (single k k (1 : D j)))
-      (by simpa using (hk.map (NonUnitalRingHom.single (fun j ↦ Matrix (n j) (n j) (D j)) j)
-        ).matrix_of_unique (m := Unit))) =
+  have hcls : IdempotentMonoid.toKZero _ (IdempotentMonoid.mk ((uniqueRingEquiv (m := Unit)).symm
+      (Pi.single (M := fun j ↦ Matrix (n j) (n j) (D j)) j (single k k (1 : D j))))
+      ((hk.piSingle j).map uniqueRingEquiv.symm)) =
       (piEquiv _).symm (Pi.single j (SplitK0.of.{u} (principalRightIdeal hk))) := by
     rw [← IdempotentMonoid.toKZero_mk_of_unique (m := Unit), piEquiv_symm_single_toKZero,
       IdempotentMonoid.piEquiv_symm_single_mk]

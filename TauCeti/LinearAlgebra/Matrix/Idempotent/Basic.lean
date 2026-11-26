@@ -15,6 +15,7 @@ public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Algebra.Ring.Pi
 import TauCeti.LinearAlgebra.End.Idempotent
 
 import TauCeti.Data.Matrix.Basic
@@ -108,10 +109,12 @@ theorem IsIdempotentElem.matrix_prodEquiv_symm {e₁ : Matrix ι ι A} {e₂ : M
     IsIdempotentElem ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) :=
   IsIdempotentElem.map (e := (e₁, e₂)) (Prod.ext he₁.eq he₂.eq) (Matrix.prodRingEquiv ι A B).symm
 
-/-- The `1 × 1` matrix whose entry is an idempotent `a` is idempotent. -/
-theorem IsIdempotentElem.matrix_of_unique {m : Type*} [Unique m] {a : A}
-    (ha : IsIdempotentElem a) : IsIdempotentElem (Matrix.of fun _ _ : m ↦ a) := by
-  ext; simp [Matrix.mul_apply, ha.eq]
+/-- An idempotent matrix `e` over a factor `R j` of a product, placed in that factor by
+`Pi.single j` entrywise, is idempotent. -/
+theorem IsIdempotentElem.matrix_map_piSingle {J : Type*} [DecidableEq J] {R : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (R j)] (j : J) {e : Matrix ι ι (R j)}
+    (he : IsIdempotentElem e) : IsIdempotentElem (e.map (Pi.single j : R j → ∀ k, R k)) := by
+  simpa using he.matrix_map (NonUnitalRingHom.single R j)
 
 end NonUnitalNonAssocSemiring
 
@@ -304,9 +307,11 @@ theorem idempotentEquivalent_pi_iff {J : Type*} {B : J → Type*}
   refine ⟨fun h j ↦ h.map (Pi.evalNonUnitalRingHom B j), fun h ↦ ?_⟩
   choose x y hxy hyx hex hxf hfy hye using h
   -- The witnesses over the product are assembled from the component witnesses.
-  have hx (j : J) : (of fun a b j ↦ x j a b).map (· j) = x j := (rfl)
-  have hy (j : J) : (of fun a b j ↦ y j a b).map (· j) = y j := (rfl)
-  refine ⟨of fun a b j ↦ x j a b, of fun a b j ↦ y j a b, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  have hx (j : J) : (Matrix.piEquiv.symm x).map (· j) = x j :=
+    congr_fun (Matrix.piEquiv.apply_symm_apply x) j
+  have hy (j : J) : (Matrix.piEquiv.symm y).map (· j) = y j :=
+    congr_fun (Matrix.piEquiv.apply_symm_apply y) j
+  refine ⟨Matrix.piEquiv.symm x, Matrix.piEquiv.symm y, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     exact Matrix.mul_eq_of_forall_map_apply fun j ↦ by simp only [*]
 
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/

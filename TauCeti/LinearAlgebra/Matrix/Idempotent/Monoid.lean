@@ -473,7 +473,7 @@ component elsewhere. -/
 private theorem piHom_mk_map_single [DecidableEq J] {j : J} {e : Matrix ι ι (R j)}
     (he : IsIdempotentElem e) :
     piHom R
-        (mk (e.map (Pi.single j)) (by simpa using he.matrix_map (NonUnitalRingHom.single R j))) =
+        (mk (e.map (Pi.single j)) (he.matrix_map_piSingle j)) =
       Pi.single j (mk e he) := by
   ext k
   rw [AddMonoidHom.pi_apply, map_mk]
@@ -524,7 +524,7 @@ factor. -/
 theorem piEquiv_symm_single_mk [Finite J] [DecidableEq J] {j : J} {e : Matrix ι ι (R j)}
     (he : IsIdempotentElem e) :
     (piEquiv R).symm (Pi.single j (mk e he)) =
-      mk (e.map (Pi.single j)) (by simpa using he.matrix_map (NonUnitalRingHom.single R j)) :=
+      mk (e.map (Pi.single j)) (he.matrix_map_piSingle j) :=
   (piEquiv R).symm_apply_eq.2 (piHom_mk_map_single he).symm
 
 end Pi

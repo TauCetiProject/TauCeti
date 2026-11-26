@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
@@ -21,12 +22,13 @@ Building on `TauCeti.IdempotentMonoid` in `TauCeti.LinearAlgebra.Matrix.Idempote
 file proves `objectCodeAddEquiv : IdempotentMonoid R ≃+ ObjectCode (FiniteProjectiveRight R)` and
 identifies the group completions of `V(R)` with split projective `K₀` for right modules
 (`kZeroEquiv`, `kZeroEquiv_of_mk`, `kZeroEquiv_of_mk_one`, `exists_kZeroEquiv_sub_nsmul_eq`,
-`toKZero`, `toKZero_mk`, `map_toKZero`, `map_comp_kZeroEquiv`, `toKZero_mk_eq_toKZero_mk_iff`,
-`mem_mrange_toKZero_iff`, `toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left
-modules via `opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
+`toKZero`, `toKZero_mk`, `toKZero_mk_one`, `map_toKZero`, `map_comp_kZeroEquiv`,
+`toKZero_mk_eq_toKZero_mk_iff`, `mem_mrange_toKZero_iff`,
+`toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left modules via `opEquiv`
+(`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
 `extendScalarsOfIdempotentIso`. The principal right ideal `eR` of an idempotent `e`
-(`TauCeti.KZero.principalRightIdeal`) has the class of the `1 × 1` matrix `(e)`
-(`TauCeti.IdempotentMonoid.toKZero_mk_of_unique`).
+(`TauCeti.KZero.principalRightIdeal`) has the class of the `1 × 1` matrix `(e)`, the image of `e`
+under `Matrix.uniqueRingEquiv.symm` (`TauCeti.IdempotentMonoid.toKZero_mk_of_unique`).
 
 ## References
 
@@ -334,6 +336,14 @@ theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempo
     toKZero R (mk e he) = SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
   kZeroEquiv_of_mk he _ (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
+-- Not `@[simp]`: `TauCeti.IdempotentMonoid.toKZero_mk` rewrites the left-hand side.
+/-- `TauCeti.IdempotentMonoid.toKZero` sends the class of the `1 × 1` identity matrix to `[R]`, the
+class of the free right module of rank one. -/
+theorem toKZero_mk_one :
+    toKZero R (mk (1 : Matrix (Fin 1) (Fin 1) R) .one) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) :=
+  (kZeroEquiv_of_mk_one 1).trans (one_nsmul _)
+
 /-- `TauCeti.IdempotentMonoid.toKZero R` factors via `objectCodeAddEquiv R` and `SplitK0.ofCode`. -/
 theorem ofCode_comp_objectCodeAddEquiv :
     SplitK0.ofCode.{u}.comp (objectCodeAddEquiv R).toAddMonoidHom = toKZero R := by
@@ -451,9 +461,12 @@ theorem KZero.principalRightIdeal_obj (he : IsIdempotentElem e) :
   (rfl)
 
 /-- **The class of a principal right ideal.** The principal right ideal `eR` of an idempotent `e`
-has the class of the `1 × 1` idempotent matrix with entry `e`. -/
+has the class of the `1 × 1` idempotent matrix with entry `e`, its image under
+`Matrix.uniqueRingEquiv.symm`. -/
 theorem IdempotentMonoid.toKZero_mk_of_unique {m : Type*} [Unique m] (he : IsIdempotentElem e) :
-    IdempotentMonoid.toKZero R (IdempotentMonoid.mk (of fun _ _ : m ↦ e) he.matrix_of_unique) =
+    IdempotentMonoid.toKZero R
+      (IdempotentMonoid.mk ((Matrix.uniqueRingEquiv (m := m)).symm e)
+        (he.map Matrix.uniqueRingEquiv.symm)) =
       SplitK0.of.{u} (KZero.principalRightIdeal he) :=
   (IdempotentMonoid.kZeroEquiv_of R _).symm.trans
     (IdempotentMonoid.kZeroEquiv_of_mk _ _ (rangeMulVecBilinOfUniqueEquivSpan R m e).symm)

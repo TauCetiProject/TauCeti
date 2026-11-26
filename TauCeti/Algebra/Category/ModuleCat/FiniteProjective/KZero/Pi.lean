@@ -100,6 +100,7 @@ theorem piEquiv_toKZero (x : IdempotentMonoid (∀ j, R j)) :
 /-- The inverse of `TauCeti.KZero.piEquiv` places the class of an element `x` of the idempotent
 monoid of `R j` in the factor `j` by the element of the idempotent monoid of the product supported
 in that factor. -/
+@[simp]
 theorem piEquiv_symm_single_toKZero [DecidableEq J] (j : J) (x : IdempotentMonoid (R j)) :
     (piEquiv R).symm (Pi.single j (IdempotentMonoid.toKZero (R j) x)) =
       IdempotentMonoid.toKZero _ ((IdempotentMonoid.piEquiv R).symm (Pi.single j x)) := by
@@ -132,7 +133,7 @@ theorem piEquiv_symm_single_of_ofIdempotent [DecidableEq J] {ι : Type*} [Fintyp
     {e : Matrix ι ι (R j)} (he : IsIdempotentElem e) :
     (piEquiv R).symm (Pi.single j (SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e he))) =
       SplitK0.of.{max w u} (FiniteProjectiveModules.ofIdempotent (e.map (Pi.single j))
-        (by simpa using he.matrix_map (NonUnitalRingHom.single R j))) := by
+        (he.matrix_map_piSingle j)) := by
   simpa only [IdempotentMonoid.toKZero_mk, IdempotentMonoid.piEquiv_symm_single_mk] using
     piEquiv_symm_single_toKZero j (IdempotentMonoid.mk e he)
 
@@ -141,13 +142,9 @@ classes of the free modules of rank one over the `R j`. -/
 theorem piEquiv_of_finiteProjectiveModulesRegular :
     piEquiv R (SplitK0.of.{max w u} (finiteProjectiveModulesRegular (∀ j, R j)ᵐᵒᵖ)) =
       fun j ↦ SplitK0.of.{u} (finiteProjectiveModulesRegular (R j)ᵐᵒᵖ) := by
-  have h₁ := IdempotentMonoid.kZeroEquiv_of_mk_one (R := ∀ j, R j) 1
-  rw [one_smul, IdempotentMonoid.kZeroEquiv_of] at h₁
-  rw [← h₁, piEquiv_toKZero]
+  rw [← IdempotentMonoid.toKZero_mk_one, piEquiv_toKZero]
   ext j
-  have hj := IdempotentMonoid.kZeroEquiv_of_mk_one (R := R j) 1
-  rw [one_smul, IdempotentMonoid.kZeroEquiv_of] at hj
-  rw [← hj, IdempotentMonoid.map_mk]
+  rw [← IdempotentMonoid.toKZero_mk_one, IdempotentMonoid.map_mk]
   congr
   exact Matrix.map_one _ rfl rfl
 
