@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.QuotSMulTop
 
 import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.AdicCompletion.Exactness
-import TauCeti.RingTheory.AdicCompletion.Regular
+import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
