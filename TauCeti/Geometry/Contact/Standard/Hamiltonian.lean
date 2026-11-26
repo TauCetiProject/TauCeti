@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Flow
+import TauCeti.Geometry.Manifold.Flow.NormedSpace
 
 /-!
 # Contact Hamiltonian vector fields and flows of the standard contact form
@@ -218,19 +219,17 @@ theorem mpullback_flowOf_contactHamiltonianVectorField_standardContactForm_z_eq_
 field `∂_z` of `dz - x dy`. -/
 theorem isMIntegralCurve_reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
     IsMIntegralCurve (fun t ↦ (p.1, p.2.1, p.2.2 + t)) standardContactForm.reebVectorField := by
-  intro t
-  have hd : HasDerivAt (fun t ↦ (p.1, p.2.1, p.2.2 + t)) ((0, 0, 1) : ℝ × ℝ × ℝ) t :=
-    (hasDerivAt_const t p.1).prodMk
-      ((hasDerivAt_const t p.2.1).prodMk ((hasDerivAt_id t).const_add p.2.2))
-  refine hasMFDerivAt_iff_hasFDerivAt.2 ?_
-  rw [reebVectorField_standardContactForm, standardReebField_apply]
-  exact hd.hasFDerivAt
+  have h : (fun t : ℝ ↦ p + t • ((0, 0, 1) : ℝ × ℝ × ℝ)) = fun t ↦ (p.1, p.2.1, p.2.2 + t) := by
+    funext t
+    ext <;> simp
+  rw [funext reebVectorField_standardContactForm, funext standardReebField_apply, ← h]
+  exact isMIntegralCurve_translation _ p
 
 /-- The Reeb vector field `∂_z` of `dz - x dy` is complete. -/
 theorem isCompleteVectorField_reebVectorField_standardContactForm :
-    IsCompleteVectorField standardContactForm.reebVectorField :=
-  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun p ↦
-    ⟨_, by simp, isMIntegralCurve_reebVectorField_standardContactForm p⟩
+    IsCompleteVectorField standardContactForm.reebVectorField := by
+  rw [funext reebVectorField_standardContactForm, funext standardReebField_apply]
+  exact isCompleteVectorField_const _
 
 /-- **The Reeb flow of `dz - x dy` is the translation** `(x, y, z) ↦ (x, y, z + t)`. Its time-`t`
 maps are strict contactomorphisms
@@ -238,9 +237,7 @@ maps are strict contactomorphisms
 with `TauCeti.isCompleteVectorField_reebVectorField_standardContactForm`). -/
 theorem flowOf_reebVectorField_standardContactForm (t : ℝ) (p : ℝ × ℝ × ℝ) :
     flowOf standardContactForm.reebVectorField t p = (p.1, p.2.1, p.2.2 + t) := by
-  have h := flowOf_eq_of_isMIntegralCurve
-    (isContactForm_standardContactForm.contMDiff_reebVectorField.of_le (by simp))
-    (isMIntegralCurve_reebVectorField_standardContactForm p) t
-  simpa using h
+  rw [funext reebVectorField_standardContactForm, funext standardReebField_apply, flowOf_const]
+  ext <;> simp
 
 end TauCeti

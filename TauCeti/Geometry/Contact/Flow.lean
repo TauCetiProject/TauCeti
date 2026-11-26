@@ -248,9 +248,8 @@ theorem IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_has
   refine isCompleteVectorField_of_isCompact_of_eq_zero_off
     (hα.contMDiff_contactHamiltonianVectorField (n := 1) (by simp) (hf.of_le (by norm_num)))
     hfc.isCompact fun x hx ↦ ?_
-  have h0 : f =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
-  refine (hα.contactHamiltonianVectorField_eq_zero_iff).2 ⟨h0.eq_of_nhds, fun v _ ↦ ?_⟩
-  rw [h0.mvfderiv_eq, mvfderiv_zero, zero_apply]
+  exact ((notMem_tsupport_iff_eventuallyEq.1 hx).contactHamiltonianVectorField_eq α).trans
+    (by simp)
 
 end HamiltonianFlow
 
