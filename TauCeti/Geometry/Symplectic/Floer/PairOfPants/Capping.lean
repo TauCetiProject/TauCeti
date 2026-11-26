@@ -75,7 +75,9 @@ negative planes and the output by a positive plane.
 * `TauCeti.Floer.negativePlanePerturbation_cylindricalEndLift`: far out on the end it is
   `H(t) dt`.
 * `TauCeti.Floer.contMDiff_negativePlanePerturbation`: for a period-one Hamiltonian of class
-  `C^n`, the plane datum is of class `C^n` on all of `ℂ × M`, including the pole.
+  `C^n`, the plane datum is of class `C^n` on all of `ℂ × M`, including the pole;
+  `TauCeti.Floer.contMDiff_negativePlanePerturbation_apply` is the same for its components in real
+  coordinates.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`: its
   integrated curvature along any map into a manifold is at most a bound for `|H|`.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_negativePlanePerturbation_closedBall`:
@@ -98,7 +100,9 @@ negative planes and the output by a positive plane.
   statements for a manifold target.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf_family`: for `L > 4` the capped datum
   is of class `C^n` on the cylinder obtained by capping, jointly with the neck length;
-  `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf` is the statement at a fixed length.
+  `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf` is the statement at a fixed length,
+  and `TauCeti.Floer.mdifferentiableAt_plumbedPerturbation_single_inf` its consequence that the
+  datum is differentiable in the target point.
 * `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf_family`,
   `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf`: the same for a vector space
   target, in real coordinates on the domain.
@@ -384,6 +388,17 @@ theorem contMDiff_negativePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
       (hH.piSingle_apply inf)
       (hHs.uncurry_piSingle_apply inf) ⟨w, hw₀, hw₁⟩ x
 
+/-- For a period-one Hamiltonian of class `C^n` on `ℝ × M`, the components of the negative plane
+perturbation in real coordinates are `C^n` jointly in the domain point and the target point, on the
+whole plane. The vector-space case is `SymplecticForm.contDiff_negativePlanePerturbation_apply`. -/
+theorem contMDiff_negativePlanePerturbation_apply {n : ℕ∞} (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H)) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) :=
+  ((contMDiff_negativePlanePerturbation hH hHs).comp
+    ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd)).clm_apply contMDiff_const
+
 /-- **The positive plane perturbation is smooth.** For a Hamiltonian of period one which is `C^n`
 on `ℝ × M`, the positive plane perturbation is `C^n` at every point of `(ℂ ∖ {0}) × M`. Off the
 point `1` it is the pair-of-pants perturbation with one nonzero input, and near `1` it vanishes.
@@ -498,6 +513,17 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       (fun p : ℂ × M => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2) (w, x) :=
   (contMDiffAt_plumbedPerturbation_single_inf_family hq hHb hHbs hL hw x).comp (w, x)
     (contMDiffAt_const.prodMk contMDiffAt_id)
+
+/-- At the capped puncture `c_q` and at every point of `ℂ ∖ {0, 1}`, the capped datum evaluated at
+a fixed direction is differentiable in the target point. -/
+theorem mdifferentiableAt_plumbedPerturbation_single_inf (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L) {w : ℂ}
+    (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1) (v : ℂ) (x : M) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L w y v) x :=
+  (((contMDiffAt_plumbedPerturbation_single_inf (n := 1) hq hHb hHbs hL hw x).comp x
+    (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
+    one_ne_zero
 
 section VectorSpace
 
@@ -985,22 +1011,6 @@ section PlumbingChart
 open _root_.Complex (equivRealProdCLM)
 open TauCeti.Complex (equivRealProdCLM_symm_realChart realChart_injective)
 
-omit [IsManifold I ⊤ M] in
-/-- At the image under `ψ_L` of a point of the inserted plane outside the circle `s_∞ = -L/2`, the
-capped datum is differentiable in the target point, for a manifold target. -/
-private theorem mdifferentiableAt_plumbedPerturbation_single_inf_realChart (hq : q ≠ inf)
-    (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
-    {w : ℝ × ℝ}
-    (hwL : inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2) (v : ℂ) (x : M) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
-      (equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) y v) x :=
-  (((contMDiffAt_plumbedPerturbation_single_inf (n := 1) hq hHb hHbs hL (by
-      rw [equivRealProdCLM_symm_realChart]
-      exact plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le hq (by linarith) hwL)
-    x).comp x (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
-      contMDiffAt_const).mdifferentiableAt one_ne_zero
-
 /-- **The inserted plane solves its Floer equation**, for a manifold target. Let `u` solve the
 Floer equation `(du - X_K)^{0,1} = 0` of the capping datum `K` of the finite end `q` with neck
 length `L > 4` at the image `ψ_L(w)` of a point `w` of the inserted plane outside the circle
@@ -1025,8 +1035,11 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap_single_in
       (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x Complex.I)
       (u ∘ realChart (q.plumbingMap L)) w).toLinearMap := by
-  have htgt (v : ℂ) := mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
-    hwL v (u (realChart (q.plumbingMap L) w))
+  have htgt (v : ℂ) := mdifferentiableAt_plumbedPerturbation_single_inf hq hHb hHbs hL
+    (w := equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) (by
+      rw [equivRealProdCLM_symm_realChart]
+      exact plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le hq (by linarith) hwL)
+    v (u (realChart (q.plumbingMap L) w))
   have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
     ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
     (htgt Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
@@ -1064,14 +1077,17 @@ theorem integral_floerEnergyDensity_image_plumbingMap_single_inf (ω : SmoothTwo
         (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.plumbingMap L)) w := by
+  have htgt {w : ℝ × ℝ} (hw : w ∈ B) (v : ℂ) (x : M) :=
+    mdifferentiableAt_plumbedPerturbation_single_inf hq hHb hHbs hL
+      (w := equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) (by
+        rw [equivRealProdCLM_symm_realChart]
+        exact plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le hq (by linarith) (hB w hw))
+      v x
   rw [ω.integral_floerEnergyDensity_image hBm
     (realChart_injective (q.plumbingMap_injective _)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
-    (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q _ w) hu
-    (fun w hw ↦ mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
-      (hB w hw) 1 _)
-    fun w hw ↦ mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
-      (hB w hw) Complex.I _]
+    (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q _ w) hu (fun w hw ↦ htgt hw 1 _)
+    fun w hw ↦ htgt hw Complex.I _]
   -- The pulled-back datum is the negative plane datum.
   exact setIntegral_congr_fun hBm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ by

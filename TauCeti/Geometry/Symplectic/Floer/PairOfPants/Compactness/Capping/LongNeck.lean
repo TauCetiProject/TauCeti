@@ -85,7 +85,7 @@ public section
 
 open Complex Filter Function MeasureTheory Metric Set Topology TauCeti.ThricePuncturedSphere
 open TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart)
+open TauCeti.Complex (realChart)
 open scoped Manifold NNReal Real
 open TauCeti.MeasureTheory
 
@@ -97,17 +97,6 @@ variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace G M] [IsManifold I ⊤ M] [CompactSpace M] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {ω : SmoothTwoForm I M} {Hb : Puncture → ℝ → M → ℝ} {e : M → F}
-
-/-- A point of the disc `‖w‖ ≤ 2 exp (2πρ)` of the plane lies outside the circle `s_∞ = -L/2` of the
-end at `∞`, for neck lengths `L > 4` with `L ≥ 2ρ`. -/
-private theorem endSign_mul_re_endCoord_inf_le {ρ L : ℝ} (hL4 : 4 < L) (hLρ : 2 * ρ ≤ L) {w : ℂ}
-    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * ρ)) : inf.endSign * (inf.endCoord w).re ≤ L / 2 := by
-  rw [endSign_inf, neg_one_mul]
-  have hρ' : 2 * Real.exp (2 * π * ρ) ≤ 2 * Real.exp (2 * π * max ρ 0) := by
-    gcongr
-    exact le_max_left ρ 0
-  exact (neg_re_endCoord_inf_le (le_max_right ρ 0) (hw.trans hρ')).trans
-    (max_le (by linarith) (by linarith))
 
 omit [I.Boundaryless] [CompactSpace M] in
 /-- For a `C¹` map `u` on the capped plane whose Floer energy for the capping datum `K_L` is at most
@@ -136,21 +125,15 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_comp_realChart_l
   have hPo : IsOpen {z : ℝ × ℝ | equivRealProdCLM.symm z ≠ 0} :=
     isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
   have hψ : ContDiff ℝ 1 (realChart (one.plumbingMap L)) := contDiff_realChart_plumbingMap one L
-  have hψP {w : ℝ × ℝ} (hw : w ∈ D') :
-      equivRealProdCLM.symm (realChart (one.plumbingMap L) w) ≠ 0 := by
-    rw [equivRealProdCLM_symm_realChart]
-    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith) (hwL w hw)
+  have hψP {w : ℝ × ℝ} (hw : w ∈ D') :=
+    equivRealProdCLM_symm_realChart_plumbingMap_ne_zero (by linarith) (hwL w hw)
   -- The Hamiltonian vector fields of the plane datum are continuous on the whole plane.
-  have hK (v : ℂ) : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (1 + 1)
-      (uncurry fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x v) :=
-    ((contMDiff_negativePlanePerturbation (hHb one) (hHbs one)).comp
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).clm_apply contMDiff_const
   have hX (v : ℂ) : ContinuousOn (fun p : (ℝ × ℝ) × M ↦ (⟨p.2, ω.hamiltonianVectorField
       (fun y ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm p.1) y v) p.2⟩ :
         TangentBundle I M)) ((realChart (one.plumbingMap L) ⁻¹'
           {z | equivRealProdCLM.symm z ≠ 0}) ×ˢ univ) :=
-    (hω.contMDiff_hamiltonianVectorField_uncurry (by simp) (hK v)).continuous.continuousOn
+    (hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
+      (contMDiff_negativePlanePerturbation_apply (hHb one) (hHbs one) v)).continuous.continuousOn
   refine ⟨((ω.continuousOn_floerEnergyDensity (hPo.preimage hψ.continuous)
     (hu.comp hψ.contMDiff.contMDiffOn fun _ hw ↦ hw) (hX 1) (hX Complex.I)).mono
       fun w hw ↦ hψP hw).integrableOn_compact hD' |>.mono_set hΩ'D, ?_⟩
@@ -158,8 +141,7 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_comp_realChart_l
   rw [← ω.integral_floerEnergyDensity_image_plumbingMap_single_inf (by decide) hHb
     (fun r ↦ (hHbs r).of_le (by norm_num)) hL hΩ'.measurableSet (fun w hw ↦ hwL w (hΩ'D hw))
     fun w hw ↦ (hu.contMDiffAt (hPo.mem_nhds (hψP (hΩ'D hw)))).mdifferentiableAt one_ne_zero]
-  exact (ENNReal.ofReal_le_ofReal_iff E₀.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
-    ((setLIntegral_le_lintegral _ _).trans (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+  exact setIntegral_le_of_lintegral_ofReal_le hE _
 
 /-- **The plane piece at the long-neck end of the capping family, in a closed manifold.** Let `ω`
 be a nondegenerate two-form on a closed manifold `M`, let `Hb` be period-one `C³` Hamiltonians, and
@@ -235,9 +217,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappi
   -- fields are `C²` in every chart.
   have hK (v : ℂ) : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
       (uncurry fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x v) :=
-    ((contMDiff_negativePlanePerturbation (hHb one) (hHbs one)).comp
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).clm_apply contMDiff_const
+    contMDiff_negativePlanePerturbation_apply (hHb one) (hHbs one) v
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj hU' hD' hD'U' hJ'
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) fun _ _ _ ↦ (hK 1).contMDiffAt)
@@ -249,11 +229,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappi
   -- The window `D'` lies outside the circle `s_∞ = -Lₖ/2`, and `ψₖ` carries it into `ℂ ∖ {0}`.
   have hwL (k : ℕ) (w : ℝ × ℝ) (hw : w ∈ D') :
       inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L k / 2 :=
-    endSign_mul_re_endCoord_inf_le (hL4 k) (hLρ k) (hD'ρ w hw)
-  have hψP (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') :
-      equivRealProdCLM.symm (realChart (one.plumbingMap (L k)) w) ≠ 0 := by
-    rw [equivRealProdCLM_symm_realChart]
-    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith [hL4 k]) (hwL k w hw)
+    endSign_mul_re_endCoord_inf_le (by linarith [hL4 k]) (hLρ k) (hD'ρ w hw)
+  have hψP (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') :=
+    equivRealProdCLM_symm_realChart_plumbingMap_ne_zero (by linarith [hL4 k]) (hwL k w hw)
   have h (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_comp_realChart_le hω hHb
     (fun r ↦ (hHbs r).of_le (by norm_num)) (hL4 k) hD' hΩ' hΩ'D (hwL k)
     ((hu k).of_le (by norm_num)) (hE k)
@@ -373,8 +351,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappi
         (equivRealProdCLM.symm z) x 1)
       (Kt' := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
         (equivRealProdCLM.symm z) x Complex.I) _ (hKΩ k hz 1).symm (hKΩ k hz Complex.I).symm]
-    exact (ENNReal.ofReal_le_ofReal_iff E₀.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
-      ((setLIntegral_le_lintegral _ _).trans ((hE k).trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+    exact setIntegral_le_of_lintegral_ofReal_le (hE k) _
 
 /-- **Compactness at the long-neck end of the capping family, in a closed manifold.** Combine
 the settings of `exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_capping_pants`,
