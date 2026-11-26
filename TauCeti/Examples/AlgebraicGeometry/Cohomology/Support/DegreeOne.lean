@@ -44,28 +44,25 @@ def localizationRingEquiv : Localization.Away (coordinate R) ≃+* Localization.
       rw [Submonoid.map_powers]
       exact congrArg Submonoid.powers ((Scheme.ΓSpecIso (.of R[X])).inv_hom_id_apply X))
 
-/-- On global functions, `localizationRingEquiv` is the identification `Γ(𝔸¹_R, 𝒪) ≅ R[t]`. -/
-lemma localizationRingEquiv_algebraMap (a : Γ(affineLine R, ⊤)) :
-    localizationRingEquiv R (algebraMap _ _ a) =
-      algebraMap R[X] (Localization.Away (X : R[X])) ((Scheme.ΓSpecIso (.of R[X])).hom a) := by
-  unfold localizationRingEquiv
-  exact IsLocalization.ringEquivOfRingEquiv_eq _ a
-
 /-- `localizationRingEquiv` carries the image of `Γ(𝔸¹_R, 𝒪)` onto the image of `R[t]`. -/
 lemma map_range_algebraMap :
     (LinearMap.range (Algebra.linearMap Γ(affineLine R, ⊤)
         (Localization.Away (coordinate R)))).toAddSubgroup.map
         (localizationRingEquiv R).toAddEquiv.toAddMonoidHom =
       (algebraMap R[X] (Localization.Away (X : R[X]))).toAddMonoidHom.range := by
+  have key (a : Γ(affineLine R, ⊤)) : localizationRingEquiv R (algebraMap _ _ a) =
+      algebraMap R[X] (Localization.Away (X : R[X])) ((Scheme.ΓSpecIso (.of R[X])).hom a) := by
+    unfold localizationRingEquiv
+    exact IsLocalization.ringEquivOfRingEquiv_eq _ a
   ext y
   simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range,
     Algebra.linearMap_apply, AddMonoidHom.mem_range]
   constructor
   · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
-    exact ⟨(Scheme.ΓSpecIso (.of R[X])).hom a, (localizationRingEquiv_algebraMap R a).symm⟩
+    exact ⟨(Scheme.ΓSpecIso (.of R[X])).hom a, (key a).symm⟩
   · rintro ⟨r, rfl⟩
     refine ⟨_, ⟨(Scheme.ΓSpecIso (.of R[X])).inv r, rfl⟩, ?_⟩
-    refine (localizationRingEquiv_algebraMap R _).trans ?_
+    refine (key _).trans ?_
     exact congrArg _ ((Scheme.ΓSpecIso (.of R[X])).inv_hom_id_apply r)
 
 /-- **`H¹_Z(𝔸¹_R, 𝒪) = R[t, t⁻¹] / R[t]` for `Z` the origin.** On the affine line over a
