@@ -10,17 +10,21 @@ public import TauCeti.Geometry.MeasureTheory.ApproximateTangentSpace
 /-!
 # Check: the blow-ups of a subspace
 
-The first Check of GeometricMeasureTheory §2.1 ("Approximate tangent planes and the density
-theorem"): if `M = P` is a `k`-dimensional subspace of a real inner product space `V` and `x ∈ P`,
-then for every `r > 0` and every `φ`,
+If `P` is a `k`-dimensional subspace of a real inner product space `V` and `x ∈ P`, then for
+every `r > 0` and every `φ`,
 
 `r⁻ᵏ ∫_P φ((y − x)/r) dHᵏ(y) = ∫_P φ dHᵏ`
 
 (`integral_dilation_euclideanHausdorffMeasure_restrict`), by the scaling `Hᵏ(rA) = rᵏ Hᵏ(A)`; so
 `P` is its own approximate tangent plane in the integral formulation. The exponent matters: with
 the normalisation `r^{1−k}` the same integrals are `r ∫_P φ dHᵏ`
-(`integral_dilation_euclideanHausdorffMeasure_restrict_mul`), which tend to `0` as `r → 0⁺`
-(`tendsto_integral_dilation_euclideanHausdorffMeasure_restrict_mul`).
+(`integral_dilation_euclideanHausdorffMeasure_restrict_smul`), which tend to `0` as `r → 0⁺`
+(`tendsto_integral_dilation_euclideanHausdorffMeasure_restrict_smul`).
+
+## References
+
+* L. Simon, *Lectures on Geometric Measure Theory*, §11 (approximate tangent spaces, in the
+  integral formulation).
 -/
 
 open MeasureTheory Measure Filter Topology Module
@@ -45,7 +49,7 @@ theorem integral_dilation_euclideanHausdorffMeasure_restrict (hx : x ∈ P) (hr 
 
 /-- With the normalisation `r^{1−k}` instead of `r⁻ᵏ`, the dilated integrals over a subspace are
 `r ∫_P φ dHᵏ`. -/
-theorem integral_dilation_euclideanHausdorffMeasure_restrict_mul (hx : x ∈ P) (hr : 0 < r)
+theorem integral_dilation_euclideanHausdorffMeasure_restrict_smul (hx : x ∈ P) (hr : 0 < r)
     (φ : V → G) :
     (r ^ finrank ℝ P)⁻¹ • r • ∫ y in (P : Set V), φ (r⁻¹ • (y - x)) ∂μHE[finrank ℝ P] =
       r • ∫ y in (P : Set V), φ y ∂μHE[finrank ℝ P] := by
@@ -53,7 +57,7 @@ theorem integral_dilation_euclideanHausdorffMeasure_restrict_mul (hx : x ∈ P) 
 
 /-- With the normalisation `r^{1−k}` the dilated integrals over a subspace tend to `0`, not to
 `∫_P φ dHᵏ`. -/
-theorem tendsto_integral_dilation_euclideanHausdorffMeasure_restrict_mul (hx : x ∈ P)
+theorem tendsto_integral_dilation_euclideanHausdorffMeasure_restrict_smul (hx : x ∈ P)
     (φ : V → G) :
     Tendsto (fun r : ℝ ↦
         (r ^ finrank ℝ P)⁻¹ • r • ∫ y in (P : Set V), φ (r⁻¹ • (y - x)) ∂μHE[finrank ℝ P])
@@ -64,6 +68,6 @@ theorem tendsto_integral_dilation_euclideanHausdorffMeasure_restrict_mul (hx : x
     exact (hc.tendsto' 0 0 (zero_smul ℝ _)).mono_left nhdsWithin_le_nhds
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-  rw [integral_dilation_euclideanHausdorffMeasure_restrict_mul hx hr]
+  rw [integral_dilation_euclideanHausdorffMeasure_restrict_smul hx hr]
 
 end TauCeti.Examples.SubspaceBlowUp
