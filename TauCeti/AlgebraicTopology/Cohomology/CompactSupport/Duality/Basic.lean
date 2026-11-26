@@ -82,6 +82,8 @@ property of an open subset that its duality map is bijective.
 
 ## Main definitions
 
+* `TopPair.singularCapWith`: capping with a fixed class `γ ∈ Hₙ(X, A; ℤ)`,
+  `Hᵖ(X, A; L) ⟶ H_q(X; L)`.
 * `TauCeti.HomologicalOrientation.capFundamentalClassOn`: capping with the fundamental class along
   a compact set, `Hᵖ(M, M ∖ K; L) ⟶ H_q(M; L)`.
 * `TauCeti.HomologicalOrientation.dualityMap`: the duality map `Hᵖ_c(M; L) ⟶ H_q(M; L)`.
@@ -159,6 +161,28 @@ namespace TauCeti
 
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
+/-- **Capping with a fixed homology class** `γ ∈ Hₙ(X, A; ℤ)` of a pair `P = (X, A)`: the map
+`Hᵖ(X, A; L) ⟶ H_q(X; L)`, `α ↦ γ ⌢ α`, for `p + q = n`. -/
+def _root_.TopPair.singularCapWith (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n) :
+    P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj P.fst :=
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
+  -- groups rather than those of the objects of `ModuleCat ℤ`.
+  let f := (LinearMap.applyₗ (R := ℤ) γ).toAddMonoidHom.comp <|
+    ModuleCat.homAddEquiv.toAddMonoidHom.comp
+      (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h).toAddMonoidHom
+  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+
+/-- Capping with a fixed class `γ` evaluates the relative cap product at `γ`. -/
+lemma _root_.TopPair.singularCapWith_apply (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n)
+    (α : P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    P.singularCapWith L γ p q h α = (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom γ :=
+  (rfl)
+
 namespace HomologicalOrientation
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
@@ -172,13 +196,7 @@ def capFundamentalClassOn {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q 
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
         (TopCat.of M) :=
-  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
-  -- groups rather than those of the objects of `ModuleCat ℤ`.
-  let f := (LinearMap.applyₗ (R := ℤ) (o.fundamentalClassOn hn hK)).toAddMonoidHom.comp <|
-    ModuleCat.homAddEquiv.toAddMonoidHom.comp
-      ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
-        (ρ_ L).hom p q n h).toAddMonoidHom
-  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+  (TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCapWith L (o.fundamentalClassOn hn hK) p q h
 
 /-- Capping with the fundamental class along `K` evaluates the relative cap product at `μ_K`. -/
 lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q = n)

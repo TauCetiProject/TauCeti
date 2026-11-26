@@ -90,13 +90,8 @@ def capFundamentalClassRel (p q : ℕ) (h : p + q = n) :
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
         (TopCat.of X) :=
-  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
-  -- groups rather than those of the objects of `ModuleCat ℤ`.
-  let g := (LinearMap.applyₗ (R := ℤ) (o.fundamentalClassRel hn hι hιf hf)).toAddMonoidHom.comp <|
-    ModuleCat.homAddEquiv.toAddMonoidHom.comp
-      ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCap ℤ (ρ_ _).inv
-        (ρ_ L).hom p q n h).toAddMonoidHom
-  ModuleCat.ofHom { g with map_smul' := map_intCast_smul g ℤ ℤ }
+  (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCapWith L
+    (o.fundamentalClassRel hn hι hιf hf) p q h
 
 /-- Capping with the relative fundamental class evaluates the relative cap product at
 `[X, ∂X]`. -/
@@ -106,7 +101,7 @@ lemma capFundamentalClassRel_apply (p q : ℕ) (h : p + q = n)
     o.capFundamentalClassRel hn hι hιf hf L p q h α =
       ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCap ℤ (ρ_ _).inv
         (ρ_ L).hom p q n h α).hom (o.fundamentalClassRel hn hι hιf hf) :=
-  (rfl)
+  TopPair.singularCapWith_apply _ L _ p q h α
 
 /-- **Capping with `[X, ∂X]` through the interior.** For compact `K ⊆ M`, on a class restricted
 from `Hᵖ(X, X ∖ ι(K))`, capping with the relative fundamental class is capping the excised class in
@@ -161,7 +156,7 @@ private abbrev interiorHom (hι : IsOpenEmbedding ι) : TopCat.of M ⟶ TopCat.o
 
 /-- The points of the interior outside the collar of depth less than `s`, a compact set. -/
 private def interiorCompl {s : ℝ} (hs : 0 < s) : Compacts (TopCat.of M) :=
-  ⟨ι ⁻¹' (collarPart c s)ᶜ, isCompact_preimage_compl_collarPart hι hc hιf hs⟩
+  ⟨ι ⁻¹' (collarPart c s)ᶜ, hc.isCompact_preimage_compl_collarPart hι.isInducing hιf hs⟩
 
 /-- Its image in `X`, the complement of the collar of depth less than `s`. -/
 private abbrev collarCompl {s : ℝ} (hs : 0 < s) : Compacts (TopCat.of X) :=

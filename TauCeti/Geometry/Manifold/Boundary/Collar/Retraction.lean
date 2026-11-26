@@ -44,10 +44,6 @@ closed in `M`. That is where compactness of `N` and the Hausdorff property of `M
 
 ## Main results
 
-* `TauCeti.IsCollar.apply_mem_range_iff`: a point of the collar lies on `f(N)` exactly when its
-  depth is `0`.
-* `TauCeti.IsCollar.isCompact_image_le`: if `N` is compact, the part of the collar of depth at most
-  `t < 1` is compact.
 * `TauCeti.IsCollar.coe_complHomotopyEquiv`: the homotopy equivalence `M \ f(N) ≃ₕ M` is the
   inclusion.
 * `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply`: its homotopy inverse sends `c (x, t)` to
@@ -212,24 +208,6 @@ private theorem push_of_notMem_image (s : I) {x : M}
   · obtain ⟨p, rfl⟩ := hxc
     rw [hc.push_apply, pushCoord_of_le s (le_of_lt (not_le.1 fun h ↦ hx ⟨p, h, rfl⟩))]
   · exact push_of_notMem_range s hxc
-
-/-- A point `c p` of the collar lies on the boundary `f(N)` exactly when its depth is `0`. -/
-theorem apply_mem_range_iff {p : N × Ico (0 : ℝ) 1} : c p ∈ range f ↔ (p.2 : ℝ) = 0 :=
-  -- `c p ∈ range f` is `p ∈ c ⁻¹' range f` by definition of the preimage.
-  (Set.ext_iff.1 hc.preimage_range p).trans ⟨fun h ↦ congrArg Subtype.val h.2,
-    fun h ↦ ⟨trivial, Subtype.ext h⟩⟩
-
-/-- **The collar of depth at most `t < 1` is compact** when the boundary parameter space is. -/
-theorem isCompact_image_le [CompactSpace N] {t : ℝ} (ht : t < 1) :
-    IsCompact (c '' {p | (p.2 : ℝ) ≤ t}) := by
-  have hI : IsCompact (((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Icc 0 t) :=
-    IsInducing.subtypeVal.isCompact_preimage' isCompact_Icc fun s hs ↦
-      ⟨⟨s, hs.1, hs.2.trans_lt ht⟩, rfl⟩
-  have : {p : N × Ico (0 : ℝ) 1 | (p.2 : ℝ) ≤ t} =
-      univ ×ˢ (((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Icc 0 t) :=
-    ext fun p ↦ by simp [p.2.property.1]
-  rw [this]
-  exact (isCompact_univ.prod hI).image hc.isOpenEmbedding.continuous
 
 /-- The push is continuous: on the open image of the collar it is the push of collar coordinates,
 and on the open complement of `c(N × [0, 1/2])` it is the identity. -/

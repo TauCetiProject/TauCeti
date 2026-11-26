@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
 public import Mathlib.Topology.Homotopy.Basic
-import TauCeti.Geometry.Manifold.Boundary.Collar.Retraction
 
 /-!
 # The collar of a given depth and its deformation onto the boundary
@@ -33,6 +32,8 @@ deformation used by Hatcher to show that the collar has no homology relative to 
 
 ## Main results
 
+* `TauCeti.IsCollar.isCompact_preimage_compl_collarPart`: if `M` is compact, the complement of the
+  collar of positive depth is compact, read in an embedded complement of the boundary.
 * `TauCeti.IsCollar.exists_disjoint_collarPart`: a compact set missing the boundary misses the
   collar of some positive depth.
 
@@ -97,6 +98,15 @@ lemma compl_collarPart_subset_range {M' : Type*} {ι : M' → M} (hιf : range �
     {t : ℝ} (ht : 0 < t) : (collarPart c t)ᶜ ⊆ range ι := by
   rw [hιf]
   exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
+
+/-- For a compact space `M` and `0 < t`, the points of `M'` outside the collar of depth less
+than `t` form a compact set `ι⁻¹(M ∖ Cₜ)`, when `ι` is an inducing map (such as an embedding) onto
+the complement of the boundary `f(N)`, such as the interior of a manifold with boundary. -/
+lemma isCompact_preimage_compl_collarPart [CompactSpace M] {M' : Type*} [TopologicalSpace M']
+    {ι : M' → M} (hι : IsInducing ι) (hιf : range ι = (range f)ᶜ) {t : ℝ} (ht : 0 < t) :
+    IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
+  hι.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
+    (hc.compl_collarPart_subset_range hιf ht)
 
 /-- Every point outside the boundary lies outside the collar of some positive depth. -/
 lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x ∉ collarPart c t := by
