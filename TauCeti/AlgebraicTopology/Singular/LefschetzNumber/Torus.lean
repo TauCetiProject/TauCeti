@@ -34,7 +34,8 @@ alternating sum of the traces of the exterior powers of `P`, which is
 `LinearMap.sum_neg_one_pow_mul_trace_exteriorPower_map`).
 
 For `p ≠ 0` the Pontryagin maps of the torus `Tⁿ = ι → AddCircle p` are bijective over every
-commutative ring (`AddCircle.bijective_pontryaginExteriorPower_pi`). An integer matrix
+commutative ring (`AddCircle.bijective_pontryaginExteriorPower_pi`, in
+`TauCeti.AlgebraicTopology.Singular.Torus.Exterior`). An integer matrix
 `A : Matrix ι ι ℤ` acts on `Tⁿ` by the continuous homomorphism `x ↦ A • x` (`Matrix.smulVecHom`),
 and on `H₁(Tⁿ; ℤ) = ℤⁿ` by `A`
 (`TauCeti.torusFirstHomologyEquiv_homologyMap_smulVecHom`). Over a field `k` of characteristic
@@ -43,31 +44,33 @@ zero, flat base change carries this to `H₁(Tⁿ; k)`, so the Lefschetz number 
 `L(x ↦ A • x) = det (1 - A)`
 
 (`Matrix.lefschetzNumber_smulVecHom`). The iterates of `x ↦ A • x` are the maps of the powers of
-`A`, so its Lefschetz zeta function is `exp (∑ₙ det (1 - Aⁿ) tⁿ / n)`
-(`Matrix.lefschetzZeta_smulVecHom`). On the two-torus this is
+`A` (`Matrix.lefschetzNumber_iterate_smulVecHom`), so its Lefschetz zeta function is
+`exp (∑ₙ det (1 - Aⁿ) tⁿ / n)` (`Matrix.lefschetzZeta_smulVecHom`). On the two-torus this is
 `det (1 - t A) / ((1 - t) (1 - det A t))` (`Matrix.lefschetzZeta_smulVecHom_mul_fin_two`), and for
-`det A = 1` it is `det (1 - t A) / (1 - t) ^ 2` (`Matrix.lefschetzZeta_smulVecHom_fin_two`). For
-Arnold's cat map `A = !![2, 1; 1, 1]` this is `(1 - 3 t + t ^ 2) / (1 - t) ^ 2`, and for the
-identity of the two-torus it is `(1 - t) ^ 2 / (1 - t) ^ 2 = 1`.
+`det A = 1` it is `det (1 - t A) / (1 - t) ^ 2`
+(`Matrix.lefschetzZeta_smulVecHom_fin_two_of_det_eq_one`). For Arnold's cat map
+`A = !![2, 1; 1, 1]` this is `(1 - 3 t + t ^ 2) / (1 - t) ^ 2`, and for the identity of the
+two-torus it is `(1 - t) ^ 2 / (1 - t) ^ 2 = 1`.
 
 For `A` invertible, every fixed point of `x ↦ A • x` has the Lefschetz sign `sgn det (1 - A)`, and
 there are `|det (1 - A)|` of them when `det (1 - A) ≠ 0`, so the Lefschetz number computed here is
 the signed count of the fixed points: the Lefschetz fixed-point formula holds for every iterate
-(`AddCircle.lefschetzNumber_eq_finsum_sign_det_id_sub_fixedPointDerivative_iterate`, in
-`TauCeti.Dynamics.TorusAutomorphism`).
+(`AddCircle.`
+`finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_eq_lefschetzNumber`,
+in `TauCeti.Dynamics.TorusAutomorphism`).
 
 ## Main results
 
 * `ContinuousMap.lefschetzNumber_eq_det_id_sub_of_bijective`: when the Pontryagin maps are
   bijective, `L(f) = det (1 - f_*)`, the determinant on `H₁(G; k)`.
-* `AddCircle.bijective_pontryaginExteriorPower_pi`: the Pontryagin maps of the torus
-  `ι → AddCircle p` are bijective.
 * `Matrix.lefschetzNumber_smulVecHom`: the Lefschetz number of `x ↦ A • x` on `ι → AddCircle p`
   is `det (1 - A)`.
+* `Matrix.lefschetzNumber_iterate_smulVecHom`: the Lefschetz number of its `n`-th iterate is
+  `det (1 - Aⁿ)`.
 * `Matrix.lefschetzZeta_smulVecHom`: its Lefschetz zeta function is
   `exp (∑ₙ det (1 - Aⁿ) tⁿ / n)`.
-* `Matrix.lefschetzZeta_smulVecHom_mul_fin_two`, `Matrix.lefschetzZeta_smulVecHom_fin_two`: the
-  closed forms on the two-torus.
+* `Matrix.lefschetzZeta_smulVecHom_mul_fin_two`,
+  `Matrix.lefschetzZeta_smulVecHom_fin_two_of_det_eq_one`: the closed forms on the two-torus.
 
 ## References
 
@@ -120,50 +123,6 @@ theorem lefschetzNumber_eq_det_id_sub_of_bijective
 end Exterior
 
 end ContinuousMap
-
-namespace AddCircle
-
-variable {ι : Type} {p : ℝ}
-
-/-- Circle coordinates on the torus `ι → AddCircle p`, as a continuous homomorphism from its
-multiplicative form to the torus `ι → S¹` of unit complex numbers. -/
-private def piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle) where
-  toFun x i := ULift.up (toCircle (Multiplicative.toAdd x i))
-  map_one' := funext fun _ ↦ ULift.ext toCircle_zero
-  map_mul' x y := funext fun i ↦ ULift.ext (toCircle_add (x.toAdd i) (y.toAdd i))
-  continuous_toFun := continuous_pi fun i ↦ continuous_uliftUp.comp <|
-    continuous_toCircle.comp <| (continuous_apply i).comp continuous_toAdd
-
-/-- For `p ≠ 0` the circle coordinates are an isomorphism of topological groups. -/
-private theorem isIso_ofHom_piToCircle (hp : p ≠ 0) :
-    IsIso (TopCat.ofHom ((piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle)) :
-      C(Multiplicative (ι → AddCircle p), ι → ULift Circle))) := by
-  rw [TopCat.isIso_iff_isHomeomorph]
-  -- factorwise, the circle coordinates are the homeomorphisms `AddCircle p ≃ₜ S¹`
-  have h : IsHomeomorph fun x : ι → AddCircle p ↦ fun i ↦ ULift.up.{0} (toCircle (x i)) := by
-    convert (Homeomorph.piCongrRight fun _ : ι ↦
-      (homeomorphCircle hp).trans Homeomorph.ulift.symm).isHomeomorph using 1
-    ext x i
-    simp [homeomorphCircle_apply, Homeomorph.ulift]
-  -- `Multiplicative (ι → AddCircle p)` is a type synonym carrying the topology of the torus
-  exact h
-
-variable (ι) in
-/-- **The homology of a torus of additive circles is the exterior algebra on its first homology.**
-For `p ≠ 0` and every commutative ring `k`, the Pontryagin map `⋀ⁿ H₁(Tⁿ; k) → Hₙ(Tⁿ; k)` of the
-torus `Tⁿ = ι → AddCircle p` is bijective. The Pontryagin product is taken on the multiplicative
-form of the torus, the monoid object of `TopCat` with the same underlying space. -/
-theorem bijective_pontryaginExteriorPower_pi [Finite ι] {k : Type} [CommRing k] (hp : p ≠ 0)
-    (n : ℕ) :
-    Function.Bijective
-      (TopCat.pontryaginExteriorPower k (TopCat.of (Multiplicative (ι → AddCircle p))) n) :=
-  have := isIso_ofHom_piToCircle (ι := ι) hp
-  TopCat.bijective_pontryaginExteriorPower_of_isIso
-    (TopCat.ofHom ((piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle)) :
-      C(Multiplicative (ι → AddCircle p), ι → ULift Circle)))
-    (bijective_pontryaginExteriorPower_torus k ι n)
-
-end AddCircle
 
 namespace Matrix
 
@@ -225,6 +184,19 @@ theorem lefschetzNumber_smulVecHom (A : Matrix ι ι ℤ) (k : Type) [Field k] [
   rw [h, ← det_id_sub_singularHomologyMap_smulVecHom_int A hp, ← eq_intCast (algebraMap ℤ k)]
   exact TopCat.det_id_sub_singularHomologyMap_eq_algebraMap _ 1
 
+/-- **The Lefschetz numbers of the iterates of a linear endomorphism of a torus.** For `p ≠ 0`, an
+integer matrix `A` and a field `k` of characteristic zero, the `n`-th iterate of the map `x ↦ A • x`
+of the torus `ι → AddCircle p` has Lefschetz number `det (1 - Aⁿ)`: it is the map of `Aⁿ`. -/
+theorem lefschetzNumber_iterate_smulVecHom (A : Matrix ι ι ℤ) (k : Type) [Field k] [CharZero k]
+    (hp : p ≠ 0) (n : ℕ) :
+    (⟨(⇑(A.smulVecHom (AddCircle p)))^[n], (A.smulVecHom (AddCircle p)).continuous.iterate n⟩ :
+        C(ι → AddCircle p, ι → AddCircle p)).lefschetzNumber k = ((1 - A ^ n).det : k) := by
+  have h : (⟨(⇑(A.smulVecHom (AddCircle p)))^[n],
+      (A.smulVecHom (AddCircle p)).continuous.iterate n⟩ : C(ι → AddCircle p, ι → AddCircle p)) =
+      ((A ^ n).smulVecHom (AddCircle p) : C(ι → AddCircle p, ι → AddCircle p)) :=
+    ContinuousMap.ext fun x ↦ congrFun (iterate_smulVecHom (AddCircle p) A n) x
+  rw [h, lefschetzNumber_smulVecHom _ k hp]
+
 /-- **The Lefschetz zeta function of a linear endomorphism of a torus.** For `p ≠ 0`, an integer
 matrix `A` and a field `k` of characteristic zero, the map `x ↦ A • x` of the torus
 `ι → AddCircle p` has Lefschetz zeta function `exp (∑ₙ det (1 - Aⁿ) tⁿ / n)`: its `n`-th iterate is
@@ -234,11 +206,7 @@ theorem lefschetzZeta_smulVecHom (A : Matrix ι ι ℤ) (k : Type) [Field k] [Al
     (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, ι → AddCircle p)).lefschetzZeta k =
       (PowerSeries.exp k).subst (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • ((1 - A ^ n).det : k)) := by
   have := algebraRat.charZero k
-  have h (n : ℕ) : (⟨(⇑(A.smulVecHom (AddCircle p)))^[n],
-      (A.smulVecHom (AddCircle p)).continuous.iterate n⟩ : C(ι → AddCircle p, ι → AddCircle p)) =
-      ((A ^ n).smulVecHom (AddCircle p) : C(ι → AddCircle p, ι → AddCircle p)) :=
-    ContinuousMap.ext fun x ↦ congrFun (iterate_smulVecHom (AddCircle p) A n) x
-  simp_rw [lefschetzZeta_def, ContinuousMap.coe_ofClass, h, lefschetzNumber_smulVecHom _ k hp]
+  simp_rw [lefschetzZeta_def, ContinuousMap.coe_ofClass, lefschetzNumber_iterate_smulVecHom _ k hp]
 
 /-- **The Lefschetz zeta function of a linear endomorphism of the two-torus.** For `p ≠ 0`, a
 `2 × 2` integer matrix `A` and a field `k` of characteristic zero, the map `x ↦ A • x` of the torus
@@ -257,8 +225,8 @@ theorem lefschetzZeta_smulVecHom_mul_fin_two (A : Matrix (Fin 2) (Fin 2) ℤ) (k
 `p ≠ 0`, a `2 × 2` integer matrix `A` of determinant one and a field `k` of characteristic zero, the
 map `x ↦ A • x` of the torus `Fin 2 → AddCircle p` has Lefschetz zeta function
 `det (1 - t A) / (1 - t) ^ 2`. For the identity of the torus it is `1`. -/
-theorem lefschetzZeta_smulVecHom_fin_two {A : Matrix (Fin 2) (Fin 2) ℤ} (hA : A.det = 1)
-    (k : Type) [Field k] [Algebra ℚ k] (hp : p ≠ 0) :
+theorem lefschetzZeta_smulVecHom_fin_two_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : A.det = 1) (k : Type) [Field k] [Algebra ℚ k] (hp : p ≠ 0) :
     (A.smulVecHom (AddCircle p) : C(Fin 2 → AddCircle p, Fin 2 → AddCircle p)).lefschetzZeta k =
       ((A.map (Int.castRingHom k)).charpolyRev : PowerSeries k) * PowerSeries.mk 1 ^ 2 := by
   simp_rw [lefschetzZeta_smulVecHom A k hp, intCast_det_one_sub, Matrix.map_pow]
