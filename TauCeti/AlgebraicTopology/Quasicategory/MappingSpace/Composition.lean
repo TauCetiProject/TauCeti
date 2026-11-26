@@ -67,6 +67,14 @@ an edge restriction, and its independence of the section (`SSet.mappingSpace.exi
 is proved like `SSet.rightMappingSpace.exists_homotopy_postcomp`, by applying
 `SSet.exists_homotopy_of_rlp_monomorphisms` to the trivial fibration
 (`SSet.triangleSpace.exists_homotopy_edge₀₂`).
+
+The functor-quasicategory input to the spine lifting and to associativity is Jack McKoen and
+Joël Riou's Mathlib formalization of inner anodyne pushout-products
+(`Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct`, after
+J. McKoen, *A Formalization of Functor Quasi-Categories in Lean 4*): its lemma
+`SSet.innerFibration_pullbackObjObjπ` and the two instances derived from it used here, that
+`(MonoidalClosed.pre i).app X` is an inner fibration for a monomorphism `i` and that
+`(ihom A).obj X` is a quasicategory when `X` is.
 -/
 
 public section

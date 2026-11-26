@@ -44,7 +44,10 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- In a braided monoidal category, the maps `B ⟶ (A ⟶[C] X)` correspond to the maps
 `A ⟶ (B ⟶[C] X)`, for closed objects `A` and `B`: both are curried forms of maps `A ⊗ B ⟶ X`, up
-to the braiding. -/
+to the braiding.
+
+This packages the transposition `curry ((β_ _ _).hom ≫ uncurry _)` used inline earlier in the
+proof of `SSet.Edge.isEquivalence_iff_forall_isEquivalence_map_evalAt`. -/
 noncomputable def ihomSwapEquiv (A B X : C) [Closed A] [Closed B] :
     (B ⟶ (ihom A).obj X) ≃ (A ⟶ (ihom B).obj X) where
   toFun g := curry ((β_ B A).hom ≫ uncurry g)
