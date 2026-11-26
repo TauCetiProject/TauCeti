@@ -52,64 +52,38 @@ private theorem mem_edgesAtZero_of_isTiling {M : Set TriEdge} (h : IsTiling hexa
   obtain ⟨⟨a, b⟩, k⟩ := e
   fin_cases k <;> simp [vertexFaces_def, Prod.ext_iff] at hw hb ⊢ <;> omega
 
-/-- In a tiling of the unit hexagon, a face of `R₆` whose edges in the tiling can only be `x` or
-`y` contains exactly one of `x` and `y`. -/
+/-- In a tiling of the unit hexagon, a face `f` of `R₆` whose only edges at the origin are `x` and
+`y` contains exactly one of `x` and `y`. The hypothesis is a finite check, closed by `simp`. -/
 private theorem mem_iff_notMem_of_isTiling {M : Set TriEdge} (h : IsTiling hexagon M)
-    {f : TriFace} (hf : f ∈ hexagon) {x y : TriEdge} (hx : x ∈ f.edges) (hy : y ∈ f.edges)
-    (hxy : x ≠ y) (hall : ∀ e ∈ f.edges, e ∈ M → e = x ∨ e = y) : x ∈ M ↔ y ∉ M := by
+    (f : TriFace) (x y : TriEdge)
+    (hf : f ∈ vertexFaces (0, 0) ∧ x ∈ f.edges ∧ y ∈ f.edges ∧ x ≠ y ∧ ∀ e ∈ f.edges,
+      (e = ⟨(0, 0), 0⟩ ∨ e = ⟨(0, 0), 1⟩ ∨ e = ⟨(0, 0), 2⟩ ∨ e = ⟨(-1, 0), 0⟩ ∨
+        e = ⟨(0, -1), 1⟩ ∨ e = ⟨(-1, -1), 2⟩) → e = x ∨ e = y) : x ∈ M ↔ y ∉ M := by
+  obtain ⟨hf, hx, hy, hxy, hall⟩ := hf
   obtain ⟨e₀, ⟨he₀, he₀f⟩, hu⟩ := h.existsUnique hf
   constructor
   · exact fun hx' hy' => hxy ((hu x ⟨hx', hx⟩).trans (hu y ⟨hy', hy⟩).symm)
   · intro hy'
-    rcases hall e₀ he₀f he₀ with rfl | rfl
+    rcases hall e₀ he₀f (mem_edgesAtZero_of_isTiling h he₀) with rfl | rfl
     · exact he₀
     · exact absurd he₀ hy'
 
 /-- A tiling of the unit hexagon is `T_a` or `T_b`. -/
 theorem eq_tilingA_or_eq_tilingB {M : Set TriEdge} (h : IsTiling hexagon M) :
     M = tilingA ∨ M = tilingB := by
-  have hall (f : TriFace) (x y : TriEdge) (hf : ∀ e ∈ f.edges, e ∈ M →
-      e = ⟨(0, 0), 0⟩ ∨ e = ⟨(0, 0), 1⟩ ∨ e = ⟨(0, 0), 2⟩ ∨ e = ⟨(-1, 0), 0⟩ ∨
-        e = ⟨(0, -1), 1⟩ ∨ e = ⟨(-1, -1), 2⟩ → e = x ∨ e = y) :
-      ∀ e ∈ f.edges, e ∈ M → e = x ∨ e = y :=
-    fun e he heM => hf e he heM (mem_edgesAtZero_of_isTiling h heM)
   -- the six faces around the origin, each with its two edges at the origin
-  have h1 := mem_iff_notMem_of_isTiling h (f := ⟨(0, 0), true⟩)
-      (x := ⟨(0, 0), 0⟩) (y := ⟨(0, 0), 2⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
-  have h2 := mem_iff_notMem_of_isTiling h (f := ⟨(0, 0), false⟩)
-      (x := ⟨(0, 0), 1⟩) (y := ⟨(0, 0), 2⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_false, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
-  have h3 := mem_iff_notMem_of_isTiling h (f := ⟨(-1, 0), true⟩)
-      (x := ⟨(-1, 0), 0⟩) (y := ⟨(0, 0), 1⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
-  have h4 := mem_iff_notMem_of_isTiling h (f := ⟨(-1, -1), false⟩)
-      (x := ⟨(-1, 0), 0⟩) (y := ⟨(-1, -1), 2⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_false, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
-  have h5 := mem_iff_notMem_of_isTiling h (f := ⟨(-1, -1), true⟩)
-      (x := ⟨(0, -1), 1⟩) (y := ⟨(-1, -1), 2⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
-  have h6 := mem_iff_notMem_of_isTiling h (f := ⟨(0, -1), false⟩)
-      (x := ⟨(0, -1), 1⟩) (y := ⟨(0, 0), 0⟩)
-    (by simp [vertexFaces_def]) (by simp) (by simp) (by simp)
-    (hall _ _ _ fun e he _ hm => by
-      simp only [TriFace.edges_mk_false, Finset.mem_insert, Finset.mem_singleton] at he
-      rcases he with rfl | rfl | rfl <;> simp_all)
+  have h1 := mem_iff_notMem_of_isTiling h ⟨(0, 0), true⟩ ⟨(0, 0), 0⟩ ⟨(0, 0), 2⟩
+    (by simp [vertexFaces_def])
+  have h2 := mem_iff_notMem_of_isTiling h ⟨(0, 0), false⟩ ⟨(0, 0), 1⟩ ⟨(0, 0), 2⟩
+    (by simp [vertexFaces_def])
+  have h3 := mem_iff_notMem_of_isTiling h ⟨(-1, 0), true⟩ ⟨(-1, 0), 0⟩ ⟨(0, 0), 1⟩
+    (by simp [vertexFaces_def])
+  have h4 := mem_iff_notMem_of_isTiling h ⟨(-1, -1), false⟩ ⟨(-1, 0), 0⟩ ⟨(-1, -1), 2⟩
+    (by simp [vertexFaces_def])
+  have h5 := mem_iff_notMem_of_isTiling h ⟨(-1, -1), true⟩ ⟨(0, -1), 1⟩ ⟨(-1, -1), 2⟩
+    (by simp [vertexFaces_def])
+  have h6 := mem_iff_notMem_of_isTiling h ⟨(0, -1), false⟩ ⟨(0, -1), 1⟩ ⟨(0, 0), 0⟩
+    (by simp [vertexFaces_def])
   by_cases hc : (⟨(0, 0), 2⟩ : TriEdge) ∈ M
   · left
     ext e
@@ -126,41 +100,31 @@ theorem eq_tilingA_or_eq_tilingB {M : Set TriEdge} (h : IsTiling hexagon M) :
     · simp only [tilingB, Set.mem_insert_iff, Set.mem_singleton_iff] at he
       rcases he with rfl | rfl | rfl <;> tauto
 
+/-- A finite set of edges whose faces lie in `R₆`, and which meets each face of `R₆` in exactly
+one edge, is a tiling of the unit hexagon. Both hypotheses are finite checks, closed by `simp`. -/
+private theorem isTiling_hexagon_of_card_filter {M : Finset TriEdge}
+    (hM : ∀ e ∈ M, e.faces ⊆ vertexFaces (0, 0))
+    (hu : ∀ f ∈ vertexFaces (0, 0), (M.filter (· ∈ f.edges)).card = 1) :
+    IsTiling hexagon M := by
+  refine isTiling_def.2 ⟨fun e he f hef => hM e he (TriEdge.mem_faces.2 hef), fun f hf => ?_⟩
+  obtain ⟨e, he⟩ := Finset.card_eq_one.1 (hu f hf)
+  have hmem (y : TriEdge) : y ∈ M ∧ y ∈ f.edges ↔ y = e := by
+    simpa using Finset.ext_iff.1 he y
+  exact ⟨e, (hmem e).2 rfl, fun y hy => (hmem y).1 hy⟩
+
 /-- `T_a` is a tiling of the unit hexagon. -/
 theorem isTiling_tilingA : IsTiling hexagon tilingA := by
-  refine isTiling_def.2 ⟨fun e he f hef => ?_, fun f hf => ?_⟩
-  · rw [← TriEdge.mem_faces, TriEdge.faces_def] at hef
-    rw [tilingA] at he
-    rcases he with rfl | rfl | rfl <;>
-      simp only [Finset.mem_insert, Finset.mem_singleton] at hef <;>
-      rcases hef with rfl | rfl <;> simp [vertexFaces_def]
-  · simp only [hexagon, vertexFaces_def, Finset.coe_insert, Finset.coe_singleton,
-      Set.mem_insert_iff, Set.mem_singleton_iff] at hf
-    rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    · refine existsUnique_of_exists_of_unique ?_ ?_
-      · simp [tilingA]
-      · rintro y₁ y₂ ⟨hy₁, hf₁⟩ ⟨hy₂, hf₂⟩
-        rw [tilingA] at hy₁ hy₂
-        rcases hy₁ with rfl | rfl | rfl <;> rcases hy₂ with rfl | rfl | rfl <;>
-          first | rfl | simp at hf₁ hf₂
+  simpa [tilingA] using isTiling_hexagon_of_card_filter
+    (M := {⟨(0, 0), 2⟩, ⟨(-1, 0), 0⟩, ⟨(0, -1), 1⟩})
+    (by simp [vertexFaces_def, TriEdge.faces_def, Finset.insert_subset_iff])
+    (by simp [vertexFaces_def, Finset.filter_insert, Finset.filter_singleton])
 
 /-- `T_b` is a tiling of the unit hexagon. -/
 theorem isTiling_tilingB : IsTiling hexagon tilingB := by
-  refine isTiling_def.2 ⟨fun e he f hef => ?_, fun f hf => ?_⟩
-  · rw [← TriEdge.mem_faces, TriEdge.faces_def] at hef
-    rw [tilingB] at he
-    rcases he with rfl | rfl | rfl <;>
-      simp only [Finset.mem_insert, Finset.mem_singleton] at hef <;>
-      rcases hef with rfl | rfl <;> simp [vertexFaces_def]
-  · simp only [hexagon, vertexFaces_def, Finset.coe_insert, Finset.coe_singleton,
-      Set.mem_insert_iff, Set.mem_singleton_iff] at hf
-    rcases hf with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    · refine existsUnique_of_exists_of_unique ?_ ?_
-      · simp [tilingB]
-      · rintro y₁ y₂ ⟨hy₁, hf₁⟩ ⟨hy₂, hf₂⟩
-        rw [tilingB] at hy₁ hy₂
-        rcases hy₁ with rfl | rfl | rfl <;> rcases hy₂ with rfl | rfl | rfl <;>
-          first | rfl | simp at hf₁ hf₂
+  simpa [tilingB] using isTiling_hexagon_of_card_filter
+    (M := {⟨(0, 0), 0⟩, ⟨(0, 0), 1⟩, ⟨(-1, -1), 2⟩})
+    (by simp [vertexFaces_def, TriEdge.faces_def, Finset.insert_subset_iff])
+    (by simp [vertexFaces_def, Finset.filter_insert, Finset.filter_singleton])
 
 /-- **The unit hexagon has exactly two tilings**, `T_a` and `T_b`. -/
 theorem isTiling_hexagon_iff {M : Set TriEdge} :
@@ -229,11 +193,14 @@ theorem not_isTiling_frozen_union :
 
 /-! ### Placed tiles -/
 
-/-- The placed tiles of `(0,1)` and `(0,3)` share `W(0)`, so no tiling contains both edges. -/
+/-- The placed tiles of `(0,1)` and `(0,3)` share the face `W(0)`. -/
 theorem white₀_mem_toPlacedTile :
-    white₀ ∈ (⟨(0, 0), 0⟩ : TriEdge).toPlacedTile ∧ white₀ ∈ (⟨(0, 0), 2⟩ : TriEdge).toPlacedTile ∧
-      ∀ R M, IsTiling R M → ¬ ((⟨(0, 0), 0⟩ : TriEdge) ∈ M ∧ (⟨(0, 0), 2⟩ : TriEdge) ∈ M) := by
-  refine ⟨by simp, by simp, fun R M h hM => ?_⟩
+    white₀ ∈ (⟨(0, 0), 0⟩ : TriEdge).toPlacedTile ∧ white₀ ∈ (⟨(0, 0), 2⟩ : TriEdge).toPlacedTile :=
+  ⟨by simp, by simp⟩
+
+/-- No tiling contains both `(0,1)` and `(0,3)`, since both edges lie in `W(0)`. -/
+theorem not_mem_and_mem_of_isTiling {R : Set TriFace} {M : Set TriEdge} (h : IsTiling R M) :
+    ¬ ((⟨(0, 0), 0⟩ : TriEdge) ∈ M ∧ (⟨(0, 0), 2⟩ : TriEdge) ∈ M) := fun hM => by
   have := h.eq_of_mem_edges (f := white₀) hM.1 hM.2 (by simp) (by simp)
   simp at this
 
