@@ -35,12 +35,13 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `TwoSidedIdeal.Quotient.nonUnitalCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebra`: C⋆-norm
   and C⋆-algebra instances on `A ⧸ I` for a closed two-sided ideal `I : TwoSidedIdeal A`.
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
-  `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
-  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
-  `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
-  `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
-* `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
-  `⋆`-algebra homomorphism between C⋆-algebras is closed.
+  `TwoSidedIdeal.Quotient.factorStarAlgHom`, `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`, and
+  `TwoSidedIdeal.Quotient.opStarAlgEquiv`: universal `⋆`-homomorphisms and `⋆`-equivalences on
+  C⋆-quotients. `mkStarAlgHom` and `liftStarAlgHom` have unital counterparts
+  `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
+* `NonUnitalStarAlgHom.isClosed_range`, `StarAlgHom.isClosed_range`,
+  `TwoSidedIdeal.isClosed_map_mk`, and `TwoSidedIdeal.isClosed_sup`: `⋆`-homomorphism ranges,
+  images of closed ideals in quotients, and sums `I ⊔ J` of closed ideals are automatically closed.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
   of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt`: the distance from `a` to the preimage of a
@@ -308,6 +309,37 @@ theorem quotStarAlgEquivOfEq_symm {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm :=
   (rfl)
 
+/-- Canonical isometric `⋆`-algebra isomorphism `(A ⧸ I)ᵐᵒᵖ ≃⋆ₐ[ℂ] Aᵐᵒᵖ ⧸ I.op` identifying the
+opposite of a C⋆-quotient with the quotient of `Aᵐᵒᵖ` by `I.op`. -/
+noncomputable def opStarAlgEquiv (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    (A ⧸ I)ᵐᵒᵖ ≃⋆ₐ[ℂ] Aᵐᵒᵖ ⧸ I.op where
+  toFun := opEquiv I
+  invFun := (opEquiv I).symm
+  left_inv := (opEquiv I).left_inv
+  right_inv := (opEquiv I).right_inv
+  map_mul' := map_mul (opEquiv I)
+  map_add' := map_add (opEquiv I)
+  map_star' x := by
+    obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    rw [← MulOpposite.op_star, ← mk_star, opEquiv_op_mk, opEquiv_op_mk,
+      MulOpposite.op_star, mk_star]
+  map_smul' c x := by
+    obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    rw [← MulOpposite.op_smul, ← mk_smul_complex, opEquiv_op_mk, opEquiv_op_mk,
+      MulOpposite.op_smul, mk_smul_complex]
+
+@[simp]
+theorem opStarAlgEquiv_op_mk (I : TwoSidedIdeal A) [IsClosed (I : Set A)] (a : A) :
+    opStarAlgEquiv I (MulOpposite.op (mk I a)) = mk I.op (MulOpposite.op a) :=
+  opEquiv_op_mk I a
+
+@[simp]
+theorem opStarAlgEquiv_symm_mk (I : TwoSidedIdeal A) [IsClosed (I : Set A)] (u : Aᵐᵒᵖ) :
+    (opStarAlgEquiv I).symm (mk I.op u) = MulOpposite.op (mk I u.unop) :=
+  opEquiv_symm_mk I u
+
 end NonUnital
 
 section Unital
@@ -557,6 +589,16 @@ theorem liftOfSurjective_comp_self {C : Type*} [NonUnitalCStarAlgebra C]
     φ.liftOfSurjective hφ (θ.comp φ) hθ = θ :=
   ((φ.eq_liftOfSurjective_iff hφ (θ.comp φ) hθ).mpr rfl).symm
 
+/-- The image of a closed two-sided ideal of a C⋆-algebra under any `⋆`-algebra homomorphism is
+closed. -/
+theorem isClosed_image_ideal (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    IsClosed (φ '' (I : Set A)) := by
+  have hrange : φ '' (I : Set A) = Set.range (φ.comp I.starAlgHom) := by
+    ext b
+    simp [Set.mem_image, Set.mem_range]
+  rw [hrange]
+  exact (φ.comp I.starAlgHom).isClosed_setRange
+
 end NonUnitalStarAlgHom
 
 namespace NonUnitalStarAlgHom
@@ -672,3 +714,37 @@ theorem coe_quotientKerEquivRange_mk (a : A) :
   congrArg Subtype.val (φ.quotientKerEquivRange_mk a)
 
 end StarAlgHom
+
+namespace TwoSidedIdeal
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- Under a surjective `⋆`-algebra homomorphism between C⋆-algebras, the pushforward of a closed
+two-sided ideal is already closed without taking closure. -/
+theorem isClosed_map_of_surjective {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ)
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    IsClosed (TwoSidedIdeal.map φ I : Set B) := by
+  rw [TwoSidedIdeal.coe_map_of_surjective hφ]
+  exact φ.isClosed_image_ideal I
+
+/-- The image of a closed two-sided ideal `I` in the C⋆-quotient `A ⧸ J` by a closed ideal `J` is
+closed. -/
+instance isClosed_map_mk (I J : TwoSidedIdeal A) [IsClosed (I : Set A)] [IsClosed (J : Set A)] :
+    IsClosed (TwoSidedIdeal.map (Quotient.mk J) I : Set (A ⧸ J)) :=
+  isClosed_map_of_surjective (φ := Quotient.mkStarAlgHom J) (Quotient.mkStarAlgHom_surjective J) I
+
+/-- Normalizing `TwoSidedIdeal.map` along `Quotient.mkStarAlgHom J` to `Quotient.mk J`, so
+`TwoSidedIdeal.isClosed_map_mk` applies uniformly. -/
+@[simp]
+theorem map_mkStarAlgHom (I J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
+    TwoSidedIdeal.map (Quotient.mkStarAlgHom J) I = TwoSidedIdeal.map (Quotient.mk J) I :=
+  (rfl)
+
+/-- The algebraic sum `I ⊔ J` of two closed two-sided ideals in a C⋆-algebra is automatically
+closed. -/
+instance isClosed_sup (I J : TwoSidedIdeal A) [IsClosed (I : Set A)] [IsClosed (J : Set A)] :
+    IsClosed ((I ⊔ J : TwoSidedIdeal A) : Set A) := by
+  rw [← TwoSidedIdeal.comap_map_mk I J]
+  exact TwoSidedIdeal.isClosed_comap (Quotient.continuous_mk J) inferInstance
+
+end TwoSidedIdeal
