@@ -78,11 +78,6 @@ private theorem verschiebungFun_map (n : ℕ) (f : R →+* R') (x : BigWittVecto
   simp only [coeff_verschiebungFun, coeff_map]
   split_ifs <;> simp
 
-private theorem ghostPolynomial_verschiebungFun (n : ℕ) (x : BigWittVector (S / n) R) (m : ℕ) :
-    ghostPolynomial m (verschiebungFun n x).coeff =
-      if n ∣ m then n * ghostPolynomial (m / n) x.coeff else 0 :=
-  ghostPolynomial_ite_dvd n m x.coeff
-
 private theorem verschiebungFun_add (n : ℕ) (x y : BigWittVector (S / n) R) :
     verschiebungFun n (x + y) = verschiebungFun n x + verschiebungFun n y := by
   -- lift `x` and `y` to the integral polynomial ring `ℤ[X_r : r ∈ R]`
@@ -94,7 +89,8 @@ private theorem verschiebungFun_add (n : ℕ) (x y : BigWittVector (S / n) R) :
   refine ghostMap_injective (fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)) ?_
   rw [map_add]
   funext m
-  simp only [Pi.add_apply, ghostMap_apply, ghostPolynomial_verschiebungFun]
+  simp only [Pi.add_apply, ghostMap_apply, funext (coeff_verschiebungFun n _),
+    ghostPolynomial_ite_dvd]
   split_ifs with h
   · have hadd := congrFun (map_add ghostMap x y) ⟨m / n, TruncationSet.div_mem_div m.property h⟩
     simp only [Pi.add_apply, ghostMap_apply] at hadd

@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.WittVector.Big.TruncationSet
 import Mathlib.Algebra.Regular.SMul
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.Basic
+import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.Coprime.Lemmas
 
 /-!
@@ -217,21 +218,13 @@ theorem ghostPolynomial_ite_dvd (n m : ℕ) (x : ℕ → R) :
       zero_pow (Nat.div_pos (Nat.divisor_le hd) (Nat.pos_of_mem_divisors hd)).ne', mul_zero]
   rw [ghostPolynomial_eq_sum]
   split_ifs with hnm
-  · -- the divisors of `n * k` divisible by `n` are the `n * e` with `e ∣ k`
-    obtain ⟨k, rfl⟩ := hnm
-    have hn : 0 < n := Nat.pos_of_ne_zero (left_ne_zero_of_mul hm)
-    have hk : k ≠ 0 := right_ne_zero_of_mul hm
-    rw [Nat.mul_div_cancel_left k hn, ghostPolynomial_eq_sum, mul_sum,
-      ← sum_subset (s₁ := k.divisors.map ⟨(n * ·), mul_right_injective₀ hn.ne'⟩), sum_map]
-    · refine sum_congr rfl fun e _ ↦ ?_
-      simp only [Function.Embedding.coeFn_mk, dvd_mul_right, ite_true,
-        Nat.mul_div_cancel_left e hn, Nat.mul_div_mul_left k e hn, Nat.cast_mul, mul_assoc]
-    · intro d hd
-      obtain ⟨e, he, rfl⟩ := mem_map.1 hd
-      exact Nat.mem_divisors.2 ⟨mul_dvd_mul_left n (Nat.dvd_of_mem_divisors he), hm⟩
-    · intro d hd hdmap
-      refine hzero d hd fun ⟨e, he⟩ ↦ hdmap (mem_map.2 ⟨e, Nat.mem_divisors.2 ⟨?_, hk⟩, he.symm⟩)
-      exact (Nat.mul_dvd_mul_iff_left hn).1 (he ▸ Nat.dvd_of_mem_divisors hd)
+  · -- only the divisors `d = n * e` with `e ∣ m / n` contribute
+    have hn : 0 < n := Nat.pos_of_ne_zero (ne_zero_of_dvd_ne_zero hm hnm)
+    rw [← sum_filter_of_ne (p := (n ∣ ·)) fun d hd h ↦ by_contra (h <| hzero d hd ·),
+      Nat.sum_divisors_filter_dvd hnm, ghostPolynomial_eq_sum, mul_sum]
+    refine sum_congr rfl fun e _ ↦ ?_
+    rw [ite_eq_left (dvd_mul_right n e), Nat.mul_div_cancel_left e hn, Nat.div_div_eq_div_mul,
+      Nat.cast_mul, mul_assoc]
   · exact sum_eq_zero fun d hd ↦ hzero d hd fun hnd ↦ hnm (hnd.trans (Nat.dvd_of_mem_divisors hd))
 
 end Semiring
