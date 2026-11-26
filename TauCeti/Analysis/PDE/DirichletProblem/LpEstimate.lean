@@ -16,7 +16,7 @@ Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, wit
 not necessarily symmetric, and let `c` be measurable and bounded with `c ≥ κ > 0` almost
 everywhere. This file proves that every weak solution `u ∈ H¹₀(Ω)` of
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div F` in `Ω`, `u = 0` on `∂Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f + div F` in `Ω`, `u = 0` on `∂Ω`,
 
 with `f ∈ L²(Ω)` and `F ∈ L²(Ω; ℝⁿ)`, satisfies for every `2 ≤ p < ∞`
 
@@ -25,7 +25,7 @@ with `f ∈ L²(Ω)` and `F ∈ L²(Ω; ℝⁿ)`, satisfies for every `2 ≤ p <
 (`TauCeti.PDE.UniformlyEllipticOn.eLpNorm_value_le_of_forall_energyFormH1_eq`). No integrability
 of `u` beyond `L²` is assumed and nothing about `Ω` or the regularity of `a`. For the constant
 shift `c = κ` the estimate reads `√κ ‖u‖_p ≤ κ^{-1/2} ‖f‖_p + √((p - 1) / (4λ)) ‖F‖_p`. This is
-the zero-order part of Krylov's whole-space `W^{1,p}` estimate for `-div(a∇u) + κu = f - div F`
+the zero-order part of Krylov's whole-space `W^{1,p}` estimate for `-div(a∇u) + κu = f + div F`
 with coefficients of vanishing mean oscillation: the gradient estimate carries a lower-order term
 `r₀⁻¹ ‖u‖_p`, which this bound controls by the data with the factor `r₀⁻¹ κ^{-1/2}`. With `F = 0`
 it is the contraction bound `‖u‖_p ≤ κ⁻¹ ‖f‖_p`
@@ -55,7 +55,7 @@ and the bound passes to `u` as `k → ∞`.
 ## Main declarations
 
 * `TauCeti.PDE.UniformlyEllipticOn.eLpNorm_value_le_of_forall_energyFormH1_eq`: the `Lᵖ` bound for
-  `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div F`.
+  `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f + div F`.
 * `TauCeti.PDE.UniformlyEllipticOn.eLpNorm_value_le_of_isWeakSolutionDirichlet`: its case `F = 0`,
   `‖u‖_p ≤ κ⁻¹ ‖f‖_p`.
 
@@ -191,6 +191,10 @@ private theorem min_rpow_le_mul_lpProfile (hp : 2 ≤ p) (hk : 0 ≤ k) (t : ℝ
       exact lpProfile_mono hp hk hks
     exact mul_le_mul hks hφ (Real.rpow_nonneg hk _) hs
 
+private theorem mul_lpProfile_nonneg (hp : 2 ≤ p) (hk : 0 ≤ k) (t : ℝ) :
+    0 ≤ t * lpProfile p k t :=
+  (min_rpow_le_mul_lpProfile hp hk t).trans' (Real.rpow_nonneg (le_min (abs_nonneg t) hk) _)
+
 /-- `|φ(t)|^{p/(p-1)} ≤ t φ(t)`, the bound used for the Hölder pairing with the datum. -/
 private theorem abs_lpProfile_rpow_le (hp : 2 ≤ p) (hk : 0 ≤ k) (t : ℝ) :
     |lpProfile p k t| ^ (p / (p - 1)) ≤ t * lpProfile p k t := by
@@ -317,8 +321,8 @@ private theorem integral_lpProfileDeriv_rpow_rpow_le (hp : 2 < p) (hk : 0 ≤ k)
     (∫ x, lpProfileDeriv p k (U x) ^ (p / (p - 2)) ∂μ) ^ (1 / (p / (p - 2))) ≤
       (p - 1) * (∫ x, U x * lpProfile p k (U x) ∂μ) ^ ((p - 2) / p) := by
   have hp1 : 0 < p - 1 := by linarith
-  have hZ : 0 ≤ ∫ x, U x * lpProfile p k (U x) ∂μ := integral_nonneg fun x =>
-    (min_rpow_le_mul_lpProfile hp.le hk _).trans' (Real.rpow_nonneg (le_min (abs_nonneg _) hk) _)
+  have hZ : 0 ≤ ∫ x, U x * lpProfile p k (U x) ∂μ :=
+    integral_nonneg fun x => mul_lpProfile_nonneg hp.le hk _
   calc _ ≤ ((p - 1) ^ (p / (p - 2)) * ∫ x, U x * lpProfile p k (U x) ∂μ) ^
         (1 / (p / (p - 2))) := by
         refine Real.rpow_le_rpow (integral_nonneg fun x => Real.rpow_nonneg
@@ -330,29 +334,18 @@ private theorem integral_lpProfileDeriv_rpow_rpow_le (hp : 2 < p) (hk : 0 ≤ k)
         rw [Real.mul_rpow (Real.rpow_nonneg hp1.le _) hZ, ← Real.rpow_mul hp1.le, one_div_div,
           show p / (p - 2) * ((p - 2) / p) = 1 by field_simp, Real.rpow_one]
 
-/-- `‖G‖² ∈ L^{p/2}` with `(∫ (‖G‖²)^{p/2})^{2/p} = ‖G‖_p²`, for `G ∈ Lᵖ`. -/
-private theorem memLp_norm_sq_and_integral_rpow_eq {F : Type*} [NormedAddCommGroup F]
-    {G : α → F} (hp0 : 0 < p) (hG : MemLp G (ENNReal.ofReal p) μ) :
-    MemLp (fun x => ‖G x‖ ^ 2) (ENNReal.ofReal (p / 2)) μ ∧
-      (∫ x, (‖G x‖ ^ 2) ^ (p / 2) ∂μ) ^ (1 / (p / 2)) = ((∫ x, ‖G x‖ ^ p ∂μ) ^ p⁻¹) ^ 2 := by
-  have hpow (x : α) : ‖‖G x‖ ^ 2‖ ^ (p / 2) = ‖G x‖ ^ p := by
-    rw [norm_pow, norm_norm, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-    norm_num
-    ring_nf
-  have hGint : Integrable (fun x => ‖G x‖ ^ p) μ := by
-    simpa only [ENNReal.toReal_ofReal hp0.le] using
-      hG.integrable_norm_rpow (ENNReal.ofReal_pos.2 (by positivity)).ne' ENNReal.ofReal_ne_top
-  refine ⟨(integrable_norm_rpow_iff (hG.aestronglyMeasurable.norm.pow 2)
-    (ENNReal.ofReal_pos.2 (by positivity)).ne'
-    ENNReal.ofReal_ne_top).1 (hGint.congr (Eventually.of_forall fun x => ?_)), ?_⟩
-  · simp only [ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ p / 2), Pi.pow_apply]
-    exact (hpow x).symm
-  · have hint : ∫ x, (‖G x‖ ^ 2) ^ (p / 2) ∂μ = ∫ x, ‖G x‖ ^ p ∂μ :=
-      integral_congr_ae (Eventually.of_forall fun x => by
-        simpa only [norm_pow, norm_norm] using hpow x)
-    rw [hint, ← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun x => Real.rpow_nonneg
-      (norm_nonneg _) _), one_div_div]
-    norm_num [div_eq_inv_mul]
+/-- `(∫ (‖G‖²)^{p/2})^{2/p} = ‖G‖_p²`, the `L^{p/2}` norm of `‖G‖²`. -/
+private theorem integral_norm_sq_rpow_rpow_eq {F : Type*} [NormedAddCommGroup F] (G : α → F) :
+    (∫ x, (‖G x‖ ^ 2) ^ (p / 2) ∂μ) ^ (1 / (p / 2)) = ((∫ x, ‖G x‖ ^ p ∂μ) ^ p⁻¹) ^ 2 := by
+  have hint : ∫ x, (‖G x‖ ^ 2) ^ (p / 2) ∂μ = ∫ x, ‖G x‖ ^ p ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun x => by
+      beta_reduce
+      rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+      norm_num
+      ring_nf)
+  rw [hint, ← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun x => Real.rpow_nonneg
+    (norm_nonneg _) _), one_div_div]
+  norm_num [div_eq_inv_mul]
 
 /-- Hölder's inequality with the exponents `p / 2` and `p / (p - 2)`, followed by
 `φ'(t)^{p/(p-2)} ≤ (p - 1)^{p/(p-2)} t φ(t)`:
@@ -364,7 +357,10 @@ private theorem integral_lpProfileDeriv_mul_sq_le (hp : 2 ≤ p) (hk : 0 ≤ k)
       (p - 1) * ((∫ x, ‖G x‖ ^ p ∂μ) ^ p⁻¹) ^ 2 *
         (∫ x, U x * lpProfile p k (U x) ∂μ) ^ ((p - 2) / p) := by
   have hp0 : 0 < p := by linarith
-  obtain ⟨hGmem, hfirst⟩ := memLp_norm_sq_and_integral_rpow_eq hp0 hG
+  have hGmem : MemLp (fun x => ‖G x‖ ^ 2) (ENNReal.ofReal (p / 2)) μ := by
+    rw [ENNReal.ofReal_div_of_pos two_pos, ENNReal.ofReal_ofNat]
+    simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using hG.norm_rpow_div 2
+  have hfirst := integral_norm_sq_rpow_rpow_eq (p := p) (μ := μ) G
   rcases hp.eq_or_lt with rfl | hp2
   · have h1 (s : ℝ) : lpProfileDeriv 2 k s = 1 := by norm_num [lpProfileDeriv]
     simp only [h1, one_mul, sub_self, zero_div, Real.rpow_zero, mul_one]
@@ -490,8 +486,7 @@ private theorem mul_mul_lpProfile_le (hp : 2 ≤ p) (hk : 0 ≤ k) {A : Matrix �
   set φ := lpProfile p k t
   set d := lpProfileDeriv p k t
   have hd : 0 ≤ d := lpProfileDeriv_nonneg hp hk t
-  have htφ : 0 ≤ t * φ := (min_rpow_le_mul_lpProfile hp hk t).trans' (Real.rpow_nonneg
-    (le_min (abs_nonneg t) hk) _)
+  have htφ : 0 ≤ t * φ := mul_lpProfile_nonneg hp hk t
   have hQ := hA g
   have hGg : -(‖G‖ * ‖g‖) ≤ ⟪G, g⟫_ℝ := neg_le_of_abs_le (abs_real_inner_le_norm G g)
   have hsφ' : s * φ ≤ |s| * |φ| := by rw [← abs_mul]; exact le_abs_self _
@@ -508,7 +503,7 @@ private theorem mul_mul_lpProfile_le (hp : 2 ≤ p) (hk : 0 ≤ k) {A : Matrix �
     rw [mul_assoc]; exact mul_le_mul_of_nonneg_right hγ htφ
   linarith [mul_le_mul_of_nonneg_left hQ hd, mul_le_mul_of_nonneg_left hGg hd]
 
-/-- **The tested equation.** For a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div F`
+/-- **The tested equation.** For a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f + div F`
 with `c ≥ κ`, testing against `φ(u) ∈ H¹₀(Ω)` gives
 
 `κ ∫_Ω u φ(u) ≤ ∫_Ω |f| |φ(u)| + (4λ)⁻¹ ∫_Ω φ'(u) ‖F‖²`. -/
@@ -533,9 +528,6 @@ private theorem mul_integral_mul_lpProfile_le
   have heq := hu ⟨z, W1p.contDiffComp_mem_w1p0Submodule _ _ _ _ u.property⟩
   rw [energyFormH1_def, dirichletForcing_apply_eq_setIntegral,
     divergenceForcing_apply_eq_neg_setIntegral] at heq
-  change ∫ x in Omega, energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-      (c x) (jetField w x) (jetField z x) ∂mu =
-    (∫ x in Omega, f x * W1p.value z x ∂mu) + -∫ x in Omega, ⟪F x, W1p.gradient z x⟫_ℝ ∂mu at heq
   have hval : ⇑(W1p.value z) =ᵐ[mu.restrict Omega] fun x => lpProfile p k (W1p.value w x) :=
     value_lpProfileComp_ae hp hk w
   have hgrad : ⇑(W1p.gradient z) =ᵐ[mu.restrict Omega]
@@ -606,8 +598,7 @@ private theorem eLpNorm_min_abs_value_le
     Lp.aestronglyMeasurable _
   have hP1 := integrable_mul_lpProfile hp hk w
   set Z := ∫ x in Omega, W1p.value w x * lpProfile p k (W1p.value w x) ∂mu
-  have hZ : 0 ≤ Z := integral_nonneg fun x => (min_rpow_le_mul_lpProfile hp hk _).trans'
-    (Real.rpow_nonneg (le_min (abs_nonneg _) hk) _)
+  have hZ : 0 ≤ Z := integral_nonneg fun x => mul_lpProfile_nonneg hp hk _
   set A := (∫ x in Omega, |f x| ^ p ∂mu) ^ p⁻¹
   set N := (∫ x in Omega, ‖F x‖ ^ p ∂mu) ^ p⁻¹
   have hA : 0 ≤ A := Real.rpow_nonneg (integral_nonneg fun x => Real.rpow_nonneg
@@ -637,7 +628,7 @@ measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ` with lower cons
 necessarily symmetric, let `c` be measurable and bounded with `c ≥ κ > 0` a.e. on `Ω`, and let
 `u ∈ H¹₀(Ω)` be a weak solution of
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div F` in `Ω`, `u = 0` on `∂Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f + div F` in `Ω`, `u = 0` on `∂Ω`,
 
 with `f ∈ L²(Ω)` and `F ∈ L²(Ω; ℝⁿ)`. Then for every `2 ≤ p < ∞`
 
