@@ -153,15 +153,15 @@ variable (J S) in
 Sobolev space `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0`
 by convention when its coefficients are not essentially bounded on the cylinder. -/
 def stationarySobolevOperator : H1 V →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL
+  (jetOperator 2 stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL
 
 variable (J S) in
 /-- The definition of the Sobolev realization of the stationary cylinder operator: the first-order
-operator `TauCeti.jetOperator stripMeasure` of its coefficient field on jets, restricted to
+operator `TauCeti.jetOperator 2 stripMeasure` of its coefficient field on jets, restricted to
 `TauCeti.CylinderSobolev.H1`. -/
 theorem stationarySobolevOperator_def :
     stationarySobolevOperator J S =
-      (jetOperator stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL :=
+      (jetOperator 2 stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL :=
   (rfl)
 
 /-- For continuous loops `J_t` and `S_t`, the Sobolev realization of the stationary cylinder
@@ -171,7 +171,7 @@ theorem coeFn_stationarySobolevOperator
     (x : H1 V) :
     stationarySobolevOperator J S x =ᵐ[stripMeasure]
       fun z ↦ stationaryJetCoeff J S z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
-  coeFn_jetOperator (memLp_stationaryJetCoeff hJc hSc) x
+  coeFn_jetOperator (p := 2) (memLp_stationaryJetCoeff hJc hSc) x
 
 /-- For continuous loops `J_t` and `S_t`, the Sobolev realization of the stationary cylinder
 operator is `D ξ` on the jet of a test section `ξ`. -/
@@ -563,7 +563,7 @@ the linearized Floer operator, which is the translation-invariant operator
 constant `K`. -/
 theorem exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    ∃ C : ℝ≥0, ∀ ξ : H1 V, ‖ξ‖ ≤ C * ‖ω.floerSobolevOperator
+    ∃ C : ℝ≥0, ∀ ξ : H1 V, ‖ξ‖ ≤ C * ‖ω.floerSobolevOperator 2
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (fun w ↦ x w.2) ξ‖ := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
@@ -582,7 +582,7 @@ the realization of the linearized Floer operator at the stationary cylinder `u(s
 trivial kernel. -/
 theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).ker = ⊥ := by
   obtain ⟨C, hC⟩ :=
     exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hx hJc

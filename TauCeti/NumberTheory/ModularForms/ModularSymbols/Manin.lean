@@ -15,7 +15,7 @@ from `g · ∞` to `g · 0`. Right multiplication by `S` reverses this path, and
 permuted by `U = TS` around an ideal triangle sum to zero: these are the two-term and three-term
 Manin relations, here proved among the degree-zero divisors themselves. The unimodular divisors
 span the degree-zero divisors by Manin's lemma, so an additive map on them is determined by its
-values on the unimodular divisors.
+values on the unimodular divisors, and in particular by its values on all paths.
 
 A Manin symbol is the modular symbol on the oriented edge from `g · 0` to `g · ∞`, for
 `g ∈ SL₂(ℤ)`: the reverse of the path of the unimodular divisor. These edges generate the
@@ -104,6 +104,12 @@ theorem addMonoidHom_ext_unimodular {V : Type*} [AddCommMonoid V] {φ ψ : degre
   dsimp only
   rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, ← neg_divisor,
     ← unimodularDivisor_def (R := ℤ), ← unimodularDivisor_mul_S, h]
+
+/-- An additive map on the integral degree-zero divisors is determined by its values on the paths
+`{b} - {a}`. -/
+theorem addMonoidHom_ext_divisor {V : Type*} [AddCommMonoid V] {φ ψ : degreeZero ℤ →+ V}
+    (h : ∀ a b : OnePoint ℚ, φ (divisor ℤ a b) = ψ (divisor ℤ a b)) : φ = ψ :=
+  addMonoidHom_ext_unimodular fun _ ↦ h _ _
 
 end UnimodularDivisor
 

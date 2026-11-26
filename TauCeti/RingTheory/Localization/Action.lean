@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.RingTheory.Localization.Defs
+public import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.Algebra.Algebra.Basic
 
 /-!
@@ -42,6 +43,9 @@ fraction `a / s` through its numerator.
   `g • a = (g • s) v` in `B`, and `TauCeti.IsLocalization.localizationRingEnd_mk'`:
   `g • (a / s) = (g • a) / (g • s)` when `g • s` is again a denominator.
 * `TauCeti.Localization.smul_mk'`: `g • (a / s) = (g • a) / s` on `M⁻¹A`.
+* `TauCeti.IsFractionRing.div_mem_fixedPoints_iff`: for any action on a fraction field `L` of a
+  domain `B` extending the action on `B`, the fraction `b / c` is invariant if and only if
+  `(g • b) * c = b * (g • c)` for all `g`.
 -/
 
 public section
@@ -171,3 +175,23 @@ theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
   exact congrArg _ <| Subtype.ext <| Algebra.smul_eq_of_mem_algebraMapSubmonoid g s.property
 
 end TauCeti.Localization
+
+namespace TauCeti.IsFractionRing
+
+variable {G B : Type*} [Monoid G] [CommRing B] [MulSemiringAction G B] (L : Type*) [Field L]
+  [Algebra B L] [IsFractionRing B L] [MulSemiringAction G L] [SMulDistribClass G B L]
+
+/-- For an action on a fraction field `L` of `B` extending the action on `B`, the fraction
+`b / c` is invariant exactly when `(g • b) * c = b * (g • c)` for all `g`. -/
+theorem div_mem_fixedPoints_iff (b : B) {c : B} (hc : c ≠ 0) :
+    algebraMap B L b / algebraMap B L c ∈ MulAction.fixedPoints G L ↔
+      ∀ g : G, (g • b) * c = b * (g • c) := by
+  have hc' : algebraMap B L c ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective B L)).2 hc
+  refine forall_congr' fun g ↦ ?_
+  have hgc : g • algebraMap B L c ≠ 0 := (map_ne_zero (MulSemiringAction.toRingHom G L g)).2 hc'
+  rw [show g • (algebraMap B L b / algebraMap B L c) = g • algebraMap B L b / g • algebraMap B L c
+      from map_div₀ (MulSemiringAction.toRingHom G L g) _ _, div_eq_div_iff hgc hc',
+    ← algebraMap.smul', ← algebraMap.smul', ← map_mul, ← map_mul,
+    (IsFractionRing.injective B L).eq_iff]
+
+end TauCeti.IsFractionRing
