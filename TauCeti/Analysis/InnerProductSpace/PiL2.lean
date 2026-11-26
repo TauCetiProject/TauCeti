@@ -54,6 +54,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
   `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
+* `EuclideanSpace.toDual_symm_proj`: the Riesz representative of the coordinate projection
+  `x ↦ xᵢ` is the basis vector `eᵢ`.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
@@ -331,6 +333,15 @@ theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι �
   rw [LinearIsometryEquiv.symm_apply_eq]
   ext i
   exact (basisFun_repr ι 𝕜 x i).symm
+
+/-- The Riesz representative of the coordinate projection `x ↦ xᵢ` is the basis vector `eᵢ`. -/
+@[simp]
+theorem toDual_symm_proj [DecidableEq ι] (i : ι) :
+    (InnerProductSpace.toDual 𝕜 (EuclideanSpace 𝕜 ι)).symm (EuclideanSpace.proj i) =
+      EuclideanSpace.single i 1 := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext y
+  simp [EuclideanSpace.inner_single_left]
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
