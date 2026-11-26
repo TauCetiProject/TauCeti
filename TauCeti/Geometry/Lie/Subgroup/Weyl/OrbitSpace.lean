@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.OrbitSpace
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
 public import TauCeti.RepresentationTheory.InvariantForm
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
-import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
