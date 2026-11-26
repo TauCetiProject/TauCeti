@@ -76,8 +76,11 @@ theorem mem_quotientPointsSubgroup_multiplierKernelHopfIdeal_iff {A : Type u} [C
         (multiplierKernelHopfIdeal R n q) (CommAlgCat.of R A) ↔
       pointsMulEquiv R n q (A := A) f ∈ (multiplierPoints R n q A).ker := by
   rw [multiplierKernelHopfIdeal_def, ← CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff,
-    ← MulEquiv.map_eq_one_iff MultiplicativeGroup.pointsMulEquiv, mem_ker_multiplierPoints_iff,
-    ← Units.val_eq_one, ← Units.val_eq_one, pointsMulEquiv_snd]
+    ← MulEquiv.map_eq_one_iff MultiplicativeGroup.pointsMulEquiv]
+  simp only [mem_ker_multiplierPoints_iff, Units.ext_iff, Units.val_one]
+  -- `simp` does not fire `pointsMulEquiv_snd` here: it matches this goal only at the instance
+  -- transparency that `rw` uses, not at the reducible transparency of `simp`.
+  rw [pointsMulEquiv_snd]
   simp [MultiplicativeGroup.pointsMulEquiv_apply]
 
 /-- The points of `GO(q)` whose similitude has multiplier `1`. -/
@@ -98,8 +101,11 @@ noncomputable def multiplierKernelPointsMulEquiv (A : CommAlgCat.{u} R) :
     multiplierKernelPoints R n q A ≃*
       HopfAlgebra.points (R := R) (H := QuadraticOrthogonal.coordinateHopfAlgebra R n q) A :=
   (((pointsMulEquiv R n q (A := A)).subgroupMap (multiplierKernelPoints R n q A)).trans
-    (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective
-      (pointsMulEquiv R n q (A := A)).surjective _))).trans
+    -- The `show` gives the congruence proof the folded type that `subgroupMap` produces, so
+    -- that `simp` can rewrite with `MulEquiv.subgroupCongr_apply` in the lemmas below.
+    (MulEquiv.subgroupCongr (show (multiplierKernelPoints R n q A).map
+        (pointsMulEquiv R n q (A := A) : _ →* _) = (multiplierPoints R n q A).ker from
+      Subgroup.map_comap_eq_self_of_surjective (pointsMulEquiv R n q (A := A)).surjective _))).trans
     ((kerMultiplierPointsMulEquiv R n q A).trans
       (QuadraticOrthogonal.pointsMulEquiv R n q A).symm)
 
@@ -111,9 +117,7 @@ theorem coe_pointsMulEquiv_multiplierKernelPointsMulEquiv (A : CommAlgCat.{u} R)
         GL (Fin n) A) =
       ((pointsMulEquiv R n q (A := A) f : pointsSubgroup R n q A) : GL (Fin n) A × Aˣ).1 := by
   simp only [multiplierKernelPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.apply_symm_apply,
-    coe_kerMultiplierPointsMulEquiv]
-  exact congrArg (fun p : pointsSubgroup R n q A ↦ (p : GL (Fin n) A × Aˣ).1)
-    ((MulEquiv.subgroupCongr_apply _ _).trans (MulEquiv.coe_subgroupMap_apply _ _ f))
+    coe_kerMultiplierPointsMulEquiv, MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply]
 
 /-- The point of `GO(q)` attached to a point `g` of `O(q)` is the similitude `(g, 1)`. -/
 @[simp]
@@ -125,9 +129,8 @@ theorem coe_pointsMulEquiv_multiplierKernelPointsMulEquiv_symm (A : CommAlgCat.{
       ((QuadraticOrthogonal.pointsMulEquiv R n q A g : GL (Fin n) A), 1) := by
   rw [← coe_kerMultiplierPointsMulEquiv_symm]
   simp only [multiplierKernelPointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
-  rw [← MulEquiv.coe_subgroupMap_apply, MulEquiv.apply_symm_apply]
-  exact congrArg (fun p : pointsSubgroup R n q A ↦ (p : GL (Fin n) A × Aˣ))
-    (MulEquiv.subgroupCongr_symm_apply _ _)
+  rw [← MulEquiv.coe_subgroupMap_apply, MulEquiv.apply_symm_apply,
+    MulEquiv.subgroupCongr_symm_apply]
 
 /-- Change of value algebra preserves the points with multiplier `1`. -/
 theorem mapValue_mem_multiplierKernelPoints {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
@@ -220,5 +223,13 @@ theorem mapPointsFunctor_multiplierKernelCoordinateIso_hom :
   -- `mapPointsFunctor` of a coordinate morphism is by definition the map of the functor of
   -- points on its opposite, so this is `map_preimage` for that fully faithful functor.
   (CommHopfAlgCat.pointsFunctor (R := R)).map_preimage (multiplierKernelPointsIso R n q).hom
+
+/-- On points, the inverse of `multiplierKernelCoordinateIso` is the inverse of
+`multiplierKernelPointsIso`. -/
+@[simp]
+theorem mapPointsFunctor_multiplierKernelCoordinateIso_inv :
+    CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (multiplierKernelCoordinateIso R n q).inv =
+      (multiplierKernelPointsIso R n q).inv :=
+  (CommHopfAlgCat.pointsFunctor (R := R)).map_preimage (multiplierKernelPointsIso R n q).inv
 
 end TauCeti.QuadraticSimilitude
