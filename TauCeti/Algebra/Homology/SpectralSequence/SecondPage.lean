@@ -16,17 +16,18 @@ filtered complexes and bicomplexes in Mathlib's conventions. Its differentials o
 from `(a, b)` to `(a + 2, b - 1)`, so they preserve the lines `a + 2b = -k`. Suppose that along
 such a line, parametrised by `p : ℕ` as `(-k - 2p, p)`, the objects of the page `2` are identified
 with the terms of a chain complex `H` indexed by `ℕ`, so that the differentials correspond up to a
-fixed sign `ε : ℤˣ`, and that the object at `(-k + 2, -1)` just below the line vanishes. Then the
-object at `(-k - 2p, p)` of the next page (numbered `3`), which is the homology of the page `2`,
-is the homology of `H` in degree `p`
+fixed sign `ε : ℤˣ`, and that the object of the line at `p = -1`, the point `(-k + 2, -1)` which
+is the target of the differential leaving `(-k, 0)`, vanishes. Then the object at `(-k - 2p, p)`
+of the next page (numbered `3`), which is the homology of the page `2`, is the homology of `H` in
+degree `p`
 (`CategoryTheory.SpectralSequence.pageThreeXIsoHomology`). On classes of cycles of the page `2`,
 the identification is the class of the corresponding cycle of `H`
 (`CategoryTheory.SpectralSequence.homologyπ_pageThreeXIsoHomology_hom`).
 
 This is the form in which the classical `E₂` term of a first-quadrant spectral sequence is
 computed: the first page is a family of complexes of homology objects whose differentials are
-induced by the data, and the second page is their homology. For the spectral sequences of the
-row and column filtrations of a first-quadrant bicomplex, see
+induced by the data, and the second page is their homology. For the spectral sequence of the
+column filtration of a first-quadrant bicomplex, see
 `TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.SecondPage`.
 
 ## References
@@ -118,7 +119,8 @@ private lemma isIso_homologyMap_pageTwoShortComplexHom (p : ℕ) :
 
 /-- **The second page from a model of the first page.** If, along the line `(-k - 2p, p)`, the
 objects of the page `2` of `E` are the terms of a chain complex `H`, compatibly with the
-differentials up to a sign `ε`, and the object at `(-k + 2, -1)` vanishes, then the object at
+differentials up to a sign `ε`, and the object of the line at `p = -1`, the point `(-k + 2, -1)`
+which is the target of the differential leaving `(-k, 0)`, vanishes, then the object at
 `(-k - 2p, p)` of the page `3` is the homology of `H` in degree `p`. -/
 def pageThreeXIsoHomology (p : ℕ) : (E.page 3).X (-(k : ℤ) - 2 * p, p) ≅ H.homology p :=
   have := isIso_homologyMap_pageTwoShortComplexHom E H k ε e he h₀ p
@@ -151,22 +153,13 @@ lemma homologyπ_pageThreeXIsoHomology_hom (p : ℕ) :
           (by rw [Category.assoc, iCycles_pageTwo_comp_hom_d E H k ε e he]) ≫
         H.homologyπ p := by
   have := isIso_homologyMap_pageTwoShortComplexHom E H k ε e he h₀ p
-  have h : ((E.page 2 le_rfl).cyclesIsoSc' (-(k : ℤ) - 2 * ((p + 1 : ℕ) : ℤ), (p + 1 : ℕ))
-        (-(k : ℤ) - 2 * p, p) (-(k : ℤ) - 2 * p + 2, (p : ℤ) - 1)
-        ((ComplexShape.up' _).prev_eq' (Prod.ext (by dsimp; omega) (by dsimp; omega)))
-        ((ComplexShape.up' _).next_eq' (Prod.ext (by dsimp) (by dsimp; omega)))).hom ≫
-      ShortComplex.cyclesMap (pageTwoShortComplexHom E H k ε e he p) ≫
-      (H.cyclesIsoSc' (p + 1) p (p - 1) (by simp) (by cases p <;> simp)).inv =
-      H.liftCycles ((E.page 2 le_rfl).iCycles (-(k : ℤ) - 2 * p, p) ≫ (e p).hom) (p - 1)
-        (by cases p <;> simp)
-        (by rw [Category.assoc, iCycles_pageTwo_comp_hom_d E H k ε e he]) := by
-    rw [← cancel_mono (H.iCycles p)]
-    simp [pageTwoShortComplexHom]
-  simp only [pageThreeXIsoHomology, Iso.trans_hom, Iso.symm_hom, asIso_hom]
-  rw [Iso.hom_inv_id_assoc]
-  simp only [HomologicalComplex.π_homologyIsoSc'_hom_assoc,
-    ShortComplex.homologyπ_naturality_assoc, HomologicalComplex.π_homologyIsoSc'_inv,
-    reassoc_of% h]
+  simp only [pageThreeXIsoHomology, Iso.trans_hom, Iso.symm_hom, asIso_hom, Iso.hom_inv_id_assoc,
+    HomologicalComplex.π_homologyIsoSc'_hom_assoc, ShortComplex.homologyπ_naturality_assoc,
+    HomologicalComplex.π_homologyIsoSc'_inv]
+  simp only [← Category.assoc]
+  congr 1
+  rw [← cancel_mono (H.iCycles p)]
+  simp [pageTwoShortComplexHom]
 
 /-- **Naturality of the second-page identification.** Let `F : E ⟶ E'` be a morphism of spectral
 sequences whose component on the page `2` at `(-k - 2p, p)` corresponds, under the identifications
@@ -183,24 +176,13 @@ lemma pageThreeXIsoHomology_hom_naturality {E' : E₂CohomologicalSpectralSequen
     (hF : (F.hom 2).f (-(k : ℤ) - 2 * p, p) ≫ (e' p).hom = (e p).hom ≫ T.f p) :
     (F.hom 3).f (-(k : ℤ) - 2 * p, p) ≫ (pageThreeXIsoHomology E' H' k ε' e' he' h₀' p).hom =
       (pageThreeXIsoHomology E H k ε e he h₀ p).hom ≫ HomologicalComplex.homologyMap T p := by
-  -- On cycles of the page `2`, the component of `F` followed by the lift to the cycles of `H'` is
-  -- the lift to the cycles of `H` followed by the map induced by `T`.
-  have hcycles : HomologicalComplex.cyclesMap (F.hom 2) (-(k : ℤ) - 2 * p, p) ≫
-      H'.liftCycles ((E'.page 2 le_rfl).iCycles (-(k : ℤ) - 2 * p, p) ≫ (e' p).hom) (p - 1)
-        (by cases p <;> simp)
-        (by rw [Category.assoc, iCycles_pageTwo_comp_hom_d E' H' k ε' e' he']) =
-      H.liftCycles ((E.page 2 le_rfl).iCycles (-(k : ℤ) - 2 * p, p) ≫ (e p).hom) (p - 1)
-        (by cases p <;> simp)
-        (by rw [Category.assoc, iCycles_pageTwo_comp_hom_d E H k ε e he]) ≫
-        HomologicalComplex.cyclesMap T p := by
-    rw [HomologicalComplex.comp_liftCycles, HomologicalComplex.liftCycles_comp_cyclesMap]
-    congr 1
-    rw [HomologicalComplex.cyclesMap_i_assoc, hF, Category.assoc]
   rw [← cancel_epi ((E.page 2 le_rfl).homologyπ (-(k : ℤ) - 2 * p, p) ≫
-    (E.iso 2 3 (-(k : ℤ) - 2 * p, p)).hom), Category.assoc, Category.assoc,
-    homologyπ_pageThreeXIsoHomology_hom_assoc E H k ε e he h₀ p, ← F.comm_assoc 2 3,
-    HomologicalComplex.homologyπ_naturality_assoc,
-    homologyπ_pageThreeXIsoHomology_hom E' H' k ε' e' he' h₀' p, reassoc_of% hcycles,
-    HomologicalComplex.homologyπ_naturality]
+    (E.iso 2 3 (-(k : ℤ) - 2 * p, p)).hom), Category.assoc, Category.assoc, ← F.comm_assoc 2 3]
+  simp only [homologyπ_pageThreeXIsoHomology_hom_assoc, HomologicalComplex.homologyπ_naturality,
+    HomologicalComplex.homologyπ_naturality_assoc, homologyπ_pageThreeXIsoHomology_hom]
+  simp only [← Category.assoc]
+  congr 1
+  rw [← cancel_mono (H'.iCycles p)]
+  simp [hF]
 
 end CategoryTheory.SpectralSequence
