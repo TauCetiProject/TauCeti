@@ -41,7 +41,8 @@ These are the data that show the data spaces of the parabolic Cauchy problem to 
 
 The `k`-th derivative is computed by `TauCeti.iteratedDeriv_abs_rpow`, through the signed powers
 `|x|^r sgn(x)^j` of `TauCeti.Analysis.SpecialFunctions.Pow.Regularity`. For `β ≤ 1` the signed
-power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2` (`TauCeti.holderWith_abs_rpow_mul_sign_pow`),
+power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`
+(`TauCeti.holderWith_abs_rpow_mul_sign_pow`, in `TauCeti.Analysis.SpecialFunctions.Pow.Holder`),
 and for `α > β` it is not `α`-Hölder on `(-1, 1)`
 (`TauCeti.not_holderOnWith_abs_rpow_mul_sign_pow_Ioo`), since its absolute value is the cusp
 `|x|^β` of `TauCeti.not_holderOnWith_abs_rpow_Ioo`.
@@ -63,41 +64,6 @@ private theorem abs_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) (x : 
   · simp [Real.zero_rpow hr.ne']
   · rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r), abs_pow,
       Real.abs_sign_of_ne_zero hx, one_pow, mul_one]
-
-/-- For `β ≤ 1`, the signed power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`. -/
-theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : ℕ) :
-    HolderWith 2 β (fun x : ℝ ↦ |x| ^ (β : ℝ) * Real.sign x ^ j) := by
-  refine holderOnWith_univ.mp (HolderOnWith.of_dist_le fun x _ y _ ↦ ?_)
-  rw [Real.dist_eq, Real.dist_eq, NNReal.coe_ofNat]
-  have hxy : 0 ≤ |x - y| ^ (β : ℝ) := Real.rpow_nonneg (abs_nonneg _) _
-  by_cases hs : Real.sign x ^ j = Real.sign y ^ j
-  · -- Equal signs: the Hölder bound of `t ↦ t^β` on `[0, ∞)`.
-    rw [hs, ← sub_mul, abs_mul]
-    calc |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| * |Real.sign y ^ j|
-        ≤ |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| :=
-          mul_le_of_le_one_right (abs_nonneg _) (Real.abs_sign_pow_le_one y j)
-      _ ≤ |(|x| - |y|)| ^ (β : ℝ) :=
-          Real.abs_rpow_sub_rpow_le (abs_nonneg x) (abs_nonneg y) β.coe_nonneg hβ1
-      _ ≤ |x - y| ^ (β : ℝ) :=
-          Real.rpow_le_rpow (abs_nonneg _) (abs_abs_sub_abs_le_abs_sub x y) β.coe_nonneg
-      _ ≤ 2 * |x - y| ^ (β : ℝ) := by linarith
-  · -- Different signs: `x` and `y` lie on opposite sides of `0`, so both are at most `|x - y|`.
-    have hmul : x * y ≤ 0 := by
-      by_contra h
-      rcases pos_and_pos_or_neg_and_neg_of_mul_pos (not_le.1 h) with ⟨hx, hy⟩ | ⟨hx, hy⟩
-      · exact hs (by rw [Real.sign_of_pos hx, Real.sign_of_pos hy])
-      · exact hs (by rw [Real.sign_of_neg hx, Real.sign_of_neg hy])
-    have hx : |x| ≤ |x - y| := sq_le_sq.mp (by nlinarith)
-    have hy : |y| ≤ |x - y| := sq_le_sq.mp (by nlinarith)
-    calc |(|x| ^ (β : ℝ) * Real.sign x ^ j - |y| ^ (β : ℝ) * Real.sign y ^ j)|
-        ≤ |(|x| ^ (β : ℝ) * Real.sign x ^ j)| + |(|y| ^ (β : ℝ) * Real.sign y ^ j)| :=
-          abs_sub _ _
-      _ ≤ |x| ^ (β : ℝ) + |y| ^ (β : ℝ) :=
-          add_le_add (abs_abs_rpow_mul_sign_pow_le j x) (abs_abs_rpow_mul_sign_pow_le j y)
-      _ ≤ |x - y| ^ (β : ℝ) + |x - y| ^ (β : ℝ) :=
-          add_le_add (Real.rpow_le_rpow (abs_nonneg _) hx β.coe_nonneg)
-            (Real.rpow_le_rpow (abs_nonneg _) hy β.coe_nonneg)
-      _ = 2 * |x - y| ^ (β : ℝ) := by ring
 
 /-- For `0 < β < α`, the signed power `|x|^β sgn(x)^j` is not `α`-Hölder on `(-1, 1)`: its
 absolute value is the cusp `|x|^β`. -/

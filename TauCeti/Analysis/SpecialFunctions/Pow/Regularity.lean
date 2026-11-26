@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Pow.Holder
 import TauCeti.Basic.Real.Sign
+import TauCeti.Topology.Instances.Real.Sign
 
 /-!
 # The sharp finite regularity of absolute powers
@@ -24,7 +26,8 @@ The derivatives are computed through the signed powers `|x|^r sgn(x)^j`, continu
 `r |x|^(r - 1) sgn(x)^(j + 1)` everywhere (`TauCeti.hasDerivAt_abs_rpow_mul_sign_pow`), so that
 `D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
 (`TauCeti.iteratedDeriv_abs_rpow`). Away from the origin the sign is locally constant
-(`Real.eventually_sign_eq_nhds`).
+(`Real.eventually_sign_eq_nhds`), and the signed power is at most `|x|^r` in absolute value
+(`TauCeti.abs_abs_rpow_mul_sign_pow_le`).
 -/
 
 public section
@@ -32,27 +35,9 @@ public section
 open Set Filter Topology Real
 open scoped ContDiff
 
-namespace Real
-
-/-- Away from the origin the real sign function is locally constant. -/
-theorem eventually_sign_eq_nhds {x : ℝ} (hx : x ≠ 0) : ∀ᶠ y in 𝓝 x, sign y = sign x := by
-  rcases hx.lt_or_gt with h | h
-  · filter_upwards [Iio_mem_nhds h] with y hy
-    rw [sign_of_neg hy, sign_of_neg h]
-  · filter_upwards [Ioi_mem_nhds h] with y hy
-    rw [sign_of_pos hy, sign_of_pos h]
-
-end Real
-
 namespace TauCeti
 
 /-! ### Signed powers and the derivatives of `|x|^p` -/
-
-/-- The signed power `|x|^r sgn(x)^j` is at most `|x|^r` in absolute value. -/
-theorem abs_abs_rpow_mul_sign_pow_le {r : ℝ} (j : ℕ) (x : ℝ) :
-    |(|x| ^ r * Real.sign x ^ j)| ≤ |x| ^ r := by
-  rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r)]
-  exact mul_le_of_le_one_right (Real.rpow_nonneg (abs_nonneg x) r) (Real.abs_sign_pow_le_one x j)
 
 /-- `|x|^(r - 2) x = |x|^(r - 1) sgn(x)`. -/
 private theorem abs_rpow_sub_two_mul (r x : ℝ) :
