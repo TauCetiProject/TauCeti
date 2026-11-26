@@ -50,6 +50,8 @@ only along a null frontier, is itself a fundamental domain.
 * `MeasureTheory.IsFundamentalDomain.congr_set`: a set a.e. equal to a fundamental domain is one.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_aedisjoint_smul`: a set a.e. disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.measure_le_of_subset_iUnion_smul`: a fundamental domain has
+  measure at most that of any set whose translates cover it.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
@@ -344,6 +346,20 @@ theorem IsFundamentalDomain.measure_le_of_aedisjoint_smul {G α : Type*} [Group 
   hs.measure_le_of_pairwise_disjoint ht <| (pairwise_aedisjoint_of_aedisjoint_forall_ne_one hd
     fun g ↦ (measurePreserving_smul g μ).quasiMeasurePreserving).mono fun _ _ h ↦
       h.mono inter_subset_left inter_subset_left
+
+/-- **A fundamental domain is no larger than a set whose translates cover it.** If the translates
+of `t` cover a fundamental domain `s`, for instance because they cover the whole space, then
+`μ s ≤ μ t`. -/
+@[to_additive /-- **A fundamental domain is no larger than a set whose translates cover it.** If
+the translates of `t` cover an additive fundamental domain `s`, then `μ s ≤ μ t`. -/]
+theorem IsFundamentalDomain.measure_le_of_subset_iUnion_smul {G α : Type*} [Group G]
+    [MulAction G α] [MeasurableSpace α] [Countable G] [MeasurableConstSMul G α] {μ : Measure α}
+    [SMulInvariantMeasure G α μ] {s t : Set α} (hs : IsFundamentalDomain G s μ)
+    (hst : s ⊆ ⋃ g : G, g • t) : μ s ≤ μ t :=
+  calc μ s ≤ μ (⋃ g : G, g • t ∩ s) := measure_mono <| by
+        rw [← iUnion_inter]; exact subset_inter hst subset_rfl
+    _ ≤ ∑' g : G, μ (g • t ∩ s) := measure_iUnion_le _
+    _ = μ t := (hs.measure_eq_tsum t).symm
 
 /-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
 invariant measure has positive covolume. -/
