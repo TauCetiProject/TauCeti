@@ -37,6 +37,10 @@ positions. Its unordered edges are the positions `bipartiteEdge u v` read by its
 vertex and edge counts of cyclic trace words in `TauCeti.Combinatorics.TraceWord.Counting` apply to
 bipartite words.
 
+An open bipartite path `TauCeti.bipartitePath` interleaves the row and column vertices and
+appends a terminal row vertex. It has no immediate reversals exactly when consecutive row
+vertices and consecutive column vertices differ.
+
 ## Main declarations
 
 * `TauCeti.bipartiteEdge`: the positions read by the steps of a bipartite word.
@@ -48,6 +52,7 @@ bipartite words.
   most `k + 1` row and column indices.
 * `TauCeti.bipartiteWord`: the bipartite word as a cyclic word on `α ⊕ β`, which determines
   `u` and `v` (`TauCeti.bipartiteWord_inj`).
+* `TauCeti.bipartitePath`: the open alternating word with one extra row vertex.
 * `TauCeti.sym2_bipartiteWord`: its unordered edges are the positions read by its steps.
 * `TauCeti.card_image_bipartiteWord`: it visits `#(image u) + #(image v)` vertices.
 
@@ -127,6 +132,97 @@ theorem sym2_bipartiteWord (u : Fin k → α) (v : Fin k → β) (a : Fin k ⊕ 
       bipartiteEdge_inl]
   · simp only [finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, bipartiteWord_inr,
       bipartiteEdge_inr, Sym2.eq_swap]
+
+/-- Interleave the row and column vertices and append the final row vertex. -/
+def bipartitePath (u : Fin (k + 1) → α) (v : Fin k → β) :
+    Fin (2 * k + 1) → α ⊕ β :=
+  Fin.snoc (bipartiteWord (u ∘ Fin.castSucc) v) (.inl (u (Fin.last k)))
+
+/-- The even positions of a bipartite path are its row vertices. -/
+@[simp]
+theorem bipartitePath_even (u : Fin (k + 1) → α) (v : Fin k → β)
+    (t : Fin (k + 1)) :
+    bipartitePath u v ⟨2 * t, by omega⟩ = .inl (u t) := by
+  induction t using Fin.lastCases with
+  | last =>
+    have h : (⟨2 * (Fin.last k : ℕ), by simp⟩ : Fin (2 * k + 1)) = Fin.last (2 * k) := by
+      ext
+      simp
+    rw [h]
+    simp [bipartitePath]
+  | cast t =>
+    have h : (⟨2 * (t : ℕ), by omega⟩ : Fin (2 * k + 1)) =
+        (finSumFinInterleaveEquiv k (.inl t)).castSucc := by ext; simp
+    simp [bipartitePath, h]
+
+/-- The odd positions of a bipartite path are its column vertices. -/
+@[simp]
+theorem bipartitePath_odd (u : Fin (k + 1) → α) (v : Fin k → β)
+    (t : Fin k) :
+    bipartitePath u v ⟨2 * t + 1, by omega⟩ = .inr (v t) := by
+  have h : (⟨2 * (t : ℕ) + 1, by omega⟩ : Fin (2 * k + 1)) =
+      (finSumFinInterleaveEquiv k (.inr t)).castSucc := by ext; simp
+  simp [bipartitePath, h]
+
+/-- A bipartite path determines both of its tuples of vertices. -/
+theorem bipartitePath_injective :
+    Function.Injective (fun uv : (Fin (k + 1) → α) × (Fin k → β) ↦
+      bipartitePath uv.1 uv.2) := by
+  intro u v huv
+  refine Prod.ext (funext fun t ↦ ?_) (funext fun t ↦ ?_)
+  · simpa only [bipartitePath_even, Sum.inl.injEq] using congrFun huv ⟨2 * t, by omega⟩
+  · simpa only [bipartitePath_odd, Sum.inr.injEq] using congrFun huv ⟨2 * t + 1, by omega⟩
+
+/-- A word with row vertices at the even positions and column vertices at the odd positions
+is represented by a bipartite path. -/
+theorem exists_eq_bipartitePath (w : Fin (2 * k + 1) → α ⊕ β)
+    (h : ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0)) :
+    ∃ (u : Fin (k + 1) → α) (v : Fin k → β), bipartitePath u v = w := by
+  let u (t : Fin (k + 1)) := (w ⟨2 * t, by omega⟩).getLeft (by
+    rw [h]
+    exact decide_eq_true (by simp))
+  let v (t : Fin k) := (w ⟨2 * t + 1, by omega⟩).getRight (by
+    rw [← Sum.not_isLeft, h]
+    simp)
+  refine ⟨u, v, funext fun t ↦ ?_⟩
+  by_cases ht : (t : ℕ) % 2 = 0
+  · let j : Fin (k + 1) := ⟨t / 2, by omega⟩
+    have hEq : t = ⟨2 * j, by omega⟩ := Fin.ext (by dsimp [j]; omega)
+    rw [hEq, bipartitePath_even]
+    exact Sum.inl_getLeft _ _
+  · let j : Fin k := ⟨t / 2, by omega⟩
+    have hEq : t = ⟨2 * j + 1, by omega⟩ := Fin.ext (by dsimp [j]; omega)
+    rw [hEq, bipartitePath_odd]
+    exact Sum.inr_getRight _ _
+
+/-- A bipartite path has no immediate reversals exactly when adjacent row vertices differ
+and adjacent column vertices differ. -/
+theorem bipartitePath_nonbacktracking_iff (u : Fin (k + 1) → α)
+    (v : Fin k → β) :
+    (∀ s t : Fin (2 * k + 1), (s : ℕ) + 2 = t → bipartitePath u v s ≠ bipartitePath u v t) ↔
+      (∀ t : Fin k, u t.castSucc ≠ u t.succ) ∧
+        ∀ s t : Fin k, (s : ℕ) + 1 = t → v s ≠ v t := by
+  constructor
+  · intro h
+    constructor
+    · intro t
+      simpa only [bipartitePath_even, ne_eq, Sum.inl.injEq] using
+        h ⟨2 * (t.castSucc : ℕ), by omega⟩ ⟨2 * (t.succ : ℕ), by omega⟩ (by simp; omega)
+    · intro s t hst
+      simpa only [bipartitePath_odd, ne_eq, Sum.inr.injEq] using
+        h ⟨2 * s + 1, by omega⟩ ⟨2 * t + 1, by omega⟩ (by dsimp; omega)
+  · rintro ⟨hu, hv⟩ s t hst
+    by_cases hs : (s : ℕ) % 2 = 0
+    · let j : Fin k := ⟨s / 2, by omega⟩
+      have hs' : s = ⟨2 * (j.castSucc : ℕ), by omega⟩ := Fin.ext (by dsimp [j]; omega)
+      have ht' : t = ⟨2 * (j.succ : ℕ), by omega⟩ := Fin.ext (by dsimp [j]; omega)
+      simpa only [hs', ht', bipartitePath_even, ne_eq, Sum.inl.injEq] using hu j
+    · let j : Fin k := ⟨s / 2, by omega⟩
+      let j' : Fin k := ⟨t / 2, by omega⟩
+      have hs' : s = ⟨2 * j + 1, by omega⟩ := Fin.ext (by dsimp [j]; omega)
+      have ht' : t = ⟨2 * j' + 1, by omega⟩ := Fin.ext (by dsimp [j']; omega)
+      simpa only [hs', ht', bipartitePath_odd, ne_eq, Sum.inr.injEq] using
+        hv j j' (by dsimp [j, j']; omega)
 
 variable [DecidableEq α] [DecidableEq β]
 

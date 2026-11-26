@@ -245,6 +245,17 @@ theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin 
     ¬ (i.castSucc = 0 ∧ i.succ = last n) :=
   mt (castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
 
+/-- The pairs of consecutive indices in `Fin (n + 1)` are exactly the pairs
+`(i.castSucc, i.succ)` for `i : Fin n`. -/
+theorem forall_val_add_one_eq_iff {n : ℕ} (P : Fin (n + 1) → Fin (n + 1) → Prop) :
+    (∀ i j : Fin (n + 1), (i : ℕ) + 1 = j → P i j) ↔
+      ∀ i : Fin n, P i.castSucc i.succ := by
+  refine ⟨fun h i ↦ h i.castSucc i.succ rfl, fun h i j hij ↦ ?_⟩
+  let k : Fin n := ⟨i, by omega⟩
+  have hi : k.castSucc = i := Fin.ext rfl
+  have hj : k.succ = j := Fin.ext hij
+  exact hi ▸ hj ▸ h k
+
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
@@ -266,6 +277,13 @@ theorem natAdd_ne_castAdd {m n : ℕ} (i : Fin m) (j : Fin n) : natAdd m j ≠ c
 theorem natAdd_comp_finProdFinEquiv_injective {m n k : ℕ} :
     Function.Injective fun l : Fin n × Fin k ↦ natAdd m (finProdFinEquiv l) :=
   (natAdd_injective _ _).comp finProdFinEquiv.injective
+
+/-- The remainder of a packed pair recovers its second coordinate. -/
+@[simp]
+theorem modNat_finProdFinEquiv {m n : ℕ} (i : Fin m) (j : Fin n) :
+    (finProdFinEquiv (i, j)).modNat = j := by
+  simpa only [finProdFinEquiv_symm_apply] using
+    congrArg Prod.snd (finProdFinEquiv.symm_apply_apply (i, j))
 
 /-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
 theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
