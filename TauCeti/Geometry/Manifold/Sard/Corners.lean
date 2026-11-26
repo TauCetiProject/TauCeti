@@ -119,7 +119,7 @@ theorem isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_of_range_eq
       ↥(I.depthStratum M k.val) :=
     I.isManifold_depthStratum M hr0 hI k.val
   have : LindelofSpace ↥(I.depthStratum M k.val) := I.lindelofSpace_depthStratum (M := M) k.val
-  have hval := I.contMDiff_subtypeVal_depthStratum M hr0 hI k.val
+  have hval := (I.isImmersionOfComplement_subtypeVal_depthStratum M hr0 hI k.val).contMDiff
   have himg : f '' (s ∩ I.depthStratum M k.val) =
       (f ∘ (Subtype.val : ↥(I.depthStratum M k.val) → M)) ''
         ((Subtype.val : ↥(I.depthStratum M k.val) → M) ⁻¹' s) := by

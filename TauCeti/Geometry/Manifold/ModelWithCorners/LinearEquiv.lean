@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
@@ -33,10 +32,6 @@ arbitrary charted spaces conjugate accordingly
 `ModelWithCorners.mfderiv_transContinuousLinearEquiv`).
 Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv` supplies the identity comparison
 diffeomorphism on any charted manifold, with underlying map `id` in both directions.
-For real models whose ranges are carried by continuous linear equivalences onto coordinate
-nonnegativity regions `{z : EuclideanSpace ℝ ι | ∀ i ∈ S, 0 ≤ z i}`, this class is closed under
-products (`ModelWithCorners.image_range_prod_eq`) and includes every finite-dimensional
-boundaryless model (`ModelWithCorners.exists_equiv_image_range_eq_of_boundaryless`).
 
 ## References
 
@@ -285,65 +280,3 @@ theorem coe_toTransContinuousLinearEquiv_symm (e : E ≃L[𝕜] F) :
     ⇑(toTransContinuousLinearEquiv (n := n) I M e).symm = id := (rfl)
 
 end ContinuousLinearEquiv
-
-namespace ModelWithCorners
-
-open Module
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
-  (I : ModelWithCorners ℝ E H)
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H']
-  (I' : ModelWithCorners ℝ E' H')
-
-/-- If two models with corners have ranges linearly equivalent to coordinate nonnegativity regions,
-their product model has range linearly equivalent to the product coordinate region. -/
-theorem image_range_prod_eq {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    {S₁ : Set ι₁} {S₂ : Set ι₂}
-    {e₁ : E ≃L[ℝ] EuclideanSpace ℝ ι₁} {e₂ : E' ≃L[ℝ] EuclideanSpace ℝ ι₂}
-    (h₁ : e₁ '' range I = {z | ∀ i ∈ S₁, 0 ≤ z i})
-    (h₂ : e₂ '' range I' = {z | ∀ j ∈ S₂, 0 ≤ z j}) :
-    ((e₁.prodCongr e₂).trans EuclideanSpace.sumEquivProd.symm) '' range (I.prod I') =
-      {z : EuclideanSpace ℝ (ι₁ ⊕ ι₂) |
-        ∀ k ∈ Sum.inl '' S₁ ∪ Sum.inr '' S₂, 0 ≤ z k} := by
-  ext z
-  rw [ContinuousLinearEquiv.image_eq_preimage_symm]
-  simp only [ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
-    ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
-    mem_preimage, range_prod, mem_prod, mem_ofPred_eq]
-  have hmem₁ : e₁.symm (EuclideanSpace.sumEquivProd z).1 ∈ range I ↔
-      ∀ i ∈ S₁, 0 ≤ z (Sum.inl i) := by
-    have : e₁.symm (EuclideanSpace.sumEquivProd z).1 ∈ range I ↔
-        (EuclideanSpace.sumEquivProd z).1 ∈ e₁ '' range I := by
-      rw [e₁.image_eq_preimage_symm, mem_preimage]
-    rw [this, h₁]
-    simp [EuclideanSpace.sumEquivProd]
-  have hmem₂ : e₂.symm (EuclideanSpace.sumEquivProd z).2 ∈ range I' ↔
-      ∀ j ∈ S₂, 0 ≤ z (Sum.inr j) := by
-    have : e₂.symm (EuclideanSpace.sumEquivProd z).2 ∈ range I' ↔
-        (EuclideanSpace.sumEquivProd z).2 ∈ e₂ '' range I' := by
-      rw [e₂.image_eq_preimage_symm, mem_preimage]
-    rw [this, h₂]
-    simp [EuclideanSpace.sumEquivProd]
-  rw [hmem₁, hmem₂]
-  constructor
-  · rintro ⟨hz₁, hz₂⟩ k (⟨i, hi, rfl⟩ | ⟨j, hj, rfl⟩)
-    · exact hz₁ i hi
-    · exact hz₂ j hj
-  · intro hz
-    exact ⟨fun i hi ↦ hz (Sum.inl i) (Or.inl ⟨i, hi, rfl⟩),
-      fun j hj ↦ hz (Sum.inr j) (Or.inr ⟨j, hj, rfl⟩)⟩
-
-/-- Every boundaryless finite-dimensional real model with corners is linearly equivalent to a
-coordinate-region model with empty constraint set. -/
-theorem exists_equiv_image_range_eq_of_boundaryless [FiniteDimensional ℝ E] [I.Boundaryless] :
-    ∃ e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)),
-      e '' range I = {z | ∀ i ∈ (∅ : Set (Fin (finrank ℝ E))), 0 ≤ z i} := by
-  let e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
-    ((Module.finBasis ℝ E).equivFun.trans
-      (EuclideanSpace.equiv (Fin (finrank ℝ E)) ℝ).symm.toLinearEquiv).toContinuousLinearEquiv
-  refine ⟨e, ?_⟩
-  rw [I.range_eq_univ, Set.image_univ, e.surjective.range_eq]
-  ext z
-  simp
-
-end ModelWithCorners

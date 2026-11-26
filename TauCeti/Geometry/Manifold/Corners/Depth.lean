@@ -61,14 +61,23 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
   in the positive tangent cone.
 * `ModelWithCorners.depthAt_eq_zero_iff`, `ModelWithCorners.depth_eq_zero_iff`: depth zero means
   interior point.
+* `ModelWithCorners.image_range_prod_eq`,
+  `ModelWithCorners.exists_equiv_image_range_eq_of_boundaryless`: coordinate nonnegativity regions
+  are closed under products and include all finite-dimensional boundaryless models up to continuous
+  linear equivalence.
 * `ModelWithCorners.depthAt_eq_natCard_of_range_eq`,
-  `ModelWithCorners.depthAt_le_natCard_of_range_eq`: for a model whose range is cut out by the
-  nonnegativity of some coordinates, the depth counts the vanishing ones among them, so it is at
-  most the cardinality of that coordinate set.
+  `ModelWithCorners.depthAt_le_natCard_of_range_eq`,
+  `ModelWithCorners.depthAt_le_of_forall_pos`, `ModelWithCorners.depthAt_eq_iff_of_forall_pos`: for
+  a model whose range is cut out by the nonnegativity of some coordinates, the depth counts the
+  vanishing ones among them, is at most the cardinality of that coordinate set, and is monotone
+  under preservation of positive coordinates.
 * `ModelWithCorners.depthAt_transContinuousLinearEquiv`,
   `ModelWithCorners.depth_transContinuousLinearEquiv`: continuous linear changes of model
   coordinates preserve the depth.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
+* `ModelWithCorners.isOpen_setOf_depth_le_of_range_eq`,
+  `ModelWithCorners.isClosed_setOf_le_depth_of_range_eq` (and `*_of_image_range_eq`): upper
+  semicontinuity of the depth on coordinate-region models.
 * `ModelWithCorners.depth_modelWithCornersEuclideanQuadrant`: on a manifold modelled on the
   quadrant, the depth of a point counts the vanishing coordinates of its image in any chart.
 * `ModelWithCorners.depth_eq_card_filter_chartAt`: the same count in a preferred chart, as the
@@ -340,6 +349,57 @@ theorem range_modelWithCornersEuclideanHalfSpace_eq (n : ℕ) [NeZero n] :
     range (𝓡∂ n) = {z | ∀ i ∈ ({0} : Set (Fin n)), 0 ≤ z i} := by
   simp [range_modelWithCornersEuclideanHalfSpace]
 
+/-- If two models with corners have ranges linearly equivalent to coordinate nonnegativity regions,
+their product model has range linearly equivalent to the product coordinate region. -/
+theorem image_range_prod_eq {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    {S₁ : Set ι₁} {S₂ : Set ι₂}
+    {e₁ : E ≃L[ℝ] EuclideanSpace ℝ ι₁} {e₂ : E' ≃L[ℝ] EuclideanSpace ℝ ι₂}
+    (h₁ : e₁ '' range I = {z | ∀ i ∈ S₁, 0 ≤ z i})
+    (h₂ : e₂ '' range I' = {z | ∀ j ∈ S₂, 0 ≤ z j}) :
+    ((e₁.prodCongr e₂).trans EuclideanSpace.sumEquivProd.symm) '' range (I.prod I') =
+      {z : EuclideanSpace ℝ (ι₁ ⊕ ι₂) |
+        ∀ k ∈ Sum.inl '' S₁ ∪ Sum.inr '' S₂, 0 ≤ z k} := by
+  ext z
+  rw [ContinuousLinearEquiv.image_eq_preimage_symm]
+  simp only [ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
+    ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
+    mem_preimage, range_prod, mem_prod, mem_ofPred_eq]
+  have hmem₁ : e₁.symm (EuclideanSpace.sumEquivProd z).1 ∈ range I ↔
+      ∀ i ∈ S₁, 0 ≤ z (Sum.inl i) := by
+    have : e₁.symm (EuclideanSpace.sumEquivProd z).1 ∈ range I ↔
+        (EuclideanSpace.sumEquivProd z).1 ∈ e₁ '' range I := by
+      rw [e₁.image_eq_preimage_symm, mem_preimage]
+    rw [this, h₁]
+    simp [EuclideanSpace.sumEquivProd]
+  have hmem₂ : e₂.symm (EuclideanSpace.sumEquivProd z).2 ∈ range I' ↔
+      ∀ j ∈ S₂, 0 ≤ z (Sum.inr j) := by
+    have : e₂.symm (EuclideanSpace.sumEquivProd z).2 ∈ range I' ↔
+        (EuclideanSpace.sumEquivProd z).2 ∈ e₂ '' range I' := by
+      rw [e₂.image_eq_preimage_symm, mem_preimage]
+    rw [this, h₂]
+    simp [EuclideanSpace.sumEquivProd]
+  rw [hmem₁, hmem₂]
+  constructor
+  · rintro ⟨hz₁, hz₂⟩ k (⟨i, hi, rfl⟩ | ⟨j, hj, rfl⟩)
+    · exact hz₁ i hi
+    · exact hz₂ j hj
+  · intro hz
+    exact ⟨fun i hi ↦ hz (Sum.inl i) (Or.inl ⟨i, hi, rfl⟩),
+      fun j hj ↦ hz (Sum.inr j) (Or.inr ⟨j, hj, rfl⟩)⟩
+
+/-- Every boundaryless finite-dimensional real model with corners is linearly equivalent to a
+coordinate-region model with empty constraint set. -/
+theorem exists_equiv_image_range_eq_of_boundaryless [FiniteDimensional ℝ E] [I.Boundaryless] :
+    ∃ e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)),
+      e '' range I = {z | ∀ i ∈ (∅ : Set (Fin (finrank ℝ E))), 0 ≤ z i} := by
+  let e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
+    ((Module.finBasis ℝ E).equivFun.trans
+      (EuclideanSpace.equiv (Fin (finrank ℝ E)) ℝ).symm.toLinearEquiv).toContinuousLinearEquiv
+  refine ⟨e, ?_⟩
+  rw [I.range_eq_univ, Set.image_univ, e.surjective.range_eq]
+  ext z
+  simp
+
 /-- For a model with corners whose range is cut out by the nonnegativity of the coordinates
 indexed by `S`, the depth of a point of the range is the number of those coordinates that vanish
 there. -/
@@ -405,6 +465,46 @@ theorem depthAt_le_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
   rw [depthAt_eq_natCard_of_range_eq hJ hy]
   exact Nat.card_le_card_of_injective (fun j : {i // i ∈ S ∧ y i = 0} ↦ (⟨j.val, j.property.1⟩ : S))
     (fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : S → ι) h))
+
+/-- At a point `z` of `{w | ∀ i ∈ S, 0 ≤ w i}` where every coordinate of `S` positive at `y`
+remains positive, the depth at `z` is at most the depth at `y`. -/
+theorem depthAt_le_of_forall_pos (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    {y z : EuclideanSpace ℝ ι} (hy : y ∈ range J) (hz : z ∈ range J)
+    (hpos : ∀ i ∈ S, y i ≠ 0 → 0 < z i) :
+    J.depthAt z ≤ J.depthAt y := by
+  rw [depthAt_eq_natCard_of_range_eq hJ hy, depthAt_eq_natCard_of_range_eq hJ hz]
+  refine Nat.card_le_card_of_injective
+    (fun j : {i // i ∈ S ∧ z i = 0} ↦
+      (⟨j.val, j.property.1, by_contra fun hy0 ↦ (hpos j.val j.property.1 hy0).ne' j.property.2⟩ :
+        {i // i ∈ S ∧ y i = 0}))
+    (fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : {i // i ∈ S ∧ y i = 0} → ι) h))
+
+/-- Under the positivity condition of `depthAt_le_of_forall_pos`, equality of depths holds exactly
+when every coordinate of `S` vanishing at `y` also vanishes at `z`. -/
+theorem depthAt_eq_iff_of_forall_pos (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    {y z : EuclideanSpace ℝ ι} (hy : y ∈ range J) (hz : z ∈ range J)
+    (hpos : ∀ i ∈ S, y i ≠ 0 → 0 < z i) :
+    J.depthAt z = J.depthAt y ↔ ∀ i ∈ S, y i = 0 → z i = 0 := by
+  classical
+  let A : Finset ι := Finset.univ.filter fun i ↦ i ∈ S ∧ z i = 0
+  let B : Finset ι := Finset.univ.filter fun i ↦ i ∈ S ∧ y i = 0
+  have hAB : A ⊆ B := fun i hi ↦ by
+    simp only [A, B, Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+    exact ⟨hi.1, by_contra fun hy0 ↦ (hpos i hi.1 hy0).ne' hi.2⟩
+  have hcardA : J.depthAt z = A.card := by
+    rw [depthAt_eq_natCard_of_range_eq hJ hz, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  have hcardB : J.depthAt y = B.card := by
+    rw [depthAt_eq_natCard_of_range_eq hJ hy, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [hcardA, hcardB]
+  constructor
+  · intro h i hiS hyi
+    have hBA : A = B := Finset.eq_of_subset_of_card_le hAB h.ge
+    have hiA : i ∈ A := hBA ▸ (by simp [B, hiS, hyi])
+    exact (Finset.mem_filter.1 hiA).2.2
+  · intro h
+    refine congrArg Finset.card (Finset.Subset.antisymm hAB fun i hi ↦ ?_)
+    simp only [A, B, Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+    exact ⟨hi.1, h i hi.1 hi.2⟩
 
 /-- In the quadrant model `𝓡c n`, the depth of a point of the quadrant is its number of
 vanishing coordinates. -/
@@ -523,6 +623,128 @@ theorem depthAt_extend_eq_depth (hn : n ≠ 0) {e : OpenPartialHomeomorph M H}
   omega
 
 end Manifold
+
+section Semicontinuity
+
+section RangeEq
+
+variable {ι : Type*} [Fintype ι] {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {S : Set ι}
+  {M : Type*} [TopologicalSpace M]
+
+/-- Inside the source of an open partial homeomorphism `e : OpenPartialHomeomorph M H`, the subset
+where every coordinate in `S` nonzero at `e.extend J x` stays strictly positive is open in `M`. -/
+theorem isOpen_setOf_forall_extend_pos (J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H)
+    (S : Set ι) (e : OpenPartialHomeomorph M H) (x : M) :
+    IsOpen {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
+  have hset : {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} =
+      e.source ∩ ⋂ j : {j : ι // j ∈ S ∧ e.extend J x j ≠ 0},
+        (fun q ↦ e.extend J q j.val) ⁻¹' Ioi 0 := by
+    ext q
+    simp only [mem_ofPred_eq, mem_inter_iff, mem_iInter, mem_preimage, mem_Ioi, Subtype.forall]
+    exact ⟨fun ⟨hq, h⟩ ↦ ⟨hq, fun j hj ↦ h j hj.1 hj.2⟩,
+      fun ⟨hq, h⟩ ↦ ⟨hq, fun j hj hx0 ↦ h j ⟨hj, hx0⟩⟩⟩
+  rw [hset]
+  refine isOpen_iff_mem_nhds.2 fun q ⟨hq, hpos⟩ ↦ ?_
+  have hcont (j : {j : ι // j ∈ S ∧ e.extend J x j ≠ 0}) :
+      ContinuousAt (fun p ↦ e.extend J p j.val) q :=
+    (EuclideanSpace.proj j.val : EuclideanSpace ℝ ι →L[ℝ] ℝ).continuous.continuousAt.comp
+      (J.continuous.continuousAt.comp (e.continuousAt hq))
+  refine Filter.inter_mem (e.open_source.mem_nhds hq) ?_
+  rw [Filter.iInter_mem]
+  intro j
+  exact (hcont j).preimage_mem_nhds (isOpen_Ioi.mem_nhds (mem_iInter.1 hpos j))
+
+/-- A point `x ∈ e.source` belongs to the positive slice of `e` defined at `x`. -/
+theorem mem_setOf_forall_extend_pos_self (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    {e : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) :
+    x ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
+  refine ⟨hx, fun j hj hne ↦ ?_⟩
+  have hmem : e.extend J x ∈ range J := by
+    rw [OpenPartialHomeomorph.extend_coe]
+    exact mem_range_self _
+  rw [hJ] at hmem
+  exact lt_of_le_of_ne (hmem j hj) hne.symm
+
+variable [ChartedSpace H M] {n : WithTop ℕ∞}
+
+/-- **Upper semicontinuity of depth** for coordinate-region models: on a `C^n` manifold (`n ≠ 0`)
+modelled on `{z | ∀ i ∈ S, 0 ≤ z i}`, the points of depth at most `k` form an open set. -/
+theorem isOpen_setOf_depth_le_of_range_eq [IsManifold J n M] (hn : n ≠ 0)
+    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
+    IsOpen {x : M | J.depth x ≤ k} := by
+  refine isOpen_iff_forall_mem_open.2 fun x hx ↦ ?_
+  let e := chartAt H x
+  let U := {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j}
+  refine ⟨U, ?_, isOpen_setOf_forall_extend_pos J S e x,
+    mem_setOf_forall_extend_pos_self hJ (mem_chart_source H x)⟩
+  intro q ⟨hq, hpos⟩
+  have hxe : x ∈ e.source := mem_chart_source H x
+  have he : e ∈ IsManifold.maximalAtlas J n M := IsManifold.chart_mem_maximalAtlas x
+  rw [mem_ofPred_eq, ← depthAt_extend_eq_depth hn he hq]
+  have hle := depthAt_le_of_forall_pos hJ
+    (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _)
+    (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _) hpos
+  rw [depthAt_extend_eq_depth hn he hxe] at hle
+  exact hle.trans hx
+
+/-- On a `C^n` manifold (`n ≠ 0`) modelled on `{z | ∀ i ∈ S, 0 ≤ z i}`, the points of depth at
+least `k` form a closed set. -/
+theorem isClosed_setOf_le_depth_of_range_eq [IsManifold J n M] (hn : n ≠ 0)
+    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
+    IsClosed {x : M | k ≤ J.depth x} := by
+  cases k with
+  | zero =>
+    have : {x : M | 0 ≤ J.depth x} = univ := eq_univ_of_forall fun _ ↦ Nat.zero_le _
+    rw [this]
+    exact isClosed_univ
+  | succ m =>
+    have : {x : M | m + 1 ≤ J.depth x} = {x : M | J.depth x ≤ m}ᶜ := by
+      ext x
+      simp
+    rw [this]
+    exact (isOpen_setOf_depth_le_of_range_eq hn hJ m).isClosed_compl
+
+end RangeEq
+
+section ImageRangeEq
+
+variable {I} {ι : Type*} [Finite ι] {S : Set ι}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
+
+/-- **Upper semicontinuity of depth** for any model linearly equivalent to a coordinate region
+`{z | ∀ i ∈ S, 0 ≤ z i}`. -/
+theorem isOpen_setOf_depth_le_of_image_range_eq [IsManifold I n M]
+    (hn : n ≠ 0) (e : E ≃L[ℝ] EuclideanSpace ℝ ι)
+    (hI : e '' range I = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
+    IsOpen {x : M | I.depth x ≤ k} := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  have : FiniteDimensional ℝ E := e.symm.toLinearEquiv.finiteDimensional
+  have heq : {x : M | I.depth x ≤ k} =
+      {x : M | (I.transContinuousLinearEquiv e).depth x ≤ k} := by
+    ext x
+    simp
+  rw [heq]
+  exact isOpen_setOf_depth_le_of_range_eq hn
+    (by rwa [I.transContinuousLinearEquiv_range]) k
+
+/-- For any model linearly equivalent to a coordinate region, `{x | k ≤ I.depth x}` is closed. -/
+theorem isClosed_setOf_le_depth_of_image_range_eq [IsManifold I n M]
+    (hn : n ≠ 0) (e : E ≃L[ℝ] EuclideanSpace ℝ ι)
+    (hI : e '' range I = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
+    IsClosed {x : M | k ≤ I.depth x} := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  have : FiniteDimensional ℝ E := e.symm.toLinearEquiv.finiteDimensional
+  have heq : {x : M | k ≤ I.depth x} =
+      {x : M | k ≤ (I.transContinuousLinearEquiv e).depth x} := by
+    ext x
+    simp
+  rw [heq]
+  exact isClosed_setOf_le_depth_of_range_eq hn
+    (by rwa [I.transContinuousLinearEquiv_range]) k
+
+end ImageRangeEq
+
+end Semicontinuity
 
 section Quadrant
 

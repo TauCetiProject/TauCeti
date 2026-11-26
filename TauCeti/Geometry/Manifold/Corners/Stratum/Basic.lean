@@ -5,53 +5,57 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Corners.Stratum
+public import TauCeti.Geometry.Manifold.Corners.Depth
 
 import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
-# Depth strata of a manifold with corners: topology and coordinate-region properties
+# The depth strata of a manifold with corners
 
-For a manifold `M` modelled on a real model with corners `I`,
-`TauCeti.Geometry.Manifold.Corners.Stratum` defines the *depth-`k` stratum*
-`I.depthStratum M k := {x : M | I.depth x = k}` and establishes its basic partition properties
-(`ModelWithCorners.iUnion_depthStratum`, `ModelWithCorners.pairwise_disjoint_depthStratum`,
-`ModelWithCorners.depthStratum_zero`) together with the quadrant manifold structure. This file
-develops general topological, functorial, and product properties of `ModelWithCorners.depthStratum`,
-and establishes upper semicontinuity of the depth on arbitrary coordinate-region models.
+A manifold with corners `M` modelled on a real model `I` is partitioned by the depth of its points
+(`ModelWithCorners.depth`): its *depth-`k` stratum* `I.depthStratum M k := {x : M | I.depth x = k}`
+is the set of points of depth `k`. The depth-zero stratum is the interior and is open; on a manifold
+with boundary modelled on the half-space the depth-one stratum is the boundary, and there are no
+strata of depth greater than one. The strata of higher depth are the edges and vertices of the
+corners: on the cube `[0, 1]³` the strata of depth `0, 1, 2, 3` are the open cube, the six open
+faces, the twelve open edges and the eight vertices.
 
-When `I` is a coordinate-region model `range I = {z : EuclideanSpace ℝ ι | ∀ i ∈ S, 0 ≤ z i}`
-(such as the quadrant `𝓡c n` with `S = univ`, the half-space `𝓡∂ n` with `S = {0}`, or via a
-continuous linear equivalence any finite product of such models), the depth is upper semicontinuous
-on any `C^1` manifold: near a point `x`, coordinates in `S` that are positive in a chart remain
-positive, so points near `x` have depth at most `I.depth x`
-(`ModelWithCorners.isOpen_setOf_depth_le_of_range_eq`). Consequently `{x | k ≤ I.depth x}` is
-closed and each depth stratum `I.depthStratum M k` is locally closed
-(`ModelWithCorners.isLocallyClosed_depthStratum_of_range_eq`).
+This file defines `ModelWithCorners.depthStratum` and establishes its partition, functorial,
+product, countability, and local-closedness properties, together with concrete characterizations on
+the half-space and quadrant models. When `I` is (up to a continuous linear equivalence) a
+coordinate-region model `{z : EuclideanSpace ℝ ι | ∀ i ∈ S, 0 ≤ z i}`, upper semicontinuity of the
+depth (`ModelWithCorners.isOpen_setOf_depth_le_of_range_eq`) implies that each depth stratum is
+locally closed (`ModelWithCorners.isLocallyClosed_depthStratum_of_range_eq`).
 
 For the boundaryless smooth manifold structure on each depth stratum `↥(J.depthStratum M k)` of any
 coordinate-region model `J`, see `TauCeti.Geometry.Manifold.Corners.Stratum.Manifold`.
 
+## Main definitions
+
+* `ModelWithCorners.depthStratum`: the depth-`k` stratum `{x : M | I.depth x = k}` of a manifold
+  with corners.
+
 ## Main results
 
-* `ModelWithCorners.depthStratum_eq_empty_of_boundaryless`,
-  `ModelWithCorners.depthStratum_zero_of_boundaryless`,
-  `ModelWithCorners.iUnion_depthStratum_eq_univ`: boundaryless strata and the finite cover indexed
-  by `Fin (finrank ℝ E + 1)`.
+* `ModelWithCorners.iUnion_depthStratum`, `ModelWithCorners.pairwise_disjoint_depthStratum`,
+  `ModelWithCorners.depthStratum_eq_empty_of_finrank_lt`: the strata partition the manifold, and
+  only the strata of depth at most its dimension are nonempty.
+* `ModelWithCorners.depthStratum_zero`, `ModelWithCorners.isOpen_depthStratum_zero`,
+  `ModelWithCorners.depthStratum_eq_empty_of_boundaryless`,
+  `ModelWithCorners.depthStratum_zero_of_boundaryless`: the depth-zero stratum is the interior (open
+  on any `C^r` manifold with `r ≠ 0`), and boundaryless manifolds have only the depth-zero stratum.
 * `ModelWithCorners.depthStratum_transContinuousLinearEquiv`,
-  `ModelWithCorners.depthStratum_prod`, `Diffeomorph.image_depthStratum`: invariance under linear
-  coordinate changes and diffeomorphisms, and the product decomposition.
+  `ModelWithCorners.depthStratum_prod`, `Diffeomorph.preimage_depthStratum`,
+  `Diffeomorph.image_depthStratum`: invariance under linear coordinate changes and diffeomorphisms,
+  and the product decomposition.
 * `ModelWithCorners.secondCountableTopology_depthStratum`,
   `ModelWithCorners.lindelofSpace_depthStratum`: second-countability and Lindelöfness of every
   depth stratum of a Lindelöf manifold over a second-countable model space.
-* `ModelWithCorners.depthAt_le_of_forall_pos`, `ModelWithCorners.depthAt_eq_iff_of_forall_pos`:
-  monotone behaviour and equality criterion for `depthAt` under positivity preservation.
-* `ModelWithCorners.isOpen_setOf_depth_le_of_range_eq`,
-  `ModelWithCorners.isClosed_setOf_le_depth_of_range_eq`,
-  `ModelWithCorners.isLocallyClosed_depthStratum_of_range_eq`: upper semicontinuity of `depth` and
-  local closedness of depth strata (with linear-equivalence transfers `*_of_image_range_eq`).
-* Concrete coordinate characterizations for `EuclideanHalfSpace n` and `EuclideanQuadrant n`
-  (`n : ℕ`).
+* `ModelWithCorners.isLocallyClosed_depthStratum_of_range_eq`,
+  `ModelWithCorners.isLocallyClosed_depthStratum_of_image_range_eq`: local closedness of depth
+  strata on coordinate-region models and models linearly equivalent to them.
+* Concrete characterizations for manifolds modelled on `EuclideanHalfSpace n` and points of
+  `EuclideanHalfSpace n` and `EuclideanQuadrant n` (`n : ℕ`).
 
 ## References
 
@@ -60,8 +64,8 @@ coordinate-region model `J`, see `TauCeti.Geometry.Manifold.Corners.Stratum.Mani
   [arXiv:0910.3518](https://arxiv.org/abs/0910.3518)
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
   Springer (2013), Chapter 16, section *Manifolds with Corners*.
-* Formal foundations in this library: `TauCeti.Geometry.Manifold.Corners.Depth` (intrinsic `depth`
-  and `depthAt`) and `TauCeti.Geometry.Manifold.Corners.Stratum` (`ModelWithCorners.depthStratum`).
+* Formal foundations in this library: `TauCeti.Geometry.Manifold.Corners.Depth` (intrinsic `depth`,
+  `depthAt`, and upper semicontinuity of depth).
 -/
 
 public section
@@ -78,13 +82,61 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H']
   (I' : ModelWithCorners ℝ E' H')
 
-/-! ### Functorial, product, and countability properties of depth strata -/
+/-! ### Definition, partition, functorial, product, and countability properties -/
 
 section Basic
 
-variable {I I'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+variable (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The **depth-`k` stratum** of a manifold with corners `M`: the set of its points of depth `k`
+(`ModelWithCorners.depth`). -/
+def depthStratum (k : ℕ) : Set M :=
+  {x | I.depth x = k}
+
+variable {I I' M}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Explicit set description of `depthStratum`. -/
+theorem depthStratum_def (k : ℕ) : I.depthStratum M k = {x | I.depth x = k} :=
+  (rfl)
+
+/-- A point belongs to the depth-`k` stratum iff its depth is `k`. -/
+@[simp, grind =]
+theorem mem_depthStratum {k : ℕ} {x : M} : x ∈ I.depthStratum M k ↔ I.depth x = k :=
+  (Iff.rfl)
+
+/-- A point of the depth-`k` stratum has depth `k`. -/
+@[simp, grind =]
+theorem depth_subtypeVal_depthStratum {k : ℕ} (p : I.depthStratum M k) : I.depth (p : M) = k :=
+  p.prop
+
+/-- Every point lies in the stratum of its depth. -/
+@[simp]
+theorem iUnion_depthStratum : ⋃ k, I.depthStratum M k = univ :=
+  eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨I.depth x, rfl⟩
+
+/-- Distinct depth strata are disjoint. -/
+theorem pairwise_disjoint_depthStratum : Pairwise (Disjoint on I.depthStratum M) :=
+  fun _ _ hkl ↦ disjoint_left.2 fun _ hk hl ↦ hkl (hk.symm.trans hl)
+
+/-- There are no points of depth larger than the dimension of the model. -/
+theorem depthStratum_eq_empty_of_finrank_lt {k : ℕ} (hk : finrank ℝ E < k) :
+    I.depthStratum M k = ∅ :=
+  eq_empty_of_forall_notMem fun x hx ↦ by
+    have := depth_le_finrank (I := I) x
+    rw [mem_depthStratum] at hx
+    omega
+
+/-- The depth-zero stratum is the interior. -/
+@[simp]
+theorem depthStratum_zero [FiniteDimensional ℝ E] : I.depthStratum M 0 = I.interior M := by
+  ext x
+  simp [ModelWithCorners.interior]
+
+/-- The depth-zero stratum of a `C^r` manifold, `r ≠ 0`, is open. -/
+theorem isOpen_depthStratum_zero [FiniteDimensional ℝ E] {r : WithTop ℕ∞} [IsManifold I r M]
+    (hr : r ≠ 0) : IsOpen (I.depthStratum M 0) :=
+  depthStratum_zero (I := I) (M := M) ▸ I.isOpen_interior hr
 
 /-- On a boundaryless finite-dimensional manifold, every stratum of positive depth is empty. -/
 theorem depthStratum_eq_empty_of_boundaryless [BoundarylessManifold I M] [FiniteDimensional ℝ E]
@@ -99,12 +151,6 @@ theorem depthStratum_zero_of_boundaryless [BoundarylessManifold I M] [FiniteDime
     I.depthStratum M 0 = univ := by
   rw [depthStratum_zero]
   exact I.interior_eq_univ
-
-/-- The depth strata of depths `0, …, dim E` cover the manifold. -/
-theorem iUnion_depthStratum_eq_univ :
-    ⋃ k : Fin (finrank ℝ E + 1), I.depthStratum M k = univ := by
-  refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
-  exact ⟨⟨I.depth x, Nat.lt_succ_of_le (I.depth_le_finrank x)⟩, mem_depthStratum.2 rfl⟩
 
 /-- A continuous linear change of model coordinates leaves every depth stratum unchanged. -/
 @[simp]
@@ -158,89 +204,12 @@ theorem lindelofSpace_depthStratum [SecondCountableTopology E] [LindelofSpace M]
 
 end Basic
 
-/-! ### Coordinate-region depth inequalities and upper semicontinuity -/
+/-! ### Local closedness on coordinate-region models -/
 
 section Topology
 
 variable {ι : Type*} [Fintype ι] {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {S : Set ι}
-
-/-- At a point `z` of `{w | ∀ i ∈ S, 0 ≤ w i}` where every coordinate of `S` positive at `y`
-remains positive, the depth at `z` is at most the depth at `y`. -/
-theorem depthAt_le_of_forall_pos (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
-    {y z : EuclideanSpace ℝ ι} (hy : y ∈ range J) (hz : z ∈ range J)
-    (hpos : ∀ i ∈ S, y i ≠ 0 → 0 < z i) :
-    J.depthAt z ≤ J.depthAt y := by
-  rw [depthAt_eq_natCard_of_range_eq hJ hy, depthAt_eq_natCard_of_range_eq hJ hz]
-  refine Nat.card_le_card_of_injective
-    (fun j : {i // i ∈ S ∧ z i = 0} ↦
-      (⟨j.val, j.property.1, by_contra fun hy0 ↦ (hpos j.val j.property.1 hy0).ne' j.property.2⟩ :
-        {i // i ∈ S ∧ y i = 0}))
-    (fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : {i // i ∈ S ∧ y i = 0} → ι) h))
-
-/-- Under the positivity condition of `depthAt_le_of_forall_pos`, equality of depths holds exactly
-when every coordinate of `S` vanishing at `y` also vanishes at `z`. -/
-theorem depthAt_eq_iff_of_forall_pos (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
-    {y z : EuclideanSpace ℝ ι} (hy : y ∈ range J) (hz : z ∈ range J)
-    (hpos : ∀ i ∈ S, y i ≠ 0 → 0 < z i) :
-    J.depthAt z = J.depthAt y ↔ ∀ i ∈ S, y i = 0 → z i = 0 := by
-  classical
-  let A : Finset ι := Finset.univ.filter fun i ↦ i ∈ S ∧ z i = 0
-  let B : Finset ι := Finset.univ.filter fun i ↦ i ∈ S ∧ y i = 0
-  have hAB : A ⊆ B := fun i hi ↦ by
-    simp only [A, B, Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
-    exact ⟨hi.1, by_contra fun hy0 ↦ (hpos i hi.1 hy0).ne' hi.2⟩
-  have hcardA : J.depthAt z = A.card := by
-    rw [depthAt_eq_natCard_of_range_eq hJ hz, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hcardB : J.depthAt y = B.card := by
-    rw [depthAt_eq_natCard_of_range_eq hJ hy, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  rw [hcardA, hcardB]
-  constructor
-  · intro h i hiS hyi
-    have hBA : A = B := Finset.eq_of_subset_of_card_le hAB h.ge
-    have hiA : i ∈ A := hBA ▸ (by simp [B, hiS, hyi])
-    exact (Finset.mem_filter.1 hiA).2.2
-  · intro h
-    refine congrArg Finset.card (Finset.Subset.antisymm hAB fun i hi ↦ ?_)
-    simp only [A, B, Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
-    exact ⟨hi.1, h i hi.1 hi.2⟩
-
-variable {M : Type*} [TopologicalSpace M]
-
-/-- Inside the source of an open partial homeomorphism `e : OpenPartialHomeomorph M H`, the subset
-where every coordinate in `S` nonzero at `e.extend J x` stays strictly positive is open in `M`. -/
-theorem isOpen_setOf_forall_extend_pos (J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H)
-    (S : Set ι) (e : OpenPartialHomeomorph M H) (x : M) :
-    IsOpen {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
-  have hset : {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} =
-      e.source ∩ ⋂ j : {j : ι // j ∈ S ∧ e.extend J x j ≠ 0},
-        (fun q ↦ e.extend J q j.val) ⁻¹' Ioi 0 := by
-    ext q
-    simp only [mem_ofPred_eq, mem_inter_iff, mem_iInter, mem_preimage, mem_Ioi, Subtype.forall]
-    exact ⟨fun ⟨hq, h⟩ ↦ ⟨hq, fun j hj ↦ h j hj.1 hj.2⟩,
-      fun ⟨hq, h⟩ ↦ ⟨hq, fun j hj hx0 ↦ h j ⟨hj, hx0⟩⟩⟩
-  rw [hset]
-  refine isOpen_iff_mem_nhds.2 fun q ⟨hq, hpos⟩ ↦ ?_
-  have hcont (j : {j : ι // j ∈ S ∧ e.extend J x j ≠ 0}) :
-      ContinuousAt (fun p ↦ e.extend J p j.val) q :=
-    (EuclideanSpace.proj j.val : EuclideanSpace ℝ ι →L[ℝ] ℝ).continuous.continuousAt.comp
-      (J.continuous.continuousAt.comp (e.continuousAt hq))
-  refine Filter.inter_mem (e.open_source.mem_nhds hq) ?_
-  rw [Filter.iInter_mem]
-  intro j
-  exact (hcont j).preimage_mem_nhds (isOpen_Ioi.mem_nhds (mem_iInter.1 hpos j))
-
-/-- A point `x ∈ e.source` belongs to the positive slice of `e` defined at `x`. -/
-theorem mem_setOf_forall_extend_pos_self (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
-    {e : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) :
-    x ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
-  refine ⟨hx, fun j hj hne ↦ ?_⟩
-  have hmem : e.extend J x ∈ range J := by
-    rw [OpenPartialHomeomorph.extend_coe]
-    exact mem_range_self _
-  rw [hJ] at hmem
-  exact lt_of_le_of_ne (hmem j hj) hne.symm
-
-variable [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- On a manifold modelled on `{z | ∀ i ∈ S, 0 ≤ z i}`, every depth stratum beyond `Nat.card S` is
 empty. -/
@@ -252,48 +221,9 @@ theorem depthStratum_eq_empty_of_natCard_lt_of_range_eq
   rw [mem_depthStratum] at hx
   omega
 
-variable {n : WithTop ℕ∞}
-
-/-- **Upper semicontinuity of depth** for coordinate-region models: on a `C^n` manifold (`n ≠ 0`)
-modelled on `{z | ∀ i ∈ S, 0 ≤ z i}`, the points of depth at most `k` form an open set. -/
-theorem isOpen_setOf_depth_le_of_range_eq [IsManifold J n M] (hn : n ≠ 0)
-    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
-    IsOpen {x : M | J.depth x ≤ k} := by
-  refine isOpen_iff_forall_mem_open.2 fun x hx ↦ ?_
-  let e := chartAt H x
-  let U := {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j}
-  refine ⟨U, ?_, isOpen_setOf_forall_extend_pos J S e x,
-    mem_setOf_forall_extend_pos_self hJ (mem_chart_source H x)⟩
-  intro q ⟨hq, hpos⟩
-  have hxe : x ∈ e.source := mem_chart_source H x
-  have he : e ∈ IsManifold.maximalAtlas J n M := IsManifold.chart_mem_maximalAtlas x
-  rw [mem_ofPred_eq, ← depthAt_extend_eq_depth hn he hq]
-  have hle := depthAt_le_of_forall_pos hJ
-    (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _)
-    (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _) hpos
-  rw [depthAt_extend_eq_depth hn he hxe] at hle
-  exact hle.trans hx
-
-/-- On a `C^n` manifold (`n ≠ 0`) modelled on `{z | ∀ i ∈ S, 0 ≤ z i}`, the points of depth at
-least `k` form a closed set. -/
-theorem isClosed_setOf_le_depth_of_range_eq [IsManifold J n M] (hn : n ≠ 0)
-    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
-    IsClosed {x : M | k ≤ J.depth x} := by
-  cases k with
-  | zero =>
-    have : {x : M | 0 ≤ J.depth x} = univ := eq_univ_of_forall fun _ ↦ Nat.zero_le _
-    rw [this]
-    exact isClosed_univ
-  | succ m =>
-    have : {x : M | m + 1 ≤ J.depth x} = {x : M | J.depth x ≤ m}ᶜ := by
-      ext x
-      simp
-    rw [this]
-    exact (isOpen_setOf_depth_le_of_range_eq hn hJ m).isClosed_compl
-
 /-- Every depth stratum of a `C^n` manifold (`n ≠ 0`) modelled on `{z | ∀ i ∈ S, 0 ≤ z i}` is
 locally closed (an intersection of an open set and a closed set). -/
-theorem isLocallyClosed_depthStratum_of_range_eq [IsManifold J n M] (hn : n ≠ 0)
+theorem isLocallyClosed_depthStratum_of_range_eq {n : WithTop ℕ∞} [IsManifold J n M] (hn : n ≠ 0)
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
     IsLocallyClosed (J.depthStratum M k) := by
   have hEq : J.depthStratum M k = {x : M | J.depth x ≤ k} ∩ {x : M | k ≤ J.depth x} := by
@@ -309,37 +239,6 @@ section TopologyEquiv
 
 variable {ι : Type*} [Finite ι] {S : Set ι}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
-
-/-- **Upper semicontinuity of depth** for any model linearly equivalent to a coordinate region
-`{z | ∀ i ∈ S, 0 ≤ z i}`. -/
-theorem isOpen_setOf_depth_le_of_image_range_eq {I : ModelWithCorners ℝ E H} [IsManifold I n M]
-    (hn : n ≠ 0) (e : E ≃L[ℝ] EuclideanSpace ℝ ι)
-    (hI : e '' range I = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
-    IsOpen {x : M | I.depth x ≤ k} := by
-  let _ : Fintype ι := Fintype.ofFinite ι
-  have : FiniteDimensional ℝ E := e.symm.toLinearEquiv.finiteDimensional
-  have heq : {x : M | I.depth x ≤ k} =
-      {x : M | (I.transContinuousLinearEquiv e).depth x ≤ k} := by
-    ext x
-    simp
-  rw [heq]
-  exact isOpen_setOf_depth_le_of_range_eq hn
-    (by rwa [I.transContinuousLinearEquiv_range]) k
-
-/-- For any model linearly equivalent to a coordinate region, `{x | k ≤ I.depth x}` is closed. -/
-theorem isClosed_setOf_le_depth_of_image_range_eq {I : ModelWithCorners ℝ E H} [IsManifold I n M]
-    (hn : n ≠ 0) (e : E ≃L[ℝ] EuclideanSpace ℝ ι)
-    (hI : e '' range I = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
-    IsClosed {x : M | k ≤ I.depth x} := by
-  let _ : Fintype ι := Fintype.ofFinite ι
-  have : FiniteDimensional ℝ E := e.symm.toLinearEquiv.finiteDimensional
-  have heq : {x : M | k ≤ I.depth x} =
-      {x : M | k ≤ (I.transContinuousLinearEquiv e).depth x} := by
-    ext x
-    simp
-  rw [heq]
-  exact isClosed_setOf_le_depth_of_range_eq hn
-    (by rwa [I.transContinuousLinearEquiv_range]) k
 
 /-- For any model linearly equivalent to a coordinate region, every depth stratum is locally
 closed. -/
@@ -364,6 +263,23 @@ variable {n : ℕ}
 section HalfSpace
 
 variable [NeZero n]
+
+/-- On a manifold modelled on the half-space, the depth-one stratum is the boundary. -/
+@[simp]
+theorem depthStratum_modelWithCornersEuclideanHalfSpace_one {M : Type*}
+    [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace n) M] :
+    (𝓡∂ n).depthStratum M 1 = (𝓡∂ n).boundary M := by
+  ext x
+  simp [ModelWithCorners.boundary]
+
+/-- On a manifold modelled on the half-space, there are no strata of depth larger than one. -/
+theorem depthStratum_modelWithCornersEuclideanHalfSpace_eq_empty_of_one_lt {k : ℕ}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace n) M] (hk : 1 < k) :
+    (𝓡∂ n).depthStratum M k = ∅ :=
+  eq_empty_of_forall_notMem fun x hx ↦ by
+    have := depth_modelWithCornersEuclideanHalfSpace_le_one (n := n) x
+    rw [mem_depthStratum] at hx
+    omega
 
 /-- A point of `EuclideanHalfSpace n` has depth `0` iff its zeroth coordinate is positive. -/
 theorem mem_depthStratum_euclideanHalfSpace_zero_iff {x : EuclideanHalfSpace n} :
