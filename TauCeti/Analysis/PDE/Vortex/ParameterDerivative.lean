@@ -92,7 +92,7 @@ coefficient. Here `‖g‖_c` denotes the weighted norm `‖exp(c ρ) g‖₂` o
   complement of the kernel, `(Q†)' g = -Q† (Z_b† (Q† g))`
   (`ContinuousLinearMap.IsFredholm.adjoint_comp_fderiv_orthogonalRightInverse_apply`), where
   `Z_b` is the multiplication by `Z(b, ·)`, pointwise the transposed matrix of `Z(β)`
-  (`MeasureTheory.Lp.coeFn_adjoint_holderL_apply`, `adjoint_gaugeFixedZerothOrder_apply`). For
+  (`ContinuousLinearMap.coeFn_adjoint_holderL`, `adjoint_gaugeFixedZerothOrder_apply`). For
   `g` orthogonal to the kernel the values of `Q† g` are a weak solution of `L_x* η = g`, so the
   weighted elliptic estimate for `L_x*`
   (`exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeFixedOperator`)
@@ -1046,12 +1046,15 @@ private theorem exists_forall_exists_mem_ker_inner_sub_eq_zero (m : ℕ) (R₀ :
   obtain ⟨hkc, hkn, -, -⟩ := hest x D hx hbound hsol hframe hD hD₀ a hax
   have := hT.finite_ker
   -- The `L²`-orthogonal projection of `h` onto the finite-dimensional space `S` of the values of
-  -- the kernel is the value of a kernel element `k₀`.
+  -- the kernel is the value of a kernel element `k₀`. The linear map underlying
+  -- `sobolevFieldValues` applies as `sobolevFieldValues` (`ContinuousLinearMap.coe_coe`), so
+  -- `Submodule.mem_map_of_mem` places these values in `S`.
   set S := (sobolevGaugeFixedOperator a).ker.map
     (sobolevFieldValues : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _).toLinearMap
   obtain ⟨k₀, hk₀, hk₀P⟩ := Submodule.mem_map.1 (S.starProjection_apply_mem h)
+  simp only [ContinuousLinearMap.coe_coe] at hk₀P
   have hperp : h - sobolevFieldValues k₀ ∈ Sᗮ := by
-    rw [show sobolevFieldValues k₀ = S.starProjection h from hk₀P]
+    rw [hk₀P]
     exact S.sub_starProjection_mem_orthogonal h
   -- The weight costs at most `kc kn` on `ι k₀`, since `‖ι k₀‖² = ⟪ι k₀, h⟫`.
   have hS : sobolevFieldValues k₀ ∈ S := Submodule.mem_map_of_mem hk₀
@@ -1120,20 +1123,14 @@ private theorem exists_forall_exists_adjoint_orthogonalRightInverse_eq (m : ℕ)
         hk0]) hPm 0 fun i ↦ .of_forall fun z ↦ by simp
   rw [norm_zero, zero_add] at huPn
   have hk : (k : ℝ) ≤ k + 1 := by linarith
+  obtain ⟨huP', hP⟩ := norm_inclusion_le_and_ae_eq hk (Nat.cast_nonneg k) huP
   refine ⟨h - sobolevFieldValues k₀, horth, by rw [map_sub, hR0, sub_zero],
     W - fun i ↦ inclusion hk (uP i), fun i ↦ ?_, ?_⟩
-  · have hP : ⇑(inclusionLp (Nat.cast_nonneg k) (inclusion hk (uP i))) =ᵐ[volume]
-        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues k₀ z) i : ℂ) := by
-      rw [inclusionLp_inclusion]
-      exact huP i
-    filter_upwards [coeFn_inclusionLp_sub_ae_eq _ (hW i) hP,
+  · filter_upwards [coeFn_inclusionLp_sub_ae_eq _ (hW i) (hP i),
       (Lp.coeFn_sub h (sobolevFieldValues k₀)).filter_mono
         Measure.ae_le_ae_restrict_coe_opens_top] with z h₁ h₂
     rw [Pi.sub_apply, h₁, h₂, Pi.sub_apply, smul_sub, PiLp.sub_apply, Complex.ofReal_sub]
-  · have huP' : ‖fun i ↦ inclusion hk (uP i)‖ ≤ ‖uP‖ :=
-      (pi_norm_le_iff_of_nonneg (norm_nonneg uP)).2 fun i ↦
-        (norm_inclusion_apply_le hk _).trans (norm_le_pi_norm uP i)
-    calc ‖W - fun i ↦ inclusion hk (uP i)‖ ≤ ‖W‖ + ‖uP‖ := (norm_sub_le _ _).trans (by gcongr)
+  · calc ‖W - fun i ↦ inclusion hk (uP i)‖ ≤ ‖W‖ + ‖uP‖ := (norm_sub_le _ _).trans (by gcongr)
       _ ≤ ‖W‖ + K₁ * (KP * (4 * ‖W‖)) := by gcongr; exact huPn.trans (by gcongr)
       _ = (1 + K₁ * KP * 4) * ‖W‖ := by ring
 
@@ -1203,14 +1200,14 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_adjoint_holderL (k : ℕ)
   have hZ (i j : Fin 4) :=
     contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hβ hβb j i
   have hk : (k : ℝ) ≤ k + 1 := by linarith
+  obtain ⟨hun, hu'⟩ := norm_inclusion_le_and_ae_eq hk (Nat.cast_nonneg k) hu
   -- `exp(c ρ) Z_b† U` is `0 + A (exp(c ρ) U)` for the transposed matrix `A = Z(β)ᵀ`.
   obtain ⟨W, hW, hWn⟩ := hCb (fun i j z ↦ gaugeFixedZerothOrderMatrix (β z) j i)
     (fun i j ↦ (hZ i j).1) M (fun i j ↦ (hZ i j).2)
-    (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • U z) 0 (fun i ↦ inclusion hk (u i)) 0
-    (fun i ↦ by rw [inclusionLp_inclusion]; exact hu i)
+    (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • U z) 0 _ 0 hu'
     (fun i ↦ by simpa [Pi.zero_def] using Lp.coeFn_zero ℂ 2 volume)
   refine ⟨W, fun i ↦ ?_, hWn.trans ?_⟩
-  · filter_upwards [hW i, (Lp.coeFn_adjoint_holderL_apply gaugeFixedZerothOrder b U).filter_mono
+  · filter_upwards [hW i, (gaugeFixedZerothOrder.coeFn_adjoint_holderL b U).filter_mono
       Measure.ae_le_ae_restrict_coe_opens_top,
       hb.filter_mono Measure.ae_le_ae_restrict_coe_opens_top] with z h₁ h₂ h₃
     rw [h₁, h₂, h₃, adjoint_gaugeFixedZerothOrder_apply]
@@ -1218,8 +1215,6 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_adjoint_holderL (k : ℕ)
   · have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
     rw [norm_zero, zero_add]
     gcongr
-    exact (pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun i ↦
-      (norm_inclusion_apply_le hk _).trans (norm_le_pi_norm u i)
 
 /-- **The weighted Sobolev estimate for the parameter derivative of the adjoints of the orthogonal
 right inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, bound

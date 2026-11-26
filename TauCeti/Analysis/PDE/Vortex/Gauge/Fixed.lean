@@ -760,13 +760,14 @@ theorem gaugeFixedZerothOrder_eq_toEuclideanLin (w v : EuclideanSpace ℝ (Fin 4
 theorem adjoint_gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
     ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) v =
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j := by
+  -- `gaugeFixedZerothOrder w` is the Euclidean map of its matrix, whose adjoint is the transpose.
+  have h : gaugeFixedZerothOrder w =
+      (gaugeFixedZerothOrderMatrix w).toEuclideanLin.toContinuousLinearMap :=
+    ContinuousLinearMap.ext (gaugeFixedZerothOrder_eq_toEuclideanLin w)
+  rw [h, ← LinearMap.adjoint_toContinuousLinearMap,
+    ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint, Matrix.conjTranspose_eq_transpose_of_trivial]
   ext i
-  -- The `i`-th coordinate is the pairing with the `i`-th basis vector.
-  have h := ContinuousLinearMap.adjoint_inner_left (gaugeFixedZerothOrder w)
-    (EuclideanSpace.single i (1 : ℝ)) v
-  rw [EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real] at h
-  rw [h]
-  simp [gaugeFixedZerothOrder_apply, PiLp.inner_apply, Fin.sum_univ_four]
+  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct, Matrix.transpose_apply]
 
 /-- The gauge-fixed operators at two fields `x` and `x'` differ by multiplication by the
 zeroth-order part `gaugeFixedZerothOrder (x z - x' z)`, pointwise and without any regularity of the

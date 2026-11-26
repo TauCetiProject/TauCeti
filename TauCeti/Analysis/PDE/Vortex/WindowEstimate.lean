@@ -97,7 +97,7 @@ namespace TauCeti.Vortex
 
 /-- Coordinates in `H^s(ℂ)` of a field also serve, through the inclusion, at every lower order
 `r`, with no larger norm. -/
-private theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 ≤ r)
+theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 ≤ r)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} {u : Fin 4 → H^{s}(ℂ)}
     (hu : ∀ a, ⇑(inclusionLp (hr.trans h) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
     ‖fun a ↦ inclusion h (u a)‖ ≤ ‖u‖ ∧
@@ -498,7 +498,9 @@ integrable. If the coordinates of `exp(c ρ) g` are given by `v : Fin 4 → H^k(
 `‖u‖ ≤ K (‖v‖ + ‖exp(c ρ) η‖_(L²))`.
 
 This is the counterpart for `L_x*` of
-`exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`. -/
+`exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`. For a single field
+it is `exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul_of_gaugeFixedOperator`; here
+the constant depends on `x` only through `B`. -/
 theorem exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeFixedOperator
     (k : ℕ) (B c : ℝ) :
     ∃ K ≥ 0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x →
@@ -515,27 +517,16 @@ theorem exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeF
           fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • η z) a : ℂ)) ∧
         ‖u‖ ≤ K * (‖v‖ +
           (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • η z) 2 volume).toReal) := by
-  -- `H = exp(c ρ) η` solves `L_x* H = exp(c ρ) g + A H` with `A = -(expWeightCoeff c)ᵀ`, whose
-  -- entries have derivatives bounded by `M`.
-  obtain ⟨M, hM₀, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
-  refine ⟨K₁, hK₁, fun x hx hxb η g hη hg hweak hwη v hv ↦ ?_⟩
-  have hA (i j : Fin 4) : ContDiff ℝ ∞ (fun z ↦ -expWeightCoeff c j i z) :=
-    (contDiff_expWeightCoeff c j i).neg
-  have hAb (i j : Fin 4) (n : ℕ) (hn : n ≤ k) (z : ℂ) :
-      ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ M := by
-    simpa using hM j i n hn z
-  have hwg : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) ∈ sobolevFields k :=
-    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
-  have hHweak (w : ℂ → EuclideanSpace ℝ (Fin 4)) (hw : ContDiff ℝ ∞ w)
-      (hwc : HasCompactSupport w) :=
-    integral_inner_exp_mul_smul_gaugeFixedOperator_eq (c := c) hx.continuous hη hg hweak hw hwc
-  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
-    (mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add k hx
-      (fun i n hn ↦ ⟨B, hxb i n hn⟩) hA (fun i j ↦ ⟨M, hM₀, hAb i j⟩) hwη hwg hHweak)
-  exact ⟨u, hu, hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _)) hA
-    (fun i j n hn z ↦ (hAb i j n hn z).trans (le_max_right _ _)) _ _ u v hu hv hHweak⟩
+  exact ⟨K₁, hK₁, fun x hx hxb η g hη hg hweak hwη v hv ↦
+    exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul_of_gaugeFixedOperator k hx
+      (fun i n hn ↦ ⟨B, hxb i n hn⟩)
+      (hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
+        (fun i j ↦ (contDiff_expWeightCoeff c j i).neg)
+        fun i j n hn z ↦ by simpa using (hM j i n hn z).trans (le_max_right _ _))
+      hη hg hweak hwη hv⟩
 
 /-! ### The weighted estimates over a window of divisors -/
 

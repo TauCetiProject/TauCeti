@@ -978,11 +978,14 @@ theorem IsFredholm.adjoint_comp_fderiv_orthogonalRightInverse_apply (hι : Injec
   have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
   refine ext_inner_right ℝ fun y ↦ ?_
   -- `Q' y` is `-Q (T' (Q y))` plus a kernel element, which pairs to zero with `g`.
-  rw [inner_neg_left, adjoint_inner_left, adjoint_inner_left, adjoint_inner_left, comp_apply,
-    comp_apply, comp_apply, ← sub_add_cancel (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x))
-      x₀ v y) (orthogonalKerProjection ι (T x₀) _),
-    hT.sub_orthogonalKerProjection_fderiv_orthogonalRightInverse_apply hι hsurj hd v y, map_add,
-    inner_add_right, hg _ (hπ.mem_ker _), add_zero, map_neg, inner_neg_right]
+  have hQ' : fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y =
+      -orthogonalRightInverse ι (T x₀) (fderiv ℝ T x₀ v (orthogonalRightInverse ι (T x₀) y)) +
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y) :=
+    eq_add_of_sub_eq (hT.sub_orthogonalKerProjection_fderiv_orthogonalRightInverse_apply hι hsurj
+      hd v y)
+  rw [adjoint_inner_left, comp_apply, hQ']
+  simp [adjoint_inner_left, inner_add_right, hg _ (hπ.mem_ker _)]
 
 end AdjointDerivative
 

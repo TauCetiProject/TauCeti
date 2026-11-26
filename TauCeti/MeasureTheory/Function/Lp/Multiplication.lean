@@ -9,10 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
-import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -31,8 +31,9 @@ operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicat
 `Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
 multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`). More
 generally, for a continuous bilinear map `B` into real Hilbert spaces and an essentially bounded
-`b`, the adjoint of the Hölder multiplication operator `f ↦ B (b ·) (f ·)` on `L²` is computed
-pointwise by the adjoints of `B (b x)` (`coeFn_adjoint_holderL_apply`).
+`b`, the adjoint of the Hölder multiplication operator `f ↦ B (b ·) (f ·)` on `L²` is the Hölder
+multiplication operator of the pointwise adjoints of `B` (`ContinuousLinearMap.adjoint_holderL`), so
+it is computed pointwise by the adjoints of `B (b x)` (`ContinuousLinearMap.coeFn_adjoint_holderL`).
 
 For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator μ s hs` of its
 indicator cuts an `Lᵖ` class off to `s` (`multiplicationOperator_linftyIndicator_ae`). It does not
@@ -304,26 +305,33 @@ theorem adjoint_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
 
 /-- **The adjoint of a Hölder multiplication operator.** For a continuous bilinear map
 `B : V →L[ℝ] F →L[ℝ] G` into real Hilbert spaces and an essentially bounded `b`, the adjoint of the
-multiplication operator `f ↦ B (b ·) (f ·)` from `L²(α, F)` to `L²(α, G)` is computed pointwise:
-it sends `h` to `x ↦ (B (b x))† (h x)`. -/
-theorem coeFn_adjoint_holderL_apply {V F G : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F] [NormedAddCommGroup G]
-    [InnerProductSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] F →L[ℝ] G) (b : Lp V ∞ μ)
-    (h : Lp G 2 μ) :
+multiplication operator `f ↦ B (b ·) (f ·)` from `L²(α, F)` to `L²(α, G)` is the multiplication
+operator of the pointwise adjoints `v ↦ (B v)†`. -/
+theorem _root_.ContinuousLinearMap.adjoint_holderL {V F G : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+    [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] F →L[ℝ] G)
+    (b : Lp V ∞ μ) :
+    ContinuousLinearMap.adjoint (B.holderL μ ∞ 2 2 b) =
+      (ContinuousLinearMap.adjointRealCLM ∘L B).holderL μ ∞ 2 2 b := by
+  refine ((eq_adjoint_iff _ _).2 fun h f ↦ ?_).symm
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(ContinuousLinearMap.adjointRealCLM ∘L B).coeFn_holder (r := 2) b h,
+    B.coeFn_holder (r := 2) b f] with x h₁ h₂
+  rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
+  simp [adjoint_inner_left]
+
+/-- The adjoint of the Hölder multiplication operator `f ↦ B (b ·) (f ·)` on `L²` is computed
+pointwise: it sends `h` to `x ↦ (B (b x))† (h x)` (`ContinuousLinearMap.adjoint_holderL`). -/
+theorem _root_.ContinuousLinearMap.coeFn_adjoint_holderL {V F G : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+    [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] F →L[ℝ] G)
+    (b : Lp V ∞ μ) (h : Lp G 2 μ) :
     ContinuousLinearMap.adjoint (B.holderL μ ∞ 2 2 b) h =ᵐ[μ]
       fun x ↦ ContinuousLinearMap.adjoint (B (b x)) (h x) := by
-  -- The pointwise adjoint is the multiplication operator of the bilinear map `v ↦ (B v)†`.
-  set B' : V →L[ℝ] G →L[ℝ] F := ContinuousLinearMap.adjointRealCLM ∘L B
-  have hB : B'.holderL μ ∞ 2 2 b = ContinuousLinearMap.adjoint (B.holderL μ ∞ 2 2 b) := by
-    refine (eq_adjoint_iff _ _).2 fun h f ↦ ?_
-    rw [L2.inner_def, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [B'.coeFn_holder (r := 2) b h, B.coeFn_holder (r := 2) b f] with x h₁ h₂
-    rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
-    simp [B', adjoint_inner_left]
-  rw [← hB, ContinuousLinearMap.holderL_apply_apply]
-  filter_upwards [B'.coeFn_holder (r := 2) b h] with x hx
-  simp [hx, B']
+  rw [B.adjoint_holderL, ContinuousLinearMap.holderL_apply_apply]
+  filter_upwards [(ContinuousLinearMap.adjointRealCLM ∘L B).coeFn_holder (r := 2) b h] with x hx
+  simp [hx]
 
 end InnerProductSpace
 
