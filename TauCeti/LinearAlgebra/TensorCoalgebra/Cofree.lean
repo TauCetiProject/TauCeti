@@ -24,7 +24,7 @@ whose length-`(n + 1)` component is `f^{⊗(n + 1)} ∘ Δ⁽ⁿ⁾`, where `Δ�
 `LinearMap.iteratedComul`. The sum is finite on each element exactly because `Δ` is conilpotent.
 Conversely `f` is the composite of `F` with the projection `Tᶜ(N) ⟶ N` onto single letters.
 
-That `F` is a coalgebra map is generalized coassociativity (`LinearMap.iteratedComul_add_succ`)
+That `F` is a coalgebra map is generalized coassociativity (`LinearMap.iteratedComul_succ_add`)
 read one bidegree at a time; that a coalgebra map is determined by its projection to letters
 needs neither coassociativity nor conilpotence. For `C = Tᶜ(M)` itself the cofree lift is the
 Taylor expansion `TauCeti.ReducedTensorWords.coalgHom`
@@ -186,7 +186,7 @@ theorem deconcatenation_comp_cofreeLift
     map_component_comp_deconcatenation, TensorProduct.map_map, component_comp_cofreeLift,
     component_comp_cofreeLift, LinearMap.comp_apply]
   dsimp only
-  rw [hc, LinearMap.iteratedComul_add_succ hcoassoc]
+  rw [hc, LinearMap.iteratedComul_succ_add hcoassoc]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hmul ⊢
   rw [LinearEquiv.symm_apply_eq, ← TensorProduct.map_map]
   exact hmul.symm

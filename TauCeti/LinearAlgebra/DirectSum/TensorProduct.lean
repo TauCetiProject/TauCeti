@@ -43,7 +43,6 @@ variable {S : Type*} [Semiring S] [Algebra R S]
 
 /-- The `i`-th component of `(⨁ i, M₁ i) ⊗ M₂' ≃ ⨁ i, M₁ i ⊗ M₂'` is the `i`-th component
 projection tensored with the identity. -/
-@[simp]
 theorem directSumLeft_apply [∀ i, Module S (M₁ i)] [∀ i, IsScalarTower R S (M₁ i)]
     (z : (⨁ i, M₁ i) ⊗[R] M₂') (i : ι₁) :
     directSumLeft R S M₁ M₂' z i = (DirectSum.component R ι₁ M₁ i).rTensor M₂' z := by
@@ -53,7 +52,6 @@ theorem directSumLeft_apply [∀ i, Module S (M₁ i)] [∀ i, IsScalarTower R S
 
 /-- The `i`-th component of `M₁' ⊗ (⨁ i, M₂ i) ≃ ⨁ i, M₁' ⊗ M₂ i` is the `i`-th component
 projection tensored with the identity. -/
-@[simp]
 theorem directSumRight_apply [Module S M₁'] [IsScalarTower R S M₁'] (z : M₁' ⊗[R] ⨁ i, M₂ i)
     (i : ι₂) :
     directSumRight R S M₁' M₂ z i = (DirectSum.component R ι₂ M₂ i).lTensor M₁' z := by

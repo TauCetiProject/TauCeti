@@ -27,7 +27,7 @@ coproduct; Tau Ceti's noncounital differential graded coalgebras
 Iterating on the left needs no coassociativity, and each iterated coproduct factors through the
 previous one, so once an iterate vanishes on an element all later ones do
 (`LinearMap.iteratedComul_eq_zero_of_le`). With coassociativity, the iterates can be split at any
-position (`LinearMap.iteratedComul_add_succ`). Neither statement needs flatness, a field, or any
+position (`LinearMap.iteratedComul_succ_add`). Neither statement needs flatness, a field, or any
 hypothesis on the characteristic.
 
 ## Main definitions
@@ -39,7 +39,7 @@ hypothesis on the characteristic.
 
 * `LinearMap.iteratedComul_eq_zero_of_le`: the iterated coproducts vanishing on an element form an
   upper set.
-* `LinearMap.iteratedComul_add_succ`: for a coassociative coproduct,
+* `LinearMap.iteratedComul_succ_add`: for a coassociative coproduct,
   `Δ⁽ⁱ⁺ʲ⁺¹⁾ = (Δ⁽ⁱ⁾ ⊗ Δ⁽ʲ⁾) ∘ Δ` up to flattening.
 * `LinearMap.iteratedComul_comp`: iterated coproducts are natural along coalgebra maps.
 
@@ -148,7 +148,7 @@ theorem IsConilpotent.exists_forall_iteratedComul_eq_zero (hΔ : Δ.IsConilpoten
 /-- **Generalized coassociativity.** For a coassociative coproduct, the iterated coproduct with
 `i + j + 2` output factors is obtained by applying `Δ⁽ⁱ⁾` and `Δ⁽ʲ⁾` to the two factors of `Δ`
 and flattening. -/
-theorem iteratedComul_add_succ
+theorem iteratedComul_succ_add
     (hΔ : (TensorProduct.assoc R C C C).toLinearMap ∘ₗ Δ.rTensor C ∘ₗ Δ = Δ.lTensor C ∘ₗ Δ)
     (i j : ℕ) :
     Δ.iteratedComul (i + 1 + j) = TensorPower.mulEquiv.toLinearMap ∘ₗ
