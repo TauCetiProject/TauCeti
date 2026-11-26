@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.PreferredChartReading
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -52,6 +53,8 @@ closed upper half-plane are read in `ℂ` in
   domains and of their pairwise intersections.
 * `TauCeti.FiniteBundleAtlas.transition`: the chart transition between two charts.
 * `TauCeti.FiniteBundleAtlas.coord`: a section read in a chart.
+* `TauCeti.FiniteBundleAtlas.preferredChartReading_center`: the reading of a section in the
+  preferred charts at the centre of a chart is its reading in that chart.
 * `TauCeti.FiniteBundleAtlas.chartSection`: the section with prescribed coordinates on the domain
   of one chart, extended by zero.
 * `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
@@ -285,6 +288,12 @@ def coord (i : Fin A.n) (s : ∀ x, V x) (y : E) : F :=
 
 theorem coord_def (i : Fin A.n) (s : ∀ x, V x) (y : E) :
     A.coord i s y = (A.triv i ⟨(A.chart i).symm y, s ((A.chart i).symm y)⟩).2 :=
+  (rfl)
+
+/-- The reading of a section in the preferred charts at the centre of chart `i` is its reading in
+chart `i`. -/
+theorem preferredChartReading_center (i : Fin A.n) (s : ∀ x, V x) :
+    preferredChartReading E F s (A.center i) = A.coord i s :=
   (rfl)
 
 theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) :

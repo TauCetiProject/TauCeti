@@ -104,17 +104,6 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 
 namespace IsRealCauchyRiemannOperator
 
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The chart reading of the zero `(0,1)`-form vanishes almost everywhere on the chart image. -/
-private theorem chartValueL_zero_ae (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        (((0 : zeroOneSobolevSections A volume p 0) : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0)
-      =ᵐ[volume.restrict (A.image i)] 0 := by
-  simp only [ZeroMemClass.coe_zero, map_zero]
-  exact (ae_image_tangentHom_iff A volume i).1
-    (Lp.coeFn_zero (ℂ →L[ℝ] F) p (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
-
 /-! ### The kernel -/
 
 include hD hDs in
@@ -125,8 +114,8 @@ theorem sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(ℝ, ℂ); F, V�
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
   refine (ae_image_tangentHom_iff A volume i).2 ?_
   filter_upwards [chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p s i,
-    chartValueL_zero_ae A (p := p) i, ae_restrict_mem (A.image i).isOpen.measurableSet]
-    with y h₁ h₂ hy
+    chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i,
+    ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ hy
   rw [h₁, h₂, show D s = 0 from funext hs]
   exact A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n)) (A.image_tangentHom i ▸ hy)
 
@@ -148,7 +137,8 @@ theorem apply_eq_zero_of_sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(
   have h' := chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p s i
   rw [h] at h'
   rw [A.image_tangentHom]
-  filter_upwards [h'.symm.trans (chartValueL_zero_ae A (p := p) i),
+  filter_upwards [h'.symm.trans
+      (chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i),
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hyi
   exact hy.trans (A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n))
     (A.image_tangentHom i ▸ hyi)).symm
@@ -171,7 +161,9 @@ theorem exists_contDiffOn_ae_eq_chartValueL_of_sobolevL_eq_zero (hp : 1 < p)
     contDiffOn_const
     ((contDiffOn_const.clm_comp (A.contDiffOn_chartZeroOrder_image hD hDs i)).const_smul _)
     (fun _ _ ↦ lsmul_I_mul_lsmul_I) hp (Lp.memLp _).memLpLoc hDu ?_
-  filter_upwards [hchart, chartValueL_zero_ae A (p := p) i] with y h₁ h₂
+  filter_upwards [hchart,
+    chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i]
+    with y h₁ h₂
   rw [h₂] at h₁
   have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h₁
   simp only [Pi.zero_apply, zero_apply, add_apply, complexAntilinearPartL_apply_one] at h1
