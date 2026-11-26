@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 import Mathlib.Algebra.Field.ULift
+import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
