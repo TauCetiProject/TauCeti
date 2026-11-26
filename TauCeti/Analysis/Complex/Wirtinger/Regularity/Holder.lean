@@ -9,7 +9,6 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Pompeiu.Weak
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
 import TauCeti.Analysis.Holder.Jet.Bounds
@@ -71,56 +70,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
   {Ω : Opens ℂ} {u g : ℂ → F} {k : ℕ} {α : ℝ≥0}
 
-omit [FiniteDimensional ℂ F] in
-/-- **Cutting off local `C^{k,α}` data.** Data that are `Cᵏ` on `ball z₀ r`, with derivatives
-through order `k` bounded there and `k`-th derivative `α`-Hölder there, agree on `ball z₀ (r / 3)`
-with `Cᵏ` data supported in `closedBall z₀ (2 * r / 3)` that are bounded with all derivatives
-through order `k` and have globally `α`-Hölder `k`-th derivative. -/
-private theorem exists_cutoff_eqOn {z₀ : ℂ} {r : ℝ} (hr : 0 < r) {M H : ℝ≥0}
-    (hg : ContDiffOn ℝ k g (ball z₀ r))
-    (hM : ∀ j ≤ k, ∀ x ∈ ball z₀ r, ‖iteratedFDeriv ℝ j g x‖ ≤ M)
-    (hH : HolderOnWith H α (iteratedFDeriv ℝ k g) (ball z₀ r)) (hα : α ≤ 1) :
-    ∃ f : ℂ → F, ContDiff ℝ k f ∧ Function.support f ⊆ closedBall z₀ (2 * r / 3) ∧
-      (∃ H' : ℝ≥0, HolderWith H' α (iteratedFDeriv ℝ k f)) ∧
-      (∃ M' : ℝ≥0, ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j f x‖ ≤ M') ∧ EqOn f g (ball z₀ (r / 3)) := by
-  let χ : ContDiffBump z₀ := ⟨r / 3, 2 * r / 3, by positivity, by linarith⟩
-  have hχ (m : ℕ) : ContDiff ℝ m χ := χ.contDiff.of_le (by exact_mod_cast le_top)
-  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff (hχ (k + 1))
-  let N' : ℝ≥0 := ⟨N, hN0⟩
-  have hrIn : χ.rIn = r / 3 := rfl
-  have hrOut : χ.rOut = 2 * r / 3 := rfl
-  let δ : ℝ≥0 := ⟨r / 3, by positivity⟩
-  have hδr : (δ : ℝ) = r / 3 := rfl
-  have hδ : 0 < δ := by rw [← NNReal.coe_pos, hδr]; positivity
-  -- The `r / 3`-thickening of the support of the cutoff is the ball of radius `r`.
-  have hthick : thickening (δ : ℝ) (tsupport χ) ⊆ ball z₀ r := by
-    rw [χ.tsupport_eq, hrOut]
-    refine (thickening_closedBall (by exact_mod_cast hδ) (by positivity) z₀).subset.trans ?_
-    exact ball_subset_ball (by rw [hδr]; linarith)
-  have hts : tsupport χ ⊆ ball z₀ r :=
-    (self_subset_thickening (by exact_mod_cast hδ) _).trans hthick
-  have hχb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N' := fun i hi x ↦ hN i hi x
-  refine ⟨fun x ↦ χ x • g x, ?_, ?_,
-    ⟨_, holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset hg (hχ (k + 1)) isOpen_ball hδ
-      hthick hα hM hχb hH⟩, ⟨2 ^ k * N' * M, fun j hj x ↦ ?_⟩, fun x hx ↦ ?_⟩
-  · rw [contDiff_iff_contDiffAt]
-    intro x
-    by_cases hx : x ∈ ball z₀ r
-    · exact (hχ k).contDiffAt.smul (hg.contDiffAt (isOpen_ball.mem_nhds hx))
-    · refine (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hts h)] with y hy
-      simp [hy]
-  · refine (Function.support_smul_subset_left (⇑χ) g).trans ?_
-    rw [χ.support_eq, hrOut]
-    exact ball_subset_closedBall
-  · refine (norm_iteratedFDeriv_cutoff_smul_le hg (hχ k) isOpen_ball hts hj hM
-      (fun i hi x ↦ hχb i (by omega) x) x).trans ?_
-    push_cast
-    gcongr
-    exact one_le_two
-  · dsimp only
-    rw [χ.one_of_mem_closedBall (by rw [hrIn]; exact ball_subset_closedBall hx), one_smul]
-
 /-- **Local regularity.** Near each point of `Ω`, a distributional solution of `\bar∂u = g` with
 `g ∈ C^{k,α}_loc(Ω)` agrees almost everywhere with a map that is `C^{k+1}` with `α`-Hölder
 `(k + 1)`-th derivative on a ball about the point: the Cauchy transform of a cutoff of `g` plus a
@@ -134,8 +83,7 @@ private theorem exists_ball_contDiffOn_ae_eq (hα : 0 < α) (hα1 : α < 1)
       ∃ C, HolderOnWith C α (iteratedFDeriv ℝ (k + 1) v) (ball z₀ r) := by
   have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  have hε2 : ball z₀ (ε / 2) ⊆ Ω :=
-    (ball_subset_ball (half_le_self hε.le)).trans hεΩ
+  have hε2 : ball z₀ (ε / 2) ⊆ Ω := (ball_subset_ball (half_le_self hε.le)).trans hεΩ
   obtain ⟨C, hC⟩ := hgH (closedBall z₀ (ε / 2))
     ((closedBall_subset_ball (half_lt_self hε)).trans hεΩ) (isCompact_closedBall _ _)
   -- Common bounds and a Hölder bound for the data on a ball `B(z₀, r)`.
@@ -143,23 +91,31 @@ private theorem exists_ball_contDiffOn_ae_eq (hα : 0 < α) (hα1 : α < 1)
     (hg.mono hε2).exists_ball_bounds_and_holderOnWith_iteratedFDeriv
       (ball_mem_nhds z₀ (half_pos hε)) hα1.le (hC.mono ball_subset_closedBall)
   have hrΩ : ball z₀ r ⊆ Ω := hrε.trans hε2
-  -- Cut the data off to `f`, equal to `g` on `B(z₀, r / 3)`.
-  obtain ⟨f, hf, hfs, ⟨Hf, hHf⟩, ⟨Mf, hMf⟩, hfg⟩ :=
-    exists_cutoff_eqOn hr (hg.mono hrΩ) hM (hH k le_rfl) hα1.le
+  -- Cut the data off to `f = χ • g`, equal to `g` on `B(z₀, r / 3)`.
+  let χ : ContDiffBump z₀ := ⟨r / 3, 2 * r / 3, by positivity, by linarith⟩
+  have hχ : ContDiff ℝ (k + 1) χ := χ.contDiff.of_le (by exact_mod_cast le_top)
+  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff hχ
+  have hts : tsupport χ ⊆ ball z₀ r :=
+    χ.tsupport_eq.trans_subset (closedBall_subset_ball (by linarith : 2 * r / 3 < r))
+  let f := CkHolderSpace.cutoff (hg.mono hrΩ) hχ isOpen_ball (convex_ball z₀ r) hts hα1.le hM
+    (N := ⟨N, hN0⟩) (fun i hi x ↦ hN i hi x) (hH k le_rfl)
+  have hfs : Function.support f ⊆ closedBall z₀ (2 * r / 3) :=
+    subset_tsupport _ |>.trans <| (CkHolderSpace.tsupport_cutoff_subset ..).trans χ.tsupport_eq.le
+  have hfg : EqOn f g (ball z₀ (r / 3)) := fun x hx ↦ (CkHolderSpace.cutoff_apply ..).trans <| by
+    rw [χ.one_of_mem_closedBall (ball_subset_closedBall hx), one_smul]
+  obtain ⟨Hf, hHf⟩ := f.memHolder_iteratedFDeriv
   obtain ⟨A, hA⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform (F := F) k hα
     hα1 z₀ (r := 2 * r / 3) (R := r / 3) (by positivity) (by positivity)
-  obtain ⟨hTcd, hTH, -⟩ := hA hf hfs hHf hMf
-  -- On `B(z₀, r / 3)`, `u - T f` solves `\bar∂ = 0`, so it is holomorphic up to a null set.
+  obtain ⟨hTcd, hTH, -⟩ := hA f.contDiff hfs hHf (M := ‖f‖₊) fun _ ↦ f.norm_iteratedFDeriv_apply_le
+  -- On `B(z₀, r / 3)`, `u` is the Cauchy transform of `f` plus a holomorphic map.
   let B : Opens ℂ := ⟨ball z₀ (r / 3), isOpen_ball⟩
   have hBΩ : B ≤ Ω := (ball_subset_ball (by linarith)).trans hrΩ
-  have hfi : Integrable f := hf.continuous.integrable_of_hasCompactSupport
+  have hfi : Integrable f := f.contDiff.continuous.integrable_of_hasCompactSupport
     (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall _ _) hfs)
   have hgf : g =ᵐ[volume.restrict (B : Set ℂ)] f :=
     (ae_restrict_mem isOpen_ball.measurableSet).mono fun x hx ↦ (hfg hx).symm
-  have hw := ((h.mono hBΩ).congr_ae_deriv hgf).sub
-    (hasWeakConjWirtingerDerivOn_cauchyTransform hfi B)
-  rw [sub_self] at hw
-  obtain ⟨w, hwd, hwu⟩ := hw.exists_differentiableOn_ae_eq
+  obtain ⟨w, hwd, hwu⟩ :=
+    ((h.mono hBΩ).congr_ae_deriv hgf).exists_differentiableOn_ae_eq_cauchyTransform_add hfi
   have hw' : ContDiffOn ℝ (k + 1 + 1 : ℕ) w (ball z₀ (r / 3)) :=
     (hwd.contDiffOn isOpen_ball).restrict_scalars ℝ
   have hsub : ball z₀ (r / 6) ⊆ ball z₀ (r / 3) := ball_subset_ball (by linarith)
@@ -167,9 +123,8 @@ private theorem exists_ball_contDiffOn_ae_eq (hα : 0 < α) (hα1 : α < 1)
   obtain ⟨Cw, hCw⟩ := hw'.exists_holderOnWith_iteratedFDeriv isOpen_ball hα1.le
     (isCompact_closedBall z₀ (r / 6)) (closedBall_subset_ball (by linarith))
   refine ⟨r / 6, by positivity, hsub.trans hBΩ, cauchyTransform f + w,
-    (hTcd.mono hsub').add ((hw'.of_le (by exact_mod_cast Nat.le_succ _)).mono hsub), ?_, ?_⟩
-  · filter_upwards [ae_restrict_of_ae_restrict_of_subset hsub hwu] with z hz
-    rw [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]
+    (hTcd.mono hsub').add ((hw'.of_le (by exact_mod_cast Nat.le_succ _)).mono hsub),
+    ae_restrict_of_ae_restrict_of_subset hsub hwu, ?_⟩
   · refine ⟨_, ((hTH.mono (hsub.trans ball_subset_closedBall)).add
       (hCw.mono ball_subset_closedBall)).congr fun x hx ↦ ?_⟩
     exact (iteratedFDeriv_add_apply (hTcd.contDiffAt (isOpen_ball.mem_nhds (hsub' hx)))
