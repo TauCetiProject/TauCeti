@@ -14,6 +14,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
@@ -321,6 +323,34 @@ theorem norm_sliceMoment_le {B C : ℝ} (hK : IsCompact K) (hT : ∀ z, ∀ w �
   refine norm_setIntegral_le_of_norm_le_const hK.measure_lt_top fun w hw ↦ ?_
   rw [norm_smul, Real.norm_eq_abs]
   exact mul_le_mul (hC w hw) (hB w hw) (norm_nonneg _) ((abs_nonneg _).trans (hC w hw))
+
+/-! ### Dilation of the normal fibres -/
+
+/-- **Slice moments under a dilation of the normal fibres.** Pulling a two-form `T` back by the
+fibre dilation `Φ_a (z, w) = (z, a w)`, `a ≠ 0`, rescales the weights of its slice moments:
+`∫ g dμ_z(Φ_a^* T) = ∫ g(a⁻¹ w) dμ_z(T)`. The slice density picks up the Jacobian `a²` of the
+dilation of the fibre, which the change of variables `w ↦ a w` cancels. In particular the flux
+`M₀ = ∫ dμ_z` is unchanged, and the moments `M_k = ∫ wᵏ dμ_z` of `Φ_a^* T` are `a⁻ᵏ` times
+those of `T`. No regularity of `T` or `g` is needed. -/
+theorem sliceMoment_compContinuousLinearMap_prodMap_smul (T : E × ℂ → (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ)
+    (g : ℂ → F) {a : ℝ} (ha : a ≠ 0) (z : E) :
+    sliceMoment (fun x ↦ (T (x.1, a • x.2)).compContinuousLinearMap
+        ((ContinuousLinearMap.id ℝ E).prodMap (a • ContinuousLinearMap.id ℝ ℂ))) g z =
+      sliceMoment T (fun w ↦ g (a⁻¹ • w)) z := by
+  set f : ℂ → F := fun w ↦ T (z, w) ![(0, 1), (0, I)] • g (a⁻¹ • w)
+  have hframe : ⇑((ContinuousLinearMap.id ℝ E).prodMap (a • ContinuousLinearMap.id ℝ ℂ)) ∘
+      ![((0 : E), (1 : ℂ)), (0, I)] = fun i ↦ a • ![((0 : E), (1 : ℂ)), (0, I)] i := by
+    ext i : 1
+    fin_cases i <;> simp
+  have hpt (w : ℂ) : (T (z, a • w)).compContinuousLinearMap
+      ((ContinuousLinearMap.id ℝ E).prodMap (a • ContinuousLinearMap.id ℝ ℂ))
+        ![(0, 1), (0, I)] • g w = a ^ 2 • f (a • w) := by
+    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hframe,
+      ContinuousAlternatingMap.map_smul_univ]
+    simp [f, smul_smul, sq, inv_mul_cancel_left₀ (Complex.ofReal_ne_zero.2 ha)]
+  simp only [sliceMoment_def, hpt, integral_smul, Measure.integral_comp_smul,
+    Complex.finrank_real_complex, smul_smul]
+  rw [abs_inv, abs_of_nonneg (sq_nonneg a), mul_inv_cancel₀ (pow_ne_zero 2 ha), one_smul]
 
 /-! ### The flux of a closed form and its pairing with base forms -/
 
