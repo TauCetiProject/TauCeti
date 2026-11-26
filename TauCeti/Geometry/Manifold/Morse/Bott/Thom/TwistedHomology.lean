@@ -19,8 +19,8 @@ all its critical points lie on the pieces. Crossing the level attaches the negat
 the pieces, so the relative homology across the level is the direct sum of the homologies of the
 Thom pairs `(ν⁻ j, (ν⁻ j)₀)`
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`). This file
-applies the Thom isomorphism with orientation-twisted coefficients over a compact base
-(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
+applies the Thom isomorphism with orientation-twisted coefficients
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the namespace
 `TauCeti.VectorBundleOrientationCover`) to every summand. For every commutative ring `K`, `ℤ`
 included, this gives Bott's description of the homology across the level with no orientation of the
 negative normal bundles:
@@ -74,12 +74,12 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 /-- **The Thom pairs of finitely many bundles, with orientation-twisted coefficients.** For
-finitely many vector bundles `V j` of ranks `r j` over compact bases `S j` and a commutative ring
+finitely many vector bundles `V j` of ranks `r j` over bases `S j` and a commutative ring
 `K`, the coproduct of the homologies `Hₙ(V j, (V j)₀; K)` of the Thom pairs is the coproduct, over
 the bundles of rank `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(V j) ⊗ K)` with coefficients
 in the orientation local systems. -/
 private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
-    {ι : Type*} [Finite ι] {S : ι → Type} [∀ j, TopologicalSpace (S j)] [∀ j, CompactSpace (S j)]
+    {ι : Type*} [Finite ι] {S : ι → Type} [∀ j, TopologicalSpace (S j)]
     {r : ι → ℕ} {V : ∀ j, S j → Type} [∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j))]
     [∀ j s, AddCommMonoid (V j s)] [∀ j s, Module ℝ (V j s)] [∀ j s, TopologicalSpace (V j s)]
     [∀ j, FiberBundle (Fin (r j) → ℝ) (V j)] [∀ j, VectorBundle ℝ (Fin (r j) → ℝ) (V j)]
@@ -93,12 +93,12 @@ private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomolo
   -- contribute.
   have hW (j : ι) (hj : ¬r j ≤ n) : IsZero (W j) :=
     isZero_singularHomology_thomPair _ (by rw [finrank_fin_fun]; omega)
-  -- From rank `r j` on, the twisted Thom isomorphism over the compact base shifts the twisted
-  -- homology of the base up by the rank.
+  -- From rank `r j` on, the twisted Thom isomorphism shifts the twisted homology of the base up
+  -- by the rank.
   have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
       ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
     eqToIso (by rw [finrank_fin_fun, Nat.sub_add_cancel j.property]) ≪≫
-      (nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace (F := Fin (r j) → ℝ)
+      (nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (F := Fin (r j) → ℝ)
         (E := V j) ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) K (n - r j)).some
   exact ⟨(biproduct.isoCoproduct W).symm ≪≫
     (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
@@ -251,12 +251,10 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
   have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
-  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many.
   have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have : Finite {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} :=
     h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ And.left
-  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
-    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`,
   -- whose ranks are the indices.
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcompact
