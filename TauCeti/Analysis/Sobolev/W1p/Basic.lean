@@ -702,6 +702,19 @@ theorem W1p.toReal_eLpNorm_gradient_le_norm (u : W1p mu Omega p) {s : Set E}
   (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
     (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl))).trans_eq (Lp.norm_def _).symm
 
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` puts the value of `u` in `Lˢ`. -/
+theorem W1p.memLp_value_of_eLpNorm_le {u : W1p mu Omega p} {s : ENNReal} {S : NNReal}
+    (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    MemLp (W1p.value u) s (mu.restrict Omega) :=
+  memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` in real form. -/
+theorem W1p.toReal_eLpNorm_value_le_mul_norm_gradient {u : W1p mu Omega p} {s : ENNReal}
+    {S : NNReal} (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    (eLpNorm (W1p.value u) s (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient u‖ := by
+  have := ENNReal.toReal_mono (by finiteness) hS
+  rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
+
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
