@@ -29,7 +29,8 @@ into the cotangent bundle of the torus which pulls the canonical form `ω = ∑ 
 to `σ` and whose actions are functions on the base, `I ∘ Φ = a ∘ π` for a map `a : B → ℝ^ι`
 (`TauCeti.CotangentBundle.torusActions`). This is the conclusion of
 `IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`, the sufficiency half of
-Duistermaat's criterion. This file proves the necessity half: such a chart forces
+Duistermaat's criterion. This file proves the necessity half, and with it the criterion itself:
+such a chart forces
 
 * **exact periods**: the period lattice at `b` is spanned by the covectors `p • da_j(b)`
   (`IsLagrangianTorusFibration.periodLattice_eq_closure_of_actionAngle`), so the period forms are
@@ -417,13 +418,15 @@ theorem exists_actionAngle_iff [BoundarylessManifold J B]
       have hab := (ha b).mdifferentiableAt (by simp)
       simp only [α, LinearEquiv.apply_symm_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
         smul_apply, smul_eq_mul]
-      exact congrArg (p * ·) (((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).mvfderiv_comp_apply
-        hab v).trans (congrArg (· j) (mvfderiv_apply_eq_mfderiv_apply a b v)))
+      exact congrArg (p * ·) ((mvfderiv_apply_apply hab v j).symm.trans
+        (congrArg (· j) (mvfderiv_apply_eq_mfderiv_apply a b v)))
     have hαΛ (b : B) : (fun j ↦ (SmoothForm.degreeOneEquiv (α j) b : F →L[ℝ] ℝ)) =
         fun j ↦ p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp
           (mfderiv J 𝓘(ℝ, ι → ℝ) a b) : F →L[ℝ] ℝ) :=
       funext fun j ↦ ContinuousLinearMap.ext fun v ↦ by
         rw [hα]
+        -- Both sides are `p * da_b(v)_j`, read through the definitional identification
+        -- `TangentSpace J b = F`, which `simp` does not see through.
         rfl
     have hli (b : B) : LinearIndependent ℝ fun j ↦ SmoothForm.degreeOneEquiv (α j) b := by
       rw [hαΛ]
@@ -431,9 +434,11 @@ theorem exists_actionAngle_iff [BoundarylessManifold J B]
     have hframe : IsLocalFrameOn J (F →L[ℝ] ℝ) ∞
         (fun j b ↦ SmoothForm.degreeOneEquiv (α j) b) univ :=
       ⟨fun {b} _ ↦ hli b, fun {b} _ ↦ ((hli b).span_eq_top_of_card_eq_finrank'
-        (by rw [hι, ContinuousLinearMap.dual_finrank_eq]; rfl)).ge,
+        (by simp [hι, ContinuousLinearMap.dual_finrank_eq])).ge,
         fun j ↦ (SmoothForm.degreeOneEquiv (α j)).contMDiff.contMDiffOn⟩
     obtain ⟨Φ, hΦ, hΦi, hΦσ, hΦa, -⟩ := h.exists_actionAngle_of_lagrangian_section hσc hs hframe
+      -- The two spanning families agree up to the definitional identification
+      -- `TangentSpace J b = F`.
       (fun b ↦ (hΛ b).trans (by rw [hαΛ]; rfl)) p hsm hsσ ha hα hinj
     exact ⟨Φ, hΦ, hΦi, hΦσ, hΦa⟩
 

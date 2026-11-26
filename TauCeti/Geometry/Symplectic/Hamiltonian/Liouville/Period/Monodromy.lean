@@ -45,11 +45,12 @@ So nontrivial linear monodromy is an obstruction to global action coordinates.
 
 Conversely, over a connected base, trivial linear monodromy gives a global frame of the period
 lattice. A continuous covector field whose values are periods is locally exact: near every point
-it is the differential of an integer combination of `2π` times local action coordinates
-(`IsLagrangianTorusFibration.exists_contMDiffOn_eq_mvfderiv_of_continuous`), since two continuous
-lifts of a connected open set to the period lattice bundle which agree at one point agree
-everywhere. Trivial monodromy lifts the identity of `B` to continuous sections of periods through
-a basis of one period lattice, which span every period lattice
+it is the differential of a smooth function
+(`IsLagrangianTorusFibration.exists_contMDiffOn_eq_mvfderiv_of_continuous`). The proof takes an
+integer combination of `2π` times local action coordinates, using that two continuous lifts of a
+connected open set to the period lattice bundle which agree at one point agree everywhere.
+Trivial monodromy lifts the identity of `B` to continuous sections of periods through a basis of
+one period lattice, which span every period lattice
 (`TauCeti.exists_frame_of_latticeMonodromyHom_eq_one`). So they are closed one-forms
 `α_1, …, α_n` forming a smooth frame of `T*B` with `Λ_b = ℤ α_1(b) + ⋯ + ℤ α_n(b)` for every `b`
 (`IsLagrangianTorusFibration.exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one`), the
@@ -136,7 +137,7 @@ theorem latticeMonodromyHom_eq_one_of_periodLattice_eq_closure_mvfderiv {ι : Ty
 
 /-- **Continuous sections of periods are locally exact.** A continuous covector field `s` on the
 base of a regular Lagrangian torus fibration whose values are periods is, near every point, the
-differential of a smooth function, an integer combination of `2π` times local action coordinates. -/
+differential of a smooth function. -/
 theorem exists_contMDiffOn_eq_mvfderiv_of_continuous [BoundarylessManifold J B]
     {s : ∀ b, TangentSpace J b →L[ℝ] ℝ}
     (hs : Continuous fun b ↦ TotalSpace.mk' (F →L[ℝ] ℝ)
@@ -158,7 +159,7 @@ theorem exists_contMDiffOn_eq_mvfderiv_of_continuous [BoundarylessManifold J B]
     have hab := (ha b hb).mdifferentiableAt (by simp)
     have hj (j : Fin (finrank ℝ F)) (v : TangentSpace J b) :
         mvfderiv J (fun c ↦ a c j) b v = mvfderiv J a b v j :=
-      (ContinuousLinearMap.proj j : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ).mvfderiv_comp_apply hab v
+      (mvfderiv_apply_apply hab v j).symm
     ext v
     rw [ℓ.mvfderiv_comp_apply hab]
     simp only [ℓ, hj, smul_apply, FunLike.coe_sum,
@@ -180,7 +181,7 @@ theorem exists_contMDiffOn_eq_mvfderiv_of_continuous [BoundarylessManifold J B]
       |>.continuousWithinAt
   refine ⟨ℓ ∘ a, W, hV.connectedComponentIn, mem_connectedComponentIn hb₀, fun b hb ↦
     (ℓ.contMDiff.contMDiffAt.comp b (ha b (hWV hb))).contMDiffWithinAt, ?_⟩
-  exact eq_of_continuousOn (h.isCoveringMap_latticeProj_periodLattice hσc)
+  exact eqOn_of_continuousOn_of_mem_lattice (h.isCoveringMap_latticeProj_periodLattice hσc)
     isPreconnected_connectedComponentIn hs.continuousOn (hcont.mono hWV) (fun b _ ↦ hsΛ b)
     (fun b hb ↦ hdgΛ b (hWV hb)) (mem_connectedComponentIn hb₀) (hk.trans (hdg b₀ hb₀).symm)
 
@@ -188,9 +189,7 @@ theorem exists_contMDiffOn_eq_mvfderiv_of_continuous [BoundarylessManifold J B]
 regular Lagrangian torus fibration be connected, and let its linear monodromy at some point be
 trivial. Then there are closed one-forms `α_1, …, α_n` on `B`, `n = dim B`, forming a smooth frame
 of `T*B`, which span the period lattice over `ℤ` at every point:
-`Λ_b = ℤ α_1(b) + ⋯ + ℤ α_n(b)`.
-Near every point each `α_i` is the differential of an integer combination of `2π` times local
-action coordinates. -/
+`Λ_b = ℤ α_1(b) + ⋯ + ℤ α_n(b)`. -/
 theorem exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one [BoundarylessManifold J B]
     [PreconnectedSpace B]
     (hL : IsCoveringMap (latticeProj (F →L[ℝ] ℝ) (E := fun b : B ↦ TangentSpace J b →L[ℝ] ℝ)

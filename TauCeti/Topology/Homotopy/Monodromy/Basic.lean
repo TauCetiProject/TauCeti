@@ -271,17 +271,9 @@ theorem _root_.IsCoveringMap.exists_section_iff_forall_monodromy_eq [PathConnect
     have h := hp.monodromy_section s.continuous (fun y ↦ congrFun hps y) γ.toPath
     rwa [show (⟨s x, congrFun hps x⟩ : p ⁻¹' {x}) = e from Subtype.ext hsx] at h
   · intro h
-    have hle : (FundamentalGroup.map (ContinuousMap.id X) x).range ≤
-        (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.property).range := by
-      rintro _ ⟨γ, rfl⟩
-      -- The identity of the base induces the identity of `π₁(X, x)`.
-      rw [show FundamentalGroup.map (ContinuousMap.id X) x γ = γ by
-        obtain ⟨q⟩ := γ
-        induction q using Quotient.inductionOn
-        rfl]
-      exact (hp.monodromy_eq_self_iff_mem_range e γ).1 (h γ)
-    obtain ⟨s, ⟨hsx, hps⟩, -⟩ := hp.existsUnique_continuousMap_lifts_of_range_le
-      (f := ContinuousMap.id X) (a₀ := x) (e₀ := e) e.property hle
+    obtain ⟨s, ⟨hsx, hps⟩, -⟩ := hp.existsUnique_continuousMap_lifts_of_range_le_subgroup
+      (f := ContinuousMap.id X) (a₀ := x) (e₀ := e) e.property ⊤ le_top
+      fun γ _ ↦ (hp.monodromy_eq_self_iff_mem_range e γ).1 (h γ)
     exact ⟨s, hsx, hps⟩
 
 /-! ### The fibre as a coset space -/

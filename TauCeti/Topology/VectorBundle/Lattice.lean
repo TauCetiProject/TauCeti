@@ -45,7 +45,7 @@ lattice family spanned by a global continuous frame has trivial monodromy
 (`TauCeti.latticeMonodromyHom_eq_one`).
 
 Two continuous sections with values in `L` which agree at one point agree on every preconnected
-set on which they are continuous (`TauCeti.eq_of_continuousOn`).
+set on which they are continuous (`TauCeti.eqOn_of_continuousOn_of_mem_lattice`).
 
 Conversely, over a path-connected, locally path-connected base, trivial monodromy gives global
 frames. If monodromy around every loop at `x` is trivial, the lifting criterion gives a continuous
@@ -427,8 +427,8 @@ include hL in
 /-- **Sections of a lattice family are rigid.** Two sections of `E` which are continuous on a
 preconnected set `U`, take values in `L` there and agree at one point of `U` agree on all of
 `U`. -/
-theorem eq_of_continuousOn {s t : ∀ b, E b} {U : Set B} (hU : IsPreconnected U)
-    (hs : ContinuousOn (fun b ↦ TotalSpace.mk' F b (s b)) U)
+theorem eqOn_of_continuousOn_of_mem_lattice {s t : ∀ b, E b} {U : Set B}
+    (hU : IsPreconnected U) (hs : ContinuousOn (fun b ↦ TotalSpace.mk' F b (s b)) U)
     (ht : ContinuousOn (fun b ↦ TotalSpace.mk' F b (t b)) U) (hsL : ∀ b ∈ U, s b ∈ L b)
     (htL : ∀ b ∈ U, t b ∈ L b) {b₀ : B} (hb₀ : b₀ ∈ U) (hst : s b₀ = t b₀) :
     ∀ b ∈ U, s b = t b := by
