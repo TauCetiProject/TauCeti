@@ -191,6 +191,15 @@ theorem IsTwoBoundary.isUpperTriangular_mul_mul {M T T' : Matrix (Fin (n + 1)) (
   rw [heq]
   exact (hM.isUpperTriangular_mul hT).mul_isUpperTriangular hT'
 
+/-- For `r + s < n`, the products of matrices supported at the two-boundary positions vanish:
+`(M - 1) (M' - 1) = 0` whenever `M` and `M'` satisfy the two-boundary support condition. -/
+theorem IsTwoBoundary.sub_one_mul_sub_one_eq_zero (h : r + s < n)
+    {M M' : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hM : IsTwoBoundary n r s M)
+    (hM' : IsTwoBoundary n r s M') : (M - 1) * (M' - 1) = 0 := by
+  rw [isTwoBoundary_iff_supported] at hM hM'
+  ext i j
+  exact hM.mul_apply_eq_zero hM' (by omega)
+
 end Ring
 
 namespace UpperUnitriangularGroup
