@@ -45,8 +45,9 @@ collision set `q = 0`.
   (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace`).
 
 Central-force motions are reversible: `s ↦ (q(-s), -p(-s))` is again a motion
-(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`), as for the radial
-motion (`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_effectivePotential`).
+(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`). Its case `V = ℝ`
+with the effective potential is the reversibility of the radial motion
+(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_effectivePotential`).
 
 The Kepler potential `-κ / r`, `κ > 0`, is attractive; its collision domain and collision orbits
 are treated in `TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Collision`.
@@ -68,6 +69,33 @@ open Set
 open scoped InnerProductSpace Manifold ContDiff
 
 namespace TauCeti
+
+/-! ### Time reversal -/
+
+section TimeReversal
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {m : ℝ} {U : ℝ → ℝ}
+
+/-- **Time reversal of central-force motion.** If `γ = (q, p)` solves Hamilton's equations for
+`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` at time `-t`, off the collision set and with `U` differentiable
+at `‖q‖`, then the reversed motion `s ↦ (q(-s), -p(-s))` solves them at time `t`. -/
+theorem hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian {γ : ℝ → V × V}
+    {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (centralForceHamiltonian m U) (γ (-t))) (-t))
+    (hq : (γ (-t)).1 ≠ 0) (hU : DifferentiableAt ℝ U ‖(γ (-t)).1‖) :
+    HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        ((γ (-t)).1, -(γ (-t)).2)) t := by
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU.hasDerivAt hq] at hγ
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
+    (x := ((γ (-t)).1, -(γ (-t)).2)) hU.hasDerivAt hq]
+  have h := ((ContinuousLinearMap.id ℝ V).prodMap (-ContinuousLinearMap.id ℝ V)).hasFDerivAt
+    |>.comp_hasDerivAt t (hγ.scomp t (hasDerivAt_neg t))
+  exact h.congr_deriv (by ext <;> simp)
+
+end TimeReversal
 
 /-! ### The reduced radial motion -/
 
@@ -132,13 +160,10 @@ theorem hasDerivAt_reverse_hamiltonianVectorField_effectivePotential {γ : ℝ �
     HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
       ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U)) ((γ (-t)).1, -(γ (-t)).2)) t := by
-  have h₁ := (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential hγ hr
-    hU).scomp t (hasDerivAt_neg t)
-  have h₂ := (hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential hγ hr
-    hU).scomp t (hasDerivAt_neg t)
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
-    hU.hasDerivAt hr]
-  exact (h₁.prodMk h₂.neg).congr_deriv (by ext <;> simp [neg_div])
+  -- This is the time reversal of central-force motion on `V = ℝ` in the potential `U_ℓ`.
+  refine hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian hγ hr.ne' ?_
+  rw [Real.norm_of_nonneg hr.le]
+  exact (hasDerivAt_effectivePotential hU.hasDerivAt hr.ne').differentiableAt
 
 /-- **Radial motions avoiding collision in the past move inwards.** Let `m > 0`, and let
 `γ = (r, p_r)` be an integral curve of the reduced Hamiltonian vector field at all times `t ≤ a`,
@@ -266,24 +291,6 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
   -- But the particle thrown at the centre has radial momentum `-‖u‖ ≠ 0`.
   rw [radialMomentum_eq_zero_iff, hγ₀] at h
   simp [hu] at h
-
-/-- **Time reversal of central-force motion.** If `γ = (q, p)` solves Hamilton's equations for
-`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` at time `-t`, off the collision set and with `U` differentiable
-at `‖q‖`, then the reversed motion `s ↦ (q(-s), -p(-s))` solves them at time `t`. -/
-theorem hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian {γ : ℝ → V × V}
-    {t : ℝ}
-    (hγ : HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m U) (γ (-t))) (-t))
-    (hq : (γ (-t)).1 ≠ 0) (hU : DifferentiableAt ℝ U ‖(γ (-t)).1‖) :
-    HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
-      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
-        ((γ (-t)).1, -(γ (-t)).2)) t := by
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU.hasDerivAt hq] at hγ
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
-    (x := ((γ (-t)).1, -(γ (-t)).2)) hU.hasDerivAt hq]
-  have h := ((ContinuousLinearMap.id ℝ V).prodMap (-ContinuousLinearMap.id ℝ V)).hasFDerivAt
-    |>.comp_hasDerivAt t (hγ.scomp t (hasDerivAt_neg t))
-  exact h.congr_deriv (by ext <;> simp)
 
 /-- **Motions with zero angular momentum stay on a ray.** Let `γ = (q, p)` solve Hamilton's
 equations for `H(q, p) = ‖p‖² / (2m) + U(‖q‖)` on a preconnected set `s` of times, avoiding the
