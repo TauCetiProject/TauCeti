@@ -235,8 +235,7 @@ private theorem det_toMatrix_periodComparison {n : ℕ} (b : Basis (Fin n) E (ρ
     ext i j
     rw [hcol, ← (b j).prop g, periodAction_eq_baseChange,
       ← LinearMap.toMatrix_mulVec_repr (v₁ := cV) (v₂ := cV)]
-    simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, Algebra.TensorProduct.basis_repr_rTensor,
-      hcol, cV]
+    simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, hcol, cV]
   conv_lhs => rw [hM]
   rw [Matrix.det_mul, ← RingHom.map_det, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
     LinearMap.det_toMatrix, MulSemiringAction.toRingHom_apply]

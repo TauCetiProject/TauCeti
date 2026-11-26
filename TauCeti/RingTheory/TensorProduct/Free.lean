@@ -53,6 +53,7 @@ theorem lift_bijective_of_basis {R S U T : Type*} [CommSemiring R] [CommSemiring
 
 /-- The coordinates of `(φ ⊗ id) x` in the basis `1 ⊗ bᵢ` of `A' ⊗[R] M` are `φ` applied to the
 coordinates of `x` in the basis `1 ⊗ bᵢ` of `A ⊗[R] M`. -/
+@[simp]
 theorem basis_repr_rTensor {R A A' M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     [Semiring A'] [Algebra R A'] [AddCommMonoid M] [Module R M] (b : Module.Basis ι R M)
     (φ : A →ₐ[R] A') (x : A ⊗[R] M) (i : ι) :
