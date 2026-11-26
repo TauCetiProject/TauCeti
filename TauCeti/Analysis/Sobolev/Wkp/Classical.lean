@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -130,11 +131,8 @@ theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p
       subst i
       have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
           eLpNorm (value 0 u) p (mu.restrict Omega) := by
-        refine eLpNorm_congr_norm_ae
-          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
-            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
-        filter_upwards [hu] with x hx
-        rw [norm_iteratedFDeriv_zero, hx]
+        rw [eLpNorm_iteratedFDeriv_zero]
+        exact eLpNorm_congr_ae hu.symm
       simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
   | succ k ih =>
       intro i hi
@@ -157,10 +155,7 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
       intro i hi
       have hi0 : i = 0 := by omega
       subst i
-      refine (MemLp.ae_eq hu (Lp.memLp (value 0 u))).congr_norm
-        ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
-          (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
-      exact .of_forall fun x => (norm_iteratedFDeriv_zero (f := f) (x := x)).symm
+      exact memLp_iteratedFDeriv_zero_iff.2 (MemLp.ae_eq hu (Lp.memLp (value 0 u)))
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
@@ -179,13 +174,7 @@ derivative seminorm for any almost-everywhere representative on the domain. -/
 theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
     {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
-  rw [Lp.norm_def, lpNorm]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable _).congr hu)) ?_
-  filter_upwards [hu] with x hx
-  rw [hx, norm_iteratedFDeriv_zero]
+  rw [lpNorm_iteratedFDeriv_zero, Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
 
 /-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
 function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
@@ -218,15 +207,13 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
     ∀ (k : ℕ) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega)) →
       ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f
-  | 0, f, hf, hmem => by
+  | 0, f, _, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 le_rfl).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 le_rfl)
       exact ⟨hv.toLp f, by rw [value_zero]; exact hv.coeFn_toLp⟩
   | 1, f, hf, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 (by simp)).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 (by simp))
       have hg : MemLp (gradient f) p (mu.restrict Omega) :=
         (hmem 1 le_rfl).congr_norm
           (((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn

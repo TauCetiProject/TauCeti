@@ -286,7 +286,7 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f * g)) 2) ∧
         semiclassicalSobolevNorm k h (f * g) ≤
           C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) le_rfl
+  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) ENNReal.one_lt_two
     (by rw [ENNReal.toReal_ofNat, mul_comm]; exact_mod_cast hk)
   refine ⟨max C 0, le_max_right C 0, fun h hh f g hf hg hfm hgm ↦ ?_⟩
   obtain ⟨hf', hfm'⟩ := contDiff_comp_smul_and_memLp hf hfm hh.ne'

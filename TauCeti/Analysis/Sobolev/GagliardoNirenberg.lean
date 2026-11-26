@@ -16,11 +16,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Convex.Sequence.LogConvex
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Module.Multilinear.Basis
@@ -664,38 +666,6 @@ section Bilinear
 variable {G H : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [NormedAddCommGroup H]
   [NormedSpace ℝ H]
 
-omit [μ.IsAddHaarMeasure] in
-/-- The case `k = 0` of the Moser product estimate: `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`. -/
-private theorem eLpNorm_iteratedFDeriv_zero_bilinear_le {p : ℝ≥0∞} (hp1 : 1 ≤ p)
-    (B : F →L[ℝ] G →L[ℝ] H) {u : E → F} {v : E → G} (hu : ContDiff ℝ 0 u)
-    (hv : ContDiff ℝ 0 v) :
-    eLpNorm (iteratedFDeriv ℝ 0 (fun x ↦ B (u x) (v x))) p μ ≤
-      (1 : ℝ≥0) * ‖B‖ₑ * (eLpNorm u ∞ μ * eLpNorm (iteratedFDeriv ℝ 0 v) p μ +
-        eLpNorm (iteratedFDeriv ℝ 0 u) p μ * eLpNorm v ∞ μ) := by
-  have h := B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv (k := 0) le_rfl hp1
-    (q := fun _ ↦ ∞) (r := fun _ ↦ p) (fun _ _ ↦ inferInstance)
-  have h0 : eLpNorm (iteratedFDeriv ℝ 0 u) ∞ μ = eLpNorm u ∞ μ :=
-    eLpNorm_congr_norm_ae (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
-      hu.continuous.aestronglyMeasurable
-      (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)
-  simp only [zero_add, Finset.range_one, Finset.sum_singleton, Nat.choose_self, Nat.cast_one,
-    mul_one, h0] at h
-  refine h.trans ?_
-  rw [ENNReal.coe_one, one_mul, mul_assoc]
-  gcongr
-  exact le_self_add
-
-private theorem natCast_mul_inv_inv_div {p : ℝ≥0∞} {k : ℕ} (hk : k ≠ 0) (i : ℕ) :
-    (k : ℝ≥0∞) * (((i : ℝ≥0∞) * p⁻¹ / k)⁻¹)⁻¹ = i * p⁻¹ := by
-  rw [inv_inv, ENNReal.mul_div_cancel (by exact_mod_cast hk) (by simp)]
-
-private theorem holderTriple_inv_div {p : ℝ≥0∞} {k : ℕ} (hk : k ≠ 0) {i : ℕ} (hi : i ≤ k) :
-    ENNReal.HolderTriple ((i : ℝ≥0∞) * p⁻¹ / k)⁻¹ (((k - i : ℕ) : ℝ≥0∞) * p⁻¹ / k)⁻¹ p := by
-  constructor
-  rw [inv_inv, inv_inv, ENNReal.div_add_div_same, ← add_mul, ← Nat.cast_add,
-    Nat.add_sub_cancel' hi, mul_comm, ENNReal.mul_div_cancel_right (by exact_mod_cast hk)
-    (by simp)]
-
 /-- The product of the two Gagliardo–Nirenberg bounds for `D^i u` and `D^(k - i) v` is at most the
 sum of the two endpoint products. -/
 private theorem mul_rpow_mul_mul_rpow_le {k i : ℕ} (hk : k ≠ 0) (hi : i ≤ k)
@@ -736,23 +706,31 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le {p : ℝ≥0∞} (hp : 2 ≤ p
           eLpNorm (iteratedFDeriv ℝ k u) p μ * eLpNorm v ∞ μ) := by
   have hp1 : 1 ≤ p := le_trans (by norm_num) hp
   rcases eq_or_ne k 0 with rfl | hk
-  · exact ⟨1, fun B u v hu _ hv _ ↦ eLpNorm_iteratedFDeriv_zero_bilinear_le hp1 B hu hv⟩
+  · -- `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`.
+    refine ⟨1, fun B u v hu _ hv _ ↦ ?_⟩
+    rw [eLpNorm_iteratedFDeriv_zero, eLpNorm_iteratedFDeriv_zero, eLpNorm_iteratedFDeriv_zero,
+      ENNReal.coe_one, one_mul]
+    refine (eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := ∞) (q := p) B
+      hu.continuous.aestronglyMeasurable hv.continuous.aestronglyMeasurable).trans ?_
+    rw [mul_assoc]
+    exact mul_le_mul_right le_self_add _
   set q : ℕ → ℝ≥0∞ := fun i ↦ ((i : ℝ≥0∞) * p⁻¹ / k)⁻¹
   have hGNu : ∀ i ≤ k, ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm (iteratedFDeriv ℝ i u) (q i) μ ≤ C * eLpNorm u ∞ μ ^ (1 - (i : ℝ) / k) *
         eLpNorm (iteratedFDeriv ℝ k u) p μ ^ ((i : ℝ) / k) := fun i hi ↦
-    exists_eLpNorm_iteratedFDeriv_le hp hp' hk hi (natCast_mul_inv_inv_div hk i)
+    exists_eLpNorm_iteratedFDeriv_le hp hp' hk hi (ENNReal.natCast_mul_inv_inv_div hk i)
   have hGNv : ∀ i ≤ k, ∃ C : ℝ≥0, ∀ v : E → G, ContDiff ℝ k v → HasCompactSupport v →
       eLpNorm (iteratedFDeriv ℝ (k - i) v) (q (k - i)) μ ≤
         C * eLpNorm v ∞ μ ^ (1 - ((k - i : ℕ) : ℝ) / k) *
           eLpNorm (iteratedFDeriv ℝ k v) p μ ^ (((k - i : ℕ) : ℝ) / k) := fun i _ ↦
-    exists_eLpNorm_iteratedFDeriv_le hp hp' hk (Nat.sub_le k i) (natCast_mul_inv_inv_div hk _)
+    exists_eLpNorm_iteratedFDeriv_le hp hp' hk (Nat.sub_le k i)
+      (ENNReal.natCast_mul_inv_inv_div hk _)
   choose! CF hCF using hGNu
   choose! CG hCG using hGNv
   refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ≥0) * CF i * CG i,
     fun B u v hu hc hv hc' ↦ ?_⟩
   refine (B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv le_rfl hp1 (q := q)
-    (r := fun i ↦ q (k - i)) (fun i hi ↦ holderTriple_inv_div hk hi)).trans ?_
+    (r := fun i ↦ q (k - i)) (fun i hi ↦ ENNReal.HolderTriple.natCast_mul_inv_div hk hi)).trans ?_
   rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
