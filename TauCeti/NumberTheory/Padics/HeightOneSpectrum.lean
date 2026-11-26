@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
 # Units at the height-one primes of `ℚ`
@@ -24,6 +25,8 @@ corresponding to a rational prime `p` with the ideal `(p)`.
   prime, as an instance.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
+* `Rat.HeightOneSpectrum.valuation_eq_one_of_not_dvd`: a rational number whose numerator
+  and denominator are prime to `p` is a unit at `v`.
 * `Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm`: the height-one prime of `R` corresponding to
   the prime `p` is `(p)`.
 * `Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff`: a proper ideal lies over it exactly
@@ -52,6 +55,23 @@ instance fact_prime_natGenerator {R : Type*} [CommRing R] [Algebra R ℚ] [IsInt
 variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] [IsDedekindDomain R]
   [IsFractionRing R ℚ]
 
+omit [IsFractionRing R ℚ] in
+/-- The rational prime corresponding to `v` under `primesEquiv` is `natGenerator v`. -/
+theorem coe_primesEquiv (v : HeightOneSpectrum R) : (primesEquiv v : ℕ) = natGenerator v :=
+  rfl
+
+omit [IsFractionRing R ℚ] in
+/-- The rational prime of the height-one prime corresponding to `p` under `primesEquiv` is `p`. -/
+@[simp]
+theorem natGenerator_primesEquiv_symm (p : Nat.Primes) :
+    natGenerator ((primesEquiv (R := R)).symm p) = p := by
+  rw [← coe_primesEquiv, Equiv.apply_symm_apply]
+
+omit [IsFractionRing R ℚ] in
+/-- Distinct height-one primes have distinct rational primes. -/
+theorem natGenerator_injective : Function.Injective (natGenerator (R := R)) := fun v w h ↦
+  primesEquiv.injective <| Subtype.ext <| by rw [coe_primesEquiv, coe_primesEquiv, h]
+
 /-- A nonzero rational number is a unit at the height-one prime `v` exactly when its `p`-adic
 valuation vanishes, for `p` the rational prime corresponding to `v`. -/
 theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : ℚ}
@@ -59,6 +79,15 @@ theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : 
   have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).property⟩
   rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
   simp [Rat.padicValuation, hx]
+
+/-- A rational number whose numerator and denominator are prime to the rational prime
+`natGenerator v` is a unit at the height-one prime `v`. -/
+theorem valuation_eq_one_of_not_dvd (v : HeightOneSpectrum R) {x : ℚ}
+    (hnum : ¬natGenerator v ∣ x.num.natAbs) (hden : ¬natGenerator v ∣ x.den) :
+    v.valuation ℚ x = 1 := by
+  have hx : x ≠ 0 := by rintro rfl; exact hnum (by simp)
+  rw [valuation_eq_one_iff_padicValRat_eq_zero v hx, coe_primesEquiv]
+  exact (padicValRat.eq_zero_iff hx).2 ⟨hnum, hden⟩
 
 omit [IsFractionRing R ℚ] in
 /-- The height-one prime of `R` corresponding to the prime `p` under `primesEquiv` is the ideal
