@@ -37,9 +37,9 @@ exponents have unbounded denominators, shows that the Puiseux field is a proper 
 * `TauCeti.puiseuxField.single K q a`: the monomial `a t ^ q` as a Puiseux series.
 * `TauCeti.puiseuxField.levelEmbedding K n`: the level-`n` embedding `K⸨X⸩ →ₐ[K] puiseuxField K`,
   `X ↦ t ^ (1 / n)`.
-* The `K⸨X⸩`-algebra and `K⟦X⟧`-algebra (`TauCeti.puiseuxField.algebraPowerSeries`) structures on
-  `puiseuxField K` given by `levelEmbedding K 1`, with their `IsScalarTower` and
-  `Module.IsTorsionFree` instances.
+* The `K⸨X⸩`-algebra, `K⟦X⟧`-algebra (`TauCeti.puiseuxField.algebraPowerSeries`), and
+  `K⟮X⟯`-algebra (`TauCeti.puiseuxField.algebraRatFunc`) structures on `puiseuxField K` given by
+  `levelEmbedding K 1`, with their `IsScalarTower` and `Module.IsTorsionFree` instances.
 
 ## Main results
 
@@ -66,7 +66,7 @@ exponents have unbounded denominators, shows that the Puiseux field is a proper 
 public section
 
 open HahnSeries LaurentSeries Polynomial
-open scoped LaurentSeries PowerSeries
+open scoped LaurentSeries PowerSeries RatFunc
 
 namespace TauCeti
 
@@ -347,6 +347,44 @@ instance isTorsionFree_powerSeries : Module.IsTorsionFree K⟦X⟧ (puiseuxField
 theorem algebraMap_powerSeries_X :
     algebraMap K⟦X⟧ (puiseuxField K) PowerSeries.X = single K 1 1 := by
   rw [algebraMap_powerSeries_apply, PowerSeries.coe_X, algebraMap_laurentSeries_single_one]
+
+variable (K) in
+/-- The Puiseux field is a `K⟮X⟯`-algebra through `K⟮X⟯ → K⸨X⸩ → puiseuxField K`. -/
+noncomputable instance algebraRatFunc : Algebra K⟮X⟯ (puiseuxField K) :=
+  ((algebraMap K⸨X⸩ (puiseuxField K)).comp (algebraMap K⟮X⟯ K⸨X⸩)).toAlgebra
+
+/-- The `K⟮X⟯`-algebra map into the Puiseux field factors through `K⸨X⸩`. -/
+theorem algebraMap_ratFunc_apply (r : K⟮X⟯) :
+    algebraMap K⟮X⟯ (puiseuxField K) r =
+      algebraMap K⸨X⸩ (puiseuxField K) (algebraMap K⟮X⟯ K⸨X⸩ r) :=
+  (rfl)
+
+/-- As a Hahn series, the image of `r : K⟮X⟯` in the Puiseux field is its level-one embedding. -/
+@[simp]
+theorem coe_algebraMap_ratFunc (r : K⟮X⟯) :
+    (algebraMap K⟮X⟯ (puiseuxField K) r : HahnSeries ℚ K) =
+      ramifiedEmbedding K 1 (algebraMap K⟮X⟯ K⸨X⸩ r) :=
+  (rfl)
+
+/-- Scalar actions of `K⟮X⟯` and `K⸨X⸩` on `puiseuxField K` form a scalar tower. -/
+instance isScalarTower_ratFunc_laurentSeries :
+    IsScalarTower K⟮X⟯ K⸨X⸩ (puiseuxField K) :=
+  IsScalarTower.of_algebraMap_eq' rfl
+
+/-- Scalar actions of `K` and `K⟮X⟯` on `puiseuxField K` form a scalar tower. -/
+instance isScalarTower_ratFunc : IsScalarTower K K⟮X⟯ (puiseuxField K) :=
+  IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [algebraMap_ratFunc_apply, IsScalarTower.algebraMap_apply K K[X] K⟮X⟯,
+      Polynomial.algebraMap_eq, ← RatFunc.coePolynomial_eq_algebraMap, ← RatFunc.coe_coe,
+      Polynomial.coe_C, PowerSeries.coe_C, ← _root_.LaurentSeries.algebraMap_apply,
+      ← IsScalarTower.algebraMap_apply K K⸨X⸩]
+
+/-- The `K⟮X⟯`-algebra map sends `RatFunc.X` to the Puiseux parameter `t = single K 1 1`. -/
+@[simp]
+theorem algebraMap_ratFunc_X :
+    algebraMap K⟮X⟯ (puiseuxField K) RatFunc.X = single K 1 1 := by
+  rw [algebraMap_ratFunc_apply, ← RatFunc.algebraMap_X, ← RatFunc.coePolynomial_eq_algebraMap,
+    ← RatFunc.coe_coe, Polynomial.coe_X, PowerSeries.coe_X, algebraMap_laurentSeries_single_one]
 
 /-! ### A series with exponents of unbounded denominator -/
 
