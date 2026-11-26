@@ -47,15 +47,19 @@ is why the base is assumed boundaryless.
   every `r`-jet is the jet of a section, `C^n` at the base point for any `n`
   (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`) and `C^n` near it when `M` and `V` are `C^n`
   (`TauCeti.JetBundle.exists_contMDiffOn_jet_eq`). The jet is local
-  (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`), linear on sections that are `C^r` at the base
-  point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and vanishes exactly
-  when the derivatives of order at most `r` of the local representative do
+  (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`): it is the symmetrization of the derivatives of
+  any function agreeing with the local representative near the base point
+  (`TauCeti.JetBundle.jet_eq_symmetrizeJets_of_eventuallyEq`). It is linear on sections that are
+  `C^r` at the base point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and
+  vanishes exactly when the derivatives of order at most `r` of the local representative do
   (`TauCeti.JetBundle.jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero`). For the trivial
   bundle over a model space it is the tuple of iterated derivatives of the section
   (`TauCeti.JetBundle.toJets_jet_trivial`).
-* `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which reads in every
-  chart as the truncation of symmetric jets (`TauCeti.JetBundle.coordChange_truncate`) and sends
-  `jʳs(x)` to `jʳ's(x)` (`TauCeti.JetBundle.truncate_jet`).
+* `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which is the
+  truncation of symmetric jets in each fibre (`TauCeti.JetBundle.truncate_apply`), is onto
+  (`TauCeti.JetBundle.truncate_surjective`), reads in every chart as the truncation of symmetric
+  jets (`TauCeti.JetBundle.coordChange_truncate`) and sends `jʳs(x)` to `jʳ's(x)`
+  (`TauCeti.JetBundle.truncate_jet`).
 * `TauCeti.JetBundle.value`: the projection `JᵣV → V`, which sends `jʳs(x)` to `s x`
   (`TauCeti.JetBundle.value_jet`).
 
@@ -349,8 +353,10 @@ theorem jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero {s : ∀ x, V x} 
   rw [map_zero, toJets_jet hs, funext_iff]
   exact ⟨fun h k hk ↦ h ⟨k, Nat.lt_succ_of_le hk⟩, fun h k ↦ h k k.is_le⟩
 
-/-- The `r`-jet of a section only depends on its local representative near the image of `x`. -/
-private theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
+/-- The `r`-jet of a section at `x` is the symmetrization of the iterated derivatives at
+`extChartAt I x x`, of orders at most `r`, of any function `g` agreeing with the local
+representative of the section near that point. -/
+theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
     (hg : FirstJetBundle.localRep I F s x =ᶠ[𝓝 (extChartAt I x x)] g) :
     jet I F r s x = symmetrizeJets 𝕜 E F r fun k : Fin (r + 1) ↦
       iteratedFDeriv 𝕜 k.val g (extChartAt I x x) := by
@@ -619,6 +625,18 @@ def truncate (hr : r' ≤ r) (x : M) : JetBundle I F V r x →L[𝕜] JetBundle 
 theorem toJets_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
     toJets 𝕜 E F r' (truncate hr x j) = jetTruncate hr (toJets 𝕜 E F r j) :=
   SymmetricJet.toJets_truncate hr j
+
+/-- In the fibre at `x`, the truncation of jets is the truncation of symmetric jets. -/
+theorem truncate_apply (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
+    truncate hr x j = SymmetricJet.truncate 𝕜 E F hr j :=
+  (rfl)
+
+/-- **Truncation of jets is onto.** -/
+theorem truncate_surjective (hr : r' ≤ r) (x : M) :
+    Function.Surjective (truncate (I := I) (F := F) (V := V) hr x) := by
+  intro B
+  obtain ⟨A, hA⟩ := SymmetricJet.truncate_surjective (𝕜 := 𝕜) (E := E) (F := F) hr B
+  exact ⟨A, (truncate_apply hr x A).trans hA⟩
 
 /-- Truncating to the same order is the identity. -/
 @[simp]

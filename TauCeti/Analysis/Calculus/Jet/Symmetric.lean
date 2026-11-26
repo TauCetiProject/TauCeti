@@ -47,6 +47,13 @@ commutes with the truncation of symmetric jets to lower order.
   `ContDiffAt.symmetricJetCoordChange` and `ContDiffOn.symmetricJetCoordChange`.
 * `TauCeti.SymmetricJet.truncate`: truncation of symmetric jets to lower order, which commutes
   with coordinate changes (`TauCeti.SymmetricJet.truncate_symmetricJetCoordChange`).
+* `TauCeti.symmetrizeJets_eq_of_forall_apply_const_eq`: the symmetrization of a tuple only depends
+  on the values of its components on the diagonals `(h, …, h)`.
+* `TauCeti.SymmetricJet.ofTop`: the symmetric jet of order `r` with only a top component. Over a
+  field of characteristic zero, the jets of order `r + 1` truncating to zero are exactly these
+  (`TauCeti.SymmetricJet.ker_truncate`), and truncation is onto
+  (`TauCeti.SymmetricJet.truncate_surjective`): this is the exact sequence
+  `0 → Sym^(r+1)(E, F) → J^(r+1) → J^r → 0` of symmetric jets.
 
 ## Implementation notes
 
@@ -254,6 +261,19 @@ theorem toJets_symmetrizeJets_iteratedFDeriv [CharZero 𝕜] {f : E → F} {x : 
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val f x := by
   rw [symmetrizeJets_of_mem (iteratedFDeriv_mem_symmetricJets hf hn), toJets_mk]
 
+/-- **The symmetrization only sees the diagonal values.** Two tuples whose components agree on
+every diagonal `(h, …, h)` have the same symmetrization. -/
+theorem symmetrizeJets_eq_of_forall_apply_const_eq {A B : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F}
+    (hAB : ∀ i (h : E), A i (fun _ ↦ h) = B i fun _ ↦ h) :
+    symmetrizeJets 𝕜 E F r A = symmetrizeJets 𝕜 E F r B := by
+  refine toJets_injective ?_
+  rw [toJets_symmetrizeJets, toJets_symmetrizeJets]
+  -- The Taylor polynomials of `A` and `B` only see the diagonal values.
+  have hpoly : finiteJetPolynomial r A 0 = finiteJetPolynomial r B 0 := by
+    funext y
+    simp only [finiteJetPolynomial_apply, hAB]
+  rw [hpoly]
+
 /-! ### Coordinate changes of symmetric jets -/
 
 /-- The **coordinate change of symmetric `r`-jets** under a change of base coordinates
@@ -385,6 +405,101 @@ theorem truncate_symmetricJetCoordChange (hr : r' ≤ r) {h : E' → E} {g : E' 
     toJets_truncate, funext (jetTruncate_apply hr (linearJetCoordChange r h g x _)),
     funext (jetTruncate_apply hr (toJets 𝕜 E F r A))]
   exact congrArg _ (linearJetCoordChange_truncate hr hh hg _)
+
+/-- **Truncation is onto.** Every symmetric jet of order `r'` is the truncation of a symmetric jet
+of order `r ≥ r'`, for instance of its extension by zero. -/
+theorem truncate_surjective [CharZero 𝕜] (hr : r' ≤ r) :
+    Function.Surjective (truncate 𝕜 E F hr) := by
+  intro B
+  -- Extend the tuple of `B` by zero and symmetrize; nothing changes in orders at most `r'`.
+  refine ⟨symmetrizeJets 𝕜 E F r fun i ↦
+    if h : i.val ≤ r' then toJets 𝕜 E F r' B ⟨i.val, by omega⟩ else 0, ?_⟩
+  rw [truncate_symmetrizeJets]
+  conv_rhs => rw [← symmetrizeJets_toJets B]
+  congr 1
+  funext i
+  rw [jetTruncate_apply, dite_eq_left (by simpa using Nat.lt_succ_iff.mp i.isLt)]
+  -- The two indices have the same value `i.val`.
+  congr 1
+
+/-! ### Symmetric jets with only a top component -/
+
+variable (𝕜 E F r) in
+/-- The symmetric jet of order `r` whose only component is the symmetrization of `A`, of order
+`r`. Over a field of characteristic zero its top component is that symmetrization
+(`TauCeti.SymmetricJet.toJets_ofTop_last`) and its other components vanish
+(`TauCeti.SymmetricJet.toJets_ofTop_of_ne_last`). -/
+def ofTop : (E [×r]→L[𝕜] F) →L[𝕜] SymmetricJet 𝕜 E F r :=
+  symmetrizeJets 𝕜 E F r ∘L
+    ContinuousLinearMap.single 𝕜 (fun i : Fin (r + 1) ↦ E [×i.val]→L[𝕜] F) (Fin.last r)
+
+theorem ofTop_apply (A : E [×r]→L[𝕜] F) :
+    ofTop 𝕜 E F r A = symmetrizeJets 𝕜 E F r
+      (Pi.single (M := fun i : Fin (r + 1) ↦ E [×i.val]→L[𝕜] F) (Fin.last r) A) :=
+  (rfl)
+
+/-- The top component of `ofTop A` is the symmetrization of `A`. -/
+@[simp]
+theorem toJets_ofTop_last [CharZero 𝕜] (A : E [×r]→L[𝕜] F) :
+    toJets 𝕜 E F r (ofTop 𝕜 E F r A) (Fin.last r) =
+      ContinuousMultilinearMap.symmetrize 𝕜 (Fin r) E F A := by
+  rw [ofTop_apply, toJets_symmetrizeJets_apply, Pi.single_eq_same]
+  -- The left side symmetrizes over `Fin (Fin.last r).val`, which is `Fin r` by definition;
+  -- `Fin.val_last` cannot be rewritten there since the type of `Pi.single (Fin.last r) A i`
+  -- depends on `i`.
+  rfl
+
+/-- The components of `ofTop A` below the top order vanish. -/
+theorem toJets_ofTop_of_ne_last [CharZero 𝕜] (A : E [×r]→L[𝕜] F) {i : Fin (r + 1)}
+    (hi : i ≠ Fin.last r) : toJets 𝕜 E F r (ofTop 𝕜 E F r A) i = 0 := by
+  rw [ofTop_apply, toJets_symmetrizeJets_apply, Pi.single_eq_of_ne hi, map_zero]
+
+/-- On a symmetric map, the top component of `ofTop A` is `A` itself. -/
+theorem toJets_ofTop_last_of_comp_perm [CharZero 𝕜] {A : E [×r]→L[𝕜] F}
+    (hA : ∀ (v : Fin r → E) (σ : Perm (Fin r)), A (v ∘ σ) = A v) :
+    toJets 𝕜 E F r (ofTop 𝕜 E F r A) (Fin.last r) = A := by
+  rw [toJets_ofTop_last, ContinuousMultilinearMap.symmetrize_eq_self hA]
+
+/-- `ofTop A` vanishes exactly when the symmetrization of `A` does. -/
+theorem ofTop_eq_zero_iff [CharZero 𝕜] (A : E [×r]→L[𝕜] F) :
+    ofTop 𝕜 E F r A = 0 ↔ ContinuousMultilinearMap.symmetrize 𝕜 (Fin r) E F A = 0 := by
+  refine ⟨fun h ↦ by rw [← toJets_ofTop_last, h, map_zero, Pi.zero_apply], fun h ↦ ?_⟩
+  refine toJets_injective (funext fun i ↦ ?_)
+  rw [map_zero, Pi.zero_apply]
+  by_cases hi : i = Fin.last r
+  · subst hi
+    rw [toJets_ofTop_last, h]
+  · exact toJets_ofTop_of_ne_last A hi
+
+/-- Jets with only a top component truncate to zero. -/
+@[simp]
+theorem truncate_ofTop [CharZero 𝕜] (hr : r' < r) (A : E [×r]→L[𝕜] F) :
+    truncate 𝕜 E F hr.le (ofTop 𝕜 E F r A) = 0 := by
+  refine toJets_injective (funext fun i ↦ ?_)
+  rw [toJets_truncate, jetTruncate_apply, map_zero, Pi.zero_apply,
+    toJets_ofTop_of_ne_last A (Fin.ne_of_val_ne (by simp; omega))]
+
+/-- **The kernel of truncation.** Over a field of characteristic zero, a symmetric jet of order
+`r + 1` truncates to zero in order `r` exactly when it only has a top component. Together with
+`TauCeti.SymmetricJet.truncate_surjective` this is the exact sequence
+`0 → Sym^(r+1)(E, F) → J^(r+1) → J^r → 0`. -/
+theorem ker_truncate [CharZero 𝕜] :
+    (truncate 𝕜 E F (Nat.le_add_right r 1)).ker = (ofTop 𝕜 E F (r + 1)).range := by
+  ext j
+  refine ⟨fun hj ↦ ⟨toJets 𝕜 E F (r + 1) j (Fin.last (r + 1)), ?_⟩, ?_⟩
+  · refine toJets_injective (funext fun i ↦ ?_)
+    by_cases hi : i = Fin.last (r + 1)
+    · subst hi
+      exact toJets_ofTop_last_of_comp_perm fun v σ ↦
+        mem_symmetricJets.1 (toJets_mem j) (Fin.last (r + 1)) v σ
+    · rw [ContinuousLinearMap.coe_coe, toJets_ofTop_of_ne_last _ hi]
+      -- Below the top order, the component of `j` is a component of its truncation.
+      have hj' := congr_fun (congrArg (toJets 𝕜 E F r) (LinearMap.mem_ker.1 hj))
+        (i.castLT (Fin.val_lt_last hi))
+      rw [ContinuousLinearMap.coe_coe, toJets_truncate, jetTruncate_apply, map_zero] at hj'
+      exact hj'.symm
+  · rintro ⟨A, rfl⟩
+    exact truncate_ofTop (Nat.lt_succ_self r) A
 
 end SymmetricJet
 
