@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Moser
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Moser's theorem along an exact path
@@ -98,9 +99,7 @@ theorem exists_diffeomorph_mpullback_add_smul_eq (σ₀ σ₁ : SmoothTwoForm I 
     (hs : s ∈ Icc (0 : ℝ) 1) :
     ∃ φ : M ≃ₘ⟮I, I⟯ M, SmoothForm.mpullback φ φ.contMDiff (σ₀ + s • (σ₁ - σ₀)) = σ₀ := by
   obtain ⟨ψ, -, -, hψ⟩ := exists_isotopy_mpullback_add_smoothTransition_smul_eq σ₀ σ₁ β hβ hσ
-  obtain ⟨t, -, rfl⟩ : ∃ t ∈ Icc (0 : ℝ) 1, Real.smoothTransition t = s :=
-    intermediate_value_Icc zero_le_one Real.smoothTransition.continuous.continuousOn
-      (by simpa using hs)
+  obtain ⟨t, -, rfl⟩ := Real.smoothTransition.surjOn_Icc hs
   exact ⟨ψ t, hψ t⟩
 
 end SmoothTwoForm

@@ -124,33 +124,41 @@ private theorem torusAngleCos_torusAngleSin_eq_extChartAt (i : ι)
   · conv_lhs => rw [hx]
     exact torusAngleSin_coe i _
 
+omit [Fintype ι] in
+/-- The covector `c • proj i` of `ι → ℝ` sends `w` to `c * wᵢ`. -/
+private theorem smul_proj_apply (c : ℝ) (i : ι) (w : ι → ℝ) :
+    (c • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) w = c * w i := by
+  rw [smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
+
 /-- The cosine of the `i`-th angle has differential `-sin xᵢ dxᵢ`. -/
 theorem mvfderiv_torusAngleCos (i : ι) (x : ∀ _ : ι, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
     mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusAngleCos ι i) x v =
       -torusAngleSin ι i x * v i := by
-  have heq := comp_extChartAt_symm_eventuallyEq (fun z ↦ (z : ℂ).re) i x
-  simp only [re_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul] at heq
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  -- `erw`: the coercion of the bundled smooth map unfolds to the function read by `heq`.
-  erw [heq.fderiv_eq, (hasFDerivAt_apply i _).cos.fderiv]
-  rw [(torusAngleCos_torusAngleSin_eq_extChartAt i x).2]
-  -- The derivative `(-sin yᵢ) • proj i` evaluates to `-sin yᵢ * vᵢ` by definition.
-  rfl
+  have heq : torusAngleCos ι i ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
+      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)] fun y ↦ Real.cos (y i) := by
+    filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
+      with y hy
+    rw [Function.comp_apply, extChartAt_pi_symm_apply x hy, torusAngleCos_coe]
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, heq.fderiv_eq,
+    (hasFDerivAt_apply i _).cos.fderiv, (torusAngleCos_torusAngleSin_eq_extChartAt i x).2]
+  -- The tangent vector `v` is a vector of `ι → ℝ`.
+  exact smul_proj_apply _ i v
 
 /-- The sine of the `i`-th angle has differential `cos xᵢ dxᵢ`. -/
 theorem mvfderiv_torusAngleSin (i : ι) (x : ∀ _ : ι, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
     mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusAngleSin ι i) x v =
       torusAngleCos ι i x * v i := by
-  have heq := comp_extChartAt_symm_eventuallyEq (fun z ↦ (z : ℂ).im) i x
-  simp only [im_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul] at heq
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  -- `erw`: the coercion of the bundled smooth map unfolds to the function read by `heq`.
-  erw [heq.fderiv_eq, (hasFDerivAt_apply i _).sin.fderiv]
-  rw [(torusAngleCos_torusAngleSin_eq_extChartAt i x).1]
-  -- The derivative `cos yᵢ • proj i` evaluates to `cos yᵢ * vᵢ` by definition.
-  rfl
+  have heq : torusAngleSin ι i ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
+      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)] fun y ↦ Real.sin (y i) := by
+    filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
+      with y hy
+    rw [Function.comp_apply, extChartAt_pi_symm_apply x hy, torusAngleSin_coe]
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, heq.fderiv_eq,
+    (hasFDerivAt_apply i _).sin.fderiv, (torusAngleCos_torusAngleSin_eq_extChartAt i x).1]
+  -- The tangent vector `v` is a vector of `ι → ℝ`.
+  exact smul_proj_apply _ i v
 
 /-- The cosine of an angle of the torus lies in `[-1, 1]`. -/
 theorem abs_torusAngleCos_le_one (i : ι) (x : ∀ _ : ι, AddCircle (2 * π)) :
