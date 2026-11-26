@@ -272,7 +272,10 @@ end PullbackData
 
 omit [HasPullbacks C] in
 /-- The descent datum `A` is the pullback of itself along the identity. -/
-def PullbackData.refl {U : C} (A : Obj.{w} J F U) : PullbackData (𝟙 U) A A where
+-- The body is exposed, as is that of `PullbackData.trans`, so that the index maps and morphisms of
+-- identity and composite pullback data are definitionally those of their constituents, as needed
+-- to state and compute transports onto pullback data mapped along a strong transformation.
+@[expose] def PullbackData.refl {U : C} (A : Obj.{w} J F U) : PullbackData (𝟙 U) A A where
   α j := j
   β j := 𝟙 _
   w j := by simp
@@ -287,6 +290,29 @@ def PullbackData.refl {U : C} (A : Obj.{w} J F U) : PullbackData (𝟙 U) A A wh
       Category.id_comp, Category.comp_id]
     exact A.D.hom_congr q' _ b b' hb hb' hb.symm
 
+namespace PullbackData
+
+omit [HasPullbacks C]
+
+/-- The index map of `refl A` is the identity. -/
+@[simp]
+lemma refl_α {U : C} (A : Obj.{w} J F U) (j : A.ι) : (refl A).α j = j :=
+  (rfl)
+
+/-- The morphisms of `refl A` are identities. -/
+@[simp]
+lemma refl_β {U : C} (A : Obj.{w} J F U) (j : A.ι) : (refl A).β j = 𝟙 (A.X j) :=
+  (rfl)
+
+/-- The identifications of `refl A` are the descent isomorphisms of `A`. -/
+lemma refl_iso {U : C} (A : Obj.{w} J F U) ⦃T : C⦄ ⦃j : A.ι⦄ (b : T ⟶ A.X j) (c : T ⟶ A.X j)
+    (h : b ≫ (refl A).β j = c) :
+    (refl A).iso b c h =
+      A.D.iso (b ≫ A.f j) b c rfl (by rw [← (Category.comp_id b).symm.trans h]) :=
+  (rfl)
+
+end PullbackData
+
 omit [HasPullbacks C] in
 private lemma iso_hom_comp_iso_hom_congr {U V W : C} {q : V ⟶ U} {r : W ⟶ V}
     {A : Obj.{w} J F U} {B : Obj.{w} J F V} {E : Obj.{w} J F W} (P : PullbackData r B E)
@@ -300,7 +326,7 @@ private lemma iso_hom_comp_iso_hom_congr {U V W : C} {q : V ⟶ U} {r : W ⟶ V}
 /-- The composite of an identification of `E` with the pullback of `B` along `r` and of `B` with
 the pullback of `A` along `q`: an identification of `E` with the pullback of `A` along
 `r ≫ q`. -/
-def PullbackData.trans {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U}
+@[expose] def PullbackData.trans {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U}
     {B : Obj.{w} J F V} {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B)
     (rq : W ⟶ U) (hrq : r ≫ q = rq) : PullbackData rq A E where
   α j := Q.α (P.α j)
@@ -317,6 +343,33 @@ def PullbackData.trans {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F 
     simp only [Iso.trans_hom, Iso.trans_inv, Category.assoc]
 
 namespace PullbackData
+
+omit [HasPullbacks C] in
+/-- The index map of a composite of pullback data is the composite of the index maps. -/
+@[simp]
+lemma trans_α {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U} {B : Obj.{w} J F V}
+    {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B) (rq : W ⟶ U)
+    (hrq : r ≫ q = rq) (j : E.ι) : (P.trans Q rq hrq).α j = Q.α (P.α j) :=
+  (rfl)
+
+omit [HasPullbacks C] in
+/-- The morphisms of a composite of pullback data are the composites of the morphisms. -/
+@[simp]
+lemma trans_β {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U} {B : Obj.{w} J F V}
+    {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B) (rq : W ⟶ U)
+    (hrq : r ≫ q = rq) (j : E.ι) : (P.trans Q rq hrq).β j = P.β j ≫ Q.β (P.α j) :=
+  (rfl)
+
+omit [HasPullbacks C] in
+/-- The identifications of a composite of pullback data are the composites of the
+identifications. -/
+lemma trans_iso {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U} {B : Obj.{w} J F V}
+    {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B) (rq : W ⟶ U)
+    (hrq : r ≫ q = rq) ⦃T : C⦄ ⦃j : E.ι⦄ (b : T ⟶ E.X j)
+    (c : T ⟶ A.X ((P.trans Q rq hrq).α j)) (h : b ≫ (P.trans Q rq hrq).β j = c) :
+    (P.trans Q rq hrq).iso b c h =
+      P.iso b (b ≫ P.β j) rfl ≪≫ Q.iso (b ≫ P.β j) c (by rw [← h, Category.assoc]; rfl) :=
+  (rfl)
 
 variable [F.IsPrestack J] {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A A' : Obj.{w} J F U}
   {B B' : Obj.{w} J F V} {E E' : Obj.{w} J F W}

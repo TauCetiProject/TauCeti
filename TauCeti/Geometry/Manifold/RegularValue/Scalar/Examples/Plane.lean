@@ -32,7 +32,10 @@ carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`, and it
 is the unit sphere (`TauCeti.boundary_scalarRegularSublevel_norm_sq`). For the plane, `n = 1`, the
 boundary is the unit circle. Its boundary atlas is modelled on `EuclideanSpace ℝ (Fin 1)`, its
 regular-level atlas on `Fin 1 → ℝ`, and `TauCeti.scalarRegularSublevelBoundaryDiffeomorph`
-identifies the two by the identity of points.
+identifies the two by the identity of points. At a point of the circle such as `(1, 0)` the
+preferred chart of the disc is a face chart, whose zeroth coordinate is the inward coordinate
+`1 - ‖x‖²` (`TauCeti.scalarRegularSublevelChartAt_apply_zero_of_eq`), which vanishes on the circle;
+an example at the end of the file checks this at `(1, 0)`.
 -/
 
 public section
@@ -128,5 +131,24 @@ theorem boundary_scalarRegularSublevel_norm_sq :
   exact pow_eq_one_iff_of_nonneg (norm_nonneg (x : E)) two_ne_zero
 
 end NormSq
+
+/- At the point `(1, 0)` of the unit circle, the preferred chart of the closed unit disc
+`{x | ‖x‖² ≤ 1}` of the Euclidean plane is a face chart: on its whole source its zeroth coordinate
+is the inward coordinate `1 - ‖x‖²`, and this coordinate vanishes at `(1, 0)`. -/
+example :
+    letI := scalarRegularSublevelChartedSpace (contDiff_norm_sq ℝ).contMDiff
+      (isRegularValue_norm_sq (E := EuclideanSpace ℝ (Fin 2)) one_ne_zero)
+      (finrank_euclideanSpace_fin (n := 2))
+    let p : {x : EuclideanSpace ℝ (Fin 2) | ‖x‖ ^ 2 ≤ 1} :=
+      ⟨!₂[1, 0], by simp [EuclideanSpace.norm_sq_eq]⟩
+    (∀ w ∈ (chartAt (EuclideanHalfSpace 2) p).source,
+      (chartAt (EuclideanHalfSpace 2) p w).val 0 = 1 - ‖(w : EuclideanSpace ℝ (Fin 2))‖ ^ 2) ∧
+      (chartAt (EuclideanHalfSpace 2) p p).val 0 = 0 := by
+  intro p
+  have h : ‖(p : EuclideanSpace ℝ (Fin 2))‖ ^ 2 = 1 := by simp [p, EuclideanSpace.norm_sq_eq]
+  simp only [scalarRegularSublevelChartedSpace_chartAt]
+  refine ⟨fun w hw ↦ scalarRegularSublevelChartAt_apply_zero_of_eq _ _ _ h hw, ?_⟩
+  rw [scalarRegularSublevelChartAt_apply_zero_of_eq _ _ _ h
+    (mem_scalarRegularSublevelChartAt_source _ _ _ _), h, sub_self]
 
 end TauCeti

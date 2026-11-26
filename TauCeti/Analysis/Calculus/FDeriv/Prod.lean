@@ -82,8 +82,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
-* `TauCeti.norm_fderiv_comp_snd_le`: the norm of the derivative of a function of the second
-  variable alone is at most that of the derivative of the function.
+* `TauCeti.norm_fderiv_comp_snd_le`: the derivative of a function of the second variable alone
+  has norm at most that of the derivative of the function.
 * `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
   the first variable alone, and the bound of its norm by that of the derivative of the function.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
