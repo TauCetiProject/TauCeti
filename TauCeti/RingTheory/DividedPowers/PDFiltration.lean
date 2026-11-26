@@ -24,7 +24,7 @@ value `1` and total weight `0`.
 This filtration is fundamental in the theory of divided power ideals and crystalline cohomology:
 it is decreasing, multiplicative (`Fᵐ · Fⁿ ≤ Fᵐ⁺ⁿ`), satisfies `F⁰ = ⊤` and `F¹ = I`, contains the
 ordinary ideal powers `Iⁿ ≤ Fⁿ`, is stable under the divided power operations
-(`hI.dpow m x ∈ Fᵐⁿ` for `x ∈ Fⁿ`, `n ≥ 1`, so each `Fⁿ` for `n ≥ 1` is a sub-dp-ideal of `I`),
+(`hI.dpow m x ∈ Fᵐⁿ` for `x ∈ Fⁿ`, so each `Fⁿ` for `n ≥ 1` is a sub-dp-ideal of `I`),
 and is functorial under divided power morphisms (with exact image `(Fⁿ).map f = Fⁿ_δ J` whenever
 `I.map f = J`, without assuming surjectivity of `f`).
 
@@ -52,7 +52,7 @@ filtration coincides with the ordinary power filtration `I ^ n`.
   `hI.pdFiltration m * hI.pdFiltration n ≤ hI.pdFiltration (m + n)`.
 * `DividedPowers.pow_le_pdFiltration`, `DividedPowers.pow_eq_bot_of_pdFiltration_eq_bot`:
   `I ^ n ≤ hI.pdFiltration n` and `hI.pdFiltration n = ⊥ → I ^ n = ⊥`.
-* `DividedPowers.dpow_mem_pdFiltration_mul`: for `n ≠ 0` and `x ∈ hI.pdFiltration n`,
+* `DividedPowers.dpow_mem_pdFiltration_mul`: for `x ∈ hI.pdFiltration n`,
   `hI.dpow m x ∈ hI.pdFiltration (m * n)`.
 * `DividedPowers.isSubDPIdeal_pdFiltration`: for `n ≠ 0`, `hI.pdFiltration n` is a sub-dp-ideal.
 * `DividedPowers.pdFiltration_eq_span_of_eq_span`: generator description when `I = Ideal.span S`.
@@ -290,11 +290,12 @@ private theorem dpow_list_prod_mem_pdFiltration_mul {m : ℕ} (l : List (ℕ × 
   rw [hI.dpow_comp hi0 hiI]
   exact Ideal.mul_mem_left _ _ (hI.dpow_mem_pdFiltration hiI)
 
-/-- For `n ≠ 0` and `x ∈ hI.pdFiltration n`, its `m`-th divided power lies in
-`hI.pdFiltration (m * n)`. -/
-theorem dpow_mem_pdFiltration_mul {m n : ℕ} (hn : n ≠ 0) {x : R}
+/-- For `x ∈ hI.pdFiltration n`, its `m`-th divided power lies in `hI.pdFiltration (m * n)`. -/
+theorem dpow_mem_pdFiltration_mul {m n : ℕ} {x : R}
     (hx : x ∈ hI.pdFiltration n) :
     hI.dpow m x ∈ hI.pdFiltration (m * n) := by
+  by_cases hn : n = 0
+  · simp [hn]
   rw [pdFiltration] at hx
   refine hI.dpow_mem_of_mem_span_of_mul_le (A := fun k ↦ hI.pdFiltration (k * n))
     (by simp) (fun i j ↦ by rw [add_mul]; exact hI.pdFiltration_mul_le _ _) ?_ ?_ hx m
@@ -312,7 +313,7 @@ theorem isSubDPIdeal_pdFiltration {n : ℕ} (hn : n ≠ 0) :
   isSubideal := hI.pdFiltration_le_self hn
   dpow_mem _ hm _ hx :=
     hI.pdFiltration_antitone (Nat.le_mul_of_pos_left n (Nat.pos_of_ne_zero hm))
-      (hI.dpow_mem_pdFiltration_mul hn hx)
+      (hI.dpow_mem_pdFiltration_mul hx)
 
 end Basic
 
