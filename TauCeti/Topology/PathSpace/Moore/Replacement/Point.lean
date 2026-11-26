@@ -50,28 +50,20 @@ of the inclusion of `a` is the Moore path `γ` from `a`. This is `homeomorphPath
 `γ.source ∈ {a}` rewritten to `γ.source = a`. -/
 def homeomorphPathsFromSingleton :
     MooreReplacement (ContinuousMap.subtypeVal ({a} : Set B)) ≃ₜ MoorePathFrom B a :=
-  (homeomorphPathsFrom {a}).trans <| (Homeomorph.refl _).subtype fun _ ↦ by
-    rw [Homeomorph.refl_apply, id_eq, Set.mem_singleton_iff]
+  (homeomorphPathsFrom {a}).trans <| (Homeomorph.refl _).subtype fun _ ↦ by simp
 
 /-- The Moore path from `a` of a point of the replacement of the inclusion of `a`. -/
 @[simp]
 theorem toMoorePath_homeomorphPathsFromSingleton
     (x : MooreReplacement (ContinuousMap.subtypeVal {a})) :
     (homeomorphPathsFromSingleton a x).toMoorePath = x.path := by
-  rcases hx : homeomorphPathsFromSingleton a x with ⟨γ, hγ⟩
-  have h := congrArg Subtype.val hx
-  rw [homeomorphPathsFromSingleton, Homeomorph.trans_apply, Homeomorph.subtype_apply_coe,
-    Homeomorph.refl_apply, id_eq, coe_homeomorphPathsFrom] at h
-  rw [MoorePathFrom.toMoorePath_mk, h]
+  simp [homeomorphPathsFromSingleton, MoorePathFrom.toMoorePath_eq_coe]
 
 /-- The point of the replacement of the inclusion of `a` with Moore path `γ` from `a`. -/
 @[simp]
 theorem path_homeomorphPathsFromSingleton_symm (γ : MoorePathFrom B a) :
     ((homeomorphPathsFromSingleton a).symm γ).path = γ.toMoorePath := by
-  obtain ⟨γ, hγ⟩ := γ
-  rw [homeomorphPathsFromSingleton, Homeomorph.symm_trans_apply, path_homeomorphPathsFrom_symm,
-    Homeomorph.subtype_symm_apply_coe, Homeomorph.refl_symm, Homeomorph.refl_apply,
-    id_eq, MoorePathFrom.toMoorePath_mk]
+  simp [homeomorphPathsFromSingleton, MoorePathFrom.toMoorePath_eq_coe]
 
 namespace Fiber
 
