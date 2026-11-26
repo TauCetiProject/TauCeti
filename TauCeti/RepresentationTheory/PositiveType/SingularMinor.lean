@@ -10,6 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.InformationTheory.Coding.CharacterSum
+public import TauCeti.LinearAlgebra.Matrix.Determinant.LeftKernel
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Translate
+public import TauCeti.RepresentationTheory.PositiveType.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 
@@ -36,23 +39,24 @@ an inner product of two vectors of `ℂ^(𝔽_q^d) ⊗ H` whose squared norms ar
 
 ## Main results
 
-* `inner_sum_sum_eq_card_mul_sum`: Gram sums over a group, `⟪∑ v a, ∑ w b⟫ = #G ∑ f s` when
-  `⟪v a, w b⟫ = f (a⁻¹ * b)`.
-* `card_mul_sum_det_eq_zero_le`: the bound on the mass of the singular minors.
+* `TauCeti.PositiveType.card_mul_sum_det_eq_zero_le`: the bound on the mass of the singular
+  minors.
 
 ## Stabilisers under the contragredient
 
-The roadmap states the second stabiliser through the contragredient `π′(s) = (π(s)ᵀ)⁻¹` acting on
-columns: `π′(s) x = x`. This holds exactly when `xᵀ π(s) = xᵀ`, the form used here
-(`x ᵥ* π s = x`), which needs no inverse transpose on `GL_d`.
+The stabiliser of `x` under the contragredient `π′(s) = (π(s)ᵀ)⁻¹`, `π′(s) x = x`, is the set of
+`s` with `xᵀ π(s) = xᵀ`, that is `x ᵥ* π s = x`; this file uses the latter form, which needs no
+inverse transpose on `GL_d`.
 
 ## References
 
 These results are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
 Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`
-(`New.inner_sum_sum_eq_card_mul`, `New.norm_sq_sum_tmul_eq_card_mul_sum`,
-`New.orthonormal_addChar_div_sqrt`, `New.re_sum_addChar_dotProduct_mul_le`,
-`New.card_le_card_filter_vecMul_eq_zero`, `New.card_mul_sum_det_eq_zero_le`).
+(`New.norm_sq_sum_tmul_eq_card_mul_sum`, `New.re_sum_addChar_dotProduct_mul_le`,
+`New.card_mul_sum_det_eq_zero_le`); the Gram sum, the orthonormal Fourier vectors, the left-kernel
+count and the translate lemmas it uses are `TauCeti.inner_sum_sum_eq_card_mul_sum`,
+`AddChar.orthonormal_dotProduct`, `Matrix.card_le_card_filter_vecMul_eq_zero`,
+`MonoidHom.vecMul_inv_eq_vecMul_inv_iff` and `MonoidHom.mulVec_eq_mulVec_iff`.
 -/
 
 public section
@@ -63,17 +67,7 @@ open scoped InnerProductSpace TensorProduct
 
 variable {G : Type*} [Group G] [Fintype G]
 
-/-- **Gram sums over a group.** If `⟪v a, w b⟫ = f (a⁻¹ * b)` for all `a, b` in a finite group
-`G`, then `⟪∑ a, v a, ∑ b, w b⟫ = #G · ∑ s, f s`. -/
-theorem inner_sum_sum_eq_card_mul_sum {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] {v w : G → E} (f : G → 𝕜) (h : ∀ a b, ⟪v a, w b⟫_𝕜 = f (a⁻¹ * b)) :
-    ⟪∑ a, v a, ∑ b, w b⟫_𝕜 = Fintype.card G * ∑ s, f s := by
-  -- For each `a` the map `b ↦ a⁻¹ * b` is a bijection of `G`.
-  have h_row (a : G) : ⟪v a, ∑ b, w b⟫_𝕜 = ∑ s, f s := by
-    simpa [inner_sum, h] using (Group.mulLeft_bijective a⁻¹).sum_comp f
-  simp [sum_inner, h_row]
-
-namespace PositiveType
+namespace TauCeti.PositiveType
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
@@ -98,61 +92,11 @@ private theorem norm_sq_sum_tmul_eq {X E : Type*} [NormedAddCommGroup E] [InnerP
 
 variable {k n : Type*} [Field k] [Fintype k] [DecidableEq k] [Fintype n] [DecidableEq n]
 
-omit [DecidableEq k] in
-/-- For a primitive additive character `ψ` of a finite field with `q` elements, the functions
-`ζ ↦ ψ (-(x ⬝ᵥ ζ)) / √(q ^ |n|)`, one for each `x : kⁿ`, are orthonormal: they are the Fourier
-transforms of the point masses. -/
-private theorem orthonormal_addChar_dotProduct {ψ : AddChar k ℂ} (hψ : ψ.IsPrimitive) :
-    Orthonormal ℂ fun x : n → k ↦ (WithLp.toLp 2 fun ζ : n → k ↦
-      ψ (-(x ⬝ᵥ ζ)) / √((Fintype.card k : ℝ) ^ Fintype.card n) : EuclideanSpace ℂ (n → k)) := by
-  classical
-  rw [orthonormal_iff_ite]
-  intro x y
-  have h_mul (ζ : n → k) :
-      ψ (-(y ⬝ᵥ ζ)) * starRingEnd ℂ (ψ (-(x ⬝ᵥ ζ))) = ψ ((x - y) ⬝ᵥ ζ) := by
-    rw [← AddChar.map_neg_eq_conj, ← AddChar.map_add_eq_mul, sub_dotProduct, neg_neg,
-      neg_add_eq_sub]
-  -- The character sum is `q ^ |n|` for `x = y` and `0` otherwise.
-  have h_sum : ∑ ζ : n → k, ψ (-(y ⬝ᵥ ζ)) * starRingEnd ℂ (ψ (-(x ⬝ᵥ ζ))) =
-      if x = y then (Fintype.card k : ℂ) ^ Fintype.card n else 0 := by
-    simp only [h_mul, AddChar.sum_apply_dotProduct hψ, sub_eq_zero]
-  have hq : (0 : ℝ) < (Fintype.card k : ℝ) ^ Fintype.card n := by positivity
-  simp only [PiLp.inner_apply, RCLike.inner_apply, map_div₀, Complex.conj_ofReal,
-    div_mul_div_comm, ← sum_div, h_sum]
-  split_ifs
-  · rw [← Complex.ofReal_mul, Real.mul_self_sqrt hq.le, Complex.ofReal_pow,
-      Complex.ofReal_natCast, div_self (by exact_mod_cast hq.ne')]
-  · simp
-
 /-- The Fourier vector of `x` paired with the point mass at `w` is `ψ (x ⬝ᵥ w) / √(q ^ |n|)`. -/
 private theorem inner_addChar_single {ψ : AddChar k ℂ} (r : ℝ) (x w : n → k) :
     ⟪(WithLp.toLp 2 fun ζ : n → k ↦ ψ (-(x ⬝ᵥ ζ)) / r : EuclideanSpace ℂ (n → k)),
       EuclideanSpace.single w (1 : ℂ)⟫_ℂ = ψ (x ⬝ᵥ w) / r := by
   simp [EuclideanSpace.inner_single_right, ← AddChar.map_neg_eq_conj]
-
-omit [Fintype G] [Fintype k] [DecidableEq k] in
-/-- The translates `x π(a)⁻¹` of a row agree exactly when `π(a⁻¹ b)` fixes the row. -/
-private theorem vecMul_inv_eq_vecMul_inv_iff (π : G →* GL n k) (x : n → k) (a b : G) :
-    x ᵥ* (π a⁻¹ : Matrix n n k) = x ᵥ* (π b⁻¹ : Matrix n n k) ↔
-      x ᵥ* (π (a⁻¹ * b) : Matrix n n k) = x := by
-  have hvm (v : n → k) (g h : G) :
-      v ᵥ* (π g : Matrix n n k) ᵥ* (π h : Matrix n n k) = v ᵥ* (π (g * h) : Matrix n n k) := by
-    rw [vecMul_vecMul, map_mul, Units.val_mul]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simpa [hvm] using congrArg (· ᵥ* (π b : Matrix n n k)) h
-  · simpa [hvm, h] using congrArg (· ᵥ* (π b⁻¹ : Matrix n n k)) h
-
-omit [Fintype G] [Fintype k] [DecidableEq k] in
-/-- The translates `π(a) z` of a column agree exactly when `π(a⁻¹ b)` fixes the column. -/
-private theorem mulVec_eq_mulVec_iff (π : G →* GL n k) (z : n → k) (a b : G) :
-    (π a : Matrix n n k) *ᵥ z = (π b : Matrix n n k) *ᵥ z ↔
-      (π (a⁻¹ * b) : Matrix n n k) *ᵥ z = z := by
-  have hmv (v : n → k) (g h : G) :
-      (π g : Matrix n n k) *ᵥ (π h : Matrix n n k) *ᵥ v = (π (g * h) : Matrix n n k) *ᵥ v := by
-    rw [mulVec_mulVec, map_mul, Units.val_mul]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simpa [hmv] using (congrArg ((π a⁻¹ : Matrix n n k) *ᵥ ·) h).symm
-  · simpa [hmv, h] using (congrArg ((π a : Matrix n n k) *ᵥ ·) h).symm
 
 /-- **The off-axis character sum.** Let `Θ` have positive type and `ψ` be a primitive additive
 character of a finite field with `q` elements. If the `Θ`-mass of the row stabiliser
@@ -171,23 +115,20 @@ private theorem re_sum_addChar_mul_le {ψ : AddChar k ℂ} (hψ : ψ.IsPrimitive
   -- The row `x` translated by `a` is `x π(a)⁻¹`; the column `z` translated by `b` is `π(b) z`.
   let X₁ := ∑ a, c (x ᵥ* (π a⁻¹ : Matrix n n k)) ⊗ₜ[ℂ] u a
   let X₀ := ∑ a, e ((π a : Matrix n n k) *ᵥ z) ⊗ₜ[ℂ] u a
-  have h_mat (a b : G) : ((π a⁻¹ : GL n k) : Matrix n n k) * (π b : Matrix n n k) =
-      (π (a⁻¹ * b) : Matrix n n k) := by
-    rw [map_mul, Units.val_mul]
   have h_inner (a b : G) : ⟪c (x ᵥ* (π a⁻¹ : Matrix n n k)) ⊗ₜ[ℂ] u a,
       e ((π b : Matrix n n k) *ᵥ z) ⊗ₜ[ℂ] u b⟫_ℂ =
         ψ (x ⬝ᵥ (π (a⁻¹ * b) : Matrix n n k) *ᵥ z) * Θ (a⁻¹ * b) / r := by
     rw [TensorProduct.inner_tmul, inner_addChar_single, hu, ← dotProduct_mulVec, mulVec_mulVec,
-      h_mat, div_mul_eq_mul_div]
+      ← π.val_map_mul, div_mul_eq_mul_div]
   have h_X : ⟪X₁, X₀⟫_ℂ = Fintype.card G * ∑ s, ψ (x ⬝ᵥ (π s : Matrix n n k) *ᵥ z) * Θ s / r :=
     inner_sum_sum_eq_card_mul_sum _ h_inner
   have hG₀ : (0 : ℝ) ≤ Fintype.card G := Nat.cast_nonneg _
   have hX₁ : ‖X₁‖ ^ 2 ≤ Fintype.card G * Y :=
-    (norm_sq_sum_tmul_eq (orthonormal_addChar_dotProduct hψ) _ _
-      (vecMul_inv_eq_vecMul_inv_iff π x) hu).trans_le (mul_le_mul_of_nonneg_left hx hG₀)
+    (norm_sq_sum_tmul_eq (AddChar.orthonormal_dotProduct hψ) _ _
+      (π.vecMul_inv_eq_vecMul_inv_iff x) hu).trans_le (mul_le_mul_of_nonneg_left hx hG₀)
   have hX₀ : ‖X₀‖ ^ 2 ≤ Fintype.card G * Y :=
     (norm_sq_sum_tmul_eq EuclideanSpace.orthonormal_single _ _
-      (mulVec_eq_mulVec_iff π z) hu).trans_le (mul_le_mul_of_nonneg_left hz hG₀)
+      (π.mulVec_eq_mulVec_iff z) hu).trans_le (mul_le_mul_of_nonneg_left hz hG₀)
   have h_cs : 2 * (⟪X₁, X₀⟫_ℂ).re ≤ ‖X₁‖ ^ 2 + ‖X₀‖ ^ 2 := by
     have h_re : (⟪X₁, X₀⟫_ℂ).re ≤ ‖X₁‖ * ‖X₀‖ := re_inner_le_norm (𝕜 := ℂ) X₁ X₀
     linarith [two_mul_le_add_sq ‖X₁‖ ‖X₀‖]
@@ -200,15 +141,6 @@ private theorem re_sum_addChar_mul_le {ψ : AddChar k ℂ} (hψ : ψ.IsPrimitive
   have h_le : (⟪X₁, X₀⟫_ℂ).re ≤ Fintype.card G * Y := by linarith
   rw [h_eq, div_le_iff₀ hG]
   nlinarith [mul_le_mul_of_nonneg_left h_le hr.le]
-
-/-- A singular square matrix over a field with `q` elements has at least `q` vectors in its left
-kernel. -/
-private theorem card_le_card_filter_vecMul_eq_zero {m : Type*} [Fintype m] [DecidableEq m]
-    {Z : Matrix m m k} (hZ : Z.det = 0) : Fintype.card k ≤ #{y : m → k | y ᵥ* Z = 0} := by
-  -- The left kernel holds the `q` multiples of some `y ≠ 0`.
-  obtain ⟨y, hy, hyZ⟩ : ∃ y : m → k, y ≠ 0 ∧ y ᵥ* Z = 0 := exists_vecMul_eq_zero_iff.2 hZ
-  exact card_le_card_of_injOn (fun t : k ↦ t • y) (by simp [smul_vecMul, hyZ])
-    (smul_left_injective k hy).injOn
 
 omit [Group G] in
 /-- Counting left kernels: `q` times the `Θ`-mass of the `s` with `det Z(s) = 0` is at most the
@@ -223,7 +155,7 @@ private theorem card_mul_sum_det_eq_zero_le_sum_sum {m : Type*} [Fintype m] [Dec
         gcongr with s
         split_ifs with hs
         · exact mul_le_mul_of_nonneg_right
-            (Nat.cast_le.2 (card_le_card_filter_vecMul_eq_zero hs)) (hΘ s)
+            (Nat.cast_le.2 (Matrix.card_le_card_filter_vecMul_eq_zero hs)) (hΘ s)
         · exact mul_nonneg (Nat.cast_nonneg _) (hΘ s)
     _ = ∑ y : m → k, ∑ s with y ᵥ* Z s = 0, Θ s := by
         simp only [sum_filter, natCast_card_filter, sum_mul, boole_mul]
@@ -283,8 +215,7 @@ theorem card_mul_sum_det_eq_zero_le {m : Type*} [Fintype m] [DecidableEq m] (π 
     simp only [W, ← sum_mul, AddChar.sum_apply_dotProduct hψ, sum_filter, mul_sum]
     have hre : ((Fintype.card k : ℂ) ^ Fintype.card m).re = Q := by
       rw [← Complex.ofReal_natCast, ← Complex.ofReal_pow, Complex.ofReal_re]
-    simp [apply_ite Complex.re]
-    simp only [hre]
+    simp [apply_ite Complex.re, hre]
   have h_kernel := card_mul_sum_det_eq_zero_le_sum_sum Z hΘ
   have h_total : Q * ∑ y : m → k, ∑ s with y ᵥ* Z s = 0, Θ s ≤ Q * (2 * mass + Q * r * Y) := by
     calc Q * ∑ y : m → k, ∑ s with y ᵥ* Z s = 0, Θ s
@@ -298,4 +229,4 @@ theorem card_mul_sum_det_eq_zero_le {m : Type*} [Fintype m] [DecidableEq m] (π 
   have := le_of_mul_le_mul_left h_total hQ
   linarith
 
-end PositiveType
+end TauCeti.PositiveType
