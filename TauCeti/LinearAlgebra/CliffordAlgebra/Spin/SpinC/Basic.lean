@@ -344,6 +344,11 @@ theorem ofCircle_mul_mulCircle (z : Circle) (a : spinCGroup Q hQ) (w : Circle) :
   rw [mulCircle_apply, mulCircle_apply, ← mul_assoc,
     ← Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ z) a, mul_assoc, map_mul]
 
+/-- Multiplying by the trivial circle element changes nothing: `(a, 1) ↦ a [1, 1] = a`. -/
+theorem mulCircle_comp_inl :
+    (mulCircle Q hQ).comp (MonoidHom.inl _ _) = MonoidHom.id _ :=
+  MonoidHom.noncommCoprod_comp_inl _ _ _
+
 /-- Multiplication by the central circle does not change the rotation. -/
 @[simp]
 theorem toSpecialOrthogonal_mulCircle (g : spinCGroup Q hQ × Circle) :
@@ -357,6 +362,14 @@ theorem toSpecialOrthogonal_comp_mulCircle :
     (toSpecialOrthogonal Q hQ).comp (mulCircle Q hQ) =
       (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
   MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
+
+/-- Multiplication by the central circle lifts the first projection along the vector action
+`Spinᶜ(Q) → SO(Q) ⊆ GL(M)`, along which `Spinᶜ` structures lift the orthonormal frame bundle. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_mulCircle :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp (mulCircle Q hQ) =
+      ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (MonoidHom.fst _ _) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_mulCircle, MonoidHom.comp_assoc]
 
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
