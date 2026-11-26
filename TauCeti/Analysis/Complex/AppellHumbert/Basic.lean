@@ -197,6 +197,11 @@ theorem semichar_add_eq_circleExp_mul (l m : L) :
   congr 3
   field_simp
 
+/-- The semicharacter is `1` at the zero period. -/
+@[simp]
+theorem semichar_apply_zero : D.semichar 0 = 1 := by
+  simpa using D.semichar_add_eq_circleExp_mul_mul 0 0
+
 /-- **The Riemann form is integral on `L`**: for `l, m ∈ L`, `E (l, m)` is an integer. Comparing
 `χ (l + m)` with `χ (m + l)` gives `exp (2πi E (l, m)) = 1`. -/
 theorem exists_riemannForm_eq_intCast (l m : L) : ∃ n : ℤ, D.riemannForm l m = n := by
@@ -236,6 +241,11 @@ noncomputable def factor (l : L) (z : V) : ℂ :=
 /-- The defining formula of the factor of automorphy. -/
 theorem factor_def (l : L) (z : V) :
     D.factor l z = D.semichar l * exp (D.form l z + D.form l l / 2) := (rfl)
+
+/-- The factor of automorphy is `1` at the zero period. -/
+@[simp]
+theorem factor_zero_period (z : V) : D.factor 0 z = 1 := by
+  simp [factor_def]
 
 /-- The factor of automorphy does not vanish. -/
 theorem factor_ne_zero (l : L) (z : V) : D.factor l z ≠ 0 :=
