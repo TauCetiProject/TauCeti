@@ -9,6 +9,8 @@ public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import Mathlib.Combinatorics.SimpleGraph.Walk.Chord
 
+import TauCeti.Combinatorics.SimpleGraph.CycleGraph
+
 /-!
 # Chordless paths and chordless cycles
 
@@ -27,10 +29,14 @@ in the theory of chordal graphs.
 
 ## Main results
 
+* `SimpleGraph.Walk.le_add_one_of_length_eq_dist`: on a shortest walk, a vertex adjacent to the
+  vertex at position `i` lies at a position at most `i + 1`.
 * `SimpleGraph.Walk.isChordless_of_length_eq_dist`: a shortest walk is chordless.
 * `SimpleGraph.Reachable.exists_isPath_isChordless`: reachable vertices are joined by a chordless
   path.
 * `SimpleGraph.Walk.exists_isPath_isChordless_of_forall_mem_support`: the same inside a vertex set.
+* `SimpleGraph.Walk.IsChordless.append_of_forall_mem_support`: two chordless walks with no edges
+  between their private parts append to a chordless walk.
 * `SimpleGraph.Walk.IsChordless.cycleGraph_isIndContained`: a chordless cycle of length `n` gives an
   induced copy of `cycleGraph n`.
 
@@ -51,7 +57,7 @@ namespace Walk
 
 /-- In a shortest walk, a vertex adjacent to the vertex at position `i` lies at a position at most
 `i + 1`: otherwise the edge would shortcut the walk. -/
-private theorem le_add_one_of_length_eq_dist {p : G.Walk u v} (hp : p.length = G.dist u v)
+theorem le_add_one_of_length_eq_dist {p : G.Walk u v} (hp : p.length = G.dist u v)
     {i j : ℕ} (hj : j ≤ p.length) (h : G.Adj (p.getVert i) (p.getVert j)) : j ≤ i + 1 := by
   have := G.dist_le ((p.take i).append (cons h (p.drop j)))
   simp only [length_append, take_length, length_cons, drop_length] at this
@@ -92,48 +98,65 @@ theorem exists_isPath_isChordless_of_forall_mem_support (p : G.Walk u v) {s : Se
   obtain ⟨x, -, rfl⟩ := List.mem_map.1 ((q.support_map _) ▸ hw)
   exact x.property
 
+/-- Two chordless walks `P` from `x` to `y` and `Q` from `y` to `z` append to a chordless walk
+when each vertex of `P` lies on `Q` or in `A`, each vertex of `Q` lies on `P` or in `B`, and no
+edge joins `A` to `B`. -/
+theorem IsChordless.append_of_forall_mem_support {A B : Set V} {x y z : V} {P : G.Walk x y}
+    {Q : G.Walk y z} (hPc : P.IsChordless) (hQc : Q.IsChordless)
+    (hAB : ∀ u ∈ A, ∀ w ∈ B, ¬G.Adj u w) (hPA : ∀ v ∈ P.support, v ∈ Q.support ∨ v ∈ A)
+    (hQB : ∀ v ∈ Q.support, v ∈ P.support ∨ v ∈ B) : (P.append Q).IsChordless := by
+  rw [isChordless_iff_forall_mem_edges]
+  intro u w hu hw huw
+  rw [edges_append, List.mem_append]
+  rw [mem_support_append_iff] at hu hw
+  rcases hu with hu | hu <;> rcases hw with hw | hw
+  · exact .inl (hPc.mem_edges hu hw huw)
+  · rcases hPA u hu with hu' | hu'
+    · exact .inr (hQc.mem_edges hu' hw huw)
+    · rcases hQB w hw with hw' | hw'
+      · exact .inl (hPc.mem_edges hu hw' huw)
+      · exact absurd huw (hAB u hu' w hw')
+  · rcases hPA w hw with hw' | hw'
+    · exact .inr (hQc.mem_edges hu hw' huw)
+    · rcases hQB u hu with hu' | hu'
+      · exact .inl (hPc.mem_edges hu' hw huw)
+      · exact absurd huw.symm (hAB w hw' u hu')
+  · exact .inr (hQc.mem_edges hu hw huw)
+
 /-- **A chordless cycle is an induced cycle graph.** If `p` is a chordless cycle of length `n`,
 then listing its vertices in order embeds `cycleGraph n` into `G` as an induced subgraph. -/
 theorem IsChordless.cycleGraph_isIndContained {p : G.Walk u u} (hc : p.IsChordless)
     (hp : p.IsCycle) : cycleGraph p.length ⊴ G := by
   have hinj := hp.getVert_injOn'
   have hlen := hp.three_le_length
-  -- consecutive vertices of the cycle, including the last and the first, are adjacent
-  have key {i j : Fin p.length} (h : (j - i).val = 1) : G.Adj (p.getVert i) (p.getVert j) := by
-    rcases Nat.lt_or_ge j i with hij | hij
-    · rw [Fin.coe_sub_iff_lt.mpr (Fin.lt_def.mpr hij)] at h
-      rw [show i = p.length - 1 by lia, show ↑j = 0 by lia, getVert_zero]
-      exact p.adj_penultimate hp.not_nil
-    · grind [adj_getVert_succ, Fin.sub_val_of_le]
   suffices h : ∀ i j : Fin p.length, G.Adj (p.getVert i) (p.getVert j) ↔ (cycleGraph _).Adj i j from
     ⟨⟨⟨fun i : Fin p.length ↦ p.getVert i, fun i j h ↦ Fin.ext (hinj i.isLt j.isLt h)⟩, h _ _⟩⟩
   intro i j
-  refine ⟨fun h ↦ ?_, fun h ↦ cycleGraph_adj'.mp h |>.elim (key · |>.symm) key⟩
-  -- an adjacency between two vertices of the cycle is one of its edges, by chordlessness
-  obtain ⟨k, hk, hkij⟩ := p.mk_mem_edges_iff_exists.1
-    (hc.mem_edges (p.getVert_mem_support _) (p.getVert_mem_support _) h)
-  have hk1 : p.getVert (k + 1) = p.getVert ((k + 1) % p.length) := by
-    rcases Nat.lt_or_ge (k + 1) p.length with h1 | h1
-    · rw [Nat.mod_eq_of_lt h1]
-    · rw [show k + 1 = p.length by lia, Nat.mod_self, getVert_length, getVert_zero]
-  have hmod := Nat.mod_lt (k + 1) (show 0 < p.length by lia)
-  rw [hk1, Sym2.eq_iff] at hkij
-  rw [cycleGraph_adj']
-  rcases hkij with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · have e1 := hinj hk i.isLt h1
-    have e2 := hinj hmod j.isLt h2
-    rcases Nat.lt_or_ge (k + 1) p.length with h3 | h3
-    · rw [Nat.mod_eq_of_lt h3] at e2
-      right; rw [Fin.sub_val_of_le (by simp only [Fin.le_def]; lia)]; lia
-    · rw [show k + 1 = p.length by lia, Nat.mod_self] at e2
-      right; rw [Fin.coe_sub_iff_lt.mpr (by simp only [Fin.lt_def]; lia)]; lia
-  · have e1 := hinj hk j.isLt h1
-    have e2 := hinj hmod i.isLt h2
-    rcases Nat.lt_or_ge (k + 1) p.length with h3 | h3
-    · rw [Nat.mod_eq_of_lt h3] at e2
-      left; rw [Fin.sub_val_of_le (by simp only [Fin.le_def]; lia)]; lia
-    · rw [show k + 1 = p.length by lia, Nat.mod_self] at e2
-      left; rw [Fin.coe_sub_iff_lt.mpr (by simp only [Fin.lt_def]; lia)]; lia
+  have := i.isLt
+  have := j.isLt
+  have h0 : p.getVert 0 = p.getVert p.length := by simp
+  rw [TauCeti.cycleGraph_adj_iff_val (by lia)]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · -- an adjacency between two vertices of the cycle is one of its edges, by chordlessness
+    obtain ⟨k, hk, hkij⟩ := p.mk_mem_edges_iff_exists.1
+      (hc.mem_edges (p.getVert_mem_support _) (p.getVert_mem_support _) h)
+    -- the edge at position `k` ends at position `k + 1`, or at `0` if it closes the cycle
+    obtain ⟨l, hl, hkl, hl'⟩ : ∃ l < p.length,
+        p.getVert (k + 1) = p.getVert l ∧ (l = k + 1 ∨ l = 0 ∧ k + 1 = p.length) := by
+      rcases Nat.lt_or_ge (k + 1) p.length with h1 | h1
+      · exact ⟨k + 1, h1, rfl, .inl rfl⟩
+      · exact ⟨0, by lia, by rw [h0, show k + 1 = p.length by lia], .inr ⟨rfl, by lia⟩⟩
+    rw [hkl, Sym2.eq_iff] at hkij
+    have : k = i ∧ l = j ∨ k = j ∧ l = i :=
+      hkij.imp (fun h ↦ ⟨hinj hk i.isLt h.1, hinj hl j.isLt h.2⟩)
+        (fun h ↦ ⟨hinj hk j.isLt h.1, hinj hl i.isLt h.2⟩)
+    lia
+  · -- consecutive vertices of the cycle, including the last and the first, are adjacent
+    rcases h with h | h | ⟨hi, hj⟩ | ⟨hj, hi⟩
+    · rw [h]; exact p.adj_getVert_succ (by lia)
+    · rw [h]; exact (p.adj_getVert_succ (by lia)).symm
+    · simpa [hi, hj] using (p.adj_getVert_succ (i := j) (by lia)).symm
+    · simpa [hi, hj] using p.adj_getVert_succ (i := i) (by lia)
 
 end Walk
 

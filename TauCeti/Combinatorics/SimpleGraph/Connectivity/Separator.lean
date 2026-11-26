@@ -8,8 +8,6 @@ module
 public import Mathlib.Order.Minimal
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.ArrowWalk
 
-import Mathlib.Combinatorics.SimpleGraph.Walk.Decomp
-
 /-!
 # Vertex separators of a pair of vertices
 
@@ -20,10 +18,12 @@ the subgraph `G.induce Sᶜ` induced on the remaining vertices. It is a *minimal
 the fixed pair: a minimal `a`–`b` separator may contain a minimal separator of another pair. No
 finiteness is assumed anywhere.
 
-Minimal separators are the separators of Dirac's characterization of chordal graphs. The two facts
-about them proved here are the ones its proof uses: every vertex of a minimal `a`–`b` separator has
-a neighbour reachable from `a` after deleting the separator, and two distinct nonadjacent vertices
-`a`, `b` always have a minimal separator, which can be chosen among the neighbours of `a`.
+Minimal separators are the separators of Dirac's characterization of chordal graphs. The facts
+about them proved here are the ones its proof uses: after deleting a separator, the parts reachable
+from `a` and from `b` are disjoint and joined by no edge; every vertex of a minimal `a`–`b`
+separator has a neighbour reachable from `a` after deleting the separator, so two of its vertices
+are joined by a walk through that part; and two distinct nonadjacent vertices `a`, `b` always have
+a minimal separator, which can be chosen among the neighbours of `a`.
 
 ## Main definitions
 
@@ -36,8 +36,14 @@ a neighbour reachable from `a` after deleting the separator, and two distinct no
   meets every walk from `a` to `b`.
 * `SimpleGraph.isMinimalSeparator_iff`: a separator is minimal exactly when deleting any one of its
   vertices gives a set that no longer separates.
+* `SimpleGraph.IsSeparator.not_reachable_of_reachable`,
+  `SimpleGraph.IsSeparator.not_adj_of_reachable`: after deleting a separator of `a` from `b`, no
+  vertex is reachable from both, and no edge joins the part reachable from `a` to the part
+  reachable from `b`.
 * `SimpleGraph.IsMinimalSeparator.exists_adj_reachable`: each vertex of a minimal `a`–`b`
   separator has a neighbour in the part of the graph reachable from `a`.
+* `SimpleGraph.IsMinimalSeparator.exists_walk_of_mem`: two vertices of a minimal `a`–`b` separator
+  are joined by a walk through the part of the graph reachable from `a`.
 * `SimpleGraph.exists_isMinimalSeparator_subset_neighborSet`: distinct nonadjacent vertices have
   a minimal separator consisting of neighbours of the first.
 
@@ -89,16 +95,24 @@ theorem isSeparator_comm : G.IsSeparator a b S ↔ G.IsSeparator b a S :=
 /-- No set separates a vertex from itself. -/
 theorem IsSeparator.ne (h : G.IsSeparator a b S) : a ≠ b := by
   rintro rfl
-  obtain ⟨v, hv, hvS⟩ := h.exists_mem_support .nil
-  rw [Walk.support_nil, List.mem_singleton] at hv
-  exact h.left_notMem (hv ▸ hvS)
+  exact h.not_reachable .rfl
 
 /-- No set separates two adjacent vertices. -/
-theorem IsSeparator.not_adj (h : G.IsSeparator a b S) : ¬G.Adj a b := fun hab ↦ by
-  obtain ⟨v, hv, hvS⟩ := h.exists_mem_support hab.toWalk
-  rw [Adj.support_toWalk, List.mem_cons, List.mem_singleton] at hv
-  rcases hv with rfl | rfl
-  exacts [h.left_notMem hvS, h.right_notMem hvS]
+theorem IsSeparator.not_adj (h : G.IsSeparator a b S) : ¬G.Adj a b := fun hab ↦
+  h.not_reachable (induce_adj.2 hab).reachable
+
+/-- No vertex is reachable from both `a` and `b` after deleting a separator of `a` from `b`. -/
+theorem IsSeparator.not_reachable_of_reachable (h : G.IsSeparator a b S) {v : V} (hv : v ∉ S)
+    (ha : (G.induce Sᶜ).Reachable ⟨a, h.left_notMem⟩ ⟨v, hv⟩) :
+    ¬(G.induce Sᶜ).Reachable ⟨b, h.right_notMem⟩ ⟨v, hv⟩ := fun hb ↦
+  h.not_reachable (ha.trans hb.symm)
+
+/-- After deleting a separator of `a` from `b`, no edge joins a vertex reachable from `a` to a
+vertex reachable from `b`. -/
+theorem IsSeparator.not_adj_of_reachable (h : G.IsSeparator a b S) {u w : V} (hu : u ∉ S)
+    (hw : w ∉ S) (ha : (G.induce Sᶜ).Reachable ⟨a, h.left_notMem⟩ ⟨u, hu⟩)
+    (hb : (G.induce Sᶜ).Reachable ⟨b, h.right_notMem⟩ ⟨w, hw⟩) : ¬G.Adj u w := fun huw ↦
+  h.not_reachable_of_reachable hw (ha.trans (induce_adj.2 huw).reachable) hb
 
 /-- A set containing a separator of `a` from `b` and avoiding `a` and `b` separates them. -/
 theorem IsSeparator.mono (h : G.IsSeparator a b S) (hST : S ⊆ T) (ha : a ∉ T) (hb : b ∉ T) :
@@ -151,22 +165,33 @@ theorem IsMinimalSeparator.exists_adj_reachable (h : G.IsMinimalSeparator a b S)
     rw [isSeparator_iff] at this
     push Not at this
     exact this (fun ha ↦ hS.left_notMem ha.1) (fun hb ↦ hS.right_notMem hb.1)
-  -- the vertices reachable from `a` by walks avoiding `S`
-  let C : Set V := {v | ∃ q : G.Walk a v, ∀ w ∈ q.support, w ∉ S}
-  have hbC : b ∉ C := fun ⟨q, hq⟩ ↦
-    let ⟨v, hv, hvS⟩ := hS.exists_mem_support q
-    hq v hv hvS
-  obtain ⟨d, hd, ⟨q, hq⟩, hdC⟩ := p.exists_boundary_dart C ⟨.nil, by simpa using hS.left_notMem⟩ hbC
+  -- the vertices reachable from `a` after deleting `S`
+  let C : Set V := {v | ∃ hv : v ∉ S, (G.induce Sᶜ).Reachable ⟨a, hS.left_notMem⟩ ⟨v, hv⟩}
+  obtain ⟨d, hd, ⟨hdS', hr⟩, hdC⟩ :=
+    p.exists_boundary_dart C ⟨hS.left_notMem, .rfl⟩ fun ⟨_, hb⟩ ↦ hS.not_reachable hb
   have hdS : d.snd ∈ S := by
     by_contra hdS
-    refine hdC ⟨q.concat d.adj, fun w hw ↦ ?_⟩
-    rw [Walk.support_concat, List.mem_append, List.mem_singleton] at hw
-    rcases hw with hw | rfl
-    exacts [hq w hw, hdS]
+    exact hdC ⟨hdS, hr.trans (induce_adj.2 d.adj).reachable⟩
   have hdx : d.snd = x := by
     by_contra hdx
     exact hp _ (p.dart_snd_mem_support_of_mem_darts hd) ⟨hdS, hdx⟩
-  refine ⟨d.fst, hq _ q.end_mem_support, hdx ▸ d.adj.symm, reachable_induce_iff.2 ⟨q, hq⟩⟩
+  exact ⟨d.fst, hdS', hdx ▸ d.adj.symm, hr⟩
+
+/-- Two vertices `x` and `y` of a minimal separator of `a` from `b` are joined by a walk whose
+vertices other than `x` and `y` are reachable from `a` after deleting the separator. -/
+theorem IsMinimalSeparator.exists_walk_of_mem (h : G.IsMinimalSeparator a b S) {x y : V}
+    (hx : x ∈ S) (hy : y ∈ S) :
+    ∃ p : G.Walk x y, ∀ w ∈ p.support, w = x ∨ w = y ∨
+      ∃ hw : w ∉ S, (G.induce Sᶜ).Reachable ⟨a, h.isSeparator.left_notMem⟩ ⟨w, hw⟩ := by
+  obtain ⟨wx, hwx, hxw, hrx⟩ := h.exists_adj_reachable hx
+  obtain ⟨wy, hwy, hyw, hry⟩ := h.exists_adj_reachable hy
+  obtain ⟨q, hq⟩ := reachable_induce_iff.1 (hrx.symm.trans hry)
+  refine ⟨.cons hxw (q.concat hyw.symm), fun w hw ↦ ?_⟩
+  obtain rfl | hw | rfl : w = x ∨ w ∈ q.support ∨ w = y := by simpa using hw
+  · exact .inl rfl
+  · refine .inr (.inr ⟨hq w hw, hrx.trans (Walk.reachable_of_mem_support
+      (w := q.induce Sᶜ hq) (Walk.start_mem_support _) (by simpa using hw))⟩)
+  · exact .inr (.inl rfl)
 
 /-- **Existence of minimal separators.** Two distinct nonadjacent vertices `a` and `b` have a
 minimal separator all of whose vertices are neighbours of `a`. No finiteness is needed. -/
@@ -189,17 +214,13 @@ theorem exists_isMinimalSeparator_subset_neighborSet (hab : a ≠ b) (h : ¬G.Ad
     obtain ⟨d, hd, ⟨q, hq⟩, hdD⟩ := p.reverse.exists_boundary_dart D hbD haD
     have hda : G.Adj a d.snd := by
       by_contra hda
-      refine hdD ⟨q.cons d.adj.symm, fun w hw ↦ ?_⟩
-      rw [Walk.support_cons, List.mem_cons] at hw
-      rcases hw with rfl | hw
-      exacts [hda, hq w hw]
+      exact hdD ⟨q.cons d.adj.symm, List.forall_mem_cons.2 ⟨hda, hq⟩⟩
     refine ⟨d.snd, ?_, hda, d.fst, ⟨q, hq⟩, d.adj.symm⟩
     simpa using p.reverse.dart_snd_mem_support_of_mem_darts hd
   · -- deleting `x` from `T` reopens the walk from `a` through `x` and `D` to `b`
     obtain ⟨hax, d, ⟨q, hq⟩, hxd⟩ := hx
     obtain ⟨v, hv, hvT, hvx⟩ := hsep.exists_mem_support ((q.cons hxd).cons hax)
-    rw [Walk.support_cons, Walk.support_cons, List.mem_cons, List.mem_cons] at hv
-    rcases hv with rfl | rfl | hv
+    obtain rfl | rfl | hv : v = a ∨ v = x ∨ v ∈ q.support := by simpa using hv
     exacts [haT hvT, hvx rfl, hq v hv hvT.1]
 
 end SimpleGraph

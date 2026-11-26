@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Separator
 public import Mathlib.Combinatorics.SimpleGraph.Clique
 
 import TauCeti.Combinatorics.SimpleGraph.CycleGraph
-import Mathlib.Combinatorics.SimpleGraph.Walk.Decomp
 
 /-!
 # Dirac's separator theorem
@@ -54,31 +53,6 @@ namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V} {a b : V} {S : Set V}
 
-/-- Two chordless walks `P` from `x` to `y` and `Q` from `y` to `x` form a chordless closed walk
-when each vertex of `P` lies on `Q` or in `A`, each vertex of `Q` lies on `P` or in `B`, and no
-edge joins `A` to `B`. -/
-private theorem isChordless_append_of_forall_mem_support {A B : Set V} {x y : V}
-    (hAB : ∀ u ∈ A, ∀ w ∈ B, ¬G.Adj u w) {P : G.Walk x y} {Q : G.Walk y x} (hPc : P.IsChordless)
-    (hQc : Q.IsChordless) (hPA : ∀ v ∈ P.support, v ∈ Q.support ∨ v ∈ A)
-    (hQB : ∀ v ∈ Q.support, v ∈ P.support ∨ v ∈ B) : (P.append Q).IsChordless := by
-  rw [Walk.isChordless_iff_forall_mem_edges]
-  intro u w hu hw huw
-  rw [Walk.edges_append, List.mem_append]
-  rw [Walk.mem_support_append_iff] at hu hw
-  rcases hu with hu | hu <;> rcases hw with hw | hw
-  · exact .inl (hPc.mem_edges hu hw huw)
-  · rcases hPA u hu with hu' | hu'
-    · exact .inr (hQc.mem_edges hu' hw huw)
-    · rcases hQB w hw with hw' | hw'
-      · exact .inl (hPc.mem_edges hu hw' huw)
-      · exact absurd huw (hAB u hu' w hw')
-  · rcases hPA w hw with hw' | hw'
-    · exact .inr (hQc.mem_edges hu hw' huw)
-    · rcases hQB u hu with hu' | hu'
-      · exact .inl (hPc.mem_edges hu' hw huw)
-      · exact absurd huw.symm (hAB w hw' u hu')
-  · exact .inr (hQc.mem_edges hu hw huw)
-
 /-- In a chordal graph, two distinct vertices `x` and `y` joined by a walk through a set `A` and by
 a walk through a set `B` are adjacent, provided `A` and `B` are disjoint and no edge joins them. -/
 private theorem IsChordal.adj_of_forall_mem_support (hG : G.IsChordal) {A B : Set V} {x y : V}
@@ -106,7 +80,7 @@ private theorem IsChordal.adj_of_forall_mem_support (hG : G.IsChordal) {A B : Se
     exact hdisj.notMem_of_mem_left hvA hvB
   -- the cycle is chordless, as there are no edges between `A` and `B`
   have hchord : (P.append Q).IsChordless := by
-    refine isChordless_append_of_forall_mem_support hAB hPc hQc (fun v hv ↦ ?_) (fun v hv ↦ ?_)
+    refine hPc.append_of_forall_mem_support hQc hAB (fun v hv ↦ ?_) (fun v hv ↦ ?_)
     · rcases hP v hv with rfl | rfl | hv
       exacts [.inl Q.end_mem_support, .inl Q.start_mem_support, .inr hv]
     · rcases hQ v hv with rfl | rfl | hv
@@ -121,46 +95,20 @@ private theorem IsChordal.adj_of_forall_mem_support (hG : G.IsChordal) {A B : Se
 /-- **Minimal separators of a chordal graph are cliques.** -/
 theorem IsChordal.isClique_of_isMinimalSeparator (hG : G.IsChordal)
     (hS : G.IsMinimalSeparator a b S) : G.IsClique S := by
-  classical
   have hsep := hS.isSeparator
-  -- `C c` is the set of vertices reachable from `c` after deleting `S`
-  let C : V → Set V := fun c ↦ {v | ∃ q : G.Walk c v, ∀ w ∈ q.support, w ∉ S}
-  have hC {c v : V} (q : G.Walk c v) (hq : ∀ w ∈ q.support, w ∉ S) : ∀ w ∈ q.support, w ∈ C c :=
-    fun w hw ↦ ⟨q.takeUntil w hw, fun u hu ↦ hq u (q.support_takeUntil_subset_support hw hu)⟩
-  -- two vertices of a minimal `c`–`d` separator are joined by a walk through `C c`
-  have hwalk {c d x y : V} (hS : G.IsMinimalSeparator c d S) (hx : x ∈ S) (hy : y ∈ S) :
-      ∃ P : G.Walk x y, ∀ w ∈ P.support, w ∈ insert x (insert y (C c)) := by
-    obtain ⟨wx, hwx, hxw, hrx⟩ := hS.exists_adj_reachable hx
-    obtain ⟨wy, hwy, hyw, hry⟩ := hS.exists_adj_reachable hy
-    obtain ⟨qx, hqx⟩ := reachable_induce_iff.1 hrx
-    obtain ⟨qy, hqy⟩ := reachable_induce_iff.1 hry
-    refine ⟨.cons hxw (qx.reverse.append (qy.concat hyw.symm)), fun w hw ↦ ?_⟩
-    simp only [Walk.support_cons, Walk.mem_support_append_iff, Walk.support_reverse,
-      Walk.support_concat, List.mem_cons, List.mem_reverse, List.mem_append, List.not_mem_nil,
-      or_false] at hw
-    rcases hw with rfl | hw | hw | rfl
-    · exact .inl rfl
-    · exact .inr (.inr (hC qx hqx w hw))
-    · exact .inr (.inr (hC qy hqy w hw))
-    · exact .inr (.inl rfl)
   intro x hx y hy hxy
-  obtain ⟨P, hP⟩ := hwalk hS hx hy
-  obtain ⟨Q, hQ⟩ := hwalk hS.symm hy hx
-  refine hG.adj_of_forall_mem_support hxy (Set.disjoint_left.2 ?_) (fun u hu w hw huw ↦ ?_) P hP Q
-    (by simpa only [Set.insert_comm] using hQ)
-  · -- a vertex reachable from both `a` and `b` would join them outside `S`
-    rintro v ⟨qa, hqa⟩ ⟨qb, hqb⟩
-    obtain ⟨w, hw, hwS⟩ := hsep.exists_mem_support (qa.append qb.reverse)
-    rw [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse] at hw
-    exact hw.elim (hqa w · hwS) (hqb w · hwS)
-  · -- so would an edge between the parts reachable from `a` and from `b`
-    obtain ⟨qa, hqa⟩ := hu
-    obtain ⟨qb, hqb⟩ := hw
-    obtain ⟨v, hv, hvS⟩ := hsep.exists_mem_support (qa.append (qb.reverse.cons huw))
-    rw [Walk.mem_support_append_iff, Walk.support_cons, List.mem_cons, Walk.support_reverse,
-      List.mem_reverse] at hv
-    rcases hv with hv | rfl | hv
-    exacts [hqa v hv hvS, hqa _ qa.end_mem_support hvS, hqb v hv hvS]
+  -- `x` and `y` are joined through the part reachable from `a` and through the part reachable from
+  -- `b` after deleting `S`; these parts are disjoint and no edge joins them
+  obtain ⟨P, hP⟩ := hS.exists_walk_of_mem hx hy
+  obtain ⟨Q, hQ⟩ := hS.symm.exists_walk_of_mem hy hx
+  refine hG.adj_of_forall_mem_support
+    (A := {w | ∃ hw : w ∉ S, (G.induce Sᶜ).Reachable ⟨a, hsep.left_notMem⟩ ⟨w, hw⟩})
+    (B := {w | ∃ hw : w ∉ S, (G.induce Sᶜ).Reachable ⟨b, hsep.right_notMem⟩ ⟨w, hw⟩})
+    hxy (Set.disjoint_left.2 ?_) ?_ P hP Q fun w hw ↦ or_left_comm.1 (hQ w hw)
+  · rintro v ⟨hv, ha⟩ ⟨_, hb⟩
+    exact hsep.not_reachable_of_reachable hv ha hb
+  · rintro u ⟨hu, ha⟩ w ⟨hw, hb⟩
+    exact hsep.not_adj_of_reachable hu hw ha hb
 
 /-- Adjacency between the vertices of an induced cycle on `m + 4` vertices, by position. -/
 private theorem adj_cycleGraph_embedding_iff {m : ℕ} (f : cycleGraph (m + 4) ↪g G) {i j : ℕ}
@@ -184,22 +132,16 @@ private theorem mem_of_isSeparator_of_subset_neighborSet {m : ℕ} (f : cycleGra
     · have := (adj_cycleGraph_embedding_iff f (i := 0) (by lia) _).1 (hSN hjS)
       lia
   -- so the long arc joins the vertex at position `2` to the one at position `m + 3` outside `S`
-  have harc (k : ℕ) (hk : k ≤ m + 1) :
-      ∃ q : G.Walk (f ⟨2, by lia⟩) (f ⟨2 + k, by lia⟩), ∀ w ∈ q.support, w ∉ S := by
+  have harc (k : ℕ) (hk : k ≤ m + 1) : (G.induce Sᶜ).Reachable ⟨f ⟨2, by lia⟩, hsep.right_notMem⟩
+      ⟨f ⟨2 + k, by lia⟩, hout (by lia) (by lia)⟩ := by
     induction k with
-    | zero => exact ⟨.nil, by simpa using hsep.right_notMem⟩
+    | zero => exact .rfl
     | succ k ih =>
-      obtain ⟨q, hq⟩ := ih (by lia)
-      refine ⟨q.concat ((adj_cycleGraph_embedding_iff f _ _).2 (by lia)), fun w hw ↦ ?_⟩
-      rw [Walk.support_concat, List.mem_append, List.mem_singleton] at hw
-      rcases hw with hw | rfl
-      exacts [hq w hw, hout (by lia) (by lia)]
-  obtain ⟨q, hq⟩ := harc (m + 1) le_rfl
-  obtain ⟨v, hv, hvS⟩ := hsep.exists_mem_support
-    (q.reverse.cons ((adj_cycleGraph_embedding_iff f (i := 0) (j := 2 + (m + 1)) _ _).2 (by lia)))
-  rw [Walk.support_cons, List.mem_cons, Walk.support_reverse, List.mem_reverse] at hv
-  rcases hv with rfl | hv
-  exacts [hsep.left_notMem hvS, hq v hv hvS]
+      exact (ih (by lia)).trans
+        (induce_adj.2 ((adj_cycleGraph_embedding_iff f _ _).2 (by lia))).reachable
+  exact hsep.not_reachable ((induce_adj.2
+    ((adj_cycleGraph_embedding_iff f (i := 0) (j := 2 + (m + 1)) _ _).2 (by lia))).reachable.trans
+      (harc (m + 1) le_rfl).symm)
 
 /-- A graph all of whose minimal separators are cliques is chordal. -/
 theorem isChordal_of_forall_isMinimalSeparator_isClique
@@ -216,13 +158,12 @@ theorem isChordal_of_forall_isMinimalSeparator_isClique
   have hsep := hS.isSeparator
   -- it contains the vertex at position `1`, on the short arc between them
   have h1 : f ⟨1, by lia⟩ ∈ S := by
-    have h01 : G.Adj (f ⟨0, by lia⟩) (f ⟨1, by lia⟩) := (hadj _ _).2 (by lia)
-    have h12 : G.Adj (f ⟨1, by lia⟩) (f ⟨2, by lia⟩) := (hadj _ _).2 (by lia)
-    obtain ⟨v, hv, hvS⟩ := hsep.exists_mem_support (.cons h01 (.cons h12 .nil))
-    simp only [Walk.support_cons, Walk.support_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at hv
-    rcases hv with rfl | rfl | rfl
-    exacts [absurd hvS hsep.left_notMem, hvS, absurd hvS hsep.right_notMem]
+    by_contra h1
+    have h01 : (G.induce Sᶜ).Adj ⟨f ⟨0, by lia⟩, hsep.left_notMem⟩ ⟨f ⟨1, by lia⟩, h1⟩ :=
+      (hadj _ _).2 (by lia)
+    have h12 : (G.induce Sᶜ).Adj ⟨f ⟨1, by lia⟩, h1⟩ ⟨f ⟨2, by lia⟩, hsep.right_notMem⟩ :=
+      (hadj _ _).2 (by lia)
+    exact hsep.not_reachable (h01.reachable.trans h12.reachable)
   -- and the vertex at position `m + 3`; the two are not adjacent, so `S` is not a clique
   have h3 := mem_of_isSeparator_of_subset_neighborSet f hsep hSN
   have := (hadj _ _).1 (h _ _ _ hS h1 h3 (hne _ _ (by lia)))
