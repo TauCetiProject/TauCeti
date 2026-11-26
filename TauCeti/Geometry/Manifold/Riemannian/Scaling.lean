@@ -265,22 +265,8 @@ theorem norm_sq_mgradient_rescale_const [IsManifold I 1 M]
       ‖TauCeti.Manifold.mgradient I f x‖ ^ 2) =
     c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       ‖TauCeti.Manifold.mgradient I f x‖ ^ 2) := by
-  set v₀ : TangentSpace I x :=
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    TauCeti.Manifold.mgradient I f x
-  have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      TauCeti.Manifold.mgradient I f x) = c⁻¹ • v₀ := g.mgradient_rescale_const hc f x
-  have hsq₀ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      ‖v₀‖ ^ 2) = g.inner x v₀ v₀ := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle]
-  rw [hsq₀]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle, hgrad, rescale_inner]
-  simp only [map_smul, smul_apply, smul_eq_mul]
-  field_simp
+  rw [g.norm_mgradient_rescale contMDiff_const (fun _ ↦ hc) f x, mul_pow, inv_pow,
+    Real.sq_sqrt hc.le]
 
 /-- **Scaling of the Laplacian.** Multiplying a `C¹` metric by a positive constant `c` multiplies
 the Laplace–Beltrami operator of every `C²` function by `c⁻¹`. -/
