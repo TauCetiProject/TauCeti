@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -157,9 +158,9 @@ theorem existsUnique_dirichletForm_eq (f : Lp ℝ 2 (riemannianVolume I M))
     ∃! w : SobolevH1 I M, ∫ x, toLp w x ∂riemannianVolume I M = 0 ∧
       ∀ v, dirichletForm w v = ∫ x, f x * toLp v x ∂riemannianVolume I M := by
   -- The right-hand side as a continuous linear functional.
-  set ℓ : StrongDual ℝ (SobolevH1 I M) := (innerSL ℝ f).comp toLp
-  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M := by
-    simp [ℓ, L2.inner_def, mul_comm]
+  set ℓ : StrongDual ℝ (SobolevH1 I M) := Lp.pairingL f toLp
+  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M :=
+    Lp.pairingL_apply f toLp v
   obtain ⟨w, hw, huniq⟩ := isCoercive_poissonForm.existsUnique_forall_eq ℓ
   -- Testing against `1` shows that the Lax–Milgram solution has integral zero.
   have hw0 : integralCLM w = 0 := by

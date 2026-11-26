@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
@@ -190,20 +191,21 @@ attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 /-- The **right-hand side of the Dirichlet problem** as a continuous linear functional on
 `H¹₀(Ω)`: an `L²(Ω)` function `f` acts by `v ↦ ∫_Ω f v`, pairing against the value component of
 the Sobolev jet. Continuity is automatic from the construction, the value map
-`TauCeti.W1p0.valueL` being continuous and the pairing being the `L²` inner product. -/
+`TauCeti.W1p0.valueL` being continuous and the pairing `MeasureTheory.Lp.pairingL` being the `L²`
+inner product. -/
 def dirichletForcing (f : Lp ℝ 2 (mu.restrict Omega)) : StrongDual ℝ (W1p0 mu Omega 2) :=
-  (innerSL ℝ f).comp W1p0.valueL
-
-/-- The forcing functional is the `L²` inner product against the value component. -/
-@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
-    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [dirichletForcing, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p0.valueL_apply]
+  Lp.pairingL f W1p0.valueL
 
 /-- The forcing functional written as the integral `∫_Ω f v` it names. -/
 theorem dirichletForcing_apply_eq_setIntegral (f : Lp ℝ 2 (mu.restrict Omega))
     (v : W1p0 mu Omega 2) :
     dirichletForcing f v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  rw [dirichletForcing_apply, L2.inner_def]
+  rw [dirichletForcing, Lp.pairingL_apply, W1p0.valueL_apply]
+
+/-- The forcing functional is the `L²` inner product against the value component. -/
+@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  rw [dirichletForcing_apply_eq_setIntegral, L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
 
