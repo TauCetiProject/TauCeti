@@ -20,6 +20,7 @@ import TauCeti.Probability.BrownianMotion.NormalizedIncrements
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Moments.SubGaussian.Gaussian.Real
+import TauCeti.Topology.Instances.NNReal.Dyadic.ModulusOfContinuity
 
 /-!
 # Lévy's exact uniform modulus of continuity for Brownian motion
