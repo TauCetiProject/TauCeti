@@ -57,8 +57,9 @@ constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
 Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
-(`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
-`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
+(`ContMDiff.clm_bundle_comp`, and `ContMDiffWithinAt.clm_bundle_comp` within a set). The
+corresponding native section operation is `ContMDiffSection.clmComp`; it requires no finite rank
+or completeness assumption.
 
 Negation of a hom-bundle section along any base map preserves its regularity
 (`ContMDiff.clm_bundle_neg`). Taking the ordinary trace of an endomorphism family along a
@@ -361,6 +362,27 @@ variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 
   [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
   {n : WithTop ℕ∞} {b : M → B}
   {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+
+/-- Composing two hom-bundle fields along the same base map preserves their regularity within a
+set at a point. -/
+theorem ContMDiffWithinAt.clm_bundle_comp {s : Set M} {x : M}
+    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)) s x)
+    (hC : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) s x) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) s x := by
+  have hAx := (contMDiffWithinAt_hom_bundle _).mp hA
+  have hCx := (contMDiffWithinAt_hom_bundle _).mp hC
+  rw [contMDiffWithinAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp (A x) (C x)
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))⟩
+  filter_upwards [hAx.1.continuousWithinAt.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
 
 /-- Composing two hom-bundle fields along the same base map preserves their regularity at a
 point. -/

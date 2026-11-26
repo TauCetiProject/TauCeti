@@ -154,15 +154,15 @@ theorem _root_.ContMDiff.mdifferentiableAt_clm_bundle_symm_apply {n : WithTop �
     using ((hΦ.clm_bundle_equiv_symm x).mdifferentiableAt hn).clm_bundle_apply hσ
 
 omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
-/-- **Transport preserves smoothness.** If an operator `D` sends `C^(k + 1)` sections of `V` to
-`Cᵏ` `V`-valued one-forms, then its transport along a `C^(k + 1)` bundle isomorphism `Φ` sends
-`C^(k + 1)` sections of `W` to `Cᵏ` `W`-valued one-forms. -/
-theorem contMDiffCovariantDerivativeOn_sectionTransport {k : WithTop ℕ∞}
+/-- **Transport preserves smoothness.** If an operator `D` sends sections of `V` that are
+`C^(k + 1)` on a set `u` to `V`-valued one-forms that are `Cᵏ` on `u`, then its transport along a
+`C^(k + 1)` bundle isomorphism `Φ` does the same for `W`. -/
+theorem contMDiffCovariantDerivativeOn_sectionTransport {k : WithTop ℕ∞} {u : Set M}
     (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) (k + 1) fun x ↦
       TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
         ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x))
-    (hDs : ContMDiffCovariantDerivativeOn F k D Set.univ) :
-    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) Set.univ where
+    (hDs : ContMDiffCovariantDerivativeOn F k D u) :
+    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) u where
   contMDiff {σ} hσ := by
     have hτ := ContMDiffOn.clm_bundle_apply hΦ.clm_bundle_equiv_symm.contMDiffOn hσ
     simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_restrictScalars'_symm]
@@ -170,18 +170,17 @@ theorem contMDiffCovariantDerivativeOn_sectionTransport {k : WithTop ℕ∞}
     have hDτ := hDs.contMDiff hτ
     simp only [ContinuousLinearEquiv.toContinuousLinearMap_restrictScalars'] at hΦ
     simp only [sectionTransport_apply]
-    exact fun x _ ↦ (((hΦ x).of_le le_self_add).clm_bundle_comp
-      ((hDτ x (Set.mem_univ x)).contMDiffAt Filter.univ_mem)).contMDiffWithinAt
+    exact fun x hx ↦ ((hΦ x).of_le le_self_add).contMDiffWithinAt.clm_bundle_comp (hDτ x hx)
 
 omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
 /-- The transport of a `Cᵏ` operator along a smooth bundle isomorphism is `Cᵏ`, for every
 `k : ℕ∞`; the case of `contMDiffCovariantDerivativeOn_sectionTransport` for smooth `Φ`. -/
-theorem _root_.ContMDiffCovariantDerivativeOn.sectionTransport_of_contMDiff {k : ℕ∞}
-    (hDs : ContMDiffCovariantDerivativeOn F k D Set.univ)
+theorem _root_.ContMDiffCovariantDerivativeOn.sectionTransport_of_contMDiff {k : ℕ∞} {u : Set M}
+    (hDs : ContMDiffCovariantDerivativeOn F k D u)
     (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞ fun x ↦
       TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
         ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) :
-    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) Set.univ :=
+    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) u :=
   contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by exact_mod_cast le_top)) hDs
 
 omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
