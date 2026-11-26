@@ -323,6 +323,15 @@ theorem norm_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) :
   conv_lhs => rw [← mk_coeFn f]
   exact norm_mk_eq_integral hp0 hp _ _
 
+/-- For a finite measure, a class whose fibre norm is almost everywhere at most `C` has norm at
+most `μ(B) ^ (1 / p) * C`. -/
+theorem norm_le_of_ae_bound [IsFiniteMeasure μ] {C : ℝ} (hC : 0 ≤ C)
+    (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) : ‖f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C := by
+  rw [norm_eq_norm_toLp]
+  refine Lp.norm_le_of_ae_bound hC ?_
+  filter_upwards [f.memLp_norm.coeFn_toLp, hfC] with x hx hfx
+  rwa [hx, norm_norm]
+
 variable [hp : Fact (1 ≤ p)]
 
 -- The additive structure is `instAddCommGroup` itself, so that it agrees at instance reducibility
