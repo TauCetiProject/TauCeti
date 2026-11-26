@@ -36,10 +36,9 @@ and scalar extension.
   roots `α`.
 * `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: the case of constant coefficient `1`,
   where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
-* `Polynomial.Splits.eval_nonneg_of_forall_mem_roots_le`,
-  `Polynomial.Splits.eval_nonpos_of_forall_mem_erase_le`: over an ordered domain, a split
-  polynomial with nonnegative leading coefficient is nonnegative above all its roots, and
-  nonpositive between its largest root and the remaining ones.
+* `Polynomial.Splits.eval_nonpos_of_forall_mem_erase_le`: over an ordered domain, a split
+  polynomial with nonnegative leading coefficient is nonpositive between its largest root and the
+  remaining ones.
 * `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent up to a unit constant of divisors
   of mapped split polynomials whose mapped leading coefficient is a unit.
 * `Units.exists_pow_eq_of_splits`: a unit `a` is an `m`-th power of a unit when `Xᵐ - a` splits.
@@ -109,15 +108,6 @@ section Order
 
 variable {R : Type*} [CommRing R] [IsDomain R] [PartialOrder R] [IsOrderedRing R] {f : R[X]}
   {x : R}
-
-/-- **Sign to the right of the roots.** A split polynomial with nonnegative leading coefficient
-is nonnegative at every point that lies above all of its roots. -/
-theorem Splits.eval_nonneg_of_forall_mem_roots_le (hf : f.Splits) (hlc : 0 ≤ f.leadingCoeff)
-    (hx : ∀ a ∈ f.roots, a ≤ x) : 0 ≤ f.eval x := by
-  rw [hf.eval_eq_prod_roots]
-  refine mul_nonneg hlc (Multiset.prod_nonneg fun b hb ↦ ?_)
-  obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hb
-  exact sub_nonneg.2 (hx a ha)
 
 /-- **Sign between the two largest roots.** A split polynomial with nonnegative leading
 coefficient is nonpositive at every point `x` that lies below one of its roots `a` and above all

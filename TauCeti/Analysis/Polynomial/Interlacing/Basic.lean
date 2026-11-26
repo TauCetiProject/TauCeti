@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Data.Multiset.Sort
 public import Mathlib.Basic.Real.Basic
+import Mathlib.Analysis.Polynomial.Order
 import Mathlib.Topology.Algebra.Polynomial
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Algebra.Polynomial.Splits
@@ -94,6 +95,13 @@ theorem sortedRoots_eq_iff {l : List ℝ} :
     (pairwise_sortedRoots p) hl ?_
   rw [← Multiset.coe_eq_coe, hlp, coe_sortedRoots]
 
+/-- Within range, each entry of `p.sortedRoots` is at most the one before it. -/
+theorem sortedRoots_getD_succ_le_getD {j : ℕ} (hj : j + 1 < p.sortedRoots.length) :
+    p.sortedRoots.getD (j + 1) 0 ≤ p.sortedRoots.getD j 0 := by
+  simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj,
+    List.getElem?_eq_getElem (Nat.lt_of_succ_lt hj), Option.getD_some]
+  exact List.pairwise_iff_getElem.1 (pairwise_sortedRoots p) _ _ _ _ (Nat.lt_succ_self j)
+
 /-- Every root of `p` is at most the head of `p.sortedRoots`, its largest root. -/
 theorem le_sortedRoots_getD_zero (hx : x ∈ p.roots) : x ≤ p.sortedRoots.getD 0 0 := by
   rw [← mem_sortedRoots] at hx
@@ -174,11 +182,8 @@ theorem commonlyInterlaced_of_subsingleton [Subsingleton ι] (hf : ∀ i, (f i).
     CommonlyInterlaced f := by
   refine ⟨hf, fun i i' j hj ↦ ?_⟩
   obtain rfl := Subsingleton.elim i i'
-  have hlen : j + 1 < (f i).sortedRoots.length := by
-    rwa [length_sortedRoots, (splits_iff_card_roots.1 (hf i))]
-  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlen,
-    List.getElem?_eq_getElem (by omega), Option.getD_some, Option.getD_some]
-  exact List.pairwise_iff_getElem.1 (pairwise_sortedRoots _) _ _ _ _ (by omega)
+  exact sortedRoots_getD_succ_le_getD <| by
+    rwa [length_sortedRoots, splits_iff_card_roots.1 (hf i)]
 
 /-- **One level of an interlacing family** (Marcus–Spielman–Srivastava, Lemma 4.2). If the
 members of a nonempty finite commonly interlaced family of real polynomials have positive leading
@@ -212,8 +217,9 @@ theorem exists_isRoot_le_of_commonlyInterlaced [Fintype ι] [Nonempty ι]
   -- At the largest largest root every member is nonnegative.
   have hpos : 0 ≤ (∑ i, f i).eval (r i₁) := by
     rw [eval_finsetSum]
-    exact sum_nonneg fun i _ ↦ (hf.splits i).eval_nonneg_of_forall_mem_roots_le (hlc i).le
-      fun y hy ↦ (le_sortedRoots_getD_zero hy).trans (hi₁ i (mem_univ _))
+    exact sum_nonneg fun i _ ↦ zero_le_eval_of_roots_le_of_leadingCoeff_nonneg
+      (fun y hy ↦ (le_sortedRoots_getD_zero ((mem_roots (hne i)).2 hy)).trans (hi₁ i (mem_univ _)))
+      (hlc i).le
   obtain ⟨y, ⟨hy₀, -⟩, hy⟩ := intermediate_value_Icc (hi₁ i₀ (mem_univ _))
     (∑ i, f i).continuous.continuousOn ⟨hneg, hpos⟩
   exact ⟨i₀, fun x hx ↦ ⟨y, hy, (le_sortedRoots_getD_zero ((mem_roots (hne i₀)).2 hx)).trans hy₀⟩⟩
