@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -30,6 +30,55 @@ open Filter
 open scoped Topology
 
 namespace TauCeti.OneSidedBound
+
+/-- Round `exp u` down to a natural number `y` and `exp v` strictly up to the least multiple `b`
+of `q * y`. If `0 ≤ u`, `0 < q`, and `q * exp u ≤ exp v`, both cutoffs are positive and rounding
+changes their logarithms by at most one. -/
+theorem exists_rounded_scales {u v : ℝ} {q : ℕ} (hu : 0 ≤ u) (hq : 0 < q)
+    (hstep : (q : ℝ) * Real.exp u ≤ Real.exp v) :
+    let y := ⌊Real.exp u⌋₊
+    ∃ b : ℕ, 0 < y ∧ 0 < b ∧ IsLeast {n : ℕ | q * y ∣ n ∧ Real.exp v < (n : ℝ)} b ∧
+      u - 1 ≤ Real.log y ∧ Real.log y ≤ u ∧ v ≤ Real.log b ∧ Real.log b ≤ v + 1 := by
+  intro y
+  have hExp : 1 ≤ Real.exp u := Real.one_le_exp_iff.2 hu
+  have hy : 0 < y := Nat.le_floor (by simpa using hExp)
+  have hy' : (0 : ℝ) < y := by exact_mod_cast hy
+  have he : 2 ≤ Real.exp 1 := by linarith [Real.add_one_le_exp 1]
+  have hlo : u - 1 ≤ Real.log y := by
+    refine (Real.le_log_iff_exp_le hy').2 ?_
+    rw [Real.exp_sub]
+    exact (div_le_div_of_nonneg_left (Real.exp_pos u).le zero_lt_two he).trans
+      (Nat.div_two_lt_floor hExp).le
+  have hfloor : (y : ℝ) ≤ Real.exp u := Nat.floor_le (Real.exp_pos _).le
+  let d := q * y
+  have hd : 0 < d := Nat.mul_pos hq hy
+  have hd' : (0 : ℝ) < d := by exact_mod_cast hd
+  have hdv : (d : ℝ) ≤ Real.exp v := by
+    rw [Nat.cast_mul]
+    exact (mul_le_mul_of_nonneg_left hfloor (Nat.cast_nonneg q)).trans hstep
+  obtain ⟨j, _, hlt, hle⟩ := exists_pos_nat_mul_bounds (Real.exp_pos v).le hd'
+  have hb : (0 : ℝ) < (j : ℝ) * d := (Real.exp_pos v).trans hlt
+  refine ⟨j * d, hy, by exact_mod_cast hb, ⟨⟨dvd_mul_left _ _, by exact_mod_cast hlt⟩, ?_⟩,
+    hlo, (Real.log_le_iff_le_exp hy').2 hfloor, ?_, ?_⟩
+  · rintro n ⟨⟨k, rfl⟩, hn⟩
+    rw [Nat.mul_comm d k]
+    apply Nat.mul_le_mul_right
+    by_contra! hjk
+    have hgap : (k : ℝ) * d + d ≤ (j : ℝ) * d := by
+      rw [← add_one_mul]
+      exact mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.succ_le_of_lt hjk) hd'.le
+    have hn' : Real.exp v < (d : ℝ) * k := by exact_mod_cast hn
+    rw [mul_comm (d : ℝ)] at hn'
+    linarith
+  · push_cast
+    exact (Real.le_log_iff_exp_le hb).2 hlt.le
+  · push_cast
+    refine (Real.log_le_iff_le_exp hb).2 ?_
+    rw [Real.exp_add]
+    calc
+      _ ≤ Real.exp v + d := hle
+      _ ≤ Real.exp v * 2 := by linarith
+      _ ≤ Real.exp v * Real.exp 1 := mul_le_mul_of_nonneg_left he (Real.exp_pos _).le
 
 /-- Construct the separated integral scales for large natural `x`. The second cutoff `x₁` is
 `⌊exp (x ^ (ε/6))⌋₊` and `b` is the least multiple of `q x * x₁` strictly above `exp (x ^ ε)`.
