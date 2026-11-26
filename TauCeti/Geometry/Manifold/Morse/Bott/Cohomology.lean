@@ -55,8 +55,8 @@ critical submanifold whose negative bundle is oriented, for instance a complex v
 The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
 closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the Thom isomorphism is used over a
-compact base (`TauCeti.thomEquivOfCompactSpace`), and so is its twisted form
-(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the namespace
+compact base (`TauCeti.thomEquivOfCompactSpace`). Its twisted form holds over any base
+(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the namespace
 `TauCeti.VectorBundleOrientationCover`). The twisted form needs the base, the fibres and the ring in
 `Type`, and is computed with injective values only, through the universal coefficient theorem.
 
@@ -305,9 +305,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocal
       (VectorBundleOrientationCover.signLocalSystem F V K hι).twistedCohomology K N p) := by
   obtain ⟨e⟩ := nonempty_singularCohomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir
     φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) K N (p + finrank ℝ F)
-  have := compactSpace_of_isClosedEmbedding_gaugeDiscBundle hε.le hK hρ hg hgD
   obtain ⟨e'⟩ := open VectorBundleOrientationCover in
-    nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace F V hι K N p
+    nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem F V hι K N p
   exact ⟨e ≪≫ e'⟩
 
 end Twisted

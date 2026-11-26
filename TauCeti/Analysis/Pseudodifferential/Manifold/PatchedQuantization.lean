@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
+public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 
 /-!
 # Patched quantization on a manifold
@@ -26,6 +27,9 @@ patched quantization is one.
   symbols `aᵢ` in charts `eᵢ`, for cutoffs whose supports form a locally finite family on `M`.
 * `TauCeti.patchedQuantization_mem_classicalPseudodifferentialOperators`: the patched quantization
   of classical symbols of order `m` is a classical pseudodifferential operator of order `m`.
+* `TauCeti.classicalPrincipalSymbol_patchedQuantization`: its principal symbol is the locally
+  finite sum of the principal symbols of the chart quantizations, which
+  `OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization` computes.
 
 ## References
 
@@ -93,5 +97,19 @@ theorem patchedQuantization_mem_classicalPseudodifferentialOperators
       (image_mono subset_union_left))
     fun i _ hf ↦ (e i).chartQuantization_eq_zero (he i) _ _ _ fun p hp ↦
       hf.self_of_nhdsSet p (image_mono subset_union_right hp)
+
+/-- **The principal symbol of a patched quantization** is the locally finite sum of the principal
+symbols of its chart quantizations `φᵢ Op(aᵢ) ψᵢ`. -/
+theorem classicalPrincipalSymbol_patchedQuantization [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+    (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (patchedQuantization he φ ψ a hS) x ξ =
+      ∑ᶠ i, classicalPrincipalSymbol m ((e i).chartQuantization (he i) (φ i) (ψ i) (a i)) x ξ :=
+  classicalPrincipalSymbol_locallyFiniteSum hS
+    (fun i f ↦ ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f).trans
+      (image_mono subset_union_left))
+    (fun i ↦
+      (e i).chartQuantization_mem_classicalPseudodifferentialOperators (he i) (φ i) (ψ i) (a i))
+    (patchedQuantization_mem_classicalPseudodifferentialOperators he φ ψ a hS) x ξ
 
 end TauCeti
