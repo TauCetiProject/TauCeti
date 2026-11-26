@@ -52,6 +52,11 @@ theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence li
 the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
 partial sums of a sequence enters an integral against the partial-sum step function.
 
+On a set where a real function `g` is nonnegative, `f = O(g)` uniformly on the set means
+`‖f x‖ ≤ c * g x` there for a constant `c`, with no norm on `g`. This is the form in which a big-O
+hypothesis on a weight enters a pointwise estimate, such as the bound of a solution of a Volterra
+integral equation by a multiple of its weight.
+
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
 soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic estimate becomes
 an explicit inequality valid at every point, which a summation argument can apply at infinitely
@@ -99,6 +104,8 @@ resolvent-type functions, which are `O(1 / y)` there.
   satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
+* `Asymptotics.isBigO_principal_iff_of_nonneg`: for `g ≥ 0` on `s`, `f = O(g)` on `s` if and
+  only if `‖f x‖ ≤ c * g x` on `s` for some `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
 * `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
@@ -226,6 +233,14 @@ theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
   exact (hu.comp_tendsto tendsto_nat_floor_atTop).trans <|
     (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
       (hmax.fun_comp fun t ↦ t ^ r)
+
+/-- **A big-O bound on a set by a nonnegative real function.** If `g ≥ 0` on `s`, then
+`f = O(g)` on `s` exactly when `‖f x‖ ≤ c * g x` on `s` for some constant `c`. -/
+theorem isBigO_principal_iff_of_nonneg {α E : Type*} [Norm E] {f : α → E} {g : α → ℝ}
+    {s : Set α} (hg : ∀ x ∈ s, 0 ≤ g x) :
+    f =O[𝓟 s] g ↔ ∃ c, ∀ x ∈ s, ‖f x‖ ≤ c * g x :=
+  isBigO_principal.trans <| exists_congr fun _ ↦ forall₂_congr fun x hx ↦ by
+    rw [Real.norm_of_nonneg (hg x hx)]
 
 /-- **An eventual big-O bound holds on a whole half-line once it holds on its intervals.** If
 `f = O(g)` at `atTop` and `f = O(g)` uniformly on every interval `[a, b]`, then `f = O(g)`

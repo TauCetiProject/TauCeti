@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.IntermediateValue

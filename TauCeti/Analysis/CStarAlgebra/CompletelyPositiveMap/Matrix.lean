@@ -26,8 +26,10 @@ into a unital C⋆-algebra in which `φ 1` has finite spectrum.
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
   `CStarMatrix.blockDiagonalSingle`, with the trace formula
   `CompletelyPositiveMap.normalizedTrace_blockDiagonal_apply`, which weights the block `i` by
-  `|n i| / |Σ i, n i|`, and contractivity
-  `CompletelyPositiveMap.norm_blockDiagonal_map_one_le_one`.
+  `|n i| / |Σ i, n i|`, the norm `CompletelyPositiveMap.norm_blockDiagonal_apply`
+  (`‖diag(φ_i(a))‖ = maxᵢ ‖φ_i(a)‖`), the multiplicativity defect
+  `CompletelyPositiveMap.blockDiagonal_map_mul_sub`, which is the block-diagonal matrix of the
+  defects of the `φ_i`, and contractivity `CompletelyPositiveMap.norm_blockDiagonal_map_one_le_one`.
 * `CompletelyPositiveMap.compression`: the compression `T ↦ (⟪e i, T e j⟫)ᵢⱼ` of `B(H)` by a finite
   family of vectors, which is the map `T ↦ V⋆TV` for `V x = Σ xᵢ eᵢ`. It is unital when the family
   is orthonormal (`CompletelyPositiveMap.compression_map_one`), and its normalized trace is
@@ -104,6 +106,22 @@ theorem normalizedTrace_blockDiagonal_apply (φ : ∀ i, A →CP CStarMatrix (n 
       ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) *
         CStarMatrix.normalizedTrace (φ i a) := by
   rw [blockDiagonal_apply, CStarMatrix.normalizedTrace_blockDiagonal']
+
+/-- The norm of `diag(φ_i(a))` is the largest of the norms `‖φ_i(a)‖`, so a block-diagonal sum of
+completely positive contractions is a contraction. -/
+theorem norm_blockDiagonal_apply (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a : A) :
+    ‖blockDiagonal φ a‖ = ‖fun i => φ i a‖ := by
+  rw [blockDiagonal_apply, CStarMatrix.norm_ofMatrix_blockDiagonal']
+
+/-- The multiplicativity defect of the block-diagonal sum is the block-diagonal matrix of the
+multiplicativity defects of the `φ_i`. -/
+theorem blockDiagonal_map_mul_sub (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a b : A) :
+    blockDiagonal φ (a * b) - blockDiagonal φ a * blockDiagonal φ b =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (φ i (a * b) - φ i a * φ i b)) := by
+  simp only [blockDiagonal_apply, ← CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply (R := ℂ),
+    ← map_mul, ← map_sub]
+  -- unfold the embedding and evaluate the pointwise operations blockwise
+  simp only [CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply, Pi.sub_apply, Pi.mul_apply]
 
 end BlockDiagonal
 
