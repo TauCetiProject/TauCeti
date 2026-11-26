@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Combinatorics.Hypergraph.PairColor.Const
 import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 import TauCeti.Combinatorics.Hypergraph.Polyad.Subpolyad
 import Mathlib.Tactic.NormNum
@@ -26,8 +27,7 @@ open Finset Colored3Graph
 
 example :
     let S : PairSkeleton3 Unit (Fin 4) :=
-      ⟨Finpartition.indiscrete univ_nonempty.ne_empty,
-        ⟨fun _ ↦ (), id, fun _ ↦ rfl, fun _ ↦ rfl⟩⟩
+      ⟨Finpartition.indiscrete univ_nonempty.ne_empty, .const ()⟩
     let P : Polyad3 S := Polyad3.ofData univ univ univ (by simp [S]) (by simp [S]) (by simp [S])
       () () ()
     let Q : Subpolyad3 P :=

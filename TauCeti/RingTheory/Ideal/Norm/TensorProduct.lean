@@ -9,6 +9,9 @@ public import Mathlib.LinearAlgebra.Quotient.Card
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import Mathlib.RingTheory.Flat.TorsionFree
+
 /-!
 # Cardinalities of finite modules under extension of Dedekind domains
 
@@ -17,21 +20,21 @@ Let `R → S` be a finite torsion-free extension of Dedekind domains, both free 
 `n = finrank R S`. Scalar extension to `S` raises the cardinality of a finite `R`-module `T` to the
 `n`-th power: `#(S ⊗ T) = #T ^ n` (`TauCeti.natCard_tensorProduct`). For a cyclic module `R / I`
 this is `N(I S) = N(I) ^ n` (Mathlib's `Ideal.absNorm_algebraMap`); the general case follows by
-induction on `#T`, since `S` is flat over `R`.
+induction on `#T`, since `S` is flat over `R`. For an infinite `T` both sides are `0`, since `S` is
+faithfully flat over `R`, so `T` embeds into `S ⊗ T`.
 
-So for a submodule `N` of an `R`-module `E` with `E / N` finite, the index of the base change
-`S ⊗ N` in `S ⊗ E` is `#(E / N) ^ n` (`Submodule.cardQuot_baseChange`). In particular, for an
-element `s` with `E / R s` finite, the index of `S (1 ⊗ s)` is `#(E / R s) ^ n`
-(`TauCeti.cardQuot_span_one_tmul`).
+So for a submodule `N` of an `R`-module `E`, the index of the base change `S ⊗ N` in `S ⊗ E` is
+`#(E / N) ^ n` (`Submodule.cardQuot_baseChange`). In particular, for an element `s`, the index of
+`S (1 ⊗ s)` is `#(E / R s) ^ n` (`TauCeti.cardQuot_span_one_tmul`).
 
 ## Main statements
 
 * `TauCeti.natCard_tensorProduct_quotient`: `#(S ⊗ R / I) = #(R / I) ^ finrank R S`.
-* `TauCeti.natCard_tensorProduct`: `#(S ⊗ T) = #T ^ finrank R S` for a finite `R`-module `T`.
-* `Submodule.cardQuot_baseChange`: `#(S ⊗ E / N.baseChange S) = #(E / N) ^ finrank R S` when
-  `E / N` is finite.
-* `TauCeti.cardQuot_span_one_tmul`: `#(S ⊗ E / S (1 ⊗ s)) = #(E / R s) ^ finrank R S` when
-  `E / R s` is finite.
+* `TauCeti.natCard_tensorProduct`: `#(S ⊗ T) = #T ^ finrank R S` for every `R`-module `T` (both
+  sides are `0` for infinite `T`).
+* `Submodule.cardQuot_baseChange`: `#(S ⊗ E / N.baseChange S) = #(E / N) ^ finrank R S`.
+* `TauCeti.cardQuot_span_one_tmul`: `#(S ⊗ E / S (1 ⊗ s)) = #(E / R s) ^ finrank R S`.
+* `TauCeti.finite_quotient_span_one_tmul`: if `E / R s` is finite, so is `S ⊗ E / S (1 ⊗ s)`.
 -/
 
 public section
@@ -56,10 +59,9 @@ theorem natCard_tensorProduct_quotient (I : Ideal R) :
     smul_eq_mul, Ideal.mul_top, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply,
     Ideal.absNorm_algebraMap, Ideal.absNorm_apply, Submodule.cardQuot_apply]
 
-/-- **Scalar extension to `S` raises the cardinality of a finite module to the power
-`finrank R S`.** -/
-theorem natCard_tensorProduct (T : Type*) [AddCommGroup T] [Module R T] [Finite T] :
-    Nat.card (S ⊗[R] T) = Nat.card T ^ finrank R S := by
+/-- The case of `TauCeti.natCard_tensorProduct` for a finite module `T`. -/
+private theorem natCard_tensorProduct_of_finite (T : Type*) [AddCommGroup T] [Module R T]
+    [Finite T] : Nat.card (S ⊗[R] T) = Nat.card T ^ finrank R S := by
   induction hT : Nat.card T using Nat.strong_induction_on generalizing T with
   | _ m ih =>
   subst hT
@@ -91,14 +93,26 @@ theorem natCard_tensorProduct (T : Type*) [AddCommGroup T] [Module R T] [Finite 
     ← Nat.card_congr (TensorProduct.tensorQuotientEquiv S C).toEquiv, hC, hQ] at this
   rw [this, C.card_eq_card_quotient_mul_card, mul_pow]
 
+/-- **Scalar extension to `S` raises the cardinality of a module to the power `finrank R S`.**
+For an infinite module both sides are `0`: `S` is faithfully flat over `R`, so `T` embeds into
+`S ⊗ T` by `t ↦ 1 ⊗ t`, and `finrank R S` is positive. -/
+theorem natCard_tensorProduct (T : Type*) [AddCommGroup T] [Module R T] :
+    Nat.card (S ⊗[R] T) = Nat.card T ^ finrank R S := by
+  rcases finite_or_infinite T with hT | hT
+  · exact natCard_tensorProduct_of_finite S T
+  have : Infinite (S ⊗[R] T) :=
+    Infinite.of_injective _ (Module.FaithfullyFlat.tensorProduct_mk_injective (B := S) T)
+  have hpos : 0 < finrank R S := Module.finrank_pos
+  rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite, zero_pow hpos.ne']
+
 end TauCeti
 
 namespace Submodule
 
-/-- **The index of a submodule under base change.** If `E / N` is finite, then
+/-- **The index of a submodule under base change**:
 `#(S ⊗ E / N.baseChange S) = #(E / N) ^ finrank R S`. -/
-theorem cardQuot_baseChange {E : Type*} [AddCommGroup E] [Module R E] (N : Submodule R E)
-    [Finite (E ⧸ N)] : (N.baseChange S).cardQuot = N.cardQuot ^ finrank R S := by
+theorem cardQuot_baseChange {E : Type*} [AddCommGroup E] [Module R E] (N : Submodule R E) :
+    (N.baseChange S).cardQuot = N.cardQuot ^ finrank R S := by
   -- The `R`-submodule cut out by `S ⊗ N → S ⊗ E` is the base change of `N`, viewed over `R`.
   have hrange : LinearMap.range (N.subtype.lTensor S) = (N.baseChange S).restrictScalars R := by
     have hmap : (N.subtype.baseChange S).restrictScalars R = N.subtype.lTensor S :=
@@ -114,13 +128,20 @@ end Submodule
 
 namespace TauCeti
 
-/-- **The index of an element under base change.** If `E / R s` is finite, then
+/-- **The index of an element under base change**:
 `#(S ⊗ E / S (1 ⊗ s)) = #(E / R s) ^ finrank R S`. -/
-theorem cardQuot_span_one_tmul {E : Type*} [AddCommGroup E] [Module R E] {s : E}
-    [Finite (E ⧸ Submodule.span R {s})] :
+theorem cardQuot_span_one_tmul {E : Type*} [AddCommGroup E] [Module R E] (s : E) :
     (Submodule.span S {(1 : S) ⊗ₜ[R] s}).cardQuot =
       (Submodule.span R {s}).cardQuot ^ finrank R S := by
   rw [← Submodule.cardQuot_baseChange S, Submodule.baseChange_span, Set.image_singleton,
     TensorProduct.mk_apply]
+
+/-- If `E / R s` is finite, so is `S ⊗ E / S (1 ⊗ s)`. -/
+theorem finite_quotient_span_one_tmul {E : Type*} [AddCommGroup E] [Module R E] {s : E}
+    [Finite (E ⧸ Submodule.span R {s})] :
+    Finite ((S ⊗[R] E) ⧸ Submodule.span S {(1 : S) ⊗ₜ[R] s}) := by
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [← Submodule.cardQuot_apply, cardQuot_span_one_tmul, Submodule.cardQuot_apply]
+  exact pow_ne_zero _ Nat.card_pos.ne'
 
 end TauCeti

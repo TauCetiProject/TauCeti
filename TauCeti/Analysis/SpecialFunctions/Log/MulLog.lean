@@ -26,6 +26,8 @@ second differences are `O(|h|)`, although it is not Lipschitz near `0`.
   `u * log u - a * log a ≥ (u - a) * (log a + 1)`.
 * `Real.sub_le_mul_log_sub_mul_log`: for `0 ≤ a, b` with `a = 0` whenever `b = 0`,
   `a - b ≤ a * log a - a * log b`, the scalar form of Klein's inequality.
+* `Real.mul_negMulLog_div`, `Real.mul_log_div_nonneg`: `q * negMulLog (p / q) = p * log (q / p)`,
+  and `0 ≤ p * log (q / p)` for `0 ≤ p ≤ q`, the terms of a conditional entropy.
 * `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
@@ -41,6 +43,8 @@ second differences are `O(|h|)`, although it is not Lipschitz near `0`.
 * `Real.abs_mul_log_le_one_add_sq`: `|x * log x| ≤ 1 + x ^ 2` for every real `x`.
 * `Real.abs_add_mul_log_add_add_sub_mul_log_sub_sub_two_mul_mul_log_le`: Zygmund's condition
   `|(x + h) log (x + h) + (x - h) log (x - h) - 2 x log x| ≤ 30 |h|`.
+* `Real.ofReal_negMulLog`: for `0 ≤ x`, `ofReal (negMulLog x) = ofReal x * ofReal (-log x)`, the
+  form in which entropy sums over measures in `ℝ≥0∞` split off the mass of a set.
 * `Real.le_sub_div_log_sub_log`: for `m ≤ a, b` with `0 < a, b` and `log a ≠ log b`,
   `m ≤ (a - b) / (log a - log b)`, the difference quotient form of the preceding estimate.
 * `Real.mul_abs_log_sub_log_le`, `Real.abs_log_sub_log_le`: Lipschitz bounds
@@ -91,6 +95,20 @@ theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ha
   rcases hb.eq_or_lt with rfl | hb
   · simp [hab rfl]
   nlinarith [mul_log_sub_mul_log_ge hb ha]
+
+/-- `q * negMulLog (p / q) = p * log (q / p)`: the `negMulLog` of a ratio, rescaled, as a term of
+the conditional entropy. Both sides vanish when `q = 0`. -/
+theorem mul_negMulLog_div (p q : ℝ) : q * negMulLog (p / q) = p * log (q / p) := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp
+  · rw [negMulLog, show q / p = (p / q)⁻¹ from (inv_div p q).symm, log_inv]
+    field_simp
+
+/-- The term `p * log (q / p)` of the conditional entropy is nonnegative for `0 ≤ p ≤ q`. -/
+theorem mul_log_div_nonneg {p q : ℝ} (hp : 0 ≤ p) (hpq : p ≤ q) : 0 ≤ p * log (q / p) := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simp
+  · exact mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpq))
 
 /-- The loss of the function `u ↦ u * log u` at a value `x` that gives up an amount `t`, where
 `0 ≤ t` and `t ≤ x / 2`, is at most `-t * (log x - log 2 + 1)`: the supporting line
@@ -310,6 +328,11 @@ theorem abs_add_mul_log_add_add_sub_mul_log_sub_sub_two_mul_mul_log_le (x h : �
   rw [heq, abs_mul, mul_comm 30]
   exact mul_le_mul_of_nonneg_left
     (abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le t) (abs_nonneg h)
+
+/-- `negMulLog x = x * (-log x)`, read in `ℝ≥0∞` for `0 ≤ x`. -/
+theorem ofReal_negMulLog {x : ℝ} (hx : 0 ≤ x) :
+    ENNReal.ofReal (negMulLog x) = ENNReal.ofReal x * ENNReal.ofReal (-log x) := by
+  rw [← ENNReal.ofReal_mul hx, negMulLog, neg_mul, mul_neg]
 
 end Real
 

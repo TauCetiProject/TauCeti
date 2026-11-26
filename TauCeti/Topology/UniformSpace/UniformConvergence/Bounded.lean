@@ -29,6 +29,10 @@ Along a single end, a map `g` continuous on `α × β` is eventually bounded alo
 `x ↦ (x, F i x)` of a family converging uniformly on a compact set `s` to a limit continuous on `s`
 (`IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn`): the graphs converge uniformly
 to the compact graph of the limit, near which `g` is bounded.
+
+A sequence of maps continuous on a compact set `K` and converging uniformly on `K` is uniformly
+bounded on `K` (`TendstoUniformlyOn.exists_forall_norm_le_of_isCompact`): far out, every term is
+within `2` of one fixed term, and the finitely many remaining terms are bounded.
 -/
 
 public section
@@ -81,3 +85,25 @@ theorem IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α 
   have h₁ := hi x hx
   rw [dist_eq_norm'] at h₁
   linarith [hC _ (mem_image_of_mem _ hx), norm_le_insert' (g (x, F i x)) (g (x, f x))]
+
+/-- A sequence of maps continuous on a compact set `K` that converges uniformly on `K` is uniformly
+bounded on `K`. No continuity of the limit is needed. -/
+theorem TendstoUniformlyOn.exists_forall_norm_le_of_isCompact {α E : Type*} [TopologicalSpace α]
+    [SeminormedAddCommGroup E] {F : ℕ → α → E} {f : α → E} {K : Set α}
+    (h : TendstoUniformlyOn F f atTop K) (hK : IsCompact K) (hF : ∀ n, ContinuousOn (F n) K) :
+    ∃ C, ∀ n, ∀ x ∈ K, ‖F n x‖ ≤ C := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 h 1 one_pos)
+  choose B hB using fun n => hK.exists_bound_of_continuousOn (hF n)
+  set S := ∑ n ∈ Finset.range (N + 1), |B n|
+  have hle (m : ℕ) (hm : m ≤ N) (x : α) (hx : x ∈ K) : ‖F m x‖ ≤ S :=
+    (hB m x hx).trans ((le_abs_self _).trans (Finset.single_le_sum (fun n _ => abs_nonneg (B n))
+      (Finset.mem_range.2 (by omega))))
+  refine ⟨S + 2, fun n x hx => ?_⟩
+  rcases le_or_gt n N with hn | hn
+  · linarith [hle n hn x hx]
+  -- Far out, `F n x` is within `2` of `F N x`, through the limit `f x`.
+  have h₁ := hN n hn.le x hx
+  have h₂ := hN N le_rfl x hx
+  have h₃ := dist_triangle_left (F n x) (F N x) (f x)
+  rw [dist_eq_norm] at h₃
+  linarith [norm_le_insert' (F n x) (F N x), hle N le_rfl x hx]

@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Power
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
 /-!
 # Thickenings of schemes
@@ -55,6 +57,12 @@ module of homomorphisms into `I`.
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_pow_succ`: for ideal sheaves
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsThickening.factor_firstOrder`: a closed immersion whose ideal sheaf
+  `I` satisfies `I ^ (n + 2) = 0` factors, by Mathlib's `IsClosedImmersion.lift`, through
+  `V(I ^ (n + 1))` as a thickening with ideal of vanishing `(n + 1)`-st power followed by a
+  first-order thickening.
+* `TauCeti.AlgebraicGeometry.isThickening_of_isNilpotent_ker`: a closed immersion with nilpotent
+  ideal sheaf is a thickening.
 * `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
   ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
   `X.nilradical.subscheme ⟶ X` is a thickening.
@@ -110,6 +118,17 @@ theorem isThickening_iff_ker_le_nilradical (i : Z ⟶ X) [IsClosedImmersion i] :
       ← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal, top_le_iff]
   simp [isThickening_iff, surjective_iff, hnil, ← Set.range_eq_univ, ← hrange,
     ‹IsClosedImmersion i›]
+
+/-- A closed immersion whose ideal sheaf is nilpotent is a thickening. -/
+theorem isThickening_of_isNilpotent_ker (i : Z ⟶ X) [IsClosedImmersion i]
+    (h : IsNilpotent i.ker) : IsThickening i := by
+  obtain ⟨m, hm⟩ := h
+  exact (isThickening_iff_ker_le_nilradical i).2 <|
+    calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
+      _ = (i.ker ^ (m + 1)).radical := (Scheme.IdealSheafData.radical_pow _ m.succ_ne_zero).symm
+      _ = X.nilradical := by
+        rw [pow_eq_zero_of_le m.le_succ hm, Scheme.IdealSheafData.zero_eq_bot,
+          Scheme.IdealSheafData.radical_bot]
 
 namespace IsThickening
 
@@ -182,18 +201,15 @@ class IsFirstOrderThickening (f : X ⟶ Y) : Prop extends IsClosedImmersion f wh
 
 namespace IsFirstOrderThickening
 
+/-- The ideal sheaf of a first-order thickening is nilpotent. -/
+theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
+  ⟨2, by simp [pow_two, ker_mul_self]⟩
+
 /-- A first-order thickening is a thickening: its ideal sheaf has square zero, so it lies in the
 nilradical. -/
 instance (priority := 100) isThickening (i : Z ⟶ X) [IsFirstOrderThickening i] :
     IsThickening i :=
-  (isThickening_iff_ker_le_nilradical i).2 <|
-    calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
-      _ = (i.ker * i.ker).radical := by rw [Scheme.IdealSheafData.radical_mul, inf_idem]
-      _ = X.nilradical := by rw [ker_mul_self, Scheme.IdealSheafData.radical_bot]
-
-/-- The ideal sheaf of a first-order thickening is nilpotent. -/
-theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
-  ⟨2, by simp [pow_two, ker_mul_self]⟩
+  isThickening_of_isNilpotent_ker i (isNilpotent_ker i)
 
 /-- An isomorphism is a first-order thickening. -/
 instance (priority := 100) of_isIso (i : Z ⟶ X) [IsIso i] : IsFirstOrderThickening i where
@@ -329,7 +345,7 @@ theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤
     IsFirstOrderThickening (Scheme.IdealSheafData.inclusion h) :=
   (inclusion_iff h).mpr <| by
     rw [← pow_mul]
-    exact pow_le_pow_of_le_one bot_le le_top (by omega)
+    exact I.pow_le_pow_right (by omega)
 
 /-- The product of two sections of the ideal sheaf of a first-order thickening vanishes, over any
 open subset. -/
@@ -351,5 +367,30 @@ theorem mul_eq_zero_of_app_eq_zero (i : Z ⟶ X) [IsFirstOrderThickening i] {U :
   rw [← TopCat.Presheaf.germ_res_apply X.presheaf (homOfLE hVU) x hxV, h0, map_zero, map_zero]
 
 end IsFirstOrderThickening
+
+namespace IsThickening
+
+/-- A closed immersion `i : Z ⟶ X` whose ideal sheaf `I` satisfies `I ^ (n + 2) = 0` factors as
+`Z ⟶ X' ⟶ X` through the closed subscheme `X' = V(I ^ (n + 1))`, where `X' ⟶ X` is a first-order
+thickening (as `(I ^ (n + 1)) ^ 2 ≤ I ^ (n + 2) = 0`) and `Z ⟶ X'` is a thickening whose ideal
+sheaf `I / I ^ (n + 1)` has vanishing `(n + 1)`-st power. Inductively, a thickening with nilpotent
+ideal sheaf is a composite of first-order thickenings. -/
+theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.ker ^ (n + 2) = ⊥) :
+    IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧
+      IsThickening (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+        (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)) ∧
+      (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+        (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)).ker ^ (n + 1) = ⊥ := by
+  -- The `(n + 1)`-st power of the ideal sheaf of `Z ⟶ X'` is the inverse image of `I ^ (n + 1)`,
+  -- which vanishes on `X'`.
+  have hker : (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+      (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)).ker ^ (n + 1) = ⊥ :=
+    Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le _ (i.ker ^ (n + 1)).subschemeι
+      (by rw [IsClosedImmersion.lift_fac, Scheme.IdealSheafData.ker_subschemeι])
+  refine ⟨⟨?_⟩, isThickening_of_isNilpotent_ker _ ⟨n + 1, hker⟩, hker⟩
+  rw [Scheme.IdealSheafData.ker_subschemeι, ← pow_add, ← le_bot_iff, ← h]
+  exact i.ker.pow_le_pow_right (by omega)
+
+end IsThickening
 
 end TauCeti.AlgebraicGeometry

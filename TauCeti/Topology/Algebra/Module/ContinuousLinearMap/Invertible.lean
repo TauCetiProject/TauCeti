@@ -25,7 +25,8 @@ controls variation of inverse operators by variation of the original operators.
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
 inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
-degree. Scaling the identity by a nonzero scalar `c`
+degree. For such a nonzero scalar `c` with `c - A` invertible, `1 - A / c` is a unit
+(`ContinuousLinearMap.isUnit_one_add_neg_inv_smul`). Scaling the identity by a nonzero scalar `c`
 from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
 real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
 topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
@@ -325,7 +326,41 @@ theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
   rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
     map_inv₀]
 
+omit [ContinuousConstSMul 𝕜 M] in
+/-- Multiplying a continuous linear map by a nonzero scalar `c` from a subfield `S` of its scalars,
+such as a real multiple of a complex-linear map, does not change its invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂] {c : S} (hc : c ≠ 0)
+    {f : M →L[𝕜] M₂} : (c • f).IsInvertible ↔ f.IsInvertible := by
+  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul],
+    isInvertible_smul_iff ((map_ne_zero _).2 hc)]
+
 end Smul
+
+section OneAddNegInvSMul
+
+variable {𝕜 S M : Type*} [Field 𝕜] [Field S] [Algebra S 𝕜]
+  [TopologicalSpace M] [AddCommGroup M] [Module 𝕜 M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul 𝕜 M] [Module S (M →L[𝕜] M)] [IsScalarTower S 𝕜 (M →L[𝕜] M)]
+
+/-- For a nonzero scalar `c` from a subfield `S` of the scalars, such as a real shift of a
+complex-linear map, `1 - A / c = c⁻¹ (c - A)`. -/
+theorem one_add_neg_inv_smul_eq {c : S} (hc : c ≠ 0) (A : M →L[𝕜] M) :
+    1 + (-c⁻¹) • A = (algebraMap S 𝕜 c)⁻¹ • (algebraMap S 𝕜 c • (1 : M →L[𝕜] M) - A) := by
+  rw [← map_inv₀, algebraMap_smul, algebraMap_smul, smul_sub, smul_smul, inv_mul_cancel₀ hc,
+    one_smul, neg_smul, ← sub_eq_add_neg]
+
+/-- For a nonzero scalar `c` from a subfield `S` of the scalars with `c - A` invertible,
+`1 - A / c` is a unit. -/
+theorem isUnit_one_add_neg_inv_smul {c : S} (hc : c ≠ 0) {A : M →L[𝕜] M}
+    (h : (algebraMap S 𝕜 c • (1 : M →L[𝕜] M) - A).IsInvertible) :
+    IsUnit (1 + (-c⁻¹) • A) := by
+  rw [one_add_neg_inv_smul_eq hc, ← isInvertible_iff_isUnit,
+    isInvertible_smul_iff (inv_ne_zero ((map_ne_zero _).2 hc))]
+  exact h
+
+end OneAddNegInvSMul
 
 section SMulId
 
@@ -357,6 +392,20 @@ theorem isInvertible_toSpanSingleton_iff {c : 𝕜} :
     rw [toSpanSingleton_zero, isInvertible_zero_iff] at h
     exact not_subsingleton 𝕜 h.1
   all_goals ext; simp [hc]
+
+/-- On a topological semifield, a continuous linear map `𝕜 → 𝕜` is invertible exactly when it is
+nonzero, since it is `a ↦ a • f 1`. -/
+theorem isInvertible_iff_ne_zero {f : 𝕜 →L[𝕜] 𝕜} : f.IsInvertible ↔ f ≠ 0 := by
+  have hf : f = toSpanSingleton 𝕜 (f 1) := ext_ring (by simp)
+  rw [hf, isInvertible_toSpanSingleton_iff, ← hf]
+  exact not_congr ⟨fun h ↦ ext_ring (by simp [h]), fun h ↦ by simp [h]⟩
+
+/-- On a topological semifield, `c • id` is invertible exactly when `c ≠ 0`. -/
+@[simp]
+theorem isInvertible_smul_id_iff {c : 𝕜} :
+    (c • ContinuousLinearMap.id 𝕜 𝕜).IsInvertible ↔ c ≠ 0 := by
+  rw [show c • ContinuousLinearMap.id 𝕜 𝕜 = toSpanSingleton 𝕜 c from ext_ring (by simp),
+    isInvertible_toSpanSingleton_iff]
 
 end ToSpanSingleton
 

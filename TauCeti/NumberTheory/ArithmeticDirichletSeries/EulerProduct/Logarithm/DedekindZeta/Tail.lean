@@ -36,8 +36,8 @@ Two elementary inputs carry the argument.
   denominator `1 - N(𝔭) ^ (-s)` is bounded below by `1 / 2`; the termwise difference is
   therefore at most `N(𝔭) ^ (-2)`.
 * `N(𝔭)` is at least the rational prime below `𝔭` and at most `[K : ℚ]` primes lie over one
-  rational prime, so `∑_𝔭 N(𝔭) ^ (-2) ≤ 2 [K : ℚ]`.  That bound is not proved again here: it is
-  the imported `TauCeti.tsum_absNorm_rpow_neg_two_le`.
+  rational prime, so `∑_𝔭 N(𝔭) ^ (-2) ≤ [K : ℚ] ≤ 2 [K : ℚ]`.  That bound is not proved again
+  here: it is the imported `TauCeti.tsum_absNorm_rpow_neg_two_le`.
 
 ## Main results
 
@@ -159,7 +159,8 @@ theorem tsum_neg_log_one_sub_sub_absNorm_rpow_le {s : ℝ} (hs : 1 ≤ s) :
   ((summable_neg_log_one_sub_sub_absNorm_rpow (K := K)
       ((by norm_num : (1 / 2 : ℝ) < 1).trans_le hs)).tsum_le_tsum
     (fun 𝔭 ↦ Real.neg_log_one_sub_rpow_sub_le (two_le_absNorm_asIdeal_real 𝔭) hs)
-    (summable_absNorm_rpow_primes_of_one_lt one_lt_two)).trans tsum_absNorm_rpow_neg_two_le
+    (summable_absNorm_rpow_primes_of_one_lt one_lt_two)).trans
+    (tsum_absNorm_rpow_neg_two_le.trans (le_mul_of_one_le_left (Nat.cast_nonneg _) one_le_two))
 
 /-- **The prime-power tail is continuous at `s = 1` from the right.** As `s → 1⁺`, the sum
 `∑_𝔭 (-log (1 - N(𝔭) ^ (-s)) - N(𝔭) ^ (-s))` tends to its value at `s = 1`, by dominated

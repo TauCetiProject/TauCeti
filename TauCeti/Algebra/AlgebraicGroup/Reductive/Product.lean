@@ -180,11 +180,8 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
       exact (FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I _).symm
   ext x
   have h := SetLike.ext_iff.mp hJ (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x)
-  have hinv : FiniteTypeCommHopfAlgCat.toBialgHom e.inv
-      (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x) = x := by
-    rw [← BialgHom.comp_apply, ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, e.hom_inv_id]
-    rw [FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.id_apply]
-  simpa only [J, HopfIdeal.mem_comap, hinv, HopfIdeal.mem_augmentation,
+  simpa only [J, HopfIdeal.mem_comap, FiniteTypeCommHopfAlgCat.toBialgHom_inv_hom_apply e x,
+    HopfIdeal.mem_augmentation,
     CoalgHomClass.counit_comp_apply] using h
 
 end reductiveCommHopfAlgProperty

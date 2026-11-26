@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Positive
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
@@ -19,16 +20,29 @@ import TauCeti.LinearAlgebra.Matrix.Vec
 
 The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
 bounds a block determinant by the product of its diagonal-block determinants.
+For equal-sized blocks `fromBlocks A B Bᴴ D`, the off-diagonal determinant satisfies
+the Cauchy--Schwarz bound `‖det B‖² ≤ ‖det A‖ · ‖det D‖`
+(`Matrix.PosSemidef.norm_det_sq_le_of_fromBlocks`), specializing to Gram pairings
+in matrix (`Matrix.PosSemidef.norm_det_conjTranspose_mul_mul_sq_le`) and vector-family
+(`Matrix.PosSemidef.norm_det_pairing_sq_le`) forms.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
 The monotonicity and block statements include singular matrices and empty blocks,
 over either real or complex scalars.
 
-For real positive-semidefinite `n × n` matrices, the inequality of arithmetic and
-geometric means for the eigenvalues gives `det A ≤ (tr A / n) ^ n`, and its mixed
-form `det A * det B ≤ (tr (A * B) / n) ^ n` is the pointwise step of the
-Aleksandrov–Bakelman–Pucci maximum principle. Read through the standard basis of `ℝⁿ`, it bounds
-`det T det A` by `(∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ` for a positive operator `T`
+For positive-semidefinite `n × n` matrices `A` and `B` over `ℝ` or `ℂ`, the inequality of
+arithmetic and geometric means for the eigenvalues (`Real.geom_mean_le_arith_mean_weighted`)
+gives `n * (Re det A) ^ (1 / n) ≤ Re tr A`, with equality exactly for real multiples of `1`
+(`Real.geom_mean_eq_arith_mean_weighted_iff_of_pos`, with
+`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq` from the spectral theorem), and the mixed
+form `n * (Re (det A * det B)) ^ (1 / n) ≤ Re tr (A * B)`, applied to `√A * B * √A`. For
+positive-definite `A` equality holds exactly when `B` is a real multiple of `A⁻¹`. The mixed
+bound turns a lower bound on `det A * det B` into a lower bound on the trace pairing
+`Re tr (A * B)`, as in the complex Hessian equation estimates. Determinants and traces of
+Hermitian matrices are real; the statements take their real parts. Over `ℝ` the power forms
+`det A ≤ (tr A / n) ^ n` and `det A * det B ≤ (tr (A * B) / n) ^ n` follow; the latter is the
+pointwise step of the Aleksandrov–Bakelman–Pucci maximum principle. Read through the standard
+basis of `ℝⁿ`, it bounds `det T det A` by `(∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ` for a positive operator `T`
 (`LinearMap.IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow`), where the principal part
 `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ = tr (A M_T)` (`LinearMap.IsSymmetric.trace_mul_toMatrix`) is nonnegative
 (`LinearMap.IsPositive.sum_mul_apply_nonneg`).
@@ -36,8 +50,13 @@ Aleksandrov–Bakelman–Pucci maximum principle. Read through the standard basi
 ## References
 
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, §7.8.
+* B. Guo, D. H. Phong and F. Tong, *On L^∞ estimates for complex Monge–Ampère equations*,
+  Ann. of Math. 198 (2023), for the trace–determinant inequality and its equality case.
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative
   Subspace Theorem*, §6.1, (6.12), for the subspace-height application.
+* Gram-determinant Cauchy--Schwarz theorems adapted from `New.norm_det_pairing_sq_le` in
+  `src/Lib/General/LinearAlgebra/GramDeterminant.lean` of `grh-lean`
+  (<https://github.com/lsernau/grh-lean>, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -115,6 +134,68 @@ theorem PosSemidef.det_fromBlocks_le {A : Matrix m m 𝕜} {B : Matrix m n 𝕜}
   rw [det_fromBlocks₁₁, invOf_eq_nonsing_inv]
   exact mul_le_mul_of_nonneg_left hbound hA.det_nonneg
 
+omit [Fintype m] [DecidableEq m] in
+/-- **Off-diagonal determinant Cauchy--Schwarz inequality.** For a positive-semidefinite `2 × 2`
+block matrix `fromBlocks A B Bᴴ D` with square blocks of the same size over `ℝ` or `ℂ`,
+`‖B.det‖ ^ 2 ≤ ‖A.det‖ * ‖D.det‖`. -/
+theorem PosSemidef.norm_det_sq_le_of_fromBlocks {A B D : Matrix n n 𝕜}
+    (h : (fromBlocks A B Bᴴ D).PosSemidef) :
+    ‖B.det‖ ^ 2 ≤ ‖A.det‖ * ‖D.det‖ := by
+  have hA : A.PosSemidef := by simpa using h.toBlocks₁₁
+  have hD : D.PosSemidef := by simpa using h.toBlocks₂₂
+  by_cases hdet : A.det = 0
+  · obtain ⟨x, hx0, hAx⟩ := Matrix.exists_mulVec_eq_zero_iff.2 hdet
+    have hBx : Bᴴ *ᵥ x = 0 := by simpa using h.toBlocks₂₁_mulVec_eq_zero (by simpa using hAx)
+    have hBdet : B.det = 0 := by
+      have h' : Bᴴ.det = 0 := Matrix.exists_mulVec_eq_zero_iff.1 ⟨x, hx0, hBx⟩
+      simpa using h'
+    simp [hBdet, hdet]
+  have hA' : A.PosDef := hA.posDef_iff_det_ne_zero.mpr hdet
+  cases hA'.isUnit.nonempty_invertible
+  have hS : (D - Bᴴ * A⁻¹ * B).PosSemidef := h.schur_complement₁₁ hA.inv.isHermitian (by simp)
+  have hle : (Bᴴ * A⁻¹ * B).det ≤ D.det :=
+    (hA.inv.conjTranspose_mul_mul_same B).det_le_det (Matrix.le_iff.2 hS)
+  have h_lhs : (Bᴴ * A⁻¹ * B).det = ((‖B.det‖ ^ 2 / ‖A.det‖ : ℝ) : 𝕜) := by
+    simp only [det_mul, det_conjTranspose, det_nonsing_inv, Ring.inverse_eq_inv', RCLike.star_def]
+    rw [mul_right_comm, RCLike.conj_mul]
+    push_cast
+    rw [RCLike.norm_of_nonneg' hA.det_nonneg, div_eq_mul_inv]
+  have hle_real : ‖B.det‖ ^ 2 / ‖A.det‖ ≤ ‖D.det‖ := by
+    rw [← RCLike.ofReal_le_ofReal (K := 𝕜), ← h_lhs, RCLike.norm_of_nonneg' hD.det_nonneg]
+    exact hle
+  exact ((div_le_iff₀ (norm_pos_iff.2 hdet)).1 hle_real).trans_eq (mul_comm _ _)
+
+omit [DecidableEq m] in
+/-- **Cauchy--Schwarz inequality for Gram determinants (matrix form).** For a positive-semidefinite
+matrix `G : Matrix m m 𝕜` and matrices `A B : Matrix m n 𝕜` over `ℝ` or `ℂ`,
+`‖(Aᴴ * G * B).det‖ ^ 2 ≤ ‖(Aᴴ * G * A).det‖ * ‖(Bᴴ * G * B).det‖`. -/
+theorem PosSemidef.norm_det_conjTranspose_mul_mul_sq_le {G : Matrix m m 𝕜} (hG : G.PosSemidef)
+    (A B : Matrix m n 𝕜) :
+    ‖(Aᴴ * G * B).det‖ ^ 2 ≤ ‖(Aᴴ * G * A).det‖ * ‖(Bᴴ * G * B).det‖ := by
+  have hblock :
+      fromBlocks (Aᴴ * G * A) (Aᴴ * G * B) (Aᴴ * G * B)ᴴ (Bᴴ * G * B) =
+        (fromCols A B)ᴴ * G * fromCols A B := by
+    rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, fromRows_mul_fromCols]
+    simp only [conjTranspose_mul, conjTranspose_conjTranspose, hG.isHermitian.eq, Matrix.mul_assoc]
+  exact (hblock ▸ hG.conjTranspose_mul_mul_same (fromCols A B)).norm_det_sq_le_of_fromBlocks
+
+omit [DecidableEq m] in
+/-- **Cauchy--Schwarz inequality for Gram determinants (vector-family form).** For a
+positive-semidefinite matrix `G : Matrix m m 𝕜` and two families `v w : n → m → 𝕜` of vectors over
+`ℝ` or `ℂ`, `‖det (star (v i) ⬝ᵥ G *ᵥ w k)‖ ^ 2 ≤`
+`‖det (star (v i) ⬝ᵥ G *ᵥ v k)‖ * ‖det (star (w i) ⬝ᵥ G *ᵥ w k)‖`. -/
+theorem PosSemidef.norm_det_pairing_sq_le {G : Matrix m m 𝕜} (hG : G.PosSemidef)
+    (v w : n → m → 𝕜) :
+    ‖(of fun i k : n ↦ star (v i) ⬝ᵥ G *ᵥ w k).det‖ ^ 2 ≤
+      ‖(of fun i k : n ↦ star (v i) ⬝ᵥ G *ᵥ v k).det‖ *
+        ‖(of fun i k : n ↦ star (w i) ⬝ᵥ G *ᵥ w k).det‖ := by
+  have h_eq (x y : n → m → 𝕜) :
+      (of x)ᵀᴴ * G * (of y)ᵀ = of fun i k : n ↦ star (x i) ⬝ᵥ G *ᵥ y k := by
+    rw [Matrix.mul_assoc]
+    ext i k
+    simp [Matrix.mul_apply, dotProduct, mulVec]
+  simpa only [h_eq] using hG.norm_det_conjTranspose_mul_mul_sq_le (of v)ᵀ (of w)ᵀ
+
 variable [Fintype p] [DecidableEq p]
 
 /-- **Koteljanskii's inequality for overlapping blocks.** The product of the
@@ -164,43 +245,108 @@ section ArithmeticMean
 
 variable [Fintype n] [DecidableEq n]
 
-/-- **The determinant–trace inequality.** The determinant of a real positive-semidefinite
-`n × n` matrix is at most the `n`-th power of the mean of its eigenvalues,
-`det A ≤ (tr A / n) ^ n`: the inequality of arithmetic and geometric means for the eigenvalues.
-For `n = 0` both sides are `1`. -/
-theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSemidef) :
-    A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
+/-- **The determinant–trace inequality.** For a positive-semidefinite `n × n` matrix `N`,
+`n * (Re det N) ^ (1 / n) ≤ Re tr N`. For `n = 0` both sides are `0`. -/
+theorem PosSemidef.card_mul_re_det_rpow_le_re_trace {N : Matrix n n 𝕜} (hN : N.PosSemidef) :
+    Fintype.card n * RCLike.re N.det ^ (Fintype.card n : ℝ)⁻¹ ≤ RCLike.re N.trace := by
   rcases isEmpty_or_nonempty n with hn | hn
   · simp
-  set μ := hA.isHermitian.eigenvalues
-  have hμ := hA.eigenvalues_nonneg
-  have hdet : A.det = ∏ i, μ i := by simpa using hA.isHermitian.det_eq_prod_eigenvalues
-  have htr : A.trace = ∑ i, μ i := by simpa using hA.isHermitian.trace_eq_sum_eigenvalues
+  set μ := hN.isHermitian.eigenvalues
+  have hμ := hN.eigenvalues_nonneg
   have hcard : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   have hamgm := Real.geom_mean_le_arith_mean_weighted Finset.univ
     (fun _ => (Fintype.card n : ℝ)⁻¹) μ (fun _ _ => by positivity)
     (by simp [Finset.card_univ, hcard]) fun i _ => hμ i
-  rw [Real.finsetProd_rpow _ _ fun i _ => hμ i, ← Finset.mul_sum, ← div_eq_inv_mul] at hamgm
-  have hprod : 0 ≤ ∏ i, μ i := Finset.prod_nonneg fun i _ => hμ i
-  rw [hdet, htr, ← Real.rpow_inv_natCast_pow hprod (Fintype.card_ne_zero (α := n))]
-  exact pow_le_pow_left₀ (Real.rpow_nonneg hprod _) hamgm _
+  rw [Real.finsetProd_rpow _ _ fun i _ => hμ i, ← Finset.mul_sum] at hamgm
+  rw [hN.isHermitian.re_det_eq_prod_eigenvalues, hN.isHermitian.re_trace_eq_sum_eigenvalues]
+  calc (Fintype.card n : ℝ) * (∏ i, μ i) ^ (Fintype.card n : ℝ)⁻¹
+      ≤ Fintype.card n * ((Fintype.card n : ℝ)⁻¹ * ∑ i, μ i) := by gcongr
+    _ = ∑ i, μ i := by field_simp
 
-/-- **The mixed determinant–trace inequality.** For real positive-semidefinite `n × n` matrices
-`A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
+/-- **The equality case of the determinant–trace inequality.** For a positive-semidefinite
+`n × n` matrix `N`, `n * (Re det N) ^ (1 / n) = Re tr N` exactly when `N` is a real multiple
+of `1`. -/
+theorem PosSemidef.card_mul_re_det_rpow_eq_re_trace_iff {N : Matrix n n 𝕜}
+    (hN : N.PosSemidef) :
+    Fintype.card n * RCLike.re N.det ^ (Fintype.card n : ℝ)⁻¹ = RCLike.re N.trace ↔
+      ∃ c : ℝ, N = c • (1 : Matrix n n 𝕜) := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · exact ⟨fun _ => ⟨0, Subsingleton.elim _ _⟩, fun _ => by simp⟩
+  have i₀ : n := Classical.arbitrary n
+  have hcard : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  refine ⟨fun h => ?_, ?_⟩
+  · set μ := hN.isHermitian.eigenvalues
+    have hμ := hN.eigenvalues_nonneg
+    have hamgm := Real.geom_mean_eq_arith_mean_weighted_iff_of_pos Finset.univ
+      (fun _ => (Fintype.card n : ℝ)⁻¹) μ (fun _ _ => by positivity)
+      (by simp [Finset.card_univ, hcard]) fun i _ => hμ i
+    rw [Real.finsetProd_rpow _ _ fun i _ => hμ i, ← Finset.mul_sum] at hamgm
+    rw [hN.isHermitian.re_det_eq_prod_eigenvalues, hN.isHermitian.re_trace_eq_sum_eigenvalues]
+      at h
+    have hμc := hamgm.1 (by rw [← h]; field_simp)
+    exact ⟨μ i₀, hN.isHermitian.eq_smul_one_of_eigenvalues_eq fun i =>
+      hμc i (Finset.mem_univ _) i₀ (Finset.mem_univ _)⟩
+  · rintro ⟨c, rfl⟩
+    have hc : 0 ≤ c := by
+      simpa [RCLike.real_smul_eq_coe_mul] using hN.diag_nonneg (i := i₀)
+    simp only [det_smul_of_tower, det_one, trace_smul, trace_one, RCLike.smul_re, RCLike.one_re,
+      mul_one, RCLike.natCast_re]
+    rw [Real.pow_rpow_inv_natCast hc Fintype.card_ne_zero, mul_comm]
+
+/-- **The trace–determinant inequality.** For positive-semidefinite `n × n` matrices `A` and `B`,
+`n * (Re (det A * det B)) ^ (1 / n) ≤ Re tr (A * B)`. -/
+theorem PosSemidef.card_mul_re_det_mul_det_rpow_le_re_trace_mul {A B : Matrix n n 𝕜}
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    Fintype.card n * RCLike.re (A.det * B.det) ^ (Fintype.card n : ℝ)⁻¹ ≤
+      RCLike.re (A * B).trace := by
+  rw [← hA.det_sqrt_mul_mul_sqrt, ← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
+  exact (hB.sqrt_mul_mul_sqrt A).card_mul_re_det_rpow_le_re_trace
+
+/-- **The equality case of the trace–determinant inequality.** For a positive-definite `A` and a
+positive-semidefinite `B`, `n * (Re (det A * det B)) ^ (1 / n) = Re tr (A * B)` exactly when `B`
+is a real multiple of `A⁻¹`. -/
+theorem PosDef.card_mul_re_det_mul_det_rpow_eq_re_trace_mul_iff {A B : Matrix n n 𝕜}
+    (hA : A.PosDef) (hB : B.PosSemidef) :
+    Fintype.card n * RCLike.re (A.det * B.det) ^ (Fintype.card n : ℝ)⁻¹ =
+      RCLike.re (A * B).trace ↔ ∃ c : ℝ, B = c • A⁻¹ := by
+  rw [← hA.posSemidef.det_sqrt_mul_mul_sqrt, ← trace_mul_comm,
+    ← hA.posSemidef.trace_sqrt_mul_mul_sqrt,
+    (hB.sqrt_mul_mul_sqrt A).card_mul_re_det_rpow_eq_re_trace_iff]
+  set S := CFC.sqrt A
+  have hSS : S * S = A := CFC.sqrt_mul_sqrt_self A hA.posSemidef.nonneg
+  have hSu : IsUnit S.det := hA.isUnit_det_sqrt
+  have hAinv : A⁻¹ = S⁻¹ * S⁻¹ := by rw [← hSS, mul_inv_rev]
+  -- `X ↦ S⁻¹ * X * S⁻¹` inverts the conjugation `B ↦ S * B * S`.
+  have hconj (X : Matrix n n 𝕜) : S⁻¹ * (S * X * S) * S⁻¹ = X := by
+    simp only [← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hSu, Matrix.one_mul]
+    simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hSu, Matrix.mul_one]
+  refine ⟨fun ⟨c, hc⟩ => ⟨c, ?_⟩, fun ⟨c, hc⟩ => ⟨c, ?_⟩⟩
+  · have h := congrArg (fun X => S⁻¹ * X * S⁻¹) hc
+    simp only [hconj] at h
+    simp [h, hAinv]
+  · simp [hc, hAinv, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hSu,
+      Matrix.nonsing_inv_mul _ hSu]
+
+/-- **The determinant–trace inequality in power form.** The determinant of a real
+positive-semidefinite `n × n` matrix is at most the `n`-th power of the mean of its eigenvalues,
+`det A ≤ (tr A / n) ^ n`. For `n = 0` both sides are `1`. -/
+theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+    A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp
+  exact Real.le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero hA.det_nonneg
+    (by simpa only [RCLike.re_to_real] using hA.card_mul_re_det_rpow_le_re_trace)
+
+/-- **The mixed determinant–trace inequality in power form.** For real positive-semidefinite
+`n × n` matrices `A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
 theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
     (hA : A.PosSemidef) (hB : B.PosSemidef) :
     A.det * B.det ≤ ((A * B).trace / Fintype.card n) ^ Fintype.card n := by
-  set S := CFC.sqrt A
-  have hS : S.IsHermitian :=
-    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
-  have hN : (S * B * S).PosSemidef := by
-    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same S
-  have hdet : (S * B * S).det = A.det * B.det := by
-    rw [← CFC.sqrt_mul_sqrt_self A hA.nonneg]
-    simp only [det_mul, S]
-    ring
-  rw [← hdet, ← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
-  exact hN.det_le_trace_div_card_pow
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp
+  exact Real.le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero
+    (mul_nonneg hA.det_nonneg hB.det_nonneg)
+    (by simpa only [RCLike.re_to_real] using hA.card_mul_re_det_mul_det_rpow_le_re_trace_mul hB)
 
 end ArithmeticMean
 

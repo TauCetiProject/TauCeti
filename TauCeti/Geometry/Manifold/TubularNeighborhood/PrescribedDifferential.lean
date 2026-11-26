@@ -95,11 +95,11 @@ variable [RiemannianBundle (fun y : M ↦ TangentSpace J y)]
 
 /-- The exponential in `N` of the image under `A` of the orthogonal representative of a normal
 vector of `i`. -/
-private def transportedNormalExp (p : TotalSpace P (fun q ↦ i.NormalSpace q hn)) : N :=
+private def transportedNormalExp (p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) : N :=
   Manifold.riemannianExp K N (g p.proj) (A p.proj (i.normalRepresentative p.proj hn p.snd))
 
 /-- The tangent vector of `N` whose exponential is `transportedNormalExp`. -/
-private def transportedNormalVector (p : TotalSpace P (fun q ↦ i.NormalSpace q hn)) :
+private def transportedNormalVector (p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :
     TangentBundle K N :=
   ⟨g p.proj, A p.proj (i.normalRepresentative p.proj hn p.snd)⟩
 
@@ -115,19 +115,19 @@ private theorem contMDiff_transportedNormalVector
     ContMDiff (I.prod 𝓘(ℝ, P)) K.tangent ∞ (transportedNormalVector (P := P) i hn A) := by
   let := i.normalSpaceFiberBundle hn hdim
   have hproj : ContMDiff (I.prod 𝓘(ℝ, P)) I ∞
-      (fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦ p.proj) :=
+      (fun p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦ p.proj) :=
     contMDiff_proj _
   intro p
   -- `clm_apply_of_inCoordinates` takes `A` in the `ContinuousLinearMap.inCoordinates` form, so `hϕ`
   -- is stated that way; `inTangentCoordinates` in `hA` is by definition this `inCoordinates`.
   have hϕ : ContMDiffAt (I.prod 𝓘(ℝ, P)) 𝓘(ℝ, V →L[ℝ] F) ∞
-      (fun p' : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
+      (fun p' : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦
         ContinuousLinearMap.inCoordinates V (TangentSpace J (M := M)) F
           (TangentSpace K (M := N)) (i p.proj) (i p'.proj) (g p.proj) (g p'.proj)
           (A p'.proj)) p :=
     (hA p.proj).comp p (hproj p)
   have hv : ContMDiffAt (I.prod 𝓘(ℝ, P)) J.tangent ∞
-      (fun p' : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
+      (fun p' : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦
         (⟨i p'.proj, i.normalRepresentative p'.proj hn p'.snd⟩ : TangentBundle J M)) p :=
     i.contMDiff_normalRepresentative (m := ∞) hn (by simp) hdim p
   exact ContMDiffAt.clm_apply_of_inCoordinates (F₁ := V) (E₁ := TangentSpace J (M := M))
@@ -136,7 +136,8 @@ private theorem contMDiff_transportedNormalVector
     (v := fun p ↦ i.normalRepresentative p.proj hn p.snd) hϕ hv ((hg.comp hproj) p)
 
 /-- The natural domain of `transportedNormalExp`. -/
-private def transportedNormalExpDomain : Set (TotalSpace P (fun q ↦ i.NormalSpace q hn)) :=
+private def transportedNormalExpDomain : Set
+    (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
   transportedNormalVector i hn A ⁻¹' {z | z.snd ∈ Manifold.expDomain K N z.proj}
 
 /-- The natural domain of the transported normal exponential is open. -/
@@ -155,7 +156,8 @@ omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [Finit
   [IsContMDiffRiemannianBundle J ∞ V (fun y : M ↦ TangentSpace J y)] in
 /-- The zero section lies in the natural domain of the transported normal exponential. -/
 private theorem zeroSection_mem_transportedNormalExpDomain (q : Q) :
-    zeroSection P (fun q ↦ i.NormalSpace q hn) q ∈ transportedNormalExpDomain i hn A := by
+    zeroSection P
+        (fun q ↦ i.isImmersion.NormalSpace q hn) q ∈ transportedNormalExpDomain i hn A := by
   -- The fibre value of the zero section is the zero of the fibre over its projection, which is
   -- only definitionally the fibre over `q`; restate it over `q` so that `map_zero` applies.
   change A q (i.normalRepresentative q hn 0) ∈ Manifold.expDomain K N (g q)
@@ -181,7 +183,7 @@ omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [Finit
 /-- The transported normal exponential is the fibrewise exponential of `A` composed with the
 orthogonal representative of a normal vector. -/
 private theorem transportedNormalExp_eq :
-    transportedNormalExp i hn A = fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
+    transportedNormalExp i hn A = fun p : TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn) ↦
       Manifold.riemannianExp K N (g p.proj)
         ((A p.proj).comp (i.normalRepresentative p.proj hn) p.snd) := by
   funext p
@@ -192,7 +194,8 @@ omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [Finit
   [IsContMDiffRiemannianBundle J ∞ V (fun y : M ↦ TangentSpace J y)] in
 /-- The transported normal exponential sends the zero section to `g`. -/
 private theorem transportedNormalExp_zeroSection (q : Q) :
-    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.NormalSpace q hn) q) = g q := by
+    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q) =
+        g q := by
   rw [transportedNormalExp_eq]
   exact Bundle.riemannianExp_fiberwise_zeroSection
     (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q
@@ -204,17 +207,17 @@ private theorem mfderiv_transportedNormalExp_zeroSection_apply
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
     (hg : ContMDiff I K ∞ g)
     (hA : ∀ q, ContMDiffAt I 𝓘(ℝ, V →L[ℝ] F) ∞ (inTangentCoordinates J K i g A q) q)
-    (q : Q) (u : TangentSpace I q) (v : i.NormalSpace q hn) :
+    (q : Q) (u : TangentSpace I q) (v : i.isImmersion.NormalSpace q hn) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     mfderiv (I.prod 𝓘(ℝ, P)) K (transportedNormalExp i hn A)
-        (zeroSection P (fun q ↦ i.NormalSpace q hn) q)
+        (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q)
         ((Bundle.zeroSectionTangentEquiv (I := I) q).symm (u, v)) =
       mfderiv I K g q u + A q (i.normalRepresentative q hn v) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   have he : MDifferentiableAt (I.prod 𝓘(ℝ, P)) K (transportedNormalExp i hn A)
-      (zeroSection P (fun q ↦ i.NormalSpace q hn) q) :=
+      (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q) :=
     ((contMDiffOn_transportedNormalExp i hn A hdim hg hA).contMDiffAt
       ((isOpen_transportedNormalExpDomain i hn A hdim hg hA).mem_nhds
         (zeroSection_mem_transportedNormalExpDomain i hn A q))).mdifferentiableAt (by simp)
@@ -231,9 +234,9 @@ private theorem mfderiv_transportedNormalExp_zeroSection [J.Boundaryless] [T2Spa
     (hAi : ∀ q, (A q).comp (mfderiv I J i q) = mfderiv I K g q) (q : Q) :
     letI := i.normalSpaceFiberBundle hn hdim
     mfderiv (I.prod 𝓘(ℝ, P)) K (transportedNormalExp i hn A)
-        (zeroSection P (fun q ↦ i.NormalSpace q hn) q) =
+        (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q) =
       (A q).comp (mfderiv (I.prod 𝓘(ℝ, P)) J (i.normalExp (P := P) hn)
-        (zeroSection P (fun q ↦ i.NormalSpace q hn) q)) := by
+        (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q)) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   ext w
@@ -255,12 +258,12 @@ private theorem isLocalDiffeomorphAt_transportedNormalExp_zeroSection [I.Boundar
     (hAi : ∀ q, (A q).comp (mfderiv I J i q) = mfderiv I K g q) (q : Q) :
     letI := i.normalSpaceFiberBundle hn hdim
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) K ∞ (transportedNormalExp i hn A)
-      (zeroSection P (fun q ↦ i.NormalSpace q hn) q) := by
+      (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   obtain ⟨e, he⟩ : (mfderiv (I.prod 𝓘(ℝ, P)) K (transportedNormalExp i hn A)
-      (zeroSection P (fun q ↦ i.NormalSpace q hn) q)).IsInvertible := by
+      (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q)).IsInvertible := by
     rw [mfderiv_transportedNormalExp_zeroSection i hn A hdim hg hA hAi q]
     exact (hAinv q).comp (i.isInvertible_mfderiv_normalExp_zeroSection hn (by simp) hdim q)
   exact isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_transportedNormalExp i hn A hdim hg hA)
@@ -279,8 +282,9 @@ private theorem exists_partialDiffeomorph_transportedNormalExp [I.Boundaryless] 
     (hAi : ∀ q, (A q).comp (mfderiv I J i q) = mfderiv I K g q)
     {O' : Set N} (hO' : IsOpen O') (hgO' : range g ⊆ O') :
     letI := i.normalSpaceFiberBundle hn hdim
-    ∃ Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) K (TotalSpace P (fun q ↦ i.NormalSpace q hn)) N ∞,
-      (∀ q, zeroSection P (fun q ↦ i.NormalSpace q hn) q ∈ Φ.source) ∧ Φ.target ⊆ O' ∧
+    ∃ Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) K
+        (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) N ∞,
+      (∀ q, zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) q ∈ Φ.source) ∧ Φ.target ⊆ O' ∧
         ⇑Φ = transportedNormalExp i hn A := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
@@ -291,18 +295,19 @@ private theorem exists_partialDiffeomorph_transportedNormalExp [I.Boundaryless] 
   have : MetrizableSpace N := Manifold.metrizableSpace K N
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace Q := ChartedSpace.locallyCompactSpace H Q
-  have : MetrizableSpace (TotalSpace P (fun q ↦ i.NormalSpace q hn)) :=
+  have : MetrizableSpace (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
-  have : Nonempty (TotalSpace P (fun q ↦ i.NormalSpace q hn)) :=
-    Nonempty.map (zeroSection P (fun q ↦ i.NormalSpace q hn)) inferInstance
-  have hTZ : transportedNormalExp i hn A ∘ zeroSection P (fun q ↦ i.NormalSpace q hn) = g :=
+  have : Nonempty (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
+    Nonempty.map (zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn)) inferInstance
+  have hTZ : transportedNormalExp i hn A ∘ zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn) =
+      g :=
     funext (transportedNormalExp_zeroSection i hn A)
   obtain ⟨Φ, hΦZ, -, hΦO', -, hΦ⟩ := exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt
     (isLocalDiffeomorphAt_transportedNormalExp_zeroSection i hn A hdim hg hA hAinv hAi)
     (isOpen_transportedNormalExpDomain i hn A hdim hg hA)
     (range_subset_iff.2 (zeroSection_mem_transportedNormalExpDomain i hn A)) hO'
     (by rw [hTZ]; exact hgO') (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
-    (π P (fun q ↦ i.NormalSpace q hn))
+    (π P (fun q ↦ i.isImmersion.NormalSpace q hn))
     (FiberBundle.continuous_proj _ _) (fun _ ↦ rfl) (by rw [hTZ]; exact hgi)
   exact ⟨Φ, fun q ↦ hΦZ (mem_range_self q), hΦO', hΦ⟩
 
@@ -332,7 +337,7 @@ private theorem exists_partialDiffeomorph_mfderiv_eq_of_riemannian [I.Boundaryle
   have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E :=
     finrank_euclideanSpace_fin
   let := i.normalSpaceFiberBundle hn hdim
-  let Z := zeroSection P (fun q ↦ i.NormalSpace q hn)
+  let Z := zeroSection P (fun q ↦ i.isImmersion.NormalSpace q hn)
   -- `Φ_M`: normal-exponential coordinates around the image of `i`, inside `O`.
   obtain ⟨ΦM, hΦMZ, -, hΦMO, -, hΦM⟩ :=
     i.exists_partialDiffeomorph_normalExp_subset (P := P) (m := ∞) hn (by simp) (by simp) hdim

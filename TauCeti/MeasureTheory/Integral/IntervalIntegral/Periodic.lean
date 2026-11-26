@@ -11,8 +11,11 @@ public import TauCeti.Topology.Instances.AddCircle.Lift
 
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.MeasureTheory.Measure.AddCircle
+import TauCeti.Topology.Instances.AddCircle.Annulus
 
 /-!
 # Pushforwards of Haar measure along circle diffeomorphisms
@@ -44,6 +47,10 @@ over `[0, T/2]` (`intervalIntegral.integral_eq_two_smul_of_even`). If `T ≠ 0` 
 integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for any integer
 `n ≠ 0`, and both sides of these identities are `0`.
 
+The file also records the lattice `θℤ ⊂ ℝ`: for `θ > 0` the interval `[t, t + θ)` is a fundamental
+domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[t, t + θ)` gives Weil's formula
+`∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θℤ ⊂ ℝ`.
+
 ## Main declarations
 
 * `AddCircle.map_volume_le_of_lift` and `AddCircle.map_haarAddCircle_le_of_lift`: if `c ≤ F'`
@@ -61,6 +68,12 @@ integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for a
 * `AddCircle.measurePreserving_of_lift`: a measure-preserving map of `ℝ × Y` commuting with the
   translation by `T` of the first coordinate descends to a measure-preserving map of
   `AddCircle T × Y`.
+* `TauCeti.isAddFundamentalDomain_Ico_op_zmultiples`: `[t, t + θ)` is a fundamental domain for
+  the right translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's
+  `isAddFundamentalDomain_Ioc'`.
+* `TauCeti.addCovolume_op_zmultiples`: the covolume of `θℤ` in `ℝ` is `θ`.
+* `TauCeti.lintegral_eq_setLIntegral_Ico_tsum_add_zsmul`: Weil's formula
+  `∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
 * `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
@@ -233,25 +246,6 @@ private abbrev translateAction (T : ℝ) (Y : Type*) : AddAction ℤ (ℝ × Y) 
     rw [add_zsmul]
     ring
 
-omit hT [MeasurableSpace Y] in
-/-- A map commuting with the translation by `T` of the first coordinate commutes with the
-translations by all integer multiples of `T`. -/
-private theorem apply_add_zsmul {f : ℝ × Y → ℝ × Y}
-    (hf : ∀ x : ℝ × Y, f (x.1 + T, x.2) = ((f x).1 + T, (f x).2)) (n : ℤ) (x : ℝ × Y) :
-    f (x.1 + n • T, x.2) = ((f x).1 + n • T, (f x).2) := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    have h := hf (x.1 + (n : ℤ) • T, x.2)
-    rw [ih] at h
-    rw [add_one_zsmul, ← add_assoc, h, add_assoc]
-  | pred n ih =>
-    have h := hf (x.1 + (-(n : ℤ) - 1) • T, x.2)
-    rw [add_assoc, ← add_one_zsmul, sub_add_cancel, ih, Prod.ext_iff] at h
-    refine Prod.ext ?_ h.2.symm
-    have hs : (-(n : ℤ) - 1) • T = -(n : ℤ) • T - T := by rw [sub_zsmul, one_zsmul]; abel
-    linarith [h.1]
-
 /-- A map of `AddCircle T × Y` lifted from a measurable map of `ℝ × Y` is measurable. -/
 theorem measurable_of_lift {f : ℝ × Y → ℝ × Y} (hf : Measurable f)
     {g : AddCircle T × Y → AddCircle T × Y}
@@ -300,7 +294,7 @@ theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
     simpa [hvadd, F, zero_add] using existsUnique_add_zsmul_mem_Ioc hT.out x.1 0
   have hfF : IsAddFundamentalDomain ℤ (f ⁻¹' F) (volume.prod ν) := by
     refine .mk' (hf.measurable hFm).nullMeasurableSet fun x ↦ ?_
-    simp only [mem_preimage, hvadd, apply_add_zsmul hfT]
+    simp only [mem_preimage, hvadd, zsmul_eq_mul, TauCeti.apply_add_int_mul_of_apply_add hfT]
     simpa [F] using existsUnique_add_zsmul_mem_Ioc hT.out (f x).1 0
   have hπv (n : ℤ) (x : ℝ × Y) : π (n +ᵥ x) = π x := by
     obtain ⟨s, y⟩ := x
@@ -321,6 +315,44 @@ theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
 end Descent
 
 end AddCircle
+
+/-! ### The lattice `θℤ ⊂ ℝ` -/
+
+namespace TauCeti
+
+/-- **`[t, t + θ)` is a fundamental domain for `θℤ` acting on `ℝ` by right translation.**
+
+Adapted from Mathlib's `isAddFundamentalDomain_Ioc'`
+(`Mathlib/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`), with `Ioc` replaced by `Ico`. -/
+theorem isAddFundamentalDomain_Ico_op_zmultiples {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
+    (μ : Measure ℝ := by volume_tac) :
+    IsAddFundamentalDomain (AddSubgroup.op <| .zmultiples θ) (Ico t (t + θ)) μ := by
+  refine IsAddFundamentalDomain.mk' nullMeasurableSet_Ico fun x => ?_
+  refine (intEquivOpZMultiples (not_isOfFinAddOrder_of_isAddTorsionFree hθ.ne')).bijective
+    |>.existsUnique_iff.2 ?_
+  simpa using existsUnique_add_zsmul_mem_Ico hθ x t
+
+/-- **The covolume of `θℤ` in `ℝ` is `θ`** for Lebesgue measure. -/
+@[simp]
+theorem addCovolume_op_zmultiples {θ : ℝ} (hθ : 0 < θ) :
+    addCovolume (AddSubgroup.op <| .zmultiples θ) ℝ volume = ENNReal.ofReal θ := by
+  rw [(isAddFundamentalDomain_Ico_op_zmultiples hθ 0 volume).covolume_eq_volume volume,
+    Real.volume_Ico]
+  simp
+
+/-- **Weil's formula for `θℤ ⊂ ℝ`**: `∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θ > 0` and
+measurable `f : ℝ → [0, ∞]`. -/
+theorem lintegral_eq_setLIntegral_Ico_tsum_add_zsmul {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
+    {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ x, f x = ∫⁻ x in Ico t (t + θ), ∑' n : ℤ, f (x + n • θ) := by
+  have : Fact (0 < θ) := ⟨hθ⟩
+  rw [(isAddFundamentalDomain_Ico_op_zmultiples hθ t volume).lintegral_eq_tsum'',
+    ← lintegral_tsum (f := fun g x => f (g +ᵥ x)) fun g =>
+      (hf.comp (measurable_const_vadd _)).aemeasurable]
+  refine setLIntegral_congr_fun measurableSet_Ico fun x _ => ?_
+  rw [← QuotientAddGroup.automorphize_mk, AddCircle.automorphize_coe]
+
+end TauCeti
 
 /-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
 a period vanishes, vanishes on `(a, a + T)`. -/

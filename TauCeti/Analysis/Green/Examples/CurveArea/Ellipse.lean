@@ -8,11 +8,9 @@ module
 public import TauCeti.Analysis.Green.Examples.CurveArea.Basic
 public import TauCeti.Analysis.Green.Affine.Basic
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
-public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 
 /-!
 # Signed ellipse area
@@ -306,9 +304,9 @@ theorem windingNumber_ellipse_outside {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
   have hconv : Convex ℝ (A '' closedBall (0 : ℂ) 1) :=
     (convex_closedBall (0 : ℂ) 1).linear_image A.toLinearEquiv.toLinearMap
   have hzero : (0 : ℂ) ∈ A '' closedBall (0 : ℂ) 1 := ⟨0, by simp, map_zero A⟩
-  apply Contour.windingNumber_eq_zero_of_starConvex (hconv.starConvex hzero)
-    (IsPiecewiseC1On.of_contDiffOn (contDiff_ellipse a b (n := 1)).contDiffOn)
-    (ellipse_closed a b)
+  apply AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex
+    (contDiff_ellipse a b (n := 1)).contDiffOn.absolutelyContinuousOnInterval
+    (hconv.starConvex hzero) (ellipse_closed a b)
   · intro t ht
     have hm : ellipse a b t ∈ ellipse a b '' uIcc 0 (2 * Real.pi) := mem_image_of_mem _ ht
     rw [image_ellipse_uIcc a b ha hb] at hm

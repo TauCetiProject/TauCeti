@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
+public import Mathlib.GroupTheory.MonoidLocalization.Lemmas
 public import Mathlib.Tactic.Abel
 
 /-!
@@ -27,9 +28,16 @@ cancellativity hypothesis is used.
 ## Main definitions
 
 * `Algebra.GrothendieckAddGroup.liftAddEquiv`: Mathlib's `lift` as an additive isomorphism.
+* `Algebra.GrothendieckAddGroup.prodEquiv`, `Algebra.GrothendieckAddGroup.piEquiv`: the
+  Grothendieck group of a product, binary or of an arbitrary family, is the product of the
+  Grothendieck groups.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
   `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
   as the Grothendieck group of `ℕ`.
+* `Algebra.GrothendieckAddGroup.congr`: an isomorphism `M ≃+ N` induces an isomorphism of
+  group completions.
+* `Algebra.GrothendieckAddGroup.addEquivInt`: an isomorphism `M ≃+ ℕ` induces
+  `GrothendieckAddGroup M ≃+ ℤ`.
 * `Algebra.GrothendieckAddGroup.instRing` and `Algebra.GrothendieckAddGroup.instCommRing`: the
   ring structure, commutative when the semiring is.
 * `Algebra.GrothendieckAddGroup.ofRingHom`: the canonical semiring map into the completion.
@@ -45,7 +53,7 @@ public section
 
 namespace Algebra.GrothendieckAddGroup
 
-variable {M : Type*} [AddCommMonoid M] {G : Type*} [AddCommGroup G]
+variable {M : Type*} [AddCommMonoid M] {N : Type*} [AddCommMonoid N] {G : Type*} [AddCommGroup G]
 
 /-! ### The universal property, in additive form -/
 
@@ -58,6 +66,35 @@ def natIntLocalizationMap : (⊤ : AddSubmonoid ℕ).LocalizationMap ℤ where
 @[simp]
 theorem natIntLocalizationMap_apply (n : ℕ) : natIntLocalizationMap n = (n : ℤ) :=
   (rfl)
+
+/-- An additive isomorphism `M ≃+ N` induces an isomorphism `GrothendieckAddGroup M ≃+
+GrothendieckAddGroup N` of group completions. -/
+noncomputable def congr (e : M ≃+ N) : GrothendieckAddGroup M ≃+ GrothendieckAddGroup N :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv
+    (AddLocalization.addMonoidOf (⊤ : AddSubmonoid N)) (AddSubmonoid.map_equiv_top e)
+
+/-- The isomorphism `congr e` sends `of a` to `of (e a)`. -/
+theorem congr_of (e : M ≃+ N) (a : M) : congr e (of a) = of (e a) :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv_eq
+    (AddSubmonoid.map_equiv_top e) a
+
+/-- An additive isomorphism `M ≃+ ℕ` induces an isomorphism `GrothendieckAddGroup M ≃+ ℤ` of
+group completions: `congr e` followed by the identification of the completion of `ℕ` with `ℤ`
+given by `natIntLocalizationMap`. -/
+noncomputable def addEquivInt (e : M ≃+ ℕ) : GrothendieckAddGroup M ≃+ ℤ :=
+  (congr e).trans
+    ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid ℕ)).addEquivOfLocalizations
+      natIntLocalizationMap)
+
+/-- The isomorphism `addEquivInt e` sends `of a` to `e a`. -/
+theorem addEquivInt_of (e : M ≃+ ℕ) (a : M) : addEquivInt e (of a) = e a := by
+  rw [addEquivInt, AddEquiv.trans_apply, congr_of]
+  exact (AddLocalization.addMonoidOf (⊤ : AddSubmonoid ℕ)).lift_eq _ (e a)
+
+/-- The inverse of `addEquivInt e` sends a natural number `n` to `of (e.symm n)`. -/
+theorem addEquivInt_symm_natCast (e : M ≃+ ℕ) (n : ℕ) :
+    (addEquivInt e).symm n = of (e.symm n) :=
+  (addEquivInt e).symm_apply_eq.2 <| by rw [addEquivInt_of, AddEquiv.apply_symm_apply]
 
 /-- Restricting the extension of `f` along `of` recovers `f`. -/
 theorem lift_comp_of (f : M →+ G) : (lift f).comp (of : M →+ _) = f :=
@@ -82,6 +119,10 @@ theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - 
   obtain ⟨⟨a, s⟩, h⟩ := (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).surj x
   exact ⟨a, s, eq_sub_of_add_eq h⟩
 
+/-- The Grothendieck group of a trivial monoid is trivial. -/
+instance instSubsingleton [Subsingleton M] : Subsingleton (GrothendieckAddGroup M) :=
+  (AddLocalization.addMonoidOf ⊤).subsingleton_of_subsingleton
+
 /-- Two elements of the monoid have the same image in the Grothendieck group exactly when they
 become equal after adding a common element. -/
 theorem of_eq_of_iff {a b : M} :
@@ -97,6 +138,93 @@ noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G)
 
 @[simp]
 theorem coe_liftAddEquiv : ⇑(liftAddEquiv : (M →+ G) ≃+ _) = lift := (rfl)
+
+/-! ### Products -/
+
+section Prod
+
+/-- **The Grothendieck group of a product.** The group completion of `M × N` is the product of
+the group completions of `M` and `N`, `of (a, b) ↦ (of a, of b)`
+(`Algebra.GrothendieckAddGroup.prodEquiv_of`). -/
+noncomputable def prodEquiv :
+    GrothendieckAddGroup (M × N) ≃+ GrothendieckAddGroup M × GrothendieckAddGroup N :=
+  AddMonoidHom.toAddEquiv (lift ((of : M →+ _).prodMap (of : N →+ _)))
+    ((lift ((of : M × N →+ _).comp (AddMonoidHom.inl M N))).coprod
+      (lift ((of : M × N →+ _).comp (AddMonoidHom.inr M N))))
+    (addHom_ext fun a ↦ by
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, lift_apply_of,
+        AddMonoidHom.coe_prodMap, Prod.map_fst, Prod.map_snd, AddMonoidHom.coprod_apply,
+        AddMonoidHom.inl_apply, AddMonoidHom.inr_apply]
+      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add])
+    (AddMonoidHom.ext fun ⟨x, y⟩ ↦ by
+      obtain ⟨a, a', rfl⟩ := exists_eq_sub_of x
+      obtain ⟨b, b', rfl⟩ := exists_eq_sub_of y
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, AddMonoidHom.coprod_apply,
+        map_sub, map_add, lift_apply_of, AddMonoidHom.inl_apply, AddMonoidHom.inr_apply,
+        AddMonoidHom.coe_prodMap, Prod.map_apply, map_zero, Prod.mk_sub_mk, Prod.mk_add_mk,
+        sub_self, add_zero, zero_add])
+
+-- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.lift_apply_of`: the simp normal form of
+-- `of a` is `AddLocalization.addMonoidOf ⊤ a`, so these left-hand sides are not in simp normal
+-- form.
+/-- `Algebra.GrothendieckAddGroup.prodEquiv` sends `of (a, b)` to `(of a, of b)`. -/
+theorem prodEquiv_of (a : M) (b : N) : prodEquiv (of (a, b)) = (of a, of b) := by
+  simp only [prodEquiv, AddMonoidHom.toAddEquiv_apply, lift_apply_of, AddMonoidHom.coe_prodMap,
+    Prod.map_apply]
+
+/-- The inverse of `Algebra.GrothendieckAddGroup.prodEquiv` sends `(of a, of b)` to
+`of (a, b)`. -/
+theorem prodEquiv_symm_of (a : M) (b : N) : prodEquiv.symm (of a, of b) = of (a, b) :=
+  prodEquiv.symm_apply_eq.2 (prodEquiv_of a b).symm
+
+end Prod
+
+section Pi
+
+variable {ι : Type*} {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
+
+/-- Taking all components, `of a ↦ (of (a i))ᵢ`, is a localization map of the product at its top
+submonoid, by Mathlib's `AddSubmonoid.IsLocalizationMap.pi`. -/
+private noncomputable def piLocalizationMap :
+    (⊤ : AddSubmonoid (∀ i, P i)).LocalizationMap (∀ i, GrothendieckAddGroup (P i)) where
+  toFun := Pi.map fun i ↦ AddLocalization.addMonoidOf (⊤ : AddSubmonoid (P i))
+  map_add' a b := funext fun i ↦ map_add _ (a i) (b i)
+  isLocalizationMap := by
+    rw [← AddSubmonoid.pi_top (M := P) .univ]
+    exact AddSubmonoid.IsLocalizationMap.pi (fun _ ↦ ⊤) fun i ↦
+      (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (P i))).isLocalizationMap
+
+/-- `piLocalizationMap` sends `a` to the family `(of (a i))ᵢ`. -/
+private theorem piLocalizationMap_apply (a : ∀ i, P i) :
+    piLocalizationMap a = fun i ↦ of (a i) :=
+  (rfl)
+
+/-- **The Grothendieck group of a product.** The group completion of `Π i, P i` is the product of
+the group completions of the `P i`, `of a ↦ (of (a i))ᵢ`
+(`Algebra.GrothendieckAddGroup.piEquiv_of`). No finiteness of the index type is needed: two
+families become equal in the completion exactly when they do componentwise, each after adding
+its own element. -/
+noncomputable def piEquiv :
+    GrothendieckAddGroup (∀ i, P i) ≃+ ∀ i, GrothendieckAddGroup (P i) :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (∀ i, P i))).addEquivOfLocalizations
+    piLocalizationMap
+
+-- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.prodEquiv_of`: the simp normal form of
+-- `of a` is `AddLocalization.addMonoidOf ⊤ a`.
+/-- `Algebra.GrothendieckAddGroup.piEquiv` sends `of a` to the family `(of (a i))ᵢ`. -/
+theorem piEquiv_of (a : ∀ i, P i) : piEquiv (of a) = fun i ↦ of (a i) := by
+  rw [piEquiv, AddSubmonoid.LocalizationMap.addEquivOfLocalizations_apply,
+    ← piLocalizationMap_apply]
+  -- `of` is Mathlib's abbreviation for `(AddLocalization.addMonoidOf ⊤).toAddMonoidHom`, so `of a`
+  -- is `addMonoidOf ⊤ a` up to coercion, which `exact` sees but `rw [lift_eq]` does not.
+  exact (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (∀ i, P i))).lift_eq _ a
+
+/-- The inverse of `Algebra.GrothendieckAddGroup.piEquiv` sends the family `(of (a i))ᵢ` to
+`of a`. -/
+theorem piEquiv_symm_of (a : ∀ i, P i) : piEquiv.symm (fun i ↦ of (a i)) = of a :=
+  piEquiv.symm_apply_eq.2 (piEquiv_of a).symm
+
+end Pi
 
 /-! ### The multiplication -/
 

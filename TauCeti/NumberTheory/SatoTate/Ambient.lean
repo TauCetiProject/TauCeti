@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.RankOne
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
 
 /-!
 # The ambient groups of Sato–Tate theory: `U(d)` and `USp(d)`

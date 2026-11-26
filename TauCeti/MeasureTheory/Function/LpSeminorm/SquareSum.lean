@@ -24,11 +24,25 @@ makes `p/2 ≥ 1`, so that the triangle inequality holds in `L^{p/2}`.
 
 The inequality interchanges a square sum with an `Lᵖ` norm. It is how square function estimates,
 such as the Littlewood–Paley inequality, combine with estimates for the individual pieces.
+A constant factor comes out of such a square sum (`ENNReal.tsum_mul_sq_rpow_inv_two`).
 -/
 
 public section
 
 open scoped ENNReal
+
+namespace ENNReal
+
+/-- A constant factor comes out of an `ℓ²` norm in `[0, ∞]`:
+`(∑ᵢ (c zᵢ)²)^{1/2} = c (∑ᵢ zᵢ²)^{1/2}`. -/
+theorem tsum_mul_sq_rpow_inv_two {ι : Type*} (c : ℝ≥0∞) (z : ι → ℝ≥0∞) :
+    (∑' i, (c * z i) ^ 2) ^ (2⁻¹ : ℝ) = c * (∑' i, z i ^ 2) ^ (2⁻¹ : ℝ) := by
+  simp_rw [mul_pow c, ENNReal.tsum_mul_left]
+  rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
+  congr 1
+  exact_mod_cast ENNReal.pow_rpow_inv_natCast two_ne_zero c
+
+end ENNReal
 
 namespace MeasureTheory
 

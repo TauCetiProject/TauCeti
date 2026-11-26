@@ -12,7 +12,8 @@ import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Geometry.Symplectic.Manifold.Energy
-import TauCeti.Topology.Order.Interval
+import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic.Regularity
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Energy quantization for pseudoholomorphic planes in a manifold
@@ -20,7 +21,7 @@ import TauCeti.Topology.Order.Interval
 Let `J` be a smooth almost complex structure on a boundaryless Hausdorff manifold `M`, tamed by a
 two-form `ω`, as on a closed symplectic manifold. A pseudoholomorphic plane is a map
 `u : ℝ × ℝ → M` solving `∂ₜu = J(u) ∂ₛu`, and its area is `∫ ω(∂ₛu, ∂ₜu)`. This file proves that
-on a compact subset `K` of `M` there is an energy `κ > 0` below which every such `C³` plane with
+on a compact subset `K` of `M` there is an energy `κ > 0` below which every such `C¹` plane with
 values in `K` is constant
 (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`).
 
@@ -30,6 +31,10 @@ almost complex structures `J p`, depending on a parameter `p` in a normed space 
 expressions in the charts of `M` jointly `C²` in `p` and the point, and tamed by `ω` for `p` in a
 compact set `C`, one `κ > 0` bounds from below the area of every nonconstant `J p`-holomorphic plane
 with values in `K`, for every `p ∈ C`. The single structure is the case of a constant family.
+The parametric statement assumes `C³` planes, since its structures are given only through their
+chart expressions. A smooth structure, such as one frozen from a smooth family, makes every `C¹`
+solution smooth (`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`), so the statements for a
+single structure and for frozen structures need only `C¹` planes, as bubbles are.
 
 This is the lower bound for the energy of bubbles in Gromov–Floer compactness. Where the
 derivatives of a sequence of Floer solutions blow up, a limit of the rescaled solutions is
@@ -594,11 +599,12 @@ end Family
 /-- **Energy quantization for pseudoholomorphic planes in a manifold.** Let `J` be a smooth almost
 complex structure on a boundaryless Hausdorff manifold `M`, tamed by a two-form `ω`, as on a closed
 symplectic manifold, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that every
-nonconstant `C³` solution `u : ℝ × ℝ → M` of `∂ₜu = J(u) ∂ₛu` with values in `K` has area
-`∫ ω(∂ₛu, ∂ₜu) ≥ κ`. -/
+nonconstant `C¹` solution `u : ℝ × ℝ → M` of `∂ₜu = J(u) ∂ₛu` with values in `K` has area
+`∫ ω(∂ₛu, ∂ₜu) ≥ κ`. Such a solution is smooth
+(`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`). -/
 theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2Space M]
     (hJ : ω.Tames J) {K : Set M} (hK : IsCompact K) :
-    ∃ κ > 0, ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u → (∀ z, u z ∈ K) →
+    ∃ κ > 0, ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u → (∀ z, u z ∈ K) →
       (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
         J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → (∃ z w, u z ≠ u w) →
       ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
@@ -608,7 +614,8 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
     (J := fun (_ : Unit) ↦ J) isOpen_univ (subset_univ {()}) isCompact_singleton
     (fun α ↦ ((J.contDiffOn_inChart α).of_le (by simp)).comp contDiffOn_snd fun _ hq ↦ hq.2)
     (fun _ _ ↦ hJ) hK
-  exact ⟨κ, hκ, h rfl⟩
+  exact ⟨κ, hκ, fun u hu huK hCR ↦
+    h rfl ((contMDiff_of_mfderiv_stdComplexLineImag_eq hu hCR).of_le (by simp)) huK hCR⟩
 
 end TauCeti.SmoothTwoForm
 
@@ -623,13 +630,13 @@ family of almost complex structures on a boundaryless Hausdorff manifold `M`, ov
 space `P` that is a normed space, such as the domain `ℝ × ℝ` of a Floer equation with a
 domain-dependent structure. Let the frozen structures `J p` be tamed by a two-form `ω` for `p` in a
 compact set `C`, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that for every
-`p ∈ C`, every nonconstant `C³` solution `u : ℝ × ℝ → M` of `∂ₜu = J p (u) ∂ₛu` with values in `K`
+`p ∈ C`, every nonconstant `C¹` solution `u : ℝ × ℝ → M` of `∂ₜu = J p (u) ∂ₛu` with values in `K`
 has area `∫ ω(∂ₛu, ∂ₜu) ≥ κ`. -/
 theorem exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2Space M]
     (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, P) P ⊤) {ω : SmoothTwoForm I M}
     {C : Set P} (hC : IsCompact C) (hJt : ∀ p ∈ C, ω.Tames (J.freezeSmooth p)) {K : Set M}
     (hK : IsCompact K) :
-    ∃ κ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
+    ∃ κ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u →
       (∀ z, u z ∈ K) →
       (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
         J.freezeSmooth p (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) →
@@ -637,7 +644,10 @@ theorem exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2
       ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) := by
-  exact SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric isOpen_univ
-    (subset_univ C) hC (fun α ↦ (J.contDiffOn_inChart_freezeSmooth α).of_le (by simp)) hJt hK
+  obtain ⟨κ, hκ, h⟩ := SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric
+    isOpen_univ (subset_univ C) hC (fun α ↦ (J.contDiffOn_inChart_freezeSmooth α).of_le (by simp))
+    hJt hK
+  exact ⟨κ, hκ, fun p hp u hu huK hCR ↦
+    h hp ((contMDiff_of_mfderiv_stdComplexLineImag_eq hu hCR).of_le (by simp)) huK hCR⟩
 
 end TauCeti.ContMDiffAlmostComplexStructureFamily

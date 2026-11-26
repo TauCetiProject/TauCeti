@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Analysis.PSeries
-import TauCeti.Analysis.Normed.Ring.InfiniteProd
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 
 /-!
 # Uniform-tail convergence criterion for infinite products

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.EllipticRegularity.Basic
 public import TauCeti.Analysis.Pseudodifferential.BesovSpace
-public import TauCeti.Analysis.Holder.Zygmund
+public import TauCeti.Analysis.Holder.Zygmund.Basic
 import TauCeti.Analysis.Pseudodifferential.InteriorRegularity
 import TauCeti.Analysis.Pseudodifferential.Smoothing
 

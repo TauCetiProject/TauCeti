@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Line
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Zero
+public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 
 /-!
 # Fundamental groups of real projective spaces in every dimension
@@ -22,13 +23,18 @@ The three group isomorphisms are constructed in the imported dimension-specific 
 `TauCeti.RealProjectiveSpace.Zero.fundamentalGroupMulEquiv` in dimension zero,
 `TauCeti.RealProjectiveSpace.Line.fundamentalGroupMulEquiv` in dimension one, and
 `TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv` for `2 ≤ n`. This file records their
-common cardinality consequence. Recall that `Nat.card` is zero on an infinite type, so the value
-zero in dimension one expresses infinitude, not an empty fundamental group.
+common cardinality consequence, and the nontriviality of the fundamental group in every positive
+dimension for the real projectivization `ℙ ℝ (Fin (n + 1) → ℝ)`, the manifold model of `RPⁿ`
+(through `TauCeti.RealProjectiveSpace.homeomorphProjectivization`). Recall that `Nat.card` is
+zero on an infinite type, so the value zero in dimension one expresses infinitude, not an empty
+fundamental group.
 
-## Main result
+## Main results
 
 * `TauCeti.RealProjectiveSpace.card_fundamentalGroup`: the cardinality trichotomy
   `1, 0, 2` in dimensions `0, 1, ≥ 2`, respectively.
+* `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup_projectivization`: for `n ≠ 0` the
+  fundamental group of `ℙ ℝ (Fin (n + 1) → ℝ)` is nontrivial at every basepoint.
 
 ## References
 
@@ -57,6 +63,20 @@ theorem card_fundamentalGroup (n : ℕ) (x : RealProjectiveSpace n) :
   · rcases n with _ | n
     · exact Line.card_fundamentalGroup x
     · exact card_fundamentalGroup_of_two_le (n + 2) (by omega) x
+
+open scoped LinearAlgebra.Projectivization in
+/-- For `n ≠ 0`, the fundamental group of the real projectivization `ℙ ℝ (Fin (n + 1) → ℝ)`, which
+is homeomorphic to `RPⁿ` (`TauCeti.RealProjectiveSpace.homeomorphProjectivization`), is nontrivial
+at every basepoint: it is infinite cyclic for `n = 1` and of order two for `n ≥ 2`. -/
+theorem nontrivial_fundamentalGroup_projectivization {n : ℕ} (hn : n ≠ 0)
+    (x : ℙ ℝ (Fin (n + 1) → ℝ)) : Nontrivial (FundamentalGroup (ℙ ℝ (Fin (n + 1) → ℝ)) x) := by
+  have : Nontrivial (FundamentalGroup (RealProjectiveSpace n)
+      ((homeomorphProjectivization n).symm x)) := by
+    obtain rfl | hn₂ := eq_or_ne n 1
+    · exact Line.nontrivial_fundamentalGroup _
+    · exact nontrivial_fundamentalGroup n (by omega) _
+  exact (FundamentalGroup.homeomorphMulEquiv (homeomorphProjectivization n).symm x).toEquiv
+    |>.nontrivial
 
 end
 

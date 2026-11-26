@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Adjunction.Unique
 
 /-!
@@ -23,8 +25,14 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
 * `TauCeti.BalancedExtension.functor f`: the functor `ModuleCat R ⥤ ModuleCat S`.
 * `TauCeti.BalancedExtension.adjunction f`: extension of scalars is left adjoint to
   restriction of scalars.
+* `TauCeti.BalancedExtension.functorComp f g`: extension along `g ∘ f` is extension along `f`
+  followed by extension along `g`.
+* `TauCeti.BalancedExtension.functorCongr h`: extension along equal ring homomorphisms.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
+* `TauCeti.BalancedExtension.restrictScalarsTensorIso f Q P`: for commutative rings, the
+  projection formula `Q ⊗_S (S ⊗_R P) ≅ Q ⊗_R P` of `R`-modules, with the scalars of the left side
+  restricted along `f`.
 
 ## Main results
 
@@ -43,7 +51,7 @@ namespace TauCeti.BalancedExtension
 
 open CategoryTheory
 
-universe u₁ u₂ v
+universe u u₁ u₂ v
 
 section Ring
 
@@ -156,6 +164,92 @@ theorem functor_map_surjective (hf : Function.Surjective f) {P N : ModuleCat.{ma
 
 end Ring
 
+section Congr
+
+variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
+
+/-- Extension of scalars along equal ring homomorphisms gives isomorphic functors: the natural
+isomorphism whose components are `TauCeti.BalancedExtension.congrRingHom`, `s ⊗ p ↦ s ⊗ p`. -/
+noncomputable def functorCongr {f f' : R →+* S} (h : f = f') :
+    functor.{u₁, u₂, v} f ≅ functor.{u₁, u₂, v} f' :=
+  NatIso.ofComponents (fun P ↦ (congrRingHom (P := P) h).toModuleIso) fun φ ↦
+    ModuleCat.hom_ext (congrRingHom_comp_map h (ModuleCat.Hom.hom φ))
+
+@[simp]
+theorem functorCongr_hom_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (s : S) (p : P) :
+    (functorCongr h).hom.app P (tmul f s p) = tmul f' s p :=
+  congrRingHom_tmul h s p
+
+@[simp]
+theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (s : S) (p : P) :
+    (functorCongr h).inv.app P (tmul f' s p) = tmul f s p :=
+  (LinearEquiv.symm_apply_eq _).2 (congrRingHom_tmul h s p).symm
+
+/-- The component of `TauCeti.BalancedExtension.functorCongr h` is
+`TauCeti.BalancedExtension.congrRingHom h` on every element, not only on pure tensors. -/
+theorem functorCongr_hom_app_apply {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (x : BalancedExtension f P) :
+    (functorCongr h).hom.app P x = congrRingHom h x :=
+  (rfl)
+
+/-- Extension of scalars along a ring homomorphism and itself: the identity. -/
+@[simp]
+theorem functorCongr_refl (f : R →+* S) :
+    functorCongr.{u₁, u₂, v} (rfl : f = f) = Iso.refl _ :=
+  Iso.ext (NatTrans.ext (funext fun P ↦ ModuleCat.hom_ext (hom_ext fun p ↦
+    functorCongr_hom_app_tmul rfl P 1 p)))
+
+end Congr
+
+section Composition
+
+variable {R S T : Type u₁} [Ring R] [Ring S] [Ring T]
+
+variable (f : R →+* S) (g : S →+* T)
+
+/-- **Extension of scalars along a composite**, as a natural isomorphism: extending along `g ∘ f`
+is extending along `f` and then along `g`. Its component at `P` is the inverse of
+`TauCeti.BalancedExtension.cancelBaseChange`, `t ⊗ p ↦ t ⊗ (1 ⊗ p)`. This is the form of Mathlib's
+`ModuleCat.extendScalarsComp` for possibly noncommutative rings. -/
+noncomputable def functorComp :
+    functor.{u₁, u₁, max v u₁} (g.comp f) ≅
+      functor.{u₁, u₁, max v u₁} f ⋙ functor.{u₁, u₁, max v u₁} g :=
+  (NatIso.ofComponents (fun P ↦ (cancelBaseChange f g (P := P)).toModuleIso) fun φ ↦
+    ModuleCat.hom_ext (cancelBaseChange_comp_map f g (ModuleCat.Hom.hom φ))).symm
+
+/-- The component of `TauCeti.BalancedExtension.functorComp` sends `t ⊗ p` to `t ⊗ (1 ⊗ p)`. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_hom_app_tmul (P : ModuleCat.{max v u₁} R) (t : T) (p : P) :
+    (functorComp f g).hom.app P (tmul (g.comp f) t p) = tmul g t (tmul f 1 p) :=
+  cancelBaseChange_symm_tmul f g t p
+
+/-- The inverse component of `TauCeti.BalancedExtension.functorComp` sends `t ⊗ (s ⊗ p)` to
+`(t * g s) ⊗ p`. Not `@[simp]`: its left-hand side mentions the composite functor, which `simp`
+unfolds. -/
+theorem functorComp_inv_app_tmul (P : ModuleCat.{max v u₁} R) (t : T) (s : S) (p : P) :
+    (functorComp f g).inv.app P (tmul g t (tmul f s p)) = tmul (g.comp f) (t * g s) p :=
+  cancelBaseChange_tmul f g t s p
+
+/-- The component of `TauCeti.BalancedExtension.functorComp` is the inverse of
+`TauCeti.BalancedExtension.cancelBaseChange` on every element, not only on pure tensors. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_hom_app_apply (P : ModuleCat.{max v u₁} R)
+    (x : BalancedExtension (g.comp f) P) :
+    (functorComp f g).hom.app P x = (cancelBaseChange f g).symm x :=
+  (rfl)
+
+/-- The inverse component of `TauCeti.BalancedExtension.functorComp` is
+`TauCeti.BalancedExtension.cancelBaseChange` on every element, not only on pure tensors. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_inv_app_apply (P : ModuleCat.{max v u₁} R)
+    (x : BalancedExtension g (BalancedExtension f P)) :
+    (functorComp f g).inv.app P x = cancelBaseChange f g x :=
+  (rfl)
+
+end Composition
+
 section CommRing
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [CommRing S] (f : R →+* S)
@@ -191,5 +285,83 @@ theorem extendScalarsIso_inv_app_tmul (M : ModuleCat.{max v u₂} R) (s : S) (m 
     (ModuleCat.inv_hom_apply ((extendScalarsIso f).app M) (tmul f s m))
 
 end CommRing
+
+section Monoidal
+
+open MonoidalCategory
+
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- The `S`-linear equivalence `Q ⊗_S (S ⊗_R P) ≃ Q ⊗_R P`, `q ⊗ (s ⊗ p) ↦ s q ⊗ p`, underlying
+`TauCeti.BalancedExtension.restrictScalarsTensorIso`: identify `S ⊗_R P` with Mathlib's extension
+of scalars and cancel the base change. -/
+private noncomputable def restrictScalarsTensorEquiv (Q : ModuleCat.{u} S) (P : ModuleCat.{u} R) :
+    letI := f.toAlgebra
+    letI : Module R Q := Module.compHom Q f
+    haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+    TensorProduct S Q (BalancedExtension f P) ≃ₗ[S] TensorProduct R Q P :=
+  letI := f.toAlgebra
+  letI : Module R Q := Module.compHom Q f
+  haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+  let e₁ : TensorProduct S Q (BalancedExtension f P) ≃ₗ[S]
+      TensorProduct S Q (TensorProduct R S P) :=
+    TensorProduct.congr (LinearEquiv.refl S Q) ((extendScalarsIso f).app P).toLinearEquiv
+  e₁.trans (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P)
+
+private theorem restrictScalarsTensorEquiv_tmul (Q : ModuleCat.{u} S) (P : ModuleCat.{u} R)
+    (q : Q) (s : S) (p : P) :
+    letI := f.toAlgebra
+    letI : Module R Q := Module.compHom Q f
+    haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+    restrictScalarsTensorEquiv f Q P (q ⊗ₜ[S] tmul f s p) = (s • q) ⊗ₜ[R] p :=
+  -- The instances of the statement.
+  letI := f.toAlgebra
+  letI : Module R Q := Module.compHom Q f
+  haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+  -- The comparison with `ModuleCat.extendScalars` sends `tmul f s p` to `s ⊗ₜ p`, which
+  -- `cancelBaseChange` sends to `s • q ⊗ₜ p`.
+  (congrArg (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P)
+    ((TensorProduct.congr_tmul _ _ _ _).trans
+      (congrArg (q ⊗ₜ[S] ·) (extendScalarsIso_hom_app_tmul f P s p)))).trans
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul R S S q p s)
+
+/-- **The projection formula for modules.** For commutative rings, an `S`-module `Q` and an
+`R`-module `P`, the `R`-module `Q ⊗_S (S ⊗_R P)`, with scalars restricted along `f`, is
+`Q ⊗_R P`, by `q ⊗ (s ⊗ p) ↦ s q ⊗ p`
+(`TauCeti.BalancedExtension.restrictScalarsTensorIso_hom_tmul`). -/
+noncomputable def restrictScalarsTensorIso (Q : ModuleCat.{u} S)
+    (P : ModuleCat.{u} R) :
+    (ModuleCat.restrictScalars f).obj (Q ⊗ (functor.{u, u, u} f).obj P) ≅
+      (ModuleCat.restrictScalars f).obj Q ⊗ P :=
+  letI := f.toAlgebra
+  letI : Module R Q := Module.compHom Q f
+  haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+  -- The `S`-linear equivalence is `R`-linear for the restricted scalars, because `f r` acts on
+  -- `Q ⊗_R P` as `r` does.
+  let e := restrictScalarsTensorEquiv f Q P
+  f.restrictScalarsIsoOfAddEquiv e.toAddEquiv fun r x ↦
+    (e.map_smul (f r) x).trans (algebraMap_smul S r (e x))
+
+@[simp]
+theorem restrictScalarsTensorIso_hom_tmul (Q : ModuleCat.{u} S)
+    (P : ModuleCat.{u} R) (q : Q) (s : S) (p : P) :
+    (restrictScalarsTensorIso f Q P).hom
+        (q ⊗ₜ[S] tmul f s p : TensorProduct S Q (BalancedExtension f P)) =
+      ((s • q : Q) ⊗ₜ[R] p : TensorProduct R ((ModuleCat.restrictScalars f).obj Q) P) :=
+  (RingHom.restrictScalarsIsoOfAddEquiv_hom_apply f _ _ _).trans
+    (restrictScalarsTensorEquiv_tmul f Q P q s p)
+
+@[simp]
+theorem restrictScalarsTensorIso_inv_tmul (Q : ModuleCat.{u} S)
+    (P : ModuleCat.{u} R) (q : Q) (p : P) :
+    (restrictScalarsTensorIso f Q P).inv
+        (q ⊗ₜ[R] p : TensorProduct R ((ModuleCat.restrictScalars f).obj Q) P) =
+      (q ⊗ₜ[S] tmul f 1 p : TensorProduct S Q (BalancedExtension f P)) := by
+  have h := restrictScalarsTensorIso_hom_tmul f Q P q 1 p
+  rw [one_smul] at h
+  rw [← h]
+  exact ModuleCat.inv_hom_apply (restrictScalarsTensorIso f Q P) _
+
+end Monoidal
 
 end TauCeti.BalancedExtension

@@ -63,7 +63,7 @@ def normalSpaceEquivOfComplement (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) :
-    f.NormalSpace x hn ≃L[𝕜] P :=
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] P :=
   (f.normalSpaceEquivInTangentCoordinates hn hx hy).trans
     ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).quotientRangeEquiv B hB)
@@ -77,7 +77,7 @@ of tangent-chart coordinates. -/
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfComplement hn hx hy B hB (f.normalClass x hn v) =
+    f.normalSpaceEquivOfComplement hn hx hy B hB (f.isImmersion.normalClass x hn v) =
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f x, v⟩).2 := by
@@ -92,7 +92,8 @@ tangent chart and take its normal class. -/
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) (w : P) :
     (f.normalSpaceEquivOfComplement hn hx hy B hB).symm w =
-      f.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
+      f.isImmersion.normalClass x hn
+          ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
   simp [normalSpaceEquivOfComplement]
 
 /-- Changing the complement and the ambient tangent chart gives the normal-coordinate

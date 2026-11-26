@@ -44,6 +44,8 @@ for such a junk value carry the hypothesis `c ∈ μ` explicitly.
   less than the number of cells, a consequence of the hook of the cell `(0, 0)`.
 * `YoungDiagram.prod_hookLength_eq_factorial_of_colLen_le_one`: the hook lengths of a
   one-row diagram multiply to `μ.card !`.
+* `YoungDiagram.prod_factorial_rowLen_le_prod_hookLength`: for every diagram, the factorials of
+  the row lengths multiply to at most the product of the hook lengths.
 
 ## References
 
@@ -355,6 +357,44 @@ theorem prod_hookLength_eq_factorial_of_rowLen_le_one {μ : YoungDiagram} (h : �
     ∏ c ∈ μ.cells, hookLength μ c = Nat.factorial μ.card := by
   rw [← prod_hookLength_transpose μ,
     prod_hookLength_eq_factorial_of_colLen_le_one (by simpa using h), card_transpose]
+
+/-! ### Row factorials against the hook product
+
+The hook of the cell `(i, j)` contains the `μ.rowLen i - j` cells of row `i` from column `j` on,
+so the hook lengths of row `i` are at least `μ.rowLen i, μ.rowLen i - 1, …, 1` and multiply to at
+least `(μ.rowLen i)!`. Multiplying over the rows bounds the product of the factorials of the row
+lengths by the product of all the hook lengths; for a diagram with a single row this is the
+equality `prod_hookLength_eq_factorial_of_colLen_le_one`. -/
+
+variable (μ)
+
+/-- The hook length of the cell `(i, j)` is at least `μ.rowLen i - j`, the number of cells of row
+`i` from column `j` on. For a cell outside the diagram the left side is `0`, so the bound holds
+for every `(i, j)`. -/
+theorem rowLen_sub_le_hookLength (i j : ℕ) : μ.rowLen i - j ≤ hookLength μ (i, j) := by
+  simp only [hookLength_def, armLength_def]
+  omega
+
+/-- The hook lengths of row `i` multiply to at least `(μ.rowLen i)!`. -/
+theorem factorial_rowLen_le_prod_hookLength (i : ℕ) :
+    (μ.rowLen i).factorial ≤ ∏ j ∈ Finset.range (μ.rowLen i), hookLength μ (i, j) := by
+  rw [← Nat.descFactorial_self, Nat.descFactorial_eq_prod_range]
+  exact Finset.prod_le_prod fun j _ => μ.rowLen_sub_le_hookLength i j
+
+/-- The factorials of the row lengths of `μ` multiply to at most the product of all the hook
+lengths of `μ`. The rows are those with index `i < N`, for any `N`; the rows from `μ.colLen 0` on
+are empty, so `N = μ.colLen 0` gives the product over all rows. -/
+theorem prod_factorial_rowLen_le_prod_hookLength (N : ℕ) :
+    ∏ i ∈ Finset.range N, (μ.rowLen i).factorial ≤ ∏ c ∈ μ.cells, hookLength μ c := by
+  calc ∏ i ∈ Finset.range N, (μ.rowLen i).factorial
+      ≤ ∏ i ∈ Finset.range (max N (μ.colLen 0)), (μ.rowLen i).factorial :=
+        Finset.prod_le_prod_of_subset_of_one_le
+          (Finset.range_subset_range.mpr (le_max_left _ _)) fun i _ _ => Nat.factorial_pos _
+    _ ≤ ∏ i ∈ Finset.range (max N (μ.colLen 0)),
+          ∏ j ∈ Finset.range (μ.rowLen i), hookLength μ (i, j) :=
+        Finset.prod_le_prod fun i _ => μ.factorial_rowLen_le_prod_hookLength i
+    _ = ∏ c ∈ μ.cells, hookLength μ c :=
+        (μ.prod_cells_eq_prod_range (le_max_right _ _) _).symm
 
 end YoungDiagram
 

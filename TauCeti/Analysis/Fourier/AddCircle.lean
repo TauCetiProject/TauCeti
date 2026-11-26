@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -67,6 +68,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.injective_exp_intCast_mul_mul_I`: the same at period `2π`, read on the real line:
+  `ℓ ↦ (θ ↦ e^{iℓθ})` is injective.
 * `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.star_fourier_mul_fourier`: `fourier n` is unitary in `C(AddCircle T, ℂ)`.
@@ -85,6 +88,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   circle takes values of modulus one.
 * `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
   multiplicative unit circle is a unique integer power.
+* `ContinuousMonoidHom.exists_eq_comp_id_pow_iff`: a character of the circle factors through
+  `z ↦ zⁿ` exactly when its exponent is divisible by `n`.
 * `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
@@ -156,6 +161,19 @@ theorem fourier_injective (hT : T ≠ 0) : Function.Injective (fourier (T := T))
           rw [← Complex.exp_sub, he]
       _ = 1 := by rw [hx, div_self (Complex.exp_ne_zero _)]
   norm_num at hcontra
+
+/-- The characters `θ ↦ e^{iℓθ}` of the rotation group are distinct for distinct `ℓ`. -/
+theorem injective_exp_intCast_mul_mul_I :
+    Function.Injective fun (ℓ : ℤ) (θ : ℝ) ↦ Complex.exp (ℓ * θ * Complex.I) := by
+  intro ℓ ℓ' h
+  -- On the circle `ℝ / 2πℤ` the Fourier monomial `fourier n` is `θ ↦ e^{inθ}`.
+  have key (n : ℤ) (x : ℝ) :
+      2 * (Real.pi : ℂ) * Complex.I * n * x / ((2 * Real.pi : ℝ) : ℂ) = n * x * Complex.I := by
+    push_cast
+    field_simp
+  refine fourier_injective (T := 2 * Real.pi) Real.two_pi_pos.ne' (ContinuousMap.ext fun x ↦ ?_)
+  induction x using QuotientAddGroup.induction_on with
+  | H x => rw [fourier_coe_apply, fourier_coe_apply, key, key]; exact congrFun h x
 
 /-- The Fourier monomial of frequency `1` in terms of the cosine and sine of `2π t / T`. -/
 theorem fourier_one_coe_apply (t : ℝ) :
@@ -741,6 +759,20 @@ theorem existsUnique_circle_eq_zpow (χ : Circle →ₜ* Circle) :
   ext x
   simp only [fourier_apply, AddCircle.toCircle_zsmul]
   exact congrArg (fun z : Circle ↦ (z : ℂ)) ((hm _).symm.trans (hn' _))
+
+/-- **Characters through a power map of the circle.** A continuous character `χ` of the circle
+factors through the power map `z ↦ zⁿ` exactly when it is `z ↦ z^(n k)` for some integer `k`:
+the characters of the target circle pull back to the characters whose exponent is divisible by
+`n`. -/
+theorem exists_eq_comp_id_pow_iff (χ : Circle →ₜ* Circle) (n : ℕ) :
+    (∃ ψ : Circle →ₜ* Circle, χ = ψ.comp (ContinuousMonoidHom.id Circle ^ n)) ↔
+      ∃ k : ℤ, ∀ z : Circle, χ z = z ^ ((n : ℤ) * k) := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    obtain ⟨k, hk, -⟩ := existsUnique_circle_eq_zpow ψ
+    exact ⟨k, fun z ↦ by simp [hk, zpow_mul]⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨ContinuousMonoidHom.id Circle ^ k, ext fun z ↦ by simp [hk, zpow_mul]⟩
 
 end ContinuousMonoidHom
 
