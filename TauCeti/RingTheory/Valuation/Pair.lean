@@ -20,8 +20,7 @@ of `a - e * (a - b) = (1 - e) * a + e * b`.
 
 Every `PreValuationRing A` (in particular every `ValuationRing A`) is a valuation pair inside
 itself (`Subring.isValuationPair_top`), and every `ValuationSubring F` of a field `F` is a
-valuation pair inside `F` (`ValuationSubring.isValuationPair_toSubring`). More generally, a ring
-of integral adeles inside the finite adeles satisfies `Subring.IsValuationPair`.
+valuation pair inside `F` (`ValuationSubring.isValuationPair_toSubring`).
 
 ## Main definitions and results
 

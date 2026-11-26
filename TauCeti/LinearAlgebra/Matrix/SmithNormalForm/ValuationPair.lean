@@ -27,9 +27,9 @@ for some `k, k' : GL n R` and `d : n → A` (`Subring.IsValuationPair.exists_eq_
 No divisibility chain among the entries of `d` is asserted.
 
 As immediate corollaries, every square matrix over a `PreValuationRing A` (in particular over any
-`ValuationRing A` or non-discrete `ValuationSubring F`) is diagonalized by two-sided multiplication
-by `GL n A` (`Matrix.exists_eq_mul_diagonal_mul_of_preValuationRing`), and every square matrix over
-a field `F` is diagonalized by `GL n O` for any `ValuationSubring F`
+`ValuationRing A` or `ValuationSubring F`, including non-discrete ones) is diagonalized by
+two-sided multiplication by `GL n A` (`Matrix.exists_eq_mul_diagonal_mul_of_preValuationRing`), and
+every square matrix over a field `F` is diagonalized by `GL n O` for any `ValuationSubring F`
 (`ValuationSubring.exists_eq_mul_diagonal_mul`).
 
 ## Main results
