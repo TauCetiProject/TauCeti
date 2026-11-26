@@ -111,15 +111,16 @@ end LinearMap
 
 namespace Ideal
 
-variable {R S T : Type*} [CommRing R] [CommRing S] [Ring T]
+variable {R S T : Type*} [CommRing R] [Ring S] [Ring T]
   [Algebra R S] [Algebra R T]
 
 /-- Extension along a flat coefficient algebra commutes with contracting a two-sided ideal to
-the coefficient ring. The ideal of `T` is extended along the right tensor inclusion. -/
+the coefficient ring. The ideal of `T` is extended along the right tensor inclusion and
+contracted along the left tensor inclusion. -/
 theorem map_comap_algebraMap_eq_of_flat [Module.Flat R S] (I : Ideal T) [I.IsTwoSided] :
     (I.comap (algebraMap R T)).map (algebraMap R S) =
       (I.map (Algebra.TensorProduct.includeRight : T →ₐ[R] S ⊗[R] T)).comap
-        (algebraMap S (S ⊗[R] T)) := by
+        (Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] T) := by
   let f := (Algebra.ofId R (T ⧸ I)).toLinearMap
   have hf : LinearMap.ker f = I.comap (algebraMap R T) := by
     ext r
@@ -132,9 +133,9 @@ theorem map_comap_algebraMap_eq_of_flat [Module.Flat R S] (I : Ideal T) [I.IsTwo
       Algebra.TensorProduct.lTensor_ker (A := S) q (Ideal.Quotient.mkₐ_surjective R I)
   ext s
   simp only [← hf, LinearMap.mem_map_ker_iff_of_flat, Ideal.mem_comap, ← hq,
-    RingHom.mem_ker, LinearMap.baseChange_tmul, Algebra.TensorProduct.algebraMap_apply,
-    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, f, AlgHom.toLinearMap_apply,
-    Algebra.algebraMap_self_apply, map_one]
+    RingHom.mem_ker, LinearMap.baseChange_tmul,
+    Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    f, AlgHom.toLinearMap_apply, map_one]
 
 end Ideal
 

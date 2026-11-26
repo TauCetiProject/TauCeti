@@ -48,5 +48,8 @@ theorem map_coefficientEisensteinIdeal_eq_of_flat [Module.Flat R S] :
         (algebraMap R S ∘ a) := by
   rw [coefficientEisensteinIdeal_eq_comap, coefficientEisensteinIdeal_eq_comap,
     Ideal.map_comap_algebraMap_eq_of_flat, map_eisensteinIdeal_includeRight]
+  ext s
+  simp only [Ideal.mem_comap, Algebra.TensorProduct.includeLeft_apply,
+    Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
 
 end TauCeti
