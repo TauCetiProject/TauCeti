@@ -55,8 +55,9 @@ number of ramified places is even.
   `isRamifiedAtReal_iff_isEmpty_algEquiv_matrix` and `isRamifiedAtReal_iff_forall_isUnit`.
 * `TauCeti.QuaternionAlgebra.isRamifiedAtReal_iff`: `B` is ramified at a real place exactly when
   `a` and `b` are both negative there.
-* `TauCeti.QuaternionAlgebra.isRamifiedAt_iff_of_nonempty_algEquiv`: isomorphic symbol algebras
-  have the same ramified places.
+* `TauCeti.QuaternionAlgebra.isRamifiedAt_iff_of_nonempty_algEquiv`,
+  `TauCeti.QuaternionAlgebra.ramifiedFinitePlaces_eq_of_nonempty_algEquiv`: isomorphic symbol
+  algebras have the same ramified places.
 * `TauCeti.QuaternionAlgebra.not_isRamifiedAt_of_valuation_eq_one`: `B` is unramified at a finite
   place at which `2`, `a` and `b` are units.
 * `TauCeti.QuaternionAlgebra.even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces`: the
@@ -266,6 +267,13 @@ variable {a b}
 theorem mem_ramifiedFinitePlaces {v : HeightOneSpectrum (𝓞 F)} :
     v ∈ ramifiedFinitePlaces a b ↔ IsRamifiedAt a b v := by
   rw [ramifiedFinitePlaces, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
+
+/-- Isomorphic symbol algebras over `F` have the same finite ramification places. -/
+theorem ramifiedFinitePlaces_eq_of_nonempty_algEquiv {c d : Fˣ}
+    (h : Nonempty (ℍ[F,(a : F),(b : F)] ≃ₐ[F] ℍ[F,(c : F),(d : F)])) :
+    ramifiedFinitePlaces a b = ramifiedFinitePlaces c d := by
+  ext v
+  rw [mem_ramifiedFinitePlaces, mem_ramifiedFinitePlaces, isRamifiedAt_iff_of_nonempty_algEquiv h]
 
 end Finite
 
