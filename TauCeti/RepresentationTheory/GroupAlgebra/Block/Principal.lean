@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import Mathlib.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.AsAlgebraHom

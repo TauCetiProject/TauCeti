@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
-import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Topology.UniformSpace.CompactConvergence
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
+import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
 
 /-!
 # Derivative convergence for Floer solutions on a manifold
@@ -21,10 +21,10 @@ to the limit, assuming eventual uniform bounds on chart differentials
 (`TauCeti.SmoothTwoForm.IsNondegenerate.`
 `contMDiffOn_one_and_isComplexLinearMap_of_tendsto_floer_parametric`).
 
-The proof localizes in extended charts around each point, conjugates to `ℂ → ℝ^d` via
-`Floer.transportedAlmostComplexInChartAt` and
-`SmoothTwoForm.transportedHamiltonianOneFormInChartAt`, and applies the Euclidean parametric `C¹`
-convergence theorem `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`.
+The proof localizes in extended charts around each point, reads `J` and `X_K` in coordinates via
+`Floer.almostComplexInChartAt` and `SmoothTwoForm.hamiltonianOneFormInChartAt`, and applies the
+parametric `C¹` convergence theorem
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`.
 
 ## References
 
@@ -36,7 +36,7 @@ public section
 
 noncomputable section
 
-open Bundle Complex ContinuousLinearMap Filter Function Metric Set Topology
+open Bundle Filter Function Metric Set Topology
 open scoped Manifold
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
@@ -80,7 +80,6 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
           (fderiv ℝ (extChartAt I α ∘ v) z₀ stdComplexLineReal -
             ω.hamiltonianVectorFieldInChartAt α (Ks p₀) (z₀, extChartAt I α (v z₀))) := by
   set e := extChartAt I α
-  set eℂ := Complex.equivRealProdCLM
   -- Step 1: Choose a small closed disc around `z₀` mapped into `e.source` with uniform `C¹` bound.
   have hU_open : IsOpen (Ω ∩ v ⁻¹' e.source) :=
     hvc.isOpen_inter_preimage hΩ (isOpen_extChartAt_source α)
@@ -97,120 +96,94 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
     exact hn (x := ⟨z, hcl_Ω hz⟩) hz
   obtain ⟨M₀, hev_bd⟩ := hbd α (closedBall z₀ r) (isCompact_closedBall z₀ r) hcl_Ω hcl_v
   obtain ⟨N, hN⟩ := eventually_atTop.1 (hev_src.and hev_bd)
-  -- Step 2: Set up the `C¹` coordinate Floer data on `ℂ` via shared chart transport.
+  -- Step 2: Set up the `C¹` coordinate Floer data on `ℝ × ℝ` in the chart at `α`.
   have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 1) (by simp) hW hKs
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 1) (by simp) hW hKt
-  let LP : P ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ P)) := toEuclidean
-  let LE : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := toEuclidean
-  have hW' : IsOpen {q : EuclideanSpace ℝ (Fin (Module.finrank ℝ P)) ×
-      (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) | LE.symm q.2.2 ∈ e.target ∧
-        (LP.symm q.1, (eℂ q.2.1, e.symm (LE.symm q.2.2))) ∈ W} := by
-    simpa only [preimage_ofPred_eq, Floer.chartTransportEquiv_apply] using
-      (isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage
-        (Floer.chartTransportEquiv LP LE).continuous
-  have hJ' := Floer.contDiffOn_transportedAlmostComplexInChartAt (n := 1) (by simp) α LP LE hJ
-  have hX' :=
-    ω.contDiffOn_transportedHamiltonianOneFormInChartAt (n := 1) (by simp) α LP LE hXsM hXtM
-  set Uℂ : Set ℂ := eℂ ⁻¹' ball z₀ r
-  have hUℂ : IsOpen Uℂ := isOpen_ball.preimage eℂ.continuous
-  obtain ⟨hv_cd, hconv_tail, hCR_v⟩ := Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric
-    hW' hJ' hX' hUℂ
-    (p := fun n ↦ LP (p (n + N))) (p₀ := LP p₀)
-    (u := fun n ↦ (LE ∘ (e ∘ u (n + N))) ∘ eℂ) (v := (LE ∘ (e ∘ v)) ∘ eℂ)
-    ((LP.continuous.continuousAt.tendsto.comp hp).comp (tendsto_add_atTop_nat N))
-    (fun y hy ↦ by
-      have hysrc := hcl_v (ball_subset_closedBall hy)
-      refine ⟨?_, ?_⟩
-      · simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
-          e.map_source hysrc
-      · simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply,
-          e.left_inv hysrc] using hvW (eℂ y) (hcl_Ω (ball_subset_closedBall hy)))
-    (fun n ↦ (LE.contDiff.comp_contDiffOn
-      (contMDiffOn_iff_contDiffOn.1 <|
+  let g : (P × (ℝ × ℝ)) × E → P × ((ℝ × ℝ) × E) := fun q ↦ (q.1.1, (q.1.2, q.2))
+  have hg : ContDiff ℝ 1 g :=
+    (contDiff_fst.comp contDiff_fst).prodMk ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  set S₀ : Set (P × ((ℝ × ℝ) × E)) :=
+    {q | q.2.2 ∈ e.target ∧ (q.1, (q.2.1, e.symm q.2.2)) ∈ W}
+  have hS₀ : IsOpen S₀ := isOpen_preimage_prod_extChartAt_symm (I := I) α hW
+  have hJ' : ContDiffOn ℝ 1
+      (fun q : (P × (ℝ × ℝ)) × E ↦ Floer.almostComplexInChartAt I α (J q.1.1) (q.1.2, q.2))
+      (g ⁻¹' S₀) :=
+    (Floer.contDiffOn_almostComplexInChartAt_of_contMDiffOn (n := 1) (by simp) α hJ).comp
+      hg.contDiffOn (mapsTo_preimage g S₀)
+  have hXs' : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks))
+      (g ⁻¹' S₀) :=
+    ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 1) (by simp) α hXsM).comp
+      hg.contDiffOn (mapsTo_preimage g S₀)).congr fun q _ ↦
+        ω.hamiltonianVectorFieldInChartAt_uncurry α Ks q.1.1 q.1.2 q.2
+  have hXt' : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Kt))
+      (g ⁻¹' S₀) :=
+    ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 1) (by simp) α hXtM).comp
+      hg.contDiffOn (mapsTo_preimage g S₀)).congr fun q _ ↦
+        ω.hamiltonianVectorFieldInChartAt_uncurry α Kt q.1.1 q.1.2 q.2
+  have hX' : ContDiffOn ℝ 1
+      (ω.hamiltonianOneFormInChartAt α (Function.uncurry Ks) (Function.uncurry Kt)) (g ⁻¹' S₀) :=
+    ω.contDiffOn_hamiltonianOneFormInChartAt hXs' hXt'
+  obtain ⟨hv_cd, hconv_tail, hCR_v⟩ :=
+    Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric
+      (J := fun q : (P × (ℝ × ℝ)) × E ↦ Floer.almostComplexInChartAt I α (J q.1.1) (q.1.2, q.2))
+      (X := ω.hamiltonianOneFormInChartAt α (Function.uncurry Ks) (Function.uncurry Kt))
+      (hS₀.preimage hg.continuous) hJ' hX' isOpen_ball
+      (p := fun n ↦ p (n + N)) (p₀ := p₀)
+      (u := fun n ↦ e ∘ u (n + N)) (v := e ∘ v)
+      (hp.comp (tendsto_add_atTop_nat N))
+      (fun y hy ↦ by
+        have hysrc := hcl_v (ball_subset_closedBall hy)
+        refine ⟨e.map_source hysrc, ?_⟩
+        simpa only [g, Function.comp_apply, e.left_inv hysrc] using
+          hvW y (hcl_Ω (ball_subset_closedBall hy)))
+      (fun n ↦ contMDiffOn_iff_contDiffOn.1 <|
         (contMDiffOn_extChartAt (n := (⊤ : ℕ∞))).comp
           ((hu (n + N)).mono (ball_subset_closedBall.trans hcl_Ω))
           fun z hz ↦ by
             rw [mem_preimage, ← extChartAt_source I]
-            exact (hN (n + N) (Nat.le_add_left N n)).1 (ball_subset_closedBall hz))).comp
-      eℂ.contDiff.contDiffOn (mapsTo_preimage _ _))
-    (fun n y hy w ↦ by
-      have hytgt : LE.symm ((LE ∘ (e ∘ u (n + N))) (eℂ y)) ∈ e.target := by
-        simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
-          e.map_source ((hN (n + N) (Nat.le_add_left N n)).1 (ball_subset_closedBall hy))
-      exact Floer.transportedAlmostComplexInChartAt_apply_apply α LP LE J
-        (LP (p (n + N))) hytgt w)
-    (fun n y hy ↦ by
-      have hzcl : eℂ y ∈ closedBall z₀ r := ball_subset_closedBall hy
-      have hzΩ : eℂ y ∈ Ω := hcl_Ω hzcl
-      have hsrc : u (n + N) (eℂ y) ∈ e.source := (hN (n + N) (Nat.le_add_left N n)).1 hzcl
-      have hdiff : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (u (n + N)) (eℂ y) :=
-        ((hu (n + N)).mdifferentiableOn (by simp)).mdifferentiableAt (hΩ.mem_nhds hzΩ)
-      exact (ω.transported_floerEquation_iff α LP LE (J := J) (Ks := Ks) (Kt := Kt)
-        (p (n + N)) (e ∘ u (n + N)) y).2 <|
-        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-          hdiff hsrc).1 (hfl (n + N) (eℂ y) hzΩ))
-    (fun C'' _ hC''U ↦ ⟨‖(LE : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ *
-        max M₀ 0 * ‖(eℂ : ℂ →L[ℝ] ℝ × ℝ)‖, fun n y hy ↦ by
-      have hzcl : eℂ y ∈ closedBall z₀ r := ball_subset_closedBall (hC''U hy)
-      have h1 : ‖fderiv ℝ (e ∘ u (n + N)) (eℂ y)‖ ≤ max M₀ 0 :=
-        ((hN (n + N) (Nat.le_add_left N n)).2 (eℂ y) hzcl).trans (le_max_left _ _)
-      have hcomp : fderiv ℝ ((LE ∘ (e ∘ u (n + N))) ∘ eℂ) y =
-          (LE : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E))).comp
-            ((fderiv ℝ (e ∘ u (n + N)) (eℂ y)).comp (eℂ : ℂ →L[ℝ] ℝ × ℝ)) := by
-        rw [eℂ.comp_right_fderiv, LE.comp_fderiv, ContinuousLinearMap.comp_assoc]
-      rw [hcomp]
-      refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left
-        ((opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right h1 (norm_nonneg _)))
-        (norm_nonneg _)) |>.trans_eq (by ring)⟩)
-    (fun y hy ↦ by
-      have hysrc := hcl_v (ball_subset_closedBall hy)
-      have hyΩ : eℂ y ∈ Ω := hcl_Ω (ball_subset_closedBall hy)
-      have hpt_u : Tendsto (fun n ↦ u (n + N) (eℂ y)) atTop (𝓝 (v (eℂ y))) :=
-        ((continuous_eval_const (⟨eℂ y, hyΩ⟩ : Ω)).continuousAt.tendsto.comp
-          hlim).comp (tendsto_add_atTop_nat N)
-      exact (LE.continuous.continuousAt.tendsto).comp
-        (((continuousOn_extChartAt α).continuousAt
-          ((isOpen_extChartAt_source α).mem_nhds hysrc)).tendsto.comp hpt_u))
-  -- Step 3: Transport `C¹` regularity, derivative convergence and the equation back to `ℝ × ℝ`.
-  have hv_cd' : ContDiffOn ℝ 1 (e ∘ v) (ball z₀ r) := by
-    have heq : (fun z ↦ LE.symm (((LE ∘ (e ∘ v)) ∘ eℂ) (eℂ.symm z))) = e ∘ v :=
-      funext fun z ↦ by simp
-    rw [← heq]
-    exact LE.symm.contDiff.comp_contDiffOn
-      (hv_cd.comp eℂ.symm.contDiff.contDiffOn fun z hz ↦ by simpa [Uℂ] using hz)
-  let adj : (ℂ →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) →L[ℝ] (ℝ × ℝ →L[ℝ] E) :=
-    (ContinuousLinearMap.compL ℝ (ℝ × ℝ) ℂ E).flip eℂ.symm.toContinuousLinearMap ∘L
-      (ContinuousLinearMap.compL ℝ ℂ (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) E)
-        LE.symm.toContinuousLinearMap
-  have hadj (f : ℝ × ℝ → E) (z : ℝ × ℝ) :
-      adj (fderiv ℝ ((LE ∘ f) ∘ eℂ) (eℂ.symm z)) = fderiv ℝ f z := by
-    have heq : (LE.symm ∘ ((LE ∘ f) ∘ eℂ)) ∘ eℂ.symm = f := funext fun w ↦ by simp
-    have hL := LE.symm.comp_fderiv (f := (LE ∘ f) ∘ eℂ) (x := eℂ.symm z)
-    have hR := eℂ.symm.comp_right_fderiv (f := LE.symm ∘ ((LE ∘ f) ∘ eℂ)) (x := z)
-    rw [heq] at hR
-    rw [hR, hL]
-    exact ContinuousLinearMap.ext fun w ↦ by simp [adj]
-  have hconv_real_tail : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (e ∘ u (n + N)))
-      (fderiv ℝ (e ∘ v)) atTop (ball z₀ r) := by
-    have h1 := (adj.uniformContinuous.comp_tendstoLocallyUniformlyOn hconv_tail).comp eℂ.symm
-      (fun z (hz : z ∈ ball z₀ r) ↦ by simpa [Uℂ] using hz) eℂ.symm.continuous.continuousOn
-    exact (h1.congr_right fun z _ ↦ hadj (e ∘ v) z).congr fun n z _ ↦ hadj (e ∘ u (n + N)) z
+            exact (hN (n + N) (Nat.le_add_left N n)).1 (ball_subset_closedBall hz))
+      (fun n y hy w ↦ Floer.almostComplexInChartAt_apply_apply
+        (e.map_source ((hN (n + N) (Nat.le_add_left N n)).1 (ball_subset_closedBall hy))) _ w)
+      (fun n y hy ↦ by
+        have hzcl : y ∈ closedBall z₀ r := ball_subset_closedBall hy
+        have hzΩ : y ∈ Ω := hcl_Ω hzcl
+        have hsrc : u (n + N) y ∈ e.source := (hN (n + N) (Nat.le_add_left N n)).1 hzcl
+        have hdiff : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (u (n + N)) y :=
+          ((hu (n + N)).mdifferentiableOn (by simp)).mdifferentiableAt (hΩ.mem_nhds hzΩ)
+        simpa only [e, Function.comp_apply, SmoothTwoForm.hamiltonianOneFormInChartAt_uncurry,
+          SmoothTwoForm.hamiltonianOneFormInChartAt_stdComplexLineImag,
+          SmoothTwoForm.hamiltonianOneFormInChartAt_stdComplexLineReal] using
+          (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+            hdiff hsrc).1 (hfl (n + N) y hzΩ))
+      (fun C'' _ hC''U ↦ ⟨max M₀ 0, fun n y hy ↦
+        ((hN (n + N) (Nat.le_add_left N n)).2 y (ball_subset_closedBall (hC''U hy))).trans
+          (le_max_left _ _)⟩)
+      (fun y hy ↦ by
+        have hysrc := hcl_v (ball_subset_closedBall hy)
+        have hyΩ : y ∈ Ω := hcl_Ω (ball_subset_closedBall hy)
+        have hpt_u : Tendsto (fun n ↦ u (n + N) y) atTop (𝓝 (v y)) :=
+          ((continuous_eval_const (⟨y, hyΩ⟩ : Ω)).continuousAt.tendsto.comp
+            hlim).comp (tendsto_add_atTop_nat N)
+        exact ((continuousOn_extChartAt α).continuousAt
+          ((isOpen_extChartAt_source α).mem_nhds hysrc)).tendsto.comp hpt_u)
+  -- Step 3: Reindex the derivative convergence back from `n + N` to `n`.
   have hconv_real : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (e ∘ u n))
       (fderiv ℝ (e ∘ v)) atTop (ball z₀ r) := by
-    rw [tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball] at hconv_real_tail ⊢
+    rw [tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball] at hconv_tail ⊢
     intro C'' hC'' hC''c
     rw [Metric.tendstoUniformlyOn_iff]
     intro ε hε
     have hmap : ∀ᶠ n in map (· + N) atTop,
         ∀ x ∈ C'', dist (fderiv ℝ (e ∘ v) x) (fderiv ℝ (e ∘ u n) x) < ε :=
       Filter.eventually_map.2
-        (Metric.tendstoUniformlyOn_iff.1 (hconv_real_tail C'' hC'' hC''c) ε hε)
+        (Metric.tendstoUniformlyOn_iff.1 (hconv_tail C'' hC'' hC''c) ε hε)
     rwa [Filter.map_add_atTop_eq_nat] at hmap
-  refine ⟨r, hr, ball_subset_closedBall.trans hcl_Ω, hcl_v.mono_left ball_subset_closedBall, hv_cd',
+  refine ⟨r, hr, ball_subset_closedBall.trans hcl_Ω, hcl_v.mono_left ball_subset_closedBall, hv_cd,
     hconv_real, ?_⟩
-  have hCR0 := (ω.transported_floerEquation_iff α LP LE (J := J) (Ks := Ks) (Kt := Kt)
-    p₀ (e ∘ v) (eℂ.symm z₀)).1 (hCR_v (eℂ.symm z₀) (by simpa [Uℂ, eℂ] using hr))
-  simpa only [eℂ, ContinuousLinearEquiv.apply_symm_apply, Function.comp_apply] using hCR0
+  simpa only [Function.comp_apply, SmoothTwoForm.hamiltonianOneFormInChartAt_uncurry,
+    SmoothTwoForm.hamiltonianOneFormInChartAt_stdComplexLineImag,
+    SmoothTwoForm.hamiltonianOneFormInChartAt_stdComplexLineReal] using
+    hCR_v z₀ (mem_ball_self hr)
 
 /-- **Global `C¹` convergence and passage of the Floer equation to the limit on a manifold.**
 Let `ω` be a nondegenerate two-form on a boundaryless manifold `M` modelled on a

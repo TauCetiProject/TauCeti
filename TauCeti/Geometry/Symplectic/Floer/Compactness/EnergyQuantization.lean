@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt.CompactCover
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue
+import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
 
 /-!
 # Energy quantization for Floer solutions on a manifold

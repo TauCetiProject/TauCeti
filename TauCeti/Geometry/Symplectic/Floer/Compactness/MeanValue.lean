@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 

@@ -65,6 +65,10 @@ The induction instead runs through the tangential derivative `∂_s`:
   axis for a reflected solution.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_succ`: `W^{k+1,q}` regularity up to the axis for a weak
   solution with a totally real boundary condition.
+* `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_succ_of_hasWeakFDerivOn`: the same with hypotheses on
+  the half-plane coefficients in place of the hypothesis that the reflected coefficients are
+  Sobolev coefficients: `J` continuous up to the axis with weak derivative `DJ` in `Lᵖ_loc`,
+  anticommuting with `R` on the axis (`TauCeti.isSobolevCRCoefficients_crReflection`).
 
 ## References
 
@@ -352,5 +356,32 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_succ [FiniteDimensional ℝ V] {p q : ℝ
     ((memLpLoc_crReflectionDeriv_iff hΩ).1 hc.memLpLoc_deriv)
     ((memLpLoc_crReflectionZeroth_iff hΩ).1 hc.memLpLoc_zeroth)
     hpq.le).memWkpLoc_succ_of_crReflection hΩ hc hp hJ2 hpq hqp hJ hS hη
+
+/-- **`W^{k+1,q}` regularity up to the real axis for Sobolev coefficients** (McDuff–Salamon,
+Proposition B.4.9, with a totally real boundary condition). Let `Ω` be invariant under conjugation
+and `R` an isometric involution of the finite-dimensional space `V` whose fixed vectors lie in
+`Λ`, and `p > 2`. Let `J` be continuous on `Ω ∩ {0 ≤ t}`, with `J² = -1` almost everywhere there,
+with weak derivative `DJ` on the open upper part, locally `Lᵖ` up to the axis, and anticommuting
+with `R` on `Ω ∩ ℝ`. Let `ξ ∈ L^q_loc` be a weak solution up to the real axis of
+`∂_s ξ + J ∂_t ξ + S ξ = η` with boundary subspace `Λ`, for `1/p + 1/q < 1` and `q ≤ p`. If
+`J, S ∈ W^{k,p}_loc` and `η ∈ W^{k,q}_loc` up to the axis, then
+`ξ ∈ W^{k+1,q}_loc(Ω ∩ {0 ≤ t})`. -/
+theorem IsWeakCRSolutionHalf.memWkpLoc_succ_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
+    {p q : ℝ≥0} {k : ℕ} {Λ : Submodule ℝ V} {R : V ≃ₗᵢ[ℝ] V}
+    (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) (hR : Function.Involutive R)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hΛ : ∀ v, R v = v → v ∈ Λ)
+    (hJW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hDJ : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ)
+    (hp : 2 < p) (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1)
+    (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p)
+    (hJ : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k J)
+    (hS : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k S)
+    (hη : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k η) :
+    MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) ξ :=
+  h.memWkpLoc_succ hR hΩ hΛ
+    (isSobolevCRCoefficients_crReflection hΩ (by exact_mod_cast one_le_two.trans hp.le) hJW hJc
+      hJR hDJ hS.memLpLoc) hp hJ2 hpq hqp hJ hS hη
 
 end TauCeti
