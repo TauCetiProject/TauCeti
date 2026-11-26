@@ -49,7 +49,9 @@ compact set.
 * `TauCeti.lt_apply_flowOf_of_le_apply`, `TauCeti.apply_flowOf_lt_of_apply_le`: a trajectory
   crosses a level transverse to the field only in the direction of the field.
 * `TauCeti.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: a function that the flow rescales by
-  `e^s` is differentiated to itself by the field.
+  `e^s` is differentiated to itself by the field, and
+  `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add`: a function that the flow
+  translates at unit speed has derivative `1` along the field.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.mfderiv_flowOf_zero_apply_eq_self`: the spatial derivative of the time-zero flow map is
   the identity.
@@ -416,6 +418,19 @@ theorem mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq [IsManifold I 1 M]
   rw [flowOf_zero v] at hcurve
   refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
   simpa using (Real.hasDerivAt_exp 0).mul_const (F x)
+
+/-- **A function translated by a flow has unit derivative along the field.** If `F` is
+differentiable at `x` and `F(φ_s x) = F(x) + s` for `s` near `0`, then `dF(v) = 1` at `x`. -/
+theorem mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {F : M → ℝ} {x : M} (hF : MDifferentiableAt I 𝓘(ℝ) F x)
+    (heq : ∀ᶠ s in 𝓝 0, F (flowOf v s x) = F x + s) :
+    mvfderiv I F x (v x) = 1 := by
+  have hcurve := hasDerivAt_comp_flowOf hv (mem_flowDomain_zero hv x)
+    (by rwa [flowOf_zero v])
+  rw [flowOf_zero v] at hcurve
+  exact ((((hasDerivAt_id' (0 : ℝ)).const_add (F x)).congr_of_eventuallyEq heq).unique
+    hcurve).symm
 
 /-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
 `(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the
