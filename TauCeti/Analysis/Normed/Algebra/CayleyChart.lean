@@ -39,6 +39,10 @@ parametrize local holomorphic slices of the space of complex structures; the sta
 the pointwise and Banach-algebraic content of that construction, for any normed algebra in which
 the relevant fields live.
 
+The Cayley transform at the base point `1` has derivative
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` (`TauCeti.hasFDerivAt_cayleyCoord_one`); this applies in particular
+to the matrix algebra used to construct unitary-group charts.
+
 ## Main statements
 
 * `TauCeti.analyticOnNhd_cayleyParam`, `TauCeti.analyticOnNhd_cayleyCoord`: analyticity of the two
@@ -184,7 +188,34 @@ theorem analyticOnNhd_cayleyCoord_comp_cayleyParam (j₀ j₁ : A) :
       {η : A | IsUnit (1 + η) ∧ IsUnit (j₁ + cayleyParam j₀ η)} :=
   fun _ hη ↦ (analyticAt_cayleyCoord hη.2).comp (analyticAt_cayleyParam hη.1)
 
-/-! ### The derivative of the Cayley parametrization -/
+/-! ### Derivatives -/
+
+/-- The derivative of the Cayley transform `cayleyCoord 1` in a normed algebra is
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` where `1 + x` is a unit. -/
+theorem hasFDerivAt_cayleyCoord_one {x : A} (hx : IsUnit (1 + x)) :
+    HasFDerivAt (cayleyCoord 1)
+      (-(2 : 𝕜) • ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (1 + x)) (Ring.inverse (1 + x))) x := by
+  have hinv : HasFDerivAt (fun y : A ↦ Ring.inverse (1 + y))
+      (-ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (1 + x)) (Ring.inverse (1 + x))) x := by
+    have h := hasFDerivAt_ringInverse (𝕜 := 𝕜) hx.unit
+    rw [← Ring.inverse_unit, hx.unit_spec] at h
+    exact (h.comp x ((hasFDerivAt_id x).const_add 1)).congr_fderiv
+      (ContinuousLinearMap.comp_id _)
+  have h1 : (1 - x) * Ring.inverse (1 + x) = 2 * Ring.inverse (1 + x) - 1 := by
+    have h := one_add_cayleyCoord_one hx
+    rw [cayleyCoord_def] at h
+    rw [← h]
+    abel
+  rw [cayleyCoord_eq_fun]
+  refine (((hasFDerivAt_id x).const_sub 1).mul' hinv).congr_fderiv ?_
+  ext t
+  simp only [add_apply, neg_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.mulLeftRight_apply, smul_apply, id_eq,
+    smul_eq_mul, op_smul_eq_mul]
+  rw [mul_neg, ← mul_assoc, ← mul_assoc, h1, neg_smul, two_smul]
+  noncomm_ring
 
 /-- The derivative of `cayleyParam j` at `η` with `1 + η` invertible: the continuous linear map
 `ζ ↦ (1 + η)⁻¹ * (j * ζ - ζ * cayleyParam j η)`. -/

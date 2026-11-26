@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Matrix.Normed
-public import TauCeti.Analysis.Matrix.Cayley
+public import TauCeti.Analysis.Normed.Algebra.CayleyChart
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.Congruence
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Cayley
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -29,7 +29,7 @@ so that the skew-Hermitian matrices are real coordinates on the Lie algebra of e
 
 on the skew-Hermitian `S` with `D(S) = 1 - A⁻¹ S / 2` invertible
 (`Matrix.unitaryGroupOf.cayleyChart`), where `c` is the Cayley transform
-`Matrix.cayleyTransform`. It is a bijection onto the `g ∈ U(A)` with `1 + g` invertible
+`TauCeti.cayleyCoord 1`. It is a bijection onto the `g ∈ U(A)` with `1 + g` invertible
 (`Matrix.unitaryGroupOf.cayleyChartEquiv`), with inverse `g ↦ -2 A c(g)`. At `S = 0` it is `1`, with
 differential `T ↦ A⁻¹ T`: the identification of `𝔲(n)` with the Lie algebra of `U(A)`.
 
@@ -59,8 +59,6 @@ Derivatives are taken for the Frobenius norm on matrices; matrix norms are only 
   of the chart is the congruence by `D⁻ᴴ`.
 * `Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`: its determinant is
   `|det D|^(-2 n)`.
-* `Matrix.cayley_eq_cayleyTransform`: the Cayley transform `Matrix.cayley H` of a Hermitian matrix
-  is `c(-i H)`.
 
 ## Provenance
 
@@ -76,7 +74,7 @@ Hermitian involution, the chart is totalized by `2 D⁻¹ - 1`, and the Jacobian
 determinant in real coordinates of the skew-Hermitian matrices. The coordinate-free statement on
 the real vector space of skew-Hermitian matrices, the exact determinant, the generalization to every
 invertible Hermitian `A`, and the factorization through the Cayley transform
-`Matrix.cayleyTransform` are new here.
+`TauCeti.cayleyCoord 1` are new here.
 
 ## References
 
@@ -88,57 +86,11 @@ invertible Hermitian `A`, and the factorization through the Cayley transform
 
 public section
 
-open Complex
+open Complex TauCeti
 
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The Cayley transform `Matrix.cayley H = (1 + i H) (1 - i H)⁻¹` of a complex matrix is the
-Cayley transform `c(-i H) = (1 + i H) (1 - i H)⁻¹`. -/
-theorem cayley_eq_cayleyTransform (H : Matrix n n ℂ) : cayley H = cayleyTransform (-(I • H)) := by
-  rw [cayley_def, cayleyTransform_def, sub_neg_eq_add, ← sub_eq_add_neg]
-
-section Calculus
-
-open scoped Matrix.Norms.Frobenius
-
-variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [RCLike 𝕜'] [NormedAlgebra 𝕜 𝕜']
-
-/-- **The derivative of the Cayley transform.** At a matrix `X` with `1 + X` invertible, the
-Cayley transform `c(X) = (1 - X) (1 + X)⁻¹` has derivative `T ↦ -2 (1 + X)⁻¹ T (1 + X)⁻¹`. -/
-theorem hasFDerivAt_cayleyTransform {X : Matrix n n 𝕜'} (hX : IsUnit (1 + X)) :
-    HasFDerivAt (𝕜 := 𝕜) cayleyTransform
-      (-(2 : 𝕜) • ContinuousLinearMap.mulLeftRight 𝕜 (Matrix n n 𝕜') (1 + X)⁻¹ (1 + X)⁻¹) X := by
-  obtain ⟨u, hu⟩ := hX
-  have hP : ((u⁻¹ : (Matrix n n 𝕜')ˣ) : Matrix n n 𝕜') = (1 + X)⁻¹ := by
-    rw [coe_units_inv, hu]
-  have hinv : HasFDerivAt (fun Y : Matrix n n 𝕜' ↦ Ring.inverse (1 + Y))
-      (-ContinuousLinearMap.mulLeftRight 𝕜 (Matrix n n 𝕜') (1 + X)⁻¹ (1 + X)⁻¹) X := by
-    have h := hasFDerivAt_ringInverse (𝕜 := 𝕜) u
-    rw [hP, hu] at h
-    exact (h.comp X ((hasFDerivAt_id X).const_add 1)).congr_fderiv
-      (ContinuousLinearMap.comp_id _)
-  have hfun : (cayleyTransform : Matrix n n 𝕜' → Matrix n n 𝕜') =
-      fun Y ↦ (1 - Y) * Ring.inverse (1 + Y) :=
-    funext fun Y ↦ by rw [cayleyTransform_def, nonsing_inv_eq_ringInverse]
-  -- `(1 - X) (1 + X)⁻¹ = 2 (1 + X)⁻¹ - 1`, which turns the product rule into the claim.
-  have h1 : (1 - X) * (1 + X)⁻¹ = 2 * (1 + X)⁻¹ - 1 := by
-    rw [show (1 : Matrix n n 𝕜') - X = 2 - (1 + X) by rw [← one_add_one_eq_two]; abel,
-      Matrix.sub_mul, mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 ⟨u, hu⟩)]
-  rw [hfun]
-  refine (((hasFDerivAt_id X).const_sub 1).mul' hinv).congr_fderiv ?_
-  ext T : 1
-  -- The composite continuous linear maps mix the instances of the Frobenius norm with the default
-  -- topology of matrices, which agree only up to unfolding, so their `_apply` lemmas do not fire;
-  -- `change` states the value of the product rule directly.
-  change (1 - X) * -((1 + X)⁻¹ * T * (1 + X)⁻¹) + -T * Ring.inverse (1 + X) =
-    -(2 : 𝕜) • ((1 + X)⁻¹ * T * (1 + X)⁻¹)
-  rw [← nonsing_inv_eq_ringInverse, Matrix.mul_neg, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h1,
-    neg_smul, two_smul]
-  noncomm_ring
-
-end Calculus
 
 namespace unitaryGroupOf
 
@@ -150,18 +102,19 @@ Hermitian `A` it preserves the form of `A` where `1 - A⁻¹ S / 2` is invertibl
 (`Matrix.unitaryGroupOf.star_cayleyChart_mul_mul_cayleyChart`); elsewhere its value is `0`. -/
 noncomputable def cayleyChart (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     Matrix n n ℂ :=
-  cayleyTransform (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))))
+  cayleyCoord 1 (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))))
 
 /-- The definition of the Cayley chart. -/
 theorem cayleyChart_def (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-    cayleyChart A S = cayleyTransform (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) :=
+    cayleyChart A S = cayleyCoord 1 (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) :=
   (rfl)
 
 /-- The Cayley chart is `(1 + A⁻¹ S / 2) (1 - A⁻¹ S / 2)⁻¹`. -/
 theorem cayleyChart_eq (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyChart A S = (1 + (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) *
       (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ := by
-  rw [cayleyChart_def, cayleyTransform_def, sub_neg_eq_add, ← sub_eq_add_neg]
+  rw [cayleyChart_def, cayleyCoord_def, ← nonsing_inv_eq_ringInverse,
+    sub_neg_eq_add, ← sub_eq_add_neg]
 
 /-- The Cayley chart sends `0` to the identity. -/
 @[simp]
@@ -189,7 +142,7 @@ theorem star_neg_smul_inv_mul_mul_add (hA : A.IsHermitian)
 theorem star_cayleyChart_mul_mul_cayleyChart (hA : A.IsHermitian)
     (hS : IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) :
     star (cayleyChart A S) * A * cayleyChart A S = A :=
-  star_cayleyTransform_mul_mul_cayleyTransform (star_neg_smul_inv_mul_mul_add hA S)
+  star_cayleyCoord_one_mul_mul_cayleyCoord_one (star_neg_smul_inv_mul_mul_add hA S)
     (by rwa [← sub_eq_add_neg])
 
 /-- **The Cayley chart as a bijection.** For an invertible Hermitian `A`, the Cayley chart is a
@@ -230,7 +183,7 @@ Cayley transform. -/
 theorem coe_cayleyChartEquiv_symm_apply (hA : A.IsHermitian) (hA' : IsUnit A)
     (g : {g : unitaryGroupOf A // IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))}) :
     (((cayleyChartEquiv hA hA').symm g).val : Matrix n n ℂ) =
-      -(2 : ℂ) • (A * cayleyTransform ((g.val : GL n ℂ) : Matrix n n ℂ)) := by
+      -(2 : ℂ) • (A * cayleyCoord 1 ((g.val : GL n ℂ) : Matrix n n ℂ)) := by
   simp [cayleyChartEquiv]
 
 section Calculus
@@ -252,15 +205,19 @@ theorem hasFDerivAt_cayleyChart (hS : IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (
       (skewAdjoint.submodule ℝ (Matrix n n ℂ)).subtypeL
   have hY (S' : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
       Y S' = -((2 : ℂ)⁻¹ • (A⁻¹ * (S' : Matrix n n ℂ))) := by
-    -- As in `hasFDerivAt_cayleyTransform`, the `_apply` lemmas of the composite do not fire.
+    -- Frobenius and default matrix topology instances agree after unfolding, so the
+    -- `_apply` lemmas of the composite do not fire.
     change -((2 : ℂ)⁻¹ • A⁻¹) * (S' : Matrix n n ℂ) = _
     rw [Matrix.neg_mul, Matrix.smul_mul]
   have h1 : IsUnit (1 + Y S) := by rwa [hY, ← sub_eq_add_neg]
-  have hfun : cayleyChart A = cayleyTransform ∘ Y :=
+  have hfun : cayleyChart A = cayleyCoord 1 ∘ Y :=
     funext fun S' ↦ by rw [Function.comp_apply, hY, cayleyChart_def]
   rw [hfun]
-  refine ((hasFDerivAt_cayleyTransform (𝕜 := ℝ) h1).comp S Y.hasFDerivAt).congr_fderiv ?_
+  refine ((hasFDerivAt_cayleyCoord_one (𝕜 := ℝ) h1).comp S Y.hasFDerivAt).congr_fderiv ?_
   ext T : 1
+  -- The composite mixes Frobenius and default matrix topology instances, so the CLM `_apply`
+  -- lemmas do not fire; unfolding and converting `Ring.inverse` states its value directly.
+  simp only [← nonsing_inv_eq_ringInverse]
   change -(2 : ℝ) • ((1 + Y S)⁻¹ * Y T * (1 + Y S)⁻¹) = _ * (T : Matrix n n ℂ) * _
   rw [hY, hY, ← sub_eq_add_neg]
   simp only [Matrix.mul_neg, Matrix.neg_mul, smul_neg, neg_smul, neg_neg, Matrix.mul_smul,
@@ -304,7 +261,7 @@ theorem star_cayleyChart_mul_mul_fderiv_cayleyChart (hA : A.IsHermitian) (hA' : 
       star (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ * T *
         (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ := by
   -- `φ(S)ᴴ A D⁻¹ = D⁻ᴴ A`, since `-A⁻¹ S / 2` is skew-adjoint for the form of `A`.
-  have key := star_cayleyTransform_mul_mul_inv (star_neg_smul_inv_mul_mul_add hA S)
+  have key := star_cayleyCoord_one_mul_mul_inv (star_neg_smul_inv_mul_mul_add hA S)
   rw [← sub_eq_add_neg, ← cayleyChart_def] at key
   rw [fderiv_cayleyChart_apply hS]
   generalize 1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)) = D at key ⊢

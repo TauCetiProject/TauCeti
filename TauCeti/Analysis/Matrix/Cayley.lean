@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Ring.CayleyChart
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.Matrix.Spectrum
@@ -81,6 +82,12 @@ theorem cayley_def (A : Matrix n n ℂ) : cayley A = (1 + I • A) * (1 - I • 
 @[simp]
 theorem cayley_zero : cayley (0 : Matrix n n ℂ) = 1 := by
   simp [cayley]
+
+/-- The Hermitian Cayley transform is the ring Cayley coordinate of `-i H` relative to `1`. -/
+theorem cayley_eq_cayleyCoord_one (H : Matrix n n ℂ) :
+    cayley H = TauCeti.cayleyCoord 1 (-(I • H)) := by
+  rw [cayley_def, TauCeti.cayleyCoord_def, ← nonsing_inv_eq_ringInverse,
+    sub_neg_eq_add, ← sub_eq_add_neg]
 
 /-- **Naturality of the Cayley transform.** Conjugating by an invertible matrix `P`, with inverse
 `Q`, commutes with the Cayley transform. -/
