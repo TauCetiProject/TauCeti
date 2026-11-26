@@ -66,6 +66,8 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   `TauCeti.UnitAddTorus.BesovSpace.weightedBlocksₗᵢ` into `ℓ^q(ℕ, Lᵖ)`, with the formulas
   `TauCeti.UnitAddTorus.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and
   `TauCeti.UnitAddTorus.BesovSpace.norm_eq_ciSup` (`q = ∞`).
+* `TauCeti.UnitAddTorus.BesovSpace.norm_le_mul_norm_of_forall_rpow_mul_norm_le`: a bound on the
+  weighted blocks of one element by a multiple of those of another bounds the norms.
 * `TauCeti.UnitAddTorus.BesovSpace.coeffCLM`: each Fourier coefficient is a continuous linear
   functional on `B^s_{p,q}(𝕋ᵈ)`, bounded by `TauCeti.UnitAddTorus.BesovSpace.norm_coeff_le`.
 * The instance `CompleteSpace (TauCeti.UnitAddTorus.BesovSpace φ s p q)`: `B^s_{p,q}(𝕋ᵈ)` is a
@@ -723,6 +725,20 @@ theorem rpow_mul_norm_littlewoodPaleyBlockLp_le (u : BesovSpace φ s p q) (j : �
     2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
+
+/-- **A blockwise bound gives a norm bound.** If `B ≥ 0` and the weighted blocks of
+`v ∈ B^{s'}_{p,q}(𝕋ᵈ)` are bounded by `B` times those of `u ∈ B^s_{p,q}(𝕋ᵈ)`, that is
+`2^{js'} ‖Δⱼ v‖_p ≤ B 2^{js} ‖Δⱼ u‖_p` for every `j`, then `‖v‖ ≤ B ‖u‖`. -/
+theorem norm_le_mul_norm_of_forall_rpow_mul_norm_le {s' B : ℝ} (hB : 0 ≤ B)
+    {u : BesovSpace φ s p q} {v : BesovSpace φ s' p q}
+    (h : ∀ j : ℕ, 2 ^ (s' * j) * ‖littlewoodPaleyBlockLp φ p j v.coeff‖ ≤
+      B * (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖)) :
+    ‖v‖ ≤ B * ‖u‖ := by
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks, ← Complex.norm_of_nonneg hB, ← norm_smul]
+  refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+  rw [lp.coeFn_smul, Pi.smul_apply, norm_smul, Complex.norm_of_nonneg hB,
+    norm_weightedBlocks_apply, norm_weightedBlocks_apply]
+  exact h j
 
 /-- For `q < ∞` the norm of `B^s_{p,q}(𝕋ᵈ)` is `(∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q)^{1/q}`. -/
 theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace φ s p q) :
