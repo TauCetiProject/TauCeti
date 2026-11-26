@@ -150,8 +150,10 @@ theorem HasWeakConjWirtingerDerivOn.exists_contDiffOn_ae_eq_of_holderOnWith (hα
   -- glue to one representative `V` on `Ω`, agreeing with `v z` on the whole ball about `z`.
   obtain ⟨V, hVu, hV⟩ := IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
     (HereditarilyLindelofSpace.isLindelof (Ω : Set ℂ)) (U := fun z ↦ ball z (r z))
-    (fun _ _ ↦ isOpen_ball) (fun z hz ↦ mem_ball_self (hr z hz)) hrΩ
+    (fun _ _ ↦ isOpen_ball) (fun z hz ↦ mem_ball_self (hr z hz))
     (fun z hz ↦ (hv z hz).continuousOn) hvu
+  replace hVu : u =ᵐ[volume.restrict Ω] V := ae_restrict_of_ae hVu
+  replace hV : ∀ z ∈ Ω, EqOn V (v z) (ball z (r z)) := fun z hz y hy ↦ hV z hz ⟨hy, hrΩ z hz hy⟩
   have hVcd : ContDiffOn ℝ (k + 1 : ℕ) V Ω := contDiffOn_of_locally_contDiffOn fun z hz ↦
     ⟨ball z (r z), isOpen_ball, mem_ball_self (hr z hz),
       ((hv z hz).congr (hV z hz)).mono inter_subset_right⟩

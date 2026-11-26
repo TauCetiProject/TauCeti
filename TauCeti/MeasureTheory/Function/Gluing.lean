@@ -42,8 +42,8 @@ interior and up to the boundary, into global ones.
 * `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
   open cover hold almost everywhere on the covered set.
 * `IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn`: continuous local
-  representatives of a function on a Lindelöf set glue to a single representative agreeing with
-  each of them on its domain.
+  representatives of a function near the points of a Lindelöf set glue to a single representative
+  agreeing with each of them on its domain within the set.
 * `IsOpen.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
   of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function `F`,
   glue to a single Hölder function on `closure U`, with a constant uniform over all such pieces.
@@ -90,35 +90,43 @@ theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountabl
   exact ae_mono (Measure.restrict_mono_set μ hs) ((ae_restrict_iUnion_iff _ _).2 fun i => h i)
 
 /-- **Continuous local representatives glue.** Let `μ` charge every nonempty open set, and let
-every point `x` of a Lindelöf set `s` have an open neighbourhood `U x ⊆ s` on which `f` agrees
+every point `x` of a Lindelöf set `s` have an open neighbourhood `U x` on which `f` agrees
 `μ`-almost everywhere with a function `g x` continuous on `U x`. Then a single function agrees
-with every `g x` on `U x`, and with `f` almost everywhere on `s`. -/
+with every `g x` on `U x ∩ s`, and with `f` almost everywhere; it differs from `f` only in `s`. -/
 theorem _root_.IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
-    [TopologicalSpace X] [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] {Y : Type*}
-    [TopologicalSpace Y] [T2Space Y] {s : Set X} (hs : IsLindelof s) {f : X → Y}
-    {U : X → Set X} {g : X → X → Y} (hU : ∀ x ∈ s, IsOpen (U x)) (hxU : ∀ x ∈ s, x ∈ U x)
-    (hUs : ∀ x ∈ s, U x ⊆ s) (hg : ∀ x ∈ s, ContinuousOn (g x) (U x))
-    (hfg : ∀ x ∈ s, f =ᵐ[μ.restrict (U x)] g x) :
-    ∃ G : X → Y, f =ᵐ[μ.restrict s] G ∧ ∀ x ∈ s, EqOn G (g x) (U x) := by
-  -- Two local representatives agree on the overlap of their domains, so taking at each point
-  -- the value of its own representative agrees with every representative on its domain.
-  have hG : ∀ x ∈ s, EqOn (fun y => g y y) (g x) (U x) := fun x hx y hy => by
-    have hys := hUs x hx hy
-    have hfy : f =ᵐ[μ.restrict (U y ∩ U x)] g y :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_left (hfg y hys)
-    have hfx : f =ᵐ[μ.restrict (U y ∩ U x)] g x :=
-      ae_restrict_of_ae_restrict_of_subset inter_subset_right (hfg x hx)
-    exact Measure.eqOn_open_of_ae_eq (hfy.symm.trans hfx) ((hU y hys).inter (hU x hx))
-      ((hg y hys).mono inter_subset_left) ((hg x hx).mono inter_subset_right) ⟨hxU y hys, hy⟩
-  refine ⟨fun y => g y y, ?_, hG⟩
-  -- Countably many of the neighbourhoods cover `s`.
+    [TopologicalSpace X] [μ.IsOpenPosMeasure] {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {s : Set X} (hs : IsLindelof s) {f : X → Y} {U : X → Set X} {g : X → X → Y}
+    (hU : ∀ x ∈ s, IsOpen (U x)) (hxU : ∀ x ∈ s, x ∈ U x)
+    (hg : ∀ x ∈ s, ContinuousOn (g x) (U x)) (hfg : ∀ x ∈ s, f =ᵐ[μ.restrict (U x)] g x) :
+    ∃ G : X → Y, f =ᵐ[μ] G ∧ ∀ x ∈ s, EqOn G (g x) (U x ∩ s) := by
+  classical
+  -- Two local representatives are continuous and agree almost everywhere on the overlap of their
+  -- domains, hence agree everywhere there.
+  have hgg : ∀ x ∈ s, ∀ y ∈ s, EqOn (g x) (g y) (U x ∩ U y) := fun x hx y hy ↦ by
+    have hfx : f =ᵐ[μ.restrict (U x ∩ U y)] g x :=
+      ae_restrict_of_ae_restrict_of_subset inter_subset_left (hfg x hx)
+    have hfy : f =ᵐ[μ.restrict (U x ∩ U y)] g y :=
+      ae_restrict_of_ae_restrict_of_subset inter_subset_right (hfg y hy)
+    exact Measure.eqOn_open_of_ae_eq (hfx.symm.trans hfy) ((hU x hx).inter (hU y hy))
+      ((hg x hx).mono inter_subset_left) ((hg y hy).mono inter_subset_right)
+  -- At a point of `s` take the value of its own representative; outside `s` keep `f`.
+  let G : X → Y := fun y ↦ if y ∈ s then g y y else f y
+  have hG : ∀ x ∈ s, EqOn G (g x) (U x ∩ s) := fun x hx y hy ↦ by
+    simp only [G, hy.2, ↓reduceIte]
+    exact hgg y hy.2 x hx ⟨hxU y hy.2, hy.1⟩
+  refine ⟨G, ae_iff.2 ?_, hG⟩
+  -- Countably many of the neighbourhoods cover `s`, where all disagreement of `f` and `G` lies.
   obtain ⟨t, htc, hts, hst⟩ :=
-    hs.elim_nhds_subcover U fun x hx => (hU x hx).mem_nhds (hxU x hx)
-  refine ae_mono (Measure.restrict_mono_set μ hst)
-    ((ae_restrict_biUnion_iff U htc _).2 fun x hx => ?_)
-  filter_upwards [hfg x (hts x hx), ae_restrict_mem (hU x (hts x hx)).measurableSet]
-    with y hy hyU
-  exact hy.trans (hG x (hts x hx) hyU).symm
+    hs.elim_nhds_subcover U fun x hx ↦ (hU x hx).mem_nhds (hxU x hx)
+  have hsub : {y | ¬f y = G y} ⊆ ⋃ x ∈ t, {y | ¬f y = g x y} ∩ U x := fun y hy ↦ by
+    have hys : y ∈ s := by
+      by_contra h
+      exact hy (by simp only [G, h, ↓reduceIte])
+    obtain ⟨x, hxt, hyU⟩ := mem_iUnion₂.1 (hst hys)
+    exact mem_iUnion₂.2 ⟨x, hxt, fun h ↦ hy (h.trans (hG x (hts x hxt) ⟨hyU, hys⟩).symm), hyU⟩
+  refine measure_mono_null hsub ((measure_biUnion_null_iff htc).2 fun x hx ↦ ?_)
+  exact nonpos_iff_eq_zero.1
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 (hfg x (hts x hx))).le)
 
 /-- **Gluing Hölder pieces that agree almost everywhere.** Let `U` be open with compact closure in
 a pseudometric space with a measure charging every nonempty open set, and assign to each
