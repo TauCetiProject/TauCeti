@@ -142,12 +142,12 @@ theorem resolutionCubeReverseSaddle_comp_resolutionCubeι (hj : j' = j - 2) (S :
         ModuleCat.ofHom (D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
           (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
             (cubeState_insert_ne hc)) R) := by
-  ext x
-  simp only [resolutionCubeReverseSaddle, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-    LinearMap.comp_apply, LinearEquiv.coe_coe]
-  change D.resolutionCubeι hD R j' S _ = _
-  rw [← coe_resolutionCubeVertexEquiv, LinearEquiv.apply_symm_apply, LinearMap.restrict_apply,
-    Subtype.coe_mk, coe_resolutionCubeVertexEquiv]
+  refine ConcreteCategory.ext_apply fun x ↦ ?_
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.ofHom_apply,
+    resolutionCubeReverseSaddle, ModuleCat.ofHom_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe, ← coe_resolutionCubeVertexEquiv,
+    LinearEquiv.apply_symm_apply, LinearMap.restrict_apply, Subtype.coe_mk,
+    coe_resolutionCubeVertexEquiv]
 
 /-- **The reverse saddle at `c` commutes with all unaffected cube edges `a ≠ c`.** Each mixed square
 consists of four saddle edges between states differing at `c` and `a`, which commute by

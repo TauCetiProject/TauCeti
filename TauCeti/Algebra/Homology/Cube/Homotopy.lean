@@ -386,11 +386,17 @@ private lemma ι_cubeReverseEdgeHom_comp_cubeComplex_d_insert (F G : Finset ι �
   · simp only [cIdx, Preadditive.comp_zsmul, smul_smul, ← pow_add, ← two_mul, pow_mul,
       neg_one_sq, one_pow, one_smul]
   · rw [← Finset.sum_coe_sort]
-    refine Fintype.sum_equiv
-      ((Equiv.subtypeSubtypeEquivSubtypeExists _ _).trans
-        (Equiv.subtypeEquivRight fun x ↦ by simp [cIdx, Subtype.ext_iff, and_comm]))
-      _ _ fun a ↦ ?_
-    simp only [Preadditive.comp_zsmul, smul_smul]
+    let e : ((univ : Finset (S.valᶜ : Finset ι)).erase cIdx) ≃ ((insert c S.val)ᶜ : Finset ι) :=
+      (Equiv.subtypeSubtypeEquivSubtypeExists _ _).trans
+        (Equiv.subtypeEquivRight fun x ↦ by simp [cIdx, Subtype.ext_iff, and_comm])
+    refine Fintype.sum_equiv e _ _ fun a ↦ ?_
+    have ha : (e a : ι) = a.val.val := by
+      rw [Equiv.trans_apply, Equiv.subtypeEquivRight_apply_coe,
+        Equiv.subtypeSubtypeEquivSubtypeExists_apply_coe]
+    rw [Preadditive.comp_zsmul, smul_smul]
+    generalize_proofs
+    generalize (e a : ι) = x at *
+    subst ha
     rfl
 
 /-- On a vertex `insert c S` (`c ∉ S`), when `h` commutes with all unaffected edges, the
