@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
@@ -40,7 +41,7 @@ for `y ≠ -x`.
 * `TauCeti.riemannianEDist_sphere_of_ne_neg`: the round distance between non-antipodal points is
   their angle.
 * `TauCeti.riemannianEDist_sphere`: in positive dimension, the round distance is the angle.
-* `TauCeti.riemannianEDist_neg_sphere`: in positive dimension, antipodal points are at distance
+* `TauCeti.riemannianEDist_self_neg_sphere`: in positive dimension, antipodal points are at distance
   `π`.
 
 ## References
@@ -61,17 +62,23 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- For `|c| < 1` and `|s| ≤ 1`, the function `r ↦ arccos (c r)` has derivative
-`-c / √(1 - (c s)²)` at `s`. -/
-private theorem hasDerivAt_arccos_const_mul {c s : ℝ} (hc : |c| < 1) (hs : |s| ≤ 1) :
-    HasDerivAt (fun r ↦ Real.arccos (c * r)) (-(1 / √(1 - (c * s) ^ 2)) * c) s := by
-  have hcs : |c * s| < 1 := by
-    rw [abs_mul]
-    exact (mul_le_of_le_one_right (abs_nonneg c) hs).trans_lt hc
-  rw [abs_lt] at hcs
-  have h := (Real.hasDerivAt_arccos hcs.1.ne' hcs.2.ne).comp s ((hasDerivAt_id' s).const_mul c)
-  rw [mul_one] at h
-  exact h
+/-- For points `x, z` of the unit sphere and `|c| < 1`, `|c ⟪x, z⟫| < 1`. -/
+private theorem abs_mul_inner_coe_sphere_lt_one {c : ℝ} (hc : |c| < 1) (x z : sphere (0 : E) 1) :
+    |c * inner ℝ (x : E) (z : E)| < 1 := by
+  rw [abs_mul]
+  exact (mul_le_of_le_one_right (abs_nonneg c) (abs_le.2 (real_inner_mem_Icc_of_norm_eq_one
+    (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere z)))).trans_lt hc
+
+/-- The function `z ↦ ⟪x, z⟫` is smooth on the unit sphere. -/
+private theorem contMDiff_inner_coe_sphere (x : E) :
+    ContMDiff (𝓡 n) 𝓘(ℝ) ω fun z : sphere (0 : E) 1 ↦ inner ℝ x (z : E) :=
+  (innerSL ℝ x).contDiff.contMDiff.comp contMDiff_coe_sphere
+
+/-- For points `x, y` of the unit sphere, the angle `∠ x y` is `arccos ⟪x, y⟫`. -/
+private theorem angle_coe_sphere (x y : sphere (0 : E) 1) :
+    angle (x : E) (y : E) = Real.arccos (inner ℝ (x : E) (y : E)) := by
+  rw [inner_eq_cos_angle_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere y),
+    Real.arccos_cos (angle_nonneg _ _) (angle_le_pi _ _)]
 
 /-- For `|c| < 1` the function `z ↦ arccos (c ⟪x, z⟫)` is `C¹` on the sphere: its argument stays in
 `[-|c|, |c|]`, away from the singular points `±1` of `arccos`. -/
@@ -80,17 +87,10 @@ private theorem contMDiff_arccos_mul_inner_coe_sphere {c : ℝ} (hc : |c| < 1)
     ContMDiff (𝓡 n) 𝓘(ℝ) 1 ((fun r ↦ Real.arccos (c * r)) ∘
       fun z : sphere (0 : E) 1 ↦ inner ℝ (x : E) (z : E)) := by
   intro z
-  have hcz : |c * inner ℝ (x : E) (z : E)| < 1 := by
-    rw [abs_mul]
-    exact (mul_le_of_le_one_right (abs_nonneg c) (abs_le.2 (real_inner_mem_Icc_of_norm_eq_one
-      (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere z)))).trans_lt hc
-  rw [abs_lt] at hcz
+  have hcz := abs_lt.1 (abs_mul_inner_coe_sphere_lt_one hc x z)
   have hφ : ContDiffAt ℝ 1 (fun r ↦ Real.arccos (c * r)) (inner ℝ (x : E) (z : E)) :=
     (Real.contDiffAt_arccos hcz.1.ne' hcz.2.ne).comp _ (contDiffAt_id.const_smul c)
-  have hg : ContMDiff (𝓡 n) 𝓘(ℝ) 1 fun z : sphere (0 : E) 1 ↦ inner ℝ (x : E) (z : E) := by
-    simpa [Function.comp_def] using
-      (innerSL ℝ (x : E)).contMDiff.comp (contMDiff_coe_sphere (n := n))
-  exact hφ.contMDiffAt.comp z (hg z)
+  exact hφ.contMDiffAt.comp z ((contMDiff_inner_coe_sphere (x : E)).of_le (by simp) z)
 
 /-- For `0 < c < 1` the differential of `z ↦ arccos (c ⟪x, z⟫)` on the sphere has norm at most `1`
 for the round metric: it is `-c / √(1 - (c s)²)` times the differential of `z ↦ ⟪x, z⟫`, whose
@@ -100,12 +100,11 @@ private theorem norm_mvfderiv_arccos_mul_inner_coe_sphere_le {c : ℝ} (hc₀ : 
     ‖mvfderiv (𝓡 n) ((fun r ↦ Real.arccos (c * r)) ∘
       fun z : sphere (0 : E) 1 ↦ inner ℝ (x : E) (z : E)) z v‖ ≤ ‖v‖ := by
   set g : sphere (0 : E) 1 → ℝ := fun z ↦ inner ℝ (x : E) (z : E)
-  have hgz : MDiffAt g z := by
-    refine ((innerSL ℝ (x : E)).contMDiff.comp (contMDiff_coe_sphere (n := n) (m := 1)) z)
-      |>.mdifferentiableAt one_ne_zero
-  have hφ := hasDerivAt_arccos_const_mul (by rwa [abs_of_pos hc₀])
-    (abs_le.2 (real_inner_mem_Icc_of_norm_eq_one (norm_eq_of_mem_sphere x)
-      (norm_eq_of_mem_sphere z)))
+  have hgz : MDiffAt g z :=
+    (contMDiff_inner_coe_sphere (x : E) z).mdifferentiableAt (by simp)
+  have hcs := abs_lt.1 (abs_mul_inner_coe_sphere_lt_one (by rwa [abs_of_pos hc₀]) x z)
+  have hφ := ((hasDerivAt_id' (g z)).const_mul c).arccos hcs.1.ne' hcs.2.ne
+  rw [mul_one] at hφ
   rw [mvfderiv_scalar_comp hgz hφ.differentiableAt, hφ.deriv, smul_apply,
     ← Manifold.inner_mgradient, norm_smul]
   set s := g z
@@ -156,8 +155,6 @@ angle `∠ x y = arccos ⟪x, y⟫` is at most their Riemannian distance for the
 theorem ofReal_angle_le_riemannianEDist_sphere (x y : sphere (0 : E) 1) :
     ENNReal.ofReal (angle (x : E) (y : E)) ≤ Manifold.riemannianEDist (𝓡 n) x y := by
   set s := inner ℝ (x : E) (y : E)
-  have hangle : angle (x : E) (y : E) = Real.arccos s := by
-    simp [angle, s, norm_eq_of_mem_sphere]
   -- Let `c → 1` from below in `arccos (c s) - arccos c ≤ d(x, y)`.
   have hlim : Tendsto (fun c ↦ ENNReal.ofReal (Real.arccos (c * s) - Real.arccos c))
       (𝓝[<] 1) (𝓝 (ENNReal.ofReal (angle (x : E) (y : E)))) := by
@@ -167,7 +164,7 @@ theorem ofReal_angle_le_riemannianEDist_sphere (x y : sphere (0 : E) 1) :
           Real.continuous_arccos)
     have h1 := hcont.tendsto 1
     simp only [one_mul, Real.arccos_one, sub_zero] at h1
-    rw [hangle]
+    rw [angle_coe_sphere]
     exact h1.mono_left nhdsWithin_le_nhds
   refine le_of_tendsto hlim ?_
   filter_upwards [Ioo_mem_nhdsLT one_pos] with c hc
@@ -216,7 +213,9 @@ theorem riemannianEDist_sphere_of_ne_neg {x y : sphere (0 : E) 1} (h : y ≠ -x)
     ring
   have hw0 : w ≠ 0 := by
     intro hw
-    have hs : s ^ 2 = 1 := by nlinarith [hw2, norm_zero (E := E), hw ▸ hw2]
+    have hs : s ^ 2 = 1 := by
+      rw [hw, norm_zero, sq, zero_mul] at hw2
+      linarith
     have hy : (y : E) = s • (x : E) := sub_eq_zero.1 hw
     rcases sq_eq_one_iff.1 hs with h1 | h1
     · exact hxy (Subtype.ext (by rw [hy, h1, one_smul]))
@@ -226,14 +225,12 @@ theorem riemannianEDist_sphere_of_ne_neg {x y : sphere (0 : E) 1} (h : y ≠ -x)
   have hq : inner ℝ (x : E) (q : E) = 0 := by
     simp [q, real_inner_smul_right, hxw]
   refine riemannianEDist_sphere_le_of_sphereGreatCircle_eq hq (angle_nonneg _ _) ?_
-  have hangle : angle (x : E) (y : E) = Real.arccos s := by
-    simp [angle, s, norm_eq_of_mem_sphere]
   have hs1 : s ∈ Icc (-1) 1 :=
     real_inner_mem_Icc_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere y)
   have hsin : Real.sin (Real.arccos s) = ‖w‖ := by
     rw [Real.sin_arccos, ← hw2, Real.sqrt_sq (norm_nonneg w)]
   ext
-  rw [coe_sphereGreatCircle, hangle, Real.cos_arccos hs1.1 hs1.2, hsin]
+  rw [coe_sphereGreatCircle, angle_coe_sphere, Real.cos_arccos hs1.1 hs1.2, hsin]
   simp [q, smul_smul, hwpos.ne', w]
 
 /-- **The round distance is the angle.** In positive dimension, the Riemannian distance between
@@ -257,7 +254,7 @@ theorem riemannianEDist_sphere (hn : n ≠ 0) (x y : sphere (0 : E) 1) :
 
 /-- **Antipodal points are at distance `π`.** In positive dimension, the round distance from a
 point of the unit sphere to its antipode is `π`. -/
-theorem riemannianEDist_neg_sphere (hn : n ≠ 0) (x : sphere (0 : E) 1) :
+theorem riemannianEDist_self_neg_sphere (hn : n ≠ 0) (x : sphere (0 : E) 1) :
     Manifold.riemannianEDist (𝓡 n) x (-x) = ENNReal.ofReal Real.pi := by
   rw [riemannianEDist_sphere hn, coe_neg_sphere,
     angle_self_neg_of_ne_zero (ne_zero_of_mem_unit_sphere x)]
