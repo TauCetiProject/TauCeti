@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.MinCriticalCount
-public import TauCeti.Geometry.Manifold.Morse.Torus
+public import TauCeti.Geometry.Manifold.Morse.Torus.Basic
 import TauCeti.Geometry.Manifold.Morse.Perfect
 
 /-!
@@ -149,12 +149,7 @@ theorem torusSineSum_comp_extChartAt_symm_eventuallyEq (x : ∀ i, AddCircle (p 
         Real.sin (2 * π / p 0 * y 0 + 2 * π / p 1 * y 1) := by
   filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) x]
     with y hy
-  rw [extChartAt_pi] at hy ⊢
-  have hsymm : (PartialEquiv.pi fun i ↦ extChartAt 𝓘(ℝ) (x i)).symm y =
-      fun i ↦ (y i : AddCircle (p i)) := by
-    rw [PartialEquiv.pi_symm_apply]
-    exact funext fun i ↦ extChartAt_symm_apply (x i) (hy i (mem_univ i))
-  rw [comp_apply, hsymm, torusSineSum_coe]
+  rw [comp_apply, extChartAt_pi_symm_apply x hy, torusSineSum_coe]
 
 /-- The sine sum on the two-torus is smooth. -/
 theorem contMDiff_torusSineSum :
@@ -214,6 +209,19 @@ private theorem mem_criticalPoints_torusSineSum_iff_re {x : ∀ i, AddCircle (p 
     toCircle_apply_mk, ← Circle.exp_add]
   simp only [Circle.coe_exp, Complex.exp_ofReal_mul_I_re]
 
+/-- The angle `2π (q / 2) / q` is `π`. -/
+private theorem two_pi_div_mul_half {q : ℝ} (hq : q ≠ 0) : 2 * π / q * (q / 2) = π := by
+  field_simp
+
+/-- The angle `2π (q / 6) / q` is `π / 3`. -/
+private theorem two_pi_div_mul_sixth {q : ℝ} (hq : q ≠ 0) : 2 * π / q * (q / 6) = π / 3 := by
+  field_simp; ring
+
+/-- The angle `2π (-(q / 6)) / q` is `-(π / 3)`. -/
+private theorem two_pi_div_mul_neg_sixth {q : ℝ} (hq : q ≠ 0) :
+    2 * π / q * -(q / 6) = -(π / 3) := by
+  field_simp; ring
+
 /-- **Critical points of the sine sum.** A point of the two-torus is a critical point of the sine
 sum exactly when its angles are both `π`, both `π / 3` or both `-π / 3`. -/
 theorem mem_criticalPoints_torusSineSum_iff {x : ∀ i, AddCircle (p i)} :
@@ -226,12 +234,9 @@ theorem mem_criticalPoints_torusSineSum_iff {x : ∀ i, AddCircle (p i)} :
       z = (a : AddCircle (p i)) ↔ toCircle z = Circle.exp (2 * π / p i * a) := by
     rw [← toCircle_apply_mk, (injective_toCircle (Fact.out : 0 < p i).ne').eq_iff]
   have hp (i : Fin 2) : p i ≠ 0 := (Fact.out : 0 < p i).ne'
-  have hπ (i : Fin 2) : 2 * π / p i * (p i / 2) = π := by have := hp i; field_simp
-  have hπ₃ (i : Fin 2) : 2 * π / p i * (p i / 6) = π / 3 := by have := hp i; field_simp; ring
-  have hπ₃' (i : Fin 2) : 2 * π / p i * -(p i / 6) = -(π / 3) := by
-    have := hp i; field_simp; ring
   rw [mem_criticalPoints_torusSineSum_iff_re, re_add_re_mul_eq_zero_iff]
-  simp only [funext_iff, Fin.forall_fin_two, hcircle, hπ, hπ₃, hπ₃']
+  simp only [funext_iff, Fin.forall_fin_two, hcircle, two_pi_div_mul_half (hp _),
+    two_pi_div_mul_sixth (hp _), two_pi_div_mul_neg_sixth (hp _)]
 
 /-- **The sine sum has three critical points**: the diagonal points of the two-torus with angles
 `π`, `π / 3` and `-π / 3`. -/
@@ -250,25 +255,15 @@ theorem totalCriticalCount_torusSineSum :
   have hp : p 0 ≠ 0 := (Fact.out : 0 < p 0).ne'
   have hs : 0 < √3 / 2 := by positivity
   have h₁ : (toCircle ((p 0 / 2 : ℝ) : AddCircle (p 0)) : ℂ).im = 0 := by
-    rw [im_toCircle_coe, show 2 * π / p 0 * (p 0 / 2) = π by field_simp, Real.sin_pi]
+    rw [im_toCircle_coe, two_pi_div_mul_half hp, Real.sin_pi]
   have h₂ : (toCircle ((p 0 / 6 : ℝ) : AddCircle (p 0)) : ℂ).im = √3 / 2 := by
-    rw [im_toCircle_coe, show 2 * π / p 0 * (p 0 / 6) = π / 3 by field_simp; ring,
-      Real.sin_pi_div_three]
+    rw [im_toCircle_coe, two_pi_div_mul_sixth hp, Real.sin_pi_div_three]
   have h₃ : (toCircle ((-(p 0 / 6) : ℝ) : AddCircle (p 0)) : ℂ).im = -(√3 / 2) := by
-    rw [im_toCircle_coe, show 2 * π / p 0 * -(p 0 / 6) = -(π / 3) by field_simp; ring,
-      Real.sin_neg, Real.sin_pi_div_three]
+    rw [im_toCircle_coe, two_pi_div_mul_neg_sixth hp, Real.sin_neg, Real.sin_pi_div_three]
   rw [totalCriticalCount_def, criticalPoints_torusSineSum, encard_eq_three]
-  refine ⟨_, _, _, fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_, rfl⟩
-  · have e : ((p 0 / 2 : ℝ) : AddCircle (p 0)) = ((p 0 / 6 : ℝ) : AddCircle (p 0)) := congrFun h 0
-    rw [e] at h₁
-    linarith
-  · have e : ((p 0 / 2 : ℝ) : AddCircle (p 0)) = ((-(p 0 / 6) : ℝ) : AddCircle (p 0)) :=
-      congrFun h 0
-    rw [e] at h₁
-    linarith
-  · have e : ((p 0 / 6 : ℝ) : AddCircle (p 0)) = ((-(p 0 / 6) : ℝ) : AddCircle (p 0)) :=
-      congrFun h 0
-    rw [e] at h₂
+  refine ⟨_, _, _, fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_, rfl⟩ <;>
+    have := congrArg (fun x : ∀ i, AddCircle (p i) ↦ (toCircle (x 0) : ℂ).im) h <;>
+    simp only [h₁, h₂, h₃] at this <;>
     linarith
 
 /-- **The sine sum is not a Morse function**: every Morse function on the two-torus has at least

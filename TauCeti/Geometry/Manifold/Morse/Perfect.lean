@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-public import TauCeti.Geometry.Manifold.Morse.Torus
+public import TauCeti.Geometry.Manifold.Morse.Torus.Basic
 
 /-!
 # Perfect Morse functions
