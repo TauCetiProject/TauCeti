@@ -69,6 +69,7 @@ theorem mem_cells_ofPolyhedron {F : Set V} :
   Set.Finite.mem_toFinset _
 
 /-- A polyhedron occurs as a cell of its face complex exactly when it is nonempty. -/
+@[simp high]
 theorem self_mem_cells_ofPolyhedron_iff : P ∈ (ofPolyhedron h P hP).cells ↔ P.Nonempty :=
   (mem_cells_ofPolyhedron hP).trans ⟨fun hF => hF.nonempty, fun hne => ⟨hne, IsExposed.refl P⟩⟩
 
@@ -105,12 +106,6 @@ theorem cells_ofPolyhedron_nonempty : (ofPolyhedron h P hP).cells.Nonempty ↔ P
 theorem cells_ofPolyhedron_eq_empty : (ofPolyhedron h P hP).cells = ∅ ↔ P = ∅ := by
   rw [← Finset.not_nonempty_iff_eq_empty, cells_ofPolyhedron_nonempty,
     Set.not_nonempty_iff_eq_empty]
-
-/-- The empty polyhedron has no nonempty faces. -/
-@[simp]
-theorem cells_ofPolyhedron_empty (hempty : IsRationalNormalPolyhedron h (∅ : Set V)) :
-    (ofPolyhedron h ∅ hempty).cells = ∅ :=
-  (cells_ofPolyhedron_eq_empty hempty).mpr rfl
 
 /-- A complex weakly refines the face complex of `P` exactly when its support lies in `P`. -/
 @[simp]
@@ -162,6 +157,7 @@ theorem ofPolyhedron_isSubcomplex_ofPolyhedron {Q : Set V}
   exact ⟨fun hface hne => (hface hne).isExposed hne, fun hexp hne => ⟨hne, hexp⟩⟩
 
 /-- The face complex of the whole space is the complex with the single cell `Set.univ`. -/
+@[simp]
 theorem ofPolyhedron_univ (hU : IsRationalNormalPolyhedron h (Set.univ : Set V)) :
     ofPolyhedron h Set.univ hU = univ h := by
   apply IsSubcomplex.antisymm
