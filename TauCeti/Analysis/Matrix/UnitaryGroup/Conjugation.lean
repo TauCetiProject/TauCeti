@@ -21,11 +21,11 @@ public section
 namespace Matrix.UnitaryGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-variable {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
+variable {R : Type*} [CommSemiring R] [StarRing R] [TopologicalSpace R]
   [ContinuousAdd R] [ContinuousMul R]
 
 /-- Conjugation by a unitary matrix, as a continuous linear equivalence of the matrix space. -/
-def conjStarAlgAutCLE (U : unitaryGroup n R) :
+def conjStarAlgAutCLE (U : unitary (Matrix n n R)) :
     Matrix n n R ≃L[R] Matrix n n R where
   toLinearEquiv := (Unitary.conjStarAlgAut R _ U).toAlgEquiv.toLinearEquiv
   continuous_toFun := by
@@ -40,13 +40,21 @@ def conjStarAlgAutCLE (U : unitaryGroup n R) :
     exact (continuous_const.mul continuous_id).mul continuous_const
 
 /-- The linear part of the continuous equivalence is the unitary conjugation automorphism. -/
-theorem conjStarAlgAutCLE_toLinearEquiv (U : unitaryGroup n R) :
+theorem conjStarAlgAutCLE_toLinearEquiv (U : unitary (Matrix n n R)) :
     (conjStarAlgAutCLE U).toLinearEquiv = (Unitary.conjStarAlgAut R _ U).toAlgEquiv.toLinearEquiv :=
   (rfl)
 
 /-- The continuous linear equivalence acts by unitary conjugation. -/
-@[simp] theorem conjStarAlgAutCLE_apply (U : unitaryGroup n R)
+@[simp] theorem conjStarAlgAutCLE_apply (U : unitary (Matrix n n R))
     (A : Matrix n n R) : conjStarAlgAutCLE U A = Unitary.conjStarAlgAut R _ U A :=
   (rfl)
+
+/-- The inverse continuous linear equivalence is conjugation by the inverse unitary. -/
+@[simp] theorem conjStarAlgAutCLE_symm (U : unitary (Matrix n n R)) :
+    (conjStarAlgAutCLE U).symm = conjStarAlgAutCLE U⁻¹ := by
+  apply ContinuousLinearEquiv.toLinearEquiv_injective
+  simp only [ContinuousLinearEquiv.toLinearEquiv_symm, conjStarAlgAutCLE_toLinearEquiv,
+    ← AlgEquiv.toLinearEquiv_symm, ← StarAlgEquiv.toAlgEquiv_symm, Unitary.conjStarAlgAut_symm,
+    Unitary.star_eq_inv]
 
 end Matrix.UnitaryGroup

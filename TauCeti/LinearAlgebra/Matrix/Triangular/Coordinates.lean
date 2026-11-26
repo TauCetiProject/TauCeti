@@ -45,6 +45,10 @@ def schurLowerIndexEquiv (ι : Type*) [LinearOrder ι] :
 @[simp] theorem schurLowerIndexEquiv_apply_val (ij : SchurLowerIndex ι) :
     (schurLowerIndexEquiv ι ij).val = (ij.val.2, ij.val.1) := (rfl)
 
+/-- The inverse lower index reindexing swaps the entries of the underlying pair. -/
+@[simp] theorem schurLowerIndexEquiv_symm_apply_val (ij : {ij : ι × ι // ¬ij.1 ≤ ij.2}) :
+    ((schurLowerIndexEquiv ι).symm ij).val = (ij.val.2, ij.val.1) := (rfl)
+
 /-- Assemble a matrix from the two parts of its Schur coordinates. -/
 def schurMatrixEquiv : SchurCoordinates ι R ≃ₗ[R] Matrix ι ι R :=
   ((Matrix.ofLinearEquiv R).symm.trans <|
