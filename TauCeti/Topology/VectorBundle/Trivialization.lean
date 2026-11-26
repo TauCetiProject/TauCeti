@@ -72,7 +72,9 @@ coordinate change from the first, is the fibrewise inverse of the first
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
-(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
+(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`), and a linear map between the
+fibres of two vector bundles is determined by its readings in linear trivializations of both
+(`Bundle.Trivialization.linearMap_ext`).
 
 Transport through a preferred fibre equivalence also shows that a family spanning a fibre with
 nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
@@ -341,6 +343,21 @@ theorem injective_comp_continuousLinearMapAt {G : Type*} [NormedAddCommGroup G] 
   intro c c' h
   ext v
   simpa [e.continuousLinearMapAt_symmL hb] using DFunLike.congr_fun h (e.symmL 𝕜 b v)
+
+/-- **Linear maps between fibres are determined in frames.** For linear trivializations `e` of `E`
+and `e'` of `E'` whose base sets contain `b`, two linear maps `E_b → E'_b` are equal when they
+agree on every vector `e⁻¹ v` after reading in `e'`. -/
+theorem linearMap_ext {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {E' : B → Type*}
+    [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
+    [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] (e' : Trivialization F' (π F' E'))
+    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {A A' : E b →ₗ[𝕜] E' b}
+    (h : ∀ v, e'.continuousLinearMapAt 𝕜 b (A (e.symm b v)) =
+      e'.continuousLinearMapAt 𝕜 b (A' (e.symm b v))) :
+    A = A' := by
+  ext w
+  rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hb w, e.symmL_apply hb,
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A _),
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A' _), h]
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 
