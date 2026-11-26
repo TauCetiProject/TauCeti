@@ -311,6 +311,12 @@ theorem addBasepointGenerator_injective :
   · simpa using h' i.castSucc
   · simpa using h' (Fin.last n)
 
+/-- The generators `(x, k)` and `(y, m)` agree exactly when `x = y` and `k = m`. -/
+@[simp]
+theorem addBasepointGenerator_inj {x y : H.Generator} {k m : Fin 2} :
+    H.addBasepointGenerator r₀ x k = H.addBasepointGenerator r₀ y m ↔ x = y ∧ k = m :=
+  ((H.addBasepointGenerator_injective r₀).eq_iff (a := (x, k)) (b := (y, m))).trans Prod.ext_iff
+
 /-- A point on an old `α`-curve of the diagram with an added basepoint is an old point. -/
 private theorem exists_eq_inl_of_addBasepoint_alpha {p : Point ⊕ Fin 2} {i : Fin n}
     (hp : (H.addBasepoint r₀).alpha p = i.castSucc) : ∃ q, p = Sum.inl q ∧ H.alpha q = i := by
