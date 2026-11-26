@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -31,60 +31,10 @@ open scoped Topology
 
 namespace TauCeti.OneSidedBound
 
--- Round the two cutoffs together: the step for b includes the rounded second cutoff.
-private theorem exists_rounded_scales {u v : ℝ} {q : ℕ} (hu : 0 ≤ u) (hq : 0 < q)
-    (hstep : (q : ℝ) * Real.exp u ≤ Real.exp v) :
-    let y := ⌊Real.exp u⌋₊
-    ∃ b : ℕ, 0 < y ∧ 0 < b ∧ IsLeast {n : ℕ | q * y ∣ n ∧ Real.exp v < (n : ℝ)} b ∧
-      u - 1 ≤ Real.log y ∧ Real.log y ≤ u ∧ v ≤ Real.log b ∧ Real.log b ≤ v + 1 := by
-  let y := ⌊Real.exp u⌋₊
-  have hy : 0 < y := Nat.le_floor (by simpa using Real.one_le_exp_iff.2 hu)
-  have hy' : (0 : ℝ) < y := by exact_mod_cast hy
-  have he : 2 ≤ Real.exp 1 := by linarith [Real.add_one_le_exp 1]
-  have hlo : u - 1 ≤ Real.log y := by
-    by_cases h : u ≤ 1
-    · exact (sub_nonpos.mpr h).trans (Real.log_nonneg (by exact_mod_cast Nat.succ_le_of_lt hy))
-    refine (Real.le_log_iff_exp_le hy').2 ?_
-    have h₁ : 1 ≤ Real.exp (u - 1) := Real.one_le_exp_iff.2 (by linarith)
-    have hs : Real.exp (u - 1) * Real.exp 1 = Real.exp u := by
-      rw [← Real.exp_add, sub_add_cancel]
-    have hround := hs.trans_lt (Nat.lt_floor_add_one (Real.exp u))
-    linarith [mul_le_mul_of_nonneg_left he (Real.exp_pos (u - 1)).le]
-  have hfloor : (y : ℝ) ≤ Real.exp u := Nat.floor_le (Real.exp_pos _).le
-  let d := q * y
-  have hd : 0 < d := Nat.mul_pos hq hy
-  have hd' : (0 : ℝ) < d := by exact_mod_cast hd
-  have hdv : (d : ℝ) ≤ Real.exp v := by
-    rw [Nat.cast_mul]
-    exact (mul_le_mul_of_nonneg_left hfloor (Nat.cast_nonneg q)).trans hstep
-  obtain ⟨j, _, hlt, hle⟩ := exists_pos_nat_mul_bounds (Real.exp_pos v).le hd'
-  have hb : (0 : ℝ) < (j : ℝ) * d := (Real.exp_pos v).trans hlt
-  refine ⟨j * d, hy, by exact_mod_cast hb, ⟨⟨dvd_mul_left _ _, by exact_mod_cast hlt⟩, ?_⟩,
-    hlo, (Real.log_le_iff_le_exp hy').2 hfloor, ?_, ?_⟩
-  · rintro n ⟨⟨k, rfl⟩, hn⟩
-    rw [Nat.mul_comm d k]
-    apply Nat.mul_le_mul_right
-    by_contra! hjk
-    have hgap : (k : ℝ) * d + d ≤ (j : ℝ) * d := by
-      rw [← add_one_mul]
-      exact mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.succ_le_of_lt hjk) hd'.le
-    have hn' : Real.exp v < (d : ℝ) * k := by exact_mod_cast hn
-    rw [mul_comm (d : ℝ)] at hn'
-    linarith
-  · push_cast
-    exact (Real.le_log_iff_exp_le hb).2 hlt.le
-  · push_cast
-    refine (Real.log_le_iff_le_exp hb).2 ?_
-    rw [Real.exp_add]
-    calc
-      _ ≤ Real.exp v + d := hle
-      _ ≤ Real.exp v * 2 := by linarith
-      _ ≤ Real.exp v * Real.exp 1 := mul_le_mul_of_nonneg_left he (Real.exp_pos _).le
-
 /-- Construct the separated integral scales for large natural `x`. The second cutoff `x₁` is
 `⌊exp (x ^ (ε/6))⌋₊` and `b` is the least multiple of `q x * x₁` strictly above `exp (x ^ ε)`.
 The modulus can vary with `x`, provided it is eventually positive and bounded by a fixed power.
-The power exponents `N`, `M`, `p` can be taken to be `10^6`, `10^6`, `100`, respectively. -/
+For `0 < ε < 1 / 100`, one can take `N = M = 10^6` and `p = 100`. -/
 theorem eventually_exists_admissible_scales {q : ℕ → ℕ} {A C ε : ℝ} (hε : 0 < ε)
     (N M p : ℕ) (hp : ε * p < 1) (hq₀ : ∀ᶠ x in atTop, 0 < q x)
     (hq : ∀ᶠ x in atTop, (q x : ℝ) ≤ (x : ℝ) ^ A) :
