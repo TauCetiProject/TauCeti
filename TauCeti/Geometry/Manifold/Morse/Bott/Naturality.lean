@@ -43,10 +43,11 @@ is orientable exactly when the other is
 `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`).
 
 Across a critical level, the relative homology of the sublevels is the homology of the critical
-submanifolds twisted by these orientation local systems and shifted by their indices. So these
-results match the twisted homology of the critical submanifolds of `f ∘ σ` with that of the
-corresponding critical submanifolds of `f`, as the diffeomorphism invariance of the critical-band
-spectral sequence requires.
+submanifolds twisted by these orientation local systems and shifted by their indices. So the
+isomorphisms of orientation local systems here are the input needed to identify the twisted
+homology of the critical submanifolds of `f ∘ σ` with that of the corresponding critical
+submanifolds of `f`, as the diffeomorphism invariance of the critical-band spectral sequence
+requires; this file does not state that homology comparison.
 
 ## Main definitions
 
@@ -369,10 +370,10 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace_of_comp
       (hσs s)).toContinuousLinearEquiv) (hΦ.congr fun v ↦ by simp), fun v ↦ by simp⟩
 
 /-- The inverses of the identifications `negativeNormalSpaceEquivOfComp` of the negative normal
-spaces along a map are continuous on the total spaces of the negative normal bundles: the forward
-map is a `C^k` family of fibrewise isomorphisms (`contMDiff_negativeNormalSpaceEquivOfComp`), so its
+spaces along a map are `C^k` on the total spaces of the negative normal bundles: the forward map is
+a `C^k` family of fibrewise isomorphisms (`contMDiff_negativeNormalSpaceEquivOfComp`), so its
 inverse is `C^k` too. -/
-theorem continuous_negativeNormalSpaceEquivOfComp_symm
+theorem contMDiff_negativeNormalSpaceEquivOfComp_symm
     (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
     (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')
     (hσ : ContMDiff I I' (k + 2) σ) (hσs : ∀ s, IsRegularPoint I I' σ (i s))
@@ -406,7 +407,8 @@ theorem continuous_negativeNormalSpaceEquivOfComp_symm
       (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
     letI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
       hr).fiberBundle
-    Continuous fun v : TotalSpace (Fin r → ℝ)
+    ContMDiff (J.prod 𝓘(ℝ, Fin r → ℝ)) (J.prod 𝓘(ℝ, Fin r → ℝ)) k
+      fun v : TotalSpace (Fin r → ℝ)
         (fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) ↦
       TotalSpace.mk' (Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
         v.proj ((h.negativeNormalSpaceEquivOfComp hn hn' hσi h' g.toRiemannianMetric
@@ -430,11 +432,11 @@ theorem continuous_negativeNormalSpaceEquivOfComp_symm
   let := subbundleTopology P' (F' := Fin r → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
   let := hV'.fiberBundle
   have := hV'.vectorBundle
-  exact (contMDiff_bundle_symm (fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h'
+  exact contMDiff_bundle_symm (fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h'
     g.toRiemannianMetric g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
       (hσs s)).toContinuousLinearEquiv)
     ((h.contMDiff_negativeNormalSpaceEquivOfComp hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g g'
-      hr).congr fun v ↦ by simp)).continuous
+      hr).congr fun v ↦ by simp)
 
 /-- **The negative normal bundles along a map are orientable together.** In the setting of
 `contMDiff_negativeNormalSpaceEquivOfComp`, the negative normal bundle of `i` relative to `g` is
@@ -537,9 +539,10 @@ variable (R : Type*) [Ring R]
 In the setting of `contMDiff_negativeNormalSpaceEquivOfComp`, the orientation local systems
 `o(ν⁻)` of the negative normal bundle of `i` relative to `g` and of `i'` relative to `g'` are
 isomorphic: the fibrewise isomorphisms `negativeNormalSpaceEquivOfComp` transport orientations of
-fibres. For a diffeomorphism `σ`, homology with coefficients in the orientation local system of
-the negative normal bundle is therefore the same for the critical submanifold `i'` of `f` and for
-its preimage `i` under `σ`, a critical submanifold of `f ∘ σ`. -/
+fibres. For a diffeomorphism `σ`, this is what is needed to identify the homology with
+coefficients in the orientation local system of the negative normal bundle of the critical
+submanifold `i'` of `f` with that of its preimage `i` under `σ`, a critical submanifold of
+`f ∘ σ`. -/
 def negativeNormalSpaceSignLocalSystemIsoOfComp
     (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
     (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')
@@ -608,8 +611,8 @@ def negativeNormalSpaceSignLocalSystemIsoOfComp
     (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h'
       g.toRiemannianMetric g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
         (hσs s)).toContinuousLinearEquiv.symm) (by simp) (by simp)
-    (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g
-      g' hr)
+    (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g
+      g' hr).continuous
 
 /-- The isomorphism of orientation local systems of the negative normal bundles along a map is the
 one induced by the inverses of the fibrewise isomorphisms `negativeNormalSpaceEquivOfComp`
@@ -659,8 +662,8 @@ theorem negativeNormalSpaceSignLocalSystemIsoOfComp_def
         (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi
           h' g.toRiemannianMetric g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
             (hσs s)).toContinuousLinearEquiv.symm) (by simp) (by simp)
-        (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim'
-          g g' hr) :=
+        (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim'
+          g g' hr).continuous :=
   (rfl)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
