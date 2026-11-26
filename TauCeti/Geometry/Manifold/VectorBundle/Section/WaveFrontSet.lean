@@ -105,9 +105,10 @@ theorem that a distribution is smooth near a point exactly when it is microlocal
 point in every nonzero direction
 (`Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt`) turns this into
 microlocal smoothness of `T` at every nonzero covector at `x`, since the differential of the
-inverse chart identifies the covectors at `x` with the vectors of `E`. The latter condition does
-not mention the chart, which gives the independence of the chart and the frame, and the
-projection theorem.
+inverse chart identifies the covectors at `x` with the vectors of `E`, the nonzero ones with the
+nonzero ones (`OpenPartialHomeomorph.MDifferentiable.toDual_symm_comp_mfderiv_symm_eq_zero_iff`).
+The latter condition does not mention the chart, which gives the independence of the chart and
+the frame, and the projection theorem.
 
 ## References
 
@@ -123,6 +124,23 @@ noncomputable section
 
 open Set Filter Function TopologicalSpace Complex Distribution ContinuousLinearMap
 open scoped Manifold ContDiff Distributions Topology InnerProduct CompactConvergenceCLM
+
+namespace OpenPartialHomeomorph.MDifferentiable
+
+open InnerProductSpace
+
+variable {E H M : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {c : OpenPartialHomeomorph M E}
+
+/-- In a chart `c` into a real inner product space, differentiable with its inverse, a covector
+`ξ` at `x` in the source of `c` is read as the zero vector of `E` exactly when it is zero. -/
+theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(ℝ, E)) {x : M}
+    (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
+  (toDual ℝ E).symm.map_eq_zero_iff.trans (hc.comp_mfderiv_symm_eq_zero_iff hx)
+
+end OpenPartialHomeomorph.MDifferentiable
 
 /-! ### Microlocal smoothness on the manifold -/
 
@@ -250,18 +268,6 @@ theorem waveFrontSet_sub_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (S - T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
   microlocalSingularSet_sub_subset isInvariantMicrolocalRegularity_isMicrolocallySmoothAt S T
 
-omit [T2Space M] [IsManifold I ∞ M] in
-/-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
-vector of `E` exactly when it is zero. -/
-private theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
-    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
-  (toDual ℝ E).symm.map_eq_zero_iff.trans
-    ((OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx).1.eq_iff'
-      (zero_comp _))
-
 /-! ### The singular support and the projection of the wave front set -/
 
 section SingularSupport
@@ -304,15 +310,16 @@ private theorem forall_notMem_singularSupport_chartComponent_iff
       ∀ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 → IsMicrolocallySmoothAt T x ξ := by
   have hcx : c x ∈ (⟨c.target, c.open_target⟩ : Opens E) := c.map_source hx
   -- Reading covectors at `x` in the chart is a bijection onto the covectors of `E`.
-  have hb := OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx
+  have hcd : c.MDifferentiable I 𝓘(ℝ, E) :=
+    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
+  have hb := hcd.comp_mfderiv_symm_bijective hx
   refine ⟨fun h ξ hξ ↦ (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦
     (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).1 (h v) _
-      (mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 hξ), fun h v ↦ ?_⟩
+      (mt (hcd.toDual_symm_comp_mfderiv_symm_eq_zero_iff hx).1 hξ), fun h v ↦ ?_⟩
   refine (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).2 fun η hη ↦ ?_
   obtain ⟨ξ, hξη⟩ := hb.2 (toDual ℝ E η)
   rw [← (toDual ℝ E).symm_apply_apply η, ← hξη] at hη ⊢
-  have hξ : ξ ≠ 0 := mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 hη
+  have hξ : ξ ≠ 0 := mt (hcd.toDual_symm_comp_mfderiv_symm_eq_zero_iff hx).2 hη
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
 
 /-- **The singular support in any chart and frame.** For a smooth chart `c` at `x` with smooth
@@ -435,7 +442,8 @@ theorem waveFrontSet_delta [I.Boundaryless] {x : M} {ℓ : V x →L[ℝ] ℝ} (h
   -- A nonzero covector at `y` is read in the chart as a nonzero vector.
   have hne {ξ : TangentSpace I y →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
       (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c y)) ≠ 0 :=
-    mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hy).1 hξ
+    mt (OpenPartialHomeomorph.MDifferentiable.toDual_symm_comp_mfderiv_symm_eq_zero_iff
+      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hy).1 hξ
   refine ⟨fun ⟨hξ, hT⟩ ↦ ⟨by_contra fun hyx ↦ hT fun v ↦ ?_, hξ⟩, ?_⟩
   · -- Away from `x`, every component is microlocally smooth at `c y`.
     by_cases hx : x ∈ c.source
