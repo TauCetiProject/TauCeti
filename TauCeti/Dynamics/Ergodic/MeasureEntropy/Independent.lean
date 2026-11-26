@@ -58,8 +58,6 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun
   | zero => simp [iteratedPartitionLabel_zero]
   | succ n ih =>
     have hb := measurable_iteratedPartitionLabel hT.measurable ha
-    have hinj : Function.Injective fun p : (Fin n → ι) × (Fin 1 → ι) ↦ Fin.append p.1 p.2 :=
-      (Fin.appendEquiv n 1).injective
     -- The first `n` labels are independent of the label at time `n`.
     have hindep : IndepFun (iteratedPartitionLabel T a n)
         (fun x ↦ iteratedPartitionLabel T a 1 (T^[n] x)) μ := by
@@ -75,13 +73,11 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun
         simp
       · funext x k
         simp
-    rw [iteratedPartitionLabel_add, countablePartitionEntropy_comp_of_injective _ hinj,
-      countablePartitionEntropy_pair_of_indepFun
-        (b := fun x ↦ iteratedPartitionLabel T a 1 (T^[n] x)) (hb n)
-        ((hb 1).comp (hT.measurable.iterate n)) hindep, ih, ← Function.comp_def,
-      countablePartitionEntropy_comp_of_measurePreserving (hT.iterate n) (hb 1),
-      iteratedPartitionLabel_one, countablePartitionEntropy_comp_of_injective a
-        Function.const_injective, Nat.cast_succ, add_mul, one_mul]
+    rw [countablePartitionEntropy_iteratedPartitionLabel_add]
+    refine (countablePartitionEntropy_pair_of_indepFun (hb n)
+      ((hb 1).comp (hT.measurable.iterate n)) hindep).trans ?_
+    rw [ih, countablePartitionEntropy_comp_of_measurePreserving (hT.iterate n) (hb 1),
+      countablePartitionEntropy_iteratedPartitionLabel_one, Nat.cast_succ, add_mul, one_mul]
 
 /-- **Independent iterates.** For a measure-preserving map of a probability space and a
 measurable countable label whose iterates `a ∘ T^[k]` are independent, the entropy rate is the

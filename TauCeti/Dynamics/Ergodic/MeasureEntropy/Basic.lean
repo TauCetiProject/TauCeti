@@ -223,6 +223,24 @@ theorem iteratedPartitionLabel_add (T : X → X) (a : X → ι) (m n : ℕ) :
   · simp
   · simp [← Function.iterate_add_apply, add_comm]
 
+/-- The length-`(m + n)` itinerary has the entropy of the joint label of the length-`m`
+itinerary and the length-`n` itinerary started at `T^[m] x`, for every measure. -/
+theorem countablePartitionEntropy_iteratedPartitionLabel_add (T : X → X) (a : X → ι)
+    (m n : ℕ) :
+    countablePartitionEntropy μ (iteratedPartitionLabel T a (m + n)) =
+      countablePartitionEntropy μ
+        fun x ↦ (iteratedPartitionLabel T a m x, iteratedPartitionLabel T a n (T^[m] x)) := by
+  rw [iteratedPartitionLabel_add]
+  exact countablePartitionEntropy_comp_of_injective _ (Fin.appendEquiv m n).injective
+
+/-- The length-one itinerary has the entropy of the label, for every measure. -/
+@[simp]
+theorem countablePartitionEntropy_iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
+    countablePartitionEntropy μ (iteratedPartitionLabel T a 1) =
+      countablePartitionEntropy μ a := by
+  rw [iteratedPartitionLabel_one]
+  exact countablePartitionEntropy_comp_of_injective a Function.const_injective
+
 /-- A countable label is a coarsening of every itinerary of positive length, so its entropy is at
 most the entropy of the itinerary, for every measure. -/
 theorem countablePartitionEntropy_le_iteratedPartitionLabel [Countable ι] (T : X → X)
@@ -244,9 +262,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_add_le [IsZeroOrProbabi
       countablePartitionEntropy μ (iteratedPartitionLabel T a m) +
         countablePartitionEntropy μ (iteratedPartitionLabel T a n) := by
   have hb := measurable_iteratedPartitionLabel hT.measurable ha
-  have hinj : Function.Injective fun p : (Fin m → ι) × (Fin n → ι) ↦ Fin.append p.1 p.2 :=
-    (Fin.appendEquiv m n).injective
-  rw [iteratedPartitionLabel_add, countablePartitionEntropy_comp_of_injective _ hinj]
+  rw [countablePartitionEntropy_iteratedPartitionLabel_add]
   refine (countablePartitionEntropy_pair_le_add (hb m)
     ((hb n).comp (hT.measurable.iterate m))).trans_eq ?_
   rw [countablePartitionEntropy_comp_of_measurePreserving (hT.iterate m) (hb n)]
@@ -261,8 +277,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_le_mul [IsZeroOrProbabi
   | zero => simp [iteratedPartitionLabel_zero]
   | succ n ih =>
     refine (countablePartitionEntropy_iteratedPartitionLabel_add_le hT ha n 1).trans ?_
-    rw [iteratedPartitionLabel_one, countablePartitionEntropy_comp_of_injective a
-      Function.const_injective, Nat.cast_succ, add_mul, one_mul]
+    rw [countablePartitionEntropy_iteratedPartitionLabel_one, Nat.cast_succ, add_mul, one_mul]
     gcongr
 
 /-- **Maximal rate.** For a measure-preserving map of a probability space (or the zero measure)
