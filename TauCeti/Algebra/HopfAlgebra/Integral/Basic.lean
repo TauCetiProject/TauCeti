@@ -56,6 +56,13 @@ def rightIntegral : Submodule R H where
   smul_mem' r t ht h := by
     rw [smul_mul_assoc, ht h, smul_comm r]
 
+/-- A bialgebra is unimodular when its left and right integral submodules agree. -/
+def IsUnimodular : Prop := leftIntegral R H = rightIntegral R H
+
+/-- Unimodularity is equality of the two integral spaces. -/
+theorem isUnimodular_iff : IsUnimodular R H ↔ leftIntegral R H = rightIntegral R H :=
+  Iff.rfl
+
 variable {R H}
 
 theorem mem_leftIntegral_iff {t : H} :
