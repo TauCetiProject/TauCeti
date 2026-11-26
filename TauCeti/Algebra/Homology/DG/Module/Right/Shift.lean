@@ -143,13 +143,12 @@ theorem shiftEquiv_koszulTwist (M : DGRightModuleCat.{uR, uA, uM} h) (n q : ℤ)
   have key : (InternalGrading.ofDecomposition (M.shift n).grading).koszulTwist q =
       (((q * n).negOnePow : ℤ) : R) •
         (InternalGrading.ofDecomposition M.grading).koszulTwist q := by
-    refine (InternalGrading.ofDecomposition M.grading).linearMap_ext fun p x hx ↦ ?_
-    have hx' : x ∈ (InternalGrading.ofDecomposition (M.shift n).grading).piece (p - n) := by
-      rw [InternalGrading.ofDecomposition_piece, shift_grading, sub_add_cancel]
-      rwa [InternalGrading.ofDecomposition_piece] at hx
-    rw [InternalGrading.koszulTwist_apply_of_mem _ hx', LinearMap.smul_apply,
-      InternalGrading.koszulTwist_apply_of_mem _ hx, smul_smul, ← Int.cast_mul, ← Units.val_mul,
-      mul_sub, Int.negOnePow_sub, mul_comm (q * n).negOnePow]
+    rw [show InternalGrading.ofDecomposition (M.shift n).grading =
+        (InternalGrading.ofDecomposition M.grading).shift n from
+      InternalGrading.ext fun p ↦ by
+        rw [InternalGrading.ofDecomposition_piece, shift_grading, InternalGrading.shift_piece,
+          InternalGrading.ofDecomposition_piece]]
+    exact (InternalGrading.ofDecomposition M.grading).koszulTwist_shift n q
   rw [shiftEquiv_apply, shiftEquiv_apply, key, LinearMap.smul_apply, ← negOnePowCast_eq_intCast,
     ← negOnePow_smul_eq_negOnePowCast_smul]
 
