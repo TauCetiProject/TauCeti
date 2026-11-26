@@ -38,11 +38,15 @@ with local coefficients in the second page of its index spectral sequence.
   `..._eq_morseBoundaryCoeff`, in the namespace `TauCeti.IsAdaptedPseudoGradient`).
 
 So the degree-zero part of the Barraud–Cornea cocycle is the Morse differential in which each
-trajectory is weighted by the homotopy class of its loop. For instance (an illustration, not
-formalized here), for the height function of the circle, with `θ` collapsing one of the two arcs
-between the critical points, the two trajectories from the maximum to the minimum have loops of
-classes `1` and `t`, a generator of `π₁(S¹)`, and the truncated entry is `1 + t` in
-`(ZMod 2)[π₁(S¹)]`. For integral fundamental chains of the trajectory spaces the coefficients
+trajectory is weighted by the homotopy class of its loop. For instance, for the height function of
+the circle, the two trajectories from the maximum to the minimum have loops of classes `g` and
+`t g`, with `t` the image of a generator of `π₁(S¹)`, so the entry is `(1 + t) g` when both carry
+the coefficient `1` (`TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one` and
+`TauCeti.IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_mul`,
+in `TauCeti.Geometry.Manifold.Morse.DG.Circle`). With `θ` collapsing the upper arc (through
+`π / 2`) between the critical points (an illustration, not formalized here), `g = 1` and the entry
+is `1 + t` in `(ZMod 2)[π₁(S¹)]`; collapsing the lower arc instead gives `t g = 1` and the entry
+`1 + t⁻¹`. For integral fundamental chains of the trajectory spaces the coefficients
 `r_u` are instead the orientation signs of the trajectories; this integral form is a remark, not
 formalized here.
 

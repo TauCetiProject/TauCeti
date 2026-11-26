@@ -64,6 +64,13 @@ theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) :=
   (rfl)
 
+/-- The reversed Moore loop has the inverse class. -/
+@[simp↓]
+theorem fundamentalGroupHom_symm (γ : MooreLoopSpace X x) :
+    fundamentalGroupHom x γ.symm = (fundamentalGroupHom x γ)⁻¹ := by
+  rw [fundamentalGroupHom_apply, fundamentalGroupHom_apply, toPath_symm,
+    Path.Homotopic.Quotient.mk_symm, inv_inj, FundamentalGroup.inv_def]
+
 /-- Moore loops with the same underlying Moore path have the same value under a family of
 homomorphisms out of the fundamental groups, even when their base points are only propositionally
 equal. -/
