@@ -492,10 +492,11 @@ relative `ℤ / 2` grading of this diagram: every generator is joined to `p₀` 
 periodic Maslov indices are the even integers. -/
 theorem exists_isMaslovGradingMod_circleTimesSphere_one :
     ∃ gr, (circleTimesSphere 1).IsMaslovGradingMod (AddSubgroup.zmultiples 2) ![0, 1, 1] gr := by
-  rw [← periodicMaslovIndices_circleTimesSphere_one 0]
-  obtain ⟨gr, hgr⟩ := exists_coe_sub_eq_periodicMaslovIndices (χ := ![0, 1, 1])
-    (x₀ := circleTimesSphereGenerator 1 0)
-    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide) _)
+  obtain ⟨gr, hgr⟩ := exists_coe_sub_eq_of_maslovIndex_sub_two_mul_sum_mem (χ := ![0, 1, 1])
+    (x₀ := circleTimesSphereGenerator 1 0) (Λ := AddSubgroup.zmultiples 2) fun E hE => by
+      rw [← periodicMaslovIndices_circleTimesSphere_one 0]
+      exact maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide) _
+        E hE
   refine ⟨gr, ⟨fun {x _ _} hD => ?_⟩⟩
   obtain ⟨a, rfl⟩ := (circleTimesSphereGenerator_bijective 1).2 x
   fin_cases a
