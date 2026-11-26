@@ -241,21 +241,12 @@ private theorem exists_norm_iteratedFDeriv_dilate_inverse_le (hp : p.IsParameter
     (norm_iteratedFDeriv_one_sub_smul_le hP hS0 (by positivity) (hS x hx ξ) r) hFinvb i hi
   exact h.trans (div_le_div_of_nonneg_right (le_abs_self c) (by positivity))
 
-omit [CompleteSpace V] in
-/-- **Undoing the frequency dilation.** Up to the factor `t ^ |β|`, the mixed derivative
-`∂ₓ^α ∂_ξ^β g` at `(x, ξ)` is the mixed derivative at `(0, 0)` of the dilation
-`(y, v) ↦ g(x + y, ξ + t v)`, so it is bounded by the derivatives of the dilation there. -/
-private theorem pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_dilate
-    {g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V} (hg : ContDiff ℝ ∞ g)
-    (α β : List (Fin n)) (x ξ : CoordinateSpace n) {t : ℝ} (ht : 0 < t) :
-    t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤
-      ‖iteratedFDeriv ℝ (α.length + β.length)
-        (fun q : CoordinateSpace n × CoordinateSpace n => g (x + q.1, ξ + t • q.2)) 0‖ := by
-  have h := norm_mixedDeriv_le α β ((hg.comp (contDiff_dilate x ξ t)).of_le
-    (by exact_mod_cast le_top)) 0 0
-  simp only [Function.comp_def] at h
-  rwa [mixedDeriv_comp_add_smul (hg.of_le (by exact_mod_cast le_top)), norm_smul,
-    Real.norm_eq_abs, abs_pow, abs_of_pos ht, Prod.mk_zero_zero] at h
+/-- For `r ∈ R`, the inverse `(x, ξ) ↦ (1 - r p(x, ξ))⁻¹` of a parameter-elliptic symbol is
+smooth. -/
+private theorem contDiff_inverse_one_sub_smul (hp : p.IsParameterElliptic R) {r : ℂ} (hr : r ∈ R) :
+    ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
+  (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
+    fun q => hp.isInvertible hr q
 
 /-- **Symbol estimates for products of powers, uniformly in the parameter.** For a
 parameter-elliptic symbol `p` of order `d`, the functions
@@ -277,9 +268,7 @@ private theorem exists_norm_mixedDeriv_pow_mul_inverse_pow_le (hp : p.IsParamete
   have ht : 0 < t := Real.rpow_pos_of_pos hu _
   set g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
     fun q => p.coefficient q ^ i * (1 - r • p.coefficient q).inverse ^ l
-  have hinv : ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
-    (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
-      fun q => hp.isInvertible hr q
+  have hinv := contDiff_inverse_one_sub_smul hp hr
   have hg : ContDiff ℝ ∞ g := (p.contDiff_coefficient.pow i).mul (hinv.pow l)
   -- The dilation of `g` is a product of the dilations of `p` and of the inverse, whose derivatives
   -- at `0` are of size `⟨ξ⟩ ^ d` and at most `c`; by the Leibniz rule its derivatives are of size
@@ -296,7 +285,8 @@ private theorem exists_norm_mixedDeriv_pow_mul_inverse_pow_le (hp : p.IsParamete
     (hG.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le hc' l) k le_rfl
   -- Undo the dilation: each frequency derivative costs a factor `t = ⟨ξ⟩`.
   have hkey : t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤ M * (u ^ (d / 2)) ^ i :=
-    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_dilate hg α β x ξ ht).trans
+    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+      (hg.of_le (by exact_mod_cast le_top)) x ξ ht.le).trans
       (hprod.trans_eq (by simp only [M]; ring))
   have hTi : (u ^ (d / 2)) ^ i = u ^ ((d * i - β.length) / 2) * t ^ β.length := by
     simp only [t]
@@ -326,12 +316,11 @@ private theorem exists_norm_mixedDeriv_smul_inverse_le (hp : p.IsParameterEllipt
   have ht : 0 < t := Real.rpow_pos_of_pos hu _
   set T : ℝ := u ^ (d / 2)
   have hT : 0 < T := Real.rpow_pos_of_pos hu _
-  have hinv : ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
-    (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
-      fun q => hp.isInvertible hr q
+  have hinv := contDiff_inverse_one_sub_smul hp hr
   set D := ‖mixedDeriv α β (fun q => (1 - r • p.coefficient q).inverse) x ξ‖
   have hD : t ^ β.length * D ≤ c / (1 + ‖r‖ * T) :=
-    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_dilate hinv α β x ξ ht).trans
+    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+      (hinv.of_le (by exact_mod_cast le_top)) x ξ ht.le).trans
       (hc x hx ξ r hr _ le_rfl)
   -- `‖r‖ / (1 + ‖r‖ T) ≤ 1 / T`
   have hrD : T * (‖r‖ * (t ^ β.length * D)) ≤ c := by
@@ -395,9 +384,8 @@ def normalizedResolvent (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
   coefficient_of_notMem q r hr := indicator_of_notMem hr _
   contDiff_iteratedDeriv j r hr := by
     simp only [iteratedDeriv_indicator_inverse_one_sub_smul _ j hr (hp.isInvertible hr _)]
-    exact ((p.contDiff_coefficient.pow j).mul (((contDiff_const.sub
-      (p.contDiff_coefficient.const_smul r)).clm_inverse fun q => hp.isInvertible hr q).pow
-        (j + 1))).const_smul _
+    exact ((p.contDiff_coefficient.pow j).mul
+      ((contDiff_inverse_one_sub_smul hp hr).pow (j + 1))).const_smul _
   exists_bound K hK j α β := by
     obtain ⟨M, hM0, hM⟩ := exists_norm_mixedDeriv_pow_mul_inverse_pow_le hp hK j (j + 1) α β
     refine ⟨j ! * M, by positivity, fun x hx ξ r hr => ?_⟩
@@ -484,9 +472,7 @@ def resolvent (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
       (contDiffOn_id.smul contDiffOn_const)).clm_inverse fun r hr => hp.isInvertible hr q)
   coefficient_of_notMem q r hr := indicator_of_notMem hr _
   contDiff_iteratedDeriv j r hr := by
-    have hinv : ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
-      (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
-        fun q => hp.isInvertible hr q
+    have hinv := contDiff_inverse_one_sub_smul hp hr
     rcases j with _ | j
     · simp only [iteratedDeriv_zero, indicator_of_mem hr]
       exact hinv.const_smul r
@@ -558,10 +544,11 @@ theorem iteratedDeriv_succ_coefficient_resolvent (j : ℕ)
 theorem coefficient_resolvent_inv (q : CoordinateSpace n × CoordinateSpace n) {μ : ℂ}
     (hμ : μ⁻¹ ∈ R) (hμ0 : μ ≠ 0) :
     (resolvent p hp).coefficient q μ⁻¹ = (μ • 1 - p.coefficient q).inverse := by
-  rw [coefficient_resolvent_eq_smul, coefficient_normalizedResolvent_inv q hμ hμ0, smul_smul,
-    inv_mul_eq_div, neg_div, div_self hμ0, ← neg_sub, ← neg_one_smul ℂ (μ • 1 - _),
-    ContinuousLinearMap.inverse_smul, smul_smul]
-  norm_num
+  have h : (p.coefficient q - μ • 1).inverse = -(μ • 1 - p.coefficient q).inverse := by
+    rw [← neg_sub, ← neg_one_smul ℂ (μ • 1 - _), ContinuousLinearMap.inverse_smul]
+    simp
+  rw [coefficient_resolvent_eq_smul, coefficient_normalizedResolvent_inv q hμ hμ0, h]
+  simp [smul_neg, smul_smul, hμ0]
 
 end WeakParameterSymbol
 
