@@ -50,7 +50,7 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
   quotient `4 q / 3`.
   `Sym3.replicatedSeed q = (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)` has defect
   `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`, `gaugeDist_replicatedSeed`,
-  from `defect_ofLt_seed` and `gaugeDist_seed`), the identity gauge costs `6 q ^ 2`
+  from `defect_ofLt_seed` and `gaugeDist_ofLt_seed`), the identity gauge costs `6 q ^ 2`
   (`cost_one_replicatedSeed`), and `Sym3.replicatedSeedOfCardEq` carries it to any `V` with
   `card V = 4 q`, where its ratio is `card V / 3`
   (`Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq`).
@@ -113,7 +113,7 @@ theorem defect_ofLt_seed :
 
 /-- The identity gauge costs `6` against the seed: its three non-identity edges are
 transpositions. -/
-theorem cost_one_seed :
+theorem cost_one_ofLt_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
   rw [Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
@@ -122,10 +122,10 @@ theorem cost_one_seed :
       (seed p.1 p.2).support.card = 6)
 
 /-- The seed has gauge distance `6`, attained by the identity gauge. -/
-theorem gaugeDist_seed :
+theorem gaugeDist_ofLt_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).gaugeDist (movedNorm (Fin 3)) = 6 := by
   refine le_antisymm (((Cochain.ofLt (complete (Fin 4)) seed).gaugeDist_le_cost _
-    (fun _ => 1)).trans cost_one_seed.le) ?_
+    (fun _ => 1)).trans cost_one_ofLt_seed.le) ?_
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
   rw [← Cochain.mul_costErr_eq_cost, Cochain.costErr_ofLt_complete]
   have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed seed_zero_of_pos
@@ -152,7 +152,7 @@ theorem defect_replicatedSeed (q : ℕ) :
 /-- Replication multiplies the seed gauge distance `6` by `q ^ 2`. -/
 theorem gaugeDist_replicatedSeed (q : ℕ) :
     (replicatedSeed q).gaugeDist (movedNorm (Fin 3)) = 6 * (q : ℝ) ^ 2 := by
-  rw [replicatedSeed, Cochain.gaugeDist_replicate, gaugeDist_seed, Fintype.card_fin]
+  rw [replicatedSeed, Cochain.gaugeDist_replicate, gaugeDist_ofLt_seed, Fintype.card_fin]
   ring
 
 /-- The identity gauge costs `6 q ^ 2` against the replicated seed. -/
@@ -163,7 +163,7 @@ theorem cost_one_replicatedSeed (q : ℕ) :
       (fun x : Fin 4 ×ₗ Fin q => (ofLex x).1) = fun _ => 1 := by
     funext _
     simp [Function.comp_apply]
-  rw [← hγ, Cochain.cost_replicate_comp, cost_one_seed, Fintype.card_fin]
+  rw [← hγ, Cochain.cost_replicate_comp, cost_one_ofLt_seed, Fintype.card_fin]
   ring
 
 /-- The upper bound when `card V = 4 q`. -/
@@ -173,8 +173,8 @@ private theorem h1_complete_le_of_card_eq_four_mul {V : Type*} [Fintype V] [Line
   rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (W := Fin 4 ×ₗ Fin q)
     (by rw [hV, Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin])]
   refine (h1_complete_lex_le_card_mul_div (ι := Fin q) (α := Cochain.ofLt (complete (Fin 4)) seed)
-    (by rw [gaugeDist_seed]; norm_num)).trans_eq ?_
-  rw [defect_ofLt_seed, gaugeDist_seed, Fintype.card_fin, hV]
+    (by rw [gaugeDist_ofLt_seed]; norm_num)).trans_eq ?_
+  rw [defect_ofLt_seed, gaugeDist_ofLt_seed, Fintype.card_fin, hV]
   push_cast
   ring
 
@@ -251,7 +251,7 @@ theorem defect_div_gaugeDist_replicatedSeedOfCardEq {q : ℕ}
       (Fintype.card V : ℝ) / 3 := by
   simp only [replicatedSeedOfCardEq, Cochain.defect_relabelComplete isConjInvariant_movedNorm,
     Cochain.gaugeDist_relabelComplete, replicatedSeed, Cochain.defect_div_gaugeDist_replicate,
-    defect_ofLt_seed, gaugeDist_seed, Fintype.card_fin, hV]
+    defect_ofLt_seed, gaugeDist_ofLt_seed, Fintype.card_fin, hV]
   push_cast
   ring
 
