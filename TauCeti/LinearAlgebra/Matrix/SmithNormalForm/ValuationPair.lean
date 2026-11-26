@@ -67,7 +67,7 @@ private lemma IsValuationPair.directed_span_pivot (hR : R.IsValuationPair) (y : 
   rintro ⟨c, c'⟩ ⟨d, d'⟩
   let B (a b : GL n R) : A :=
     ((GeneralLinearGroup.map R.subtype a).val * y * (GeneralLinearGroup.map R.subtype b).val) p p
-  obtain ⟨e, he, h_le⟩ := hR.exists_idempotent (B c c') (B d d')
+  obtain ⟨e, he, h_le⟩ := isValuationPair_iff.1 hR (B c c') (B d d')
   let patch (a b : GL n R) : GL n R := a * he.cutGL (a⁻¹ * b)
   have patch_val (a b : GL n R) : (GeneralLinearGroup.map R.subtype (patch a b)).val =
       e.val • (GeneralLinearGroup.map R.subtype b).val +
@@ -133,7 +133,7 @@ private lemma exists_eq_mul_diagonal_mul_of_pivot_dvd {M : Matrix n n A} {p : n}
       M i j - w i p * M p j = ∑ s : {i : n // i ≠ p}, k.val i s * d s * l.val s j := by
     simpa [↓mul_diagonal, Matrix.mul_apply, Subring.smul_def, GeneralLinearGroup.map_apply] using
       congrFun (congrFun h_block i) j
-  have default_val : ((default : {i : n // i = p}) : n) = p := rfl
+  have default_val : ((default : {i : n // i = p}) : n) = p := (default : {i : n // i = p}).property
   refine ⟨lower, upper, D, (reindex e.symm e.symm).injective ?_⟩
   suffices M.submatrix e e =
       fromBlocks 1 0 ((of fun i j ↦ w i.val j.val).map R.subtype)
@@ -203,8 +203,8 @@ valuation subring `O` of `F`. No divisibility chain among the entries of `d` is 
 theorem exists_eq_mul_diagonal_mul {F n : Type*} [Field F] [Fintype n] [DecidableEq n]
     (O : ValuationSubring F) (y : Matrix n n F) :
     ∃ (k k' : GL n O) (d : n → F),
-      y = (GeneralLinearGroup.map O.toSubring.subtype k).val * diagonal d *
-        (GeneralLinearGroup.map O.toSubring.subtype k').val :=
+      y = (GeneralLinearGroup.map O.subtype k).val * diagonal d *
+        (GeneralLinearGroup.map O.subtype k').val :=
   O.isValuationPair_toSubring.exists_eq_mul_diagonal_mul y
 
 end ValuationSubring

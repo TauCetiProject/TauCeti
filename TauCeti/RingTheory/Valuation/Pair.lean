@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.LinearAlgebra.Span.Basic
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-!
 # Valuation pairs of commutative rings
@@ -28,9 +26,10 @@ of integral adeles inside the finite adeles satisfies `Subring.IsValuationPair`.
 ## Main definitions and results
 
 * `Subring.IsValuationPair`: valuation-pair condition on a subring `R` of a commutative ring `A`.
-* `Subring.isValuationPair_iff` and `Subring.IsValuationPair.exists_idempotent`: characterization
-  and elimination lemma for `Subring.IsValuationPair`.
-* `Subring.IsValuationPair.top`: if `R ⊆ A` is a valuation pair, then `⊤ : Subring R` is a
+* `Subring.isValuationPair_iff`: characterization of `Subring.IsValuationPair`.
+* `Subring.isValuationPair_of_mem_or_mem`: sufficient condition when `R`-spans of singletons are
+  totally ordered (no nontrivial idempotents needed).
+* `Subring.IsValuationPair.top_subring`: if `R ⊆ A` is a valuation pair, then `⊤ : Subring R` is a
   valuation pair.
 * `Subring.isValuationPair_top`: every `PreValuationRing A` is a valuation pair inside itself.
 * `ValuationSubring.isValuationPair_toSubring`: every valuation subring of a field is a valuation
@@ -63,17 +62,21 @@ theorem isValuationPair_iff {R : Subring A} :
       ∀ a b : A, ∃ e : R, IsIdempotentElem e ∧ R ∙ a ⊔ R ∙ b ≤ R ∙ (a - e * (a - b)) :=
   Iff.rfl
 
-/-- Elimination lemma for `Subring.IsValuationPair`: given `a, b : A`, produce an idempotent
-`e : R` whose patch `a - e * (a - b)` generates an `R`-submodule containing `a` and `b`. -/
-theorem IsValuationPair.exists_idempotent {R : Subring A} (hR : R.IsValuationPair) (a b : A) :
-    ∃ e : R, IsIdempotentElem e ∧ R ∙ a ⊔ R ∙ b ≤ R ∙ (a - e * (a - b)) :=
-  hR a b
+/-- If for all `a b : A` either `a ∈ R ∙ b` or `b ∈ R ∙ a`, then `R` is a valuation pair. -/
+theorem isValuationPair_of_mem_or_mem {R : Subring A} (h : ∀ a b : A, a ∈ R ∙ b ∨ b ∈ R ∙ a) :
+    R.IsValuationPair := by
+  refine isValuationPair_iff.2 fun a b ↦ ?_
+  rcases h a b with hab | hba
+  · refine ⟨1, IsIdempotentElem.one, ?_⟩
+    simpa [sup_le_iff, span_singleton_le_iff_mem] using hab
+  · refine ⟨0, IsIdempotentElem.zero, ?_⟩
+    simpa [sup_le_iff, span_singleton_le_iff_mem] using hba
 
 /-- If `R ⊆ A` is a valuation pair, then `R` is a valuation pair inside itself. -/
-theorem IsValuationPair.top {R : Subring A} (hR : R.IsValuationPair) :
+theorem IsValuationPair.top_subring {R : Subring A} (hR : R.IsValuationPair) :
     (⊤ : Subring R).IsValuationPair := by
   refine isValuationPair_iff.2 fun a b ↦ ?_
-  obtain ⟨e, he, hle⟩ := hR.exists_idempotent a.val b.val
+  obtain ⟨e, he, hle⟩ := isValuationPair_iff.1 hR a.val b.val
   let e' : (⊤ : Subring R) := ⟨e, trivial⟩
   have lift_mem {x : R} (hx : x.val ∈ R ∙ (a.val - e * (a.val - b.val))) :
       x ∈ (⊤ : Subring R) ∙ (a - e' * (a - b)) := by
@@ -87,17 +90,11 @@ theorem IsValuationPair.top {R : Subring A} (hR : R.IsValuationPair) :
 
 /-- Every `PreValuationRing A` (in particular every `ValuationRing A`) is a valuation pair inside
 itself. -/
-theorem isValuationPair_top [PreValuationRing A] : (⊤ : Subring A).IsValuationPair := by
-  refine isValuationPair_iff.2 fun a b ↦ ?_
-  obtain ⟨c, hc | hc⟩ := PreValuationRing.cond a b
-  · refine ⟨0, IsIdempotentElem.zero, sup_le ((span_singleton_le_iff_mem _ _).2 ?_)
-      ((span_singleton_le_iff_mem _ _).2 ?_)⟩
-    · exact mem_span_singleton.2 ⟨1, by simp⟩
-    · exact mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩
-  · refine ⟨1, IsIdempotentElem.one, sup_le ((span_singleton_le_iff_mem _ _).2 ?_)
-      ((span_singleton_le_iff_mem _ _).2 ?_)⟩
-    · exact mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩
-    · exact mem_span_singleton.2 ⟨1, by simp⟩
+theorem isValuationPair_top [PreValuationRing A] : (⊤ : Subring A).IsValuationPair :=
+  isValuationPair_of_mem_or_mem fun a b ↦ by
+    obtain ⟨c, hc | hc⟩ := PreValuationRing.cond a b
+    · exact Or.inr (mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩)
+    · exact Or.inl (mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩)
 
 end Subring
 
@@ -106,24 +103,11 @@ namespace ValuationSubring
 variable {F : Type*} [Field F]
 
 /-- Every valuation subring `O` of a field `F` is a valuation pair inside `F`. -/
-theorem isValuationPair_toSubring (O : ValuationSubring F) : O.toSubring.IsValuationPair := by
-  refine Subring.isValuationPair_iff.2 fun a b ↦ ?_
-  have h_dvd : (∃ y ∈ O, a = b * y) ∨ ∃ y ∈ O, b = a * y := by
-    by_cases ha : a = 0
-    · exact Or.inl ⟨0, O.zero_mem, by simp [ha]⟩
-    · by_cases hb : b = 0
-      · exact Or.inr ⟨0, O.zero_mem, by simp [hb]⟩
-      · rcases O.mem_or_inv_mem (a / b) with h | h
-        · exact Or.inl ⟨a / b, h, by field_simp⟩
-        · exact Or.inr ⟨(a / b)⁻¹, h, by field_simp⟩
-  rcases h_dvd with ⟨y, hy, rfl⟩ | ⟨y, hy, rfl⟩
-  · refine ⟨1, IsIdempotentElem.one, sup_le ((span_singleton_le_iff_mem _ _).2 ?_)
-      ((span_singleton_le_iff_mem _ _).2 ?_)⟩
-    · exact mem_span_singleton.2 ⟨⟨y, hy⟩, by simp [Subring.smul_def]; ring⟩
-    · exact mem_span_singleton.2 ⟨1, by simp⟩
-  · refine ⟨0, IsIdempotentElem.zero, sup_le ((span_singleton_le_iff_mem _ _).2 ?_)
-      ((span_singleton_le_iff_mem _ _).2 ?_)⟩
-    · exact mem_span_singleton.2 ⟨1, by simp⟩
-    · exact mem_span_singleton.2 ⟨⟨y, hy⟩, by simp [Subring.smul_def]; ring⟩
+theorem isValuationPair_toSubring (O : ValuationSubring F) : O.toSubring.IsValuationPair :=
+  Subring.isValuationPair_of_mem_or_mem fun a b ↦ (le_total (O.valuation a) (O.valuation b)).imp
+    (fun h ↦ let ⟨y, hy⟩ := (O.valuation_le_iff a b).1 h
+      mem_span_singleton.2 ⟨y, by simpa [Subring.smul_def, mul_comm] using hy⟩)
+    (fun h ↦ let ⟨y, hy⟩ := (O.valuation_le_iff b a).1 h
+      mem_span_singleton.2 ⟨y, by simpa [Subring.smul_def, mul_comm] using hy⟩)
 
 end ValuationSubring
