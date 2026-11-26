@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Cocycle
 
 /-!
 # Continuous 1-cocycles of a local field with `p`-torsion-free coefficients
@@ -19,9 +19,8 @@ inertia subgroup `P_K`. Let `M` be a discrete `p`-torsion-free `G_K`-module (i.e
 implies `m = 0`) on which `P_K` acts trivially.
 
 Because `P_K` is a pro-`p` group (`TauCeti.isProP_wildInertiaSubgroup`), every continuous
-1-cocycle `c : Z1 G_K M` restricts on `P_K` to a continuous homomorphism into a discrete
-`p`-torsion-free group, whose image is a finite `p`-group and therefore trivial. Hence `c` vanishes
-on `P_K` and factors through the tame quotient `toTameQuotient K`. Consequently:
+1-cocycle `c : Z1 G_K M` vanishes on `P_K` (`TauCeti.IsProP.apply_eq_zero_of_mem_Z1`) and factors
+through the tame quotient `toTameQuotient K`. Consequently:
 
 * If `c` vanishes on a topological generator `τ` of tame inertia, then `c` vanishes on all of
   `I_K` (`apply_eq_zero_of_mem_inertiaSubgroup_of_tameGenerator`).
@@ -35,9 +34,6 @@ on `P_K` and factors through the tame quotient `toTameQuotient K`. Consequently:
 
 ## Main results
 
-* `TauCeti.TameCohomology.apply_mul_of_smul_eq_self` and
-  `TauCeti.TameCohomology.apply_pow_of_smul_eq_self`: additivity of a continuous 1-cocycle on
-  elements acting trivially on `M`.
 * `TauCeti.TameCohomology.apply_eq_zero_of_mem_wildInertiaSubgroup`: a continuous 1-cocycle with
   discrete `p`-torsion-free coefficients and trivial `P_K`-action vanishes on `P_K`.
 * `TauCeti.TameCohomology.apply_eq_of_toTameQuotient_eq`: such a cocycle depends only on the image
@@ -65,31 +61,6 @@ open scoped ValuativeRel
 
 namespace TauCeti.TameCohomology
 
-section ElementwiseTrivial
-
-variable {G M : Type*} [Group G] [TopologicalSpace G]
-  [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M] [DistribMulAction G M]
-
-/-- A continuous 1-cocycle is additive on a product `a * b` whenever `a` acts trivially on `M`. -/
-theorem apply_mul_of_smul_eq_self (c : Z1 G M) {a : G} (ha : ∀ m : M, a • m = m) (b : G) :
-    (c : G → M) (a * b) = (c : G → M) a + (c : G → M) b := by
-  rw [(mem_Z1_iff.1 c.property).2 a b, ha, add_comm]
-
-/-- A continuous 1-cocycle satisfies `c (a ^ k) = k • c a` whenever `a` acts trivially on `M`. -/
-theorem apply_pow_of_smul_eq_self (c : Z1 G M) {a : G} (ha : ∀ m : M, a • m = m) (k : ℕ) :
-    (c : G → M) (a ^ k) = k • (c : G → M) a := by
-  have hpow (j : ℕ) (m : M) : a ^ j • m = m := by
-    induction j with
-    | zero => simp
-    | succ j ihj => rw [pow_succ', mul_smul, ihj, ha]
-  induction k with
-  | zero => simp [map_one_of_mem_Z1 c.property]
-  | succ k ih => rw [pow_succ, apply_mul_of_smul_eq_self c (hpow k) a, ih, succ_nsmul]
-
-end ElementwiseTrivial
-
-section WildTrivial
-
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 variable {M : Type*} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction (Field.absoluteGaloisGroup K) M] [DiscreteTopology M]
@@ -102,32 +73,8 @@ theorem apply_eq_zero_of_mem_wildInertiaSubgroup
     (hM : ∀ m : M, ringChar 𝓀[K] • m = 0 → m = 0)
     (c : Z1 (Field.absoluteGaloisGroup K) M) {g : Field.absoluteGaloisGroup K}
     (hg : g ∈ wildInertiaSubgroup K) :
-    (c : Field.absoluteGaloisGroup K → M) g = 0 := by
-  have hc := mem_Z1_iff.1 c.property
-  let f : wildInertiaSubgroup K →* Multiplicative M :=
-    { toFun := fun x ↦ Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) x.val)
-      map_one' := by simp [map_one_of_mem_Z1 c.property]
-      map_mul' := fun x y ↦ by
-        rw [Subgroup.coe_mul, apply_mul_of_smul_eq_self c (hP x.val x.property), ofAdd_add] }
-  have hf_ker_open : IsOpen (f.ker : Set (wildInertiaSubgroup K)) :=
-    (isOpen_discrete ({0} : Set M)).preimage (hc.1.comp continuous_subtypeVal)
-  have hpro : IsProP (ringChar 𝓀[K]) (wildInertiaSubgroup K) :=
-    isProP_wildInertiaSubgroup K (ringChar 𝓀[K])
-  have hpg : IsPGroup (ringChar 𝓀[K]) f.range := hpro.isPGroup_range f hf_ker_open
-  obtain ⟨k, hk⟩ := hpg ⟨f ⟨g, hg⟩, ⟨⟨g, hg⟩, rfl⟩⟩
-  have hpow_p : (ringChar 𝓀[K]) ^ k • (c : Field.absoluteGaloisGroup K → M) g = 0 := by
-    have h1 : f ⟨g, hg⟩ ^ (ringChar 𝓀[K]) ^ k = 1 := congrArg Subtype.val hk
-    rw [show f ⟨g, hg⟩ = Multiplicative.ofAdd ((c : Field.absoluteGaloisGroup K → M) g) from rfl,
-      ← ofAdd_nsmul, ← ofAdd_zero] at h1
-    exact Multiplicative.ofAdd.injective h1
-  clear hk
-  induction k with
-  | zero => simpa using hpow_p
-  | succ k ih =>
-    apply ih
-    apply hM
-    rw [← mul_nsmul, ← pow_succ]
-    exact hpow_p
+    (c : Field.absoluteGaloisGroup K → M) g = 0 :=
+  (isProP_wildInertiaSubgroup K (ringChar 𝓀[K])).apply_eq_zero_of_mem_Z1 hP hM c hg
 
 /-- A continuous 1-cocycle with `p`-torsion-free coefficients and trivial `P_K`-action is
 right-invariant under `P_K`. -/
@@ -231,10 +178,8 @@ theorem smul_apply_eq_natCard_smul_of_isArithFrobeniusLift_of_mem_inertiaSubgrou
     simpa [mul_assoc, map_mul, map_pow] using h1
   have heq := apply_eq_of_toTameQuotient_eq hP hM c htame
   rw [hc.2 σ τ, hc.2 (τ ^ Nat.card 𝓀[K]) σ, hI _ (pow_mem hτ _),
-    apply_pow_of_smul_eq_self c (hI τ hτ), add_comm ((c : Field.absoluteGaloisGroup K → M) σ)]
-    at heq
+    map_pow_of_smul_eq_self_of_mem_Z1 c.property (hI τ hτ),
+    add_comm ((c : Field.absoluteGaloisGroup K → M) σ)] at heq
   exact add_right_cancel heq
-
-end WildTrivial
 
 end TauCeti.TameCohomology
