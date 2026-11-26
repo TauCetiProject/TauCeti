@@ -24,6 +24,7 @@ sets under every parameter: `(m • ·) ⁻¹' s =ᵐ[μ] s` for all `m : M`. Th
 ## Main results
 
 * `TauCeti.aeSMulInvariants_le`: it is a sub-σ-algebra of the ambient one.
+* `TauCeti.measurable_aeSMulInvariants_dom`: functions measurable for the invariant σ-algebra.
 * `TauCeti.ergodicSMul_iff_aeSMulInvariants`: an invariant measure is ergodic exactly when every
   invariant set is null or conull.
 * `TauCeti.comap_aeSMulInvariants_le`: pullback along a measurable map that is nonsingular and
@@ -40,7 +41,7 @@ namespace TauCeti
 
 open MeasureTheory Filter Set
 
-variable (M : Type*) {X Y : Type*} [SMul M X] [mX : MeasurableSpace X]
+variable (M : Type*) {X Y Z : Type*} [SMul M X] [mX : MeasurableSpace X]
 
 /-- The invariant σ-algebra of an action: the measurable sets `s` with
 `(m • ·) ⁻¹' s =ᵐ[μ] s` for every `m : M`. -/
@@ -63,6 +64,17 @@ theorem measurableSet_aeSMulInvariants {s : Set X} :
     MeasurableSet[aeSMulInvariants M μ] s ↔
       MeasurableSet s ∧ ∀ m : M, (m • ·) ⁻¹' s =ᵐ[μ] s :=
   .rfl
+
+/-- A function is measurable for the invariant σ-algebra exactly when it is measurable and the
+preimage of every measurable set is invariant up to null sets under every parameter. -/
+@[to_additive /-- A function is measurable for the invariant σ-algebra exactly when it is
+measurable and the preimage of every measurable set is invariant up to null sets under every
+parameter. -/]
+theorem measurable_aeSMulInvariants_dom [MeasurableSpace Z] {g : X → Z} :
+    Measurable[aeSMulInvariants M μ] g ↔
+      Measurable g ∧ ∀ m : M, ∀ t, MeasurableSet t → (g ∘ (m • ·)) ⁻¹' t =ᵐ[μ] g ⁻¹' t := by
+  simp only [Measurable, measurableSet_aeSMulInvariants, imp_and, forall_and]
+  exact and_congr_right' ⟨fun h m t ht ↦ h t ht m, fun h t ht m ↦ h m t ht⟩
 
 /-- The invariant σ-algebra is a sub-σ-algebra of the ambient one. -/
 @[to_additive /-- The invariant σ-algebra is a sub-σ-algebra of the ambient one. -/]
