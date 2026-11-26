@@ -56,6 +56,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   composition, up to the binomial coefficient `(m + k).choose m`.
 * `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
   multiplication by `δ f`.
+* `TauCeti.commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top`: for entries `a₁, …, aₘ` in
+  an ideal `I`, the iterated commutator `[⋯[D, a₁], …, aₘ] x` is `D ((a₁ ⋯ aₘ) • x)` modulo `I`.
 * `TauCeti.cotangentSymbol_toCotangent`: the cotangent symbol on classes of elements of `I`;
   `TauCeti.cotangentSymbol_comp_perm` and `TauCeti.cotangentSymbol_comp_const` give its symmetry
   and its composition law.
@@ -424,6 +426,26 @@ theorem commutatorSymbol_apply_sub_mem_smul_top {m : ℕ} (D : differentialOpera
   · simp [hj, hj.ne]
   · simp
   · simp [hj.not_gt, hj.ne, hj.ne']
+
+/-- **Iterated commutators with elements of an ideal.** If `a₁, …, aₘ` lie in `I`, then modulo
+`I` the iterated commutator `[⋯[D, a₁], …, aₘ] x` is `D ((a₁ ⋯ aₘ) • x)`: expanding the
+commutators, every other term is a multiple of some `aᵢ`. -/
+theorem commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top {m : ℕ}
+    (D : differentialOperators R A M N m) {a : Fin m → A} (ha : ∀ i, a i ∈ I) (x : M) :
+    commutatorSymbol R A M N m D a x - (D : M →ₗ[R] N) ((∏ i, a i) • x) ∈
+      I • (⊤ : Submodule A N) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    -- `[D, a₀]` applied to `(a₁ ⋯ aₘ) • x` is `D ((a₀ ⋯ aₘ) • x)` minus a multiple of `a₀`.
+    have h := ih ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.property _⟩
+      (fun i ↦ ha i.succ)
+    rw [smulCommutator_apply_apply, ← mul_smul] at h
+    rw [commutatorSymbol_succ_apply, show Fin.tail a = fun i ↦ a i.succ from rfl,
+      Fin.prod_univ_succ]
+    convert sub_mem h (Submodule.smul_mem_smul (ha 0)
+      (Submodule.mem_top (x := (D : M →ₗ[R] N) ((∏ i : Fin m, a i.succ) • x)))) using 1
+    abel
 
 variable (I) in
 /-- A representative in `I` of a cotangent class. -/

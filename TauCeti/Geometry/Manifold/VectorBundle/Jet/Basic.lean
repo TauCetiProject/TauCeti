@@ -47,9 +47,11 @@ is why the base is assumed boundaryless.
   every `r`-jet is the jet of a section, `C^n` at the base point for any `n`
   (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`) and `C^n` near it when `M` and `V` are `C^n`
   (`TauCeti.JetBundle.exists_contMDiffOn_jet_eq`). The jet is local
-  (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`), linear on sections that are `C^r` at the base
-  point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and vanishes exactly
-  when the derivatives of order at most `r` of the local representative do
+  (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`): it is the symmetrization of the derivatives of
+  any function agreeing with the local representative near the base point
+  (`TauCeti.JetBundle.jet_eq_symmetrizeJets_of_eventuallyEq`). It is linear on sections that are
+  `C^r` at the base point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and
+  vanishes exactly when the derivatives of order at most `r` of the local representative do
   (`TauCeti.JetBundle.jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero`). For the trivial
   bundle over a model space it is the tuple of iterated derivatives of the section
   (`TauCeti.JetBundle.toJets_jet_trivial`).
@@ -350,7 +352,7 @@ theorem jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero {s : ∀ x, V x} 
   exact ⟨fun h k hk ↦ h ⟨k, Nat.lt_succ_of_le hk⟩, fun h k ↦ h k k.is_le⟩
 
 /-- The `r`-jet of a section only depends on its local representative near the image of `x`. -/
-private theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
+theorem jet_eq_symmetrizeJets_of_eventuallyEq {s : ∀ x, V x} {x : M} {g : E → F}
     (hg : FirstJetBundle.localRep I F s x =ᶠ[𝓝 (extChartAt I x x)] g) :
     jet I F r s x = symmetrizeJets 𝕜 E F r fun k : Fin (r + 1) ↦
       iteratedFDeriv 𝕜 k.val g (extChartAt I x x) := by
