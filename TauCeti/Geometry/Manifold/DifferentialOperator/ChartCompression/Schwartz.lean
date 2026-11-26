@@ -35,6 +35,8 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
+* `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function whose
+  readings through cutoffs adding up to `1` on `M` all vanish is zero.
 -/
 
 public section
@@ -159,5 +161,32 @@ theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     exact ⟨φ'.tsupport_subset hx', mem_preimage.2 (hyx ▸ e.map_target (φ.tsupport_subset hy))⟩
 
 end Overlap
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
+  [T2Space M]
+
+/-- **A function is determined by its readings.** Let `ψᵢ` be finitely many cutoffs in charts
+`eᵢ` whose readings `ψᵢ ∘ eᵢ` on `M`, extended by `0`, add up to `1`. A smooth function `u` on `M`
+all of whose readings `ψᵢ · (u ∘ eᵢ⁻¹)` vanish is zero. -/
+theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
+  ext x
+  -- `u x = ∑ᵢ ψᵢ(eᵢ x) u x`, and each term is the reading of `u` in `eᵢ` at `eᵢ x`.
+  rw [ContMDiffMap.coe_zero, Pi.zero_apply, ← one_smul ℝ (u x), ← hψ x, Finset.sum_smul]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  by_cases hx : x ∈ (e i).source
+  · have h := congr($(hu i) (e i x))
+    rwa [cutoffPushforwardSchwartz_apply, (e i).left_inv hx, zero_apply,
+      ← cutoffPullback_one_apply_of_mem (he i) (ψ i) hx] at h
+  · rw [cutoffPullback_apply_of_notMem (he i) _ _ hx, zero_smul]
 
 end OpenPartialHomeomorph
