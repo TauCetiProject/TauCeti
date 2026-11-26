@@ -41,6 +41,8 @@ second transformation `U(a, b, z) = z^{1 - b} U(a - b + 1, 2 - b, z)` (DLMF 13.2
 
 * `Complex.kummerUBracket_intCast` — `F(a, n, w) = 0` for every integer `n`.
 * `Complex.differentiable_kummerUBracket` — `F` is holomorphic in `(a, b, w)` on `ℂ³`.
+* `Differentiable.kummerUBracket` and its `At`, `On` and `WithinAt` variants — `fun_prop`
+  composition lemmas for `F`.
 * `Complex.kummerUBracket_sub_add_one_two_sub` —
   `F(a - b + 1, 2 - b, w) = -e^{(b - 1) w} F(a, b, w)`.
 * `Complex.kummerUBracket_zero_left` — `F(0, b, w) = sin(πb) / π`, so that
@@ -88,6 +90,45 @@ theorem differentiable_kummerUBracket :
   refine Differentiable.sub (Differentiable.mul ?_ (hG (by fun_prop)))
     (Differentiable.mul (Differentiable.mul (by fun_prop) ?_) (hG (by fun_prop))) <;>
     exact Differentiable.regularizedHGFun_singleton (by fun_prop) (by fun_prop) (by fun_prop)
+
+section Comp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g h : E → ℂ} {s : Set E}
+  {x : E}
+
+/-- For `f`, `g` and `h` differentiable at `x` within `s`, so is `y ↦ F(f y, g y, h y)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableWithinAt.kummerUBracket
+    (hf : DifferentiableWithinAt ℂ f s x) (hg : DifferentiableWithinAt ℂ g s x)
+    (hh : DifferentiableWithinAt ℂ h s x) :
+    DifferentiableWithinAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) s x := by
+  have H := (differentiable_kummerUBracket (f x, g x, h x)).comp_differentiableWithinAt x
+    (hf.prodMk (hg.prodMk hh))
+  exact H
+
+/-- For `f`, `g` and `h` differentiable at `x`, so is `y ↦ F(f y, g y, h y)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableAt.kummerUBracket (hf : DifferentiableAt ℂ f x)
+    (hg : DifferentiableAt ℂ g x) (hh : DifferentiableAt ℂ h x) :
+    DifferentiableAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) x := by
+  have H := (differentiable_kummerUBracket (f x, g x, h x)).comp x (hf.prodMk (hg.prodMk hh))
+  exact H
+
+/-- For `f`, `g` and `h` differentiable on `s`, so is `y ↦ F(f y, g y, h y)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableOn.kummerUBracket (hf : DifferentiableOn ℂ f s)
+    (hg : DifferentiableOn ℂ g s) (hh : DifferentiableOn ℂ h s) :
+    DifferentiableOn ℂ (fun y => kummerUBracket (f y) (g y) (h y)) s := fun x hx =>
+  (hf x hx).kummerUBracket (hg x hx) (hh x hx)
+
+/-- For differentiable `f`, `g` and `h`, the function `y ↦ F(f y, g y, h y)` is differentiable. -/
+@[fun_prop]
+theorem _root_.Differentiable.kummerUBracket (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (hh : Differentiable ℂ h) :
+    Differentiable ℂ fun y => kummerUBracket (f y) (g y) (h y) := fun x =>
+  (hf x).kummerUBracket (hg x) (hh x)
+
+end Comp
 
 /-- The bracket form of Kummer's second transformation (DLMF 13.2.40):
 `F(a - b + 1, 2 - b, w) = -e^{(b - 1) w} F(a, b, w)`. The parameter map
