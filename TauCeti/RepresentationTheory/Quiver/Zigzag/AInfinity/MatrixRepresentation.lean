@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixR
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.Combinatorics.SimpleGraph.Bipartite
-import TauCeti.Combinatorics.SimpleGraph.Dart
+import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 
 /-!
 # Higher Hochschild classes and non-formal deformations from matrix representations

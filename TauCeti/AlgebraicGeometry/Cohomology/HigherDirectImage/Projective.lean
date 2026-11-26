@@ -5,68 +5,69 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
-public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
-public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 
 /-!
-# Higher direct images on projective schemes over a Noetherian affine base
+# Coherence and Serre vanishing for higher direct images on projective schemes
 
-Combining the affine-base identification `Hⁿ(X, M)~ ≅ Rⁿ f_* M`
-(`AlgebraicGeometry.Scheme.Modules.tildeCohomologyIsoHigherDirectImage` in
-`TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent`) with Serre's finiteness
-(`TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite`) and vanishing
-(`TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre`) theorems, this file proves:
-* coherence (finite presentation) of `R^q f_* F` for every projective scheme `X` over a Noetherian
-  ring `R`, every quasi-coherent `𝒪_X`-module `F` of finite type, and every `q : ℕ`;
-* vanishing of `R^q f_* (i^* 𝒪(n) ⊗ F)` for every closed subscheme `i : X ⟶ Proj (Sym_R M)` over
-  `Spec R` (with `R` Noetherian and `M` finite), every `q > 0`, and all sufficiently large `n : ℤ`.
-
-## Main declarations
-
-* `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_higherDirectImage_of_isProjectiveOver`:
-  higher direct images of quasi-coherent modules of finite type on a projective scheme over a
-  Noetherian ring are finitely presented.
-* `AlgebraicGeometry.Scheme.Modules.exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor`:
-  higher direct images of sufficiently positive twists vanish in positive degrees.
+Let `R` be a Noetherian commutative ring, `X` a scheme projective over `R`
+(`AlgebraicGeometry.Scheme.IsProjectiveOver R X`), and `M` a quasi-coherent `𝒪_X`-module of finite
+type. Combining Serre's cohomology finiteness theorem
+(`AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isProjectiveOver`) and Serre's vanishing
+theorem
+(`AlgebraicGeometry.Scheme.Modules.exists_subsingleton_cohomology_pullback_twistingSheaf_tensor`)
+with the `Spec R` higher-direct-image characterization
+(`AlgebraicGeometry.Scheme.Modules.tildeCohomologyIsoHigherDirectImage` and
+`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_higherDirectImage_Spec_iff`) shows:
+* coherence: every higher direct image `Rⁿ (X ↘ Spec R)_* M` is finitely presented
+  (`AlgebraicGeometry.Scheme.IsProjectiveOver.isFinitePresentation_higherDirectImage`), the
+  projective-over-`Spec R` case of Hartshorne, Theorem III.8.8(b) and Stacks Tag 02O5;
+* Serre vanishing for higher direct images: for every closed immersion
+  `i : X ⟶ Proj (Sym_R M₀)` over `Spec R` with `M₀` finite,
+  `R^q (X ↘ Spec R)_* (i^* 𝒪(n) ⊗ F) = 0` for every `q > 0` and all sufficiently large `n : ℤ`
+  (`exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor`).
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.8.5 and Theorem
-  III.5.2.
-* [The Stacks Project, Tag 02O5](https://stacks.math.columbia.edu/tag/02O5) (coherence of higher
-  direct images).
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.8.5,
+  Theorem III.5.2, and Theorem III.8.8(b).
+* [The Stacks Project, Tag 02O5](https://stacks.math.columbia.edu/tag/02O5).
 -/
 
 public section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicGeometry Scheme.Modules
+noncomputable section
+
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry AlgebraicGeometry.Scheme.Modules
 open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u
 
-noncomputable section
+namespace AlgebraicGeometry.Scheme
+
+/-- **Coherence of higher direct images for projective schemes over a Noetherian ring** (the
+projective-over-`Spec R` case of Hartshorne, Theorem III.8.8(b), and of the proper theorem in
+Stacks Tag 02O5): if `X` is projective over a Noetherian ring `R` and `M` is a quasi-coherent
+`𝒪_X`-module of finite type, then every higher direct image `Rⁿ (X ↘ Spec R)_* M` is finitely
+presented (hence coherent). -/
+instance IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [CommRing R]
+    [IsNoetherianRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
+    (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
+    (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation :=
+  (M.isFinitePresentation_higherDirectImage_Spec_iff R n).mpr
+    (Module.finitePresentation_of_finite R (Cohomology M n))
+
+end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Modules
-
-/-- **Coherence of projective higher direct images over a Noetherian affine base.** Let `X` be a
-projective scheme over a Noetherian commutative ring `R` and `F` a quasi-coherent `𝒪_X`-module of
-finite type. Then every higher direct image `R^q (X ↘ Spec R)_* F` is finitely presented. -/
-theorem isFinitePresentation_higherDirectImage_of_isProjectiveOver (R : Type u) [CommRing R]
-    [IsNoetherianRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
-    (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
-    (((X ↘ Spec (.of R)).higherDirectImage q).obj F).IsFinitePresentation := by
-  let M : ModuleCat.{u} (CommRingCat.of R) := ModuleCat.of (CommRingCat.of R) (Cohomology F q)
-  have : Module.Finite (CommRingCat.of R) M :=
-    finite_cohomology_of_isProjectiveOver R F q
-  have : Module.FinitePresentation (CommRingCat.of R) M :=
-    Module.finitePresentation_of_finite (CommRingCat.of R) M
-  exact (SheafOfModules.isFinitePresentation (Spec (.of R)).ringCatSheaf).prop_of_iso
-    (tildeCohomologyIsoHigherDirectImage R F q)
-    (isFinitePresentation_tilde M)
 
 /-- **Serre vanishing for higher direct images.** Let `R` be a Noetherian commutative ring, `M` a
 finite `R`-module, `i : X ⟶ Proj (Sym_R M)` a closed immersion over `Spec R`, and `F` a
@@ -96,7 +97,7 @@ theorem exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor
     (inferInstance : (tilde.functor _).PreservesZeroMorphisms)
   exact ((tilde.functor (.of R)).map_isZero
     (ModuleCat.isZero_of_subsingleton (ModuleCat.of (CommRingCat.of R) (Cohomology G q)))).of_iso
-    (tildeCohomologyIsoHigherDirectImage R G q).symm
+    (G.tildeCohomologyIsoHigherDirectImage R q).symm
 
 end AlgebraicGeometry.Scheme.Modules
 

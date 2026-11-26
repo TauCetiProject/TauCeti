@@ -10,13 +10,13 @@ public import Mathlib.Algebra.Order.Ring.Rat
 public import Mathlib.Data.Fintype.Pi
 public import TauCeti.Algebra.Order.BigOperators.Dominance
 import Mathlib.Algebra.Order.Field.Rat
-import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Data.Rat.Floor
 import Mathlib.Order.Fin.Tuple
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # Newton vectors of `GL_n` and the admissible set `B(GL_n, μ)`
@@ -39,11 +39,13 @@ builds on the dominance order and the pairing with `2ρ` of
   totals, and leading partial sums of `ν` at most those of `ν'`. The pairing with `2ρ` is
   monotone (`TauCeti.Dominates.twoRhoPairing_le`) and strictly monotone
   (`TauCeti.Dominates.twoRhoPairing_lt`) for it.
-* For an integral cocharacter `μ`, the admissible set `B(GL_n, μ)` consists of the Newton vectors
-  `ν ≼ μ`, that is `TauCeti.Dominates ν μ` (`TauCeti.admissibleNewtonVectors`). It is finite
-  (`TauCeti.finite_admissibleNewtonVectors`): its slopes lie between the last and the first
-  coordinates of `μ`, and have denominators dividing `n!`. When `μ` is decreasing it is itself the
-  largest element of `B(GL_n, μ)`, the ordinary class. Every `ν ∈ B(GL_n, μ)` has
+* For an integral vector `μ`, `TauCeti.admissibleNewtonVectors μ` consists of the Newton vectors
+  `ν ≼ μ`, that is `TauCeti.Dominates ν μ`. The vector `μ` is used in its given order: when `μ` is
+  decreasing, the dominant representative of an integral cocharacter, this is the admissible set
+  `B(GL_n, μ)`; for other `μ` it is only the set of Newton vectors dominated by `μ`. It is finite
+  for every `μ` (`TauCeti.finite_admissibleNewtonVectors`): its slopes lie between the last and
+  the first coordinates of `μ`, and have denominators dividing `n!`. When `μ` is decreasing it is
+  itself the largest element of `B(GL_n, μ)`, the ordinary class. Every Newton vector `ν ≼ μ` has
   `⟨2ρ, ν⟩ ≤ ⟨2ρ, μ⟩` (`TauCeti.Dominates.twoRhoPairing_le`), and in a product of general linear
   groups the sums of these pairings agree only for `ν = μ`
   (`TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`).
@@ -56,17 +58,19 @@ For instance `B(GL₂, (1, 0))` consists of the ordinary vector `(1, 0)` and the
 
 * `TauCeti.IsNewtonVector ν`: `ν` is decreasing and each slope `λ` of multiplicity `m` has
   `m λ ∈ ℤ`.
-* `TauCeti.admissibleNewtonVectors μ`: the Newton vectors `ν ≼ μ` for an integral vector `μ`.
+* `TauCeti.admissibleNewtonVectors μ`: the Newton vectors `ν ≼ μ` for an integral vector `μ`;
+  for decreasing `μ` this is `B(GL_n, μ)`.
 
 ## Main results
 
 * `TauCeti.IsNewtonVector.exists_int_factorial_mul_eq`: `n! νᵢ` is an integer.
 * `TauCeti.IsNewtonVector.exists_int_eq_of_card_eq_one`: a slope of multiplicity one is an
   integer.
-* `TauCeti.finite_admissibleNewtonVectors`: `B(GL_n, μ)` is finite.
-* `TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`: in a product of general linear
-  groups, the sums of the pairings with `2ρ` of `ν ∈ ∏_w B(GL_n, μ_w)` and of `μ` agree only for
-  `ν = μ`.
+* `TauCeti.finite_admissibleNewtonVectors`: for every integral vector `μ`, the Newton vectors
+  `ν ≼ μ` form a finite set; for decreasing `μ` this is `B(GL_n, μ)`.
+* `TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`: for Newton vectors `ν_w ≼ μ_w`,
+  the sums of the pairings with `2ρ` of `ν` and of `μ` agree only for `ν = μ`; for decreasing
+  `μ_w` these are the families in `∏_w B(GL_n, μ_w)`.
 * `TauCeti.admissibleNewtonVectors_one_zero`: `B(GL₂, (1, 0)) = {(1, 0), (1/2, 1/2)}`.
 
 ## References
@@ -127,14 +131,16 @@ theorem IsNewtonVector.exists_int_eq_of_card_eq_one {ν : Fin n → ℚ} (hν : 
 
 /-! ### The admissible set -/
 
-/-- The **admissible set** `B(GL_n, μ)` of an integral cocharacter `μ`: the Newton vectors
-`ν ≼ μ` (`TauCeti.Dominates ν μ`), that is with the same total slope as `μ` and leading partial
-sums at most those of `μ`. For decreasing `μ` this is the set of Newton vectors of the
-`μ`-admissible classes in `B(GL_n)`. -/
+/-- The Newton vectors `ν` dominated by an integral vector `μ`, `ν ≼ μ` (`TauCeti.Dominates ν μ`),
+that is with the same total slope as `μ` and leading partial sums at most those of `μ`. The
+vector `μ` is not sorted. When `μ` is decreasing, the dominant representative of an integral
+cocharacter, this is the **admissible set** `B(GL_n, μ)`: the set of Newton vectors of the
+`μ`-admissible classes in `B(GL_n)`. For other `μ` it is only the set of Newton vectors dominated
+by `μ`. -/
 def admissibleNewtonVectors (μ : Fin n → ℤ) : Set (Fin n → ℚ) :=
   {ν | IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ)}
 
-/-- Membership in `B(GL_n, μ)`: a Newton vector `ν` with `ν ≼ μ`. -/
+/-- Membership in `TauCeti.admissibleNewtonVectors μ`: a Newton vector `ν` with `ν ≼ μ`. -/
 @[simp]
 theorem mem_admissibleNewtonVectors {μ : Fin n → ℤ} {ν : Fin n → ℚ} :
     ν ∈ admissibleNewtonVectors μ ↔ IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ) :=
@@ -145,52 +151,25 @@ theorem intCast_mem_admissibleNewtonVectors {μ : Fin n → ℤ} (hμ : Antitone
     (fun i ↦ (μ i : ℚ)) ∈ admissibleNewtonVectors μ :=
   ⟨isNewtonVector_intCast hμ, Dominates.refl _⟩
 
-/-- The coordinates of an admissible vector lie between the last and the first coordinates of the
-cocharacter. -/
-private theorem mem_Icc_of_mem_admissibleNewtonVectors {μ : Fin (n + 1) → ℤ}
-    {ν : Fin (n + 1) → ℚ} (hν : ν ∈ admissibleNewtonVectors μ) (i : Fin (n + 1)) :
-    ν i ∈ Set.Icc (μ (Fin.last n) : ℚ) (μ 0) := by
-  obtain ⟨hN, hdom⟩ := hν
-  obtain ⟨htot, hpre⟩ := dominates_iff_forall_prefixSum_le.mp hdom
-  -- the first coordinate is the prefix sum of length `1`, the last one the total minus the
-  -- prefix sum of length `n`
-  have hfirst (x : Fin (n + 1) → ℚ) : prefixSum 1 x = x 0 := by
-    rw [prefixSum_succ (Nat.succ_pos n), prefixSum_zero, zero_add, Fin.mk_zero']
-  have hlast (x : Fin (n + 1) → ℚ) : ∑ i, x i = prefixSum n x + x (Fin.last n) := by
-    rw [← prefixSum_of_le le_rfl]
-    exact prefixSum_succ (Nat.lt_succ_self n) x
-  have h₁ := hpre 1
-  have h₂ := hpre n
-  rw [hfirst, hfirst] at h₁
-  rw [hlast, hlast] at htot
-  exact ⟨by linarith [hN.antitone (Fin.le_last i)], (hN.antitone (Fin.zero_le i)).trans h₁⟩
-
-/-- **Finiteness of the admissible set.** For every integral cocharacter `μ`, the set
-`B(GL_n, μ)` of Newton vectors `ν ≼ μ` is finite. -/
+/-- **Finiteness of the admissible set.** For every integral vector `μ`, the set of Newton
+vectors `ν ≼ μ` is finite: their coordinates lie between the last and the first coordinates of
+`μ`, and in `(1 / n!) ℤ`. For decreasing `μ` this is the admissible set `B(GL_n, μ)`. -/
 theorem finite_admissibleNewtonVectors (μ : Fin n → ℤ) : (admissibleNewtonVectors μ).Finite := by
   rcases n with _ | n
   · exact Set.toFinite _
-  -- every coordinate is `z / (n + 1)!` for an integer `z` in a bounded interval
-  have hN : (0 : ℚ) < (n + 1).factorial := by exact_mod_cast Nat.factorial_pos _
-  refine (Set.Finite.pi (t := fun _ ↦ (fun z : ℤ ↦ (z : ℚ) / (n + 1).factorial) ''
-    Set.Icc ((n + 1).factorial * μ (Fin.last n)) ((n + 1).factorial * μ 0))
-    fun _ ↦ (Set.finite_Icc _ _).image _).subset ?_
-  intro ν hν i _
-  obtain ⟨z, hz⟩ := hν.1.exists_int_factorial_mul_eq i
-  obtain ⟨hlo, hhi⟩ := mem_Icc_of_mem_admissibleNewtonVectors hν i
-  refine ⟨z, ⟨?_, ?_⟩, ?_⟩
-  · have : ((n + 1).factorial : ℚ) * μ (Fin.last n) ≤ z :=
-      hz ▸ mul_le_mul_of_nonneg_left hlo hN.le
-    exact_mod_cast this
-  · have : (z : ℚ) ≤ (n + 1).factorial * μ 0 := hz ▸ mul_le_mul_of_nonneg_left hhi hN.le
-    exact_mod_cast this
-  · simp only [← hz, mul_div_cancel_left₀ _ hN.ne']
+  refine (Set.Finite.pi (t := fun _ ↦ {q : ℚ | q ∈ Set.Icc (μ (Fin.last n) : ℚ) (μ 0) ∧
+      ∃ m : ℤ, ((n + 1).factorial : ℚ) * q = m}) fun _ ↦
+    finite_setOf_mem_Icc_natCast_mul_eq_intCast (Nat.factorial_ne_zero _) _ _).subset ?_
+  rintro ν ⟨hν, hdom⟩ i -
+  exact ⟨⟨hdom.apply_last_le_apply hν.antitone i, hdom.apply_le_apply_zero hν.antitone i⟩,
+    hν.exists_int_factorial_mul_eq i⟩
 
 /-- **The ordinary class in a product of general linear groups.** Let `ν = (ν_w)_w` be a finite
-family with `ν_w ∈ B(GL_n, μ_w)` for every `w`. Then `∑_w ⟨2ρ, ν_w⟩ = ∑_w ⟨2ρ, μ_w⟩` only for
-`ν_w = μ_w` for every `w`. Since each `⟨2ρ, ν_w⟩ ≤ ⟨2ρ, μ_w⟩`
-(`TauCeti.Dominates.twoRhoPairing_le`), for decreasing `μ_w` and the group `∏_w GL_n` this says
-that the ordinary class is the only admissible class whose dimension `d_b` attains the maximum. -/
+family of Newton vectors with `ν_w ≼ μ_w` for every `w`. Then
+`∑_w ⟨2ρ, ν_w⟩ = ∑_w ⟨2ρ, μ_w⟩` only for `ν_w = μ_w` for every `w`. Since each
+`⟨2ρ, ν_w⟩ ≤ ⟨2ρ, μ_w⟩` (`TauCeti.Dominates.twoRhoPairing_le`), for decreasing `μ_w` and the group
+`∏_w GL_n` this says that the ordinary class is the only admissible class whose dimension `d_b`
+attains the maximum. -/
 theorem sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff {W : Type*} [Fintype W]
     {μ : W → Fin n → ℤ} {ν : W → Fin n → ℚ} (hν : ∀ w, ν w ∈ admissibleNewtonVectors (μ w)) :
     ∑ w, twoRhoPairing (ν w) = ∑ w, twoRhoPairing (fun i ↦ (μ w i : ℚ)) ↔
@@ -201,15 +180,9 @@ theorem sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff {W : Type*} [Fintype 
 ordinary vector `(1, 0)` and the basic vector `(1/2, 1/2)`. -/
 theorem admissibleNewtonVectors_one_zero :
     admissibleNewtonVectors ![1, 0] = {![1, 0], ![1 / 2, 1 / 2]} := by
-  -- on `GL₂`, dominance by `(1, 0)` says: total slope `1` and first slope at most `1`
-  have hdom (ν : Fin 2 → ℚ) : (Dominates ν fun i ↦ ((![1, 0] : Fin 2 → ℤ) i : ℚ)) ↔
-      ν 0 + ν 1 = 1 ∧ ν 0 ≤ 1 := by
-    rw [dominates_def]
-    refine ⟨fun ⟨htot, h⟩ ↦ ⟨by simpa [Fin.sum_univ_two, eq_comm] using htot, by simpa using h 1⟩,
-      fun ⟨htot, h⟩ ↦ ⟨by simpa [Fin.sum_univ_two] using htot.symm, fun k hk ↦ ?_⟩⟩
-    interval_cases k <;> simp [Fin.sum_univ_two, htot, h]
   ext ν
-  simp only [mem_admissibleNewtonVectors, hdom, Set.mem_insert_iff, Set.mem_singleton_iff]
+  simp only [mem_admissibleNewtonVectors, dominates_iff_fin_two, Set.mem_insert_iff,
+    Set.mem_singleton_iff, Matrix.cons_val_zero, Matrix.cons_val_one, Int.cast_one, Int.cast_zero]
   constructor
   · rintro ⟨hN, htot, h₀⟩
     have h₁₀ : ν 1 ≤ ν 0 := hN.antitone (Fin.zero_le 1)

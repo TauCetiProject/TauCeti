@@ -371,6 +371,64 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
   rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
     zero_add]
 
+/-- **The Morse index on a complement of a null line of the Hessian.** If the Hessian of `φ` at `x`
+has kernel `ℝ v` and `ℓ v = 1`, then the Morse index of `φ` at `x` is the Morse index at `0` of the
+restriction `w ↦ φ (x + w)` to the kernel of `ℓ`: the line `ℝ v` is null for the Hessian and
+orthogonal to the kernel of `ℓ`. -/
+theorem morseIndex_comp_add_coe_ker [FiniteDimensional ℝ E] {φ : E → ℝ} {x v : E}
+    {ℓ : StrongDual ℝ E} (hφ : ContDiffAt ℝ 2 φ x)
+    (hker : (fderiv ℝ (fderiv ℝ φ) x).ker = ℝ ∙ v) (hℓ : ℓ v = 1) :
+    morseIndex (fun w : ℓ.ker ↦ φ (x + w)) 0 = morseIndex φ x := by
+  set K := ℓ.ker
+  set H := fderiv ℝ (fderiv ℝ φ) x
+  have hsymm : ∀ u w, H u w = H w u := hφ.isSymmSndFDerivAt (by simp)
+  have hv : H v = 0 := H.apply_eq_zero_of_ker_eq_span_singleton hker
+  -- The Hessian of the restriction is the restriction of the Hessian.
+  have hcomp : hessianQuadraticForm (fun w : K ↦ φ (x + w)) 0 =
+      (hessianQuadraticForm φ x).comp K.subtype := by
+    ext w
+    simpa using fderiv_fderiv_comp_add_coe_apply (y := (0 : K)) (by simpa using hφ) w w
+  -- The splitting `E ≃ ℝ × K`, `(a, w) ↦ a • v + w`.
+  let e : (ℝ × K) ≃ₗ[ℝ] E := LinearEquiv.ofLinearMap
+    ((LinearMap.toSpanSingleton ℝ E v).coprod K.subtype)
+    ((ℓ : E →ₗ[ℝ] ℝ).prod (LinearMap.codRestrict K
+      (LinearMap.id - (LinearMap.toSpanSingleton ℝ E v).comp (ℓ : E →ₗ[ℝ] ℝ))
+      fun y ↦ by simp [K, hℓ]))
+    (by ext y; simp)
+    (by
+      refine LinearMap.ext fun ⟨a, ⟨w, hw⟩⟩ ↦ ?_
+      have hw' : ℓ w = 0 := LinearMap.mem_ker.1 hw
+      ext <;> simp [hℓ, hw'])
+  have he : (hessianQuadraticForm φ x).comp (e : ℝ × K →ₗ[ℝ] E) =
+      (0 : QuadraticForm ℝ ℝ).prod ((hessianQuadraticForm φ x).comp K.subtype) := by
+    ext ⟨a, w⟩
+    simp only [QuadraticMap.comp_apply, QuadraticMap.prod_apply, hessianQuadraticForm_apply,
+      zero_apply, zero_add, Submodule.subtype_apply, LinearEquiv.coe_coe, e,
+      LinearEquiv.coe_ofLinearMap, LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply]
+    have hHa : H (a • v + w) = H w := by rw [map_add, map_smul, hv, smul_zero, zero_add]
+    rw [hHa, map_add, map_smul, hsymm (w : E) v, hv]
+    simp [H]
+  rw [morseIndex_def, morseIndex_def, hcomp,
+    (QuadraticMap.Equivalent.sigNeg_eq
+      ⟨QuadraticMap.isometryEquivOfCompLinearEquiv (hessianQuadraticForm φ x) e⟩), he,
+    QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero, zero_add]
+
+/-- **The Hessian on a complement of a null line is invertible.** If the Hessian of `φ` at `x` has
+kernel `ℝ v` and `ℓ v = 1`, then the Hessian at `0` of the restriction `w ↦ φ (x + w)` to the
+kernel of `ℓ` is invertible. -/
+theorem isInvertible_fderiv_fderiv_comp_add_coe_ker [FiniteDimensional ℝ E] {φ : E → ℝ}
+    {x v : E} {ℓ : StrongDual ℝ E} (hφ : ContDiffAt ℝ 2 φ x)
+    (hker : (fderiv ℝ (fderiv ℝ φ) x).ker = ℝ ∙ v) (hℓ : ℓ v = 1) :
+    (fderiv ℝ (fderiv ℝ fun w : ℓ.ker ↦ φ (x + w)) 0).IsInvertible := by
+  have hcomp (u w : ℓ.ker) : fderiv ℝ (fderiv ℝ fun w : ℓ.ker ↦ φ (x + w)) 0 u w =
+      fderiv ℝ (fderiv ℝ φ) x u w := by
+    simpa using fderiv_fderiv_comp_add_coe_apply (y := (0 : ℓ.ker)) (by simpa using hφ) u w
+  refine ContinuousLinearMap.isInvertible_of_injective
+    ((injective_iff_map_eq_zero _).2 fun u hu ↦ Subtype.ext ?_)
+  refine ContinuousLinearMap.eq_zero_of_forall_apply_eq_zero_of_ker_eq_span_singleton
+    (hφ.isSymmSndFDerivAt (by simp)) hker hℓ u.property fun w hw ↦ ?_
+  rw [← hcomp u ⟨w, hw⟩, hu, zero_apply]
+
 /-- **The Morse index is lower semicontinuous.** If `f` is `C²` at `x`, then at every point near
 `x` the Morse index of `f` is at least its Morse index at `x`. The point `x` need not be critical,
 nor nondegenerate: a degenerate Hessian can acquire new negative directions under perturbation,
