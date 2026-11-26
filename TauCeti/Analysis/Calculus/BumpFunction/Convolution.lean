@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
@@ -313,27 +314,14 @@ probability measure with density `φ.normed μ`. -/
 theorem normed_convolution_mem_of_convex (φ : ContDiffBump (0 : G)) {s : Set F}
     (hs : Convex ℝ s) (hsc : IsClosed s) (hg : LocallyIntegrable g μ) (hgs : ∀ x, g x ∈ s)
     (x : G) : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x ∈ s := by
-  set ν := μ.withDensity fun t => ENNReal.ofReal (φ.normed μ t)
-  have hmeas : Measurable fun t => ENNReal.ofReal (φ.normed μ t) :=
-    ENNReal.measurable_ofReal.comp φ.continuous_normed.measurable
-  have hlt : ∀ᵐ t ∂μ, ENNReal.ofReal (φ.normed μ t) < (⊤ : ℝ≥0∞) :=
-    ae_of_all _ fun _ => ENNReal.ofReal_lt_top
-  have htoReal (t : G) : (ENNReal.ofReal (φ.normed μ t)).toReal = φ.normed μ t :=
-    ENNReal.toReal_ofReal (φ.nonneg_normed t)
-  -- The density `φ.normed μ` is nonnegative with integral one.
-  have : IsProbabilityMeasure ν := ⟨by
-    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-      ← ofReal_integral_eq_lintegral_ofReal φ.integrable_normed (ae_of_all _ φ.nonneg_normed),
-      φ.integral_normed, ENNReal.ofReal_one]⟩
   have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
     (lsmul ℝ ℝ) φ.continuous_normed hg x
-  have heq : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x = ∫ t, g (x - t) ∂ν := by
-    rw [convolution_def, integral_withDensity_eq_integral_toReal_smul hmeas hlt]
-    simp only [htoReal, lsmul_apply]
+  have heq : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x = ∫ t, g (x - t) ∂φ.normedMeasure μ := by
+    rw [convolution_def, φ.integral_normedMeasure]
+    simp only [lsmul_apply]
   rw [heq]
   refine hs.integral_mem hsc (ae_of_all _ fun t => hgs _) ?_
-  rw [integrable_withDensity_iff_integrable_smul' hmeas hlt]
-  simpa only [htoReal, ConvolutionExistsAt, lsmul_apply] using hexists
+  simpa only [φ.integrable_normedMeasure_iff, ConvolutionExistsAt, lsmul_apply] using hexists
 
 /-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
 its values in `[a, b]`. -/
