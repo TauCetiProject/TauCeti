@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 public import TauCeti.Analysis.Complex.Theta.Fourier
+import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.Analysis.Complex.Theta.Vanishing
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 
@@ -28,7 +29,9 @@ For `k > 0` and `0 < τ.im`, integrating the theta series termwise
 the shift-by-`k` recurrence and Fourier uniqueness from `TauCeti.Analysis.Complex.Theta.Fourier`,
 `s ↦ (thetaFourierCoeff α s 0, …, thetaFourierCoeff α s (k - 1))` is a linear isomorphism onto
 `Fin k → ℂ`, giving the basis `TauCeti.thetaSectionsBasis` and the dimension formula
-`TauCeti.finrank_thetaSections`.
+`TauCeti.finrank_thetaSections`. Outside the positive-level upper half-plane regime,
+`TauCeti.finrank_thetaSections_of_im_nonpos` and `TauCeti.finrank_thetaSections_zero` record
+the boundary and level-`0` dimension formulas.
 
 ## Main definitions
 
@@ -49,6 +52,8 @@ the shift-by-`k` recurrence and Fourier uniqueness from `TauCeti.Analysis.Comple
   combination of the `θ_r` weighted by its first `k` twisted Fourier coefficients.
 * `TauCeti.finrank_thetaSections`: for `k > 0` and `im τ > 0`, `thetaSections k τ α β` has
   dimension `k`.
+* `TauCeti.finrank_thetaSections_of_im_nonpos`: vanishing dimension for `0 < k` and `τ.im ≤ 0`.
+* `TauCeti.finrank_thetaSections_zero`: complete dimension formula at level `k = 0` for `τ.im ≠ 0`.
 
 ## References
 
@@ -116,12 +121,20 @@ theorem characteristicTheta_one_zero (τ z : ℂ) :
     characteristicTheta 1 τ 0 0 0 z = jacobiTheta₂ z τ := by
   simp [characteristicTheta_apply]
 
+private lemma im_natCast_mul (k : ℕ) (τ : ℂ) : ((k : ℂ) * τ).im = k * τ.im := by
+  rw [← ofReal_natCast, im_ofReal_mul]
+
+private lemma im_natCast_mul_pos {k : ℕ} {τ : ℂ} (hk : 0 < k) (hτ : 0 < τ.im) :
+    0 < ((k : ℂ) * τ).im := by
+  rw [im_natCast_mul]
+  exact mul_pos (Nat.cast_pos.mpr hk) hτ
+
 /-- When `k = 0` or `τ.im ≤ 0`, `characteristicTheta` vanishes identically (inheriting the
 junk-value convention `jacobiTheta₂_undef`). -/
 theorem characteristicTheta_undef {k : ℕ} {τ : ℂ} (h : k = 0 ∨ τ.im ≤ 0) (α β : ℝ) (r : ℤ)
     (z : ℂ) : characteristicTheta k τ α β r z = 0 := by
   have him : (k * τ).im ≤ 0 := by
-    rw [← ofReal_natCast, im_ofReal_mul]
+    rw [im_natCast_mul]
     rcases h with rfl | hτ
     · simp
     · exact mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg k) hτ
@@ -191,11 +204,8 @@ theorem hasSum_characteristicTheta {k : ℕ} (hk : 0 < k) {τ : ℂ} (hτ : 0 < 
         cexp (2 * π * I * n * ((r + α) * τ - β) + π * I * k * n ^ 2 * τ) *
           cexp (2 * π * I * ((r + n * k : ℤ) + α) * z))
       (characteristicTheta k τ α β r z) := by
-  have hkτ : 0 < (k * τ).im := by
-    rw [← ofReal_natCast, im_ofReal_mul]
-    exact mul_pos (Nat.cast_pos.mpr hk) hτ
-  have hsum := (hasSum_jacobiTheta₂_term (k * z + (r + α) * τ - β) hkτ).mul_left
-    (cexp (2 * π * I * (r + α) * z))
+  have hsum := (hasSum_jacobiTheta₂_term (k * z + (r + α) * τ - β)
+    (im_natCast_mul_pos hk hτ)).mul_left (cexp (2 * π * I * (r + α) * z))
   rw [← characteristicTheta_apply] at hsum
   refine hsum.congr_fun fun n => ?_
   simp only [jacobiTheta₂_term, ← Complex.exp_add]
@@ -211,10 +221,8 @@ private lemma thetaFourierCoeff_characteristicTheta_eq {k : ℕ} (hk : 0 < k) {�
         cexp (2 * π * I * n * ((r + α) * τ - β) + π * I * k * n ^ 2 * τ)
       else 0 := by
   have hk0 : (k : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hk.ne'
-  have hkτ : 0 < ((k : ℂ) * τ).im := by
-    rw [← ofReal_natCast, im_ofReal_mul]
-    exact mul_pos (Nat.cast_pos.mpr hk) hτ
-  have hint := integral_cexp_mul_jacobiTheta₂_mul_add hk0 (r - m) ((r + α) * τ - β) hkτ
+  have hint := integral_cexp_mul_jacobiTheta₂_mul_add hk0 (r - m) ((r + α) * τ - β)
+    (im_natCast_mul_pos hk hτ)
   have hcongr :
       thetaFourierCoeff α (characteristicTheta k τ α β r) m =
         ∫ x in (0 : ℝ)..1,
@@ -302,12 +310,16 @@ private noncomputable def thetaCoeffMap (k : ℕ) (τ : ℂ) (α β : ℝ) :
     exact thetaFourierCoeff_add hs ht r
   map_smul' c s := funext fun r => thetaFourierCoeff_smul α c (s : ℂ → ℂ) r
 
+@[simp]
+private lemma thetaCoeffMap_apply (s : thetaSections k τ α β) (r : Fin k) :
+    thetaCoeffMap k τ α β s r = thetaFourierCoeff α (s : ℂ → ℂ) r :=
+  (rfl)
+
 private lemma thetaCoeffMap_characteristicTheta (hτ : 0 < τ.im) (r : Fin k) :
     thetaCoeffMap k τ α β ⟨_, characteristicTheta_mem_thetaSections k τ α β r⟩ =
       Pi.single r 1 := by
   funext m
-  rw [thetaCoeffMap, LinearMap.coe_mk, AddHom.coe_mk,
-    thetaFourierCoeff_characteristicTheta_fin hτ α β r m, Pi.single_apply]
+  rw [thetaCoeffMap_apply, thetaFourierCoeff_characteristicTheta_fin hτ α β r m, Pi.single_apply]
 
 private lemma thetaCoeffMap_bijective (hk : 0 < k) (hτ : 0 < τ.im) :
     Function.Bijective (thetaCoeffMap k τ α β) := by
@@ -322,7 +334,7 @@ private lemma thetaCoeffMap_bijective (hk : 0 < k) (hτ : 0 < τ.im) :
       have := Int.emod_lt_of_pos m hk'
       omega
     have hcongr := congr_fun hs ⟨(m % k).toNat, hlt⟩
-    simpa [thetaCoeffMap, Int.toNat_of_nonneg (Int.emod_nonneg m hk'.ne')] using hcongr
+    simpa [Int.toNat_of_nonneg (Int.emod_nonneg m hk'.ne')] using hcongr
   · refine ⟨∑ r, v r • ⟨_, characteristicTheta_mem_thetaSections k τ α β r⟩, ?_⟩
     simp only [map_sum, map_smul, thetaCoeffMap_characteristicTheta hτ]
     ext m
@@ -352,8 +364,8 @@ coefficients `TauCeti.thetaFourierCoeff α s r`. -/
 theorem thetaSectionsBasis_repr_apply (hk : 0 < k) (hτ : 0 < τ.im) (s : thetaSections k τ α β)
     (r : Fin k) :
     (thetaSectionsBasis hk hτ α β).repr s r = thetaFourierCoeff α (s : ℂ → ℂ) r := by
-  rw [thetaSectionsBasis, Module.Basis.ofEquivFun_repr_apply, LinearEquiv.ofBijective_apply]
-  rfl
+  rw [thetaSectionsBasis, Module.Basis.ofEquivFun_repr_apply, LinearEquiv.ofBijective_apply,
+    thetaCoeffMap_apply]
 
 /-- **Kähler quantization of the degree-`k` torus.** For `k > 0` and `τ` in the upper half-plane,
 the level-`k` theta line on `ℂ / (ℤ + τℤ)` has exactly `k` linearly independent holomorphic
@@ -361,6 +373,32 @@ sections, whatever the characteristics `(α, β)`. -/
 theorem finrank_thetaSections (hk : 0 < k) (hτ : 0 < τ.im) (α β : ℝ) :
     Module.finrank ℂ (thetaSections k τ α β) = k := by
   simp [Module.finrank_eq_card_basis (thetaSectionsBasis hk hτ α β)]
+
+/-- For positive level `k > 0` and `τ.im ≤ 0`, `thetaSections k τ α β` has dimension `0`. -/
+theorem finrank_thetaSections_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
+    (α β : ℝ) : Module.finrank ℂ (thetaSections k τ α β) = 0 := by
+  rw [thetaSections_eq_bot_of_im_nonpos k hk τ hτ α β, finrank_bot]
+
+open scoped Classical in
+/-- **Complete dimension formula at level `k = 0`.** For any non-real period `τ` (`τ.im ≠ 0`), the
+space `thetaSections 0 τ α β` has dimension `1` when both characteristics are integers (the
+trivial flat line bundle) and dimension `0` otherwise. -/
+theorem finrank_thetaSections_zero (τ : ℂ) (hτ : τ.im ≠ 0) (α β : ℝ) :
+    Module.finrank ℂ (thetaSections 0 τ α β) =
+      if (∃ a : ℤ, (a : ℝ) = α) ∧ (∃ b : ℤ, (b : ℝ) = β) then 1 else 0 := by
+  by_cases h : (∃ a : ℤ, (a : ℝ) = α) ∧ (∃ b : ℤ, (b : ℝ) = β)
+  · rw [ite_eq_left h]
+    have h1 : (fun _ : ℂ => (1 : ℂ)) ∈ thetaSections 0 τ α β :=
+      (mem_thetaSections_zero_iff_const hτ h.left h.right).mpr ⟨1, rfl⟩
+    refine finrank_eq_one ⟨fun _ => 1, h1⟩ ?_ fun s => ?_
+    · intro h0
+      have := congrFun (congrArg Subtype.val h0) 0
+      exact one_ne_zero this
+    · obtain ⟨c, hc⟩ := (mem_thetaSections_zero_iff_const hτ h.left h.right).mp s.property
+      refine ⟨c, Subtype.ext ?_⟩
+      ext z
+      simp [hc]
+  · rw [ite_eq_right h, thetaSections_zero_eq_bot_of_not_int hτ h, finrank_bot]
 
 /-- Every level-`k` theta section (`0 < k`) is the finite linear combination of the `k`
 characteristic theta functions weighted by its first `k` twisted Fourier coefficients. -/

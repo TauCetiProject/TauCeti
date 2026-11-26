@@ -57,11 +57,8 @@ theorem thetaFourierCoeff_eq_mul_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α 
       cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * (m + α) * τ) *
         thetaFourierCoeff α s (m + k) := by
   let h : ℂ → ℂ := fun z => cexp (-2 * π * I * (m + α) * z) * s z
-  have hper : Function.Periodic h ((1 : ℝ) : ℂ) := fun z => by
-    simp only [h, ofReal_one, h1, ← mul_assoc, ← Complex.exp_add]
-    rw [show -2 * π * I * (m + α) * (z + 1) + 2 * π * I * α =
-        -2 * π * I * (m + α) * z + (-m : ℤ) * (2 * π * I) by push_cast; ring,
-      Complex.exp_add _ ((-m : ℤ) * (2 * π * I)), Complex.exp_int_mul_two_pi_mul_I, mul_one]
+  have hper : Function.Periodic h ((1 : ℝ) : ℂ) := by
+    simpa only [ofReal_one] using periodic_cexp_mul_of_add_one h1 m
   have key := hper.intervalIntegral_comp_add_eq_of_differentiable
     ((by fun_prop : Differentiable ℂ fun z : ℂ => cexp (-2 * π * I * (m + α) * z)).mul hs) τ
   rw [thetaFourierCoeff_eq_integral, thetaFourierCoeff_eq_integral,

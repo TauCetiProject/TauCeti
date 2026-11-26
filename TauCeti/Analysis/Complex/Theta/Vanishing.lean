@@ -59,6 +59,23 @@ private lemma norm_thetaFourierCoeff_add_level {k : ℕ} {τ : ℂ} {α β : ℝ
   rw [hexp, Complex.mul_I_re, Complex.sub_im, Complex.im_ofReal_mul, Complex.ofReal_im]
   ring
 
+private lemma norm_thetaFourierCoeff_le_add_nat_mul {k : ℕ} {τ : ℂ} (hτ : τ.im ≤ 0) {α β : ℝ}
+    {s : ℂ → ℂ} (hs : s ∈ thetaSections k τ α β) {n : ℤ}
+    (hn : 0 ≤ (n : ℝ) + α + (k : ℝ) / 2) (j : ℕ) :
+    ‖thetaFourierCoeff α s n‖ ≤ ‖thetaFourierCoeff α s (n + j * k)‖ := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have hidx : n + ((j + 1 : ℕ) : ℤ) * k = (n + j * k) + k := by push_cast; ring
+    rw [hidx, norm_thetaFourierCoeff_add_level hs]
+    have hpos : 0 ≤ ((n + (j : ℤ) * (k : ℤ) : ℤ) : ℝ) + α + (k : ℝ) / 2 := by
+      push_cast
+      have hjk : (0 : ℝ) ≤ (j : ℝ) * (k : ℝ) := by positivity
+      linarith
+    have harg : 0 ≤ -2 * π * (((n + (j : ℤ) * (k : ℤ) : ℤ) : ℝ) + α + (k : ℝ) / 2) * τ.im :=
+      mul_nonneg_of_nonpos_of_nonpos (by nlinarith [Real.pi_pos, hpos]) hτ
+    exact ih.trans (le_mul_of_one_le_left (norm_nonneg _) (Real.one_le_exp harg))
+
 /-- When `k > 0` and `τ.im ≤ 0`, there are no nonzero holomorphic theta sections. -/
 theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
     (α β : ℝ) : thetaSections k τ α β = ⊥ := by
@@ -68,20 +85,6 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
     fun m => ?_
   have hzero_ge : ∀ n : ℤ, 0 ≤ (n : ℝ) + α + (k : ℝ) / 2 → thetaFourierCoeff α s n = 0 := by
     intro n hn
-    have hle : ∀ j : ℕ, ‖thetaFourierCoeff α s n‖ ≤ ‖thetaFourierCoeff α s (n + j * k)‖ := by
-      intro j
-      induction j with
-      | zero => simp
-      | succ j ih =>
-        have hidx : n + ((j + 1 : ℕ) : ℤ) * k = (n + j * k) + k := by push_cast; ring
-        rw [hidx, norm_thetaFourierCoeff_add_level hs]
-        have hpos : 0 ≤ ((n + (j : ℤ) * (k : ℤ) : ℤ) : ℝ) + α + (k : ℝ) / 2 := by
-          push_cast
-          have hjk : (0 : ℝ) ≤ (j : ℝ) * (k : ℝ) := by positivity
-          linarith
-        have harg : 0 ≤ -2 * π * (((n + (j : ℤ) * (k : ℤ) : ℤ) : ℝ) + α + (k : ℝ) / 2) * τ.im :=
-          mul_nonneg_of_nonpos_of_nonpos (by nlinarith [Real.pi_pos, hpos]) hτ
-        exact ih.trans (le_mul_of_one_le_left (norm_nonneg _) (Real.one_le_exp harg))
     have hinj : Function.Injective (fun j : ℕ => n + (j : ℤ) * k) := fun j₁ j₂ h => by
       have hk0 : (k : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hk.ne'
       exact Int.natCast_inj.mp (mul_right_cancel₀ hk0 (add_left_cancel h))
@@ -90,7 +93,8 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
         (tendsto_thetaFourierCoeff_zero α s).norm.comp
           (Nat.cofinite_eq_atTop ▸ hinj.tendsto_cofinite)
     have hnorm0 : ‖thetaFourierCoeff α s n‖ ≤ 0 :=
-      le_of_tendsto_of_tendsto' tendsto_const_nhds htend hle
+      le_of_tendsto_of_tendsto' tendsto_const_nhds htend
+        (norm_thetaFourierCoeff_le_add_nat_mul hτ hs hn)
     exact norm_eq_zero.mp (le_antisymm hnorm0 (norm_nonneg _))
   obtain ⟨j, hj⟩ := exists_nat_gt (-(m : ℝ) - α - (k : ℝ) / 2)
   have hge : 0 ≤ ((m + (j : ℤ) * (k : ℤ) : ℤ) : ℝ) + α + (k : ℝ) / 2 := by

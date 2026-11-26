@@ -36,6 +36,8 @@ coefficients `thetaFourierCoeff α s m = fourierCoeffOn zero_lt_one (fun t => ex
 * `TauCeti.tendsto_thetaFourierCoeff_zero`: Riemann–Lebesgue decay of `thetaFourierCoeff`.
 * `TauCeti.eq_zero_of_thetaFourierCoeff_eq_zero`: an entire function with all twisted Fourier
   coefficients zero vanishes identically.
+* `TauCeti.periodic_cexp_mul_of_add_one`: `1`-periodicity of `z ↦ exp (-2πi(m + α)z) * s z` for
+  quasi-periodic `s`.
 
 ## References
 
@@ -101,6 +103,17 @@ theorem thetaFourierCoeff_add {α : ℝ} {s₁ s₂ : ℂ → ℂ}
   simp only [thetaFourierCoeff_def, Pi.add_apply, mul_add]
   exact fourierCoeffOn_add zero_lt_one (hs₁.continuousOn_mul hexp) (hs₂.continuousOn_mul hexp) m
 
+/-- If `s (z + 1) = exp (2πiα) * s z`, then `z ↦ exp (-2πi(m + α)z) * s z` is `1`-periodic for
+every integer `m : ℤ`. -/
+theorem periodic_cexp_mul_of_add_one {α : ℝ} {s : ℂ → ℂ}
+    (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (m : ℤ) :
+    Function.Periodic (fun z => cexp (-2 * π * I * (m + α) * z) * s z) 1 := by
+  intro z
+  simp only [h1, ← mul_assoc, ← Complex.exp_add]
+  rw [show -2 * π * I * (m + α) * (z + 1) + 2 * π * I * α =
+      -2 * π * I * (m + α) * z + (-m : ℤ) * (2 * π * I) by push_cast; ring,
+    Complex.exp_add _ ((-m : ℤ) * (2 * π * I)), Complex.exp_int_mul_two_pi_mul_I, mul_one]
+
 private noncomputable def twistedPeriodic (α : ℝ) (s : ℂ → ℂ) (z : ℂ) : ℂ :=
   cexp (-2 * π * I * α * z) * s z
 
@@ -110,11 +123,7 @@ private noncomputable def twistedCusp (α : ℝ) (s : ℂ → ℂ) : ℂ → ℂ
 private lemma periodic_twistedPeriodic {α : ℝ} {s : ℂ → ℂ}
     (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
     Function.Periodic (twistedPeriodic α s) 1 := by
-  intro z
-  simp only [twistedPeriodic, h1]
-  rw [← mul_assoc, ← Complex.exp_add]
-  congr 2
-  ring
+  simpa [twistedPeriodic] using periodic_cexp_mul_of_add_one h1 0
 
 private lemma twistedCusp_qParam {α : ℝ} {s : ℂ → ℂ}
     (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (z : ℂ) :

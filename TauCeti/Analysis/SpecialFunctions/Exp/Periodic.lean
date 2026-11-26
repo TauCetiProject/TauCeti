@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 
 /-!
 # The periods of `exp (π i ·)` and `exp (2 π i ·)`, and branches of the logarithm
@@ -32,8 +33,6 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   integer `k`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.norm_exp_two_pi_mul_ofReal_mul_I`: the same with the factors ordered `2 π x i`.
-* `Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff`: `exp (2 π i x) = 1` for real `x` if and only
-  if `x` is an integer.
 * `Complex.exp_neg_two_pi_mul_I_mul_ofReal_eq_one_iff`: `exp (-2 π i x) = 1` for real `x` if and
   only if `x` is an integer.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
@@ -86,20 +85,12 @@ the order of the holonomies `exp (2 π θ i)` of flat lines. -/
 theorem norm_exp_two_pi_mul_ofReal_mul_I (x : ℝ) : ‖cexp (2 * π * x * I)‖ = 1 := by
   rw [mul_right_comm, norm_exp_two_pi_mul_I_mul_ofReal]
 
-/-- `e(x) = 1` for real `x` if and only if `x` is an integer. -/
-theorem exp_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
-    cexp (2 * π * I * x) = 1 ↔ ∃ n : ℤ, (n : ℝ) = x := by
-  rw [exp_eq_one_iff]
-  refine ⟨fun ⟨n, hn⟩ => ⟨n, ofReal_injective ?_⟩, fun ⟨n, hn⟩ => ⟨n, ?_⟩⟩
-  · rw [ofReal_intCast]
-    exact (mul_left_cancel₀ two_pi_I_ne_zero (hn.trans (mul_comm _ _))).symm
-  · rw [← hn, ofReal_intCast, mul_comm]
-
 /-- `exp (-2 π i x) = 1` for real `x` if and only if `x` is an integer. -/
 theorem exp_neg_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
     cexp (-2 * π * I * x) = 1 ↔ ∃ n : ℤ, (n : ℝ) = x := by
-  rw [show (-2 * π * I * (x : ℂ)) = -(2 * π * I * x) by ring, exp_neg, inv_eq_one,
-    exp_two_pi_mul_I_mul_ofReal_eq_one_iff]
+  rw [show (-2 * π * I * (x : ℂ)) = 2 * π * I * ((-x : ℝ) : ℂ) by push_cast; ring,
+    ← TauCeti.expTwoPiI_def, TauCeti.expTwoPiI_eq_one_iff]
+  exact ⟨fun ⟨n, hn⟩ => ⟨-n, by push_cast; linarith⟩, fun ⟨n, hn⟩ => ⟨-n, by push_cast; linarith⟩⟩
 
 /-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
 `(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/
