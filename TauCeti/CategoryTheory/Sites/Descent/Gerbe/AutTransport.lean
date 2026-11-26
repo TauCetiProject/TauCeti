@@ -44,7 +44,7 @@ In the namespace `CategoryTheory.Pseudofunctor.GerbeAutTransport`:
   `conjugateCoverAut_cover_independent`: independence of the local isomorphisms and of the cover.
 * `conjugateCoverAut_of_iso`: agreement with conjugation along a global isomorphism.
 * `conjugateCoverHom`, `conjugateCoverAut_comp`, `conjugateCoverAut_reverse`,
-  `conjugateCoverEquiv`: the group isomorphism `Aut x ≃* Aut y`.
+  `conjugateCoverEquiv`, `conjugateCoverEquiv_of_iso`: the group isomorphism `Aut x ≃* Aut y`.
 
 ## References
 
@@ -136,6 +136,7 @@ theorem conjugateDescentIso_one (e : LocalIsos R x y) :
   exact (by simp : (localConjugate i.obj.hom (e i) 1).asIso.hom = 𝟙 _)
 
 /-- The descent automorphism of `a⁻¹` is the inverse of the descent automorphism of `a`. -/
+@[simp]
 theorem conjugateDescentIso_inv (e : LocalIsos R x y) (a : Aut x) :
     conjugateDescentIso hF e a⁻¹ = (conjugateDescentIso hF e a).symm := by
   ext1
@@ -235,6 +236,21 @@ theorem conjugateCoverHom_apply (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut 
     conjugateCoverHom hF hR e a = conjugateCoverAut hF hR e a :=
   (rfl)
 
+@[simp]
+theorem conjugateCoverAut_one (hR : R ∈ J U) (e : LocalIsos R x y) :
+    conjugateCoverAut hF hR e 1 = 1 :=
+  map_one (conjugateCoverHom hF hR e)
+
+@[simp]
+theorem conjugateCoverAut_mul (hR : R ∈ J U) (e : LocalIsos R x y) (a b : Aut x) :
+    conjugateCoverAut hF hR e (a * b) = conjugateCoverAut hF hR e a * conjugateCoverAut hF hR e b :=
+  map_mul (conjugateCoverHom hF hR e) a b
+
+@[simp]
+theorem conjugateCoverAut_inv (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x) :
+    conjugateCoverAut hF hR e a⁻¹ = (conjugateCoverAut hF hR e a)⁻¹ :=
+  map_inv (conjugateCoverHom hF hR e) a
+
 /-- **Composition.** Transport along local isomorphisms `x ≅ y` and then `y ≅ z` is transport along
 any local isomorphisms `x ≅ z`. -/
 theorem conjugateCoverAut_comp (hR : R ∈ J U) (e : LocalIsos R x y) (d : LocalIsos R y z)
@@ -274,5 +290,10 @@ theorem conjugateCoverEquiv_cover_independent {S : Sieve U} (hR : R ∈ J U) (hS
     (e : LocalIsos R x y) (d : LocalIsos S x y) :
     conjugateCoverEquiv hF hR e = conjugateCoverEquiv hF hS d :=
   MulEquiv.ext fun a ↦ conjugateCoverAut_cover_independent hF hR hS e d a
+
+/-- If `d : x ≅ y`, the equivalence from any local isomorphisms is conjugation along `d`. -/
+theorem conjugateCoverEquiv_of_iso (hR : R ∈ J U) (e : LocalIsos R x y) (d : x ≅ y) :
+    conjugateCoverEquiv hF hR e = Aut.autMulEquivOfIso d :=
+  MulEquiv.ext (conjugateCoverAut_of_iso hF hR e d)
 
 end CategoryTheory.Pseudofunctor.GerbeAutTransport
