@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+
 /-!
 # Exact orders of Gamma and the archimedean factors
 
@@ -19,9 +21,10 @@ with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such 
 leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
-`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)` are analytic
-wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
-`Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
+`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)`
+are analytic wherever the Gamma argument avoids the nonpositive integers. Analyticity of Gamma is
+available as `Complex.analyticAt_Gamma` in `Gamma/Basic.lean`; this file proves the shifted result
+(`Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
 nonpositive: none has a zero as a meromorphic germ. At `1 - n`, `Γ_ℝ` is regular for even `n`
 and has a simple pole for odd `n` (`Complex.meromorphicOrderAt_Gammaℝ_one_sub_nat`).
@@ -117,12 +120,6 @@ theorem meromorphicTrailingCoeffAt_Gamma_neg_nat (n : ℕ) :
 @[simp]
 theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma 0 = 1 := by
   simpa using meromorphicTrailingCoeffAt_Gamma_neg_nat 0
-
-/-- Gamma is analytic away from the nonpositive integers. -/
-@[fun_prop]
-theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
-  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
-  simpa only [Pi.inv_def, inv_inv] using h
 
 /-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
 `s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive

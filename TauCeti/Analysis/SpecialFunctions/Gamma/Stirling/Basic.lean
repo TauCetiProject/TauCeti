@@ -31,7 +31,9 @@ Combining the Stieltjes representation with
 `TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le` yields Nemes's explicit bounds
 `‖stirlingRemainder z‖ ≤ 1 / (8 * cos (arg z / 2) ^ 2 * ‖z‖)` on `slitPlane` and
 `‖stirlingRemainder z‖ ≤ 1 / (8 * sin (δ / 2) ^ 2 * ‖z‖)` on every closed sector `|arg z| ≤ π - δ`
-(`0 < δ`, `z ≠ 0`). Taking real parts gives the corresponding bound for `log ‖Γ s‖`, whose
+(`0 < δ`, `z ≠ 0`); at `δ = π / 2` the latter reads `‖stirlingRemainder z‖ ≤ 1 / (4 * ‖z‖)` on the
+nonzero points of the closed right half-plane. Taking real parts gives the corresponding
+bound for `log ‖Γ s‖`, whose
 consequence on vertical strips is in
 `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher derivatives and positive-
 axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.
@@ -46,8 +48,9 @@ axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/R
   conjugation symmetry, shift identity, and vanishing limit at positive integers.
 * `TauCeti.stirlingRemainder_eq_integral`: Stieltjes integral representation of
   `stirlingRemainder` on `slitPlane`.
-* `TauCeti.norm_stirlingRemainder_le`, `TauCeti.norm_stirlingRemainder_le_of_abs_arg_le`: Nemes's
-  explicit slit-plane and closed-sector bounds for `stirlingRemainder`.
+* `TauCeti.norm_stirlingRemainder_le`, `TauCeti.norm_stirlingRemainder_le_of_abs_arg_le`,
+  `TauCeti.norm_stirlingRemainder_le_of_re_nonneg`: Nemes's explicit slit-plane, closed-sector and
+  nonzero points of the closed right half-plane bounds for `stirlingRemainder`.
 * `TauCeti.abs_log_norm_Gamma_sub_stirling_le`: the real-part form for `log ‖Γ s‖`.
 
 ## References
@@ -252,6 +255,19 @@ theorem norm_stirlingRemainder_le_of_abs_arg_le {z : ℂ} {δ : ℝ}
     ‖stirlingRemainder z‖ ≤ 1 / (8 * Real.sin (δ / 2) ^ 2 * ‖z‖) := by
   rw [stirlingRemainder_eq_integral (mem_slitPlane_of_abs_arg_le hδ hz hz0)]
   simpa using norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le_of_abs_arg_le 0 hδ hz
+
+/-- Nemes's bound on the closed right half-plane: `‖R(z)‖ ≤ 1 / (4 ‖z‖)` for nonzero `z` with
+`0 ≤ re z`. This is the sector bound at `δ = π / 2`. -/
+theorem norm_stirlingRemainder_le_of_re_nonneg {z : ℂ} (hz : 0 ≤ z.re) (hz0 : z ≠ 0) :
+    ‖stirlingRemainder z‖ ≤ 1 / (4 * ‖z‖) := by
+  have hdiv : π / 2 / 2 = π / 4 := by ring
+  have hsin : Real.sin (π / 2 / 2) ^ 2 = 1 / 2 := by
+    rw [hdiv, Real.sin_pi_div_four, div_pow, Real.sq_sqrt zero_le_two]
+    norm_num
+  have h := norm_stirlingRemainder_le_of_abs_arg_le (δ := π / 2) (by positivity)
+    (by rw [sub_half]; exact abs_arg_le_pi_div_two_iff.mpr hz) hz0
+  rw [hsin] at h
+  exact h.trans_eq (by ring)
 
 /-- Stirling's formula for `log ‖Γ s‖` on a sector: for `0 < δ` and nonzero `s` with
 `|arg s| ≤ π - δ`,

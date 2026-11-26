@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import TauCeti.Analysis.Complex.Sector.Bounds
@@ -21,6 +23,9 @@ import Mathlib.Analysis.Convex.Contractible
 Gamma on the positive real axis, commutes with complex conjugation on the slit plane, and satisfies
 the functional equation `logGamma (z + 1) = logGamma z + log z` for `z ∈ slitPlane`. In
 particular, its value at `3` is `Real.log 2`, and its real part is `Real.log ‖Complex.Gamma z‖`.
+Its derivative is `Complex.digamma`, so along a vertical line `t ↦ σ + t i` in the slit plane the
+phase `Im (logGamma (σ + t i))` has derivative `Re (digamma (σ + t i))`
+(`TauCeti.hasDerivAt_im_logGamma_ofReal_add_mul_I`).
 
 The branch is constructed once on the whole slit plane, using
 `TauCeti.exists_differentiableOn_eqOn_exp_comp`; its restrictions to sectors therefore agree
@@ -201,6 +206,28 @@ theorem hasDerivAt_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
     HasDerivAt logGamma (Complex.digamma z) z :=
   deriv_logGamma hz ▸
     (differentiableOn_logGamma.differentiableAt (isOpen_slitPlane.mem_nhds hz)).hasDerivAt
+
+/-- Along a vertical line through the slit plane, the phase `t ↦ Im (logGamma (σ + t i))` has
+derivative `Re (digamma (σ + t i))`. -/
+theorem hasDerivAt_im_logGamma_ofReal_add_mul_I {σ t : ℝ} (h : (σ : ℂ) + t * I ∈ slitPlane) :
+    HasDerivAt (fun t : ℝ ↦ (logGamma (σ + t * I)).im) (Complex.digamma (σ + t * I)).re t := by
+  have hpath : HasDerivAt (fun t : ℝ ↦ (σ : ℂ) + t * I) I t := by
+    simpa using (((hasDerivAt_id (t : ℂ)).comp_ofReal (z := t)).mul_const I).const_add (σ : ℂ)
+  have hL := (hasDerivAt_logGamma h).comp t hpath
+  simpa only [Function.comp_def, Complex.imCLM_apply, Complex.mul_I_im] using
+    Complex.imCLM.hasFDerivAt.comp_hasDerivAt t hL
+
+/-- Along a vertical line through any positive real part, integrate the real part of digamma:
+`∫ t in 0..T, Re (digamma (σ + t i)) = Im (logGamma (σ + T i))`. -/
+theorem integral_re_digamma_ofReal_add_mul_I {σ : ℝ} (hσ : 0 < σ) (T : ℝ) :
+    ∫ t in (0 : ℝ)..T, (digamma (σ + t * I)).re = (logGamma (σ + T * I)).im := by
+  have hre : Continuous fun t : ℝ ↦ (digamma (σ + t * I)).re :=
+    Complex.continuous_re.comp (continuous_digamma_ofReal_add_mul_I hσ)
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun _ _ ↦ hasDerivAt_im_logGamma_ofReal_add_mul_I
+      (Complex.mem_slitPlane_iff.mpr (Or.inl (by simpa using hσ))))
+    (hre.intervalIntegrable 0 T)]
+  simp [logGamma_ofReal hσ]
 
 /-- Holomorphy on every sector avoiding the negative real axis. All these sectors use the same
 branch, so their restrictions agree on every overlap. -/
