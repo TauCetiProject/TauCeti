@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.IntervalDomain
 public import TauCeti.Analysis.PDE.MixedProblem
-public import TauCeti.Analysis.PDE.Spectrum.Interval
+import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
 
