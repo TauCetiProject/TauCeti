@@ -18,8 +18,11 @@ import TauCeti.Algebra.BigOperators.Finset.Fiber
 # The grading of domains in bordered Heegaard diagrams
 
 The bordered invariants of Lipshitz, Ozsváth and Thurston are graded by the nonabelian group
-`G'(4k)` of the strands algebra (`TauCeti.StrandGradingGroup`), through a grading of domains. For
-a domain `B` connecting the generator `x` to the generator `y` of a bordered Heegaard diagram,
+`G'(4k)` of the strands algebra, through a grading of domains. In Tau Ceti `G'(n)` is the
+subgroup `TauCeti.StrandGradingGroup.gPrime` of the ambient central extension
+`TauCeti.StrandGradingGroup (Fin n)`; the grading `g'` below takes values in this ambient group,
+and its membership in `G'(n)` is not proved here. For a domain `B` connecting the generator `x` to
+the generator `y` of a bordered Heegaard diagram,
 
   `g'(B) = (-e(B) - n_x(B) - n_y(B), ∂^∂ B)`,
 
@@ -56,7 +59,7 @@ total sum zero the boundary contribution is the linking `L(∂^∂ D, ∂^∂ E)
 
   `n_x(E) + n_w(D) = n_y(D) + n_y(E) - L(∂^∂ D, ∂^∂ E)`,
 
-which is exactly the correction term `L` in the product of `G'(4k)`.
+which is exactly the correction term `L` in the product of `TauCeti.StrandGradingGroup`.
 
 ## Main definitions
 
@@ -515,7 +518,8 @@ theorem IsDomainBetween.periodicGradings_eq (χ : Region → ℤ) (hD : H.IsDoma
 
 /-- **The relative grading is well defined.** Two domains from `x₀` to `x` with the same
 basepoint multiplicity have gradings in the same right coset of the periodic gradings `P(x₀)`, so
-the coset `P(x₀) g'(D)` does not depend on the domain `D` from `x₀` to `x`. -/
+the coset `P(x₀) g'(D)` does not depend on the domain `D` from `x₀` to `x` of a fixed basepoint
+multiplicity. -/
 theorem IsDomainBetween.rightRel_domainGrading (χ : Region → ℤ) {D' : Region → ℤ}
     (hD : H.IsDomainBetween x y D) (hD' : H.IsDomainBetween x y D')
     (h₀ : D' (H.borderRegion 0) = D (H.borderRegion 0)) :

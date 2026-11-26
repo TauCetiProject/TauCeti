@@ -169,14 +169,23 @@ theorem generatorChain_apply [DecidableEq Point] (x : H.Generator) (q : Point) :
     ⟨by rintro ⟨j, rfl⟩; simp, fun h => ⟨_, h⟩⟩
   simp only [generatorChain, Set.indicator_apply, this, Pi.one_apply]
 
-/-- Pairing the `0`-chain of a generator with a ring-valued function on intersection points sums
-the function over the points of the generator. -/
-theorem sum_generatorChain_mul [Fintype Point] {R : Type*} [Ring R] (x : H.Generator)
-    (f : Point → R) : ∑ q, (H.generatorChain x q : R) * f q = ∑ j, f (x.point j) := by
+/-- Pairing the `0`-chain of a generator with a function on intersection points sums the
+function over the points of the generator. Only the zero and one scalar laws are needed, so
+the values may lie in any commutative additive monoid with a zero-preserving `ℤ`-action. -/
+theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
+    [MulActionWithZero ℤ M] (x : H.Generator) (f : Point → M) :
+    ∑ q, H.generatorChain x q • f q = ∑ j, f (x.point j) := by
   classical
   refine (Fintype.sum_of_injective x.point (Function.LeftInverse.injective x.beta_point) _ _
     (fun q hq => ?_) fun j => by simp).symm
   simp [show x.point (H.beta q) ≠ q from fun h => hq ⟨_, h⟩]
+
+/-- Pairing the `0`-chain of a generator with a ring-valued function on intersection points sums
+the function over the points of the generator. -/
+theorem sum_generatorChain_mul [Fintype Point] {R : Type*} [Ring R] (x : H.Generator)
+    (f : Point → R) : ∑ q, (H.generatorChain x q : R) * f q = ∑ j, f (x.point j) := by
+  simp_rw [← zsmul_eq_mul]
+  exact H.sum_generatorChain_smul x f
 
 /-! ### The idempotents of a generator -/
 
