@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
@@ -23,6 +23,14 @@ complex and coclosed for its adjoint. This file proves the **Hodge decomposition
 an orthogonal decomposition. The characterization of closed ranges by a **Poincaré inequality**,
 `LinearPMap.isClosed_range_iff_exists_norm_le_mul_norm`, holds for any closed operator and is in
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange`.
+
+The pair has the **compactness property** `LinearPMap.CompactProperty d₀ d₁` when
+`dom d₁ ∩ dom d₀†`, with its graph norm, embeds compactly into `F`. For a complex with this
+property, the ranges of `d₀`, `d₀†` and `d₁` are closed, with Poincaré inequalities for `d₀†`
+and `d₁`, and the harmonic space is finite dimensional. On a bounded Lipschitz domain, the
+compactness property of the `L²` de Rham complex is the content of Picard's compactness theorem.
+These are the consequences of the compactness property in Arnold, Falk and Winther (2010),
+§3.1.3.
 
 For bounded operators with closed range, the decomposition of the kernel is
 `ContinuousLinearMap.range_sup_ker_inf_ker_adjoint`. Here the operators are unbounded, as the
@@ -43,6 +51,11 @@ and `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`, in
   `LinearPMap.isOrtho_topologicalClosure_range_harmonicSpace`,
   `LinearPMap.isOrtho_harmonicSpace_topologicalClosure_range_adjoint` and
   `LinearPMap.isOrtho_topologicalClosure_range_topologicalClosure_range_adjoint`.
+* `LinearPMap.CompactProperty.isClosed_range_left` and
+  `LinearPMap.CompactProperty.isClosed_range_right`: the compactness property closes the ranges of
+  `d₀` and `d₁`.
+* `LinearPMap.CompactProperty.finiteDimensional_harmonicSpace`: the compactness property makes the
+  harmonic space finite dimensional.
 
 ## References
 
@@ -184,5 +197,123 @@ theorem topologicalClosure_range_sup_harmonicSpace_sup_topologicalClosure_range_
   exact Submodule.sup_orthogonal_of_hasOrthogonalProjection
 
 end Hodge
+
+/-! ### The compactness property -/
+
+section Compact
+
+variable [CompleteSpace E] {d₀ : E →ₗ.[𝕜] F} {d₁ : F →ₗ.[𝕜] G}
+
+variable (d₀ d₁) in
+/-- The **compactness property** of a pair of composable partial linear maps `d₀ : E →ₗ.[𝕜] F` and
+`d₁ : F →ₗ.[𝕜] G`: the vectors `u` of `dom d₁ ∩ dom d₀†` with `‖u‖ ≤ 1`, `‖d₁ u‖ ≤ 1` and
+`‖d₀† u‖ ≤ 1` form a relatively compact subset of `F`. In other words, `dom d₁ ∩ dom d₀†` with
+its graph norm embeds compactly into `F`. -/
+def CompactProperty : Prop :=
+  IsCompact (_root_.closure {u : F | ∃ (h₁ : u ∈ d₁.domain) (h₀ : u ∈ d₀†.domain),
+    ‖u‖ ≤ 1 ∧ ‖d₁ ⟨u, h₁⟩‖ ≤ 1 ∧ ‖d₀† ⟨u, h₀⟩‖ ≤ 1})
+
+variable (d₀ d₁) in
+/-- The compactness property is the relative compactness of the vectors `u` of
+`dom d₁ ∩ dom d₀†` with `‖u‖ ≤ 1`, `‖d₁ u‖ ≤ 1` and `‖d₀† u‖ ≤ 1`. -/
+theorem compactProperty_def : CompactProperty d₀ d₁ ↔
+    IsCompact (_root_.closure {u : F | ∃ (h₁ : u ∈ d₁.domain) (h₀ : u ∈ d₀†.domain),
+      ‖u‖ ≤ 1 ∧ ‖d₁ ⟨u, h₁⟩‖ ≤ 1 ∧ ‖d₀† ⟨u, h₀⟩‖ ≤ 1}) :=
+  Iff.rfl
+
+variable (d₀ d₁) in
+/-- In finite dimension every pair of partial linear maps has the compactness property. -/
+theorem compactProperty_of_finiteDimensional [FiniteDimensional 𝕜 F] :
+    CompactProperty d₀ d₁ := by
+  have := FiniteDimensional.proper_rclike 𝕜 F
+  refine ((Metric.isBounded_closedBall (x := (0 : F)) (r := 1)).subset ?_).isCompact_closure
+  rintro u ⟨-, -, hu, -⟩
+  exact mem_closedBall_zero_iff.2 hu
+
+/-- A vector in the kernel of a partial linear map lies in its domain, with value of norm at most
+one. -/
+private theorem exists_norm_apply_le_one_of_mem_ker {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace 𝕜 H] {f : F →ₗ.[𝕜] H} {u : F} (hu : u ∈ f.ker) :
+    ∃ h : u ∈ f.domain, ‖f ⟨u, h⟩‖ ≤ 1 :=
+  ⟨f.ker_le_domain hu, by
+    rw [(coe_mem_ker_iff (x := ⟨u, f.ker_le_domain hu⟩)).1 hu, norm_zero]
+    exact zero_le_one⟩
+
+/-- **The Poincaré inequality for `d₁`.** In a complex `range d₀ ≤ ker d₁` with the compactness
+property, `d₀` densely defined and `d₁` closed, for some `c > 0`, `‖u‖ ≤ c ‖d₁ u‖` for every `u`
+in the domain of `d₁` orthogonal to its kernel. -/
+theorem CompactProperty.exists_norm_le_mul_norm_right (h : CompactProperty d₀ d₁)
+    (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed)
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    ∃ c > 0, ∀ u : d₁.domain, (u : F) ∈ d₁.kerᗮ → ‖(u : F)‖ ≤ c * ‖d₁ u‖ := by
+  refine exists_norm_le_mul_norm_of_isCompact_closure hc₁ h fun u hu hu1 hdu ↦ ?_
+  -- A vector orthogonal to `ker d₁` is orthogonal to `range d₀`, so `d₀†` kills it.
+  have hker : (u : F) ∈ d₀†.ker := by
+    rw [← orthogonal_range_eq_ker_adjoint hd₀]
+    exact Submodule.orthogonal_le hcomplex hu
+  obtain ⟨h₀, hz⟩ := exists_norm_apply_le_one_of_mem_ker hker
+  exact ⟨u.property, h₀, hu1, hdu, hz⟩
+
+/-- **The Poincaré inequality for `d₀†`.** In a complex `range d₀ ≤ ker d₁` with the compactness
+property, `d₀` densely defined and `d₁` closed, for some `c > 0`, `‖u‖ ≤ c ‖d₀† u‖` for every
+`u` in the domain of `d₀†` orthogonal to its kernel. -/
+theorem CompactProperty.exists_norm_le_mul_norm_adjoint_left [CompleteSpace F]
+    (h : CompactProperty d₀ d₁) (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed)
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    ∃ c > 0, ∀ u : d₀†.domain, (u : F) ∈ d₀†.kerᗮ → ‖(u : F)‖ ≤ c * ‖d₀† u‖ := by
+  refine exists_norm_le_mul_norm_of_isCompact_closure (adjoint_isClosed hd₀) h
+    fun u hu hu1 hdu ↦ ?_
+  -- A vector orthogonal to `ker d₀†` lies in the closure of `range d₀`, so `d₁` kills it.
+  have hker : (u : F) ∈ d₁.ker := by
+    rw [← topologicalClosure_range_eq_orthogonal_ker_adjoint hd₀] at hu
+    exact topologicalClosure_range_le_ker hc₁ hcomplex hu
+  obtain ⟨h₁, hz⟩ := exists_norm_apply_le_one_of_mem_ker hker
+  exact ⟨h₁, u.property, hu1, hz, hdu⟩
+
+/-- **The range of `d₁` is closed.** In a complex `range d₀ ≤ ker d₁` with the compactness
+property, `d₀` densely defined and `d₁` closed, the range of `d₁` is closed. -/
+theorem CompactProperty.isClosed_range_right [CompleteSpace F] (h : CompactProperty d₀ d₁)
+    (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed)
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    _root_.IsClosed (LinearMap.range d₁.toFun : Set G) :=
+  have ⟨_, _, hc⟩ := h.exists_norm_le_mul_norm_right hd₀ hc₁ hcomplex
+  isClosed_range_of_norm_le_mul_norm hc₁ hc
+
+/-- **The range of `d₀†` is closed.** In a complex `range d₀ ≤ ker d₁` with the compactness
+property, `d₀` densely defined and `d₁` closed, the range of `d₀†` is closed. -/
+theorem CompactProperty.isClosed_range_adjoint_left [CompleteSpace F]
+    (h : CompactProperty d₀ d₁) (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed)
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    _root_.IsClosed (LinearMap.range d₀†.toFun : Set E) :=
+  have ⟨_, _, hc⟩ := h.exists_norm_le_mul_norm_adjoint_left hd₀ hc₁ hcomplex
+  isClosed_range_of_norm_le_mul_norm (adjoint_isClosed hd₀) hc
+
+/-- **The range of `d₀` is closed.** In a complex `range d₀ ≤ ker d₁` with the compactness
+property, `d₀` closed and densely defined and `d₁` closed, the range of `d₀` is closed. -/
+theorem CompactProperty.isClosed_range_left [CompleteSpace F] (h : CompactProperty d₀ d₁)
+    (hc₀ : d₀.IsClosed) (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed)
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    _root_.IsClosed (LinearMap.range d₀.toFun : Set F) :=
+  isClosed_range_of_isClosed_range_adjoint hc₀ hd₀
+    (h.isClosed_range_adjoint_left hd₀ hc₁ hcomplex)
+
+/-- **The harmonic space is finite dimensional.** If `d₀` and `d₁` have the compactness property,
+with `d₀` densely defined and `d₁` closed, the harmonic space `ker d₁ ⊓ ker d₀†` is finite
+dimensional. -/
+theorem CompactProperty.finiteDimensional_harmonicSpace (h : CompactProperty d₀ d₁)
+    (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d₁.IsClosed) :
+    FiniteDimensional 𝕜 (harmonicSpace d₀ d₁) := by
+  have hemb := (isClosed_harmonicSpace hd₀ hc₁).isClosedEmbedding_subtypeVal
+  refine FiniteDimensional.of_isCompact_closedBall₀ 𝕜 one_pos <|
+    (hemb.isCompact_preimage h).of_isClosed_subset Metric.isClosed_closedBall
+      fun x hx ↦ subset_closure ?_
+  -- The unit ball of the harmonic space lies in the set of the compactness property, since
+  -- `d₁` and `d₀†` vanish on harmonic vectors.
+  obtain ⟨hk₁, hk₀⟩ := mem_harmonicSpace_iff.1 x.property
+  obtain ⟨h₁, hz₁⟩ := exists_norm_apply_le_one_of_mem_ker hk₁
+  obtain ⟨h₀, hz₀⟩ := exists_norm_apply_le_one_of_mem_ker hk₀
+  exact ⟨h₁, h₀, mem_closedBall_zero_iff.1 hx, hz₁, hz₀⟩
+
+end Compact
 
 end LinearPMap
