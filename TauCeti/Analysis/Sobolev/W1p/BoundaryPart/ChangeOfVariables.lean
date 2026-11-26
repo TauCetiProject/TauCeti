@@ -361,42 +361,32 @@ private theorem exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradie
         ‖W1p.gradient u‖ =
           |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient v‖ := by
   have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
-  -- The derivative of `x ↦ a • x` has norm `‖a‖ ‖id‖` and Jacobian determinant `aⁿ`.
-  have hnorm : ∀ (a : ℝ) (x : E),
-      ‖fderiv ℝ (fun x : E => a • x) x‖ ≤ ‖a‖ * ‖ContinuousLinearMap.id ℝ E‖ :=
-    fun a x => (norm_fderiv_const_smul_id a x).le
-  have hdet : ∀ (a : ℝ) (x : E),
-      |a| ^ Module.finrank ℝ E ≤ |(fderiv ℝ (fun x : E => a • x) x).det| :=
-    fun a x => by rw [det_fderiv_const_smul_id, abs_pow]
-  have habs : ∀ a : ℝ, a ≠ 0 → 0 < |a| ^ Module.finrank ℝ E := fun a ha => by positivity
-  -- `Φ = r⁻¹ • ·` maps `U` into `V`, and `Ψ = r • ·` maps `V` into `U` and inverts it.
-  have hΦmaps : MapsTo (fun x : E => r⁻¹ • x) U V := fun x hx => by
-    rw [hUV] at hx
-    obtain ⟨y, hy, rfl⟩ := hx
-    simpa [inv_smul_smul₀ hr] using hy
-  have hΨmaps : MapsTo (fun x : E => r • x) V U := fun y hy => by
-    rw [SetLike.mem_coe, ← SetLike.mem_coe, hUV]
-    exact smul_mem_smul_set hy
-  have hΦc : ContDiff ℝ ∞ fun x : E => r⁻¹ • x := contDiff_const_smul r⁻¹
-  have hΨc : ContDiff ℝ ∞ fun x : E => r • x := contDiff_const_smul r
-  have hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U :=
-    (hΦc.differentiable (by simp)).differentiableOn
-  have hΨ : DifferentiableOn ℝ (fun x : E => r • x) V :=
-    (hΨc.differentiable (by simp)).differentiableOn
-  have hΦinj : InjOn (fun x : E => r⁻¹ • x) U := (smul_right_injective E hr').injOn
-  have hΨinj : InjOn (fun x : E => r • x) V := (smul_right_injective E hr).injOn
+  -- The hypotheses of `W1p.compL` for the dilation `x ↦ a • x`, used at `a = r⁻¹` and `a = r`.
+  have hd (a : ℝ) {s : Set E} : DifferentiableOn ℝ (fun x : E => a • x) s :=
+    differentiableOn_id.const_smul a
+  have hinj {a : ℝ} (ha : a ≠ 0) {s : Set E} : InjOn (fun x : E => a • x) s :=
+    (smul_right_injective E ha).injOn
+  have hnorm (a : ℝ) (x : E) := (norm_fderiv_const_smul_id a x).le
+  have hdet (a : ℝ) (x : E) :
+      |a| ^ Module.finrank ℝ E ≤ |(fderiv ℝ (fun x : E => a • x) x).det| := by
+    simp [det_fderiv_const_smul_id]
+  -- `Φ = r⁻¹ • ·` maps `U = r • V` into `V`, and `Ψ = r • ·` maps `V` into `U` and inverts it.
+  have hΦmaps : MapsTo (fun x : E => r⁻¹ • x) U V := fun x hx =>
+    (mem_smul_set_iff_inv_smul_mem₀ hr _ x).1 (hUV ▸ hx)
+  have hΨmaps : MapsTo (fun x : E => r • x) V U := fun y hy => hUV ▸ smul_mem_smul_set hy
   -- `u` is the dilate of `v = u (r • ·)`, which lies in `W^{1,p}_Γ(V)`.
-  obtain ⟨v, rfl⟩ : ∃ v, W1p.compL _ hp hΦ hΦinj hΦmaps (fun x _ => hnorm r⁻¹ x) (habs r⁻¹ hr')
-      (fun x _ => hdet r⁻¹ x) v = u :=
-    ⟨_, W1p.compL_compL_of_leftInvOn _ hp hΦ hΦinj hΦmaps _ _ _ hΨ hΨinj hΨmaps
-      (fun y _ => hnorm r y) (habs r hr) (fun y _ => hdet r y) (fun x _ => smul_inv_smul₀ hr x) u⟩
+  obtain ⟨v, rfl⟩ : ∃ v, W1p.compL _ hp (hd r⁻¹) (hinj hr') hΦmaps (fun x _ => hnorm r⁻¹ x)
+      (by positivity) (fun x _ => hdet r⁻¹ x) v = u :=
+    ⟨_, W1p.compL_compL_of_leftInvOn _ hp (hd r⁻¹) (hinj hr') hΦmaps _ _ _ (hd r) (hinj hr) hΨmaps
+      (fun y _ => hnorm r y) (by positivity) (fun y _ => hdet r y) (fun x _ => smul_inv_smul₀ hr x)
+      u⟩
   refine ⟨v, ?_, W1p.norm_value_compL_inv_smul hp _ _ _ _ _ _ hr hUV v,
     W1p.norm_gradient_compL_inv_smul hp _ _ _ _ _ _ hr hUV v⟩
   rw [← preimage_smul_inv₀ hr] at hu
-  exact (W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp hΦ hΦinj hΦmaps _ _ _ hΦc
-    (Homeomorph.smulOfNeZero r⁻¹ hr').isProperMap hΨc (Homeomorph.smulOfNeZero r hr).isProperMap
-    hΨmaps (fun y _ => hnorm r y) (habs r hr) (fun y _ => hdet r y)
-    (fun y => inv_smul_smul₀ hr y)).1 hu
+  exact (W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp _ _ hΦmaps _ _ _ (contDiff_const_smul r⁻¹)
+    (Homeomorph.smulOfNeZero r⁻¹ hr').isProperMap (contDiff_const_smul r)
+    (Homeomorph.smulOfNeZero r hr).isProperMap hΨmaps (fun y _ => hnorm r y) (by positivity)
+    (fun y _ => hdet r y) (fun y => inv_smul_smul₀ hr y)).1 hu
 
 /-- One direction of `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: a
 Poincaré–Friedrichs inequality on `W^{1,p}_Γ(V)` with constant `C` gives one on
@@ -430,8 +420,8 @@ theorem W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff (hp : p ≠ ⊤) 
   refine ⟨fun h => ?_, forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp hr hUV⟩
   have hVU : (V : Set E) = r⁻¹ • (U : Set E) := by rw [hUV, inv_smul_smul₀ hr]
   have h' := forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp (inv_ne_zero hr) hVU h
-  rwa [inv_smul_smul₀ hr, abs_inv, ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 hr),
-    one_mul] at h'
+  rw [inv_smul_smul₀ hr] at h'
+  simpa [abs_inv, ← mul_assoc, hr] using h'
 
 end Dilation
 

@@ -75,8 +75,9 @@ theorem eLpNorm_comp_inv_smul_restrict_smul (u : E → G) {r : ℝ} (hr : r ≠ 
     map_addHaar_smul μ hr', restrict_smul, eLpNorm_smul_measure_of_ne_zero (by positivity),
     smul_eq_mul]
   congr 1
-  rw [inv_pow, inv_inv, abs_pow, ENNReal.ofReal_rpow_of_pos (by positivity), ← Real.rpow_natCast,
-    ← Real.rpow_mul (abs_nonneg r), one_div, ENNReal.toReal_inv, div_eq_mul_inv]
+  -- The measure factor is `|(r⁻¹ ^ n)⁻¹| = |r| ^ n`, raised to the power `1 / p`.
+  rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg]
+  simp [div_eq_mul_inv, Real.rpow_natCast_mul (abs_nonneg r)]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p` for
 `r ≠ 0`, where `n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`,

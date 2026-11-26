@@ -447,10 +447,13 @@ theorem W1p.norm_value_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r • 
     (u : W1p mu V p) :
     ‖W1p.value (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
       |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value u‖ := by
-  rw [Lp.norm_def, Lp.norm_def,
-    eLpNorm_congr_ae (W1p.value_compL_ae _ hp hΦ hinj hmaps hL hc hdet u), hUV,
-    Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by positivity)]
+  have he : eLpNorm (W1p.value (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.value u) p (mu.restrict V) := by
+    rw [eLpNorm_congr_ae (W1p.value_compL_ae _ hp hΦ hinj hmaps hL hc hdet u), hUV,
+      Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r)]
 
 /-- **Dilation scaling of the gradient.** If `U = r • V` with `r ≠ 0`, the dilate `u (r⁻¹ • ·)` of
 `u ∈ W^{1,p}(V)` has `‖∇(u (r⁻¹ • ·))‖_{Lᵖ(U)} = |r| ^ (n / p - 1) * ‖∇u‖_{Lᵖ(V)}`, where `n` is
@@ -469,8 +472,9 @@ theorem W1p.norm_gradient_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r �
     rw [eLpNorm_congr_ae h, hUV, ← Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
     exact eLpNorm_const_smul _ _ _ _
   -- It remains to compute the real factor `|r|⁻¹ * |r| ^ (n / p) = |r| ^ (n / p - 1)`.
-  rw [Lp.norm_def, Lp.norm_def, he, Real.rpow_sub_one (abs_ne_zero.2 hr)]
-  simp [Real.rpow_nonneg (abs_nonneg r), div_eq_inv_mul, mul_assoc]
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r), Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  ring
 
 end Dilation
 
