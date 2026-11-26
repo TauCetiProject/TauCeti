@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import TauCeti.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import TauCeti.RingTheory.MilnorK.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Homogeneity of the Steinberg ideal
@@ -102,12 +103,6 @@ theorem tprod_mem_steinbergRelations {n : ℕ} (f : Fin n → Rˣ) (i : ℕ) (hi
     (PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (f k)) ∈ steinbergRelations R n :=
   Submodule.subset_span ⟨f, i, hi, h, rfl⟩
 
-private theorem ofMul_append {m n : ℕ} (g : Fin m → Rˣ) (f : Fin n → Rˣ) :
-    Fin.append (fun k ↦ Additive.ofMul (g k)) (fun k ↦ Additive.ofMul (f k)) =
-      fun k ↦ Additive.ofMul (Fin.append g f k) := by
-  funext k
-  refine Fin.addCases (fun k ↦ ?_) (fun k ↦ ?_) k <;> simp
-
 /-- The multiplication `⨂^i ⊗ ⨂^j → ⨂^(i + j)` of tensor powers, as a bilinear map. -/
 private abbrev gMulBilin (i j : ℕ) :
     ⨂[ℤ]^i (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^j (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^(i + j) (Additive Rˣ) :=
@@ -132,7 +127,8 @@ theorem gMul_mem_steinbergRelations_left {i j : ℕ} (a : ⨂[ℤ]^i (Additive R
     Submodule.map₂_span_span, Submodule.span_le]
   rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨f, l, hl, h, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
-  rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
+  rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ← Function.comp_def Additive.ofMul,
+    ← Function.comp_def Additive.ofMul, ← Fin.comp_append]
   refine tprod_mem_steinbergRelations _ (i + l) (by omega) ?_
   -- The entries `i + l` and `i + l + 1` of the concatenation are the entries `l` and `l + 1`
   -- of its right block `f`.
@@ -153,7 +149,8 @@ theorem gMul_mem_steinbergRelations_right {i j : ℕ} {x : ⨂[ℤ]^i (Additive 
     Submodule.map₂_span_span, Submodule.span_le]
   rintro _ ⟨_, ⟨f, l, hl, h, rfl⟩, _, ⟨g, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
-  rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
+  rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ← Function.comp_def Additive.ofMul,
+    ← Function.comp_def Additive.ofMul, ← Fin.comp_append]
   refine tprod_mem_steinbergRelations _ l (by omega) ?_
   -- The entries `l` and `l + 1` of the concatenation are those of its left block `f`.
   have e₀ : (⟨l, by omega⟩ : Fin (i + j)) = Fin.castAdd j ⟨l, Nat.lt_of_succ_lt hl⟩ := by
