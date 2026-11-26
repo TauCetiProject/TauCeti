@@ -54,9 +54,9 @@ is the Fourier integral of `t^{s-1}`, regularised at `∞`.
 * `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`: joint analyticity in `(s, z)` on
   `{0 < Re s} × {0 < Re z}`.
 * `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos`,
-  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_pos`,
-  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_pos_eq_sum`: integrability on `(δ, ∞)` for `δ > 0`
-  and one or `n` integrations by parts.
+  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral`,
+  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral`: integrability on `(δ, ∞)`
+  for `δ > 0` and one or `n` integrations by parts.
 * `Complex.norm_cpow_mul_exp_neg_mul_le`: the bound `‖t^γ e^{-wt}‖ ≤ t^{Re γ}` for `Re w ≥ 0`.
 * `Complex.integrableOn_cpow_mul_exp_mul_I_Ioi`: on the imaginary axis, `t^γ e^{ixt}` is
   integrable on `(δ, ∞)` for `Re γ < -1`.
@@ -303,8 +303,8 @@ theorem integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos (γ : ℂ) {z : ℂ} (hz : 
 
 /-- One integration by parts in `∫_δ^∞ t^γ e^{-zt} dt`, for `Re z > 0` and `δ > 0`:
 it equals `z⁻¹ δ^γ e^{-zδ} + z⁻¹ γ ∫_δ^∞ t^{γ-1} e^{-zt} dt`. -/
-theorem integral_cpow_mul_exp_neg_mul_Ioi_of_pos (γ : ℂ) {z : ℂ} (hz : 0 < z.re) {δ : ℝ}
-    (hδ : 0 < δ) :
+theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral (γ : ℂ) {z : ℂ} (hz : 0 < z.re)
+    {δ : ℝ} (hδ : 0 < δ) :
     ∫ t in Ioi δ, (t : ℂ) ^ γ * cexp (-(z * t)) =
       z⁻¹ * ((δ : ℂ) ^ γ * cexp (-(z * δ))) +
         z⁻¹ * (γ * ∫ t in Ioi δ, (t : ℂ) ^ (γ - 1) * cexp (-(z * t))) := by
@@ -349,7 +349,7 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_of_pos (γ : ℂ) {z : ℂ} (hz : 0 < 
 
 /-- `n` integrations by parts in `∫_δ^∞ t^{α-1} e^{-zt} dt`, for `Re z > 0` and `δ > 0`. The
 `k`-th endpoint term carries the falling factorial `(α - 1)(α - 2)⋯(α - k)`. -/
-theorem integral_cpow_mul_exp_neg_mul_Ioi_of_pos_eq_sum (α : ℂ) {z : ℂ} (hz : 0 < z.re)
+theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral (α : ℂ) {z : ℂ} (hz : 0 < z.re)
     {δ : ℝ} (hδ : 0 < δ) (n : ℕ) :
     ∫ t in Ioi δ, (t : ℂ) ^ (α - 1) * cexp (-(z * t)) =
       ∑ k ∈ range n, z⁻¹ ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
@@ -362,8 +362,8 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_of_pos_eq_sum (α : ℂ) {z : ℂ} (hz
     -- The exponent produced by the last integration by parts, `α - 1 - n - 1`, must be put in
     -- the form `α - 1 - (n + 1)` with a cast natural number to match the statement at `n + 1`.
     have hexp : α - 1 - (n : ℂ) - 1 = α - 1 - ((n + 1 : ℕ) : ℂ) := by push_cast; ring
-    rw [ih, integral_cpow_mul_exp_neg_mul_Ioi_of_pos (α - 1 - n) hz hδ, sum_range_succ,
-      descPochhammer_succ_eval, hexp]
+    rw [ih, integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral (α - 1 - n) hz hδ,
+      sum_range_succ, descPochhammer_succ_eval, hexp]
     ring
 
 /-- For `Re w ≥ 0` and `t > 0`, `‖t^γ e^{-wt}‖ ≤ t^{Re γ}`. -/
@@ -398,7 +398,7 @@ private noncomputable def gammaSplit (α : ℂ) (δ : ℝ) (n : ℕ) (w : ℂ) :
 private theorem gammaSplit_of_re_pos {α z : ℂ} (hα : 0 < α.re) (hz : 0 < z.re) {δ : ℝ}
     (hδ : 0 < δ) (n : ℕ) : gammaSplit α δ n z = Gamma α * z ^ (-α) := by
   have hint := integrableOn_cpow_mul_exp_neg_mul_Ioi hα hz
-  rw [gammaSplit, add_assoc, ← integral_cpow_mul_exp_neg_mul_Ioi_of_pos_eq_sum α hz hδ n,
+  rw [gammaSplit, add_assoc, ← integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral α hz hδ n,
     intervalIntegral.integral_of_le hδ.le,
     ← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
       (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hδ.le)),
