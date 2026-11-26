@@ -12,7 +12,6 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import TauCeti.Algebra.BigOperators.Finset.Pairs
-import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Analysis.Calculus.Deriv.PositivePart
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -30,17 +29,16 @@ times `t > 0`, and local integrability of the repulsion sum on `[0, t]`. An orde
 integrable down to `0` while `StrictAnti (X t)` holds for `t > 0`.
 
 This file introduces both the deterministic path predicate `IsDysonPath` and the almost-sure
-measure-level predicate `IsDysonSolution`, proves pairwise inverse-gap integrability, the
-Rogers–Shi entrance bound, and time-shift restart invariance, establishes the pathwise `ℓ²` energy
-identity, contraction, and uniqueness, and constructs concrete witnesses for `n ≤ 1` and for
-zero-noise `n = 2` (including coincident initial states).
+measure-level predicate `IsDysonSolution`, proves pairwise inverse-gap integrability and the
+Rogers–Shi entrance bound, establishes the pathwise `ℓ²` energy identity, contraction, and
+uniqueness, and constructs concrete witnesses for `n ≤ 1` and for zero-noise `n = 2` (including
+coincident initial states).
 Globally Lipschitz chamber truncations and localization live in
 `TauCeti.Probability.DysonBrownianMotion.Truncation`.
 
 ## Main declarations
 
-* `TauCeti.Probability.IsDysonPath`: deterministic pathwise solution predicate for a driving path,
-  with time-shift restart `TauCeti.Probability.IsDysonPath.shift`.
+* `TauCeti.Probability.IsDysonPath`: deterministic pathwise solution predicate for a driving path.
 * `TauCeti.Probability.IsDysonSolution`: almost-sure solution predicate driven by `B` at parameter
   `β`.
 * `TauCeti.Probability.IsDysonPath.intervalIntegrable_sub_inv` and
@@ -231,48 +229,6 @@ theorem integral_sum_Ioi_sub_inv_le (hX : IsDysonPath n x w X) (t : ℝ≥0) :
   have hmul := mul_le_mul_of_nonneg_left hmono (by positivity : (0 : ℝ) ≤ (n : ℝ) / 2)
   rwa [← mul_assoc, hcancel, one_mul] at hmul
 
-private theorem uIcc_subset_uIcc_zero_add (t₀ t : ℝ≥0) :
-    uIcc (t₀ : ℝ) ((t₀ + t : ℝ≥0) : ℝ) ⊆ uIcc 0 ((t₀ + t : ℝ≥0) : ℝ) := by
-  rw [uIcc_of_le (NNReal.coe_le_coe.2 le_self_add), uIcc_of_le (t₀ + t).coe_nonneg]
-  exact Icc_subset_Icc t₀.coe_nonneg le_rfl
-
-/-- **Time-shift invariance (semigroup restart).** Shifting a Dyson trajectory `X` forward by any
-`t₀ : ℝ≥0` yields a Dyson trajectory started at `X t₀` and driven by the increment path
-`t ↦ w (t₀ + t) - w t₀`. When `0 < t₀`, the restarted initial state `X t₀` lies in the open Weyl
-chamber `{z | StrictAnti z}` even if `X 0` had coincident coordinates. -/
-theorem shift (hX : IsDysonPath n x w X) (t₀ : ℝ≥0) :
-    IsDysonPath n (X t₀) (fun t i ↦ w (t₀ + t) i - w t₀ i) (fun t ↦ X (t₀ + t)) where
-  continuous := hX.continuous.comp (continuous_const.add continuous_id)
-  strictAnti _ ht := hX.strictAnti _ (add_pos_of_nonneg_of_pos _root_.zero_le ht)
-  intervalIntegrable t i := by
-    have hint := (hX.intervalIntegrable (t₀ + t) i).mono_set (uIcc_subset_uIcc_zero_add t₀ t)
-    have hshift : IntervalIntegrable
-        (fun s : ℝ ↦ ∑ j ∈ Finset.univ.erase i,
-          (X ((t₀ : ℝ) + s).toNNReal i - X ((t₀ : ℝ) + s).toNNReal j)⁻¹)
-        volume 0 t := by
-      simpa [NNReal.coe_add] using hint.comp_add_left (t₀ : ℝ)
-    refine hshift.congr fun s hs ↦ ?_
-    rw [uIoc_of_le t.coe_nonneg] at hs
-    simp [Real.toNNReal_add t₀.coe_nonneg hs.1.le, Real.toNNReal_coe]
-  eq_integral t i := by
-    have h1 := hX.eq_integral (t₀ + t) i
-    have h2 := hX.eq_integral t₀ i
-    have hadj := intervalIntegral.integral_add_adjacent_intervals
-      (hX.intervalIntegrable_dysonDrift t₀ i)
-      ((hX.intervalIntegrable_dysonDrift (t₀ + t) i).mono_set (uIcc_subset_uIcc_zero_add t₀ t))
-    have hchg : (∫ s in (0 : ℝ)..t, dysonDrift n (X (t₀ + s.toNNReal)) i) =
-        ∫ u in (t₀ : ℝ)..((t₀ + t : ℝ≥0) : ℝ), dysonDrift n (X u.toNNReal) i := by
-      have hcongr : (∫ s in (0 : ℝ)..t, dysonDrift n (X (t₀ + s.toNNReal)) i) =
-          ∫ s in (0 : ℝ)..t, dysonDrift n (X ((t₀ : ℝ) + s).toNNReal) i :=
-        intervalIntegral.integral_congr fun s hs ↦ by
-          rw [uIcc_of_le t.coe_nonneg] at hs
-          simp [Real.toNNReal_add t₀.coe_nonneg hs.1, Real.toNNReal_coe]
-      rw [hcongr,
-        intervalIntegral.integral_comp_add_left
-          (fun u : ℝ ↦ dysonDrift n (X u.toNNReal) i) (t₀ : ℝ),
-        add_zero, NNReal.coe_add]
-    linarith
-
 private theorem eq_integral_of_mem_uIcc (hX : IsDysonPath n x w X) {s t : ℝ≥0} {r : ℝ}
     (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
     X r.toNNReal i = x i + w r.toNNReal i +
@@ -315,12 +271,6 @@ theorem sum_sub_sq_le_of_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y
         (hX.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
         (hY.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
 
-/-- Squared `ℓ²` distance between two Dyson trajectories driven by the same path is antitone on
-`[0, ∞)`. -/
-theorem antitone_sum_sub_sq (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) :
-    Antitone fun t ↦ ∑ i : Fin n, (X t i - Y t i) ^ 2 :=
-  fun _ _ hst ↦ hX.sum_sub_sq_le_of_le hY hst
-
 /-- **Continuous dependence on the initial configuration.** The squared `ℓ²` distance at any time
 `t` is bounded by the initial squared `ℓ²` distance `∑ i, (x i - y i) ^ 2`. -/
 theorem sum_sub_sq_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (t : ℝ≥0) :
@@ -330,9 +280,12 @@ theorem sum_sub_sq_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (t :
 
 /-- **Pathwise uniqueness.** Two Dyson trajectories started at the same configuration `x` and driven
 by the same forcing path `w` are identical. -/
-theorem eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n x w Y) : X = Y :=
-  funext fun t ↦ TauCeti.eq_of_sum_sq_sub_le_zero <| by
+theorem eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n x w Y) : X = Y := by
+  ext t i
+  have hle : ∑ j : Fin n, (X t j - Y t j) ^ 2 ≤ 0 := by
     simpa only [sub_self, zero_pow two_ne_zero, Finset.sum_const_zero] using hX.sum_sub_sq_le hY t
+  exact sub_eq_zero.1 <| (Finset.sum_sq_eq_zero_iff _ _).1
+    (le_antisymm hle (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)) i (Finset.mem_univ i)
 
 /-- Coordinates of a Dyson trajectory lie in the closed decreasing chamber at every time. -/
 protected theorem antitone (hX : IsDysonPath n x w X) (t : ℝ≥0) : Antitone (X t) := by
@@ -511,21 +464,6 @@ theorem ae_eq (hX : IsDysonSolution β n x P B X) (hY : IsDysonSolution β n x P
     ∀ᵐ ω ∂P, ∀ t, X t ω = Y t ω := by
   filter_upwards [hX, hY] with _ hωX hωY
   exact congrFun (hωX.eq hωY)
-
-/-- Almost every sample path of an `IsDysonSolution` lies in the closed decreasing Weyl chamber at
-all times `t ≥ 0`. -/
-theorem ae_antitone (hX : IsDysonSolution β n x P B X) :
-    ∀ᵐ ω ∂P, ∀ t : ℝ≥0, Antitone (X t ω) := by
-  filter_upwards [hX] with _ hω t
-  exact hω.antitone t
-
-/-- Almost surely, the squared `ℓ²` distance between two solutions driven by the same process `B` is
-antitone in time. -/
-theorem ae_antitone_sum_sub_sq (hX : IsDysonSolution β n x P B X)
-    (hY : IsDysonSolution β n y P B Y) :
-    ∀ᵐ ω ∂P, Antitone fun t : ℝ≥0 ↦ ∑ i : Fin n, (X t ω i - Y t ω i) ^ 2 := by
-  filter_upwards [hX, hY] with _ hωX hωY
-  exact hωX.antitone_sum_sub_sq hωY
 
 /-- Almost-sure `ℓ²` stability in the initial configuration `x, y` for solutions driven by the same
 process `B`. -/

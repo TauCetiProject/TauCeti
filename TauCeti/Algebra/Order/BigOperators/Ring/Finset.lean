@@ -13,12 +13,9 @@ public import Mathlib.Algebra.BigOperators.Intervals
 
 `Finset.sum_sq_le_sum_mul` bounds the sum of squares of nonnegative elements by their sum
 times a common upper bound, in a partially ordered semiring.
-`Finset.sum_sq_le_zero_iff` characterizes when a finite sum of squares is nonpositive, and
-`Finset.eqOn_of_sum_sq_sub_le_zero` (`TauCeti.eq_of_sum_sq_sub_le_zero` on a finite type) deduces
-pointwise equality from nonpositivity of a sum of squared differences.
-`Finset.sum_range_sq_sub_le` specializes `sum_sq_le_sum_mul` to successive differences
-`t (i + 1) - t i` along a monotone prefix in a partially ordered ring, bounding the sum of their
-squares by the endpoint difference `t n - t 0` times a common upper bound.
+`Finset.sum_range_sq_sub_le` specializes this to successive differences `t (i + 1) - t i`
+along a monotone prefix in a partially ordered ring, bounding the sum of their squares by
+the endpoint difference `t n - t 0` times a common upper bound.
 These bounds convert sums of squared partition increments into mesh bounds by telescoping.
 
 `Finset.prod_abs_eq_neg_one_pow_card_filter_neg_mul_prod` computes the sign of a finite product in
@@ -47,20 +44,6 @@ theorem sum_sq_le_sum_mul {ι R : Type*} [Semiring R] [PartialOrder R] [IsOrdere
   rw [sum_mul]
   exact sum_le_sum fun i hi ↦ by
     simpa only [pow_two] using mul_le_mul_of_nonneg_left (hδ i hi) (hf i hi)
-
-/-- A finite sum of squares is nonpositive if and only if every summand on the finset vanishes. -/
-theorem sum_sq_le_zero_iff {ι R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R]
-    [ExistsAddOfLE R] (s : Finset ι) (f : ι → R) :
-    ∑ i ∈ s, f i ^ 2 ≤ 0 ↔ ∀ i ∈ s, f i = 0 := by
-  rw [← sum_sq_eq_zero_iff]
-  exact ⟨fun h ↦ le_antisymm h (sum_nonneg fun _ _ ↦ sq_nonneg _), le_of_eq⟩
-
-/-- Two functions agree on a finset `s` whenever the sum over `s` of their squared differences is
-nonpositive. -/
-theorem eqOn_of_sum_sq_sub_le_zero {ι R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-    (s : Finset ι) {f g : ι → R} (h : ∑ i ∈ s, (f i - g i) ^ 2 ≤ 0) :
-    Set.EqOn f g s := fun i hi ↦
-  sub_eq_zero.1 ((s.sum_sq_le_zero_iff fun j ↦ f j - g j).1 h i hi)
 
 /-- Along a monotone prefix, the sum of squared successive differences is at most the
 endpoint difference times any common upper bound on the successive differences. -/
@@ -122,12 +105,5 @@ theorem sub_one_mul_sum_Ico_add_le_of_mul_le {R : Type*} [NonAssocRing R] [Preor
       exact sub_le_sub_right (hstep k hk) (f k)
   rw [← mul_sum, sum_Ico_sub f hm] at hle
   exact (add_le_add_left hle (f M)).trans_eq (sub_add_cancel (f m) (f M))
-
-/-- Two functions on a finite type are equal whenever the sum of their squared differences is
-nonpositive. -/
-theorem eq_of_sum_sq_sub_le_zero {ι R : Type*} [Fintype ι] [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] {f g : ι → R} (h : ∑ i, (f i - g i) ^ 2 ≤ 0) :
-    f = g :=
-  funext fun i ↦ univ.eqOn_of_sum_sq_sub_le_zero h (mem_univ i)
 
 end TauCeti

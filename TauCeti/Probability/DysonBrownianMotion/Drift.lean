@@ -11,7 +11,6 @@ public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Analysis.Normed.Field.Lemmas
-import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -41,18 +40,14 @@ To construct Dyson trajectories up to chamber exit via standard globally Lipschi
 also define the `ε`-truncated drift `truncatedDysonDrift ε n`, obtained by clamping each ordered
 gap `x i - x j` (`i < j`) below at `ε > 0`. It agrees with `dysonDrift n` on the `ε`-interior of
 the chamber while remaining globally bounded, `2 ε⁻²`-Lipschitz in the supremum norm (uniformly in
-`n`), centered, equivariant under positive rescaling and chamber-preserving reflection
-`(-x) ∘ Fin.revPerm`, and monotonically dissipative on all of `Fin n → ℝ`.
+`n`), centered, and monotonically dissipative on all of `Fin n → ℝ`.
 
 ## Main declarations
 
-* `TauCeti.Probability.dysonDrift`: the singular Coulomb repulsion drift on `Fin n → ℝ`, with
-  permutation equivariance `TauCeti.Probability.dysonDrift_comp_equiv` and continuity
-  `TauCeti.Probability.continuousOn_dysonDrift`.
+* `TauCeti.Probability.dysonDrift`: the singular Coulomb repulsion drift on `Fin n → ℝ`.
 * `TauCeti.Probability.sum_mul_dysonDrift_eq_sum_Ioi`: antisymmetric pairing over `i < j`.
-* `TauCeti.Probability.sum_dysonDrift_eq_zero`,
-  `TauCeti.Probability.sum_self_mul_dysonDrift_eq_inv_mul_choose`, and
-  `TauCeti.Probability.sum_self_mul_dysonDrift`: first- and second-moment identities.
+* `TauCeti.Probability.sum_dysonDrift_eq_zero` and `TauCeti.Probability.sum_self_mul_dysonDrift`:
+  first- and second-moment identities.
 * `TauCeti.Probability.sum_dysonDrift_sub_mul_sub_nonpos`: monotone dissipativity on the chamber.
 * `TauCeti.Probability.sum_dysonDrift_sub_mul_comp_sub_nonpos` and
   `TauCeti.Probability.sum_dysonDrift_sub_mul_max_sub_zero_nonpos`: dissipativity against monotone
@@ -63,11 +58,8 @@ the chamber while remaining globally bounded, `2 ε⁻²`-Lipschitz in the supre
 * `TauCeti.Probability.mul_sum_Ioi_sub_inv_le_sum_sub_two_mul_mul_dysonDrift`: entrance-weight lower
   bound.
 * `TauCeti.Probability.sum_dysonDrift_sq`: Calogero–Moser partial-fraction identity.
-* `TauCeti.Probability.truncatedDysonDrift`,
-  `TauCeti.Probability.truncatedDysonDrift_neg_comp_revPerm`,
-  `TauCeti.Probability.truncatedDysonDrift_smul`, and
-  `TauCeti.Probability.lipschitzWith_truncatedDysonDrift`: globally Lipschitz `ε`-truncation and
-  its symmetries.
+* `TauCeti.Probability.truncatedDysonDrift` and
+  `TauCeti.Probability.lipschitzWith_truncatedDysonDrift`: globally Lipschitz `ε`-truncation.
 
 ## References
 
@@ -170,14 +162,6 @@ theorem dysonDrift_neg (n : ℕ) (x : Fin n → ℝ) :
   refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
   rw [show -x i - -x j = -(x i - x j) by ring, inv_neg]
 
-/-- Permuting particle labels commutes with `dysonDrift`: evaluating at `x ∘ σ` permutes the
-output coordinates by `σ`. -/
-theorem dysonDrift_comp_equiv (n : ℕ) (σ : Fin n ≃ Fin n) (x : Fin n → ℝ) :
-    dysonDrift n (x ∘ σ) = dysonDrift n x ∘ σ := by
-  ext i
-  simp only [dysonDrift_eq_inv_mul_sum, Function.comp_apply]
-  exact congrArg _ (Equiv.sum_comp σ fun j ↦ (x (σ i) - x j)⁻¹)
-
 /-- First coordinate of the two-particle Dyson drift. -/
 theorem dysonDrift_two_zero (x : Fin 2 → ℝ) :
     dysonDrift 2 x 0 = (2 * (x 0 - x 1))⁻¹ := by
@@ -199,11 +183,6 @@ theorem continuousAt_dysonDrift {n : ℕ} {x : Fin n → ℝ} (hx : Function.Inj
     tendsto_finsetSum _ fun j hj ↦ ((continuousAt_apply i _).sub (continuousAt_apply j _)).inv₀
       (sub_ne_zero.2 (hx.ne (Finset.ne_of_mem_erase hj).symm))
 
-/-- `dysonDrift n` is continuous on the set of configurations with pairwise distinct coordinates. -/
-theorem continuousOn_dysonDrift (n : ℕ) :
-    ContinuousOn (dysonDrift n) {x : Fin n → ℝ | Function.Injective x} :=
-  fun _ hx ↦ (continuousAt_dysonDrift hx).continuousWithinAt
-
 /-! ### Antisymmetric pairing and algebraic identities -/
 
 /-- **Antisymmetric pairing formula for `dysonDrift`.** Pairing `dysonDrift n x` against any weight
@@ -221,35 +200,26 @@ theorem sum_dysonDrift_eq_zero (n : ℕ) (x : Fin n → ℝ) :
     ∑ i : Fin n, dysonDrift n x i = 0 := by
   simpa using sum_mul_dysonDrift_eq_sum_Ioi n (fun _ ↦ 1) x
 
-/-- **Virial identity for all `n` (including `n = 0`).** For every `n : ℕ` and any configuration
-`x : Fin n → ℝ` with distinct coordinates, `∑ i, x i * dysonDrift n x i = n⁻¹ * n.choose 2`. -/
-theorem sum_self_mul_dysonDrift_eq_inv_mul_choose {n : ℕ} {x : Fin n → ℝ}
-    (hx : Function.Injective x) :
-    ∑ i : Fin n, x i * dysonDrift n x i = (n : ℝ)⁻¹ * (n.choose 2 : ℝ) := by
-  rw [sum_mul_dysonDrift_eq_sum_Ioi]
-  have hones (i : Fin n) : ∑ j ∈ Finset.Ioi i, (x i - x j) * (x i - x j)⁻¹ =
-      (Finset.Ioi i).card := by
-    rw [Finset.sum_congr rfl fun j hj ↦
-      mul_inv_cancel₀ (sub_ne_zero.2 (hx.ne (Finset.mem_Ioi.1 hj).ne))]
-    simp
-  simp_rw [hones, ← Nat.cast_sum]
-  refine congrArg _ (congrArg Nat.cast ?_)
-  have hcard : (∑ i : Fin n, (Finset.Ioi i).card) =
-      (((Finset.univ : Finset (Fin n)) ×ˢ Finset.univ).filter fun p ↦ p.1 < p.2).card := by
-    rw [Finset.card_filter, Finset.sum_product]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← Finset.card_filter]
-    exact congrArg Finset.card (by ext j; simp)
-  rw [hcard, Finset.card_product_filter_lt, Finset.card_univ, Fintype.card_fin]
-
 /-- **Virial identity.** At any configuration with distinct coordinates (`n ≥ 1`), pairing `x`
 with `dysonDrift n x` gives `(n - 1) / 2`. -/
 theorem sum_self_mul_dysonDrift {n : ℕ} (hn : 0 < n) {x : Fin n → ℝ}
     (hx : Function.Injective x) :
     ∑ i : Fin n, x i * dysonDrift n x i = ((n : ℝ) - 1) / 2 := by
-  rw [sum_self_mul_dysonDrift_eq_inv_mul_choose hx, Nat.cast_choose_two]
+  rw [sum_mul_dysonDrift_eq_sum_Ioi]
+  have hones (i : Fin n) : ∑ j ∈ Finset.Ioi i, (x i - x j) * (x i - x j)⁻¹ =
+      ∑ _j ∈ Finset.Ioi i, (1 : ℝ) :=
+    Finset.sum_congr rfl fun j hj ↦ mul_inv_cancel₀ (sub_ne_zero.2 (hx.ne (Finset.mem_Ioi.1 hj).ne))
+  simp_rw [hones]
+  have hdouble : 2 * (∑ i : Fin n, ∑ _j ∈ Finset.Ioi i, (1 : ℝ)) = (n : ℝ) * ((n : ℝ) - 1) := by
+    calc 2 * (∑ i : Fin n, ∑ _j ∈ Finset.Ioi i, (1 : ℝ))
+        = ∑ i : Fin n, ∑ _j ∈ Finset.Ioi i, ((1 : ℝ) + 1) := by
+          simp [Finset.mul_sum, two_mul]
+      _ = ∑ i : Fin n, ∑ _j ∈ ({i}ᶜ : Finset (Fin n)), (1 : ℝ) :=
+          Finset.sum_sum_Ioi_add_eq_sum_sum_off_diag (fun _ _ : Fin n ↦ (1 : ℝ))
+      _ = (n : ℝ) * ((n : ℝ) - 1) := by
+          simp [Finset.card_compl, nsmul_eq_mul, Nat.cast_sub hn]; ring
   have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
-  field_simp [hn₀]
+  field_simp [hn₀]; linarith
 
 /-- Difference pairing identity for `dysonDrift` at arbitrary configurations `x` and `y`. -/
 theorem sum_dysonDrift_sub_mul_sub_eq_sum_Ioi (n : ℕ) (x y : Fin n → ℝ) :
@@ -443,28 +413,6 @@ theorem truncatedDysonDrift_one (ε : ℝ) : truncatedDysonDrift ε 1 = 0 :=
 theorem truncatedDysonDrift_add_const (ε : ℝ) (n : ℕ) (x : Fin n → ℝ) (c : ℝ) :
     truncatedDysonDrift ε n (fun i ↦ x i + c) = truncatedDysonDrift ε n x := by
   ext i; simp [truncatedDysonDrift_apply]
-
-/-- Reflecting and reversing coordinates via `x ↦ (-x) ∘ Fin.revPerm` (which preserves the
-decreasing Weyl chamber) negates and reverses `truncatedDysonDrift`. -/
-theorem truncatedDysonDrift_neg_comp_revPerm (ε : ℝ) (n : ℕ) (x : Fin n → ℝ) :
-    truncatedDysonDrift ε n ((-x) ∘ Fin.revPerm) =
-      -(truncatedDysonDrift ε n x ∘ Fin.revPerm) := by
-  ext i
-  simp only [truncatedDysonDrift_apply, Pi.neg_apply, Function.comp_apply, Fin.revPerm_apply,
-    neg_sub_neg]
-  rw [← Fin.map_revPerm_Iio i, ← Fin.map_revPerm_Ioi i, Finset.sum_map, Finset.sum_map]
-  simp only [Equiv.coe_toEmbedding, Fin.revPerm_apply]
-  ring
-
-/-- Rescaling both coordinates and cutoff by `c > 0` rescales `truncatedDysonDrift` by `c⁻¹`. -/
-theorem truncatedDysonDrift_smul {c : ℝ} (hc : 0 < c) (ε : ℝ) (n : ℕ) (x : Fin n → ℝ) :
-    truncatedDysonDrift (c * ε) n (c • x) = c⁻¹ • truncatedDysonDrift ε n x := by
-  ext i
-  have hterm (u v : Fin n) :
-      (max (c * x u - c * x v) (c * ε))⁻¹ = c⁻¹ * (max (x u - x v) ε)⁻¹ := by
-    rw [← mul_sub, ← mul_max_of_nonneg _ _ hc.le, mul_inv]
-  simp only [truncatedDysonDrift_apply, Pi.smul_apply, smul_eq_mul, hterm, ← Finset.mul_sum]
-  ring
 
 /-- On the `ε`-interior of the open Weyl chamber (`∀ i < j, ε ≤ x i - x j`), the `ε`-truncated
 drift agrees with `dysonDrift n`. -/

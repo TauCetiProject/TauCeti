@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Probability.Process.Adapted
-public import Mathlib.Topology.Defs.Filter
 public import TauCeti.Probability.DysonBrownianMotion.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.ODE.Gronwall
-import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
-import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Nonautonomous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -27,11 +23,10 @@ Dyson integral equation to the globally Lipschitz nonautonomous ODE
 `truncatedDysonPath`.
 
 This file constructs `truncatedDysonPath` and develops its finite-horizon integral-equation
-uniqueness, Grönwall stability in `(x, w)`, causal congruence, measurability and filtration
-adaptedness, global `ℓ²` energy identity and contraction, short-time separation from the open Weyl
-chamber, consistency across cutoffs before chamber exit, localization of `IsDysonPath`, and
-deterministic, adapted, and almost-sure conditional pasting of non-colliding chamber truncations
-into global Dyson trajectories via finite-stage stabilization of `(m + 1)⁻¹` cutoffs.
+uniqueness, Grönwall stability in `(x, w)`, causal congruence in the driving path, global `ℓ²`
+energy identity and contraction, consistency across cutoffs before chamber exit, localization of
+`IsDysonPath`, and deterministic and almost-sure construction of global Dyson trajectories from
+non-colliding chamber truncations.
 
 ## Main declarations
 
@@ -40,28 +35,18 @@ into global Dyson trajectories via finite-stage stabilization of `(m + 1)⁻¹` 
 * `TauCeti.Probability.truncatedDysonPath_eq_integral` and
   `TauCeti.Probability.eq_truncatedDysonPath_of_eq_integral`: integral equation and finite-horizon
   uniqueness.
-* `TauCeti.Probability.dist_truncatedDysonPath_le`,
-  `TauCeti.Probability.truncatedDysonPath_eq_of_eqOn`,
-  `TauCeti.Probability.measurable_truncatedDysonPath`, and
-  `TauCeti.Probability.adapted_truncatedDysonPath`: Grönwall stability, causal congruence,
-  measurability, and filtration adaptedness.
+* `TauCeti.Probability.dist_truncatedDysonPath_le` and
+  `TauCeti.Probability.truncatedDysonPath_eq_of_eqOn`: Grönwall stability and causal congruence.
 * `TauCeti.Probability.sum_truncatedDysonPath_sub_sq_eq` and
   `TauCeti.Probability.sum_truncatedDysonPath_sub_sq_le`: global `ℓ²` energy identity and
   contraction.
-* `TauCeti.Probability.exists_pos_forall_le_truncatedDysonPath_sub`: short-time `ε`-separation from
-  the open Weyl chamber.
 * `TauCeti.Probability.truncatedDysonPath_eq_of_le_sub`,
   `TauCeti.Probability.IsDysonPath.eq_truncatedDysonPath_of_le_sub`, and
   `TauCeti.Probability.isDysonPath_of_forall_exists_truncatedDysonPath`: cutoff consistency and
   localization between truncated and genuine Dyson trajectories.
-* `TauCeti.Probability.eqOn_limUnder_truncatedDysonPath`,
-  `TauCeti.Probability.isDysonPath_limUnder_truncatedDysonPath`,
-  `TauCeti.Probability.adapted_limUnder_truncatedDysonPath`,
-  `TauCeti.Probability.isDysonSolution_limUnder_truncatedDysonPath`,
-  `TauCeti.Probability.exists_isDysonPath_of_forall_exists_le_truncatedDysonPath_sub`, and
-  `TauCeti.Probability.exists_isDysonSolution_of_ae_le_truncatedDysonPath_sub`: finite-stage
-  stabilization and conditional pasting of non-exiting truncations into global deterministic,
-  adapted, and almost-sure Dyson solutions.
+* `TauCeti.Probability.exists_isDysonPath_of_forall_exists_le_truncatedDysonPath_sub` and
+  `TauCeti.Probability.exists_isDysonSolution_of_ae_le_truncatedDysonPath_sub`: pasting
+  non-exiting truncations into a global Dyson trajectory and an `IsDysonSolution`.
 
 ## References
 
@@ -316,45 +301,6 @@ theorem truncatedDysonPath_eq_of_eqOn {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x : F
   rw [dist_self, add_zero, zero_mul] at h
   exact dist_le_zero.1 h
 
-/-- **Measurability of `truncatedDysonPath` from causal evaluations.** If every sample path `w ω`
-is continuous and `ω ↦ w ω s` is measurable for all `s ≤ t`, then
-`ω ↦ truncatedDysonPath hε n x (w ω) (hw ω) t` is measurable. -/
-theorem measurable_truncatedDysonPath {Ω : Type*} {mΩ : MeasurableSpace Ω} {ε : ℝ} (hε : 0 < ε)
-    (n : ℕ) (x : Fin n → ℝ) {w : Ω → ℝ≥0 → Fin n → ℝ} (hw : ∀ ω, Continuous (w ω)) (t : ℝ≥0)
-    (hm : ∀ s ≤ t, Measurable[mΩ] fun ω ↦ w ω s) :
-    Measurable[mΩ] fun ω ↦ truncatedDysonPath hε n x (w ω) (hw ω) t := by
-  let clamp : C(Icc (0 : ℝ≥0) t, Fin n → ℝ) → ℝ≥0 → Fin n → ℝ :=
-    fun f s ↦ f ⟨min s t, ⟨_root_.zero_le, min_le_right s t⟩⟩
-  have hclamp (f : C(Icc (0 : ℝ≥0) t, Fin n → ℝ)) : Continuous (clamp f) :=
-    f.continuous.comp ((continuous_id.min continuous_const).subtype_mk _)
-  have hlip : LipschitzWith (Real.exp (2 * ε⁻¹ ^ 2 * (t : ℝ))).toNNReal
-      (fun f : C(Icc (0 : ℝ≥0) t, Fin n → ℝ) ↦
-        truncatedDysonPath hε n x (clamp f) (hclamp f) t) := by
-    refine LipschitzWith.of_dist_le_mul fun f₁ f₂ ↦ ?_
-    rw [Real.coe_toNNReal _ (Real.exp_nonneg _), mul_comm]
-    simpa only [dist_self, zero_add] using
-      dist_truncatedDysonPath_le hε n x x (hclamp f₁) (hclamp f₂) (T := t) (δ := dist f₁ f₂)
-        (fun s _ ↦ ContinuousMap.dist_apply_le_dist _) le_rfl
-  let r : Ω → C(Icc (0 : ℝ≥0) t, Fin n → ℝ) :=
-    fun ω ↦ ⟨fun s ↦ w ω s.val, (hw ω).comp continuous_subtypeVal⟩
-  have hr_meas : Measurable[mΩ] r :=
-    ContinuousMap.measurable_iff_eval.2 fun s ↦ hm s.val s.property.2
-  have heq : (fun ω ↦ truncatedDysonPath hε n x (w ω) (hw ω) t) =
-      fun ω ↦ truncatedDysonPath hε n x (clamp (r ω)) (hclamp (r ω)) t :=
-    funext fun ω ↦ truncatedDysonPath_eq_of_eqOn hε n x (hw ω) (hclamp (r ω))
-      (fun s hs ↦ by simp [clamp, r, min_eq_left (mem_Iic.1 hs)]) le_rfl
-  rw [heq]
-  exact hlip.continuous.measurable.comp hr_meas
-
-/-- **Filtration adaptedness of `truncatedDysonPath`.** If `w` has continuous sample paths and is
-adapted to a filtration `ℱ`, then `truncatedDysonPath` driven by `w` is adapted to `ℱ`. -/
-theorem adapted_truncatedDysonPath {Ω : Type*} {mΩ : MeasurableSpace Ω} {ε : ℝ} (hε : 0 < ε)
-    (n : ℕ) (x : Fin n → ℝ) {w : Ω → ℝ≥0 → Fin n → ℝ} (hw : ∀ ω, Continuous (w ω))
-    {ℱ : Filtration ℝ≥0 mΩ} (hadapt : Adapted ℱ fun t ω ↦ w ω t) :
-    Adapted ℱ fun t ω ↦ truncatedDysonPath hε n x (w ω) (hw ω) t := fun t ↦
-  measurable_truncatedDysonPath (mΩ := ℱ t) hε n x hw t fun s hs ↦
-    (hadapt s).mono (ℱ.mono hs) le_rfl
-
 private theorem truncatedDysonPath_eq_integral_of_mem_uIcc {ε : ℝ} (hε : 0 < ε) (n : ℕ)
     (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) {s t : ℝ≥0} {r : ℝ}
     (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
@@ -407,61 +353,6 @@ theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
       (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n x w hw hr i)
       (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n y w hw hr i)
       fun _ _ ↦ sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
-
-/-- Squared `ℓ²` distance between two `ε`-truncated Dyson trajectories driven by the same path `w`
-is antitone on `[0, ∞)`. -/
-theorem antitone_sum_truncatedDysonPath_sub_sq {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x y : Fin n → ℝ)
-    (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) :
-    Antitone fun t ↦ ∑ i : Fin n,
-      (truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n y w hw t i) ^ 2 :=
-  fun _ _ hst ↦ sum_truncatedDysonPath_sub_sq_le hε n x y w hw hst
-
-/-- **Short-time separation from the open Weyl chamber.** From any strictly decreasing initial
-configuration `x : Fin n → ℝ` and continuous driving path `w` with `w 0 = 0`, there exist a cutoff
-`ε > 0` and a positive horizon `T > 0` on which `truncatedDysonPath hε n x w hw` stays
-`ε`-separated. -/
-theorem exists_pos_forall_le_truncatedDysonPath_sub {n : ℕ} {x : Fin n → ℝ} (hx : StrictAnti x)
-    {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) (hw0 : w 0 = 0) :
-    ∃ (ε : ℝ) (hε : 0 < ε) (T : ℝ≥0), 0 < T ∧
-      ∀ t ≤ T, ∀ i j : Fin n, i < j →
-        ε ≤ truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n x w hw t j := by
-  let S : Finset (Fin n × Fin n) :=
-    ((Finset.univ : Finset (Fin n)) ×ˢ Finset.univ).filter fun p ↦ p.1 < p.2
-  rcases S.eq_empty_or_nonempty with hS | hS
-  · refine ⟨1, zero_lt_one, 1, zero_lt_one, fun _ _ i j hij ↦ ?_⟩
-    have hmem : (i, j) ∈ S := by simp [S, hij]
-    rw [hS] at hmem
-    exact False.elim (Finset.notMem_empty _ hmem)
-  · set δ : ℝ := S.inf' hS (fun p ↦ x p.1 - x p.2)
-    have hδ : 0 < δ := (Finset.lt_inf'_iff _).2 fun p hp ↦ by
-      have hlt : p.1 < p.2 := by simpa [S] using hp
-      exact sub_pos.2 (hx hlt)
-    let ε : ℝ := 2⁻¹ * δ
-    have hε : 0 < ε := by positivity
-    let U : Set ℝ≥0 :=
-      ⋂ p ∈ S, {t : ℝ≥0 |
-        ε < truncatedDysonPath hε n x w hw t p.1 - truncatedDysonPath hε n x w hw t p.2}
-    have hU_open : IsOpen U := isOpen_biInter_finset fun p _ ↦ isOpen_lt continuous_const <|
-      ((continuous_apply p.1).comp (continuous_truncatedDysonPath hε n x w hw)).sub
-        ((continuous_apply p.2).comp (continuous_truncatedDysonPath hε n x w hw))
-    have h0_mem : (0 : ℝ≥0) ∈ U := by
-      simp only [U, mem_iInter, mem_ofPred_eq, truncatedDysonPath_eval_zero, hw0, add_zero]
-      intro p hp
-      have hle : δ ≤ x p.1 - x p.2 := Finset.inf'_le _ hp
-      dsimp only [ε]
-      linarith
-    obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hU_open 0 h0_mem
-    let T : ℝ≥0 := (r / 2).toNNReal
-    have hT_pos : 0 < T := Real.toNNReal_pos.2 (div_pos hr zero_lt_two)
-    refine ⟨ε, hε, T, hT_pos, fun t ht i j hij ↦ ?_⟩
-    have ht_ball : t ∈ Metric.ball (0 : ℝ≥0) r := by
-      rw [Metric.mem_ball, NNReal.dist_eq, NNReal.coe_zero, sub_zero, abs_of_nonneg t.coe_nonneg]
-      have hle : (t : ℝ) ≤ r / 2 := (NNReal.coe_le_coe.2 ht).trans_eq
-        (Real.coe_toNNReal _ (div_pos hr zero_lt_two).le)
-      linarith
-    have htU := hball ht_ball
-    simp only [U, mem_iInter, mem_ofPred_eq] at htU
-    exact (htU (i, j) (by simp [S, hij])).le
 
 /-- **Consistency of chamber truncations before exit.** If `truncatedDysonPath hε₁ n x w hw` stays
 inside `{z | ∀ i < j, max ε₁ ε₂ ≤ z i - z j}` on `(0, T)`, then the `ε₁`- and `ε₂`-truncated paths
@@ -541,89 +432,6 @@ theorem isDysonPath_of_forall_exists_truncatedDysonPath {n : ℕ} {x : Fin n →
     have hs_le : s.toNNReal ≤ t := Real.toNNReal_le_iff_le_coe.2 hs.2
     rw [← hEq s.toNNReal hs_le, truncatedDysonDrift_eq_dysonDrift (hgap s.toNNReal hs_le)]
 
-/-- **Finite-stage stabilization of `(m + 1)⁻¹` chamber truncations.** Whenever
-`truncatedDysonPath hε n x w hw` keeps ordered gaps at least `ε > 0` at positive times before `T`,
-the sequence `m ↦ truncatedDysonPath _ n x w hw t` at cutoffs `((m : ℝ) + 1)⁻¹` eventually equals
-`truncatedDysonPath hε n x w hw t` for every `t ≤ T`, so its `limUnder` coincides with
-`truncatedDysonPath hε n x w hw` throughout `Iic T`. -/
-theorem eqOn_limUnder_truncatedDysonPath {ε : ℝ} (hε : 0 < ε) {n : ℕ} {x : Fin n → ℝ}
-    {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) {T : ℝ≥0}
-    (hgap : ∀ s, 0 < s → s < T → ∀ i j : Fin n, i < j →
-      ε ≤ truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n x w hw s j) :
-    EqOn
-      (fun t ↦ limUnder atTop fun m : ℕ ↦
-        truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x w hw t)
-      (truncatedDysonPath hε n x w hw) (Iic T) := by
-  intro t ht
-  obtain ⟨M, hM⟩ := exists_nat_gt ε⁻¹
-  have hev : (fun _ : ℕ ↦ truncatedDysonPath hε n x w hw t) =ᶠ[atTop]
-      fun m : ℕ ↦ truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x w hw t := by
-    filter_upwards [eventually_ge_atTop M] with m hm
-    have hm_pos : (0 : ℝ) < (m : ℝ) + 1 := Nat.cast_add_one_pos m
-    have hinv_le : ((m : ℝ) + 1)⁻¹ ≤ ε := by
-      rw [inv_le_comm₀ hm_pos hε]
-      have hM' : ε⁻¹ < (m : ℝ) := hM.trans_le (Nat.cast_le.2 hm)
-      linarith
-    exact truncatedDysonPath_eq_of_le_sub hε (inv_pos.2 hm_pos) hw
-      (fun s hs₀ hs i j hij ↦ (max_eq_left hinv_le).trans_le (hgap s hs₀ hs i j hij)) ht
-  exact (tendsto_const_nhds.congr' hev).limUnder_eq
-
-/-- **Conditional deterministic `limUnder` pasting of truncated Dyson paths.** This is the
-deterministic pasting step used in the proof of AGZ Lemma 4.3.3, assuming `ε`-separation on every
-horizon `[0, T]`: under that hypothesis, the explicit pointwise `limUnder` along cutoffs
-`((m : ℝ) + 1)⁻¹` is a global `IsDysonPath n x w`. -/
-theorem isDysonPath_limUnder_truncatedDysonPath {n : ℕ} {x : Fin n → ℝ}
-    {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w)
-    (hch : ∀ T : ℝ≥0, ∃ (ε : ℝ) (hε : 0 < ε), ∀ t ≤ T, ∀ i j : Fin n, i < j →
-      ε ≤ truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n x w hw t j) :
-    IsDysonPath n x w
-      (fun t ↦ limUnder atTop fun m : ℕ ↦
-        truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x w hw t) := by
-  refine isDysonPath_of_forall_exists_truncatedDysonPath hw fun T ↦ ?_
-  obtain ⟨ε, hε, hT⟩ := hch T
-  have heq : ∀ t ≤ T, (limUnder atTop fun m : ℕ ↦
-      truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x w hw t) =
-      truncatedDysonPath hε n x w hw t :=
-    fun t ht ↦ eqOn_limUnder_truncatedDysonPath hε hw (fun s _ hs ↦ hT s hs.le) ht
-  exact ⟨ε, hε, heq, fun t ht i j hij ↦ by rw [heq t ht]; exact hT t ht i j hij⟩
-
-/-- **Filtration adaptedness of the `limUnder` Dyson trajectory.** When `w` has continuous sample
-paths and is adapted to `ℱ`, the pointwise `limUnder` of the `((m : ℝ) + 1)⁻¹`-truncated
-trajectories is adapted to `ℱ`. -/
-theorem adapted_limUnder_truncatedDysonPath {Ω : Type*} {mΩ : MeasurableSpace Ω} (n : ℕ)
-    (x : Fin n → ℝ) {w : Ω → ℝ≥0 → Fin n → ℝ} (hw : ∀ ω, Continuous (w ω))
-    {ℱ : Filtration ℝ≥0 mΩ} (hadapt : Adapted ℱ fun t ω ↦ w ω t) :
-    Adapted ℱ fun t ω ↦ limUnder atTop fun m : ℕ ↦
-      truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x (w ω) (hw ω) t := fun t ↦ by
-  let : MeasurableSpace Ω := ℱ t
-  exact (StronglyMeasurable.limUnder fun m : ℕ ↦
-    (adapted_truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x hw
-      hadapt t).stronglyMeasurable).measurable
-
-/-- **Conditional `limUnder` pasting into an `IsDysonSolution`.** Assuming continuous driving sample
-paths and almost-sure `ε`-separation on every compact horizon `[0, T]` (the conditional pasting step
-of AGZ Lemma 4.3.3), the explicit `limUnder` of the `((m : ℝ) + 1)⁻¹`-truncated trajectories is an
-`IsDysonSolution β n x P B` (and is `ℱ`-adapted whenever `B` is, by
-`adapted_limUnder_truncatedDysonPath`). -/
-theorem isDysonSolution_limUnder_truncatedDysonPath {Ω : Type*} [MeasurableSpace Ω]
-    (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (P : Measure Ω) {B : Fin n → ℝ≥0 → Ω → ℝ}
-    (hB : ∀ i ω, Continuous (B i · ω))
-    (hch : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∃ (ε : ℝ) (hε : 0 < ε), ∀ t ≤ T, ∀ i j : Fin n, i < j →
-      ε ≤ truncatedDysonPath hε n x
-          (fun s k ↦ Real.sqrt (2 / (β * n)) * B k s ω)
-          (continuous_pi fun k ↦ continuous_const.mul (hB k ω)) t i -
-        truncatedDysonPath hε n x
-          (fun s k ↦ Real.sqrt (2 / (β * n)) * B k s ω)
-          (continuous_pi fun k ↦ continuous_const.mul (hB k ω)) t j) :
-    IsDysonSolution β n x P B
-      (fun t ω ↦ limUnder atTop fun m : ℕ ↦
-        truncatedDysonPath (inv_pos.2 (Nat.cast_add_one_pos m)) n x
-          (fun s k ↦ Real.sqrt (2 / (β * n)) * B k s ω)
-          (continuous_pi fun k ↦ continuous_const.mul (hB k ω)) t) := by
-  rw [isDysonSolution_def]
-  filter_upwards [hch] with ω hωch
-  exact isDysonPath_limUnder_truncatedDysonPath _ hωch
-
 /-- **Pasting non-exiting truncations into a global Dyson trajectory.** If for every horizon
 `T : ℝ≥0` some `ε > 0` keeps `truncatedDysonPath hε n x w hw` inside the `ε`-chamber on `[0, T]`,
 then these truncations paste into a global `IsDysonPath n x w X`, which agrees on `[0, T]` with
@@ -636,9 +444,27 @@ theorem exists_isDysonPath_of_forall_exists_le_truncatedDysonPath_sub {n : ℕ}
       ∀ (T : ℝ≥0) {ε : ℝ} (hε : 0 < ε),
         (∀ s, 0 < s → s < T → ∀ i j : Fin n, i < j →
           ε ≤ truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n x w hw s j) →
-        ∀ t ≤ T, X t = truncatedDysonPath hε n x w hw t :=
-  ⟨_, isDysonPath_limUnder_truncatedDysonPath hw hch, fun _ _ hε hgap _ ht ↦
-    eqOn_limUnder_truncatedDysonPath hε hw hgap ht⟩
+        ∀ t ≤ T, X t = truncatedDysonPath hε n x w hw t := by
+  choose εT hεT hchT using hch
+  let X : ℝ≥0 → Fin n → ℝ := fun t ↦ truncatedDysonPath (hεT t) n x w hw t
+  have hcompat : ∀ (T : ℝ≥0) {ε : ℝ} (hε : 0 < ε),
+      (∀ s, 0 < s → s < T → ∀ i j : Fin n, i < j →
+        ε ≤ truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n x w hw s j) →
+      ∀ t ≤ T, X t = truncatedDysonPath hε n x w hw t := by
+    intro T ε hε hεch t ht
+    have hm : 0 < min ε (εT t) := lt_min hε (hεT t)
+    have h₁ := truncatedDysonPath_eq_of_le_sub (hεT t) hm hw (T := t)
+      (fun s _ hs i j hij ↦ (max_eq_left (min_le_right ε (εT t))).trans_le
+        (hchT t s hs.le i j hij)) le_rfl
+    have h₂ := truncatedDysonPath_eq_of_le_sub hε hm hw
+      (fun s hs₀ hs i j hij ↦ (max_eq_left (min_le_left ε (εT t))).trans_le
+        (hεch s hs₀ hs i j hij)) ht
+    exact h₁.trans h₂.symm
+  refine ⟨X, isDysonPath_of_forall_exists_truncatedDysonPath hw fun T ↦
+    ⟨εT T, hεT T, hcompat T (hεT T) (fun s _ hs ↦ hchT T s hs.le), fun t ht i j hij ↦ ?_⟩,
+    hcompat⟩
+  rw [hcompat T (hεT T) (fun s _ hs ↦ hchT T s hs.le) t ht]
+  exact hchT T t ht i j hij
 
 /-- **Almost-sure pasting into an `IsDysonSolution`.** If `B` has almost surely continuous paths
 and, almost surely, every horizon `[0, T]` admits a cutoff `ε > 0` whose truncated trajectory stays
