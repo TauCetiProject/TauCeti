@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Isomorphism.Residual
+import TauCeti.Data.Sum.Basic
 import Mathlib.Logic.Equiv.Bool
 import Mathlib.Algebra.Order.Group.Int
 
@@ -101,18 +102,18 @@ section NaturalBounds
 variable {V W : Type*} {N : Network ℕ V} {M : Network ℕ W} (e : N.Iso M)
 
 example (r : TauCeti.Assignment (ResidualHom N.Hom) ℤ) :
-    e.assignmentEquiv ℤ (residualNet r) = residualNet (e.residualAssignmentEquiv ℤ r) := by
+    e.assignmentEquiv ℤ (residualNet r) = residualNet (e.residualZero.assignmentEquiv ℤ r) := by
   rw [e.assignmentEquiv_residualNet]
 
 example (lo hi g : N.Assignment ℤ) :
-    e.residualAssignmentEquiv ℤ (residualCapacity lo hi g) =
+    e.residualZero.assignmentEquiv ℤ (residualCapacity lo hi g) =
       residualCapacity (e.assignmentEquiv ℤ lo) (e.assignmentEquiv ℤ hi)
         (e.assignmentEquiv ℤ g) := by
-  rw [e.residualAssignmentEquiv_residualCapacity]
+  rw [e.assignmentEquiv_residualCapacity]
 
 end NaturalBounds
 
--- Bundled simplification continues after transport normalizes to the unbundled equivalence.
+-- Bundled simplification continues after transport normalizes to the zero-capacity relabelling.
 section BundledTransport
 
 variable {V W : Type*} [Fintype V] [Fintype W]
@@ -137,7 +138,7 @@ end BundledTransport
 example {V W K R : Type*} [LE K] {N : Network K V} {M : Network K W} (e : N.Iso M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V}
     (a : ResidualHom N.Hom x y) :
-    e.residualAssignmentEquiv R r ((Sum.map (e.homEquiv x y) (e.homEquiv y x) a).swap) =
+    e.residualZero.assignmentEquiv R r ((Sum.map (e.homEquiv x y) (e.homEquiv y x) a).swap) =
       r a.swap := by
   simp
 

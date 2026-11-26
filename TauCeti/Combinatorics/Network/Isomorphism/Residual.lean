@@ -6,22 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Isomorphism.Basic
-public import TauCeti.Data.Sum.Basic
+-- The groupoid proofs compute the arrow maps of `Iso.refl`, `Iso.trans`, and `Iso.symm`.
+import all TauCeti.Combinatorics.Network.Isomorphism.Basic
 
 /-!
 # Residual networks under network isomorphisms
 
-A bounded-network isomorphism transports residual assignments via
-`Network.Iso.residualAssignmentEquiv`, requiring only an order relation on the bound coefficients
-and no feasible assignment. At corresponding feasible assignments, `Network.Iso.residual` bundles
-an isomorphism of residual networks. Forward copies remain forward copies and reverse copies
-remain reverse copies, even for loops and antiparallel arrows. Transport commutes with residual
-capacities, net changes, updates, and canonical differences. Thus relabelling a bounded problem
-before making a residual adjustment gives the same assignment as relabelling afterwards.
+A bounded-network isomorphism relabels the residual arrows. `Network.Iso.residualZero` packages
+this relabelling using zero capacities, so that the existing `Network.Iso.assignmentEquiv` API
+transports residual assignments without a feasible reference or additional assumptions on the
+original bound coefficients. At corresponding feasible assignments, `Network.Iso.residual`
+packages the same relabelling with the actual residual capacities.
 
-The arrowwise identities require no finite vertex or arrow types. Under finiteness, this file
-also transports residual excess and circulations. The existing `Network.Iso` API supplies walk,
-subnetwork, and bundled flow transport along `e.residual f hf`.
+Forward and reverse tags are preserved, even for loops and antiparallel arrows. Transport
+commutes with capacities, net changes, updates, and canonical differences without finiteness.
+The existing `Network.Iso` API also transports walks and, under finiteness, excess,
+circulations, and flows.
 -/
 
 public section
@@ -32,174 +32,123 @@ universe u u' u'' v v' v'' w w'
 
 variable {V : Type u} {W : Type u'} {K : Type w}
 
-section Assignments
+section Relabelling
 
 variable [LE K] {N : Network.{u, v, w} K V} {M : Network.{u', v', w} K W}
 
-/-- Transport residual assignments by relabelling endpoints and retaining forward/reverse tags.
-This depends only on the original isomorphism, not on any feasible assignment or its bounds. -/
-def residualAssignmentEquiv (e : N ≃ₙ M) (R : Type w') :
-    TauCeti.Assignment (ResidualHom N.Hom) R ≃ TauCeti.Assignment (ResidualHom M.Hom) R :=
-  e.vertexEquiv.piCongr fun x ↦ e.vertexEquiv.piCongr fun y ↦
-    (Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)).arrowCongr (Equiv.refl R)
+/-- Relabel the residual arrow families independently of feasibility. The zero capacities are
+only placeholders: assignment transport is independent of the bounds. Reducibility lets the
+endpoints and tagged arrow families compute for the dependent assignment API. -/
+@[expose, reducible]
+def residualZero (e : N ≃ₙ M) :
+    Network.ofCapacity (K := ℕ) (ResidualHom N.Hom) 0 (fun _ ↦ le_rfl) ≃ₙ
+      Network.ofCapacity (K := ℕ) (ResidualHom M.Hom) 0 (fun _ ↦ le_rfl) where
+  vertexEquiv := e.vertexEquiv
+  homEquiv x y := Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)
+  map_lower _ := rfl
+  map_upper _ := rfl
 
-/-- A transported residual assignment has its original value on any transported residual arrow. -/
+/-- Zero-capacity residual relabelling uses the original vertex equivalence. -/
 @[simp]
-theorem residualAssignmentEquiv_apply {R : Type w'} (e : N ≃ₙ M)
-    (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V}
-    (a : ResidualHom N.Hom x y) :
-    e.residualAssignmentEquiv R r (Sum.map (e.homEquiv x y) (e.homEquiv y x) a) = r a := by
-  simp [residualAssignmentEquiv]
+theorem residualZero_vertexEquiv (e : N ≃ₙ M) : e.residualZero.vertexEquiv = e.vertexEquiv :=
+  (rfl)
 
-/-- Pulling a residual assignment back evaluates by relabelling its arrow forward. -/
+/-- Zero-capacity residual relabelling retains the forward and reverse tags. -/
 @[simp]
-theorem residualAssignmentEquiv_symm_apply {R : Type w'} (e : N ≃ₙ M)
-    (r : TauCeti.Assignment (ResidualHom M.Hom) R) {x y : V}
-    (a : ResidualHom N.Hom x y) :
-    (e.residualAssignmentEquiv R).symm r a =
-      r (Sum.map (e.homEquiv x y) (e.homEquiv y x) a) := by
-  simp [residualAssignmentEquiv]
+theorem residualZero_homEquiv (e : N ≃ₙ M) (x y : V) :
+    e.residualZero.homEquiv x y = Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x) :=
+  (rfl)
 
-/-- A transported residual assignment has its original value on each transported forward copy. -/
+/-- The identity isomorphism induces the identity on zero-capacity residual networks. -/
 @[simp]
-theorem residualAssignmentEquiv_inl {R : Type w'} (e : N ≃ₙ M)
+theorem residualZero_refl (N : Network K V) : (refl N).residualZero = refl _ := by
+  refine Iso.ext rfl (heq_of_eq ?_)
+  funext x y
+  exact Equiv.sumCongr_refl
+
+/-- Zero-capacity residual relabelling respects composition. -/
+@[simp]
+theorem residualZero_trans {X : Type u''} {P : Network.{u'', v'', w} K X}
+    (e : N ≃ₙ M) (f : M ≃ₙ P) :
+    (e.trans f).residualZero = e.residualZero.trans f.residualZero := by
+  refine Iso.ext rfl (heq_of_eq ?_)
+  funext x y
+  exact (Equiv.sumCongr_trans ..).symm
+
+private theorem residual_homOfEq {Q : V → V → Type v} {x y x' y' : V}
+    (hx : x = x') (hy : y = y') (a : ResidualHom Q x y) :
+    @Quiver.homOfEq V ⟨ResidualHom Q⟩ _ _ _ _ a hx hy =
+      a.map (fun b ↦ @Quiver.homOfEq V ⟨Q⟩ _ _ _ _ b hx hy)
+        (fun b ↦ @Quiver.homOfEq V ⟨Q⟩ _ _ _ _ b hy hx) := by
+  subst x' y'
+  cases a <;> rfl
+
+/-- Zero-capacity residual relabelling respects inversion. -/
+@[simp]
+theorem residualZero_symm (e : N ≃ₙ M) : e.symm.residualZero = e.residualZero.symm := by
+  refine Iso.ext (symm_vertexEquiv e) (heq_of_eq ?_)
+  funext x y
+  apply Equiv.ext
+  intro a
+  -- Both inverse arrow maps transport endpoints to the original inverse vertex map.
+  change Equiv.sumCongr (e.inverseHomEquiv x y) (e.inverseHomEquiv y x) a =
+    e.residualZero.inverseHomEquiv x y a
+  rw [inverseHomEquiv_apply e.residualZero, residualZero_homEquiv, Equiv.sumCongr_symm,
+    residual_homOfEq]
+  cases a <;> simp [inverseHomEquiv_apply]
+
+/-- Assignment transport preserves evaluation on a relabelled residual arrow in `Sum.map`
+normal form. -/
+@[simp]
+theorem assignmentEquiv_residualZero_apply {R : Type w'} (e : N ≃ₙ M)
+    (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V} (a : ResidualHom N.Hom x y) :
+    e.residualZero.assignmentEquiv R r (Sum.map (e.homEquiv x y) (e.homEquiv y x) a) = r a :=
+  e.residualZero.assignmentEquiv_apply R r a
+
+/-- Assignment transport preserves evaluation on a relabelled forward copy. -/
+@[simp]
+theorem assignmentEquiv_residualZero_inl {R : Type w'} (e : N ≃ₙ M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V} (a : N.Hom x y) :
-    e.residualAssignmentEquiv R r (Sum.inl (e.homEquiv x y a)) = r (Sum.inl a) := by
-  exact e.residualAssignmentEquiv_apply r (Sum.inl a)
+    e.residualZero.assignmentEquiv R r (Sum.inl (e.homEquiv x y a)) = r (Sum.inl a) :=
+  e.residualZero.assignmentEquiv_apply R r (Sum.inl a)
 
-/-- A transported residual assignment has its original value on each transported reverse copy. -/
+/-- Assignment transport preserves evaluation on a relabelled reverse copy. -/
 @[simp]
-theorem residualAssignmentEquiv_inr {R : Type w'} (e : N ≃ₙ M)
+theorem assignmentEquiv_residualZero_inr {R : Type w'} (e : N ≃ₙ M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V} (a : N.Hom y x) :
-    e.residualAssignmentEquiv R r (Sum.inr (e.homEquiv y x a)) = r (Sum.inr a) := by
-  exact e.residualAssignmentEquiv_apply r (Sum.inr a)
+    e.residualZero.assignmentEquiv R r (Sum.inr (e.homEquiv y x a)) = r (Sum.inr a) :=
+  e.residualZero.assignmentEquiv_apply R r (Sum.inr a)
 
-/-- Residual transport acts separately on the forward and reverse coefficient assignments. -/
-theorem residualAssignmentEquiv_apply_eq_elim {R : Type w'} (e : N ≃ₙ M)
-    (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : W}
-    (a : ResidualHom M.Hom x y) :
-    e.residualAssignmentEquiv R r a =
-      a.elim (fun b ↦ e.assignmentEquiv R (fun {_ _} c ↦ r (Sum.inl c)) b)
-        (fun b ↦ e.assignmentEquiv R (fun {_ _} c ↦ r (Sum.inr c)) b) := by
-  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-  obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-  obtain ⟨a, rfl⟩ := (Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)).surjective a
-  cases a <;> simp
+-- These simp rules match goals whose arrow finiteness instances are inferred on `ResidualHom`,
+-- rather than on the projections of the zero-capacity networks.
 
-/-- Inverse residual assignment transport is transport along the inverse isomorphism. -/
-theorem residualAssignmentEquiv_symm (e : N ≃ₙ M) (R : Type w') :
-    (e.residualAssignmentEquiv R).symm = e.symm.residualAssignmentEquiv R := by
-  apply Equiv.ext
-  intro r
-  funext x y a
-  rw [residualAssignmentEquiv_symm_apply, residualAssignmentEquiv_apply_eq_elim,
-    ← assignmentEquiv_symm]
-  cases a <;> simp
-
-/-- Residual assignment transport carries zero to zero. -/
+/-- Relabelling preserves excess on the residual arrow family. -/
 @[simp]
-theorem residualAssignmentEquiv_zero {R : Type w'} [Zero R] (e : N ≃ₙ M) :
-    e.residualAssignmentEquiv R 0 = 0 := by
-  apply (e.residualAssignmentEquiv R).symm.injective
-  funext x y a
-  simp
-
-/-- Identity relabelling fixes residual assignments. -/
-@[simp]
-theorem residualAssignmentEquiv_refl (N : Network K V) (R : Type w') :
-    (refl N).residualAssignmentEquiv R =
-      Equiv.refl (TauCeti.Assignment (ResidualHom N.Hom) R) := by
-  apply Equiv.ext
-  intro r
-  funext x y a
-  rw [residualAssignmentEquiv_apply_eq_elim, assignmentEquiv_refl]
-  cases a <;> rfl
-
-/-- Residual assignment transport respects composition of network isomorphisms. -/
-@[simp]
-theorem residualAssignmentEquiv_trans {X : Type u''} {P : Network.{u'', v'', w} K X}
-    (e : N ≃ₙ M) (f : M ≃ₙ P) (R : Type w') :
-    (e.trans f).residualAssignmentEquiv R =
-      (e.residualAssignmentEquiv R).trans (f.residualAssignmentEquiv R) := by
-  apply Equiv.ext
-  intro r
-  funext x y a
-  simp only [residualAssignmentEquiv_apply_eq_elim, assignmentEquiv_trans, Equiv.trans_apply]
-  cases a <;> rfl
-
-/-- Residual assignment transport preserves and reflects pointwise order. -/
-theorem residualAssignmentEquiv_le_residualAssignmentEquiv_iff {R : Type w'} [LE R]
-    (e : N ≃ₙ M) (r s : TauCeti.Assignment (ResidualHom N.Hom) R) :
-    e.residualAssignmentEquiv R r ≤ e.residualAssignmentEquiv R s ↔ r ≤ s := by
-  constructor
-  · intro h x y a
-    simpa using h (e.vertexEquiv x) (e.vertexEquiv y)
-      (Sum.map (e.homEquiv x y) (e.homEquiv y x) a)
-  · intro h x y a
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-    obtain ⟨a, rfl⟩ := (Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)).surjective a
-    simpa using h x y a
-
-/-- Residual assignment transport preserves arbitrary pointwise order intervals. -/
-theorem residualAssignmentEquiv_mem_Icc_map_iff {R : Type w'} [Preorder R]
-    (e : N ≃ₙ M) (lo hi r : TauCeti.Assignment (ResidualHom N.Hom) R) :
-    e.residualAssignmentEquiv R r ∈
-      Set.Icc (e.residualAssignmentEquiv R lo) (e.residualAssignmentEquiv R hi) ↔
-        r ∈ Set.Icc lo hi :=
-  and_congr (e.residualAssignmentEquiv_le_residualAssignmentEquiv_iff lo r)
-    (e.residualAssignmentEquiv_le_residualAssignmentEquiv_iff r hi)
-
-/-- Excess is preserved by residual assignment transport. -/
-@[simp]
-theorem excessAt_residualAssignmentEquiv [Fintype V] [Fintype W]
+theorem excessAt_assignmentEquiv_residualZero [Fintype V] [Fintype W]
     [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (M.Hom x y)]
     {R : Type w'} [AddCommGroup R] (e : N ≃ₙ M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) (x : V) :
-    TauCeti.excessAt (e.residualAssignmentEquiv R r) (e.vertexEquiv x) =
-      TauCeti.excessAt r x := by
-  rw [← excessAt_comp_equiv e.vertexEquiv
-    (fun x y ↦ Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x))
-    (e.residualAssignmentEquiv R r) x]
-  congr 1
-  funext x y a
-  exact e.residualAssignmentEquiv_apply r a
+    TauCeti.excessAt (e.residualZero.assignmentEquiv R r) (e.vertexEquiv x) =
+      TauCeti.excessAt r x :=
+  e.residualZero.excessAt_assignmentEquiv r x
 
-/-- Transported residual excess is the original excess composed with the inverse vertex map. -/
-theorem excessAt_residualAssignmentEquiv_eq_comp [Fintype V] [Fintype W]
-    [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (M.Hom x y)]
-    {R : Type w'} [AddCommGroup R] (e : N ≃ₙ M)
-    (r : TauCeti.Assignment (ResidualHom N.Hom) R) :
-    TauCeti.excessAt (e.residualAssignmentEquiv R r) =
-      TauCeti.excessAt r ∘ e.vertexEquiv.symm := by
-  funext y
-  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
-  simp
-
-/-- Residual assignment transport preserves and reflects conservation. -/
+/-- Relabelling preserves and reflects circulation on the residual arrow family. -/
 @[simp]
-theorem isCirculation_residualAssignmentEquiv_iff [Fintype V] [Fintype W]
+theorem isCirculation_assignmentEquiv_residualZero_iff [Fintype V] [Fintype W]
     [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (M.Hom x y)]
     {R : Type w'} [AddCommGroup R] (e : N ≃ₙ M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) :
-    IsCirculation (e.residualAssignmentEquiv R r) ↔ IsCirculation r := by
-  rw [isCirculation_iff, isCirculation_iff]
-  constructor
-  · intro hr x
-    rw [← e.excessAt_residualAssignmentEquiv r x]
-    exact hr _
-  · intro hr y
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
-    rw [e.excessAt_residualAssignmentEquiv r x, hr x]
+    IsCirculation (e.residualZero.assignmentEquiv R r) ↔ IsCirculation r :=
+  e.residualZero.isCirculation_assignmentEquiv_iff r
 
 /-- Relabelling commutes with residual capacities, independently of feasibility. -/
 @[simp]
-theorem residualAssignmentEquiv_residualCapacity {R : Type w'} [Sub R] (e : N ≃ₙ M)
+theorem assignmentEquiv_residualCapacity {R : Type w'} [Sub R] (e : N ≃ₙ M)
     (lo hi g : N.Assignment R) :
-    e.residualAssignmentEquiv R (residualCapacity lo hi g) =
+    e.residualZero.assignmentEquiv R (residualCapacity lo hi g) =
       residualCapacity (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
         (e.assignmentEquiv R g) := by
-  apply (e.residualAssignmentEquiv R).symm.injective
+  apply (e.residualZero.assignmentEquiv R).symm.injective
   funext x y a
   cases a <;> simp
 
@@ -208,7 +157,7 @@ may be independent of those used for the network bounds. -/
 @[simp]
 theorem assignmentEquiv_residualNet {R : Type w'} [AddCommGroup R]
     (e : N ≃ₙ M) (r : TauCeti.Assignment (ResidualHom N.Hom) R) :
-    e.assignmentEquiv R (residualNet r) = residualNet (e.residualAssignmentEquiv R r) := by
+    e.assignmentEquiv R (residualNet r) = residualNet (e.residualZero.assignmentEquiv R r) := by
   apply (e.assignmentEquiv R).symm.injective
   funext x y a
   simp
@@ -219,22 +168,22 @@ then updating. No conservation or residual feasibility hypothesis is needed. -/
 theorem assignmentEquiv_residualUpdate {R : Type w'} [AddCommGroup R]
     (e : N ≃ₙ M) (g : N.Assignment R) (r : TauCeti.Assignment (ResidualHom N.Hom) R) :
     e.assignmentEquiv R (residualUpdate g r) =
-      residualUpdate (e.assignmentEquiv R g) (e.residualAssignmentEquiv R r) := by
+      residualUpdate (e.assignmentEquiv R g) (e.residualZero.assignmentEquiv R r) := by
   apply (e.assignmentEquiv R).symm.injective
   funext x y a
   simp
 
 /-- The canonical residual difference is invariant under relabelling. -/
 @[simp]
-theorem residualAssignmentEquiv_residualDifference {R : Type w'} [AddCommGroup R] [Lattice R]
+theorem assignmentEquiv_residualDifference {R : Type w'} [AddCommGroup R] [Lattice R]
     (e : N ≃ₙ M) (g h : N.Assignment R) :
-    e.residualAssignmentEquiv R (residualDifference g h) =
+    e.residualZero.assignmentEquiv R (residualDifference g h) =
       residualDifference (e.assignmentEquiv R g) (e.assignmentEquiv R h) := by
-  apply (e.residualAssignmentEquiv R).symm.injective
+  apply (e.residualZero.assignmentEquiv R).symm.injective
   funext x y a
   cases a <;> simp
 
-end Assignments
+end Relabelling
 
 variable [AddGroup K] [Preorder K] [AddRightMono K]
   {N : Network.{u, v, w} K V} {M : Network.{u', v', w} K W}
@@ -248,8 +197,8 @@ applying the dependent arrow and assignment APIs. -/
 def residual (e : N ≃ₙ M) (f : N.Assignment K) (hf : f ∈ Set.Icc N.lower N.upper) :
     N.residual f hf ≃ₙ
       M.residual (e.assignmentEquiv K f) ((e.assignmentEquiv_mem_Icc_iff f).2 hf) where
-  vertexEquiv := e.vertexEquiv
-  homEquiv x y := Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)
+  vertexEquiv := e.residualZero.vertexEquiv
+  homEquiv := e.residualZero.homEquiv
   map_lower _ := rfl
   map_upper a := by
     rcases a with a | a <;> simp [e.map_lower, e.map_upper]
@@ -271,13 +220,12 @@ theorem residual_homEquiv (e : N ≃ₙ M) (f : N.Assignment K)
 @[simp]
 theorem assignmentEquiv_residual (e : N ≃ₙ M) (f : N.Assignment K)
     (hf : f ∈ Set.Icc N.lower N.upper) (R : Type w') :
-    (e.residual f hf).assignmentEquiv R = e.residualAssignmentEquiv R := by
+    (e.residual f hf).assignmentEquiv R = e.residualZero.assignmentEquiv R := by
+  apply Equiv.symm_bijective.injective
   apply Equiv.ext
   intro r
-  apply (e.residualAssignmentEquiv R).symm.injective
   funext x y a
-  simp only [residualAssignmentEquiv_symm_apply, residualAssignmentEquiv_apply]
-  exact (e.residual f hf).assignmentEquiv_apply R r a
+  simp
 
 /- Forward and reverse arrow formulas simplify using `Equiv.sumCongr_apply` and the
 `Sum.map` constructor lemmas, without additional simp registrations. -/
