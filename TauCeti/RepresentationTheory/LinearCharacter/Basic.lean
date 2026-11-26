@@ -104,6 +104,7 @@ theorem ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ) (g
 
 /-- **The group algebra acts on the line of `χ` by scalars.** An element `x` of `k[G]` acts on
 the line `k` by multiplication by its image under the algebra map `k[G] → k` extending `χ`. -/
+@[simp]
 theorem asAlgebraHom_ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ)
     (x : MonoidAlgebra k G) (a : k) :
     (ofLinearCharacter χ).asAlgebraHom x a =
