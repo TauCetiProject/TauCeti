@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
-public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
@@ -87,37 +86,17 @@ principal-character pole at `1` is removed. -/
     rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ h).1]
     exact WithTop.coe_lt_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0)
 
-/-- Away from `0`, the Riesz remainder Mellin expression has at most a simple pole. -/
-theorem neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction {ρ : ℂ} (h₀ : ρ ≠ 0) :
-    -1 ≤ meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) ρ := by
-  by_cases h : 0 < meromorphicOrderAt χ.LFunction ρ
-  · rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ h).1]
-  · have hnonneg := not_lt.mp fun hp ↦ h
-      ((χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀).mp hp)
-    have hneg : (-1 : WithTop ℤ) ≤ 0 :=
-      WithTop.coe_le_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0).le
-    exact hneg.trans hnonneg
-
 /-- Away from `0`, the residue of the Riesz remainder Mellin expression is the zero
 multiplicity divided by `ρ * (1 - ρ)`, and is zero at points that are not zeros of `L`.
 The natural analytic order at the principal character's pole is zero. -/
 theorem residue_rieszRemainderMellin_LFunction {ρ : ℂ} (h₀ : ρ ≠ 0) :
     TauCeti.Contour.residue (TauCeti.rieszRemainderMellin χ.LFunction) ρ =
       (analyticOrderNatAt χ.LFunction ρ : ℂ) / (ρ * (1 - ρ)) := by
-  by_cases h : 0 < meromorphicOrderAt χ.LFunction ρ
-  · obtain ⟨_, hreg⟩ := χ.meromorphicOrderAt_LFunction_pos_iff.mp h
-    obtain ⟨hord, hc⟩ := χ.rieszRemainderMellin_LFunction_simplePole h₀ h
-    rw [TauCeti.Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord, hc,
-      χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt hreg,
-      WithTop.untop₀_coe, Int.cast_natCast]
-  · have hnonneg := not_lt.mp fun hp ↦ h
-      ((χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀).mp hp)
-    have hnat : analyticOrderNatAt χ.LFunction ρ = 0 := by
-      apply Nat.eq_zero_of_not_pos
-      intro hn
-      exact h (χ.meromorphicOrderAt_LFunction_pos_iff.mpr
-        (χ.one_le_analyticOrderNatAt_LFunction_iff.mp hn))
-    simp [hnat, TauCeti.Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hnonneg]
+  rw [χ.meromorphic_LFunction.residue_rieszRemainderMellin h₀]
+  by_cases h₁ : ρ = 1
+  · simp [h₁]
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt (.inl h₁), WithTop.untop₀_coe,
+      Int.cast_natCast]
 
 /-- Every real pole of the Mellin expression in the open right half-plane has a positive real
 leading Laurent coefficient, which is its residue since the pole is simple. -/

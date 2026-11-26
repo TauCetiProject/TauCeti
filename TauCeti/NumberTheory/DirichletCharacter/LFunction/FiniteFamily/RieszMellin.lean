@@ -105,8 +105,10 @@ private theorem neg_one_le_meromorphicOrderAt_rieszPair (χ : PrimitiveDirichlet
     {ρ : ℂ} (h₀ : ρ ≠ 0) :
     -1 ≤ meromorphicOrderAt (rieszRemainderMellin χ.character.LFunction +
       rieszRemainderMellin χ⁻¹.character.LFunction) ρ :=
-  (le_min (χ.character.neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction h₀)
-    (χ⁻¹.character.neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction h₀)).trans
+  le_trans (le_min
+    (χ.character.meromorphic_LFunction.neg_one_le_meromorphicOrderAt_rieszRemainderMellin h₀)
+    (χ⁻¹.character.meromorphic_LFunction.neg_one_le_meromorphicOrderAt_rieszRemainderMellin
+      h₀))
     (meromorphicOrderAt_add
       (meromorphicNFOn_rieszRemainderMellin _ (Set.mem_univ ρ)).meromorphicAt
       (meromorphicNFOn_rieszRemainderMellin _ (Set.mem_univ ρ)).meromorphicAt)
@@ -230,7 +232,8 @@ private theorem meromorphicOrderAt_rieszPair_neg_iff (χ : PrimitiveDirichletCha
       χ.character.meromorphicOrderAt_LFunction_inv_conj (conj ρ)
   rw [hsum, Contour.meromorphicOrderAt_sum_lt_zero_iff_of_pairwise_sameRay
     (fun i _ ↦ (meromorphicNFOn_rieszRemainderMellin _ (Set.mem_univ ρ)).meromorphicAt)
-    (fun i _ ↦ (ψ i).character.neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction h₀)]
+    (fun i _ ↦
+      (ψ i).character.meromorphic_LFunction.neg_one_le_meromorphicOrderAt_rieszRemainderMellin h₀)]
   · simp only [Finset.mem_univ, true_and, Fin.exists_fin_two, ψ, Matrix.cons_val_zero,
       Matrix.cons_val_one]
     rw [χ.character.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀,
