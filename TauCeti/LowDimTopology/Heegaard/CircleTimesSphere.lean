@@ -493,13 +493,14 @@ periodic Maslov indices are the even integers. -/
 theorem exists_isMaslovGradingMod_circleTimesSphere_one :
     ∃ gr, (circleTimesSphere 1).IsMaslovGradingMod (AddSubgroup.zmultiples 2) ![0, 1, 1] gr := by
   rw [← periodicMaslovIndices_circleTimesSphere_one 0]
-  refine exists_isMaslovGradingMod_periodicMaslovIndices
-    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
-    fun x => ?_
+  obtain ⟨gr, hgr⟩ := exists_coe_sub_eq_periodicMaslovIndices (χ := ![0, 1, 1])
+    (x₀ := circleTimesSphereGenerator 1 0)
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide) _)
+  refine ⟨gr, ⟨fun {x _ _} hD => ?_⟩⟩
   obtain ⟨a, rfl⟩ := (circleTimesSphereGenerator_bijective 1).2 x
   fin_cases a
-  · exact ⟨0, isDomainBetween_zero _⟩
-  · exact ⟨_, isDomainBetween_circleTimesSphere_single_two 1⟩
+  · exact hgr (isDomainBetween_zero _) hD
+  · exact hgr (isDomainBetween_circleTimesSphere_single_two 1) hD
 
 /-- With the basepoint in the bigon `B₁`, the generators carry no Maslov grading, since the
 periodic domain `A + 2 B₂` has Maslov index two. -/

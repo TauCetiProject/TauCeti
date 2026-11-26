@@ -115,6 +115,7 @@ theorem finsuppPieceBasis_repr_apply {p : ι} (x : (finsupp A g).piece p) (i : {
 /-- Coarsening the grading by `g` along a map `f : ι → κ` grades by `f ∘ g`: a finitely supported
 function lies in the coarsened piece of degree `k` exactly when every nonzero coordinate has an
 assigned degree in the fibre of `f` over `k`. -/
+@[simp]
 theorem mem_coarsenGrading_finsupp_piece_iff {κ : Type*} {f : ι → κ} {k : κ} {c : I →₀ A} :
     c ∈ coarsenGrading (finsupp A g).piece f k ↔ ∀ i, c i ≠ 0 → f (g i) = k := by
   have h : (finsupp A g).piece =
