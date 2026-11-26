@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.FiberBundle.Principal.Tensor
 public import TauCeti.Topology.VectorBundle.SpinStructure.ChargeConjugation
 public import TauCeti.Topology.VectorBundle.SpinStructure.Twist.Basic
 
@@ -27,9 +28,9 @@ sends `[p, h]` to `[(p, [p, 1]), h]`.
 
 The same group identity, in the form `χ (x [1, z]) = x [1, (det x)⁻¹ z⁻¹]`
 (`CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`), describes the charge conjugate of a twist.
-For a principal `U(1)`-bundle `E`, write `E⁻¹ = E ×_{z ↦ z⁻¹} U(1)` for the inverse bundle and
-`A ⊗ B = (A ×_X B) ×_{(a, b) ↦ a b} U(1)` for the tensor product of two principal `U(1)`-bundles.
-Then
+For a principal `U(1)`-bundle `E`, write `E⁻¹ = E ×_{z ↦ z⁻¹} U(1)` for the inverse bundle
+(`TauCeti.PrincipalBundle.Inverse`) and `A ⊗ B = (A ×_X B) ×_{(a, b) ↦ a b} U(1)` for the tensor
+product of two principal `U(1)`-bundles (`TauCeti.PrincipalBundle.Tensor`). Then
 
 * `(s.twist E).chargeConj ≃ s.chargeConj.twist E⁻¹`
   (`TauCeti.SpinCStructure.chargeConjTwistEquiv`): charge conjugation inverts the twisting line;
@@ -127,14 +128,15 @@ local notation "δ" => (ContinuousMonoidHom.comp (ContinuousMonoidHom.inv Circle
 local notation "hδ" => map_continuous (ContinuousMonoidHom.comp
   (ContinuousMonoidHom.inv Circle) (spinCGroup.detContinuousMonoidHom (realCliffordForm n 0) hQ))
 
-/-- Inversion of the circle, along which a principal `U(1)`-bundle extends to its inverse. -/
+/-- Inversion of the circle, along which a principal `U(1)`-bundle extends to its inverse
+(`TauCeti.PrincipalBundle.Inverse`). -/
 local notation "ν" => (ContinuousMonoidHom.inv Circle : Circle →* Circle)
 
 /-- Inversion of the circle is continuous. -/
 local notation "hν" => map_continuous (ContinuousMonoidHom.inv Circle)
 
 /-- Multiplication of the circle, along which the fibre product of two principal `U(1)`-bundles
-extends to their tensor product. -/
+extends to their tensor product (`TauCeti.PrincipalBundle.Tensor`). -/
 local notation "τ" => (ContinuousMonoidHom.mul Circle : Circle × Circle →* Circle)
 
 /-- Multiplication of the circle is continuous. -/
@@ -260,7 +262,7 @@ omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle 
 `s.chargeConj` by `E⁻¹` intertwines `(g, w)` with `χ (g [1, w]) = χ g [1, w⁻¹]`. -/
 private theorem inl_fiberProdMk_inl_inl_smul (s : SpinCStructure F V n) {x : X}
     (z : FiberProd s.P E x) (g : spinCGroup (realCliffordForm n 0) hQ × Circle) :
-    Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Extend E ν hν))
+    Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
         (FiberProd.mk (Extend.inl χ hχ (FiberProd.fst (op g • z)))
           (Extend.inl ν hν (FiberProd.snd (op g • z)))) =
       Extend.mk μ hμ (FiberProd.mk (Extend.inl χ hχ z.fst) (Extend.inl ν hν z.snd)) (χ (μ g)) := by
@@ -276,13 +278,13 @@ sends `[[(p, e), a], h]` to `[([p, 1], [e, 1]), χ a h]`
 (`TauCeti.SpinCStructure.chargeConjTwistEquiv_toEquiv_mk`); it is well defined because
 `χ (g [1, w]) = χ g [1, w⁻¹]`. -/
 def chargeConjTwistEquiv (s : SpinCStructure F V n) :
-    (s.twist E).chargeConj.Equiv (s.chargeConj.twist (Extend E ν hν)) :=
-  chargeConjTwistEquivOfEquivariant E s (s.chargeConj.twist (Extend E ν hν))
-    (fun _ z ↦ Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Extend E ν hν))
+    (s.twist E).chargeConj.Equiv (s.chargeConj.twist (Inverse Circle E)) :=
+  chargeConjTwistEquivOfEquivariant E s (s.chargeConj.twist (Inverse Circle E))
+    (fun _ z ↦ Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
       (FiberProd.mk (Extend.inl χ hχ (FiberProd.fst (P := s.P) (Q := E) z))
         (Extend.inl ν hν (FiberProd.snd (P := s.P) (Q := E) z))))
     (fun _ z g ↦ (inl_fiberProdMk_inl_inl_smul E s z g).trans (Extend.smul_inl μ hμ _ _).symm)
-    ((Extend.continuous_inl (FiberProd (Extend s.P χ hχ) (Extend E ν hν)) μ hμ).comp
+    ((Extend.continuous_inl (FiberProd (Extend s.P χ hχ) (Inverse Circle E)) μ hμ).comp
       (Continuous.totalSpaceMk_fiberProdMk
         ((Extend.continuous_inl s.P χ hχ).comp FiberProd.continuous_totalSpaceMk_fst)
         ((Extend.continuous_inl E ν hν).comp FiberProd.continuous_totalSpaceMk_snd)))
@@ -296,7 +298,7 @@ theorem chargeConjTwistEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : 
     (a h : spinCGroup (realCliffordForm n 0) hQ) :
     (s.chargeConjTwistEquiv E).toEquiv x
         (Extend.mk χ hχ (Extend.mk μ hμ (P := FiberProd s.P E) (FiberProd.mk p e) a) h) =
-      Extend.mk μ hμ (P := FiberProd (Extend s.P χ hχ) (Extend E ν hν))
+      Extend.mk μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
         (FiberProd.mk (Extend.inl χ hχ p) (Extend.inl ν hν e)) (χ a * h) :=
   (chargeConjTwistEquivOfEquivariant_toEquiv_mk E s _ _ _ _ _ x _ a h).trans
     (Extend.smul_inl μ hμ _ _)
@@ -307,7 +309,7 @@ sends `[[(p, e), 1], 1]` to `[([p, 1], [e, 1]), 1]`. -/
 theorem chargeConjTwistEquiv_toEquiv_inl (s : SpinCStructure F V n) (x : X) (p : s.P x) (e : E x) :
     (s.chargeConjTwistEquiv E).toEquiv x
         (Extend.inl χ hχ (Extend.inl μ hμ (P := FiberProd s.P E) (FiberProd.mk p e))) =
-      Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Extend E ν hν))
+      Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
         (FiberProd.mk (Extend.inl χ hχ p) (Extend.inl ν hν e)) := by
   rw [Extend.inl_def χ, Extend.inl_def μ, chargeConjTwistEquiv_toEquiv_mk, map_one, one_mul]
   exact (Extend.inl_def μ hμ _).symm
@@ -319,7 +321,7 @@ the twist of `s` by `(P ×_{det⁻¹} U(1)) ⊗ E⁻¹` intertwines `(g, w)` wit
 private theorem inl_fiberProdMk_inl_fiberProdMk_smul (s : SpinCStructure F V n) {x : X}
     (z : FiberProd s.P E x) (g : spinCGroup (realCliffordForm n 0) hQ × Circle) :
     Extend.inl μ hμ
-        (P := FiberProd s.P (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ))
+        (P := FiberProd s.P (Tensor Circle s.invDetBundle (Inverse Circle E)))
         (FiberProd.mk (FiberProd.fst (op g • z))
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ (FiberProd.fst (op g • z)))
             (Extend.inl ν hν (FiberProd.snd (op g • z)))))) =
@@ -344,20 +346,20 @@ Hermitian four-manifold, identifying the determinant line of `s_ω` with the ant
 `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`. -/
 def chargeConjTwistEquivTwist (s : SpinCStructure F V n) :
     (s.twist E).chargeConj.Equiv
-      (s.twist (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ)) :=
+      (s.twist (Tensor Circle s.invDetBundle (Inverse Circle E))) :=
   chargeConjTwistEquivOfEquivariant E s
-    (s.twist (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ))
+    (s.twist (Tensor Circle s.invDetBundle (Inverse Circle E)))
     (fun _ z ↦ Extend.inl μ hμ
-      (P := FiberProd s.P (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ))
+      (P := FiberProd s.P (Tensor Circle s.invDetBundle (Inverse Circle E)))
       (FiberProd.mk (FiberProd.fst (P := s.P) (Q := E) z)
         (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ (FiberProd.fst (P := s.P) (Q := E) z))
           (Extend.inl ν hν (FiberProd.snd (P := s.P) (Q := E) z))))))
     (fun _ z g ↦
       (inl_fiberProdMk_inl_fiberProdMk_smul E s z g).trans (Extend.smul_inl μ hμ _ _).symm)
     ((Extend.continuous_inl
-        (FiberProd s.P (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ)) μ hμ).comp
+        (FiberProd s.P (Tensor Circle s.invDetBundle (Inverse Circle E))) μ hμ).comp
       (Continuous.totalSpaceMk_fiberProdMk FiberProd.continuous_totalSpaceMk_fst
-        ((Extend.continuous_inl (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ).comp
+        ((Extend.continuous_inl (FiberProd s.invDetBundle (Inverse Circle E)) τ hτ).comp
           (Continuous.totalSpaceMk_fiberProdMk
             ((Extend.continuous_inl s.P δ hδ).comp FiberProd.continuous_totalSpaceMk_fst)
             ((Extend.continuous_inl E ν hν).comp FiberProd.continuous_totalSpaceMk_snd)))))
@@ -371,7 +373,7 @@ theorem chargeConjTwistEquivTwist_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
     (s.chargeConjTwistEquivTwist E).toEquiv x
         (Extend.mk χ hχ (Extend.mk μ hμ (P := FiberProd s.P E) (FiberProd.mk p e) a) h) =
       Extend.mk μ hμ
-        (P := FiberProd s.P (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ))
+        (P := FiberProd s.P (Tensor Circle s.invDetBundle (Inverse Circle E)))
         (FiberProd.mk p
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ p) (Extend.inl ν hν e))))
         (χ a * h) :=
@@ -386,7 +388,7 @@ theorem chargeConjTwistEquivTwist_toEquiv_inl (s : SpinCStructure F V n) (x : X)
     (s.chargeConjTwistEquivTwist E).toEquiv x
         (Extend.inl χ hχ (Extend.inl μ hμ (P := FiberProd s.P E) (FiberProd.mk p e))) =
       Extend.inl μ hμ
-        (P := FiberProd s.P (Extend (FiberProd s.invDetBundle (Extend E ν hν)) τ hτ))
+        (P := FiberProd s.P (Tensor Circle s.invDetBundle (Inverse Circle E)))
         (FiberProd.mk p
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ p) (Extend.inl ν hν e)))) := by
   rw [Extend.inl_def χ, Extend.inl_def μ, chargeConjTwistEquivTwist_toEquiv_mk, map_one, one_mul]
