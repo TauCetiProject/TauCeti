@@ -332,43 +332,45 @@ theorem lintegral_image_positiveEndChart_inf_le
           ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
       ENNReal.ofReal ((4 * Fintype.card ι + 1) * (20 * π ^ 2)) *
         ∫⁻ ζ in P ×ˢ Ico 0 1, ENNReal.ofReal (sobolevDensity (ξ ∘ positiveEndChart inf) ζ) := by
-  rw [lintegral_image_positiveEndChart inf hP, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun ζ hζ ↦ ?_
-  rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
-    abs_of_pos (det_fderiv_positiveEndChart_pos inf ζ)]
-  refine ENNReal.ofReal_le_ofReal ?_
-  set w := positiveEndChart inf ζ
   set K : ℝ := 4 * Fintype.card ι + 1
   have hK : 1 ≤ K := by simp only [K]; linarith [Nat.cast_nonneg (α := ℝ) (Fintype.card ι)]
-  -- Beyond `s = 2` of the output end the centers are within half the norm.
-  have hnorm := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-  rw [Prod.mk.eta] at hnorm
-  have hexp : 2 * Real.exp (2 * π) ≤ Real.exp (2 * π * ζ.1) := by
-    have hx : 2 ≤ Real.exp (2 * π) := by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
-    have h₂ : Real.exp (2 * π) * Real.exp (2 * π) ≤ Real.exp (2 * π * ζ.1) := by
-      rw [← Real.exp_add]
-      exact Real.exp_le_exp.2 (by nlinarith [pi_pos, hP2 ζ.1 hζ.1])
-    nlinarith [Real.exp_pos (2 * π)]
-  have hρ : movingEndsWeight c w ≤ K * cylindricalWeight w :=
-    movingEndsWeight_le_mul_cylindricalWeight
-      (by rw [← norm_pos_iff, hnorm]; positivity)
-      fun i ↦ by rw [hnorm]; linarith [hout i, norm_nonneg (a i)]
-  have hdet := (det_fderiv_positiveEndChart_pos inf ζ).le
-  have hcyl := det_fderiv_positiveEndChart_mul_le inf (by linarith [hP2 ζ.1 hζ.1]) (hξ ζ hζ)
-  rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  have hX := sq_nonneg ‖fderiv ℝ ξ w (1, 0)‖
-  have hY := sq_nonneg ‖fderiv ℝ ξ w (0, 1)‖
-  have hξ2 := sq_nonneg ‖ξ w‖
-  calc (fderiv ℝ (positiveEndChart inf) ζ).det * (movingEndsWeight c w * ‖ξ w‖ ^ 2 +
-        ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ w (0, 1)‖ ^ 2)
-      ≤ K * ((fderiv ℝ (positiveEndChart inf) ζ).det * (cylindricalWeight w * ‖ξ w‖ ^ 2 +
-        ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ w (0, 1)‖ ^ 2)) := by
-        have : movingEndsWeight c w * ‖ξ w‖ ^ 2 ≤ K * cylindricalWeight w * ‖ξ w‖ ^ 2 :=
-          mul_le_mul_of_nonneg_right hρ hξ2
-        nlinarith [mul_le_mul_of_nonneg_left this hdet, mul_nonneg hdet hX, mul_nonneg hdet hY]
-    _ ≤ K * (20 * π ^ 2 * (‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (1, 0)‖ ^ 2 +
-        ‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (0, 1)‖ ^ 2 + ‖ξ w‖ ^ 2)) := by gcongr
-    _ = _ := by simp only [comp_apply]; ring
+  -- On the band, the weight is at most `K` times the cylindrical weight of the pair of pants, so
+  -- the bound for the pair of pants applies.
+  calc _ ≤ ENNReal.ofReal K * ∫⁻ w in positiveEndChart inf '' (P ×ˢ Ico 0 1),
+        ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 + ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) := by
+        rw [lintegral_image_positiveEndChart inf hP, lintegral_image_positiveEndChart inf hP,
+          ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun ζ hζ ↦ ?_
+        rw [mul_left_comm (ENNReal.ofReal K), ← ENNReal.ofReal_mul (p := K) (by linarith)]
+        gcongr _ * ?_
+        refine ENNReal.ofReal_le_ofReal ?_
+        set w := positiveEndChart inf ζ
+        -- Beyond `s = 2` of the output end the centers are within half the norm.
+        have hnorm := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
+        rw [Prod.mk.eta] at hnorm
+        have hexp : 2 * Real.exp (2 * π) ≤ Real.exp (2 * π * ζ.1) := by
+          have hx : 2 ≤ Real.exp (2 * π) := by
+            linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+          have h₂ : Real.exp (2 * π) * Real.exp (2 * π) ≤ Real.exp (2 * π * ζ.1) := by
+            rw [← Real.exp_add]
+            exact Real.exp_le_exp.2 (by nlinarith [pi_pos, hP2 ζ.1 hζ.1])
+          nlinarith [Real.exp_pos (2 * π)]
+        have hρ : movingEndsWeight c w ≤ K * cylindricalWeight w :=
+          movingEndsWeight_le_mul_cylindricalWeight
+            (by rw [← norm_pos_iff, hnorm]; positivity)
+            fun i ↦ by rw [hnorm]; linarith [hout i, norm_nonneg (a i)]
+        nlinarith [mul_le_mul_of_nonneg_right hρ (sq_nonneg ‖ξ w‖),
+          sq_nonneg ‖fderiv ℝ ξ w (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ w (0, 1)‖]
+    _ ≤ ENNReal.ofReal K * (ENNReal.ofReal (20 * π ^ 2) * ∫⁻ ζ in P ×ˢ Ico 0 1,
+        ENNReal.ofReal (‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (0, 1)‖ ^ 2 +
+            ‖ξ (positiveEndChart inf ζ)‖ ^ 2)) := by
+        gcongr
+        exact lintegral_image_positiveEndChart_le inf hP (fun s hs ↦ by linarith [hP2 s hs]) hξ
+    _ = _ := by
+        rw [← mul_assoc, ← ENNReal.ofReal_mul (by linarith)]
+        simp only [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq, comp_apply]
 
 /-- The lower integral over a band `(T, ∞) × [0, 1)` of a nonnegative function integrable over
 `(T, ∞) × [0, 1]` is at most its integral over `(T, ∞) × [0, 1]`. -/
@@ -713,11 +715,9 @@ theorem memLp_floerConformalJetCoeff_of_movingEnds (ω : SymplecticForm V)
   have hBin (i : ι) : B i ≤ Bin := (le_abs_self _).trans
     (Finset.single_le_sum (f := fun j ↦ |B j|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ i))
   -- On the compact truncation `Σ_T` the field is continuous, hence bounded.
-  have hK : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T) :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_puncturedSphereTruncation c a T)
-  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn
-    (hcont.mono fun z hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz)
+  obtain ⟨A, hA⟩ :=
+    (isCompact_preimage_puncturedSphereTruncation c a T).exists_bound_of_continuousOn
+    (hcont.mono (preimage_puncturedSphereTruncation_subset ha T))
   refine memLp_top_of_bound (hcont.aestronglyMeasurable hρ.isOpen.measurableSet)
     (max A (max (1 + Bin + (2 * π)⁻¹ * ((1 + Bin) * Bin)) (1 + |Bo| + π⁻¹ * ((1 + |Bo|) * |Bo|))))
     ?_

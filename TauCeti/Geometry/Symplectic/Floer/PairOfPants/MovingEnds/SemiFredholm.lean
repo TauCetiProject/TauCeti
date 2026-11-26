@@ -125,11 +125,6 @@ private theorem isOpen_movingEndsDomain [Finite ι] (c : ι → ℂ) :
 private noncomputable def movingEndsTruncation (c a : ι → ℂ) (T : ℝ) : Set (ℝ × ℝ) :=
   Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T
 
-private theorem isCompact_movingEndsTruncation (c a : ι → ℂ) (T : ℝ) :
-    IsCompact (movingEndsTruncation c a T) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_puncturedSphereTruncation c a T)
-
 private theorem movingEndsTruncation_mono (c a : ι → ℂ) {T T' : ℝ} (h : T ≤ T') :
     movingEndsTruncation c a T ⊆ movingEndsTruncation c a T' :=
   preimage_mono (puncturedSphereTruncation_mono h)
@@ -266,11 +261,6 @@ private theorem mem_movingEndsTruncation_iff (ha : ∀ i, a i ≠ 0) {T : ℝ} (
     · rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]
       positivity
     · exact not_lt.1 fun h ↦ (he none).not_gt ((lt_fst_positiveEndCoord_inf_iff h0).2 h)
-
-/-- The truncation `Σ_T` lies in the sphere. -/
-private theorem movingEndsTruncation_subset (ha : ∀ i, a i ≠ 0) (T : ℝ) :
-    movingEndsTruncation c a T ⊆ movingEndsDomain c :=
-  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
 
 /-- The longitudinal coordinate of every end is bounded above on a compact subset of the sphere. -/
 private theorem exists_forall_movingEndCoord_le (ha : ∀ i, a i ≠ 0) {K : Set (ℝ × ℝ)}
@@ -622,7 +612,7 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le_of_end [Finite
         2 * (M * (1 + B)) ^ 2 * ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) := by
   have hβξ := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hξ hξU
   have hD := ω.integral_norm_floerLinearization_fun_smul_sq_le (isOpen_movingEndsDomain c) hJ hKs
-    hKt hu (isCompact_movingEndsTruncation c a _)
+    hKt hu (isCompact_preimage_puncturedSphereTruncation c a _)
     (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz)
     (fun z _ ↦ abs_le.2 ⟨by linarith [movingEndCutoff_nonneg (c := c) (a := a) R₀ e z],
       movingEndCutoff_le_one R₀ e z⟩)
@@ -666,8 +656,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) := by
   set K := movingEndsTruncation c a (R₀ + 1)
-  have hK : IsCompact K := isCompact_movingEndsTruncation c a _
-  have hKU : K ⊆ movingEndsDomain c := movingEndsTruncation_subset ha _
+  have hK : IsCompact K := isCompact_preimage_puncturedSphereTruncation c a _
+  have hKU : K ⊆ movingEndsDomain c := preimage_puncturedSphereTruncation_subset ha _
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- Bounds for `J` along `u` and for the derivatives of the cutoffs on `K`.
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
@@ -702,7 +692,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
       C₀ * (2 * X + 2 * c' ^ 2 * Y + Y) + Y :=
     (ω.setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add (J := J')
       (isOpen_movingEndsDomain c) hJ hKs hKt hu
-      (isCompact_movingEndsTruncation c a R₀).measurableSet hK
+      (isCompact_preimage_puncturedSphereTruncation c a R₀).measurableSet hK
       (movingEndsTruncation_mono c a (by linarith)) hKU
       (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
       (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le (hKU hz))
@@ -782,7 +772,7 @@ theorem
     | none => exact hendOut hξ hξc hξR
     | some i => exact hend i hξ hξc hξR
   obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
-    (K := movingEndsTruncation c a) (isCompact_movingEndsTruncation c a)
+    (K := movingEndsTruncation c a) (isCompact_preimage_puncturedSphereTruncation c a)
     (fun _ _ h ↦ movingEndsTruncation_mono c a h) (r := 2) (S := movingEndsDomain c) (R := Re)
     (G := fun e ξ ↦ ξ ∘ movingEndChart c a e) fun _ hR₀ hR ↦
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_aux ha hsep hout hJ hKs hKt
