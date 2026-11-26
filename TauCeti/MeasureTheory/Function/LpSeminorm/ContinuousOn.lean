@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 /-!
 # Continuous functions and the `L^∞` seminorm
@@ -22,7 +23,8 @@ of `Continuous.memLp_top_of_hasCompactSupport`.
 Without compactness, a function continuous on a measurable set `s` and bounded there lies in
 `L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`). Multiplication by such a function
 `φ`, with `‖φ‖ ≤ C` on `s`, scales the `Lᵖ(s)` seminorm by at most `C`
-(`ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le`).
+(`ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le`, the restricted form of
+`MeasureTheory.eLpNorm_smul_le_of_ae_norm_le`).
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -71,11 +73,8 @@ theorem ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le {𝕜 F : Type*} [Norme
     [IsBoundedSMul 𝕜 F] {φ : X → 𝕜} {s : Set X} (hφ : ContinuousOn φ s) (hs : MeasurableSet s)
     {C : ℝ} (hC : ∀ x ∈ s, ‖φ x‖ ≤ C) (f : X → F) (p : ℝ≥0∞) (μ : Measure X) :
     eLpNorm (fun x ↦ φ x • f x) p (μ.restrict s) ≤
-      ENNReal.ofReal C * eLpNorm f p (μ.restrict s) := by
-  have hφ' := hφ.aestronglyMeasurable (μ := μ) hs
-  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ').trans (mul_le_mul_left ?_ _)
-  rw [eLpNorm_exponent_top hφ']
-  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hs).mono hC)
+      ENNReal.ofReal C * eLpNorm f p (μ.restrict s) :=
+  eLpNorm_smul_le_of_ae_norm_le (hφ.aestronglyMeasurable hs) ((ae_restrict_mem hs).mono hC) f p
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
