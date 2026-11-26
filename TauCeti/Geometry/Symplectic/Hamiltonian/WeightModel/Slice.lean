@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.LocalToGlobal
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Convexity
+import TauCeti.Topology.OpenPartialHomeomorph.Germ
 
 /-!
 # Local convexity of the slice model of a torus moment map
@@ -338,31 +339,11 @@ theorem map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap [TopologicalSpace 
     {f : X → StrongDual ℝ 𝔱} {ν : StrongDual ℝ 𝔱} (hA : Disjoint A (Submodule.span ℝ (range α)))
     (hf : EqOn f ((fun y ↦ ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2)) ∘ e)
       e.source) {x : X} (hx : x ∈ e.source) :
-    map f (𝓝 x) = 𝓝[ν +ᵥ ((A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α))] (f x) := by
-  set C := (A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α)
-  have hmaps : MapsTo f e.source (ν +ᵥ C) := fun y hy ↦ by
-    rw [hf hy]
-    exact vadd_mem_vadd_set ⟨_, (e y).2.1.property, _, mem_range_self _, rfl⟩
-  have hcont : ContinuousAt f x := by
-    have hg : Continuous fun y : P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) ↦
-        ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2) := by
-      fun_prop
-    have hd := hg.continuousAt.comp (e.continuousAt hx)
-    exact hd.congr (eventually_of_mem (e.open_source.mem_nhds hx) fun y hy ↦ (hf hy).symm)
-  refine le_antisymm (fun T hT ↦ ?_) fun T hT ↦ ?_
-  · obtain ⟨V, hV, hVT⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hT
-    exact mem_map.2 (mem_of_superset
-      (inter_mem (hcont.preimage_mem_nhds hV) (e.open_source.mem_nhds hx))
-      fun y ⟨hyV, hy⟩ ↦ hVT ⟨hyV, hmaps hy⟩)
-  · -- `e` is open on its source and the model is open onto `ν +ᵥ C`.
-    have hN : e '' (f ⁻¹' T ∩ e.source) ∈ 𝓝 (e x) :=
-      e.image_mem_nhds hx (inter_mem (mem_map.1 hT) (e.open_source.mem_nhds hx))
-    have hfx : f x = ν + (((e x).2.1 : StrongDual ℝ 𝔱) + weightMomentMap α (e x).2.2) := hf hx
-    rw [hfx]
-    refine mem_of_superset (image_mem_nhdsWithin_vadd_add_range_weightMomentMap hA ν (e x) hN) ?_
-    rintro _ ⟨_, ⟨x', ⟨hx'T, hx'⟩, rfl⟩, rfl⟩
-    rw [mem_preimage, hf hx'] at hx'T
-    exact hx'T
+    map f (𝓝 x) = 𝓝[ν +ᵥ ((A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α))] (f x) :=
+  e.map_nhds_eq_nhdsWithin_of_eqOn hf hx (by fun_prop)
+    (Eventually.of_forall fun y ↦
+      vadd_mem_vadd_set ⟨_, y.2.1.property, _, mem_range_self _, rfl⟩)
+    fun _ ↦ image_mem_nhdsWithin_vadd_add_range_weightMomentMap hA ν (e x)
 
 /-- **The local cone at a point of the orbit.** Let `A` be a subspace of `𝔱*` meeting the span of
 the weights `αₖ` trivially. If, in a chart `e : X → P × (A × ℂ^ι)`, a map `f` reads
