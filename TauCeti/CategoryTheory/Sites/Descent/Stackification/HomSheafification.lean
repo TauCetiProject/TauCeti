@@ -195,14 +195,8 @@ lemma Fiber.homMk_comp {M N P : Fiber J F U}
 /-- The morphism given by the identity local morphism is the identity. -/
 lemma Fiber.homMk_id (M : Fiber J F U) : Fiber.homMk (𝟙 _) = 𝟙 M := by
   ext
-  -- `J.toSheafifySections U` is compatible with the units, as a monoidal natural transformation
-  -- (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`).
-  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
-  have hε : ε (J.sheafifySections U) PUnit.unit =
-      (J.toSheafifySections U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit :=
-    (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := J.toSheafifySections U))
-      PUnit.unit).symm
-  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply, hε]
+  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply,
+    GrothendieckTopology.ε_toSheafifySections]
   exact (congrArg ((J.toSheafifySections U).app _)
     (presheafHomId_app_apply M.obj _ PUnit.unit)).symm.trans
     (ConcreteCategory.congr_hom ((J.toSheafifySections U).naturality (presheafHomId M.obj)) _)

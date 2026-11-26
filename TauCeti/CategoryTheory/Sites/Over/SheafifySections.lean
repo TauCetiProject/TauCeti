@@ -115,19 +115,26 @@ lemma μ_toSheafifySections {P Q : (Over U)ᵒᵖ ⥤ Type v'} (x : P.obj (op (O
     ConcreteCategory.comp_apply] at this
   exact this.symm
 
+/-- The monoidal structure of `J.sheafifySections U` is compatible with the unit of
+sheafification: the unit `ε` is the image of the point of the terminal presheaf. -/
+lemma ε_toSheafifySections :
+    ε (J.sheafifySections U) PUnit.unit =
+      (J.toSheafifySections U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit := by
+  -- Evaluation at the terminal object preserves finite products, so `J.toSheafifySections U` is
+  -- a monoidal natural transformation (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`), and
+  -- so it is compatible with the units.
+  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
+  exact (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := J.toSheafifySections U))
+    PUnit.unit).symm
+
 /-- The image under `J.sheafifySections U` of a morphism `toUnit P ≫ y` that factors through the
 terminal presheaf is constant, with value the image of the global section given by `y`. -/
 lemma sheafifySections_map_toUnit_comp {P Q : (Over U)ᵒᵖ ⥤ Type v'}
     (y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ Q) (a : (J.sheafifySections U).obj P) :
     (J.sheafifySections U).map (CartesianMonoidalCategory.toUnit P ≫ y) a =
       (J.toSheafifySections U).app Q (y.app (op (Over.mk (𝟙 U))) PUnit.unit) := by
-  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
-  have hε : ε (J.sheafifySections U) PUnit.unit =
-      (J.toSheafifySections U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit :=
-    (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := J.toSheafifySections U))
-      PUnit.unit).symm
   rw [Functor.map_comp, ConcreteCategory.comp_apply, ← Functor.Monoidal.toUnit_ε]
-  refine (congrArg ((J.sheafifySections U).map y) hε).trans ?_
+  refine (congrArg ((J.sheafifySections U).map y) ε_toSheafifySections).trans ?_
   exact (ConcreteCategory.congr_hom ((J.toSheafifySections U).naturality y) _).symm
 
 end sheafifySections

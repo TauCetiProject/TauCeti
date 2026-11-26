@@ -38,8 +38,8 @@ are not available.
   functor sends morphisms inverted by sheafification to morphisms inverted by sheafification.
 * `CategoryTheory.Functor.sheafPushforwardContinuousPresheafToSheafIso`: the restriction along
   `G` of the sheafification of `Q` is the sheafification of the restriction of `Q`, under the
-  locally bijective hypotheses above. Morphisms out of the restriction of a sheafification are
-  determined on the restricted unit (`whiskerLeft_toSheafify_hom_ext`).
+  locally bijective hypotheses above. Morphisms from the restriction of a sheafification to a
+  sheaf are determined on the restricted unit (`whiskerLeft_toSheafify_hom_ext`).
 * `CategoryTheory.Functor.opCompSheafifyIso`: the same isomorphism on underlying presheaves,
   `G.op ⋙ sheafify K Q ≅ sheafify J (G.op ⋙ Q)`, characterized by the restricted unit
   (`whiskerLeft_toSheafify_comp_opCompSheafifyIso_hom`). It is natural in `Q`
