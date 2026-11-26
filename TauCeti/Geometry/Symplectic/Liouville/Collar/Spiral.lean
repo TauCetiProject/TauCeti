@@ -1,0 +1,373 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.Flow.Basic
+public import TauCeti.Geometry.Manifold.VectorField.Transverse
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Order.Monotone.Union
+import TauCeti.Analysis.Complex.Circle.Basic
+import TauCeti.Geometry.Manifold.Flow.NormedSpace
+import TauCeti.Geometry.Symplectic.Liouville.ContactType
+
+/-!
+# A spiral with no Liouville collar of uniform width
+
+A hypersurface `Y` transverse to the Liouville field `Z` of a primitive `α`, `ι_Z dα = α`, has a
+collar: the local flow map `Φ(t, y) = φₜ(y)` is a diffeomorphism from a neighbourhood
+`{(t, y) | |t| < ε y}` of `{0} × Y` onto a neighbourhood of `Y`
+(`TauCeti.exists_continuous_pos_injOn_flowOf_comp`). When `Y` is compact the width can be taken
+constant (`TauCeti.exists_pos_injOn_flowOf_comp`). This file shows that compactness cannot be
+dropped there, even for a closed embedded hypersurface and a complete Liouville field.
+
+In the plane `ℂ` with its radial primitive `λₓ(v) = σ(x, v) / 2` of a linear symplectic form `σ`,
+the Liouville field is `Z(u) = u / 2`, whose flow is the dilation `u ↦ e^(t/2) u`. Let
+`Y` be the **polar curve** `r = ρ(θ)`, the image of `θ ↦ ρ(θ) e^(iθ)` (`TauCeti.polarCurve`).
+
+* If `ρ` never vanishes, every nonzero multiple of the position field is transverse to the curve
+  (`TauCeti.isTransverseAlong_smul_polarCurve`), and for smooth `ρ` the curve is an immersion
+  (`TauCeti.injective_mfderiv_polarCurve`) on which `λ` restricts to a contact form
+  (`TauCeti.isContactForm_mpullback_polarCurve_radialPrimitive`).
+* If `ρ` is continuous, strictly increasing and positive, the curve is a topological embedding
+  (`TauCeti.isEmbedding_polarCurve`). If moreover `ρ → 0` as `θ → -∞` and `ρ → ∞` as `θ → ∞`,
+  its closure only adds the origin (`TauCeti.closure_range_polarCurve`): the curve is a closed
+  embedded curve in `ℂ ∖ {0}`.
+* If `ρ(θ + 2π) / ρ(θ) → 1` as `θ → ∞`, then on no strip `(-ε, ε) × ℝ` is the flow map
+  `(t, θ) ↦ e^(t/2) ρ(θ) e^(iθ)` injective (`TauCeti.not_injOn_flowOf_polarCurve`): the points
+  at angles `θ` and `θ + 2π` lie on one ray, and the flow joins them in the time
+  `2 log (ρ(θ + 2π) / ρ(θ))`, which tends to `0`.
+
+The radius `TauCeti.spiralRadius` is a smooth, strictly increasing function with
+`spiralRadius θ = e^(θ - 2)` for `θ ≤ 2` and `spiralRadius θ = θ` for `θ ≥ 3`. It satisfies all
+these hypotheses (`TauCeti.strictMono_spiralRadius`, `TauCeti.tendsto_spiralRadius_atBot`,
+`TauCeti.tendsto_spiralRadius_atTop`, `TauCeti.tendsto_spiralRadius_add_two_pi_div`), so its
+spiral is a closed embedded curve in `ℂ ∖ {0}`, transverse to the complete Liouville field `u / 2`
+and of contact type. By `TauCeti.exists_continuous_pos_injOn_flowOf_comp` it has a Liouville
+collar of variable width, but by `TauCeti.not_injOn_flowOf_polarCurve` none of uniform width.
+
+## Main definitions
+
+* `TauCeti.polarCurve`: the polar curve `θ ↦ ρ(θ) e^(iθ)`.
+* `TauCeti.spiralRadius`: a smooth increasing radius, equal to `e^(θ - 2)` for `θ ≤ 2` and to `θ`
+  for `θ ≥ 3`.
+
+## Main results
+
+* `TauCeti.isTransverseAlong_smul_polarCurve`: transversality to the position field.
+* `TauCeti.isContactForm_mpullback_polarCurve_radialPrimitive`: the radial primitive restricts to a
+  contact form on the polar curve.
+* `TauCeti.isEmbedding_polarCurve`, `TauCeti.closure_range_polarCurve`: the polar curve of an
+  increasing radius from `0` to `∞` is a closed embedded curve in `ℂ ∖ {0}`.
+* `TauCeti.not_injOn_flowOf_polarCurve`: the flow map of `u / 2` out of the polar curve is
+  injective on no strip `(-ε, ε) × ℝ`.
+
+## References
+
+* D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Section 3.5 (hypersurfaces of contact type and their collars).
+-/
+
+public section
+
+noncomputable section
+
+open Complex Filter Function Set Topology
+open scoped Manifold Real ContDiff
+
+namespace TauCeti
+
+/-! ### Polar curves -/
+
+/-- The **polar curve** `r = ρ(θ)`: the curve `θ ↦ ρ(θ) e^(iθ)` in `ℂ`. -/
+def polarCurve (ρ : ℝ → ℝ) (θ : ℝ) : ℂ :=
+  circleMap 0 (ρ θ) θ
+
+@[simp]
+theorem polarCurve_apply (ρ : ℝ → ℝ) (θ : ℝ) : polarCurve ρ θ = circleMap 0 (ρ θ) θ :=
+  (rfl)
+
+variable {ρ : ℝ → ℝ}
+
+private theorem polarCurve_eq_mul : polarCurve ρ = fun θ ↦ (ρ θ : ℂ) * exp ((θ : ℂ) * I) := by
+  funext θ
+  rw [polarCurve_apply, circleMap_zero]
+
+/-- The polar curve of a continuous radius is continuous. -/
+theorem continuous_polarCurve (h : Continuous ρ) : Continuous (polarCurve ρ) := by
+  rw [polarCurve_eq_mul]
+  fun_prop
+
+/-- The polar curve of a `Cⁿ` radius is `Cⁿ`. -/
+theorem contDiff_polarCurve {n : WithTop ℕ∞} (h : ContDiff ℝ n ρ) :
+    ContDiff ℝ n (polarCurve ρ) := by
+  rw [polarCurve_eq_mul]
+  exact (ofRealCLM.contDiff.comp h).mul ((ofRealCLM.contDiff.mul contDiff_const).cexp)
+
+/-- The velocity of the polar curve `r = ρ(θ)` is `(ρ'(θ) + i ρ(θ)) e^(iθ)`. -/
+theorem hasDerivAt_polarCurve {ρ' θ : ℝ} (h : HasDerivAt ρ ρ' θ) :
+    HasDerivAt (polarCurve ρ) ((ρ' + ρ θ * I) * exp ((θ : ℂ) * I)) θ := by
+  rw [hasDerivAt_iff_hasFDerivAt]
+  convert hasFDerivAt_circleExp_mul_ofReal (hasFDerivAt_id θ) h.hasFDerivAt using 1
+  · funext t
+    simp [Circle.coe_exp, circleMap_zero, mul_comm]
+  · ext
+    simp [Circle.coe_exp]
+    ring
+
+/-- A radius is differentiable wherever its polar curve is: `ρ(θ) = Re (γ(θ) e^(-iθ))`. -/
+private theorem differentiableAt_of_differentiableAt_polarCurve {θ : ℝ}
+    (h : DifferentiableAt ℝ (polarCurve ρ) θ) : DifferentiableAt ℝ ρ θ := by
+  have hρ : ρ = fun t : ℝ ↦ (polarCurve ρ t * exp (-((t : ℂ) * I))).re := by
+    funext t
+    rw [polarCurve_eq_mul, mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero,
+      mul_one, ofReal_re]
+  rw [hρ]
+  exact reCLM.differentiableAt.comp θ
+    (h.mul ((ofRealCLM.differentiableAt.mul_const I).neg.cexp))
+
+/-- The differential of the polar curve sends `v` to `v (ρ'(θ) + i ρ(θ)) e^(iθ)`. -/
+private theorem fderiv_polarCurve_apply {θ : ℝ} (h : DifferentiableAt ℝ ρ θ) (v : ℝ) :
+    fderiv ℝ (polarCurve ρ) θ v =
+      v • ((((deriv ρ θ : ℝ) : ℂ) + ((ρ θ : ℝ) : ℂ) * I) * exp ((θ : ℂ) * I)) := by
+  rw [(hasDerivAt_polarCurve h.hasDerivAt).hasFDerivAt.fderiv]
+  simp
+
+/-- No multiple `u (ρ' + i ρ) e^(iθ)` of the velocity of a polar curve with `ρ(θ) ≠ 0` is a
+nonzero multiple `c ρ(θ) e^(iθ)` of its position: the angular components are `u ρ(θ)` and `0`. -/
+private theorem smul_velocity_ne_smul_polarCurve {c θ ρ' : ℝ} (hc : c ≠ 0) (hρ : ρ θ ≠ 0)
+    (u : ℝ) : u • ((((ρ' : ℝ) : ℂ) + ((ρ θ : ℝ) : ℂ) * I) * exp ((θ : ℂ) * I)) ≠
+      c • polarCurve ρ θ := by
+  intro h
+  -- Cancelling `e^(iθ)` gives `u (ρ' + i ρ) = c ρ`.
+  have h' : ((u : ℂ) * (ρ' + ρ θ * I)) * exp ((θ : ℂ) * I) =
+      ((c * ρ θ : ℝ) : ℂ) * exp ((θ : ℂ) * I) := by
+    rw [polarCurve_apply, circleMap_zero, real_smul, real_smul] at h
+    push_cast
+    linear_combination h
+  have h2 := mul_right_cancel₀ (exp_ne_zero _) h'
+  have him := congrArg Complex.im h2
+  have hre := congrArg Complex.re h2
+  simp only [mul_im, mul_re, ofReal_re, ofReal_im, add_re, add_im, I_re, I_im] at him hre
+  have hu : u = 0 := by simpa [hρ] using him
+  subst hu
+  simp_all
+
+/-- **The position field is transverse to a polar curve.** If the radius `ρ` never vanishes, then
+for every `c ≠ 0` the vector field `u ↦ c u` is transverse along the polar curve `r = ρ(θ)`: the
+velocity `(ρ' + i ρ) e^(iθ)` has a nonzero angular component. No differentiability of `ρ` is
+needed, since where the curve is not differentiable its differential vanishes. -/
+theorem isTransverseAlong_smul_polarCurve {c : ℝ} (hc : c ≠ 0) (hρ : ∀ θ, ρ θ ≠ 0) :
+    IsTransverseAlong (I := 𝓘(ℝ, ℂ)) 𝓘(ℝ) (fun x : ℂ ↦ c • x) (polarCurve ρ) := by
+  refine isTransverseAlong_iff.2 fun θ ⟨v, hv⟩ ↦ ?_
+  rw [mfderiv_eq_fderiv] at hv
+  by_cases hd : DifferentiableAt ℝ (polarCurve ρ) θ
+  · -- On model spaces the tangent identifications are the identity.
+    exact smul_velocity_ne_smul_polarCurve hc (hρ θ) v
+      ((fderiv_polarCurve_apply (differentiableAt_of_differentiableAt_polarCurve hd) v).symm.trans
+        (hv : fderiv ℝ (polarCurve ρ) θ v = c • polarCurve ρ θ))
+  · rw [fderiv_zero_of_not_differentiableAt hd] at hv
+    exact smul_ne_zero hc (circleMap_ne_center (hρ θ)) hv.symm
+
+/-- **A polar curve is an immersion** where its radius is differentiable and nonzero. -/
+theorem injective_mfderiv_polarCurve {θ : ℝ} (hd : DifferentiableAt ℝ ρ θ) (hρ : ρ θ ≠ 0) :
+    Injective (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (polarCurve ρ) θ) := by
+  intro v w h
+  rw [mfderiv_eq_fderiv] at h
+  -- On model spaces the tangent identifications are the identity.
+  have h' := (fderiv_polarCurve_apply hd v).symm.trans
+    ((h : fderiv ℝ (polarCurve ρ) θ v = fderiv ℝ (polarCurve ρ) θ w).trans
+      (fderiv_polarCurve_apply hd w))
+  refine smul_left_injective ℝ (mul_ne_zero (fun h0 ↦ hρ ?_) (exp_ne_zero _)) h'
+  simpa using congrArg Complex.im h0
+
+/-- **A polar curve is of contact type.** For a smooth nowhere-vanishing radius `ρ` and a linear
+symplectic form `σ` on `ℂ`, the radial primitive `λₓ(v) = σ(x, v) / 2`, whose Liouville field is
+`u / 2`, restricts to a contact form on the polar curve `r = ρ(θ)`. -/
+theorem isContactForm_mpullback_polarCurve_radialPrimitive (σ : SymplecticForm ℂ)
+    (hc : ContDiff ℝ ∞ ρ) (hρ : ∀ θ, ρ θ ≠ 0) :
+    (SmoothForm.mpullback (polarCurve ρ) (contDiff_polarCurve hc).contMDiff
+      σ.radialPrimitive).IsContactForm := by
+  have hrc : IsRestrictedContactType 𝓘(ℝ) σ.constSmooth.val σ.radialPrimitive.val
+      (polarCurve ρ) :=
+    isRestrictedContactType_iff.2 ⟨σ.mextDeriv_radialPrimitive, fun x ↦ (2⁻¹ : ℝ) • x,
+      contMDiff_vectorSpace_iff_contDiff.2 (contDiff_id.const_smul (2⁻¹ : ℝ)),
+      σ.constSmooth_interior_two_inv_smul, isTransverseAlong_smul_polarCurve (by norm_num) hρ⟩
+  refine hrc.isContactType.isContactForm_mpullback σ.isNondegenerate_constSmooth _
+    (fun θ ↦ injective_mfderiv_polarCurve ((hc.differentiable (by simp)) θ) (hρ θ)) ?_
+  simp
+
+/-- **A polar curve with increasing positive radius is an embedding.** Its norm is the radius,
+which is a topological embedding of `ℝ` since it is continuous and strictly increasing. -/
+theorem isEmbedding_polarCurve (hc : Continuous ρ) (hm : StrictMono ρ) (hpos : ∀ θ, 0 < ρ θ) :
+    IsEmbedding (polarCurve ρ) := by
+  have hnorm : (fun z : ℂ ↦ ‖z‖) ∘ polarCurve ρ = ρ := by
+    funext θ
+    simp [abs_of_pos (hpos θ)]
+  have hρ : IsEmbedding ρ := hm.isEmbedding_of_ordConnected (isPreconnected_range hc).ordConnected
+  refine ⟨IsInducing.of_comp (continuous_polarCurve hc) continuous_norm
+    (by rw [hnorm]; exact hρ.isInducing), fun a b h ↦ hm.injective ?_⟩
+  simpa [abs_of_pos (hpos a), abs_of_pos (hpos b)] using congrArg (fun z : ℂ ↦ ‖z‖) h
+
+/-- **A polar curve from the origin to infinity is closed in `ℂ ∖ {0}`.** If the radius `ρ` is
+continuous and monotone, tends to `0` at `-∞` and to `∞` at `∞`, then the closure of the polar
+curve `r = ρ(θ)` adds only the origin to it. -/
+theorem closure_range_polarCurve (hc : Continuous ρ) (hm : Monotone ρ)
+    (h0 : Tendsto ρ atBot (𝓝 0)) (htop : Tendsto ρ atTop atTop) :
+    closure (range (polarCurve ρ)) = insert 0 (range (polarCurve ρ)) := by
+  have hcont := continuous_polarCurve hc
+  have hnorm (θ : ℝ) : ‖polarCurve ρ θ‖ = ρ θ := by
+    simp [abs_of_nonneg (hm.le_of_tendsto h0 θ)]
+  refine Subset.antisymm (fun z hz ↦ ?_) (insert_subset_iff.2 ⟨?_, subset_closure⟩)
+  · rcases eq_or_ne z 0 with rfl | hz0
+    · exact mem_insert _ _
+    refine mem_insert_of_mem _ ?_
+    -- The part of the curve in the closed ball `B` of radius `r = ‖z‖ / 2` about `z` is compact,
+    -- since its parameters lie in an interval `[a, b]` on which `r ≤ ρ ≤ 3 r` can hold.
+    set r := ‖z‖ / 2 with hr
+    have hr0 : 0 < r := by positivity
+    obtain ⟨a, ha⟩ : ∃ a, ρ a < r := (h0.eventually (gt_mem_nhds hr0)).exists
+    obtain ⟨b, hb⟩ : ∃ b, 3 * r < ρ b := (htop.eventually_gt_atTop _).exists
+    have hsub : polarCurve ρ ⁻¹' Metric.closedBall z r ⊆ Icc a b := by
+      intro θ hθ
+      rw [mem_preimage, Metric.mem_closedBall, dist_eq_norm] at hθ
+      have hd : |ρ θ - ‖z‖| ≤ r := by
+        rw [← hnorm]
+        exact (abs_norm_sub_norm_le _ _).trans hθ
+      rw [abs_le] at hd
+      exact ⟨le_of_not_gt fun h ↦ by linarith [hm h.le],
+        le_of_not_gt fun h ↦ by linarith [hm h.le]⟩
+    have hK : IsCompact (polarCurve ρ ⁻¹' Metric.closedBall z r) :=
+      isCompact_Icc.of_isClosed_subset (Metric.isClosed_closedBall.preimage hcont) hsub
+    have hz' : z ∈ closure (polarCurve ρ '' (polarCurve ρ ⁻¹' Metric.closedBall z r)) := by
+      rw [image_preimage_eq_range_inter, mem_closure_iff_nhds]
+      intro U hU
+      obtain ⟨w, hwU, hw⟩ := mem_closure_iff_nhds.1 hz (U ∩ Metric.closedBall z r)
+        (inter_mem hU (Metric.closedBall_mem_nhds z hr0))
+      exact ⟨w, hwU.1, hw, hwU.2⟩
+    obtain ⟨θ, -, rfl⟩ := (hK.image hcont).isClosed.closure_subset hz'
+    exact mem_range_self θ
+  · -- The curve tends to the origin as `θ → -∞`.
+    have ht : Tendsto (polarCurve ρ) atBot (𝓝 0) := by
+      rw [tendsto_zero_iff_norm_tendsto_zero]
+      simpa only [hnorm] using h0
+    exact mem_closure_of_tendsto ht (Eventually.of_forall mem_range_self)
+
+/-- **The flow out of a polar curve is injective on no strip.** Let the radius satisfy
+`ρ(θ + 2π) / ρ(θ) → 1` as `θ → ∞`, as the spiral `ρ(θ) = θ` does. Then for every `ε > 0` the flow
+map `(t, θ) ↦ φₜ(ρ(θ) e^(iθ)) = e^(t/2) ρ(θ) e^(iθ)` of the Liouville field `u / 2` is not
+injective on `(-ε, ε) × ℝ`: the flow joins the points at the angles `θ` and `θ + 2π` of the
+curve in the time `2 log (ρ(θ + 2π) / ρ(θ))`, which is eventually smaller than `ε`. -/
+theorem not_injOn_flowOf_polarCurve
+    (hρ : Tendsto (fun θ ↦ ρ (θ + 2 * π) / ρ θ) atTop (𝓝 1)) {ε : ℝ} (hε : 0 < ε) :
+    ¬ InjOn (fun q : ℝ × ℝ ↦
+        flowOf (I := 𝓘(ℝ, ℂ)) (fun x : ℂ ↦ (2⁻¹ : ℝ) • x) q.1 (polarCurve ρ q.2))
+      (Ioo (-ε) ε ×ˢ univ) := by
+  have hlog : Tendsto (fun θ ↦ 2 * Real.log (ρ (θ + 2 * π) / ρ θ)) atTop (𝓝 0) := by
+    simpa using ((Real.continuousAt_log one_ne_zero).tendsto.comp hρ).const_mul 2
+  obtain ⟨θ, hθε, hk⟩ := ((hlog.eventually (Ioo_mem_nhds (neg_neg_of_pos hε) hε)).and
+    (hρ.eventually (lt_mem_nhds one_pos))).exists
+  have hρθ : ρ θ ≠ 0 := fun h ↦ by simp [h] at hk
+  intro hinj
+  have heq := hinj (x₁ := (2 * Real.log (ρ (θ + 2 * π) / ρ θ), θ)) (mem_prod.2 ⟨hθε, mem_univ _⟩)
+    (x₂ := (0, θ + 2 * π)) (mem_prod.2 ⟨⟨neg_neg_of_pos hε, hε⟩, mem_univ _⟩) ?_
+  · have := congrArg Prod.snd heq
+    simp only at this
+    linarith [Real.pi_pos]
+  · simp only [flowOf_dilation]
+    rw [show 2⁻¹ * (2 * Real.log (ρ (θ + 2 * π) / ρ θ)) = Real.log (ρ (θ + 2 * π) / ρ θ) by ring,
+      Real.exp_log hk, mul_zero, Real.exp_zero, one_smul, polarCurve_apply, polarCurve_apply,
+      periodic_circleMap 0 (ρ (θ + 2 * π)) θ, circleMap_zero, circleMap_zero, real_smul]
+    rw [← mul_assoc, ← ofReal_mul, div_mul_cancel₀ _ hρθ]
+
+/-! ### The spiral radius -/
+
+/-- A smooth increasing **spiral radius**: `e^(θ - 2)` for `θ ≤ 2`, blending through a smooth
+transition into `θ` for `θ ≥ 3`. -/
+def spiralRadius (θ : ℝ) : ℝ :=
+  Real.exp (θ - 2) + Real.smoothTransition (θ - 2) * (θ - Real.exp (θ - 2))
+
+/-- Below `θ = 2` the spiral radius is `e^(θ - 2)`. -/
+theorem spiralRadius_of_le_two {θ : ℝ} (h : θ ≤ 2) : spiralRadius θ = Real.exp (θ - 2) := by
+  simp [spiralRadius, Real.smoothTransition.zero_of_nonpos (by linarith : θ - 2 ≤ 0)]
+
+/-- From `θ = 3` on the spiral radius is `θ`, so the spiral is the Archimedean spiral `r = θ`. -/
+theorem spiralRadius_of_three_le {θ : ℝ} (h : 3 ≤ θ) : spiralRadius θ = θ := by
+  simp [spiralRadius, Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ θ - 2)]
+
+/-- The spiral radius is smooth. -/
+theorem contDiff_spiralRadius {n : ℕ∞} : ContDiff ℝ n spiralRadius := by
+  have he : ContDiff ℝ n fun θ : ℝ ↦ Real.exp (θ - 2) :=
+    Real.contDiff_exp.comp (contDiff_id.sub contDiff_const)
+  exact he.add ((Real.smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)).mul
+    (contDiff_id.sub he))
+
+/-- On `[2, 3]`, where the spiral radius blends `e^(θ - 2)` into `θ`, the first lies below the
+second. -/
+private theorem exp_sub_two_le_self {θ : ℝ} (h2 : 2 ≤ θ) (h3 : θ ≤ 3) : Real.exp (θ - 2) ≤ θ := by
+  have h := Real.abs_exp_sub_one_sub_id_le (x := θ - 2) (by rw [abs_le]; constructor <;> linarith)
+  nlinarith [(abs_le.1 h).2]
+
+/-- The spiral radius is strictly increasing. -/
+theorem strictMono_spiralRadius : StrictMono spiralRadius := by
+  refine StrictMonoOn.Iic_union_Ici (a := 2) (fun a ha b hb hab ↦ ?_) fun a ha b _ hab ↦ ?_
+  · rw [spiralRadius_of_le_two ha, spiralRadius_of_le_two hb]
+    exact Real.exp_lt_exp.2 (by linarith)
+  rcases le_or_gt 3 a with h3 | h3
+  · rw [spiralRadius_of_three_le h3, spiralRadius_of_three_le (h3.trans hab.le)]
+    exact hab
+  -- With `h` the transition and `e = exp (· - 2)`, `ρ = (1 - h) e + h id`, so
+  -- `ρ b - ρ a = (1 - h b) (e b - e a) + h b (b - a) + (h b - h a) (a - e a)`.
+  set ha' := Real.smoothTransition (a - 2)
+  set hb' := Real.smoothTransition (b - 2)
+  have hid : spiralRadius b - spiralRadius a = (1 - hb') * (Real.exp (b - 2) - Real.exp (a - 2)) +
+      hb' * (b - a) + (hb' - ha') * (a - Real.exp (a - 2)) := by
+    simp only [spiralRadius, ha', hb']
+    ring
+  have hhab : ha' ≤ hb' := Real.smoothTransition.monotone (by linarith)
+  have he : Real.exp (a - 2) < Real.exp (b - 2) := Real.exp_lt_exp.2 (by linarith)
+  have hea := exp_sub_two_le_self ha h3.le
+  have hb0 : 0 ≤ hb' := Real.smoothTransition.nonneg _
+  have hb1 : hb' ≤ 1 := Real.smoothTransition.le_one _
+  have hpos : 0 < (1 - hb') * (Real.exp (b - 2) - Real.exp (a - 2)) + hb' * (b - a) := by
+    rcases hb1.lt_or_eq with h | h
+    · nlinarith [mul_pos (sub_pos.2 h) (sub_pos.2 he)]
+    · rw [h]
+      linarith
+  nlinarith [mul_nonneg (sub_nonneg.2 hhab) (sub_nonneg.2 hea)]
+
+/-- The spiral radius tends to `0` as `θ → -∞`. -/
+theorem tendsto_spiralRadius_atBot : Tendsto spiralRadius atBot (𝓝 0) := by
+  have h : Tendsto (fun θ : ℝ ↦ Real.exp (θ - 2)) atBot (𝓝 0) :=
+    Real.tendsto_exp_atBot.comp (tendsto_atBot_add_const_right _ (-2) tendsto_id)
+  exact h.congr' ((eventually_le_atBot 2).mono fun θ hθ ↦ (spiralRadius_of_le_two hθ).symm)
+
+/-- The spiral radius tends to `∞` as `θ → ∞`. -/
+theorem tendsto_spiralRadius_atTop : Tendsto spiralRadius atTop atTop :=
+  tendsto_id.congr' ((eventually_ge_atTop 3).mono fun _ hθ ↦ (spiralRadius_of_three_le hθ).symm)
+
+/-- The spiral radius is positive. -/
+theorem spiralRadius_pos (θ : ℝ) : 0 < spiralRadius θ :=
+  (strictMono_spiralRadius.monotone.le_of_tendsto tendsto_spiralRadius_atBot (θ - 1)).trans_lt
+    (strictMono_spiralRadius (by linarith))
+
+/-- Consecutive turns of the spiral have asymptotically equal radii:
+`spiralRadius (θ + 2π) / spiralRadius θ → 1`. -/
+theorem tendsto_spiralRadius_add_two_pi_div :
+    Tendsto (fun θ ↦ spiralRadius (θ + 2 * π) / spiralRadius θ) atTop (𝓝 1) := by
+  have h : Tendsto (fun θ : ℝ ↦ 1 + 2 * π / θ) atTop (𝓝 1) := by
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).add
+      ((tendsto_const_nhds (x := 2 * π)).div_atTop (tendsto_id (α := ℝ)))
+  refine h.congr' ((eventually_ge_atTop 3).mono fun θ hθ ↦ ?_)
+  dsimp only
+  rw [spiralRadius_of_three_le hθ, spiralRadius_of_three_le (by linarith [Real.pi_pos])]
+  field_simp
+
+end TauCeti
