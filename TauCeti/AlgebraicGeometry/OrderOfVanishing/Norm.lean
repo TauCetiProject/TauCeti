@@ -114,14 +114,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     ((algebraMap (Y.presheaf.stalk y) X.functionField).comp
       (algebraMap Γ(Y, V) (Y.presheaf.stalk y))).toAlgebra
   have : IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) X.functionField := .of_algebraMap_eq' rfl
-  have : IsScalarTower Γ(Y, V) Γ(X, f ⁻¹ᵁ V) X.functionField := .of_algebraMap_eq' <| by
-    have : IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) Y.functionField :=
-      functionField_isScalarTower Y V ⟨y, hy⟩
-    -- Reassociate the chosen composite algebra maps before applying germ naturality.
-    change (algebraMap Y.functionField X.functionField).comp
-      ((algebraMap (Y.presheaf.stalk y) Y.functionField).comp (algebraMap Γ(Y, V) _)) = _
-    rw [← IsScalarTower.algebraMap_eq]
-    exact (congrArg CommRingCat.Hom.hom (f.appLE_germToFunctionField V (f ⁻¹ᵁ V) le_rfl)).symm
+  have : IsScalarTower Γ(Y, V) Γ(X, f ⁻¹ᵁ V) X.functionField :=
+    .of_algebraMap_eq' (f.functionFieldMap_comp_algebraMap_comp_germ V (f ⁻¹ᵁ V) le_rfl hy)
   have : IsFractionRing Γ(X, f ⁻¹ᵁ V) X.functionField :=
     functionField_isFractionRing_of_isAffineOpen X _ hU
   -- The points of the fibre, indexed by the primes of `B₀` over `p`.
@@ -149,16 +143,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     .of_algebraMap_eq' rfl
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) :
       IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) (X.presheaf.stalk (x q)) :=
-    .of_algebraMap_eq' <| by
-      have hnat : f.appLE V (f ⁻¹ᵁ V) le_rfl ≫
-          X.presheaf.germ (f ⁻¹ᵁ V) (x q) (hxU q) =
-          Y.presheaf.germ V y hy ≫
-            Y.presheaf.stalkSpecializes ((hfx q).symm ▸ specializes_refl y) ≫
-              f.stalkMap (x q) := by
-        rw [TopCat.Presheaf.germ_stalkSpecializes_assoc, Scheme.Hom.germ_stalkMap,
-          Scheme.Hom.appLE_eq_app]
-      rw [f.algebraMap_stalkAlgebraOfApplyEq (hfx q)]
-      exact congrArg CommRingCat.Hom.hom hnat
+    .of_algebraMap_eq' (f.algebraMap_stalkAlgebraOfApplyEq_comp_germ V (f ⁻¹ᵁ V) le_rfl
+      (hfx q) (hxU q) hy).symm
   have hq1 (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : coheight (x q) = 1 :=
     coheight_eq_one_of_isAffineOpen f hV hU hfin hy hy1 (hfx q)
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : Ring.KrullDimLE 1 (X.presheaf.stalk (x q)) :=

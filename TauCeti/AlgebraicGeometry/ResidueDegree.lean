@@ -137,6 +137,18 @@ theorem finrank_residueField_stalk {K : Type u} [Field K] {X : Scheme.{u}}
     (IsLocalRing.ResidueField (X.presheaf.stalk x)) ↦
       g (((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom c)) hc).symm
 
+/-- Pullback to a smaller open commutes with taking germs at a point over a specified image. -/
+@[reassoc]
+theorem appLE_germ_of_apply_eq (f : X ⟶ Y) (U : Y.Opens) (V : X.Opens)
+    (e : V ≤ f ⁻¹ᵁ U) {x : X} {y : Y} (h : f x = y) (hx : x ∈ V) (hy : y ∈ U) :
+    f.appLE U V e ≫ X.presheaf.germ V x hx =
+      Y.presheaf.germ U y hy ≫ Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫
+        f.stalkMap x := by
+  subst y
+  simp only [TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp]
+  rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
+    ← X.presheaf.germ_res (homOfLE e) x hx, Scheme.Hom.appLE_map_assoc]
+
 /-- The local ring `𝒪_{Y,y}` maps to the local ring `𝒪_{X,x}` of a point over `y`, through the
 stalk map of `f` at `x`. -/
 noncomputable abbrev stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
@@ -150,6 +162,18 @@ theorem algebraMap_stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x 
     algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x) =
       (Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫ f.stalkMap x).hom :=
   rfl
+
+/-- The algebra map on stalks at equal image points commutes with germs of pulled-back sections. -/
+theorem algebraMap_stalkAlgebraOfApplyEq_comp_germ (f : X ⟶ Y)
+    (U : Y.Opens) (V : X.Opens) (e : V ≤ f ⁻¹ᵁ U)
+    {x : X} {y : Y} (h : f x = y) (hx : x ∈ V) (hy : y ∈ U) :
+    letI := f.stalkAlgebraOfApplyEq h
+    (algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x)).comp
+        (Y.presheaf.germ U y hy).hom =
+      (X.presheaf.germ V x hx).hom.comp (f.appLE U V e).hom := by
+  let _ := f.stalkAlgebraOfApplyEq h
+  rw [f.algebraMap_stalkAlgebraOfApplyEq h]
+  exact (congrArg CommRingCat.Hom.hom (f.appLE_germ_of_apply_eq U V e h hx hy)).symm
 
 /-- Over the image point itself, the algebra map of `stalkAlgebraOfApplyEq` is the stalk map
 of `f`. -/

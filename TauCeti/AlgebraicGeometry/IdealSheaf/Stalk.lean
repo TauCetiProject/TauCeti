@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.ResidueDegree
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalProperties.Semilocal
 
@@ -256,8 +257,7 @@ theorem stalkIdeal_comap {Y : Scheme.{u}} (I : Y.IdealSheafData) (g : X ⟶ Y) (
   obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset (X := X) (U := g ⁻¹ᵁ U) hxU
   have hnat : g.appLE U V hVU ≫ X.presheaf.germ V x hxV =
       Y.presheaf.germ U (g x) hxU ≫ g.stalkMap x := by
-    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
-      ← X.presheaf.germ_res (homOfLE hVU) x hxV, Scheme.Hom.appLE_map_assoc]
+    simpa using g.appLE_germ_of_apply_eq U V hVU rfl hxV hxU
   rw [stalkIdeal_eq_map _ ⟨V, hV⟩ x hxV, ideal_comap_of_le I g ⟨U, hU⟩ ⟨V, hV⟩ hVU,
     stalkIdeal_eq_map I ⟨U, hU⟩ _ hxU]
   simpa only [Ideal.map_map, ← CommRingCat.hom_comp] using
