@@ -71,16 +71,19 @@ criteria across submodules of `Q.radical` and `Q.polarBilin.ker`.
   `∑ i, Q (b (Sum.inl i)) * Q (b (Sum.inr i))` from the choice of symplectic basis `b`.
 * `QuadraticMap.arf_eq_sum_of_toMatrix_polarBilin_eq_J`: `Q.arf` equals the symplectic-basis sum in
   every symplectic basis of `Q.polarBilin`.
-* `QuadraticMap.gaussSum_eq_of_finrank_eq`, `QuadraticMap.arf_eq_of_gaussSum_eq`,
+* `QuadraticMap.gaussSum_eq_of_finrank_eq`,
+  `QuadraticMap.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow`,
+  `QuadraticMap.arf_eq_of_gaussSum_eq`,
   `QuadraticMap.gaussSum_ne_zero_of_nondegenerate_polarBilin`:
-  `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m` when `Module.finrank (ZMod 2) V = 2 * m`, determining
-  `Q.arf` and showing `Q.gaussSum ≠ 0`.
+  `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m` when `Module.finrank (ZMod 2) V = 2 * m` (equivalently
+  `2 ^ (Module.finrank (ZMod 2) V / 2)`), determining `Q.arf` and showing `Q.gaussSum ≠ 0`.
 * `QuadraticMap.IsometryEquiv.arf_eq`, `QuadraticMap.Equivalent.arf_eq`, `QuadraticMap.arf_prod`,
   `QuadraticMap.arf_pi`, `QuadraticMap.arf_of_isCompl_orthogonal`: isometry invariance and
   orthogonal-sum additivity of `Q.arf`.
-* `QuadraticMap.arf_eq_mul_of_polar_eq_one`, `QuadraticMap.arf_linMulLin_fst_snd`,
-  `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: the Arf invariant of a
-  binary form on `ZMod 2 × ZMod 2`, and of the hyperbolic plane `x * y` and the anisotropic plane
+* `TauCeti.anisotropic_binaryQuadraticForm_iff`, `QuadraticMap.arf_eq_mul_of_polar_eq_one`,
+  `QuadraticMap.arf_linMulLin_fst_snd`,
+  `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: anisotropy of `[a, b]` over
+  `ZMod 2` and the Arf invariant of binary forms on `ZMod 2 × ZMod 2`, including `x * y` and
   `x ^ 2 + x * y + y ^ 2`.
 * `QuadraticMap.two_mul_card_subtype_apply_eq_zero_of_finrank_eq`,
   `QuadraticMap.card_subtype_apply_eq_zero_of_pos_of_finrank_eq`,
@@ -185,12 +188,26 @@ end QuadraticMap
 
 namespace TauCeti
 
+/-- Over `ZMod 2`, `binaryQuadraticForm (ZMod 2) a b` is anisotropic if and only if `a = 1` and
+`b = 1`. -/
+@[simp]
+theorem anisotropic_binaryQuadraticForm_iff {a b : ZMod 2} :
+    (binaryQuadraticForm (ZMod 2) a b).Anisotropic ↔ a = 1 ∧ b = 1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have ha : a ≠ 0 := fun ha0 ↦
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![1, 0] (by simp [ha0])) 0)
+    have hb : b ≠ 0 := fun hb0 ↦
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![0, 1] (by simp [hb0])) 1)
+    exact ⟨ZMod.ne_zero_iff_eq_one.mp ha, ZMod.ne_zero_iff_eq_one.mp hb⟩
+  · rintro ⟨rfl, rfl⟩
+    rw [anisotropic_binaryQuadraticForm_one_iff]
+    intro t
+    rcases t.eq_zero_or_eq_one with rfl | rfl <;> decide
+
 /-- Over `ZMod 2`, the binary quadratic form `binaryQuadraticForm (ZMod 2) 1 1`
 (`x 0 ^ 2 + x 0 * x 1 + x 1 ^ 2`) is anisotropic. -/
-theorem anisotropic_binaryQuadraticForm_one : (binaryQuadraticForm (ZMod 2) 1 1).Anisotropic := by
-  rw [anisotropic_binaryQuadraticForm_one_iff]
-  intro t
-  rcases t.eq_zero_or_eq_one with rfl | rfl <;> decide
+theorem anisotropic_binaryQuadraticForm_one : (binaryQuadraticForm (ZMod 2) 1 1).Anisotropic :=
+  anisotropic_binaryQuadraticForm_iff.mpr ⟨rfl, rfl⟩
 
 /-- On `binaryQuadraticForm (ZMod 2) a b`, the Gauss sum equals `(-1) ^ (a * b).val * 2`. -/
 @[simp]
@@ -309,6 +326,16 @@ theorem gaussSum_eq_of_finrank_eq [Fintype V] {Q : QuadraticForm (ZMod 2) V}
   simpa only [traceGaussSum_eq_gaussSum, traceArf_eq_arf, ZMod.card, Nat.cast_ofNat] using
     Q.traceGaussSum_eq_of_finrank_eq hQ hdim
 
+/-- Dimension-free form of `QuadraticMap.gaussSum_eq_of_finrank_eq`: on any finite `ZMod 2`-space
+with nondegenerate polar form,
+`Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ (Module.finrank (ZMod 2) V / 2)`. -/
+theorem gaussSum_eq_neg_one_pow_val_arf_mul_two_pow [Fintype V] {Q : QuadraticForm (ZMod 2) V}
+    (hQ : Q.polarBilin.Nondegenerate) :
+    Q.gaussSum = (-1 : ℤ) ^ Q.arf.val * 2 ^ (Module.finrank (ZMod 2) V / 2) := by
+  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
+  have hdiv : Module.finrank (ZMod 2) V / 2 = m := by omega
+  rw [hdiv, Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
+
 /-- **Extracting the Arf invariant from a Gauss sum.** For a quadratic form `Q` on a finite
 `ZMod 2`-space `V` of dimension `2 * m` with nondegenerate polar form, if
 `Q.gaussSum = (-1) ^ a.val * 2 ^ m`, then `Q.arf = a`. -/
@@ -404,12 +431,10 @@ theorem arf_eq_mul_of_polar_eq_one {Q : QuadraticForm (ZMod 2) (ZMod 2 × ZMod 2
   have hb₁ : b (.inl 0) = (1, 0) := by simp [b]
   have hb₂ : b (.inr 0) = (0, 1) := by simp [b]
   have hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin 1) (ZMod 2) := by
-    ext x y
-    rw [LinearMap.BilinForm.toMatrix_apply]
-    rcases x with x | x <;> rcases y with y | y <;> obtain rfl := Subsingleton.elim x 0 <;>
-      obtain rfl := Subsingleton.elim y 0 <;>
-      simp [hb₁, hb₂, polar_self, polar_comm Q (0, 1), hQ, Matrix.J,
-        (by decide : (2 : ZMod 2) = 0)]
+    rw [Q.toMatrix_polarBilin_eq_J_iff]
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
+      obtain rfl := Subsingleton.elim i 0 <;> obtain rfl := Subsingleton.elim j 0 <;>
+      simp only [hb₁, hb₂, polar_self_eq_zero_of_charTwo, hQ, ↓reduceIte]
   rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, Fin.sum_univ_one, hb₁, hb₂]
 
 /-- The **hyperbolic plane** `Q (x, y) = x * y` over `ZMod 2` has Arf invariant `0`. -/
@@ -554,8 +579,7 @@ theorem card_subtype_apply_eq_one_of_pos_of_finrank_eq {Q : QuadraticForm (ZMod 
 /-- A quadratic form over `ZMod 2` with nondegenerate polar form has nonzero Gauss sum. -/
 theorem gaussSum_ne_zero_of_nondegenerate_polarBilin {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) : Q.gaussSum ≠ 0 := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
+  rw [Q.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow hQ]
   exact mul_ne_zero (pow_ne_zero _ (by decide)) (pow_ne_zero _ (by decide))
 
 /-- For `Q` with nondegenerate polar form on a finite `ZMod 2`-space, `Q.arf = 0` if and only if
@@ -563,9 +587,8 @@ theorem gaussSum_ne_zero_of_nondegenerate_polarBilin {Q : QuadraticForm (ZMod 2)
 theorem arf_eq_zero_iff_gaussSum_pos {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) :
     Q.arf = 0 ↔ 0 < Q.gaussSum := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
-  have hpow : (0 : ℤ) < 2 ^ m := pow_pos (by decide : (0 : ℤ) < 2) m
+  rw [Q.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow hQ]
+  have hpow : (0 : ℤ) < 2 ^ (Module.finrank (ZMod 2) V / 2) := pow_pos (by decide : (0 : ℤ) < 2) _
   rcases Q.arf.eq_zero_or_eq_one with h0 | h1
   · rw [h0, ZMod.val_zero, pow_zero, one_mul]
     exact ⟨fun _ ↦ hpow, fun _ ↦ rfl⟩
