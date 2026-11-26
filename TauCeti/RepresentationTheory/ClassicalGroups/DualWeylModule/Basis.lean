@@ -168,6 +168,15 @@ noncomputable def borderExponent (μ ν : YoungDiagram) (hμ : μ.colLen 0 ≤ n
     Finsupp.single ⟨ν.colLen j, hlt.trans_le ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ)⟩ 1
   else 0
 
+theorem borderExponent_of_lt (hμ : μ.colLen 0 ≤ n) {j : ℕ} (hlt : ν.colLen j < μ.colLen j) :
+    borderExponent μ ν hμ j =
+      Finsupp.single ⟨ν.colLen j, hlt.trans_le ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ)⟩ 1 :=
+  dite_eq_left hlt
+
+theorem borderExponent_of_not_lt (hμ : μ.colLen 0 ≤ n) {j : ℕ} (hlt : ¬ν.colLen j < μ.colLen j) :
+    borderExponent μ ν hμ j = 0 :=
+  dite_eq_right hlt
+
 /-- **Bordering a column.** Let `T` be a tableau of shape `ν` in `N` letters, `ν` interlacing
 `μ`, and `extend h T` the tableau of shape `μ` in `N + 1` letters obtained by writing the top
 letter `N` in the cells of `μ / ν`. The expansion in the last row of the minor of `extend h T` at
@@ -180,10 +189,10 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
       (columnMinor R ν ((YoungDiagram.colLen_le_of_le h.le 0).trans hμ) (ssytFilling T) j) := by
   have h₁ := YoungDiagram.colLen_le_of_le h.le j
   have h₂ := h.colLen_le_colLen_add_one j
-  rw [columnMinor_def, columnMinor_def, borderExponent]
+  rw [columnMinor_def, columnMinor_def]
   by_cases hlt : ν.colLen j < μ.colLen j
   · have heq : μ.colLen j = ν.colLen j + 1 := by omega
-    rw [dite_eq_left_of_eq_true (eq_true hlt),
+    rw [borderExponent_of_lt hμ hlt,
       ← Matrix.mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
     have h_rows : (fun a : Fin (μ.colLen j) => ssytFilling (BoundedSSYT.extend h T) a j
         (YoungDiagram.mem_iff_lt_colLen.mpr a.isLt)) ∘ finCongr heq.symm =
@@ -206,7 +215,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
     rw [h_rows, h_cols]
     exact hasLeadingTerm_lastRowEquiv_mvPolynomialMinor_snoc _ _
   · have heq : μ.colLen j = ν.colLen j := by omega
-    rw [dite_eq_right_of_eq_false (eq_false hlt),
+    rw [borderExponent_of_not_lt hμ hlt,
       ← Matrix.mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
     have h_rows : (fun a : Fin (μ.colLen j) => ssytFilling (BoundedSSYT.extend h T) a j
         (YoungDiagram.mem_iff_lt_colLen.mpr a.isLt)) ∘ finCongr heq.symm =
@@ -241,8 +250,9 @@ theorem sum_borderExponent (h : μ.InterlacedBy ν) (hμ : μ.colLen 0 ≤ n) :
   ext s
   have h_apply (j : ℕ) : borderExponent μ ν hμ j s =
       if ν.colLen j < μ.colLen j ∧ (s : ℕ) = ν.colLen j then 1 else 0 := by
-    unfold borderExponent
-    split_ifs with h₁ h₂ h₂ <;> simp_all [Finsupp.single_apply, Fin.ext_iff, eq_comm]
+    by_cases h₁ : ν.colLen j < μ.colLen j
+    · simp [borderExponent_of_lt hμ h₁, h₁, Finsupp.single_apply, Fin.ext_iff, eq_comm]
+    · simp [borderExponent_of_not_lt hμ h₁, h₁]
   -- The column `j` holds a cell of `μ / ν` in the row `s` exactly for `ν.rowLen s ≤ j <
   -- μ.rowLen s`.
   have h_filter : (range (μ.rowLen 0)).filter

@@ -255,6 +255,11 @@ variable (R : Type*) [CommRing R] {N n : ℕ}
 columns. -/
 def initialColumns (n k : ℕ) (s : Fin n) : ℕ := if (s : ℕ) < k then 1 else 0
 
+@[simp]
+theorem initialColumns_apply (n k : ℕ) (s : Fin n) :
+    initialColumns n k s = if (s : ℕ) < k then 1 else 0 :=
+  (rfl)
+
 /-- Every monomial of a minor on the first `k` columns uses each of these columns once. -/
 theorem mvPolynomialMinor_mem_restrictSupport {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N) :
     Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈
@@ -327,6 +332,11 @@ theorem mvPolynomialMinor_mem_dualWeylModule {k : ℕ} (hk : k ≤ n) (r : Fin k
 degree `k` for it when it has degree `k` in the row `a`. -/
 def rowWeight (a : Fin N) (p : Fin N × Fin n) : ℕ := if p.1 = a then 1 else 0
 
+@[simp]
+theorem rowWeight_apply (a : Fin N) (p : Fin N × Fin n) :
+    rowWeight a p = if p.1 = a then 1 else 0 :=
+  (rfl)
+
 /-- **Minors are weight vectors.** A minor of `x` on the rows `r` has degree `#{i | r i = a}` in
 the row `a`, the number of times `r` lists `a`. -/
 theorem isWeightedHomogeneous_mvPolynomialMinor {k : Type*} [Fintype k] [DecidableEq k]
@@ -345,7 +355,7 @@ theorem isWeightedHomogeneous_mvPolynomialMinor {k : Type*} [Fintype k] [Decidab
     simp only [rowWeight, Finset.sum_boole, Nat.cast_id]
     exact Finset.card_bij (fun i _ => σ i) (by simp) (fun _ _ _ _ h => σ.injective h)
       fun i hi => ⟨σ.symm i, by simpa using hi, by simp⟩
-  simpa [h_deg] using h
+  rwa [h_deg] at h
 
 /-- Summed over the columns `j` of a Young diagram `μ` (or over any longer range), the column
 degrees of the minors on the first `μ.colLen j` columns are the row lengths of `μ`. -/
