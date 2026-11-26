@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
+import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
@@ -306,17 +307,40 @@ theorem tendstoUniformlyOnFilter_normed_convolution {ι : Type*} {l : Filter ι}
   intro ε hε
   simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
 
+/-- Mollifying a locally integrable function with values in a closed convex set `s` by a
+normalized bump keeps its values in `s`: the mollification at `x` is the mean of `g (x - ·)` for the
+probability measure with density `φ.normed μ`. -/
+theorem normed_convolution_mem_of_convex (φ : ContDiffBump (0 : G)) {s : Set F}
+    (hs : Convex ℝ s) (hsc : IsClosed s) (hg : LocallyIntegrable g μ) (hgs : ∀ x, g x ∈ s)
+    (x : G) : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x ∈ s := by
+  set ν := μ.withDensity fun t => ENNReal.ofReal (φ.normed μ t)
+  have hmeas : Measurable fun t => ENNReal.ofReal (φ.normed μ t) :=
+    ENNReal.measurable_ofReal.comp φ.continuous_normed.measurable
+  have hlt : ∀ᵐ t ∂μ, ENNReal.ofReal (φ.normed μ t) < (⊤ : ℝ≥0∞) :=
+    ae_of_all _ fun _ => ENNReal.ofReal_lt_top
+  have htoReal (t : G) : (ENNReal.ofReal (φ.normed μ t)).toReal = φ.normed μ t :=
+    ENNReal.toReal_ofReal (φ.nonneg_normed t)
+  -- The density `φ.normed μ` is nonnegative with integral one.
+  have : IsProbabilityMeasure ν := ⟨by
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+      ← ofReal_integral_eq_lintegral_ofReal φ.integrable_normed (ae_of_all _ φ.nonneg_normed),
+      φ.integral_normed, ENNReal.ofReal_one]⟩
+  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
+    (lsmul ℝ ℝ) φ.continuous_normed hg x
+  have heq : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x = ∫ t, g (x - t) ∂ν := by
+    rw [convolution_def, integral_withDensity_eq_integral_toReal_smul hmeas hlt]
+    simp only [htoReal, lsmul_apply]
+  rw [heq]
+  refine hs.integral_mem hsc (ae_of_all _ fun t => hgs _) ?_
+  rw [integrable_withDensity_iff_integrable_smul' hmeas hlt]
+  simpa only [htoReal, ConvolutionExistsAt, lsmul_apply] using hexists
+
 /-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
 its values in `[a, b]`. -/
 theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {a b : ℝ}
     (hw : LocallyIntegrable w μ) (hwab : ∀ x, w x ∈ Set.Icc a b) (x : G) :
-    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b := by
-  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
-    (lsmul ℝ ℝ) φ.continuous_normed hw x
-  exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).1,
-    convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b :=
+  φ.normed_convolution_mem_of_convex (convex_Icc a b) isClosed_Icc hw hwab x
 
 open Set in
 /-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
