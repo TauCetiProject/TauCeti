@@ -27,47 +27,51 @@ open scoped Distributions ENNReal Gradient InnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E]
 
 section Lp
 
-variable (E) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+variable [CompleteSpace E] (E) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+  (μ : Measure E) [IsFiniteMeasureOnCompacts μ]
 
-/-- The closed subspace of `Lᵖ(E; E)` consisting of fields with zero weak divergence.
+/-- The closed subspace of `Lᵖ(μ; E)` annihilating scalar test gradients.
 It is defined by continuous pairings with test gradients, including at `p = 1` and `p = ∞`. -/
-noncomputable def solenoidalLp : ClosedSubmodule ℝ (Lp E p (volume : Measure E)) :=
+noncomputable def solenoidalLp : ClosedSubmodule ℝ (Lp E p μ) :=
   haveI : (ENNReal.conjExponent p).HolderConjugate p :=
     (ENNReal.HolderConjugate.conjExponent Fact.out).symm
   ⨅ φ : 𝓓((⊤ : Opens E), ℝ), (⊥ : ClosedSubmodule ℝ ℝ).comap
     (MemLp.innerLpCLM ℝ ((TestFunction.gradientCLM φ).continuous.memLp_of_hasCompactSupport
-      (p := p.conjExponent) (μ := volume) (TestFunction.gradientCLM φ).hasCompactSupport))
+      (p := p.conjExponent) (μ := μ) (TestFunction.gradientCLM φ).hasCompactSupport))
 
-variable {E p}
+variable {E p μ}
 
 /-- Membership in the closed solenoidal subspace is equivalent to annihilating every test
 gradient. -/
-theorem mem_solenoidalLp_iff_integral_inner_eq_zero {u : Lp E p (volume : Measure E)} :
-    u ∈ solenoidalLp E p ↔ ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, ⟪u x, ∇ (φ : E → ℝ) x⟫_ℝ = 0 := by
+theorem mem_solenoidalLp_iff_integral_inner_eq_zero {u : Lp E p μ} :
+    u ∈ solenoidalLp E p μ ↔
+      ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, ⟪u x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = 0 := by
   simp only [solenoidalLp, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
     ClosedSubmodule.mem_bot, MemLp.innerLpCLM_apply]
   simp_rw [← TestFunction.gradientCLM_apply, real_inner_comm]
 
+end Lp
+
 /-- The closed solenoidal subspace consists of precisely the fields whose representatives
 have weak divergence zero on the whole space. -/
 @[simp]
-theorem mem_solenoidalLp_iff {u : Lp E p (volume : Measure E)} :
-    u ∈ solenoidalLp E p ↔ IsSolenoidalOn volume ⊤ (u : E → E) := by
-  have hu : LocallyIntegrableOn (u : E → E) (⊤ : Opens E) volume :=
+theorem mem_solenoidalLp_iff [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {μ : Measure E} [IsLocallyFiniteMeasure μ] {u : Lp E p μ} :
+    u ∈ solenoidalLp E p μ ↔ IsSolenoidalOn μ ⊤ (u : E → E) := by
+  have hu : LocallyIntegrableOn (u : E → E) (⊤ : Opens E) μ :=
     ((Lp.memLp u).locallyIntegrable Fact.out).locallyIntegrableOn _
   rw [mem_solenoidalLp_iff_integral_inner_eq_zero, isSolenoidalOn_iff, and_iff_right hu]
 
-end Lp
-
-/-- The solenoidal `L²` fields are orthogonal to the closed span of the test gradients,
-which is `wassersteinTangentSpace` at Lebesgue measure. -/
-theorem solenoidalLp_two_eq_orthogonal_wassersteinTangentSpace :
-    (solenoidalLp E 2).toSubmodule = (wassersteinTangentSpace (volume : Measure E))ᗮ := by
+/-- The solenoidal `L²(μ)` fields are orthogonal to the closed span of the test gradients,
+which is `wassersteinTangentSpace μ`. -/
+theorem solenoidalLp_two_eq_orthogonal_wassersteinTangentSpace [FiniteDimensional ℝ E]
+    (μ : Measure E) [IsFiniteMeasureOnCompacts μ] :
+    (solenoidalLp E 2 μ).toSubmodule = (wassersteinTangentSpace μ)ᗮ := by
   ext u
   rw [ClosedSubmodule.mem_toSubmodule_iff, mem_solenoidalLp_iff_integral_inner_eq_zero,
     mem_orthogonal_wassersteinTangentSpace_iff]

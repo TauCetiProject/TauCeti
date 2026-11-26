@@ -24,7 +24,7 @@ open scoped ENNReal
 
 /-- For every finite exponent `p ≥ 1`, the solenoidal subspace on the real line is zero. -/
 theorem solenoidalLp_real_eq_bot {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :
-    solenoidalLp ℝ p = ⊥ := by
+    solenoidalLp ℝ p volume = ⊥ := by
   refine le_antisymm (fun u hu ↦ ClosedSubmodule.mem_bot.mpr ?_) bot_le
   obtain ⟨c, hc⟩ := (mem_solenoidalLp_iff.mp hu).exists_ae_eq_const
   have hmem := (Lp.memLp u).ae_eq hc
