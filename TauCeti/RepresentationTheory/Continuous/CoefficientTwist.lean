@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Along
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 public import TauCeti.RepresentationTheory.Continuous.Reduction
 public import TauCeti.Topology.Algebra.Ring.Frobenius
 

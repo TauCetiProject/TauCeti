@@ -27,6 +27,8 @@ suspension leaves the underlying module unchanged and reindexes its homogeneous 
 
 ## Main results
 
+* `TauCeti.InternalGrading.mem_shift_piece_neg_of_mem_zero`: a degree-zero element has degree `-c`
+  after shifting by `c`.
 * `LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
 
 ## References
@@ -79,6 +81,11 @@ theorem shift_shift (G : InternalGrading R M ι) (c d : ι) :
     (G.shift c).shift d = G.shift (d + c) := by
   ext p
   simp [add_assoc]
+
+/-- An element of degree zero has degree `-c` after shifting the grading by `c`. -/
+theorem mem_shift_piece_neg_of_mem_zero (G : InternalGrading R M ι) (c : ι) {x : M}
+    (hx : x ∈ G.piece 0) : x ∈ (G.shift c).piece (-c) := by
+  rwa [shift_piece, neg_add_cancel]
 
 /-- A Koszul twist preserves the original degree, expressed in any shifted grading. -/
 theorem koszulTwist_mem_shift_piece {R : Type u} {M : Type v}

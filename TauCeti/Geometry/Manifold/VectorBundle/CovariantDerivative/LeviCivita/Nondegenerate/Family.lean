@@ -43,6 +43,51 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
   (g : ContMDiffNondegenerateMetricFamily I M IP P)
 
+section RiemannianBundle
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {p : P}
+
+/-- If a smooth metric family evaluates at the parameter `p` to the installed inner product, so does
+its member `g.metric p`. -/
+theorem metric_apply_eq_inner_of_apply_eq_inner
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v) (y : M)
+    (u v : TangentSpace I y) : g.metric p y u v = inner ℝ u v := by
+  rw [metric_apply, hg]
+
+variable [FiniteDimensional ℝ E]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- A Levi-Civita connection of a member of the family which is the installed metric is a
+Levi-Civita connection of the installed metric. -/
+theorem isLeviCivitaConnection_of_apply_eq_inner
+    (hcov : (g.metric p).IsLeviCivitaConnection cov)
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v) :
+    cov.IsLeviCivitaConnection :=
+  ((g.metric p).isLeviCivitaConnection_iff_of_apply_eq_inner
+    (g.metric_apply_eq_inner_of_apply_eq_inner hg)).mp hcov
+
+/-- Mathlib's Levi-Civita connection is a Levi-Civita connection of a member of the family which is
+the installed metric. -/
+theorem isLeviCivitaConnection_leviCivitaConnection_of_apply_eq_inner
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v) :
+    (g.metric p).IsLeviCivitaConnection (CovariantDerivative.leviCivitaConnection I M) :=
+  ((g.metric p).isLeviCivitaConnection_iff_of_apply_eq_inner
+    (g.metric_apply_eq_inner_of_apply_eq_inner hg)).mpr
+    (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+
+/-- A Levi-Civita connection of a member of the family which is the installed metric agrees with
+Mathlib's Levi-Civita connection on vector fields differentiable at the point. -/
+theorem apply_eq_leviCivitaConnection_of_apply_eq_inner
+    (hcov : (g.metric p).IsLeviCivitaConnection cov)
+    (hg : ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v)
+    {Y : Π x : M, TangentSpace I x} {x : M} (hY : MDiffAt (T% Y) x) :
+    cov Y x = CovariantDerivative.leviCivitaConnection I M Y x :=
+  ContinuousLinearMap.ext fun v ↦ (g.isLeviCivitaConnection_of_apply_eq_inner hcov hg).uniqueness I
+    (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I) hY v
+
+end RiemannianBundle
+
 variable [FiniteDimensional ℝ E] [IsManifold IP 1 P]
 
 /-- Applying the connections of a smooth metric family to fixed smooth vector fields gives

@@ -252,6 +252,28 @@ theorem contDiff_uncurry_continuationHomotopy [NormedAddCommGroup V] [NormedSpac
     ContDiff ℝ n (uncurry (continuationHomotopy H₀ H₁)) :=
   contDiff_uncurry_linearHomotopy smoothTransition.contDiff hH₀ hH₁
 
+/-- The continuation homotopy from `H₀_μ` to `H₁_μ`, for families `H₀`, `H₁` of time-dependent
+Hamiltonians that are jointly `Cⁿ` in the parameter `μ`, the time and the point, is jointly `Cⁿ`
+in `μ`, the point of the cylinder and the point. -/
+theorem contDiff_uncurry_continuationHomotopy_family [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {n : ℕ∞} {H₀ H₁ : ℝ → ℝ → V → ℝ}
+    (hH₀ : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ H₀ p.1 p.2.1 p.2.2)
+    (hH₁ : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ H₁ p.1 p.2.1 p.2.2) :
+    ContDiff ℝ n
+      (uncurry fun p : ℝ × (ℝ × ℝ) ↦ continuationHomotopy (H₀ p.1) (H₁ p.1) p.2) := by
+  -- It is the continuation homotopy of `H₀`, `H₁` viewed as Hamiltonians on `ℝ × V`, read at
+  -- `(μ, y)`.
+  have heq : (uncurry fun p : ℝ × (ℝ × ℝ) ↦ continuationHomotopy (H₀ p.1) (H₁ p.1) p.2) =
+      uncurry (continuationHomotopy (fun t (q : ℝ × V) ↦ H₀ q.1 t q.2)
+        (fun t (q : ℝ × V) ↦ H₁ q.1 t q.2)) ∘ fun q ↦ (q.1.2, (q.1.1, q.2)) := by
+    funext q
+    simp only [comp_apply, uncurry_def, continuationHomotopy_def]
+  have hswap : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ (p.2.1, p.1, p.2.2) :=
+    contDiff_snd.fst.prodMk (contDiff_fst.prodMk contDiff_snd.snd)
+  rw [heq]
+  exact (contDiff_uncurry_continuationHomotopy (V := ℝ × V) (hH₀.comp hswap)
+    (hH₁.comp hswap)).comp (contDiff_fst.snd.prodMk (contDiff_fst.fst.prodMk contDiff_snd))
+
 /-- The `s`-derivative of the continuation homotopy, its derivative along the direction `1` of
 the domain, is `β'(s) (H₁ - H₀)(t)`. -/
 theorem fderiv_continuationHomotopy_stdComplexLineReal {z : ℝ × ℝ} {x : V}

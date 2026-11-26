@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.CondExpPartitionEntropy.FiniteLabel
-public import TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy
+public import TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Basic
 
 /-!
 # Worked examples: conditional entropy given the σ-algebra of a finite label
