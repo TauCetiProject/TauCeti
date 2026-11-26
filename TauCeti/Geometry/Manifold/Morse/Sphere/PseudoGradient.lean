@@ -69,7 +69,7 @@ north pole `v` is the complement of the south pole `-v`. -/
 @[simp]
 theorem unstableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.unstableSet v = {-v}ᶜ :=
-  hX.unstableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
+  hX.unstableSet_eq_compl_of_critical_eq_or_eq
     (fun y ↦ (mfderiv_sphereHeight_eq_zero_iff v y).1) (ne_neg_of_mem_unit_sphere ℝ v)
     hX.unstableSet_sphereHeight_neg
 
@@ -78,7 +78,7 @@ pole `-v` is the complement of the north pole `v`. -/
 @[simp]
 theorem stableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.stableSet (-v) = {v}ᶜ :=
-  hX.stableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
+  hX.stableSet_eq_compl_of_critical_eq_or_eq
     (fun y ↦ (mfderiv_sphereHeight_eq_zero_iff v y).1) (ne_neg_of_mem_unit_sphere ℝ v)
     hX.stableSet_sphereHeight_self
 

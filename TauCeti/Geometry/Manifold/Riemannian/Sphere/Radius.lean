@@ -69,8 +69,8 @@ def sphereRoundMetricOfRadius (r : ℝ) (hr : 0 < r) :
   ((sphereRoundMetric (E := E)).ofLE le_top).rescale (fun _ ↦ r ^ 2) contMDiff_const
     fun _ ↦ pow_pos hr 2
 
-/-- Unfolding lemma for `TauCeti.sphereRoundMetricOfRadius`. -/
-theorem sphereRoundMetricOfRadius_def (r : ℝ) (hr : 0 < r) :
+/-- Unfolding lemma for `sphereRoundMetricOfRadius`. -/
+theorem sphereRoundMetricOfRadius_def (hr : 0 < r) :
     sphereRoundMetricOfRadius (E := E) (n := n) r hr =
       ((sphereRoundMetric (E := E)).ofLE le_top).rescale (fun _ ↦ r ^ 2) contMDiff_const
         fun _ ↦ pow_pos hr 2 :=

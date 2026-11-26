@@ -234,25 +234,16 @@ noncomputable def unblockedHomologyCommutationLinearMap :
     letI := hG.unblockedHomologyModule R
     letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
     G.unblockedHomology R →ₗ[Polynomial R]
-      (G.swapColumns C.column (finRotate n C.column)).unblockedHomology R := by
-  letI := hG.unblockedHomologyModule R
-  letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
-  exact
-    { toFun := G.unblockedHomologyCommutationMap R C
-      map_add' := map_add _
-      map_smul' := fun q y => by
-        obtain ⟨p, rfl⟩ := aeval_const_X_surjective (Fin n) R q
-        rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ,
-          ← (hG.swapColumns C.column (finRotate n C.column)).aeval_smul_unblockedHomology]
-        simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply,
-          aeval_rename, Function.comp_def, RingHom.id_apply] }
+      (G.swapColumns C.column (finRotate n C.column)).unblockedHomology R :=
+  hG.unblockedHomologyLinearMapOfSemilinear R (hG.swapColumns C.column (finRotate n C.column))
+    (fun p => by simp [aeval_rename, Function.comp_def]) (G.unblockedHomologyCommutationMap R C)
 
 /-- The `R[U]`-linear map acts by the specified semilinear commutation map. -/
 @[simp]
 theorem unblockedHomologyCommutationLinearMap_apply (y : G.unblockedHomology R) :
     hG.unblockedHomologyCommutationLinearMap R C y =
-      G.unblockedHomologyCommutationMap R C y := (rfl)
+      G.unblockedHomologyCommutationMap R C y := by
+  rw [unblockedHomologyCommutationLinearMap, coe_unblockedHomologyLinearMapOfSemilinear]
 
 open OddComponentGridDiagram in
 /-- For a knot grid, the `R[U]`-linear commutation map of a column turn `C` is homogeneous for the
@@ -269,6 +260,7 @@ theorem isHomogeneous_unblockedHomologyCommutationLinearMap :
   refine LinearMap.isHomogeneous_def.mpr fun a y hy => ?_
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
+  rw [unblockedHomologyCommutationLinearMap_apply]
   -- The target grading belongs to `(hG.swapColumns ..).toOddComponentGridDiagram`, which is
   -- `hG.toOddComponentGridDiagram.swapColumns C` by definition: both pair the grid
   -- `G.swapColumns C.column (finRotate n C.column)` with a proof that its component count is odd

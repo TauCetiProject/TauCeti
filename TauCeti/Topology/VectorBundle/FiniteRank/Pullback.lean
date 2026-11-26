@@ -77,6 +77,11 @@ def pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) : FiniteRankBundleC
     ((A.pullback f).core.localTriv i).baseSet =
       f ⁻¹' (A.core.localTriv (f i)).baseSet := (rfl)
 
+/-- A point lies in the chart `i` of the pullback exactly when its image lies in the chart `f i`
+of the original core. -/
+theorem mem_baseSet_pullback {A : FiniteRankBundleCore 𝕜 Y} {f : C(X, Y)} {i x : X} :
+    x ∈ (A.pullback f).core.baseSet i ↔ f x ∈ A.core.baseSet (f i) := Iff.rfl
+
 @[simp] theorem coordChange_pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (i j x : X) :
     (A.pullback f).core.coordChange i j x = A.core.coordChange (f i) (f j) (f x) := (rfl)

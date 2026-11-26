@@ -97,6 +97,19 @@ namespace SemiboundedForm
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
   (q : SemiboundedForm 𝕜 H)
 
+/-- Two semibounded forms are equal when they have the same form domain and agree on pairs of
+vectors with the same underlying vectors in `H`. -/
+theorem ext_of_form_eq {q q' : SemiboundedForm 𝕜 H} (h : q.domain = q'.domain)
+    (h' : ∀ (u v : q.domain) (u' v' : q'.domain), (u : H) = u' → (v : H) = v' →
+      q.form u v = q'.form u' v') : q = q' := by
+  revert h h'
+  obtain ⟨D, f, -, -⟩ := q
+  obtain ⟨D', f', -, -⟩ := q'
+  rintro rfl h'
+  congr
+  ext u v
+  exact h' u v u v rfl rfl
+
 /-! ### Lower bounds and admissible shifts -/
 
 /-- `γ` is a **lower bound** of `q`: `γ * ‖u‖ ^ 2 ≤ re (q u u)` on the form domain. -/

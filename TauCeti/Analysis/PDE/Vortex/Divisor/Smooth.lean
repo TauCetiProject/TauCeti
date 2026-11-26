@@ -12,7 +12,6 @@ import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -261,20 +260,11 @@ end Background
 
 /-! ### The parts from the reduced solution -/
 
-/-- The Sobolev embedding of `H^s(ℂ)`, `s > 1`, into the bounded continuous functions. -/
-private def sobolevBCF {s : ℝ} (hs : 1 < s) : H^{s}(ℂ) →L[ℝ] ℂ →ᵇ ℂ :=
-  (ZeroAtInftyContinuousMap.toBCFₗᵢ ℝ).toContinuousLinearMap.comp
-    ((toZeroAtInfty (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ)
-
-private theorem coeFn_sobolevBCF {s : ℝ} (hs : 1 < s) (u : H^{s}(ℂ)) :
-    ⇑(sobolevBCF hs u) = ⇑(toZeroAtInfty (finrank_real_complex_lt_two_mul hs) u) := by
-  ext z
-  simp [sobolevBCF]
-
-/-- The Sobolev embedding of `u` is a representative of its `L²` function. -/
-private theorem sobolevBCF_ae_eq {s : ℝ} (hs : 1 < s) {u : H^{s}(ℂ)} {f : ℂ → ℂ}
-    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] f) : ⇑(sobolevBCF hs u) =ᵐ[volume] f := by
-  rw [coeFn_sobolevBCF]
+/-- The Sobolev embedding of `u ∈ H^s(ℂ)`, `s > 1`, is a representative of its `L²` function. -/
+private theorem toBCF_ae_eq {s : ℝ} (hs : 1 < s) {u : H^{s}(ℂ)} {f : ℂ → ℂ}
+    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] f) :
+    ⇑(toBCF (finrank_real_complex_lt_two_mul hs) u) =ᵐ[volume] f := by
+  rw [coe_toBCF]
   exact (coeFn_inclusionLp_ae_eq_toZeroAtInfty _ u).symm.trans hu
 
 variable {m : ℕ}
@@ -286,18 +276,19 @@ private def reducedSolutionH3 (c : Fin m → ℂ) : H^{(2 : ℝ) + 1}(ℂ) :=
 
 /-- The derivative `∂_v w_c` of the reduced solution, as a bounded continuous function. -/
 private def reducedSolutionDeriv (v : ℂ) (c : Fin m → ℂ) : ℂ →ᵇ ℂ :=
-  sobolevBCF one_lt_two (lineDerivCLM (by norm_num) (by simp) v (reducedSolutionH3 c))
+  toBCF (finrank_real_complex_lt_two_mul one_lt_two)
+    (lineDerivCLM (by norm_num) (by simp) v (reducedSolutionH3 c))
 
 private theorem contDiff_reducedSolutionDeriv (v : ℂ) :
     ContDiff ℝ ∞ (reducedSolutionDeriv (m := m) v) :=
-  (sobolevBCF one_lt_two).contDiff.comp
+  ((toBCF (finrank_real_complex_lt_two_mul one_lt_two)).restrictScalars ℝ).contDiff.comp
     (((lineDerivCLM (by norm_num) (by simp) v).restrictScalars ℝ).contDiff.comp
       (contDiff_ofRealSobolevFunction_reducedSolution _))
 
 private theorem reducedSolutionDeriv_ae_eq (v : ℂ) (c : Fin m → ℂ) :
     ⇑(reducedSolutionDeriv v c) =ᵐ[volume]
       fun z ↦ (fderiv ℝ (reducedSolution (monicOfCoeff c)) z v : ℂ) :=
-  sobolevBCF_ae_eq one_lt_two (coeFn_inclusionLp_lineDerivCLM_ae_eq (by norm_num) (by simp)
+  toBCF_ae_eq one_lt_two (coeFn_inclusionLp_lineDerivCLM_ae_eq (by norm_num) (by simp)
     zero_le_two ((contDiff_reducedSolution _).of_le (by simp))
     (coeFn_inclusionLp_ofRealSobolevFunction _ _) v)
 
@@ -313,7 +304,7 @@ private def partsEntry (c₀ c : Fin m → ℂ) : Fin 6 → ℂ →ᵇ ℂ :=
       (natDegree_monicOfCoeff c₀).ge fun k ↦ (monicOfCoeff c).coeff k,
     polySqrtWeight (monicOfCoeff c₀) (monic_monicOfCoeff c₀).ne_zero
       (natDegree_monicOfCoeff c₀).ge fun k ↦ (monicOfCoeff c).derivative.coeff k,
-    sobolevBCF one_lt_two (sobolevReducedSolution c),
+    toBCF (finrank_real_complex_lt_two_mul one_lt_two) (sobolevReducedSolution c),
     reducedSolutionDeriv 1 c,
     reducedSolutionDeriv I c]
 
@@ -324,7 +315,8 @@ private theorem contDiff_partsEntry (c₀ : Fin m → ℂ) (j : Fin 6) :
   · exact contDiff_polySqrtWeight _ _ _ fun k ↦ (contDiff_coeff_monicOfCoeff k).restrict_scalars ℝ
   · exact contDiff_polySqrtWeight _ _ _ fun k ↦
       (contDiff_coeff_derivative_monicOfCoeff k).restrict_scalars ℝ
-  · exact (sobolevBCF one_lt_two).contDiff.comp contDiff_sobolevReducedSolution
+  · exact ((toBCF (finrank_real_complex_lt_two_mul one_lt_two)).restrictScalars ℝ).contDiff.comp
+      contDiff_sobolevReducedSolution
   · exact contDiff_reducedSolutionDeriv 1
   · exact contDiff_reducedSolutionDeriv I
 
@@ -373,7 +365,7 @@ private theorem partsNormSq_vortexParts_self (c₀ : Fin m → ℂ) (z : ℂ) :
 of `P_c` is the vortex of `P_c`. -/
 private theorem ae_fieldOfParts_vortexParts (c₀ c : Fin m → ℂ) :
     ∀ᵐ z, fieldOfParts (vortexParts c₀ c z) = polynomialVortex (monicOfCoeff c) z := by
-  have h3 := sobolevBCF_ae_eq one_lt_two (coeFn_inclusionLp_sobolevReducedSolution c)
+  have h3 := toBCF_ae_eq one_lt_two (coeFn_inclusionLp_sobolevReducedSolution c)
   filter_upwards [h3, reducedSolutionDeriv_ae_eq 1 c, reducedSolutionDeriv_ae_eq I c]
     with z h3 h4 h5
   rw [polynomialVortex_def]

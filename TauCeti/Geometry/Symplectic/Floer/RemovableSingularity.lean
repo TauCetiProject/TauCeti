@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
 public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
@@ -59,8 +60,10 @@ on the open disc `B(z₀, R)`; off `z₀` the solution is smooth, which extends 
   `(du - X_K)^{0,1} = 0` on `Ω \ {z₀}` for an open `Ω ⊆ ℝ × ℝ`, with integrable Floer energy
   density and `J` tamed by `ω`.
 
-None of these results asserts differentiability at the puncture; that needs elliptic regularity of
-the extension.
+None of these results asserts differentiability at the puncture. For the coordinate form with
+`C^ℓ` data, `2 ≤ ℓ`, elliptic regularity makes the extension `C^ℓ` on the whole disc, solving the
+equation at the puncture too, in `TauCeti.Geometry.Symplectic.Floer.RemovableSingularity.Smooth`
+(`TauCeti.Floer.exists_contDiffOn_update_of_finite_energy`).
 
 ## References
 
@@ -347,12 +350,8 @@ theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
   filter_upwards [ae_restrict_mem measurableSet_ball,
     ae_restrict_of_ae (volume.ae_ne z₀)] with z hzε hzne
   have hz : z ∈ ball z₀ (R / 2) \ {z₀} := ⟨ball_subset_ball hεR.le hzε, hzne⟩
-  have hupd : ∀ᶠ w in 𝓝 z, w ≠ z₀ := isOpen_compl_singleton.mem_nhds hzne
-  have hG' : fderiv ℝ (Function.update G z₀ q') z = fderiv ℝ G z :=
-    Filter.EventuallyEq.fderiv_eq (hupd.mono fun w hw ↦ Function.update_of_ne hw _ _)
-  have hu' : fderiv ℝ (Function.update u z₀ q) z = fderiv ℝ u z :=
-    Filter.EventuallyEq.fderiv_eq (hupd.mono fun w hw ↦ Function.update_of_ne hw _ _)
-  rw [Function.comp_apply, hG', hu', fderiv_eq_sndL_comp hG hGu hz,
+  rw [Function.comp_apply, fderiv_update_of_ne hzne, fderiv_update_of_ne hzne,
+    fderiv_eq_sndL_comp hG hGu hz,
     ContinuousLinearMap.compL_apply]
 
 end Euclidean

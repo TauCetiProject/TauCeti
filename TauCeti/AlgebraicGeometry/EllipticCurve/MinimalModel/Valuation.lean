@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.LocalDiscriminant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Valuation
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
 /-!

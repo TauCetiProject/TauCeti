@@ -43,6 +43,13 @@ theorem volume_real_unitBall :
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
     ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
+/-- The Euclidean unit ball has positive real volume in every dimension. -/
+theorem volume_real_unitBall_pos (n : ℕ) :
+    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) :=
+  ENNReal.toReal_pos
+    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
+    measure_ball_lt_top.ne
+
 /-- There is a closed ball about the origin of volume one. -/
 theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (closedBall (0 : V) ρ) = 1 := by
   rcases subsingleton_or_nontrivial V with hV | hV

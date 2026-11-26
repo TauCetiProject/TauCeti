@@ -34,6 +34,10 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
   is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
 * `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 * `ENNReal.HolderConjugate.le_two`: the conjugate of an exponent `p ≥ 2` is at most `2`.
+* `ENNReal.HolderConjugate.le_inv_one_sub_inv`,
+  `ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv`: for `1 ≤ p ≤ q`, the
+  conjugate `q'` of `q` is at most the conjugate `p' = (1 - 1/p)⁻¹` of `p`, and
+  `1/q' - 1/p' = 1/p - 1/q`.
 * `NNReal.HolderConjugate.eq_two`: an exponent in `ℝ≥0` conjugate to `2` is `2`.
 -/
 
@@ -128,6 +132,22 @@ theorem le_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 ≤ p) : q ≤ 2
     (ENNReal.inv_le_inv.2 hp) (ENNReal.inv_lt_inv.2 (not_le.1 hq))
   rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
   exact lt_irrefl _ h
+
+/-- For `p ≤ q`, the exponent `q'` conjugate to `q` is at most the exponent `(1 - 1/p)⁻¹`
+conjugate to `p`. -/
+theorem le_inv_one_sub_inv {p q q' : ℝ≥0∞} [q'.HolderConjugate q] (hpq : p ≤ q) :
+    q' ≤ (1 - p⁻¹)⁻¹ := by
+  rw [← ENNReal.inv_le_inv, inv_inv, ← one_sub_inv q q']
+  exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hpq) 1
+
+/-- For `1 ≤ p`, the exponent `q'` conjugate to `q` and the exponent `(1 - 1/p)⁻¹` conjugate to `p`
+have the same reciprocal gap as `p` and `q`: `1/q' - (1 - 1/p) = 1/p - 1/q`. -/
+theorem inv_toReal_sub_inv_toReal_inv_one_sub_inv {p q q' : ℝ≥0∞} [q'.HolderConjugate q]
+    (hp : 1 ≤ p) : q'.toReal⁻¹ - ((1 - p⁻¹)⁻¹).toReal⁻¹ = (p⁻¹).toReal - (q⁻¹).toReal := by
+  rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv, ← one_sub_inv q q',
+    ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 (one_le q q')) ENNReal.one_ne_top,
+    ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 hp) ENNReal.one_ne_top,
+    _root_.sub_sub_sub_cancel_left]
 
 end ENNReal.HolderConjugate
 

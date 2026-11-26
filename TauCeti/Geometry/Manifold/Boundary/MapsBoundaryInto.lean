@@ -21,7 +21,8 @@ that use them.
 
 * `TauCeti.MapsBoundaryInto`, with its eliminators `TauCeti.MapsBoundaryInto.mapsTo` and
   `TauCeti.MapsBoundaryInto.mem_range`, and its behaviour under constant maps, `congr`, `mono` and
-  composition; `TauCeti.mapsBoundaryInto_comp_iff` for composition with an injective map.
+  composition; `TauCeti.mapsBoundaryInto_comp_iff` for composition with an injective map, and
+  `TauCeti.mapsBoundaryInto_comp_diffeomorph_iff` for precomposition with a diffeomorphism.
 * `TauCeti.mapsBoundaryInto_of_boundaryless`: on a manifold without boundary every map satisfies
   every boundary condition.
 * `TauCeti.MapsBoundaryInto.of_tendsto`: closedness under pointwise limits when `range ι` is
@@ -33,7 +34,7 @@ that use them.
 public section
 
 open Set Filter
-open scoped Topology
+open scoped Topology Manifold
 
 namespace TauCeti
 
@@ -128,5 +129,16 @@ theorem mapsBoundaryInto_comp_iff {g : M → N} (hg : Function.Injective g) :
   refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp g⟩
   obtain ⟨y, hy⟩ := h hx
   exact ⟨y, hg hy⟩
+
+/-- **Invariance under diffeomorphisms of the domain.** A diffeomorphism `Φ : X' → X` maps the
+boundary of `X'` onto the boundary of `X`, so `u ∘ Φ` maps the boundary into `L` along `ι` exactly
+when `u` does. -/
+theorem mapsBoundaryInto_comp_diffeomorph_iff {HX' EX' : Type*} [TopologicalSpace HX']
+    [NormedAddCommGroup EX'] [NormedSpace 𝕜 EX'] {IX' : ModelWithCorners 𝕜 EX' HX'}
+    {X' : Type*} [TopologicalSpace X'] [ChartedSpace HX' X'] {n : WithTop ℕ∞} (hn : n ≠ 0)
+    (Φ : X' ≃ₘ^n⟮IX', IX⟯ X) : MapsBoundaryInto IX' (u ∘ Φ) ι ↔ MapsBoundaryInto IX u ι := by
+  rw [mapsBoundaryInto_iff_mapsTo, mapsBoundaryInto_iff_mapsTo, ← Φ.preimage_boundary hn]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ h hx⟩
+  simpa using h (x := Φ.symm x) (by simpa using hx)
 
 end TauCeti

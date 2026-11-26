@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -21,11 +22,13 @@ underlying topological space of `K` is the subspace topology of `G`, the inclusi
 a topological embedding, which is what distinguishes an embedded from a merely immersed subgroup;
 the remaining content is the smooth structure and the splitting of the differential.
 
-The theorem of this file is **Cartan's closed-subgroup theorem**: a closed subgroup of a
+The main theorem of this file is **Cartan's closed-subgroup theorem**: a closed subgroup of a
 finite-dimensional real Lie group is an embedded Lie subgroup, with model vector space its Lie
 algebra `TauCeti.Lie.lieSubalgebraOfSubgroup`.  It is what makes a group cut out of a Lie group by
 closed conditions -- a matrix group, a maximal torus, the kernel or centralizer of a continuous
-homomorphism -- a Lie group in its own right.
+homomorphism -- a Lie group in its own right.  Conversely an embedded Lie subgroup is closed, since
+it is locally compact in its subspace topology, so the embedded Lie subgroups are exactly the closed
+subgroups.
 
 The model space being the Lie algebra pins the dimension of `K`.  The finer statement that the Lie
 algebra of `K` *as a Lie group* maps isomorphically onto `lieSubalgebraOfSubgroup K` along the
@@ -55,6 +58,10 @@ differential of the inclusion is not proved here.
   **the closed-subgroup theorem with its model space**, the data for a closed subgroup with model
   space its Lie algebra.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`: **the closed-subgroup (Cartan) theorem**.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isClosed`, `TauCeti.Lie.IsEmbeddedLieSubgroup.isClosed`:
+  conversely, an embedded Lie subgroup is closed.
+* `TauCeti.Lie.isEmbeddedLieSubgroup_iff_isClosed`: the embedded Lie subgroups of a
+  finite-dimensional real Lie group are exactly its closed subgroups.
 * `TauCeti.Lie.discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot`: a closed subgroup is discrete
   exactly when its Lie algebra is trivial.
 
@@ -114,6 +121,15 @@ theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K
   dsimp only
   let _ : ChartedSpace E' K := d.chartedSpace
   exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
+
+/-- **The model space of an embedded Lie subgroup is finite-dimensional** when that of the ambient
+group is: the differential of the inclusion at `1` embeds it linearly in `E`. -/
+theorem finiteDimensional [FiniteDimensional ℝ E] (d : EmbeddedLieSubgroupData I K E') :
+    FiniteDimensional ℝ E' :=
+  let _ := d.chartedSpace
+  Module.Finite.of_injective
+    (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1 : E' →L[ℝ] E).toLinearMap
+    (d.injective_mfderiv_subtypeVal 1)
 
 /-- The inclusion of an embedded Lie subgroup is a smooth embedding. -/
 theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G]
@@ -178,6 +194,18 @@ theorem injective_mfderiv_mul_left_subtypeVal [ContMDiffMul I ∞ G]
       (d.mdifferentiableAt_mul_left_subtypeVal g k) u
   rw [hder, hder, hvw]
 
+/-- **An embedded Lie subgroup is closed.** The differential of the inclusion at `1` is injective,
+so the model space of `K` is finite-dimensional and `K` is locally compact in its subspace
+topology; a locally compact subgroup of a `T0` topological group is closed
+(`Subgroup.isClosed_of_weaklyLocallyCompactSpace`). -/
+theorem isClosed [FiniteDimensional ℝ E] [IsTopologicalGroup G]
+    (d : EmbeddedLieSubgroupData I K E') : IsClosed (K : Set G) := by
+  let _ := d.chartedSpace
+  have := I.t1Space G
+  have := d.finiteDimensional
+  have : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace E' K
+  exact Subgroup.isClosed_of_weaklyLocallyCompactSpace K
+
 end EmbeddedLieSubgroupData
 
 /-- **`K` is an embedded Lie subgroup**: it carries `TauCeti.Lie.EmbeddedLieSubgroupData` for some
@@ -205,6 +233,12 @@ theorem EmbeddedLieSubgroupData.isEmbeddedLieSubgroup {K : Subgroup G} {E' : Typ
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] (d : EmbeddedLieSubgroupData I K E') :
     IsEmbeddedLieSubgroup (I := I) K :=
   ⟨E', inferInstance, inferInstance, ⟨d⟩⟩
+
+/-- **An embedded Lie subgroup is closed**; see `TauCeti.Lie.EmbeddedLieSubgroupData.isClosed`. -/
+theorem IsEmbeddedLieSubgroup.isClosed [FiniteDimensional ℝ E] [IsTopologicalGroup G]
+    {K : Subgroup G} (hK : IsEmbeddedLieSubgroup (I := I) K) : IsClosed (K : Set G) := by
+  obtain ⟨_, _, _, ⟨d⟩⟩ := hK
+  exact d.isClosed
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
@@ -244,6 +278,15 @@ theorem isEmbeddedLieSubgroup_of_isClosed {K : Subgroup G} (hK : IsClosed (K : S
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
   exact d.isEmbeddedLieSubgroup
+
+/-- **The embedded Lie subgroups are the closed subgroups.** A subgroup of a finite-dimensional
+real Lie group is an embedded Lie subgroup exactly when it is closed: one direction is Cartan's
+closed-subgroup theorem `TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`, the other
+`TauCeti.Lie.IsEmbeddedLieSubgroup.isClosed`. -/
+theorem isEmbeddedLieSubgroup_iff_isClosed {K : Subgroup G} :
+    IsEmbeddedLieSubgroup (I := I) K ↔ IsClosed (K : Set G) :=
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  ⟨IsEmbeddedLieSubgroup.isClosed, isEmbeddedLieSubgroup_of_isClosed⟩
 
 /-- **A closed subgroup is discrete exactly when its Lie algebra is trivial.** If `K` is discrete,
 each one-parameter subgroup lying in `K` is constant, so its generator vanishes. Conversely, by the

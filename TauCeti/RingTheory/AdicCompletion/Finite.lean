@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
+import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.RingTheory.AdicCompletion.Pow
 import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.Monogenic
@@ -42,6 +44,8 @@ their restrictions to the module.
   separated module over an adically precomplete ring is finite once its reduction is.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
+* `IsAdicComplete.of_finite_projective`: a finite projective module over an adically complete
+  ring is complete, without a Noetherian hypothesis.
 * `IsPrecomplete.of_finite_of_isLocalRing`: a finite local algebra over a precomplete local ring
   is precomplete at its own maximal ideal, without a Noetherian hypothesis.
 * `IsAdicComplete.of_finite_of_isLocalRing`: a finite local algebra over a complete Noetherian
@@ -111,6 +115,14 @@ theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Modu
     IsAdicComplete I M where
   toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
+
+/-- A finite projective module over an adically complete ring is complete, without a
+Noetherian hypothesis. -/
+theorem IsAdicComplete.of_finite_projective [IsAdicComplete I R] [Module.Finite R M]
+    [Module.Projective R M] : IsAdicComplete I M := by
+  obtain ⟨n, _, g, _, hg, _⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  exact { toIsHausdorff := IsHausdorff.of_injective I g hg
+          toIsPrecomplete := IsPrecomplete.of_finite I M }
 
 /-- A finite local algebra over a precomplete local ring is precomplete for its own maximal
 ideal, without a Noetherian hypothesis. The two maximal-ideal-adic filtrations are cofinal. -/

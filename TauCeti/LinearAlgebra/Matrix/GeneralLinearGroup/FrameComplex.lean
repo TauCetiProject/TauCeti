@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Basic
 public import TauCeti.LinearAlgebra.Matrix.RowCol
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
@@ -61,7 +62,6 @@ range condition.
   representations.
 * `TauCeti.ColumnSystem.chainComplex`: the augmented chain complex, in `Rep k G`.
 * `TauCeti.ColumnSystem.Adjacent`: two members with one column are the faces of a member with two.
-* `TauCeti.unimodularFrames`: the unimodular `p`-frames of `Rᵐ`.
 * `TauCeti.frameSystem`, `TauCeti.affineFrameSystem`: the complexes `F_n^0` and `F_n^1`.
 
 ## Main results
@@ -336,54 +336,22 @@ end ColumnSystem
 section Frames
 
 variable (R m) in
-/-- The **unimodular `p`-frames** of `Rᵐ`: the `m × p` matrices with a left inverse. Their columns
-form a basis of a free direct summand of the module `Rᵐ` of columns. -/
-def unimodularFrames (p : ℕ) : Set (Matrix m (Fin p) R) :=
-  {A | ∃ B : Matrix (Fin p) m R, B * A = 1}
-
-omit [DecidableEq m] in
-theorem mem_unimodularFrames_iff {p : ℕ} {A : Matrix m (Fin p) R} :
-    A ∈ unimodularFrames R m p ↔ ∃ B : Matrix (Fin p) m R, B * A = 1 :=
-  Iff.rfl
-
-omit [DecidableEq m] in
-/-- Subsequences of frames are frames. -/
-theorem submatrix_mem_unimodularFrames {p q : ℕ} {A : Matrix m (Fin p) R}
-    (hA : A ∈ unimodularFrames R m p) {f : Fin q → Fin p} (hf : Function.Injective f) :
-    A.submatrix id f ∈ unimodularFrames R m q := by
-  obtain ⟨B, hB⟩ := hA
-  refine ⟨B.submatrix f id, ?_⟩
-  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hB, submatrix_one _ hf]
-
-/-- Frames are stable under the general linear group. -/
-theorem mul_mem_unimodularFrames {p : ℕ} (g : GL m R) {A : Matrix m (Fin p) R}
-    (hA : A ∈ unimodularFrames R m p) : (g : Matrix m m R) * A ∈ unimodularFrames R m p := by
-  obtain ⟨B, hB⟩ := hA
-  exact ⟨B * ((g⁻¹ : GL m R) : Matrix m m R), by
-    simp [Matrix.mul_assoc, ← Matrix.mul_assoc _ (g : Matrix m m R), hB]⟩
-
-/-- The standard frame `(e_(f 0), …, e_(f (p - 1)))` of an injective `f`. -/
-theorem one_submatrix_mem_unimodularFrames {p : ℕ} {f : Fin p → m} (hf : Function.Injective f) :
-    (1 : Matrix m m R).submatrix id f ∈ unimodularFrames R m p :=
-  ⟨(1 : Matrix m m R).submatrix f id, by
-    rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one _ hf]⟩
-
-variable (R m) in
 /-- The unimodular frames of `Rᵐ`, with `GL m R` acting by left multiplication. -/
 def frameSystem : ColumnSystem (MonoidHom.id (GL m R)) where
-  carrier := unimodularFrames R m
+  carrier p := unimodularFrames R m (Fin p)
   submatrix_succAbove_mem _ hA := submatrix_mem_unimodularFrames hA Fin.succAbove_right_injective
   mul_mem g _ hA := mul_mem_unimodularFrames g hA
 
 @[simp]
-theorem frameSystem_carrier : (frameSystem R m).carrier = unimodularFrames R m :=
+theorem frameSystem_carrier (p : ℕ) :
+    (frameSystem R m).carrier p = unimodularFrames R m (Fin p) :=
   (rfl)
 
 variable (R m) in
 /-- The unimodular frames of `Rᵐ ⊕ R` whose vectors lie in the affine hyperplane `Rᵐ + e_*`, the
 last coordinate of each being `1`, with `g : GL m R` acting through `diag(g, 1)`. -/
 def affineFrameSystem : ColumnSystem (fromBlocksGL.comp (MonoidHom.inl (GL m R) (GL Unit R))) where
-  carrier p := {A | A ∈ unimodularFrames R (m ⊕ Unit) p ∧ ∀ j, A (.inr ()) j = 1}
+  carrier p := {A | A ∈ unimodularFrames R (m ⊕ Unit) (Fin p) ∧ ∀ j, A (.inr ()) j = 1}
   submatrix_succAbove_mem _ hA :=
     ⟨submatrix_mem_unimodularFrames hA.1 Fin.succAbove_right_injective, fun _ => hA.2 _⟩
   mul_mem g A hA := ⟨mul_mem_unimodularFrames _ hA.1, fun j => by
@@ -392,7 +360,7 @@ def affineFrameSystem : ColumnSystem (fromBlocksGL.comp (MonoidHom.inl (GL m R) 
 @[simp]
 theorem mem_affineFrameSystem_carrier_iff {p : ℕ} {A : Matrix (m ⊕ Unit) (Fin p) R} :
     A ∈ (affineFrameSystem R m).carrier p ↔
-      A ∈ unimodularFrames R (m ⊕ Unit) p ∧ ∀ j, A (.inr ()) j = 1 :=
+      A ∈ unimodularFrames R (m ⊕ Unit) (Fin p) ∧ ∀ j, A (.inr ()) j = 1 :=
   Iff.rfl
 
 /-! ### Exactness in low degrees -/
@@ -400,7 +368,7 @@ theorem mem_affineFrameSystem_carrier_iff {p : ℕ} {A : Matrix (m ⊕ Unit) (Fi
 omit [DecidableEq m] in
 /-- A vector `v` with `b ⬝ᵥ v = 1` for some functional `b` is a unimodular `1`-frame. -/
 theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
-    (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m 1 :=
+    (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m (Fin 1) :=
   ⟨of ![b], by
     ext i j
     rw [Subsingleton.elim i 0, Subsingleton.elim j 0]
@@ -410,7 +378,7 @@ theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
 omit [DecidableEq m] in
 /-- A vector `v` is a unimodular `1`-frame exactly when `b ⬝ᵥ v = 1` for some functional `b`. -/
 theorem transpose_of_cons_mem_unimodularFrames_iff {v : m → R} :
-    (of ![v])ᵀ ∈ unimodularFrames R m 1 ↔ ∃ b : m → R, b ⬝ᵥ v = 1 := by
+    (of ![v])ᵀ ∈ unimodularFrames R m (Fin 1) ↔ ∃ b : m → R, b ⬝ᵥ v = 1 := by
   refine ⟨fun ⟨B, hB⟩ => ⟨fun r => B 0 r, ?_⟩,
     fun ⟨b, hb⟩ => transpose_of_cons_mem_unimodularFrames b hb⟩
   have h := congrFun (congrFun hB 0) 0
@@ -421,7 +389,7 @@ omit [DecidableEq m] in
 /-- Two vectors `v, w` with a dual pair of functionals `r₁, r₂` form a unimodular `2`-frame. -/
 theorem transpose_of_cons_cons_mem_unimodularFrames {v w : m → R} (r₁ r₂ : m → R)
     (h₁₁ : r₁ ⬝ᵥ v = 1) (h₁₂ : r₁ ⬝ᵥ w = 0) (h₂₁ : r₂ ⬝ᵥ v = 0) (h₂₂ : r₂ ⬝ᵥ w = 1) :
-    (of ![v, w])ᵀ ∈ unimodularFrames R m 2 :=
+    (of ![v, w])ᵀ ∈ unimodularFrames R m (Fin 2) :=
   ⟨of ![r₁, r₂], by
     rw [one_fin_two]
     ext i j
@@ -446,7 +414,7 @@ nonempty, as soon as `m` is nonempty. -/
 theorem frameSystem_chainComplex_exactAt_zero [Nonempty m] :
     ((frameSystem R m).chainComplex k).ExactAt 0 :=
   (frameSystem R m).chainComplex_exactAt_zero k
-    ⟨_, one_submatrix_mem_unimodularFrames (f := fun _ : Fin 1 => Classical.arbitrary m)
+    ⟨_, submatrix_one_mem_unimodularFrames (f := fun _ : Fin 1 => Classical.arbitrary m)
       (Function.injective_of_subsingleton _)⟩
 
 /-- The complex of unimodular frames in the affine hyperplane `Rᵐ + e_*` is exact in degree `0`:
@@ -454,7 +422,7 @@ theorem frameSystem_chainComplex_exactAt_zero [Nonempty m] :
 theorem affineFrameSystem_chainComplex_exactAt_zero :
     ((affineFrameSystem R m).chainComplex k).ExactAt 0 :=
   (affineFrameSystem R m).chainComplex_exactAt_zero k
-    ⟨_, one_submatrix_mem_unimodularFrames (f := fun _ : Fin 1 => (.inr () : m ⊕ Unit))
+    ⟨_, submatrix_one_mem_unimodularFrames (f := fun _ : Fin 1 => (.inr () : m ⊕ Unit))
       (Function.injective_of_subsingleton _), fun _ => by rw [submatrix_apply, id, one_apply_eq]⟩
 
 /-- The complex of unimodular frames in the affine hyperplane `Rᵐ + e_*` is exact in degree `1`,
@@ -468,8 +436,9 @@ theorem affineFrameSystem_chainComplex_exactAt_one (hm : 1 < Fintype.card m) :
   have hvert : ∀ u : m → R, (of ![Sum.elim u 1])ᵀ ∈ F.carrier 1 := fun u =>
     ⟨transpose_of_cons_mem_unimodularFrames (Pi.single (.inr ()) 1) (by simp),
       fun j => by fin_cases j; simp⟩
-  have hedge : ∀ u u' : m → R, (of ![Sum.elim u 1, Sum.elim u' 1])ᵀ ∈ unimodularFrames R _ 2 →
-      F.Adjacent ⟨_, hvert u⟩ ⟨_, hvert u'⟩ := fun u u' h =>
+  have hedge : ∀ u u' : m → R,
+      (of ![Sum.elim u 1, Sum.elim u' 1])ᵀ ∈ unimodularFrames R _ (Fin 2) →
+        F.Adjacent ⟨_, hvert u⟩ ⟨_, hvert u'⟩ := fun u u' h =>
     F.adjacent_of_mem _ _ ⟨h, fun j => by fin_cases j <;> simp⟩
   refine F.chainComplex_exactAt_one k ⟨_, hvert 0⟩ fun ⟨A, hA⟩ => ?_
   set u : m → R := fun r => A (.inl r) 0

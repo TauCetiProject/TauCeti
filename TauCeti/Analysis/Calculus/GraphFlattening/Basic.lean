@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -19,14 +20,17 @@ import TauCeti.Topology.MetricSpace.Holder
 For a continuous real function `γ` on a topological space `E`, the shear
 `(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the product `WithLp 2 (ℝ × E)`.
 It carries the region `γ(y) < t` to the positive normal half-space and its graph to
-height zero. Its inverse adds `γ(y)` to the normal coordinate.
+height zero. Its inverse adds `γ(y)` to the normal coordinate, and so pulls the model domain
+`TauCeti.normalEpigraph φ` back to `TauCeti.normalHalfSpace 0`
+(`TauCeti.coe_normalHalfSpace_eq_preimage_graphFlattening_symm`).
 
 At points where `γ` is differentiable, the derivative is the linear shear
 `(s, z) ↦ (s - Dγ(y) z, z)`. Its determinant is one and its operator norm is at
 most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. The shear differs from the
 identity by the height alone, so its iterated derivatives of order at least two are bounded by
 those of `γ`, and so are those of its inverse. For a `K`-Lipschitz `γ`,
-both the shear and its inverse are `(1 + K)`-Lipschitz. These are the chart estimates used to
+both the shear and its inverse are `(1 + K)`-Lipschitz. Two shears differ pointwise by the
+difference of their heights. These are the chart estimates used to
 transfer Sobolev trace and extension operators from a half-space to a domain with a graph
 boundary.
 The shear also preserves Lebesgue measure, requiring only continuity of `γ`.
@@ -102,6 +106,14 @@ theorem graphFlattening_image_eq (γ : E → ℝ) (hγ : Continuous γ) :
   rw [(graphFlattening γ hγ).image_eq_preimage_symm]
   simp
 
+/-- Inverse graph flattening pulls the region above the graph of `φ` back to the half-space
+`{0 < t}`. -/
+theorem coe_normalHalfSpace_eq_preimage_graphFlattening_symm (φ : C(E, ℝ)) :
+    (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) =
+      (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ := by
+  rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt,
+    coe_normalHalfSpace]
+
 variable [AddCommGroup E] [Module ℝ E] in
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
     ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
@@ -114,6 +126,15 @@ end Topology
 section Lipschitz
 
 variable {E : Type*} [SeminormedAddCommGroup E]
+
+/-- Two graph flattenings differ pointwise by the difference of their heights. -/
+theorem dist_graphFlattening_graphFlattening {γ₁ γ₂ : E → ℝ} (hγ₁ : Continuous γ₁)
+    (hγ₂ : Continuous γ₂) (x : WithLp 2 (ℝ × E)) :
+    dist (graphFlattening γ₁ hγ₁ x) (graphFlattening γ₂ hγ₂ x) = dist (γ₁ x.snd) (γ₂ x.snd) := by
+  rw [WithLp.prod_dist_eq_of_L2]
+  -- The normal coordinates differ by the heights, and the tangential coordinates agree.
+  simp only [graphFlattening_apply, WithLp.toLp_fst, WithLp.toLp_snd, dist_sub_left, dist_self]
+  simp [Real.sqrt_sq dist_nonneg]
 
 /-- Graph flattening by a `K`-Lipschitz height is `(1 + K)`-Lipschitz. -/
 theorem lipschitzWith_graphFlattening {γ : E → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ) :

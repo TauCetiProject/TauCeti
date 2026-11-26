@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Data.ENNReal.Holder
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.WeakDeriv.IntegrationByParts
 
 /-!
 # Sobolev regularity of the annihilator of a real Cauchy–Riemann operator
@@ -36,7 +39,15 @@ regular as the coefficients allow:
   (`TauCeti.memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero`). This form needs no
   inner product on `V`. For `J ∈ C^{ℓ+1}` and `S ∈ C^ℓ`, `ℓ ≤ ∞`, such a covector field agrees
   almost everywhere with a `C^ℓ` field
-  (`TauCeti.exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero`).
+  (`TauCeti.exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero`);
+* by duality, a locally `L^q` function `u` (`q > 1`) with a weak derivative that solves
+  `∂_s u + J ∂_t u + S u = 0` almost everywhere, for `J ∈ C^{ℓ+1}` and `S ∈ C^ℓ`, agrees almost
+  everywhere with a `C^ℓ` function
+  (`TauCeti.exists_contDiffOn_ae_eq_of_hasWeakFDerivOn_cauchyRiemann`): the field of evaluations
+  `z ↦ (ψ ↦ ψ (u z))` annihilates the transposed operator on covector test functions;
+* the adjoint equation `∫ η ((∂bar φ + Z φ)(1)) = 0` of an operator written with the complex
+  antilinear part of the derivative is the covector form for `J = i` and `S = 2 Z(·)(1)`
+  (`TauCeti.integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero`).
 
 After the reflection `ρ(z) = -conj z`, an annihilator of `D` is a weak solution of a homogeneous
 real Cauchy–Riemann equation whose leading coefficient again squares to `-1`
@@ -237,5 +248,135 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero {
   induction ℓ using ENat.recTopCoe with
   | top => exact contDiffOn_infty.2 fun k ↦ hC k le_top
   | coe n => exact_mod_cast hC n le_rfl
+
+/-! ### Weak solutions of a real Cauchy–Riemann equation, by duality -/
+
+/-- **The transposed equation.** If `u` has weak derivative `Du` and solves
+`∂_s u + J ∂_t u + S u = 0` almost everywhere on `Ω`, for a `C¹` field `J`, then for every covector
+test function `ψ`, `∫ (∂_s ψ + Jᵀ ∂_t ψ + (∂_t J - S)ᵀ ψ)(u) = 0`, where `Aᵀ ψ = ψ ∘ A`. -/
+private theorem integral_apply_cauchyRiemann_transpose_eq_zero {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+    {J S : ℂ → V →L[ℝ] V} (hJ : ContDiffOn ℝ 1 J Ω) {u : ℂ → V} {Du : ℂ → ℂ →L[ℝ] V}
+    (hDu : HasWeakFDerivOn volume Ω u Du)
+    (h : ∀ᵐ z ∂volume.restrict Ω, Du z 1 + J z (Du z I) + S z (u z) = 0)
+    (ψ : 𝓓(Ω, V →L[ℝ] ℝ)) :
+    ∫ z, fderiv ℝ (ψ : ℂ → V →L[ℝ] ℝ) z 1 (u z) +
+      (ContinuousLinearMap.compL ℝ V V ℝ).flip (J z) (fderiv ℝ (ψ : ℂ → V →L[ℝ] ℝ) z I) (u z) +
+        (ContinuousLinearMap.compL ℝ V V ℝ).flip (fderiv ℝ J z I - S z) (ψ z) (u z) = 0 := by
+  set T : (V →L[ℝ] V) →L[ℝ] (V →L[ℝ] ℝ) →L[ℝ] V →L[ℝ] ℝ :=
+    (ContinuousLinearMap.compL ℝ V V ℝ).flip
+  have hψ : ContDiff ℝ 1 (ψ : ℂ → V →L[ℝ] ℝ) := ψ.contDiff.of_le (by simp)
+  -- The test function `Φ = Jᵀ ψ` is `C¹` with support in that of `ψ`.
+  set Φ : ℂ → V →L[ℝ] ℝ := fun z ↦ T (J z) (ψ z)
+  have hΦ : ContDiff ℝ 1 Φ :=
+    T.contDiff_of_tsupport_subset_right hJ hψ.contDiffOn Ω.isOpen ψ.tsupport_subset
+  have hΦψ : Function.support Φ ⊆ Function.support ψ :=
+    Function.support_subset_iff'.2 fun z hz ↦ by simp [Φ, Function.notMem_support.1 hz]
+  have hΦc : HasCompactSupport Φ := ψ.hasCompactSupport.mono hΦψ
+  have hΦs : tsupport Φ ⊆ Ω := (closure_mono hΦψ).trans ψ.tsupport_subset
+  have hdΦ (z : ℂ) : fderiv ℝ Φ z I (u z) =
+      T (J z) (fderiv ℝ (ψ : ℂ → V →L[ℝ] ℝ) z I) (u z) + T (fderiv ℝ J z I) (ψ z) (u z) := by
+    rw [T.fderiv_of_tsupport_subset_right (hJ.differentiableOn one_ne_zero)
+      (hψ.differentiable one_ne_zero) Ω.isOpen ψ.tsupport_subset z]
+    simp
+  -- Integration by parts in both directions, and the equation for the zeroth-order term.
+  have h₁ := (hDu.hasWeakLineDerivOn 1).integral_fderiv_apply_eq_neg hψ ψ.hasCompactSupport
+    ψ.tsupport_subset
+  have h₂ := (hDu.hasWeakLineDerivOn I).integral_fderiv_apply_eq_neg hΦ hΦc hΦs
+  have hi₁ := hDu.locallyIntegrableOn.integrable_clm_apply_of_hasCompactSupport
+    ((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
+    (ψ.hasCompactSupport.fderiv_apply ℝ 1) ((tsupport_fderiv_apply_subset ℝ 1).trans
+      ψ.tsupport_subset)
+  have hi₂ := hDu.locallyIntegrableOn.integrable_clm_apply_of_hasCompactSupport
+    ((hΦ.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
+    (hΦc.fderiv_apply ℝ I) ((tsupport_fderiv_apply_subset ℝ I).trans hΦs)
+  have hj₁ := (hDu.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
+    |>.integrable_clm_apply_of_hasCompactSupport hψ.continuous.continuousOn ψ.hasCompactSupport
+      ψ.tsupport_subset
+  have hj₂ := (hDu.hasWeakLineDerivOn I).locallyIntegrableOn_deriv
+    |>.integrable_clm_apply_of_hasCompactSupport hΦ.continuous.continuousOn hΦc hΦs
+  have hS : (fun z ↦ ψ z (S z (u z))) =ᵐ[volume] fun z ↦ -(ψ z (Du z 1) + Φ z (Du z I)) := by
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 h] with z hz
+    by_cases hzΩ : z ∈ Ω
+    · simp only [Φ, T, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply,
+        ContinuousLinearMap.comp_apply, ← map_add]
+      rw [eq_neg_of_add_eq_zero_right (hz hzΩ), map_neg]
+    · simp [Φ, image_eq_zero_of_notMem_tsupport fun h ↦ hzΩ (ψ.tsupport_subset h)]
+  calc _ = ∫ z, fderiv ℝ (ψ : ℂ → V →L[ℝ] ℝ) z 1 (u z) + fderiv ℝ Φ z I (u z) -
+        ψ z (S z (u z)) := integral_congr_ae (.of_forall fun z ↦ by simp [hdΦ, T]; abel)
+    _ = 0 := by
+      have hi : Integrable (fun z ↦ fderiv ℝ (ψ : ℂ → V →L[ℝ] ℝ) z 1 (u z) +
+          fderiv ℝ Φ z I (u z)) := hi₁.add hi₂
+      have hj : Integrable (fun z ↦ ψ z (Du z 1) + Φ z (Du z I)) := hj₁.add hj₂
+      rw [integral_sub hi (hj.neg.congr hS.symm), integral_add hi₁ hi₂,
+        integral_congr_ae hS, integral_neg, integral_add hj₁ hj₂, h₁, h₂]
+      ring
+
+/-- **Weak solutions of a real Cauchy–Riemann equation are regular at every exponent.** Let
+`Ω ⊆ ℂ` be open, `V` a finite-dimensional real normed space, `ℓ ≤ ∞`, `J` a `C^{ℓ+1}` field of
+complex structures on `V` and `S` a `C^ℓ` field of endomorphisms over `Ω`. If a locally `L^q`
+function `u` (`q > 1`) with weak derivative `Du` satisfies `∂_s u + J ∂_t u + S u = 0` almost
+everywhere on `Ω`, then `u` agrees almost everywhere on `Ω` with a `C^ℓ` function.
+
+Unlike the bootstrap for `IsWeakCauchyRiemannOn`, this needs no exponent above `2`. By weak
+integration by parts, the field of evaluations `z ↦ (ψ ↦ ψ (u z))` annihilates the transposed
+operator `∂_s ψ + Jᵀ ∂_t ψ + (∂_t J - S)ᵀ ψ` on covector test functions `ψ`, whose leading
+coefficient `Jᵀ` again squares to `-1`; so the regularity theorem for annihilators applies. -/
+theorem exists_contDiffOn_ae_eq_of_hasWeakFDerivOn_cauchyRiemann {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+    {J S : ℂ → V →L[ℝ] V} {ℓ : ℕ∞} (hJ : ContDiffOn ℝ ((ℓ + 1 : ℕ∞) : WithTop ℕ∞) J Ω)
+    (hS : ContDiffOn ℝ (ℓ : WithTop ℕ∞) S Ω) (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
+    {u : ℂ → V} {Du : ℂ → ℂ →L[ℝ] V} {q : ℝ≥0∞} (hq : 1 < q) (hu : MemLpLoc q Ω u)
+    (hDu : HasWeakFDerivOn volume Ω u Du)
+    (h : ∀ᵐ z ∂volume.restrict Ω, Du z 1 + J z (Du z I) + S z (u z) = 0) :
+    ∃ g : ℂ → V, ContDiffOn ℝ (ℓ : WithTop ℕ∞) g Ω ∧ u =ᵐ[volume.restrict Ω] g := by
+  -- `T A ψ = ψ ∘ A` transposes endomorphisms of `V` to endomorphisms of its dual.
+  let T : (V →L[ℝ] V) →L[ℝ] (V →L[ℝ] ℝ) →L[ℝ] V →L[ℝ] ℝ :=
+    (ContinuousLinearMap.compL ℝ V V ℝ).flip
+  have hdJ : ContDiffOn ℝ (ℓ : WithTop ℕ∞) (fun z ↦ fderiv ℝ J z I) Ω :=
+    (hJ.fderiv_of_isOpen Ω.isOpen (by exact_mod_cast le_rfl)).clm_apply contDiffOn_const
+  let ev : V →L[ℝ] (V →L[ℝ] ℝ) →L[ℝ] ℝ := ContinuousLinearMap.apply ℝ ℝ
+  have hη : MemLpLoc q Ω (fun z ↦ ev (u z)) := hu.clm_comp (G := (V →L[ℝ] ℝ) →L[ℝ] ℝ) ev
+  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero
+    (Ω := Ω) (ℓ := ℓ) (J := fun z ↦ T (J z)) (S := fun z ↦ T (fderiv ℝ J z I - S z))
+    (contDiffOn_const.clm_apply hJ) (contDiffOn_const.clm_apply (hdJ.sub hS))
+    (fun z hz ↦ by ext ψ v; simp [T, ← mul_apply_eq_comp, hJ2 z hz]) hq hη
+    fun ψ ↦ integral_apply_cauchyRiemann_transpose_eq_zero (hJ.of_le (by simp)) hDu h ψ
+  -- `u` is recovered from its evaluations on the coordinate functionals of a basis.
+  let b := Module.finBasis ℝ V
+  refine ⟨fun z ↦ ∑ j, g z (LinearMap.toContinuousLinearMap (b.coord j)) • b j,
+    ContDiffOn.sum fun j _ ↦ (hg.clm_apply contDiffOn_const).smul contDiffOn_const, ?_⟩
+  filter_upwards [hug] with z hz
+  rw [← hz]
+  exact (b.sum_repr (u z)).symm
+
+/-! ### The adjoint equation of an operator `∂bar + Z` -/
+
+section ComplexAntilinear
+
+open ContinuousLinearMap (complexAntilinearPartL complexAntilinearPartL_apply_one lsmul)
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F]
+
+/-- **The adjoint equation in planar form.** For a covector field `η`, a field `Z` of zeroth-order
+terms and a function `φ`, if `η` annihilates the value on `1` of `∂bar φ + Z φ` in integral, it
+annihilates `∂ₛφ + i ∂ₜφ + 2 Z(φ)(1)`, which is twice that value. This is the form of the adjoint
+equation for `J = i` and `S = 2 Z(·)(1)` taken by the planar regularity theorems. -/
+theorem integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero {η : ℂ → F →L[ℝ] ℝ}
+    {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F} {φ : ℂ → F}
+    (h : ∫ z, η z ((complexAntilinearPartL (fderiv ℝ φ z) + Z z (φ z)) 1) = 0) :
+    ∫ z, η z (fderiv ℝ φ z 1 + lsmul ℝ ℂ Complex.I (fderiv ℝ φ z Complex.I) +
+      ((2 : ℝ) • (ContinuousLinearMap.apply ℝ F (1 : ℂ)).comp (Z z)) (φ z)) = 0 := by
+  have h2 := congrArg ((2 : ℝ) * ·) h
+  rw [mul_zero, ← integral_const_mul] at h2
+  rw [← h2]
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  simp only [add_apply, complexAntilinearPartL_apply_one,
+    smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply, map_add, map_smul, smul_eq_mul]
+  ring
+
+end ComplexAntilinear
 
 end TauCeti
