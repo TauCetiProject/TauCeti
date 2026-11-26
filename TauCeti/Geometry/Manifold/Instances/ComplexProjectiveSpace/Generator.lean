@@ -231,14 +231,13 @@ private theorem lineLiftUnit_of_notMem {y : Fin 2 → I} (hy : y ∉ Cube.bounda
   have hv : lineLiftVector n y = √(1 - cubeRadius y ^ 2) •
       affineVector 0 (Pi.single 0 (2 * squareCenterOffset y / (√(1 - cubeRadius y ^ 2) : ℝ))) := by
     ext i
-    refine Fin.cases ?_ (fun j ↦ Fin.cases ?_ (fun k ↦ ?_) j) i
-    · simp [lineLiftVector]
-    · rw [← Fin.succAbove_zero, PiLp.smul_apply, affineVector_apply_succAbove, Fin.succAbove_zero,
-        Pi.single_eq_same, Complex.real_smul, Fin.succ_zero_eq_one, lineLiftVector_apply_one,
-        mul_div_cancel₀ _ (Complex.ofReal_ne_zero.2 ha.ne')]
-    · rw [← Fin.succAbove_zero, PiLp.smul_apply, affineVector_apply_succAbove, Fin.succAbove_zero,
-        Pi.single_eq_of_ne (Fin.succ_ne_zero k), smul_zero]
-      simp [lineLiftVector, Fin.ext_iff]
+    induction i using Fin.succAboveCases 0 with
+    | x => simp [lineLiftVector]
+    | p j =>
+      rw [PiLp.smul_apply, affineVector_apply_succAbove]
+      refine Fin.cases ?_ (fun k ↦ ?_) j
+      · simp [lineLiftVector, mul_div_cancel₀ _ (Complex.ofReal_ne_zero.2 ha.ne')]
+      · simp [lineLiftVector, Fin.ext_iff]
   refine Subtype.ext ?_
   rw [lineLiftUnit, coe_normalizeToSphere_apply, hv, NormedSpace.normalize_smul_of_pos ha,
     coe_affineUnitVector_apply, NormedSpace.normalize]
@@ -382,6 +381,9 @@ private def rightEdgeLoop : Path (1 : Circle) 1 where
   source' := squareTwist_eq_one (.inr (.inl rfl))
   target' := squareTwist_eq_one (.inr (.inr rfl))
 
+private theorem rightEdgeLoop_apply (t : I) : rightEdgeLoop t = squareTwist ![1, t] :=
+  (rfl)
+
 /-- The twisted direction turns once around the circle along the right edge. -/
 private theorem degree_rightEdgeLoop : Circle.degree rightEdgeLoop = 1 :=
   Circle.degree_eq_of_sub_eq rightEdgeLoop continuous_rightEdgeAngle exp_rightEdgeAngle
@@ -412,15 +414,10 @@ private theorem hopfBoundary_lineSquare :
   rw [GenLoop.map_apply, GenLoop.map_apply]
   refine (hopfFiberHomeomorph _).symm_apply_eq.2 (Subtype.ext (Subtype.ext ?_))
   rw [TopCat.IsBoundaryLift.endLoop_apply_coe, coe_hopfFiberHomeomorph_apply,
-    coe_lineLift_of_mem n (p := (1, t)) ⟨0, .inr rfl⟩]
-  -- The right side is `u • e₁` for `u = homeomorphSphere (squareTwist (1, t))`, read through
-  -- `genLoopEquivOfUnique` and `rightEdgeLoop`; the unit sphere of `ℂ` acts on the sphere of
-  -- `ℂⁿ⁺²` by scalar multiplication, which holds by definition and has no lemma to rewrite with.
-  change _ = ((Circle.homeomorphSphere (squareTwist ![1, t 0]) : ℂ)) •
-    ((affineUnitVector 1 0 : sphere (0 : EuclideanSpace ℂ (Fin (n + 2))) 1) :
-      EuclideanSpace ℂ (Fin (n + 2)))
-  rw [Circle.coe_homeomorphSphere_apply, coe_affineUnitVector_zero]
-  rfl
+    coe_lineLift_of_mem n (p := (1, t)) ⟨0, .inr rfl⟩, ContinuousMap.coe_mk,
+    GenLoop.genLoopEquivOfUnique_symm_apply, rightEdgeLoop_apply, Sphere.coe_sphere_smul,
+    Circle.coe_homeomorphSphere_apply, coe_affineUnitVector_zero, squarePoint,
+    Subsingleton.elim (default : Fin 1) 0]
 
 /-- **The coordinate line generates `π₂(CPⁿ⁺¹)`.** The isomorphism `π₂(CPⁿ⁺¹) ≃* ℤ` of the Hopf
 fibration sends the class `lineClass n` of the coordinate line `[1 : z : 0 : ⋯ : 0]`, read as a
