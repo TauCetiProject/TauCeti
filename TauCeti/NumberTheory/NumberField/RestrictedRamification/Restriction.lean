@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.NumberTheory.NumberField.RestrictedRamification.Basic
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # Restriction and transition maps for Galois groups with restricted ramification
@@ -87,61 +88,44 @@ theorem isQuotientMap_restrictGaloisGroupS (S : Set (HeightOneSpectrum (𝓞 K))
   (restrictGaloisGroupS K Ω S).continuous.isClosedMap.isQuotientMap
     (restrictGaloisGroupS K Ω S).continuous (restrictGaloisGroupS_surjective K Ω S)
 
-@[instance_reducible]
-private def algebraMaxUnramifiedOutside {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
-    Algebra (maxUnramifiedOutside K Ω S) (maxUnramifiedOutside K Ω T) :=
-  (IntermediateField.inclusion (maxUnramifiedOutside_mono h)).toRingHom.toAlgebra
-
-omit [NumberField K] [Normal K Ω] in
-private lemma isScalarTower_maxUnramifiedOutside {S T : Set (HeightOneSpectrum (𝓞 K))}
-    (h : S ⊆ T) :
-    letI := algebraMaxUnramifiedOutside K Ω h
-    IsScalarTower K (maxUnramifiedOutside K Ω S) (maxUnramifiedOutside K Ω T) :=
-  letI := algebraMaxUnramifiedOutside K Ω h
-  .of_algebraMap_eq fun _ ↦ rfl
-
 /-- **Functoriality of `G_{K,S}` in `S`.** For `S ⊆ T`, restricting from `K_T` to `K_S` gives a
 continuous group homomorphism `G_{K,T} →ₜ* G_{K,S}`. -/
 def galoisGroupSMap {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
-    galoisGroupS K Ω T →ₜ* galoisGroupS K Ω S :=
-  let _ := algebraMaxUnramifiedOutside K Ω h
-  have := isScalarTower_maxUnramifiedOutside K Ω h
-  let f : galoisGroupS K Ω T →* galoisGroupS K Ω S :=
-    AlgEquiv.restrictNormalHom (F := K) (K₁ := maxUnramifiedOutside K Ω T)
-      (maxUnramifiedOutside K Ω S)
-  { toMonoidHom := f
-    continuous_toFun := by
-      refine (isQuotientMap_restrictGaloisGroupS K Ω T).continuous_iff.2 ?_
-      have hcomp : (f.toFun ∘ restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S := by
-        funext σ
-        ext x
-        have h1 := congrArg Subtype.val
-          (AlgEquiv.restrictNormal_commutes (F := K) (K₁ := maxUnramifiedOutside K Ω T)
-            (restrictGaloisGroupS K Ω T σ) (maxUnramifiedOutside K Ω S) x)
-        exact (h1.trans (restrictGaloisGroupS_apply K Ω T σ
-          (IntermediateField.inclusion (maxUnramifiedOutside_mono h) x))).trans
-          (restrictGaloisGroupS_apply K Ω S σ x).symm
-      rw [hcomp]
-      exact (restrictGaloisGroupS K Ω S).continuous }
+    galoisGroupS K Ω T →ₜ* galoisGroupS K Ω S where
+  toMonoidHom := (IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom
+  continuous_toFun := by
+    refine (isQuotientMap_restrictGaloisGroupS K Ω T).continuous_iff.2 ?_
+    have hcomp :
+        ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
+          restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S := by
+      funext σ
+      have hval : (maxUnramifiedOutside K Ω T).val.comp
+          (IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)) =
+          (maxUnramifiedOutside K Ω S).val := rfl
+      rw [Function.comp_apply, restrictGaloisGroupS_eq_restrictNormalHom,
+        restrictGaloisGroupS_eq_restrictNormalHom,
+        ← IntermediateField.restrictNormalHom_val (maxUnramifiedOutside K Ω T),
+        AlgHom.restrictNormalHom_restrictNormalHom, hval, IntermediateField.restrictNormalHom_val]
+    -- `ContinuousMonoidHom` evaluates through `toMonoidHom.toFun`.
+    change Continuous
+      ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
+        restrictGaloisGroupS K Ω T)
+    rw [hcomp]
+    exact (restrictGaloisGroupS K Ω S).continuous
 
 /-- The transition map `G_{K,T} → G_{K,S}` acts on `K_S` by applying the element of `G_{K,T}`. -/
 @[simp]
 theorem galoisGroupSMap_apply {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T)
     (σ : galoisGroupS K Ω T) (x : maxUnramifiedOutside K Ω S) :
     (galoisGroupSMap K Ω h σ x : Ω) =
-      (σ (IntermediateField.inclusion (maxUnramifiedOutside_mono h) x) : Ω) := by
-  let _ := algebraMaxUnramifiedOutside K Ω h
-  have := isScalarTower_maxUnramifiedOutside K Ω h
-  exact congrArg Subtype.val
-    (AlgEquiv.restrictNormal_commutes (F := K) (K₁ := maxUnramifiedOutside K Ω T) σ
-      (maxUnramifiedOutside K Ω S) x)
+      (σ (IntermediateField.inclusion (maxUnramifiedOutside_mono h) x) : Ω) :=
+  congrArg Subtype.val
+    ((IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom_commutes σ x)
 
 /-- The transition map `G_{K,T} → G_{K,S}` is surjective. -/
 theorem galoisGroupSMap_surjective {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
-    Function.Surjective (galoisGroupSMap K Ω h) := by
-  let _ := algebraMaxUnramifiedOutside K Ω h
-  have := isScalarTower_maxUnramifiedOutside K Ω h
-  exact AlgEquiv.restrictNormalHom_surjective (maxUnramifiedOutside K Ω T)
+    Function.Surjective (galoisGroupSMap K Ω h) :=
+  AlgHom.restrictNormalHom_surjective _
 
 /-- Restricting from `Gal(Ω / K)` to `G_{K,T}` and then to `G_{K,S}` equals restricting directly
 to `G_{K,S}`. -/

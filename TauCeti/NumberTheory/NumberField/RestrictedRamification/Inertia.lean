@@ -182,7 +182,7 @@ theorem localToGaloisGroupS_eq_one_of_mem_inertia {S : Set (HeightOneSpectrum (�
       (restrictGaloisGroupS K (SeparableClosure K) S).toMonoidHom.ker := by
     rw [ker_restrictGaloisGroupS]
     exact absoluteGaloisGroupMap_mem_fixingSubgroup_maxUnramifiedOutside K hv τ hg
-  exact hmem
+  exact MonoidHom.mem_ker.1 hmem
 
 private theorem isUnramified_adicCompletion_of_inertia_le_fixingSubgroup
     {S : Set (HeightOneSpectrum (𝓞 K))} {L : IntermediateField K (SeparableClosure K)}
@@ -285,6 +285,21 @@ instance instNormal_inertiaOutsideSubgroup (S : Set (HeightOneSpectrum (𝓞 K))
   rw [← ker_restrictGaloisGroupS_eq_inertiaOutsideSubgroup K S]
   exact MonoidHom.normal_ker _
 
+/-- A continuous homomorphism `φ : G_K →ₜ* H` into a `T₁` topological group killing local inertia
+at every finite place outside `S` kills the fixing subgroup of `K_S`. -/
+theorem fixingSubgroup_maxUnramifiedOutside_le_ker {S : Set (HeightOneSpectrum (𝓞 K))}
+    {H : Type*} [Group H] [TopologicalSpace H] [T1Space H]
+    (φ : AbsoluteGaloisGroup K →ₜ* H)
+    (hφ : ∀ (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
+      ∀ (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+        (g : AbsoluteGaloisGroup (v.adicCompletion K)),
+        g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
+        φ (absoluteGaloisGroupMap τ g) = 1) :
+    (maxUnramifiedOutside K (SeparableClosure K) S).fixingSubgroup ≤ φ.toMonoidHom.ker := by
+  rw [fixingSubgroup_maxUnramifiedOutside_eq_inertiaOutsideSubgroup]
+  exact (inertiaOutsideSubgroup_le_iff_of_isClosed K
+    (isClosed_singleton.preimage φ.continuous)).2 hφ
+
 /-- **Universal lift through `G_{K,S}`.** A continuous homomorphism `φ : G_K →ₜ* H` into a `T₁`
 topological group killing local inertia at every finite place outside `S` factors through
 `restrictGaloisGroupS : G_K →ₜ* G_{K,S}`. -/
@@ -297,18 +312,30 @@ def liftGaloisGroupS {S : Set (HeightOneSpectrum (𝓞 K))}
         g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
         φ (absoluteGaloisGroupMap τ g) = 1) :
     galoisGroupS K (SeparableClosure K) S →ₜ* H :=
-  have hker : (maxUnramifiedOutside K (SeparableClosure K) S).fixingSubgroup ≤
-      φ.toMonoidHom.ker := by
-    rw [fixingSubgroup_maxUnramifiedOutside_eq_inertiaOutsideSubgroup]
-    exact (inertiaOutsideSubgroup_le_iff_of_isClosed K
-      (isClosed_singleton.preimage φ.continuous)).2 hφ
   let e := TauCeti.quotientFixingSubgroupEquiv K (SeparableClosure K)
     (maxUnramifiedOutside K (SeparableClosure K) S)
   let qLift : AbsoluteGaloisGroup K ⧸
       (maxUnramifiedOutside K (SeparableClosure K) S).fixingSubgroup →* H :=
-    QuotientGroup.lift _ φ.toMonoidHom hker
+    QuotientGroup.lift _ φ.toMonoidHom (fixingSubgroup_maxUnramifiedOutside_le_ker K φ hφ)
   { toMonoidHom := qLift.comp e.symm.toMonoidHom
     continuous_toFun := (continuous_quot_lift _ φ.continuous).comp e.symm.continuous }
+
+/-- Evaluating `liftGaloisGroupS φ hφ` applies `QuotientGroup.lift` to the inverse of
+`quotientFixingSubgroupEquiv`. -/
+theorem liftGaloisGroupS_apply {S : Set (HeightOneSpectrum (𝓞 K))}
+    {H : Type*} [Group H] [TopologicalSpace H] [T1Space H]
+    (φ : AbsoluteGaloisGroup K →ₜ* H)
+    (hφ : ∀ (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
+      ∀ (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+        (g : AbsoluteGaloisGroup (v.adicCompletion K)),
+        g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
+        φ (absoluteGaloisGroupMap τ g) = 1)
+    (y : galoisGroupS K (SeparableClosure K) S) :
+    liftGaloisGroupS K φ hφ y =
+      QuotientGroup.lift _ φ.toMonoidHom (fixingSubgroup_maxUnramifiedOutside_le_ker K φ hφ)
+        ((TauCeti.quotientFixingSubgroupEquiv K (SeparableClosure K)
+            (maxUnramifiedOutside K (SeparableClosure K) S)).symm y) :=
+  (rfl)
 
 /-- Evaluating `liftGaloisGroupS φ hφ` on `restrictGaloisGroupS σ` recovers `φ σ`. -/
 @[simp]
@@ -322,22 +349,9 @@ theorem liftGaloisGroupS_apply_restrict {S : Set (HeightOneSpectrum (𝓞 K))}
         φ (absoluteGaloisGroupMap τ g) = 1)
     (σ : AbsoluteGaloisGroup K) :
     liftGaloisGroupS K φ hφ (restrictGaloisGroupS K (SeparableClosure K) S σ) = φ σ := by
-  have hker : (maxUnramifiedOutside K (SeparableClosure K) S).fixingSubgroup ≤
-      φ.toMonoidHom.ker := by
-    rw [fixingSubgroup_maxUnramifiedOutside_eq_inertiaOutsideSubgroup]
-    exact (inertiaOutsideSubgroup_le_iff_of_isClosed K
-      (isClosed_singleton.preimage φ.continuous)).2 hφ
-  have hsymm := TauCeti.quotientFixingSubgroupEquiv_symm_restrictNormalHom (F := K)
-    (E := SeparableClosure K) (M := maxUnramifiedOutside K (SeparableClosure K) S) σ
-  -- Unfold `liftGaloisGroupS` on `restrictNormalHom σ` to `QuotientGroup.lift` applied to `e.symm`.
-  have h1 : liftGaloisGroupS K φ hφ (restrictGaloisGroupS K (SeparableClosure K) S σ) =
-      QuotientGroup.lift _ φ.toMonoidHom hker
-        ((TauCeti.quotientFixingSubgroupEquiv K (SeparableClosure K)
-            (maxUnramifiedOutside K (SeparableClosure K) S)).symm
-          (AlgEquiv.restrictNormalHom (maxUnramifiedOutside K (SeparableClosure K) S) σ)) := by
-    rw [restrictGaloisGroupS_eq_restrictNormalHom]
-    rfl
-  rw [h1, hsymm]
+  rw [liftGaloisGroupS_apply, restrictGaloisGroupS_eq_restrictNormalHom,
+    TauCeti.quotientFixingSubgroupEquiv_symm_restrictNormalHom (F := K) (E := SeparableClosure K)
+      (M := maxUnramifiedOutside K (SeparableClosure K) S) σ]
   exact QuotientGroup.lift_mk' _ _ σ
 
 /-- `liftGaloisGroupS φ hφ` composed with `restrictGaloisGroupS` equals `φ`. -/
