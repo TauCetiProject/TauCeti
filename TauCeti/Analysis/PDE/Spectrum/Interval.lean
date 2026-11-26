@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
 public import TauCeti.Analysis.PDE.IntervalDomain
 public import TauCeti.Analysis.PDE.Spectrum.Basic
+public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -18,6 +19,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
+import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
 /-!
 # The Dirichlet, Neumann and mixed eigenvalues of `-Δ` on an interval
@@ -45,8 +47,9 @@ on the space `H¹_Γ(a, b)` of Sobolev functions vanishing on a boundary part `�
 (`TauCeti.w1pVanishingOnSubmodule`), with the weak eigenvalue problem `∫ ∇u · ∇v = κ ∫ u v` for
 every `v ∈ H¹_Γ(a, b)`. On a domain with the Rellich property, the `κ` for which this problem has
 a nonzero solution are the eigenvalues of the mixed Laplacian `-Δ_Γ`
-(`TauCeti.PDE.spectrum_mixedOperator_laplacian`); Rellich compactness for the interval is not
-proved here.
+(`TauCeti.PDE.spectrum_mixedOperator_laplacian`). The value map `W^{1,p}(a, b) → Lᵖ(a, b)` is
+compact (Rellich), since the interval is a ball of the line, so for `Γ = ∅` these numbers are the
+spectrum of the Neumann Laplacian `-Δ_∅`.
 
 * With no Dirichlet part, `Γ = ∅`, the Neumann eigenvalues are the numbers `(k π / (b - a))²`,
   `k ≥ 0`, with eigenfunctions `cos (k π (x - a) / (b - a))`; the constants are the case `k = 0`.
@@ -102,6 +105,10 @@ excludes every other eigenvalue.
   `TauCeti.PDE.isLeast_exists_ne_zero_forall_inner_gradient_eq_intervalDomain_left`: the weak
   mixed eigenvalues of `-Δ` on `(a, b)` with Dirichlet part `Γ = {a}`, tested on `H¹_Γ(a, b)`, are
   `{((2k + 1) π / (2 (b - a)))² | k ≥ 0}`, with least element `(π / (2 (b - a)))²`.
+* `TauCeti.PDE.isCompactOperator_valueL_intervalDomain`: Rellich compactness of
+  `W^{1,p}(a, b) → Lᵖ(a, b)`.
+* `TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`: the spectrum of the
+  Neumann Laplacian `-Δ_∅` on `(a, b)` is `{(k π / (b - a))² | k ≥ 0}`.
 
 ## References
 
@@ -481,7 +488,7 @@ problem with a Dirichlet condition at `a` and a Neumann condition at `b`. -/
 
 section Mixed
 
-open scoped Distributions Gradient ContDiff
+open scoped Distributions Gradient ContDiff ENNReal
 
 attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
 
@@ -762,7 +769,9 @@ imposing `u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹_∅(a, b)
 mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
 (`TauCeti.PDE.spectrum_mixedOperator_laplacian`): the closure in `H¹(a, b)` of the restrictions of
 test functions on the line. It agrees with `H¹(a, b)` exactly when these restrictions are dense
-(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), which is not proved here. -/
+(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), which is not proved here. These numbers
+are the spectrum of the Neumann Laplacian
+(`TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`). -/
 theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : a < b)
     {kappa : ℝ} :
     (∃ u : W1pVanishingOn volume (intervalDomain a b) 2 ∅, u ≠ 0 ∧
@@ -821,6 +830,30 @@ theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_intervalDomain_left (hab
   obtain ⟨k, rfl⟩ := (exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left hab).1 hkappa
   gcongr
   nlinarith [Real.pi_pos, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+
+/-- **Rellich compactness on an interval.** For `1 ≤ p ≤ ∞`, the value map
+`W^{1,p}(a, b) → Lᵖ(a, b)` is a compact operator, since the interval is a ball of the line
+(`TauCeti.PDE.coe_intervalDomain_eq_ball`). -/
+theorem isCompactOperator_valueL_intervalDomain {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := intervalDomain a b) (p := p)) := by
+  have h : intervalDomain a b =
+      ⟨Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2), Metric.isOpen_ball⟩ :=
+    Opens.ext coe_intervalDomain_eq_ball
+  rw [h]
+  exact W1p.isCompactOperator_valueL_ball _ _
+
+/-- **The spectrum of the Neumann Laplacian on an interval.** The mixed Laplacian `-Δ_∅` on
+`(a, b)`, the self-adjoint realization of `-d²/dx²` with the Neumann condition `u' = 0` at both
+ends, has spectrum `{(k π / (b - a))² | k ≥ 0}`. Each cosine mode is an eigenfunction
+(`TauCeti.PDE.exists_value_ae_eq_cos_and_inner_gradient_eq`). -/
+theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
+    (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
+      (Omega := intervalDomain a b) (1 : Matrix (Fin 1) (Fin 1) ℝ)) ∅).spectrum =
+      {kappa | ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2} := by
+  rw [spectrum_mixedOperator_laplacian (empty_disjoint _)
+    isCompactOperator_valueL_intervalDomain]
+  ext kappa
+  exact exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab
 
 end Mixed
 
