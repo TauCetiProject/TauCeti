@@ -451,4 +451,22 @@ theorem lintegral_comp_positiveEndChart_le (q : Puncture) {P : Set ℝ} (hP : Me
   exact ENNReal.ofReal_le_ofReal
     (norm_fderiv_comp_positiveEndChart_sq_add_le q (hP0 ζ.1 hζ.1) (hξ ζ hζ))
 
+/-- A function continuous on `S = ℂ ∖ {0, 1}` and bounded far out on every end, on the images
+`φ'_q((T, ∞) × [0, 1))` of the positive end charts, is essentially bounded on `S`: on the compact
+truncation `S_T` it is bounded by continuity, and the end images cover the rest of `S`. -/
+theorem memLp_top_of_continuousOn_of_norm_positiveEndChart_le {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ × ℝ → E} (hf : ContinuousOn f thricePuncturedSphereReal)
+    {T M : ℝ}
+    (hM : ∀ q (ζ : ℝ × ℝ), T < ζ.1 → ζ.2 ∈ Ico (0 : ℝ) 1 → ‖f (positiveEndChart q ζ)‖ ≤ M) :
+    MemLp f ∞ (volume.restrict thricePuncturedSphereReal) := by
+  obtain ⟨A, hA⟩ := (isCompact_preimage_truncation T).exists_bound_of_continuousOn
+    (hf.mono (preimage_truncation_subset_thricePuncturedSphereReal T))
+  refine memLp_top_of_bound
+    (hf.aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet) (max A M) ?_
+  filter_upwards [ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z hz
+  rcases subset_preimage_truncation_union_iUnion_image_positiveEndChart T hz with hzT | hzT
+  · exact (hA z hzT).trans (le_max_left _ _)
+  obtain ⟨q, ζ, ⟨hζ1, hζ2⟩, rfl⟩ := mem_iUnion.1 hzT
+  exact (hM q ζ hζ1 hζ2).trans (le_max_right _ _)
+
 end TauCeti.Floer
