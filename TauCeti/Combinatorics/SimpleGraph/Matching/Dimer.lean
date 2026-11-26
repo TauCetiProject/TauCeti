@@ -41,7 +41,8 @@ It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is fin
 (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration; at
 `F = ∅` it is then the singleton `{ω}` (`SimpleGraph.dimerCompletionSet_empty`).
 Moving configurations by `g : Γ` maps `Ω_F(ω)` bijectively onto the completion set of the moved
-configuration at `g • F` (`SimpleGraph.sum_dimerCompletionSet_smul`).
+configuration at `g • F` (`SimpleGraph.dimerCompletionSet_smul`), so sums over the two
+completion sets agree (`SimpleGraph.sum_dimerCompletionSet_smul`).
 Each member is the gluing of its restriction to `F` to `ω` off `F`
 (`Function.updateFinset_restrict_of_eqOn_compl`), so a sum over the completion set
 is a sum over the configurations `η` on `F` whose gluing to `ω` is a dimer configuration
@@ -346,29 +347,40 @@ theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
 
 open scoped Pointwise in
 /-- **Moving a completion set.** For a group `Γ` acting on the edges through graph automorphisms,
-the map `σ_g ω = (e ↦ ω (g⁻¹ • e))` is a bijection from the completion set `Ω_F(ω)` onto
-`Ω_{g • F}(σ_g ω)`, so sums over the two sets agree. -/
+the map `σ_g ω = (e ↦ ω (g⁻¹ • e))` carries the completion set `Ω_F(ω)` onto
+`Ω_{g • F}(σ_g ω)`. -/
+theorem dimerCompletionSet_smul {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
+    (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e) [DecidableEq G.edgeSet] (g : Γ)
+    (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
+    G.dimerCompletionSet (g • F) (fun e => ω (g⁻¹ • e)) =
+      (fun ω' e => ω' (g⁻¹ • e)) '' G.dimerCompletionSet F ω := by
+  ext ω'
+  simp only [mem_image, mem_dimerCompletionSet]
+  constructor
+  · rintro ⟨hω', hF⟩
+    refine ⟨fun e => ω' (g • e), ⟨by simpa using hω'.smul hΓ g⁻¹, fun e he => ?_⟩, by simp⟩
+    dsimp only
+    rw [hF _ fun h => he ((Finset.smul_mem_smul_finset_iff g).1 h), inv_smul_smul]
+  · rintro ⟨ω'', ⟨hω'', hF⟩, rfl⟩
+    refine ⟨hω''.smul hΓ g, fun e he => hF _ fun h => he ?_⟩
+    rwa [← Finset.inv_smul_mem_iff]
+
+open scoped Pointwise in
+/-- Since `σ_g ω = (e ↦ ω (g⁻¹ • e))` is a bijection from `Ω_F(ω)` onto `Ω_{g • F}(σ_g ω)`
+(`SimpleGraph.dimerCompletionSet_smul`), sums over the two completion sets agree. -/
 theorem sum_dimerCompletionSet_smul [DecidableEq G.edgeSet] {Γ : Type*} [Group Γ]
     [MulAction Γ G.edgeSet] (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e)
     {M : Type*} [AddCommMonoid M] (g : Γ) (F : Finset G.edgeSet) (ω : G.edgeSet → Bool)
     (f : (G.edgeSet → Bool) → M) :
     ∑ ω' ∈ (G.finite_dimerCompletionSet (g • F) fun e => ω (g⁻¹ • e)).toFinset, f ω' =
       ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset, f fun e => ω' (g⁻¹ • e) := by
-  symm
-  refine Finset.sum_nbij' (fun ω' e => ω' (g⁻¹ • e)) (fun ω' e => ω' (g • e)) ?_ ?_ ?_ ?_
-    fun _ _ => rfl
-  · intro ω' hω'
-    simp only [Finite.mem_toFinset, mem_dimerCompletionSet] at hω' ⊢
-    refine ⟨hω'.1.smul hΓ g, fun e he => hω'.2 _ fun h => he ?_⟩
-    rwa [← Finset.inv_smul_mem_iff]
-  · intro ω' hω'
-    simp only [Finite.mem_toFinset, mem_dimerCompletionSet] at hω' ⊢
-    refine ⟨by simpa using hω'.1.smul hΓ g⁻¹, fun e he => ?_⟩
-    rw [hω'.2 _ fun h => he ((Finset.smul_mem_smul_finset_iff g).1 h), inv_smul_smul]
-  · intro ω' _
-    exact funext fun e => congrArg ω' (inv_smul_smul g e)
-  · intro ω' _
-    exact funext fun e => congrArg ω' (smul_inv_smul g e)
+  classical
+  have hσ : Injective fun (ω' : G.edgeSet → Bool) e => ω' (g⁻¹ • e) :=
+    fun ω₁ ω₂ h => funext fun e => by simpa using congrFun h (g • e)
+  rw [← Finset.sum_image fun _ _ _ _ h => hσ h]
+  congr 1
+  ext ω'
+  simp only [Finite.mem_toFinset, Finset.mem_image, dimerCompletionSet_smul hΓ, mem_image]
 
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/

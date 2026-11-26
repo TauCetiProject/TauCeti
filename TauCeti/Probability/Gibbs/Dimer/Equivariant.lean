@@ -15,7 +15,8 @@ through graph automorphisms, so that `Γ` acts on the subshift `𝔛(G)` of dime
 `(g • ω)(e) = ω(g⁻¹ • e)`. Write `σ_g ω` for this action on all configurations.
 
 Moving a configuration by `g` moves its completion set: `σ_g` maps `Ω_F(ω)` bijectively onto
-`Ω_{g • F}(σ_g ω)` (`SimpleGraph.sum_dimerCompletionSet_smul`). When the weight is invariant under
+`Ω_{g • F}(σ_g ω)` (`SimpleGraph.dimerCompletionSet_smul`, with the sum form
+`SimpleGraph.sum_dimerCompletionSet_smul`). When the weight is invariant under
 `g`, `w (g • e) = w e`, the weight of `σ_g ω` on `g • F` is the weight of `ω` on `F`
 (`SimpleGraph.dimerWeight_smul`), so the partition functions agree
 (`SimpleGraph.dimerPartitionFunction_smul`) and `σ_g` carries the Boltzmann law `γ^w_F(· | ω)` to
@@ -99,12 +100,8 @@ theorem isEquivariant_dimerSpecification [DecidableEq G.edgeSet]
       (dimerKernel Γ hΓ w (g • F) (g • ω)).map Subtype.val := by
     rw [Measure.map_map hemb.measurable (measurable_const_smul g), hcomp,
       ← Measure.map_map (Measurable.of_eval fun e => measurable_pi_apply _) hemb.measurable,
-      dimerKernel_apply_eq_comap, dimerKernel_apply_eq_comap, hemb.map_comap, hemb.map_comap,
-      Subtype.range_coe, Subtype.range_coe, restrict_dimerSubshift_dimerBoltzmann,
-      restrict_dimerSubshift_dimerBoltzmann, map_dimerBoltzmann_smul hΓ g (hw g),
+      map_val_dimerKernel, map_val_dimerKernel, map_dimerBoltzmann_smul hΓ g (hw g),
       TauCeti.Subshift.coe_smul]
-  ext C _
-  have h := congrArg (fun μ : Measure (G.edgeSet → Bool) => μ (Subtype.val '' C)) key
-  simpa only [hemb.map_apply, Subtype.val_injective.preimage_image] using h
+  exact hemb.map_injective key
 
 end SimpleGraph

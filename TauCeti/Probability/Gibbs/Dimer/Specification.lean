@@ -123,6 +123,16 @@ theorem restrict_dimerSubshift_dimerBoltzmann (w : G.edgeSet → ℝ) (F : Finse
   rw [ae_iff]
   simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω
 
+/-- Pushing `γ^w_F(· | ω)` forward along the inclusion of `𝔛(G)` into the configurations gives
+the Boltzmann law. -/
+theorem map_val_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+    (ω : G.dimerSubshift Γ hΓ) :
+    (dimerKernel Γ hΓ w F ω).map Subtype.val = G.dimerBoltzmann w F ω.val := by
+  have hemb : MeasurableEmbedding (Subtype.val : G.dimerSubshift Γ hΓ → _) :=
+    .subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe
+  rw [dimerKernel_apply_eq_comap, hemb.map_comap, Subtype.range_coe,
+    restrict_dimerSubshift_dimerBoltzmann]
+
 /-- Integrating against `γ^w_F(· | ω)` on `𝔛(G)` is integrating against the Boltzmann law. -/
 theorem lintegral_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
     (ω : G.dimerSubshift Γ hΓ) (f : (G.edgeSet → Bool) → ℝ≥0∞) :
