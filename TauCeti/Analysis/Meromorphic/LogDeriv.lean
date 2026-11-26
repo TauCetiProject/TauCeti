@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Contour.Argument.Principle
+import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # Finite part of a logarithmic derivative
@@ -19,7 +21,7 @@ pole. `TauCeti.logDerivFinitePart` extracts the value of the regular part, after
 
 public section
 
-open Filter Topology
+open ComplexConjugate Filter Topology
 
 namespace TauCeti
 
@@ -65,5 +67,14 @@ theorem _root_.AnalyticAt.logDerivFinitePart_eq_logDeriv {f : ℂ → ℂ} {a : 
     (hf : AnalyticAt ℂ f a) (ha : f a ≠ 0) : logDerivFinitePart f a = logDeriv f a :=
   (hf.logDeriv ha).logDerivFinitePart_eq
     (by simp [hf.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr ha])
+
+/-- The finite part of the logarithmic derivative of a reflected function at `a` is the
+conjugate of the original finite part at `conj a`. -/
+@[simp] theorem logDerivFinitePart_conj_conj (f : ℂ → ℂ) (a : ℂ) :
+    logDerivFinitePart (conj ∘ f ∘ conj) a = conj (logDerivFinitePart f (conj a)) := by
+  have h := congrFun (toMeromorphicNFAt_conj_conj
+    (fun z ↦ logDeriv f z - (meromorphicOrderAt f (conj a)).untop₀ / (z - conj a)) a) a
+  simp only [logDerivFinitePart, meromorphicOrderAt_conj_conj, logDeriv_conj_conj]
+  simpa only [Function.comp_def, map_sub, map_div₀, map_intCast, Complex.conj_conj] using h
 
 end TauCeti

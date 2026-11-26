@@ -49,10 +49,11 @@ Hessian in `TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation`.
   `κ⁻² ⨍_{B_r} ‖D²u‖² + κ^(n + 1) (⨍_{B_r} f² + δ^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q))`, up to
   constants, for Hölder conjugate exponents `q, q'`.
 * **Sharp function and absorption.** These bounds on all balls give the estimate by Krylov's sharp
-  function method (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le`), applied to
-  the operator-valued field `D²u`: the Fefferman–Stein inequality and the maximal inequality bound
-  `∫ ‖D²u‖^p` by `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖D²u‖^p + c₂ ∫ |f|^p`. Choosing first `κ` large and
-  then `δ` small, the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
+  function method with mean oscillation in `L²`
+  (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le` at the exponent `2`),
+  applied to the operator-valued field `D²u`: the Fefferman–Stein inequality and the maximal
+  inequality bound `∫ ‖D²u‖^p` by `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖D²u‖^p + c₂ ∫ |f|^p`. Choosing
+  first `κ` large and then `δ` small, the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
 
 The restriction `p > 2` comes from the `L²` mean oscillation estimate. The argument is the same as
 for the divergence-form estimate in `TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation`, with
@@ -210,12 +211,14 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le 
           eLpNorm (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
             EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p volume ≤
             C * eLpNorm f p volume := by
-  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le (n := n)
-    (E := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (F := ℝ) hp hp_top
+  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le (n := n)
+    (E := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (F := ℝ)
+    one_le_two (by rwa [ENNReal.ofReal_ofNat]) hp_top
     (decayConst n lam Lam) (forcingConst n lam Lam) ((n + 1) ^ 2 * forcingConst n lam Lam)
     (2 * Lam)
   refine ⟨C, δ, hδ, fun {a} ha hbd hosc u f hu hgp hfp =>
     h hgp hfp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
+  simp only [Real.rpow_two]
   -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   exact (setAverage_norm_iteratedGradient_sub_sq_le ha hbd hu hp.le hgp hq hqp hρ hκ hA

@@ -45,6 +45,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
   into any algebra, commutative or not, are the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the
   version over a field with values in a domain.
+* `Irreducible.orderOf_eq_orderOf_root`: over a field, every root of an irreducible polynomial `p`
+  in a nontrivial commutative algebra has the multiplicative order of `AdjoinRoot.root p`.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
@@ -97,6 +99,7 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   these equivalences isolate that identification cleanly.
 
 Stated over arbitrary commutative rings.
+The exception is `Irreducible.orderOf_eq_orderOf_root`, which is stated over a field.
 
 ## Provenance
 
@@ -547,6 +550,19 @@ theorem tensorXPowAlgEquiv_comp_map {S : Type*} [CommRing S] [Algebra k S] (φ :
 end TensorProduct
 
 end AdjoinRoot
+
+/-- All roots of an irreducible polynomial `p` over a field, in any nontrivial commutative
+`K`-algebra, have the multiplicative order of the root `AdjoinRoot.root p` of `p` in
+`AdjoinRoot p`: the `K`-algebra map `AdjoinRoot p → L` sending `AdjoinRoot.root p` to the root is
+injective, as `AdjoinRoot p` is a field. -/
+theorem Irreducible.orderOf_eq_orderOf_root {K : Type*} [Field K] {p : K[X]} (hp : Irreducible p)
+    {L : Type*} [CommRing L] [Nontrivial L] [Algebra K L] {x : L} (hx : aeval x p = 0) :
+    orderOf x = orderOf (AdjoinRoot.root p) := by
+  have := Fact.mk hp
+  have hx' : p.eval₂ (algebraMap K L) x = 0 := by rwa [← aeval_def]
+  let f := AdjoinRoot.lift (algebraMap K L) x hx'
+  rw [← orderOf_injective f.toMonoidHom f.injective (AdjoinRoot.root p)]
+  simp [f]
 
 namespace Polynomial
 
