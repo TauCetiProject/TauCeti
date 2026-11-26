@@ -8,11 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Analytic.ZeroCount
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.Complex.Wirtinger.Green
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
+import TauCeti.Analysis.Complex.ZeroMultiplicity
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Analysis.Contour.Argument.PowerSum
 import TauCeti.MeasureTheory.Integral.Circle.IntegrationByParts
@@ -104,22 +104,6 @@ theorem exists_contDiffOn_differentiableOn_exp_neg_mul_of_conjWirtingerDeriv_app
     ((hg.differentiableOn one_ne_zero z hz).differentiableAt (hΩ.mem_nhds hz))
     ((hα z hz).differentiableAt (hΩ.mem_nhds hz)) (hga z hz) (heq z hz)).differentiableWithinAt
 
-/-- At a point where `exp (-g) α` is analytic of finite order, the exponent of a local
-factorization `α w = (w - z) ^ n v w`, with `v` continuous and nonzero at `z`, is that order. -/
-private lemma analyticOrderNatAt_exp_neg_mul_eq {g v : ℂ → ℂ} {z : ℂ} {n : ℕ}
-    (hf : AnalyticAt ℂ (fun w ↦ exp (-g w) * α w) z)
-    (hfin : analyticOrderAt (fun w ↦ exp (-g w) * α w) z ≠ ⊤) (hg : ContinuousAt g z)
-    (hv : ContinuousAt v z) (hv₀ : v z ≠ 0) (hαv : ∀ᶠ w in 𝓝 z, α w = (w - z) ^ n * v w) :
-    analyticOrderNatAt (fun w ↦ exp (-g w) * α w) z = n := by
-  obtain ⟨h, hh, hh₀, hfh⟩ := hf.analyticOrderAt_ne_top.1 hfin
-  have hu : ContinuousAt (fun w ↦ exp (-g w) * v w) z := by fun_prop
-  refine eq_of_eventually_sub_pow_mul_eq hh.continuousAt hh₀ hu
-    (mul_ne_zero (exp_ne_zero _) hv₀) ?_
-  filter_upwards [hfh, hαv] with w hw hw'
-  simp only [smul_eq_mul] at hw
-  rw [← hw, hw']
-  ring
-
 /-! ### The boundary term -/
 
 /-- Along the circle, the logarithmic derivative of `exp (-g) α` is that of `α` minus the
@@ -184,22 +168,17 @@ private lemma exists_analyticOnNhd_exp_neg_mul (hΩ : IsOpen Ω) (hsub : closedB
     fun z hz ↦ hf.analyticAt (hΩ.mem_nhds (hsub hz)),
     fun z hz ↦ mul_ne_zero (exp_ne_zero _) (hsphere z hz)⟩
 
-/-- **The zeros of a solution of `bar∂α = a α` in a disc.** Let `α` be real-differentiable on an
-open set `Ω` containing the closed disc `|z - c| ≤ R`, with `bar∂α = a α` on `Ω` for a `C¹`
-coefficient `a`, and nowhere zero on the boundary circle. Then there is a multiset `D` of points of
-the open disc such that near every point `z` of the disc, `α w = (w - z) ^ D.count z * v w` with
-`v` continuous at `z` and `v z ≠ 0`. -/
-theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul (hΩ : IsOpen Ω)
-    (hsub : closedBall c R ⊆ Ω) (hα : DifferentiableOn ℝ α Ω) (ha : ContDiffOn ℝ 1 a Ω)
-    (heq : ∀ z ∈ Ω, conjWirtingerDeriv α z 1 = a z * α z)
-    (hsphere : ∀ z ∈ sphere c R, α z ≠ 0) :
-    ∃ D : Multiset ℂ, (∀ z ∈ D, z ∈ ball c R) ∧ ∀ z ∈ ball c R, ∃ v : ℂ → ℂ,
-      ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D.count z * v w := by
+/-- Near every point `z` of the open disc, `α w = (w - z) ^ n * v w` with `v` continuous and
+nonzero at `z`, where `n` is the multiplicity of `z` in the multiset of zeros of the holomorphic
+function `exp (-g) α`. -/
+private lemma exists_eventually_eq_pow_count_zeroMultiset_mul {g : ℂ → ℂ}
+    (hfa : AnalyticOnNhd ℂ (fun w ↦ exp (-g w) * α w) (closedBall c R))
+    (hfs : ∀ z ∈ sphere c R, exp (-g z) * α z ≠ 0) (hgc : ∀ z ∈ ball c R, ContinuousAt g z) :
+    ∀ z ∈ ball c R, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, α w =
+      (w - z) ^ (AnalyticOnNhd.zeroMultiset (fun w ↦ exp (-g w) * α w) (ball c R)).count z *
+        v w := by
   classical
-  obtain ⟨g, -, -, -, hgc, hfa, hfs⟩ :=
-    exists_analyticOnNhd_exp_neg_mul hΩ hsub hα ha heq hsphere
-  refine ⟨AnalyticOnNhd.zeroMultiset (fun w ↦ exp (-g w) * α w) (ball c R),
-    fun z hz ↦ AnalyticOnNhd.mem_of_mem_zeroMultiset hz, fun z hz ↦ ?_⟩
+  intro z hz
   have hzc := ball_subset_closedBall hz
   have hord := hfa.analyticOrderAt_eq_count_zeroMultiset hfs hzc
   obtain ⟨h, hh, hh₀, hfh⟩ := (hfa z hzc).analyticOrderAt_ne_top.1 (by simp [hord])
@@ -214,27 +193,21 @@ theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq
   rw [← hN]
   linear_combination exp (g w) * hw - α w * he
 
-/-- The multiset `D` of exponents of the local factorizations of `α` in the open disc is the
-multiset of zeros of the holomorphic function `exp (-g) α` there. -/
-private lemma eq_zeroMultiset_exp_neg_mul {g : ℂ → ℂ}
-    (hfa : AnalyticOnNhd ℂ (fun w ↦ exp (-g w) * α w) (closedBall c R))
-    (hfs : ∀ z ∈ sphere c R, exp (-g z) * α z ≠ 0) (hg : ∀ z ∈ ball c R, ContinuousAt g z)
-    {D : Multiset ℂ} (hD : ∀ z ∈ D, z ∈ ball c R)
-    (hDα : ∀ z ∈ ball c R, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D.count z * v w) :
-    D = AnalyticOnNhd.zeroMultiset (fun w ↦ exp (-g w) * α w) (ball c R) := by
-  classical
-  ext z
-  rw [AnalyticOnNhd.count_zeroMultiset hfa]
-  by_cases hz : z ∈ ball c R
-  · rw [indicator_of_mem hz]
-    have hzc := ball_subset_closedBall hz
-    have hord := hfa.analyticOrderAt_eq_count_zeroMultiset hfs hzc
-    obtain ⟨v, hv, hv₀, hαv⟩ := hDα z hz
-    exact (analyticOrderNatAt_exp_neg_mul_eq (hfa z hzc) (hord ▸ ENat.natCast_ne_top _)
-      (hg z hz) hv hv₀ hαv).symm
-  · rw [indicator_of_notMem hz, Multiset.count_eq_zero]
-    exact fun h ↦ hz (hD z h)
+/-- **The zeros of a solution of `bar∂α = a α` in a disc.** Let `α` be real-differentiable on an
+open set `Ω` containing the closed disc `|z - c| ≤ R`, with `bar∂α = a α` on `Ω` for a `C¹`
+coefficient `a`, and nowhere zero on the boundary circle. Then there is a multiset `D` of points of
+the open disc such that near every point `z` of the disc, `α w = (w - z) ^ D.count z * v w` with
+`v` continuous at `z` and `v z ≠ 0`. -/
+theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul (hΩ : IsOpen Ω)
+    (hsub : closedBall c R ⊆ Ω) (hα : DifferentiableOn ℝ α Ω) (ha : ContDiffOn ℝ 1 a Ω)
+    (heq : ∀ z ∈ Ω, conjWirtingerDeriv α z 1 = a z * α z)
+    (hsphere : ∀ z ∈ sphere c R, α z ≠ 0) :
+    ∃ D : Multiset ℂ, (∀ z ∈ D, z ∈ ball c R) ∧ ∀ z ∈ ball c R, ∃ v : ℂ → ℂ,
+      ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D.count z * v w := by
+  obtain ⟨g, -, -, -, hgc, hfa, hfs⟩ :=
+    exists_analyticOnNhd_exp_neg_mul hΩ hsub hα ha heq hsphere
+  exact ⟨_, fun z hz ↦ AnalyticOnNhd.mem_of_mem_zeroMultiset hz,
+    exists_eventually_eq_pow_count_zeroMultiset_mul hfa hfs hgc⟩
 
 /-- The weighted logarithmic integral of the holomorphic function `exp (-g) α` along the circle is
 the boundary term of `α` plus `2i ∫ φ' a`. -/
@@ -308,7 +281,8 @@ theorem sum_map_eq_intervalIntegral_add_integral_of_conjWirtingerDeriv_apply_one
     exists_analyticOnNhd_exp_neg_mul hΩ hsub hα ha heq hsphere
   -- `D` is the multiset of zeros of the holomorphic function `exp (-g) α`, so the holomorphic
   -- argument principle applies.
-  rw [eq_zeroMultiset_exp_neg_mul hfa hfs hgc hD hDα,
+  rw [multiset_eq_of_eventually_eq_pow_mul hD (fun _ ↦ AnalyticOnNhd.mem_of_mem_zeroMultiset) hDα
+      (exists_eventually_eq_pow_count_zeroMultiset_mul hfa hfs hgc),
     Contour.sum_map_zeroMultiset_eq_circleIntegral hR hfa hfs
       fun z hz ↦ hφ.analyticAt (hΩ.mem_nhds (hsub hz)),
     circleIntegral_mul_logDeriv_exp_neg_mul hΩ hR hsub hα hg hga hf hsphere hφ]
