@@ -46,6 +46,19 @@ namespace TauCeti
 
 variable {α β : Type*}
 
+/-- Within each block of length `2 * k`, the parity selects the interleaving side and division
+by two gives the index within that side of the block. -/
+private theorem finCongr_finProdFinEquiv_eq_interleave {r k : ℕ}
+    (b : Fin r) (i : Fin (2 * k)) :
+    let s := finProdFinEquiv (b, (⟨i.val / 2, by omega⟩ : Fin k))
+    finCongr (by ac_rfl) (finProdFinEquiv (b, i)) =
+      finSumFinInterleaveEquiv (r * k) (if i.val % 2 = 0 then .inl s else .inr s) := by
+  dsimp only
+  split_ifs <;> apply Fin.ext <;>
+    simp only [finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
+      val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr] <;>
+    rw [Nat.mul_assoc] <;> omega
+
 /-- The two steps from an even position start and end at adjacent row indices. From an odd
 position the corresponding columns are adjacent, and the position can lie strictly inside a
 block only if the first column is not the last column of that block. -/
@@ -60,31 +73,18 @@ private theorem bipartiteWord_ne_finRotate_finRotate_of_within_block {r k : ℕ}
   let j : Fin (k + 1) := ⟨i.val / 2, by omega⟩
   let s : Fin (r * (k + 1)) := finProdFinEquiv (b, j)
   dsimp only
+  rw [finCongr_finProdFinEquiv_eq_interleave]
   by_cases hi₂ : i.val % 2 = 0
-  · have he : finCongr (by ac_rfl) (finProdFinEquiv (b, i)) =
-        finSumFinInterleaveEquiv (r * (k + 1)) (.inl s) := by
-      apply Fin.ext
-      simp only [finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
-        val_finSumFinInterleaveEquiv_inl, s, j]
-      rw [Nat.mul_assoc]
-      omega
-    simpa only [he, finRotate_finSumFinInterleaveEquiv_inl,
+  · simpa only [ite_eq_left hi₂, finRotate_finSumFinInterleaveEquiv_inl,
       finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, ne_eq, Sum.inl.injEq] using (h s).1
-  · have he : finCongr (by ac_rfl) (finProdFinEquiv (b, i)) =
-        finSumFinInterleaveEquiv (r * (k + 1)) (.inr s) := by
-      apply Fin.ext
-      simp only [finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
-        val_finSumFinInterleaveEquiv_inr, s, j]
-      rw [Nat.mul_assoc]
-      omega
-    have hj : s.modNat = j := by
+  · have hj : s.modNat = j := by
       simpa only [finProdFinEquiv_symm_apply] using
         congrArg Prod.snd (finProdFinEquiv.symm_apply_apply (b, j))
     have hjlast : j ≠ Fin.last k := fun he ↦ by
       have hv := congrArg Fin.val he
       simp only [j, Fin.val_last] at hv
       omega
-    simpa only [he, finRotate_finSumFinInterleaveEquiv_inr,
+    simpa only [ite_eq_right hi₂, finRotate_finSumFinInterleaveEquiv_inr,
       finRotate_finSumFinInterleaveEquiv_inl, bipartiteWord_inr, ne_eq, Sum.inr.injEq] using
         (h s).2 (hj ▸ hjlast)
 
@@ -167,8 +167,7 @@ private theorem image_bipartiteNonbacktrackingWords_subset {r k : ℕ} :
   intro l m e w
   have hlength : r * l = 2 * m := by dsimp [l, m]; ac_rfl
   have he (t : Fin (r * l)) : e (finRotate _ t) = finRotate _ (e t) := by
-    apply Fin.ext
-    simp only [e, finCongr_apply, Fin.val_cast, Fin.coe_finRotate_eq_ite, hlength]
+    simpa only [e] using t.finCongr_finRotate hlength
   intro f hf
   obtain ⟨uv, huv, rfl⟩ := mem_image.mp hf
   obtain ⟨hn, hrep⟩ := mem_bipartiteNonbacktrackingWords.mp huv
