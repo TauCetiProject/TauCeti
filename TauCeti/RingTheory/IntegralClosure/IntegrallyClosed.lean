@@ -325,6 +325,7 @@ end TauCeti
 
 /-- An element of an integrally closed domain is a square in its fraction field if and only if it
 is a square in the ring: a square root in the fraction field is integral, hence lies in the ring. -/
+@[simp]
 theorem IsIntegrallyClosed.isSquare_algebraMap_iff {R : Type*} [CommRing R] [IsIntegrallyClosed R]
     (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] {x : R} :
     IsSquare (algebraMap R K x) ↔ IsSquare x := by

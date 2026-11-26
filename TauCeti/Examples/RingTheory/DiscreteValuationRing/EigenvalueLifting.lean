@@ -123,7 +123,8 @@ example [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K] [Algebra 
       (b : V) (f' : V ⊗[O] (Fin 2 → O)), f' ≠ 0 ∧
         (toLin' !![0, ϖ; 0, 0]).baseChange V f' = b • f' ∧ residue V b = 0 ∧
         piScalarRight O V V (Fin 2) f' 1 = 0 := by
-  have h0 := nilpotent_baseChange_residueField_eq_zero ϖ hϖ.not_isUnit
+  have h0 := nilpotent_baseChange_residueField_eq_zero ϖ
+    ((mem_maximalIdeal ϖ).2 (mem_nonunits_iff.2 hϖ.not_isUnit))
   obtain ⟨L, V, _, j, -, -, hinj, -, -, -, -, b, f', hf', hb⟩ :=
     exists_valuationSubring_forall_baseChange_apply_eq_smul K
       (fun _ : Unit ↦ toLin' !![0, ϖ; 0, 0]) (fun _ _ ↦ Commute.refl _) (fun _ ↦ 0) _
@@ -183,6 +184,14 @@ theorem companion_baseChange_residueField_one_tmul_single_one [IsLocalRing O]
     ← algebraMap_smul (ResidueField O) ϖ]
   simp [ResidueField.algebraMap_eq, (residue_eq_zero_iff ϖ).2 hϖ]
 
+/-- An irreducible element `ϖ` of an integrally closed domain `O` has no square root in the
+fraction field `K` of `O`; this is `IsIntegrallyClosed.isSquare_algebraMap_iff` applied to
+`ϖ`, which is not a square in `O`. -/
+private theorem sq_ne_algebraMap_of_irreducible [IsIntegrallyClosed O] (K : Type*) [Field K]
+    [Algebra O K] [IsFractionRing O K] (hϖ : Irreducible ϖ) (y : K) :
+    y ^ 2 ≠ algebraMap O K ϖ := fun h ↦
+  hϖ.not_isSquare ((IsIntegrallyClosed.isSquare_algebraMap_iff K).1 ⟨y, by rw [← h, sq]⟩)
+
 /-- *Necessity of a fraction-field extension*: for an irreducible element `ϖ` of an integrally
 closed domain `O`, such as a uniformizer of a DVR, the companion operator `[[0, ϖ], [1, 0]]` has
 no nonzero eigenvector over the fraction field `K` of `O`, since `ϖ` has no square root in `K`. -/
@@ -191,8 +200,7 @@ theorem not_exists_companion_baseChange_fractionRing_eq_smul [IsIntegrallyClosed
     ¬ ∃ (c : K) (v : K ⊗[O] (Fin 2 → O)), v ≠ 0 ∧
       (toLin' !![0, ϖ; 1, 0]).baseChange K v = c • v := by
   rintro ⟨c, v, hv0, hv⟩
-  exact (IsIntegrallyClosed.isSquare_algebraMap_iff K).not.2 hϖ.not_isSquare
-    ⟨c, by rw [← sq_eq_of_companion_baseChange_eq_smul ϖ hv0 hv, sq]⟩
+  exact sq_ne_algebraMap_of_irreducible ϖ K hϖ c (sq_eq_of_companion_baseChange_eq_smul ϖ hv0 hv)
 
 /-- Over an `O`-algebra `A` containing a square root `α` of `ϖ`, the vector `(α, 1)` is an
 eigenvector of the companion operator `[[0, ϖ], [1, 0]]` with eigenvalue `α`, and it is nonzero
@@ -229,7 +237,7 @@ theorem not_isSeparable_of_companion_baseChange_eq_smul [IsIntegrallyClosed O]
   rw [hc, adjoin_simple_eq_bot_iff.2 (IntermediateField.algebraMap_mem _ _)] at h
   obtain ⟨y, rfl⟩ := mem_bot.1 (h ▸ mem_adjoin_simple_self K c)
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hc
-  exact hϖ.not_isSquare ((IsIntegrallyClosed.isSquare_algebraMap_iff K).1 ⟨y, by rw [← hc, sq]⟩)
+  exact sq_ne_algebraMap_of_irreducible ϖ K hϖ y hc
 
 /-- For `O = 𝔽₂⟦t⟧` and `ϖ = t`, an eigenvalue `c` of the companion operator `[[0, t], [1, 0]]`
 over a field `L` containing the fraction field `K` generates a nontrivial purely inseparable
@@ -257,7 +265,8 @@ example [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K] [Algebra 
     ∃ (L : IntermediateField K (AlgebraicClosure K)) (V : ValuationSubring L) (_ : Algebra O V)
       (b : V), (b : L) ^ 2 = algebraMap K L (algebraMap O K ϖ) ∧
         (b : L) ∉ (algebraMap K L).range ∧ residue V b = 0 := by
-  have hres := companion_baseChange_residueField_one_tmul_single_one ϖ hϖ.not_isUnit
+  have hres := companion_baseChange_residueField_one_tmul_single_one ϖ
+    ((mem_maximalIdeal ϖ).2 (mem_nonunits_iff.2 hϖ.not_isUnit))
   obtain ⟨L, V, _, j, -, -, -, -, hcompat, -, -, b, f', hf', hb⟩ :=
     exists_valuationSubring_forall_baseChange_apply_eq_smul K
       (fun _ : Unit ↦ toLin' !![0, ϖ; 1, 0]) (fun _ _ ↦ Commute.refl _) (fun _ ↦ 0) _
@@ -268,7 +277,7 @@ example [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K] [Algebra 
   refine ⟨L, V, ‹_›, b (), hb2, ?_, by simp [(hb ()).2]⟩
   rintro ⟨y, hy⟩
   rw [← hy, ← map_pow, (algebraMap K L).injective.eq_iff] at hb2
-  exact hϖ.not_isSquare ((IsIntegrallyClosed.isSquare_algebraMap_iff K).1 ⟨y, by rw [← hb2, sq]⟩)
+  exact sq_ne_algebraMap_of_irreducible ϖ K hϖ y hb2
 
 end Companion
 
