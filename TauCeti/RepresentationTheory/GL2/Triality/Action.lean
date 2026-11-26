@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
 import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.Group.Action.End
 import TauCeti.LinearAlgebra.Matrix.StdBasis
 
 /-!
@@ -164,9 +165,9 @@ theorem representation_vecMulVec_tmul (w : WreathProduct (GL (Fin 2) R) (Fin 3))
   apply (tripleTensorEquiv R).injective
   rw [tripleTensorEquiv_representation, tripleTensorEquiv_vecMulVec_tmul,
     tripleTensorEquiv_vecMulVec_tmul]
-  simp only [Representation.wreathTensor_apply_tprod, stdRep_apply]
+  simp only [Representation.wreathTensor_apply_tprod, stdRep_apply_apply, ← Equiv.Perm.inv_def]
   refine congrArg _ (funext fun k ↦ ?_)
-  fin_cases k <;> rfl
+  fin_cases k <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, cons_val]
 
 /-- A triple of invertible matrices acts on `M₂(R) ⊗[R] R²` by `m ⊗ v ↦ g₀ m g₂ᵀ ⊗ g₁ v`. -/
 @[simp]
@@ -205,7 +206,9 @@ theorem representation_inr_mul_inl_mul_inr_inv (σ : Equiv.Perm (Fin 3))
         representation R (SemidirectProduct.inr σ⁻¹) =
       representation R (SemidirectProduct.inl (g ∘ σ.symm)) := by
   rw [← map_mul, ← map_mul, ← SemidirectProduct.inl_aut]
-  rfl
+  refine congrArg (fun h ↦ representation R (SemidirectProduct.inl h)) (funext fun k ↦ ?_)
+  rw [Function.comp_apply, mulAutArrow_apply_apply_eq_apply_inv_smul, Equiv.Perm.smul_def,
+    Equiv.Perm.inv_def]
 
 end Action
 
