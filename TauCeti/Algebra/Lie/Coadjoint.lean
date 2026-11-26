@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.Dual
 
 /-!
@@ -72,7 +73,9 @@ Finally, the positive Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν
 form on covectors `α, β ∈ L`, with sharp map `β(π♯α) = π(α, β)`. Its sharp image
 `π♯α = -⁅α, ν⁆` is the orbit derivative of `[-α]`, and the KKS form evaluated on the preimages
 of `π♯α` and `π♯β` is `π_ν(α, β)`. This fixes the signs relating the KKS form to the Lie–Poisson
-structure.
+structure. The sharp map and the orbit derivative have the same image `L · ν`, whose rank is that
+of `L ⧸ L_ν`. For a finite-dimensional Lie algebra over a field this image is the annihilator of
+the stabilizer `L_ν`, the kernel of the alternating form `ν.kirillovForm`.
 
 ## Main definitions
 
@@ -100,6 +103,11 @@ structure.
   the orbit derivative of `[-α]`.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
+* `Module.Dual.range_coadjointTangentMap`: the orbit derivative and the sharp map have the same
+  image.
+* `Module.Dual.range_kirillovForm`: the image of the sharp map is the annihilator of `L_ν`.
+* `Module.Dual.finrank_range_kirillovForm`: the rank of the Lie–Poisson tensor at `ν` is the
+  dimension of `L ⧸ L_ν`.
 * `TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`: for an invariant form `B` with
   trivial left radical on a Lie module, the annihilator of `B m` is that of `m`; on `L` itself,
   the stabilizer of `B μ` is the centralizer of `μ`.
@@ -435,6 +443,42 @@ theorem kksForm_eq_kirillovForm_of_coadjointTangentMap_eq {α β : L}
   rw [kirillovForm_eq_coadjointTangentMap_mk_neg] at hx hy
   rw [ν.coadjointTangentMap_injective hx, ν.coadjointTangentMap_injective hy, kksForm_mk,
     kirillovForm_apply, neg_lie, lie_neg, neg_neg]
+
+/-- **The orbit derivative and the Lie–Poisson sharp map have the same image**, the subspace
+`L · ν = {⁅ξ, ν⁆}` of `L*`: the sharp image `π♯α = ν.kirillovForm α` is the orbit derivative of
+`[-α]`. -/
+theorem range_coadjointTangentMap :
+    LinearMap.range ν.coadjointTangentMap = LinearMap.range ν.kirillovForm := by
+  refine le_antisymm ?_ fun _ ⟨α, hα⟩ ↦
+    ⟨_, (kirillovForm_eq_coadjointTangentMap_mk_neg ν α).symm.trans hα⟩
+  rintro _ ⟨x, rfl⟩
+  induction x using Submodule.Quotient.induction_on with
+  | H ξ => exact ⟨-ξ, by rw [kirillovForm_eq_coadjointTangentMap_mk_neg, neg_neg]⟩
+
+/-- **The rank of the Lie–Poisson tensor at `ν` is the dimension of the algebraic tangent model**
+`L ⧸ L_ν` of the coadjoint orbit through `ν`, since the injective orbit derivative has the same
+image as the sharp map. -/
+theorem finrank_range_kirillovForm :
+    finrank R (LinearMap.range ν.kirillovForm) =
+      finrank R (L ⧸ (lieAnnihilator R L ν).toSubmodule) := by
+  rw [← range_coadjointTangentMap, LinearMap.finrank_range_of_inj ν.coadjointTangentMap_injective]
+
+end Module.Dual
+
+namespace Module.Dual
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] (ν : Dual K L)
+
+/-- **The image of the Lie–Poisson sharp map is the annihilator of the stabilizer.** For a
+finite-dimensional Lie algebra over a field, the sharp images `π♯α = ν.kirillovForm α` at `ν` are
+exactly the covectors vanishing on the coadjoint stabilizer `L_ν`, the kernel of the alternating
+form `ν.kirillovForm`. -/
+theorem range_kirillovForm [FiniteDimensional K L] :
+    LinearMap.range ν.kirillovForm = (lieAnnihilator K L ν).toSubmodule.dualAnnihilator := by
+  have h : LinearMap.flip ν.kirillovForm = -ν.kirillovForm := by
+    ext ξ η
+    exact (ν.isAlt_kirillovForm.neg_eq ξ η).symm
+  rw [← ker_kirillovForm, LinearMap.dualAnnihilator_ker_eq_range_flip, h, LinearMap.range_neg]
 
 end Module.Dual
 

@@ -34,7 +34,6 @@ projective Hilbert modules (Frank–Larson; Roe, Prop. 10.2) and its structural 
 
 ## Main declarations
 
-* `TauCeti.CStarModule.IsParsevalFrame.finite`, `TauCeti.CStarModule.IsParsevalFrame.projective`
 * `TauCeti.CStarModule.exists_isParsevalFrame_iff_finite_projective`
 * `TauCeti.CStarModule.exists_completeSpace_cstarModule_of_finite_projective`
 * `LinearMap.exists_isAdjointPair_of_finite_projective`
@@ -57,24 +56,6 @@ open scoped WithCStarModule
 
 namespace TauCeti.CStarModule
 
-/-- Any `A`-module admitting a finite Parseval frame is finitely generated over `A`; neither
-completeness nor norms are needed. -/
-theorem IsParsevalFrame.finite {A ι E : Type*} [Fintype ι] [Semiring A] [Inner A E]
-    [AddCommMonoid E] [Module A E] {x : ι → E} (hx : IsParsevalFrame A x) : Module.Finite A E :=
-  Module.Finite.of_surjective (∑ i : ι, (LinearMap.proj i).smulRight (x i)) fun z ↦
-    ⟨fun i ↦ inner A (x i) z, by simp [LinearMap.sum_apply, hx]⟩
-
-/-- Any C⋆-module admitting a finite Parseval frame is projective over `A`; completeness is not
-needed. -/
-theorem IsParsevalFrame.projective {A ι E : Type*} [Fintype ι] [Semiring A] [StarRing A]
-    [Module ℂ A] [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [Module A E] [Norm E]
-    [CStarModule A E] {x : ι → E} (hx : IsParsevalFrame A x) : Module.Projective A E :=
-  let i₀ : E →ₗ[A] (ι → A) := LinearMap.pi fun i ↦
-    { toFun := inner A (x i), map_add' := fun _ _ ↦ inner_add_right,
-      map_smul' := fun _ _ ↦ inner_op_smul_right }
-  Module.Projective.of_split i₀ (∑ i : ι, (LinearMap.proj i).smulRight (x i)) <|
-    LinearMap.ext fun z ↦ by simp [i₀, hx]
-
 /-- **Frame characterization of finitely generated projective Hilbert modules** (Frank–Larson; Roe,
 Proposition 10.2): over a unital C⋆-algebra `A`, a complete right Hilbert `A`-module `E` admits a
 finite Parseval frame if and only if `E` is finitely generated and projective as a right `A`-module.
@@ -84,7 +65,8 @@ theorem exists_isParsevalFrame_iff_finite_projective {A E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
     [CStarModule Aᵐᵒᵖ E] : (∃ (n : ℕ) (x : Fin n → E), IsParsevalFrame Aᵐᵒᵖ x) ↔
       Module.Finite Aᵐᵒᵖ E ∧ Module.Projective Aᵐᵒᵖ E := by
-  refine ⟨fun ⟨_, _, hx⟩ ↦ ⟨hx.finite, hx.projective⟩, fun ⟨_, _⟩ ↦ ?_⟩
+  refine ⟨fun ⟨_, _, hx⟩ ↦ ⟨Module.Finite.of_isParsevalFrame hx,
+    Module.Projective.of_isParsevalFrame hx⟩, fun ⟨_, _⟩ ↦ ?_⟩
   obtain ⟨n, f₀, g₀, _, _, hfg₀⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ E
   let e := TauCeti.WithCStarModule.piOpLinearEquiv A (Fin n)
   obtain ⟨x, hx⟩ := (f₀ ∘ₗ e.toLinearMap).exists_isParsevalFrame_of_comp_eq_id

@@ -16,6 +16,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # First-order weak Sobolev spaces
@@ -66,7 +67,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
   everywhere its value-gradient pair.
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
-  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`.
+  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`, which is at most `‖w‖`
+  (`TauCeti.W1p.sqrt_setIntegral_value_sq_le_norm`).
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -74,6 +76,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
   `W^{1,p}(Ω)` with weak gradient `0`.
+* `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
+  `W^{1,p}(Ω)`, for `Ω` of finite measure.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
   weak derivative is an element of `W^{1,p}(Ω)` whose weak gradient is dual to that derivative.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
@@ -106,7 +110,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace
+open _root_.MeasureTheory TopologicalSpace
 open scoped Distributions InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
@@ -749,6 +753,21 @@ theorem W1p.integral_value_sq_eq_norm_value_sq_top (u : W1p mu ⊤ 2) :
     ∫ x, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
   simpa using W1p.integral_value_sq_eq_norm_value_sq u
 
+/-- The `L²` norm of the value of `u ∈ W^{1,2}(Ω)` on a subset of `Ω` is at most the norm of
+`u`. -/
+theorem W1p.sqrt_setIntegral_value_sq_le_norm (u : W1p mu Omega 2) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) :
+    √(∫ x in s, W1p.value u x ^ 2 ∂mu) ≤ ‖u‖ := by
+  have hint : Integrable (fun x => W1p.value u x ^ 2) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.value u)).integrable_sq
+  calc √(∫ x in s, W1p.value u x ^ 2 ∂mu)
+      ≤ √(∫ x in Omega, W1p.value u x ^ 2 ∂mu) :=
+        Real.sqrt_le_sqrt (setIntegral_mono_set hint (ae_of_all _ fun _ => sq_nonneg _)
+          (Filter.Eventually.of_forall hs))
+    _ = ‖W1p.value u‖ := by
+      rw [W1p.integral_value_sq_eq_norm_value_sq, Real.sqrt_sq (norm_nonneg _)]
+    _ ≤ ‖u‖ := W1p.norm_value_le u
+
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
     ⟪W1p.value u, W1p.value v⟫_ℝ = ∫ x in Omega, W1p.value u x * W1p.value v x ∂mu := by
@@ -959,6 +978,11 @@ theorem W1p.ext_value {u v : W1p mu Omega p} (hvalue : W1p.value u = W1p.value v
   filter_upwards [hderiv] with x hx
   exact innerSL_inj.mp hx
 
+/-- The `Lᵖ` value projection of `W^{1,p}(Ω)` is injective. -/
+theorem W1p.valueL_injective :
+    Function.Injective (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) :=
+  fun _ _ h => W1p.ext_value (by simpa only [W1p.valueL_apply] using h)
+
 section Const
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
@@ -979,6 +1003,12 @@ theorem W1p.value_const (c : ℝ) :
     W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c :=
   W1p.value_mk _ _ _
 
+/-- The value of the constant Sobolev function `c` is `c` almost everywhere. -/
+theorem W1p.value_const_ae (c : ℝ) :
+    W1p.value (W1p.const c : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun _ => c := by
+  rw [W1p.value_const]
+  exact Lp.coeFn_const p _ c
+
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]
 theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=
@@ -987,15 +1017,35 @@ theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega 
 /-- Adding a constant `c` to a Sobolev function adds `c` to its value almost everywhere. -/
 theorem W1p.value_add_const_ae (u : W1p mu Omega p) (c : ℝ) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (u + W1p.const c) x = W1p.value u x + c := by
-  rw [← W1p.valueL_apply, map_add, W1p.valueL_apply, W1p.valueL_apply, W1p.value_const]
-  filter_upwards [Lp.coeFn_add (W1p.value u) (Lp.const p (mu.restrict Omega) c),
-    Lp.coeFn_const p (mu.restrict Omega) c] with x h1 h2
-  rw [h1, Pi.add_apply, h2, Function.const_apply]
+  rw [← W1p.valueL_apply, map_add, W1p.valueL_apply, W1p.valueL_apply]
+  filter_upwards [Lp.coeFn_add (W1p.value u) (W1p.value (W1p.const c : W1p mu Omega p)),
+    W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c] with x h1 h2
+  rw [h1, Pi.add_apply, h2]
 
 /-- Adding a constant to a Sobolev function does not change its weak gradient. -/
 theorem W1p.gradient_add_const (u : W1p mu Omega p) (c : ℝ) :
     W1p.gradient (u + W1p.const c) = W1p.gradient u := by
   rw [W1p.gradient_add, W1p.gradient_const, add_zero]
+
+/-- The integral `∫_Ω u` as a continuous linear functional on `W^{1,p}(Ω)`, for `Ω` of finite
+measure. -/
+def W1p.integralL : W1p mu Omega p →L[ℝ] ℝ :=
+  (Set.setIntegralLp (μ := mu.restrict (Omega : Set E)) (𝕜 := ℝ) Set.univ
+    (measure_lt_top _ _)).comp W1p.valueL
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- `TauCeti.W1p.integralL` is the integral of the value over `Ω`. -/
+@[simp]
+theorem W1p.integralL_apply (u : W1p mu Omega p) :
+    W1p.integralL u = ∫ x in Omega, W1p.value u x ∂mu := by
+  rw [W1p.integralL, ContinuousLinearMap.comp_apply, Set.setIntegralLp_apply,
+    Measure.restrict_univ, W1p.valueL_apply]
+
+/-- The integral of a constant `c` over `Ω` is `|Ω| c`. -/
+theorem W1p.integralL_const (c : ℝ) :
+    W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
+  rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
+  exact integral_congr_ae (W1p.value_const_ae c)
 
 end Const
 

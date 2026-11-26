@@ -511,9 +511,10 @@ private theorem isCoveringMap_proj (hP : IsLocalTiling P N)
     (hu : HasUniformTilingCharts P N) : IsCoveringMap (proj hP) := by
   have := t2Space_glued hP
   obtain ⟨ε, hε, hunif⟩ := hu
-  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP)) hε
-    fun e ↦ ?_
+  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP))
+    (dist_mem_uniformity hε) fun e ↦ ?_
   obtain ⟨a, y, rfl⟩ := exists_glue_eq hP e
+  simp only [Metric.ball_eq_ball']
   obtain ⟨W, M, hc, -, h, hh, hball⟩ := hunif y y.property
   set g := a * h⁻¹
   have hgy : g⁻¹ • a • (y : X) = h • (y : X) := by
@@ -522,13 +523,14 @@ private theorem isCoveringMap_proj (hP : IsLocalTiling P N)
     rw [Metric.smul_ball, proj_glue, hgy]
   have hsub (w : X) (hw : w ∈ ball (proj hP (glue hP a y)) ε) : g⁻¹ • w ∈ W :=
     hball (hmaps ▸ smul_mem_smul_set hw)
+  have hlift : chartLift hP M g (glue hP a y) (h • (y : X)) = glue hP a y := by
+    rw [chartLift_smul hP hc g _ hh y.property (hball (mem_ball_self hε)), inv_mul_cancel_right]
   refine ⟨fun w ↦ chartLift hP M g (glue hP a y) (g⁻¹ • w),
     (continuousOn_chartLift hP hc g _).comp (continuous_const_smul _).continuousOn hsub, ?_,
-    fun w hw ↦ by simp only [proj_chartLift hP hc g _ (hsub w hw), smul_inv_smul], ?_⟩
-  · rw [← image_image (chartLift hP M g (glue hP a y)) (g⁻¹ • ·), image_smul, hmaps]
-    exact isOpen_image_chartLift hP hc g _ isOpen_ball hball
-  · simp only [proj_glue, hgy]
-    rw [chartLift_smul hP hc g _ hh y.property (hball (mem_ball_self hε)), inv_mul_cancel_right]
+    fun w hw ↦ by simp only [proj_chartLift hP hc g _ (hsub w hw), smul_inv_smul]⟩
+  rw [← image_image (chartLift hP M g (glue hP a y)) (g⁻¹ • ·), image_smul, hmaps]
+  exact (isOpen_image_chartLift hP hc g _ isOpen_ball hball).mem_nhds
+    ⟨_, mem_ball_self hε, hlift⟩
 
 end Gluing
 

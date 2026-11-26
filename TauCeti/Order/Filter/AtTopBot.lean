@@ -29,10 +29,12 @@ instead.
 The second statement is diagonal extraction for countably many properties of extractions
 (`TauCeti.extraction_forall`): if every extraction has, for each `j`, a further extraction with
 the property `P j`, then one extraction is, for every `j`, eventually a subsequence of an
-extraction with the property `P j`. In particular, a single subsequence makes countably many
-sequences converge at once when every subsequence of each of them has a convergent further
-subsequence (`TauCeti.extraction_forall_exists_tendsto`). This is the compactness step of the
-Arzelà–Ascoli theorem. For finitely many properties of extractions, each preserved by further
+extraction with the property `P j`. When the properties concern the filter `map ψ atTop` and pass
+to finer filters, one extraction has all of them (`TauCeti.extraction_forall_of_antitone`). In
+particular, a single subsequence makes countably many sequences converge at once when every
+subsequence of each of them has a convergent further subsequence
+(`TauCeti.extraction_forall_exists_tendsto`). This is the compactness step of the Arzelà–Ascoli
+theorem. For finitely many properties of extractions, each preserved by further
 extraction, the same holds one property at a time (`TauCeti.extraction_forall_mem_finset`).
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
@@ -42,7 +44,10 @@ partial sums `∑ n ≤ x` taken over real and over natural cutoffs. More genera
 takes every large value, so `map g atTop = atTop` (`TauCeti.map_atTop_eq_of_le_add_one`) and
 `u ∘ g` converges exactly when `u` does (`TauCeti.tendsto_comp_iff_of_le_add_one`). For instance,
 a partial product over the primes `p ≤ n` is a function of the prime count `π n`, which moves in
-steps of at most one.
+steps of at most one. For monotone cutoffs `B k` tending to infinity, the index of the block
+`B k ≤ x < B (k + 1)` containing `x` can be chosen to tend to infinity with `x`
+(`TauCeti.exists_tendsto_atTop_le_lt_succ`), which compares a sequence with its values at the
+cutoffs.
 
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
@@ -119,6 +124,24 @@ theorem exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le {ψ D : ℕ → ℕ} 
   choose! f hf using hD
   have hev : ∀ᶠ n in atTop, n ≤ f n ∧ D n = ψ (f n) := (eventually_ge_atTop m).mono hf
   exact ⟨f, tendsto_atTop_mono' atTop (hev.mono fun _ h ↦ h.1) tendsto_id, hev.mono fun _ h ↦ h.2⟩
+
+/-- **Diagonal extraction for properties stable under refinement.** Let `P j` be properties of
+filters on `ℕ` that pass from a filter to every finer one. If every extraction has, for each `j`, a
+further extraction `ψ` with `P j (map ψ atTop)`, then one extraction `D` has `P j (map D atTop)` for
+every `j`. -/
+theorem extraction_forall_of_antitone {P : ℕ → Filter ℕ → Prop}
+    (hP : ∀ j ⦃l l' : Filter ℕ⦄, l' ≤ l → P j l → P j l')
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
+      ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (map (ψ ∘ ψ') atTop)) :
+    ∃ D : ℕ → ℕ, StrictMono D ∧ ∀ j, P j (map D atTop) := by
+  obtain ⟨D, hD, hDP⟩ := extraction_forall (P := fun j ψ ↦ P j (map ψ atTop)) h
+  refine ⟨D, hD, fun j ↦ ?_⟩
+  obtain ⟨ψ, hψ, hDψ⟩ := hDP j
+  -- `D` is eventually a reindexing `ψ ∘ f` of `ψ`, so `map D atTop` refines `map ψ atTop`.
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hDψ
+  refine hP j ?_ hψ
+  rw [map_congr hDf, ← map_map]
+  exact map_mono hf
 
 /-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
 terms from some index on are terms `ψ k` with `k ≥ n`. -/
@@ -197,6 +220,22 @@ theorem tendsto_comp_iff_of_le_add_one {X : Type*} {g : ℕ → ℕ} (hg : Tends
     (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) {u : ℕ → X} {l : Filter X} :
     Tendsto (u ∘ g) atTop l ↔ Tendsto u atTop l := by
   rw [← tendsto_map'_iff, map_atTop_eq_of_le_add_one hg hle]
+
+/-- Let `B : ℕ → α` be monotone and tend to infinity. Every `x ≥ B 0` lies in a block
+`B k ≤ x < B (k + 1)`, and the index `κ x` of such a block tends to infinity with `x`. -/
+theorem exists_tendsto_atTop_le_lt_succ {α : Type*} [LinearOrder α] [NoMaxOrder α] {B : ℕ → α}
+    (hBm : Monotone B) (hB : Tendsto B atTop atTop) :
+    ∃ κ : α → ℕ, Tendsto κ atTop atTop ∧ ∀ x, B 0 ≤ x → B (κ x) ≤ x ∧ x < B (κ x + 1) := by
+  have h (x : α) : ∃ k, B 0 ≤ x → B k ≤ x ∧ x < B (k + 1) := by
+    by_cases hx : B 0 ≤ x
+    · obtain ⟨k, -, hk⟩ := hB.exists_le_lt_succ hx
+      exact ⟨k, fun _ ↦ hk⟩
+    · exact ⟨0, fun h ↦ absurd h hx⟩
+  choose κ hκ using h
+  refine ⟨κ, tendsto_atTop.2 fun a ↦ ?_, hκ⟩
+  filter_upwards [eventually_ge_atTop (B a)] with x hx
+  by_contra! hlt
+  exact (hκ x ((hBm (Nat.zero_le a)).trans hx)).2.not_ge ((hBm (Nat.succ_le_of_lt hlt)).trans hx)
 
 /-- In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large
 natural numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`. -/
