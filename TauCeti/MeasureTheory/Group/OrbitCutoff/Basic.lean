@@ -132,6 +132,21 @@ theorem Measure.cutoffMeasure_def (μ : Measure X) :
     ν.cutoffMeasure μ = μ.withDensity ν.orbitCutoff :=
   (rfl)
 
+/-- The cutoff measure of the zero measure is zero. -/
+@[simp]
+theorem Measure.cutoffMeasure_zero : ν.cutoffMeasure (0 : Measure X) = 0 := by
+  rw [cutoffMeasure_def, withDensity_zero_left]
+
+/-- The cutoff measure is additive in the measure. -/
+theorem Measure.cutoffMeasure_add (μ μ' : Measure X) :
+    ν.cutoffMeasure (μ + μ') = ν.cutoffMeasure μ + ν.cutoffMeasure μ' := by
+  rw [cutoffMeasure_def, cutoffMeasure_def, cutoffMeasure_def, withDensity_add_measure]
+
+/-- The cutoff measure commutes with scaling the measure. -/
+theorem Measure.cutoffMeasure_smul (c : ℝ≥0∞) (μ : Measure X) :
+    ν.cutoffMeasure (c • μ) = c • ν.cutoffMeasure μ := by
+  rw [cutoffMeasure_def, cutoffMeasure_def, withDensity_smul_measure]
+
 end Defs
 
 /-- For counting measure, an orbit cutoff is a measurable weight whose values along every orbit sum

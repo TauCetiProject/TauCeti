@@ -56,7 +56,7 @@ theorem integral_count_eq_tsum (hf : Integrable f (Measure.count : Measure α)) 
 
 section Prod
 
-variable {X Z : Type*} [MeasurableSpace X] [MeasurableSpace Z] {m : Measure X} [SFinite m]
+variable {X Z : Type*} [MeasurableSpace X] [MeasurableSpace Z] {m : Measure X}
   [SFinite (Measure.count : Measure Z)] {k : Z → X → E}
 
 /-- For `(x, z) ↦ k z x` integrable for `m × count`, the integral of `z ↦ k z x` for counting
@@ -64,7 +64,8 @@ measure is the sum `∑' z, k z x` for `m`-almost every `x`. -/
 theorem integral_count_ae_eq_tsum_of_integrable_prod
     (h_int : Integrable (fun p : X × Z ↦ k p.2 p.1) (m.prod Measure.count)) :
     (fun x ↦ ∫ z, k z x ∂Measure.count) =ᵐ[m] fun x ↦ ∑' z, k z x := by
-  filter_upwards [h_int.prod_right_ae] with x hx using integral_count_eq_tsum hx
+  filter_upwards [((integrable_prod_iff h_int.aestronglyMeasurable).mp h_int).1] with x hx
+    using integral_count_eq_tsum hx
 
 /-- For `(x, z) ↦ k z x` integrable for `m × count`, the sum `x ↦ ∑' z, k z x` is
 `m`-integrable. -/
@@ -75,7 +76,7 @@ theorem integrable_tsum_of_integrable_prod_count
 
 /-- For `(x, z) ↦ k z x` integrable for `m × count`, its integral is the integral of
 `x ↦ ∑' z, k z x`. -/
-theorem integral_prod_count_eq_integral_tsum
+theorem integral_prod_count_eq_integral_tsum [SFinite m]
     (h_int : Integrable (fun p : X × Z ↦ k p.2 p.1) (m.prod Measure.count)) :
     ∫ p : X × Z, k p.2 p.1 ∂m.prod Measure.count = ∫ x, ∑' z, k z x ∂m := by
   rw [integral_prod _ h_int]

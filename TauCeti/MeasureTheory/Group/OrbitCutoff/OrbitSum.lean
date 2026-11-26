@@ -13,14 +13,17 @@ public import TauCeti.MeasureTheory.Group.OrbitCutoff.Discrete
 Let a discrete subgroup `Γ` of a second countable locally compact group `G` act on a countable set
 `Y`, and let `k_y` (`y ∈ Y`) be measurable functions on `G` with `k_{γ • y} (γ x) = k_y (x)`. The
 integral over `Γ \ G` of the sum of the `k_z` over the orbit of `y` is the integral of `k_y` over
-`Γ_y \ G`, where `Γ_y` is the stabiliser of `y`, either side being absolutely integrable if the
-other is (`Subgroup.integral_tsum_orbit_eq_integral_stabilizer`). This is the unfolding of
-Poincaré-type series.
+`Γ_y \ G`, where `Γ_y` is the stabiliser of `y`
+(`Subgroup.integral_tsum_orbit_eq_integral_stabilizer`). The hypothesis is that the sum of the
+norms `‖k_z‖` over the orbit has finite integral over `Γ \ G`, or equivalently that `k_y` is
+integrable over `Γ_y \ G`; integrability over `Γ \ G` of the sum of the `k_z` themselves does not
+suffice, since it allows cancellation. This is the unfolding of Poincaré-type series.
 
 More generally, if `C ⊂ Y` is a block, in the sense that `γ` carries a point of `C` into `C`
-exactly when `γ` lies in a subgroup `S ⊂ Γ`, the integral over `Γ \ G` of the sum over the union `D`
-of the translates of `C` is the integral over `S \ G` of the sum over `C`
-(`Subgroup.integral_tsum_block`).
+exactly when `γ` lies in a subgroup `S ⊂ Γ`, and `∑_{y ∈ D} ‖k_y‖` has finite integral over
+`Γ \ G`, or equivalently `∑_{y ∈ C} ‖k_y‖` has finite integral over `S \ G`, then the integral
+over `Γ \ G` of the sum over the union `D` of the translates of `C` is the integral over `S \ G` of
+the sum over `C` (`Subgroup.integral_tsum_block`).
 
 Integrals over `Γ \ G` are integrals against `Γ.cutoffMeasure μ`
 (`TauCeti/MeasureTheory/Group/OrbitCutoff/Basic.lean`).

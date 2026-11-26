@@ -70,6 +70,24 @@ theorem cosetMeasure_def (μ : Measure G) (ν : Measure H) (i : H →* G) :
     μ.cosetMeasure ν i = letI := MulAction.compHom G i; ν.cutoffMeasure μ :=
   (rfl)
 
+/-- The coset measure of the zero measure is zero. -/
+@[simp]
+theorem cosetMeasure_zero (ν : Measure H) (i : H →* G) : (0 : Measure G).cosetMeasure ν i = 0 := by
+  let := MulAction.compHom G i
+  rw [cosetMeasure_def, cutoffMeasure_zero]
+
+/-- The coset measure is additive in the measure on `G`. -/
+theorem cosetMeasure_add (μ μ' : Measure G) (ν : Measure H) (i : H →* G) :
+    (μ + μ').cosetMeasure ν i = μ.cosetMeasure ν i + μ'.cosetMeasure ν i := by
+  let := MulAction.compHom G i
+  rw [cosetMeasure_def, cosetMeasure_def, cosetMeasure_def, cutoffMeasure_add]
+
+/-- The coset measure commutes with scaling the measure on `G`. -/
+theorem cosetMeasure_smul (c : ℝ≥0∞) (μ : Measure G) (ν : Measure H) (i : H →* G) :
+    (c • μ).cosetMeasure ν i = c • μ.cosetMeasure ν i := by
+  let := MulAction.compHom G i
+  rw [cosetMeasure_def, cosetMeasure_def, cutoffMeasure_smul]
+
 instance (μ : Measure G) [SFinite μ] (ν : Measure H) (i : H →* G) :
     SFinite (μ.cosetMeasure ν i) := by
   let := MulAction.compHom G i
