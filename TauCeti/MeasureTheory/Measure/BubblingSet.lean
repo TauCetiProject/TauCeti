@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Basic
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -47,10 +49,19 @@ is finite with `#Z * δ ≤ E` (`Set.finite_of_forall_finset_card_mul_le`), even
 (`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion_sdiff`). The uniform quantum `δ` is essential:
 the thresholds of infinitely many windows need not be bounded below otherwise.
 
+Without a uniform quantum, on open windows `Oⱼ` exhausting a set `Ω`, with finite bubbling sets
+`Zⱼ` and thresholds `δⱼ > 0` depending on the window, the points of `Ω` lying in no regular part
+`Oⱼ \ Zⱼ` still form a set meeting every compact subset of `Ω` in finitely many points, each
+carrying a positive amount of energy, and bounds on the compact subsets of the regular parts give
+bounds on the compact subsets of their union
+(`TauCeti.exists_bubblingSet_of_forall_window`).
+
 ## Main results
 
 * `TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion`: convergence off finitely
   many bubbling points on a countable union of windows.
+* `TauCeti.exists_bubblingSet_of_forall_window`: the bubbling set of an exhaustion by windows with
+  thresholds depending on the window.
 
 ## References
 
@@ -64,6 +75,51 @@ open Filter Set Topology MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- **The bubbling set of an exhaustion by windows.** Let open windows `Oⱼ`, directed under
+inclusion, cover `Ω`, and let `Zⱼ` be finite sets. Let the densities `fᵢ` be nonnegative and
+integrable on measurable sets `Uᵢ`, each window eventually lying in `Uᵢ` along `l`. Suppose that
+along `l`, every ball about a point of `Zⱼ` eventually carries `∫ fᵢ ≥ δⱼ > 0` within `Oⱼ`, and the
+functions `gᵢ` are eventually bounded above on every compact subset of `Oⱼ \ Zⱼ`. Then the set
+`Z ⊆ Ω` of points lying in no regular part `Oⱼ \ Zⱼ` meets every compact subset of `Ω` in a finite
+set, every ball about a point of `Z` eventually carries `∫ fᵢ ≥ δ` within `Uᵢ` for some `δ > 0`, and
+the `gᵢ` are eventually bounded above on every compact subset of `Ω \ Z = ⋃ⱼ (Oⱼ \ Zⱼ)`. -/
+theorem exists_bubblingSet_of_forall_window {X κ ι β : Type*} [MetricSpace X]
+    [LocallyCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [Preorder β] [IsDirected β (· ≤ ·)] [Nonempty β] {Ω : Set X} {O : κ → Set X}
+    (hO : ∀ j, IsOpen (O j)) (hOd : Directed (· ⊆ ·) O) (hOΩ : ⋃ j, O j = Ω)
+    {Zw : κ → Finset X} {l : Filter ι} {U : ι → Set X} {f : ι → X → ℝ} {g : ι → X → β}
+    {δ : κ → ℝ} (hU : ∀ i, MeasurableSet (U i)) (hint : ∀ i, IntegrableOn (f i) (U i) μ)
+    (hf0 : ∀ i, ∀ y ∈ U i, 0 ≤ f i y) (hOU : ∀ j, ∀ᶠ i in l, O j ⊆ U i) (hδ : ∀ j, 0 < δ j)
+    (hconc : ∀ j, ∀ z ∈ Zw j, ∀ ε > 0, ∀ᶠ i in l, δ j ≤ ∫ y in Metric.ball z ε ∩ O j, f i y ∂μ)
+    (hbd : ∀ j C, IsCompact C → C ⊆ O j \ ↑(Zw j) → ∃ A, ∀ᶠ i in l, ∀ y ∈ C, g i y ≤ A) :
+    ∃ Z ⊆ Ω, Ω \ Z = ⋃ j, O j \ ↑(Zw j) ∧ (∀ C, IsCompact C → C ⊆ Ω → (Z ∩ C).Finite) ∧
+      (∀ z ∈ Z, ∃ δ > 0, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in Metric.ball z ε ∩ U i, f i y ∂μ) ∧
+      ∀ C, IsCompact C → C ⊆ Ω \ Z → ∃ A, ∀ᶠ i in l, ∀ y ∈ C, g i y ≤ A := by
+  have hΩZ : Ω \ (Ω \ ⋃ j, O j \ ↑(Zw j)) = ⋃ j, O j \ ↑(Zw j) :=
+    sdiff_sdiff_cancel_left (iUnion_subset fun j ↦ sdiff_subset.trans (hOΩ ▸ subset_iUnion O j))
+  refine ⟨_, sdiff_subset, hΩZ, fun C hC hCΩ ↦ ?_, fun z hz ↦ ?_, fun C hC hCZ ↦ ?_⟩
+  · -- A compact set lies in some window `O m`, so it only meets the bubbling points of `O m`.
+    cases isEmpty_or_nonempty κ
+    · exact finite_empty.subset fun y hy ↦ by simpa [← hOΩ] using hCΩ hy.2
+    obtain ⟨m, hm⟩ := hC.elim_directed_cover O hO (hOΩ ▸ hCΩ) hOd
+    exact (Zw m).finite_toSet.subset fun y hy ↦
+      by_contra fun hyZ ↦ hy.1.2 (mem_iUnion.2 ⟨m, hm hy.2, hyZ⟩)
+  · -- Energy concentrates at `z` on a window containing it, which eventually lies in `U i`.
+    obtain ⟨j, hj⟩ := mem_iUnion.1 (hOΩ.symm ▸ hz.1 : z ∈ ⋃ j, O j)
+    have hzZ : z ∈ Zw j := by_contra fun h ↦ hz.2 (mem_iUnion.2 ⟨j, hj, h⟩)
+    refine ⟨δ j, hδ j, fun ε hε ↦ ?_⟩
+    filter_upwards [hconc j z hzZ ε hε, hOU j] with i hi hOU
+    exact hi.trans (setIntegral_mono_set ((hint i).mono_set inter_subset_right)
+      (ae_restrict_of_forall_mem (measurableSet_ball.inter (hU i)) fun y hy ↦
+        hf0 i y hy.2)
+      (inter_subset_inter_right _ hOU).eventuallySubset)
+  · -- Bounds on compact neighbourhoods of the points of `C`, from their windows, cover `C`.
+    refine hC.exists_eventually_forall_le_of_forall fun y hy ↦ ?_
+    obtain ⟨j, hj⟩ := mem_iUnion.1 (hΩZ ▸ hCZ hy)
+    obtain ⟨s, hs, hsG, hsc⟩ :=
+      local_compact_nhds (((hO j).sdiff (Zw j).finite_toSet.isClosed).mem_nhds hj)
+    exact ⟨s, mem_nhdsWithin_of_mem_nhds hs, hbd j s hsc hsG⟩
 
 variable {X α : Type*} [TopologicalSpace X] [UniformSpace α] [MeasurableSpace X]
 

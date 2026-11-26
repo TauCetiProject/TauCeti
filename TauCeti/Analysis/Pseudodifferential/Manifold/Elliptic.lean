@@ -65,6 +65,9 @@ elliptic of order `2` (`TauCeti.IsLaplaceType.isClassicalElliptic_complexifyLine
   compression.
 * `TauCeti.isElliptic_restrict_iff_forall_isClassicalEllipticAt`: the chart symbol restricted to an
   open set where the cutoffs do not vanish is elliptic exactly when `P` is elliptic there.
+* `TauCeti.IsClassicalElliptic.inv_classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`: the
+  inverse `σ_m(P)⁻¹` of the principal symbol of an elliptic operator is a smooth homogeneous
+  function of degree `-m` on the cotangent bundle.
 * `TauCeti.exists_isEllipticOn_of_forall_isClassicalEllipticAt`,
   `TauCeti.exists_comp_eq_id_of_forall_isClassicalEllipticAt`: ellipticity of the chart symbol at
   large frequencies over a compact set, and a local inverse symbol of order `-m`.
@@ -229,8 +232,7 @@ theorem isClassicalEllipticAt_iff_forall_isInvertible
     fun h ξ hξ ↦ ?_⟩
   -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
-  refine hηξ ▸ h _ fun hη ↦ hξ ?_
-  rw [← hηξ, hη, map_zero, ContinuousLinearMap.zero_comp]
+  exact hηξ ▸ h _ (toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ)
 
 /-- **The chart symbol of an elliptic operator.** Let `a` be the symbol of the chart compression of
 `P` by `φ`, `ψ` in a chart `e`, and let `U` be an open set on which `φ ψ` does not vanish (so `U`
@@ -304,6 +306,17 @@ operator is elliptic form an open set. -/
 theorem isOpen_setOf_isClassicalEllipticAt :
     IsOpen {x : M | IsClassicalEllipticAt m P x} :=
   isOpen_iff_mem_nhds.2 fun _ hx ↦ hx.eventually
+
+/-! ### The inverse principal symbol -/
+
+/-- **The inverse principal symbol of an elliptic operator.** If `P` is elliptic of order `m`, the
+inverse `σ_m(P)(x, ξ)⁻¹` of its principal symbol is a smooth positively homogeneous function of
+degree `-m` on the cotangent bundle. -/
+theorem IsClassicalElliptic.inv_classicalPrincipalSymbol_mem_homogeneousCotangentSymbols
+    (hP : IsClassicalElliptic m P) :
+    (fun x ξ ↦ (classicalPrincipalSymbol m P x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) :=
+  inv_mem_homogeneousCotangentSymbols classicalPrincipalSymbol_mem_homogeneousCotangentSymbols
+    fun x ξ hξ ↦ isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hP x) ξ hξ
 
 /-! ### Local inverse symbols -/
 
