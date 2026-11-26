@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Sobolev
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 public import TauCeti.Analysis.Fredholm.ClosedRange
 
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
@@ -1041,13 +1042,6 @@ theorem isFredholm_floerConformalSobolevOperator_positive (ω : SymplecticForm V
   exact (Submodule.quotientEquivOfIsCompl D.range D.rangeᗮ
     (Submodule.isCompl_orthogonal _)).symm.finiteDimensional
 
-/-- A function of period one takes at `t` its value at the fractional part of `t`. -/
-private theorem apply_eq_apply_fract {α : Type*} {g : ℝ → α} (hg : Periodic g 1) (t : ℝ) :
-    g t = g (Int.fract t) := by
-  have h := hg.sub_int_mul_eq (x := t) ⌊t⌋
-  rw [mul_one] at h
-  rw [Int.fract, h]
-
 /-- On the end of the positive plane, the slice defect of a map `u` read in end coordinates has
 period one in the angular coordinate, for a Hamiltonian of period one. -/
 private theorem sliceDefect_comp_realChart_positive_add_one (ω : SymplecticForm V)
@@ -1090,7 +1084,7 @@ private theorem exists_forall_norm_le_of_end {K : Set V} (hK : IsCompact K)
   · exact (hB₀ z hz).trans (le_max_left _ _)
   · -- On the end, `J_q(t) = J_q(t - ⌊t⌋)` with `t - ⌊t⌋ ∈ [0, 1]`.
     set t := (positive.endCoord (Complex.equivRealProdCLM.symm z)).im
-    rw [hJr z hz, apply_eq_apply_fract hJqper t]
+    rw [hJr z hz, ← hJqper.apply_fract t]
     exact (hBK (Int.fract t, u z) ⟨⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩,
       huK z hz⟩).trans (le_max_right _ _)
 
@@ -1110,7 +1104,7 @@ private theorem exists_forall_norm_sliceDefect_le_one (ω : SymplecticForm V) {H
     fun t ↦ sliceDefect_comp_realChart_positive_add_one ω hH u ζ.1 t
   have h := hT₀ ζ.1 hζ (Int.fract ζ.2) ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
   rw [Pi.zero_apply, dist_zero_left] at h
-  rw [show ζ = (ζ.1, ζ.2) from rfl, apply_eq_apply_fract hper ζ.2]
+  rw [show ζ = (ζ.1, ζ.2) from rfl, ← hper.apply_fract ζ.2]
   exact h.le
 
 /-- **The linearized operator along a finite-energy PSS plane is Fredholm.** Let `H` be a `C⁴`
