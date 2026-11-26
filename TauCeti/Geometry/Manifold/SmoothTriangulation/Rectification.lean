@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Perturbation
 
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Approximation
 import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 
 /-!
@@ -20,20 +21,22 @@ vertex type into a finite-dimensional real normed space, let `A` be a compact su
 an injective star immersion `g` of the subdivision, of class `min n ∞`, which
 
 * is uniformly as close to `f` as desired,
-* agrees with `f` at the points that `f` sends outside `U`, and
+* equals `f ∘ π` wherever `f ∘ π` lands outside `U`, where `π` is the canonical map from the
+  realization of the subdivision onto `|K|`, and
 * is rectilinear on every closed simplex of the subdivision whose image meets `A`: on such a
   simplex, `g` is the combination of its values at the vertices, with the barycentric coordinates
   as weights.
 
 So every point of `A` in the image of `g` lies in the image of a closed simplex on which `g` is
-linear, the convex hull of the images of its vertices, while away from `U` the map is unchanged.
+linear, the convex hull of the images of its vertices, while `g` equals `f ∘ π` wherever `f ∘ π`
+lands outside `U`: this is pointwise agreement, and no closed-support condition is asserted.
 This is the step of Munkres' construction of a smooth triangulation in which
 an embedded complex is straightened in a coordinate chart, before it is fitted together there with
 a rectilinear triangulation of another part of the manifold.
 
 The map `g` is the interpolation `AffineMap.lineMap (f (π x)) (s x) (ψ (f (π x)))` between `f` and
-its secant map `s` on the subdivision, read through the canonical map `π` onto `|K|`, by a smooth
-cut-off `ψ` on `E` which is one on a neighbourhood of `A` and has support `U`. For fine
+its secant map `s` on the subdivision, read through `π`, by a smooth cut-off `ψ` on `E` which is
+one on a neighbourhood of `A` and whose support, the set where it is nonzero, is `U`. For fine
 subdivisions it is an injective star immersion
 (`TauCeti.IsStarImmersion.eventually_isStarImmersion_and_injective_lineMap_secantMap`). The closed
 simplices of fine subdivisions are small, so `f ∘ π` varies little on each of them
@@ -45,7 +48,8 @@ is the secant map (`AbstractSimplicialComplex.lineMap_secantMap_faceInclusion_eq
 
 * `TauCeti.IsStarImmersion.eventually_exists_isStarImmersion_and_injective_and_eq_sum`: an
   injective star immersion can be made rectilinear near a compact set, on all fine edgewise
-  subdivisions, by a small perturbation supported in a prescribed neighbourhood of that set.
+  subdivisions, by a small perturbation which equals `f ∘ π` wherever `f ∘ π` lands outside a
+  prescribed neighbourhood of that set.
 
 ## References
 

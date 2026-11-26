@@ -60,8 +60,6 @@ fat.
   points `edgewisePoint u` of its vertices, placed in a face of `K` by `edgewiseVertexPoint`.
 * `Continuous.eventually_norm_secantMap_sub_lt_edgewiseSubdivision`: on a finite complex, the
   secant maps of a continuous map on fine edgewise subdivisions converge to it uniformly.
-* `Continuous.eventually_norm_sub_lt_edgewiseSubdivision`: on a finite complex, a continuous map
-  varies arbitrarily little on the closed simplices of fine edgewise subdivisions.
 
 ## References
 
@@ -178,20 +176,6 @@ open TauCeti
 variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : AbstractSimplicialComplex ι} {k : ℕ}
 
-/-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
-the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
-noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) : StandardSimplex σ :=
-  ⟨edgewisePoint a.val.val, by
-    simpa only [coe_image] using edgewisePoint_mem_convexHull a.val.ne_zero (hρσ a.val a.property)⟩
-
-/-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
-@[simp]
-theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) :
-    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.val.val :=
-  (rfl)
-
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the secant map of `f` pulled back to the subdivision is the secant map of `f` on `σ`
 through the points `edgewisePoint a` of the vertices `a` of `ρ`. -/
@@ -271,38 +255,7 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
   refine hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
       ?_
   rw [edgewiseSubdivisionFaceMap_apply]
+  simp only [coe_edgewiseVertexPoint, smul_eq_mul]
   exact (Finset.sum_coe_sort ρ.val fun a => y.val a * edgewisePoint a.val i).symm
-
-omit [NormedSpace ℝ E] in
-/-- **The simplices of fine edgewise subdivisions have small images.** Let `f` be a continuous map
-of the realization of a complex `K` with finitely many faces into a normed space. For all
-sufficiently large `k`, `f` varies by less than `ε` on the image in `|K|` of every closed simplex
-of the `k`-th edgewise subdivision of `K`. -/
-theorem eventually_norm_sub_lt_edgewiseSubdivision {f : Realization K → E}
-    (hf : Continuous f) (hK : K.faces.Finite) {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val),
-      ‖f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)) -
-        f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))‖ < ε := by
-  -- There are finitely many faces of `K`, and each gives a bound on `k`.
-  have : Finite (Face K) := hK.to_subtype
-  filter_upwards [eventually_all.mpr fun σ =>
-    (hf.comp (continuous_faceInclusion K σ)).eventually_norm_sub_lt_of_mem_edgewiseSubdivision
-      K.toPreAbstractSimplicialComplex hε] with k hk ρ x y
-  -- The simplex `ρ` lies in the face of `K` spanned by the entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
-  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
-    mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
-  have hfactor (z : StandardSimplex ρ.val) :
-      f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ z)) =
-        (f ∘ faceInclusion K σ) (edgewiseSubdivisionFaceMap hρσ z) :=
-    congrArg f (congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) z)
-  have hcoord (z : StandardSimplex ρ.val) (i : σ.val) :
-      (edgewiseSubdivisionFaceMap hρσ z).val i =
-        ∑ a : ρ.val, z.val a • (edgewiseVertexPoint hρσ a).val i := by
-    rw [edgewiseSubdivisionFaceMap_apply]
-    exact (Finset.sum_coe_sort ρ.val fun a => z.val a * edgewisePoint a.val i).symm
-  rw [hfactor, hfactor]
-  exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) x y _ _
-    (hcoord x) (hcoord y)
 
 end Continuous

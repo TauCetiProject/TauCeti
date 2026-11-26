@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
@@ -25,6 +26,11 @@ fatness of the faces is required.
 The comparison is stated in barycentric coordinates: the original map is evaluated at the
 barycentre of the subdivision vertices, and its secant map uses the same weights on their
 images. This is the zeroth-order part of secant approximation in smooth triangulation.
+
+In the same way, a continuous map varies arbitrarily little on every face of a sufficiently fine
+edgewise subdivision of a simplex. For a complex with finitely many faces, the bounds on the
+individual faces combine: a continuous map of its realization varies by less than any `ε` on the
+image of every closed simplex of all sufficiently fine edgewise subdivisions.
 
 ## References
 
@@ -128,3 +134,37 @@ theorem Continuous.eventually_norm_sub_lt_of_mem_edgewiseSubdivision
     simpa only [dist_eq_norm, v, he, hp] using
       norm_edgewisePoint_sub_edgewisePoint_le hρ a.property b.property σ
   simpa only [Function.comp_apply, Homeomorph.symm_apply_apply, dist_eq_norm] using hgη hdist
+
+open TauCeti.SetLike in
+/-- **The simplices of fine edgewise subdivisions have small images.** Let `f` be a continuous map
+of the realization of a complex `K` with finitely many faces into a seminormed group. For all
+sufficiently large `k`, `f` varies by less than `ε` on the image in `|K|` of every closed simplex
+of the `k`-th edgewise subdivision of `K`. -/
+theorem Continuous.eventually_norm_sub_lt_edgewiseSubdivision
+    {ι E : Type*} [LinearOrder ι] [SeminormedAddCommGroup E] {K : AbstractSimplicialComplex ι}
+    {f : Realization K → E} (hf : Continuous f) (hK : K.faces.Finite) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val),
+      ‖f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)) -
+        f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))‖ < ε := by
+  -- There are finitely many faces of `K`, and each gives a bound on `k`.
+  have : Finite (Face K) := hK.to_subtype
+  filter_upwards [eventually_all.mpr fun σ =>
+    (hf.comp (continuous_faceInclusion K σ)).eventually_norm_sub_lt_of_mem_edgewiseSubdivision
+      K.toPreAbstractSimplicialComplex hε] with k hk ρ x y
+  -- The simplex `ρ` lies in the face of `K` spanned by the entries of its vertices.
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
+    Finset.mem_biUnion.mpr ⟨u, hu, Finset.mem_image_of_mem _ (Finset.mem_univ l)⟩
+  have hfactor (z : StandardSimplex ρ.val) :
+      f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ z)) =
+        (f ∘ faceInclusion K σ) (edgewiseSubdivisionFaceMap hρσ z) :=
+    congrArg f (congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) z)
+  have hcoord (z : StandardSimplex ρ.val) (i : σ.val) :
+      (edgewiseSubdivisionFaceMap hρσ z).val i =
+        ∑ a : ρ.val, z.val a • (edgewiseVertexPoint hρσ a).val i := by
+    rw [edgewiseSubdivisionFaceMap_apply]
+    simp only [coe_edgewiseVertexPoint, smul_eq_mul]
+    exact (Finset.sum_coe_sort ρ.val fun a => z.val a * TauCeti.edgewisePoint a.val i).symm
+  rw [hfactor, hfactor]
+  exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) x y _ _
+    (hcoord x) (hcoord y)
