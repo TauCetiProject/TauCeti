@@ -18,9 +18,10 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 Take the weighted sum of the Mellin expressions for primitive Dirichlet characters, pairing
 each character with its inverse to match the real part of its Riesz remainder. For nonnegative
-weights, the residues do not cancel: the sole complex factor is the common Riesz denominator.
-The poles thus detect every positively weighted zero and its conjugate, and poles on the
-positive real axis have positive real residues. These are the pole data used in L. Alpöge's
+weights, the residues away from `0` do not cancel: they share a common Riesz factor.
+Thus at a point other than `0` there is a pole exactly when a positively weighted member's
+`L`-function vanishes there or at the conjugate point, and poles on the positive real axis
+have positive real residues. These are the pole data used in L. Alpöge's
 `Deduction.poleData` (<https://github.com/leanprover-community/riemann-hypothesis>).
 -/
 
