@@ -121,22 +121,13 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOpera
   refine ⟨4 * K₃, by positivity, ?_⟩
   intro x hx hxb X _ _ a p₀ hax v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂ hβv hβw hβ₂ hβvb hβwb hβ₂b
     e₁ e₂ e₃ y u₁ u₂ u₃ hu₁ hu₂ hu₃ hTy A S C N hA hS hC hN hu₁n hu₂n hu₃n K₂ g hy hg
-  have hMv : 0 ≤ Mv := (norm_nonneg _).trans (hβvb 0 0 (Nat.zero_le k) 0)
-  have hMw : 0 ≤ Mw := (norm_nonneg _).trans (hβwb 0 0 (Nat.zero_le k) 0)
-  have hM₂ : 0 ≤ M₂ := (norm_nonneg _).trans (hβ₂b 0 0 (Nat.zero_le k) 0)
   -- Each `L∞` norm is at most twice the bound on the coordinates of its field.
-  have hbv2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * Mv :=
-    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hMv hbv fun i z ↦ by
-      simpa only [norm_iteratedFDeriv_zero] using hβvb i 0 (Nat.zero_le k) z).trans_eq
-      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
-  have hbw2 : ‖fderiv ℝ a p₀ w‖ ≤ 2 * Mw :=
-    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hMw hbw fun i z ↦ by
-      simpa only [norm_iteratedFDeriv_zero] using hβwb i 0 (Nat.zero_le k) z).trans_eq
-      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
-  have hb₂2 : ‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖ ≤ 2 * M₂ :=
-    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM₂ hb₂ fun i z ↦ by
-      simpa only [norm_iteratedFDeriv_zero] using hβ₂b i 0 (Nat.zero_le k) z).trans_eq
-      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
+  obtain ⟨hMv, hbv2⟩ :=
+    nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hbv hβvb
+  obtain ⟨hMw, hbw2⟩ :=
+    nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hbw hβwb
+  obtain ⟨hM₂, hb₂2⟩ :=
+    nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hb₂ hβ₂b
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * (‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖₊ +
       ‖fderiv ℝ a p₀ v‖₊ * ‖fderiv ℝ a p₀ w‖₊)) (by positivity)
@@ -161,10 +152,13 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOpera
         K₃ * (M₂ * (A * N) + Mv * (S * Mw * N) + Mw * (S * Mv * N) +
           K₂ * (2 * M₂ + 2 * Mv * (2 * Mw)) * (C * N)) := by
         gcongr
-    _ = 4 * K₃ * (A + S + K₂ * C) * (M₂ + Mv * Mw) * N - K₃ * N *
-          (3 * A * M₂ + 4 * A * (Mv * Mw) + 4 * S * M₂ + 2 * S * (Mv * Mw) + 2 * K₂ * C * M₂) := by
-        ring
-    _ ≤ _ := sub_le_self _ (by positivity)
+    _ ≤ _ := by
+        have hK₂C : 0 ≤ (K₂ : ℝ) * C := by positivity
+        nlinarith [mul_nonneg (mul_nonneg hK₃ hN) (mul_nonneg hA hM₂),
+          mul_nonneg (mul_nonneg hK₃ hN) (mul_nonneg hA (mul_nonneg hMv hMw)),
+          mul_nonneg (mul_nonneg hK₃ hN) (mul_nonneg hS hM₂),
+          mul_nonneg (mul_nonneg hK₃ hN) (mul_nonneg hS (mul_nonneg hMv hMw)),
+          mul_nonneg (mul_nonneg hK₃ hN) (mul_nonneg hK₂C hM₂)]
 
 /-- **The weighted Sobolev estimate for the second parameter derivative of the orthogonal right
 inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, bound `B`,

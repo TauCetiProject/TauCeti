@@ -900,6 +900,18 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
 
 /-! ### The weighted Sobolev estimate for the parameter derivative -/
 
+/-- **The `L∞` norm of a coefficient with bounded derivatives.** If `b` is the class of a field
+`β` whose coordinates have derivatives bounded by `M` through order `k`, as in the hypotheses of
+the weighted Sobolev estimates below, then `0 ≤ M` and `‖b‖∞ ≤ 2 M`. -/
+theorem nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le {k : ℕ}
+    {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {β : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ}
+    (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ β z i) z‖ ≤ M) :
+    0 ≤ M ∧ ‖b‖ ≤ 2 * M := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
+  refine ⟨hM, (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq ?_⟩
+  norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos]
+
 /-- **The coordinates of the zeroth-order term.** For every order `k` there is a constant `C` with
 the following property. If `β` is a smooth field whose coordinates have derivatives bounded by `M`
 through order `k`, and `u : Fin 4 → H^(k+1)(ℂ)` are coordinates of a field `Y`, then
@@ -1064,7 +1076,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_fora
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
   have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse sobolevFieldValues_injective hsurj
   set Q := orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
+  obtain ⟨hM, hb2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hb hβb
   have hf := eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hw
   -- The values of `Q f` solve `L_x Y = f` weakly, with weighted `L²` norm at most `4 qc ‖w‖`, so
   -- `exp(c ρ) Q f` has coordinates `u₀` in `H^(k+1)`.
@@ -1080,10 +1092,6 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_fora
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
     (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v f) hf
-  have hb2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * M :=
-    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
-      simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq
-      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
   obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax ![fderiv ℝ a p₀ v] ![β] ![M]
     (Fin.forall_fin_one.2 hb) (Fin.forall_fin_one.2 hβ) (Fin.forall_fin_one.2 hβb) ![Q f] _ ![u₀]
     (Fin.forall_fin_one.2 hu₀) (by
@@ -1155,7 +1163,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set N := (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
     volume).toReal
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
+  obtain ⟨hM, hb2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le hb hβb
   have he' := (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
   -- `π e` is a weak solution of `L_x Y = 0` with weighted `L²` norm at most `kπ N`, so
   -- `exp(c ρ) π e` has coordinates `u₀` in `H^(k+1)`.
@@ -1172,10 +1180,6 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
     (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v e) he'
-  have hb2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * M :=
-    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
-      simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq
-      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
   obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax ![fderiv ℝ a p₀ v] ![β] ![M]
     (Fin.forall_fin_one.2 hb) (Fin.forall_fin_one.2 hβ) (Fin.forall_fin_one.2 hβb) ![π e] _ ![u₀]
     (Fin.forall_fin_one.2 hu₀) (by
