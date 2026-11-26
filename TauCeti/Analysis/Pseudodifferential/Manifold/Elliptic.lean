@@ -123,18 +123,8 @@ theorem isClassicalElliptic_iff : IsClassicalElliptic m P ↔ ∀ x : M, IsClass
 /-- **Ellipticity ignores lower order terms.** Adding an operator of order `m - 1` does not change
 ellipticity at a point. -/
 theorem isClassicalEllipticAt_add_iff (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1))
-    {x : M} : IsClassicalEllipticAt m (P + Q) x ↔ IsClassicalEllipticAt m P x := by
-  have hQ' : Q ∈ classicalPseudodifferentialOperators m :=
-    classicalPseudodifferentialOperators_le 1 (by simp) hQ
-  by_cases hP : P ∈ classicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [classicalPrincipalSymbol_add hP hQ', classicalPrincipalSymbol_eq_zero_of_mem_sub_one hQ,
-      add_zero]
-  · -- Neither `P` nor `P + Q` is of order `m`, so both principal symbols vanish.
-    have hPQ : P + Q ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa using sub_mem h hQ'
-    simp [isClassicalEllipticAt_iff, classicalPrincipalSymbol_of_notMem hP,
-      classicalPrincipalSymbol_of_notMem hPQ]
+    {x : M} : IsClassicalEllipticAt m (P + Q) x ↔ IsClassicalEllipticAt m P x :=
+  forall₂_congr fun ξ _ ↦ by rw [classicalPrincipalSymbol_add_of_mem_sub_one hQ]
 
 /-- **Ellipticity ignores lower order terms.** Adding an operator of order `m - 1` does not change
 ellipticity. -/
@@ -232,8 +222,7 @@ theorem isClassicalEllipticAt_iff_forall_isInvertible
     fun h ξ hξ ↦ ?_⟩
   -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
-  refine hηξ ▸ h _ fun hη ↦ hξ ?_
-  rw [← hηξ, hη, map_zero, ContinuousLinearMap.zero_comp]
+  exact hηξ ▸ h _ (toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ)
 
 /-- **The chart symbol of an elliptic operator.** Let `a` be the symbol of the chart compression of
 `P` by `φ`, `ψ` in a chart `e`, and let `U` be an open set on which `φ ψ` does not vanish (so `U`

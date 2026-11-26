@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Geometry.Manifold.Riemannian.Poisson
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 
 /-!
 # Schrödinger operators with a nonnegative potential on a closed manifold
@@ -270,9 +271,9 @@ theorem existsUnique_dirichletForm_add_potentialForm_eq {V : Lp ℝ ∞ (riemann
     ∃! w : SobolevH1 I M, ∀ v, dirichletForm w v + potentialForm V w v =
       ∫ x, f x * toLp v x ∂riemannianVolume I M := by
   -- The right-hand side as a continuous linear functional.
-  set ℓ : StrongDual ℝ (SobolevH1 I M) := (innerSL ℝ f).comp toLp
-  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M := by
-    simp [ℓ, L2.inner_def, mul_comm]
+  set ℓ : StrongDual ℝ (SobolevH1 I M) := Lp.pairingL f toLp
+  have hℓ (v : SobolevH1 I M) : ℓ v = ∫ x, f x * toLp v x ∂riemannianVolume I M :=
+    Lp.pairingL_apply f toLp v
   simpa only [add_apply, hℓ] using
     (isCoercive_dirichletForm_add_potentialForm hV₀ hV).existsUnique_forall_eq ℓ
 

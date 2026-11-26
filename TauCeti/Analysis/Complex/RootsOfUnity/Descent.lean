@@ -127,12 +127,13 @@ theorem differentiableAt_descendPow_pow [AddCommGroup E] [Module ℂ E] [Topolog
     DifferentiableAt ℂ (descendPow m f) (u ^ m) := by
   -- A holomorphic branch `ρ` of the `m`-th root near `u ^ m`, with `ρ (u ^ m) = u`.
   obtain ⟨ρ, hρ, hρw, hρpow⟩ :=
-    exists_differentiableAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
+    exists_analyticAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
   have hρt := hρ.continuousAt.tendsto
   rw [hρw] at hρt
   have heq : descendPow m f =ᶠ[𝓝 (u ^ m)] f ∘ ρ := (hρt.eventually hf).mono fun v hv ↦ by
     rw [Function.comp_apply, ← descendPow_pow hv, hρpow]
-  exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _ hρ).congr_of_eventuallyEq heq
+  exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _
+    hρ.differentiableAt).congr_of_eventuallyEq heq
 
 /-- The descent of a function continuous on an open set `s` and invariant under the `m`-th roots
 of unity at every point of `s` is continuous on `(· ^ m) '' s`, since `u ↦ u ^ m` is an open map. -/

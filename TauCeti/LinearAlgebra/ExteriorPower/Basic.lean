@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Further results on exterior powers
@@ -50,6 +51,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   exactly when the vectors are linearly independent.
 * `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
   target have a nonzero exterior product.
+* `exteriorPower.ιMulti_append_subtype_ne_zero`: linearly independent families in two disjoint
+  subspaces have a nonzero joint exterior product.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -325,6 +328,17 @@ theorem ιMulti_comp_ne_zero_of_eq_basis {W : Type*} [AddCommGroup W] [Module K 
   rw [show g ∘ v = ⇑b from funext hv]
   exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
 
+/-- A family of vectors of `p` followed by a family of vectors of `q` has a nonzero exterior
+product when both families are linearly independent and `p`, `q` are disjoint. -/
+theorem ιMulti_append_subtype_ne_zero {p q : Submodule K V} (hpq : Disjoint p q) {m n : ℕ}
+    {a : Fin m → p} {b : Fin n → q} (ha : LinearIndependent K a) (hb : LinearIndependent K b) :
+    ιMulti K (m + n) (Fin.append (p.subtype ∘ a) (q.subtype ∘ b)) ≠ 0 := by
+  rw [ιMulti_ne_zero_iff]
+  refine TauCeti.linearIndependent_fin_append.2
+    ⟨ha.map' _ p.ker_subtype, hb.map' _ q.ker_subtype, hpq.mono ?_ ?_⟩
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (a i).property)
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (b i).property)
+
 end Field
 
 /-! ### Induced maps -/
@@ -450,6 +464,22 @@ theorem exteriorPower_apply_ιMulti (e : M ≃ₗ[R] N) (n : ℕ) (m : Fin n →
 theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   (rfl)
+
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    _root_.exteriorPower.map n e.toLinearMap (_root_.exteriorPower.map n e.symm.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).apply_symm_apply x
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    _root_.exteriorPower.map n e.symm.toLinearMap (_root_.exteriorPower.map n e.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).symm_apply_apply x
 
 @[simp]
 theorem exteriorPower_refl (n : ℕ) :

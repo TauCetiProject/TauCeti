@@ -56,7 +56,7 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   focus-focus blocks it is, then
   the two bases concatenate to a Darboux basis of `V` in whose Williamson blocks the family is in
   normal form.
-* `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks`:
+* `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span`:
   **Williamson's classification of mixed type.** If the span of a nondegenerate family contains a
   form `P` such that `A_P²` has nonzero real eigenvalues `μ ∈ s` and `A_P` has eigenvalues
   `z = a + bi` with `a, b > 0`, `z ∈ t`, and `2 |s| + 4 |t| = dim V`, then the family spans the same
@@ -476,7 +476,7 @@ has distinct eigenvalues `z = a + bi`, `a, b > 0`, `z ∈ t`, each with an eigen
 `2 |s| + 4 |t| = dim V`. Then there are a Darboux basis with `|s| + 2 |t|` planes and a set of
 elliptic planes among the first `|s|` whose Williamson blocks span the same space as `Q`: `|s|`
 elliptic or hyperbolic blocks and `|t|` focus-focus blocks. -/
-theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
+theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span
     (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
     (hP : P ∈ Submodule.span ℝ (Set.range Q)) {s : Finset ℝ} {t : Finset ℂ}
     (hst : s.card * 2 + t.card * 4 = finrank ℝ V) (hs0 : (0 : ℝ) ∉ s)
@@ -670,7 +670,7 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
           Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (williamsonBlocks b u)) :=
   ⟨fun ⟨_, hP, _, _, hst, hs0, hPs, ht0, hPt⟩ ↦
     let ⟨_, _, hb, hspan⟩ :=
-      h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
+      h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span hP hst hs0 hPs ht0 hPt
     ⟨_, _, _, _, hb, hspan⟩,
   fun ⟨_, _, _, u, hb, hspan⟩ ↦
     hspan ▸ hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank u⟩

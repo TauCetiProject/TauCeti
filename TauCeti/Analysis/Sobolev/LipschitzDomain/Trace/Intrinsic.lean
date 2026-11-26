@@ -225,11 +225,7 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
   have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
-  have hdim : finrank ℝ E = finrank ℝ F - 1 := by
-    rw [e.toLinearEquiv.finrank_eq, (WithLp.linearEquiv 2 ℝ (ℝ × E)).finrank_eq,
-      Module.finrank_prod, Module.finrank_self]
-    omega
-  rw [← hdim]
+  rw [← e.finrank_snd]
   exact exists_frontierTrace_of_isLipschitzDomainWith_image hp g hL hb
 
 /-- **Density of functions smooth up to the boundary.** On a bounded Lipschitz domain of a
