@@ -13,13 +13,14 @@ import Mathlib.Topology.MetricSpace.Thickening
 /-!
 # Hausdorff and Kuratowski limits of closed sets in a metric space
 
-The type `TopologicalSpace.Closeds X` of closed subsets of a metric space `X` carries the
+The type `TopologicalSpace.Closeds X` of closed subsets of an extended metric space `X` carries the
 Hausdorff extended distance (`TopologicalSpace.Closeds.edist_eq`). This file compares convergence
 in this distance with the local notion of Kuratowski convergence, `TauCeti.IsKuratowskiLimit`.
 
-* If closed sets `F i` converge to `Z` in the Hausdorff distance, then every point of `Z` is
-  eventually arbitrarily close to a point of `F i` (`Filter.Tendsto.eventually_exists_dist_lt`),
-  and `F i` converges to `Z` in the sense of Kuratowski (`Filter.Tendsto.isKuratowskiLimit`).
+* If closed sets `F i` converge to `Z` in the Hausdorff distance, then `F i` converges to `Z` in
+  the sense of Kuratowski (`Filter.Tendsto.isKuratowskiLimit`); in a metric space, every point of
+  `Z` is eventually arbitrarily close to a point of `F i`
+  (`Filter.Tendsto.eventually_exists_dist_lt`).
 * When `X` is compact the converse holds, so the two notions of convergence of closed sets agree
   (`TauCeti.isKuratowskiLimit_iff_tendsto`). On a noncompact space Kuratowski convergence is
   weaker: the sets `{n}` of `ℝ` converge to `∅` in the sense of Kuratowski but stay at Hausdorff
@@ -37,42 +38,38 @@ public section
 
 open Filter Metric Set TopologicalSpace Topology
 
-variable {X ι : Type*} [MetricSpace X] {l : Filter ι}
+variable {ι : Type*} {l : Filter ι}
 
-/-- If closed sets `F i` converge to `Z` in the Hausdorff distance, then every point of `Z` is
-eventually within any prescribed positive distance of a point of `F i`. -/
-theorem Filter.Tendsto.eventually_exists_dist_lt {F : ι → Closeds X} {Z : Closeds X}
-    (hF : Tendsto F l (𝓝 Z)) {x : X} (hx : x ∈ Z) {ε : ℝ}
-    (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist x y < ε := by
-  filter_upwards [EMetric.tendsto_nhds.1 hF (ENNReal.ofReal ε) (by simpa using hε)] with i hi
-  rw [edist_comm, Closeds.edist_eq] at hi
-  obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
-  exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩
+section EMetricSpace
+
+variable {X : Type*} [EMetricSpace X]
 
 /-- **Hausdorff convergence implies Kuratowski convergence.** If closed sets `F i` converge to `Z`
 in the Hausdorff distance, they converge to `Z` in the sense of Kuratowski. -/
 theorem Filter.Tendsto.isKuratowskiLimit {F : ι → Closeds X} {Z : Closeds X}
     (hF : Tendsto F l (𝓝 Z)) : TauCeti.IsKuratowskiLimit l (fun i ↦ (F i : Set X)) Z where
   eventually_inter_nonempty x hx U hU := by
-    obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
-    filter_upwards [hF.eventually_exists_dist_lt hx hε] with i ⟨y, hy, hxy⟩
-    exact ⟨y, hy, hεU (mem_ball'.2 hxy)⟩
+    obtain ⟨ε, hε, hεU⟩ := EMetric.mem_nhds_iff.1 hU
+    filter_upwards [EMetric.tendsto_nhds.1 hF ε hε] with i hi
+    rw [edist_comm, Closeds.edist_eq] at hi
+    obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
+    exact ⟨y, hy, hεU (mem_eball'.2 hxy)⟩
   exists_mem_nhds_eventually_disjoint x hx := by
-    obtain ⟨ε, hε, hεZ⟩ := Metric.mem_nhds_iff.1 (Z.isClosed.isOpen_compl.mem_nhds hx)
-    refine ⟨ball x (ε / 2), ball_mem_nhds x (half_pos hε), ?_⟩
-    filter_upwards [EMetric.tendsto_nhds.1 hF (ENNReal.ofReal (ε / 2)) (by simpa using hε)]
-      with i hi
+    obtain ⟨ε, hε, hεZ⟩ := EMetric.mem_nhds_iff.1 (Z.isClosed.isOpen_compl.mem_nhds hx)
+    have hε2 : 0 < ε / 2 := ENNReal.half_pos hε.ne'
+    refine ⟨eball x (ε / 2), eball_mem_nhds x hε2, ?_⟩
+    filter_upwards [EMetric.tendsto_nhds.1 hF (ε / 2) hε2] with i hi
     rw [Closeds.edist_eq] at hi
     refine Set.disjoint_left.2 fun y hy hyx ↦ ?_
     -- A point `z` of `Z` within `ε / 2` of `y ∈ ball x (ε / 2)` would lie in `ball x ε ⊆ Zᶜ`.
     obtain ⟨z, hz, hyz⟩ := exists_edist_lt_of_hausdorffEDist_lt hy hi
-    rw [edist_dist, ENNReal.ofReal_lt_ofReal_iff (half_pos hε)] at hyz
-    refine hεZ (mem_ball.2 ?_) hz
-    linarith [dist_triangle z y x, dist_comm z y, mem_ball.1 hyx]
+    refine hεZ (mem_eball.2 ?_) hz
+    exact (edist_triangle_left z x y).trans_lt <|
+      (ENNReal.add_lt_add hyz (mem_eball.1 hyx)).trans_eq (ENNReal.add_halves ε)
 
-/-- **Kuratowski and Hausdorff convergence agree on a compact space.** In a compact metric space,
-closed sets `F i` converge to `Z` in the sense of Kuratowski exactly when they converge to `Z` in
-the Hausdorff distance. -/
+/-- **Kuratowski and Hausdorff convergence agree on a compact space.** In a compact extended
+metric space, closed sets `F i` converge to `Z` in the sense of Kuratowski exactly when they
+converge to `Z` in the Hausdorff distance. -/
 theorem TauCeti.isKuratowskiLimit_iff_tendsto [CompactSpace X] {F : ι → Closeds X}
     {Z : Closeds X} : IsKuratowskiLimit l (fun i ↦ (F i : Set X)) Z ↔ Tendsto F l (𝓝 Z) := by
   refine ⟨fun h ↦ tendsto_nhds_of_unique_mapClusterPt fun Z' hZ' ↦ ?_,
@@ -81,6 +78,18 @@ theorem TauCeti.isKuratowskiLimit_iff_tendsto [CompactSpace X] {F : ι → Close
   -- `Z` are Kuratowski limits of `F`, so they coincide.
   obtain ⟨U, hUl, hU⟩ := mapClusterPt_iff_ultrafilter.1 hZ'
   exact Closeds.ext <| hU.isKuratowskiLimit.unique (h.comp (tendsto_id'.2 hUl))
+
+end EMetricSpace
+
+/-- If closed sets `F i` converge to `Z` in the Hausdorff distance, then every point of `Z` is
+eventually within any prescribed positive distance of a point of `F i`. -/
+theorem Filter.Tendsto.eventually_exists_dist_lt {X : Type*} [MetricSpace X] {F : ι → Closeds X}
+    {Z : Closeds X} (hF : Tendsto F l (𝓝 Z)) {x : X} (hx : x ∈ Z) {ε : ℝ}
+    (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist x y < ε := by
+  filter_upwards [EMetric.tendsto_nhds.1 hF (ENNReal.ofReal ε) (by simpa using hε)] with i hi
+  rw [edist_comm, Closeds.edist_eq] at hi
+  obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
+  exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩
 
 /-- **Compact separation from a Kuratowski limit in a metric space.** If the sets `F i` converge to
 `Z` in the sense of Kuratowski and the compact set `K` is disjoint from `Z`, there is `δ > 0` such
