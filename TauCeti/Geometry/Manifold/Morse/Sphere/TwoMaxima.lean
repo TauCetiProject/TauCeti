@@ -673,22 +673,13 @@ multiple of the saddle, and the boundary of the saddle vanishes. So the integral
 complex `TauCeti.IsAdaptedPseudoGradient.signedMorseComplex` of `(hᵤ² + t hᵥ, X)` is defined. -/
 theorem signedMorseBoundary_comp_signedMorseBoundary_sphereHeight_sq_add_smul_sphereHeight
     (hn : 2 ≤ n) :
-    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
-  refine LinearMap.ext fun c ↦ Finsupp.ext fun q ↦ ?_
-  rw [LinearMap.comp_apply, signedMorseBoundary_apply, LinearMap.zero_apply, Finsupp.coe_zero,
-    Pi.zero_apply]
-  refine Finset.sum_eq_zero fun p _ ↦ ?_
-  dsimp only
-  by_cases hp : (p : sphere (0 : E) 1) = v
-  · -- The saddle is not a maximum, so its boundary vanishes.
-    rw [signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight_eq_zero huv ht₀ ht₂ hX 𝔬 hn
-      fun h ↦ ?_, Int.cast_zero, mul_zero]
-    rw [hp, sphereHeight_self] at h
-    linarith
-  · -- Every boundary is a multiple of the saddle.
-    rw [signedMorseBoundary_apply, Finsupp.sum, Finset.sum_eq_zero fun p' _ ↦ ?_, zero_mul]
-    rw [signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight_eq_zero huv ht₀ ht₂ hX 𝔬 hn
-      fun _ ↦ hp, Int.cast_zero, mul_zero]
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 :=
+  (signedMorseBoundaryAt_comp_signedMorseBoundaryAt_eq_zero_iff hf).1 fun k ↦ by
+    by_cases hk : k + 1 = n
+    · rw [signedMorseBoundaryAt_eq_zero_of_add_one_ne huv ht₀ ht₂ hX 𝔬 hf hn (k := k + 1)
+        (by omega), LinearMap.comp_zero]
+    · rw [signedMorseBoundaryAt_eq_zero_of_add_one_ne huv ht₀ ht₂ hX 𝔬 hf hn hk,
+        LinearMap.zero_comp]
 
 /-- **`H₀ = R` for the sphere with two maxima.** For `n ≥ 2`, the integral Morse homology of
 `hᵤ² + t hᵥ` in degree `0`, with coefficients in any ring `R`, is `R`, for every adapted
