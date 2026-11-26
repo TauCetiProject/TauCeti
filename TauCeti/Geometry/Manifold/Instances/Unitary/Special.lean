@@ -210,14 +210,10 @@ action is a real bilinear map of finite-dimensional spaces. -/
 instance _root_.Matrix.instContMDiffSMulMulVec {k : ℕ∞ω} :
     ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, n → 𝕜) k (Matrix n n 𝕜) (n → 𝕜) where
   contMDiff_smul := by
-    have h : ContMDiff (𝓘(ℝ, Matrix n n 𝕜).prod 𝓘(ℝ, n → 𝕜)) 𝓘(ℝ, Matrix n n 𝕜 × (n → 𝕜)) k
-        (@id (Matrix n n 𝕜 × (n → 𝕜))) := by
-      rw [contMDiff_prod_module_iff, ← contMDiff_prod_iff]; exact contMDiff_id
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
     -- The action is the real bilinear map `(A, v) ↦ A *ᵥ v`.
-    let B : Matrix n n 𝕜 →ₗ[ℝ] (n → 𝕜) →ₗ[ℝ] (n → 𝕜) :=
-      LinearMap.mk₂ ℝ (fun A v ↦ A *ᵥ v) Matrix.add_mulVec (fun c A v ↦ Matrix.smul_mulVec c A v)
-        Matrix.mulVec_add (fun c A v ↦ Matrix.mulVec_smul A c v)
-    exact B.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff.comp h
+    exact (Matrix.mulVecBilin ℝ ℝ : Matrix n n 𝕜 →ₗ[ℝ] (n → 𝕜) →ₗ[ℝ] (n → 𝕜))
+      |>.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff
 
 /-- Any `C^k` action (`k ≤ ∞`) of the matrices on a manifold restricts to a `C^k` action of the
 special unitary group. -/

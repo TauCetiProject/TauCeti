@@ -84,11 +84,11 @@ theorem momentMap_specialOrthogonalGroup_eq_rotationMomentMap_comp
   refine momentMap_eq_rotationMomentMap_comp (fun ξ ↦ LinearMap.ext fun v ↦ ?_) z
   -- The orbit map of `v` is the inclusion of `SO(n)` followed by the linear map `A ↦ A *ᵥ v`.
   let L : Matrix n n ℝ →L[ℝ] (n → ℝ) :=
-    LinearMap.toContinuousLinearMap ((LinearMap.applyₗ v).comp Matrix.toLin'.toLinearMap)
+    LinearMap.toContinuousLinearMap ((Matrix.mulVecBilin ℝ ℝ).flip v)
   have horbit : (fun g : Matrix.specialOrthogonalGroup n ℝ ↦ g • v) =
       L ∘ (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) := by
     funext g
-    simp [L, Submonoid.smul_def, Matrix.toLin'_apply]
+    simp [L, Submonoid.smul_def, Matrix.mulVecBilin_apply]
   have hval : MDifferentiableAt (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ)
       (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1 :=
     Matrix.specialUnitaryGroup.contMDiff_val.mdifferentiableAt (by simp)

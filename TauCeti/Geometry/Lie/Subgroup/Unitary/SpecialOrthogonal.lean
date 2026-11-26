@@ -96,6 +96,15 @@ private def specialOrthogonalLieAlgebraMap :
       (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1).toLinearMap
     mvfderiv_specialOrthogonalGroup_val_mem_so
 
+private theorem coe_specialOrthogonalLieAlgebraMap_apply
+    (ξ : GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ)
+      (Matrix.specialOrthogonalGroup n ℝ)) :
+    (specialOrthogonalLieAlgebraMap n ξ : Matrix n n ℝ) =
+      mvfderiv (Matrix.specialUnitaryGroup.model n ℝ)
+        (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1 ξ := by
+  rw [specialOrthogonalLieAlgebraMap, LinearMap.codRestrict_apply]
+  rfl
+
 private theorem injective_specialOrthogonalLieAlgebraMap :
     Function.Injective (specialOrthogonalLieAlgebraMap n) := by
   intro ξ η h
@@ -131,7 +140,7 @@ private theorem surjective_specialOrthogonalLieAlgebraMap :
       ∀ v, mfderiv (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ) Subtype.val e v =
         (specialOrthogonalLieAlgebraMap n v : Matrix n n ℝ) := by
     rintro e rfl v
-    rfl
+    rw [coe_specialOrthogonalLieAlgebraMap_apply, mvfderiv_apply_eq_mfderiv_apply]
   refine ⟨mfderiv 𝓘(ℝ) (Matrix.specialUnitaryGroup.model n ℝ) γ 0 (1 : ℝ), Subtype.ext ?_⟩
   rw [← h2 _ hγ0]
   -- Both sides of `h1` evaluate by definition: `(L ∘ M) 1 = L (M 1)` and `(t ↦ t • A) 1 = 1 • A`.
@@ -162,8 +171,7 @@ theorem coe_specialOrthogonalLieAlgebraEquiv_apply
     (specialOrthogonalLieAlgebraEquiv n ξ : Matrix n n ℝ) =
       mvfderiv (Matrix.specialUnitaryGroup.model n ℝ)
         (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1 ξ := by
-  rw [specialOrthogonalLieAlgebraEquiv, LinearEquiv.ofBijective_apply]
-  -- The map is the codomain restriction of this differential to `so(n)`.
-  rfl
+  rw [specialOrthogonalLieAlgebraEquiv, LinearEquiv.ofBijective_apply,
+    coe_specialOrthogonalLieAlgebraMap_apply]
 
 end TauCeti
