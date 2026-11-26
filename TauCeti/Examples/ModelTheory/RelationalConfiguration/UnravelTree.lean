@@ -83,8 +83,9 @@ theorem eq_or_eq_of_between_surplus {m : ℕ} (hm : χ x + 1 < m) {z : List ℚ 
     · exact Or.inl rfl
     · omega
 
-/-- Without tags, the original nodes form the prefix order for every colouring. -/
-theorem unravelTreeRel_none_none_iff (χ' : List ℚ → ℕ) (y : List ℚ) :
+/-- Without tags, the comparison of two original nodes does not depend on the colouring: for every
+colouring it is the prefix order `x <+: y` of `unravelTreeRel_none_left`. -/
+theorem unravelTreeRel_none_none_congr_color (χ' : List ℚ → ℕ) (y : List ℚ) :
     unravelTreeRel χ (x, none) (y, none) ↔ unravelTreeRel χ' (x, none) (y, none) := by
   simp
 
