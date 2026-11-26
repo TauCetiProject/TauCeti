@@ -311,6 +311,16 @@ theorem W1pVanishingOn.denseRange_valueL_two (hΓ : Disjoint Γ Omega) :
     exact ⟨⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩, by
       simp only [W1pVanishingOn.valueL_apply, W1p0.valueL_apply]⟩
 
+/-- The value map of `W^{1,p}_Γ(Ω)` is nonzero on a nonempty open set `Ω` when `Γ` misses `Ω`,
+since `W^{1,p}_Γ(Ω)` then contains `W^{1,p}_0(Ω)`. -/
+theorem W1pVanishingOn.valueL_ne_zero (hΓ : Disjoint Γ Omega) (hOmega : (Omega : Set E).Nonempty) :
+    W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := p) (Γ := Γ) ≠ 0 := by
+  obtain ⟨w, hw⟩ := W1p0.exists_value_ne_zero (mu := mu) (p := p) hOmega
+  intro h
+  apply hw
+  simpa only [W1pVanishingOn.valueL_apply, zero_apply] using DFunLike.congr_fun h
+    ⟨(w : W1p mu Omega p), w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩
+
 /-- The value map `W^{1,p}_Γ(Ω) → Lᵖ(Ω)` is compact when the value map of `W^{1,p}(Ω)` is, as
 for a bounded Lipschitz domain by Rellich--Kondrachov. -/
 theorem W1pVanishingOn.isCompactOperator_valueL
