@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
-public import TauCeti.Analysis.CStarAlgebra.TracePairing.Unitization
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Order
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.UnitalTracePairing
 
 /-!
-# Trace pairings, the order of `K₀` and unital algebras
+# Trace pairings and the order of `K₀`
 
 Let `τ` be a positive tracial functional on a C⋆-algebra `A` and `τ_*` its pairing with the
 projection `K₀`-group (`TauCeti.PositiveTracialFunctional.kZeroPairing`).
@@ -25,10 +23,6 @@ projection `K₀`-group (`TauCeti.PositiveTracialFunctional.kZeroPairing`).
   functional with `τ(1) = 1`, a tracial state, induces a state of the ordered group
   `(K₀(A), K₀(A)⁺, [1_A])`: a homomorphism to `ℝ`, nonnegative on the cone, with value `1` at
   the order unit.
-* For unital `A`, the pairing of `τ` with the operator `K₀`-group, the kernel of
-  `K₀(A⁺) → K₀(ℂ)` (`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing`), is `τ_*`
-  under the isomorphism `K₀(A) ≃+ K₀ᵖ(A)` of `TauCeti.UnitizationKZero.unitalEquiv`
-  (`TauCeti.PositiveTracialFunctional.kZeroPairing_unitalEquiv`).
 
 ## References
 
@@ -72,13 +66,6 @@ theorem kZeroPairing_le_of_mem_scale {x : ProjectionKZero A}
   have h := τ.kZeroPairing_nonneg_of_mem_positiveCone
     (ProjectionKZero.sub_mem_positiveCone_of_mem_scale hx)
   rwa [map_sub, kZeroPairing_orderUnit, sub_nonneg] at h
-
-/-- **Agreement with the operator `K₀`-group.** For unital `A`, the pairing of `τ` with
-`K₀(A) = ker (K₀(A⁺) → K₀(ℂ))` is `τ_*` composed with `K₀(A) ≃+ K₀ᵖ(A)`. -/
-theorem kZeroPairing_unitalEquiv (x : UnitizationKZero ℂ A) :
-    τ.kZeroPairing (UnitizationKZero.unitalEquiv ℂ A x) = τ.unitizationKZeroPairing x := by
-  rw [kZeroPairing_apply, unitizationKZeroPairing_apply,
-    UnitizationKZero.tracePairing_unitalEquiv]
 
 end Unital
 
