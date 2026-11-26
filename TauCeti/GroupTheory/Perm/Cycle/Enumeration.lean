@@ -12,7 +12,7 @@ public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.Logic.Equiv.Fin.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Enumerating a finite set along the cycles of a permutation
@@ -286,7 +286,7 @@ theorem orbitElemEquiv_succ (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers 
       σ.orbitElemEquiv ⟨ω, finRotate (Function.minimalPeriod (σ • ·) ω.out) t⟩ :=
   (σ.sigmaCycleEquiv_finRotate _ _ ω _).symm.trans
     (congrArg (fun i ↦ σ.sigmaCycleEquiv _ σ.existsUnique_sameCycle_orbitRel_out ⟨ω, i⟩)
-      (TauCeti.finCongr_finRotate (σ.minimalPeriod_sub_one_add_one ω.out).symm t).symm)
+      (Fin.finCongr_finRotate t (σ.minimalPeriod_sub_one_add_one ω.out).symm).symm)
 
 end OrbitElem
 

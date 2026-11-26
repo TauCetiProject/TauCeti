@@ -33,6 +33,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 
 * `Matrix.dvd_diagonal_apply`: a scalar divides the entries of a diagonal matrix
   whose diagonal contains it.
+* `Matrix.vecMul_diagonal_vec2`: a row vector times `diag(a, b)` scales its two coordinates by
+  `a` and `b`.
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
 * `TauCeti.diagonal_mul_single`, `TauCeti.single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on one side
@@ -64,6 +66,12 @@ namespace Matrix
 theorem dvd_diagonal_apply {ι α : Type*} [DecidableEq ι] [MonoidWithZero α]
     (d : ι → α) (i j : ι) : d j ∣ diagonal d i j := by
   by_cases hij : i = j <;> simp [diagonal, hij]
+
+/-- A row vector times the diagonal matrix `diag(a, b)` has coordinates `v 0 * a` and `v 1 * b`. -/
+theorem vecMul_diagonal_vec2 {α : Type*} [NonUnitalNonAssocSemiring α] (v : Fin 2 → α)
+    (a b : α) : v ᵥ* diagonal ![a, b] = ![v 0 * a, v 1 * b] := by
+  ext i
+  fin_cases i <;> simp [vecMul_diagonal]
 
 end Matrix
 

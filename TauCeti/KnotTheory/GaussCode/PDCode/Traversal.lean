@@ -8,9 +8,9 @@ module
 public import TauCeti.KnotTheory.GaussCode.PDCode.Components
 public import TauCeti.KnotTheory.PDCode.Planar
 public import TauCeti.KnotTheory.PDCode.Visit
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import Mathlib.Logic.Equiv.Bool
-import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Reading Gauss codes from oriented PD-codes
@@ -118,7 +118,7 @@ theorem exists_gaussTraversal (D : OrientedPDCode n)
       congrArg (fun σ => σ (f a)) hf
   apply (f.trans (finCongr D.card_outgoingHalfEdges)).injective
   rw [Equiv.apply_symm_apply]
-  simp only [Equiv.trans_apply, hstep, TauCeti.finCongr_finRotate]
+  simp only [Equiv.trans_apply, hstep, Fin.finCongr_finRotate]
   have hi := (f.trans (finCongr D.card_outgoingHalfEdges)).apply_symm_apply i
   exact congrArg (finRotate _) hi.symm
 

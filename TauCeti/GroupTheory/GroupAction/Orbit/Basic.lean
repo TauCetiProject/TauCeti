@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
+public import Mathlib.GroupTheory.GroupAction.IterateAct
 
 /-!
 # Invariant-and-witness orbit criteria
@@ -27,6 +30,10 @@ the witness membership condition (`∀ g ∈ ws, g ∈ H`) from the covering che
 (`∀ x ∈ s, x ∈ ws.map (· • a)`) lets computational proofs discharge the covering check on concrete
 ambient elements without packing subgroup-membership proofs into the witness list.
 
+The file also identifies two orbits of cyclic actions: the orbit of `x` under the `ℕ`-action of
+`IterateMulAct f` is its forward orbit `range fun n ↦ f^[n] x`, and the orbit under
+`Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`.
+
 ## Main results
 
 * `MulAction.orbit_subset_of_invariant`: a function constant along the `M`-orbit of `a` confines
@@ -39,6 +46,8 @@ ambient elements without packing subgroup-membership proofs into the witness lis
   explicit witness list `ws : List G`.
 * `MulAction.minimalPeriod_conj_smul`: minimal periods of actions are invariant under
   simultaneous conjugation of the acting element and translation of the basepoint.
+* `MulAction.orbit_iterateMulAct`: the orbit under `IterateMulAct f` is the forward orbit of `f`.
+* `MulAction.mem_orbit_zpowers_iff`: membership in the orbit under `Subgroup.zpowers g`.
 -/
 
 public section
@@ -105,5 +114,24 @@ theorem minimalPeriod_conj_smul {G α : Type*} [Group G] [MulAction G α] (g c :
   refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
   simp only [Function.IsPeriodicPt, Function.IsFixedPt, ← (hsc.iterate_right n).eq]
   exact (MulAction.injective c).eq_iff
+
+/-- The orbit of `x` under the `ℕ`-action of `IterateMulAct f` is its forward orbit. -/
+@[to_additive (attr := simp) /-- The orbit of `x` under the `ℕ`-action of `IterateAddAct f` is its
+forward orbit. -/]
+theorem orbit_iterateMulAct {α : Type*} (f : α → α) (x : α) :
+    orbit (IterateMulAct f) x = Set.range fun n : ℕ ↦ f^[n] x := by
+  ext y
+  constructor
+  · rintro ⟨⟨n⟩, rfl⟩
+    exact ⟨n, (IterateMulAct.mk_smul n x).symm⟩
+  · rintro ⟨n, rfl⟩
+    exact ⟨⟨n⟩, IterateMulAct.mk_smul n x⟩
+
+/-- The orbit of `x` under `Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`. -/
+@[to_additive /-- The orbit of `x` under `AddSubgroup.zmultiples g` consists of the
+points `n • g +ᵥ x`, `n : ℤ`. -/]
+theorem mem_orbit_zpowers_iff {G α : Type*} [Group G] [MulAction G α] {g : G} {x y : α} :
+    y ∈ orbit (Subgroup.zpowers g) x ↔ ∃ n : ℤ, g ^ n • x = y := by
+  simp only [mem_orbit_iff, Subgroup.exists_zpowers, Subgroup.smul_def]
 
 end MulAction

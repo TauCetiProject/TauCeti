@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
+import Mathlib.Data.Set.Finite.Lattice
 import TauCeti.Combinatorics.SimpleGraph.Basic
 
 /-!
@@ -28,6 +29,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 * `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
 * `SimpleGraph.sum_neighborFinset_comm` — swapping the order of summation in a double sum over
   neighbours.
+* `SimpleGraph.finite_setOf_exists_mem_and_mem` — in a locally finite graph only finitely many
+  edges share a vertex with an edge of a finite set of edges.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
 * `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
@@ -88,6 +91,22 @@ theorem sum_neighborFinset_comm (G : SimpleGraph V) [Fintype V] [G.LocallyFinite
   sum_comm' fun i j ↦ by
     simp only [mem_univ, true_and, and_true, mem_neighborFinset]
     exact ⟨Adj.symm, Adj.symm⟩
+
+/-- For a locally finite graph, only finitely many edges share a vertex with an edge of a finite
+set `F`. -/
+theorem finite_setOf_exists_mem_and_mem (G : SimpleGraph V) [G.LocallyFinite]
+    (F : Finset G.edgeSet) :
+    {e : G.edgeSet | ∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)}.Finite := by
+  classical
+  have hv (v : V) : {e : G.edgeSet | v ∈ (e : Sym2 V)}.Finite :=
+    Set.Finite.of_finite_image (f := fun e => (e : Sym2 V))
+      ((G.incidenceSet v).toFinite.subset fun _ ⟨e, he, hee⟩ => hee ▸ ⟨e.property, he⟩)
+      Subtype.val_injective.injOn
+  refine ((F.finite_toSet.biUnion fun f _ => (f : Sym2 V).toFinset.finite_toSet.biUnion
+    fun v _ => hv v)).subset ?_
+  rintro e ⟨f, hf, v, hve, hvf⟩
+  simp only [Set.mem_iUnion]
+  exact ⟨f, hf, v, by simpa using hvf, hve⟩
 
 /-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
 edge set of the graph it generates. -/
