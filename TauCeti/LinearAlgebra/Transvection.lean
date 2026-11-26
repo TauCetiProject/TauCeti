@@ -23,10 +23,10 @@ This file computes the invariants that distinguish the two classes: the displace
 polynomial of `transvection f v` on a free module of rank `n ≥ 1` is
 `(X - 1) ^ (n - 1) * (X - (1 + f v))`. Consequently, for a pseudo-reflection `g`:
 
-* `g` is a transvection exactly when `det g = 1`, exactly when `g` is unipotent, and then its
-  characteristic polynomial is `(X - 1) ^ n`;
-* otherwise `g` is diagonalisable: `V` is the direct sum of the fixed hyperplane of `g` and the
-  line on which `g` acts by `det g ≠ 1`.
+* `g` is a transvection exactly when `det g = 1`, over a division ring exactly when `g` is
+  unipotent, and then its characteristic polynomial is `(X - 1) ^ n`;
+* otherwise, over a field and for finite-dimensional `V`, `g` is diagonalisable: `V` is the
+  direct sum of the fixed hyperplane of `g` and the line on which `g` acts by `det g ≠ 1`.
 
 Both classes are stable under conjugation (also by an isomorphism onto another module), and
 under extension of scalars, which preserves being different from the identity when the extension
@@ -122,9 +122,10 @@ with entries `b.repr v i * f (b j)`. -/
 theorem toMatrix_transvection {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R V)
     (f : Dual R V) (v : V) :
     toMatrix b b (transvection f v) = 1 + Matrix.vecMulVec (b.repr v) (fun j ↦ f (b j)) := by
-  ext i j
-  simp [toMatrix_apply, transvection.apply, Matrix.one_apply, Matrix.vecMulVec_apply,
-    Finsupp.single_apply, mul_comm, eq_comm]
+  have h : transvection f v = 1 + f.smulRight v := by
+    ext x
+    simp [transvection.apply]
+  rw [h, map_add, toMatrix_one, toMatrix_smulRight, Function.comp_def]
 
 end Matrix
 
@@ -212,8 +213,8 @@ theorem sub_one_sq_eq_zero_of_mem_transvections {e : V ≃ₗ[R] V} (he : e ∈ 
     ((e : Module.End R V) - 1) ^ 2 = 0 := by
   obtain ⟨f, v, hfv, rfl⟩ := he
   ext x
-  rw [transvection.coe_toLinearMap, LinearMap.transvection.sub_one_pow_succ_apply, pow_one, hfv,
-    mul_zero, zero_smul, LinearMap.zero_apply]
+  rw [transvection.coe_toLinearMap]
+  simp [LinearMap.transvection.sub_one_pow_succ_apply, hfv]
 
 /-- A linear equivalence whose underlying map is `transvection f v` with `f v = 0` is a
 transvection. -/
@@ -237,8 +238,8 @@ private theorem symm_trans_trans_mem_transvections (g : V ≃ₗ[R] W) {e : V �
     (he : e ∈ transvections R V) : g.symm.trans (e.trans g) ∈ transvections R W := by
   obtain ⟨f, v, hfv, rfl⟩ := he
   refine ⟨f ∘ₗ g.symm, g v, by simpa using hfv, ?_⟩
-  rw [← toLinearMap_inj, coe_trans, coe_trans, LinearMap.comp_assoc, transvection.coe_toLinearMap,
-    transvection.coe_toLinearMap, LinearMap.transvection.congr]
+  rw [← toLinearMap_inj, coe_trans, coe_trans, LinearMap.comp_assoc]
+  simp [LinearMap.transvection.congr]
 
 /-- Transporting along an isomorphism `g : V ≃ₗ[R] W` preserves and reflects dilatransvections. -/
 @[simp]
@@ -261,14 +262,16 @@ theorem symm_trans_trans_mem_transvections_iff (g : V ≃ₗ[R] W) {e : V ≃ₗ
 /-- A conjugate of a dilatransvection is a dilatransvection. -/
 @[simp]
 theorem conj_mem_dilatransvections_iff (g e : V ≃ₗ[R] V) :
-    g * e * g⁻¹ ∈ dilatransvections R V ↔ e ∈ dilatransvections R V :=
-  symm_trans_trans_mem_dilatransvections_iff g
+    g * e * g⁻¹ ∈ dilatransvections R V ↔ e ∈ dilatransvections R V := by
+  rw [mul_eq_trans, mul_eq_trans, DFunLike.coe_injective (coe_inv g)]
+  exact symm_trans_trans_mem_dilatransvections_iff g
 
 /-- A conjugate of a transvection is a transvection. -/
 @[simp]
 theorem conj_mem_transvections_iff (g e : V ≃ₗ[R] V) :
-    g * e * g⁻¹ ∈ transvections R V ↔ e ∈ transvections R V :=
-  symm_trans_trans_mem_transvections_iff g
+    g * e * g⁻¹ ∈ transvections R V ↔ e ∈ transvections R V := by
+  rw [mul_eq_trans, mul_eq_trans, DFunLike.coe_injective (coe_inv g)]
+  exact symm_trans_trans_mem_transvections_iff g
 
 end Ring
 
@@ -290,9 +293,7 @@ theorem mem_transvections_iff_isNilpotent_sub_one {e : V ≃ₗ[K] V}
   | zero => exact hv (by simpa using congr($hn v))
   | succ k =>
     have := congr($hn v)
-    rw [LinearMap.transvection.sub_one_pow_succ_apply, LinearMap.zero_apply, smul_eq_zero,
-      ← pow_succ'] at this
-    exact this.elim (fun h ↦ hfv ((pow_eq_zero_iff k.succ_ne_zero).mp h)) hv
+    simp [LinearMap.transvection.sub_one_pow_succ_apply, hfv, hv] at this
 
 end DivisionRing
 
