@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
-import TauCeti.Analysis.PDE.MaximumPrinciple.LpDrift
+import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
+import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.MeasureTheory.Function.Holder
 
 /-!
@@ -107,65 +108,58 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ}
 
 omit [DecidableEq ι] in
-/-- Above the level `l`, `u = (u - l)⁺ + l` and `∇(u - l)⁺ = ∇u`; below it `(u - l)⁺` and its
-gradient vanish. -/
-private theorem ae_posPartAbove_cases {l : ℝ} (hl : 0 ≤ l) (u : W1p mu Omega 2) :
-    ∀ᵐ x ∂mu.restrict Omega,
-      (W1p.value u x = W1p.value (W1p.posPartAbove (by norm_num) hl u) x + l ∧
-        W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x = W1p.gradient u x) ∨
-      (W1p.value (W1p.posPartAbove (by norm_num) hl u) x = 0 ∧
-        W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x = 0) := by
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u,
-    W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hv hg
-  by_cases hx : l < W1p.value u x
-  · left
-    rw [hv, hg, indicator_of_mem (s := {y | l < W1p.value u y}) hx, max_eq_left (by linarith)]
-    exact ⟨by ring, rfl⟩
-  · right
-    rw [hv, hg, indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
-      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
-    exact ⟨rfl, rfl⟩
+/-- The pointwise bound of a first-order term: `|f ⟪d, G⟫| ≤ ‖d‖ ‖G‖ |f|`. -/
+private theorem norm_mul_inner_le (f : ℝ) (d G : EuclideanSpace ℝ ι) :
+    ‖f * ⟪d, G⟫‖ ≤ ‖d‖ * (‖G‖ * ‖f‖) := by
+  rw [norm_mul]
+  nlinarith [norm_inner_le_norm (𝕜 := ℝ) d G, norm_nonneg f]
 
 omit [DecidableEq ι] in
 /-- Hölder's inequality and the Sobolev inequality for a first-order lower-order term:
-`∫ ‖d‖ ‖∇w‖ |w| ≤ ‖d‖_p S ‖∇w‖₂²` when `1/p + 1/t = 1/2` and `‖w‖_t ≤ S ‖∇w‖₂`. -/
-private theorem integral_norm_mul_norm_gradient_mul_norm_value_le {p t : ℝ≥0∞}
+`-∫ w ⟪d, ∇w⟫ ≤ ‖d‖_p S ‖∇w‖₂²` when `1/p + 1/t = 1/2` and `‖w‖_t ≤ S ‖∇w‖₂`. -/
+private theorem neg_integral_value_mul_inner_gradient_le {p t : ℝ≥0∞}
     (hpt : p⁻¹ + t⁻¹ = 2⁻¹) {S : ℝ≥0} {w : W1p mu Omega 2}
     (hS : eLpNorm (W1p.value w) t (mu.restrict Omega) ≤ S * ‖W1p.gradient w‖ₑ)
     {d : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hd : MemLp d p (mu.restrict Omega)) :
-    ∫ x in Omega, ‖d x‖ * (‖W1p.gradient w x‖ * ‖W1p.value w x‖) ∂mu ≤
+    -(∫ x in Omega, W1p.value w x * ⟪d x, W1p.gradient w x⟫ ∂mu) ≤
       (eLpNorm d p (mu.restrict Omega)).toReal * S * ‖W1p.gradient w‖ ^ 2 := by
   have : p.HolderTriple t 2 := ⟨hpt⟩
-  have hwt : MemLp (W1p.value w) t (mu.restrict Omega) :=
-    memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
-  have hsob : (eLpNorm (W1p.value w) t (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient w‖ := by
-    simpa [ENNReal.toReal_mul] using ENNReal.toReal_mono (by finiteness) hS
-  calc ∫ x in Omega, ‖d x‖ * (‖W1p.gradient w x‖ * ‖W1p.value w x‖) ∂mu
-      ≤ (eLpNorm d p (mu.restrict Omega)).toReal * ((eLpNorm (W1p.gradient w) 2
+  have hwt := W1p.memLp_value_of_eLpNorm_le hS
+  calc -(∫ x in Omega, W1p.value w x * ⟪d x, W1p.gradient w x⟫ ∂mu)
+      ≤ ∫ x in Omega, ‖d x‖ * (‖W1p.gradient w x‖ * ‖W1p.value w x‖) ∂mu :=
+        (neg_le_abs _).trans <| abs_integral_le_integral_abs.trans <|
+          integral_mono_of_nonneg (ae_of_all _ fun x ↦ abs_nonneg _)
+            (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) (Lp.memLp _) hwt)
+            (ae_of_all _ fun x ↦ (Real.norm_eq_abs _).symm.trans_le (norm_mul_inner_le _ _ _))
+    _ ≤ (eLpNorm d p (mu.restrict Omega)).toReal * ((eLpNorm (W1p.gradient w) 2
           (mu.restrict Omega)).toReal * (eLpNorm (W1p.value w) t (mu.restrict Omega)).toReal) :=
         integral_norm_mul_norm_mul_norm_le (r := 2) (s := 2) hd (Lp.memLp _) hwt
     _ ≤ (eLpNorm d p (mu.restrict Omega)).toReal * (‖W1p.gradient w‖ * (S * ‖W1p.gradient w‖)) := by
         rw [← Lp.norm_def]
         gcongr
+        exact W1p.toReal_eLpNorm_value_le_mul_norm_gradient hS
     _ = _ := by ring
 
 omit [DecidableEq ι] in
 /-- Hölder's inequality and the Sobolev inequality for the zeroth-order term:
-`∫ |c| |w|² ≤ ‖c‖_r S² ‖∇w‖₂²` when `1/r + 2/t = 1` and `‖w‖_t ≤ S ‖∇w‖₂`. -/
-private theorem integral_norm_mul_norm_value_mul_norm_value_le {r t : ℝ≥0∞}
+`-∫ c w² ≤ ‖c‖_r S² ‖∇w‖₂²` when `1/r + 2/t = 1` and `‖w‖_t ≤ S ‖∇w‖₂`. -/
+private theorem neg_integral_mul_value_mul_value_le {r t : ℝ≥0∞}
     (hrt : r⁻¹ + t⁻¹ + t⁻¹ = 1) {S : ℝ≥0} {w : W1p mu Omega 2}
     (hS : eLpNorm (W1p.value w) t (mu.restrict Omega) ≤ S * ‖W1p.gradient w‖ₑ)
     (hc : MemLp c r (mu.restrict Omega)) :
-    ∫ x in Omega, ‖c x‖ * (‖W1p.value w x‖ * ‖W1p.value w x‖) ∂mu ≤
+    -(∫ x in Omega, c x * W1p.value w x * W1p.value w x ∂mu) ≤
       (eLpNorm c r (mu.restrict Omega)).toReal * S ^ 2 * ‖W1p.gradient w‖ ^ 2 := by
   have : r.HolderTriple t (r⁻¹ + t⁻¹)⁻¹ := ⟨by rw [inv_inv]⟩
   have : t.HolderTriple (r⁻¹ + t⁻¹)⁻¹ 1 := ⟨by rw [inv_inv, inv_one, ← hrt]; ring⟩
-  have hwt : MemLp (W1p.value w) t (mu.restrict Omega) :=
-    memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
-  have hsob : (eLpNorm (W1p.value w) t (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient w‖ := by
-    simpa [ENNReal.toReal_mul] using ENNReal.toReal_mono (by finiteness) hS
-  calc ∫ x in Omega, ‖c x‖ * (‖W1p.value w x‖ * ‖W1p.value w x‖) ∂mu
-      ≤ (eLpNorm c r (mu.restrict Omega)).toReal *
+  have hwt := W1p.memLp_value_of_eLpNorm_le hS
+  have hsob := W1p.toReal_eLpNorm_value_le_mul_norm_gradient hS
+  calc -(∫ x in Omega, c x * W1p.value w x * W1p.value w x ∂mu)
+      ≤ ∫ x in Omega, ‖c x‖ * (‖W1p.value w x‖ * ‖W1p.value w x‖) ∂mu :=
+        (neg_le_abs _).trans <| abs_integral_le_integral_abs.trans <|
+          integral_mono_of_nonneg (ae_of_all _ fun x ↦ abs_nonneg _)
+            (hc.integrable_norm_mul_norm_mul_norm (s := (r⁻¹ + t⁻¹)⁻¹) hwt hwt)
+            (ae_of_all _ fun x ↦ by simp only [abs_mul, ← Real.norm_eq_abs, mul_assoc, le_refl])
+    _ ≤ (eLpNorm c r (mu.restrict Omega)).toReal *
           ((eLpNorm (W1p.value w) t (mu.restrict Omega)).toReal *
             (eLpNorm (W1p.value w) t (mu.restrict Omega)).toReal) :=
         integral_norm_mul_norm_mul_norm_le (s := (r⁻¹ + t⁻¹)⁻¹) hc hwt hwt
@@ -190,41 +184,12 @@ private theorem neg_integral_lowerOrder_le {p r t : ℝ≥0∞} (hpt : p⁻¹ + 
         ∫ x in Omega, c x * W1p.value v x * W1p.value v x ∂mu) ≤
       (((eLpNorm b p (mu.restrict Omega)).toReal + (eLpNorm e p (mu.restrict Omega)).toReal) * S +
         (eLpNorm c r (mu.restrict Omega)).toReal * S ^ 2) * ‖W1p.gradient v‖ ^ 2 := by
-  set f := W1p.value v
-  set G := W1p.gradient v
-  have : p.HolderTriple t 2 := ⟨hpt⟩
-  have : r.HolderTriple t (r⁻¹ + t⁻¹)⁻¹ := ⟨by rw [inv_inv]⟩
-  have : t.HolderTriple (r⁻¹ + t⁻¹)⁻¹ 1 := ⟨by rw [inv_inv, inv_one, ← hrt]; ring⟩
-  have hft : MemLp f t (mu.restrict Omega) :=
-    memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
-  -- Each term is bounded by its absolute value, then by Hölder's and the Sobolev inequality.
-  have hbound_e : -(∫ x in Omega, f x * ⟪e x, G x⟫ ∂mu) ≤
-      (eLpNorm e p (mu.restrict Omega)).toReal * S * ‖G‖ ^ 2 :=
-    (neg_le_abs _).trans <| abs_integral_le_integral_abs.trans <|
-      (integral_mono_of_nonneg (ae_of_all _ fun x ↦ abs_nonneg _)
-        (he.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) (Lp.memLp G) hft)
-        (ae_of_all _ fun x ↦ by
-          simp only [abs_mul, ← Real.norm_eq_abs]
-          nlinarith [norm_inner_le_norm (𝕜 := ℝ) (e x) (G x), norm_nonneg (f x)])).trans
-      (integral_norm_mul_norm_gradient_mul_norm_value_le hpt hS he)
-  have hbound_b : -(∫ x in Omega, ⟪b x, G x⟫ * f x ∂mu) ≤
-      (eLpNorm b p (mu.restrict Omega)).toReal * S * ‖G‖ ^ 2 :=
-    (neg_le_abs _).trans <| abs_integral_le_integral_abs.trans <|
-      (integral_mono_of_nonneg (ae_of_all _ fun x ↦ abs_nonneg _)
-        (hb.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) (Lp.memLp G) hft)
-        (ae_of_all _ fun x ↦ by
-          simp only [abs_mul, ← Real.norm_eq_abs]
-          nlinarith [norm_inner_le_norm (𝕜 := ℝ) (b x) (G x), norm_nonneg (f x)])).trans
-      (integral_norm_mul_norm_gradient_mul_norm_value_le hpt hS hb)
-  have hbound_c : -(∫ x in Omega, c x * f x * f x ∂mu) ≤
-      (eLpNorm c r (mu.restrict Omega)).toReal * S ^ 2 * ‖G‖ ^ 2 :=
-    (neg_le_abs _).trans <| abs_integral_le_integral_abs.trans <|
-      (integral_mono_of_nonneg (ae_of_all _ fun x ↦ abs_nonneg _)
-        (hc.integrable_norm_mul_norm_mul_norm (s := (r⁻¹ + t⁻¹)⁻¹) hft hft)
-        (ae_of_all _ fun x ↦ by
-          simp only [abs_mul, ← Real.norm_eq_abs, mul_assoc, le_refl])).trans
-      (integral_norm_mul_norm_value_mul_norm_value_le hrt hS hc)
-  linarith
+  have hcomm : ∫ x in Omega, ⟪b x, W1p.gradient v x⟫ * W1p.value v x ∂mu =
+      ∫ x in Omega, W1p.value v x * ⟪b x, W1p.gradient v x⟫ ∂mu :=
+    integral_congr_ae (ae_of_all _ fun _ ↦ mul_comm _ _)
+  linarith [neg_integral_value_mul_inner_gradient_le hpt hS he,
+    neg_integral_value_mul_inner_gradient_le hpt hS hb,
+    neg_integral_mul_value_mul_value_le hrt hS hc]
 
 omit [DecidableEq ι] in
 /-- The integrability of the lower-order terms tested against `v ∈ Lᵗ ∩ H¹(Ω)`, on a set of finite
@@ -238,7 +203,6 @@ private theorem integrable_lowerOrder (hOmega : mu Omega ≠ ∞) {p r t : ℝ�
       Integrable (fun x ↦ W1p.value v x * ⟪e x, W1p.gradient v x⟫) (mu.restrict Omega) ∧
       Integrable (fun x ↦ c x * W1p.value v x * W1p.value v x) (mu.restrict Omega) := by
   have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hOmega
-  set f := W1p.value v
   set G := W1p.gradient v
   -- The exponents: `p ≥ 2`, and `c v` is integrable since `1/r + 1/t ≤ 1`.
   have hp2 : (2 : ℝ≥0∞) ≤ p := by
@@ -254,9 +218,7 @@ private theorem integrable_lowerOrder (hOmega : mu Omega ≠ ∞) {p r t : ℝ�
     memLp_one_iff_integrable.1 ((hc.fun_mul hvt).mono_exponent hσ), ?_, ?_⟩
   · exact (he.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) (Lp.memLp G) hvt).mono'
       (hvt.aestronglyMeasurable.mul (he.aestronglyMeasurable.inner (Lp.aestronglyMeasurable G)))
-      (ae_of_all _ fun x ↦ by
-        rw [norm_mul]
-        nlinarith [norm_inner_le_norm (𝕜 := ℝ) (e x) (G x), norm_nonneg (f x)])
+      (ae_of_all _ fun x ↦ norm_mul_inner_le _ _ _)
   · exact (hc.integrable_norm_mul_norm_mul_norm (s := (r⁻¹ + t⁻¹)⁻¹) hvt hvt).mono'
       ((hc.aestronglyMeasurable.mul hvt.aestronglyMeasurable).mul hvt.aestronglyMeasurable)
       (ae_of_all _ fun x ↦ by rw [norm_mul, norm_mul, mul_assoc])
@@ -293,7 +255,7 @@ private theorem integral_lowerOrder_posPartAbove_eq (hOmega : mu Omega ≠ ∞)
   -- Above the level `u = w + l`, below it `w` and `∇w` vanish.
   have hcases : ∀ᵐ x ∂mu.restrict Omega,
       (W1p.value u x = W1p.value w x + l ∧ W1p.gradient w x = W1p.gradient u x) ∨
-        (W1p.value w x = 0 ∧ W1p.gradient w x = 0) := ae_posPartAbove_cases hl u
+        (W1p.value w x = 0 ∧ W1p.gradient w x = 0) := W1p.ae_posPartAbove_cases (by norm_num) hl u
   have hsplit_e : ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient w x⟫ ∂mu =
       ∫ x in Omega, W1p.value w x * ⟪e x, W1p.gradient w x⟫ ∂mu +
         l * ∫ x in Omega, ⟪e x, W1p.gradient w x⟫ ∂mu := by
@@ -312,7 +274,7 @@ private theorem integral_lowerOrder_posPartAbove_eq (hOmega : mu Omega ≠ ∞)
     · simp only [hv]
       ring
     · simp [hv]
-  rw [hsplit_e, integral_inner_gradient_mul_value_posPartAbove hl u, hsplit_c,
+  rw [hsplit_e, W1p.integral_inner_gradient_mul_value_posPartAbove (by norm_num) hl u b, hsplit_c,
     integral_add hint_cw hint_e]
   ring
 
@@ -358,8 +320,7 @@ private theorem half_mul_norm_gradient_posPartAbove_sq_le_of_small_lowerOrder
   have hw0 : w ∈ w1p0Submodule mu Omega 2 :=
     W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
   have hSw := hS w hw0
-  have hwt : MemLp (W1p.value w) t (mu.restrict Omega) :=
-    memLp_iff.2 (hSw.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+  have hwt := W1p.memLp_value_of_eLpNorm_le hSw
   -- Ellipticity: `λ ‖∇w‖₂² ≤ a(w, w) ≤ a(u, w)`.
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero
     aestronglyMeasurable_zero (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0)
@@ -386,23 +347,20 @@ private theorem inv_add_inv_eq_of_inv_eq_sub {q s : ℝ≥0} (hq : 2 < (q : ℝ)
     (hs : (s : ℝ)⁻¹ = 2⁻¹ - (q : ℝ)⁻¹) :
     (q : ℝ≥0∞)⁻¹ + (s : ℝ≥0∞)⁻¹ = 2⁻¹ ∧
       ((q / 2 : ℝ≥0) : ℝ≥0∞)⁻¹ + (s : ℝ≥0∞)⁻¹ + (s : ℝ≥0∞)⁻¹ = 1 := by
-  have hqinv2 : (q : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos hq
-  have hs0 : s ≠ 0 := by
-    rintro rfl
-    rw [NNReal.coe_zero, inv_zero] at hs
-    linarith
   have hq0 : q ≠ 0 := by
     rintro rfl
     norm_num at hq
-  constructor
-  · rw [← ENNReal.coe_inv hq0, ← ENNReal.coe_inv hs0, ← ENNReal.coe_add,
-      show (2⁻¹ : ℝ≥0∞) = ((2⁻¹ : ℝ≥0) : ℝ≥0∞) by simp, ENNReal.coe_inj, ← NNReal.coe_inj]
-    push_cast
+  have hs0 : s ≠ 0 := by
+    rintro rfl
+    have := inv_strictAnti₀ two_pos hq
+    simp only [NNReal.coe_zero, inv_zero] at hs
     linarith
-  · rw [← ENNReal.coe_inv (div_ne_zero hq0 two_ne_zero), ← ENNReal.coe_inv hs0,
-      ← ENNReal.coe_add, ← ENNReal.coe_add, ← ENNReal.coe_one, ENNReal.coe_inj, ← NNReal.coe_inj]
-    push_cast
-    rw [inv_div, hs]
+  -- Both identities are checked in `ℝ`, where they follow from `hs`.
+  constructor
+  · rw [← ENNReal.toReal_eq_toReal_iff' (by simp [hq0, hs0]) (by simp)]
+    simp [ENNReal.toReal_add, hq0, hs0, hs]
+  · rw [← ENNReal.toReal_eq_toReal_iff' (by simp [hq0, hs0]) (by simp)]
+    simp [ENNReal.toReal_add, hq0, hs0, hs]
     ring
 
 /-- The scale-invariant smallness condition gives the smallness condition with the Sobolev
@@ -482,8 +440,9 @@ theorem exists_ae_value_le_add_of_small_lowerOrder [Nonempty ι] {q : ℝ≥0} (
   obtain ⟨C₀, hC₀, hstamp⟩ :=
     exists_ae_value_le_add_of_forall_mul_norm_gradient_posPartAbove_sq_le (mu := mu) hq hqn
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - (q : ℝ)⁻¹)⁻¹
-  obtain ⟨hpt, hrt⟩ := inv_add_inv_eq_of_inv_eq_sub hq
-    (Real.coe_toNNReal _ (inv_nonneg.2 (sub_pos.2 hqinv2).le) ▸ inv_inv _ : (s : ℝ)⁻¹ = _)
+  have hs : (s : ℝ)⁻¹ = 2⁻¹ - (q : ℝ)⁻¹ := by
+    rw [Real.coe_toNNReal _ (inv_nonneg.2 (sub_pos.2 hqinv2).le), inv_inv]
+  obtain ⟨hpt, hrt⟩ := inv_add_inv_eq_of_inv_eq_sub hq hs
   refine ⟨(2 * (K + K ^ 2))⁻¹, 2 * C₀, by positivity, by positivity,
     fun {Omega a b e c lam Lam g F u k} hk hOmega h ha hb he hc hsmall hsign hg hF hu hboundary
       ↦ ?_⟩
