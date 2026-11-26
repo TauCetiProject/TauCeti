@@ -57,6 +57,7 @@ same identity for `z • y` gives `(z - σ z) B x y = 0`. This needs no hypothes
 theorem eq_zero_of_forall_apply_self_eq_zero {K V : Type*} [CommRing K] [AddCommGroup V]
     [Module K V] {σ : K →+* K} {B : V →ₛₗ[σ] V →ₗ[K] K} {z : K}
     (hz : z - σ z ∈ nonZeroDivisors K) (hB : ∀ x, B x x = 0) : B = 0 := by
+  -- `B.IsAlt` is by definition `∀ x, B x x = 0`, so `hB` is that hypothesis.
   have hswap (x y : V) : B y x = -B x y := ((show B.IsAlt from hB).neg x y).symm
   ext x y
   have h := hswap x (z • y)

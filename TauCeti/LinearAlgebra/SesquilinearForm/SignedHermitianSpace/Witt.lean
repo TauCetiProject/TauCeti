@@ -19,9 +19,10 @@ quadratic extension `E/F` with its Galois conjugation), and let `(V, h)` be an `
 space over `K`, `ε = ±1`, nondegenerate but of any dimension. This file proves Witt's theorems for
 `(V, h)`, in every characteristic and for both signs:
 
-* **extension**: an isometry between two finite-dimensional subspaces of `V`, nondegenerate or
-  not, extends to an element of the unitary group `U(V)`, the isometry group of `h`; it can even
-  be chosen as a product of quasi-reflections;
+* **extension**: an injective isometry from a finite-dimensional subspace of `V` into `V`, the
+  subspace nondegenerate or not, extends to an element of the unitary group `U(V)`, the isometry
+  group of `h`; for a linearly independent family, the extension can even be chosen as a product
+  of quasi-reflections (`exists_mem_quasiReflectionSubgroup_apply_eq`);
 * **cancellation**: if `U ⊥ V ≅ U ⊥ V'` with `U` finite-dimensional, then `V ≅ V'`.
 
 For a unit `s` with `s + ε σ s = h v v`, the **quasi-reflection** along `v` is
@@ -255,8 +256,9 @@ theorem exists_form_apply_eq_ite [RingHomSurjective σ] {ι : Type*} [Finite ι]
       conv_lhs => rw [← Finset.univ_sum_single (Φ u)]
       simp only [map_sum, map_smulₛₗ, LinearMap.sum_apply, LinearMap.smul_apply, ha, smul_eq_mul]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [← mul_one (Φ u i), ← smul_eq_mul, Pi.single_smul', map_smul, smul_eq_mul, mul_comm]
-      rfl
+      -- Pull the scalar `Φ u i` out of `f`, then unfold `Φ u i` to `h (x i) u`.
+      rw [← mul_one (Φ u i), ← smul_eq_mul, Pi.single_smul', map_smul, smul_eq_mul]
+      simp [Φ, mul_comm]
     have hsum : ∑ i, a i • x i = 0 := H.separatingLeft _ fun u ↦ by
       rw [← hfΦ]
       exact hf (LinearMap.mem_range_self Φ u)
@@ -367,9 +369,10 @@ theorem exists_mem_quasiReflectionSubgroup_apply_eq (hσ : ∃ z, σ z ≠ z) {�
     rw [mul_apply_eq_comp, hgs i hi, hrs i hi]
 
 /-- **Witt's extension theorem** (Scharlau, Chapter 7). Over a field whose involution
-`σ` is not the identity, every isometry `f` from a finite-dimensional subspace `W` of a signed
-hermitian space `(V, h)` into `V` extends to an element of the unitary group `U(V)`. The subspace
-`W` may be degenerate, and `V` need not be finite-dimensional. -/
+`σ` is not the identity, every injective isometry `f` from a finite-dimensional subspace `W` of a
+signed hermitian space `(V, h)` into `V` (an isometric embedding) extends to an element of the
+unitary group `U(V)`. The subspace `W` may be degenerate, and `V` need not be
+finite-dimensional. -/
 theorem exists_mem_isometryGroup_extend (hσ : ∃ z, σ z ≠ z) {W : Submodule K V}
     [FiniteDimensional K W] (f : W →ₗ[K] V) (hf : Function.Injective f)
     (hff : ∀ x y, H.form (f x) (f y) = H.form x y) :
@@ -434,8 +437,7 @@ theorem equivalent_of_equivalent_prod (hσ : ∃ z, σ z ≠ z)
   let W := LinearMap.range (LinearMap.inl K V₀ V₂)
   have hW (w : W) : (w : V₀ × V₂) = ((w : V₀ × V₂).1, 0) := by
     obtain ⟨a, ha⟩ := w.property
-    rw [← ha]
-    rfl
+    rw [← ha, LinearMap.inl_apply]
   let f : W →ₗ[K] V₀ × V₂ :=
     e.toLinearMap ∘ₗ LinearMap.inl K V₀ V₁ ∘ₗ LinearMap.fst K V₀ V₂ ∘ₗ W.subtype
   have hf (w : W) : f w = e ((w : V₀ × V₂).1, 0) := rfl

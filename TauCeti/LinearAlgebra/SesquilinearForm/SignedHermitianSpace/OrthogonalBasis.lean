@@ -92,7 +92,7 @@ theorem exists_isOrthoᵢ_basis_of_forall_form_swap [FiniteDimensional K V] (hσ
   · rw [LinearMap.mem_ker, map_add, map_smul, smul_eq_mul, neg_mul, div_mul_cancel₀ _ hx,
       add_neg_cancel]
   -- The new vector `x` is orthogonal to `W`, in both orders.
-  have hxW (w : W) : B x w = 0 := w.property
+  have hxW (w : W) : B x w = 0 := LinearMap.mem_ker.1 w.property
   have hWx (w : W) : B w x = 0 := by rw [hB, hxW, map_zero, smul_zero]
   rw [Basis.coe_mkFinCons]
   intro i j hij
