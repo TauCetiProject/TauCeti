@@ -24,6 +24,8 @@ are flat, then so is `M`: a submodule of a flat module with flat quotient is fla
 * `Module.Flat.of_exact_of_lTensor_quotient_injective`: for an exact pair `M → N → P → 0` with
   `N` flat, the cokernel `P` is flat when `M → N` stays injective after tensoring with every
   `R ⧸ I`.
+* `Module.Flat.of_surjective_of_ker_inf_smul_top_le`: the target of a surjection `f` from a flat
+  module is flat when `ker f ∩ I M ⊆ I (ker f)` for every finitely generated ideal `I`.
 * `Function.Exact.flat_left_of_injective_of_surjective`: the first term of a short exact
   sequence whose other two terms are flat is flat.
 * `Submodule.flat_of_flat_quotient`: a submodule of a flat module with flat quotient is flat.
@@ -80,6 +82,46 @@ theorem Module.Flat.of_exact_of_lTensor_quotient_injective [Module.Flat R N]
     (LinearMap.exact_subtype_mkQ I) I.mkQ_surjective
     ((LinearMap.lTensor_inj_iff_rTensor_inj _ _).mp (hf hI))
     (Module.Flat.lTensor_preserves_injective_linearMap _ I.injective_subtype)
+
+/-- **Flatness of a quotient by the intersection criterion.** Let `f : M → N` be surjective with
+`M` flat over `R`. If `ker f ∩ I M ⊆ I (ker f)` for every finitely generated ideal `I`, then `N`
+is flat over `R`. This is the converse of `LinearMap.ker_inf_smul_top_eq_smul_of_flat`: the
+quotient `(ker f ∩ I M) ⧸ I (ker f)` is `Tor₁(R ⧸ I, N)`. -/
+theorem Module.Flat.of_surjective_of_ker_inf_smul_top_le [Module.Flat R M] (f : M →ₗ[R] N)
+    (hf : Function.Surjective f)
+    (h : ∀ ⦃I : Ideal R⦄, I.FG → LinearMap.ker f ⊓ I • ⊤ ≤ I • LinearMap.ker f) :
+    Module.Flat R N := by
+  rw [Module.Flat.iff_rTensor_injective]
+  intro I hI
+  rw [injective_iff_map_eq_zero]
+  intro τ hτ
+  obtain ⟨σ, rfl⟩ := LinearMap.lTensor_surjective I hf τ
+  -- The multiplication maps `I ⊗ M → M` and `I ⊗ N → N`; the first is injective as `M` is flat.
+  let μM : I ⊗[R] M →ₗ[R] M := (TensorProduct.lid R M).toLinearMap ∘ₗ I.subtype.rTensor M
+  let μN : I ⊗[R] N →ₗ[R] N := (TensorProduct.lid R N).toLinearMap ∘ₗ I.subtype.rTensor N
+  have hμ : Function.Injective μM :=
+    (TensorProduct.lid R M).injective.comp (Module.Flat.iff_rTensor_injective'.mp ‹_› I)
+  have hfμ : f ∘ₗ μM = μN ∘ₗ f.lTensor I := TensorProduct.ext' fun i m ↦ by simp [μM, μN]
+  have hmem : μM σ ∈ LinearMap.ker f ⊓ I • ⊤ := by
+    refine ⟨LinearMap.mem_ker.mpr ?_, ?_⟩
+    · rw [← LinearMap.comp_apply, hfμ, LinearMap.comp_apply]
+      simp [μN, hτ]
+    · rw [← Ideal.subtype_rTensor_range]
+      exact ⟨σ, rfl⟩
+  have hker : I • LinearMap.ker f = (I • (⊤ : Submodule R (LinearMap.ker f))).map
+      (LinearMap.ker f).subtype := by
+    rw [Submodule.map_smul'', Submodule.map_subtype_top]
+  obtain ⟨z, hz, hzσ⟩ := (hker ▸ h hI hmem :)
+  rw [← Ideal.subtype_rTensor_range] at hz
+  obtain ⟨w, rfl⟩ := hz
+  have hσ : σ = (LinearMap.ker f).subtype.lTensor I w := by
+    refine hμ ?_
+    rw [← hzσ, ← LinearMap.comp_apply μM, ← LinearMap.comp_apply (LinearMap.ker f).subtype]
+    congr 1
+    exact TensorProduct.ext' fun i m ↦ by simp [μM]
+  rw [hσ, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp]
+  have : f ∘ₗ (LinearMap.ker f).subtype = 0 := LinearMap.ext fun x ↦ x.property
+  rw [this, LinearMap.lTensor_zero, LinearMap.zero_apply]
 
 /-- The first term of a short exact sequence whose middle and last terms are flat is flat. -/
 theorem Function.Exact.flat_left_of_injective_of_surjective

@@ -36,6 +36,8 @@ base change along any ring map `B → B'` for which `B'` also embeds in its coef
 
 ## Main results
 
+* `TauCeti.pow_smul_mem_diagonalLattice_iff`: `ξ ^ m v ∈ μ(ξ) Bⁿ` exactly when `v` lies in the
+  lattice of the cocharacter `μ - m`.
 * `Submodule.monotone_latticeFiltration`: `Fil^m Λ ⊆ Fil^{m'} Λ` for `m ≤ m'`.
 * `Submodule.latticeFiltration_map_mulVecLin`: `Fil^m (g Λ) = (g mod ξ) Fil^m Λ` for
   `g ∈ GLₙ(B)`.
@@ -155,6 +157,18 @@ theorem mem_diagonalLattice {k : n → ℤ} {hξ : IsUnit (algebraMap B K ξ)} {
   simp only [diagonalLattice, Submodule.mem_pi, Set.mem_univ, true_imp_iff,
     Submodule.mem_span_singleton, Algebra.smul_def]
   exact forall_congr' fun i ↦ exists_congr fun b ↦ by rw [mul_comm, eq_comm]
+
+/-- Multiplying by `ξ ^ m` shifts the lattice of a cocharacter by `m`. -/
+theorem pow_smul_mem_diagonalLattice_iff (hξ : IsUnit (algebraMap B K ξ))
+    (k : n → ℤ) (m : ℕ) {v : n → K} :
+    ξ ^ m • v ∈ diagonalLattice k hξ ↔ v ∈ diagonalLattice (fun i ↦ k i - m) hξ := by
+  simp only [mem_diagonalLattice]
+  refine forall_congr' fun i ↦ exists_congr fun b ↦ ?_
+  have h₁ : (ξ ^ m • v) i = ((hξ.unit ^ m : Kˣ) : K) * v i := by
+    simp [Algebra.smul_def, Units.val_pow_eq_pow_val]
+  have h₂ : hξ.unit ^ k i = hξ.unit ^ m * hξ.unit ^ (k i - m) := by
+    rw [← zpow_natCast, ← zpow_add, add_sub_cancel]
+  rw [h₁, h₂, Units.val_mul, mul_assoc, Units.mul_right_inj]
 
 end TauCeti
 
