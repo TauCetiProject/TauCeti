@@ -21,8 +21,9 @@ the diagonal Green function, to almost surely infinitely many positive-time visi
 state, and to an infinite mean number of such visits; in particular a transient state is
 revisited finitely often on average. Recurrence is constant on communicating classes. The mean
 return time is the extended nonnegative expectation of the first return time; it is at least one,
-equals the sum of the pre-return tail probabilities when singletons are measurable, and is
-infinite at a transient state. A measurable state-space map intertwining two Markov kernels
+is exactly one at a state the chain stays at for one step almost surely, equals the sum of the
+pre-return tail probabilities when singletons are measurable, and is infinite at a transient
+state. A measurable state-space map intertwining two Markov kernels
 projects recurrence and bounds the target mean return time from above whenever target singletons
 are measurable.
 
@@ -109,6 +110,25 @@ theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
     _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
       have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
       exact_mod_cast ENat.natCast_le_toENNReal.2 h
+
+/-- A state that the chain stays at for one step almost surely has mean return time one. -/
+theorem meanReturnTime_eq_one_of_apply_singleton_self [MeasurableSingletonClass S]
+    (h : κ x {x} = 1) : κ.meanReturnTime x = 1 := by
+  refine le_antisymm ?_ κ.one_le_meanReturnTime
+  have hstay : ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ, ω 1 = x := by
+    refine ae_of_ae_map (f := fun ω : ℕ → S => ω 1) (measurable_pi_apply 1).aemeasurable
+      (p := fun y : S => y = x) ?_
+    rw [Measure.markovChainLaw_map_eval, Measure.dirac_bind (κ ^ 1).measurable, pow_one,
+      ae_iff, ← Set.compl_singleton_eq, prob_compl_eq_one_sub (measurableSet_singleton x), h,
+      tsub_self]
+  calc κ.meanReturnTime x ≤ ∫⁻ _, 1 ∂markovChainLaw (Measure.dirac x) κ := by
+        rw [meanReturnTime_def]
+        refine lintegral_mono_ae ?_
+        filter_upwards [hstay] with ω hω
+        have h1 : hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1 ω ≤ (1 : ℕ) :=
+          hittingAfter_le_of_mem le_rfl hω
+        exact (ENat.toENNReal_le.2 h1).trans_eq ENat.toENNReal_one
+    _ = 1 := by simp
 
 /-- Congruence in the kernel argument of `Kernel.meanReturnTime`. -/
 theorem meanReturnTime_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
