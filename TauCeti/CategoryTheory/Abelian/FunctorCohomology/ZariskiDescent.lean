@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.RingTheory.Ideal.Maximal
 public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.CategoryTheory.Abelian.FunctorCohomology.Basic
 
 /-!
@@ -31,7 +32,10 @@ functors on `C` to the Zariski topology of the rings `ι A`.
   corresponding groups.
 
 Zariski-locally everything subfunctors contain the whole functor, are stable under enlarging and
-under finite intersections, and under restriction along a functor `φ : C' ⥤ C`.
+under finite intersections, and under restriction along a functor `φ : C' ⥤ C`. Over local rings
+they contain every point, so every coefficient functor has Zariski descent when all the rings
+`ι A` are local (`CategoryTheory.hasZariskiDescent_of_isLocalRing`). A coefficient functor with
+partitions vanishes on objects whose ring is zero (`CategoryTheory.HasPartitions.subsingleton`).
 
 ## References
 
@@ -122,6 +126,34 @@ lemma IsZariskiLocallyTop.whiskerLeft {C' : Type u'} [Category.{v'} C'] (φ : C'
   obtain ⟨a, ha, hU⟩ := hU (φ.obj A) y m hm
   exact ⟨a, ha, fun B f hf ↦ hU (φ.obj B) (φ.map f) hf⟩
 
+/-- Over a local ring a Zariski-locally everything subfunctor contains every point: an element
+outside the maximal ideal is already a unit. -/
+lemma IsZariskiLocallyTop.mem_of_isLocalRing {U : Subfunctor Y} (hU : U.IsZariskiLocallyTop ι)
+    {A : C} [IsLocalRing (ι.obj A)] (y : Y.obj A) : y ∈ U.obj A := by
+  obtain ⟨a, ha, h⟩ := hU A y _ (IsLocalRing.maximalIdeal.isMaximal _)
+  have ha : IsUnit a := of_not_not fun h' ↦ ha ((IsLocalRing.mem_maximalIdeal a).2 h')
+  simpa using h A (𝟙 A) (by simpa using ha)
+
 end Subfunctor
+
+/-- If every ring `ι A` is local, every coefficient functor has Zariski descent: a
+Zariski-locally everything subfunctor is then the whole functor. -/
+lemma hasZariskiDescent_of_isLocalRing [HasExt.{t} (C ⥤ AddCommGrpCat.{w})]
+    [∀ A, IsLocalRing (ι.obj A)] (F : C ⥤ AddCommGrpCat.{w}) : HasZariskiDescent.{t} ι F :=
+  fun Y U hU ↦ by
+    obtain rfl : U = ⊤ := le_antisymm le_top fun _ y _ ↦ hU.mem_of_isLocalRing y
+    exact Subfunctor.isDenseFor_top Y
+
+variable {ι} in
+/-- A coefficient functor with partitions vanishes on every object whose ring is zero: the two
+copies of the identity split the zero ring as a product, so they split `F A` as `F A × F A`. -/
+lemma HasPartitions.subsingleton {F : C ⥤ AddCommGrpCat.{w}} (hF : HasPartitions ι F) {A : C}
+    [Subsingleton (ι.obj A)] : Subsingleton (F.obj A) := by
+  have h := (hF.bijective_prod (𝟙 A) (𝟙 A)
+    ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩).2
+  have hzero (a : F.obj A) : a = 0 := by
+    obtain ⟨x, hx⟩ := h (0, a)
+    exact (Prod.ext_iff.1 hx).2.symm.trans (Prod.ext_iff.1 hx).1
+  exact ⟨fun a b ↦ (hzero a).trans (hzero b).symm⟩
 
 end CategoryTheory

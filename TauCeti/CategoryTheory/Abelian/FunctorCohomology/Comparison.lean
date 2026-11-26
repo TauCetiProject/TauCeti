@@ -23,7 +23,9 @@ and a map `α : N' ⟶ φ ⋙ N` it gives the homomorphisms
 that restrict along `φ` (an exact functor between the categories of functors), push forward by `β`
 and pull back by `α`. This is `CategoryTheory.Functor.extComparison φ β α n`. The comparison is
 *bijective along `α`* (`CategoryTheory.Functor.IsExtComparisonBijective`) if these maps are
-bijective in every degree.
+bijective in every degree. Isomorphisms give bijective comparisons for the identity functor
+(`CategoryTheory.Functor.isExtComparisonBijective_id_of_isIso`), and bijective comparisons compose
+(`CategoryTheory.Functor.IsExtComparisonBijective.comp`).
 
 Comparison maps are natural in the source and in the coefficients
 (`CategoryTheory.Functor.mk₀_comp_extComparison` and
@@ -91,6 +93,16 @@ lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
     Ext.id_mapExactFunctor x
   rw [extComparison_apply, hid]
 
+/-- For the identity functor, isomorphisms `β` and `α` give a bijective comparison: its inverse
+is the comparison along their inverses. -/
+lemma isExtComparisonBijective_id_of_isIso (β : F ⟶ G) (α : M ⟶ N) [IsIso β] [IsIso α] :
+    IsExtComparisonBijective.{t, t} (𝟭 C) β α := fun n ↦ by
+  refine Function.bijective_iff_has_inverse.mpr
+    ⟨extComparison (𝟭 C) (CategoryTheory.inv β) (CategoryTheory.inv α) n, fun x ↦ ?_,
+      fun x ↦ ?_⟩ <;>
+  simp only [extComparison_id_apply, Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀_assoc,
+    Ext.mk₀_comp_mk₀, IsIso.hom_inv_id, IsIso.inv_hom_id, Ext.mk₀_id_comp, Ext.comp_mk₀_id]
+
 /-- Comparison maps are natural in the source: if `a' : M' ⟶ N'` lies over `γ : M ⟶ N`, in the
 sense that `a' ≫ a = b ≫ φ.whiskerLeft γ`, then pulling back along `a'` after the comparison map
 along `a` is the comparison map along `b` after pulling back along `γ`. -/
@@ -129,6 +141,20 @@ lemma extComparison_extComparison (φ : C' ⥤ C) (ψ : C'' ⥤ C') (β : φ ⋙
   simp only [extComparison_apply, h, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
     ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero, Ext.comp_assoc_of_third_deg_zero]
   rfl
+
+/-- Bijective comparisons compose: if `(φ, β)` is bijective along `α` and `(ψ, β')` is bijective
+along `α'`, the composite `(ψ ⋙ φ, ψ.whiskerLeft β ≫ β')` is bijective along
+`α' ≫ ψ.whiskerLeft α`. -/
+lemma IsExtComparisonBijective.comp {φ : C' ⥤ C} {ψ : C'' ⥤ C'} {β : φ ⋙ F ⟶ F'}
+    {β' : ψ ⋙ F' ⟶ F''} {α : N' ⟶ φ ⋙ N} {α' : N'' ⟶ ψ ⋙ N'}
+    (h : IsExtComparisonBijective.{t, t'} φ β α) (h' : IsExtComparisonBijective.{t', t''} ψ β' α') :
+    IsExtComparisonBijective.{t, t''} (ψ ⋙ φ) (ψ.whiskerLeft β ≫ β') (α' ≫ ψ.whiskerLeft α) :=
+  fun n ↦ by
+    have : ⇑(extComparison.{t, t''} (ψ ⋙ φ) (ψ.whiskerLeft β ≫ β') (α' ≫ ψ.whiskerLeft α) n) =
+        extComparison ψ β' α' n ∘ extComparison φ β α n :=
+      funext fun x ↦ (extComparison_extComparison φ ψ β β' α α' x).symm
+    rw [this]
+    exact (h' n).comp (h n)
 
 /-- A natural transformation `η : φ ⟶ ψ` can be moved from the coefficients to the source: the
 comparison map of `(φ, F.whiskerRight η ≫ β)` along `α` is that of `(ψ, β)` along

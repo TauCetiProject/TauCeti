@@ -358,6 +358,16 @@ lemma Subfunctor.isDenseFor_top (Y : C ⥤ Type w) : (⊤ : Subfunctor Y).IsDens
     rw [(Subfunctor.preimage_eq_top_iff _ _).2 le_top]
     exact isExtEquivFor_of_isIso _
 
+/-- A subfunctor `U` of `Y` is dense for `F` exactly when, for every map `y : R ⟶ Y` from a
+corepresentable functor, the relative cohomology `Extⁿ(ℤ[R] / ℤ[y⁻¹ U], F)` vanishes in every
+degree. -/
+lemma Subfunctor.isDenseFor_iff_forall_subsingleton_ext {Y : C ⥤ Type w} (U : Subfunctor Y) :
+    U.IsDenseFor.{t} F ↔ ∀ ⦃R : C ⥤ Type w⦄ [R.IsCorepresentable] (y : R ⟶ Y) (n : ℕ),
+      Subsingleton (Ext.{t} (cokernel (Functor.whiskerRight (U.preimage y).ι
+        AddCommGrpCat.free)) F n) :=
+  ⟨fun h _ _ y ↦ (isExtEquivFor_iff_of_shortExact (U.preimage y).shortExact_free).1 (h y),
+    fun h _ _ y ↦ (isExtEquivFor_iff_of_shortExact (U.preimage y).shortExact_free).2 (h y)⟩
+
 /-- A pointwise surjective map is a cover for every coefficient functor. -/
 lemma isCoverFor_of_epi {E Y : C ⥤ Type w} (p : E ⟶ Y) [Epi p] : IsCoverFor.{t} F p := by
   have : IsIso (Subfunctor.range p).ι := by
