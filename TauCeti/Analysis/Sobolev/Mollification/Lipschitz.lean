@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.LineDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
@@ -66,11 +66,9 @@ theorem fderiv_normed_convolution_apply (hψ : LipschitzWith K ψ) (ρ : ContDif
       ((hψ.ae_lineDifferentiableAt v).mono fun x hx _ => hx.hasLineDerivAt)
   have hl := hweak.lineDeriv_convolution_right hψ.continuous.locallyIntegrable (ρ.normed μ)
     ρ.contDiff_normed ρ.hasCompactSupport_normed x (by simp)
-  have hsmooth : ContDiff ℝ ∞ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) :=
-    ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed
-      hψ.continuous.locallyIntegrable
   rw [convolution_flip, convolution_flip] at hl
-  rw [← hl, (hsmooth.differentiable (by simp) x).lineDeriv_eq_fderiv]
+  rw [← hl, ((ρ.contDiff_normed_convolution hψ.continuous.locallyIntegrable (n := 1)).differentiable
+    one_ne_zero x).lineDeriv_eq_fderiv]
 
 /-- The derivatives in a direction `v` of the mollifications of a `K`-Lipschitz function are
 bounded by `K ‖v‖`. -/
@@ -110,8 +108,8 @@ theorem tendsto_integral_fderiv_normed_convolution_apply_smul (hψ : LipschitzWi
       (𝓝 (∫ x, lineDeriv ℝ ψ x v • w x ∂μ)) :=
   tendsto_integral_filter_of_dominated_convergence (fun x => (K * ‖v‖) * ‖w x‖)
     (Eventually.of_forall fun i =>
-      ((((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-        hψ.continuous.locallyIntegrable (n := ⊤)).continuous_fderiv (by simp)).clm_apply
+      ((((ρ i).contDiff_normed_convolution hψ.continuous.locallyIntegrable
+        (n := ⊤)).continuous_fderiv (by simp)).clm_apply
           continuous_const).aestronglyMeasurable.smul hw.1)
     (Eventually.of_forall fun i => Eventually.of_forall fun x => by
       rw [norm_smul]

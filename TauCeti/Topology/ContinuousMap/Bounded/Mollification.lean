@@ -74,8 +74,7 @@ theorem normedConvolutionBUC_mem_smoothBoundedDerivativesSubmodule (ρ : ContDif
     ρ.normedConvolutionBUC μ f ∈ smoothBoundedDerivativesSubmodule ℝ G F := by
   refine (mem_smoothBoundedDerivativesSubmodule ℝ G F _).2 ⟨?_, fun m ↦
     ⟨‖f.val‖ * ∫ y, ‖iteratedFDeriv ℝ m (ρ.normed μ) y‖ ∂μ, fun x ↦ ?_⟩⟩
-  · exact ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed
-      f.val.continuous.locallyIntegrable
+  · exact ρ.contDiff_normed_convolution f.val.continuous.locallyIntegrable
   · rw [coe_normedConvolutionBUC]
     exact ρ.hasCompactSupport_normed.norm_iteratedFDeriv_convolution_left_le
       (ρ.contDiff_normed (n := (⊤ : ℕ∞))) le_top f.val.continuous.locallyIntegrable

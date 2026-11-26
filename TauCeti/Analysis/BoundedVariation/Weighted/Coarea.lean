@@ -28,6 +28,12 @@ the right side: on a neighbourhood `U ≤ Ω` of `K` the weight is bounded below
 whose integral over `t` is `m |Du|(U) = ∞` by the Euclidean coarea formula
 `TauCeti.totalVariationOn_eq_lintegral_perimeter`.
 
+For `u` of locally finite Euclidean variation the identity also holds on every Borel subset `B`
+of `Ω`, with the measure `e^{−W} |Du|` of `B` in place of the weighted variation:
+`∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`
+(`TauCeti.setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral`). Only measurability
+of the weight enters here.
+
 ## References
 
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Cambridge University
@@ -99,5 +105,23 @@ theorem weightedVariation_eq_lintegral_weightedPerimeter (hW : ContDiff ℝ 1 W)
   · rw [lintegral_weightedPerimeter_eq_top hW hu hfin]
     by_contra h
     exact hfin (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu h)
+
+/-- **The weighted coarea formula on Borel subsets.** For a measurable weight `W`, `u` locally
+integrable on the open set `Ω` with locally finite Euclidean variation there, and a measurable
+subset `B` of `Ω`, `∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`. For `B = Ω` and a `C¹`
+weight both sides are `V_μ(u; Ω)` and `∫_ℝ P_μ({u > t}; Ω) dt`
+(`TauCeti.weightedVariation_eq_lintegral_weightedPerimeter`). -/
+theorem setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral (hW : Measurable W)
+    (hu : LocallyIntegrableOn u Ω)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞)
+    {B : Set Ω} (hB : MeasurableSet B) :
+    ∫⁻ x in B, ENNReal.ofReal (Real.exp (-W x)) ∂variationMeasure volume Ω u =
+      ∫⁻ t, ∫⁻ x in B, ENNReal.ofReal (Real.exp (-W x))
+        ∂variationMeasure volume Ω ({x | t < u x}.indicator 1) := by
+  have hρ : Measurable fun x : Ω => ENNReal.ofReal (Real.exp (-W x)) :=
+    (hW.comp measurable_subtypeVal).neg.exp.ennreal_ofReal
+  simp_rw [← lintegral_indicator hB]
+  exact lintegral_variationMeasure_eq_lintegral_lintegral hu hfin (hρ.indicator hB).aemeasurable
 
 end TauCeti

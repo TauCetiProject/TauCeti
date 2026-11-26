@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.RingTheory.Discriminant
 import Mathlib.LinearAlgebra.Matrix.Trace
+import TauCeti.Algebra.Polynomial.Cubic.Basic
 
 /-!
 # The cubic algebra of a binary cubic form
@@ -34,8 +35,12 @@ algebra with the invariant of its binary cubic form.
 * `Cubic.CubicAlgebra.omega`, `Cubic.CubicAlgebra.theta`: the two non-unit basis vectors, with
   scoped notation `ω` and `θ`.
 * `Cubic.CubicAlgebra.basis`: the `R`-basis `1, ω, θ`.
+* `Cubic.CubicAlgebra.negBasis`: the negated basis `1, -ω, -θ`, in which the table takes the
+  signs of Bhargava, Shankar and Tsimerman.
 * `Cubic.CubicAlgebra.lift`: the universal property; elements of a commutative `R`-algebra
   satisfying the table of `P` define an algebra map out of `P.CubicAlgebra`.
+* `Cubic.CubicAlgebra.mapRingHom`: base change along `φ : R →+* S`, to the cubic algebra of
+  `P.map φ`.
 * `Cubic.CubicAlgebra.splitAlgEquiv`: for the form `uv(u - v)`, the cubic algebra is `R × R × R`.
 
 ## Main results
@@ -45,13 +50,16 @@ algebra with the invariant of its binary cubic form.
 * `Cubic.CubicAlgebra.omega_mul_theta`, `Cubic.CubicAlgebra.omega_mul_omega`,
   `Cubic.CubicAlgebra.theta_mul_theta`: the multiplication table.
 * `Cubic.CubicAlgebra.trace_apply`: `Tr(x₀ + x₁ω + x₂θ) = 3x₀ + bx₁ - cx₂`.
-* `Cubic.CubicAlgebra.discr_basis`: the discriminant of `1, ω, θ` is `Cubic.discr P`.
+* `Cubic.CubicAlgebra.discr_basis`, `Cubic.CubicAlgebra.discr_negBasis`: the discriminant of
+  `1, ω, θ`, and of `1, -ω, -θ`, is `Cubic.discr P`.
 
 ## Implementation notes
 
 The structure and its additive and scalar instances follow the layout of Mathlib's
 `QuadraticAlgebra` (`Mathlib.Algebra.QuadraticAlgebra.Defs`): each instance is stated under the
-least structure on `R` it needs, and the multiplication starts at `CommRing R`.
+least structure on `R` it needs, and the multiplication starts at `CommRing R`. The base change
+`mapRingHom`, with its injectivity, surjectivity and functoriality lemmas, follows Mathlib's
+`QuadraticAlgebra.mapRingHom` (`Mathlib.Algebra.QuadraticAlgebra.Basic`).
 
 ## References
 
@@ -59,6 +67,8 @@ least structure on `R` it needs, and the multiplication starts at `CommRing R`.
   **5** (2011), 1069–1094, §2.
 * W. T. Gan, B. Gross, G. Savin, *Fourier coefficients of modular forms on `G₂`*, Duke Math. J.
   **115** (2002), 105–169.
+* M. Bhargava, A. Shankar and J. Tsimerman, *On the Davenport–Heilbronn theorems and second order
+  terms*, Invent. Math. **193** (2013), 439–499, §2.
 -/
 
 @[expose] public section
@@ -442,6 +452,118 @@ theorem discr_basis : Algebra.discr R (basis P) = P.discr := by
     basis_two, trace_apply]
   simp [Cubic.discr]
   ring
+
+/-! ### The negated basis -/
+
+variable (P) in
+/-- The negated basis `1, -ω, -θ`. In it the multiplication table takes the signs of Bhargava,
+Shankar and Tsimerman: see `neg_omega_mul_neg_theta`, `neg_omega_mul_neg_omega` and
+`neg_theta_mul_neg_theta`. -/
+noncomputable def negBasis : Module.Basis (Fin 3) R P.CubicAlgebra :=
+  (basis P).unitsSMul ![1, -1, -1]
+
+@[simp] theorem negBasis_zero : negBasis P 0 = 1 := by
+  simp [negBasis, Module.Basis.unitsSMul_apply]
+
+@[simp] theorem negBasis_one : negBasis P 1 = -ω P := by
+  simp [negBasis, Module.Basis.unitsSMul_apply]
+
+@[simp] theorem negBasis_two : negBasis P 2 = -θ P := by
+  simp [negBasis, Module.Basis.unitsSMul_apply]
+
+@[simp]
+theorem negBasis_repr (x : P.CubicAlgebra) :
+    (negBasis P).repr x = ![x.re, -x.imOmega, -x.imTheta] := by
+  ext i; fin_cases i <;> simp [negBasis, Module.Basis.repr_unitsSMul]
+
+/-- In the negated basis, `(-ω)(-θ) = -ad`. -/
+theorem neg_omega_mul_neg_theta :
+    -ω P * -θ P = algebraMap R P.CubicAlgebra (-(P.a * P.d)) := by
+  rw [neg_mul_neg, omega_mul_theta]
+
+/-- In the negated basis, `(-ω)² = -ac - b(-ω) + a(-θ)`. -/
+theorem neg_omega_mul_neg_omega :
+    -ω P * -ω P = algebraMap R P.CubicAlgebra (-(P.a * P.c)) - P.b • -ω P + P.a • -θ P := by
+  rw [neg_mul_neg, omega_mul_omega]
+  module
+
+/-- In the negated basis, `(-θ)² = -bd - d(-ω) + c(-θ)`. -/
+theorem neg_theta_mul_neg_theta :
+    -θ P * -θ P = algebraMap R P.CubicAlgebra (-(P.b * P.d)) - P.d • -ω P + P.c • -θ P := by
+  rw [neg_mul_neg, theta_mul_theta]
+  module
+
+/-- The discriminant of the negated basis `1, -ω, -θ` is also `Cubic.discr P`: the change of basis
+is `diag(1, -1, -1)`, whose determinant squares to `1`. -/
+@[simp]
+theorem discr_negBasis : Algebra.discr R (negBasis P) = P.discr := by
+  have h : ⇑(negBasis P) =
+      ((Matrix.diagonal ![1, -1, -1]).map (algebraMap R P.CubicAlgebra)).mulVec ⇑(basis P) := by
+    funext i
+    fin_cases i <;> simp [Matrix.diagonal_map, Matrix.mulVec_diagonal]
+  rw [h, Algebra.discr_of_matrix_mulVec, discr_basis, Matrix.det_diagonal, Fin.prod_univ_three]
+  simp
+
+/-! ### Base change -/
+
+section Map
+
+variable [CommRing S] (φ : R →+* S)
+
+/-- The ring homomorphism `P.CubicAlgebra →+* (P.map φ).CubicAlgebra` induced by `φ : R →+* S`,
+applying `φ` to each coordinate. It sends `ω` and `θ` to `ω` and `θ`. -/
+def mapRingHom (P : Cubic R) : P.CubicAlgebra →+* (P.map φ).CubicAlgebra where
+  toFun x := ⟨φ x.re, φ x.imOmega, φ x.imTheta⟩
+  map_one' := by ext <;> simp
+  map_mul' _ _ := by ext <;> simp
+  map_zero' := by ext <;> simp
+  map_add' _ _ := by ext <;> simp
+
+@[simp] theorem re_mapRingHom (x : P.CubicAlgebra) : (mapRingHom φ P x).re = φ x.re := rfl
+@[simp] theorem imOmega_mapRingHom (x : P.CubicAlgebra) :
+    (mapRingHom φ P x).imOmega = φ x.imOmega := rfl
+@[simp] theorem imTheta_mapRingHom (x : P.CubicAlgebra) :
+    (mapRingHom φ P x).imTheta = φ x.imTheta := rfl
+
+@[simp] theorem mapRingHom_omega : mapRingHom φ P (ω P) = ω (P.map φ) := by
+  ext <;> simp
+
+@[simp] theorem mapRingHom_theta : mapRingHom φ P (θ P) = θ (P.map φ) := by
+  ext <;> simp
+
+@[simp]
+theorem mapRingHom_algebraMap [CommSemiring T] [Algebra T R] (t : T) :
+    mapRingHom φ P (algebraMap T P.CubicAlgebra t) =
+      algebraMap S (P.map φ).CubicAlgebra (φ (algebraMap T R t)) := by
+  ext <;> simp
+
+theorem mapRingHom_injective (hφ : Function.Injective φ) :
+    Function.Injective (mapRingHom φ P) := fun x y h ↦ by
+  ext
+  · exact hφ (congr_arg re h)
+  · exact hφ (congr_arg imOmega h)
+  · exact hφ (congr_arg imTheta h)
+
+theorem mapRingHom_surjective (hφ : Function.Surjective φ) :
+    Function.Surjective (mapRingHom φ P) := fun y ↦ by
+  obtain ⟨x₀, hx₀⟩ := hφ y.re
+  obtain ⟨x₁, hx₁⟩ := hφ y.imOmega
+  obtain ⟨x₂, hx₂⟩ := hφ y.imTheta
+  exact ⟨⟨x₀, x₁, x₂⟩, by ext <;> simp [hx₀, hx₁, hx₂]⟩
+
+@[simp]
+theorem mapRingHom_id : mapRingHom (.id R) P = .id P.CubicAlgebra := rfl
+
+theorem mapRingHom_comp [CommRing T] (ψ : S →+* T) :
+    (mapRingHom ψ (P.map φ)).comp (mapRingHom φ P) = mapRingHom (ψ.comp φ) P := rfl
+
+@[simp]
+theorem trace_mapRingHom (x : P.CubicAlgebra) :
+    Algebra.trace S (P.map φ).CubicAlgebra (mapRingHom φ P x) =
+      φ (Algebra.trace R P.CubicAlgebra x) := by
+  simp [trace_apply, map_ofNat]
+
+end Map
 
 /-! ### The split form -/
 
