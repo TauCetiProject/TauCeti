@@ -1021,8 +1021,7 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
-    fun t ↦ by simp only [hHp t, hxp t]
+  have hSp := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   have hclosed := Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul hSc hSp hJc hJp
   have h₀ :=
     (isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH hHp hx hxp
@@ -1031,13 +1030,6 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
     hne (h₀ ζ hζ hζp fun t ↦ by simpa using hA t)) fun δ hδ ζ hζ hζp hA ↦ ?_
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
-
-/-- Along a `p`-periodic path `x`, the linearized Hamiltonian vector fields
-`S_t = dX_{H_t}(x(t))` of a `p`-periodic time-dependent Hamiltonian `H` are `p`-periodic in `t`. -/
-theorem periodic_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
-    {p : ℝ} (hHp : Periodic H p) {x : ℝ → V} (hxp : Periodic x p) :
-    Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) p :=
-  fun t ↦ by simp only [hHp t, hxp t]
 
 /-- **The linearized Hamiltonian vector field along a periodic loop is a loop.** Along a
 one-periodic `C¹` loop `x`, for instance a one-periodic orbit, and for a one-periodic, jointly `C³`

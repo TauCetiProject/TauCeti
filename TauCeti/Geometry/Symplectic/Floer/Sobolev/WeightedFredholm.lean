@@ -100,9 +100,9 @@ private theorem tendstoUniformlyOn_and_sliceDefect_of_eventuallyEq {V : Type*}
   refine ⟨(tendstoUniformlyOn_const x l _).congr (h.mono fun s hs t _ ↦ (hs t).eq_of_nhds.symm),
     (tendstoUniformlyOn_const 0 l _).congr (h.mono fun s hs t _ ↦ ?_)⟩
   dsimp only
-  rw [Pi.zero_apply, eq_comm, sliceDefect_def, (hs t).fderiv_eq, (hs t).eq_of_nhds,
-    ← Function.comp_def x Prod.snd, fderiv_comp_snd]
-  simp [(hx t).hasFDerivAt.fderiv]
+  rw [Pi.zero_apply, eq_comm, sliceDefect_def, (hs t).fderiv_eq, (hs t).eq_of_nhds]
+  simpa only [sliceDefect_def, Pi.zero_apply] using
+    congrFun (sliceDefect_comp_snd_eq_zero hx) (s, t)
 
 end Helpers
 

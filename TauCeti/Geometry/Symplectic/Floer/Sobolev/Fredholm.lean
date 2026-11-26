@@ -41,8 +41,9 @@ when the asymptotic orbits are one-periodic and nondegenerate.
 * **With a weight.** The same holds for the realization `D_u - c(s)` of the operator conjugated by
   an exponential weight whose slope `c` is `δ±` near `±∞`, when the shifted fields
   `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps
-  (`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical`): along the
-  segment of maps the weight does not change, so the weighted semi-Fredholm estimate holds
+  (`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical`), with the
+  same index (`TauCeti.SymplecticForm.index_floerWeightedSobolevOperator_eq_of_cylindrical`): along
+  the segment of maps the weight does not change, so the weighted semi-Fredholm estimate holds
   throughout. The unweighted statements are its case `c = 0`.
 * **Invariance under the data.** Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be Floer data with the
   same end Hamiltonians `H₋_t` and `H₊_t`, possibly cylindrical from different radii on, and with
@@ -749,6 +750,52 @@ theorem isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical (ω : Symplec
     fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω
       (Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt u') hJ hKs hKt hJc hu' hu hc hcm
       hcp hxm hdetm hu'xm hδ'm huxm hδm hxp hdetp hu'xp hδ'p huxp hδp h).1⟩
+
+/-- **The index of the weighted linearized Floer operator depends only on the asymptotic
+orbits.** Under the hypotheses of
+`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_iff_of_cylindrical`, if
+`D_u - c(s)` is Fredholm, then `D_{u'} - c(s)` has the same index as `D_u - c(s)`. -/
+theorem index_floerWeightedSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u) (hu' : ContDiff ℝ 1 u')
+    {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hu'xm : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xm atBot (Icc 0 1))
+    (hδ'm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u' (s, t)) 0 atBot
+        (Icc 0 1)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (hu'xp : TendstoUniformlyOn (fun s t ↦ u' (s, t)) xp atTop (Icc 0 1))
+    (hδ'p : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
+        (Icc 0 1))
+    (h : (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+      Ks Kt u c).IsFredholm) :
+    (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u' c).index =
+      (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u c).index :=
+  (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hc hcm hcp hxm hdetm huxm
+    hδm hu'xm hδ'm hxp hdetp huxp hδp hu'xp hδ'p h).2
 
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the
