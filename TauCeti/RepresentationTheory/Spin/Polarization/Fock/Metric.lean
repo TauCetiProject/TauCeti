@@ -10,9 +10,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
--- Private: the polar form of `Q v = -‖v‖²` and the Clifford `*`-representation criterion are
--- used only inside proofs.
-import TauCeti.Analysis.Complex.Basic
+-- Private: the polar form of `Q v = -‖v‖²` (`CliffordAlgebra.OrthonormalBasis`) and the Clifford
+-- `*`-representation criterion (`CliffordAlgebra.Hermitian.Complex`) are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 

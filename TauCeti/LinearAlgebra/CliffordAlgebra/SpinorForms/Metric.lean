@@ -107,10 +107,8 @@ theorem trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange_mul_eq_zero_of_ne
         ((ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x)).adjoint *
           ρ.cliffordFormsEquivEnd ((⋀[ℝ]^l V).subtype.baseChange ℂ y)) = 0 := by
   rw [ρ.trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
-    LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
-      (innerₗ V) hkl
-      (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ x)
-      (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ y),
+    LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_ne
+      (innerₗ V) hkl x y,
     mul_zero]
 
 /-- **Spinor tensor metric comparison**: under `ρ.cliffordFormsEquivTensor`, the ordinary tensor

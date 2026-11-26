@@ -340,6 +340,18 @@ theorem sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower
 
 end LinearMap
 
+namespace ExteriorAlgebra
+
+/-- Every basis element `b.ExteriorAlgebra S` of `ExteriorAlgebra R M` lies in the homogeneous
+exterior power `⋀[R]^S.card M` of degree `S.card`. -/
+theorem basis_mem_exteriorPower {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [LinearOrder I] (b : _root_.Module.Basis I R M) (S : Finset I) :
+    b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
+  rw [basis_eq_coe_basis b ⟨S, rfl⟩]
+  exact (b.exteriorPower S.card ⟨S, rfl⟩).property
+
+end ExteriorAlgebra
+
 namespace Module.Basis
 
 variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
@@ -356,24 +368,15 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_one (σ : R →+* R) :
   rcases eq_or_ne S.card T.card with hcard | hcard
   · let s : Set.powersetCard I S.card := ⟨S, rfl⟩
     let t : Set.powersetCard I S.card := ⟨T, Set.powersetCard.mem_iff.mpr hcard.symm⟩
-    have hS : b.ExteriorAlgebra S = (b.exteriorPower S.card s : _root_.ExteriorAlgebra R M) :=
-      ExteriorAlgebra.basis_eq_coe_basis b s
-    have hT : b.ExteriorAlgebra T = (b.exteriorPower S.card t : _root_.ExteriorAlgebra R M) :=
-      ExteriorAlgebra.basis_eq_coe_basis b t
-    have hst : (s = t) ↔ (S = T) := Subtype.ext_iff
-    rw [hS, hT, LinearMap.sesqExteriorAlgebra_coe_coe, ← b.toLinearMapₛₗ₂_exteriorPower_one,
+    rw [_root_.ExteriorAlgebra.basis_eq_coe_basis b s,
+      _root_.ExteriorAlgebra.basis_eq_coe_basis b t,
+      LinearMap.sesqExteriorAlgebra_coe_coe, ← b.toLinearMapₛₗ₂_exteriorPower_one,
       toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
-    simp [hst]
+    simp [Subtype.ext_iff, s, t]
   · have hne : S ≠ T := fun h ↦ hcard (congrArg Finset.card h)
-    let s : Set.powersetCard I S.card := ⟨S, rfl⟩
-    let t : Set.powersetCard I T.card := ⟨T, rfl⟩
-    have hS : b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
-      rw [ExteriorAlgebra.basis_eq_coe_basis b s]
-      exact (b.exteriorPower S.card s).property
-    have hT : b.ExteriorAlgebra T ∈ ⋀[R]^T.card M := by
-      rw [ExteriorAlgebra.basis_eq_coe_basis b t]
-      exact (b.exteriorPower T.card t).property
-    rw [LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hcard hS hT]
+    rw [LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hcard
+      (_root_.ExteriorAlgebra.basis_mem_exteriorPower b S)
+      (_root_.ExteriorAlgebra.basis_mem_exteriorPower b T)]
     simp [hne]
 
 end Module.Basis

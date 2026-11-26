@@ -42,8 +42,10 @@ No finiteness, flatness, or basis assumption is needed for the comparison theore
   `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_baseChangeEquiv_symm`:
   compatibility of `sesqExteriorAlgebra` with `sesqComplexification` across
   `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`.
-* `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange` and
-  `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne`:
+* `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange`,
+  `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne`,
+  and
+  `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_ne`:
   degree-`n` restriction and degree orthogonality on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`.
 
 ## References
@@ -83,16 +85,36 @@ theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
     (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
     (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
     sesqComplexification B.sesqExteriorAlgebra x y = 0 := by
-  rw [Submodule.baseChange] at hx hy
-  obtain ⟨x', rfl⟩ := hx
-  obtain ⟨y', rfl⟩ := hy
-  induction x' using TensorProduct.inductionOn with
-  | add u₁ u₂ hu₁ hu₂ => simp only [map_add, LinearMap.add_apply, hu₁, hu₂, add_zero]
-  | tmul z u =>
-    induction y' using TensorProduct.inductionOn with
-    | add v₁ v₂ hv₁ hv₂ => simp only [map_add, hv₁, hv₂, add_zero]
-    | tmul w v =>
-      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq u.property v.property]
+  rw [Submodule.baseChange_eq_span] at hx hy
+  induction hx using Submodule.span_induction with
+  | mem _ hu =>
+    obtain ⟨u, hu, rfl⟩ := hu
+    induction hy using Submodule.span_induction with
+    | mem _ hv =>
+      obtain ⟨v, hv, rfl⟩ := hv
+      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq hu hv]
+    | zero => simp
+    | add _ _ _ _ hv₁ hv₂ => simp [TensorProduct.mk_apply] at hv₁ hv₂ ⊢; simp [hv₁, hv₂]
+    | smul c _ _ hv => simp [TensorProduct.mk_apply] at hv ⊢; simp [hv]
+  | zero => simp
+  | add _ _ _ _ hu₁ hu₂ => simp [hu₁, hu₂]
+  | smul c _ _ hu => simp [hu]
+
+/-- **Distinct complexified exterior powers are orthogonal** (on `subtype.baseChange` images): for
+`p ≠ q`, `(⋀[ℝ]^p V).subtype.baseChange ℂ x` and `(⋀[ℝ]^q V).subtype.baseChange ℂ y` are
+orthogonal with respect to `B.sesqExteriorAlgebra.sesqComplexification`. -/
+theorem sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_ne
+    (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q)
+    (x : ℂ ⊗[ℝ] ⋀[ℝ]^p V) (y : ℂ ⊗[ℝ] ⋀[ℝ]^q V) :
+    sesqComplexification B.sesqExteriorAlgebra
+        ((⋀[ℝ]^p V).subtype.baseChange ℂ x) ((⋀[ℝ]^q V).subtype.baseChange ℂ y) = 0 := by
+  have hmem {k : ℕ} (z : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
+      (⋀[ℝ]^k V).subtype.baseChange ℂ z ∈ (⋀[ℝ]^k V).baseChange ℂ := by
+    have h : LinearMap.range ((⋀[ℝ]^k V).subtype.baseChange ℂ) = (⋀[ℝ]^k V).baseChange ℂ := by
+      rw [← LinearMap.baseChange_range, Submodule.range_subtype]
+    exact h ▸ LinearMap.mem_range_self _ z
+  exact B.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne hpq
+    (hmem x) (hmem y)
 
 /-- **Complexification commutes with exterior Gram forms on the exterior algebra**: under
 `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, `B.sesqComplexification.sesqExteriorAlgebra` on
@@ -115,9 +137,7 @@ theorem sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv (B : BilinForm 
         sesqComplexification_sesqExteriorPower_equivBaseChange]
     · simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e,
         ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange]
-      exact sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne B hpq
-        (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ _)
-        (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ _)
+      exact B.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_ne hpq _ _
   simpa [e] using
     (LinearMap.congr_fun₂ h (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
       (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y)).symm
