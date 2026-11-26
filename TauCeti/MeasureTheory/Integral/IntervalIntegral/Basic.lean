@@ -84,6 +84,9 @@ not belong to any particular application.
   continuous on `uIcc a b ×ˢ K` (with `K` compact), or continuous on `uIcc a b`, uniform
   left-endpoint Riemann sums converge uniformly on `K`, respectively pointwise, to
   `∫ t in a..b, f t`.
+* `MeasureTheory.LocallyIntegrable.intervalIntegrable` and
+  `MeasureTheory.locallyIntegrable_iff_forall_intervalIntegrable`: a function on `ℝ` is locally
+  integrable with respect to `μ` if and only if it is interval integrable on every interval.
 -/
 
 public section
@@ -625,3 +628,18 @@ theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max {E : Type*
   · refine (intervalIntegrable_const (c := f c)).congr fun y hy ↦ ?_
     rw [uIoc_of_ge hx] at hy
     simp only [max_eq_right hy.2]
+
+/-- A locally integrable function on `ℝ` is interval integrable on every interval. -/
+theorem MeasureTheory.LocallyIntegrable.intervalIntegrable {E : Type*} [NormedAddCommGroup E]
+    {f : ℝ → E} {μ : Measure ℝ} (hf : LocallyIntegrable f μ) (a b : ℝ) :
+    IntervalIntegrable f μ a b :=
+  (hf.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+
+/-- A function on `ℝ` is locally integrable with respect to `μ` if and only if it is interval
+integrable on every interval. -/
+theorem MeasureTheory.locallyIntegrable_iff_forall_intervalIntegrable {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} {μ : Measure ℝ} :
+    LocallyIntegrable f μ ↔ ∀ a b, IntervalIntegrable f μ a b :=
+  ⟨fun hf a b ↦ hf.intervalIntegrable a b,
+    fun hf x ↦ ⟨Ioo (x - 1) (x + 1), Ioo_mem_nhds (by linarith) (by linarith),
+      (hf (x - 1) (x + 1)).1.mono_set Ioo_subset_Ioc_self⟩⟩

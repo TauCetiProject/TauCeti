@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
-import Mathlib.MeasureTheory.Integral.DivergenceTheorem
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
 /-!
 # Calculus along absolutely continuous curves
@@ -45,6 +47,10 @@ fundamental-theorem results to curves.
   integration by parts with supplied almost-everywhere derivatives.
 * `AbsolutelyContinuousOnInterval.integral_div_eq_log_sub_log`: the fundamental theorem for the
   logarithmic derivative of a nonvanishing absolutely continuous real function.
+* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg` and
+  `AbsolutelyContinuousOnInterval.sqrt_sub_sqrt_eq_intervalIntegral`: a nonnegative absolutely
+  continuous real function has zero derivative almost everywhere on its zero set, and when
+  `deriv η / (2 √η)` is interval integrable, `√(η b) - √(η a) = ∫_a^b deriv η / (2 √η)`.
 * `TauCeti.Probability.survival_eq_exp_integral_hazard`: a positive absolutely continuous
   survival function is reconstructed from its hazard rate.
 * `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
@@ -58,6 +64,16 @@ fundamental-theorem results to curves.
   `|∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n| = |Λ t| ^ (n + 1) / (n + 1)`, and
   `TauCeti.norm_integral_le_abs_integral_norm_pow_div_factorial_mul`, the resulting inductive step
   of factorial bounds on iterated integrals.
+* `IntervalIntegrable.absolutelyContinuousOnInterval_of_eq_integral` and
+  `MeasureTheory.LocallyIntegrable.ae_hasDerivAt_of_eq_integral`: a function represented as an
+  indefinite interval integral is absolutely continuous on every subinterval and is differentiable
+  almost everywhere with the integrand as its derivative.
+
+## References
+
+* P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A. Wellner, *Efficient and Adaptive Estimation
+  for Semiparametric Models*, Johns Hopkins University Press, 1993, Appendix A.5, Corollary 1
+  (citing J. Hájek and Z. Šidák, *Theory of Rank Tests*, Academic Press, 1967).
 -/
 
 public section
@@ -227,6 +243,82 @@ theorem integral_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
     (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
     ∫ t in a..b, V t / f t = Real.log (f b) - Real.log (f a) :=
   (hf.log h0).integral_eq_sub_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
+
+/-- If a nonnegative function `η : ℝ → ℝ` is absolutely continuous on `uIcc a b`, then for almost
+every `u ∈ uIoc a b`, `η` is differentiable at `u` and `η u = 0` implies `deriv η u = 0`. -/
+theorem ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg {η : ℝ → ℝ}
+    (hac : AbsolutelyContinuousOnInterval η a b) (hη : ∀ x ∈ uIcc a b, 0 ≤ η x) :
+    ∀ᵐ u ∂volume, u ∈ uIoc a b → HasDerivAt η (deriv η u) u ∧ (η u = 0 → deriv η u = 0) := by
+  have hne_max : ∀ᵐ u ∂volume, u ≠ max a b := by simp [ae_iff, measure_singleton]
+  filter_upwards [hac.ae_differentiableAt, hne_max] with u hdiff hne hu
+  refine ⟨(hdiff (uIoc_subset_uIcc hu)).hasDerivAt, fun hu0 ↦ ?_⟩
+  have hu_ioo : u ∈ Ioo (min a b) (max a b) := ⟨hu.1, lt_of_le_of_ne hu.2 hne⟩
+  have hmin : IsLocalMin η u := by
+    refine Filter.mem_of_superset (isOpen_Ioo.mem_nhds hu_ioo) fun y hy ↦ ?_
+    rw [hu0]
+    exact hη y (Ioo_subset_Icc_self hy)
+  exact hmin.deriv_eq_zero
+
+/-- **Increments of a square-root function** (Bickel–Klaassen–Ritov–Wellner, Appendix A.5,
+Corollary 1, part A, after Hájek–Šidák). If `η : ℝ → ℝ` is nonnegative and absolutely continuous on
+`uIcc a b`, and `deriv η / (2 √η)` is interval integrable on `a..b`, then
+`√(η b) - √(η a) = ∫ u in a..b, deriv η u / (2 √(η u))`. -/
+theorem sqrt_sub_sqrt_eq_intervalIntegral {η : ℝ → ℝ}
+    (hac : AbsolutelyContinuousOnInterval η a b) (hη : ∀ x ∈ uIcc a b, 0 ≤ η x)
+    (hint : IntervalIntegrable (fun u ↦ deriv η u / (2 * Real.sqrt (η u))) volume a b) :
+    Real.sqrt (η b) - Real.sqrt (η a) = ∫ u in a..b, deriv η u / (2 * Real.sqrt (η u)) := by
+  -- Step 1: Differentiability and zero-minimum property a.e. on `uIoc a b` (following the direct
+  -- argument of Hájek–Šidák as cited in Bickel–Klaassen–Ritov–Wellner, Appendix A.5, Corollary 1).
+  have hae := hac.ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg hη
+  have hη_asm : AEStronglyMeasurable η (volume.restrict (uIoc a b)) :=
+    (hac.continuousOn.mono uIoc_subset_uIcc).aestronglyMeasurable measurableSet_uIoc
+  have hd_asm : AEStronglyMeasurable (deriv η) (volume.restrict (uIoc a b)) :=
+    (intervalIntegrable_iff.mp hac.intervalIntegrable_deriv).aestronglyMeasurable
+  -- Step 2: Regularize `η` to `η + ε` (`ε > 0`), compose with the `C¹` function `y ↦ √(y + ε)`,
+  -- and apply the fundamental theorem of calculus for absolutely continuous functions.
+  have hftc : ∀ᶠ ε : ℝ in nhdsWithin 0 (Ioi 0),
+      (∫ u in a..b, deriv η u / (2 * Real.sqrt (η u + ε))) =
+        Real.sqrt (η b + ε) - Real.sqrt (η a + ε) := by
+    filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+    have hf_ac : AbsolutelyContinuousOnInterval (fun u ↦ Real.sqrt (η u + ε)) a b :=
+      hac.comp_of_contDiffAt (φ := fun y ↦ Real.sqrt (y + ε)) fun _ ⟨u, hu, heq⟩ ↦
+        (contDiffAt_id.add contDiffAt_const).sqrt
+          (by rw [← heq]; exact (add_pos_of_nonneg_of_pos (hη u hu) hε).ne')
+    refine hf_ac.integral_eq_sub_of_ae_hasDerivAt ?_
+    filter_upwards [hae] with u hu hmem
+    exact ((hu hmem).1.add_const ε).sqrt
+      (add_pos_of_nonneg_of_pos (hη u (uIoc_subset_uIcc hmem)) hε).ne'
+  -- Step 3: Pass to the limit `ε → 0⁺` via dominated convergence with bound `‖deriv η / (2 √η)‖`.
+  have hlim_lhs : Filter.Tendsto (fun ε : ℝ ↦ ∫ u in a..b, deriv η u / (2 * Real.sqrt (η u + ε)))
+      (nhdsWithin 0 (Ioi 0)) (nhds (∫ u in a..b, deriv η u / (2 * Real.sqrt (η u)))) := by
+    refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
+      (fun u ↦ ‖deriv η u / (2 * Real.sqrt (η u))‖) ?_ ?_ hint.norm ?_
+    · exact Filter.Eventually.of_forall fun ε ↦
+        (hd_asm.aemeasurable.div
+          (aemeasurable_const.mul (hη_asm.aemeasurable.add_const ε).sqrt)).aestronglyMeasurable
+    · filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+      filter_upwards [hae] with u hu hmem
+      rcases eq_or_ne (η u) 0 with h0 | h0
+      · simp [(hu hmem).2 h0]
+      · have hpos : 0 < η u := lt_of_le_of_ne (hη u (uIoc_subset_uIcc hmem)) (Ne.symm h0)
+        simp only [Real.norm_eq_abs, abs_div,
+          abs_of_pos (by positivity : 0 < 2 * Real.sqrt (η u + ε)),
+          abs_of_pos (by positivity : 0 < 2 * Real.sqrt (η u))]
+        gcongr; linarith
+    · filter_upwards [hae] with u hu hmem
+      rcases eq_or_ne (η u) 0 with h0 | h0
+      · simp [(hu hmem).2 h0]
+      · have hpos : 0 < η u := lt_of_le_of_ne (hη u (uIoc_subset_uIcc hmem)) (Ne.symm h0)
+        have hden_ne : 2 * Real.sqrt (η u + 0) ≠ 0 := by rw [add_zero]; positivity
+        have hc : ContinuousAt (fun ε : ℝ ↦ deriv η u / (2 * Real.sqrt (η u + ε))) 0 :=
+          ContinuousAt.div continuousAt_const
+            (continuousAt_const.mul ((continuousAt_const.add continuousAt_id).sqrt)) hden_ne
+        simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+  have hlim_rhs : Filter.Tendsto (fun ε : ℝ ↦ Real.sqrt (η b + ε) - Real.sqrt (η a + ε))
+      (nhdsWithin 0 (Ioi 0)) (nhds (Real.sqrt (η b) - Real.sqrt (η a))) := by
+    have hc : Continuous fun ε : ℝ ↦ Real.sqrt (η b + ε) - Real.sqrt (η a + ε) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact tendsto_nhds_unique hlim_rhs (hlim_lhs.congr' hftc)
 
 end AbsolutelyContinuousOnInterval
 
@@ -406,3 +498,31 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   simp only [Pi.add_apply, Function.comp_apply] at hFTC ⊢
   rw [hFTC]
   abel
+
+/-- A function `f` that agrees on `uIcc a b` with `f c + ∫ t in c..x, f' t` (with `f'` interval
+integrable on `c..a` and `a..b`) is absolutely continuous on `uIcc a b`. -/
+theorem IntervalIntegrable.absolutelyContinuousOnInterval_of_eq_integral
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f f' : ℝ → F} {a b c : ℝ} (hca : IntervalIntegrable f' volume c a)
+    (hab : IntervalIntegrable f' volume a b)
+    (heq : ∀ x ∈ uIcc a b, f x = f c + ∫ t in c..x, f' t) :
+    AbsolutelyContinuousOnInterval f a b := by
+  have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ f a) a b :=
+    (LipschitzWith.const (f a)).lipschitzOnWith.absolutelyContinuousOnInterval
+  refine (hconst.add (hab.absolutelyContinuousOnInterval_intervalIntegral'
+    left_mem_uIcc)).congr fun x hx ↦ ?_
+  have hax : IntervalIntegrable f' volume a x :=
+    hab.mono_set (uIcc_subset_uIcc left_mem_uIcc hx)
+  simp only [Pi.add_apply]
+  rw [heq x hx, heq a left_mem_uIcc, add_assoc,
+    intervalIntegral.integral_add_adjacent_intervals hca hax]
+
+/-- A function represented globally as an indefinite integral `f x = f c + ∫ t in c..x, f' t` of a
+locally integrable function `f'` has derivative `f' x` at Lebesgue-almost every `x`. -/
+theorem MeasureTheory.LocallyIntegrable.ae_hasDerivAt_of_eq_integral {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f f' : ℝ → F} {c : ℝ}
+    (hf' : LocallyIntegrable f' volume) (heq : ∀ x, f x = f c + ∫ t in c..x, f' t) :
+    ∀ᵐ x ∂volume, HasDerivAt f (f' x) x := by
+  filter_upwards [_root_.LocallyIntegrable.ae_hasDerivAt_integral hf'] with x hx
+  rw [funext heq]
+  simpa [Pi.add_def] using (hasDerivAt_const x (f c)).add (hx c)

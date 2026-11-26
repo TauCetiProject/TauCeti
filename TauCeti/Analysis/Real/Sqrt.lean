@@ -80,6 +80,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt`: `|√x - √y| (√x + √y) = |x - y|` for `0 ≤ x` and
   `0 ≤ y`.
 * `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`, `|√μ - 1| ≤ |μ - 1|`.
+* `Real.abs_sqrt_one_add_sub_one_sub_div_two_le`: for every real `u`,
+  `|√(1 + u) - 1 - u / 2| ≤ u ^ 2 / 2`.
 * `Real.abs_one_sub_inv_sqrt_le_abs_sub_one`: if `1 ≤ μ + √μ`, `|1 - (√μ)⁻¹| ≤ |μ - 1|`.
 * `Real.sqrt_add_le_add_sqrt`: for all reals `a` and `b`, `√(a + b) ≤ √a + √b`.
 * `Real.sqrt_le_sqrt_add_sqrt_abs_sub`: for all reals `t` and `s`, `√t ≤ √s + √|t - s|`.
@@ -345,6 +347,24 @@ theorem abs_sqrt_sub_one_le_abs_sub_one (μ : ℝ) :
   · rw [sqrt_eq_zero_of_nonpos hμ, abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
     norm_num
     linarith
+
+/-- Global second-order Taylor remainder bound for `√(1 + u)`: for every real `u`,
+`|√(1 + u) - 1 - u / 2| ≤ u ^ 2 / 2`. -/
+theorem abs_sqrt_one_add_sub_one_sub_div_two_le (u : ℝ) :
+    |√(1 + u) - 1 - u / 2| ≤ u ^ 2 / 2 := by
+  rcases le_or_gt (-1) u with hu | hu
+  · have h1u : 0 ≤ 1 + u := by linarith
+    have hden : 1 / 2 ≤ √(1 + u) + (1 + u / 2) := by
+      have := sqrt_nonneg (1 + u); linarith
+    have hprod : (√(1 + u) - 1 - u / 2) * (√(1 + u) + (1 + u / 2)) = -(u ^ 2 / 4) := by
+      have hsq : √(1 + u) * √(1 + u) = 1 + u := mul_self_sqrt h1u
+      nlinarith
+    have habs := congr_arg abs hprod
+    rw [abs_mul, abs_of_nonneg (by linarith : 0 ≤ √(1 + u) + (1 + u / 2)), abs_neg,
+      abs_of_nonneg (by positivity : 0 ≤ u ^ 2 / 4)] at habs
+    nlinarith [abs_nonneg (√(1 + u) - 1 - u / 2)]
+  · rw [sqrt_eq_zero_of_nonpos (by linarith), zero_sub]
+    exact abs_le.mpr ⟨by nlinarith, by nlinarith⟩
 
 /-- If `1 ≤ μ + √μ`, then the inverse square root is no farther from `1` than `μ` is:
 `|1 - (√μ)⁻¹| ≤ |μ - 1|`. The hypothesis forces `0 < μ` and holds for `1 / 2 ≤ μ`; for positive

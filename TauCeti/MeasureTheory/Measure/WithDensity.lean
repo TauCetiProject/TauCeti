@@ -84,6 +84,8 @@ measure that is positive on nonempty open sets are equal.
   to the same set leaves it unchanged.
 * `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
   then weighted gives no mass to the complement of the set.
+* `MeasureTheory.isProbabilityMeasure_withDensity_ofReal`: weighting a measure by an
+  almost-everywhere nonnegative real density with integral `1` yields a probability measure.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -407,6 +409,15 @@ theorem withDensity_restrict_apply_compl {α : Type*} [MeasurableSpace α] {μ :
     (μ.restrict s).withDensity f sᶜ = 0 :=
   withDensity_absolutelyContinuous _ _ <| by
     rw [Measure.restrict_apply hs.compl, Set.compl_inter_self, measure_empty]
+
+/-- A measure weighted by an almost-everywhere nonnegative real density with integral `1` is a
+probability measure. -/
+theorem isProbabilityMeasure_withDensity_ofReal {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hf1 : ∫ x, f x ∂μ = 1) :
+    IsProbabilityMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) := ⟨by
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hf1) hf,
+    hf1, ENNReal.ofReal_one]⟩
 
 end MeasureTheory
 
