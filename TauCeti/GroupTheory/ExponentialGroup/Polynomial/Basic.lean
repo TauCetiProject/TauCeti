@@ -51,9 +51,10 @@ increasing order of the exponents; for a map `T` as above the factors commute. T
 axioms, two commuting elements are placed in a commutative subgroup that `T` maps to itself, the
 centralizer of their centralizer. There `T` is an endomorphism `τ`, and the exponentiation is,
 written multiplicatively, the `ℤ[t]`-module in which `t` acts by `τ`: the module of Mathlib's
-`Module.AEval'`, whose action formula `p • m = aeval τ p m` is used here directly, through
-`Polynomial.aeval` and `Module.compHom`. That module is a `ℤ[t]`-group by
-`TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`.
+`Module.AEval'`, whose action formula is `p • m = aeval τ p m`. That module is a `ℤ[t]`-group by
+`TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`, and the axioms are
+transported to the subgroup along the multiplicative equivalence with it, by
+`Function.Injective.isExponentialGroup`.
 
 ## References
 
@@ -190,18 +191,18 @@ private theorem isExponentialGroup_polynomialPow_of_comm {Z : Type*} [Group Z]
     letI := polynomialPow τ
     IsExponentialGroup ℤ[X] Z := by
   let : CommGroup Z := { (inferInstance : Group Z) with mul_comm := hZ }
-  -- `Z` is, written multiplicatively, the `ℤ[t]`-module `AEval' φ` in which `t` acts by `τ`
+  let := polynomialPow τ
+  -- `e` identifies `Z` with the `ℤ[t]`-module `AEval' φ` in which `t` acts by `τ`, written
+  -- multiplicatively, and carries the exponentiation to the module action
   let φ := τ.toAdditive.toIntLinearMap
-  have hpow (z : Z) (p : ℤ[X]) : (letI := polynomialPow τ; z ^ p) =
-      ((Module.AEval'.of φ).symm
-        (Multiplicative.ofAdd (Module.AEval'.of φ (.ofMul z)) ^ p).toAdd).toMul := by
-    rw [Multiplicative.multiplicativePow_def, toAdd_ofAdd, Module.AEval.of_symm_smul, toAdd_ofAdd,
-      LinearEquiv.symm_apply_apply, Module.End.smul_def, polynomialPow_eq_aeval]
-  have h : polynomialPow τ =
-      (MultiplicativePow.instPow : Pow (Multiplicative (Module.AEval' φ)) ℤ[X]) :=
-    congrArg Pow.mk (funext₂ hpow)
-  rw [h]
-  exact MultiplicativePow.instIsExponentialGroup (A := ℤ[X]) (M := Module.AEval' φ)
+  let e : Z ≃* Multiplicative (Module.AEval' φ) :=
+    AddEquiv.toMultiplicativeRight (Module.AEval'.of φ).toAddEquiv
+  refine e.injective.isExponentialGroup e.toMonoidHom fun z p => ?_
+  simp only [e, MulEquiv.coe_toMonoidHom, AddEquiv.toMultiplicativeRight_apply_apply,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    Multiplicative.multiplicativePow_def, toAdd_ofAdd, polynomialPow_eq_aeval, ofMul_toMul]
+  rw [← Module.End.smul_def]
+  exact congrArg Multiplicative.ofAdd (Module.AEval.of_aeval_smul _ _ _)
 
 section Hyp
 

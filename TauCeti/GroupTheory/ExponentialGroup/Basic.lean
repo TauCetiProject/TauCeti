@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Algebra.Ring.Int.Defs
 public import Mathlib.Algebra.Ring.Nat
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import Mathlib.Algebra.Group.Commute.Hom
 import TauCeti.Algebra.Group.Basic
 
 /-!
@@ -52,6 +53,8 @@ generated fully residually free group. In a `ℤ[t]`-group the laws give, for in
 * Every group is a `ℤ`-group and an `ℕ`-group, with the usual powers.
 * `TauCeti.IsExponentialGroup.isExponentialGroup_compPow`: along a homomorphism of semirings
   `f : A →+* B`, a `B`-group is an `A`-group with `g ^ a = g ^ f a`.
+* `Function.Injective.isExponentialGroup`: an exponentiation that an injective homomorphism
+  carries to the exponentiation of an `A`-group is an `A`-group structure.
 * `TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`: a module `M` over a
   commutative semiring `A` is an `A`-group, written multiplicatively.
 
@@ -280,6 +283,27 @@ scoped instance instPow {A M : Type*} [SMul A M] : Pow (Multiplicative M) A :=
 end MultiplicativePow
 
 end TauCeti.IsExponentialGroup
+
+namespace Function.Injective
+
+open TauCeti
+
+variable {A G H : Type*} [Semiring A] [Group G] [Group H] [Pow G A] [Pow H A]
+
+/-- An exponentiation on `G` that an injective homomorphism `f : G →* H` carries to the
+exponentiation of an `A`-group `H` makes `G` an `A`-group. -/
+theorem isExponentialGroup [IsExponentialGroup A H] (f : G →* H) (hf : Function.Injective f)
+    (hpow : ∀ (g : G) (a : A), f (g ^ a) = f g ^ a) : IsExponentialGroup A G where
+  pow_one g := hf <| by rw [hpow, IsExponentialGroup.pow_one]
+  pow_add g a b := hf <| by rw [map_mul, hpow, hpow, hpow, IsExponentialGroup.pow_add]
+  pow_mul g a b := hf <| by rw [hpow, hpow, hpow, IsExponentialGroup.pow_mul]
+  conj_pow g h a := hf <| by
+    simp only [hpow, map_mul, map_inv, IsExponentialGroup.conj_pow]
+  mul_pow {g h} hc a := hf <| by
+    rw [hpow, map_mul, map_mul, hpow, hpow]
+    exact IsExponentialGroup.mul_pow (hc.map f) a
+
+end Function.Injective
 
 namespace Multiplicative
 

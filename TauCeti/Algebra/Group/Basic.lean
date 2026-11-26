@@ -95,6 +95,6 @@ then `g` commutes with `T h`. -/]
 theorem apply_right_of_conj {T : G → G} (hc : Commute g h)
     (hT : T (g * h * g⁻¹) = g * T h * g⁻¹) : Commute g (T h) := by
   rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at hT
-  exact hT.symm
+  exact (commute_iff_eq _ _).2 hT.symm
 
 end Commute
