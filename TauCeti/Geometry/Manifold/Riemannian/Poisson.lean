@@ -80,8 +80,7 @@ private def integralCLM : StrongDual ℝ (SobolevH1 I M) :=
 private theorem integralCLM_apply (w : SobolevH1 I M) :
     integralCLM w = ∫ x, toLp w x ∂riemannianVolume I M := by
   rw [integralCLM, ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm,
-    inner_toLp_ofSmooth_right]
-  simp
+    integral_toLp_eq_inner_toLp_ofSmooth_one]
 
 /-- The value of the constant function `1` has integral `Vol(M)`. -/
 private theorem integral_toLp_ofSmooth_one :

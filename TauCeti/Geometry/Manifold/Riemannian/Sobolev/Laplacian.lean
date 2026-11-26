@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
+import TauCeti.MeasureTheory.Function.Lp.Integral.Basic
 
 /-!
 # The Laplacian of a closed manifold as a self-adjoint operator on `L²`
@@ -100,24 +102,6 @@ private theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
   rw [dirichletForm_apply, innerSL_apply_apply]
   ring
 
-/-- The right-hand side `0` of the Poisson equation has integral zero. -/
-private theorem integral_coeFn_zero :
-    ∫ x, (0 : Lp ℝ 2 (riemannianVolume I M)) x ∂riemannianVolume I M = 0 :=
-  integral_eq_zero_of_ae (Lp.coeFn_zero ℝ 2 _)
-
-/-- The weak right-hand side `0` of the Poisson equation. -/
-private theorem integral_zero_mul_toLp (v : SobolevH1 I M) :
-    ∫ x, (0 : Lp ℝ 2 (riemannianVolume I M)) x * toLp v x ∂riemannianVolume I M = 0 := by
-  refine integral_eq_zero_of_ae ?_
-  filter_upwards [Lp.coeFn_zero ℝ 2 (riemannianVolume I M)] with x hx
-  rw [hx, Pi.zero_apply, zero_mul]
-
-/-- `Δ⁺ f = g` for some proof that `f` lies in the domain exactly when `(f, g)` is on the graph. -/
-private theorem exists_negLaplacian_apply_eq_iff {f g : Lp ℝ 2 (riemannianVolume I M)} :
-    (∃ hf : f ∈ (negLaplacian I M).domain, negLaplacian I M ⟨f, hf⟩ = g) ↔
-      (f, g) ∈ (negLaplacian I M).graph := by
-  simp only [LinearPMap.mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
-
 section Closed
 
 variable [IsManifold I ∞ M] [T2Space M]
@@ -162,7 +146,7 @@ theorem inner_negLaplacian_self_nonneg (f : (negLaplacian I M).domain) :
 theorem exists_negLaplacian_apply_eq_smul_iff {μ : ℝ} {f : Lp ℝ 2 (riemannianVolume I M)} :
     (∃ hf : f ∈ (negLaplacian I M).domain, negLaplacian I M ⟨f, hf⟩ = μ • f) ↔
       ∃ w ∈ weakEigenspace I M μ, toLp w = f := by
-  rw [exists_negLaplacian_apply_eq_iff, mem_graph_negLaplacian_iff]
+  rw [LinearPMap.exists_apply_eq_iff_mem_graph, mem_graph_negLaplacian_iff]
   refine exists_congr fun w ↦ ⟨fun ⟨hw, hD⟩ ↦ ⟨mem_weakEigenspace_iff.2 fun v ↦ ?_, hw⟩,
     fun ⟨hμ, hw⟩ ↦ ⟨hw, fun v ↦ ?_⟩⟩
   · rw [hD, ← hw, real_inner_smul_left]
@@ -193,31 +177,25 @@ function. -/
 theorem exists_negLaplacian_apply_eq_zero_iff {f : Lp ℝ 2 (riemannianVolume I M)} :
     (∃ hf : f ∈ (negLaplacian I M).domain, negLaplacian I M ⟨f, hf⟩ = 0) ↔
       ∃ c : ℝ, c • toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) = f := by
-  rw [exists_negLaplacian_apply_eq_iff]
+  rw [LinearPMap.exists_apply_eq_iff_mem_graph]
   refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ hc ▸ mem_graph_negLaplacian_smul_toLp_ofSmooth_one c⟩
   obtain ⟨w, rfl, hD⟩ := mem_graph_negLaplacian_iff.1 h
-  -- Subtract from `w` its mean value; the difference is a weak solution of `Δ⁺ w' = 0` of
+  -- Subtract from `w` its mean value `c`; the difference is a weak solution of `Δ⁺ w' = 0` of
   -- integral zero, hence zero by uniqueness of the weak Poisson problem.
   set e := toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) with he_def
-  have hint (u : SobolevH1 I M) : ∫ x, toLp u x ∂riemannianVolume I M = ⟪toLp u, e⟫_ℝ := by
-    rw [he_def, inner_toLp_ofSmooth_right]
-    simp
-  have hc : ⟪toLp w, e⟫_ℝ - ⟪toLp w, e⟫_ℝ / ‖e‖ ^ 2 * ‖e‖ ^ 2 = 0 := by
-    rcases eq_or_ne e 0 with he | he
-    · simp [he]
-    · rw [div_mul_cancel₀ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 he)), sub_self]
   set c := ⟪toLp w, e⟫_ℝ / ‖e‖ ^ 2
+  have hmean : ∫ x, toLp (w - c • ofSmooth 1) x ∂riemannianVolume I M = 0 := by
+    rw [integral_toLp_eq_inner_toLp_ofSmooth_one]
+    rcases eq_or_ne e 0 with he | he
+    · simp [← he_def, he]
+    · simp [← he_def, he, inner_sub_left, real_inner_smul_left, c]
+  have hharm (v : SobolevH1 I M) : dirichletForm (w - c • ofSmooth 1) v =
+      ∫ x, (0 : Lp ℝ 2 (riemannianVolume I M)) x * toLp v x ∂riemannianVolume I M := by
+    rw [Lp.integral_zero_mul]
+    simp [hD, dirichletForm_comm (ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) v]
   have hzero : w - c • ofSmooth (1 : C^∞⟮I, M; ℝ⟯) = 0 :=
-    (existsUnique_dirichletForm_eq 0 integral_coeFn_zero).unique
-      ⟨by
-          rw [hint]
-          simpa only [map_sub, map_smul, ← he_def, inner_sub_left, real_inner_smul_left,
-            real_inner_self_eq_norm_sq] using hc,
-        fun v ↦ by
-          rw [integral_zero_mul_toLp]
-          simp [hD, dirichletForm_comm (ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) v]⟩
-      ⟨by rw [map_zero]; exact integral_coeFn_zero,
-        fun v ↦ by rw [integral_zero_mul_toLp]; simp⟩
+    (existsUnique_dirichletForm_eq 0 Lp.integral_coeFn_zero).unique ⟨hmean, hharm⟩
+      ⟨by rw [map_zero]; exact Lp.integral_coeFn_zero, fun v ↦ by rw [Lp.integral_zero_mul]; simp⟩
   exact ⟨c, by rw [sub_eq_zero.1 hzero, map_smul]⟩
 
 /-- **The range of the Laplacian consists of the functions of integral zero.** On a closed
@@ -323,6 +301,7 @@ theorem compMeasurePreserving_mem_domain_negLaplacian_iff (Φ : RiemannianIsomet
 
 /-- **Riemannian isometries commute with the Laplacian.** For a Riemannian isometry
 `Φ : M → N` and `f` in the domain of `Δ⁺` on `N`, `Δ⁺ (f ∘ Φ) = (Δ⁺ f) ∘ Φ`. -/
+@[simp]
 theorem negLaplacian_compMeasurePreserving (Φ : RiemannianIsometry I I' M N)
     (f : (negLaplacian I' N).domain) :
     negLaplacian I M ⟨Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume f,
