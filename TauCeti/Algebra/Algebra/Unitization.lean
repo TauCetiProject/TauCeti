@@ -47,6 +47,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
+* `Unitization.traceExtension`: the extension `(r, a) ↦ g r + f a` of an additive map `f` on `A`
+  to the unitization, tracial when `f` is (`Unitization.traceExtension_mul_comm`).
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.prodStarAlgEquiv`: for a unital star algebra `A`, the splitting
   `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
@@ -276,6 +278,35 @@ theorem fstStarAlgEquivOfSubsingleton_symm_apply [Star R] [Star A] (r : R) :
     (fstStarAlgEquivOfSubsingleton R A).symm r = inl r := (rfl)
 
 end Subsingleton
+
+section TraceExtension
+
+variable {R A M : Type*} [AddCommMonoid R] [AddCommMonoid A] [AddCommMonoid M]
+
+/-- The extension `f⁺ (r, a) = g r + f a` of an additive map `f : A →+ M` to the unitization,
+with value `g` on the scalars. -/
+def traceExtension (g : R →+ M) (f : A →+ M) : Unitization R A →+ M :=
+  (g.coprod f).comp (addEquiv R A).toAddMonoidHom
+
+@[simp]
+theorem traceExtension_apply (g : R →+ M) (f : A →+ M) (x : Unitization R A) :
+    traceExtension g f x = g x.fst + f x.snd :=
+  (rfl)
+
+end TraceExtension
+
+section TraceExtensionMul
+
+variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A] [AddCommMonoid M]
+
+/-- The extension of a tracial map to the unitization is tracial. -/
+theorem traceExtension_mul_comm (g : R →+ M) {f : A →+ M}
+    (hf : ∀ a b, f (a * b) = f (b * a)) (x y : Unitization R A) :
+    traceExtension g f (x * y) = traceExtension g f (y * x) := by
+  simp only [traceExtension_apply, fst_mul, snd_mul, map_add, hf x.snd y.snd, mul_comm x.fst y.fst]
+  abel
+
+end TraceExtensionMul
 
 end Unitization
 
