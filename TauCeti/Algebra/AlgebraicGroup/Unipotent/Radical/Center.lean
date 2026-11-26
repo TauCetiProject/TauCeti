@@ -142,8 +142,7 @@ theorem unipotentRadicalCenterConjLinearAut_apply
         m.ofConv.toLinearMap ∘ₗ (Coalgebra.skewPrimitive k
         (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1).subtype := by
     ext p
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      AlgHom.toLinearMap_apply, BialgHom.mapDomain_apply_apply]
+    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, BialgHom.mapDomain_apply_apply]
     exact congrArg m.ofConv (SymmetricAlgebra.liftBialgHom_ι (Coalgebra.skewPrimitive k
       (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1).subtype
       (fun p ↦ p.property) p)

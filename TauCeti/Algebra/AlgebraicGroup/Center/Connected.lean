@@ -312,7 +312,7 @@ theorem smooth_reducedConnectedCenter (I : HopfIdeal k H) :
 
 /-- The reduced connected center of a closed subgroup is commutative: its coordinate Hopf algebra
 is cocommutative. -/
-theorem isCocomm_reducedConnectedCenter (I : HopfIdeal k H) :
+noncomputable instance isCocomm_reducedConnectedCenter (I : HopfIdeal k H) :
     Coalgebra.IsCocomm k (FiniteTypeCommHopfAlgCat.quotient H I.reducedConnectedCenter) :=
   let e := (CommHopfAlgCat.mkQuotient H.obj I).quotientIsoOfSurjective
     (CommHopfAlgCat.mkQuotient_surjective _ _)

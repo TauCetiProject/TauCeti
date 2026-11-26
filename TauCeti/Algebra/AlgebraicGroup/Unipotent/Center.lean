@@ -91,7 +91,6 @@ theorem liftBialgHom_primitive_bijective_reducedConnectedCenter [CharZero k]
     Function.Bijective (SymmetricAlgebra.liftBialgHom
       (Coalgebra.skewPrimitive k (1 : H ⧸ I.reducedConnectedCenter.toIdeal) 1).subtype
       fun p ↦ p.property) :=
-  let _ := isCocomm_reducedConnectedCenter I
   HopfAlgebra.liftBialgHom_primitive_bijective_of_forall_isUnipotentPoint
     (geometricallyUnipotent_reducedConnectedCenter hI).forall_isUnipotentPoint
 

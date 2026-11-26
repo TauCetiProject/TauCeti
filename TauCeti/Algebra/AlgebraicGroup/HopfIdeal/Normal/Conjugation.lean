@@ -95,10 +95,9 @@ theorem IsNormal.mapDomain_conjPoints (hI : I.IsNormal) {A : Type w} [CommRing A
     BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) (hI.conjPoints A g n) =
       g * BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n * g⁻¹ := by
   have := hI.range_mapDomain_mkBialgHom_normal A
-  rw [conjPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.congr_apply,
-    MulEquiv.symm_symm, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    MonoidHom.apply_ofInjective_symm, MulAut.conjNormal_apply,
-    MonoidHom.ofInjective_apply]
+  simp only [conjPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.congr_apply,
+    MulEquiv.symm_symm, MulEquiv.trans_apply, MonoidHom.apply_ofInjective_symm,
+    MulAut.conjNormal_apply, MonoidHom.ofInjective_apply]
 
 /-- Pointwise form of `TauCeti.HopfIdeal.IsNormal.mapDomain_conjPoints`: the conjugate point
 takes at the class of `x` the value of `g * n * g⁻¹` at `x`. -/
@@ -146,10 +145,9 @@ private theorem vectorConjPoints_mapValue (hI : I.IsNormal)
     (P : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     AlgHom.mapValue φ (vectorConjPoints hI e A g P) =
       vectorConjPoints hI e B (AlgHom.mapValue φ g) (AlgHom.mapValue φ P) := by
-  rw [vectorConjPoints_apply, vectorConjPoints_apply, BialgEquiv.mapDomainMulEquiv_apply,
-    BialgEquiv.mapDomainMulEquiv_apply, BialgEquiv.mapDomainMulEquiv_symm_apply,
+  simp only [vectorConjPoints_apply, BialgEquiv.mapDomainMulEquiv_apply,
     BialgEquiv.mapDomainMulEquiv_symm_apply, ← BialgHom.mapDomain_mapValue_apply,
-    hI.mapValue_conjPoints, BialgHom.mapDomain_mapValue_apply]
+    hI.mapValue_conjPoints]
 
 variable [Algebra ℚ R]
 
