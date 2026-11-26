@@ -16,6 +16,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Algebra.Ring.SubOnePow
 import TauCeti.Data.ZMod.Ico
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Adjoint
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.Padics.Matrix
 
 /-!
@@ -284,13 +285,6 @@ theorem eq_top_of_isClosed_of_map_toZMod_eq_top (hℓ5 : 5 ≤ ℓ) {H : Subgrou
 
 /-! ### The `GL₂` form -/
 
-/-- Reduction modulo `ℓ` commutes with the inclusion of `SL₂` in `GL₂`. -/
-private theorem map_toZMod_toGL (s : SL(2, ℤ_[ℓ])) :
-    GeneralLinearGroup.map toZMod (SpecialLinearGroup.toGL s) =
-      SpecialLinearGroup.toGL (SpecialLinearGroup.map (toZMod (p := ℓ)) s) := by
-  ext i j
-  simp [GeneralLinearGroup.map_apply]
-
 /-- **Serre's lifting lemma, the `GL₂` form.** For a prime `ℓ ≥ 5`, a closed subgroup `H` of
 `GL₂(ℤ_ℓ)` whose reduction modulo `ℓ` contains `SL₂(𝔽_ℓ)` contains `SL₂(ℤ_ℓ)`, so it is the full
 preimage of its image under the determinant. -/
@@ -328,7 +322,7 @@ theorem eq_comap_map_det_of_isClosed (hℓ5 : 5 ≤ ℓ) {H : Subgroup (GL (Fin 
     refine ⟨k, ?_, SpecialLinearGroup.toGL_injective ?_⟩
     · rw [SetLike.mem_coe, Subgroup.mem_comap, hk]
       exact Subgroup.le_topologicalClosure _ (Subgroup.commutator_mem_commutator hg₁ hg₂)
-    · rw [← map_toZMod_toGL, hk, map_commutatorElement, e₁, e₂, map_commutatorElement]
+    · rw [SpecialLinearGroup.toGL_map, hk, map_commutatorElement, e₁, e₂, map_commutatorElement]
   have hSL : (SpecialLinearGroup.toGL : SL(2, ℤ_[ℓ]) →* GL (Fin 2) ℤ_[ℓ]).range ≤ H := by
     rintro _ ⟨s, rfl⟩
     have hs : s ∈ K := eq_top_of_isClosed_of_map_toZMod_eq_top hℓ5 hK hKmap ▸ Subgroup.mem_top s
