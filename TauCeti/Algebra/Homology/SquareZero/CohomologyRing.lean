@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Algebra
+public import TauCeti.Algebra.DirectSum.Ring
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!
@@ -42,7 +43,7 @@ the cohomology of a unital product sends the unit to the unit. In particular, tw
 on the same module which agree up to coboundaries on cocycles give the same graded ring structure,
 whatever their units (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`); the graded ring
 structure depends only on the product on cohomology and the unit class
-(`LinearMap.cohomologyGRing_congr`), since it is built by `LinearMap.cohomologyGRingOfMul` from
+(`LinearMap.cohomologyGRing_congr`), since it is built by `TauCeti.DirectSum.gRingOfMul` from
 these alone.
 
 The degree-wise cohomology is that of `TauCeti.Algebra.Homology.SquareZero.Graded`, where `M` need
@@ -60,8 +61,6 @@ coboundaries.
 
 * `LinearMap.cohomologyMul`: the product `H^i × H^j → H^(i + j)` induced by a product of degree
   zero.
-* `LinearMap.cohomologyGRingOfMul`: the graded ring structure on degree-wise cohomology given by
-  an associative, unital bilinear product on cohomology.
 * `LinearMap.cohomologyGRing`: the graded ring structure on degree-wise cohomology.
 * `LinearMap.cohomologyGAlgebra`: its graded `R`-algebra structure.
 * `LinearMap.cohomologyAlgHom`, `LinearMap.cohomologyAlgEquiv`: the algebra homomorphism, and
@@ -140,56 +139,6 @@ theorem cohomologyMul_mk {i j : ℤ} (a : D.cocycles G i) (b : D.cocycles G j) :
 
 end Mul
 
-section OfMul
-
-variable (mul : ∀ i j : ℤ, D.cohomology G i →ₗ[R] D.cohomology G j →ₗ[R] D.cohomology G (i + j))
-  (one : D.cohomology G 0)
-
-/-- **The graded ring of a product on cohomology.** A bilinear product `H^i × H^j → H^(i + j)` on
-degree-wise cohomology which is associative, with a two-sided unit `one` in degree zero, as
-elements of the graded monoid of cohomology classes, makes the degree-wise cohomology a graded
-ring. Its data are `mul` and `one` alone, so that it is determined by them
-(`LinearMap.cohomologyGRing_congr`). -/
-@[expose, instance_reducible]
-def cohomologyGRingOfMul
-    (one_mul : ∀ {i : ℤ} (x : D.cohomology G i),
-      GradedMonoid.mk (A := fun k ↦ D.cohomology G k) (0 + i) (mul 0 i one x) = ⟨i, x⟩)
-    (mul_one : ∀ {i : ℤ} (x : D.cohomology G i),
-      GradedMonoid.mk (A := fun k ↦ D.cohomology G k) (i + 0) (mul i 0 x one) = ⟨i, x⟩)
-    (mul_assoc : ∀ {i j k : ℤ} (x : D.cohomology G i) (y : D.cohomology G j)
-      (z : D.cohomology G k),
-      GradedMonoid.mk (A := fun k ↦ D.cohomology G k) (i + j + k) (mul (i + j) k (mul i j x y) z) =
-        ⟨i + (j + k), mul i (j + k) x (mul j k y z)⟩) :
-    DirectSum.GRing (fun i ↦ D.cohomology G i) :=
-  letI : GradedMonoid.GMul (fun i ↦ D.cohomology G i) := ⟨fun x y ↦ mul _ _ x y⟩
-  letI : GradedMonoid.GOne (fun i ↦ D.cohomology G i) := ⟨one⟩
-  { mul_zero x := map_zero _
-    zero_mul y := LinearMap.map_zero₂ _ y
-    mul_add x y z := map_add _ y z
-    add_mul x y z := LinearMap.map_add₂ _ x y z
-    one_mul x := one_mul x.2
-    mul_one x := mul_one x.2
-    mul_assoc x y z := mul_assoc x.2 y.2 z.2
-    natCast n := n • one
-    natCast_zero := zero_smul _ _
-    natCast_succ n := succ_nsmul _ n
-    intCast n := n • one
-    intCast_ofNat n := natCast_zsmul _ n
-    intCast_negSucc_ofNat n := negSucc_zsmul _ n }
-
-variable {mul one} in
-/-- `LinearMap.cohomologyGRingOfMul` depends only on the product and the unit. -/
-theorem cohomologyGRingOfMul_congr {mul' : ∀ i j : ℤ,
-      D.cohomology G i →ₗ[R] D.cohomology G j →ₗ[R] D.cohomology G (i + j)}
-    {one' : D.cohomology G 0} (hmul : mul = mul') (hone : one = one')
-    {one_mul one_mul' mul_one mul_one' mul_assoc mul_assoc'} :
-    cohomologyGRingOfMul mul one one_mul mul_one mul_assoc =
-      cohomologyGRingOfMul mul' one' one_mul' mul_one' mul_assoc' := by
-  subst hmul hone
-  rfl
-
-end OfMul
-
 section GRing
 
 variable (μ : M →ₗ[R] M →ₗ[R] M)
@@ -209,7 +158,9 @@ unit up to coboundaries on cocycles. Then the degree-wise cohomology of `D` is a
 product `LinearMap.cohomologyMul` and unit the class of `e`. -/
 @[expose, instance_reducible]
 def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
-  cohomologyGRingOfMul (fun _ _ ↦ cohomologyMul μ hdeg hL) (Submodule.Quotient.mk ⟨e, he⟩)
+  TauCeti.DirectSum.gRingOfMul
+    (fun _ _ ↦ toAddMonoidHom'.comp (cohomologyMul μ hdeg hL).toAddMonoidHom)
+    (Submodule.Quotient.mk ⟨e, he⟩)
     (fun x ↦ by
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       exact (congrArg (GradedMonoid.mk _) (cohomologyMul_mk μ hdeg hL ⟨e, he⟩ a)).trans
@@ -224,6 +175,8 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       induction y using Submodule.Quotient.induction_on with | H b => ?_
       induction z using Submodule.Quotient.induction_on with | H c => ?_
+      simp only [AddMonoidHom.coe_comp, Function.comp_apply, toAddMonoidHom'_apply,
+        toAddMonoidHom_coe]
       rw [cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk]
       exact gradedMonoid_mk_cohomology_mk_eq (add_assoc _ _ _)
         (by simpa only [add_assoc] using hassoc a.property b.property c.property))
@@ -233,14 +186,14 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
 theorem cohomologyGRing_gMul {i j : ℤ} (x : D.cohomology G i) (y : D.cohomology G j) :
     letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
     GradedMonoid.GMul.mul (A := fun i ↦ D.cohomology G i) x y = cohomologyMul μ hdeg hL x y :=
-  rfl
+  TauCeti.DirectSum.gRingOfMul_gMul x y
 
 /-- In the cohomology ring, the unit is the class of `e`. -/
 @[simp]
 theorem cohomologyGRing_gOne :
     letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
     GradedMonoid.GOne.one (A := fun i ↦ D.cohomology G i) = Submodule.Quotient.mk ⟨e, he⟩ :=
-  rfl
+  TauCeti.DirectSum.gRingOfMul_gOne
 
 /-- In the cohomology ring, the product of the classes of two cocycles `a` and `b` is the class of
 `μ a b`. -/
@@ -510,9 +463,9 @@ theorem cohomologyGRing_congr
     (hone : (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) = Submodule.Quotient.mk ⟨e', he'⟩) :
     cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc =
       cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc :=
-  -- Both are `LinearMap.cohomologyGRingOfMul` of the product and the unit class; the remaining
+  -- Both are `TauCeti.DirectSum.gRingOfMul` of the product and the unit class; the remaining
   -- arguments are proofs.
-  cohomologyGRingOfMul_congr (funext fun i ↦ funext fun j ↦ hmul i j) hone
+  TauCeti.DirectSum.gRingOfMul_congr (funext₂ fun i j ↦ by rw [hmul i j]) hone
 
 include hsub in
 /-- **Products agreeing up to coboundaries have the same cohomology ring.** Let `μ` and `ν` be
