@@ -48,6 +48,7 @@ variable {M : Type*} [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k
 /-- **The semisimplification has the characteristic polynomials of the module.** For an
 `A`-module `M` that is finite-dimensional over a field `k` (with `A` a `k`-algebra), every
 `a : A` has the same characteristic polynomial on `M^ss` as on `M`. -/
+@[simp]
 theorem charpoly_lsmul_semisimplification (a : A) :
     (Algebra.lsmul k k (semisimplification A M) a).charpoly =
       (Algebra.lsmul k k M a).charpoly := by
@@ -79,6 +80,7 @@ theorem charpoly_lsmul_semisimplification (a : A) :
     exact e.charpoly_lsmul_eq a
 
 /-- Every `a : A` has the same trace over `k` on the semisimplification `M^ss` as on `M`. -/
+@[simp]
 theorem trace_lsmul_semisimplification (a : A) :
     LinearMap.trace k (semisimplification A M) (Algebra.lsmul k k (semisimplification A M) a) =
       LinearMap.trace k M (Algebra.lsmul k k M a) := by
@@ -86,6 +88,7 @@ theorem trace_lsmul_semisimplification (a : A) :
     charpoly_lsmul_semisimplification]
 
 /-- Every `a : A` has the same determinant over `k` on the semisimplification `M^ss` as on `M`. -/
+@[simp]
 theorem det_lsmul_semisimplification (a : A) :
     LinearMap.det (Algebra.lsmul k k (semisimplification A M) a) =
       LinearMap.det (Algebra.lsmul k k M a) := by
