@@ -19,9 +19,9 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Sections of trivial vector bundles
 
 A `C^n` section of `Bundle.Trivial M F` with normed fibre `F` is a `C^n` map `M → F`
-(`ContMDiffSection.trivialEquiv`), with constant sections (`ContMDiffSection.trivialConst`) and
-basis coordinate expansions (`ContMDiffSection.trivialCoord`,
-`ContMDiffSection.eq_sum_trivialCoord_smul_trivialConst`).
+(`ContMDiffSection.trivialEquiv`), with constant sections (`ContMDiffSection.trivialConst`),
+pullbacks along `C^n` maps (`ContMDiffSection.trivialPullback`) and basis coordinate expansions
+(`ContMDiffSection.trivialCoord`, `ContMDiffSection.eq_sum_trivialCoord_smul_trivialConst`).
 
 In differential geometry—for instance for trivial Lie algebra bundles and transformation Lie
 algebroids—the fibre `W` is often a finite-dimensional Hausdorff topological module over a
@@ -92,6 +92,22 @@ def trivialConst : F →ₗ[𝕜] Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
 theorem trivialConst_injective [Nonempty M] :
     Function.Injective (trivialConst I M n (F := F)) := fun _ _ h ↦ by
   obtain ⟨x₀⟩ := ‹Nonempty M›; simpa using congr($h x₀)
+
+section TrivialPullback
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Pullback of `C^n` sections of `Bundle.Trivial N F` along a `C^n` map `φ : M → N`: the section
+`x ↦ s (φ x)`. -/
+def trivialPullback (φ : C^n⟮I, M; J, N⟯) :
+    Cₛ^n⟮J; F, Bundle.Trivial N F⟯ →ₗ[𝕜] Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
+  ⟨⟨fun s ↦ trivialEquiv.symm ((trivialEquiv (𝕜 := 𝕜) s).comp φ), fun _ _ ↦ (rfl)⟩,
+    fun _ _ ↦ (rfl)⟩
+
+@[simp] theorem trivialPullback_apply (φ : C^n⟮I, M; J, N⟯) (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯)
+    (x : M) : trivialPullback φ s x = s (φ x) := (rfl)
+
+end TrivialPullback
 
 section Basis
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {ι : Type*} (b : Module.Basis ι 𝕜 F)
