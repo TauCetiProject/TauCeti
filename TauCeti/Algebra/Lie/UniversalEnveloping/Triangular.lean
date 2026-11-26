@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Subalgebra
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Decomposition
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Triangular
 public import TauCeti.Algebra.Lie.Weights.Borel
+import TauCeti.Algebra.Lie.Subalgebra.Complement
 
 /-!
 # Factorizations of the universal enveloping algebra
@@ -86,25 +87,15 @@ theorem negativeNilradical_mul_cartan_mul_positiveNilradical_eq_top :
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K
 
-private theorem isCompl_cartan_positiveNilradical_ofLe :
-    IsCompl ((H.ofLe (le_borelSubalgebra H b)) : Submodule K (borelSubalgebra H b))
-      (((positiveNilradical H b).ofLe (positiveNilradical_le_borelSubalgebra H b)) :
-        Submodule K (borelSubalgebra H b)) := by
-  rw [(borelSubalgebra H b : Submodule K L).mapIic.isCompl_iff, Set.Iic.isCompl_iff]
-  simp only [Submodule.coe_mapIic_apply, LieSubalgebra.coe_ofLe,
-    Submodule.map_subtype_range_inclusion]
-  exact ⟨disjoint_cartan_positiveNilradical H b, (borelSubalgebra_toSubmodule H b).symm⟩
-
 /-- Multiplication identifies the Cartan and positive enveloping factors with the Borel
 enveloping algebra. -/
 noncomputable def borelMulEquiv :
     U H ⊗[K] U (positiveNilradical H b) ≃ₗ[K] U (borelSubalgebra H b) :=
-  (TensorProduct.congr
-    (UniversalEnvelopingAlgebra.mapEquiv K
-      (LieSubalgebra.equivOfLe (le_borelSubalgebra H b))).toLinearEquiv
-    (UniversalEnvelopingAlgebra.mapEquiv K
-      (LieSubalgebra.equivOfLe (positiveNilradical_le_borelSubalgebra H b))).toLinearEquiv).trans
-    (LieSubalgebra.mulEquiv _ _ (isCompl_cartan_positiveNilradical_ofLe H b))
+  LieSubalgebra.mulEquivOfLe (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm)
 
 /-- The Borel decomposition sends a pure tensor to the ordered product of its two images. -/
 @[simp]
@@ -112,17 +103,12 @@ theorem borelMulEquiv_tmul (h : U H) (n : U (positiveNilradical H b)) :
     borelMulEquiv H b (h ⊗ₜ n) =
       UniversalEnvelopingAlgebra.map K (LieSubalgebra.inclusion (le_borelSubalgebra H b)) h *
         UniversalEnvelopingAlgebra.map K
-          (LieSubalgebra.inclusion (positiveNilradical_le_borelSubalgebra H b)) n := by
-  have hc (A : LieSubalgebra K L) (hA : A ≤ borelSubalgebra H b) :
-      (UniversalEnvelopingAlgebra.map K (A.ofLe hA).incl).comp
-          (UniversalEnvelopingAlgebra.mapEquiv K (LieSubalgebra.equivOfLe hA)).toAlgHom =
-        UniversalEnvelopingAlgebra.map K (LieSubalgebra.inclusion hA) := by
-    rw [UniversalEnvelopingAlgebra.mapEquiv_toAlgHom, ← UniversalEnvelopingAlgebra.map_comp]
-    congr 1
-  simp only [borelMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LieSubalgebra.mulEquiv_tmul, AlgEquiv.toLinearEquiv_apply]
-  exact congrArg₂ (· * ·) (AlgHom.congr_fun (hc H _) h)
-    (AlgHom.congr_fun (hc (positiveNilradical H b) _) n)
+          (LieSubalgebra.inclusion (positiveNilradical_le_borelSubalgebra H b)) n :=
+  LieSubalgebra.mulEquivOfLe_tmul (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm) h n
 
 /-- The inverse Borel decomposition recovers the Cartan and positive factors of a product. -/
 @[simp]
@@ -130,8 +116,12 @@ theorem borelMulEquiv_symm_mul (h : U H) (n : U (positiveNilradical H b)) :
     (borelMulEquiv H b).symm
       (UniversalEnvelopingAlgebra.map K (LieSubalgebra.inclusion (le_borelSubalgebra H b)) h *
         UniversalEnvelopingAlgebra.map K
-          (LieSubalgebra.inclusion (positiveNilradical_le_borelSubalgebra H b)) n) = h ⊗ₜ n := by
-  rw [← borelMulEquiv_tmul H b, LinearEquiv.symm_apply_apply]
+          (LieSubalgebra.inclusion (positiveNilradical_le_borelSubalgebra H b)) n) = h ⊗ₜ n :=
+  LieSubalgebra.mulEquivOfLe_symm_mul (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm) h n
 
 /-- **The triangular decomposition of `U(L)`**: multiplication identifies
 `U(n⁻) ⊗ (U(H) ⊗ U(n⁺))` with `U(L)`, sending `f ⊗ h ⊗ e` to the ordered product `f h e` of the
@@ -140,8 +130,12 @@ the Borel decomposition `TauCeti.UniversalEnvelopingAlgebra.borelMulEquiv` follo
 decomposition of `U(L)` along `L = n⁻ ⊕ 𝔟`. -/
 noncomputable def triangularMulEquiv :
     U (negativeNilradical H b) ⊗[K] (U H ⊗[K] U (positiveNilradical H b)) ≃ₗ[K] U L :=
-  (TensorProduct.congr (LinearEquiv.refl K _) (borelMulEquiv H b)).trans
-    (LieSubalgebra.mulEquiv _ _ (isCompl_negativeNilradical_borelSubalgebra H b))
+  LieSubalgebra.triangularMulEquiv (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm)
+    (negativeNilradical H b) (isCompl_negativeNilradical_borelSubalgebra H b)
 
 /-- The triangular decomposition sends a pure tensor to the ordered product of its three
 images. -/
@@ -151,10 +145,13 @@ theorem triangularMulEquiv_tmul (f : U (negativeNilradical H b)) (h : U H)
     triangularMulEquiv H b (f ⊗ₜ (h ⊗ₜ e)) =
       UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
         UniversalEnvelopingAlgebra.map K H.incl h *
-          UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e := by
-  simp only [triangularMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.refl_apply, borelMulEquiv_tmul, LieSubalgebra.mulEquiv_tmul, map_mul,
-    ← AlgHom.comp_apply, map_incl_comp_map_inclusion, mul_assoc]
+          UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e :=
+  LieSubalgebra.triangularMulEquiv_tmul (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm)
+    (negativeNilradical H b) (isCompl_negativeNilradical_borelSubalgebra H b) f h e
 
 /-- The inverse triangular decomposition recovers the three factors of an ordered product. -/
 @[simp]
@@ -164,8 +161,13 @@ theorem triangularMulEquiv_symm_mul_mul (f : U (negativeNilradical H b)) (h : U 
         (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
           UniversalEnvelopingAlgebra.map K H.incl h *
             UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e) =
-      f ⊗ₜ (h ⊗ₜ e) := by
-  rw [← triangularMulEquiv_tmul H b, LinearEquiv.symm_apply_apply]
+      f ⊗ₜ (h ⊗ₜ e) :=
+  LieSubalgebra.triangularMulEquiv_symm_mul_mul (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm)
+    (negativeNilradical H b) (isCompl_negativeNilradical_borelSubalgebra H b) f h e
 
 variable {H} in
 /-- **Linear maps out of `U(L)` are determined on ordered products**: two linear maps from `U(L)`
@@ -181,14 +183,12 @@ theorem linearMap_ext_triangular {M : Type*} [AddCommMonoid M] [Module K M]
         g' (UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
           UniversalEnvelopingAlgebra.map K H.incl h *
             UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e)) :
-    g = g' := by
-  have hcomp : g ∘ₗ (triangularMulEquiv H b).toLinearMap =
-      g' ∘ₗ (triangularMulEquiv H b).toLinearMap :=
-    TensorProduct.ext_threefold' fun f h e ↦ by
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, triangularMulEquiv_tmul] using
-        hg f h e
-  refine LinearMap.ext fun u ↦ ?_
-  obtain ⟨t, rfl⟩ := (triangularMulEquiv H b).surjective u
-  exact LinearMap.congr_fun hcomp t
+    g = g' :=
+  LieSubalgebra.linearMap_ext_triangular (le_borelSubalgebra H b)
+    (positiveNilradical_le_borelSubalgebra H b)
+    (LieSubalgebra.isCompl_ofLe (le_borelSubalgebra H b)
+      (positiveNilradical_le_borelSubalgebra H b) (disjoint_cartan_positiveNilradical H b)
+      (borelSubalgebra_toSubmodule H b).symm)
+    (negativeNilradical H b) (isCompl_negativeNilradical_borelSubalgebra H b) hg
 
 end TauCeti.UniversalEnvelopingAlgebra

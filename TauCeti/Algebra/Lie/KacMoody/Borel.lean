@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.KacMoody.Triangular
+public import TauCeti.Algebra.Lie.Subalgebra.Complement
 import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 
 /-!
@@ -119,11 +120,10 @@ theorem isCompl_negativeSubalgebra_borelSubalgebra :
 theorem isCompl_cartanSubalgebra_positiveSubalgebra_ofLe :
     IsCompl
       ((cartanSubalgebra R).ofLe (cartanSubalgebra_le_borelSubalgebra R)).toSubmodule
-      ((positiveSubalgebra R).ofLe (positiveSubalgebra_le_borelSubalgebra R)).toSubmodule := by
-  rw [(borelSubalgebra R).toSubmodule.mapIic.isCompl_iff, Set.Iic.isCompl_iff]
-  simp only [Submodule.coe_mapIic_apply, LieSubalgebra.coe_ofLe,
-    Submodule.map_subtype_range_inclusion]
-  exact ⟨(disjoint_positiveSubalgebra_cartanSubalgebra R).symm,
-    (borelSubalgebra_toSubmodule R).symm⟩
+      ((positiveSubalgebra R).ofLe (positiveSubalgebra_le_borelSubalgebra R)).toSubmodule :=
+  LieSubalgebra.isCompl_ofLe (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (disjoint_positiveSubalgebra_cartanSubalgebra R).symm
+    (borelSubalgebra_toSubmodule R).symm
 
 end TauCeti.KacMoody

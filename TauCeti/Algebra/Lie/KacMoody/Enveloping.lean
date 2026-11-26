@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.KacMoody.Borel
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Decomposition
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Triangular
 
 /-!
 # Triangular PBW decomposition for a Kac–Moody presentation
@@ -19,8 +19,9 @@ highest-weight modules. The decompositions are linear: the factors need not comm
 
 We apply `LieSubalgebra.mulEquiv`, the relative PBW theorem for complementary subalgebras,
 twice. There is no finite-dimensionality, finite-type, or characteristic-zero assumption.
-The organization and tensor computation proofs adapt the finite-type construction in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Triangular` to the full Kac–Moody presentation.
+The shared assembly in `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Triangular`, extracted
+from the finite-type construction in `TauCeti.Algebra.Lie.UniversalEnveloping.Triangular`,
+provides the equivalences and their computation and extensionality rules.
 
 ## References
 
@@ -42,12 +43,9 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra K
 /-- Multiplication factors the Borel enveloping algebra into its Cartan and positive factors. -/
 noncomputable def borelMulEquiv :
     U (cartanSubalgebra R) ⊗[K] U (positiveSubalgebra R) ≃ₗ[K] U (borelSubalgebra R) :=
-  (TensorProduct.congr
-    (UniversalEnvelopingAlgebra.mapEquiv K
-      (LieSubalgebra.equivOfLe (cartanSubalgebra_le_borelSubalgebra R))).toLinearEquiv
-    (UniversalEnvelopingAlgebra.mapEquiv K
-      (LieSubalgebra.equivOfLe (positiveSubalgebra_le_borelSubalgebra R))).toLinearEquiv).trans
-    (LieSubalgebra.mulEquiv _ _ (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R))
+  LieSubalgebra.mulEquivOfLe (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R)
 
 /-- The Borel PBW equivalence multiplies the images of the two tensor factors in order. -/
 @[simp]
@@ -56,13 +54,10 @@ theorem borelMulEquiv_tmul (h : U (cartanSubalgebra R)) (e : U (positiveSubalgeb
       UniversalEnvelopingAlgebra.map K
           (LieSubalgebra.inclusion (cartanSubalgebra_le_borelSubalgebra R)) h *
         UniversalEnvelopingAlgebra.map K
-          (LieSubalgebra.inclusion (positiveSubalgebra_le_borelSubalgebra R)) e := by
-  simp only [borelMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LieSubalgebra.mulEquiv_tmul, AlgEquiv.toLinearEquiv_apply,
-    ← AlgEquiv.toAlgHom_apply, UniversalEnvelopingAlgebra.mapEquiv_toAlgHom,
-    ← AlgHom.comp_apply, ← UniversalEnvelopingAlgebra.map_comp]
-  -- The inclusion after `equivOfLe` is the original inclusion of the subalgebra.
-  rfl
+          (LieSubalgebra.inclusion (positiveSubalgebra_le_borelSubalgebra R)) e :=
+  LieSubalgebra.mulEquivOfLe_tmul (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R) h e
 
 /-- The inverse Borel decomposition recovers the Cartan and positive factors of a product. -/
 @[simp]
@@ -71,8 +66,10 @@ theorem borelMulEquiv_symm_mul (h : U (cartanSubalgebra R)) (e : U (positiveSuba
       (UniversalEnvelopingAlgebra.map K
           (LieSubalgebra.inclusion (cartanSubalgebra_le_borelSubalgebra R)) h *
         UniversalEnvelopingAlgebra.map K
-          (LieSubalgebra.inclusion (positiveSubalgebra_le_borelSubalgebra R)) e) = h ⊗ₜ e := by
-  rw [← borelMulEquiv_tmul, LinearEquiv.symm_apply_apply]
+          (LieSubalgebra.inclusion (positiveSubalgebra_le_borelSubalgebra R)) e) = h ⊗ₜ e :=
+  LieSubalgebra.mulEquivOfLe_symm_mul (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R) h e
 
 /-- The triangular PBW decomposition of the full presentation: multiplication in the order
 `n⁻`, `𝔥`, `n⁺` is a linear equivalence, with no finiteness assumptions. -/
@@ -80,8 +77,10 @@ noncomputable def triangularMulEquiv :
     U (negativeSubalgebra R) ⊗[K]
       (U (cartanSubalgebra R) ⊗[K] U (positiveSubalgebra R)) ≃ₗ[K]
         U (PresentedLieAlgebra R) :=
-  (TensorProduct.congr (LinearEquiv.refl K _) (borelMulEquiv R)).trans
-    (LieSubalgebra.mulEquiv _ _ (isCompl_negativeSubalgebra_borelSubalgebra R))
+  LieSubalgebra.triangularMulEquiv (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R)
+    (negativeSubalgebra R) (isCompl_negativeSubalgebra_borelSubalgebra R)
 
 /-- A pure tensor maps to the ordered product of its negative, Cartan, and positive factors. -/
 @[simp]
@@ -90,10 +89,11 @@ theorem triangularMulEquiv_tmul (f : U (negativeSubalgebra R))
     triangularMulEquiv R (f ⊗ₜ (h ⊗ₜ e)) =
       UniversalEnvelopingAlgebra.map K (negativeSubalgebra R).incl f *
         UniversalEnvelopingAlgebra.map K (cartanSubalgebra R).incl h *
-          UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e := by
-  simp only [triangularMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.refl_apply, borelMulEquiv_tmul, LieSubalgebra.mulEquiv_tmul, map_mul,
-    ← AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_incl_comp_map_inclusion, mul_assoc]
+          UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e :=
+  LieSubalgebra.triangularMulEquiv_tmul (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R)
+    (negativeSubalgebra R) (isCompl_negativeSubalgebra_borelSubalgebra R) f h e
 
 /-- The inverse triangular decomposition recovers a tensor from an ordered product. -/
 @[simp]
@@ -102,8 +102,11 @@ theorem triangularMulEquiv_symm_mul_mul (f : U (negativeSubalgebra R))
     (triangularMulEquiv R).symm
       (UniversalEnvelopingAlgebra.map K (negativeSubalgebra R).incl f *
         UniversalEnvelopingAlgebra.map K (cartanSubalgebra R).incl h *
-          UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e) = f ⊗ₜ (h ⊗ₜ e) := by
-  rw [← triangularMulEquiv_tmul, LinearEquiv.symm_apply_apply]
+          UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e) = f ⊗ₜ (h ⊗ₜ e) :=
+  LieSubalgebra.triangularMulEquiv_symm_mul_mul (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R)
+    (negativeSubalgebra R) (isCompl_negativeSubalgebra_borelSubalgebra R) f h e
 
 /-- Linear maps out of the full enveloping algebra are determined by ordered products. -/
 theorem linearMap_ext_triangular {M : Type*} [AddCommMonoid M] [Module K M]
@@ -115,13 +118,10 @@ theorem linearMap_ext_triangular {M : Type*} [AddCommMonoid M] [Module K M]
             UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e) =
         g' (UniversalEnvelopingAlgebra.map K (negativeSubalgebra R).incl f *
           UniversalEnvelopingAlgebra.map K (cartanSubalgebra R).incl h *
-            UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e)) : g = g' := by
-  have hcomp : g ∘ₗ (triangularMulEquiv R).toLinearMap =
-      g' ∘ₗ (triangularMulEquiv R).toLinearMap :=
-    TensorProduct.ext_threefold' fun f h e => by
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, triangularMulEquiv_tmul] using hg f h e
-  refine LinearMap.ext fun u => ?_
-  obtain ⟨t, rfl⟩ := (triangularMulEquiv R).surjective u
-  exact LinearMap.congr_fun hcomp t
+            UniversalEnvelopingAlgebra.map K (positiveSubalgebra R).incl e)) : g = g' :=
+  LieSubalgebra.linearMap_ext_triangular (cartanSubalgebra_le_borelSubalgebra R)
+    (positiveSubalgebra_le_borelSubalgebra R)
+    (isCompl_cartanSubalgebra_positiveSubalgebra_ofLe R)
+    (negativeSubalgebra R) (isCompl_negativeSubalgebra_borelSubalgebra R) hg
 
 end TauCeti.KacMoody
