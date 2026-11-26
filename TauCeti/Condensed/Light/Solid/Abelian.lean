@@ -7,10 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.Condensed.Light.Solid.Basic
 
 import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
-import Mathlib.CategoryTheory.Preadditive.LeftExact
 import TauCeti.CategoryTheory.Preadditive.Projective.Internal
 import TauCeti.Condensed.Light.NullSequence.Projective
 
@@ -21,7 +21,8 @@ Since the null-sequence module is internally projective, internal Hom out of it 
 functor (`CategoryTheory.InternallyProjective.preservesHomology_ihom`). Consequently the
 condition that one minus the null shift is invertible on this internal Hom passes along exact
 sequences. Light solid modules are closed under kernels, cokernels and extensions, so they form
-an abelian full subcategory whose inclusion preserves finite limits and finite colimits.
+an abelian full subcategory whose inclusion preserves finite limits and finite colimits
+(`CategoryTheory.ObjectProperty.preservesFiniteColimits_ι`).
 
 These are the kernel, cokernel and extension closure properties of Rodríguez Camargo,
 *Notes on Solid Geometry*, [Theorem 3.2.4(1)](https://arxiv.org/abs/2603.03012v1), Section 3.2,
@@ -90,11 +91,5 @@ instance : (IsLightSolid (R := R)).IsClosedUnderCokernels where
 /-- Light solid modules are closed under extensions. -/
 instance : (IsLightSolid (R := R)).IsClosedUnderExtensions where
   prop_X₂_of_shortExact := isLightSolid_X₂_of_shortExact
-
-/-- The inclusion of light solid modules preserves finite colimits, since it preserves
-cokernels. -/
-instance : PreservesFiniteColimits (IsLightSolid (R := R)).ι := by
-  have := (IsLightSolid (R := R)).preservesCokernels_ι
-  exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 end TauCeti
