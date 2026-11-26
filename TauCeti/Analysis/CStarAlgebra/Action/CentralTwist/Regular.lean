@@ -218,7 +218,7 @@ theorem coeFn_regular_unitaryMap (s : G) (ξ : Lp H 2 μ) :
 /-- At the trivial cocycle, the twisted regular pair recovers the ordinary regular
 covariant representation. -/
 @[simp]
-theorem regular_one_toCovariantRepresentation :
+theorem toCovariantRepresentation_regular_one :
     (regular α 1 ρ hρ μ).toCovariantRepresentation =
       CovariantRepresentation.regular α ρ μ := by
   refine CovariantRepresentation.ext (by simp) ?_
