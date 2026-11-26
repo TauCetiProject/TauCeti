@@ -41,7 +41,7 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 * `TauCeti.ConstructionB.sumHalf`: half the coordinate sum modulo two, with kernel
   `ker_sumHalf` and surjectivity `sumHalf_surjective`.
 * `TauCeti.ConstructionB.relIndex_lattice`: Construction B has index two in Construction A.
-* `TauCeti.ConstructionB.mem_constructionA_lattice_iff`: Construction A is the union of
+* `TauCeti.ConstructionB.mem_constructionALattice_iff`: Construction A is the union of
   Construction B and its translate by `2 eᵢ`.
 * `TauCeti.ConstructionB.integralLattice`: Construction B as an integral lattice, with
   `discriminant_integralLattice` and `isEven_integralLattice`.
@@ -224,7 +224,7 @@ theorem relIndex_lattice [Nonempty ι] (hC : BinaryCode.IsEven C) :
 /-- **Construction A is the union of Construction B and its translate by `2 eᵢ`**, for an even
 binary code and any coordinate `i`: a Construction A vector either lies in Construction B or
 differs from a Construction B vector by `2 eᵢ`. -/
-theorem mem_constructionA_lattice_iff [DecidableEq ι] (hC : BinaryCode.IsEven C) (i : ι)
+theorem mem_constructionALattice_iff [DecidableEq ι] (hC : BinaryCode.IsEven C) (i : ι)
     (x : ι → ℚ) :
     x ∈ ConstructionA.lattice 2 C.toAddSubgroup ↔
       x ∈ lattice C ∨ x - Pi.single i (2 : ℚ) ∈ lattice C := by
