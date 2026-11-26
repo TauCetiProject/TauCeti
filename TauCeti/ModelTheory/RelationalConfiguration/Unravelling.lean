@@ -45,6 +45,8 @@ No step uses symmetry or irreflexivity.
 
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff`: two colours agree exactly when the nodes
   have the same length and the same atomic diagram;
+* `TauCeti.RelationalConfiguration.continuous_unravelColor`: the colour of a node depends
+  continuously on the code (it reads finitely many coordinates);
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff_sameAtomicType`: two nodes of the same length
   have the same colour exactly when their vertex tuples have the same atomic type;
 * `TauCeti.RelationalConfiguration.unravelColor_map`: the colour for a relabelled code `σ • c` of
@@ -136,6 +138,22 @@ theorem unravelColor_eq_iff {c d : RelationalConfiguration Language.graph ℕ} {
     rw [← hn]
     refine List.map_inj_left.2 fun i hi ↦ List.map_inj_left.2 fun j hj ↦ ?_
     exact h i (List.mem_range.1 hi) j (List.mem_range.1 hj)
+
+open Filter Topology in
+/-- **The colour of a node depends continuously on the code**: it reads the finitely many
+coordinates `c.eval (adjAtom a_i a_j)` of the vertex tuple `a` of the node. -/
+theorem continuous_unravelColor (x : List ℚ) :
+    Continuous fun c : RelationalConfiguration Language.graph ℕ => unravelColor c x := by
+  refine continuous_iff_continuousAt.2 fun c => ?_
+  have hev (a : Atom Language.graph ℕ) : ∀ᶠ d in 𝓝 c, d.eval a = c.eval a :=
+    (continuous_eval a).continuousAt ((isOpen_discrete {c.eval a}).mem_nhds rfl)
+  have h : ∀ᶠ d in 𝓝 c, ∀ i : Fin x.length, ∀ j : Fin x.length,
+      d.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) =
+        c.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) :=
+    eventually_all.2 fun i => eventually_all.2 fun j => hev _
+  refine (continuousAt_const (y := unravelColor c x)).congr (h.mono fun d hd => ?_)
+  refine unravelColor_eq_iff.2 ⟨rfl, fun i hi j hj => ?_⟩
+  exact Prod.ext (by simp) (by simpa using (hd ⟨i, hi⟩ ⟨j, hj⟩).symm)
 
 /-- Nodes of the same colour have the same length. -/
 theorem length_eq_of_unravelColor_eq {c d : RelationalConfiguration Language.graph ℕ}

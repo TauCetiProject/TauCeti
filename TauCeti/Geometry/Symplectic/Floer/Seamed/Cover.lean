@@ -52,6 +52,7 @@ cylinder replaces the cap. Both are covers attached to the kernel of an onto hom
 
 ## Main definitions
 
+* `TauCeti.Floer.seamedTorusClassHom γ₀`: the torus class `π₁(C, γ₀) → H₂(Y_φ; ℤ)`.
 * `TauCeti.Floer.seamedPeriodHom γ₀ Iω Ic`: the period homomorphism `π₁(C, γ₀) → ℝ × ℤ`.
 * `TauCeti.Floer.seamedPeriodGroup γ₀ Iω Ic`: its image, the period group `Γ`.
 * `TauCeti.Floer.seamedPeriodClass γ₀ Iω Ic`: the period homomorphism onto `Γ`.
@@ -102,9 +103,11 @@ variable {F : Type} [TopologicalSpace F] {φ : F ≃ₜ F} (γ₀ : SeamedPath �
 
 /-! ### The period homomorphism and the period group -/
 
-/-- The torus class of a loop in the path component `C` of `γ₀`, through the inclusion of `C`
-into the space of seamed paths. -/
-private def componentTorusClassHom :
+/-- **The torus class of a loop of seamed paths in the path component `C` of `γ₀`**
+`π₁(C, γ₀) → H₂(Y_φ; ℤ)`: the class of the torus that the loop sweeps out in the mapping torus,
+`TauCeti.SeamedPath.torusClassHom` read through the inclusion of `C` into the space of seamed
+paths. -/
+def seamedTorusClassHom :
     Additive (HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀)) →+
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
         (TopCat.of (MappingTorus φ)) :=
@@ -112,13 +115,28 @@ private def componentTorusClassHom :
     (HomotopyGroup.mapHom (⟨Subtype.val, continuous_subtypeVal⟩ :
       C(pathComponent γ₀, SeamedPath φ)) rfl).toAdditive
 
+/-- The torus class of a loop in the path component of `γ₀` is the torus class of the same loop
+of seamed paths. -/
+theorem seamedTorusClassHom_apply
+    (a : Additive (HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀))) :
+    seamedTorusClassHom γ₀ a =
+      SeamedPath.torusClassHom φ γ₀ (Additive.ofMul (HomotopyGroup.map
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent γ₀, SeamedPath φ)) rfl
+          a.toMul)) :=
+  (rfl)
+
 variable (Iω Ic) in
 /-- **The period homomorphism of a loop of seamed paths** `π₁(C, γ₀) → ℝ × ℤ`, on the path
 component `C` of `γ₀`: a loop of `φ`-seamed paths at `γ₀` goes to the values of the two
 transgressions `Iω` and `Ic` on the class of the torus it sweeps out in the mapping torus. -/
 def seamedPeriodHom :
     Additive (HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀)) →+ ℝ × ℤ :=
-  (Iω.prod Ic).comp (componentTorusClassHom γ₀)
+  (Iω.prod Ic).comp (seamedTorusClassHom γ₀)
+
+/-- The period homomorphism is the torus class followed by the pair of transgressions. -/
+theorem seamedPeriodHom_eq_comp :
+    seamedPeriodHom γ₀ Iω Ic = (Iω.prod Ic).comp (seamedTorusClassHom γ₀) :=
+  (rfl)
 
 /-- The first coordinate of the period class of a loop of seamed paths is the value of `Iω` on
 the torus it sweeps out. -/

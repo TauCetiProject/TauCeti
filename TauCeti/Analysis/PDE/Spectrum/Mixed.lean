@@ -122,10 +122,6 @@ local instance : NormedAddCommGroup (w1pVanishingOnSubmodule mu Omega 2 Γ).toSu
 local instance : InnerProductSpace ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule :=
   inferInstance
 
-/-- `H¹_Γ(Ω)` is complete, as a closed subspace of `H¹(Ω)`. -/
-local instance : CompleteSpace (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule :=
-  (w1pVanishingOnSubmodule mu Omega 2 Γ).isClosed.completeSpace_coe
-
 /-! ### Mixed eigenvalues -/
 
 variable (mu Omega Γ a b c) in
@@ -168,16 +164,6 @@ theorem isMixedEigenvalue_frontier_iff (kappa : ℝ) :
 
 /-! ### The shifted energy form on `H¹_Γ(Ω)` -/
 
-/-- The value map `H¹_Γ(Ω) → L²(Ω)`. -/
-private def valueL (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
-    (Omega : Opens (EuclideanSpace ℝ ι)) (Γ : Set (EuclideanSpace ℝ ι)) :
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
-  W1p.valueL.comp (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
-
-private theorem valueL_apply (u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-    valueL mu Omega Γ u = W1p.value (u : W1p mu Omega 2) := by
-  simp [valueL]
-
 /-- The energy form on `H¹_Γ(Ω)` shifted by `ω` times the `L²` inner product of the values, in
 the shape `B + ω ⟪J ·, J ·⟫` of `TauCeti.isCoercive_add_smul_toSesqForm_comp_of_garding`. -/
 private def shiftedForm
@@ -187,7 +173,7 @@ private def shiftedForm
       (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ :=
   (energyFormH1L hcoeff).bilinearComp (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
       (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL +
-    omega • ((ContinuousLinearMap.toSesqForm (valueL mu Omega Γ)).comp (valueL mu Omega Γ) :
+    omega • ((ContinuousLinearMap.toSesqForm W1pVanishingOn.valueL).comp W1pVanishingOn.valueL :
       (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
         (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ)
 
@@ -196,7 +182,7 @@ private theorem shiftedForm_apply
     (omega : ℝ) (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
     shiftedForm hcoeff Γ omega u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
-        omega * ⟪valueL mu Omega Γ u, valueL mu Omega Γ v⟫_ℝ := by
+        omega * ⟪W1pVanishingOn.valueL u, W1pVanishingOn.valueL v⟫_ℝ := by
   rw [← energyFormH1L_apply hcoeff]
   -- Definitional unfolding: `shiftedForm` is `B.bilinearComp ι ι + ω • (toSesqForm J).comp J`
   -- for the inclusion `ι = subtypeL` and `J = valueL`, and evaluating it uses only
@@ -211,12 +197,12 @@ private theorem forall_shiftedForm_eq_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (omega kappa : ℝ) (u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
     (∀ v, shiftedForm hcoeff Γ omega u v =
-        (kappa + omega) * ⟪valueL mu Omega Γ u, valueL mu Omega Γ v⟫_ℝ) ↔
+        (kappa + omega) * ⟪W1pVanishingOn.valueL u, W1pVanishingOn.valueL v⟫_ℝ) ↔
       ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
           kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   refine forall_congr' fun v ↦ ?_
-  rw [shiftedForm_apply, valueL_apply, valueL_apply, add_mul]
+  rw [shiftedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, add_mul]
   exact add_left_inj _
 
 /-- A Gårding inequality on `H¹_Γ(Ω)` is coercivity of the shifted form
@@ -231,16 +217,8 @@ private theorem isCoercive_shiftedForm
     IsCoercive (shiftedForm hcoeff Γ omega) :=
   isCoercive_add_smul_toSesqForm_comp_of_garding htheta fun v ↦ by
     rw [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply, energyFormH1L_apply,
-      valueL_apply]
+      W1pVanishingOn.valueL_apply]
     exact hgarding v
-
-/-- The value map `H¹_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`, since `H¹_Γ(Ω)` contains
-`H¹₀(Ω)`. -/
-private theorem denseRange_valueL (hΓ : Disjoint Γ Omega) : DenseRange (valueL mu Omega Γ) :=
-  W1p0.denseRange_valueL_two.mono <| by
-    rintro _ ⟨w, rfl⟩
-    exact ⟨⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩, by
-      simp only [valueL_apply, W1p0.valueL_apply]⟩
 
 /-! ### The mixed eigenvalues as a sequence -/
 
@@ -279,13 +257,13 @@ theorem exists_hilbertBasis_nat_isMixedEigenvalue_monotone [Nonempty ι]
   have hB := isCoercive_shiftedForm hcoeff htheta hgarding
   obtain ⟨basis, kappa, u, hmono, htendsto, -, hvalue, heq, hiff, -⟩ :=
     hB.exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone
-      (hrellich.comp_clm (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL)
-      (denseRange_valueL hΓ)
+      (W1pVanishingOn.isCompactOperator_valueL hrellich)
+      (W1pVanishingOn.denseRange_valueL_two hΓ)
       (fun u v ↦ by rw [shiftedForm_apply, shiftedForm_apply, hsymm, real_inner_comm])
       (L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega_nonempty)
   refine ⟨basis, fun k ↦ kappa k - omega, u, fun k l hkl ↦ by simpa using hmono hkl,
     by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-omega) htendsto,
-    fun k ↦ by rw [← valueL_apply, hvalue],
+    fun k ↦ by rw [← W1pVanishingOn.valueL_apply, hvalue],
     fun k ↦ (forall_shiftedForm_eq_iff hcoeff omega _ (u k)).1 ?_, fun kappa' ↦ ?_⟩
   · simpa only [sub_add_cancel] using heq k
   · rw [isMixedEigenvalue_iff]
@@ -370,8 +348,8 @@ private theorem isLeast_of_hilbertBasis
       (shiftedForm hcoeff Γ omega).toLinearMap₁₂ u v =
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ⟪J u, J v⟫_ℝ := by
-    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, shiftedForm_apply, valueL_apply,
-      valueL_apply, hJ, hJ]
+    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, shiftedForm_apply,
+      W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, hJ, hJ]
   -- `C` is admissible for the form exactly when `C + ω` is admissible for the shifted form.
   have hmem (W : Submodule ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) (C : ℝ) :
       (∀ v ∈ W, (shiftedForm hcoeff Γ omega).toLinearMap₁₂ v v ≤ (C + omega) * ‖J v‖ ^ 2) ↔

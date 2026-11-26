@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
@@ -32,8 +32,11 @@ elements are Frobenius groups; their Frobenius kernels are identified in
 * `TauCeti.AffineGroup.map`: the homomorphism of affine groups induced by a ring homomorphism.
 * `TauCeti.affineTranslationSubgroup` and `TauCeti.affineLinearSubgroup`: the two canonical
   factors.
+* `TauCeti.AffineGroup.toAdd_mul_mul_inv_left` and `TauCeti.AffineGroup.mul_mul_inv_right`: over
+  a commutative ring, `(a, u) (b, v) (a, u)⁻¹ = (u b + (1 - v) a, v)`.
 * `TauCeti.isComplement'_affineTranslationSubgroup_affineLinearSubgroup`: the two factors are
   complementary.
+* `TauCeti.normalCore_affineLinearSubgroup`: the linear factor has trivial normal core.
 * `TauCeti.fixedPointFree_conjNormal_affineTranslationSubgroup`: a nonidentity linear factor
   fixes no nonidentity translation.
 * `TauCeti.isFrobeniusComplement_affineLinearSubgroup`: for a finite division ring of order at least
@@ -66,10 +69,6 @@ theorem affineAction_apply_toAdd {F : Type*} [Ring F] (u : Fˣ) (x : Multiplicat
 multiplication. -/
 abbrev AffineGroup (F : Type*) [Ring F] :=
   Multiplicative F ⋊[affineAction F] Fˣ
-
-/-- A one-dimensional affine group over a finite ring is finite. -/
-instance {F : Type*} [Ring F] [Finite F] : Finite (AffineGroup F) :=
-  Finite.of_equiv (Multiplicative F × Fˣ) SemidirectProduct.equivProd.symm
 
 /-- An element `(b, a)` of the affine group sends `x` to `b + a * x`. -/
 instance {F : Type*} [Ring F] : SMul (AffineGroup F) F where
@@ -135,6 +134,22 @@ theorem AffineGroup.map_smul {F E : Type*} [Ring F] [Ring E] (f : F →+* E) (g 
     (x : F) : AffineGroup.map f g • f x = f (g • x) := by
   simp [AffineGroup.smul_def]
 
+/-- **The conjugation formula, translation part.** Over a commutative ring, conjugating `(b, v)`
+by `(a, u)` gives the translation part `u b + (1 - v) a`. -/
+theorem AffineGroup.toAdd_mul_mul_inv_left {F : Type*} [CommRing F] (g h : AffineGroup F) :
+    (g * h * g⁻¹).left.toAdd =
+      (g.right : F) * h.left.toAdd + (1 - (h.right : F)) * g.left.toAdd := by
+  simp only [SemidirectProduct.mul_left, SemidirectProduct.mul_right, SemidirectProduct.inv_left,
+    toAdd_mul, affineAction_apply_toAdd, toAdd_inv, Units.val_mul]
+  rw [mul_comm (g.right : F) (h.right : F), mul_assoc (h.right : F), Units.mul_inv_cancel_left]
+  ring
+
+/-- **The conjugation formula, linear part.** Over a commutative ring, conjugation does not change
+the linear part. -/
+theorem AffineGroup.mul_mul_inv_right {F : Type*} [CommRing F] (g h : AffineGroup F) :
+    (g * h * g⁻¹).right = h.right := by
+  simp [mul_comm g.right]
+
 /-- The normal subgroup of translations in the affine group. -/
 def affineTranslationSubgroup (F : Type*) [Ring F] : Subgroup (AffineGroup F) :=
   (SemidirectProduct.inl : Multiplicative F →* AffineGroup F).range
@@ -142,6 +157,11 @@ def affineTranslationSubgroup (F : Type*) [Ring F] : Subgroup (AffineGroup F) :=
 /-- The subgroup of linear maps fixing zero in the affine group. -/
 def affineLinearSubgroup (F : Type*) [Ring F] : Subgroup (AffineGroup F) :=
   (SemidirectProduct.inr : Fˣ →* AffineGroup F).range
+
+/-- The linear factor is the image of the unit group under `SemidirectProduct.inr`. -/
+theorem affineLinearSubgroup_def (F : Type*) [Ring F] :
+    affineLinearSubgroup F = (SemidirectProduct.inr : Fˣ →* AffineGroup F).range :=
+  (rfl)
 
 /-- An affine transformation is a translation exactly when its linear coordinate is one. -/
 @[simp]
@@ -162,6 +182,21 @@ theorem mem_affineLinearSubgroup_iff {F : Type*} [Ring F] (g : AffineGroup F) :
   · intro hg
     refine ⟨g.right, SemidirectProduct.ext ?_ rfl⟩
     exact Multiplicative.ext hg.symm
+
+/-- The linear factor of an affine group has trivial normal core: conjugating a nonidentity
+element of it by the translation `x ↦ x + 1` gives an element outside it. Equivalently
+(`Subgroup.normalCore_eq_ker`), the affine group acts faithfully on the cosets of the linear
+factor. -/
+theorem normalCore_affineLinearSubgroup (F : Type*) [Ring F] :
+    (affineLinearSubgroup F).normalCore = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
+  let t : AffineGroup F := SemidirectProduct.inl (Multiplicative.ofAdd 1)
+  have h₀ : g.left.toAdd = 0 := (mem_affineLinearSubgroup_iff g).mp (Subgroup.normalCore_le _ hg)
+  have h₁ := (mem_affineLinearSubgroup_iff _).mp (hg t)
+  -- The translation part of `t g t⁻¹` is `1 - v` for `g = (0, v)`, and it must vanish.
+  have h₂ : 1 + -(g.right : F) = 0 := by simpa [t, h₀] using h₁
+  have hv : (g.right : F) = 1 := (add_neg_eq_zero.mp h₂).symm
+  exact AffineGroup.ext (by simpa using h₀) (by simpa using hv)
 
 /-- The translation subgroup of an affine group is normal. -/
 instance {F : Type*} [Ring F] : (affineTranslationSubgroup F).Normal := by
@@ -196,12 +231,17 @@ theorem card_affineTranslationSubgroup (F : Type*) [Ring F] :
       SemidirectProduct.inl_injective).toEquiv.symm).trans
     (Nat.card_congr Multiplicative.toAdd)
 
+/-- The linear factor of an affine group has the same natural cardinality as the unit group. -/
+theorem card_affineLinearSubgroup_eq_card_units (F : Type*) [Ring F] :
+    Nat.card (affineLinearSubgroup F) = Nat.card Fˣ :=
+  Nat.card_congr (MonoidHom.ofInjective
+      (f := (SemidirectProduct.inr : Fˣ →* AffineGroup F))
+      SemidirectProduct.inr_injective).toEquiv.symm
+
 /-- The linear factor of an affine group has natural cardinality one less than the ring. -/
 theorem card_affineLinearSubgroup (F : Type*) [DivisionRing F] :
     Nat.card (affineLinearSubgroup F) = Nat.card F - 1 :=
-  (Nat.card_congr (MonoidHom.ofInjective
-      (f := (SemidirectProduct.inr : Fˣ →* AffineGroup F))
-      SemidirectProduct.inr_injective).toEquiv.symm).trans (Nat.card_units F)
+  (card_affineLinearSubgroup_eq_card_units F).trans (Nat.card_units F)
 
 /-- A one-dimensional affine group has natural cardinality `|F| (|F| - 1)`. -/
 theorem card_affineGroup (F : Type*) [DivisionRing F] :

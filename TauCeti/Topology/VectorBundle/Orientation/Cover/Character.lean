@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
@@ -21,7 +22,9 @@ the **orientation character** `w₁ : π₁(B, b) →* ℤˣ`
 the bundle in the form of a homomorphism on the fundamental group (no cohomology class is
 constructed here). It is `1` on a loop exactly when
 transport along the loop preserves an orientation of `E_b`, and `-1` exactly when it reverses it
-(`orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`).
+(`orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`), also
+stated through `orientationTransport` along a representing loop
+(`orientationCharacter_fromPath_eq_one_iff`, `orientationCharacter_fromPath_eq_neg_one_iff`).
 
 The orientation character is the sign character `IsCoveringMap.signCharacter` of the orientation
 double cover, and the results below specialize the double-cover results of
@@ -70,6 +73,8 @@ and the orientation local system of `Q` has the orientation character as its mon
 
 * `orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`: the
   character is `1` where transport preserves an orientation and `-1` where it reverses it.
+* `orientationCharacter_fromPath_eq_one_iff`, `orientationCharacter_fromPath_eq_neg_one_iff`: the
+  same statements for the class of a loop, through `orientationTransport`.
 * `TauCeti.VectorBundleOrientation.orientationCharacter_eq_one`,
   `TauCeti.VectorBundleOrientation.nonempty_iff_orientationCharacter_eq_one`: a bundle over a
   connected, locally path-connected base is orientable exactly when its orientation character is
@@ -163,6 +168,25 @@ theorem orientationCharacter_eq_neg_one_iff {b : B} (g : FundamentalGroup B b)
       ((isCoveringMap_proj hι).monodromy g.toPath e : VectorBundleOrientationCover F E ι) =
         deck e :=
   IsCoveringMap.signCharacter_eq_neg_one_iff _ deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) _ g e
+
+/-- The orientation character of the class of a loop `γ` is `1` exactly when transport along `γ`
+returns an orientation `o` of the fibre to itself. -/
+theorem orientationCharacter_fromPath_eq_one_iff {b : B} (γ : Path b b)
+    (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = 1 ↔
+      orientationTransport E hι γ o = o := by
+  rw [orientationCharacter_eq_one_iff_monodromy_eq hι _ ⟨⟨b, o⟩, rfl⟩,
+    orientationTransport_apply, ← (fiberEquiv F E ι b).injective.eq_iff, fiberEquiv_mk]
+
+/-- The orientation character of the class of a loop `γ` is `-1` exactly when transport along `γ`
+carries an orientation `o` of the fibre to the opposite orientation. -/
+theorem orientationCharacter_fromPath_eq_neg_one_iff {b : B} (γ : Path b b)
+    (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = -1 ↔
+      orientationTransport E hι γ o = -o := by
+  rw [orientationCharacter_eq_neg_one_iff hι _ ⟨⟨b, o⟩, rfl⟩, orientationTransport_apply,
+    ← fiberEquiv_mk (F := F) (-o), (fiberEquiv F E ι b).injective.eq_iff, Subtype.ext_iff,
+    deck_apply]
 
 /-! ### Orientability -/
 

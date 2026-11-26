@@ -61,9 +61,10 @@ The structure follows the proof of the area formula in
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
 * `TauCeti.measurable_normDet_adjoint_fderiv`,
+  `TauCeti.measurable_ofReal_normDet_adjoint_fderiv`,
   `TauCeti.measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero`,
-  `TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv`: Borel measurability of the
-  coarea Jacobian and of the regular coarea locus.
+  `TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv`: measurability of the coarea
+  Jacobian and Borel measurability of the regular coarea locus.
 * `lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv`:
   the coarea formula for maps with surjective derivative.
 * `ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt`: almost every
@@ -196,13 +197,22 @@ end ApproximatesLinearOn
 namespace TauCeti
 
 /-- The coarea Jacobian `x ↦ (fderiv ℝ f x)†.normDet` of a map between finite-dimensional real
-inner product spaces is Borel measurable. -/
+inner product spaces is measurable. -/
 @[fun_prop]
 theorem measurable_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
     [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (f : E → F) :
     Measurable fun x ↦ (fderiv ℝ f x).adjoint.normDet :=
   ContinuousLinearMap.continuous_normDet_adjoint.measurable.comp (measurable_fderiv ℝ f)
+
+/-- The `ℝ≥0∞`-valued coarea Jacobian `x ↦ ENNReal.ofReal (fderiv ℝ f x)†.normDet` of a map between
+finite-dimensional real inner product spaces is measurable. -/
+@[fun_prop]
+theorem measurable_ofReal_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (f : E → F) :
+    Measurable fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet :=
+  ENNReal.measurable_ofReal.comp (measurable_normDet_adjoint_fderiv f)
 
 /-- The set of differentiability points with nonzero coarea Jacobian is Borel measurable. -/
 theorem measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero {E F : Type*}

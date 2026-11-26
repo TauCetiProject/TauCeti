@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.RingTheory.ClassGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Algebra.Group.Submonoid.Units
 import TauCeti.RingTheory.ClassGroup.HeightOneSpectrum
 import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
@@ -41,6 +42,8 @@ the everywhere-integral units together with the principal finite ideles.
   of `toFractionalIdeal`.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
   everywhere-integral units are the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.range_units_map_val_eq_integralUnits`: the everywhere-integral
+  units are the images of the units of the integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.mem_integralUnits_iff_val_mem_and_inv_mem`: membership
   means that both the idele and its inverse are integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
@@ -109,6 +112,12 @@ theorem coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) 
     (x : 𝔸ᶠ[R, K]) v ≠ 0 :=
   (isUnit_iff.mp x.isUnit).1 v
 
+/-- Every component of the inverse of a finite idele is the inverse of the component. -/
+@[simp]
+theorem coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v = ((x : 𝔸ᶠ[R, K]) v)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← mul_apply, Units.inv_mul, one_apply])
+
 /-- The valuation of a component of a finite idele is nonzero. -/
 theorem valued_coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
     Valued.v ((x : 𝔸ᶠ[R, K]) v) ≠ 0 := by
@@ -121,11 +130,9 @@ theorem eventually_valued_coe_units_apply_eq_one (x : 𝔸ᶠ[R, K]ˣ) :
   (isUnit_iff.mp x.isUnit).2
 
 /-- The valuations of a finite idele and of its inverse at a place are inverse to each other. -/
-@[simp] theorem valued_coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
-    Valued.v (((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = (Valued.v ((x : 𝔸ᶠ[R, K]) v))⁻¹ :=
-  (inv_eq_of_mul_eq_one_right (by
-    rw [← map_mul, ← mul_apply, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_apply,
-      map_one])).symm
+theorem valued_coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    Valued.v (((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = (Valued.v ((x : 𝔸ᶠ[R, K]) v))⁻¹ := by
+  rw [coe_units_inv_apply, map_inv₀]
 
 /-- The `v`-adic order of a finite idele `x`, that is, the exponent of `v` in the fractional
 ideal that `x` defines.  The sign is chosen so that a uniformizer at `v` has order `1`. -/
@@ -366,6 +373,15 @@ finite idele lies in `integralUnits` exactly when it and its inverse are integra
 theorem integralUnits_eq_units_integralAdeles :
     integralUnits R K = (integralAdeles R K).toSubmonoid.units := by
   rw [← sIntegralUnits_empty, sIntegralUnits_eq_units_sIntegralAdeles, sIntegralAdeles_empty]
+
+variable (R K) in
+/-- The units of `𝔸_f` coming from units of the integral adeles are the everywhere-integral
+units. -/
+theorem range_units_map_val_eq_integralUnits :
+    (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range =
+      integralUnits R K := by
+  rw [integralUnits_eq_units_integralAdeles]
+  exact (integralAdeles R K).toSubmonoid.range_units_map_subtype
 
 /-- An idele is an everywhere-integral unit if and only if it and its inverse
 are integral finite adeles. -/

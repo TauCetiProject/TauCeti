@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Topology.Algebra.Group.Defs
+public import TauCeti.Topology.FiberBundle.MapFiber
 public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
@@ -28,11 +29,26 @@ This is the local step shared by reductions of the orthonormal frame bundle
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`) and of principal
 bundles (`TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem`).
 
+When such trivializations cover the base (`TauCeti.IsLocallyTrivialReduction proj H S`), the fibres
+of `S` over `B` (`TauCeti.MapFiber`) form a fibre bundle with fibre `H`
+(`TauCeti.IsLocallyTrivialReduction.fiberBundle`), and a principal `H`-bundle when the action of
+`G` on `Z` is an action preserving `proj` (`TauCeti.IsLocallyTrivialReduction.principalBundle`).
+
+## Main definitions
+
+* `TauCeti.reductionMulAction`: the right action of `H` on a set `S` that `H` carries into itself.
+* `TauCeti.IsLocallyTrivialReduction proj H S`: every point of the base lies in the base set of an
+  `H`-equivariant trivialization of `S`.
+* `TauCeti.IsLocallyTrivialReduction.atlas`, `TauCeti.IsLocallyTrivialReduction.fiberBundle`: the
+  atlas of chosen equivariant trivializations, and the fibre bundle of `S` it defines.
+
 ## Main results
 
 * `Bundle.Trivialization.exists_trivialization_of_continuousOn_symm_mem`: a set stable under
   exactly a subgroup `H` is trivial with fibre `H`, equivariantly, wherever an equivariant
   trivialization can be corrected into it continuously.
+* `TauCeti.IsLocallyTrivialReduction.principalBundle`: a locally trivial reduction is a principal
+  `H`-bundle.
 
 ## References
 
@@ -170,3 +186,129 @@ theorem exists_trivialization_of_continuousOn_symm_mem {x : B} (hx : x ∈ U) :
   rw [Subgroup.coe_mul, coe_toSubgroup h₂, coe_toSubgroup h₁, he _ _ (hUe hp), hproj, mul_assoc]
 
 end Bundle.Trivialization
+
+/-! ### Locally trivial reductions -/
+
+open Bundle
+
+namespace TauCeti
+
+variable {B Z G : Type*} [Group G] {H : Subgroup G} {S : Set Z}
+
+section Action
+
+variable [MulAction Gᵐᵒᵖ Z]
+
+/-- The right action of a subgroup `H` on a set `S` that `H` carries into itself: the right action
+of `G`, restricted. -/
+@[instance_reducible]
+def reductionMulAction (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S) : MulAction Hᵐᵒᵖ S where
+  smul g p := ⟨op (g.unop : G) • (p : Z), hS p p.property _ g.unop.property⟩
+  one_smul p := Subtype.ext (one_smul Gᵐᵒᵖ (p : Z))
+  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : G)) (op (h.unop : G)) (p : Z))
+
+/-- The action of `g ∈ H` on a point of `S` is that of `g` on `Z`. -/
+@[simp]
+theorem coe_reductionMulAction_smul (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S) (g : Hᵐᵒᵖ) (p : S) :
+    letI := reductionMulAction hS
+    ((g • p : S) : Z) = op (g.unop : G) • (p : Z) :=
+  (rfl)
+
+/-- The action of `g ∈ H` on a point `p` of `S` is the point `op g • p` of `S`, with any proof
+that it lies in `S`. -/
+theorem reductionMulAction_smul_eq_mk (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S) (g : H) (p : S)
+    (hgp : op (g : G) • (p : Z) ∈ S) :
+    letI := reductionMulAction hS
+    op g • p = ⟨_, hgp⟩ :=
+  Subtype.ext (coe_reductionMulAction_smul hS (op g) p)
+
+/-- The action of `H` on `S` preserves a map `proj` that the action of `G` preserves. -/
+theorem proj_reductionMulAction_smul {proj : Z → B}
+    (hproj : ∀ (g : Gᵐᵒᵖ) (z : Z), proj (g • z) = proj z) (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S)
+    (g : Hᵐᵒᵖ) (p : S) :
+    letI := reductionMulAction hS
+    proj (g • p : S) = proj p :=
+  hproj _ _
+
+end Action
+
+variable [TopologicalSpace B] [TopologicalSpace Z] [TopologicalSpace G]
+
+section Predicate
+
+variable [SMul Gᵐᵒᵖ Z]
+
+/-- A set `S` of points of `Z` is a *locally trivial reduction* of `proj : Z → B` to a subgroup `H`
+when every point of the base lies in the base set of a trivialization of `S` with fibre `H` that
+turns the right action of `H` into right multiplication. -/
+def IsLocallyTrivialReduction (proj : Z → B) (H : Subgroup G) (S : Set Z) : Prop :=
+  ∀ b : B, ∃ t : Trivialization H (fun p : S ↦ proj p), b ∈ t.baseSet ∧
+    ∀ (g : H) (p : S) (hgp : op (g : G) • (p : Z) ∈ S),
+      proj p ∈ t.baseSet → t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g)
+
+/-- Unfolds `TauCeti.IsLocallyTrivialReduction`. -/
+theorem isLocallyTrivialReduction_iff {proj : Z → B} : IsLocallyTrivialReduction proj H S ↔
+    ∀ b : B, ∃ t : Trivialization H (fun p : S ↦ proj p), b ∈ t.baseSet ∧
+      ∀ (g : H) (p : S) (hgp : op (g : G) • (p : Z) ∈ S),
+        proj p ∈ t.baseSet → t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) :=
+  Iff.rfl
+
+namespace IsLocallyTrivialReduction
+
+variable {proj : Z → B} (hS : IsLocallyTrivialReduction proj H S)
+
+/-- The atlas of `S` given by the chosen equivariant trivializations of a locally trivial
+reduction. -/
+def atlas : MapFiber.Atlas H (fun p : S ↦ proj p) :=
+  ⟨fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose,
+    fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose_spec.1⟩
+
+/-- The trivialization of the atlas at `b` is the chosen equivariant trivialization at `b`. -/
+theorem atlas_trivAt (b : B) :
+    hS.atlas.trivAt b = (isLocallyTrivialReduction_iff.mp hS b).choose :=
+  (rfl)
+
+/-- The trivializations of the atlas turn the action of `H` into right multiplication. -/
+theorem atlas_trivAt_mk_smul (b : B) (g : H) (p : S) (hgp : op (g : G) • (p : Z) ∈ S)
+    (hp : proj p ∈ (hS.atlas.trivAt b).baseSet) :
+    hS.atlas.trivAt b ⟨_, hgp⟩ = ((hS.atlas.trivAt b p).1, (hS.atlas.trivAt b p).2 * g) :=
+  (isLocallyTrivialReduction_iff.mp hS b).choose_spec.2 g p hgp hp
+
+/-- **A locally trivial reduction is a fibre bundle** with fibre `H`: the fibres of `S` over the
+base, with the chosen trivializations as atlas. -/
+@[instance_reducible]
+def fiberBundle : FiberBundle H (MapFiber fun p : S ↦ proj p) :=
+  hS.atlas.fiberBundle
+
+/-- The trivialization at `b` of the fibre bundle of a locally trivial reduction is the chosen
+equivariant trivialization of `S` at `b`, read on the fibres of `S`. -/
+theorem trivializationAt_fiberBundle (b : B) :
+    letI := hS.fiberBundle
+    trivializationAt H (MapFiber fun p : S ↦ proj p) b = (hS.atlas.trivAt b).toMapFiber :=
+  hS.atlas.trivializationAt_eq b
+
+end IsLocallyTrivialReduction
+
+end Predicate
+
+namespace IsLocallyTrivialReduction
+
+variable [MulAction Gᵐᵒᵖ Z] {proj : Z → B} (hS : IsLocallyTrivialReduction proj H S)
+
+/-- **A locally trivial reduction is a principal `H`-bundle**, for a right action of `G` preserving
+`proj` that `H` carries `S` into. -/
+theorem principalBundle (hproj : ∀ (g : Gᵐᵒᵖ) (z : Z), proj (g • z) = proj z)
+    (hSH : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S) :
+    letI := hS.fiberBundle
+    letI := reductionMulAction hSH
+    letI := MapFiber.mulAction (proj := fun p : S ↦ proj p) (M := Hᵐᵒᵖ)
+      (proj_reductionMulAction_smul hproj hSH)
+    PrincipalBundle H (MapFiber fun p : S ↦ proj p) :=
+  letI := reductionMulAction hSH
+  hS.atlas.principalBundle (proj_reductionMulAction_smul hproj hSH) fun b p hp g ↦ by
+    rw [reductionMulAction_smul_eq_mk hSH g p (hSH p p.property g g.property),
+      hS.atlas_trivAt_mk_smul b g p _ hp]
+
+end IsLocallyTrivialReduction
+
+end TauCeti

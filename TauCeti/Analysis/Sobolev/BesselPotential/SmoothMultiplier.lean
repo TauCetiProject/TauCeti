@@ -62,8 +62,6 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
   multiplies `H^{0,p}` into itself, for every `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function with bounded
   derivatives up to order `k` multiplies `H^{k,p}` into itself, for `1 < p < ∞`.
-* `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`: in particular a Schwartz function
-  multiplies `H^{k,p}` into itself.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg`: the same for the
   negative order `H^{-k,p}`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the two
@@ -160,13 +158,6 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
     exact (ih (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
       (hf.mono_of_one_lt hp hp_top (by linarith))).add
       (ih (fun n hn ↦ hbd n (by omega)) (hf'.2 v))
-
-/-- **Schwartz multipliers act on `H^{k,p}`.** For `1 < p < ∞`, multiplication by a Schwartz
-function maps `H^{k,p}` into itself. -/
-theorem MemSobolev.smulLeftCLM_schwartzMap (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ} (ψ : 𝓢(E, ℂ))
-    {f : 𝓢'(E, F)} (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F ψ f) :=
-  hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-    fun i _ ↦ ⟨_, ψ.norm_iteratedFDeriv_le_seminorm ℝ i⟩
 
 /-- **Multipliers with bounded derivatives act on `H^{-k,p}`.** Let `1 < p < ∞` and let `g` be a
 function whose iterated derivatives of order at most `k` are bounded. Then `g f ∈ H^{-k,p}` for

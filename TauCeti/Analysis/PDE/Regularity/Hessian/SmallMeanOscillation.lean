@@ -27,15 +27,15 @@ proves the a priori estimate
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`, `2 < p < ∞`,
 
-for every such `u` whose weak Hessian `D²u` lies in `Lᵖ` and is integrable, with `C` and the
-threshold `δ` depending only on `n`, `p`, `λ` and `Λ`
+for every such `u` whose weak Hessian `D²u` lies in `Lᵖ`, with `C` and the threshold `δ` depending
+only on `n`, `p`, `λ` and `Λ`
 (`TauCeti.PDE.exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le`). Only the
 mean oscillation of `a` is controlled, not its modulus of continuity, so coefficients with jumps
 are allowed as long as the jumps are small in mean. Coefficients of vanishing mean oscillation have
 small mean oscillation on small balls only; the passage from small balls to all scales, by
-localization, is not treated here. The integrability of `D²u` is the a priori integrability that
-the Fefferman–Stein inequality requires; it holds for instance when `D²u ∈ Lᵖ` vanishes outside a
-bounded set, as for a cutoff of a local solution.
+localization, is not treated here. The membership `D²u ∈ Lᵖ` is the a priori integrability that
+the Fefferman–Stein inequality requires; no further integrability of `D²u`, such as `D²u ∈ L¹`, is
+needed.
 
 ## The argument
 
@@ -185,7 +185,7 @@ following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}` bo
 that on every ball `B` some constant matrix `A`, uniformly elliptic with constants `λ, Λ`, has mean
 deviation `⨍_B ‖a - A‖ ≤ δ` from `a`; both norms are operator norms of the attached bilinear
 forms. Let `u ∈ W^{2,2}(ℝ^{n+1})` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere, with `f ∈ Lᵖ`, and
-let the weak Hessian `D²u` be integrable and in `Lᵖ`. Then
+let the weak Hessian `D²u` lie in `Lᵖ`. Then
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`.
 
@@ -204,8 +204,6 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le 
           (∀ᵐ x, ∑ i, ∑ j, a x i j *
             ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
               f x) →
-          Integrable (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
-            EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) →
           MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
             EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p volume →
           MemLp f p volume →
@@ -216,8 +214,8 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le 
     (E := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (F := ℝ) hp hp_top
     (decayConst n lam Lam) (forcingConst n lam Lam) ((n + 1) ^ 2 * forcingConst n lam Lam)
     (2 * Lam)
-  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u f hu hint hgp hfp =>
-    h hint hgp hfp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
+  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u f hu hgp hfp =>
+    h hgp hfp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
   -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   exact (setAverage_norm_iteratedGradient_sub_sq_le ha hbd hu hp.le hgp hq hqp hρ hκ hA

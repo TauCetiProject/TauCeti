@@ -50,6 +50,9 @@ The diagonal torus `diag(t₁, …, tₙ, (1), tₙ⁻¹, …, t₁⁻¹)` is in
   `pointsSubgroup l A`, naturally in `A` (`pointsMulEquiv_mapValue`).
 * `TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso`: the coordinate
   Hopf algebra commutes with base change along every `R → K`.
+* `TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeBaseChangeIso`: so does the group scheme,
+  compatibly with the inclusions into `GL_l`
+  (`map_inclusion_comp_groupSchemeBaseChangeIso_hom`).
 
 ## References
 
@@ -93,6 +96,15 @@ theorem formMatrix_apply (i j : Fin l) :
     Fin.revPerm_apply]
   exact if_congr (Option.mem_def.trans (Option.some_inj.trans eq_comm)) rfl rfl
 
+variable {α l} in
+/-- The entry of `J_l` at `(i, k)` vanishes when `i + k ≥ l`. -/
+theorem formMatrix_apply_eq_zero {i k : Fin l} (hik : l ≤ (i : ℕ) + k) :
+    formMatrix α l i k = 0 := by
+  rw [formMatrix_apply, ite_eq_right]
+  rintro rfl
+  rw [Fin.val_rev] at hik
+  omega
+
 /-- `J_l` is symmetric. -/
 @[simp]
 theorem transpose_formMatrix : (formMatrix α l)ᵀ = formMatrix α l := by
@@ -117,6 +129,20 @@ theorem formMatrix_mul_self : formMatrix T l * formMatrix T l = 1 := by
   rw [formMatrix, ← permMatrix_mul,
     show (Fin.revPerm : Equiv.Perm (Fin l)) * Fin.revPerm = 1 from Equiv.ext Fin.rev_rev,
     permMatrix_one]
+
+/-- Right multiplication by `J_l` reverses the columns. -/
+@[simp]
+theorem mul_formMatrix_apply {m : Type*} (M : Matrix m (Fin l) T) (i : m) (j : Fin l) :
+    (M * formMatrix T l) i j = M i (Fin.rev j) := by
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv, Fin.revPerm_symm,
+    submatrix_apply, id, Fin.revPerm_apply]
+
+/-- Left multiplication by `J_l` reverses the rows. -/
+@[simp]
+theorem formMatrix_mul_apply {n : Type*} (M : Matrix (Fin l) n T) (i : Fin l) (j : n) :
+    (formMatrix T l * M) i j = M (Fin.rev i) j := by
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply, id,
+    Fin.revPerm_apply]
 
 /-- Framing `J_l` by a diagonal matrix: `diag(d) J_l diag(d)ᵀ` has the entry `d i d (l - 1 - i)` at
 `(i, l - 1 - i)` and `0` elsewhere. -/
@@ -143,6 +169,10 @@ theorem diagonal_mul_formMatrix_mul_transpose_diagonal_eq_iff (d : Fin l → T) 
     rw [diagonal_mul_formMatrix_mul_transpose_diagonal, formMatrix_apply, h]
 
 end FormMatrixRing
+
+/-- The determinant of `J_l` is a unit, as `J_l² = 1`. -/
+theorem isUnit_det_formMatrix {T : Type*} [CommRing T] {l : ℕ} : IsUnit (formMatrix T l).det :=
+  isUnit_det_of_left_inverse formMatrix_mul_self
 
 /-! ### The point groups -/
 
@@ -440,6 +470,16 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l)
     (map_baseChangeHopfIdeal_definingHopfIdeal R l K)
 
+/-- The inverse base-change isomorphism of `SO_l^J` is compatible with the quotient coordinate
+morphisms. -/
+@[reassoc]
+theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv :
+    coordinateMap K l ≫ (coordinateHopfAlgebraBaseChangeIso R l K).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R l) := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
+  exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
 /-- The finite-type coordinate Hopf algebra of `SO_l^J` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :
     FiniteTypeCommHopfAlgCat.baseChange (K := K) (finiteTypeCoordinateHopfAlgebra R l) ≅
@@ -450,5 +490,45 @@ noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :
     (coordinateHopfAlgebraBaseChangeIso R l K)
 
 end BaseChange
+
+/-! ### Base change of the group scheme -/
+
+section GroupSchemeBaseChange
+
+open _root_.AlgebraicGeometry
+
+variable (K : Type u) [CommRing K] [Algebra R K]
+
+/-- **Base change of the group scheme `SO_l^J`**: its base change to `K` is the group scheme
+`SO_l^J` over `K`, the Hopf-ideal base-change comparison of `GL_l` at the defining Hopf ideals. -/
+noncomputable def groupSchemeBaseChangeIso :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
+        (groupScheme R l) ≅ groupScheme K l :=
+  GeneralLinear.hopfIdealBaseChangeIso R K l (definingHopfIdeal R l) (definingHopfIdeal K l)
+    (coordinateHopfAlgebraBaseChangeIso R l K).symm
+
+/-- The base-change isomorphism of `SO_l^J` is the Hopf-ideal base-change comparison of `GL_l`
+for the inverse base-change isomorphism of coordinate Hopf algebras. -/
+theorem groupSchemeBaseChangeIso_def :
+    groupSchemeBaseChangeIso R l K =
+      GeneralLinear.hopfIdealBaseChangeIso R K l (definingHopfIdeal R l)
+        (definingHopfIdeal K l) (coordinateHopfAlgebraBaseChangeIso R l K).symm :=
+  (rfl)
+
+/-- **Base change of `SO_l^J` is compatible with the inclusions.** Along the base-change
+isomorphisms, the base change of the inclusion of `SO_l^J` into `GL_l` over `R` is the inclusion
+over `K`. -/
+@[reassoc]
+theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (inclusion R l) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K l).hom =
+      (groupSchemeBaseChangeIso R l K).hom ≫ inclusion K l := by
+  have he := coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv R l K
+  rw [coordinateMap_def, coordinateMap_def] at he
+  rw [inclusion_def, inclusion_def, groupSchemeBaseChangeIso_def]
+  exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K l _ _
+    (coordinateHopfAlgebraBaseChangeIso R l K).symm he
+
+end GroupSchemeBaseChange
 
 end TauCeti.AntidiagonalSpecialOrthogonal
