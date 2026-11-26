@@ -14,12 +14,13 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.VectorBundle.Complex.ChernCocycle
 public import TauCeti.Topology.VectorBundle.Complex.RealStructure
 public import TauCeti.Topology.VectorBundle.Complex.LinearPart
+public import TauCeti.Topology.VectorBundle.Complex.TorusClutching
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.RestrictScalars
 import TauCeti.Geometry.Symplectic.Cayley.Basic
 import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
-# The first Chern number of a symplectic manifold on spheres
+# The first Chern number of a symplectic manifold on spheres and tori
 
 Let `σ` be a fiberwise nondegenerate two-form on a manifold `M`, for instance a symplectic form.
 An almost complex structure `J` tamed by `σ` makes the tangent bundle a complex vector bundle
@@ -31,8 +32,9 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   every tangent space (`TauCeti.SmoothTwoForm.Tames.isUnit_one_sub_toEndomorphism_mul`, from the
   linear `TauCeti.SymplecticForm.Tames.isUnit_one_sub_mul`): a vector with
   `K (J v) = v` has `K v = -J v`, and `σ(v, K v) = -σ(v, J v)` cannot be positive together with
-  `σ(v, J v)` unless `v = 0`. So the complex-linear part `v ↦ (v - K (J v)) / 2` of the identity is
-  an isomorphism of complex vector bundles `(TM, J) ≃ (TM, K)`
+  `σ(v, J v)` unless `v = 0` (`TauCeti.SmoothTwoForm.Tames.eq_zero_of_apply_apply_eq`). So the
+  complex-linear part `v ↦ (v - K (J v)) / 2` of the identity is an isomorphism of complex vector
+  bundles `(TM, J) ≃ (TM, K)`
   (`TauCeti.Bundle.ContinuousComplexStructure.complexLinearPartEquiv`), and the clutching numbers of
   `(TM, J)` and `(TM, K)` agree (`TauCeti.SmoothTwoForm.Tames.clutchingNumberHom_eq`), for any
   complex model fibres and any smoothness levels at which `J` and `K` are regarded.
@@ -77,6 +79,14 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   clutching number homomorphism of the holomorphic tangent bundle
   (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom_tangentSpace`).
 
+* **Tori.** The same arguments apply to the clutching number of a map of the torus
+  (`TauCeti.torusClutchingNumber`), read as a map of the square agreeing on opposite edges: it does
+  not depend on the tame almost complex structure
+  (`TauCeti.SmoothTwoForm.Tames.torusClutchingNumber_eq`), and it vanishes on every map of the
+  torus when an anti-symplectic diffeomorphism is homotopic to the identity
+  (`TauCeti.SmoothTwoForm.Tames.torusClutchingNumber_eq_zero_of_mpullback_eq_neg`). Its vanishing,
+  together with that of the symplectic area of tori, is symplectic atoroidality.
+
 The first Chern number on spheres and the symplectic area of spheres
 (`TauCeti.sphereIntegralHom`) are the two periods of capped Hamiltonian Floer theory: the grading
 and the action of a capped periodic orbit change by `2 c₁(B)` and `ω(B)` when a sphere `B` is glued
@@ -105,6 +115,9 @@ with a cohomological first Chern class is made.
   anti-symplectic diffeomorphism homotopic to the identity forces the first Chern number to vanish.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom`: the
   first Chern number factors through the Hurewicz map `π₂(M, x) → H₂(M; ℤ)`, uniformly in `x`.
+* `TauCeti.SmoothTwoForm.Tames.torusClutchingNumber_eq`,
+  `TauCeti.SmoothTwoForm.Tames.torusClutchingNumber_eq_zero_of_mpullback_eq_neg`: the same for the
+  clutching numbers of maps of the torus.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom_tangentSpace`: on a
   complex manifold, for a two-form taming the complex structure, it is the clutching number
   homomorphism of the holomorphic tangent bundle.
@@ -136,18 +149,25 @@ variable [FiniteDimensional ℝ E]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)] [NormedAddCommGroup G'] [NormedSpace ℂ G']
   [FiniteDimensional ℂ G'] [Fact (finrank ℝ E = 2 * finrank ℂ G')]
 
+/-- **Tame structures are nowhere inverse to each other.** If `J` and `K` are both tamed by `σ`,
+regarded at any smoothness levels `n` and `m`, then no nonzero tangent vector `v` has
+`K (J v) = v`: the endomorphism `1 - K J` of every tangent space is invertible. -/
+theorem Tames.eq_zero_of_apply_apply_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞) {y : M}
+    {v : TangentSpace I y} (hv : (K.toContMDiff m).toContinuousComplexStructure y
+      ((J.toContMDiff n).toContinuousComplexStructure y v) = v) : v = 0 := by
+  have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
+  apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
+  simpa [sub_eq_zero] using hv.symm
+
 /-- **Independence of the tame almost complex structure.** If `J` and `K` are both tamed by `σ`,
 the tangent bundles `(TM, J)` and `(TM, K)` have the same clutching number homomorphism
 `π₂(M, x) → ℤ`, for any complex model fibres `G` and `G'` and any smoothness levels `n` and `m` at
 which `J` and `K` are regarded. -/
 theorem Tames.clutchingNumberHom_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞) (x : M) :
     clutchingNumberHom G' (K.toContMDiff m).toContinuousComplexStructure.Fiber x =
-      clutchingNumberHom G (J.toContMDiff n).toContinuousComplexStructure.Fiber x := by
-  refine Bundle.ContinuousComplexStructure.clutchingNumberHom_fiber_eq (fun y v hv ↦ ?_) G G' x
-  -- On each tangent space, `1 - K J` is invertible because `J` and `K` are tamed by `σ`.
-  have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
-  apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
-  simpa [sub_eq_zero] using hv.symm
+      clutchingNumberHom G (J.toContMDiff n).toContinuousComplexStructure.Fiber x :=
+  Bundle.ContinuousComplexStructure.clutchingNumberHom_fiber_eq
+    (fun _ _ ↦ hJ.eq_zero_of_apply_apply_eq hK n m) G G' x
 
 namespace IsNondegenerate
 
@@ -155,7 +175,7 @@ variable [T2Space M] [SigmaCompactSpace M]
 
 /-- The model space `E` of a manifold with a fiberwise nondegenerate two-form has even dimension,
 so `ℂⁿ` with `n = dim E / 2` is a complex model fibre for its tangent bundle. -/
-private theorem two_mul_finrank_euclideanSpace (h : σ.IsNondegenerate) (x : M) :
+theorem two_mul_finrank_euclideanSpace (h : σ.IsNondegenerate) (x : M) :
     finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) := by
   rw [finrank_euclideanSpace_fin, Nat.two_mul_div_two_of_even]
   exact ((exists_compatible h).choose.almostComplexStructureAt x).even_finrank_real
@@ -475,3 +495,64 @@ theorem firstChernHom_eq_clutchingNumberHom_tangentSpace {σ : SmoothTwoForm �
   rfl
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
+
+/-! ### Tori -/
+
+namespace TauCeti.SmoothTwoForm
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {J K : SmoothAlmostComplexStructure I M}
+  (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
+  [Fact (finrank ℝ E = 2 * finrank ℂ G)] [NormedAddCommGroup G'] [NormedSpace ℂ G']
+  [FiniteDimensional ℂ G'] [Fact (finrank ℝ E = 2 * finrank ℂ G')]
+
+/-- **Independence of the tame almost complex structure, on tori.** If `J` and `K` are both tamed
+by `σ`, the tangent bundles `(TM, J)` and `(TM, K)` have the same clutching number on every map
+`u` of the torus, read as a map of the square agreeing on opposite edges, for any complex model
+fibres `G` and `G'` and any smoothness levels `n` and `m` at which `J` and `K` are regarded. -/
+theorem Tames.torusClutchingNumber_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞)
+    (u : C(Fin 2 → unitInterval, M)) (hR : ∀ t, u ![1, t] = u ![0, t])
+    (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
+    torusClutchingNumber G' (K.toContMDiff m).toContinuousComplexStructure.Fiber u =
+      torusClutchingNumber G (J.toContMDiff n).toContinuousComplexStructure.Fiber u := by
+  -- The complex-linear part of the identity is an isomorphism `(TM, J) ≃ (TM, K)`.
+  have hKJ : ∀ y (v : TangentSpace I y), (K.toContMDiff m).toContinuousComplexStructure y
+      ((J.toContMDiff n).toContinuousComplexStructure y v) = v → v = 0 :=
+    fun _ _ ↦ hJ.eq_zero_of_apply_apply_eq hK n m
+  simpa using torusClutchingNumber_map_of_continuousLinearEquiv (ContinuousMap.id M)
+    (Bundle.ContinuousComplexStructure.complexLinearPartEquiv hKJ)
+    (Bundle.ContinuousComplexStructure.continuous_complexLinearPartEquiv hKJ G G') u hR hT
+
+/-- **An anti-symplectic diffeomorphism homotopic to the identity kills the first Chern number on
+tori.** If a diffeomorphism `h` of `M` pulls `σ` back to `-σ` and is homotopic to the identity,
+then for every almost complex structure `J` tamed by `σ`, the clutching number of `(TM, J)`
+vanishes on every map `u` of the torus. The maps `u` and `h ∘ u` have the same clutching number,
+since the homotopy moves one into the other through maps of the torus, and opposite clutching
+numbers, since the differential of `h` is conjugate linear from `(TM, -h^* J)` to `(TM, J)` and
+`-h^* J` is tamed by `σ`. -/
+theorem Tames.torusClutchingNumber_eq_zero_of_mpullback_eq_neg (hJ : σ.Tames J) (n : ℕ∞)
+    (h : M ≃ₘ⟮I, I⟯ M) (hh : SmoothForm.mpullback h h.contMDiff σ = -σ)
+    (H : (ContinuousMap.id M).Homotopy ⟨h, h.continuous⟩) (u : C(Fin 2 → unitInterval, M))
+    (hR : ∀ t, u ![1, t] = u ![0, t]) (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
+    torusClutchingNumber G (J.toContMDiff n).toContinuousComplexStructure.Fiber u = 0 := by
+  have hK : σ.Tames (-J.pullback h) := (hh ▸ hJ.pullback h).neg
+  -- The differential of `h` reverses the clutching number, from `-h^* J` to `J`.
+  have hneg := torusClutchingNumber_map_of_conjugateLinear (F := G) (F' := G) ⟨h, h.continuous⟩
+    (IsNondegenerate.mfderivConjFiberEquiv h J)
+    (IsNondegenerate.continuous_mfderivFiberRealEquiv G G _ h J) u hR hT
+  -- The homotopy from the identity to `h`, along `u`, is a homotopy through maps of the torus.
+  let Hu : C(unitInterval × (Fin 2 → unitInterval), M) :=
+    ⟨fun q ↦ H (q.1, u q.2), H.continuous.comp (continuous_fst.prodMk (u.continuous.comp
+      continuous_snd))⟩
+  have hhom := torusClutchingNumber_eq_of_homotopy (F := G)
+    (E := (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber) Hu
+    (fun r t ↦ congrArg (fun x ↦ H (r, x)) (hR t)) fun r s ↦ congrArg (fun x ↦ H (r, x)) (hT s)
+  have h0 : Hu.curry 0 = u := ContinuousMap.ext fun y ↦ H.apply_zero (u y)
+  have h1 : Hu.curry 1 = (⟨h, h.continuous⟩ : C(M, M)).comp u :=
+    ContinuousMap.ext fun y ↦ H.apply_one (u y)
+  rw [h0, h1, hneg, Tames.torusClutchingNumber_eq G G hJ hK ⊤ ⊤ u hR hT] at hhom
+  rw [Tames.torusClutchingNumber_eq G G hJ hJ ⊤ n u hR hT]
+  omega
+
+end TauCeti.SmoothTwoForm

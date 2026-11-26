@@ -23,7 +23,9 @@ is solved by Duhamel's formula
 in terms of the propagators `cos (tD)` (`TauCeti.waveCosPropagator`) and `D⁻¹ sin (tD)`
 (`TauCeti.waveSinPropagator`). A strong solution on an order-connected set of times containing
 `0` and `t`, whose forcing is integrable between `0` and `t`, is given at time `t` by this formula
-(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`). Conversely,
+(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`), that is by
+`TauCeti.waveDuhamelSolution` with the data `u(0)` and `∂ₜu(0)`
+(`TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`). Conversely,
 this file shows that the formula `TauCeti.waveDuhamelSolution f g G` solves the forced problem
 for all data `f, g ∈ L²` and every continuous forcing `G : ℝ → L²`, in the weak sense.
 
@@ -181,6 +183,16 @@ theorem waveDuhamelSolution_eq_setIntegral_Iio (f g : Lp F 2 (volume : Measure E
   rw [waveDuhamelSolution_def, hind, setIntegral_indicator measurableSet_Icc, hset,
     integral_Ico_eq_integral_Ioo,
     ← integral_Ioc_eq_integral_Ioo, intervalIntegral.integral_of_le ht]
+
+/-- A strong solution of `∂ₜ²u - Δu = G` on an order-connected set of times `s` containing `0` and
+`t`, with `G` integrable between `0` and `t`, is given at time `t` by Duhamel's formula with the
+data `u(0)` and `u'(0)`. -/
+theorem IsWaveSolutionOn.eq_waveDuhamelSolution {u u' u'' G : ℝ → Lp F 2 (volume : Measure E)}
+    {s : Set ℝ} [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'' G s) {t : ℝ} (h0 : 0 ∈ s)
+    (ht : t ∈ s) (hG : IntervalIntegrable G volume 0 t) :
+    u t = waveDuhamelSolution F (u 0) (u' 0) G t := by
+  rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht hG, sub_zero,
+    waveDuhamelSolution_def]
 
 section Duhamel
 

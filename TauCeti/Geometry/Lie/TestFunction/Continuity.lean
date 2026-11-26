@@ -27,8 +27,8 @@ words in a basis, with coefficients bounded by the coordinates of the letters.
 ## Main definitions
 
 * `TauCeti.LieTestFunction.FixedSupport.mkCLM`: a linear map of test functions that maps supports
-  in `C` into `C'` and bounds each fixed-support seminorm of the image by one of the argument, as a
-  continuous linear map between fixed-support spaces.
+  in `C` into `C'` and bounds each fixed-support seminorm of the image by a multiple of a finite sum
+  of those of the argument, as a continuous linear map between fixed-support spaces.
 * `TauCeti.LieTestFunction.FixedSupport.inclusionOfSubset`: the continuous inclusion of
   fixed-support spaces for a larger support.
 * `TauCeti.LieTestFunction.FixedSupport.leftDeriv`: left differentiation `L_X` as a continuous
@@ -107,27 +107,53 @@ namespace FixedSupport
 
 variable {C C' : Set G}
 
+/-- A finite sum of fixed-support seminorms is at most the number of words times their supremum. -/
+private theorem sum_fixedSupportSeminorm_inclusion_le (s : Finset (List (GroupLieAlgebra I G)))
+    (a : FixedSupport I G C) :
+    ∑ v ∈ s, fixedSupportSeminorm v (inclusion I G C a) ≤
+      s.card * (s.sup (seminormFamily I G C)) a := by
+  rw [← nsmul_eq_mul]
+  refine Finset.sum_le_card_nsmul _ _ _ fun v hv ↦ ?_
+  rw [← seminormFamily_apply]
+  exact Seminorm.le_finset_sup_apply hv
+
 /-- A linear map `T` of test functions that maps test functions supported in `C` to ones supported
-in `C'`, and bounds each fixed-support seminorm of `T a` by one fixed-support seminorm of `a`, as a
-continuous linear map from the fixed-support space of `C` to that of `C'`. -/
+in `C'`, and bounds each fixed-support seminorm of `T a` by a constant times a finite sum of
+fixed-support seminorms of `a`, as a continuous linear map from the fixed-support space of `C` to
+that of `C'`. -/
 def mkCLM (T : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G)
     (hT : ∀ a : LieTestFunction I G, tsupport a ⊆ C → tsupport (T a) ⊆ C')
-    (hbound : ∀ w, ∃ v, ∀ a : LieTestFunction I G, tsupport a ⊆ C →
-      fixedSupportSeminorm w (T a) ≤ fixedSupportSeminorm v a) :
+    (hbound : ∀ w, ∃ (s : Finset (List (GroupLieAlgebra I G))) (K : ℝ),
+      ∀ a : LieTestFunction I G, tsupport a ⊆ C →
+        fixedSupportSeminorm w (T a) ≤ K * ∑ v ∈ s, fixedSupportSeminorm v a) :
     FixedSupport I G C →L[ℂ] FixedSupport I G C' :=
   let f : FixedSupport I G C →ₗ[ℂ] FixedSupport I G C' :=
     { toFun a := mk (T (inclusion I G C a)) (hT _ (tsupport_inclusion_subset a))
       map_add' a b := ext (by simp)
       map_smul' c a := ext (by simp) }
   ⟨f, (withSeminorms I G C).continuous_of_isBounded (withSeminorms I G C') f
-    (Seminorm.IsBounded.of_real fun w ↦ ⟨{(hbound w).choose}, 1, fun a ↦ by
-      simpa [f] using (hbound w).choose_spec _ (tsupport_inclusion_subset a)⟩)⟩
+    (Seminorm.IsBounded.of_real fun w ↦ by
+      obtain ⟨s, K, h⟩ := hbound w
+      refine ⟨s, max K 0 * s.card, fun a ↦ ?_⟩
+      have hS : 0 ≤ ∑ v ∈ s, fixedSupportSeminorm v (inclusion I G C a) :=
+        Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
+      calc seminormFamily I G C' w (f a)
+          ≤ K * ∑ v ∈ s, fixedSupportSeminorm v (inclusion I G C a) := by
+            simpa [f] using h _ (tsupport_inclusion_subset a)
+        _ ≤ max K 0 * ∑ v ∈ s, fixedSupportSeminorm v (inclusion I G C a) :=
+            mul_le_mul_of_nonneg_right (le_max_left _ _) hS
+        _ ≤ max K 0 * s.card * (s.sup (seminormFamily I G C)) a := by
+            rw [mul_assoc]
+            exact mul_le_mul_of_nonneg_left (sum_fixedSupportSeminorm_inclusion_le s a)
+              (le_max_right _ _))⟩
 
 @[simp]
 theorem inclusion_mkCLM (T : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G)
     (hT : ∀ a : LieTestFunction I G, tsupport a ⊆ C → tsupport (T a) ⊆ C')
-    (hbound : ∀ w, ∃ v, ∀ a : LieTestFunction I G, tsupport a ⊆ C →
-      fixedSupportSeminorm w (T a) ≤ fixedSupportSeminorm v a) (a : FixedSupport I G C) :
+    (hbound : ∀ w, ∃ (s : Finset (List (GroupLieAlgebra I G))) (K : ℝ),
+      ∀ a : LieTestFunction I G, tsupport a ⊆ C →
+        fixedSupportSeminorm w (T a) ≤ K * ∑ v ∈ s, fixedSupportSeminorm v a)
+    (a : FixedSupport I G C) :
     inclusion I G C' (mkCLM T hT hbound a) = T (inclusion I G C a) :=
   inclusion_mk _ _
 
@@ -135,7 +161,7 @@ variable (I G) in
 /-- The **inclusion** `LieTestFunction_C(G) → LieTestFunction_{C'}(G)` for `C ⊆ C'`, a continuous
 linear map: every fixed-support seminorm is unchanged. -/
 def inclusionOfSubset (h : C ⊆ C') : FixedSupport I G C →L[ℂ] FixedSupport I G C' :=
-  mkCLM LinearMap.id (fun _ ha ↦ ha.trans h) fun w ↦ ⟨w, fun _ _ ↦ le_rfl⟩
+  mkCLM LinearMap.id (fun _ ha ↦ ha.trans h) fun w ↦ ⟨{w}, 1, fun _ _ ↦ by simp⟩
 
 @[simp]
 theorem inclusion_inclusionOfSubset (h : C ⊆ C') (a : FixedSupport I G C) :
@@ -146,7 +172,7 @@ theorem inclusion_inclusionOfSubset (h : C ⊆ C') (a : FixedSupport I G C) :
 seminorm of `L_X a` along `w` is that of `a` along `w ++ [X]`. -/
 def leftDeriv (X : GroupLieAlgebra I G) : FixedSupport I G C →L[ℂ] FixedSupport I G C :=
   mkCLM (LieTestFunction.leftDeriv X) (fun a ha ↦ (tsupport_leftDeriv_subset X a).trans ha)
-    fun w ↦ ⟨w ++ [X], fun a _ ↦ (fixedSupportSeminorm_leftDeriv w X a).le⟩
+    fun w ↦ ⟨{w ++ [X]}, 1, fun a _ ↦ by simpa using (fixedSupportSeminorm_leftDeriv w X a).le⟩
 
 @[simp]
 theorem inclusion_leftDeriv (X : GroupLieAlgebra I G) (a : FixedSupport I G C) :
@@ -161,7 +187,7 @@ def rightTranslate (g : G) :
     (fun a ha ↦ by
       rw [tsupport_rightTranslate, MulOpposite.op_inv]
       exact Set.smul_set_mono ha)
-    fun w ↦ ⟨w, fun a _ ↦ (fixedSupportSeminorm_rightTranslate w g a).le⟩
+    fun w ↦ ⟨{w}, 1, fun a _ ↦ by simp⟩
 
 @[simp]
 theorem inclusion_rightTranslate (g : G) (a : FixedSupport I G C) :
@@ -226,6 +252,15 @@ theorem leftDeriv_eq_sum_basis {ι : Type*} [Fintype ι]
   simp only [AddMonoidHom.mk'_apply, b.sum_repr] at h
   rw [h]
   simp only [leftDeriv_smul]
+
+/-- Pointwise expansion of a left differentiation in a basis of the Lie algebra. -/
+theorem leftDeriv_apply_eq_sum_basis {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℝ (GroupLieAlgebra I G)) (Y : GroupLieAlgebra I G)
+    (a : LieTestFunction I G) (g : G) :
+    leftDeriv Y a g = ∑ i, ((b.repr Y i : ℝ) : ℂ) * leftDeriv (b i) a g := by
+  have h := congrArg (fun T ↦ toFunction I G (T a) g) (leftDeriv_eq_sum_basis b Y)
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_smul] at h
+  simpa only [Finset.sum_apply, Pi.smul_apply, toFunction_apply, smul_eq_mul] using h
 
 /-- A fixed-support seminorm along any word `u ++ w` whose prefix `u` is a word in a basis `b` of
 the Lie algebra is bounded by finitely many fixed-support seminorms along words in `b`. -/

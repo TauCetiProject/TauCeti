@@ -25,7 +25,8 @@ squares back to it, and packages the principal square root of a nonzero complex 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
 (`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
-these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`. It also follows
+that `i√x` squares to `-x` (`Complex.I_mul_ofReal_sqrt_sq`).
 -/
 
 public section
@@ -157,6 +158,11 @@ theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
 `x⁻¹`. -/
 theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
   rw [← mul_inv, mul_self_ofReal_sqrt hx]
+
+/-- For a nonnegative real `x`, `i√x` is a square root of `-x`: `(i√x) ^ 2 = -x`. -/
+theorem I_mul_ofReal_sqrt_sq {x : ℝ} (hx : 0 ≤ x) : (I * √x) ^ 2 = -x := by
+  rw [mul_pow, I_sq, sq_ofReal_sqrt hx]
+  ring
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by

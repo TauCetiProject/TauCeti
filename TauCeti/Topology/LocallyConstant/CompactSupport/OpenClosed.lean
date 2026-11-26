@@ -26,8 +26,8 @@ an `R`-module. This file constructs the two maps of the open-closed sequence
 The sequence is exact at `C_c^∞(U, M)` and `C_c^∞(X, M)` for every Hausdorff `X`. Restriction is
 surjective when `X` is an *l-space* (Hausdorff, locally compact and totally disconnected): such a
 space is prespectral, so a compact open subset `K` of `Z` is cut out of `Z` by a compact open subset
-of `X` (`TopologicalSpace.CompactOpens.exists_preimage_subtypeVal_eq`), every indicator `1_K • m`
-extends, and these indicators span `C_c^∞(Z, M)`.
+of `X` (`TopologicalSpace.CompactOpens.exists_subset_preimage_subtypeVal_eq`), every indicator
+`1_K • m` extends, and these indicators span `C_c^∞(Z, M)`.
 
 ## Main definitions
 
@@ -154,26 +154,11 @@ spanning indicators `1_K • m` of `C_c^∞(Z, M)` are restrictions. -/
 theorem restrict_surjective [T2Space X] [WeaklyLocallyCompactSpace X]
     [TotallyDisconnectedSpace X] : Surjective (restrict R M hZ) := by
   have : PrespectralSpace X := .of_locallyCompactSpace_of_zeroDimensionalSpace
-  rw [← LinearMap.range_eq_top, eq_top_iff]
-  intro f _
-  have hf : (f : LocallyConstant Z M) ∈
-      Submodule.span R (range fun p : CompactOpens Z × M => compactOpenIndicator p.1 p.2) := by
-    rw [← compactlySupported_eq_span]
-    exact f.property
-  -- The range contains the span of the indicators, as a submodule of `LocallyConstant Z M`.
-  suffices h : Submodule.span R (range fun p : CompactOpens Z × M => compactOpenIndicator p.1 p.2)
-      ≤ (LinearMap.range (restrict R M hZ)).map (compactlySupported R Z M).subtype by
-    obtain ⟨g, hg, hgf⟩ := h hf
-    exact Submodule.subtype_injective _ hgf ▸ hg
-  refine Submodule.span_le.2 ?_
-  rintro _ ⟨⟨K, m⟩, rfl⟩
-  obtain ⟨W, hW⟩ := CompactOpens.exists_preimage_subtypeVal_eq K
-  refine ⟨restrict R M hZ
-    ⟨compactOpenIndicator W m, compactOpenIndicator_mem_compactlySupported W m⟩,
-    LinearMap.mem_range_self _ _, LocallyConstant.ext fun z => ?_⟩
-  have hzK : (z : X) ∈ (W : Set X) ↔ z ∈ (K : Set Z) := by rw [← hW, mem_preimage]
-  simp only [Submodule.coe_subtype, restrict_apply, coe_compactOpenIndicator]
-  by_cases hz : z ∈ (K : Set Z) <;> simp [hz, hzK]
+  refine surjective_of_forall_compactOpenIndicator _ fun K m => ?_
+  obtain ⟨W, -, hW⟩ :=
+    CompactOpens.exists_subset_preimage_subtypeVal_eq isOpen_univ (subset_univ Z) K
+  exact ⟨⟨compactOpenIndicator W m, compactOpenIndicator_mem_compactlySupported W m⟩,
+    comap_subtypeVal_compactOpenIndicator hW m⟩
 
 end Restrict
 
