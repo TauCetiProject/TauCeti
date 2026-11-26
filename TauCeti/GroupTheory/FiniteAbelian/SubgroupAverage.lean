@@ -35,7 +35,7 @@ variable {G 𝕜 : Type*} [Group G] [CommRing 𝕜] [IsDomain 𝕜] [Algebra ℚ
 open scoped Classical in
 /-- The mean of a character on a left coset `gH` is its value at `g` if its restriction to
 `H` is trivial, and is zero otherwise. -/
-theorem expect_apply_mul_subgroup (χ : G →* 𝕜) (H : Subgroup G) [Fintype H] (g : G) :
+theorem expect_apply_mul_eq_ite (χ : G →* 𝕜) (H : Subgroup G) [Fintype H] (g : G) :
     (𝔼 u : H, χ (g * u)) = if χ.comp H.subtype = 1 then χ g else 0 := by
   classical
   simp_rw [map_mul, ← Finset.mul_expect, ← Subgroup.subtype_apply, ← MonoidHom.comp_apply]
@@ -45,14 +45,14 @@ theorem expect_apply_mul_subgroup (χ : G →* 𝕜) (H : Subgroup G) [Fintype H
 
 end MonoidHom
 
-namespace TauCeti
+namespace Subgroup
 
 open scoped Classical in
 /-- The mean over `u ∈ H` of the weighted character sums on `g i * u * T` projects onto the
 characters trivial on `H`. Each retained summand is counted `T.card` times. -/
-theorem expect_sum_translate_characters {G 𝕜 ι : Type*} [Group G] [CommRing 𝕜] [IsDomain 𝕜]
-    [Algebra ℚ≥0 𝕜] (H : Subgroup G) [Fintype H] (T : Finset H) (I : Finset ι)
-    (χ : ι → G →* 𝕜) (c : ι → 𝕜) (g : ι → G) :
+theorem expect_sum_sum_mul_apply_mul_eq_card_mul_sum_filter {G 𝕜 ι : Type*} [Group G]
+    [CommRing 𝕜] [IsDomain 𝕜] [Algebra ℚ≥0 𝕜] (H : Subgroup G) [Fintype H] (T : Finset H)
+    (I : Finset ι) (χ : ι → G →* 𝕜) (c : ι → 𝕜) (g : ι → G) :
     (𝔼 u : H, ∑ t ∈ T, ∑ i ∈ I, c i * χ i (g i * u * t)) =
       (T.card : 𝕜) * ∑ i ∈ I.filter (fun i ↦ (χ i).comp H.subtype = 1), c i * χ i (g i) := by
   classical
@@ -62,8 +62,8 @@ theorem expect_sum_translate_characters {G 𝕜 ι : Type*} [Group G] [CommRing 
       if (χ i).comp H.subtype = 1 then χ i (g i) else 0 :=
     (Fintype.expect_equiv (Equiv.mulRight t) _ (fun u : H ↦ χ i (g i * u))
       fun _ ↦ rfl).trans
-      ((χ i).expect_apply_mul_subgroup H (g i))
+      ((χ i).expect_apply_mul_eq_ite H (g i))
   simp_rw [h, mul_ite, mul_zero, ← Finset.sum_filter]
   rw [Finset.sum_const, nsmul_eq_mul]
 
-end TauCeti
+end Subgroup
