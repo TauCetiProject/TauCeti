@@ -73,7 +73,7 @@ private theorem reducedHamiltonian_eq {r : ℝ} (hr : 0 ≤ r) (p : ℝ) :
 
 /-- For `U` differentiable near `[r₁, r₂]` with `r₁ > 0`, the effective potential is
 differentiable on `[r₁, r₂]`. -/
-private theorem hasDerivAt_deriv_effectivePotential (hr₁ : 0 < r₁)
+private theorem hasDerivAt_effectivePotential_of_mem_Icc (hr₁ : 0 < r₁)
     (hU : ∀ᶠ r in 𝓝ˢ (Icc r₁ r₂), DifferentiableAt ℝ U r) {r : ℝ} (hr : r ∈ Icc r₁ r₂) :
     HasDerivAt (effectivePotential m ℓ U) (deriv (effectivePotential m ℓ U) r) r :=
   (hasDerivAt_effectivePotential (hU.self_of_nhdsSet r hr).hasDerivAt
@@ -92,7 +92,7 @@ include hr₁ h₁₂ hU hE₂ hlt hd₂ in
 private theorem deriv_effectivePotential_pos : 0 < deriv (effectivePotential m ℓ U) r₂ := by
   refine lt_of_le_of_ne (not_lt.1 fun hneg ↦ ?_) hd₂.symm
   -- Otherwise `U_ℓ` would exceed `U_ℓ(r₂) = E` just to the left of `r₂`.
-  have h := ((hasDerivAt_deriv_effectivePotential hr₁ hU
+  have h := ((hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
     (right_mem_Icc.2 h₁₂.le)).neg.hasDerivWithinAt (s := Iio r₂)).eventually_nhdsLT_lt_of_pos
     (neg_pos.2 hneg)
   obtain ⟨r, hr, hr'⟩ := (h.and (Ioo_mem_nhdsLT h₁₂)).exists
@@ -104,8 +104,8 @@ include hr₁ h₁₂ hU hE₁ hlt hd₁ in
 private theorem deriv_effectivePotential_neg : deriv (effectivePotential m ℓ U) r₁ < 0 := by
   refine lt_of_le_of_ne (not_lt.1 fun hpos ↦ ?_) hd₁
   -- Otherwise `U_ℓ` would exceed `U_ℓ(r₁) = E` just to the right of `r₁`.
-  have h := ((hasDerivAt_deriv_effectivePotential hr₁ hU (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt
-    (s := Ioi r₁)).eventually_nhdsGT_lt_of_pos hpos
+  have h := ((hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
+    (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt (s := Ioi r₁)).eventually_nhdsGT_lt_of_pos hpos
   obtain ⟨r, hr, hr'⟩ := (h.and (Ioo_mem_nhdsGT h₁₂)).exists
   linarith [hlt r hr']
 
@@ -116,11 +116,11 @@ private theorem exists_lt_effectivePotential :
     ∃ a b, 0 ≤ a ∧ a < r₁ ∧ r₂ < b ∧ (∀ r ∈ Ioo a b, DifferentiableAt ℝ U r) ∧
       (∀ r ∈ Ioo a r₁, E < effectivePotential m ℓ U r) ∧
       ∀ r ∈ Ioo r₂ b, E < effectivePotential m ℓ U r := by
-  have h₁ := (((hasDerivAt_deriv_effectivePotential hr₁ hU
+  have h₁ := (((hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
     (left_mem_Icc.2 h₁₂.le)).neg.hasDerivWithinAt (s := Iio r₁)).eventually_nhdsLT_lt_of_pos
     (neg_pos.2 (deriv_effectivePotential_neg hr₁ h₁₂ hU hE₁ hlt hd₁))).and
     (hU.filter_mono (nhdsWithin_le_nhds.trans (nhds_le_nhdsSet (left_mem_Icc.2 h₁₂.le))))
-  have h₂ := (((hasDerivAt_deriv_effectivePotential hr₁ hU
+  have h₂ := (((hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
     (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt (s := Ioi r₂)).eventually_nhdsGT_lt_of_pos
     (deriv_effectivePotential_pos hr₁ h₁₂ hU hE₂ hlt hd₂)).and
     (hU.filter_mono (nhdsWithin_le_nhds.trans (nhds_le_nhdsSet (right_mem_Icc.2 h₁₂.le))))
@@ -146,9 +146,9 @@ private theorem intervalIntegrable_div_absRadialMomentum_well :
     IntervalIntegrable (fun r ↦ m / absRadialMomentum m U ℓ E r) volume r₁ r₂ :=
   intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂
     (fun r hr ↦ (hU.self_of_nhdsSet r hr).continuousAt.continuousWithinAt) hlt
-    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hr₁ hU
+    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
       (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
-    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hr₁ hU
+    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
       (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
@@ -156,9 +156,9 @@ include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 private theorem radialPeriod_pos_well : 0 < radialPeriod m U ℓ E r₁ r₂ :=
   radialPeriod_pos hm hr₁ h₁₂
     (fun r hr ↦ (hU.self_of_nhdsSet r hr).continuousAt.continuousWithinAt) hlt
-    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hr₁ hU
+    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
       (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
-    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hr₁ hU
+    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_effectivePotential_of_mem_Icc hr₁ hU
       (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
