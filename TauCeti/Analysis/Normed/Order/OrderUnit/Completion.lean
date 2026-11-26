@@ -155,7 +155,9 @@ image of `AddSubmonoid.nonneg E` under `coe he`. -/
 def closedNonnegCone (he : IsOrderUnitNorm e) : AddSubmonoid (OrderUnitCompletion he) :=
   ((AddSubmonoid.nonneg E).map (coe he).toAddMonoidHom).topologicalClosure
 
-private theorem mem_closedNonnegCone_iff {x : OrderUnitCompletion he} :
+/-- Membership in `closedNonnegCone he` unfolds to membership in the topological closure of the
+image of `{a : E | 0 ≤ a}` under `coe he`. -/
+theorem mem_closedNonnegCone_iff {x : OrderUnitCompletion he} :
     x ∈ closedNonnegCone he ↔ x ∈ closure (coe he '' {a : E | 0 ≤ a}) := by
   simp only [closedNonnegCone, ← SetLike.mem_coe, AddSubmonoid.coe_topologicalClosure,
     AddSubmonoid.coe_map, AddSubmonoid.coe_nonneg, Set.Ici_def, LinearMap.toAddMonoidHom_coe,
@@ -229,8 +231,17 @@ instance : PartialOrder (OrderUnitCompletion he) where
       exact hyx
     exact (sub_eq_zero.mp (eq_zero_of_mem_closedNonnegCone_of_neg_mem he hxy hneg)).symm
 
-private theorem le_iff_mem_closedNonnegCone (x y : OrderUnitCompletion he) :
+/-- Order relation on `OrderUnitCompletion he` in terms of `closedNonnegCone he`: `x ≤ y` if and
+only if `y - x ∈ closedNonnegCone he`. -/
+theorem le_iff_mem_closedNonnegCone (x y : OrderUnitCompletion he) :
     x ≤ y ↔ y - x ∈ closedNonnegCone he := Iff.rfl
+
+/-- Membership in `closedNonnegCone he` is equivalent to nonnegativity in `OrderUnitCompletion he`.
+-/
+@[simp]
+theorem mem_closedNonnegCone_iff_nonneg (x : OrderUnitCompletion he) :
+    x ∈ closedNonnegCone he ↔ 0 ≤ x := by
+  rw [le_iff_mem_closedNonnegCone, sub_zero]
 
 /-- Order characterization on arbitrary elements of `OrderUnitCompletion he`: `x ≤ y` if and
 only if `y.toCompletion - x.toCompletion` belongs to the closure of the image of the positive cone

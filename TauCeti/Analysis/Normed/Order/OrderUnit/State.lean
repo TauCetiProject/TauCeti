@@ -222,16 +222,9 @@ theorem convex_stateSpace (e : E) : Convex ℝ (stateSpace e) := by
     simp [hφ.2, hψ.2, hst]
 
 /-- The order-unit state space is weak-star closed in `WeakDual ℝ E`. -/
-theorem isClosed_stateSpace (e : E) : IsClosed (stateSpace e) := by
-  have hset : stateSpace e =
-      (⋂ (a : E) (b : E) (_ : a ≤ b), {φ : WeakDual ℝ E | φ a ≤ φ b}) ∩
-        {φ : WeakDual ℝ E | φ e = 1} := by
-    ext φ
-    simp [stateSpace, Monotone]
-  rw [hset]
-  refine IsClosed.inter ?_ (isClosed_eq (WeakDual.eval_continuous e) continuous_const)
-  refine isClosed_iInter fun a => isClosed_iInter fun b => isClosed_iInter fun _ => ?_
-  exact isClosed_le (WeakDual.eval_continuous a) (WeakDual.eval_continuous b)
+theorem isClosed_stateSpace (e : E) : IsClosed (stateSpace e) :=
+  (isClosed_monotone.preimage WeakDual.coeFn_continuous).inter
+    (isClosed_eq (WeakDual.eval_continuous e) continuous_const)
 
 /-- Evaluation at any `a : E` is weak-star continuous on `OrderUnit.stateSpace e`. -/
 theorem continuous_eval_stateSpace (a : E) : Continuous (fun φ : stateSpace e => φ.1 a) :=
@@ -574,23 +567,6 @@ namespace OrderUnit
 section CStarStates
 
 variable (A : Type*) [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-private theorem im_apply_eq_zero_of_mem_stateSpace {A : Type*} [CStarAlgebra A] [PartialOrder A]
-    [StarOrderedRing A] {ψ : WeakDual ℂ A} (hψ : ψ ∈ TauCeti.stateSpace A) {a : A}
-    (ha : IsSelfAdjoint a) : (ψ a).im = 0 := by
-  let ψp : A →P[ℂ] ℂ :=
-    { toContinuousLinearMap := WeakDual.toStrongDual ψ
-      monotone' := WeakDual.monotone_toStrongDual_of_map_nonneg
-        fun _ => map_nonneg_of_mem_stateSpace hψ }
-  have hsa : IsSelfAdjoint (ψp.toContinuousLinearMap a) := by
-    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap]
-    exact ha.map ψp
-  exact (Complex.im_eq_zero_iff_isSelfAdjoint (ψ a)).mpr hsa
-
-private theorem ofReal_re_apply_of_mem_stateSpace {A : Type*} [CStarAlgebra A] [PartialOrder A]
-    [StarOrderedRing A] {ψ : WeakDual ℂ A} (hψ : ψ ∈ TauCeti.stateSpace A) {a : A}
-    (ha : IsSelfAdjoint a) : ((ψ a).re : ℂ) = ψ a :=
-  Complex.ext rfl (by simp [im_apply_eq_zero_of_mem_stateSpace hψ ha])
 
 /-- Restrict a C⋆-algebra state on `A` (with compatible star order `PartialOrder A` and
 `StarOrderedRing A`) to a real order-unit state on `selfAdjoint A`. -/

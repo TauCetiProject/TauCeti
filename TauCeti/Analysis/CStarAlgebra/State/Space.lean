@@ -117,6 +117,22 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
     rfl
   exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
 
+/-- A state of a C⋆-algebra takes real values on self-adjoint elements: `(φ a).im = 0`. -/
+theorem im_apply_eq_zero_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : (φ a).im = 0 := by
+  let φp : A →P[ℂ] ℂ :=
+    { toContinuousLinearMap := toStrongDual φ
+      monotone' := monotone_toStrongDual_of_map_nonneg fun _ => map_nonneg_of_mem_stateSpace hφ }
+  have hsa : IsSelfAdjoint (φp.toContinuousLinearMap a) := by
+    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap]
+    exact ha.map φp
+  exact (Complex.im_eq_zero_iff_isSelfAdjoint (φ a)).mpr hsa
+
+/-- Evaluating a state on a self-adjoint element equals the complex coercion of its real part. -/
+theorem ofReal_re_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : ((φ a).re : ℂ) = φ a :=
+  Complex.ext rfl (by simp [im_apply_eq_zero_of_mem_stateSpace hφ ha])
+
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
   intro φ hφ ψ hψ s t hs ht hst
