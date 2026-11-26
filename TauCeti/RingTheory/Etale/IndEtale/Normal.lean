@@ -132,6 +132,8 @@ private theorem exists_etale_eval_scaleRoots_eq_zero [IndEtale R A] {p : A[X]} (
     have hpQ : Q.map (MvPolynomial.aeval x).toRingHom = p := by
       rw [Polynomial.map_map, AlgHom.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe,
         ← AlgHom.comp_toRingHom, MvPolynomial.aeval_comp_rename]
+      -- By definition `mapEquivMonic` sends `f` to `(freeMonic R n).map f` and a monic `p` back to
+      -- `aeval (p.coeff ·)`, so `apply_symm_apply` at `p` is exactly the goal up to unfolding.
       exact congrArg Subtype.val
         ((MvPolynomial.mapEquivMonic R A n).apply_symm_apply (.mk p hp rfl))
     have h := hP (MvPolynomial.aeval x).toRingHom
