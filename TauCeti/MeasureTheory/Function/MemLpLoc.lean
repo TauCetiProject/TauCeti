@@ -32,7 +32,9 @@ compactly supported ones), composition of local `Lᵖ` operator families with co
 Hölder's inequality on compact sets (`TauCeti.MemLpLoc.clm_apply`), decreasing the integrability
 exponent, and comparison with local integrability. A locally `Lᵖ` function vanishing off a compact
 subset of `U` is globally `Lᵖ`. Continuous functions, and more generally a.e.-strongly measurable
-functions bounded near every point of `U`, are locally `Lᵖ` for every exponent. On an open set,
+functions bounded near every point of `U`, are locally `Lᵖ` for every exponent, as is the extension
+by zero of a function bounded near every point of `U` on a measurable subset
+(`TauCeti.memLpLoc_indicator_of_forall_eventually_norm_le`). On an open set,
 membership is detected on the open subsets with compact closure inside it, and on a ball of a proper
 metric space on the smaller concentric balls (`TauCeti.memLpLoc_ball_iff`); with `1 ≤ p` a locally
 `Lᵖ` function agrees almost everywhere with its precise representative.
@@ -213,6 +215,23 @@ theorem memLpLoc_of_forall_eventually_norm_le [IsFiniteMeasureOnCompacts μ]
     exact ⟨_, mem_nhdsWithin_of_mem_nhds hM, M, fun _ hw ↦ hw⟩
   exact MemLp.of_bound (hf.mono_measure (Measure.restrict_mono hKU le_rfl)) M
     (ae_restrict_of_forall_mem hK.measurableSet hM)
+
+open scoped Topology in
+/-- A function a.e.-strongly measurable on a measurable subset `V` of `U`, and bounded on `V` near
+every point of `U`, is locally `Lᵖ` on `U` for every exponent once extended by zero off `V`. -/
+theorem memLpLoc_indicator_of_forall_eventually_norm_le [IsFiniteMeasureOnCompacts μ]
+    (hV : MeasurableSet V) (hVU : V ⊆ U) (hf : AEStronglyMeasurable f (μ.restrict V))
+    (hb : ∀ z ∈ U, ∃ M, ∀ᶠ w in 𝓝[U] z, w ∈ V → ‖f w‖ ≤ M) :
+    MemLpLoc p U (V.indicator f) μ := by
+  refine memLpLoc_of_forall_eventually_norm_le
+    (((aestronglyMeasurable_indicator_iff hV).2 hf).mono_measure Measure.restrict_le_self)
+    fun z hz ↦ ?_
+  obtain ⟨M, hM⟩ := hb z hz
+  refine ⟨max M 0, (eventually_nhdsWithin_iff.1 hM).mono fun w hw ↦ ?_⟩
+  by_cases hwV : w ∈ V
+  · rw [Set.indicator_of_mem hwV]
+    exact (hw (hVU hwV) hwV).trans (le_max_left _ _)
+  · simp [Set.indicator_of_notMem hwV]
 
 end Measurable
 

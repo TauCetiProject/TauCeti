@@ -44,8 +44,8 @@ All four results apply to piecewise `C¹` curves via
 `TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval` and its continuity and derivative
 integrability consequences. The identities `integral_realWindingIntegrand_eq_arg_sub_arg` and
 `integral_realWindingIntegrand_eq_arg_mul_sub_arg_mul` are exact, real-valued counterparts at
-basepoint `w = 0` of `TauCeti.IsPiecewiseC1On.coe_two_pi_mul_re_windingNumber`, which identifies
-that quantity only as a `Real.Angle`.
+basepoint `w = 0` of `AbsolutelyContinuousOnInterval.coe_two_pi_mul_re_windingNumber`, which
+identifies that quantity only as a `Real.Angle`.
 
 On a slit-plane arc of a unit tangent, these identities identify the increment of its real
 argument lift with its angular integral; the ratio formula compares such increments in two frames.

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RingTheory.Idempotents.Primitive.Central
 public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
@@ -84,11 +85,8 @@ group (or monoid) `G`, the centre of `R[G]` is a finite `R`-module, hence an Art
 theorem exists_completeOrthogonalIdempotents_isBlockIdempotent (R G : Type*) [CommRing R]
     [IsArtinianRing R] [Monoid G] [Finite G] :
     ∃ (n : ℕ) (b : Fin n → Subalgebra.center R (MonoidAlgebra R G)),
-      CompleteOrthogonalIdempotents b ∧ ∀ i, IsBlockIdempotent (b i) := by
-  have : IsNoetherian R (Subalgebra.center R (MonoidAlgebra R G)) :=
-    isNoetherian_submodule' (Subalgebra.toSubmodule (Subalgebra.center R (MonoidAlgebra R G)))
-  have : IsArtinianRing (Subalgebra.center R (MonoidAlgebra R G)) := IsArtinianRing.of_finite R _
-  exact exists_completeOrthogonalIdempotents_isPrimitiveIdempotent _
+      CompleteOrthogonalIdempotents b ∧ ∀ i, IsBlockIdempotent (b i) :=
+  exists_completeOrthogonalIdempotents_isPrimitiveIdempotent _
 
 /-- **Uniqueness of the block decomposition.** Two complete orthogonal families of block
 idempotents of `R[G]`, indexed by finite types, agree up to a bijection of the index types. This

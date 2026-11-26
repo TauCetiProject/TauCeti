@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
@@ -13,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -29,7 +31,9 @@ trajectories of Morse functions
 * **The Morse data.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
   only critical point is `0` (`TauCeti.criticalPoints_sq_real`, `TauCeti.mfderiv_sq_real_zero`),
   a minimum of index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
-  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The inverted well `-x²` is a Morse function
+  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The critical Hessian of `x²` is
+  `(u, v) ↦ 2 u v` at every point (`TauCeti.criticalHessian_sq_real_apply`), the second derivative
+  with no factor `1 / 2`. The inverted well `-x²` is a Morse function
   (`TauCeti.isMorse_neg_sq_real`) with the same critical point
   (`TauCeti.criticalPoints_neg_sq_real`), a maximum of index `1`
   (`TauCeti.manifoldMorseIndex_neg_sq_real`).
@@ -161,6 +165,18 @@ theorem manifoldMorseIndex_neg_sq_real :
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit)
   have h := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rwa [manifoldMorseIndex_sq_real_zero, Module.finrank_self] at h
+
+/-- **The critical Hessian of `x ↦ x²`** is the bilinear form `(u, v) ↦ 2 u v` at every point:
+the Hessian of `x²` is `2`, with no factor `1 / 2`. -/
+theorem criticalHessian_sq_real_apply (x u v : ℝ) :
+    criticalHessian 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x u v = 2 * u * v := by
+  have h : (fun y : ℝ ↦ y ^ 2) = fun y : ℝ ↦ ‖y‖ ^ 2 := by
+    ext y
+    simp [Real.norm_eq_abs, sq_abs]
+  rw [criticalHessian_modelSpace, h]
+  refine (fderiv_fderiv_norm_sq_apply x u v).trans ?_
+  simp only [RCLike.inner_apply, conj_trivial]
+  ring
 
 /-! ### The trajectories -/
 

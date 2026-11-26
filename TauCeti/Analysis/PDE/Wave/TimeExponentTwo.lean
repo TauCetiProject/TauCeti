@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Energy
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.MixedNorm
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 
@@ -187,23 +188,13 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
     (r' := (1 - r₀⁻¹)⁻¹) hn hr₀
   obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
   set B := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r'⁻¹)⁻¹ volume
-  have hr1 : r⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (ENNReal.HolderConjugate.one_le r r')
-  have hr₀1 : r₀⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (one_le_two.trans hr₀2)
-  have hr'r₀' : r' ≤ (1 - r₀⁻¹)⁻¹ := by
-    rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.HolderConjugate.one_sub_inv r r']
-    exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hr₀r) 1
-  have hexp : r'.toReal⁻¹ - ((1 - r₀⁻¹)⁻¹).toReal⁻¹ = (r₀⁻¹).toReal - (r⁻¹).toReal := by
-    rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv,
-      ← ENNReal.HolderConjugate.one_sub_inv r r', ENNReal.toReal_sub_of_le hr1 ENNReal.one_ne_top,
-      ENNReal.toReal_sub_of_le hr₀1 ENNReal.one_ne_top]
-    ring
   refine ⟨C * B.toNNReal, fun j m hm F hF ↦ ?_⟩
   -- `Pⱼ F(s) = Pⱼ Qⱼ F(s)`, and the endpoint estimate applies to `Qⱼ F`.
   have h := hC j m hm _ ((φ.dyadicMultiplier ℂ σ j).continuous.comp_aestronglyMeasurable hF)
   simp only [hσ j m hm] at h
   have hB := eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
     (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (ENNReal.HolderConjugate.one_le r' r)
-      hr'r₀') hF (q := 2)
+      (ENNReal.HolderConjugate.le_inv_one_sub_inv (q' := r') hr₀r)) hF (q := 2)
   refine h.trans ?_
   calc _ ≤ C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r₀⁻¹).toReal - 2⁻¹)) *
@@ -212,7 +203,8 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
           eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 volume) := by
         gcongr
     _ = _ := by
-        rw [hexp, ENNReal.coe_mul, ENNReal.coe_toNNReal
+        rw [ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv (q := r) (q' := r')
+            (one_le_two.trans hr₀2), ENNReal.coe_mul, ENNReal.coe_toNNReal
           (φ.memLp_fourierInv_dyadicDilate σ 0 _).eLpNorm_ne_top,
           ← ofReal_rpow_mul_ofReal_rpow j _ (r₀⁻¹).toReal (r⁻¹).toReal]
         ring

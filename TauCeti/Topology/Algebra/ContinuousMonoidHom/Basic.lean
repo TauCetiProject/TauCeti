@@ -29,17 +29,17 @@ Named compatibility proofs describe subgroup inclusions and composition of scala
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 `Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
 inclusion of additive fixed points, without a continuity assumption on the action.
-A homomorphism from a group with continuous left translations and open kernel is continuous for
-every topology on the target; for a discrete target, continuity is equivalent to openness of the
-kernel. The projections of a product of topological monoids onto its factors are
-packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
-`ContinuousMonoidHom.snd`. Inverses and integer powers of continuous homomorphisms into a
-commutative topological group are computed pointwise, and the multiplicative isomorphism underlying
-a continuous multiplicative isomorphism has the same underlying function. A topologically embedded
-continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
-range, with forward and inverse computation rules. The file also records the agreement of finite
-order before and after forgetting continuity, and the open kernel of a finite-order continuous
-character into the units of a `T1` commutative integral domain.
+A homomorphism, multiplicative or additive, from a group with continuous left translations and open
+kernel is continuous for every topology on the target; for a multiplicative homomorphism into a
+discrete target, continuity is equivalent to openness of the kernel. The projections of a product of
+topological monoids onto its factors are packaged as `ContinuousMonoidHom.proj`, next to Mathlib's
+`ContinuousMonoidHom.fst` and `ContinuousMonoidHom.snd`. Inverses and integer powers of continuous
+homomorphisms into a commutative topological group are computed pointwise, and the multiplicative
+isomorphism underlying a continuous multiplicative isomorphism has the same underlying function. A
+topologically embedded continuous group homomorphism is also packaged as a continuous
+multiplicative equivalence with its range, with forward and inverse computation rules. The file
+also records the agreement of finite order before and after forgetting continuity, and the open
+kernel of a finite-order continuous character into the units of a `T1` commutative integral domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -99,6 +99,9 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
 
 /-- A homomorphism with open kernel out of a group with continuous left translations is continuous
 for every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+@[to_additive /-- An additive homomorphism with open kernel out of an additive group with continuous
+left translations is continuous for every topology on the target: it is constant on the open coset
+`x + ker f` of each point `x`. -/]
 theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
     [MulOneClass F] [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) :
     Continuous f := by
