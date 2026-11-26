@@ -231,7 +231,7 @@ poles where both representatives have the canonical value zero. -/
       (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_completedDedekindZeta K))
       (meromorphicNFOn_completedDedekindZeta K) (σ := 1)
     intro z hz
-    have hz' : 1 < (conj z).re := hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
     have hD := ofReal_cpow_conj (r := ((discr K).natAbs : ℝ)) (by positivity) (z / 2)
     rw [ofReal_natCast, map_div₀, map_ofNat] at hD
     simp only [Function.comp_apply, completedDedekindZeta_eq_mul_dedekindZeta K hz',
