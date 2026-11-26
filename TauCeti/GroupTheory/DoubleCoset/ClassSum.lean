@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Rat
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.DoubleCoset.Mass
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Weighted class sums and class integrals
@@ -201,16 +202,9 @@ structure HasFiniteClassSet (Γ K : Subgroup G) : Prop where
 variable {Γ K J : Subgroup G}
 
 /-- An open subgroup has finite index in a compact subgroup. -/
-theorem _root_.Subgroup.relIndex_ne_zero_of_isCompact_of_isOpen [IsTopologicalGroup G]
-    (hK : IsCompact (K : Set G)) (hJ : IsOpen (J : Set G)) : J.relIndex K ≠ 0 := by
-  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  have := Subgroup.quotient_finite_of_isOpen (J.subgroupOf K) hJ.preimage_val
-  exact (Subgroup.finiteIndex_of_finite_quotient (H := J.subgroupOf K)).index_ne_zero
-
-/-- An open subgroup has finite index in a compact subgroup. -/
-theorem isFiniteRelIndex_of_isCompact_of_isOpen [IsTopologicalGroup G] (hK : IsCompact (K : Set G))
-    (hJ : IsOpen (J : Set G)) : J.IsFiniteRelIndex K :=
-  ⟨Subgroup.relIndex_ne_zero_of_isCompact_of_isOpen hK hJ⟩
+theorem isFiniteRelIndex_of_isCompact_of_isOpen [SeparatelyContinuousMul G]
+    (hK : IsCompact (K : Set G)) (hJ : IsOpen (J : Set G)) : J.IsFiniteRelIndex K :=
+  ⟨Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hJ hK⟩
 
 /-- The mass of a class set of finite type is positive. -/
 theorem HasFiniteClassSet.orbitMass_pos (h : HasFiniteClassSet Γ K) : 0 < orbitMass K (G ⧸ Γ) := by
@@ -411,7 +405,7 @@ theorem _root_.Subgroup.relIndex_mul_measure_inf (hK : IsCompact (K : Set G))
   -- Pull `μ` back to `K`, where `H ⊓ K` is a measurable subgroup of finite index whose cosets, all
   -- of the same measure, partition `K`.
   have h_emb : MeasurableEmbedding K.subtype := .subtypeVal hK.isClosed.measurableSet
-  have : (H.subgroupOf K).FiniteIndex := ⟨Subgroup.relIndex_ne_zero_of_isCompact_of_isOpen hK hH⟩
+  have : (H.subgroupOf K).FiniteIndex := ⟨Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hH hK⟩
   have : (μ.comap K.subtype).IsMulLeftInvariant := .comap _ h_emb
   have h_index := (H.subgroupOf K).index_mul_measure
     (h_emb.measurable hH.measurableSet) (μ.comap K.subtype)
