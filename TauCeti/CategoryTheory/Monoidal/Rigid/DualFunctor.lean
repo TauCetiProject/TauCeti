@@ -49,10 +49,9 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.rightDualTensorIso_inv_whiskerRight_evaluation` and
   `TauCeti.coevaluation_comp_whiskerLeft_rightDualTensorIso_hom`: it carries the evaluation and
   coevaluation of `(X ⊗ Y, (X ⊗ Y)ᘁ)` to those of the tensor product pairing;
-* `TauCeti.rightDualUnitIso`, `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom`, and
-  `TauCeti.rightDualUnitIso_inv_whiskerRight_evaluation`: the canonical identification
-  `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the unit and its
-  interaction with coevaluation and evaluation;
+* `TauCeti.rightDualUnitIso` and `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom`: the
+  canonical identification `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the
+  unit and its interaction with coevaluation;
 * `TauCeti.rightDualFunctorCoreMonoidal` and the instance `TauCeti.rightDualFunctorMonoidal`: the
   strong monoidal structure on `rightDualFunctor C`, with structure morphisms given by
   `TauCeti.rightDualFunctor_ε`, `TauCeti.rightDualFunctor_η`, `TauCeti.rightDualFunctor_μ` and
@@ -69,7 +68,8 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate`);
 * `TauCeti.doubleRightDualFunctor_map_evaluation` and
   `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
-  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
+  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`, with the evaluation also
+  in the form `TauCeti.doubleRightDualFunctor_μ_comp_map_evaluation`;
 * `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
   `X ≅ Xᘁᘁ` is rigid, with left duals described by
   `TauCeti.rigidCategoryOfIsoDoubleRightDual_evaluation` and
@@ -202,16 +202,6 @@ theorem coevaluation_comp_whiskerLeft_rightDualUnitIso_hom :
       𝟙_ C ◁ (rightDualUnitIso C).hom = (ρ_ (𝟙_ C)).inv := by
   rw [rightDualUnitIso_hom, rightDualIso_hom, coevaluation_comp_rightMate, id_whiskerRight,
     Category.comp_id, TauCeti.ExactPairing.unit_coevaluation]
-
-/-- Through `TauCeti.rightDualUnitIso`, the evaluation of the chosen right dual of `𝟙_ C` is the
-right unitor of `𝟙_ C`. -/
-@[reassoc]
-theorem rightDualUnitIso_inv_whiskerRight_evaluation :
-    (rightDualUnitIso C).inv ▷ 𝟙_ C ≫
-      @ExactPairing.evaluation C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)).exact =
-    (ρ_ (𝟙_ C)).hom := by
-  rw [rightDualUnitIso_inv, ExactPairing.rightDualIso_inv_whiskerRight_evaluation,
-    TauCeti.ExactPairing.unit_evaluation]
 
 /-! In `(Cᵒᵖ)ᴹᵒᵖ`, composition and tensor products are those of `C` in the reverse order, by
 definition. So after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj`, each coherence condition
@@ -477,6 +467,17 @@ theorem doubleRightDualFunctor_map_evaluation (X : C) :
       simp only [Category.assoc, Functor.Monoidal.δ_μ_assoc, Functor.Monoidal.η_ε,
         Category.comp_id]
     _ = _ := by rw [h]
+
+/-- The double right dual functor carries the evaluation of `(X, Xᘁ)` to the evaluation of
+`(Xᘁᘁ, Xᘁᘁᘁ)`, up to its tensor and unit comparisons: the form of
+`TauCeti.doubleRightDualFunctor_map_evaluation` with the tensor comparison on the other side. -/
+theorem doubleRightDualFunctor_μ_comp_map_evaluation (X : C) :
+    μ (doubleRightDualFunctor C) Xᘁ X ≫ (doubleRightDualFunctor C).map (ε_ X Xᘁ) =
+      ε_ ((doubleRightDualFunctor C).obj X) ((doubleRightDualFunctor C).obj X)ᘁ ≫
+        ε (doubleRightDualFunctor C) := by
+  rw [doubleRightDualFunctor_map_evaluation, Functor.Monoidal.μ_δ_assoc]
+  -- The two sides differ only in how the objects `Xᘁᘁ` are written.
+  rfl
 
 /-- The double right dual functor carries the coevaluation of `(X, Xᘁ)` to the coevaluation of
 `(Xᘁᘁ, Xᘁᘁᘁ)`, up to its unit and tensor comparisons. -/

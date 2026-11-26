@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.Algebra.Group.Hom.Instances
 public import TauCeti.Algebra.Group.Hom.Lift
+import Mathlib.Algebra.Group.Pi.Torsion
 
 /-!
 # Transport and flipping of homomorphisms
@@ -26,6 +27,10 @@ range contains every `n`-th root of unity of `P`, provided every element of `M` 
 sees such an `f` as an isomorphism. This is the form in which an injection of coefficient groups
 whose image is the `n`-torsion induces bijections on duals.
 
+Homomorphisms into a torsion-free commutative monoid form a torsion-free monoid, as they embed
+into the torsion-free monoid of all functions. With `TauCeti.IsAddTorsionFree.to_twoUniqueSums`
+this gives unique sums on a character lattice `N →+ ℤ`, as used for monoid algebras of characters.
+
 The same transport principle applies to biadditive pairings: bijective changes of both variables
 and of the target preserve bijectivity of the curried homomorphism.
 Flipping a biadditive pairing also preserves equivariance under a common scalar action.
@@ -42,6 +47,8 @@ Flipping a biadditive pairing also preserves equivariance under a common scalar 
   homomorphism is bijective on homomorphisms out of any unital magma.
 * `AddMonoidHom.bijective_of_bijective_pairing`: bijectivity of a curried biadditive pairing is
   preserved by bijective changes of variables and target.
+* `MonoidHom.instIsMulTorsionFree`, `AddMonoidHom.instIsAddTorsionFree`: homomorphisms into a
+  torsion-free commutative monoid form a torsion-free monoid.
 * `AddMonoidHom.flip_map_smul`: flipping a biadditive pairing preserves equivariance.
 * `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv`: a pairing that reads, through
   additive equivalences, as a bijective curried homomorphism separates the points of its second
@@ -139,6 +146,13 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
       fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one])
 
 end TauCeti
+
+/-- Homomorphisms into a torsion-free commutative monoid form a torsion-free monoid. -/
+@[to_additive /-- Homomorphisms into a torsion-free commutative additive monoid form a torsion-free
+additive monoid. -/]
+instance MonoidHom.instIsMulTorsionFree {M N : Type*} [MulOneClass M] [CommMonoid N]
+    [IsMulTorsionFree N] : IsMulTorsionFree (M →* N) :=
+  DFunLike.coe_injective.isMulTorsionFree (MonoidHom.coeFn M N)
 
 namespace AddMonoidHom
 

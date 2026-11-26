@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Square
 import Mathlib.Geometry.Manifold.Metrizable
+import TauCeti.Geometry.Manifold.Boundary.LocalModels
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.Geometry.Manifold.Morse.Stable.SequentialCompactness
 
@@ -357,15 +358,9 @@ theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     IsOpen ((↑) ⁻¹' hX.morseTrajectoryPairs p r c₁ c₂ :
-      Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) := by
-  -- Its complement is the preimage of a finite, hence closed, set.
-  have hc : IsClosed ((↑) ⁻¹' (closure (hX.morseTrajectoryPairs p r c₁ c₂) \
-      hX.morseTrajectoryPairs p r c₁ c₂) : Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
-    (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p
-      hgap).isClosed.preimage continuous_subtypeVal
-  convert hc.isOpen_compl using 1
-  ext x
-  simp only [mem_preimage, mem_compl_iff, Set.mem_sdiff, Subtype.coe_prop, true_and, not_not]
+      Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
+  (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂
+    h₂₁ h₁p hgap).isClosed.isOpen_compl).isOpen_preimage_val_closure
 
 include h hf in
 /-- **The compactified space is one-dimensional at unbroken trajectories.** Every unbroken
@@ -384,23 +379,8 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hpr
     ⟨w.1, hwP.1, hwP.2.1⟩
   let _ := C
-  have hL1 : Module.finrank ℝ L = Module.finrank ℝ ℝ := by rw [Module.finrank_self]; omega
-  -- The unbroken trajectories sit openly in the compactified space.
-  let ι : hX.morseTrajectoryPairs p r c₁ c₂ → closure (hX.morseTrajectoryPairs p r c₁ c₂) :=
-    fun x ↦ ⟨x.val, subset_closure x.property⟩
-  have hι : IsOpenEmbedding ι := by
-    refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
-    convert h.isOpen_preimage_val_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
-    ext x
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
-  have : Nonempty (hX.morseTrajectoryPairs p r c₁ c₂) := ⟨⟨w, hwP⟩⟩
-  let G := ((hι.toOpenPartialHomeomorph ι).symm.trans Φ.toOpenPartialHomeomorph).trans
-    ((chartAt L (Φ ⟨w, hwP⟩)).trans
-      (ContinuousLinearEquiv.ofFinrankEq hL1).toHomeomorph.toOpenPartialHomeomorph)
-  refine ⟨G.source, G.open_source.mem_nhds ?_, G.target, G.open_target,
-    ⟨G.toHomeomorphSourceTarget.symm⟩⟩
-  have hιw : ι ⟨w, hwP⟩ = ⟨w, hw⟩ := rfl
-  simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
+  exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
+    (h.isOpen_preimage_val_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap) (by omega) Φ hw hwP
 
 include h hf in
 /-- **`∂² = 0` reduces to the parity of broken trajectory pairs.** The mod-two Morse boundary

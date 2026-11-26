@@ -41,6 +41,7 @@ realized that way must insert to match this convention.
   nondegenerate.
 * `TauCeti.Hodge.IsPolarization.exists_pairing_ne_zero`: conjugate Hodge components pair
   nondegenerately.
+* `TauCeti.Hodge.IsPolarization.of_smul`: a form polarizes if a positive multiple of it does.
 * `TauCeti.Hodge.Polarization`: a polarized Hodge structure's form, bundled with its relations.
 * `TauCeti.Hodge.IsPolarizable`: existence of some polarizing form.
 
@@ -109,6 +110,10 @@ theorem complex_nondegenerate (h : IsPolarization hℂ hs Q) :
     LinearMap.BilinForm.Nondegenerate (bilinForm hℂ Q) :=
   nondegenerate_bilinForm_complex hℂ h.nondegenerate
 
+/-- The map `Q♭ : V → Hom(V, ℤ)`, `x ↦ Q(x, ·)`, of a polarizing form is injective. -/
+theorem injective (h : IsPolarization hℂ hs Q) : Function.Injective Q :=
+  LinearMap.ker_eq_bot.mp h.nondegenerate.ker_eq_bot
+
 /-- The first Hodge–Riemann relation transported to the conjugate filtration. -/
 theorem orthogonal_conjF (h : IsPolarization hℂ hs Q) (p : ℤ) {x y : Vℂ}
     (hx : x ∈ hs.conjF p) (hy : y ∈ hs.conjF (n + 1 - p)) :
@@ -150,6 +155,33 @@ theorem exists_pairing_ne_zero (h : IsPolarization hℂ hs Q) {p : ℤ} {x : V�
     (hx : x ∈ hs.piece p) (hx0 : x ≠ 0) :
     ∃ y ∈ hs.piece (n - p), bilinForm hℂ Q x y ≠ 0 :=
   ⟨latticeConj hℂ x, by simpa using hs.conj_mem_piece hx, h.pairing_conj_ne_zero hx hx0⟩
+
+/-- **A form whose positive multiple polarizes is a polarization.** -/
+theorem of_smul {a : ℤ} (ha : 0 < a) (h : IsPolarization hℂ hs (a • Q)) :
+    IsPolarization hℂ hs Q := by
+  have ha' : (a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr ha.ne'
+  have hform (x y : Vℂ) : bilinForm hℂ (a • Q) x y = a * bilinForm hℂ Q x y := by
+    simp
+  refine ⟨fun x y ↦ ?_, ?_, fun p x hx y hy ↦ ?_, fun p x hx hx0 ↦ ?_⟩
+  · have := h.symm_weight x y
+    simp only [LinearMap.smul_apply, smul_eq_mul] at this
+    exact mul_left_cancel₀ ha.ne' (by rw [this]; ring)
+  · refine ⟨fun x hx ↦ h.nondegenerate.1 x fun y ↦ ?_, fun y hy ↦ h.nondegenerate.2 y fun x ↦ ?_⟩
+    · simp [hx y]
+    · simp [hy x]
+  · have := h.orthogonal p x hx y hy
+    rw [hform] at this
+    exact (mul_eq_zero.mp this).resolve_left ha'
+  · -- Divide the positive value `a * z` by the positive integer `a`, reading off real and
+    -- imaginary parts.
+    have := h.positive p x hx hx0
+    rw [hform, mul_left_comm] at this
+    generalize Complex.I ^ (2 * p - n) * bilinForm hℂ Q x (latticeConj hℂ x) = z at this ⊢
+    rw [Complex.pos_iff] at this ⊢
+    simp only [Complex.mul_re, Complex.mul_im, Complex.intCast_re, Complex.intCast_im, zero_mul,
+      sub_zero, add_zero] at this
+    exact ⟨pos_of_mul_pos_right this.1 (by exact_mod_cast ha.le),
+      ((mul_eq_zero.mp this.2.symm).resolve_left (by exact_mod_cast ha.ne')).symm⟩
 
 end IsPolarization
 
