@@ -111,6 +111,16 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 
 namespace IsRealCauchyRiemannOperator
 
+/-- The exponent `p + q` at which a `W^{k+2,p}` coefficient acts on `W^{k+2,q}` is at least `1`. -/
+local instance instFactOneLeAddSucc : Fact (1 ≤ ((p + q : ℝ≥0) : ℝ≥0∞)) :=
+  ⟨(Fact.out : (1 : ℝ≥0∞) ≤ q).trans (ENNReal.coe_le_coe.2 le_add_self)⟩
+
+omit [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] in
+/-- For `p ≥ 2` and `q > 1`, the exponent `p + q` lies above `2`, as multiplication by `W^{k+1,p+q}`
+coefficients requires. -/
+private theorem two_lt_add (hp : 2 ≤ p) (hq : 1 < q) : 2 < p + q :=
+  hp.trans_lt (lt_add_of_pos_right p (zero_lt_one.trans hq))
+
 /-- **The zeroth-order term of class `W^{k+2,p}`.** For `p ≥ 2`, every finite `q > 1` and a
 `W^{k+2,p}` section `α` of the real hom bundle `x ↦ V x →L[ℝ] (T_x M →L[ℝ] V x)`, the bounded
 operator sending a `W^{k+2,q}` section `ξ` of `V` to the `(0,1)`-part of the one-form `α ξ`, a
@@ -122,7 +132,7 @@ def sobolevCoeffPerturbationSuccL (hp : 2 ≤ p) (hq : 1 < q)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
       (k + 1 + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
-  perturbationSuccL A k (two_lt_add_of_two_le hp) hq le_add_self
+  perturbationSuccL A k (two_lt_add hp hq) hq le_add_self
     (coefficientL A volume hp (p + q) (k + 1) α)
 
 /-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, below the top order). For a fixed
@@ -149,7 +159,7 @@ theorem chartValueL_sobolevCoeffPerturbationSuccL_ae (hp : 2 ≤ p) (hq : 1 < q)
         ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
           volume p (k + 1 + 1) i α y
             (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
-  filter_upwards [chartValueL_perturbationSuccL_ae A k (two_lt_add_of_two_le hp) hq le_add_self
+  filter_upwards [chartValueL_perturbationSuccL_ae A k (two_lt_add hp hq) hq le_add_self
       (coefficientL A volume hp (p + q) (k + 1) α) ξ i,
     chartValueL_coefficientL_ae A volume hp (p + q) (k + 1) α i] with y h₁ h₂
   -- `sobolevCoeffPerturbationSuccL` is `perturbationSuccL` of `coefficientL α` by definition.
@@ -169,7 +179,7 @@ def sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
       (k + 1 + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
-  hD.perturbedSobolevSuccL A hDs k (two_lt_add_of_two_le hp) hq le_add_self
+  hD.perturbedSobolevSuccL A hDs k (two_lt_add hp hq) hq le_add_self
     (coefficientL A volume hp (p + q) (k + 1) α)
 
 /-- The realization of `D₀ + α` is the realization of `D₀` plus the zeroth-order term. -/
@@ -215,7 +225,7 @@ theorem chartValueL_sobolevCoeffPerturbedSobolevSuccL_ae (hp : 2 ≤ p) (hq : 1 
           ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
             volume p (k + 1 + 1) i α y
               (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
-  filter_upwards [hD.chartValueL_perturbedSobolevSuccL_ae A hDs k (two_lt_add_of_two_le hp) hq
+  filter_upwards [hD.chartValueL_perturbedSobolevSuccL_ae A hDs k (two_lt_add hp hq) hq
       le_add_self (coefficientL A volume hp (p + q) (k + 1) α) ξ hDu,
     chartValueL_coefficientL_ae A volume hp (p + q) (k + 1) α i] with y h₁ h₂
   -- `sobolevCoeffPerturbedSobolevSuccL` is `perturbedSobolevSuccL` of `coefficientL α` by

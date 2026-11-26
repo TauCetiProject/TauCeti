@@ -95,16 +95,15 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 
 namespace IsRealCauchyRiemannOperator
 
-omit [Fact (1 ≤ (p : ℝ≥0∞))] in
 /-- The exponent `p + q` at which a Sobolev coefficient acts on Sobolev sections of exponent `q`
 is at least `1`. -/
-instance instFactOneLeAdd : Fact (1 ≤ ((p + q : ℝ≥0) : ℝ≥0∞)) :=
+local instance instFactOneLeAdd : Fact (1 ≤ ((p + q : ℝ≥0) : ℝ≥0∞)) :=
   ⟨(Fact.out : (1 : ℝ≥0∞) ≤ q).trans (ENNReal.coe_le_coe.2 le_add_self)⟩
 
 omit [Fact (1 ≤ (p : ℝ≥0∞))] in
 /-- For `p ≥ 2` and `q ≥ 1`, the exponent `p + q` lies above `2`, as multiplication by Sobolev
 coefficients of exponent `p + q` on a surface requires. -/
-theorem two_lt_add_of_two_le (hp : 2 ≤ p) : 2 < p + q :=
+private theorem two_lt_add_of_two_le (hp : 2 ≤ p) : 2 < p + q :=
   hp.trans_lt (lt_add_of_pos_right p
     (ENNReal.coe_pos.1 (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q))))
 
