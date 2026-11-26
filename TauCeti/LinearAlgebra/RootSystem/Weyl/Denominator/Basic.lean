@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import Mathlib.Algebra.Regular.Pow
 import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+import TauCeti.LinearAlgebra.RootSystem.Basic
 
 /-!
 # The Weyl denominator
@@ -135,25 +136,13 @@ theorem neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero {x : M}
   exact sum_mem fun i hi ↦
     root_mem_posRootCone_of_mem_posRoots P b ((mem_posRootsFinset P b i).mp (hT hi))
 
-omit [Finite ι] in
-/-- A root has infinite additive order: `n α = 0` pairs with `α^∨` to `2 n = 0`. -/
-private theorem not_isOfFinAddOrder_neg_root (i : ι) : ¬IsOfFinAddOrder (-P.root i) := by
-  rw [isOfFinAddOrder_neg_iff, isOfFinAddOrder_iff_nsmul_eq_zero]
-  rintro ⟨n, hn, hnα⟩
-  have h := congrArg (P.coroot' i) hnα
-  simp only [map_nsmul, RootPairing.root_coroot'_eq_pairing, RootPairing.pairing_same,
-    map_zero, nsmul_eq_mul] at h
-  have h' : ((n * 2 : ℕ) : R) = 0 := by exact_mod_cast h
-  rw [Nat.cast_eq_zero] at h'
-  omega
-
 /-- **The Weyl denominator is regular**: multiplication by `Δ = ∏_{α>0} (1 - e^{-α})` is
 injective on `ℤ[M]`, each factor being regular because a root has infinite additive order. -/
 theorem isRegular_weylDenominator : IsRegular (weylDenominator P b) := by
   rw [weylDenominator_def]
   refine IsRegular.prod fun i _ ↦ ?_
-  have h := (isUnit_one.neg.isRegular).mul
-    (isRegular_single_sub_one_of_not_isOfFinAddOrder (R := ℤ) (not_isOfFinAddOrder_neg_root P i))
+  have h := (isUnit_one.neg.isRegular).mul (isRegular_single_sub_one_of_not_isOfFinAddOrder
+    (R := ℤ) (isOfFinAddOrder_neg_iff.not.mpr (P.not_isOfFinAddOrder_root i)))
   rwa [neg_one_mul, neg_sub] at h
 
 end TauCeti

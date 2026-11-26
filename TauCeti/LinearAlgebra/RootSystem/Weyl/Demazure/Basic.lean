@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Invariant
 import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 import TauCeti.Algebra.MonoidAlgebra.Telescope
+import TauCeti.LinearAlgebra.RootSystem.Basic
 
 /-!
 # The integral Demazure operator of a root
@@ -167,13 +168,8 @@ theorem isLeftRegular_one_sub_single_neg_root :
     IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) := by
   intro f g h
   beta_reduce at h
-  have hα : ¬IsOfFinAddOrder (-P.root i) := by
-    rw [isOfFinAddOrder_iff_nsmul_eq_zero]
-    rintro ⟨n, hn, hnα⟩
-    have := congrArg (P.coroot' i) hnα
-    simp only [smul_neg, map_neg, map_nsmul, root_coroot'_eq_pairing, pairing_same, map_zero,
-      nsmul_eq_mul, neg_eq_zero] at this
-    omega
+  have hα : ¬IsOfFinAddOrder (-P.root i) :=
+    isOfFinAddOrder_neg_iff.not.mpr (P.not_isOfFinAddOrder_root i)
   rw [← sub_eq_zero]
   refine TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder hα ?_
   linear_combination -h

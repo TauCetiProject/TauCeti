@@ -14,6 +14,7 @@ import Mathlib.Algebra.Module.Basic
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Int.Interval
 
 /-!
 # Summation by parts against a geometric sequence
@@ -71,18 +72,21 @@ theorem sum_Ico_smul_pow_eq {R 𝕜 : Type*} [Ring R] [DivisionRing 𝕜] [Modul
     rw [sum_Ico_succ_top hmk, sum_Ico_succ_top hmk, ih, hterm]
     abel
 
-/-- **The centred geometric sum telescopes**: for `z ≠ 0` in a field,
+/-- **The centred geometric sum telescopes**: for `z ≠ 0` in a division ring,
 `(1 - z) ∑_{j=-n}^{n} z^j = z^{-n} - z^{n+1}`. -/
-theorem one_sub_mul_sum_Icc_zpow {𝕜 : Type*} [Field 𝕜] {z : 𝕜} (hz : z ≠ 0) (n : ℕ) :
+theorem one_sub_mul_sum_Icc_zpow {𝕜 : Type*} [DivisionRing 𝕜] {z : 𝕜} (hz : z ≠ 0) (n : ℕ) :
     (1 - z) * ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) - z ^ (n + 1) := by
   -- Reindex `j = -n + k` with `k = 0, …, 2 n`.
   have hsum : ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) * ∑ k ∈ range (2 * n + 1), z ^ k := by
-    rw [Int.Icc_eq_finset_map, sum_map, show ((n : ℤ) + 1 - -(n : ℤ)).toNat = 2 * n + 1 by omega,
+    rw [Int.Icc_eq_finset_map, sum_map, ← Int.card_Icc, Int.card_Icc_neg_natCast_natCast,
       Finset.mul_sum]
     refine sum_congr rfl fun k _ ↦ ?_
     simp [zpow_add₀ hz]
-  rw [hsum, mul_left_comm, mul_neg_geom_sum, mul_sub, mul_one, ← zpow_natCast z (2 * n + 1),
-    ← zpow_add₀ hz, ← zpow_natCast]
+  -- `1 - z` commutes with the powers of `z`.
+  have hc : Commute (1 - z) (z ^ (-(n : ℤ))) :=
+    (Commute.one_left _).sub_left ((Commute.refl z).zpow_right₀ _)
+  rw [hsum, ← mul_assoc, hc.eq, mul_assoc, mul_neg_geom_sum, mul_sub, mul_one,
+    ← zpow_natCast z (2 * n + 1), ← zpow_add₀ hz, ← zpow_natCast]
   congr 2
   push_cast
   ring

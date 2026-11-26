@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.Weyl.WeylVectorMultiple
 public import TauCeti.Analysis.Fourier.FiniteAbelian.UniformDistance
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Field.GeomSum
+import TauCeti.Data.Int.Interval
 
 /-!
 # Quantitative equidistribution of weights modulo the root lattice
@@ -157,11 +158,13 @@ private theorem exists_mem_posRootsFinset_addChar_ne_one {ψ : AddChar A ℂ}
       exact hroot i
     | zero => exact (congrArg ψ φ.map_zero).trans ψ.map_zero_eq_one
     | add x y hx hy ihx ihy =>
-      rw [show (⟨x + y, add_mem hx hy⟩ : AddSubgroup.closure _) = ⟨x, hx⟩ + ⟨y, hy⟩ from rfl,
-        map_add, AddChar.map_add_eq_mul, ihx, ihy, one_mul]
+      have hxy : (⟨x + y, add_mem hx hy⟩ : AddSubgroup.closure _) = ⟨x, hx⟩ + ⟨y, hy⟩ :=
+        Subtype.ext (AddSubgroup.coe_add _ ⟨x, hx⟩ ⟨y, hy⟩).symm
+      rw [hxy, map_add, AddChar.map_add_eq_mul, ihx, ihy, one_mul]
     | neg x hx ihx =>
-      rw [show (⟨-x, neg_mem hx⟩ : AddSubgroup.closure _) = -⟨x, hx⟩ from rfl, map_neg,
-        AddChar.map_neg_eq_inv, ihx, inv_one]
+      have hx' : (⟨-x, neg_mem hx⟩ : AddSubgroup.closure _) = -⟨x, hx⟩ :=
+        Subtype.ext (AddSubgroup.coe_neg _ ⟨x, hx⟩).symm
+      rw [hx', map_neg, AddChar.map_neg_eq_inv, ihx, inv_one]
   refine hψ (AddChar.ext _ _ fun x ↦ ?_)
   obtain ⟨q, rfl⟩ := hφ x
   rw [hall q, AddChar.zero_apply]
@@ -206,9 +209,9 @@ private theorem norm_prod_inv_mul_sum_Icc_le [Finite A] {ψ : AddChar A ℂ} (h�
     exact norm_sum_Icc_zpow_le_two_mul_add_one (ψ.norm_apply _) n
   · rw [hfactor]
     gcongr
+    unfold charBound
     refine (norm_sum_Icc_zpow_le (ψ.norm_apply _) hz n).trans (le_of_eq_of_le ?_
-      (single_le_sum (f := fun i ↦ if ψ (φ (rootLatticeRoot i)) = 1 then 0
-        else 2 / ‖1 - ψ (φ (rootLatticeRoot i))‖) (fun _ _ ↦ by split_ifs <;> positivity) hi₀))
+      (single_le_sum (fun _ _ ↦ by split_ifs <;> positivity) hi₀))
     simp [hz]
 
 /-- The Fourier coefficient at `ψ` of the root-string product divided by its total mass
@@ -242,9 +245,7 @@ private theorem sum_abs_coeff_div_sub_uniform_le [Fintype A] (b : (IsKilling.roo
     have h := sum_coeff_div_mul_addChar 0 b n φ
     simp only [AddChar.zero_apply, mul_one, one_zpow] at h
     rw [h, prod_eq_one fun i _ ↦ ?_]
-    rw [sum_const, Int.card_Icc,
-      show (n : ℤ) + 1 - -(n : ℤ) = ((2 * n + 1 : ℕ) : ℤ) by push_cast; ring,
-      Int.toNat_natCast, nsmul_eq_mul, mul_one]
+    rw [sum_const, Int.card_Icc_neg_natCast_natCast, nsmul_eq_mul, mul_one]
     push_cast
     exact inv_mul_cancel₀ (by exact_mod_cast Nat.succ_ne_zero (2 * n))
   have hdist := sum_norm_sub_mean_le_sum_norm_fourier f
