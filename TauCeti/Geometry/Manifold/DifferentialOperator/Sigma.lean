@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Sigma
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 
 /-!
 # Differential operators on disjoint unions of manifolds

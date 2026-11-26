@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Derivation.DifferentialRing
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Perturbation

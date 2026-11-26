@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension

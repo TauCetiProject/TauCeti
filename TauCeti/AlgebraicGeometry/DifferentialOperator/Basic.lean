@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.CategoryTheory.Sites.SheafHom
 public import Mathlib.CategoryTheory.Sites.Subsheaf
 public import TauCeti.AlgebraicGeometry.Modules.Sections
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 
 /-!
 # The sheaf of differential operators on a scheme

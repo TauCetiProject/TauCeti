@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 public import TauCeti.RingTheory.Derivation.FirstOrder
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
