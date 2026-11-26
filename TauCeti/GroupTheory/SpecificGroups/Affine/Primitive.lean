@@ -36,6 +36,8 @@ two counterexamples are stated in `TauCeti.GroupTheory.Perm.Jordan.Counterexampl
 
 ## Main results
 
+* `TauCeti.AffineGroup.existsUnique_smul_eq_and_smul_eq`: `AGL(1, F)` is sharply
+  `2`-transitive on `F`.
 * `TauCeti.AffineGroup.isPreprimitive`: `AGL(1, F)` acts primitively on `F`, being
   `2`-transitive.
 * `TauCeti.AffineGroup.natCard_range_toPermHom`: the permutation image of `AGL(1, F)` has order
@@ -79,6 +81,28 @@ instance isMultiplyPretransitive_two : IsMultiplyPretransitive (AffineGroup F) F
   · simp only [AffineGroup.smul_def, toAdd_ofAdd, Units.val_mk0]
     -- `c - s a + s b = c + s (b - a)`, and `s (b - a) = d - c` by the choice of `s`.
     rw [sub_add_eq_add_sub, add_sub_assoc, ← mul_sub, h, add_sub_cancel]
+
+/-- **The affine group of a division ring is sharply `2`-transitive**: two distinct points are sent
+to two given distinct points by exactly one affine map. -/
+theorem existsUnique_smul_eq_and_smul_eq {x₁ x₂ y₁ y₂ : F} (hx : x₁ ≠ x₂) (hy : y₁ ≠ y₂) :
+    ∃! g : AffineGroup F, g • x₁ = y₁ ∧ g • x₂ = y₂ := by
+  obtain ⟨g, hg₁, hg₂⟩ :=
+    (is_two_pretransitive_iff (G := AffineGroup F)).1 inferInstance hx hy
+  refine ⟨g, ⟨hg₁, hg₂⟩, fun h ⟨hh₁, hh₂⟩ ↦ ?_⟩
+  rw [AffineGroup.smul_def] at hg₁ hg₂ hh₁ hh₂
+  -- Subtracting the values at `x₁` from those at `x₂` shows that the linear parts agree.
+  have hr : (h.right : F) = g.right := by
+    have hh : (h.right : F) * (x₂ - x₁) = y₂ - y₁ := by
+      rw [mul_sub, ← hh₂, ← hh₁]
+      abel
+    have hg : (g.right : F) * (x₂ - x₁) = y₂ - y₁ := by
+      rw [mul_sub, ← hg₂, ← hg₁]
+      abel
+    have h0 : ((h.right : F) - g.right) * (x₂ - x₁) = 0 := by rw [sub_mul, hh, hg, sub_self]
+    exact sub_eq_zero.1 ((mul_eq_zero.1 h0).resolve_right (sub_ne_zero.2 hx.symm))
+  refine AffineGroup.ext ?_ hr
+  rw [hr] at hh₁
+  exact add_right_cancel (hh₁.trans hg₁.symm)
 
 /-- The affine group of a division ring acts primitively on it. -/
 instance isPreprimitive : IsPreprimitive (AffineGroup F) F :=
