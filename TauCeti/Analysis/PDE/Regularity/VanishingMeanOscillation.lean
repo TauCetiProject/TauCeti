@@ -9,15 +9,18 @@ public import TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Divergence
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.PDE.Caccioppoli.Divergence
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
-# The interior `W^{1,p}` estimate for coefficients of vanishing mean oscillation
+# Interior and whole-space `W^{1,p}` estimates for coefficients of vanishing mean oscillation
 
 Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`, neither symmetric nor continuous in
 general, bounded by `Λ`, and of small mean oscillation below a radius `r₀`: on every ball `B` of
@@ -43,6 +46,30 @@ invariant under dilations, and the factor `|B_R|^(1/p - 1/2)` turns the `L²` no
 `Lᵖ` scale. It is quantitative in `u`, as it must be: `u ↦ M u` scales both sides. The membership
 `∇u ∈ Lᵖ(B_R)` is an a priori assumption: the estimate bounds the norm, it does not prove that it
 is finite.
+
+If `a` is also uniformly elliptic on `Ω`, Caccioppoli's inequality and Hölder's inequality turn
+the `L²` norm of `∇u` into the `Lᵖ` norm of `u` on a larger ball: if `B(x₀, 2R) ⊆ Ω`, `4 R ≤ r₀`
+and `∇u ∈ Lᵖ(B_R)`, then
+
+`‖∇u‖_{Lᵖ(B_{R/2})} ≤ C (‖G‖_{Lᵖ(B_{2R})} + R⁻¹ ‖u‖_{Lᵖ(B_{2R})})`
+
+(`TauCeti.PDE.exists_eLpNorm_gradient_ball_le_eLpNorm_value_of_setAverage_le`). Averaging the
+`p`-th powers of these interior estimates over all centres
+(`TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le`) gives the estimate on the whole space: for
+`a` uniformly elliptic on `ℝ^{n+1}` and of small mean oscillation below `r₀ > 0`, every
+`u ∈ H¹(ℝ^{n+1})` solving `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` with `∇u ∈ Lᵖ` satisfies
+
+`‖∇u‖_{Lᵖ} ≤ C (‖G‖_{Lᵖ} + r₀⁻¹ ‖u‖_{Lᵖ})`
+
+(`TauCeti.PDE.exists_eLpNorm_gradient_le_eLpNorm_value_of_setAverage_le`), with `C` and `δ`
+depending only on `n`, `p`, `λ` and `Λ`. This is the divergence-form counterpart of the
+whole-space `W^{2,p}` estimate
+`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`. When the mean
+oscillation is small at every scale the term `r₀⁻¹ ‖u‖_{Lᵖ}` is absent
+(`TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`); for
+coefficients of vanishing mean oscillation it records the radius below which the oscillation is
+small. In Krylov's whole-space theorem this term is removed by a zero-order term `λ u` with `λ`
+large.
 
 ## The argument
 
@@ -72,6 +99,10 @@ functions whose gradient vanishes outside a small ball, so the work is the local
 * `TauCeti.PDE.exists_eLpNorm_gradient_ball_le_eLpNorm_two_of_setAverage_le`: the interior
   `W^{1,p}` estimate, `2 < p < ∞`, for coefficients of small mean oscillation below a radius, with
   the `L²` norm of `∇u` on the right.
+* `TauCeti.PDE.exists_eLpNorm_gradient_ball_le_eLpNorm_value_of_setAverage_le`: the same estimate
+  for uniformly elliptic coefficients, with the `Lᵖ` norm of `u` on the right.
+* `TauCeti.PDE.exists_eLpNorm_gradient_le_eLpNorm_value_of_setAverage_le`: the `W^{1,p}` estimate
+  on `ℝ^{n+1}` for coefficients of small mean oscillation below a radius `r₀`.
 * `TauCeti.PDE.exists_extendByZero_cutoff`, `TauCeti.PDE.energyFormH1_extendByZero_cutoff_eq` and
   `TauCeti.PDE.setIntegral_cutoff_forcing_eq_zero`: the localization of a local weak solution for
   bounded measurable coefficients. A cutoff of the solution, extended by zero, solves a
@@ -921,6 +952,392 @@ theorem exists_eLpNorm_gradient_ball_le_eLpNorm_two_of_setAverage_le {p : ℝ≥
     fun {a r₀} ha hbd hosc {Ω x₀ R} hR hRr₀ hball u G hu hv hg hG => ?_⟩
   exact eLpNorm_ball_half_le_of_step hp hθ0 hθ1 hqinv hδ0 hC₁ habs hR hg hG
     (fun hs hst htR => hstep ha hbd hosc hRr₀ hball u G hu hv hg hG hs hst htR)
+
+/-! ### The lower-order term in `Lᵖ`, and the estimate on the whole space -/
+
+section WholeSpace
+
+/-- **Caccioppoli's inequality for a local weak solution tested against test functions.** For `u`
+solving `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` in `Ω` against test functions, with `a` uniformly elliptic on
+`B(x₀, 2R) ⊆ Ω` and `G ∈ L²(B(x₀, 2R))`,
+`∫_{B(x₀, R)} ‖∇u‖² ≤ c₁ (K / R)² ∫_{B(x₀, 2R)} u² + c₂ ∫_{B(x₀, 2R)} ‖G‖²`, with `c₁`, `c₂` the
+constants of `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_divergence` and `K`
+depending only on the dimension. -/
+private theorem exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction :
+    ∃ K : ℝ, 0 < K ∧ ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {lam Lam : ℝ} {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+      {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ},
+      UniformlyEllipticOn (ball x₀ (2 * R)) a lam Lam →
+      AEStronglyMeasurable a (volume.restrict (ball x₀ (2 * R))) →
+      0 < R → ball x₀ (2 * R) ⊆ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) →
+      ∀ (u : W1p volume Ω 2) (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+        (∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
+          ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+        MemLp G 2 (volume.restrict (ball x₀ (2 * R))) →
+        ∫ x in ball x₀ R, ‖W1p.gradient u x‖ ^ 2 ≤
+          2 * ((2 * Lam / lam) ^ 2 + 1) * (K / R) ^ 2 *
+              (∫ x in ball x₀ (2 * R), ‖W1p.value u x‖ ^ 2) +
+            12 / lam ^ 2 * ∫ x in ball x₀ (2 * R), ‖G x‖ ^ 2 := by
+  obtain ⟨K, hK0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_divergence (ι := Fin (n + 1))
+  refine ⟨K, hK0, fun {a lam Lam Ω x₀ R} hell ham hR hball u G hu hG => ?_⟩
+  set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ (2 * R), isOpen_ball⟩
+  have hB : B ≤ Ω := hball
+  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict B) :=
+    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) hell.upper_nonneg ham
+      aestronglyMeasurable_const aestronglyMeasurable_const (fun _ hx => hell.upper_bound hx)
+      (fun _ _ => by simp) (fun _ _ => by simp)
+  have hG0 : MemLp (fun x => G x - 0) 2 (volume.restrict B) := by simp_rw [sub_zero]; exact hG
+  -- On `B`, the restriction of `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = div F` with `F = -G`, against `H¹₀(B)`.
+  have hw : ∀ v : W1p0 volume B 2, energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
+      -∫ x in B, ⟪(-G) x, W1p.gradient (v : W1p volume B 2) x⟫_ℝ := fun v => by
+    rw [forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff (f := 0)
+      (fun φ => by rw [hu φ]; simp) hG0 MemLp.zero v, MemLp.toLp_zero, inner_zero_left, add_zero,
+      L2.inner_def, ← integral_neg]
+    refine integral_congr_ae ?_
+    filter_upwards [hG0.coeFn_toLp] with x hx
+    rw [hx, sub_zero, Pi.neg_apply, inner_neg_left, neg_neg]
+  have hcacc := hC (mu := volume) (Omega := B) (u := W1p.restrictL hB u) (x₀ := x₀) (r := R)
+    (R := 2 * R) hell ham hG.neg hw (by linarith) subset_rfl
+  -- On `B`, the jets of the restriction are those of `u`.
+  have e1 : ∫ x in ball x₀ R, ‖W1p.gradient (W1p.restrictL hB u) x‖ ^ 2 =
+      ∫ x in ball x₀ R, ‖W1p.gradient u x‖ ^ 2 := by
+    refine integral_congr_ae (ae_restrict_of_ae_restrict_of_subset
+      (ball_subset_ball (by linarith) : ball x₀ R ⊆ ball x₀ (2 * R)) ?_)
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  have e2 : ∫ x in ball x₀ (2 * R), W1p.value (W1p.restrictL hB u) x ^ 2 =
+      ∫ x in ball x₀ (2 * R), ‖W1p.value u x‖ ^ 2 := by
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.value_restrictL_ae hB u] with x hx
+    rw [hx, Real.norm_eq_abs, sq_abs]
+  simp only [Pi.neg_apply, norm_neg] at hcacc
+  rwa [e1, e2, show 2 * R - R = R by ring] at hcacc
+
+/-- **Caccioppoli's inequality in `L²` norms.** The inequality of
+`exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction`, after taking square roots:
+`‖∇u‖_{L²(B(x₀, R))} ≤ α R⁻¹ ‖u‖_{L²(B(x₀, 2R))} + β ‖G‖_{L²(B(x₀, 2R))}`. -/
+private theorem exists_eLpNorm_gradient_two_ball_le (lam Lam : ℝ) :
+    ∃ α β : ℝ, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ},
+      UniformlyEllipticOn (ball x₀ (2 * R)) a lam Lam →
+      AEStronglyMeasurable a (volume.restrict (ball x₀ (2 * R))) →
+      0 < R → ball x₀ (2 * R) ⊆ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) →
+      ∀ (u : W1p volume Ω 2) (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+        (∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
+          ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+        MemLp G 2 (volume.restrict (ball x₀ (2 * R))) →
+        eLpNorm (W1p.gradient u) 2 (volume.restrict (ball x₀ R)) ≤
+          ENNReal.ofReal α * ENNReal.ofReal R⁻¹ *
+              eLpNorm (W1p.value u) 2 (volume.restrict (ball x₀ (2 * R))) +
+            ENNReal.ofReal β * eLpNorm G 2 (volume.restrict (ball x₀ (2 * R))) := by
+  obtain ⟨K, hK0, hK⟩ :=
+    exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction (n := n)
+  set c₁ : ℝ := 2 * ((2 * Lam / lam) ^ 2 + 1) with hc₁_def
+  set c₂ : ℝ := 12 / lam ^ 2 with hc₂_def
+  refine ⟨√c₁ * K, √c₂, fun {a Ω x₀ R} hell ham hR hball u G hu hG => ?_⟩
+  have hcacc := hK hell ham hR hball u G hu hG
+  rw [← hc₁_def, ← hc₂_def] at hcacc
+  have hgrad : MemLp (W1p.gradient u) 2 (volume.restrict (ball x₀ R)) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono
+      ((ball_subset_ball (by linarith)).trans hball) le_rfl)
+  have hval : MemLp (W1p.value u) 2 (volume.restrict (ball x₀ (2 * R))) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono hball le_rfl)
+  rw [hgrad.eLpNorm_two_eq_ofReal_sqrt_integral, hval.eLpNorm_two_eq_ofReal_sqrt_integral,
+    hG.eLpNorm_two_eq_ofReal_sqrt_integral]
+  set I₂ := ∫ x in ball x₀ (2 * R), ‖W1p.value u x‖ ^ 2
+  set I₃ := ∫ x in ball x₀ (2 * R), ‖G x‖ ^ 2
+  have hc₁ : 0 ≤ c₁ := by positivity
+  have hI₂ : 0 ≤ I₂ := integral_nonneg fun _ => by positivity
+  have hI₃ : 0 ≤ I₃ := integral_nonneg fun _ => by positivity
+  rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
+    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_iff.2 ⟨by positivity, hcacc.trans ?_⟩)
+  -- `(√c₁ K R⁻¹ √I₂ + √c₂ √I₃)² ≥ c₁ (K / R)² I₂ + c₂ I₃`.
+  have hA : (√c₁ * K * R⁻¹ * √I₂) ^ 2 = c₁ * (K / R) ^ 2 * I₂ := by
+    rw [mul_pow, mul_pow, mul_pow, Real.sq_sqrt hc₁, Real.sq_sqrt hI₂, div_pow, inv_pow,
+      div_eq_mul_inv]
+    ring
+  have hB : (√c₂ * √I₃) ^ 2 = c₂ * I₃ := by
+    rw [mul_pow, Real.sq_sqrt (by positivity), Real.sq_sqrt hI₃]
+  have hcross : 0 ≤ √c₁ * K * R⁻¹ * √I₂ * (√c₂ * √I₃) := by positivity
+  nlinarith [hA, hB, hcross]
+
+/-- **Hölder's inequality on `B(x₀, 2R)`, scaled by `|B(x₀, R)|`.** For `p ≥ 2`,
+`|B(x₀, R)|^(1/p - 1/2) ‖f‖_{L²(B(x₀, 2R))} ≤ 2^(n+1) ‖f‖_{Lᵖ(B(x₀, 2R))}`: this turns the `L²`
+term of `exists_eLpNorm_gradient_ball_le_eLpNorm_two_of_setAverage_le` into an `Lᵖ` norm. -/
+private theorem rpow_mul_eLpNorm_two_ball_le {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞}
+    (hp : 2 ≤ p) {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 < R)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → F}
+    (hf : AEStronglyMeasurable f (volume.restrict (ball x₀ (2 * R)))) :
+    volume (ball x₀ R) ^ (p.toReal⁻¹ - 2⁻¹) * eLpNorm f 2 (volume.restrict (ball x₀ (2 * R))) ≤
+      2 ^ (n + 1) * eLpNorm f p (volume.restrict (ball x₀ (2 * R))) := by
+  set e : ℝ := 2⁻¹ - p.toReal⁻¹
+  have he0 : 0 ≤ e := by
+    rcases eq_or_ne p ⊤ with rfl | hp_top
+    · simp [e]
+    · have h2 : (2 : ℝ) ≤ p.toReal := by
+        simpa using (ENNReal.toReal_le_toReal (by simp) hp_top).2 hp
+      exact sub_nonneg.2 (inv_anti₀ two_pos h2)
+  have he1 : e ≤ 1 := by
+    have : 0 ≤ p.toReal⁻¹ := inv_nonneg.2 ENNReal.toReal_nonneg
+    simp only [e]
+    linarith
+  set V := volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R)
+  have hHolder := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hf
+  rw [Measure.restrict_apply_univ, Measure.addHaar_ball_mul_of_pos _ x₀ two_pos R,
+    finrank_euclideanSpace_fin, ENNReal.toReal_ofNat, one_div, one_div,
+    ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, ENNReal.mul_rpow_of_nonneg _ _ he0]
+    at hHolder
+  rw [Measure.addHaar_ball_center, show p.toReal⁻¹ - 2⁻¹ = -e by ring]
+  calc V ^ (-e) * eLpNorm f 2 (volume.restrict (ball x₀ (2 * R)))
+      ≤ V ^ (-e) * (eLpNorm f p (volume.restrict (ball x₀ (2 * R))) *
+          ((2 ^ (n + 1)) ^ e * V ^ e)) := by gcongr
+    _ = (2 ^ (n + 1)) ^ e * V ^ (-e + e) * eLpNorm f p (volume.restrict (ball x₀ (2 * R))) := by
+        rw [ENNReal.rpow_add _ _ (measure_ball_pos volume 0 hR).ne' measure_ball_lt_top.ne]
+        ring
+    _ ≤ 2 ^ (n + 1) * eLpNorm f p (volume.restrict (ball x₀ (2 * R))) := by
+        rw [neg_add_cancel, ENNReal.rpow_zero, mul_one]
+        gcongr
+        calc ((2 : ℝ≥0∞) ^ (n + 1)) ^ e ≤ ((2 : ℝ≥0∞) ^ (n + 1)) ^ (1 : ℝ) :=
+              ENNReal.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) he1
+          _ = 2 ^ (n + 1) := ENNReal.rpow_one _
+
+/-- The bookkeeping of the interior estimate: the `Lᵖ` norm of `G` on `B(x₀, R)`, together with
+the bounds of `rpow_mul_eLpNorm_two_ball_le` on the two `L²` terms of Caccioppoli's inequality,
+is at most `(1 + 2^(n+1) (β + α)) (Z + r Y)`. -/
+private theorem add_mul_add_le {α β r Y Z : ℝ≥0∞} :
+    Z + α * r * (2 ^ (n + 1) * Y) + β * (2 ^ (n + 1) * Z) ≤
+      (1 + 2 ^ (n + 1) * (β + α)) * (Z + r * Y) := by
+  have e : (1 + 2 ^ (n + 1) * (β + α)) * (Z + r * Y) =
+      (Z + α * r * (2 ^ (n + 1) * Y) + β * (2 ^ (n + 1) * Z)) +
+        (r * Y + 2 ^ (n + 1) * β * (r * Y) + 2 ^ (n + 1) * α * Z) := by ring
+  rw [e]
+  exact le_self_add
+
+/-- A right side of the form `C (Z + R⁻¹ Y)` with `C ≠ 0`, `R > 0` and `Y` or `Z` infinite bounds
+everything. -/
+private theorem le_mul_add_ofReal_inv_mul_of_eq_top {C : ℝ≥0∞} (hC : C ≠ 0) {R : ℝ} (hR : 0 < R)
+    {X Y Z : ℝ≥0∞} (h : Y = ⊤ ∨ Z = ⊤) : X ≤ C * (Z + ENNReal.ofReal R⁻¹ * Y) := by
+  rcases h with rfl | rfl
+  · rw [ENNReal.mul_top (ENNReal.ofReal_pos.2 (inv_pos.2 hR)).ne', add_top, ENNReal.mul_top hC]
+    exact le_top
+  · rw [top_add, ENNReal.mul_top hC]
+    exact le_top
+
+/-- **The interior `W^{1,p}` estimate for coefficients of small mean oscillation, with the
+`Lᵖ` norm of `u` on the right.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and
+`δ > 0`, depending only on `n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a
+measurable coefficient matrix on `ℝ^{n+1}`, bounded by `Λ`, such that on every ball `B` of radius
+at most `r₀` some constant matrix `A`, uniformly elliptic with constants `λ, Λ`, has mean
+deviation `⨍_B ‖a - A‖ ≤ δ` from `a`. Let `a` be uniformly elliptic with constants `λ, Λ` on `Ω`,
+let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `Ω`, let `B(x₀, 2R) ⊆ Ω` with `4 R ≤ r₀`,
+and let `∇u` lie in `Lᵖ(B(x₀, R))`. Then
+
+`‖∇u‖_{Lᵖ(B(x₀, R/2))} ≤ C (‖G‖_{Lᵖ(B(x₀, 2R))} + R⁻¹ ‖u‖_{Lᵖ(B(x₀, 2R))})`.
+
+The membership `∇u ∈ Lᵖ(B(x₀, R))` is an a priori assumption; nothing is assumed of `u` and `G`
+beyond the equation, since the right side is infinite unless they lie in `Lᵖ(B(x₀, 2R))`. -/
+theorem exists_eLpNorm_gradient_ball_le_eLpNorm_value_of_setAverage_le {p : ℝ≥0∞} (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {r₀ : ℝ},
+        AEStronglyMeasurable a volume → (∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) →
+        (∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
+          ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
+            UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
+              ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ) →
+        ∀ {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))}
+          {R : ℝ}, UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam →
+          4 * R ≤ r₀ → ball x₀ (2 * R) ⊆ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) →
+        ∀ (u : W1p volume Ω 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+          (∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
+            ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+          MemLp (W1p.gradient u) p (volume.restrict (ball x₀ R)) →
+          eLpNorm (W1p.gradient u) p (volume.restrict (ball x₀ (R / 2))) ≤
+            C * (eLpNorm G p (volume.restrict (ball x₀ (2 * R))) + ENNReal.ofReal R⁻¹ *
+              eLpNorm (W1p.value u) p (volume.restrict (ball x₀ (2 * R)))) := by
+  obtain ⟨C₁, δ, hδ, h₁⟩ := exists_eLpNorm_gradient_ball_le_eLpNorm_two_of_setAverage_le hp hp_top
+    lam Lam
+  obtain ⟨α, β, h₂⟩ := exists_eLpNorm_gradient_two_ball_le (n := n) lam Lam
+  refine ⟨(C₁ + 1) * (1 + 2 ^ (n + 1) * (β.toNNReal + α.toNNReal)), δ, hδ,
+    fun {a r₀} ham hbd hosc {Ω x₀ R} hell hRr hball u G hu hgrad => ?_⟩
+  rcases le_or_gt R 0 with hR | hR
+  · rw [ball_eq_empty.2 (by linarith), Measure.restrict_empty, eLpNorm_measure_zero]
+    exact zero_le
+  have hsub : ball x₀ R ⊆ ball x₀ (2 * R) := ball_subset_ball (by linarith)
+  have hval₂ : AEStronglyMeasurable (W1p.value u) (volume.restrict (ball x₀ (2 * R))) :=
+    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hball le_rfl)
+  set Y := eLpNorm (W1p.value u) p (volume.restrict (ball x₀ (2 * R)))
+  set Z := eLpNorm G p (volume.restrict (ball x₀ (2 * R)))
+  set r := ENNReal.ofReal R⁻¹
+  -- Data outside `Lᵖ(B(x₀, 2R))` make the right side infinite.
+  by_cases hfin : Y ≠ ⊤ ∧ Z ≠ ⊤
+  swap
+  · exact le_mul_add_ofReal_inv_mul_of_eq_top (by positivity) hR (by
+      rw [not_and_or, not_ne_iff, not_ne_iff] at hfin
+      exact hfin)
+  have hG : MemLp G p (volume.restrict (ball x₀ (2 * R))) :=
+    memLp_iff.2 (lt_top_iff_ne_top.2 hfin.2)
+  have : IsFiniteMeasure (volume.restrict (ball x₀ (2 * R))) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hloc := h₁ ham hbd hosc hR hRr (hsub.trans hball) u G hu
+    (memLp_iff.2 ((eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)).trans_lt
+      (lt_top_iff_ne_top.2 hfin.1))) hgrad (hG.mono_measure (Measure.restrict_mono hsub le_rfl))
+  have hL2 := h₂ (hell.mono_set hball) (ham.mono_measure Measure.restrict_le_self) hR hball u G hu
+    (hG.mono_exponent hp.le)
+  set V := volume (ball x₀ R) ^ (p.toReal⁻¹ - 2⁻¹)
+  calc eLpNorm (W1p.gradient u) p (volume.restrict (ball x₀ (R / 2)))
+      ≤ C₁ * (Z + V * (ENNReal.ofReal α * r *
+          eLpNorm (W1p.value u) 2 (volume.restrict (ball x₀ (2 * R))) +
+          ENNReal.ofReal β * eLpNorm G 2 (volume.restrict (ball x₀ (2 * R))))) := by
+        refine hloc.trans ?_
+        gcongr
+        exact eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)
+    _ = C₁ * (Z + ENNReal.ofReal α * r *
+          (V * eLpNorm (W1p.value u) 2 (volume.restrict (ball x₀ (2 * R)))) +
+          ENNReal.ofReal β * (V * eLpNorm G 2 (volume.restrict (ball x₀ (2 * R))))) := by ring
+    _ ≤ C₁ * (Z + ENNReal.ofReal α * r * (2 ^ (n + 1) * Y) +
+          ENNReal.ofReal β * (2 ^ (n + 1) * Z)) := by
+        have hHu := rpow_mul_eLpNorm_two_ball_le hp.le hR hval₂
+        have hHG := rpow_mul_eLpNorm_two_ball_le hp.le hR hG.aestronglyMeasurable
+        gcongr
+    _ ≤ (C₁ + 1) *
+          ((1 + 2 ^ (n + 1) * (ENNReal.ofReal β + ENNReal.ofReal α)) * (Z + r * Y)) := by
+        gcongr
+        · exact le_self_add
+        · exact add_mul_add_le
+    _ = _ := by
+        push_cast
+        rw [mul_assoc]
+        rfl
+
+/-- **From the local estimates to the whole space.** If at every centre `y`
+`‖g‖_{Lᵖ(B(y, R/2))} ≤ 2C ‖k‖_{Lᵖ(B(y, 2R))}` for `k = ‖G‖ + R⁻¹ |v|` and `R = r₀ / 4`, then
+`‖g‖_{Lᵖ} ≤ 4^(n+1) 2C 4 (‖G‖_{Lᵖ} + r₀⁻¹ ‖v‖_{Lᵖ})`. -/
+private theorem eLpNorm_le_of_forall_eLpNorm_ball_le {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp_top : p ≠ ⊤)
+    {r₀ R : ℝ} (hR : 0 < R) (hR_def : R = r₀ / 4)
+    {g G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hg : AEStronglyMeasurable g volume)
+    (hG : AEStronglyMeasurable G volume) (hv : AEStronglyMeasurable v volume) {C : ℝ≥0}
+    (hlocal : ∀ y, eLpNorm g p (volume.restrict (ball y (R / 2))) ≤
+      eLpNorm ((2 * C : ℝ) • fun x => ‖G x‖ + R⁻¹ * ‖v x‖) p (volume.restrict (ball y (2 * R)))) :
+    eLpNorm g p volume ≤
+      (4 ^ (n + 1) * (2 * C) * 4 : ℝ≥0) * (eLpNorm G p volume + ENNReal.ofReal r₀⁻¹ *
+        eLpNorm v p volume) := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+  have hglob := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le hp0 hp_top hg
+    ((hG.norm.add (hv.norm.const_mul _)).const_smul (2 * C : ℝ)) (half_pos hR)
+    (Eventually.of_forall hlocal)
+  have hratio : volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (2 * R)) /
+      volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (R / 2)) = 4 ^ (n + 1) := by
+    rw [show 2 * R = 4 * (R / 2) by ring, Measure.addHaar_ball_mul_of_pos _ _ four_pos,
+      finrank_euclideanSpace_fin, ENNReal.mul_div_cancel_right
+        (measure_ball_pos volume _ (half_pos hR)).ne' measure_ball_lt_top.ne,
+      ENNReal.ofReal_pow zero_le_four, ENNReal.ofReal_ofNat]
+  have hpow : ((4 : ℝ≥0∞) ^ (n + 1)) ^ p.toReal⁻¹ ≤ 4 ^ (n + 1) := by
+    calc ((4 : ℝ≥0∞) ^ (n + 1)) ^ p.toReal⁻¹ ≤ ((4 : ℝ≥0∞) ^ (n + 1)) ^ (1 : ℝ) :=
+          ENNReal.rpow_le_rpow_of_exponent_le (one_le_pow₀ (by norm_num)) (inv_le_one_of_one_le₀
+            (by simpa using (ENNReal.toReal_le_toReal (by simp) hp_top).2 hp1))
+      _ = 4 ^ (n + 1) := ENNReal.rpow_one _
+  have hkle : eLpNorm (fun x => ‖G x‖ + R⁻¹ * ‖v x‖) p volume ≤
+      eLpNorm G p volume + ENNReal.ofReal R⁻¹ * eLpNorm v p volume := by
+    refine (eLpNorm_add_le (μ := volume) (f := fun x => ‖G x‖) (g := fun x => R⁻¹ * ‖v x‖)
+      hp1).trans_eq ?_
+    rw [eLpNorm_norm, show (fun x => R⁻¹ * ‖v x‖) = R⁻¹ • fun x => ‖v x‖ from rfl,
+      eLpNorm_const_smul, eLpNorm_norm, Real.eNorm_eq_ofReal (inv_nonneg.2 hR.le)]
+    all_goals first | exact hv | exact hG
+  have hRr : ENNReal.ofReal R⁻¹ = 4 * ENNReal.ofReal r₀⁻¹ := by
+    rw [hR_def, inv_div, div_eq_mul_inv, ENNReal.ofReal_mul zero_le_four, ENNReal.ofReal_ofNat]
+  rw [hratio, eLpNorm_const_smul, Real.eNorm_eq_ofReal (by positivity),
+    ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal] at hglob
+  refine hglob.trans ?_
+  calc ((4 : ℝ≥0∞) ^ (n + 1)) ^ p.toReal⁻¹ *
+        (2 * C * eLpNorm (fun x => ‖G x‖ + R⁻¹ * ‖v x‖) p volume)
+      ≤ 4 ^ (n + 1) * (2 * C * (eLpNorm G p volume +
+          4 * ENNReal.ofReal r₀⁻¹ * eLpNorm v p volume)) := by
+        rw [← hRr]
+        gcongr
+    _ ≤ 4 ^ (n + 1) * (2 * C * (4 * (eLpNorm G p volume +
+          ENNReal.ofReal r₀⁻¹ * eLpNorm v p volume))) := by
+        gcongr
+        rw [mul_add, ← mul_assoc]
+        gcongr
+        exact le_mul_of_one_le_left' (by norm_num)
+    _ = _ := by push_cast; ring
+
+/-- **The `W^{1,p}` estimate on `ℝ^{n+1}` for coefficients of small mean oscillation below a
+radius.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on
+`n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a measurable coefficient matrix on
+`ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, such that on every ball `B` of radius at most
+`r₀ > 0` some constant matrix `A`, uniformly elliptic with the same constants, has mean deviation
+`⨍_B ‖a - A‖ ≤ δ` from `a`. Then every `u ∈ H¹(ℝ^{n+1})` solving `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly,
+with `∇u ∈ Lᵖ`, satisfies
+
+`‖∇u‖_{Lᵖ} ≤ C (‖G‖_{Lᵖ} + r₀⁻¹ ‖u‖_{Lᵖ})`.
+
+Coefficients of vanishing mean oscillation satisfy the hypothesis for every `δ > 0` with some
+radius `r₀`, and the term `r₀⁻¹ ‖u‖_{Lᵖ}` records that radius; when the hypothesis holds at every
+scale it can be dropped, as in
+`TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`. The
+membership `∇u ∈ Lᵖ` is an a priori assumption. -/
+theorem exists_eLpNorm_gradient_le_eLpNorm_value_of_setAverage_le {p : ℝ≥0∞} (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {r₀ : ℝ},
+        0 < r₀ → AEStronglyMeasurable a volume → UniformlyEllipticOn univ a lam Lam →
+        (∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
+          ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
+            UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
+              ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ) →
+        ∀ (u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
+              ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+          MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+            p volume →
+          eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+            EuclideanSpace ℝ (Fin (n + 1))) p volume ≤
+            C * (eLpNorm G p volume + ENNReal.ofReal r₀⁻¹ *
+              eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume) := by
+  have hp1 : 1 ≤ p := one_le_two.trans hp.le
+  obtain ⟨C, δ, hδ, h⟩ :=
+    exists_eLpNorm_gradient_ball_le_eLpNorm_value_of_setAverage_le (n := n) hp hp_top lam Lam
+  refine ⟨4 ^ (n + 1) * (2 * (C + 1)) * 4, δ, hδ,
+    fun {a r₀} hr₀ ham hell hosc u G hu hgrad => ?_⟩
+  -- A forcing outside `Lᵖ` makes the right side infinite.
+  rcases eq_or_ne (eLpNorm G p volume) ⊤ with hGtop | hGfin
+  · exact le_mul_add_ofReal_inv_mul_of_eq_top (by positivity) hr₀ (Or.inr hGtop)
+  have hG : AEStronglyMeasurable G volume := (memLp_iff.2 hGfin.lt_top).aestronglyMeasurable
+  set R := r₀ / 4 with hR_def
+  have hR : 0 < R := by positivity
+  set k : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ‖G x‖ + R⁻¹ * ‖W1p.value u x‖
+  have hval : AEStronglyMeasurable (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) volume := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.aestronglyMeasurable (W1p.value u)
+  -- The interior estimate on `B(y, R/2)`, at every centre `y`, bounded by a local norm of `k`.
+  have hlocal : ∀ y, eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) p (volume.restrict (ball y (R / 2))) ≤
+      eLpNorm ((2 * (C + 1) : ℝ) • k) p (volume.restrict (ball y (2 * R))) := fun y => by
+    refine (h ham (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) hosc (Ω := ⊤)
+      (x₀ := y) (R := R) (by simpa only [Opens.coe_top] using hell) (by rw [hR_def]; ring_nf; rfl)
+      (subset_univ _) u G (fun φ => by rw [hu φ, Opens.coe_top, Measure.restrict_univ])
+      (hgrad.restrict _)).trans ?_
+    grw [show (C : ℝ≥0∞) ≤ C + 1 from le_self_add]
+    rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal (by positivity), ENNReal.ofReal_mul zero_le_two,
+      ENNReal.ofReal_ofNat, ← NNReal.coe_one, ← NNReal.coe_add, ENNReal.ofReal_coe_nnreal,
+      mul_comm (2 : ℝ≥0∞), mul_assoc, two_mul (eLpNorm k p _)]
+    push_cast
+    gcongr
+    · exact eLpNorm_mono_real hG.restrict fun x => le_add_of_nonneg_right (by positivity)
+    · rw [← Real.eNorm_eq_ofReal (inv_nonneg.2 hR.le), ← eLpNorm_const_smul]
+      exact eLpNorm_mono_real (hval.const_smul _).restrict fun x => by
+        rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le)]
+        exact le_add_of_nonneg_left (by positivity)
+  exact eLpNorm_le_of_forall_eLpNorm_ball_le (C := C + 1) hp1 hp_top hR hR_def
+    hgrad.aestronglyMeasurable hG hval (by exact_mod_cast hlocal)
+
+end WholeSpace
 
 end PDE
 
