@@ -143,8 +143,7 @@ if its twisting grading is the identity. -/
 theorem twistingGrading_eq_id_iff :
     twistingGrading o hn γ hγ = LinearMap.id ↔ γ = Algebra.lsmul ℂ ℂ E (complexVolume Q o) := by
   refine ⟨fun h ↦ LinearMap.ext fun ψ ↦ ?_, fun h ↦ LinearMap.ext fun ψ ↦ ?_⟩
-  · rw [← complexVolume_smul_twistingGrading o hn hγ hQ, h]
-    rfl
+  · rw [← complexVolume_smul_twistingGrading o hn hγ hQ, h, LinearMap.id_apply, Algebra.lsmul_coe]
   · simp [twistingGrading_apply, h, complexVolume_smul_complexVolume_smul o hQ]
 
 /-! ### The multiplicity space of a graded module -/

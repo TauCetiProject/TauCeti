@@ -187,7 +187,8 @@ def withLpProdAssoc : Q₁₂_₃.IsometryEquiv Q₁_₂₃ :=
 @[simp] theorem withLpProdAssoc_symm_apply (y : WithLp p (U × WithLp p (V × W))) :
     (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).symm y =
       WithLp.toLp p (WithLp.toLp p (y.fst, y.snd.fst), y.snd.snd) :=
-  (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).symm_apply_eq.mpr (by simp; rfl)
+  (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).symm_apply_eq.mpr
+    (by simp [← WithLp.ofLp_fst, ← WithLp.ofLp_snd])
 end ProdAssoc
 end Algebraic
 
@@ -282,7 +283,7 @@ include hQ in
 theorem eq_mul_norm_sq_of_withLpProd {c : ℝ}
     (hQ₁ : ∀ v, Q₁ v = c * ‖v‖ ^ 2) (hQ₂ : ∀ w, Q₂ w = c * ‖w‖ ^ 2) (x : WithLp 2 (V × W)) :
     Q x = c * ‖x‖ ^ 2 := by
-  rw [hQ, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2, mul_add]; rfl
+  rw [hQ, hQ₁, hQ₂, WithLp.ofLp_fst, WithLp.ofLp_snd, WithLp.prod_norm_sq_eq_of_L2, mul_add]
 
 include hQ in
 /-- When `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, an additive quadratic form `Q (v, w) = Q₁ v + Q₂ w` on

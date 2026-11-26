@@ -392,7 +392,7 @@ theorem map_prodUnique_prod_positiveOrientation {F₀ : Type*} [AddCommGroup F�
     Basis.eq_of_apply_eq fun k ↦ by
       obtain ⟨i | j, rfl⟩ := finSumFinEquiv.surjective k
       · have hi : (finCongr (Nat.add_zero m).symm).symm (finSumFinEquiv (.inl i)) = i := by
-          ext; rfl
+          rw [finSumFinEquiv_apply_left]; ext; simp
         rw [Basis.map_apply, Basis.reindex_apply, Basis.reindex_apply, Equiv.symm_apply_apply, hi]
         simp [Basis.prod_apply]
       · exact j.elim0

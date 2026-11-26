@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Normed.Lp.WithLp
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
 /-!
@@ -51,7 +52,7 @@ theorem map_withLpProdComm (hn : finrank R V = n) (hm : finrank R W = m)
       (-1 : Rˣ) ^ (n * m) • Orientation.reindex R _ (finCongr (add_comm m n)) o' := by
   have hcomm : (LinearIsometryEquiv.withLpProdComm p R V W).toLinearEquiv.trans
       (WithLp.linearEquiv p R (W × V)) =
-      (WithLp.linearEquiv p R (V × W)).trans (LinearEquiv.prodComm R V W) := by ext x <;> rfl
+      (WithLp.linearEquiv p R (V × W)).trans (LinearEquiv.prodComm R V W) := by ext x <;> simp
   refine (Orientation.map (Fin (n + m)) (WithLp.linearEquiv p R (W × V))).injective ?_
   rw [← Orientation.map_trans, hcomm, Orientation.map_trans, ho,
     Orientation.map_prodComm_prod o₁ o₂ hn hm, Orientation.map_units_smul,
@@ -71,39 +72,39 @@ end Comm
 
 section Assoc
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {K U V W : Type*} [Field K] [LinearOrder K]
-  [IsStrictOrderedRing K]
-  [SeminormedAddCommGroup U] [Module K U] [FiniteDimensional K U]
-  [SeminormedAddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [SeminormedAddCommGroup W] [Module K W] [FiniteDimensional K W]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {R U V W : Type*} [CommRing R] [LinearOrder R]
+  [IsStrictOrderedRing R]
+  [SeminormedAddCommGroup U] [Module R U] [Module.Free R U] [Module.Finite R U]
+  [SeminormedAddCommGroup V] [Module R V] [Module.Free R V] [Module.Finite R V]
+  [SeminormedAddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W]
   {n m k : ℕ}
-  (o₁ : Orientation K U (Fin n)) (o₂ : Orientation K V (Fin m)) (o₃ : Orientation K W (Fin k))
-  (o₁₂ : Orientation K (WithLp p (U × V)) (Fin (n + m)))
-  (o₂₃ : Orientation K (WithLp p (V × W)) (Fin (m + k)))
-  (o₁₂_₃ : Orientation K (WithLp p (WithLp p (U × V) × W)) (Fin (n + m + k)))
-  (o₁_₂₃ : Orientation K (WithLp p (U × WithLp p (V × W))) (Fin (n + (m + k))))
+  (o₁ : Orientation R U (Fin n)) (o₂ : Orientation R V (Fin m)) (o₃ : Orientation R W (Fin k))
+  (o₁₂ : Orientation R (WithLp p (U × V)) (Fin (n + m)))
+  (o₂₃ : Orientation R (WithLp p (V × W)) (Fin (m + k)))
+  (o₁₂_₃ : Orientation R (WithLp p (WithLp p (U × V) × W)) (Fin (n + m + k)))
+  (o₁_₂₃ : Orientation R (WithLp p (U × WithLp p (V × W))) (Fin (n + (m + k))))
 
 /-- `LinearIsometryEquiv.withLpProdAssoc` carries the left-associated ordered product orientation
 to the right-associated one, reindexed along `(add_assoc n m k).symm`. -/
-theorem map_withLpProdAssoc (hn : finrank K U = n) (hm : finrank K V = m) (hk : finrank K W = k)
-    (ho₁₂ : o₁₂.map (Fin (n + m)) (WithLp.linearEquiv p K (U × V)) = o₁.prod o₂ hn hm)
-    (ho₂₃ : o₂₃.map (Fin (m + k)) (WithLp.linearEquiv p K (V × W)) = o₂.prod o₃ hm hk)
+theorem map_withLpProdAssoc (hn : finrank R U = n) (hm : finrank R V = m) (hk : finrank R W = k)
+    (ho₁₂ : o₁₂.map (Fin (n + m)) (WithLp.linearEquiv p R (U × V)) = o₁.prod o₂ hn hm)
+    (ho₂₃ : o₂₃.map (Fin (m + k)) (WithLp.linearEquiv p R (V × W)) = o₂.prod o₃ hm hk)
     (ho₁₂_₃ : o₁₂_₃.map (Fin (n + m + k))
-      (WithLp.linearEquiv p K (WithLp p (U × V) × W)) =
+      (WithLp.linearEquiv p R (WithLp p (U × V) × W)) =
       o₁₂.prod o₃
-        (by rw [(WithLp.linearEquiv p K (U × V)).finrank_eq, Module.finrank_prod, hn, hm]) hk)
+        (by rw [(WithLp.linearEquiv p R (U × V)).finrank_eq, Module.finrank_prod, hn, hm]) hk)
     (ho₁_₂₃ : o₁_₂₃.map (Fin (n + (m + k)))
-      (WithLp.linearEquiv p K (U × WithLp p (V × W))) =
+      (WithLp.linearEquiv p R (U × WithLp p (V × W))) =
       o₁.prod o₂₃ hn
-        (by rw [(WithLp.linearEquiv p K (V × W)).finrank_eq, Module.finrank_prod, hm, hk])) :
-    o₁₂_₃.map (Fin (n + m + k)) (LinearIsometryEquiv.withLpProdAssoc p K U V W).toLinearEquiv =
-      Orientation.reindex K _ (finCongr (add_assoc n m k).symm) o₁_₂₃ := by
-  let eL := (WithLp.linearEquiv p K (WithLp p (U × V) × W)).trans
-    ((WithLp.linearEquiv p K (U × V)).prodCongr (LinearEquiv.refl K W))
-  let eR := (WithLp.linearEquiv p K (U × WithLp p (V × W))).trans
-    ((LinearEquiv.refl K U).prodCongr (WithLp.linearEquiv p K (V × W)))
-  have hcomm : (LinearIsometryEquiv.withLpProdAssoc p K U V W).toLinearEquiv.trans eR =
-      eL.trans (LinearEquiv.prodAssoc K U V W) := by ext x <;> rfl
+        (by rw [(WithLp.linearEquiv p R (V × W)).finrank_eq, Module.finrank_prod, hm, hk])) :
+    o₁₂_₃.map (Fin (n + m + k)) (LinearIsometryEquiv.withLpProdAssoc p R U V W).toLinearEquiv =
+      Orientation.reindex R _ (finCongr (add_assoc n m k).symm) o₁_₂₃ := by
+  let eL := (WithLp.linearEquiv p R (WithLp p (U × V) × W)).trans
+    ((WithLp.linearEquiv p R (U × V)).prodCongr (LinearEquiv.refl R W))
+  let eR := (WithLp.linearEquiv p R (U × WithLp p (V × W))).trans
+    ((LinearEquiv.refl R U).prodCongr (WithLp.linearEquiv p R (V × W)))
+  have hcomm : (LinearIsometryEquiv.withLpProdAssoc p R U V W).toLinearEquiv.trans eR =
+      eL.trans (LinearEquiv.prodAssoc R U V W) := by ext x <;> simp [eL, eR]
   have hL : o₁₂_₃.map (Fin (n + m + k)) eL =
       (o₁.prod o₂ hn hm).prod o₃ (by rw [Module.finrank_prod, hn, hm]) hk := by
     rw [Orientation.map_trans, ho₁₂_₃, Orientation.map_prod, ho₁₂, Orientation.map_refl,

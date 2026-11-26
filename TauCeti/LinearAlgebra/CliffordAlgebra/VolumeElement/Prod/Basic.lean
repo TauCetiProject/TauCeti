@@ -243,18 +243,18 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
   simp [List.map_map, Function.comp_def]
 
 include hQ₁ in
-/-- The normalized volume element of `V ⊕ W` acts by `Γ_V ^ (m + 1) ⊗ Γ_W`. -/
-private theorem complexProdTensor_complexVolume_eq_map_pow (b₁ : OrthonormalBasis (Fin n) ℝ V)
-    (hb₁ : b₁.toBasis.orientation = o₁) (b₂ : OrthonormalBasis (Fin m) ℝ W)
-    (hb₂ : b₂.toBasis.orientation = o₂) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+/-- In an orthogonal product frame `(b₁, b₂)` orienting `V ⊕ W`, the normalized volume element
+acts by `(ρ₁ Γ_{b₁} * ρ₁ Γ_{o₁} ^ m) ⊗ ρ₂ Γ_{b₂}`. -/
+private theorem complexProdTensor_complexVolume_eq_map_mul_pow (b₁ : OrthonormalBasis (Fin n) ℝ V)
+    (b₂ : OrthonormalBasis (Fin m) ℝ W) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
     (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
-      TensorProduct.map (ρ₁ (complexVolume Q₁ o₁) ^ (m + 1)) (ρ₂ (complexVolume Q₂ o₂)) := by
+      TensorProduct.map
+        (ρ₁ (complexVolume Q₁ b₁.toBasis.orientation) * ρ₁ (complexVolume Q₁ o₁) ^ m)
+        (ρ₂ (complexVolume Q₂ b₂.toBasis.orientation)) := by
   have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
-  rw [complexProdTensor_complexVolume_eq_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ hQb₁ b₂ hQb₂ ho, pow_succ']
-  -- Only the first factor `Γ_V` of `Γ_V ^ (m + 1) = Γ_V * Γ_V ^ m` is expanded in the frame.
-  generalize ρ₁ (complexVolume Q₁ o₁) ^ m = g
-  rw [complexVolume_eq o₁ b₁ hb₁ hQb₁, complexVolume_eq o₂ b₂ hb₂ hQb₂]
+  rw [complexProdTensor_complexVolume_eq_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ hQb₁ b₂ hQb₂ ho,
+    complexVolume_eq _ b₁ rfl hQb₁, complexVolume_eq _ b₂ rfl hQb₂]
   simp only [map_smul, smul_mul_assoc, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
     smul_smul, ← pow_add]
   congr 2
@@ -278,28 +278,25 @@ private theorem complexProdTensor_complexVolume_eq_map_pow_of_map_eq_prod
       (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm) =
       ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation := by
     rw [Orientation.prod_basis_orientation, ← hB, Basis.orientation_map,
-      ← Orientation.map_trans, LinearEquiv.self_trans_symm, Orientation.map_refl]; rfl
+      ← Orientation.map_trans, LinearEquiv.self_trans_symm, Orientation.map_refl,
+      Equiv.refl_apply]
   have ho' : o = (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm := by
-    rw [← ho, ← Orientation.map_trans, LinearEquiv.self_trans_symm, Orientation.map_refl]; rfl
+    rw [← ho, ← Orientation.map_trans, LinearEquiv.self_trans_symm, Orientation.map_refl,
+      Equiv.refl_apply]
   have hpos : complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂
       (complexVolume Q ((o₁.prod b₂.toBasis.orientation Fact.out Fact.out).map
         (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm)) =
       TensorProduct.map (ρ₁ (complexVolume Q₁ o₁) ^ (m + 1))
         (ρ₂ (complexVolume Q₂ b₂.toBasis.orientation)) := by
     rcases b₁.toBasis.orientation_eq_or_eq_neg o₁ with rfl | rfl
-    · exact complexProdTensor_complexVolume_eq_map_pow hQ _ hQ₁ hn ρ₁ ρ₂ _ _ b₁ rfl b₂ rfl hQb₂
-        ho₀.symm
-    · have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
-      rw [Orientation.prod_neg_left, Orientation.map_neg, ho₀, complexVolume_neg_orientation,
-        map_neg, complexProdTensor_complexVolume_eq_map hQ _ hQ₁ hn ρ₁ ρ₂ _ b₁ hQb₁ b₂ hQb₂ rfl,
-        pow_succ']
-      generalize ρ₁ (complexVolume Q₁ (-b₁.toBasis.orientation)) ^ m = g
-      rw [complexVolume_neg_orientation, complexVolume_eq _ b₁ rfl hQb₁,
-        complexVolume_eq _ b₂ rfl hQb₂]
-      simp only [map_smul, smul_mul_assoc, ← neg_smul, TensorProduct.map_smul_left,
-        TensorProduct.map_smul_right, smul_smul, mul_neg, ← pow_add]
-      rw [neg_smul, show (m + 1) / 2 + (n + 1) / 2 = (n + m + 1) / 2 by obtain ⟨j, hj⟩ := hn; omega]
+    · rw [ho₀, complexProdTensor_complexVolume_eq_map_mul_pow hQ _ hQ₁ hn ρ₁ ρ₂ _ b₁ b₂ hQb₂ rfl,
+        ← pow_succ']
+    · rw [Orientation.prod_neg_left, Orientation.map_neg, ho₀, complexVolume_neg_orientation,
+        map_neg, complexProdTensor_complexVolume_eq_map_mul_pow hQ _ hQ₁ hn ρ₁ ρ₂ _ b₁ b₂ hQb₂ rfl,
+        pow_succ', complexVolume_neg_orientation, map_neg, neg_mul, ← neg_one_smul ℂ (_ * _),
+        TensorProduct.map_smul_left]
+      exact (neg_one_smul ℂ _).symm
   rw [ho']
   rcases b₂.toBasis.orientation_eq_or_eq_neg o₂ with rfl | rfl
   · exact hpos
