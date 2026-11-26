@@ -42,6 +42,8 @@ the restriction of a transformation compatible with `φ` is compatible with the 
 * `CategoryTheory.Pseudofunctor.AbelianBanding`: an `A`-banding of `F`.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.mulEquiv_hom_comp`: the band automorphisms
   commute with every isomorphism of the fibre.
+* `CategoryTheory.Pseudofunctor.AbelianBanding.mulEquiv_hom_naturality`: when the fibres are
+  groupoids, the band automorphisms are natural in the object.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.aut_mul_comm`: the automorphism groups of a banded
   pseudofunctor are commutative.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.over`: the restriction of an `A`-banding to the
@@ -135,6 +137,14 @@ lemma mulEquiv_hom_comp {U : C} {x y : F.obj (.mk (op U))} (e : x ≅ y)
   simp only [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom] at h
   rw [← h]
   simp
+
+/-- **Band automorphisms are natural** when the fibres are groupoids: for every fibre arrow
+`f : x ⟶ y`, `f ≫ b(U, y)(a) = b(U, x)(a) ≫ f`. -/
+@[reassoc]
+lemma mulEquiv_hom_naturality {U : C} [IsGroupoid (F.obj (.mk (op U)))]
+    {x y : F.obj (.mk (op U))} (f : x ⟶ y) (a : Multiplicative (A.obj.obj (op U))) :
+    f ≫ (b.mulEquiv U y a).asIso.hom = (b.mulEquiv U x a).asIso.hom ≫ f :=
+  (b.mulEquiv_hom_comp (asIso f) a).symm
 
 /-- Conjugation by an isomorphism `e : x ≅ y` sends the band automorphism of `a` at `x` to the
 band automorphism of `a` at `y`, stated on the underlying morphisms. -/
