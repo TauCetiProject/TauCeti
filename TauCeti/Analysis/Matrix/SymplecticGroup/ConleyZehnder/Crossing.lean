@@ -341,6 +341,32 @@ private theorem crossingSum_eq_zero {a b : ℝ} (hab : a ≤ b)
 
 end CrossingSum
 
+/-- If `Ψ` does not have the eigenvalues `1` and `-1` at once, then `[0, 1]` subdivides into
+intervals on each of which `Ψ` avoids the eigenvalue `1` or avoids the eigenvalue `-1`: the two
+open sets of such parameters cover `[0, 1]`. -/
+private theorem exists_monotone_det_sub_one_ne_zero_or_det_add_one_ne_zero
+    {Ψ : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ} (hΨI : Continuous fun t : I ↦ Ψ t)
+    (h₁ : ∀ t ∈ Icc (0 : ℝ) 1, (Ψ t - 1).det = 0 → IsUnit (Ψ t + 1).det) :
+    ∃ t : ℕ → I, t 0 = 0 ∧ Monotone t ∧ (∃ N, ∀ m ≥ N, t m = 1) ∧ ∀ m,
+      (∀ r ∈ Icc (t m : ℝ) (t (m + 1)), (Ψ r - 1).det ≠ 0) ∨
+        ∀ r ∈ Icc (t m : ℝ) (t (m + 1)), (Ψ r + 1).det ≠ 0 := by
+  obtain ⟨t, ht0, htm, hN, htc⟩ := exists_monotone_Icc_subset_open_cover_unitInterval
+    (c := fun i : Bool ↦ {t : I | (Ψ t + bif i then -1 else 1).det ≠ 0})
+    (fun _ ↦ isOpen_ne_fun (hΨI.add continuous_const).matrix_det continuous_const)
+    fun t _ ↦ mem_iUnion.2 <| by
+      by_cases ht : (Ψ t - 1).det = 0
+      · exact ⟨false, by simpa using (h₁ t t.property ht).ne_zero⟩
+      · exact ⟨true, by simpa [← sub_eq_add_neg] using ht⟩
+  refine ⟨t, ht0, htm, hN, fun m ↦ ?_⟩
+  obtain ⟨i, hi⟩ := htc m
+  have hpt {r : ℝ} (hr : r ∈ Icc (t m : ℝ) (t (m + 1))) :
+      (Ψ r + bif i then -1 else 1).det ≠ 0 := by
+    simpa using hi (a := ⟨r, Icc_subset_Icc (unitInterval.nonneg _) (unitInterval.le_one _) hr⟩)
+      ⟨Subtype.coe_le_coe.1 hr.1, Subtype.coe_le_coe.1 hr.2⟩
+  cases i
+  · exact Or.inr fun r hr ↦ by simpa using hpt hr
+  · exact Or.inl fun r hr ↦ by simpa [← sub_eq_add_neg] using hpt hr
+
 section Subpath
 
 variable {A B : GLSymplectic n ℝ} (γ : Path A B) {Ψ Ψ' : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ}
@@ -416,6 +442,24 @@ private theorem conleyZehnderIndex_subpath_eq_crossingSum
   · exact conleyZehnderIndex_subpath_eq_crossingSum_of_isUnit_det_add_one γ hγ hΨc hmem hfin hd
       hreg hlt fun t ht ↦ isUnit_iff_ne_zero.2 (h₁ t ht)
 
+/-- If on each interval `[t m, t (m + 1)]` of a subdivision of `[0, 1]` the Conley–Zehnder index
+of the subpath of `γ` is the crossing sum, then so it is on each interval `[0, t m]`. -/
+private theorem conleyZehnderIndex_subpath_zero_eq_crossingSum
+    (hfin : {t ∈ Icc (0 : ℝ) 1 | (Ψ t - 1).det = 0}.Finite) {t : ℕ → I} (ht0 : t 0 = 0)
+    (htm : Monotone t)
+    (hpiece : ∀ m, conleyZehnderIndex (γ.subpath (t m) (t (m + 1))) =
+      crossingSum Ψ Ψ' (t m) (t (m + 1))) (m : ℕ) :
+    conleyZehnderIndex (γ.subpath 0 (t m)) = crossingSum Ψ Ψ' 0 (t m) := by
+  induction m with
+  | zero =>
+    rw [ht0, Path.subpath_self, conleyZehnderIndex_refl]
+    simp [crossingSum]
+  | succ m ih =>
+    rw [← conleyZehnderIndex_eq_of_homotopic (Path.Homotopic.subpath_trans_subpath γ 0 (t m)
+      (t (m + 1))), conleyZehnderIndex_trans, ih, hpiece m]
+    exact crossingSum_add_crossingSum hfin le_rfl (unitInterval.nonneg _) (htm m.le_succ)
+      (unitInterval.le_one _)
+
 end Subpath
 
 /-- **The crossing form formula for the Conley–Zehnder index.** Let `γ` be a path of symplectic
@@ -453,53 +497,10 @@ theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum
       γ.continuous_extend)).continuousOn.congr fun t ht ↦ ?_
     simp [← hγ ⟨t, ht⟩, Path.extend_extends' γ ⟨t, ht⟩]
   have hfin := finite_setOf_det_sub_one_eq_zero hΨc hmem h₁ hd hreg
-  -- `[0, 1]` is covered by the parameters without the eigenvalue `1` and those without `-1`.
-  obtain ⟨c, hc₀, hc₁⟩ : ∃ c : Bool → Set I,
-      c false = {t : I | (Ψ t + 1).det ≠ 0} ∧ c true = {t : I | (Ψ t - 1).det ≠ 0} :=
-    ⟨fun i ↦ bif i then {t | (Ψ t - 1).det ≠ 0} else {t | (Ψ t + 1).det ≠ 0}, rfl, rfl⟩
-  have hcopen (i : Bool) : IsOpen (c i) := by
-    cases i
-    · rw [hc₀]
-      exact isOpen_ne_fun (hΨI.add continuous_const).matrix_det continuous_const
-    · rw [hc₁]
-      exact isOpen_ne_fun (hΨI.sub continuous_const).matrix_det continuous_const
-  have hccover : univ ⊆ ⋃ i, c i := fun t _ ↦ by
-    by_cases ht : (Ψ t - 1).det = 0
-    · refine mem_iUnion.2 ⟨false, ?_⟩
-      rw [hc₀, mem_ofPred_eq]
-      exact (h₁ t t.property ht).ne_zero
-    · refine mem_iUnion.2 ⟨true, ?_⟩
-      rw [hc₁, mem_ofPred_eq]
-      exact ht
-  -- Subdivide `[0, 1]` into pieces of the cover, on each of which the index is the crossing sum.
-  obtain ⟨t, ht0, htm, ⟨N, hN⟩, htc⟩ := exists_monotone_Icc_subset_open_cover_unitInterval hcopen
-    hccover
-  have hpiece (m : ℕ) :
-      conleyZehnderIndex (γ.subpath (t m) (t (m + 1))) = crossingSum Ψ Ψ' (t m) (t (m + 1)) := by
-    obtain ⟨i, hi⟩ := htc m
-    have hpt {r : ℝ} (hr : r ∈ Icc (t m : ℝ) (t (m + 1))) : (⟨r, Icc_subset_Icc
-        (unitInterval.nonneg _) (unitInterval.le_one _) hr⟩ : I) ∈ c i :=
-      hi ⟨Subtype.coe_le_coe.1 hr.1, Subtype.coe_le_coe.1 hr.2⟩
-    refine conleyZehnderIndex_subpath_eq_crossingSum γ hγ hΨc hmem hfin hd hreg (htm m.le_succ) ?_
-    cases i
-    · refine Or.inr fun r hr ↦ ?_
-      have h := hpt hr
-      rwa [hc₀, mem_ofPred_eq] at h
-    · refine Or.inl fun r hr ↦ ?_
-      have h := hpt hr
-      rwa [hc₁, mem_ofPred_eq] at h
-  -- Add up the pieces.
-  have hkey (m : ℕ) : conleyZehnderIndex (γ.subpath 0 (t m)) = crossingSum Ψ Ψ' 0 (t m) := by
-    induction m with
-    | zero =>
-      rw [ht0, Path.subpath_self, conleyZehnderIndex_refl]
-      simp [crossingSum]
-    | succ m ih =>
-      rw [← conleyZehnderIndex_eq_of_homotopic (Path.Homotopic.subpath_trans_subpath γ 0 (t m)
-        (t (m + 1))), conleyZehnderIndex_trans, ih, hpiece m]
-      exact crossingSum_add_crossingSum hfin le_rfl (unitInterval.nonneg _) (htm m.le_succ)
-        (unitInterval.le_one _)
-  have h := hkey N
+  obtain ⟨t, ht0, htm, ⟨N, hN⟩, htc⟩ :=
+    exists_monotone_det_sub_one_ne_zero_or_det_add_one_ne_zero hΨI h₁
+  have h := conleyZehnderIndex_subpath_zero_eq_crossingSum γ hfin ht0 htm (fun m ↦
+    conleyZehnderIndex_subpath_eq_crossingSum γ hγ hΨc hmem hfin hd hreg (htm m.le_succ) (htc m)) N
   rw [hN N le_rfl, conleyZehnderIndex_congr _ γ fun s ↦ by simp [Path.subpath_zero_one],
     Set.Icc.coe_one, crossingSum_eq hfin le_rfl zero_lt_one le_rfl] at h
   simpa only [crossingSig] using h
