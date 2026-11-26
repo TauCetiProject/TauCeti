@@ -179,14 +179,14 @@ theorem coe_spanLine (w : E) (hw : w ≠ 0) :
 
 /-- The value of `spanLine 𝕜 w hw` is the projection `v ↦ ‖w‖⁻² ⟪w, v⟫ w`. -/
 theorem coe_spanLine_eq_inv_norm_sq_smul (w : E) (hw : w ≠ 0) :
-    (spanLine 𝕜 w hw : E →L[𝕜] E) = (‖w‖ ^ 2 : 𝕜)⁻¹ • (innerSL 𝕜 w).smulRight w := by
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = (‖w‖ ^ 2 : 𝕜)⁻¹ • InnerProductSpace.rankOne 𝕜 w w := by
   ext1 v
   rw [coe_spanLine, Submodule.starProjection_singleton]
   simp [div_eq_inv_mul, mul_smul]
 
 /-- For a unit vector `w`, the value of `spanLine 𝕜 w hw` is the projection `v ↦ ⟪w, v⟫ w`. -/
 theorem coe_spanLine_of_norm_eq_one {w : E} (hw : w ≠ 0) (h : ‖w‖ = 1) :
-    (spanLine 𝕜 w hw : E →L[𝕜] E) = (innerSL 𝕜 w).smulRight w := by
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = InnerProductSpace.rankOne 𝕜 w w := by
   rw [coe_spanLine_eq_inv_norm_sq_smul, h]
   simp
 
@@ -197,7 +197,8 @@ theorem continuous_spanLine {α : Type*} [TopologicalSpace α] {w : α → E} (h
   simp only [Function.comp_def, coe_spanLine_eq_inv_norm_sq_smul]
   refine (Continuous.inv₀ (f := fun t ↦ (‖w t‖ ^ 2 : 𝕜)) (by fun_prop) fun t ↦ ?_).smul ?_
   · simpa using hw0 t
-  · exact ((ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 E E).continuous.comp
+  · simp only [InnerProductSpace.rankOne_def]
+    exact ((ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 E E).continuous.comp
       ((innerSL 𝕜 : E →L⋆[𝕜] E →L[𝕜] 𝕜).continuous.comp hw)).clm_apply hw
 
 section FiniteGrassmannian

@@ -188,13 +188,10 @@ theorem tangentialDivergence_of_mem_grassmannian_finrank {P : E →L[ℝ] E}
 `⟪w, DX(x) w⟫`. -/
 theorem tangentialDivergence_spanLine (X : E → E) (x : E) {w : E} (hw : w ≠ 0) (h : ‖w‖ = 1) :
     tangentialDivergence X x (grassmannian.spanLine ℝ w hw) = ⟪w, fderiv ℝ X x w⟫_ℝ := by
-  rw [tangentialDivergence_def, grassmannian.coe_spanLine_of_norm_eq_one hw h]
-  have hlin : (((innerSL ℝ w).smulRight w ∘L fderiv ℝ X x : E →L[ℝ] E) : E →ₗ[ℝ] E) =
-      (((innerSL ℝ w) ∘L fderiv ℝ X x : E →L[ℝ] ℝ) : E →ₗ[ℝ] ℝ).smulRight w := by
-    ext v
-    simp
-  rw [hlin, LinearMap.trace_smulRight]
-  simp
+  rw [tangentialDivergence_def, grassmannian.coe_spanLine_of_norm_eq_one hw h,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.trace_comp_comm',
+    ← ContinuousLinearMap.toLinearMap_comp, InnerProductSpace.comp_rankOne,
+    InnerProductSpace.trace_rankOne]
 
 /-! ### The first variation -/
 
