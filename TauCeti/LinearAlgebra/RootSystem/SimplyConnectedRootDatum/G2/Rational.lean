@@ -20,7 +20,8 @@ assembly and rational base change. In the same table order, the sums of two posi
 recorded by `TauCeti.DynkinType.index_pair_of_root_add_mem_range_root_g2`,
 `TauCeti.DynkinType.root_castAdd_eq_add_g2` and
 `TauCeti.DynkinType.two_nsmul_add_notMem_range_root_g2`; these drive the collection of positive
-root subgroups in type `G₂`.
+root subgroups in type `G₂`. The negative roots are the entries `6 + l`, with
+`TauCeti.DynkinType.root_natAdd_g2` recording that entry `6 + l` is the negative of entry `l`.
 -/
 
 public section
@@ -40,6 +41,22 @@ theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
     · exact heq_of_eqRec_eq _ (simplyConnectedBase_G2 ht)
   rw [hpos]
   exact mem_posRoots_g2_iff k
+
+/-- **Negative roots of `G₂`.** The root at index `6 + l` of the native root table is the negative
+of the root at index `l`, by `TauCeti.DynkinType.g2Root_addNat`. -/
+theorem root_natAdd_g2 (ht : G2.Valid) (l : Fin 6) :
+    (G2.simplyConnectedRootDatum ht).root (Fin.natAdd 6 l) =
+      -(G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 l) := by
+  rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root, Fin.natAdd_eq_addNat]
+  exact g2Root_addNat l
+
+/-- The root at index `6 + l` of the native `G₂` root table and the root at another index `k < 6`
+do not sum to zero. -/
+theorem root_natAdd_add_root_castAdd_ne_zero_g2 (ht : G2.Valid) {k l : Fin 6} (hkl : k ≠ l) :
+    (G2.simplyConnectedRootDatum ht).root (Fin.natAdd 6 l) +
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 k) ≠ 0 := fun h =>
+  hkl (Fin.castAdd_injective _ _ ((G2.simplyConnectedRootDatum ht).root.injective
+    (neg_add_eq_zero.mp (by rwa [root_natAdd_g2] at h)).symm))
 
 -- The three certificates below unfold the assembled datum to the native root table and decide.
 local macro "g2_table" : tactic => `(tactic|

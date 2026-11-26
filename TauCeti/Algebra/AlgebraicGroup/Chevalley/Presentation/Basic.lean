@@ -370,20 +370,13 @@ theorem steinbergLift_of (γ : Fin t.numRoots) (a : A) :
     D.steinbergLift A (PresentedGroup.of (γ, a)) = D.rootSubgroupPoints γ A (ofAdd a) :=
   PresentedGroup.toGroup.of _
 
-/-- Steinberg's homomorphism carries the presented Weyl word `W_γ(s)` to Steinberg's element
-`n_γ(s)` of the datum. -/
-@[simp]
-theorem steinbergLift_mk_steinbergWeylWord (γ : Fin t.numRoots) (s : Aˣ) :
-    D.steinbergLift A (PresentedGroup.mk _ (steinbergWeylWord ht γ s)) = D.weylElement γ A s := by
-  -- `PresentedGroup.toGroup` evaluates the class of a word by lifting that word.
-  exact D.lift_steinbergWeylWord A γ s
-
 /-- Steinberg's homomorphism carries the Weyl element `W_γ(s)` of the presented group to
 Steinberg's element `n_γ(s)` of the datum. -/
 @[simp]
 theorem steinbergLift_steinbergWeylElement (γ : Fin t.numRoots) (s : Aˣ) :
-    D.steinbergLift A (t.steinbergWeylElement ht A γ s) = D.weylElement γ A s :=
-  D.steinbergLift_mk_steinbergWeylWord A γ s
+    D.steinbergLift A (t.steinbergWeylElement ht A γ s) = D.weylElement γ A s := by
+  -- `PresentedGroup.toGroup` evaluates the class of a word by lifting that word.
+  exact D.lift_steinbergWeylWord A γ s
 
 /-- Steinberg's homomorphism carries the root subgroups of the presented group onto those of the
 datum. -/

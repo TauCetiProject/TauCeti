@@ -60,6 +60,8 @@ All declarations are in the namespace `TauCeti.DynkinType`.
   the generators at `±αᵢ` normalize `Û⁽ⁱ⁾`.
 * `steinbergWeylElement_simpleIndex_mem_normalizer_steinbergPuncturedPositiveSubgroup`:
   so does `W_{αᵢ}(s)`.
+* `range_steinbergRootSubgroup_simpleIndex_le_normalizer_steinbergPuncturedPositiveSubgroup`:
+  the generators at `αᵢ` normalize `Û⁽ⁱ⁾`.
 * `mem_steinbergPositiveSubgroup_iff_exists_mul_steinbergRootSubgroup`: the
   factorization `Û = Û⁽ⁱ⁾ X_{αᵢ}`.
 * `steinbergWeylElement_simpleIndex_conj_steinbergRootSubgroup`: Steinberg's
@@ -196,6 +198,15 @@ theorem steinbergPositiveSubgroup_le_normalizer_steinbergPuncturedPositiveSubgro
   simpa only [inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one] using
     mul_mul_inv_mem_steinbergPuncturedPositiveSubgroup i (inv_mem hx) h
 
+/-- **The generators at `αᵢ` normalize `Û⁽ⁱ⁾`**, as they lie in `Û`. -/
+theorem range_steinbergRootSubgroup_simpleIndex_le_normalizer_steinbergPuncturedPositiveSubgroup
+    (i : Fin t.rank) :
+    (t.steinbergRootSubgroup ht A (t.simpleIndex ht i)).range ≤
+      Subgroup.normalizer (t.steinbergPuncturedPositiveSubgroup ht A i : Set _) := by
+  refine le_trans ?_ (steinbergPositiveSubgroup_le_normalizer_steinbergPuncturedPositiveSubgroup i)
+  rw [steinbergPositiveSubgroup_eq_steinbergPuncturedPositiveSubgroup_sup t ht A i]
+  exact le_sup_right
+
 /-- **Factorization along a simple root.** Every element of `Û` is a product `v X_{αᵢ}(u)` with
 `v ∈ Û⁽ⁱ⁾`. No uniqueness of the factors is asserted. -/
 theorem mem_steinbergPositiveSubgroup_iff_exists_mul_steinbergRootSubgroup (i : Fin t.rank)
@@ -206,11 +217,8 @@ theorem mem_steinbergPositiveSubgroup_iff_exists_mul_steinbergRootSubgroup (i : 
   rw [steinbergPositiveSubgroup_eq_steinbergPuncturedPositiveSubgroup_sup t ht A i,
     Subgroup.mem_sup_of_right_le_normalizer_left]
   · simp only [MonoidHom.mem_range, exists_exists_eq_and]
-    simp only [eq_comm]
-  · refine le_trans ?_
-      (steinbergPositiveSubgroup_le_normalizer_steinbergPuncturedPositiveSubgroup i)
-    rw [steinbergPositiveSubgroup_eq_steinbergPuncturedPositiveSubgroup_sup t ht A i]
-    exact le_sup_right
+    exact exists_congr fun _ => and_congr_right' (exists_congr fun _ => eq_comm)
+  · exact range_steinbergRootSubgroup_simpleIndex_le_normalizer_steinbergPuncturedPositiveSubgroup i
 
 /-! ## Normalization by the negative simple root -/
 
@@ -254,6 +262,13 @@ private theorem commutatorElement_mem_of_root_eq_add {i : Fin t.rank} {β γ δ 
   rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.commutator_add hδ hβ hγ u v)]
   exact mk_steinbergRoot_mem_steinbergPuncturedPositiveSubgroup hδmem _
 
+/-- The negative simple root `-αᵢ` of the simply connected datum. -/
+private theorem root_neg_simpleIndex (i : Fin t.rank) :
+    (t.simplyConnectedRootDatum ht).root ((t.simplyConnectedRootDatum ht).reflectionPerm
+        (t.simpleIndex ht i) (t.simpleIndex ht i)) =
+      -(t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
+  rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+
 /-- The negative simple root `-αᵢ` of the rational root system. -/
 private theorem root_rationalRootSystem_neg_simpleIndex (i : Fin t.rank) :
     (t.rationalRootSystem ht).root ((t.simplyConnectedRootDatum ht).reflectionPerm
@@ -261,16 +276,6 @@ private theorem root_rationalRootSystem_neg_simpleIndex (i : Fin t.rank) :
       -(t.rationalRootSystem ht).root (t.simpleIndex ht i) := by
   rw [← reflectionPerm_rationalRootSystem, RootPairing.root_reflectionPerm,
     RootPairing.reflection_apply_self]
-
-/-- A root `-αᵢ + ρ` with `ρ` positive is positive. -/
-private theorem isPos_of_root_eq_neg_simpleIndex_add {i : Fin t.rank} {δ ρ : Fin t.numRoots}
-    (hρ : (t.rationalBase ht).IsPos ρ)
-    (hδ : (t.rationalRootSystem ht).root δ = (t.rationalRootSystem ht).root
-      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) +
-        (t.rationalRootSystem ht).root ρ) :
-    (t.rationalBase ht).IsPos δ :=
-  hρ.sub (simpleIndex_mem_support i)
-    (by rw [hδ, root_rationalRootSystem_neg_simpleIndex]; abel)
 
 /-- A root `m(-αᵢ) + nγ` with `n > 0` is not `αᵢ`, when `-αᵢ` and `γ` are linearly independent. -/
 private theorem ne_simpleIndex_of_root_eq_nsmul_add {i : Fin t.rank} {γ δ : Fin t.numRoots}
@@ -288,12 +293,47 @@ private theorem ne_simpleIndex_of_root_eq_nsmul_add {i : Fin t.rank} {γ δ : Fi
       root_rationalRootSystem_neg_simpleIndex, add_neg_cancel])
   exact hn.ne' (by exact_mod_cast h.2)
 
+/-- A root `m(-αᵢ) + nγ` with `n > 0` and `γ` a positive root other than `αᵢ` is positive, when
+`-αᵢ` and `γ` are linearly independent: its reflection in `αᵢ` is `mαᵢ + n sᵢγ`, a positive root
+other than `αᵢ`. -/
+private theorem mem_posRoots_of_root_eq_nsmul_add {i : Fin t.rank} {γ δ : Fin t.numRoots}
+    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i})
+    (hlin : LinearIndependent ℚ ![(t.rationalRootSystem ht).root
+      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)),
+        (t.rationalRootSystem ht).root γ])
+    {m n : ℕ} (hn : 0 < n)
+    (hδ : (t.rationalRootSystem ht).root δ = m • (t.rationalRootSystem ht).root
+      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) +
+        n • (t.rationalRootSystem ht).root γ) :
+    δ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+  let P := t.rationalRootSystem ht
+  let b := t.rationalBase ht
+  have hi : t.simpleIndex ht i ∈ b.support := simpleIndex_mem_support i
+  have hγ' := (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi γ).mpr hγ
+  refine ((reflectionPerm_mem_posRoots_diff_singleton_iff P b hi δ).mp ⟨?_, fun h => ?_⟩).1
+  · rw [mem_posRoots_iff_root_mem_posRootCone, RootPairing.root_reflectionPerm, hδ, map_add,
+      map_nsmul, map_nsmul, root_rationalRootSystem_neg_simpleIndex, map_neg,
+      RootPairing.reflection_apply_self, neg_neg, ← RootPairing.root_reflectionPerm]
+    exact add_mem
+      (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b (support_subset_posRoots P b hi)) m)
+      (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hγ'.1) n)
+  · -- Otherwise `δ = -αᵢ`, and `(m - 1)(-αᵢ) + nγ = 0` contradicts linear independence.
+    have hδβ : δ = (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+        (t.simpleIndex ht i) := by
+      rw [← P.reflectionPerm_self (t.simpleIndex ht i) δ, Set.mem_singleton_iff.mp h,
+        reflectionPerm_rationalRootSystem]
+    rw [hδβ] at hδ
+    have h0 := (LinearIndependent.pair_iff.mp hlin) ((m : ℚ) - 1) n (by
+      rw [sub_smul, one_smul, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, sub_add_eq_add_sub,
+        ← hδ, sub_self])
+    exact hn.ne' (by exact_mod_cast h0.2)
+
 /-- Outside `G₂`, if `-αᵢ + γ` is a root for a positive root `γ ≠ αᵢ`, the commutator of the
 generators at `-αᵢ` and `γ` lies in `Û⁽ⁱ⁾`: the roots `-jαᵢ + kγ` with `j, k > 0` are positive and
 different from `αᵢ`. -/
 private theorem commutatorElement_neg_simpleIndex_mem_of_isNotG2_of_root_eq_add
     [(t.rationalRootSystem ht).IsNotG2] (i : Fin t.rank) {γ δ : Fin t.numRoots}
-    (hγ : (t.rationalBase ht).IsPos γ)
+    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i})
     (hδ : (t.simplyConnectedRootDatum ht).root δ = (t.simplyConnectedRootDatum ht).root
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) +
         (t.simplyConnectedRootDatum ht).root γ)
@@ -301,51 +341,15 @@ private theorem commutatorElement_neg_simpleIndex_mem_of_isNotG2_of_root_eq_add
     ⁅t.steinbergRootSubgroup ht A ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i)) (ofAdd u),
       t.steinbergRootSubgroup ht A γ (ofAdd v)⁆ ∈ t.steinbergPuncturedPositiveSubgroup ht A i := by
-  let P := t.rationalRootSystem ht
-  let R := t.simplyConnectedRootDatum ht
-  set β := R.reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)
-  have hδQ : P.root δ = P.root β + P.root γ := by
+  set β := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)
+  have hδQ : (t.rationalRootSystem ht).root δ =
+      (t.rationalRootSystem ht).root β + (t.rationalRootSystem ht).root γ := by
     simpa only [one_nsmul] using
       (t.root_rationalRootSystem_eq_nsmul_add_iff ht β γ δ 1).mpr (by rwa [one_nsmul])
-  have hlin := P.linearIndependent_of_add_mem_range_root' ⟨δ, hδQ⟩
-  have hδpos := isPos_of_root_eq_neg_simpleIndex_add hγ hδQ
-  have hδα := ne_simpleIndex_of_root_eq_nsmul_add hlin (m := 1) (n := 1) one_pos
-    (by simpa only [one_nsmul] using hδQ)
-  have hmem {ε : Fin t.numRoots} (hεpos : (t.rationalBase ht).IsPos ε)
-      (hεα : ε ≠ t.simpleIndex ht i) (w : A) :=
-    mk_steinbergRoot_mem_steinbergPuncturedPositiveSubgroup (A := A)
-      (δ := ε) ⟨(mem_posRoots _ _ _).mpr hεpos, hεα⟩ w
-  by_cases hdouble : 2 • R.root β + R.root γ ∈ Set.range R.root
-  · -- The root string `γ, β + γ, 2β + γ`.
-    obtain ⟨ε, hε⟩ := hdouble
-    have hεQ : P.root ε = P.root β + P.root δ := by
-      rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht β γ ε 2).mpr hε, hδQ, two_nsmul]
-      abel
-    have hεα := ne_simpleIndex_of_root_eq_nsmul_add hlin (m := 2) (n := 1) one_pos (by
-      rw [hεQ, hδQ, two_nsmul, one_nsmul]; abel)
-    rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.commutator_two_nsmul_add
-      hδ hε (three_nsmul_add_notMem_range_root β γ)
-      (add_two_nsmul_notMem_range_root hlin ⟨ε, hε⟩) u v), map_mul]
-    exact Subgroup.mul_mem _ (hmem hδpos hδα _)
-      (hmem (isPos_of_root_eq_neg_simpleIndex_add hδpos hεQ) hεα _)
-  · by_cases hdouble' : R.root β + 2 • R.root γ ∈ Set.range R.root
-    · -- The root string `β, β + γ, β + 2γ`.
-      obtain ⟨ε, hε⟩ := hdouble'
-      have hεQ : P.root ε = P.root δ + P.root γ := by
-        rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht γ β ε 2).mpr
-          (by rw [hε, add_comm]), hδQ, two_nsmul]
-        abel
-      have hεα := ne_simpleIndex_of_root_eq_nsmul_add hlin (m := 1) (n := 2) two_pos (by
-        rw [hεQ, hδQ, two_nsmul, one_nsmul]; abel)
-      have hthree : R.root β + 3 • R.root γ ∉ Set.range R.root := by
-        rw [add_comm]
-        exact three_nsmul_add_notMem_range_root γ β
-      rw [commutatorElement_eq_of_isSteinbergRelator
-        (IsSteinbergRelator.commutator_add_two_nsmul hδ hε hdouble hthree u v), map_mul]
-      exact Subgroup.mul_mem _ (hmem hδpos hδα _) (hmem (hδpos.add hγ hεQ) hεα _)
-    · -- Neither double string: the one-factor relation.
-      exact commutatorElement_mem_of_root_eq_add ⟨(mem_posRoots _ _ _).mpr hδpos, hδα⟩ hδ
-        hdouble hdouble' u v
+  have hlin := (t.rationalRootSystem ht).linearIndependent_of_add_mem_range_root' ⟨δ, hδQ⟩
+  exact commutatorElement_mem_of_isNotG2_of_root_eq_add hδ (fun _ _ _ _ hk hε =>
+    mk_steinbergRoot_mem_steinbergPuncturedPositiveSubgroup ⟨mem_posRoots_of_root_eq_nsmul_add hγ
+      hlin hk hε, ne_simpleIndex_of_root_eq_nsmul_add hlin hk hε⟩) u v
 
 /-- Outside `G₂`, the commutator of a generator at `-αᵢ` with one at a positive root `γ ≠ αᵢ` lies
 in `Û⁽ⁱ⁾`. -/
@@ -360,11 +364,10 @@ private theorem commutatorElement_neg_simpleIndex_mem_of_isNotG2
   by_cases hsum : R.root (R.reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) +
       R.root γ ∈ Set.range R.root
   · obtain ⟨δ, hδ⟩ := hsum
-    exact commutatorElement_neg_simpleIndex_mem_of_isNotG2_of_root_eq_add i
-      ((mem_posRoots _ _ _).mp hγ.1) hδ u v
+    exact commutatorElement_neg_simpleIndex_mem_of_isNotG2_of_root_eq_add i hγ hδ u v
   · -- Without a root sum the generators commute; the sum is not zero as `γ ≠ αᵢ`.
     refine commutatorElement_mem_of_root_add_notMem_range hsum (fun h => hγ.2 ?_) u v
-    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] at h
+    rw [root_neg_simpleIndex] at h
     exact R.root.injective (neg_add_eq_zero.mp h).symm
 
 -- The certificates below unfold the assembled `G₂` datum to the native root table and decide.
@@ -384,22 +387,6 @@ private theorem g2_castAdd_mem_posRoots_diff {ht : G2.Valid} {i : Fin G2.rank} {
   ⟨(mem_posRoots_rational_g2_iff ht _).mpr l.isLt,
     fun h => hl (by simpa using congrArg Fin.val h)⟩
 
-/-- In type `G₂`, the root at index `6 + l` of the native table is the negative of the root at
-index `l`. -/
-private theorem g2_root_natAdd {ht : G2.Valid} (l : Fin 6) :
-    (G2.simplyConnectedRootDatum ht).root (Fin.natAdd 6 l) =
-      -(G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 l) := by
-  revert l
-  g2_table
-
-/-- In type `G₂`, the root at index `6 + l` and a positive root at another index `k` do not sum to
-zero. -/
-private theorem g2_root_natAdd_add_ne_zero {ht : G2.Valid} {k l : Fin 6} (hkl : k ≠ l) :
-    (G2.simplyConnectedRootDatum ht).root (Fin.natAdd 6 l) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 k) ≠ 0 := fun h =>
-  hkl (Fin.castAdd_injective _ _ ((G2.simplyConnectedRootDatum ht).root.injective
-    (neg_add_eq_zero.mp (by rwa [g2_root_natAdd] at h)).symm))
-
 /-- In type `G₂`, the commutators of the generator at the short negative simple root `-α₀`, at
 index `6` of the native table, with those at the positive roots other than `α₀` lie in `Û⁽⁰⁾`. -/
 private theorem g2_commutatorElement_natAdd_zero_mem {ht : G2.Valid} {k : Fin 6} (hk : k ≠ 0)
@@ -415,7 +402,7 @@ private theorem g2_commutatorElement_natAdd_zero_mem {ht : G2.Valid} {k : Fin 6}
     revert k; decide
   · -- `-α₀ + α₁` is not a root.
     exact commutatorElement_mem_of_root_add_notMem_range (by g2_table)
-      (g2_root_natAdd_add_ne_zero (by decide)) u v
+      (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₀ + (α₀ + α₁) = α₁`, with a string of length two.
     exact commutatorElement_mem_of_root_eq_add (g2_castAdd_mem_posRoots_diff (l := 1) (by decide))
       (by g2_table) (by g2_table) (by g2_table) u v
@@ -438,7 +425,7 @@ private theorem g2_commutatorElement_natAdd_zero_mem {ht : G2.Valid} {k : Fin 6}
       (hmem 1 (by decide) _)) (hmem 5 (by decide) _)
   · -- `-α₀ + (3α₀ + 2α₁)` is not a root.
     exact commutatorElement_mem_of_root_add_notMem_range (by g2_table)
-      (g2_root_natAdd_add_ne_zero (by decide)) u v
+      (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
 
 /-- In type `G₂`, the commutators of the generator at the long negative simple root `-α₁`, at
 index `7` of the native table, with those at the positive roots other than `α₁` lie in `Û⁽¹⁾`. -/
@@ -455,7 +442,7 @@ private theorem g2_commutatorElement_natAdd_one_mem {ht : G2.Valid} {k : Fin 6} 
     revert k; decide
   · -- `-α₁ + α₀` is not a root.
     exact commutatorElement_mem_of_root_add_notMem_range (by g2_table)
-      (g2_root_natAdd_add_ne_zero (by decide)) u v
+      (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₁` long and `α₀ + α₁` short, with the long root first.
     rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.g2_long_short (ht := ht)
       (α := Fin.castAdd 6 (2 : Fin 6)) (β := Fin.natAdd 6 (1 : Fin 6))
@@ -466,10 +453,10 @@ private theorem g2_commutatorElement_natAdd_one_mem {ht : G2.Valid} {k : Fin 6} 
       (hmem 5 (by decide) _)) (hmem 4 (by decide) _)
   · -- `-α₁ + (2α₀ + α₁)` is not a root.
     exact commutatorElement_mem_of_root_add_notMem_range (by g2_table)
-      (g2_root_natAdd_add_ne_zero (by decide)) u v
+      (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₁ + (3α₀ + α₁)` is not a root.
     exact commutatorElement_mem_of_root_add_notMem_range (by g2_table)
-      (g2_root_natAdd_add_ne_zero (by decide)) u v
+      (root_natAdd_add_root_castAdd_ne_zero_g2 ht (by decide)) u v
   · -- `-α₁ + (3α₀ + 2α₁) = 3α₀ + α₁`, with a string of length two.
     exact commutatorElement_mem_of_root_eq_add (g2_castAdd_mem_posRoots_diff (l := 4) (by decide))
       (by g2_table) (by g2_table) (by g2_table) u v
@@ -491,19 +478,21 @@ private theorem g2_commutatorElement_neg_simpleIndex_mem {ht : G2.Valid} (i : Fi
   generalize hβ : (G2.simplyConnectedRootDatum ht).reflectionPerm (G2.simpleIndex ht i)
     (G2.simpleIndex ht i) = β
   have hβroot : (G2.simplyConnectedRootDatum ht).root β =
-      -(G2.simplyConnectedRootDatum ht).root (G2.simpleIndex ht i) := by
-    rw [← hβ, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+      -(G2.simplyConnectedRootDatum ht).root (G2.simpleIndex ht i) :=
+    hβ ▸ root_neg_simpleIndex i
   -- The negative simple roots sit at the indices `6` and `7` of the native table.
   fin_cases i
   · obtain rfl : β = Fin.natAdd 6 (0 : Fin 6) :=
       (G2.simplyConnectedRootDatum ht).root.injective (by
-        rw [hβroot, g2_root_natAdd, show G2.simpleIndex ht ⟨0, by decide⟩ = Fin.castAdd 6 0 from
-          Fin.ext (val_simpleIndex _ _ _)])
+        rw [hβroot, root_natAdd_g2,
+          show G2.simpleIndex ht ⟨0, by decide⟩ = Fin.castAdd 6 0 from
+            Fin.ext (val_simpleIndex _ _ _)])
     exact g2_commutatorElement_natAdd_zero_mem (fun h => hk (by simp [h])) u v
   · obtain rfl : β = Fin.natAdd 6 (1 : Fin 6) :=
       (G2.simplyConnectedRootDatum ht).root.injective (by
-        rw [hβroot, g2_root_natAdd, show G2.simpleIndex ht ⟨1, by decide⟩ = Fin.castAdd 6 1 from
-          Fin.ext (val_simpleIndex _ _ _)])
+        rw [hβroot, root_natAdd_g2,
+          show G2.simpleIndex ht ⟨1, by decide⟩ = Fin.castAdd 6 1 from
+            Fin.ext (val_simpleIndex _ _ _)])
     exact g2_commutatorElement_natAdd_one_mem (fun h => hk (by simp [h])) u v
 
 /-- The commutator of a generator at `-αᵢ` with one at a positive root `γ ≠ αᵢ` lies in `Û⁽ⁱ⁾`. -/
@@ -543,11 +532,9 @@ theorem closure_steinbergSimpleRootPair_le_normalizer_steinbergPuncturedPositive
           (t.simpleIndex ht i) (t.simpleIndex ht i)))) ≤
       Subgroup.normalizer (t.steinbergPuncturedPositiveSubgroup ht A i : Set _) := by
   rw [← MonoidHom.coe_range, ← MonoidHom.coe_range, ← Subgroup.sup_eq_closure]
-  refine sup_le ?_
+  exact sup_le
+    (range_steinbergRootSubgroup_simpleIndex_le_normalizer_steinbergPuncturedPositiveSubgroup i)
     (range_steinbergRootSubgroup_neg_simpleIndex_le_normalizer_steinbergPuncturedPositiveSubgroup i)
-  refine le_trans ?_ (steinbergPositiveSubgroup_le_normalizer_steinbergPuncturedPositiveSubgroup i)
-  rw [steinbergPositiveSubgroup_eq_steinbergPuncturedPositiveSubgroup_sup t ht A i]
-  exact le_sup_right
 
 /-! ## Conjugation by simple Weyl elements -/
 
