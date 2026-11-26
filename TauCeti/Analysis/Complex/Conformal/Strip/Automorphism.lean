@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Classification
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 import TauCeti.Analysis.Complex.UpperHalfPlane.Log
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Holomorphic automorphisms of the strip fixing its two ends
@@ -35,9 +36,10 @@ strip to `-1` and the positive end to `1`. Conjugated by it, an automorphism `φ
 fixing both ends becomes a holomorphic automorphism of the disc, of the form
 `ζ ↦ u (ζ - a) / (1 - conj a ζ)` by
 `TauCeti.exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv`, which extends continuously
-to `±1` and fixes these two boundary points. Fixing `1` and `-1` forces `u = 1` and `a` real, and
-the automorphism `ζ ↦ (ζ - a) / (1 - a ζ)` of the disc with real `a` is the conjugate of the
-translation of the strip by `log ((1 - a) / (1 + a)) / π`.
+to `±1` and fixes these two boundary points. Fixing `1` and `-1` forces `u = 1` and `a` real
+(`TauCeti.coe_eq_one_and_conj_eq_of_tendsto`), and the automorphism `ζ ↦ (ζ - a) / (1 - a ζ)` of
+the disc with real `a` is the conjugate of the translation of the strip by
+`log ((1 - a) / (1 + a)) / π` (`TauCeti.sub_ofReal_div_one_sub_ofReal_mul_sub_I_div_add_I`).
 
 Consequently two holomorphic parametrizations `u` and `v` of the same domain by the strip, with
 the same limits `x ≠ y` at the two ends, differ by a real translation as soon as `v` extends
@@ -58,8 +60,9 @@ which map the closed strip bijectively onto the closure of the bigon with its tw
 
 ## References
 
-* L. Ahlfors, *Complex Analysis*, Ch. 4, Section 3 (the automorphisms of the disc) and Ch. 6,
-  Section 1 (conformal maps of the strip).
+* L. Ahlfors, *Complex Analysis*, 3rd ed., McGraw–Hill, 1979, Ch. 4, Section 3 (the
+  automorphisms of the disc) and Ch. 3, Section 4 (elementary conformal mappings, among them the
+  maps of the strip).
 -/
 
 public section
@@ -69,6 +72,12 @@ open UpperHalfPlane (upperHalfPlaneSet)
 open scoped ComplexConjugate Real
 
 namespace TauCeti
+
+/-- A map sending `s` into `t` which tends to `l'` along `l ⊓ 𝓟 s` tends to `l' ⊓ 𝓟 t`. -/
+private theorem tendsto_inf_principal_of_mapsTo {α β : Type*} {f : α → β} {l : Filter α}
+    {l' : Filter β} {s : Set α} {t : Set β} (hf : Tendsto f (l ⊓ 𝓟 s) l') (hst : MapsTo f s t) :
+    Tendsto f (l ⊓ 𝓟 s) (l' ⊓ 𝓟 t) :=
+  tendsto_inf.mpr ⟨hf, tendsto_principal.mpr (mem_inf_of_right (mem_principal.mpr hst))⟩
 
 /-! ### A coordinate identifying the strip with the disc -/
 
@@ -92,12 +101,6 @@ private theorem invOn_log_div_pi_exp_pi_mul_strip :
       {z : ℂ | z.im ∈ Ioo 0 1} upperHalfPlaneSet := by
   simpa using invOn_log_sub_div_pi_exp_pi_mul_add_strip 0
 
-private theorem one_sub_ne_zero_of_mem_ball {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) : 1 - ζ ≠ 0 :=
-  sub_ne_zero.mpr fun h => by subst h; simp at hζ
-
-private theorem one_add_ne_zero_of_mem_ball {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) : 1 + ζ ≠ 0 :=
-  fun h => by rw [show ζ = -1 by linear_combination h] at hζ; simp at hζ
-
 private theorem stripToDisc_mem_ball {z : ℂ} (hz : z ∈ {z : ℂ | z.im ∈ Ioo 0 1}) :
     stripToDisc z ∈ ball (0 : ℂ) 1 :=
   bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo (bijOn_exp_pi_mul_strip.mapsTo hz)
@@ -120,7 +123,7 @@ private theorem stripToDisc_discToStrip {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 
   simp only at h
   rw [stripToDisc, discToStrip, h]
   exact sub_I_div_add_I_I_mul_one_add_div_one_sub
-    (sub_ne_zero.mp (one_sub_ne_zero_of_mem_ball hζ)).symm
+    (sub_ne_zero.mp (one_sub_ne_zero_of_norm_lt_one (mem_ball_zero_iff.mp hζ))).symm
 
 private theorem differentiableOn_stripToDisc :
     DifferentiableOn ℂ stripToDisc {z : ℂ | z.im ∈ Ioo 0 1} := by
@@ -138,7 +141,8 @@ private theorem differentiableOn_discToStrip :
   have hw : I * (1 + ζ) / (1 - ζ) ∈ slitPlane := mem_slitPlane_iff.mpr (.inr him.ne')
   have hd : DifferentiableAt ℂ (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) ζ :=
     ((differentiableAt_const _).mul ((differentiableAt_const _).add differentiableAt_id)).div
-      ((differentiableAt_const _).sub differentiableAt_id) (one_sub_ne_zero_of_mem_ball hζ)
+      ((differentiableAt_const _).sub differentiableAt_id)
+      (one_sub_ne_zero_of_norm_lt_one (mem_ball_zero_iff.mp hζ))
   exact ((hd.clog hw).div_const _).differentiableWithinAt
 
 /-! ### The two ends -/
@@ -181,28 +185,31 @@ private theorem tendsto_norm_one_sub (ζ₀ : ℂ) :
 /-- The inverse coordinate sends `-1` to the negative end of the strip. -/
 private theorem tendsto_discToStrip_neg_one :
     Tendsto discToStrip (𝓝[ball 0 1] (-1)) (comap re atBot ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
-  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
-    (eventually_nhdsWithin_of_forall fun ζ hζ => discToStrip_mem_strip hζ)⟩
+  refine tendsto_inf_principal_of_mapsTo (tendsto_comap_iff.mpr ?_)
+    fun ζ hζ => discToStrip_mem_strip hζ
   have hq : Tendsto (fun ζ : ℂ => ‖1 + ζ‖ / ‖1 - ζ‖) (𝓝[ball 0 1] (-1)) (𝓝[≠] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun ζ hζ =>
-      div_ne_zero (norm_ne_zero_iff.mpr (one_add_ne_zero_of_mem_ball hζ))
-        (norm_ne_zero_iff.mpr (one_sub_ne_zero_of_mem_ball hζ))⟩
-    have h := (tendsto_norm_one_add (-1)).div (tendsto_norm_one_sub (-1)) (by norm_num)
-    norm_num at h
-    exact h
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun ζ hζ => ?_⟩
+    · have h := (tendsto_norm_one_add (-1)).div (tendsto_norm_one_sub (-1)) (by norm_num)
+      norm_num at h
+      exact h
+    have hζ' : ‖ζ‖ < 1 := mem_ball_zero_iff.mp hζ
+    have h₁ : 1 + ζ ≠ 0 := by
+      simpa using one_sub_ne_zero_of_norm_lt_one (x := -ζ) (by simpa using hζ')
+    exact div_ne_zero (norm_ne_zero_iff.mpr h₁)
+      (norm_ne_zero_iff.mpr (one_sub_ne_zero_of_norm_lt_one hζ'))
   exact ((Real.tendsto_log_nhdsNE_zero.comp hq).atBot_div_const Real.pi_pos).congr fun ζ => by
     simp [re_discToStrip]
 
 /-- The inverse coordinate sends `1` to the positive end of the strip. -/
 private theorem tendsto_discToStrip_one :
     Tendsto discToStrip (𝓝[ball 0 1] 1) (comap re atTop ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
-  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
-    (eventually_nhdsWithin_of_forall fun ζ hζ => discToStrip_mem_strip hζ)⟩
+  refine tendsto_inf_principal_of_mapsTo (tendsto_comap_iff.mpr ?_)
+    fun ζ hζ => discToStrip_mem_strip hζ
   have hnum := tendsto_norm_one_add 1
   have hden : Tendsto (fun ζ : ℂ => ‖1 - ζ‖) (𝓝[ball 0 1] 1) (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨by simpa using tendsto_norm_one_sub 1,
       eventually_nhdsWithin_of_forall fun ζ hζ => ?_⟩
-    exact norm_pos_iff.mpr (one_sub_ne_zero_of_mem_ball hζ)
+    exact norm_pos_iff.mpr (one_sub_ne_zero_of_norm_lt_one (mem_ball_zero_iff.mp hζ))
   have h2 : ‖(1 : ℂ) + 1‖ = 2 := by norm_num
   rw [h2] at hnum
   have hq : Tendsto (fun ζ : ℂ => ‖1 + ζ‖ / ‖1 - ζ‖) (𝓝[ball 0 1] 1) atTop := by
@@ -210,31 +217,6 @@ private theorem tendsto_discToStrip_one :
       hnum.pos_mul_atTop two_pos (tendsto_inv_nhdsGT_zero.comp hden)
   exact ((Real.tendsto_log_atTop.comp hq).atTop_div_const Real.pi_pos).congr fun ζ => by
     simp [re_discToStrip]
-
-/-- In the coordinate `ζ = (e - i) / (e + i)` of the upper half-plane, the disc automorphism
-`ζ ↦ (ζ - r) / (1 - r ζ)` with real `-1 < r < 1` is the dilation `e ↦ l e` by
-`l = (1 - r) / (1 + r)`. -/
-private theorem moebius_cayley_eq {e : ℂ} (he : 0 < e.im) {r : ℝ} (hr₀ : -1 < r) (hr₁ : r < 1) :
-    ((e - I) / (e + I) - r) / (1 - r * ((e - I) / (e + I))) =
-      (e * ((1 - r) / (1 + r) : ℝ) - I) / (e * ((1 - r) / (1 + r) : ℝ) + I) := by
-  have hI : e + I ≠ 0 := add_I_ne_zero_of_im_nonneg he.le
-  have hr : (1 + r : ℂ) ≠ 0 := by exact_mod_cast (by linarith : (1 + r : ℝ) ≠ 0)
-  have hden : e + I - r * (e - I) ≠ 0 := fun h => by
-    have := congrArg im h
-    simp at this
-    nlinarith
-  have hnum : (e - I) / (e + I) - r = (e - I - r * (e + I)) / (e + I) := by
-    field_simp
-  have hden' : 1 - r * ((e - I) / (e + I)) = (e + I - r * (e - I)) / (e + I) := by
-    field_simp
-  have hle : e * ((1 - r) / (1 + r) : ℝ) + I ≠ 0 := fun h => by
-    have := congrArg im h
-    rw [add_im, mul_im, ofReal_re, ofReal_im, mul_zero, zero_add, I_im, zero_im] at this
-    nlinarith [mul_pos he (div_pos (by linarith : 0 < 1 - r) (by linarith : 0 < 1 + r))]
-  rw [hnum, hden', div_div_div_cancel_right₀ hI, div_eq_div_iff hden hle]
-  push_cast
-  field_simp
-  ring
 
 /-! ### Automorphisms of the strip -/
 
@@ -280,42 +262,6 @@ private theorem exists_eqOn_stripToDisc_comp {φ : ℂ → ℂ}
   have h := hua (Complex.UnitDisc.mk ζ (by simpa using hζ))
   rwa [coe_unitDiscStandardAutomorphismEquiv_apply, Complex.UnitDisc.coe_mk] at h
 
-/-- A standard disc automorphism `ζ ↦ u (ζ - a) / (1 - conj a ζ)` which agrees on the disc with a
-map tending to `1` at `1` and to `-1` at `-1` has `u = 1` and real `a`. -/
-private theorem coe_eq_one_and_conj_eq_of_tendsto {f : ℂ → ℂ} {u : Circle}
-    {a : Complex.UnitDisc}
-    (hf : EqOn f (fun ζ => (u : ℂ) * ((ζ - a) / (1 - conj (a : ℂ) * ζ))) (ball 0 1))
-    (h₁ : Tendsto f (𝓝[ball 0 1] 1) (𝓝 1)) (h₂ : Tendsto f (𝓝[ball 0 1] (-1)) (𝓝 (-1))) :
-    (u : ℂ) = 1 ∧ conj (a : ℂ) = a := by
-  set M : ℂ → ℂ := fun ζ => (u : ℂ) * ((ζ - a) / (1 - conj (a : ℂ) * ζ))
-  have hnorm : ‖conj (a : ℂ)‖ < 1 := by simpa using a.norm_lt_one
-  -- At a point of the unit circle, `M` is continuous, so its value is the limit of `f`.
-  have hfix (ζ₀ : ℂ) (hζ₀ : ‖ζ₀‖ = 1) (hf₀ : Tendsto f (𝓝[ball 0 1] ζ₀) (𝓝 ζ₀)) :
-      M ζ₀ = ζ₀ := by
-    have hden : 1 - conj (a : ℂ) * ζ₀ ≠ 0 := by
-      refine sub_ne_zero.mpr fun h => ?_
-      have := congrArg norm h
-      rw [norm_one, norm_mul, hζ₀, mul_one] at this
-      exact hnorm.ne this.symm
-    have hM : ContinuousAt M ζ₀ := by
-      refine continuousAt_const.mul (ContinuousAt.div ?_ ?_ hden) <;> fun_prop
-    have : (𝓝[ball (0 : ℂ) 1] ζ₀).NeBot := mem_closure_iff_nhdsWithin_neBot.mp
-      (by rw [closure_ball _ one_ne_zero]; simp [hζ₀])
-    exact tendsto_nhds_unique (hM.tendsto.mono_left nhdsWithin_le_nhds)
-      (hf₀.congr' (eventually_nhdsWithin_of_forall hf))
-  have e₁ := hfix 1 (by simp) h₁
-  have e₂ := hfix (-1) (by simp) h₂
-  have hd₁ : 1 - conj (a : ℂ) ≠ 0 := sub_ne_zero.mpr fun h => by simp [← h] at hnorm
-  have hd₂ : 1 + conj (a : ℂ) ≠ 0 := fun h => by
-    rw [show conj (a : ℂ) = -1 by linear_combination h] at hnorm; simp at hnorm
-  simp only [M, mul_one, mul_neg] at e₁ e₂
-  rw [sub_neg_eq_add] at e₂
-  field_simp at e₁ e₂
-  have hu : (u : ℂ) = 1 := by linear_combination (e₁ - e₂) / 2
-  refine ⟨hu, ?_⟩
-  rw [hu] at e₁
-  linear_combination e₁
-
 /-- **Automorphisms of the strip fixing both ends are translations.** Let `φ` be a holomorphic
 bijection of the strip `0 < z.im < 1` onto itself which sends the negative end `re z → -∞` of the
 strip to the negative end and the positive end `re z → ∞` to the positive end. Then `φ` is a real
@@ -332,8 +278,7 @@ theorem exists_eqOn_add_of_bijOn_strip {φ : ℂ → ℂ}
   obtain ⟨u, a, hfM⟩ := exists_eqOn_stripToDisc_comp hφ hφS
   have hend {l : Filter ℝ} (hl : Tendsto φ (comap re l ⊓ 𝓟 S) (comap re l)) :
       Tendsto φ (comap re l ⊓ 𝓟 S) (comap re l ⊓ 𝓟 S) :=
-    tendsto_inf.mpr ⟨hl, tendsto_principal.mpr (mem_inf_of_right (mem_principal.mpr
-      hφS.mapsTo))⟩
+    tendsto_inf_principal_of_mapsTo hl hφS.mapsTo
   obtain ⟨hu, ha⟩ := coe_eq_one_and_conj_eq_of_tendsto hfM
     (tendsto_stripToDisc_atTop.comp ((hend htop).comp tendsto_discToStrip_one))
     (tendsto_stripToDisc_atBot.comp ((hend hbot).comp tendsto_discToStrip_neg_one))
@@ -355,7 +300,7 @@ theorem exists_eqOn_add_of_bijOn_strip {φ : ℂ → ℂ}
       ← ofReal_exp, Real.exp_log hl]
   have him : 0 < (cexp (π * z)).im := bijOn_exp_pi_mul_strip.mapsTo hz
   rw [stripToDisc, stripToDisc, hexp]
-  exact moebius_cayley_eq him hr₀ hr₁
+  exact sub_ofReal_div_one_sub_ofReal_mul_sub_I_div_add_I him hr₀ hr₁
 
 /-! ### Strip parametrizations of a domain -/
 
@@ -409,17 +354,16 @@ private theorem tendsto_re_comap_inf_closedStrip_atTop {v : ℂ → ℂ} {x y : 
   have hρρ (z : ℂ) : ρ (ρ z) = z := by simp [ρ]
   have hρre (z : ℂ) : (ρ z).re = -z.re := by simp [ρ]
   have hρend : Tendsto ρ (comap re atTop ⊓ 𝓟 C) (comap re atBot ⊓ 𝓟 C) :=
-    tendsto_inf.mpr ⟨tendsto_comap_iff.mpr (by
+    tendsto_inf_principal_of_mapsTo (tendsto_comap_iff.mpr (by
         simpa [comp_def, hρre] using (tendsto_neg_atTop_atBot (G := ℝ)).comp
-          (tendsto_comap.mono_left inf_le_left)),
-      tendsto_principal.mpr (mem_inf_of_right (mem_principal.mpr hρC))⟩
+          (tendsto_comap.mono_left inf_le_left))) hρC
   have h := tendsto_re_comap_inf_closedStrip_atBot hxy.symm
     (hvc.comp (continuous_conj.neg.continuousOn) hρC) (hvx.comp hρend)
     fun ⟨z, hz, hvz⟩ => hy ⟨ρ z, hρC hz, hvz⟩
   have hmap : Tendsto ρ (comap v (𝓝 y) ⊓ 𝓟 C) (comap (v ∘ ρ) (𝓝 y) ⊓ 𝓟 C) :=
-    tendsto_inf.mpr ⟨tendsto_comap_iff.mpr (by
-        simpa [comp_def, hρρ] using (tendsto_comap (f := v) (x := 𝓝 y)).mono_left inf_le_left),
-      tendsto_principal.mpr (mem_inf_of_right (mem_principal.mpr hρC))⟩
+    tendsto_inf_principal_of_mapsTo (tendsto_comap_iff.mpr (by
+        simpa [comp_def, hρρ] using
+          (tendsto_comap (f := v) (x := 𝓝 y)).mono_left inf_le_left)) hρC
   simpa [comp_def, hρre] using tendsto_neg_atBot_atTop.comp (h.comp hmap)
 
 /-- **Strip parametrizations of a domain are unique up to translation.** Let `u` and `v` be
@@ -453,10 +397,9 @@ theorem exists_eqOn_add_of_bijOn_of_notMem_image {Ω : Set ℂ} {u v : ℂ → �
   -- It fixes both ends, since `v (φ z) = u z` tends to `x` or `y` there.
   have hend (l : Filter ℝ) (p : ℂ) (hup : Tendsto u (comap re l ⊓ 𝓟 S) (𝓝 p)) :
       Tendsto φ (comap re l ⊓ 𝓟 S) (comap v (𝓝 p) ⊓ 𝓟 C) :=
-    tendsto_inf.mpr ⟨tendsto_comap_iff.mpr (hup.congr' (eventually_inf_principal.mpr
-        (Eventually.of_forall fun z hz => (hvφ z hz).symm))),
-      tendsto_principal.mpr (mem_inf_of_right (mem_principal.mpr fun z hz =>
-        hSC (hφS.mapsTo hz)))⟩
+    tendsto_inf_principal_of_mapsTo (tendsto_comap_iff.mpr (hup.congr'
+      (eventually_inf_principal.mpr (Eventually.of_forall fun z hz => (hvφ z hz).symm))))
+      fun z hz => hSC (hφS.mapsTo hz)
   obtain ⟨c, hc⟩ := exists_eqOn_add_of_bijOn_strip hφ hφS
     (tendsto_comap_iff.mpr ((tendsto_re_comap_inf_closedStrip_atBot hxy hvc hvy hx).comp
       (hend atBot x hux)))
