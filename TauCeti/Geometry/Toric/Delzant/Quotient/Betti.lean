@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Index
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Darboux
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Hamiltonian
 public import TauCeti.Geometry.Toric.Delzant.Simplex
-import Mathlib.Algebra.Module.Submodule.Union
 import TauCeti.Geometry.Manifold.Algebra.TypeTags
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
@@ -75,8 +74,6 @@ normals (`TauCeti.Toric.IsSmoothVertex.eq_edgeBasis_iff`).
   edge vector vanishes, `⟨μ_Δ, x⟩` is a Morse function whose critical points lie over the vertices.
 * `TauCeti.Toric.IsDelzant.bettiNumber_delzantQuotient_eq_ncard`: the Betti numbers of `M_Δ`
   count vertices by their descending edges.
-* `TauCeti.Toric.IsDelzant.exists_forall_edgeBasis_apply_ne_zero`: directions on which no edge
-  vector vanishes exist.
 * `TauCeti.Toric.IsDelzant.bettiNumber_delzantQuotient_two_mul_finrank_sub`: the symmetry
   `b_(2n - j) = b_j`.
 * `TauCeti.Toric.bettiNumber_delzantQuotient_simplex`: the Betti numbers of `ℂPⁿ`.
@@ -205,23 +202,6 @@ end Vertex
 
 variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
   (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
-
-omit [Fintype ι] in
-/-- **Generic directions exist.** Some `x ∈ V` lies on no edge hyperplane: no edge vector at any
-vertex of a Delzant polytope vanishes on `x`. -/
-theorem exists_forall_edgeBasis_apply_ne_zero [Finite ι] :
-    ∃ x : V, ∀ v (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ) k,
-      (hΔ.isSmoothVertex v hv).edgeBasis hi k x ≠ 0 := by
-  have := finite_extremePoints_facetPolyhedron (i := i) (u := u) (c := c) |>.to_subtype
-  obtain ⟨x, hx⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists
-    (fun e : Σ v : (facetPolyhedron i u c).extremePoints ℝ,
-        activeSet (facetPairing i u) c v.val ↦
-      ((hΔ.isSmoothVertex e.1.val e.1.property).edgeBasis hi e.2).toLinearMap)
-    fun e ↦ by
-      by_contra! h
-      exact (hΔ.isSmoothVertex e.1.val e.1.property).edgeBasis hi |>.ne_zero e.2 <|
-        ContinuousLinearMap.ext h
-  exact ⟨x, fun v hv k ↦ hx ⟨⟨v, hv⟩, k⟩⟩
 
 /-- Every critical point of a component `⟨μ_Δ, x⟩` along which no edge vector vanishes is the
 point over some vertex. -/
