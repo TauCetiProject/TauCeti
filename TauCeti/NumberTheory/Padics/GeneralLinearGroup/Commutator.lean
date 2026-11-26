@@ -13,6 +13,10 @@ public import TauCeti.NumberTheory.Padics.SpecialLinearGroup.FirstCongruence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 -- Non-public: `PadicInt.isUnit_two` and `PadicInt.isUnit_one_add_of_dvd`, in proofs only.
 import TauCeti.NumberTheory.Padics.PadicIntegers
+-- Non-public: the elements of `GL₂(𝔽₂)` whose cube is `1`, in one proof only.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.FieldCardTwo
+-- Non-public: `TauCeti.commutatorSet_pow_subset_commutator`, in one proof only.
+import TauCeti.GroupTheory.Commutator
 
 /-!
 # The commutator subgroup of `GL₂(ℤ_ℓ)`
@@ -140,14 +144,13 @@ theorem mem_commutatorSet_pow_four_padicInt_two {g : GL (Fin 2) ℤ_[2]}
     simp [Matrix.mul_apply, Fin.sum_univ_two, transvection] at h11
   have hc : GeneralLinearGroup.map (toZMod (p := 2)) c ^ 3 = 1 := by
     rw [← GeneralLinearGroup.mem_commutator_fin_two_iff_pow_three_eq_one (Nat.card_zmod 2),
-      commutator_eq_closure]
-    exact Subgroup.subset_closure
-      (by rw [map_commutatorElement]; exact commutator_mem_commutatorSet _ _)
+      map_commutatorElement]
+    exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
   have hcdet : GeneralLinearGroup.det c = 1 := by
     rw [map_commutatorElement, commutatorElement_eq_one_iff_mul_comm, mul_comm]
   -- The reduction of `g` is `1`, that of `c` or that of `c⁻¹`; correct `g` by `c` accordingly.
-  rcases GeneralLinearGroup.eq_one_or_eq_or_eq_inv_of_pow_three_eq_one (Nat.card_zmod 2) hg hc
-    hc₁ with h | h | h
+  rcases GeneralLinearGroup.eq_one_or_eq_or_eq_inv_of_pow_three_eq_one_of_card_eq_two
+    (Nat.card_zmod 2) hg hc hc₁ with h | h | h
   · exact Set.pow_subset_pow_right (one_mem_commutatorSet _) (by norm_num)
       (mem_commutatorSet_pow_three_of_map_eq_one hdet h)
   · rw [← inv_mul_cancel_right g c, pow_succ]
@@ -172,10 +175,7 @@ theorem mem_commutator_padicInt_two_iff {g : GL (Fin 2) ℤ_[2]} :
       exact Subgroup.commutator_mono le_top le_top
     exact (GeneralLinearGroup.mem_commutator_fin_two_iff_pow_three_eq_one (Nat.card_zmod 2)).1
       (hle (Subgroup.mem_map_of_mem _ hg))
-  · refine Submonoid.pow_subset (S := (commutator (GL (Fin 2) ℤ_[2])).toSubmonoid) ?_
-      (mem_commutatorSet_pow_four_padicInt_two hdet hg)
-    rw [commutator_eq_closure]
-    exact Subgroup.subset_closure
+  · exact commutatorSet_pow_subset_commutator 4 (mem_commutatorSet_pow_four_padicInt_two hdet hg)
 
 /-- The elementary matrix `[[1, 1], [0, 1]]` is not a product of commutators in `GL₂(ℤ₂)`: its
 reduction modulo `2` is a transposition of `GL₂(𝔽₂) ≅ S₃`. So the commutator subgroup of `GL₂(ℤ₂)`
