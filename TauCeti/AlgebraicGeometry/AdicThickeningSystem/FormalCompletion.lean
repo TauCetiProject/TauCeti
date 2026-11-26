@@ -387,7 +387,8 @@ noncomputable def levelIsoPullback (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) 
     (X.formalCompletion I).X n ≅
       ((Over.pullback (toScheme Y J n)).obj (Over.mk f)).left :=
   (isPullback_map_app f hf n).isoIsPullback _ _
-    (by simpa only [Over.mk_hom] using Over.isPullback_pullback_obj (toScheme Y J n) (Over.mk f))
+    (by simpa only [Over.pullback_obj_hom, Over.mk_hom] using
+      IsPullback.of_hasPullback f (toScheme Y J n))
 
 @[reassoc (attr := simp)]
 theorem levelIsoPullback_hom_fst (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
@@ -441,13 +442,15 @@ theorem levelIsoPullback_hom_map {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I
         (by rw [← hp, ← hq]; exact (comap_comap_over_left K g).le)).app n ≫
       (levelIsoPullback q hq n).hom =
       (levelIsoPullback p hp n).hom ≫ ((Over.pullback (toScheme Z K n)).map g).left := by
-  have hpb := Over.isPullback_pullback_obj (toScheme Z K n) (Over.mk q)
-  simp only [Over.mk_hom] at hpb
+  have hpb : IsPullback (Limits.pullback.fst q (toScheme Z K n))
+      ((Over.pullback (toScheme Z K n)).obj (Over.mk q)).hom q (toScheme Z K n) := by
+    simpa only [Over.pullback_obj_hom, Over.mk_hom] using
+      IsPullback.of_hasPullback q (toScheme Z K n)
   refine hpb.hom_ext ?_ ?_
   · have hfst :
         ((Over.pullback (toScheme Z K n)).map g).left ≫ Limits.pullback.fst q (toScheme Z K n) =
           Limits.pullback.fst p (toScheme Z K n) ≫ g.left := by
-      simpa only [Over.mk_hom] using Over.pullback_map_left_fst (toScheme Z K n) g
+      simpa only [Over.mk_hom] using (Over.isPullback_pullback_map_left (toScheme Z K n) g).w
     rw [Category.assoc, Category.assoc, levelIsoPullback_hom_fst, map_app_toScheme,
       hfst, levelIsoPullback_hom_fst_assoc]
   · rw [Category.assoc, Category.assoc, Over.w]
