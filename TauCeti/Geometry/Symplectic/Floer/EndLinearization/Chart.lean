@@ -276,7 +276,7 @@ the chart `ψ`, where the structures are `J_e(t)`, the pulled-back perturbation 
 `u` solves the Floer equation, the formal adjoint of the cylindrical datum `(J_e, 0, H_e)` along
 `u ∘ ψ`, on the covector field `η` read in the chart as the `(0, 1)`-form `η (ψ ·) ∘ (a + b J)`,
 is the Jacobian of `ψ` times `D_u^* η` at `ψ ζ`. -/
-private theorem floerLinearizationAdjoint_covectorPullback_of_chart (ω : SymplecticForm V)
+theorem floerLinearizationAdjoint_covectorPullback_of_chart (ω : SymplecticForm V)
     {He : ℝ → V → ℝ} (hHe : ContDiff ℝ 2 (uncurry He)) {Je : ℝ → V → AlmostComplexStructure V}
     {ψ : ℝ × ℝ → ℝ × ℝ} {R₁ : ℝ}
     (hψJ : ∀ ζ : ℝ × ℝ, R₁ < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -342,8 +342,6 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
         (covectorPullback ψ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ‖ ^ 2 ≤
       ∫ z, ρ z * ‖ω.floerLinearizationAdjoint
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   set D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
     Ks Kt u η
   set s := Ioo a b ×ˢ Ioo (0 : ℝ) 1
@@ -356,12 +354,9 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
     rw [ContinuousLinearMap.det]
     exact (hψJ ζ (hpos hζ)).det_nonneg
   -- The weighted integrand, read on the band through `ψ`, is integrable there.
-  have hg : IntegrableOn (fun ζ ↦ (fderiv ℝ ψ ζ).det * (ρ (ψ ζ) * ‖D (ψ ζ)‖ ^ 2)) s := by
-    refine ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
-      (fun ζ hζ ↦ (hψd ζ hζ).hasFDerivAt.hasFDerivWithinAt) hinj _).1 hint.integrableOn).congr_fun
-      (fun ζ hζ ↦ ?_) hs
-    dsimp only
-    rw [abs_of_nonneg (hdet₀ ζ hζ), smul_eq_mul]
+  have hg : IntegrableOn (fun ζ ↦ (fderiv ℝ ψ ζ).det * (ρ (ψ ζ) * ‖D (ψ ζ)‖ ^ 2)) s :=
+    (integrableOn_image_iff_of_eq_abs_det_smul hs hinj hψd fun ζ hζ ↦ by
+      rw [abs_of_nonneg (hdet₀ ζ hζ), smul_eq_mul]).1 hint.integrableOn
   calc _ = ∫ ζ in s, ‖ω.floerLinearizationAdjoint
         (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun w ↦ He w.2) (u ∘ ψ)

@@ -68,7 +68,7 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   support in the end, `η'` has integrable `W^{1,2}` energy density over the cylinder
   (`TauCeti.Floer.PSSPlane.integrableOn_sobolevDensity_covectorPullback`). On the part `ε s ≥ 2`
   of the end, the formal adjoint of the cylindrical end data on `η'` is `det (dφ)` times `D_u^* η`
-  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_comp_realChart_cylindricalEndLift`). On the
+  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_covectorPullback_of_chart`). On the
   positive plane, whose end lies at `s → ∞` in end coordinates, the estimate of the adjoint of a
   half-cylinder at a nondegenerate orbit then bounds the `W^{1,2}` energy of `η'` by
   `∫ ‖w‖² ‖D_u^* η‖²` over the plane, by
@@ -568,54 +568,6 @@ private theorem tendstoUniformlyOn_sliceDefect_of_le_exp (ω : SymplecticForm V)
     _ = _ := by ring
 
 /-! ### The formal adjoint on the end -/
-
-/-- **The formal adjoint of a PSS plane on its end.** Let `u` solve the Floer equation for the
-perturbation of the PSS plane `p` at the point `φ(ζ)` of the end, with `ζ = (s, t)` and
-`ε s ≥ 2`, where `φ` is the end lift and `ε = p.endSign`, and let each `H(t)` be `C²` on `V`. Read
-the covector field `η` in end coordinates as the `(0, 1)`-form `η (φ ·) ∘ (a + b J)`
-(`TauCeti.Floer.covectorPullback`), where `(a, b) = dφ (1, 0)`. The formal adjoint of the operator
-along `u ∘ φ` of the cylindrical datum `H(t) dt`, with the structures `J(φ(·), ·)`, applied to this
-form at `ζ`, is `det dφ = a² + b²` times the formal adjoint `D_u^* η` in the coordinate of `ℂ` at
-`φ(ζ)`. -/
-theorem floerLinearizationAdjoint_comp_realChart_cylindricalEndLift (ω : SymplecticForm V)
-    {p : PSSPlane} {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ∀ t, ContDiff ℝ 2 (H t))
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    {ζ : ℝ × ℝ} (hζ : 2 ≤ p.endSign * ζ.1)
-    (hu : DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
-    (hη : DifferentiableAt ℝ η (realChart p.cylindricalEndLift ζ))
-    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
-      (realChart p.cylindricalEndLift ζ))
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (realChart p.cylindricalEndLift ζ) (u (realChart p.cylindricalEndLift ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        (realChart p.cylindricalEndLift ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerLinearizationAdjoint
-        (fun ζ' y ↦ (J (realChart p.cylindricalEndLift ζ') y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun ζ' ↦ H ζ'.2) (u ∘ realChart p.cylindricalEndLift)
-        (covectorPullback (realChart p.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ =
-      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det • ω.floerLinearizationAdjoint
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η (realChart p.cylindricalEndLift ζ) := by
-  set w := Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)
-  have hK (v : ℂ) := eventually_differentiableAt_perturbation (p := p) hHs w v
-    (u (realChart p.cylindricalEndLift ζ))
-  have hX (v : ℂ) := ω.differentiableAt_hamiltonianVectorField_pssPlanePerturbation (p := p) hHs
-    w v (u (realChart p.cylindricalEndLift ζ))
-  refine Eq.trans ?_ (ω.floerLinearizationAdjoint_perturbationPullback
-    (contDiff_realChart p.contDiff_cylindricalEndLift).contDiffAt
-    (.of_forall fun _ ↦ isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _))
-    hu (hK 1) (hK Complex.I) (hX 1) (hX Complex.I)
-    ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl) hη hJu)
-  -- The adjoint at `ζ` sees the pulled-back datum only at `ζ`, where it is `H(t) dt`.
-  rw [perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal,
-    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH]
-  refine ω.floerLinearizationAdjoint_congr_data _ _ .rfl rfl (funext fun x ↦ ?_)
-  rw [Real.smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- A function with compact support in the part `‖w‖ > exp (2π R)` of the positive PSS plane
 vanishes in end coordinates outside a band `(R, b) × ℝ`. -/
