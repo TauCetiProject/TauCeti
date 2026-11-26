@@ -23,6 +23,12 @@ theorem for its absolutely continuous logarithm evaluates the difference of thei
 
 Chaining finitely many proximity steps along the straight-line homotopy `(1 - s) • γ₀ + s • γ₁`
 deduces invariance from the geometric condition `z ∉ segment ℝ (γ₀ t) (γ₁ t)` for all `t`.
+
+## Provenance
+
+The comparison-quotient argument is the standard proof of the dog-on-a-leash lemma (equivalently,
+the homotopy form of Rouché's theorem); see L. Ahlfors, *Complex Analysis*, Ch. 4.
+No formal source is vendored.
 -/
 
 public section

@@ -24,7 +24,12 @@ time (`TauCeti.exists_contMDiffOn_boundaryFlow`). The time slices of `W` in `[0,
 starting at `0`.
 
 This is the first step of the flow construction of a smooth collar (Hirsch, *Differential
-Topology*, Chapter 4, Theorem 6.1; Lee, *Introduction to Smooth Manifolds*, Theorem 9.25).
+Topology*, Chapter 4, Theorem 6.1; Lee, *Introduction to Smooth Manifolds*, Theorem 9.25). The
+next step is that the flow-out `(x, t) ↦ Φ x t` of the boundary is injective at nonnegative times
+(`TauCeti.injOn_flowOut_boundary`): forward integral curves that start on the boundary and lie in
+the interior at positive times meet only at equal times and from the same starting point
+(`IsMIntegralCurveOn.eq_and_apply_zero_eq_of_apply_eq`). This holds for any model with corners
+and a C¹ field.
 
 ## Main results
 
@@ -32,6 +37,7 @@ Topology*, Chapter 4, Theorem 6.1; Lee, *Introduction to Smooth Manifolds*, Theo
   field along the whole boundary.
 * `TauCeti.IsOutwardPointingField.exists_contMDiffOn_boundaryFlow`: the same for the negative of a
   smooth outward-pointing field.
+* `TauCeti.injOn_flowOut_boundary`: the flow-out of the boundary along such a flow is injective.
 -/
 
 public section
@@ -40,6 +46,8 @@ open Bundle Filter Function Manifold Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+section HalfSpace
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M]
@@ -140,5 +148,39 @@ theorem IsOutwardPointingField.exists_contMDiffOn_boundaryFlow
             (0 < t → Φ x t ∈ (𝓡∂ (n + 1)).interior M) := by
   exact TauCeti.exists_contMDiffOn_boundaryFlow (-V)
     (fun x ↦ (hV.contMDiff x).neg_section) fun a ha ↦ by simpa using hV.isOutwardPointing ha
+
+end HalfSpace
+
+section FlowOut
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [T2Space M]
+  {v : (x : M) → TangentSpace I x}
+
+/-- **The flow-out of the boundary is injective.** Let `Φ x t` be a forward flow of a C¹ vector
+field `v`, given on a set `W ⊆ M × ℝ` as by `TauCeti.exists_contMDiffOn_boundaryFlow`: for a
+boundary point `x` and `(x, t) ∈ W` with `t ≥ 0`, the segment `{x} × [0, t]` lies in `W`, the
+curve `s ↦ Φ x s` starts at `x` and is an integral curve of `v` on `[0, t]`, and `Φ x t` lies in
+the interior of `M` if `t > 0`. Then `(x, t) ↦ Φ x t` is injective on the points of `W` over the
+boundary of `M` at nonnegative times. -/
+theorem injOn_flowOut_boundary {W : Set (M × ℝ)} {Φ : M → ℝ → M}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hΦ : ∀ x ∈ I.boundary M, ∀ t, (x, t) ∈ W → 0 ≤ t →
+      (∀ s ∈ Icc 0 t, (x, s) ∈ W) ∧ Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) v (Icc 0 t) ∧
+        (0 < t → Φ x t ∈ I.interior M)) :
+    InjOn (fun p : M × ℝ ↦ Φ p.1 p.2) (W ∩ I.boundary M ×ˢ Ici 0) := by
+  rintro ⟨x, a⟩ ⟨hxa, hx, ha⟩ ⟨y, b⟩ ⟨hyb, hy, hb⟩ h
+  obtain ⟨hxW, hx0, hxc, -⟩ := hΦ x hx a hxa ha
+  obtain ⟨hyW, hy0, hyc, -⟩ := hΦ y hy b hyb hb
+  -- Along each curve, the positive times stay in `W`, so the curve is in the interior there.
+  obtain ⟨rfl, h0⟩ := hxc.eq_and_apply_zero_eq_of_apply_eq hyc ha hb (by rwa [hx0]) (by rwa [hy0])
+    (fun t ht ↦ (hΦ x hx t (hxW t (Ioc_subset_Icc_self ht)) ht.1.le).2.2.2 ht.1)
+    (fun t ht ↦ (hΦ y hy t (hyW t (Ioc_subset_Icc_self ht)) ht.1.le).2.2.2 ht.1)
+    (fun t _ ↦ hv _) h
+  rw [hx0, hy0] at h0
+  rw [h0]
+
+end FlowOut
 
 end TauCeti
