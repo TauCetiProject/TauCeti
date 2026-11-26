@@ -25,23 +25,25 @@ roots of `P` with the places where the slice lives, in both directions.
 * **No root is missed.** Near every root of `P` the slice density does not vanish
   (`TauCeti.SeibergWitten.exists_forall_mem_roots_exists_dist_lt_ne_zero`). For the cutoff
   current, a point where the slice density does not vanish lies on the support of `Θ`, where
-  `|α|² ≤ 1 / 2`, and so, by Taubes's off-zero bound, within distance `K h` of a zero of `α`
+  `|α|² ≤ 1 / 2`, and so, by Taubes's off-zero bound relative to a set `Z` (playing the role of
+  the zero set of `α`), within distance `K h` of a point of `Z`
   (`TauCeti.SeibergWitten.exists_forall_exists_dist_le_of_mem_tsupport_cutoffCurrent`). Hence
-  every root `V` of `P` has a zero of `α` within distance `ε` of the slice point near `V`, and,
-  for a Lipschitz disc, within distance `L ε + K h` of `σ(V)`
-  (`TauCeti.SeibergWitten.exists_forall_mem_roots_exists_dist_le_add_mul`). The zero may lie on a
-  neighbouring slice: the distance is the one of the ambient space.
+  every root `V` of `P` has a disc point `w` with `|w - V| < ε` and a point of `Z` within
+  distance `K h` of `σ w` (`TauCeti.SeibergWitten.exists_forall_mem_roots_exists_dist_le`), and
+  so, for an `L`-Lipschitz disc, a point of `Z` within distance `L ε + K h` of `σ(V)`
+  (`TauCeti.SeibergWitten.exists_forall_mem_roots_exists_dist_le_add_mul`). The point of `Z` may
+  lie on a neighbouring slice: the distance is the one of the ambient space.
 * **No charged core is a ghost.** A subdisc carrying normalized charge at least `1` lies within
   `ε` of a root of `P` (`TauCeti.SeibergWitten.exists_forall_exists_mem_roots_dist_lt`). For the
   cutoff current, the charge of a subdisc whose boundary circle lies in the vacuum `χ(|α|²) = 1`
   is the winding number of `α ∘ σ` around that circle
-  (`TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_closedBall`), so a zero of `α`
-  enclosed by a vacuum circle of positive winding number lies within `ρ₁ + ε` of a root, where
-  `ρ₁` is the radius of the circle
+  (`TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_closedBall`), so the centre of
+  a vacuum circle of radius `ρ₁` around which `α ∘ σ` has positive winding number lies within
+  `ρ₁ + ε` of a root
   (`TauCeti.SeibergWitten.exists_forall_exists_mem_roots_dist_lt_of_windingNumber`).
 
-In each statement the tolerance `δ` depends only on `m`, `R` and `ε`, and the radius `K` only on
-the constants of the off-zero bound, so the comparison is uniform over all fields and discs. The
+In each statement the tolerance `δ`, and the constants `K` and `r₀`, are chosen before the field,
+the disc and the slice, so the comparison is uniform over all fields and discs. The
 two hypotheses that the coupled equations have to supply are not proved here: the smallness of
 the Newton variance, and the positivity of the winding number of the field around its zeros.
 
@@ -86,11 +88,8 @@ theorem exists_mem_closedBall_dist_lt_ne_zero {f : ℂ → ℝ} {R ε ρ : ℝ} 
   set t := min ρ 1
   have hεt : ε < t := lt_min hερ hε
   set g : ℂ → ℝ := fun w ↦ max (t - dist w V) 0 with hg
-  have hgL : LipschitzWith 1 g := LipschitzWith.of_dist_le_mul fun x y ↦ by
-    simp only [hg, NNReal.coe_one, one_mul, Real.dist_eq]
-    refine (abs_max_sub_max_le_abs _ _ _).trans ?_
-    rw [sub_sub_sub_cancel_left, ← Real.dist_eq]
-    exact abs_dist_sub_le y x V |>.trans_eq (dist_comm y x)
+  have hgL : LipschitzWith 1 g := by
+    simpa using ((LipschitzWith.const t).sub (LipschitzWith.dist_left V)).max_const 0
   have hg₀ (w : ℂ) : 0 ≤ g w := le_max_right _ _
   have hg₁ (w : ℂ) : |g w| ≤ 1 := by
     rw [abs_of_nonneg (hg₀ w)]
@@ -131,12 +130,8 @@ theorem exists_mem_dist_lt_of_le_setIntegral {f : ℂ → ℝ} {R ε ρ₁ ρ κ
   -- The tent `g`, equal to `t` on the subdisc and to `0` off the open disc of radius `ρ`,
   -- vanishes at every point of `S`.
   set g : ℂ → ℝ := fun w ↦ max (min t (ρ - dist w w₀)) 0 with hg
-  have hgL : LipschitzWith 1 g := LipschitzWith.of_dist_le_mul fun x y ↦ by
-    simp only [hg, NNReal.coe_one, one_mul, Real.dist_eq]
-    refine (abs_max_sub_max_le_abs _ _ _).trans <| (abs_min_sub_min_le_max _ _ _ _).trans ?_
-    rw [sub_self, abs_zero, max_eq_right (abs_nonneg _), sub_sub_sub_cancel_left,
-      ← Real.dist_eq]
-    exact abs_dist_sub_le y x w₀ |>.trans_eq (dist_comm y x)
+  have hgL : LipschitzWith 1 g := by
+    simpa using (((LipschitzWith.const ρ).sub (LipschitzWith.dist_left w₀)).const_min t).max_const 0
   have hg₀ (w : ℂ) : 0 ≤ g w := le_max_right _ _
   have hgt (w : ℂ) : g w ≤ t := max_le (min_le_left _ _) ht₀.le
   have hg₁ (w : ℂ) : |g w| ≤ 1 := by
@@ -231,15 +226,14 @@ theorem exists_forall_exists_mem_roots_dist_lt (m : ℕ) (R : ℝ) {ε : ℝ} (h
 /-! ### The slices of the cutoff current -/
 
 /-- **No root is missed by the zeros of the field.** Fix the constants `C`, `c > 0` and `c₀` of
-Taubes's off-zero bound. For every accuracy `ε > 0` there are a tolerance `δ > 0`, depending only
-on `m`, `R` and `ε`, and constants `K` and `r₀ > 0`, depending only on `C`, `c` and `c₀`, with the
-following property. Let `Θ` be the cutoff current of a pair `(b, α)` with `α` of class `C²`, for a
-cutoff `χ` equal to `1` above `1 / 2`, and let `f` be its slice density along a disc `σ`,
-integrable on the closed disc of radius `R`. Suppose the normalized slice has mass `m`, negative
-mass at most `δ` and Newton variance at most `δ`, that `r ≥ r₀` and `h > 0`, and that at the
-points `σ w` of the disc the off-zero bound holds relative to a set `Z`. Then for every root `V`
-of the Newton polynomial of the slice there is a point `w` of the disc with `|w - V| < ε` and a
-point of `Z` within distance `K h` of `σ w`. -/
+Taubes's off-zero bound. For every accuracy `ε > 0` there are a tolerance `δ > 0` and constants
+`K` and `r₀ > 0` with the following property. Let `Θ` be the cutoff current of a pair `(b, α)`
+with `α` of class `C²`, for a cutoff `χ` equal to `1` above `1 / 2`, and let `f` be its slice
+density along a disc `σ`, integrable on the closed disc of radius `R`. Suppose the normalized
+slice has mass `m`, negative mass at most `δ` and Newton variance at most `δ`, that `r ≥ r₀` and
+`h > 0`, and that at the points `σ w` of the disc the off-zero bound holds relative to a set `Z`.
+Then for every root `V` of the Newton polynomial of the slice there is a point `w` of the disc
+with `|w - V| < ε` and a point of `Z` within distance `K h` of `σ w`. -/
 theorem exists_forall_mem_roots_exists_dist_le (m : ℕ) (R : ℝ) {ε : ℝ} (hε : 0 < ε)
     (C c c₀ : ℝ) (hc : 0 < c) :
     ∃ δ > 0, ∃ K r₀ : ℝ, 0 < r₀ ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
