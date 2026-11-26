@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Uniformizer
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
+public import TauCeti.Topology.Algebra.Group.SmoothCharacter
 
 /-!
 # Unramified characters of a local field
@@ -41,6 +42,8 @@ geometric Frobenius to `λ`.
 * `TauCeti.exists_eq_unramifiedCharacter_iff`: a continuous character is unramified exactly when
   it is trivial on `U(K,0)`.
 * `TauCeti.unramifiedCharacter_injective`: `a ↦ μ_a` is injective.
+* `TauCeti.isSmoothCharacter_unramifiedCharacter`: `μ_t` with values in a unit group `Aˣ` is a
+  smooth character, whatever the topology on `Aˣ`.
 
 ## References
 
@@ -168,5 +171,14 @@ theorem exists_monoidHom_mul_unramifiedCharacter_iff (a b : G) :
   · intro hcomm
     refine ⟨(unramifiedCharacter K (a * b)).toMonoidHom, fun x ↦ ?_⟩
     simp [hcomm.mul_zpow]
+
+variable (K) in
+/-- The unramified character `μ_t` with values in a unit group `Aˣ` is smooth, whatever the topology
+on `Aˣ`: its kernel contains the open subgroup `U(K,0)` of units of valuation one. -/
+theorem isSmoothCharacter_unramifiedCharacter {A : Type*} [Monoid A] [TopologicalSpace Aˣ]
+    (t : Aˣ) : IsSmoothCharacter (unramifiedCharacter K t : Kˣ →* Aˣ) := by
+  refine isSmoothCharacter_iff.2 (Subgroup.isOpen_mono (fun u hu ↦ ?_) (isOpen_unitFiltration 0))
+  rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass]
+  exact unramifiedCharacter_apply_of_valuation_eq_one t ((mem_unitFiltration_zero u).1 hu)
 
 end TauCeti

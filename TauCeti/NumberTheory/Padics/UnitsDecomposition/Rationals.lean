@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 
 /-!

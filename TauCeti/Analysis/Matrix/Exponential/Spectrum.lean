@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Analysis.Matrix.Exponential.EuclideanCLM
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.LinearAlgebra.Matrix.OfReal
@@ -19,7 +20,8 @@ import TauCeti.LinearAlgebra.Matrix.OfReal
 For a complex square matrix `Y`, the eigenvalues of `exp Y` are the exponentials of the eigenvalues
 of `Y` (`Matrix.spectrum_exp`): this is the spectral mapping theorem for the exponential of an
 operator on a finite-dimensional complex space, `ContinuousLinearMap.spectrum_exp`, read through
-the star algebra equivalence `Matrix.toEuclideanCLM`.
+the star algebra equivalence `Matrix.toEuclideanCLM`, which commutes with the exponential
+(`Matrix.toEuclideanCLM_exp`).
 
 The eigenvalues of `exp Y` are therefore the values `exp ν` at eigenvalues `ν` of `Y`, and these
 satisfy `‖ν‖ ≤ ‖Y‖` for the `ℓ²` operator norm (`Matrix.exists_norm_le_exp_eq_of_mem_spectrum`).
@@ -52,11 +54,9 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 /-- **Spectral mapping for the matrix exponential.** The spectrum of the exponential of a complex
 square matrix is the image under the exponential of its spectrum. -/
 theorem spectrum_exp (Y : Matrix m m ℂ) : spectrum ℂ (exp Y) = exp '' spectrum ℂ Y := by
-  let +nondep : NormedAlgebra ℚ (Matrix m m ℂ) := .restrictScalars ℚ ℂ _
   let e := (toEuclideanCLM (n := m) (𝕜 := ℂ)).toAlgEquiv
-  have he : Continuous e := LinearMap.continuous_of_finiteDimensional e.toLinearMap
-  rw [← AlgEquiv.spectrum_eq e, ← AlgEquiv.spectrum_eq e Y, ← ContinuousLinearMap.spectrum_exp,
-    NormedSpace.map_exp e he Y]
+  rw [← AlgEquiv.spectrum_eq e, ← AlgEquiv.spectrum_eq e Y, ← ContinuousLinearMap.spectrum_exp]
+  exact congrArg (spectrum ℂ) (toEuclideanCLM_exp Y)
 
 /-- Taking the exponential of a real matrix commutes with viewing it as a complex matrix. -/
 theorem exp_map_ofReal (Y : Matrix m m ℝ) :
