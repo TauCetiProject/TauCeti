@@ -195,7 +195,7 @@ theorem exp_lowerCentralQuotientι_bch (u v : F ⧸ lowerCentralSeries ℚ F F c
       (LieSubmodule.Quotient.mk x) (LieSubmodule.Quotient.mk y) =
       LieSubmodule.Quotient.mk (_root_.FreeLieAlgebra.lift ℚ ![x, y] r) := by
     rw [bch_eq_lift _ hr]
-    exact (map_lift_pair (LieIdeal.mkQ _) x y r).symm
+    simpa only [LieIdeal.mkQ_apply] using (map_lift_pair (LieIdeal.mkQ _) x y r).symm
   -- Transport the defining identity of `bchElement c` along the enveloping map of `φ`.
   have hq : ∀ z : 𝔣, IsNilpotent.exp
       (Ideal.Quotient.mk (J ^ (c + 1)) (ι (_root_.FreeLieAlgebra.lift ℚ ![x, y] z))) =
@@ -425,9 +425,11 @@ noncomputable def _root_.LieIdeal.bchQuotientEquiv (I : LieIdeal ℚ L) :
 @[simp]
 theorem _root_.LieIdeal.bchQuotientEquiv_mk (I : LieIdeal ℚ L) (x : L) :
     I.bchQuotientEquiv (exp x : BCHGroup L) = exp (LieSubmodule.Quotient.mk x) := by
-  rw [LieIdeal.bchQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk]
   -- The first isomorphism theorem sends the class of `g` to the image of `g`.
-  exact QuotientGroup.kerLift_mk (map I.mkQ) (exp x)
+  rw [LieIdeal.bchQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfSurjective,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk, map_exp,
+    LieIdeal.mkQ_apply]
 
 end BCHGroup
 
