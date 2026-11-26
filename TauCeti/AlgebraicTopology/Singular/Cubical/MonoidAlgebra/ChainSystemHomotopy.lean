@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Continuat
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 import TauCeti.Algebra.Homology.DG.Twisted.Invertible
 import TauCeti.Algebra.Ring.NegOnePow
-import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Homotopies of twisting and continuation chain systems
@@ -44,17 +43,18 @@ because the boundary has no homology in that degree. The chains are constructed 
 at the pairs of smaller index difference
 (`TauCeti.TwistingChainSystem.cubicalChainDifferential_sub_add_continuationChainSum`), and its
 relative class is `μ x y - μ x y = 0`, since the continuation sum lies in `A x y`; injectivity
-makes it a boundary.
+makes it a boundary (`TauCeti.exists_forall_cubicalChainDifferential_eq_of_injective`).
 
 The same argument compares two continuation chain systems `T₀` and `T₁` from `S` to `S'`
-(`TauCeti.ContinuationChainSystem`) on the spaces `N x y` of continuation trajectories. If both
+(`TauCeti.ContinuationChainSystem`) on the spaces `N x y` of continuation trajectories. Let `s`,
+`s'`, `t₀` and `t₁` denote the chains of `S`, `S'`, `T₀` and `T₁`. If `T₀` and `T₁` both
 represent the same classes `ν x y ∈ H_{ind x - indQ y}(N x y, B x y)`, they are joined by a
 parametrized chain system (`TauCeti.ParametrizedChainSystem`) on the spaces `N x y` themselves,
 included by the identities
 (`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem`): chains
 `h x y` of dimension `ind x - indQ y + 1` with
 
-`∂ h x y = ν₁ x y - ν₀ x y + Σ_z (-1) ^ (ind x - ind z) • κ_* (s x z × h z y)
+`∂ h x y = t₁ x y - t₀ x y + Σ_z (-1) ^ (ind x - ind z) • κ_* (s x z × h z y)
   + Σ_z (-1) ^ (ind x - indQ z) • κ'_* (h x z × s' z y)`.
 
 The right-hand side is a cycle once the equation holds at the pairs of smaller index difference
@@ -301,49 +301,6 @@ private theorem exists_continuationChainSum_eq_cubicalChainSumMap
   · simp only [map_add, map_sum, map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hιA,
       continuationChainSum_def]
 
-/-- The homotopy equation holds at the pairs `(x, y)` with `ind x ≤ ind y`, where all its terms
-vanish for degree reasons. -/
-private theorem homotopy_of_le {h : ∀ x y, normalizedCubicalChainAlgebra (M x y) k}
-    (hh : ∀ x y, h x y ∈ cubicalChainGrading (M x y) k (ind y - ind x)) {x y : P}
-    (hxy : ind x ≤ ind y) :
-    cubicalChainDifferential (M x y) k (h x y) =
-      S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
-  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hh x y),
-    S.chain_eq_zero_of_le hxy, S'.chain_eq_zero_of_le hxy,
-    continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hh hxy, sub_self, add_zero]
-
-/-- The chain of a pair `(x, y)` of index difference `d + 1` in the inductive construction of a
-homotopy: a chain whose boundary is the right-hand side of the homotopy equation, which is a
-cycle with vanishing relative class. -/
-private theorem exists_chain_of_sub_eq (hS : S.IsRepresenting A μ) (hS' : S'.IsRepresenting A μ)
-    (hι : ∀ x w z y (a : M x w) (b : M w z) (c : M z y),
-      ι x z y (ι x w z (a, b), c) = ι x w y (a, ι w z y (b, c)))
-    (hA : ∀ x z y p, ι x z y p ∈ A x y)
-    (hinj : ∀ x y, ind y < ind x → Function.Injective (HomologicalComplex.homologyMap
-      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (A x y)).map))
-        (ind x - ind y - 1).toNat).hom)
-    {h : ∀ x y, normalizedCubicalChainAlgebra (M x y) k}
-    (hh : ∀ x y, h x y ∈ cubicalChainGrading (M x y) k (ind y - ind x)) {x y : P} {d : ℕ}
-    (hxy : ind x - ind y = d + 1)
-    (hd : ∀ x' y', ind x' - ind y' ≤ d → cubicalChainDifferential (M x' y') k (h x' y') =
-      S.chain x' y' - S'.chain x' y' +
-        continuationChainSum ind ind ι ι k S.chain S'.chain h x' y') :
-    ∃ e : normalizedCubicalChainAlgebra (M x y) k,
-      e ∈ cubicalChainGrading (M x y) k (ind y - ind x) ∧
-      cubicalChainDifferential (M x y) k e =
-        S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
-  obtain ⟨b, hb, hbsum⟩ := exists_continuationChainSum_eq_cubicalChainSumMap (S := S) (S' := S')
-    hA hh x y
-  have hdeg : ind y - ind x + 1 = -(((ind x - ind y - 1).toNat : ℕ) : ℤ) := by omega
-  have hcycle := cubicalChainDifferential_sub_add_continuationChainSum S S' hh (hι x · · y)
-    (fun z _ h₂ ↦ hd z y (by omega)) (fun z h₁ _ ↦ hd x z (by omega))
-  rw [← hbsum] at hcycle ⊢
-  obtain ⟨e, he, hde⟩ := ((S.isRepresenting_iff μ).1 hS x y (by omega))
-    |>.exists_cubicalChainDifferential_eq_sub_add ((S'.isRepresenting_iff μ).1 hS' x y (by omega))
-      (hdeg ▸ hb) hcycle (hinj x y (by omega))
-  have hdeg' : -((((ind x - ind y - 1).toNat + 1 : ℕ)) : ℤ) = ind y - ind x := by omega
-  exact ⟨e, hdeg' ▸ he, hde⟩
-
 /-- **Any two representing chain systems are homotopic.** Let `S` and `S'` be twisting chain
 systems representing the same classes `μ x y` of `H_{ind x - ind y - 1}(M x y, A x y)`, for
 associative composition maps `ι` with values in the subspaces `A x y`. If the maps
@@ -364,53 +321,29 @@ theorem IsRepresenting.nonempty_homotopy (hS : S.IsRepresenting A μ)
       (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (A x y)).map))
         (ind x - ind y - 1).toNat).hom) :
     Nonempty (S.Homotopy S') := by
-  classical
-  -- Recursion on the index difference: at a pair `(x, y)` with `ind y < ind x`, the homotopy
-  -- equation only involves the chains of the pairs of smaller index difference.
-  let r : P × P → P × P → Prop := InvImage (· < ·) fun p ↦ (ind p.1 - ind p.2).toNat
-  have hr {x y x' y' : P} (h : (ind x' - ind y').toNat < (ind x - ind y).toNat) :
-      r (x', y') (x, y) := h
-  refine ((InvImage.wf _ wellFounded_lt : WellFounded r).exists_forall_of_forall_exists
-    (X := fun p ↦ normalizedCubicalChainAlgebra (M p.1 p.2) k)
-    (fun h p a ↦ a ∈ cubicalChainGrading (M p.1 p.2) k (ind p.2 - ind p.1) ∧
-      (ind p.2 < ind p.1 → cubicalChainDifferential (M p.1 p.2) k a = S.chain p.1 p.2 -
-        S'.chain p.1 p.2 + continuationChainSum ind ind ι ι k S.chain S'.chain
-          (fun x y ↦ h (x, y)) p.1 p.2)) ?_ ?_).elim fun h hh ↦
-    ⟨⟨fun x y ↦ h (x, y), fun x y ↦ (hh (x, y)).1, fun x y ↦ if hxy : ind y < ind x
-      then (hh (x, y)).2 hxy else homotopy_of_le (fun x y ↦ (hh (x, y)).1) (not_lt.1 hxy)⟩⟩
-  · -- The condition at `(x, y)` only depends on the chains of the pairs of smaller index
-    -- difference.
-    rintro ⟨x, y⟩ a h h' hhh' ⟨ha, hd⟩
-    dsimp only at ha hd ⊢
-    refine ⟨ha, fun hyx ↦ (hd hyx).trans ?_⟩
-    rw [continuationChainSum_congr (ν' := fun x y ↦ h' (x, y)) S.mem_graded S'.mem_graded
-      (fun z _ ↦ hhh' (z, y) (hr (by omega))) fun z _ ↦ hhh' (x, z) (hr (by omega))]
-  · rintro ⟨x, y⟩ h hlt
-    dsimp only
-    by_cases hyx : ind y < ind x
-    · -- Extend the chains of the pairs of smaller index difference by zero.
-      let h' : ∀ x y, normalizedCubicalChainAlgebra (M x y) k := fun x' y' ↦
-        if r (x', y') (x, y) then h (x', y') else 0
-      have hh'r {x' y' : P} (h₁ : r (x', y') (x, y)) : h' x' y' = h (x', y') := by simp [h', h₁]
-      have hh' (x' y' : P) : h' x' y' ∈ cubicalChainGrading (M x' y') k (ind y' - ind x') := by
-        by_cases h₁ : r (x', y') (x, y)
-        · exact hh'r h₁ ▸ (hlt _ h₁).1
-        · rw [show h' x' y' = 0 by simp [h', h₁]]
-          exact zero_mem _
-      have hcongr {x' y' : P} (h₁ : ind x' - ind y' ≤ ind x - ind y) :
-          continuationChainSum ind ind ι ι k S.chain S'.chain h' x' y' =
-            continuationChainSum ind ind ι ι k S.chain S'.chain (fun x y ↦ h (x, y)) x' y' :=
-        continuationChainSum_congr S.mem_graded S'.mem_graded
-          (fun _ _ ↦ hh'r (hr (by omega))) fun _ _ ↦ hh'r (hr (by omega))
-      obtain ⟨e, he, hde⟩ := exists_chain_of_sub_eq hS hS' hι hA hinj hh' (x := x) (y := y)
-        (d := (ind x - ind y - 1).toNat) (by omega) fun x' y' h₁ ↦ by
-          by_cases h₂ : ind x' ≤ ind y'
-          · exact homotopy_of_le hh' h₂
-          · rw [hh'r (hr (by omega)), (hlt (x', y') (hr (by omega))).2
-              (show ind y' < ind x' by omega), hcongr (by omega)]
-      exact ⟨e, he, fun _ ↦ hde.trans (by rw [hcongr le_rfl])⟩
-    · -- At the pairs with `ind x ≤ ind y` only the degree condition is imposed.
-      exact ⟨0, zero_mem _, fun h ↦ absurd h hyx⟩
+  -- The chain of `(x, y)` is a chain of `M x y` of cohomological degree `ind y - ind x`, whose
+  -- boundary is a cycle `s x y - s' x y + b` with `b` a chain of `A x y`.
+  obtain ⟨h, hh, hd⟩ := exists_forall_cubicalChainDifferential_eq_of_injective
+    (deg := fun x y ↦ ind y - ind x) (n := fun x y ↦ (ind x - ind y - 1).toNat) (μ := μ)
+    (F := fun h x y ↦ S.chain x y - S'.chain x y +
+      continuationChainSum ind ind ι ι k S.chain S'.chain h x y)
+    (fun x y hxy ↦ by omega)
+    (fun h h' x y _ _ hhh' ↦ by
+      rw [continuationChainSum_congr (ν' := h') S.mem_graded S'.mem_graded
+        (fun z _ ↦ hhh' z y (by omega)) fun z _ ↦ hhh' x z (by omega)])
+    (fun h x y hh hxy ↦ by
+      rw [S.chain_eq_zero_of_le (by omega), S'.chain_eq_zero_of_le (by omega),
+        continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hh (by omega), sub_self,
+        add_zero])
+    (fun x y hxy ↦ hinj x y (by omega)) fun h x y hxy hh hd ↦ by
+    obtain ⟨b, hb, hbsum⟩ :=
+      exists_continuationChainSum_eq_cubicalChainSumMap (S := S) (S' := S') hA hh x y
+    have hdeg : ind y - ind x + 1 = -(((ind x - ind y - 1).toNat : ℕ) : ℤ) := by omega
+    exact ⟨cubicalChainDifferential_sub_add_continuationChainSum S S' hh (hι x · · y)
+      (fun z _ h₂ ↦ hd z y (by omega)) (fun z h₁ _ ↦ hd x z (by omega)), S.chain x y,
+      S'.chain x y, b, (S.isRepresenting_iff μ).1 hS x y (by omega),
+      (S'.isRepresenting_iff μ).1 hS' x y (by omega), hdeg ▸ hb, by rw [hbsum]⟩
+  exact ⟨⟨h, hh, hd⟩⟩
 
 end TwistingChainSystem
 
@@ -464,117 +397,6 @@ private theorem exists_parametrizedChainSum_eq_sub_add (hB : ∀ x z y p, κ x z
   · simp only [parametrizedChainSum_def, cubicalChainSumMap_id, LinearMap.id_apply, map_add,
       map_sum, map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hκB, hκB', add_assoc]
 
-/-- The parametrized equation holds at the pairs `(x, y)` with `ind x < indQ y`, where all its
-terms vanish for degree reasons. -/
-private theorem parametrized_of_lt {h : ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
-    (hh : ∀ x y, h x y ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1)) {x : P} {y : Q}
-    (hxy : ind x < indQ y) :
-    cubicalChainDifferential (N x y) k (h x y) =
-      parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-        (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x y := by
-  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hh x y),
-    parametrizedChainSum_eq_zero_of_lt S.mem_graded S'.mem_graded T₀.mem_graded T₁.mem_graded hh
-      hxy]
-
-/-- The chain of a pair `(x, y)` with `indQ y ≤ ind x` in the inductive construction of a
-parametrized chain system from `T₀` to `T₁`: a chain whose boundary is the parametrized sum, which
-is a cycle with vanishing relative class. -/
-private theorem exists_chain_of_parametrized (hT₀ : T₀.IsRepresenting B ν)
-    (hT₁ : T₁.IsRepresenting B ν)
-    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
-      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
-    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
-      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
-    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
-      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
-    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
-    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
-      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
-        (ind x - indQ y).toNat).hom)
-    {h : ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
-    (hh : ∀ x y, h x y ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1)) {x : P} {y : Q}
-    (hxy : indQ y ≤ ind x)
-    (hd : ∀ x' y', ind x' - indQ y' < ind x - indQ y →
-      cubicalChainDifferential (N x' y') k (h x' y') =
-        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x' y') :
-    ∃ e : normalizedCubicalChainAlgebra (N x y) k,
-      e ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1) ∧
-      cubicalChainDifferential (N x y) k e =
-        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x y := by
-  obtain ⟨b, hb, hsum⟩ := exists_parametrizedChainSum_eq_sub_add (T₀ := T₀) (T₁ := T₁) hB hB' hh
-    x y
-  have hcycle := cubicalChainDifferential_parametrizedChainSum
-    (fun x y ↦ ContinuousMap.id (N x y)) (fun x y ↦ ContinuousMap.id (N x y)) T₀ T₁ hh
-    (hκ x · · y) (hκκ' x · · y) (hκ' x · · y) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
-    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun z _ h₂ ↦ hd z y (by omega))
-    fun z h₁ _ ↦ hd x z (by omega)
-  rw [hsum] at hcycle ⊢
-  have hdeg : indQ y - ind x = -(((ind x - indQ y).toNat : ℕ) : ℤ) := by omega
-  obtain ⟨e, he, hde⟩ := ((T₁.isRepresenting_iff ν).1 hT₁ x y hxy)
-    |>.exists_cubicalChainDifferential_eq_sub_add ((T₀.isRepresenting_iff ν).1 hT₀ x y hxy)
-      (hdeg ▸ hb) hcycle (hinj x y hxy)
-  have hdeg' : -((((ind x - indQ y).toNat + 1 : ℕ)) : ℤ) = indQ y - ind x - 1 := by omega
-  exact ⟨e, hdeg' ▸ he, hde⟩
-
-/-- The inductive step of the construction of a parametrized chain system from `T₀` to `T₁`: if
-chains of the pairs of smaller index difference than `(x, y)` have the right degrees and satisfy
-the parametrized equation, some chain of `(x, y)` satisfies it too. -/
-private theorem exists_chain_of_forall_lt (hT₀ : T₀.IsRepresenting B ν)
-    (hT₁ : T₁.IsRepresenting B ν)
-    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
-      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
-    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
-      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
-    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
-      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
-    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
-    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
-      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
-        (ind x - indQ y).toNat).hom)
-    {x : P} {y : Q} (hyx : indQ y ≤ ind x)
-    (h : ∀ p : P × Q, normalizedCubicalChainAlgebra (N p.1 p.2) k)
-    (hlt : ∀ p : P × Q, (ind p.1 - indQ p.2 + 1).toNat < (ind x - indQ y + 1).toNat →
-      h p ∈ cubicalChainGrading (N p.1 p.2) k (indQ p.2 - ind p.1 - 1) ∧
-        (indQ p.2 ≤ ind p.1 → cubicalChainDifferential (N p.1 p.2) k (h p) =
-          parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-            (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
-            (fun x y ↦ h (x, y)) p.1 p.2)) :
-    ∃ e : normalizedCubicalChainAlgebra (N x y) k,
-      e ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1) ∧
-      cubicalChainDifferential (N x y) k e =
-        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
-          (fun x y ↦ h (x, y)) x y := by
-  classical
-  -- Extend the chains of the pairs of smaller index difference by zero.
-  let lt (x' : P) (y' : Q) : Prop := (ind x' - indQ y' + 1).toNat < (ind x - indQ y + 1).toNat
-  let h' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k := fun x' y' ↦
-    if lt x' y' then h (x', y') else 0
-  have hh'r {x' : P} {y' : Q} (h₁ : lt x' y') : h' x' y' = h (x', y') := by simp [h', h₁]
-  have hh' (x' : P) (y' : Q) :
-      h' x' y' ∈ cubicalChainGrading (N x' y') k (indQ y' - ind x' - 1) := by
-    by_cases h₁ : lt x' y'
-    · exact hh'r h₁ ▸ (hlt (x', y') h₁).1
-    · rw [show h' x' y' = 0 by simp [h', h₁]]
-      exact zero_mem _
-  have hcongr {x' : P} {y' : Q} (h₁ : ind x' - indQ y' ≤ ind x - indQ y) :
-      parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h' x' y' =
-        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
-          (fun x y ↦ h (x, y)) x' y' :=
-    parametrizedChainSum_congr S.mem_graded S'.mem_graded
-      (fun _ _ ↦ hh'r (show lt _ _ by omega)) fun _ _ ↦ hh'r (show lt _ _ by omega)
-  obtain ⟨e, he, hde⟩ := exists_chain_of_parametrized hT₀ hT₁ hκ hκκ' hκ' hB hB' hinj hh' hyx
-    fun x' y' h₁ ↦ by
-      by_cases h₂ : ind x' < indQ y'
-      · exact parametrized_of_lt hh' h₂
-      · rw [hh'r (show lt x' y' by omega), (hlt (x', y') (show lt x' y' by omega)).2
-          (show indQ y' ≤ ind x' by omega), hcongr (by omega)]
-  exact ⟨e, he, hde.trans (by rw [hcongr le_rfl])⟩
-
 /-- **Any two representing continuation chain systems are joined by a parametrized chain
 system.** Let `T₀` and `T₁` be continuation chain systems from `S` to `S'` representing the same
 classes `ν x y` of `H_{ind x - indQ y}(N x y, B x y)`, for associative composition maps `κ` and
@@ -605,35 +427,29 @@ theorem IsRepresenting.nonempty_parametrizedChainSystem (hT₀ : T₀.IsRepresen
         (ind x - indQ y).toNat).hom) :
     Nonempty (ParametrizedChainSystem κ κ' (fun x y ↦ ContinuousMap.id (N x y))
       (fun x y ↦ ContinuousMap.id (N x y)) T₀ T₁) := by
-  classical
-  -- Recursion on the index difference: at a pair `(x, y)` with `indQ y ≤ ind x`, the parametrized
-  -- equation only involves the chains of the pairs of smaller index difference.
-  let r : P × Q → P × Q → Prop := InvImage (· < ·) fun p ↦ (ind p.1 - indQ p.2 + 1).toNat
-  have hr {x x' : P} {y y' : Q}
-      (h : (ind x' - indQ y' + 1).toNat < (ind x - indQ y + 1).toNat) : r (x', y') (x, y) := h
-  refine ((InvImage.wf _ wellFounded_lt : WellFounded r).exists_forall_of_forall_exists
-    (X := fun p ↦ normalizedCubicalChainAlgebra (N p.1 p.2) k)
-    (fun h p a ↦ a ∈ cubicalChainGrading (N p.1 p.2) k (indQ p.2 - ind p.1 - 1) ∧
-      (indQ p.2 ≤ ind p.1 → cubicalChainDifferential (N p.1 p.2) k a =
-        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
-          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
-          (fun x y ↦ h (x, y)) p.1 p.2)) ?_ ?_).elim fun h hh ↦
-    ⟨⟨fun x y ↦ h (x, y), fun x y ↦ (hh (x, y)).1, fun x y ↦ if hxy : indQ y ≤ ind x
-      then (hh (x, y)).2 hxy else parametrized_of_lt (fun x y ↦ (hh (x, y)).1) (not_le.1 hxy)⟩⟩
-  · -- The condition at `(x, y)` only depends on the chains of the pairs of smaller index
-    -- difference.
-    rintro ⟨x, y⟩ a h h' hhh' ⟨ha, hd⟩
-    dsimp only at ha hd ⊢
-    refine ⟨ha, fun hyx ↦ (hd hyx).trans ?_⟩
-    rw [parametrizedChainSum_congr (h' := fun x y ↦ h' (x, y)) S.mem_graded S'.mem_graded
-      (fun z _ ↦ hhh' (z, y) (hr (by omega))) fun z _ ↦ hhh' (x, z) (hr (by omega))]
-  · rintro ⟨x, y⟩ h hlt
-    dsimp only
-    by_cases hyx : indQ y ≤ ind x
-    · obtain ⟨e, he, hde⟩ := exists_chain_of_forall_lt hT₀ hT₁ hκ hκκ' hκ' hB hB' hinj hyx h hlt
-      exact ⟨e, he, fun _ ↦ hde⟩
-    · -- At the pairs with `ind x < indQ y` only the degree condition is imposed.
-      exact ⟨0, zero_mem _, fun h ↦ absurd h hyx⟩
+  -- The chain of `(x, y)` is a chain of `N x y` of cohomological degree `indQ y - ind x - 1`,
+  -- whose boundary is a cycle `t₁ x y - t₀ x y + b` with `b` a chain of `B x y`.
+  obtain ⟨h, hh, hd⟩ := exists_forall_cubicalChainDifferential_eq_of_injective
+    (deg := fun x y ↦ indQ y - ind x - 1) (n := fun x y ↦ (ind x - indQ y).toNat) (μ := ν)
+    (F := parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+      (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain)
+    (fun x y hxy ↦ by omega)
+    (fun h h' x y _ _ hhh' ↦ parametrizedChainSum_congr S.mem_graded S'.mem_graded
+      (fun z _ ↦ hhh' z y (by omega)) fun z _ ↦ hhh' x z (by omega))
+    (fun h x y hh hxy ↦ parametrizedChainSum_eq_zero_of_lt S.mem_graded S'.mem_graded
+      T₀.mem_graded T₁.mem_graded hh (by omega))
+    (fun x y hxy ↦ hinj x y (by omega)) fun h x y hxy hh hd ↦ by
+    obtain ⟨b, hb, hsum⟩ :=
+      exists_parametrizedChainSum_eq_sub_add (T₀ := T₀) (T₁ := T₁) hB hB' hh x y
+    have hdeg : indQ y - ind x = -(((ind x - indQ y).toNat : ℕ) : ℤ) := by omega
+    exact ⟨cubicalChainDifferential_parametrizedChainSum
+      (fun x y ↦ ContinuousMap.id (N x y)) (fun x y ↦ ContinuousMap.id (N x y)) T₀ T₁ hh
+      (hκ x · · y) (hκκ' x · · y) (hκ' x · · y) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
+      (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun z _ h₂ ↦ hd z y (by omega))
+      fun z h₁ _ ↦ hd x z (by omega), T₁.chain x y, T₀.chain x y, b,
+      (T₁.isRepresenting_iff ν).1 hT₁ x y (by omega),
+      (T₀.isRepresenting_iff ν).1 hT₀ x y (by omega), hdeg ▸ hb, hsum⟩
+  exact ⟨⟨h, hh, hd⟩⟩
 
 section Evaluation
 
