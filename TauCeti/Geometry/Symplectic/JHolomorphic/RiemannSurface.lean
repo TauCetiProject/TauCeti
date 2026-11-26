@@ -56,7 +56,7 @@ On a compact connected Riemann surface a nonconstant `C¹` pseudoholomorphic map
 finitely many critical points (`TauCeti.finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`) and
 finite fibres (`TauCeti.finite_preimage_singleton_of_isPseudoholomorphic`), so the preimage
 `u⁻¹(u(Crit u))` of its critical values is finite
-(`TauCeti.finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`). This finite
+(`TauCeti.criticalValuePreimage`, `TauCeti.finite_criticalValuePreimage`). This finite
 exceptional set is where the factorization of a nonconstant closed curve through a simple curve
 starts (McDuff–Salamon, Proposition 2.5.1). Off it the curve is immersed, and the factorization is
 built from the relation `Γ₀` under which two points `z` and `ζ` are related when the branches of
@@ -80,6 +80,10 @@ changes of the charts are invertible. For two curves, both are read in the chart
 common value; the local factor `φ'` of the coordinate expressions gives the factor
 `φ₀⁻¹ ∘ φ' ∘ φ₁` of the curves, for the charts `φ₀` and `φ₁` of the two Riemann surfaces.
 
+## Main definitions
+
+* `TauCeti.criticalValuePreimage`: the preimage `B = u⁻¹(u(Crit u))` of the critical values.
+
 ## Main results
 
 * `TauCeti.eq_of_isPseudoholomorphic_of_eventually_eq`: unique continuation on a connected
@@ -90,9 +94,9 @@ common value; the local factor `φ'` of the coordinate expressions gives the fac
   nonconstant `C¹` pseudoholomorphic map are isolated.
 * `TauCeti.finite_preimage_singleton_of_isPseudoholomorphic`,
   `TauCeti.finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`,
-  `TauCeti.finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`: on a compact
-  connected Riemann surface the fibres, the critical set and the preimage of the critical values of
-  a nonconstant `C¹` pseudoholomorphic map are finite.
+  `TauCeti.finite_criticalValuePreimage`: on a compact connected Riemann surface the fibres, the
+  critical set and the preimage of the critical values of a nonconstant `C¹` pseudoholomorphic map
+  are finite.
 * `TauCeti.germFactorsThrough_of_frequently_mem_image`, `TauCeti.germFactorsThrough_of_tendsto`:
   accumulating coincidences factor a pseudoholomorphic curve (McDuff–Salamon, Lemma 2.4.3).
 * `TauCeti.germFactorsThrough_iff_frequently_mem_image`: holomorphic factorization of germs at an
@@ -564,6 +568,41 @@ theorem equivalence_germFactorsThrough (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
 
 end Coincidence
 
+/-! ### The preimage of the critical values -/
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+variable (I) in
+/-- The preimage `B = u⁻¹(u(Crit u))` of the critical values of a map `u : S → N` from a Riemann
+surface: the points `z` whose fibre `u⁻¹(u z)` contains a point at which the derivative of `u`
+vanishes. Off `B` all the points of each fibre are immersed. -/
+def criticalValuePreimage (u : S → N) : Set S :=
+  u ⁻¹' (u '' {x | mfderiv 𝓘(ℝ, ℂ) I u x = 0})
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+@[simp]
+theorem mem_criticalValuePreimage {z : S} :
+    z ∈ criticalValuePreimage I u ↔ ∃ x, mfderiv 𝓘(ℝ, ℂ) I u x = 0 ∧ u x = u z :=
+  Iff.rfl
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- The set `u⁻¹(u(Crit u))` is a union of fibres of `u`. -/
+theorem mem_criticalValuePreimage_iff_of_apply_eq {z ζ : S} (h : u z = u ζ) :
+    z ∈ criticalValuePreimage I u ↔ ζ ∈ criticalValuePreimage I u := by
+  simp only [criticalValuePreimage, mem_preimage, h]
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- A map is immersed at the points outside the preimage of its critical values. -/
+theorem mfderiv_ne_zero_of_notMem_criticalValuePreimage {z : S}
+    (hz : z ∉ criticalValuePreimage I u) : mfderiv 𝓘(ℝ, ℂ) I u z ≠ 0 :=
+  fun h ↦ hz ⟨z, h, rfl⟩
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- A point related to a point outside `u⁻¹(u(Crit u))` lies outside it too. -/
+theorem RiemannSurface.GermFactorsThrough.notMem_criticalValuePreimage {z ζ : S}
+    (h : GermFactorsThrough u z u ζ) (hz : z ∉ criticalValuePreimage I u) :
+    ζ ∉ criticalValuePreimage I u :=
+  (mem_criticalValuePreimage_iff_of_apply_eq h.apply_eq).not.1 hz
+
 /-! ### Compact Riemann surfaces -/
 
 /-- **Finite fibres.** On a compact connected Riemann surface, a nonconstant `C¹`
@@ -591,10 +630,9 @@ theorem finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic [CompactSpace S] [Pr
 /-- **The preimage of the critical values is finite.** On a compact connected Riemann surface, a
 nonconstant `C¹` pseudoholomorphic map `u` into an almost complex manifold has finitely many
 points in `u⁻¹(u(Crit u))`, the preimage of the images of its critical points. -/
-theorem finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic [CompactSpace S]
-    [PreconnectedSpace S] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
-    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) :
-    (u ⁻¹' (u '' {x | mfderiv 𝓘(ℝ, ℂ) I u x = 0})).Finite :=
+theorem finite_criticalValuePreimage [CompactSpace S] [PreconnectedSpace S]
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) : (criticalValuePreimage I u).Finite :=
   ((finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic hu hJu hne).image u).preimage' fun y _ ↦
     finite_preimage_singleton_of_isPseudoholomorphic hu hJu hne y
 
