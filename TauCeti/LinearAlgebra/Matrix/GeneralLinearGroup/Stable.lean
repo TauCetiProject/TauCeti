@@ -96,6 +96,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroupMap_surjective`: surjective ring maps
   induce surjective homomorphisms of stable elementary subgroups.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
+* `TauCeti.StableGeneralLinearGroup.instSubsingleton`: over a zero ring `A`, `GL_∞(A)` is
+  trivial.
 
 ## References
 
@@ -280,6 +282,12 @@ theorem exists_of₂ (x y : StableGeneralLinearGroup A) :
     ∃ n u v, of A n u = x ∧ of A n v = y := by
   obtain ⟨n, u, v, rfl, rfl⟩ := DirectLimit.exists_eq_mk₂ (fun _ _ h ↦ stabilizeGL A h) x y
   exact ⟨n, u, v, of_apply n u, of_apply n v⟩
+
+/-- The stable general linear group of the zero ring is trivial. -/
+instance instSubsingleton [Subsingleton A] : Subsingleton (StableGeneralLinearGroup A) := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨n, u, v, rfl, rfl⟩ := exists_of₂ x y
+  rw [Subsingleton.elim u v]
 
 /-- Homomorphisms out of the stable general linear group agree when they agree on each
 `GL (Fin n) A`. -/

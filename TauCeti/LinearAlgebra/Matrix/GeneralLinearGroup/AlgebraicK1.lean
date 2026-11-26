@@ -59,6 +59,10 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
 * `TauCeti.AlgebraicK1.instSubsingleton`: `K₁` of the zero ring is trivial.
 * `TauCeti.AlgebraicK1.prodEquiv_apply`, `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the isomorphism
   `K₁(A × B) ≃* K₁(A) × K₁(B)` and its inverse on classes.
+* `TauCeti.AlgebraicK1.map_fst_prodEquiv_symm`, `TauCeti.AlgebraicK1.map_snd_prodEquiv_symm`:
+  the projections recover the two components from the inverse.
+* `TauCeti.prodEquivGL_stabilizeGL`, `TauCeti.stabilizeGL_prodEquivGL_symm`: splitting an
+  invertible matrix over `A × B` into its components commutes with stabilization.
 
 ## References
 
@@ -74,6 +78,27 @@ noncomputable section
 open Matrix
 
 namespace TauCeti
+
+section Prod
+
+variable {A B : Type*} [Ring A] [Ring B]
+
+/-- Splitting an invertible matrix over `A × B` into its two components commutes with
+stabilization `u ↦ u ⊕ 1`. -/
+theorem prodEquivGL_stabilizeGL {m n : ℕ} (h : m ≤ n) (g : GL (Fin m) (A × B)) :
+    prodEquivGL (Fin n) A B (stabilizeGL (A × B) h g) =
+      Prod.map (stabilizeGL A h) (stabilizeGL B h) (prodEquivGL (Fin m) A B g) :=
+  Prod.ext (by simpa using (stabilizeGL_map h (RingHom.fst A B) g).symm)
+    (by simpa using (stabilizeGL_map h (RingHom.snd A B) g).symm)
+
+/-- Stabilizing the invertible matrix over `A × B` with components `p.1` and `p.2` stabilizes
+both components. -/
+theorem stabilizeGL_prodEquivGL_symm {m n : ℕ} (h : m ≤ n) (p : GL (Fin m) A × GL (Fin m) B) :
+    stabilizeGL (A × B) h ((prodEquivGL (Fin m) A B).symm p) =
+      (prodEquivGL (Fin n) A B).symm (Prod.map (stabilizeGL A h) (stabilizeGL B h) p) := by
+  rw [MulEquiv.eq_symm_apply, prodEquivGL_stabilizeGL, MulEquiv.apply_symm_apply]
+
+end Prod
 
 namespace AlgebraicK1
 
@@ -357,6 +382,22 @@ theorem prodEquiv_symm_mk {n : ℕ} (u : GL (Fin n) A) (v : GL (Fin n) B) :
       mk (A × B) n ((prodEquivGL (Fin n) A B).symm (u, v)) := by
   rw [MulEquiv.symm_apply_eq, prodEquiv_apply]
   exact Prod.ext (map_fst_mkProd (u, v)).symm (map_snd_mkProd (u, v)).symm
+
+/-- The homomorphism of `K₁` induced by the first projection recovers the first component from
+the inverse of `K₁(A × B) ≃* K₁(A) × K₁(B)`. -/
+@[simp]
+theorem map_fst_prodEquiv_symm (p : AlgebraicK1 A × AlgebraicK1 B) :
+    map (RingHom.fst A B) ((prodEquiv A B).symm p) = p.1 := by
+  have h := congrArg Prod.fst ((prodEquiv A B).apply_symm_apply p)
+  rwa [prodEquiv_apply] at h
+
+/-- The homomorphism of `K₁` induced by the second projection recovers the second component from
+the inverse of `K₁(A × B) ≃* K₁(A) × K₁(B)`. -/
+@[simp]
+theorem map_snd_prodEquiv_symm (p : AlgebraicK1 A × AlgebraicK1 B) :
+    map (RingHom.snd A B) ((prodEquiv A B).symm p) = p.2 := by
+  have h := congrArg Prod.snd ((prodEquiv A B).apply_symm_apply p)
+  rwa [prodEquiv_apply] at h
 
 end Prod
 
