@@ -803,18 +803,6 @@ theorem range_torusClassHom_const (x : Q) :
     (const x).torusClassHom.range = (hurewiczIntHom Q x 1).range := by
   rw [range_torusClassHom, toCircleMap_const, range_freeLoopTorusClassHom_const]
 
-/-- The loop of rotations of the circle, `t ↦ (z ↦ z * exp (2πit))`, based at the identity. -/
-private def circleRotationGenLoop : Ω^ (Fin 1) C(Circle, Circle) (ContinuousMap.id Circle) :=
-  ⟨ContinuousMap.curry ⟨fun p : (Fin 1 → I) × Circle ↦ p.2 * unitToCircle (p.1 0), by fun_prop⟩,
-    fun t ⟨i, hi⟩ ↦ by
-      obtain rfl := Subsingleton.elim i 0
-      ext z
-      rcases hi with hi | hi <;> simp [hi]⟩
-
-private theorem circleRotationGenLoop_apply (t : Fin 1 → I) (z : Circle) :
-    circleRotationGenLoop t z = z * unitToCircle (t 0) :=
-  (rfl)
-
 /-- **The rotation loop has zero torus class**: rotating a free Moore loop `γ` once around itself
 (`TauCeti.MooreFreeLoopSpace.rotationLoop`) sweeps out the torus `(s, t) ↦ γ(s + t)`, which
 factors through the circle. -/
@@ -825,7 +813,7 @@ theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace 
       GenLoop.map ⟨(toCircleMap γ).comp, ContinuousMap.continuous_postcomp _⟩
         (ContinuousMap.comp_id _) circleRotationGenLoop := by
     ext t z
-    simp [genLoopEquivOfUnique, circleRotationGenLoop_apply, toCircleMap_rotate]
+    simp [genLoopEquivOfUnique, toCircleMap_rotate]
   have h0 := freeLoopTorusClassHom_map_comp_eq_zero_of_isZero
     (isZero_singularHomology_circle_of_two_le (ModuleCat.of ℤ ℤ) le_rfl) (toCircleMap γ)
     (ContinuousMap.comp_id _)

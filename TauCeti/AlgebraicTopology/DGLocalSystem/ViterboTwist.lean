@@ -25,7 +25,7 @@ The sign system only sees the second Stiefel–Whitney class through its pairing
 classes. So this file takes that pairing as an arbitrary additive map `c : H₂(M; ℤ) → ℤ/2` and
 defines the **Viterbo twist** of `c` as the product of the torus sign `σ_c`
 (`TauCeti.RankOneLocalSystem.torusSign`) with the orientation part
-(`TauCeti.RankOneLocalSystem.viterboTwist`). For `c = ⟨w₂(TM), -⟩` it is `η₀`.
+(`TauCeti.RankOneLocalSystem.viterboOrientationTwist`). For `c = ⟨w₂(TM), -⟩` it is `η₀`.
 
 The laws of the twist follow from those of its two factors.
 

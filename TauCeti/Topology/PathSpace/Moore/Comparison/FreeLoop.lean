@@ -149,42 +149,31 @@ the fraction `s` of its length is the circle map of `γ` precomposed with the ro
 theorem toCircleMap_rotate (γ : MooreFreeLoopSpace X) (s : I) (z : Circle) :
     toCircleMap (γ.rotate (γ.length * toNNReal s)) z = toCircleMap γ (z * unitToCircle s) := by
   obtain ⟨u, rfl⟩ := unitToCircle_surjective z
-  have hs : γ.length * toNNReal s ≤ γ.length :=
-    mul_le_of_le_one_right (by positivity) <| by
+  have hL (x : I) : γ.length * toNNReal x ≤ γ.length :=
+    mul_le_of_le_one_right zero_le <| by
       rw [← NNReal.coe_le_coe]
-      exact unitInterval.le_one s
+      exact unitInterval.le_one x
   rw [toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath, length_rotate]
   by_cases h : (u : ℝ) + s ≤ 1
   · -- Before the end of `γ`, the rotation runs along `γ` from time `L s`.
     let v : I := ⟨(u : ℝ) + s, add_nonneg (unitInterval.nonneg u) (unitInterval.nonneg s), h⟩
-    have hv : unitToCircle u * unitToCircle s = unitToCircle v := by
-      rw [unitToCircle_apply, unitToCircle_apply, unitToCircle_apply, ← Circle.exp_add, mul_add]
-    rw [hv, toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath,
-      rotate_apply_of_le]
-    · exact congrArg γ.toMoorePath (NNReal.eq (by simp [v, mul_add, add_comm]))
-    · refine le_tsub_of_add_le_right ?_
-      rw [← mul_add]
-      refine mul_le_of_le_one_right (by positivity) ?_
-      rw [← NNReal.coe_le_coe]
-      simpa using h
+    have he : γ.length * toNNReal u + γ.length * toNNReal s = γ.length * toNNReal v :=
+      NNReal.eq (by simp [v, mul_add])
+    rw [unitToCircle_mul_unitToCircle (v := v) 0 (by simp [v]), toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath, rotate_apply_of_le _
+        (le_tsub_of_add_le_right (he.trans_le (hL v))), add_comm, he]
   · -- After the end of `γ`, the rotation runs along `γ` from its start.
     have : 1 < (u : ℝ) + s := not_le.1 h
     let v : I :=
       ⟨(u : ℝ) + s - 1, by linarith, by linarith [unitInterval.le_one u, unitInterval.le_one s]⟩
-    have hv : unitToCircle u * unitToCircle s = unitToCircle v := by
-      rw [unitToCircle_apply, unitToCircle_apply, unitToCircle_apply, ← Circle.exp_add,
-        ← Circle.exp_sub_two_pi]
-      congr 1
-      simp only [v]
-      ring
     have he : γ.length * toNNReal u =
         γ.length - γ.length * toNNReal s + γ.length * toNNReal v := by
       refine NNReal.eq ?_
-      rw [NNReal.coe_add, NNReal.coe_sub hs]
+      rw [NNReal.coe_add, NNReal.coe_sub (hL s)]
       simp only [NNReal.coe_mul, coe_toNNReal, v]
       ring
-    rw [hv, toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath, he,
-      rotate_apply_length_sub_add, min_eq_left]
+    rw [unitToCircle_mul_unitToCircle (v := v) 1 (by simp [v]), toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath, he, rotate_apply_length_sub_add, min_eq_left]
     refine mul_le_mul_of_nonneg_left ?_ (by positivity)
     rw [← NNReal.coe_le_coe]
     simp only [coe_toNNReal, v]
