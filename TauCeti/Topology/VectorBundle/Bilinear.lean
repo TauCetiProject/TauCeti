@@ -30,7 +30,7 @@ trivialization gives a bilinear field continuous on its base set
 (`TauCeti.continuousOn_trivializationAt_pullbackForm`), the local building block for continuous
 Riemannian metrics.
 
-`IsCompact.exists_pos_eventually_mul_bilin_self_le_and_le` gives quantitative openness:
+`IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le_and_le_mul` gives quantitative openness:
 two families positive at one parameter on a compact set have uniform positive two-sided
 comparison constants for nearby parameters. Neither symmetry nor a background metric is needed.
 
@@ -145,7 +145,7 @@ variable {B : Type*} [TopologicalSpace B]
   {b b₀ : P → ∀ x : K, V x →L[ℝ] V x →L[ℝ] ℝ}
 
 /-- A uniform one-sided bound needs positivity only of the dominating field. -/
-private theorem IsCompact.exists_pos_eventually_mul_bilin_self_le (hK : IsCompact K)
+private theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le (hK : IsCompact K)
     (hb : ∀ x : K, ContinuousAt (fun q : P × K ↦
       TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
         (q.2 : B) (b q.1 q.2)) (p₀, x))
@@ -192,7 +192,7 @@ private theorem IsCompact.exists_pos_eventually_mul_bilin_self_le (hK : IsCompac
 a compact set admit uniform positive two-sided comparison bounds for all parameters near `p₀`.
 Continuity is only required at points over `p₀` in the product of the parameter space with the
 compact subset. The bounds do not require symmetry or a background fibre norm. -/
-theorem IsCompact.exists_pos_eventually_mul_bilin_self_le_and_le (hK : IsCompact K)
+theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le_and_le_mul (hK : IsCompact K)
     (hb : ∀ x : K, ContinuousAt (fun q : P × K ↦
       TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
         (q.2 : B) (b q.1 q.2)) (p₀, x))
@@ -203,8 +203,8 @@ theorem IsCompact.exists_pos_eventually_mul_bilin_self_le_and_le (hK : IsCompact
     (hpos₀ : ∀ (x : K) (v : V x), v ≠ 0 → 0 < b₀ p₀ x v v) :
     ∃ c > 0, ∃ C > 0, ∀ᶠ p in 𝓝 p₀, ∀ (x : K) (v : V x),
       c * b₀ p x v v ≤ b p x v v ∧ b p x v v ≤ C * b₀ p x v v := by
-  obtain ⟨c, hc, hl⟩ := hK.exists_pos_eventually_mul_bilin_self_le hb hb₀ hpos
-  obtain ⟨d, hd, hu⟩ := hK.exists_pos_eventually_mul_bilin_self_le hb₀ hb hpos₀
+  obtain ⟨c, hc, hl⟩ := hK.exists_pos_eventually_mul_bilinear_apply_self_le hb hb₀ hpos
+  obtain ⟨d, hd, hu⟩ := hK.exists_pos_eventually_mul_bilinear_apply_self_le hb₀ hb hpos₀
   refine ⟨c, hc, d⁻¹, inv_pos.mpr hd, (hl.and hu).mono fun p hp x v ↦ ⟨hp.1 x v, ?_⟩⟩
   rw [← div_eq_inv_mul, le_div_iff₀ hd]
   simpa only [mul_comm] using hp.2 x v
