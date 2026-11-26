@@ -61,6 +61,8 @@ unfolded by hand.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
+* `TauCeti.sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet`: a point of the upper half-plane differs
+  from every real number.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
@@ -430,6 +432,12 @@ end ModularGroup
 namespace TauCeti
 
 open Complex Function Set
+
+/-- A point of the upper half-plane differs from every real number: the `upperHalfPlaneSet` form
+of Mathlib's `UpperHalfPlane.ne_ofReal`. -/
+theorem sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
+    (p : ℝ) : w - p ≠ 0 :=
+  sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨w, hw⟩ p)
 
 /-- For `p < q`, the real fractional-linear transformation sending `p` to infinity
 and `q` to zero preserves the upper half-plane bijectively. -/

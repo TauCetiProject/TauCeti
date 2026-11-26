@@ -27,8 +27,8 @@ onto the closed upper half-plane with `a` removed, the two boundary lines onto t
 
 Conversely, for real `p < q` the coordinate `w ↦ log ((w - q) / (w - p)) / π` is a holomorphic
 bijection of the upper half-plane onto that strip. It sends the real points `q` and `p` to the
-negative and positive ends of the strip, and is continuous at every other real point `r`, which it
-sends to a point of the lower boundary line.
+negative and positive ends of the strip, and is continuous at every real point `r ∉ [p, q]`, which
+it sends to the point `log ((r - q) / (r - p)) / π` of the lower boundary line.
 -/
 
 public section
@@ -52,6 +52,15 @@ theorem bijOn_log_upperHalfPlaneSet :
       mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi hw.1 hw.2)
 
 /-! ### The exponential coordinate of the strip of height `1` -/
+
+/-- The imaginary part of `exp (π z) + a` for real `a`. -/
+theorem exp_pi_mul_add_im (a : ℝ) (z : ℂ) :
+    (cexp (π * z) + a).im = Real.exp (π * z.re) * Real.sin (π * z.im) := by
+  simp [exp_im]
+
+/-- The imaginary part of `log (w - a) / π` for real `a`. -/
+theorem log_sub_div_pi_im (a : ℝ) (w : ℂ) : (log (w - a) / π).im = arg (w - a) / π := by
+  rw [div_ofReal_im, log_im]
 
 /-- The map `w ↦ log (w - a) / π` inverts `z ↦ exp (π z) + a` between the closed strip and the
 closed upper half-plane with `a` removed. -/
@@ -85,15 +94,14 @@ theorem bijOn_exp_pi_mul_add_strip (a : ℝ) :
     BijOn (fun z : ℂ => cexp (π * z) + a) {z : ℂ | z.im ∈ Ioo 0 1} upperHalfPlaneSet := by
   refine (invOn_log_sub_div_pi_exp_pi_mul_add_strip a).bijOn
     (fun z hz => ?_) fun w (hw : 0 < w.im) => ?_
-  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, exp_pi_mul_add_im]
     refine mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi ?_ ?_) <;>
-      simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero] <;>
       nlinarith [Real.pi_pos, hz.1, hz.2]
   · have harg : 0 < arg (w - a) ∧ arg (w - a) < π := by
       have hw' : 0 < (w - a).im := by simpa using hw
       exact ⟨(arg_nonneg_iff.mpr hw'.le).lt_of_ne fun h => hw'.ne' (arg_eq_zero_iff.mp h.symm).2,
         arg_lt_pi_iff.mpr (.inr hw'.ne')⟩
-    simp only [mem_ofPred_eq, div_ofReal_im, log_im, mem_Ioo]
+    simp only [mem_ofPred_eq, log_sub_div_pi_im, mem_Ioo]
     exact ⟨div_pos harg.1 Real.pi_pos, (div_lt_one Real.pi_pos).mpr harg.2⟩
 
 /-- `exp (π z) + a` maps the closed strip of height `1` bijectively onto the closed upper
@@ -102,13 +110,12 @@ theorem bijOn_exp_pi_mul_add_closedStrip (a : ℝ) :
     BijOn (fun z : ℂ => cexp (π * z) + a) {z : ℂ | z.im ∈ Icc 0 1}
       ({w : ℂ | 0 ≤ w.im} \ {(a : ℂ)}) := by
   refine (invOn_log_sub_div_pi_exp_pi_mul_add a).bijOn (fun z hz => ⟨?_, ?_⟩) fun w hw => ?_
-  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, exp_pi_mul_add_im]
     refine mul_nonneg (Real.exp_pos _).le (Real.sin_nonneg_of_nonneg_of_le_pi ?_ ?_) <;>
-      simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero] <;>
       nlinarith [Real.pi_pos, hz.1, hz.2]
   · simp
   · have hw' : 0 ≤ (w - a).im := by simpa using hw.1
-    simp only [mem_ofPred_eq, div_ofReal_im, log_im, mem_Icc]
+    simp only [mem_ofPred_eq, log_sub_div_pi_im, mem_Icc]
     exact ⟨div_nonneg (arg_nonneg_iff.mpr hw') Real.pi_pos.le,
       (div_le_one Real.pi_pos).mpr (arg_le_pi _)⟩
 
@@ -123,12 +130,12 @@ theorem bijOn_exp_pi_mul_add_strip_boundary (a : ℝ) :
     fun w hw => ⟨le_of_eq (Eq.symm hw.1), hw.2⟩
   refine ((invOn_log_sub_div_pi_exp_pi_mul_add a).mono hsub hsub').bijOn
     (fun z hz => ⟨?_, ?_⟩) fun w hw => ?_
-  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, exp_pi_mul_add_im]
     rcases hz with h | h <;> simp [h]
   · simp
   · have him : (w - a).im = 0 := by simpa using hw.1
     have hne : w - a ≠ 0 := sub_ne_zero.mpr hw.2
-    simp only [mem_ofPred_eq, div_ofReal_im, log_im]
+    simp only [mem_ofPred_eq, log_sub_div_pi_im]
     rcases lt_or_gt_of_ne (fun h : (w - a).re = 0 => hne (Complex.ext h him)) with h | h
     · exact .inr (by rw [arg_eq_pi_iff.mpr ⟨h, him⟩, div_self Real.pi_ne_zero])
     · exact .inl (by rw [arg_eq_zero_iff.mpr ⟨h.le, him⟩, zero_div])
@@ -150,11 +157,6 @@ theorem tendsto_exp_pi_mul_add_comap_re_atTop (a : ℝ) :
   exact (tendsto_add_const_cobounded (a : ℂ)).comp (tendsto_exp_comap_re_atTop.comp h)
 
 /-! ### A logarithmic coordinate of the upper half-plane -/
-
-/-- A point of the upper half-plane differs from every real number. -/
-private theorem sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
-    (p : ℝ) : w - p ≠ 0 :=
-  sub_ne_zero.mpr fun h => by simp [h] at hw
 
 /-- For `p < q`, the coordinate `w ↦ log ((w - q) / (w - p)) / π` maps the upper half-plane
 bijectively onto the open strip of height `1`. -/
