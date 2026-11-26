@@ -45,14 +45,13 @@ noncomputable section
 namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
-  [∀ Y : C, HasWeakSheafify (J.over Y) AddCommGrpCat.{u}]
-  [∀ Y : C, (J.over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M : _root_.SheafOfModules.{u} R}
 
 /-- **A local basis trivializes the restriction.** If `s` is a section of `M` over `X` such that,
 over every `f : Y ⟶ X`, multiplying the restriction of `s` along `f` by scalars is a bijection
 `R(Y) → M(Y)`, then multiplication by `s` is an isomorphism from the structure sheaf of the slice
-over `X` to the restriction `M.over X`. -/
+over `X` to the restriction `M.over X`. This generalizes the construction
+`AlgebraicGeometry.Scheme.IdealSheafData.unitOverIsoOfIdealEqSpan`. -/
 def unitOverIsoOfBijectiveSMul {X : C} (s : M.val.obj (op X))
     (hs : ∀ (Y : C) (f : Y ⟶ X),
       Function.Bijective fun r : R.obj.obj (op Y) ↦ r • M.val.map f.op s) :
@@ -67,6 +66,23 @@ def unitOverIsoOfBijectiveSMul {X : C} (s : M.val.obj (op X))
       exact hs Y.left Y.hom
   asIso ((M.over X).unitHomEquiv.symm ((M.overSectionsEquiv X).symm s))
 
+/-- The trivialization associated to a local basis acts by multiplying its restriction by the
+input scalar. -/
+@[simp]
+theorem unitOverIsoOfBijectiveSMul_hom_val_app {X : C} (s : M.val.obj (op X))
+    (hs : ∀ (Y : C) (f : Y ⟶ X),
+      Function.Bijective fun r : R.obj.obj (op Y) ↦ r • M.val.map f.op s)
+    (Y : Over X) (r : R.obj.obj (op Y.left)) :
+    (unitOverIsoOfBijectiveSMul s hs).hom.val.app (op Y) r = r • M.val.map Y.hom.op s := by
+  unfold unitOverIsoOfBijectiveSMul
+  rw [asIso_hom]
+  -- As in the construction, the slice coefficient instances differ syntactically.
+  erw [unitHomEquiv_symm_val_app, _root_.SheafOfModules.overSectionsEquiv_symm_apply_eval]
+  rfl
+
+variable [∀ Y : C, HasWeakSheafify (J.over Y) AddCommGrpCat.{u}]
+  [∀ Y : C, (J.over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
 /-- The rank-one local trivialization atlas given by local bases `s i` on a cover `X i`: over each
 `X i`, the free sheaf on one generator is identified with the restriction of `M` by
 multiplication by `s i` (`TauCeti.SheafOfModules.unitOverIsoOfBijectiveSMul`). -/
@@ -79,6 +95,33 @@ def LocalTrivializations.ofBijectiveSMul {ι : Type u₁} (X : ι → C) (hX : J
   X := X
   coversTop := hX
   iso i := freePUnitIsoUnit (R.over (X i)) ≪≫ unitOverIsoOfBijectiveSMul (s i) (hs i)
+
+namespace LocalTrivializations
+
+variable {ι : Type u₁} (X : ι → C) (hX : J.CoversTop X)
+  (s : ∀ i, M.val.obj (op (X i)))
+  (hs : ∀ i (Y : C) (f : Y ⟶ X i),
+    Function.Bijective fun r : R.obj.obj (op Y) ↦ r • M.val.map f.op (s i))
+
+/-- The atlas constructed from local bases uses the given indexing type. -/
+@[simp]
+theorem ofBijectiveSMul_I : (ofBijectiveSMul X hX s hs).I = ι := (rfl)
+
+/-- The atlas constructed from local bases uses the given covering objects. -/
+@[simp]
+theorem ofBijectiveSMul_X :
+    (ofBijectiveSMul X hX s hs).X = fun i ↦ X ((ofBijectiveSMul_I X hX s hs).mp i) := (rfl)
+
+/-- The local isomorphism of the atlas is the trivialization given by its basis section. -/
+@[simp]
+theorem ofBijectiveSMul_iso (i : (ofBijectiveSMul X hX s hs).I) :
+    (ofBijectiveSMul X hX s hs).iso i =
+      cast (by rw [ofBijectiveSMul_X])
+        (freePUnitIsoUnit (R.over (X ((ofBijectiveSMul_I X hX s hs).mp i))) ≪≫
+          unitOverIsoOfBijectiveSMul (s ((ofBijectiveSMul_I X hX s hs).mp i))
+            (hs ((ofBijectiveSMul_I X hX s hs).mp i))) := (rfl)
+
+end LocalTrivializations
 
 /-- **A sheaf of modules with local bases is invertible.** If a cover `X i` carries sections `s i`
 of `M` such that over every `f : Y ⟶ X i` every section of `M` over `Y` is a unique scalar multiple

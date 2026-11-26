@@ -190,6 +190,30 @@ noncomputable section
 open Filter Function Matrix.ProjectiveSpecialLinearGroup Metric MulAction Set UpperHalfPlane
 open scoped ComplexConjugate ContDiff Manifold MatrixGroups ModularForm Topology
 
+namespace Subgroup.CuspDatum
+
+variable {Γ : Subgroup PSL(2, ℝ)}
+
+/-- **Boundedness at a cusp depends only on its cusp orbit.** If `F` satisfies the weight-`k`
+transformation law for `Γ' ≤ SL(2, ℝ)`, whose image contains `Γ`, and is bounded at the cusp of
+a cusp datum `D`, then it is bounded at the cusp of every cusp datum `D'` representing the same cusp
+orbit. -/
+theorem isBoundedAt_of_cuspOrbit_eq {Γ' : _root_.Subgroup SL(2, ℝ)}
+    (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ)))) {k : ℤ} {F : ℍ → ℂ}
+    (hF : ∀ g ∈ Γ', ∀ τ : ℍ, F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ)
+    {D D' : Γ.CuspDatum} (hDD' : D'.cuspOrbit = D.cuspOrbit)
+    (hD : OnePoint.IsBoundedAt D.cusp F k) : OnePoint.IsBoundedAt D'.cusp F k := by
+  obtain ⟨γ, hγ⟩ := (D'.cuspOrbit_eq_iff D).mp hDD'
+  obtain ⟨h, hh, hhγ⟩ := _root_.Subgroup.mem_map.mp (hΓ γ.property)
+  have hc : Matrix.SpecialLinearGroup.mapGL ℝ h • D.cusp = D'.cusp := by
+    rw [OnePoint.mapGL_smul, ← hγ]
+    exact congrArg (· • D.cusp) hhγ
+  rw [← hc, OnePoint.IsBoundedAt.smul_iff,
+    (Matrix.SpecialLinearGroup.slash_mapGL_eq_self_iff h k F).mpr (hF h hh)]
+  exact hD
+
+end Subgroup.CuspDatum
+
 namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)

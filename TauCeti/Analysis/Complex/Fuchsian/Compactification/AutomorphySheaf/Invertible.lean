@@ -184,7 +184,9 @@ private theorem isBoundedAt_automorphyExtension_automorphyFrame {D : Γ.CuspDatu
   refine (TauCeti.Subgroup.CuspDatum.isBoundedAtImInfty_slash_automorphySection (k := k) (r := r)
     hs (continuousAt_const (y := (1 : ℂ)))).congr' ?_ EventuallyEq.rfl
   filter_upwards [(atImInfty_mem {z : ℍ | D.width < z.im}).mpr
-    ⟨D.width + 1, fun z hz ↦ show D.width < z.im by linarith⟩] with z hz
+    ⟨D.width + 1, fun z hz ↦ by
+      simp only [Set.mem_ofPred_eq]
+      linarith⟩] with z hz
   have hmem : s⁻¹ • z ∈ TauCeti.Subgroup.CuspDatum.horodisc D D.width := by
     rwa [TauCeti.Subgroup.CuspDatum.mem_horodisc, ← hs, pslMk_smul, smul_inv_smul]
   rw [ModularForm.slash_apply, ModularForm.slash_apply, Matrix.SpecialLinearGroup.mapGL_smul,
@@ -379,7 +381,7 @@ private theorem hasLocalFrame_ofQuotient
   have : Finite (stabilizer Γ z) := (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
   obtain ⟨ε, hε, hopen, hsep⟩ := exists_pos_isOpenEmbedding_and_smul_eq_self Γ z
   let ψ : Γ.LinearizingCoordinate z ε := LinearizingCoordinate.discCoordinate hε
-  obtain ⟨r, hr, hkr⟩ := exists_lt_forall_denom_zpow_eq_one hΓ hk (z := z)
+  obtain ⟨r, hr, hkr⟩ := exists_lt_forall_denom_zpow_eq_one hΓ.le hk (z := z)
   set e := ofQuotientChart (stabilizerBallQuotientChart hε hopen)
   have hU := ofQuotient_mem_ofQuotientChart_source_iff_mem_smul_ball (Γ' := Γ') hΓ hε hopen
   have hσ' {σ : ℍ} (hσ : σ ∈ ball z ε) : σ ∈ stabilizerBall Γ z ε :=
@@ -409,7 +411,8 @@ private theorem hasLocalFrame_ofQuotient
     obtain ⟨σ, hσ, rfl⟩ := exists_mem_ball_of_mem_ofQuotientChart_source hε hopen hy
     refine ⟨σ, hσ, rfl, ?_⟩
     rw [hframe σ hσ, Ne, LinearizingCoordinate.automorphyFrame_eq_zero_iff]
-    exact fun h ↦ hyz (by rw [show σ = z from h.1])
+    exact fun h ↦ hyz (congrArg (fun τ : ℍ ↦ ofQuotient (Quotient.mk _ τ))
+      h.1)
   · -- the coefficient of a section is its descent, holomorphic in the chart
     have hVo : IsOpen ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V) :=
       (continuous_ofQuotient.comp continuous_quotient_mk').isOpen_preimage
@@ -478,7 +481,8 @@ private theorem hasLocalFrame_ofCusp
     (fun D' hD' ↦ ?_) (fun y hy hyD ↦ ?_) fun V hVU G hG ↦ ?_
   · -- the frame is bounded at the cusp
     rw [cuspChart_source, ofCusp_mem_cuspNhd_iff] at hD'
-    exact isBoundedAt_of_cuspOrbit_eq hΓ (fun g hg τ ↦ automorphyExtension_smul hF₀ hg τ) hD'
+    exact CuspDatum.isBoundedAt_of_cuspOrbit_eq hΓ.ge
+      (fun g hg τ ↦ automorphyExtension_smul hF₀ hg τ) hD'
       (isBoundedAt_automorphyExtension_automorphyFrame hs hF₀)
   · -- the frame vanishes nowhere on `ℍ`
     rw [cuspChart_source] at hy
