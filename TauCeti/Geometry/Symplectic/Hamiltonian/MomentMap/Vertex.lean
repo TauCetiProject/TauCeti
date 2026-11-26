@@ -75,6 +75,8 @@ Apart from `TauCeti.bijective_pi_of_mfderiv_eq`, all declarations are in the nam
   a symplectic toric manifold are isolated, hence finite in number.
 * `isMorse_of_eq_top_of_faithfulSMul`: a component `μ^ξ` whose one-parameter subgroup is dense in
   `G` is a Morse function.
+* `apply_le_apply_of_mem_closure`: if `μ^ξ` has a local maximum at `p` for every `ξ` in an open
+  set `V`, then `μ^ξ` attains its maximum at `p` for every `ξ` in the closure of `V`.
 * `exists_forall_lt_of_mem_fixedPoints`: every fixed point is the unique maximum of some component
   `μ^ξ` of the moment map.
 * `preimage_singleton_eq_of_mem_fixedPoints`: the fibre of `μ` through a fixed point is that
@@ -245,6 +247,36 @@ theorem isMorse_of_eq_top_of_faithfulSMul
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   exact h.isMorse_of_eq_top hσ.isNondegenerate hξ fun _ hq ↦
     h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
+
+/-- **Local maxima of moment map components on an open set are global.** Let a torus `G` act
+smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,
+preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. If `μ^ξ` has a local maximum at `p`
+for every `ξ` in an open set `V` of the Lie algebra, then `μ^ξ` attains its maximum at `p` for every
+`ξ` in the closure of `V`. -/
+theorem apply_le_apply_of_mem_closure
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {p : M} {V : Set (GroupLieAlgebra I G)}
+    (hV : IsOpen V) (hmax : ∀ ξ ∈ V, IsLocalMax (fun y ↦ μ y ξ) p) {ξ : GroupLieAlgebra I G}
+    (hξ : ξ ∈ closure V) (x : M) : μ x ξ ≤ μ p ξ := by
+  have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
+  -- The elements `ζ` for which `μ^ζ` attains its maximum at `p` form a closed set.
+  let S : Set (GroupLieAlgebra I G) := {ζ | ∀ y, μ y ζ ≤ μ p ζ}
+  have hS : IsClosed S := by
+    simp only [S, ofPred_forall]
+    exact isClosed_iInter fun y ↦ isClosed_le (μ y).continuous_of_finiteDimensional
+      (μ p).continuous_of_finiteDimensional
+  -- For `ζ ∈ V` with dense one-parameter subgroup, `μ^ζ` is Morse, so its local maximum at `p` is
+  -- global; such `ζ` are dense in `V`.
+  have hD : V ∩ {ζ | Lie.closedOneParameterSubgroup ζ = ⊤} ⊆ S := fun ζ ⟨hζV, hζ⟩ y ↦
+    h.isMaxOn_of_isLocalMax hσ.isNondegenerate
+      (SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG)
+      (h.isMorse_of_eq_top_of_faithfulSMul hσ hG hdim hζ) (hmax ζ hζV) (mem_univ y)
+  have hVS : V ⊆ S :=
+    ((Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).open_subset_closure_inter hV).trans
+      (closure_minimal hD hS)
+  exact closure_minimal hVS hS hξ x
 
 /-- **A fixed point is the unique maximum of a moment map component.** Let a torus `G` act
 smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,

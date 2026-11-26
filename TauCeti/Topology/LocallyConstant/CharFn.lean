@@ -15,7 +15,8 @@ public import Mathlib.Topology.Sets.Compacts
 The characteristic function `1_U` of a clopen set `U` is a locally constant function (Mathlib's
 `LocallyConstant.charFn`). With values in a ring `R`, these functions are idempotents of the ring
 `LocallyConstant X R` which multiply like the sets intersect: `1_U * 1_V = 1_(U ∩ V)`
-(`LocallyConstant.charFn_mul_charFn`).
+(`LocallyConstant.charFn_mul_charFn`). Pulling `1_U` back along a continuous map gives the
+characteristic function of the preimage (`LocallyConstant.comap_charFn`).
 
 In a Hausdorff space `X` a compact open set `U` is clopen, so it has a characteristic function
 `TopologicalSpace.CompactOpens.charFn`, with the same multiplicative API. For a locally profinite

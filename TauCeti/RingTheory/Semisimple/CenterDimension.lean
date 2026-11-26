@@ -47,6 +47,8 @@ construction works over any commutative semiring of scalars.
   two-sided ideal.
 * `TauCeti.mul_eq_zero_of_mem_isotypicComponents`: distinct isotypic components of the regular
   module multiply to zero.
+* `TauCeti.exists_sum_eq_of_isotypicComponents`: every element is a sum of elements of the
+  isotypic components of the regular module.
 * `TauCeti.exists_ne_zero_mem_center_of_mem_isotypicComponents`: it contains a nonzero central
   element.
 * `TauCeti.card_isotypicComponents_le_finrank_center`: the number of isotypic components of the
@@ -83,6 +85,18 @@ theorem mul_eq_zero_of_mem_isotypicComponents {c c' : Ideal R}
   have hdisj : Disjoint c' c :=
     (sSupIndep_isotypicComponents R R).pairwiseDisjoint hc' hc hne
   exact (Submodule.disjoint_def.mp hdisj) _ (c'.smul_mem b hx) (Ideal.mul_mem_right x c hb)
+
+/-- **Every element of a semisimple ring is a sum over the isotypic components.** For the finite
+set `s` of isotypic components of the regular module, every `x` is `∑_{c ∈ s} μ c` with
+`μ c ∈ c`. -/
+theorem exists_sum_eq_of_isotypicComponents [IsSemisimpleRing R] (x : R) :
+    ∃ μ : Ideal R → R, (∀ c, μ c ∈ c) ∧
+      ∑ c ∈ (isotypicComponents R R).toFinite.toFinset, μ c = x := by
+  have hx : x ∈ ⨆ c ∈ (isotypicComponents R R).toFinite.toFinset, c := by
+    simp_rw [Set.Finite.mem_toFinset, ← sSup_eq_iSup, sSup_isotypicComponents]
+    exact Submodule.mem_top
+  obtain ⟨μ, hμ⟩ := (Submodule.mem_iSup_finset_iff_exists_sum _ x).mp hx
+  exact ⟨fun c ↦ μ c, fun c ↦ (μ c).property, hμ⟩
 
 section CommSemiring
 

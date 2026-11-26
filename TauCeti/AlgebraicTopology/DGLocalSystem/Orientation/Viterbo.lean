@@ -113,6 +113,14 @@ theorem viterboOrientationTwist_def (γ : MooreFreeLoopSpace M) :
           (orientation R hd γ.basepoint ^ (-signExponent (orientationCharacter hd) γ)) := by
   rw [viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_def, orientation_def]
 
+/-- **The orientation part of the Viterbo twist is defined over `ℤ`**: extending its coefficients
+along a ring homomorphism `φ : R →+* R'` gives the orientation part with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_viterboOrientationTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (γ : MooreFreeLoopSpace M) :
+    mapRingHom φ (viterboOrientationTwist R hd γ) = viterboOrientationTwist R' hd γ :=
+  mapRingHom_freeLoopTwist φ γ
+
 /-! ### The rotation of a loop -/
 
 /-- **Along the rotation of a loop `γ`, the pullback `ev₀^* o_M` of the orientation local system
