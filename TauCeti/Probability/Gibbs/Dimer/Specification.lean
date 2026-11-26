@@ -478,11 +478,7 @@ theorem IsDimerGibbs.isGibbs_comap_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < 
   refine Finset.sum_congr rfl fun p _ => ?_
   by_cases hp : ∃ ω, G.IsDimerConfiguration ω ∧ E.restrict ω = p
   · obtain ⟨ω, hω, rfl⟩ := hp
-    have hset : MeasureTheory.cylinder (α := fun _ : G.edgeSet => Bool) E {E.restrict ω} =
-        {η | ∀ e ∈ E, η e = ω e} := by
-      ext η
-      simp [funext_iff]
-    rw [hset]
+    rw [← SymbolicDynamics.FullShift.cylinder_eq_cylinder_singleton]
     exact hμ.lintegral_dimerBoltzmann_setOf_forall_mem_eq Γ hΓ hw hE hω
   · -- no dimer configuration has the pattern `p`: both sides vanish
     have hnull : MeasureTheory.cylinder (α := fun _ : G.edgeSet => Bool) E {p} ⊆
