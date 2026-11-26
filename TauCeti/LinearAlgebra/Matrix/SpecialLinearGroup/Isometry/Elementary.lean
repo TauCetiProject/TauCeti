@@ -26,9 +26,12 @@ group. It is a step towards generation and the use of the transvection subgroups
 criterion; it does not assert that the elementary group is the full special isometry group.
 
 Two nonorthogonal isotropic vectors in `U^⊥` are joined up to a scalar by a transvection fixing `U`
-(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`), and
-orthogonal vectors in `u^⊥` off `K ∙ u` are joined by two such transvections
-(`Matrix.exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`), giving
+(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`), two
+isotropic vectors in `U^⊥` paired nontrivially with an intermediate isotropic vector in `U^⊥` are
+joined by the product of two such elements — namely
+`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero`
+— and orthogonal vectors in `u^⊥` off `K ∙ u` are joined by constructing such an intermediate
+vector (`Matrix.exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`), giving
 transitivity up to scalar (`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_smul`) and on
 isotropic points (`Matrix.isPretransitive_elementaryUnitaryGroup`).
 The transvection step follows the symplectic argument of
@@ -172,6 +175,31 @@ theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_n
   simp [hga, unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hxU u hu),
     (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hyU u hu)]
 
+/-- **Connecting two isotropic vectors via an intermediate isotropic vector while fixing an
+orthogonal set.** Let `σ` be an involution and let `Q` be an `ε`-Hermitian matrix. If some nonzero
+`d` satisfies `d + ε * σ d = 0` and `x, z, y` are isotropic vectors orthogonal to every vector in
+`U` with `h(z, x) ≠ 0` and `h(y, z) ≠ 0`, then some element of `Q.elementaryUnitaryGroup σ` fixes
+every vector in `U` and sends `x` to a nonzero scalar multiple of `y`. -/
+theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
+    (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {U : Set (n → K)} {x z y : n → K}
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hz : (σ ∘ z) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hxU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (hzU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hyU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0) (hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0) :
+    ∃ t ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (∀ u ∈ U, (t : Matrix n n K) *ᵥ u = u) ∧ (t : Matrix n n K) *ᵥ x = c • y := by
+  obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+      hσ hQ hadm hx hz hxU hzU hzx
+  obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+      hσ hQ hadm hz hy hzU hyU hyz
+  exact ⟨t₂ * t₁, mul_mem ht₂ ht₁, c₁ * c₂, mul_ne_zero hc₁ hc₂,
+    fun u hu ↦ by rw [coe_mul_specialIsometryGroup_mulVec, ht₁U u hu, ht₂U u hu],
+    by rw [coe_mul_specialIsometryGroup_mulVec, ht₁x, mulVec_smul, ht₂z, smul_smul]⟩
+
 /-- **Connecting two isotropic vectors in `u^⊥` off `K ∙ u`.** Let `σ` be an involution, let `Q` be
 an invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
 elements `s` with `σ(s) = ε s` and has a nonzero kernel element. If `x` and `y` are isotropic
@@ -186,15 +214,15 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
     ∃ g : Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ u = u ∧
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y := by
-  have hjoin {a b : n → K} (ha : (σ ∘ a) ⬝ᵥ (Q *ᵥ a) = 0) (hb : (σ ∘ b) ⬝ᵥ (Q *ᵥ b) = 0)
-      (hua : (σ ∘ u) ⬝ᵥ (Q *ᵥ a) = 0) (hub : (σ ∘ u) ⬝ᵥ (Q *ᵥ b) = 0)
-      (hba : (σ ∘ b) ⬝ᵥ (Q *ᵥ a) ≠ 0) :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero hσ hQ hadm
-      (U := {u}) ha hb (Set.forall_mem_singleton.mpr hua) (Set.forall_mem_singleton.mpr hub) hba
+  suffices ∃ t ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (∀ w ∈ ({u} : Set (n → K)), (t : Matrix n n K) *ᵥ w = w) ∧
+      (t : Matrix n n K) *ᵥ x = c • y by
+    obtain ⟨t, ht, c, hc, htU, htx⟩ := this
+    exact ⟨⟨t, ht⟩, c, hc, htU u (Set.mem_singleton u), htx⟩
   by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
   swap
-  · obtain ⟨t, ht, c, hc, htU, htx⟩ := hjoin hx hy hux huy hyx
-    exact ⟨⟨t, ht⟩, c, hc, htU u (Set.mem_singleton u), htx⟩
+  · exact exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero hσ hQ hadm
+      hx hy (Set.forall_mem_singleton.mpr hux) (Set.forall_mem_singleton.mpr huy) hyx
   -- Choose `v` orthogonal to `u` and paired nontrivially with both `x` and `y`, then correct
   -- `v` to an isotropic vector `z = v + a • x`.
   obtain ⟨v, hvu, hvx, hvy⟩ :=
@@ -210,12 +238,10 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
   have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0 := by
     rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
     simpa [z, hxy] using hvy
-  obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ := hjoin hx hz hux huz hzx
-  obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ := hjoin hz hy huz huy hyz
-  refine ⟨⟨t₂, ht₂⟩ * ⟨t₁, ht₁⟩, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
-  · rw [Subgroup.coe_mul, coe_mul_specialIsometryGroup_mulVec,
-      ht₁U u (Set.mem_singleton u), ht₂U u (Set.mem_singleton u)]
-  · rw [Subgroup.coe_mul, coe_mul_specialIsometryGroup_mulVec, ht₁x, mulVec_smul, ht₂z, smul_smul]
+  exact
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero
+      hσ hQ hadm hx hz hy (Set.forall_mem_singleton.mpr hux) (Set.forall_mem_singleton.mpr huz)
+      (Set.forall_mem_singleton.mpr huy) hzx hyz
 
 /-- **The elementary unitary group is transitive up to scalar on nonzero isotropic vectors.** Let
 `σ` be an involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace

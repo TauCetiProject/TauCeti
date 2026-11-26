@@ -106,11 +106,10 @@ private theorem exists_mem_iSup_totally_isotropic_smul {U : Set (n → K)}
     (hxU : OrthoSet Q σ U x) (hyU : OrthoSet Q σ U y) (hx'U : OrthoSet Q σ U x') :
     ∃ t₂ ∈ Q.elementaryUnitaryGroup σ, ∃ c₂ ≠ (0 : K),
       (∀ u ∈ U, (t₂ : Matrix n n K) *ᵥ u = u) ∧ (t₂ : Matrix n n K) *ᵥ x' = c₂ • x := by
-  have hjoin {u v : n → K} (hu : OrthoSet Q σ U u) (hv : OrthoSet Q σ U v) :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero hσ hQ
-      ⟨d, hd, hdε⟩ (hW_iso u hu) (hW_iso v hv) hu hv
   by_cases hxx' : (σ ∘ x) ⬝ᵥ (Q *ᵥ x') = 0
-  swap; · exact hjoin hx'U hxU hxx'
+  swap
+  · exact exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+      hσ hQ ⟨d, hd, hdε⟩ (hW_iso x' hx'U) (hW_iso x hxU) hx'U hxU hxx'
   obtain ⟨v₁, hv₁U, hv₁x'⟩ : ∃ v₁, OrthoSet Q σ U v₁ ∧ (σ ∘ v₁) ⬝ᵥ (Q *ᵥ x') ≠ 0 := by
     by_contra! hall; exact hx'0 (hW_nd x' hx'U hall)
   obtain ⟨z, hzU, hzx', hxz⟩ :
@@ -121,11 +120,9 @@ private theorem exists_mem_iSup_totally_isotropic_smul {U : Set (n → K)}
           by rwa [comp_add_dotProduct_mulVec, hyx', add_zero], by simp [mulVec_add, hxv₁, hxy]⟩
       · exact ⟨y, hyU, hyx', hxy ▸ one_ne_zero⟩
     · exact ⟨v₁, hv₁U, hv₁x', hxv₁⟩
-  obtain ⟨t₂a, ht₂a, c₂a, hc₂a, ht₂aU, ht₂ax'⟩ := hjoin hx'U hzU hzx'
-  obtain ⟨t₂b, ht₂b, c₂b, hc₂b, ht₂bU, ht₂bz⟩ := hjoin hzU hxU hxz
-  exact ⟨t₂b * t₂a, mul_mem ht₂b ht₂a, c₂a * c₂b, mul_ne_zero hc₂a hc₂b,
-    fun u hu ↦ by rw [coe_mul_specialIsometryGroup_mulVec, ht₂aU u hu, ht₂bU u hu],
-    by rw [coe_mul_specialIsometryGroup_mulVec, ht₂ax', mulVec_smul, ht₂bz, smul_smul]⟩
+  exact
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero
+      hσ hQ ⟨d, hd, hdε⟩ (hW_iso x' hx'U) (hW_iso z hzU) (hW_iso x hxU) hx'U hzU hxU hzx' hxz
 
 omit [DecidableEq n] hdet htr hd hdε he hf hef hfe hgen in
 private theorem exists_hyperbolic_partner_of_totally_isotropic {U : Set (n → K)}

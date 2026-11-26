@@ -450,12 +450,10 @@ theorem det_hyperbolicRescaling [DecidableEq n] (hε : ε * ε = 1) {e f : n →
     (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (c₁ c₂ : R) :
     (Q.hyperbolicRescaling σ ε e f c₁ c₂).det = c₁ * c₂ := by
   have hd₁ : (1 + ((c₁ - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q)).det = c₁ := by
-    rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, TauCeti.det_one_sub_vecMulVec,
-      dotProduct_smul, ← dotProduct_mulVec, hfe, smul_eq_mul]
+    rw [TauCeti.det_one_add_smul_vecMulVec, ← dotProduct_mulVec, hfe]
     linear_combination (c₁ - 1) * hε
   have hd₂ : (1 + (c₂ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)).det = c₂ := by
-    rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, TauCeti.det_one_sub_vecMulVec,
-      dotProduct_smul, ← dotProduct_mulVec, hef, smul_eq_mul]
+    rw [TauCeti.det_one_add_smul_vecMulVec, ← dotProduct_mulVec, hef]
     ring
   rw [hyperbolicRescaling_eq_mul hf, det_mul, hd₁, hd₂]
 

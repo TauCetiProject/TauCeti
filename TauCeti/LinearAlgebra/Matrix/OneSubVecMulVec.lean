@@ -34,8 +34,9 @@ is computed for vectors in any algebra over a commutative ring.
 * `TauCeti.one_sub_vecMulVec_mul_comm` and `TauCeti.one_sub_vecMulVec_braid`: the commutation and
   braid relations, from the values of the pairings.
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
-* `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
-  inverse.
+* `TauCeti.det_one_sub_vecMulVec`, `TauCeti.det_one_add_smul_vecMulVec`, and
+  `TauCeti.inv_one_sub_vecMulVec`: the determinants of `1 - vecMulVec u v` and
+  `1 + c • vecMulVec u v`, and the inverse.
 * `TauCeti.one_sub_vecMulVec_mulVec`, `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply`, and its
   inverse counterpart compute the matrix-vector product and induced linear automorphism on column
   vectors.
@@ -137,6 +138,15 @@ theorem one_sub_vecMulVec_mul_self (t : R) {u v : α → R} (h : v ⬝ᵥ u = t 
 theorem det_one_sub_vecMulVec (u v : α → R) : (1 - vecMulVec u v).det = 1 - v ⬝ᵥ u := by
   rw [sub_eq_add_neg, ← neg_vecMulVec, vecMulVec_eq Unit,
     det_one_add_replicateCol_mul_replicateRow, dotProduct_neg]
+  ring
+
+/-- The determinant of a scaled rank-one perturbation `1 + c • vecMulVec u v` of the identity in
+terms of its self-pairing. -/
+@[simp]
+theorem det_one_add_smul_vecMulVec (c : R) (u v : α → R) :
+    (1 + c • vecMulVec u v).det = 1 + c * (v ⬝ᵥ u) := by
+  rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, det_one_sub_vecMulVec, dotProduct_smul,
+    smul_eq_mul]
   ring
 
 /-- The inverse of a rank-one perturbation of the identity whose self-pairing is `t + 1`.

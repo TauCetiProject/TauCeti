@@ -183,8 +183,7 @@ variable {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R} {v : n →
 `det(τ_{v,a}) = 1 + a B(v, v)`. -/
 theorem det_unitaryTransvection_eq (a : R) :
     (Q.unitaryTransvection σ v a).det = 1 + a * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  rw [unitaryTransvection_def, ← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec,
-    TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, smul_eq_mul]; ring
+  rw [unitaryTransvection_def, TauCeti.det_one_add_smul_vecMulVec, ← dotProduct_mulVec]
 
 /-- **An isotropic transvection has determinant one.** -/
 theorem det_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
