@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
-import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Data.Int.Interval
+public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Int.Interval
 import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Order.SuccPred.Int
 
@@ -63,6 +63,17 @@ theorem eq_of_forall_add_one_eq {f : ℤ → ℤ} (hf : ∀ n, f (n + 1) = f n) 
     | pred n ih => rw [← ih, ← hf (-(n : ℤ) - 1), sub_add_cancel]
   rw [h n, h m]
 
+/-- Telescoping over an integer interval: `Σ_{a ≤ x < b} (f(x + 1) − f(x)) = f(b) − f(a)`. -/
+theorem sum_Ico_add_one_sub (f : ℤ → ℤ) {a b : ℤ} (hab : a ≤ b) :
+    ∑ x ∈ Finset.Ico a b, (f (x + 1) - f x) = f b - f a := by
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, b = a + n := ⟨(b - a).toNat, by omega⟩
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, ← add_assoc, ← Finset.sum_Ico_add_eq_sum_Ico_add_one (by omega),
+      ih (by omega)]
+    ring
+
 open Classical in
 /-- The height cochain along an edge of direction `e₁` is the indicator of `M`. -/
 theorem heightCochain_mk_zero (M : Set TriEdge) (v : ℤ × ℤ) :
@@ -87,6 +98,22 @@ theorem tilingHeight_sub_target_eq {e : TriEdge} (he : e ∉ symmDiff M M') :
     · rw [heightCochain_of_mem hM, heightCochain_of_mem (he.1 hM)]
     · rw [heightCochain_of_notMem hM, heightCochain_of_notMem fun hM' => hM (he.2 hM')]
   omega
+
+open Classical in
+/-- Along an edge `e` of direction `e₁` the increment of `H_M − H_{M'}` is
+`[e ∈ M ∖ M'] − [e ∈ M' ∖ M]`. -/
+theorem tilingHeight_sub_add_one_zero_sub (p : ℤ × ℤ) :
+    (tilingHeight M (p + (1, 0)) - tilingHeight M' (p + (1, 0))) -
+        (tilingHeight M p - tilingHeight M' p) =
+      (if (⟨p, 0⟩ : TriEdge) ∈ M \ M' ∩ edgesOfDir 0 then 1 else 0) -
+        (if (⟨p, 0⟩ : TriEdge) ∈ M' \ M ∩ edgesOfDir 0 then 1 else 0) := by
+  have h₁ := h.tilingHeight_target_sub_v ⟨p, 0⟩
+  have h₂ := h'.tilingHeight_target_sub_v ⟨p, 0⟩
+  rw [heightCochain_mk_zero] at h₁ h₂
+  simp only [TriEdge.target_mk, latticeDir_zero] at h₁ h₂
+  simp only [Set.mem_inter_iff, Set.mem_sdiff, mem_edgesOfDir, and_true]
+  by_cases hM : (⟨p, 0⟩ : TriEdge) ∈ M <;> by_cases hM' : (⟨p, 0⟩ : TriEdge) ∈ M' <;>
+    simp [hM, hM'] at h₁ h₂ ⊢ <;> omega
 
 /-- If two plane tilings differ on finitely many edges, there is `K` such that the difference of
 their height functions takes one value at every point with a coordinate of absolute value at least
@@ -165,31 +192,13 @@ theorem ncard_sdiff_inter_edgesOfDir_zero_eq (hS : (symmDiff M M').Finite) :
       simp [edge, hk]
   have hA : A ⊆ symmDiff M M' := fun e he => Or.inl ⟨he.1.1, he.1.2⟩
   have hB : B ⊆ symmDiff M M' := fun e he => Or.inr ⟨he.1.1, he.1.2⟩
-  -- The increment of `D` along `((x, y), 0)` is `[e ∈ A] − [e ∈ B]`.
   have hterm : ∀ p : ℤ × ℤ, D (p + (1, 0)) - D p =
-      (if edge p ∈ A then 1 else 0) - (if edge p ∈ B then 1 else 0) := fun p => by
-    have h₁ := h.tilingHeight_target_sub_v (edge p)
-    have h₂ := h'.tilingHeight_target_sub_v (edge p)
-    rw [heightCochain_mk_zero] at h₁ h₂
-    simp only [edge, TriEdge.target_mk, latticeDir_zero] at h₁ h₂
-    simp only [hD, A, B, edge, Set.mem_inter_iff, Set.mem_sdiff, mem_edgesOfDir, and_true]
-    by_cases hM : (⟨p, 0⟩ : TriEdge) ∈ M <;> by_cases hM' : (⟨p, 0⟩ : TriEdge) ∈ M' <;>
-      simp [hM, hM'] at h₁ h₂ ⊢ <;> omega
-  -- Along each row of the box the increments telescope to `c − c = 0`.
-  have htel : ∀ (f : ℤ → ℤ) (a b : ℤ), a ≤ b →
-      ∑ x ∈ Finset.Ico a b, (f (x + 1) - f x) = f b - f a := by
-    intro f a b hab
-    obtain ⟨n, rfl⟩ : ∃ n : ℕ, b = a + n := ⟨(b - a).toNat, by omega⟩
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Nat.cast_succ, ← add_assoc, ← Finset.sum_Ico_add_eq_sum_Ico_add_one (by omega),
-        ih (by omega)]
-      ring
+      (if edge p ∈ A then 1 else 0) - (if edge p ∈ B then 1 else 0) :=
+    fun p => tilingHeight_sub_add_one_zero_sub h h' p
   have hzero : ∑ p ∈ box, (D (p + (1, 0)) - D p) = 0 := by
     rw [Finset.sum_product_right]
     refine Finset.sum_eq_zero fun y _ => ?_
-    have := htel (fun x => D (x, y)) (-K) K (by omega)
+    have := sum_Ico_add_one_sub (fun x => D (x, y)) (by omega : (-K : ℤ) ≤ K)
     simp only [Prod.mk_add_mk, add_zero] at this ⊢
     rw [this]
     have hK₁ := hc (K, y) (Or.inl (by simp))
