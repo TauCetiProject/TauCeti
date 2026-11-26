@@ -17,10 +17,11 @@ import TauCeti.RingTheory.QuasiFinite.Basic
 
 Let `A` be a discrete valuation ring and `B` a Dedekind domain, finite and torsion-free over `A`.
 For a nonzero ideal `J` of `B`, the relative norm of `J` is the power of the maximal ideal of `A`
-given by the length of `B ⧸ J`: `relNorm A J = 𝔪_A ^ length_A (B ⧸ J)`. So the exponent of a
-prime `p` of a Dedekind domain `R` in a relative ideal norm is a length over the localization
-`R_p`, which is how ideal norms are compared with other length-valued invariants, such as
-determinants of lattices. By `Ideal.length_quotient_eq_finsum_count_normalizedFactors_mul`, this
+given by the length of `B ⧸ J`: `relNorm A J = 𝔪_A ^ length_A (B ⧸ J)`. This expresses the
+norm exponent over `A` as a length, which is how ideal norms are compared with other
+length-valued invariants, such as determinants of lattices. (Applying this at the localization
+`R_p` of a global Dedekind domain `R` also needs `relNorm` to commute with localization, which is
+not proved here.) By `Ideal.length_quotient_eq_finsum_count_normalizedFactors_mul`, this
 exponent is `Σ_m v_m(J) [κ(m) : κ(A)]`, the sum over the maximal ideals `m` of `B`.
 
 The proof uses that `B` is semilocal, hence a principal ideal domain, so `J = bB`; then
