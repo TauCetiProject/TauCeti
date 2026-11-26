@@ -32,6 +32,7 @@ namespace AlgebraicGeometry
 variable {X Y : Scheme.{u}}
 
 /-- On an affine open `U`, the prime of `Γ(X, U)` of a point `fromSpec q` is `q`. -/
+@[simp]
 theorem IsAffineOpen.primeIdealOf_fromSpec {U : X.Opens} (hU : IsAffineOpen U)
     (q : PrimeSpectrum Γ(X, U)) (hq : hU.fromSpec q ∈ U) :
     hU.primeIdealOf ⟨hU.fromSpec q, hq⟩ = q :=
@@ -76,9 +77,11 @@ noncomputable def IsAffineOpen.preimageSingletonEquivPrimesOver :
 
 /-- The fibre-to-prime correspondence sends a point to its prime on the source affine open. -/
 @[simp]
-theorem IsAffineOpen.coe_preimageSingletonEquivPrimesOver_apply (x : (f ⁻¹' {y} : Set X))
-    (hx : x.val ∈ U) :
-    (hV.preimageSingletonEquivPrimesOver f hU hUV hy x).val = (hU.primeIdealOf ⟨x, hx⟩).asIdeal :=
+theorem IsAffineOpen.coe_preimageSingletonEquivPrimesOver_apply (x : (f ⁻¹' {y} : Set X)) :
+    (hV.preimageSingletonEquivPrimesOver f hU hUV hy x).val =
+      (hU.primeIdealOf ⟨x, by
+        rw [← hUV, Scheme.Hom.mem_preimage, x.property]
+        exact hy⟩).asIdeal :=
   (rfl)
 
 /-- The inverse correspondence sends a prime to its point on the source affine open. -/
