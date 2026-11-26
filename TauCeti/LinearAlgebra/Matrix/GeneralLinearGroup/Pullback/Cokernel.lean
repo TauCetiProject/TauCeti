@@ -252,8 +252,8 @@ theorem quotientMayerVietorisRangeEquivCusp_mk_ofUnits
     simp [v, ← hp]
   have hinv : TrivSqZeroExt.fst ((v⁻¹ : (DualNumber k)ˣ) : DualNumber k) = (p.coeff 0)⁻¹ := by
     refine eq_inv_of_mul_eq_one_right ?_
-    rw [← (show TrivSqZeroExt.fst (v : DualNumber k) = p.coeff 0 by simp [hv]),
-      ← TrivSqZeroExt.fst_mul, Units.mul_inv, TrivSqZeroExt.fst_one]
+    rw [← (show TrivSqZeroExt.fst (v : DualNumber k) = p.coeff 0 by simp [hv])]
+    exact dualNumber_fst_mul_fst_inv v
   rw [hinv, hv, DualNumber.snd_aeval_eps, Algebra.algebraMap_self, RingHom.id_apply,
     div_eq_mul_inv]
 

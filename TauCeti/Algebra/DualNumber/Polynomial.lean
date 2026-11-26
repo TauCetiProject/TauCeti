@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
-public import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # Polynomials evaluated at `ε`
@@ -145,7 +144,7 @@ instance isLocalRing_polynomialQuotientSpanXSq (K : Type*) [Field K] :
 not find this through the commutative ring structure of the quotient unaided. -/
 instance isMulCommutative_units_polynomialQuotientSpanXSq :
     IsMulCommutative (R[X] ⧸ Ideal.span {(X : R[X]) ^ 2})ˣ :=
-  Units.isMulCommutative
+  CommMagma.to_isCommutative (G := (R[X] ⧸ Ideal.span {(X : R[X]) ^ 2})ˣ)
 
 end Quotient
 

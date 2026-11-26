@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Algebra.DualNumber.Basic
-public import TauCeti.Algebra.Group.Units.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -35,6 +34,8 @@ units of the truncated polynomial ring `R[t] ⧸ (t²)`, which measures, for ins
 
 * `TauCeti.isMulCommutative_units_dualNumber`: the units of `R[ε]` commute, so every subgroup of
   `R[ε]ˣ` is normal.
+* `TauCeti.dualNumber_fst_mul_fst_inv`: the scalar part of the inverse of a unit of `R[ε]` is the
+  inverse of its scalar part.
 * `TauCeti.dualNumberUnitsQuotientEquiv_mk`: the class of a unit `u` goes to
   `u.snd * (u⁻¹).fst`, which is `b / a` for `u = a + bε`.
 * `TauCeti.dualNumberUnitsQuotientEquiv_symm_apply`: the inverse sends `b` to the class of
@@ -52,14 +53,14 @@ find this through the commutative semiring structure of `R[ε]` unaided, so it i
 makes every subgroup of `R[ε]ˣ` normal. -/
 instance isMulCommutative_units_dualNumber {R : Type*} [CommSemiring R] :
     IsMulCommutative (DualNumber R)ˣ :=
-  Units.isMulCommutative
-
-variable (R : Type*) [CommRing R]
+  CommMagma.to_isCommutative (G := (DualNumber R)ˣ)
 
 /-- The scalar part of the inverse of a unit of `R[ε]` is the inverse of its scalar part. -/
-private theorem fst_mul_fst_inv (u : (DualNumber R)ˣ) :
+theorem dualNumber_fst_mul_fst_inv {R : Type*} [Semiring R] (u : (DualNumber R)ˣ) :
     fst (u : DualNumber R) * fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R) = 1 := by
   rw [← fst_mul, Units.mul_inv, fst_one]
+
+variable (R : Type*) [CommRing R]
 
 /-- The homomorphism `a + bε ↦ b / a` from the units of `R[ε]` to the additive group of `R`. -/
 private def unitsSndMulFstInv : (DualNumber R)ˣ →* Multiplicative R where
@@ -67,8 +68,8 @@ private def unitsSndMulFstInv : (DualNumber R)ˣ →* Multiplicative R where
     Multiplicative.ofAdd (snd (u : DualNumber R) * fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R))
   map_one' := by simp
   map_mul' u v := by
-    have hu := fst_mul_fst_inv R u
-    have hv := fst_mul_fst_inv R v
+    have hu := dualNumber_fst_mul_fst_inv u
+    have hv := dualNumber_fst_mul_fst_inv v
     rw [← ofAdd_add, mul_inv_rev, Units.val_mul, Units.val_mul, DualNumber.snd_mul, fst_mul]
     congr 1
     linear_combination
@@ -86,8 +87,8 @@ private theorem ker_unitsSndMulFstInv :
     have hsnd : snd (u : DualNumber R) = 0 := by
       have h' : snd (u : DualNumber R) * fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R) = 0 :=
         congrArg Multiplicative.toAdd h
-      simpa [mul_assoc, mul_comm (fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R)), fst_mul_fst_inv]
-        using congrArg (· * fst (u : DualNumber R)) h'
+      simpa [mul_assoc, mul_comm (fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R)),
+        dualNumber_fst_mul_fst_inv] using congrArg (· * fst (u : DualNumber R)) h'
     refine ⟨Units.map (fstHom R R R : DualNumber R →* R) u, Units.ext ?_⟩
     ext
     · simp [algebraMap_eq_inl]
