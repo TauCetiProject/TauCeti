@@ -141,10 +141,8 @@ private theorem mulInvariantExp_eq_one_of_weightRotation_eq_id
   have : CompactSpace (MulAction.stabilizer G y) := isCompact_iff_compactSpace.1
     (isClosed_stabilizer (continuous_id.smul continuous_const)).isCompact
   have : Finite (MulAction.stabilizer G y) := finite_of_compact_of_discrete
-  have hg : IsOfFinOrder g := by
-    obtain ⟨k, hk, hgk⟩ := isOfFinOrder_iff_pow_eq_one.1
-      (isOfFinOrder_of_finite (⟨g, hfix hy⟩ : MulAction.stabilizer G y))
-    exact isOfFinOrder_iff_pow_eq_one.2 ⟨k, hk, congrArg Subtype.val hgk⟩
+  have hg : IsOfFinOrder g := (MulAction.stabilizer G y).subtype.isOfFinOrder
+    (isOfFinOrder_of_finite ⟨g, hfix hy⟩)
   -- By the identity principle and effectiveness, `g = 1`.
   by_contra hg1
   have hint := interior_fixedBy_eq_empty (I := I') hg hg1
