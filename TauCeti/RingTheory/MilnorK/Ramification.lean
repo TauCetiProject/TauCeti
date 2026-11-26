@@ -37,8 +37,8 @@ When `w` is trivial on `F`, which is not a valuation extension with positive ram
   `SerreAlgebra.rescale e ∘ SerreAlgebra.shift c⁻¹ ∘ SerreAlgebra.map ι`.
 * `Valuation.milnorResidue_map_algebraMap`: `∂_w(res_{E/F} x) = e · ι(∂_v x)`.
 * `Valuation.milnorSpecialization_map_algebraMap`: `λ_s(res_{E/F} x) = ι(λ_t x) + ι(∂_v x) {c}`.
-* `Valuation.milnorResidue_map_of_ord_eq_zero`: if `ord_w` vanishes on the image of `Fˣ`, then
-  `∂_w(res_{E/F} x) = 0`.
+* `Valuation.milnorResidue_map_of_forall_ord_eq_zero`: if `ord_w` vanishes on the image of
+  `Fˣ`, then `∂_w(res_{E/F} x) = 0`.
 
 ## References
 
@@ -121,7 +121,7 @@ end Extension
 ring homomorphism and `ord_w` vanishes on `φ(Fˣ)`, then the residue at `w` of the image of every
 class of `K_*ᴹ(F)` is zero: Serre's map `d_s` sends such images to `K_*ᴹ(k_w)`, with no
 `Π`-component. -/
-theorem milnorResidue_map_of_ord_eq_zero (φ : F →+* E) (w : Valuation E ℤᵐ⁰) (s : Eˣ)
+theorem milnorResidue_map_of_forall_ord_eq_zero (φ : F →+* E) (w : Valuation E ℤᵐ⁰) (s : Eˣ)
     (hs : w.ord (s : E) = 1) (h : ∀ r : Fˣ, w.ord (φ r) = 0) (x : MilnorK F) :
     w.milnorResidue s hs (MilnorK.map φ x) = 0 := by
   suffices H : (w.serreMap s hs).comp (MilnorK.map φ) =

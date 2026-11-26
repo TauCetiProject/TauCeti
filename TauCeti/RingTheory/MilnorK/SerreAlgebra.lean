@@ -377,13 +377,6 @@ theorem shift_symm (c : kˣ) : (shift c).symm = shift c⁻¹ := by
 
 /-! ### Rescaling the indeterminate -/
 
-/-- `{-1}` is killed by `n² - n`: `n² {-1} = {-1} n` for every integer `n`. -/
-private theorem intCast_mul_self_mul_ofUnit_neg_one (n : ℤ) :
-    (n : MilnorK k) * (n : MilnorK k) * ofUnit (-1) = ofUnit (-1) * (n : MilnorK k) := by
-  rw [← Int.cast_mul, ← zsmul_eq_mul, ← Int.cast_comm, ← zsmul_eq_mul, ← ofUnit_zpow,
-    ← ofUnit_zpow, show n * n = n + n * (n - 1) by ring, zpow_add,
-    (Int.even_mul_pred_self n).neg_one_zpow, mul_one]
-
 /-- For `n : ℤ`, the ring endomorphism `rescale n` of `L(k)` fixing `K_*ᴹ(k)` and sending `Π` to
 `n Π`, so `a + b Π ↦ a + n b Π`. It respects `Π Π = {-1} Π` because `n²` and `n` have the same
 parity while `{-1}` is killed by two. Two rescalings compose as
@@ -393,7 +386,9 @@ def rescale (n : ℤ) : SerreAlgebra k →+* SerreAlgebra k :=
     (by
       ext
       · simp
-      · simpa using intCast_mul_self_mul_ofUnit_neg_one n)
+      · simpa [zsmul_eq_mul, Int.cast_comm] using
+          zsmul_ofUnit_neg_one_eq_of_even_sub (R := k) (m := n * n) (n := n)
+            (by simpa [mul_sub] using Int.even_mul_pred_self n))
 
 @[simp]
 theorem fst_rescale (n : ℤ) (x : SerreAlgebra k) : (rescale n x).fst = x.fst := by
