@@ -281,10 +281,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 theorem contMDiff_subtypeVal_comp_iff {k : ℕ∞ω} {f : M → PosDefDetOne n 𝕜} :
     ContMDiff I 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) k (Subtype.val ∘ f) ↔
       ContMDiff I 𝓘(ℝ, Model n 𝕜) k f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ contMDiff_subtypeVal.comp hf⟩
-  exact (ContMDiff.iff_comp_isImmersion
-    ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).isImmersion.of_le le_top)).2
-    ⟨hf.continuous.subtype_mk _, hf⟩
+  have h := isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)
+  exact (IsSmoothEmbedding.contMDiff_iff_comp ⟨h.isImmersion.of_le le_top, h.isEmbedding⟩).symm
 
 end PosDefDetOne
 
@@ -299,18 +297,9 @@ be arbitrary, including analytic. -/
 def traceZeroExpDiffeomorph (k : ℕ∞ω) :
     traceZeroSelfAdjoint n 𝕜 ≃ₘ^k⟮𝓘(ℝ, traceZeroSelfAdjoint n 𝕜),
       𝓘(ℝ, PosDefDetOne.Model n 𝕜)⟯ PosDefDetOne n 𝕜 where
-  toFun X := ⟨hermitianExpDiffeomorph n 𝕜 k X, by
-    rw [coe_hermitianExpDiffeomorph_apply]
-    exact (isHermitian_iff_isSelfAdjoint.2 (X : selfAdjoint (Matrix n n 𝕜)).property
-      ).det_exp_eq_one_iff.2 (mem_traceZeroSelfAdjoint.1 X.property)⟩
-  invFun P := ⟨(hermitianExpDiffeomorph n 𝕜 k).symm P.val, by
-    have hP := P.property
-    rw [← (hermitianExpDiffeomorph n 𝕜 k).apply_symm_apply P.val,
-      coe_hermitianExpDiffeomorph_apply] at hP
-    exact mem_traceZeroSelfAdjoint.2 ((isHermitian_iff_isSelfAdjoint.2
-      ((hermitianExpDiffeomorph n 𝕜 k).symm P.val).property).det_exp_eq_one_iff.1 hP)⟩
-  left_inv X := Subtype.ext ((hermitianExpDiffeomorph n 𝕜 k).symm_apply_apply X)
-  right_inv P := Subtype.ext ((hermitianExpDiffeomorph n 𝕜 k).apply_symm_apply P.val)
+  toEquiv := (hermitianExpDiffeomorph n 𝕜 k).toEquiv.subtypeEquiv fun X ↦ by
+    rw [mem_traceZeroSelfAdjoint, Diffeomorph.coe_toEquiv, coe_hermitianExpDiffeomorph_apply,
+      (isHermitian_iff_isSelfAdjoint.2 X.property).det_exp_eq_one_iff]
   contMDiff_toFun := by
     -- The spaces are named so that the subspace's normed structure is found by instance search:
     -- the definition of `traceZeroSelfAdjoint` is not exposed to unification here.
