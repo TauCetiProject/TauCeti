@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Holder.OpenSet.Frontier
 public import TauCeti.Analysis.Holder.OpenSet.Laplacian
 public import TauCeti.Analysis.Holder.OpenSet.Zero
 import TauCeti.Analysis.Holder.Coefficient
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 
 /-!
@@ -120,6 +121,38 @@ variable (hΩ : (Ω : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E')
 variable {a a' : ι → ι → HolderSpace α Ω ℝ} {b b' : ι → HolderSpace α Ω ℝ}
   {c c' : HolderSpace α Ω ℝ}
 
+private theorem secondOrderL_apply (a : ι → ι → HolderSpace α Ω ℝ) (u : CkHolderSpaceOn 2 α Ω ℝ)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ∀ x : Ω, g x = u x) (x : Ω) :
+    secondOrderL a u x = ∑ i, ∑ j, a i j x *
+      fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  have h2 := u.iteratedFDeriv_eq hg (Fin.last 2) x
+  simp only [Fin.val_last] at h2
+  simp only [secondOrderL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
+    HolderSpace.sum_apply, ContinuousLinearMap.compHolder₂_apply, HolderSpace.compLeftL_apply,
+    iteratedFDerivHolderL_apply, coe_iteratedFDerivHolder, ContinuousLinearMap.mul_apply',
+    ContinuousMultilinearMap.apply_apply, ← h2, iteratedFDeriv_two_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+
+private theorem firstOrderL_apply (b : ι → HolderSpace α Ω ℝ) (u : CkHolderSpaceOn 2 α Ω ℝ)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ∀ x : Ω, g x = u x) (x : Ω) :
+    firstOrderL hΩ hb hα b u x = ∑ i, b i x * fderiv ℝ g x (EuclideanSpace.single i 1) := by
+  have h1 := u.iteratedFDeriv_eq hg (Fin.castSucc (Fin.last 1)) x
+  simp only [Fin.val_last, Fin.val_castSucc] at h1
+  simp only [firstOrderL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
+    HolderSpace.sum_apply, ContinuousLinearMap.compHolder₂_apply, HolderSpace.compLeftL_apply,
+    iteratedFDerivHolderL_apply, coe_iteratedFDerivHolder,
+    iteratedFDeriv_inclusionSuccLOfIsLipschitzDomain, ContinuousLinearMap.mul_apply',
+    ContinuousMultilinearMap.apply_apply, ← h1, iteratedFDeriv_one_apply, Matrix.cons_val_fin_one]
+
+omit [DecidableEq ι] in
+private theorem zerothOrderL_apply (c : HolderSpace α Ω ℝ) (u : CkHolderSpaceOn 2 α Ω ℝ)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ∀ x : Ω, g x = u x) (x : Ω) :
+    zerothOrderL hΩ hb hα c u x = c x * g x := by
+  simp only [zerothOrderL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compHolder₂_apply,
+    ContinuousLinearMap.mul_apply', ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, zeroEquivHolderSpace_apply,
+    inclusionSuccLOfIsLipschitzDomain_apply, hg]
+
 /-- The value of `L u` at a point of `Ω`, computed from any function `g` on `ℝⁿ` agreeing with `u`
 on `Ω`: `L u = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼg + ∑ᵢ bⁱ ∂ᵢg + c g`. -/
 theorem nonDivergenceOperatorL_apply (u : CkHolderSpaceOn 2 α Ω ℝ)
@@ -128,20 +161,9 @@ theorem nonDivergenceOperatorL_apply (u : CkHolderSpaceOn 2 α Ω ℝ)
       ∑ i, ∑ j, a i j x * fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1)
           (EuclideanSpace.single j 1) +
         ∑ i, b i x * fderiv ℝ g x (EuclideanSpace.single i 1) + c x * g x := by
-  have h2 := u.iteratedFDeriv_eq hg (Fin.last 2) x
-  have h1 := u.iteratedFDeriv_eq hg (Fin.castSucc (Fin.last 1)) x
-  simp only [Fin.val_last, Fin.val_castSucc] at h1 h2
-  simp only [nonDivergenceOperatorL, secondOrderL, firstOrderL, zerothOrderL, _root_.add_apply,
-    FunLike.coe_sum, Finset.sum_apply,
-    ContinuousLinearMap.comp_apply, HolderSpace.add_apply, HolderSpace.sum_apply,
-    ContinuousLinearMap.compHolder₂_apply, HolderSpace.compLeftL_apply,
-    iteratedFDerivHolderL_apply, coe_iteratedFDerivHolder,
-    iteratedFDeriv_inclusionSuccLOfIsLipschitzDomain, ContinuousLinearMap.mul_apply',
-    ContinuousMultilinearMap.apply_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, zeroEquivHolderSpace_apply,
-    inclusionSuccLOfIsLipschitzDomain_apply, ← hg, ← h1, ← h2, iteratedFDeriv_two_apply,
-    iteratedFDeriv_one_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
+  rw [nonDivergenceOperatorL, _root_.add_apply, _root_.add_apply, HolderSpace.add_apply,
+    HolderSpace.add_apply, secondOrderL_apply a u hg, firstOrderL_apply hΩ hb hα b u hg,
+    zerothOrderL_apply hΩ hb hα c u hg]
 
 /-- With the identity matrix as principal coefficient and no lower-order terms, the operator is the
 Laplacian. -/
@@ -191,7 +213,8 @@ private theorem norm_secondOrderL_le (a : ι → ι → HolderSpace α Ω ℝ) :
     _ ≤ ‖a i j‖ * (1 * 1) := by
         gcongr
         · exact ContinuousLinearMap.norm_mul_compHolder₂_le _
-        · exact HolderSpace.norm_compLeftL_apply_le_one (Fin.forall_fin_two.2 ⟨by simp, by simp⟩)
+        · exact (HolderSpace.norm_compLeftL_le _).trans
+            ((ContinuousMultilinearMap.norm_apply_le_prod _).trans_eq (by simp))
         · exact norm_iteratedFDerivHolderL_le_one
     _ = ‖a i j‖ := by ring
 
@@ -206,7 +229,8 @@ private theorem norm_firstOrderL_le (b : ι → HolderSpace α Ω ℝ) :
     _ ≤ ‖b i‖ * (1 * (1 * ‖inclusionSuccLOfIsLipschitzDomain (k := 1) (F := ℝ) hΩ hb hα‖)) := by
         gcongr
         · exact ContinuousLinearMap.norm_mul_compHolder₂_le _
-        · exact HolderSpace.norm_compLeftL_apply_le_one (Fin.forall_fin_one.2 (by simp))
+        · exact (HolderSpace.norm_compLeftL_le _).trans
+            ((ContinuousMultilinearMap.norm_apply_le_prod _).trans_eq (by simp))
         · exact norm_iteratedFDerivHolderL_le_one
     _ = _ := by ring
 

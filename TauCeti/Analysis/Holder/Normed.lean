@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Basic
-public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -667,17 +666,6 @@ theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
 /-- Postcomposition with a continuous linear map `g` has operator norm at most `‖g‖`. -/
 theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
-
-/-- Evaluating a Hölder field of continuous multilinear maps on fixed vectors of norm at most one
-has operator norm at most one. -/
-theorem norm_compLeftL_apply_le_one {ι : Type*} [Fintype ι] {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {v : ι → E} (hv : ∀ i, ‖v i‖ ≤ 1) :
-    ‖compLeftL (α := α) (X := X)
-      (ContinuousMultilinearMap.apply ℝ (fun _ : ι ↦ E) Y' v)‖ ≤ 1 := by
-  refine (norm_compLeftL_le _).trans (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ ?_)
-  rw [one_mul, ContinuousMultilinearMap.apply_apply]
-  exact (f.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg f)
-    (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hv i))
 
 /-- Postcomposition with a linear isometry preserves the Hölder-space norm. -/
 theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
