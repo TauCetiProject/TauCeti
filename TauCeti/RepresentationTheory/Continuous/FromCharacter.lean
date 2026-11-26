@@ -14,7 +14,6 @@ public import Mathlib.Topology.Instances.Matrix
 -- Non-public: used only inside proofs.
 import Mathlib.Topology.Algebra.Group.Units
 import Mathlib.Topology.ContinuousMap.Algebra
-import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.RepresentationTheory.Semisimple.TraceForm
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
@@ -78,21 +77,6 @@ namespace Representation
 
 variable {k G V : Type*} [Field k] [TopologicalSpace k] [Monoid G] [TopologicalSpace G]
   [AddCommGroup V] [Module k V]
-
-omit [TopologicalSpace k] [TopologicalSpace G] in
-/-- A representation whose trace pairing is nondegenerate on its span is finite-dimensional: on an
-infinite-dimensional space the trace vanishes identically, so the identity would pair to zero with
-everything. -/
-private theorem finiteDimensional_of_nondegenerate (ρ : Representation k G V)
-    (hρ : ∀ f ∈ Submodule.span k (Set.range ρ), (∀ g, LinearMap.trace k V (f * ρ g) = 0) → f = 0) :
-    FiniteDimensional k V := by
-  by_contra hV
-  have htr := TauCeti.LinearMap.trace_eq_zero_of_not_finite hV
-  have h1 : (1 : Module.End k V) = 0 :=
-    hρ 1 (Submodule.subset_span ⟨1, map_one ρ⟩) fun g ↦ by rw [htr, LinearMap.zero_apply]
-  have : Subsingleton V := ⟨fun v w ↦ by
-    simpa using congr($h1 v).trans congr($h1 w).symm⟩
-  exact hV inferInstance
 
 /-- **The character controls the linear functionals of a representation with nondegenerate trace
 pairing.** Suppose that the only element `f` of the span of the operators `ρ g` with
