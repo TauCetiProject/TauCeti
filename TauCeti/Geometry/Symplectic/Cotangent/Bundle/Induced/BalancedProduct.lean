@@ -45,8 +45,10 @@ the derivative of the equivariance of `f` is `df (ξ_N) = -f ∘ ad_(ι ξ)`
 
 The descended form `TauCeti.CotangentBundle.balancedProductInducedForm` is the unique smooth
 two-form on `G ×_K N` pulling back to `Ω`
-(`TauCeti.CotangentBundle.eq_balancedProductInducedForm_iff`), and it is closed when `σ` is
-(`TauCeti.CotangentBundle.isClosed_balancedProductInducedForm`). The map
+(`TauCeti.CotangentBundle.eq_balancedProductInducedForm_iff`). It is closed when `σ` is
+(`TauCeti.CotangentBundle.isClosed_balancedProductInducedForm`) and invariant under the action
+`k • [g, n] = [k g, n]` of `G`
+(`TauCeti.CotangentBundle.mpullback_smul_balancedProductInducedForm`). The map
 `TauCeti.CotangentBundle.balancedProductInducedMomentMap`, `[g, n] ↦ Ad*_g (f n)`, is well defined
 by the equivariance of `f`, and it is a group-level moment map of the action
 `k • [g, n] = [k g, n]` of `G` on `(G ×_K N, Ω)`
@@ -75,7 +77,10 @@ the action near the orbit of `p`, with moment map `[g, η, v] ↦ Ad*_g (ν + η
   `TauCeti.CotangentBundle.eq_balancedProductInducedForm_iff`: the descended form is the unique
   smooth form pulling back to the induced form.
 * `TauCeti.CotangentBundle.eval₂_balancedProductInducedForm_mfderiv_one`: its value at `[1, n]`.
+* `TauCeti.CotangentBundle.eval₂_balancedProductInducedForm_mfderiv_quotientMk`: its value on
+  images of tangent vectors of `G × N` is that of the induced form.
 * `TauCeti.CotangentBundle.isClosed_balancedProductInducedForm`: it is closed when `σ` is.
+* `TauCeti.CotangentBundle.mpullback_smul_balancedProductInducedForm`: it is `G`-invariant.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_balancedProductInducedForm`: the moment map of
   the action of `G`.
 
@@ -108,21 +113,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {EN HN : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
   {IN : ModelWithCorners ℝ EN HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
 
-/-- The map `K.RightTranslation × N → G × N` forgetting that `K` acts on the first factor. -/
-private theorem contMDiff_prodMap_toRightTranslation_symm :
-    ContMDiff (I.prod IN) (I.prod IN) ∞ (Prod.map K.toRightTranslation.symm (id : N → N)) :=
-  (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id
-
-/-- The map `K.RightTranslation × N → G × N` forgetting that `K` acts on the first factor has
-identity differential. -/
-private theorem mfderiv_prodMap_toRightTranslation_symm (x : K.RightTranslation × N)
-    (v : TangentSpace (I.prod IN) x) :
-    mfderiv (I.prod IN) (I.prod IN) (Prod.map K.toRightTranslation.symm (id : N → N)) x v = v := by
-  rw [mfderiv_prodMap ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞ x.1)
-    |>.mdifferentiableAt (by simp)) mdifferentiableAt_id]
-  exact Prod.ext (Subgroup.RightTranslation.mfderiv_toRightTranslation_symm _ _)
-    (congrArg (· v.2) (mfderiv_id (I := IN) (x := x.2)))
-
 variable [LieGroup I ∞ G] [IsManifold IN ∞ N] {σ : SmoothTwoForm IN N} {f : N → E →L[ℝ] ℝ}
 
 /-- The induced form `-d⟨f, θ⟩ + pr₂^* σ`, read on `K.RightTranslation × N`, the space on which `K`
@@ -130,7 +120,8 @@ acts by `k • (g, n) = (g k⁻¹, k • n)`. -/
 private abbrev inducedFormRT (σ : SmoothTwoForm IN N)
     (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) :
     SmoothTwoForm (I.prod IN) (K.RightTranslation × N) :=
-  SmoothForm.mpullback _ contMDiff_prodMap_toRightTranslation_symm (inducedForm I G σ hf)
+  SmoothForm.mpullback _ (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
+    (inducedForm I G σ hf)
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EN]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -173,8 +164,10 @@ private theorem eval₂_inducedFormRT_fundamental (hf : ContMDiff IN 𝓘(ℝ, E
     Prod.ext (by rw [prodVectorField_fst, InfinitesimalAction.fundamental_apply,
         Subgroup.RightTranslation.fundamentalVectorField_eq_mulInvariantVectorField_neg])
       (by rw [prodVectorField_snd, InfinitesimalAction.fundamental_apply])
-  rw [SmoothForm.eval₂_mpullback, mfderiv_prodMap_toRightTranslation_symm,
-    mfderiv_prodMap_toRightTranslation_symm, InfinitesimalAction.fundamental_prod,
+  rw [SmoothForm.eval₂_mpullback,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+    InfinitesimalAction.fundamental_prod,
     InfinitesimalAction.prod_apply, hv]
   exact eval₂_inducedForm_eq_zero (I := I) (G := G) (IN := IN) (σ := σ) hf
     (p := (K.toRightTranslation.symm x.1, x.2))
@@ -238,7 +231,8 @@ theorem isBasic_inducedForm (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f)
       funext fun x ↦ Prod.ext (by simp) rfl
     have h := congrArg Subtype.val (SmoothForm.mpullback_mpullback_of_comp_eq
       (ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, F)) (I' := I.prod IN) k)
-      contMDiff_prodMap_toRightTranslation_symm contMDiff_prodMap_toRightTranslation_symm
+      (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
+      (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
       (contMDiff_mul_right.prodMap hφ) hcomp (inducedForm I G σ hf))
     rwa [mpullback_prodMap_mul_right_inducedForm hf (k : G)⁻¹ hφ (hfK k)
       (hσK k), SmoothForm.coe_mpullback] at h
@@ -331,8 +325,8 @@ theorem eval₂_balancedProductInducedForm_mfderiv_one (n : N)
   rw [← SmoothForm.eval₂_mpullback _ (BalancedProduct.isSubmersion_quotientMk_rightTranslation
       (K := K) (Z := N) (I := I) (IZ := IN) (F := F)).contMDiff,
     mpullback_quotientMk_balancedProductInducedForm, SmoothForm.eval₂_mpullback,
-    mfderiv_prodMap_toRightTranslation_symm (G := G),
-    mfderiv_prodMap_toRightTranslation_symm (G := G)]
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply]
   -- The tangent spaces of `K.RightTranslation × N` and of `G × N` at `(1, n)` are both the model
   -- space `E × EN`; the formula is elaborated on `G × N` before being applied to `v` and `w`.
   have h := eval₂_inducedForm_one (I := I) (G := G) (σ := σ) hf n
@@ -348,6 +342,68 @@ theorem isClosed_balancedProductInducedForm (hσ : σ.IsClosed) :
   have := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
     (F := F)
   exact SmoothForm.isClosed_descendedForm_iff.2 ((isClosed_inducedForm hf hσ).mpullback _ _)
+
+/-- **The induced form on `G ×_K N` in terms of representatives.** On the images of tangent
+vectors `v` and `w` of `G × N` under the differential of the projection, the induced form on
+`G ×_K N` takes the value of the induced form on `G × N`. -/
+theorem eval₂_balancedProductInducedForm_mfderiv_quotientMk (x : K.RightTranslation × N)
+    (v w : TangentSpace (I.prod IN) x) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    (balancedProductInducedForm I G σ hf hfK hσK hμ).eval₂
+        (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N)) x)
+        (mfderiv (I.prod IN) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
+          (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N))) x v)
+        (mfderiv (I.prod IN) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
+          (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N))) x w) =
+      (inducedForm I G σ hf).eval₂ (K.toRightTranslation.symm x.1, x.2) v w := by
+  let _ := BalancedProduct.rightTranslationChartedSpace K N I IN F
+  have := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  rw [← SmoothForm.eval₂_mpullback _ (BalancedProduct.isSubmersion_quotientMk_rightTranslation
+      (K := K) (Z := N) (I := I) (IZ := IN) (F := F)).contMDiff,
+    mpullback_quotientMk_balancedProductInducedForm, SmoothForm.eval₂_mpullback,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply]
+  -- `Prod.map K.toRightTranslation.symm id x` is `(K.toRightTranslation.symm x.1, x.2)`.
+  rfl
+
+/-- **The induced form on `G ×_K N` is `G`-invariant**: the action `[g, n] ↦ [k g, n]` of `k ∈ G`
+preserves it, as left translation of the `G`-factor preserves the induced form on `G × N`. -/
+theorem mpullback_smul_balancedProductInducedForm (k : G) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    haveI := BalancedProduct.contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    SmoothForm.mpullback (fun y : BalancedProduct K K.RightTranslation N ↦ k • y)
+        (ContMDiffSMul.contMDiff_const_smul (I := I) k)
+        (balancedProductInducedForm I G σ hf hfK hσK hμ) =
+      balancedProductInducedForm I G σ hf hfK hσK hμ := by
+  let _ := BalancedProduct.rightTranslationChartedSpace K N I IN F
+  have := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  have := BalancedProduct.contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  have hq := BalancedProduct.isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I)
+    (IZ := IN) (F := F)
+  have he := Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm (K := K) (I := I)
+    (IZ := IN) (Z := N) ∞
+  -- On representatives, `k` acts by `(g, n) ↦ (k g, n)`, which preserves the induced form.
+  have hL : ContMDiff (I.prod IN) (I.prod IN) ∞
+      (Prod.map (K.toRightTranslation ∘ (k * ·) ∘ K.toRightTranslation.symm) (id : N → N)) :=
+    ((Subgroup.RightTranslation.contMDiff_toRightTranslation ∞).comp (contMDiff_mul_left.comp
+      (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞))).prodMap contMDiff_id
+  refine SmoothForm.mpullback_injective_of_surjective hq.contMDiff Quotient.mk_surjective
+    (hq.surjective_mfderiv (by simp)) ?_
+  rw [SmoothForm.mpullback_mpullback_of_comp_eq hq.contMDiff
+      (ContMDiffSMul.contMDiff_const_smul (I := I) k) hL hq.contMDiff (hcomp := rfl),
+    mpullback_quotientMk_balancedProductInducedForm,
+    SmoothForm.mpullback_mpullback_of_comp_eq hL he he
+      (contMDiff_mul_left.prodMap contMDiff_id) (g' := Prod.map (k * ·) (id : N → N))
+      (hcomp := rfl),
+    mpullback_prodMap_mul_left_inducedForm]
 
 /-! ### The moment map -/
 
@@ -397,29 +453,21 @@ theorem isEquivariantMomentMap_balancedProductInducedForm :
   have hπ := BalancedProduct.isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I)
     (IZ := IN) (F := F)
   refine ⟨(isMomentMap_inducedForm (G := G) (σ := σ) hf).of_comp_eq
-    contMDiff_prodMap_toRightTranslation_symm hπ mpullback_quotientMk_balancedProductInducedForm
-    Quotient.mk_surjective (fun ξ x ↦ ?_) (funext fun x ↦ rfl), fun g y ↦ ?_⟩
-  · -- The fundamental vector field of `ξ` on `G × N` lifts that on `G ×_K N`.
-    have hL : MDifferentiableAt I (I.prod IN)
-        (fun g : G ↦ (K.toRightTranslation (g * K.toRightTranslation.symm x.1), x.2)) 1 :=
-      ((Subgroup.RightTranslation.contMDiff_toRightTranslation (I := I) ∞).mdifferentiableAt
-        (by simp) |>.comp_of_eq 1 (mdifferentiableAt_mul_right (I := I)) rfl).prodMk
-        mdifferentiableAt_const
-    have horbit : (fun g : G ↦ g • Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N)) x) =
-        Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N)) ∘
-          fun g : G ↦ (K.toRightTranslation (g * K.toRightTranslation.symm x.1), x.2) :=
-      funext fun g ↦ by
-        rw [comp_apply, BalancedProduct.quotientMk_eq_mk_toRightTranslation,
-          BalancedProduct.smul_mk_toRightTranslation]
-    refine ⟨InfinitesimalAction.prod (InfinitesimalAction.fundamental I G I G) 0 ξ
-      (Prod.map K.toRightTranslation.symm id x), mfderiv_prodMap_toRightTranslation_symm _ _, ?_⟩
-    rw [InfinitesimalAction.fundamental_apply, fundamentalVectorField_apply, horbit]
-    refine Eq.trans ?_ (mfderiv_comp_apply_of_eq (1 : G) ((hπ.contMDiff x).mdifferentiableAt
-      (by simp)) hL (Prod.ext (by simp) rfl) ξ).symm
-    rw [InfinitesimalAction.fundamental_prod_zero_apply]
-    -- The two orbit maps `g ↦ (g g₀, n)` into `G × N` and into `K.RightTranslation × N` agree up to
-    -- the identification of `G` with its type synonym, which carries the charts of `G`.
-    rfl
+    (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞) hπ
+    mpullback_quotientMk_balancedProductInducedForm Quotient.mk_surjective
+    (fun ξ x ↦ ⟨(fundamentalVectorField I ξ (K.toRightTranslation.symm x.1), 0), ?_,
+      (BalancedProduct.mfderiv_quotientMk_fundamentalVectorField_rightTranslation ξ x).trans
+        (congrFun (InfinitesimalAction.fundamental_apply ξ) _).symm⟩)
+    (funext fun x ↦ rfl), fun g y ↦ ?_⟩
+  · -- The lift `(ξ_G(g), 0)` is the generator of left multiplication on the first factor.
+    refine (Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply x _).trans ?_
+    simp only [InfinitesimalAction.prod_apply, InfinitesimalAction.zero_apply,
+      InfinitesimalAction.fundamental_apply]
+    exact Prod.ext
+      (prodVectorField_fst (fundamentalVectorField I ξ) (0 : ∀ n : N, TangentSpace IN n)
+        (Prod.map K.toRightTranslation.symm id x)).symm
+      (prodVectorField_snd (fundamentalVectorField I ξ) (0 : ∀ n : N, TangentSpace IN n)
+        (Prod.map K.toRightTranslation.symm id x)).symm
   · induction y using BalancedProduct.induction_on_toRightTranslation with
     | h g' n =>
       rw [BalancedProduct.smul_mk_toRightTranslation, balancedProductInducedMomentMap_mk,
