@@ -174,9 +174,7 @@ theorem normalCovariantDeriv_normalModelStructure (p X : ℂ × ℂ) :
       I * normalCovariantDeriv A p X := by
   rw [normalModelStructure_normalModelConnectionCoeff_apply, normalCovariantDeriv_def,
     normalCovariantDeriv_def]
-  ring_nf
-  simp only [I_sq]
-  ring
+  linear_combination -(A p.1 (fun _ ↦ X.1) : ℂ) * p.2 * I_sq
 
 /-! ### Compatibility of the coupling form -/
 
@@ -274,20 +272,30 @@ theorem normalModelGauge_snd (φ : ℂ → ℝ) (p : ℂ × ℂ) :
     (normalModelGauge φ p).2 = exp (φ p.1 * I) * p.2 :=
   (rfl)
 
-/-- The gauge transformation of `-φ` inverts that of `φ`. -/
+/-- The gauge transformation of the zero function is the identity. -/
 @[simp]
-theorem normalModelGauge_neg_normalModelGauge (φ : ℂ → ℝ) (p : ℂ × ℂ) :
-    normalModelGauge (-φ) (normalModelGauge φ p) = p := by
+theorem normalModelGauge_zero : normalModelGauge 0 = id := by
+  funext p
+  ext <;> simp [normalModelGauge]
+
+/-- Composing gauge transformations adds their phase functions. -/
+@[simp]
+theorem normalModelGauge_normalModelGauge (φ ψ : ℂ → ℝ) (p : ℂ × ℂ) :
+    normalModelGauge φ (normalModelGauge ψ p) = normalModelGauge (φ + ψ) p := by
   ext
   · rfl
-  · simp only [normalModelGauge_snd, normalModelGauge_fst, Pi.neg_apply, ofReal_neg, neg_mul,
-      ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, one_mul]
+  · simp only [normalModelGauge_snd, normalModelGauge_fst, Pi.add_apply, ofReal_add, add_mul,
+      Complex.exp_add, mul_assoc]
+
+/-- The gauge transformation of `-φ` inverts that of `φ`. -/
+theorem normalModelGauge_neg_normalModelGauge (φ : ℂ → ℝ) (p : ℂ × ℂ) :
+    normalModelGauge (-φ) (normalModelGauge φ p) = p := by
+  simp
 
 /-- The gauge transformation of `φ` inverts that of `-φ`. -/
-@[simp]
 theorem normalModelGauge_normalModelGauge_neg (φ : ℂ → ℝ) (p : ℂ × ℂ) :
     normalModelGauge φ (normalModelGauge (-φ) p) = p := by
-  simpa using normalModelGauge_neg_normalModelGauge (-φ) p
+  simp
 
 variable {φ : ℂ → ℝ}
 
@@ -352,9 +360,7 @@ theorem isJHolomorphicAt_normalModelGauge (hφ : DifferentiableAt ℝ φ p.1)
   ext
   · rfl
   · simp only [ofReal_sub]
-    ring_nf
-    rw [I_sq]
-    ring
+    linear_combination -exp (φ p.1 * I) * (fderiv ℝ φ p.1 X.1 : ℂ) * p.2 * I_sq
 
 /-- **Gauge transformations preserve the coupling form.** If `A' = A - dφ` at `z` and `A'` has the
 same curvature as `A` there, as when `φ` is `C²`, the gauge transformation of `φ` pulls the
