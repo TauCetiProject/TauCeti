@@ -17,10 +17,11 @@ The associativity of the pair-of-pants product on homology compares the two comp
 `(x₁ x₂) x₃` and `x₁ (x₂ x₃)` through the one-parameter family of Floer data
 `K_τ = TauCeti.Floer.associativityPerturbation H Hout G G' L τ`, `τ ∈ ℝ`, on spheres with three
 moving input ends: for `τ ≤ -1` it is the plumbed four-punctured sphere of `(x₁ x₂) x₃`, for
-`τ ≥ 2` that of `x₁ (x₂ x₃)`, and in between the neck Hamiltonians `G`, `G'` are switched off
-while the input ends move along the associativity path. The counts of this family give the
-homotopy between the two compositions, and they are finite below each energy level only if its
-moduli spaces are compact up to bubbling and breaking.
+`τ ≥ 2` that of `x₁ (x₂ x₃)`; on `[-1, 0]` and `[1, 2]` the neck Hamiltonians `G`, `G'` are
+turned off by the cutoffs `β(-τ)`, `β(τ - 1)`, where `β = Real.smoothTransition`, and on `[0, 1]`
+the input ends move along the associativity path with no neck terms. The counts of this family
+give the homotopy between the two compositions, and they are finite below each energy level only
+if its moduli spaces are compact up to bubbling and breaking.
 
 This file proves the interior part of Gromov–Floer compactness for this family in a closed
 manifold `M`, for a fixed neck length `L > 4`, uniformly over a compact window `C` of parameters
@@ -252,12 +253,10 @@ theorem
       (fun z x ↦ associativityPerturbation H Hout G G' L (τ k) (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ associativityPerturbation H Hout G G' L (τ k) (equivRealProdCLM.symm z) x
         Complex.I) (u k) y ≤ A + (∑ i, B i + Bout + 2 * (BG + BG')) := by
-    have hSk := isOpen_forall_ne (c := associativityCenter (Real.exp (-(2 * π * L)) / 4) (τ k))
-      equivRealProdCLM.symm.continuous
-    have hmono := setIntegral_mono_set (hE k)
-      ((ae_restrict_iff' hSk.measurableSet).2 (Eventually.of_forall fun z hz ↦
-        floerEnergyDensity_nonneg hω (hJt _ (hτC k) z hz _) (hfl k z hz)))
-      (Eventually.of_forall (hΩS k))
+    have hmono := hω.setIntegral_floerEnergyDensity_mono_set (hΩS k)
+      (isOpen_forall_ne (c := associativityCenter (Real.exp (-(2 * π * L)) / 4) (τ k))
+        equivRealProdCLM.symm.continuous).measurableSet
+      (hE k) (fun z hz ↦ hJt _ (hτC k) z hz _) (hfl k)
     have hbd := (abs_le.1 (hω.abs_integral_floerEnergyDensity_associativityPerturbation_sub_le hH
       (fun i ↦ (hHs i).of_le (by norm_num)) hHout (hHouts.of_le (by norm_num)) hG
       (hGs.of_le (by norm_num)) hG' (hG's.of_le (by norm_num)) hL (τ k) hB hBout hBG hBG'
