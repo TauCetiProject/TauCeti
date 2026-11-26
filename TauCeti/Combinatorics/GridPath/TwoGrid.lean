@@ -70,11 +70,27 @@ variable {m : ℕ} {Γ Γ' : TwoGridPath m} {s : ℕ × ℕ}
 
 /-- The first path, through `(0, 0)`: it goes left from `Y'^m_0` to `Y'^0_0` and up from `Y^0_0` to
 `Y^0_m`, so both halves are recorded as going down the first column. -/
-def first (m : ℕ) : TwoGridPath m := ⟨0, fun _ : Bool ↦ .column m.zero_le⟩
+@[expose] def first (m : ℕ) : TwoGridPath m := ⟨0, fun _ : Bool ↦ .column m.zero_le⟩
 
 /-- The last path, through `(m, m)`: it goes up from `Y'^m_0` to `Y'^m_m` and left from `Y^m_m` to
 `Y^0_m`, so both halves are recorded as going along the row `m`. -/
-def last (m : ℕ) : TwoGridPath m := ⟨m, fun _ : Bool ↦ .row m m⟩
+@[expose] def last (m : ℕ) : TwoGridPath m := ⟨m, fun _ : Bool ↦ .row m m⟩
+
+/-- The first path meets the diagonal at `(0, 0)`. -/
+@[simp]
+theorem first_diagonalIndex : (first m).diagonalIndex = 0 := rfl
+
+/-- Both halves of the first path go down the first column. -/
+@[simp]
+theorem first_half (z : Bool) : (first m).half z = .column m.zero_le := rfl
+
+/-- The last path meets the diagonal at `(m, m)`. -/
+@[simp]
+theorem last_diagonalIndex : (last m).diagonalIndex = m := rfl
+
+/-- Both halves of the last path go along the row `m`. -/
+@[simp]
+theorem last_half (z : Bool) : (last m).half z = .row m m := rfl
 
 /-- `Turn Γ (i, j) Γ'`: the path `Γ` reaches `(i, j)` from the right and leaves it upwards, and `Γ'`
 arises from `Γ` by replacing the node `(i, j)` by `(i + 1, j + 1)`. -/
@@ -126,13 +142,15 @@ theorem squares_subset (Γ : TwoGridPath m) : Γ.squares ⊆ range m ×ˢ range 
     omega
 
 /-- No unit square lies between the first path, through `(0, 0)`, and itself. -/
+@[simp]
 theorem squares_first : (first m).squares = ∅ := by
-  grind [squares, first, → GridPath.bounds_of_mem_squares]
+  grind [squares, first]
 
 /-- For the last path `last m`, the one through `(m, m)`, the set `(last m).squares` is exactly the
 `(i, j)` with `i, j < m`, that is `range m ×ˢ range m`. -/
+@[simp]
 theorem squares_last : (last m).squares = range m ×ˢ range m := by
-  simp [squares, last, GridPath.squares_row]
+  simp [squares, last]
 
 /-- Let `Γ` and `Γ'` be paths in `TwoGridPath m` with `Γ.Turn s Γ'`. Then `s ∉ Γ.squares`, and
 `Γ'.squares` is `Γ.squares` with `s` inserted. -/
@@ -144,9 +162,9 @@ theorem Turn.squares_eq (h_turn : Γ.Turn s Γ') :
     have h_notMem : (a, b) ∉ (Γ.half z).squares := by
       simpa [hΓ] using GridPath.notMem_squares_down_right_append q r
     have h_notMem_swap (z' : Bool) : (b, a) ∉ (Γ.half z').squares := by
-      grind [→ GridPath.bounds_of_mem_squares]
+      grind
     have h_insert : (q.right.down.append r).squares = insert (a, b) (Γ.half z).squares := by
-      simp [hΓ, GridPath.squares_right_down_append]
+      rw [hΓ, GridPath.squares_right_down_append]
     constructor
     · cases z <;> simp [mem_squares, hb.not_gt, h_notMem, h_notMem_swap]
     · cases z <;> simp [squares, h_insert]
@@ -167,24 +185,36 @@ theorem Turn.mem_product (h_turn : Γ.Turn s Γ') : s ∈ range m ×ˢ range m :
   obtain ⟨-, h_eq⟩ := h_turn.squares_eq
   exact Γ'.squares_subset (by simp [h_eq])
 
+/-- A turn at a node `(i, j)` off the diagonal is an inner turn: in some half `z`, where the node
+appears as `(i, j)` for `z = false` and as `(j, i)` for `z = true`, the half splits as a path `q`
+to the node above the corner, a step down, a step right and a path `r` to the diagonal, and `Γ'`
+has these two steps exchanged, with the same diagonal node and the same other half. -/
+theorem Turn.exists_inner_of_ne {i j : ℕ} (h_turn : Γ.Turn (i, j) Γ') (hij : i ≠ j) :
+    ∃ (z : Bool) (a b : ℕ) (q : GridPath 0 m a (b + 1))
+      (r : GridPath (a + 1) b Γ.diagonalIndex Γ.diagonalIndex),
+      (bif z then (b, a) else (a, b)) = (i, j) ∧
+      Γ.half z = q.down.right.append r ∧
+      Γ' = ⟨Γ.diagonalIndex, Function.update Γ.half z (q.right.down.append r)⟩ := by
+  generalize hs : (i, j) = s at h_turn
+  cases h_turn with
+  | @inner _ z a b q r hΓ => exact ⟨z, a, b, q, r, rfl, hΓ, rfl⟩
+  | diagonal q => grind
+
 /-- Let `Γ'` arise from `Γ`, a path from `(m, 0)` to `(0, m)` by steps up or left, by replacing the
 node `(i, j)` by `(i + 1, j + 1)`, where `i < j`. The turn takes place in `Γ.half false`, the part
 of `Γ` after the diagonal node `(Γ.diagonalIndex, Γ.diagonalIndex)`, read backwards from `(0, m)`.
 This half splits as a path `q` to `(i, j + 1)`, a step down, a step right and a path `r` to the
 diagonal. The path `Γ'` has these two steps exchanged, and has the same diagonal node and the same
 other half. -/
-theorem Turn.exists_corner_of_lt {i j : ℕ} (h_turn : Γ.Turn (i, j) Γ') (hij : i < j) :
+theorem Turn.exists_half_false_eq_of_lt {i j : ℕ} (h_turn : Γ.Turn (i, j) Γ') (hij : i < j) :
     ∃ (q : GridPath 0 m i (j + 1)) (r : GridPath (i + 1) j Γ.diagonalIndex Γ.diagonalIndex),
       Γ.half false = q.down.right.append r ∧
       Γ' = ⟨Γ.diagonalIndex, Function.update Γ.half false (q.right.down.append r)⟩ := by
-  generalize hs : (i, j) = s at h_turn
-  cases h_turn with
-  | @inner _ z a b q r hΓ =>
-    have hab : a + 1 ≤ Γ.diagonalIndex ∧ Γ.diagonalIndex ≤ b := r.le_and_le
-    cases z <;> cases hs
-    · exact ⟨q, r, hΓ, rfl⟩
-    · omega
-  | diagonal q => grind
+  obtain ⟨z, a, b, q, r, hs, hΓ, rfl⟩ := h_turn.exists_inner_of_ne hij.ne
+  have hab : a + 1 ≤ Γ.diagonalIndex ∧ Γ.diagonalIndex ≤ b := r.le_and_le
+  cases z <;> cases hs
+  · exact ⟨q, r, hΓ, rfl⟩
+  · omega
 
 /-- Let `Γ'` arise from `Γ`, a path from `(m, 0)` to `(0, m)` by steps up or left, by replacing the
 node `(i, j)` by `(i + 1, j + 1)`, where `j < i`. The turn takes place in `Γ.half true`, the part
@@ -196,14 +226,11 @@ theorem Turn.exists_half_true_eq_of_gt {i j : ℕ} (h_turn : Γ.Turn (i, j) Γ')
     ∃ (q : GridPath 0 m j (i + 1)) (r : GridPath (j + 1) i Γ.diagonalIndex Γ.diagonalIndex),
       Γ.half true = q.down.right.append r ∧
       Γ' = ⟨Γ.diagonalIndex, Function.update Γ.half true (q.right.down.append r)⟩ := by
-  generalize hs : (i, j) = s at h_turn
-  cases h_turn with
-  | @inner _ z a b q r hΓ =>
-    have hab : a + 1 ≤ Γ.diagonalIndex ∧ Γ.diagonalIndex ≤ b := r.le_and_le
-    cases z <;> cases hs
-    · omega
-    · exact ⟨q, r, hΓ, rfl⟩
-  | diagonal q => grind
+  obtain ⟨z, a, b, q, r, hs, hΓ, rfl⟩ := h_turn.exists_inner_of_ne hji.ne'
+  have hab : a + 1 ≤ Γ.diagonalIndex ∧ Γ.diagonalIndex ≤ b := r.le_and_le
+  cases z <;> cases hs
+  · omega
+  · exact ⟨q, r, hΓ, rfl⟩
 
 /-- A turn at `(j, j)` takes place on the diagonal: both halves reach `(j, j + 1)`, and their last
 step, down to `(j, j)`, is replaced by the step right to `(j + 1, j + 1)`. -/
@@ -252,13 +279,13 @@ theorem turn_induction {motive : TwoGridPath m → Finset (ℕ × ℕ) → Prop}
   -- Induction on the number of squares between `Γ` and the last path.
   suffices h_above_path : ∀ (k : ℕ) (Γ : TwoGridPath m),
       #(range m ×ˢ range m \ Γ.squares) = k → motive Γ (range m ×ˢ range m \ Γ.squares) by
-    simpa [squares_first] using h_above_path _ (first m) rfl
+    simpa using h_above_path _ (first m) rfl
   intro k
   induction k using Nat.strong_induction_on with
   | _ k ih =>
     intro Γ hk
     obtain rfl | h_ne := eq_or_ne Γ (last m)
-    · simpa [squares_last] using h_last
+    · simpa using h_last
     obtain ⟨s, Γ', hΓΓ' : Γ.Turn s Γ'⟩ := exists_turn h_ne
     obtain ⟨hs : s ∉ Γ.squares, h_eq : Γ'.squares = insert s Γ.squares⟩ := hΓΓ'.squares_eq
     have h_new : s ∉ range m ×ˢ range m \ Γ'.squares := by simp [h_eq]

@@ -60,13 +60,38 @@ inductive GridPath (a₀ b₀ : ℕ) : ℕ → ℕ → Type
 
 namespace GridPath
 
-variable {a₀ b₀ a b a' b' m : ℕ}
+variable {a₀ b₀ a b a' b' a'' b'' m : ℕ}
 
 /-- One path followed by another. -/
 def append (p : GridPath a₀ b₀ a b) : ∀ {a' b' : ℕ}, GridPath a b a' b' → GridPath a₀ b₀ a' b'
   | _, _, nil => p
   | _, _, down q => (p.append q).down
   | _, _, right q => (p.append q).right
+
+/-- A path followed by the path without steps is itself. -/
+@[simp]
+theorem append_nil (p : GridPath a₀ b₀ a b) : p.append nil = p := (rfl)
+
+/-- Appending a path that ends with a step down appends the path, then the step down. -/
+@[simp]
+theorem append_down (p : GridPath a₀ b₀ a b) (q : GridPath a b a' (b' + 1)) :
+    p.append q.down = (p.append q).down := (rfl)
+
+/-- Appending a path that ends with a step right appends the path, then the step right. -/
+@[simp]
+theorem append_right (p : GridPath a₀ b₀ a b) (q : GridPath a b a' b') :
+    p.append q.right = (p.append q).right := (rfl)
+
+/-- The path without steps followed by a path is that path. -/
+@[simp]
+theorem nil_append (p : GridPath a₀ b₀ a b) : nil.append p = p := by
+  induction p <;> simp [*]
+
+/-- Appending paths is associative. -/
+@[simp]
+theorem append_assoc (p : GridPath a₀ b₀ a b) (q : GridPath a b a' b')
+    (r : GridPath a' b' a'' b'') : (p.append q).append r = p.append (q.append r) := by
+  induction r <;> simp [*]
 
 /-- The path down the first column, from `(0, m)` to `(0, b)`. -/
 def column (hb : b ≤ m) : GridPath 0 m 0 b :=
@@ -76,6 +101,14 @@ def column (hb : b ≤ m) : GridPath 0 m 0 b :=
 def row (m : ℕ) : ∀ a : ℕ, GridPath 0 m a m
   | 0 => nil
   | a + 1 => (row m a).right
+
+/-- The path along the row `m` to `(0, m)` has no steps. -/
+@[simp]
+theorem row_zero (m : ℕ) : row m 0 = nil := (rfl)
+
+/-- The path along the row `m` to `(a + 1, m)` is the one to `(a, m)` followed by a step right. -/
+@[simp]
+theorem row_succ (m a : ℕ) : row m (a + 1) = (row m a).right := (rfl)
 
 /-- The unit squares between the first column and the steps down of a path, each named by its
 corner with the least indices: the step from `(a, b + 1)` to `(a, b)` contributes the `(i, b)` with
@@ -130,12 +163,14 @@ theorem eq_row (p : GridPath 0 m a m) : p = row m a := by
 
 /-- The squares to the left of the steps down of `p` followed by `q` are those of `p` and those
 of `q`. -/
+@[simp]
 theorem squares_append (p : GridPath a₀ b₀ a b) (q : GridPath a b a' b') :
     (p.append q).squares = p.squares ∪ q.squares := by
   induction q <;> simp [append, squares, *]
 
 /-- A square `s` to the left of a step down of a path from `(a₀, b₀)` to `(a, b)` lies to the left
 of the column `a` and between the rows `b` and `b₀`. -/
+@[grind →]
 theorem bounds_of_mem_squares {p : GridPath a₀ b₀ a b} {s : ℕ × ℕ} (hs : s ∈ p.squares) :
     s.1 < a ∧ b ≤ s.2 ∧ s.2 < b₀ := by
   induction p with
@@ -144,16 +179,17 @@ theorem bounds_of_mem_squares {p : GridPath a₀ b₀ a b} {s : ℕ × ℕ} (hs 
   | right p ih => grind [squares]
 
 /-- The path along a row has no step down, hence no squares. -/
+@[simp]
 theorem squares_row (m a : ℕ) : (row m a).squares = ∅ := by
-  induction a <;> simp [row, *]
+  induction a <;> simp [*]
 
 /-- Let a path follow `q` to `(i, j + 1)`, step down to `(i, j)`, step right to `(i + 1, j)` and
 follow `r`. Then the unit square with lower left corner `(i, j)` is not among the `squares` of the
 path, the unit squares to the left of its steps down. -/
 theorem notMem_squares_down_right_append {i j : ℕ} (q : GridPath a₀ b₀ i (j + 1))
     (r : GridPath (i + 1) j a b) : (i, j) ∉ (q.down.right.append r).squares := by
-  have hq : (i, j) ∉ q.squares := by grind [→ bounds_of_mem_squares]
-  have hr : (i, j) ∉ r.squares := by grind [→ bounds_of_mem_squares]
+  have hq : (i, j) ∉ q.squares := by grind
+  have hr : (i, j) ∉ r.squares := by grind
   simp [squares_append, squares, hq, hr]
 
 /-- Let a path follow `q` to `(i, j + 1)`, go to `(i + 1, j)` in two steps and follow `r`. If it
