@@ -91,6 +91,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   of the second iterated Fréchet derivative.
 * `TauCeti.laplacian_fun_sum`, `TauCeti.laplacian_sum`: the Laplacian of a finite sum of `C²`
   functions is the sum of their Laplacians.
+* `ContinuousLinearMap.laplacian`: the Laplacian of a continuous linear map vanishes.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences;
   `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
@@ -166,6 +167,13 @@ theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
     Δ (∑ i ∈ s, f i) x = ∑ i ∈ s, Δ (f i) x := by
   rw [Finset.sum_fn]
   exact laplacian_fun_sum hf
+
+/-- The Laplacian of a continuous linear map vanishes: its derivative is constant. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.laplacian (L : E →L[ℝ] F) : Δ (L : E → F) = 0 := by
+  funext x
+  rw [laplacian_eq_traceL, show fderiv ℝ (L : E → F) = fun _ ↦ L from funext fun _ ↦ L.fderiv]
+  simp
 
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/

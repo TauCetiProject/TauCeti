@@ -43,10 +43,11 @@ half-plane about the winding point has slit-compatible chord ratios, so its inde
 is a principal logarithm. The plane slit along the complement of a convex real set `S` is open
 when `S` is, and star-shaped about every point of `S`
 (`TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`);
-it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is
-open, star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
-preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
-`{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for `0 < m`.
+it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}`
+contains the open unit disc and is open, star-convex about every real point `x < 1` (in
+particular about `0`), and preconnected, and is preserved under scaling by `[0, 1]`. So, for
+every `m`, the pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and
+connected for `0 < m`.
 
 ## Main declarations
 
@@ -56,6 +57,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
   `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`,
   `IsCompact.exists_le_norm_one_sub_ofReal_mul`
+* `Complex.one_sub_mem_slitPlane_of_norm_lt_one`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -517,6 +519,10 @@ theorem _root_.IsCompact.exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : I
     norm_pos_iff.2 (slitPlane_ne_zero (one_sub_ofReal_mul_mem_slitPlane (hKΩ hp.2) hp.1))
   obtain ⟨δ, hδ, h⟩ := (isCompact_Icc.prod hK).exists_forall_le' (by fun_prop) hpos
   exact ⟨δ, hδ, fun z hz t ht => h (t, z) ⟨ht, hz⟩⟩
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` contains the open unit disc. -/
+theorem one_sub_mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 - z ∈ slitPlane := by
+  simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -z) (by simpa using hz)
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=

@@ -27,6 +27,8 @@ cancellativity hypothesis is used.
 ## Main definitions
 
 * `Algebra.GrothendieckAddGroup.liftAddEquiv`: Mathlib's `lift` as an additive isomorphism.
+* `Algebra.GrothendieckAddGroup.prodEquiv`: the Grothendieck group of a product is the product of
+  the Grothendieck groups.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
   `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
   as the Grothendieck group of `ℕ`.
@@ -115,6 +117,10 @@ theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - 
   obtain ⟨⟨a, s⟩, h⟩ := (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).surj x
   exact ⟨a, s, eq_sub_of_add_eq h⟩
 
+/-- The Grothendieck group of a trivial monoid is trivial. -/
+instance instSubsingleton [Subsingleton M] : Subsingleton (GrothendieckAddGroup M) :=
+  (AddLocalization.addMonoidOf ⊤).subsingleton_of_subsingleton
+
 /-- Two elements of the monoid have the same image in the Grothendieck group exactly when they
 become equal after adding a common element. -/
 theorem of_eq_of_iff {a b : M} :
@@ -130,6 +136,46 @@ noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G)
 
 @[simp]
 theorem coe_liftAddEquiv : ⇑(liftAddEquiv : (M →+ G) ≃+ _) = lift := (rfl)
+
+/-! ### Products -/
+
+section Prod
+
+/-- **The Grothendieck group of a product.** The group completion of `M × N` is the product of
+the group completions of `M` and `N`, `of (a, b) ↦ (of a, of b)`
+(`Algebra.GrothendieckAddGroup.prodEquiv_of`). -/
+noncomputable def prodEquiv :
+    GrothendieckAddGroup (M × N) ≃+ GrothendieckAddGroup M × GrothendieckAddGroup N :=
+  AddMonoidHom.toAddEquiv (lift ((of : M →+ _).prodMap (of : N →+ _)))
+    ((lift ((of : M × N →+ _).comp (AddMonoidHom.inl M N))).coprod
+      (lift ((of : M × N →+ _).comp (AddMonoidHom.inr M N))))
+    (addHom_ext fun a ↦ by
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, lift_apply_of,
+        AddMonoidHom.coe_prodMap, Prod.map_fst, Prod.map_snd, AddMonoidHom.coprod_apply,
+        AddMonoidHom.inl_apply, AddMonoidHom.inr_apply]
+      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add])
+    (AddMonoidHom.ext fun ⟨x, y⟩ ↦ by
+      obtain ⟨a, a', rfl⟩ := exists_eq_sub_of x
+      obtain ⟨b, b', rfl⟩ := exists_eq_sub_of y
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, AddMonoidHom.coprod_apply,
+        map_sub, map_add, lift_apply_of, AddMonoidHom.inl_apply, AddMonoidHom.inr_apply,
+        AddMonoidHom.coe_prodMap, Prod.map_apply, map_zero, Prod.mk_sub_mk, Prod.mk_add_mk,
+        sub_self, add_zero, zero_add])
+
+-- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.lift_apply_of`: the simp normal form of
+-- `of a` is `AddLocalization.addMonoidOf ⊤ a`, so these left-hand sides are not in simp normal
+-- form.
+/-- `Algebra.GrothendieckAddGroup.prodEquiv` sends `of (a, b)` to `(of a, of b)`. -/
+theorem prodEquiv_of (a : M) (b : N) : prodEquiv (of (a, b)) = (of a, of b) := by
+  simp only [prodEquiv, AddMonoidHom.toAddEquiv_apply, lift_apply_of, AddMonoidHom.coe_prodMap,
+    Prod.map_apply]
+
+/-- The inverse of `Algebra.GrothendieckAddGroup.prodEquiv` sends `(of a, of b)` to
+`of (a, b)`. -/
+theorem prodEquiv_symm_of (a : M) (b : N) : prodEquiv.symm (of a, of b) = of (a, b) :=
+  prodEquiv.symm_apply_eq.2 (prodEquiv_of a b).symm
+
+end Prod
 
 /-! ### The multiplication -/
 

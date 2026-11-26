@@ -279,40 +279,34 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
     MemLp (ω.floerConformalJetCoeff cylindricalWeight
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
       (volume.restrict thricePuncturedSphereReal) := by
-  -- Far out on every end `u` is within `1` of its asymptotic loop, and the slice defect is less
-  -- than `1`, over the band `t ∈ [0, 1]`.
-  obtain ⟨S₀, hS₀⟩ := eventually_atTop.1 (eventually_all.2 fun q ↦
-    (Metric.tendstoUniformlyOn_iff.1 (hux q) 1 one_pos).and
-      (Metric.tendstoUniformlyOn_iff.1 (hδ q) 1 one_pos))
-  choose Mx hMx using fun q ↦
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q)
-  set T := max 2 (max R₁ S₀)
-  have hT₁ : R₁ ≤ T := le_max_of_le_right (le_max_left _ _)
-  have hT₀ : S₀ ≤ T := le_max_of_le_right (le_max_right _ _)
-  -- Beyond the height `T` the end points lie in `S` and beyond the height `R₁`.
-  have hend (q : Puncture) {ζ : ℝ × ℝ} (hζ : T ≤ ζ.1) :
-      positiveEndChart q ζ ∈ thricePuncturedSphereReal ∧
-        R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 := by
+  have hcont : ContinuousOn (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) thricePuncturedSphereReal :=
+    ω.continuousOn_floerConformalJetCoeff isWeight_cylindricalWeight hJ hKs hKt
+      fun z hz ↦ (hu z hz).contDiffWithinAt
+  -- Far out on each end, the coefficient field of the end datum along `u ∘ φ'_q` is bounded over
+  -- the band `t ∈ [0, 1]`.
+  choose Bq hBq using fun q ↦ ω.exists_eventually_norm_floerJetCoeff_le
+    (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (hJe q) (hx q) (hux q) (hδ q)
+  obtain ⟨T, hT⟩ := eventually_atTop.1 ((eventually_all.2 hBq).and
+    (eventually_ge_atTop (max 2 R₁)))
+  have hTR : max 2 R₁ ≤ T := (hT T le_rfl).2
+  set B := ∑ q, |Bq q|
+  have hBqB (q : Puncture) : Bq q ≤ B := (le_abs_self _).trans
+    (Finset.single_le_sum (f := fun q' ↦ |Bq q'|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ q))
+  -- Beyond the height `T` of the end `q`, the data are the pair-of-pants data.
+  refine memLp_top_of_continuousOn_of_norm_positiveEndChart_le hcont (T := T)
+    (M := 1 + B + (1 + B) * B / (2 * π)) fun q ζ hζ1 hζ2 ↦ ?_
+  have h2 : 2 ≤ ζ.1 := by linarith [le_max_left 2 R₁]
+  have hR : R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 := by
     rw [fst_positiveEndCoord_positiveEndChart]
-    exact ⟨positiveEndChart_mem_thricePuncturedSphereReal (by linarith [le_max_left 2 (max R₁ S₀)]),
-      hT₁.trans hζ⟩
-  refine ω.memLp_floerConformalJetCoeff_pairOfPants hH hHs hJ hKs hKt
-    (fun z hz ↦ (hu z hz).contDiffWithinAt) hJe (le_max_left _ _)
-    (fun q ζ hζ ↦ hJeq q ζ (hT₁.trans hζ)) (fun q ζ hζ ↦ hK q _ (hend q hζ).1 (hend q hζ).2)
-    (fun q ζ hζ ↦ hF q _ (hend q hζ).1 (hend q hζ).2)
-    (Cu := ∑ q, |Mx q| + 1) (Cδ := 1) (fun q ζ hζ ht ↦ ?_) (fun q ζ hζ ht ↦ ?_)
-  · have h : dist (x q ζ.2) (u (positiveEndChart q ζ)) < 1 :=
-      ((hS₀ ζ.1 (hT₀.trans hζ)) q).1 ζ.2 ht
-    have hq : Mx q ≤ ∑ q, |Mx q| := (le_abs_self _).trans
-      (Finset.single_le_sum (f := fun q ↦ |Mx q|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ q))
-    rw [dist_comm, dist_eq_norm] at h
-    linarith [norm_sub_norm_le (u (positiveEndChart q ζ)) (x q ζ.2), hMx q ζ.2 ht]
-  · have h : dist ((0 : ℝ → V) ζ.2) (sliceDefect
-        (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
-        (u ∘ positiveEndChart q) ζ) < 1 :=
-      ((hS₀ ζ.1 (hT₀.trans hζ)) q).2 ζ.2 ht
-    rw [Pi.zero_apply, dist_zero_left] at h
-    exact h.le
+    linarith [le_max_right 2 R₁]
+  have hz : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal (by linarith)
+  exact ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
+    (fun t ↦ (hHs q).comp (contDiff_const.prodMk contDiff_id)) h2
+    (hJeq q ζ (by linarith [le_max_right 2 R₁])) (hK q _ hz hR).1 (hK q _ hz hR).2
+    ((hu _ hz).differentiableAt one_ne_zero) (hF q _ hz hR)
+    (((hT ζ.1 hζ1.le).1 q ζ.2 (Ico_subset_Icc_self hζ2)).trans (hBqB q))
 
 /-- **Peetre's estimate along a pair of pants.** Under the hypotheses of the semi-Fredholm
 estimate `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`

@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Hamming
-public import TauCeti.LinearAlgebra.Submodule.Prod
+public import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 
 /-!
 # Direct sums of linear codes
