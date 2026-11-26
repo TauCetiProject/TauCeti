@@ -51,6 +51,8 @@ curvatures `1` and `H = 1`.
   sum of `II_q(e_i, e_i)` over every `h`-orthonormal basis `(e_i)`, and
   `TauCeti.mul_boundaryMeanCurvature`, `TauCeti.boundaryMeanCurvature_eq_sum_div`: `n H` is the
   sum of the principal curvatures, `H` their average.
+* `TauCeti.boundaryWeingarten_apply_eq_sum`: `S_q u = ∑ᵢ II_q(u, eᵢ) eᵢ` for every
+  `h`-orthonormal basis `(eᵢ)`.
 * `TauCeti.boundaryWeingarten_eq_smul_id_iff`: `S_q = c • id ↔ II_q = c • h`, in which case
   every principal curvature and, for `n ≥ 1`, the mean curvature is `c`
   (`TauCeti.boundaryPrincipalCurvatures_eq_of_boundaryWeingarten_eq_smul`,
@@ -383,4 +385,26 @@ theorem sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature
     boundaryWeingartenTangent_boundaryTangentEquiv,
     ← boundaryInducedForm_eq_inner_boundaryTangentEquiv,
     ← boundaryInducedForm_boundaryWeingarten_comm, boundaryInducedForm_boundaryWeingarten]
+
+/-- **The Weingarten map in an orthonormal basis**: for every basis `(eᵢ)` of the tangent space of
+the boundary at `q`, orthonormal for the induced metric, `S_q u = ∑ᵢ II_q(u, eᵢ) eᵢ`. -/
+theorem boundaryWeingarten_apply_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
+    (e : Fin n → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    (he : ∀ i j, boundaryInducedForm q (e i) (e j) = if i = j then 1 else 0)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundaryWeingarten q u = ∑ i, boundarySecondFundamentalForm q u (e i) • e i := by
+  have hon : Orthonormal ℝ fun i ↦ boundaryTangentEquiv q (e i) := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    rw [← boundaryInducedForm_eq_inner_boundaryTangentEquiv, he]
+  have hsp : ⊤ ≤ Submodule.span ℝ (Set.range fun i ↦ boundaryTangentEquiv q (e i)) :=
+    (hon.linearIndependent.span_eq_top_of_card_eq_finrank' (by simp)).ge
+  -- Expand `dι (S_q u)` in the orthonormal basis `(dι eᵢ)` of `T_q∂M ⊆ T_qM`.
+  apply (boundaryTangentEquiv q).injective
+  rw [← (OrthonormalBasis.mk hon hsp).sum_repr' (boundaryTangentEquiv q (boundaryWeingarten q u)),
+    map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [OrthonormalBasis.coe_mk, ← boundaryInducedForm_eq_inner_boundaryTangentEquiv,
+    (boundaryInducedForm_isSymm q).eq, boundaryInducedForm_boundaryWeingarten, map_smul]
+
 end TauCeti
