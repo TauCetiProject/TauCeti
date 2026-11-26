@@ -5,15 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.TensorProduct
-public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import TauCeti.Algebra.TensorProduct.Module
-public import TauCeti.Algebra.TensorProduct.Module.RightAction
-public import TauCeti.LinearAlgebra.BilinearForm.Dual.PerfectPairing
-import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
+public import TauCeti.LinearAlgebra.BilinearForm.AdjointBaseChange
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Padic
 import TauCeti.LinearAlgebra.BilinearForm.ElementaryDivisors
-import TauCeti.LinearAlgebra.PerfectPairing.Basis
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Symplectic lattices with an order action
@@ -27,9 +21,19 @@ The rational dual lattice is an `O`-submodule. The index of the original lattice
 is the absolute Gram determinant of the integral pairing, and the completion at `p` is
 self-dual exactly when `p` does not divide this index.
 
+The extended order acts via `BialgebraModule.tensorPairAction`. The rational dual uses Mathlib's
+`LinearMap.BilinForm.dualSubmodule` and the full-lattice result
+`LinearMap.BilinForm.isFullLattice_dualSubmodule`. The square-index formula uses the alternating
+elementary-divisor theorem
+`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate`.
+The local criterion uses `dualSubmodule_range_mk_eq_self_iff_isPerfPair` and the perfect-pairing
+determinant criterion `Module.Basis.isPerfPair_of_isUnit_det` and
+`Module.Basis.isUnit_det_of_isPerfPair`.
+
 ## References
 
-* K.-W. Lan, *Arithmetic compactifications of PEL-type Shimura varieties*, thesis, §1.2.1.
+* K.-W. Lan, *Arithmetic compactifications of PEL-type Shimura varieties*, thesis, §1.2.1
+  and Definition 1.4.1.1, where the dual index contributes to the bad primes.
 -/
 
 public section
@@ -73,33 +77,16 @@ attribute [local instance low] TensorProduct.rightModule
 
 /-- The extended pairing is adjoint for the action of each element of the original order. -/
 theorem baseChange_adjoint (b : O) (x y : A ⊗[ℤ] L) :
-    S.form.baseChange A (b • x) y = S.form.baseChange A x (star b • y) := by
-  have h : S.form.compl₁₂ (Algebra.lsmul ℤ ℤ L b) LinearMap.id =
-      S.form.compl₁₂ LinearMap.id (Algebra.lsmul ℤ ℤ L (star b)) :=
-    LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ S.adjoint b v w
-  have hA := congrArg (LinearMap.BilinForm.baseChange A) h
-  simp only [LinearMap.BilinForm.baseChange_compl₁₂, LinearMap.baseChange_id] at hA
-  simpa only [TensorProduct.rightModule_smul_eq_lTensor, LinearMap.compl₁₂_apply,
-    LinearMap.id_apply, LinearMap.baseChange_eq_lTensor] using congr($hA x y)
+    S.form.baseChange A (b • x) y = S.form.baseChange A x (star b • y) :=
+  S.form.baseChange_rightModule_adjoint b (S.adjoint b) x y
 
 /-- With the trivial involution on the base ring, the entire scalar-extended order acts
 by star-adjoints for the extended pairing. This holds over nonflat base rings as well. -/
 theorem baseChange_tensor_adjoint [StarRing A] [TrivialStar A]
     (c : A ⊗[ℤ] O) (x y : A ⊗[ℤ] L) :
     let ρ := BialgebraModule.tensorPairAction ℤ A L
-    S.form.baseChange A (ρ c x) y = S.form.baseChange A x (ρ (star c) y) := by
-  intro ρ
-  have hsmul (a : A) (b : O) (z : A ⊗[ℤ] L) : ρ (a ⊗ₜ[ℤ] b) z = a • (b • z) := by
-    have hmul : a ⊗ₜ[ℤ] b = (a ⊗ₜ[ℤ] (1 : O)) * ((1 : A) ⊗ₜ[ℤ] b) := by
-      simp [Algebra.TensorProduct.tmul_mul_tmul]
-    rw [hmul, map_mul, mul_apply_eq_comp, BialgebraModule.tensorPairAction_tmul_one,
-      BialgebraModule.tensorPairAction_one_tmul, TensorProduct.rightModule_smul_eq_lTensor]
-  induction c using TensorProduct.inductionOn with
-  | tmul a b =>
-    rw [TensorProduct.star_tmul, star_trivial, hsmul, hsmul,
-      LinearMap.BilinForm.smul_left, LinearMap.BilinForm.smul_right, S.baseChange_adjoint]
-  | add c d hc hd =>
-    simp only [star_add, map_add, LinearMap.add_apply, hc, hd]
+    S.form.baseChange A (ρ c x) y = S.form.baseChange A x (ρ (star c) y) :=
+  S.form.baseChange_tensor_adjoint S.adjoint c x y
 
 end BaseChange
 
@@ -149,14 +136,18 @@ theorem dual_restrictScalars :
       (LinearMap.range (TensorProduct.mk ℤ ℚ L 1)) := (rfl)
 
 /-- Integrality of the pairing embeds the original lattice in its dual. -/
-theorem le_dual : LinearMap.range (toRational (O := O) (L := L)) ≤ S.dual := by
-  rintro _ ⟨x, rfl⟩
-  refine S.mem_dual_iff.2 fun y ↦ Submodule.mem_one.2 ⟨S.form x y, ?_⟩
-  simp
+theorem le_dual : LinearMap.range (toRational (O := O) (L := L)) ≤ S.dual :=
+  S.form.range_mk_one_le_dualSubmodule
 
 /-- The index of the integral lattice in its rational dual. -/
 noncomputable def dualIndex : ℕ :=
   (LinearMap.range (toRational (O := O) (L := L))).toAddSubgroup.relIndex S.dual.toAddSubgroup
+
+/-- The dual index is the relative index of the original lattice in its dual. -/
+theorem dualIndex_def :
+    S.dualIndex =
+      (LinearMap.range (toRational (O := O) (L := L))).toAddSubgroup.relIndex
+        S.dual.toAddSubgroup := (rfl)
 
 /-- The order-stable dual spans the rational space and is a lattice over the integers. -/
 instance instIsFullLatticeDual : (S.dual.restrictScalars ℤ).IsFullLattice ℚ := by
@@ -166,47 +157,18 @@ instance instIsFullLatticeDual : (S.dual.restrictScalars ℤ).IsFullLattice ℚ 
 
 /-- The dual index is the absolute Gram determinant in any integral basis. -/
 theorem dualIndex_eq_natAbs_det {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
-    S.dualIndex = (S.form.toMatrix b).det.natAbs := by
-  let bQ := b.baseChange ℚ
-  let B := S.form.baseChange ℚ
-  let d := B.dualBasis S.nondegenerate_rat bQ
-  have hbQ : (LinearMap.range (TensorProduct.mk ℤ ℚ L 1)) =
-      Submodule.span ℤ (Set.range bQ) := b.range_mk_one_eq_span
-  have hcarrier :
-      (LinearMap.range (toRational (O := O))).toAddSubgroup =
-        AddSubgroup.closure (Set.range bQ) := by
-    apply AddSubgroup.toIntSubmodule.injective
-    rw [AddSubgroup.toIntSubmodule_closure]
-    exact hbQ
-  have hdual : S.dual.toAddSubgroup = AddSubgroup.closure (Set.range d) := by
-    apply AddSubgroup.toIntSubmodule.injective
-    rw [AddSubgroup.toIntSubmodule_closure, ← B.dualSubmodule_span_of_basis S.nondegenerate_rat bQ,
-      ← hbQ]
-    exact S.dual_restrictScalars
-  have hindex := AddSubgroup.relIndex_eq_abs_det _ _
-    (Submodule.toAddSubgroup_le _ _ |>.mpr S.le_dual) bQ d hcarrier hdual
-  have hm : d.toMatrix bQ = ((S.form.toMatrix b).map (algebraMap ℤ ℚ)).transpose := by
-    ext i j
-    simp [d, bQ, B, Basis.toMatrix_apply]
-  rw [Basis.det_apply, hm, Matrix.det_transpose, ← RingHom.mapMatrix_apply,
-    ← RingHom.map_det] at hindex
-  apply (Nat.cast_injective (R := ℚ))
-  rw [Nat.cast_natAbs, Int.cast_abs]
-  exact hindex
+    S.dualIndex = (S.form.toMatrix b).det.natAbs :=
+  S.form.relIndex_dualSubmodule_range_mk_one_eq_natAbs_det S.nondegenerate_rat b
 
 /-- The rational dual contains the integral lattice with positive finite index. -/
-theorem dualIndex_pos : 0 < S.dualIndex := by
-  classical
-  let b := Module.Free.chooseBasis ℤ L
-  rw [S.dualIndex_eq_natAbs_det b]
-  exact Int.natAbs_pos.mpr
-    ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp S.nondegenerate)
+theorem dualIndex_pos : 0 < S.dualIndex :=
+  S.form.relIndex_dualSubmodule_range_mk_one_pos S.nondegenerate
 
 /-- Index one characterizes self-duality in the rational span. -/
 @[simp]
 theorem dualIndex_eq_one_iff :
     S.dualIndex = 1 ↔ S.dual = LinearMap.range (toRational (O := O) (L := L)) := by
-  rw [dualIndex, AddSubgroup.relIndex_eq_one, Submodule.toAddSubgroup_le, S.le_dual.ge_iff_eq]
+  rw [S.dualIndex_def, AddSubgroup.relIndex_eq_one, Submodule.toAddSubgroup_le, S.le_dual.ge_iff_eq]
   exact eq_comm
 
 /-- In a symplectic basis with elementary divisors `d`, the dual index is the square of their
@@ -237,28 +199,24 @@ def IsSelfDualAt : Prop :=
   let N := LinearMap.range (TensorProduct.mk ℤ_[p] ℚ_[p] M 1)
   ((S.form.baseChange ℤ_[p]).baseChange ℚ_[p]).dualSubmodule N = N
 
+/-- Self-duality at `p` means equality with the dual in the `ℚ_[p]`-span. -/
+theorem isSelfDualAt_iff_dualSubmodule_eq :
+    let M := ℤ_[p] ⊗[ℤ] L
+    let N := LinearMap.range (TensorProduct.mk ℤ_[p] ℚ_[p] M 1)
+    S.IsSelfDualAt p ↔ ((S.form.baseChange ℤ_[p]).baseChange ℚ_[p]).dualSubmodule N = N :=
+  Iff.rfl
+
 /-- A completed lattice is self-dual exactly when its integral pairing is perfect. -/
 theorem isSelfDualAt_iff_isPerfPair :
-    S.IsSelfDualAt p ↔ (S.form.baseChange ℤ_[p]).IsPerfPair := by
-  classical
-  let b := Module.Free.chooseBasis ℤ L
-  have hB : (S.form.baseChange ℤ_[p]).Nondegenerate :=
-    (S.form.nondegenerate_baseChange_iff b).2 S.nondegenerate
-  exact (S.form.baseChange ℤ_[p]).dualSubmodule_range_mk_eq_self_iff_isPerfPair
-    (hB.baseChange_of_isLocalization ℚ_[p] (nonZeroDivisors ℤ_[p]))
+    S.IsSelfDualAt p ↔ (S.form.baseChange ℤ_[p]).IsPerfPair :=
+  (S.isSelfDualAt_iff_dualSubmodule_eq p).trans
+    (S.form.baseChange_padic_dualSubmodule_eq_self_iff_isPerfPair S.nondegenerate p)
 
 /-- A symplectic lattice is self-dual at `p` exactly when `p` does not divide its dual index. -/
 theorem isSelfDualAt_iff_not_dvd_dualIndex :
-    S.IsSelfDualAt p ↔ ¬p ∣ S.dualIndex := by
-  classical
-  let b := Module.Free.chooseBasis ℤ L
-  let bP := b.baseChange ℤ_[p]
-  let B := S.form.baseChange ℤ_[p]
-  have hdet : B.IsPerfPair ↔ IsUnit (B.toMatrix bP).det :=
-    ⟨bP.isUnit_det_of_isPerfPair bP B, bP.isPerfPair_of_isUnit_det bP B⟩
-  rw [S.isSelfDualAt_iff_isPerfPair p, hdet, LinearMap.BilinForm.det_toMatrix_baseChange,
-    S.dualIndex_eq_natAbs_det b, ← Int.natCast_dvd_natCast, Int.dvd_natAbs]
-  exact PadicInt.isUnit_intCast_iff
+    S.IsSelfDualAt p ↔ ¬p ∣ S.dualIndex :=
+  (S.isSelfDualAt_iff_dualSubmodule_eq p).trans
+    (S.form.baseChange_padic_dualSubmodule_eq_self_iff_not_dvd_relIndex S.nondegenerate p)
 
 end Padic
 
