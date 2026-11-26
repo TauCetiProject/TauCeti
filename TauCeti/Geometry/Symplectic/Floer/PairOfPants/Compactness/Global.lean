@@ -89,6 +89,59 @@ public section
 open Complex Filter Function MeasureTheory Metric Set Topology TauCeti.ThricePuncturedSphere
 open scoped Manifold
 
+namespace TauCeti.SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Energy concentration on a window of an end, read on `S`.** Let `g(y) = φ'_q(y + (m, 0))` be
+the translated positive end chart of the end `q`, and let `Ω` be an open window whose translate by
+`(m, 0)` lies beyond `max T 0`, for `T ≥ 2`, in a band of angular width one. If the energy `δ` of
+the end readings `uₖ ∘ g` concentrates in every disc about a point of `Z ⊆ Ω`, then every
+neighbourhood of a point of `g(Z)` eventually carries energy at least `δ` for the energy measure
+of `uₖ` on `S`. -/
+private theorem eventually_ofReal_le_withDensity_image_positiveEndChart_add
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℕ → ℝ × ℝ → M} (hu : ∀ k, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u k) thricePuncturedSphereReal)
+    {q : Puncture} {m : ℕ} {T t₀ : ℝ} (hT : 2 ≤ T) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩT : ∀ z ∈ Ω, z + ((m : ℝ), 0) ∈ Ioi (max T 0) ×ˢ Ioo t₀ (t₀ + 1)) {δ : ℝ} {φ : ℕ → ℕ}
+    {Z : Finset (ℝ × ℝ)}
+    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y) :
+    ∀ z ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z, ∀ N ∈ 𝓝 z,
+      ∀ᶠ n in atTop, ENNReal.ofReal δ ≤ (volume.restrict thricePuncturedSphereReal).withDensity
+        (fun y ↦ ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y)) N := by
+  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
+  have hg : Continuous g :=
+    (contDiff_positiveEndChart q 0).continuous.comp (continuous_id.add continuous_const)
+  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
+  rintro _ ⟨z, hz, rfl⟩ N hN
+  obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 (hg.continuousAt.preimage_mem_nhds hN)
+  filter_upwards [hconc z hz ε hε] with n hn
+  -- The image of the disc is open, so measurable, and lies in `S ∩ N`.
+  have hs : MeasurableSet (ball z ε ∩ Ω) := measurableSet_ball.inter hΩ.measurableSet
+  have hgsS : g '' (ball z ε ∩ Ω) ⊆ thricePuncturedSphereReal := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact positiveEndChart_mem_thricePuncturedSphereReal
+      ((le_max_right _ _).trans_lt (hΩT y hy.2).1)
+  refine TauCeti.MeasureTheory.le_withDensity_of_le_setLIntegral
+    (hgo _ (isOpen_ball.inter hΩ)).measurableSet hgsS
+    (image_subset_iff.2 (inter_subset_left.trans hεN)) ?_
+  rw [← SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq q
+    (fun w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (hT.trans hw) x) (hH q) (hHd q)
+    (hu _) m hs fun y hy ↦ hΩT y hy.2]
+  exact (ENNReal.ofReal_le_ofReal hn).trans
+    TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
+
+end TauCeti.SmoothTwoForm
+
 namespace TauCeti.SymplecticForm
 
 open Floer
@@ -248,31 +301,13 @@ private theorem concentration_and_tendstoLocallyUniformlyOn_image_positiveEndCha
       ∃ v' : ℝ × ℝ → V, TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v' atTop
         ((fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' Ω \
           (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z) := by
-  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
-  have hg : Continuous g :=
-    (contDiff_positiveEndChart q 0).continuous.comp (continuous_id.add continuous_const)
-  have hgS (y : ℝ × ℝ) (hy : y ∈ Ω) : g y ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT y hy).1)
-  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
-  have hKH (r : Puncture) (w : ℂ) (x : V) (hw : T ≤ r.endSign * (r.endCoord w).re) :
-      pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w :=
-    pairOfPantsPerturbation_eq_smul_endAngularForm (hT.trans hw) x
   refine ⟨?_, exists_tendstoLocallyUniformlyOn_image_positiveEndChart_add hΩ hΩT hZ hv⟩
-  · rintro _ ⟨z, hz, rfl⟩ N hN
-    obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 (hg.continuousAt.preimage_mem_nhds hN)
-    filter_upwards [hconc z hz ε hε] with n hn
-    have hs : MeasurableSet (ball z ε ∩ Ω) := measurableSet_ball.inter hΩ.measurableSet
-    -- The image of the disc is open, so measurable, and lies in `S ∩ N`.
-    have hgs : MeasurableSet (g '' (ball z ε ∩ Ω)) := (hgo _ (isOpen_ball.inter hΩ)).measurableSet
-    have hgsS : g '' (ball z ε ∩ Ω) ⊆ thricePuncturedSphereReal := by
-      rintro _ ⟨y, hy, rfl⟩
-      exact hgS y hy.2
-    refine TauCeti.MeasureTheory.le_withDensity_of_le_setLIntegral hgs hgsS
-      (image_subset_iff.2 (inter_subset_left.trans hεN)) ?_
-    rw [← setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq hKH hH hHd (hu _) q m hs
-      fun y hy ↦ hΩT y hy.2]
-    exact (ENNReal.ofReal_le_ofReal hn).trans
-      TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
+  -- The concentration is the manifold statement for the constant form.
+  simpa only [floerEnergyDensity_constSmooth] using
+    SmoothTwoForm.eventually_ofReal_le_withDensity_image_positiveEndChart_add
+      (ω := ω.constSmooth) hH (fun q t ↦ (hHd q t).mdifferentiable)
+      (fun k ↦ (hu k).mdifferentiableOn) hT hΩ hΩT
+      (by simpa only [floerEnergyDensity_constSmooth] using hconc)
 
 /-- The energy of a Floer pair of pants whose action difference is at most `A` is at most
 `A + B_0 + B_1 + B_∞`, which is nonnegative. -/
@@ -476,51 +511,6 @@ variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedSpace ℝ F] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {e : M → F}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [CompactSpace M] in
-/-- **Energy concentration on a window of an end, read on `S`.** Let `g(y) = φ'_q(y + (m, 0))` be
-the translated positive end chart of the end `q`, and let `Ω` be an open window whose translate by
-`(m, 0)` lies beyond `max T 0`, for `T ≥ 2`, in a band of angular width one. If the energy `δ` of
-the end readings `uₖ ∘ g` concentrates in every disc about a point of `Z ⊆ Ω`, then every
-neighbourhood of a point of `g(Z)` eventually carries energy at least `δ` for the energy measure
-of `uₖ` on `S`. -/
-private theorem eventually_ofReal_le_withDensity_image_positiveEndChart_add
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
-    {u : ℕ → ℝ × ℝ → M} (hu : ∀ k, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u k) thricePuncturedSphereReal)
-    {q : Puncture} {m : ℕ} {T t₀ : ℝ} (hT : 2 ≤ T) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
-    (hΩT : ∀ z ∈ Ω, z + ((m : ℝ), 0) ∈ Ioi (max T 0) ×ˢ Ioo t₀ (t₀ + 1)) {δ : ℝ} {φ : ℕ → ℕ}
-    {Z : Finset (ℝ × ℝ)}
-    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
-      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y) :
-    ∀ z ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z, ∀ N ∈ 𝓝 z,
-      ∀ᶠ n in atTop, ENNReal.ofReal δ ≤ (volume.restrict thricePuncturedSphereReal).withDensity
-        (fun y ↦ ENNReal.ofReal (ω.floerEnergyDensity
-          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
-          (u (φ n)) y)) N := by
-  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
-  have hg : Continuous g :=
-    (contDiff_positiveEndChart q 0).continuous.comp (continuous_id.add continuous_const)
-  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
-  rintro _ ⟨z, hz, rfl⟩ N hN
-  obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 (hg.continuousAt.preimage_mem_nhds hN)
-  filter_upwards [hconc z hz ε hε] with n hn
-  -- The image of the disc is open, so measurable, and lies in `S ∩ N`.
-  have hs : MeasurableSet (ball z ε ∩ Ω) := measurableSet_ball.inter hΩ.measurableSet
-  have hgsS : g '' (ball z ε ∩ Ω) ⊆ thricePuncturedSphereReal := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact positiveEndChart_mem_thricePuncturedSphereReal
-      ((le_max_right _ _).trans_lt (hΩT y hy.2).1)
-  refine TauCeti.MeasureTheory.le_withDensity_of_le_setLIntegral
-    (hgo _ (isOpen_ball.inter hΩ)).measurableSet hgsS
-    (image_subset_iff.2 (inter_subset_left.trans hεN)) ?_
-  rw [← SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq q
-    (fun w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (hT.trans hw) x) (hH q) (hHd q)
-    (hu _) m hs fun y hy ↦ hΩT y hy.2]
-  exact (ENNReal.ofReal_le_ofReal hn).trans
-    TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
-
-
 omit [I.Boundaryless] [CompactSpace M] in
 /-- The energy of a Floer pair of pants in a manifold whose topological energy is at most `A` is
 at most `A + B_0 + B_1 + B_∞`, which is nonnegative. -/
@@ -628,11 +618,11 @@ private theorem exists_pos_window_data (hω : ω.IsNondegenerate) (hH : ∀ q, P
       c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (Jq q t x v) := by
     -- The end chart is `1`-periodic in `t`, so `φ_q(±T, t)` lies on the circle over `[0, 1)`.
     obtain ⟨t', ht', heq⟩ := (periodic_comp_endChart q id (q.endSign * T)).exists_mem_Ico₀ one_pos t
+    simp only [id_comp] at heq
     have h : c * ‖mvfderiv I e x v‖ ^ 2 ≤
         hω.symplecticFormAt x v (J (endChart q (q.endSign * T, t')) x v) :=
       hJc _ (Or.inr (mem_iUnion.2 ⟨q, t', Ico_subset_Icc_self ht', rfl⟩)) x (mem_univ x) v
-    rw [hJq]
-    rwa [← show endChart q (q.endSign * T, t) = endChart q (q.endSign * T, t') from heq] at h
+    simpa only [hJq, heq] using h
   have hD := isCompact_preimage_truncation (T + 2)
   have hDS := preimage_truncation_subset_thricePuncturedSphereReal (T + 2)
   obtain ⟨Ls, hLs⟩ := exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbation_le

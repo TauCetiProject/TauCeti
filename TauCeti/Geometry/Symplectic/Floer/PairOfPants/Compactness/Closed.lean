@@ -300,18 +300,16 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbati
   have hHd (q : Puncture) (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
     ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
   have hK : (fun y ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) y v) =
-      fun y ↦ ∑ q, a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im y := by
+      fun y ↦ ∑ q, (a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im) y := by
     funext y
     simp only [pairOfPantsPerturbation_def, FunLike.coe_sum, Finset.sum_apply,
       FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, a]
     exact Finset.sum_congr rfl fun q _ ↦ by ring
   rw [hK, ω.hamiltonianVectorField_fun_sum
-    (F := fun q y ↦ a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im y)
+    (F := fun q ↦ a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im)
     fun q _ ↦ (hHd q _ x).const_smul (a q z), map_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun q _ ↦ ?_)
-  rw [show (fun y ↦ a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im y) =
-    a q z • H q (q.endCoord (equivRealProdCLM.symm z)).im from rfl,
-    hamiltonianVectorField_const_smul, map_smul, norm_smul]
+  rw [hamiltonianVectorField_const_smul, map_smul, norm_smul]
   exact mul_le_mul (hC q z hz) (hLH q _ x) (norm_nonneg _) ((norm_nonneg _).trans (hC q z hz))
 
 
