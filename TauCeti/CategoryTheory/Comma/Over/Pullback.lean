@@ -36,13 +36,11 @@ For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
 `CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
 `i'` with base change along `i` and then along `t`;
 when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
-change along `t` of the fiber at `i`. For the self-pullback square of `p : Y ⟶ X`,
-`CategoryTheory.Over.pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst` gives the first
-projection of the resulting canonical overlap identification on `Y ×_X Y`. For a commuting triangle
-`a ≫ b = d`, the natural isomorphism `CategoryTheory.Over.pullbackCompIsoOfEq` identifies base
-change along `b` and then along `a` with base change along `d`, coherently for three composable
-morphisms (`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`); in particular, morphisms which
-agree after base change along `b` agree after base change along `d`
+change along `t` of the fiber at `i`. For a commuting triangle `a ≫ b = d`, the natural isomorphism
+`CategoryTheory.Over.pullbackCompIsoOfEq` identifies base change along `b` and then along `a` with
+base change along `d`, coherently for three composable morphisms
+(`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`); in particular, morphisms which agree after
+base change along `b` agree after base change along `d`
 (`CategoryTheory.Over.pullback_map_eq_map_of_comp_eq`). For a cone `c` over a diagram `D`, the
 predicate `CategoryTheory.Limits.Cone.LiftsAlong` says that a morphism between base changes to the
 cone point is, up to these identifications, the base change of a morphism between base changes to a
@@ -210,31 +208,6 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A :
   Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
 end CommSquare
-
-/-- On underlying objects, the canonical overlap identification
-`(Over.pullback (pullback.fst p p)).obj ((Over.pullback p).obj A) ≅
-  (Over.pullback (pullback.snd p p)).obj ((Over.pullback p).obj A)`
-over `Y ×_X Y` sends `((a, y₁), (y₁, y₂))` to `((a, y₂), (y₁, y₂))`: its first projection to
-`A ×_X Y` pairs the `A`-coordinate `a` with the second `Y`-coordinate `y₂`. -/
-@[reassoc]
-theorem pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst [HasPullbacks C] {X Y : C}
-    (p : Y ⟶ X) (A : Over X) :
-    ((pullbackComp (pullback.fst p p) p).inv.app A).left ≫
-        eqToHom (congrArg (fun f ↦ Limits.pullback A.hom f)
-          (pullback.condition (f := p) (g := p))) ≫
-        ((pullbackComp (pullback.snd p p) p).hom.app A).left ≫
-        pullback.fst ((pullback p).obj A).hom (pullback.snd p p) =
-      pullback.lift
-        (pullback.fst ((pullback p).obj A).hom (pullback.fst p p) ≫ pullback.fst A.hom p)
-        (pullback.snd ((pullback p).obj A).hom (pullback.fst p p) ≫ pullback.snd p p)
-        (by
-          rw [Category.assoc, pullback.condition, ← pullback_obj_hom p A,
-            pullback.condition_assoc, pullback.condition, Category.assoc]) := by
-  refine pullback.hom_ext ?_ ?_
-  · rw [pullback.lift_fst]
-    simp [eqToHom_comp_pullback_fst A.hom (pullback.condition (f := p) (g := p))]
-  · rw [pullback.lift_snd]
-    simp [eqToHom_comp_pullback_snd_assoc A.hom (pullback.condition (f := p) (g := p))]
 
 section Triangle
 

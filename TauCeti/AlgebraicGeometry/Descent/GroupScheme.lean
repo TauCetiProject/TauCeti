@@ -26,7 +26,7 @@ descent for:
 * finite locally free commutative group schemes
   (`exists_finiteFlatCommGroupScheme_baseChange_hom_isIso`), preserving the rank function along `p`
   and with canonical uniqueness up to group-scheme isomorphism
-  (`TauCeti.DescentDatum.Hom.descendGrpIso`);
+  (`TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.descendIso`);
 * group schemes affine over the base change `G₀ ×_S S'` of an arbitrary group scheme `G₀` over `S`
   (`Hom.exists_grp_baseChange_hom_isIso_of_mem`) and finite locally free homomorphisms into
   `G₀ ×_S S'` (`Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso`); for closed subgroup
@@ -39,10 +39,11 @@ descent for:
   fpqc descent for group schemes affine over `S'`.
 * `TauCeti.DescentDatum.exists_finiteFlatCommGroupScheme_baseChange_hom_isIso`: effective fpqc
   descent for `FiniteFlatCommGroupScheme`, retaining `Scheme.Hom.finrank`.
-* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.baseChangeIsoOfDescent`: the comparison
-  isomorphism `G₀.baseChange p ≅ G` induced by a group-homomorphism isomorphism of descent data
-  (with uniqueness of the descended `FiniteFlatCommGroupScheme` given by
-  `FiniteFlatCommGroupScheme.isoMk (f.descendGrpIso g)`).
+* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.baseChangeIsoOfDescent` and
+  `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.descendIso`: the comparison isomorphism
+  `G₀.baseChange p ≅ G` induced by a group-homomorphism isomorphism of descent data, and the
+  canonical uniqueness isomorphism `G₀ ≅ H₀` between descended `FiniteFlatCommGroupScheme`s
+  (`comp_baseChangeHom_descendIso`, `eq_descendIso`).
 * `TauCeti.DescentDatum.Hom.exists_grp_baseChange_hom_isIso_of_mem` and
   `TauCeti.DescentDatum.Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso`: effective fpqc
   descent of group schemes affine over a descended group scheme `G₀`, preserving morphism
@@ -87,7 +88,8 @@ to `p` on a finite locally free commutative group scheme `G` over `S'`. Then the
 locally free commutative group scheme `G₀` over `S` and an isomorphism `f` of descent data from
 `baseChange p G₀.toOver` to `D` whose underlying morphism over `S'` is a group homomorphism, and
 the rank of `G` over `S'` is the rank of `G₀` pulled back along `p`. Uniqueness up to canonical
-isomorphism `G₀ ≅ H₀` is supplied by `FiniteFlatCommGroupScheme.isoMk (f.descendGrpIso g)`. -/
+isomorphism `G₀ ≅ H₀` is supplied by `FiniteFlatCommGroupScheme.descendIso`
+(`FiniteFlatCommGroupScheme.eq_descendIso`). -/
 theorem exists_finiteFlatCommGroupScheme_baseChange_hom_isIso
     (G : TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme S')
     (D : DescentDatum p G.toOver) [D.IsMon] :
@@ -195,5 +197,54 @@ theorem baseChangeIsoOfDescent_hom_hom_hom_hom (G₀ : FiniteFlatCommGroupScheme
   simp only [baseChangeIsoOfDescent, isoMk_hom, homMk_hom, Iso.trans_hom, Grp.comp',
     Mon.comp_hom', eqToIso.hom]
   exact congrArg (· ≫ f.hom) (eqToHom_map (Grp.forget (Over S')) (G₀.grpMk_baseChange p))
+
+section EffectiveEpi
+
+variable [∀ {Z : Scheme.{u}} (g : Z ⟶ S), EffectiveEpi (pullback.fst g p)]
+  {G₀ H₀ : FiniteFlatCommGroupScheme S} {W : Over S'} [GrpObj W] {D : DescentDatum p W}
+  (f : DescentDatum.Hom (DescentDatum.baseChange p G₀.toOver) D)
+  (g : DescentDatum.Hom (DescentDatum.baseChange p H₀.toOver) D)
+  [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom]
+
+/-- **Uniqueness of effective descent of finite locally free commutative group schemes.** Two
+finite locally free commutative group schemes `G₀` and `H₀` over `S` whose canonical descent data
+are isomorphic to the same `(W, D)`, via isomorphisms `f` and `g` of descent data whose underlying
+maps are monoid homomorphisms, are canonically isomorphic; this is the unique isomorphism carrying
+`f` to `g` (`eq_descendIso`). -/
+noncomputable def descendIso : G₀ ≅ H₀ :=
+  isoMk (f.descendGrpIso g)
+
+/-- The forward homomorphism of `descendIso f g` bundles that of `f.descendGrpIso g`. -/
+@[simp]
+theorem descendIso_hom :
+    (descendIso f g).hom =
+      homMk (f.descendGrpIso (G := Grp.mk G₀.toOver) (H := Grp.mk H₀.toOver) g).hom :=
+  isoMk_hom _
+
+/-- The inverse homomorphism of `descendIso f g` bundles that of `f.descendGrpIso g`. -/
+@[simp]
+theorem descendIso_inv :
+    (descendIso f g).inv =
+      homMk (f.descendGrpIso (G := Grp.mk G₀.toOver) (H := Grp.mk H₀.toOver) g).inv :=
+  isoMk_inv _
+
+/-- The isomorphism `descendIso f g : G₀ ≅ H₀` carries `f` to `g`. -/
+theorem comp_baseChangeHom_descendIso :
+    g.comp (DescentDatum.baseChangeHom p (descendIso f g).hom.hom.hom.hom) = f := by
+  rw [descendIso_hom, homMk_hom]
+  exact f.comp_baseChangeHom_descendGrpIso (G := Grp.mk G₀.toOver) (H := Grp.mk H₀.toOver) g
+
+/-- `descendIso f g` is the unique isomorphism `G₀ ≅ H₀` carrying `f` to `g`. -/
+theorem eq_descendIso (e : G₀ ≅ H₀)
+    (he : g.comp (DescentDatum.baseChangeHom p e.hom.hom.hom.hom) = f) :
+    e = descendIso f g := by
+  ext1
+  apply hom_ext
+  rw [descendIso_hom, homMk_hom]
+  exact congrArg Iso.hom
+    (f.eq_descendGrpIso (G := Grp.mk G₀.toOver) (H := Grp.mk H₀.toOver) g
+      ((toGrp S).mapIso e) he)
+
+end EffectiveEpi
 
 end TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme
