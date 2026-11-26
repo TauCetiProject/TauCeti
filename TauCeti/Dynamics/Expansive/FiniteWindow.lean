@@ -8,17 +8,15 @@ module
 public import TauCeti.Dynamics.Expansive
 import Mathlib.Topology.UniformSpace.Separation
 import TauCeti.Topology.Homeomorph.Semiconj
+import TauCeti.Topology.UniformSpace.Compact
 
 /-!
 # Finite-window forms of expansiveness
 
 On a compact space, the separation of orbits in an expansive system is uniform in a finite window
-of times. If continuous maps `f i : X → Y` separate points through a closed set `V`
-(`∀ i, (f i x, f i y) ∈ V` implies `x = y`), then for every entourage `W` there is a finite set
-`F` of indices such that `∀ i ∈ F, (f i x, f i y) ∈ V` already implies `(x, y) ∈ W`
-(`TauCeti.exists_finset_forall_mem_of_isClosed`). This is the compactness argument: the closed
-sets `{(x, y) | (f i x, f i y) ∈ V}` meet the compact complement of the interior of `W` in the
-empty set.
+of times. Each statement applies the compactness lemma
+`TauCeti.exists_finset_forall_mem_of_isClosed` (in `TauCeti.Topology.UniformSpace.Compact`) to
+the maps `x ↦ m • x` or `x ↦ T ^ n x`.
 
 * For a continuous monoid action on a compact uniform space, expansiveness is equivalent, on a
   `T0` space, to the existence of an entourage `V` such that for every entourage `W` a finite set
@@ -36,27 +34,7 @@ namespace TauCeti
 open Set Filter
 open scoped Uniformity Topology
 
-variable {X : Type*} [UniformSpace X] [CompactSpace X]
-
-/-- **Finite windows.** On a compact uniform space, if continuous maps `f i` into a topological
-space `Y` separate points through a closed set `V`, then for every entourage `W` a finite set `F`
-of indices suffices: `(f i x, f i y) ∈ V` for every `i ∈ F` implies `(x, y) ∈ W`. -/
-theorem exists_finset_forall_mem_of_isClosed {ι Y : Type*} [TopologicalSpace Y] {f : ι → X → Y}
-    (hf : ∀ i, Continuous (f i)) {V : Set (Y × Y)} (hV : IsClosed V)
-    (hsep : ∀ x y, (∀ i, (f i x, f i y) ∈ V) → x = y) {W : Set (X × X)} (hW : W ∈ 𝓤 X) :
-    ∃ F : Finset ι, ∀ x y, (∀ i ∈ F, (f i x, f i y) ∈ V) → (x, y) ∈ W := by
-  have hK : IsCompact (interior W)ᶜ := isOpen_interior.isClosed_compl.isCompact
-  have hclosed (i : ι) : IsClosed {p : X × X | (f i p.1, f i p.2) ∈ V} :=
-    hV.preimage (((hf i).comp continuous_fst).prodMk ((hf i).comp continuous_snd))
-  obtain ⟨F, hF⟩ := hK.elim_finite_subfamily_closed _ hclosed <| by
-    refine Set.disjoint_left.2 fun p hp hmem ↦ hp ?_
-    obtain ⟨x, y⟩ := p
-    obtain rfl : x = y := hsep x y fun i ↦ Set.mem_iInter.1 hmem i
-    exact refl_mem_uniformity (interior_mem_uniformity hW)
-  refine ⟨F, fun x y hxy ↦ interior_subset (by_contra fun hp ↦ ?_)⟩
-  exact Set.disjoint_left.1 hF hp (Set.mem_iInter₂.2 fun i hi ↦ hxy i hi)
-
-variable {M : Type*} [SMul M X]
+variable {X : Type*} [UniformSpace X] [CompactSpace X] {M : Type*} [SMul M X]
 
 /-- **Finite windows for expansive actions.** A continuous expansive action on a compact uniform
 space has a closed entourage `V` such that for every entourage `W` finitely many times suffice:
