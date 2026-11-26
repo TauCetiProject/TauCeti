@@ -36,7 +36,7 @@ unitary group is precisely the block-diagonal subgroup `U(p) × U(q)` (the range
 
 ## Main definitions and results
 
-* `Matrix.unitaryGroupOf.star_exp_mul_mul_exp_eq_iff`: for Hermitian `X`,
+* `Matrix.IsHermitian.star_exp_mul_mul_exp_eq_iff`: for Hermitian `X`,
   `star (exp X) * J * exp X = J ↔ J * X + X * J = 0`.
 * `Matrix.unitaryGroupOf.cartanHomeomorph`, `Matrix.unitaryGroupOf.val_cartanHomeomorph_apply`,
   `Matrix.unitaryGroupOf.coe_cartanHomeomorph_symm_apply_fst`,
@@ -62,7 +62,7 @@ noncomputable section
 open Matrix NormedSpace
 open scoped ComplexOrder MatrixOrder Matrix.Norms.L2Operator
 
-namespace Matrix.unitaryGroupOf
+namespace Matrix.IsHermitian
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal TauCeti.normedAlgebraRatOfReal
 
@@ -72,8 +72,8 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 the form `J` if and only if `J * X + X * J = 0`. -/
 theorem star_exp_mul_mul_exp_eq_iff {J X : Matrix n n 𝕜} (hJ_herm : J.IsHermitian)
     (hJ_sq : J * J = 1) (hX : X.IsHermitian) :
-    star (exp X) * J * exp X = J ↔ J * X + X * J = 0 := by
-  have hexp_star : star (exp X) = exp X := by
+    star (NormedSpace.exp X) * J * NormedSpace.exp X = J ↔ J * X + X * J = 0 := by
+  have hexp_star : star (NormedSpace.exp X) = NormedSpace.exp X := by
     rw [star_eq_conjTranspose, ← exp_conjTranspose, hX.eq]
   rw [hexp_star]
   constructor
@@ -81,19 +81,20 @@ theorem star_exp_mul_mul_exp_eq_iff {J X : Matrix n n 𝕜} (hJ_herm : J.IsHermi
     let uJ : (Matrix n n 𝕜)ˣ := ⟨J, J, hJ_sq, hJ_sq⟩
     have hJXJ_herm : (J * X * J).IsHermitian := by
       simpa only [hJ_herm.eq] using isHermitian_conjTranspose_mul_mul J hX
-    have hexp_conj : J * exp X * J = exp (J * X * J) :=
+    have hexp_conj : J * NormedSpace.exp X * J = NormedSpace.exp (J * X * J) :=
       (NormedSpace.exp_units_conj uJ X).symm
-    have hexp_mul_neg : exp X * exp (-X) = 1 := by
+    have hexp_mul_neg : NormedSpace.exp X * NormedSpace.exp (-X) = 1 := by
       rw [← NormedSpace.exp_add_of_commute (Commute.refl X).neg_right, add_neg_cancel,
         NormedSpace.exp_zero]
-    have hmul_one : J * exp X * J * exp X = 1 := by
-      rw [Matrix.mul_assoc J (exp X) J, Matrix.mul_assoc J, h, hJ_sq]
-    have heq : exp (J * X * J) = exp (-X) := by
-      calc exp (J * X * J)
-          = exp (J * X * J) * (exp X * exp (-X)) := by rw [hexp_mul_neg, Matrix.mul_one]
-        _ = (J * exp X * J * exp X) * exp (-X) := by
+    have hmul_one : J * NormedSpace.exp X * J * NormedSpace.exp X = 1 := by
+      rw [Matrix.mul_assoc J (NormedSpace.exp X) J, Matrix.mul_assoc J, h, hJ_sq]
+    have heq : NormedSpace.exp (J * X * J) = NormedSpace.exp (-X) := by
+      calc NormedSpace.exp (J * X * J)
+          = NormedSpace.exp (J * X * J) * (NormedSpace.exp X * NormedSpace.exp (-X)) := by
+              rw [hexp_mul_neg, Matrix.mul_one]
+        _ = (J * NormedSpace.exp X * J * NormedSpace.exp X) * NormedSpace.exp (-X) := by
             rw [← hexp_conj]; simp only [Matrix.mul_assoc]
-        _ = exp (-X) := by rw [hmul_one, Matrix.one_mul]
+        _ = NormedSpace.exp (-X) := by rw [hmul_one, Matrix.one_mul]
     have hX_anti : J * X * J = -X := (hJXJ_herm.exp_eq_exp_iff hX.neg).1 heq
     calc J * X + X * J = (J * X * J) * J + X * J := by
           simp only [Matrix.mul_assoc, hJ_sq, Matrix.mul_one]
@@ -104,32 +105,38 @@ theorem star_exp_mul_mul_exp_eq_iff {J X : Matrix n n 𝕜} (hJ_herm : J.IsHermi
       rw [SemiconjBy, neg_mul, eq_neg_of_add_eq_zero_left h]
     simpa only [neg_neg] using hS.exp_neg_mul_mul_exp_eq_self
 
+end Matrix.IsHermitian
+
+namespace Matrix.unitaryGroupOf
+
+attribute [local instance] Matrix.l2OpNormedAlgebraReal TauCeti.normedAlgebraRatOfReal
+
+variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
+
+private lemma expUnit_mem_unitaryGroupOf_iff {J X : Matrix n n 𝕜} (hJ_herm : J.IsHermitian)
+    (hJ_sq : J * J = 1) (hX : X.IsHermitian) :
+    TauCeti.expUnit X ∈ unitaryGroupOf J ↔ J * X + X * J = 0 := by
+  rw [mem_unitaryGroupOf_iff, TauCeti.expUnit_coe, hJ_herm.star_exp_mul_mul_exp_eq_iff hJ_sq hX]
+
 private lemma expUnit_smul_mem_of_mem {J : Matrix n n 𝕜} (hJ_herm : J.IsHermitian)
     (hJ_sq : J * J = 1) (X : Matrix n n 𝕜) (hX : IsSelfAdjoint X)
     (hmem : TauCeti.expUnit X ∈ unitaryGroupOf J) (t : ℝ) :
     TauCeti.expUnit (t • X) ∈ unitaryGroupOf J := by
-  have hX' : X.IsHermitian := isHermitian_iff_isSelfAdjoint.2 hX
-  have hanti : J * X + X * J = 0 := by
-    rw [mem_unitaryGroupOf_iff, TauCeti.expUnit_coe,
-      star_exp_mul_mul_exp_eq_iff hJ_herm hJ_sq hX'] at hmem
-    exact hmem
+  have hanti : J * X + X * J = 0 :=
+    (expUnit_mem_unitaryGroupOf_iff hJ_herm hJ_sq (isHermitian_iff_isSelfAdjoint.2 hX)).1 hmem
   have htX : (t • X).IsHermitian := isHermitian_iff_isSelfAdjoint.2 (by
     rw [IsSelfAdjoint, star_smul, star_trivial, hX.star_eq])
-  rw [mem_unitaryGroupOf_iff, TauCeti.expUnit_coe,
-    star_exp_mul_mul_exp_eq_iff hJ_herm hJ_sq htX, Matrix.mul_smul, Matrix.smul_mul, ← smul_add,
-    hanti, smul_zero]
+  rw [expUnit_mem_unitaryGroupOf_iff hJ_herm hJ_sq htX, Matrix.mul_smul, Matrix.smul_mul,
+    ← smul_add, hanti, smul_zero]
 
 private lemma forall_expUnit_smul_mem_iff {J : Matrix n n 𝕜} (hJ_herm : J.IsHermitian)
     (hJ_sq : J * J = 1) (X : selfAdjoint (Matrix n n 𝕜)) :
     (∀ t : ℝ, TauCeti.expUnit (t • (X : Matrix n n 𝕜)) ∈ unitaryGroupOf J) ↔
       J * (X : Matrix n n 𝕜) + (X : Matrix n n 𝕜) * J = 0 := by
   have hX' : (X : Matrix n n 𝕜).IsHermitian := isHermitian_iff_isSelfAdjoint.2 X.property
-  refine ⟨fun h ↦ ?_, fun h t ↦ expUnit_smul_mem_of_mem hJ_herm hJ_sq _ X.property ?_ t⟩
-  · have h1 : TauCeti.expUnit (X : Matrix n n 𝕜) ∈ unitaryGroupOf J := by simpa using h 1
-    rwa [mem_unitaryGroupOf_iff, TauCeti.expUnit_coe,
-      star_exp_mul_mul_exp_eq_iff hJ_herm hJ_sq hX'] at h1
-  · rwa [mem_unitaryGroupOf_iff, TauCeti.expUnit_coe,
-      star_exp_mul_mul_exp_eq_iff hJ_herm hJ_sq hX']
+  refine ⟨fun h ↦ (expUnit_mem_unitaryGroupOf_iff hJ_herm hJ_sq hX').1 (by simpa using h 1),
+    fun h t ↦ expUnit_smul_mem_of_mem hJ_herm hJ_sq _ X.property
+      ((expUnit_mem_unitaryGroupOf_iff hJ_herm hJ_sq hX').2 h) t⟩
 
 /-- **Global Cartan decomposition of `unitaryGroupOf J`** for a Hermitian involution `J` over `ℝ`
 or `ℂ`: the map `(k, X) ↦ k * exp X` is a homeomorphism from the product of
@@ -160,7 +167,7 @@ theorem val_cartanHomeomorph_apply {J : Matrix n n 𝕜} (hJ_herm : J.IsHermitia
     ((cartanHomeomorph hJ_herm hJ_sq p : GL n 𝕜) : Matrix n n 𝕜) =
       (p.1.val : Matrix n n 𝕜) * exp (p.2.val : Matrix n n 𝕜) := by
   rw [cartanHomeomorph, Homeomorph.trans_apply, Subgroup.val_cartanHomeomorph_apply]
-  rfl
+  simp [Homeomorph.setCongr]
 
 /-- The unitary factor of the Cartan decomposition of `g ∈ unitaryGroupOf J` is its polar unitary
 factor. -/
@@ -169,7 +176,8 @@ theorem coe_cartanHomeomorph_symm_apply_fst {J : Matrix n n 𝕜} (hJ_herm : J.I
     (hJ_sq : J * J = 1) (g : unitaryGroupOf J) :
     (((cartanHomeomorph hJ_herm hJ_sq).symm g).1 : unitaryGroup n 𝕜) =
       (g : GL n 𝕜).polarUnitary := by
-  rw [cartanHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm]
+  simp only [cartanHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Homeomorph.refl_symm, Homeomorph.refl_apply]
   exact Subgroup.coe_cartanHomeomorph_symm_apply_fst _ _ g
 
 /-- The Hermitian factor of the Cartan decomposition of `g ∈ unitaryGroupOf J` is
@@ -180,8 +188,9 @@ theorem coe_cartanHomeomorph_symm_apply_snd {J : Matrix n n 𝕜} (hJ_herm : J.I
     ((((cartanHomeomorph hJ_herm hJ_sq).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
       Matrix n n 𝕜) =
       CFC.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [cartanHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm]
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
+  simp only [cartanHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+    Homeomorph.coe_prodCongr, Prod.map_snd]
+  simpa [Homeomorph.setCongr] using Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
 
 /-- **Unique polar decomposition in `unitaryGroupOf J`** for a Hermitian involution `J` over `ℝ` or
 `ℂ`: every `g : unitaryGroupOf J` factors uniquely as `g = k * exp X` with `k` unitary in

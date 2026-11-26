@@ -94,8 +94,8 @@ The basic structure of these groups is recorded here.
   transposition.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
   `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
-* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff_mem_unitaryGroup`: over a
-  field of characteristic not `2`, the image of `U(p) × U(q)` is `U(p, q) ∩ U(p ⊕ q)`.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff_mem_unitaryGroup`: over an
+  integral domain of characteristic not `2`, the image of `U(p) × U(q)` is `U(p, q) ∩ U(p ⊕ q)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
   characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`: over a field of
@@ -477,30 +477,20 @@ theorem mem_range_fromBlocksHom_iff {g : indefiniteUnitaryGroup p q R} :
   rw [val_fromBlocksHom]
   exact (hB0 ▸ hM).symm
 
-end indefiniteUnitaryGroup
-
-end CommRing
-
-section Field
-
-variable {p q} {K : Type*} [Field K] [StarRing K]
-
-namespace indefiniteUnitaryGroup
-
 /-- An element of `U(p, q)` (or `O(p, q)`) is unitary in the ambient space if and only if it lies
 in the block-diagonal subgroup `U(p) × U(q)` (the range of `fromBlocksHom`). -/
-theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup [NeZero (2 : K)]
-    (g : indefiniteUnitaryGroup p q K) :
-    g ∈ (fromBlocksHom p q K).range ↔
-      ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) ∈ unitaryGroup (p ⊕ q) K := by
+theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup [IsDomain R] [NeZero (2 : R)]
+    (g : indefiniteUnitaryGroup p q R) :
+    g ∈ (fromBlocksHom p q R).range ↔
+      ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) ∈ unitaryGroup (p ⊕ q) R := by
   constructor
   · rintro ⟨x, rfl⟩
     rw [val_fromBlocksHom, ← UnitaryGroup.coe_sum]
     exact (UnitaryGroup.sum x).property
   · intro hU
     rw [mem_range_fromBlocksHom_iff]
-    set M : Matrix (p ⊕ q) (p ⊕ q) K := ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K)
-    set J : Matrix (p ⊕ q) (p ⊕ q) K := indefiniteDiagonal p q K
+    set M : Matrix (p ⊕ q) (p ⊕ q) R := ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)
+    set J : Matrix (p ⊕ q) (p ⊕ q) R := indefiniteDiagonal p q R
     have hJM : Mᴴ * J * M = J := by
       simpa only [star_eq_conjTranspose] using mem_unitaryGroupOf_iff.1 g.property
     have hcomm : J * M = M * J := by
@@ -513,10 +503,20 @@ theorem mem_range_fromBlocksHom_iff_mem_unitaryGroup [NeZero (2 : K)]
     rw [← fromBlocks_toBlocks M, hJblock] at h21
     simp only [fromBlocks_multiply, Matrix.zero_mul, Matrix.mul_zero, add_zero, zero_add,
       Matrix.one_mul, Matrix.mul_one, Matrix.neg_mul, toBlocks_fromBlocks₂₁] at h21
-    have h2 : (2 : K) • M.toBlocks₂₁ = 0 := by
+    have h2 : (2 : R) • M.toBlocks₂₁ = 0 := by
       rw [two_smul]
       exact eq_neg_iff_add_eq_zero.1 h21.symm
     exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+
+end indefiniteUnitaryGroup
+
+end CommRing
+
+section Field
+
+variable {p q} {K : Type*} [Field K] [StarRing K]
+
+namespace indefiniteUnitaryGroup
 
 variable [CharZero K]
 
