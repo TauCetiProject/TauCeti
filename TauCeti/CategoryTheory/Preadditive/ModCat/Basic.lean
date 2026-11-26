@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-public import Mathlib.CategoryTheory.Linear.Basic
+public import Mathlib.CategoryTheory.Center.Linear
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
 /-!
@@ -20,15 +20,20 @@ additive functors `C ⥤ AddCommGrpCat` are the objects of `ModCat Cᵒᵖ`. For
 
 Kernels, cokernels and (co)limits in a functor category are computed pointwise, so a (co)limit
 of additive functors is again additive. Hence the additive functors `D ⥤ A` into a preadditive
-category `A` contain zero and are closed under kernels, cokernels, finite products, and all
-limits and colimits that exist in `A`. Mathlib's `CategoryTheory/Abelian/Subcategory.lean` then
-makes `ModCat C` abelian, and it has every shape of colimit that `AddCommGrpCat.{w}` has.
+category `A` contain zero and are closed under kernels, cokernels, and all limits and colimits
+that exist in `A`. They are also closed under every finite product that exists in `D ⥤ A`, since
+such a product is a biproduct and the additive evaluation functors preserve it. Mathlib's
+`CategoryTheory/Abelian/Subcategory.lean` then makes `ModCat C` abelian, and it has every shape of
+colimit that `AddCommGrpCat.{w}` has.
 
 The representable functors `Hom(-, X)` form the Yoneda embedding `ModCat.yoneda : C ⥤ ModCat C`,
-and they are projective by the Yoneda lemma. When `D` is `R`-linear, so is the category
-`D ⥤+ A` of additive functors into any preadditive `A`, with `r ∈ R` acting on `φ : F ⟶ G` by
-`φ ≫ G(r • 𝟙)` ([Mitchell, §11]); in particular `ModCat D` is `R`-linear. Finally, finitely
-presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
+and they are projective by the Yoneda lemma. When `D` is linear over a ring `R`, so is the
+category `D ⥤+ A` of additive functors into any preadditive `A`, with `r ∈ R` acting on
+`φ : F ⟶ G` by `φ ≫ G(r • 𝟙)` ([Mitchell, §11]); in particular `ModCat D` is `R`-linear. This
+structure is a definition with a scoped instance, not a global instance: at `R = ℤ` it agrees with
+the canonical action of the abelian groups `F ⟶ G` only propositionally, and when `A` is
+`R`-linear the action through the target is different. Finally, finitely presented functors are
+additive, so `mod C` is a full subcategory of `ModCat C`.
 
 ## Main definitions
 
@@ -36,8 +41,10 @@ presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
 * `TauCeti.AdditiveFunctor.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an additive functor
   `G` out of an `R`-linear category.
+* `TauCeti.AdditiveFunctor.sourceToCatCenter R : R →+* CatCenter (D ⥤+ A)`: this action as a
+  ring homomorphism into the center.
 * `TauCeti.AdditiveFunctor.sourceLinear R : Linear R (D ⥤+ A)`: the `R`-linear structure induced
-  by an `R`-linear source.
+  by an `R`-linear source, for a ring `R`.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
 
 ## Main results
@@ -45,12 +52,16 @@ presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 * `TauCeti.additiveFunctor_isClosedUnderLimitsOfShape`,
   `TauCeti.additiveFunctor_isClosedUnderColimitsOfShape`: additive functors are closed under the
   limits and colimits of the target, together with instances for zero, kernels, cokernels and
-  finite products.
+  all existing finite products.
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances and Mathlib's full-subcategory instances.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
-* `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear preadditive category `D`; specializing `D`
-  to an opposite category gives `Linear R (ModCat D)`.
+* `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
+  preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
+  category gives `Linear R (ModCat D)`.
+* `TauCeti.AdditiveFunctor.sourceLinear_smul_int`, `TauCeti.AdditiveFunctor.smulEnd_int`,
+  `TauCeti.AdditiveFunctor.smulEnd_nat`: at `ℤ` and `ℕ` the source action is the canonical
+  multiple.
 
 ## References
 
@@ -69,10 +80,12 @@ section Closure
 
 variable {D : Type*} [Category* D] [Preadditive D] {A : Type*} [Category* A] [Preadditive A]
 
-/-- A limit of additive functors is additive: limits in `D ⥤ A` are computed pointwise, so
-`F.map (f + g)` is detected by its composites with the projections of the pointwise limit. -/
-instance additiveFunctor_isClosedUnderLimitsOfShape (J : Type*) [Category* J]
-    [HasLimitsOfShape J A] : (additiveFunctor D A).IsClosedUnderLimitsOfShape J where
+/-- A limit of additive functors is additive when evaluation at each object of `D` preserves
+limits of shape `J`: then `F.map (f + g)` is detected by its composites with the projections of
+the pointwise limit. -/
+theorem additiveFunctor_isClosedUnderLimitsOfShape_of_preserves (J : Type*) [Category* J]
+    [∀ Y : D, PreservesLimitsOfShape J ((evaluation D A).obj Y)] :
+    (additiveFunctor D A).IsClosedUnderLimitsOfShape J where
   limitsOfShape_le := by
     rintro F ⟨h⟩
     refine ⟨fun {X Y f g} ↦ ?_⟩
@@ -82,6 +95,11 @@ instance additiveFunctor_isClosedUnderLimitsOfShape (J : Type*) [Category* J]
       (h.π.app j).naturality u
     simp only [Functor.mapCone_π_app, evaluation_obj_map, Preadditive.add_comp, hn,
       Functor.map_add, Preadditive.comp_add]
+
+/-- A limit of additive functors is additive: limits in `D ⥤ A` are computed pointwise. -/
+instance additiveFunctor_isClosedUnderLimitsOfShape (J : Type*) [Category* J]
+    [HasLimitsOfShape J A] : (additiveFunctor D A).IsClosedUnderLimitsOfShape J :=
+  additiveFunctor_isClosedUnderLimitsOfShape_of_preserves J
 
 /-- A colimit of additive functors is additive: colimits in `D ⥤ A` are computed pointwise, so
 `F.map (f + g)` is detected by its composites with the injections of the pointwise colimit. -/
@@ -113,9 +131,11 @@ instance [HasCoequalizers A] : (additiveFunctor D A).IsClosedUnderCokernels wher
     rintro _ ⟨f, k, hk, hX, hY⟩
     exact (additiveFunctor D A).prop_of_isColimit hk (by rintro (_ | _) <;> assumption)
 
-/-- A finite product of additive functors is additive. -/
-instance [HasFiniteProducts A] : (additiveFunctor D A).IsClosedUnderFiniteProducts where
-  isClosedUnderLimitsOfShape _ _ := inferInstance
+/-- A finite product of additive functors is additive, whenever it exists in `D ⥤ A`. A finite
+product in the preadditive category `D ⥤ A` is a biproduct, so the additive evaluation functors
+preserve it, even when `A` lacks other finite products. -/
+instance : (additiveFunctor D A).IsClosedUnderFiniteProducts where
+  isClosedUnderLimitsOfShape _ _ := additiveFunctor_isClosedUnderLimitsOfShape_of_preserves _
 
 end Closure
 
@@ -155,9 +175,12 @@ end ModCat
 section Linear
 
 variable {D : Type*} [Category* D] [Preadditive D] {A : Type*} [Category* A] [Preadditive A]
-  (R : Type*) [Semiring R] [Linear R D]
 
 namespace AdditiveFunctor
+
+section Semiring
+
+variable (R : Type*) [Semiring R] [Linear R D]
 
 /-- The action of `r ∈ R` on an additive functor `G` out of an `R`-linear category: the
 endomorphism of `G` whose component at `X` is `G(r • 𝟙 X)`. -/
@@ -206,55 +229,108 @@ theorem smulEnd_zero (G : D ⥤+ A) : smulEnd R 0 G = 0 := by
   ext X : 3
   simp
 
-/-- The `R`-linear structure on `D ⥤+ A` coming from the `R`-linear source `D`: `r ∈ R` acts on
-`φ : F ⟶ G` by `φ ≫ smulEnd R r G`, with components `φ_X ≫ G(r • 𝟙 X)` ([Mitchell, §11]).
+/-- The action of an `R`-linear source on additive functors, as a ring homomorphism into the
+center of `D ⥤+ A`: the central element attached to `r` has component `smulEnd R r G` at `G`. -/
+def sourceToCatCenter : R →+* CatCenter (D ⥤+ A) where
+  toFun r := .of { app G := smulEnd R r G, naturality _ _ φ := comp_smulEnd R r φ }
+  map_one' := CatCenter.ext _ _ fun G ↦ smulEnd_one R G
+  map_mul' r s := CatCenter.ext _ _ fun G ↦ smulEnd_mul R r s G
+  map_zero' := CatCenter.ext _ _ fun G ↦ smulEnd_zero R G
+  map_add' r s := CatCenter.ext _ _ fun G ↦ smulEnd_add R r s G
 
-It is not a global instance: when `A` is `R`-linear too, Mathlib's `functorCategoryLinear` and
-`Linear.fullSubcategory` give `D ⥤+ A` the pointwise `R`-linear structure of the target, which
-differs from this one on functors that are additive but not `R`-linear. -/
+/-- The component of `sourceToCatCenter R r` at `G` is `smulEnd R r G`. -/
+@[simp]
+theorem sourceToCatCenter_app (r : R) (G : D ⥤+ A) :
+    (sourceToCatCenter R r).app G = smulEnd R r G := by
+  unfold sourceToCatCenter
+  rfl
+
+end Semiring
+
+section Ring
+
+variable (R : Type*) [Ring R] [Linear R D]
+
+/-- The `R`-linear structure on `D ⥤+ A` coming from the `R`-linear source `D`: `r ∈ R` acts on
+`φ : F ⟶ G` by `φ ≫ smulEnd R r G`, with components `φ_X ≫ G(r • 𝟙 X)` ([Mitchell, §11]). It is
+`Linear.ofRingMorphism` applied to `sourceToCatCenter R`.
+
+It is a definition, not an instance, because `D ⥤+ A` may already carry other linear structures.
+When `A` is `R`-linear, Mathlib's `functorCategoryLinear` and `Linear.fullSubcategory` give the
+pointwise action through the target, which is a different action on functors that are additive
+but not `R`-linear. At `R = ℤ`, Mathlib's `preadditiveIntLinear` gives the canonical action of the
+abelian groups `F ⟶ G`; it agrees with this one only propositionally (`sourceLinear_smul_int`),
+not definitionally. So activating `sourceLinear ℤ` as a local instance creates a non-definitional
+diamond; for other rings a local instance is safe as long as `A` is not `R`-linear. For
+`D ⥤+ AddCommGrpCat` the scoped instance `TauCeti.ModCat.linear` provides this structure. -/
 @[instance_reducible]
-def sourceLinear : Linear R (D ⥤+ A) where
-  homModule _ G :=
-    { smul r φ := φ ≫ smulEnd R r G
-      one_smul φ := (congrArg (φ ≫ ·) (smulEnd_one R G)).trans (Category.comp_id φ)
-      mul_smul r s φ := (congrArg (φ ≫ ·) (smulEnd_mul R r s G)).trans
-        (Category.assoc _ _ _).symm
-      smul_zero _ := zero_comp
-      smul_add _ _ _ := Preadditive.add_comp _ _ _ _ _ _
-      add_smul r s φ := (congrArg (φ ≫ ·) (smulEnd_add R r s G)).trans
-        (Preadditive.comp_add _ _ _ _ _ _)
-      zero_smul φ := (congrArg (φ ≫ ·) (smulEnd_zero R G)).trans comp_zero }
-  smul_comp _ _ _ r φ ψ :=
-    (Category.assoc _ _ _).trans <| ((congrArg (φ ≫ ·) (comp_smulEnd R r ψ)).symm).trans
-      (Category.assoc _ _ _).symm
-  comp_smul _ _ _ _ _ _ := (Category.assoc _ _ _).symm
+def sourceLinear : Linear R (D ⥤+ A) :=
+  Linear.ofRingMorphism (sourceToCatCenter R)
+
+section
 
 attribute [local instance] sourceLinear
-
-/-- In `sourceLinear R`, the scalar `r` acts on `φ : F ⟶ G` by composing with `smulEnd R r G`. -/
-theorem smul_eq_comp_smulEnd (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) :
-    r • φ = φ ≫ smulEnd R r G := by
-  unfold sourceLinear
-  rfl
 
 /-- In `sourceLinear R`, the components of `r • φ` are `φ_X ≫ G(r • 𝟙 X)`. -/
 @[simp]
 theorem smul_hom_app (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) (X : D) :
     (r • φ).hom.app X = φ.hom.app X ≫ G.obj.map (r • 𝟙 X) := by
-  simp [smul_eq_comp_smulEnd]
+  have h : r • φ = φ ≫ (sourceToCatCenter R r).app G := by
+    unfold sourceLinear
+    exact Linear.smulOfRingMorphism_smul_eq' (sourceToCatCenter R) r φ
+  simp [h]
+
+end
+
+end Ring
+
+/-! ### Comparison with the canonical actions of `ℕ` and `ℤ`
+
+Every preadditive category is `ℕ`- and `ℤ`-linear through `preadditiveNatLinear` and
+`preadditiveIntLinear`, so `smulEnd` makes sense at `R = ℕ` and `R = ℤ`, and `sourceLinear` at
+`R = ℤ` (it needs a ring, so there is no source structure at `ℕ`). They agree there with the
+canonical multiples in the abelian groups of morphisms, but only propositionally. -/
+
+/-- At `ℕ`, the action of `n` is the canonical multiple `n • 𝟙 G`. -/
+theorem smulEnd_nat [Linear ℕ D] (n : ℕ) (G : D ⥤+ A) : smulEnd ℕ n G = n • 𝟙 G := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [smulEnd_add, smulEnd_one, ih, succ_nsmul]
+
+/-- At `ℤ`, the action of `n` is the canonical multiple `n • 𝟙 G`: there is only one ring
+homomorphism from `ℤ` to the center, so `sourceToCatCenter ℤ` is `Linear.toCatCenter ℤ`. -/
+theorem smulEnd_int [Linear ℤ D] (n : ℤ) (G : D ⥤+ A) : smulEnd ℤ n G = n • 𝟙 G := by
+  have h : (sourceToCatCenter ℤ n).app G = (Linear.toCatCenter ℤ (D ⥤+ A) n).app G := by
+    rw [RingHom.ext_int (sourceToCatCenter ℤ) (Linear.toCatCenter ℤ (D ⥤+ A))]
+  rw [sourceToCatCenter_app] at h
+  exact h
+
+/-- At `ℤ`, the scalar multiplication of `sourceLinear ℤ` is the canonical `ℤ`-multiple in the
+abelian group `F ⟶ G`. The two agree propositionally but not definitionally. -/
+theorem sourceLinear_smul_int [Linear ℤ D] (n : ℤ) {F G : D ⥤+ A} (φ : F ⟶ G) :
+    ((sourceLinear ℤ).homModule F G).smul n φ = n • φ :=
+  int_smul_eq_zsmul ((sourceLinear ℤ).homModule F G) n φ
 
 end AdditiveFunctor
 
+namespace ModCat
+
 /-- **Additive functors into abelian groups out of an `R`-linear category are `R`-linear**, with
-the structure `AdditiveFunctor.sourceLinear R`. The target `AddCommGrpCat` is linear only over
-`ℕ` and `ℤ`, where the two actions agree, so this instance does not compete with the pointwise
-structure. -/
-instance AdditiveFunctor.linearAddCommGrpCat : Linear R (D ⥤+ AddCommGrpCat.{w}) :=
+the structure `AdditiveFunctor.sourceLinear R`. This is a scoped instance; use
+`open scoped TauCeti.ModCat` to get it. It is scoped because at `R = ℤ` it competes with
+Mathlib's `preadditiveIntLinear`: the two actions agree only propositionally
+(`AdditiveFunctor.sourceLinear_smul_int`), not definitionally. Its low priority makes
+`preadditiveIntLinear` win at `ℤ` when the scope is open. -/
+scoped instance (priority := low) linear (R : Type*) [Ring R] [Linear R D] :
+    Linear R (D ⥤+ AddCommGrpCat.{w}) :=
   AdditiveFunctor.sourceLinear R
 
-/-- **`Mod D` is `R`-linear** when `D` is, by specializing the instance above to the source
-`Dᵒᵖ`. -/
-example : Linear R (ModCat.{w} D) := inferInstance
+end ModCat
+
+open scoped TauCeti.ModCat in
+/-- **`Mod D` is `R`-linear** when `D` is, once the scope `TauCeti.ModCat` is open: specialize
+the scoped instance `ModCat.linear` to the source `Dᵒᵖ`. -/
+example (R : Type*) [Ring R] [Linear R D] : Linear R (ModCat.{w} D) := inferInstance
 
 end Linear
 
