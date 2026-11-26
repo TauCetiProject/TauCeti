@@ -70,8 +70,7 @@ private theorem ortho_proj_sup_hyperbolic (hε : ε * ε = 1) {S : Submodule K (
   have hlin {u z : n → K} (a : K) (h₁ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (h₂ : (σ ∘ z) ⬝ᵥ (Q *ᵥ w) = 0) :
       (σ ∘ (u + a • z)) ⬝ᵥ (Q *ᵥ w) = 0 := by simp [TauCeti.map_comp_smul, smul_dotProduct, h₁, h₂]
   set s₁ := (s₀ + (ε * ((σ ∘ y) ⬝ᵥ (Q *ᵥ (v - s₀)))) • x) + ((σ ∘ x) ⬝ᵥ (Q *ᵥ (v - s₀))) • y
-  have hsub : v - s₁ = w := by
-    dsimp [s₁]; rw [add_assoc s₀, ← sub_sub v s₀]; nth_rw 1 [hr]; exact add_sub_cancel_left _ _
+  have hsub : v - s₁ = w := by dsimp [s₁]; linear_combination (norm := module) hr
   refine ⟨s₁, Submodule.add_mem_sup (Submodule.add_mem_sup hs₀
     (Submodule.mem_span_singleton.mpr ⟨_, rfl⟩)) (Submodule.mem_span_singleton.mpr ⟨_, rfl⟩),
     hsub ▸ (S ⊔ (K ∙ x)).forall_mem_sup_span_singleton (S.forall_mem_sup_span_singleton
@@ -258,7 +257,7 @@ private theorem exists_mem_iSup_compensated_reflection_aux {v : n → K}
     ∃ r₀ ∈ Q.elementaryUnitaryGroup σ, RescalesPair e f σ r₀ (-(d⁻¹ * σ τ)) ∧
       ∀ w : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0 →
         (σ ∘ v) ⬝ᵥ (Q *ᵥ w) = 0 → (r₀ : Matrix n n K) *ᵥ w = w := by
-  have hε0 := left_ne_zero_of_mul (hε ▸ one_ne_zero); have hστ0 := (map_ne_zero σ).mpr hτ0
+  have hε0 := left_ne_zero_of_mul_eq_one hε; have hστ0 := (map_ne_zero σ).mpr hτ0
   set c₀ := -(d⁻¹ * σ τ); have hc₀ := neg_ne_zero.mpr (mul_ne_zero (inv_ne_zero hd) hστ0)
   set z := e + (σ τ + d) • f + τ • v; set u₂ := e + d • f
   obtain ⟨hz, hu₂, hu₂z, hu₂ce⟩ :=
@@ -318,9 +317,12 @@ private theorem exists_mem_iSup_compensated_reflection {v : n → K} (hev : (σ 
   obtain ⟨w, hvw, hw_ortho, hx_eq⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_add_smul hvv x
   set α := ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x))
   have hαμ : α * μ = α + τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x)) := by dsimp [α, μ]; field_simp
-  (conv_lhs => rw [hx_eq, mulVec_add, mulVec_smul,
-    hr₀w w (hw_ortho _ hev hex) (hw_ortho _ hfv hfx) hvw, hrv', smul_smul, hαμ])
-  (conv_rhs => enter [1]; rw [hx_eq]); module
+  calc (r₀ : Matrix n n K) *ᵥ x
+      = (r₀ : Matrix n n K) *ᵥ (w + α • v) := by rw [hx_eq]
+    _ = w + (α + τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x))) • v := by
+        rw [mulVec_add, mulVec_smul, hr₀w w (hw_ortho _ hev hex) (hw_ortho _ hfv hfx) hvw,
+          hrv', smul_smul, hαμ]
+    _ = x + (τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x))) • v := by linear_combination (norm := module) -hx_eq
 
 private theorem exists_mem_iSup_anisotropic_pair_ne {S : Submodule K (n → K)}
     (hSe : ∀ s ∈ S, (σ ∘ e) ⬝ᵥ (Q *ᵥ s) = 0) (hSf : ∀ s ∈ S, (σ ∘ f) ⬝ᵥ (Q *ᵥ s) = 0)
@@ -352,7 +354,7 @@ private theorem exists_mem_iSup_anisotropic_pair_ne {S : Submodule K (n → K)}
   have h1 := congrArg σ hgx; simp only [apply_comp_dotProduct_mulVec hσ hQ] at h1
   rw [coe_mul_specialIsometryGroup_mulVec, hr₁w _ he_gx hf_gx, comp_add_dotProduct_mulVec,
     TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, hgx,
-    mul_left_cancel₀ (left_ne_zero_of_mul (hε ▸ one_ne_zero)) h1]
+    mul_left_cancel₀ (left_ne_zero_of_mul_eq_one hε) h1]
   exact fun h_eq ↦ mul_ne_zero ((map_ne_zero σ).mpr (mul_ne_zero hτ₁0 hxx)) hxx
     (by linear_combination h_eq)
 
@@ -389,10 +391,10 @@ private theorem exists_mem_iSup_fixes_anisotropic {S : Submodule K (n → K)}
   have hfv : (σ ∘ f) ⬝ᵥ (Q *ᵥ v) = 0 := by rw [mulVec_sub, dotProduct_sub,
     comp_dotProduct_mulVec_mulVec_eq_zero_of_mulVec_eq_smul hg₁Q
       (inv_ne_zero ((map_ne_zero σ).mpr hc₁)) hgf₁ hfx, hfx, sub_zero]
-  have hvs (s : n → K) (hs : s ∈ S) : (σ ∘ v) ⬝ᵥ (Q *ᵥ s) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (by
-      rw [mulVec_sub, dotProduct_sub]; nth_rw 1 [← hgS₁ s hs]
-      rw [comp_mulVec_dotProduct_mulVec_mulVec hg₁Q, hxU s (by simp [hs]), sub_zero])
+  have hvs (s : n → K) (hs : s ∈ S) : (σ ∘ v) ⬝ᵥ (Q *ᵥ s) = 0 := by
+    have hys := comp_mulVec_dotProduct_mulVec_mulVec hg₁Q x s
+    rw [hgS₁ s hs] at hys
+    rw [map_comp_sub, sub_dotProduct, hys, sub_self]
   have hα0 : α ≠ 0 := by simpa [α, v, map_comp_sub, sub_dotProduct, sub_ne_zero] using hne₁
   have hbvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = -(α + ε * σ α) := by
     have hσα : ε * σ α = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) - (σ ∘ x) ⬝ᵥ (Q *ᵥ x) := by
@@ -469,7 +471,7 @@ private theorem exists_mem_iSup_fixes_totally_isotropic {S : Submodule K (n → 
 omit [DecidableEq n] hσ hQ hdet htr hd hdε he hf hef hgen in
 private theorem finrank_lt_card_of_ortho {S : Submodule K (n → K)}
     (hSf : ∀ s ∈ S, (σ ∘ f) ⬝ᵥ (Q *ᵥ s) = 0) : Module.finrank K S < Fintype.card n := by
-  have he_notMem : e ∉ S := fun heS ↦ left_ne_zero_of_mul (hε ▸ one_ne_zero) (hfe ▸ hSf e heS)
+  have he_notMem : e ∉ S := fun heS ↦ left_ne_zero_of_mul_eq_one hε (hfe ▸ hSf e heS)
   simpa [Module.finrank_fintype_fun_eq_card] using
     Submodule.finrank_lt (s := S) fun htop ↦ he_notMem (htop ▸ Submodule.mem_top)
 
@@ -504,7 +506,7 @@ private theorem mem_iSup_of_fixes_submodule :
         have hSx s (hs : s ∈ S) := hxU s (by simp [hs])
         have hSy s (hs : s ∈ S) := hyU s (by simp [hs])
         set S' : Submodule K (n → K) := (S ⊔ (K ∙ x)) ⊔ (K ∙ y)
-        have hx_notMem : x ∉ S := fun hxS ↦ left_ne_zero_of_mul (hε ▸ one_ne_zero)
+        have hx_notMem : x ∉ S := fun hxS ↦ left_ne_zero_of_mul_eq_one hε
           (hyx ▸ (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hSy x hxS))
         have hfin : Module.finrank K S < Module.finrank K S' := (Nat.lt_succ_self _).trans_le
           ((Submodule.finrank_sup_span_singleton hx_notMem).symm.trans_le

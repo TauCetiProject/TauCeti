@@ -142,7 +142,7 @@ private theorem siegelTransvection_mem_elementary_of_exists_param {c c₀ : K}
     (hc : c + ε * σ c + ε * ((σ ∘ w₀) ⬝ᵥ (Q *ᵥ w₀)) = 0) {s₀ : Q.specialIsometryGroup σ}
     (hs₀ : s₀ ∈ Q.elementaryUnitaryGroup σ) (hcs₀ : ↑s₀ = Q.siegelTransvection σ ε e w₀ c₀) :
     MemElemSiegel Q σ ε e w₀ c := fun {s} hs hcs ↦ by
-  have he₀ : e ≠ 0 := fun h0 ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa [h0] using hef.symm)
+  have he₀ := left_ne_zero_of_comp_dotProduct_mulVec_eq_one hef
   have hc₀ := (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet he₀ he
     hew₀ c₀).mp ⟨s₀, s₀.property, hcs₀⟩
   obtain ⟨t₀, ht₀, hct₀⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
@@ -223,7 +223,7 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
   have hey' : (σ ∘ e) ⬝ᵥ (Q *ᵥ y') = 0 := by dsimp [y']; split_ifs <;> simp [hey₀]
   have hwy' : (σ ∘ (w₀ + y')) ⬝ᵥ (Q *ᵥ u₀) ≠ 0 := by
     dsimp [y']; split_ifs with h0
-    · simpa [comp_add_dotProduct_mulVec, h0, hy₀u₀] using left_ne_zero_of_mul (hε ▸ one_ne_zero)
+    · simpa [comp_add_dotProduct_mulVec, h0, hy₀u₀] using left_ne_zero_of_mul_eq_one hε
     · simpa using h0
   obtain ⟨t, ht⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hu₀_iso hwy'
   set x₁ := w₀ + y' + t • u₀; set x₂ := (-t) • u₀; set x₃ := -y'

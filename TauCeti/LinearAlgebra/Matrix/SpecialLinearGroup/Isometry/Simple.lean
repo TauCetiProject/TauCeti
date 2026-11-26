@@ -32,8 +32,11 @@ namespace Matrix
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} {σ : K →+* K}
   {ε : K}
 
-/-- **Iwasawa's theorem for projective special unitary groups**: when transvections generate and
-`Q.specialIsometryGroup σ` is perfect, its central quotient is simple. -/
+/-- **Iwasawa's theorem for projective special unitary groups**: for involutive `σ` and invertible
+`ε`-Hermitian `Q` with surjective `ε`-trace, nonzero skew-trace, nonempty
+`Matrix.isotropicPoints Q σ`, and either a `σ`-fixed scalar outside `{0, 1}`, `Fintype.card n ≤ 2`,
+or Witt index at least two, if `Q.specialIsometryGroup σ` is perfect then its central quotient is
+simple. -/
 theorem isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)

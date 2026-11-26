@@ -21,8 +21,10 @@ import TauCeti.Logic.Function.Basic
 For involutive `σ` on `K` and invertible `ε`-Hermitian `Q` with surjective `ε`-trace, nonzero
 skew-trace, and nonempty `Matrix.isotropicPoints Q σ`, we prove `Matrix.specialIsometryGroup Q σ`
 perfect (`Matrix.commutator_specialIsometryGroup_eq_top`) when `σ` fixes `c ≠ 0` with `c ^ 2 ≠ 1`,
-Witt index is at least two, or `3 ≤ Fintype.card n` and `∃ c ≠ 0, c * σ c ≠ 1` (each giving
-generation via `Matrix.exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span`).
+Witt index is at least two, or `3 ≤ Fintype.card n` and `∃ c ≠ 0, c * σ c ≠ 1`. Each of these three
+cases yields a `σ`-fixed scalar outside `{0, 1}`, `Fintype.card n ≤ 2`, or Witt index at least two
+(`Matrix.exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span`), which with the
+remaining hypotheses gives transvection generation via `Matrix.iSup_unitaryTransvectionSubgroup`.
 
 ## References
 
@@ -45,7 +47,7 @@ private abbrev MemCommTransv (Q : Matrix n n K) (σ : K →+* K) (e : n → K) (
   ∃ t ∈ commutator (Q.specialIsometryGroup σ), (t : Matrix n n K) = Q.unitaryTransvection σ e a
 
 variable (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
-  (hε : ε * ε = 1) (hσε : σ ε = ε) (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s)
+  (hε : ε * ε = 1) (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s)
   {e f : n → K} (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
   (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε)
 
@@ -89,41 +91,19 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
   congr 1; simp only [w₁, TauCeti.map_comp_smul, smul_dotProduct, mulVec_smul, dotProduct_smul,
     smul_eq_mul, hu₀y₀, hy₀u₀]; linear_combination b * hε + hb
 
-private def hyperbolicRescaling (Q : Matrix n n K) (σ : K →+* K) (ε : K) (e f : n → K) (c : K) :=
-  1 + ((c - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) + ((σ c)⁻¹ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)
-
-private theorem hyperbolicRescaling_mulVec (e f : n → K) (c : K) (x : n → K) :
-    hyperbolicRescaling Q σ ε e f c *ᵥ x = x + (((c - 1) * ε) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e +
-      (((σ c)⁻¹ - 1) * ((σ ∘ e) ⬝ᵥ (Q *ᵥ x))) • f := by
-  simp [hyperbolicRescaling, add_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
-    smul_smul]
-
-include hσ hQ hε hσε he hf hef hfe in
-private theorem transpose_map_hyperbolicRescaling_mul_mul_self {c : K} (hc : c ≠ 0) :
-    ((hyperbolicRescaling Q σ ε e f c).map σ)ᵀ * Q * hyperbolicRescaling Q σ ε e f c = Q :=
-  have hσc := (map_ne_zero σ).mpr hc
-  transpose_map_mul_mul_eq_self fun x y ↦ by
-    rw [hyperbolicRescaling_mulVec, hyperbolicRescaling_mulVec]
-    simp only [map_comp_add, TauCeti.map_comp_smul, map_mul, map_sub, map_inv₀, map_one, hσ c, hσε,
-      comp_dotProduct_mulVec_swap hσ hQ hε e x, comp_dotProduct_mulVec_swap hσ hQ hε f x,
-      add_dotProduct, smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
-      smul_eq_mul, he, hf, hef, hfe]; field_simp
-    linear_combination σ c * (c - 1) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ y)) * σ ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) * hε
-
-include hσ hQ hε hσε he hf hef hfe in
+include hσ hQ hε he hf hef hfe in
 private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v : n → K}
     (hev : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0) (hvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) ≠ 0) {c : K} (hc : c ≠ 0) :
     ∃ g : Q.specialIsometryGroup σ, (g : Matrix n n K) *ᵥ e = c • e := by
-  have hσc := (map_ne_zero σ).mpr hc; have hε0 := left_ne_zero_of_mul (hε ▸ one_ne_zero)
-  let M₁ := hyperbolicRescaling Q σ ε e f c; set a := (σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹
+  have hσc := (map_ne_zero σ).mpr hc; have hε0 := left_ne_zero_of_mul_eq_one hε
+  let M₁ := Q.hyperbolicRescaling σ ε e f c (σ c)⁻¹
+  set a := (σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹
   let M₂ := Q.unitaryTransvection σ v a
-  have hM₁e : M₁ *ᵥ e = c • e := by
-    rw [hyperbolicRescaling_mulVec]; simp [hfe, he, mul_assoc, hε, sub_smul]
-  have hd₁ : M₁.det = c * (σ c)⁻¹ := det_eq_mul_of_mulVec_eq_smul hε he hf hef hfe hM₁e
-    (by rw [hyperbolicRescaling_mulVec]; simp [hf, hef, sub_smul])
-    fun w hew hfw ↦ by rw [hyperbolicRescaling_mulVec]; simp [hew, hfw]
+  have hM₁e : M₁ *ᵥ e = c • e := hyperbolicRescaling_mulVec_left hε he hfe c (σ c)⁻¹
+  have hd₁ : M₁.det = c * (σ c)⁻¹ := det_hyperbolicRescaling hε hf hef hfe c (σ c)⁻¹
   have hd₂ : M₂.det = σ c * c⁻¹ := by rw [det_unitaryTransvection_eq]; dsimp [a]; field_simp; ring
-  have hM₁Q := transpose_map_hyperbolicRescaling_mul_mul_self hσ hQ hε hσε he hf hef hfe hc
+  have hM₁Q := transpose_map_hyperbolicRescaling_mul_mul_self hσ hQ hε he hf hef
+    (c₁ := c) (c₂ := (σ c)⁻¹) (by rw [map_inv₀, hσ c, mul_inv_cancel₀ hc])
   have hM₂Q : (M₂.map σ)ᵀ * Q * M₂ = Q := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero
     (v := v) (a := a) hσ hQ (by simp only [a, map_mul, map_sub, map_inv₀, map_one, hσ c,
       apply_comp_dotProduct_mulVec hσ hQ v v]; field_simp; ring)
@@ -134,11 +114,11 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v
   simpa [M₂, ← mulVec_mulVec, unitaryTransvection_mulVec,
     (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev] using hM₁e
 
-include hσ hQ hdet hε hσε htr he hf hef hfe in
+include hσ hQ hdet hε htr he hf hef hfe in
 private theorem unitaryTransvection_mem_commutator_of_card_three_le (hcard : 3 ≤ Fintype.card n)
     {c : K} (hc : c ≠ 0) (hc1 : c * σ c ≠ 1) {a : K} (ha : a + ε * σ a = 0) :
     MemCommTransv Q σ e a := by
-  have he₀ : e ≠ 0 := fun h0 ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa [h0] using hef.symm)
+  have he₀ := left_ne_zero_of_comp_dotProduct_mulVec_eq_one hef
   let φ : (n → K) →ₗ[K] K × K := (toBilin' Q (σ ∘ e)).prod (toBilin' Q (σ ∘ f))
   have hrk := LinearMap.finrank_range_add_finrank_ker φ
   have hle : Module.finrank K (LinearMap.range φ) ≤ 2 := by
@@ -150,15 +130,17 @@ private theorem unitaryTransvection_mem_commutator_of_card_three_le (hcard : 3 �
   by_cases hvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0
   · exact unitaryTransvection_mem_commutator_of_witt_two hσ hQ hdet hε htr he hf hef he₀
       (notMem_span_of_dotProduct_mulVec_of_ne_zero hfv
-        (hfe ▸ left_ne_zero_of_mul (hε ▸ one_ne_zero)) hv0) he hvv hev ha
-  · obtain ⟨g, hge⟩ := exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic hσ hQ hε hσε
-      he hf hef hfe hev hvv hc
+        (hfe ▸ left_ne_zero_of_mul_eq_one hε) hv0) he hvv hev ha
+  · obtain ⟨g, hge⟩ := exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic hσ hQ hε he hf
+      hef hfe hev hvv hc
     exact unitaryTransvection_mem_commutator_of_mulVec_eq_smul hσ hQ he hc1 hge ha
 
 end Helpers
 
 omit [DecidableEq n] in
-/-- Each non-solvability hypothesis implies transvection generation. -/
+/-- For involutive `σ`, each of `∃ c ≠ 0, c ^ 2 ≠ 1 ∧ σ c = c`, Witt index at least two, or
+`3 ≤ Fintype.card n ∧ ∃ c ≠ 0, c * σ c ≠ 1` yields a `σ`-fixed scalar outside `{0, 1}`,
+`Fintype.card n ≤ 2`, or Witt index at least two. -/
 theorem exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span
     (hσ : Function.Involutive σ) (hperf : (∃ c : K, c ≠ 0 ∧ c ^ 2 ≠ 1 ∧ σ c = c) ∨
       (∃ u w : n → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
@@ -186,7 +168,6 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
   have := Function.nonempty_of_ne he₀; have hgen :=
     exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span hσ hperf
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
-  have hσε := map_eq_self_of_mul_self_eq_one_of_det_ne_zero hσ hQ hdet hε
   have hmem (a : K) (ha : a + ε * σ a = 0) : MemCommTransv Q σ e a := by
     rcases hperf with ⟨c, hc0, hcsq, hσc⟩ | ⟨u, w, hu0, hws, hu, hw, huw⟩ | ⟨hcard, c, hc0, hc1⟩
     · obtain ⟨h, -, hhe, -, -⟩ :=
@@ -196,7 +177,7 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
         hhe ha
     · exact unitaryTransvection_mem_commutator_of_witt_two hσ hQ hdet hε htr he hf hef hu0 hws hu hw
         huw ha
-    · exact unitaryTransvection_mem_commutator_of_card_three_le hσ hQ hdet hε hσε htr he hf hef hfe
+    · exact unitaryTransvection_mem_commutator_of_card_three_le hσ hQ hdet hε htr he hf hef hfe
         hcard hc0 hc1 ha
   let p₀ : Q.isotropicPoints σ := ⟨_, (mk_mem_isotropicPoints_iff he₀).mpr he⟩
   have hp₀ : Q.unitaryTransvectionSubgroup σ p₀ ≤ commutator (Q.specialIsometryGroup σ) := by

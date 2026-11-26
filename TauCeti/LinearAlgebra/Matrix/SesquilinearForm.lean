@@ -45,8 +45,13 @@ the Hermitian metric making a chosen basis orthonormal, for instance the increas
 an exterior algebra.
 
 More generally, for a ring endomorphism `σ` and a Gram matrix `Q`, write
-`B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A matrix `g` with
-`σ(g)ᵀ Q g = Q` intertwines the row covectors `σ(x)ᵀ Q` (`Matrix.comp_mulVec_vecMul_vecMul`) and
+`B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A nonzero value `B(x, y) ≠ 0`
+(in particular `B(x, y) = 1` over a nontrivial semiring) forces `x ≠ 0` and `y ≠ 0`
+(`Matrix.left_ne_zero_of_comp_dotProduct_mulVec_ne_zero`,
+`Matrix.right_ne_zero_of_comp_dotProduct_mulVec_ne_zero`,
+`Matrix.left_ne_zero_of_comp_dotProduct_mulVec_eq_one`,
+`Matrix.right_ne_zero_of_comp_dotProduct_mulVec_eq_one`). A matrix `g` with `σ(g)ᵀ Q g = Q`
+intertwines the row covectors `σ(x)ᵀ Q` (`Matrix.comp_mulVec_vecMul_vecMul`) and
 hence preserves `B` (`Matrix.comp_mulVec_dotProduct_mulVec_mulVec`), while orthogonality to `u`
 extends from `S` and `x` to `S ⊔ (R ∙ x)`
 (`Matrix.forall_mem_sup_span_singleton_comp_dotProduct_mulVec_eq_zero`). If `σ` is an involution and
@@ -81,8 +86,10 @@ Conversely, preserving `B` implies `σ(g)ᵀ Q g = Q` (`Matrix.transpose_map_mul
 (`Matrix.exists_eq_add_and_comp_dotProduct_mulVec_eq_zero`,
 `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_add_smul`,
 `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one`,
-`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span`) yield extensionality and
-`det` formulas (`Matrix.eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero`,
+`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span`) together with the
+hyperbolic rescaling matrix `Matrix.hyperbolicRescaling` (`Matrix.hyperbolicRescaling_mulVec`,
+`Matrix.det_hyperbolicRescaling`, `Matrix.transpose_map_hyperbolicRescaling_mul_mul_self`) yield
+extensionality and `det` formulas (`Matrix.eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero`,
 `Matrix.det_eq_mul_of_mulVec_eq_smul`, `Matrix.det_eq_mul_mul_of_mulVec_eq_smul`).
 -/
 
@@ -230,6 +237,28 @@ theorem comp_add_dotProduct_mulVec (u v w : n → R) :
     (σ ∘ (u + v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
   rw [map_comp_add, add_dotProduct]
 
+/-- If `B(x, y) ≠ 0`, then `x ≠ 0`. -/
+theorem left_ne_zero_of_comp_dotProduct_mulVec_ne_zero {x y : n → R}
+    (h : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) ≠ 0) : x ≠ 0 := by
+  rintro rfl
+  exact h (by simp)
+
+/-- If `B(x, y) ≠ 0`, then `y ≠ 0`. -/
+theorem right_ne_zero_of_comp_dotProduct_mulVec_ne_zero {x y : n → R}
+    (h : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) ≠ 0) : y ≠ 0 := by
+  rintro rfl
+  exact h (by simp)
+
+/-- Over a nontrivial semiring, `B(x, y) = 1` implies `x ≠ 0`. -/
+theorem left_ne_zero_of_comp_dotProduct_mulVec_eq_one [Nontrivial R] {x y : n → R}
+    (h : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 1) : x ≠ 0 :=
+  left_ne_zero_of_comp_dotProduct_mulVec_ne_zero (ne_zero_of_eq_one h)
+
+/-- Over a nontrivial semiring, `B(x, y) = 1` implies `y ≠ 0`. -/
+theorem right_ne_zero_of_comp_dotProduct_mulVec_eq_one [Nontrivial R] {x y : n → R}
+    (h : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 1) : y ≠ 0 :=
+  right_ne_zero_of_comp_dotProduct_mulVec_ne_zero (ne_zero_of_eq_one h)
+
 /-- For an involutive `σ` and `σ(Q)ᵀ = ε Q`, the transposed conjugate of `x (σ(y)ᵀ Q)` is
 `ε (Q y) σ(x)ᵀ`. -/
 theorem transpose_map_vecMulVec_vecMul (hσ : Function.Involutive σ) {ε : R}
@@ -337,6 +366,142 @@ theorem eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero {A B : Matrix n n R} (
     obtain ⟨w, hew, hfw, hx⟩ := exists_eq_add_and_comp_dotProduct_mulVec_eq_zero hε he hf hef hfe x
     rw [hx]; simp [mulVec_add, mulVec_smul, he_eq, hf_eq, hw_eq w hew hfw]
 
+/-- **Hyperbolic rescaling matrix**
+`1 + ((c₁ - 1) * ε) • e (σ(f)ᵀ Q) + (c₂ - 1) • f (σ(e)ᵀ Q)` for the `σ`-sesquilinear form
+`B(x, y) = σ(x)ᵀ Q y`. On a hyperbolic pair `(e, f)` (`B(e, e) = B(f, f) = 0`, `B(e, f) = 1`,
+`B(f, e) = ε` with `ε * ε = 1`), it rescales `e` by `c₁`, `f` by `c₂`, and fixes `{e, f}ᗮ`. -/
+def hyperbolicRescaling [DecidableEq n] (Q : Matrix n n R) (σ : R →+* R) (ε : R) (e f : n → R)
+    (c₁ c₂ : R) : Matrix n n R :=
+  1 + ((c₁ - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) + (c₂ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)
+
+/-- Explicit matrix formula for `Matrix.hyperbolicRescaling`. -/
+theorem hyperbolicRescaling_def [DecidableEq n] (Q : Matrix n n R) (σ : R →+* R) (ε : R)
+    (e f : n → R) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ =
+      1 + ((c₁ - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) +
+        (c₂ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q) :=
+  (rfl)
+
+/-- Rescaling both vectors by `1` gives the identity matrix. -/
+@[simp]
+theorem hyperbolicRescaling_one_one [DecidableEq n] (e f : n → R) :
+    Q.hyperbolicRescaling σ ε e f 1 1 = 1 := by
+  simp [hyperbolicRescaling_def]
+
+/-- When `e = 0`, `Matrix.hyperbolicRescaling` is the identity matrix. -/
+@[simp]
+theorem hyperbolicRescaling_zero_left [DecidableEq n] (f : n → R) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε 0 f c₁ c₂ = 1 := by
+  simp [hyperbolicRescaling_def]
+
+/-- When `f = 0`, `Matrix.hyperbolicRescaling` is the identity matrix. -/
+@[simp]
+theorem hyperbolicRescaling_zero_right [DecidableEq n] (e : n → R) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε e 0 c₁ c₂ = 1 := by
+  simp [hyperbolicRescaling_def]
+
+/-- `Matrix.hyperbolicRescaling` sends `x` to
+`x + ((c₁ - 1) * ε * B(f, x)) • e + ((c₂ - 1) * B(e, x)) • f`. -/
+theorem hyperbolicRescaling_mulVec [DecidableEq n] (e f : n → R) (c₁ c₂ : R) (x : n → R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ *ᵥ x =
+      x + (((c₁ - 1) * ε) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e +
+        ((c₂ - 1) * ((σ ∘ e) ⬝ᵥ (Q *ᵥ x))) • f := by
+  simp [hyperbolicRescaling_def, add_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
+    smul_smul]
+
+/-- When `ε * ε = 1`, `B(e, e) = 0`, and `B(f, e) = ε`, `Matrix.hyperbolicRescaling` rescales `e`
+by `c₁`. -/
+theorem hyperbolicRescaling_mulVec_left [DecidableEq n] (hε : ε * ε = 1) {e f : n → R}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ *ᵥ e = c₁ • e := by
+  rw [hyperbolicRescaling_mulVec]
+  simp [he, hfe, mul_assoc, hε, sub_smul]
+
+/-- When `B(f, f) = 0` and `B(e, f) = 1`, `Matrix.hyperbolicRescaling` rescales `f` by `c₂`. -/
+theorem hyperbolicRescaling_mulVec_right [DecidableEq n] {e f : n → R}
+    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ *ᵥ f = c₂ • f := by
+  rw [hyperbolicRescaling_mulVec]
+  simp [hf, hef, sub_smul]
+
+/-- `Matrix.hyperbolicRescaling` fixes every vector `w` with `B(e, w) = 0` and `B(f, w) = 0`. -/
+theorem hyperbolicRescaling_mulVec_eq_self [DecidableEq n] {e f w : n → R} (c₁ c₂ : R)
+    (hew : (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0) (hfw : (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ *ᵥ w = w := by
+  rw [hyperbolicRescaling_mulVec]
+  simp [hew, hfw]
+
+/-- **Two-factor product for an isotropic `f`.** When `B(f, f) = 0`, `Matrix.hyperbolicRescaling`
+factors into two rank-one perturbations of the identity. -/
+theorem hyperbolicRescaling_eq_mul [DecidableEq n] {e f : n → R}
+    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (c₁ c₂ : R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ =
+      (1 + ((c₁ - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q)) *
+        (1 + (c₂ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)) := by
+  have hprod : vecMulVec e ((σ ∘ f) ᵥ* Q) * vecMulVec f ((σ ∘ e) ᵥ* Q) = 0 := by
+    simp [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, hf]
+  simp only [hyperbolicRescaling_def, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul,
+    Matrix.mul_one, smul_mul_assoc, mul_smul_comm, hprod, smul_zero, add_zero]
+
+/-- **Determinant of `Matrix.hyperbolicRescaling`**: when `ε * ε = 1`, `B(f, f) = 0`,
+`B(e, f) = 1`, and `B(f, e) = ε`, `det(hyperbolicRescaling Q σ ε e f c₁ c₂) = c₁ * c₂`. -/
+theorem det_hyperbolicRescaling [DecidableEq n] (hε : ε * ε = 1) {e f : n → R}
+    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1)
+    (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (c₁ c₂ : R) :
+    (Q.hyperbolicRescaling σ ε e f c₁ c₂).det = c₁ * c₂ := by
+  have hd₁ : (1 + ((c₁ - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q)).det = c₁ := by
+    rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, TauCeti.det_one_sub_vecMulVec,
+      dotProduct_smul, ← dotProduct_mulVec, hfe, smul_eq_mul]
+    linear_combination (c₁ - 1) * hε
+  have hd₂ : (1 + (c₂ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)).det = c₂ := by
+    rw [← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec, TauCeti.det_one_sub_vecMulVec,
+      dotProduct_smul, ← dotProduct_mulVec, hef, smul_eq_mul]
+    ring
+  rw [hyperbolicRescaling_eq_mul hf, det_mul, hd₁, hd₂]
+
+/-- Multiplying two hyperbolic rescalings on a hyperbolic pair multiplies their scalars. -/
+theorem hyperbolicRescaling_mul_hyperbolicRescaling [DecidableEq n] (hε : ε * ε = 1)
+    {e f : n → R} (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
+    (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (c₁ c₂ d₁ d₂ : R) :
+    Q.hyperbolicRescaling σ ε e f c₁ c₂ * Q.hyperbolicRescaling σ ε e f d₁ d₂ =
+      Q.hyperbolicRescaling σ ε e f (c₁ * d₁) (c₂ * d₂) :=
+  eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero hε he hf hef hfe
+    (by simp [← mulVec_mulVec, hyperbolicRescaling_mulVec_left hε he hfe, mulVec_smul, smul_smul,
+      mul_comm])
+    (by simp [← mulVec_mulVec, hyperbolicRescaling_mulVec_right hf hef, mulVec_smul, smul_smul,
+      mul_comm])
+    fun w hew hfw ↦ by simp [← mulVec_mulVec, hyperbolicRescaling_mulVec_eq_self _ _ hew hfw]
+
+/-- **Conjugation law for `Matrix.hyperbolicRescaling`.** A matrix `g` preserving `Q` carries
+`hyperbolicRescaling Q σ ε e f c₁ c₂` to `hyperbolicRescaling Q σ ε (g *ᵥ e) (g *ᵥ f) c₁ c₂`. -/
+theorem mul_hyperbolicRescaling [DecidableEq n] {g : Matrix n n R}
+    (hg : (g.map σ)ᵀ * Q * g = Q) (e f : n → R) (c₁ c₂ : R) :
+    g * Q.hyperbolicRescaling σ ε e f c₁ c₂ =
+      Q.hyperbolicRescaling σ ε (g *ᵥ e) (g *ᵥ f) c₁ c₂ * g := by
+  simp [hyperbolicRescaling_def, Matrix.mul_add, Matrix.add_mul, mul_vecMulVec, vecMulVec_mul,
+    comp_mulVec_vecMul_vecMul hg]
+
+/-- **Hyperbolic rescaling is an isometry when `c₁ * σ c₂ = 1`.** -/
+theorem transpose_map_hyperbolicRescaling_mul_mul_self [DecidableEq n]
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {e f : n → R}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
+    (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) {c₁ c₂ : R} (hc : c₁ * σ c₂ = 1) :
+    ((Q.hyperbolicRescaling σ ε e f c₁ c₂).map σ)ᵀ * Q *
+      Q.hyperbolicRescaling σ ε e f c₁ c₂ = Q := by
+  have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
+  have hσε : σ ε = ε := by simpa [hfe, hef] using apply_comp_dotProduct_mulVec hσ hQ f e
+  have hc' : σ c₁ * c₂ = 1 := by simpa [map_mul, hσ c₂] using congrArg σ hc
+  refine transpose_map_mul_mul_eq_self fun x y ↦ ?_
+  rw [hyperbolicRescaling_mulVec, hyperbolicRescaling_mulVec]
+  simp only [map_comp_add, TauCeti.map_comp_smul, map_mul, map_sub, map_one, hσε,
+    comp_dotProduct_mulVec_swap hσ hQ hε e x, comp_dotProduct_mulVec_swap hσ hQ hε f x,
+    add_dotProduct, smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
+    smul_eq_mul, he, hf, hef, hfe]
+  linear_combination
+    ((σ ∘ f) ⬝ᵥ (Q *ᵥ y)) * σ ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) * (c₁ - 1) * σ c₂ * hε +
+    ((σ ∘ f) ⬝ᵥ (Q *ᵥ y)) * σ ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) * hc +
+    ((σ ∘ e) ⬝ᵥ (Q *ᵥ y)) * σ ((σ ∘ f) ⬝ᵥ (Q *ᵥ x)) * ε * hc'
+
 /-- **Determinant of a matrix rescaling a hyperbolic pair** `(e, f)` by `c₁, c₂` and fixing
 `{e, f}ᗮ`. -/
 theorem det_eq_mul_of_mulVec_eq_smul [DecidableEq n] {A : Matrix n n R} (hε : ε * ε = 1)
@@ -345,27 +510,13 @@ theorem det_eq_mul_of_mulVec_eq_smul [DecidableEq n] {A : Matrix n n R} (hε : �
     (hAe : A *ᵥ e = c₁ • e) (hAf : A *ᵥ f = c₂ • f)
     (hAw : ∀ w : n → R, (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0 → A *ᵥ w = w) :
     A.det = c₁ * c₂ := by
-  let M₁ : Matrix n n R := 1 - vecMulVec ((1 - c₁) • e) (ε • ((σ ∘ f) ᵥ* Q))
-  let M₂ : Matrix n n R := 1 - vecMulVec ((1 - c₂) • f) ((σ ∘ e) ᵥ* Q)
-  have hM₁ {v} (hv : (σ ∘ f) ⬝ᵥ (Q *ᵥ v) = 0) : M₁ *ᵥ v = v := by
-    rw [TauCeti.one_sub_vecMulVec_mulVec]; simp [← dotProduct_mulVec, hv]
-  have hM₂ {v} (hv : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0) : M₂ *ᵥ v = v := by
-    rw [TauCeti.one_sub_vecMulVec_mulVec]; simp [← dotProduct_mulVec, hv]
-  have hM₂f : M₂ *ᵥ f = c₂ • f := by
-    rw [TauCeti.one_sub_vecMulVec_mulVec, ← dotProduct_mulVec, hef, one_smul]; module
-  have hM₁e : M₁ *ᵥ e = c₁ • e := by
-    rw [TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec, hfe, smul_eq_mul,
-      hε, one_smul]; module
-  have hA : A = M₁ * M₂ := eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero hε he hf hef hfe
-    (by simp [← mulVec_mulVec, hAe, hM₂ he, hM₁e])
-    (by simp [← mulVec_mulVec, hAf, hM₂f, mulVec_smul, hM₁ hf])
-    fun w hew hfw ↦ by simp [← mulVec_mulVec, hAw w hew hfw, hM₂ hew, hM₁ hfw]
-  have hd₁ : M₁.det = c₁ := by
-    rw [TauCeti.det_one_sub_vecMulVec, smul_dotProduct, dotProduct_smul, ← dotProduct_mulVec, hfe,
-      smul_eq_mul, smul_eq_mul]; linear_combination -(1 - c₁) * hε
-  have hd₂ : M₂.det = c₂ := by
-    rw [TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hef, smul_eq_mul]; ring
-  rw [hA, det_mul, hd₁, hd₂]
+  have hA : A = Q.hyperbolicRescaling σ ε e f c₁ c₂ :=
+    eq_of_mulVec_eq_of_comp_dotProduct_mulVec_eq_zero hε he hf hef hfe
+      (hAe.trans (hyperbolicRescaling_mulVec_left hε he hfe c₁ c₂).symm)
+      (hAf.trans (hyperbolicRescaling_mulVec_right hf hef c₁ c₂).symm)
+      fun w hew hfw ↦
+        (hAw w hew hfw).trans (hyperbolicRescaling_mulVec_eq_self c₁ c₂ hew hfw).symm
+  rw [hA, det_hyperbolicRescaling hε hf hef hfe]
 
 /-- Over a domain, `Q.det ≠ 0`, injective `σ`, and `u ≠ 0` imply
 `vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q) ≠ 0`. -/
@@ -607,7 +758,7 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one (hσ : Function.Involut
     (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mpr (by simpa [f₀, he] using hue)
   let f := ((σ ∘ e) ⬝ᵥ (Q *ᵥ f₀))⁻¹ • f₀
   have hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 := by simp [f, mulVec_smul, inv_mul_cancel₀ hef₀]
-  exact ⟨f, fun h0 ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa [h0] using hef.symm),
+  exact ⟨f, right_ne_zero_of_comp_dotProduct_mulVec_eq_one hef,
     by simp [f, TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, hf₀], hef,
     comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef⟩
 
@@ -668,7 +819,7 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span
   have hz₀u₀ : (σ ∘ z₀) ⬝ᵥ (Q *ᵥ u₀) = ε := by
     rw [hz_eq] at hzu₀; simpa [TauCeti.map_comp_smul, smul_dotProduct, heu₀, hfu₀] using hzu₀
   obtain ⟨t, hy₀⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hu₀_iso
-    (hz₀u₀ ▸ left_ne_zero_of_mul (hε ▸ one_ne_zero))
+    (hz₀u₀ ▸ left_ne_zero_of_mul_eq_one hε)
   exact ⟨u₀, z₀ + t • u₀, heu₀, hfu₀,
     by simp [mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, hez₀, heu₀],
     by simp [mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, hfz₀, hfu₀], hu₀_iso, hy₀,
@@ -688,8 +839,8 @@ theorem det_eq_mul_mul_of_mulVec_eq_smul {A : Matrix n n K} (hσ : Function.Invo
       (σ ∘ v) ⬝ᵥ (Q *ᵥ w) = 0 → A *ᵥ w = w) : A.det = c₁ * c₂ * c₃ := by
   have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
   by_cases hc₃ : c₃ = 0
-  · simp [hc₃,
-      exists_mulVec_eq_zero_iff.mp ⟨v, fun h0 ↦ hvv (by simp [h0]), by simpa [hc₃] using hAv⟩]
+  · simp [hc₃, exists_mulVec_eq_zero_iff.mp
+      ⟨v, left_ne_zero_of_comp_dotProduct_mulVec_ne_zero hvv, by simpa [hc₃] using hAv⟩]
   let M₃ : Matrix n n K := 1 - vecMulVec ((1 - c₃⁻¹) • v) (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ • ((σ ∘ v) ᵥ* Q))
   have hM₃ {u} (hu : (σ ∘ v) ⬝ᵥ (Q *ᵥ u) = 0) : M₃ *ᵥ u = u := by
     rw [TauCeti.one_sub_vecMulVec_mulVec]; simp [← dotProduct_mulVec, hu]
