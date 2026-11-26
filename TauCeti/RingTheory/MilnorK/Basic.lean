@@ -458,6 +458,36 @@ theorem span_range_symbol : Submodule.span ℤ (Set.range (symbol (R := R))) = �
   ext x
   simp [eq_comm]
 
+/-- The span of the symbols of length `n` whose entries all lie in a set `A` of units is the `n`-th
+power of the span of the degree-one classes `{a}`, `a ∈ A`. -/
+theorem span_symbol_eq_pow (A : Set Rˣ) (n : ℕ) :
+    Submodule.span ℤ (symbol '' {l : List Rˣ | l.length = n ∧ ∀ a ∈ l, a ∈ A}) =
+      Submodule.span ℤ (ofUnit '' A) ^ n := by
+  induction n with
+  | zero =>
+    rw [pow_zero, Submodule.one_eq_span]
+    congr 1
+    ext x
+    simp [eq_comm]
+  | succ n ih =>
+    rw [pow_succ', ← ih, Submodule.span_mul_span]
+    congr 1
+    ext x
+    simp only [Set.mem_image, Set.mem_ofPred_eq, Set.mem_mul]
+    constructor
+    · rintro ⟨_ | ⟨a, l⟩, ⟨hl, hA⟩, rfl⟩
+      · simp at hl
+      · exact ⟨ofUnit a, ⟨a, hA a List.mem_cons_self, rfl⟩, symbol l,
+          ⟨l, ⟨by simpa using hl, fun b hb ↦ hA b (List.mem_cons_of_mem a hb)⟩, rfl⟩, rfl⟩
+    · rintro ⟨_, ⟨a, ha, rfl⟩, _, ⟨l, ⟨hl, hA⟩, rfl⟩, rfl⟩
+      exact ⟨a :: l, ⟨by simp [hl], by simpa [ha] using hA⟩, rfl⟩
+
+/-- The degree-`n` Milnor K-group is the `n`-th power of the span of the degree-one classes. -/
+theorem degree_eq_span_pow (n : ℕ) :
+    degree R n = Submodule.span ℤ (Set.range (ofUnit (R := R))) ^ n := by
+  rw [← Set.image_univ, ← span_symbol_eq_pow, degree]
+  simp
+
 /-! ### Graded maps -/
 
 /-- `lift f hf` maps degree `n` into the `n`-th piece of a graded target whenever `f` takes values
@@ -681,6 +711,28 @@ theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUn
   have h₂ := ofUnit_mul_ofUnit_neg_self a
   rw [← neg_one_mul a, ofUnit_mul, mul_add] at h₂
   rw [eq_neg_of_add_eq_zero_right h₂, neg_eq_of_add_eq_zero_left h₁]
+
+/-- Over a field, for units `a, b` with difference `h = a - b`,
+`{a, b} = {h, b} - {h, a} + {a, -1}`. Applied to two distinct monic polynomials of the same degree
+`d`, it rewrites their symbol through symbols having an entry of degree less than `d`
+(Weibel, proof of Lemma III.7.4.2). -/
+theorem ofUnit_mul_ofUnit_eq_of_sub_eq {a b h : Fˣ} (hab : (a : F) - b = h) :
+    ofUnit a * ofUnit b =
+      ofUnit h * ofUnit b - ofUnit h * ofUnit a + ofUnit a * ofUnit (-1) := by
+  -- The Steinberg relation for `a / h + (-1) * b / h = 1`, expanded bilinearly.
+  have hsum : ((a / h : Fˣ) : F) + ((-1 * b / h : Fˣ) : F) = 1 := by
+    have hh : (a : F) - b ≠ 0 := hab ▸ h.ne_zero
+    simp only [Units.val_div_eq_div_val, Units.val_mul, Units.val_neg, Units.val_one, ← hab]
+    field_simp
+    ring
+  have key := ofUnit_mul_ofUnit_of_add_eq_one hsum
+  rw [ofUnit_div, ofUnit_div, ofUnit_mul] at key
+  have h₂ : ofUnit a * ofUnit (-1) + ofUnit a * ofUnit (-1) = 0 := by
+    rw [← mul_add, ← ofUnit_mul, neg_one_mul, neg_neg, ofUnit_one, mul_zero]
+  simp only [sub_mul, mul_sub, mul_add, ofUnit_mul_ofUnit_self h,
+    ofUnit_mul_ofUnit_comm a h] at key
+  rw [← sub_eq_zero, ← sub_eq_zero.2 (key.trans h₂.symm)]
+  abel
 
 /-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
 theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
