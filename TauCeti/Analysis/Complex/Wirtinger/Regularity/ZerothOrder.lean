@@ -168,9 +168,7 @@ theorem exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add (hp : 1 < p) (hp
 /-- **Interior regularity for `∂bar` of a weakly differentiable map.** Let `1 < p < ∞` and let `u`
 be locally `Lᵖ` on an open set `Ω`, with weak derivative `Du`. If `∂bar u`, the value on `1` of the
 complex antilinear part of `Du`, lies in `W^{k,p}_loc(Ω)`, then `u` lies in `W^{k+1,p}_loc(Ω)`.
-This is `TauCeti.HasWeakConjWirtingerDerivOn.memWkpLoc_succ`, transported from a Euclidean space
-to `F` along a complex linear isomorphism, for values in a space whose real structure is any one
-compatible with the complex structure. -/
+The real structure of the values is any one compatible with the complex structure. -/
 theorem memWkpLoc_succ_of_hasWeakFDerivOn_of_memWkpLoc_complexAntilinearPartL (hp : 1 < p)
     (hp_top : p ≠ ⊤) {Ω : Opens ℂ} {k : ℕ} {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F}
     (hu : MemLpLoc p Ω u) (hDu : HasWeakFDerivOn volume Ω u Du)
@@ -184,12 +182,11 @@ theorem memWkpLoc_succ_of_hasWeakFDerivOn_of_memWkpLoc_complexAntilinearPartL (h
   have h := (hDu.clm_comp eℝ).hasWeakConjWirtingerDerivOn
   have hfe : (fun z ↦ (2 : ℂ)⁻¹ • ((eℝ.comp (Du z)) 1 + Complex.I • (eℝ.comp (Du z)) Complex.I)) =
       fun z ↦ eℝ (complexAntilinearPartL (Du z) 1) := by
-    have h2 (x : F) : e ((2⁻¹ : ℝ) • x) = (2⁻¹ : ℂ) • e x := by
-      rw [show (2⁻¹ : ℝ) • x = (2⁻¹ : ℂ) • x by rw [← algebraMap_smul ℂ (2⁻¹ : ℝ) x]; norm_num,
-        map_smul]
     funext z
-    rw [ContinuousLinearMap.complexAntilinearPartL_apply_one]
-    simp [eℝ, h2]
+    rw [← ContinuousLinearMap.comp_apply,
+      ← ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp (e : F →L[ℂ] Eu) (Du z),
+      ContinuousLinearMap.complexAntilinearPartL_apply_one]
+    simp [eℝ, ← Complex.coe_smul]
   rw [hfe] at h
   have hue := h.memWkpLoc_succ hp hp_top (hu.clm_comp eℝ) (hf.clm_comp eℝ)
   simpa [eℝ, sℝ] using hue.clm_comp sℝ
@@ -211,9 +208,7 @@ private theorem memWkpLoc_succ_of_memWkpLoc_of_complexAntilinearPartL_add_ae_eq 
 /-- **Interior regularity for `∂bar` plus a zeroth-order term.** Let `1 < p < ∞`, let `Z` be a
 field of real-linear maps that is `Cᵏ` on an open set `Ω`, and let `u` be locally `Lᵖ` on `Ω` with
 weak derivative `Du`. If `∂bar u + Z u`, with `∂bar u` the complex antilinear part of `Du`, agrees
-almost everywhere with a map `g` in `W^{k,p}_loc(Ω)`, then `u` lies in `W^{k+1,p}_loc(Ω)`. The
-order is raised one step at a time: once `u` is in `W^{j,p}_loc(Ω)` for some `j ≤ k`, so is
-`∂bar u = g - Z u`. -/
+almost everywhere with a map `g` in `W^{k,p}_loc(Ω)`, then `u` lies in `W^{k+1,p}_loc(Ω)`. -/
 theorem memWkpLoc_succ_of_complexAntilinearPartL_add_ae_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
     {Ω : Opens ℂ} {k : ℕ} {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F} (hZ : ContDiffOn ℝ k Z Ω) {u : ℂ → F}
     {Du g : ℂ → ℂ →L[ℝ] F} (hu : MemLpLoc p Ω u) (hDu : HasWeakFDerivOn volume Ω u Du)
