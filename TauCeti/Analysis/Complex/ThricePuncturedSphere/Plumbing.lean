@@ -79,7 +79,8 @@ maps on the plumbed sphere is computed.
   map of a finite end `q` carries the whole part `-s_∞ ≤ L/2` of the plane, including `0` and `1`,
   to the capped puncture `c_q` or into `ℂ ∖ {0, 1}`;
   `Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le` is the consequence `ψ_L(w) ≠ 0` for
-  the end at `1`.
+  the end at `1`, and `Puncture.equivRealProdCLM_symm_realChart_plumbingMap_ne_zero` its form in
+  real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -626,6 +627,13 @@ theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 1 < L) {w : ℂ}
     (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 :=
   (plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (by simp) hL hwL).elim
     (fun h ↦ by simp [h]) And.left
+
+/-- `plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le` in real coordinates. -/
+theorem equivRealProdCLM_symm_realChart_plumbingMap_ne_zero (hL : 1 < L) {w : ℝ × ℝ}
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) :
+    Complex.equivRealProdCLM.symm (realChart (one.plumbingMap L) w) ≠ 0 := by
+  rw [equivRealProdCLM_symm_realChart]
+  exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le hL hwL
 
 /-- The plumbing map carries a point of the inserted thrice-punctured sphere outside the circle
 `s_∞ = -L/2` into the plumbed four-punctured sphere, in real coordinates. -/

@@ -156,9 +156,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairO
   have hK (w : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+    (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x w).of_le (by norm_num)
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal hD hDS hJ
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1))
