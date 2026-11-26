@@ -121,9 +121,8 @@ theorem sectionalCurvature_add_smul_right (hcov : CovariantDerivative.IsMetricCo
     (x : M) (u v : TangentSpace I x) (a : ℝ) :
     cov.sectionalCurvature hcov x u (v + a • u) =
       cov.sectionalCurvature hcov x u v := by
-  have hzero : inner ℝ (curvature x u v u) u = 0 := by
-    apply CharZero.eq_neg_self_iff.mp
-    simpa [real_inner_comm] using hcov.inner_curvatureTensor_eq_neg x u v u u
+  have hzero : inner ℝ (curvature x u v u) u = 0 :=
+    hcov.inner_curvatureTensor_self_eq_zero x u v u
   rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
     Matrix.real_det_gram_fin_two]
   simp only [map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply,

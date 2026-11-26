@@ -339,6 +339,13 @@ lemma toTopObjMk_map {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w 
   dsimp at h
   rw [toTopObjMk, toTopObjMk, h, TopCat.toSSetObjEquiv_naturality_apply]
 
+/-- The point of a face of a simplex is the point of the simplex with the transported
+coordinates. -/
+lemma toTopObjMk_δ {n : ℕ} (i : Fin (n + 2)) (x : X _⦋n + 1⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTopObjMk (X.δ i x) w = toTopObjMk x (StdSimplex.map (SimplexCategory.δ i) w) :=
+  toTopObjMk_map (SimplexCategory.δ i) x w
+
 /-- The realization of a Yoneda-corresponding map `Δ[n] ⟶ X` takes the coordinates `w` in
 `StdSimplex ℝ (Fin (n + 1))` to `toTopObjMk x w`. -/
 lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (x : X _⦋n⦌)

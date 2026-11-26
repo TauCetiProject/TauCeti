@@ -12,12 +12,16 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 # The parametrization of the standard `1`-simplex by the unit interval
 
 Values of Mathlib's homeomorphism `Convexity.StdSimplex.homeomorphI` between the standard
-`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), it sends
-the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
-(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`), the barycentric weights of
-`homeomorphI.symm t` are `1 - t` and `t` (`weights_homeomorphI_symm_zero`,
-`weights_homeomorphI_symm_one`), and reversing the vertices of `Fin 2` corresponds to
-`unitInterval.symm` (`map_rev_homeomorphI_symm`).
+`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), its inverse
+has weights `1 - t` and `t` (`homeomorphI_symm_weights_zero`, `homeomorphI_symm_weights_one`), it
+sends the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
+(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`), and reversing the vertices of
+`Fin 2` corresponds to `unitInterval.symm` (`map_rev_homeomorphI_symm`).
+
+Through this parametrization, a pair of points `f 0` and `f 1` of `M` gives the path
+`Convexity.StdSimplex.edgePath f` in the standard simplex on `M` from the vertex `f 0` to the
+vertex `f 1`, the image of the standard `1`-simplex under `StdSimplex.map f`; for a face map `f`
+of the standard `2`-simplex, this is the path along one of its edges.
 
 More generally, the weight of a vertex of any real standard simplex is a continuous map to the
 unit interval (`weightI`), and so is the sum of the weights of the last two vertices of the
@@ -33,6 +37,18 @@ lemma homeomorphI_apply_eq_mk (w : StdSimplex ℝ (Fin 2)) :
     homeomorphI w = ⟨w.weights 1, w.weights_nonneg 1, w.weights_apply_le_one 1⟩ :=
   Subtype.ext (homeomorphI_apply_coe w)
 
+/-- The last weight of the point of the standard `1`-simplex of parameter `t` is `t`. -/
+@[simp]
+lemma homeomorphI_symm_weights_one (t : unitInterval) : (homeomorphI.symm t).weights 1 = t := by
+  rw [← homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
+
+/-- The first weight of the point of the standard `1`-simplex of parameter `t` is `1 - t`. -/
+@[simp]
+lemma homeomorphI_symm_weights_zero (t : unitInterval) :
+    (homeomorphI.symm t).weights 0 = 1 - t := by
+  rw [← homeomorphI_symm_weights_one t, ← total_fin_two (homeomorphI.symm t)]
+  ring
+
 /-- The `0`-th face of the standard `1`-simplex is its last vertex, of parameter `1`. -/
 -- Not a simp lemma: `Fin.succAbove_zero` rewrites the face map first.
 lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
@@ -45,18 +61,28 @@ lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (1 : Fin 2)) w) = 0 := by
   simp [Subsingleton.elim w (single 0)]
 
-@[simp] lemma weights_homeomorphI_symm_one (t : unitInterval) :
-    (homeomorphI.symm t).weights 1 = (t : ℝ) := by
-  rw [← homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
-@[simp] lemma weights_homeomorphI_symm_zero (t : unitInterval) :
-    (homeomorphI.symm t).weights 0 = 1 - (t : ℝ) :=
-  eq_sub_of_add_eq (by simpa using (homeomorphI.symm t).total_fin_two)
 @[simp] lemma map_rev_homeomorphI_symm (t : unitInterval) :
     map Fin.rev (homeomorphI.symm t) = homeomorphI.symm (unitInterval.symm t) := by
   apply homeomorphI.injective; ext
   have h1 : (1 : Fin 2) = Fin.rev 0 := rfl
   rw [homeomorphI_apply_coe, Homeomorph.apply_symm_apply, unitInterval.coe_symm_eq, h1,
-    weights_map_apply_of_injective Fin.rev_injective, weights_homeomorphI_symm_zero]
+    weights_map_apply_of_injective Fin.rev_injective, homeomorphI_symm_weights_zero]
+
+/-- The path in the standard simplex on `M` from the vertex `f 0` to the vertex `f 1`: the
+standard `1`-simplex, parametrized by the unit interval through `homeomorphI`, followed by
+`StdSimplex.map f`. For a face map `f = i.succAbove` of the standard `2`-simplex, it runs along
+the `i`-th edge. -/
+noncomputable def edgePath {M : Type*} (f : Fin 2 → M) :
+    Path (single (R := ℝ) (f 0)) (single (f 1)) where
+  toFun t := map f (homeomorphI.symm t)
+  continuous_toFun := (continuous_map ℝ f).comp homeomorphI.symm.continuous
+  source' := by rw [homeomorphI_symm_zero, map_single]
+  target' := by rw [homeomorphI_symm_one, map_single]
+
+@[simp]
+lemma edgePath_apply {M : Type*} (f : Fin 2 → M) (t : unitInterval) :
+    edgePath f t = map f (homeomorphI.symm t) :=
+  (rfl)
 
 /-- The weight of the vertex `i` of a real standard simplex, as a point of the unit interval. -/
 noncomputable def weightI {ι : Type*} (i : ι) : C(StdSimplex ℝ ι, unitInterval) :=

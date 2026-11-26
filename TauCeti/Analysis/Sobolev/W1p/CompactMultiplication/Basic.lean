@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.RellichKondrachov
-public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
+public import TauCeti.Analysis.Sobolev.W1p.Mixed.Multiplication
 public import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 

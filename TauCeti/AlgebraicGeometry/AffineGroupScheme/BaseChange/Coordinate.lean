@@ -27,6 +27,9 @@ anti-equivalence.
   Hopf spectrum of the scalar-extended coordinate Hopf algebra.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_hom_naturality`: the underlying
   group-object comparison intertwines pullback and coordinate scalar extension on morphisms.
+* `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`: a commuting
+  square of coordinate Hopf algebras, with the scalar extensions identified, gives the commuting
+  square of group schemes over `S`.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeNatIso`: the comparison is natural in the
   coordinate Hopf algebra.
 
@@ -140,6 +143,25 @@ theorem hopfSpecBaseChangeGrpIso_hom_naturality {H K : CommHopfAlgCat.{u} R}
     hopfSpecBaseChangeGrpIso_inv_hom_hom_left, hopfSpecBaseChangeGrpIso_hom_hom_hom_left]
   rw [Functor.mapGrp_map_hom_hom]
   exact pullbackSpecIso'_natural (R := R) (S := S) f
+
+/-- **A coordinate square gives a group-scheme square.** If `(S ⊗ f) ≫ b = b' ≫ g`, then base
+change of `Spec f` followed by the comparison of the base change of `Spec H'` with `Spec A'`
+(through `Spec (S ⊗ H')`) is the comparison of the base change of `Spec H` with `Spec A`
+(through `Spec (S ⊗ H)`) followed by `Spec g`. -/
+@[reassoc]
+theorem hopfSpecBaseChangeGrpIso_trans_hom_naturality {H H' : CommHopfAlgCat.{u} R}
+    {A A' : CommHopfAlgCat.{u} S} (f : H' ⟶ H) (g : A' ⟶ A)
+    (b : CommHopfAlgCat.baseChange (K := S) H ≅ A) (b' : CommHopfAlgCat.baseChange (K := S) H' ≅ A')
+    (h : CommHopfAlgCat.baseChangeMap (K := S) f ≫ b.hom = b'.hom ≫ g) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).mapGrp.map
+          ((hopfSpec (CommRingCat.of R)).map f.op) ≫
+        (hopfSpecBaseChangeGrpIso H' ≪≫ (hopfSpec (CommRingCat.of S)).mapIso b'.symm.op).hom =
+      (hopfSpecBaseChangeGrpIso H ≪≫ (hopfSpec (CommRingCat.of S)).mapIso b.symm.op).hom ≫
+        (hopfSpec (CommRingCat.of S)).map g.op := by
+  have h' := (CommSq.vert_inv ⟨h⟩).w.symm
+  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom]
+  rw [← Category.assoc, hopfSpecBaseChangeGrpIso_hom_naturality, Category.assoc, Category.assoc,
+    ← Functor.map_comp, ← Functor.map_comp, ← op_comp, ← op_comp, h']
 
 /-- The group-object comparison between pullback of Hopf spectra and Hopf spectra of scalar
 extensions, natural in the coordinate Hopf algebra. -/

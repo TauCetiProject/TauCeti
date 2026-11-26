@@ -22,8 +22,10 @@ up to a two-sided additive bounded error and `g` diverges, then `f / g` tends to
 It also records that the reciprocal of a positive power of `x - a` diverges to `atTop` as `x`
 tends to `a` from the right, and likewise for `a - x` from the left. These are the one-sided
 blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power, and their consequence that
-`x / (1 - x)` diverges as `x` tends to `1` from the left. It records the one-sided bound
-`x ^ 2 < 1` for `x` sufficiently close to `1` from below. Finally, it records that `t f + g` is
+`x / (1 - x)` diverges as `x` tends to `1` from the left. Multiplication by a positive constant maps
+the right neighbourhoods of `0` into themselves, and `r * c` tends to `0` as `r` tends to `0` from
+above. It records the one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
+Finally, it records that `t f + g` is
 eventually positive on a compact set when `f ≥ 0` there and `g > 0` at the zeros of `f`, the
 scalar form of the case of Finsler's lemma where the first form is positive semidefinite.
 
@@ -41,6 +43,9 @@ scalar form of the case of Finsler's lemma where the first form is positive semi
   from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
+* `TauCeti.tendsto_const_mul_nhdsGT_zero` — `x ↦ c x` maps `𝓝[>] 0` into itself for `c > 0`.
+* `TauCeti.tendsto_mul_const_nhdsGT_zero` — `r * c` tends to `0` as `r` tends to `0` from
+  above.
 * `IsCompact.eventually_forall_mul_add_pos` — if `f` and `g` are continuous on a compact set `K`,
   `f ≥ 0` on `K` and `g > 0` at the zeros of `f` in `K`, then for every sufficiently large `t`,
   `t f + g` is positive on `K`.
@@ -89,6 +94,12 @@ theorem eventually_sq_lt_one_nhdsLT_one {𝕜 : Type*} [Field 𝕜] [LinearOrder
     ∀ᶠ x : 𝕜 in 𝓝[<] 1, x ^ 2 < 1 := by
   filter_upwards [Ioo_mem_nhdsLT (by simp : (-1 : 𝕜) < 1)] with x hx
   nlinarith [hx.1, hx.2]
+
+/-- A linear function `r ↦ r * c` tends to `0` as `r` tends to `0` from above. -/
+theorem tendsto_mul_const_nhdsGT_zero {𝕜 : Type*} [MulZeroClass 𝕜] [Preorder 𝕜]
+    [TopologicalSpace 𝕜] [ContinuousMul 𝕜] (c : 𝕜) :
+    Tendsto (fun r : 𝕜 ↦ r * c) (𝓝[>] 0) (𝓝 0) :=
+  ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul c)).mono_left nhdsWithin_le_nhds
 
 /-- **Eventual positivity of `t f + g` on a compact set.** Let `f` and `g` be continuous on a
 compact set `K`, with `f ≥ 0` on `K` and `g > 0` at the points of `K` where `f` vanishes. Then for
@@ -158,5 +169,12 @@ theorem tendsto_div_one_sub_nhdsLT_one :
   simpa [div_eq_mul_inv] using h
 
 end InvPow
+
+/-- Multiplication by a constant `c > 0` maps the right neighbourhoods of `0` into themselves. This
+is the `Tendsto` form of Mathlib's `eventually_nhdsGT_zero_mul_left`. -/
+theorem tendsto_const_mul_nhdsGT_zero {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜] {c : 𝕜} (hc : 0 < c) :
+    Tendsto (c * ·) (𝓝[>] 0) (𝓝[>] 0) :=
+  tendsto_comap.mono_left (comap_mulLeft_nhdsGT_zero hc).ge
 
 end TauCeti

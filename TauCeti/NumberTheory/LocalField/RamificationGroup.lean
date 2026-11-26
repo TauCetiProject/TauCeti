@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
@@ -310,6 +310,13 @@ noncomputable def lowerRamificationGroupReal (u : ℝ) : Subgroup (L ≃ₐ[K] L
 theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
+
+/-- The real-indexed local-field filtration is the real-indexed ramification filtration of the
+integer ring. -/
+theorem lowerRamificationGroupReal_eq_ramificationGroupReal (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u :=
+  (rfl)
 
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/

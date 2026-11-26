@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExtensionByZero
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
 # Restriction of module sheaves preserves limits, injectives, and free modules
@@ -32,11 +33,15 @@ Restriction to an open `U` only sees sections over opens contained in `U`: a mor
 isomorphism on those sections restricts to an isomorphism
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_isIso_app`), and over them the
 unit of the restriction--pushforward adjunction is an isomorphism on sections
-(`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`). Restriction along an
-isomorphism of schemes reflects isomorphisms, a morphism that is an isomorphism over an open is
-one over every smaller open and, along an open immersion, exactly when it is one over the image,
-a submodule containing one that is everything over an open is everything over it, and restriction
-to the slice site over an open preserves epimorphisms.
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`), so the unit is an
+isomorphism along an open immersion with full image
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_of_opensRange_eq_top`);
+along an open immersion from an empty scheme the unit is zero
+(`AlgebraicGeometry.Scheme.Modules.restrictAdjunction_unit_app_eq_zero_of_isEmpty`). Restriction
+along an isomorphism of schemes reflects isomorphisms, a morphism that is an isomorphism over an
+open is one over every smaller open and, along an open immersion, exactly when it is one over the
+image, a submodule containing one that is everything over an open is everything over it, and
+restriction to the slice site over an open preserves epimorphisms.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -205,6 +210,12 @@ noncomputable instance
     PreservesLimits (pullback f) :=
   preservesLimits_of_natIso (restrictFunctorIsoPullback f)
 
+/-- Module pullback along an open immersion preserves injective modules, since restriction does. -/
+instance injective_pullback_obj_of_isOpenImmersion {X Y : Scheme.{u}} (f : Y ⟶ X)
+    [IsOpenImmersion f] (I : X.Modules) [Injective I] :
+    Injective ((pullback f).obj I) :=
+  Injective.of_iso ((restrictFunctorIsoPullback f).app I) inferInstance
+
 /-- Restriction along an open immersion sends the free module on `ι` to the free module on `ι`. -/
 noncomputable def restrictFreeIso {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
     (ι : Type u) :
@@ -285,6 +296,25 @@ theorem isIso_restrictAdjunction_unit_app_app {X Y : Scheme.{u}} (f : X ⟶ Y)
   have : homOfLE (f.image_preimage_le V) = eqToHom h := Subsingleton.elim _ _
   rw [restrictAdjunction_unit_app_app, this]
   exact Functor.map_isIso M.presheaf (eqToHom h).op
+
+/-- Along an open immersion with image `Y`, the unit `N ⟶ j_* (N|_V)` is an isomorphism. -/
+theorem isIso_restrictAdjunction_unit_app_of_opensRange_eq_top {V Y : Scheme.{u}} (j : V ⟶ Y)
+    [IsOpenImmersion j] (N : Y.Modules) (h : j.opensRange = ⊤) :
+    IsIso ((restrictAdjunction j).unit.app N) :=
+  Hom.isIso_iff_isIso_app.mpr fun _ ↦
+    isIso_restrictAdjunction_unit_app_app j N (h ▸ le_top)
+
+/-- Along an open immersion from an empty scheme, the unit `N ⟶ j_* (N|_V)` is zero: its target
+has no nonzero sections. -/
+@[simp]
+theorem restrictAdjunction_unit_app_eq_zero_of_isEmpty {V Y : Scheme.{u}} (j : V ⟶ Y)
+    [IsOpenImmersion j] [IsEmpty V] (N : Y.Modules) :
+    (restrictAdjunction j).unit.app N = 0 := by
+  refine hom_ext _ _ fun W ↦ ?_
+  ext s
+  -- The sections of `j_* (N|_V)` over `W` are sections of `N|_V` over the empty open `j⁻¹ W`.
+  exact section_ext_of_isEmpty (M := N.restrict j) (U := j ⁻¹ᵁ W)
+    (hU := ⟨fun x ↦ isEmptyElim (x.val : V)⟩) _ _
 
 /-- The transpose of an isomorphism along an open immersion is an isomorphism on sections
 over opens contained in its image. -/

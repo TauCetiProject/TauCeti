@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The sphere as the actual smooth boundary of the closed ball
@@ -69,6 +69,13 @@ theorem sphereDiffeomorphBoundaryClosedBall_apply_coe (x : sphere (0 : E) 1) :
 theorem sphereDiffeomorphBoundaryClosedBall_symm_apply_coe
     (x : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
     ((sphereDiffeomorphBoundaryClosedBall (n := n)).symm x).val = x.val.val := (rfl)
+
+/-- The intrinsic boundary of the closed unit ball is nonempty. -/
+instance instNonemptyBoundaryClosedBall :
+    Nonempty ((𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :=
+  haveI : Nontrivial E :=
+    Module.nontrivial_of_finrank_eq_succ (Fact.out : Module.finrank ℝ E = n + 1)
+  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype.map sphereDiffeomorphBoundaryClosedBall
 
 /-- The unit circle `Circle` is homeomorphic to the actual intrinsic boundary of the closed unit
 disc of `ℂ`. The map preserves the underlying complex number. -/

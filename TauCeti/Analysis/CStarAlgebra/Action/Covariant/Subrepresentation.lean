@@ -8,9 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
 import Mathlib.Logic.Small.List
 import Mathlib.RingTheory.Finiteness.Small
-import TauCeti.Analysis.InnerProductSpace.Compression
+import TauCeti.Analysis.CStarAlgebra.Representation.Compression
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Small
-import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 import TauCeti.Topology.Sequences.Small
 
 /-!
@@ -59,24 +58,11 @@ variable {G A H K : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra
 def restrict (hπ : ∀ a, Set.MapsTo (P.coefficient a) (Set.range V) (Set.range V))
     (hU : ∀ g, Set.MapsTo (P.group g) (Set.range V) (Set.range V)) :
     CovariantRepresentation α K where
-  coefficient :=
-    { toFun a := (P.coefficient a).compression V.toContinuousLinearMap
-      map_smul' c a := by simp
-      map_zero' := by simp
-      map_add' a b := by simp
-      map_mul' a b := by
-        simp only [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.compression_def]
-        exact V.isPartialIsometry_toContinuousLinearMap.adjoint_comp_comp_comp_of_mapsTo _ (hπ b)
-      map_star' a := by
-        simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
-          ContinuousLinearMap.adjoint_compression] }
+  coefficient := P.coefficient.compression V hπ
   group := .ofMonoidHom
     { toFun g := (P.group g).compression V.toContinuousLinearMap
       map_one' := by
-        ext x
-        simpa only [map_one, ContinuousLinearMap.compression_apply, ContinuousLinearMap.comp_apply,
-          one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap] using
-          congr($(V.adjoint_comp_self) x)
+        rw [map_one, ContinuousLinearMap.compression_one]
       map_mul' g h := by
         simp only [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.compression_def]
         exact V.isPartialIsometry_toContinuousLinearMap.adjoint_comp_comp_comp_of_mapsTo _ (hU h) }
@@ -91,7 +77,8 @@ def restrict (hπ : ∀ a, Set.MapsTo (P.coefficient a) (Set.range V) (Set.range
       (P.continuous_orbit (V x))).congr fun g =>
         ((P.group g).compression_apply V.toContinuousLinearMap x).symm
   covariance g a x := by
-    -- The operators of the restricted pair are, by construction, the given compressions.
+    rw [NonUnitalStarAlgHom.compression_apply, NonUnitalStarAlgHom.compression_apply]
+    -- The group operators of `ContRepresentation.ofMonoidHom` are the given compressions.
     change (P.group g).compression V.toContinuousLinearMap
         ((P.coefficient a).compression V.toContinuousLinearMap x) =
       (P.coefficient (α g a)).compression V.toContinuousLinearMap
@@ -107,8 +94,7 @@ variable (hπ : ∀ a, Set.MapsTo (P.coefficient a) (Set.range V) (Set.range V))
 @[simp]
 theorem restrict_coefficient_apply (a : A) (x : K) :
     V ((P.restrict hπ hU).coefficient a x) = P.coefficient a (V x) :=
-  (congrArg V ((P.coefficient a).compression_apply V.toContinuousLinearMap x)).trans
-    (V.apply_adjoint_apply_of_mem_range (hπ a ⟨x, rfl⟩))
+  P.coefficient.apply_compression_apply V hπ a x
 
 /-- The isometry intertwines the restricted group representation with the original one. -/
 @[simp]
@@ -167,13 +153,8 @@ theorem exists_isometry_mapsTo_mem_range {G : Type u} {A : Type v} {H : Type w} 
   have : Small.{max u v} (W : Set H) := by
     rw [Submodule.topologicalClosure_coe]
     exact Set.small_closure _
-  have : Small.{max u v} W := this
-  obtain ⟨ι, ⟨b⟩⟩ := TauCeti.exists_hilbertBasis_of_small.{max u v} ℂ W
-  let V := W.subtypeₗᵢ.comp b.repr.symm.toLinearIsometry
-  have hV : Set.range V = W := by
-    simp [V, Set.range_comp, b.repr.symm.surjective.range_eq]
-  refine ⟨lp (fun _ : ι => ℂ) 2, inferInstance, inferInstance, inferInstance, V, fun a => ?_,
-    fun g => ?_, ?_⟩
+  obtain ⟨K, _, _, _, V, hV⟩ := W.exists_linearIsometry_range_eq
+  refine ⟨K, inferInstance, inferInstance, inferInstance, V, fun a => ?_, fun g => ?_, ?_⟩
   all_goals rw [hV]
   · simpa using hW (Submonoid.subset_closure (Or.inl ⟨a, rfl⟩))
   · simpa using hW (Submonoid.subset_closure (Or.inr ⟨g, rfl⟩))

@@ -22,25 +22,26 @@ of empty categories, zigzags in `Limits.WalkingCospan`, and automatic synthesis 
 one-object categories.
 -/
 
-open CategoryTheory CategoryTheory.classifyingSpace
+open CategoryTheory TauCeti.CategoryTheory TauCeti.CategoryTheory.classifyingSpace
 
 example : vertex (⟨true⟩ : Discrete Bool) ≠ vertex ⟨false⟩ :=
   fun h ↦ Bool.noConfusion (Discrete.ext_iff.1 (vertex_injective h))
 example (b : Fin 2) :
-    classifyingSpaceMap (𝟭 (Fin 2)) ≠ classifyingSpaceMap ((Functor.const (Fin 2)).obj b) := by
+    (𝟭 (Fin 2)).classifyingSpaceMap ≠ ((Functor.const (Fin 2)).obj b).classifyingSpaceMap := by
   intro h
   have hb := vertex_injective <| by simpa using ConcreteCategory.congr_hom h (vertex (1 - b))
   fin_cases b <;> exact absurd hb (by decide)
 example (b : Fin 2) :
-    classifyingSpaceMap (((Functor.const (Discrete PUnit.{1})).obj b) ⋙
-        ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩)) = 𝟙 (classifyingSpace (Discrete PUnit.{1})) ∧
-    classifyingSpaceMap (((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) ⋙
-        ((Functor.const (Discrete PUnit.{1})).obj b)) =
-      classifyingSpaceMap ((Functor.const (Fin 2)).obj b) := by
+    (((Functor.const (Discrete PUnit.{1})).obj b) ⋙
+        ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩)).classifyingSpaceMap =
+        𝟙 (classifyingSpace (Discrete PUnit.{1})) ∧
+    (((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) ⋙
+        ((Functor.const (Discrete PUnit.{1})).obj b)).classifyingSpaceMap =
+      ((Functor.const (Fin 2)).obj b).classifyingSpaceMap := by
   have hcomp : ((Functor.const (Discrete PUnit.{1})).obj b) ⋙
       ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) = 𝟭 (Discrete PUnit.{1}) :=
     CategoryTheory.Functor.ext (fun ⟨⟨⟩⟩ ↦ rfl) fun ⟨⟨⟩⟩ ⟨⟨⟩⟩ _ ↦ Subsingleton.elim _ _
-  exact ⟨by rw [hcomp, classifyingSpaceMap_id], rfl⟩
+  exact ⟨by rw [hcomp, Functor.classifyingSpaceMap_id], rfl⟩
 example (C : Type*) [Category* C] [IsEmpty C] : ¬ ContractibleSpace (classifyingSpace C) := fun _ ↦
   let ⟨e⟩ := ContractibleSpace.hequiv_unit (classifyingSpace C); IsEmpty.false (e.invFun ())
 example :
@@ -48,7 +49,7 @@ example :
     IsEmpty (Limits.WalkingCospan.right ⟶ Limits.WalkingCospan.left) ∧
     Joined (vertex Limits.WalkingCospan.left) (vertex Limits.WalkingCospan.right) :=
   ⟨⟨nofun⟩, ⟨nofun⟩,
-    ⟨(edgePath Limits.WalkingCospan.Hom.inl).trans (edgePath Limits.WalkingCospan.Hom.inr).symm⟩⟩
+    ⟨(edge Limits.WalkingCospan.Hom.inl).trans (edge Limits.WalkingCospan.Hom.inr).symm⟩⟩
 example (n : ℕ) : ContractibleSpace (classifyingSpace (Fin (n + 1))) := inferInstance
 example (n : ℕ) : SSet.IsWeaklyContractible (nerve (Fin (n + 1))) := inferInstance
 noncomputable example : Unique (classifyingSpace (Discrete PUnit.{1})) := inferInstance

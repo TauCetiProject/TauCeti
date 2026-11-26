@@ -36,11 +36,17 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 * `κ` is smooth, and it pulls the Liouville form `λ` back to `∑ j, I_j dθ_j`
   (`TauCeti.CotangentBundle.mpullback_liouvilleForm_actionAngleCover_apply`) and the canonical
   symplectic form `ω = -dλ` back to `∑ j, dθ_j ∧ dI_j`
-  (`TauCeti.CotangentBundle.eval₂_symplecticForm_mfderiv_actionAngleCover`).
+  (`TauCeti.CotangentBundle.eval₂_symplecticForm_mfderiv_actionAngleCover`). In particular the
+  covectors with zero angles over any smooth family of actions pull `ω` back to zero
+  (`TauCeti.CotangentBundle.mpullback_actionAngleCover_zero_comp_symplecticForm`).
 * Since `∑ j, dθ_j ∧ dI_j` is nondegenerate, `κ` is a local diffeomorphism
   (`TauCeti.CotangentBundle.isLocalDiffeomorph_actionAngleCover`). Hence the action map is smooth
   (`TauCeti.CotangentBundle.contMDiff_torusActions`), since its composite with `κ` is the
-  projection `(θ, I) ↦ I`.
+  projection `(θ, I) ↦ I`, and a submersion
+  (`TauCeti.CotangentBundle.surjective_mfderiv_torusActions`).
+* Hence, without lifting the angles, `ω(ξ, η) = dθ(ξ) ⬝ᵥ dI(η) - dθ(η) ⬝ᵥ dI(ξ)` for the
+  differentials `dθ` of the projection to the torus and `dI` of the actions
+  (`TauCeti.CotangentBundle.eval₂_symplecticForm_eq_dotProduct_sub`).
 
 So `(θ mod p, I)` are global coordinates on `T*Tⁿ` in which `ω = ∑ j, dθ_j ∧ dI_j`. These are the
 coordinates in which the Liouville–Arnold theorem states its normal form near a compact regular
@@ -310,6 +316,36 @@ theorem isLocalDiffeomorph_actionAngleCover :
   exact eq_of_forall_sum_mul_sub_mul_eq (c := (0 : (ι → ℝ) × (ι → ℝ))) fun w ↦ by
     simpa using h w
 
+section ZeroAngles
+
+variable {F H' B : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} [TopologicalSpace B] [ChartedSpace H' B] [IsManifold J ∞ B]
+  {a : B → ι → ℝ}
+
+/-- **The zero angles are Lagrangian.** For a smooth family of actions `a : B → ℝ^ι`, the map
+`b ↦ κ(0, a(b))` to the covectors with zero angles pulls the canonical symplectic form back to
+zero: along `θ = 0` the form `∑ j, dθ_j ∧ dI_j` vanishes. -/
+theorem mpullback_actionAngleCover_zero_comp_symplecticForm (ha : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ a) :
+    SmoothForm.mpullback (actionAngleCover p ∘ fun b ↦ ((0 : ι → ℝ), a b))
+      ((contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space ha))
+      (symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) = 0 := by
+  have hg : ContMDiff J 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) ∞ fun b ↦ ((0 : ι → ℝ), a b) :=
+    contMDiff_const.prodMk_space ha
+  rw [← SmoothForm.mpullback_mpullback _ _ hg (contMDiff_actionAngleCover p)]
+  refine SmoothBundleForm.ext_eval₂ fun b v w ↦ ?_
+  -- The angle components of the derivative of `b ↦ (0, a(b))` vanish.
+  have h0 (u : TangentSpace J b) :
+      (mfderiv J 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (fun b ↦ ((0 : ι → ℝ), a b)) b u).1 = 0 := by
+    have h1 := congrArg Prod.fst (MDifferentiableAt.mvfderiv_prodMk_apply
+      (f := fun _ ↦ (0 : ι → ℝ)) mdifferentiableAt_const ((ha b).mdifferentiableAt (by simp)) u)
+    rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, mfderiv_const] at h1
+    exact h1
+  rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
+    eval₂_symplecticForm_mfderiv_actionAngleCover, h0, h0]
+  simp
+
+end ZeroAngles
+
 /-- The action map of the cotangent bundle of the torus is smooth. -/
 theorem contMDiff_torusActions [DecidableEq ι] :
     ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
@@ -317,6 +353,70 @@ theorem contMDiff_torusActions [DecidableEq ι] :
   rw [← (isLocalDiffeomorph_actionAngleCover (ι := ι) p).contMDiff_comp_iff
     (surjective_actionAngleCover p) le_rfl, torusActions_comp_actionAngleCover]
   exact contMDiff_iff_contDiff.2 contDiff_snd
+
+/-- The action map of the cotangent bundle of the torus is a submersion: its composite with the
+action–angle covering map is the projection `(θ, I) ↦ I`. -/
+theorem surjective_mfderiv_torusActions [DecidableEq ι]
+    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) :
+    Surjective (mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+      𝓘(ℝ, ι → ℝ) (torusActions p) z) := by
+  obtain ⟨x, rfl⟩ := surjective_actionAngleCover p z
+  have hκ := (contMDiff_actionAngleCover (ι := ι) p x).mdifferentiableAt (by simp)
+  have hT := (contMDiff_torusActions (ι := ι) p (actionAngleCover p x)).mdifferentiableAt
+    (by simp)
+  refine Surjective.of_comp (g := mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) _ (actionAngleCover p) x) ?_
+  rw [← ContinuousLinearMap.coe_comp, ← mfderiv_comp x hT hκ, torusActions_comp_actionAngleCover,
+    mfderiv_eq_fderiv, fderiv_snd]
+  exact fun w ↦ ⟨(0, w), rfl⟩
+
+/-- **The canonical symplectic form in angle and action differentials.** On the cotangent bundle
+of the torus, `ω(ξ, η) = dθ(ξ) ⬝ᵥ dI(η) - dθ(η) ⬝ᵥ dI(ξ)`, where `dθ` is the differential of the
+projection to the torus and `dI` that of the actions (`TauCeti.CotangentBundle.torusActions`).
+This is `ω = ∑ j, dθ_j ∧ dI_j` read without choosing real lifts of the angles. -/
+theorem eval₂_symplecticForm_eq_dotProduct_sub [DecidableEq ι]
+    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
+    (ξ η : TangentSpace ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) z) :
+    SmoothBundleForm.eval₂
+        (symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) z ξ η =
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) TotalSpace.proj z ξ ⬝ᵥ
+        mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          𝓘(ℝ, ι → ℝ) (torusActions p) z η -
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) TotalSpace.proj z η ⬝ᵥ
+        mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          𝓘(ℝ, ι → ℝ) (torusActions p) z ξ := by
+  -- Write `z = κ(x)` and the tangent vectors as images of vectors `u`, `u'` under `dκ`.
+  obtain ⟨x, rfl⟩ := surjective_actionAngleCover p z
+  have hinv := (isLocalDiffeomorph_actionAngleCover (ι := ι) p).isInvertible_mfderiv (by simp) x
+  obtain ⟨u, rfl⟩ := hinv.surjective ξ
+  obtain ⟨u', rfl⟩ := hinv.surjective η
+  have hκ := (contMDiff_actionAngleCover (ι := ι) p x).mdifferentiableAt (by simp)
+  -- Along `κ` the angle differential reads the first component, since `proj ∘ κ = [·] ∘ fst`.
+  have hθ (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) TotalSpace.proj (actionAngleCover p x)
+          (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
+            ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+            (actionAngleCover p) x w) = w.1 := by
+    rw [← mfderiv_comp_apply x
+      ((Bundle.contMDiff_proj (n := ∞) _ (actionAngleCover p x)).mdifferentiableAt (by simp)) hκ]
+    exact DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+      (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv w
+  -- Along `κ` the action differential reads the second component, since `I ∘ κ = snd`.
+  have hI (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          𝓘(ℝ, ι → ℝ) (torusActions p) (actionAngleCover p x)
+          (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
+            ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+            (actionAngleCover p) x w) = w.2 := by
+    rw [← mfderiv_comp_apply x
+      ((contMDiff_torusActions p (actionAngleCover p x)).mdifferentiableAt (by simp)) hκ,
+      torusActions_comp_actionAngleCover]
+    exact (DFunLike.congr_fun (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt.mfderiv
+      w).trans (congrFun ContinuousLinearMap.coe_snd' w)
+  rw [eval₂_symplecticForm_mfderiv_actionAngleCover, hθ, hθ, hI, hI, dotProduct, dotProduct,
+    ← Finset.sum_sub_distrib]
 
 /-- A function of the actions is differentiable where its profile is differentiable at the actions.
 -/

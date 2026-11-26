@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Op
@@ -13,7 +12,6 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 import TauCeti.AlgebraicTopology.SimplexCategory.Basic
-import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
 /-!
 # Basic properties and natural isomorphisms of geometric realization
@@ -25,12 +23,10 @@ Continuous maps out of `|X|` are constructed via `SSet.descToTop` and compared v
 `SSet.toTop_hom_ext`.
 
 To support classifying spaces of categories and their fundamental groupoids, this file establishes:
-* emptiness, nonemptiness, and subsingleton criteria for `|X|`, together with constant-map
+* emptiness and nonemptiness characterizations for `|X|`, together with constant-map
   realization (`toTop_map_const`, `toTop_map_const_hom`);
 * separation of `0`- and `1`-simplices via piecewise-linear test functions (`toTopPoint_injective`,
   `toTopObjMk_one_injective`);
-* edge paths `Edge.toTopPath` and path homotopies from `2`-simplices
-  (`Edge.CompStruct.toTopPath_homotopic`);
 * natural isomorphisms commuting `SSet.toTop` with discrete sets (`constCompToTopIso`), universe
   lifts (`uliftFunctorCompToTopIso`, `toTopUliftHomeomorph`), and simplicial opposites
   (`opFunctorCompToTopIso`, `toTopOpHomeomorph`).
@@ -66,19 +62,9 @@ lemma toTop_map_const (y : Y _⦋0⦌) :
 @[simp] theorem isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) :=
   ⟨fun h ↦ ⟨fun x ↦ h.false (toTopPoint x)⟩, fun h ↦ ⟨fun z ↦
     let ⟨_, x, _, _⟩ := exists_toTopObjMk z; h.false (X.map (⦋0⦌.const _ 0).op x)⟩⟩
-instance [IsEmpty (X _⦋0⦌)] : IsEmpty |X| := (isEmpty_toTop_iff X).2 inferInstance
 /-- The geometric realization `|X|` is nonempty if and only if `X` is nonempty. -/
 @[simp] theorem nonempty_toTop_iff (X : SSet.{u}) : Nonempty |X| ↔ X.Nonempty := by
   rw [← not_isEmpty_iff, isEmpty_toTop_iff, not_isEmpty_iff]
-instance [X.Nonempty] : Nonempty |X| := (nonempty_toTop_iff X).2 inferInstance
-instance [∀ n, Subsingleton (X.obj n)] : Subsingleton |X| where
-  allEq z₁ z₂ := by
-    obtain ⟨n₁, x₁, w₁, rfl⟩ := exists_toTopObjMk z₁
-    obtain ⟨n₂, x₂, w₂, rfl⟩ := exists_toTopObjMk z₂
-    have h {n : ℕ} (x : X _⦋n⦌) (w) : toTopObjMk x w = toTopPoint (X.map (⦋0⦌.const ⦋n⦌ 0).op x) :=
-      (congrArg (toTopObjMk · w) (Subsingleton.elim x (X.map (⦋n⦌.const ⦋0⦌ 0).op _))).trans
-        ((toTopObjMk_map _ _ w).trans (toTopObjMk_eq_toTopPoint _ _))
-    rw [h x₁ w₁, h x₂ w₂]; exact congrArg toTopPoint (Subsingleton.elim _ _)
 
 /-! ### Separation of vertices and `1`-simplices -/
 
@@ -164,64 +150,6 @@ theorem toTopObjMk_one_injective (X : SSet.{u}) :
       ← Fin.castSucc_zero, δ_comp_σ_self_apply, δ_comp_σ_self_apply] at hv
     exact congrArg _ hv
   · exact sep h₁ heq
-
-/-! ### Edge paths and `2`-simplices in geometric realization -/
-
-namespace Edge
-open unitInterval
-variable {x₀ x₁ x₂ : X _⦋0⦌}
-/-- The path in `|X|` from `toTopPoint x₀` to `toTopPoint x₁` traced by `e : X.Edge x₀ x₁`. -/
-noncomputable def toTopPath (e : X.Edge x₀ x₁) : _root_.Path (toTopPoint x₀) (toTopPoint x₁) where
-  toContinuousMap := (⟨toTopObjMk e.edge, continuous_toTopObjMk e.edge⟩ : C(_, |X|)).comp
-    (StdSimplex.homeomorphI.symm : C(I, StdSimplex ℝ (Fin 2)))
-  source' := by simp [e.src_eq]
-  target' := by simp [e.tgt_eq]
-lemma toTopPath_apply (e : X.Edge x₀ x₁) (t : I) :
-    e.toTopPath t = toTopObjMk e.edge (StdSimplex.homeomorphI.symm t) := (rfl)
-@[simp] lemma toTopPath_id (x : X _⦋0⦌) :
-    (Edge.id x).toTopPath = _root_.Path.refl (toTopPoint x) := by
-  ext t; rw [toTopPath_apply, Edge.id_edge, SimplicialObject.σ, toTopObjMk_map,
-    toTopObjMk_eq_toTopPoint, _root_.Path.refl_apply]
-@[simp] lemma toTop_map_toTopPath_apply (f : X ⟶ Y) (e : X.Edge x₀ x₁) (t : I) :
-    toTop.map f (e.toTopPath t) = (e.map f).toTopPath t := by
-  rw [toTopPath_apply, toTopPath_apply, toTop_map_toTopObjMk, Edge.map_edge]
-
-private noncomputable def stdSimplex₂FacePath {a b : Fin 3} (j : Fin 3)
-    (ha : j.succAbove 0 = a) (hb : j.succAbove 1 = b) :
-    _root_.Path (StdSimplex.single (R := ℝ) a) (StdSimplex.single b) where
-  toContinuousMap :=
-    (⟨StdSimplex.map j.succAbove, StdSimplex.continuous_map ℝ j.succAbove⟩ : C(_, _)).comp
-      (StdSimplex.homeomorphI.symm : C(I, StdSimplex ℝ (Fin 2)))
-  source' := by simp [StdSimplex.map_single, ha]
-  target' := by simp [StdSimplex.map_single, hb]
-/-- A `2`-simplex `CompStruct e₀₁ e₁₂ e₀₂` in `X` witnesses a homotopy in `|X|` between the edge
-path of `e₀₂` and the concatenation of the edge paths of `e₀₁` and `e₁₂`. -/
-theorem CompStruct.toTopPath_homotopic {e₀₁ : X.Edge x₀ x₁} {e₁₂ : X.Edge x₁ x₂}
-    {e₀₂ : X.Edge x₀ x₂} (h : CompStruct e₀₁ e₁₂ e₀₂) :
-    e₀₂.toTopPath.Homotopic (e₀₁.toTopPath.trans e₁₂.toTopPath) := by
-  let σMap : C(StdSimplex ℝ (Fin 3), |X|) := ⟨toTopObjMk h.simplex, continuous_toTopObjMk h.simplex⟩
-  have hmap := (SimplyConnectedSpace.paths_homotopic
-    (stdSimplex₂FacePath (a := 0) (b := 2) 1 (by decide) (by decide))
-    ((stdSimplex₂FacePath (a := 0) (b := 1) 2 (by decide) (by decide)).trans
-      (stdSimplex₂FacePath (a := 1) (b := 2) 0 (by decide) (by decide)))).map σMap
-  rw [_root_.Path.map_trans] at hmap
-  have hpt {y₀ y₁ : X _⦋0⦌} {a b : Fin 3} (j : Fin 3) (ha : j.succAbove 0 = a)
-      (hb : j.succAbove 1 = b) (e : X.Edge y₀ y₁) (hd : X.δ j h.simplex = e.edge) (t : I) :
-      ((stdSimplex₂FacePath j ha hb).map σMap.continuous) t = e.toTopPath t := by
-    rw [_root_.Path.map_coe, Function.comp_apply]
-    exact (congrArg (toTopObjMk h.simplex)
-      (congrArg (StdSimplex.map · (StdSimplex.homeomorphI.symm t))
-        (SimplexCategory.coe_δ j).symm)).trans <| by
-      rw [← toTopObjMk_map, ← SimplicialObject.δ, hd, toTopPath_apply]
-  have h02 := hpt (a := 0) (b := 2) 1 (by decide) (by decide) e₀₂ h.d₁
-  convert hmap.pathCast
-    ((e₀₂.toTopPath.source.symm.trans (h02 0).symm).trans (_root_.Path.source _))
-    ((e₀₂.toTopPath.target.symm.trans (h02 1).symm).trans (_root_.Path.target _)) using 1
-  · exact (_root_.Path.ext (funext h02)).symm
-  · ext t; simp only [_root_.Path.cast_coe, _root_.Path.trans_apply]; split_ifs with ht'
-    · exact (hpt 2 (by decide) (by decide) e₀₁ h.d₂ _).symm
-    · exact (hpt 0 (by decide) (by decide) e₁₂ h.d₀ _).symm
-end Edge
 
 /-! ### Realization of discrete simplicial sets -/
 
@@ -470,10 +398,4 @@ lemma toTopOpHomeomorph_naturality_apply (f : X ⟶ Y) (z : |X.op|) :
     toTopOpHomeomorph Y (toTop.map (SSet.opFunctor.map f) z) =
       toTop.map f (toTopOpHomeomorph X z) :=
   ConcreteCategory.congr_hom (opFunctorCompToTopIso.hom.naturality f) z
-@[simp] lemma toTopOpHomeomorph_opEquiv_toTopPath_apply {x₀ x₁ : X _⦋0⦌} (e : X.Edge x₀ x₁)
-    (t : unitInterval) :
-    toTopOpHomeomorph X ((Edge.opEquiv e).toTopPath t) = e.toTopPath.symm t := by
-  rw [Edge.toTopPath_apply, toTopOpHomeomorph_toTopObjMk, Edge.opEquiv_edge, Equiv.apply_symm_apply,
-    StdSimplex.map_rev_homeomorphI_symm, _root_.Path.symm_apply, Function.comp_apply,
-    Edge.toTopPath_apply]
 end SSet

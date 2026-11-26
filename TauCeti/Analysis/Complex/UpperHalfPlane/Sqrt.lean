@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.RCLike.Sqrt
 import Mathlib.Analysis.Complex.SqrtDeriv
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # Principal square roots of real linear forms on the upper half-plane
@@ -15,18 +16,20 @@ import Mathlib.Analysis.Complex.SqrtDeriv
 For real `m` and `n`, the principal square root of `m τ + n` is continuous on the upper
 half-plane: `m τ + n` is constant if `m = 0`, and otherwise stays off the real axis, where the
 branch cut lies. For an integer matrix `(a b; c d)` this is the square root `√(c τ + d)` of its
-automorphy factor, as in half-integral-weight transformation laws.
+automorphy factor, as in half-integral-weight transformation laws; it never vanishes on `ℍ`.
 
 ## Main results
 
 * `UpperHalfPlane.continuous_sqrt_ofReal_mul_add`: `τ ↦ √(m τ + n)` is continuous on `ℍ`.
+* `UpperHalfPlane.sqrt_denom_ne_zero`: the square root `√(c τ + d)` of an automorphy factor does
+  not vanish on `ℍ`.
 -/
 
 public section
 
 open Complex
 
-open scoped UpperHalfPlane
+open scoped UpperHalfPlane MatrixGroups
 
 namespace UpperHalfPlane
 
@@ -42,6 +45,13 @@ theorem continuous_sqrt_ofReal_mul_add (m n : ℝ) :
     simpa [hm] using τ.im_pos.ne'
   exact (continuousAt_sqrt (Or.inr him)).comp
     (f := fun τ : ℍ ↦ (m : ℂ) * τ + n) (by fun_prop)
+
+/-- The principal square root `√(c τ + d)` of the automorphy factor of `γ = (a b; c d)` in
+`SL(2, ℤ)` does not vanish on the upper half-plane. -/
+theorem sqrt_denom_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
+    Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 := by
+  rw [← ModularGroup.denom_apply]
+  exact sqrt_eq_zero_iff.not.2 (denom_ne_zero _ τ)
 
 end UpperHalfPlane
 

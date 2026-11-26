@@ -14,6 +14,7 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Separation.Hausdorff
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.Separation.Sigma
 public import TauCeti.Topology.Constructions.FiniteGluing
 
@@ -80,7 +81,8 @@ The model is the following.
   under the quotient map (`image_quotient_mk_compl`).  The quotient map restricts to a
   homeomorphism from the disjoint union of the normalization components minus their flag points
   onto the complement of the node set, because it is an open embedding there
-  (`quotientMapOnComplNodeSetHomeomorph`).
+  (`quotientMapOnComplNodeSetHomeomorph`).  The two complements are bundled as open subsets
+  `complFlagPointSet` and `complNodeSet`.
 
 The node set and its complement are *intended* to be the singular locus and the smooth locus of
 the nodal curve.  This file only builds the underlying topological space, so the two names are
@@ -670,6 +672,14 @@ theorem eq_of_mk_eq_of_notMem_flagPointSet {d : FlagPairData ι Flag X} {x y : �
   by_contra hne
   exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
 
+/-- A point of the disjoint union has the same image in the glued curve as a mark exactly when it
+is that mark, since marks are not flag points. -/
+theorem Marking.mk_eq_mk_point_iff {d : FlagPairData ι Flag X} {L : Type*} (m : Marking d L)
+    (l : L) (z : Σ i, X i) :
+    Quotient.mk (gluedRelSetoid d) z = Quotient.mk _ (m.point l) ↔ z = m.point l :=
+  ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m.point_notMem_flagPointSet l) h.symm).symm,
+    fun h ↦ h ▸ rfl⟩
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/
 theorem isClosed_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
@@ -752,6 +762,42 @@ disjoint union that represents it in the glued curve. -/
   obtain ⟨x, rfl⟩ := (quotientMapOnComplNodeSetHomeomorph d).surjective y
   rw [Homeomorph.symm_apply_apply]
   exact (quotientMapOnComplNodeSetHomeomorph_apply d x).symm
+
+-- The bodies of `complFlagPointSet` and `complNodeSet` are exposed: the restricted sheafed spaces
+-- of `NodalGluing/Normalization.lean` are indexed by these open sets, and their points must
+-- unfold to the subtypes of `(flagPointSet d)ᶜ` and `(nodeSet d)ᶜ` used by
+-- `isOpenEmbedding_domRestrict_quotient_mk`.
+/-- The complement of the flag points, an open subset of the normalization. -/
+@[expose] def complFlagPointSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] : TopologicalSpace.Opens (Σ i, X i) :=
+  ⟨(flagPointSet d)ᶜ, (flagPointSet_finite d).isClosed.isOpen_compl⟩
+
+@[simp]
+theorem coe_complFlagPointSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] :
+    (complFlagPointSet d : Set (Σ i, X i)) = (flagPointSet d)ᶜ := (rfl)
+
+/-- A point lies in the complement of the flag points exactly when it is not a flag point. -/
+@[simp]
+theorem mem_complFlagPointSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] {x : Σ i, X i} :
+    x ∈ complFlagPointSet d ↔ x ∉ flagPointSet d := Iff.rfl
+
+/-- The complement of the nodes, an open subset of the glued curve. -/
+@[expose] def complNodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] : TopologicalSpace.Opens (GluedCurve d) :=
+  ⟨(nodeSet d)ᶜ, isOpen_compl_nodeSet d⟩
+
+@[simp]
+theorem coe_complNodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] :
+    (complNodeSet d : Set (GluedCurve d)) = (nodeSet d)ᶜ := (rfl)
+
+/-- A point lies in the complement of the nodes exactly when it is not a node. -/
+@[simp]
+theorem mem_complNodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T1Space (X i)] [Finite Flag] {z : GluedCurve d} :
+    z ∈ complNodeSet d ↔ z ∉ nodeSet d := Iff.rfl
 
 /-! ### Neighbourhoods of flag points -/
 

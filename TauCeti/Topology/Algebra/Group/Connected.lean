@@ -35,6 +35,8 @@ connected one.
   neighbourhood of `1`.
 * `Submonoid.eq_top_of_mem_nhds_one`: in a preconnected topological group a submonoid that is a
   neighbourhood of `1` is the whole group.
+* `Joined.inv_mul_mem_connectedComponentOfOne`: elements joined by a path differ by an element of
+  the identity component.
 * `Subgroup.map_connectedComponentOfOne_le`: a continuous homomorphism maps the identity
   component into the identity component.
 * `MonoidHom.range_eq_connectedComponentOfOne`: a continuous homomorphism with open range, whose
@@ -174,6 +176,14 @@ theorem _root_.Submonoid.eq_top_of_mem_nhds_one [PreconnectedSpace G] {S : Submo
   rintro x (hx | hx)
   · exact hx.1
   · simpa using hx.2
+
+/-- In a topological group, an element joined to `y` differs from it by an element of the
+identity component. -/
+theorem _root_.Joined.inv_mul_mem_connectedComponentOfOne {x y : G} (h : Joined x y) :
+    x⁻¹ * y ∈ Subgroup.connectedComponentOfOne G := by
+  have : Joined (1 : G) (x⁻¹ * y) := by
+    simpa using h.map (continuous_const.mul continuous_id : Continuous fun z : G ↦ x⁻¹ * z)
+  exact pathComponent_subset_component _ this
 
 /-- A continuous homomorphism maps the identity component into the identity component. -/
 theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']
