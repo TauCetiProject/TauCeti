@@ -13,8 +13,9 @@ import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Extension
 
 Fix a nonreal embedding `σ : K →+* ℂ`. Each infinite place of an extension `L/K` above the
 place of `σ` has exactly one representative extending `σ`: of the two conjugate embeddings
-representing the place, the other one extends `conjugate σ` instead. The relative norm evaluated
-at `σ` is the product of these representatives, with one factor per infinite place over `σ`.
+representing the place, the other one extends `conjugate σ` instead. In a finite extension the
+relative norm evaluated at `σ` is the product of these representatives, with one factor per
+infinite place over the place of `σ`.
 For an imaginary quadratic base this product runs over all infinite places of `L`.
 
 For the cyclotomic case over an imaginary quadratic field, see `New.Parameters.prod_phi_eq` in
@@ -81,16 +82,16 @@ theorem mk_equivInfinitePlace_symm_apply [Subsingleton (InfinitePlace K)] (hσ :
     (w : InfinitePlace L) : InfinitePlace.mk ((equivInfinitePlace hσ).symm w).val = w := by
   rw [← equivInfinitePlace_apply hσ, Equiv.apply_symm_apply]
 
-open scoped Classical in
-/-- The relative norm at `σ` is the product of the values of the unique representatives
-extending `σ`, one for each infinite place over the place of `σ`. -/
-theorem prod_equivPlacesOver_symm_apply [NumberField L] (hσ : ¬ IsReal σ) (x : L) :
-    ∏ w : placesOver L (InfinitePlace.mk σ), ((equivPlacesOver hσ).symm w).val x =
+/-- In a finite extension, the relative norm at `σ` is the product of the values of the unique
+representatives extending `σ`, one for each infinite place over the place of `σ`. -/
+theorem prod_equivPlacesOver_symm_apply [FiniteDimensional K L] (hσ : ¬ IsReal σ) (x : L) :
+    ∏ᶠ w : placesOver L (InfinitePlace.mk σ), ((equivPlacesOver hσ).symm w).val x =
       σ (Algebra.norm K x) := by
   have : CharZero K := σ.charZero
-  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ K L
   have : IsAlgClosed (Codomain σ) := Complex.isAlgClosed
   let e := (equivAlgHom L σ).symm.trans (equivPlacesOver hσ)
+  let := Fintype.ofEquiv (L →ₐ[K] Codomain σ) e
+  rw [finprod_eq_prod_of_fintype]
   calc
     _ = ∏ f : L →ₐ[K] Codomain σ, Codomain.equiv σ (f x) :=
       (Fintype.prod_equiv e _ _ fun f ↦ by
@@ -98,18 +99,15 @@ theorem prod_equivPlacesOver_symm_apply [NumberField L] (hσ : ¬ IsReal σ) (x 
     _ = σ (Algebra.norm K x) := by
       rw [← map_prod, ← Algebra.norm_eq_prod_embeddings K (Codomain σ), Codomain.equiv_algebraMap]
 
-/-- With only one infinite place on the base, the relative norm at a nonreal embedding `σ`
-is a product over all infinite places of the extension. -/
-theorem prod_equivInfinitePlace_symm_apply [NumberField L] [Subsingleton (InfinitePlace K)]
+/-- In a finite extension whose base has only one infinite place, the relative norm at a nonreal
+embedding `σ` is a product over all infinite places of the extension. -/
+theorem prod_equivInfinitePlace_symm_apply [FiniteDimensional K L] [Subsingleton (InfinitePlace K)]
     (hσ : ¬ IsReal σ) (x : L) :
-    ∏ w : InfinitePlace L, ((equivInfinitePlace hσ).symm w).val x = σ (Algebra.norm K x) := by
-  classical
+    ∏ᶠ w : InfinitePlace L, ((equivInfinitePlace hσ).symm w).val x = σ (Algebra.norm K x) := by
   let e : placesOver L (InfinitePlace.mk σ) ≃ InfinitePlace L :=
     (equivPlacesOver hσ).symm.trans (equivInfinitePlace hσ)
-  calc
-    _ = ∏ w : placesOver L (InfinitePlace.mk σ), ((equivPlacesOver hσ).symm w).val x :=
-      (Fintype.prod_equiv e _ _ fun w ↦ by
-        simp only [e, Equiv.trans_apply, Equiv.symm_apply_apply]).symm
-    _ = _ := prod_equivPlacesOver_symm_apply hσ x
+  rw [← finprod_comp_equiv e]
+  simpa only [e, Equiv.trans_apply, Equiv.symm_apply_apply] using
+    prod_equivPlacesOver_symm_apply hσ x
 
 end NumberField.ComplexEmbedding.Extension
