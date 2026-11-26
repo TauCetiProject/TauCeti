@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.Morse.Pi
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Exponential convergence of gradient trajectories: two test cases
@@ -249,8 +250,7 @@ theorem tendsto_maximalIntegralCurve_neg_mgradient_sq_sub_sq (a : ℝ) :
   rw [tendsto_zero_iff_norm_tendsto_zero]
   simp_rw [maximalIntegralCurve_neg_mgradient_sq_sub_sq, PiLp.norm_single, norm_mul,
     Real.norm_eq_abs, Real.abs_exp]
-  simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-    (tendsto_id.const_mul_atTop two_pos)).const_mul |a|
+  exact Real.tendsto_const_mul_exp_neg_mul_atTop |a| two_pos
 
 /-- **The energy along the stable trajectory of the saddle.** Along the trajectory of
 `-grad (x² - y²)` through `(a, 0)`, the energy `f(γ t) - f(0) = f(γ t)` is `a² exp (-4 t)`. It is
