@@ -44,6 +44,8 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
 * `TauCeti.countablePartitionEntropy_pair_of_indepFun`: independent labels have additive entropy.
 * `TauCeti.countablePartitionEntropy_comp_of_injective`: relabeling by an injection, for instance
   embedding a countable alphabet into `ℕ`, does not change the entropy.
+* `TauCeti.countablePartitionEntropy_congr_ae`, `TauCeti.conditionalPartitionEntropy_congr_ae`:
+  almost-everywhere equal labels have equal entropy and conditional entropy.
 * `TauCeti.countablePartitionEntropy_eq_ofReal_sum`: on a finite alphabet, under a probability
   (or zero) measure, the entropy is the finite sum `∑ i, negMulLog p_i`.
 
@@ -133,6 +135,29 @@ theorem countablePartitionEntropy_comp_of_injective (a : X → ι) {e : ι → �
       Set.eq_empty_of_forall_notMem fun x hx ↦ hcr ⟨a x, hx⟩
     simp [this] at hc
 
+/-- Almost-everywhere equal labels have equal entropy. No measurability is needed: the atoms
+differ by null sets. -/
+theorem countablePartitionEntropy_congr_ae {a a' : X → ι} (h : a =ᵐ[μ] a') :
+    countablePartitionEntropy μ a = countablePartitionEntropy μ a' := by
+  simp only [countablePartitionEntropy_def, measureReal_def,
+    measure_congr (h.preimage _)]
+
+/-- Almost-everywhere equal labels have equal conditional entropy. -/
+theorem conditionalPartitionEntropy_congr_ae {a a' : X → ι} {b b' : X → κ} (ha : a =ᵐ[μ] a')
+    (hb : b =ᵐ[μ] b') :
+    conditionalPartitionEntropy μ a b = conditionalPartitionEntropy μ a' b' := by
+  simp only [conditionalPartitionEntropy_def, measureReal_def,
+    measure_congr ((ha.preimage _).inter (hb.preimage _)),
+    measure_congr (hb.preimage _)]
+
+/-- Almost-everywhere equality passes to joins, so joins of almost-everywhere equal labels have
+equal entropy. -/
+theorem countablePartitionEntropy_pair_congr_ae {a a' : X → ι} {b b' : X → κ}
+    (ha : a =ᵐ[μ] a') (hb : b =ᵐ[μ] b') :
+    countablePartitionEntropy μ (fun x ↦ (a x, b x)) =
+      countablePartitionEntropy μ (fun x ↦ (a' x, b' x)) :=
+  countablePartitionEntropy_congr_ae (ha.prodMk hb)
+
 /-- Joining a partition with itself does not change it: `H(a ∨ a) = H(a)`. -/
 theorem countablePartitionEntropy_pair_self (μ : Measure X) (a : X → ι) :
     countablePartitionEntropy μ (fun x ↦ (a x, a x)) = countablePartitionEntropy μ a :=
@@ -184,6 +209,13 @@ theorem countablePartitionEntropy_eq_ofReal_sum [Fintype ι] [IsZeroOrProbabilit
     countablePartitionEntropy μ a = ENNReal.ofReal (∑ i, negMulLog (μ.real (a ⁻¹' {i}))) := by
   rw [countablePartitionEntropy_def, tsum_fintype, ENNReal.ofReal_sum_of_nonneg]
   exact fun _ _ ↦ negMulLog_nonneg measureReal_nonneg measureReal_le_one
+
+/-- On a finite alphabet the entropy is finite, for any measure. -/
+theorem countablePartitionEntropy_ne_top [Finite ι] (μ : Measure X) (a : X → ι) :
+    countablePartitionEntropy μ a ≠ ∞ := by
+  have := Fintype.ofFinite ι
+  rw [countablePartitionEntropy_def, tsum_fintype]
+  exact ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.ofReal_ne_top
 
 /-- A partition conditioned on itself has conditional entropy zero. -/
 @[simp]

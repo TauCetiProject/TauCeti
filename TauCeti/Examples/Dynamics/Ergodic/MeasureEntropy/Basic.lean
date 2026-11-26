@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Ergodic.MeasureEntropy
+public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Count
 
