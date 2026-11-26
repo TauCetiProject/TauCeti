@@ -291,6 +291,32 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     simp only [Function.comp_apply] at this
     linarith [min_le_right (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
 
+/-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` lies
+between `f q` and `f p`, since it decreases. -/
+theorem mem_Icc_comp_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p q : E} (hfp : ContinuousAt f p)
+    (hfq : ContinuousAt f q) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    (s : ℝ) : f (γ s) ∈ Icc (f q) (f p) :=
+  ⟨(hγ.antitone_comp_neg_gradient hf).le_of_tendsto (hfq.tendsto.comp htop) s,
+    (hγ.antitone_comp_neg_gradient hf).ge_of_tendsto (hfp.tendsto.comp hbot) s⟩
+
+/-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` at a
+point which is not a critical point lies strictly between `f q` and `f p`: it decreases, strictly
+near that point. -/
+theorem mem_Ioo_comp_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p q : E} (hfp : ContinuousAt f p)
+    (hfq : ContinuousAt f q) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) : f (γ s₀) ∈ Ioo (f q) (f p) := by
+  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
+  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
+  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
+    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
+  obtain ⟨t₁, ht₁⟩ := (hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).exists
+  obtain ⟨t₂, ht₂⟩ := (hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).exists
+  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
+  exact ⟨(hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₂).1.trans_lt ht₂,
+    ht₁.trans_le (hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₁).2⟩
+
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
 times equals the integral of the squared norm of its gradient along the trajectory. -/
 theorem integral_norm_gradient_sq_eq_sub

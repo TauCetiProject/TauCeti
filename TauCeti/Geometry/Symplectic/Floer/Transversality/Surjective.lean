@@ -36,7 +36,7 @@ Floer data rests, for the free Hamiltonian directions of an inhomogeneous core.
 
 The proof is the standard one (McDuff–Salamon, Proposition 3.2.1). The statements and the closing
 argument follow the Morse analogue
-`TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top` in
 `TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`.
 
 * **Closed range.** The range of `D_u` is closed and of finite codimension, so every subspace
