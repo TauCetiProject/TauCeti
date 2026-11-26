@@ -152,6 +152,26 @@ theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
 
+section Evaluation
+
+variable {K V : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [AddCommGroup V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
+  [Module.Finite K V]
+
+/-- Evaluation of linear automorphisms on a finite module is jointly continuous for the
+forward-and-inverse topology and the caller's module topology. -/
+@[fun_prop]
+theorem continuous_linearEquiv_apply :
+    Continuous (fun p : (V ≃ₗ[K] V) × V ↦ p.1 p.2) := by
+  have : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
+  refine (IsModuleTopology.continuous_linearMap_apply_iff
+    (fun e : V ≃ₗ[K] V ↦ (e : Module.End K V))).2 fun v ↦ ?_
+  exact (IsModuleTopology.continuous_of_linearMap
+    ((LinearMap.applyₗ : V →ₗ[K] Module.End K V →ₗ[K] V) v)).comp
+      continuous_linearEquiv_toLinearMap
+
+end Evaluation
+
 section AutCongr
 
 variable {W : Type*} [AddCommMonoid W] [Module K W]

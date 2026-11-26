@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 

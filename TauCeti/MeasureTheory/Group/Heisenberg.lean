@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Group.Lattice
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Shear
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 
 /-!
 # Haar measure and the integer lattice of the real Heisenberg group
