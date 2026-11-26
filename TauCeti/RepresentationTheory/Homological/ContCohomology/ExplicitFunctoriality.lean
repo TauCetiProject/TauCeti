@@ -1071,8 +1071,8 @@ variable {G : Type uG} [Group G] [TopologicalSpace G]
   {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-/-- A continuous `1`-cocycle vanishing on a subgroup has zero restriction to that subgroup,
-without any assumption on the subgroup action. -/
+/-- A continuous `1`-cocycle vanishing on `I` represents a cohomology class whose restriction
+to `H¹(I, M)` is zero, without any assumption on the `I`-action. -/
 theorem _root_.Subgroup.explicitRes1_mk_eq_zero_of_forall_eq_zero (I : Subgroup G)
     (z : Z1 G M) (hz : ∀ g : I, (z : G → M) (g : G) = 0) :
     explicitRes1 G M I (z : H1 G M) = 0 := by
