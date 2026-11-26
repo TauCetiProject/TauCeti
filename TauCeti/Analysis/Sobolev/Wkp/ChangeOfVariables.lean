@@ -84,6 +84,8 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
   `IsChangeOfVariables.of_leftInvOn`.
 * `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`: bounded precomposition and diffeomorphism
   invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`.
+* `TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`: the Faà di
+  Bruno bound in `Lᵖ` for derivatives of `f ∘ Φ` measured in units of a length scale `h`.
 * `TauCeti.Wkp.compOfLeftInvOnL`, `TauCeti.Wkp.exists_norm_comp_le`: precomposition and uniform
   norm bound for left-invertible `Cᵏ` maps across all orders `k : ℕ` and exponents `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
@@ -486,49 +488,77 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 section Smooth
 
-/-- The Faà di Bruno estimate integrated over `U`: the `Lᵖ(U)` seminorm of the `i`-th derivative of
-`f ∘ Φ` is controlled by the `Lᵖ(V)` seminorms of the derivatives of `f` of order at most `i`. -/
-private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ L c)
-    {f : E → ℝ} (hf : ContDiffOn ℝ k f V) {i : ℕ} (hi : i ≤ k) :
-    eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
-      ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V) := by
+/-- **The weighted Faà di Bruno estimate in `Lᵖ`.** Let `Φ` be a change of variables of order `0`
+from `U` into `V` that is `Cᵏ` on `U`, and let `h ≥ 0` be a length scale such that
+`h ^ (j - 1) * ‖Dʲ Φ‖ ≤ B` on `U` for `1 ≤ j ≤ k`. For `f` of class `Cᵏ` on `V` and `i ≤ k`, the
+`Lᵖ(U)` seminorm of `hⁱ Dⁱ (f ∘ Φ)` is at most `max 1 B ^ i` times the sum, over the ordered
+partitions `π` of `i`, of `c^(-1/p)` times the `Lᵖ(V)` seminorm of `h^|π| D^|π| f`. At `h = 1`
+this is the unweighted estimate used to construct `TauCeti.Wkp.compL`. -/
+theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le
+    (hcv : IsChangeOfVariables 0 U V Φ L c) (hΦ : ContDiffOn ℝ k Φ U) {h B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ j, 1 ≤ j → j ≤ k → ∀ x ∈ (U : Set E), h ^ (j - 1) * ‖iteratedFDeriv ℝ j Φ x‖ ≤ B)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (hf : ContDiffOn ℝ k f V)
+    {i : ℕ} (hi : i ≤ k) :
+    ENNReal.ofReal (h ^ i) * eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
+      ENNReal.ofReal (max 1 B ^ i) * ∑ π : OrderedFinpartition i,
+        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal * (ENNReal.ofReal (h ^ π.length) *
+          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V)) := by
   have hi' : ((i : ℕ) : ℕ∞ω) ≤ k := by exact_mod_cast hi
-  have hfΦ : ContDiffOn ℝ k (f ∘ Φ) U := hf.comp h.contDiffOn h.mapsTo
-  calc eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U)
-      ≤ eLpNorm (fun x => max 1 L ^ i * ∑ π : OrderedFinpartition i,
-          ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        refine eLpNorm_mono_ae_real ((ContinuousOn.continuousOn_iteratedFDeriv hfΦ U.isOpen
-          hi').aestronglyMeasurable U.isOpen.measurableSet) ?_
+  have hfΦ : ContDiffOn ℝ k (f ∘ Φ) U := hf.comp hΦ hcv.mapsTo
+  calc _ = eLpNorm (h ^ i • iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) := by
+        rw [← Real.eNorm_of_nonneg (pow_nonneg hh i), ← eLpNorm_const_smul]
+    _ ≤ eLpNorm (fun x => max 1 B ^ i * ∑ π : OrderedFinpartition i,
+          h ^ π.length * ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
+        refine eLpNorm_mono_ae_real (((ContinuousOn.continuousOn_iteratedFDeriv hfΦ U.isOpen
+          hi').aestronglyMeasurable U.isOpen.measurableSet).const_smul _) ?_
         filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-        exact ((hf.contDiffAt (V.isOpen.mem_nhds (h.mapsTo hx))).of_le
-          hi').norm_iteratedFDeriv_comp_le_sum
-          ((h.contDiffOn.contDiffAt (U.isOpen.mem_nhds hx)).of_le hi')
-          fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
-    _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
-          fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos L).le i),
-          ← eLpNorm_const_smul]
-        congr 1
-        funext x
+        rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (pow_nonneg hh i)]
+        exact ((hf.contDiffAt (V.isOpen.mem_nhds (hcv.mapsTo hx))).of_le
+          hi').pow_mul_norm_iteratedFDeriv_comp_le_sum
+          ((hΦ.contDiffAt (U.isOpen.mem_nhds hx)).of_le hi') hh
+          fun j hj1 hji => hB j hj1 (hji.trans hi) x hx
+    _ = ENNReal.ofReal (max 1 B ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
+          h ^ π.length • fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos B).le i), ← eLpNorm_const_smul]
+        congr 1 with x
         simp [Finset.sum_apply]
-    _ ≤ ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-          eLpNorm (fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        gcongr
-        exact eLpNorm_sum_le Fact.out
     _ ≤ _ := by
+        gcongr
+        refine (eLpNorm_sum_le Fact.out).trans (Finset.sum_le_sum fun π _ => ?_)
+        rw [eLpNorm_const_smul, Real.eNorm_of_nonneg (pow_nonneg hh _), mul_left_comm]
+        gcongr
+        refine (eLpNorm_comp_le_of_map_le_smul (g := fun y => ‖iteratedFDeriv ℝ π.length f y‖)
+          hcv.aemeasurable (hcv.map_restrict_le mu) p).trans_eq ?_
+        rw [eLpNorm_norm _ ((ContinuousOn.continuousOn_iteratedFDeriv hf V.isOpen
+          (by exact_mod_cast π.length_le.trans hi)).aestronglyMeasurable V.isOpen.measurableSet)]
+
+/-- **The weighted Faà di Bruno estimate in `Lᵖ`, summed.** In the setting of
+`TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`, suppose that the
+derivatives of `f` of order `j ≤ i` lie in `Lᵖ(V)` with `hʲ ‖Dʲ f‖_{Lᵖ(V)} ≤ M`. Then
+`hⁱ ‖Dⁱ (f ∘ Φ)‖_{Lᵖ(U)} ≤ max 1 B ^ i · #{ordered partitions of i} · c^(-1/p) · M`. -/
+theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le
+    (hcv : IsChangeOfVariables 0 U V Φ L c) (hΦ : ContDiffOn ℝ k Φ U) {h B M : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ j, 1 ≤ j → j ≤ k → ∀ x ∈ (U : Set E), h ^ (j - 1) * ‖iteratedFDeriv ℝ j Φ x‖ ≤ B)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (hf : ContDiffOn ℝ k f V)
+    {i : ℕ} (hi : i ≤ k) (hfm : ∀ j ≤ i, MemLp (iteratedFDeriv ℝ j f) p (mu.restrict V))
+    (hM : ∀ j ≤ i, h ^ j * lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict V) ≤ M) :
+    ENNReal.ofReal (h ^ i) * eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
+      ENNReal.ofReal (max 1 B ^ i * Fintype.card (OrderedFinpartition i) *
+        c⁻¹ ^ (1 / p).toReal * M) := by
+  have hc := hcv.pos
+  refine (hcv.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le hΦ hh hB hf hi).trans ?_
+  calc _ ≤ ENNReal.ofReal (max 1 B ^ i) *
+        ∑ _π : OrderedFinpartition i, ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal * M) := by
         gcongr with π
-        calc eLpNorm (fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U)
-            = eLpNorm ((fun y => ‖iteratedFDeriv ℝ π.length f y‖) ∘ Φ) p (mu.restrict U) := rfl
-          _ ≤ (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-              eLpNorm (fun y => ‖iteratedFDeriv ℝ π.length f y‖) p (mu.restrict V) :=
-            eLpNorm_comp_le_of_map_le_smul h.aemeasurable (h.map_restrict_le mu) p
-          _ = _ := by
-            rw [eLpNorm_norm]
-            exact (ContinuousOn.continuousOn_iteratedFDeriv hf V.isOpen
-              (by exact_mod_cast π.length_le.trans hi)).aestronglyMeasurable
-                V.isOpen.measurableSet
+        rw [← ENNReal.ofReal_inv_of_pos hc, ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 hc.le)
+          ENNReal.toReal_nonneg, ← ofReal_lpNorm (hfm _ π.length_le),
+          ← ENNReal.ofReal_mul (pow_nonneg hh _), ← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal (by gcongr; exact hM _ π.length_le)
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
+          ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        ring
 
 /-- If `u ∈ W^{k,p}(V)` has a `Cᵏ` representative `f`, every derivative of `f ∘ Φ` through order
 `k` has `Lᵖ(U)` seminorm at most `max 1 L ^ i · #{ordered partitions of i} · c^(-1/p) · ‖u‖`. -/
@@ -538,27 +568,11 @@ private theorem eLpNorm_iteratedFDeriv_comp_le_norm (h : IsChangeOfVariables k U
     eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
       ENNReal.ofReal (max 1 L ^ i * Fintype.card (OrderedFinpartition i) *
         c⁻¹ ^ (1 / p).toReal * ‖u‖) := by
-  have hmem := memLp_iteratedFDeriv_of_contDiffOn k u hf hu
-  have hC : (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal = ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal) := by
-    rw [← ENNReal.ofReal_inv_of_pos h.pos,
-      ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 h.pos.le) ENNReal.toReal_nonneg]
-  have hc' : 0 ≤ c⁻¹ ^ (1 / p).toReal := by have := h.pos; positivity
-  have hM : 0 ≤ max 1 L ^ i := pow_nonneg (max_one_pos L).le i
-  refine (eLpNorm_iteratedFDeriv_comp_le h hf hi).trans ?_
-  calc ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V)
-      ≤ ENNReal.ofReal (max 1 L ^ i) *
-          ∑ _π : OrderedFinpartition i, ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal * ‖u‖) := by
-        gcongr with π
-        rw [hC, ENNReal.ofReal_mul hc', ← ofReal_lpNorm (hmem _ (π.length_le.trans hi))]
-        gcongr
-        exact lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu _ (π.length_le.trans hi)
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
-          ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul hM]
-        congr 1
-        ring
+  simpa only [one_pow, ENNReal.ofReal_one, one_mul] using
+    (h.mono (Nat.zero_le k)).ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le (mu := mu)
+      (p := p) h.contDiffOn zero_le_one (by simpa using h.norm_iteratedFDeriv_le) hf hi
+      (fun j hj => memLp_iteratedFDeriv_of_contDiffOn k u hf hu j (hj.trans hi))
+      (fun j hj => by simpa using lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu j (hj.trans hi))
 
 /-- **The smooth case.** If `u ∈ W^{k,p}(V)` has a `Cᵏ` representative `f`, then `f ∘ Φ`
 represents an element of `W^{k,p}(U)` of norm at most `compLBound p k L c * ‖u‖`. -/
