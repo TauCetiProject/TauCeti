@@ -42,23 +42,6 @@ open CategoryTheory AlgebraicGeometry LieAlgebra TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-namespace TauCeti.SpecialLinear
-
-universe u
-
-/-- **The standard `sl₂` triple in `Lie(SL₂)`.** -/
-theorem isSl2Triple_tangentLieEquivSl_symm_single (R : Type u) [CommRing R] [Nontrivial R] :
-    IsSl2Triple
-      ((tangentLieEquivSl (R := R) (B := R) 2).symm (SpecialLinear.singleSubSingle 0 1 1))
-      ((tangentLieEquivSl (R := R) (B := R) 2).symm (SpecialLinear.single 0 1 zero_ne_one 1))
-      ((tangentLieEquivSl (R := R) (B := R) 2).symm (SpecialLinear.single 1 0 one_ne_zero 1)) :=
-  (isSl2Triple_single (R := R) (zero_ne_one : (0 : Fin 2) ≠ 1)).map
-    (tangentLieEquivSl (R := R) (B := R) 2).symm.toLieHom fun h0 ↦
-      singleSubSingle_ne_zero zero_ne_one one_ne_zero
-        ((tangentLieEquivSl (R := R) (B := R) 2).symm.injective (h0.trans (map_zero _).symm))
-
-end TauCeti.SpecialLinear
-
 namespace IsSl2Triple
 
 universe u
@@ -77,8 +60,7 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
   have _ : Module.Finite k M := Module.Finite.of_basis b
   let ρLie := (Comodule.differential (R := k) (H := H) (M := M)).comp (t.toLieHom k)
-  let _ := LieRingModule.compLieHom M ρLie
-  let _ := LieModule.compLieHom M ρLie
+  let _ := LieRingModule.compLieHom M ρLie; let _ := LieModule.compLieHom M ρLie
   let _ := SpecialLinear.comoduleOfLieModule k M
   let A := SpecialLinear.coordinateHopfAlgebra k 2
   have hdiff : (derivationCompLieHom (B := k) (Comodule.coordinateBialgHom (H := H) b)).comp
@@ -133,9 +115,8 @@ theorem derivationCompLieHom_sl2CoordinateMap_injective (t : IsSl2Triple h e f) 
 
 /-- Differential of `t.sl2CoordinateMap` on `(tangentLieEquivSl 2).symm A`. -/
 @[simp] theorem derivationComp_sl2CoordinateMap_symm (t : IsSl2Triple h e f)
-    (A : SpecialLinear.sl (Fin 2) k) :
-    derivationComp (B := k) t.sl2CoordinateMap.hom
-        ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm A) = t.toLieHom k A := by
+    (A : SpecialLinear.sl (Fin 2) k) : derivationComp (B := k) t.sl2CoordinateMap.hom
+      ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm A) = t.toLieHom k A := by
   rw [t.derivationComp_sl2CoordinateMap, LieEquiv.apply_symm_apply]
 
 /-- The image of the differential of `t.sl2CoordinateMap` is `t.toLieSubalgebra k`. -/
@@ -162,12 +143,10 @@ theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
     (hψ : derivationCompLieHom (B := k) ψ.hom h ≠ 0) :
     (t.map (derivationCompLieHom (B := k) ψ.hom) hψ).sl2CoordinateMap = ψ ≫ t.sl2CoordinateMap := by
   symm; rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.hom_comp, derivationCompLieHom_comp,
-    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]
-  ext d; simp only [LieHom.comp_apply]
+    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]; ext d; rfl
 
 /-- On `SL₂` itself, the standard `sl₂` triple integrates to the identity of `O(SL₂)`. -/
-@[simp] theorem sl2CoordinateMap_tangentLieEquivSl_symm_single
-    (t : IsSl2Triple
+@[simp] theorem sl2CoordinateMap_tangentLieEquivSl_symm_single (t : IsSl2Triple
       ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm
         (SpecialLinear.singleSubSingle 0 1 1))
       ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm
@@ -209,16 +188,15 @@ theorem derivationComp_sl2CoordinateMap_rootSubgroup_one_zero (t : IsSl2Triple h
 finite-type affine group `G = Spec H` over a characteristic-zero field `k`, this is the unique
 group-scheme morphism (obtained from `t.sl2CoordinateMap` via `hopfSpec`) whose differential is
 `(t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl 2)`. -/
-noncomputable def sl2GroupSchemeHom (t : IsSl2Triple h e f) :
-    SpecialLinear.groupScheme k 2 ⟶
+noncomputable def sl2GroupSchemeHom (t : IsSl2Triple h e f) : SpecialLinear.groupScheme k 2 ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op (CommHopfAlgCat.of k H)) :=
   eqToHom (SpecialLinear.groupScheme_def k 2) ≫
     (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op
 
 /-- Explicit formula for `t.sl2GroupSchemeHom` via `hopfSpec`. -/
-theorem sl2GroupSchemeHom_def (t : IsSl2Triple h e f) :
-    t.sl2GroupSchemeHom = eqToHom (SpecialLinear.groupScheme_def k 2) ≫
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op := (rfl)
+theorem sl2GroupSchemeHom_def (t : IsSl2Triple h e f) : t.sl2GroupSchemeHom =
+    eqToHom (SpecialLinear.groupScheme_def k 2) ≫
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op := by rfl
 
 end IsSl2Triple
 

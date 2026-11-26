@@ -57,6 +57,13 @@ noncomputable def oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
     H →ₐc[R] LaurentPolynomial R :=
   (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.comp l
 
+/-- The opposite cocharacter is precomposition with negation on `ℤ`. -/
+theorem oppositeCocharacter_eq_comp_domCongrBialgEquiv_neg
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    l.oppositeCocharacter =
+      (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.comp l :=
+  (rfl)
+
 /-- On coordinates the opposite cocharacter inverts the Laurent variable. -/
 @[simp]
 theorem oppositeCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (h : H) :

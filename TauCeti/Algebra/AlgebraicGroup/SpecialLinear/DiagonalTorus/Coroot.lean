@@ -50,17 +50,16 @@ noncomputable def simpleCorootCocharacter (i : Fin r) :
     (Finsupp.applyAddHom (ULift.up i)).toMultiplicative
 
 /-- Unfolding `simpleCorootCocharacter` via `diagonalTorusCoordinateMap`. -/
-theorem simpleCorootCocharacter_def (i : Fin r) :
-    simpleCorootCocharacter r R i = (diagonalTorusCoordinateMap r R).hom.cocharacter
-      (Finsupp.applyAddHom (ULift.up i)).toMultiplicative := (rfl)
+theorem simpleCorootCocharacter_def (i : Fin r) : simpleCorootCocharacter r R i =
+    (diagonalTorusCoordinateMap r R).hom.cocharacter
+      (Finsupp.applyAddHom (ULift.up i)).toMultiplicative := by rfl
 
 variable {r R}
 
 /-- On `A`-points, `simpleCorootCocharacter r R i` sends `u : Aˣ` to `diag2nUnit _ u`. -/
 @[simp] theorem pointsMulEquiv_pointsHom_simpleCorootCocharacter {A : Type v} [CommRing A]
-    [Algebra R A] (i : Fin r) (u : Aˣ) :
-    pointsMulEquiv (R := R) (A := A) (r + 1)
-        (Cocharacter.pointsHom A (simpleCorootCocharacter r R i) u) =
+    [Algebra R A] (i : Fin r) (u : Aˣ) : pointsMulEquiv (R := R) (A := A) (r + 1)
+      (Cocharacter.pointsHom A (simpleCorootCocharacter r R i) u) =
       Matrix.SpecialLinearGroup.diag2nUnit
         ((Fin.castSucc_lt_succ_iff (a := i) (b := i)).mpr le_rfl).ne u := by
   have hne : i.castSucc ≠ i.succ := ((Fin.castSucc_lt_succ_iff (a := i) (b := i)).mpr le_rfl).ne
@@ -78,8 +77,8 @@ variable {r R}
     rw [simpleCorootCocharacter, BialgHom.pointsHom_cocharacter, hmap,
       toGL_pointsMulEquiv_diagonalTorusPoints, Matrix.SpecialLinearGroup.toGL_diag2nUnit]
     congr 1; funext a; rw [torusCharacter_diagonalTorusWeight, torusCharacter_def]
-    have hcoord (j : Fin r) :
-        SplitTorus.pointsMulEquiv q (ULift.up j) = u ^ (if j = i then (1 : ℤ) else 0) := by
+    have hcoord (j : Fin r) : SplitTorus.pointsMulEquiv q (ULift.up j) =
+        u ^ (if j = i then (1 : ℤ) else 0) := by
       rw [SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv, freeAbelianCharEquiv_apply,
         DiagonalizableGroup.pointsMulEquiv_cocharPoints, MulEquiv.apply_symm_apply,
         zpowersHom_apply, toAdd_ofAdd, zpow_one]
@@ -89,8 +88,7 @@ variable {r R}
     rw [Finset.prod_eq_single i (fun j _ hji ↦ by simp [hji])
       (fun hi ↦ (hi (Finset.mem_univ i)).elim)]
     simp only [↓reduceIte, one_mul, SlStd.weight_def]
-    by_cases h1 : a = i.castSucc
-    · subst h1; simp [hne]
+    by_cases h1 : a = i.castSucc; · subst h1; simp [hne]
     · by_cases h2 : a = i.succ <;> [subst h2; skip] <;> simp [*]
   exact fun a b ↦ congr_fun (congr_fun
     (congrArg (fun g : GL (Fin (r + 1)) A ↦ (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A)) hGL) a) b

@@ -66,8 +66,7 @@ theorem derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm
   have hmap := congrArg Subtype.val <|
     tangentKerMap_derivationMulEquivTangentKer (B := B) l
       (Multiplicative.ofAdd ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm b))
-  rw [toAdd_ofAdd] at hmap
-  rw [← hmap, tangentKerMap_apply_val, Cocharacter.pointsHom_apply]
+  rw [toAdd_ofAdd] at hmap; rw [← hmap, tangentKerMap_apply_val, Cocharacter.pointsHom_apply]
   have hgm :=
     MultiplicativeGroup.derivationMulEquivTangentKer_tangentLinearEquiv_symm (R := R) (B := B) b
   have hb : ((Bialgebra.CounitAlgebra.algEquivSelf R (LaurentPolynomial R) B).symm b :
@@ -90,13 +89,11 @@ variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
 /-- **In characteristic zero, the dynamic Levi subgroup `Z_G(l)` of a cocharacter `l` and the
 centralizer `C_G(dl(1))` of its unit tangent differential have the same tangent Lie algebra.** -/
 theorem lieSubalgebra_leviDefiningHopfIdeal_eq_centralizerHopfIdeal [CharZero k]
-    (l : H →ₐc[k] LaurentPolynomial k) :
-    (leviDefiningHopfIdeal l).lieSubalgebra (B := k) =
+    (l : H →ₐc[k] LaurentPolynomial k) : (leviDefiningHopfIdeal l).lieSubalgebra (B := k) =
       (TauCeti.centralizerHopfIdeal H
-        ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm
-          (derivationComp (B := k) l
-            ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1)))).lieSubalgebra
-          (B := k) := by
+        ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm (derivationComp (B := k) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1)))).lieSubalgebra
+        (B := k) := by
   apply LieSubalgebra.toSubmodule_injective
   rw [l.lieSubalgebra_leviDefiningHopfIdeal_eq_eigenspace, Module.End.eigenspace_zero,
     TauCeti.lieSubalgebra_centralizerHopfIdeal, LieEquiv.apply_symm_apply]
@@ -104,31 +101,25 @@ theorem lieSubalgebra_leviDefiningHopfIdeal_eq_centralizerHopfIdeal [CharZero k]
 /-- **The dynamic Levi subgroup `Z_G(l)` of a cocharacter `l` is a closed subgroup scheme of the
 centralizer `C_G(dl(1))` of its unit tangent differential** (contravariantly, the centralizer ideal
 lies in the Levi ideal). This holds in arbitrary characteristic. -/
-theorem centralizerHopfIdeal_le_leviDefiningHopfIdeal
-    (l : H →ₐc[k] LaurentPolynomial k) :
-    TauCeti.centralizerHopfIdeal H
-        ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm
-          (derivationComp (B := k) l
-            ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1))) ≤
+theorem centralizerHopfIdeal_le_leviDefiningHopfIdeal (l : H →ₐc[k] LaurentPolynomial k) :
+    TauCeti.centralizerHopfIdeal H ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm
+        (derivationComp (B := k) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1))) ≤
       leviDefiningHopfIdeal l := by
-  rw [HopfIdeal.le_iff_forall_quotientPointsSubgroup_le
-    (H := _root_.CommHopfAlgCat.of k H)]
-  intro A g hg
-  rw [quotientPointsSubgroup_leviDefiningHopfIdeal] at hg
+  rw [HopfIdeal.le_iff_forall_quotientPointsSubgroup_le (H := _root_.CommHopfAlgCat.of k H)]
+  intro A g hg; rw [quotientPointsSubgroup_leviDefiningHopfIdeal] at hg
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
   suffices hker : (TauCeti.centralizerHopfIdeal H
-      ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm
-        (derivationComp (B := k) l
-          ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1)))).toIdeal ≤
+      ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm (derivationComp (B := k) l
+        ((MultiplicativeGroup.tangentLinearEquiv (R := k) (B := k)).symm 1)))).toIdeal ≤
       RingHom.ker g.ofConv from fun a ha ↦ hker (HopfIdeal.mem_toIdeal.mpr ha)
   rw [TauCeti.centralizerHopfIdeal_le_ker_iff, ← Derivation.cotangentDualLieEquiv_apply,
     LieEquiv.apply_symm_apply,
     MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one,
     Derivation.adDerivation_eq_self_iff_commute_tangentPoint]
   let C := Bialgebra.CounitAlgebra k H A
-  let φ : A →ₐ[k] DualNumber C :=
-    (TrivSqZeroExt.inlAlgHom k C C).comp
-      (Bialgebra.CounitAlgebra.algEquivSelf k H A).symm.toAlgHom
+  let φ : A →ₐ[k] DualNumber C := (TrivSqZeroExt.inlAlgHom k C C).comp
+    (Bialgebra.CounitAlgebra.algEquivSelf k H A).symm.toAlgHom
   have hgφ : AlgHom.mapValue (TrivSqZeroExt.inlAlgHom k C C)
       (Derivation.pointInCounitAlgebra A g) = AlgHom.mapValue φ g := by
     apply ofConv_injective; apply AlgHom.ext; intro a

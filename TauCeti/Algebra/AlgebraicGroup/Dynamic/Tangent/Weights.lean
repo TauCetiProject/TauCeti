@@ -338,8 +338,8 @@ theorem map_cotangentLinearEquiv_adjointWeightSpace_cocharacter [IsDomain R] [Ch
     Module.End.mem_eigenspace_iff, ad_apply, ad_apply]
   simp only [← (Derivation.cotangentDualLieEquiv (R := R) (H := H)).injective.eq_iff,
     LieEquiv.coe_toLieHom, LieEquiv.map_lie, LieEquiv.apply_symm_apply]
-  rw [Derivation.cotangentDualLieEquiv_apply, map_smul, ← Derivation.cotangentDualLieEquiv_apply]
-  rfl
+  rw [Derivation.cotangentDualLieEquiv_apply, map_smul,
+    ← Derivation.cotangentDualLieEquiv_apply]; rfl
 
 /-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(P_G(l))` is the
 supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 ≤ n`. -/
@@ -349,9 +349,8 @@ theorem lieSubalgebra_parabolicDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R]
       ⨆ (n : ℤ) (_ : 0 ≤ n), Module.End.eigenspace
         (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
           ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
-  rw [l.lieSubalgebra_parabolicDefiningHopfIdeal_toSubmodule, Submodule.map_iSup]
-  refine iSup_congr fun n ↦ ?_; rw [Submodule.map_iSup]
-  exact iSup_congr fun _ ↦ l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter n
+  rw [l.lieSubalgebra_parabolicDefiningHopfIdeal_toSubmodule]
+  simp_rw [Submodule.map_iSup, l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter]
 
 /-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(U_G(l))` is the
 supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 < n`. -/
@@ -361,9 +360,8 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R]
       ⨆ (n : ℤ) (_ : 0 < n), Module.End.eigenspace
         (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
           ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
-  rw [l.lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule, Submodule.map_iSup]
-  refine iSup_congr fun n ↦ ?_; rw [Submodule.map_iSup]
-  exact iSup_congr fun _ ↦ l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter n
+  rw [l.lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule]
+  simp_rw [Submodule.map_iSup, l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter]
 
 /-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(Z_G(l))` is the
 zero eigenspace of `ad` of its unit tangent differential. -/

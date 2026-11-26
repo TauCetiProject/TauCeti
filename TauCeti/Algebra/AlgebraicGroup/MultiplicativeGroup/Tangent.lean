@@ -211,16 +211,22 @@ theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
 
 end Ring
 
+/-- Applying `domCongrBialgEquiv` along `ℤ`-negation equals `LaurentPolynomial.invert`. -/
+@[simp]
+theorem domCongrBialgEquiv_neg_apply {R : Type u} [CommSemiring R] (p : R[T;T⁻¹]) :
+    AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ) p = LaurentPolynomial.invert p :=
+  rfl
+
 /-- Pulling a tangent derivation of `𝔾ₘ` back along inversion `T ↦ T⁻¹` negates it. -/
 theorem derivationComp_invert {R : Type u} [CommRing R] [Ring B] [Algebra R B]
     (d : Derivation R R[T;T⁻¹] (CounitAlgebra R R[T;T⁻¹] B)) :
     derivationComp (B := B)
       (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom d = -d := by
   apply (tangentLinearEquiv (R := R) (B := B)).injective
-  rw [tangentLinearEquiv_apply, algEquivSelf_derivationComp_apply,
-    show (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.toAlgHom
-      (LaurentPolynomial.T 1) = LaurentPolynomial.T (-1) from LaurentPolynomial.invert_T 1,
-    derivation_T_zsmul, map_zsmul, neg_one_zsmul, map_neg, tangentLinearEquiv_apply]
+  rw [tangentLinearEquiv_apply, algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom,
+    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom, domCongrBialgEquiv_neg_apply,
+    LaurentPolynomial.invert_T, derivation_T_zsmul, map_zsmul, neg_one_zsmul, map_neg,
+    tangentLinearEquiv_apply]
 
 section Lie
 

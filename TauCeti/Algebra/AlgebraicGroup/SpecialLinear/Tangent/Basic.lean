@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
+public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # The tangent Lie algebra of the special linear group
@@ -31,6 +32,8 @@ convolution and matrix-commutator Lie brackets.
 * `TauCeti.SpecialLinear.tangentMatrix`: a tangent vector to `SLₙ`, as a trace-zero matrix.
 * `TauCeti.SpecialLinear.tangentLieEquivSl`: the tangent Lie algebra of `SLₙ` is its classical
   special linear Lie algebra.
+* `TauCeti.SpecialLinear.isSl2Triple_tangentLieEquivSl_symm_single`: the standard `sl₂` triple in
+  `Lie(SL₂)`.
 
 ## References
 
@@ -200,6 +203,18 @@ theorem tangentLieEquivSl_apply
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     tangentLieEquivSl n d = tangentMatrix n d := by
   rfl
+
+/-- **The standard `sl₂` triple in `Lie(SL₂)`.** -/
+theorem isSl2Triple_tangentLieEquivSl_symm_single (R : Type u) [CommRing R] [Nontrivial R] :
+    IsSl2Triple
+      ((tangentLieEquivSl (R := R) (B := R) 2).symm
+        (LieAlgebra.SpecialLinear.singleSubSingle 0 1 1))
+      ((tangentLieEquivSl (R := R) (B := R) 2).symm
+        (LieAlgebra.SpecialLinear.single 0 1 zero_ne_one 1))
+      ((tangentLieEquivSl (R := R) (B := R) 2).symm
+        (LieAlgebra.SpecialLinear.single 1 0 one_ne_zero 1)) :=
+  (isSl2Triple_single (R := R) (zero_ne_one : (0 : Fin 2) ≠ 1)).mapLieEquiv
+    (tangentLieEquivSl (R := R) (B := R) 2).symm
 
 end SpecialLinear
 

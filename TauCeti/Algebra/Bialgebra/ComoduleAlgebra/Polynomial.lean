@@ -39,12 +39,9 @@ comodule algebra over `H`, with underlying comodule `TauCeti.Comodule.polynomial
 
 Like `TauCeti.Comodule.polynomial`, this is deliberately not a global instance. -/
 @[expose, implicit_reducible]
-noncomputable def polynomial (b : Module.Basis ι R V) :
-    ComoduleAlgebra R H (MvPolynomial ι R) where
+noncomputable def polynomial (b : Module.Basis ι R V) : ComoduleAlgebra R H (MvPolynomial ι R) where
   toComodule := Comodule.polynomial H b
-  coact_one := by
-    let _ := Comodule.polynomial H b
-    rw [Comodule.polynomial_coact_apply, map_one]
+  coact_one := by let _ := Comodule.polynomial H b; rw [Comodule.polynomial_coact_apply, map_one]
   coact_mul p q := by
     let _ := Comodule.polynomial H b
     rw [Comodule.polynomial_coact_apply, Comodule.polynomial_coact_apply,

@@ -123,6 +123,18 @@ theorem pointInCounitAlgebra_eq_pointsMulEquiv_symm
 
 omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)] in
+/-- Extending a base-ring point along `Algebra.ofId R (CounitAlgebra R H R)` agrees with
+`pointInCounitAlgebra`. -/
+theorem mapValue_ofId_eq_pointInCounitAlgebra (g : WithConv (H →ₐ[R] R)) :
+    AlgHom.mapValue (H := H) (Algebra.ofId R (Bialgebra.CounitAlgebra R H R)) g =
+      pointInCounitAlgebra R g := by
+  apply WithConv.ofConv_injective
+  ext x
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
+  simp [AlgHom.mapValue_apply]
+
+omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)] in
 /-- Changing the value algebra of a point commutes with regarding it as a point valued in the
 counit-indexed copy of that algebra. -/
 @[simp]

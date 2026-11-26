@@ -49,12 +49,10 @@ section PolynomialDifferential
 
 variable {R : Type u} [CommRing R]
 
-private theorem coord_differential_standard_two
-    (x : Derivation R (coordinateHopfAlgebra R 2)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) (i j : Fin 2) :
-    (Pi.basisFun R (Fin 2)).coord i
-        (Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x
-          (Pi.basisFun R (Fin 2) j)) =
+private theorem coord_differential_standard_two (x : Derivation R (coordinateHopfAlgebra R 2)
+    (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) (i j : Fin 2) :
+    (Pi.basisFun R (Fin 2)).coord i (Comodule.differential (R := R)
+      (H := coordinateHopfAlgebra R 2) x (Pi.basisFun R (Fin 2) j)) =
       (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) i j := by
   rw [← Derivation.apply_matrixCoefficient, ← Comodule.coefficientMatrix_apply,
     coefficientMatrix_basisFun, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
@@ -62,9 +60,8 @@ private theorem coord_differential_standard_two
 
 /-- **Infinitesimal action of `SL₂` on `X 0`**: `x` with matrix `A` sends `X 0` to
 `-A₀₀ X 0 - A₀₁ X 1`. -/
-theorem differential_polynomialComodule_X_zero
-    (x : Derivation R (coordinateHopfAlgebra R 2)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) :
+theorem differential_polynomialComodule_X_zero (x : Derivation R (coordinateHopfAlgebra R 2)
+    (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) :
     letI := polynomialComodule R 2
     Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x
         (X 0 : MvPolynomial (Fin 2) R) =
@@ -77,9 +74,8 @@ theorem differential_polynomialComodule_X_zero
 
 /-- **Infinitesimal action of `SL₂` on `X 1`**: `x` with matrix `A` sends `X 1` to
 `-A₁₀ X 0 + A₀₀ X 1`. -/
-theorem differential_polynomialComodule_X_one
-    (x : Derivation R (coordinateHopfAlgebra R 2)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) :
+theorem differential_polynomialComodule_X_one (x : Derivation R (coordinateHopfAlgebra R 2)
+    (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) :
     letI := polynomialComodule R 2
     Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x
         (X 1 : MvPolynomial (Fin 2) R) =
@@ -121,8 +117,8 @@ noncomputable def binaryFormsSignedBasis (R : Type u) [CommRing R] (d : ℕ) :
 
 /-- At `i = 0`, the signed monomial basis vector is the highest-weight monomial `yᵈ`. -/
 @[simp] theorem binaryFormsSignedBasis_zero (d : ℕ) :
-    binaryFormsSignedBasis R d 0 = ⟨X 1 ^ d, X_one_pow_mem_binaryForms⟩ := by
-  apply Subtype.ext; rw [coe_binaryFormsSignedBasis_apply]; simp
+    binaryFormsSignedBasis R d 0 = ⟨X 1 ^ d, X_one_pow_mem_binaryForms⟩ :=
+  Subtype.ext <| by rw [coe_binaryFormsSignedBasis_apply]; simp
 
 /-- **The canonical `R`-linear equivalence `binaryForms R d ≃ₗ[R] Sl2Std R d`** sending
 `(-1)ⁱ X 0 ^ i * X 1 ^ (d - i)` to `Sl2Std.basis R d i`. -/
@@ -143,25 +139,37 @@ noncomputable def binaryFormsEquivSl2Std (R : Type u) [CommRing R] (d : ℕ) :
     binaryFormsEquivSl2Std R d ⟨X 1 ^ d, X_one_pow_mem_binaryForms⟩ = Sl2Std.basis R d 0 := by
   rw [← binaryFormsSignedBasis_zero, binaryFormsEquivSl2Std_signedBasis]
 
-private theorem coe_differential_binaryForms {d : ℕ}
-    (x : Derivation R (coordinateHopfAlgebra R 2)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) (g : binaryForms R d) :
+private theorem coe_differential_binaryForms {d : ℕ} (x : Derivation R (coordinateHopfAlgebra R 2)
+    (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) (g : binaryForms R d) :
     ((Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x g :
         binaryForms R d) : MvPolynomial (Fin 2) R) =
       Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x (g : MvPolynomial _ R) := by
   simpa only [Subcomodule.subtype_apply] using (binaryForms R d).subtype.map_differential x g
+
+private theorem differential_polynomialComodule_X_zero_pow_mul_X_one_pow (x : Derivation R
+    (coordinateHopfAlgebra R 2) (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R))
+    (i j : ℕ) : letI := polynomialComodule R 2
+    Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x
+        (X 0 ^ i * X 1 ^ j : MvPolynomial (Fin 2) R) =
+      (((j : R) - (i : R)) * (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 0 0) •
+          (X 0 ^ i * X 1 ^ j) - ((i : R) * (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 0 1) •
+          (X 0 ^ (i - 1) * X 1 ^ (j + 1)) - ((j : R) * (tangentMatrix 2 x : Matrix (Fin 2)
+          (Fin 2) R) 1 0) • (X 0 ^ (i + 1) * X 1 ^ (j - 1)) := by
+  let _ := polynomialComoduleAlgebra R 2
+  rw [ComoduleAlgebra.differential_mul, ComoduleAlgebra.differential_pow,
+    ComoduleAlgebra.differential_pow, differential_polynomialComodule_X_zero,
+    differential_polynomialComodule_X_one]
+  rcases i with _ | m <;> rcases j with _ | n <;> simp [smul_eq_C_mul, pow_succ] <;> ring
 
 private theorem differential_slFinTwoBasis_zero_signedBasis (d : ℕ) (i : Fin (d + 1)) :
     Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
         ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 0))
         (binaryFormsSignedBasis R d i) =
       ((i : ℕ) : R) • binaryFormsSignedBasis R d ⟨(i : ℕ) - 1, by omega⟩ := by
-  let _ := polynomialComoduleAlgebra R 2; apply Subtype.ext
-  rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
-    ComoduleAlgebra.differential_mul, ComoduleAlgebra.differential_pow,
-    ComoduleAlgebra.differential_pow, differential_polynomialComodule_X_zero,
-    differential_polynomialComodule_X_one, ← tangentLieEquivSl_apply, LieEquiv.apply_symm_apply,
-    slFinTwoBasis_zero, SetLike.val_smul, coe_binaryFormsSignedBasis_apply]
+  apply Subtype.ext; rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
+    differential_polynomialComodule_X_zero_pow_mul_X_one_pow, ← tangentLieEquivSl_apply,
+    LieEquiv.apply_symm_apply, slFinTwoBasis_zero, SetLike.val_smul,
+    coe_binaryFormsSignedBasis_apply]
   rcases Nat.eq_zero_or_pos (i : ℕ) with hi | hi
   · simp [hi, SpecialLinear.val_single]
   · obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hi.ne'
@@ -174,18 +182,13 @@ private theorem differential_slFinTwoBasis_one_monomial (i j : ℕ) :
         ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 1))
         (X 0 ^ i * X 1 ^ j : MvPolynomial (Fin 2) R) =
       -((j : R) • (X 0 ^ (i + 1) * X 1 ^ (j - 1))) := by
-  let _ := polynomialComoduleAlgebra R 2
-  rw [ComoduleAlgebra.differential_mul, ComoduleAlgebra.differential_pow,
-    ComoduleAlgebra.differential_pow, differential_polynomialComodule_X_zero,
-    differential_polynomialComodule_X_one, ← tangentLieEquivSl_apply, LieEquiv.apply_symm_apply,
-    slFinTwoBasis_one]
-  simp [SpecialLinear.val_single, smul_eq_C_mul, pow_succ]; ring
+  rw [differential_polynomialComodule_X_zero_pow_mul_X_one_pow, ← tangentLieEquivSl_apply,
+    LieEquiv.apply_symm_apply, slFinTwoBasis_one]; simp [SpecialLinear.val_single]
 
 private theorem differential_slFinTwoBasis_one_signedBasis (d : ℕ) {i : Fin (d + 1)}
-    (hi : (i : ℕ) < d) :
-    Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
-        ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 1))
-        (binaryFormsSignedBasis R d i) =
+    (hi : (i : ℕ) < d) : Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
+      ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 1))
+      (binaryFormsSignedBasis R d i) =
       ((d : R) - (i : ℕ)) • binaryFormsSignedBasis R d ⟨(i : ℕ) + 1, by omega⟩ := by
   apply Subtype.ext; rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
     differential_slFinTwoBasis_one_monomial, SetLike.val_smul, coe_binaryFormsSignedBasis_apply]
@@ -205,23 +208,19 @@ private theorem differential_slFinTwoBasis_two_signedBasis (d : ℕ) (i : Fin (d
         ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 2))
         (binaryFormsSignedBasis R d i) =
       ((d : R) - 2 * (i : ℕ)) • binaryFormsSignedBasis R d i := by
-  let _ := polynomialComoduleAlgebra R 2; apply Subtype.ext
-  have hjd : (d : R) = ((d - (i : ℕ) : ℕ) : R) + (i : ℕ) := by
-    rw [← Nat.cast_add, Nat.sub_add_cancel (Nat.lt_succ_iff.mp i.isLt)]
+  apply Subtype.ext
+  have hjd : (d : R) - 2 * (i : ℕ) = ((d - (i : ℕ) : ℕ) : R) - (i : ℕ) := by
+    rw [Nat.cast_sub (Nat.lt_succ_iff.mp i.isLt)]; ring
   rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
-    ComoduleAlgebra.differential_mul, ComoduleAlgebra.differential_pow,
-    ComoduleAlgebra.differential_pow, differential_polynomialComodule_X_zero,
-    differential_polynomialComodule_X_one, ← tangentLieEquivSl_apply, LieEquiv.apply_symm_apply,
-    slFinTwoBasis_two, SetLike.val_smul, coe_binaryFormsSignedBasis_apply, hjd]
-  generalize d - (i : ℕ) = j; generalize (i : ℕ) = a
-  rcases a with _ | m <;> rcases j with _ | n <;>
-    simp [SpecialLinear.val_singleSubSingle, smul_eq_C_mul, pow_succ, map_ofNat] <;> ring
+    differential_polynomialComodule_X_zero_pow_mul_X_one_pow, ← tangentLieEquivSl_apply,
+    LieEquiv.apply_symm_apply, slFinTwoBasis_two, SetLike.val_smul,
+    coe_binaryFormsSignedBasis_apply, hjd]
+  simp [SpecialLinear.val_singleSubSingle, smul_eq_C_mul]; ring
 
 private theorem binaryFormsEquivSl2Std_differential_basis (d : ℕ) (k : Fin 3) (i : Fin (d + 1)) :
-    binaryFormsEquivSl2Std R d
-        (Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
-          ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R k))
-          (binaryFormsSignedBasis R d i)) = ⁅slFinTwoBasis R k, Sl2Std.basis R d i⁆ := by
+    binaryFormsEquivSl2Std R d (Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
+        ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R k))
+        (binaryFormsSignedBasis R d i)) = ⁅slFinTwoBasis R k, Sl2Std.basis R d i⁆ := by
   match k with
   | 0 => rw [differential_slFinTwoBasis_zero_signedBasis, (binaryFormsEquivSl2Std R d).map_smul,
       binaryFormsEquivSl2Std_signedBasis, Sl2Std.lie_slFinTwoBasis_zero, Sl2Std.raise_basis]

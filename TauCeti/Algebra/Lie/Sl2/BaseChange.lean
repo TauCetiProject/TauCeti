@@ -34,5 +34,4 @@ theorem IsSl2Triple.baseChange {R A L : Type*} [CommRing R] [CommRing A] [Algebr
     (hh : ((1 : A) ⊗ₜ[R] h : A ⊗[R] L) ≠ 0) :
     IsSl2Triple ((1 : A) ⊗ₜ[R] h) ((1 : A) ⊗ₜ[R] e) ((1 : A) ⊗ₜ[R] f) :=
   ⟨hh, by simp [t.lie_e_f], by simp [t.lie_h_e_nsmul], by
-    rw [LieAlgebra.ExtendScalars.bracket_tmul, one_mul, t.lie_h_f_nsmul, TensorProduct.tmul_neg,
-      two_nsmul, two_nsmul, TensorProduct.tmul_add]⟩
+    simp [t.lie_h_f_nsmul, two_nsmul, TensorProduct.tmul_add, TensorProduct.tmul_neg]⟩

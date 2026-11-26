@@ -45,16 +45,14 @@ torsion-free `H`-comodule `V` equals the `(m : R)`-eigenspace of its unit tangen
 theorem weightSpace_cocharacter_eq_eigenspace {R H : Type*} [CommRing R] [IsDomain R] [CharZero R]
     [CommRing H] [Bialgebra R H] (l : H →ₐc[R] LaurentPolynomial R) (V : Type*) [AddCommGroup V]
     [Module R V] [Module.IsTorsionFree R V] [Comodule R H V] (m : ℤ) :
-    DiagonalizableGroup.weightSpace V
-        (((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l).toCoalgHom)
-        (Multiplicative.ofAdd m) =
+    DiagonalizableGroup.weightSpace V (((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R
+      ℤ).toBialgHom.comp l).toCoalgHom) (Multiplicative.ofAdd m) =
       Module.End.eigenspace (Comodule.differential (R := R) (H := H) (M := V)
         (derivationComp (B := R) l
           ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (m : R) := by
   let eMult := AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ
-  let π : H →ₐc[R] MonoidAlgebra R (Multiplicative ℤ) := eMult.toBialgHom.comp l
-  let d₁ := (MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1
-  let d₀ := derivationComp (B := R) eMult.symm.toBialgHom d₁
+  let d₀ := derivationComp (B := R) eMult.symm.toBialgHom
+    ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1)
   have hd₀ (x : Multiplicative ℤ) : Bialgebra.CounitAlgebra.algEquivSelf R
       (MonoidAlgebra R (Multiplicative ℤ)) R (d₀ (MonoidAlgebra.single x 1)) = (x.toAdd : R) := by
     rw [algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
@@ -63,10 +61,9 @@ theorem weightSpace_cocharacter_eq_eigenspace {R H : Type*} [CommRing R] [IsDoma
   have hinj : Function.Injective fun x : Multiplicative ℤ ↦ Bialgebra.CounitAlgebra.algEquivSelf R
       (MonoidAlgebra R (Multiplicative ℤ)) R (d₀ (MonoidAlgebra.single x 1)) := fun x y hxy ↦
     Multiplicative.toAdd.injective (Int.cast_inj.mp ((hd₀ x).symm.trans (hxy.trans (hd₀ y))))
-  have hπd₀ : derivationComp (B := R) π d₀ = derivationComp (B := R) l d₁ := by
-    rw [derivationComp_comp, LinearMap.comp_apply,
-      derivationComp_derivationComp_eq_self_of_comp_eq_id _ _ (BialgHom.ext eMult.symm_apply_apply)]
-  rw [DiagonalizableGroup.weightSpace_eq_eigenspace_differential_of_injective V π d₀ hinj
-      (Multiplicative.ofAdd m), hπd₀, hd₀, toAdd_ofAdd]
+  rw [DiagonalizableGroup.weightSpace_eq_eigenspace_differential_of_injective V
+      (eMult.toBialgHom.comp l) d₀ hinj (Multiplicative.ofAdd m), derivationComp_comp,
+    LinearMap.comp_apply, derivationComp_derivationComp_eq_self_of_comp_eq_id _ _
+      (BialgHom.ext eMult.symm_apply_apply), hd₀, toAdd_ofAdd]
 
 end BialgHom

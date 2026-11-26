@@ -745,15 +745,11 @@ theorem eq_of_le_of_finrank_quotient_le {k : Type u} [Field k] {A : _root_.CommH
     {I J : HopfIdeal k A} (hIJ : I ≤ J)
     [Module.Finite k (_root_.CommHopfAlgCat.quotient A I)]
     (hdim : Module.finrank k (_root_.CommHopfAlgCat.quotient A I) ≤
-      Module.finrank k (_root_.CommHopfAlgCat.quotient A J)) :
-    I = J := by
-  have hsurj : Function.Surjective (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap :=
-    _root_.CommHopfAlgCat.quotientMapOfLe_surjective A hIJ
+      Module.finrank k (_root_.CommHopfAlgCat.quotient A J)) : I = J := by
+  have hsurj := _root_.CommHopfAlgCat.quotientMapOfLe_surjective A hIJ
   have : Module.Finite k (_root_.CommHopfAlgCat.quotient A J) :=
     Module.Finite.of_surjective (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap hsurj
-  have heq : Module.finrank k (_root_.CommHopfAlgCat.quotient A I) =
-      Module.finrank k (_root_.CommHopfAlgCat.quotient A J) :=
-    le_antisymm hdim (LinearMap.finrank_le_finrank_of_surjective hsurj)
+  have heq := le_antisymm hdim (LinearMap.finrank_le_finrank_of_surjective hsurj)
   exact (_root_.CommHopfAlgCat.quotientMapOfLe_injective_iff A hIJ).mp
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank heq).mpr hsurj)
 

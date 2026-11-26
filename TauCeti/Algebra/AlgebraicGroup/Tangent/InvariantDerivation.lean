@@ -78,25 +78,24 @@ variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
 representation with its values regarded as derivations. -/
 noncomputable def leftInvariantDerivation :
     Derivation R H (CounitAlgebra R H R) →ₗ⁅R⁆ Derivation R H H where
-  toFun d :=
-    Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-      rw [ComoduleAlgebra.differential_mul, smul_eq_mul, smul_eq_mul]
-      ring
+  toFun d := ComoduleAlgebra.differentialDerivation (R := R) (H := H) (A := H) d
   map_add' d e := by
     ext h
-    exact LinearMap.congr_fun (map_add (Comodule.differential (M := H)) d e) h
+    simp only [ComoduleAlgebra.differentialDerivation_apply, add_apply, map_add,
+      LinearMap.add_apply]
   map_smul' r d := by
     ext h
+    simp only [ComoduleAlgebra.differentialDerivation_apply, smul_apply]
     exact LinearMap.congr_fun (map_smul (Comodule.differential (M := H)) r d) h
   map_lie' {d e} := by
-    let : LieRing (Module.End R H) := LieRing.ofAssociativeRing
     ext h
-    exact LinearMap.congr_fun (LieHom.map_lie (Comodule.differential (M := H)) d e) h
+    simp only [ComoduleAlgebra.differentialDerivation_apply, Derivation.commutator_apply,
+      LieHom.map_lie, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp]
 
 /-- The left-invariant derivation is the differentiated regular representation. -/
 theorem toLinearMap_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
     (leftInvariantDerivation d).toLinearMap = Comodule.differential (R := R) (H := H) (M := H) d :=
-  Derivation.coe_mk'_linearMap _ _
+  ComoduleAlgebra.differentialDerivation_toLinearMap (R := R) (H := H) (A := H) d
 
 /-- The left-invariant derivation contracts the comultiplication against the tangent vector. -/
 theorem leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R)) (h : H) :

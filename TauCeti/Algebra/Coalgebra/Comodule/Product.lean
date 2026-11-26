@@ -413,14 +413,11 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 variable (B : ι → Type w) [∀ i, AddCommMonoid (B i)] [∀ i, Module R (B i)]
 
 /-- The direct-sum coaction on a finite Pi-product of comodules. -/
-def piCoact (c : ∀ i, Comodule R C (B i)) :
-    (∀ i, B i) →ₗ[R] (∀ i, B i) ⊗[R] C :=
-  ∑ i, TensorProduct.map (LinearMap.single R B i) LinearMap.id ∘ₗ
-    (c i).coact ∘ₗ LinearMap.proj i
+def piCoact (c : ∀ i, Comodule R C (B i)) : (∀ i, B i) →ₗ[R] (∀ i, B i) ⊗[R] C :=
+  ∑ i, TensorProduct.map (LinearMap.single R B i) LinearMap.id ∘ₗ (c i).coact ∘ₗ LinearMap.proj i
 
 /-- Evaluating the finite Pi-product coaction sums the coordinate coactions. -/
-@[simp]
-theorem piCoact_apply (c : ∀ i, Comodule R C (B i)) (f : ∀ i, B i) :
+@[simp] theorem piCoact_apply (c : ∀ i, Comodule R C (B i)) (f : ∀ i, B i) :
     piCoact (R := R) (C := C) B c f =
       ∑ i, TensorProduct.map (LinearMap.single R B i) LinearMap.id ((c i).coact (f i)) := by
   simp [piCoact]
@@ -429,41 +426,29 @@ theorem piCoact_apply (c : ∀ i, Comodule R C (B i)) (f : ∀ i, B i) :
 theorem piCoact_single (c : ∀ i, Comodule R C (B i)) (i : ι) (x : B i) :
     piCoact (R := R) (C := C) B c (LinearMap.single R B i x) =
       TensorProduct.map (LinearMap.single R B i) LinearMap.id ((c i).coact x) := by
-  rw [piCoact_apply, Finset.sum_eq_single i]
-  · simp
-  · intro j _ hji
-    simp [Pi.single_eq_of_ne hji]
-  · intro hi
-    exact absurd (Finset.mem_univ i) hi
+  rw [piCoact_apply, Finset.sum_eq_single i] <;>
+    [simp; (intro j _ hji; simp [Pi.single_eq_of_ne hji]); exact (absurd (Finset.mem_univ i) ·)]
 
 private theorem piCoact_comp_single (c : ∀ i, Comodule R C (B i)) (i : ι) :
     piCoact (R := R) (C := C) B c ∘ₗ LinearMap.single R B i =
-      TensorProduct.map (LinearMap.single R B i) LinearMap.id ∘ₗ (c i).coact := by
-  ext x
-  exact piCoact_single (R := R) (C := C) B c i x
+      TensorProduct.map (LinearMap.single R B i) LinearMap.id ∘ₗ (c i).coact :=
+  LinearMap.ext fun x ↦ piCoact_single (R := R) (C := C) B c i x
 
 private theorem piCoact_coassoc (c : ∀ i, Comodule R C (B i)) :
-    TensorProduct.assoc R (∀ i, B i) C C ∘ₗ
-        (piCoact (R := R) (C := C) B c).rTensor C ∘ₗ
-          piCoact (R := R) (C := C) B c =
-      Coalgebra.comul.lTensor (∀ i, B i) ∘ₗ
-        piCoact (R := R) (C := C) B c := by
-  ext i x
-  let _ : Comodule R C (B i) := c i
-  simp only [LinearMap.comp_apply, piCoact_single]
-  have h :=
-    congrArg
-      (TensorProduct.map (LinearMap.single R B i)
-        (TensorProduct.map (LinearMap.id : C →ₗ[R] C) (LinearMap.id : C →ₗ[R] C)))
-      (coassoc_apply (R := R) (C := C) (M := B i) x)
+    TensorProduct.assoc R (∀ i, B i) C C ∘ₗ (piCoact (R := R) (C := C) B c).rTensor C ∘ₗ
+        piCoact (R := R) (C := C) B c =
+      Coalgebra.comul.lTensor (∀ i, B i) ∘ₗ piCoact (R := R) (C := C) B c := by
+  ext i x; let _ : Comodule R C (B i) := c i; simp only [LinearMap.comp_apply, piCoact_single]
+  have h := congrArg (TensorProduct.map (LinearMap.single R B i)
+      (TensorProduct.map (LinearMap.id : C →ₗ[R] C) (LinearMap.id : C →ₗ[R] C)))
+    (coassoc_apply (R := R) (C := C) (M := B i) x)
   rw [TensorProduct.map_map_assoc] at h
   simpa [LinearMap.rTensor_map, LinearMap.lTensor_map, piCoact_comp_single] using h
 
 private theorem piCoact_counit (c : ∀ i, Comodule R C (B i)) :
     Coalgebra.counit.lTensor (∀ i, B i) ∘ₗ piCoact (R := R) (C := C) B c =
       (TensorProduct.mk R (∀ i, B i) R).flip 1 := by
-  ext i x
-  let _ : Comodule R C (B i) := c i
+  ext i x; let _ : Comodule R C (B i) := c i
   simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply, piCoact_single]
   have h := congrArg (TensorProduct.map (LinearMap.single R B i) (LinearMap.id : R →ₗ[R] R))
     (lTensor_counit_coact (R := R) (C := C) (M := B i) x)
@@ -472,157 +457,108 @@ private theorem piCoact_counit (c : ∀ i, Comodule R C (B i)) :
         (coact (R := R) (C := C) (M := B i) x)) =
       TensorProduct.map (LinearMap.single R B i) LinearMap.id
         (Coalgebra.counit.lTensor (B i) (coact (R := R) (C := C) (M := B i) x)) := by
-    induction coact (R := R) (C := C) (M := B i) x using TensorProduct.inductionOn with
-    | tmul b c' => simp
-    | add u v hu hv => simp [hu, hv]
-  rw [hl, h]
-  simp
+    induction coact (R := R) (C := C) (M := B i) x using TensorProduct.inductionOn <;> simp [*]
+  rw [hl, h]; simp
 
 /-- The direct-sum comodule structure on a finite Pi-product `∀ i, B i`.
 
 Like `Comodule.Prod`, this is deliberately not a global instance. -/
-@[implicit_reducible]
-def pi (c : ∀ i, Comodule R C (B i)) : Comodule R C (∀ i, B i) where
+@[implicit_reducible] def pi (c : ∀ i, Comodule R C (B i)) : Comodule R C (∀ i, B i) where
   coact := piCoact (R := R) (C := C) B c
   coassoc := piCoact_coassoc (R := R) (C := C) B c
   lTensor_counit_comp_coact := piCoact_counit (R := R) (C := C) B c
 
 /-- The coaction in `Comodule.pi` is `Comodule.piCoact`. -/
-@[simp]
-theorem pi_coact (c : ∀ i, Comodule R C (B i)) :
-    letI := pi (R := R) (C := C) B c
-    coact (R := R) (C := C) (M := ∀ i, B i) = piCoact (R := R) (C := C) B c := by
-  rfl
+@[simp] theorem pi_coact (c : ∀ i, Comodule R C (B i)) : letI := pi (R := R) (C := C) B c
+    coact (R := R) (C := C) (M := ∀ i, B i) = piCoact (R := R) (C := C) B c := by rfl
 
 /-- Evaluating the coaction of `Comodule.pi` sums the coordinate coactions. -/
 theorem pi_coact_apply (c : ∀ i, Comodule R C (B i)) (f : ∀ i, B i) :
-    letI := pi (R := R) (C := C) B c
-    coact (R := R) (C := C) f =
+    letI := pi (R := R) (C := C) B c; coact (R := R) (C := C) f =
       ∑ i, TensorProduct.map (LinearMap.single R B i) LinearMap.id ((c i).coact (f i)) := by
-  let _ := pi (R := R) (C := C) B c
-  rw [pi_coact, piCoact_apply]
+  let _ := pi (R := R) (C := C) B c; rw [pi_coact, piCoact_apply]
 
 /-- The `i`-th coordinate projection from the finite Pi-product comodule. -/
 def piProj (c : ∀ i, Comodule R C (B i)) (i : ι) :
-    letI := pi (R := R) (C := C) B c
-    letI := c i
-    Hom R C (∀ j, B j) (B i) :=
-  letI := pi (R := R) (C := C) B c
-  letI := c i
+    letI := pi (R := R) (C := C) B c; letI := c i; Hom R C (∀ j, B j) (B i) :=
+  letI := pi (R := R) (C := C) B c; letI := c i
   { toLinearMap := LinearMap.proj i
     map_coact := by
-      ext f
-      simp only [LinearMap.comp_apply, pi_coact, piCoact_apply, map_sum,
-        TensorProduct.map_map, LinearMap.comp_id]
+      ext f; simp only [LinearMap.comp_apply, pi_coact, piCoact_apply, map_sum,
+        TensorProduct.map_map, LinearMap.comp_id, LinearMap.proj_apply]
       rw [Finset.sum_eq_single i]
-      · have h : (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B i) =
-            LinearMap.id := by
-          ext x
-          simp
-        rw [h, TensorProduct.map_id, LinearMap.id_apply]
-        rfl
-      · intro j _ hji
-        have h : (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B j) = 0 := by
-          ext x
-          simp [Pi.single_eq_of_ne (Ne.symm hji)]
-        rw [h, TensorProduct.map_zero_left, LinearMap.zero_apply]
-      · intro hi
-        exact absurd (Finset.mem_univ i) hi }
+      · rw [show (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B i) = LinearMap.id
+          from LinearMap.ext fun x ↦ by simp, TensorProduct.map_id, LinearMap.id_apply]
+      · intro j _ hji; rw [show (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B j) =
+          0 from LinearMap.ext fun x ↦ by simp [Pi.single_eq_of_ne (Ne.symm hji)],
+          TensorProduct.map_zero_left, LinearMap.zero_apply]
+      · exact (absurd (Finset.mem_univ i) ·) }
 
 /-- The underlying linear map of `Comodule.piProj` is `LinearMap.proj`. -/
-@[simp]
-theorem piProj_toLinearMap (c : ∀ i, Comodule R C (B i)) (i : ι) :
-    letI := pi (R := R) (C := C) B c
-    letI := c i
-    (piProj (R := R) (C := C) B c i).toLinearMap = LinearMap.proj i := by
-  rfl
+@[simp] theorem piProj_toLinearMap (c : ∀ i, Comodule R C (B i)) (i : ι) :
+    letI := pi (R := R) (C := C) B c; letI := c i
+    (piProj (R := R) (C := C) B c i).toLinearMap = LinearMap.proj i := by rfl
 
 /-- Evaluating `Comodule.piProj` returns the `i`-th coordinate. -/
-@[simp]
-theorem piProj_apply (c : ∀ i, Comodule R C (B i)) (i : ι) (f : ∀ j, B j) :
-    letI := pi (R := R) (C := C) B c
-    letI := c i
-    piProj (R := R) (C := C) B c i f = f i := by
-  rfl
+@[simp] theorem piProj_apply (c : ∀ i, Comodule R C (B i)) (i : ι) (f : ∀ j, B j) :
+    letI := pi (R := R) (C := C) B c; letI := c i
+    piProj (R := R) (C := C) B c i f = f i := by rfl
 
 /-- The `i`-th coordinate inclusion into the finite Pi-product comodule. -/
 def piSingle (c : ∀ i, Comodule R C (B i)) (i : ι) :
-    letI := c i
-    letI := pi (R := R) (C := C) B c
-    Hom R C (B i) (∀ j, B j) :=
-  letI := c i
-  letI := pi (R := R) (C := C) B c
+    letI := c i; letI := pi (R := R) (C := C) B c; Hom R C (B i) (∀ j, B j) :=
+  letI := c i; letI := pi (R := R) (C := C) B c
   { toLinearMap := LinearMap.single R B i
-    map_coact := by
-      ext x
-      simp only [LinearMap.comp_apply, pi_coact, piCoact_single] }
+    map_coact := by ext x; simp only [LinearMap.comp_apply, pi_coact, piCoact_single] }
 
 /-- The underlying linear map of `Comodule.piSingle` is `LinearMap.single`. -/
-@[simp]
-theorem piSingle_toLinearMap (c : ∀ i, Comodule R C (B i)) (i : ι) :
-    letI := c i
-    letI := pi (R := R) (C := C) B c
-    (piSingle (R := R) (C := C) B c i).toLinearMap = LinearMap.single R B i := by
-  rfl
+@[simp] theorem piSingle_toLinearMap (c : ∀ i, Comodule R C (B i)) (i : ι) :
+    letI := c i; letI := pi (R := R) (C := C) B c
+    (piSingle (R := R) (C := C) B c i).toLinearMap = LinearMap.single R B i := by rfl
 
 /-- Evaluating `Comodule.piSingle` gives `Pi.single`. -/
-@[simp]
-theorem piSingle_apply (c : ∀ i, Comodule R C (B i)) (i : ι) (x : B i) :
-    letI := c i
-    letI := pi (R := R) (C := C) B c
-    piSingle (R := R) (C := C) B c i x = Pi.single i x := by
-  rfl
+@[simp] theorem piSingle_apply (c : ∀ i, Comodule R C (B i)) (i : ι) (x : B i) :
+    letI := c i; letI := pi (R := R) (C := C) B c
+    piSingle (R := R) (C := C) B c i x = Pi.single i x := by rfl
 
 /-- The comodule morphism into a finite Pi-product induced by a family of morphisms. -/
 def piLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (c : ∀ i, Comodule R C (B i)) (f : ∀ i, letI := c i; Hom R C P (B i)) :
-    letI := pi (R := R) (C := C) B c
-    Hom R C P (∀ i, B i) :=
+    letI := pi (R := R) (C := C) B c; Hom R C P (∀ i, B i) :=
   letI := pi (R := R) (C := C) B c
   { toLinearMap := LinearMap.pi fun i ↦ (f i).toLinearMap
     map_coact := by
-      have hmap : ∀ t : P ⊗[R] C,
-          TensorProduct.map (LinearMap.pi fun i ↦ (f i).toLinearMap) (LinearMap.id : C →ₗ[R] C) t =
-            ∑ i, TensorProduct.map ((LinearMap.single R B i).comp (f i).toLinearMap)
-              (LinearMap.id : C →ₗ[R] C) t := by
-        intro t
+      have hmap (t : P ⊗[R] C) : TensorProduct.map (LinearMap.pi fun i ↦ (f i).toLinearMap)
+            (LinearMap.id : C →ₗ[R] C) t = ∑ i, TensorProduct.map
+              ((LinearMap.single R B i).comp (f i).toLinearMap) (LinearMap.id : C →ₗ[R] C) t := by
         induction t using TensorProduct.inductionOn with
         | tmul p c' =>
           simp only [TensorProduct.map_tmul, LinearMap.id_apply, LinearMap.comp_apply,
             LinearMap.single_apply, ← TensorProduct.sum_tmul]
-          congr 1
-          exact (Finset.univ_sum_single (fun i ↦ f i p)).symm
-        | add x y hx hy =>
-          simp only [map_add, Finset.sum_add_distrib, hx, hy]
-      ext p
-      simp only [LinearMap.comp_apply, pi_coact, piCoact_apply]
-      rw [hmap]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      let _ : Comodule R C (B i) := c i
-      have hcomp :
-          TensorProduct.map ((LinearMap.single R B i).comp (f i).toLinearMap)
-              (LinearMap.id : C →ₗ[R] C) =
-            (TensorProduct.map (LinearMap.single R B i) (LinearMap.id : C →ₗ[R] C)).comp
-              (TensorProduct.map (f i).toLinearMap (LinearMap.id : C →ₗ[R] C)) := by
+          exact congrArg (· ⊗ₜ[R] c') (Finset.univ_sum_single (fun i ↦ f i p)).symm
+        | add x y hx hy => simp only [map_add, Finset.sum_add_distrib, hx, hy]
+      ext p; simp only [LinearMap.comp_apply, pi_coact, piCoact_apply, LinearMap.pi_apply,
+        Hom.coe_toLinearMap]
+      rw [hmap]; refine Finset.sum_congr rfl fun i _ ↦ ?_; let _ : Comodule R C (B i) := c i
+      have hcomp : TensorProduct.map ((LinearMap.single R B i).comp (f i).toLinearMap)
+            (LinearMap.id : C →ₗ[R] C) =
+          (TensorProduct.map (LinearMap.single R B i) (LinearMap.id : C →ₗ[R] C)).comp
+            (TensorProduct.map (f i).toLinearMap (LinearMap.id : C →ₗ[R] C)) := by
         rw [← TensorProduct.map_comp, LinearMap.comp_id]
-      rw [hcomp, LinearMap.comp_apply, (f i).map_coact_apply p]
-      rfl }
+      rw [hcomp, LinearMap.comp_apply, (f i).map_coact_apply p] }
 
 /-- The underlying linear map of `Comodule.piLift` is `LinearMap.pi`. -/
-@[simp]
-theorem piLift_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[simp] theorem piLift_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (c : ∀ i, Comodule R C (B i)) (f : ∀ i, letI := c i; Hom R C P (B i)) :
     letI := pi (R := R) (C := C) B c
     (piLift (R := R) (C := C) B c f).toLinearMap = LinearMap.pi fun i ↦ (f i).toLinearMap := by
   rfl
 
 /-- Evaluating `Comodule.piLift` gives the tuple of evaluations. -/
-@[simp]
-theorem piLift_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[simp] theorem piLift_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (c : ∀ i, Comodule R C (B i)) (f : ∀ i, letI := c i; Hom R C P (B i)) (p : P) (i : ι) :
     letI := pi (R := R) (C := C) B c
-    piLift (R := R) (C := C) B c f p i = f i p := by
-  rfl
+    piLift (R := R) (C := C) B c f p i = f i p := by rfl
 
 end Pi
 

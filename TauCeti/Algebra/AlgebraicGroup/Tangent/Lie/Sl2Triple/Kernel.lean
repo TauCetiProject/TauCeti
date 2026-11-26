@@ -8,14 +8,13 @@ module
 public import Mathlib.RingTheory.Etale.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Tangent.SpecialLinear
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Sl2Triple.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.FiniteEtale
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Augmentation
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.SpecialLinear
-import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Tangent.Basic
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Center.FiniteFlat
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
@@ -143,44 +142,10 @@ variable (k : Type u) [Field k] [CharZero k]
 
 /-- The integrated morphism of the standard `sl₂` triple on `SL₂` has trivial kernel. -/
 @[simp] theorem kernelHopfIdeal_sl2CoordinateMap_isSl2Triple_tangentLieEquivSl_symm_single :
-    CommHopfAlgCat.kernelHopfIdeal
-        (isSl2Triple_tangentLieEquivSl_symm_single k).sl2CoordinateMap =
+    CommHopfAlgCat.kernelHopfIdeal (isSl2Triple_tangentLieEquivSl_symm_single k).sl2CoordinateMap =
       HopfIdeal.augmentation k (coordinateHopfAlgebra k 2) := by
   rw [IsSl2Triple.sl2CoordinateMap_tangentLieEquivSl_symm_single]
   exact CommHopfAlgCat.kernelHopfIdeal_eq_augmentation_of_surjective _ Function.surjective_id
-
-private theorem derivationCompLieHom_conjugationMap_two_ne_zero :
-    derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
-      (B := k) 2).symm (SpecialLinear.singleSubSingle 0 1 1)) ≠ 0 := by
-  intro h0
-  let d₀ := (tangentLieEquivSl (R := k) (B := k) 2).symm (SpecialLinear.singleSubSingle 0 1 1)
-  have hd : ProjectiveGeneralLinear.tangentEnd 2
-      (derivationComp (B := k) (conjugationMap 2 k).hom d₀) = 0 := by
-    rw [← derivationCompLieHom_apply, h0, map_zero]
-  have hmat : GeneralLinear.tangentMatrix 2 (derivationComp (B := k) (coordinateMap k 2).hom d₀) =
-      (SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : k)).val := by
-    rw [coordinateMap, CommHopfAlgCat.hom_mkQuotient, ← HopfIdeal.quotientLieHom_apply,
-      ← tangentMatrix_apply_coe, ← tangentLieEquivSl_apply, LieEquiv.apply_symm_apply]
-  rw [conjugationMap_def, CommHopfAlgCat.hom_comp, derivationComp_comp, LinearMap.comp_apply,
-    ProjectiveGeneralLinear.tangentEnd_derivationComp_conjugationMap, hmat] at hd
-  have heval := congr_fun (congr_fun
-    (LinearMap.congr_fun hd (Matrix.single (0 : Fin 2) 1 (1 : k))) 0) 1
-  simp only [LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply,
-    SpecialLinear.val_singleSubSingle, LinearMap.zero_apply, Matrix.sub_apply, Matrix.mul_apply,
-    Matrix.single_apply, Matrix.zero_apply, Fin.sum_univ_two, Fin.isValue] at heval
-  norm_num at heval
-
-/-- **The standard `sl₂` triple in `Lie(PGL₂)`**, pushed forward along `SL₂ ⟶ PGL₂`. -/
-theorem isSl2Triple_derivationCompLieHom_conjugationMap :
-    IsSl2Triple
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
-        (B := k) 2).symm (SpecialLinear.singleSubSingle 0 1 1)))
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
-        (B := k) 2).symm (SpecialLinear.single 0 1 zero_ne_one 1)))
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
-        (B := k) 2).symm (SpecialLinear.single 1 0 one_ne_zero 1))) :=
-  (isSl2Triple_tangentLieEquivSl_symm_single k).map _
-    (derivationCompLieHom_conjugationMap_two_ne_zero k)
 
 /-- `isSl2Triple_derivationCompLieHom_conjugationMap k` integrates to `SL₂ ⟶ PGL₂`. -/
 @[simp] theorem sl2CoordinateMap_isSl2Triple_derivationCompLieHom_conjugationMap :

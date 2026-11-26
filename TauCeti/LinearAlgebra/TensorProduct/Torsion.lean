@@ -223,21 +223,19 @@ commutative ring without zero divisors is nontrivial. -/
 theorem nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
     {R P M : Type*} [CommRing R] [IsCancelMulZero R] [AddCommMonoid P] [Module R P]
     [Module.Flat R P] [Nontrivial P] [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
-    [Nontrivial M] :
-    Nontrivial (P ⊗[R] M) := by
-  obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
-  exact TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
-    (LinearMap.toSpanSingleton R M m₀) (smul_left_injective R hm₀)
+    [Nontrivial M] : Nontrivial (P ⊗[R] M) :=
+  let ⟨_, hm₀⟩ := exists_ne (0 : M)
+  TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
+    (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
 
 /-- The tensor product of a nontrivial torsion-free module with a nontrivial flat module over a
 commutative ring without zero divisors is nontrivial. -/
 theorem nontrivial_tensorProduct_of_flat_right_of_isTorsionFree
     {R M P : Type*} [CommRing R] [IsCancelMulZero R] [AddCommGroup M] [Module R M]
     [Module.IsTorsionFree R M] [Nontrivial M] [AddCommMonoid P] [Module R P]
-    [Module.Flat R P] [Nontrivial P] :
-    Nontrivial (M ⊗[R] P) := by
-  obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
-  exact TensorProduct.nontrivial_of_linearMap_injective_of_flat_right R M P
-    (LinearMap.toSpanSingleton R M m₀) (smul_left_injective R hm₀)
+    [Module.Flat R P] [Nontrivial P] : Nontrivial (M ⊗[R] P) :=
+  let ⟨_, hm₀⟩ := exists_ne (0 : M)
+  TensorProduct.nontrivial_of_linearMap_injective_of_flat_right R M P
+    (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
 
 end TauCeti

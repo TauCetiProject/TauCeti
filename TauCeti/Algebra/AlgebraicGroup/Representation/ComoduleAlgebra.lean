@@ -92,20 +92,17 @@ variable {A : Type*} [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
 noncomputable def differentialDerivation (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
     Derivation R A A :=
   Derivation.mk' (Comodule.differential (R := R) (H := H) d) fun x y ↦ by
-    rw [differential_mul, smul_eq_mul, smul_eq_mul]
-    ring
+    rw [differential_mul, smul_eq_mul, smul_eq_mul]; ring
 
 @[simp]
 theorem differentialDerivation_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a : A) :
     differentialDerivation (R := R) (H := H) d a =
-      Comodule.differential (R := R) (H := H) d a := by
-  rfl
+      Comodule.differential (R := R) (H := H) d a := by rfl
 
 @[simp]
 theorem differentialDerivation_toLinearMap (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
     (differentialDerivation (R := R) (H := H) (A := A) d).toLinearMap =
-      Comodule.differential (R := R) (H := H) (M := A) d := by
-  rfl
+      Comodule.differential (R := R) (H := H) (M := A) d := by rfl
 
 /-- **The power rule for a commutative comodule algebra.** A tangent vector at the identity
 differentiates `a ^ m` to `m • a ^ (m - 1) * (d • a)`. -/
