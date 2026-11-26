@@ -108,17 +108,6 @@ theorem exists_eLpNormWkp_comp_sub_le_of_two_lt_mul_halfPlane {p : ℝ≥0} (hp 
     funext fun z => by
       simp [ContDiff.sub_eq_hadamardFactor_apply g (hg.of_le (by simp)) (u z) (v z)]
   have hH := hM (fun z => (u z, v z)) (huc.prodMk hvc) fun z hz => ⟨huL hz, hvL hz⟩
-  -- The norm of the pair `(u, v)` is at most the sum of the norms.
-  have hpair : eLpNormWkp p S k (fun z => (u z, v z)) ≤
-      eLpNormWkp p S k u + eLpNormWkp p S k v := by
-    have h : (fun z => (u z, v z)) = (fun z => ContinuousLinearMap.inl ℝ F F (u z)) +
-        fun z => ContinuousLinearMap.inr ℝ F F (v z) := by
-      ext1 z
-      simp
-    rw [h]
-    exact (eLpNormWkp_add_le hp1).trans (add_le_add
-      (eLpNormWkp_clm_comp_le_of_norm_le_one _ (ContinuousLinearMap.norm_inl_le_one ℝ F F))
-      (eLpNormWkp_clm_comp_le_of_norm_le_one _ (ContinuousLinearMap.norm_inr_le_one ℝ F F)))
   have hVS : (V : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ S :=
     inter_subset_inter_left _ (subset_closure.trans hVΩ)
   rw [hfun]
@@ -133,6 +122,7 @@ theorem exists_eLpNormWkp_comp_sub_le_of_two_lt_mul_halfPlane {p : ℝ≥0} (hp 
     _ ≤ N * (M * (1 + (eLpNormWkp p S k u + eLpNormWkp p S k v)) ^ k) *
         eLpNormWkp p S k (v - u) := by
       gcongr
+      exact eLpNormWkp_prodMk_le hp1
     _ = _ := by
       push_cast
       ring

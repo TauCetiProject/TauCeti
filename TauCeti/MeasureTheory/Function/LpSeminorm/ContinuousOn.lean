@@ -41,7 +41,8 @@ open interval `(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity fun
 (`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`). The same holds for the `L^∞`
 seminorm on a set `s` at a point of the closure of the interior of `s` where `f` is continuous
 within `s`, such as a boundary point of a closed half-disc
-(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior`).
+(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior`); the statement for
+`ContinuousAt` is its case `s = univ`.
 -/
 
 public section
@@ -68,25 +69,6 @@ theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither 
     (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
   memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
     .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
-
-omit [OpensMeasurableSpace X] in
-/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
-at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
-theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
-    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
-  by_cases hm : AEStronglyMeasurable f μ
-  swap
-  · rw [eLpNorm_of_not_aestronglyMeasurable hm]
-    exact le_top
-  by_contra h
-  push Not at h
-  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on a neighbourhood, of positive measure.
-  have hV := hf.eNorm.eventually_const_lt h
-  have hae : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ eLpNorm f ∞ μ := by
-    rw [eLpNorm_exponent_top hm]
-    exact eNorm_ae_le_eLpNormEssSup f μ
-  have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
-  exact (μ.measure_pos_of_mem_nhds hV).ne' h0
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum on a set dominates a value up to its boundary.** If `x` lies in the
@@ -116,6 +98,14 @@ theorem ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior
         measure_mono fun y hy => ⟨hts ⟨hy.1, interior_subset hy.2⟩, interior_subset hy.2⟩
     _ ≤ μ.restrict s {y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} := Measure.le_restrict_apply _ _
     _ = 0 := h0
+
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
+at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
+theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
+    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
+  simpa using hf.continuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior (μ := μ)
+    (s := univ) (by simp)
 
 section CLMComp
 
