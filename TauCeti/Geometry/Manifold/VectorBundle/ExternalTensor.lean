@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.TensorProduct
 public import TauCeti.Topology.VectorBundle.Pullback
 
@@ -119,16 +119,6 @@ instance : MemTrivializationAtlas (t.externalTensor 𝕜 t') :=
 
 variable {𝕜 t t'}
 
-omit [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [∀ y, TopologicalSpace (W y)]
-  [FiberBundle G W] [MemTrivializationAtlas t] [MemTrivializationAtlas t'] in
-/-- The product of the base sets of `t` and `t'` is the intersection of the base sets of their
-pullbacks along the two projections of `M × N`. -/
-private theorem prod_baseSet_eq_inter_pullback :
-    t.baseSet ×ˢ t'.baseSet = (t.pullback (ContinuousMap.fst : C(M × N, M))).baseSet ∩
-      (t'.pullback (ContinuousMap.snd : C(M × N, N))).baseSet := by
-  rw [pullback_baseSet, pullback_baseSet, ContinuousMap.fst_apply, ContinuousMap.snd_apply,
-    Set.prod_eq]
-
 /-- The base set of the trivialization of `V ⊠ W` induced by `t` and `t'` is the product of their
 base sets. -/
 @[simp]
@@ -183,26 +173,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {W : N → Type*} [∀ y, AddCommGroup (W y)] [∀ y, Module 𝕜 (W y)] [∀ y, TopologicalSpace (W y)]
   [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 G] [∀ x, Module 𝕜 (V x)]
-  [VectorBundle 𝕜 F V] [∀ y, Module 𝕜 (W y)] [VectorBundle 𝕜 G W] in
-/-- A `C^n` section of `V`, composed with the first projection, is a `C^n` section of the
-pullback of `V` to `M × N`. -/
-private theorem contMDiff_pullback_fst (s : Cₛ^n⟮I; F, V⟯) :
-    ContMDiff (I.prod J) ((I.prod J).prod 𝓘(𝕜, F)) n fun p : M × N ↦
-      TotalSpace.mk' F (E := (ContinuousMap.fst : C(M × N, M)) *ᵖ V) p (s p.1) :=
-  (Bundle.Pullback.contMDiff_iff (I := I) (ContinuousMap.fst : C(M × N, M)) contMDiff_fst).2
-    ⟨contMDiff_id, s.contMDiff.comp contMDiff_fst⟩
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 G] [∀ x, Module 𝕜 (V x)]
-  [VectorBundle 𝕜 F V] [∀ y, Module 𝕜 (W y)] [VectorBundle 𝕜 G W] in
-/-- A `C^n` section of `W`, composed with the second projection, is a `C^n` section of the
-pullback of `W` to `M × N`. -/
-private theorem contMDiff_pullback_snd (t : Cₛ^n⟮J; G, W⟯) :
-    ContMDiff (I.prod J) ((I.prod J).prod 𝓘(𝕜, G)) n fun p : M × N ↦
-      TotalSpace.mk' G (E := (ContinuousMap.snd : C(M × N, N)) *ᵖ W) p (t p.2) :=
-  (Bundle.Pullback.contMDiff_iff (I := J) (ContinuousMap.snd : C(M × N, N)) contMDiff_snd).2
-    ⟨contMDiff_id, t.contMDiff.comp contMDiff_snd⟩
-
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
   [∀ y, IsTopologicalAddGroup (W y)] [∀ y, ContinuousSMul 𝕜 (W y)]
 
@@ -211,9 +181,14 @@ and a `C^n` section `t` of `W` over `N`, a `C^n` section of `V ⊠ W` over `M ×
 def externalTensor (s : Cₛ^n⟮I; F, V⟯) (t : Cₛ^n⟮J; G, W⟯) :
     Cₛ^n⟮I.prod J; ProjectiveTensor 𝕜 F G, ExternalTensor 𝕜 V W⟯ where
   toFun p := s p.1 ⊗ₜ[𝕜] t p.2
+  -- The pullbacks of `s` and `t` along the projections are `p ↦ s p.1` and `p ↦ t p.2`; the
+  -- closing `rfl` unfolds `ContMDiffMap.fst p` to `p.1` and `ContMDiffMap.snd p` to `p.2`.
   contMDiff_toFun := ContMDiff.tmul_section (E₁ := (ContinuousMap.fst : C(M × N, M)) *ᵖ V)
-    (E₂ := (ContinuousMap.snd : C(M × N, N)) *ᵖ W) (contMDiff_pullback_fst s)
-    (contMDiff_pullback_snd t)
+    (E₂ := (ContinuousMap.snd : C(M × N, N)) *ᵖ W)
+    ((s.pullback (ContMDiffMap.fst : C^n⟮I.prod J, M × N; I, M⟯)).contMDiff.congr fun p ↦ by
+      rw [pullback_apply]; rfl)
+    ((t.pullback (ContMDiffMap.snd : C^n⟮I.prod J, M × N; J, N⟯)).contMDiff.congr fun p ↦ by
+      rw [pullback_apply]; rfl)
 
 /-- The external tensor product of sections is `(x, y) ↦ s x ⊗ t y`. -/
 @[simp]
