@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.RingTheory.ClassGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Algebra.Group.Submonoid.Units
 import TauCeti.RingTheory.ClassGroup.HeightOneSpectrum
 import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
@@ -375,13 +376,8 @@ units. -/
 theorem range_units_map_val_eq_integralUnits :
     (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range =
       integralUnits R K := by
-  ext x
-  rw [MonoidHom.mem_range, integralUnits_eq_units_integralAdeles, Submonoid.mem_units_iff]
-  constructor
-  · rintro ⟨u, rfl⟩
-    exact ⟨(u : integralAdeles R K).property, (↑u⁻¹ : integralAdeles R K).property⟩
-  · rintro ⟨h₁, h₂⟩
-    exact ⟨⟨⟨_, h₁⟩, ⟨_, h₂⟩, Subtype.ext x.mul_inv, Subtype.ext x.inv_mul⟩, Units.ext rfl⟩
+  rw [integralUnits_eq_units_integralAdeles]
+  exact (integralAdeles R K).toSubmonoid.range_units_map_subtype
 
 /-- An idele is an everywhere-integral unit if and only if it and its inverse
 are integral finite adeles. -/

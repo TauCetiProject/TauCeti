@@ -5,18 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.Submonoid.Units
 
 /-!
-# Units in submonoids of groups
+# Units in submonoids
 
-An element of a submonoid of a group is a unit in that submonoid exactly when its inverse
-also lies in the submonoid. The additive version characterizes additive units by negation.
+The units of a submonoid `S` of a monoid `M`, mapped into `Mˣ` by the inclusion, form the
+subgroup `S.units` of units of `M` lying in `S` together with their inverses. An element of a
+submonoid of a group is a unit in that submonoid exactly when its inverse also lies in the
+submonoid. The additive versions are stated for additive units.
 -/
 
 public section
 
 namespace Submonoid
+
+/-- The image of the units of a submonoid `S` in the units of the ambient monoid is
+`S.units`. -/
+@[to_additive
+/-- The image of the additive units of an additive submonoid `S` in the additive units of the
+ambient monoid is `S.addUnits`. -/]
+theorem range_units_map_subtype {M : Type*} [Monoid M] (S : Submonoid M) :
+    (Units.map S.subtype).range = S.units := by
+  ext x
+  rw [MonoidHom.mem_range, mem_units_iff]
+  constructor
+  · rintro ⟨u, rfl⟩
+    exact ⟨u.val.property, u.inv.property⟩
+  · rintro ⟨h₁, h₂⟩
+    exact ⟨S.unitsEquivUnitsType ⟨x, h₁, h₂⟩, rfl⟩
 
 /-- An element of a submonoid of a group is a unit precisely when its inverse belongs to it. -/
 @[to_additive
