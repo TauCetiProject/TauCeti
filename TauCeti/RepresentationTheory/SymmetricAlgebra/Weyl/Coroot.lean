@@ -75,8 +75,8 @@ theorem toPerfPair_flip_weylGroupCorootRep (w : P.weylGroup) (y : N) :
       P.weylGroupRootRep.dual w⁻¹ (P.toLinearMap.flip.toPerfPair y) := by
   ext x
   simp only [LinearMap.toLinearMap_toPerfPair, LinearMap.flip_apply, Representation.dual_apply,
-    inv_inv, weylGroupRootRep, weylGroupCorootRep, Module.Dual.transpose_apply,
-    LinearMap.comp_apply, Representation.ofDistribMulAction_apply_apply]
+    inv_inv, weylGroupRootRep_apply, weylGroupCorootRep_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply]
   -- the goal is `⟨x, op w • y⟩ = ⟨w • x, y⟩`: Mathlib acts on weights through `weightEquiv` and
   -- on coweights through `coweightEquiv`, and the pairing makes this their transposition law
   exact (Equiv.toLinearMap_weightEquiv (w : P.Aut) x y).symm
