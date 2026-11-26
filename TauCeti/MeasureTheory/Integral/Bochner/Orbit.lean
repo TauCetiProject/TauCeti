@@ -33,10 +33,12 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {S 𝕜 X Y : Type*} [MeasurableSpace S] {μ : Measure S} [RCLike 𝕜]
+section
+
+variable {S 𝕜 X Y : Type*} [MeasurableSpace S] {μ : Measure S} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
   [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
-  [NormedSpace ℝ Y] [IsScalarTower ℝ 𝕜 Y]
+  [NormedSpace ℝ Y] [SMulCommClass ℝ 𝕜 Y]
 
 /-- Integrate an operator field orbitwise. Integrability of each orbit suffices for
 the resulting linear operator to be bounded, even on an arbitrary measure space. -/
@@ -81,6 +83,13 @@ theorem norm_orbitIntegralCLM_le (A : S → X →L[𝕜] Y)
   intro x
   rw [orbitIntegralCLM_apply, ← integral_mul_const]
   exact norm_integral_le_of_norm_le (hg.mul_const ‖x‖) (hbound x)
+
+end
+
+variable {S 𝕜 X Y : Type*} [MeasurableSpace S] {μ : Measure S} [RCLike 𝕜]
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
+  [NormedSpace ℝ Y] [IsScalarTower ℝ 𝕜 Y]
 
 /-- For a Bochner integrable operator field, orbitwise integration agrees with the
 Bochner integral in the operator-norm topology. -/
