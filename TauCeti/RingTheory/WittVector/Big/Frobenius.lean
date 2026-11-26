@@ -141,15 +141,21 @@ theorem frobenius_map (n : ℕ) (f : R →+* R') (x : BigWittVector S R) :
     frobenius n (map f x) = map f (frobenius n x) :=
   frobeniusFun_map n f x
 
+-- Lift the input along the polynomial counit and specialize the equality of the two outputs.
+private theorem eq_of_ghostMap_eq_of_counit {A : Type u} [CommRing A]
+    (f g : ∀ {B : Type u} [CommRing B], BigWittVector S B → BigWittVector T B)
+    (hspecialize : ∀ a : BigWittVector S (MvPolynomial A ℤ),
+      map (counit A) (f a) = map (counit A) (g a) → f (map (counit A) a) = g (map (counit A) a))
+    (hghost : ∀ a : BigWittVector S (MvPolynomial A ℤ), ghostMap (f a) = ghostMap (g a))
+    (x : BigWittVector S A) : f x = g x :=
+  eq_of_ghostMap_eq_of_surjective _ (map_surjective (counit A) (counit_surjective A))
+    (P := fun a ↦ f a = g a) f g hspecialize hghost x
+
 /-- Frobenius commutes with restriction to smaller truncation sets. -/
 theorem frobenius_restrict (n : ℕ) (h : T ≤ S) (x : BigWittVector S R) :
     frobenius n (restrict h x) =
-      restrict (TruncationSet.div_le_div h n) (frobenius n x) := by
-  exact eq_of_ghostMap_eq_of_surjective _
-    (map_surjective (S := S) (counit R) (counit_surjective R))
-    (P := fun a ↦ frobenius n (restrict h a) =
-      restrict (TruncationSet.div_le_div h n) (frobenius n a))
-    (fun a ↦ frobenius n (restrict h a))
+      restrict (TruncationSet.div_le_div h n) (frobenius n x) :=
+  eq_of_ghostMap_eq_of_counit (fun a ↦ frobenius n (restrict h a))
     (fun a ↦ restrict (TruncationSet.div_le_div h n) (frobenius n a))
     (fun a e ↦ by simpa only [← frobenius_map, map_restrict] using e)
     (fun a ↦ by ext k; simp) x
@@ -157,11 +163,8 @@ theorem frobenius_restrict (n : ℕ) (h : T ≤ S) (x : BigWittVector S R) :
 /-- Frobenius at index one is the identity, with its target presented as `S / 1`. -/
 @[simp]
 theorem frobenius_one (x : BigWittVector S R) :
-    frobenius 1 x = restrict (le_of_eq (TruncationSet.div_one S)) x := by
-  exact eq_of_ghostMap_eq_of_surjective _
-    (map_surjective (S := S) (counit R) (counit_surjective R))
-    (P := fun a ↦ frobenius 1 a = restrict (le_of_eq (TruncationSet.div_one S)) a)
-    (fun a ↦ frobenius 1 a)
+    frobenius 1 x = restrict (le_of_eq (TruncationSet.div_one S)) x :=
+  eq_of_ghostMap_eq_of_counit (fun a ↦ frobenius 1 a)
     (fun a ↦ restrict (le_of_eq (TruncationSet.div_one S)) a)
     (fun a e ↦ by simpa only [← frobenius_map, map_restrict] using e)
     (fun a ↦ by ext k; simp) x
@@ -169,12 +172,8 @@ theorem frobenius_one (x : BigWittVector S R) :
 /-- Successive Frobenius maps multiply their indices. -/
 theorem frobenius_frobenius (n k : ℕ) (x : BigWittVector S R) :
     frobenius k (frobenius n x) =
-      restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) x) := by
-  exact eq_of_ghostMap_eq_of_surjective _
-    (map_surjective (S := S) (counit R) (counit_surjective R))
-    (P := fun a ↦ frobenius k (frobenius n a) =
-      restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) a))
-    (fun a ↦ frobenius k (frobenius n a))
+      restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) x) :=
+  eq_of_ghostMap_eq_of_counit (fun a ↦ frobenius k (frobenius n a))
     (fun a ↦ restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) a))
     (fun a e ↦ by simpa only [← frobenius_map, map_restrict] using e)
     (fun a ↦ by ext i; simp [mul_assoc]) x
