@@ -109,9 +109,12 @@ end IsTrace
 /-- The amplification of a map that is lower semicontinuous on `B₊` is lower semicontinuous on
 `M_n(B)₊`. -/
 theorem _root_.LowerSemicontinuousOn.matrixTrace (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x}) :
-    LowerSemicontinuousOn (matrixTrace τ n) {x | 0 ≤ x} :=
-  lowerSemicontinuousOn_sum fun i _ ↦ hlsc.comp
-    (CStarMatrix.ofMatrixL.symm.continuous.matrix_elem i i).continuousOn
+    LowerSemicontinuousOn (matrixTrace τ n) {x | 0 ≤ x} := by
+  -- Mathlib's `CStarMatrix.ofMatrixL` is built from `continuous_id` in both directions, so
+  -- `ofMatrixL.symm x i j` is definitionally `x i j`; the ascription below records this step.
+  have hentry (i : n) : Continuous fun x : CStarMatrix n n B ↦ x i i :=
+    CStarMatrix.ofMatrixL.symm.continuous.matrix_elem i i
+  exact lowerSemicontinuousOn_sum fun i _ ↦ hlsc.comp (hentry i).continuousOn
     fun _ hx ↦ CStarMatrix.diag_nonneg_of_nonneg hx i
 
 /-- **The amplification of a faithful trace is faithful.** -/
