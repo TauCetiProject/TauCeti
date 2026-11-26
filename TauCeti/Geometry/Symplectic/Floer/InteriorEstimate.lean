@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
-import TauCeti.MeasureTheory.Integral.Bochner.Multiplier
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -78,7 +78,7 @@ public section
 
 namespace TauCeti.SymplecticForm
 
-open ContinuousLinearMap Filter Function Set MeasureTheory
+open ContinuousLinearMap Filter Function Set _root_.MeasureTheory
 open scoped Topology
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]

@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
-import TauCeti.MeasureTheory.Integral.Bochner.Multiplier
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants

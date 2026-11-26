@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange.SemiFredhol
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
-import TauCeti.MeasureTheory.Integral.Bochner.Multiplier
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The semi-Fredholm estimate along the input-exchange family capped at `0`
