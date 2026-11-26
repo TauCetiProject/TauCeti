@@ -131,25 +131,6 @@ private theorem integrable_inner_gradient_mul_value
 
 variable [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- Above a level `l ≥ 0`, the drift term of the weak form tested against `v = (u - l)⁺` only sees
-`v`: `∫ ⟪b, ∇u⟫ v = ∫ ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
-private theorem integral_inner_gradient_mul_value_posPartAbove {l : ℝ} (hl : 0 ≤ l)
-    (u : W1p mu Omega 2) :
-    ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ *
-        W1p.value (W1p.posPartAbove (by norm_num) hl u) x ∂mu =
-      ∫ x in Omega, ⟪b x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ *
-        W1p.value (W1p.posPartAbove (by norm_num) hl u) x ∂mu := by
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u,
-    W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hvx hgx
-  rw [hgx, hvx]
-  by_cases hx : l < W1p.value u x
-  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hx]
-  · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
-      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
-    simp
-
 /-- The energy inequality behind the weak maximum principle with a drift `‖b‖ ≤ β + |d|`,
 `d ∈ Lᵖ`: for a weak subsolution `u` and `v = (u - l)⁺ ∈ H¹₀(Ω) ∩ L^q`,
 `λ ‖∇v‖₂² ≤ ∫ (σ + β + |d|) |∇v| v`. -/
@@ -203,7 +184,7 @@ private theorem UniformlyEllipticOn.mul_norm_gradient_sq_le_integral_of_memLp_dr
     hsign hl hmem
   have h₃ := hu ⟨v, hmem⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u)
   simp only at h₃
-  rw [integral_inner_gradient_mul_value_posPartAbove hl u] at h₃
+  rw [W1p.integral_inner_gradient_mul_value_posPartAbove (by norm_num) hl u b] at h₃
   have hsplit : ∫ x in Omega, (sigma + beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu =
       sigma * ∫ x in Omega, ‖g x‖ * ‖f x‖ ∂mu +
         ∫ x in Omega, (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu := by
@@ -249,8 +230,7 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_eLpNorm_indicator_of_not_ae_va
   set Γ := {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}
   have hmem : v ∈ w1p0Submodule mu Omega 2 :=
     W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
-  have hfq : MemLp f q μ :=
-    memLp_iff.2 ((hsob v hmem).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+  have hfq : MemLp f q μ := W1p.memLp_value_of_eLpNorm_le (hsob v hmem)
   have hΓ : MeasurableSet Γ := W1p.measurableSet_lt_value_and_gradient_ne_zero u l
   -- `λ ‖∇v‖² ≤ ∫_Γ (σ + β + |d|) |∇v| v ≤ ‖1_Γ (σ + β + |d|)‖_p ‖∇v‖₂ ‖v‖_q`, since `∇v = 0`
   -- almost everywhere outside `Γ`.
@@ -399,8 +379,7 @@ theorem UniformlyEllipticOn.value_le_of_memLp_drift_of_forall_eLpNorm_le
     hc_bound he_bound hsign hpq hsob le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero])
     fun φ hφ ↦ by
       have hφq : MemLp (W1p.value (φ : W1p mu Omega 2)) q (mu.restrict Omega) :=
-        memLp_iff.2 ((hsob _ φ.property).trans_lt
-          (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+        W1p.memLp_value_of_eLpNorm_le (hsob _ φ.property)
       have hint_b : ∫ x in Omega, ⟪b x, W1p.gradient (u - v) x⟫_ℝ *
             W1p.value (φ : W1p mu Omega 2) x ∂mu =
           (∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (φ : W1p mu Omega 2) x ∂mu) -
