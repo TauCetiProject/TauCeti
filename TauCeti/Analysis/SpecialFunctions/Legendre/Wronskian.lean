@@ -39,10 +39,11 @@ the span criterion follows from Abel's identity by Cramer's rule.
   derivative `((ν₁ - ν₂) (ν₁ + ν₂ + 1) - (μ₁² - μ₂²) / (1 - z²)) f g`.
 * `TauCeti.one_sub_sq_mul_wronskian_eq_of_legendreEquation`: Abel's identity: for two solutions
   with the same `(ν, μ)` on a preconnected open set, `(1 - z²) 𝒲{f, g}` is constant.
-* `TauCeti.wronskian_ne_zero_of_legendreEquation`: on a preconnected open set avoiding `±1`, the
-  Wronskian of two solutions is nowhere zero as soon as it is nonzero at one point.
+* `TauCeti.wronskian_ne_zero_of_legendreEquation`: on a preconnected open set, the Wronskian of
+  two solutions is nowhere zero as soon as it is nonzero at one point `z₀` with `z₀ ≠ ±1`.
 * `TauCeti.exists_eq_mul_add_mul_of_legendreEquation`: the span criterion: on a preconnected
-  open set avoiding `±1`, two solutions whose Wronskian is nonzero at one point span all solutions.
+  open set, two solutions whose Wronskian is nonzero at one point `z₀` with `z₀ ≠ ±1` span all
+  solutions.
 
 ## References
 
@@ -106,37 +107,29 @@ theorem one_sub_sq_mul_wronskian_eq_of_legendreEquation {ν μ : ℂ} (hV : IsOp
     (fun z hz ↦ legendreEquation_sturmLiouville (hfe z hz))
     (fun z hz ↦ legendreEquation_sturmLiouville (hge z hz)) hx hz
 
-/-- On a set avoiding `±1`, the coefficient `1 - z²` of the associated Legendre equation does not
-vanish. -/
-private theorem one_sub_sq_ne_zero_of_notMem (hV₁ : (1 : ℂ) ∉ V) (hV₂ : (-1 : ℂ) ∉ V) {z : ℂ}
-    (hz : z ∈ V) : 1 - z ^ 2 ≠ 0 := by
-  rw [sub_ne_zero, ne_comm, Ne, sq_eq_one_iff]
-  rintro (rfl | rfl)
-  exacts [hV₁ hz, hV₂ hz]
-
-/-- On a preconnected open set `V` avoiding `±1`, the Wronskian `𝒲{f, g}` of two solutions of the
-associated Legendre equation with the same degree `ν` and order `μ` vanishes nowhere on `V` as
-soon as it is nonzero at one point of `V`. -/
+/-- On a preconnected open set `V`, the Wronskian `𝒲{f, g}` of two solutions of the associated
+Legendre equation with the same degree `ν` and order `μ` vanishes nowhere on `V` as soon as it is
+nonzero at one point `z₀ ∈ V` with `1 - z₀² ≠ 0`. -/
 theorem wronskian_ne_zero_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V) (hVc : IsPreconnected V)
-    (hV₁ : (1 : ℂ) ∉ V) (hV₂ : (-1 : ℂ) ∉ V) (hf : DifferentiableOn ℂ f V)
-    (hg : DifferentiableOn ℂ g V)
+    (hf : DifferentiableOn ℂ f V) (hg : DifferentiableOn ℂ g V)
     (hfe : ∀ z ∈ V, (1 - z ^ 2) * deriv^[2] f z - 2 * z * deriv f z +
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * f z = 0)
     (hge : ∀ z ∈ V, (1 - z ^ 2) * deriv^[2] g z - 2 * z * deriv g z +
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * g z = 0)
-    {z₀ z : ℂ} (hz₀ : z₀ ∈ V) (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) (hz : z ∈ V) :
+    {z₀ z : ℂ} (hz₀ : z₀ ∈ V) (hz₀' : 1 - z₀ ^ 2 ≠ 0)
+    (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) (hz : z ∈ V) :
     f z * deriv g z - deriv f z * g z ≠ 0 := by
   intro h
   have := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hf hg hfe hge hz hz₀
   rw [h, mul_zero] at this
-  exact mul_ne_zero (one_sub_sq_ne_zero_of_notMem hV₁ hV₂ hz₀) hW this.symm
+  exact mul_ne_zero hz₀' hW this.symm
 
-/-- **Span criterion for the associated Legendre equation.** On a preconnected open set `V` avoiding
-`±1`, if two solutions `f`, `g` of the associated Legendre equation with degree `ν` and order `μ`
-have nonzero Wronskian `𝒲{f, g}` at one point of `V`, then every solution `w` on `V` with the same
-`ν` and `μ` is `α f + β g` on `V`, with constants `α`, `β`. -/
+/-- **Span criterion for the associated Legendre equation.** On a preconnected open set `V`, if
+two solutions `f`, `g` of the associated Legendre equation with degree `ν` and order `μ` have
+nonzero Wronskian `𝒲{f, g}` at one point `z₀ ∈ V` with `1 - z₀² ≠ 0`, then every solution `w` on
+`V` with the same `ν` and `μ` is `α f + β g` on `V`, with constants `α`, `β`. -/
 theorem exists_eq_mul_add_mul_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V)
-    (hVc : IsPreconnected V) (hV₁ : (1 : ℂ) ∉ V) (hV₂ : (-1 : ℂ) ∉ V)
+    (hVc : IsPreconnected V)
     (hf : DifferentiableOn ℂ f V) (hg : DifferentiableOn ℂ g V) (hw : DifferentiableOn ℂ w V)
     (hfe : ∀ z ∈ V, (1 - z ^ 2) * deriv^[2] f z - 2 * z * deriv f z +
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * f z = 0)
@@ -144,7 +137,8 @@ theorem exists_eq_mul_add_mul_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V)
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * g z = 0)
     (hwe : ∀ z ∈ V, (1 - z ^ 2) * deriv^[2] w z - 2 * z * deriv w z +
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * w z = 0)
-    {z₀ : ℂ} (hz₀ : z₀ ∈ V) (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) :
+    {z₀ : ℂ} (hz₀ : z₀ ∈ V) (hz₀' : 1 - z₀ ^ 2 ≠ 0)
+    (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) :
     ∃ α β : ℂ, ∀ z ∈ V, w z = α * f z + β * g z := by
   -- Cramer's rule: `w 𝒲{f, g} = 𝒲{w, g} f + 𝒲{f, w} g` at every point, and by Abel's identity
   -- each of the three Wronskians at `z` is `(1 - z₀²) / (1 - z²)` times its value at `z₀`.
@@ -155,7 +149,7 @@ theorem exists_eq_mul_add_mul_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V)
   have hwg := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hw hg hwe hge hz hz₀
   have hfw := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hf hw hfe hwe hz hz₀
   rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div, eq_div_iff hW]
-  refine mul_left_cancel₀ (one_sub_sq_ne_zero_of_notMem hV₁ hV₂ hz₀) ?_
+  refine mul_left_cancel₀ hz₀' ?_
   linear_combination -(w z) * hfg + f z * hwg + g z * hfw
 
 end TauCeti
