@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.DisjointGlue
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TopDual
 public import TauCeti.AlgebraicGeometry.Limits.Sigma
+public import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 
@@ -77,20 +78,12 @@ lemma iSup_component : ⨆ n, component R n = ⊤ :=
 lemma isAffineOpen_component (n : ULift.{u} ℕ) : IsAffineOpen (component R n) :=
   isAffineOpen_opensRange _
 
-/- At the pinned Mathlib, instance search does not find `IsZariskiLocalAtTarget @QuasiCompact` and
-`IsZariskiLocalAtTarget @QuasiSeparated` from Mathlib's `HasAffineProperty` instances, so these are
-passed explicitly below. -/
-
 /-- The morphism `⨿ₙ ℙⁿ_R ⟶ ⨿ₙ Spec R` is quasi-compact, since each `ℙⁿ_R` is. -/
 instance instQuasiCompactToSigma : QuasiCompact (toSigma R) :=
-  have := @HasAffineProperty.instIsZariskiLocalAtTarget _ _
-    instHasAffinePropertyQuasiCompactCompactSpaceCarrierCarrierCommRingCat
   (IsZariskiLocalAtTarget.sigmaMap_iff (projSpaceToSpec R) @QuasiCompact).mpr fun _ ↦ inferInstance
 
 /-- The morphism `⨿ₙ ℙⁿ_R ⟶ ⨿ₙ Spec R` is quasi-separated, since each `ℙⁿ_R` is separated. -/
 instance instQuasiSeparatedToSigma : QuasiSeparated (toSigma R) :=
-  have := @HasAffineProperty.instIsZariskiLocalAtTarget _ _
-    instHasAffinePropertyQuasiSeparatedQuasiSeparatedSpaceCarrierCarrierCommRingCat
   (IsZariskiLocalAtTarget.sigmaMap_iff (projSpaceToSpec R) @QuasiSeparated).mpr fun _ ↦ by
     rw [projSpaceToSpec, Proj.toSpecCoeff_def]
     infer_instance

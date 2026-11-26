@@ -45,6 +45,10 @@ classical specialization at `v = 1` at the same time.
 * `TauCeti.laurentQuantumInteger_add`: the addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`.
 * `TauCeti.qInt_add_inv_eq_laurentEval`: the value of `[n]_v` at a unit `u` of a commutative ring
   is the quantum integer `TauCeti.qInt` at the loop parameter `u + u⁻¹`.
+* `TauCeti.laurentQuantumInteger_natCast_eq_sum`: the expansion of `[n]_v` in monomials
+  with exponents `2j + 1 - n` for `0 ≤ j < n`.
+* `TauCeti.qInt_add_inv_eq_sum`: evaluating this sum at a unit `q` gives the quantum integer
+  at loop parameter `q + q⁻¹`, including at `q = ±1`.
 * `TauCeti.sub_inv_mul_qInt_add_inv`: `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
 * `TauCeti.qInt_add_inv_eq_quantumInteger`: at `q` in a field with `q - q⁻¹ ≠ 0`, the quantum
   integer at `δ = q + q⁻¹` is the field quantum integer `TauCeti.quantumInteger q n`.
@@ -127,6 +131,20 @@ theorem qInt_add_inv_eq_laurentEval {R : Type*} [CommRing R] (u : Rˣ) (n : ℕ)
   rw [qInt_def, laurentQuantumInteger, ← AlgHom.coe_toRingHom, Polynomial.hom_eval₂,
     ← Polynomial.eval_map, map_S]
   simp
+
+/-- The integral Laurent polynomial `[n]` is a sum of `n` monomials with coefficient one. -/
+theorem laurentQuantumInteger_natCast_eq_sum (n : ℕ) :
+    laurentQuantumInteger n = ∑ j ∈ Finset.range n, T (2 * (j : ℤ) + 1 - n) := by
+  refine eq_of_forall_laurentEval_eq fun K _ u hu => ?_
+  simpa only [laurentEval_laurentQuantumInteger hu, map_sum, laurentEval_T,
+    Units.val_zpow_eq_zpow_val] using quantumInteger_natCast_eq_sum hu n
+
+/-- At a unit of a commutative ring, the quantum integer at loop parameter `q + q⁻¹`
+is the sum of the corresponding integer powers of `q`. -/
+theorem qInt_add_inv_eq_sum {R : Type*} [CommRing R] (q : Rˣ) (n : ℕ) :
+    qInt R (q + ↑q⁻¹) n = ∑ j ∈ Finset.range n, ↑(q ^ (2 * (j : ℤ) + 1 - n)) := by
+  rw [qInt_add_inv_eq_laurentEval, laurentQuantumInteger_natCast_eq_sum, map_sum]
+  simp only [laurentEval_T]
 
 /-- **The `q`-side characterization of the quantum integers**: at `δ = u + u⁻¹` for a unit `u`,
 `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`. -/

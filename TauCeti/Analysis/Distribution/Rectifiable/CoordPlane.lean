@@ -109,14 +109,11 @@ theorem coordPlaneCurrent_eq_frameCurrent (I : Fin k ↪ Fin n) (x : EuclideanSp
     coordPlaneCurrent I x U = Distribution.frameCurrent ((range (coordPlaneMap I x)).indicator 1)
       fun _ j ↦ EuclideanSpace.single (I j) 1 := by
   ext ω
-  rw [coordPlaneCurrent_apply_eq_setIntegral, Distribution.frameCurrent_apply
+  rw [coordPlaneCurrent_apply_eq_setIntegral, Distribution.frameCurrent_indicator_one_apply
     (τ := fun _ j ↦ EuclideanSpace.single (I j) 1)
+    (isometry_coordPlaneMap I x).isClosedEmbedding.isClosed_range.measurableSet
     ((locallyIntegrable_indicator_range_coordPlaneMap I x).locallyIntegrableOn _) measurable_const
-    fun _ _ ↦ EuclideanSpace.orthonormal_single.comp _ I.injective, ← integral_indicator
-    (isometry_coordPlaneMap I x).isClosedEmbedding.isClosed_range.measurableSet]
-  congr 1
-  funext y
-  by_cases hy : y ∈ range (coordPlaneMap I x) <;> simp [hy]
+    fun _ _ ↦ EuclideanSpace.orthonormal_single.comp _ I.injective]
 
 /-- A property that holds `μHE[k]`-almost everywhere on an open set `U` holds at some point of a
 coordinate `k`-plane meeting `U`, since the plane meets `U` in a set of positive measure. -/
