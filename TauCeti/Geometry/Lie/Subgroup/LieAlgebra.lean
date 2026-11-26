@@ -63,10 +63,11 @@ of `K` whose Lie algebra contains `X + Y` and `⁅X, Y⁆` — but Yamabe's theo
 file, and neither is the subalgebra property for a non-closed `K`.
 
 What this file does prove is the closed case: only the scalar closure survives with no
-topological hypothesis, since both the Trotter formula and the difference quotient produce the new
-element as a *limit* of elements of `K`, never as an element of `K` on the nose.
-`TauCeti.Lie.isClosed_setOf_forall_lieExp_smul_mem` turns those limits back into membership, and it
-is the only place closedness is used. So for a closed `K` the generation collapses
+topological hypothesis, since the Trotter formula produces `lieExp (t • (X + Y))` as a *limit* of
+elements of `K`, never as an element of `K` on the nose, and closedness of `K` turns that limit
+back into membership. Once `𝔨` is a linear subspace, the difference quotient needs no further
+hypothesis: a finite-dimensional subspace is closed, so it contains the limit `⁅X, Y⁆`. So for a
+closed `K` the generation collapses
 (`TauCeti.Lie.coe_lieSubalgebraOfSubgroup`), which is the hypothesis under which the
 closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) = 𝔨`, is stated.
 
@@ -85,7 +86,7 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
 * `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`: the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`
   has derivative `⁅X, Y⁆` at the origin. This is the derivation-level infinitesimal adjoint, the
   analytic input to bracket closure.
-* `TauCeti.Lie.lie_mem_of_forall_Ad_lieExp_smul_mem`: a closed subspace containing the adjoint
+* `TauCeti.Lie.lie_mem_of_forall_Ad_lieExp_smul_mem`: a subspace containing the adjoint
   orbit `s ↦ Ad (lieExp (s • X)) Y` contains `⁅X, Y⁆`.
 * `TauCeti.Lie.lie_mem_of_forall_Ad_mem`: a subspace of `𝔤` invariant under every `Ad g` is
   invariant under every `ad X`.
@@ -250,13 +251,15 @@ theorem hasDerivAt_Ad_lieExp_smul_apply_zero (X Y : LeftInvariantDerivation I G)
       0 key
   simpa [Function.comp_def] using hcomp
 
-/-- **A closed subspace containing the adjoint orbit of `Y` contains `⁅X, Y⁆`.** The curve
+/-- **A subspace containing the adjoint orbit of `Y` contains `⁅X, Y⁆`.** The curve
 `s ↦ Ad (lieExp (s • X)) Y` starts at `Y` and has derivative `⁅X, Y⁆` at `0`, so its difference
-quotients lie in `S` and the bracket is their limit. -/
+quotients lie in `S`, and the bracket is their limit; `S` is closed, being finite-dimensional. -/
 theorem lie_mem_of_forall_Ad_lieExp_smul_mem {S : Submodule ℝ (LeftInvariantDerivation I G)}
-    (hS : IsClosed (S : Set (LeftInvariantDerivation I G))) {X Y : LeftInvariantDerivation I G}
+    {X Y : LeftInvariantDerivation I G}
     (h : ∀ s : ℝ, Ad (I := I) (lieExp (I := I) (s • X)) Y ∈ S) : ⁅X, Y⁆ ∈ S := by
-  refine hS.mem_of_tendsto
+  have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  refine S.isClosed_of_finiteDimensional.mem_of_tendsto
     (hasDerivAt_iff_tendsto_slope.mp (hasDerivAt_Ad_lieExp_smul_apply_zero X Y))
     (Eventually.of_forall fun s => ?_)
   rw [slope_def_module]
@@ -270,9 +273,7 @@ theorem lie_mem_of_forall_Ad_mem {S : Submodule ℝ (LeftInvariantDerivation I G
     (hS : ∀ g : G, ∀ Y ∈ S, Ad (I := I) g Y ∈ S) (X : LeftInvariantDerivation I G)
     {Y : LeftInvariantDerivation I G} (hY : Y ∈ S) : ⁅X, Y⁆ ∈ S := by
   have _ : T2Space G := I.t2Space_of_lieGroup ∞
-  have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact lie_mem_of_forall_Ad_lieExp_smul_mem S.isClosed_of_finiteDimensional fun _ => hS _ _ hY
+  exact lie_mem_of_forall_Ad_lieExp_smul_mem fun _ => hS _ _ hY
 
 omit [T2Space G] in
 /-- **In a connected Lie group, `Ad`-invariance is `ad`-invariance.** A subspace of `𝔤` is
@@ -321,13 +322,11 @@ theorem lieExp_smul_lie_mem {K : Subgroup G} (hK : IsClosed (K : Set G))
       smul_mem' := fun c {_} hZ => lieExp_smul_smul_mem hZ c }
   have hmemS : ∀ Z : LeftInvariantDerivation I G,
       Z ∈ S ↔ ∀ s : ℝ, lieExp (I := I) (s • Z) ∈ K := fun _ => Iff.rfl
-  have hSclosed : IsClosed (S : Set (LeftInvariantDerivation I G)) :=
-    isClosed_setOf_forall_lieExp_smul_mem hK
   -- The adjoint orbit of `Y` along the one-parameter subgroup of `X`.
   set φ : ℝ → LeftInvariantDerivation I G := fun s => Ad (I := I) (lieExp (I := I) (s • X)) Y
   have hφmem : ∀ s : ℝ, φ s ∈ S := fun s =>
     lieExp_smul_Ad_mem (Subgroup.le_normalizer (hX s)) hY
-  have hlie : ⁅X, Y⁆ ∈ S := lie_mem_of_forall_Ad_lieExp_smul_mem hSclosed hφmem
+  have hlie : ⁅X, Y⁆ ∈ S := lie_mem_of_forall_Ad_lieExp_smul_mem hφmem
   exact (hmemS _).mp hlie t
 
 /-! ### The Lie subalgebra -/
