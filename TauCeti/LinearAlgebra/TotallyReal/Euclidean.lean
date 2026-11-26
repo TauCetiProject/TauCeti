@@ -42,6 +42,8 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
   real scalar does not change it (`Matrix.realImage_smul`).
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
   that real matrix is orthogonal.
+* `Matrix.realImage_map_star_eq_of_realImage_eq`: conjugating the entries of `M` conjugates
+  `M ℝⁿ`, so the image of `ℝⁿ` under `M.map star` depends only on `M ℝⁿ`.
 * `Matrix.realImage_symplecticSum_congr`: the image of the real points under a symplectic direct
   sum of invertible matrices only depends on their images under the blocks.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
@@ -60,6 +62,11 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
   (`Matrix.continuous_lagrangianChartCLE`).
 * `Matrix.lagrangianChart_smul_one`: the chart subspace of a scalar matrix `s` is the rotation
   `e^{iα} ℝⁿ` of `ℝⁿ` by the angle `α = π / 2 - arctan s` of `s + i`.
+* `Matrix.lagrangianChart_mul_mul_inv`: an invertible real matrix `P` maps the chart subspace of
+  `S` onto that of `P S P⁻¹`; for orthogonal `O` this is the chart of `O S Oᵀ`
+  (`Matrix.lagrangianChart_mul_mul_transpose`).
+* `Matrix.lagrangianChart_fromBlocks_diagonal`: the chart subspace of a block-diagonal matrix is the
+  direct sum of the chart subspaces of its blocks.
 
 ## References
 
@@ -240,6 +247,27 @@ theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
 
+/-- **Conjugating the entries preserves equality of the images of `ℝⁿ`.** On a real vector `x`,
+the matrix `M.map star` takes the value `conj (M x)`, so `(M.map star) ℝⁿ` is the conjugate of
+`M ℝⁿ` and depends only on it. -/
+theorem realImage_map_star_eq_of_realImage_eq {M N : Matrix n n ℂ}
+    (h : M.realImage = N.realImage) : (M.map star).realImage = (N.map star).realImage := by
+  have hval (P : Matrix n n ℂ) {x : EuclideanSpace ℂ n} (hx : x ∈ realSubspace n) (i : n) :
+      toEuclideanCLM (𝕜 := ℂ) (P.map star) x i = star (toEuclideanCLM (𝕜 := ℂ) P x i) := by
+    simp only [toEuclideanCLM_apply, ofLp_toLpLin, toLin'_apply]
+    have hxs : star (WithLp.ofLp x) = WithLp.ofLp x :=
+      funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)
+    rw [← conjTranspose_transpose, mulVec_transpose, vecMul_conjTranspose, hxs, Pi.star_apply]
+  have key {M N : Matrix n n ℂ} (hMN : M.realImage ≤ N.realImage) :
+      (M.map star).realImage ≤ (N.map star).realImage := by
+    intro v hv
+    obtain ⟨x, hx, rfl⟩ := mem_realImage.1 hv
+    obtain ⟨y, hy, hyx⟩ := mem_realImage.1 (hMN (mem_realImage.2 ⟨x, hx, rfl⟩))
+    refine mem_realImage.2 ⟨y, hy, ?_⟩
+    ext i
+    rw [hval N hy, hyx, hval M hx]
+  exact le_antisymm (key h.le) (key h.ge)
+
 /-- Multiplying by a nonzero real scalar does not change `M ℝⁿ`. -/
 @[simp]
 theorem realImage_smul (M : Matrix n n ℂ) {r : ℝ} (hr : r ≠ 0) :
@@ -375,10 +403,7 @@ theorem lagrangianChartFrame_apply (S : Matrix n n ℝ) (i j : n) :
 theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
     S.lagrangianChartFrame * (S.map ((↑) : ℝ → ℂ) - Complex.I • 1) =
       (S * S + 1).map ((↑) : ℝ → ℂ) := by
-  have h : (S * S).map ((↑) : ℝ → ℂ) = S.map (↑) * S.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, h,
-    Matrix.map_one _ (by simp) (by simp)]
+  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
   simp [add_mul, mul_sub, smul_smul]
   abel
 
@@ -566,5 +591,67 @@ theorem lagrangianChart_neg_one :
     ring
   rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
+
+/-- **A real change of coordinates conjugates the chart.** For an invertible real matrix `P`, the
+complex matrix of `P`, which preserves `ℝⁿ`, maps `{S y + i y | y ∈ ℝⁿ}` onto
+`{P S P⁻¹ y + i y | y ∈ ℝⁿ}`. -/
+theorem lagrangianChart_mul_mul_inv {P : Matrix n n ℝ} (hP : IsUnit P) (S : Matrix n n ℝ) :
+    (P * S * P⁻¹).lagrangianChart = S.lagrangianChart.map
+      (((toEuclideanCLM (𝕜 := ℂ) (P.map ((↑) : ℝ → ℂ)) :
+        EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+          EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+  have hP' : P⁻¹ * P = 1 := nonsing_inv_mul P ((isUnit_iff_isUnit_det P).1 hP)
+  -- `(P S P⁻¹ + i) P = P (S + i)`, and right multiplication by `P` does not change the image.
+  have hmap : (P * S * P⁻¹).map ((↑) : ℝ → ℂ) * P.map (↑) = P.map (↑) * S.map (↑) :=
+    calc (P * S * P⁻¹).map ((↑) : ℝ → ℂ) * P.map (↑) = (P * S * P⁻¹ * P).map (↑) :=
+          (Matrix.map_mul (f := Complex.ofRealHom)).symm
+      _ = (P * S).map (↑) := by rw [Matrix.mul_assoc (P * S), hP', Matrix.mul_one]
+      _ = P.map (↑) * S.map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
+  have hframe : (P * S * P⁻¹).lagrangianChartFrame * P.map ((↑) : ℝ → ℂ) =
+      P.map (↑) * S.lagrangianChartFrame := by
+    simp only [lagrangianChartFrame, Matrix.add_mul, Matrix.mul_add, smul_mul_assoc,
+      mul_smul_comm, Matrix.one_mul, Matrix.mul_one, hmap]
+  rw [lagrangianChart_def, ← realImage_mul_map_ofReal _ hP, hframe, realImage_mul,
+    lagrangianChart_def]
+
+/-- **A real orthogonal change of coordinates conjugates the chart.** For a real orthogonal
+matrix `O`, the complex matrix of `O` maps `{S y + i y | y ∈ ℝⁿ}` onto
+`{O S Oᵀ y + i y | y ∈ ℝⁿ}`: this is `Matrix.lagrangianChart_mul_mul_inv` with `O⁻¹ = Oᵀ`. -/
+theorem lagrangianChart_mul_mul_transpose {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
+    (S : Matrix n n ℝ) :
+    (O * S * Oᵀ).lagrangianChart = S.lagrangianChart.map
+      (((toEuclideanCLM (𝕜 := ℂ) (O.map ((↑) : ℝ → ℂ)) :
+        EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+          EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+  have hO' : Oᵀ * O = 1 := (mem_orthogonalGroup_iff' n ℝ).1 hO
+  rw [← inv_eq_left_inv hO']
+  exact lagrangianChart_mul_mul_inv ((isUnit_iff_isUnit_det O).2 (isUnit_det_of_left_inverse hO')) S
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- **The chart of a block-diagonal matrix is the direct sum of the charts.** Under the splitting
+`ℂ^{n ⊕ m} ≃ ℂⁿ × ℂᵐ`, the subspace `{S y + i y}` of the block-diagonal matrix with blocks `S`
+and `T` is the product of the subspaces of `S` and of `T`. -/
+theorem lagrangianChart_fromBlocks_diagonal (S : Matrix n n ℝ) (T : Matrix m m ℝ) :
+    (fromBlocks S 0 0 T).lagrangianChart =
+      (S.lagrangianChart.prod T.lagrangianChart).map
+        (((EuclideanSpace.sumEquivProd (𝕜 := ℂ) (ι := n) (κ := m)).symm.toLinearEquiv :
+          (EuclideanSpace ℂ n × EuclideanSpace ℂ m) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ m)).restrictScalars
+            ℝ) := by
+  ext v
+  simp only [Submodule.mem_map, Submodule.mem_prod, mem_lagrangianChart]
+  constructor
+  · intro hv
+    refine ⟨EuclideanSpace.sumEquivProd v, ⟨fun i ↦ ?_, fun i ↦ ?_⟩,
+      EuclideanSpace.sumEquivProd.symm_apply_apply v⟩
+    · simpa [Fintype.sum_sum_type] using hv (.inl i)
+    · simpa [Fintype.sum_sum_type] using hv (.inr i)
+  · rintro ⟨w, ⟨h₁, h₂⟩, rfl⟩ (i | i)
+    · simpa [Fintype.sum_sum_type] using h₁ i
+    · simpa [Fintype.sum_sum_type] using h₂ i
+
+end Sum
 
 end Matrix

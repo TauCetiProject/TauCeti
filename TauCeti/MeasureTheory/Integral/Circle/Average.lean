@@ -9,7 +9,11 @@ public import Mathlib.MeasureTheory.Integral.CircleAverage
 import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
-# Local radial continuity of circle averages
+# Circle averages over the polar angles and their local radial continuity
+
+`TauCeti.circleAverage_eq_integral_neg_pi_pi` writes `Real.circleAverage f c R` as the normalized
+integral over the angles `[-π, π]`, the angular range of the polar-coordinate formulas such as
+`TauCeti.integral_annulus_eq_integral_circleMap`, rather than over `[0, 2π]` as in its definition.
 
 Mathlib's `Continuous.circleAverage` and `ContinuousOn.circleAverage` establish continuity of
 `Real.circleAverage f c` globally when `f` is continuous on `ℂ`, or on a set of nonnegative radii
@@ -23,6 +27,19 @@ over whose concentric circles `f` is continuous. When `f` has interior singulari
 public section
 
 open Metric Real Set Topology
+
+namespace TauCeti
+
+/-- The circle average is the normalized integral over the angles `[-π, π]`, the angular range of
+the polar-coordinate formulas, instead of the period `[0, 2π]` of its definition. -/
+theorem circleAverage_eq_integral_neg_pi_pi {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℂ → E} {c : ℂ} {R : ℝ} :
+    circleAverage f c R = (2 * π)⁻¹ • ∫ θ in -π..π, f (circleMap c R θ) := by
+  rw [circleAverage_eq_integral_add (-π),
+    intervalIntegral.integral_comp_add_right (fun θ ↦ f (circleMap c R θ)), zero_add, two_mul,
+    add_neg_cancel_right]
+
+end TauCeti
 
 /-- If `f : ℂ → E` is continuous on a set `s` that is a neighbourhood of `sphere c |R|`, then
 `Real.circleAverage f c` is continuous at `R` (including when `f` has singularities inside

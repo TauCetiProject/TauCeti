@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SegmentIncrement
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
 
 /-!
 # The `Lᵖ` translation estimate
@@ -467,11 +468,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopo
           hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp h
             MeasurableSet.univ fun _ _ _ _ => mem_univ _
     _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p
-          ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable
-          (Filter.Eventually.of_forall fun x => by
-            rw [mul_comm]
-            exact ContinuousLinearMap.le_opENorm _ _)
+        TauCeti.eLpNorm_fderiv_apply_le (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable h p
 
 /-- **Continuity of translation in `Lᵖ`** for a `C¹` function with `Lᵖ` derivative: the `Lᵖ`
 distance between `u` and its translate tends to `0`. This is the qualitative corollary of

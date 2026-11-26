@@ -6,22 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real exponential
 
-Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`. For `0 < x`
-the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers, lies between
-`exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled mean of the geometric
-weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
+Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
+`(A x + B) exp (-(a x))` tends to `0`; for `0 < a`, `e^{t a} b` stays bounded as `t → +∞` only for
+`b = 0`. For `0 < x` the function `x / (exp x - 1)`, the generating function of the Bernoulli
+numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled
+mean of the geometric weights `(1 - q) q ^ k`, so these bounds control geometric averages as
+`q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
-with the rescaled level `exp (-(t / ε))`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
+with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
+`|log x - y| ≤ C` for `0 < x` is equivalent to the multiplicative bounds
+`exp (-C) * exp y ≤ x ≤ exp C * exp y`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
 is bounded on `x ≥ 0`.
 
 ## Main results
 
+* `TauCeti.mul_exp_one_sub_lt_one`: `x exp (1 - x) < 1` for `x ≠ 1`.
+* `Real.one_add_le_exp_sub_sq_div_four`: `1 + v ≤ exp (v - v² / 4)` for `0 ≤ v ≤ 1 / 8`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
+* `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
+  `x → ∞`, for `0 < a`.
+* `TauCeti.eq_zero_of_eventually_abs_exp_mul_le`: if `|e^{t a} b|` is eventually bounded as
+  `t → +∞` and `0 < a`, then `b = 0`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`: for `K > 0` and `k < μ`, `K exp (-k t)` is not
@@ -29,6 +40,9 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
+  `0 < x`.
+* `TauCeti.exp_neg_le_factorial_div_pow`: `exp (-y) ≤ n! / yⁿ` for `0 < y`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
@@ -40,20 +54,55 @@ is bounded on `x ≥ 0`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
+* `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
+  normalized kernel, expressed in the rescaled coordinate `t = a u / k`.
 * `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
   `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
   `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
 * `TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le`:
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
+* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
+  `δ ≤ t`.
+* `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `TauCeti.exp_div_pow_le_exp_div_pow`: `exp t / d ^ k ≤ exp c / s ^ k` for `0 < s`, `0 ≤ d` and
+  `k (s / d - 1) + t ≤ c`.
+* `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
+  `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
+* `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
+  `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
 -/
 
 public section
 
 open Filter Real
-open scoped Nat
+open scoped Nat Topology
 
 namespace TauCeti
+
+/-- `x exp (1 - x) < 1` for `x ≠ 1`, a rescaling of `x + 1 < exp x` for `x ≠ 0`. -/
+theorem mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * exp (1 - x) < 1 := by
+  have h := add_one_lt_exp (sub_ne_zero.2 hx)
+  rw [sub_add_cancel] at h
+  calc x * exp (1 - x) < exp (x - 1) * exp (1 - x) := by gcongr
+    _ = 1 := by rw [← exp_add, sub_add_sub_cancel, sub_self, exp_zero]
+
+/-- For `0 ≤ v ≤ 1 / 8`, `1 + v ≤ exp (v - v² / 4)`, from the alternating series of
+`log (1 + v)` (`Real.abs_log_sub_add_sum_range_le`). -/
+theorem _root_.Real.one_add_le_exp_sub_sq_div_four {v : ℝ} (hv0 : 0 ≤ v) (hv : v ≤ 1 / 8) :
+    1 + v ≤ Real.exp (v - v ^ 2 / 4) := by
+  have h := Real.abs_log_sub_add_sum_range_le (x := -v)
+    (by rw [abs_neg, abs_of_nonneg hv0]; linarith) 2
+  rw [abs_neg, abs_of_nonneg hv0, sub_neg_eq_add] at h
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+  norm_num at h
+  have h' := (abs_le.1 h).2
+  have h3 : v ^ 3 / (1 - v) ≤ v ^ 2 / 4 := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [mul_nonneg (sq_nonneg v) (show 0 ≤ 1 - 5 * v by linarith)]
+  rw [← Real.exp_log (by linarith : (0 : ℝ) < 1 + v)]
+  exact Real.exp_le_exp.2 (by nlinarith)
 
 /-- An affine function of `x` is eventually smaller than `exp (a x)` when `0 < a`. -/
 theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
@@ -63,6 +112,24 @@ theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
   rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
   nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
     mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
+
+/-- An affine function of `x` times `exp (-(a x))` tends to `0` as `x → ∞`, for `0 < a`. -/
+theorem tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero {a : ℝ} (ha : 0 < a) (A B : ℝ) :
+    Tendsto (fun x ↦ (A * x + B) * exp (-(a * x))) atTop (𝓝 0) := by
+  have h₁ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 a ha).const_mul A
+  have h₀ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 0 a ha).const_mul B
+  simpa [rpow_one, rpow_zero, add_mul, mul_assoc] using h₁.add h₀
+
+/-- A product `e^{t a} b` with `0 < a` that is eventually bounded in absolute value as `t → +∞`
+has `b = 0`, since otherwise it is unbounded. -/
+theorem eq_zero_of_eventually_abs_exp_mul_le {a b C : ℝ} (ha : 0 < a)
+    (h : ∀ᶠ t in atTop, |exp (t * a) * b| ≤ C) : b = 0 := by
+  by_contra hb
+  have hT : Tendsto (fun t ↦ |exp (t * a) * b|) atTop atTop := by
+    simp only [abs_mul, abs_exp]
+    exact (tendsto_exp_atTop.comp (tendsto_id.atTop_mul_const ha)).atTop_mul_const (abs_pos.2 hb)
+  obtain ⟨t, h1, h2⟩ := (h.and (hT.eventually_gt_atTop C)).exists
+  exact (h2.trans_le h1).false
 
 /-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
 many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
@@ -127,6 +194,19 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- For `0 < x`, a two-sided logarithmic approximation `|log x - y| ≤ C` is equivalent to the
+multiplicative bounds `exp (-C) * exp y ≤ x` and `x ≤ exp C * exp y`. -/
+theorem abs_log_sub_le_iff {x y C : ℝ} (hx : 0 < x) :
+    |log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y := by
+  rw [abs_le, sub_le_iff_le_add, le_sub_iff_add_le, ← exp_add, ← exp_add,
+    le_log_iff_exp_le hx, log_le_iff_le_exp hx]
+
+/-- For `0 < y`, `exp (-y) ≤ n! / yⁿ`: the exponential decays faster than every power. -/
+theorem exp_neg_le_factorial_div_pow {y : ℝ} (hy : 0 < y) (n : ℕ) :
+    exp (-y) ≤ n ! / y ^ n := by
+  rw [exp_neg, ← inv_div]
+  exact inv_anti₀ (by positivity) (pow_div_factorial_le_exp y hy.le n)
 
 /-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
 to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/
@@ -219,6 +299,37 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
     le_div_iff₀ (pow_pos ha m)]
   linarith
 
+/-- The Gamma kernel, in the coordinate `t = a u / k`, is bounded by
+`a⁻ᵏ (t exp (1 - t))^k`. For `k = 0` the bound is `1`. -/
+theorem pow_mul_exp_neg_mul_div_factorial_le_profile {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u)
+    (k : ℕ) :
+    u ^ k * exp (-(a * u)) / (k ! : ℝ) ≤
+      (a ^ k)⁻¹ * (a * u / k * exp (1 - a * u / k)) ^ k := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simpa using exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg ha.le hu))
+  have hkR : (0 : ℝ) < k := Nat.cast_pos.mpr hk
+  let t : ℝ := a * u / k
+  have ht : t * k = a * u := div_mul_cancel₀ _ hkR.ne'
+  have hexp : exp (1 - t) ^ k * exp (-(k : ℝ)) = exp (-(a * u)) := by
+    rw [← exp_natCast_mul, ← exp_add]
+    congr 1
+    linear_combination -ht
+  have hpow : t ^ k * (k : ℝ) ^ k = a ^ k * u ^ k := by
+    rw [← mul_pow, ht, mul_pow]
+  -- Separate the value at the mode from the factor that depends on the rescaled coordinate.
+  have hmode : (k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ) ≤ 1 := by
+    rw [div_le_one (by positivity)]
+    simpa using pow_mul_exp_neg_mul_le (a := 1) one_pos hkR.le k
+  calc
+    _ = (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k * ((k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ)) := by
+      symm
+      rw [mul_pow]
+      calc
+        _ = (a ^ k)⁻¹ * (t ^ k * (k : ℝ) ^ k) * (exp (1 - t) ^ k * exp (-(k : ℝ))) /
+            (k ! : ℝ) := by ring
+        _ = _ := by rw [hpow, hexp, ← mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ ha.ne'), one_mul]
+    _ ≤ (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k := mul_le_of_le_one_right (by positivity) hmode
+
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
@@ -279,5 +390,76 @@ theorem inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le {a y : ℝ} (ha : 0 < 
           ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
         _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
             rw [mul_one]; gcongr; exact le_max_right _ _
+
+/-- For `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the weight
+`x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single exponential, decaying as `x → ∞`. -/
+theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ) :
+    exp (-(r * x)) * x ≤ 2 / δ * exp (-(δ / 2 * x)) := by
+  rcases lt_or_ge x 0 with hx | hx
+  · exact (mul_nonpos_of_nonneg_of_nonpos (exp_pos _).le hx.le).trans (by positivity)
+  have hy := add_one_le_exp (δ / 2 * x)
+  have h1 : exp (-(r * x)) ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) := by
+    rw [← exp_add]
+    gcongr
+    nlinarith
+  have h2 : exp (-(δ / 2 * x)) * x ≤ 2 / δ := by
+    rw [le_div_iff₀ hδ, exp_neg, inv_mul_eq_div, div_mul_eq_mul_div, div_le_iff₀ (exp_pos _)]
+    nlinarith
+  calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
+    _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
+
+/-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
+`e^{-(x-σ)δ}` for `t ≥ δ`. -/
+theorem exp_neg_sub_mul_le_of_le {σ x δ t : ℝ} (hx : σ ≤ x) (ht : δ ≤ t) :
+    exp (-(x - σ) * t) ≤ exp (-(x - σ) * δ) :=
+  exp_le_exp.mpr (mul_le_mul_of_nonpos_left ht (by linarith))
+
+/-- A natural power of a nonnegative real number is at most the exponential of the exponent
+times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
+theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
+  rw [exp_natCast_mul]
+  exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
+`k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from
+`(s / d) ^ k ≤ exp (k (s / d - 1))`, that is from `x ≤ exp (x - 1)`; at `d = 0` the left side is
+`0` unless `k = 0`, when the hypothesis reads `t ≤ c`. -/
+theorem exp_div_pow_le_exp_div_pow {s d t c : ℝ} (k : ℕ) (hs : 0 < s) (hd : 0 ≤ d)
+    (h : k * (s / d - 1) + t ≤ c) : exp t / d ^ k ≤ exp c / s ^ k := by
+  rcases hd.eq_or_lt with rfl | hd
+  · rcases Nat.eq_zero_or_pos k with rfl | hk
+    · simpa using h
+    · rw [zero_pow hk.ne', div_zero]
+      positivity
+  have hx : s ^ k ≤ exp (k * (s / d - 1)) * d ^ k := by
+    rw [← div_le_iff₀ (by positivity), ← div_pow, exp_natCast_mul]
+    exact pow_le_pow_left₀ (by positivity) (by linarith [add_one_le_exp (s / d - 1)]) k
+  rw [div_le_div_iff₀ (by positivity) (by positivity)]
+  calc exp t * s ^ k ≤ exp t * (exp (k * (s / d - 1)) * d ^ k) := by gcongr
+    _ = exp (t + k * (s / d - 1)) * d ^ k := by rw [exp_add]; ring
+    _ ≤ exp c * d ^ k := by gcongr; linarith
+
+/-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`. -/
+theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (hx : 1 ≤ x) :
+    1 + a * x ≤ (1 + a) * Real.exp (a * (x - 1)) := by
+  rcases le_or_gt (-1) a with ha | ha
+  · have h := Real.add_one_le_exp (a * (x - 1))
+    nlinarith [mul_le_mul_of_nonneg_left h (neg_le_iff_add_nonneg'.1 ha),
+      mul_nonneg (sq_nonneg a) (sub_nonneg.2 hx)]
+  · have h : Real.exp (a * (x - 1)) ≤ 1 :=
+      Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg (by linarith) (sub_nonneg.2 hx))
+    nlinarith [mul_nonneg_of_nonpos_of_nonpos (by linarith : 1 + a ≤ 0) (sub_nonpos.2 h)]
+
+/-- `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`. -/
+theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤ x) (hxt : x ≤ t)
+    (ht : t < 1) : (1 - x)⁻¹ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by
+  have ht2 : 0 < 1 - t ^ 2 := by nlinarith
+  have hx2 : 0 < 1 - x ^ 2 := by nlinarith
+  have hexp := Real.add_one_le_exp (t ^ 2 / (1 - t ^ 2))
+  have hfrac : t ^ 2 / (1 - t ^ 2) + 1 = (1 - t ^ 2)⁻¹ := by field_simp; ring
+  rw [hfrac] at hexp
+  calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
+    _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
+    _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
 
 end TauCeti

@@ -43,7 +43,9 @@ provides:
   `TauCeti.nonempty_derivedExtendRestrictScalarsAdj`), together with the compatibility of its unit
   and counit on complex models with the degreewise lift of `ModuleCat.extendRestrictScalarsAdj f`,
   and the canonical adjunction `TauCeti.derivedExtendScalarsAdj` with the K-flat object
-  isomorphism `TauCeti.derivedExtendScalarsKFlatIso`.
+  isomorphism `TauCeti.derivedExtendScalarsKFlatIso`;
+* on a flat module in degree zero, derived extension of scalars is the ordinary extension of
+  scalars in degree zero (`TauCeti.derivedExtendScalarsSingleIso`).
 
 ## References
 
@@ -184,18 +186,9 @@ def derivedExtendRestrictScalarsAdj
       (Functor.whiskerRight eR.inv G ≫ (Functor.associator _ _ _).hom) W_S :=
     Functor.isRightDerivedFunctor_of_inverts W_S (R' ⋙ G)
       ((Functor.associator DerivedCategory.Q R' G).symm ≪≫ Functor.isoWhiskerRight eR G)
-  have hDerivesComp : (CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).Derives
-      ((complexBaseChange f ⋙ DerivedCategory.Q) ⋙ R') :=
-    MorphismProperty.IsInvertedBy.of_comp _ _ (localizerMorphism_derives_complexBaseChange f) R'
   have : (G ⋙ R').IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R := by
-    refine hDerivesComp.isLeftDerivedFunctor_of_isIso _ fun P ↦ ?_
-    have : IsIso (α.app ((CochainComplex.KFlat.localizerMorphism
-        (ModuleCat.{u} R)).functor.obj P)) :=
-      (localizerMorphism_derives_complexBaseChange f).isIso' α P
-    dsimp
-    rw [Category.id_comp]
-    infer_instance
+      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R :=
+    (localizerMorphism_derives_complexBaseChange f).isLeftDerivedFunctor_comp α R'
   exact ((ModuleCat.extendRestrictScalarsAdj f).mapHomologicalComplex
     (ComplexShape.up ℤ)).derived W_R W_S α eR.inv
 
@@ -365,6 +358,18 @@ component. -/
 lemma derivedExtendScalarsKFlatIso_inv (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
     (derivedExtendScalarsKFlatIso.{u, w, w'} f P).inv =
       inv ((derivedExtendScalarsCounit f).app P) := (rfl)
+
+/-- **Derived extension of scalars of a flat module.** For a flat `R`-module `M` placed in degree
+zero, the derived extension of scalars `M ⊗^L_R S` is the ordinary extension of scalars
+`S ⊗_R M` placed in degree zero, since `M` in degree zero is K-flat. -/
+def derivedExtendScalarsSingleIso (M : ModuleCat.{u} R) [Module.Flat R M] :
+    (derivedExtendScalars.{u, w, w'} f).obj ((DerivedCategory.singleFunctor _ 0).obj M) ≅
+      (DerivedCategory.singleFunctor _ 0).obj ((ModuleCat.extendScalars f).obj M) :=
+  (derivedExtendScalars f).mapIso ((DerivedCategory.singleFunctorIsoCompQ _ 0).app M) ≪≫
+    derivedExtendScalarsKFlatIso f _ ≪≫
+    DerivedCategory.Q.mapIso ((HomologicalComplex.singleMapHomologicalComplex
+      (ModuleCat.extendScalars f) (.up ℤ) 0).app M) ≪≫
+    ((DerivedCategory.singleFunctorIsoCompQ _ 0).app _).symm
 
 /-- The canonical adjunction
 `derivedExtendScalars f ⊣ (ModuleCat.restrictScalars f).mapDerivedCategory` between derived

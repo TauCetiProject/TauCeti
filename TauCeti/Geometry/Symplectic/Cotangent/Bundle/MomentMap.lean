@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
+public import TauCeti.Geometry.Symplectic.Cotangent.MomentMap
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
@@ -53,6 +54,9 @@ reduced.
 
 * `TauCeti.CotangentBundle.liouvilleForm_apply_fundamentalVectorField`: `⟨μ, ξ⟩ = λ(ξ_{T*M})`.
 * `TauCeti.CotangentBundle.momentMap_smul`: coadjoint equivariance.
+* `TauCeti.CotangentBundle.momentMap_apply_eq_cotangentMomentMap`: for a linear action on a normed
+  space `V`, the moment map on `T*V` is the linear cotangent moment map `A ↦ p(A q)` evaluated at
+  the infinitesimal generator of `ξ`.
 * `TauCeti.CotangentBundle.momentMap_eq_zero_iff`: a covector lies in the zero level `μ⁻¹(0)`
   exactly when it vanishes on the orbit directions `𝔤 · x`.
 * `TauCeti.CotangentBundle.momentMap_comp_groupLieAlgebraMap`: for an action through a
@@ -60,6 +64,8 @@ reduced.
   larger group.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`: `μ` is a coadjoint-equivariant
   moment map for the canonical symplectic form.
+* `TauCeti.CotangentBundle.differential_momentMap_surjective`: for a free action, every value of
+  the cotangent moment map is regular.
 * `TauCeti.CotangentBundle.hamiltonianTorusData_momentMap`: the cotangent lift of a smooth action
   of a commutative Lie group, such as a torus, is a Hamiltonian torus action with moment map `μ`.
 
@@ -115,6 +121,22 @@ theorem momentMap_comp_groupLieAlgebraMap {EK HK : Type*} [NormedAddCommGroup EK
   ext ξ
   rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, momentMap_apply, momentMap_apply,
     φ.fundamentalVectorField_groupLieAlgebraMap hφ hsmul]
+
+/-- **Linear actions.** If `G` acts on a normed space `V` through `ρ : G → (V →L[ℝ] V)`, and `ρ`
+is differentiable at the identity, then at a covector `p` at `q` the cotangent moment map is the
+moment map `A ↦ p(A q)` of the cotangent-lifted linear action (`TauCeti.cotangentMomentMap`),
+evaluated at the infinitesimal generator `dρ₁(ξ)`. -/
+theorem momentMap_apply_eq_cotangentMomentMap {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [MulAction G V] {ρ : G → V →L[ℝ] V} (hρ : ∀ g v, g • v = ρ g v)
+    (hd : MDifferentiableAt IG 𝓘(ℝ, V →L[ℝ] V) ρ 1) (z : CotangentBundle 𝓘(ℝ, V) V)
+    (ξ : GroupLieAlgebra IG G) :
+    momentMap IG G z ξ = cotangentMomentMap (z.proj, z.snd)
+      (tangentSpaceCastModel 𝓘(ℝ, V →L[ℝ] V) (ρ 1) (mfderiv IG 𝓘(ℝ, V →L[ℝ] V) ρ 1 ξ) :
+        V →ₗ[ℝ] V) := by
+  rw [momentMap_apply, fundamentalVectorField_eq_mfderiv_apply hρ hd, cotangentMomentMap_apply,
+    ContinuousLinearMap.coe_coe]
+  -- The covector of `T*V` at `q` is a continuous linear form on `V` itself.
+  rfl
 
 section Smooth
 
@@ -235,6 +257,27 @@ theorem isEquivariantMomentMap_momentMap :
   apply_smul := momentMap_smul
 
 end Equivariant
+
+section Regular
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable [LieGroup IG ∞ G] [FiniteDimensional ℝ EG] [FiniteDimensional ℝ E] [I.Boundaryless]
+  [T2Space M] [IsManifold I ∞ M] [ContMDiffSMul IG I ∞ G M] [ContMDiffConstSMul I ∞ G M]
+  [IsCancelSMul G M]
+
+/-- **For a free action, every value of the cotangent moment map is regular.** An element of `G`
+fixing a covector fixes its base point, so the cotangent-lifted action of a free action is free,
+and freeness makes the differential of a moment map of a symplectic form surjective. The moment
+map property `h` holds by `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`. -/
+theorem differential_momentMap_surjective
+    (h : (symplecticForm I M).IsEquivariantMomentMap (momentMap IG G)) (z : CotangentBundle I M) :
+    Function.Surjective (h.differential z) :=
+  h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
+    (isSymplectic_symplecticForm.isNondegenerate.nondegenerate_bilinFormAt z)
+    (isCancelSMul_iff_stabilizer_eq_bot.1 inferInstance z)
+
+end Regular
 
 section Torus
 

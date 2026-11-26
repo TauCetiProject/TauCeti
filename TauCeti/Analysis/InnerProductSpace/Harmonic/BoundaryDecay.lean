@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Reflection
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 

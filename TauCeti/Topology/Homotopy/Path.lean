@@ -35,6 +35,13 @@ prescribed end paths as a path between paths. The smoothing of caps in
 `Geometry/Symplectic/Floer/Cap/Smoothing.lean` feeds such families to
 `Path.homotopic_of_continuous_square`, and `IsSmoothBasedCap.toPath` in
 `Geometry/Symplectic/Floer/Cap/Area.lean` is built with `Path.ofContinuousFamily`.
+`ContinuousMap.pathTrans` and `ContinuousMap.pathSymm` concatenate and reverse continuous families
+of paths pointwise. A homotopy between constant maps is such a family
+(`ContinuousMap.Homotopy.evalAtEquiv`), and this identification matches the concatenation and
+reversal of homotopies with `pathTrans` and `pathSymm`; the paths traced by concatenated and
+reversed homotopies are computed by `ContinuousMap.Homotopy.evalAt_trans` and `evalAt_symm`.
+`Topology/Homotopy/Homotopic/Homotopy.lean` reads homotopy of homotopies between constant maps
+through `evalAtEquiv`.
 
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
@@ -84,6 +91,8 @@ endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
 `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
 pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+`Path.Homotopy.reflTransSymm_apply` evaluates Mathlib's homotopy from the constant path to
+`p.trans p.symm`, which has no `simps` lemmas of its own.
 
 Every point of a path lies in the path component of its source (`Path.mem_pathComponent`). So the
 paths in a subspace `S` starting at a point whose path component lies in `S` are the paths of the
@@ -322,6 +331,28 @@ def ofContinuousFamily {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X
 theorem ofContinuousFamily_apply {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X)
     (hF : Continuous ↿F) (h₀ : ∀ s, F s 0 = x₀) (h₁ : ∀ s, F s 1 = x₁) (hp : ∀ t, F 0 t = p t)
     (hq : ∀ t, F 1 t = q t) (s t : I) : ofContinuousFamily F hF h₀ h₁ hp hq s t = F s t :=
+  (rfl)
+
+/-- The pointwise concatenation of continuous families of paths. -/
+noncomputable def _root_.ContinuousMap.pathTrans {Y : Type*} [TopologicalSpace Y] {x₀ x₁ x₂ : X}
+    (α : C(Y, Path x₀ x₁)) (β : C(Y, Path x₁ x₂)) : C(Y, Path x₀ x₂) where
+  toFun y := (α y).trans (β y)
+  continuous_toFun := α.continuous.path_trans β.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathTrans_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ x₂ : X}
+    (α : C(Y, Path x₀ x₁)) (β : C(Y, Path x₁ x₂)) (y : Y) : α.pathTrans β y = (α y).trans (β y) :=
+  (rfl)
+
+/-- The pointwise reversal of a continuous family of paths. -/
+def _root_.ContinuousMap.pathSymm {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X}
+    (α : C(Y, Path x₀ x₁)) : C(Y, Path x₁ x₀) where
+  toFun y := (α y).symm
+  continuous_toFun := Path.continuous_symm.comp α.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathSymm_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X}
+    (α : C(Y, Path x₀ x₁)) (y : Y) : α.pathSymm y = (α y).symm :=
   (rfl)
 
 /-- **A square with prescribed edges is a path homotopy.** A continuous map on `I × I` that
@@ -645,6 +676,105 @@ theorem exists_partition_with_property {x y : X} (γ : Path x y) (P : Set X → 
 
 end Path
 
+namespace ContinuousMap.Homotopy
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ f₂ : C(X, Y)}
+
+/-! ### Paths traced by concatenated and reversed homotopies -/
+
+@[simp]
+theorem evalAt_refl (f : C(X, Y)) (x : X) : (Homotopy.refl f).evalAt x = Path.refl (f x) := by
+  ext
+  simp
+
+@[simp]
+theorem evalAt_symm (F : Homotopy f₀ f₁) (x : X) : F.symm.evalAt x = (F.evalAt x).symm := by
+  ext
+  simp
+
+@[simp]
+theorem evalAt_trans (F : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) (x : X) :
+    (F.trans G).evalAt x = (F.evalAt x).trans (G.evalAt x) := by
+  ext t
+  simp only [evalAt_apply, trans_apply, Path.trans_apply]
+
+@[simp]
+theorem symm_refl (f : C(X, Y)) : (Homotopy.refl f).symm = Homotopy.refl f := by
+  ext
+  simp
+
+/-! ### Homotopies between constant maps -/
+
+/-- A homotopy between the constant maps at `y₀` and `y₁` is a continuous family, indexed by
+`X`, of paths from `y₀` to `y₁`: the path traced by each point. -/
+def evalAtEquiv {y₀ y₁ : Y} : Homotopy (const X y₀) (const X y₁) ≃ C(X, Path y₀ y₁) where
+  toFun F := ⟨F.evalAt, Path.continuous_uncurry_iff.1 (F.continuous.comp continuous_swap)⟩
+  invFun α :=
+    { toFun p := α p.2 p.1
+      continuous_toFun := (Path.continuous_uncurry_iff.2 α.continuous).comp continuous_swap
+      map_zero_left := by simp
+      map_one_left := by simp }
+  left_inv _ := (rfl)
+  right_inv _ := (rfl)
+
+@[simp]
+theorem evalAtEquiv_apply {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) (x : X) :
+    evalAtEquiv F x = F.evalAt x :=
+  (rfl)
+
+@[simp]
+theorem evalAt_evalAtEquiv_symm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (x : X) :
+    (evalAtEquiv.symm α).evalAt x = α x :=
+  (rfl)
+
+@[simp]
+theorem evalAtEquiv_symm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (t : I) (x : X) :
+    evalAtEquiv.symm α (t, x) = α x t :=
+  (rfl)
+
+/-- The constant homotopy at a constant map is the constant family of constant paths. -/
+@[simp]
+theorem evalAtEquiv_refl (y : Y) :
+    evalAtEquiv (Homotopy.refl (const X y)) = const X (Path.refl y) := by
+  ext
+  simp
+
+/-- Concatenating homotopies between constant maps concatenates their families of paths. -/
+@[simp]
+theorem evalAtEquiv_trans {y₀ y₁ y₂ : Y} (F : Homotopy (const X y₀) (const X y₁))
+    (G : Homotopy (const X y₁) (const X y₂)) :
+    evalAtEquiv (F.trans G) = (evalAtEquiv F).pathTrans (evalAtEquiv G) := by
+  ext x : 1
+  simp
+
+/-- Reversing a homotopy between constant maps reverses its family of paths. -/
+@[simp]
+theorem evalAtEquiv_homotopySymm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) :
+    evalAtEquiv F.symm = (evalAtEquiv F).pathSymm := by
+  ext x : 1
+  simp
+
+/-- The constant family of constant paths corresponds to the constant homotopy. -/
+@[simp]
+theorem evalAtEquiv_symm_const_refl (y : Y) :
+    evalAtEquiv.symm (const X (Path.refl y)) = Homotopy.refl (const X y) := by
+  rw [Equiv.symm_apply_eq, evalAtEquiv_refl]
+
+@[simp]
+theorem evalAtEquiv_symm_pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
+    (β : C(X, Path y₁ y₂)) :
+    evalAtEquiv.symm (α.pathTrans β) = (evalAtEquiv.symm α).trans (evalAtEquiv.symm β) := by
+  rw [Equiv.symm_apply_eq]
+  simp
+
+@[simp]
+theorem evalAtEquiv_symm_pathSymm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) :
+    evalAtEquiv.symm α.pathSymm = (evalAtEquiv.symm α).symm := by
+  rw [Equiv.symm_apply_eq]
+  simp
+
+end ContinuousMap.Homotopy
+
 -- Ported from https://github.com/leanprover-community/mathlib4/pull/44183.
 /-- Given open sets `U i` into which `f` maps the consecutive segments `[t i, t (i + 1)]` of a
 monotone sequence in the unit interval, the path components of `f (t j)` in the intersections of
@@ -686,6 +816,15 @@ theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
   · rw [refl_apply, Set.projIcc_of_le_left _ (by linarith)]
     exact p.source.symm
   · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.property.2]⟩).symm
+
+/-- The value of Mathlib's `Path.Homotopy.reflTransSymm p` at `(s, t)`: the path `p` at time
+`Path.Homotopy.reflTransSymmAux (s, t)`. Mathlib defines `reflTransSymm` as a plain `def` with no
+`simps` lemmas. -/
+@[simp]
+theorem Homotopy.reflTransSymm_apply {y z : X} (p : Path y z) (x : I × I) :
+    Homotopy.reflTransSymm p x =
+      p ⟨Homotopy.reflTransSymmAux x, Homotopy.reflTransSymmAux_mem_I x⟩ :=
+  (rfl)
 
 namespace Homotopic.Quotient
 

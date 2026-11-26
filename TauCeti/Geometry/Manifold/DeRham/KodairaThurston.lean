@@ -207,7 +207,7 @@ theorem mpullback_mk_dtForm :
 /-- The first homology class of the loop `deckLoop g`. -/
 private abbrev deckClass (g : DeckGroup) :
     ((singularChains ℤ).obj (TopCat.of KodairaThurston)).homology 1 :=
-  H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston) (deckLoop g))
+  H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop g))
 
 /-- The period of `dx` on the loop `deckLoop g`, the integral along it, is the first Heisenberg
 coordinate of `g`. -/
@@ -296,12 +296,12 @@ def deRhamCohomologyOneEquiv :
 `((1, 0, 0), 0)`, `((0, 1, 0), 0)` and `((0, 0, 0), 1)` of the deck group. -/
 theorem deRhamCohomologyOneEquiv_apply (c : deRhamCohomology 𝓘(ℝ, Cover) KodairaThurston 1) :
     deRhamCohomologyOneEquiv c =
-      (deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (⟨1, 0, 0⟩, 1)))),
-        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (⟨0, 1, 0⟩, 1)))),
-        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (1, .ofAdd 1))))) := by
+      (deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (⟨1, 0, 0⟩, 1)))),
+        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (⟨0, 1, 0⟩, 1)))),
+        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (1, .ofAdd 1))))) := by
   simp only [deRhamCohomologyOneEquiv, LinearEquiv.ofBijective_apply, periods, LinearMap.coe_mk,
     AddHom.coe_mk]
 

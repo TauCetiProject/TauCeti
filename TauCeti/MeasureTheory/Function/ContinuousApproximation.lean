@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.MeasureTheory.Function.BoundedBorel
 public import TauCeti.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Simultaneous continuous approximation for finitely many measures
@@ -17,15 +18,17 @@ import Mathlib.MeasureTheory.Integral.IntegrableOn
 Let `α` be a normal topological space with its Borel σ-algebra, for instance a compact Hausdorff
 space, and let `μ i` be finitely many weakly regular measures on `α`. A function `f : α → E`
 with values in a real normed space that is integrable for every `μ i` is approximated in
-`L¹(μ i)`, simultaneously for all `i`, by a single continuous function `g`: approximate `f` in
-`L¹` of the sum measure `∑ i, μ i`, which is again weakly regular, and use monotonicity of the
-integral in the measure.
+`L¹(μ i)`, simultaneously for all `i`, by a single bounded continuous function `g`: approximate
+`f` in `L¹` of the sum measure `∑ i, μ i`, which is again weakly regular, and use monotonicity of
+the integral in the measure.
 
-If the measures are finite and `‖f x‖ ≤ M` everywhere, the approximant can be chosen with the
-same bound. Composing `g` with the radial retraction onto the closed ball of radius `M` keeps it
-continuous, does not move the values of `f`, and at most doubles the distance from them, so it
+If moreover `‖f x‖ ≤ M` everywhere, the approximant can be chosen with the same bound. Composing
+`g` with the radial retraction onto the closed ball of radius `M` keeps it continuous and
+integrable, does not move the values of `f`, and at most doubles the distance from them, so it
 costs only a factor of two in each `L¹` error. A sequence of such approximants then has `L¹`
-errors tending to zero for every `μ i`.
+errors tending to zero for every `μ i`. When `f` vanishes outside a closed set `K`, multiplying
+the approximant by an Urysohn function cuts it off outside a given neighbourhood of `K` without
+increasing the error.
 
 This is the approximation step that extends a representation of the continuous functions on a
 compact Hausdorff space to bounded Borel functions: the scalar measures of the representation are
@@ -34,12 +37,15 @@ operators bounded.
 
 ## Main results
 
-* `MeasureTheory.exists_continuous_forall_integral_norm_sub_le`: an integrable function is
-  approximated in `L¹(μ i)` for all `i` at once by one continuous function.
-* `MeasureTheory.exists_continuous_norm_le_forall_integral_norm_sub_le`: a function bounded by
-  `M` is approximated in this way by a continuous function bounded by `M`.
+* `MeasureTheory.exists_boundedContinuous_forall_integral_norm_sub_le`: an integrable function is
+  approximated in `L¹(μ i)` for all `i` at once by one bounded continuous function.
+* `MeasureTheory.exists_continuous_norm_le_forall_integral_norm_sub_le`: an integrable function
+  bounded by `M` is approximated in this way by a continuous function bounded by `M`.
 * `MeasureTheory.exists_seq_continuous_norm_le_tendsto_integral_norm_sub`: a sequence of
   continuous functions bounded by `M` whose `L¹(μ i)` distances to `f` tend to zero for all `i`.
+* `MeasureTheory.exists_continuous_norm_le_support_subset_integral_norm_sub_le`: a function bounded
+  by `M` and vanishing outside a closed set `K` is approximated in `L¹(ν)` by continuous functions
+  bounded by `M` vanishing outside a given neighbourhood of `K`.
 * `TauCeti.BoundedBorelFunction.eq_of_forall_ofContinuousMap_eq`: on a compact normal space, two
   maps on bounded Borel symbols that are Lipschitz for `L¹` distances against finite weakly
   regular measures and agree on continuous symbols are equal.
@@ -58,7 +64,7 @@ formalization.
 
 public section
 
-open Filter Topology
+open BoundedContinuousFunction Filter Topology
 
 namespace MeasureTheory
 
@@ -68,43 +74,42 @@ variable {α : Type*} [TopologicalSpace α] [NormalSpace α] [MeasurableSpace α
 
 /-- **Simultaneous continuous approximation in `L¹`.** On a normal Borel space, a function that is
 integrable for each of finitely many weakly regular measures `μ i` is approximated in
-`L¹(μ i)`, for all `i` at once, by a single continuous function integrable for every `μ i`. -/
-theorem exists_continuous_forall_integral_norm_sub_le {f : α → E}
+`L¹(μ i)`, for all `i` at once, by a single bounded continuous function integrable for every
+`μ i`. -/
+theorem exists_boundedContinuous_forall_integral_norm_sub_le {f : α → E}
     (hf : ∀ i, Integrable f (μ i)) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : C(α, E), ∀ i, Integrable g (μ i) ∧ ∫ x, ‖f x - g x‖ ∂μ i ≤ ε := by
+    ∃ g : α →ᵇ E, ∀ i, Integrable g (μ i) ∧ ∫ x, ‖f x - g x‖ ∂μ i ≤ ε := by
   have := Fintype.ofFinite ι
   have hfμ : Integrable f (∑ i, μ i) := integrable_finsetSum_measure.2 fun i _ ↦ hf i
   -- Approximate in `L¹` of the sum measure, which dominates every `μ i`.
   obtain ⟨g, hfg, hg⟩ := hfμ.exists_boundedContinuous_integral_sub_le hε
-  refine ⟨g.toContinuousMap, fun i ↦ ?_⟩
+  refine ⟨g, fun i ↦ ?_⟩
   have hle : μ i ≤ ∑ j, μ j :=
     Finset.single_le_sum (f := μ) (fun _ _ ↦ Measure.zero_le _) (Finset.mem_univ i)
   exact ⟨hg.mono_measure hle, (integral_mono_measure hle (.of_forall fun _ ↦ norm_nonneg _)
     (hfμ.sub hg).norm).trans hfg⟩
 
-variable [∀ i, IsFiniteMeasure (μ i)]
-
 /-- **Simultaneous bounded continuous approximation in `L¹`.** On a normal Borel space, a
-function bounded by `M` and almost everywhere strongly measurable for each of finitely many finite
-weakly regular measures `μ i` is approximated in `L¹(μ i)`, for all `i` at once, by a single
-continuous function that is also bounded by `M` and integrable for every `μ i`. -/
+function bounded by `M` and integrable for each of finitely many weakly regular measures `μ i` is
+approximated in `L¹(μ i)`, for all `i` at once, by a single continuous function that is also
+bounded by `M` and integrable for every `μ i`. -/
 theorem exists_continuous_norm_le_forall_integral_norm_sub_le {f : α → E}
-    (hf : ∀ i, AEStronglyMeasurable f (μ i)) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M) {ε : ℝ}
-    (hε : 0 < ε) :
+    (hf : ∀ i, Integrable f (μ i)) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : C(α, E), (∀ x, ‖g x‖ ≤ M) ∧
       ∀ i, Integrable g (μ i) ∧ ∫ x, ‖f x - g x‖ ∂μ i ≤ ε := by
   rcases isEmpty_or_nonempty α with hα | ⟨⟨x₀⟩⟩
   · exact ⟨0, isEmptyElim, fun i ↦ by simp [Measure.eq_zero_of_isEmpty (μ i), hε.le]⟩
   have hM : 0 ≤ M := (norm_nonneg _).trans (hfM x₀)
-  have hfi i : Integrable f (μ i) := .of_bound (hf i) M (.of_forall hfM)
-  obtain ⟨g, hg⟩ := exists_continuous_forall_integral_norm_sub_le hfi (half_pos hε)
+  obtain ⟨g, hg⟩ := exists_boundedContinuous_forall_integral_norm_sub_le hf (half_pos hε)
   -- Retract `g` onto the closed ball of radius `M`, which contains every value of `f`.
   let r : C(E, E) :=
-    ⟨TauCeti.radialRetraction M, continuous_const.radialRetraction (fun _ ↦ hM) continuous_id⟩
-  have hrM x : ‖r x‖ ≤ M := (TauCeti.norm_radialRetraction hM x).trans_le (min_le_right _ _)
-  refine ⟨r.comp g, fun x ↦ hrM (g x), fun i ↦ ⟨?_, ?_⟩⟩
-  · exact .of_bound (r.continuous.comp_aestronglyMeasurable (hg i).1.1) M
-      (.of_forall fun _ ↦ hrM _)
+    ⟨TauCeti.radialRetraction M, (TauCeti.lipschitzWith_radialRetraction hM).continuous⟩
+  have hr (x : E) : ‖r x‖ = min ‖x‖ M := TauCeti.norm_radialRetraction hM x
+  refine ⟨r.comp g.toContinuousMap, fun x ↦ (hr _).trans_le (min_le_right _ _),
+    fun i ↦ ⟨?_, ?_⟩⟩
+  · -- The retraction does not increase norms, so it preserves integrability of `g`.
+    exact (hg i).1.mono (r.continuous.comp_aestronglyMeasurable (hg i).1.1)
+      (.of_forall fun _ ↦ (hr _).trans_le (min_le_left _ _))
   -- Retraction fixes `f x` and is `2`-Lipschitz, so it at most doubles `‖f x - g x‖`.
   have hdist x : ‖f x - r (g x)‖ ≤ 2 * ‖f x - g x‖ := by
     have := (TauCeti.lipschitzWith_radialRetraction (E := E) hM).dist_le_mul (f x) (g x)
@@ -112,16 +117,16 @@ theorem exists_continuous_norm_le_forall_integral_norm_sub_le {f : α → E}
       NNReal.coe_ofNat] at this
   calc ∫ x, ‖f x - r (g x)‖ ∂μ i ≤ ∫ x, 2 * ‖f x - g x‖ ∂μ i :=
         integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
-          (((hfi i).sub (hg i).1).norm.const_mul 2) (.of_forall hdist)
+          (((hf i).sub (hg i).1).norm.const_mul 2) (.of_forall hdist)
     _ = 2 * ∫ x, ‖f x - g x‖ ∂μ i := integral_const_mul _ _
     _ ≤ ε := by linarith [(hg i).2]
 
 /-- **Bounded continuous approximating sequences.** On a normal Borel space, a function bounded by
-`M` and almost everywhere strongly measurable for each of finitely many finite weakly regular
-measures `μ i` is the limit in `L¹(μ i)`, for all `i` at once, of a sequence of continuous
-functions bounded by `M` and integrable for every `μ i`. -/
+`M` and integrable for each of finitely many weakly regular measures `μ i` is the limit in
+`L¹(μ i)`, for all `i` at once, of a sequence of continuous functions bounded by `M` and
+integrable for every `μ i`. -/
 theorem exists_seq_continuous_norm_le_tendsto_integral_norm_sub {f : α → E}
-    (hf : ∀ i, AEStronglyMeasurable f (μ i)) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M) :
+    (hf : ∀ i, Integrable f (μ i)) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M) :
     ∃ g : ℕ → C(α, E), (∀ n x, ‖g n x‖ ≤ M) ∧ (∀ n i, Integrable (g n) (μ i)) ∧
       ∀ i, Tendsto (fun n ↦ ∫ x, ‖f x - g n x‖ ∂μ i) atTop (𝓝 0) := by
   choose g hgM hg using fun n : ℕ ↦ exists_continuous_norm_le_forall_integral_norm_sub_le hf hfM
@@ -129,6 +134,37 @@ theorem exists_seq_continuous_norm_le_tendsto_integral_norm_sub {f : α → E}
   refine ⟨g, hgM, fun n i ↦ (hg n i).1, fun i ↦ ?_⟩
   exact squeeze_zero (fun _ ↦ integral_nonneg fun _ ↦ norm_nonneg _) (fun n ↦ (hg n i).2)
     tendsto_one_div_add_atTop_nhds_zero_nat
+
+/-- **Bounded continuous approximation with a cutoff.** On a normal Borel space, a function bounded
+by `M`, integrable for a weakly regular measure `ν` and vanishing outside a closed set `K`, is
+approximated in `L¹(ν)` by continuous functions bounded by `M` that vanish outside any given open
+neighbourhood `U` of `K`. -/
+theorem exists_continuous_norm_le_support_subset_integral_norm_sub_le {ν : Measure α}
+    [ν.WeaklyRegular] {f : α → E} (hf : Integrable f ν) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M)
+    {K U : Set α} (hK : IsClosed K) (hU : IsOpen U) (hKU : K ⊆ U)
+    (hfK : Function.support f ⊆ K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : C(α, E), (∀ x, ‖g x‖ ≤ M) ∧ Function.support g ⊆ U ∧ Integrable g ν ∧
+      ∫ x, ‖f x - g x‖ ∂ν ≤ ε := by
+  obtain ⟨g, hgM, hg⟩ := exists_continuous_norm_le_forall_integral_norm_sub_le
+    (μ := fun _ : Unit ↦ ν) (fun _ ↦ hf) hfM hε
+  obtain ⟨hgi, hgε⟩ := hg ()
+  -- Cut `g` off with an Urysohn function equal to `1` on `K` and to `0` outside `U`.
+  obtain ⟨χ, hχU, hχK, hχ01⟩ := exists_continuous_zero_one_of_isClosed hU.isClosed_compl hK
+    (Set.disjoint_compl_left_iff_subset.2 hKU)
+  have hχg (x : α) : ‖χ x • g x‖ ≤ ‖g x‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (hχ01 x).1]
+    exact mul_le_of_le_one_left (norm_nonneg _) (hχ01 x).2
+  have hfχ (x : α) : ‖f x - χ x • g x‖ ≤ ‖f x - g x‖ := by
+    by_cases hx : x ∈ K
+    · simp [hχK hx]
+    · simpa [Function.notMem_support.1 fun h ↦ hx (hfK h)] using hχg x
+  refine ⟨⟨fun x ↦ χ x • g x, χ.continuous.smul g.continuous⟩, fun x ↦ (hχg x).trans (hgM x),
+    fun x hx ↦ ?_, hgi.mono (χ.continuous.aestronglyMeasurable.smul hgi.1)
+      (.of_forall hχg), ?_⟩
+  · by_contra hxU
+    exact hx (by simp [hχU hxU])
+  · exact (integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (hf.sub hgi).norm
+      (.of_forall hfχ)).trans hgε
 
 end MeasureTheory
 
@@ -155,7 +191,7 @@ theorem eq_of_forall_ofContinuousMap_eq {ν₁ ν₂ : Measure α} [IsFiniteMeas
   have : ∀ b, IsFiniteMeasure (ν b) := fun b ↦ by cases b <;> assumption
   have : ∀ b, (ν b).WeaklyRegular := fun b ↦ by cases b <;> assumption
   obtain ⟨g, -, -, hg⟩ := exists_seq_continuous_norm_le_tendsto_integral_norm_sub (μ := ν)
-    (fun _ ↦ f.measurable.aestronglyMeasurable) f.norm_coe_le_norm
+    (fun b ↦ f.integrable (ν b)) f.norm_coe_le_norm
   -- A map that is Lipschitz for the `L¹(ν b)` distance sends the approximants to its value at `f`.
   have key {G : BoundedBorelFunction α → F} {C : ℝ} (b : Bool)
       (hG : ∀ f g, dist (G f) (G g) ≤ C * ∫ x, ‖f x - g x‖ ∂ν b) :

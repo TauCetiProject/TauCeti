@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
-import Mathlib.AlgebraicGeometry.Morphisms.Affine
-import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.AlgebraicGeometry.LineBundle.Power
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.ResidueField
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
+public import TauCeti.RingTheory.LocalRing.Module
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
 # The nonvanishing locus of a section of an invertible sheaf
@@ -34,6 +38,20 @@ On an affine open `U`, the nonvanishing locus of every section over `U` is affin
 `f` of the sections over `U`. These are the two facts making every invertible sheaf on an affine
 scheme ample.
 
+Pullback of sections commutes with nonvanishing loci for every scheme morphism, and the
+nonvanishing locus of a tensor product of sections is the intersection of their loci. Positive
+powers of a section retain its nonvanishing locus, in any representative of the tensor-power
+class. These operations transport affine nonvanishing neighbourhoods in the study of ampleness.
+
+The pullback, fibre and tensor arguments are adapted from `roed-math/TauCeti-w2-fresh`, branch
+`lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
+
+For a line bundle `L` whose class in the Picard group is trivial, `L` is only isomorphic to `𝒪_X`,
+not equal to it, but the nonvanishing loci of its sections over `U` are still exactly the basic
+open sets of the regular functions on `U`. When the global functions on `X` form a field, as on an
+integral scheme universally closed over a field (`AlgebraicGeometry.isField_of_universallyClosed`),
+a global section of `L` therefore vanishes either everywhere or nowhere.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus`: the open set `X_s` of points at which the
@@ -54,9 +72,29 @@ scheme ample.
   sheaves have the same nonvanishing loci of sections over each open;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
   basic open set of the regular function `r`;
+* `AlgebraicGeometry.Scheme.Modules.basicOpen_eq_inf_nonvanishingLocus`: if `s|_V = f • e` with
+  `e` nonvanishing on `V`, then `X_s ∩ V` is the basic open set of `f`;
+* `AlgebraicGeometry.Scheme.Modules.quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus`:
+  a scheme covered by affine nonvanishing loci of global sections of `M` is quasi-separated;
 * `AlgebraicGeometry.IsAffineOpen.nonvanishingLocus`: on an affine open, `X_s` is affine;
+  `AlgebraicGeometry.IsAffineOpen.inf_nonvanishingLocus`: if `V` is affine and `V ≤ W`,
+  then `V ∩ X_t` is affine for a section `t` over `W`;
 * `AlgebraicGeometry.Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen`: every point of
-  an affine open `U` lies in `X_s` for some section `s` over `U`.
+  an affine open `U` lies in `X_s` for some section `s` over `U`;
+* `AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_pullbackSections` and
+  `AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_restrictAppIso_inv`: the nonvanishing locus
+  of a pulled-back or restricted section is the preimage;
+* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tmulRight` and
+  `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: `X_{s ⊗ t} = X_s ∩ X_t`,
+  and `X_{sᵏ} = X_s` for `k > 0`;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow`: every
+  representative of the class `(mk L₀)ᵏ`, with `k > 0`, has a section with the same
+  nonvanishing locus as `s₀`;
+* `InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one`:
+  the nonvanishing loci of sections of a line bundle of trivial class are the basic open sets;
+* `InvertibleSheaf.nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one`:
+  when `Γ(X, ⊤)` is a field, a global section of a line bundle of trivial class vanishes
+  everywhere or nowhere.
 
 ## References
 
@@ -69,7 +107,8 @@ scheme ample.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace
+open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace MonoidalCategory
+open scoped TensorProduct
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -300,6 +339,35 @@ theorem range_nonvanishingLocus_eq_of_iso {N : X.Modules}
   exact ⟨fun ⟨s, hs⟩ ↦ ⟨φ.hom.app U s, (nonvanishingLocus_hom_app φ s).trans hs⟩,
     fun ⟨s, hs⟩ ↦ ⟨φ.symm.hom.app U s, (nonvanishingLocus_hom_app φ.symm s).trans hs⟩⟩
 
+/-- If `e` vanishes nowhere on `V ≤ U` and `s|_V = f • e`, then `X_s ∩ V` is the basic open set
+of `f`. -/
+theorem basicOpen_eq_inf_nonvanishingLocus {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U))
+    {e : Γ(M, V)} (he : V ≤ M.nonvanishingLocus e) {f : Γ(X, V)}
+    (hf : f • e = M.presheaf.map i.op s) : X.basicOpen f = V ⊓ M.nonvanishingLocus s := by
+  rw [← inf_eq_left.mpr ((X.basicOpen_le f).trans he), ← nonvanishingLocus_smul, hf,
+    nonvanishingLocus_map]
+
+/-- A scheme covered by affine nonvanishing loci of global sections of an invertible sheaf is
+quasi-separated: two such loci `X_s` and `X_t` meet in the basic open of `X_s` cut out by the
+function `t / s`, which is affine. -/
+theorem quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus
+    (h : ∀ x : X, ∃ s : Γ(M, ⊤), x ∈ M.nonvanishingLocus s ∧
+      IsAffineOpen (M.nonvanishingLocus s)) :
+    QuasiSeparatedSpace X := by
+  let S := {s : Γ(M, ⊤) // IsAffineOpen (M.nonvanishingLocus s)}
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun s : S ↦ M.nonvanishingLocus s.val)
+    (top_unique fun x _ ↦ ?_) (fun s ↦ s.property) fun s t ↦ ?_
+  · obtain ⟨s, hxs, hs⟩ := h x
+    exact Opens.mem_iSup.mpr ⟨⟨s, hs⟩, hxs⟩
+  -- On `X_s`, write `t = g • s`; then `X_s ∩ X_t` is the basic open of `g` in `X_s`.
+  let j : M.nonvanishingLocus s.val ⟶ ⊤ := homOfLE le_top
+  have hss : M.nonvanishingLocus s.val ≤ M.nonvanishingLocus (M.presheaf.map j.op s.val) := by
+    rw [nonvanishingLocus_map]
+    exact le_inf le_rfl le_rfl
+  obtain ⟨g, hg⟩ := surjective_smul_of_le_nonvanishingLocus hss (M.presheaf.map j.op t.val)
+  rw [← Opens.coe_inf, ← basicOpen_eq_inf_nonvanishingLocus j t.val hss hg]
+  exact (s.property.basicOpen g).isCompact
+
 /-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a
 regular function `r` is its basic open set `X_r`. -/
 @[simp]
@@ -345,6 +413,14 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.nonvanishingLocus {U : X.Opens}
     rw [X.basicOpen_res]
     exact hf x
 
+/-- The intersection of an affine open `V ≤ W` with the nonvanishing locus of a section over `W` is
+affine: it is the nonvanishing locus of the restriction of the section to `V`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.inf_nonvanishingLocus {V W : X.Opens}
+    (hV : IsAffineOpen V) (hVW : V ≤ W) (t : Γ(M, W)) :
+    IsAffineOpen (V ⊓ M.nonvanishingLocus t) := by
+  rw [← nonvanishingLocus_map (homOfLE hVW) t]
+  exact hV.nonvanishingLocus _
+
 variable (M) in
 /-- **Sections over an affine open generate the stalks.** Every point `x` of an affine open `U`
 lies in the nonvanishing locus of some section of an invertible sheaf over `U`. -/
@@ -366,4 +442,214 @@ theorem exists_mem_nonvanishingLocus_of_isAffineOpen {U : X.Opens} (hU : IsAffin
   rw [SetLike.mem_coe, X.mem_basicOpen _ _ hx, map_pow]
   exact ((X.mem_basicOpen _ _ hx).mp hxf).pow n
 
+section Pullback
+
+/-- **A section vanishes nowhere exactly where it is nonzero in the fibre.** A point `x` of `U`
+lies in the nonvanishing locus of a section `s` over `U` exactly when the pullback of `s` along
+`Spec κ(x) ⟶ X`, an element of the fibre `κ(x) ⊗ M_x`, is nonzero. -/
+theorem mem_nonvanishingLocus_iff_pullbackSectionsLE_ne_zero {U : X.Opens} (s : Γ(M, U)) {x : X}
+    (hx : x ∈ U) :
+    x ∈ M.nonvanishingLocus s ↔ Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField x) M U ⊤
+      (fromSpecResidueField_preimage_eq_top x hx).ge s ≠ 0 := by
+  have : M.IsQuasicoherent :=
+    TauCeti.AlgebraicGeometry.InvertibleSheaf.isQuasicoherent_obj ⟨M, ‹_›⟩
+  have := Module.finite_of_finrank_eq_succ (finrank_stalk_of_isInvertible M x)
+  rw [mem_nonvanishingLocus_iff_of_mem hx,
+    TauCeti.IsLocalRing.span_singleton_eq_top_iff_one_tmul_ne_zero
+      (Module.finrank_baseChange.trans (finrank_stalk_of_isInvertible M x)),
+    ← one_smul (X.residueField x) (Scheme.Hom.pullbackSectionsLE _ M U ⊤ _ s),
+    ← residueFieldPullbackSectionsEquiv_tmul_germ x M hx, LinearEquiv.map_ne_zero_iff]
+  -- The two sides differ only in their residue field: `X.residueField x` is defined as the
+  -- bundled `IsLocalRing.ResidueField (X.presheaf.stalk x)`, with its field and algebra structures
+  -- inherited from it, and Mathlib has no lemma rewriting one into the other.
+  rfl
+
+/-- **The nonvanishing locus of a pulled-back section is the preimage.** For a morphism
+`g : Y ⟶ X` and a section `s` of the invertible sheaf `M` over `U`, the pullback of `s` to a
+section of `g^* M` over `g⁻¹ U` has nonvanishing locus `g⁻¹ X_s`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_pullbackSections
+    {Y : Scheme.{u}} (g : Y ⟶ X) {U : X.Opens} (s : Γ(M, U)) :
+    ((pullback g).obj M).nonvanishingLocus (g.pullbackSections M U s) =
+      g ⁻¹ᵁ M.nonvanishingLocus s := by
+  ext y
+  simp only [SetLike.mem_coe, Scheme.Hom.mem_preimage]
+  by_cases hy : g y ∈ U
+  swap
+  · exact iff_of_false
+      (fun h ↦ hy ((g.mem_preimage (U := U) (x := y)).mp (nonvanishingLocus_le _ h)))
+      (fun h ↦ hy (nonvanishingLocus_le _ h))
+  have hyU : y ∈ g ⁻¹ᵁ U := (g.mem_preimage (U := U) (x := y)).mpr hy
+  rw [mem_nonvanishingLocus_iff_pullbackSectionsLE_ne_zero _ hyU,
+    mem_nonvanishingLocus_iff_pullbackSectionsLE_ne_zero _ hy]
+  let p := Y.fromSpecResidueField y
+  let q := X.fromSpecResidueField (g y)
+  let f := Spec.map (g.residueFieldMap y)
+  have hp : ⊤ ≤ p ⁻¹ᵁ (g ⁻¹ᵁ U) :=
+    (fromSpecResidueField_preimage_eq_top y hyU).ge
+  have hq : ⊤ ≤ q ⁻¹ᵁ U := (fromSpecResidueField_preimage_eq_top (g y) hy).ge
+  have hW : (⊤ : (Spec (Y.residueField y)).Opens) ≤ f ⁻¹ᵁ ⊤ := le_rfl
+  have hc : p ≫ g = f ≫ q :=
+    (Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField g y).symm
+  let e := (pullbackComp p g).app M ≪≫ (pullbackCongr hc).app M ≪≫
+    ((pullbackComp f q).app M).symm
+  -- Compare the two routes from the original section to its value over `κ(y)`.
+  have he : e.hom.app ⊤ (p.pullbackSectionsLE _ (g ⁻¹ᵁ U) ⊤ hp
+      (g.pullbackSections M U s)) =
+      f.pullbackSectionsLE _ ⊤ ⊤ hW (q.pullbackSectionsLE M U ⊤ hq s) := by
+    calc
+      _ = ((pullbackComp f q).inv.app M).app ⊤
+          (((pullbackCongr hc).hom.app M).app ⊤
+            ((p ≫ g).pullbackSectionsLE M U ⊤ (hp.trans (Set.preimage_mono le_rfl)) s)) := by
+        dsimp only [e, Iso.trans_hom, Iso.symm_hom]
+        simp only [Hom.comp_app, ConcreteCategory.comp_apply, Iso.app_hom, Iso.app_inv]
+        have h := g.pullbackSectionsLE_comp_hom M U p (g ⁻¹ᵁ U) le_rfl hp s
+        rw [g.pullbackSectionsLE_self M U s] at h
+        exact congrArg (fun z ↦ ((pullbackComp f q).inv.app M).app ⊤
+          (((pullbackCongr hc).hom.app M).app ⊤ z)) h
+      _ = ((pullbackComp f q).inv.app M).app ⊤
+          ((f ≫ q).pullbackSectionsLE M U ⊤ (hW.trans (Set.preimage_mono hq)) s) := by
+        rw [Scheme.Hom.pullbackSectionsLE_congr]
+      _ = _ := Scheme.Hom.pullbackSectionsLE_comp q M U f ⊤ hq hW s
+  have hi : IsIso (homOfLE hW) :=
+    homOfLE_isIso_of_eq _ (Scheme.Hom.preimage_top f).symm
+  refine (map_ne_zero_iff (e.hom.app ⊤).hom
+    (ConcreteCategory.bijective_of_isIso _).injective).symm.trans ?_
+  rw [he]
+  exact map_ne_zero_iff _ (f.pullbackSectionsLE_injective_of_isIso _ ⊤ ⊤ hW
+    (f.pullbackSections_injective_of_field _))
+
+/-- The nonvanishing locus of a pulled-back section restricted to `V` is the intersection
+of `V` with the preimage of the original nonvanishing locus. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_pullbackSectionsLE
+    {Y : Scheme.{u}} (g : Y ⟶ X) {U : X.Opens} {V : Y.Opens} (hV : V ≤ g ⁻¹ᵁ U)
+    (s : Γ(M, U)) :
+    ((pullback g).obj M).nonvanishingLocus (g.pullbackSectionsLE M U V hV s) =
+      V ⊓ g ⁻¹ᵁ M.nonvanishingLocus s := by
+  rw [Scheme.Hom.pullbackSectionsLE_apply, nonvanishingLocus_map,
+    Scheme.Hom.nonvanishingLocus_pullbackSections]
+
+end Pullback
+
+section Restrict
+
+variable {Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f] {M : Y.Modules}
+  [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible Y M]
+
+/-- **The nonvanishing locus of a restricted section is the preimage.** Along an open immersion
+`f : X ⟶ Y`, a section `s` of `M` over `f(U)` restricts to a section of `M|_X` over `U`, whose
+nonvanishing locus is `f⁻¹ Y_s`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_restrictAppIso_inv
+    {U : X.Opens} (s : Γ(M, f ''ᵁ U)) :
+    (M.restrict f).nonvanishingLocus ((M.restrictAppIso f U).inv s) =
+      f ⁻¹ᵁ M.nonvanishingLocus s := by
+  -- Under `M|_X ≅ f^* M`, the restricted section is the pullback of `s`, restricted to `U`.
+  rw [← nonvanishingLocus_hom_app ((restrictFunctorIsoPullback f).app M), Iso.app_hom,
+    restrictFunctorIsoPullback_hom_app_restrictAppIso_inv, Scheme.Hom.pullbackSectionsLE_apply,
+    nonvanishingLocus_map, Scheme.Hom.nonvanishingLocus_pullbackSections]
+  exact inf_eq_right.mpr ((Scheme.Hom.preimage_mono _ (nonvanishingLocus_le s)).trans
+    (f.preimage_image_eq U).le)
+
+end Restrict
+
+section TensorProduct
+
+variable {M N : X.Modules}
+
+/-- **A tensor product of sections vanishes nowhere exactly on the intersection.** For invertible
+sheaves `M` and `N` and sections `s` of `M` and `t` of `N` over the same open `U`, the section
+`s ⊗ t` of `M ⊗ N` over `U` has nonvanishing locus `X_s ∩ X_t`. -/
+@[simp]
+theorem nonvanishingLocus_tmulRight
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M]
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X N]
+    {U : X.Opens} (s : Γ(M, U)) (t : Γ(N, U)) :
+    (M ⊗ N).nonvanishingLocus (tmulRight M t s) =
+      M.nonvanishingLocus s ⊓ N.nonvanishingLocus t := by
+  ext x
+  by_cases hx : x ∈ U
+  swap
+  · exact iff_of_false (fun h ↦ hx (nonvanishingLocus_le _ h))
+      (fun h ↦ hx (nonvanishingLocus_le _ h.1))
+  -- At `x` the stalks of `M` and `N` are free of rank one, and the germ of `s ⊗ t` is `s_x ⊗ t_x`.
+  obtain ⟨eM⟩ := nonempty_linearEquiv_stalk_of_isInvertible M x
+  obtain ⟨eN⟩ := nonempty_linearEquiv_stalk_of_isInvertible N x
+  rw [SetLike.mem_coe, SetLike.mem_coe, Opens.mem_inf,
+    mem_nonvanishingLocus_iff_of_mem (M := M ⊗ N) hx,
+    mem_nonvanishingLocus_iff_of_mem (M := M) hx, mem_nonvanishingLocus_iff_of_mem (M := N) hx,
+    ← eM.symm.span_singleton_tmul_eq_top_iff eN.symm, ← tensorStalkEquiv_germ_tmulRight M s t hx]
+  exact (M.tensorStalkEquiv N x).span_singleton_apply_eq_top_iff.symm
+
+end TensorProduct
+
+section TensorPow
+
+/-- **Positive powers of a section vanish nowhere exactly where the section does.** For a section
+`s` of the invertible sheaf `M` over `U` and `k > 0`, the tensor power `sᵏ`, a section of the
+`k`-th tensor power of `M`, has the same nonvanishing locus as `s`. -/
+@[simp]
+theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(M, U)) {k : ℕ} (hk : 0 < k) :
+    (TauCeti.tensorPow M k).nonvanishingLocus (tensorPowSection s k) = M.nonvanishingLocus s := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt hk
+  rw [zero_add]
+  induction n with
+  | zero =>
+    rw [tensorPowSection_succ, tensorPowSection_zero, ← rightUnitor_inv_app_eq_tmulRight]
+    exact nonvanishingLocus_hom_app (ρ_ M).symm s
+  | succ n ih =>
+    rw [tensorPowSection_succ, nonvanishingLocus_tmulRight, ih (Nat.succ_pos _), inf_idem]
+
+end TensorPow
+
 end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
+
+open LineBundleClass
+
+variable {X : Scheme.{u}}
+
+/-- **Powers of a section.** A section `s₀` of a line bundle `L₀` gives, in every line bundle
+`L` of class `(mk L₀)ᵏ` with `k > 0`, a section with the same nonvanishing locus: the
+`k`-fold tensor product `s₀ ⊗ ⋯ ⊗ s₀`, transported along an isomorphism. -/
+theorem exists_nonvanishingLocus_eq_of_mk_eq_pow
+    {L₀ L : InvertibleSheaf X} {k : ℕ} {U : X.Opens} (hk : 0 < k) (hL : mk L = mk L₀ ^ k)
+    (s₀ : Γ(L₀.obj, U)) :
+    ∃ s : Γ(L.obj, U), L.obj.nonvanishingLocus s = L₀.obj.nonvanishingLocus s₀ := by
+  -- `L` is isomorphic to the monoidal tensor power `L₀^{⊗k}`, whose class is `(mk L₀)ᵏ`.
+  have hclass : mk L = mk (TauCeti.tensorPow L₀ k) := by rw [mk_tensorPow, hL]
+  obtain ⟨e⟩ := mk_eq_mk_iff.mp hclass
+  let e' : L.obj ≅ TauCeti.tensorPow L₀.obj k := e ≪≫ eqToIso (tensorPow_obj L₀ k)
+  refine ⟨e'.inv.app U (Scheme.Modules.tensorPowSection s₀ k), ?_⟩
+  rw [← Iso.symm_hom, Scheme.Modules.nonvanishingLocus_hom_app,
+    Scheme.Modules.nonvanishingLocus_tensorPowSection _ hk]
+
+/-- The nonvanishing loci of the sections over `U` of a line bundle of trivial class are exactly the
+basic open sets of the regular functions on `U`. -/
+theorem range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one {L : InvertibleSheaf X}
+    (hL : LineBundleClass.mk L = 1) (U : X.Opens) :
+    Set.range (L.obj.nonvanishingLocus (U := U)) = Set.range (X.basicOpen (U := U)) := by
+  -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
+  obtain ⟨e⟩ : Nonempty (L.obj ≅ SheafOfModules.unit X.ringCatSheaf) :=
+    LineBundleClass.mk_eq_one_iff.mp hL
+  rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e U]
+  exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
+
+/-- When the global functions on `X` form a field, for instance on an integral scheme universally
+closed over a field, a global section of a line bundle of trivial class vanishes either everywhere
+or nowhere. -/
+theorem nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one (hX : IsField Γ(X, ⊤))
+    {L : InvertibleSheaf X} (hL : LineBundleClass.mk L = 1) (s : Γ(L.obj, ⊤)) :
+    L.obj.nonvanishingLocus s = ⊥ ∨ L.obj.nonvanishingLocus s = ⊤ := by
+  obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
+    rw [← range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one hL ⊤]
+    exact ⟨s, rfl⟩
+  let := hX.toField
+  rw [← hr]
+  obtain rfl | hr₀ := eq_or_ne r 0
+  · exact Or.inl (X.basicOpen_zero ⊤)
+  · exact Or.inr (X.basicOpen_of_isUnit hr₀.isUnit)
+
+end TauCeti.AlgebraicGeometry.InvertibleSheaf

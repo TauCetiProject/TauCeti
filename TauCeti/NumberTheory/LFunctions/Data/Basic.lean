@@ -56,9 +56,11 @@ imposed on the analytic record.
 
 ## Main results
 
-* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`.
+* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
+* `HasFunctionalEquation.meromorphicOrderAt_completed_one_sub`: the functional equation reflects
+  meromorphic orders of the completed functions across the critical line.
 
 ## References
 
@@ -126,6 +128,22 @@ theorem gammaFactor_def (s : ℂ) :
     d.gammaFactor s =
       (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod * (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod :=
   (rfl)
+
+/-- Every record `d` has a finite norm bound on its real and complex gamma shifts. -/
+theorem exists_shift_norm_le :
+    ∃ M ≥ 0, (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) ∧ (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) := by
+  have hnn (m : Multiset ℂ) : ∀ x ∈ m.map norm, (0 : ℝ) ≤ x := by
+    intro x hx
+    obtain ⟨z, -, rfl⟩ := Multiset.mem_map.mp hx
+    exact norm_nonneg z
+  have hR0 : 0 ≤ (d.gammaR.map norm).sum := Multiset.sum_nonneg (hnn d.gammaR)
+  have hC0 : 0 ≤ (d.gammaC.map norm).sum := Multiset.sum_nonneg (hnn d.gammaC)
+  refine ⟨(d.gammaR.map norm).sum + (d.gammaC.map norm).sum, add_nonneg hR0 hC0,
+    fun μ hμ ↦ ?_, fun ν hν ↦ ?_⟩
+  · have h1 := Multiset.single_le_sum (hnn d.gammaR) ‖μ‖ (Multiset.mem_map_of_mem norm hμ)
+    linarith
+  · have h2 := Multiset.single_le_sum (hnn d.gammaC) ‖ν‖ (Multiset.mem_map_of_mem norm hν)
+    linarith
 
 /-- The **dual card**: conjugate coefficients, conjugate gamma shifts, conjugate root number, the
 reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar divisor. The conductor
@@ -208,6 +226,11 @@ structure HasFunctionalEquation : Prop where
     d.completed s = d.rootNumber * d.dual.completed (1 - s)
 
 variable {d}
+
+/-- The root number of a card satisfying the functional equation is nonzero. -/
+theorem HasFunctionalEquation.rootNumber_ne_zero (h : d.HasFunctionalEquation) :
+    d.rootNumber ≠ 0 :=
+  norm_ne_zero_iff.mp (by simp [h.norm_rootNumber])
 
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
@@ -293,6 +316,19 @@ theorem HasFunctionalEquation.eventuallyEq (h : d.HasFunctionalEquation) (s : �
   simp only [Set.mem_sdiff, Set.mem_univ, Set.mem_union, Finset.mem_coe, Finsupp.mem_support_iff,
     Set.mem_preimage, true_and, not_or, not_not] at hz
   exact h.completed_eq z hz.1 hz.2
+
+/-- The functional equation carries the meromorphic order of the dual completed function at `s`
+to that of the completed function at `1 - s`, including at poles. -/
+theorem HasFunctionalEquation.meromorphicOrderAt_completed_one_sub
+    (h : d.HasFunctionalEquation) (s : ℂ) :
+    meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
+  have hsmul : (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
+      d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) := by
+    ext z
+    simp [Function.comp_def, smul_eq_mul]
+  rw [meromorphicOrderAt_congr (h.eventuallyEq (1 - s)), hsmul,
+    meromorphicOrderAt_const_smul_eq_meromorphicOrderAt h.rootNumber_ne_zero,
+    meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
 
 end AnalyticLFunctionData
 

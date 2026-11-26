@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 public import Mathlib.Order.Northcott
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 public import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
 
@@ -32,6 +32,17 @@ the lower bounds of a spectral cutoff: if the coefficients of `u` vanish on all 
 positive eigenvalue for the quadratic form and the least nonzero absolute value of an eigenvalue for
 the norm. For a nonnegative operator the eigenvectors with nonpositive eigenvalues span its kernel.
 
+The same expansion controls the *spectral truncation* of a nonnegative symmetric operator `A`. Let
+`Π_R = b.projection {k | λ k ≤ R}` be the coordinate projection onto the eigenvectors with
+eigenvalues at most `R` (`HilbertBasis.projection`). With compact resolvent it has finite rank, and
+for every bounded operator `T` the truncation `T ∘ Π_R` approximates `T` on the domain of `A`:
+
+`R ‖T u - T (Π_R u)‖² ≤ ‖T‖² re ⟪A u, u⟫`.
+
+Measured in the form norm `re ⟪A u, u⟫ ^ (1/2)` on the domain of `A`, the error is at most
+`‖T‖ / √R`. This is how a bounded operator is replaced by finite-rank operators built from
+finitely many eigenvectors, up to an error controlled in the form norm.
+
 ## Main results
 
 * `LinearPMap.HasCompactResolvent.northcott_norm_of_orthonormal`: the eigenvalues attached to an
@@ -44,6 +55,13 @@ the norm. For a nonnegative operator the eigenvectors with nonpositive eigenvalu
 * `LinearPMap.IsFormalAdjoint.mul_norm_le_norm_apply_of_hilbertBasis`: the lower bound
   `c ‖u‖ ≤ ‖A u‖` for `u` orthogonal to the eigenbasis vectors with eigenvalues of absolute value
   below `c`.
+* `LinearPMap.IsFormalAdjoint.hasSum_re_inner_of_hilbertBasis`: the quadratic form
+  `re ⟪A u, u⟫` as the Parseval sum `∑ λ k ‖⟪b k, u⟫‖²`.
+* `LinearPMap.IsFormalAdjoint.mul_norm_projection_sq_le_re_inner`,
+  `LinearPMap.IsFormalAdjoint.mul_norm_apply_sub_apply_projection_sq_le_re_inner`: the spectral
+  truncation estimate above, for nonnegative eigenvalues.
+* `LinearPMap.HasCompactResolvent.hasFiniteRange_projection_setOf_le`: with compact resolvent and
+  eigenvalues bounded below, the spectral truncation `Π_R` has finite rank.
 * `LinearPMap.HasCompactResolvent.exists_pos_mul_norm_sq_le_re_inner`,
   `LinearPMap.HasCompactResolvent.exists_pos_mul_norm_le_norm_apply`: positive spectral gaps on the
   complement of the eigenvectors with nonpositive, respectively zero, eigenvalues.
@@ -77,10 +95,8 @@ theorem HasCompactResolvent.northcott_norm_of_orthonormal (h : A.HasCompactResol
       exact resolvent_apply_of_apply_eq_smul hz ⟨v i, hi⟩ hAi
     -- `z` lies in the resolvent set, so it is not an eigenvalue.
     have hne (i : ι) : z - lam i ≠ 0 := by
-      intro hzi
       obtain ⟨hi, hAi⟩ := hA i
-      rw [← sub_eq_zero.1 hzi] at hAi
-      exact hv.ne_zero i (congrArg Subtype.val (eq_zero_of_apply_eq_smul hz _ hAi))
+      exact sub_ne_zero_of_apply_eq_smul hz ⟨v i, hi⟩ (hv.ne_zero i) hAi
     set M := ‖z‖ + |R| + 1
     have hM : 0 < M := by positivity
     refine (hK.finite_setOf_le_norm_of_orthonormal (T := (A.resolvent z : E →ₗ[𝕜] E)) hv hR
@@ -107,14 +123,12 @@ section HilbertBasis
 
 variable {κ : Type*} (b : HilbertBasis κ 𝕜 E) {lam : κ → ℝ}
 
-/-- Let `A` be symmetric with a Hilbert basis `b` of eigenvectors, `A (b k) = λ k • b k` with `λ k`
-real. If the coefficients `⟪b k, u⟫` of `u` in the domain vanish whenever `λ k < c`, then
-`c ‖u‖² ≤ re ⟪A u, u⟫`. -/
-theorem IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis (hA : A.IsFormalAdjoint A)
-    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) {c : ℝ} (u : A.domain)
-    (hu : ∀ k, lam k < c → ⟪b k, (u : E)⟫_𝕜 = 0) :
-    c * ‖(u : E)‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 := by
-  -- The quadratic form is the Parseval sum `∑ λ k ‖⟪b k, u⟫‖²`.
+/-- **Parseval for the quadratic form.** Let `A` be symmetric with a Hilbert basis `b` of
+eigenvectors, `A (b k) = λ k • b k` with `λ k` real. For `u` in the domain, the quadratic form
+`re ⟪A u, u⟫` is the sum `∑ λ k ‖⟪b k, u⟫‖²`. -/
+theorem IsFormalAdjoint.hasSum_re_inner_of_hilbertBasis (hA : A.IsFormalAdjoint A)
+    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) (u : A.domain) :
+    HasSum (fun k ↦ lam k * ‖⟪b k, (u : E)⟫_𝕜‖ ^ 2) (re ⟪A u, (u : E)⟫_𝕜) := by
   have hterm (k : κ) : ⟪A u, b k⟫_𝕜 * ⟪b k, (u : E)⟫_𝕜 =
       ((lam k * ‖⟪b k, (u : E)⟫_𝕜‖ ^ 2 : ℝ) : 𝕜) := by
     obtain ⟨hk, hAk⟩ := hb k
@@ -123,9 +137,17 @@ theorem IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis (hA : A.IsFormal
     rw [h1, hAk, inner_smul_right, ← inner_conj_symm (u : E) (b k), mul_assoc, RCLike.conj_mul]
     push_cast
     ring
-  have hform : HasSum (fun k ↦ lam k * ‖⟪b k, (u : E)⟫_𝕜‖ ^ 2) (re ⟪A u, (u : E)⟫_𝕜) := by
-    simpa only [hterm, ofReal_re] using hasSum_re _ (b.hasSum_inner_mul_inner (A u) u)
-  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left c) hform
+  simpa only [hterm, ofReal_re] using hasSum_re _ (b.hasSum_inner_mul_inner (A u) u)
+
+/-- Let `A` be symmetric with a Hilbert basis `b` of eigenvectors, `A (b k) = λ k • b k` with `λ k`
+real. If the coefficients `⟪b k, u⟫` of `u` in the domain vanish whenever `λ k < c`, then
+`c ‖u‖² ≤ re ⟪A u, u⟫`. -/
+theorem IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis (hA : A.IsFormalAdjoint A)
+    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) {c : ℝ} (u : A.domain)
+    (hu : ∀ k, lam k < c → ⟪b k, (u : E)⟫_𝕜 = 0) :
+    c * ‖(u : E)‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 := by
+  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left c)
+    (hA.hasSum_re_inner_of_hilbertBasis b hb u)
   rcases lt_or_ge (lam k) c with hk | hk
   · simp [hu k hk]
   · exact mul_le_mul_of_nonneg_right hk (sq_nonneg _)
@@ -147,8 +169,8 @@ theorem IsFormalAdjoint.mul_norm_le_norm_apply_of_hilbertBasis (hA : A.IsFormalA
     rw [← h1, hAk, inner_smul_left, conj_ofReal]
   have hsq : (c * ‖(u : E)‖) ^ 2 ≤ ‖A u‖ ^ 2 := by
     rw [mul_pow]
-    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left (c ^ 2))
-      (b.hasSum_norm_sq_inner (A u))
+    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left (c ^ 2))
+      (b.hasSum_norm_inner_sq (A u))
     rw [hcoef, norm_mul, norm_ofReal, mul_pow]
     rcases lt_or_ge |lam k| c with hk | hk
     · simp [hu k hk]
@@ -182,6 +204,53 @@ theorem HasCompactResolvent.exists_pos_mul_norm_le_norm_apply (h : A.HasCompactR
   obtain ⟨c, hc, hgap⟩ := h.exists_pos_forall_norm_lt_imp_eq_zero b.orthonormal hb
   exact ⟨c, hc, fun u hu ↦ hA.mul_norm_le_norm_apply_of_hilbertBasis b hb u fun k hk ↦
     hu k (ofReal_eq_zero.1 (hgap k (by rwa [norm_ofReal])))⟩
+
+/-- **Spectral truncation of a nonnegative operator.** Let `A` be symmetric with a Hilbert basis `b`
+of eigenvectors, `A (b k) = λ k • b k` with `λ k ≥ 0`. For every `R` and every `u` in the domain,
+the part of `u` along the eigenvectors with eigenvalues greater than `R` satisfies
+`R ‖b.projection {k | R < λ k} u‖² ≤ re ⟪A u, u⟫`. -/
+theorem IsFormalAdjoint.mul_norm_projection_sq_le_re_inner (hA : A.IsFormalAdjoint A)
+    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) (hlam : ∀ k, 0 ≤ lam k)
+    (R : ℝ) (u : A.domain) :
+    R * ‖b.projection {k | R < lam k} u‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 :=
+  b.mul_norm_projection_sq_le _ (fun _ hk ↦ le_of_lt hk) (fun k _ ↦ hlam k)
+    (hA.hasSum_re_inner_of_hilbertBasis b hb u)
+
+/-- **Truncation estimate for a nonnegative operator.** Let `A` be symmetric with a Hilbert basis
+`b` of eigenvectors, `A (b k) = λ k • b k` with `λ k ≥ 0`, and let
+`Π_R = b.projection {k | λ k ≤ R}` be its spectral truncation at `R`. Every bounded operator `T`
+satisfies `R ‖T u - T (Π_R u)‖² ≤ ‖T‖² re ⟪A u, u⟫` for `u` in the domain of `A`. -/
+theorem IsFormalAdjoint.mul_norm_apply_sub_apply_projection_sq_le_re_inner
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (hA : A.IsFormalAdjoint A)
+    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) (hlam : ∀ k, 0 ≤ lam k)
+    (T : E →L[𝕜] F) (R : ℝ) (u : A.domain) :
+    R * ‖T u - T (b.projection {k | lam k ≤ R} u)‖ ^ 2 ≤ ‖T‖ ^ 2 * re ⟪A u, (u : E)⟫_𝕜 := by
+  have hcompl : {k | R < lam k} = {k | lam k ≤ R}ᶜ := by
+    ext k
+    simp
+  have hsub : T u - T (b.projection {k | lam k ≤ R} u) = T (b.projection {k | R < lam k} u) := by
+    simp [hcompl, b.projection_compl]
+  have hform := hA.hasSum_re_inner_of_hilbertBasis b hb u
+  rw [hsub]
+  rcases le_or_gt 0 R with hR | hR
+  · exact b.mul_norm_apply_projection_sq_le _ T hR (fun _ hk ↦ le_of_lt hk) (fun k _ ↦ hlam k)
+      hform
+  -- For `R < 0` the left side is nonpositive and the quadratic form is nonnegative.
+  exact (mul_nonpos_of_nonpos_of_nonneg hR.le (sq_nonneg _)).trans
+    (mul_nonneg (sq_nonneg _) (hform.nonneg fun k ↦ mul_nonneg (hlam k) (sq_nonneg _)))
+
+/-- **Spectral truncations have finite rank.** Let `A` have compact resolvent and a Hilbert basis
+`b` of eigenvectors, `A (b k) = λ k • b k` with real eigenvalues bounded below by `m`. Then for
+every `R` the spectral truncation `b.projection {k | λ k ≤ R}` has finite rank. -/
+theorem HasCompactResolvent.hasFiniteRange_projection_setOf_le (h : A.HasCompactResolvent)
+    (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) {m : ℝ}
+    (hlam : ∀ k, m ≤ lam k) (R : ℝ) :
+    (b.projection {k | lam k ≤ R} : E →ₗ[𝕜] E).HasFiniteRange := by
+  refine b.hasFiniteRange_projection _ <|
+    ((h.northcott_norm_of_orthonormal b.orthonormal hb).finite_le (max R (-m))).subset ?_
+  intro k (hk : lam k ≤ R)
+  simp only [Set.mem_ofPred_eq, norm_ofReal, abs_le]
+  constructor <;> linarith [hlam k, le_max_left R (-m), le_max_right R (-m)]
 
 end HilbertBasis
 

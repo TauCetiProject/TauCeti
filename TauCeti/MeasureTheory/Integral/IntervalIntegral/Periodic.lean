@@ -12,6 +12,8 @@ public import TauCeti.Topology.Instances.AddCircle.Lift
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.Topology.Instances.AddCircle.Annulus
 
 /-!
 # Pushforwards of Haar measure along circle diffeomorphisms
@@ -34,6 +36,15 @@ measure-preserving maps `f` of `ℝ × Y` commuting with `(s, y) ↦ (s + T, y)`
 `volume.prod ν`: both `(0, T] × Y` and its preimage under `f` are fundamental domains of these
 translations, and an invariant set has the same measure in both.
 
+The file also collects facts about interval integrals of periodic functions on `ℝ`, among them
+the integrals of an even `T`-periodic function `f` over whole periods. Such a function is
+determined by its values on `[0, T/2]`: the reflection `x ↦ T - x` carries `[0, T/2]` to
+`[T/2, T]` and preserves `f`, so integrability on `[0, T/2]` gives integrability over a period;
+and the integral over `[-T/2, T/2]`, which is the integral over a period, is twice the integral
+over `[0, T/2]` (`intervalIntegral.integral_eq_two_smul_of_even`). If `T ≠ 0` and `f` is not
+integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for any integer
+`n ≠ 0`, and both sides of these identities are `0`.
+
 ## Main declarations
 
 * `AddCircle.map_volume_le_of_lift` and `AddCircle.map_haarAddCircle_le_of_lift`: if `c ≤ F'`
@@ -55,6 +66,20 @@ translations, and an invariant set has the same measure in both.
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
 * `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
   over `[-T/2, T/2]` is its integral over `[0, T]`.
+* `Function.Periodic.intervalIntegral_comp_neg`: a `T`-periodic function and its reflection
+  `x ↦ f (-x)` have the same integral over `[0, T]`.
+* `Function.Periodic.intervalIntegrable_of_even`: an even `T`-periodic function (`T ≠ 0`) which is
+  interval integrable on `[0, T/2]` is interval integrable on every interval.
+* `Function.Periodic.intervalIntegral_add_zsmul_eq'`: Mathlib's
+  `Function.Periodic.intervalIntegral_add_zsmul_eq` without its integrability hypothesis.
+* `Function.Periodic.intervalIntegral_eq_two_smul_of_even` and
+  `Function.Periodic.intervalIntegral_add_int_mul_eq_of_even`: an even `T`-periodic function
+  integrates from `0` to `T` to twice, and from `t` to `t + n T` to `2 n` times, its integral from
+  `0` to `T / 2`, with no integrability hypothesis.
+* `Function.Periodic.intervalIntegral_add_int_mul_eq_add_of_even`: quasi-periodicity of the
+  integral of an even `T`-periodic function which is interval integrable on `[0, T/2]`.
+* `intervalIntegral.integral_add_nsmul_eq_geom_sum_smul`: if `f (x + T) = c • f x`, the integral
+  of `f` over `m` periods is `1 + c + ⋯ + c ^ (m - 1)` times its integral over one period.
 -/
 
 public section
@@ -209,25 +234,6 @@ private abbrev translateAction (T : ℝ) (Y : Type*) : AddAction ℤ (ℝ × Y) 
     rw [add_zsmul]
     ring
 
-omit hT [MeasurableSpace Y] in
-/-- A map commuting with the translation by `T` of the first coordinate commutes with the
-translations by all integer multiples of `T`. -/
-private theorem apply_add_zsmul {f : ℝ × Y → ℝ × Y}
-    (hf : ∀ x : ℝ × Y, f (x.1 + T, x.2) = ((f x).1 + T, (f x).2)) (n : ℤ) (x : ℝ × Y) :
-    f (x.1 + n • T, x.2) = ((f x).1 + n • T, (f x).2) := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    have h := hf (x.1 + (n : ℤ) • T, x.2)
-    rw [ih] at h
-    rw [add_one_zsmul, ← add_assoc, h, add_assoc]
-  | pred n ih =>
-    have h := hf (x.1 + (-(n : ℤ) - 1) • T, x.2)
-    rw [add_assoc, ← add_one_zsmul, sub_add_cancel, ih, Prod.ext_iff] at h
-    refine Prod.ext ?_ h.2.symm
-    have hs : (-(n : ℤ) - 1) • T = -(n : ℤ) • T - T := by rw [sub_zsmul, one_zsmul]; abel
-    linarith [h.1]
-
 /-- A map of `AddCircle T × Y` lifted from a measurable map of `ℝ × Y` is measurable. -/
 theorem measurable_of_lift {f : ℝ × Y → ℝ × Y} (hf : Measurable f)
     {g : AddCircle T × Y → AddCircle T × Y}
@@ -276,7 +282,7 @@ theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
     simpa [hvadd, F, zero_add] using existsUnique_add_zsmul_mem_Ioc hT.out x.1 0
   have hfF : IsAddFundamentalDomain ℤ (f ⁻¹' F) (volume.prod ν) := by
     refine .mk' (hf.measurable hFm).nullMeasurableSet fun x ↦ ?_
-    simp only [mem_preimage, hvadd, apply_add_zsmul hfT]
+    simp only [mem_preimage, hvadd, zsmul_eq_mul, TauCeti.apply_add_int_mul_of_apply_add hfT]
     simpa [F] using existsUnique_add_zsmul_mem_Ioc hT.out (f x).1 0
   have hπv (n : ℤ) (x : ℝ × Y) : π (n +ᵥ x) = π x := by
     obtain ⟨s, y⟩ := x
@@ -326,3 +332,119 @@ theorem Function.Periodic.intervalIntegral_neg_div_two_eq {E : Type*} [NormedAdd
     ∫ t in -T / 2..T / 2, f t = ∫ t in 0..T, f t := by
   have h := hf.intervalIntegral_add_eq (-T / 2) 0
   rwa [zero_add, show -T / 2 + T = T / 2 by ring] at h
+
+namespace Function.Periodic
+
+variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {T : ℝ}
+
+/-- An even `T`-periodic function (`T ≠ 0`) that is interval integrable from `0` to `T / 2` is
+interval integrable over every interval. -/
+theorem intervalIntegrable_of_even (hper : Periodic f T) (heven : Function.Even f) (hT : T ≠ 0)
+    (hf : IntervalIntegrable f volume 0 (T / 2)) (a b : ℝ) : IntervalIntegrable f volume a b := by
+  have hfun : (fun x ↦ f (T - x)) = f := funext fun x ↦ by
+    rw [sub_eq_neg_add, hper (-x), heven x]
+  have h2 : IntervalIntegrable f volume (T / 2) T := by
+    have h := hf.comp_sub_left T
+    rw [hfun, sub_half, sub_zero] at h
+    exact h.symm
+  exact hper.intervalIntegrable₀ hT (hf.trans h2) a b
+
+variable [NormedSpace ℝ E]
+
+/-- A `T`-periodic function and its reflection `x ↦ f (-x)` have the same integral over the period
+`[0, T]`. -/
+theorem intervalIntegral_comp_neg (hper : Periodic f T) :
+    ∫ x in (0 : ℝ)..T, f (-x) = ∫ x in (0 : ℝ)..T, f x := by
+  rw [intervalIntegral.integral_comp_neg, neg_zero]
+  simpa using hper.intervalIntegral_add_eq (-T) 0
+
+/-- Version of `Function.Periodic.intervalIntegral_add_zsmul_eq` without the integrability
+hypothesis: if `f` is not interval integrable over one period, it is not interval integrable over
+`n` periods for `n ≠ 0`, and both sides are `0`. -/
+theorem intervalIntegral_add_zsmul_eq' (hper : Periodic f T) (n : ℤ) (t : ℝ) :
+    ∫ x in t..t + n • T, f x = n • ∫ x in t..t + T, f x := by
+  rcases eq_or_ne T 0 with rfl | hT
+  · simp
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  by_cases h : IntervalIntegrable f volume t (t + T)
+  · exact hper.intervalIntegral_add_zsmul_eq n t (hper.intervalIntegrable hT h)
+  · rw [intervalIntegral.integral_undef h, smul_zero]
+    exact intervalIntegral.integral_undef fun hI ↦
+      h ((hper.zsmul n).intervalIntegrable (smul_ne_zero hn hT) hI _ _)
+
+/-- An even `T`-periodic function integrates from `0` to `T` to twice its integral from `0` to
+`T / 2`; no integrability hypothesis is needed. -/
+theorem intervalIntegral_eq_two_smul_of_even (hper : Periodic f T) (heven : Function.Even f) :
+    ∫ x in (0 : ℝ)..T, f x = (2 : ℝ) • ∫ x in (0 : ℝ)..T / 2, f x := by
+  rw [← hper.intervalIntegral_neg_div_two_eq, neg_div,
+    intervalIntegral.integral_eq_two_smul_of_even heven]
+
+/-- An even `T`-periodic function integrates over `n` periods, from `t` to `t + n T`, to `2 n` times
+its integral from `0` to `T / 2`; no integrability hypothesis is needed. -/
+theorem intervalIntegral_add_int_mul_eq_of_even (hper : Periodic f T) (heven : Function.Even f)
+    (t : ℝ) (n : ℤ) :
+    ∫ x in t..t + n * T, f x = (2 * (n : ℝ)) • ∫ x in (0 : ℝ)..T / 2, f x := by
+  rw [← zsmul_eq_mul, hper.intervalIntegral_add_zsmul_eq' n t, hper.intervalIntegral_add_eq t 0,
+    zero_add, hper.intervalIntegral_eq_two_smul_of_even heven, ← Int.cast_smul_eq_zsmul ℝ n,
+    smul_smul, mul_comm (n : ℝ) 2]
+
+/-- **Quasi-periodicity** of the integral of an even `T`-periodic function that is interval
+integrable from `0` to `T / 2`: adding `n` periods to the upper limit adds `2 n` times the integral
+over `[0, T / 2]`. -/
+theorem intervalIntegral_add_int_mul_eq_add_of_even (hper : Periodic f T)
+    (heven : Function.Even f) (hf : IntervalIntegrable f volume 0 (T / 2)) (a x : ℝ) (n : ℤ) :
+    ∫ θ in a..x + n * T, f θ =
+      (∫ θ in a..x, f θ) + (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..T / 2, f θ := by
+  rcases eq_or_ne T 0 with rfl | hT
+  · simp
+  have hint := hper.intervalIntegrable_of_even heven hT hf
+  rw [← intervalIntegral.integral_add_adjacent_intervals (hint a x) (hint x _),
+    hper.intervalIntegral_add_int_mul_eq_of_even heven x n]
+
+end Function.Periodic
+
+/-- **Integrals of a function with a multiplier over several periods.** If `f (x + T) = c • f x`
+for every `x`, then the integral of `f` over the `m` periods `[t, t + m T]` is
+`1 + c + ⋯ + c ^ (m - 1)` times its integral over `[t, t + T]`. No integrability hypothesis is
+needed: if `f` is not interval integrable on `[t, t + T]`, then for `m ≥ 1` it is not interval
+integrable on `[t, t + m T]`, and both sides are `0`. -/
+theorem intervalIntegral.integral_add_nsmul_eq_geom_sum_smul {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+    [SMulCommClass ℝ 𝕜 E] {f : ℝ → E} {T : ℝ} {c : 𝕜} (hf : ∀ x, f (x + T) = c • f x)
+    (t : ℝ) (m : ℕ) :
+    ∫ x in t..t + m • T, f x = (∑ j ∈ Finset.range m, c ^ j) • ∫ x in t..t + T, f x := by
+  have hpow (j : ℕ) (x : ℝ) : f (x + j • T) = c ^ j • f x := by
+    induction j generalizing x with
+    | zero => simp
+    | succ j ih => rw [succ_nsmul, ← add_assoc, hf, ih, ← mul_smul, ← pow_succ']
+  have hpiece (j : ℕ) :
+      ∫ x in t + j • T..t + (j + 1) • T, f x = c ^ j • ∫ x in t..t + T, f x := by
+    rw [← intervalIntegral.integral_smul, succ_nsmul, ← add_assoc, add_right_comm t,
+      ← intervalIntegral.integral_comp_add_right f (j • T)]
+    exact intervalIntegral.integral_congr fun x _ ↦ hpow j x
+  rw [Finset.sum_smul]
+  by_cases hint : IntervalIntegrable f volume t (t + T)
+  · have hint' (j : ℕ) : IntervalIntegrable f volume (t + j • T) (t + (j + 1) • T) := by
+      have h := (hint.smul (c ^ j)).comp_sub_right (j • T)
+      rw [succ_nsmul, ← add_assoc, add_right_comm t]
+      refine h.congr fun x _ ↦ ?_
+      simp only [Pi.smul_apply]
+      rw [← hpow, sub_add_cancel]
+    have h := intervalIntegral.sum_integral_adjacent_intervals
+      (a := fun j ↦ t + j • T) (n := m) fun j _ ↦ hint' j
+    simp only [zero_nsmul, add_zero] at h
+    rw [← h]
+    exact Finset.sum_congr rfl fun j _ ↦ hpiece j
+  · rcases Nat.eq_zero_or_pos m with rfl | hm
+    · simp
+    rw [intervalIntegral.integral_undef hint]
+    simp only [smul_zero, Finset.sum_const_zero]
+    refine intervalIntegral.integral_undef fun h ↦ hint (h.mono_set ?_)
+    have hT : t + T ∈ Set.uIcc t (t + m • T) := by
+      rw [nsmul_eq_mul, Set.mem_uIcc]
+      have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+      rcases le_total 0 T with hT | hT
+      · exact Or.inl ⟨by linarith, by nlinarith⟩
+      · exact Or.inr ⟨by nlinarith, by linarith⟩
+    exact Set.uIcc_subset_uIcc Set.left_mem_uIcc hT

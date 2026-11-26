@@ -30,8 +30,13 @@ the pullback is `C^n`.
   pullback with `J`.
 * `OpenPartialHomeomorph.symm_pullbackEnd_comp_fderiv`: the derivative of `e` intertwines `J`
   with its pullback along `e.symm`.
+* `OpenPartialHomeomorph.fderiv_add_pullbackEnd_fderiv_eq_zero`: a solution of a Cauchy–Riemann
+  equation `Du v + J(u) Du w = 0` read in a chart solves it for the pulled-back field.
 * `OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`: the pullback of a field squaring
   to `-1` squares to `-1`.
+* `OpenPartialHomeomorph.fderiv_symm_comp_add_pullbackEnd_eq_zero`: a map `u` with
+  `Du x + J(u) (Du y) = 0`, such as a solution of the Cauchy–Riemann equation
+  `∂ₛu + J(u) ∂ₜu = 0`, read in the chart `e`, satisfies the same equation for `e.pullbackEnd J`.
 -/
 
 public noncomputable section
@@ -97,6 +102,24 @@ theorem symm_pullbackEnd_comp_fderiv (J : E → E →L[𝕜] E) {p : E} (hp : p 
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
     e.symm_symm, e.left_inv hp, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
 
+/-- **A Cauchy–Riemann equation read in a chart.** If `u` satisfies `Du v + J(u) Du w = 0` at `x`
+and `u x` lies in the target of `e`, with `e` and its inverse differentiable there, then
+`e⁻¹ ∘ u` satisfies the same equation for the pulled-back field `e.pullbackEnd J`. -/
+theorem fderiv_add_pullbackEnd_fderiv_eq_zero {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {J : F → F →L[𝕜] F} {u : G → F} {x v w : G} (hx : u x ∈ e.target)
+    (hu : DifferentiableAt 𝕜 u x) (he : DifferentiableAt 𝕜 e (e.symm (u x)))
+    (hes : DifferentiableAt 𝕜 e.symm (u x))
+    (hCR : fderiv 𝕜 u x v + J (u x) (fderiv 𝕜 u x w) = 0) :
+    fderiv 𝕜 (e.symm ∘ u) x v + e.pullbackEnd J ((e.symm ∘ u) x) (fderiv 𝕜 (e.symm ∘ u) x w) =
+      0 := by
+  -- The derivative of `e⁻¹` intertwines `J` with the structure read in the chart.
+  have h (y : F) : e.pullbackEnd J (e.symm (u x)) (fderiv 𝕜 e.symm (u x) y) =
+      fderiv 𝕜 e.symm (u x) (J (u x) y) := by
+    simpa only [e.symm_symm, ContinuousLinearMap.comp_apply] using
+      congr($(e.symm.symm_pullbackEnd_comp_fderiv J (e.symm_source ▸ hx) hes he) y)
+  simp only [(hes.hasFDerivAt.comp x hu.hasFDerivAt).fderiv, ContinuousLinearMap.comp_apply,
+    Function.comp_apply, h, ← map_add, hCR, map_zero]
+
 /-- **The pullback of an almost complex structure is an almost complex structure.** If
 `J (e p)` squares to `-1`, so does the pulled-back endomorphism at `p`. -/
 theorem pullbackEnd_apply_pullbackEnd_apply {J : F → F →L[𝕜] F} {p : E} (hp : p ∈ e.source)
@@ -105,5 +128,27 @@ theorem pullbackEnd_apply_pullbackEnd_apply {J : F → F →L[𝕜] F} {p : E} (
     e.pullbackEnd J p (e.pullbackEnd J p v) = -v := by
   rw [pullbackEnd_apply, pullbackEnd_apply, e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs,
     hsq, map_neg, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
+
+/-- **Transporting `Du x + J(u) (Du y) = 0` into a chart.** Let `u : X → F` be differentiable at
+`ζ` with `u ζ` in the target of `e`, and let `e` and `e.symm` be differentiable at `e.symm (u ζ)`
+and at `u ζ`. If `Du_ζ x + J(u ζ) (Du_ζ y) = 0`, then `e.symm ∘ u` satisfies the same equation
+for the pulled-back field `e.pullbackEnd J`. For `X = ℂ`, `x = 1` and `y = i` this transports the
+Cauchy–Riemann equation `∂ₛu + J(u) ∂ₜu = 0` into the chart. -/
+theorem fderiv_symm_comp_add_pullbackEnd_eq_zero {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {J : F → F →L[𝕜] F} {u : X → F} {ζ : X} (ht : u ζ ∈ e.target)
+    (hu : DifferentiableAt 𝕜 u ζ) (he : DifferentiableAt 𝕜 e (e.symm (u ζ)))
+    (hes : DifferentiableAt 𝕜 e.symm (u ζ)) {x y : X}
+    (h : fderiv 𝕜 u ζ x + J (u ζ) (fderiv 𝕜 u ζ y) = 0) :
+    fderiv 𝕜 (fun w ↦ e.symm (u w)) ζ x +
+      e.pullbackEnd J (e.symm (u ζ)) (fderiv 𝕜 (fun w ↦ e.symm (u w)) ζ y) = 0 := by
+  have hp := e.map_target ht
+  have hep : e (e.symm (u ζ)) = u ζ := e.right_inv ht
+  have hD : fderiv 𝕜 (fun w ↦ e.symm (u w)) ζ = (fderiv 𝕜 e.symm (u ζ)).comp (fderiv 𝕜 u ζ) :=
+    (hes.hasFDerivAt.comp ζ hu.hasFDerivAt).fderiv
+  have hes' : DifferentiableAt 𝕜 e.symm (e (e.symm (u ζ))) := by rwa [hep]
+  have hinv (v : F) : fderiv 𝕜 e (e.symm (u ζ)) (fderiv 𝕜 e.symm (u ζ) v) = v := by
+    simpa only [hep] using e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hes' v
+  rw [pullbackEnd_apply, hD, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, hep,
+    hinv, ← map_add, h, map_zero]
 
 end OpenPartialHomeomorph

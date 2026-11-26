@@ -97,7 +97,9 @@ inserted half are transported along `ψ` by the change of variables formula
 the null circle `s_q = L/2`
 (`TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`). On the same pieces
 the curvature is integrable over `Σ_R`
-(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`). The energy identity
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`), and it vanishes on
+the rest of the four-punctured sphere for `R ≥ 2` (`SmoothTwoForm`'s
+`hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`). The energy identity
 over the whole four-punctured sphere, the limit `R → ∞`, is in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Asymptotic`.
 
@@ -248,10 +250,12 @@ private theorem integral_hamiltonianCurvature_plumbedPerturbation_inserted
     hamiltonianCurvature_pairOfPantsPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
       (hB w hw).1 (hB w hw).2]
 
-/-- Over the image under the plumbing chart of a measurable set `B` outside the circle
-`s_∞ = -L/2` of the inserted pair of pants, the Floer energy of `u` for the plumbed perturbation
-is that of `u ∘ ψ` over `B` for the perturbation of the inserted pair of pants. -/
-private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : SmoothTwoForm I M)
+/-- **The energy of the inserted pair of pants, for a manifold target.** For period-one `C¹`
+Hamiltonians with `Hb q = Ha ∞`, neck length `L > 4` and `u` of class `C¹` on the plumbed
+four-punctured sphere, over the image under the plumbing chart `ψ` of a measurable set `B` of the
+inserted pair of pants outside the circle `s_∞ = -L/2`, the Floer energy of `u` for the plumbed
+perturbation is that of `u ∘ ψ` over `B` for the perturbation of the inserted pair of pants. -/
+theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
@@ -279,7 +283,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
     fun w hw ↦ ?_
   rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), smul_eq_mul,
     ω.floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL
-      (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (hB w hw).2
+      (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (by linarith [(hB w hw).2])
       ((hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds (hP hw))).mdifferentiableAt
         one_ne_zero)]
 
@@ -374,6 +378,64 @@ theorem integrableOn_hamiltonianCurvature_plumbedTruncation (ω : SmoothTwoForm 
     (integrableOn_hamiltonianCurvature_plumbedPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
       (hR₀ inf) (by simp) hu)
 
+/-- **The curvature vanishes off the truncated plumbed sphere, for a manifold target.** At a point
+of the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, outside the truncation
+`Σ_R = q.plumbedTruncation L R` at an outer height `R ≥ 2`, the curvature of the plumbed
+perturbation of period-one `C¹` Hamiltonians on a manifold vanishes, for every neck length
+`L > 4`. -/
+theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1)
+    (hzR : Complex.equivRealProdCLM.symm z ∉ q.plumbedTruncation L R) (x : M) :
+    ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z x = 0 := by
+  have hzc : Complex.equivRealProdCLM.symm z ≠ q.endCenter := ne_endCenter hz.1 q
+  by_cases hle : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2
+  · -- Inside the circle `s_q = L/2` the curvature is that of the receiving pair of pants, and the
+    -- point lies beyond height `R ≥ 2` on some end of it.
+    obtain ⟨r, hr⟩ : ∃ r : Puncture,
+        R < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+      by_contra! h
+      exact hzR (mem_plumbedTruncation_iff.2 (Or.inl ⟨mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩, hle⟩))
+    rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab hzc (by linarith)]
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHb hHbs hz.1
+      (by rw [fst_positiveEndCoord]; linarith) x
+  · -- Beyond it the point is the image under the plumbing map of a point `w` of the inserted pair
+    -- of pants outside the circle `s_∞ = -L/2`, lying beyond height `R ≥ 2` on some end of it.
+    set w := (Complex.equivRealProdCLM.symm z - q.endCenter) / q.plumbingFactor L with hw
+    have hw₀ : w ≠ 0 ∧ w ≠ 1 := q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hz
+    have hwL : -(L / 2) ≤ (inf.endCoord w).re := by
+      rw [hw, re_endCoord_inf_sub_endCenter_div q L hzc]
+      linarith
+    have hψ : q.plumbingMap L w = Complex.equivRealProdCLM.symm z :=
+      plumbingMap_sub_endCenter_div q L _
+    obtain ⟨r, hr⟩ : ∃ r : Puncture, R < r.endSign * (r.endCoord w).re := by
+      by_contra! h
+      exact hzR (mem_plumbedTruncation_iff.2
+        (Or.inr ⟨w, mem_truncation.2 ⟨hw₀.1, hw₀.2, h⟩, hwL, hψ⟩))
+    have hwz : realChart (q.plumbingMap L) (Complex.equivRealProdCLM w) = z := by
+      rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, hψ,
+        ContinuousLinearEquiv.apply_symm_apply]
+    have hdet :
+        (fderiv ℝ (realChart (q.plumbingMap L)) (Complex.equivRealProdCLM w)).det ≠ 0 := by
+      rw [TauCeti.Complex.det_fderiv_realChart (q.hasDerivAt_plumbingMap L _)]
+      exact (Complex.normSq_pos.2 (q.plumbingFactor_ne_zero L)).ne'
+    have h := hamiltonianCurvature_pairOfPantsPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
+      (w := Complex.equivRealProdCLM w)
+      (by rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]; exact hw₀)
+      (by rw [ContinuousLinearEquiv.symm_apply_apply, endSign_inf]; linarith) x
+    rw [ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHa hHas
+      (by rw [ContinuousLinearEquiv.symm_apply_apply]; exact hw₀) (q := r)
+      (by rw [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply]; linarith), hwz] at h
+    exact ((mul_eq_zero.1 h.symm).resolve_left hdet)
+
 end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
@@ -388,31 +450,30 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The cutoff `1 - β(±s_r - R)` along the end `r`, in real coordinates: it is `1` where the signed
 longitudinal coordinate `±s_r` is at most `R` and `0` where it is at least `R + 1`. -/
 private noncomputable def endCutoff (r : Puncture) (R : ℝ) (z : ℝ × ℝ) : ℝ :=
-  1 - smoothTransition (r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re - R)
+  1 - smoothTransition ((positiveEndCoord r z).1 - R)
 
 private theorem contDiffAt_endCutoff {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) {n : ℕ∞} :
     ContDiffAt ℝ n (endCutoff r R) z :=
   contDiffAt_const.sub (smoothTransition.contDiffAt.comp z
-    ((contDiffAt_const.mul ((r.contDiffAt_re_endCoord hz).comp z
-      Complex.equivRealProdCLM.symm.contDiff.contDiffAt)).sub contDiffAt_const))
+    ((contDiffAt_fst_positiveEndCoord r hz).sub contDiffAt_const))
 
 /-- Near a point at which `±s_r < R`, the cutoff is `1`. -/
 private theorem endCutoff_eventuallyEq_one {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
-    (h : r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < R) :
+    (h : (positiveEndCoord r z).1 < R) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 1 := by
-  filter_upwards [(continuousAt_endSign_mul_re_endCoord r hz).eventually (gt_mem_nhds h)]
-    with z' hz'
+  filter_upwards [(contDiffAt_fst_positiveEndCoord r hz (n := 0)).continuousAt.eventually
+    (gt_mem_nhds h)] with z' hz'
   rw [endCutoff, smoothTransition.zero_of_nonpos (by linarith), sub_zero]
 
 /-- Near a point at which `±s_r > R + 1`, the cutoff is `0`. -/
 private theorem endCutoff_eventuallyEq_zero {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
-    (h : R + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    (h : R + 1 < (positiveEndCoord r z).1) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 0 := by
-  filter_upwards [(continuousAt_endSign_mul_re_endCoord r hz).eventually (lt_mem_nhds h)]
-    with z' hz'
+  filter_upwards [(contDiffAt_fst_positiveEndCoord r hz (n := 0)).continuousAt.eventually
+    (lt_mem_nhds h)] with z' hz'
   rw [endCutoff, smoothTransition.one_of_one_le (by linarith), sub_self]
 
 /-- The cutoffs at height `L/2 + 1` are `1` on the boundary circles `±s = L/2` of the ends. -/
@@ -421,25 +482,10 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
       (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))) = 1 := by
   have h := (mem_truncation.1
     (cylindricalEndLift_mem_truncation r (R := L / 2) (by linarith) t)).2.2 r'
-  rw [endCutoff, ContinuousLinearEquiv.symm_apply_apply,
+  rw [endCutoff, fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply,
     smoothTransition.zero_of_nonpos (by linarith), sub_zero]
 
 /-! ### The receiving and inserted pieces of a map -/
-
-/-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
-the target. -/
-private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
-    v).contDiffWithinAt
 
 /-- The receiving piece `(1 - β(s_q - L/2 - 1)) u` of a map `u` that is `C²` on the plumbed
 four-punctured sphere vanishes near the puncture `ψ(1)`, and so is `C²` on `S`. -/
@@ -456,7 +502,7 @@ private theorem contDiffOn_receivingPiece (hq : q ≠ inf) (hL : 4 < L) {u : ℝ
     by_contra h
     exact hzP ⟨hz, h⟩
   refine endCutoff_eventuallyEq_zero (ne_endCenter hz q) ?_
-  rw [h₁, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero]
+  rw [fst_positiveEndCoord, h₁, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero]
   linarith [re_endCoord_inf_one_pos]
 
 /-- The inserted piece `(1 - β(-s_∞ - L/2 - 1)) (u ∘ ψ)` of a map `u` that is `C²` on the plumbed
@@ -491,7 +537,7 @@ private theorem contDiffOn_insertedPiece (hq : q ≠ inf) (hL : 4 < L) {u : ℝ 
   refine endCutoff_eventuallyEq_zero (by simpa using hw.1) ?_
   have h := re_endCoord_lt_zero hq hv hvq
   rw [re_endCoord_plumbingMap q L hw.1] at h
-  rw [endSign_inf]
+  rw [fst_positiveEndCoord, endSign_inf]
   linarith
 
 /-- On the receiving truncation `S_{L/2}`, the receiving piece agrees with the map near every
@@ -501,7 +547,8 @@ private theorem receivingPiece_eventuallyEq (u : ℝ × ℝ → V) {z : ℝ × �
     (fun z ↦ endCutoff q (L / 2 + 1) z • u z) =ᶠ[𝓝 z] u := by
   have hz' := mem_truncation.1 hz
   filter_upwards [endCutoff_eventuallyEq_one (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q)
-    (by linarith [hz'.2.2 q] : q.endSign * (q.endCoord _).re < L / 2 + 1)] with z' hz''
+    (by rw [fst_positiveEndCoord]; linarith [hz'.2.2 q] : (positiveEndCoord q z).1 < L / 2 + 1)]
+    with z' hz''
   rw [hz'', one_smul]
 
 /-- On the inserted truncation `S_{L/2}`, the inserted piece agrees with `u ∘ ψ` near every
@@ -512,7 +559,8 @@ private theorem insertedPiece_eventuallyEq (u : ℝ × ℝ → V) {w : ℝ × �
       fun w ↦ u (realChart (q.plumbingMap L) w) := by
   have hw' := mem_truncation.1 hw
   filter_upwards [endCutoff_eventuallyEq_one (ne_endCenter ⟨hw'.1, hw'.2.1⟩ inf)
-    (by linarith [hw'.2.2 inf] : inf.endSign * (inf.endCoord _).re < L / 2 + 1)] with w' hw''
+    (by rw [fst_positiveEndCoord]; linarith [hw'.2.2 inf] : (positiveEndCoord inf w).1 < L / 2 + 1)]
+    with w' hw''
   rw [hw'', one_smul]
 
 /-! ### The energy and curvature of the two pieces -/
