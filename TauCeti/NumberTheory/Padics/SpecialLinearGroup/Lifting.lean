@@ -49,12 +49,19 @@ conjugating by elements of `H` lifting `SL₂(𝔽_ℓ)` makes it stable under c
 Hence `L_k = 𝔰𝔩₂(𝔽_ℓ)` for every `k ≥ 1`. By induction on `k`, every `g ∈ SL₂(ℤ_ℓ)` is then
 congruent modulo `ℓᵏ` to an element of `H`: the error term of an approximation modulo `ℓᵏ` has
 trace zero modulo `ℓ`, so it is absorbed by an element of `H` from the layer `L_k`. So `H` is dense,
-and being closed it is everything.
+and being closed it is everything. This approximation and density step is stated separately, from
+an arbitrary starting level `ℓ ^ (k₀ + 1)`, since the `ℓ = 2, 3` versions of the lemma run the same
+induction from a higher level.
 
 ## Main results
 
 * `TauCeti.eq_top_of_isClosed_of_map_toZMod_eq_top`: for a prime `ℓ ≥ 5`, a closed subgroup of
   `SL₂(ℤ_ℓ)` that surjects onto `SL₂(𝔽_ℓ)` is all of `SL₂(ℤ_ℓ)`.
+* `TauCeti.exists_mem_eq_add_pow_smul_of_le` and
+  `TauCeti.eq_top_of_isClosed_of_exists_mem_eq_add_pow_smul`: if every element of `SL₂(ℤ_ℓ)` is
+  approximated modulo `ℓ ^ (k₀ + 1)` by elements of `H`, and every layer from `L_{k₀+1}` on is all
+  of `𝔰𝔩₂(𝔽_ℓ)`, then every element is approximated modulo every `ℓ ^ (k + 1)`, `k ≥ k₀`; so a
+  closed such `H` is all of `SL₂(ℤ_ℓ)`.
 * `TauCeti.eq_comap_map_det_of_isClosed`: for a prime `ℓ ≥ 5`, a closed subgroup of `GL₂(ℤ_ℓ)`
   whose reduction contains `SL₂(𝔽_ℓ)` is the preimage of its determinant image.
 * `TauCeti.eq_top_of_isClosed_of_map_det_eq_top`: if moreover its determinant is surjective, it is
@@ -81,12 +88,6 @@ variable {ℓ : ℕ} [hℓ : Fact ℓ.Prime]
 /-- For `ℓ ≥ 5`, `2` is nonzero in `𝔽_ℓ`. -/
 private theorem two_ne_zero_of_five_le (hℓ5 : 5 ≤ ℓ) : (2 : ZMod ℓ) ≠ 0 := by
   exact_mod_cast ZMod.natCast_ne_zero_of_mem_Ico (k := 2) (Finset.mem_Ico.2 ⟨by norm_num, by omega⟩)
-
-/-- The product of an element of `SL₂(ℤ_ℓ)` and its inverse, as matrices, is `1`. -/
-private theorem coe_mul_coe_inv (h : SL(2, ℤ_[ℓ])) :
-    (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) * ((h⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) =
-      1 := by
-  rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
 
 /-! ### The layers of a subgroup of `SL₂(ℤ_ℓ)` -/
 
@@ -136,7 +137,7 @@ private theorem conj_mem_layer {H : Subgroup SL(2, ℤ_[ℓ])}
     h₀ * h * h₀⁻¹, H.mul_mem (H.mul_mem hh₀ hh) (H.inv_mem hh₀), ?_⟩
   · simp [← map_inv]
   · rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, e, mul_add, mul_one, add_mul,
-      coe_mul_coe_inv, mul_smul_comm, smul_mul_assoc]
+      SpecialLinearGroup.coe_mul_coe_inv, mul_smul_comm, smul_mul_assoc]
 
 /-- The `ℓ`-th power map sends each layer into the next one. -/
 private theorem layer_le_layer_succ (hℓ5 : 5 ≤ ℓ) (H : Subgroup SL(2, ℤ_[ℓ])) (k : ℕ) :
@@ -194,42 +195,54 @@ private theorem layer_eq_ker_trace (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[
 
 /-! ### Approximation and density -/
 
-/-- If `H` surjects onto `SL₂(𝔽_ℓ)` and `ℓ ≥ 5`, every element of `SL₂(ℤ_ℓ)` is congruent modulo
-`ℓ ^ (k + 1)` to an element of `H`. -/
-private theorem exists_mem_eq_add_pow_smul (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[ℓ])}
-    (hmap : H.map (SpecialLinearGroup.map (toZMod (p := ℓ))) = ⊤) (k : ℕ) (g : SL(2, ℤ_[ℓ])) :
+/-- If `H` surjects onto `SL₂(𝔽_ℓ)`, every element of `SL₂(ℤ_ℓ)` is congruent modulo `ℓ` to an
+element of `H`. -/
+private theorem exists_mem_eq_add_smul {H : Subgroup SL(2, ℤ_[ℓ])}
+    (hmap : H.map (SpecialLinearGroup.map (toZMod (p := ℓ))) = ⊤) (g : SL(2, ℤ_[ℓ])) :
+    ∃ h ∈ H, ∃ Z, (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (0 + 1) • Z := by
+  obtain ⟨h, hh, hgh⟩ : SpecialLinearGroup.map toZMod g ∈ H.map (SpecialLinearGroup.map toZMod) :=
+    hmap ▸ Subgroup.mem_top _
+  obtain ⟨Z, hZ⟩ := exists_eq_nsmul_of_map_toZMod_eq_zero
+    (X := (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) - (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])) (by
+      rw [Matrix.map_sub _ (map_sub toZMod), ← SpecialLinearGroup.map_apply_coe,
+        ← SpecialLinearGroup.map_apply_coe, hgh, sub_self])
+  exact ⟨h, hh, Z, by rw [zero_add, pow_one, ← hZ, add_sub_cancel]⟩
+
+/-- The approximation step of Serre's lifting lemma, from level `ℓ ^ (k₀ + 1)` on. Suppose every
+element of `SL₂(ℤ_ℓ)` is congruent modulo `ℓ ^ (k₀ + 1)` to an element of `H`, and for every
+`k ≥ k₀` each trace-zero `Y ∈ M₂(𝔽_ℓ)` is the reduction of some `X` with `1 + ℓ ^ (k + 1) X ∈ H`.
+Then every element of `SL₂(ℤ_ℓ)` is congruent modulo `ℓ ^ (k + 1)` to an element of `H`, for
+every `k ≥ k₀`. -/
+theorem exists_mem_eq_add_pow_smul_of_le {H : Subgroup SL(2, ℤ_[ℓ])} {k₀ : ℕ}
+    (hbase : ∀ g : SL(2, ℤ_[ℓ]), ∃ h ∈ H, ∃ Z,
+      (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k₀ + 1) • Z)
+    (hlayer : ∀ k, k₀ ≤ k → ∀ Y : Matrix (Fin 2) (Fin 2) (ZMod ℓ), Y.trace = 0 →
+      ∃ X, toZMod.mapMatrix X = Y ∧
+        ∃ h ∈ H, (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + ℓ ^ (k + 1) • X)
+    {k : ℕ} (hk : k₀ ≤ k) (g : SL(2, ℤ_[ℓ])) :
     ∃ h ∈ H, ∃ Z, (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k + 1) • Z := by
-  induction k with
-  | zero =>
-    obtain ⟨h, hh, hgh⟩ : SpecialLinearGroup.map toZMod g ∈ H.map (SpecialLinearGroup.map toZMod) :=
-      hmap ▸ Subgroup.mem_top _
-    obtain ⟨Z, hZ⟩ := exists_eq_nsmul_of_map_toZMod_eq_zero
-      (X := (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) - (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])) (by
-        rw [Matrix.map_sub _ (map_sub toZMod), ← SpecialLinearGroup.map_apply_coe,
-          ← SpecialLinearGroup.map_apply_coe, hgh, sub_self])
-    exact ⟨h, hh, Z, by rw [zero_add, pow_one, ← hZ, add_sub_cancel]⟩
-  | succ k ih =>
+  induction k, hk using Nat.le_induction with
+  | base => exact hbase g
+  | succ k hk ih =>
     obtain ⟨h, hh, Z, hZ⟩ := ih
     set hinv : Matrix (Fin 2) (Fin 2) ℤ_[ℓ] := ((h⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])
-    have hhinv : (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) * hinv = 1 := coe_mul_coe_inv h
     -- The error term `h⁻¹ g = 1 + ℓ ^ (k + 1) h⁻¹ Z` has trace zero modulo `ℓ`.
     have hdet : (1 + ℓ ^ (k + 1) • (hinv * Z)).det = 1 := by
       have : (1 : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) + ℓ ^ (k + 1) • (hinv * Z) =
           ((h⁻¹ * g : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) := by
-        rw [SpecialLinearGroup.coe_mul, hZ, mul_add, mul_smul_comm, ← SpecialLinearGroup.coe_mul,
-          inv_mul_cancel, SpecialLinearGroup.coe_one]
+        rw [SpecialLinearGroup.coe_mul, hZ, mul_add, mul_smul_comm,
+          SpecialLinearGroup.coe_inv_mul_coe]
       rw [this]
       exact (h⁻¹ * g).prop
-    have hmem : toZMod.mapMatrix (hinv * Z) ∈ layer H k := by
-      rw [layer_eq_ker_trace hℓ5 hmap, LinearMap.mem_ker, traceLinearMap_apply]
-      exact trace_map_toZMod_eq_zero_of_det_one_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero)
+    obtain ⟨X, hX, h', hh', e'⟩ := hlayer k hk (toZMod.mapMatrix (hinv * Z)) <|
+      trace_map_toZMod_eq_zero_of_det_one_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero)
         (pow_ne_zero _ hℓ.out.ne_zero) hdet
-    obtain ⟨X, hX, h', hh', e'⟩ := hmem
     obtain ⟨W, hW⟩ := exists_eq_nsmul_of_map_toZMod_eq_zero (X := hinv * Z - X)
       (by rw [← RingHom.mapMatrix_apply, map_sub, hX, sub_self])
     refine ⟨h * h', H.mul_mem hh hh', h * W, ?_⟩
     calc (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])
-        = h + ℓ ^ (k + 1) • (h * (hinv * Z)) := by rw [hZ, ← mul_assoc, hhinv, one_mul]
+        = h + ℓ ^ (k + 1) • (h * (hinv * Z)) := by
+          rw [hZ, ← mul_assoc, SpecialLinearGroup.coe_mul_coe_inv, one_mul]
       _ = h + ℓ ^ (k + 1) • (h * (X + ℓ • W)) := by rw [← hW, add_sub_cancel]
       _ = h * (1 + ℓ ^ (k + 1) • X) + ℓ ^ (k + 1 + 1) • (h * W) := by
         simp only [mul_add, mul_one, mul_smul_comm, smul_add, smul_smul, ← pow_succ]
@@ -237,17 +250,36 @@ private theorem exists_mem_eq_add_pow_smul (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(
       _ = ((h * h' : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) + ℓ ^ (k + 1 + 1) • (h * W) := by
         rw [SpecialLinearGroup.coe_mul, e']
 
+/-- The density step of Serre's lifting lemma, from level `ℓ ^ (k₀ + 1)` on. Suppose every
+element of `SL₂(ℤ_ℓ)` is congruent modulo `ℓ ^ (k₀ + 1)` to an element of the closed subgroup `H`,
+and for every `k ≥ k₀` each trace-zero `Y ∈ M₂(𝔽_ℓ)` is the reduction of some `X` with
+`1 + ℓ ^ (k + 1) X ∈ H`. Then `H` is all of `SL₂(ℤ_ℓ)`. -/
+theorem eq_top_of_isClosed_of_exists_mem_eq_add_pow_smul {H : Subgroup SL(2, ℤ_[ℓ])}
+    (hH : IsClosed (H : Set SL(2, ℤ_[ℓ]))) {k₀ : ℕ}
+    (hbase : ∀ g : SL(2, ℤ_[ℓ]), ∃ h ∈ H, ∃ Z,
+      (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k₀ + 1) • Z)
+    (hlayer : ∀ k, k₀ ≤ k → ∀ Y : Matrix (Fin 2) (Fin 2) (ZMod ℓ), Y.trace = 0 →
+      ∃ X, toZMod.mapMatrix X = Y ∧
+        ∃ h ∈ H, (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + ℓ ^ (k + 1) • X) :
+    H = ⊤ := by
+  refine eq_top_iff.2 fun g _ ↦ ?_
+  choose h hh Z hZ using fun k ↦
+    exists_mem_eq_add_pow_smul_of_le hbase hlayer (Nat.le_add_left k₀ k) g
+  have hZ' (k : ℕ) : (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h k + ℓ ^ (k + 1) • (ℓ ^ k₀ • Z k) := by
+    rw [hZ k, smul_smul, ← pow_add, add_right_comm]
+  rw [← SetLike.mem_coe, ← hH.closure_eq]
+  exact mem_closure_of_tendsto
+    (SpecialLinearGroup.isClosedEmbedding_val.isInducing.tendsto_nhds_iff.2
+      (tendsto_of_eq_add_pow_nsmul hZ')) (Eventually.of_forall hh)
+
 /-- **Serre's lifting lemma.** For a prime `ℓ ≥ 5`, a closed subgroup of `SL₂(ℤ_ℓ)` whose
 reduction modulo `ℓ` is all of `SL₂(𝔽_ℓ)` is all of `SL₂(ℤ_ℓ)`. -/
 theorem eq_top_of_isClosed_of_map_toZMod_eq_top (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[ℓ])}
     (hH : IsClosed (H : Set SL(2, ℤ_[ℓ])))
-    (hmap : H.map (SpecialLinearGroup.map (toZMod (p := ℓ))) = ⊤) : H = ⊤ := by
-  refine eq_top_iff.2 fun g _ ↦ ?_
-  choose h hh Z hZ using fun k ↦ exists_mem_eq_add_pow_smul hℓ5 hmap k g
-  rw [← SetLike.mem_coe, ← hH.closure_eq]
-  exact mem_closure_of_tendsto
-    (SpecialLinearGroup.isClosedEmbedding_val.isInducing.tendsto_nhds_iff.2
-      (tendsto_of_eq_add_pow_nsmul hZ)) (Eventually.of_forall hh)
+    (hmap : H.map (SpecialLinearGroup.map (toZMod (p := ℓ))) = ⊤) : H = ⊤ :=
+  eq_top_of_isClosed_of_exists_mem_eq_add_pow_smul hH (exists_mem_eq_add_smul hmap)
+    fun k _ Y hY ↦ (layer_eq_ker_trace hℓ5 hmap k).ge <| by
+      rwa [LinearMap.mem_ker, traceLinearMap_apply]
 
 /-! ### The `GL₂` form -/
 
