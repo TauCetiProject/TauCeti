@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Maps
@@ -26,17 +27,21 @@ For a locally finite graph the dimer configurations form a closed set of configu
 (`SimpleGraph.isClosed_setOf_isDimerConfiguration`): whether a vertex is covered exactly once
 depends only on the finitely many edges at that vertex. A graph isomorphism transports dimer
 configurations (`SimpleGraph.IsDimerConfiguration.comp_mapEdgeSet`), so for a group `Γ` acting on
-the edges through graph automorphisms the dimer configurations form a subshift,
-`G.dimerSubshift Γ`, the configuration space `𝔛(G)`. The automorphism group itself acts on the
-edges (`SimpleGraph.Iso.instMulActionEdgeSet`, with `SimpleGraph.Iso.exists_smul_eq_mapEdgeSet`),
-and a homomorphism `τ : Γ →* (G ≃g G)` induces an action of `Γ` of this kind by
-`MulAction.compHom` (`SimpleGraph.Iso.exists_compHom_smul_eq_mapEdgeSet`).
+the edges through graph automorphisms, moving a dimer configuration by `g : Γ` gives a dimer
+configuration (`SimpleGraph.IsDimerConfiguration.smul`) and the dimer configurations form a
+subshift, `G.dimerSubshift Γ`, the configuration space `𝔛(G)`. The automorphism group itself acts
+on the edges (`SimpleGraph.Iso.instMulActionEdgeSet`, with
+`SimpleGraph.Iso.exists_smul_eq_mapEdgeSet`), and a homomorphism `τ : Γ →* (G ≃g G)` induces an
+action of `Γ` of this kind by `MulAction.compHom`
+(`SimpleGraph.Iso.exists_compHom_smul_eq_mapEdgeSet`).
 
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
 `G.dimerCompletionSet F ω` is the set of dimer configurations agreeing with `ω` off `F`.
 It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
 (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration; at
 `F = ∅` it is then the singleton `{ω}` (`SimpleGraph.dimerCompletionSet_empty`).
+Moving configurations by `g : Γ` maps `Ω_F(ω)` bijectively onto the completion set of the moved
+configuration at `g • F` (`SimpleGraph.sum_dimerCompletionSet_smul`).
 Each member is the gluing of its restriction to `F` to `ω` off `F`
 (`Function.updateFinset_restrict_of_eqOn_compl`), so a sum over the completion set
 is a sum over the configurations `η` on `F` whose gluing to `ω` is a dimer configuration
@@ -222,6 +227,15 @@ theorem isClosed_setOf_isDimerConfiguration [G.LocallyFinite] :
 
 /-! ### The subshift of dimer configurations -/
 
+/-- For a group `Γ` acting on the edges through graph automorphisms, moving a dimer configuration
+by an element of `Γ` gives a dimer configuration. -/
+theorem IsDimerConfiguration.smul {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
+    (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e) {ω : G.edgeSet → Bool}
+    (hω : G.IsDimerConfiguration ω) (g : Γ) : G.IsDimerConfiguration fun e => ω (g⁻¹ • e) := by
+  obtain ⟨φ, hφ⟩ := hΓ g⁻¹
+  have : (fun e => ω (g⁻¹ • e)) = ω ∘ φ.mapEdgeSet := funext fun e => by simp [hφ e]
+  simpa only [this] using hω.comp_mapEdgeSet φ
+
 variable (G) in
 /-- The subshift `𝔛(G)` of dimer configurations of a locally finite graph `G`, for a group `Γ`
 acting on the edges through graph automorphisms. -/
@@ -230,10 +244,7 @@ def dimerSubshift [G.LocallyFinite] (Γ : Type*) [Group Γ] [MulAction Γ G.edge
     TauCeti.Subshift Γ G.edgeSet Bool where
   carrier := {ω | G.IsDimerConfiguration ω}
   isClosed := isClosed_setOf_isDimerConfiguration
-  smul_mem' g ω hω := by
-    obtain ⟨φ, hφ⟩ := hΓ g⁻¹
-    have : (fun e => ω (g⁻¹ • e)) = ω ∘ φ.mapEdgeSet := funext fun e => by simp [hφ e]
-    simpa only [mem_ofPred_eq, this] using hω.comp_mapEdgeSet φ
+  smul_mem' g _ hω := hω.smul hΓ g
 
 @[simp]
 theorem mem_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
@@ -332,6 +343,32 @@ theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
   by_cases he : e ∈ F
   · exact congrFun h ⟨e, he⟩
   · rw [h₁.2 e he, h₂.2 e he]
+
+open scoped Pointwise in
+/-- **Moving a completion set.** For a group `Γ` acting on the edges through graph automorphisms,
+the map `σ_g ω = (e ↦ ω (g⁻¹ • e))` is a bijection from the completion set `Ω_F(ω)` onto
+`Ω_{g • F}(σ_g ω)`, so sums over the two sets agree. -/
+theorem sum_dimerCompletionSet_smul [DecidableEq G.edgeSet] {Γ : Type*} [Group Γ]
+    [MulAction Γ G.edgeSet] (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e)
+    {M : Type*} [AddCommMonoid M] (g : Γ) (F : Finset G.edgeSet) (ω : G.edgeSet → Bool)
+    (f : (G.edgeSet → Bool) → M) :
+    ∑ ω' ∈ (G.finite_dimerCompletionSet (g • F) fun e => ω (g⁻¹ • e)).toFinset, f ω' =
+      ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset, f fun e => ω' (g⁻¹ • e) := by
+  symm
+  refine Finset.sum_nbij' (fun ω' e => ω' (g⁻¹ • e)) (fun ω' e => ω' (g • e)) ?_ ?_ ?_ ?_
+    fun _ _ => rfl
+  · intro ω' hω'
+    simp only [Finite.mem_toFinset, mem_dimerCompletionSet] at hω' ⊢
+    refine ⟨hω'.1.smul hΓ g, fun e he => hω'.2 _ fun h => he ?_⟩
+    rwa [← Finset.inv_smul_mem_iff]
+  · intro ω' hω'
+    simp only [Finite.mem_toFinset, mem_dimerCompletionSet] at hω' ⊢
+    refine ⟨by simpa using hω'.1.smul hΓ g⁻¹, fun e he => ?_⟩
+    rw [hω'.2 _ fun h => he ((Finset.smul_mem_smul_finset_iff g).1 h), inv_smul_smul]
+  · intro ω' _
+    exact funext fun e => congrArg ω' (inv_smul_smul g e)
+  · intro ω' _
+    exact funext fun e => congrArg ω' (smul_inv_smul g e)
 
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/

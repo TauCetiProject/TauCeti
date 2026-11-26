@@ -23,7 +23,7 @@ Boltzmann laws `γ^w_F(· | ω)` (`SimpleGraph.dimerBoltzmann`), restricted to `
   `TauCeti.Subshift.measurable_updateFinset_exterior`,
   `SimpleGraph.measurable_dimerBoltzmann_apply`);
 * it is Markov (`SimpleGraph.isMarkovKernel_dimerKernel`), since `γ^w_F(· | ω)` is a probability
-  measure carried by dimer configurations;
+  measure carried by dimer configurations (`SimpleGraph.restrict_dimerSubshift_dimerBoltzmann`);
 * it is proper (`SimpleGraph.isProper_dimerKernel`), since every member of the completion set
   `Ω_F(ω)` agrees with `ω` off `F`;
 * the family is consistent, `γ^w_Λ ∘ γ^w_Δ = γ^w_Δ` for `Λ ⊆ Δ`
@@ -114,15 +114,22 @@ theorem dimerKernel_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) (ω : G
   rw [dimerKernel_apply_eq_comap]
   exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe).comap_apply _ _
 
+/-- The Boltzmann law `γ^w_F(· | ω)` is carried by the dimer configurations: restricting it to
+`𝔛(G)` does not change it. -/
+theorem restrict_dimerSubshift_dimerBoltzmann (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+    (ω : G.edgeSet → Bool) :
+    (G.dimerBoltzmann w F ω).restrict (G.dimerSubshift Γ hΓ) = G.dimerBoltzmann w F ω := by
+  refine Measure.restrict_eq_self_of_ae_mem ?_
+  rw [ae_iff]
+  simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω
+
 /-- Integrating against `γ^w_F(· | ω)` on `𝔛(G)` is integrating against the Boltzmann law. -/
 theorem lintegral_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
     (ω : G.dimerSubshift Γ hΓ) (f : (G.edgeSet → Bool) → ℝ≥0∞) :
     ∫⁻ x, f x.val ∂dimerKernel Γ hΓ w F ω = ∫⁻ x, f x ∂G.dimerBoltzmann w F ω.val := by
   have h := lintegral_subtype_comap (μ := G.dimerBoltzmann w F ω.val)
     (G.dimerSubshift Γ hΓ).measurableSet_coe f
-  refine h.trans (congrArg (lintegral · f) (Measure.restrict_eq_self_of_ae_mem ?_))
-  rw [ae_iff]
-  simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω.val
+  rwa [restrict_dimerSubshift_dimerBoltzmann] at h
 
 variable (Γ hΓ) in
 /-- For a positive weight, the kernel `γ^w_F` is Markov. -/
