@@ -200,12 +200,7 @@ theorem semiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {k : ℕ} {
 @[simp]
 theorem semiclassicalSobolevNorm_comp_sub (k : ℕ) (h : ℝ) (f : E → F) (a : E) :
     semiclassicalSobolevNorm k h (fun x ↦ f (x - a)) = semiclassicalSobolevNorm k h f := by
-  simp only [semiclassicalSobolevNorm, iteratedFDeriv_comp_sub', ← toReal_eLpNorm]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  conv_rhs => rw [← (measurePreserving_sub_right volume a).map_eq]
-  rw [(measurableEmbedding_subRight a).eLpNorm_map_measure]
-  rfl
+  simp only [semiclassicalSobolevNorm, iteratedFDeriv_comp_sub', lpNorm_comp_sub_right]
 
 /-- Multiplying the semiclassical norm by `h^(n/2)` removes the volume normalization:
 `h^(n/2) ‖f‖_{k,h} = ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂`. -/

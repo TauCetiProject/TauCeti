@@ -214,7 +214,7 @@ theorem mixedIteratedFDeriv_comp_normalDilation_of_ne_zero (n a : ℕ) (f : E �
     V.mixedIteratedFDeriv n a (f ∘ V.normalDilation t) =
       t ^ (n - a) • (V.mixedIteratedFDeriv n a f ∘ V.normalDilation t) := by
   have hcomp : f ∘ V.normalDilation t = f ∘ V.normalDilationEquiv ht := by
-    rw [← V.coe_normalDilationEquiv ht, ContinuousLinearEquiv.coe_coe]
+    rw [coeFn_normalDilationEquiv]
   ext x m
   rw [mixedIteratedFDeriv_apply, hcomp, ContinuousLinearEquiv.iteratedFDeriv_comp_right,
     ContinuousMultilinearMap.compContinuousLinearMap_apply, coe_normalDilationEquiv,

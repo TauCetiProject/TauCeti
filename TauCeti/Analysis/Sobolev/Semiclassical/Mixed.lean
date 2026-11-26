@@ -271,11 +271,7 @@ theorem mixedSemiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {j : �
 theorem mixedSemiclassicalSobolevNorm_comp_sub (j : ℕ) (h : ℝ) (f : E → F) (c : E) :
     V.mixedSemiclassicalSobolevNorm j h (fun x ↦ f (x - c)) =
       V.mixedSemiclassicalSobolevNorm j h f := by
-  simp only [mixedSemiclassicalSobolevNorm, mixedIteratedFDeriv_comp_sub, ← toReal_eLpNorm]
-  congr 1
-  refine sum_congr rfl fun n _ ↦ sum_congr rfl fun a _ ↦ ?_
-  conv_rhs => rw [← (measurePreserving_sub_right volume c).map_eq]
-  rw [(measurableEmbedding_subRight c).eLpNorm_map_measure, Function.comp_def]
+  simp only [mixedSemiclassicalSobolevNorm, mixedIteratedFDeriv_comp_sub, lpNorm_comp_sub_right]
 
 /-- **Change of variables under the normal dilation.** Composing with the normal dilation by
 `h > 0` multiplies `Lᵖ` norms against an additive Haar measure by `h^(-dim V / p)`. The exponent
@@ -296,7 +292,7 @@ theorem lpNorm_comp_normalDilation {G : Type*} [NormedAddCommGroup G] [μ.IsAddH
       ← Real.rpow_mul hh.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
   rw [← toReal_eLpNorm, ← toReal_eLpNorm]
   rw [hdet] at hc
-  rw [← V.coe_normalDilationEquiv hh.ne', ContinuousLinearEquiv.coe_coe, hc,
+  rw [← V.coeFn_normalDilationEquiv hh.ne', hc,
     ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), hval]
 
 
@@ -393,7 +389,7 @@ theorem exists_norm_le_mul_mixedSemiclassicalSobolevNorm {j : ℕ} (hj : finrank
   have hgm (n : ℕ) (hn : n ≤ j) (a : ℕ) (ha : a ≤ n) :
       MemLp (V.mixedIteratedFDeriv n a g) 2 := by
     rw [V.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero n a f hh.ne',
-      ← V.coe_normalDilationEquiv hh.ne', ContinuousLinearEquiv.coe_coe]
+      ← V.coeFn_normalDilationEquiv hh.ne']
     exact ((hm n hn a ha).comp_continuousLinearEquiv _).const_smul _
   obtain ⟨hDg, hle⟩ := V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le hg hgm
   have hx : g ((V.normalDilationEquiv hh.ne').symm x) = f x := by

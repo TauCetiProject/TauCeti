@@ -91,6 +91,10 @@ theorem coe_normalDilationEquiv {t : ℝ} (ht : t ≠ 0) :
   (rfl)
 
 @[simp]
+theorem coeFn_normalDilationEquiv {t : ℝ} (ht : t ≠ 0) :
+    ⇑(V.normalDilationEquiv ht) = V.normalDilation t :=
+  (rfl)
+
 theorem normalDilationEquiv_apply {t : ℝ} (ht : t ≠ 0) (x : E) :
     V.normalDilationEquiv ht x = V.normalDilation t x :=
   (rfl)
