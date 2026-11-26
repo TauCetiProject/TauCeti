@@ -81,6 +81,8 @@ with no continuity assumed) and computes their principal symbols:
 * `OpenPartialHomeomorph.complexChartCompression_comp_apply`: the compression of a composition
   `A ∘ B` is the compression of `A` after that of `B`, through a cutoff equal to `1` where the
   outputs of `B` live.
+* `OpenPartialHomeomorph.complexChartCompression_mulLeft_complexCutoffPullback_comp`: multiplying
+  an operator by the pullback of a cutoff moves the cutoff into its chart compressions.
 
 ## References
 
@@ -658,6 +660,28 @@ theorem complexChartCompression_comp_apply (φ ψ χ : 𝓓(⟨e.target, e.open_
       e.complexChartCompression he φ χ A (e.complexChartCompression he χ ψ B f) := by
   simp only [complexChartCompression_def, LinearMap.comp_apply,
     complexCutoffPullback_complexCutoffPushforward he χ hB]
+
+/-- **Chart compressions of a multiplication by a cutoff.** Multiplying an operator `T` on the left
+by the pullback `θ ∘ e` of a cutoff `θ` moves `θ` into the outer cutoff of its chart compressions:
+if `χ` equals `1` on the support of `θ`, the compression of `(θ ∘ e) T` by `χ` and `ψ` is the
+compression of `T` by `θ` and `ψ`. -/
+theorem complexChartCompression_mulLeft_complexCutoffPullback_comp
+    {θ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport θ, χ y = 1)
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (T : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he χ ψ
+        (LinearMap.mulLeft ℂ (e.complexCutoffPullback he θ 1) ∘ₗ T) =
+      e.complexChartCompression he θ ψ T := by
+  ext f y
+  simp only [complexChartCompression_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
+    ContMDiffMap.coe_mul, Pi.mul_apply]
+  by_cases hθ : θ y = 0
+  · by_cases hy : y ∈ e.target
+    · simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy, hθ]
+    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (χ.tsupport_subset h), hθ]
+  · have hy : y ∈ e.target := θ.tsupport_subset (subset_tsupport _ hθ)
+    simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy,
+      hχ y (subset_tsupport _ hθ)]
 
 end Complex
 
