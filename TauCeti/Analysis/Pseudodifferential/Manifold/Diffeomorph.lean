@@ -217,6 +217,7 @@ theorem classicalPrincipalSymbol_pushforwardOperator [IsManifold 𝓘(ℝ, Coord
 `ξ ∈ T*_y N` is the principal symbol of `P` at the preimage `Φ⁻¹ y` and the pulled-back covector
 `ξ ∘ dΦ_{Φ⁻¹ y}`: `classicalPrincipalSymbol_pushforwardOperator` read at an arbitrary point of
 `N`. -/
+@[simp]
 theorem classicalPrincipalSymbol_pushforwardOperator_apply
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N] {m : ℝ}
     (y : N) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) y →L[ℝ] ℝ) :
