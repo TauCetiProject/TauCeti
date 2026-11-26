@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 public import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
 # A rank-one operator: off-diagonal interpolation needs `q₀ ≠ q₁`
@@ -21,17 +22,18 @@ and a weak type `(p₁, q₁)` bound for a subadditive operator `T`, and it assu
 
 Let `T` be the rank-one operator `T f (y) = (∫_0^1 f) |y|^{-1/2}`. Its modulus is dominated by
 the sublinear operator `rankOneOperator g y = (∫_0^1 |g|) |y|^{-1/2}`, with values in `ℝ≥0∞`
-(`eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator`), which equals it for nonnegative `g`. Since
-`|y|^{-1/2}` lies in weak `L²` but not in `L²`:
+(`eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator`), which equals it for nonnegative `g`
+integrable on `[0, 1]`, away from `y = 0`. Since `|y|^{-1/2}` lies in weak `L²` but not in `L²`:
 
 * `rankOneOperator` is subadditive (`rankOneOperator_add_le`);
-* it is of weak type `(1, 2)` (`rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_one`) and of
-  weak type `(2, 2)` (`rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_two`), both with
+* it is of weak type `(1, 2)` (`rpow_two_mul_volume_lt_rankOneOperator_le_mul_lintegral_eNorm`)
+  and of weak type `(2, 2)`
+  (`rpow_two_mul_volume_lt_rankOneOperator_le_mul_lintegral_eNorm_rpow_two`), both with
   constant `2`, in exactly the form of the hypotheses of the off-diagonal theorem;
 * it is not of strong type `(4/3, 2)` with any finite constant
   (`not_exists_lintegral_rankOneOperator_rpow_le`), since it maps the indicator of `[0, 1]`, which
   lies in every `Lᵖ`, to `|y|^{-1/2}`, which is not square integrable
-  (`lintegral_eNorm_rpow_neg_one_eq_top`).
+  (`TauCeti.setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior`).
 
 The same holds for the linear operator `T` itself: its distribution function obeys the same
 bound (`rpow_two_mul_volume_lt_eNorm_setIntegral_mul_abs_rpow_le`), and it is not of strong type
@@ -58,8 +60,8 @@ public noncomputable section
 namespace TauCeti.Examples.MarcinkiewiczRankOne
 
 /-- The sublinear rank-one operator `g ↦ (∫_0^1 |g|) |y|^{-1/2}` on the real line, with values in
-`ℝ≥0∞`. It is the modulus of the linear operator `f ↦ (∫_0^1 f) |y|^{-1/2}` on nonnegative
-functions, and it dominates that modulus in general. -/
+`ℝ≥0∞`. It dominates the modulus of the linear operator `f ↦ (∫_0^1 f) |y|^{-1/2}`, and equals
+it for nonnegative functions integrable on `[0, 1]`, away from `y = 0`. -/
 def rankOneOperator (g : ℝ → ℝ) (y : ℝ) : ℝ≥0∞ :=
   (∫⁻ x in Icc 0 1, ‖g x‖ₑ) * ‖y‖ₑ ^ (-(1 / 2 : ℝ))
 
@@ -67,6 +69,11 @@ def rankOneOperator (g : ℝ → ℝ) (y : ℝ) : ℝ≥0∞ :=
 theorem rankOneOperator_apply (g : ℝ → ℝ) (y : ℝ) :
     rankOneOperator g y = (∫⁻ x in Icc 0 1, ‖g x‖ₑ) * ‖y‖ₑ ^ (-(1 / 2 : ℝ)) :=
   (rfl)
+
+/-- For `y ≠ 0`, the power `‖y‖ₑ ^ s` is the real power `|y| ^ s`. -/
+private theorem eNorm_rpow_eq_ofReal_abs_rpow {y : ℝ} (hy : y ≠ 0) (s : ℝ) :
+    ‖y‖ₑ ^ s = ENNReal.ofReal (|y| ^ s) := by
+  rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
 
 /-- The rank-one operator dominates the modulus of the linear operator
 `f ↦ (∫_0^1 f) |y|^{-1/2}`. -/
@@ -77,8 +84,8 @@ theorem eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator (g : ℝ → ℝ) (y :
   · simp
   · gcongr
     · exact eNorm_integral_le_lintegral_eNorm _
-    · rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _), Real.eNorm_eq_ofReal_abs,
-        ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
+    · rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _),
+        eNorm_rpow_eq_ofReal_abs_rpow hy]
 
 /-- The rank-one operator is subadditive. -/
 theorem rankOneOperator_add_le {g : ℝ → ℝ} (hg : AEMeasurable g (volume.restrict (Icc 0 1)))
@@ -115,8 +122,7 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le (g : ℝ → ℝ) (r : ℝ≥0
     · simp [sq_nonneg]
     have hyp : 0 < |y| := abs_pos.2 hy0
     rw [mem_ofPred_eq, ← ENNReal.ofReal_toReal hr', ← ENNReal.ofReal_toReal hI,
-      Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_pos hyp,
-      ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+      eNorm_rpow_eq_ofReal_abs_rpow hy0, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
       ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg] at hy
     have hs : 0 < |y| ^ (1 / 2 : ℝ) := Real.rpow_pos_of_pos hyp _
     rw [Real.rpow_neg hyp.le, ← div_eq_mul_inv, lt_div_iff₀ hs, ← lt_div_iff₀' hb] at hy
@@ -128,20 +134,17 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le (g : ℝ → ℝ) (r : ℝ≥0
         gcongr
     _ = 2 * I ^ (2 : ℝ) := by
       -- `b² · 2 (a / b)² = 2 a²`, computed in `ℝ`.
-      rw [Real.volume_Icc, ← ENNReal.ofReal_toReal hr', ← ENNReal.ofReal_toReal hI,
-        ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg two_pos.le,
-        ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg two_pos.le,
-        ← ENNReal.ofReal_mul (Real.rpow_nonneg ENNReal.toReal_nonneg _), ← ENNReal.ofReal_ofNat 2,
-        ← ENNReal.ofReal_mul zero_le_two]
+      rw [ENNReal.rpow_two, ENNReal.rpow_two, Real.volume_Icc, ← ENNReal.ofReal_toReal hr',
+        ← ENNReal.ofReal_toReal hI, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg,
+        ← ENNReal.ofReal_pow ENNReal.toReal_nonneg, ← ENNReal.ofReal_mul (sq_nonneg _),
+        ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
       congr 1
-      have h2 : (2 : ℝ) = ((2 : ℕ) : ℝ) := by norm_num
-      rw [h2, Real.rpow_natCast, Real.rpow_natCast]
       field_simp
       ring
 
 /-- **Weak type `(1, 2)`.** The rank-one operator satisfies the weak type `(1, 2)` bound with
 constant `2`, in the form of the hypotheses of the off-diagonal Marcinkiewicz theorem. -/
-theorem rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_one (g : ℝ → ℝ) (r : ℝ≥0∞) :
+theorem rpow_two_mul_volume_lt_rankOneOperator_le_mul_lintegral_eNorm (g : ℝ → ℝ) (r : ℝ≥0∞) :
     r ^ (2 : ℝ) * volume {y | r < rankOneOperator g y} ≤
       2 * (∫⁻ x, ‖g x‖ₑ ^ (1 : ℝ)) ^ ((2 : ℝ) / 1) := by
   refine (rpow_two_mul_volume_lt_rankOneOperator_le g r).trans ?_
@@ -152,7 +155,7 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_one (g : ℝ → ℝ
 /-- **Weak type `(2, 2)`.** The rank-one operator satisfies the weak type `(2, 2)` bound with
 constant `2`, in the form of the hypotheses of the off-diagonal Marcinkiewicz theorem. By the
 Cauchy–Schwarz inequality, `(∫_0^1 |g|)² ≤ ∫_0^1 |g|²`. -/
-theorem rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_two {g : ℝ → ℝ}
+theorem rpow_two_mul_volume_lt_rankOneOperator_le_mul_lintegral_eNorm_rpow_two {g : ℝ → ℝ}
     (hg : AEMeasurable g (volume.restrict (Icc 0 1))) (r : ℝ≥0∞) :
     r ^ (2 : ℝ) * volume {y | r < rankOneOperator g y} ≤
       2 * (∫⁻ x, ‖g x‖ₑ ^ (2 : ℝ)) ^ ((2 : ℝ) / 2) := by
@@ -170,18 +173,9 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le_lintegral_two {g : ℝ → ℝ
     _ ≤ ∫⁻ x, ‖g x‖ₑ ^ (2 : ℝ) := setLIntegral_le_lintegral _ _
 
 /-- The function `|y|^{-1}` is not integrable near `0`: `∫ |y|^{-1} dy = ∞` on the real line. -/
-theorem lintegral_eNorm_rpow_neg_one_eq_top : ∫⁻ y : ℝ, ‖y‖ₑ ^ (-1 : ℝ) = ⊤ := by
-  have hnot : ¬ IntegrableOn (fun y : ℝ => y ^ (-1 : ℝ)) (Ioo 0 1) := by
-    rw [intervalIntegral.integrableOn_Ioo_rpow_iff zero_lt_one]; norm_num
-  have hIoo : ∫⁻ y in Ioo (0 : ℝ) 1, ‖y‖ₑ ^ (-1 : ℝ) = ⊤ := by
-    by_contra hne
-    refine hnot ⟨(measurable_id.pow_const _).aestronglyMeasurable, ?_⟩
-    rw [hasFiniteIntegral_def]
-    refine lt_of_eq_of_lt (setLIntegral_congr_fun measurableSet_Ioo fun y hy => ?_)
-      (lt_top_iff_ne_top.2 hne)
-    rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg hy.1.le _), Real.eNorm_eq_ofReal hy.1.le,
-      ENNReal.ofReal_rpow_of_pos hy.1]
-  exact top_unique (hIoo ▸ setLIntegral_le_lintegral _ _)
+private theorem lintegral_eNorm_rpow_neg_one_eq_top : ∫⁻ y : ℝ, ‖y‖ₑ ^ (-1 : ℝ) = ⊤ := by
+  simpa using TauCeti.setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior (mu := volume)
+    (s := -1) (by simp) (Ω := univ) (x := (0 : ℝ)) (by simp)
 
 /-- The rank-one operator maps the indicator of `[0, 1]` to `|y|^{-1/2}`. -/
 theorem rankOneOperator_indicator (y : ℝ) :
@@ -250,9 +244,8 @@ theorem not_exists_lintegral_eNorm_setIntegral_mul_abs_rpow_le :
   rw [← lintegral_eNorm_rpow_neg_one_eq_top]
   refine lintegral_congr_ae ((Measure.ae_ne volume 0).mono fun y hy => ?_)
   simp only [hint, one_mul]
-  rw [ Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _),
-    Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy),
-    ENNReal.ofReal_rpow_of_nonneg
+  rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _),
+    eNorm_rpow_eq_ofReal_abs_rpow hy, ENNReal.ofReal_rpow_of_nonneg
       (Real.rpow_nonneg (abs_nonneg y) _) two_pos.le, ← Real.rpow_mul (abs_nonneg y)]
   norm_num
 
