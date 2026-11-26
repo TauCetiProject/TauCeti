@@ -14,6 +14,9 @@ A.e. finite strong measurability is equivalent to a.e. strong measurability toge
 vanishing a.e. outside a measurable sigma-finite support. This separates the topological
 measurability requirement from the measure-theoretic support requirement, for arbitrary
 measures and Hausdorff targets with zero.
+
+A continuous map sending zero to zero preserves a.e. finite strong measurability; this gives,
+for example, a.e. finite strong measurability of every scalar evaluation.
 -/
 
 public section
@@ -21,6 +24,18 @@ public section
 open Filter Set
 
 namespace MeasureTheory
+
+/-- Composing an a.e. finitely strongly measurable function with a continuous map sending zero
+to zero gives an a.e. finitely strongly measurable function. -/
+theorem _root_.Continuous.comp_aefinStronglyMeasurable {S X Y : Type*} [MeasurableSpace S]
+    [TopologicalSpace X] [Zero X] [TopologicalSpace Y] [Zero Y] {μ : Measure S}
+    {f : S → X} {g : X → Y} (hg : Continuous g) (hg0 : g 0 = 0)
+    (hf : AEFinStronglyMeasurable f μ) : AEFinStronglyMeasurable (fun s ↦ g (f s)) μ := by
+  obtain ⟨k, ⟨fs, hfin, hlim⟩, hfk⟩ := hf
+  refine ⟨fun s ↦ g (k s), ⟨fun n ↦ (fs n).map g, fun n ↦ (measure_mono ?_).trans_lt (hfin n),
+    fun s ↦ (hg.tendsto _).comp (hlim s)⟩, hfk.fun_comp g⟩
+  rw [SimpleFunc.coe_map]
+  exact Function.support_comp_subset hg0 _
 
 /-- A function is a.e. finitely strongly measurable exactly when it is a.e. strongly measurable
 and vanishes a.e. outside a measurable set on which the measure is sigma-finite. -/

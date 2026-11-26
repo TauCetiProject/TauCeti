@@ -104,7 +104,10 @@ private theorem aefinStronglyMeasurable_of_subspace_tests (E : Submodule 𝕜 X)
   have hg : AEStronglyMeasurable g μ := by
     refine aestronglyMeasurable_iff_nullMeasurable_separable.2 ⟨?_, univ,
       .of_separableSpace univ, Eventually.of_forall fun _ ↦ mem_univ _⟩
-    -- Use the null-measurable sigma-algebra, keeping the domain of `g` as `S`.
+    -- Use the null-measurable sigma-algebra, keeping the domain of `g` as `S`. Both
+    -- `NullMeasurable g μ` and each `NullMeasurable (fun s ↦ y (g s)) μ` unfold by definition to
+    -- measurability for `NullMeasurableSpace S μ`, so the scalar tests feed
+    -- `measurable_evalMeasurableSpace_iff` directly and `hmeas` closes the goal.
     have hmeas : @Measurable S E
         (inferInstance : MeasurableSpace (NullMeasurableSpace S μ)) (borel E) g := by
       rw [← hB]
@@ -136,15 +139,11 @@ theorem aefinStronglyMeasurable_iff_scalar_tests {f : S → X} :
       ∀ x' : StrongDual 𝕜 X, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ := by
   constructor
   · intro hf
+    refine ⟨?_, fun x' ↦ x'.continuous.comp_aefinStronglyMeasurable (map_zero x') hf⟩
     obtain ⟨g, hg, hfg⟩ := hf
     obtain ⟨⟨E, hEc, hEs, hgE⟩, -⟩ :=
       (stronglyMeasurable_iff_scalar_tests (𝕜 := 𝕜)).1 hg.stronglyMeasurable
-    refine ⟨⟨E, hEc, hEs, ?_⟩, fun x' ↦ ?_⟩
-    · filter_upwards [hfg] with s hs using hs.symm ▸ hgE s
-    · obtain ⟨t, ht, hz, hσ⟩ := hg.exists_set_sigmaFinite
-      have hm := x'.continuous.comp_stronglyMeasurable hg.stronglyMeasurable
-      exact ⟨fun s ↦ x' (g s), hm.finStronglyMeasurable_of_set_sigmaFinite
-        ht (fun s hs ↦ by rw [hz s hs, map_zero]) hσ, hfg.fun_comp x'⟩
+    exact ⟨E, hEc, hEs, by filter_upwards [hfg] with s hs using hs.symm ▸ hgE s⟩
   · rintro ⟨⟨E, -, hEs, hfE⟩, htest⟩
     have : SeparableSpace E := hEs.separableSpace
     have hsurj : (fun x' : StrongDual 𝕜 X ↦ x'.comp E.subtypeL) '' univ = univ := by
@@ -176,11 +175,7 @@ theorem aefinStronglyMeasurable_iff_separating_tests {E : Submodule 𝕜 X}
     AEFinStronglyMeasurable f μ ↔
       ∀ x' ∈ T, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ := by
   refine ⟨?_, aefinStronglyMeasurable_of_subspace_tests E ?_ hsep hfE⟩
-  · rintro ⟨g, hg, hfg⟩ x' _
-    obtain ⟨t, ht, hz, hσ⟩ := hg.exists_set_sigmaFinite
-    have hm := x'.continuous.comp_stronglyMeasurable hg.stronglyMeasurable
-    exact ⟨fun s ↦ x' (g s), hm.finStronglyMeasurable_of_set_sigmaFinite
-      ht (fun s hs ↦ by rw [hz s hs, map_zero]) hσ, hfg.fun_comp x'⟩
+  · exact fun hf x' _ ↦ x'.continuous.comp_aefinStronglyMeasurable (map_zero x') hf
   · apply evalMeasurableSpace_eq_borel_of_separating
     intro x hx
     exact Subtype.ext <| hsep x x.property fun x' hx' ↦ hx _ (mem_image_of_mem _ hx')
