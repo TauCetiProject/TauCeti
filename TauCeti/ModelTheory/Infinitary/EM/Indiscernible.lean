@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Semantics
+public import TauCeti.ModelTheory.Infinitary.Equiv
 public import Mathlib.Order.Hom.Basic
 
 /-!
@@ -20,7 +20,8 @@ tuple in its `n` bound positions, and `Δ` collects formulas of varying arity as
 
 Indiscernibility for `Δ` passes to smaller sets of formulas, and to subsequences: precomposing with
 an order embedding `K ↪o J` keeps it, and precomposing with an order isomorphism neither gains nor
-loses it.
+loses it. Moving the values of the sequence along an isomorphism of structures `M ≃[L] N` neither
+gains nor loses it either.
 
 ## Main definitions
 
@@ -35,11 +36,13 @@ loses it.
 * `FirstOrder.Language.IsIndiscernibleOn.comp_orderEmbedding` and
   `FirstOrder.Language.isIndiscernibleOn_comp_orderIso_iff`: restriction along an order embedding
   and transport along an order isomorphism of index types.
+* `FirstOrder.Language.isIndiscernibleOn_equiv_comp_iff`: transport along an isomorphism of
+  structures.
 -/
 
 public section
 
-universe u v w z z'
+universe u v w w' z z'
 
 namespace FirstOrder.Language
 
@@ -96,5 +99,15 @@ theorem isIndiscernibleOn_comp_orderIso_iff {a : J → M}
   refine ⟨fun h => ?_, fun h => h.comp_orderEmbedding e.toOrderEmbedding⟩
   have he : (a ∘ e) ∘ e.symm.toOrderEmbedding = a := funext fun x => by simp
   simpa only [he] using h.comp_orderEmbedding e.symm.toOrderEmbedding
+
+/-- **Transport along an isomorphism of structures.** Moving the values of a sequence along an
+isomorphism `M ≃[L] N` neither gains nor loses indiscernibility for `Δ`: the same increasing tuples
+of indices are compared on both sides. -/
+theorem isIndiscernibleOn_equiv_comp_iff {N : Type w'} [L.Structure N] (e : M ≃[L] N)
+    {a : J → M} {Δ : Set (Σ n, L.BoundedFormulaω Empty n)} :
+    IsIndiscernibleOn (e ∘ a) Δ ↔ IsIndiscernibleOn a Δ := by
+  have hv : (Empty.elim : Empty → N) = e ∘ Empty.elim := funext fun x => x.elim
+  simp only [isIndiscernibleOn_iff, hv, Function.comp_assoc,
+    StrongHomClass.realize_boundedFormulaInf]
 
 end FirstOrder.Language
