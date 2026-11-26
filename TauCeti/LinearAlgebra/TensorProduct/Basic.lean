@@ -22,7 +22,8 @@ Such contractions extract coordinates and test tensor identities, supporting com
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
 pure tensors over a finite spanning family of the right factor. It also expands pure tensors
-with a multiset sum in one factor.
+with a multiset sum in one factor. Finally, it shows that a scalar action which can be moved
+across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 
 ## Main declarations
 
@@ -63,6 +64,8 @@ with a multiset sum in one factor.
   `tensorTensorTensorComm` reassociates its value, and
   `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
   the first two factors.
+* `TensorProduct.CompatibleSMul.tensorProduct`: `K`-balanced and `R`-balanced tensors agreeing in
+  `M ⊗[R] N` agree in `M ⊗[R] (N ⊗[K] P)`.
 
 ## References
 
@@ -521,5 +524,25 @@ theorem injective_mk_one_iff (A : Type*) [Semiring A] [Algebra R A] :
     Function.Injective (mk R A M 1) ↔ Function.Injective ((Algebra.linearMap R A).rTensor M) := by
   rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
     EquivLike.injective_comp]
+
+section CompatibleSMul
+
+variable {K : Type*} [CommSemiring K] [Algebra R K] [Module K M] [Module K N] [IsScalarTower R K N]
+  [Module K P]
+
+/-- If `K`-balanced and `R`-balanced tensors agree in `M ⊗[R] N`, they agree in
+`M ⊗[R] (N ⊗[K] P)`, where `K` acts on `N ⊗[K] P` through `N`. -/
+-- A pure tensor `n ⊗ p` of `N ⊗[K] P` is the image of `n` under the `K`-linear map `· ⊗ p`.
+instance CompatibleSMul.tensorProduct [CompatibleSMul R K M N] :
+    CompatibleSMul R K M (N ⊗[K] P) where
+  smul_tmul k m t := by
+    induction t using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [smul_add, tmul_add, hs, ht]
+    | tmul n p =>
+      rw [smul_tmul']
+      exact congrArg (LinearMap.lTensor M (((TensorProduct.mk K N P).flip p).restrictScalars R))
+        (TensorProduct.smul_tmul (R := R) k m n)
+
+end CompatibleSMul
 
 end TensorProduct
