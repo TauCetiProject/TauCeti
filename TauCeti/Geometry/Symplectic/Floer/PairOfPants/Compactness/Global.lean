@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.End
 import TauCeti.Data.ENNReal.NatCastDiv
+import TauCeti.Geometry.Symplectic.Floer.Compactness.EndWindow
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.BubblingSet
@@ -172,25 +173,6 @@ private theorem isOpen_setOf_forall_fst_positiveEndCoord_lt (c : ℝ) :
   exact (continuousAt_fst_positiveEndCoord q (Puncture.ne_endCenter
     (mem_thricePuncturedSphereReal_iff.1 hzS) q)).eventually_lt continuousAt_const (hz q)
 
-/-- The end windows `(T + 1, T + 3) × (c - 2/5, c + 2/5)` of a positive end chart, with `c = 0`
-for `b = false` and `c = 1/2` for `b = true`. -/
-private noncomputable def endWindow (T : ℝ) (b : Bool) : Set (ℝ × ℝ) :=
-  Ioo (T + 1) (T + 3) ×ˢ
-    Ioo ((bif b then 1 / 2 else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)
-
-/-- The translates by `(m, 0)`, `m ≥ 0`, of the closed end windows lie beyond `T ≥ 0` in a band of
-angular width one. -/
-private theorem add_mem_Ioi_prod_Ioo {T : ℝ} (hT : 0 ≤ T) {m : ℝ} (hm : 0 ≤ m) {b : Bool}
-    {y : ℝ × ℝ} (hy : y ∈ Icc (T + 1) (T + 3) ×ˢ
-      Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)) :
-    y + (m, 0) ∈ Ioi (max T 0) ×ˢ
-      Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
-  obtain ⟨⟨hs, -⟩, ht₁, ht₂⟩ := hy
-  refine ⟨?_, ?_, ?_⟩
-  · rw [Prod.fst_add, mem_Ioi, max_eq_left hT]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
-
 /-- A point at least `T + 2` out along the end `q` lies in the image of an end window under
 `y ↦ φ'_q(y + (m, 0))` for some `m ∈ ℕ`. -/
 private theorem exists_mem_image_positiveEndChart_add {q : Puncture} {z : ℝ × ℝ}
@@ -201,28 +183,10 @@ private theorem exists_mem_image_positiveEndChart_add {q : Puncture} {z : ℝ ×
   set s := (positiveEndCoord q z).1
   set t := (positiveEndCoord q z).2
   have hzc : positiveEndChart q (s, t) = z := positiveEndChart_positiveEndCoord q hz
-  -- Translate by the integer part of `s - (T + 2)`.
-  set m := ⌊s - (T + 2)⌋₊
-  have hm₁ : (m : ℝ) ≤ s - (T + 2) := Nat.floor_le (by linarith)
-  have hm₂ : s - (T + 2) < m + 1 := Nat.lt_floor_add_one _
-  -- Shift the angular coordinate by an integer into one of the two windows.
+  -- Translate `(s, t)` into an end window, using that `φ'_q` has period one in `t`.
+  obtain ⟨m, k, b, hy⟩ := exists_sub_mem_endWindow (by linarith : T + 1 < s) t
   have hper : Periodic (fun t ↦ positiveEndChart q (s, t)) 1 := positiveEndChart_add_one q s
-  have hk (k : ℤ) : positiveEndChart q (s, t - k) = z := by
-    simpa [hzc] using hper.sub_int_mul_eq k (x := t)
-  have hy (b : Bool) (k : ℤ) (h₁ : (bif b then 1 / 2 else 0) - 2 / 5 < t - k)
-      (h₂ : t - k < (bif b then 1 / 2 else 0) + 2 / 5) : ∃ (m : ℕ) (b : Bool),
-        z ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' endWindow T b :=
-    ⟨m, b, (s - m, t - k), ⟨⟨by linarith, by linarith⟩, h₁, h₂⟩, by simpa using hk k⟩
-  have hf₀ : 0 ≤ t - ⌊t⌋ := Int.self_sub_floor t ▸ Int.fract_nonneg t
-  have hf₁ : t - ⌊t⌋ < 1 := Int.self_sub_floor t ▸ Int.fract_lt_one t
-  by_cases h₁ : t - ⌊t⌋ < 2 / 5
-  · exact hy false ⌊t⌋ (by simp only [Bool.cond_false]; linarith)
-      (by simp only [Bool.cond_false]; linarith)
-  by_cases h₂ : t - ⌊t⌋ < 9 / 10
-  · exact hy true ⌊t⌋ (by simp only [Bool.cond_true]; linarith)
-      (by simp only [Bool.cond_true]; linarith)
-  · exact hy false (⌊t⌋ + 1) (by push_cast; simp only [Bool.cond_false]; linarith)
-      (by push_cast; simp only [Bool.cond_false]; linarith)
+  exact ⟨m, b, (s - m, t - k), hy, by simpa [hzc] using hper.sub_int_mul_eq k (x := t)⟩
 
 /-- The windows covering `S`: the core, where the signed longitudinal coordinate of every end is
 below `T + 2`, and on each end `q` the images of the end windows under `y ↦ φ'_q(y + (m, 0))`,
@@ -235,9 +199,8 @@ private noncomputable def window (T : ℝ) : Option (Puncture × ℕ × Bool) �
 private theorem positiveEndChart_add_mem {T : ℝ} (hT : 0 ≤ T) (q : Puncture) (m : ℕ) {b : Bool}
     {y : ℝ × ℝ} (hy : y ∈ endWindow T b) :
     positiveEndChart q (y + ((m : ℝ), 0)) ∈ thricePuncturedSphereReal :=
-  positiveEndChart_mem_thricePuncturedSphereReal <| (le_max_right _ _).trans_lt
-    (add_mem_Ioi_prod_Ioo hT (Nat.cast_nonneg m)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)).1
+  positiveEndChart_mem_thricePuncturedSphereReal <| hT.trans_lt
+    (endWindow_add_mem_Ioi_prod_Ioo le_rfl (Nat.cast_nonneg m) hy).1
 
 /-- The windows are open, since the positive end charts are open maps. -/
 private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
@@ -245,7 +208,7 @@ private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
   rcases i with _ | ⟨q, m, b⟩
   · exact isOpen_setOf_forall_fst_positiveEndCoord_lt _
   · exact (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight ((m : ℝ), (0 : ℝ))).isOpenMap
-      _ (isOpen_Ioo.prod isOpen_Ioo)
+      _ (isOpen_endWindow T b)
 
 /-- The core window lies in the compact truncation `S_{T + 2}`. -/
 private theorem window_none_subset (T : ℝ) :
@@ -404,9 +367,9 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
       (hHs q) (hJqt q) (hJq q) (fun s t x hs ↦ hJe q s t x ((le_max_left _ _).trans hs))
       (D := Icc (max T₀ 2 + 1) (max T₀ 2 + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) (by linarith) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero] at h) hK
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2)
+      (endWindow_closed_subset_Ioi_prod_Ioo (max_le le_rfl (by linarith)) b)
+      hK
   obtain ⟨δc, hδc, hconvc⟩ :=
     exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsPerturbation ω hH
       hHs hB hJ hJt (isCompact_preimage_truncation (max T₀ 2 + 2))
@@ -423,17 +386,18 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
         (isOpen_window _ none).measurableSet (fun y hy ↦ hy.1)
         fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn, v, hv⟩
   · obtain ⟨φ, Z, v, hφ, hZΩ, -, hc, -, -, -, hv⟩ := hconve q b (Ω := endWindow (max T₀ 2) b)
-      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_Ioo.prod isOpen_Ioo)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self) (fun _ ↦ Nat.cast_nonneg m)
+      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_endWindow _ b)
+      (endWindow_subset_Icc_prod_Icc _ b) (fun _ ↦ Nat.cast_nonneg m)
       (fun k ↦ hu _) (fun k ↦ hfl _)
       (nonneg_and_lintegral_floerEnergyDensity_le ω hH hHs hB hJt (hu 0) (hfl 0) (ha 0) (hA 0)).1
       (fun k ↦ (nonneg_and_lintegral_floerEnergyDensity_le ω hH hHs hB hJt (hu _) (hfl _) (ha _)
         (hA _)).2) (fun k y hy ↦ huK _ (positiveEndChart_add_mem (by linarith) q m hy))
     obtain ⟨hc', v', hv'⟩ :=
       concentration_and_tendstoLocallyUniformlyOn_image_positiveEndChart_add ω hH hHd
-        (fun k ↦ (hu (ψ k)).differentiableOn (by norm_num)) hT (isOpen_Ioo.prod isOpen_Ioo)
-        (fun y hy ↦ add_mem_Ioi_prod_Ioo (by linarith) (Nat.cast_nonneg m)
-          (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)) hZΩ
+        (fun k ↦ (hu (ψ k)).differentiableOn (by norm_num)) hT (isOpen_endWindow _ b)
+        (fun y hy ↦
+          endWindow_add_mem_Ioi_prod_Ioo (max_le le_rfl (by linarith)) (Nat.cast_nonneg m) hy)
+        hZΩ
         (fun z hz ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ ((min_le_right _ _).trans
           (Finset.inf'_le (fun p : Puncture × Bool ↦ δe p.1 p.2) (Finset.mem_univ (q, b)))).trans
             hn) hv
@@ -636,12 +600,11 @@ private theorem concentration_and_tendstoLocallyUniformlyOn_window_some
       ∃ v' : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) v' atTop
         (window T (some (q, m, b)) \ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z) := by
   have hΩT (y : ℝ × ℝ) (hy : y ∈ endWindow T b) :=
-    add_mem_Ioi_prod_Ioo hT (Nat.cast_nonneg m)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)
+    endWindow_add_mem_Ioi_prod_Ioo (max_le le_rfl hT) (Nat.cast_nonneg m) hy
   exact ⟨eventually_ofReal_le_withDensity_image_positiveEndChart_add hKH hH
     (fun q t ↦ ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero)
-    hu hT₀ (isOpen_Ioo.prod isOpen_Ioo) hΩT hconc,
-    exists_tendstoLocallyUniformlyOn_image_positiveEndChart_add (isOpen_Ioo.prod isOpen_Ioo)
+    hu hT₀ (isOpen_endWindow T b) hΩT hconc,
+    exists_tendstoLocallyUniformlyOn_image_positiveEndChart_add (isOpen_endWindow T b)
       hΩT hZ (f := fun n ↦ e ∘ u (φ n)) hv⟩
 
 /-- **The windows of a family, with one threshold.** Under the hypotheses of the main theorem
@@ -715,9 +678,8 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
       (hq q).2.2.2.choose_spec
       (D := Icc (T + 1) (T + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) (by linarith) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero] at h)
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2)
+      (endWindow_closed_subset_Ioi_prod_Ioo (max_le le_rfl (by linarith)) b)
   obtain ⟨δc, hδc, hconvc⟩ :=
     hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset hed he_inj hW hC
       (isCompact_preimage_truncation (T + 2)) ((prod_mono subset_rfl hDS).trans hCW) hJ hXs hXt
@@ -739,7 +701,7 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
       (K := fun k ↦ K (p (ψ k))) (J := fun k ↦ J (p (ψ k))) (Ω := endWindow T b) (u := u ∘ ψ)
       (R := fun _ ↦ (m : ℝ)) (fun k w x hw ↦ hKH _ (hpC _) q w x ((le_max_left _ _).trans hw))
       (fun k s t x hs ↦ hJe _ (hpC _) q s t x ((le_max_left _ _).trans hs))
-      (isOpen_Ioo.prod isOpen_Ioo) (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self)
+      (isOpen_endWindow _ b) (endWindow_subset_Icc_prod_Icc _ b)
       (fun _ ↦ Nat.cast_nonneg m) (fun k ↦ hu _) (fun k ↦ hfl _) hE0 fun k ↦ hEl _
     exact ⟨φ, hφ, _, concentration_and_tendstoLocallyUniformlyOn_window_some
       (K := fun k ↦ K (p (ψ k))) (fun k ↦ hKH _ (hpC _)) hH (fun q ↦ (hHs q).of_le (by norm_num))
