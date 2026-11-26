@@ -19,7 +19,7 @@ commute, the commutator `⁅a, b⁆` of lifts `a, b ∈ St(R)` maps to `⁅A, B�
 `K₂(R)`, and it does not depend on the lifts, since two lifts of the same matrix differ by a central
 element. This element `A ⋆ B ∈ K₂(R)` is the **star product** of `A` and `B`.
 
-The star product is trivial on the diagonal, skew-symmetric, multiplicative in each variable as
+The star product satisfies `A ⋆ A = 1` and is skew-symmetric, multiplicative in each variable as
 long as each factor commutes with the other variable, invariant under simultaneous conjugation
 by any element of `GL_∞(R)`, and natural in ring homomorphisms. Conjugation invariance comes from
 Whitehead's lemma: on a finite stage, conjugation by an element of `GL_∞(R)` agrees with conjugation
@@ -84,6 +84,13 @@ private theorem commutatorElement_mem_ker {a b : SteinbergGroup R}
     ⁅a, b⁆ ∈ (SteinbergGroup.toStableGL R).ker := by
   rw [← SteinbergGroup.ker_toElementarySubgroup]
   exact (MonoidHom.commutatorElement_mem_ker_iff _).2 h
+
+/-- The commutator of two elements of `St(R)` whose images in `E_∞(R)` commute is central. -/
+private theorem commutatorElement_mem_center {a b : SteinbergGroup R}
+    (h : Commute (SteinbergGroup.toElementarySubgroup R a)
+      (SteinbergGroup.toElementarySubgroup R b)) :
+    ⁅a, b⁆ ∈ Subgroup.center (SteinbergGroup R) :=
+  SteinbergGroup.ker_toStableGL_le_center (commutatorElement_mem_ker h)
 
 /-- A chosen lift to `St(R)` of an element of `E_∞(R)`. -/
 private def lift (A : StableGeneralLinearGroup.elementarySubgroup R) : SteinbergGroup R :=
@@ -167,8 +174,7 @@ theorem starProduct_mul_left {A₁ A₂ : StableGeneralLinearGroup.elementarySub
   obtain ⟨b, rfl⟩ := SteinbergGroup.toElementarySubgroup_surjective B
   refine Subtype.ext ?_
   -- `⁅a₁ a₂, b⁆ = a₁ ⁅a₂, b⁆ a₁⁻¹ ⁅a₁, b⁆`, and `⁅a₂, b⁆` is central.
-  have hc : ⁅a₂, b⁆ ∈ Subgroup.center (SteinbergGroup R) :=
-    SteinbergGroup.ker_toStableGL_le_center (commutatorElement_mem_ker h₂)
+  have hc := commutatorElement_mem_center h₂
   rw [Subgroup.coe_mul, coe_starProduct_eq_commutatorElement _ (map_mul _ a₁ a₂) rfl,
     coe_starProduct_toElementarySubgroup, coe_starProduct_toElementarySubgroup,
     commutatorElement_mul_left_eq_conj_mul, Subgroup.mem_center_iff.1 hc a₁, mul_inv_cancel_right,
@@ -193,8 +199,8 @@ theorem starProduct_conjNormal (g : StableGeneralLinearGroup R) (h : Commute A B
   -- which lifts to `s ∈ St(R)`; conjugating lifts of `A` and `B` by `s` gives lifts of the
   -- conjugates, and conjugation by `s` fixes the central commutator.
   obtain ⟨n, x, y, hx, hy⟩ := StableGeneralLinearGroup.exists_of₂ (A : StableGeneralLinearGroup R) B
-  obtain ⟨e, he, hconj⟩ := StableGeneralLinearGroup.exists_mem_elementarySubgroup_mul_of_mul_inv_eq
-    g n
+  obtain ⟨e, he, hconj⟩ :=
+    StableGeneralLinearGroup.exists_mem_elementarySubgroup_forall_mul_mul_inv_eq g n
   obtain ⟨s, hs⟩ := SteinbergGroup.toElementarySubgroup_surjective ⟨e, he⟩
   have hs' : SteinbergGroup.toStableGL R s = e := by
     rw [← SteinbergGroup.coe_toElementarySubgroup, hs]
@@ -207,8 +213,7 @@ theorem starProduct_conjNormal (g : StableGeneralLinearGroup R) (h : Commute A B
     refine Subtype.ext ?_
     rw [MulAut.conjNormal_apply, SteinbergGroup.coe_toElementarySubgroup, map_mul, map_mul,
       map_inv, hs', ← SteinbergGroup.coe_toElementarySubgroup, ← hz, hconj]
-  have hc : ⁅a, b⁆ ∈ Subgroup.center (SteinbergGroup R) :=
-    SteinbergGroup.ker_toStableGL_le_center (commutatorElement_mem_ker h)
+  have hc := commutatorElement_mem_center h
   refine Subtype.ext ?_
   rw [coe_starProduct_eq_commutatorElement _ (hlift hx) (hlift hy),
     coe_starProduct_toElementarySubgroup, ← MulAut.conj_apply, ← MulAut.conj_apply,
@@ -283,6 +288,28 @@ private theorem steinbergSymbol_eq_starProduct_diag {u v : Rˣ} (h : Commute u v
       AlgebraicK2.starProduct (diagInvOne u) (diagOneInv v) (commute_diagInvOne_diagOneInv h) :=
   steinbergSymbol_eq_starProduct h rfl rfl _
 
+/-- **The Steinberg symbol is skew-symmetric**: for commuting units `u` and `v`,
+`{u, v}⁻¹ = {v, u}`. -/
+@[simp]
+theorem steinbergSymbol_inv {u v : Rˣ} (h : Commute u v) :
+    (steinbergSymbol u v h)⁻¹ = steinbergSymbol v u h.symm := by
+  -- `{u, v}⁻¹ = diag(v, 1, v⁻¹) ⋆ diag(u, u⁻¹, 1)`, and conjugating by the permutation matrix `g`
+  -- exchanging the last two coordinates turns this into `diag(v, v⁻¹, 1) ⋆ diag(u, 1, u⁻¹)`.
+  let g := StableGeneralLinearGroup.of R 3 (permutationGL (Equiv.swap (1 : Fin 3) 2))
+  have hswap (s : Fin 3 → Rˣ) : g * StableGeneralLinearGroup.of R 3 (diagGL s) * g⁻¹ =
+      StableGeneralLinearGroup.of R 3 (diagGL ![s 0, s 2, s 1]) := by
+    rw [← map_inv, ← map_mul, ← map_mul, permutationGL_mul_diagGL_mul_inv]
+    congr 2
+    ext i : 1
+    fin_cases i <;> simp [Equiv.swap_apply_of_ne_of_ne]
+  rw [steinbergSymbol_eq_starProduct_diag, AlgebraicK2.starProduct_inv,
+    ← AlgebraicK2.starProduct_conjNormal g]
+  refine steinbergSymbol_eq_starProduct h.symm ?_ ?_ _ |>.symm
+  · rw [MulAut.conjNormal_apply]
+    exact (hswap _).trans (by simp)
+  · rw [MulAut.conjNormal_apply]
+    exact (hswap _).trans (by simp)
+
 /-- **The Steinberg symbol is multiplicative in its first variable**: for pairwise commuting units
 `u₁`, `u₂` and `v`, `{u₁ u₂, v} = {u₁, v} {u₂, v}`. -/
 theorem steinbergSymbol_mul_left {u₁ u₂ v : Rˣ} (h₁₂ : Commute u₁ u₂) (h₁ : Commute u₁ v)
@@ -305,37 +332,8 @@ theorem steinbergSymbol_mul_right {u v₁ v₂ : Rˣ} (h₁₂ : Commute v₁ v�
     (h₂ : Commute u v₂) :
     steinbergSymbol u (v₁ * v₂) (h₁.mul_right h₂) =
       steinbergSymbol u v₁ h₁ * steinbergSymbol u v₂ h₂ := by
-  have hmul : diagOneInv (v₁ * v₂) = diagOneInv v₁ * diagOneInv v₂ := by
-    refine Subtype.ext ?_
-    simp only [diagOneInv, Subgroup.coe_mul, ← map_mul]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp [mul_inv_rev, h₁₂.inv_inv.eq]
-  rw [steinbergSymbol_eq_starProduct_diag, steinbergSymbol_eq_starProduct_diag,
-    steinbergSymbol_eq_starProduct_diag, ← AlgebraicK2.starProduct_mul_right]
-  simp only [hmul]
-
-/-- **The Steinberg symbol is skew-symmetric**: for commuting units `u` and `v`,
-`{u, v}⁻¹ = {v, u}`. -/
-@[simp]
-theorem steinbergSymbol_inv {u v : Rˣ} (h : Commute u v) :
-    (steinbergSymbol u v h)⁻¹ = steinbergSymbol v u h.symm := by
-  -- `{u, v}⁻¹ = diag(v, 1, v⁻¹) ⋆ diag(u, u⁻¹, 1)`, and conjugating by the permutation matrix `g`
-  -- exchanging the last two coordinates turns this into `diag(v, v⁻¹, 1) ⋆ diag(u, 1, u⁻¹)`.
-  let g := StableGeneralLinearGroup.of R 3 (permutationGL (Equiv.swap (1 : Fin 3) 2))
-  have hswap (s : Fin 3 → Rˣ) : g * StableGeneralLinearGroup.of R 3 (diagGL s) * g⁻¹ =
-      StableGeneralLinearGroup.of R 3 (diagGL ![s 0, s 2, s 1]) := by
-    rw [← map_inv, ← map_mul, ← map_mul, permutationGL_mul_diagGL_mul_inv]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp [Equiv.swap_apply_of_ne_of_ne]
-  rw [steinbergSymbol_eq_starProduct_diag, AlgebraicK2.starProduct_inv,
-    ← AlgebraicK2.starProduct_conjNormal g]
-  refine steinbergSymbol_eq_starProduct h.symm ?_ ?_ _ |>.symm
-  · rw [MulAut.conjNormal_apply]
-    exact (hswap _).trans (by simp)
-  · rw [MulAut.conjNormal_apply]
-    exact (hswap _).trans (by simp)
+  rw [← inv_inv (steinbergSymbol u (v₁ * v₂) _), steinbergSymbol_inv,
+    steinbergSymbol_mul_left h₁₂ h₁.symm h₂.symm, mul_inv, steinbergSymbol_inv, steinbergSymbol_inv]
 
 end SteinbergSymbol
 

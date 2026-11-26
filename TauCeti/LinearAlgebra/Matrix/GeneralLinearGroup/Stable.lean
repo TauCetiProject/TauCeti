@@ -71,7 +71,7 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
-* `TauCeti.StableGeneralLinearGroup.exists_mem_elementarySubgroup_mul_of_mul_inv_eq`: on each
+* `TauCeti.StableGeneralLinearGroup.exists_mem_elementarySubgroup_forall_mul_mul_inv_eq`: on each
   finite stage, conjugation by an element of `GL_∞(A)` agrees with conjugation by an element of
   `E_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_eq_commutator`: `E_∞(A)` is the
@@ -378,7 +378,7 @@ instance elementarySubgroup_normal : (elementarySubgroup A).Normal where
 /-- **Conjugation in `GL_∞(A)` is elementary on each finite stage.** For `g ∈ GL_∞(A)` and a size
 `n`, some stably elementary `e` induces the same conjugation as `g` on the image of `GL_n(A)`:
 if `g` is represented by `w` at a size `k ≥ n`, take for `e` Whitehead's matrix `w ⊕ w⁻¹`. -/
-theorem exists_mem_elementarySubgroup_mul_of_mul_inv_eq (g : StableGeneralLinearGroup A)
+theorem exists_mem_elementarySubgroup_forall_mul_mul_inv_eq (g : StableGeneralLinearGroup A)
     (n : ℕ) : ∃ e ∈ elementarySubgroup A,
       ∀ u : GL (Fin n) A, e * of A n u * e⁻¹ = g * of A n u * g⁻¹ := by
   obtain ⟨m, v, rfl⟩ := exists_of g
