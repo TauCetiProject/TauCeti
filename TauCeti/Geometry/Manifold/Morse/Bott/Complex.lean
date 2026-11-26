@@ -56,8 +56,9 @@ identities hold for all integer ranks and dimensions.
 a module `M C` with a square-zero boundary for each component of a finite set, and maps
 `P_CD : M C → M D` satisfying the face relation
 `∂ P_CD = (-1)^d_CD P_CD ∂ + ∑_E (-1)^s_CED P_ED P_CE`, with `s_CED` the broken-face exponent.
-Its total differential `D` on `∏_C M C` is `(-1)^λ_D ∂` on the diagonal and `F_CD` off it
-(`TauCeti.BottChainData.differential`), and `D² = 0`
+Its total differential `D` on `∏_C M C` has component `(-1)^λ_D ∂ + ∑_C F_CD` in `D`, so its
+diagonal entry is `(-1)^λ_D ∂ + F_DD` (with `F_DD = 0` for geometric data, since `𝓜(D, D)` is
+empty) and `F_CD` off it (`TauCeti.BottChainData.differential`), and `D² = 0`
 (`TauCeti.BottChainData.differential_comp_differential`). If each `M C` is graded so that `∂`
 lowers degree by one and `P_CD` shifts it by `d_CD`, then `D` lowers the total degree
 `chain degree + λ_C` by one (`TauCeti.BottChainData.differential_mem_totalDegree`), and the
@@ -83,7 +84,8 @@ total-degree pieces form a chain complex (`TauCeti.BottChainData.chainComplex`).
 
 * `TauCeti.negOnePow_rank_mul_negOnePow_bottDegreeShift`: the cross-term coefficient vanishes.
 * `TauCeti.bottCorrespondenceExponent_add_modEq`: the broken-face parity identity.
-* `TauCeti.BottChainData.boundary_comp_correspondence`: the component identity of `D² = 0`.
+* `TauCeti.BottChainData.boundary_comp_correspondence_add_eq_zero`: the component identity of
+  `D² = 0`.
 * `TauCeti.BottChainData.differential_comp_differential`: `D² = 0`.
 * `TauCeti.BottChainData.differential_mem_totalDegree`: `D` has total degree `-1`.
 
@@ -113,15 +115,26 @@ critical component `D`, `m_CD = λ_C - λ_D + dim C - 1`, for negative-normal ra
 and component dimensions `dim`. -/
 def bottTrajectoryDim (C D : ι) : ℤ := rank C - rank D + dim C - 1
 
+theorem bottTrajectoryDim_def (C D : ι) :
+    bottTrajectoryDim rank dim C D = rank C - rank D + dim C - 1 :=
+  (rfl)
+
 /-- **The chain-degree shift of the Bott correspondence** from `C` to `D`,
 `d_CD = λ_C - λ_D - 1`: the fibre product `𝓜(C, D) ×_C σ` of a chain `σ` on `C` has dimension
 `dim σ + d_CD`. -/
 def bottDegreeShift (C D : ι) : ℤ := rank C - rank D - 1
 
+theorem bottDegreeShift_def (C D : ι) : bottDegreeShift rank C D = rank C - rank D - 1 :=
+  (rfl)
+
 /-- **The exponent of the sign of the Bott correspondence** from `C` to `D`,
 `g_CD = (λ_D + 1) m_CD`: the signed correspondence is `(-1)^g_CD` times the endpoint pushforward
 of the trajectory-first fibre product. -/
 def bottCorrespondenceExponent (C D : ι) : ℤ := (rank D + 1) * bottTrajectoryDim rank dim C D
+
+theorem bottCorrespondenceExponent_def (C D : ι) :
+    bottCorrespondenceExponent rank dim C D = (rank D + 1) * bottTrajectoryDim rank dim C D :=
+  (rfl)
 
 /-- **The exponent of the sign of the broken face** through `E` of the correspondence from `C` to
 `D`, `a + e λ_E + a b + e (a + b) + e`, with `a = m_CE`, `b = m_ED` and `e = dim E`. It is the
@@ -131,6 +144,13 @@ def bottBrokenFaceExponent (C E D : ι) : ℤ :=
   bottTrajectoryDim rank dim C E + dim E * rank E +
     bottTrajectoryDim rank dim C E * bottTrajectoryDim rank dim E D +
     dim E * (bottTrajectoryDim rank dim C E + bottTrajectoryDim rank dim E D) + dim E
+
+theorem bottBrokenFaceExponent_def (C E D : ι) :
+    bottBrokenFaceExponent rank dim C E D =
+      bottTrajectoryDim rank dim C E + dim E * rank E +
+        bottTrajectoryDim rank dim C E * bottTrajectoryDim rank dim E D +
+        dim E * (bottTrajectoryDim rank dim C E + bottTrajectoryDim rank dim E D) + dim E :=
+  (rfl)
 
 /-- A broken stratum through `E` of the Bott trajectories from `C` to `D` has codimension one:
 `m_CE + m_ED - dim E = m_CD - 1`. -/
@@ -171,15 +191,6 @@ private theorem broken_face_parity :
           e * ((lC - lE + c - 1) + (lE - lD + e - 1)) + e + 1 := by
   decide
 
-/-- The polynomial identity behind the broken-face sign, on `ZMod 2`. -/
-private theorem broken_face_sign :
-    ∀ lC lE lD c e : ZMod 2,
-      (lD + 1) * (lC - lD + c - 1) + lD +
-          ((lC - lE + c - 1) + e * lE + (lC - lE + c - 1) * (lE - lD + e - 1) +
-            e * ((lC - lE + c - 1) + (lE - lD + e - 1)) + e) -
-        ((lE + 1) * (lC - lE + c - 1) + (lD + 1) * (lE - lD + e - 1) + 1) = 0 := by
-  decide
-
 /-- **The broken-face parity identity of the Bott complex**: with `a = m_CE`, `b = m_ED` and
 `e = dim E`,
 `g_CD + λ_D + a + e λ_E ≡ g_CE + g_ED + a b + e (a + b) + e + 1 (mod 2)`.
@@ -205,10 +216,15 @@ theorem negOnePow_bottCorrespondenceExponent_mul (C E D : ι) :
       -((bottCorrespondenceExponent rank dim C E).negOnePow *
         (bottCorrespondenceExponent rank dim E D).negOnePow) := by
   rw [← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_succ,
-    Int.negOnePow_eq_iff, ← ZMod.intCast_eq_zero_iff_even]
-  simp only [bottBrokenFaceExponent, bottCorrespondenceExponent, bottTrajectoryDim]
-  push_cast
-  exact broken_face_sign _ _ _ _ _
+    Int.negOnePow_eq_iff]
+  -- the exponents differ from the two sides of the parity identity by an even number
+  set a := bottTrajectoryDim rank dim C E
+  set b := bottTrajectoryDim rank dim E D
+  have h := (even_iff_two_dvd.2 (bottCorrespondenceExponent_add_modEq rank dim C E D).symm.dvd).add
+    (even_two_mul (a * b + dim E * (a + b) + dim E))
+  convert h using 1
+  simp only [bottBrokenFaceExponent]
+  ring
 
 end Signs
 
@@ -219,7 +235,9 @@ component `C` has a negative-normal rank `rank C`, a dimension `dim C` and a mod
 with a square-zero boundary. For each ordered pair `(C, D)` the pushforward `P_CD` along the
 Bott trajectories from `C` to `D` satisfies the face relation of the compactified trajectory
 spaces: the boundary of `P_CD σ` consists of the input-boundary face `(-1)^d_CD P_CD (∂σ)` and the
-broken faces `(-1)^s_CED P_ED P_CE σ` through the intermediate components `E`. -/
+broken faces `(-1)^s_CED P_ED P_CE σ` through the components `E`. The sum runs over all
+components, including `E = C` and `E = D`; for geometric data the self-pushforwards `P_CC` vanish,
+so only the intermediate components contribute. -/
 structure BottChainData (R : Type*) [Semiring R] (ι : Type*) [Fintype ι] (M : ι → Type*)
     [∀ C, AddCommGroup (M C)] [∀ C, Module R (M C)] where
   /-- The negative-normal rank `λ_C` of each critical component. -/
@@ -265,7 +283,7 @@ theorem differential_apply (x : ∀ C, M C) (D : ι) :
 
 /-- **The component identity of `D² = 0`**: for every ordered pair of components,
 `(-1)^λ_D ∂ F_CD + (-1)^λ_C F_CD ∂ + ∑_E F_ED F_CE = 0`. -/
-theorem boundary_comp_correspondence (C D : ι) :
+theorem boundary_comp_correspondence_add_eq_zero (C D : ι) :
     (B.rank D : ℤ).negOnePow • (B.boundary D ∘ₗ B.correspondence C D) +
         (B.rank C : ℤ).negOnePow • (B.correspondence C D ∘ₗ B.boundary C) +
       ∑ E, B.correspondence E D ∘ₗ B.correspondence C E = 0 := by
@@ -291,7 +309,8 @@ theorem differential_comp_differential : B.differential ∘ₗ B.differential = 
   have key : ∀ C, (B.rank D : ℤ).negOnePow • B.boundary D (B.correspondence C D (x C)) +
       B.correspondence C D ((B.rank C : ℤ).negOnePow • B.boundary C (x C)) +
         ∑ E, B.correspondence E D (B.correspondence C E (x C)) = 0 := fun C ↦ by
-    simpa [LinearMap.sum_apply] using LinearMap.congr_fun (B.boundary_comp_correspondence C D) (x C)
+    simpa [LinearMap.sum_apply] using
+      LinearMap.congr_fun (B.boundary_comp_correspondence_add_eq_zero C D) (x C)
   have hsq : B.boundary D (B.boundary D (x D)) = 0 :=
     LinearMap.congr_fun (B.boundary_comp_boundary D) (x D)
   simp only [LinearMap.comp_apply, differential_apply, map_add, map_sum, LinearMap.zero_apply,
@@ -359,8 +378,12 @@ by one and the pushforward from `C` to `D` shifts it by `d_CD`. -/
     (fun k ↦ ModuleCat.ofHom (B.differential.restrict fun _ hx ↦ by
       simpa using B.differential_mem_totalDegree hboundary hpushforward hx))
     (fun k ↦ by
-      ext x D
-      simpa using congrFun (B.differential_differential x.val) D)
+      ext x : 2
+      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, ModuleCat.hom_zero,
+        LinearMap.zero_apply]
+      refine Subtype.ext ?_
+      rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, B.differential_differential,
+        Submodule.coe_zero])
 
 /-- The differential of the Bott chain complex from total degree `k + 1` to total degree `k` is
 the Bott differential. -/
@@ -373,8 +396,17 @@ theorem chainComplex_d_apply
     (((B.chainComplex hboundary hpushforward).d (k + 1) k).hom x : B.totalDegree S k).val =
       B.differential x.val := by
   simp only [chainComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
-  -- the restriction of a linear map acts as the map itself on the underlying elements
-  rfl
+  exact LinearMap.coe_restrict_apply _ _
+
+/-- The object of the Bott chain complex in total degree `k` is the total-degree piece. -/
+@[simp]
+theorem chainComplex_X
+    (hboundary : ∀ C j, ∀ x ∈ S C j, B.boundary C x ∈ S C (j - 1))
+    (hpushforward : ∀ C D j, ∀ x ∈ S C j,
+      B.pushforward C D x ∈ S D (j + bottDegreeShift B.rank C D))
+    (k : ℤ) :
+    (B.chainComplex hboundary hpushforward).X k = ModuleCat.of R (B.totalDegree S k) :=
+  (rfl)
 
 end Grading
 
@@ -392,13 +424,37 @@ def ofBoundary (rank dim : ι → ℕ) (boundary : ∀ C, M C →ₗ[R] M C)
   pushforward _ _ := 0
   boundary_comp_pushforward _ _ := by simp
 
+section ofBoundary
+
+variable (rank dim : ι → ℕ) (boundary : ∀ C, M C →ₗ[R] M C)
+  (hboundary : ∀ C, boundary C ∘ₗ boundary C = 0)
+
+@[simp]
+theorem ofBoundary_rank : (ofBoundary rank dim boundary hboundary).rank = rank :=
+  (rfl)
+
+@[simp]
+theorem ofBoundary_dim : (ofBoundary rank dim boundary hboundary).dim = dim :=
+  (rfl)
+
+@[simp]
+theorem ofBoundary_boundary : (ofBoundary rank dim boundary hboundary).boundary = boundary :=
+  (rfl)
+
+@[simp]
+theorem ofBoundary_pushforward (C D : ι) :
+    (ofBoundary rank dim boundary hboundary).pushforward C D = 0 :=
+  (rfl)
+
+end ofBoundary
+
 /-- Without trajectories, the Bott differential is the internal boundary `(-1)^λ_C ∂` of each
 component. -/
 theorem differential_ofBoundary_apply (rank dim : ι → ℕ) (boundary : ∀ C, M C →ₗ[R] M C)
     (hboundary : ∀ C, boundary C ∘ₗ boundary C = 0) (x : ∀ C, M C) (D : ι) :
     (ofBoundary rank dim boundary hboundary).differential x D =
       (rank D : ℤ).negOnePow • boundary D (x D) := by
-  simp [differential_apply, correspondence_apply, ofBoundary]
+  simp [differential_apply, correspondence_apply]
 
 end BottChainData
 
