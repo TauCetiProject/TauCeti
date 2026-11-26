@@ -265,7 +265,7 @@ omit [CompleteSpace (C.sobolevSections μ p k)] in
 theorem chartRestrictEquiv_apply (hinj : Function.Injective (C.chartRestrictL μ p k Z i))
     (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) (w : C.aeZeroOn μ p k Z) :
     C.chartRestrictEquiv μ p k hinj hsurj w = C.chartRestrictL μ p k Z i w :=
-  (rfl)
+  LinearEquiv.ofBijective_apply _ w
 
 variable (C μ p k) in
 /-- **Extension by zero.** When the chart-`i` components of the Sobolev sections vanishing on the
@@ -333,6 +333,18 @@ theorem extendByZeroL_chartRestrictL (hinj : Function.Injective (C.chartRestrict
     (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) (w : C.aeZeroOn μ p k Z) :
     C.extendByZeroL μ p k hinj hsurj (C.chartRestrictL μ p k Z i w) = w := by
   rw [extendByZeroL_apply, ← chartRestrictEquiv_apply hinj hsurj, LinearEquiv.symm_apply_apply]
+
+/-- Sobolev sections vanishing on the sets `Z i` converge as soon as their chart-`i` components
+converge, when the chart-`i` components are bijective: extension by zero is continuous. -/
+theorem tendsto_of_tendsto_chartRestrictL (hinj : Function.Injective (C.chartRestrictL μ p k Z i))
+    (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) {ι : Type*} {l : Filter ι}
+    {a : ι → C.aeZeroOn μ p k Z} {u : C.aeZeroOn μ p k Z}
+    (h : Tendsto (fun m ↦ C.chartRestrictL μ p k Z i (a m)) l
+      (𝓝 (C.chartRestrictL μ p k Z i u))) :
+    Tendsto a l (𝓝 u) := by
+  have hE := ((C.extendByZeroL μ p k hinj hsurj).continuous.tendsto _).comp h
+  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
+  exact tendsto_subtype_rng.2 hE
 
 end Extension
 
@@ -527,6 +539,16 @@ theorem extendByZeroL_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin 
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (w : aeZeroOff A μ p k L) :
     extendByZeroL h hL hLi (chartRestrictL A μ p k i L w) = w :=
   SectionChartData.extendByZeroL_chartRestrictL (chartRestrictL_injective hLi) (h hL hLi) w
+
+/-- Elements vanishing off `L` converge as soon as their chart-`i` components converge, since
+extension by zero is continuous. -/
+theorem tendsto_of_tendsto_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin A.n}
+    {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i) {ι : Type*} {l : Filter ι}
+    {a : ι → aeZeroOff A μ p k L} {u : aeZeroOff A μ p k L}
+    (ha : Tendsto (fun m ↦ chartRestrictL A μ p k i L (a m)) l
+      (𝓝 (chartRestrictL A μ p k i L u))) :
+    Tendsto a l (𝓝 u) :=
+  SectionChartData.tendsto_of_tendsto_chartRestrictL (chartRestrictL_injective hLi) (h hL hLi) ha
 
 end Extension
 

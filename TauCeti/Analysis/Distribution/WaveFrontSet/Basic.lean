@@ -41,7 +41,8 @@ not microlocally smooth.
 ## Main declarations
 
 * `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`; it is
-  continuous (`Distribution.continuous_localFourier`).
+  continuous (`Distribution.continuous_localFourier`) and converges uniformly on compact sets of
+  frequencies when `T` converges in `𝓓'(Ω, ℂ)` (`Distribution.tendstoUniformlyOn_localFourier`).
 * `Distribution.IsMicrolocallySmoothAt T x ξ`: microlocal smoothness at `(x, ξ)`.
 * `Distribution.waveFrontSet T`: the wave front set.
 
@@ -191,23 +192,41 @@ theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     T.localFourier φ 0 = T.complexPairing φ :=
   localFourier_eq T φ fun x ↦ by simp
 
+/-- Modulating a cutoff by Fourier atoms `η ↦ φ e_η` depends continuously on the frequency. -/
+private theorem continuous_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) :
+    Continuous fun η : E ↦
+      bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ := by
+  refine continuous_of_contDiff_uncurry
+    φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_
+  · simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact tsupport_mul_subset_left
+  · simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
+
 /-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
 theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
-    Continuous (T.localFourier φ) := by
+    Continuous (T.localFourier φ) :=
+  T.complexPairing.continuous.comp (continuous_bilinLeftCLM_fourierAtom φ)
+
+/-- Convergence of distributions in `𝓓'(Ω, ℂ)` gives uniform convergence of localized Fourier
+transforms on compact sets of frequencies. -/
+theorem tendstoUniformlyOn_localFourier {α : Type*} {l : Filter α} {f : α → 𝓓'(Ω, ℂ)}
+    {T : 𝓓'(Ω, ℂ)} (h : Tendsto f l (𝓝 T)) (φ : 𝓓(Ω, ℂ)) {K : Set E} (hK : IsCompact K) :
+    TendstoUniformlyOn (fun a η ↦ (f a).localFourier φ η) (T.localFourier φ) l K := by
   set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
     bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
-  have hT : T.localFourier φ = fun η ↦ T.complexPairing (ψ η) :=
-    funext fun η ↦ localFourier_eq T φ fun x ↦ by
-      simp [ψ, bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
-        -TauCeti.fourierAtom_apply]
-  rw [hT]
-  -- The modulated cutoffs `φ e_η` share the support of `φ` and depend smoothly on `η`.
-  refine T.complexPairing.continuous.comp (continuous_of_contDiff_uncurry
-    φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_)
-  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
-    exact tsupport_mul_subset_left
-  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
-    exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
+  have hψ : Continuous ψ := continuous_bilinLeftCLM_fourierAtom φ
+  have hcomp (L : ℂ →L[ℝ] ℝ) :
+      TendstoUniformlyOn (fun a η ↦ f a (postcompCLM (𝕜 := ℝ) L (ψ η)))
+        (fun η ↦ T (postcompCLM (𝕜 := ℝ) L (ψ η))) l K :=
+    (((UniformConvergenceCLM.tendsto_iff_tendstoUniformlyOn _ _ _).1 h _
+      (hK.image ((postcompCLM (𝕜 := ℝ) L).continuous.comp hψ))).comp
+      (fun η ↦ postcompCLM (𝕜 := ℝ) L (ψ η))).mono (subset_preimage_image _ _)
+  have hsum := (hcomp reCLM).add
+    ((uniformContinuous_const_smul I).comp_tendstoUniformlyOn (hcomp imCLM))
+  refine (hsum.congr_right fun η _ ↦ ?_).congr (.of_forall fun a η _ ↦ ?_)
+  · simp [ψ, localFourier_def, complexPairing_apply]
+  · simp [ψ, localFourier_def, complexPairing_apply]
 
 /-- If `S` pairs with each complex test function `ψ` as `T` with `P ψ`, where `P` acts as
 multiplication by `g`, then the localized Fourier transform of `S` with cutoff `φ` is that of `T`

@@ -132,6 +132,12 @@ theorem mvfderiv_apply_mgradient :
       inner ℝ (mgradient I f x) (mgradient I f x) :=
   (inner_mgradient _).symm
 
+/-- The differential of `f` in the direction of its negative gradient is minus the squared norm of
+the gradient. -/
+theorem mvfderiv_apply_neg_mgradient :
+    mvfderiv I f x (-mgradient I f x) = -‖mgradient I f x‖ ^ 2 := by
+  rw [map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq]
+
 /-- The gradient vanishes exactly where the differential does. -/
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by

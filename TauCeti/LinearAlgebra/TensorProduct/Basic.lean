@@ -15,14 +15,16 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 /-!
 # Tensor-product naturality, contractions and trace identities
 
-This file records how tensor reassociation interacts with tensoring composite maps. It defines
+This file records how tensor reassociation interacts with tensoring composite maps, and that
+`f ⊗ 𝟙` sends pure tensors with a left factor in the kernel of `f` to zero. It defines
 contraction against a linear functional on the right factor, bundled as a linear map in the
 functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
 pure tensors over a finite spanning family of the right factor. It also expands pure tensors
-with a multiset sum in one factor.
+with a multiset sum in one factor. Finally, it shows that a scalar action which can be moved
+across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 
 ## Main declarations
 
@@ -33,6 +35,8 @@ with a multiset sum in one factor.
   anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
+* `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
+  an element of the kernel of `f ⊗ 𝟙`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -63,6 +67,8 @@ with a multiset sum in one factor.
   `tensorTensorTensorComm` reassociates its value, and
   `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
   the first two factors.
+* `TensorProduct.CompatibleSMul.tensorProduct`: `K`-balanced and `R`-balanced tensors agreeing in
+  `M ⊗[R] N` agree in `M ⊗[R] (N ⊗[K] P)`.
 
 ## References
 
@@ -110,6 +116,11 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
   have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
+
+/-- Tensoring with any `w` sends the kernel of a linear map `f` into the kernel of `f ⊗ 𝟙`. -/
+theorem tmul_mem_ker_rTensor {f : N →ₗ[R] P} {x : N} (hx : x ∈ ker f) (w : M) :
+    x ⊗ₜ w ∈ ker (f.rTensor M) := by
+  rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
 
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
@@ -521,5 +532,25 @@ theorem injective_mk_one_iff (A : Type*) [Semiring A] [Algebra R A] :
     Function.Injective (mk R A M 1) ↔ Function.Injective ((Algebra.linearMap R A).rTensor M) := by
   rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
     EquivLike.injective_comp]
+
+section CompatibleSMul
+
+variable {K : Type*} [CommSemiring K] [Algebra R K] [Module K M] [Module K N] [IsScalarTower R K N]
+  [Module K P]
+
+/-- If `K`-balanced and `R`-balanced tensors agree in `M ⊗[R] N`, they agree in
+`M ⊗[R] (N ⊗[K] P)`, where `K` acts on `N ⊗[K] P` through `N`. -/
+-- A pure tensor `n ⊗ p` of `N ⊗[K] P` is the image of `n` under the `K`-linear map `· ⊗ p`.
+instance CompatibleSMul.tensorProduct [CompatibleSMul R K M N] :
+    CompatibleSMul R K M (N ⊗[K] P) where
+  smul_tmul k m t := by
+    induction t using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [smul_add, tmul_add, hs, ht]
+    | tmul n p =>
+      rw [smul_tmul']
+      exact congrArg (LinearMap.lTensor M (((TensorProduct.mk K N P).flip p).restrictScalars R))
+        (TensorProduct.smul_tmul (R := R) k m n)
+
+end CompatibleSMul
 
 end TensorProduct

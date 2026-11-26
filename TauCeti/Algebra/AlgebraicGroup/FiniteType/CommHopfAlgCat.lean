@@ -145,6 +145,13 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     toBialgHom (ofHom (R := R) φ) = φ :=
   rfl
 
+/-- The bialgebra equivalence `CommHopfAlgCat.ofIso` of an isomorphism `e` of finite-type
+commutative Hopf algebras has underlying bialgebra morphism `toBialgHom e.hom`. -/
+lemma toBialgHom_ofIso_ι_mapIso {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ K) :
+    (_root_.CommHopfAlgCat.ofIso ((ObjectProperty.ι _).mapIso e)).toBialgHom =
+      toBialgHom e.hom :=
+  rfl
+
 @[simp]
 lemma forget₂_commHopfAlgCat_obj (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).obj H =

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Complex-valued smooth functions on real manifolds
@@ -22,10 +23,10 @@ complexifies to a complex-linear map between complex-valued ones
 (`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution.
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
-(`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data, and
-precomposition with a diffeomorphism is a complex algebra isomorphism
-(`Diffeomorph.compRightComplexAlgEquiv`), through which operators are transported along
-diffeomorphisms by conjugation.
+(`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
+For a diffeomorphism it is a complex algebra isomorphism (`Diffeomorph.compRightComplexAlgEquiv`),
+and conjugating by it carries the complex-linear operators on the functions on one manifold to
+those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -505,5 +506,61 @@ theorem compRightComplexAlgEquiv_symm (φ : N ≃ₘ^n⟮J, I⟯ M) :
     (compRightComplexAlgEquiv φ).symm = compRightComplexAlgEquiv φ.symm :=
   AlgEquiv.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by
     rw [compRightComplexAlgEquiv_symm_apply, compRightComplexAlgEquiv_apply]
+
+/-- Precomposition with the identity is the identity. -/
+@[simp]
+theorem compRightComplexAlgEquiv_refl :
+    compRightComplexAlgEquiv (Diffeomorph.refl I M n) = AlgEquiv.refl :=
+  AlgEquiv.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by simp
+
+/-- Precomposition with a composite reverses the order of the precompositions. -/
+theorem compRightComplexAlgEquiv_trans {E'' H'' P : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''}
+    [TopologicalSpace P] [ChartedSpace H'' P] (φ : N ≃ₘ^n⟮J, I⟯ M) (ψ : M ≃ₘ^n⟮I, K⟯ P) :
+    compRightComplexAlgEquiv (φ.trans ψ) =
+      (compRightComplexAlgEquiv ψ).trans (compRightComplexAlgEquiv φ) :=
+  AlgEquiv.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by simp
+
+/-- The **pushforward** of complex-linear operators on the real-smooth complex-valued functions
+along a `C^n` diffeomorphism `Φ : M → N`: the operator `P` on `M` becomes the operator
+`u ↦ P (u ∘ Φ) ∘ Φ⁻¹` on `N`. It is an isomorphism of complex algebras, so it respects the
+identity and composition of operators. -/
+def pushforwardOperator (Φ : M ≃ₘ^n⟮I, J⟯ N) :
+    Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₐ[ℂ] Module.End ℂ C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  (compRightComplexAlgEquiv Φ.symm).toLinearEquiv.conjAlgEquiv ℂ
+
+@[simp]
+theorem pushforwardOperator_apply_apply (Φ : M ≃ₘ^n⟮I, J⟯ N)
+    (P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (u : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) (y : N) :
+    pushforwardOperator Φ P u y = P (compRightComplexAlgEquiv Φ u) (Φ.symm y) := by
+  simp [pushforwardOperator, LinearEquiv.conjAlgEquiv_apply, ← AlgEquiv.toLinearEquiv_symm]
+
+/-- As a function, the pushforward of `P` applied to `u` is `P (u ∘ Φ) ∘ Φ⁻¹`. -/
+theorem coe_pushforwardOperator_apply (Φ : M ≃ₘ^n⟮I, J⟯ N)
+    (P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (u : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⇑(pushforwardOperator Φ P u) = P (compRightComplexAlgEquiv Φ u) ∘ Φ.symm :=
+  funext <| pushforwardOperator_apply_apply Φ P u
+
+/-- The pushforward along `Φ⁻¹` undoes the pushforward along `Φ`. -/
+@[simp]
+theorem pushforwardOperator_symm (Φ : M ≃ₘ^n⟮I, J⟯ N) :
+    (pushforwardOperator Φ).symm = pushforwardOperator Φ.symm := by
+  rw [pushforwardOperator, pushforwardOperator, LinearEquiv.symm_conjAlgEquiv,
+    ← AlgEquiv.toLinearEquiv_symm, compRightComplexAlgEquiv_symm, symm_symm]
+
+/-- The pushforward along the identity is the identity. -/
+@[simp]
+theorem pushforwardOperator_refl :
+    pushforwardOperator (Diffeomorph.refl I M n) = AlgEquiv.refl := by
+  ext P u x
+  simp
+
+/-- The pushforward along a composite of diffeomorphisms is the composite of the pushforwards. -/
+theorem pushforwardOperator_trans {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P]
+    [ChartedSpace H'' P] (Φ : M ≃ₘ^n⟮I, J⟯ N) (Ψ : N ≃ₘ^n⟮J, K⟯ P) :
+    pushforwardOperator (Φ.trans Ψ) = (pushforwardOperator Φ).trans (pushforwardOperator Ψ) := by
+  ext P u x
+  simp [compRightComplexAlgEquiv_trans]
 
 end Diffeomorph

@@ -18,7 +18,10 @@ evaluations of a vector family with the vector family's `Lᵖ` norm. For constan
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under reindexing. For
 `p ≥ 1`, a linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has
-norm at most `‖s‖ * ∑ i, ‖v i‖`.
+norm at most `‖s‖ * ∑ i, ‖v i‖`. For `p ≥ 1`, a real family with a positive coordinate has
+positive `Lᵖ` norm (`PiLp.norm_toLp_pos`), and for `1 ≤ q < ∞` rescaling a positive family `c` to
+`(‖c‖_q (c i / ‖c‖_q) ^ (q / p))_i` moves it from `ℓ^q` to `ℓ^p` without changing its norm
+(`PiLp.norm_toLp_mul_div_rpow`).
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -206,6 +209,35 @@ theorem norm_toLp_smul_const {F 𝕜 : Type*} [SeminormedAddGroup F] [Seminormed
       Real.mul_rpow (PiLp.norm_nonneg' _) (norm_nonneg y), norm_rpow_eq_sum hp_pos,
       norm_rpow_eq_sum hp_pos, Finset.sum_mul]
     simp only [norm_smul, Real.mul_rpow (norm_nonneg _) (norm_nonneg y)]
+
+/-- A real family with a positive coordinate has positive `Lᵖ` norm. -/
+theorem norm_toLp_pos [Fact (1 ≤ p)] {c : ι → ℝ} {i : ι} (hi : 0 < c i) : 0 < ‖WithLp.toLp p c‖ :=
+  hi.trans_le ((Real.le_norm_self _).trans (norm_apply_le (WithLp.toLp p c) i))
+
+/-- Rescaling a positive family `c` with `N = ‖c‖_{ℓ^q}`, `1 ≤ q < ∞`, to
+`(N (c i / N) ^ (q / p))_i` preserves its norm in `ℓ^p` for every `p ≠ 0`. -/
+theorem norm_toLp_mul_div_rpow [Nonempty ι] {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : q ≠ ∞) (hp : p ≠ 0)
+    {c : ι → ℝ} (hc : ∀ i, 0 < c i) :
+    ‖WithLp.toLp p fun i ↦ ‖WithLp.toLp q c‖ * (c i / ‖WithLp.toLp q c‖) ^ (q.toReal / p.toReal)‖
+      = ‖WithLp.toLp q c‖ := by
+  set N := ‖WithLp.toLp q c‖
+  have hN : 0 < N := norm_toLp_pos (hc (Classical.arbitrary ι))
+  rcases eq_or_ne p ∞ with rfl | hp'
+  · simp [abs_of_pos hN]
+  have hp₀ := ENNReal.toReal_pos hp hp'
+  -- `∑ᵢ (c i / N) ^ q = 1`
+  have hsum : ∑ i, (c i / N) ^ q.toReal = 1 := by
+    have h := norm_rpow_eq_sum ((ENNReal.toReal_pos_iff_ne_top q).2 hq) (WithLp.toLp q c)
+    simp only [Real.norm_eq_abs, abs_of_pos (hc _)] at h
+    simp_rw [Real.div_rpow (hc _).le hN.le, ← Finset.sum_div, ← h]
+    exact div_self (by positivity)
+  rw [← Real.rpow_left_inj (PiLp.norm_nonneg' _) hN.le hp₀.ne', norm_rpow_eq_sum hp₀]
+  have hterm (i : ι) : ‖(WithLp.toLp p fun i ↦ N * (c i / N) ^ (q.toReal / p.toReal)) i‖ ^
+      p.toReal = N ^ p.toReal * (c i / N) ^ q.toReal := by
+    have hb : 0 ≤ c i / N := (div_pos (hc i) hN).le
+    rw [toLp_apply, Real.norm_of_nonneg (by positivity), Real.mul_rpow hN.le (by positivity),
+      ← Real.rpow_mul hb, div_mul_cancel₀ _ hp₀.ne']
+  simp_rw [hterm, ← Finset.mul_sum, hsum, mul_one]
 
 section Constant
 

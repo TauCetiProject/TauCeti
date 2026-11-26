@@ -229,7 +229,7 @@ private lemma pullback_map_glued {Y : Over S} (g : Y ⟶ Over.mk (𝟙 S)) (hg :
     rw [Over.mkIdTerminal.hom_ext (c ≫ _) (ιV ≫ g)]
     exact R.downward_closed hg ιV
   have hV : ⊤ ≤ (V.ι ≫ Y.hom) ⁻¹ᵁ U := by simp [V]
-  apply (bijective_bigSectionsRestrictLE_ι N Y.hom V).injective
+  apply (bijective_bigSectionsRestrictLE_ι N Y.hom V rfl).injective
   -- Both sides, read as global sections over the open subscheme `V = Y⁻¹ U`, are the value of
   -- the member of `m` over `V` on the pullback of `s`: for the glued morphism by construction of
   -- its sections over `U`, for `m g hg` by compatibility of `m` with restriction to `V`.

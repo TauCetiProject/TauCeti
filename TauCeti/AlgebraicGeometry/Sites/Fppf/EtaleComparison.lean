@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Pullback
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.CategoryTheory.Sites.ComparableTopologies
@@ -47,6 +48,15 @@ The morphism `a_X` factors through `ε`: its direct image is the direct image of
 the restriction of big étale sheaves to the small étale site
 (`AlgebraicGeometry.Scheme.aXPushforwardIsoComp`).
 
+The morphism `a_X` is compatible with base change along a morphism `f : Y ⟶ X`: restricting to
+étale `X`-schemes after the big direct image along `f` (`T ↦ F(T ×_X Y)`) is the small étale
+direct image after restricting to étale `Y`-schemes
+(`AlgebraicGeometry.Scheme.aXPushforwardBaseChangeIso`), and dually for the inverse images
+(`AlgebraicGeometry.Scheme.aXPullbackBaseChangeIso`). Both direct images are restrictions along
+the same functor `X.Etale ⥤ Over Y`, `V ↦ V ×_X Y`. The big inverse image along `f` is the
+restriction along `Over.map f`, left adjoint to the big direct image since
+`Over.map f ⊣ Over.pullback f`.
+
 The site `Over X` is large (its objects form a type in the universe above that of the morphisms),
 so the existence of fppf sheafification on it (`HasWeakSheafify`) and of the inverse image of
 `a_X` are hypotheses of the inverse images rather than constructions.
@@ -60,6 +70,10 @@ so the existence of fppf sheafification on it (`HasWeakSheafify`) and of the inv
   `AlgebraicGeometry.Scheme.aXAdjunction`: the morphism `a_X`.
 * `AlgebraicGeometry.Scheme.aXPushforwardIsoComp`: the direct image of `a_X` is that of `ε`
   followed by restriction to the small étale site.
+* `AlgebraicGeometry.Scheme.Hom.bigFppfPushforward`, `AlgebraicGeometry.Scheme.Hom.bigFppfPullback`:
+  the direct and inverse images of big fppf sheaves along a morphism of schemes.
+* `AlgebraicGeometry.Scheme.aXPushforwardBaseChangeIso`,
+  `AlgebraicGeometry.Scheme.aXPullbackBaseChangeIso`: compatibility of `a_X` with base change.
 
 ## References
 
@@ -161,6 +175,8 @@ theorem aXPushforwardIsoComp_inv_app_hom (F : Sheaf (fppfTopology.over X) A) :
   -- As in `aXPushforwardIsoComp_hom_app_hom`, `rfl` closes an equation of two identities.
   ext; simp [aXPushforwardIsoComp]; rfl
 
+section AXPullback
+
 /- The inverse image of `a_X` exists when the left Kan extensions along the inclusion of étale
 `X`-schemes among all `X`-schemes and fppf sheafification exist, by Mathlib's construction
 `CategoryTheory.Functor.sheafPullbackConstruction.sheafPullback`. -/
@@ -193,5 +209,107 @@ instance preservesFiniteLimits_aXPullback
   -- it preserves finite limits; flatness alone does not give the exactness of the Kan extension.
   have : RepresentablyFlat (Etale.forget X) := flat_of_preservesFiniteLimits _
   exact Functor.sheafPullbackConstruction.preservesFiniteLimits _ _ _ _
+
+end AXPullback
+
+/-! ### Compatibility of `a_X` with base change -/
+
+section BaseChange
+
+variable {X} {Y : Scheme.{u}} (f : Y ⟶ X)
+
+/-- The direct image of big fppf sheaves along `f : Y ⟶ X`: an fppf sheaf `F` on `Y`-schemes gives
+the fppf sheaf `T ↦ F(T ×_X Y)` on `X`-schemes, the restriction along base change
+`Over.pullback f`, which is continuous for the fppf topologies. -/
+noncomputable abbrev Hom.bigFppfPushforward :
+    Sheaf (fppfTopology.over Y) A ⥤ Sheaf (fppfTopology.over X) A :=
+  (Over.pullback f).sheafPushforwardContinuous A (fppfTopology.over X) (fppfTopology.over Y)
+
+/-- **`a_X` commutes with base change, direct images.** For `f : Y ⟶ X`, restricting the big direct
+image of an fppf sheaf on `Y`-schemes to étale `X`-schemes is the small étale direct image of its
+restriction to étale `Y`-schemes: both are restriction along `V ↦ V ×_X Y` from `X.Etale` to
+`Over Y` (`Hom.smallEtaleBaseChangeCompForgetIso`). -/
+noncomputable def aXPushforwardBaseChangeIso :
+    f.bigFppfPushforward A ⋙ aXPushforward X A ≅ aXPushforward Y A ⋙ f.smallEtalePushforward A :=
+  letI := Functor.isContinuous_comp f.smallEtaleBaseChange (Etale.forget Y) (smallEtaleTopology X)
+    (smallEtaleTopology Y) (fppfTopology.over Y)
+  Functor.sheafPushforwardContinuousComp' f.smallEtaleBaseChangeCompForgetIso.symm A
+      (smallEtaleTopology X) (fppfTopology.over X) (fppfTopology.over Y) ≪≫
+    (Functor.sheafPushforwardContinuousComp _ _ _ _ _ _).symm
+
+/-- On sections over an étale `X`-scheme `V`, `aXPushforwardBaseChangeIso` is the restriction
+along `Hom.smallEtaleBaseChangeCompForgetIso`, whose underlying morphism of schemes is the
+identity of `V ×_X Y`. -/
+@[simp]
+theorem aXPushforwardBaseChangeIso_hom_app_hom_app (F : Sheaf (fppfTopology.over Y) A)
+    (V : X.Etaleᵒᵖ) :
+    ((aXPushforwardBaseChangeIso A f).hom.app F).hom.app V =
+      F.obj.map (f.smallEtaleBaseChangeCompForgetIso.hom.app V.unop).op := by
+  -- `simp` reaches `F.obj.map _ ≫ 𝟙 _`, but cannot rewrite the object inside the identity, which
+  -- agrees with the expected one only up to unfolding, so `Category.comp_id` closes the goal.
+  simp only [Functor.comp_obj, aXPushforwardBaseChangeIso, Iso.trans_hom, Iso.symm_hom,
+    NatTrans.comp_app, ObjectProperty.FullSubcategory.comp_hom,
+    Functor.sheafPushforwardContinuousComp'_hom_app_hom_app, Iso.symm_inv,
+    Functor.sheafPushforwardContinuousComp_inv_app_hom_app]
+  exact Category.comp_id _
+
+/-- On sections over an étale `X`-scheme `V`, the inverse of `aXPushforwardBaseChangeIso` is the
+restriction along the inverse of `Hom.smallEtaleBaseChangeCompForgetIso`. -/
+@[simp]
+theorem aXPushforwardBaseChangeIso_inv_app_hom_app (F : Sheaf (fppfTopology.over Y) A)
+    (V : X.Etaleᵒᵖ) :
+    ((aXPushforwardBaseChangeIso A f).inv.app F).hom.app V =
+      F.obj.map (f.smallEtaleBaseChangeCompForgetIso.inv.app V.unop).op := by
+  -- As in `aXPushforwardBaseChangeIso_hom_app_hom_app`, with the identity on the left.
+  simp only [Functor.comp_obj, aXPushforwardBaseChangeIso, Iso.trans_inv, Iso.symm_inv,
+    NatTrans.comp_app, ObjectProperty.FullSubcategory.comp_hom,
+    Functor.sheafPushforwardContinuousComp_hom_app_hom_app,
+    Functor.sheafPushforwardContinuousComp'_inv_app_hom_app, Iso.symm_hom]
+  exact Category.id_comp _
+
+/-- The inverse image of big fppf sheaves along `f : Y ⟶ X`: an fppf sheaf `G` on `X`-schemes gives
+the fppf sheaf `V ↦ G(V)` on `Y`-schemes, regarding a `Y`-scheme as an `X`-scheme via `f`, the
+restriction along `Over.map f` (Mathlib's `GrothendieckTopology.overMapPullback`). -/
+noncomputable abbrev Hom.bigFppfPullback :
+    Sheaf (fppfTopology.over X) A ⥤ Sheaf (fppfTopology.over Y) A :=
+  fppfTopology.overMapPullback A f
+
+/-- The inverse image of big fppf sheaves along `f` is left adjoint to the direct image, as
+`Over.map f` is left adjoint to `Over.pullback f`. -/
+noncomputable abbrev Hom.bigFppfAdjunction : f.bigFppfPullback A ⊣ f.bigFppfPushforward A :=
+  (Over.mapPullbackAdj f).sheafPushforwardContinuous (fppfTopology.over Y) (fppfTopology.over X)
+
+section Pullback
+
+variable [(aXPushforward X A).IsRightAdjoint] [(aXPushforward Y A).IsRightAdjoint]
+  [(f.smallEtalePushforward A).IsRightAdjoint]
+
+/-- **`a_X` commutes with base change, inverse images.** For `f : Y ⟶ X`, pulling an étale sheaf
+on `X` back to the small étale site of `Y` and then to the big fppf site of `Y` is the same as
+pulling it back to the big fppf site of `X` and then along `f`: the left adjoints of the two
+composites in `aXPushforwardBaseChangeIso` agree. -/
+noncomputable def aXPullbackBaseChangeIso :
+    f.smallEtalePullback A ⋙ aXPullback Y A ≅ aXPullback X A ⋙ f.bigFppfPullback A :=
+  ((f.smallEtaleAdjunction A).comp (aXAdjunction Y A)).leftAdjointUniq
+    (((aXAdjunction X A).comp (f.bigFppfAdjunction A)).ofNatIsoRight
+      (aXPushforwardBaseChangeIso A f))
+
+/-- `aXPullbackBaseChangeIso` is characterized by the units of the two composite adjunctions: it
+carries the unit through the small étale site of `Y` to the unit through the big fppf site of `X`,
+followed by `aXPushforwardBaseChangeIso`. -/
+@[reassoc]
+theorem unit_aXPullbackBaseChangeIso_hom :
+    ((f.smallEtaleAdjunction A).comp (aXAdjunction Y A)).unit ≫
+        Functor.whiskerRight (aXPullbackBaseChangeIso A f).hom
+          (aXPushforward Y A ⋙ f.smallEtalePushforward A) =
+      ((aXAdjunction X A).comp (f.bigFppfAdjunction A)).unit ≫
+        Functor.whiskerLeft (aXPullback X A ⋙ f.bigFppfPullback A)
+          (aXPushforwardBaseChangeIso A f).hom := by
+  rw [aXPullbackBaseChangeIso, Adjunction.unit_leftAdjointUniq_hom]
+  simp [Adjunction.ofNatIsoRight]
+
+end Pullback
+
+end BaseChange
 
 end AlgebraicGeometry.Scheme

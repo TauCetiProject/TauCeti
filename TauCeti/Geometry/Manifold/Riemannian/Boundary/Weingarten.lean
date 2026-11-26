@@ -41,7 +41,8 @@ curvatures `1` and `H = 1`.
   bundled as `TauCeti.boundaryPrincipalBasis`
   (`TauCeti.boundaryWeingarten_boundaryPrincipalDirection`,
   `TauCeti.boundaryInducedForm_boundaryPrincipalDirection`), in which `II_q` is diagonal
-  (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`).
+  (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`), so that
+  `II_q(u, u) = ∑ᵢ κᵢ uᵢ²` (`TauCeti.boundarySecondFundamentalForm_self_eq_sum`).
 * `TauCeti.boundaryMeanCurvature`: the mean curvature `H(q) = tr S_q / n`, with
   `TauCeti.sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature`: `tr_h II = n H`, the
   sum of `II_q(e_i, e_i)` over every `h`-orthonormal basis `(e_i)`, and
@@ -248,6 +249,19 @@ theorem boundarySecondFundamentalForm_boundaryPrincipalDirection (q : (𝓡∂ (
   rw [← boundaryInducedForm_boundaryWeingarten, boundaryWeingarten_boundaryPrincipalDirection,
     map_smul, LinearMap.smul_apply, boundaryInducedForm_boundaryPrincipalDirection]
   split_ifs <;> simp
+
+/-- **The second fundamental form in principal coordinates**: `II_q(u, u) = ∑ᵢ κᵢ uᵢ²`, where
+`uᵢ` are the coordinates of `u` in the basis of principal directions. -/
+theorem boundarySecondFundamentalForm_self_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundarySecondFundamentalForm q u u =
+      ∑ i, boundaryPrincipalCurvatures q i * (boundaryPrincipalBasis q).repr u i ^ 2 := by
+  conv_lhs => rw [← (boundaryPrincipalBasis q).sum_repr u]
+  simp only [coe_boundaryPrincipalBasis, map_sum, map_smul, LinearMap.coe_sum,
+    LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply,
+    boundarySecondFundamentalForm_boundaryPrincipalDirection, smul_eq_mul, mul_ite, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
 
 /-- The principal directions are nonzero. -/
 theorem boundaryPrincipalDirection_ne_zero (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :

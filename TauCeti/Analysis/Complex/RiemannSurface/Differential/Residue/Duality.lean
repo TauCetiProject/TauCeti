@@ -39,9 +39,11 @@ With Riemann–Roch for divisor sheaves this has two consequences:
 * comparing with the topological formula `deg K = -χ(X)`, the topological genus is at most the
   analytic genus (`TauCeti.RiemannSurface.genus_le_analyticGenus`).
 
-Equality in both, which is the remaining content of Serre duality, needs the surjectivity of the
-connecting map (Forster, Theorem 17.3), so that the pairing is defined on all of `H¹(X, 𝒪_D)`, and
-the surjectivity of the duality map (Forster, Theorem 17.9).
+The connecting map is surjective (Forster, Theorem 17.3,
+`TauCeti.RiemannSurface.mittagLefflerConnecting_surjective` in
+`Divisor/Cohomology/Vanishing.lean`), so the pairing is defined on all of `H¹(X, 𝒪_D)`. Equality
+in both inequalities, which is the remaining content of Serre duality, needs the surjectivity of
+the duality map (Forster, Theorem 17.9).
 
 ## Main results
 

@@ -12,8 +12,9 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
+public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import TauCeti.NumberTheory.LocalField.Units.Decomposition
-import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -31,13 +32,20 @@ Identifying `U(L,i)` with `(maximalIdeal 𝒪[L] ^ i).principalUnitGroup`
 `(maximalIdeal 𝒪[L]).PrincipalUnitGroupPowGraded i`
 (`TauCeti.unitFiltrationGradedEquivPrincipalUnitGroupPowGraded`), this file transports the
 general discrete-valuation-ring constructions from
-`TauCeti/RingTheory/DiscreteValuationRing/RamificationGroup.lean` to the unit filtration.
-Using Teichmüller representatives (`TauCeti.smul_teichmullerLift_of_mem_ramificationGroup_zero`),
-an element of `G_0` has membership in `G_{i+1}` decided at a uniformizer alone
-(`TauCeti.mem_ramificationGroup_natCast_iff_smul_sub_mem`), yielding exactness of the kernels
-and injectivity of the graded maps (`θ_i`, `TauCeti.IsDiscreteValuationRing.tameCharacterGraded`,
-and `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`) without requiring a
-separable base extension.
+`TauCeti/RingTheory/DiscreteValuationRing/RamificationGroup.lean` to the unit filtration,
+yielding `θ_i : G_i / G_{i+1} →* U(L,i) / U(L,i+1)`. The map `θ_i` is injective, because
+membership of an element of `G_0` in `G_{i+1}` is decided at `ϖ` alone: this is the uniformizer
+criterion `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem` over the invariant
+subring of `𝒪[L]`, whose residue extension is separable because `𝓀[L]` is finite.
+
+At depth zero the general tame character `TauCeti.IsLocalRing.tameCharacter G 𝒪[L]` embeds
+`G_0 / G_1` into `𝓀[L]ˣ`, so the tame quotient is cyclic of order dividing `q - 1`, where `q` is
+the cardinality of the residue field, and the index of `G_1` in `G_0` is prime to the residue
+characteristic `p`. At positive depth every `G_i / G_{i+1}` is a `p`-group; when the action is
+faithful and `G_0` is finite, every `G_i` with `i ≥ 1`, in particular the wild inertia group `G_1`,
+is a `p`-group, and `G_1` is the Sylow `p`-subgroup `TauCeti.IsLocalRing.ramificationGroupOneSylow`
+of `G_0`. These are the local-field cases of the general local-ring statements in
+`TauCeti.RingTheory.LocalRing.RamificationGroup.Graded`.
 
 ## Main definitions
 
@@ -66,16 +74,19 @@ separable base extension.
 * `TauCeti.ker_ramificationGroupToUnitFiltrationGraded` and
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective`: the kernel is exactly
   `G_{i+1}`, and `θ_i` is injective.
-* `TauCeti.tameCharacterGraded_injective`, `TauCeti.ker_tameCharacter`, and
-  `TauCeti.ramificationGroupGradedToResidueField_injective`: exactness and injectivity of the
-  DVR tame character and positive-depth residue coordinate in the local-field setting without a
-  base ring.
+* `TauCeti.ramificationGroupGradedToPrincipalUnitGroupGraded_injective`,
+  `TauCeti.ker_tameCharacter_of_irreducible`,
+  `TauCeti.tameCharacterGraded_injective_of_irreducible`, and
+  `TauCeti.ramificationGroupGradedToResidueField_injective_of_irreducible`: exactness and
+  injectivity of the DVR graded maps over local fields without a base ring.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`: the tame quotient
   is cyclic, of order dividing `q - 1`.
-* `TauCeti.not_dvd_index_ramificationGroup_one` and `TauCeti.natCard_ramificationGroup_one`:
-  index prime to `p` and order `p ^ (v_p #G_0)` of wild inertia (together with
-  `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex` for the Sylow `p`-subgroup).
+* `TauCeti.isPGroup_ramificationGroupGraded_natCast_succ` and
+  `TauCeti.isPGroup_ramificationGroup`: the positive-depth graded pieces, and, for a faithful
+  action with finite `G_0`, the positive-depth ramification groups, are `p`-groups.
+* `TauCeti.not_dvd_index_ramificationGroup_one`: the index of `G_1` in `G_0` is prime to `p`.
+* `TauCeti.natCard_ramificationGroup_one`: the order of `G_1` is the `p`-part of the order of `G_0`.
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
   trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
   prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
@@ -89,7 +100,7 @@ the depth-zero declarations fix the index `(0 : ℤ)`, the spelling in which a s
 
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2, Proposition 5.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2, Propositions 5 to 7.
 -/
 
 public section
@@ -256,42 +267,26 @@ theorem smul_teichmullerLift_of_mem_ramificationGroup_zero
     rwa [← residue_eq_zero_iff, map_sub, sub_eq_zero, residue_teichmullerLift] at h
   · rw [← smul_pow', teichmullerLift_pow_natCard]
 
+/-- The residue field of `L` is separable over the residue field of the invariant subring of
+`𝒪[L]`, because it is finite, hence perfect. So the invariant subring, which is local by
+`TauCeti.FixedPoints.isLocalRing_subalgebra`, is a base ring for the uniformizer criterion
+`TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem` and the graded embeddings of
+`TauCeti.RingTheory.LocalRing.RamificationGroup.Graded`. -/
+instance isSeparable_residueField_fixedPoints_subalgebra :
+    Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra ℤ 𝒪[L] G)) 𝓀[L] := by
+  have : Finite (ResidueField (FixedPoints.subalgebra ℤ 𝒪[L] G)) :=
+    Finite.of_injective _ (algebraMap _ 𝓀[L]).injective
+  infer_instance
+
 /-- **Membership in the ramification filtration is decided at a uniformizer**: an element `σ` of
-the inertia group `G_0` lies in `G_n` exactly when `σ ϖ ≡ ϖ` modulo `𝓂[L] ^ (n + 1)`. Writing an
-integer as a Teichmüller representative, which `σ` fixes, plus `ϖ` times an integer, the
-congruence propagates from `ϖ` to every integer one power of `𝓂[L]` at a time. -/
+the inertia group `G_0` lies in `G_n` exactly when `σ ϖ ≡ ϖ` modulo `𝓂[L] ^ (n + 1)`. This is the
+local-field case of `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`, over the
+invariant subring of `𝒪[L]`. -/
 theorem mem_ramificationGroup_natCast_iff_smul_sub_mem (hϖ : Irreducible ϖ)
     (hσ : σ ∈ ramificationGroup G 𝒪[L] 0) {n : ℕ} :
-    σ ∈ ramificationGroup G 𝒪[L] (n : ℤ) ↔ σ • ϖ - ϖ ∈ 𝓂[L] ^ (n + 1) := by
-  rw [mem_ramificationGroup_natCast_iff]
-  refine ⟨fun h ↦ h ϖ, fun h ↦ ?_⟩
-  have hσϖ : σ • ϖ ∈ 𝓂[L] := by
-    have h₁ := mem_ramificationGroup_zero_iff.mp hσ ϖ
-    have h₂ : ϖ ∈ 𝓂[L] := (mem_maximalIdeal ϖ).mpr hϖ.not_isUnit
-    simpa using Ideal.add_mem _ h₁ h₂
-  suffices ∀ m ≤ n + 1, ∀ x : 𝒪[L], σ • x - x ∈ 𝓂[L] ^ m from this _ le_rfl
-  intro m
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    intro hm x
-    obtain ⟨y, hy⟩ : ∃ y, x = teichmullerLift L (residue 𝒪[L] x) + ϖ * y := by
-      have hx : x - teichmullerLift L (residue 𝒪[L] x) ∈ 𝓂[L] := by
-        rw [← residue_eq_zero_iff, map_sub, residue_teichmullerLift, sub_self]
-      rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).mp hϖ,
-        Ideal.mem_span_singleton'] at hx
-      obtain ⟨y, hy⟩ := hx
-      exact ⟨y, by rw [mul_comm, hy]; ring⟩
-    have hsplit : σ • x - x = σ • ϖ * (σ • y - y) + (σ • ϖ - ϖ) * y := by
-      rw [hy, smul_add, smul_mul', smul_teichmullerLift_of_mem_ramificationGroup_zero hσ]
-      ring
-    have h₁ : σ • ϖ * (σ • y - y) ∈ 𝓂[L] ^ (m + 1) := by
-      rw [pow_succ']
-      exact Ideal.mul_mem_mul hσϖ (ih (by omega) y)
-    have h₂ : (σ • ϖ - ϖ) * y ∈ 𝓂[L] ^ (m + 1) :=
-      Ideal.mul_mem_right _ _ (Ideal.pow_le_pow_right hm h)
-    rw [hsplit]
-    exact Ideal.add_mem _ h₁ h₂
+    σ ∈ ramificationGroup G 𝒪[L] (n : ℤ) ↔ σ • ϖ - ϖ ∈ 𝓂[L] ^ (n + 1) :=
+  IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem (FixedPoints.subalgebra ℤ 𝒪[L] G)
+    hϖ.maximalIdeal_eq hσ
 
 /-- An element of the inertia group `G_0` lies in `G_1` as soon as the ratio `σ ϖ / ϖ` of a
 uniformizer `ϖ` has a `p`-power congruent to `1` modulo the maximal ideal, for `p` the residue
@@ -453,7 +448,7 @@ theorem ramificationGroupGradedToPrincipalUnitGroupGraded_injective (hϖ : Irred
 
 /-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
 @[simp]
-theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
+theorem ker_tameCharacter_of_irreducible (hϖ : Irreducible ϖ) :
     (IsDiscreteValuationRing.tameCharacter (G := G) hϖ).ker =
       (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
   ext σ
@@ -461,54 +456,72 @@ theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
   exact (mem_ramificationGroup_natCast_iff_smul_sub_mem hϖ σ.property (n := 1)).symm
 
 /-- **The tame character is injective on `G_0 / G_1`.** -/
-theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
+theorem tameCharacterGraded_injective_of_irreducible (hϖ : Irreducible ϖ) :
     Function.Injective (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ) :=
   IsDiscreteValuationRing.tameCharacterGraded_injective_of_injective hϖ
     (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hϖ)
 
 /-- The positive-depth ramification quotient embeds in the additive residue field. -/
-theorem ramificationGroupGradedToResidueField_injective (n : ℕ) (π : 𝒪[L])
+theorem ramificationGroupGradedToResidueField_injective_of_irreducible (n : ℕ) (π : 𝒪[L])
     (hπ : Irreducible π) :
     Function.Injective
       (IsDiscreteValuationRing.ramificationGroupGradedToResidueField (G := G) n hπ) :=
   IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective_of_injective n hπ
     (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hπ)
 
+/-! ### The tame quotient -/
+
 variable (G L) in
-/-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
-residue field, which is cyclic because the residue field is finite. -/
+/-- **The tame quotient is cyclic**: the tame character `TauCeti.IsLocalRing.tameCharacterGraded`
+embeds `G_0 / G_1` into the multiplicative group of the residue field, which is cyclic because the
+residue field is finite. Unlike `TauCeti.IsLocalRing.isCyclic_ramificationGroupGraded_zero`, no
+finiteness of `G_0 / G_1` is assumed. -/
 theorem isCyclic_ramificationGroupGraded_zero :
     IsCyclic (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) :=
-  have ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  isCyclic_of_injective _ (tameCharacterGraded_injective hϖ)
+  isCyclic_of_injective _
+    (IsLocalRing.tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G))
 
 variable (G L) in
 /-- The order of the tame quotient `G_0 / G_1` divides `q - 1`, for `q` the cardinality of the
 residue field. -/
 theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
     Nat.card (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) ∣ Nat.card 𝓀[L] - 1 := by
-  obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   rw [← Nat.card_units]
-  exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective hϖ)
+  exact Subgroup.card_dvd_of_injective _
+    (IsLocalRing.tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G))
+
+/-! ### Wild inertia is a `p`-group -/
+
+variable (G) in
+/-- At positive depth `i`, the graded piece `G_i / G_{i+1}` is a `p`-group for the residue
+characteristic `p`. This is the local-field case of
+`TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded`. -/
+theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP 𝓀[L] p] (i : ℕ) :
+    IsPGroup p (RamificationGroupGraded G 𝒪[L] ((i + 1 : ℕ) : ℤ)) :=
+  IsLocalRing.isPGroup_ramificationGroupGraded p (by omega)
+
+variable (G) in
+/-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue
+characteristic, whenever the action is faithful and `G_0` is finite; in particular the wild
+inertia group `G_1` is a `p`-group. This is the local-field case of
+`TauCeti.IsLocalRing.isPGroup_ramificationGroup`. -/
+theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
+    [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
+    IsPGroup p (ramificationGroup G 𝒪[L] i) :=
+  IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
 
 variable (G) in
-/-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. -/
+/-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. This is the local-field
+case of `TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`, where `G_0 / G_1` is finite
+because it embeds in `𝓀[L]ˣ`. -/
 theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
     ¬p ∣ ((ramificationGroup G 𝒪[L] 1).subgroupOf
       (ramificationGroup G 𝒪[L] 0)).index := by
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  have _ : Finite (RamificationGroupGraded G 𝒪[L] 0) :=
-    Finite.of_injective _ (tameCharacterGraded_injective hϖ)
-  have hidx : ((ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0)).index =
-      Nat.card (RamificationGroupGraded G 𝒪[L] 0) := by
-    rw [Subgroup.index_eq_card, RamificationGroupGraded, zero_add]
-  rw [hidx]
-  exact TauCeti.not_dvd_natCard_of_injective_units p
-    (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ)
-    (tameCharacterGraded_injective hϖ)
+  have : Finite (RamificationGroupGraded G 𝒪[L] 0) := Finite.of_injective _
+    (IsLocalRing.tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G))
+  exact IsLocalRing.not_dvd_index_ramificationGroup_one (FixedPoints.subalgebra ℤ 𝒪[L] G) p
 
 variable (G) in
 /-- The order of wild inertia is the residue-characteristic part of the order of inertia:
@@ -516,10 +529,13 @@ variable (G) in
 theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Nat.card (ramificationGroup G 𝒪[L] 1) =
-      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p :=
+      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsLocalRing.natCard_ramificationGroup_one_of_not_dvd_index G 𝒪[L] p
-    (not_dvd_index_ramificationGroup_one G p)
+  rw [← Sylow.card_eq_multiplicity
+    (IsLocalRing.ramificationGroupOneSylow G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p),
+    IsLocalRing.ramificationGroupOneSylow_coe]
+  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -530,16 +546,18 @@ is, if and only if the inertia group `G_0` is finite of order prime to `p`: when
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
     [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
+  have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
-  · exact IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index
-      G 𝒪[L] p (not_dvd_index_ramificationGroup_one G p)
+  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
+      Nat.factorization_eq_zero_iff]
+    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin
     rw [Nat.card_eq_zero_of_infinite]
     simp only [dvd_zero, not_true_eq_false, iff_false]
     intro h
-    obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-    have hker := ker_tameCharacter (G := G) hϖ
+    have hker :=
+      IsLocalRing.ker_tameCharacter (G := G) (S := 𝒪[L]) (FixedPoints.subalgebra ℤ 𝒪[L] G)
     rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
     exact hfin (Finite.of_injective _ hker)
 

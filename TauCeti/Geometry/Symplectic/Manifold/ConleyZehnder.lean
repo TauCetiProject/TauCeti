@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
+import TauCeti.Geometry.Symplectic.ConleyZehnder.Parity
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.UnitaryFrame
@@ -64,6 +65,8 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`: the change of frame law.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_comp_eq`: independence of the frame over a cap.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isSymplecticFrame`: existence of symplectic frames.
+* `TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`: in a periodic frame, the index
+  of a family from the identity whose endpoint fixes no nonzero vector is an integer.
 
 ## References
 
@@ -235,6 +238,38 @@ theorem frameConleyZehnderIndex_trans [FiniteDimensional ℝ W] [FiniteDimension
     ext v
     rw [Path.map_coe, Function.comp_apply]
     simp
+
+/-- **The index of a nondegenerate return map is an integer.** Let `χ` be a symplectic frame along
+`γ` taking the same values at the two ends, for instance a periodic frame along a loop, and let `Φ`
+be a family of linear maps along `γ` preserving `σ` which starts at the identity and whose endpoint
+`Φ(1)` fixes no nonzero vector, as the linearized flow along a nondegenerate periodic orbit does.
+Then the Conley–Zehnder index of `Φ` read in `χ` is an integer. -/
+theorem exists_int_frameConleyZehnderIndex_eq [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ₁ : ∀ v, χ 0 v = χ 1 v)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    (hΦ₁ : ∀ v, Φ 1 v = v → v = 0) :
+    ∃ k : ℤ, frameConleyZehnderIndex ω₀ hχ hΦ hΦσ = k := by
+  -- Read in `χ`, the path starts at the identity of the model.
+  have hA : (1 : W →L[ℝ] W) = (((χ 0).trans (Φ 0)).trans (χ 0).symm : W ≃L[ℝ] W) := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    -- Unfold the composite pointwise: its middle factor `Φ 0` maps `T_(γ 0) M` to itself only
+    -- up to the definitional equality of tangent spaces, which `simp` lemmas cannot match.
+    change v = (χ 0).symm (Φ 0 (χ 0 v))
+    rw [hΦ₀, ContinuousLinearEquiv.symm_apply_apply]
+  -- and its endpoint `χ(1)⁻¹ ∘ Φ(1) ∘ χ(0)` fixes no nonzero vector of the model.
+  have hB : End.eigenspace (((((χ 0).trans (Φ 1)).trans (χ 1).symm : W ≃L[ℝ] W) : W →L[ℝ] W) :
+      W →ₗ[ℝ] W) 1 = ⊥ := by
+    refine (Submodule.eq_bot_iff _).2 fun v hv ↦ ?_
+    rw [End.mem_eigenspace_iff, one_smul] at hv
+    -- The same unfolding of the composite, applied to `v`.
+    have hv' : (χ 1).symm (Φ 1 (χ 0 v)) = v := hv
+    exact (χ 0).map_eq_zero_iff.1 (hΦ₁ _ (((χ 1).symm_apply_eq.1 hv').trans (hχ₁ v).symm))
+  obtain ⟨k, hk, -⟩ := ω₀.exists_int_conleyZehnderIndex_eq_of_one
+    ((framePath hχ.continuous hΦ).cast hA rfl) (apply_framePath_apply hχ hΦ hΦσ) hB
+  exact ⟨k, (ω₀.conleyZehnderIndex_congr (framePath hχ.continuous hΦ)
+    ((framePath hχ.continuous hΦ).cast hA rfl) _ fun _ ↦ rfl).trans hk⟩
 
 omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 /-- The change of frame `t ↦ χ(t)⁻¹ ∘ χ'(t)` between two frames along `γ` takes the same value at

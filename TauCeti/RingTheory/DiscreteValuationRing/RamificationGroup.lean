@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Irreducible.Lemmas
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
@@ -40,9 +40,9 @@ extension `ResidueField B / ResidueField A` is separable, membership of an eleme
 (`TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_eq_maximalIdeal`), so the
 kernel of the `i`-th homomorphism is *equal* to `G_{i+1}` and all graded maps `θ_i`,
 `tameCharacterGraded`, and `ramificationGroupGradedToResidueField` are injective. Together with the
-local-ring positive-depth results from `TauCeti/RingTheory/LocalRing/RamificationGroup.lean`, this
-gives the tame/wild decomposition of inertia without assuming that the residue field is finite or
-that `B` is complete:
+local-ring positive-depth results from `TauCeti/RingTheory/LocalRing/RamificationGroup/Graded.lean`,
+this gives the tame/wild decomposition of inertia without assuming that the residue field is finite
+or that `B` is complete:
 
 * whenever `G_0 / G_1` is finite, it is cyclic, and its cardinality is not divisible by the residue
   characteristic `p`;
@@ -709,7 +709,8 @@ theorem tameCharacter_injective_of_charZero (A : Type*) [CommRing A] [IsLocalRin
   have : Finite (ramificationGroup G B 1) :=
     finite_ramificationGroup_of_le G B zero_le_one
   exact (tameCharacter_injective_iff A hϖ).mpr
-    (ramificationGroup_eq_bot_of_charZero G B (i := 1) one_pos)
+    (ramificationGroup_eq_bot_of_charZero (G := G) (S := B) (i := 1) one_pos
+      (iInf_ramificationGroup_eq_bot G B))
 
 /-- When `B` is a local `A`-algebra on which `G` acts by `A`-algebra automorphisms with separable
 residue extension, a finite inertia group `G_0` with trivial wild inertia `G_1 = ⊥` is cyclic. -/
@@ -739,7 +740,8 @@ theorem isCyclic_ramificationGroup_zero_of_charZero (A G B : Type*) [CommRing A]
   have : Finite (ramificationGroup G B 1) :=
     finite_ramificationGroup_of_le G B zero_le_one
   exact isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot A G B
-    (ramificationGroup_eq_bot_of_charZero G B one_pos)
+    (ramificationGroup_eq_bot_of_charZero (G := G) (S := B) one_pos
+      (iInf_ramificationGroup_eq_bot G B))
 
 end Structure
 

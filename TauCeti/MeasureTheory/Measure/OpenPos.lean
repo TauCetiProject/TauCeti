@@ -24,7 +24,8 @@ An almost-everywhere inclusion of an open set in another set implies inclusion i
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
 then shows that regular open sets are determined by their almost-everywhere classes. Likewise a
 continuous function on the closure of an open set is determined by its values almost everywhere on
-the set.
+the set, and two functions continuous on `closure U ∩ V`, for open `U` and `V`, which agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
 almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
