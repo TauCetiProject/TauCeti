@@ -25,8 +25,9 @@ assumed in the definition.
 The two extreme cases are the familiar ones. At `Γ = frontier Ω` every generator restricts to a
 test function supported in `Ω`, and conversely, so `W^{1,p}_Γ(Ω) = W^{1,p}_0(Ω)` for every open `Ω`
 and every `p` (`TauCeti.w1pVanishingOnSubmodule_frontier`). At `Γ = ∅` the generators are all
-restrictions of test functions, which are dense in `W^{1,p}(Ω)` on bounded Lipschitz domains for
-finite `p`; that case lives with the Lipschitz-domain theory.
+restrictions of test functions, so `W^{1,p}_∅(Ω) = W^{1,p}(Ω)` exactly when these are dense
+(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), as on bounded Lipschitz domains for finite
+`p`.
 
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
 as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
@@ -45,6 +46,8 @@ motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
   sequences of generators.
 * `TauCeti.w1pVanishingOnSubmodule_antitone` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
   antitone in `Γ` and depends only on `closure Γ`.
+* `TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`: at `Γ = ∅` it is everything exactly when
+  the restricted test functions are dense.
 * `TauCeti.w1p0Submodule_le_w1pVanishingOnSubmodule`: it contains `W^{1,p}_0(Ω)` when `Γ` misses
   `Ω`, and more generally `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`: restriction from a
   larger open set `U` maps `W^{1,p}_0(U)` into it when `Γ` misses `U`.
@@ -193,6 +196,22 @@ theorem w1pVanishingOnSubmodule_closure :
       (w1pVanishingOnSubmodule mu Omega p (closure Γ)).isClosed
       (fun _ hφ => W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
         (by rwa [closure_closure])) hu
+
+/-! ### The empty boundary part -/
+
+/-- **`W^{1,p}_∅(Ω)` is all of `W^{1,p}(Ω)` exactly when restricted test functions are dense.** At
+`Γ = ∅` every restriction to `Ω` of a test function on the whole space is a generator, so
+`W^{1,p}_∅(Ω)` is the closure of their range. -/
+theorem w1pVanishingOnSubmodule_empty_eq_top_iff :
+    w1pVanishingOnSubmodule mu Omega p ∅ = ⊤ ↔
+      DenseRange fun φ : 𝓓((⊤ : Opens E), ℝ) =>
+        W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ) := by
+  refine ⟨fun h u => ?_, fun h => eq_top_iff.2 fun u _ => h.induction_on u
+    (w1pVanishingOnSubmodule mu Omega p ∅).isClosed fun _ =>
+      W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (by simp)⟩
+  have hu : u ∈ w1pVanishingOnSubmodule mu Omega p ∅ := h ▸ ClosedSubmodule.mem_top
+  rw [← SetLike.mem_coe, coe_w1pVanishingOnSubmodule] at hu
+  simpa only [closure_empty, disjoint_empty, ofPred_true, image_univ] using hu
 
 /-! ### Comparison with `W^{1,p}_0(Ω)` -/
 
