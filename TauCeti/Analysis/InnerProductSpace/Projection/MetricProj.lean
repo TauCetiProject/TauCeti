@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 
 /-!
 # The metric projection onto a set
@@ -35,6 +36,7 @@ online gradient descent.
 
 ## Main results
 
+* `Metric.infDist_eq_iInf_norm_sub`: `Metric.infDist x s` as an infimum of norms.
 * `TauCeti.metricProj_mem_of_exists`, `TauCeti.norm_sub_metricProj_of_exists`: when a nearest
   point exists, `metricProj s x` is one.
 * `TauCeti.metricProj_eq_self_of_mem`: points of `s` project to themselves.
@@ -63,6 +65,16 @@ public section
 
 open Metric
 open scoped RealInnerProductSpace
+
+namespace Metric
+
+variable {E : Type*} [SeminormedAddCommGroup E] {s : Set E} {x : E}
+
+/-- `Metric.infDist x s` as an infimum of norms: the norm form of `Metric.infDist_eq_iInf`. -/
+theorem infDist_eq_iInf_norm_sub : infDist x s = ⨅ y : s, ‖x - y‖ := by
+  simp [infDist_eq_iInf, dist_eq_norm]
+
+end Metric
 
 namespace TauCeti
 
@@ -106,10 +118,6 @@ theorem metricProj_eq_self_of_mem (hx : x ∈ s) : metricProj s x = x := by
   have hdist := norm_sub_metricProj_of_exists h
   rw [infDist_zero_of_mem hx, norm_sub_eq_zero_iff] at hdist
   exact hdist.symm
-
-/-- `Metric.infDist x s` as an infimum of norms. -/
-private theorem infDist_eq_iInf_norm_sub : infDist x s = ⨅ y : s, ‖x - y‖ := by
-  simp [infDist_eq_iInf, dist_eq_norm]
 
 end NormedAddCommGroup
 
@@ -161,14 +169,10 @@ theorem metricProj_eq_iff (hne : K.Nonempty) (hc : IsComplete K) (hK : Convex �
       fun z hz ↦ inner_sub_metricProj_sub_metricProj_nonpos hc hK x hz⟩
   · rintro ⟨hp, hvar⟩
     have h₁ := hvar _ (metricProj_mem hne hc hK x)
-    have h₂ := inner_sub_metricProj_sub_metricProj_nonpos hc hK x hp
-    have hneg : ⟪x - metricProj K x, p - metricProj K x⟫ =
-        -⟪x - metricProj K x, metricProj K x - p⟫ := by
-      rw [← inner_neg_right, neg_sub]
-    have hself : ⟪metricProj K x - p, metricProj K x - p⟫ =
-        ⟪x - p, metricProj K x - p⟫ - ⟪x - metricProj K x, metricProj K x - p⟫ := by
-      rw [← inner_sub_left, sub_sub_sub_cancel_left]
-    exact sub_eq_zero.1 (real_inner_self_nonpos.1 (by linarith))
+    have h := norm_sub_le_norm_sub_of_inner_sub_le_zero
+      (inner_sub_metricProj_sub_metricProj_nonpos hc hK x hp) h₁
+    rw [sub_self, norm_zero] at h
+    exact sub_eq_zero.1 (norm_le_zero_iff.1 h)
 
 /-- Every nearest point of a complete convex set `K` to `x` is the metric projection of `x`. -/
 theorem eq_metricProj_of_norm_sub_eq_infDist (hc : IsComplete K) (hK : Convex ℝ K) {x y : E}
