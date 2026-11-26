@@ -597,7 +597,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
     hN0 hN1 hN2 hV hK => ?_⟩
   have hΩcl : Ω ⊆ closure Ω := subset_closure
   -- `u` and `Du` are `α`-Hölder on `Ω` with constant `C₁ N`.
-  obtain ⟨hHu, hHDu⟩ := hC₁ hU hΩU hu hN0 hN1 hN2
+  obtain ⟨hHu, hHDu⟩ := hC₁ (fun z hz => hu.contDiffAt (hU.mem_nhds (hΩU (hΩcl hz))))
+    (fun z hz => by rw [Real.norm_eq_abs]; exact hN0 z (hΩcl hz)) (fun z hz => hN1 z (hΩcl hz))
+    fun z hz => hN2 z (hΩcl hz)
   -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on `Ω` with constant `K + N P`.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun z hz => hN0 z (hΩcl hz))
     (fun z hz => hN1 z (hΩcl hz)) hHb hb hHc hc

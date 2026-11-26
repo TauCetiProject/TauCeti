@@ -127,7 +127,9 @@ theorem exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mu
   have hD2N : ∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N₁ := fun z hz =>
     (hAD z hz).2.trans hN₁.2
   -- `φ` and `Dφ` are `α`-Hölder on `Ω` with constant `C₃ N₁`.
-  obtain ⟨hHφ, hHDφ⟩ := hC₃ hU hΩU hφ hφN hDN hD2N
+  obtain ⟨hHφ, hHDφ⟩ := hC₃ (fun z hz => hφ.contDiffAt (hU.mem_nhds (hΩU (hΩcl hz))))
+    (fun z hz => by rw [Real.norm_eq_abs]; exact hφN z (hΩcl hz)) (fun z hz => hDN z (hΩcl hz))
+    fun z hz => hD2N z (hΩcl hz)
   refine ⟨fun z hz => (hAD z hz).1.trans ?_, fun z hz => (hAD z hz).2.trans ?_,
     (holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul hL hM hHb hb hHc hc hHφ hHDφ
       (hQ.mono hΩcl) (fun z hz => hφN z (hΩcl hz)) (fun z hz => hDN z (hΩcl hz))
