@@ -88,6 +88,30 @@ theorem columnDet_succ_column_last (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
     Fin.snoc_last, columnDet_apply, Fin.removeNth, id_eq,
     submatrix_apply, Function.comp_apply, Finset.sum_mul, Units.smul_def, smul_mul_assoc]
 
+/-- If the strictly upper entries kill a vector and each diagonal entry acts on it by a
+scalar, the column determinant acts on it by the product of the diagonal scalars. -/
+theorem columnDet_smul_of_upper_smul_eq_zero {S M : Type*} [CommMonoid S]
+    [AddCommGroup M] [Module R M] [MulAction S M] [SMulCommClass R S M]
+    (A : Matrix (Fin n) (Fin n) R) (v : M) (c : Fin n → S)
+    (hupper : ∀ i j, i < j → A i j • v = 0) (hdiag : ∀ i, A i i • v = c i • v) :
+    A.columnDet • v = (∏ i, c i) • v := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    -- On `v`, only the bottom entry of the last column contributes.
+    rw [columnDet_succ_column_last, Finset.sum_smul, Finset.sum_eq_single (Fin.last n)]
+    · simp only [Fin.val_last, Nat.sub_self, pow_zero, one_smul, Fin.succAbove_last,
+        mul_smul, hdiag]
+      have hprefix := ih (A.submatrix Fin.castSucc Fin.castSucc) (c ∘ Fin.castSucc)
+        (fun i j hij => hupper i.castSucc j.castSucc (Fin.castSucc_lt_castSucc_iff.mpr hij))
+        (fun i => hdiag i.castSucc)
+      rw [smul_comm, hprefix, ← mul_smul, Fin.prod_univ_castSucc]
+      simp only [Function.comp_apply, mul_comm]
+    · intro i _ hi
+      rw [smul_assoc, mul_smul, hupper i _ (Fin.lt_last_iff_ne_last.mpr hi), smul_zero,
+        smul_zero]
+    · simp
+
 /-- In size one the column determinant is the unique entry. -/
 @[simp] theorem columnDet_fin_one (A : Matrix (Fin 1) (Fin 1) R) : A.columnDet = A 0 0 := by
   simp [columnDet_succ_column_zero]
