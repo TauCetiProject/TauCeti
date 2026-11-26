@@ -281,6 +281,12 @@ instance integralClosure_moduleFinite (n : ℕ) :
     Module.Finite ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
   (integralPowerBasis p Ω n).finite
 
+/-- The scalar inclusion of the p-adic integers into the cyclotomic integer ring reflects units. -/
+instance integralClosure_isLocalHom (n : ℕ) :
+    IsLocalHom (algebraMap ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n))) := by
+  have := Module.Free.of_basis (integralPowerBasis p Ω n).basis
+  infer_instance
+
 @[simp]
 theorem integralPowerBasis_gen (n : ℕ) : (integralPowerBasis p Ω n).gen = integralRoot p Ω n - 1 :=
   Subtype.ext (by simp [integralPowerBasis])
