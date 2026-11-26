@@ -115,7 +115,7 @@ theorem map_eq_zero_iff_not_linearIndependent [FiniteDimensional K V] {ι : Type
     ω v = 0 ↔ ¬LinearIndependent K v := by
   refine ⟨fun h hv ↦ ?_, fun hv ↦ ω.map_linearDependent v hv⟩
   have hb := (map_basis_ne_zero_iff (basisOfLinearIndependentOfCardEqFinrank' v hv hι) ω).2 hω
-  rw [basisOfLinearIndependentOfCardEqFinrank', Basis.coe_mk] at hb
+  rw [coe_basisOfLinearIndependentOfCardEqFinrank'] at hb
   exact hb h
 
 /-- **A nonzero area form vanishes exactly on parallel pairs.** On a space of dimension two, a

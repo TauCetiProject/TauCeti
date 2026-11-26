@@ -24,7 +24,7 @@ is built from a model Hermitian Clifford module, compared with `Spinᶜ(4)` thro
 basis `b` of the model four-space `V`. In Taubes's analysis of the Seiberg–Witten equations on a
 symplectic four-manifold, a positive spinor is written `α u₀ + β`, where `u₀` is a unit section of
 the trivial summand of `W⁺ = 1 ⊕ K⁻¹`, the `-2i`-eigenline of `c₂(ω)`. This file constructs `u₀`
-and the splitting `W⁺ = 1 ⊕ K⁻¹`.
+and the fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x`, with continuous components.
 
 **The model.** Let `JV` be the complex structure of `V` corresponding to `J₀` under `b`. Read on `V`
 through `b`, the lift `σ g` is the quaternionic lift `OrthonormalBasis.spinCUnitary` of the frame
@@ -52,10 +52,11 @@ every fibre the pointwise identities of the canonical line hold:
 `q(u₀) = (‖u‖² / 4) ω` (`TauCeti.OrthonormalFrameBundle.quadraticTwoForm_canonicalSpinor`), which
 is Taubes's `q(u₀) = iω/4` for a unit spinor.
 
-**The splitting.** For a nonzero model spinor `u` on the canonical line, the canonical spinor
-vanishes nowhere (`TauCeti.OrthonormalFrameBundle.canonicalSpinor_ne_zero`), so it splits `W⁺`
-into the trivial line it spans and a complement isomorphic to the determinant line `L`
-(`TauCeti.SpinCStructure.halfSpinorEquivProd`), and `L` is the anticanonical line
+**The fibrewise splitting.** For a nonzero model spinor `u` on the canonical line, the canonical
+spinor vanishes nowhere (`TauCeti.OrthonormalFrameBundle.canonicalSpinor_ne_zero`), so it splits
+each fibre `W⁺_x` into the line spanned by `u₀(x)` and a complement isomorphic to the fibre of the
+determinant line `L` (`TauCeti.SpinCStructure.halfSpinorEquivProd`), and `L` is the anticanonical
+line
 `K⁻¹ = Λ²_ℂ (E, J)` (`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`).
 For a nonzero alternating form `ω` on the model positive half-spinors, of complex dimension two,
 the composite is the complex linear isomorphism `W⁺_x ≃ ℂ × K⁻¹_x`,
@@ -65,17 +66,22 @@ In a unitary frame `p` it sends `[[p, 1], φ]` to `(⟪u, φ⟫, ω(u, φ) (p e�
 (`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`), and its two
 components are continuous on total spaces
 (`TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
-`TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`). This is the
-decomposition `ψ = α u₀ + β` of a positive spinor with `α = ⟪u₀, ψ⟫ / ‖u‖²` and `β` in the
-summand `K⁻¹`.
+`TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`). Its inverse sends
+`(a, 0)` to `(a / ‖u‖²) u₀(x)`
+(`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_symm_mk_zero`), which gives the
+decomposition `ψ = α u₀(x) + β` of a positive spinor with `α = ⟪u₀(x), ψ⟫ / ‖u‖²` and `β` in the
+complement of `u₀(x)` identified with `K⁻¹_x`
+(`TauCeti.OrthonormalFrameBundle.smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero`).
 
-The canonical connection `A₀` and the identity `D_{A₀} u₀ = 0` on a manifold are not constructed
-here.
+Only the forward components of the fibrewise splitting are shown continuous: the bundle
+isomorphism `W⁺ ≃ 1 ⊕ K⁻¹` (continuity of the inverse) and the subbundle `K⁻¹ ⊂ W⁺` are not
+constructed here, nor are the canonical connection `A₀` and the identity `D_{A₀} u₀ = 0` on a
+manifold.
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.canonicalSpinor`: the canonical spinor `u₀ = [[p, 1], u]`.
-* `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd`: the splitting
+* `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd`: the fibrewise splitting
   `W⁺_x ≃ ℂ × K⁻¹_x`, `ψ ↦ (⟪u₀(x), ψ⟫, ω(u₀(x), ψ))`.
 
 ## Main results
@@ -93,6 +99,9 @@ here.
 * `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_mk`,
   `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`: the splitting in a
   unitary frame, and its value `(‖u‖², 0)` on `u₀`.
+* `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_symm_mk_zero`,
+  `TauCeti.OrthonormalFrameBundle.smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero`:
+  the inverse on the trivial summand, and the decomposition `ψ = α u₀ + β`.
 * `TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
   `TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`: continuity of its
   components on total spaces.
@@ -286,7 +295,7 @@ theorem quadraticTwoForm_canonicalSpinor (hω : o.hodgeStar hkl JV.kahlerForm = 
 
 end TauCeti.OrthonormalFrameBundle
 
-/-! ### The splitting `W⁺ = 1 ⊕ K⁻¹` -/
+/-! ### The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` -/
 
 namespace TauCeti.OrthonormalFrameBundle
 
@@ -331,8 +340,8 @@ variable {JV : AlmostComplexStructure V}
     toPositiveHalfSpinors o hQ b ρ hρ u)
 
 variable (hJ hJ₂ hJ₀ hF e h₀ h₂) in
-/-- **The splitting `W⁺ = 1 ⊕ K⁻¹` of the positive half-spinors** of the canonical `Spinᶜ`
-structure of a rank-four bundle with an orthogonal complex structure `J`: the complex linear
+/-- **The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` of the positive half-spinors** of the canonical
+`Spinᶜ` structure of a rank-four bundle with an orthogonal complex structure `J`: the complex linear
 isomorphism `W⁺_x ≃ ℂ × Λ²_ℂ (E x, J x)` sending `ψ` to `(⟪u₀(x), ψ⟫, ω(u₀(x), ψ))`, the
 coefficient along the canonical spinor `u₀`
 (`TauCeti.OrthonormalFrameBundle.canonicalSpinor`) and the determinant pairing with `u₀` read in
@@ -340,12 +349,14 @@ the anticanonical line `K⁻¹ = Λ²_ℂ (E, J)` through
 `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`. It sends `u₀` to the
 generator `(‖u‖², 0)` of the trivial summand
 (`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`), so a positive
-spinor is `α u₀ + β` with `β` in the summand `K⁻¹`. When `u` lies on the canonical line, `u₀`
-does not depend on the unitary frame used to define it and the components of the splitting are
-continuous on total spaces
+spinor is `α u₀(x) + β` with `β` in the complement of `u₀(x)` identified with `K⁻¹_x`
+(`TauCeti.OrthonormalFrameBundle.smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero`).
+When `u` lies on the canonical line, `u₀` does not depend on the unitary frame used to define it
+and the components of the splitting are continuous on total spaces
 (`TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
 `TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`); for any other `u`
-the section `u₀` is read in a chosen frame. -/
+the section `u₀` is read in a chosen frame. Only these forward components are shown continuous; no
+bundle isomorphism `W⁺ ≃ 1 ⊕ K⁻¹` is constructed. -/
 def canonicalHalfSpinorEquivProd (x : X) :
     (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1 x ≃L[ℂ]
       ℂ × DetBundle ℂ G Jc.Fiber x :=
@@ -354,8 +365,8 @@ def canonicalHalfSpinorEquivProd (x : X) :
     ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr
       (canonicalDeterminantLineEquivDetBundle hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x))
 
-/-- The splitting `W⁺ = 1 ⊕ K⁻¹` sends `ψ` to the coefficient `⟪u₀(x), ψ⟫` and the determinant
-pairing `ω(u₀(x), ψ)` read in `K⁻¹`. -/
+/-- The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` sends `ψ` to the coefficient `⟪u₀(x), ψ⟫` and the
+determinant pairing `ω(u₀(x), ψ)` read in `K⁻¹_x`. -/
 @[simp]
 theorem canonicalHalfSpinorEquivProd_apply {x : X}
     (ψ : (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1 x) :
@@ -366,8 +377,8 @@ theorem canonicalHalfSpinorEquivProd_apply {x : X}
             ![canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x, ψ])) := by
   simp [canonicalHalfSpinorEquivProd]
 
-/-- **The canonical spinor spans the trivial summand**: the splitting `W⁺ = 1 ⊕ K⁻¹` sends
-`u₀(x)` to `(‖u‖², 0)`. -/
+/-- **The canonical spinor spans the trivial summand**: the fibrewise splitting
+`W⁺_x ≃ ℂ × K⁻¹_x` sends `u₀(x)` to `(‖u‖², 0)`. -/
 theorem canonicalHalfSpinorEquivProd_canonicalSpinor (x : X) :
     canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x
         (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x) = ((‖u‖ : ℂ) ^ 2, 0) := by
@@ -375,10 +386,33 @@ theorem canonicalHalfSpinorEquivProd_canonicalSpinor (x : X) :
     SpinCStructure.halfSpinorEquivProd_self, norm_canonicalSpinor]
   simp
 
+/-- **The inverse of the fibrewise splitting on the trivial summand**: `W⁺_x ≃ ℂ × K⁻¹_x` sends
+`(a / ‖u‖²) • u₀(x)` to `(a, 0)`. -/
+@[simp]
+theorem canonicalHalfSpinorEquivProd_symm_mk_zero (x : X) (a : ℂ) :
+    (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm (a, 0) =
+      (a / (‖u‖ : ℂ) ^ 2) • canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x := by
+  simp [canonicalHalfSpinorEquivProd, norm_canonicalSpinor]
+
+/-- **The decomposition `ψ = α u₀ + β`** of a positive spinor: `α = ⟪u₀(x), ψ⟫ / ‖u‖²` and `β` is
+the vector of the complement of `u₀(x)` whose component in `K⁻¹_x` is `ω(u₀(x), ψ)`
+(`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_apply`). -/
+theorem smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero {x : X}
+    (ψ : (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1 x) :
+    ((canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x ψ).1 /
+          (‖u‖ : ℂ) ^ 2) • canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x +
+        (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm
+          (0, (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x
+            ψ).2) = ψ := by
+  apply (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).injective
+  rw [← canonicalHalfSpinorEquivProd_symm_mk_zero (G := G) hJc hrank hω hu₀ x,
+    ContinuousLinearEquiv.map_add, ContinuousLinearEquiv.apply_symm_apply,
+    ContinuousLinearEquiv.apply_symm_apply, Prod.mk_add_mk, add_zero, zero_add]
+
 include hJV hu in
-/-- **The splitting `W⁺ = 1 ⊕ K⁻¹` in a unitary frame.** When the model spinor `u` lies on the
-canonical line, the splitting sends the class `[[p, 1], φ]` of a model half-spinor `φ` in a
-unitary frame `p` to `(⟪u, φ⟫, ω(u, φ) (p e₀ ∧ p e₂))`. -/
+/-- **The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` in a unitary frame.** When the model spinor `u`
+lies on the canonical line, the splitting sends the class `[[p, 1], φ]` of a model half-spinor `φ`
+in a unitary frame `p` to `(⟪u, φ⟫, ω(u, φ) (p e₀ ∧ p e₂))`. -/
 theorem canonicalHalfSpinorEquivProd_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
     (φ : o.HalfSpinModel hQ b ρ hρ 1) :
     canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x
@@ -390,8 +424,8 @@ theorem canonicalHalfSpinorEquivProd_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ 
     canonicalDeterminantLineEquivDetBundle_mk_inl, LinearIsometryEquiv.apply_symm_apply]
 
 include hJV hu in
-/-- **The trivial component of the splitting `W⁺ = 1 ⊕ K⁻¹` is continuous** on the total space of
-`W⁺`, when the model spinor lies on the canonical line. -/
+/-- **The trivial component of the fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` is continuous** on the
+total space of `W⁺`, when the model spinor lies on the canonical line. -/
 theorem continuous_fst_canonicalHalfSpinorEquivProd :
     Continuous fun z : TotalSpace (o.HalfSpinModel hQ b ρ hρ 1)
         ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1) ↦
@@ -402,8 +436,9 @@ theorem continuous_fst_canonicalHalfSpinorEquivProd :
     (continuous_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu)
 
 include hJV hu in
-/-- **The anticanonical component of the splitting `W⁺ = 1 ⊕ K⁻¹` is continuous** from the total
-space of `W⁺` to that of `K⁻¹ = Λ²_ℂ (E, J)`, when the model spinor lies on the canonical line. -/
+/-- **The anticanonical component of the fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` is continuous**
+from the total space of `W⁺` to that of `K⁻¹ = Λ²_ℂ (E, J)`, when the model spinor lies on the
+canonical line. -/
 theorem continuous_snd_canonicalHalfSpinorEquivProd :
     Continuous fun z : TotalSpace (o.HalfSpinModel hQ b ρ hρ 1)
         ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1) ↦
