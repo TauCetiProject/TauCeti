@@ -211,10 +211,9 @@ private theorem determinantLineTwistLinearEquiv_mk (s : SpinCStructure F V n) {x
     determinantLineTwistLinearEquiv_apply,
     AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk, division_self, one_smul]
   -- `[1, u]` acts on the determinant model by `u²`, and `[q₀ u, 1] = [q₀, u] = u [q₀, 1]`.
-  have hmk := AssociatedBundle.mk_smul_scalar (G := Circle) q₀ (u : ℂ) (1 : ℂ)
-  rw [smul_eq_mul, mul_one] at hmk
   simp [AssociatedBundle.mk_smul, Circle.smul_def, mul_smul, DeterminantModel.ofCircle_smul,
-    smul_comm g, hmk, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sq]
+    smul_comm g, AssociatedBundle.mk_eq_smul_mk_one q₀ (u : ℂ), TensorProduct.tmul_smul,
+    ← TensorProduct.smul_tmul', sq]
 
 /-- **The determinant line of a twisted `Spinᶜ` structure**: twisting `s` by a principal
 `U(1)`-bundle `Q` with Hermitian line `E = Q ×_{U(1)} ℂ` tensors its determinant line with `E²`,
@@ -270,10 +269,7 @@ theorem determinantLineTwistEquiv_symm_tmul (s : SpinCStructure F V n) {x : X} (
   refine (ContinuousLinearEquiv.symm_apply_eq _).2
     ((?_ : _ = _).trans (determinantLineTwistEquiv_inl Q s p q _).symm)
   -- `[q, a] = a [q, 1]` and `[q, c] = c [q, 1]`.
-  have hmk (d : ℂ) :
-      AssociatedBundle.mk Circle q d = AssociatedBundle.mk Circle q (d • (1 : ℂ)) := by
-    rw [smul_eq_mul, mul_one]
-  rw [hmk a, hmk c]
+  rw [AssociatedBundle.mk_eq_smul_mk_one q a, AssociatedBundle.mk_eq_smul_mk_one q c]
   simp only [AssociatedBundle.mk_smul_scalar, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul',
     smul_smul, mul_comm c a]
 
@@ -298,11 +294,7 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
     (continuous_twist_associatedBundleMk_fst_smul Q s).tmul_section
       ((continuous_twist_associatedBundleMk_snd_one Q s).tmul_section
         (continuous_twist_associatedBundleMk_snd_one Q s))
-  refine hc.congr fun y ↦ ?_
-  exact (congrArg (TotalSpace.mk' (ProjectiveTensor ℂ (DeterminantModel n)
-      (ProjectiveTensor ℂ ℂ ℂ)) (E := fun x ↦ s.determinantLine x ⊗[ℂ]
-        (AssociatedBundle Circle Q ℂ x ⊗[ℂ] AssociatedBundle Circle Q ℂ x)) y.1.1.proj)
-    (determinantLineTwistEquiv_mk Q s y.1.1.snd.fst y.1.1.snd.snd y.1.2 y.2)).symm
+  exact hc.congr fun _ ↦ congrArg (TotalSpace.mk _) (determinantLineTwistEquiv_mk ..).symm
 
 end DeterminantLine
 
@@ -422,8 +414,8 @@ theorem halfSpinorBundleTwistEquiv_symm_tmul (s : SpinCStructure F V 4) {x : X} 
   refine (ContinuousLinearEquiv.symm_apply_eq _).2
     ((?_ : _ = _).trans (halfSpinorBundleTwistEquiv_inl Q o hqf b ρ hρ ε s p q _).symm)
   -- `[q, a] = a [q, 1]`.
-  rw [AssociatedBundle.mk_smul_scalar, TensorProduct.smul_tmul, ← AssociatedBundle.mk_smul_scalar,
-    smul_eq_mul, mul_one]
+  rw [AssociatedBundle.mk_smul_scalar, TensorProduct.smul_tmul,
+    ← AssociatedBundle.mk_eq_smul_mk_one]
 
 /-- **The comparison of half-spinor bundles is continuous** on total spaces. -/
 theorem continuous_halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) :
@@ -443,11 +435,7 @@ theorem continuous_halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) :
           AssociatedBundle.mk Circle y.1.1.snd.snd (1 : ℂ)) :=
     (continuous_twist_associatedBundleMk_fst_smul Q s).tmul_section
       (continuous_twist_associatedBundleMk_snd_one Q s)
-  refine hc.congr fun y ↦ ?_
-  exact (congrArg (TotalSpace.mk' (ProjectiveTensor ℂ (o.HalfSpinModel hqf b ρ hρ ε) ℂ)
-      (E := fun x ↦ s.halfSpinorBundle o hqf b ρ hρ ε x ⊗[ℂ] AssociatedBundle Circle Q ℂ x)
-      y.1.1.proj)
-    (halfSpinorBundleTwistEquiv_mk Q o hqf b ρ hρ ε s y.1.1.snd.fst y.1.1.snd.snd y.1.2 y.2)).symm
+  exact hc.congr fun _ ↦ congrArg (TotalSpace.mk _) (halfSpinorBundleTwistEquiv_mk ..).symm
 
 end HalfSpinor
 
