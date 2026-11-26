@@ -179,7 +179,7 @@ private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral (hH : ContDiff
     (hγ : Continuous γ) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (η : testSection V) {R : ℝ} (hR : ∀ s t, R ≤ |s| → (η : ℝ × ℝ → V) (s, t) = 0) :
     ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 =
+        (fun _ ↦ H) (fun z ↦ γ z.1) ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 =
       ∫ z in Icc (-R) R ×ˢ Icc 0 1, ‖ω.floerLinearization
         (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
         (fun z ↦ γ z.1) η z‖ ^ 2 := by
@@ -198,10 +198,10 @@ private theorem mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (η : testSection V) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, (η : ℝ × ℝ → V) (s, t) = 0) :
-    (2 * π - a) ^ 2 * ‖jetLp (testSection V) η‖ ^ 2 ≤
+    (2 * π - a) ^ 2 * ‖jetLp 2 (testSection V) η‖ ^ 2 ≤
       ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)
-        ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 := by
+        ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 := by
   obtain ⟨hη2, hηp, R, hR⟩ := mem_testSection_iff.1 η.property
   have hη1 : ContDiff ℝ 1 (η : ℝ × ℝ → V) := hη2.of_le one_le_two
   set R₀ := max R 0
@@ -249,14 +249,13 @@ theorem mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator
     isClosed_le (continuous_const.mul ((continuous_id.sub sliceAverageL.continuous).norm.pow 2))
       (continuous_const.mul ((D.continuous.comp
         (continuous_id.sub sliceAverageL.continuous)).norm.pow 2))
-  refine (denseRange_codRestrict_jetLp (testSection V)).induction_on x hcl fun ξ ↦ ?_
+  refine jetClosure_induction hcl (fun ξ ↦ ?_) x
   -- On the jet of a test section `ξ`, `x - P x` is the jet of the test section `ξ - ξbar`.
   set η : testSection V := ξ - ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩
-  have hx : (jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ -
-      sliceAverageL ((jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ) =
-        ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩ := by
+  have hx : toJetClosure 2 (testSection V) ξ - sliceAverageL (toJetClosure 2 (testSection V) ξ) =
+      ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩ := by
     refine Subtype.ext ?_
-    rw [Submodule.coe_sub, coe_sliceAverageL, LinearMap.codRestrict_apply, sliceAverageLp_jetLp]
+    rw [Submodule.coe_sub, coe_sliceAverageL, coe_toJetClosure, sliceAverageLp_jetLp]
     simp [η, map_sub]
   have hmean : ∀ s, ∫ t in (0 : ℝ)..1, (η : ℝ × ℝ → V) (s, t) = 0 := fun s ↦ by
     have hint : IntervalIntegrable (fun t ↦ (ξ : ℝ × ℝ → V) (s, t)) volume 0 1 :=

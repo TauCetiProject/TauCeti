@@ -117,9 +117,9 @@ theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W}
 test sections. -/
 private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     {C T : ℝ} (hest : HasSemiFredholmEstimate F₀ F₁ M C T) (ξ : testSection F₀ F₁) :
-    ‖jetLp (testSection F₀ F₁) ξ‖ ≤
-      √(max C 0) * (‖jetOperator stripMeasure M (jetLp (testSection F₀ F₁) ξ)‖ +
-        ‖restrictValue T (jetLp (testSection F₀ F₁) ξ)‖) := by
+    ‖jetLp 2 (testSection F₀ F₁) ξ‖ ≤
+      √(max C 0) * (‖jetOperator stripMeasure M (jetLp 2 (testSection F₀ F₁) ξ)‖ +
+        ‖restrictValue T (jetLp 2 (testSection F₀ F₁) ξ)‖) := by
   obtain ⟨hξ, hξ₀, hξ₁, R, hR⟩ := mem_testSection_iff.1 ξ.property
   have hR₀ : ∀ s t, max R 0 ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
     hR s t ((le_max_left R 0).trans hs)
