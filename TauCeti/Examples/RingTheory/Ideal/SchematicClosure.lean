@@ -72,8 +72,8 @@ private theorem algebraMap_mul_mk_X_eq_one (hϖ0 : ϖ ≠ 0) :
   -- `ϖx - 1` lies in the closure ideal, so its class vanishes.
   have h := Ideal.Quotient.eq_zero_iff_mem.mpr
     ((closureIdeal_span_X_sub_inv (K := K) hϖ0).ge (Ideal.mem_span_singleton_self (C ϖ * X - 1)))
-  rw [map_sub, map_mul, map_one, sub_eq_zero] at h
-  exact h
+  rwa [map_sub, map_mul, map_one, sub_eq_zero, Polynomial.C_eq_algebraMap,
+    Ideal.Quotient.mk_algebraMap] at h
 
 /-- **The closure of `x = ϖ⁻¹` has no section**: an `O`-point of `O[x] ⧸ (ϖx - 1)` would make
 `ϖ` a unit. -/
