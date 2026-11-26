@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedCochainComplex
+import TauCeti.Algebra.Homology.CochainComplex.Antidiagonal
 
 /-!
 # Poincaré duality for the integral Morse complex
@@ -20,12 +21,11 @@ manifolds. The opposite function `-f`, with the pseudo-gradient `-X` and the dua
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_dual`). This file turns that
 identity of boundary maps into an identification of complexes and of their (co)homology.
 
-* **`∂² = 0` for `-f`.** The coefficient of `p` in `∂ ∂ r` for `-f` is minus the coefficient of
-  `r` in `∂ ∂ p` for `f`
-  (`IsMorseSmale.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply`), so the Morse
-  boundary of `-f` squares to zero exactly when that of `f` does
-  (`IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff`). In
-  particular the integral Morse complex of `-f` is defined whenever that of `f` is.
+* **`∂² = 0` for `-f`.** The Morse boundary of `-f` squares to zero exactly when that of `f` does
+  (`IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff`, in
+  `TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation`). In particular the integral Morse
+  complex of `-f` is defined whenever that of `f` is
+  (`IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int`).
 * **Cochains of `f` are chains of `-f`.** Reading an additive map `a` from the integral chains of
   `f` of index `i` to a ring `R` as the chain of `-f` of index `k` whose coefficient at `q` is
   `a q * (-1) ^ ((i + 1).choose 2)` (`TauCeti.IsMorse.signedCochainToNegChain`) is an isomorphism
@@ -37,7 +37,8 @@ identity of boundary maps into an identification of complexes and of their (co)h
 * **Poincaré duality.** Hence the Morse cohomology of `f` with coefficients in `R`, the cohomology
   of `Hom_ℤ(CM_*(f; ℤ), R)`, is isomorphic in degree `i` to the Morse homology of `-f` with
   coefficients in `R` in degree `k`, for `i + k = n`
-  (`IsMorseSmale.signedMorseCohomologyEquivNegHomology`). This is the Morse-theoretic form of
+  (`IsMorseSmale.signedMorseCohomologyEquivNegHomology`), by the homological algebra of
+  `CochainComplex.homologyIsoOfAntidiagonal`. This is the Morse-theoretic form of
   Poincaré duality on an oriented manifold; identifying it with Poincaré duality in singular
   (co)homology needs the comparison of Morse and singular (co)homology, which is not made here.
   Its mod-two form, which needs no orientations, is
@@ -52,8 +53,8 @@ identity of boundary maps into an identification of complexes and of their (co)h
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff`: the Morse
-  boundary of `-f` squares to zero exactly when that of `f` does.
+* `IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int`: the Morse
+  boundary of `-f` squares to zero whenever the integral Morse boundary of `f` does.
 * `IsMorseSmale.signedCochainToNegChain_comp_signedMorseBoundaryAt`: the identification carries
   the coboundary of `f` to the boundary of `-f`.
 * `IsMorseSmale.signedMorseCohomologyEquivNegHomology`: the Morse cohomology of `f` in degree `i`
@@ -90,57 +91,6 @@ namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} (𝔬 : MorseOrientation f X) (hf : IsMorse 𝓘(ℝ, E) f)
   (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
-
-/-- **`∂ ∘ ∂` for the opposite function.** For the dual orientation data, the coefficient of `p` in
-the boundary of the boundary of `r` for `-f` is minus the coefficient of `r` in the boundary of the
-boundary of `p` for `f`. Each intermediate critical point `q` contributes the product of the signs
-`(-1) ^ ind_f q` and `(-1) ^ ind_f p`, which is `-1` since `ind_f p = ind_f q + 1`. -/
-theorem IsMorseSmale.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply {R : Type*}
-    [Ring R] (hMS : hX.IsMorseSmale) (r p : criticalPoints 𝓘(ℝ, E) (-f)) :
-    (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R
-        ((hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R (Finsupp.single r 1)) p =
-      -hX.signedMorseBoundary 𝔬 hf R
-        (hX.signedMorseBoundary 𝔬 hf R (Finsupp.single (Set.equivOfEq criticalPoints_neg p) 1))
-          (Set.equivOfEq criticalPoints_neg r) := by
-  have := hf.finite_criticalPoints.to_subtype
-  have := hf.neg.finite_criticalPoints.to_subtype
-  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
-  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) (-f))
-  rw [signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
-    signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  simp_rw [signedMorseBoundary_single_apply, one_mul, hMS.signedMorseBoundaryCoeff_dual 𝔬 hf oM,
-    ← Int.cast_mul, ← Int.cast_sum, ← Int.cast_neg, ← Finset.sum_neg_distrib]
-  congr 1
-  -- Reindex by the critical points of `f`, and compare the summands at each `q`.
-  refine Fintype.sum_equiv (Set.equivOfEq criticalPoints_neg) _ _ fun q ↦ ?_
-  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
-  · simp only [Set.equivOfEq_apply, hpq, pow_succ]
-    rcases neg_one_pow_eq_or ℤ (manifoldMorseIndex 𝓘(ℝ, E) f q) with h | h <;> rw [h] <;> ring
-  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one (p := Set.equivOfEq _ p)
-      (q := Set.equivOfEq _ q) (by simpa using hpq)]
-    simp
-
-/-- **`∂² = 0` for `-f` exactly when `∂² = 0` for `f`.** For the dual orientation data, the Morse
-boundary of `-f` with coefficients in a ring `R` squares to zero exactly when the Morse boundary of
-`f` with coefficients in `R` does. In particular, the integral Morse complex of `-f` is defined
-whenever that of `f` is. -/
-theorem IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff
-    {R : Type*} [Ring R] (hMS : hX.IsMorseSmale) :
-    (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R ∘ₗ
-        (hX.neg hf).signedMorseBoundary (𝔬.dual hX hf oM) hf.neg R = 0 ↔
-      hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
-  -- A linear map on a free module vanishes when it vanishes on the basis, and the boundary of
-  -- `a • p` is `a` times the boundary of `p`.
-  have key : ∀ {N : Type u} {φ : (N →₀ R) →ₗ[R] (N →₀ R)},
-      φ = 0 ↔ ∀ x y : N, φ (Finsupp.single x 1) y = 0 := fun {N φ} ↦ by
-    refine ⟨fun h x y ↦ by simp [h], fun h ↦ Finsupp.lhom_ext fun x a ↦ Finsupp.ext fun y ↦ ?_⟩
-    rw [← Finsupp.smul_single_one, map_smul]
-    simp [h]
-  simp only [key, LinearMap.comp_apply,
-    hMS.signedMorseBoundary_dual_signedMorseBoundary_dual_single_apply 𝔬 hf oM, neg_eq_zero]
-  refine ⟨fun h p r ↦ ?_, fun h r p ↦ h _ _⟩
-  simpa using
-    h ((Set.equivOfEq criticalPoints_neg).symm r) ((Set.equivOfEq criticalPoints_neg).symm p)
 
 /-- **`∂² = 0` over `ℤ` for `f` gives `∂² = 0` for `-f` over every ring.** For the dual orientation
 data, if the integral Morse boundary of `f` squares to zero, so does the Morse boundary of `-f` with
@@ -339,40 +289,6 @@ theorem IsMorseSmale.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegCh
   ext a : 2
   exact hMS.signedCochainToNegChain_comp_signedMorseBoundaryAt 𝔬 hf oM i k a
 
-/-- The morphism of short complexes, from the coboundaries of `f` into and out of index `i` to the
-boundaries of `-f` into and out of index `k`, given by reading cochains of `f` as chains of `-f`.
-For `i + k = n` it is an isomorphism in the middle, and it is an epimorphism on the left and a
-monomorphism on the right, also at the ends `i = 0` and `k = 0` of the complexes. -/
-private noncomputable def signedCochainToNegChainSc {i k : ℕ} (hik : i + k = finrank ℝ E) :
-    (hX.signedMorseCochainComplex 𝔬 hf R hsq).sc' (i - 1) i (i + 1) ⟶
-      ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-        (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-          R)).sc' (k + 1) k (k - 1) where
-  τ₁ := ModuleCat.ofHom (hf.signedCochainToNegChain R (i - 1) (k + 1))
-  τ₂ := ModuleCat.ofHom (hf.signedCochainToNegChain R i k)
-  τ₃ := ModuleCat.ofHom (hf.signedCochainToNegChain R (i + 1) (k - 1))
-  comm₁₂ := by
-    rcases i with _ | i
-    · -- At `i = 0` no coboundary enters index `0`, and `-f` has no critical point of index `n + 1`.
-      have hd : ((hX.signedMorseCochainComplex 𝔬 hf R hsq).sc' (0 - 1) 0 (0 + 1)).f = 0 :=
-        (hX.signedMorseCochainComplex 𝔬 hf R hsq).shape _ _ (by simp)
-      rw [hd, hf.signedCochainToNegChain_eq_zero (by omega), ModuleCat.ofHom_zero]
-      exact zero_comp.trans zero_comp.symm
-    · exact (hMS.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegChain oM hsq i k).symm
-  comm₂₃ := by
-    rcases k with _ | k
-    · -- At `k = 0` no boundary leaves index `0`, and `f` has no critical point of index `n + 1`.
-      have hd : (((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-          (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-            R)).sc' (0 + 1) 0 (0 - 1)).g = 0 :=
-        ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-          (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-            R)).shape _ _ (by simp)
-      rw [hd, hf.signedCochainToNegChain_eq_zero (i := i + 1) (k := 0 - 1) (by omega),
-        ModuleCat.ofHom_zero]
-      exact comp_zero.trans comp_zero.symm
-    · exact (hMS.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegChain oM hsq i k).symm
-
 /-- **Poincaré duality for Morse (co)homology.** On a manifold of dimension `n` oriented by `oM`,
 for `i + k = n`, reading integral cochains of `f` as chains of `-f` identifies the Morse cohomology
 of `f` with coefficients in `R` in degree `i` with the Morse homology of `-f`, for the
@@ -383,51 +299,31 @@ noncomputable def IsMorseSmale.signedMorseCohomologyEquivNegHomology {i k : ℕ}
       ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
         (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
           R)).homology k :=
-  haveI : Epi (signedCochainToNegChainSc (R := R) oM hMS hsq hik).τ₁ := by
-    rcases i with _ | i
-    · -- The chains of `-f` of index `n + 1` vanish.
-      exact IsZero.epi (isZero_signedMorseComplex_X_of_finrank_lt
-        (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq R)
-        (by omega)) _
-    · exact (ModuleCat.epi_iff_surjective _).2
-        (hf.bijective_signedCochainToNegChain (R := R) (by omega)).2
-  haveI : IsIso (signedCochainToNegChainSc (R := R) oM hMS hsq hik).τ₂ :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (hf.bijective_signedCochainToNegChain (R := R) hik)
-  haveI : Mono (signedCochainToNegChainSc (R := R) oM hMS hsq hik).τ₃ := by
-    rcases k with _ | k
-    · -- The cochains of `f` of index `n + 1` vanish.
-      exact IsZero.mono (isZero_signedMorseCochainComplex_X_of_finrank_lt (R := R) hsq
-        (by omega)) _
-    · exact (ModuleCat.mono_iff_injective _).2
-        (hf.bijective_signedCochainToNegChain (R := R) (by omega)).1
-  ((hX.signedMorseCochainComplex 𝔬 hf R hsq).homologyIsoSc' (i - 1) i (i + 1)
-      (by rcases i with _ | i <;> simp) (by simp) ≪≫
-    asIso (ShortComplex.homologyMap (signedCochainToNegChainSc (R := R) oM hMS hsq hik)) ≪≫
-    (((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-          (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-            R)).homologyIsoSc' (k + 1) k (k - 1)
-      (by simp) (by rcases k with _ | k <;> simp)).symm).toLinearEquiv
+  ((hX.signedMorseCochainComplex 𝔬 hf R hsq).homologyIsoOfAntidiagonal
+    ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
+      (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq R))
+    (fun i k ↦ ModuleCat.ofHom (hf.signedCochainToNegChain R i k))
+    (hMS.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegChain oM hsq)
+    (fun _ _ hik ↦ (ConcreteCategory.isIso_iff_bijective _).2
+      (hf.bijective_signedCochainToNegChain (R := R) hik))
+    -- The cochains of `f` and the chains of `-f` of index `n + 1` vanish.
+    (isZero_signedMorseCochainComplex_X_of_finrank_lt (R := R) hsq (by omega))
+    (isZero_signedMorseComplex_X_of_finrank_lt
+      (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq R)
+      (by omega)) hik).toLinearEquiv
 
-/-- A cocycle of `f` of index `i`, read as a chain of `-f` of index `k`, is a cycle of `-f`, for
-`i + k = n`. -/
-theorem IsMorseSmale.iCycles_comp_ofHom_signedCochainToNegChain_comp_d {i k : ℕ}
-    (hik : i + k = finrank ℝ E) :
+/-- A cocycle of `f` of index `i`, read as a chain of `-f` of index `k`, is a cycle of `-f`. -/
+theorem IsMorseSmale.iCycles_comp_ofHom_signedCochainToNegChain_comp_d (i k : ℕ) :
     ((hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles i ≫
         ModuleCat.ofHom (hf.signedCochainToNegChain R i k)) ≫
       ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
         (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-          R)).d k (k - 1) = 0 := by
-  -- Reading cochains as chains commutes with the differentials leaving index `i` and `k`.
-  calc _ = (hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles i ≫
-        (signedCochainToNegChainSc (R := R) oM hMS hsq hik).τ₂ ≫
-          (((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-          (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-            R)).sc' (k + 1) k (k - 1)).g :=
-        Category.assoc _ _ _
-    _ = (hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles i ≫
-        ((hX.signedMorseCochainComplex 𝔬 hf R hsq).sc' (i - 1) i (i + 1)).g ≫
-          (signedCochainToNegChainSc (R := R) oM hMS hsq hik).τ₃ := by rw [ShortComplex.Hom.comm₂₃]
-    _ = 0 := ((hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles_d_assoc _ _ _).trans zero_comp
+          R)).d k (k - 1) = 0 :=
+  (hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles_comp_comp_d_of_comm
+    ((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
+      (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq R))
+    (fun i k ↦ ModuleCat.ofHom (hf.signedCochainToNegChain R i k))
+    (hMS.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegChain oM hsq) i k
 
 /-- **Poincaré duality for Morse (co)homology on classes.** For `i + k = n`, the identification of
 the Morse cohomology of `f` with the Morse homology of `-f` sends the class of a cocycle of `f` to
@@ -445,23 +341,11 @@ theorem IsMorseSmale.signedMorseCohomologyEquivNegHomology_homologyπ {i k : ℕ
           ((hX.signedMorseCochainComplex 𝔬 hf R hsq).iCycles i ≫
             ModuleCat.ofHom (hf.signedCochainToNegChain R i k))
           (k - 1) (by rcases k with _ | k <;> simp)
-          (hMS.iCycles_comp_ofHom_signedCochainToNegChain_comp_d oM hsq hik) x) := by
+          (hMS.iCycles_comp_ofHom_signedCochainToNegChain_comp_d oM hsq i k) x) := by
   rw [signedMorseCohomologyEquivNegHomology, Iso.toLinearEquiv_apply,
     ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply]
-  refine ConcreteCategory.congr_hom ?_ x
-  -- Each step of the composite is induced on cycles, where it acts as `signedCochainToNegChain`.
-  simp only [Iso.trans_hom, asIso_hom, Iso.symm_hom]
-  rw [HomologicalComplex.π_homologyIsoSc'_hom_assoc, ShortComplex.homologyπ_naturality_assoc,
-    HomologicalComplex.π_homologyIsoSc'_inv, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (((hX.neg hf).signedMorseComplex (𝔬.dual hX hf oM) hf.neg R
-          (hMS.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_of_int 𝔬 hf oM hsq
-      R)).iCycles k)]
-  simp only [Category.assoc, HomologicalComplex.cyclesIsoSc'_inv_iCycles,
-    ShortComplex.cyclesMap_i, HomologicalComplex.cyclesIsoSc'_hom_iCycles_assoc,
-    HomologicalComplex.liftCycles_i]
-  -- The middle component of `signedCochainToNegChainSc` is `signedCochainToNegChain`.
-  simp [signedCochainToNegChainSc]
+  exact ConcreteCategory.congr_hom (CochainComplex.homologyπ_comp_homologyIsoOfAntidiagonal_hom
+    _ _ _ _ _ _ _ hik) x
 
 end IsAdaptedPseudoGradient
 
