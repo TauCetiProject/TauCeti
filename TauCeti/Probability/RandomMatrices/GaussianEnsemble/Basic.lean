@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.RandomMatrix.Wigner.Basic
+public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Complex.NormSq
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 
 /-!
 # Gaussian orthogonal and unitary ensembles
@@ -22,10 +23,13 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 ## Main definitions
 
 * `TauCeti.Probability.gaussianEnsemble`: the matrix built from the array `g`.
+* `TauCeti.Probability.gaussianEnsembleSelfAdjointCLM`: continuous `ℝ`-linear map bundling
+  `gaussianEnsemble β n` into `selfAdjoint (Matrix (Fin n) (Fin n) ℂ)`.
 
 ## Main results
 
-* `TauCeti.Probability.isHermitian_gaussianEnsemble`: the matrix is Hermitian.
+* `TauCeti.Probability.isHermitian_gaussianEnsemble` and
+  `TauCeti.Probability.isSymm_gaussianEnsemble_one`: Hermitian and (`β = 1`) symmetric structure.
 * `TauCeti.Probability.im_gaussianEnsemble_one`,
   `TauCeti.Probability.im_gaussianEnsemble_of_lt_of_ne_one`, and
   `TauCeti.Probability.gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one`: imaginary-part and
@@ -413,6 +417,31 @@ theorem integral_re_trace_gaussianEnsemble_two_sq_div {Ω : Type*} {mΩ : Measur
   have : (n : ℝ) ≠ 0 := by positivity
   field_simp
   ring
+
+/-- The `β = 1` Gaussian ensemble is a symmetric matrix. -/
+theorem isSymm_gaussianEnsemble_one (n : ℕ) (g : Fin n × Fin n → ℝ) :
+    (gaussianEnsemble 1 n g).IsSymm := by
+  ext i j
+  rw [transpose_apply, gaussianEnsemble_apply, gaussianEnsemble_apply]
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · simp [hij, hij.ne, hij.not_gt, hij.ne']
+  · simp
+  · simp [hji, hji.ne, hji.not_gt, hji.ne']
+
+/-- Continuous `ℝ`-linear map bundling `gaussianEnsemble β n` into the real topological submodule
+`selfAdjoint (Matrix (Fin n) (Fin n) ℂ)`. -/
+def gaussianEnsembleSelfAdjointCLM (β n : ℕ) :
+    (Fin n × Fin n → ℝ) →L[ℝ] selfAdjoint (Matrix (Fin n) (Fin n) ℂ) where
+  toFun g := ⟨gaussianEnsemble β n g, (isHermitian_gaussianEnsemble β n g).isSelfAdjoint⟩
+  map_add' g h := Subtype.ext (gaussianEnsemble_add g h)
+  map_smul' c g := Subtype.ext (gaussianEnsemble_smul c g)
+  cont := continuous_gaussianEnsemble.subtype_mk _
+
+/-- Coercing `gaussianEnsembleSelfAdjointCLM β n g` to a matrix recovers
+`gaussianEnsemble β n g`. -/
+@[simp] theorem coe_gaussianEnsembleSelfAdjointCLM_apply (β n : ℕ) (g : Fin n × Fin n → ℝ) :
+    (gaussianEnsembleSelfAdjointCLM β n g : Matrix (Fin n) (Fin n) ℂ) =
+      gaussianEnsemble β n g := (rfl)
 
 end Probability
 

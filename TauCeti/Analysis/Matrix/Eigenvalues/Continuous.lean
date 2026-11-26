@@ -29,7 +29,9 @@ eigenvalues are continuous (`Matrix.continuous_eigenvalues₀_selfAdjoint`). Alo
 ordered eigenvalues of `A i` converge to the limit of the corresponding eigenvalues of `B i`
 (`Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero`); the sizes may vary. Continuity
 uses the usual entrywise topology: Mathlib's Euclidean operator norm induces this same topology.
-Empty index types are allowed.
+Consequently, the locus where a given sorted eigenvalue is simple and the open simple-spectrum
+locus `{X | StrictAnti X.property.isHermitian.eigenvalues₀}` are open in
+`selfAdjoint (Matrix n n 𝕜)`. Empty index types are allowed.
 
 ## References
 
@@ -89,6 +91,42 @@ theorem continuous_eigenvalues₀_selfAdjoint :
     Continuous (fun A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
       A.property.isHermitian.eigenvalues₀) :=
   continuous_eigenvalues₀.comp (continuous_subtypeVal.subtype_mk fun A ↦ A.property.isHermitian)
+
+/-- Mathlib's matrix-indexed eigenvalue list is continuous on the real vector space of Hermitian
+matrices. -/
+@[fun_prop]
+theorem continuous_eigenvalues_selfAdjoint :
+    Continuous (fun A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      A.property.isHermitian.eigenvalues) :=
+  continuous_eigenvalues.comp (continuous_subtypeVal.subtype_mk fun A ↦ A.property.isHermitian)
+
+/-- Self-adjoint matrices whose `k`-th sorted eigenvalue is simple form an open set. -/
+theorem isOpen_setOf_forall_eigenvalues₀_ne (k : Fin (Fintype.card n)) :
+    IsOpen {X : selfAdjoint (Matrix n n 𝕜) |
+      ∀ j ≠ k, X.property.isHermitian.eigenvalues₀ j ≠ X.property.isHermitian.eigenvalues₀ k} := by
+  have heq : {X : selfAdjoint (Matrix n n 𝕜) |
+      ∀ j ≠ k, X.property.isHermitian.eigenvalues₀ j ≠ X.property.isHermitian.eigenvalues₀ k} =
+      ⋂ j ∈ Finset.univ.erase k, {X : selfAdjoint (Matrix n n 𝕜) |
+        X.property.isHermitian.eigenvalues₀ j ≠ X.property.isHermitian.eigenvalues₀ k} := by
+    ext X; simp [Finset.mem_erase]
+  rw [heq]
+  exact isOpen_biInter_finset fun j _ ↦ isOpen_ne_fun
+    ((continuous_apply j).comp continuous_eigenvalues₀_selfAdjoint)
+    ((continuous_apply k).comp continuous_eigenvalues₀_selfAdjoint)
+
+/-- The simple-spectrum locus `{X | StrictAnti X.property.isHermitian.eigenvalues₀}` is open in
+`selfAdjoint (Matrix n n 𝕜)`. -/
+theorem isOpen_setOf_strictAnti_eigenvalues₀ :
+    IsOpen {X : selfAdjoint (Matrix n n 𝕜) | StrictAnti X.property.isHermitian.eigenvalues₀} := by
+  have heq : {X : selfAdjoint (Matrix n n 𝕜) | StrictAnti X.property.isHermitian.eigenvalues₀} =
+      ⋂ i : Fin (Fintype.card n), ⋂ j : {j : Fin (Fintype.card n) // i < j},
+        {X : selfAdjoint (Matrix n n 𝕜) |
+          X.property.isHermitian.eigenvalues₀ j.val < X.property.isHermitian.eigenvalues₀ i} := by
+    ext X; simp [StrictAnti, Subtype.forall]
+  rw [heq]
+  exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦ isOpen_lt
+    ((continuous_apply j.val).comp continuous_eigenvalues₀_selfAdjoint)
+    ((continuous_apply i).comp continuous_eigenvalues₀_selfAdjoint)
 
 open Filter Topology in
 /-- **Spectral gaps persist.** For a family of Hermitian matrices whose entries are continuous at

@@ -15,10 +15,11 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
-# Continuous matrix actions and block maps over a topological module
+# Continuous matrix actions, trace, and block maps over a topological module
 
 A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an additive monoid `M` on
 which `R` acts additively by `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on
@@ -27,22 +28,23 @@ which each scalar acts continuously, this is the continuous additive map
 matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R` it is `Matrix.mulVec`
 (`Matrix.smulVecHom_self_apply`); over a topological commutative semiring, bundling linearity as
 well gives `Matrix.mulVecCLM : (ι → R) →L[R] (κ → R)`, which varies continuously with the matrix
-entries over any normed field (`Matrix.continuous_mulVecCLM`, `Matrix.continuousOn_mulVecCLM`).
+entries over any normed field (`Matrix.continuous_mulVecCLM`, `Matrix.continuousOn_mulVecCLM`, and
+bilinearly `Matrix.mulVecBilinCLM`).
 
 The motivating case for `Matrix.smulVecHom` is `R = ℤ` and `M = AddCircle p`, where an integer
 matrix induces a map of tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 
-The upper-right block projection and the matching insertion are continuous linear maps over
-any semiring and topological module, with arbitrary row and column index types. Their application
-lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_apply`.
+The matrix trace (`Matrix.traceCLM`), the upper-right block projection, and the matching insertion
+are continuous linear maps over any semiring and topological module. Their application lemmas are
+`Matrix.traceCLM_apply`, `Matrix.toBlocks₁₂CLM_apply`, and `Matrix.fromBlocks₁₂CLM_apply`.
 
 ## Main definitions
 
 * `Matrix.smulVecHom`: the continuous additive action of a matrix on vectors in an additive monoid
   with a distributive scalar action.
-* `Matrix.mulVecCLM`: `Matrix.mulVec` as a continuous linear map `(ι → R) →L[R] (κ → R)`, with
-  continuity in families over a normed field (`Matrix.continuous_mulVecCLM`,
-  `Matrix.continuousOn_mulVecCLM`).
+* `Matrix.mulVecCLM` and `Matrix.mulVecBilinCLM`: `Matrix.mulVec` as a continuous linear map
+  `(ι → R) →L[R] (κ → R)` and as a continuous bilinear map over a normed field.
+* `Matrix.traceCLM`: matrix trace as a continuous linear map.
 * `TauCeti.dotProductCLM`: the covector `v ↦ c ⬝ᵥ v` as a continuous linear functional on `ι → R`.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
@@ -144,6 +146,21 @@ def fromBlocks₁₂CLM :
 
 end Blocks
 
+section Trace
+
+/-- `Matrix.trace` as a continuous linear map. -/
+def traceCLM (n α R : Type*) [Fintype n] [AddCommMonoid R] [TopologicalSpace R] [ContinuousAdd R]
+    [Semiring α] [Module α R] : Matrix n n R →L[α] R where
+  toLinearMap := Matrix.traceLinearMap n α R
+  cont := continuous_id.matrix_trace
+
+/-- Applying `Matrix.traceCLM` evaluates `Matrix.trace`. -/
+@[simp] theorem traceCLM_apply {n α R : Type*} [Fintype n] [AddCommMonoid R] [TopologicalSpace R]
+    [ContinuousAdd R] [Semiring α] [Module α R] (M : Matrix n n R) :
+    traceCLM n α R M = M.trace := (rfl)
+
+end Trace
+
 section MulVecCLM
 
 section TopologicalSemiring
@@ -220,6 +237,19 @@ theorem continuous_mulVecCLM :
     funext mulVecCLM_eq_sum
   rw [hEq]
   fun_prop
+
+/-- `Matrix.mulVec` bundled as a continuous bilinear map `Matrix κ ι 𝕜 →L[𝕜] (ι → 𝕜) →L[𝕜] (κ → 𝕜)`
+over a normed field. -/
+def mulVecBilinCLM (κ ι 𝕜 : Type*) [Fintype ι] [NormedField 𝕜] [Finite κ] :
+    Matrix κ ι 𝕜 →L[𝕜] (ι → 𝕜) →L[𝕜] (κ → 𝕜) where
+  toFun := mulVecCLM
+  map_add' := mulVecCLM_add
+  map_smul' := mulVecCLM_smul
+  cont := continuous_mulVecCLM
+
+/-- Applying `Matrix.mulVecBilinCLM` to a matrix yields `A.mulVecCLM`. -/
+@[simp]
+theorem mulVecBilinCLM_apply (A : Matrix κ ι 𝕜) : mulVecBilinCLM κ ι 𝕜 A = A.mulVecCLM := (rfl)
 
 /-- A matrix family whose entries are continuous on `s` induces a continuous-on-`s` family of
 continuous linear maps via `Matrix.mulVecCLM`. -/
