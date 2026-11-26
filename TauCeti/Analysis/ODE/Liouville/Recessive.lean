@@ -143,7 +143,7 @@ private lemma hasDerivAt_div_sub_exp {x : ℝ} {W : ℂ} (hfx : 0 < f x)
   convert (hwx.div hw₂x hx2).sub ((hξx.const_mul 2).exp.ofReal_comp.const_mul (W / 2)) using 1
   have hid := liouvilleGreen_approximant_sq_mul_deriv_exp (ξ := ξ) hfx
   have hyx := liouvilleGreen_approximant_ne_zero (σ := -ξ x) hfx
-  rw [show deriv w x * w₂ x - w x * deriv w₂ x = W by rw [← hW]; ring]
+  rw [mul_comm (deriv w x), mul_comm (w x), hW]
   generalize ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) = A at hid hyx ⊢
   generalize ((Real.exp (2 * ξ x) * (2 * √(f x)) : ℝ) : ℂ) = B at hid ⊢
   generalize w₂ x = V at hx2 ⊢

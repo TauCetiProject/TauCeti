@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.ODE.NonlinearCaratheodory.Interval
@@ -82,6 +83,8 @@ theorem contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I) (hq : Co
     (hv x hx).congr_of_eventuallyEq <|
       eventually_of_mem (hI.mem_nhds hx) fun t ht ↦ (hw t ht).deriv
   refine ⟨?_, fun x hx ↦ by rw [iteratedDeriv_succ, iteratedDeriv_one]; exact (hdw x hx).deriv⟩
+  -- `contDiffOn_succ_iff_deriv_of_isOpen` is stated for orders of the form `n + 1`, so the orders
+  -- `2` and `1` are first written as `1 + 1` and `0 + 1` to peel off one derivative at a time.
   rw [show (2 : WithTop ℕ∞) = 1 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen hI]
   refine ⟨fun x hx ↦ (hw x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   rw [show (1 : WithTop ℕ∞) = 0 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen hI]
@@ -176,16 +179,12 @@ theorem eqOn_mul_of_wronskian_eq_zero (hu : ContDiffOn ℝ 2 u I)
     EqOn w (fun x ↦ w t₀ / u t₀ * u x) I := by
   set c := w t₀ / u t₀
   have hcu : ContDiffOn ℝ 2 (fun x ↦ c * u x) I := contDiffOn_const.mul hu
-  have hd (x : ℝ) (hx : x ∈ I) : deriv (fun x ↦ c * u x) x = c * deriv u x :=
-    ((hu.hasDerivAt_and_hasDerivAt_deriv hI hx).1.const_mul c).deriv
   have hcuq (x : ℝ) (hx : x ∈ I) : iteratedDeriv 2 (fun x ↦ c * u x) x = q x * (c * u x) := by
-    have h2 := ((hu.hasDerivAt_and_hasDerivAt_deriv hI hx).2.const_mul c).congr_of_eventuallyEq
-      (eventually_of_mem (hI.mem_nhds hx) fun t ht ↦ hd t ht)
-    rw [iteratedDeriv_succ, iteratedDeriv_one, h2.deriv, huq x hx]
+    rw [iteratedDeriv_const_mul_field, huq x hx]
     ring
   refine eqOn_of_iteratedDeriv_eq_mul hI hIc hq hw hwq hcu hcuq ht₀
     (by simp only [c]; field_simp) ?_
-  rw [hd t₀ ht₀]
+  rw [deriv_const_mul_field]
   simp only [c]
   field_simp
   linear_combination hW
