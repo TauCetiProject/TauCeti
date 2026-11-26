@@ -29,7 +29,7 @@ with fibre `V` in the frame, `ξ ↦ (w ↦ Φ w (ξ w))`, acts on jets through 
   `TauCeti.CylinderSobolev.frameL`;
 * if `Ψ z` is a two-sided inverse of `Φ z` and `Ψ` is `C²` and bounded, then `Ψ` is a frame as
   well, the two operators are mutually inverse
-  (`TauCeti.CylinderSobolev.frameL_comp_frameL_of_comp_eq_id`), and reading in a frame is an
+  (`TauCeti.CylinderSobolev.frameL_comp_frameL_eq_id_of_comp_eq_id`), and reading in a frame is an
   isomorphism of Sobolev spaces (`TauCeti.CylinderSobolev.frameEquiv`).
 
 Consequently Fredholmness and the index of first-order operators on the cylinder do not depend on
@@ -170,7 +170,7 @@ variable {Φ : ℝ × ℝ → V →L[ℝ] W} {Ψ : ℝ × ℝ → W →L[ℝ] V}
 include hΦ hΨ in
 /-- **Inverse frames give inverse operators.** If `Ψ z` is a left inverse of `Φ z` for every `z`,
 reading in the frame `Φ` and then in the frame `Ψ` is the identity of `H1 V`. -/
-theorem frameL_comp_frameL_of_comp_eq_id
+theorem frameL_comp_frameL_eq_id_of_comp_eq_id
     (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V) :
     (frameL hΨ hΨp hΨB hΨ'B).comp (frameL hΦ hΦp hΦB hΦ'B) = ContinuousLinearMap.id ℝ (H1 V) := by
   -- The composite coefficient field is the change of frame by the identity frame.
@@ -206,8 +206,8 @@ def frameEquiv (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V
   have hΨ'B z := norm_fderiv_le_of_comp_eq_id (hΦ.differentiable (by norm_num) z)
     (hΨ.differentiable (by norm_num) z) (hΨB z) (hΦ'B z) hΨΦ hΦΨ
   .ofContinuousLinearMap (frameL hΦ hΦp hΦB hΦ'B) (frameL hΨ hΨp hΨB hΨ'B)
-    (frameL_comp_frameL_of_comp_eq_id hΨ hΨp hΨB hΨ'B hΦ hΦp hΦB hΦ'B hΦΨ)
-    (frameL_comp_frameL_of_comp_eq_id hΦ hΦp hΦB hΦ'B hΨ hΨp hΨB hΨ'B hΨΦ)
+    (frameL_comp_frameL_eq_id_of_comp_eq_id hΨ hΨp hΨB hΨ'B hΦ hΦp hΦB hΦ'B hΦΨ)
+    (frameL_comp_frameL_eq_id_of_comp_eq_id hΦ hΦp hΦB hΦ'B hΨ hΨp hΨB hΨ'B hΨΦ)
 
 /-- The isomorphism `frameEquiv` is reading sections in the frame `Φ`. -/
 @[simp]

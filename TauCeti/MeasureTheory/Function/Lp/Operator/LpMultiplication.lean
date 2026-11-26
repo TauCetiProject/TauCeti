@@ -149,7 +149,7 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
 
 /-- Multiplication by an essentially bounded field `G` of maps, followed by multiplication by an
 essentially bounded field `G'` with `G' x ∘ G x = id` almost everywhere, is the identity. -/
-theorem operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id {G : α → E →L[𝕜] F}
+theorem operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id {G : α → E →L[𝕜] F}
     {G' : α → F →L[𝕜] E} (hG : MemLp G ∞ μ) (hG' : MemLp G' ∞ μ)
     (h : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E) :
     operatorMultiplication p (hG'.toLp G') ∘L operatorMultiplication p (hG.toLp G) =
@@ -167,8 +167,8 @@ theorem isInvertible_operatorMultiplication_of_comp_eq_id {G : α → E →L[�
     (hG'G : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E)
     (hGG' : ∀ᵐ x ∂μ, G x ∘L G' x = ContinuousLinearMap.id 𝕜 F) :
     (operatorMultiplication p (hG.toLp G)).IsInvertible :=
-  .of_inverse (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG' hG hGG')
-    (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG hG' hG'G)
+  .of_inverse (operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id hG' hG hGG')
+    (operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id hG hG' hG'G)
 
 /-- On a σ-finite space, `‖operatorMultiplication p A‖ = ‖A‖` (`1 ≤ p ≤ ∞`). -/
 @[simp] theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ) :

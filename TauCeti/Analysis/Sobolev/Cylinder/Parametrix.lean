@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
-public import TauCeti.Analysis.Sobolev.Cylinder.Frame
+import TauCeti.Analysis.Sobolev.Cylinder.Frame
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
