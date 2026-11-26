@@ -279,14 +279,18 @@ private theorem continuousOn_floerEnergyDensity_of_parametric {W : Set (P × (�
     (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry (hXt α).continuousOn
       fun y hy ↦ ⟨hpΩ y.1 hy.1, hy.2⟩)
 
-/-- Energy on the discs of Hofer's lemma, over a compact parameter window. There are `σ > 0`,
-`δ > 0` and `κ > 0` with the following property, for every parameter `p ∈ C`. Let `N = √ρ(z₀)` for
-the Floer energy density `ρ` of a solution `u` for `K_p` and `J_p`, with `N > 0` and `2 B ≤ N`, and
-let `√ρ ≤ 2 N` on the closed disc of radius `σ / N` about `z₀`. If the radius is small,
-`(σ / N)² < κ`, then every set `T ⊆ Ω` containing the disc carries energy `∫_T ρ ≥ δ`. Indeed the
-image of the disc under `e ∘ u` is small enough for the mean-value inequality on a closed manifold,
-which would otherwise bound `σ² = (σ / N)² ρ(z₀)` by `C ((σ / N)² + ∫_T ρ) < σ²`. -/
-private theorem IsNondegenerate.exists_pos_forall_le_setIntegral_floerEnergyDensity_of_sqrt_le
+/-- **Energy on the discs of Hofer's lemma, over a compact parameter window.** Under the hypotheses
+of the mean-value inequality on a closed manifold
+(`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt`), with the
+structures uniformly tame with respect to a differentiable injective `e : M → F`,
+`c ‖d e v‖² ≤ ω(v, J_p v)`, and the pushforwards of the Hamiltonian vector fields at most `B`,
+there are `σ > 0`, `δ > 0` and `κ > 0` with the following property, for every parameter `p ∈ C`.
+Let `N = √ρ(z₀)` for the Floer energy density `ρ` of a solution `u` for `K_p` and `J_p`, with
+`N > 0` and `2 B ≤ N`, and let `√ρ ≤ 2 N` on the closed disc of radius `σ / N` about `z₀`. If the
+radius is small, `(σ / N)² < κ`, then every measurable set `T ⊆ Ω` containing the disc carries
+energy `∫_T ρ ≥ δ`. The discs are those produced by Hofer's lemma
+(`TauCeti.hofer_of_continuousOn_closedBall`) applied to `√ρ`. -/
+theorem IsNondegenerate.exists_pos_forall_le_setIntegral_floerEnergyDensity_of_sqrt_le
     (hω : ω.IsNondegenerate) {e : M → F} (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x)
     (he_inj : Injective e) {W : Set (P × (ℝ × ℝ))} {C : Set P} {D : Set (ℝ × ℝ)} (hW : IsOpen W)
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
