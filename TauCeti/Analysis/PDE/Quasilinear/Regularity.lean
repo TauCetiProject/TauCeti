@@ -176,11 +176,11 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
     (B.isOpen.mem_nhds (hK (self_subset_cthickening _ hx))) (W1p.value_restrictL_ae hB u)
 
 /-- The coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v` is `γ`-Hölder on a bounded
-set, when `A` is `α`-Hölder in `x`, with `γ ≤ α`, and Lipschitz in `s`. -/
-private theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) (hTΩ : T ⊆ Omega)
-    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
-    (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
+set `T`, when `A` is `α`-Hölder in `x ∈ S ⊇ T`, with `γ ≤ α`, and Lipschitz in `s`. -/
+theorem holderOnWith_matrixBilinearForm_comp {S T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) (hTΩ : T ⊆ S)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) S)
+    (hAs : ∀ x ∈ S, LipschitzWith L fun s => matrixBilinearForm (A x s))
     {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hv : HolderOnWith Cv γ v T) :
     HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ
@@ -246,6 +246,18 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
       (M := ↑(Kx * D ^ ((α : ℝ) - γ) + L * (Cv * D ^ ((γ₀ : ℝ) - γ))) * ρ ^ (γ : ℝ))
   exact ⟨_, h hell haK hGK le_rfl (hf.mono_measure (Measure.restrict_mono hρS le_rfl)) hu' hρ hρS⟩
 
+/-- The exponent conditions `0 < β ≤ 1 - (n + 1) / q` of the `C^{1,β}` estimates force
+`q > n + 1`: the datum `f ∈ L^q` costs `(n + 1) / q < 1` of a derivative. -/
+theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) {q : ℝ≥0∞} (hq : q ≠ 0)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
+  have hβ' : (0 : ℝ) < β := hβ
+  rcases eq_or_ne q ⊤ with rfl | hqt
+  · simp
+  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos hq hqt
+    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+    exact (div_lt_one hq0).1 (by linarith)
+
 /-- **Interior `C^{1,β}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹`
 be open and let `A(x, s)` be a field of matrices, uniformly elliptic with constants `λ, Λ` in `x`
 for every `s`, `α`-Hölder in `x` with a constant independent of `s`, and Lipschitz in `s` with a
@@ -280,15 +292,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     (hR : 0 < R) (hRS : thickening R S ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
-  -- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`.
-  have hβ' : (0 : ℝ) < β := hβ
-  have hqn : (n : ℝ≥0∞) + 1 < q := by
-    rcases eq_or_ne q ⊤ with rfl | hqt
-    · simp
-    · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq2) hqt
-      refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-      rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-      exact (div_lt_one hq0).1 (by linarith)
+  have hqn := natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq2).ne' hβq
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS
