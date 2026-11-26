@@ -75,6 +75,12 @@ theorem IsMatlisGenerator.trace_mul_dualEquiv_symm_apply (η : CharacterModule M
   rw [← smul_eq_mul, ← map_smul, ← hχ.dualEquiv_apply]
   exact DFunLike.congr_fun ((hχ.dualEquiv M).apply_symm_apply η) (r • m)
 
+/-- Applying the trace to the inverse comparison recovers the original character. -/
+@[simp]
+theorem IsMatlisGenerator.trace_dualEquiv_symm_apply (η : CharacterModule M) (m : M) :
+    χ ((hχ.dualEquiv M).symm η m) = η m := by
+  simpa only [one_mul, one_smul] using hχ.trace_mul_dualEquiv_symm_apply η 1 m
+
 /-- Compute the inverse comparison at `m` by applying the inverse trace identification to
 the character `r ↦ η (r • m)`. -/
 theorem IsMatlisGenerator.dualEquiv_symm_apply (η : CharacterModule M) (m : M) :
@@ -99,19 +105,6 @@ theorem IsMatlisGenerator.dualEquiv_units_smul (u : Rˣ) (f : Module.Dual R M) :
     (hχ.units_smul u).dualEquiv M f = (u : R) • hχ.dualEquiv M f := by
   ext m
   simp only [IsMatlisGenerator.dualEquiv_apply, smul_apply, map_smul, smul_eq_mul]
-
-omit [Finite R] in
-include hχ in
-/-- A linear form vanishes on a submodule if and only if its trace character does. Multiplying
-elements of the submodule by all scalars is essential: the trace can have an additive kernel. -/
-theorem IsMatlisGenerator.forall_apply_eq_zero_iff (S : Submodule R M) (f : Module.Dual R M) :
-    (∀ m ∈ S, χ (f m) = 0) ↔ ∀ m ∈ S, f m = 0 := by
-  refine ⟨fun h m hm ↦ ?_, fun h m hm ↦ by rw [h m hm, map_zero]⟩
-  apply (isMatlisGenerator_iff_injective.mp hχ)
-  rw [map_zero]
-  ext r
-  simpa only [LinearMap.toSpanSingleton_apply, smul_apply, smul_eq_mul, zero_mul, map_zero,
-    map_smul, mul_comm, TauCeti.CharacterModule.zero_apply] using h (r • m) (S.smul_mem r hm)
 
 /-- The trace comparison detects membership in the linear annihilator of a submodule. -/
 theorem IsMatlisGenerator.mem_dualAnnihilator_iff (S : Submodule R M) (f : Module.Dual R M) :
