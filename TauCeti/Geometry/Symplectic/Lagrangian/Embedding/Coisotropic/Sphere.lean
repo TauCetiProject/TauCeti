@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Sphere
+public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Isotropic
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
 # The round sphere is coisotropic
