@@ -340,8 +340,8 @@ slopes `c₁` and `c₂`, with limits `δ₁₋ ≤ δ₂₋` at `-∞` and `δ�
 `ν ∈ (δ₁, δ₂)` is the only eigenvalue of `A(p₊) = -i dX_{H₊}(p₊)` in `[δ₁, δ₂]`, and that
 `A(p₋) = -i dX_{H₋}(p₋)` has no eigenvalue in `[δ₁₋, δ₂₋]`. Then the index of `D - c₁` exceeds
 that of `D - c₂` by the multiplicity of `ν`: as the limit at `+∞` of the slope of the weight, a
-decay weight there, increases through `ν`, the index decreases by the dimension of the eigenspace
-of `A(p₊)` at `ν`. -/
+decay weight there when positive, increases through `ν`, the index decreases by the dimension of
+the eigenspace of `A(p₊)` at `ν`. -/
 theorem index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atTop
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
     (hγ : Continuous γ)
