@@ -221,7 +221,7 @@ theorem sum_dysonDrift_eq_zero (n : ℕ) (x : Fin n → ℝ) :
     ∑ i : Fin n, dysonDrift n x i = 0 := by
   simpa using sum_mul_dysonDrift_eq_sum_Ioi n (fun _ ↦ 1) x
 
-/-- **Unconditional virial identity.** For every `n : ℕ` (including `n = 0`) and any configuration
+/-- **Virial identity for all `n` (including `n = 0`).** For every `n : ℕ` and any configuration
 `x : Fin n → ℝ` with distinct coordinates, `∑ i, x i * dysonDrift n x i = n⁻¹ * n.choose 2`. -/
 theorem sum_self_mul_dysonDrift_eq_inv_mul_choose {n : ℕ} {x : Fin n → ℝ}
     (hx : Function.Injective x) :

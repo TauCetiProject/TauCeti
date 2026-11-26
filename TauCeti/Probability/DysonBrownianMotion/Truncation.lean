@@ -185,18 +185,21 @@ theorem truncatedDysonPath_eq_integral (t : ℝ≥0) (i : Fin n) :
       simp only [shiftedTruncatedField, truncatedDysonPath, Real.coe_toNNReal s hs.1]
   rw [truncatedDysonPath, Pi.add_apply, hZ_i, ← hproj, hcongr]; ring
 
+private theorem intervalIntegrable_truncatedDysonDrift_truncatedDysonPath (t : ℝ≥0) (i : Fin n) :
+    IntervalIntegrable
+      (fun s : ℝ ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i)
+      volume 0 t :=
+  ((continuous_apply i).comp ((continuous_truncatedDysonDrift hε n).comp
+    ((continuous_truncatedDysonPath hε n x w hw).comp
+      continuous_real_toNNReal))).intervalIntegrable 0 t
+
 /-- Center-of-mass conservation for `truncatedDysonPath`. -/
 @[simp]
 theorem sum_truncatedDysonPath (t : ℝ≥0) :
     ∑ i : Fin n, truncatedDysonPath hε n x w hw t i = (∑ i : Fin n, x i) + ∑ i : Fin n, w t i := by
-  have hint (i : Fin n) : IntervalIntegrable
-      (fun s : ℝ ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i)
-      volume 0 t :=
-    ((continuous_apply i).comp ((continuous_truncatedDysonDrift hε n).comp
-      ((continuous_truncatedDysonPath hε n x w hw).comp
-        continuous_real_toNNReal))).intervalIntegrable 0 t
   simp_rw [truncatedDysonPath_eq_integral hε n x w hw t, Finset.sum_add_distrib]
-  rw [← intervalIntegral.integral_finsetSum fun i _ ↦ hint i]
+  rw [← intervalIntegral.integral_finsetSum fun i _ ↦
+    intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i]
   simp [sum_truncatedDysonDrift_eq_zero]
 
 end Basic
@@ -352,13 +355,14 @@ theorem adapted_truncatedDysonPath {Ω : Type*} {mΩ : MeasurableSpace Ω} {ε :
   measurable_truncatedDysonPath (mΩ := ℱ t) hε n x hw t fun s hs ↦
     (hadapt s).mono (ℱ.mono hs) le_rfl
 
-private theorem truncatedDysonPath_eq_integral_of_nonneg {ε : ℝ} (hε : 0 < ε) (n : ℕ)
-    (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) {r : ℝ} (hr : 0 ≤ r) (i : Fin n) :
+private theorem truncatedDysonPath_eq_integral_of_mem_uIcc {ε : ℝ} (hε : 0 < ε) (n : ℕ)
+    (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) {s t : ℝ≥0} {r : ℝ}
+    (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
     truncatedDysonPath hε n x w hw r.toNNReal i =
       x i + w r.toNNReal i +
         ∫ u in (0 : ℝ)..r,
           truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw u.toNNReal) i := by
-  simpa only [Real.coe_toNNReal r hr] using
+  simpa only [Real.coe_toNNReal r ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1)] using
     truncatedDysonPath_eq_integral hε n x w hw r.toNNReal i
 
 /-- **Global `ℓ²` energy identity for `truncatedDysonPath`.** For any initial configurations
@@ -376,26 +380,14 @@ theorem sum_truncatedDysonPath_sub_sq_eq {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
           truncatedDysonDrift ε n (truncatedDysonPath hε n y w hw r.toNNReal) i) *
           (truncatedDysonPath hε n x w hw r.toNNReal i -
             truncatedDysonPath hε n y w hw r.toNNReal i) := by
-  have hint (z : Fin n → ℝ) (u : ℝ≥0) (i : Fin n) : IntervalIntegrable
-      (fun r : ℝ ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n z w hw r.toNNReal) i)
-      volume 0 u :=
-    ((continuous_apply i).comp ((continuous_truncatedDysonDrift hε n).comp
-      ((continuous_truncatedDysonPath hε n z w hw).comp
-        continuous_real_toNNReal))).intervalIntegrable 0 u
   simpa only [Real.toNNReal_coe] using
     TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
-      (x := x) (y := y) (w := fun r ↦ w r.toNNReal)
-      (X := fun r ↦ truncatedDysonPath hε n x w hw r.toNNReal)
-      (Y := fun r ↦ truncatedDysonPath hε n y w hw r.toNNReal)
-      (F := fun r ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw r.toNNReal))
-      (G := fun r ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n y w hw r.toNNReal))
-      (t₀ := 0) (t₁ := (s : ℝ)) (t₂ := (t : ℝ))
-      (fun i _ ↦ hint x s i) (fun i _ ↦ hint x t i)
-      (fun i _ ↦ hint y s i) (fun i _ ↦ hint y t i)
-      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_nonneg hε n x w hw
-        ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1) i)
-      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_nonneg hε n y w hw
-        ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1) i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw t i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n x w hw hr i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n y w hw hr i)
 
 /-- **Global `ℓ²` contraction for `truncatedDysonPath`.** Holds for arbitrary initial configurations
 `x, y : Fin n → ℝ` without any chamber restriction. -/
@@ -405,15 +397,16 @@ theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
         (truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n y w hw t i) ^ 2 ≤
       ∑ i : Fin n,
         (truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n y w hw s i) ^ 2 := by
-  have hint_nonpos : ∫ r in (s : ℝ)..t, (∑ i : Fin n,
-      (truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw r.toNNReal) i -
-        truncatedDysonDrift ε n (truncatedDysonPath hε n y w hw r.toNNReal) i) *
-        (truncatedDysonPath hε n x w hw r.toNNReal i -
-          truncatedDysonPath hε n y w hw r.toNNReal i)) ≤ 0 := by
-    rw [intervalIntegral.integral_of_le (NNReal.coe_le_coe.2 hst)]
-    exact setIntegral_nonpos measurableSet_Ioc fun r _ ↦
-      sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
-  linarith [sum_truncatedDysonPath_sub_sq_eq hε n x y w hw s t]
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (NNReal.coe_le_coe.2 hst)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw t i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n x w hw hr i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n y w hw hr i)
+      fun _ _ ↦ sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
 
 /-- Squared `ℓ²` distance between two `ε`-truncated Dyson trajectories driven by the same path `w`
 is antitone on `[0, ∞)`. -/

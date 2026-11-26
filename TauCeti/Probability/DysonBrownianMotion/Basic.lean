@@ -231,6 +231,11 @@ theorem integral_sum_Ioi_sub_inv_le (hX : IsDysonPath n x w X) (t : ℝ≥0) :
   have hmul := mul_le_mul_of_nonneg_left hmono (by positivity : (0 : ℝ) ≤ (n : ℝ) / 2)
   rwa [← mul_assoc, hcancel, one_mul] at hmul
 
+private theorem uIcc_subset_uIcc_zero_add (t₀ t : ℝ≥0) :
+    uIcc (t₀ : ℝ) ((t₀ + t : ℝ≥0) : ℝ) ⊆ uIcc 0 ((t₀ + t : ℝ≥0) : ℝ) := by
+  rw [uIcc_of_le (NNReal.coe_le_coe.2 le_self_add), uIcc_of_le (t₀ + t).coe_nonneg]
+  exact Icc_subset_Icc t₀.coe_nonneg le_rfl
+
 /-- **Time-shift invariance (semigroup restart).** Shifting a Dyson trajectory `X` forward by any
 `t₀ : ℝ≥0` yields a Dyson trajectory started at `X t₀` and driven by the increment path
 `t ↦ w (t₀ + t) - w t₀`. When `0 < t₀`, the restarted initial state `X t₀` lies in the open Weyl
@@ -240,10 +245,7 @@ theorem shift (hX : IsDysonPath n x w X) (t₀ : ℝ≥0) :
   continuous := hX.continuous.comp (continuous_const.add continuous_id)
   strictAnti _ ht := hX.strictAnti _ (add_pos_of_nonneg_of_pos _root_.zero_le ht)
   intervalIntegrable t i := by
-    have hsub : uIcc (t₀ : ℝ) ((t₀ + t : ℝ≥0) : ℝ) ⊆ uIcc 0 ((t₀ + t : ℝ≥0) : ℝ) := by
-      rw [uIcc_of_le (NNReal.coe_le_coe.2 le_self_add), uIcc_of_le (t₀ + t).coe_nonneg]
-      exact Icc_subset_Icc t₀.coe_nonneg le_rfl
-    have hint := (hX.intervalIntegrable (t₀ + t) i).mono_set hsub
+    have hint := (hX.intervalIntegrable (t₀ + t) i).mono_set (uIcc_subset_uIcc_zero_add t₀ t)
     have hshift : IntervalIntegrable
         (fun s : ℝ ↦ ∑ j ∈ Finset.univ.erase i,
           (X ((t₀ : ℝ) + s).toNNReal i - X ((t₀ : ℝ) + s).toNNReal j)⁻¹)
@@ -255,12 +257,9 @@ theorem shift (hX : IsDysonPath n x w X) (t₀ : ℝ≥0) :
   eq_integral t i := by
     have h1 := hX.eq_integral (t₀ + t) i
     have h2 := hX.eq_integral t₀ i
-    have hsub : uIcc (t₀ : ℝ) ((t₀ + t : ℝ≥0) : ℝ) ⊆ uIcc 0 ((t₀ + t : ℝ≥0) : ℝ) := by
-      rw [uIcc_of_le (NNReal.coe_le_coe.2 le_self_add), uIcc_of_le (t₀ + t).coe_nonneg]
-      exact Icc_subset_Icc t₀.coe_nonneg le_rfl
     have hadj := intervalIntegral.integral_add_adjacent_intervals
       (hX.intervalIntegrable_dysonDrift t₀ i)
-      ((hX.intervalIntegrable_dysonDrift (t₀ + t) i).mono_set hsub)
+      ((hX.intervalIntegrable_dysonDrift (t₀ + t) i).mono_set (uIcc_subset_uIcc_zero_add t₀ t))
     have hchg : (∫ s in (0 : ℝ)..t, dysonDrift n (X (t₀ + s.toNNReal)) i) =
         ∫ u in (t₀ : ℝ)..((t₀ + t : ℝ≥0) : ℝ), dysonDrift n (X u.toNNReal) i := by
       have hcongr : (∫ s in (0 : ℝ)..t, dysonDrift n (X (t₀ + s.toNNReal)) i) =
@@ -274,10 +273,12 @@ theorem shift (hX : IsDysonPath n x w X) (t₀ : ℝ≥0) :
         add_zero, NNReal.coe_add]
     linarith
 
-private theorem eq_integral_of_nonneg (hX : IsDysonPath n x w X) {r : ℝ} (hr : 0 ≤ r) (i : Fin n) :
+private theorem eq_integral_of_mem_uIcc (hX : IsDysonPath n x w X) {s t : ℝ≥0} {r : ℝ}
+    (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
     X r.toNNReal i = x i + w r.toNNReal i +
       ∫ u in (0 : ℝ)..r, dysonDrift n (X u.toNNReal) i := by
-  simpa only [Real.coe_toNNReal r hr] using hX.eq_integral r.toNNReal i
+  simpa only [Real.coe_toNNReal r ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1)] using
+    hX.eq_integral r.toNNReal i
 
 /-- **Pathwise `ℓ²` energy identity.** For any two Dyson trajectories `X` and `Y` driven by the
 same path `w` and any times `s, t : ℝ≥0`, the change in squared Euclidean distance from `s` to `t`
@@ -289,31 +290,30 @@ theorem sum_sub_sq_eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (s t
           (X r.toNNReal i - Y r.toNNReal i) := by
   simpa only [Real.toNNReal_coe] using
     TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
-      (x := x) (y := y) (w := fun r ↦ w r.toNNReal) (X := fun r ↦ X r.toNNReal)
-      (Y := fun r ↦ Y r.toNNReal)
-      (F := fun r ↦ dysonDrift n (X r.toNNReal)) (G := fun r ↦ dysonDrift n (Y r.toNNReal))
-      (t₀ := 0) (t₁ := (s : ℝ)) (t₂ := (t : ℝ))
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)
       (fun i _ ↦ hY.intervalIntegrable_dysonDrift s i)
       (fun i _ ↦ hY.intervalIntegrable_dysonDrift t i)
-      (fun _ hr i _ ↦ hX.eq_integral_of_nonneg ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1) i)
-      (fun _ hr i _ ↦ hY.eq_integral_of_nonneg ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1) i)
+      (fun _ hr i _ ↦ hX.eq_integral_of_mem_uIcc hr i)
+      (fun _ hr i _ ↦ hY.eq_integral_of_mem_uIcc hr i)
 
 /-- **Pathwise `ℓ²` contraction.** Any two Dyson trajectories `X` and `Y` driven by the same path
 `w` have nonincreasing squared Euclidean distance on `[0, ∞)`. -/
 theorem sum_sub_sq_le_of_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y)
     {s t : ℝ≥0} (hst : s ≤ t) :
     ∑ i : Fin n, (X t i - Y t i) ^ 2 ≤ ∑ i : Fin n, (X s i - Y s i) ^ 2 := by
-  have hint_nonpos : ∫ r in (s : ℝ)..t, (∑ i : Fin n,
-      (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i) *
-        (X r.toNNReal i - Y r.toNNReal i)) ≤ 0 := by
-    rw [intervalIntegral.integral_of_le (NNReal.coe_le_coe.2 hst)]
-    refine setIntegral_nonpos measurableSet_Ioc fun r hr ↦ ?_
-    exact sum_dysonDrift_sub_mul_sub_nonpos
-      (hX.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
-      (hY.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
-  linarith [hX.sum_sub_sq_eq hY s t]
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (NNReal.coe_le_coe.2 hst)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t i)
+      (fun _ hr i _ ↦ hX.eq_integral_of_mem_uIcc hr i)
+      (fun _ hr i _ ↦ hY.eq_integral_of_mem_uIcc hr i)
+      fun r hr ↦ sum_dysonDrift_sub_mul_sub_nonpos
+        (hX.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
+        (hY.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
 
 /-- Squared `ℓ²` distance between two Dyson trajectories driven by the same path is antitone on
 `[0, ∞)`. -/
