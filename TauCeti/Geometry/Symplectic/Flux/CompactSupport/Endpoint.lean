@@ -42,6 +42,11 @@ negated by pointwise inversion (`TauCeti.Diffeotopy.compactFlux_trans`,
   group `Γ_σ` (`TauCeti.toDeRhamCohomology_mem_fluxGroup`), and the induced map on the quotients
   carries the compactly supported endpoint flux to the endpoint flux
   (`TauCeti.map_toAdd_compactEndpointFlux`).
+* **Naturality.** For a diffeomorphism `f` preserving `σ`, conjugating a compactly supported
+  `σ`-preserving diffeotopy by `f` transports its compactly supported flux by `(f⁻¹)^*`, so
+  `Γ_(σ,c)` is invariant under `(f⁻¹)^*` (`TauCeti.map_symm_mem_compactFluxGroup`), and the
+  compactly supported endpoint flux of `f φ f⁻¹` is the image of that of `φ`
+  (`TauCeti.compactEndpointFlux_mul_mul_inv`).
 
 For an exact form, the compactly supported flux depends only on the endpoint, so the flux group
 is trivial (`TauCeti.compactFluxGroup_eq_bot_of_mem_exactForms`). The flux group need not be
@@ -68,6 +73,8 @@ flux but nonzero compactly supported flux (`TauCeti.Geometry.Symplectic.Flux.Cyl
   isotopies end in the kernel.
 * `TauCeti.compactEndpointFlux_surjective`: surjectivity for a symplectic form.
 * `TauCeti.map_toAdd_compactEndpointFlux`: compatibility with the endpoint flux.
+* `TauCeti.map_symm_mem_compactFluxGroup`, `TauCeti.compactEndpointFlux_mul_mul_inv`: naturality
+  under diffeomorphisms preserving `σ`.
 
 ## References
 
@@ -165,6 +172,20 @@ theorem compactFlux_sub_compactFlux_mem_compactFluxGroup {Φ Ψ : Diffeotopy J �
     ?_, ?_⟩
   · rw [Diffeotopy.final_symm_trans, h, mul_inv_cancel]
   · exact Φ.compactFlux_symm_trans Ψ σ _ _ _ _ _ _ hL hΨL
+
+/-- **Naturality of the compactly supported flux group.** For a diffeomorphism `f` preserving
+`σ`, the pullback along `f⁻¹` maps the compactly supported flux group into itself: it transports
+the compactly supported flux of a compactly supported loop `φ_t` to that of the compactly
+supported loop `f ∘ φ_t ∘ f⁻¹`. -/
+theorem map_symm_mem_compactFluxGroup {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ diffeomorphStabilizer σ.val)
+    {c : compactlySupportedDeRhamCohomology J M 1} (hc : c ∈ compactFluxGroup σ) :
+    compactlySupportedDeRhamCohomology.equivOfDiffeomorph f.symm 1 c ∈ compactFluxGroup σ := by
+  obtain ⟨Φ, K, hK, hΦK, hΦ, hΦ₁, rfl⟩ := hc
+  refine ⟨Φ.transDiffeomorph f, f '' K, hK.image f.continuous,
+    Diffeotopy.eqOn_id_transDiffeomorph f hΦK,
+    timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ, ?_, ?_⟩
+  · rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv, hΦ₁, mul_one, mul_inv_cancel]
+  · exact Φ.compactFlux_transDiffeomorph_of_mem_diffeomorphStabilizer hf _ _ _ _
 
 /-- **Forgetting supports maps the compactly supported flux group into the flux group.** The
 comparison map `H¹_c(M) → H¹_dR(M)` sends the compactly supported flux of a compactly supported
@@ -300,6 +321,34 @@ theorem mem_ker_compactEndpointFlux_of_hasHamiltonian {Φ : Diffeotopy J ∞ M} 
       (compactEndpointFlux σ).ker :=
   mem_ker_compactEndpointFlux_iff.2
     ⟨Φ, K, hK, hΦK, hΦ, rfl, hF.compactFlux_eq_zero hL hFL _ _⟩
+
+/-- **Naturality of the compactly supported endpoint flux.** For a diffeomorphism `f` preserving
+`σ`, the compactly supported endpoint flux of `f φ f⁻¹` is the image of that of `φ` under the map
+induced on `H¹_c(M) / Γ_(σ,c)` by the pullback along `f⁻¹`
+(`TauCeti.map_symm_mem_compactFluxGroup`). -/
+theorem compactEndpointFlux_mul_mul_inv {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ diffeomorphStabilizer σ.val)
+    (φ : compactIsotopyStabilizer σ.val) :
+    compactEndpointFlux σ ⟨f * φ * f⁻¹, mul_mul_inv_mem_compactIsotopyStabilizer hf φ.property⟩ =
+      Multiplicative.ofAdd (QuotientAddGroup.map (compactFluxGroup σ) (compactFluxGroup σ)
+        (compactlySupportedDeRhamCohomology.equivOfDiffeomorph f.symm 1).toLinearMap.toAddMonoidHom
+        (fun _ hc ↦ map_symm_mem_compactFluxGroup hf hc)
+        (Multiplicative.toAdd (compactEndpointFlux σ φ))) := by
+  obtain ⟨Φ, ⟨K, hK, hΦK⟩, hΦ, h⟩ := mem_compactIsotopyStabilizer.1 φ.property
+  have hfK := Diffeotopy.eqOn_id_transDiffeomorph f hΦK
+  rw [compactEndpointFlux_apply φ hK hΦK hΦ h (Φ.fluxForm_mem_compactlySupportedForms σ.val hK hΦK),
+    compactEndpointFlux_apply _ (hK.image f.continuous) hfK
+      (timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ) (by
+        rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv, h])
+      ((Φ.transDiffeomorph f).fluxForm_mem_compactlySupportedForms σ.val (hK.image f.continuous)
+        hfK),
+    Φ.compactFlux_transDiffeomorph_of_mem_diffeomorphStabilizer hf
+      (final_mem_diffeomorphStabilizer hΦ) _ (Φ.fluxForm_mem_compactlySupportedForms σ.val hK hΦK),
+    toAdd_ofAdd]
+  -- The coercion of `g.toAddMonoidHom` is `g` (`LinearMap.toAddMonoidHom_coe`).
+  exact congrArg Multiplicative.ofAdd (QuotientAddGroup.map_mk (compactFluxGroup σ)
+    (compactFluxGroup σ)
+    (compactlySupportedDeRhamCohomology.equivOfDiffeomorph f.symm 1).toLinearMap.toAddMonoidHom
+    _ _).symm
 
 /-- **Forgetting supports.** The map `H¹_c(M) / Γ_(σ,c) → H¹_dR(M) / Γ_σ` induced by the
 comparison map `H¹_c(M) → H¹_dR(M)` sends the compactly supported endpoint flux of `φ` to its

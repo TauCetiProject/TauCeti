@@ -38,6 +38,9 @@ on pointwise composites and changes sign under pointwise inversion
 hold modulo exact forms; here the correction is the differential of a function vanishing at every
 point which the first diffeotopy never moves
 (`TauCeti.Diffeotopy.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ`), so it is compactly supported.
+Conjugating by a diffeomorphism `f` preserving `σ` transports the compactly supported flux by the
+pullback along `f⁻¹`
+(`TauCeti.Diffeotopy.compactFlux_transDiffeomorph_of_mem_diffeomorphStabilizer`).
 
 For an exact two-form `σ = dθ` the primitive `θ` need not be compactly supported, but the flux
 form is still `φ₁^* θ - θ` up to the exterior derivative of a function vanishing outside `K`
@@ -74,6 +77,8 @@ time-one flow has compactly supported flux `[α]`.
   is compactly supported and closed.
 * `TauCeti.Diffeotopy.toDeRhamCohomology_compactFlux`: forgetting supports sends the compactly
   supported flux to the flux.
+* `TauCeti.Diffeotopy.compactFlux_transDiffeomorph_of_mem_diffeomorphStabilizer`: conjugating by
+  a diffeomorphism `f` preserving `σ` transports the compactly supported flux by `(f⁻¹)^*`.
 * `TauCeti.Diffeotopy.compactFlux_trans`, `TauCeti.Diffeotopy.compactFlux_symm`,
   `TauCeti.Diffeotopy.compactFlux_symm_trans`: the compactly supported flux of pointwise
   composites, inverses and quotients of compactly supported diffeotopies.
@@ -207,6 +212,30 @@ theorem compactFlux_refl (σ : closedForms J M 2)
     (refl J ∞ M).compactFlux σ hΦ hc = 0 := by
   rw [compactFlux_def, compactlySupportedDeRhamCohomology.mk_eq_zero_iff]
   simp only [fluxForm_refl, zero_mem]
+
+/-- **Naturality of the compactly supported flux under diffeomorphisms preserving `σ`.**
+Conjugating a diffeotopy by a diffeomorphism `f` preserving `σ` transports its compactly
+supported flux by the pullback along `f⁻¹`. -/
+theorem compactFlux_transDiffeomorph_of_mem_diffeomorphStabilizer {σ : closedForms J M 2}
+    {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hcΦ : Φ.fluxForm σ.val ∈ compactlySupportedForms J M 1)
+    (hc : (Φ.transDiffeomorph f).fluxForm σ.val ∈ compactlySupportedForms J M 1) :
+    (Φ.transDiffeomorph f).compactFlux σ h hc =
+      compactlySupportedDeRhamCohomology.equivOfDiffeomorph f.symm 1
+        (Φ.compactFlux σ hΦ hcΦ) := by
+  rw [compactFlux_def, compactFlux_def]
+  -- `rw` would fail its motive check from here on: the proof `f.symm.toHomeomorph.isProperMap`
+  -- has type `IsProperMap ⇑f.symm` only after unfolding the coercion of `f.symm.toHomeomorph`.
+  refine Eq.trans ?_ (compactlySupportedDeRhamCohomology.equivOfDiffeomorph_mk f.symm 1 _).symm
+  congr 1
+  apply Subtype.ext
+  exact ((Φ.fluxForm_transDiffeomorph f σ.val).trans (congrArg
+    (fun τ ↦ SmoothForm.mpullback f.symm f.symm.contMDiff (Φ.fluxForm τ))
+    (SmoothForm.mem_diffeomorphStabilizer.1 hf))).trans
+    (compactlySupportedClosedForms.coe_mpullback f.symm f.symm.contMDiff
+      f.symm.toHomeomorph.isProperMap 1 ⟨Φ.fluxForm σ.val, _⟩).symm
 
 /-! ### The compactly supported flux homomorphism -/
 
