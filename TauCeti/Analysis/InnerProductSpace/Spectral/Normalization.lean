@@ -518,7 +518,7 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimension
 
 /-- Read on a Euclidean model `W` through a linear equivalence `T`, an endomorphism of a real vector
 space `V` with the properties of the normalizing transport of a pair of bilinear forms `(q, h)` on
-`V` is the normalizing transport of the pair `(Q, h)` read on `W`, that is, pulled back along
+`V` is the normalizing transport of the pair `(Q, H)` read on `W`, that is, pulled back along
 `T⁻¹`. -/
 theorem _root_.LinearEquiv.eq_comp_normalizingTransport_comp {V W : Type*} [AddCommGroup V]
     [Module ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]

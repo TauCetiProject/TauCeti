@@ -154,6 +154,7 @@ theorem map_relativeSpectralSubspace_compl₁₂ (e : W ≃ₗ[R] V) :
 /-- A vector lies in a spectral subspace of the pair pulled back along a linear equivalence `e`
 exactly when its image under `e` lies in the corresponding spectral subspace of the original
 pair. -/
+@[simp]
 theorem mem_relativeSpectralSubspace_compl₁₂_iff (e : W ≃ₗ[R] V) {w : W} :
     w ∈ relativeSpectralSubspace (g.compl₁₂ (e : W →ₗ[R] V) (e : W →ₗ[R] V))
         (q.compl₁₂ (e : W →ₗ[R] V) (e : W →ₗ[R] V)) Ω ↔

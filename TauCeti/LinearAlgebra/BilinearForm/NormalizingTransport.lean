@@ -125,16 +125,9 @@ private theorem euclideanForm_comm (hq : q.IsSymm) (w w' : EuclideanSpace ℝ (F
 
 /-- A nondegenerate form pulls back to an injective one. -/
 private theorem injective_euclideanForm (hq' : LinearMap.ker q = ⊥) :
-    Function.Injective (euclideanForm q) := fun w w' hww' ↦ by
-  have hker : (euclideanEquiv V).symm (w - w') ∈ LinearMap.ker q := by
-    rw [LinearMap.mem_ker]
-    ext x
-    obtain ⟨y, rfl⟩ := (euclideanEquiv V).symm.surjective x
-    have := congr($hww' y)
-    rw [euclideanForm_apply, euclideanForm_apply] at this
-    simp [map_sub, this]
-  rwa [hq', Submodule.mem_bot, map_eq_zero_iff _ (euclideanEquiv V).symm.injective,
-    sub_eq_zero] at hker
+    Function.Injective (euclideanForm q) := fun w w' hww' ↦
+  LinearMap.ker_eq_bot.mp (ker_compl₁₂_eq_bot (euclideanEquiv V).symm hq') <|
+    LinearMap.ext fun x ↦ by simpa [euclideanForm_apply] using congr($hww' x)
 
 /-- A positive definite symmetric form pulls back to one with strictly positive Riesz operator. -/
 private theorem isStrictlyPositive_euclideanForm (hh : h.IsSymm)
@@ -295,9 +288,7 @@ theorem normalizingTransport_compl₁₂ {W : Type*} [AddCommGroup W] [Module �
     ⟨fun w ↦ ?_, fun w w' ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩).symm
   · simpa using hpos (e w)
   · simpa using hqS (e w) (e w')
-  · rw [mem_relativeSpectralSubspace_compl₁₂_iff] at hw ⊢
-    simpa using hneg (e w) hw
-  · rw [mem_relativeSpectralSubspace_compl₁₂_iff] at hw ⊢
-    simpa using hposS (e w) hw
+  · simpa using hneg (e w) (by simpa using hw)
+  · simpa using hposS (e w) (by simpa using hw)
 
 end LinearMap.BilinForm

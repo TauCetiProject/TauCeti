@@ -254,23 +254,12 @@ theorem normalHessian_normalHessianNormalization_apply_self (v : i.isImmersion.N
       g.inner s (v - h.negativeNormalProjection hn g s v)
           (v - h.negativeNormalProjection hn g s v) -
         g.inner s (h.negativeNormalProjection hn g s v) (h.negativeNormalProjection hn g s v) := by
-  set P := h.negativeNormalProjection hn g s
-  set N := h.normalHessianNormalization hn g s
-  have hneg := h.negativeNormalProjection_apply_mem hn g v
-  have hpos := h.sub_negativeNormalProjection_apply_mem hn g v
-  -- `N` maps the two components into the two normal spaces, which are `Hess`-orthogonal.
-  have hcross : h.normalHessian hn s (N (P v)) (N (v - P v)) = 0 :=
-    h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g
-      (h.normalHessianNormalization_apply_mem_negativeNormalSpace hn g hneg)
-      (h.normalHessianNormalization_apply_mem_positiveNormalSpace hn g hpos)
-  have hv : N v = N (P v) + N (v - P v) := by rw [← map_add, add_sub_cancel]
-  have hcross' : h.normalHessian hn s (N (v - P v)) (N (P v)) = 0 := by
-    rw [← (h.isSymm_normalHessian hn s).eq (N (P v)) (N (v - P v)), hcross]
-  rw [hv]
-  simp only [map_add, LinearMap.add_apply]
-  rw [hcross, hcross',
-    h.normalHessian_normalHessianNormalization_of_mem_negativeNormalSpace hn g hneg,
-    h.normalHessian_normalHessianNormalization_of_mem_positiveNormalSpace hn g hpos]
+  rw [h.normalHessian_apply_eq_normalHessian_negativeNormalProjection_add hn g,
+    h.negativeNormalProjection_normalHessianNormalization hn g, ← map_sub,
+    h.normalHessian_normalHessianNormalization_of_mem_negativeNormalSpace hn g
+      (h.negativeNormalProjection_apply_mem hn g v),
+    h.normalHessian_normalHessianNormalization_of_mem_positiveNormalSpace hn g
+      (h.sub_negativeNormalProjection_apply_mem hn g v)]
   ring
 
 /-- **The adapted metric is the pull-back of the fibre metric along `N⁻¹ / √2`.** For the
@@ -294,17 +283,9 @@ theorem adaptedMetric_inner_normalHessianNormalization (u v : i.isImmersion.Norm
     (V := h.positiveNormalSpace hn g s) (ε := 1) (fun w hw ↦ by
       rw [h.normalHessian_normalHessianNormalization_of_mem_positiveNormalSpace hn g hw]
       ring) (hpos u) (hpos v)
-  -- Split `g (u, v)` along the `g`-orthogonal components.
-  have hsplit : g.inner s u v = g.inner s (P u) (P v) + g.inner s (u - P u) (v - P v) := by
-    have h₁ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g (hneg u) (hpos v)
-    have h₂ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g (hneg v) (hpos u)
-    rw [g.symm] at h₂
-    conv_lhs => rw [show u = P u + (u - P u) by abel, show v = P v + (v - P v) by abel]
-    simp only [map_add, add_apply]
-    rw [h₁, h₂]
-    ring
   rw [adaptedMetric_inner, hsub, hsub, h.negativeNormalProjection_normalHessianNormalization hn g,
-    h.negativeNormalProjection_normalHessianNormalization hn g, hNneg, hNpos, hsplit]
+    h.negativeNormalProjection_normalHessianNormalization hn g, hNneg, hNpos,
+    h.inner_eq_inner_negativeNormalProjection_add hn g u v]
   ring
 
 /-- **Compatibility with the normal-bundle trivializations.** Let `e` be a linear trivialization
