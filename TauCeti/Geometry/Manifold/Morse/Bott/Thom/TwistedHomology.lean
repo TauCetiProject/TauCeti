@@ -82,6 +82,19 @@ namespace TauCeti
 
 universe u
 
+/-- The Thom pairs of a family `V` of subspaces of the fibres of `E` for two model-fibre parameters
+`F₁` and `F₂`, both with the topology of a subspace of the total space of `E`, are isomorphic by the
+identity on vectors (`subbundleTotalSpaceModelHomeomorph`). -/
+private def subbundleThomPairModelIso {𝕜 : Type*} {B : Type u} [Semiring 𝕜] (F : Type*)
+    {E : B → Type u} [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [TopologicalSpace (TotalSpace F E)] (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    thomPair F₁ (fun x ↦ V x) ≅ thomPair F₂ (fun x ↦ V x) :=
+  letI := subbundleTopology F (F' := F₁) V
+  letI := subbundleTopology F (F' := F₂) V
+  TopPair.ofSubsetIso (subbundleTotalSpaceModelHomeomorph F F₁ F₂ V) fun _ ↦ by simp
+
 /-- **The Thom pairs of finitely many bundles, with orientation-twisted coefficients.** For
 finitely many vector bundles `V j` over compact bases `S j`, with model fibres `κ j → ℝ` for finite
 types `κ j`, so of ranks `|κ j|`, and a commutative ring `K`, the coproduct of the homologies
@@ -200,8 +213,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
       ((hV j).of_equiv (Fintype.equivFin (κ j))))
     (ModuleCat.of K K) n
   let R (j : ι) : thomPair (Fin (Fintype.card (κ j)) → ℝ) (V j) ≅ thomPair (κ j → ℝ) (V j) :=
-    TopPair.ofSubsetIso (subbundleTotalSpaceModelHomeomorph (P j) _ _ _) fun _ ↦ by
-      rw [mem_zeroSectionCompl, mem_zeroSectionCompl, subbundleTotalSpaceModelHomeomorph_apply]
+    subbundleThomPairModelIso (P j) _ _ ((h j).negativeNormalSpace hn (g j).toRiemannianMetric)
   exact ⟨e ≪≫ Sigma.mapIso (fun j ↦ TopPair.singularHomologyMapIso _ (R j) n) ≪≫
     (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology K n).some⟩
 
@@ -295,8 +307,8 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
         ((hV j).of_equiv (Fintype.equivFin (κ j))))
     (ModuleCat.of K K) n
   let R (j : ι) : thomPair (Fin (Fintype.card (κ j)) → ℝ) (V j) ≅ thomPair (κ j → ℝ) (V j) :=
-    TopPair.ofSubsetIso (subbundleTotalSpaceModelHomeomorph (P j) _ _ _) fun _ ↦ by
-      rw [mem_zeroSectionCompl, mem_zeroSectionCompl, subbundleTotalSpaceModelHomeomorph_apply]
+    subbundleThomPairModelIso (P j) _ _
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
   -- Reindex the pieces of index at most `n` among those on the level `c`.
   exact ⟨e ≪≫ Sigma.mapIso (fun j ↦ TopPair.singularHomologyMapIso _ (R j) n) ≪≫
     (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
