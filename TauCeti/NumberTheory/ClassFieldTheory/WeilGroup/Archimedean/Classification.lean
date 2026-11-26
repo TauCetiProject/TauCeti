@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Induction.Classification
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.OneDimensional
 
+import TauCeti.Topology.Algebra.Group.Units
+
 /-!
 # The irreducible continuous representations of `W_ℝ`
 
@@ -33,8 +35,6 @@ the induction (`WeilGroupReal.nonempty_equiv_induceRepresentation_comp_star`), s
   finite-dimensional representation isomorphic to the induction of `χ` forces `χ` continuous.
 * `WeilGroupReal.isIrreducible_induceRepresentation_complexUnitsCharacter_iff`: the induction of
   `complexUnitsCharacter s k` is irreducible if and only if `k ≠ 0`.
-* `TauCeti.ClassFieldTheory.WeilGroupReal.nonempty_equiv_induceRepresentation_comp_star`: the
-  inductions of `χ ∘ conj` and of `χ` are isomorphic.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.exists_equiv_induceRepresentation_complexUnitsCharacter`:
   an irreducible two-dimensional continuous representation of `W_ℝ` is isomorphic to the induction
   of `complexUnitsCharacter s k` for some `s` and some `k ≠ 0`.
@@ -55,34 +55,6 @@ namespace TauCeti.ClassFieldTheory
 
 namespace WeilGroupReal
 
-/-- Precomposing `complexUnitsCharacter s k` with complex conjugation gives
-`complexUnitsCharacter s (-k)`. -/
-theorem complexUnitsCharacter_comp_starMulAut (s : ℂ) (k : ℤ) :
-    (complexUnitsCharacter s k : WeilGroupComplex →* ℂˣ).comp
-        (starMulAut : MulAut WeilGroupComplex).toMonoidHom =
-      (complexUnitsCharacter s (-k) : WeilGroupComplex →* ℂˣ) := by
-  ext z
-  have h := complexUnitsCharacter_map_conj s k z
-  have hz : Units.map (starRingEnd ℂ : ℂ →* ℂ) z = star z := Units.ext (by simp)
-  rw [hz] at h
-  simp [h]
-
-/-- The character `complexUnitsCharacter s k` is fixed by complex conjugation exactly when
-`k = 0`. -/
-theorem complexUnitsCharacter_comp_starMulAut_ne_iff (s : ℂ) (k : ℤ) :
-    (complexUnitsCharacter s k : WeilGroupComplex →* ℂˣ).comp
-        (starMulAut : MulAut WeilGroupComplex).toMonoidHom ≠
-      (complexUnitsCharacter s k : WeilGroupComplex →* ℂˣ) ↔ k ≠ 0 := by
-  rw [complexUnitsCharacter_comp_starMulAut, Ne, Ne, not_iff_not]
-  constructor
-  · intro h
-    have h' : complexUnitsCharacter s (-k) = complexUnitsCharacter s k :=
-      ContinuousMonoidHom.toMonoidHom_injective h
-    rw [complexUnitsCharacter_inj] at h'
-    omega
-  · intro h
-    simp [h]
-
 /-- **Irreducibility of the induction of `z ↦ |z| ^ s * (z / |z|) ^ k`.** The induction of
 `complexUnitsCharacter s k` from `W_ℂ` to `W_ℝ` is irreducible if and only if `k ≠ 0`. -/
 theorem isIrreducible_induceRepresentation_complexUnitsCharacter_iff (s : ℂ) (k : ℤ) :
@@ -90,34 +62,10 @@ theorem isIrreducible_induceRepresentation_complexUnitsCharacter_iff (s : ℂ) (
       k ≠ 0 := by
   rw [isIrreducible_induceRepresentation_iff, complexUnitsCharacter_comp_starMulAut_ne_iff]
 
-/-- **Interchanging the exponents does not change the induction.** The inductions of `χ ∘ conj`
-and of `χ` are isomorphic, by the matrix of `j` in the induction of `χ`. -/
-theorem nonempty_equiv_induceRepresentation_comp_star (χ : WeilGroupComplex →* ℂˣ) :
-    Nonempty ((induceRepresentation
-        (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom)).Equiv
-      (induceRepresentation χ)) := by
-  let J := induceCharacter χ j
-  let e : (Fin 2 → ℂ) ≃ₗ[ℂ] (Fin 2 → ℂ) :=
-    LinearEquiv.ofLinearMap (stdRep ℂ 2 J⁻¹) (stdRep ℂ 2 J)
-      (by rw [← Module.End.mul_eq_comp, ← map_mul, inv_mul_cancel, map_one]; rfl)
-      (by rw [← Module.End.mul_eq_comp, ← map_mul, mul_inv_cancel, map_one]; rfl)
-  have h (w : WeilGroupReal) :
-      J⁻¹ * induceCharacter (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom) w =
-        induceCharacter χ w * J⁻¹ := by
-    rw [induceCharacter_comp_star]
-    simp [J, mul_assoc]
-  refine ⟨.mk e fun w ↦ LinearMap.ext fun v ↦ ?_⟩
-  change stdRep ℂ 2 J⁻¹ (induceRepresentation _ w v) =
-    induceRepresentation χ w (stdRep ℂ 2 J⁻¹ v)
-  rw [induceRepresentation_apply, induceRepresentation_apply, stdRep_apply_apply,
-    stdRep_apply_apply, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, ← Units.val_mul,
-    ← Units.val_mul, h]
-
 variable {V : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [IsModuleTopology ℂ V]
 
 /-- **Continuity of the inducing character.** If a continuous representation
-of `W_ℝ` is isomorphic to the induction of a character `χ` of `W_ℂ`, then `χ` is continuous: `χ z`
-is the first coordinate of `z` applied to the vector corresponding to the first basis vector. -/
+of `W_ℝ` is isomorphic to the induction of a character `χ` of `W_ℂ`, then `χ` is continuous. -/
 theorem continuous_of_equiv_induceRepresentation
     (ρ : ContinuousRep WeilGroupReal ℂ V) {χ : WeilGroupComplex →* ℂˣ}
     (e : ρ.toRepresentation.Equiv (induceRepresentation χ)) : Continuous χ := by
@@ -135,9 +83,7 @@ theorem continuous_of_equiv_induceRepresentation
     simp_rw [hval]
     exact (continuous_apply 0).comp
       (he.comp ((ρ.continuous_orbit _).comp continuous_includeComplex))
-  refine Units.continuous_iff.2 ⟨hc, ?_⟩
-  simp_rw [← map_inv]
-  exact hc.comp continuous_inv
+  exact (MonoidHom.continuous_iff_continuous_val χ).2 hc
 
 /-- **The two-dimensional irreducible continuous representations of `W_ℝ`.** An irreducible
 two-dimensional continuous representation of `W_ℝ` is isomorphic to the induction of a character
@@ -151,9 +97,8 @@ theorem exists_equiv_induceRepresentation_complexUnitsCharacter
   obtain ⟨χ, hχ, ⟨e⟩⟩ := exists_equiv_induceRepresentation ρ.toRepresentation hρ h2
   obtain ⟨s, k, hsk⟩ :=
     exists_eq_complexUnitsCharacter ⟨χ, continuous_of_equiv_induceRepresentation ρ e⟩
-  have hχ' : χ = (complexUnitsCharacter s k : WeilGroupComplex →* ℂˣ) := by
-    rw [← hsk]
-    rfl
+  have hχ' : χ = (complexUnitsCharacter s k : WeilGroupComplex →* ℂˣ) :=
+    congrArg ContinuousMonoidHom.toMonoidHom hsk
   subst hχ'
   exact ⟨s, k, (complexUnitsCharacter_comp_starMulAut_ne_iff s k).1 hχ, ⟨e⟩⟩
 
