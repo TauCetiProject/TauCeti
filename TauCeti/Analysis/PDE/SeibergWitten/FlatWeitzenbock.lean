@@ -33,7 +33,11 @@ operator
 `∇_v ψ = dψ(v) + i b(v) ψ`  (`TauCeti.SeibergWitten.covariantDeriv`),
 `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`  (`flatDirac`),
 
-for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). Without a basis, `D ψ` is the metric
+for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). The covariant derivative at `x` depends only
+on the germ of the field at `x` (`covariantDeriv_congr_of_eventuallyEq`). It, and the sum
+`∑ₖ ∇_{eₖ} ∇_{eₖ}` of second covariant derivatives, commute with constant complex-linear maps
+(`covariantDeriv_continuousLinearMap_comp`,
+`sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp`). Without a basis, `D ψ` is the metric
 trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ` (`AlgHom.cliffordPairing`, `flatDirac_def`).
 This is the Dirac operator of the twisted spinors on a flat chart in which the background
 connection is trivial. For `ψ = α u₀` with `u₀` constant it is the operator of the flat limiting
@@ -190,11 +194,58 @@ theorem covariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype
   rw [covariantDeriv_apply, H.fderiv]
   simp [Finset.smul_sum, ← Finset.sum_add_distrib, map_smul, LinearMap.map_smul_of_tower]
 
+/-- The covariant derivative at `x` only sees the germ of the field at `x`. -/
+theorem covariantDeriv_congr_of_eventuallyEq {f g : V → W} (h : f =ᶠ[𝓝 x] g) :
+    covariantDeriv b f x = covariantDeriv b g x := by
+  ext v
+  rw [covariantDeriv_apply, covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+
 /-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
 theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
     covariantDeriv b φ x = 0 := by
   ext v
-  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+  simp [covariantDeriv_congr_of_eventuallyEq h, covariantDeriv_apply]
+
+/-- The covariant derivative commutes with a constant complex-linear map: `∇_v (L ψ) = L (∇_v ψ)`.
+-/
+theorem covariantDeriv_continuousLinearMap_comp {W' : Type*} [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] (L : W →L[ℂ] W') (hψ : DifferentiableAt ℝ ψ x) (v : V) :
+    covariantDeriv b (fun y ↦ L (ψ y)) x v = L (covariantDeriv b ψ x v) := by
+  have H : HasFDerivAt (fun y ↦ L (ψ y)) ((L.restrictScalars ℝ).comp (fderiv ℝ ψ x)) x :=
+    (L.restrictScalars ℝ).hasFDerivAt.comp x hψ.hasFDerivAt
+  rw [covariantDeriv_apply, covariantDeriv_apply, H.fderiv]
+  simp [map_smul]
+
+/-- The second covariant derivative commutes with a constant complex-linear map:
+`∇_v ∇_w (L ψ) = L (∇_v ∇_w ψ)`, for a field differentiable near `x` whose derivative is
+differentiable at `x`. -/
+theorem covariantDeriv_covariantDeriv_continuousLinearMap_comp {W' : Type*}
+    [NormedAddCommGroup W'] [NormedSpace ℂ W'] (L : W →L[ℂ] W')
+    (hψ : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ ψ y) (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x)
+    (hb : DifferentiableAt ℝ b x) (v w : V) :
+    covariantDeriv b (fun y ↦ covariantDeriv b (fun z ↦ L (ψ z)) y w) x v =
+      L (covariantDeriv b (fun y ↦ covariantDeriv b ψ y w) x v) := by
+  have heq : (fun y ↦ covariantDeriv b (fun z ↦ L (ψ z)) y w) =ᶠ[𝓝 x]
+      fun y ↦ L (covariantDeriv b ψ y w) :=
+    hψ.mono fun y hy ↦ covariantDeriv_continuousLinearMap_comp L hy w
+  rw [covariantDeriv_congr_of_eventuallyEq heq, covariantDeriv_continuousLinearMap_comp L
+    (differentiableAt_covariantDeriv_apply hψ.self_of_nhds hψ' hb w)]
+
+/-- The sum `∑ₖ ∇_{eₖ} ∇_{eₖ} ψ` of second covariant derivatives, which is minus the rough
+Laplacian when `(eₖ)` is an orthonormal basis, commutes with a constant complex-linear map, for a
+`C²` field. -/
+theorem sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp {W' : Type*}
+    [NormedAddCommGroup W'] [NormedSpace ℂ W'] (L : W →L[ℂ] W') (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) {κ : Type*} [Fintype κ] (e : κ → V) :
+    ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b (fun z ↦ L (ψ z)) y (e k)) x (e k) =
+      L (∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k)) := by
+  have hψ₁ : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ ψ y :=
+    (hψ.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num)
+  have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun k _ ↦
+    covariantDeriv_covariantDeriv_continuousLinearMap_comp L hψ₁ hψ₂ hb (e k) (e k)
 
 end CovariantDeriv
 

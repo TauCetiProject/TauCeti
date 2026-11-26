@@ -16,7 +16,8 @@ The matrix of the inner product `innerₛₗ 𝕜` in a basis `b`, as computed b
 (`Module.Basis.toMatrix₂_innerₛₗ`). This holds over `ℝ` and `ℂ` alike, in any semi-inner product
 space. Over `ℝ` it reads `LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix.gram ℝ b`
 (`LinearMap.BilinForm.toMatrix_innerₗ`), which is the form in which Gram matrices enter the
-bilinear-form API, for instance through dual bases.
+bilinear-form API, for instance through dual bases. In an orthonormal basis it is the identity
+matrix (`LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis`).
 
 The Gram matrix of the sum of two families that are pairwise orthogonal across the two families is
 the sum of their Gram matrices (`Matrix.gram_add_of_inner_eq_zero`).
@@ -39,6 +40,12 @@ theorem Module.Basis.toMatrix₂_innerₛₗ [RCLike 𝕜] [SeminormedAddCommGro
 theorem LinearMap.BilinForm.toMatrix_innerₗ [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     (b : Module.Basis ι ℝ E) : toMatrix b (innerₗ E) = Matrix.gram ℝ b :=
   b.toMatrix₂_innerₛₗ
+
+/-- The matrix of the real inner product in an orthonormal basis is the identity matrix. -/
+theorem LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) : toMatrix b.toBasis (innerₗ E) = 1 := by
+  rw [toMatrix_innerₗ, OrthonormalBasis.coe_toBasis, Matrix.gram_eq_one_iff_orthonormal]
+  exact b.orthonormal
 
 /-- The Gram matrix of a sum of two families of vectors that are pairwise orthogonal across the two
 families is the sum of their Gram matrices. -/

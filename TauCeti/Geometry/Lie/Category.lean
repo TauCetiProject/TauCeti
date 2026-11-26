@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import TauCeti.Algebra.Category.LieAlgCat.Basic
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Lie.Integration
 import TauCeti.Geometry.Lie.Faithfulness
 import TauCeti.Geometry.Lie.Interior
 
@@ -16,14 +17,20 @@ import TauCeti.Geometry.Lie.Interior
 # The Lie functor as a categorical functor
 
 `TauCeti.LieGroupCat` is the category of finite-dimensional smooth real Lie groups and smooth
-homomorphisms. Each object carries its own vector-space model and model with corners, so the
-category includes morphisms between groups of different dimensions.
+homomorphisms. Each object carries its own vector-space model and a model with corners without
+boundary, so the category includes morphisms between groups of different dimensions. A Lie group
+is a manifold without boundary in any case (`ContMDiffMul.boundarylessManifold`); asking the model
+itself to have no boundary is what the integration of Lie-algebra homomorphisms
+(`LieHom.integrate`) uses.
 
 Differentiation gives `TauCeti.LieGroupCat.lieFunctor` into the category of finite-dimensional
 real Lie algebras. Its map on morphisms is `lieMap`, the differential at the identity.
 It is injective on morphisms
 out of preconnected objects. Its restrictions to preconnected and simply connected groups are
-faithful.
+faithful, and by Lie's second theorem (`TauCeti.Lie.lieMap_bijective`) its restriction to simply
+connected groups is fully faithful, for models in the lowest universe. A preconnected Lie group is
+second countable (`LieGroup.secondCountableTopology_of_preconnectedSpace`), so integration applies
+to every simply connected object.
 
 ## Main definitions and results
 
@@ -45,11 +52,16 @@ faithful.
 * `TauCeti.LieGroupCat.isSimplyConnected_le_isPreconnected`: the inclusion of object properties.
 * `TauCeti.LieGroupCat.simplyConnectedLieFunctor`: the faithful restriction of `lieFunctor` to
   simply connected groups.
+* `TauCeti.LieGroupCat.simplyConnectedLieFunctorFullyFaithful`: the restriction of `lieFunctor`
+  to simply connected groups is fully faithful, with the corresponding `Full` instance.
+* `TauCeti.LieGroupCat.simplyConnectedLieFunctorFullyFaithful_preimage_hom_hom`,
+  `TauCeti.LieGroupCat.simplyConnectedLieFunctor_preimage_hom_hom`: the preimage of a Lie-algebra
+  homomorphism is its integral `LieHom.integrate`.
 
 ## References
 
 * A. Kirillov Jr., *An Introduction to Lie Groups and Lie Algebras*, Cambridge Studies in
-  Advanced Mathematics 113 (2008), Theorem 3.41 (uniqueness) and Corollary 3.44.
+  Advanced Mathematics 113 (2008), Theorem 3.41 and Corollary 3.44.
 * Mathlib's `ModelWithCorners.MfldCat`, for the concrete-category setup.
 -/
 
@@ -82,6 +94,8 @@ structure LieGroupCat where
   [topologicalSpaceChartDomain : TopologicalSpace chartDomain]
   /-- The model with corners. -/
   modelWithCorners : ModelWithCorners ℝ model chartDomain
+  /-- The model has no boundary. -/
+  [boundaryless : modelWithCorners.Boundaryless]
   /-- The topology of the group. -/
   [topologicalSpace : TopologicalSpace carrier]
   /-- The charts on the group. -/
@@ -92,7 +106,7 @@ structure LieGroupCat where
   [lieGroup : LieGroup modelWithCorners ∞ carrier]
 
 attribute [instance] LieGroupCat.normedAddCommGroup LieGroupCat.normedSpace
-  LieGroupCat.finiteDimensional LieGroupCat.topologicalSpaceChartDomain
+  LieGroupCat.finiteDimensional LieGroupCat.topologicalSpaceChartDomain LieGroupCat.boundaryless
   LieGroupCat.topologicalSpace LieGroupCat.chartedSpace LieGroupCat.group LieGroupCat.lieGroup
 
 instance : CoeSort (LieGroupCat.{u, v, w}) (Type u) := ⟨LieGroupCat.carrier⟩
@@ -108,7 +122,7 @@ instance (G : LieGroupCat.{u, v, w}) : T2Space G :=
 
 /-- Bundle a finite-dimensional smooth real Lie group. -/
 abbrev of {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+    {H : Type w} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
     (G : Type u) [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] :
     LieGroupCat.{u, v, w} where
   carrier := G
@@ -303,6 +317,64 @@ noncomputable abbrev simplyConnectedLieFunctor :
 
 /-- Differentiation is faithful on simply connected Lie groups. -/
 instance : simplyConnectedLieFunctor.Faithful := inferInstance
+
+/-- The underlying group of a simply connected object is simply connected. -/
+instance (G : isSimplyConnected.{u, v, w}.FullSubcategory) : SimplyConnectedSpace G.obj :=
+  G.property
+
+/-- The underlying group of a simply connected object is second countable. -/
+instance (G : isSimplyConnected.{u, v, w}.FullSubcategory) : SecondCountableTopology G.obj :=
+  LieGroup.secondCountableTopology_of_preconnectedSpace G.obj.modelWithCorners ∞
+
+/-- **Lie's second theorem, categorically: the Lie functor is fully faithful on simply connected
+Lie groups.** Differentiation is a bijection from smooth homomorphisms between simply connected
+Lie groups onto homomorphisms of their Lie algebras, with inverse `LieHom.integrate`
+(`simplyConnectedLieFunctorFullyFaithful_preimage_hom_hom`). In particular a Lie-algebra
+isomorphism between the Lie algebras of two simply connected Lie groups integrates to an
+isomorphism of the groups (`Functor.FullyFaithful.preimageIso`). The integral leaf subgroups behind
+integration are built for models in the lowest universe, hence the universe levels. -/
+noncomputable def simplyConnectedLieFunctorFullyFaithful :
+    simplyConnectedLieFunctor.{u, 0, 0}.FullyFaithful where
+  preimage {G K} f := ObjectProperty.homMk (ofHom (LieHom.integrate (I := G.obj.modelWithCorners)
+    (G := G.obj) (I' := K.obj.modelWithCorners) (G' := K.obj) f.hom.hom))
+  map_preimage {G K} f := by
+    apply ObjectProperty.hom_ext
+    apply LieAlgCat.hom_ext
+    exact (lieFunctor_map_hom_hom _).trans (LieHom.lieMap_integrate (I := G.obj.modelWithCorners)
+      (G := G.obj) (I' := K.obj.modelWithCorners) (G' := K.obj) f.hom.hom)
+  preimage_map {G K} g := by
+    apply ObjectProperty.hom_ext
+    apply hom_ext
+    exact ContMDiffMonoidMorphism.integrate_lieMap (I := G.obj.modelWithCorners) (G := G.obj)
+      (I' := K.obj.modelWithCorners) (G' := K.obj) g.hom.hom
+
+/-- The preimage of a Lie-algebra homomorphism under `simplyConnectedLieFunctorFullyFaithful` is
+its integral. -/
+@[simp]
+theorem simplyConnectedLieFunctorFullyFaithful_preimage_hom_hom
+    {G K : isSimplyConnected.{u, 0, 0}.FullSubcategory}
+    (f : simplyConnectedLieFunctor.obj G ⟶ simplyConnectedLieFunctor.obj K) :
+    (simplyConnectedLieFunctorFullyFaithful.preimage f).hom.hom =
+      LieHom.integrate (I := G.obj.modelWithCorners) (G := G.obj) (I' := K.obj.modelWithCorners)
+        (G' := K.obj) f.hom.hom :=
+  (rfl)
+
+instance : simplyConnectedLieFunctor.{u, 0, 0}.Full :=
+  simplyConnectedLieFunctorFullyFaithful.full
+
+/-- The preimage of a Lie-algebra homomorphism under the full functor `simplyConnectedLieFunctor`
+is its integral. -/
+@[simp]
+theorem simplyConnectedLieFunctor_preimage_hom_hom
+    {G K : isSimplyConnected.{u, 0, 0}.FullSubcategory}
+    (f : simplyConnectedLieFunctor.obj G ⟶ simplyConnectedLieFunctor.obj K) :
+    (simplyConnectedLieFunctor.preimage f).hom.hom =
+      LieHom.integrate (I := G.obj.modelWithCorners) (G := G.obj) (I' := K.obj.modelWithCorners)
+        (G' := K.obj) f.hom.hom := by
+  rw [← simplyConnectedLieFunctorFullyFaithful_preimage_hom_hom]
+  congr 2
+  exact simplyConnectedLieFunctor.map_injective (by
+    rw [Functor.map_preimage, simplyConnectedLieFunctorFullyFaithful.map_preimage])
 
 end LieGroupCat
 

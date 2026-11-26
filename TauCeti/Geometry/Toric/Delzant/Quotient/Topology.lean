@@ -62,7 +62,8 @@ four (`TauCeti.Toric.sum_bettiNumber_delzantQuotient_hirzebruch`).
 
 The homology here is singular homology with coefficients in a division ring. The individual even
 Betti numbers, counted at each vertex by the edges along which a generic linear function
-increases, and the freeness and ring structure of the integral cohomology, are not proved here.
+decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`; the freeness and ring
+structure of the integral cohomology are not proved here.
 
 ## Main results
 

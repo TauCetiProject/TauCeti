@@ -25,6 +25,10 @@ scalar reparametrization of it, has Hessian `-‖v‖² / √a` at the origin.
 These are the real inputs for the Levi form and the inertia of the squared norm of a complex inner
 product space, the basic strictly plurisubharmonic function.
 
+Separately, a radial function `z ↦ U ‖z‖` has, at `q ≠ 0` and in the radial direction `q`, the
+Hessian `U''(‖q‖) ‖q‖²` of its profile `U` along the ray; this is used for the radial Hessian of
+central-force Hamiltonians.
+
 The origin is the only critical point of the squared norm, and it is nondegenerate in finite
 dimensions; the negated squared norm `z ↦ -‖z‖ ^ 2` has Morse index the dimension. On a product
 `E × F` of inner product spaces the separated sum `(u, v) ↦ -‖u‖ ^ 2 + ‖v‖ ^ 2` is the model of a
@@ -39,6 +43,8 @@ nondegenerate critical point of index `dim E`, in the normalization of a Morse c
 * `TauCeti.morseIndex_norm_sq`: its Morse index vanishes at every point.
 * `TauCeti.hessianQuadraticForm_sqrt_sub_norm_sq_zero`: the Hessian quadratic form of the
   hemisphere height `√(a - ‖x‖²)` at the origin is `-‖v‖² / √a`.
+* `TauCeti.hessianQuadraticForm_comp_norm_apply_self`: in the radial direction, the Hessian of
+  a radial function `z ↦ U ‖z‖` at `q ≠ 0` is `U''(‖q‖) ‖q‖²`.
 * `TauCeti.fderiv_norm_sq_eq_zero_iff` and `TauCeti.isNondegenerateCriticalPoint_norm_sq`: the
   origin is its only critical point, and it is nondegenerate.
 * `TauCeti.morseIndex_neg_norm_sq`: the negated squared norm has Morse index the dimension.
@@ -93,6 +99,26 @@ theorem hessianQuadraticForm_sqrt_sub_norm_sq_zero {a : ℝ} (ha : 0 < a) (v : F
   rw [hessianQuadraticForm_scalar_comp (f := fun y ↦ ‖y‖ ^ 2) hs hn hc,
     smul_apply, hd.deriv, hessianQuadraticForm_norm_sq, smul_eq_mul]
   field_simp
+
+/-- **The Hessian of a radial function in the radial direction.** If `U` is `C²` at `‖q‖` and
+`q ≠ 0`, the Hessian of `z ↦ U ‖z‖` at `q`, evaluated on `q` itself, is the Hessian of `U` at
+`‖q‖` evaluated on `‖q‖`, that is `U''(‖q‖) ‖q‖²`. -/
+theorem hessianQuadraticForm_comp_norm_apply_self {U : ℝ → ℝ} {q : F}
+    (hU : ContDiffAt ℝ 2 U ‖q‖) (hq : q ≠ 0) :
+    hessianQuadraticForm (fun z ↦ U ‖z‖) q q = hessianQuadraticForm U ‖q‖ ‖q‖ := by
+  -- Restrict to the line `t ↦ t • q`, along which `‖t • q‖ = t ‖q‖` near `t = 1`.
+  let L : ℝ →L[ℝ] F := (ContinuousLinearMap.id ℝ ℝ).smulRight q
+  let M : ℝ →L[ℝ] ℝ := ‖q‖ • ContinuousLinearMap.id ℝ ℝ
+  have hL : L 1 = q := by simp [L]
+  have hM : M 1 = ‖q‖ := by simp [M]
+  have heq : (fun z : F ↦ U ‖z‖) ∘ L =ᶠ[nhds 1] U ∘ M := by
+    filter_upwards [eventually_gt_nhds one_pos] with t ht
+    simp [L, M, norm_smul, abs_of_pos ht, mul_comm]
+  have h₁ := congr($(L.hessianQuadraticForm_comp (b := 1)
+    (f := fun z : F ↦ U ‖z‖) (by rw [hL]; exact hU.comp q (contDiffAt_norm ℝ hq))) 1)
+  have h₂ := congr($(M.hessianQuadraticForm_comp (b := 1) (f := U) (by rwa [hM])) 1)
+  rw [hessianQuadraticForm_congr_of_eventuallyEq heq, h₂] at h₁
+  simpa [hL, hM] using h₁.symm
 
 /-- The derivative of the squared norm vanishes exactly at the origin. -/
 theorem fderiv_norm_sq_eq_zero_iff {x : F} : fderiv ℝ (fun z : F ↦ ‖z‖ ^ 2) x = 0 ↔ x = 0 := by

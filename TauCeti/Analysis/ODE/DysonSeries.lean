@@ -75,6 +75,8 @@ one-parameter automorphism groups of C⋆-algebras.
   value lies in the `ε`-eigenspace of `Γ d ^ n`, the solution is twisted by `ε` along `n d`.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
+* `TauCeti.apply_dysonSeries_neg_apply`: the inverse of such a propagator is its adjoint for
+  `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
@@ -589,6 +591,17 @@ theorem apply_dysonSeriesLeft_apply_dysonSeriesLeft {M : ℝ → X →L[ℝ] X} 
   have hc := is_const_of_deriv_eq_zero (fun r => (hd r).differentiableAt)
     (fun r => (hd r).deriv) t 0
   simpa [dysonSeriesLeft_zero] using hc
+
+/-- **The inverse propagator is the adjoint for a preserved form.** If the continuous path `M` of
+bounded operators is skew for a bilinear map `B`, so that the propagator `Ψ = dysonSeriesLeft M`
+preserves `B` (`TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`), then its inverse
+`Ψ(t)⁻¹ = dysonSeries (-M) t` satisfies `B u (Ψ(t)⁻¹ w) = B (Ψ(t) u) w`. -/
+theorem apply_dysonSeries_neg_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (B : X →L[ℝ] X →L[ℝ] W)
+    (hskew : ∀ r u w, B (M r u) w + B u (M r w) = 0) (t : ℝ) (u w : X) :
+    B u (dysonSeries (-M) t w) = B (dysonSeriesLeft M t u) w := by
+  rw [← apply_dysonSeriesLeft_apply_dysonSeriesLeft hM B hskew t u, ← mul_apply_eq_comp,
+    dysonSeriesLeft_mul_dysonSeries_neg hM, one_apply_eq_self]
 
 /-- **Variation of constants.** For continuous `M` and `f`, the map
 `w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
