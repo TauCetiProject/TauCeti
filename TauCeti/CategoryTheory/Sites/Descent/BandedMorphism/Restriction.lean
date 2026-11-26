@@ -12,26 +12,21 @@ public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Action
 /-!
 # Restriction of fibre isomorphisms along arrows of the site
 
-Let `b` be an `A`-banding of a pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat`, and `f : V ⟶ U` an
-arrow of `C`. Pulling an isomorphism `p : x ≅ y` of the fibre over `U` back along `f` is a map of
-`A(U)`-sets from `x ≅ y` to the isomorphisms `F(f) x ≅ F(f) y`, on which `A(U)` acts through the
-restriction `A(U) → A(V)` (`AbelianBanding.restrictActionHom`), because pulling back carries the
-band automorphism of `a` to the band automorphism of the restriction of `a`.
-
-For a strong transformation `X : F ⟶ G`, the restriction comparison
-`BandedMorphism.restrictionIso X f x : G(f) (X_U x) ≅ X_V (F(f) x)` is the inverse of the
+Let `bG` be an `A`-banding of a pseudofunctor `G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat`, and `f : V ⟶ U` an
+arrow of `C`. For a strong transformation `X : F ⟶ G`, the restriction comparison
+`BandedMorphism.restrictionIso f X x : G(f) (X_U x) ≅ X_V (F(f) x)` is the inverse of the
 naturality isomorphism of `X` along `f` at `x`. It is compatible with modifications
 (`BandedMorphism.restrictionIso_modification`) and along the identity it is assembled from the
 unit isomorphisms of `F` and `G` (`BandedMorphism.restrictionIso_id`). Pulling back an
-isomorphism `p : y ≅ X_U x` and composing with it gives the restriction of fibre isomorphisms
-`BandedMorphism.fiberIsomRestriction X f x y : (y ≅ X_U x) ⟶ (G(f) y ≅ X_V (F(f) x))`, again a
-map of `A(U)`-sets for the restricted action (Olsson, Definitions 31.1 and Remarks 31.2, 31.5;
-Groechenig, Wyss and Ziegler, Definition 2.6 and §2.2.1).
+isomorphism `p : y ≅ X_U x` along `f` (`AbelianBanding.restrictActionHom`) and composing with the
+restriction comparison gives the restriction of fibre isomorphisms
+`BandedMorphism.fiberIsomRestriction f bG X x y : (y ≅ X_U x) ⟶ (G(f) y ≅ X_V (F(f) x))`, a map of
+`A(U)`-sets for the action of `A(U)` on the target through the restriction `A(U) → A(V)` (Olsson,
+Definitions 31.1 and Remarks 31.2, 31.5; Groechenig, Wyss and Ziegler, Definition 2.6 and
+§2.2.1).
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.AbelianBanding.restrictActionHom`, with
-  `restrictActionHom_hom_apply`, `restrictActionHom_hom_trans`, `restrictActionHom_hom_refl`.
 * `CategoryTheory.Pseudofunctor.BandedMorphism.restrictionIso`, with `restrictionIso_hom`,
   `restrictionIso_inv`, `restrictionIso_modification` and `restrictionIso_id`.
 * `CategoryTheory.Pseudofunctor.BandedMorphism.fiberIsomRestriction`, with
@@ -57,47 +52,6 @@ namespace CategoryTheory.Pseudofunctor
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat.{w}} {U V : C} (f : V ⟶ U)
-
-namespace AbelianBanding
-
-variable {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} (b : F.AbelianBanding J A)
-
-/-- **Restriction of fibre isomorphisms** along `f : V ⟶ U`: pulling back `p : x ≅ y` along `f`
-is a map of `A(U)`-sets from `x ≅ y` to the isomorphisms `F(f) x ≅ F(f) y`, on which `A(U)` acts
-through the restriction `A(U) → A(V)` (`AbelianBanding.mapIso_act`). It needs no isomorphism
-`x ≅ y` to exist. -/
-def restrictActionHom (x y : F.obj (.mk (op U))) :
-    b.fiberAction x y ⟶
-      (Action.res _ (AddMonoidHom.toMultiplicative (A.obj.map f.op).hom)).obj
-        (b.fiberAction ((F.map f.op.toLoc).toFunctor.obj x)
-          ((F.map f.op.toLoc).toFunctor.obj y)) where
-  hom := TypeCat.ofHom fun p : x ≅ y ↦ (F.map f.op.toLoc).toFunctor.mapIso p
-  comm a := by
-    ext (p : x ≅ y)
-    -- The carriers of `fiberAction` are isomorphisms only after unfolding; see
-    -- `AbelianBanding.postcomposeActionIso`.
-    change (F.map f.op.toLoc).toFunctor.mapIso (b.act p a) =
-      b.act ((F.map f.op.toLoc).toFunctor.mapIso p) (.ofAdd (A.obj.map f.op a.toAdd))
-    exact b.mapIso_act f p a
-
-/-- `restrictActionHom` pulls back `p` along `f`. -/
-@[simp]
-theorem restrictActionHom_hom_apply {x y : F.obj (.mk (op U))} (p : x ≅ y) :
-    (b.restrictActionHom f x y).hom p = (F.map f.op.toLoc).toFunctor.mapIso p :=
-  (rfl)
-
-/-- Restriction of a composite is the composite of the restrictions. -/
-theorem restrictActionHom_hom_trans {x y z : F.obj (.mk (op U))} (p : x ≅ y) (q : y ≅ z) :
-    (b.restrictActionHom f x z).hom (p ≪≫ q) =
-      (b.restrictActionHom f x y).hom p ≪≫ (b.restrictActionHom f y z).hom q :=
-  Functor.mapIso_trans _ p q
-
-/-- Restriction of an identity isomorphism is the identity. -/
-theorem restrictActionHom_hom_refl (x : F.obj (.mk (op U))) :
-    (b.restrictActionHom f x x).hom (Iso.refl x) = Iso.refl _ :=
-  Functor.mapIso_refl _ x
-
-end AbelianBanding
 
 namespace BandedMorphism
 
@@ -143,42 +97,45 @@ theorem restrictionIso_modification [∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
   ext
   -- Evaluate the naturality of `m` along `f` at `x` and move the comparisons across.
   have h := congrArg (fun φ ↦ φ.toNatTrans.app x) (m.hom.as.naturality f.op.toLoc)
-  rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-  rw [Iso.trans_hom, Iso.trans_hom, restrictionIso, restrictionIso, Iso.symm_hom, Iso.symm_hom,
-    Iso.eq_inv_comp, ← Category.assoc, Iso.comp_inv_eq, StrongTrans.naturalityObjIso_hom,
-    StrongTrans.naturalityObjIso_hom, Functor.mapIso_hom, componentIso_hom, componentIso_hom]
-  exact h.symm
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
+  rw [← cancel_epi ((X.obj.naturality f.op.toLoc).hom.toNatTrans.app x)]
+  simp [← reassoc_of% h]
 
-/-- **Restriction of fibre isomorphisms** for a band-preserving `X : F ⟶ G` along `f : V ⟶ U`:
-the map of `A(U)`-sets from `y ≅ X_U x` to `G(f) y ≅ X_V (F(f) x)`, with `A(U)` acting on the
-target through the restriction `A(U) → A(V)`, that pulls back `p` along `f` and composes with the
-restriction comparison `restrictionIso f X x`. -/
-noncomputable def fiberIsomRestriction (X : HomCategory bF bG) (x : F.obj (.mk (op U)))
+variable (bG)
+
+/-- **Restriction of fibre isomorphisms** for a strong transformation `X : F ⟶ G` along
+`f : V ⟶ U`: the map of `A(U)`-sets from `y ≅ X_U x` to `G(f) y ≅ X_V (F(f) x)`, with `A(U)`
+acting on the target through the restriction `A(U) → A(V)`, that pulls back `p` along `f` and
+composes with the restriction comparison `restrictionIso f X x`. -/
+noncomputable def fiberIsomRestriction (X : F ⟶ G) (x : F.obj (.mk (op U)))
     (y : G.obj (.mk (op U))) :
-    bG.fiberAction y ((X.obj.app (.mk (op U))).toFunctor.obj x) ⟶
+    bG.fiberAction y ((X.app (.mk (op U))).toFunctor.obj x) ⟶
       (Action.res _ (AddMonoidHom.toMultiplicative (A.obj.map f.op).hom)).obj
         (bG.fiberAction ((G.map f.op.toLoc).toFunctor.obj y)
-          ((X.obj.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x))) :=
+          ((X.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x))) :=
   bG.restrictActionHom f y _ ≫
     (Action.res _ (AddMonoidHom.toMultiplicative (A.obj.map f.op).hom)).map
-      (bG.postcomposeActionIso (restrictionIso f X.obj x)).hom
+      (bG.postcomposeActionIso (restrictionIso f X x)).hom
 
 /-- `fiberIsomRestriction` sends `p` to its pullback along `f` followed by the restriction
 comparison. -/
 @[simp]
-theorem fiberIsomRestriction_hom_apply (X : HomCategory bF bG) (x : F.obj (.mk (op U)))
-    {y : G.obj (.mk (op U))} (p : y ≅ (X.obj.app (.mk (op U))).toFunctor.obj x) :
-    (fiberIsomRestriction f X x y).hom p =
-      (G.map f.op.toLoc).toFunctor.mapIso p ≪≫ restrictionIso f X.obj x :=
-  bG.postcomposeActionIso_hom_hom _ _
+theorem fiberIsomRestriction_hom_apply (X : F ⟶ G) (x : F.obj (.mk (op U)))
+    {y : G.obj (.mk (op U))} (p : y ≅ (X.app (.mk (op U))).toFunctor.obj x) :
+    (fiberIsomRestriction f bG X x y).hom p =
+      (G.map f.op.toLoc).toFunctor.mapIso p ≪≫ restrictionIso f X x :=
+  -- By the definitions of composition of `Action.Hom`s and of `Action.res` on morphisms, the
+  -- forward map is that of `restrictActionHom` followed by that of `postcomposeActionIso`.
+  (congrArg (fun q ↦ (bG.postcomposeActionIso (restrictionIso f X x)).hom.hom q)
+    (bG.restrictActionHom_hom_apply f p)).trans (bG.postcomposeActionIso_hom_hom _ _)
 
 /-- **Restriction of fibre isomorphisms along the identity**: `p` goes to the unit isomorphism of
 `G` at `y`, then `p`, then the image under `X_U` of the inverse unit isomorphism of `F` at `x`. -/
-theorem fiberIsomRestriction_id (X : HomCategory bF bG) (x : F.obj (.mk (op U)))
-    {y : G.obj (.mk (op U))} (p : y ≅ (X.obj.app (.mk (op U))).toFunctor.obj x) :
-    ((fiberIsomRestriction (𝟙 U) X x y).hom p).hom =
+theorem fiberIsomRestriction_id (X : F ⟶ G) (x : F.obj (.mk (op U)))
+    {y : G.obj (.mk (op U))} (p : y ≅ (X.app (.mk (op U))).toFunctor.obj x) :
+    ((fiberIsomRestriction (𝟙 U) bG X x y).hom p).hom =
       (G.mapId (.mk (op U))).hom.toNatTrans.app y ≫ p.hom ≫
-        (X.obj.app (.mk (op U))).toFunctor.map ((F.mapId (.mk (op U))).inv.toNatTrans.app x) := by
+        (X.app (.mk (op U))).toFunctor.map ((F.mapId (.mk (op U))).inv.toNatTrans.app x) := by
   rw [fiberIsomRestriction_hom_apply, Iso.trans_hom, restrictionIso_id, Functor.mapIso_hom]
   -- Move the unit isomorphism of `G` past `p` by its naturality.
   exact (G.mapId (.mk (op U))).hom.toNatTrans.naturality_assoc p.hom _
