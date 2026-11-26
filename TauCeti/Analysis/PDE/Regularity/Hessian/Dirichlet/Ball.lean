@@ -100,18 +100,6 @@ private theorem homothety_factors_mul_eq (n : ℕ) {R : ℝ} (hR : 0 < R) (s C t
   calc _ = (|R⁻¹ ^ 2| * |R ^ 2|) * ((R⁻¹ ^ n)⁻¹ ^ s * (R ^ n)⁻¹ ^ s) * (C * t) := by ring
     _ = C * t := by rw [hR2, hcancel, one_mul, one_mul]
 
-/-- `tr (A ∘ D²v)` is an element of `Lᵖ(Ω)` for `v ∈ W^{2,p}(Ω)`. -/
-private theorem exists_ae_traceCLM_comp_iteratedGradient_eq (Omega : Opens (WithLp 2 (ℝ × E)))
-    (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-    (v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :
-    ∃ g : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega),
-      ∀ᵐ y ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
-        traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 v y) = g y := by
-  set T := (traceCLM ℝ (WithLp 2 (ℝ × E))).comp
-    (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)
-  exact ⟨T.compLpL p _ (iteratedGradient 1 v),
-    (T.coeFn_compLpL (iteratedGradient 1 v)).mono fun y hy => hy.symm⟩
-
 /-- **Rescaling from the unit ball.** A Hessian estimate `‖D²v‖ ≤ C ‖tr (A ∘ D²v)‖`, `C ≥ 0`, on
 `W^{2,p} ∩ W^{1,p}_0` of the unit ball gives the same estimate on every ball of positive radius:
 for `v = u ∘ Φ`, `Φ y = R y + x₀`, both sides acquire the factor `R²` and reciprocal powers of the
@@ -169,19 +157,19 @@ private theorem norm_iteratedGradient_le_of_eq_ball (hp_top : p ≠ ⊤)
     exact hΨ.lpNorm_le_of_ae_le_mul_comp Omega.isOpen.measurableSet subset_rfl hΨ.mapsTo
       (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _)
       (h.mono fun y hy => by rw [hy, norm_smul, Real.norm_eq_abs])
-  obtain ⟨g, hg⟩ := exists_ae_traceCLM_comp_iteratedGradient_eq B A v
-  have hTv : ‖g‖ ≤ |R ^ 2| *
+  have hTv : ‖hessianTraceL B A v‖ ≤ |R ^ 2| *
       ((R ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal * ‖f‖) := by
     rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
     refine hΦ.lpNorm_le_of_ae_le_mul_comp B.isOpen.measurableSet subset_rfl hΦ.mapsTo
       (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _) ?_
-    filter_upwards [hg, iteratedGradient_compL_smul_add_const_ae hp_top hΦ u,
+    filter_upwards [coeFn_hessianTraceL B A v, iteratedGradient_compL_smul_add_const_ae hp_top hΦ u,
       hΦ.ae_comp hf] with y h1 h2 h3
-    rw [← h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3, norm_smul, Real.norm_eq_abs]
+    rw [h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3, norm_smul, Real.norm_eq_abs]
   refine (hDu.trans ?_).trans_eq (homothety_factors_mul_eq (finrank ℝ (WithLp 2 (ℝ × E))) hR
     (1 / p).toReal C ‖f‖)
   gcongr
-  exact (hC v g hv0 hg).trans (mul_le_mul_of_nonneg_left hTv hC0)
+  exact (hC v _ hv0 ((coeFn_hessianTraceL B A v).mono fun _ h => h.symm)).trans
+    (mul_le_mul_of_nonneg_left hTv hC0)
 
 /-- **The a priori estimate for constant coefficients on balls, with a universal constant.** Let
 `1 < p < ∞` and `0 < λ`. There is a constant `C`, depending only on `E`, `p`, `λ` and `Λ`, such

@@ -354,15 +354,17 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
   rw [inv_mul_eq_div, le_div_iff₀ hκ]
   linarith
 
-/-- The constant-coefficient operator `u ↦ tr (A ∘ D²u)` from `W^{2,p}(Ω)` to `Lᵖ(Ω)`. -/
-private def hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
+/-- The constant-coefficient operator `u ↦ tr (A ∘ D²u)` from `W^{2,p}(Ω)` to `Lᵖ(Ω)`; its
+values are given almost everywhere by `TauCeti.coeFn_hessianTraceL`. -/
+def hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
     (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
     Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2 →L[ℝ]
       Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega) :=
   ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E))
     (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)).compLpL p _ ∘L iteratedGradientL 1
 
-private theorem hessianTraceL_ae (Omega : Opens (WithLp 2 (ℝ × E)))
+/-- Almost everywhere on `Ω`, `hessianTraceL Omega A u` is `tr (A ∘ D²u)`. -/
+theorem coeFn_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
     (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
     (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :
     ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
@@ -370,7 +372,10 @@ private theorem hessianTraceL_ae (Omega : Opens (WithLp 2 (ℝ × E)))
   filter_upwards [ContinuousLinearMap.coeFn_compLpL (p := p) ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp
     (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A))
     (iteratedGradient 1 u)] with x hx
-  rw [hessianTraceL, ContinuousLinearMap.comp_apply, iteratedGradientL_apply, hx,
+  -- `delta` rather than `rw [hessianTraceL]`: the equation lemma of this unexposed definition has
+  -- a type that is slow to check.
+  delta hessianTraceL
+  rw [ContinuousLinearMap.comp_apply, iteratedGradientL_apply, hx,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply]
 
 /-- The operator `u ↦ tr (A ∘ D²u)` depends continuously on `A`, since it is linear in `A` and the
@@ -383,10 +388,12 @@ private theorem continuous_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E))) :
         Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)) :=
     { toFun := fun A => hessianTraceL Omega A
       map_add' := fun A B => by
-        simp only [hessianTraceL, map_add, ContinuousLinearMap.comp_add,
+        delta hessianTraceL
+        simp only [map_add, ContinuousLinearMap.comp_add,
           ContinuousLinearMap.add_compLpL, ContinuousLinearMap.add_comp]
       map_smul' := fun c A => by
-        simp only [hessianTraceL, map_smul, ContinuousLinearMap.comp_smul,
+        delta hessianTraceL
+        simp only [map_smul, ContinuousLinearMap.comp_smul,
           ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.smul_comp, RingHom.id_apply] }
   exact T.continuous_of_finiteDimensional
 
@@ -433,7 +440,7 @@ private theorem exists_norm_le_mul_norm_hessianTraceL (hp : 1 < p) (hp_top : p �
       (ae_of_all _ fun _ => by simp) (ae_of_all _ fun _ => le_rfl)
     refine ⟨C, fun u => ?_⟩
     simpa using hC u _ ((hM u).1 u.property)
-      ((hessianTraceL_ae Omega A (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)).mono
+      ((coeFn_hessianTraceL Omega A (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)).mono
         fun x hx => by simp only [Pi.zero_apply, zero_mul, add_zero, hx])
   exact ⟨C, fun A hA hAΛ u hu => by
     -- `mem_closedBall_zero_iff` does not unify with the operator norm here; `dist` does.
@@ -464,7 +471,7 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_eq_of_norm_le (hp : 1 <
   obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_hessianTraceL hp hp_top hΩ hbdry hlam Λ
   refine ⟨C, fun A hA hAΛ u f hu hf => ?_⟩
   have hT : hessianTraceL Omega A u = f := Lp.ext <| by
-    filter_upwards [hessianTraceL_ae Omega A u, hf] with x h1 h2
+    filter_upwards [coeFn_hessianTraceL Omega A u, hf] with x h1 h2
     rw [h1, h2]
   exact hT ▸ hC A hA hAΛ u hu
 
