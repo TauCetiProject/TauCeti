@@ -238,11 +238,7 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff, norm_intCast_lt_one_iff]
 
-/-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
-
-Not tagged `simp`: in a module importing `TauCeti.Algebra.CharP.LocalRing`, `simp` rewrites the
-left-hand side by the general `IsLocalRing.isUnit_natCast_iff_not_dvd` first (in this module alone
-`simp` makes no progress on the statement). -/
+/-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it. -/
 theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
   rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
