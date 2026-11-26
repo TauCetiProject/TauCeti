@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.RingTheory.Trace.Basic
+public import TauCeti.Algebra.Algebra.Frobenius.DivisionRing
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
@@ -20,9 +21,10 @@ trace `f = Algebra.trace F K` of a finite extension of fields it restricts a sym
 `K` to a symplectic space over `F`.
 
 When `K` is a field and `f` is nonzero, transfer loses no information. Every nonzero `x : K` has a
-multiple `a * x` outside the kernel of `f`, so transfer is injective on bilinear forms, and it
-preserves and reflects left and right separation and nondegeneracy. A `K`-linear
-endomorphism scales the transferred form by `c : F` exactly when it scales `B` by
+multiple `a * x` outside the kernel of `f`, since a nonzero functional on a division ring is a
+Frobenius functional (`LinearMap.isFrobeniusFunctional_iff_ne_zero`). So transfer is injective on
+bilinear forms, and it preserves and reflects left and right separation and nondegeneracy. A
+`K`-linear endomorphism scales the transferred form by `c : F` exactly when it scales `B` by
 `algebraMap F K c`. None of this needs finiteness or separability. Transfer along any functional
 preserves alternation, but need not reflect it in characteristic two: for `K = F₂(s)` over
 `F = F₂(s²)` every square lies in `F`, so a functional vanishing on `F` transfers the
@@ -32,18 +34,17 @@ For the trace of a finite extension of fields `K / F`, the transfer of a nondege
 nonzero space is nondegenerate exactly when `K / F` is separable: the trace of an inseparable
 extension vanishes, and so does every form transferred along it.
 
-Applied to the orthogonal sum `LinearMap.BilinForm.pi` of a family `ψ i` of nondegenerate
-alternating forms, for instance of `r` copies of one form `ψ` on `V`, this gives the
-nondegenerate alternating `F`-bilinear form `Ψ ((vᵢ), (wᵢ)) = Tr_{K/F} (∑ᵢ ψ (vᵢ, wᵢ))` on `V^r`.
-This is the symplectic form through which a symplectic representation over `K` is restricted to
-`F`. A family `(gᵢ)` of `K`-linear endomorphisms is an `F`-similitude of `Ψ` with multiplier
-`c : F` exactly when every `gᵢ` is a similitude of `ψ i` with the common multiplier
-`algebraMap F K c`; so independent multipliers in `K` do not give similitudes of `Ψ`.
+For a finite separable extension `K / F`, applied to the orthogonal sum `LinearMap.BilinForm.pi`
+of a family `ψ i` of nondegenerate alternating forms, for instance of `r` copies of one form `ψ`
+on `V`, this gives the nondegenerate alternating `F`-bilinear form
+`Ψ ((vᵢ), (wᵢ)) = Tr_{K/F} (∑ᵢ ψ (vᵢ, wᵢ))` on `V^r`. This is the symplectic form through which
+a symplectic representation over `K` is restricted to `F`. A family `(gᵢ)` of `K`-linear
+endomorphisms is an `F`-similitude of `Ψ` with multiplier `c : F` exactly when every `gᵢ` is a
+similitude of `ψ i` with the common multiplier `algebraMap F K c`; so independent multipliers in
+`K` do not give similitudes of `Ψ`.
 
 ## Main declarations
 
-* `LinearMap.eq_zero_of_forall_apply_mul_eq_zero`: a nonzero functional on a division ring
-  detects every nonzero element through its multiples.
 * `LinearMap.compBilinForm_injective`: transfer along a nonzero functional is injective.
 * `LinearMap.BilinForm.IsAlt.compBilinForm`: transfer preserves alternation.
 * `LinearMap.separatingLeft_compBilinForm_iff`, `LinearMap.separatingRight_compBilinForm_iff`,
@@ -117,22 +118,6 @@ theorem compl₁₂_compBilinForm {N : Type*} [AddCommMonoid N] [Module K N] [Mo
 
 end Semiring
 
-section DivisionRing
-
-variable {F K : Type*} [CommSemiring F] [DivisionRing K] [Algebra F K]
-
-/-- A nonzero linear functional `f` on a division ring detects every nonzero element `z`: some
-multiple `a * z` lies outside the kernel of `f`. -/
-theorem eq_zero_of_forall_apply_mul_eq_zero {f : K →ₗ[F] F} (hf : f ≠ 0) {z : K}
-    (h : ∀ a, f (a * z) = 0) : z = 0 := by
-  by_contra hz
-  obtain ⟨b, hb⟩ : ∃ b, f b ≠ 0 := by
-    by_contra! hb
-    exact hf (LinearMap.ext hb)
-  exact hb (by simpa [inv_mul_cancel_right₀ hz] using h (b * z⁻¹))
-
-end DivisionRing
-
 section Field
 
 variable {F K M : Type*} [CommSemiring F] [Field K] [Algebra F K] [AddCommMonoid M] [Module K M]
@@ -143,10 +128,8 @@ theorem compBilinForm_injective (hf : f ≠ 0) :
     Function.Injective (f.compBilinForm : BilinForm K M → BilinForm F M) := by
   intro B C h
   ext x y
-  refine sub_eq_zero.1 <| eq_zero_of_forall_apply_mul_eq_zero hf fun a ↦ ?_
-  have hxy := congr($h x (a • y))
-  simp only [compBilinForm_apply_apply, map_smul, smul_eq_mul] at hxy
-  rw [mul_sub, sub_eq_add_neg, map_add, hxy, ← map_add, add_neg_cancel, map_zero]
+  exact ((isFrobeniusFunctional_iff_ne_zero f).2 hf).eq_of_forall_apply_mul_eq fun a ↦ by
+    simpa using congr($h x (a • y))
 
 @[simp]
 theorem compBilinForm_inj (hf : f ≠ 0) {B C : BilinForm K M} :
@@ -157,7 +140,7 @@ theorem compBilinForm_inj (hf : f ≠ 0) {B C : BilinForm K M} :
 theorem separatingLeft_compBilinForm_iff (hf : f ≠ 0) {B : BilinForm K M} :
     (f.compBilinForm B).SeparatingLeft ↔ B.SeparatingLeft := by
   refine ⟨fun h x hx ↦ h x fun y ↦ by simp [hx y], fun h x hx ↦ h x fun y ↦ ?_⟩
-  refine eq_zero_of_forall_apply_mul_eq_zero hf fun a ↦ ?_
+  refine ((isFrobeniusFunctional_iff_ne_zero f).2 hf).eq_zero_of_forall_right fun a ↦ ?_
   simpa using hx (a • y)
 
 /-- The transfer along a nonzero functional is right-separating exactly when the form is. -/
