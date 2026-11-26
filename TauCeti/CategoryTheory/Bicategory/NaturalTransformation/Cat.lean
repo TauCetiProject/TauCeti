@@ -29,10 +29,11 @@ of composite pseudofunctors, which `simp` and `rw` do not see through. The same 
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
-(`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
-the naturality isomorphisms of a strong transformation. When the values of the target
-pseudofunctor are groupoids, every modification between strong transformations into it is
-invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
+(`Pseudofunctor.StrongTrans.naturalityObjIso`), with their naturality and their composition
+law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`). It also
+conjugates pullbacks of morphisms by the naturality isomorphisms of a strong transformation.
+When the values of the target pseudofunctor are groupoids, every modification between strong
+transformations into it is invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -178,6 +179,33 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
+
+/-- The naturality isomorphism of a strong transformation `η : F ⟶ G` into `Cat` along a
+composite `f ≫ g = fg`, on an object `X`: it is the image under `η` of the composition isomorphism
+of `F`, followed by the naturality isomorphisms along `g` and along `f`, and the inverse of the
+composition isomorphism of `G`. -/
+lemma naturalityObjIso_hom_comp' {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c)
+    (fg : a ⟶ c) (h : f ≫ g = fg) (X : F.obj a) :
+    (η.naturalityObjIso fg X).hom =
+      (η.app c).toFunctor.map ((F.mapComp' f g fg h).hom.toNatTrans.app X) ≫
+        (η.naturalityObjIso g ((F.map f).toFunctor.obj X)).hom ≫
+          (G.map g).toFunctor.map (η.naturalityObjIso f X).hom ≫
+            (G.mapComp' f g fg h).inv.toNatTrans.app ((η.app a).toFunctor.obj X) := by
+  subst h
+  rw [mapComp'_eq_mapComp, mapComp'_eq_mapComp, naturalityObjIso_hom,
+    naturality_comp_hom_app]
+  simp
+
+/-- Naturality of the components of the naturality isomorphism of a strong transformation into
+`Cat`. -/
+@[reassoc]
+lemma naturalityObjIso_hom_naturality {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) {X Y : F.obj a}
+    (φ : X ⟶ Y) :
+    (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫ (η.naturalityObjIso f Y).hom =
+      (η.naturalityObjIso f X).hom ≫ (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
+  by simpa using (η.naturality f).hom.toNatTrans.naturality φ
 
 /-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
 turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image

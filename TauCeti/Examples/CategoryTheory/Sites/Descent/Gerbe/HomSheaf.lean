@@ -19,7 +19,8 @@ undoes the forward map on every local arrow and conversely, two local arrows wit
 transport are equal, and an empty source `Hom` type forces an empty target `Hom` type, with no
 anchor supplied.
 
-The band hypothesis matters: the one-object functor of the constant monoid endomorphism of
+A functor on a one-object category that does not act as the identity on automorphisms (the band)
+need not be full: the one-object functor of the constant monoid endomorphism of
 `Multiplicative (ZMod 2)` is not full.
 -/
 
@@ -50,7 +51,7 @@ example {V W : C} (f : V ⟶ U)
 example (p : x ⟶ y) :
     (homPresheafMap η x y).app (op (Over.mk (𝟙 U))) (F.presheafHomObjHomEquiv p) =
       G.presheafHomObjHomEquiv ((η.app (.mk (op U))).toFunctor.map p) :=
-  homPresheafMap_identity η p
+  homPresheafMap_app_presheafHomObjHomEquiv η p
 
 section Banded
 
@@ -83,12 +84,13 @@ example (T : (Over U)ᵒᵖ) (p q : (F.presheafHom x y).obj T)
 smuggled in. -/
 example (h : IsEmpty (x ⟶ y)) :
     IsEmpty ((η.app (.mk (op U))).toFunctor.obj x ⟶ (η.app (.mk (op U))).toFunctor.obj y) :=
-  ⟨fun q ↦ h.false ((fibreHom_bijective η J bF bG x y).2 q).choose⟩
+  ⟨fun q ↦ h.false ((BandedMorphism.map_bijective bF bG η x y).2 q).choose⟩
 
 end Banded
 
-/-- Without the band condition the conclusion fails: the one-object functor of the constant
-monoid endomorphism of `Multiplicative (ZMod 2)` is not full. -/
+/-- A functor on a one-object category that does not act as the identity on automorphisms (the
+band) need not be full: the one-object functor of the constant monoid endomorphism of
+`Multiplicative (ZMod 2)` is not full. -/
 example : ¬ (SingleObj.mapHom (Multiplicative (ZMod 2)) (Multiplicative (ZMod 2)) 1).Full := by
   intro hfull
   obtain ⟨_, ha⟩ := hfull.map_surjective
