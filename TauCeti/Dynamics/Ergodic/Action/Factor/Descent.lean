@@ -8,24 +8,28 @@ module
 public import TauCeti.Dynamics.Ergodic.Action.AEInvariants
 public import TauCeti.Dynamics.Ergodic.Action.Factor
 public import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Basic
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 
 /-!
 # Invariant sets and weak mixing of factors
 
 Let `π : X → Y` be a factor map of measure-preserving actions of a monoid `M`
-(`TauCeti.IsFactorMapSMul M π μ ν`). This file shows that the invariant σ-algebra of the factor
-is the σ-algebra of the sets whose preimages are invariant, and that weak mixing of an action of
-`ℝ` passes to its factors.
+(`TauCeti.IsFactorMapSMul M π μ ν`). This file shows that, when each `(m • ·)` is measurable on
+`Y`, the invariant σ-algebra of the factor is the σ-algebra of the measurable sets whose preimages
+are invariant, and that weak mixing of an action of `ℝ` passes to its factors.
+
+For any factor map, the pullback of the invariant σ-algebra of the factor lies in the invariant
+σ-algebra of the source: this is `TauCeti.comap_aeSMulInvariants_le` applied to the fields of
+`TauCeti.IsFactorMapSMul`.
 
 ## Main results
 
-* `MeasureTheory.MeasurePreserving.preimage_ae_eq_preimage_iff`: a measure-preserving map
-  identifies almost-everywhere equality of measurable sets with that of their preimages.
-* `TauCeti.IsFactorMapSMul.measurableSet_aeSMulInvariants_preimage_iff`: a measurable subset of
-  the factor is invariant exactly when its preimage is; in particular
-  `TauCeti.IsFactorMapSMul.comap_aeSMulInvariants_le`, the pullback of the invariant σ-algebra of
-  the factor lies in the invariant σ-algebra of the source.
+* `TauCeti.IsFactorMapSMul.measurableSet_aeSMulInvariants_preimage_iff`: when the factor's action
+  is measurable by each fixed element of `M`, a measurable subset of the factor is invariant
+  exactly when its preimage is.
 * `TauCeti.IsFactorMapVAdd.isWeaklyMixing`: weak mixing of an action of `ℝ` passes to factors.
+* `MeasureTheory.Measure.IsWeaklyMixing.map`: the pushforward along an equivariant measurable map
+  to a space with a measurable translation action is weakly mixing.
 -/
 
 public section
@@ -34,15 +38,6 @@ open MeasureTheory Filter Set
 
 variable {M X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
   {π : X → Y}
-
-/-- A measure-preserving map identifies almost-everywhere equality of measurable sets with that of
-their preimages. -/
-theorem MeasureTheory.MeasurePreserving.preimage_ae_eq_preimage_iff (hπ : MeasurePreserving π μ ν)
-    {s t : Set Y} (hs : MeasurableSet s) (ht : MeasurableSet t) :
-    π ⁻¹' s =ᵐ[μ] π ⁻¹' t ↔ s =ᵐ[ν] t := by
-  rw [ae_eq_set, ae_eq_set, ← preimage_sdiff, ← preimage_sdiff,
-    hπ.measure_preimage (hs.diff ht).nullMeasurableSet,
-    hπ.measure_preimage (ht.diff hs).nullMeasurableSet]
 
 namespace TauCeti
 
@@ -61,26 +56,16 @@ theorem measurableSet_aeSMulInvariants_preimage_iff [MeasurableConstSMul M Y]
   have hπ := h.measurePreserving
   simp only [measurableSet_aeSMulInvariants, hs.preimage hπ.measurable, hs, true_and]
   refine forall_congr' fun m ↦ ?_
-  rw [← hπ.preimage_ae_eq_preimage_iff (measurable_const_smul m hs) hs]
+  rw [← hπ.preimage_ae_eq_preimage_iff (measurable_const_smul m hs).nullMeasurableSet
+    hs.nullMeasurableSet]
   exact ⟨((h.comp_smul_ae_eq m).preimage s).symm.trans,
     ((h.comp_smul_ae_eq m).preimage s).trans⟩
-
-/-- **Factor compatibility of invariant σ-algebras.** The pullback along a factor map of the
-invariant σ-algebra of the factor lies in the invariant σ-algebra of the source. -/
-@[to_additive /-- **Factor compatibility of invariant σ-algebras.** The pullback along a factor
-map of additive actions of the invariant σ-algebra of the factor lies in the invariant σ-algebra
-of the source. -/]
-theorem comap_aeSMulInvariants_le (h : IsFactorMapSMul M π μ ν) :
-    (aeSMulInvariants M ν).comap π ≤ aeSMulInvariants M μ :=
-  TauCeti.comap_aeSMulInvariants_le h.measurePreserving.measurable
-    h.measurePreserving.quasiMeasurePreserving h.comp_smul_ae_eq
 
 end IsFactorMapSMul
 
 /-- **Weak mixing passes to factors.** If `π` is a factor map of actions of `ℝ` whose target
 action is measurable and the source measure is weakly mixing, then so is the target measure. This
-extends `MeasureTheory.Measure.IsWeaklyMixing.map` from equivariant maps to almost-everywhere
-intertwiners. -/
+is the almost-everywhere form of `MeasureTheory.Measure.IsWeaklyMixing.map`. -/
 theorem IsFactorMapVAdd.isWeaklyMixing [AddAction ℝ X] [AddAction ℝ Y]
     [MeasurableConstVAdd ℝ Y] (h : IsFactorMapVAdd ℝ π μ ν) (hμ : μ.IsWeaklyMixing) :
     ν.IsWeaklyMixing := by
@@ -97,3 +82,10 @@ theorem IsFactorMapVAdd.isWeaklyMixing [AddAction ℝ X] [AddAction ℝ Y]
     hπ.measureReal_preimage hB.nullMeasurableSet] using this
 
 end TauCeti
+
+/-- **Weak mixing passes to factors**: the pushforward of a weakly mixing measure along an
+equivariant measurable map is weakly mixing, as `ErgodicSMul.map` is for ergodicity. -/
+theorem MeasureTheory.Measure.IsWeaklyMixing.map [AddAction ℝ X] [AddAction ℝ Y]
+    [MeasurableConstVAdd ℝ Y] {f : X → Y} (h : μ.IsWeaklyMixing) (hf : Measurable f)
+    (hfg : ∀ (t : ℝ) x, f (t +ᵥ x) = t +ᵥ f x) : (μ.map f).IsWeaklyMixing :=
+  (TauCeti.IsFactorMapVAdd.of_map_vadd (M := ℝ) ⟨hf, rfl⟩ hfg).isWeaklyMixing h
