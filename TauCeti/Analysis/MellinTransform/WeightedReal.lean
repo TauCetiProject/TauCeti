@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Finsupp.Defs
 public import TauCeti.Analysis.LaplaceTransform.Mellin
-import TauCeti.Analysis.LaplaceTransform.Conj
 
 /-!
 # Mellin transforms of weighted real parts
