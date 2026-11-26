@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Log
-public import Mathlib.RingTheory.MvPowerSeries.Order
+public import TauCeti.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Subst
 
 import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Subst
 
@@ -110,13 +111,6 @@ theorem le_order_coupling {p : ℕ} {pr : ℕ → Φ → Φ} (e : ℕ) :
     simpa [Nat.cast_add] using add_le_add hpow h2
   exact hsum.trans le_order_mul
 
-private lemma order_le_order_subst {σ τ : Type*} [Finite σ] {Z : σ → MvPowerSeries τ R}
-    (hZ : ∀ x, constantCoeff (Z x) = 0) (f : MvPowerSeries σ R) :
-    f.order ≤ (f.subst Z).order :=
-  (ENat.self_le_mul_left _ (ne_of_gt (lt_of_lt_of_le zero_lt_one
-    (le_iInf fun x ↦ one_le_order_iff_constCoeff_eq_zero.2 (hZ x))))).trans
-    (le_order_subst (hasSubst_of_constantCoeff_zero hZ) f)
-
 /-- Substituting series without constant term into `Γ_e ^ p ^ j` has order at least
 `(p ^ e + 1) * p ^ j`. -/
 theorem le_order_subst_coupling_pow {p : ℕ} {pr : ℕ → Φ → Φ} {τ : Type*}
@@ -135,15 +129,6 @@ theorem le_order_coupling_pow {p : ℕ} {pr : ℕ → Φ → Φ} (e j : ℕ) :
       ((coupling p pr e : MvPowerSeries (Φ × c) R) ^ p ^ j).order := by
   simpa [subst_self] using le_order_subst_coupling_pow (Z := X) (fun x ↦ constantCoeff_X x) e j
 
-/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
-private lemma lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
-    D < (p ^ e + 1) * p ^ j := by
-  rcases h with he | hj
-  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
-      (Nat.le_mul_of_pos_right _ (pow_pos (zero_lt_one.trans hp) j))
-  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
-      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
-
 private lemma coeff_smul_coupling_pow_eq_zero {p : ℕ} (hp : 1 < p) {S : Set ℕ}
     {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} {D : ℕ} {m : Φ × c →₀ ℕ} (hm : m.degree ≤ D)
     {x : S × ℕ} (hx : x ∉
@@ -154,7 +139,7 @@ private lemma coeff_smul_coupling_pow_eq_zero {p : ℕ} (hp : 1 < p) {S : Set �
   rcases x with ⟨⟨e, _⟩, j⟩
   simp only [Finset.mem_product, Finset.mem_subtype, Finset.mem_range, not_and_or, not_lt] at hx
   have hlt : m.degree < (p ^ e + 1) * p ^ j :=
-    hm.trans_lt (lt_add_one_mul_pow_of_lt hp (hx.imp Nat.lt_of_succ_le Nat.lt_of_succ_le))
+    hm.trans_lt (Nat.lt_add_one_mul_pow_of_lt hp (hx.imp Nat.lt_of_succ_le Nat.lt_of_succ_le))
   rw [coeff_smul, coeff_of_lt_order ((Nat.cast_lt.2 hlt).trans_le (le_order_coupling_pow e j)),
     mul_zero]
 
@@ -252,6 +237,46 @@ theorem rescale_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} (hp : 1 <
 
 end Coupling
 
+section CouplingBound
+
+variable {R : Type*} [NormedCommRing R] {Φ c : Type*} [Fintype Φ] [Fintype c]
+  {p : ℕ} {S : Set ℕ} {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R}
+
+/-- If `0 ≤ r ≤ 1`, `‖l e j‖ ≤ 1`, `Z` has zero constant term, and
+`‖coeff d ((coupling p pr e).subst Z)‖ ≤ r` for all `e ∈ S` with `e ≤ p.log B` and `d.degree ≤ B`,
+then `‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r` for all `d.degree ≤ B`. -/
+theorem norm_coeff_subst_couplingSum_le [IsUltrametricDist R] (hp : 1 < p) {τ : Type*} {r : ℝ}
+    (hr0 : 0 ≤ r) (hr1 : r ≤ 1) (hl : ∀ e j, ‖l e j‖ ≤ 1) {Z : Φ × c → MvPowerSeries τ R}
+    (hZ : ∀ x, constantCoeff (Z x) = 0) {B : ℕ}
+    (hΓ : ∀ e ∈ S, e ≤ p.log B → ∀ d : τ →₀ ℕ, d.degree ≤ B →
+      ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z)‖ ≤ r)
+    {d : τ →₀ ℕ} (hd : d.degree ≤ B) :
+    ‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r := by
+  classical
+  have hp0 : 0 < p := lt_trans zero_lt_one hp
+  rw [coeff_subst_couplingSum_eq_sum hp hZ]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr0 fun ⟨⟨e, he⟩, j⟩ _ ↦ ?_
+  rw [coeff_smul]
+  calc ‖l e j * coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z ^ p ^ j)‖
+      ≤ ‖l e j‖ * ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z ^ p ^ j)‖ :=
+        norm_mul_le _ _
+    _ ≤ 1 * ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z ^ p ^ j)‖ :=
+        mul_le_mul_of_nonneg_right (hl e j) (norm_nonneg _)
+    _ = ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z ^ p ^ j)‖ := one_mul _
+    _ ≤ r := ?_
+  obtain h_le | h_lt := le_or_gt e (p.log B)
+  · exact MvPowerSeries.norm_coeff_pow_le_of_degree_le hr0 hr1 (hΓ e he h_le)
+      (pow_ne_zero j hp0.ne') hd
+  · have hdeg : d.degree < (p ^ e + 1) * p ^ j :=
+      lt_of_lt_of_le
+        ((hd.trans_lt (Nat.lt_pow_of_log_lt hp h_lt)).trans (Nat.lt_succ_self _))
+        (Nat.le_mul_of_pos_right _ (pow_pos hp0 j))
+    rw [coeff_of_lt_order ((Nat.cast_lt.2 hdeg).trans_le (le_order_subst_coupling_pow hZ e j)),
+      norm_zero]
+    exact hr0
+
+end CouplingBound
+
 section NormalForm
 
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K] [Algebra ℚ K] [NormedAlgebra ℚ_[p] K]
@@ -348,38 +373,6 @@ theorem HasNormalForm.exists_of_norm_eq [IsUltrametricDist K] (hp : 1 < p)
   obtain ⟨W, hW_int, hW⟩ := hF.rescale hp hα
   refine ⟨fun e j ↦ β ^ (p + 1) * l₁ e j, W, hW_int, ?_⟩
   rw [couplingSum_const_mul hp, smul_smul, h_const, ← hW, rescale_rescale, h_scale]
-
-omit [Fact p.Prime] [Algebra ℚ K] [NormedAlgebra ℚ_[p] K] in
-/-- If `0 ≤ r ≤ 1`, `‖l e j‖ ≤ 1`, `Z` has zero constant term, and
-`‖coeff d ((coupling p pr e).subst Z)‖ ≤ r` for all `e ∈ S` with `e ≤ p.log B` and `d.degree ≤ B`,
-then `‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r` for all `d.degree ≤ B`. -/
-theorem norm_coeff_subst_couplingSum_le [IsUltrametricDist K] (hp : 1 < p) {τ : Type*} {r : ℝ}
-    (hr0 : 0 ≤ r) (hr1 : r ≤ 1) (hl : ∀ e j, ‖l e j‖ ≤ 1) {Z : Φ × c → MvPowerSeries τ K}
-    (hZ : ∀ x, constantCoeff (Z x) = 0) {B : ℕ}
-    (hΓ : ∀ e ∈ S, e ≤ p.log B → ∀ d : τ →₀ ℕ, d.degree ≤ B →
-      ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z)‖ ≤ r)
-    {d : τ →₀ ℕ} (hd : d.degree ≤ B) :
-    ‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r := by
-  classical
-  have hp0 : 0 < p := lt_trans zero_lt_one hp
-  rw [coeff_subst_couplingSum_eq_sum hp hZ]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr0 fun ⟨⟨e, he⟩, j⟩ _ ↦ ?_
-  rw [coeff_smul, norm_mul]
-  calc ‖l e j‖ * ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z ^ p ^ j)‖
-      ≤ 1 * ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z ^ p ^ j)‖ :=
-        mul_le_mul_of_nonneg_right (hl e j) (norm_nonneg _)
-    _ = ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z ^ p ^ j)‖ := one_mul _
-    _ ≤ r := ?_
-  obtain h_le | h_lt := le_or_gt e (p.log B)
-  · exact MvPowerSeries.norm_coeff_pow_le_of_degree_le hr0 hr1 (hΓ e he h_le)
-      (pow_ne_zero j hp0.ne') hd
-  · have hdeg : d.degree < (p ^ e + 1) * p ^ j :=
-      lt_of_lt_of_le
-        ((hd.trans_lt (Nat.lt_pow_of_log_lt hp h_lt)).trans (Nat.lt_succ_self _))
-        (Nat.le_mul_of_pos_right _ (pow_pos hp0 j))
-    rw [coeff_of_lt_order ((Nat.cast_lt.2 hdeg).trans_le (le_order_subst_coupling_pow hZ e j)),
-      norm_zero]
-    exact hr0
 
 /-- If `F` has normal form with integral `l`, `0 ≤ r ≤ 1`,
 `‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, and `Z` is an integral substitution without constant
