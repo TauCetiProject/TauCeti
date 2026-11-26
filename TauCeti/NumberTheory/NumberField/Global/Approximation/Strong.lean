@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.SInteger
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
-public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.Topology.Algebra.Module.DenseBaseChange
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SmallInteger
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
@@ -31,6 +33,14 @@ together with integrality at every prime would ask for an integer in that interv
 and `w` the real place the statement is the density of `ℚ` in the finite adeles; for `K = ℚ` and
 `w = 2`, elements of `ℤ[1/2]` approximate any real number.
 
+For a set `S` of finite places containing `w` when `w` is finite, the same statement says that the
+ring of `S`-integers `S.integer K` is dense in the product of the completions `K_v` over any set
+`T` of places avoiding `w` whose finite places lie in `S`
+(`TauCeti.GlobalNumberFields.denseRange_algebraMap_integer_pi`). By `DenseRange.pi_one_tmul` this
+passes to every finite module `M` over the `S`-integers, which is dense in the product of its
+scalar extensions `K_v ⊗ M` (`TauCeti.GlobalNumberFields.denseRange_one_tmul_integer_pi`); this is
+the statement for finite projective modules used by Moret-Bailly.
+
 The proof scales the `S`-integer approximation `NumberField.exists_forall_apply_add_le`, which
 loses a factor `A` depending only on `K` at the infinite places, by an element `β ∈ K` that is
 small at every infinite place other than `w` and at finitely many prescribed finite places, and
@@ -53,6 +63,10 @@ integral at every finite place other than `w`
   place other than `w` and at finitely many finite places other than `w`.
 * `TauCeti.GlobalNumberFields.exists_forall_algebraMap_mem_and_forall_norm_le_one`: additive
   strong approximation away from `w`.
+* `TauCeti.GlobalNumberFields.denseRange_algebraMap_integer_pi`: the `S`-integers are dense in the
+  product of the completions at a set of places outside them which avoids `w`.
+* `TauCeti.GlobalNumberFields.denseRange_one_tmul_integer_pi`: the same for a finite module over
+  the `S`-integers and its scalar extensions.
 
 ## References
 
@@ -64,7 +78,7 @@ integral at every finite place other than `w`
 public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped NumberField
+open scoped NumberField TensorProduct
 
 namespace TauCeti.GlobalNumberFields
 
@@ -243,5 +257,73 @@ theorem exists_forall_algebraMap_mem_and_forall_norm_le_one (w : Place K)
   rw [map_mul]
   exact (mul_le_of_le_one_right (apply_nonneg _ _)
     (hξint _ fun h ↦ ((hS' v).1 h).elim hv hvw)).trans (hβint v hvw)
+
+/-- **Strong approximation for `S`-integers.** Let `w` be a place of `K` and `S` a set of finite
+places of `K` containing `w` if `w` is finite. Then the ring of `S`-integers is dense in the
+product of the completions `K_v` over any set `T` of places which avoids `w` and whose finite
+places lie in `S`.
+
+That is, `T` and the places of the `S`-integers, the finite places outside `S`, together omit
+`w`. Some place must be omitted: `ℤ` is not dense in `ℝ`. -/
+theorem denseRange_algebraMap_integer_pi (w : Place K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (T : Set (Place K)) (hwT : w ∉ T) (hwS : ∀ v, Sum.inl v = w → v ∈ S)
+    (hTS : ∀ v, Sum.inl v ∈ T → v ∈ S) :
+    DenseRange fun x : S.integer K ↦ fun p : T ↦ algebraMap K p.val.Completion x := by
+  classical
+  rw [DenseRange, dense_iff_inter_open]
+  rintro U hU ⟨g, hg⟩
+  -- `U` contains a basic open set, a product of opens `u p` over a finite set `I` of places.
+  obtain ⟨I, u, hu, hIU⟩ := isOpen_pi_iff.1 hU g hg
+  set J := I.map (Function.Embedding.subtype (· ∈ T))
+  have hJ (p : Place K) : p ∈ J ↔ ∃ h : p ∈ T, ⟨p, h⟩ ∈ I := by simp [J]
+  -- Approximate at the finite and the infinite places of `I`, with no condition elsewhere.
+  let U' (v : HeightOneSpectrum (𝓞 K)) : Set (v.adicCompletion K) :=
+    if h : Sum.inl v ∈ T then u ⟨Sum.inl v, h⟩ else Set.univ
+  let V' (v : InfinitePlace K) : Set v.Completion :=
+    if h : Sum.inr v ∈ T then u ⟨Sum.inr v, h⟩ else Set.univ
+  have hJT {p : Place K} (hp : p ∈ J) : p ∈ T := ((hJ p).1 hp).1
+  obtain ⟨x, hxU, hxV, hxint⟩ := exists_forall_algebraMap_mem_and_forall_norm_le_one w
+    (J.preimage Sum.inl Sum.inl_injective.injOn) (J.preimage Sum.inr Sum.inr_injective.injOn)
+    (fun v hv h ↦ hwT (h ▸ hJT (Finset.mem_preimage.1 hv)))
+    (fun v hv h ↦ hwT (h ▸ hJT (Finset.mem_preimage.1 hv))) U' V'
+    (fun v hv ↦ by
+      obtain ⟨h, hI⟩ := (hJ _).1 (Finset.mem_preimage.1 hv)
+      simp only [U', h, ↓reduceDIte]
+      exact ⟨(hu _ hI).1, _, (hu _ hI).2⟩)
+    (fun v hv ↦ by
+      obtain ⟨h, hI⟩ := (hJ _).1 (Finset.mem_preimage.1 hv)
+      simp only [V', h, ↓reduceDIte]
+      exact ⟨(hu _ hI).1, _, (hu _ hI).2⟩)
+  -- `x` is integral at every finite place outside `S`, since such a place is neither `w` nor in
+  -- `I`.
+  have hxS : x ∈ S.integer K := fun v hv ↦ by
+    rw [← FinitePlace.mk_apply_le_one_iff, ← FinitePlace.norm_algebraMap_adicCompletion]
+    exact hxint v (fun h ↦ hv (hTS v (hJT (Finset.mem_preimage.1 h))))
+      fun h ↦ hv (hwS v h)
+  refine ⟨_, hIU fun p hp ↦ ?_, ⟨⟨x, hxS⟩, rfl⟩⟩
+  obtain ⟨p | p, hpT⟩ := p
+  · have := hxU p (Finset.mem_preimage.2 ((hJ _).2 ⟨hpT, hp⟩))
+    simp only [U', hpT, ↓reduceDIte] at this
+    exact this
+  · have := hxV p (Finset.mem_preimage.2 ((hJ _).2 ⟨hpT, hp⟩))
+    simp only [V', hpT, ↓reduceDIte] at this
+    exact this
+
+/-- **Strong approximation for finite modules over `S`-integers.** Let `w` be a place of `K`, `S`
+a set of finite places of `K` containing `w` if `w` is finite, and `T` a set of places which
+avoids `w` and whose finite places lie in `S`. Then a finite module `M` over the ring of
+`S`-integers is dense in the product of its scalar extensions `K_v ⊗ M` over `v ∈ T`, each with
+its module topology. -/
+theorem denseRange_one_tmul_integer_pi (w : Place K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (T : Set (Place K)) (hwT : w ∉ T) (hwS : ∀ v, Sum.inl v = w → v ∈ S)
+    (hTS : ∀ v, Sum.inl v ∈ T → v ∈ S) (M : Type*) [AddCommMonoid M] [Module (S.integer K) M]
+    [Module.Finite (S.integer K) M]
+    [∀ p : T, TopologicalSpace (p.val.Completion ⊗[S.integer K] M)]
+    [∀ p : T, IsModuleTopology p.val.Completion (p.val.Completion ⊗[S.integer K] M)] :
+    DenseRange fun m : M ↦ fun p : T ↦ (1 : p.val.Completion) ⊗ₜ[S.integer K] m :=
+  DenseRange.pi_one_tmul (A := fun p : T ↦ p.val.Completion)
+    (by simpa only [Subalgebra.algebraMap_eq, RingHom.comp_apply, AlgHom.coe_toRingHom,
+        Subalgebra.coe_val] using
+      denseRange_algebraMap_integer_pi w S T hwT hwS hTS) M
 
 end TauCeti.GlobalNumberFields
