@@ -32,7 +32,9 @@ fundamental form (`Bundle.ContMDiffRiemannianMetric.boundarySecondFundamentalFor
   (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq`). For `α = -2`,
   that is `φ = -|x|²`, `dφ(ν_in) = 2` on the sphere and `II^ĝ = e^{-1} (1 - 2) h = -e^{-1} h`
   (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_neg_two_mul_norm_sq`). The wrong
-  sign `e^{φ} (II + dφ(ν_in) h)` would give `3 e^{-1} h`;
+  sign `e^{φ} (II + dφ(ν_in) h)` would give `3 e^{-1} h`. For `α = -1` the sphere is totally
+  geodesic, `II^ĝ = 0`
+  (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_neg_one_mul_norm_sq_eq_zero`);
 * `ĝ = e^{α(|x|² - 1)²} g` for `α : ℝ`, which for `α = 2` is `φ = (|x|² - 1)²`: `φ = 0` and
   `dφ = 0` on the sphere, so `II^ĝ = II = h`
   (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq_sub_one_sq`).
@@ -170,6 +172,24 @@ theorem boundarySecondFundamentalForm_closedBall_rescale_exp_neg_two_mul_norm_sq
       boundarySecondFundamentalForm q u w) =
     -Real.exp (-1) * boundaryInducedForm q u w := by
   refine (boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq (-2) q u w).trans ?_
+  norm_num
+
+/-- **The conformal factor `e^{-|x|²}`.** For `ĝ = e^{-|x|²} g` on the closed unit ball,
+`II^ĝ = e^{-1/2} (1 - 1) h = 0`: the unit sphere is totally geodesic. This is the case `α = -1` of
+`boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq`. -/
+theorem boundarySecondFundamentalForm_closedBall_rescale_exp_neg_one_mul_norm_sq_eq_zero
+    (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1))
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    (letI : RiemannianBundle (fun x : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+        ⟨(closedBallEuclideanMetric.rescale
+          ((fun y : E ↦ Real.exp (-1 * ‖y‖ ^ 2)) ∘ Subtype.val)
+          ((contDiff_exp_mul_norm_sq (-1)).contMDiff.comp contMDiff_subtypeVal_closedBall)
+          fun _ ↦ Real.exp_pos _).toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+        (fun x : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+        IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
+      boundarySecondFundamentalForm q u w) = 0 := by
+  refine (boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq (-1) q u w).trans ?_
   norm_num
 
 /-- On the unit sphere, `x ↦ e^{α(|x|² - 1)²}` has derivative `0` in the radial direction. -/
