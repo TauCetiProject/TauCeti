@@ -15,7 +15,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Checks: exhaustive, separated and complete filtrations of `ℤ`
 
-An antitone family of submodules is a decreasingly filtered module
+An antitone family of submodules, read at `ℤᵒᵖ`, is a decreasingly filtered module
 (`CategoryTheory.FilteredObject.ofSubmodules`), whose exhaustiveness and separatedness read in the
 lattice of submodules. Checks on `ℤ` as a `ℤ`-module:
 
@@ -43,23 +43,23 @@ open FilteredObject
 
 /-- The constant filtration `F^p = ℤ` of `ℤ` is exhaustive. -/
 theorem isExhaustive_const_top :
-    (ofSubmodules (fun _ ↦ (⊤ : Submodule ℤ ℤ)) antitone_const).IsExhaustive :=
+    (ofSubmodules (fun _ : ℤᵒᵖ ↦ (⊤ : Submodule ℤ ℤ)) fun _ _ _ ↦ le_rfl).IsExhaustive :=
   isExhaustive_of_step_eq_top _ (i := op (0 : ℤ)) (by rw [step_ofSubmodules, map_top])
 
 /-- The constant filtration `F^p = ℤ` of `ℤ` is not separated. -/
 theorem not_isSeparated_const_top :
-    ¬ (ofSubmodules (fun _ ↦ (⊤ : Submodule ℤ ℤ)) antitone_const).IsSeparated := by
+    ¬ (ofSubmodules (fun _ : ℤᵒᵖ ↦ (⊤ : Submodule ℤ ℤ)) fun _ _ _ ↦ le_rfl).IsSeparated := by
   rw [isSeparated_ofSubmodules_iff]
   exact fun h ↦ top_ne_bot (h ⊤ fun _ ↦ le_rfl)
 
 /-- The zero filtration `F^p = 0` of `ℤ` is separated. -/
 theorem isSeparated_const_bot :
-    (ofSubmodules (fun _ ↦ (⊥ : Submodule ℤ ℤ)) antitone_const).IsSeparated :=
+    (ofSubmodules (fun _ : ℤᵒᵖ ↦ (⊥ : Submodule ℤ ℤ)) fun _ _ _ ↦ le_rfl).IsSeparated :=
   isSeparated_of_step_eq_bot _ (i := op (0 : ℤ)) (by rw [step_ofSubmodules, map_bot])
 
 /-- The zero filtration `F^p = 0` of `ℤ` is not exhaustive. -/
 theorem not_isExhaustive_const_bot :
-    ¬ (ofSubmodules (fun _ ↦ (⊥ : Submodule ℤ ℤ)) antitone_const).IsExhaustive := by
+    ¬ (ofSubmodules (fun _ : ℤᵒᵖ ↦ (⊥ : Submodule ℤ ℤ)) fun _ _ _ ↦ le_rfl).IsExhaustive := by
   rw [isExhaustive_ofSubmodules_iff]
   exact fun h ↦ bot_ne_top (h ⊥ fun _ ↦ le_rfl)
 
@@ -76,7 +76,7 @@ theorem antitone_adicStep (ℓ : ℤ) : Antitone (adicStep ℓ) := fun p q hpq �
 
 /-- The `ℓ`-adic filtration of `ℤ` as a decreasingly filtered `ℤ`-module. -/
 noncomputable abbrev adicFiltration (ℓ : ℤ) : FilteredObject (ModuleCat.{0} ℤ) ℤᵒᵖ :=
-  ofSubmodules (adicStep ℓ) (antitone_adicStep ℓ)
+  ofSubmodules (fun p ↦ adicStep ℓ p.unop) fun _ _ f ↦ antitone_adicStep ℓ (leOfHom f.unop)
 
 /-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
 theorem isExhaustive_adicFiltration (ℓ : ℤ) : (adicFiltration ℓ).IsExhaustive :=
@@ -91,8 +91,8 @@ theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : ℓ.natAbs ≠ 1) :
   refine (isSeparated_ofSubmodules_iff_forall_mem _ _).2 fun n hn ↦ ?_
   by_contra h0
   refine FiniteMultiplicity.not_iff_forall.2 (fun k ↦ ?_) (Int.finiteMultiplicity_iff.2 ⟨hℓ, h0⟩)
-  have := hn k
-  rwa [adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at this
+  have := hn (op (k : ℤ))
+  rwa [unop_op, adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at this
 
 /-- The partial sums `sₖ = ∑_{i < k} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)`. -/
 private def adicPartialSum (ℓ : ℤ) (k : ℕ) : ℤ :=
@@ -131,20 +131,29 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
           naturality p q f := by
             simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp,
               Category.assoc, Limits.Cone.w]
-            refine (comp_quotientCone_π_ofSubmodules_eq_iff (adicStep ℓ)
-              (antitone_adicStep ℓ) q.unop _ _).2 fun a ↦ ?_
+            rw [quotientCone_π_app]
+            refine (comp_cokernel_π_stepι_ofSubmodules_eq_iff (fun p : ℤᵒᵖ ↦ adicStep ℓ p.unop) _ q
+              (g _) (g _)).2 fun a ↦ ?_
             have h : s q.unop.toNat - s p.unop.toNat ∈ adicStep ℓ q.unop := by
               rw [adicStep, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
               exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop))
-            -- `g k` sends `a` to `a • sₖ`.
-            have h' := Submodule.smul_mem _ a h
-            rwa [smul_sub] at h' } }
-  set n : ℤ := (hL.lift c).hom (1 : ℤ)
+            simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, ← smul_sub]
+            exact Submodule.smul_mem _ a h } }
+  -- The vertex `quotientCone.pt` of the cone of quotients is the filtered module `X`
+  -- (`quotientCone_pt`, which holds by unfolding `quotientCone`).
+  let φ : ModuleCat.of ℤ ℤ ⟶ (adicFiltration ℓ).X := hL.lift c
+  set n : ℤ := φ.hom (1 : ℤ)
   have hdvd (k : ℕ) : ℓ ^ k ∣ (1 + ℓ) * n - 1 := by
-    have h' : n - (1 : ℤ) • s k ∈ adicStep ℓ k :=
-      (comp_quotientCone_π_ofSubmodules_eq_iff (adicStep ℓ) (antitone_adicStep ℓ) k
-        (hL.lift c) (g k)).1 (hL.fac c (op (k : ℤ))) 1
-    rw [one_smul, adicStep, Ideal.mem_span_singleton, Int.toNat_natCast] at h'
+    -- The leg of `c` at `op k` is `g k` followed by the projection, as `(k : ℤ).toNat = k`; the
+    -- rewrite closes this by `rfl`.
+    have hfac : hL.lift c ≫ (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) =
+        g k ≫ (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) := by
+      rw [hL.fac c (op (k : ℤ))]
+    rw [quotientCone_π_app] at hfac
+    have h' := (comp_cokernel_π_stepι_ofSubmodules_eq_iff (fun p : ℤᵒᵖ ↦ adicStep ℓ p.unop) _
+      (op (k : ℤ)) φ (g k)).1 hfac 1
+    simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul] at h'
+    rw [adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at h'
     have : (1 + ℓ) * n - 1 = (1 + ℓ) * (n - s k) - (-ℓ) ^ k := by
       have := one_add_mul_adicPartialSum ℓ k
       linear_combination this
