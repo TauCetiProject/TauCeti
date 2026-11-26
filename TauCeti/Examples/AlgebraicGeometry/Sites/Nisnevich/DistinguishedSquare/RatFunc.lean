@@ -50,6 +50,18 @@ noncomputable def squareHom : RatFunc K →+* RatFunc K :=
 theorem squareHom_X : squareHom K RatFunc.X = RatFunc.X ^ 2 :=
   algebraMap_ratFuncAlgebraOfTranscendental_X _
 
+/-- `squareHom` fixes the constants from `K`. -/
+theorem squareHom_algebraMap (a : K) :
+    squareHom K (algebraMap K (RatFunc K) a) = algebraMap K (RatFunc K) a := by
+  have hx : Transcendental K (RatFunc.X ^ 2 : RatFunc K) := RatFunc.transcendental_X.pow two_pos
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  exact (IsScalarTower.algebraMap_apply K (RatFunc K) (RatFunc K) a).symm
+
+@[simp]
+theorem squareHom_C (a : K) : squareHom K (RatFunc.C a) = RatFunc.C a := by
+  simpa using squareHom_algebraMap K a
+
 /-- **The inclusion `K(u²) → K(u)` is not distinguished with empty `U`.** -/
 theorem isEmpty_iso_SpecMap_adjoinXSq
     (Q : ElementaryDistinguishedSquare (Spec (.of (adjoinXSq K)))) [IsEmpty Q.U] :
