@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.ConnectedSum
+public import TauCeti.LowDimTopology.Heegaard.ConnectedSum.Basic
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.Twisted.Basic
 

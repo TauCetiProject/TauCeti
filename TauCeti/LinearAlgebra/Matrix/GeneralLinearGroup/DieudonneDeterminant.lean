@@ -7,12 +7,15 @@ module
 
 public import TauCeti.GroupTheory.Abelianization.WithZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 
 -- Non-public: the factorization through the Weyl element is used to prove multiplicativity and the
 -- singularity criterion of the `2 × 2` determinant; invertible upper triangular matrices only for
--- the latter; relabelling indices preserves the class in `K₁` (`AlgebraicK1.mk_reindexGL`).
+-- the latter; relabelling indices preserves the class in `K₁` (`AlgebraicK1.mk_reindexGL`); the
+-- signed Weyl word is elementary, which computes the determinant of a permutation matrix.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary.Permutation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable.BlockSum
 import TauCeti.LinearAlgebra.Matrix.WeylElementFinTwo
 
@@ -41,6 +44,18 @@ of its entries, is surjective as soon as there is an index, and whose kernel is 
 subgroup `Eₙ(D)` as soon as there are at least two indices. With a single index `E₁(D)` is
 trivial, while the determinant of `(u)` is the class of `u`, trivial for every commutator `u`.
 
+Every invertible matrix over `D` is an elementary matrix times a diagonal matrix with a chosen
+diagonal entry `d` and all others `1`. With at least two indices the commutator subgroup of
+`GLₙ(D)` is the elementary subgroup, except for `GL₂(𝔽₂)`; when `D` has an element other than `0`
+and `1`, the elementary subgroup lies in the commutator subgroup in every size. Hence the Dieudonné
+determinant is the **only** homomorphism `GLₙ(D) → Dˣ/[Dˣ, Dˣ]`, for `n ≥ 1`, that sends such a
+diagonal matrix to the class of `d`. Through `K₁(D)` the determinant inherits the rules of
+computation of classes in `K₁`: it is multiplicative on block diagonal matrices, and an invertible
+block matrix `fromBlocks X Y Z W` with invertible `X` has determinant `Δ(X) Δ(W - Z X⁻¹ Y)`, the
+Schur complement formula, in this order of the factors. It is natural in ring homomorphisms, it
+sends a permutation matrix to the class of the sign, and over a field it is the class of the usual
+determinant.
+
 ## Main definitions
 
 * `TauCeti.dieudonneDetFinTwo`: the Dieudonné determinant of `2 × 2` matrices, a monoid with zero
@@ -58,6 +73,24 @@ trivial, while the determinant of `(u)` is the class of `u`, trivial for every c
   of its entries.
 * `TauCeti.ker_dieudonneDet`: with at least two indices the kernel is the elementary subgroup.
 * `TauCeti.dieudonne_determinant`: the Dieudonné determinant theorem, as an existence statement.
+* `TauCeti.elementarySubgroup_le_ker_dieudonneDet`: elementary matrices have determinant one.
+* `TauCeti.exists_mem_elementarySubgroup_eq_mul_diagGL_mulSingle`: every invertible matrix is an
+  elementary matrix times a diagonal matrix with a chosen diagonal entry `d` and all others `1`.
+* `TauCeti.hom_ext_of_elementarySubgroup_le_ker`, `TauCeti.eq_dieudonneDet`: uniqueness of the
+  Dieudonné determinant.
+* `TauCeti.commutator_eq_elementarySubgroup`: the commutator subgroup of `GLₙ(D)` is `Eₙ(D)` for
+  `n ≥ 2`, except for `GL₂(𝔽₂)`; `TauCeti.elementarySubgroup_le_commutator_of_ne` gives the
+  inclusion `Eₙ(D) ≤ [GLₙ(D), GLₙ(D)]` in every size when `D ≠ 𝔽₂`.
+* `TauCeti.dieudonneDet_fromBlocksGL`, `TauCeti.dieudonneDet_eq_mul_of_coe_eq_fromBlocks`: the block
+  diagonal and the Schur complement formulas, with the block triangular special cases
+  `TauCeti.dieudonneDet_eq_mul_of_coe_eq_fromBlocks_zero₂₁` and
+  `TauCeti.dieudonneDet_eq_mul_of_coe_eq_fromBlocks_zero₁₂`.
+* `TauCeti.dieudonneDet_permutationGL`: a permutation matrix has the class of its sign.
+* `TauCeti.dieudonneDet_unitsMap_mapMatrix`, `TauCeti.AlgebraicK1.divisionRingEquiv_map`:
+  naturality in ring homomorphisms of division rings.
+* `TauCeti.dieudonneDet_eq_abelianizationOf_det`,
+  `TauCeti.AlgebraicK1.divisionRingEquiv_eq_abelianizationOf_det`: over a field the Dieudonné
+  determinant is the class of the usual determinant.
 
 ## Implementation notes
 
@@ -70,7 +103,8 @@ unipotent upper triangular matrix.
 
 * J. Dieudonné, *Les déterminants sur un corps non commutatif*, Bull. Soc. Math. France 71
   (1943), 27–45.
-* E. Artin, *Geometric Algebra*, Interscience (1957), Chapter IV, §1.
+* E. Artin, *Geometric Algebra*, Interscience (1957), Chapter IV, §1, where the determinant is
+  characterized by its behaviour under elementary row operations and on diagonal matrices.
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
   Mathematics 145 (2013), Chapter III, 1.2.4, Example 1.3.5 and Exercise 1.2.
 -/
@@ -363,7 +397,7 @@ theorem dieudonneDet_reindexGL (e : n ≃ m) (g : GL n D) :
 `K₁(D)`. -/
 theorem dieudonneDet_fin_apply {k : ℕ} (g : GL (Fin k) D) :
     dieudonneDet (Fin k) D g = AlgebraicK1.divisionRingEquiv D (AlgebraicK1.mk D k g) := by
-  simp [dieudonneDet, AlgebraicK1.mk_reindexGL]
+  simp [dieudonneDet]
 
 /-- On invertible `2 × 2` matrices the Dieudonné determinant is `TauCeti.dieudonneDetFinTwo`. -/
 theorem coe_dieudonneDet_fin_two (g : GL (Fin 2) D) :
@@ -448,5 +482,205 @@ theorem dieudonne_determinant (D : Type*) [DivisionRing D] (n : Type*) [Fintype 
   exact dieudonneDet_diagGL_mulSingle i d
 
 end DieudonneDet
+
+/-! ## Elementary invariance, uniqueness and the class in `K₁` -/
+
+section Uniqueness
+
+variable {n m : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] {D : Type*}
+  [DivisionRing D]
+
+/-- Elementary matrices lie in the kernel of the Dieudonné determinant. -/
+theorem elementarySubgroup_le_ker_dieudonneDet :
+    elementarySubgroup n D ≤ (dieudonneDet n D).ker :=
+  elementarySubgroup_le_iff.2 fun _ _ hij a ↦ dieudonneDet_transvectionUnit hij a
+
+/-- Over a division ring, every invertible matrix is an elementary matrix times the diagonal
+matrix with a chosen diagonal entry `d` and all others `1`. -/
+theorem exists_mem_elementarySubgroup_eq_mul_diagGL_mulSingle (i : n) (g : GL n D) :
+    ∃ e ∈ elementarySubgroup n D, ∃ d : Dˣ, g = e * diagGL (Pi.mulSingle i d) := by
+  rcases le_or_gt 2 (Fintype.card n) with hn | hn
+  · -- with two indices, divide by a diagonal matrix of the same determinant
+    obtain ⟨d, hd⟩ := Group.Abelianization.surjective_of _ (dieudonneDet n D g)
+    refine ⟨g * (diagGL (Pi.mulSingle i d))⁻¹, ?_, d, by rw [inv_mul_cancel_right]⟩
+    rw [← ker_dieudonneDet hn, MonoidHom.mem_ker, map_mul, map_inv, dieudonneDet_diagGL_mulSingle,
+      hd, mul_inv_cancel]
+  · -- with a single index, `g` is the diagonal matrix of its only entry
+    have : Subsingleton n := Fintype.card_le_one_iff_subsingleton.1 (by omega)
+    have hmul (M N : Matrix n n D) : (M * N) i i = M i i * N i i := by
+      rw [Matrix.mul_apply, Fintype.sum_subsingleton _ i]
+    refine ⟨1, one_mem _, ⟨(g : Matrix n n D) i i, (↑g⁻¹ : Matrix n n D) i i, ?_, ?_⟩, ?_⟩
+    · rw [← hmul, Units.mul_inv, Matrix.one_apply_eq]
+    · rw [← hmul, Units.inv_mul, Matrix.one_apply_eq]
+    ext a b
+    rw [Subsingleton.elim a i, Subsingleton.elim b i]
+    simp
+
+/-- Two homomorphisms out of `GL n D` that are trivial on elementary matrices are equal as soon as
+they agree on the diagonal matrices with a chosen diagonal entry `d` and all others `1`. -/
+theorem hom_ext_of_elementarySubgroup_le_ker {G : Type*} [MulOneClass G] {φ ψ : GL n D →* G} (i : n)
+    (hφ : elementarySubgroup n D ≤ φ.ker) (hψ : elementarySubgroup n D ≤ ψ.ker)
+    (h : ∀ d : Dˣ, φ (diagGL (Pi.mulSingle i d)) = ψ (diagGL (Pi.mulSingle i d))) : φ = ψ := by
+  ext1 g
+  obtain ⟨e, he, d, rfl⟩ := exists_mem_elementarySubgroup_eq_mul_diagGL_mulSingle i g
+  rw [map_mul, map_mul, MonoidHom.mem_ker.1 (hφ he), MonoidHom.mem_ker.1 (hψ he), h]
+
+/-- Over a division ring with an element other than `0` and `1`, the elementary subgroup lies in
+the commutator subgroup of `GL n D`, in every size. -/
+theorem elementarySubgroup_le_commutator_of_ne {a : D} (ha₀ : a ≠ 0) (ha₁ : a ≠ 1) :
+    elementarySubgroup n D ≤ commutator (GL n D) :=
+  elementarySubgroup_le_commutator_of_isUnit_sub_one (Units.mk0 a ha₀)
+    (isUnit_iff_ne_zero.2 (sub_ne_zero.2 ha₁))
+
+/-- **The commutator subgroup of `GLₙ(D)`** is the elementary subgroup, as soon as there are at
+least two indices, except for `2 × 2` matrices over `𝔽₂`: the group `GL₂(𝔽₂) = E₂(𝔽₂)` is the
+symmetric group on three letters, whose commutator subgroup has index two. The hypothesis `hD`
+excludes this case. -/
+theorem commutator_eq_elementarySubgroup (hn : 2 ≤ Fintype.card n)
+    (hD : 3 ≤ Fintype.card n ∨ ∃ a : D, a ≠ 0 ∧ a ≠ 1) :
+    commutator (GL n D) = elementarySubgroup n D := by
+  refine le_antisymm ((Group.Abelianization.commutator_le_ker (dieudonneDet n D)).trans
+    (ker_dieudonneDet hn).le) ?_
+  rcases hD with h₃ | ⟨a, ha₀, ha₁⟩
+  · exact elementarySubgroup_le_commutator h₃
+  · exact elementarySubgroup_le_commutator_of_ne ha₀ ha₁
+
+/-- **Uniqueness of the Dieudonné determinant**: a homomorphism `GL n D →* Dˣ/[Dˣ, Dˣ]` that sends
+the diagonal matrix with a chosen diagonal entry `d` and all others `1` to the class of `d` is the
+Dieudonné determinant. It is automatically trivial on elementary matrices: when `D` has an element
+other than `0` and `1`, these lie in the commutator subgroup by
+`TauCeti.elementarySubgroup_le_commutator_of_ne`, and otherwise `D = 𝔽₂`, so the target
+`Dˣ/[Dˣ, Dˣ]` is trivial. Commutativity of the target alone would not suffice: the sign of
+`GL₂(𝔽₂) ≅ S₃` is nontrivial on `E₂(𝔽₂) = GL₂(𝔽₂)`. -/
+theorem eq_dieudonneDet {φ : GL n D →* Group.Abelianization Dˣ} (i : n)
+    (h : ∀ d : Dˣ, φ (diagGL (Pi.mulSingle i d)) = Group.Abelianization.of d) :
+    φ = dieudonneDet n D := by
+  refine hom_ext_of_elementarySubgroup_le_ker i ?_ elementarySubgroup_le_ker_dieudonneDet
+    fun d ↦ by rw [h, dieudonneDet_diagGL_mulSingle]
+  by_cases hD : ∃ a : D, a ≠ 0 ∧ a ≠ 1
+  · obtain ⟨a, ha₀, ha₁⟩ := hD
+    exact (elementarySubgroup_le_commutator_of_ne ha₀ ha₁).trans
+      (Group.Abelianization.commutator_le_ker φ)
+  · -- every unit of `D` is `1`, so the target of `φ` is trivial
+    push Not at hD
+    intro g _
+    obtain ⟨d, hd⟩ := Group.Abelianization.surjective_of _ (φ g)
+    rw [MonoidHom.mem_ker, ← hd, Units.val_eq_one.1 (hD _ d.ne_zero), map_one]
+
+/-- The isomorphism `K₁(D) ≃* Dˣ/[Dˣ, Dˣ]` sends the class of an invertible matrix to its
+Dieudonné determinant. -/
+@[simp]
+theorem AlgebraicK1.divisionRingEquiv_mkOfFintype (g : GL n D) :
+    AlgebraicK1.divisionRingEquiv D (AlgebraicK1.mkOfFintype D n g) = dieudonneDet n D g := by
+  rw [AlgebraicK1.mkOfFintype_apply, dieudonneDet, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom]
+
+/-! ## Block matrices -/
+
+/-- The Dieudonné determinant of a block diagonal matrix is the product of the Dieudonné
+determinants of its blocks. -/
+@[simp]
+theorem dieudonneDet_fromBlocksGL (u : GL m D) (v : GL n D) :
+    dieudonneDet (m ⊕ n) D (fromBlocksGL (u, v)) = dieudonneDet m D u * dieudonneDet n D v := by
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.mkOfFintype_fromBlocksGL, map_mul,
+    AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.divisionRingEquiv_mkOfFintype]
+
+/-- **The Schur complement formula** for the Dieudonné determinant: if the upper-left block `u` of
+an invertible block matrix `fromBlocks u Y Z W` is invertible, its Dieudonné determinant is
+`Δ(u) Δ(W - Z u⁻¹ Y)`, the Schur complement being invertible by
+`Matrix.GeneralLinearGroup.isUnit_sub_mul_mul_of_coe_eq_fromBlocks`. The order of the factors in
+the Schur complement matters, since `D` need not be commutative. -/
+theorem dieudonneDet_eq_mul_of_coe_eq_fromBlocks {g : GL (m ⊕ n) D} {u : GL m D} {v : GL n D}
+    {Y : Matrix m n D} {Z : Matrix n m D} {W : Matrix n n D}
+    (hg : (g : Matrix (m ⊕ n) (m ⊕ n) D) = fromBlocks u Y Z W)
+    (hv : (v : Matrix n n D) = W - Z * (↑u⁻¹ : Matrix m m D) * Y) :
+    dieudonneDet (m ⊕ n) D g = dieudonneDet m D u * dieudonneDet n D v := by
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype,
+    AlgebraicK1.mkOfFintype_eq_mul_of_coe_eq_fromBlocks hg hv, map_mul,
+    AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.divisionRingEquiv_mkOfFintype]
+
+/-- The Dieudonné determinant of a block upper triangular matrix with invertible diagonal blocks
+`u` and `v` is `Δ(u) Δ(v)`, whatever its off-diagonal block. -/
+theorem dieudonneDet_eq_mul_of_coe_eq_fromBlocks_zero₂₁ {g : GL (m ⊕ n) D} {u : GL m D}
+    {v : GL n D} {X : Matrix m n D} (hg : (g : Matrix (m ⊕ n) (m ⊕ n) D) = fromBlocks u X 0 v) :
+    dieudonneDet (m ⊕ n) D g = dieudonneDet m D u * dieudonneDet n D v :=
+  dieudonneDet_eq_mul_of_coe_eq_fromBlocks hg (by simp)
+
+/-- The Dieudonné determinant of a block lower triangular matrix with invertible diagonal blocks
+`u` and `v` is `Δ(u) Δ(v)`, whatever its off-diagonal block. -/
+theorem dieudonneDet_eq_mul_of_coe_eq_fromBlocks_zero₁₂ {g : GL (m ⊕ n) D} {u : GL m D}
+    {v : GL n D} {Y : Matrix n m D} (hg : (g : Matrix (m ⊕ n) (m ⊕ n) D) = fromBlocks u 0 Y v) :
+    dieudonneDet (m ⊕ n) D g = dieudonneDet m D u * dieudonneDet n D v :=
+  dieudonneDet_eq_mul_of_coe_eq_fromBlocks hg (by simp)
+
+/-! ## Permutation matrices -/
+
+/-- The Dieudonné determinant of a permutation matrix is the class of the sign of the
+permutation. -/
+@[simp]
+theorem dieudonneDet_permutationGL (σ : Equiv.Perm n) :
+    dieudonneDet n D (permutationGL σ) =
+      Group.Abelianization.of (Units.map (Int.castRingHom D : ℤ →* D) (Equiv.Perm.sign σ)) := by
+  -- both sides are homomorphisms on `Equiv.Perm n`, so it suffices to compare them on swaps
+  suffices h : (dieudonneDet n D).comp permutationGL = Group.Abelianization.of.comp
+      ((Units.map (Int.castRingHom D : ℤ →* D)).comp Equiv.Perm.sign) from
+    DFunLike.congr_fun h σ
+  refine MonoidHom.eq_of_eqOn_denseM Equiv.Perm.mclosure_isSwap ?_
+  rintro _ ⟨i, j, hij, rfl⟩
+  -- the signed Weyl word `diag(1, …, -1, …, 1) · (i j)` is elementary
+  have hW := elementarySubgroup_le_ker_dieudonneDet
+    (transvectionWeylElement_mem_elementarySubgroup (A := D) hij)
+  rw [MonoidHom.mem_ker, transvectionWeylElement_eq_diagGL_mul_permutationGL, map_mul,
+    dieudonneDet_diagGL_mulSingle] at hW
+  simp [Equiv.Perm.sign_swap hij, eq_inv_of_mul_eq_one_right hW, ← map_inv]
+
+end Uniqueness
+
+/-! ## Naturality and commutative division rings -/
+
+namespace AlgebraicK1
+
+/-- The isomorphism `K₁(D) ≃* Dˣ/[Dˣ, Dˣ]` is natural in ring homomorphisms of division rings. -/
+@[simp]
+theorem divisionRingEquiv_map {D D' : Type*} [DivisionRing D] [DivisionRing D'] (f : D →+* D')
+    (x : AlgebraicK1 D) :
+    divisionRingEquiv D' (map f x) =
+      Group.Abelianization.map (Units.map (f : D →* D')) (divisionRingEquiv D x) := by
+  obtain ⟨u, rfl⟩ := ofUnits_surjective (hasStableRangeLE_one_of_isLocalRing D) x
+  simp [Group.Abelianization.map_of]
+
+/-- Over a field `F`, the isomorphism `K₁(F) ≃* Fˣ/[Fˣ, Fˣ]` is the determinant
+`K₁(F) →* Fˣ` followed by the class map, the abelianization of the commutative group `Fˣ` being
+`Fˣ` itself. -/
+theorem divisionRingEquiv_eq_abelianizationOf_det {F : Type*} [Field F] (x : AlgebraicK1 F) :
+    divisionRingEquiv F x = Group.Abelianization.of (det F x) := by
+  obtain ⟨u, rfl⟩ := ofUnits_surjective (hasStableRangeLE_one_of_isLocalRing F) x
+  simp
+
+end AlgebraicK1
+
+section Naturality
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The Dieudonné determinant is natural in ring homomorphisms of division rings: applying `f` to
+the entries of an invertible matrix applies `f` to the classes of the units. -/
+@[simp]
+theorem dieudonneDet_unitsMap_mapMatrix {D D' : Type*} [DivisionRing D] [DivisionRing D']
+    (f : D →+* D') (g : GL n D) :
+    dieudonneDet n D' (Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n D') g) =
+      Group.Abelianization.map (Units.map (f : D →* D')) (dieudonneDet n D g) := by
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, ← RingHom.toMonoidHom_eq_coe,
+    ← AlgebraicK1.map_mkOfFintype,
+    AlgebraicK1.divisionRingEquiv_map, AlgebraicK1.divisionRingEquiv_mkOfFintype]
+
+/-- Over a field the Dieudonné determinant is the class of the usual determinant. -/
+theorem dieudonneDet_eq_abelianizationOf_det {F : Type*} [Field F] (g : GL n F) :
+    dieudonneDet n F g = Group.Abelianization.of (GeneralLinearGroup.det g) := by
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype,
+    AlgebraicK1.divisionRingEquiv_eq_abelianizationOf_det,
+    AlgebraicK1.det_mkOfFintype]
+
+end Naturality
 
 end TauCeti

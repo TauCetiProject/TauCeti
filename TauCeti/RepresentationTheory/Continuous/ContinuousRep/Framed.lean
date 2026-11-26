@@ -28,6 +28,10 @@ is `det ∘ ρ` (`TauCeti.ContinuousRep.det_ofFramed`). A continuous ring homomo
 changes the coefficients of a framed representation entrywise (`TauCeti.ContinuousRep.framedMap`),
 functorially in `f`.
 
+For a group with continuous inversion, a homomorphism `Γ →* GL_n(A)` is continuous, hence framed,
+exactly when its matrix entries are continuous (`MonoidHom.continuous_iff_continuous_matrix_elem`
+in `TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic`).
+
 ## Main definitions
 
 * `TauCeti.ContinuousRep.ofFramed ρ`: the continuous representation on `n → A` of a framed

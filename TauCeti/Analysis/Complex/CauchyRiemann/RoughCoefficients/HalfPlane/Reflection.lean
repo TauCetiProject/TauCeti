@@ -77,8 +77,8 @@ a continuous `J` with weak derivative up to the boundary it holds when `J(s)` an
   axis under these hypotheses on the half-plane coefficients.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one_of_I`: the case `V = ℂ`, `J = i`, `S = 0`, real
   boundary values.
-* `TauCeti.MemLpLoc.twistedReflection`, `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ`
-  bounds pass to and from twisted reflections.
+* `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ` bounds pass back from twisted reflections;
+  the forward direction is `TauCeti.MemLpLoc.twistedReflection`.
 * `TauCeti.eLpNorm_twistedReflection_le`: on a conjugation-invariant set, the twisted reflection
   by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the axis, for `1 ≤ p`;
   the measurability is `MeasureTheory.AEStronglyMeasurable.twistedReflection`.
@@ -223,17 +223,6 @@ end Coefficients
 section Integrability
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {f : ℂ → F}
-
-/-- The twisted reflection of a map locally `Lᵖ` up to the real axis is locally `Lᵖ` on the
-conjugation-invariant set `U`. -/
-theorem MemLpLoc.twistedReflection {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
-    (L : F →L[ℝ] F) (hf : MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f) :
-    MemLpLoc p U (TauCeti.twistedReflection L f) := by
-  refine (hf.ite_conj hU L).congr_ae (ae_restrict_of_ae ?_)
-  filter_upwards [Complex.ae_im_ne_zero] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · simp [hz, not_le.2 hz]
-  · simp [hz, hz.le]
 
 /-- A map whose twisted reflection is locally `Lᵖ` on `U` is locally `Lᵖ` up to the real axis on
 `U`: the two agree off the null real axis. -/

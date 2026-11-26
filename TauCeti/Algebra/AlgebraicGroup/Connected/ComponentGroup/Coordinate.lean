@@ -40,6 +40,8 @@ file.
   functions to the coordinate ring.
 * `TauCeti.FiniteTypeCommHopfAlgCat.componentCoordinateMap`: the same map on the canonical
   constant-group coordinate ring.
+* `TauCeti.FiniteTypeCommHopfAlgCat.mem_range_componentCoordinateMap_of_isIdempotentElem`: every
+  idempotent lies in its image.
 * `TauCeti.FiniteTypeCommHopfAlgCat.eval_componentCoordinateMap`: evaluation of the coordinate map
   at a rational point is evaluation at its connected component.
 * `TauCeti.FiniteTypeCommHopfAlgCat.componentCoordinateBialgHom`: the coordinate bialgebra
@@ -259,6 +261,15 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
         rw [Pi.single_eq_of_ne hDC]
         simp
       · simp
+
+omit [IsAlgClosed k] in
+/-- Every idempotent function on the group lies in the image of the component coordinate map: it
+is pulled back from a function on the finite set of connected components. -/
+theorem mem_range_componentCoordinateMap_of_isIdempotentElem
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {e : H} (he : IsIdempotentElem e) :
+    e ∈ (componentCoordinateMap H).range := by
+  obtain ⟨s, rfl⟩ := he.exists_eq_sum_connectedComponentsIdempotent
+  exact Subalgebra.sum_mem _ fun C _ ↦ ⟨_, componentCoordinateMap_indicator H C⟩
 
 omit [IsAlgClosed k] in
 /-- The component coordinate map is injective. -/

@@ -25,7 +25,7 @@ operator:
   `Matrix.contDiffOn_spectralFunction_iff`), applied to the symmetric extension of `f` by `0`
   off `Γ`;
 * `∇F_f(A)` is positive definite (ellipticity);
-* Euler's identity `Re tr(∇F_f(A) A) = F_f(A)`;
+* Euler's identity `Re tr(∇F_f(A) A) = F_f(A)`, and `∇ log F_f = ∇F_f / F_f`;
 * `F_f` is concave on its domain when the pair is concave;
 * the structural condition `∏ⱼ ∂ⱼ f ≥ γ` on `Γ` holds if and only if `det ∇F_f(A) ≥ γ` for every
   Hermitian `A` with `λ(A) ∈ Γ`, since `det ∇F_f(A) = ∏ⱼ ∂ⱼ f(λ(A))` and the product of the
@@ -36,6 +36,7 @@ operator:
 * `TauCeti.IsAdmissiblePair.contDiffOn_spectralFunction`: `F_f` is `C¹` on `{A | λ(A) ∈ Γ}`.
 * `TauCeti.IsAdmissiblePair.posDef_spectralGradient`: `∇F_f(A)` is positive definite.
 * `TauCeti.IsAdmissiblePair.re_trace_spectralGradient_mul_self`: Euler's identity.
+* `TauCeti.IsAdmissiblePair.spectralGradient_log`: `∇ log F_f = ∇F_f / F_f`.
 * `TauCeti.IsAdmissiblePair.concaveOn_spectralFunction`: concavity for a concave pair.
 * `TauCeti.IsAdmissiblePair.hasStructuralConstant_iff_le_re_det_spectralGradient`: the structural
   condition through `det ∇F_f`.
@@ -93,6 +94,15 @@ theorem re_trace_spectralGradient_mul_self (h : IsAdmissiblePair Γ f) {A : Matr
     RCLike.re (hA.spectralGradient f * A).trace = f hA.eigenvalues₀ :=
   hA.re_trace_spectralGradient_mul_self_of_homogeneous (h.differentiableAt hAΓ)
     fun _ ht ↦ h.apply_smul ht hAΓ
+
+/-- **The gradient of `log F_f`** for an admissible pair: `∇ log F_f(A) = ∇F_f(A) / F_f(A)` at
+every Hermitian `A` with `λ(A) ∈ Γ`. The case of interest is `F_f(A) > 0`, which holds for
+instance whenever `A` is positive definite (`TauCeti.IsAdmissiblePair.pos_of_forall_pos`). -/
+theorem spectralGradient_log (h : IsAdmissiblePair Γ f) {A : Matrix ι ι 𝕜} (hA : A.IsHermitian)
+    (hAΓ : hA.eigenvalues₀ ∈ Γ) :
+    hA.spectralGradient (fun μ ↦ Real.log (f μ)) =
+      ((f hA.eigenvalues₀)⁻¹ : 𝕜) • hA.spectralGradient f :=
+  hA.spectralGradient_log (h.differentiableAt hAΓ)
 
 /-- **Concavity of the operator** of a concave admissible pair on the Hermitian matrices `A` with
 `λ(A) ∈ Γ`. -/
