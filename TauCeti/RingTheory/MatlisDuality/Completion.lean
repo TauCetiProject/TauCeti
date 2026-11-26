@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Module.Injective.Envelope.AdicCompletion
 public import TauCeti.RingTheory.Artinian.LocalRing
 public import TauCeti.RingTheory.MatlisDuality.Complete
 
+import Mathlib.LinearAlgebra.LeftExact
+
 /-!
 # Matlis duality over the completion of a Noetherian local ring
 
@@ -299,13 +301,10 @@ theorem shortExact_lcomp_adicCompletion {P Q M : Type*}
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.moduleInjective
-  refine ⟨lcomp_injective_of_surjective g hg, ?_, fun φ ↦ ?_⟩
-  · rw [LinearMap.exact_iff]
-    ext ψ
-    simp only [mem_range, mem_ker, lcomp_apply', exists_comp_eq_iff_ker_le]
-    rw [← range_le_ker_iff, ← hfg.linearMap_ker_eq]
-  · obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property R E P Q f hf φ
-    exact ⟨ψ, hψ⟩
+  refine ⟨lcomp_injective_of_surjective g hg, exact_lcomp_of_exact_of_surjective E hfg hg,
+    fun φ ↦ ?_⟩
+  obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property R E P Q f hf φ
+  exact ⟨ψ, hψ⟩
 
 /-- The completion-linear Matlis dual `Hom_{R̂}(-, E)` sends short exact sequences of `R̂`-modules
 to short exact sequences of `R̂`-modules, using injectivity of `E` over `R̂`. -/
@@ -324,13 +323,10 @@ theorem shortExact_lcomp_over_adicCompletion {N₁ N₂ N₃ : Type*}
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := hι.adicCompletion.moduleInjective
-  refine ⟨lcomp_injective_of_surjective g hg, ?_, fun φ ↦ ?_⟩
-  · rw [LinearMap.exact_iff]
-    ext ψ
-    simp only [mem_range, mem_ker, lcomp_apply', exists_comp_eq_iff_ker_le]
-    rw [← range_le_ker_iff, ← hfg.linearMap_ker_eq]
-  · obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E N₁ N₂ f hf φ
-    exact ⟨ψ, hψ⟩
+  refine ⟨lcomp_injective_of_surjective g hg, exact_lcomp_of_exact_of_surjective E hfg hg,
+    fun φ ↦ ?_⟩
+  obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E N₁ N₂ f hf φ
+  exact ⟨ψ, hψ⟩
 
 end Exact
 

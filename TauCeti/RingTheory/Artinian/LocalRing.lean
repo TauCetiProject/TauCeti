@@ -6,26 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.Essential
-public import TauCeti.RingTheory.SimpleModule.LocalRing
+public import TauCeti.RingTheory.LocalRing.Socle
 
 /-!
 # Artinian modules over commutative local rings
 
-Let `R` be a commutative local ring with maximal ideal `𝔪` and residue field `κ`. Every simple
-submodule of an `R`-module is annihilated by `𝔪`, so it lies in the socle `M[𝔪]`
-(`IsAtom.le_torsionBySet_maximalIdeal`). When `M` is Artinian, its submodule lattice is atomic,
-hence `M[𝔪]` is an essential submodule of `M`.
+Let `R` be a commutative local ring with maximal ideal `𝔪`. By
+`TauCeti.IsLocalRing.isEssential_torsionBySet_maximalIdeal` (from
+`TauCeti/RingTheory/LocalRing/Socle.lean`), the socle `M[𝔪]` of an Artinian `R`-module `M` is
+essential in `M`.
 
-In particular, if `R` is Noetherian, essentiality of `M[𝔪]` implies that every element of an
-Artinian `R`-module is killed by a power of `𝔪`, so `M` carries the canonical action of the `𝔪`-adic
+When `R` is Noetherian, essentiality of `M[𝔪]` implies that every element of an Artinian
+`R`-module is killed by a power of `𝔪`, so `M` carries the canonical action of the `𝔪`-adic
 completion `R̂`.
 
 ## Main results
 
-* `TauCeti.isEssential_torsionBySet_maximalIdeal`: the `𝔪`-torsion submodule of an Artinian module
-  over a local ring is essential.
 * `TauCeti.primaryComponent_maximalIdeal_eq_top_of_isArtinian`: over a Noetherian local ring,
   every Artinian module is maximal-ideal-power torsion.
+* `TauCeti.mem_primaryComponent_maximalIdeal_of_isArtinian`: every element of an Artinian module
+  over a Noetherian local ring is annihilated by a power of the maximal ideal.
 
 ## References
 
@@ -44,20 +44,6 @@ namespace TauCeti
 
 universe u w
 
-section IsLocalRing
-
-variable {R : Type u} [CommRing R] [IsLocalRing R]
-  {M : Type w} [AddCommGroup M] [Module R M]
-
-variable (R M) in
-/-- Over a commutative local ring, the submodule of elements killed by the maximal ideal is
-essential in every Artinian module. -/
-theorem isEssential_torsionBySet_maximalIdeal [IsArtinian R M] :
-    IsEssential (torsionBySet R M (maximalIdeal R)) :=
-  isEssential_of_forall_atom_le fun _ ha ↦ ha.le_torsionBySet_maximalIdeal
-
-end IsLocalRing
-
 section Noetherian
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
@@ -68,7 +54,8 @@ variable (R M) in
 each element is annihilated by some power of the maximal ideal. -/
 theorem primaryComponent_maximalIdeal_eq_top_of_isArtinian :
     (maximalIdeal R).primaryComponent M = ⊤ := by
-  apply (isEssential_torsionBySet_maximalIdeal R M).primaryComponent_eq_top
+  apply (TauCeti.IsLocalRing.isEssential_torsionBySet_maximalIdeal (R := R)
+    (M := M)).primaryComponent_eq_top
   intro x hx
   exact ((maximalIdeal R).primaryComponent_mem M x).mpr ⟨1, by simpa using hx⟩
 
