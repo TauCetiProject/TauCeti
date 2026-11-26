@@ -939,14 +939,9 @@ theorem classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {m : ℕ}
       (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB)),
     classicalPrincipalSymbol_smul (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB),
     classicalPrincipalSymbol_complexifyLinearMap hA x hf,
-    classicalPrincipalSymbol_complexifyLinearMap hB x hf, smoothPrincipalSymbol_mvfderiv,
-    smoothPrincipalSymbol_mvfderiv, map_add, map_smul,
-    smulCommutator_ofReal_pow_complexifyLinearMap, smulCommutator_ofReal_pow_complexifyLinearMap]
-  -- The complexification of a real operator sends `1` to the complex inclusion of its value at `1`.
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, ← map_one ContMDiffMap.ofReal,
-    ContMDiffMap.complexifyLinearMap_ofReal, ContMDiffMap.coe_add, Pi.add_apply,
-    ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply]
-  push_cast
+    classicalPrincipalSymbol_complexifyLinearMap hB x hf]
+  -- Writing `1` as the complex inclusion of the real `1`, its imaginary part vanishes.
+  simp [smoothPrincipalSymbol_mvfderiv, ← map_one ContMDiffMap.ofReal, -map_one]
   ring
 
 /-! ### Invariance under diffeomorphisms -/

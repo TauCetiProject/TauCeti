@@ -303,6 +303,20 @@ private theorem sectionEntry_eq_comp
       (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
   (rfl)
 
+/-- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` sandwiching `P` in its matrix entry are linear
+over the complex-valued smooth functions. -/
+private theorem sectionEntry_intertwine (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (∀ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ (b • f) =
+        b • (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ f) ∧
+      ∀ h, t'.cutoffFrameCoeff χ hχ ℓ (b • h) = b • t'.cutoffFrameCoeff χ hχ ℓ h := by
+  refine ⟨fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩
+  ext x
+  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
+    Pi.mul_apply, Complex.real_smul]
+  ring
+
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
 multiplication by complex-valued smooth functions, then so is each of its matrix entries
@@ -316,14 +330,8 @@ theorem sectionEntry_mem_differentialOperators {m : ℕ}
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
   rw [sectionEntry_eq_comp]
-  -- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` are linear over the complex-valued functions.
-  refine comp_comp_mem_differentialOperators (fun b ↦ ⟨b, fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩)
-    hP
-  ext x
-  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
-    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
-    Pi.mul_apply, Complex.real_smul]
-  ring
+  exact comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨b, sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ b⟩) hP
 
 /-- **Entries of iterated commutators.** The matrix entry of the `k`-fold commutator of `P` with
 multiplication by a complex-valued smooth function `g` is the `k`-fold commutator with `g` of the
@@ -334,13 +342,8 @@ theorem sectionEntry_smulCommutator_pow (g : C^∞⟮𝓘(ℝ, CoordinateSpace n
     TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) =
       (smulCommutator ℂ g ^ k) (TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P) := by
   rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
-  -- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` are linear over the complex-valued functions.
-  refine (smulCommutator_pow_comp_comp (fun f ↦ by simp [mul_smul]) (fun h ↦ ?_) P k).symm
-  ext x
-  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
-    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
-    Pi.mul_apply, Complex.real_smul]
-  ring
+  obtain ⟨hρ, hσ⟩ := sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ g
+  exact (smulCommutator_pow_comp_comp hρ hσ P k).symm
 
 end Entry
 
