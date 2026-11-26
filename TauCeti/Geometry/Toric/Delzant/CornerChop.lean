@@ -793,25 +793,6 @@ private theorem coe_map_some_eq_activeSet_simplex_zero (ha : a ≠ 0) :
   | none => exact iff_of_false (by simp) (none_notMem_activeSet_simplex_zero ha)
   | some k => exact iff_of_true (by simp) (some_mem_activeSet_simplex_iff.2 (by simp))
 
-/-- Up to the depth `a`, the simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0` of the
-simplex of size `a` lies in it. -/
-theorem mem_facetPolyhedron_simplex_of_sum_le {ε : ℝ} (hεa : ε ≤ a) {x : StrongDual ℝ (Fin n → ℝ)}
-    (hxs : ∀ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
-      simplexSupport a j ≤ x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)))
-    (hxε : ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
-      (x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) - simplexSupport a j) ≤
-        ε) :
-    x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a) := by
-  have hu (k : Fin n) :
-      (Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) (some k)) = Pi.single k 1 := by
-    simp
-  simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
-    forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
-  simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
-    sub_zero] at hxε
-  exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
-
 /-- Up to the depth `a`, the slanted facet of the simplex of size `a` stays inactive on the
 simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0`. -/
 private theorem lt_apply_simplex_of_sum_le {ε : ℝ} (hεa : ε < a) (x : StrongDual ℝ (Fin n → ℝ))

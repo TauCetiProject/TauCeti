@@ -53,6 +53,8 @@ as `e k = -(-1) - ∑_{m ≠ k} e m`. Having `#κ = rank ℤ^κ` elements, they 
 * `TauCeti.Toric.mem_facetPolyhedron_simplex_iff`: the polyhedron is the simplex of size `a`.
 * `TauCeti.Toric.none_mem_activeSet_simplex_iff`, `TauCeti.Toric.some_mem_activeSet_simplex_iff`:
   the facets of the simplex.
+* `TauCeti.Toric.mem_facetPolyhedron_simplex_of_sum_le`: the simplex of size `ε ≤ a` at the
+  corner `0` lies in it.
 * `TauCeti.Toric.isBounded_facetPolyhedron_simplex`: the simplex is bounded.
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
@@ -203,6 +205,23 @@ theorem some_mem_activeSet_simplex_iff {a : ℝ} {x : StrongDual ℝ (κ → ℝ
     some k ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
       (simplexSupport a) x ↔ x (Pi.single k 1) = 0 := by
   simp
+
+/-- Up to the depth `a`, the simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0` of the
+simplex of size `a` lies in it. -/
+theorem mem_facetPolyhedron_simplex_of_sum_le {a ε : ℝ} (hεa : ε ≤ a) {x : StrongDual ℝ (κ → ℝ)}
+    (hxs : ∀ j ∈ (Finset.univ.map .some : Finset (Option κ)),
+      simplexSupport a j ≤ x ((Int.castAddHom ℝ).compLeft κ (simplexNormal κ j)))
+    (hxε : ∑ j ∈ (Finset.univ.map .some : Finset (Option κ)),
+      (x ((Int.castAddHom ℝ).compLeft κ (simplexNormal κ j)) - simplexSupport a j) ≤ ε) :
+    x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) := by
+  have hu (k : κ) :
+      (Int.castAddHom ℝ).compLeft κ (simplexNormal κ (some k)) = Pi.single k 1 := by
+    simp
+  simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
+    forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
+  simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
+    sub_zero] at hxε
+  exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
 
 /-- **The simplex is bounded.** Its points have norm at most `|a|`. -/
 theorem isBounded_facetPolyhedron_simplex (a : ℝ) :
