@@ -239,6 +239,13 @@ def uniformlyLocalCompBound (k : ℕ) (L L' c A : ℝ) : ℝ :=
   Wkp.compLBound 2 k L c * ((k + 1) * 2 ^ k * (A * ∑ i ∈ Finset.range (k + 1),
     max 1 L' ^ i * (Fintype.card (OrderedFinpartition i) : ℝ)))
 
+/-- The formula for the constant `TauCeti.uniformlyLocalCompBound k L L' c A`. -/
+theorem uniformlyLocalCompBound_def (k : ℕ) (L L' c A : ℝ) :
+    uniformlyLocalCompBound k L L' c A =
+      Wkp.compLBound 2 k L c * ((k + 1) * 2 ^ k * (A * ∑ i ∈ Finset.range (k + 1),
+        max 1 L' ^ i * (Fintype.card (OrderedFinpartition i) : ℝ))) :=
+  (rfl)
+
 /-- The constant `TauCeti.uniformlyLocalCompBound k L L' c A` is nonnegative when `0 < c` and
 `0 ≤ A`. -/
 theorem uniformlyLocalCompBound_nonneg (k : ℕ) (L L' : ℝ) {c A : ℝ} (hc : 0 < c) (hA : 0 ≤ A) :
@@ -322,7 +329,7 @@ theorem semiclassicalSobolevNorm_smul_comp_le {η χ : E → ℝ} (hk : 1 ≤ k)
     hv.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hi)
       (hχc.comp_inv_smul_sub hh.ne' (Φ x)).smul_right
   obtain ⟨hgvm, hgv⟩ := semiclassicalSobolevNorm_smul_le_of_le_left hg hv hvm hh hB
-  rw [smul_comp_eq_comp hk hΦ hinj hL hΦΨ hηR hχ1 x, uniformlyLocalCompBound, mul_assoc]
+  rw [smul_comp_eq_comp hk hΦ hinj hL hΦΨ hηR hχ1 x, uniformlyLocalCompBound_def, mul_assoc]
   exact (semiclassicalSobolevNorm_comp_le (hg.smul hv) hgvm hΦ
     (hΦ.differentiable (by exact_mod_cast (by omega : k ≠ 0))) hinj hh hL hc hdet).trans
     (mul_le_mul_of_nonneg_left hgv (Wkp.compLBound_nonneg 2 k L hc))
