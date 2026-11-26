@@ -875,13 +875,6 @@ theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
 
 /-! ### The Neumann spectrum tested on `H¹(a, b)` and the second Neumann eigenvalue -/
 
-/-- Every class of `H¹(a, b)` lies in `H¹_∅(a, b)`. -/
-private theorem mem_w1pVanishingOnSubmodule_empty_intervalDomain
-    (u : W1p volume (intervalDomain a b) 2) :
-    u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) 2 ∅ := by
-  rw [w1pVanishingOnSubmodule_empty_intervalDomain_eq_top (p := 2) ENNReal.ofNat_ne_top]
-  exact ClosedSubmodule.mem_top
-
 /-- The weak Neumann eigenvalues of `-Δ` on `(a, b)` tested on `H¹(a, b)` are those tested on
 `H¹_∅(a, b)`, the numbers `(k π / (b - a))²`, since the two spaces agree. -/
 private theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain (hab : a < b)
@@ -892,11 +885,11 @@ private theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain (hab 
   rw [← exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab]
   constructor
   · rintro ⟨u, hu, h⟩
-    exact ⟨⟨u, mem_w1pVanishingOnSubmodule_empty_intervalDomain u⟩,
+    exact ⟨⟨u, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top u⟩,
       fun h0 => hu (congrArg Subtype.val h0), fun v => h v⟩
   · rintro ⟨u, hu, h⟩
     exact ⟨u, fun h0 => hu (Subtype.ext h0),
-      fun v => h ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain v⟩⟩
+      fun v => h ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩⟩
 
 /-- **The second Neumann eigenvalue of an interval.** The least positive weak Neumann eigenvalue of
 `-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `(π / (b - a))²`. Counted with multiplicity it is the
@@ -970,12 +963,13 @@ theorem exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq (hab : a 
     simpa only [Nat.cast_one, one_mul] using hwv
   obtain ⟨hmean, hnorm⟩ := (forall_inner_gradient_eq_iff_intervalDomain w).1 fun v => by
     simpa only [Nat.cast_one, one_mul] using
-      hw ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain v⟩
+      hw ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩
   have hne : W1p.value (w : W1p volume (intervalDomain a b) 2) ≠ 0 :=
     value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (π * (t - a) / (b - a)))
       (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) hv
   refine ⟨w, hv, hmean, ?_⟩
-  rw [hnorm, mul_div_assoc, div_self (pow_ne_zero 2 (norm_ne_zero_iff.2 hne)), mul_one]
+  rw [hnorm]
+  field_simp [norm_ne_zero_iff.2 hne]
 
 end Mixed
 

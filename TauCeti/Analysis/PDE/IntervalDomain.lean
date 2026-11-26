@@ -40,7 +40,8 @@ endpoint values.
   `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL`.
 * `TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`: for finite `p`,
   `W^{1,p}_∅(a, b)` is all of `W^{1,p}(a, b)`, so with no Dirichlet part the mixed problem on the
-  interval domain is the Neumann problem.
+  interval domain is the Neumann problem. Its membership form is
+  `TauCeti.PDE.mem_w1pVanishingOnSubmodule_empty_intervalDomain`.
 * `TauCeti.PDE.norm_value_le_mul_norm_gradient_intervalDomain`: the Poincaré–Friedrichs inequality
   `‖u‖ ≤ (b - a) ‖u'‖` on `W^{1,p}_{{a}}(a, b)`.
 -/
@@ -291,6 +292,15 @@ theorem w1pVanishingOnSubmodule_empty_intervalDomain_eq_top (hp : p ≠ ⊤) :
   eq_top_iff.2 fun u _ => intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff.1 <| by
     rw [preimage_empty, W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top hp]
     exact ClosedSubmodule.mem_top
+
+/-- For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(a, b)` lies in `W^{1,p}_∅(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`). -/
+@[simp]
+theorem mem_w1pVanishingOnSubmodule_empty_intervalDomain (hp : p ≠ ⊤)
+    (u : W1p volume (intervalDomain a b) p) :
+    u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) p ∅ := by
+  rw [w1pVanishingOnSubmodule_empty_intervalDomain_eq_top hp]
+  exact ClosedSubmodule.mem_top
 
 /-- **The Poincaré–Friedrichs inequality on the interval domain with `Γ = {a}`**: every
 `u ∈ W^{1,p}_{{a}}(a, b)` satisfies `‖u‖_{Lᵖ} ≤ (b - a) ‖u'‖_{Lᵖ}`. -/

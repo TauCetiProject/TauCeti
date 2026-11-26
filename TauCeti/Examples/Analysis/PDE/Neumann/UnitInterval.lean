@@ -74,14 +74,6 @@ theorem exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq_unitInter
   simpa using exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq (a := 0) (b := 1)
     zero_lt_one
 
-/-- The coordinate functional `x ↦ x 0` of the Euclidean line has gradient `e₀`. -/
-private theorem toDual_symm_proj_zero :
-    (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin 1))).symm (EuclideanSpace.proj 0) =
-      EuclideanSpace.single 0 1 := by
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext y
-  simp [EuclideanSpace.inner_single_left]
-
 /-- Some `u ∈ H¹(0, 1)` has value `x - 1/2` and constant gradient `e₀`. -/
 private theorem exists_value_ae_eq_sub_half_and_gradient_ae_eq :
     ∃ u : W1p volume (intervalDomain 0 1) 2,
@@ -89,16 +81,13 @@ private theorem exists_value_ae_eq_sub_half_and_gradient_ae_eq :
         (fun x => x 0 - 1 / 2) ∧
       W1p.gradient u =ᵐ[volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1)))]
         (fun _ => EuclideanSpace.single 0 1) := by
-  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := volume)
-    (Omega := intervalDomain 0 1) (p := 2) isBounded_intervalDomain (EuclideanSpace.proj 0)
+  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_apply (mu := volume)
+    (Omega := intervalDomain 0 1) (p := 2) isBounded_intervalDomain 0
   refine ⟨v - W1p.const (1 / 2), ?_, ?_⟩
   · filter_upwards [W1p.value_sub_ae v (W1p.const (1 / 2)), W1p.value_const_ae (mu := volume)
       (Omega := intervalDomain 0 1) (p := 2) (1 / 2), hv] with x h1 h2 h3
     rw [h1, Pi.sub_apply, h2, h3]
-    simp
-  · rw [W1p.gradient_sub, W1p.gradient_const, sub_zero]
-    filter_upwards [hg] with x hx
-    rw [hx, toDual_symm_proj_zero]
+  · rwa [W1p.gradient_sub, W1p.gradient_const, sub_zero]
 
 /-- **`x - 1/2` lies in `H¹(0, 1)`.** -/
 theorem exists_value_ae_eq_sub_half :
@@ -156,11 +145,11 @@ theorem not_forall_inner_gradient_eq_of_value_ae_eq_sub_half
   have h1 := ((forall_inner_gradient_eq_iff_intervalDomain u).1
     (by simpa using h)).2
   have h12 := (setIntegral_eq_zero_and_rayleigh_eq_twelve_of_value_ae_eq_sub_half hu).2
-  have hne : ‖W1p.value u‖ ^ 2 ≠ 0 := by
+  have hne : ‖W1p.value u‖ ≠ 0 := by
     rintro h0
-    rw [h0, div_zero] at h12
-    norm_num at h12
-  rw [h1, sub_zero, div_one, mul_div_assoc, div_self hne, mul_one] at h12
+    norm_num [h0] at h12
+  rw [h1] at h12
+  field_simp at h12
   nlinarith [Real.pi_pos, Real.pi_lt_d2]
 
 end TauCeti.Examples.NeumannUnitInterval
