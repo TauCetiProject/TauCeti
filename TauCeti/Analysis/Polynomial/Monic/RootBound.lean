@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Algebra.Field.GeomSum
+import Mathlib.Analysis.Polynomial.CauchyBound
+import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Algebra.Polynomial.Degree.Operations
 import Mathlib.Algebra.Polynomial.Eval.Degree
@@ -28,9 +30,14 @@ coefficients satisfy `‖aᵢ‖ ≤ c^(d - i)`. Then every root `z` of `p` sati
 If `‖z‖ > 2 c`, then `‖aᵢ zⁱ‖ ≤ 2^-(d - i) ‖z‖ᵈ`, and these weights sum to less than one, which
 contradicts `zᵈ = -∑_{i < d} aᵢ zⁱ`.
 
+Cauchy's bound, read off a bound `B` on the coefficients, gives `‖z‖ < B + 1`
+(`Polynomial.IsRoot.norm_lt_add_one`). For the multiset `s` of roots of `∏_{a ∈ s} (X - a)`,
+whose coefficients are `± s.esymm k` (`Multiset.norm_coeff_prod_X_sub_C`), it bounds the elements
+of `s` by its elementary symmetric functions (`Multiset.norm_lt_add_one_of_norm_esymm_le`).
+
 The converse bound of the coefficients by the roots is
 `‖s.esymm k‖ ≤ (card s).choose k * M ^ k` for a multiset `s` of elements of norm at most `M`
-(`Multiset.norm_esymm_le`); the coefficients of `∏_{a ∈ s} (X - a)` are `± s.esymm k`.
+(`Multiset.norm_esymm_le`).
 
 ## References
 
@@ -89,7 +96,48 @@ theorem IsRoot.norm_le_two_mul {p : K[X]} (hp : p.Monic) {c : ℝ}
   have := mul_lt_mul_of_pos_left hw (pow_pos hz₀ d)
   linarith
 
+/-- **Cauchy's bound.** If the coefficients below the top of a monic polynomial `p` have norm at
+most `B`, every root `z` of `p` satisfies `‖z‖ < B + 1`. -/
+theorem IsRoot.norm_lt_add_one {K : Type*} [NormedDivisionRing K] {p : K[X]} (hp : p.Monic) {B : ℝ}
+    (hB : ∀ i < p.natDegree, ‖p.coeff i‖ ≤ B) {z : K} (hz : p.IsRoot z) : ‖z‖ < B + 1 := by
+  -- a root forces positive degree, so `B ≥ ‖p.coeff 0‖ ≥ 0`
+  have hd : 0 < p.natDegree := by
+    by_contra! h
+    have hp1 : p = 1 := hp.natDegree_eq_zero.1 (Nat.le_zero.1 h)
+    simp [hp1] at hz
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 hd)
+  have hb : cauchyBound p ≤ B.toNNReal + 1 := by
+    rw [cauchyBound, hp.leadingCoeff, nnNorm_one, div_one]
+    gcongr
+    exact Finset.sup_le fun i hi ↦ (Real.le_toNNReal_iff_coe_le hB0).2
+      (hB i (Finset.mem_range.1 hi))
+  have hlt : ‖z‖ < B.toNNReal + 1 := by
+    exact_mod_cast (hz.norm_lt_cauchyBound hp.ne_zero).trans_le hb
+  rwa [Real.coe_toNNReal _ hB0] at hlt
+
 end Polynomial
+
+/-- The coefficients below the top of `∏_{a ∈ s} (X - a)` are, up to sign, the elementary symmetric
+functions of `s`: the coefficient of degree `i ≤ card s` has the norm of `e_(card s - i)(s)`. -/
+theorem Multiset.norm_coeff_prod_X_sub_C {K : Type*} [NormedField K] {s : Multiset K} {i : ℕ}
+    (hi : i ≤ Multiset.card s) :
+    ‖(s.map fun a ↦ Polynomial.X - Polynomial.C a).prod.coeff i‖ =
+      ‖s.esymm (Multiset.card s - i)‖ := by
+  rw [Multiset.prod_X_sub_C_coeff s hi, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+
+/-- **Cauchy's bound for a multiset.** If the elementary symmetric functions of positive degree of
+a multiset `s` have norm at most `B`, every element of `s` has norm less than `B + 1`: it is a root
+of the monic polynomial `∏_{a ∈ s} (X - a)`. -/
+theorem Multiset.norm_lt_add_one_of_norm_esymm_le {K : Type*} [NormedField K] {s : Multiset K}
+    {B : ℝ} (hB : ∀ j ∈ Finset.Icc 1 (Multiset.card s), ‖s.esymm j‖ ≤ B) {a : K} (ha : a ∈ s) :
+    ‖a‖ < B + 1 := by
+  refine Polynomial.IsRoot.norm_lt_add_one
+    (Polynomial.monic_multiset_prod_of_monic _ _ fun a _ ↦ Polynomial.monic_X_sub_C a)
+    (fun i hi ↦ ?_) (Polynomial.isRoot_of_mem_roots
+      (by rwa [Polynomial.roots_multiset_prod_X_sub_C]))
+  rw [Polynomial.natDegree_multiset_prod_X_sub_C_eq_card] at hi
+  rw [Multiset.norm_coeff_prod_X_sub_C hi.le]
+  exact hB _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
 
 /-- **Elementary symmetric functions are bounded by the elements.** If every element of a
 multiset `s` has norm at most `M`, then `‖s.esymm k‖ ≤ (card s).choose k * M ^ k`. Since the
