@@ -633,7 +633,8 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
     have h := hA.lower_bound (mem_univ 0) ν
     rw [Matrix.toQuadraticForm'_apply, ← matrixBilinearForm_apply] at h
     exact (lt_of_lt_of_le (by have := hA.pos; have := norm_pos_iff.2 hν; positivity) h).ne'
-  have hνs : ⟪ν, -s⟫_ℝ = 0 := inner_neg_right_eq_zero (inner_conormalShearVector_self hν hq)
+  have hνs : ⟪ν, -s⟫_ℝ = 0 :=
+    inner_neg_right_eq_zero (inner_conormalShearVector_right_eq_zero hν hq)
   have hκs : 1 + ‖ν‖ * ‖-s‖ ≤ κ := by
     rw [hκdef, norm_neg]
     linarith [le_abs_self (Lam / lam), norm_mul_norm_conormalShearVector_le hA.pos hν

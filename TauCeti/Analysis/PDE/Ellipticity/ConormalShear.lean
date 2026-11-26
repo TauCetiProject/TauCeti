@@ -24,7 +24,7 @@ at a flat boundary to the case of a matrix compatible with the odd reflection.
 ## Main declarations
 
 * `TauCeti.PDE.conormalShearVector`: the conormal shear vector `A ν / ⟪ν, A ν⟫ - ν / ‖ν‖²`.
-* `TauCeti.PDE.inner_conormalShearVector_self`: it is orthogonal to `ν`.
+* `TauCeti.PDE.inner_conormalShearVector_right_eq_zero`: it is orthogonal to `ν`.
 * `TauCeti.PDE.norm_mul_norm_conormalShearVector_le`: for elliptic `A`, `‖ν‖ ‖s‖ ≤ Λ / λ`.
 * `TauCeti.PDE.matrixBilinearForm_transvectionL_conormalShearVector_reflection`: for symmetric
   `A`, the sheared form is invariant under the reflection in `ν⊥`.
@@ -60,7 +60,7 @@ theorem inner_conormalShearVector (A : Matrix ι ι ℝ) (ν x : EuclideanSpace 
     matrixBilinearForm_apply]
 
 /-- For `ν ≠ 0` and `νᵀ A ν ≠ 0`, the conormal shear vector is orthogonal to `ν`. -/
-theorem inner_conormalShearVector_self {A : Matrix ι ι ℝ} {ν : EuclideanSpace ℝ ι}
+theorem inner_conormalShearVector_right_eq_zero {A : Matrix ι ι ℝ} {ν : EuclideanSpace ℝ ι}
     (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0) :
     ⟪ν, conormalShearVector A ν⟫_ℝ = 0 := by
   rw [real_inner_comm, inner_conormalShearVector, real_inner_self_eq_norm_sq,
@@ -80,7 +80,7 @@ theorem norm_mul_norm_conormalShearVector_le {A : Matrix ι ι ℝ} {ν : Euclid
   have hq0 : 0 < matrixBilinearForm A ν ν := lt_of_lt_of_le (by positivity) hq
   -- `‖s‖² β(ν, ν) = β(s, ν)`, since `s ⊥ ν`.
   have hss : ‖s‖ ^ 2 * matrixBilinearForm A ν ν = matrixBilinearForm A s ν := by
-    have hsν : ⟪ν, s⟫_ℝ = 0 := inner_conormalShearVector_self hν hq0.ne'
+    have hsν : ⟪ν, s⟫_ℝ = 0 := inner_conormalShearVector_right_eq_zero hν hq0.ne'
     rw [← real_inner_self_eq_norm_sq]
     conv_lhs => rw [inner_conormalShearVector]
     rw [hsν, mul_zero, sub_zero]
@@ -111,7 +111,7 @@ theorem matrixBilinearForm_transvectionL_conormalShearVector_reflection {A : Mat
       matrixBilinearForm A (transvectionL (conormalShearVector A ν) (-ν) ξ)
         (transvectionL (conormalShearVector A ν) (-ν) η) := by
   have hsν : ⟪conormalShearVector A ν, ν⟫_ℝ = 0 := by
-    rw [real_inner_comm]; exact inner_conormalShearVector_self hν hq
+    rw [real_inner_comm]; exact inner_conormalShearVector_right_eq_zero hν hq
   have : ‖ν‖ ^ 2 ≠ 0 := by positivity
   have hM : ∀ x, transvectionL (conormalShearVector A ν) (-ν) x =
       x - ⟪conormalShearVector A ν, x⟫_ℝ • ν := fun x => by
@@ -136,7 +136,7 @@ theorem matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq {A : Matrix
     matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x)
         ((ℝ ∙ ν)ᗮ.reflection ξ) ((ℝ ∙ ν)ᗮ.reflection η) =
       matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x) ξ η := by
-  have hs := inner_conormalShearVector_self hν hq
+  have hs := inner_conormalShearVector_right_eq_zero hν hq
   -- The adjoint of the inverse shear is `y ↦ y - ⟪s, y⟫ ν`.
   have hM : transvectionL (-conormalShearVector A ν) ν =
       transvectionL (conormalShearVector A ν) (-ν) :=

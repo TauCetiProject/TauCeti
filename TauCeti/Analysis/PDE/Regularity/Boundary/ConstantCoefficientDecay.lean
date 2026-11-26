@@ -617,7 +617,7 @@ private theorem boundaryShear_constants {lam Lam : ℝ} (hlam : 0 < lam) (hν : 
   have h0 : 0 ≤ Lam / lam := (by positivity : (0 : ℝ) ≤ ‖ν‖ * _).trans hN
   have hN' : 1 + ‖conormalShearVector A ν‖ * ‖ν‖ ≤ 1 + Lam / lam := by
     rw [mul_comm]; linarith
-  refine ⟨inner_conormalShearVector_self hν hq.ne', hq.ne', ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨inner_conormalShearVector_right_eq_zero hν hq.ne', hq.ne', ?_, ?_, ?_, ?_, ?_⟩
   · have h := mul_nonneg h0 hlam.le
     rwa [div_mul_cancel₀ _ hlam.ne'] at h
   · exact (norm_transvectionL_le _ _).trans (by linarith)
