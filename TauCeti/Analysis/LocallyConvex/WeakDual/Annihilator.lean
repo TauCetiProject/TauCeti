@@ -164,7 +164,11 @@ noncomputable def annihilatorOrderIso :
   right_inv G := congrArg toDual
     (toSubmodule_injective (map_orthogonalBilin_flip_orthogonalBilin_comap (ofDual G)))
   map_rel_iff' {S T} := by
-    simp only [← toSubmodule_le_toSubmodule]
+    -- The goal is stated for the bundled `Equiv.mk`; rewriting its coercion with
+    -- `Equiv.coe_fn_mk` gives an ill-typed motive, so `change` only unfolds that coercion to
+    -- expose the order-dual flip `toDual _ ≤ toDual _`, which `toDual_le_toDual` then rewrites.
+    change toDual (⟨_, _⟩ : ClosedSubmodule 𝕜 (WeakDual 𝕜 E)) ≤ toDual ⟨_, _⟩ ↔ S ≤ T
+    rw [OrderDual.toDual_le_toDual, ← toSubmodule_le_toSubmodule, ← toSubmodule_le_toSubmodule]
     refine ⟨fun h ↦ ?_, fun h ↦ Submodule.map_mono (Submodule.orthogonalBilin_le h)⟩
     rw [← orthogonalBilin_comap_map_orthogonalBilin_flip S,
       ← orthogonalBilin_comap_map_orthogonalBilin_flip T]
