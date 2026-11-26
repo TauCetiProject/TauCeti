@@ -74,14 +74,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(
   {p : ENNReal} {u : ℕ → X → V} {U : ℕ → Set X}
 
 omit [FiniteDimensional ℝ V] in
-/-- The chart of `V` at any point, read in `V`, is the identity. -/
-private theorem coe_extendTrans_chartAt_zero :
-    ⇑((chartAt V (0 : V)).extendTrans 𝓘(ℝ, V) (Homeomorph.refl V)) = id := by
-  rw [OpenPartialHomeomorph.coe_extendTrans_refl]
-  ext y
-  simp
-
-omit [FiniteDimensional ℝ V] in
 /-- A weak pseudoholomorphic map on `s` solves, on every part of a preferred chart target of `X`
 over `s`, the planar equation with the data read in that chart and the identity chart of `V`. -/
 private theorem isWeakCauchyRiemannOn_chartAt {w : X → V} {s : Set X}
@@ -93,7 +85,8 @@ private theorem isWeakCauchyRiemannOn_chartAt {w : X → V} {s : Set X}
       (w ∘ (chartAt ℂ x).symm) := by
   have h' := h.isWeakCauchyRiemannOn_chart (IsManifold.chart_mem_maximalAtlas x)
     (IsManifold.chart_mem_maximalAtlas (0 : V))
-  rw [coe_extendTrans_chartAt_zero, Function.id_comp] at h'
+  simp only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
+    OpenPartialHomeomorph.refl_apply, Function.id_comp] at h' ⊢
   exact h'.mono fun z hz ↦ ⟨hW hz, hWs hz, by simp⟩
 
 omit [FiniteDimensional ℝ V] in
@@ -333,8 +326,10 @@ theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakPseudoholomorphi
     rintro _ ⟨x, rfl⟩ _ rfl
     have hsrc : (chartAt V (0 : V)).source = univ := by simp
     simp only [hsrc, preimage_univ, inter_univ]
-    rw [coe_extendTrans_chartAt_zero, Function.id_comp]
-    exact (hchart x).1
+    have hx := (hchart x).1
+    simp only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
+      OpenPartialHomeomorph.refl_apply, Function.id_comp] at hx ⊢
+    exact hx
   refine ⟨σ, v, hσ, hvJ, hvJ.contMDiff hp, ?_, fun x ↦ (hchart x).2⟩
   -- Locally uniform convergence on `X`, read off in the preferred charts.
   rw [← tendstoLocallyUniformlyOn_univ, ← iUnion_source_chartAt ℂ X]
