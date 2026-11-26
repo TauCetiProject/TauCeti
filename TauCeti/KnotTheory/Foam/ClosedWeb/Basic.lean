@@ -11,6 +11,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Logic.Equiv.Prod
 public import Mathlib.Logic.Equiv.Sum
 public import Mathlib.SetTheory.Cardinal.NatCard
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -30,12 +31,16 @@ its inverse at merge vertices. Planarity of this rotation system is a separate c
 not imposed by this record; higher-genus structures are allowed.
 
 This file supplies incidence fibres, isomorphisms, orientation reversal, mirror reversal,
-and disjoint union. Nilvalent webs have no vertices and consist solely of circles; in
-particular the empty web and one circle are distinct.
+disjoint union, ordered noncommutative semigroup flows (`IsAdditiveFlow`), and single-pigment
+monochrome interval-edge selections (`IsMonochromeEdgeSelection`). Nilvalent webs have no
+vertices and consist solely of circles; in particular the empty web and one circle are distinct.
 
 The finite-record model adapts the incidence data of Goertz–Marino–Wedrich, *Monoidal
-2-categories from foam evaluation*, arXiv:2602.11120v1, Definition 3.4, distinguishing
-edge-end occurrences from vertex-free circles and leaving planarity as a separate condition.
+2-categories from foam evaluation*, arXiv:2602.11120v1, Definitions 2.4–2.5 and 3.4,
+distinguishing edge-end occurrences from vertex-free circles and leaving planarity as a
+separate condition, together with the single-pigment vertex disjoint-union condition of
+Robert–Wagner, *A closed formula for the evaluation of $\mathfrak{sl}_N$-foams*,
+arXiv:1702.04140v3, Lemma 2.5.
 -/
 
 public section
@@ -947,6 +952,59 @@ theorem theta_ends_apply (v : Bool) (i : Fin 3) :
 @[simp] theorem isSplit_theta (v : Bool) : theta.IsSplit v ↔ v = true := by
   rw [IsSplit, theta_ends_apply]
   simp
+
+/-! ### Ordered additive flows and monochrome interval-edge selections -/
+
+/-- An additive flow on a closed web assigns weights to interval edges so that at every vertex,
+the weight on the odd slot `0` equals the weight on slot `1` plus the weight on slot `2` in that
+order. No commutativity is assumed on `S`. -/
+def IsAdditiveFlow {S : Type*} [Add S] (W : ClosedWeb.{u}) (w : W.Edge → S) : Prop :=
+  ∀ v, w (W.ends (v, 0)).1 = w (W.ends (v, 1)).1 + w (W.ends (v, 2)).1
+
+theorem isAdditiveFlow_def {S : Type*} [Add S] (W : ClosedWeb.{u}) (w : W.Edge → S) :
+    W.IsAdditiveFlow w ↔ ∀ v, w (W.ends (v, 0)).1 = w (W.ends (v, 1)).1 + w (W.ends (v, 2)).1 :=
+  Iff.rfl
+
+/-- A single-pigment interval-edge selection `p : W.Edge → Bool` satisfies the Robert–Wagner
+disjoint-union condition when at every vertex `v`, the pigment appears on the odd edge `(v, 0)`
+if and only if it appears on at least one of the thin edges `(v, 1)` and `(v, 2)`, and never on
+both thin edges simultaneously. This predicate constrains only the interval edges `W.Edge`; any
+vertex-free circles `W.Circle` carry no vertex constraint and are selected independently in a
+full monochrome subweb. -/
+def IsMonochromeEdgeSelection (W : ClosedWeb.{u}) (p : W.Edge → Bool) : Prop :=
+  ∀ v, p (W.ends (v, 0)).1 = (p (W.ends (v, 1)).1 || p (W.ends (v, 2)).1) ∧
+    ¬(p (W.ends (v, 1)).1 && p (W.ends (v, 2)).1)
+
+theorem isMonochromeEdgeSelection_def (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
+    W.IsMonochromeEdgeSelection p ↔
+      ∀ v, p (W.ends (v, 0)).1 = (p (W.ends (v, 1)).1 || p (W.ends (v, 2)).1) ∧
+        ¬(p (W.ends (v, 1)).1 && p (W.ends (v, 2)).1) :=
+  Iff.rfl
+
+/-- Mirroring a closed web preserves single-pigment interval-edge selections, since disjoint union
+of a single pigment is symmetric in the two thin slots. -/
+@[simp] theorem isMonochromeEdgeSelection_mirror (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
+    W.mirror.IsMonochromeEdgeSelection p ↔ W.IsMonochromeEdgeSelection p := by
+  refine forall_congr' fun v ↦ ?_
+  rw [mirror_ends_apply, mirror_ends_apply, mirror_ends_apply]
+  dsimp only [Equiv.swap_apply_def]
+  simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
+  rw [Bool.or_comm, Bool.and_comm]
+
+/-- At every vertex of any closed web, a single-pigment interval-edge selection has equal numbers
+of active incoming and outgoing ends, and at most one of each. -/
+theorem card_active_ends_of_isMonochromeEdgeSelection {W : ClosedWeb.{u}} {p : W.Edge → Bool}
+    (hp : W.IsMonochromeEdgeSelection p) (v : W.Vertex) :
+    Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} =
+      Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && (W.ends (v, i)).2) = true} ∧
+    Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} ≤ 1 := by
+  obtain ⟨h0, h12⟩ := hp v
+  simp only [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter,
+    Fin.sum_univ_three, W.orientation_one v, W.orientation_two v, Bool.not_not]
+  cases hb0 : (W.ends (v, 0)).2 <;>
+    cases hp1 : p (W.ends (v, 1)).1 <;>
+    cases hp2 : p (W.ends (v, 2)).1 <;>
+    simp_all
 
 end ClosedWeb
 end TauCeti
