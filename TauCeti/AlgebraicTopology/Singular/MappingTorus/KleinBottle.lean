@@ -107,6 +107,17 @@ private def circleHomologyOneLinearEquiv :
   ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of ℤ ℤ)
     Complex.finrank_real_complex le_rfl).toLinearEquiv
 
+/-- `circleHomologyOneLinearEquiv` is the isomorphism
+`ContinuousMap.HomotopyEquiv.singularHomologySphereIso` for the unit circle of `ℂ`, stated on the
+singular homology object, which unfolds to the homology of the singular chain complex. -/
+private theorem circleHomologyOneLinearEquiv_apply
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : ℂ) 1))) :
+    circleHomologyOneLinearEquiv y =
+      ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of ℤ ℤ)
+        Complex.finrank_real_complex le_rfl).hom.hom y :=
+  Iso.toLinearEquiv_apply _ _
+
 /-- The Klein bottle as the topological mapping torus, as an isomorphism in `TopCat`. -/
 private def isoMappingTorus :
     TopCat.of KleinBottle ≅ TopCat.of (MappingTorus conjCircleDiffeomorph.toHomeomorph.symm) :=
@@ -219,13 +230,14 @@ theorem singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero (y) :
     circleHomologyOneLinearEquiv (homologyMap_monodromyChainMap_one_eq_neg _) baseLoopClass
     wangClass_baseLoopClass y
   rw [MappingTorus.fibreInclusionChainMap_def,
-    ← singularHomologyFunctor_obj_map_eq_homologyMap] at hfib
+    ← singularHomologyFunctor_obj_map_eq_homologyMap, circleHomologyOneLinearEquiv_apply] at hfib
   rw [← key]
   exact hfib
 
 /-- **The free coordinate of `H₁` of the Klein bottle is the degree over the base circle.** The
 first coordinate of `H₁(K; ℤ) ≃ ℤ × ℤ/2` is the map induced by the projection `K → ℝ/ℤ`, followed
 by the isomorphism `TauCeti.MappingTorus.circleWangClass : H₁(ℝ/ℤ; ℤ) ≅ ℤ`. -/
+@[simp]
 theorem singularHomologyOneLinearEquiv_apply_fst (x) :
     (singularHomologyOneLinearEquiv x).1 =
       (MappingTorus.circleWangClass (ModuleCat.of ℤ ℤ)).hom
@@ -293,7 +305,8 @@ theorem map_range_singularHomologyMap_mk_zero :
     exact ⟨_, ⟨circleHomologyOneLinearEquiv.symm n, rfl⟩,
       (singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero _).trans <|
         (congrArg (fun m : ℤ ↦ ((0 : ℤ), (m : ZMod 2)))
-          (circleHomologyOneLinearEquiv.apply_symm_apply n)).trans h⟩
+          ((circleHomologyOneLinearEquiv_apply _).symm.trans
+            (circleHomologyOneLinearEquiv.apply_symm_apply n))).trans h⟩
 
 /-- **Higher homology of the Klein bottle.** `Hₖ(K; ℤ) = 0` for `k ≥ 2`. -/
 theorem isZero_singularHomology_of_two_le {k : ℕ} (hk : 2 ≤ k) :
