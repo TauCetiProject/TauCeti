@@ -20,8 +20,6 @@ a direct sum. Its value is `D₁(x) D₂(x)`, its characteristic polynomial is `
 ## Main declarations
 
 * `TauCeti.Determinant.mul`: the product `D₁ D₂`, with `mul_apply`, `charpoly_mul`, `trace_mul`.
-* `TauCeti.Determinant.trace_eq_neg_nextCoeff_charpoly`: the trace is minus the second
-  coefficient of the characteristic polynomial, in every dimension.
 * `TauCeti.Determinant.toLaw_mul_default`: the product with the determinant of dimension zero has
   the law of `D`.
 
@@ -76,7 +74,7 @@ end CommSemiring
 
 section CommRing
 
-variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {d d₁ d₂ : ℕ}
+variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {d₁ d₂ : ℕ}
 
 /-- The characteristic polynomial of the product is the product of the characteristic polynomials:
 `χ(D₁ D₂, x) = χ(D₁, x) χ(D₂, x)`. -/
@@ -85,23 +83,12 @@ theorem charpoly_mul (D₁ : Determinant A R d₁) (D₂ : Determinant A R d₂)
     (D₁.mul D₂).charpoly x = D₁.charpoly x * D₂.charpoly x := by
   rw [charpoly_def, charpoly_def, charpoly_def, toLaw_mul, PolynomialLaw.mul_toFun', _root_.map_mul]
 
-/-- The trace is minus the second coefficient (`Polynomial.nextCoeff`) of the characteristic
-polynomial, in every dimension, including zero. -/
-theorem trace_eq_neg_nextCoeff_charpoly (D : Determinant A R d) (x : R) :
-    D.trace x = -(D.charpoly x).nextCoeff := by
-  nontriviality A
-  rcases Nat.eq_zero_or_pos d with rfl | hd
-  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply, nextCoeff,
-      ite_eq_left (charpoly_natDegree_eq_dim D x), neg_zero]
-  · rw [trace_eq_neg_charpoly_coeff D hd, nextCoeff,
-      ite_eq_right (by rw [charpoly_natDegree_eq_dim]; omega), charpoly_natDegree_eq_dim]
-
 /-- Traces add: `Tr(D₁ D₂) = Tr(D₁) + Tr(D₂)`. -/
 @[simp]
 theorem trace_mul (D₁ : Determinant A R d₁) (D₂ : Determinant A R d₂) (x : R) :
     (D₁.mul D₂).trace x = D₁.trace x + D₂.trace x := by
-  rw [trace_eq_neg_nextCoeff_charpoly, trace_eq_neg_nextCoeff_charpoly,
-    trace_eq_neg_nextCoeff_charpoly, charpoly_mul,
+  rw [trace_eq_neg_charpoly_nextCoeff, trace_eq_neg_charpoly_nextCoeff,
+    trace_eq_neg_charpoly_nextCoeff, charpoly_mul,
     (charpoly_monic D₁ x).nextCoeff_mul (charpoly_monic D₂ x), neg_add]
 
 end CommRing

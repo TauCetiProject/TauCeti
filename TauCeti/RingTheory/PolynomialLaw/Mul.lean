@@ -11,14 +11,14 @@ import TauCeti.RingTheory.TensorProduct.Maps
 /-!
 # Products of polynomial laws
 
-For polynomial laws `f g : M →ₚₗ[R] B` with values in a commutative `R`-algebra `B`, the pointwise
+For polynomial laws `f g : M →ₚₗ[R] B` with values in an `R`-algebra `B`, the pointwise
 product `f * g`, computed after every scalar extension as `f(x) g(x)`, is again a polynomial law,
 because base change of an algebra map is multiplicative. Degrees of homogeneity add, and products of
-multiplicative laws on an algebra are multiplicative.
+multiplicative laws on an algebra with values in a commutative algebra are multiplicative.
 
 ## Main declarations
 
-* `PolynomialLaw.instMul`: the pointwise product of laws with values in a commutative algebra, with
+* `PolynomialLaw.instMul`: the pointwise product of laws with values in an algebra, with
   `mul_toFun'`, `mul_toFun` and `ground_mul`.
 * `PolynomialLaw.IsHomogeneousOfDegree.mul`: degrees of homogeneity add.
 * `PolynomialLaw.IsMultiplicative.mul`: products of multiplicative laws are multiplicative.
@@ -35,9 +35,9 @@ universe u
 namespace PolynomialLaw
 
 variable {R : Type u} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
-  {B : Type*} [CommSemiring B] [Algebra R B]
+  {B : Type*} [Semiring B] [Algebra R B]
 
-/-- The pointwise product of two polynomial laws with values in a commutative algebra:
+/-- The pointwise product of two polynomial laws with values in an algebra:
 `(f * g)(x) = f(x) g(x)` after every scalar extension. -/
 instance instMul : Mul (M →ₚₗ[R] B) where
   mul f g :=
@@ -57,10 +57,8 @@ algebra in any universe. -/
 @[simp]
 theorem mul_toFun (f g : M →ₚₗ[R] B) (S : Type*) [CommSemiring S] [Algebra R S]
     (x : S ⊗[R] M) : (f * g).toFun S x = f.toFun S x * g.toFun S x := by
-  obtain ⟨n, ψ, p, rfl⟩ := exists_lift x
-  rw [← isCompat_apply, ← isCompat_apply, ← isCompat_apply, ← toFun'_eq_toFun,
-    ← toFun'_eq_toFun, ← toFun'_eq_toFun, mul_toFun', AlgHom.rTensor_toLinearMap_apply,
-    AlgHom.rTensor_toLinearMap_apply, AlgHom.rTensor_toLinearMap_apply, map_mul]
+  obtain ⟨⟨s, p⟩, ha⟩ := π_surjective x
+  simp only [toFun_eq_rTensor_φ_toFun' _ ha, mul_toFun', AlgHom.rTensor_toLinearMap_apply, map_mul]
 
 /-- The ground map of a product of laws is the product of the ground maps. -/
 @[simp]
@@ -74,8 +72,10 @@ theorem IsHomogeneousOfDegree.mul {f g : M →ₚₗ[R] B} {p q : ℕ} (hf : f.I
   isHomogeneousOfDegree_iff.mpr fun _ _ _ s x ↦ by
     rw [mul_toFun', mul_toFun', hf.toFun'_smul, hg.toFun'_smul, smul_mul_smul_comm, pow_add]
 
-/-- Products of multiplicative laws on an algebra are multiplicative. -/
-theorem IsMultiplicative.mul {A : Type*} [Semiring A] [Algebra R A] {f g : A →ₚₗ[R] B}
+/-- Products of multiplicative laws on an algebra with values in a commutative algebra are
+multiplicative. -/
+theorem IsMultiplicative.mul {A : Type*} [Semiring A] [Algebra R A] {B : Type*} [CommSemiring B]
+    [Algebra R B] {f g : A →ₚₗ[R] B}
     (hf : f.IsMultiplicative) (hg : g.IsMultiplicative) : (f * g).IsMultiplicative where
   toFun'_one S _ _ := by rw [mul_toFun', hf.toFun'_one, hg.toFun'_one, one_mul]
   toFun'_mul x y := by
