@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Equivalence
 public import TauCeti.RingTheory.Idempotents.Matrix
 
+import TauCeti.Data.Matrix.Basic
 import TauCeti.RingTheory.GrothendieckRing
 
 /-!
@@ -27,7 +28,9 @@ commutative monoid with zero the empty matrix. No cancellation is assumed.
   `InvariantBasisNumber`.
 * `of_mk_eq_of_mk_iff`: `[e] = [f]` in the group completion of `V(A)` exactly when
   `e ⊕ r ∼ f ⊕ r` for some `r`; `V(A)` need not be cancellative.
-* Functoriality (`map`, `congr`), transposition over the opposite ring (`opEquiv`), the
+* Functoriality (`map`, `congr`), the product decomposition
+  `prodEquiv : IdempotentMonoid (A × B) ≃+ IdempotentMonoid A × IdempotentMonoid B` (with
+  `prodEquiv_mk` and `prodEquiv_symm_mk_mk`), transposition over the opposite ring (`opEquiv`), the
   complement relation `mk_add_mk_one_sub` (`[f] + [1 - f] = [1]`), the ring
   group-completion normal form `exists_of_mk_sub_of_mk_one_eq`, and the division-ring rank
   isomorphisms `finrankAddEquiv : IdempotentMonoid D ≃+ ℕ` and `grothendieckAddGroupEquivInt`.
@@ -366,6 +369,82 @@ theorem congr_symm_mk {ι : Type*} [Fintype ι] (φ : R ≃+* S) (e : Matrix ι 
 
 end Map
 
+section Prod
+
+/-! ### The idempotent monoid of a product -/
+
+variable (R : Type u) (S : Type v) [NonUnitalSemiring R] [NonUnitalSemiring S]
+
+/-- Taking the two components of an idempotent matrix over `R × S`, on idempotent monoids. -/
+private noncomputable abbrev prodHom :
+    IdempotentMonoid (R × S) →+ IdempotentMonoid R × IdempotentMonoid S :=
+  (map (NonUnitalRingHom.fst R S)).prod (map (NonUnitalRingHom.snd R S))
+
+variable {R S}
+
+private theorem prodHom_mk_prodEquiv_symm {e₁ : Matrix ι ι R} {e₂ : Matrix ι ι S}
+    (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
+    prodHom R S (mk _ (he₁.matrix_prodEquiv_symm he₂)) = (mk e₁ he₁, mk e₂ he₂) := by
+  simp only [AddMonoidHom.prod_apply, map_mk, NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd,
+    Matrix.map_fst_prodEquiv_symm, Matrix.map_snd_prodEquiv_symm]
+
+private theorem prodHom_injective : Function.Injective (prodHom R S) := by
+  intro x y h
+  induction x using ind with | mk n e he
+  induction y using ind with | mk m f hf
+  simp only [AddMonoidHom.prod_apply, map_mk, Prod.mk.injEq, mk_eq_mk_iff,
+    NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd] at h
+  exact (mk_eq_mk_iff he hf).2 (idempotentEquivalent_prod_iff.2 h)
+
+private theorem prodHom_surjective : Function.Surjective (prodHom R S) := by
+  rintro ⟨x, y⟩
+  induction x using ind with | mk n e₁ he₁
+  induction y using ind with | mk m e₂ he₂
+  -- `([e₁], [e₂]) = ([e₁], 0) + (0, [e₂])`, and each summand is the image of a pair with a zero
+  -- component of the same size.
+  have h₀R : IsIdempotentElem (0 : Matrix (Fin m) (Fin m) R) := .zero
+  have h₀S : IsIdempotentElem (0 : Matrix (Fin n) (Fin n) S) := .zero
+  refine ⟨mk _ (he₁.matrix_prodEquiv_symm h₀S) + mk _ (h₀R.matrix_prodEquiv_symm he₂), ?_⟩
+  rw [map_add, prodHom_mk_prodEquiv_symm he₁ h₀S, prodHom_mk_prodEquiv_symm h₀R he₂, mk_zero,
+    mk_zero, Prod.mk_add_mk, add_zero, zero_add]
+
+private theorem prodHom_bijective : Function.Bijective (prodHom R S) :=
+  ⟨prodHom_injective, prodHom_surjective⟩
+
+variable (R S) in
+/-- **The idempotent monoid of a product.** `V(R × S) ≃+ V(R) × V(S)`, sending the class of an
+idempotent matrix over `R × S` to the classes of its two components
+(`TauCeti.IdempotentMonoid.prodEquiv_mk`). -/
+noncomputable def prodEquiv :
+    IdempotentMonoid (R × S) ≃+ IdempotentMonoid R × IdempotentMonoid S :=
+  AddEquiv.ofBijective (prodHom R S) prodHom_bijective
+
+/-- `TauCeti.IdempotentMonoid.prodEquiv` is the pair of the maps induced by the two projections. -/
+theorem prodEquiv_apply (x : IdempotentMonoid (R × S)) :
+    prodEquiv R S x = (map (NonUnitalRingHom.fst R S) x, map (NonUnitalRingHom.snd R S) x) := by
+  rw [prodEquiv, AddEquiv.ofBijective_apply, AddMonoidHom.prod_apply]
+
+/-- `TauCeti.IdempotentMonoid.prodEquiv` sends the class of an idempotent matrix `e` over `R × S`
+to the classes of its components `e.map Prod.fst` and `e.map Prod.snd`. -/
+@[simp]
+theorem prodEquiv_mk {e : Matrix ι ι (R × S)} (he : IsIdempotentElem e) :
+    prodEquiv R S (mk e he) =
+      (mk (e.map Prod.fst) (he.matrix_map (NonUnitalRingHom.fst R S)),
+        mk (e.map Prod.snd) (he.matrix_map (NonUnitalRingHom.snd R S))) := by
+  simp only [prodEquiv_apply, map_mk, NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd]
+
+/-- The inverse of `TauCeti.IdempotentMonoid.prodEquiv` sends the classes of two idempotent
+matrices `e₁` over `R` and `e₂` over `S` of the same size to the class of the matrix over `R × S`
+with components `e₁` and `e₂`. -/
+@[simp]
+theorem prodEquiv_symm_mk_mk {e₁ : Matrix ι ι R} {e₂ : Matrix ι ι S} (he₁ : IsIdempotentElem e₁)
+    (he₂ : IsIdempotentElem e₂) :
+    (prodEquiv R S).symm (mk e₁ he₁, mk e₂ he₂) =
+      mk ((Matrix.prodEquiv ι ι R S).symm (e₁, e₂)) (he₁.matrix_prodEquiv_symm he₂) :=
+  (prodEquiv R S).symm_apply_eq.2 (prodHom_mk_prodEquiv_symm he₁ he₂).symm
+
+end Prod
+
 section Opposite
 
 private noncomputable def opFun (R : Type u) [NonUnitalSemiring R] :
@@ -548,19 +627,14 @@ theorem finrankAddEquiv_symm_apply (n : ℕ) :
 `IdempotentMonoid D` is canonically isomorphic to `ℤ` via column-range dimension. -/
 noncomputable def grothendieckAddGroupEquivInt :
     _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid D) ≃+ ℤ :=
-  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv
-    _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap
-    (AddSubmonoid.map_equiv_top (finrankAddEquiv D))
+  _root_.Algebra.GrothendieckAddGroup.addEquivInt (finrankAddEquiv D)
 
 theorem grothendieckAddGroupEquivInt_of_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
     (he : IsIdempotentElem e) :
     grothendieckAddGroupEquivInt D (_root_.Algebra.GrothendieckAddGroup.of (mk e he)) =
-      (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) :=
-  ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv_eq
-    (k := _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap)
-    (AddSubmonoid.map_equiv_top (finrankAddEquiv D)) (mk e he)).trans
-    ((_root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply _).trans
-      (congrArg Nat.cast (finrankAddEquiv_mk D e he)))
+      (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) := by
+  rw [grothendieckAddGroupEquivInt, _root_.Algebra.GrothendieckAddGroup.addEquivInt_of,
+    finrankAddEquiv_mk]
 
 end DivisionRing
 

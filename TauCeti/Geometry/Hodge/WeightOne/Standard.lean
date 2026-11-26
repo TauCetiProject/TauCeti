@@ -254,7 +254,8 @@ noncomputable def hodgeStructure : HodgeStructure (isBaseChange_latticeToComplex
 
 /-- The complex-linear extension of the standard complex structure to `ℂ^{l ⊕ l}` is the matrix
 `J`. -/
-private theorem latticeComplexification_almostComplexStructure :
+@[simp]
+theorem latticeComplexification_almostComplexStructure :
     (almostComplexStructure l).latticeComplexification (isBaseChange_latticeToComplex l) =
       toLin' (J l ℂ) := by
   refine (isBaseChange_latticeToComplex l).algHom_ext _ _ fun x ↦ ?_

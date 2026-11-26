@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.Data.ENat.Monoid
 import Mathlib.Algebra.Order.Floor.BigOperators
+import TauCeti.Algebra.BigOperators.ModEq
 
 /-!
 # Ceiling division lemmas
@@ -25,6 +26,8 @@ ceiling division after subtracting a residue smaller than the divisor, and Hermi
   smaller than the divisor.
 * `Nat.sum_range_sub_ceilDiv` is Hermite's identity in ceiling-division form:
   `∑ i ∈ Finset.range n, (r - i) ⌈/⌉ n = r`.
+* `Nat.sum_range_add_mul_div` is Hermite's identity for natural-number floors with a stride `b`
+  prime to `n`: `∑ j ∈ Finset.range n, (c + b * j) / n = c + ∑ j ∈ Finset.range n, b * j / n`.
 -/
 
 public section
@@ -69,5 +72,21 @@ theorem sum_range_sub_ceilDiv (r : ℕ) {n : ℕ} (hn : 0 < n) :
   rw [Finset.sum_congr rfl fun i hi ↦ h i (Finset.mem_range.1 hi),
     Finset.sum_range_reflect (fun j ↦ (r + j) / n) n]
   exact_mod_cast Int.sum_range_add_ediv r hn
+
+/-- **Hermite's identity with a stride prime to the modulus.** For `n ≠ 0` and `b` prime to `n`,
+the natural-number quotients satisfy `∑_{j<n} (c + b j) / n = c + ∑_{j<n} b j / n`. For `b = 1`
+this is the natural-number form of `Int.sum_range_add_ediv`. -/
+theorem sum_range_add_mul_div {n b : ℕ} (hn : n ≠ 0) (hb : b.Coprime n) (c : ℕ) :
+    ∑ j ∈ Finset.range n, (c + b * j) / n = c + ∑ j ∈ Finset.range n, b * j / n := by
+  have hn' : 0 < n := pos_of_ne_zero hn
+  -- `b j = n (b j / n) + b j % n`, and `j ↦ b j % n` permutes `range n`
+  -- (`Nat.Coprime.sum_range_mul_mod`).
+  have h1 (j : ℕ) : (c + b * j) / n = (c + b * j % n) / n + b * j / n := by
+    conv_lhs => rw [← mod_add_div (b * j) n, ← add_assoc]
+    exact add_mul_div_left _ _ hn'
+  have h2 : ∑ j ∈ Finset.range n, (c + b * j % n) / n = c := by
+    rw [hb.sum_range_mul_mod (fun j ↦ (c + j) / n)]
+    exact_mod_cast Int.sum_range_add_ediv (c : ℤ) hn'
+  rw [Finset.sum_congr rfl fun j _ ↦ h1 j, Finset.sum_add_distrib, h2]
 
 end Nat
