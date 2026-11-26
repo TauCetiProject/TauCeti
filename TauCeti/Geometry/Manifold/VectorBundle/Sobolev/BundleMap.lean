@@ -60,8 +60,9 @@ the readings in a chart of the source with larger image acts continuously on the
   section `s` and of a one-form with section `θ` have sections `Φ s` and `Φ ∘ θ`.
 * `TauCeti.SobolevSection.bundleMapL_ofContMDiffSection`: on smooth sections the map is `Φ`.
 * `TauCeti.SobolevSection.bundleEquivL_symm_apply`,
-  `TauCeti.SobolevSection.tangentHomEquivL_symm_apply`: the inverses are the maps induced by
-  `Φ⁻¹`.
+  `TauCeti.SobolevSection.tangentHomEquivL_symm_apply`: the inverses are the actions of `Φ⁻¹`
+  (`TauCeti.FiniteBundleAtlas.isCoeffMap_bundleMap_symm`,
+  `TauCeti.FiniteBundleAtlas.isCoeffMap_tangentHomMap_symm`).
 -/
 
 public section
@@ -298,8 +299,27 @@ theorem isCoeffMap_tangentHomMap
   refine (ContinuousLinearMap.inCoordinates_comp _ _ hx).trans ?_
   rw [A.tangentHom.sectionChartData_coord_of_mem _ hyA, coord_tangentHom, Function.comp_apply,
     coord_hom, ContinuousLinearMap.compL_apply]
-  -- `A.ofBaseSet h` has the centres and charts of `A` (`ofBaseSet_center`, `chart_ofBaseSet`).
-  rfl
+  simp only [ofBaseSet_center, chart_ofBaseSet]
+
+omit [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- A smooth bundle morphism `Ψ : W → V` acts on sections by its chart readings, from the atlas
+`A.ofBaseSet h` of `W` back to the atlas `A` of `V`. -/
+theorem isCoeffMap_bundleMap_symm {Ψ : ∀ x, W x →L[ℝ] V x}
+    (hΨ : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, G →L[ℝ] F)) ∞
+      fun x ↦ TotalSpace.mk' (G →L[ℝ] F) (E := fun x ↦ W x →L[ℝ] V x) x (Ψ x)) :
+    (A.ofBaseSet h).sectionChartData.IsCoeffMap A.sectionChartData fun t x ↦ Ψ x (t x) := by
+  have := (A.ofBaseSet h).isCoeffMap_bundleMap A.closure_dom_subset_baseSet hΨ
+  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet] at this
+
+/-- A smooth bundle morphism `Ψ : W → V` acts on one-forms by its chart readings, from the atlas
+`A.ofBaseSet h` of `W` back to the atlas `A` of `V`. -/
+theorem isCoeffMap_tangentHomMap_symm {Ψ : ∀ x, W x →L[ℝ] V x}
+    (hΨ : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, G →L[ℝ] F)) ∞
+      fun x ↦ TotalSpace.mk' (G →L[ℝ] F) (E := fun x ↦ W x →L[ℝ] V x) x (Ψ x)) :
+    (A.ofBaseSet h).tangentHom.sectionChartData.IsCoeffMap A.tangentHom.sectionChartData
+      fun θ x ↦ (Ψ x).comp (θ x) := by
+  have := (A.ofBaseSet h).isCoeffMap_tangentHomMap A.closure_dom_subset_baseSet hΨ
+  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet] at this
 
 end FiniteBundleAtlas
 
@@ -390,9 +410,8 @@ variable (hΦ : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F →L[ℝ] 
 `W^{k,p}(V) ≃ W^{k,p}(W)` induced by a smooth bundle isomorphism `Φ`, sending an element with
 section `s` to the element with section `Φ s`. Its inverse is induced by `Φ⁻¹`. -/
 def bundleEquivL : SobolevSection A μ p k ≃L[ℝ] SobolevSection (A.ofBaseSet h) μ p k :=
-  -- The atlas `(A.ofBaseSet h).ofBaseSet _` of `V` has the fields of `A`, so it is `A`.
   (A.isCoeffMap_bundleMap h hΦ).mapEquivL μ p k
-    ((A.ofBaseSet h).isCoeffMap_bundleMap A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm)
+    (A.isCoeffMap_bundleMap_symm h hΦ.clm_bundle_equiv_symm)
     (fun _ ↦ funext fun x ↦ (Φ x).symm_apply_apply _)
     (fun _ ↦ funext fun x ↦ (Φ x).apply_symm_apply _)
 
@@ -403,13 +422,13 @@ theorem coe_bundleEquivL :
       bundleMapL A h hΦ μ p k :=
   (rfl)
 
-/-- The inverse of `bundleEquivL` is `bundleMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h` (whose
-own `ofBaseSet` atlas of `V` is `A`). -/
+/-- The inverse of `bundleEquivL` is the action of `Φ⁻¹` on sections
+(`FiniteBundleAtlas.isCoeffMap_bundleMap_symm`). -/
 @[simp]
 theorem coe_bundleEquivL_symm :
     ((bundleEquivL A h μ p k hΦ).symm :
       SobolevSection (A.ofBaseSet h) μ p k →L[ℝ] SobolevSection A μ p k) =
-      bundleMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm μ p k :=
+      (A.isCoeffMap_bundleMap_symm h hΦ.clm_bundle_equiv_symm).mapL μ p k :=
   (rfl)
 
 @[simp]
@@ -420,7 +439,7 @@ theorem bundleEquivL_apply (w : SobolevSection A μ p k) :
 @[simp]
 theorem bundleEquivL_symm_apply (w : SobolevSection (A.ofBaseSet h) μ p k) :
     (bundleEquivL A h μ p k hΦ).symm w =
-      bundleMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm μ p k w :=
+      (A.isCoeffMap_bundleMap_symm h hΦ.clm_bundle_equiv_symm).mapL μ p k w :=
   (rfl)
 
 variable {A h μ p k hΦ} in
@@ -431,19 +450,18 @@ theorem chartValueL_bundleEquivL_symm_ae_coord {w : SobolevSection (A.ofBaseSet 
       =ᵐ[μ.restrict ((A.ofBaseSet h).image i)] (A.ofBaseSet h).coord i t) (i : Fin A.n) :
     A.sectionChartData.chartValueL μ p k i ((bundleEquivL A h μ p k hΦ).symm w)
       =ᵐ[μ.restrict (A.image i)] A.coord i fun x ↦ (Φ x).symm (t x) :=
-  -- The inverse is `bundleMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h`, whose own `ofBaseSet` atlas
-  -- of `V` has the fields of `A`.
-  chartValueL_bundleMapL_ae_coord (A := A.ofBaseSet h) (hΦ := hΦ.clm_bundle_equiv_symm) ht i
+  (A.ae_eq_sectionChartData_coord_iff μ).1 <|
+    SectionChartData.IsCoeffMap.chartValueL_mapL_ae_coord
+      (hf := A.isCoeffMap_bundleMap_symm h hΦ.clm_bundle_equiv_symm)
+      (fun i ↦ ((A.ofBaseSet h).ae_eq_sectionChartData_coord_iff μ).2 (ht i)) i
 
 /-- **Smooth bundle isomorphisms act on Sobolev one-forms.** The isomorphism of Banach spaces
 between `W^{k,p}` `V`-valued and `W`-valued one-forms induced by a smooth bundle isomorphism `Φ`,
 sending an element with one-form `θ` to the element with one-form `Φ ∘ θ`. -/
 def tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
     SobolevSection A.tangentHom μ p k ≃L[ℝ] SobolevSection (A.ofBaseSet h).tangentHom μ p k :=
-  -- The atlas `(A.ofBaseSet h).ofBaseSet _` of `V` has the fields of `A`, so it is `A`.
   (A.isCoeffMap_tangentHomMap h hΦ).mapEquivL μ p k
-    ((A.ofBaseSet h).isCoeffMap_tangentHomMap A.closure_dom_subset_baseSet
-      (hΦ.clm_bundle_equiv_symm))
+    (A.isCoeffMap_tangentHomMap_symm h hΦ.clm_bundle_equiv_symm)
     (fun _ ↦ funext fun x ↦ ContinuousLinearMap.ext fun _ ↦ (Φ x).symm_apply_apply _)
     (fun _ ↦ funext fun x ↦ ContinuousLinearMap.ext fun _ ↦ (Φ x).apply_symm_apply _)
 
@@ -454,14 +472,13 @@ theorem coe_tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
       tangentHomMapL A h hΦ μ p k :=
   (rfl)
 
-/-- The inverse of `tangentHomEquivL` is `tangentHomMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h`
-(whose own `ofBaseSet` atlas of `V` is `A`). -/
+/-- The inverse of `tangentHomEquivL` is the action of `Φ⁻¹` on one-forms
+(`FiniteBundleAtlas.isCoeffMap_tangentHomMap_symm`). -/
 @[simp]
 theorem coe_tangentHomEquivL_symm [IsManifold 𝓘(ℝ, E) 1 M] :
     ((tangentHomEquivL A h μ p k hΦ).symm :
       SobolevSection (A.ofBaseSet h).tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k) =
-      tangentHomMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm
-        μ p k :=
+      (A.isCoeffMap_tangentHomMap_symm h hΦ.clm_bundle_equiv_symm).mapL μ p k :=
   (rfl)
 
 @[simp]
@@ -473,8 +490,7 @@ theorem tangentHomEquivL_apply [IsManifold 𝓘(ℝ, E) 1 M] (w : SobolevSection
 theorem tangentHomEquivL_symm_apply [IsManifold 𝓘(ℝ, E) 1 M]
     (w : SobolevSection (A.ofBaseSet h).tangentHom μ p k) :
     (tangentHomEquivL A h μ p k hΦ).symm w =
-      tangentHomMapL (A.ofBaseSet h) A.closure_dom_subset_baseSet hΦ.clm_bundle_equiv_symm
-        μ p k w :=
+      (A.isCoeffMap_tangentHomMap_symm h hΦ.clm_bundle_equiv_symm).mapL μ p k w :=
   (rfl)
 
 variable {A h μ p k hΦ} in
@@ -489,9 +505,10 @@ theorem chartValueL_tangentHomEquivL_symm_ae_coord [IsManifold 𝓘(ℝ, E) 1 M]
     A.tangentHom.sectionChartData.chartValueL μ p k i ((tangentHomEquivL A h μ p k hΦ).symm w)
       =ᵐ[μ.restrict (A.tangentHom.image i)]
         A.tangentHom.coord i fun x ↦ ((Φ x).symm : W x →L[ℝ] V x).comp (θ x) :=
-  -- The inverse is `tangentHomMapL` for `Φ⁻¹` on the atlas `A.ofBaseSet h`, whose own `ofBaseSet`
-  -- atlas of `V` has the fields of `A`.
-  chartValueL_tangentHomMapL_ae_coord (A := A.ofBaseSet h) (hΦ := hΦ.clm_bundle_equiv_symm) hθ i
+  (A.tangentHom.ae_eq_sectionChartData_coord_iff μ).1 <|
+    SectionChartData.IsCoeffMap.chartValueL_mapL_ae_coord
+      (hf := A.isCoeffMap_tangentHomMap_symm h hΦ.clm_bundle_equiv_symm)
+      (fun i ↦ ((A.ofBaseSet h).tangentHom.ae_eq_sectionChartData_coord_iff μ).2 (hθ i)) i
 
 end Equiv
 

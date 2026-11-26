@@ -447,6 +447,14 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   funext y
   rfl
 
+/-- The charts of `A.ofBaseSet h`, taken back as an atlas of the original bundle, are `A`. -/
+@[simp]
+theorem ofBaseSet_ofBaseSet
+    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
+      (trivializationAt F V ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A :=
+  (rfl)
+
 end OfBaseSet
 
 /-- The finite bundle atlas with the centers of `A` and larger chart domains `U j`, open with

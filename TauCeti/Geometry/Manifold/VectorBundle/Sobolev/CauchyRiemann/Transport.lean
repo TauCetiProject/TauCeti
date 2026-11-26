@@ -254,9 +254,8 @@ theorem zeroOneTransportEquivL_comp_sobolevL (hp : p ≠ ⊤) :
         μ.restrict ((A.ofBaseSet h).tangentHom.image i : Set ℂ) :=
       congrArg (fun U : TopologicalSpace.Opens ℂ ↦ μ.restrict (U : Set ℂ))
         ((A.ofBaseSet h).image_tangentHom i).symm
-    rw [hμ] at key
-    exact key.trans
-      (Filter.EventuallyEq.of_eq (congrArg ((A.ofBaseSet h).tangentHom.coord i) hDs'))
+    simp only [hμ, ContMDiffSection.coeFn_mk, hDs'] at key
+    exact key
 
 omit [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- **The transport of a smooth real Cauchy–Riemann operator is Fredholm.** On a closed surface,
