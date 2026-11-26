@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Stochastic
 public import TauCeti.Probability.MDP.Basic
+import TauCeti.Algebra.Ring.Invertible
 import TauCeti.Probability.ProbabilityMassFunction.Finite
 
 /-!
@@ -189,8 +190,8 @@ theorem one_sub_smul_transMatrix_mulVec_policyValue (hγ : γ < 1) (hπ : IsPoli
 theorem policyValue_eq_meanReward_add (hγ : γ < 1) (hπ : IsPolicy π) :
     M.policyValue γ π = M.meanReward π + (γ : ℝ) • (M.transMatrix π *ᵥ M.policyValue γ π) := by
   conv_lhs =>
-    rw [policyValue_def, ringInverse_one_sub_smul_eq (isUnit_one_sub_smul_transMatrix hγ hπ)]
-  rw [add_mulVec, one_mulVec, smul_mulVec, ← mulVec_mulVec, ← policyValue_def]
+    rw [policyValue_def, Ring.inverse_one_sub_eq (isUnit_one_sub_smul_transMatrix hγ hπ)]
+  rw [add_mulVec, one_mulVec, smul_mul_assoc, smul_mulVec, ← mulVec_mulVec, ← policyValue_def]
 
 /-- At a policy and for `γ < 1`, the `π`-mean of the Q-function is the value. -/
 theorem sum_mul_policyQ_eq_policyValue (hγ : γ < 1) (hπ : IsPolicy π) (s : S) :
@@ -235,8 +236,9 @@ theorem smul_le_visitation (hγ : γ < 1) (hπ : IsPolicy π) {μ : S → ℝ} (
   have hP : P ∈ rowStochastic ℝ S := transMatrix_mem_rowStochastic hπ
   have hγ' : (γ : ℝ) < 1 := by exact_mod_cast hγ
   -- The resolvent satisfies `N = 1 + γ P N`, and `P N` has nonnegative entries.
-  have hN : N = 1 + (γ : ℝ) • (P * N) :=
-    ringInverse_one_sub_smul_eq (isUnit_one_sub_smul_transMatrix hγ hπ)
+  have hN : N = 1 + (γ : ℝ) • (P * N) := by
+    rw [← smul_mul_assoc]
+    exact Ring.inverse_one_sub_eq (isUnit_one_sub_smul_transMatrix hγ hπ)
   have hPN := mul_ringInverse_one_sub_smul_nonneg hP γ.coe_nonneg hγ'
   intro s
   have hsum : 0 ≤ (μ ᵥ* (P * N)) s := by

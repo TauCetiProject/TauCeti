@@ -13,6 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.BigOperators.Sum.PosPart
+import TauCeti.Algebra.Ring.Invertible
 
 /-!
 # Row-stochastic matrices: transition couplings and discounted resolvents
@@ -147,15 +148,6 @@ theorem exists_mem_rowStochastic_vecMul_eq {R ι : Type*} [Fintype ι] [Decidabl
         max_eq_right (sub_nonpos.2 (not_lt.1 hlt))]
   exact ⟨M, hM_mem, hvecMul, hdiag⟩
 
-/-- If `1 - c • P` is a unit, its inverse satisfies the resolvent identity
-`Ring.inverse (1 - c • P) = 1 + c • (P * Ring.inverse (1 - c • P))`. -/
-theorem ringInverse_one_sub_smul_eq {R n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-    {P : Matrix n n R} {c : R} (hu : IsUnit (1 - c • P)) :
-    Ring.inverse (1 - c • P) = 1 + c • (P * Ring.inverse (1 - c • P)) := by
-  have h := Ring.mul_inverse_cancel _ hu
-  rw [sub_mul, one_mul, smul_mul_assoc] at h
-  exact sub_eq_iff_eq_add.1 h
-
 section Resolvent
 
 variable {R n : Type*} [Fintype n] [DecidableEq n] [Field R] [LinearOrder R]
@@ -202,8 +194,8 @@ maps nonnegative vectors to nonnegative vectors. -/
 theorem ringInverse_one_sub_smul_mulVec_nonneg (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
     (hc₁ : c < 1) {b : n → R} (hb : 0 ≤ b) : 0 ≤ Ring.inverse (1 - c • P) *ᵥ b := by
   refine nonneg_of_eq_add_smul_mulVec hP hc₀ hc₁ hb ?_
-  conv_lhs => rw [ringInverse_one_sub_smul_eq (isUnit_one_sub_smul_of_mem_rowStochastic hP hc₀ hc₁)]
-  rw [add_mulVec, one_mulVec, smul_mulVec, mulVec_mulVec]
+  conv_lhs => rw [Ring.inverse_one_sub_eq (isUnit_one_sub_smul_of_mem_rowStochastic hP hc₀ hc₁)]
+  rw [add_mulVec, one_mulVec, smul_mul_assoc, smul_mulVec, mulVec_mulVec]
 
 /-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the entries of the resolvent
 `Ring.inverse (1 - c • P)` are nonnegative. -/
