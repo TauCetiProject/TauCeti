@@ -52,6 +52,11 @@ they form the tensor product vector bundles of `TauCeti.Topology.VectorBundle.Te
 
 ## Main results
 
+* `TauCeti.SpinCStructure.twist_associatedBundleMk_op_smul`: in any bundle associated to the
+  twist, `[[(p₀ g, q₀ u), h], w] = [[(p₀, q₀), 1], (g [1, u] h) w]`.
+* `TauCeti.SpinCStructure.continuous_twist_associatedBundle_iff`: a map out of a bundle associated
+  to the twist with fibre `M` is continuous when it is continuous on
+  `((P ×_X Q) × Spinᶜ(n)) × M`.
 * `TauCeti.SpinCStructure.determinantLineTwistEquiv_mk`,
   `TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv_mk`: the formulas in frames, and
   `TauCeti.SpinCStructure.determinantLineTwistEquiv_symm_tmul`,
@@ -88,9 +93,7 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {V : X → Type}
   (Q : X → Type) [TopologicalSpace (TotalSpace Circle Q)] [∀ x, TopologicalSpace (Q x)]
   [FiberBundle Circle Q] [∀ x, MulAction Circleᵐᵒᵖ (Q x)] [PrincipalBundle Circle Q]
 
-/-! ### The determinant line -/
-
-section DeterminantLine
+section Rank
 
 variable {n : ℕ} [NeZero n]
 
@@ -100,6 +103,39 @@ local notation "SpinC" => spinCGroup (realCliffordForm n 0) hQ
 /-- Multiplication by the central circle, along which the twist extends the fibre product. -/
 local notation "μ" => spinCGroup.mulCircle (realCliffordForm n 0) hQ
 local notation "hμ" => spinCGroup.continuous_mulCircle (realCliffordForm n 0) hQ
+
+/-! ### Bundles associated to the twist -/
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- **Changing frames in a bundle associated to the twist**: for `(p, q) = (p₀ g, q₀ u)`,
+`[[(p, q), h], w] = [[(p₀, q₀), 1], (g [1, u] h) w]`. -/
+theorem twist_associatedBundleMk_op_smul {M : Type*} [TopologicalSpace M] [MulAction SpinC M]
+    [ContinuousSMul SpinC M] (s : SpinCStructure F V n) {x : X} (p₀ : s.P x) (q₀ : Q x)
+    (g : SpinC) (u : Circle) (h : SpinC) (w : M) :
+    AssociatedBundle.mk (P := Extend (FiberProd s.P Q) μ hμ) SpinC
+        (Extend.mk μ hμ (FiberProd.mk (op g • p₀) (op u • q₀)) h) w =
+      AssociatedBundle.mk SpinC (Extend.inl μ hμ (FiberProd.mk p₀ q₀)) ((μ (g, u) * h) • w) := by
+  rw [← FiberProd.op_smul_mk, Extend.mk_smul, ← Extend.smul_inl, AssociatedBundle.mk_smul]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- **Continuity out of a bundle associated to the twist**: its total space is an open quotient of
+`((P ×_X Q) × Spinᶜ(n)) × M` by `(((p, q), h), w) ↦ [[(p, q), h], w]`, so a map out of it is
+continuous exactly when its composite with this quotient map is. -/
+theorem continuous_twist_associatedBundle_iff {M : Type*} [TopologicalSpace M]
+    [MulAction SpinC M] [ContinuousSMul SpinC M] (s : SpinCStructure F V n) {Y : Type*}
+    [TopologicalSpace Y]
+    {f : TotalSpace M (AssociatedBundle SpinC (Extend (FiberProd s.P Q) μ hμ) M) → Y} :
+    Continuous f ↔
+      Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) × M ↦
+        f ⟨y.1.1.proj, AssociatedBundle.mk SpinC (Extend.mk μ hμ y.1.1.snd y.1.2) y.2⟩ :=
+  ((AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC
+    (Extend (FiberProd s.P Q) μ hμ) M).comp
+      ((Extend.isOpenQuotientMap_totalSpaceMk_mk (FiberProd s.P Q) μ hμ).prodMap
+        IsOpenQuotientMap.id)).continuous_comp_iff.symm
+
+/-! ### The determinant line -/
+
+section DeterminantLine
 
 /-- The comparison of determinant lines read in the frames `[(p₀, q₀), 1]`, `p₀` and `q₀`:
 `[[(p₀, q₀), 1], w] ↦ [p₀, w] ⊗ ([q₀, 1] ⊗ [q₀, 1])`. -/
@@ -144,17 +180,14 @@ private theorem determinantLineTwistLinearEquiv_mk (s : SpinCStructure F V n) {x
   -- Write `(p, q) = (p₀, q₀) • (g, u)`; then `[[(p, q), h], w] = [[(p₀, q₀), 1], g [1, u] h w]`.
   obtain ⟨g, rfl⟩ : ∃ g, op g • p₀ = p := ⟨_, smul_division (G := SpinC) p₀ p⟩
   obtain ⟨u, rfl⟩ : ∃ u, op u • q₀ = q := ⟨_, smul_division (G := Circle) q₀ q⟩
-  rw [← FiberProd.op_smul_mk, Extend.mk_smul, ← Extend.smul_inl, AssociatedBundle.mk_smul,
-    determinantLineTwistLinearEquiv_apply, AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk,
-    division_self, one_smul, TensorProduct.rid_symm_apply, TensorProduct.congr_tmul,
-    TensorProduct.lid_symm_apply, TensorProduct.congr_tmul, TensorProduct.congr_tmul]
-  simp only [LinearEquiv.refl_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-    AssociatedBundle.mkContinuousLinearEquiv_apply]
-  -- `[1, u]` acts on the determinant model by `u²`, and `[q₀ u, 1] = u [q₀, 1]`.
-  rw [AssociatedBundle.mk_smul, AssociatedBundle.mk_smul, Circle.smul_def,
-    AssociatedBundle.mk_smul_scalar, spinCGroup.mulCircle_apply, mul_smul, mul_smul,
-    DeterminantModel.ofCircle_smul, smul_comm g, AssociatedBundle.mk_smul_scalar]
-  simp only [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul, sq]
+  rw [twist_associatedBundleMk_op_smul (M := DeterminantModel n) Q s,
+    determinantLineTwistLinearEquiv_apply,
+    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk, division_self, one_smul]
+  -- `[1, u]` acts on the determinant model by `u²`, and `[q₀ u, 1] = [q₀, u] = u [q₀, 1]`.
+  have hmk := AssociatedBundle.mk_smul_scalar (G := Circle) q₀ (u : ℂ) (1 : ℂ)
+  rw [smul_eq_mul, mul_one] at hmk
+  simp [AssociatedBundle.mk_smul, Circle.smul_def, mul_smul, DeterminantModel.ofCircle_smul,
+    smul_comm g, hmk, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sq]
 
 /-- **The determinant line of a twisted `Spinᶜ` structure**: twisting `s` by a principal
 `U(1)`-bundle `Q` with Hermitian line `E = Q ×_{U(1)} ℂ` tensors its determinant line with `E²`,
@@ -224,14 +257,9 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
         (E := fun x ↦ s.determinantLine x ⊗[ℂ]
           (AssociatedBundle Circle Q ℂ x ⊗[ℂ] AssociatedBundle Circle Q ℂ x))
         v.proj (s.determinantLineTwistEquiv Q v.proj v.snd) := by
-  -- The total space of the determinant line of the twist is a quotient of
-  -- `((P ×_X Q) × Spinᶜ(n)) × ℂ`, on which the comparison is
+  -- On `((P ×_X Q) × Spinᶜ(n)) × ℂ`, the comparison is
   -- `(((p, q), h), w) ↦ [p, h w] ⊗ ([q, 1] ⊗ [q, 1])`.
-  have hquot := (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC
-    (Extend (FiberProd s.P Q) μ hμ) (DeterminantModel n)).comp
-      ((Extend.isOpenQuotientMap_totalSpaceMk_mk (FiberProd s.P Q) μ hμ).prodMap
-        IsOpenQuotientMap.id)
-  refine hquot.continuous_comp_iff.1 ?_
+  refine (continuous_twist_associatedBundle_iff Q s).2 ?_
   have hp : Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) ×
       DeterminantModel n ↦ TotalSpace.mk' SpinC y.1.1.proj y.1.1.snd.fst :=
     FiberProd.continuous_totalSpaceMk_fst.comp (continuous_fst.comp continuous_fst)
@@ -257,6 +285,8 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
     (determinantLineTwistEquiv_mk Q s y.1.1.snd.fst y.1.1.snd.snd y.1.2 y.2)).symm
 
 end DeterminantLine
+
+end Rank
 
 /-! ### The half-spinor bundles -/
 
@@ -315,17 +345,11 @@ private theorem halfSpinorBundleTwistLinearEquiv_mk (s : SpinCStructure F V 4) {
   -- Write `(p, q) = (p₀, q₀) • (g, u)`; then `[[(p, q), h], ψ] = [[(p₀, q₀), 1], g [1, u] h ψ]`.
   obtain ⟨g, rfl⟩ : ∃ g, op g • p₀ = p := ⟨_, smul_division (G := SpinC₄) p₀ p⟩
   obtain ⟨u, rfl⟩ : ∃ u, op u • q₀ = q := ⟨_, smul_division (G := Circle) q₀ q⟩
-  rw [← FiberProd.op_smul_mk, Extend.mk_smul, ← Extend.smul_inl, AssociatedBundle.mk_smul,
-    halfSpinorBundleTwistLinearEquiv_apply,
-    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk, division_self, one_smul,
-    TensorProduct.rid_symm_apply, TensorProduct.congr_tmul]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
-    AssociatedBundle.mkContinuousLinearEquiv_apply]
+  rw [twist_associatedBundleMk_op_smul, halfSpinorBundleTwistLinearEquiv_apply,
+    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk, division_self, one_smul]
   -- `[1, u]` acts on the half-spinors by `u`, and `[q₀ u, 1] = u [q₀, 1]`.
-  rw [AssociatedBundle.mk_smul, AssociatedBundle.mk_smul, Circle.smul_def,
-    AssociatedBundle.mk_smul_scalar, spinCGroup.mulCircle_apply, mul_smul, mul_smul,
-    Orientation.HalfSpinModel.ofCircle_smul, smul_comm g, AssociatedBundle.mk_smul_scalar,
-    TensorProduct.smul_tmul]
+  simp [AssociatedBundle.mk_smul, Circle.smul_def, mul_smul,
+    Orientation.HalfSpinModel.ofCircle_smul, smul_comm g, ← TensorProduct.tmul_smul]
 
 /-- **The half-spinor bundles of a twisted `Spinᶜ` structure**: twisting a `Spinᶜ` structure `s`
 of rank four by a principal `U(1)`-bundle `Q` with Hermitian line `E = Q ×_{U(1)} ℂ` tensors each
@@ -388,14 +412,8 @@ theorem continuous_halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) :
       TotalSpace.mk' (ProjectiveTensor ℂ (o.HalfSpinModel hqf b ρ hρ ε) ℂ)
         (E := fun x ↦ s.halfSpinorBundle o hqf b ρ hρ ε x ⊗[ℂ] AssociatedBundle Circle Q ℂ x)
         v.proj (s.halfSpinorBundleTwistEquiv Q o hqf b ρ hρ ε v.proj v.snd) := by
-  -- The total space of the half-spinor bundle of the twist is a quotient of
-  -- `((P ×_X Q) × Spinᶜ(4)) × S^ε`, on which the comparison is
-  -- `(((p, q), h), ψ) ↦ [p, h ψ] ⊗ [q, 1]`.
-  have hquot := (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC₄
-    (Extend (FiberProd s.P Q) μ₄ hμ₄) (o.HalfSpinModel hqf b ρ hρ ε)).comp
-      ((Extend.isOpenQuotientMap_totalSpaceMk_mk (FiberProd s.P Q) μ₄ hμ₄).prodMap
-        IsOpenQuotientMap.id)
-  refine hquot.continuous_comp_iff.1 ?_
+  -- On `((P ×_X Q) × Spinᶜ(4)) × S^ε`, the comparison is `(((p, q), h), ψ) ↦ [p, h ψ] ⊗ [q, 1]`.
+  refine (continuous_twist_associatedBundle_iff Q s).2 ?_
   have hp : Continuous fun y : (TotalSpace (SpinC₄ × Circle) (FiberProd s.P Q) × SpinC₄) ×
       o.HalfSpinModel hqf b ρ hρ ε ↦ TotalSpace.mk' SpinC₄ y.1.1.proj y.1.1.snd.fst :=
     FiberProd.continuous_totalSpaceMk_fst.comp (continuous_fst.comp continuous_fst)
