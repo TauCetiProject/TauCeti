@@ -24,11 +24,16 @@ mixed derivatives, as needed for a flat metric in nonorthogonal coordinates.
 The eigen-equation on functions with a `C²` lift holds exactly when every nonzero Fourier
 coefficient has the prescribed symbol value. Every integer frequency gives a smooth eigenmode.
 
-The symbol calculation applies `UnitAddTorus.mFourierCoeff_lineDeriv` twice, through its
-coordinate specialization `UnitAddTorus.mFourierCoeff_lineDeriv_single`. Fourier uniqueness
-(`MeasureTheory.Integrable.ae_eq_of_forall_mFourierCoeff_eq`) recovers the eigen-equation;
-this is the continuous counterpart of `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq` for smooth
-functions.
+For a flat torus in lattice coordinates, take `A` to be the inverse Gram matrix of the
+lattice basis. The eigenvalue criterion then reduces the spectral calculation to the values
+of this quadratic form on integer frequencies.
+
+## Related results
+
+* `UnitAddTorus.mFourierCoeff_lineDeriv` and its coordinate specialization
+  `UnitAddTorus.mFourierCoeff_lineDeriv_single`: first-order Fourier multipliers.
+* `MeasureTheory.Integrable.ae_eq_of_forall_mFourierCoeff_eq`: Fourier uniqueness for integrable
+  functions; `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq` is the smooth-function counterpart.
 -/
 
 public section
@@ -60,13 +65,17 @@ open Classical in
 def torusSecondOrderOperator (A : Matrix d d ℝ) (f : UnitAddTorus d → ℂ) : UnitAddTorus d → ℂ :=
   ∑ i, ∑ j, -(A i j : ℂ) • lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1)
 
-open Classical in
-theorem torusSecondOrderOperator_apply (A : Matrix d d ℝ) (f : UnitAddTorus d → ℂ)
+theorem torusSecondOrderOperator_apply [DecidableEq d] (A : Matrix d d ℝ) (f : UnitAddTorus d → ℂ)
     (x : UnitAddTorus d) :
     A.torusSecondOrderOperator f x =
       -(∑ i, ∑ j, (A i j : ℂ) * lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1) x) := by
-  simp only [torusSecondOrderOperator, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, neg_mul,
-    Finset.sum_neg_distrib]
+  have hsingle (i : d) :
+      @Pi.single d (fun _ ↦ ℝ) (fun _ ↦ inferInstance) (Classical.decEq d) i 1 =
+        (Pi.single i 1 : d → ℝ) := by
+    ext j
+    by_cases h : j = i <;> simp [h]
+  simp only [torusSecondOrderOperator, hsingle, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
+    neg_mul, Finset.sum_neg_distrib]
 
 @[simp]
 theorem torusSecondOrderOperator_const (A : Matrix d d ℝ) (c : ℂ) :
@@ -74,13 +83,6 @@ theorem torusSecondOrderOperator_const (A : Matrix d d ℝ) (c : ℂ) :
   have hzero (w : d → ℝ) : lineDeriv (0 : UnitAddTorus d → ℂ) w = 0 := by
     simpa only [Pi.zero_def] using lineDeriv_const (d := d) 0 w
   simp [torusSecondOrderOperator, hzero]
-
-/-- A constant-coefficient second-order operator preserves smoothness. -/
-theorem torusSecondOrderOperator_mem_smoothFunctions (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ}
-    (hf : f ∈ smoothFunctions d) : A.torusSecondOrderOperator f ∈ smoothFunctions d := by
-  refine (smoothFunctions d).sum_mem fun i _ ↦ (smoothFunctions d).sum_mem fun j _ ↦ ?_
-  exact (smoothFunctions d).smul_mem _
-    (lineDeriv_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hf _) _)
 
 /-- A constant-coefficient second-order operator maps `C^(n+2)` lifts to `C^n` lifts. -/
 theorem contDiff_torusSecondOrderOperator (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ} {n : ℕ∞ω}
@@ -90,6 +92,13 @@ theorem contDiff_torusSecondOrderOperator (A : Matrix d d ℝ) {f : UnitAddTorus
   refine ContDiff.sum fun i _ ↦ ContDiff.sum fun j _ ↦ ?_
   exact (contDiff_lineDeriv (contDiff_lineDeriv
     (by simpa only [add_assoc, one_add_one_eq_two] using hf) _) _).const_smul _
+
+/-- A constant-coefficient second-order operator preserves smoothness. -/
+theorem torusSecondOrderOperator_mem_smoothFunctions (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ}
+    (hf : f ∈ smoothFunctions d) : A.torusSecondOrderOperator f ∈ smoothFunctions d :=
+  mem_smoothFunctions.2 (A.contDiff_torusSecondOrderOperator (n := ∞)
+    (by simpa only [← one_add_one_eq_two, ← add_assoc, ENat.coe_top_add_one]
+      using mem_smoothFunctions.1 hf))
 
 /-- For `f` with a `C²` lift, the `k`-th Fourier coefficient of `A.torusSecondOrderOperator f`
 is the coefficient of `f` multiplied by the real quadratic symbol at `k`. -/
@@ -166,37 +175,48 @@ theorem torusSecondOrderOperator_mFourier (A : Matrix d d ℝ) (k : d → ℤ) :
     rfl
   · exact (hl (by simp [mFourierCoeff_mFourier, h])).elim
 
-/-- The second-order torus operator is additive on smooth functions. -/
+/-- The second-order torus operator is additive on functions with `C²` lifts. -/
 theorem torusSecondOrderOperator_add (A : Matrix d d ℝ) {f g : UnitAddTorus d → ℂ}
-    (hf : f ∈ smoothFunctions d) (hg : g ∈ smoothFunctions d) :
+    (hf : ContDiff ℝ 2 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle))
+    (hg : ContDiff ℝ 2 fun x : d → ℝ ↦ g fun i ↦ (x i : UnitAddCircle)) :
     A.torusSecondOrderOperator (f + g) =
       A.torusSecondOrderOperator f + A.torusSecondOrderOperator g := by
-  refine eq_of_mFourierCoeff_eq (A.torusSecondOrderOperator_mem_smoothFunctions
-    ((smoothFunctions d).add_mem hf hg))
-    ((smoothFunctions d).add_mem (A.torusSecondOrderOperator_mem_smoothFunctions hf)
-      (A.torusSecondOrderOperator_mem_smoothFunctions hg)) fun k ↦ ?_
-  simp only [mFourierCoeff_add (integrable_of_mem_smoothFunctions hf)
-    (integrable_of_mem_smoothFunctions hg),
-    mFourierCoeff_add
-      (integrable_of_mem_smoothFunctions (A.torusSecondOrderOperator_mem_smoothFunctions hf))
-      (integrable_of_mem_smoothFunctions (A.torusSecondOrderOperator_mem_smoothFunctions hg)),
-    mFourierCoeff_torusSecondOrderOperator A ((mem_smoothFunctions.1 hf).of_le (by simp)),
-    mFourierCoeff_torusSecondOrderOperator A ((mem_smoothFunctions.1 hg).of_le (by simp)),
-    mFourierCoeff_torusSecondOrderOperator A
-      ((mem_smoothFunctions.1 ((smoothFunctions d).add_mem hf hg)).of_le (by simp)), mul_add]
+  have hc {u : UnitAddTorus d → ℂ}
+      (hu : ContDiff ℝ 2 fun x : d → ℝ ↦ u fun i ↦ (x i : UnitAddCircle)) : Continuous u :=
+    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 hu.continuous
+  have hAc {u : UnitAddTorus d → ℂ}
+      (hu : ContDiff ℝ 2 fun x : d → ℝ ↦ u fun i ↦ (x i : UnitAddCircle)) :
+      Continuous (A.torusSecondOrderOperator u) :=
+    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
+      (A.contDiff_torusSecondOrderOperator (n := 0) hu).continuous
+  have hint {u : UnitAddTorus d → ℂ} (hu : Continuous u) : MeasureTheory.Integrable u :=
+    hu.integrable_of_hasCompactSupport (.of_compactSpace _)
+  refine MeasureTheory.Measure.eq_of_ae_eq
+    ((hint (hAc (hf.add hg))).ae_eq_of_forall_mFourierCoeff_eq
+      (hint ((hAc hf).add (hAc hg))) fun k ↦ ?_) (hAc (hf.add hg)) ((hAc hf).add (hAc hg))
+  rw [A.mFourierCoeff_torusSecondOrderOperator (hf.add hg),
+    mFourierCoeff_add (hint (hc hf)) (hint (hc hg)),
+    mFourierCoeff_add (hint (hAc hf)) (hint (hAc hg)),
+    A.mFourierCoeff_torusSecondOrderOperator hf, A.mFourierCoeff_torusSecondOrderOperator hg,
+    mul_add]
 
-/-- The second-order torus operator commutes with complex scalar multiplication on smooth
-functions. -/
+/-- The second-order torus operator commutes with complex scalar multiplication on functions
+with `C²` lifts. -/
 theorem torusSecondOrderOperator_smul (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ}
-    (hf : f ∈ smoothFunctions d) (c : ℂ) :
+    (hf : ContDiff ℝ 2 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (c : ℂ) :
     A.torusSecondOrderOperator (c • f) = c • A.torusSecondOrderOperator f := by
-  refine eq_of_mFourierCoeff_eq (A.torusSecondOrderOperator_mem_smoothFunctions
-    ((smoothFunctions d).smul_mem c hf))
-    ((smoothFunctions d).smul_mem c (A.torusSecondOrderOperator_mem_smoothFunctions hf)) fun k ↦ ?_
-  rw [mFourierCoeff_torusSecondOrderOperator A
-    ((mem_smoothFunctions.1 ((smoothFunctions d).smul_mem c hf)).of_le (by simp)),
-    mFourierCoeff_smul, mFourierCoeff_smul,
-    mFourierCoeff_torusSecondOrderOperator A ((mem_smoothFunctions.1 hf).of_le (by simp)),
+  have hAc : Continuous (A.torusSecondOrderOperator f) :=
+    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
+      (A.contDiff_torusSecondOrderOperator (n := 0) hf).continuous
+  have hcAc : Continuous (A.torusSecondOrderOperator (c • f)) :=
+    isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2
+      (A.contDiff_torusSecondOrderOperator (f := c • f) (n := 0) (hf.const_smul c)).continuous
+  refine MeasureTheory.Measure.eq_of_ae_eq
+    ((hcAc.integrable_of_hasCompactSupport (.of_compactSpace _)).ae_eq_of_forall_mFourierCoeff_eq
+      ((continuous_const.smul hAc).integrable_of_hasCompactSupport (.of_compactSpace _))
+      fun k ↦ ?_) hcAc (continuous_const.smul hAc)
+  rw [A.mFourierCoeff_torusSecondOrderOperator (hf.const_smul c),
+    mFourierCoeff_smul, mFourierCoeff_smul, A.mFourierCoeff_torusSecondOrderOperator hf,
     smul_eq_mul, smul_eq_mul]
   ring
 

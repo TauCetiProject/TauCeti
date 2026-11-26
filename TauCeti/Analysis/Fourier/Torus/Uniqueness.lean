@@ -90,7 +90,7 @@ namespace Continuous
 open UnitAddTorus
 
 /-- A nonzero continuous function on the torus has a nonzero Fourier coefficient. -/
-theorem exists_mFourierCoeff_ne_zero {d : Type*} [Fintype d] {f : UnitAddTorus d → ℂ}
+theorem exists_mFourierCoeff_ne_zero
     (hf : Continuous f) (hne : f ≠ 0) : ∃ n, mFourierCoeff f n ≠ 0 := by
   by_contra! hall
   have hint : MeasureTheory.Integrable f :=

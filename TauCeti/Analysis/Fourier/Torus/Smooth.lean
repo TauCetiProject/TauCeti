@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.Torus.Decay
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Basic.Complex.BigOperators
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
@@ -608,6 +609,6 @@ theorem mFourierCoeff_lineDeriv_single [DecidableEq d] {f : UnitAddTorus d → �
     (hf : ContDiff ℝ 1 fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (i : d) (n : d → ℤ) :
     mFourierCoeff (lineDeriv f (Pi.single i 1)) n =
       (2 * π * I * (n i : ℂ)) * mFourierCoeff f n := by
-  rw [mFourierCoeff_lineDeriv hf, sum_intCast_mul_single]
+  rw [mFourierCoeff_lineDeriv hf, Complex.sum_intCast_mul_single]
 
 end UnitAddTorus

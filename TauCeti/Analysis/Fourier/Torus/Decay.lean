@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Basic.Complex.BigOperators
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Normed.Group.Pi
@@ -293,14 +294,6 @@ theorem mFourierCoeff_eq_prod_smul_of_iteratedFDeriv {f g : UnitAddTorus d → E
       Fin.prod_univ_succ]
     simp only [Fin.tail]
 
-/-- Contracting an integer frequency with a real coordinate vector selects that coordinate. -/
-theorem sum_intCast_mul_single [DecidableEq d] (i : d) (n : d → ℤ) :
-    ∑ j, (n j : ℂ) * ((Pi.single i 1 : d → ℝ) j : ℂ) = (n i : ℂ) := by
-  have hcast : (fun j ↦ ((Pi.single i 1 : d → ℝ) j : ℂ)) = Pi.single i 1 := by
-    ext j
-    simp [Pi.single_apply, apply_ite Complex.ofReal]
-  rw [← dotProduct, hcast, dotProduct_single_one]
-
 /-! ### Decay of the Fourier coefficients -/
 
 /-- **Decay of the Fourier coefficients of a `C^k` function on the torus.** If the lift of `f` to
@@ -332,7 +325,8 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
   change ∀ x, g (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x
     fun _ ↦ Pi.single i 1 at hg
   have hcoeff := mFourierCoeff_eq_prod_smul_of_iteratedFDeriv hf _ hg n
-  rw [sum_intCast_mul_single, Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hcoeff
+  rw [Complex.sum_intCast_mul_single, Finset.prod_const, Finset.card_univ,
+    Fintype.card_fin] at hcoeff
   have hgM : ∀ z, ‖g z‖ ≤ M := fun z ↦ by
     obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
     rw [hg]
