@@ -56,12 +56,16 @@ namespace TauCeti.Probability
 
 variable {y : ℝ≥0} {x : ℝ}
 
+/-- For `ℓ > 1 + √y`, the quantity `ℓ - 1` is positive. -/
+private lemma sub_one_pos_of_one_add_sqrt_lt {ℓ : ℝ} (hℓ : 1 + √(y : ℝ) < ℓ) : 0 < ℓ - 1 := by
+  linarith [Real.sqrt_nonneg (y : ℝ)]
+
 /-- For `ℓ > 1 + √y`, the outlier location `ℓ (1 + y / (ℓ - 1))` lies above the upper edge
 `(1 + √y)²` of `MP_y`; the two agree at `ℓ = 1 + √y`. -/
 theorem one_add_sqrt_sq_lt_mul_one_add_div_sub_one {ℓ : ℝ} (hℓ : 1 + √(y : ℝ) < ℓ) :
     (1 + √(y : ℝ)) ^ 2 < ℓ * (1 + y / (ℓ - 1)) := by
   have hr := Real.sq_sqrt y.coe_nonneg
-  have hu : 0 < ℓ - 1 := by linarith [Real.sqrt_nonneg (y : ℝ)]
+  have hu := sub_one_pos_of_one_add_sqrt_lt hℓ
   have key : ℓ * (1 + y / (ℓ - 1)) - (1 + √(y : ℝ)) ^ 2 = (ℓ - 1 - √(y : ℝ)) ^ 2 / (ℓ - 1) := by
     field_simp
     linear_combination (-ℓ) * hr
@@ -87,8 +91,7 @@ private lemma two_mul_mul_neg_inv_add {ℓ : ℝ} (hℓ0 : ℓ ≠ 0) (hℓ1 : �
 theorem one_add_mul_marchenkoPasturCompanion_eq_zero_iff {ℓ : ℝ}
     (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     1 + ℓ * marchenkoPasturCompanion y x = 0 ↔ 1 + √(y : ℝ) < ℓ ∧ x = ℓ * (1 + y / (ℓ - 1)) := by
-  have hq := marchenkoPasturCompanion_quadratic_eq_zero (notMem_support_marchenkoPastur_of_lt hx)
-    ((sq_nonneg _).trans_lt hx).ne'
+  have hq := marchenkoPasturCompanion_quadratic_eq_zero_of_lt hx
   have hP := two_mul_mul_marchenkoPasturCompanion_add_pos hx
   have hs := marchenkoPasturCompanion_neg hx
   have hlow := neg_inv_one_add_sqrt_lt_marchenkoPasturCompanion hx
@@ -111,7 +114,7 @@ theorem one_add_mul_marchenkoPasturCompanion_eq_zero_iff {ℓ : ℝ}
     field_simp at hq ⊢
     linear_combination -hq
   · rintro ⟨hℓ, rfl⟩
-    have hℓ1 : 0 < ℓ - 1 := by linarith
+    have hℓ1 := sub_one_pos_of_one_add_sqrt_lt hℓ
     have hℓ0 : ℓ ≠ 0 := by linarith
     have ht : (ℓ * (1 + y / (ℓ - 1))) * (-ℓ⁻¹ * -ℓ⁻¹) +
         (ℓ * (1 + y / (ℓ - 1)) + 1 - y) * -ℓ⁻¹ + 1 = 0 := by
@@ -135,10 +138,7 @@ theorem one_add_mul_marchenkoPasturCompanion_pos_iff {ℓ : ℝ} (hx : (1 + √(
     0 < 1 + ℓ * marchenkoPasturCompanion y x ↔
       ℓ ≤ 1 + √(y : ℝ) ∨ ℓ * (1 + y / (ℓ - 1)) < x := by
   have hs := marchenkoPasturCompanion_neg hx
-  have hlow : -1 < (1 + √(y : ℝ)) * marchenkoPasturCompanion y x := by
-    have h1 : 0 < 1 + √(y : ℝ) := by positivity
-    have h := mul_lt_mul_of_pos_left (neg_inv_one_add_sqrt_lt_marchenkoPasturCompanion hx) h1
-    rwa [mul_neg, mul_inv_cancel₀ h1.ne'] at h
+  have hlow := neg_one_lt_mul_marchenkoPasturCompanion hx
   rcases le_or_gt ℓ (1 + √(y : ℝ)) with hℓ | hℓ
   · simp only [hℓ, true_or, iff_true]
     nlinarith [mul_nonneg_of_nonpos_of_nonpos (sub_nonpos.2 hℓ) hs.le]
@@ -189,8 +189,8 @@ theorem deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one {ℓ : ℝ}
       (ℓ - 1) ^ 2 / (ℓ ^ 2 * ((ℓ - 1) ^ 2 - y)) := by
   have hψ := one_add_sqrt_sq_lt_mul_one_add_div_sub_one hℓ
   have hd := deriv_marchenkoPasturCompanion_mul_two_mul_mul_marchenkoPasturCompanion_add
-    (notMem_support_marchenkoPastur_of_lt hψ) ((sq_nonneg _).trans_lt hψ).ne'
-  have hℓ1 : 0 < ℓ - 1 := by linarith [Real.sqrt_nonneg (y : ℝ)]
+    (notMem_support_marchenkoPastur_of_lt hψ) (pos_of_one_add_sqrt_sq_lt hψ).ne'
+  have hℓ1 := sub_one_pos_of_one_add_sqrt_lt hℓ
   have hℓ0 : ℓ ≠ 0 := by linarith
   have hD := sub_one_sq_sub_pos hℓ
   rw [marchenkoPasturCompanion_mul_one_add_div_sub_one hℓ, two_mul_mul_neg_inv_add hℓ0 hℓ1.ne']
@@ -209,7 +209,7 @@ theorem inv_mul_mul_deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one {ℓ 
     (ℓ * (ℓ * (1 + y / (ℓ - 1))) *
         deriv (marchenkoPasturCompanion y) (ℓ * (1 + y / (ℓ - 1))))⁻¹ =
       (1 - y / (ℓ - 1) ^ 2) / (1 + y / (ℓ - 1)) := by
-  have hℓ1 : 0 < ℓ - 1 := by linarith [Real.sqrt_nonneg (y : ℝ)]
+  have hℓ1 := sub_one_pos_of_one_add_sqrt_lt hℓ
   have hℓ0 : ℓ ≠ 0 := by linarith
   have hD := sub_one_sq_sub_pos hℓ
   rw [deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one hℓ]

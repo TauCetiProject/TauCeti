@@ -83,7 +83,7 @@ theorem marchenkoPasturCompanion_ofReal (y : ℝ≥0) (x : ℝ) :
 variable {y : ℝ≥0} {x : ℝ}
 
 /-- A real point above the upper edge of `MP_y` is positive. -/
-private lemma pos_of_one_add_sqrt_sq_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) : 0 < x :=
+theorem pos_of_one_add_sqrt_sq_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) : 0 < x :=
   (sq_nonneg _).trans_lt hx
 
 /-- Off the support of `MP_y` and away from `0`, the companion transform `s` satisfies the
@@ -100,7 +100,7 @@ theorem marchenkoPasturCompanion_quadratic_eq_zero (hx : x ∉ (marchenkoPastur 
     (-2 * y * (1 - y) * m + (1 - y) ^ 2 * x⁻¹ - (1 - y)) * hxi
 
 /-- The companion quadratic equation above the upper edge of `MP_y`. -/
-private lemma marchenkoPasturCompanion_quadratic_eq_zero_of_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) :
+theorem marchenkoPasturCompanion_quadratic_eq_zero_of_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     x * (marchenkoPasturCompanion y x * marchenkoPasturCompanion y x) +
       (x + 1 - y) * marchenkoPasturCompanion y x + 1 = 0 :=
   marchenkoPasturCompanion_quadratic_eq_zero (notMem_support_marchenkoPastur_of_lt hx)
@@ -143,7 +143,7 @@ theorem marchenkoPasturCompanion_neg (hx : (1 + √(y : ℝ)) ^ 2 < x) :
   nlinarith [mul_nonneg (mul_nonneg (pos_of_one_add_sqrt_sq_lt hx).le hs) hs, mul_nonneg hx1.le hs]
 
 /-- Above the upper edge of `MP_y`, the companion transform `s` satisfies `-1 < (1 + √y) s`. -/
-private lemma neg_one_lt_mul_marchenkoPasturCompanion (hx : (1 + √(y : ℝ)) ^ 2 < x) :
+theorem neg_one_lt_mul_marchenkoPasturCompanion (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     -1 < (1 + √(y : ℝ)) * marchenkoPasturCompanion y x := by
   have hq := marchenkoPasturCompanion_quadratic_eq_zero_of_lt hx
   have hP := two_mul_mul_marchenkoPasturCompanion_add_pos hx
