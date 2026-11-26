@@ -357,8 +357,10 @@ restriction along the inverse isomorphism.  This is the `Rep` analogue of Mathli
 `Action.resEquiv`, which does not apply because `Rep` is a structure rather than an `Action`.
 
 Its two functors are identified with restriction by `MulEquiv.resFunctorEquiv_functor` and
-`MulEquiv.resFunctorEquiv_inverse`. -/
-def _root_.MulEquiv.resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
+`MulEquiv.resFunctorEquiv_inverse`. The definition is exposed so that its unit and counit, which
+are the identity on vectors, unfold in computations such as
+`Representation.indTopEquiv_apply_mk`. -/
+@[expose] def _root_.MulEquiv.resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
   -- Mathlib's `MulEquiv.toMonoidHom_comp_toMonoidHom_symm` and its mirror, restated for
   -- `MulEquiv.toMonoidHom`: the coercion in those lemmas is `toMonoidHom` definitionally but not
   -- syntactically, so `rw` needs this form.

@@ -54,6 +54,9 @@ there it is the forward isomorphism that the counits compute, and the inverse th
   its inverse.
 * `TauCeti.Rep.indFunctorSubgroupOfIso`: induction in stages through an intermediate subgroup
   `S ≤ T ≤ G`, with `S` identified with the subgroup `S.subgroupOf T` of `T`.
+* `Representation.indTopEquiv`: inducing the restriction of a representation to `⊤` back to the
+  whole group returns the representation, with `Representation.indTopEquiv_apply_mk` and
+  `Representation.indTopEquiv_symm_apply` computing it on generators.
 
 ## Main statements
 
@@ -449,3 +452,63 @@ lemma Rep.coindFunctorCompIso_inv_app_hom_apply_coe_apply_coe_apply (φ : G →*
 end Coinduction
 
 end TauCeti
+
+/-! ### Induction from the whole group -/
+
+namespace Representation
+
+open CategoryTheory
+
+universe u v
+
+variable {k : Type u} {G : Type v} {V : Type (max u v)} [CommRing k] [Group G] [AddCommGroup V]
+  [Module k V]
+
+/-- **Induction from the whole group undoes restriction to it.** The representation of `G` induced
+from `⊤` by the restriction of `ρ` to `⊤` is equivalent to `ρ`; it sends `⟦g ⊗ₜ v⟧` to `ρ g⁻¹ v`
+(`Representation.indTopEquiv_apply_mk`). -/
+noncomputable def indTopEquiv (ρ : Representation k G V) :
+    (ind (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype)).Equiv ρ :=
+  -- Induction along the isomorphism `Subgroup.topEquiv` is restriction along its inverse
+  -- (`TauCeti.Rep.indFunctorMulEquivIso`). The stated target `ρ` is the restriction of
+  -- `ρ.comp (⊤ : Subgroup G).subtype` along `Subgroup.topEquiv.symm` by definition: the composite
+  -- `g ↦ ρ ((Subgroup.topEquiv.symm g : ⊤) : G)` unfolds to `g ↦ ρ g`.
+  equivOfIso ((TauCeti.Rep.indFunctorMulEquivIso (k := k) (Subgroup.topEquiv (G := G))).app
+    (Rep.of (ρ.comp (⊤ : Subgroup G).subtype)))
+
+/-- `Representation.indTopEquiv` sends the generator `⟦1 ⊗ₜ v⟧` to `v`. This is
+`Adjunction.unit_leftAdjointUniq_hom_app` read on `v`: the unit of the induction--restriction
+adjunction is the generator map `v ↦ ⟦1 ⊗ₜ v⟧`, and the unit of the restriction equivalence
+`MulEquiv.resFunctorEquiv` is the identity on vectors by definition. -/
+private lemma indTopEquiv_apply_mk_one (ρ : Representation k G V) (v : V) :
+    indTopEquiv ρ (IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) 1 v) =
+      v :=
+  congrArg (fun f => f.hom v) (Adjunction.unit_leftAdjointUniq_hom_app
+    (Rep.indResAdjunction.{max u v} k (Subgroup.topEquiv (G := G)).toMonoidHom)
+    ((MulEquiv.resFunctorEquiv (Subgroup.topEquiv (G := G))).symm.toAdjunction.ofNatIsoRight
+      (eqToIso (MulEquiv.resFunctorEquiv_functor _))) (Rep.of (ρ.comp (⊤ : Subgroup G).subtype)))
+
+-- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
+/-- **`Representation.indTopEquiv` on generators**: it sends `⟦g ⊗ₜ v⟧` to `ρ g⁻¹ v`. -/
+@[simp↓]
+lemma indTopEquiv_apply_mk (ρ : Representation k G V) (g : G) (v : V) :
+    indTopEquiv ρ (IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) g v) =
+      ρ g⁻¹ v := by
+  have hg : IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) g v =
+      ind (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) g⁻¹
+        (IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) 1 v) := by
+    rw [ind_mk, one_mul, inv_inv]
+  rw [hg]
+  refine (IntertwiningMap.isIntertwining _ _ (indTopEquiv ρ).toIntertwiningMap g⁻¹ _).trans ?_
+  exact congrArg (ρ g⁻¹) (indTopEquiv_apply_mk_one ρ v)
+
+/-- **The inverse of `Representation.indTopEquiv`** sends `v` to the generator `⟦1 ⊗ₜ v⟧`. -/
+@[simp]
+lemma indTopEquiv_symm_apply (ρ : Representation k G V) (v : V) :
+    (indTopEquiv ρ).symm v =
+      IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) 1 v := by
+  have h := (indTopEquiv ρ).symm_apply_apply
+    (IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) 1 v)
+  rwa [indTopEquiv_apply_mk_one] at h
+
+end Representation
