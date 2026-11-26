@@ -338,6 +338,7 @@ theorem cechCohomologyUnitClass_eq_toCechCohomology (P : Cᵒᵖ ⥤ ModuleCat.{
     homologyMap_cechComplexMap_cechUnitClass, cechCohomologyUnitClass_eq_ι E hE P e he j]
 
 /-- Left unit law for `cechCohomologyComplexCup`. -/
+@[simp]
 theorem cechCohomologyComplexCup_unit_left
     (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] Q.obj X)
     (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ Y (P.map f x) (Q.map f y) = Q.map f (μ X x y))
@@ -351,6 +352,7 @@ theorem cechCohomologyComplexCup_unit_left
       cechCohomologyComplexCup_ι, cechComplexCup_unit_left (E j).obj μ hμ e he hl q b]) y
 
 /-- Right unit law for `cechCohomologyComplexCup`. -/
+@[simp]
 theorem cechCohomologyComplexCup_unit_right
     (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] P.obj X)
     (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ Y (P.map f x) (Q.map f y) = P.map f (μ X x y))

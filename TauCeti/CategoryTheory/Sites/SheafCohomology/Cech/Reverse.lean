@@ -67,8 +67,6 @@ are cohomologous.
   of a presheaf of modules and its reversal have the same class.
 * `TauCeti.CategoryTheory.cechComplexπ_cechReverse`: the factors of `τ c` for a presheaf of
   modules.
-* `TauCeti.CategoryTheory.cechComponent_cechReverse`, `TauCeti.CategoryTheory.cechFace_cechReverse`:
-  the factors and restrictions of `τ c` for a presheaf of algebras.
 * `TauCeti.CategoryTheory.cechReverse_cechCupCochain` and
   `TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`: `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b`
   for general pairings and presheaves of commutative algebras.
@@ -410,29 +408,6 @@ theorem cechReverse_cechCupCochain
     dsimp only [Function.comp_def]
     rw [cechComplexπ_map_piMap'_comp U Q c]
     exact cechComplexπ_map_piMap'_eq_of_val U Q c (fun i ↦ by simp [Fin.val_rev]; omega) b
-
-/-- The factors of `τ c` for a cochain `c` of a presheaf of algebras: the factor at
-`k = (k 0, …, k n)` is `(-1) ^ (n (n + 1) / 2)` times the restriction of `c` along the reversal of
-the vertices. -/
-@[simp]
-theorem cechComponent_cechReverse {n : ℕ} (k : Fin (n + 1) → ι)
-    (c : (cechAlgebraComplex U F).X n) :
-    cechComponent k ((((cechReverse (ModuleCat.{w} R) U).app
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom c) =
-      (-1 : ℤ) ^ (n + 1).choose 2 • cechFace k Fin.rev c := by
-  rw [cechComponent_eq_sum_of_comp_π_eq (s := {()}) (z := fun _ ↦ (-1) ^ (n + 1).choose 2)
-    (σ := fun _ ↦ Fin.rev) (by rw [Finset.sum_singleton]; exact cechReverse_app_f_π U _ n k),
-    Finset.sum_singleton]
-
-/-- The restrictions of `τ c` along a map `σ` of vertices are the restrictions of `c` along
-`σ ∘ Fin.rev`, times the sign `(-1) ^ (m (m + 1) / 2)` of the reversal of `m + 1` vertices. -/
-@[simp]
-theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1))
-    (c : (cechAlgebraComplex U F).X m) :
-    cechFace k σ ((((cechReverse (ModuleCat.{w} R) U).app
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f m).hom c) =
-      (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
-  rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
 
 /-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
 algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of

@@ -373,6 +373,7 @@ theorem d_cechUnitCochain (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀ X : Cᵒᵖ
   simp [cechUnitCochain_π, he]
 
 /-- Left unit law for `cechCupCochain`. -/
+@[simp]
 theorem cechCupCochain_unit_left (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] Q.obj X)
     (e : ∀ X : Cᵒᵖ, P.obj X) (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), P.map f (e X) = e Y)
     (hl : ∀ X y, μ X (e X) y = y) (q : ℕ) (b : ((cechComplexFunctor U).obj Q).X q) :
@@ -384,6 +385,7 @@ theorem cechCupCochain_unit_left (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj 
   exact cechComplexπ_map_piMap'_id U Q c (fun j ↦ by simp) b
 
 /-- Right unit law for `cechCupCochain`. -/
+@[simp]
 theorem cechCupCochain_unit_right (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] P.obj X)
     (e : ∀ X : Cᵒᵖ, Q.obj X) (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), Q.map f (e X) = e Y)
     (hr : ∀ X x, μ X x (e X) = x) (p : ℕ) (a : ((cechComplexFunctor U).obj P).X p) :
@@ -464,9 +466,8 @@ theorem cechComponent_cechOfComponents {m : ℕ}
 
 /-- The restriction of a Čech `m`-cochain `c` along a map `σ : Fin (m + 1) → Fin (n + 1)` of
 vertices, at `k : Fin (n + 1) → ι`: the factor of `c` indexed by `k ∘ σ`, restricted along the
-projection `U (k 0) × ⋯ × U (k n) ⟶ U (k (σ 0)) × ⋯ × U (k (σ m))`. For the coface maps
-`σ = j.succAbove` these are the terms of the Čech differential (`cechFace_d`), and the cup product
-multiplies the restrictions along the front and back faces (`cechComponent_cechCup`). -/
+projection `U (k 0) × ⋯ × U (k n) ⟶ U (k (σ 0)) × ⋯ × U (k (σ m))`. The cup product multiplies
+the restrictions along the front and back faces (`cechComponent_cechCup`). -/
 def cechFace {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1)) :
     (cechAlgebraComplex U F).X m →ₗ[R] F.obj (op (∏ᶜ fun j ↦ U (k j))) :=
   (F.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ x)).op).hom.toLinearMap ∘ₗ
@@ -523,86 +524,9 @@ theorem cechComponent_eq_sum_of_comp_π_eq {κ : Type*} {m n : ℕ}
   -- indexed by the products `∏ᶜ fun j ↦ U (a j)`
   rfl
 
-/-- The factors of the Čech differential: the factor of `d c` indexed by `k : Fin (n + 2) → ι` is
-the alternating sum of the restrictions of `c` along the coface maps `m.succAbove`. -/
-theorem cechComponent_d {n : ℕ} (k : Fin (n + 2) → ι) (c : (cechAlgebraComplex U F).X n) :
-    cechComponent k (((cechAlgebraComplex U F).d n (n + 1)).hom c) =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • cechFace k m.succAbove c :=
-  cechComponent_eq_sum_of_comp_π_eq
-    (cechComplexFunctor_obj_d_comp_π U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) n k) c
-
-/-- The restrictions of the Čech differential of a cochain are alternating sums of restrictions of
-the cochain. -/
-theorem cechFace_d {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 2) → Fin (n + 1))
-    (c : (cechAlgebraComplex U F).X m) :
-    cechFace k σ (((cechAlgebraComplex U F).d m (m + 1)).hom c) =
-      ∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) • cechFace k (σ ∘ j.succAbove) c := by
-  rw [cechFace_apply, cechComponent_d, map_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_zsmul, map_cechFace]
-
 end Components
 
 section Maps
-
-/-- The factors of the map of Čech complexes `Č(V, F) ⟶ Č(U, F)` induced by a morphism of families
-`φ : U ⟶ V`: the factor indexed by `k` is the factor indexed by `φ.f ∘ k`, restricted along the
-product of the morphisms `φ.φ (k j)`. -/
-@[simp]
-theorem cechComponent_cechComplexMap {κ : Type w} {V : κ → C}
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m : ℕ} (k : Fin (m + 1) → ι)
-    (c : (cechAlgebraComplex V F).X m) :
-    cechComponent k
-        (((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f m).hom c) =
-      (F.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op).hom (cechComponent (φ.f ∘ k) c) := by
-  simpa only [cechComponent, Functor.comp_map, AlgCat.forget₂_module_map, ModuleCat.hom_ofHom,
-      AlgHom.toLinearMap_apply] using
-    cechComplexπ_cechComplexMap φ (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m c k
-
-/-- The restrictions of the map of Čech complexes induced by a morphism of families `φ : U ⟶ V`
-are the restrictions along the product of the morphisms `φ.φ (k j)`. -/
-@[simp]
-theorem cechFace_cechComplexMap {κ : Type w} {V : κ → C}
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m l : ℕ} (k : Fin (l + 1) → ι)
-    (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex V F).X m) :
-    cechFace k σ
-        (((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f m).hom c) =
-      (F.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op).hom (cechFace (φ.f ∘ k) σ c) := by
-  have : (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ x)) ≫
-      Limits.Pi.map (fun j ↦ φ.φ ((k ∘ σ) j)) =
-      Limits.Pi.map (fun j ↦ φ.φ (k j)) ≫
-        Pi.lift fun x ↦ Pi.π (fun j ↦ V ((φ.f ∘ k) j)) (σ x) :=
-    Pi.hom_ext _ _ fun _ ↦ by simp
-  rw [cechFace_apply, cechComponent_cechComplexMap, cechFace_apply, ← AlgCat.comp_apply,
-    ← AlgCat.comp_apply, ← F.map_comp, ← F.map_comp, ← op_comp, ← op_comp, this]
-  -- the products `∏ᶜ fun j ↦ U ((k ∘ σ) j)` and `∏ᶜ fun x ↦ U (k (σ x))` are the same object
-  rfl
-
-/-- The factors of the map of Čech complexes induced by a morphism of presheaves of algebras
-`α : F ⟶ G` are the images of the factors under the components of `α`. -/
-@[simp]
-theorem cechComponent_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G) {m : ℕ}
-    (k : Fin (m + 1) → ι) (c : (cechAlgebraComplex U F).X m) :
-    cechComponent k ((((cechComplexFunctor U).map
-      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f m).hom c) =
-      (α.app (op (∏ᶜ fun j ↦ U (k j)))).hom (cechComponent k c) := by
-  simpa only [cechComponent, Functor.whiskerRight_app, AlgCat.forget₂_module_map,
-      ModuleCat.hom_ofHom, AlgHom.toLinearMap_apply] using
-    cechComplexπ_cechComplexFunctor_map U
-      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) m c k
-
-/-- The restrictions of the map of Čech complexes induced by a morphism of presheaves of algebras
-`α : F ⟶ G` are the images of the restrictions under the components of `α`. -/
-@[simp]
-theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G) {m l : ℕ}
-    (k : Fin (l + 1) → ι) (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex U F).X m) :
-    cechFace k σ ((((cechComplexFunctor U).map
-      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f m).hom c) =
-      (α.app (op (∏ᶜ fun j ↦ U (k j)))).hom (cechFace k σ c) := by
-  rw [cechFace_apply, cechComponent_cechComplexFunctor_map, cechFace_apply, ← AlgCat.comp_apply,
-    ← AlgCat.comp_apply, α.naturality]
-  -- the products `∏ᶜ fun j ↦ U ((k ∘ σ) j)` and `∏ᶜ fun x ↦ U (k (σ x))` are the same object
-  rfl
 
 /-- The factors of the augmentation `F(T) → Č⁰(U, F)` for a terminal object `T`: the factor indexed
 by `a` of the augmentation of a section `s` over `T` is the restriction of `s`. -/
@@ -625,12 +549,6 @@ theorem cechFace_cechAugmentation_f_zero {T : C} (hT : IsTerminal T) {n : ℕ}
     ← op_comp, hT.hom_ext (_ ≫ _) (hT.from _)]
 
 end Maps
-
-/-- Restrictions along maps of vertices with the same values agree. -/
-lemma cechFace_eq_of_val {m n : ℕ} {k : Fin (n + 1) → ι} {σ σ' : Fin (m + 1) → Fin (n + 1)}
-    (c : (cechAlgebraComplex U F).X m) (h : ∀ i, (σ i : ℕ) = σ' i) :
-    cechFace k σ c = cechFace k σ' c := by
-  rw [show σ = σ' from funext fun i ↦ Fin.ext (h i)]
 
 section Cup
 
