@@ -200,25 +200,10 @@ private theorem ramificationIdx_eq_one_of_inertia_le_fixingSubgroup
   have hτL (a : L) : τ a = τ' (algebraMap L (w.adicCompletion L) a) :=
     congrArg (fun φ : L →ₐ[K] _ ↦ φ a) hτ
   have hfix : separableClosureInertiaSubgroup (v.adicCompletion K) ≤
-      τ'.fieldRange.fixingSubgroup := by
-    intro g hg ⟨_, y, rfl⟩
-    have hfixL (a : L) : g (τ' (algebraMap L (w.adicCompletion L) a)) =
-        τ' (algebraMap L (w.adicCompletion L) a) := by
+      τ'.fieldRange.fixingSubgroup := fun g hg ↦
+    τ'.mem_fixingSubgroup_fieldRange_of_forall_apply_algebraMap w fun a ↦ by
       rw [← hτL, ← absoluteGaloisGroupMap_commutes]
       exact congrArg τ (hL (absoluteGaloisGroupMap_mem_inertiaOutsideSubgroup K hv τ hg) a)
-    classical
-    let eSemi := v.adicCompletionSemilocalEquiv K (𝓞 L) L
-    let z : v.adicCompletion K ⊗[K] L := eSemi.symm (Pi.single ⟨w, ‹_›⟩ y)
-    have hz : eSemi z ⟨w, ‹_›⟩ = y := by simp [z]
-    -- `g • ⟨τ' y, _⟩ = ⟨τ' y, _⟩` is `g (τ' y) = τ' y` on the underlying element.
-    change g (τ' y) = τ' y
-    rw [← hz]
-    refine TensorProduct.inductionOn z (fun c a ↦ ?_) (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂])
-    have htmul : eSemi (c ⊗ₜ[K] a) ⟨w, ‹_›⟩ =
-        algebraMap (v.adicCompletion K) (w.adicCompletion L) c *
-          algebraMap L (w.adicCompletion L) a := by simp [eSemi]
-    rw [htmul]
-    simp only [map_mul, AlgHom.commutes, AlgEquiv.commutes, hfixL]
   have : Module.Finite (v.adicCompletion K) τ'.fieldRange :=
     τ'.equivFieldRange.toLinearEquiv.finiteDimensional
   let _ := finiteIntermediateFieldValuativeRel (v.adicCompletion K) _ τ'.fieldRange
