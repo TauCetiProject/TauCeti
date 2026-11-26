@@ -247,11 +247,7 @@ theorem shortExact_map_sectionsFunctor {S : ShortComplex X.Modules} (hS : S.Shor
     (hg : Function.Surjective (S.g.app ⊤)) :
     (S.map (Scheme.Modules.sectionsFunctor (⊤ : X.Opens))).ShortExact :=
   have := hS.mono_f
-  ShortComplex.ShortExact.mk'
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 (exact_sections hS))
-    ((ModuleCat.mono_iff_injective _).2 (sections_injective S.f))
-    ((ModuleCat.epi_iff_surjective _).2 hg)
-
+  ModuleCat.shortComplex_shortExact _ (exact_sections hS) (sections_injective S.f) hg
 
 /-- The connecting map is natural in the short exact sequence: a morphism `φ : S₁ ⟶ S₂` of short
 exact sequences of sheaves of modules makes the square formed by the two connecting maps and the

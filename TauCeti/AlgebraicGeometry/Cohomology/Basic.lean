@@ -77,6 +77,19 @@ instance (X : Scheme.{u}) (i : ℕ) : (cohomologyFunctor X i).Additive :=
   inferInstanceAs ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
     CategoryTheory.Sheaf.functorH.{u} _ i).Additive)
 
+/-- A zero module has no cohomology: Mathlib's `CategoryTheory.Sheaf.subsingleton_H_of_isZero`
+applied to the underlying abelian sheaf. -/
+lemma subsingleton_cohomology_of_isZero {M : X.Modules} (hM : IsZero M) (n : ℕ) :
+    Subsingleton (Cohomology M n) :=
+  CategoryTheory.Sheaf.subsingleton_H_of_isZero
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map_isZero hM) n
+
+/-- Cohomology is invariant under isomorphism of the coefficients. -/
+lemma subsingleton_cohomology_of_iso {M N : X.Modules} (e : M ≅ N) (n : ℕ)
+    [h : Subsingleton (Cohomology M n)] : Subsingleton (Cohomology N n) :=
+  have : Subsingleton ((cohomologyFunctor X n).obj M) := h
+  ((cohomologyFunctor X n).mapIso e).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
+
 /-- Zeroth cohomology is canonically equivalent to the group of global sections.
 
 Naturality in the coefficient sheaf follows from `CategoryTheory.Sheaf.H.equiv₀_naturality`

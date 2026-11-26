@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.DegreewiseQuasiIso
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
-public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsHomology
@@ -39,7 +38,7 @@ Nothing is assumed about the boundedness of `K`, and the cohomological dimension
 infinite, so the bounded below argument does not apply directly. The proof follows the Stacks
 project. The canonical truncations `τ^{≥ -n} K` are bounded below, and their injective resolutions
 `Iₙ` can be chosen to form a tower of degreewise split epimorphisms
-(`CochainComplex.towerResolution`); the limit `L` of this tower is K-injective. On every affine
+(`CochainComplex.truncGETower`); the limit `L` of this tower is K-injective. On every affine
 open `U`, global sections commute with the cohomology of the bounded below complexes `Iₙ`, since
 their terms and their cohomology sheaves have no higher cohomology on `U`
 (`Scheme.Modules.preservesLeftHomologyOf_sectionsFunctor_sc`). As the cohomology of the `Iₙ` in a
@@ -191,82 +190,25 @@ end Tower
 
 section Truncation
 
-variable {X : Scheme.{u}} (K : CochainComplex X.Modules ℤ)
-
-/-- Consecutive truncation transitions, using the general comparison of lower truncations. -/
-private abbrev truncTransition (n : ℕ) :=
-  K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)
-
-/-- The tower of injective resolutions of the canonical truncations `τ^{≥ -n} K`. -/
-private abbrev truncTower : ℕᵒᵖ ⥤ CochainComplex X.Modules ℤ :=
-  Functor.ofOpSequence (towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K))
-
-/-- The resolution `τ^{≥ -n} K ⟶ Iₙ` of the `n`-th truncation, as a map from `K`. -/
-private abbrev truncTowerι (n : ℕ) : K ⟶ (truncTower K).obj (op n) :=
-  K.πTruncGE (-(n : ℤ)) ≫ towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n
-
-/-- The maps `K ⟶ Iₙ` induce isomorphisms on cohomology in degrees `≥ -n`. -/
-private lemma quasiIsoAt_truncTowerι (n : ℕ) (j : ℤ) (hj : -(n : ℤ) ≤ j) :
-    QuasiIsoAt (truncTowerι K n) j :=
-  have := K.quasiIsoAt_πTruncGE _ j hj
-  -- the resolution map, viewed as a map into the object of the tower
-  have : QuasiIsoAt (show K.truncGE (-(n : ℤ)) ⟶ (truncTower K).obj (op n) from
-      towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n) j :=
-    QuasiIso.quasiIsoAt
-      (f := towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n) j
-  quasiIsoAt_comp _ _ j
-
-@[reassoc]
-private lemma truncTowerι_comp_map (n : ℕ) :
-    truncTowerι K (n + 1) ≫ (truncTower K).map (homOfLE (Nat.le_succ n)).op = truncTowerι K n := by
-  have e : (truncTower K).map (homOfLE (Nat.le_succ n)).op =
-      towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n :=
-    Functor.ofOpSequence_map_homOfLE_succ _ n
-  rw [e]
-  -- the same equation, stated with the terms of the tower resolution rather than the objects of
-  -- the tower functor, which agree with them definitionally
-  have h : (K.πTruncGE (-((n + 1 : ℕ) : ℤ)) ≫
-      towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) (n + 1)) ≫
-        towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n =
-      K.πTruncGE (-(n : ℤ)) ≫
-        towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n := by
-    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ,
-      CochainComplex.πTruncGE_truncGETransition_assoc]
-  exact h
-
-/-- The transitions of the tower of resolutions of the truncations of `K` induce isomorphisms on
-cohomology in degrees `≥ -n`. -/
-private lemma quasiIsoAt_truncTower_map (n : ℕ) (j : ℤ) (hj : -(n : ℤ) ≤ j) :
-    QuasiIsoAt ((truncTower K).map (homOfLE (Nat.le_succ n)).op) j := by
-  have := quasiIsoAt_truncTowerι K (n + 1) j (by push_cast; lia)
-  refine quasiIsoAt_of_comp_left (truncTowerι K (n + 1)) _ j (hφφ' := ?_)
-  rw [truncTowerι_comp_map]
-  exact quasiIsoAt_truncTowerι K n j hj
-
-variable {K}
+variable {X : Scheme.{u}} {K : CochainComplex X.Modules ℤ}
 
 /-- If the cohomology sheaves of `K` are quasi-coherent, then the tower of resolutions of the
 truncations of `K` is good. -/
-private lemma goodTower_truncTower (hK : ∀ i, (K.homology i).IsQuasicoherent) :
-    GoodTower (truncTower K) where
-  isStrictlyGE k := ⟨-k - 1, inferInstanceAs
-    ((towerResolution (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) k).IsStrictlyGE (-k - 1))⟩
+private lemma goodTower_truncGETower (hK : ∀ i, (K.homology i).IsQuasicoherent) :
+    GoodTower (truncGETower K) where
+  isStrictlyGE k := ⟨-k - 1, inferInstanceAs ((towerResolution _ _ k).IsStrictlyGE (-k - 1))⟩
   injective k i := inferInstanceAs (Injective ((towerResolution _ _ k).X i))
   isQuasicoherent k i := by
     have hι := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (QuasiIso.quasiIsoAt
-      (f := towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) k) i)
+      (f := towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
+        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) k) i)
     refine (Scheme.Modules.isQuasicoherent X).prop_of_iso (@asIso _ _ _ _ _ hι) ?_
     by_cases hi : -(k : ℤ) ≤ i
     · have hπ := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (K.quasiIsoAt_πTruncGE _ i hi)
       exact (Scheme.Modules.isQuasicoherent X).prop_of_iso (@asIso _ _ _ _ _ hπ) (hK i)
     · have : (K.truncGE (-(k : ℤ))).ExactAt i := (K.truncGE _).exactAt_of_isGE (-(k : ℤ)) i
       exact (Scheme.Modules.isQuasicoherent X).prop_of_isZero this.isZero_homology
-  isSplitEpi k i := by
-    rw [Functor.ofOpSequence_map_homOfLE_succ]
-    obtain ⟨_, _, _, _, ⟨σ⟩⟩ := (Abelian.epiWithInjectiveKernel_iff _).1
-      (degreewiseEpiWithInjectiveKernel_towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
-        (truncTransition K) k i)
-    exact ⟨σ.s, σ.s_g⟩
+  isSplitEpi := K.isSplitEpi_truncGETower_map_f
 
 end Truncation
 
@@ -281,39 +223,39 @@ the truncations of `K` is an isomorphism on degree-`j` cohomology of global sect
 affine scheme. -/
 private lemma quasiIsoAt_map_limitπ [IsAffine X] (j : ℤ) {n : ℕ} (hn : (1 - j).toNat ≤ n) :
     QuasiIsoAt (((Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).mapHomologicalComplex _).map
-      (limit.π (truncTower K) (op n))) j :=
-  (goodTower_truncTower hK).quasiIsoAt_map_π (limit.isLimit _) j _
-    (fun k hk i hi _ ↦ quasiIsoAt_truncTower_map K k i (by lia)) hn
+      (limit.π (truncGETower K) (op n))) j :=
+  (goodTower_truncGETower hK).quasiIsoAt_map_π (limit.isLimit _) j _
+    (fun k hk i hi _ ↦ K.quasiIsoAt_truncGETower_map k i (by lia)) hn
 
 include hK in
 /-- For `n` large compared with `-j`, the projection from the limit of the tower of resolutions of
 the truncations of `K` to its `n`-th term is an isomorphism on degree-`j` cohomology sheaves. -/
 private lemma quasiIsoAt_limitπ (j : ℤ) {n : ℕ} (hn : (2 - j).toNat ≤ n) :
-    QuasiIsoAt (limit.π (truncTower K) (op n)) j := by
-  have hD := goodTower_truncTower hK
+    QuasiIsoAt (limit.π (truncGETower K) (op n)) j := by
+  have hD := goodTower_truncGETower hK
   -- on each affine open, the restricted tower is good, and its projections are isomorphisms on the
   -- cohomology of global sections in degrees `≥ j - 1`
   let R (U : X.Opens) := (Scheme.Modules.restrictFunctor U.ι).mapHomologicalComplex (.up ℤ)
-  have hc (U : X.Opens) := isLimitOfPreserves (R U) (limit.isLimit (truncTower K))
+  have hc (U : X.Opens) := isLimitOfPreserves (R U) (limit.isLimit (truncGETower K))
   have hq (U : X.Opens) (hU : IsAffineOpen U) (i : ℤ) (hi : j - 1 ≤ i) :
       QuasiIsoAt (((Scheme.Modules.sectionsFunctor (⊤ : U.toScheme.Opens)).mapHomologicalComplex
-        _).map ((R U).map (limit.π (truncTower K) (op n)))) i :=
+        _).map ((R U).map (limit.π (truncGETower K) (op n)))) i :=
     have : IsAffine U := hU
     (hD.restrict U.ι).quasiIsoAt_map_π (hc U) i (2 - j).toNat (fun k hk i' hi' _ ↦ by
       rw [Functor.comp_map]
       exact HomologicalComplex.quasiIsoAt_map_of_preservesHomology _
-        (Scheme.Modules.restrictFunctor U.ι) i' (hφ := quasiIsoAt_truncTower_map K k i' (by lia)))
+        (Scheme.Modules.restrictFunctor U.ι) i' (hφ := K.quasiIsoAt_truncGETower_map k i' (by lia)))
       hn
   -- the projection is an epimorphism, surjective on sections over every affine open
-  have : Epi (limit.π (truncTower K) (op n)) := HomologicalComplex.epi_of_epi_f _ fun i ↦
+  have : Epi (limit.π (truncGETower K) (op n)) := HomologicalComplex.epi_of_epi_f _ fun i ↦
     Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun U _ ↦ by
       have := (hD.restrict U.ι).surjective_π_app (hc U) n i
       -- the sections of a restriction over `⊤` are the sections over the image of `⊤`
-      change Function.Surjective (((limit.π (truncTower K) (op n)).f i).app (U.ι ''ᵁ ⊤)) at this
+      change Function.Surjective (((limit.π (truncGETower K) (op n)).f i).app (U.ι ''ᵁ ⊤)) at this
       rwa [Scheme.Opens.ι_image_top] at this
   -- its kernel `F` is exact in degrees `≥ j`, because it is so on global sections over every
   -- affine open
-  let S := ShortComplex.mk _ _ (kernel.condition (limit.π (truncTower K) (op n)))
+  let S := ShortComplex.mk _ _ (kernel.condition (limit.π (truncGETower K) (op n)))
   have hS : S.ShortExact := { exact := ShortComplex.exact_kernel _ }
   have hF (i : ℤ) (hi : j ≤ i) : S.X₁.ExactAt i := exactAt_of_forall_isAffineOpen _ i fun U hU ↦ by
     have : IsAffine U := hU
@@ -338,17 +280,16 @@ variable {X : Scheme.{u}} {K : CochainComplex X.Modules ℤ}
 
 variable (K) in
 /-- The map from `K` to the limit of the tower of resolutions of its truncations. -/
-private def toLimit : K ⟶ limit (truncTower K) :=
-  limit.lift _ ⟨K, NatTrans.ofOpSequence (F := (Functor.const _).obj K) (G := truncTower K)
-    (truncTowerι K) fun n ↦ (Category.id_comp _).trans (truncTowerι_comp_map K n).symm⟩
+private def toLimit : K ⟶ limit (truncGETower K) :=
+  limit.lift _ K.truncGETowerCone
 
 @[reassoc]
-private lemma toLimit_π (n : ℕ) : toLimit K ≫ limit.π (truncTower K) (op n) = truncTowerι K n := by
-  rw [toLimit, limit.lift_π]
-  rfl
+private lemma toLimit_π (n : ℕ) :
+    toLimit K ≫ limit.π (truncGETower K) (op n) = K.truncGETowerι n :=
+  limit.lift_π K.truncGETowerCone (op n)
 
 /-- The limit of the tower of resolutions of the truncations of `K` is K-injective. -/
-private instance : (limit (truncTower K)).IsKInjective :=
+private instance : (limit (truncGETower K)).IsKInjective :=
   (isKInjective_of_isLimit_towerResolution _ _ (limit.isLimit _)).2
 
 /-- If the cohomology sheaves of `K` are quasi-coherent, then the limit of the tower of resolutions
@@ -358,8 +299,8 @@ private lemma quasiIso_toLimit (hK : ∀ i, (K.homology i).IsQuasicoherent) :
   rw [quasiIso_iff]
   intro j
   have := quasiIsoAt_limitπ hK j (n := max (2 - j).toNat (-j).toNat) (le_max_left _ _)
-  have := quasiIsoAt_truncTowerι K (max (2 - j).toNat (-j).toNat) j (by lia)
-  exact quasiIsoAt_of_comp_right _ (limit.π (truncTower K) (op (max (2 - j).toNat (-j).toNat))) j
+  have := K.quasiIsoAt_truncGETowerι (max (2 - j).toNat (-j).toNat) j (by lia)
+  exact quasiIsoAt_of_comp_right _ (limit.π (truncGETower K) (op (max (2 - j).toNat (-j).toNat))) j
     (hφφ' := by rw [toLimit_π]; infer_instance)
 
 /-- **Global sections of K-injective replacements.** Let `X` be an affine scheme and `K` a complex
@@ -382,9 +323,9 @@ theorem quasiIso_map_sectionsFunctor_of_isKInjective [IsAffine X]
     intro j
     let n := max (1 - j).toNat (-j).toNat
     have := hG j
-    have := (goodTower_truncTower hK).preservesLeftHomologyOf n j
-    have h₁ : QuasiIsoAt ((G.mapHomologicalComplex _).map (truncTowerι K n)) j :=
-      have := quasiIsoAt_truncTowerι K n j (by lia)
+    have := (goodTower_truncGETower hK).preservesLeftHomologyOf n j
+    have h₁ : QuasiIsoAt ((G.mapHomologicalComplex _).map (K.truncGETowerι n)) j :=
+      have := K.quasiIsoAt_truncGETowerι n j (by lia)
       HomologicalComplex.quasiIsoAt_map_of_preservesLeftHomologyOf G _ j
     have := quasiIsoAt_map_limitπ hK j (n := n) (le_max_left _ _)
     exact quasiIsoAt_of_comp_right _ ((G.mapHomologicalComplex _).map (limit.π _ (op n))) j
@@ -419,17 +360,17 @@ theorem exactAt_of_exactAt_map_sectionsFunctor [IsAffine X] [K.IsKInjective]
   -- the global sections of `Iₙ` are exact in degree `m`, hence so are the global sections of the
   -- cohomology sheaf `Hᵐ(Iₙ)`, which therefore vanishes
   have : QuasiIsoAt ((G.mapHomologicalComplex _).map (toLimit K) ≫
-      (G.mapHomologicalComplex _).map (limit.π (truncTower K) (op n))) m := inferInstance
-  have hI : ((G.mapHomologicalComplex _).obj ((truncTower K).obj (op n))).ExactAt m :=
+      (G.mapHomologicalComplex _).map (limit.π (truncGETower K) (op n))) m := inferInstance
+  have hI : ((G.mapHomologicalComplex _).obj ((truncGETower K).obj (op n))).ExactAt m :=
     (exactAt_iff_of_quasiIsoAt (((G.mapHomologicalComplex _).map (toLimit K) ≫
-      (G.mapHomologicalComplex _).map (limit.π (truncTower K) (op n)))) m).1 h
-  have := (goodTower_truncTower hK).preservesLeftHomologyOf n m
-  have := (goodTower_truncTower hK).isQuasicoherent n m
-  have : Subsingleton Γ(((truncTower K).obj (op n)).homology m, ⊤) :=
+      (G.mapHomologicalComplex _).map (limit.π (truncGETower K) (op n)))) m).1 h
+  have := (goodTower_truncGETower hK).preservesLeftHomologyOf n m
+  have := (goodTower_truncGETower hK).isQuasicoherent n m
+  have : Subsingleton Γ(((truncGETower K).obj (op n)).homology m, ⊤) :=
     ModuleCat.isZero_iff_subsingleton.1
-      (hI.isZero_homology.of_iso ((((truncTower K).obj (op n)).sc m).mapHomologyIso G).symm)
-  have := quasiIsoAt_truncTowerι K n m (by lia)
-  exact (exactAt_iff_of_quasiIsoAt (truncTowerι K n) m).2
+      (hI.isZero_homology.of_iso ((((truncGETower K).obj (op n)).sc m).mapHomologyIso G).symm)
+  have := K.quasiIsoAt_truncGETowerι n m (by lia)
+  exact (exactAt_iff_of_quasiIsoAt (K.truncGETowerι n) m).2
     ((exactAt_iff_isZero_homology _ _).2
       (_root_.AlgebraicGeometry.Scheme.Modules.isZero_of_subsingleton_sections_top _))
 

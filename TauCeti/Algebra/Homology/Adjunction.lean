@@ -125,4 +125,10 @@ lemma mapHomotopyCategory_unit_app (K : HomologicalComplex C c) :
     (adj.mapHomotopyCategory c).unit.app ((HomotopyCategory.quotient C c).obj K) =
       (HomotopyCategory.quotient C c).map ((adj.mapHomologicalComplex c).unit.app K) := (rfl)
 
+/-- The counit on homotopy categories is the class of the degreewise counit on complexes. -/
+@[simp]
+lemma mapHomotopyCategory_counit_app (K : HomologicalComplex D c) :
+    (adj.mapHomotopyCategory c).counit.app ((HomotopyCategory.quotient D c).obj K) =
+      (HomotopyCategory.quotient D c).map ((adj.mapHomologicalComplex c).counit.app K) := (rfl)
+
 end CategoryTheory.Adjunction

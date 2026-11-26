@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
@@ -124,17 +123,6 @@ theorem preservesLeftHomologyOf_sectionsFunctor_of_isQuasicoherent [IsAffine X]
   exact preservesLeftHomologyOf_sectionsFunctor S
     (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine _ 0)
     (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine _ 0)
-
-/-- A zero module has no cohomology. -/
-private lemma subsingleton_cohomology_of_isZero {M : X.Modules} (hM : IsZero M) (n : ℕ) :
-    Subsingleton (Cohomology M n) :=
-  AddCommGrpCat.isZero_iff_subsingleton.1 ((cohomologyFunctor X n).map_isZero hM)
-
-/-- Cohomology is invariant under isomorphism of the coefficients. -/
-private lemma subsingleton_cohomology_of_iso {M N : X.Modules} (e : M ≅ N) (n : ℕ)
-    [h : Subsingleton (Cohomology M n)] : Subsingleton (Cohomology N n) :=
-  have : Subsingleton ((cohomologyFunctor X n).obj M) := h
-  ((cohomologyFunctor X n).mapIso e).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 section Complex
 

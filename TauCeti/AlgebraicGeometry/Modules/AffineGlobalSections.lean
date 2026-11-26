@@ -99,8 +99,6 @@ theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
     {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact)
     [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
     (S.map (moduleSpecΓFunctor (R := R))).ShortExact := by
-  have : (moduleSpecΓFunctor (R := R)).Additive :=
-    (moduleSpecΓFunctor (R := R)).additive_of_preserves_binary_products
   have h := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
     (moduleSpecΓFunctor (R := R))).mp inferInstance S hS
   have : Epi S.g := hS.epi_g

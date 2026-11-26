@@ -12,6 +12,8 @@ public import Mathlib.CategoryTheory.Limits.IsLimit
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 
 /-!
 # `lim` and `lim¹` of towers of modules
@@ -158,17 +160,6 @@ theorem transitionOfLE_surjective {m k : ℕ} (h : ∀ n, m ≤ n → Function.S
     (hmk : m ≤ k) : Function.Surjective (F.transitionOfLE hmk) := by
   induction k, hmk using Nat.le_induction with
   | base => simpa using Function.surjective_id
-  | succ k hmk ih =>
-    rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
-      LinearMap.coe_comp]
-    exact ih.comp (h k hmk)
-
-/-- If every transition map `F.transition n` with `m ≤ n` is injective, then so is every
-composite transition `Aₖ → Aₘ`. -/
-theorem transitionOfLE_injective {m k : ℕ} (h : ∀ n, m ≤ n → Function.Injective (F.transition n))
-    (hmk : m ≤ k) : Function.Injective (F.transitionOfLE hmk) := by
-  induction k, hmk using Nat.le_induction with
-  | base => simpa using Function.injective_id
   | succ k hmk ih =>
     rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
       LinearMap.coe_comp]
@@ -397,14 +388,22 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
 projection `lim A → Aₙ` with `N ≤ n`: the tower is constant from `N` on. -/
 theorem limπ_bijective_of_le (N : ℕ) (h : ∀ k, N ≤ k → Function.Bijective (F.transition k))
     {n : ℕ} (hn : N ≤ n) : Function.Bijective (F.limπ n) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ F.lim_ext fun k ↦ ?_, fun y ↦ ?_⟩
-  · rw [map_zero]
-    rcases le_total k n with hk | hk
-    · rw [← F.transitionOfLE_comp_limπ hk, LinearMap.comp_apply, hx, map_zero]
-    · refine F.transitionOfLE_injective (fun i hi ↦ (h i (hn.trans hi)).1) hk ?_
-      rw [map_zero, ← LinearMap.comp_apply, F.transitionOfLE_comp_limπ hk, hx]
-  · exact F.exists_limπ_eq_of_forall_exists_transition_eq (fun k _ ↦ N ≤ k)
-      (fun k y hk ↦ ((h k hk).2 y).imp fun _ hy ↦ ⟨hk.trans (Nat.le_succ k), hy⟩) hn
+  -- the tower is eventually constant from `N` on
+  have hF : F.IsEventuallyConstantTo (op N) := fun j f ↦ by
+    obtain ⟨k⟩ := j
+    have hk : N ≤ k := leOfHom f.unop
+    rw [Subsingleton.elim f (homOfLE hk).op]
+    induction k, hk using Nat.le_induction with
+    | base => rw [show homOfLE (le_refl N) = 𝟙 N from rfl, op_id, F.map_id]; infer_instance
+    | succ k hk ih =>
+      rw [← homOfLE_comp hk (Nat.le_succ k), op_comp, F.map_comp]
+      have := (ConcreteCategory.isIso_iff_bijective (F.map (homOfLE (Nat.le_succ k)).op)).2
+        (h k hk)
+      have := ih (homOfLE hk).op
+      infer_instance
+  have := hF.isIso_π_of_isLimit' F.isLimitLimCone (op n) (homOfLE hn).op
+  rw [← F.limCone_π_app]
+  exact (ConcreteCategory.isIso_iff_bijective _).1 this
 
 /-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
 theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :

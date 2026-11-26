@@ -65,7 +65,7 @@ variable [HasDerivedCategory.{w} (Spec (.of ℤ)).Modules]
 example : Nonempty (((DQCoh.affineEquiv (.of ℤ)).functor.obj
       ((singleFunctor _ 0).obj (ModuleCat.of (CommRingCat.of ℤ) ℤ))).obj ≅
     (singleFunctor _ 0).obj (SheafOfModules.unit (Spec (.of ℤ)).ringCatSheaf)) :=
-  ⟨(DQCoh.affineEquivFunctorCompιIso _).app _ ≪≫
+  ⟨eqToIso (DQCoh.affineEquiv_functor_obj_obj ..) ≪≫
     ((tilde.functor _).mapDerivedCategorySingleFunctor 0).app _ ≪≫
     (singleFunctor _ 0).mapIso tildeSelf⟩
 
@@ -73,7 +73,7 @@ example : Nonempty (((DQCoh.affineEquiv (.of ℤ)).functor.obj
 example : Nonempty (((DQCoh.affineEquiv (.of ℤ)).functor.obj
       ((singleFunctor _ 0).obj (ModuleCat.of (CommRingCat.of ℤ) (ZMod 2)))).obj ≅
     (singleFunctor _ 0).obj ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2)))) :=
-  ⟨(DQCoh.affineEquivFunctorCompιIso _).app _ ≪≫
+  ⟨eqToIso (DQCoh.affineEquiv_functor_obj_obj ..) ≪≫
     ((tilde.functor _).mapDerivedCategorySingleFunctor 0).app _⟩
 
 /-- The derived global sections of `(ℤ/2)~[0]` are `(ℤ/2)[0]`: `(ℤ/2)~` has no higher

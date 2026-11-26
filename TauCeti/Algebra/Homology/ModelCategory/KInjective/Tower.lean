@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Factorizations.CM5a
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.ModelStructure
 public import TauCeti.CategoryTheory.LiftingProperties.OfOpSequence
 
@@ -42,6 +43,8 @@ with cohomology, which is where geometric input enters.
   K-injective complexes of injective objects.
 * `CochainComplex.towerResolution`, `CochainComplex.towerResolutionι`,
   `CochainComplex.towerResolutionπ`: the resolution of a tower of bounded below complexes.
+* `CochainComplex.truncGETower`, `CochainComplex.truncGETowerCone`: the tower of resolutions of the
+  canonical truncations `τ^{≥ -n} K` of a complex `K`, with its cone from `K`.
 
 ## References
 
@@ -130,9 +133,9 @@ private structure TowerLevel (n : ℕ) where
 
 /-- The bottom level of the resolution of the tower. -/
 private lemma exists_towerLevel_zero : Nonempty (TowerLevel T 0) := by
-  have : (T 0).IsStrictlyGE (-1 + 1) := by simpa using (inferInstance : (T 0).IsStrictlyGE (-0))
-  obtain ⟨K, _, ι, π, _, _, hπ, -⟩ := Plus.modelCategoryQuillen.cm5a (0 : T 0 ⟶ 0) (-1)
-  have hinj := (degreewiseEpiWithInjectiveKernel_iff_of_isZero π (isZero_zero _)).1 hπ
+  have : (T 0).IsStrictlyGE 0 := by simpa using (inferInstance : (T 0).IsStrictlyGE (-0))
+  obtain ⟨K, ι, _, _, hinj, _⟩ :=
+    Plus.modelCategoryQuillen.exists_mono_quasiIso_injective (T 0) (-1) 0
   exact ⟨⟨K, ι, inferInstance, inferInstance, by simpa using ‹K.IsStrictlyGE (-1)›, hinj⟩⟩
 
 /-- Each level of the resolution of the tower extends to the next one, by a transition which is a
@@ -190,6 +193,13 @@ lemma degreewiseEpiWithInjectiveKernel_towerResolutionπ (n : ℕ) :
     degreewiseEpiWithInjectiveKernel (towerResolutionπ T u n) :=
   (exists_towerLevel_succ T u n (towerLevel T u n)).choose_spec.choose_spec.1
 
+/-- The transitions of the resolution of the tower `T` are degreewise split epimorphisms. -/
+instance isSplitEpi_towerResolutionπ_f (n : ℕ) (i : ℤ) :
+    IsSplitEpi ((towerResolutionπ T u n).f i) :=
+  have ⟨_, _, _, _, ⟨σ⟩⟩ := (Abelian.epiWithInjectiveKernel_iff _).1
+    (degreewiseEpiWithInjectiveKernel_towerResolutionπ T u n i)
+  ⟨σ.s, σ.s_g⟩
+
 /-- The resolutions commute with the transitions: `ι (n + 1) ≫ π n = u n ≫ ι n`. -/
 @[reassoc]
 lemma towerResolutionι_comp_towerResolutionπ (n : ℕ) :
@@ -205,5 +215,82 @@ theorem isKInjective_of_isLimit_towerResolution
     (fun n ↦ ⟨-n - 1, inferInstance⟩) inferInstance hc
 
 end TowerResolution
+
+section TruncGETower
+
+variable [EnoughInjectives C] (K : CochainComplex C ℤ)
+
+/-- The tower `⋯ ⟶ I₁ ⟶ I₀` of injective resolutions of the canonical truncations `τ^{≥ -n} K` of a
+complex `K`, obtained by resolving the tower of truncations with `CochainComplex.towerResolution`.
+Its transitions are degreewise split epimorphisms with injective kernels. -/
+abbrev truncGETower : ℕᵒᵖ ⥤ CochainComplex C ℤ :=
+  Functor.ofOpSequence (towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
+    (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)))
+
+/-- The map `K ⟶ Iₙ` from `K` to the `n`-th term of `CochainComplex.truncGETower K`: the
+truncation `K ⟶ τ^{≥ -n} K` followed by the resolution of `τ^{≥ -n} K`. -/
+def truncGETowerι (n : ℕ) : K ⟶ (truncGETower K).obj (op n) :=
+  K.πTruncGE (-(n : ℤ)) ≫ towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
+    (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n
+
+/-- The maps `K ⟶ Iₙ` are compatible with the transitions of `CochainComplex.truncGETower K`. -/
+@[reassoc]
+lemma truncGETowerι_comp_map (n : ℕ) :
+    K.truncGETowerι (n + 1) ≫ (truncGETower K).map (homOfLE (Nat.le_succ n)).op =
+      K.truncGETowerι n := by
+  rw [Functor.ofOpSequence_map_homOfLE_succ]
+  -- state the compatibility using the resolving complexes before passing to tower objects
+  have h : (K.πTruncGE (-((n + 1 : ℕ) : ℤ)) ≫
+      towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
+        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) (n + 1)) ≫
+      towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
+        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n =
+      K.truncGETowerι n := by
+    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ, πTruncGE_truncGETransition_assoc]
+    rfl
+  exact h
+
+/-- The cone over `CochainComplex.truncGETower K` with point `K`, given by the maps
+`CochainComplex.truncGETowerι`. -/
+@[expose]
+def truncGETowerCone : Cone (truncGETower K) :=
+  Cone.mk K <| NatTrans.ofOpSequence K.truncGETowerι
+    (fun n ↦ (Category.id_comp _).trans (K.truncGETowerι_comp_map n).symm)
+
+@[simp]
+lemma truncGETowerCone_pt : (truncGETowerCone K).pt = K := rfl
+
+@[simp]
+lemma truncGETowerCone_π_app (n : ℕ) : (truncGETowerCone K).π.app (op n) = K.truncGETowerι n :=
+  rfl
+
+/-- The map `K ⟶ Iₙ` induces isomorphisms on cohomology in degrees `≥ -n`. -/
+lemma quasiIsoAt_truncGETowerι (n : ℕ) (j : ℤ) (hj : -(n : ℤ) ≤ j) :
+    QuasiIsoAt (K.truncGETowerι n) j :=
+  have := K.quasiIsoAt_πTruncGE _ j hj
+  -- the resolution map, viewed as a map into the object of the tower
+  have : QuasiIsoAt (show K.truncGE (-(n : ℤ)) ⟶ (truncGETower K).obj (op n) from
+      towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
+        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n) j :=
+    QuasiIso.quasiIsoAt (f := towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
+      (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n) j
+  quasiIsoAt_comp _ _ j
+
+/-- The transitions of `CochainComplex.truncGETower K` induce isomorphisms on cohomology in degrees
+`≥ -n`. -/
+lemma quasiIsoAt_truncGETower_map (n : ℕ) (j : ℤ) (hj : -(n : ℤ) ≤ j) :
+    QuasiIsoAt ((truncGETower K).map (homOfLE (Nat.le_succ n)).op) j := by
+  have := K.quasiIsoAt_truncGETowerι (n + 1) j (by push_cast; lia)
+  refine quasiIsoAt_of_comp_left (K.truncGETowerι (n + 1)) _ j (hφφ' := ?_)
+  rw [truncGETowerι_comp_map]
+  exact K.quasiIsoAt_truncGETowerι n j hj
+
+/-- The transitions of `CochainComplex.truncGETower K` are degreewise split epimorphisms. -/
+lemma isSplitEpi_truncGETower_map_f (n : ℕ) (i : ℤ) :
+    IsSplitEpi (((truncGETower K).map (homOfLE (Nat.le_succ n)).op).f i) := by
+  rw [Functor.ofOpSequence_map_homOfLE_succ]
+  exact isSplitEpi_towerResolutionπ_f _ _ n i
+
+end TruncGETower
 
 end CochainComplex

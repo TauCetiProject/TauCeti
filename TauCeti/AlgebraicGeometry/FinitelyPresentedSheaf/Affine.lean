@@ -154,8 +154,6 @@ instance : (tildeFunctor R).Additive := by
 omit [IsNoetherianRing R] in
 /-- Taking global sections of a finitely presented sheaf is additive. -/
 instance : (globalSectionsFunctor R).Additive := by
-  have : (moduleSpecΓFunctor (R := R)).Additive :=
-    (moduleSpecΓFunctor (R := R)).additive_of_preserves_binary_products
   dsimp only [globalSectionsFunctor]
   constructor
   intro M N f g

@@ -294,12 +294,8 @@ private lemma isZero_of_isZero_derivedModuleSpecΓFunctor_obj {K : DerivedCatego
 theorem isIso_tildeDerivedAdjunction_counit_app {K : DerivedCategory (Spec A).Modules}
     (hK : DQCoh (Spec A) K) : IsIso ((tildeDerivedAdjunction A).counit.app K) := by
   -- derived global sections invert the counit, by the triangle identity
-  have : IsIso ((derivedModuleSpecΓFunctor A).map ((tildeDerivedAdjunction A).counit.app K)) := by
-    have : IsIso ((tildeDerivedAdjunction A).unit.app ((derivedModuleSpecΓFunctor A).obj K) ≫
-        (derivedModuleSpecΓFunctor A).map ((tildeDerivedAdjunction A).counit.app K)) := by
-      rw [(tildeDerivedAdjunction A).right_triangle_components K]
-      exact ⟨⟨𝟙 _, Category.id_comp _, Category.id_comp _⟩⟩
-    exact IsIso.of_isIso_comp_left ((tildeDerivedAdjunction A).unit.app _) _
+  have : IsIso ((derivedModuleSpecΓFunctor A).map ((tildeDerivedAdjunction A).counit.app K)) :=
+    isIso_of_hom_comp_eq_id _ ((tildeDerivedAdjunction A).right_triangle_components K)
   -- the cone of the counit lies in `D_QCoh` and has vanishing derived global sections
   obtain ⟨Z, g, h, hT⟩ :=
     Pretriangulated.distinguished_cocone_triangle ((tildeDerivedAdjunction A).counit.app K)
@@ -354,13 +350,6 @@ noncomputable def DQCoh.affineEquiv :
       simp
   functor_unitIso_comp M := (DQCoh (Spec A)).fullyFaithfulι.map_injective <| by
     simp
-
-variable (A) in
-/-- The functor of `DQCoh.affineEquiv`, followed by the inclusion of `D_QCoh(𝒪_{Spec A})`, is
-`M ↦ M~` on derived categories. -/
-noncomputable def DQCoh.affineEquivFunctorCompιIso :
-    (DQCoh.affineEquiv A).functor ⋙ (DQCoh (Spec A)).ι ≅ (tilde.functor A).mapDerivedCategory :=
-  Iso.refl _
 
 /-- The functor of `DQCoh.affineEquiv` is `M ↦ M~` on derived categories. -/
 @[simp]

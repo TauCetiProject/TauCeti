@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Tower.KInjective
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
-public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 import Mathlib.CategoryTheory.Functor.OfSequence
 
 /-!
@@ -48,51 +47,13 @@ universe v u
 
 variable {R : Type u} [Ring R] (K : CochainComplex (ModuleCat.{max v u} R) ℤ)
 
-private abbrev injectiveTruncationTower :
-    TauCeti.ComplexTower.{max v u} R (ComplexShape.up ℤ) :=
-  Functor.ofOpSequence (towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
-    (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)))
-
-private abbrev injectiveTruncationι (n : ℕ) :
-    K ⟶ (injectiveTruncationTower K).obj (op n) :=
-  K.πTruncGE (-(n : ℤ)) ≫ towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
-    (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n
-
-private theorem injectiveTruncationι_transition (n : ℕ) :
-    injectiveTruncationι K (n + 1) ≫
-      (injectiveTruncationTower K).map (homOfLE (Nat.le_succ n)).op =
-        injectiveTruncationι K n := by
-  rw [Functor.ofOpSequence_map_homOfLE_succ]
-  -- State the compatibility using the resolving complexes before passing to tower objects.
-  have h : (K.πTruncGE (-((n + 1 : ℕ) : ℤ)) ≫
-      towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
-        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) (n + 1)) ≫
-      towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
-        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n =
-      injectiveTruncationι K n := by
-    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ, πTruncGE_truncGETransition_assoc]
-    rfl
-  exact h
-
-private def injectiveTruncationCone : Cone (injectiveTruncationTower K) :=
-  Cone.mk K <| NatTrans.ofOpSequence (injectiveTruncationι K)
-    (fun n ↦ (Category.id_comp _).trans (injectiveTruncationι_transition K n).symm)
-
-private theorem injectiveTruncationTower_split (n : ℕ) (j : ℤ) :
-    IsSplitEpi (((injectiveTruncationTower K).map (homOfLE (Nat.le_succ n)).op).f j) := by
-  rw [Functor.ofOpSequence_map_homOfLE_succ]
-  obtain ⟨E, _, e, w, ⟨s⟩⟩ := (Abelian.epiWithInjectiveKernel_iff _).1
-    (degreewiseEpiWithInjectiveKernel_towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ)))
-      (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n j)
-  exact ⟨s.s, s.s_g⟩
-
 /-- Every possibly unbounded complex of left modules admits a quasi-isomorphism into a
 K-injective complex. The ring need not be commutative. -/
 theorem exists_quasiIso_isKInjective :
     ∃ (I : CochainComplex (ModuleCat.{max v u} R) ℤ) (i : K ⟶ I),
       QuasiIso i ∧ I.IsKInjective := by
-  let C := injectiveTruncationTower K
-  have hsplit := injectiveTruncationTower_split K
+  let C : TauCeti.ComplexTower.{max v u} R (ComplexShape.up ℤ) := K.truncGETower
+  have hsplit := K.isSplitEpi_truncGETower_map_f
   have (n : ℕ) : IsKInjective (C.obj (op n)) :=
     inferInstanceAs (IsKInjective (towerResolution (fun n ↦ K.truncGE (-(n : ℤ)))
       (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n))
@@ -103,15 +64,11 @@ theorem exists_quasiIso_isKInjective :
     rw [TauCeti.ModuleTower.transition_def]
     exact (ModuleCat.epi_iff_surjective ((C.map (homOfLE (Nat.le_succ n)).op).f j)).1
       inferInstance
-  refine ⟨C.limComplex, C.isLimitLimComplexCone.lift (injectiveTruncationCone K), ?_,
+  refine ⟨C.limComplex, C.isLimitLimComplexCone.lift K.truncGETowerCone, ?_,
     C.isKInjective_limComplex hsplit⟩
   apply C.quasiIso_isLimitLimComplexCone_lift hsurj
   intro j
-  refine ⟨j.natAbs, fun n hn ↦ ?_⟩
-  have := K.quasiIsoAt_πTruncGE (-(n : ℤ)) j (by omega)
-  exact quasiIsoAt_comp (K.πTruncGE (-(n : ℤ)))
-    (towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
-      (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n) j
+  exact ⟨j.natAbs, fun n hn ↦ K.quasiIsoAt_truncGETowerι n j (by omega)⟩
 
 end CochainComplex
 
