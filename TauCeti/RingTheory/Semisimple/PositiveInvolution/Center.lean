@@ -35,6 +35,7 @@ fixed field `K₀` of `σ` is totally real (`TauCeti.PositiveInvolution.fixedCen
 * `TauCeti.PositiveInvolution.centerInvolution_centerInvolution`: `σ² = id`.
 * `TauCeti.PositiveInvolution.trace_mul_centerInvolution_pos`: `Tr_{K/ℚ}(x σ(x)) > 0` for
   `x ≠ 0`.
+* `TauCeti.PositiveInvolution.trace_mul_centerInvolution_nonneg`: `Tr_{K/ℚ}(x σ(x)) ≥ 0`.
 * `TauCeti.PositiveInvolution.center_classification`: `K` is totally real and `σ = id`, or `K` is
   CM and `σ` is complex conjugation.
 * `TauCeti.PositiveInvolution.fixedCenter_totallyReal`: the fixed field of `σ` is totally real.
@@ -64,7 +65,9 @@ theorem exists_algebraMap_eq_star (x : K) :
   obtain ⟨y, hy⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hc)
   exact ⟨y, hy⟩
 
-variable [IsSimpleRing B]
+section Nontrivial
+
+variable [Nontrivial B]
 
 /-- The **involution induced on the centre** `K` of `B`: `σ(x)` is the element of `K` with image
 `(algebraMap K B x)*`. It is a ring endomorphism since `K` is commutative. -/
@@ -74,11 +77,11 @@ noncomputable def centerInvolution : K →+* K :=
   have hspec (x : K) : algebraMap K B (P.exists_algebraMap_eq_star K x).choose =
       star (algebraMap K B x) := (P.exists_algebraMap_eq_star K x).choose_spec
   { toFun x := (P.exists_algebraMap_eq_star K x).choose
-    map_one' := hinj (by simp)
+    map_one' := hinj (by rw [hspec, map_one, star_one])
+    -- `star` reverses products, which is harmless since `algebraMap K B` has central image.
     map_mul' x y := hinj (by
-      rw [hspec, map_mul, map_mul, star_mul, hspec, hspec, ← hspec x, ← hspec y, ← map_mul,
-        ← map_mul, mul_comm])
-    map_zero' := hinj (by simp)
+      rw [hspec, map_mul, map_mul, hspec, hspec, Algebra.commutes, star_mul])
+    map_zero' := hinj (by rw [hspec, map_zero, star_zero])
     map_add' x y := hinj (by rw [hspec, map_add, map_add, star_add, hspec, hspec]) }
 
 /-- The induced involution is the restriction of `x ↦ x*` to `K`. -/
@@ -96,7 +99,9 @@ theorem centerInvolution_centerInvolution (x : K) :
   refine (algebraMap K B).injective ?_
   rw [algebraMap_centerInvolution, algebraMap_centerInvolution, star_star]
 
-variable [NumberField K] [IsScalarTower ℚ K B] [FiniteDimensional K B]
+end Nontrivial
+
+variable [IsSimpleRing B] [NumberField K] [IsScalarTower ℚ K B] [FiniteDimensional K B]
 
 /-- **The induced involution is positive for the field trace**: `Tr_{K/ℚ}(x σ(x)) > 0` for every
 nonzero `x ∈ K`. On the centre, `Trd_{B/ℚ}(c) = deg_K B · Tr_{K/ℚ}(c)`. -/
@@ -105,10 +110,17 @@ theorem trace_mul_centerInvolution_pos {x : K} (hx : x ≠ 0) :
   let := P.toStarRing
   have h := P.semisimpleReducedTrace_mul_star_pos (algebraMap K B x)
     ((map_ne_zero_iff _ (algebraMap K B).injective).mpr hx)
-  rw [← algebraMap_centerInvolution, ← map_mul,
+  -- On the centre, `Trd_{B/ℚ}(c) = Tr_{K/ℚ}(deg_K B * c) = deg_K B • Tr_{K/ℚ}(c)`.
+  rwa [← algebraMap_centerInvolution, ← map_mul,
     Algebra.semisimpleReducedTrace_eq_trace_reducedTrace K, Algebra.reducedTrace_algebraMap,
-    ← nsmul_eq_mul, map_nsmul, nsmul_eq_mul] at h
-  exact pos_of_mul_pos_right h (Nat.cast_nonneg _)
+    ← nsmul_eq_mul, map_nsmul, nsmul_pos_iff (Algebra.deg_ne_zero K B)] at h
+
+/-- `Tr_{K/ℚ}(x σ(x)) ≥ 0` for every `x ∈ K`. -/
+theorem trace_mul_centerInvolution_nonneg (x : K) :
+    0 ≤ Algebra.trace ℚ K (x * P.centerInvolution K x) := by
+  obtain rfl | hx := eq_or_ne x 0
+  · simp
+  · exact (P.trace_mul_centerInvolution_pos K hx).le
 
 /-- **The centre of a simple algebra with a positive involution is totally real or CM**: either
 `K` is totally real and the involution is the identity on `K`, or `K` is a CM field and the
@@ -117,18 +129,13 @@ theorem center_classification :
     (IsTotallyReal K ∧ P.centerInvolution K = RingHom.id K) ∨
       ∃ _ : IsCMField K, ∀ x, P.centerInvolution K x = IsCMField.complexConj K x :=
   NumberField.isTotallyReal_and_eq_id_or_isCMField_and_eq_complexConj_of_trace_mul_nonneg
-    fun x ↦ by
-      obtain rfl | hx := eq_or_ne x 0
-      · simp
-      · exact (P.trace_mul_centerInvolution_pos K hx).le
+    (P.trace_mul_centerInvolution_nonneg K)
 
 /-- **The fixed centre is totally real**: the subfield of `K` fixed by the involution is totally
 real. -/
 theorem fixedCenter_totallyReal :
     IsTotallyReal ((P.centerInvolution K).eqLocusField (RingHom.id K)) :=
-  NumberField.isTotallyReal_eqLocusField_of_trace_mul_nonneg fun x ↦ by
-    obtain rfl | hx := eq_or_ne x 0
-    · simp
-    · exact (P.trace_mul_centerInvolution_pos K hx).le
+  NumberField.isTotallyReal_eqLocusField_of_trace_mul_nonneg
+    (P.trace_mul_centerInvolution_nonneg K)
 
 end TauCeti.PositiveInvolution
