@@ -151,7 +151,7 @@ theorem coe_radicalHom_of_mem {k : Type*} [Semiring k] [Module k A] [SMulCommCla
 
 /-- Elements of `IsIdempotentElem.radicalHom he` fix `e` under left multiplication. -/
 @[simp]
-theorem coe_radicalHom_mul_idempotent (he : IsIdempotentElem e) (y : Multiplicative A) :
+theorem coe_radicalHom_mul_self (he : IsIdempotentElem e) (y : Multiplicative A) :
     (he.radicalHom y : A) * e = e := by
   rw [coe_radicalHom, add_mul, one_mul, mul_assoc (e * y.toAdd), he.one_sub_mul_self, mul_zero,
     add_zero]
