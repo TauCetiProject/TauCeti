@@ -117,7 +117,7 @@ private theorem weight_circleVarifold_eq_map :
 on the unit circle. -/
 theorem weight_circleVarifold : weight circleVarifold = μHE[1].restrict (sphere (0 : ℂ) 1) := by
   rw [weight_circleVarifold_eq_map]
-  simpa using TauCeti.smul_map_volume_restrict_circleMap 0 1
+  simpa using TauCeti.smul_map_volume_restrict_circleMap 0 1 0
 
 /-- The derivative of `g(θ) = ⟪X(γ(θ)), τ(θ)⟫`. -/
 private theorem hasDerivAt_inner_circleTangent {X : ℂ → ℂ} (hX : Differentiable ℝ X) (θ : ℝ) :
