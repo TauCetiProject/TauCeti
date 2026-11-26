@@ -25,7 +25,10 @@ If a Hamiltonian `H` has derivative `(δq, δp) ↦ ⟪a, δq⟫ + ⟪b, δp⟫`
 `H(q, p) = h(q)` depending only on position has `X_H(q, p) = (0, -∇h(q))`
 (`TauCeti.stdSymplecticForm_hamiltonianVectorField_comp_fst`). Consequently the Poisson bracket
 is given by the classical formula `{F, G} = ⟪∇_q F, ∇_p G⟫ - ⟪∇_p F, ∇_q G⟫`
-(`TauCeti.stdSymplecticForm_poissonBracket`). If a group acts linearly and isometrically on `V`,
+(`TauCeti.stdSymplecticForm_poissonBracket`). For the linear coordinates `⟪a, q⟫` and `⟪b, p⟫`
+the Hamiltonian vector fields are the constants `(0, -a)` and `(b, 0)`, and their Poisson bracket
+is `⟪a, b⟫` (`TauCeti.stdSymplecticForm_poissonBracket_inner_fst_inner_snd`); for `V = ℝ` this is
+`{q, p} = 1`. If a group acts linearly and isometrically on `V`,
 the Hamiltonian vector field of an invariant Hamiltonian commutes with the action
 (`TauCeti.stdSymplecticForm_hamiltonianVectorField_smul`).
 
@@ -82,6 +85,35 @@ theorem stdSymplecticForm_poissonBracket {F G : V × V → ℝ} {x : V × V} {a 
     hF.fderiv]
   simp [inner_neg_right, sub_eq_add_neg]
 
+/-- The linear position coordinate `q ↦ ⟪a, q⟫` has the constant Hamiltonian vector field
+`(0, -a)`. -/
+@[simp]
+theorem stdSymplecticForm_hamiltonianVectorField_inner_fst (a : V) (x : V × V) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (fun y ↦ ⟪a, y.1⟫_ℝ) x = (0, -a) := by
+  have h : HasFDerivAt (fun y : V × V ↦ ⟪a, y.1⟫_ℝ) ((innerSL ℝ a).coprod (innerSL ℝ 0)) x := by
+    convert ((innerSL ℝ a).coprod (innerSL ℝ (0 : V))).hasFDerivAt using 1
+    ext y
+    simp
+  simp [stdSymplecticForm_hamiltonianVectorField h]
+
+/-- The linear momentum coordinate `p ↦ ⟪b, p⟫` has the constant Hamiltonian vector field
+`(b, 0)`. -/
+@[simp]
+theorem stdSymplecticForm_hamiltonianVectorField_inner_snd (b : V) (x : V × V) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (fun y ↦ ⟪b, y.2⟫_ℝ) x = (b, 0) := by
+  have h : HasFDerivAt (fun y : V × V ↦ ⟪b, y.2⟫_ℝ) ((innerSL ℝ 0).coprod (innerSL ℝ b)) x := by
+    convert ((innerSL ℝ (0 : V)).coprod (innerSL ℝ b)).hasFDerivAt using 1
+    ext y
+    simp
+  simp [stdSymplecticForm_hamiltonianVectorField h]
+
+/-- **The canonical Poisson bracket.** The linear coordinates `⟪a, q⟫` and `⟪b, p⟫` have Poisson
+bracket `⟪a, b⟫`; for `V = ℝ` and `a = b = 1` this is `{q, p} = 1`. -/
+@[simp]
+theorem stdSymplecticForm_poissonBracket_inner_fst_inner_snd (a b : V) (x : V × V) :
+    (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ ⟪a, y.1⟫_ℝ) (fun y ↦ ⟪b, y.2⟫_ℝ) x =
+      ⟪a, b⟫_ℝ := by
+  simp [SymplecticForm.poissonBracket_def]
 
 /-- **Hamiltonian vector fields of invariant Hamiltonians are equivariant.** Let a group act
 linearly and isometrically on `V`, and on positions and momenta of `V × V` alike. If a Hamiltonian

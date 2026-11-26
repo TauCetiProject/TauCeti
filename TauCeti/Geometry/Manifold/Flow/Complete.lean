@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
 import TauCeti.Geometry.Manifold.ExtChartAt
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Complete vector fields
@@ -50,6 +51,9 @@ make completeness available without choosing a global flow or assuming finite di
 * `TauCeti.isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le`: a field `v` is complete when
   some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it, with no
   completeness assumption on the model space.
+* `IsCompact.exists_isCompleteVectorField_eventuallyEq`: a `C^n` field given on an open set agrees
+  near a compact subset with a complete `C^n` field on the whole manifold, which is a multiple
+  `c • v`, `c ∈ [0, 1]`, of it at every point.
 
 ## References
 
@@ -254,5 +258,35 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
       ordConnected_maximalIntegralCurveInterval.convex (fun _ _ ↦ hf _) hfp (fun _ _ ↦ hC _) h0 T
   rw [Real.closedBall_eq_Icc, zero_sub, zero_add] at hmem
   exact ⟨K, hK, hmem⟩
+
+omit [CompleteSpace E] in
+open scoped ContDiff Topology in
+/-- **Cutting a vector field off near a compact set.** Let `v` be a `C^n` vector field, `1 ≤ n`, on
+an open set `U` of a Hausdorff manifold modelled on a finite-dimensional space, and let `K ⊆ U` be
+compact. Then there is a complete `C^n` vector field `w` on the whole manifold which agrees with
+`v` on a neighbourhood of `K`, is a multiple `c • v`, `c ∈ [0, 1]`, of `v` at every point, and
+vanishes outside a compact subset of `U`. Its integral curves through the points where it agrees
+with `v` are integral curves of `v` for as long as they stay there. -/
+theorem _root_.IsCompact.exists_isCompleteVectorField_eventuallyEq [FiniteDimensional ℝ E]
+    [IsManifold I ∞ M] {n : ℕ∞} (hn : 1 ≤ n) {v : (x : M) → TangentSpace I x} {U : Set M}
+    (hU : IsOpen U) (hv : ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) U)
+    {K : Set M} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ w : (x : M) → TangentSpace I x,
+      ContMDiff I I.tangent n (fun x ↦ (⟨x, w x⟩ : TangentBundle I M)) ∧
+      IsCompleteVectorField w ∧ (∀ᶠ x in 𝓝ˢ K, w x = v x) ∧
+      (∀ x, ∃ c ∈ Icc (0 : ℝ) 1, w x = c • v x) ∧
+      ∃ C, IsCompact C ∧ C ⊆ U ∧ ∀ x ∉ C, w x = 0 := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  -- a smooth cutoff `σ`, equal to `1` near `K`, with compact support in `U`
+  obtain ⟨σ, hσ, hσ1, hσc, hσU, hσ01⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hU hKU
+  have hw : ContMDiff I I.tangent n (fun x ↦ (⟨x, (σ • v) x⟩ : TangentBundle I M)) :=
+    ContMDiffOn.smul_section_of_tsupport (hσ.of_le (mod_cast le_top)).contMDiffOn hU hσU hv
+  have hw0 : ∀ x ∉ tsupport σ, (σ • v) x = 0 := fun x hx ↦ by
+    simp [image_eq_zero_of_notMem_tsupport hx]
+  refine ⟨σ • v, hw,
+    isCompleteVectorField_of_isCompact_of_eq_zero_off (hw.of_le (mod_cast hn)) hσc hw0, ?_,
+    fun x ↦ ⟨σ x, hσ01 x, rfl⟩, tsupport σ, hσc, hσU, hw0⟩
+  filter_upwards [hσ1] with x hx
+  simp [hx]
 
 end TauCeti

@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.ModuleCat.FiniteFreeResolution
 public import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
+import TauCeti.Algebra.Homology.ShortComplex.Flat
 import TauCeti.RingTheory.Flat.Pi
 
 /-!
@@ -82,19 +83,17 @@ namespace CategoryTheory.ShortComplex.ShortExact
 `0 ⟶ S ⊗ X₁ ⟶ S ⊗ X₂ ⟶ S ⊗ X₃ ⟶ 0` is short exact for every `f : R →+* S`. -/
 theorem map_extendScalars {X : ShortComplex (ModuleCat.{u} R)} (hX : X.ShortExact)
     [Module.Flat R X.X₃] : (X.map (ModuleCat.extendScalars f)).ShortExact := by
-  -- By definition of `ModuleCat.extendScalars`, the images of `X.f` and `X.g` are the maps
-  -- `S ⊗ X₁ ⟶ S ⊗ X₂ ⟶ S ⊗ X₃` induced by `X.f` and `X.g` on the right factor.
+  -- By definition of `ModuleCat.extendScalars`, the underlying maps of `X.f` and `X.g` are
+  -- `X.f.hom.lTensor Q` and `X.g.hom.lTensor Q` for `Q = S` as an `R`-module.
   let Q := (ModuleCat.restrictScalars f).obj (ModuleCat.of S S)
-  have hg := (ModuleCat.epi_iff_surjective _).1 hX.epi_g
-  have hfg := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hX.exact
+  have hQ := hX.lTensor_of_flat Q
+  have hex := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hQ.exact
+  have hinj := (ModuleCat.mono_iff_injective _).1 hQ.mono_f
+  have hsurj := (ModuleCat.epi_iff_surjective _).1 hQ.epi_g
   refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-    exact lTensor_exact Q hfg hg
-  · rw [ModuleCat.mono_iff_injective]
-    exact LinearMap.lTensor_injective_of_exact_of_flat X.g.hom hg X.f.hom
-      hX.moduleCat_injective_f hfg Q
-  · rw [ModuleCat.epi_iff_surjective]
-    exact LinearMap.lTensor_surjective Q hg
+  · rwa [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+  · rwa [ModuleCat.mono_iff_injective]
+  · rwa [ModuleCat.epi_iff_surjective]
 
 end CategoryTheory.ShortComplex.ShortExact
 

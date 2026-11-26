@@ -602,17 +602,11 @@ theorem zero_row_conflict_infeasible (A₀ : Matrix (Fin 1) (Fin 0) ℝ) :
     (¬ ∃ p, IsFeasible A q₀ p) ∧
       (∀ x, graph A₀ x ∉ Icc r₀.1 r₀.2) ∧ ¬ ∃ p, IsFeasible A₀ r₀ p := by
   intro A q₀ r₀
-  refine ⟨exists_isFeasible_iff.not.mpr conflicting_row_no_fixed.2, fun x hx => ?_,
-    fun ⟨p, h⟩ => ?_⟩
-  · have h0 := hx.1 (.inr 0)
-    simp [r₀, Matrix.mulVec, dotProduct] at h0
-    norm_num at h0
-  · have hu := h.le_sum_zU 0
-    have hw := h.within.fst_le (.inr 0)
-    have ho := h.fst_le_snd (.inr 0)
-    simp only [Finset.univ_eq_empty, Finset.sum_empty] at hu
-    simp only [r₀] at hw
-    linarith
+  have hr : ¬ ∃ p, IsFeasible A₀ r₀ p :=
+    not_exists_isFeasible_of_conflicting_zero_row (i := 0) (fun j => Fin.elim0 j)
+      (by norm_num [r₀, mem_Icc])
+  exact ⟨exists_isFeasible_iff.not.mpr conflicting_row_no_fixed.2,
+    fun _ hx => hr (exists_isFeasible_of_graph_mem_Icc hx), hr⟩
 
 /-- Coefficient matrix of the equality rows `x₀ + x₁ + x₂`, `x₀ + x₁ - x₂`, `x₀ - x₁ + x₂` and
 `-x₀ + x₁ + x₂`. -/

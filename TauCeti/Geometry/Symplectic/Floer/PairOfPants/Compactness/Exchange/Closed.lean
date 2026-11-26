@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family in a closed manifold
@@ -173,17 +174,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- Each component `(c, z) ↦ K_c(z)(w)` of the perturbations is `C³` jointly in the parameter,
   -- the domain point of `S` and the target point, so its Hamiltonian vector field is `C²` in
   -- every chart.
-  have hg : ContMDiff (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun p : (ℝ × (ℝ × ℝ)) × M ↦ (p.1.1, (equivRealProdCLM.symm p.1.2, p.2))) :=
-    (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
-      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)
   have hK (w : ℂ) (p : ℝ × (ℝ × ℝ)) (hp : p ∈ univ ×ˢ S) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
           exchangePerturbation H p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
     (((contMDiffAt_exchangePerturbation hH hHs p.1 ⟨equivRealProdCLM.symm p.2, hp.2⟩ x).comp
-      (p, x) hg.contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+      (p, x) contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const).of_le
+        (by norm_num)
   have hWS : IsOpen (W ∩ univ ×ˢ S) := hW.inter (isOpen_univ.prod isOpen_thricePuncturedSphereReal)
   have hCDWS : C ×ˢ D ⊆ W ∩ univ ×ˢ S :=
     subset_inter hCDW (prod_mono (subset_univ _) hDS)
