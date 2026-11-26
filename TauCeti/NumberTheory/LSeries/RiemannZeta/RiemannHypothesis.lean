@@ -67,8 +67,8 @@ theorem riemannHypothesis_iff_riemannZeta_ne_zero :
       exact riemannZeta_one_ne_zero hs
     -- a trivial zero `-2(n + 1)` has negative real part
     have htriv : ¬∃ n : ℕ, s = -2 * (n + 1) := fun ⟨n, hn⟩ => by
-      have : s.re = -2 * (n + 1) := by simp [hn]
-      linarith [n.cast_nonneg (α := ℝ)]
+      subst hn
+      linarith [re_neg_two_mul_nat_add_one_lt_zero n]
     linarith [h s hs htriv hs1]
   · refine le_antisymm (not_lt.mp fun hgt => h s hgt hs) (not_lt.mp fun hlt => ?_)
     -- a zero left of the line is reflected to the zero `1 - s` right of it
@@ -88,8 +88,8 @@ theorem riemannHypothesis_iff_mem_Ioo :
   refine ⟨fun h s hs hre => h s hs (fun ⟨n, hn⟩ => ?_) ?_, fun h s hs htriv _ =>
     h s hs (re_mem_Ioo_of_riemannZeta_eq_zero hs htriv)⟩
   · -- a trivial zero `-2(n + 1)` has negative real part
-    have : s.re = -2 * (n + 1) := by simp [hn]
-    linarith [n.cast_nonneg (α := ℝ), hre.1]
+    subst hn
+    exact (re_neg_two_mul_nat_add_one_lt_zero n).not_gt hre.1
   · rintro rfl
     simp at hre
 

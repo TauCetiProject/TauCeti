@@ -324,18 +324,13 @@ theorem forall_LFunction_re_eq_half_iff_dirichletGRHUpTo {q : ℕ} [NeZero q] {H
     (∀ χ : DirichletCharacter ℂ q, ∀ ρ : ℂ, χ.LFunction ρ = 0 →
       0 < ρ.re → ρ.re < 1 → |ρ.im| ≤ H → ρ.re = 1 / 2) ↔
     ∀ (f : ℕ) [NeZero f], f ∣ q → DirichletGRHUpTo f H := by
+  have hne_one {ρ : ℂ} (hre1 : ρ.re < 1) : ρ ≠ 1 := fun h1 ↦ by simp [h1] at hre1
   refine ⟨fun h f _ hfq ψ _ ρ h0 hre0 hre1 him ↦ ?_, fun h χ ρ h0 hre0 hre1 him ↦ ?_⟩
-  · have hρ1 : ρ ≠ 1 := fun h1 ↦ by simp [h1] at hre1
-    have hlift : (DirichletCharacter.changeLevel hfq ψ).LFunction ρ = 0 :=
-      (DirichletCharacter.LFunction_changeLevel_eq_zero_iff ψ hfq hre0 (.inr hρ1)).2 h0
-    exact h (DirichletCharacter.changeLevel hfq ψ) ρ hlift hre0 hre1 him
-  · have hρ1 : ρ ≠ 1 := fun h1 ↦ by simp [h1] at hre1
-    rw [← χ.changeLevel_primitiveCharacter] at h0
-    have hprim0 : χ.primitiveCharacter.LFunction ρ = 0 :=
-      (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ.primitiveCharacter
-        χ.conductor_dvd_level hre0 (.inr hρ1)).1 h0
-    exact h χ.conductor χ.conductor_dvd_level χ.primitiveCharacter χ.primitiveCharacter_isPrimitive
-      ρ hprim0 hre0 hre1 him
+  · exact h (DirichletCharacter.changeLevel hfq ψ) ρ
+      ((DirichletCharacter.LFunction_changeLevel_eq_zero_iff ψ hfq hre0 (.inr (hne_one hre1))).2
+        h0) hre0 hre1 him
+  · exact h χ.conductor χ.conductor_dvd_level χ.primitiveCharacter χ.primitiveCharacter_isPrimitive
+      ρ ((χ.LFunction_primitiveCharacter_eq_zero_iff hre0 (hne_one hre1)).2 h0) hre0 hre1 him
 
 /-- At modulus `2`, all zeros of all characters modulo `2` in `0 < Re ρ < 1` with `|Im ρ| ≤ H` lie
 on the critical line if and only if `RiemannHypothesisUpTo H` holds, since the extra Euler factor

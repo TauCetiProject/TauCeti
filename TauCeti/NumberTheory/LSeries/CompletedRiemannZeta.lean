@@ -183,9 +183,7 @@ theorem zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo {s : ℂ} :
   rintro ⟨hζ, h0, h1⟩
   refine zero_lt_divisor_completedRiemannZeta_iff.2 ⟨hζ, ?_, ?_⟩
   · rintro ⟨n, rfl⟩
-    simp only [mul_re, neg_re, re_ofNat, add_re, natCast_re, one_re, neg_im, im_ofNat, add_im,
-      natCast_im, one_im] at h0
-    linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+    exact (re_neg_two_mul_nat_add_one_lt_zero n).not_gt h0
   · rintro rfl
     norm_num at h1
 

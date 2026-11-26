@@ -39,6 +39,8 @@ other zero lies in the open critical strip `0 < Re s < 1`.
 * `TauCeti.analyticOnNhd_riemannZeta_closedBall`: analyticity on `closedBall c r` for
   `r < |Im c|`.
 * `TauCeti.re_lt_one_of_riemannZeta_eq_zero`: every zero of `riemannZeta` has `Re s < 1`.
+* `TauCeti.re_neg_two_mul_nat_add_one_lt_zero`: the trivial zeros `-2(n + 1)` have negative
+  real part.
 * `TauCeti.re_mem_Ioo_of_riemannZeta_eq_zero`: every nontrivial zero of `riemannZeta` lies in
   the open critical strip `0 < Re s < 1`.
 * `TauCeti.one_le_toNat_analyticOrderAt_riemannZeta`: at a zero of `riemannZeta` the analytic
@@ -112,6 +114,12 @@ theorem analyticOnNhd_riemannZeta_closedBall {c : ℂ} {r : ℝ} (hr : r < |c.im
 /-- Every zero of the Riemann zeta function lies in the open half-plane `Re s < 1`. -/
 theorem re_lt_one_of_riemannZeta_eq_zero {s : ℂ} (h : riemannZeta s = 0) : s.re < 1 :=
   not_le.mp fun hs ↦ riemannZeta_ne_zero_of_one_le_re hs h
+
+/-- The trivial zeros `-2(n + 1)` of `riemannZeta` have negative real part. -/
+theorem re_neg_two_mul_nat_add_one_lt_zero (n : ℕ) : (-2 * (n + 1) : ℂ).re < 0 := by
+  simp only [mul_re, neg_re, re_ofNat, add_re, natCast_re, one_re, neg_im, im_ofNat, add_im,
+    natCast_im, one_im]
+  linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
 
 /-- Every nontrivial zero of `riemannZeta` lies in the open critical strip `0 < re s < 1`. -/
 theorem re_mem_Ioo_of_riemannZeta_eq_zero {s : ℂ} (hs : riemannZeta s = 0)

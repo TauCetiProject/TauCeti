@@ -231,13 +231,9 @@ theorem LFunction_ne_zero_of_platt_of_conductor_le (hP : PlattRecord) (hC : Plat
     (s : ℝ) (hs₀ : 0 < s) (hs₁ : s < 1) :
     DirichletCharacter.LFunction χ s ≠ 0 := by
   have hs1' : (s : ℂ) ≠ 1 := by exact_mod_cast hs₁.ne
-  rw [← χ.changeLevel_primitiveCharacter]
-  intro h0
-  have hprim0 : χ.primitiveCharacter.LFunction s = 0 :=
-    (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ.primitiveCharacter
-      χ.conductor_dvd_level (by simpa using hs₀) (.inr hs1')).1 h0
+  rw [Ne, ← χ.LFunction_primitiveCharacter_eq_zero_iff (by simpa using hs₀) hs1']
   exact LFunction_ne_zero_of_platt hP hC hcond χ.primitiveCharacter
-    χ.primitiveCharacter_isPrimitive s hs₀ hs₁ hprim0
+    χ.primitiveCharacter_isPrimitive s hs₀ hs₁
 
 /-- **No real zeros in `(0, 1)` for any character modulo `q ≤ 400 000`.** -/
 theorem LFunction_ne_zero_of_platt_of_le (hP : PlattRecord) (hC : PlattCentralRecord)
