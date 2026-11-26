@@ -23,8 +23,10 @@ elements and labels.
 
 This is the prestack which Deligne's construction `h¹/h⁰` stackifies: for a two-term complex of
 abelian sheaves, the associated stack of `Pseudofunctor.quotientGroupoid K` is the strictly
-commutative Picard stack `h¹/h⁰(E) = [E¹/E⁰]`. The stackification of a prestack is built in
-`TauCeti.CategoryTheory.Sites.Descent.Stackification`; this file supplies the prestack itself.
+commutative Picard stack `h¹/h⁰(E) = [E¹/E⁰]`. The stackification of a prestack is
+`TauCeti.Stack.stackification`, in
+`TauCeti.CategoryTheory.Sites.Descent.Stackification.Pseudofunctor`; this file supplies the
+prestack itself.
 
 * Morphisms of the prestack glue: `Pseudofunctor.isPrestack_quotientGroupoid` proves that it is a
   prestack for a Grothendieck topology `J` as soon as `E⁰` is a sheaf and `E¹` is separated. The
@@ -45,7 +47,7 @@ Mathlib's `LocallyDiscreteOpToCat.pullHom` on labels.
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.quotientGroupoid`: the prestack of quotient groupoids of a
+* `CategoryTheory.Pseudofunctor.quotientGroupoid`: the pseudofunctor of quotient groupoids of a
   presheaf of two-term complexes of abelian groups.
 * `CategoryTheory.Pseudofunctor.quotientGroupoid.objEquiv`,
   `CategoryTheory.Pseudofunctor.quotientGroupoid.label`,
@@ -79,13 +81,14 @@ namespace CategoryTheory.Pseudofunctor
 
 variable {C : Type u} [Category.{v} C] (K : Cᵒᵖ ⥤ Arrow AddCommGrpCat.{w})
 
-/-- The prestack of quotient groupoids of a presheaf `K` of two-term complexes of abelian groups:
-its fibre over `U` is the quotient groupoid `[E¹(U)/E⁰(U)]` of the complex `K(U)`, and its
-pullback functors are induced by the restriction maps of `K`. Its associated stack is Deligne's
-Picard stack `h¹/h⁰`. -/
--- The body is exposed: the fibres are the quotient groupoids of `AddMonoidHom.QuotientGroupoid`,
--- and stating the description of their objects and arrows requires the fibre over `X` to unfold
--- to the quotient groupoid of `K(X)`.
+/-- The pseudofunctor of quotient groupoids of a presheaf `K` of two-term complexes of abelian
+groups: its fibre over `U` is the quotient groupoid `[E¹(U)/E⁰(U)]` of the complex `K(U)`, and its
+pullback functors are induced by the restriction maps of `K`. It is a prestack for `J` when `E⁰`
+is a sheaf and `E¹` is separated (`Pseudofunctor.isPrestack_quotientGroupoid`); its associated
+stack is then Deligne's Picard stack `h¹/h⁰`. -/
+-- The body is exposed: the fibre API below (`objEquiv`, `label`, `homMk`, `isoMk`) is defined by
+-- unfolding the fibres to `AddMonoidHom.QuotientGroupoid`, and without exposure the compiler
+-- rejects these definitions because their compilation types would differ in other modules.
 @[expose]
 def quotientGroupoid : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, w} :=
   (K ⋙ AddMonoidHom.QuotientGroupoid.functor ⋙ Grpd.forgetToCat).toPseudofunctor'
@@ -151,6 +154,12 @@ theorem label_comp {M N P : (quotientGroupoid K).obj X} (φ : M ⟶ N) (ψ : N �
 theorem label_eqToHom {M N : (quotientGroupoid K).obj X} (h : M = N) : label (eqToHom h) = 0 :=
   AddMonoidHom.QuotientGroupoid.label_eqToHom (d := (K.obj X.as).hom.hom) h
 
+/-- Inverting an arrow negates its label. -/
+@[simp]
+theorem label_inv {M N : (quotientGroupoid K).obj X} (φ : M ⟶ N) [IsIso φ] :
+    label (inv φ) = -label φ :=
+  eq_neg_of_add_eq_zero_right (by rw [← label_comp, IsIso.hom_inv_id, label_id])
+
 /-- The isomorphism `x ≅ y` of the fibre of `quotientGroupoid K` over `X` labelled by `a`, for `a`
 with `d a + x = y`; its inverse is labelled by `-a`. -/
 def isoMk {M N : (quotientGroupoid K).obj X} (a : (K.obj X.as).left)
@@ -182,6 +191,14 @@ theorem objEquiv_symm_map_obj {Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y)
       (K.map f.as).right.hom ((objEquiv X).symm M) :=
   AddMonoidHom.QuotientGroupoid.objEquiv_symm_map_obj _ _ _ _
 
+/-- Pulling back the object of `quotientGroupoid K` given by an element of `E¹` restricts that
+element along `f`. -/
+@[simp]
+theorem map_obj_objEquiv {Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (K.obj X.as).right) :
+    ((quotientGroupoid K).map f).toFunctor.obj (objEquiv X x) =
+      objEquiv Y ((K.map f.as).right.hom x) :=
+  (objEquiv Y).symm.injective (by simp)
+
 /-- Pulling back an arrow of `quotientGroupoid K` along `f` restricts its label along `f`. -/
 @[simp]
 theorem label_map_map {Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y)
@@ -195,49 +212,40 @@ private theorem map_comp_eq {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y
   obtain ⟨g⟩ := g
   exact (K ⋙ AddMonoidHom.QuotientGroupoid.functor ⋙ Grpd.forgetToCat).map_comp f g
 
-private theorem mapComp_hom {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    ((quotientGroupoid K).mapComp f g).hom = eqToHom (map_comp_eq f g) := by
-  simp [quotientGroupoid]
-  rfl
-
-private theorem mapComp_inv {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    ((quotientGroupoid K).mapComp f g).inv = eqToHom (map_comp_eq f g).symm := by
-  simp [quotientGroupoid]
-  rfl
-
 private theorem map_id_eq (X : LocallyDiscrete Cᵒᵖ) :
     (quotientGroupoid K).map (𝟙 X) = 𝟙 ((quotientGroupoid K).obj X) :=
   (K ⋙ AddMonoidHom.QuotientGroupoid.functor ⋙ Grpd.forgetToCat).map_id X.as
 
-private theorem mapId_hom (X : LocallyDiscrete Cᵒᵖ) :
-    ((quotientGroupoid K).mapId X).hom = eqToHom (map_id_eq X) := by
-  simp [quotientGroupoid]
-  rfl
+-- The comparison isomorphisms of `quotientGroupoid K` are those of `Functor.toPseudofunctor'`,
+-- which are `eqToIso` for every functor (Mathlib's `Functor.toPseudofunctor'_mapComp` and
+-- `Functor.toPseudofunctor'_mapId`).
+private theorem mapComp_eq {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (quotientGroupoid K).mapComp f g = eqToIso (map_comp_eq f g) :=
+  Functor.toPseudofunctor'_mapComp _ f g
 
-private theorem mapId_inv (X : LocallyDiscrete Cᵒᵖ) :
-    ((quotientGroupoid K).mapId X).inv = eqToHom (map_id_eq X).symm := by
-  simp [quotientGroupoid]
-  rfl
+private theorem mapId_eq (X : LocallyDiscrete Cᵒᵖ) :
+    (quotientGroupoid K).mapId X = eqToIso (map_id_eq X) :=
+  Functor.toPseudofunctor'_mapId _ X
 
 /-- The unit comparison isomorphisms of `quotientGroupoid K` are labelled by `0`. -/
 @[simp]
 theorem label_mapId_hom_app (M : (quotientGroupoid K).obj X) :
     label (((quotientGroupoid K).mapId X).hom.toNatTrans.app M) = 0 := by
-  rw [mapId_hom, Cat.eqToHom_app, label_eqToHom]
+  rw [mapId_eq, eqToIso.hom, Cat.eqToHom_app, label_eqToHom]
 
 /-- The inverses of the unit comparison isomorphisms of `quotientGroupoid K` are labelled by
 `0`. -/
 @[simp]
 theorem label_mapId_inv_app (M : (quotientGroupoid K).obj X) :
     label (((quotientGroupoid K).mapId X).inv.toNatTrans.app M) = 0 := by
-  rw [mapId_inv, Cat.eqToHom_app, label_eqToHom]
+  rw [mapId_eq, eqToIso.inv, Cat.eqToHom_app, label_eqToHom]
 
 /-- The composition comparison isomorphisms of `quotientGroupoid K` are labelled by `0`. -/
 @[simp]
 theorem label_mapComp_hom_app {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z)
     (M : (quotientGroupoid K).obj X) :
     label (((quotientGroupoid K).mapComp f g).hom.toNatTrans.app M) = 0 := by
-  rw [mapComp_hom, Cat.eqToHom_app, label_eqToHom]
+  rw [mapComp_eq, eqToIso.hom, Cat.eqToHom_app, label_eqToHom]
 
 /-- The inverses of the composition comparison isomorphisms of `quotientGroupoid K` are labelled
 by `0`. -/
@@ -245,7 +253,7 @@ by `0`. -/
 theorem label_mapComp_inv_app {Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z)
     (M : (quotientGroupoid K).obj X) :
     label (((quotientGroupoid K).mapComp f g).inv.toNatTrans.app M) = 0 := by
-  rw [mapComp_inv, Cat.eqToHom_app, label_eqToHom]
+  rw [mapComp_eq, eqToIso.inv, Cat.eqToHom_app, label_eqToHom]
 
 /-- The comparison isomorphisms `Pseudofunctor.mapComp'` of `quotientGroupoid K` are labelled by
 `0`. -/
@@ -284,13 +292,14 @@ open quotientGroupoid
 
 /-- **The prestack condition.** If `E⁰` is a sheaf and `E¹` is separated for `J`, then arrows of
 the quotient groupoids glue: `quotientGroupoid K` is a prestack for `J`. Over `(T ⟶ S)`, the
-arrows `x ⟶ y` are the sections `a` of `E⁰` with `d a + x = y`; a compatible family of such arrows
-glues to a section of `E⁰`, which satisfies the equation because `E¹` is separated. -/
+arrows `x ⟶ y` are the sections `a` of `E⁰` with `d a + x = y`. -/
 theorem isPrestack_quotientGroupoid (J : GrothendieckTopology C)
     (h₀ : Presieve.IsSheaf J (K ⋙ Arrow.leftFunc ⋙ forget AddCommGrpCat))
     (h₁ : Presieve.IsSeparated J (K ⋙ Arrow.rightFunc ⋙ forget AddCommGrpCat)) :
     (quotientGroupoid K).IsPrestack J where
   isSheaf {S} M N := by
+    -- A compatible family of arrows glues to a section of `E⁰`, which satisfies the equation
+    -- `d a + x = y` because `E¹` is separated.
     rw [isSheaf_iff_isSheaf_of_type]
     intro T R hR x hx
     have h₀' := (Over.forget S).op_comp_isSheaf_of_isSheaf_type (J.over S) h₀
@@ -400,6 +409,14 @@ theorem label_quotientGroupoidMap_naturality_hom_app (φ : K ⟶ K') {X Y : Loca
     label (((quotientGroupoidMap φ).naturality f).hom.toNatTrans.app M) = 0 :=
   label_homMk _ _
 
+/-- The inverses of the naturality isomorphisms of the strong transformation induced by `φ` are
+labelled by `0`. -/
+@[simp]
+theorem label_quotientGroupoidMap_naturality_inv_app (φ : K ⟶ K') {X Y : LocallyDiscrete Cᵒᵖ}
+    (f : X ⟶ Y) (M : (quotientGroupoid K).obj X) :
+    label (((quotientGroupoidMap φ).naturality f).inv.toNatTrans.app M) = 0 :=
+  (label_homMk _ _).trans neg_zero
+
 /-- **Quasi-isomorphism invariance.** The functor between the fibres over `X` induced by `φ` is an
 equivalence exactly when `φ` is a quasi-isomorphism over `X`: `φ⁰` restricts to a bijection
 `H⁰ = ker d → ker d'` and `φ¹` induces a bijection `H¹ = E¹ ⧸ range d → E'¹ ⧸ range d'`. -/
@@ -463,6 +480,24 @@ theorem label_quotientGroupoidMapIsoOfHomotopy_hom_app {φ ψ : K ⟶ K'}
     label (((quotientGroupoidMapIsoOfHomotopy s h₀ h₁).hom.as.app X).toNatTrans.app M) =
       -(s.app X.as).hom ((objEquiv X).symm M) :=
   label_mapIsoOfHomotopy_hom_app s h₀ h₁ X M
+
+open scoped StrongTrans in
+/-- The component at `x` over `X` of the inverse of the modification induced by a chain homotopy
+`s` is labelled by `s x`. -/
+@[simp]
+theorem label_quotientGroupoidMapIsoOfHomotopy_inv_app {φ ψ : K ⟶ K'}
+    (s : K ⋙ Arrow.rightFunc ⟶ K' ⋙ Arrow.leftFunc)
+    (h₀ : ∀ U, (φ.app U).left.hom - (ψ.app U).left.hom = (s.app U).hom.comp (K.obj U).hom.hom)
+    (h₁ : ∀ U, (φ.app U).right.hom - (ψ.app U).right.hom = (K'.obj U).hom.hom.comp (s.app U).hom)
+    (X : LocallyDiscrete Cᵒᵖ) (M : (quotientGroupoid K).obj X) :
+    label (((quotientGroupoidMapIsoOfHomotopy s h₀ h₁).inv.as.app X).toNatTrans.app M) =
+      (s.app X.as).hom ((objEquiv X).symm M) := by
+  have h := congrArg (fun m ↦ label ((m.as.app X).toNatTrans.app M))
+    (quotientGroupoidMapIsoOfHomotopy s h₀ h₁).hom_inv_id
+  simp only [StrongTrans.homCategory_comp_as_app, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    label_comp, label_quotientGroupoidMapIsoOfHomotopy_hom_app, StrongTrans.homCategory_id_as_app,
+    Cat.Hom.toNatTrans_id, NatTrans.id_app, label_id] at h
+  exact (neg_add_eq_zero.mp h).symm
 
 end Map
 
