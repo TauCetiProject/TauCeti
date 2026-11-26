@@ -221,26 +221,40 @@ theorem algebraMap_padic_adicCompletion (w : HeightOneSpectrum B) [Finite (B ⧸
           w.underInt p).symm.toRingHom :=
   w.algebraMap_padicAlgebra p
 
+/-- Extending the adic completion at `v` along `v ∣ v` over the identity of `K` is the identity
+ring homomorphism. -/
+private theorem adicCompletionExtension_self {R : Type*} [CommRing R] [IsDedekindDomain R]
+    (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R)
+    [v.asIdeal.LiesOver v.asIdeal] :
+    adicCompletionExtension K K v v = RingHom.id (v.adicCompletion K) :=
+  (eq_adicCompletionExtension_of_continuous K K v v (f := RingHom.id (v.adicCompletion K))
+    continuous_id fun x ↦ by simp).symm
+
+/-- When `u = v` as height-one primes of `ℤ`, extending `u.adicCompletion ℚ` to
+`v.adicCompletion ℚ` after `(padicRingEquivOfCharP u p).symm` gives
+`(padicRingEquivOfCharP v p).symm`. Stating this for an arbitrary `u` with `u = v` lets `subst`
+unify the dependent completion carrier `u.adicCompletion ℚ` together with its `LiesOver` and
+`CharP` instances, which cannot be rewritten in place when `u` is `v.underInt`. -/
+private theorem adicCompletionExtension_comp_padicRingEquivOfCharP_symm_of_eq
+    {u v : HeightOneSpectrum ℤ} [v.asIdeal.LiesOver u.asIdeal] (p : ℕ) [Fact p.Prime]
+    [hu : CharP (ℤ ⧸ u.asIdeal) p] [hv : CharP (ℤ ⧸ v.asIdeal) p] (huv : u = v) :
+    (adicCompletionExtension ℚ ℚ u v).comp
+        (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP u p).symm.toRingHom =
+      (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP v p).symm.toRingHom := by
+  subst huv
+  obtain rfl : hu = hv := Subsingleton.elim _ _
+  rw [adicCompletionExtension_self ℚ u, RingHom.id_comp]
+
 /-- On a height-one prime `v` of `ℤ`, the `AdicCompletionPadic` algebra map agrees with
 `(padicRingEquivOfCharP v p).symm`. -/
 private theorem algebraMap_padic_adicCompletion_int (v : HeightOneSpectrum ℤ)
-    (p : ℕ) [Fact p.Prime] [hchar : CharP (ℤ ⧸ v.asIdeal) p] :
+    (p : ℕ) [Fact p.Prime] [CharP (ℤ ⧸ v.asIdeal) p] :
     algebraMap ℚ_[p] (v.adicCompletion ℚ) =
       (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP v p).symm.toRingHom := by
+  -- `v.underInt = v` holds propositionally (`v.underInt_self`), not definitionally, so a direct
+  -- `rw [v.underInt_self]` fails on the dependent type `v.underInt.adicCompletion ℚ`.
   rw [v.algebraMap_padic_adicCompletion (K := ℚ) p]
-  have hgen : ∀ (u : HeightOneSpectrum ℤ) [v.asIdeal.LiesOver u.asIdeal]
-      [CharP (ℤ ⧸ u.asIdeal) p], u = v →
-      (adicCompletionExtension ℚ ℚ u v).comp
-        (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP u p).symm.toRingHom =
-        (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP v p).symm.toRingHom := by
-    rintro u hlies hu_char rfl
-    obtain rfl : hu_char = hchar := Subsingleton.elim _ _
-    have := hlies
-    have hid : adicCompletionExtension ℚ ℚ u u = RingHom.id (u.adicCompletion ℚ) :=
-      (eq_adicCompletionExtension_of_continuous ℚ ℚ u u (f := RingHom.id (u.adicCompletion ℚ))
-        continuous_id fun x ↦ by simp).symm
-    rw [hid, RingHom.id_comp]
-  exact @hgen v.underInt v.liesOver_underInt (v.charP_quotient_underInt p) v.underInt_self
+  exact adicCompletionExtension_comp_padicRingEquivOfCharP_symm_of_eq p v.underInt_self
 
 /-- `ℚ_[p] → w.underInt.adicCompletion ℚ → w.adicCompletion K` is a scalar tower for the
 `AdicCompletionPadic` `ℚ_[p]`-algebra structures on both completions and the

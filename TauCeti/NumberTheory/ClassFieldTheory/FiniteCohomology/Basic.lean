@@ -173,6 +173,62 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
   exact finite_continuousCohomology_of_prime_ge_two hn A hA i
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hj₀ hj ↦ by omega
 
+open CategoryTheory in
+/-- For a discrete `R`-module `M` with a `G`-action commuting with `R`, the identity on `M` is an
+isomorphism in `TopRep ℤ G` between `ofDiscreteModule ℤ G M` and
+`TopRep.restrictScalarsInt.obj (ofDiscreteModule R G M)`. -/
+private def ofDiscreteModuleIntIsoRestrictScalarsInt {R : Type*} [Ring R] [TopologicalSpace R]
+    {G : Type u} [Monoid G] (M : Type u) [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] :
+    ofDiscreteModule ℤ G M ≅ TopRep.restrictScalarsInt.obj (ofDiscreteModule R G M) where
+  hom := TopRep.ofHom
+    { toFun x := x
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      cont := continuous_of_discreteTopology
+      isIntertwining' g := ContinuousLinearMap.ext fun (m : M) ↦
+        (ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := G) (M := M) g m).trans
+          ((ofDiscreteModule_ρ_apply_apply (R := R) (G := G) (M := M) g m).symm.trans
+            (TopRep.restrictScalarsInt_obj_ρ_apply (ofDiscreteModule R G M) g m).symm) }
+  inv := TopRep.ofHom
+    { toFun x := x
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      cont := continuous_of_discreteTopology
+      isIntertwining' g := ContinuousLinearMap.ext fun (m : M) ↦
+        (TopRep.restrictScalarsInt_obj_ρ_apply (ofDiscreteModule R G M) g m).trans
+          ((ofDiscreteModule_ρ_apply_apply (R := R) (G := G) (M := M) g m).trans
+            (ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := G) (M := M) g m).symm) }
+  hom_inv_id := by ext; rfl
+  inv_hom_id := by ext; rfl
+
+/-- Continuous cohomology of a discrete `R`-module `M` with `R`-linear `G`-action agrees with its
+continuous cohomology as a discrete `ℤ`-module, without relying on equality of `TopRep` objects. -/
+private noncomputable def continuousCohomologyOfDiscreteModuleEquiv {R : Type*} [Ring R]
+    [TopologicalSpace R] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (M : Type u) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] (i : ℕ) :
+    continuousCohomology i (ofDiscreteModule ℤ G M) ≃+
+      continuousCohomology i (ofDiscreteModule R G M) :=
+  ((continuousCohomologyFunctor ℤ G i).mapIso
+    (ofDiscreteModuleIntIsoRestrictScalarsInt (R := R) M)).toContinuousLinearEquiv.toAddEquiv.trans
+    (restrictScalarsIntEquiv (ofDiscreteModule R G M) i)
+
+/-- Transport `finite_continuousCohomology_of_le_one` from `Field.absoluteGaloisGroup F` (`GalRep`)
+to `AbsoluteGaloisGroup F` along `absoluteGaloisGroupRestrictEquiv F`. -/
+private theorem finite_continuousCohomology_absoluteGaloisGroup_of_le_one (hn : (n : F) ≠ 0)
+    (A : TopRep.{u} (ZMod n) (AbsoluteGaloisGroup F)) (hA : IsSmoothDiscrete (ZMod n) A)
+    [Finite A.V] {i : ℕ} (hi : i ≤ 1) :
+    Finite (continuousCohomology i A) := by
+  let r := absoluteGaloisGroupRestrictEquiv F
+  let X : GalRep n F :=
+    TopRep.res ((r : Field.absoluteGaloisGroup F →ₜ* AbsoluteGaloisGroup F) :
+      Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
+  have : Finite X.V := inferInstanceAs (Finite A.V)
+  have : Finite (continuousCohomology i X) :=
+    finite_continuousCohomology_of_le_one hn X (hA.res r.continuous) hi
+  exact Finite.of_equiv _ (r.continuousCohomologyIso A i).toContinuousLinearEquiv.symm.toEquiv
+
 /-- Unbundled degree-one Galois cohomology of a finite discrete `G_F`-module killed by `n` is
 finite over any nonarchimedean local field `F` in which `n` is nonzero. -/
 theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0) (M : Type u) [AddCommGroup M]
@@ -181,29 +237,12 @@ theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0) (M : Type u) [AddCommGro
     Finite (H1 (AbsoluteGaloisGroup F) M) := by
   let _ := AddCommGroup.zmodModule hM
   let A := ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) M
-  let r := absoluteGaloisGroupRestrictEquiv F
-  let X : GalRep n F :=
-    TopRep.res ((r : Field.absoluteGaloisGroup F →ₜ* AbsoluteGaloisGroup F) :
-      Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
-  have hX : IsSmoothDiscrete (ZMod n) X :=
-    (ofDiscreteModule_isSmoothDiscrete _ _ _).res r.continuous
-  have hXV : X.V = M := (TopRep.of_V A.V _).trans (ofDiscreteModule_V _ _ _)
-  have : Finite X.V := hXV ▸ ‹Finite M›
-  have : Finite (continuousCohomology 1 X) :=
-    finite_continuousCohomology_of_le_one hn X hX le_rfl
+  have : Finite A.V := inferInstanceAs (Finite M)
   have : Finite (continuousCohomology 1 A) :=
-    Finite.of_equiv _ (r.continuousCohomologyIso A 1).toContinuousLinearEquiv.symm.toEquiv
-  have : Finite (continuousCohomology 1 (TopRep.restrictScalarsInt.obj A)) :=
-    Finite.of_equiv _ (restrictScalarsIntEquiv A 1).symm.toEquiv
-  -- Both `ofDiscreteModule ℤ _ M` and `restrictScalarsInt.obj A` act on `M` by `g ↦ (m ↦ g • m)`.
-  have hobj : ofDiscreteModule ℤ (AbsoluteGaloisGroup F) M = TopRep.restrictScalarsInt.obj A :=
-    congrArg (TopRep.of (X := M)) <| DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun m ↦
-      (ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := AbsoluteGaloisGroup F) (M := M) g m).trans
-        ((ofDiscreteModule_ρ_apply_apply (R := ZMod n) (G := AbsoluteGaloisGroup F) (M := M)
-          g m).symm.trans (TopRep.restrictScalarsInt_obj_ρ_apply A g m).symm)
-  have : Finite (continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup F) M)) :=
-    hobj ▸ this
+    finite_continuousCohomology_absoluteGaloisGroup_of_le_one hn A
+      (ofDiscreteModule_isSmoothDiscrete _ _ _) le_rfl
   exact Finite.of_equiv _
-    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup F) M).symm.toEquiv
+    (((explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup F) M).trans
+      (continuousCohomologyOfDiscreteModuleEquiv (R := ZMod n) M 1)).symm.toEquiv)
 
 end TauCeti.ClassFieldTheory
