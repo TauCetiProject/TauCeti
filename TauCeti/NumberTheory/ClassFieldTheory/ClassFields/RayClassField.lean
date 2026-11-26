@@ -105,9 +105,9 @@ whenever `L/K` is Galois and `𝔪` is invariant under `Gal(L/K)`-transport
 * `TauCeti.ClassFieldTheory.finrank_rayClassField`,
   `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
   `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
-  class group, the class number and the order of the narrow class group.
-* `TauCeti.ClassFieldTheory.hilbertClassField_eq_bot_iff`: the Hilbert class field is `K` itself
-  exactly when `K` has class number one.
+  class group, the class number and the order of the narrow class group; in particular
+  `rayClassField 𝔪 = ⊥` iff `RayClassGroup 𝔪` is trivial (`rayClassField_eq_bot_iff`) and
+  `hilbertClassField K = ⊥` iff `K` has class number one (`hilbertClassField_eq_bot_iff`).
 * `TauCeti.ClassFieldTheory.fieldRange_le_hilbertClassField_iff`: the Hilbert class field is the
   maximal abelian extension unramified at every finite and every infinite place.
 * `TauCeti.ClassFieldTheory.fieldRange_le_narrowHilbertClassField_iff`: the narrow Hilbert class
@@ -274,6 +274,30 @@ theorem finrank_rayClassField :
     Module.finrank K (rayClassField 𝔪) = Nat.card (RayClassGroup 𝔪) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (rayClassArtinEquiv 𝔪).toEquiv]
 
+/-- **The Galois group of the ray class field of `𝔪` is trivial iff the ray class group of `𝔪` is
+trivial.** -/
+theorem subsingleton_gal_rayClassField_iff :
+    Subsingleton Gal(rayClassField 𝔪/K) ↔ Subsingleton (RayClassGroup 𝔪) :=
+  (rayClassArtinEquiv 𝔪).toEquiv.symm.subsingleton_congr
+
+/-- When `RayClassGroup 𝔪` is trivial, `Gal(rayClassField 𝔪 / K)` is trivial. -/
+theorem subsingleton_gal_rayClassField [Subsingleton (RayClassGroup 𝔪)] :
+    Subsingleton Gal(rayClassField 𝔪/K) :=
+  (subsingleton_gal_rayClassField_iff 𝔪).2 ‹_›
+
+/-- **The ray class field of `𝔪` is trivial over `K` iff the ray class group of `𝔪` is
+trivial.** -/
+theorem rayClassField_eq_bot_iff :
+    rayClassField 𝔪 = ⊥ ↔ Subsingleton (RayClassGroup 𝔪) := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_rayClassField,
+    Nat.card_eq_one_iff_unique, and_iff_left (inferInstance : Nonempty (RayClassGroup 𝔪))]
+
+/-- When `RayClassGroup 𝔪` is trivial, the ray class field of `𝔪` is `⊥`. -/
+@[simp]
+theorem rayClassField_eq_bot [Subsingleton (RayClassGroup 𝔪)] :
+    rayClassField 𝔪 = ⊥ :=
+  (rayClassField_eq_bot_iff 𝔪).2 ‹_›
+
 /-! ### The Hilbert class field and the narrow Hilbert class field -/
 
 variable (K)
@@ -350,9 +374,26 @@ theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = cla
   rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_congr (hilbertClassArtinEquiv K).toEquiv,
     classNumber, Nat.card_eq_fintype_card]
 
+/-- **The Galois group of the Hilbert class field is trivial exactly in class number one.** -/
+theorem subsingleton_gal_hilbertClassField_iff :
+    Subsingleton Gal(hilbertClassField K/K) ↔ classNumber K = 1 := by
+  rw [subsingleton_gal_rayClassField_iff, oneEquivClassGroup.toEquiv.subsingleton_congr,
+    ← TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup, classNumber_eq_one_iff]
+
+/-- When `𝓞 K` is a principal ideal domain, `Gal(hilbertClassField K / K)` is trivial. -/
+theorem subsingleton_gal_hilbertClassField [IsPrincipalIdealRing (𝓞 K)] :
+    Subsingleton Gal(hilbertClassField K/K) :=
+  (subsingleton_gal_hilbertClassField_iff K).2 (classNumber_eq_one_iff.2 ‹_›)
+
 /-- **The Hilbert class field is trivial exactly in class number one.** -/
 theorem hilbertClassField_eq_bot_iff : hilbertClassField K = ⊥ ↔ classNumber K = 1 := by
   rw [← IntermediateField.finrank_eq_one_iff, finrank_hilbertClassField]
+
+/-- When `𝓞 K` is a principal ideal domain, the Hilbert class field of `K` is `⊥`. -/
+@[simp]
+theorem hilbertClassField_eq_bot [IsPrincipalIdealRing (𝓞 K)] :
+    hilbertClassField K = ⊥ :=
+  (hilbertClassField_eq_bot_iff K).2 (classNumber_eq_one_iff.2 ‹_›)
 
 /-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
 group of `K` with the Galois group of the narrow Hilbert class field: `rayClassArtinEquiv` at the

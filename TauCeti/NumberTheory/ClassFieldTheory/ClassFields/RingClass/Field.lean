@@ -37,8 +37,9 @@ ray-class reciprocity.
   Picard class of the contraction to `O` of a prime `𝔭` of `𝓞 K` prime to `𝔣` maps to an
   arithmetic Frobenius at every prime above `𝔭` (`isArithFrobAt_ringClassArtinEquiv_picClass`).
   Hence `Gal(ringClassField O / K) ≃* Pic O` (`gal_ringClassField_equiv_pic`) and
-  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), so the ring class field
-  is `K` exactly when `Pic O` is trivial (`ringClassField_eq_bot_iff`). The decomposition of
+  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), so `Gal(ringClassField O / K)` is
+  trivial and `ringClassField O = ⊥` exactly when `Pic O` is trivial
+  (`subsingleton_gal_ringClassField_iff`, `ringClassField_eq_bot_iff`). The decomposition of
   such a prime `𝔭` is read off `Pic O`: its residue degree in the ring class field is the order
   `f` of the Picard class of `𝔭 ∩ O` (`orderOf_picClass_eq_inertiaDeg`), and it has `#Pic O / f`
   primes above it (`ncard_primesOver_ringClassField_mul_orderOf_picClass`). In particular `𝔭`
@@ -86,8 +87,9 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
 * `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: the Galois group of the ring class
   field is the Picard group of the order.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: the degree is the order of `Pic O`.
-* `TauCeti.ClassFieldTheory.ringClassField_eq_bot_iff`: the ring class field is `K` itself exactly
-  when `Pic O` is trivial.
+* `TauCeti.ClassFieldTheory.subsingleton_gal_ringClassField_iff`,
+  `TauCeti.ClassFieldTheory.ringClassField_eq_bot_iff`: the ring class field is trivial over `K`
+  iff `Pic O` is trivial.
 * `TauCeti.ClassFieldTheory.orderOf_picClass_eq_inertiaDeg`,
   `TauCeti.ClassFieldTheory.ncard_primesOver_ringClassField_mul_orderOf_picClass`: the
   decomposition law of a prime not dividing the conductor.
@@ -383,5 +385,35 @@ variable (O) in
 theorem hilbertClassField_le_ringClassField : hilbertClassField K ≤ ringClassField O :=
   (ringClassField_maximalNumberFieldOrder K).symm.trans_le <| ringClassField_le_ringClassField <|
     O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
+
+/-! ### Triviality of the ring class field -/
+
+variable (O)
+
+/-- **The Galois group of the ring class field of `O` is trivial iff `Pic O` is trivial.** -/
+theorem subsingleton_gal_ringClassField_iff :
+    Subsingleton Gal(ringClassField O/K) ↔ Subsingleton (Pic O) :=
+  (ringClassArtinEquiv O).toEquiv.symm.subsingleton_congr
+
+/-- When `Pic O` is trivial, the Galois group `Gal(ringClassField O / K)` is trivial. -/
+theorem subsingleton_gal_ringClassField [Subsingleton (Pic O)] :
+    Subsingleton Gal(ringClassField O/K) :=
+  (subsingleton_gal_ringClassField_iff O).2 ‹_›
+
+/-- When `Pic O` is trivial, the ring class field of `O` is `⊥` (that is, `K` itself). -/
+@[simp]
+theorem ringClassField_eq_bot [Subsingleton (Pic O)] : ringClassField O = ⊥ :=
+  (ringClassField_eq_bot_iff O).2 ‹_›
+
+/-- **Every idele class of `K` is a norm from `ringClassField O` iff `Pic O` is trivial.** -/
+theorem range_ideleClassNormMap_ringClassField_eq_top_iff :
+    (ideleClassNormMap K (ringClassField O) :
+        IdeleClassGroup (𝓞 (ringClassField O)) (ringClassField O) →*
+          IdeleClassGroup (𝓞 K) K).range = ⊤ ↔ Subsingleton (Pic O) := by
+  rw [range_ideleClassNormMap_ringClassField, MonoidHom.ker_eq_top_iff]
+  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ MonoidHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+  obtain ⟨a, rfl⟩ := ringClassIdeleQuotient_surjective O x
+  obtain ⟨b, rfl⟩ := ringClassIdeleQuotient_surjective O y
+  simp [h]
 
 end TauCeti.ClassFieldTheory

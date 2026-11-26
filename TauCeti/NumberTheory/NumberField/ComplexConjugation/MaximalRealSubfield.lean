@@ -40,6 +40,8 @@ real under a complex embedding, so it is `±1`.
 
 ## Main results
 
+* `IsOfFinOrder.add_inv_mem_maximalRealSubfield`: for any element `ζ` of finite multiplicative order
+  in a field `K`, `ζ + ζ⁻¹` lies in `K⁺`.
 * `NumberField.IsCMField.mem_maximalRealSubfield_iff_star_eq`: one complex embedding suffices to
   test membership in `K⁺`.
 * `IsAbelianGalois.mem_maximalRealSubfield_iff_star_eq`: the same for an abelian Galois extension
@@ -68,6 +70,18 @@ real under a complex embedding, so it is `±1`.
 public section
 
 open Polynomial
+
+/-- **The sum of a root of unity and its inverse is totally real**: for any element `ζ` of finite
+multiplicative order in `K`, `ζ + ζ⁻¹` lies in `NumberField.maximalRealSubfield K`. -/
+theorem IsOfFinOrder.add_inv_mem_maximalRealSubfield {K : Type*} [Field K] {ζ : K}
+    (hζ : IsOfFinOrder ζ) : ζ + ζ⁻¹ ∈ NumberField.maximalRealSubfield K := by
+  -- Under any complex embedding `φ`, `ζ` maps to the unit circle, where conjugation is inversion.
+  intro φ
+  obtain ⟨m, hm0, hm⟩ := isOfFinOrder_iff_pow_eq_one.mp hζ
+  have hz : φ ζ ^ m = 1 := by rw [← map_pow, hm, map_one]
+  have hnorm : ‖φ ζ‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hz hm0.ne'
+  rw [map_add, map_inv₀, star_add, star_inv₀, Complex.star_def, ← Complex.inv_eq_conj hnorm,
+    inv_inv, add_comm]
 
 namespace NumberField.IsCMField
 

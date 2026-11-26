@@ -38,9 +38,10 @@ has `D ≡ 1 (mod 8)`, it gives the thirteen discriminants `f² D` of such order
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_eq_one_iff`: the order of
-  conductor `f` in an imaginary quadratic field has class number one iff `h_K = 1` and `(D, f)` is
-  as above.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_eq_one_iff` and
+  `TauCeti.GlobalNumberFields.NumberFieldOrder.subsingleton_pic_intAddMulOrder_iff`: the order of
+  conductor `f` in an imaginary quadratic field has class number one (trivial Picard group) iff
+  `h_K = 1` (`𝓞 K` is a principal ideal domain) and `(D, f)` is as above.
 
 ## References
 
@@ -259,5 +260,19 @@ theorem card_pic_intAddMulOrder_eq_one_iff [IsTotallyComplex K] (hK : finrank �
       simpa [prod_pow_mul_sub_prime Nat.prime_three, h30, h3] using key
     · have h20 : c 2 = 0 := (fundamentalDiscriminantChar_two_three_of_eq_neg_four hD h4).1
       simpa [prod_pow_mul_sub_prime Nat.prime_two, h20, h4] using key
+
+/-- In an imaginary quadratic field `K`, the Picard group of `ℤ + f 𝓞 K` is trivial iff `𝓞 K` is a
+principal ideal domain and `(discr K, f)` is one of `(D, 1)`, `(D, 2)` with `D ≡ 1 (mod 8)`,
+`(-3, 2)`, `(-3, 3)`, or `(-4, 2)`. -/
+theorem subsingleton_pic_intAddMulOrder_iff [IsTotallyComplex K] (hK : finrank ℚ K = 2) (f : ℕ)
+    [NeZero f] :
+    Subsingleton (Pic (intAddMulOrder K f)) ↔ IsPrincipalIdealRing (𝓞 K) ∧
+      (f = 1 ∨ (f = 2 ∧ NumberField.discr K % 8 = 1) ∨
+        (NumberField.discr K = -3 ∧ (f = 2 ∨ f = 3)) ∨ (NumberField.discr K = -4 ∧ f = 2)) := by
+  have h := card_pic_intAddMulOrder_eq_one_iff hK f
+  rw [Nat.card_eq_one_iff_unique,
+    and_iff_left (inferInstance : Nonempty (Pic (intAddMulOrder K f))),
+    Nat.card_eq_fintype_card, ← NumberField.classNumber, NumberField.classNumber_eq_one_iff] at h
+  exact h
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder
