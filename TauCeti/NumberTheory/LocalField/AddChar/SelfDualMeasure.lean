@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import TauCeti.NumberTheory.LocalField.Topology
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # The self-dual Haar measure of an additive character of a nonarchimedean local field
@@ -30,9 +31,11 @@ Every additive Haar measure `μ` on `K` gives `P ^ m` the mass `q ^ (-m) μ(O)`,
 
 (Mathlib's `Fourier.fourierIntegral ψ ψ.selfDualMeasure`) satisfies Fourier inversion
 `𝓕 (𝓕 f) x = f (-x)` on the Schwartz–Bruhat space of `K`, the locally constant compactly supported
-functions; such a function is periodic under some `P ^ m`, which reduces inversion to
-`VectorFourier.fourierIntegral_fourierIntegral_of_periodic`. The transform therefore restricts to
-a linear automorphism of the Schwartz–Bruhat space `LocallyConstant.compactlySupported ℂ K E`.
+functions; such a function is periodic under some `P ^ m`
+(`IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow`), which reduces
+inversion to `VectorFourier.fourierIntegral_fourierIntegral_of_periodic`. The transform therefore
+restricts to a linear automorphism of the Schwartz–Bruhat space
+`LocallyConstant.compactlySupported ℂ K E`.
 The transform with the opposite sign, `y ↦ ∫ ψ (x * y) f x dμ(x)`, is `y ↦ 𝓕 f (-y)`, so it has
 the same self-dual measure and satisfies the same inversion formula.
 
@@ -48,6 +51,8 @@ zeta integrals of `f` and of `𝓕 f`. Nothing here uses the characteristic of `
 
 ## Main results
 
+* `IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow`: a locally constant
+  compactly supported function on `K` is periodic under some `P ^ m`.
 * `AddChar.selfDualMeasure_integer`,
   `AddChar.selfDualMeasure_setOf_valuation_le_uniformizer_zpow`: the self-dual measure gives `O`
   mass `q ^ (-ν / 2)` and `P ^ m` mass `q ^ (-m - ν / 2)`.
@@ -73,10 +78,20 @@ noncomputable section
 open MeasureTheory Measure Filter Topology ValuativeRel TauCeti Function Set
 open scoped ENNReal
 
-namespace AddChar
-
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
+
+/-- A locally constant compactly supported function on `K` is periodic under some fractional
+ideal `P ^ m`: its open subgroup of periods contains one of these neighbourhoods of `0`. -/
+theorem IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow
+    {A : Type*} [Zero A] {f : K → A} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
+    ∃ m : ℤ, ∀ u ∈ (valuation K).leAddSubgroup (uniformizer K ^ m), Function.Periodic f u := by
+  obtain ⟨m, -, hm⟩ := (hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_iff.1
+    ((isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
+      (zero_mem (addRightTranslationStabilizer f)))
+  exact ⟨m, fun u hu ↦ mem_addRightTranslationStabilizer.1 (hm hu)⟩
+
+namespace AddChar
 
 section Measure
 
@@ -145,13 +160,13 @@ theorem addHaar_eq_selfDualMeasure_iff (μ : Measure K) [μ.IsAddHaarMeasure] (m
   have hqt : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
   -- Both measures are multiples of the Haar measure giving `O` mass one, so it suffices to
   -- compare their masses of `O`; the hypothesis says `q ^ ν * μ(O) ^ 2 = 1`.
-  rw [addHaar_setOf_valuation_le_uniformizer_zpow, addHaar_setOf_valuation_le_uniformizer_zpow,
-    ← ENNReal.rpow_intCast, ← ENNReal.rpow_intCast, mul_mul_mul_comm,
-    ← ENNReal.rpow_add _ _ hq0 hqt] at h
-  have hexp : ((-m : ℤ) : ℝ) + ((-(-ψ.conductorExponent - m) : ℤ) : ℝ) = ψ.conductorExponent := by
+  have hν : (Nat.card 𝓀[K] : ℝ≥0∞) ^ (ψ.conductorExponent : ℝ) * μ 𝒪[K] ^ 2 = 1 := by
+    rw [← h, addHaar_setOf_valuation_le_uniformizer_zpow,
+      addHaar_setOf_valuation_le_uniformizer_zpow, mul_mul_mul_comm, ← ENNReal.zpow_add hq0 hqt,
+      ← ENNReal.rpow_intCast, sq]
+    congr 2
     push_cast
     ring
-  rw [hexp, ← sq] at h
   have hc2 : μ 𝒪[K] ^ (2 : ℝ) =
       (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-(ψ.conductorExponent : ℝ)) := by
     rw [ENNReal.rpow_two, ENNReal.rpow_neg]
@@ -177,7 +192,7 @@ theorem isLocallyConstant_fourierIntegral (hψ : Continuous ψ) (μ : Measure K)
   obtain ⟨n, hn⟩ := hfc.isCompact.exists_subset_setOf_valuation_le_uniformizer_zpow
   exact VectorFourier.isLocallyConstant_fourierIntegral ψ μ (LinearMap.mul K K)
     (U := (valuation K).leAddSubgroup (uniformizer K ^ n))
-    (by rw [Valuation.coe_leAddSubgroup]; exact IsNonarchimedeanLocalField.isCompact_closedBall K _)
+    (isCompact_leAddSubgroup K _)
     (by simp only [LinearMap.mul_apply']; exact hψ.comp continuous_mul)
     ((subset_tsupport f).trans ((valuation K).coe_leAddSubgroup _ ▸ hn))
 
@@ -191,9 +206,8 @@ theorem hasCompactSupport_fourierIntegral (hψ : Continuous ψ) (h1 : ψ ≠ 1) 
     HasCompactSupport (Fourier.fourierIntegral ψ μ f) := by
   obtain ⟨m, hm⟩ := hf.exists_forall_periodic_leAddSubgroup_uniformizer_zpow hfc
   refine VectorFourier.hasCompactSupport_fourierIntegral ψ μ (LinearMap.mul K K) hm ?_
-  rw [characterAnnihilator_leAddSubgroup (setOf_eq_one_mem_nhds_zero hψ) h1,
-    Valuation.coe_leAddSubgroup]
-  exact IsNonarchimedeanLocalField.isCompact_closedBall K _
+  rw [characterAnnihilator_leAddSubgroup (setOf_eq_one_mem_nhds_zero hψ) h1]
+  exact isCompact_leAddSubgroup K _
 
 variable [CompleteSpace E]
 
@@ -208,8 +222,7 @@ theorem fourierIntegral_fourierIntegral_selfDualMeasure (hψ : Continuous ψ) (h
   obtain ⟨m, hm⟩ := hf.exists_forall_periodic_leAddSubgroup_uniformizer_zpow hfc
   have hdual := characterAnnihilator_leAddSubgroup h0 h1
   have hmeas (n : ℤ) : MeasurableSet ((valuation K).leAddSubgroup (uniformizer K ^ n) : Set K) :=
-    (valuation K).coe_leAddSubgroup _ ▸
-      (IsNonarchimedeanLocalField.isCompact_closedBall K _).isClosed.measurableSet
+    (isCompact_leAddSubgroup K _).isClosed.measurableSet
   have h := VectorFourier.fourierIntegral_fourierIntegral_of_periodic ψ ψ.selfDualMeasure
     (LinearMap.mul K K) ψ.selfDualMeasure hψ (by simpa using continuous_mul) (hmeas m)
     (by rw [hdual]; exact hmeas _) (by rw [LinearMap.flip_mul, hdual, hdual, sub_sub_cancel])

@@ -285,8 +285,10 @@ theorem addHaar_setOf_valuation_le_uniformizer_zpow (m : ℤ) :
     simp [ha]
   have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := natCard_residueField_pos.ne'
   rw [hset, addHaar_setOf_normalizedAbsoluteValue_le, ← Units.val_mk0 ha0,
-    normalizedAbsoluteValue_coe, hm, NNRat.cast_zpow, NNRat.cast_natCast, ENNReal.coe_zpow hq,
-    ENNReal.coe_natCast]
+    normalizedAbsoluteValue_coe, hm]
+  push_cast [ENNReal.coe_zpow hq]
+  -- The two sides now print identically; they agree up to unfolding, not syntactically.
+  rfl
 
 /-- **Haar measure of an open ball.** For every additive Haar measure `μ` on `K` and every
 `a ∈ K`, the ball `|x|_K < |a|_K` has mass `q⁻¹ |a|_K μ(𝒪[K])`, where `q` is the cardinality of

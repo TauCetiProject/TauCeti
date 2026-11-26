@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.Basic
-import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -33,11 +31,10 @@ largest value below `1`. An irreducible element of `𝒪[K]` has this valuation
 group. In a nonarchimedean local field the valuation of a unit `x` is therefore
 `uniformizer K ^ v_K(x)` (`TauCeti.valuation_eq_uniformizer_zpow`), and the closed balls
 `{x | valuation K x ≤ uniformizer K ^ m}`, the fractional ideals `𝓂[K] ^ m` for `m : ℤ`, form a
-neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`). Every
-compact subset of `K` lies in one of them
-(`IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow`), and a locally constant compactly
-supported function on `K` is periodic under one of them
-(`IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow`).
+neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`). As
+additive subgroups (`Valuation.leAddSubgroup`) these balls are compact
+(`TauCeti.isCompact_leAddSubgroup`), and every compact subset of `K` lies in one of them
+(`IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow`).
 -/
 
 public section
@@ -183,6 +180,14 @@ theorem hasBasis_nhds_zero_valuation_le_uniformizer_zpow :
   · exact ⟨uniformizer K ^ m, (zpow_pos uniformizer_pos m).ne',
       fun x (hx : valuation K x < _) ↦ hx.le⟩
 
+variable (K) in
+/-- The additive subgroup `(valuation K).leAddSubgroup γ`, the closed ball
+`{x | valuation K x ≤ γ}`, is compact. -/
+theorem isCompact_leAddSubgroup (γ : ValueGroupWithZero K) :
+    IsCompact ((valuation K).leAddSubgroup γ : Set K) := by
+  rw [Valuation.coe_leAddSubgroup]
+  exact isCompact_closedBall K γ
+
 /-- Every compact subset of `K` lies in some fractional ideal `𝓂[K] ^ n`, the closed ball
 `{x | valuation K x ≤ uniformizer K ^ n}`: these balls are open, increase as `n` decreases, and
 cover `K`. -/
@@ -200,16 +205,6 @@ theorem _root_.IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow {s : 
     hs.elim_directed_cover U (fun n ↦ AddSubgroup.isOpen_of_mem_nhds _
       ((hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_of_mem trivial)) hcover
       hU.directed_le
-
-/-- A locally constant compactly supported function on `K` is periodic under some fractional
-ideal `𝓂[K] ^ m`: its open subgroup of periods contains one of these neighbourhoods of `0`. -/
-theorem _root_.IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow
-    {A : Type*} [Zero A] {f : K → A} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
-    ∃ m : ℤ, ∀ u ∈ (valuation K).leAddSubgroup (uniformizer K ^ m), Function.Periodic f u := by
-  obtain ⟨m, -, hm⟩ := (hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_iff.1
-    ((isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
-      (zero_mem (addRightTranslationStabilizer f)))
-  exact ⟨m, fun u hu ↦ mem_addRightTranslationStabilizer.1 (hm hu)⟩
 
 end LocalField
 
