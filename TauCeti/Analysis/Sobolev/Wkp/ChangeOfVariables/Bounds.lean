@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.FDeriv.Homothety
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -21,8 +22,6 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
 
 ## Main declarations
 
-* `TauCeti.Wkp.fderiv_smul_add_const` and `TauCeti.Wkp.abs_det_fderiv_smul_add_const`: the
-  derivative and the absolute Jacobian determinant of a homothety.
 * `TauCeti.Wkp.IsChangeOfVariables.smul_add_const`: a homothety is a change of variables.
 * `TauCeti.Wkp.IsChangeOfVariables.mono_const` and
   `TauCeti.Wkp.IsChangeOfVariables.norm_fderiv_fderiv_le`: weakening the constants of a change of
@@ -57,24 +56,6 @@ open MeasureTheory Set TopologicalSpace
 open scoped InnerProductSpace ENNReal ContDiff
 
 namespace TauCeti.Wkp
-
-section Homothety
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The derivative of the homothety `x ↦ ε x + a` is `ε • id` at every point. -/
-theorem fderiv_smul_add_const (ε : ℝ) (a : E) :
-    fderiv ℝ (fun x : E => ε • x + a) = fun _ => ε • ContinuousLinearMap.id ℝ E :=
-  funext fun x => (((hasFDerivAt_id x).const_smul ε).add_const a).fderiv
-
-/-- The Jacobian determinant of the homothety `x ↦ ε x + a`, `ε > 0`, has absolute value
-`ε ^ finrank ℝ E` at every point. -/
-theorem abs_det_fderiv_smul_add_const {ε : ℝ} (hε : 0 < ε) (a x : E) :
-    |(fderiv ℝ (fun x : E => ε • x + a) x).det| = ε ^ Module.finrank ℝ E := by
-  rw [fderiv_smul_add_const]
-  simp [ContinuousLinearMap.det, abs_of_pos (pow_pos hε _)]
-
-end Homothety
 
 namespace IsChangeOfVariables
 

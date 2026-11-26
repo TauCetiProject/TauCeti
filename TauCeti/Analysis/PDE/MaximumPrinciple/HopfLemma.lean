@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Geometry.Euclidean.Triangle
 import TauCeti.Analysis.Normed.Module.Ball.Touching
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Topology.Connected.Basic
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -59,9 +60,8 @@ over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
 
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: `L` applied to the
   Gaussian `exp (-α ‖· - y‖²)`.
-* `TauCeti.PDE.mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub` and
-  `TauCeti.PDE.mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub`: the shifted Gaussian barrier is
-  a subsolution on an annulus and grows at least linearly inward from its outer sphere.
+* `TauCeti.PDE.mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub`: the shifted
+  Gaussian barrier is a subsolution on an annulus.
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: **Hopf's
   boundary-point lemma**, the inward difference quotients are bounded below by a positive
   constant.
@@ -167,22 +167,6 @@ theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
   nlinarith [mul_le_mul_of_nonneg_left hQ (by positivity : (0 : ℝ) ≤ 4 * α ^ 2),
     mul_le_mul_of_nonneg_left hαbig hα0, mul_le_mul_of_nonneg_left (le_abs_self Λ) hα0,
     mul_le_mul_of_nonneg_left hinner hα0, mul_le_mul_of_nonneg_right hα (abs_nonneg γ)]
-
-/-- Moving inward from radius `r`, the Gaussian `exp (-α s²)` grows at least linearly:
-`α r e^{-α r²} t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and `0 ≤ t ≤ r`. -/
-theorem mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub {α r t : ℝ} (hα : 0 ≤ α) (ht : 0 ≤ t)
-    (htr : t ≤ r) :
-    α * r * Real.exp (-α * r ^ 2) * t ≤ Real.exp (-α * (r - t) ^ 2) - Real.exp (-α * r ^ 2) := by
-  have hexp : Real.exp (-α * (r - t) ^ 2) =
-      Real.exp (-α * r ^ 2) * Real.exp (α * (r ^ 2 - (r - t) ^ 2)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  have h1 := Real.add_one_le_exp (α * (r ^ 2 - (r - t) ^ 2))
-  have h2 : α * r * t ≤ α * (r ^ 2 - (r - t) ^ 2) := by
-    have : r * t ≤ r ^ 2 - (r - t) ^ 2 := by nlinarith
-    nlinarith
-  rw [hexp]
-  nlinarith [Real.exp_pos (-α * r ^ 2)]
 
 variable {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c u : EuclideanSpace ℝ ι → ℝ} {y x₀ : EuclideanSpace ℝ ι} {R lam Λ β γ : ℝ}

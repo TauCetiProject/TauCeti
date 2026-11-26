@@ -13,15 +13,14 @@ import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.PDE.EnergyForm.Poincare
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.Sobolev.W1p.Convex
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.SphereChart
 import TauCeti.Analysis.Sobolev.W1p.Extension
+import TauCeti.Analysis.Sobolev.W1p.LipschitzRepresentative
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.Instances.Matrix
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.InnerProductSpace.ProdL2
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Hopf's boundary-point lemma for divergence-form equations with Hölder coefficients
@@ -64,11 +63,13 @@ small by the `C^{1,β}` estimate up to the boundary.
   symmetric.
 * **The correction.** Lax–Milgram gives `ψ ∈ H¹₀(D)` with `-div (b ∇ψ) = div ((b - A) ∇Φ)`, so that
   `Φ + ψ` is a weak subsolution for `b`. Its `H¹` norm and the Hölder constant of `(b - A) ∇Φ` are
-  of order `‖b - A‖ + [b]_α`. The `C^{1,β}` estimate near the boundary point `ν`, in a chart in
-  which the unit sphere is the graph of a smooth function
-  (`TauCeti.PDE.exists_holderOnWith_gradient_ball_inter_closure_of_graph`), bounds `∇ψ` near `ν` by
-  the same order, so for `ε` small the correction is Lipschitz near `ν` with a constant below
-  `κ e^{-κ} / 2`, and it vanishes at `ν`.
+  of order `‖b - A‖ + [b]_α`. The `C^{1,β}` estimate near the boundary point `ν`
+  (`TauCeti.PDE.exists_holderOnWith_gradient_ball_inter_closure_of_graph`), in the chart
+  `TauCeti.unitSphereChart` in which the unit sphere is the graph of the smooth function
+  `TauCeti.unitSphereGraph`, bounds `∇ψ` near `ν` by the same order. So for `ε` small the
+  correction has a representative that is Lipschitz near `ν` with a constant below
+  `κ e^{-κ} / 2` and vanishes at `ν`
+  (`TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`).
 * **Comparison.** On the boundary of `D`, `u ∘ T ≥ g x₀` on the outer sphere and
   `u ∘ T ≥ g x₀ + θ Φ` on the inner one for some `θ > 0`. The weak comparison principle
   (`TauCeti.PDE.value_le_of_energyFormH1_le`) gives `g x₀ + θ (Φ + ψ) ≤ u ∘ T` on `D`, and along
@@ -103,7 +104,7 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-! ### The unit annulus and a boundary chart at a point of its outer sphere -/
+/-! ### The unit annulus and its boundary chart at a point of the outer sphere -/
 
 /-- The open annulus `{z | 1/2 < ‖z‖ < 1}`. -/
 private def unitAnnulus : Opens E :=
@@ -143,133 +144,20 @@ private theorem aestronglyMeasurable_restrict_unitAnnulus
     AEStronglyMeasurable b (volume.restrict (unitAnnulus (n := n) : Set E)) :=
   (hbc.mono unitAnnulus_subset_closedBall).aestronglyMeasurable unitAnnulus.isOpen.measurableSet
 
-/-- Along the line through a unit vector `ν`, the distance from `c • ν` to `ν` is `|c - 1|`. -/
-private theorem dist_smul_self_of_norm_eq_one {ν : E} (hν : ‖ν‖ = 1) (c : ℝ) :
-    dist (c • ν) ν = |c - 1| := by
-  have h : c • ν - ν = (c - 1) • ν := by rw [sub_smul, one_smul]
-  rw [dist_eq_norm, h, norm_smul, hν, mul_one, Real.norm_eq_abs]
-
-/-- The bump function equal to one on `closedBall 0 (1/4)` and supported in `ball 0 (1/2)`. -/
-private def sphereBump {K : Type*} [NormedAddCommGroup K] :
-    ContDiffBump (0 : K) :=
-  ⟨1 / 4, 1 / 2, by norm_num, by norm_num⟩
-
-/-- The lower boundary of the unit ball seen from the tangent space at a point of the sphere,
-`v ↦ 1 - √(1 - ‖v‖²)`, cut off by a bump function so that it is smooth with compact support. -/
-private def sphereGraph {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℝ K]
-    [FiniteDimensional ℝ K] (v : K) : ℝ :=
-  sphereBump (K := K) v * (1 - √(1 - ‖v‖ ^ 2))
-
-section SphereGraph
-
-variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℝ K] [FiniteDimensional ℝ K]
-
-private theorem contDiff_sphereGraph : ContDiff ℝ 2 (sphereGraph (K := K)) := by
-  refine contDiff_iff_contDiffAt.2 fun v => ?_
-  by_cases hv : ‖v‖ < 1
-  · refine (sphereBump (K := K)).contDiff.contDiffAt.mul (contDiffAt_const.sub ?_)
-    refine ContDiffAt.sqrt (contDiffAt_const.sub (contDiff_norm_sq ℝ).contDiffAt) ?_
-    nlinarith [norm_nonneg v]
-  · -- Off `closedBall 0 (1/2)` the bump function, hence the graph, vanishes nearby.
-    have hout : v ∉ closedBall (0 : K) (sphereBump (K := K)).rOut := by
-      rw [mem_closedBall, dist_zero_right]
-      -- The outer radius of `sphereBump` is `1/2` by definition.
-      change ¬ ‖v‖ ≤ 1 / 2
-      linarith
-    have hev : sphereGraph (K := K) =ᶠ[𝓝 v] fun _ => 0 := by
-      filter_upwards [isClosed_closedBall.isOpen_compl.mem_nhds hout] with w hw
-      rw [sphereGraph, image_eq_zero_of_notMem_tsupport (f := ⇑(sphereBump (K := K)))
-        (by rwa [ContDiffBump.tsupport_eq]), zero_mul]
-    exact contDiffAt_const.congr_of_eventuallyEq hev
-
-/-- The cut-off sphere graph has a Hölder continuous derivative, for every exponent at most one. -/
-private theorem exists_holderWith_fderiv_sphereGraph {α : ℝ≥0} (hα : α ≤ 1) :
-    ∃ C : ℝ≥0, HolderWith C α (fderiv ℝ (sphereGraph (K := K))) := by
-  have hd : ContDiff ℝ 1 (fderiv ℝ (sphereGraph (K := K))) :=
-    contDiff_sphereGraph.fderiv_right (by norm_num)
-  have hs : HasCompactSupport (fderiv ℝ (sphereGraph (K := K))) := by
-    have h : sphereGraph (K := K) = ⇑(sphereBump (K := K)) * fun v : K => 1 - √(1 - ‖v‖ ^ 2) :=
-      rfl
-    rw [h]
-    exact (sphereBump (K := K)).hasCompactSupport.mul_right.fderiv ℝ
-  obtain ⟨L, hL⟩ := hd.lipschitzWith_of_hasCompactSupport hs one_ne_zero
-  obtain ⟨M, hM⟩ := hs.exists_bound_of_continuous hd.continuous
-  exact ⟨_, (holderWith_one.2 hL).of_le_of_norm_le (D := M.toNNReal)
-    (fun x => (hM x).trans (Real.le_coe_toNNReal M)) hα one_pos⟩
-
-private theorem sphereGraph_zero : sphereGraph (0 : K) = 0 := by
-  simp [sphereGraph]
-
-private theorem sphereGraph_of_norm_le {v : K} (hv : ‖v‖ ≤ 1 / 4) :
-    sphereGraph v = 1 - √(1 - ‖v‖ ^ 2) := by
-  rw [sphereGraph, (sphereBump (K := K)).one_of_mem_closedBall (by simpa [sphereBump] using hv),
-    one_mul]
-
-end SphereGraph
-
-/-- The orthogonal splitting `x ↦ (-⟪x, ν⟫, x - ⟪x, ν⟫ ν)` along a unit vector `ν`. -/
-private def unitSplitting (ν : E) (hν : ‖ν‖ = 1) : E ≃ₗᵢ[ℝ] WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) :=
-  (ℝ ∙ ν).orthogonalDecomposition.trans
-    (LinearIsometryEquiv.withLpProdCongr 2
-      ((LinearIsometryEquiv.toSpanUnitSingleton ν hν).symm.trans (LinearIsometryEquiv.neg ℝ))
-      (LinearIsometryEquiv.refl ℝ (ℝ ∙ ν)ᗮ))
-
-private theorem unitSplitting_symm_apply (ν : E) (hν : ‖ν‖ = 1) (z : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ)) :
-    (unitSplitting ν hν).symm z = (-z.fst) • ν + (z.snd : E) := by
-  obtain ⟨⟨t, v⟩⟩ := z
-  simp [unitSplitting, LinearIsometryEquiv.symm_apply_eq, LinearIsometryEquiv.coe_refl]
-
-/-- The rigid coordinates at a unit vector `ν`: the point `ν` goes to the origin and the inward
-normal `-ν` of the unit sphere to the first axis, `e⁻¹ (t, v) = ν - t ν + v`. -/
-private def sphereChart (ν : E) (hν : ‖ν‖ = 1) : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) :=
-  (AffineIsometryEquiv.vaddConst ℝ ν).symm.trans (unitSplitting ν hν).toAffineIsometryEquiv
-
-private theorem sphereChart_symm_apply (ν : E) (hν : ‖ν‖ = 1) (z : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ)) :
-    (sphereChart ν hν).symm z = ν - z.fst • ν + (z.snd : E) := by
-  rw [AffineIsometryEquiv.symm_apply_eq]
-  have h : ν - z.fst • ν + (z.snd : E) -ᵥ ν = (unitSplitting ν hν).symm z := by
-    rw [unitSplitting_symm_apply, vsub_eq_sub, neg_smul]
-    abel
-  simp only [sphereChart, AffineIsometryEquiv.coe_trans, Function.comp_apply,
-    AffineIsometryEquiv.coe_vaddConst_symm, LinearIsometryEquiv.coe_toAffineIsometryEquiv]
-  rw [h, LinearIsometryEquiv.apply_symm_apply]
-
-private theorem sphereChart_apply_self (ν : E) (hν : ‖ν‖ = 1) : sphereChart ν hν ν = 0 := by
-  simp [sphereChart]
-
 /-- In the cylinder of half-height and radius `1/4` at a point `ν` of the unit sphere, the
-annulus is the region above the cut-off sphere graph. -/
-private theorem sphereChart_symm_mem_unitAnnulus_iff (ν : E) (hν : ‖ν‖ = 1)
+annulus is the region above the cut-off sphere graph: there the points of the unit ball are
+automatically outside `closedBall 0 (1/2)`. -/
+private theorem unitSphereChart_symm_mem_unitAnnulus_iff (ν : E) (hν : ‖ν‖ = 1)
     {z : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ)} (hz : z ∈ normalCylinder (1 / 4) (1 / 4)) :
-    (sphereChart ν hν).symm z ∈ (unitAnnulus (n := n) : Set E) ↔ sphereGraph z.snd < z.fst := by
+    (unitSphereChart ν hν).symm z ∈ (unitAnnulus (n := n) : Set E) ↔
+      unitSphereGraph z.snd < z.fst := by
+  rw [← unitSphereChart_symm_mem_ball_iff ν hν hz, coe_unitAnnulus, mem_inter_iff,
+    and_iff_left_iff_imp, mem_compl_iff, mem_closedBall_zero_iff, not_le]
+  intro _
+  have hsq := norm_unitSphereChart_symm_sq ν hν z
   rw [mem_normalCylinder] at hz
-  obtain ⟨ht1, ht2, hv⟩ := hz
-  set t := z.fst
-  set v : E := (z.snd : E)
-  have hvn : ‖(z.snd : E)‖ = ‖z.snd‖ := Submodule.norm_coe _
-  have hinner : ⟪ν, v⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 z.snd.property
-  -- The squared norm of the point is `(1 - t)² + ‖v‖²`.
-  have hsq : ‖ν - t • ν + v‖ ^ 2 = (1 - t) ^ 2 + ‖v‖ ^ 2 := by
-    have h1 : ν - t • ν + v = (1 - t) • ν + v := by rw [sub_smul, one_smul]
-    rw [h1, norm_add_sq_real, norm_smul, inner_smul_left, hinner, hν, Real.norm_eq_abs]
-    simp [sq_abs]
-  rw [sphereChart_symm_apply, mem_unitAnnulus, sphereGraph_of_norm_le (by linarith)]
-  have : ‖v‖ < 1 / 4 := by rwa [hvn]
-  have := norm_nonneg v
-  have hn0 := norm_nonneg (ν - t • ν + v)
-  constructor
-  · rintro ⟨h1, -⟩
-    have hlt : (1 - t) ^ 2 < 1 - ‖v‖ ^ 2 := by nlinarith
-    have := (Real.lt_sqrt (by linarith)).2 hlt
-    rw [← hvn]
-    linarith
-  · intro h
-    have hlt : 1 - t < √(1 - ‖v‖ ^ 2) := by rw [← hvn] at h; linarith
-    have hsq' := (Real.lt_sqrt (by linarith)).1 hlt
-    refine ⟨?_, ?_⟩
-    · nlinarith
-    · nlinarith
+  nlinarith [norm_nonneg ((unitSphereChart ν hν).symm z), norm_nonneg z.snd]
+
 /-! ### The Gaussian barrier on the annulus -/
 
 /-- The Gaussian barrier `exp (-κ ‖z‖²) - exp (-κ)`, which vanishes on the unit sphere. -/
@@ -476,72 +364,6 @@ private theorem exists_correction_of_uniformlyEllipticOn
   calc ‖ψ‖ = 10 / lam * (lam / 10 * ‖ψ‖) := by field_simp
     _ ≤ _ := mul_le_mul_of_nonneg_left hX (by positivity)
 
-/-- A function continuous near a point `ν` of the unit sphere that vanishes there outside the
-closed unit ball vanishes at `ν`. -/
-private theorem eq_zero_of_continuousOn_of_eqOn {f : E → ℝ} {ν : E} (hν : ‖ν‖ = 1) {ρ : ℝ}
-    (hρ : 0 < ρ) (hf : ContinuousOn f (ball ν ρ))
-    (hzero : EqOn f 0 (ball ν ρ ∩ (closedBall 0 1)ᶜ)) : f ν = 0 := by
-  -- `ν` is the limit of the points `(1 + s) ν`, `s → 0⁺`, which lie outside the closed unit ball.
-  have hcl : ν ∈ closure (ball ν ρ ∩ (closedBall (0 : E) 1)ᶜ) := by
-    have ht : Tendsto (fun s : ℝ => (1 + s) • ν) (𝓝[>] 0) (𝓝 ν) := by
-      have hc : Continuous fun s : ℝ => (1 + s) • ν := by fun_prop
-      simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-    refine mem_closure_of_tendsto ht ?_
-    filter_upwards [Ioo_mem_nhdsGT hρ] with s hs
-    refine ⟨?_, ?_⟩
-    · rw [mem_ball, dist_smul_self_of_norm_eq_one hν, add_sub_cancel_left, abs_of_pos hs.1]
-      exact hs.2
-    · rw [mem_compl_iff, mem_closedBall_zero_iff, norm_smul, hν, mul_one, Real.norm_eq_abs, not_le]
-      exact (lt_add_of_pos_right 1 hs.1).trans_le (le_abs_self _)
-  exact hzero.of_subset_closure (hf.mono (insert_subset (mem_ball_self hρ) inter_subset_left))
-    continuousOn_const (subset_insert _ _) (insert_subset hcl subset_closure) (mem_insert _ _)
-
-/-- **A representative vanishing at a boundary point.** If the gradient of `ψ ∈ H¹₀` of a subset of
-the unit ball is bounded by `M` near a point `ν` of the unit sphere, then `ψ` has a representative
-that is `M`-Lipschitz near `ν` and vanishes at `ν`: it is the precise representative of the
-extension of `ψ` by zero, which vanishes outside the unit ball. -/
-private theorem exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le {D : Opens E}
-    (hD : (D : Set E) ⊆ ball 0 1) (ψ : W1p0 volume D 2) {ν : E} (hν : ‖ν‖ = 1) {ρ : ℝ}
-    (hρ : 0 < ρ) {M : ℝ≥0}
-    (hM : ∀ᵐ z ∂volume, z ∈ (D : Set E) ∩ ball ν ρ → ‖W1p.gradient (ψ : W1p volume D 2) z‖ ≤ M) :
-    ∃ ψ' : E → ℝ, W1p.value (ψ : W1p volume D 2) =ᵐ[volume.restrict (D : Set E)] ψ' ∧
-      LipschitzOnWith M ψ' (ball ν ρ) ∧ ψ' ν = 0 := by
-  set ψ₀ : W1p volume (⊤ : Opens E) 2 := (W1p0.extendByZeroL (Omega' := ⊤) le_top ψ).val
-  have hval : W1p.value ψ₀ =ᵐ[volume] (D : Set E).indicator (W1p.value (ψ : W1p volume D 2)) :=
-    W1p0.value_extendByZeroL_top_ae ψ
-  have hprec : W1p.value ψ₀ =ᵐ[volume] preciseRepresentative volume (W1p.value ψ₀) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using W1p.ae_eq_preciseRepresentative ψ₀
-  -- Near `ν` the gradient of the extension is bounded by `M`: it vanishes off `D`.
-  have hgrad : ∀ᵐ z ∂volume.restrict (ball ν ρ), ‖W1p.gradient ψ₀ z‖ ≤ M := by
-    refine (ae_restrict_iff' isOpen_ball.measurableSet).2 ?_
-    filter_upwards [W1p0.gradient_extendByZeroL_top_ae ψ, hM] with z h1 h2 hz
-    rw [h1]
-    by_cases hzD : z ∈ (D : Set E)
-    · rw [indicator_of_mem hzD]
-      exact h2 ⟨hzD, hz⟩
-    · rw [indicator_of_notMem hzD, norm_zero]
-      exact M.coe_nonneg
-  set ψ' := preciseRepresentative volume (W1p.value ψ₀)
-  have hL : LipschitzOnWith M ψ' (ball ν ρ) :=
-    W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le ψ₀
-      (V := ⟨ball ν ρ, isOpen_ball⟩) le_top (convex_ball ν ρ) subset_rfl hgrad
-  refine ⟨ψ', ?_, hL, ?_⟩
-  · refine (ae_restrict_iff' D.isOpen.measurableSet).2 ?_
-    filter_upwards [hval, hprec] with z h1 h2 hz
-    rw [← h2, h1, indicator_of_mem hz]
-  · -- Outside the closed unit ball the representative vanishes, and `ν` is a limit of such points.
-    set O : Set E := ball ν ρ ∩ (closedBall 0 1)ᶜ
-    have hO : IsOpen O := isOpen_ball.inter isClosed_closedBall.isOpen_compl
-    have hOD : ∀ z ∈ O, z ∉ (D : Set E) := fun z hz hzD =>
-      hz.2 (ball_subset_closedBall (hD hzD))
-    have hzero : EqOn ψ' 0 O := by
-      refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ hO (hL.continuousOn.mono inter_subset_left)
-        continuousOn_const
-      refine (ae_restrict_iff' hO.measurableSet).2 ?_
-      filter_upwards [hval, hprec] with z h1 h2 hz
-      rw [← h2, h1, indicator_of_notMem (hOD z hz), Pi.zero_apply]
-    exact eq_zero_of_continuousOn_of_eqOn hν hρ hL.continuousOn hzero
-
 /-- **The correction is small near the boundary point.** Fix a point `ν` of the unit sphere, an
 exponent `0 < α ≤ 1`, ellipticity constants and `κ`. There are `ρ > 0` and `C ≥ 0` such that for
 every coefficient field `b`, uniformly elliptic on the closed unit ball with these constants and
@@ -565,7 +387,7 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
         W1p.value (ψ : W1p volume unitAnnulus 2) =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
           ψ' ∧ LipschitzOnWith (C * η).toNNReal ψ' (ball ν ρ) ∧ ψ' ν = 0 := by
   obtain ⟨K, B, hK, hB⟩ := exists_holderOnWith_gradient_gaussBarrier (n := n) κ hα1
-  obtain ⟨Kγ, hγK⟩ := exists_holderWith_fderiv_sphereGraph (K := (ℝ ∙ ν)ᗮ) hα1
+  obtain ⟨Kγ, hγK⟩ := exists_holderWith_fderiv_unitSphereGraph (K := (ℝ ∙ ν)ᗮ) hα1
   set β : ℝ≥0 := min α (1 / 2)
   have hβ : 0 < β := lt_min hα (by norm_num)
   have hβ1 : β < 1 := (min_le_right _ _).trans_lt (by norm_num)
@@ -573,9 +395,9 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
     isBounded_ball.subset unitAnnulus_subset_ball
   obtain ⟨ρ, hρ, κ', H⟩ := exists_holderOnWith_gradient_ball_inter_closure_of_graph (n := n)
     hβ hβ1 (min_le_left _ _) (q := ⊤) le_top (by simp [hβ1.le]) hΩ
-    (sphereChart_apply_self ν hν) (by norm_num : (0 : ℝ) < 1 / 4) (by norm_num : (0 : ℝ) < 1 / 4)
-    sphereGraph_zero (contDiff_sphereGraph.of_le one_le_two) hγK
-    (fun z hz => sphereChart_symm_mem_unitAnnulus_iff ν hν hz) lam Lam 1
+    (unitSphereChart_apply_self ν hν) (by norm_num : (0 : ℝ) < 1 / 4)
+    (by norm_num : (0 : ℝ) < 1 / 4) unitSphereGraph_zero contDiff_unitSphereGraph hγK
+    (fun z hz => unitSphereChart_symm_mem_unitAnnulus_iff ν hν hz) lam Lam 1
   -- The volume factor in the `L²` bound of the correction field.
   set V : ℝ := (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
     ((2 : ℝ≥0∞).toReal⁻¹)
@@ -607,8 +429,9 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
     calc (κ' : ℝ) * (η * (K + B) + ‖ψ‖) ≤ κ' * (η * (K + B) + 10 / lam * (V * (η * B))) := by
           gcongr
       _ = κ' * ((K + B) + 10 / lam * (V * B)) * η := by ring
-  obtain ⟨ψ', hae, hLip, h0⟩ := exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le
-    unitAnnulus_subset_ball ψ hν hρ
+  obtain ⟨ψ', hae, hLip, h0⟩ := W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le
+    isClosed_closedBall unitAnnulus_subset_closedBall ψ (x := ν)
+    (by rw [closure_compl, interior_closedBall _ one_ne_zero]; simp [hν]) hρ
     (M := (κ' * ((K + B) + 10 / lam * (V * B)) * η).toNNReal) (by
       filter_upwards [(ae_restrict_iff' (unitAnnulus.isOpen.inter isOpen_ball).measurableSet).1 hg]
         with z hz hzD
@@ -790,12 +613,14 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have ht0 := ht.1
   have htρ : t < ρ := ht.2.trans_le (min_le_left _ _)
   have ht2 : t < 1 / 2 := ht.2.trans_le (min_le_right _ _)
+  have hdist : dist ((1 - t) • ν) ν = t := by
+    rw [dist_eq_norm, sub_smul, one_smul, sub_sub_cancel_left, norm_neg, norm_smul, hν, mul_one,
+      Real.norm_eq_abs, abs_of_pos ht0]
   have hzt : (1 - t) • ν ∈ O := by
     refine ⟨mem_unitAnnulus.2 ?_, ?_⟩
     · rw [norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_pos (by linarith)]
       constructor <;> linarith
-    · rw [mem_ball, dist_smul_self_of_norm_eq_one hν, sub_sub_cancel_left, abs_neg,
-        abs_of_pos ht0]
+    · rw [mem_ball, hdist]
       exact htρ
   have hFz := hF0 hzt
   simp only [F, Pi.zero_apply, max_eq_right_iff, sub_nonpos] at hFz
@@ -803,8 +628,6 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have hΦ := mul_le_gaussBarrier_smul (zero_le_one.trans hκ) hν ht0.le (by linarith)
   have hψ' : -(C * η * t) ≤ ψ' ((1 - t) • ν) := by
     have hd := hLip.dist_le_mul ((1 - t) • ν) hzt.2 ν (mem_ball_self hρ)
-    have hdist : dist ((1 - t) • ν) ν = t := by
-      rw [dist_smul_self_of_norm_eq_one hν, sub_sub_cancel_left, abs_neg, abs_of_pos ht0]
     rw [h0, dist_zero_right, Real.norm_eq_abs, hdist,
       Real.coe_toNNReal _ (mul_nonneg hC (hKb.trans' Kb.coe_nonneg))] at hd
     linarith [neg_abs_le (ψ' ((1 - t) • ν))]

@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
+import TauCeti.Analysis.Calculus.FDeriv.Homothety
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
@@ -1002,10 +1003,10 @@ theorem matrixBilinearForm_pullbackPrincipal_smul_add_const {ε : ℝ} (hε : 0 
   have hT : (ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)) ∘L
       fderiv ℝ (fun z : EuclideanSpace ℝ ι => ε • z + c) z =
       ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
-    rw [Wkp.fderiv_smul_add_const, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul,
+    rw [fderiv_smul_add_const, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul,
       ContinuousLinearMap.id_comp, smul_smul, inv_mul_cancel₀ hε.ne', one_smul]
   rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hT,
-    Wkp.abs_det_fderiv_smul_add_const hε, finrank_euclideanSpace]
+    abs_det_fderiv_smul_add_const hε, finrank_euclideanSpace]
   ext η ξ
   simp [ContinuousLinearMap.adjoint_id, mul_assoc]
 
