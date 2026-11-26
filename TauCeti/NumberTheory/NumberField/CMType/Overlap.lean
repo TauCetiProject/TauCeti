@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.Rat.Defs
 public import TauCeti.NumberTheory.NumberField.CMType.Basic
-import Mathlib.GroupTheory.GroupAction.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.GroupTheory.GroupAction.Orbit.Finsum
 
 /-!
 # Overlap characters of CM types
@@ -72,7 +72,7 @@ namespace TauCeti
 
 namespace CMType
 
-open MulAction
+open _root_.MulAction
 
 variable {E : Type*} [CommRing E] [StarCompCommute E]
 
@@ -153,15 +153,6 @@ theorem overlap_mul_starRingAut (Φ : CMType E) (σ : RingAut ℂ) :
 
 /-! ### The conjugacy average -/
 
-/-- Translating by an automorphism of `ℂ` permutes the `Aut(ℂ)`-orbit of a CM type, so it leaves
-finite sums over the orbit unchanged. -/
-private theorem finsum_mem_orbit_smul {M : Type*} [AddCommMonoid M] (τ : RingAut ℂ)
-    (Φ : CMType E) (f : CMType E → M) :
-    ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, f (τ • Ψ) = ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, f Ψ := by
-  have h := (MulAction.injective τ).injOn.bijOn_image (s := orbit (RingAut ℂ) Φ)
-  rw [Set.image_smul, smul_orbit] at h
-  exact finsum_mem_eq_of_bijOn _ h fun _ _ ↦ rfl
-
 /-- The **conjugacy-averaged overlap** `a⁰_Φ(σ)`: the mean of `a_Ψ(σ)` over the CM types `Ψ` in
 the `Aut(ℂ)`-orbit of `Φ`. This is the normalised conjugacy sum `|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)`
 over any finite Galois quotient `G` of `Aut(ℂ)` through which the action on the embeddings of `E`
@@ -193,7 +184,7 @@ theorem averageOverlap_conj (τ σ : RingAut ℂ) (Φ : CMType E) :
   congr 1
   -- `a_Ψ(τστ⁻¹) = a_{τ⁻¹Ψ}(σ)`, and translation by `τ⁻¹` permutes the orbit.
   simp_rw [overlap_conj]
-  exact finsum_mem_orbit_smul τ⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
+  exact MulAction.finsum_mem_orbit_smul τ⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
 
 /-- **The conjugacy average over a finite Galois quotient.** Let `π` map `Aut(ℂ)` to a finite
 group `G` such that every automorphism in the kernel of `π` fixes each embedding of `E`, and let
@@ -224,7 +215,7 @@ theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
   have hperm (g : G) : ∑ Ψ ∈ hfin.toFinset, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) =
       ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
     rw [← finsum_mem_eq_finite_toFinset_sum _ hfin, ← finsum_mem_eq_finite_toFinset_sum _ hfin]
-    exact finsum_mem_orbit_smul (s g)⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
+    exact MulAction.finsum_mem_orbit_smul (s g)⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
   -- Summing `∑_g a_{s(g)⁻¹Ψ}(σ)` over the orbit in both orders.
   have key : (hfin.toFinset.card : ℚ) * ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ) =
       Nat.card G * ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
