@@ -30,50 +30,47 @@ namespace TauCeti
 
 open Equiv Equiv.Perm
 
-/-- **The parity column of the transitive groups of degree at most five.** The reference
-subgroup consists of even permutations exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`,
-`5T1`, `5T2`, and `5T4`. The label index is zero-based. -/
+/-- **The parity column of the transitive groups of degree at most five.** In degree at most
+five, the reference subgroup consists of even permutations exactly for the labels `1T1`, `3T1`,
+`4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. The label index is zero-based. -/
 @[simp]
 theorem referenceSubgroup_le_alternatingGroup_iff :
-    ∀ {n : ℕ} (j : TransitiveGroupIndex n),
+    ∀ {n : ℕ} (_ : n ≤ 5) (j : TransitiveGroupIndex n),
       referenceSubgroup n j ≤ alternatingGroup (Fin n) ↔
         n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
           (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
           (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3))
-  | 0, j => (lt_irrefl 0 (pos_of_transitiveGroupIndex j)).elim
-  | 1, j => by
+  | 0, _, j => (lt_irrefl 0 (pos_of_transitiveGroupIndex j)).elim
+  | 1, _, j => by
     refine iff_of_true ?_ (by simp)
     intro σ _
     have hσ : σ = 1 := Subsingleton.elim _ _
     simp [hσ]
-  | 2, j => by
+  | 2, _, j => by
     refine iff_of_false ?_ (by simp)
     rw [referenceSubgroup_two]
     intro h
     have hswap := h (Subgroup.mem_top (swap (0 : Fin 2) 1))
     simp [mem_alternatingGroup] at hswap
-  | 3, j => by
+  | 3, _, j => by
     obtain ⟨j, hj⟩ := j
     rw [numTransitiveGroups_three] at hj
     interval_cases j
     · exact iff_of_true referenceSubgroup_three_zero_le_alternatingGroup (by simp)
     · exact iff_of_false not_referenceSubgroup_three_one_le_alternatingGroup (by simp)
-  | 4, j => (referenceSubgroup_four_le_alternatingGroup_iff j).trans (by simp)
-  | 5, j => (referenceSubgroup_five_le_alternatingGroup_iff j).trans (by simp)
-  | n + 6, j => by
-    have hj := j.isLt
-    have h0 : numTransitiveGroups (n + 6) = 0 := numTransitiveGroups_eq_zero_of_five_lt (by omega)
-    omega
+  | 4, _, j => (referenceSubgroup_four_le_alternatingGroup_iff j).trans (by simp)
+  | 5, _, j => (referenceSubgroup_five_le_alternatingGroup_iff j).trans (by simp)
+  | _ + 6, hn, _ => by omega
 
-/-- A labelled subgroup consists of even permutations exactly for the labels `1T1`, `3T1`,
-`4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
-theorem TransitiveGroupLabel.le_alternatingGroup_iff_label {n : ℕ}
+/-- A labelled subgroup of degree at most five consists of even permutations exactly for the
+labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem TransitiveGroupLabel.le_alternatingGroup_iff_label {n : ℕ} (hn : n ≤ 5)
     {j : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))}
     (h : TransitiveGroupLabel j G) :
     G ≤ alternatingGroup (Fin n) ↔
       n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
         (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
         (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
-  rw [h.le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff]
+  rw [h.le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff hn]
 
 end TauCeti

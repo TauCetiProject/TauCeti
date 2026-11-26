@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Trace
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Traces under semilinear equivalences
@@ -18,6 +19,8 @@ spaces, such as charge conjugation of spinors, the traces are complex conjugate.
 ## Main results
 
 * `LinearEquiv.trace_eq_map_trace`: `tr T' = σ (tr T)` when `T' j = j T`.
+* `LinearMap.trace_comp_comp_of_involutive`: `tr (K ∘ f ∘ K) = σ (tr f)` for a `σ`-semilinear
+  involution `K`.
 -/
 
 public section
@@ -26,7 +29,7 @@ namespace LinearEquiv
 
 open Module
 
-variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] [Module.Free R M] [Module.Finite R M] {σ σ' : R →+* R} [RingHomInvPair σ σ']
   [RingHomInvPair σ' σ]
 
@@ -57,3 +60,24 @@ theorem trace_eq_map_trace (j : M ≃ₛₗ[σ] M') {T : M →ₗ[R] M} {T' : M'
   simp only [Matrix.diag, LinearMap.toMatrix_apply, hT, b'.repr_sum_self]
 
 end LinearEquiv
+
+namespace LinearMap
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {σ : R →+* R}
+  [RingHomInvPair σ σ] [RingHomCompTriple σ σ (RingHom.id R)]
+
+/-- Conjugating an endomorphism by a `σ`-semilinear involution `K` twists its trace by `σ`:
+`tr (K ∘ f ∘ K) = σ (tr f)`. For a conjugate-linear involution of a complex vector space the
+traces are complex conjugate. Without a finite basis both traces vanish. -/
+theorem trace_comp_comp_of_involutive {K : M →ₛₗ[σ] M} (hK : Function.Involutive K)
+    (f : M →ₗ[R] M) : trace R M ((K.comp f).comp K) = σ (trace R M f) := by
+  by_cases hb : ∃ s : Finset M, Nonempty (Module.Basis s R M)
+  · obtain ⟨s, ⟨b⟩⟩ := hb
+    have : Module.Free R M := .of_basis b
+    have : Module.Finite R M := .of_basis b
+    exact (LinearEquiv.ofInvolutive K hK).trace_eq_map_trace fun x ↦ by
+      simp [LinearEquiv.coe_ofInvolutive, hK x]
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_exists_basis hb]
+
+end LinearMap
+

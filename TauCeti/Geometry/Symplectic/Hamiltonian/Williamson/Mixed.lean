@@ -56,7 +56,7 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   focus-focus blocks it is, then
   the two bases concatenate to a Darboux basis of `V` in whose Williamson blocks the family is in
   normal form.
-* `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks`:
+* `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span`:
   **Williamson's classification of mixed type.** If the span of a nondegenerate family contains a
   form `P` such that `A_P²` has nonzero real eigenvalues `μ ∈ s` and `A_P` has eigenvalues
   `z = a + bi` with `a, b > 0`, `z ∈ t`, and `2 |s| + 4 |t| = dim V`, then the family spans the same
@@ -65,7 +65,8 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
 * `IsNondegenerateQuadraticFamily.exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff`:
   this characterizes the nondegenerate families spanning the Williamson blocks of a Darboux basis.
   Conversely, the form `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`, `Bₖ` the elliptic or hyperbolic
-  block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus pair, has such eigenvalues.
+  block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus pair, has such eigenvalues
+  (`IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank`).
 
 The proof of the classification splits `V` along `P`. The vectors `L` killed by a power of
 `∏_{μ ∈ s} (A_P² - μ)` form a symplectic subspace preserved by the family, since this polynomial is
@@ -267,6 +268,50 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
   · exact hb.quadraticPoissonBracket_focusFocusBlocksAt
       Fin.natAdd_comp_finProdFinEquiv_injective _ _
 
+/-- In a Darboux basis, the Hamiltonian endomorphism of a combination `∑ cᵢ Bᵢ` of the Williamson
+blocks sends `qₖ`, for a plane `k < m`, to `-cₖ pₖ` if the plane is elliptic and to `cₖ qₖ` if it is
+hyperbolic. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_fst
+    (hb : ω.IsDarbouxBasis b) (c : Fin m ⊕ Fin f × Fin 2 → ℝ) (k : Fin m) :
+    ω.hamiltonianEnd (∑ i, c i • williamsonBlocks b t i) (b (Fin.castAdd _ k, 0)) =
+      c (.inl k) • (if k ∈ t then -b (Fin.castAdd _ k, 1) else b (Fin.castAdd _ k, 0)) := by
+  simp [map_sum, LinearMap.sum_apply, Fintype.sum_sum_type, williamsonBlocks_inr,
+    hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
+    (Fin.castAdd_injective _ _).eq_iff]
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of a combination `∑ cᵢ Bᵢ` of the Williamson
+blocks sends `pₖ`, for a plane `k < m`, to `cₖ qₖ` if the plane is elliptic and to `-cₖ pₖ` if it is
+hyperbolic. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_snd
+    (hb : ω.IsDarbouxBasis b) (c : Fin m ⊕ Fin f × Fin 2 → ℝ) (k : Fin m) :
+    ω.hamiltonianEnd (∑ i, c i • williamsonBlocks b t i) (b (Fin.castAdd _ k, 1)) =
+      c (.inl k) • (if k ∈ t then b (Fin.castAdd _ k, 0) else -b (Fin.castAdd _ k, 1)) := by
+  simp [map_sum, LinearMap.sum_apply, Fintype.sum_sum_type, williamsonBlocks_inr,
+    hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
+    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
+    (Fin.castAdd_injective _ _).eq_iff]
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of a combination `∑ cᵢ Bᵢ` of the Williamson
+blocks acts on the planes `(q, p)` and `(q', p')` of the `j`-th focus-focus pair, with coefficients
+`d = c (inr (j, 0))` and `e = c (inr (j, 1))`, by `q ↦ d q + e q'`, `q' ↦ d q' - e q`,
+`p ↦ -d p + e p'` and `p' ↦ -d p' - e p`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_williamsonBlocks_apply_natAdd
+    (hb : ω.IsDarbouxBasis b) (c : Fin m ⊕ Fin f × Fin 2 → ℝ) (j : Fin f) (i c' : Fin 2) :
+    ω.hamiltonianEnd (∑ i, c i • williamsonBlocks b t i)
+        (b (Fin.natAdd m (finProdFinEquiv (j, i)), c')) =
+      c (.inr (j, 0)) • (if c' = 0 then b (Fin.natAdd m (finProdFinEquiv (j, i)), c')
+        else -b (Fin.natAdd m (finProdFinEquiv (j, i)), c')) +
+      c (.inr (j, 1)) • (if i = 0 then b (Fin.natAdd m (finProdFinEquiv (j, 1)), c')
+        else -b (Fin.natAdd m (finProdFinEquiv (j, 0)), c')) := by
+  fin_cases c' <;>
+    simp [map_sum, LinearMap.sum_apply, Fintype.sum_sum_type, Fintype.sum_prod_type,
+      williamsonBlocks_inr, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+      hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
+      hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+      hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+      smul_ite, Finset.sum_add_distrib]
+
 end Darboux
 
 /-! ### Assembling normal forms along an invariant splitting -/
@@ -431,7 +476,7 @@ has distinct eigenvalues `z = a + bi`, `a, b > 0`, `z ∈ t`, each with an eigen
 `2 |s| + 4 |t| = dim V`. Then there are a Darboux basis with `|s| + 2 |t|` planes and a set of
 elliptic planes among the first `|s|` whose Williamson blocks span the same space as `Q`: `|s|`
 elliptic or hyperbolic blocks and `|t|` focus-focus blocks. -/
-theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
+theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span
     (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
     (hP : P ∈ Submodule.span ℝ (Set.range Q)) {s : Finset ℝ} {t : Finset ℂ}
     (hst : s.card * 2 + t.card * 4 = finrank ℝ V) (hs0 : (0 : ℝ) ∉ s)
@@ -502,36 +547,30 @@ variable (b t) in
 /-- The form `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)` in the span of the Williamson blocks,
 `Bₖ` the elliptic or hyperbolic block of the plane `k < m`. -/
 private def williamsonRegular : QuadraticForm ℝ V :=
-  ∑ k : Fin m, (((k : ℕ) : ℝ) + 1) • williamsonBlocks b t (.inl k) +
-    ∑ j : Fin f, ((((j : ℕ) : ℝ) + 1) • williamsonBlocks b t (.inr (j, 0)) +
-      williamsonBlocks b t (.inr (j, 1)))
+  ∑ i, Sum.elim (fun k : Fin m ↦ ((k : ℕ) : ℝ) + 1)
+    (fun l : Fin f × Fin 2 ↦ if l.2 = 0 then ((l.1 : ℕ) : ℝ) + 1 else 1) i •
+      williamsonBlocks b t i
 
 omit [FiniteDimensional ℝ V] in
 private theorem williamsonRegular_mem_span :
     williamsonRegular b t ∈ Submodule.span ℝ (Set.range (williamsonBlocks b t)) :=
-  add_mem (Submodule.sum_mem _ fun _ _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩))
-    (Submodule.sum_mem _ fun _ _ ↦ add_mem
-      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩)) (Submodule.subset_span ⟨_, rfl⟩))
+  Submodule.sum_mem _ fun _ _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩)
 
 private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_castAdd_fst
     (hb : ω.IsDarbouxBasis b) (k : Fin m) :
     ω.hamiltonianEnd (williamsonRegular b t) (b (Fin.castAdd _ k, 0)) =
       (((k : ℕ) : ℝ) + 1) •
         (if k ∈ t then -b (Fin.castAdd _ k, 1) else b (Fin.castAdd _ k, 0)) := by
-  simp [williamsonRegular, map_sum, LinearMap.sum_apply, williamsonBlocks_inr,
-    hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
-    (Fin.castAdd_injective _ _).eq_iff]
+  rw [williamsonRegular, hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_fst]
+  simp
 
 private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_castAdd_snd
     (hb : ω.IsDarbouxBasis b) (k : Fin m) :
     ω.hamiltonianEnd (williamsonRegular b t) (b (Fin.castAdd _ k, 1)) =
       (((k : ℕ) : ℝ) + 1) •
         (if k ∈ t then b (Fin.castAdd _ k, 0) else -b (Fin.castAdd _ k, 1)) := by
-  simp [williamsonRegular, map_sum, LinearMap.sum_apply, williamsonBlocks_inr,
-    hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-    hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne, smul_ite,
-    (Fin.castAdd_injective _ _).eq_iff]
+  rw [williamsonRegular, hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_snd]
+  simp
 
 private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
     (hb : ω.IsDarbouxBasis b) (j : Fin f) (i : Fin 2) :
@@ -539,11 +578,8 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
       (((j : ℕ) : ℝ) + 1) • b (Fin.natAdd m (finProdFinEquiv (j, i)), 0) +
         if i = 0 then b (Fin.natAdd m (finProdFinEquiv (j, 1)), 0)
         else -b (Fin.natAdd m (finProdFinEquiv (j, 0)), 0) := by
-  simp [williamsonRegular, map_sum, LinearMap.sum_apply, williamsonBlocks_inr,
-    hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-    hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
-    hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
-    smul_ite, Finset.sum_add_distrib]
+  rw [williamsonRegular, hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_natAdd]
+  simp
 
 /-- In a Darboux basis, the square of the Hamiltonian endomorphism of the regular element has the
 eigenvalue `-(k + 1)²` if the plane `k < m` is elliptic and `(k + 1)²` if it is hyperbolic. -/
@@ -558,31 +594,20 @@ private theorem IsDarbouxBasis.hasEigenvalue_hamiltonianEnd_williamsonRegular_sq
     simp [hkt, hb.hamiltonianEnd_williamsonRegular_castAdd_fst,
       hb.hamiltonianEnd_williamsonRegular_castAdd_snd, smul_smul, sq]
 
-namespace IsNondegenerateQuadraticFamily
-
-variable {ι : Type*} {Q : ι → QuadraticForm ℝ V}
-
-/-- **Nondegenerate families of mixed type.** The span of a nondegenerate family `Q` contains a
-form `P` such that the square of its Hamiltonian endomorphism has distinct nonzero real
+/-- **The regular element of a Williamson normal form.** For a Darboux basis with `m + 2f` planes
+and any set `u` of elliptic planes among the first `m`, the span of the Williamson blocks contains
+a form `P` such that the square of its Hamiltonian endomorphism has distinct nonzero real
 eigenvalues `μ ∈ s` and the Hamiltonian endomorphism itself has distinct eigenvalues
 `z = a + bi ∈ t` with `a, b > 0`, each with an eigenvector `v + iw`, `v ≠ 0`, where
-`2 |s| + 4 |t| = dim V`, exactly when it is the span of the Williamson blocks of some Darboux
-basis. -/
-theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
-    (h : ω.IsNondegenerateQuadraticFamily Q) :
-    (∃ P ∈ Submodule.span ℝ (Set.range Q), ∃ (s : Finset ℝ) (t : Finset ℂ),
-        s.card * 2 + t.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
+`2 |s| + 4 |t| = dim V`. One such form is `∑ₖ (k + 1) Bₖ + ∑ⱼ ((j + 1) Q₁ⱼ + Q₂ⱼ)`, `Bₖ` the
+elliptic or hyperbolic block of the plane `k` and `(Q₁ⱼ, Q₂ⱼ)` the `j`-th focus-focus pair. -/
+theorem IsDarbouxBasis.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank
+    (hb : ω.IsDarbouxBasis b) (u : Finset (Fin m)) :
+    ∃ P ∈ Submodule.span ℝ (Set.range (williamsonBlocks b u)), ∃ (s : Finset ℝ) (t : Finset ℂ),
+      s.card * 2 + t.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
         (∀ μ ∈ s, (ω.hamiltonianEnd P ^ 2).HasEigenvalue μ) ∧ (∀ z ∈ t, 0 < z.re ∧ 0 < z.im) ∧
         ∀ z ∈ t, ∃ v w : V, v ≠ 0 ∧ ω.hamiltonianEnd P v = z.re • v - z.im • w ∧
-          ω.hamiltonianEnd P w = z.im • v + z.re • w) ↔
-      ∃ (m f : ℕ) (b : Basis (Fin (m + f * 2) × Fin 2) ℝ V) (u : Finset (Fin m)),
-        ω.IsDarbouxBasis b ∧
-          Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (williamsonBlocks b u)) := by
-  refine ⟨fun ⟨P, hP, s, t, hst, hs0, hPs, ht0, hPt⟩ ↦
-    let ⟨b, u, hb, hspan⟩ :=
-      h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hst hs0 hPs ht0 hPt
-    ⟨_, _, b, u, hb, hspan⟩,
-    fun ⟨m, f, b, u, hb, hspan⟩ ↦ ?_⟩
+          ω.hamiltonianEnd P w = z.im • v + z.re • w := by
   -- The regular element has the eigenvalues `∓(k + 1)²` of its square and `(j + 1) + i`.
   let z : Fin f → ℂ := fun j ↦ ((((j : ℕ) : ℝ) + 1 : ℝ) : ℂ) + Complex.I
   have hz : Function.Injective z := fun j j' hjj' ↦ by
@@ -597,7 +622,7 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
   have hinj : Function.Injective fun k : Fin m ↦
       if k ∈ u then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2 :=
     injective_ite_neg_sq u (fun _ _ hkl _ ↦ hmono.injective.ne hkl) fun _ ↦ by positivity
-  refine ⟨williamsonRegular b u, hspan ▸ williamsonRegular_mem_span,
+  refine ⟨williamsonRegular b u, williamsonRegular_mem_span,
     Finset.univ.image fun k : Fin m ↦
       if k ∈ u then -((((k : ℕ) : ℝ) + 1) ^ 2) else (((k : ℕ) : ℝ) + 1) ^ 2,
     Finset.univ.image z, ?_, ?_, ?_, ?_, ?_⟩
@@ -622,6 +647,33 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
     refine ⟨b (Fin.natAdd m (finProdFinEquiv (j, 1)), 0),
       b (Fin.natAdd m (finProdFinEquiv (j, 0)), 0), b.ne_zero _, ?_, ?_⟩ <;>
       simp [z, hb.hamiltonianEnd_williamsonRegular_natAdd, add_comm, sub_eq_add_neg]
+
+namespace IsNondegenerateQuadraticFamily
+
+variable {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+
+/-- **Nondegenerate families of mixed type.** The span of a nondegenerate family `Q` contains a
+form `P` such that the square of its Hamiltonian endomorphism has distinct nonzero real
+eigenvalues `μ ∈ s` and the Hamiltonian endomorphism itself has distinct eigenvalues
+`z = a + bi ∈ t` with `a, b > 0`, each with an eigenvector `v + iw`, `v ≠ 0`, where
+`2 |s| + 4 |t| = dim V`, exactly when it is the span of the Williamson blocks of some Darboux
+basis. -/
+theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
+    (h : ω.IsNondegenerateQuadraticFamily Q) :
+    (∃ P ∈ Submodule.span ℝ (Set.range Q), ∃ (s : Finset ℝ) (t : Finset ℂ),
+        s.card * 2 + t.card * 4 = finrank ℝ V ∧ (0 : ℝ) ∉ s ∧
+        (∀ μ ∈ s, (ω.hamiltonianEnd P ^ 2).HasEigenvalue μ) ∧ (∀ z ∈ t, 0 < z.re ∧ 0 < z.im) ∧
+        ∀ z ∈ t, ∃ v w : V, v ≠ 0 ∧ ω.hamiltonianEnd P v = z.re • v - z.im • w ∧
+          ω.hamiltonianEnd P w = z.im • v + z.re • w) ↔
+      ∃ (m f : ℕ) (b : Basis (Fin (m + f * 2) × Fin 2) ℝ V) (u : Finset (Fin m)),
+        ω.IsDarbouxBasis b ∧
+          Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (williamsonBlocks b u)) :=
+  ⟨fun ⟨_, hP, _, _, hst, hs0, hPs, ht0, hPt⟩ ↦
+    let ⟨_, _, hb, hspan⟩ :=
+      h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span hP hst hs0 hPs ht0 hPt
+    ⟨_, _, _, _, hb, hspan⟩,
+  fun ⟨_, _, _, u, hb, hspan⟩ ↦
+    hspan ▸ hb.exists_mem_span_williamsonBlocks_card_mul_two_add_card_mul_four_eq_finrank u⟩
 
 end IsNondegenerateQuadraticFamily
 

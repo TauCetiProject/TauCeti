@@ -37,6 +37,8 @@ weight.
   is a nonzero constant term (the class-level interface lives in `TauCeti.ModularForm`).
 * `TauCeti.qExpansionOrderAtCusp_mul`: additivity on products (with `qExpansionOrderAtCusp_pow` and
   `qExpansionOrderAtCusp_prod`).
+* `TauCeti.qExpansionOrderAtCusp_smul`: a nonzero constant factor, such as the sign `(-1) ^ k` of
+  the slash action of `-I`, does not change the order.
 
 ## References
 
@@ -107,6 +109,15 @@ lemma qExpansionOrderAtCusp_mul {f g : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFu
     h_nat]
   push_cast
   ring
+
+/-- Multiplying by a nonzero constant does not change the cusp order, for instance by the sign
+`(-1) ^ k` by which the slash action of `-I` in weight `k` changes a function. -/
+lemma qExpansionOrderAtCusp_smul {c : ℂ} (hc : c ≠ 0) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    qExpansionOrderAtCusp h (c • g) = qExpansionOrderAtCusp h g := by
+  rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def, qExpansion_smul hg]
+  refine congrArg _ (congrArg _ (le_antisymm ?_ PowerSeries.le_order_smul))
+  simpa only [smul_smul, inv_mul_cancel₀ hc, one_smul] using
+    PowerSeries.le_order_smul (a := c⁻¹) (φ := c • qExpansion h g)
 
 /-- Every constant function has cusp order zero: a nonzero constant by the nonvanishing
 constant term, the zero function by the junk value. -/

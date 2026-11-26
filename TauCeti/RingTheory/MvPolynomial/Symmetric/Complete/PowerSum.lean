@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Newton's identities for the complete homogeneous symmetric polynomials

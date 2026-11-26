@@ -49,6 +49,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
 * `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
+* `QuotSMulTop.equivQuotSpanSingleton`: the `R`-linear equivalence `QuotSMulTop x R ≃ R ⧸ (x)`.
 * `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
@@ -195,6 +196,27 @@ theorem quotSpanSingletonSMulTopEquiv_mk (x : R) (m : M) :
 theorem quotSpanSingletonSMulTopEquiv_symm_mk (x : R) (m : M) :
     (quotSpanSingletonSMulTopEquiv x M).symm (Submodule.Quotient.mk m) =
       Submodule.Quotient.mk m :=
+  (rfl)
+
+/-- Reducing `R` modulo `x` gives `R ⧸ (x)`: `QuotSMulTop x R ≃ₗ[R] R ⧸ (x)`, the `R`-linear
+equivalence underlying `QuotSMulTop.quotSpanSingletonSMulTopEquiv` and
+`Ideal.quotSMulTopSelfEquiv`. -/
+noncomputable def equivQuotSpanSingleton (x : R) : QuotSMulTop x R ≃ₗ[R] R ⧸ Ideal.span {x} :=
+  ((quotSpanSingletonSMulTopEquiv x R).symm.trans
+    (Ideal.span {x}).quotSMulTopSelfEquiv).restrictScalars R
+
+/-- `equivQuotSpanSingleton` sends the class of `r` to the class of `r`. -/
+@[simp]
+theorem equivQuotSpanSingleton_mk (x r : R) :
+    equivQuotSpanSingleton x (Ideal.Quotient.mk (x • ⊤) r) =
+      Ideal.Quotient.mk (Ideal.span {x}) r :=
+  (rfl)
+
+/-- `equivQuotSpanSingleton.symm` sends the class of `r` to the class of `r`. -/
+@[simp]
+theorem equivQuotSpanSingleton_symm_mk (x r : R) :
+    (equivQuotSpanSingleton x).symm (Ideal.Quotient.mk (Ideal.span {x}) r) =
+      Ideal.Quotient.mk (x • ⊤) r :=
   (rfl)
 
 /-- Negation is the identity on a module modulo twice itself. -/

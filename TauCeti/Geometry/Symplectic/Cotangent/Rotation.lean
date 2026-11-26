@@ -6,45 +6,99 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.CrossProduct
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Orthogonal
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LinearAction
 
 /-!
-# The moment map of cotangent-lifted rotations
+# Moment maps of cotangent-lifted rotations and angular momentum
 
-Let `V` be a finite-dimensional real inner product space, such as `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
-Its orthogonal group `O(V) = unitary (V →L[ℝ] V)` is a Lie group
-(`TauCeti.Geometry.Manifold.Instances.Unitary`) acting linearly on `V`, and the cotangent lift of
-this action to `T*V` has the moment map `⟨μ(q, p), ξ⟩ = p(ξ_V(q))`
-(`TauCeti.CotangentBundle.momentMap`). Through the identification of the Lie algebra of `O(V)`
-with `so(V) = skewAdjointLieSubalgebra (innerₗ V)` (`TauCeti.orthogonalLieAlgebraEquiv`), it is
-the restriction along `so(V) → gl(V)` of the moment map `A ↦ p(A q)` of the cotangent-lifted
-linear action of `gl(V)` (`TauCeti.cotangentMomentMap`):
+The rotations of `ℝⁿ` form the orthogonal Lie algebra `so(n)` of skew-symmetric matrices
+(`LieAlgebra.Orthogonal.so`), acting on `ℝⁿ = n → ℝ` by `v ↦ A v`: the restriction to `so(n)` of
+the Lie module of square matrices on `n → ℝ`, `LieModule.toEnd ℝ (so n ℝ) (n → ℝ)`. Their
+cotangent lift acts on the linear cotangent space `ℝⁿ × (ℝⁿ)*` by `(q, p) ↦ (A q, -(p ∘ A))`, and
+its moment map is
+
+`⟨μ(q, p), A⟩ = p(A q)` (`TauCeti.rotationMomentMap`),
+
+the restriction along `so(n) → gl(n)` of the moment map `TauCeti.cotangentMomentMap` of the
+cotangent-lifted action of all of `gl(n)` (`TauCeti.rotationMomentMap_eq_comp`). Hence:
+
+* `μ` is a moment map of the cotangent-lifted rotation action for the canonical form
+  `ω = Σ dqᵢ ∧ dpᵢ` (`TauCeti.isMomentMap_rotationMomentMap`);
+* it is infinitesimally equivariant, `{μ_A, μ_B} = μ_⁅A, B⁆`
+  (`TauCeti.poissonBracket_rotationMomentMap`).
+
+The same pairing `p(ξ_V q)` is the moment map `TauCeti.CotangentBundle.momentMap` of the cotangent
+lift to the manifold `T*V` of any smooth linear action of a Lie group on a finite-dimensional
+normed space `V`: in the global coordinates `T*V ≃ V × V*`
+(`TauCeti.CotangentBundle.modelSpaceDiffeomorph`) it is `cotangentMomentMap` restricted along the
+differential at the identity of the representation
+(`TauCeti.CotangentBundle.momentMap_eq_cotangentMomentMap_comp_fundamentalLinearMap`). So for a
+Lie group acting linearly on `ℝⁿ` whose infinitesimal action is by rotations, the intrinsic moment
+map of the cotangent bundle `T*ℝⁿ` is the rotation moment map above
+(`TauCeti.CotangentBundle.momentMap_eq_rotationMomentMap_comp`).
+
+For a finite-dimensional real inner product space `V`, its orthogonal group
+`O(V) = unitary (V →L[ℝ] V)` is a Lie group (`TauCeti.Geometry.Manifold.Instances.Unitary`) acting
+linearly on `V`. Through the identification of the Lie algebra of `O(V)` with
+`so(V) = skewAdjointLieSubalgebra (innerₗ V)` (`TauCeti.orthogonalLieAlgebraEquiv`), the moment
+map of its cotangent lift to `T*V` is the restriction along `so(V) → gl(V)` of
+`TauCeti.cotangentMomentMap`:
 `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp`.
 
-The rest of the file concerns the linear model on `ℝ³ = Fin 3 → ℝ` directly: the moment map
-`A ↦ p(A q)` on `(Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ)`, restricted along the matrix Lie algebra
-`so (Fin 3) ℝ → gl(3)`. The hat map `ξ ↦ (v ↦ ξ ⨯₃ v)` identifies `ℝ³` with `so(3)`, and this
-restricted moment map is the angular momentum: `p(ξ ⨯₃ q) = ξ ⬝ᵥ (q ⨯₃ p)` by the scalar triple
-product, where the covector `p` is identified with a vector by the dot product
-(`TauCeti.cotangentMomentMap_crossProduct`). As a functional on `so(3)` it is `ν_(q ⨯₃ p)` in the
-identification `ℝ³ ≃ so(3)*` of `TauCeti.soThreeDualEquiv`
-(`TauCeti.cotangentMomentMap_comp_eq_soThreeDualEquiv_cross`), and it is a moment map of the
-cotangent-lifted infinitesimal rotations of `ℝ³ × (ℝ³)*`
-(`TauCeti.isMomentMap_soThreeDualEquiv_cross`). The sign is that of the conventions
-`d⟨μ, ξ⟩ = ι_(ξ_M) ω` and `ω = Σ dqᵢ ∧ dpᵢ`: the opposite pairing `q(ξ p)` would give `p ⨯₃ q`.
-The comparison of these `ℝ³` statements with
-`TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp` for
-`V = EuclideanSpace ℝ (Fin 3)` is not proved here.
+In dimension three, the hat map `ξ ↦ ξ̂ = (v ↦ ξ ⨯₃ v)` identifies `ℝ³` with `so(3)`
+(`TauCeti.soThreeEquiv`) and the dot product identifies `ℝ³` with `so(3)*`
+(`TauCeti.soThreeDualEquiv`). Through these, the rotation moment map is the **angular momentum**
+`q ⨯₃ p` (`TauCeti.cotangentAngularMomentum`,
+`TauCeti.rotationMomentMap_eq_soThreeDualEquiv_cotangentAngularMomentum`), where the covector `p`
+is read as a vector by the dot product: by the scalar triple product,
+`p(ξ ⨯₃ q) = ξ ⬝ᵥ (q ⨯₃ p)` (`TauCeti.rotationMomentMap_soThreeEquiv`,
+`TauCeti.cotangentMomentMap_crossProduct`). The same identification, stated along the matrix
+inclusion `so (Fin 3) ℝ → gl(3)`, is `TauCeti.cotangentMomentMap_comp_eq_soThreeDualEquiv_cross`,
+with the moment map property `TauCeti.isMomentMap_soThreeDualEquiv_cross`. The sign is that of the
+conventions `d⟨μ, ξ⟩ = ι_(ξ_M) ω` and `ω = Σ dqᵢ ∧ dpᵢ`: the opposite pairing `q(ξ p)` would give
+`p ⨯₃ q`. The equivariance of the rotation moment map becomes the Poisson relations of angular
+momentum, `{ξ ⬝ᵥ L, η ⬝ᵥ L} = (ξ ⨯₃ η) ⬝ᵥ L`
+(`TauCeti.poissonBracket_dotProduct_cotangentAngularMomentum`).
 
-## Main declarations
+The same holds at group level for the orthogonal group `O(3)` of Euclidean three-space
+`V = EuclideanSpace ℝ (Fin 3)`, acting on the manifold `T*V`. Its Lie algebra is identified with
+`so(V)` by `TauCeti.orthogonalLieAlgebraEquiv`, and `so(V)` with `V` by the hat map
+`TauCeti.euclideanSoThreeEquiv`, `u ↦ (v ↦ u ⨯₃ v)`. Through these, the moment map of the
+cotangent-lifted action is the **angular momentum** `L(q, p) = q ⨯₃ p`
+(`TauCeti.CotangentBundle.angularMomentum`), where the covector `p` is read as a vector through
+the inner product: `⟨μ(q, p), ξ⟩ = ⟪u, q ⨯₃ p⟫` for the element `ξ` with infinitesimal rotation
+`v ↦ u ⨯₃ v` (`TauCeti.CotangentBundle.momentMap_unitary_apply_eq_inner_angularMomentum`). This
+is `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp` read through the scalar
+triple product `p(u ⨯₃ q) = ⟪u, q ⨯₃ p⟫` (`TauCeti.CotangentBundle.inner_angularMomentum`).
 
+## Main definitions
+
+* `TauCeti.rotationMomentMap`: the moment map `⟨μ(q, p), A⟩ = p(A q)` of the cotangent-lifted
+  rotations.
+* `TauCeti.cotangentAngularMomentum`: the angular momentum `q ⨯₃ p` of a point of `ℝ³ × (ℝ³)*`.
+* `TauCeti.CotangentBundle.angularMomentum`: the angular momentum `q ⨯₃ p` of a covector of
+  Euclidean three-space.
+
+## Main results
+
+* `TauCeti.rotationMomentMap_eq_comp`: the rotation moment map is the restriction of the cotangent
+  moment map of `gl(n)` along `so(n) → gl(n)`.
+* `TauCeti.isMomentMap_rotationMomentMap`, `TauCeti.poissonBracket_rotationMomentMap`: it is an
+  infinitesimally equivariant moment map of the cotangent-lifted rotation action.
+* `TauCeti.CotangentBundle.momentMap_eq_rotationMomentMap_comp`: for a linear Lie group action on
+  `ℝⁿ` whose infinitesimal action is by rotations, the moment map of the cotangent bundle `T*ℝⁿ` is
+  the rotation moment map.
 * `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp`: the moment map of the
-  cotangent-lifted rotations is the restriction of the `gl(V)` moment map to `so(V)`.
-* `TauCeti.cotangentMomentMap_crossProduct`,
+  cotangent-lifted rotations of `V` is the restriction of the `gl(V)` moment map to `so(V)`.
+* `TauCeti.rotationMomentMap_eq_soThreeDualEquiv_cotangentAngularMomentum`,
   `TauCeti.cotangentMomentMap_comp_eq_soThreeDualEquiv_cross`,
-  `TauCeti.isMomentMap_soThreeDualEquiv_cross`: on `ℝ³`, the `gl(3)` moment map restricted to
-  `so(3)` is the angular momentum `q ⨯₃ p`.
+  `TauCeti.isMomentMap_soThreeDualEquiv_cross`: in dimension three the moment map is the angular
+  momentum `q ⨯₃ p`.
+* `TauCeti.poissonBracket_dotProduct_cotangentAngularMomentum`: `{ξ ⬝ᵥ L, η ⬝ᵥ L} = (ξ ⨯₃ η) ⬝ᵥ L`.
+* `TauCeti.CotangentBundle.momentMap_unitary_apply_eq_inner_angularMomentum`: the moment map of the
+  cotangent-lifted action of `O(3)` on `T*ℝ³` is the angular momentum.
 
 ## References
 
@@ -65,6 +119,80 @@ open scoped ContDiff Manifold
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti
+
+/-! ### The moment map of the cotangent-lifted rotations -/
+
+section MomentMap
+
+open Matrix LieAlgebra.Orthogonal
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+variable (n) in
+/-- The **moment map of the cotangent-lifted rotations** of `ℝⁿ`: at `(q, p) ∈ ℝⁿ × (ℝⁿ)*` it is
+the linear form `A ↦ p(A q)` on `so(n)`. -/
+def rotationMomentMap (x : (n → ℝ) × StrongDual ℝ (n → ℝ)) : Module.Dual ℝ (so n ℝ) :=
+  (cotangentMomentMap x).comp (LieModule.toEnd ℝ (so n ℝ) (n → ℝ)).toLinearMap
+
+/-- The rotation moment map pairs `p` with the generated vector `A q`: `⟨μ(q, p), A⟩ = p(A q)`. -/
+@[simp]
+theorem rotationMomentMap_apply (x : (n → ℝ) × StrongDual ℝ (n → ℝ)) (A : so n ℝ) :
+    rotationMomentMap n x A = x.2 ((A : Matrix n n ℝ) *ᵥ x.1) := by
+  simp [rotationMomentMap, LieSubalgebra.coe_bracket_of_module]
+
+/-- The rotation moment map is the restriction of the moment map of the cotangent-lifted action of
+`gl(n)` along `so(n) → gl(n)`. -/
+theorem rotationMomentMap_eq_comp (x : (n → ℝ) × StrongDual ℝ (n → ℝ)) :
+    rotationMomentMap n x =
+      (cotangentMomentMap x).comp (LieModule.toEnd ℝ (so n ℝ) (n → ℝ)).toLinearMap :=
+  (rfl)
+
+/-- **The moment map of the cotangent-lifted rotations.** On `ℝⁿ × (ℝⁿ)*` with the canonical form
+`ω = Σ dqᵢ ∧ dpᵢ`, `⟨μ(q, p), A⟩ = p(A q)` is a moment map of the action of `so(n)` by the
+cotangent-lifted vector fields `(q, p) ↦ (A q, -(p ∘ A))`. -/
+theorem isMomentMap_rotationMomentMap :
+    (strongDualCotangentSymplecticForm (V := n → ℝ)).constSmooth.IsMomentMap
+      ((InfinitesimalAction.cotangentLinear (n → ℝ)).comp (LieModule.toEnd ℝ (so n ℝ) (n → ℝ)))
+      (rotationMomentMap n) :=
+  isMomentMap_cotangentMomentMap.comp (LieModule.toEnd ℝ (so n ℝ) (n → ℝ))
+
+/-- **The rotation moment map is infinitesimally equivariant**: `{μ_A, μ_B} = μ_⁅A, B⁆`. -/
+theorem poissonBracket_rotationMomentMap (A B : so n ℝ) (x : (n → ℝ) × StrongDual ℝ (n → ℝ)) :
+    (strongDualCotangentSymplecticForm (V := n → ℝ)).constSmooth.poissonBracket
+      (fun y ↦ rotationMomentMap n y A) (fun y ↦ rotationMomentMap n y B) x =
+      rotationMomentMap n x ⁅A, B⁆ := by
+  simp only [rotationMomentMap_eq_comp, LinearMap.comp_apply, LieHom.coe_toLinearMap,
+    poissonBracket_cotangentMomentMap, LieHom.map_lie]
+
+end MomentMap
+
+/-! ### Comparison with the moment map of the cotangent bundle -/
+
+namespace CotangentBundle
+
+open LieAlgebra.Orthogonal
+
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [TopologicalSpace HG]
+  {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G] [ChartedSpace HG G] [Group G]
+
+/-- **The cotangent moment map of a rotation action is the rotation moment map.** If a Lie group
+`G` acts linearly on `ℝⁿ` and its infinitesimal action is by rotations, `ξ_V = ψ(ξ)` for a linear
+map `ψ : 𝔤 → so(n)`, then the moment map of the cotangent-lifted action on `T*ℝⁿ` is, in the
+global coordinates `T*ℝⁿ ≃ ℝⁿ × (ℝⁿ)*`, the rotation moment map restricted along `ψ`. -/
+theorem momentMap_eq_rotationMomentMap_comp {n : Type*} [Fintype n] [DecidableEq n]
+    [DistribMulAction G (n → ℝ)] [SMulCommClass G ℝ (n → ℝ)]
+    [ContMDiffSMul IG 𝓘(ℝ, n → ℝ) 1 G (n → ℝ)]
+    {ψ : GroupLieAlgebra IG G →ₗ[ℝ] so n ℝ}
+    (hψ : ∀ ξ, fundamentalLinearMap IG G (n → ℝ) ξ = LieModule.toEnd ℝ (so n ℝ) (n → ℝ) (ψ ξ))
+    (z : CotangentBundle 𝓘(ℝ, n → ℝ) (n → ℝ)) :
+    momentMap IG G z = (rotationMomentMap n (modelSpaceDiffeomorph (n → ℝ) z)).comp ψ := by
+  ext ξ
+  simp only [momentMap_eq_cotangentMomentMap_comp_fundamentalLinearMap, rotationMomentMap_eq_comp,
+    LinearMap.comp_apply, hψ, LieHom.coe_toLinearMap]
+
+end CotangentBundle
+
+/-! ### The cotangent-lifted orthogonal group -/
 
 section Orthogonal
 
@@ -87,6 +215,8 @@ theorem CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp
   simp
 
 end Orthogonal
+
+/-! ### Angular momentum in dimension three -/
 
 section SoThree
 
@@ -138,5 +268,123 @@ theorem isMomentMap_soThreeDualEquiv_cross :
       ((lieEquivMatrix' (R := ℝ) (n := Fin 3)).symm.toLieHom.comp (so (Fin 3) ℝ).incl)
 
 end SoThree
+
+section AngularMomentum
+
+open LieAlgebra.Orthogonal Matrix
+
+/-- The **angular momentum** `q ⨯₃ p` of a point `(q, p)` of `ℝ³ × (ℝ³)*`, where the covector `p`
+is read as the vector `(p e₀, p e₁, p e₂)` of its values on the standard basis. -/
+def cotangentAngularMomentum (x : (Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ)) : Fin 3 → ℝ :=
+  x.1 ⨯₃ (dotProductEquiv ℝ (Fin 3)).symm (x.2 : (Fin 3 → ℝ) →ₗ[ℝ] ℝ)
+
+/-- The angular momentum is `q ⨯₃ p`, with `p` read as the vector of its values on the standard
+basis. -/
+theorem cotangentAngularMomentum_apply (x : (Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ)) :
+    cotangentAngularMomentum x = x.1 ⨯₃ fun i ↦ x.2 (Pi.single i 1) := by
+  rw [cotangentAngularMomentum]
+  refine congrArg (x.1 ⨯₃ ·) (funext fun i ↦ ?_)
+  rw [dotProductEquiv_symm_apply, LinearMap.coe_single, ContinuousLinearMap.coe_coe]
+
+/-- **The lifted rotation moment map is the angular momentum.** For the rotation `ξ̂ = (v ↦ ξ ⨯₃ v)`
+of `ℝ³`, `⟨μ(q, p), ξ̂⟩ = p(ξ ⨯₃ q) = ξ ⬝ᵥ (q ⨯₃ p)`, by the scalar triple product. -/
+theorem rotationMomentMap_soThreeEquiv (x : (Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ))
+    (ξ : Fin 3 → ℝ) :
+    rotationMomentMap (Fin 3) x (soThreeEquiv ℝ ξ) = ξ ⬝ᵥ cotangentAngularMomentum x := by
+  -- The covector `p` is the dot product with the vector of its values on the standard basis.
+  have hp (v : Fin 3 → ℝ) :
+      x.2 v = (dotProductEquiv ℝ (Fin 3)).symm (x.2 : (Fin 3 → ℝ) →ₗ[ℝ] ℝ) ⬝ᵥ v := by
+    rw [← dotProductEquiv_apply_apply, LinearEquiv.apply_symm_apply, ContinuousLinearMap.coe_coe]
+  simp only [rotationMomentMap_apply, coe_soThreeEquiv, crossProductMatrix_mulVec, hp,
+    cotangentAngularMomentum]
+  exact triple_product_permutation _ _ _
+
+/-- **The moment map of the cotangent-lifted rotations of `ℝ³` is the angular momentum.** Under the
+identification of `ℝ³` with `so(3)*` by the dot product and the hat map, `μ(q, p) = q ⨯₃ p`. -/
+theorem rotationMomentMap_eq_soThreeDualEquiv_cotangentAngularMomentum
+    (x : (Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ)) :
+    rotationMomentMap (Fin 3) x = soThreeDualEquiv ℝ (cotangentAngularMomentum x) := by
+  refine LinearMap.ext fun A ↦ ?_
+  obtain ⟨ξ, rfl⟩ := (soThreeEquiv ℝ).surjective A
+  rw [rotationMomentMap_soThreeEquiv, soThreeDualEquiv_apply_soThreeEquiv, dotProduct_comm]
+
+/-- **The Poisson brackets of angular momentum.** The components `ξ ⬝ᵥ L` of the angular momentum
+`L = q ⨯₃ p` close under the Poisson bracket of `ℝ³ × (ℝ³)*` into the cross product:
+`{ξ ⬝ᵥ L, η ⬝ᵥ L} = (ξ ⨯₃ η) ⬝ᵥ L`. -/
+theorem poissonBracket_dotProduct_cotangentAngularMomentum (ξ η : Fin 3 → ℝ)
+    (x : (Fin 3 → ℝ) × StrongDual ℝ (Fin 3 → ℝ)) :
+    (strongDualCotangentSymplecticForm (V := Fin 3 → ℝ)).constSmooth.poissonBracket
+      (fun y ↦ ξ ⬝ᵥ cotangentAngularMomentum y) (fun y ↦ η ⬝ᵥ cotangentAngularMomentum y) x =
+      (ξ ⨯₃ η) ⬝ᵥ cotangentAngularMomentum x := by
+  simp only [← rotationMomentMap_soThreeEquiv, poissonBracket_rotationMomentMap, lie_soThreeEquiv]
+
+end AngularMomentum
+
+/-! ### Angular momentum on Euclidean three-space -/
+
+section EuclideanThree
+
+open Matrix WithLp
+open scoped InnerProductSpace
+
+namespace CotangentBundle
+
+/-- The **angular momentum** `q ⨯₃ p` of a covector `p` at the point `q` of Euclidean three-space,
+where `p` is read as a vector through the inner product. -/
+def angularMomentum
+    (z : CotangentBundle 𝓘(ℝ, EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3))) :
+    EuclideanSpace ℝ (Fin 3) :=
+  toLp 2 (ofLp z.proj ⨯₃
+    ofLp ((InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin 3))).symm z.snd))
+
+/-- The angular momentum is `q ⨯₃ p`, with `p` read as a vector through the inner product. -/
+theorem angularMomentum_def
+    (z : CotangentBundle 𝓘(ℝ, EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3))) :
+    angularMomentum z = toLp 2 (ofLp z.proj ⨯₃
+      ofLp ((InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin 3))).symm z.snd)) :=
+  (rfl)
+
+/-- The angular momentum pairs with an axis `u` by the scalar triple product: `⟪u, q ⨯₃ p⟫` is
+the value of `p` on the velocity `u ⨯₃ q` of `q` under the infinitesimal rotation about `u`. -/
+theorem inner_angularMomentum
+    (z : CotangentBundle 𝓘(ℝ, EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3)))
+    (u : EuclideanSpace ℝ (Fin 3)) :
+    ⟪u, angularMomentum z⟫_ℝ = z.snd (euclideanCrossProduct u z.proj) := by
+  -- Read `p` as the vector `p♯` with `p = ⟪p♯, ·⟫`; then this is the triple product identity
+  -- `u ⬝ᵥ (q ⨯₃ p♯) = p♯ ⬝ᵥ (u ⨯₃ q)`.
+  refine Eq.trans ?_ (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ)
+    (E := EuclideanSpace ℝ (Fin 3)) (x := euclideanCrossProduct u z.proj) (y := z.snd))
+  have key (q p : EuclideanSpace ℝ (Fin 3)) :
+      ⟪u, toLp 2 (ofLp q ⨯₃ ofLp p)⟫_ℝ = ⟪p, euclideanCrossProduct u q⟫_ℝ := by
+    simp only [euclideanCrossProduct_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+    rw [dotProduct_comm, dotProduct_comm _ (ofLp p), triple_product_permutation,
+      triple_product_permutation]
+  rw [angularMomentum_def]
+  exact key _ _
+
+/-- **The moment map of the cotangent-lifted rotations of `ℝ³` is the angular momentum.** For the
+orthogonal group `O(3)` acting on Euclidean three-space, the moment map `⟨μ(q, p), ξ⟩ = p(ξ q)` of
+the cotangent-lifted action on `T*ℝ³` pairs the element `ξ` of the Lie algebra whose
+infinitesimal rotation is `v ↦ u ⨯₃ v` with the angular momentum: `⟨μ(q, p), ξ⟩ = ⟪u, q ⨯₃ p⟫`.
+Here the Lie algebra of `O(3)` is identified with `so(3)` by `TauCeti.orthogonalLieAlgebraEquiv`
+and `so(3)` with `ℝ³` by the hat map `TauCeti.euclideanSoThreeEquiv`. -/
+theorem momentMap_unitary_apply_eq_inner_angularMomentum
+    (z : CotangentBundle 𝓘(ℝ, EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3)))
+    (ξ : GroupLieAlgebra (Unitary.model (EuclideanSpace ℝ (Fin 3) →L[ℝ] EuclideanSpace ℝ (Fin 3)))
+      (unitary (EuclideanSpace ℝ (Fin 3) →L[ℝ] EuclideanSpace ℝ (Fin 3)))) :
+    momentMap (Unitary.model (EuclideanSpace ℝ (Fin 3) →L[ℝ] EuclideanSpace ℝ (Fin 3)))
+        (unitary (EuclideanSpace ℝ (Fin 3) →L[ℝ] EuclideanSpace ℝ (Fin 3))) z ξ =
+      ⟪euclideanSoThreeEquiv.symm (orthogonalLieAlgebraEquiv (EuclideanSpace ℝ (Fin 3)) ξ),
+        angularMomentum z⟫_ℝ := by
+  rw [inner_angularMomentum, momentMap_unitary_eq_cotangentMomentMap_comp]
+  obtain ⟨u, hu⟩ := euclideanSoThreeEquiv.surjective
+    (orthogonalLieAlgebraEquiv (EuclideanSpace ℝ (Fin 3)) ξ)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hu, LinearEquiv.symm_apply_apply,
+    LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, cotangentMomentMap_apply]
+  exact congrArg z.snd (LinearMap.congr_fun (coe_euclideanSoThreeEquiv u) z.proj)
+
+end CotangentBundle
+
+end EuclideanThree
 
 end TauCeti
