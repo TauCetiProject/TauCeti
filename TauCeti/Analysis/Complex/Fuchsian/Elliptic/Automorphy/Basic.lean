@@ -170,34 +170,6 @@ namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ}
 
-/-- If the projective stabilizer lifts without `-1`, its order is odd. -/
-private theorem odd_card_stabilizer_of_map_eq_of_neg_one_notMem
-    {Γ' : Subgroup SL(2, ℝ)}
-    (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ) [Finite (stabilizer Γ z)]
-    (hneg : (-1 : SL(2, ℝ)) ∉ Γ') : Odd (Nat.card (stabilizer Γ z)) := by
-  by_contra hev
-  rw [Nat.not_odd_iff_even] at hev
-  obtain ⟨q, hq⟩ := (stabilizerRotation_bijective Γ z).2
-    ⟨-1, (mem_rootsOfUnity _ _).mpr hev.neg_one_pow⟩
-  obtain ⟨g, hg, hgq⟩ := mem_map.mp (by rw [hΓ]; exact (q : Γ).property :
-    ((q : Γ) : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
-  have hgz : g • z = z := smul_eq_self_of_coe_eq q hgq
-  have hrot := coe_stabilizerRotation_eq_denom_zpow q hgq
-  rw [hq] at hrot
-  have hsq : denom (Matrix.SpecialLinearGroup.mapGL ℝ (g ^ 2)) z = -1 := by
-    rw [Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self hgz]
-    simp only [Units.val_neg, Units.val_one] at hrot
-    rw [zpow_neg, zpow_two] at hrot
-    have h := congrArg (·⁻¹) hrot
-    simp only [inv_inv, inv_neg, inv_one] at h
-    rw [sq, h]
-  have hc := Matrix.SpecialLinearGroup.mem_center_of_smul_eq_self_of_denom_sq_eq_one
-    (g := g ^ 2) (z := z) (by rw [sq, mul_smul, hgz, hgz]) (by rw [hsq]; norm_num)
-  rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with h | h
-  · rw [h] at hsq
-    norm_num at hsq
-  · exact hneg (h ▸ pow_mem hg 2)
-
 /-- The exponent criterion for the projective image itself. -/
 private theorem exists_lt_forall_denom_zpow_eq_one_of_map_eq {Γ' : Subgroup SL(2, ℝ)} {k : ℤ}
     (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ) [Finite (stabilizer Γ z)]
@@ -229,7 +201,7 @@ private theorem exists_lt_forall_denom_zpow_eq_one_of_map_eq {Γ' : Subgroup SL(
     · rw [← Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self hgz, h]
       simp
     · exact absurd (h ▸ pow_mem hg m) hneg
-  have hmodd : Odd m := odd_card_stabilizer_of_map_eq_of_neg_one_notMem hΓ hneg
+  have hmodd : Odd m := odd_card_stabilizer_of_le_map_of_neg_one_notMem hΓ.ge hneg
   -- choose `r` with `m ∣ 2 * r + k`, using that `2` is invertible modulo the odd `m`
   obtain ⟨a, ha⟩ := hmodd
   have h0 := Int.emod_nonneg (-(k * (a + 1))) hm0.ne'

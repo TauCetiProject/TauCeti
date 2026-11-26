@@ -75,24 +75,6 @@ variable {Γ : Subgroup PSL(2, ℝ)} {Γ' : _root_.Subgroup SL(2, ℝ)} {k : ℤ
 
 /-! ### Automorphic extensions over saturations -/
 
-/-- An element of `Γ` acts on `ℍ` as one of its lifts in `Γ'`. -/
-private theorem exists_mem_forall_smul_eq
-    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ) (γ : Γ) :
-    ∃ h ∈ Γ', ∀ τ : ℍ, h • τ = γ • τ := by
-  obtain ⟨h, hh, hhγ⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ γ.property :
-    (γ : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
-  exact ⟨h, hh, fun τ ↦ by rw [← pslMk_smul]; exact congrArg (· • τ) hhγ⟩
-
-/-- A point of `ℍ` is moved into `W` by an element of `Γ` exactly when it lies in the saturation of
-`W` under `Γ'`. -/
-private theorem exists_smul_mem_iff
-    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ) {W : Set ℍ}
-    {τ : ℍ} : (∃ γ : Γ, γ • τ ∈ W) ↔ τ ∈ (Γ' : Set SL(2, ℝ)) • W := by
-  rw [_root_.Subgroup.mem_smul_set_iff_exists_smul_mem]
-  refine ⟨fun ⟨γ, hγ⟩ ↦ ?_, fun ⟨h, hh, hhτ⟩ ↦ ⟨⟨h, hΓ ▸ mem_map_of_mem _ hh⟩, hhτ⟩⟩
-  obtain ⟨h, hh, hhγ⟩ := exists_mem_forall_smul_eq hΓ γ
-  exact ⟨h, hh, (hhγ τ).symm ▸ hγ⟩
-
 section Extension
 
 variable {W : Set ℍ} {F₀ : ℍ → ℂ}
@@ -150,7 +132,7 @@ private theorem ofQuotient_mem_cuspNhd_iff_mem_smul_horodisc
     (A : ℝ) (τ : ℍ) :
     ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ cuspNhd D A ↔
       τ ∈ (Γ' : Set SL(2, ℝ)) • TauCeti.Subgroup.CuspDatum.horodisc D A := by
-  rw [ofQuotient_mem_cuspNhd_iff, ← exists_smul_mem_iff hΓ]
+  rw [ofQuotient_mem_cuspNhd_iff, ← exists_smul_mem_iff_mem_smul_set_of_map_eq hΓ]
   refine ⟨fun ⟨σ, hσ, hστ⟩ ↦ ?_, fun ⟨γ, hγ⟩ ↦
     ⟨γ • τ, hγ, Quotient.sound (orbitRel_apply.mpr (mem_orbit τ γ))⟩⟩
   obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hστ))
@@ -216,7 +198,7 @@ private theorem ofQuotient_mem_ofQuotientChart_source_iff_mem_smul_ball
         (ofQuotientChart (stabilizerBallQuotientChart hε hopen)).source ↔
       τ ∈ (Γ' : Set SL(2, ℝ)) • ball z ε := by
   rw [ofQuotient_mem_ofQuotientChart_source_iff, mem_stabilizerBallQuotientChart_source_iff,
-    ← exists_smul_mem_iff hΓ]
+    ← exists_smul_mem_iff_mem_smul_set_of_map_eq hΓ]
   simp only [mem_ball]
 
 /-- Every point of the chart of `X(Γ)` given by the local orbit space of a disc is the orbit of a
