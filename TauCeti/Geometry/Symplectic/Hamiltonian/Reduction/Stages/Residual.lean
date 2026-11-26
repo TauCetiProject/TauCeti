@@ -118,22 +118,8 @@ theorem mem_levelSubMulAction_comp_monoidHom_iff (hpι : p.comp ι = 1)
     rw [← LinearMap.range_dualMap_eq_dualAnnihilator_ker] at hann
     obtain ⟨ν, hν⟩ := hann
     exact ⟨ν, hν.symm⟩
-  · -- `dp ∘ dι = 0`: it is the differential of `p ∘ ι = 1` when `p` is differentiable at `1`,
-    -- and `dp = 0` otherwise.
-    have hcomp : (0 : GroupLieAlgebra IK K →L[ℝ] GroupLieAlgebra IR R) =
-        (p.groupLieAlgebraMap I IR).comp (ι.groupLieAlgebraMap IK I) := by
-      by_cases hp : MDifferentiableAt I IR p 1
-      · have h1 : ⇑(p.comp ι) = fun _ ↦ 1 := funext fun k ↦ by rw [hpι, MonoidHom.one_apply]
-        ext ξ
-        rw [← MonoidHom.groupLieAlgebraMap_comp p ι hp hι, MonoidHom.groupLieAlgebraMap_apply, h1,
-          mfderiv_const]
-      · ext ξ
-        rw [ContinuousLinearMap.comp_apply, MonoidHom.groupLieAlgebraMap_apply p,
-          mfderiv_zero_of_not_mdifferentiableAt hp]
-        -- The two zeros lie in `GroupLieAlgebra IR R` and in the tangent space of `R` at `p 1`,
-        -- which are the same model space by definition.
-        rfl
-    rw [hν, LinearMap.comp_assoc, ← ContinuousLinearMap.toLinearMap_comp, ← hcomp]
+  · rw [hν, LinearMap.comp_assoc, ← ContinuousLinearMap.toLinearMap_comp,
+      p.groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero ι hpι hι]
     simp
 
 /-- **The first-stage level is `G`-invariant.** If `p ∘ ι = 1` and `ker dp ≤ range dι`, every
