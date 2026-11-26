@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Pullback
 public import TauCeti.Topology.VectorBundle.FiniteRank.HomotopyInvariance
 public import TauCeti.Topology.Homotopy.Homotopic.PathComponent
+public import TauCeti.Topology.PathComponent
 
 /-!
 # Homotopy invariance of pullbacks of variable-rank bundle atlases
