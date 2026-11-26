@@ -365,8 +365,6 @@ theorem isMinuscule_zero : IsMinuscule b (0 : Dual K H) := by
   have _ : LieModule.IsTrivial L (irreducibleQuotient b (0 : Dual K H)) :=
     isTrivial_of_isHighestWeightVector_weight_zero_of_lieSpan_eq_top hw
       (lieSpan_irreducibleQuotientGenerator_eq_top b 0)
-  have _ : LieModule.IsTrivial H (irreducibleQuotient b (0 : Dual K H)) :=
-    ⟨fun x m ↦ LieModule.IsTrivial.trivial (x : L) m⟩
   refine ⟨isDominantIntegral_zero, fun nu hnu ↦ ⟨1, ?_⟩⟩
   rw [one_smul, eq_comm]
   exact LinearMap.ext fun x ↦ congrFun (eq_zero_of_genWeightSpace_ne_bot_of_isTrivial hnu) x

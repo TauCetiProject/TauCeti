@@ -16,6 +16,7 @@ import Mathlib.Algebra.Order.Group.Int
 /-!
 # Integer intervals: translation boundaries and absolute-value balls
 
+The symmetric interval `[-n, n]` has `2 n + 1` elements (`Int.card_Icc_neg_natCast_natCast`).
 Translating a finite integer interval by `k` changes at most `2 * k.natAbs` of its elements.
 This bound is independent of the endpoints, including when the interval is empty. It gives
 vanishing relative boundary for intervals whose lengths tend to infinity.
@@ -59,6 +60,11 @@ theorem card_image_add_left_Icc_symmDiff_le (k a b : ℤ) :
       rw [card_Ioc] at this
       omega
   rw [Finset.symmDiff_def, card_union_of_disjoint disjoint_sdiff_sdiff, hdiff]
+  omega
+
+/-- The symmetric interval `[-n, n]` of integers has `2 n + 1` elements. -/
+theorem card_Icc_neg_natCast_natCast (n : ℕ) : #(Icc (-(n : ℤ)) n) = 2 * n + 1 := by
+  rw [card_Icc]
   omega
 
 end Int
