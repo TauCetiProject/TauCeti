@@ -395,7 +395,7 @@ theorem integral_deriv_deriv_mul_inner_waveDuhamelSolution
   have ha (t : ℝ) : HasDerivAt a (deriv a t) t :=
     (hasDerivAt_inner_waveDuhamelSolution hφψ f g hG t).differentiableAt.hasDerivAt
   have ha' (t : ℝ) := hasDerivAt_deriv_inner_waveDuhamelSolution hφψ f g hG t
-  have hθ' : ContDiff ℝ 1 (deriv θ) := (contDiff_succ_iff_deriv (n := 1).1 hθ).2.2
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
   have hθ'' (t : ℝ) : HasDerivAt (deriv θ) (deriv (deriv θ) t) t :=
     (hθ'.differentiable one_ne_zero t).hasDerivAt
   have hθ₀ (t : ℝ) : HasDerivAt θ (deriv θ t) t := (hθ.differentiable (by norm_num) t).hasDerivAt
@@ -463,7 +463,7 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolutio
   have heq (i : ι) := integral_deriv_deriv_mul_inner_waveDuhamelSolution hφ (f i) (g i)
     continuous_zero hθ hθc
   simp only [Pi.zero_apply, inner_zero_right, add_zero] at heq
-  have hθ' : ContDiff ℝ 1 (deriv θ) := (contDiff_succ_iff_deriv (n := 1).1 hθ).2.2
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
   exact tendsto_nhds_unique ((hconv φ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv).congr heq)
     (hconv (Δ φ) hθ.continuous hθc)
 
