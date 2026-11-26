@@ -16,6 +16,11 @@ the constant is a unit when the multiple is primitive
 (`Polynomial.IsPrimitive.exists_eq_mul_C_unit_of_dvd_of_natDegree_le`). Reversal permutes the
 coefficients and hence preserves primitivity. Together these facts compare primitive defining
 polynomials after inversion of a root.
+
+A primitive polynomial whose leading coefficient survives a specialization `φ` is relatively
+prime to any `q` for which the specializations are coprime
+(`Polynomial.IsPrimitive.isRelPrime_of_isCoprime_map`): this certifies that two multivariate
+polynomials have no common factor by checking a single one-variable specialization.
 -/
 
 public section
@@ -63,5 +68,24 @@ theorem IsPrimitive.exists_eq_mul_C_unit_of_dvd_of_natDegree_le
   obtain ⟨c, hc, -⟩ := exists_eq_mul_C_of_dvd_of_natDegree_le hdvd hdeg
   obtain ⟨u, hu⟩ := isPrimitive_iff_isUnit_of_C_dvd.mp (hc ▸ hp) c (dvd_mul_left (C c) q)
   exact ⟨u, by rw [hc, hu]⟩
+
+/-- **Relative primality by specialization.** Let `p` be primitive and let `φ : R →+* S` keep its
+leading coefficient nonzero. If the images of `p` and `q` under `φ` are coprime, then `p` and `q`
+have no common divisor other than units. -/
+theorem IsPrimitive.isRelPrime_of_isCoprime_map {R S : Type*} [CommSemiring R]
+    [NoZeroDivisors R] [CommSemiring S] [NoZeroDivisors S] {p q : R[X]} (hp : p.IsPrimitive)
+    (φ : R →+* S) (hφ : φ p.leadingCoeff ≠ 0) (h : IsCoprime (p.map φ) (q.map φ)) :
+    IsRelPrime p q := by
+  -- A common divisor `g` maps to a unit, so `g.map φ` is constant; as `φ` keeps the leading
+  -- coefficient of `g` nonzero, `g` is constant too, and a unit by primitivity.
+  intro g hgp hgq
+  have hu : IsUnit (g.map φ) := h.isUnit_of_dvd' (map_dvd φ hgp) (map_dvd φ hgq)
+  obtain ⟨r, rfl⟩ := hgp
+  have hlc : φ g.leadingCoeff ≠ 0 := fun h0 ↦ hφ (by rw [leadingCoeff_mul, map_mul, h0, zero_mul])
+  have hdeg : g.natDegree = 0 := by
+    rw [← natDegree_map_of_leadingCoeff_ne_zero φ hlc]
+    exact natDegree_eq_zero_of_isUnit hu
+  rw [eq_C_of_natDegree_eq_zero hdeg] at hp ⊢
+  exact (hp _ (dvd_mul_right _ _)).map C
 
 end Polynomial
