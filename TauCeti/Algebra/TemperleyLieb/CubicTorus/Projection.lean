@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
--- Private: finite-product helpers, `ZMod 3` case split, permutation trace, and involution trace.
+-- Private: finite-product helpers, `ZMod 3` case split, permutation-fixed basis, permutation trace,
+-- and involution trace.
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.ZMod.Three
+import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import Mathlib.LinearAlgebra.Matrix.Permutation
 
@@ -71,132 +73,92 @@ theorem CubicOrbit.mk_eq_mk_iff {N : ℕ} {a b : Fin N → ZMod 3} :
     (⟦a⟧ : CubicOrbit N) = ⟦b⟧ ↔ a = b ∨ a = -b :=
   Quotient.eq.trans (cubicOrbitSetoid_r_iff N a b)
 
-/-- Symmetrized Weyl element `S(a) = W(a) + W(-a)` in `CubicTorus N`. -/
-private noncomputable def symmWeyl (N : ℕ) (a : Fin N → ZMod 3) : CubicTorus N :=
-  weyl N a + weyl N (-a)
+private noncomputable def weylBasis (N : ℕ) : Module.Basis (Fin N → ZMod 3) ℂ (CubicTorus N) :=
+  (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).reindex
+    Multiplicative.toAdd
 
-private theorem symmWeyl_neg (N : ℕ) (a : Fin N → ZMod 3) :
-    symmWeyl N (-a) = symmWeyl N a := by simp [symmWeyl, add_comm]
+private theorem weylBasis_apply (N : ℕ) (a : Fin N → ZMod 3) : weylBasis N a = weyl N a := by
+  simp [weylBasis, weyl_def]
 
-private theorem symmWeyl_zero (N : ℕ) : symmWeyl N 0 = (2 : ℂ) • 1 := by
-  simp [symmWeyl, two_smul]
+private def negPerm (N : ℕ) : Equiv.Perm (Fin N → ZMod 3) :=
+  (neg_involutive (G := Fin N → ZMod 3)).toPerm Neg.neg
 
-private theorem symmWeyl_mem_cubicFixed (N : ℕ) (a : Fin N → ZMod 3) :
-    symmWeyl N a ∈ cubicFixed N := by
-  rw [symmWeyl, mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg,
-    add_comm]
+private def cubicOrbitCongr (N : ℕ) :
+    Quotient (Equiv.Perm.SameCycle.setoid (negPerm N)) ≃ CubicOrbit N :=
+  Quotient.congr (Equiv.refl _) fun a b ↦
+    (neg_involutive (G := Fin N → ZMod 3)).sameCycle_iff a b
 
-private noncomputable def symmWeylFixed (N : ℕ) (a : Fin N → ZMod 3) : cubicFixed N :=
-  ⟨symmWeyl N a, symmWeyl_mem_cubicFixed N a⟩
-
-private noncomputable def cubicOrbitVec (N : ℕ) : CubicOrbit N → cubicFixed N :=
-  Quotient.lift
-    (fun a ↦ if a = 0 then 1 else symmWeylFixed N a)
-    (fun a b h ↦ Subtype.ext <| by
-      rcases h with rfl | rfl
-      · rfl
-      · by_cases hb : b = 0
-        · simp [hb]
-        · have hnb : -b ≠ 0 := neg_ne_zero.mpr hb
-          simp [hb, hnb, symmWeylFixed, symmWeyl_neg])
-
-private theorem repr_cubicOrbitVec (N : ℕ) (q : CubicOrbit N) (a : Fin N → ZMod 3) :
-    (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).repr
-        (cubicOrbitVec N q : CubicTorus N) (ofAdd a) =
-      if q = ⟦a⟧ then 1 else 0 := by
+private theorem weylBasis_equivFun_comp_cubicInversion (N : ℕ) :
+    (weylBasis N).equivFun.toLinearMap ∘ₗ (cubicInversion N).toLinearMap =
+      (LinearEquiv.funCongrLeft ℂ ℂ (negPerm N)).toLinearMap ∘ₗ
+        (weylBasis N).equivFun.toLinearMap := by
+  refine (weylBasis N).ext fun a ↦ funext fun j ↦ ?_
   classical
-  obtain ⟨x, rfl⟩ := Quotient.exists_rep q
-  have hq : (⟦x⟧ : CubicOrbit N) = ⟦a⟧ ↔ x = a ∨ x = -a := CubicOrbit.mk_eq_mk_iff
-  by_cases hx : x = 0
-  · subst hx
-    have h0 : a = 0 ↔ (⟦0⟧ : CubicOrbit N) = ⟦a⟧ := by simp [hq, eq_comm, neg_eq_zero]
-    have h1 : ((1 : Multiplicative (Fin N → ZMod 3)) = ofAdd a) ↔ a = 0 := by
-      rw [eq_comm, ofAdd_eq_one]
-    simp only [cubicOrbitVec, Quotient.lift_mk, ↓reduceIte, OneMemClass.coe_one]
-    rw [← of_one, TwistedMonoidAlgebra.repr_of, Finsupp.single_apply]
-    simp only [h1, h0]
-  · have hne : x ≠ -x := fun h ↦ hx (funext fun i ↦
-      (ZMod.add_self_eq_zero_iff_eq_zero (by decide)).mp (eq_neg_iff_add_eq_zero.mp (congrFun h i)))
-    have hrepr (y : Fin N → ZMod 3) :
-        (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).repr
-            (weyl N y) (ofAdd a) = if y = a then 1 else 0 := by
-      simp only [weyl_def, TwistedMonoidAlgebra.repr_of, Finsupp.single_apply,
-        ofAdd.injective.eq_iff]
-    have hneg : (-x = a) ↔ (x = -a) := neg_eq_iff_eq_neg
-    simp only [cubicOrbitVec, Quotient.lift_mk, hx, ↓reduceIte, symmWeylFixed, symmWeyl, map_add,
-      Finsupp.add_apply, hrepr, hq, hneg]
-    by_cases h1 : x = a
-    · have ha : a ≠ -a := h1 ▸ hne
-      simp [h1, ha]
-    · by_cases h2 : x = -a
-      · have ha : -a ≠ a := fun h ↦ hne (by rw [h2, neg_neg, h])
-        simp [h2, ha]
-      · simp [h1, h2]
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, AlgHom.toLinearMap_apply,
+    weylBasis_apply, cubicInversion_weyl, ← weylBasis_apply, (weylBasis N).repr_self,
+    ← weylBasis_apply, (weylBasis N).repr_self, LinearEquiv.funCongrLeft_apply,
+    LinearMap.funLeft_apply, Finsupp.single_apply, Finsupp.single_apply]
+  change (if -a = j then (1 : ℂ) else 0) = if a = -j then 1 else 0
+  exact if_congr neg_eq_iff_eq_neg rfl rfl
 
-private theorem cubicOrbitVec_linearIndependent (N : ℕ) :
-    LinearIndependent ℂ (cubicOrbitVec N) := by
-  classical
-  rw [Fintype.linearIndependent_iff]
-  intro c hc q₀
-  obtain ⟨a, rfl⟩ := Quotient.exists_rep q₀
-  let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
-  have hsum : b.coord (ofAdd a)
-      ((cubicFixed N).val (∑ q : CubicOrbit N, c q • cubicOrbitVec N q)) = 0 := by
-    rw [hc, map_zero, map_zero]
-  rw [map_sum, map_sum] at hsum
-  have hterm : ∀ q : CubicOrbit N,
-      b.coord (ofAdd a) ((cubicFixed N).val (c q • cubicOrbitVec N q)) =
-        c q * if q = ⟦a⟧ then 1 else 0 := fun q ↦ by
-    rw [AlgHom.map_smul_of_tower, map_smul, smul_eq_mul, Module.Basis.coord_apply,
-      Subalgebra.coe_val, repr_cubicOrbitVec]
-  simp only [hterm, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
-    ↓reduceIte] at hsum
-  exact hsum
+private theorem cubicFixed_toSubmodule_eq (N : ℕ) :
+    (cubicFixed N).toSubmodule = (cubicInversion N).toLinearMap.fixedSubmodule := by
+  ext x
+  simp [LinearMap.mem_fixedSubmodule_iff]
 
-private theorem cubicOrbitVec_span (N : ℕ) :
-    ⊤ ≤ Submodule.span ℂ (Set.range (cubicOrbitVec N)) := by
-  intro x _
-  let S : Submodule ℂ (cubicFixed N) := Submodule.span ℂ (Set.range (cubicOrbitVec N))
-  let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
-  have hsymm (a : Fin N → ZMod 3) : symmWeylFixed N a ∈ S := by
-    by_cases ha : a = 0
-    · have h0 : symmWeylFixed N 0 = (2 : ℂ) • cubicOrbitVec N ⟦0⟧ :=
-        Subtype.ext (by simp [cubicOrbitVec, symmWeylFixed, symmWeyl_zero])
-      rw [ha, h0]
-      exact S.smul_mem (2 : ℂ) (Submodule.subset_span ⟨⟦0⟧, rfl⟩)
-    · have ha' : symmWeylFixed N a = cubicOrbitVec N ⟦a⟧ :=
-        Subtype.ext (by simp [cubicOrbitVec, symmWeylFixed, ha])
-      rw [ha']
-      exact Submodule.subset_span ⟨⟦a⟧, rfl⟩
-  have h2x : (2 : ℂ) • x = (b.repr x.val).sum fun g z ↦ z • symmWeylFixed N g.toAdd := by
-    apply Subtype.ext
-    have hxrepr : x.val = (b.repr x.val).sum fun g z ↦ z • of g := by
-      conv_lhs => rw [← b.linearCombination_repr x.val, Finsupp.linearCombination_apply]
-      exact Finsupp.sum_congr fun g _ ↦ by rw [TwistedMonoidAlgebra.basis_apply]
-    have hinv : x.val + cubicInversion N x.val =
-        (b.repr x.val).sum fun g z ↦ z • symmWeyl N g.toAdd := by
-      conv_lhs => rw [hxrepr]
-      simp [symmWeyl, Finsupp.sum, map_sum, map_smul, Finset.sum_add_distrib, of_eq_weyl, smul_add]
-    simpa [symmWeylFixed, SetLike.val_smul, two_smul, mem_cubicFixed.mp x.property,
-      Finsupp.sum] using hinv
-  have hxS : (2 : ℂ) • x ∈ S := by
-    rw [h2x]
-    exact S.sum_mem fun g _ ↦ S.smul_mem _ (hsymm g.toAdd)
-  exact (Submodule.smul_mem_iff S two_ne_zero).mp hxS
+private noncomputable def cubicFixedPermEquiv (N : ℕ) :
+    (LinearEquiv.funCongrLeft ℂ ℂ (negPerm N)).toLinearMap.fixedSubmodule ≃ₗ[ℂ] cubicFixed N :=
+  ((weylBasis N).equivFun.fixedSubmoduleCongr
+      (weylBasis_equivFun_comp_cubicInversion N)).symm.trans
+    (LinearEquiv.ofEq _ _ (cubicFixed_toSubmodule_eq N).symm)
 
 /-- **The inversion-orbit basis of `cubicFixed N`**: `⟦0⟧ ↦ 1` and `⟦a⟧ ↦ W(a) + W(-a)` for
 `a ≠ 0`. -/
 noncomputable def cubicFixedBasis (N : ℕ) : Module.Basis (CubicOrbit N) ℂ (cubicFixed N) :=
-  Module.Basis.mk (cubicOrbitVec_linearIndependent N) (cubicOrbitVec_span N)
+  ((Equiv.Perm.permutationFixedBasis (R := ℂ) (negPerm N)).reindex (cubicOrbitCongr N)).map
+    (cubicFixedPermEquiv N)
 
-@[simp] theorem cubicFixedBasis_zero (N : ℕ) : cubicFixedBasis N ⟦0⟧ = 1 :=
-  Subtype.ext (by simp [cubicFixedBasis, cubicOrbitVec])
+private theorem weylBasis_repr_cubicFixedBasis (N : ℕ) (q : CubicOrbit N) (i : Fin N → ZMod 3) :
+    (weylBasis N).repr (cubicFixedBasis N q : CubicTorus N) i =
+      if (⟦i⟧ : CubicOrbit N) = q then 1 else 0 := by
+  classical
+  have hval : (cubicFixedBasis N q : CubicTorus N) =
+      (((weylBasis N).equivFun.fixedSubmoduleCongr
+        (weylBasis_equivFun_comp_cubicInversion N)).symm
+          (Equiv.Perm.permutationFixedBasis (R := ℂ) (negPerm N)
+            ((cubicOrbitCongr N).symm q)) : CubicTorus N) := by
+    simp only [cubicFixedBasis, Module.Basis.map_apply, Module.Basis.coe_reindex,
+      Function.comp_apply, cubicFixedPermEquiv, LinearEquiv.trans_apply]
+    exact LinearEquiv.coe_ofEq_apply _ _
+  rw [← (weylBasis N).equivFun_apply, hval, LinearEquiv.fixedSubmoduleCongr_symm_apply,
+    LinearEquiv.apply_symm_apply, Equiv.Perm.permutationFixedBasis_apply]
+  exact if_congr (cubicOrbitCongr N).eq_symm_apply rfl rfl
+
+@[simp] theorem cubicFixedBasis_zero (N : ℕ) : cubicFixedBasis N ⟦0⟧ = 1 := by
+  apply Subtype.ext
+  apply (weylBasis N).repr.injective
+  ext i
+  rw [weylBasis_repr_cubicFixedBasis, OneMemClass.coe_one, ← weyl_zero, ← weylBasis_apply,
+    (weylBasis N).repr_self, Finsupp.single_apply]
+  refine if_congr ?_ rfl rfl
+  simp [CubicOrbit.mk_eq_mk_iff, eq_comm]
 
 theorem coe_cubicFixedBasis_of_ne_zero {N : ℕ} {a : Fin N → ZMod 3} (ha : a ≠ 0) :
     (cubicFixedBasis N ⟦a⟧ : CubicTorus N) = weyl N a + weyl N (-a) := by
-  simp only [cubicFixedBasis, Module.Basis.coe_mk, cubicOrbitVec]
-  rw [Quotient.lift_mk]
-  simp [ha, symmWeylFixed, symmWeyl]
+  apply (weylBasis N).repr.injective
+  ext i
+  have hne : a ≠ -a := fun h ↦ ha (funext fun k ↦
+    (ZMod.add_self_eq_zero_iff_eq_zero (by decide)).mp (eq_neg_iff_add_eq_zero.mp (congrFun h k)))
+  rw [weylBasis_repr_cubicFixedBasis, ← weylBasis_apply, ← weylBasis_apply, map_add,
+    (weylBasis N).repr_self, (weylBasis N).repr_self, Finsupp.add_apply, Finsupp.single_apply,
+    Finsupp.single_apply]
+  simp only [CubicOrbit.mk_eq_mk_iff]
+  by_cases hia : i = a <;> by_cases hina : i = -a
+  · exact absurd (hia.symm.trans hina) hne
+  · simp [hia, hne.symm]
+  · simp [hina, hne]
+  · simp [hia, hina, Ne.symm hia, Ne.symm hina]
 
 /-- The `⟦a⟧`-coordinate of `x : cubicFixed N` in `cubicFixedBasis N` equals the `ofAdd a`
 coordinate of `(x : CubicTorus N)` in `TwistedMonoidAlgebra.basis`. -/
@@ -204,14 +166,17 @@ theorem cubicFixedBasis_repr (N : ℕ) (x : cubicFixed N) (a : Fin N → ZMod 3)
     (cubicFixedBasis N).repr x ⟦a⟧ =
       (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).repr
         (x : CubicTorus N) (ofAdd a) := by
-  classical
-  let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
-  have hsum : (x : CubicTorus N) =
-      ∑ q : CubicOrbit N, (cubicFixedBasis N).repr x q • (cubicOrbitVec N q : CubicTorus N) := by
-    conv_lhs => rw [← (cubicFixedBasis N).sum_repr x]
-    simp [cubicFixedBasis]
-  rw [← b.coord_apply, hsum, map_sum]
-  simp [b, Module.Basis.coord_apply, repr_cubicOrbitVec]
+  have hq : (cubicOrbitCongr N).symm (⟦a⟧ : CubicOrbit N) = Quotient.mk _ a := rfl
+  have hx : ((cubicFixedPermEquiv N).symm x).val = (weylBasis N).equivFun (x : CubicTorus N) := by
+    simp only [cubicFixedPermEquiv, LinearEquiv.symm_trans_apply]
+    have hcoe : ((LinearEquiv.ofEq _ _ (cubicFixed_toSubmodule_eq N).symm).symm x :
+        CubicTorus N) = (x : CubicTorus N) := by
+      rw [LinearEquiv.ofEq_symm]
+      exact LinearEquiv.coe_ofEq_apply (cubicFixed_toSubmodule_eq N) x
+    rw [LinearEquiv.symm_symm, LinearEquiv.fixedSubmoduleCongr_apply, hcoe]
+  rw [cubicFixedBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
+    Module.Basis.repr_reindex_apply, hq, Equiv.Perm.permutationFixedBasis_repr, hx]
+  rfl
 
 /-- **Dimension of the inversion-fixed subalgebra**: `dim_ℂ (cubicFixed N) = (3 ^ N + 1) / 2`. -/
 @[simp] theorem finrank_cubicFixed (N : ℕ) : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2 := by
@@ -471,6 +436,16 @@ theorem algHom_ext_cubicSite {N : ℕ} {A : Type*} [Semiring A] [Algebra ℂ A]
   AlgHom.ext_of_adjoin_eq_top (adjoin_range_cubicSite N) (by rintro _ ⟨j, rfl⟩; exact h j)
 
 /-! ### Generation of `cubicFixed N` by `cubicProjection N` and surjectivity of `cubicHom` -/
+
+/-- Symmetrized Weyl element `S(a) = W(a) + W(-a)` in `CubicTorus N`. -/
+private noncomputable def symmWeyl (N : ℕ) (a : Fin N → ZMod 3) : CubicTorus N :=
+  weyl N a + weyl N (-a)
+
+private theorem symmWeyl_neg (N : ℕ) (a : Fin N → ZMod 3) :
+    symmWeyl N (-a) = symmWeyl N a := by simp [symmWeyl, add_comm]
+
+private theorem symmWeyl_zero (N : ℕ) : symmWeyl N 0 = (2 : ℂ) • 1 := by
+  simp [symmWeyl, two_smul]
 
 private theorem symmWeyl_mul_symmWeyl (N : ℕ) (a b : Fin N → ZMod 3) :
     symmWeyl N a * symmWeyl N b =
