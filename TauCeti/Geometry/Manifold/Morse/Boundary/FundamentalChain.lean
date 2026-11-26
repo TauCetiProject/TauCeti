@@ -452,7 +452,7 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
       refine (congrArg φ.negativeCoord (e.apply_symm_apply _)).trans ?_
       dsimp only
       funext i
-      rw [MorseChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
+      rw [MorseBottChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
         Pi.single_eq_of_ne (fun h ↦ (lt_irrefl (0 : ℝ)) (by
           have := i.property
           rw [h, hj] at this
