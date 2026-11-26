@@ -25,7 +25,7 @@ residue degree is positive and when it is one, and show that a morphism surjecti
 as a closed immersion, has residue degree one everywhere. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
 any compatible base-field algebra structure. These facts supply the residue-field weights used in
-degree and pushforward constructions. The comparison `length_residueField_eq_residueDegree`
+degree and pushforward constructions. The comparison `toNat_length_residueField_eq_residueDegree`
 expresses the same degree as the natural-number truncation of the length of `κ(x)` over the
 local ring of its image; it also applies to a point over a specified equal image `y`, using
 `stalkAlgebraOfApplyEq`.
@@ -161,7 +161,7 @@ theorem algebraMap_stalkAlgebraOfApplyEq_rfl (f : X ⟶ Y) (x : X) :
 
 /-- The natural-number truncation of the length of `κ(x)` over `𝒪_{Y,y}` is the residue
 degree `[κ(x) : κ(y)]` (both truncations are `0` when the extension is infinite). -/
-theorem length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
+theorem toNat_length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
     letI := stalkAlgebraOfApplyEq f h
     (Module.length (Y.presheaf.stalk y) (ResidueField (X.presheaf.stalk x))).toNat =
       f.residueDegree x := by

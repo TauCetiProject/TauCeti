@@ -33,7 +33,7 @@ The proof reads the identity off the commutative algebra of Fulton's Appendix A.
 `Γ(Y, V) → Γ(X, f⁻¹ V)`, the prime of `y` and the local rings of `X` at the points of the fibre,
 which are the primes over it (`AlgebraicGeometry.IsAffineOpen.preimageSingletonEquivPrimesOver`).
 The residue degrees enter as lengths: `length_{𝒪_{Y,y}} κ(x) = [κ(x) : κ(y)]`
-(`AlgebraicGeometry.Scheme.Hom.length_residueField_eq_residueDegree`).
+(`AlgebraicGeometry.Scheme.Hom.toNat_length_residueField_eq_residueDegree`).
 
 Adapted from the [lookahead formalization](https://github.com/roed-math/TauCeti-w2-fresh/tree/678c1bad7a8c53d6cffb49946b9fefc73d4c0435).
 -/
@@ -117,11 +117,7 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     change (algebraMap Y.functionField X.functionField).comp
       ((algebraMap (Y.presheaf.stalk y) Y.functionField).comp (algebraMap Γ(Y, V) _)) = _
     rw [← IsScalarTower.algebraMap_eq]
-    -- The section-to-function-field algebra maps are the germs at the generic points.
-    change (f.functionFieldMap.hom).comp (Y.germToFunctionField V).hom =
-      (X.germToFunctionField (f ⁻¹ᵁ V)).hom.comp (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom
-    rw [← CommRingCat.hom_comp, f.germToFunctionField_functionFieldMap, ← CommRingCat.hom_comp,
-      Scheme.Hom.appLE_eq_app]
+    exact (congrArg CommRingCat.Hom.hom (f.appLE_germToFunctionField V (f ⁻¹ᵁ V) le_rfl)).symm
   have : IsFractionRing Γ(X, f ⁻¹ᵁ V) X.functionField :=
     functionField_isFractionRing_of_isAffineOpen X _ hU
   -- The points of the fibre, indexed by the primes of `B₀` over `p`.
@@ -182,8 +178,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
       ↑(Multiplicative.ofAdd (X.ord r (x q))) :=
     (Scheme.ord_eq_iff (hq1 q) hr).mp rfl
   have : Fintype (p.primesOver Γ(X, f ⁻¹ᵁ V)) := (Algebra.QuasiFinite.finite_primesOver p).fintype
-  simp only [hord, Scheme.Hom.length_residueField_eq_residueDegree f (hfx _), ← WithZero.coe_pow,
-    ← ofAdd_nsmul, finprod_eq_prod_of_fintype] at H
+  simp only [hord, Scheme.Hom.toNat_length_residueField_eq_residueDegree f (hfx _),
+    ← WithZero.coe_pow, ← ofAdd_nsmul, finprod_eq_prod_of_fintype] at H
   exact ord_norm_eq_finsum_of_prod f hy1 e x hex r H
 
 /-- **The order of a norm at a point of codimension one** (Fulton, *Intersection Theory*,
