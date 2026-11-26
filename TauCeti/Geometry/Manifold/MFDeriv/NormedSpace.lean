@@ -66,6 +66,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_units_inv_apply`: the derivative of the pointwise inverse of a map into the
+  units of a normed algebra is `-u⁻¹ (du) u⁻¹`.
 * `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
   the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
@@ -446,6 +448,25 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- The derivative of the pointwise inverse of a map into the units of a normed algebra, read in
+the algebra: `d(u⁻¹) = -u⁻¹ (du) u⁻¹`. The algebra need not be commutative. -/
+theorem mvfderiv_units_inv_apply {𝔄 : Type*} [NormedRing 𝔄] [NormedAlgebra 𝕜 𝔄] {u : M → 𝔄ˣ}
+    {x : M} (hu : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ (u y).val) x)
+    (hu' : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ ((u y)⁻¹ : 𝔄ˣ).val) x) (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ ((u y)⁻¹ : 𝔄ˣ).val) x v =
+      -(((u x)⁻¹ : 𝔄ˣ).val * mvfderiv I (fun y ↦ (u y).val) x v * ((u x)⁻¹ : 𝔄ˣ).val) := by
+  -- Differentiate `u u⁻¹ = 1` by the Leibniz rule and multiply by `u⁻¹` on the left.
+  have h := congrArg (fun L ↦ L v) (mvfderiv_smul_algebra (F := 𝔄) hu hu')
+  have hone : ((fun y ↦ (u y).val) • fun y ↦ ((u y)⁻¹ : 𝔄ˣ).val) = fun _ ↦ 1 := by
+    funext y
+    simp
+  simp only [hone, mvfderiv_const, zero_apply, add_apply,
+    smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul] at h
+  have h' := congrArg (fun z ↦ ((u x)⁻¹ : 𝔄ˣ).val * z) h.symm
+  simp only [mul_add, mul_zero, ← mul_assoc, Units.inv_mul, one_mul] at h'
+  rw [eq_neg_iff_add_eq_zero]
+  exact h'
 
 /-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
 in the space, is `k • ·` at every point. -/
