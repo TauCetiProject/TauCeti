@@ -70,6 +70,21 @@ theorem GradedPiece.map_mk (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap 
       Submodule.Quotient.mk ⟨u x, hu p x.property⟩ :=
   (rfl)
 
+/-- The identity induces the identity on graded pieces. -/
+@[simp]
+theorem GradedPiece.map_id (hu : ∀ p, F p ≤ (F p).comap LinearMap.id := fun _ ↦ le_rfl)
+    (p : ℤ) : GradedPiece.map LinearMap.id hu p = LinearMap.id := by
+  ext; rfl
+
+/-- The map induced on graded pieces by a composite is the composite of the induced maps. -/
+theorem GradedPiece.map_comp {O : Type*} [AddCommGroup O] [Module R O] {H : ℤ → Submodule R O}
+    (f : M →ₗ[R] N) (hf : ∀ p, F p ≤ (G p).comap f) (g : N →ₗ[R] O)
+    (hg : ∀ p, G p ≤ (H p).comap g)
+    (hgf : ∀ p, F p ≤ (H p).comap (g ∘ₗ f) := fun p ↦ (hf p).trans (Submodule.comap_mono (hg p)))
+    (p : ℤ) :
+    GradedPiece.map (g ∘ₗ f) hgf p = GradedPiece.map g hg p ∘ₗ GradedPiece.map f hf p := by
+  ext; rfl
+
 end TauCeti
 
 namespace LinearMap
