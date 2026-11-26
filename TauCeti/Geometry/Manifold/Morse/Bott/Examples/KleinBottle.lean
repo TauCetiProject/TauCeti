@@ -19,7 +19,6 @@ import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
-import TauCeti.Geometry.Manifold.Topology
 import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
