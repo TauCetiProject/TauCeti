@@ -325,6 +325,26 @@ theorem twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains �
   have : IsEmpty (H.hatDomains χ x y) := by rw [h]; infer_instance
   exact finsum_of_isEmpty _
 
+/-- When exactly two distinct domains `D₁` and `D₂` are counted, the twisted coefficient is the
+sum of the two monomials of their labels. -/
+theorem twistedHatCoefficient_of_hatDomains_eq_pair {D₁ D₂ : Region → ℤ}
+    (h : H.hatDomains χ x y = {D₁, D₂}) (hne : D₁ ≠ D₂) :
+    H.twistedHatCoefficient r χ x y =
+      single (Multiplicative.ofAdd ⟨r.label x y D₁, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert D₁ {D₂})⟩) 1 +
+      single (Multiplicative.ofAdd ⟨r.label x y D₂, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert_of_mem D₁ rfl)⟩) 1 := by
+  classical
+  have := (show (H.hatDomains χ x y).Finite from h ▸ Set.toFinite _).fintype
+  have hD₁ : D₁ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert D₁ {D₂}
+  have hD₂ : D₂ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert_of_mem D₁ rfl
+  have huniv : (Finset.univ : Finset (H.hatDomains χ x y)) = {⟨D₁, hD₁⟩, ⟨D₂, hD₂⟩} := by
+    ext ⟨D, hD⟩
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
+      true_iff]
+    rwa [h] at hD
+  rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair (by simpa using hne)]
+
 /-- In a weakly admissible diagram the twisted hat differential has no diagonal terms. -/
 @[simp]
 theorem WeaklyAdmissible.twistedHatCoefficient_self (hW : H.WeaklyAdmissible)

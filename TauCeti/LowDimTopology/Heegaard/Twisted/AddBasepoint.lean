@@ -286,31 +286,11 @@ theorem twistedHatCoefficient_addBasepoint_zero_one_self {x : H.Generator}
     (H.addBasepoint r₀).twistedHatCoefficient (r.addBasepoint hr₀) (addBasepointEuler χ r₀)
         (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1) =
       1 + single (Multiplicative.ofAdd (H.addBasepointPeriodicDomainsEquiv r₀ (0, 1))) 1 := by
-  classical
-  have hset := H.hatDomains_addBasepoint_zero_one_self hr₀ h₀
-  have := (show Set.Finite ((H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
-    (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) by
-      rw [hset]; exact Set.toFinite _).fintype
-  have hβ : (Sum.elim 0 (Pi.single 1 1) : Region ⊕ Fin 3 → ℤ) ∈
-      (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x 0)
-        (H.addBasepointGenerator r₀ x 1) := by
-    rw [hset]; exact Set.mem_insert _ _
-  have hα : (Sum.elim 0 (Pi.single 0 1) : Region ⊕ Fin 3 → ℤ) ∈
-      (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x 0)
-        (H.addBasepointGenerator r₀ x 1) := by
-    rw [hset]; exact Set.mem_insert_of_mem _ rfl
-  have hne : (⟨_, hβ⟩ : (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
-      (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) ≠ ⟨_, hα⟩ := by
-    intro h
-    simpa using congrFun (congrArg Subtype.val h) (Sum.inr 0)
-  have huniv : (Finset.univ : Finset ((H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
-      (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1))) =
-      {⟨_, hβ⟩, ⟨_, hα⟩} := by
-    ext ⟨D, hD⟩
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
-      true_iff]
-    rwa [hset] at hD
-  rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair hne, one_def, ← ofAdd_zero]
+  have hne : (Sum.elim 0 (Pi.single 1 1) : Region ⊕ Fin 3 → ℤ) ≠
+      Sum.elim (0 : Region → ℤ) (Pi.single 0 1) :=
+    fun h => by simpa using congrFun h (Sum.inr 0)
+  rw [twistedHatCoefficient_of_hatDomains_eq_pair
+    (H.hatDomains_addBasepoint_zero_one_self hr₀ h₀) hne, one_def, ← ofAdd_zero]
   -- The crescent `C_β` has label `0` and the crescent `C_α` has label `C_α - C_β`.
   congr 3 <;> refine Subtype.ext ?_ <;> dsimp only <;>
     rw [ReferenceDomains.addBasepoint_label] <;> funext s <;> rcases s with s | m
