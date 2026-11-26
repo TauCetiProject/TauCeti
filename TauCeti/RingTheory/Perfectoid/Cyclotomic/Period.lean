@@ -8,12 +8,12 @@ module
 public import TauCeti.RingTheory.Perfectoid.ShiftedTheta
 public import TauCeti.RingTheory.Perfectoid.Pair
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.RingTheory.Huber.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
-import TauCeti.RingTheory.Perfectoid.IsAlgClosed
 import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Units
 
 /-!
 # Cyclotomic periods
@@ -21,6 +21,22 @@ import TauCeti.RingTheory.WittVector.Frobenius
 The periods `μ = [ε] - 1`, `ξ = ∑ j < p, [ε^(1/p)]^j`, and `xiTilde = φ(ξ)`
 are defined in Witt vectors without division. When the sharp of `ε^(1/p)` is a primitive
 `p`-th root of unity, `ξ` generates Fontaine's kernel on perfectoid integer rings.
+
+Frobenius acts on `μ` and `xiTilde` by replacing `ε` with `ε ^ p`, and the zeroth Witt coordinate
+of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
+
+## Main results
+
+* `TauCeti.Perfectoid.mu_eq_xi_mul_frobeniusEquiv_symm`: `μ = ξ * φ^(-1)(μ)`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu`: `φ^j(μ(ε)) = μ(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
+* `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
+* `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
+* `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
+  `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
+* `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
+  of a complete perfectoid field.
 
 ## References
 
@@ -86,7 +102,56 @@ omit [CharP S p] [PerfectRing S p] in
 @[simp]
 theorem mu_one : mu p (1 : S) = 0 := by simp [mu_eq]
 
+/-- Iterated Frobenius on `μ` replaces `ε` by `ε ^ p ^ j`. -/
+theorem iterate_frobeniusEquiv_mu (ε : S) (j : ℕ) :
+    ((frobeniusEquiv p S)^[j]) (mu p ε) = mu p (ε ^ p ^ j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [Function.iterate_succ_apply', ih]
+    simp only [mu_eq, map_sub, map_one, WittVector.frobeniusEquiv_apply, frobenius_teichmuller,
+      ← map_pow, ← pow_mul, ← pow_succ]
+
+/-- Iterated Frobenius on `xiTilde` replaces `ε` by `ε ^ p ^ j`. -/
+theorem iterate_frobeniusEquiv_xiTilde (ε : S) (j : ℕ) :
+    ((frobeniusEquiv p S)^[j]) (xiTilde p ε) = xiTilde p (ε ^ p ^ j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have h (δ : S) : frobeniusEquiv p S (xiTilde p δ) = xiTilde p (δ ^ p) := by
+      simp only [xiTilde_eq_sum, map_sum, map_pow, WittVector.frobeniusEquiv_apply,
+        frobenius_teichmuller]
+    rw [Function.iterate_succ_apply', ih, h, ← pow_mul, ← pow_succ]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- The zeroth Witt coordinate of `μ = [ε] - 1` is `ε - 1`. -/
+@[simp]
+theorem coeff_zero_mu (ε : S) : (mu p ε).coeff 0 = ε - 1 := by
+  simp [mu_eq, sub_coeff_zero]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- For `ε ≠ 1`, the zeroth Witt coordinate of `μ` is nonzero. -/
+theorem coeff_zero_mu_ne_zero {ε : S} (hε : ε ≠ 1) : (mu p ε).coeff 0 ≠ 0 := by
+  rwa [coeff_zero_mu, sub_ne_zero]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- For `ε ≠ 1`, `μ` is nonzero. -/
+theorem mu_ne_zero {ε : S} (hε : ε ≠ 1) : mu p ε ≠ 0 :=
+  fun h ↦ coeff_zero_mu_ne_zero p hε (by rw [h, zero_coeff])
+
 end Periods
+
+section Naturality
+
+variable (p : ℕ) [Fact p.Prime] {S T : Type*} [CommRing S] [CharP S p] [PerfectRing S p]
+  [CommRing T] [CharP T p] [PerfectRing T p]
+
+/-- Base change of `ξ` between perfect rings replaces `ε` by its image. -/
+@[simp]
+theorem map_xi (f : S →+* T) (ε : S) : WittVector.map f (xi p ε) = xi p (f ε) := by
+  simp [xi_eq, map_sum, map_teichmuller, RingHom.map_frobeniusEquiv_symm]
+
+end Naturality
 
 end TauCeti.Perfectoid
 
@@ -129,6 +194,22 @@ theorem fontaineTheta_xi_eq_zero [IsDomain A] (ε : PreTilt A p)
   rw [fontaineTheta_xi]
   exact hε.geom_sum_eq_zero (Fact.out : p.Prime).one_lt
 
+/-- If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then `ε♯ = 1`. -/
+theorem untilt_eq_one_of_isPrimitiveRoot (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
+    ε.untilt = 1 := by
+  rw [← untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one, Function.iterate_one,
+    hε.pow_eq_one]
+
+/-- If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then `ε ≠ 1`. -/
+theorem ne_one_of_isPrimitiveRoot (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
+    ε ≠ 1 := by
+  rintro rfl
+  exact hε.ne_one (Fact.out : p.Prime).one_lt (by rw [map_one, map_one])
+
 /-- A root system with sharp one gives `θ(μ) = 0`. -/
 @[simp high]
 theorem fontaineTheta_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1) :
@@ -153,6 +234,19 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
     fontaineThetaShifted A p (xiTilde p ε) = 0 := by
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
+
+/-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
+theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
+    (j : ℕ) : fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j]) (mu p ε)) = 0 := by
+  rw [iterate_frobeniusEquiv_mu]
+  exact fontaineTheta_mu_eq_zero _ (by rw [map_pow, hε, one_pow])
+
+/-- If `ε♯ = 1`, then Fontaine's map sends `φ^(j + 1)(ξ)` to `p`. -/
+theorem fontaineTheta_iterate_frobeniusEquiv_succ_xi (ε : PreTilt A p) (hε : ε.untilt = 1)
+    (j : ℕ) :
+    fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j + 1]) (xi p ε)) = p := by
+  rw [Function.iterate_succ_apply, ← xiTilde_eq, iterate_frobeniusEquiv_xiTilde]
+  exact fontaineTheta_xiTilde _ (by rw [map_pow, hε, one_pow])
 
 end FontaineValues
 
@@ -217,36 +311,26 @@ namespace PreTilt
 open TauCeti TauCeti.Perfectoid _root_.WittVector
 open scoped _root_.NormedField Valued
 
-section AlgebraicallyClosed
+section PerfectoidField
 
 variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C]
-  [IsUltrametricDist C] [CompleteSpace C] [IsAlgClosed C]
+  [IsUltrametricDist C] [CompleteSpace C] [IsPerfectoidTateRing p C]
   [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
 
-/-- For a complete algebraically closed nonarchimedean field of residue characteristic `p`,
-the cyclotomic polynomial `ξ` generates the Fontaine kernel on its valuation ring.
-Primitivity excludes the trivial root system. -/
+/-- For a complete perfectoid nonarchimedean field of residue characteristic `p`, the cyclotomic
+polynomial `ξ` generates the Fontaine kernel on its valuation ring. Primitivity excludes the
+trivial root system. -/
 theorem ker_fontaineTheta_eq_span_xi (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
     RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} := by
   have hO := Huber.powerBoundedSubring_eq_integer (K := C)
-  have hnonunit : ¬IsUnit (p : Huber.powerBoundedSubring C) := by
-    rw [hO]
-    exact Fact.out
-  have hnorm : ‖(p : C)‖ < 1 := by
-    have hle := Huber.isPowerBounded_iff_norm_le_one.mp
-      (Huber.mem_powerBoundedSubring.mp (p : Huber.powerBoundedSubring C).property)
-    apply lt_of_le_of_ne hle
-    intro he
-    exact hnonunit (Huber.powerBoundedSubring.isUnit_iff_norm_eq_one.mpr he)
-  have : IsPerfectoidTateRing p C := isPerfectoidTateRing_of_isAlgClosed hnorm
   have hplus : Huber.IsRingOfIntegralElements (𝒪[C]) := by
     rw [← hO]
     exact Huber.isRingOfIntegralElements_powerBoundedSubring C
   exact ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements hplus ε hε
 
-/-- On the valuation ring of a complete algebraically closed nonarchimedean field,
+/-- On the valuation ring of a complete perfectoid nonarchimedean field,
 `xiTilde` generates the shifted Fontaine kernel. -/
 theorem ker_fontaineThetaShifted_eq_span_xiTilde (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
@@ -255,6 +339,6 @@ theorem ker_fontaineThetaShifted_eq_span_xiTilde (ε : PreTilt (𝒪[C]) p)
   rw [xiTilde_eq]
   exact WittVector.ker_fontaineThetaShifted_eq_span (ker_fontaineTheta_eq_span_xi ε hε)
 
-end AlgebraicallyClosed
+end PerfectoidField
 
 end PreTilt
