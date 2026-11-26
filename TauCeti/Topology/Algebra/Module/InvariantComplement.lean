@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 
 /-!
 # Invariant topological complements
@@ -21,17 +20,12 @@ with a topological complement has a `G`-invariant topological complement
 projection `P` onto `p`, the average `(1 / |G|) ∑_g ρ g ∘ P ∘ ρ g⁻¹` is again a continuous
 projection onto `p`, and it commutes with the action, so its kernel is invariant.
 
-Conversely, a continuous linear map preserving both summands of a topological direct sum commutes
-with the projection onto one summand along the other (`Submodule.projectionL_apply_of_mapsTo`).
-
-These are the linear inputs of an equivariant Lyapunov–Schmidt reduction: for a Fredholm operator
-intertwining two such actions, they give splittings of the domain and the codomain into invariant
+This is a linear input of an equivariant Lyapunov–Schmidt reduction: for a Fredholm operator
+intertwining two such actions, it gives splittings of the domain and the codomain into invariant
 summands.
 
 ## Main results
 
-* `Submodule.projectionL_apply_of_mapsTo`: a continuous linear map preserving `p` and `q` commutes
-  with the projection onto `p` along `q`.
 * `Submodule.ClosedComplemented.exists_isTopCompl_forall_mapsTo`: an invariant complemented
   submodule has an invariant topological complement.
 
@@ -46,23 +40,6 @@ public section
 open Set
 
 namespace Submodule
-
-section Projection
-
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
-  {p q : Submodule R M}
-
-/-- A continuous linear map preserving both summands of a topological direct sum `M = p ⊕ q`
-commutes with the projection onto `p` along `q`. -/
-theorem projectionL_apply_of_mapsTo (h : IsTopCompl p q) {f : M →L[R] M} (hp : MapsTo f p p)
-    (hq : MapsTo f q q) (x : M) : p.projectionL q h (f x) = f (p.projectionL q h x) := by
-  have hc : Commute (p.projectionL q h) f := by
-    rw [ContinuousLinearMap.IsIdempotentElem.commute_iff (isIdempotentElem_projectionL h),
-      range_projectionL, ker_projectionL]
-    exact ⟨hp, hq⟩
-  simpa only [mul_apply_eq_comp] using congr($hc.eq x)
-
-end Projection
 
 section Average
 
@@ -83,14 +60,13 @@ theorem ClosedComplemented.exists_isTopCompl_forall_mapsTo (hG : IsUnit (Nat.car
   have hA (x : M) : (A x : M) = (↑hG.unit⁻¹ : R) • ∑ g, ρ g (P (ρ g⁻¹ x)) := by
     simp [A]
   have hinv (g : G) (x : M) : ρ g (ρ g⁻¹ x) = x := by
-    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+    simp [← mul_apply_eq_comp, ← map_mul]
   have hAp (x : p) : A x = x := by
     refine Subtype.ext ?_
     have hterm (g : G) : ρ g (P (ρ g⁻¹ x)) = x := by
       have hPx : P (ρ g⁻¹ x) = ⟨ρ g⁻¹ x, hρ g⁻¹ x.property⟩ := hP ⟨_, _⟩
       rw [hPx, hinv]
-    simp_rw [hA, hterm, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card,
-      ← Nat.cast_smul_eq_nsmul R, smul_smul, IsUnit.val_inv_mul, one_smul]
+    simp [hA, hterm, ← Nat.cast_smul_eq_nsmul R, smul_smul]
   -- The averaged projection commutes with the action.
   have hAρ (h : G) (x : M) : (A (ρ h x) : M) = ρ h (A x) := by
     rw [hA, hA, map_smul, map_sum]

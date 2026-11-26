@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.NormalForm.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Equivariant
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Topology.Algebra.Module.Complement
 import TauCeti.Topology.Algebra.Module.InvariantComplement
 
 /-!
@@ -34,7 +35,9 @@ codomain summand. Then near the coordinate of `a`:
 Two of these four invariance conditions hold automatically: differentiating `f ∘ σ = τ ∘ f` at `a`
 gives `T ∘ σ = τ ∘ T`, so `σ` preserves the kernel of `T` and `τ` its range
 (`ContinuousLinearMap.FredholmPackage.mapsTo_decDom_X₀`,
-`ContinuousLinearMap.FredholmPackage.mapsTo_decCodom_X₁`). Splittings with all four invariance
+`ContinuousLinearMap.FredholmPackage.mapsTo_decCodom_X₁`), so the statements about the inverse
+chart, the obstruction map and its slice assume only the invariance of the essential domain summand
+and of the finite-dimensional codomain summand. Splittings with all four invariance
 properties exist: if a finite group `G` of invertible order acts on
 `E` and `F` by continuous linear maps and `T` intertwines the two actions, then `T` has a Fredholm
 package whose four summands are `G`-invariant
@@ -47,11 +50,13 @@ Taubes's count of pseudoholomorphic curves this is the expected situation at a p
 bifurcation of a torus: the deformation problem of its double cover commutes with the deck
 involution, the double cover itself is a fixed solution, and at the bifurcation the kernel of the
 linearization consists of sections that are odd under the involution. The reduced obstruction slice
-is then an odd function, to which the pitchfork model `TauCeti.eventually_pitchfork` of
-`TauCeti.Analysis.Calculus.Bifurcation` applies once the kernel and cokernel are identified with
-the scalars; a pair of opposite nonzero zeros of the slice is one orbit of the involution, which
-would correspond to one embedded torus in twice the class of the original one. This file proves
-only the abstract reduction, not these geometric identifications.
+is then an odd function. This is the oddness at a single parameter value only: before the pitchfork
+model `TauCeti.eventually_pitchfork` of `TauCeti.Analysis.Calculus.Bifurcation` applies, one still
+needs a reduction of the whole one-parameter family, identifications of the kernel and cokernel
+with the scalars, and the conditions on the parameter derivatives that the pitchfork model
+requires. A pair of opposite nonzero zeros of the slice is one orbit of the involution, which would
+correspond to one embedded torus in twice the class of the original one. This file proves only the
+abstract reduction at a fixed parameter, not these further steps or geometric identifications.
 
 ## Main results
 
@@ -134,7 +139,10 @@ include hτ₀ hτ₁ in
 codomain summands. -/
 private theorem proj_map (y : F) :
     pkg.decCodom.proj (τ y) = τ.restrict (fun _ hx ↦ hτ₁ hx) (pkg.decCodom.proj y) :=
-  Subtype.ext <| Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl hτ₁ hτ₀ y
+  Subtype.ext <| by
+    rw [FredholmDecomposition.proj, coe_restrict_apply, Submodule.coe_projectionOntoL_apply,
+      Submodule.coe_projectionOntoL_apply]
+    exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl hτ₁ hτ₀ y
 
 include hσ₀ hσ₁ in
 /-- The projection of the domain onto its finite-dimensional summand commutes with a map preserving
@@ -143,7 +151,10 @@ private theorem projX₀_map (x : E) :
     pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (σ x) =
       σ.restrict (fun _ hx ↦ hσ₀ hx)
         (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm x) :=
-  Subtype.ext <| Submodule.projectionL_apply_of_mapsTo pkg.decDom.isTopCompl.symm hσ₀ hσ₁ x
+  Subtype.ext <| by
+    rw [coe_restrict_apply, Submodule.coe_projectionOntoL_apply,
+      Submodule.coe_projectionOntoL_apply]
+    exact Submodule.projectionL_apply_of_mapsTo pkg.decDom.isTopCompl.symm hσ₀ hσ₁ x
 
 include hσ₀ hσ₁ hτ₀ hτ₁ in
 /-- **The normal-form coordinates are equivariant.** If `σ` fixes the base point `a`, preserves both
@@ -178,69 +189,74 @@ section Chart
 
 variable [CompleteSpace E]
 
-include hσ₀ hσ₁ hτ₀ hτ₁ in
+/-- Near the coordinate of the base point, the inverse normal-form chart takes values in any
+prescribed neighbourhood of `a`. -/
+private theorem eventually_normalFormOpenPartialHomeomorph_symm (hf : HasStrictFDerivAt f T a)
+    {p : E → Prop} (hp : ∀ᶠ x in 𝓝 a, p x) :
+    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      p ((pkg.normalFormOpenPartialHomeomorph hf).symm y) := by
+  refine ((pkg.normalFormOpenPartialHomeomorph hf).continuousAt_symm
+    (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf)).eventually ?_
+  rwa [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
+
+include hσ₁ hτ₀ in
 /-- **The inverse normal-form chart is equivariant.** Near the coordinate of the base point, the
-inverse normal-form chart intertwines the restrictions of `τ` and `σ` with `σ`. -/
+inverse normal-form chart intertwines the restrictions of `τ` and `σ` with `σ`. Only the invariance
+of the complementary summands is assumed: `σ` preserves the finite-dimensional domain summand by
+`mapsTo_decDom_X₀` and `τ` the essential codomain summand by `mapsTo_decCodom_X₁`. -/
 theorem eventually_normalFormOpenPartialHomeomorph_symm_prodMap (hf : HasStrictFDerivAt f T a)
     (ha : σ a = a) (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
     ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
       (pkg.normalFormOpenPartialHomeomorph hf).symm
-          (Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y) =
+          (Prod.map (τ.restrict fun _ hy ↦ pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ hy)
+            (σ.restrict fun _ hy ↦ pkg.mapsTo_decDom_X₀ hf.hasFDerivAt ha hfσ hy) y) =
         σ ((pkg.normalFormOpenPartialHomeomorph hf).symm y) := by
+  have hσ₀ := pkg.mapsTo_decDom_X₀ hf.hasFDerivAt ha hfσ
+  have hτ₁ := pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ
   set Φ := pkg.normalFormOpenPartialHomeomorph hf
-  have hy₀ := pkg.normalFormOpenPartialHomeomorph_self_mem_target hf
-  have hsymm : Φ.symm (pkg.decCodom.proj (f a), 0) = a :=
-    pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf
   -- Near `a`, `f` is equivariant and `σ` maps into the source of the chart.
   have hσsrc : ∀ᶠ x in 𝓝 a, σ x ∈ Φ.source :=
     σ.continuous.continuousAt.preimage_mem_nhds
       (by rw [ha]; exact Φ.open_source.mem_nhds (pkg.mem_normalFormOpenPartialHomeomorph_source hf))
-  have hnear : ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
-      f (σ (Φ.symm y)) = τ (f (Φ.symm y)) ∧ σ (Φ.symm y) ∈ Φ.source :=
-    (Φ.continuousAt_symm hy₀).eventually
-      (p := fun x ↦ f (σ x) = τ (f x) ∧ σ x ∈ Φ.source) (by rw [hsymm]; exact hfσ.and hσsrc)
-  filter_upwards [Φ.open_target.mem_nhds hy₀, hnear] with y hy ⟨hfy, hsrc⟩
+  filter_upwards [Φ.open_target.mem_nhds (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf),
+    pkg.eventually_normalFormOpenPartialHomeomorph_symm hf (hfσ.and hσsrc)] with y hy ⟨hfy, hsrc⟩
   have hΦ : Φ (σ (Φ.symm y)) =
       Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y := by
     rw [pkg.normalFormOpenPartialHomeomorph_apply, pkg.normalFormMap_map hσ₀ hσ₁ hτ₀ hτ₁ ha hfy,
       ← pkg.normalFormOpenPartialHomeomorph_apply hf, Φ.right_inv hy]
   rw [← hΦ, Φ.left_inv hsrc]
 
-include hσ₀ hσ₁ hτ₀ hτ₁ in
-/-- **The obstruction map is equivariant.** If `σ` fixes the base point `a`, preserves both domain
-summands, `τ` preserves both codomain summands and `f` intertwines `σ` with `τ` near `a`, then near
-the coordinate of `a` the obstruction map intertwines the restrictions of `τ` and `σ` with the
-restriction of `τ` to the finite-dimensional codomain summand. -/
+include hσ₁ hτ₀ in
+/-- **The obstruction map is equivariant.** If `σ` fixes the base point `a` and preserves the
+essential domain summand, `τ` preserves the finite-dimensional codomain summand and `f` intertwines
+`σ` with `τ` near `a`, then near the coordinate of `a` the obstruction map intertwines the
+restrictions of `τ` and `σ` with the restriction of `τ` to the finite-dimensional codomain summand.
+The other two summands are preserved by `mapsTo_decDom_X₀` and `mapsTo_decCodom_X₁`. -/
 theorem eventually_obstructionMap_prodMap (hf : HasStrictFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
     ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
       pkg.obstructionMap hf
-          (Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y) =
+          (Prod.map (τ.restrict fun _ hy ↦ pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ hy)
+            (σ.restrict fun _ hy ↦ pkg.mapsTo_decDom_X₀ hf.hasFDerivAt ha hfσ hy) y) =
         τ.restrict (fun _ hy ↦ hτ₀ hy) (pkg.obstructionMap hf y) := by
-  set Φ := pkg.normalFormOpenPartialHomeomorph hf
-  have hnear : ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
-      f (σ (Φ.symm y)) = τ (f (Φ.symm y)) := by
-    refine (Φ.continuousAt_symm (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf)).eventually
-      (p := fun x ↦ f (σ x) = τ (f x)) ?_
-    rw [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
-    exact hfσ
-  filter_upwards [pkg.eventually_normalFormOpenPartialHomeomorph_symm_prodMap hσ₀ hσ₁ hτ₀ hτ₁ hf
-    ha hfσ, hnear] with y hy hfy
+  filter_upwards [pkg.eventually_normalFormOpenPartialHomeomorph_symm_prodMap hσ₁ hτ₀ hf ha hfσ,
+    pkg.eventually_normalFormOpenPartialHomeomorph_symm hf hfσ] with y hy hfy
   refine Subtype.ext ?_
   rw [obstructionMap_apply, obstructionMap_apply, hy, hfy, coe_restrict_apply,
     Submodule.coe_projectionOntoL_apply, Submodule.coe_projectionOntoL_apply]
-  exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl.symm hτ₀ hτ₁ _
+  exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl.symm hτ₀
+    (pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ) _
 
-include hσ₀ hσ₁ hτ₀ in
+include hσ₁ hτ₀ in
 /-- **The obstruction slice through the base point is equivariant.** Under the hypotheses of
-`eventually_obstructionMap_prodMap`, where `τ` preserves the essential codomain summand by
-`mapsTo_decCodom_X₁`, the essential coordinate `pkg.decCodom.proj (f a)` of the base
+`eventually_obstructionMap_prodMap`, the essential coordinate `pkg.decCodom.proj (f a)` of the base
 point is fixed by `τ`, and near `0` the slice of the obstruction map through it intertwines the
 restrictions of `σ` and `τ` to the finite-dimensional summands. -/
 theorem eventually_obstructionSlice_map (hf : HasStrictFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
     ∀ᶠ z in 𝓝 (0 : pkg.decDom.X₀),
-      pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) (σ.restrict (fun _ hy ↦ hσ₀ hy) z) =
+      pkg.obstructionSlice hf (pkg.decCodom.proj (f a))
+          (σ.restrict (fun _ hy ↦ pkg.mapsTo_decDom_X₀ hf.hasFDerivAt ha hfσ hy) z) =
         τ.restrict (fun _ hy ↦ hτ₀ hy) (pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) z) := by
   have hτ₁ := pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ
   have hfa : τ (f a) = f a := by rw [← hfσ.self_of_nhds, ha]
@@ -250,8 +266,8 @@ theorem eventually_obstructionSlice_map (hf : HasStrictFDerivAt f T a) (ha : σ 
   have hslice : Tendsto (fun z : pkg.decDom.X₀ ↦ (pkg.decCodom.proj (f a), z)) (𝓝 0)
       (𝓝 (pkg.decCodom.proj (f a), 0)) :=
     (continuous_const.prodMk continuous_id).tendsto' _ _ rfl
-  filter_upwards [hslice.eventually (pkg.eventually_obstructionMap_prodMap hσ₀ hσ₁ hτ₀ hτ₁ hf ha
-    hfσ)] with z hz
+  filter_upwards [hslice.eventually (pkg.eventually_obstructionMap_prodMap hσ₁ hτ₀ hf ha hfσ)]
+    with z hz
   rw [obstructionSlice_apply, obstructionSlice_apply, ← hz, Prod.map_apply, hy₁]
 
 /-- **Odd obstruction slices.** Suppose that `σ` fixes the base point `a`, acts by `-1` on the
@@ -264,16 +280,17 @@ theorem eventually_obstructionSlice_neg (hf : HasStrictFDerivAt f T a)
     ∀ᶠ z in 𝓝 (0 : pkg.decDom.X₀),
       pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) (-z) =
         -pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) z := by
-  have hσ₀' : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀ := fun x hx ↦ by
-    rw [SetLike.mem_coe, hσ₀ x hx]
-    exact neg_mem hx
+  have hσ₀' := pkg.mapsTo_decDom_X₀ hf.hasFDerivAt ha hfσ
   have hτ₀' : MapsTo τ pkg.decCodom.X₀ pkg.decCodom.X₀ := fun y hy ↦ by
     rw [SetLike.mem_coe, hτ₀ y hy]
     exact neg_mem hy
-  filter_upwards [pkg.eventually_obstructionSlice_map hσ₀' hσ₁ hτ₀' hf ha hfσ] with z hz
-  have hσz : σ.restrict (fun _ hy ↦ hσ₀' hy) z = -z := Subtype.ext (hσ₀ z z.property)
+  filter_upwards [pkg.eventually_obstructionSlice_map hσ₁ hτ₀' hf ha hfσ] with z hz
+  have hσz : σ.restrict (fun _ hy ↦ hσ₀' hy) z = -z :=
+    Subtype.ext <| by rw [coe_restrict_apply, Submodule.coe_neg]; exact hσ₀ z z.property
   rw [← hσz, hz]
-  exact Subtype.ext (hτ₀ _ (Subtype.property _))
+  exact Subtype.ext <| by
+    rw [coe_restrict_apply, Submodule.coe_neg]
+    exact hτ₀ _ (Subtype.property _)
 
 end Chart
 
