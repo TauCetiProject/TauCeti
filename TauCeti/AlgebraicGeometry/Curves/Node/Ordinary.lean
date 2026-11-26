@@ -189,13 +189,8 @@ private theorem AtWorstNodalOfRelativeDimensionOne.of_forall_exists_isSeparable
     (fun x ↦ ⟨x, ?_⟩) fun x ↦ ?_
   · obtain ⟨u, hu⟩ := hx x
     exact ⟨u, by simp [hu, hy]⟩
-  · have := hU x
-    rw [atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _),
-      Iso.refl_hom, Category.comp_id] at this
-    rw [Category.assoc, ← pullback.condition, ← Category.assoc,
-      atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _), Iso.refl_hom,
-      Category.comp_id]
-    exact this.comp_specAlgebraMap (R := F)
+  · rw [Category.assoc, ← pullback.condition, ← Category.assoc]
+    exact (hU x).comp_specAlgebraMap (R := F)
 
 /-- Base change of an étale chart of the node `uv = h` over `R'` along an étale map `R' → L`:
 the fibre product `Spec T ×_{Spec R'} Spec L` is étale over the node chart `uv = h` over `L`,

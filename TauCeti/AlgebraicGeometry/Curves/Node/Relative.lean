@@ -251,6 +251,16 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec
     apply (affineAtWorstNodalOfRelativeDimensionOne_iff_isoSpec f).mpr
     exact h.of_target_iso (Y.isoSpec.symm.trans e) (f ≫ Y.isoSpec.hom) (by simp)
 
+/-- Composing a nodal curve with an étale change of affine base preserves nodality of relative
+dimension one. -/
+theorem AtWorstNodalOfRelativeDimensionOne.comp_specAlgebraMap {R S : Type u}
+    [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S] {X : Scheme.{u}}
+    {f : X ⟶ Spec (.of S)} (h : AtWorstNodalOfRelativeDimensionOne f) :
+    AtWorstNodalOfRelativeDimensionOne (f ≫ Spec.algebraMap R S) := by
+  rw [atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _),
+    Iso.refl_hom, Category.comp_id] at h ⊢
+  exact h.comp_specAlgebraMap (R := R)
+
 /-- Being at worst nodal of relative dimension one is stable under arbitrary base change. -/
 instance AtWorstNodalOfRelativeDimensionOne.isStableUnderBaseChange :
     MorphismProperty.IsStableUnderBaseChange
