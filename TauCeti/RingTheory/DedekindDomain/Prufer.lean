@@ -113,9 +113,10 @@ theorem preValuationRing_atPrime (P : Ideal B) [P.IsPrime] :
       (y : L) ∈ Localization.subalgebra.ofField L P.primeCompl
         (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L) := by
     obtain ⟨a, s, hs, rfl⟩ := (Localization.subalgebra.mem_ofField_iff _ _).mp hy
-    refine (Localization.subalgebra.mem_ofField_iff _ _).mpr ⟨φ a, φ s, hs, ?_⟩
-    rw [hφ, hφ, IntermediateField.coe_mul, IntermediateField.coe_inv]
-    rfl
+    refine (Localization.subalgebra.mem_ofField_iff _ _).mpr ⟨φ a, φ s,
+      Ideal.mem_primeCompl_iff.mpr (Ideal.mem_comap.not.mp (Ideal.mem_primeCompl_iff.mp hs)), ?_⟩
+    rw [hφ, hφ, IntermediateField.coe_mul, IntermediateField.coe_inv, Subalgebra.algebraMap_apply,
+      Subalgebra.algebraMap_apply]
   have := IsDedekindDomain.preValuationRing_atPrime P'
   exact ((P'.preValuationRing_atPrime_iff F).mp this
     ⟨x, IntermediateField.mem_adjoin_simple_self K x⟩).imp (htrans _) (htrans _)

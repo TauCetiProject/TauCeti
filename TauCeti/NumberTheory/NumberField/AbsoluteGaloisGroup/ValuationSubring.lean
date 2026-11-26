@@ -89,20 +89,13 @@ namespace TauCeti.GaloisRep
 
 variable (F : Type*) [Field F] [NumberField F]
 
-omit [NumberField F] in
-/-- The ring of integers of `F` embeds in `F^alg`. -/
-private theorem algebraMap_ringOfIntegers_injective :
-    Function.Injective (algebraMap (𝓞 F) (AlgebraicClosure F)) := by
-  rw [IsScalarTower.algebraMap_eq (𝓞 F) F]
-  exact (algebraMap F _).injective.comp (FaithfulSMul.algebraMap_injective (𝓞 F) F)
-
 /-- The integral closure `O` of `𝓞 F` in `F^alg` has fraction field `F^alg`. -/
 instance instIsFractionRingIntegralClosure :
     IsFractionRing (integralClosure (𝓞 F) (AlgebraicClosure F)) (AlgebraicClosure F) :=
   have : Algebra.IsAlgebraic (𝓞 F) (AlgebraicClosure F) :=
     (IsFractionRing.comap_isAlgebraic_iff (K := F)).mpr inferInstance
   integralClosure.isFractionRing_of_algebraic fun _ hx ↦
-    algebraMap_ringOfIntegers_injective F (hx.trans (map_zero _).symm)
+    FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F) (hx.trans (map_zero _).symm)
 
 /-- **`O` is a Prüfer domain**: its localizations at primes are valuation rings. -/
 instance instPreValuationRingAtPrime (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)))
@@ -117,8 +110,7 @@ theorem algebraMap_mem_valuationSubring (A : ValuationSubring (AlgebraicClosure 
     algebraMap (integralClosure (𝓞 F) (AlgebraicClosure F)) (AlgebraicClosure F) b ∈ A := by
   have hb : IsIntegral ℤ (b : AlgebraicClosure F) := isIntegral_trans (R := ℤ) _ b.property
   obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hb.tower_top (A := A))
-  change (b : AlgebraicClosure F) ∈ A
-  rw [← ha]
+  rw [Subalgebra.algebraMap_apply, ← ha]
   exact a.property
 
 /-- **Valuation subrings of `F^alg` are primes of `O`**: sending a valuation subring to its centre
@@ -128,6 +120,24 @@ def valuationSubringEquivPrimeSpectrum :
       PrimeSpectrum (integralClosure (𝓞 F) (AlgebraicClosure F)) :=
   (Equiv.subtypeUnivEquiv (algebraMap_mem_valuationSubring F)).symm.trans
     (ValuationSubring.equivPrimeSpectrum fun _ _ ↦ inferInstance)
+
+/-- The prime of `O` corresponding to a valuation subring of `F^alg` is its centre on `O`. -/
+@[simp]
+theorem asIdeal_valuationSubringEquivPrimeSpectrum_apply
+    (A : ValuationSubring (AlgebraicClosure F)) :
+    (valuationSubringEquivPrimeSpectrum F A).asIdeal =
+      A.valuation.centerIdeal (integralClosure (𝓞 F) (AlgebraicClosure F)) fun b ↦
+        (A.valuation_le_one_iff _).mpr (algebraMap_mem_valuationSubring F A b) :=
+  ValuationSubring.asIdeal_equivPrimeSpectrum_apply _ _
+
+/-- The valuation subring of `F^alg` corresponding to a prime `Q` of `O` is the localization
+`O_Q`. -/
+@[simp]
+theorem valuationSubringEquivPrimeSpectrum_symm_apply
+    (Q : PrimeSpectrum (integralClosure (𝓞 F) (AlgebraicClosure F))) :
+    (valuationSubringEquivPrimeSpectrum F).symm Q =
+      Q.asIdeal.valuationSubringAtPrime (AlgebraicClosure F) :=
+  ValuationSubring.coe_equivPrimeSpectrum_symm_apply _ _
 
 variable {F} (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) [Q.IsPrime]
 
@@ -167,7 +177,7 @@ theorem exists_isCenteredAt_under_eq (p : Ideal (𝓞 F)) [p.IsPrime] :
         A.IsCenteredAt Q ∧ Q.under (𝓞 F) = p := by
   have hinj : Function.Injective
       (algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))) := fun x y hxy ↦
-    algebraMap_ringOfIntegers_injective F (by
+    FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F) (by
       rw [IsScalarTower.algebraMap_apply (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)), hxy,
         ← IsScalarTower.algebraMap_apply])
   obtain ⟨Q, -, hQ, hQp⟩ := Ideal.exists_ideal_over_prime_of_isIntegral p

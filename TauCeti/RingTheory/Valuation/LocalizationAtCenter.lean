@@ -10,8 +10,9 @@ public import Mathlib.RingTheory.Ideal.Pointwise
 public import Mathlib.RingTheory.Localization.AsSubring
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import Mathlib.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Localization.AsSubring
 public import TauCeti.RingTheory.Valuation.Center
-import TauCeti.RingTheory.Localization.AsSubring
+import TauCeti.RingTheory.Frobenius
 import TauCeti.RingTheory.Valuation.RamificationGroup
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
@@ -139,14 +140,6 @@ namespace Ideal
 
 variable (L) [IsFractionRing B L] (P : Ideal B) [P.IsPrime]
 
-include L in
-/-- The complement of a prime ideal of a ring with a fraction field consists of
-non-zero-divisors. This is the hypothesis under which Mathlib realizes the localization at `P`
-inside the fraction field (`Localization.subalgebra.ofField`). -/
-theorem primeCompl_le_nonZeroDivisors_of_isFractionRing : P.primeCompl ≤ B⁰ :=
-  have : IsDomain B := (IsFractionRing.isDomain_iff_isField (K := L)).mpr (Field.toIsField L)
-  P.primeCompl_le_nonZeroDivisors
-
 /-- **The localization at a prime is a valuation ring exactly when it is one inside `L`**: every
 element of `L`, or its inverse, is a fraction `a / s` with `s ∉ P`. -/
 theorem preValuationRing_atPrime_iff :
@@ -180,15 +173,22 @@ noncomputable def valuationSubringAtPrime : ValuationSubring L :=
     (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)).toSubring
     ((P.preValuationRing_atPrime_iff L).mp inferInstance)
 
+/-- The underlying subring of `B_P`, realized inside `L`, is Mathlib's
+`Localization.subalgebra.ofField`. -/
+theorem valuationSubringAtPrime_toSubring :
+    (P.valuationSubringAtPrime L).toSubring = (Localization.subalgebra.ofField L P.primeCompl
+      (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)).toSubring :=
+  (rfl)
+
 variable {L P}
 
 /-- The elements of `B_P`, realized inside `L`, are the fractions `a / s` with `s ∉ P`. -/
 theorem mem_valuationSubringAtPrime_iff {x : L} :
     x ∈ P.valuationSubringAtPrime L ↔
       ∃ a, ∃ s ∉ P, x = algebraMap B L a * (algebraMap B L s)⁻¹ := by
-  rw [valuationSubringAtPrime, ← ValuationSubring.mem_toSubring, ValuationSubring.ofSubring,
+  rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
     Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
-  rfl
+  simp only [Ideal.mem_primeCompl_iff]
 
 /-- `B_P` is centred at `P`. -/
 theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsCenteredAt P where
@@ -212,25 +212,6 @@ theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsC
         field_simp at hbs
         linear_combination hbs
       exact hinj this ▸ P.mul_mem_left a hb
-
-section Stabilizer
-
-variable {G : Type*} [Group G] [MulSemiringAction G B] {P : Ideal B}
-
-/-- An element raising every element of `B` to the `q`-th power modulo a prime `P` stabilizes
-`P`. -/
-theorem mem_stabilizer_of_forall_smul_sub_pow_mem [P.IsPrime] {g : G} {q : ℕ}
-    (hg : ∀ b : B, g • b - b ^ q ∈ P) : g ∈ MulAction.stabilizer G P := by
-  rcases q.eq_zero_or_pos with rfl | hq
-  · exact absurd (by simpa using hg 0) (P.ne_top_iff_one.mp ‹P.IsPrime›.ne_top)
-  have hiff (b : B) : g • b ∈ P ↔ b ∈ P := by
-    refine ⟨fun hb ↦ ‹P.IsPrime›.mem_of_pow_mem q ?_, fun hb ↦ ?_⟩
-    · simpa using P.sub_mem hb (hg b)
-    · simpa using P.add_mem (hg b) (P.pow_mem_of_mem hb q hq)
-  refine MulAction.mem_stabilizer_iff.mpr (SetLike.ext fun b ↦ ?_)
-  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← hiff, smul_inv_smul]
-
-end Stabilizer
 
 end Ideal
 
@@ -285,7 +266,7 @@ end IsCenteredAt
 prime is a valuation ring (`B` is a Prüfer domain with fraction field `L`), sending a valuation
 subring of `L` containing `B` to its centre is a bijection onto the prime spectrum of `B`, with
 inverse `P ↦ B_P`. -/
-@[expose] noncomputable def equivPrimeSpectrum [IsFractionRing B L]
+noncomputable def equivPrimeSpectrum [IsFractionRing B L]
     (hB : ∀ (P : Ideal B) [P.IsPrime], PreValuationRing (Localization.AtPrime P)) :
     {A : ValuationSubring L // ∀ b : B, algebraMap B L b ∈ A} ≃ PrimeSpectrum B where
   toFun A :=
@@ -311,7 +292,7 @@ theorem asIdeal_equivPrimeSpectrum_apply [IsFractionRing B L]
     (A : {A : ValuationSubring L // ∀ b : B, algebraMap B L b ∈ A}) :
     ((equivPrimeSpectrum hB A).asIdeal : Ideal B) =
       A.val.valuation.centerIdeal B fun b ↦ (A.val.valuation_le_one_iff _).mpr (A.property b) :=
-  rfl
+  (rfl)
 
 /-- The valuation subring corresponding to a prime `P` is the localization `B_P`. -/
 @[simp]
@@ -320,7 +301,7 @@ theorem coe_equivPrimeSpectrum_symm_apply [IsFractionRing B L]
     (P : PrimeSpectrum B) :
     ((equivPrimeSpectrum (L := L) hB).symm P : ValuationSubring L) =
       @Ideal.valuationSubringAtPrime B L _ _ _ _ P.asIdeal _ (hB P.asIdeal) :=
-  rfl
+  (rfl)
 
 /-! ### Group actions -/
 
@@ -411,15 +392,6 @@ theorem decompositionSubgroup_eq (h : A.IsCenteredAt P) :
     A.decompositionSubgroup K = MulAction.stabilizer (L ≃ₐ[K] L) P :=
   h.stabilizer_eq
 
-/-- For an element `g` of the decomposition group, `g` moves `x ∈ A` to `x ^ q` on residues
-exactly when `g x - x ^ q` is a nonunit of `A`. -/
-private theorem residue_smul_eq_pow_iff (g : A.decompositionSubgroup K) (x : A) (q : ℕ) :
-    IsLocalRing.residue A (g • x) = IsLocalRing.residue A x ^ q ↔
-      (g : L ≃ₐ[K] L) • (x : L) - (x : L) ^ q ∈ A.nonunits := by
-  rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff,
-    ← coe_mem_nonunits_iff]
-  simp [AlgEquiv.smul_def]
-
 /-- **The inertia group of a valuation subring is that of its centre**: the image in `Gal(L/K)`
 of Mathlib's `ValuationSubring.inertiaSubgroup` of `A` is Mathlib's inertia subgroup
 `Ideal.inertia` of the centre `P`, when `B_P` is a valuation ring. -/
@@ -433,13 +405,13 @@ theorem map_inertiaSubgroup_eq (h : A.IsCenteredAt P) :
   constructor
   · rintro ⟨g, hg, rfl⟩ x hx
     rw [SetLike.mem_coe, mem_inertiaSubgroup_iff] at hg
-    simpa using (residue_smul_eq_pow_iff g ⟨x, hx⟩ 1).mp (by simpa using hg ⟨x, hx⟩)
+    simpa using (residue_smul_eq_pow_iff A g ⟨x, hx⟩ 1).mp (by simpa using hg ⟨x, hx⟩)
   · intro hσ
     have hdec : σ ∈ A.decompositionSubgroup K := by
       rw [h.decompositionSubgroup_eq]
       exact Ideal.inertia_le_stabilizer P (Ideal.mem_inertia.mpr (hiff.mpr hσ))
     refine ⟨⟨σ, hdec⟩, (mem_inertiaSubgroup_iff A _).mpr fun x ↦ ?_, rfl⟩
-    simpa using (residue_smul_eq_pow_iff ⟨σ, hdec⟩ x 1).mpr (by simpa using hσ x x.property)
+    simpa using (residue_smul_eq_pow_iff A ⟨σ, hdec⟩ x 1).mpr (by simpa using hσ x x.property)
 
 /-- **Arithmetic Frobenius elements at a valuation subring and at its centre**: `σ ∈ Gal(L/K)` is
 an arithmetic Frobenius element at the centre `P` in Mathlib's sense (`IsArithFrobAt`, for a base
@@ -451,11 +423,12 @@ theorem isArithFrobAt_iff (h : A.IsCenteredAt P) {R : Type*} [CommRing R] [Algeb
       IsLocalRing.residue A ((⟨σ, hσ⟩ : A.decompositionSubgroup K) • x) =
         IsLocalRing.residue A x ^ Nat.card (R ⧸ P.under R) := by
   have hiff := h.forall_smul_sub_pow_mem_iff (g := σ) (q := Nat.card (R ⧸ P.under R))
-  change (∀ b : B, σ • b - b ^ _ ∈ P) ↔ _
+  rw [IsArithFrobAt, AlgHom.IsArithFrobAt]
+  simp only [MulSemiringAction.toAlgHom_apply]
   refine ⟨fun hσ ↦ ⟨(h.decompositionSubgroup_eq (K := K)).ge
       (Ideal.mem_stabilizer_of_forall_smul_sub_pow_mem hσ), fun x ↦
-    (residue_smul_eq_pow_iff _ x _).mpr (hiff.mp hσ x x.property)⟩, fun ⟨hσ, hres⟩ ↦
-    hiff.mpr fun x hx ↦ (residue_smul_eq_pow_iff ⟨σ, hσ⟩ ⟨x, hx⟩ _).mp (hres ⟨x, hx⟩)⟩
+    (residue_smul_eq_pow_iff A _ x _).mpr (hiff.mp hσ x x.property)⟩, fun ⟨hσ, hres⟩ ↦
+    hiff.mpr fun x hx ↦ (residue_smul_eq_pow_iff A ⟨σ, hσ⟩ ⟨x, hx⟩ _).mp (hres ⟨x, hx⟩)⟩
 
 end IsCenteredAt
 
