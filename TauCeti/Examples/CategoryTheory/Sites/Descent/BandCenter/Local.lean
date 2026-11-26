@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenterLocal
+public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Local
 
 /-!
 # Checks for the local determination of central sections

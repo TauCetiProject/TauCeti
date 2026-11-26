@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenter
+public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 
 /-!
@@ -58,12 +58,9 @@ theorem evaluation_eq_of_cover [F.IsPrestack J] {V : C} (a : V ⟶ U) (x : F.obj
       evaluation (g ≫ a) ((F.map g.op.toLoc).toFunctor.obj x) s =
         evaluation (g ≫ a) ((F.map g.op.toLoc).toFunctor.obj x) t) :
     evaluation a x s = evaluation a x t := by
-  refine Aut.ext (Iso.ext ((F.isPrestackFor' R hR).fullyFaithful.map_injective
-    (DescentData.hom_ext fun i ↦ ?_)))
-  have hi := congrArg (fun e : Aut _ ↦ e.asIso.hom) (h i.obj.hom i.property)
-  simp only [evaluation_asIso_hom] at hi
-  simp only [toDescentData_map_hom, evaluation_asIso_hom, map_app]
-  exact hi
+  refine Aut.ext (Iso.ext (IsPrestack.hom_ext hR fun W g hg ↦ ?_))
+  have hg' := congrArg (fun e : Aut _ ↦ e.asIso.hom) (h g hg)
+  simpa only [evaluation_asIso_hom, map_app] using hg'
 
 /-- **Evaluation at one object of a gerbe is injective**: two central sections over `U` with the
 same evaluation at an object `x` over `U` are equal. No commutativity of the automorphism groups is
