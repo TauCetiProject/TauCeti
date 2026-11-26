@@ -62,6 +62,7 @@ tangent bundle of the quotient of a vector bundle by a subbundle with local fram
   `TauCeti.IsContMDiffDistribution.quotientDiffeomorph_symm_mk`: `[v] ↦ [dΦ v]` and
   `[w] ↦ [dΦ⁻¹ w]`.
 * `TauCeti.IsContMDiffDistribution.quotientDiffeomorph_refl`,
+  `TauCeti.IsContMDiffDistribution.quotientDiffeomorph_symm`,
   `TauCeti.IsContMDiffDistribution.quotientDiffeomorph_trans`: functoriality.
 
 ## References
@@ -254,6 +255,52 @@ theorem quotientDiffeomorph_apply (p : TotalSpace (Fin r → 𝕜) fun x ↦ Tan
         (fun v hv ↦ (hΦD _ v).1 hv) p.snd⟩ :=
   (rfl)
 
+/-- The bundle isomorphism induced by `Φ` covers `Φ`. -/
+@[simp]
+theorem proj_quotientDiffeomorph (p : TotalSpace (Fin r → 𝕜) fun x ↦ TangentSpace I x ⧸ D x) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    letI := (hD'.quotientPrebundle hr').totalSpaceTopology
+    letI := (hD'.quotientPrebundle hr').toFiberBundle
+    (hD.quotientDiffeomorph hr hD' hr' Φ hΦD p).proj = Φ p.proj :=
+  (rfl)
+
+/-- The inverse of the bundle isomorphism induced by `Φ` sends the class of `w` over `y` to the
+class of `dΦ⁻¹_y w` over `Φ⁻¹ y`. -/
+theorem quotientDiffeomorph_symm_apply
+    (q : TotalSpace (Fin r' → 𝕜) fun y ↦ TangentSpace I' y ⧸ D' y) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    letI := (hD'.quotientPrebundle hr').totalSpaceTopology
+    letI := (hD'.quotientPrebundle hr').toFiberBundle
+    (hD.quotientDiffeomorph hr hD' hr' Φ hΦD).symm q =
+      ⟨Φ.symm q.proj, (D' q.proj).mapQ (D (Φ.symm q.proj))
+        (mfderiv I' I Φ.symm q.proj).toLinearMap
+        (fun w hw ↦ (Φ.mem_iff_mfderiv_symm_apply_mem (by simp) hΦD _ w).1 hw) q.snd⟩ :=
+  (rfl)
+
+/-- The inverse of the bundle isomorphism induced by `Φ` covers `Φ⁻¹`. -/
+theorem proj_quotientDiffeomorph_symm
+    (q : TotalSpace (Fin r' → 𝕜) fun y ↦ TangentSpace I' y ⧸ D' y) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    letI := (hD'.quotientPrebundle hr').totalSpaceTopology
+    letI := (hD'.quotientPrebundle hr').toFiberBundle
+    ((hD.quotientDiffeomorph hr hD' hr' Φ hΦD).symm q).proj = Φ.symm q.proj :=
+  (rfl)
+
+/-- The inverse of the bundle isomorphism induced by `Φ` is the bundle isomorphism induced by
+`Φ⁻¹`. -/
+@[simp]
+theorem quotientDiffeomorph_symm :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    letI := (hD'.quotientPrebundle hr').totalSpaceTopology
+    letI := (hD'.quotientPrebundle hr').toFiberBundle
+    (hD.quotientDiffeomorph hr hD' hr' Φ hΦD).symm =
+      hD'.quotientDiffeomorph hr' hD hr Φ.symm (Φ.mem_iff_mfderiv_symm_apply_mem (by simp) hΦD) :=
+  (rfl)
+
 /-- The bundle isomorphism induced by `Φ` sends the class of `v` over `x` to the class of
 `dΦ_x v` over `Φ x`. -/
 @[simp]
@@ -268,7 +315,6 @@ theorem quotientDiffeomorph_mk (x : M) (v : TangentSpace I x) :
 
 /-- The inverse of the bundle isomorphism induced by `Φ` is induced by `Φ⁻¹`: it sends the class
 of `w` over `y` to the class of `dΦ⁻¹_y w` over `Φ⁻¹ y`. -/
-@[simp]
 theorem quotientDiffeomorph_symm_mk (y : M') (w : TangentSpace I' y) :
     letI := (hD.quotientPrebundle hr).totalSpaceTopology
     letI := (hD.quotientPrebundle hr).toFiberBundle
