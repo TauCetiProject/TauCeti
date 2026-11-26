@@ -121,8 +121,11 @@ lemma mapHomologicalComplexExtendIso_hom_app (K : HomologicalComplex C c) :
 
 end ZeroMorphisms
 
-variable [Preadditive C] [HasZeroObject C] [Preadditive D] [HasZeroObject D] (F : C ⥤ D)
-  [F.Additive] (e : c.Embedding c') [e.IsRelIff]
+variable [Preadditive C] [HasZeroObject C] [Preadditive D] [HasZeroObject D]
+
+section
+
+variable (F : C ⥤ D) [F.Additive] (e : c.Embedding c') [e.IsRelIff]
 
 /-- Applying an additive functor `F` commutes with extension along `e` on homotopy
 categories. -/
@@ -137,5 +140,40 @@ lemma mapHomotopyCategoryExtendIso_hom_app_quotient_obj (K : HomologicalComplex 
     (F.mapHomotopyCategoryExtendIso e).hom.app ((HomotopyCategory.quotient C c).obj K) =
       (HomotopyCategory.quotient D c').map (F.mapHomologicalComplexExtendObjIso e K).hom :=
   (rfl)
+
+end
+
+variable (e : c.Embedding c') [e.IsRelIff]
+
+variable {e} in
+/-- The comparison between extension by zero and application of a functor commutes with
+natural transformations of additive functors. -/
+@[reassoc]
+lemma mapHomotopyCategoryExtendIso_hom_app_naturality (F : C ⥤ D) {G : C ⥤ D}
+    [F.Additive] [G.Additive] (τ : F ⟶ G) (K : HomotopyCategory C c) :
+    (τ.mapHomotopyCategory c').app ((e.extendHomotopyFunctor C).obj K) ≫
+        (G.mapHomotopyCategoryExtendIso e).hom.app K =
+      (F.mapHomotopyCategoryExtendIso e).hom.app K ≫
+        (e.extendHomotopyFunctor D).map ((τ.mapHomotopyCategory c).app K) := by
+  obtain ⟨L, rfl⟩ := HomotopyCategory.quotient_obj_surjective K
+  have h :
+      (τ.mapHomologicalComplex c').app (L.extend e) ≫
+          (G.mapHomologicalComplexExtendObjIso e L).hom =
+        (F.mapHomologicalComplexExtendObjIso e L).hom ≫
+          HomologicalComplex.extendMap ((τ.mapHomologicalComplex c).app L) e := by
+    ext i'
+    by_cases hi : ∃ i, e.f i = i'
+    · obtain ⟨i, rfl⟩ := hi
+      simp only [HomologicalComplex.comp_f, NatTrans.mapHomologicalComplex_app_f,
+        mapHomologicalComplexExtendObjIso_hom_f, mapHomologicalComplexExtendXIso_hom _ e rfl,
+        HomologicalComplex.extendMap_f _ e rfl]
+      simp only [Category.assoc, Iso.inv_hom_id_assoc, ← τ.naturality_assoc]
+    · exact (F.map_isZero (L.isZero_extend_X e i' (by simpa using hi))).eq_of_src _ _
+  -- On the classes of complexes both sides are induced by the corresponding chain maps.
+  rw [mapHomotopyCategoryExtendIso_hom_app_quotient_obj,
+    mapHomotopyCategoryExtendIso_hom_app_quotient_obj]
+  exact (((HomotopyCategory.quotient D c').map_comp _ _).symm.trans
+    (congrArg ((HomotopyCategory.quotient D c').map) h)).trans
+    ((HomotopyCategory.quotient D c').map_comp _ _)
 
 end CategoryTheory.Functor

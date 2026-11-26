@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Homology.Plus
-public import TauCeti.CategoryTheory.Abelian.RightDerived.Evaluation
 public import TauCeti.Topology.Sheaves.LocalCohomology.Module
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Derived
 
@@ -30,9 +28,9 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Opposite TopologicalSpace
+open CategoryTheory TopologicalSpace
 
-universe u w w'
+universe u w
 
 namespace CategoryTheory.Sheaf
 
@@ -41,65 +39,31 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R] (S : Closeds X)
 local notation "J" => Opens.grothendieckTopology X
 local notation "A" => ModuleCat R
 local notation "P" => supportedSubmoduleFunctor (R := R) S ⋙ sheafToPresheaf J A
-local notation "ev" => evaluation (Opens X)ᵒᵖ A
 
-/-- The presheaf-valued right derived functors of supported sections agree with the
-supported Ext presheaves. The isomorphism on each open is the supported-section-to-Ext
-comparison evaluated on that open. -/
-def rightDerivedSupportedSubmodulePresheafIso (n : ℕ) :
-    (P).rightDerived n ≅ supportedModuleHPresheafFunctor (R := R) S n :=
-  NatIso.ofComponents (fun F ↦ NatIso.ofComponents
-    (fun W ↦ ((P).rightDerivedEvaluationIso n W).app F ≪≫
-      (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).app F)
-    (fun i ↦ by
-      have he := congrArg (fun τ ↦ τ.app F)
-        ((P).rightDerivedEvaluationIso_hom_naturality n i)
-      have hr := congrArg (fun τ ↦ τ.app F)
-        (rightDerivedSupportedSubmoduleSectionsIso_hom_restrict (R := R) S i.unop n)
-      simp only [supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation,
-        NatTrans.comp_app, Functor.whiskerLeft_app, Quiver.Hom.op_unop] at hr
-      simp only [NatTrans.comp_app, Functor.whiskerLeft_app, evaluation_map_app] at he
-      simp only [Iso.trans_hom, Iso.app_hom]
-      -- The two evaluation functors act by the respective presheaf restrictions.
-      erw [← Category.assoc, he, Category.assoc]
-      rw [Category.assoc]
-      exact congrArg (_ ≫ ·) hr))
-    (fun f ↦ by
-      apply NatTrans.ext
-      funext W
-      simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.app_hom,
-        Category.assoc]
-      -- Convert the presheaf components to the maps of the evaluated functors.
-      erw [((P).rightDerivedEvaluationIso n W).hom.naturality_assoc,
-        (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality]
-      rfl)
-
-/-- The presheaf comparison on an open is evaluation followed by the Ext comparison
-for supported sections on that open. -/
-@[simp]
-lemma rightDerivedSupportedSubmodulePresheafIso_hom_app_app (n : ℕ) (F : Sheaf J A)
-    (W : (Opens X)ᵒᵖ) :
-    ((rightDerivedSupportedSubmodulePresheafIso S n).hom.app F).app W =
-      ((P).rightDerivedEvaluationIso n W).hom.app F ≫
-        (rightDerivedSupportedSubmoduleSectionsIso S W.unop n).hom.app F :=
-  (rfl)
+local notation "L" => presheafToSheaf J A
+local notation "e" =>
+  Functor.associator (supportedSubmoduleFunctor (R := R) S) (sheafToPresheaf J A) L ≪≫
+    Functor.isoWhiskerLeft _ (Iso.symm (sheafificationNatIso J A)) ≪≫
+    Functor.rightUnitor _ ≪≫ Iso.symm (Functor.leftUnitor _)
 
 /-- The sheaf-valued right derived functors of supported sections are the local cohomology
 sheaves, naturally in the coefficient sheaf. -/
 def rightDerivedSupportedSubmoduleIso (n : ℕ) :
     (supportedSubmoduleFunctor (R := R) S).rightDerived n ≅
-      supportedModuleHSheafFunctor (R := R) S n := by
-  let L := presheafToSheaf J (ModuleCat.{u} R)
-  have : L.Additive := inferInstanceAs ((presheafToSheaf J (ModuleCat.{u} R)).Additive)
-  have : L.PreservesHomology :=
-    inferInstanceAs ((presheafToSheaf J (ModuleCat.{u} R)).PreservesHomology)
-  let e : P ⋙ L ≅ 𝟭 (Sheaf J A) ⋙ supportedSubmoduleFunctor (R := R) S :=
-    Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _ (sheafificationNatIso J A).symm ≪≫
-      Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm
-  exact (Functor.leftUnitor _).symm ≪≫
+      supportedModuleHSheafFunctor (R := R) S n :=
+  (Functor.leftUnitor _).symm ≪≫
     (Functor.rightDerivedCompIso P L (𝟭 _) (supportedSubmoduleFunctor S) e n).symm ≪≫
     Functor.isoWhiskerRight (rightDerivedSupportedSubmodulePresheafIso (R := R) S n) L
+
+/-- After comparing the derived functor with exact postcomposition by sheafification,
+the local cohomology comparison is the sheafification of the supported Ext comparison. -/
+@[reassoc]
+lemma rightDerivedSupportedSubmoduleIso_hom_comp (n : ℕ) :
+    (Functor.rightDerivedCompIso P L (𝟭 _) (supportedSubmoduleFunctor S) e n).hom ≫
+      (Functor.leftUnitor _).hom ≫ (rightDerivedSupportedSubmoduleIso S n).hom =
+        Functor.whiskerRight (rightDerivedSupportedSubmodulePresheafIso S n).hom L := by
+  simp only [rightDerivedSupportedSubmoduleIso, Iso.trans_hom, Iso.symm_hom, Iso.hom_inv_id_assoc]
+  exact (Functor.rightDerivedCompIso P L (𝟭 _) (supportedSubmoduleFunctor S) e n).hom_inv_id_assoc _
 
 section BoundedBelow
 
@@ -117,17 +81,14 @@ def rightDerivedFunctorPlusSupportedSubmoduleHomologyIso (n : ℕ) :
   (supportedSubmoduleFunctor (R := R) S).rightDerivedFunctorPlusHomologyIso n ≪≫
     rightDerivedSupportedSubmoduleIso S n
 
-variable [HasDerivedCategory.{w'} (ModuleCat.{u} R)]
-
-/-- On a sheaf in degree zero, the bounded below derived functor of supported sections on
-an open has cohomology equal to the supported Ext groups on that open. -/
-def rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso (W : Opens X) (n : ℕ) :
-    Plus.singleFunctor (Sheaf J (ModuleCat.{u} R)) 0 ⋙
-        (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerivedFunctorPlus ⋙
-        Plus.homologyFunctor (ModuleCat.{u} R) n ≅
-      supportedModuleHPresheafFunctor (R := R) S n ⋙ (ev).obj (op W) :=
-  (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerivedFunctorPlusHomologyIso n ≪≫
-    rightDerivedSupportedSubmoduleSectionsIso S W n
+/-- The bounded below sheaf comparison is the classical local cohomology comparison
+after identifying the bounded below cohomology with the classical derived functors. -/
+@[reassoc]
+lemma rightDerivedFunctorPlusSupportedSubmoduleHomologyIso_hom (n : ℕ) :
+    (rightDerivedFunctorPlusSupportedSubmoduleHomologyIso (R := R) S n).hom =
+      ((supportedSubmoduleFunctor (R := R) S).rightDerivedFunctorPlusHomologyIso n).hom ≫
+        (rightDerivedSupportedSubmoduleIso S n).hom :=
+  (rfl)
 
 end BoundedBelow
 
