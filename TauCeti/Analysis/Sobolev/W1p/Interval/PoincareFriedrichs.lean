@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.Sobolev.Poincare.SharpConstant
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Wirtinger
 
@@ -63,66 +64,17 @@ namespace TauCeti.W1p
 
 variable {a b : ℝ}
 
-/-- If the value of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its squared
-`L²` norm is the integral of `g²` over `(a, b)`. -/
-private theorem norm_value_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
-    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
-    (hg : value u =ᵐ[volume.restrict (Ioo a b)] g) :
-    ‖value u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
-  rw [← integral_value_sq_eq_norm_value_sq, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with t ht
-  rw [ht]
-
-/-- If the gradient of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its
-squared `L²` norm is the integral of `g²` over `(a, b)`. -/
-private theorem norm_gradient_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
-    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
-    (hg : gradient u =ᵐ[volume.restrict (Ioo a b)] g) :
-    ‖gradient u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
-  rw [← integral_norm_gradient_sq_eq_norm_gradient_sq, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with t ht
-  rw [ht, Real.norm_eq_abs, sq_abs]
-
-/-- The squared `L²` norms of the value and of the gradient of `u ∈ H¹(a, b)` are the integrals of
-the squares of its continuous representative and of the derivative of that representative, and
-the latter is integrable. -/
-private theorem norm_sq_eq_integral_intervalRepresentativeL (hab : a < b)
-    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2) :
-    ‖value u‖ ^ 2 = ∫ t in a..b, intervalRepresentativeL hab u (projIcc a b hab.le t) ^ 2 ∧
-      ‖gradient u‖ ^ 2 =
-        ∫ t in a..b, deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2 ∧
-      IntervalIntegrable
-        (fun t ↦ deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2)
-        volume a b := by
-  have hderiv : deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t))
-      =ᵐ[volume.restrict (Ioo a b)] gradient u := by
-    rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Ioo]
-    filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht hmem
-    exact (ht (by rw [uIoc_of_le hab.le]; exact Ioo_subset_Ioc_self hmem)).deriv
-  have hsq : (fun t ↦ deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2)
-      =ᵐ[volume.restrict (Ioo a b)] fun t ↦ ‖gradient u t‖ ^ 2 := by
-    filter_upwards [hderiv] with t ht
-    rw [ht, Real.norm_eq_abs, sq_abs]
-  refine ⟨norm_value_sq_eq_intervalIntegral_of_ae_eq hab
-    (value_ae_eq_intervalRepresentativeL hab u),
-    norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hderiv.symm, ?_⟩
-  refine (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 ?_
-  exact ((Lp.memLp (gradient u)).norm.integrable_sq).congr hsq.symm
-
 /-- **The sharp Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the
 continuous representative of `u ∈ H¹(a, b)` vanishes at `a`, then
 `(π / (2 (b - a)))² ‖u‖²_{L²(a,b)} ≤ ‖u'‖²_{L²(a,b)}`. -/
 theorem mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_fst_eq_zero (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).1 = 0) :
     (π / (2 * (b - a))) ^ 2 * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2 := by
-  obtain ⟨hv, hg, hint⟩ := norm_sq_eq_integral_intervalRepresentativeL hab u
-  rw [hv, hg]
+  rw [norm_value_sq_eq_integral_intervalRepresentativeL hab,
+    norm_gradient_sq_eq_integral_deriv_intervalRepresentativeL hab]
   refine (absolutelyContinuousOnInterval_intervalRepresentativeL hab u)
-    |>.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left hab ?_ hint
+    |>.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left hab ?_
+      (intervalIntegrable_deriv_intervalRepresentativeL_sq hab u)
   rw [projIcc_left]
   rwa [intervalTraceL_apply] at hu
 
@@ -132,34 +84,15 @@ continuous representative of `u ∈ H¹(a, b)` vanishes at `b`, then
 theorem mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_snd_eq_zero (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).2 = 0) :
     (π / (2 * (b - a))) ^ 2 * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2 := by
-  obtain ⟨hv, hg, hint⟩ := norm_sq_eq_integral_intervalRepresentativeL hab u
-  rw [hv, hg]
+  rw [norm_value_sq_eq_integral_intervalRepresentativeL hab,
+    norm_gradient_sq_eq_integral_deriv_intervalRepresentativeL hab]
   refine (absolutelyContinuousOnInterval_intervalRepresentativeL hab u)
-    |>.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right hab ?_ hint
+    |>.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right hab ?_
+      (intervalIntegrable_deriv_intervalRepresentativeL_sq hab u)
   rw [projIcc_right]
   rwa [intervalTraceL_apply] at hu
 
 /-! ### Optimality of the constant -/
-
-/-- A `C¹` function on `ℝ` represents a class of `H¹(a, b)` with that continuous representative,
-whose squared norms are the integrals of the squares of the function and of its derivative. -/
-private theorem exists_intervalRepresentativeL_eq_of_contDiff (hab : a < b) {f : ℝ → ℝ}
-    (hf : ContDiff ℝ 1 f) :
-    ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2,
-      (∀ t : Icc a b, intervalRepresentativeL hab u t = f t) ∧
-      ‖value u‖ ^ 2 = ∫ t in a..b, f t ^ 2 ∧ ‖gradient u‖ ^ 2 = ∫ t in a..b, deriv f t ^ 2 := by
-  have hdf : MemLp (deriv f) 2 (volume.restrict (Ioo a b)) :=
-    (hf.continuous_deriv le_rfl).continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc
-      measurableSet_Ioo Ioo_subset_Icc_self 2
-  obtain ⟨u, hv, hg⟩ :=
-    (hf.contDiffOn (s := uIcc a b)).absolutelyContinuousOnInterval.exists_w1p_value_gradient_ae_eq
-      hdf
-  refine ⟨u, fun t ↦ ?_, norm_value_sq_eq_intervalIntegral_of_ae_eq hab hv,
-    norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hg⟩
-  have hrep := (intervalRepresentativeL_eq_iff hab u ⟨fun t ↦ f t, by fun_prop⟩).2 (by
-    filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
-    rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)])
-  rw [hrep, ContinuousMap.coe_mk]
 
 /-- The squares of `sin` and `cos` of `π (t - a) / (2 (b - a))` both integrate to `(b - a) / 2`
 over `(a, b)`. -/
@@ -181,36 +114,6 @@ private theorem integral_sin_sq_and_integral_cos_sq (hab : a < b) :
     field_simp
     linarith
 
-/-- If `k² ‖u‖² ≤ ‖u'‖²` on a set `S` of Sobolev classes and some `u ∈ S` with `‖u‖ ≠ 0` has
-`‖u'‖² = k² ‖u‖²`, then `k²` is the best constant. -/
-private theorem isGreatest_of_mem_of_norm_gradient_sq_eq {Ω : Opens ℝ}
-    {S : Set (W1p volume Ω 2)} {k : ℝ} (hS : ∀ u ∈ S, k ^ 2 * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2)
-    {u : W1p volume Ω 2} (hu : u ∈ S) (hu0 : 0 < ‖value u‖ ^ 2)
-    (hgu : ‖gradient u‖ ^ 2 = k ^ 2 * ‖value u‖ ^ 2) :
-    IsGreatest {C : ℝ | ∀ u ∈ S, C * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2} (k ^ 2) :=
-  ⟨hS, fun _ hC ↦ le_of_mul_le_mul_right ((hC u hu).trans hgu.le) hu0⟩
-
-/-- If `k² ‖u‖² ≤ ‖u'‖²` on a set `S` of Sobolev classes, `k > 0`, and some `u ∈ S` with
-`‖u‖ ≠ 0` has `‖u'‖² = k² ‖u‖²`, then `k⁻¹` is the least constant `C` with `‖u‖ ≤ C ‖u'‖` on `S`.
--/
-private theorem isLeast_of_mem_of_norm_gradient_sq_eq {Ω : Opens ℝ}
-    {S : Set (W1p volume Ω 2)} {k : ℝ} (hk : 0 < k)
-    (hS : ∀ u ∈ S, k ^ 2 * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2)
-    {u : W1p volume Ω 2} (hu : u ∈ S) (hu0 : 0 < ‖value u‖ ^ 2)
-    (hgu : ‖gradient u‖ ^ 2 = k ^ 2 * ‖value u‖ ^ 2) :
-    IsLeast {C : ℝ | 0 ≤ C ∧ ∀ u ∈ S, ‖value u‖ ≤ C * ‖gradient u‖} k⁻¹ := by
-  refine ⟨⟨inv_nonneg.2 hk.le, fun v hv ↦ ?_⟩, fun C hC ↦ ?_⟩
-  · rw [inv_mul_eq_div, le_div_iff₀ hk]
-    have := hS v hv
-    nlinarith [norm_nonneg (value v), norm_nonneg (gradient v)]
-  · have hg : ‖gradient u‖ = k * ‖value u‖ := by
-      rw [← sq_eq_sq₀ (norm_nonneg _) (mul_nonneg hk.le (norm_nonneg _)), hgu, mul_pow]
-    have h1 := hC.2 u hu
-    rw [hg] at h1
-    have hpos : 0 < ‖value u‖ := by nlinarith [norm_nonneg (value u)]
-    rw [inv_le_iff_one_le_mul₀ hk]
-    nlinarith
-
 /-- The class of `sin (π (t - a) / (2 (b - a)))` lies in `H¹_{{a}}(a, b)`, is nonzero, and has
 `‖u'‖² = (π / (2 (b - a)))² ‖u‖²`. -/
 private theorem exists_mem_singleton_left_norm_gradient_sq_eq (hab : a < b) :
@@ -218,8 +121,10 @@ private theorem exists_mem_singleton_left_norm_gradient_sq_eq (hab : a < b) :
       0 < ‖value u‖ ^ 2 ∧ ‖gradient u‖ ^ 2 = (π / (2 * (b - a))) ^ 2 * ‖value u‖ ^ 2 := by
   obtain ⟨hs, hc⟩ := integral_sin_sq_and_integral_cos_sq hab
   set k := π / (2 * (b - a))
-  obtain ⟨u, hrep, hv, hg⟩ := exists_intervalRepresentativeL_eq_of_contDiff hab
+  obtain ⟨u, hrep, hv, hg⟩ := exists_intervalRepresentativeL_eq_of_contDiff (p := 2) hab
     (f := fun t ↦ Real.sin (k * (t - a))) (by fun_prop)
+  replace hv := norm_value_sq_eq_intervalIntegral_of_ae_eq hab hv
+  replace hg := norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hg
   refine ⟨u, ?_, ?_, ?_⟩
   · rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero (by simp) hab,
       intervalTraceL_apply, hrep ⟨a, left_mem_Icc.2 hab.le⟩]
@@ -239,8 +144,10 @@ private theorem exists_mem_singleton_right_norm_gradient_sq_eq (hab : a < b) :
   have hkb : π / (2 * (b - a)) * (b - a) = π / 2 := by
     field_simp
   set k := π / (2 * (b - a))
-  obtain ⟨u, hrep, hv, hg⟩ := exists_intervalRepresentativeL_eq_of_contDiff hab
+  obtain ⟨u, hrep, hv, hg⟩ := exists_intervalRepresentativeL_eq_of_contDiff (p := 2) hab
     (f := fun t ↦ Real.cos (k * (t - a))) (by fun_prop)
+  replace hv := norm_value_sq_eq_intervalIntegral_of_ae_eq hab hv
+  replace hg := norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hg
   refine ⟨u, ?_, ?_, ?_⟩
   · rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (by simp) hab,
       intervalTraceL_apply, hrep ⟨b, right_mem_Icc.2 hab.le⟩]
@@ -258,7 +165,7 @@ theorem isGreatest_mul_norm_value_sq_le_norm_gradient_sq_singleton_left (hab : a
     IsGreatest {C : ℝ | ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2 {a},
       C * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2} ((π / (2 * (b - a))) ^ 2) := by
   obtain ⟨u, hu, hu0, hgu⟩ := exists_mem_singleton_left_norm_gradient_sq_eq hab
-  exact isGreatest_of_mem_of_norm_gradient_sq_eq (fun v hv ↦
+  exact isGreatest_mul_norm_value_sq_le_norm_gradient_sq_of_eq (fun v hv ↦
     mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_fst_eq_zero hab
       (intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab hv)) hu hu0 hgu
 
@@ -269,7 +176,7 @@ theorem isGreatest_mul_norm_value_sq_le_norm_gradient_sq_singleton_right (hab : 
     IsGreatest {C : ℝ | ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2 {b},
       C * ‖value u‖ ^ 2 ≤ ‖gradient u‖ ^ 2} ((π / (2 * (b - a))) ^ 2) := by
   obtain ⟨u, hu, hu0, hgu⟩ := exists_mem_singleton_right_norm_gradient_sq_eq hab
-  exact isGreatest_of_mem_of_norm_gradient_sq_eq (fun v hv ↦
+  exact isGreatest_mul_norm_value_sq_le_norm_gradient_sq_of_eq (fun v hv ↦
     mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_snd_eq_zero hab
       (intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab hv)) hu hu0 hgu
 
@@ -280,8 +187,8 @@ theorem isLeast_norm_value_le_mul_norm_gradient_singleton_left (hab : a < b) :
       ‖value u‖ ≤ C * ‖gradient u‖} (2 * (b - a) / π) := by
   obtain ⟨u, hu, hu0, hgu⟩ := exists_mem_singleton_left_norm_gradient_sq_eq hab
   rw [← inv_div]
-  exact isLeast_of_mem_of_norm_gradient_sq_eq (div_pos Real.pi_pos (by linarith)) (fun v hv ↦
-    mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_fst_eq_zero hab
+  exact isLeast_norm_value_le_mul_norm_gradient_of_eq (div_pos Real.pi_pos (by linarith))
+    (fun v hv ↦ mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_fst_eq_zero hab
       (intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab hv)) hu hu0 hgu
 
 /-- **The optimal Poincaré–Friedrichs constant of `H¹_{{b}}(a, b)`.** The least `C ≥ 0` with
@@ -291,8 +198,8 @@ theorem isLeast_norm_value_le_mul_norm_gradient_singleton_right (hab : a < b) :
       ‖value u‖ ≤ C * ‖gradient u‖} (2 * (b - a) / π) := by
   obtain ⟨u, hu, hu0, hgu⟩ := exists_mem_singleton_right_norm_gradient_sq_eq hab
   rw [← inv_div]
-  exact isLeast_of_mem_of_norm_gradient_sq_eq (div_pos Real.pi_pos (by linarith)) (fun v hv ↦
-    mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_snd_eq_zero hab
+  exact isLeast_norm_value_le_mul_norm_gradient_of_eq (div_pos Real.pi_pos (by linarith))
+    (fun v hv ↦ mul_norm_value_sq_le_norm_gradient_sq_of_intervalTraceL_snd_eq_zero hab
       (intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab hv)) hu hu0 hgu
 
 end TauCeti.W1p
