@@ -15,7 +15,7 @@ public import Mathlib.LinearAlgebra.Matrix.IsDiag
 # Restricted roots of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
 
 On `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra (`TauCeti.slComplexReal`), with the Cartan involution
-`θ X = -Xᴴ` (`TauCeti.isCartanInvolution_restrictNegConjTranspose_slComplex`), the real trace-zero
+`θ X = -Xᴴ` (`TauCeti.isCartanInvolution_slComplexNegConjTranspose`), the real trace-zero
 diagonal matrices `𝔞` (`TauCeti.slComplexRealDiagonal`) form a maximal abelian subspace of the
 `-1`-eigenspace `𝔭` (the Hermitian matrices). For `H ∈ 𝔞` the bracket `[H, X]` has `(k, l)` entry
 `(H k k - H l l) X k l`, so:
