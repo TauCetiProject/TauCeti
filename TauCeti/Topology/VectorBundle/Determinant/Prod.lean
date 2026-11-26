@@ -698,6 +698,7 @@ def trivialProdEquiv (x : B) :
 variable {V}
 
 omit [CompleteSpace K] in
+@[simp]
 theorem trivialProdEquiv_apply (x : B) (a : DetBundle K F₂ E₂ x) :
     trivialProdEquiv K B F₂ E₂ V x a =
       prodEquiv K V (Trivial B V) F₂ E₂ x ((trivialEquiv K B V x).symm 1 ⊗ₜ a) := by
