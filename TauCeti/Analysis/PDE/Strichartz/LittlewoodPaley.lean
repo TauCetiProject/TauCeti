@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.SquareSum
@@ -116,10 +117,6 @@ theorem eLpNorm_eLpNorm_apply_le_of_sum_fourierMultiplierCLM_eq {σ : ℝ} {q r 
       _ ≤ _ := by
           rw [map_sum, eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)]
           exact eLpNorm_sum_le hr
-  have hw (d : ℤ) : ENNReal.ofReal (((2 : ℝ) ^ (d + j)) ^ σ) =
-      ENNReal.ofReal (((2 : ℝ) ^ d) ^ σ) * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) := by
-    rw [zpow_add₀ two_ne_zero, Real.mul_rpow (by positivity) (by positivity),
-      ENNReal.ofReal_mul (by positivity)]
   calc eLpNorm (fun b ↦ eLpNorm (T b x) r volume) q ρ
       ≤ eLpNorm (∑ d ∈ S, fun b ↦
           eLpNorm (T b (Lp.fourierMultiplierCLM F (m (d + j)) x)) r volume) q ρ :=
@@ -133,7 +130,8 @@ theorem eLpNorm_eLpNorm_apply_le_of_sum_fourierMultiplierCLM_eq {σ : ℝ} {q r 
     _ ≤ ∑ d ∈ S, C * ENNReal.ofReal (((2 : ℝ) ^ (d + j)) ^ σ) * ‖x‖ₑ :=
         Finset.sum_le_sum fun d _ ↦ hC (d + j) x
     _ = _ := by
-        simp_rw [hw, ENNReal.ofNNReal_finsetSum, ENNReal.ofNNReal_toNNReal, Finset.sum_mul]
+        simp_rw [TauCeti.ofReal_zpow_add_rpow two_pos, ENNReal.ofNNReal_finsetSum,
+          ENNReal.ofNNReal_toNNReal, Finset.sum_mul]
         refine Finset.sum_congr rfl fun d _ ↦ ?_
         ring
 

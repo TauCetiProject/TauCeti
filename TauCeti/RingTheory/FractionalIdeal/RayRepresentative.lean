@@ -119,9 +119,7 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_isCoprime
   intro P hJP hmP hP
   have hP0 : P ≠ ⊥ := fun h0 ↦ hJ0 (le_bot_iff.mp (h0 ▸ hJP))
   let v : HeightOneSpectrum R := ⟨P, hP, hP0⟩
-  have hzero := hcount v (Ideal.dvd_iff_le.mpr hmP)
-  rw [count_coeIdeal K v hJ0, Int.natCast_eq_zero] at hzero
-  exact (Associates.count_ne_zero_iff_dvd hJ0 v.irreducible).mpr
-    (Ideal.dvd_iff_le.mpr hJP) hzero
+  exact (count_coeIdeal_eq_zero_iff hJ0).mp (hcount v (Ideal.dvd_iff_le.mpr hmP))
+    (Ideal.dvd_iff_le.mpr hJP)
 
 end FractionalIdeal

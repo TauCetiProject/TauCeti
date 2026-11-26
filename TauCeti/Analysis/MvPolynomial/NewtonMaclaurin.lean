@@ -19,7 +19,10 @@ import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
 
 For `λ ∈ ℝⁿ` write `σ_k(λ)` for the elementary symmetric polynomial `MvPolynomial.esymm` evaluated
 at `λ` and `S_k = σ_k / binom(n, k)` for the normalized function `TauCeti.normalizedEsymm`. The
-cone `Γ_k = {λ | σ_1(λ) > 0, …, σ_k(λ) > 0}` is `TauCeti.hessianCone n k`.
+cone `Γ_k = {λ | σ_1(λ) > 0, …, σ_k(λ) > 0}` is `TauCeti.hessianCone n k`. It is open
+(`TauCeti.isOpen_hessianCone`), the cones are nested, `Γ_k ⊆ Γ_j` for `j ≤ k`
+(`TauCeti.hessianCone_subset_hessianCone`), and `Γ_1` is the half-space `σ_1 > 0`
+(`TauCeti.hessianCone_one`).
 
 ## Main results
 
@@ -155,6 +158,29 @@ theorem mem_hessianCone_of_pos {n k : ℕ} {μ : Fin n → ℝ} (hμ : ∀ i, 0 
   rw [eval_esymm_eq_esymm_map, Finset.esymm_map_val]
   exact Finset.sum_pos (fun A _ ↦ Finset.prod_pos fun i _ ↦ hμ i)
     (Finset.powersetCard_nonempty.mpr (by simpa using (Finset.mem_Icc.mp hj).2.trans hk))
+
+/-- The Hessian cone `Γ_k` is open. -/
+theorem isOpen_hessianCone (n k : ℕ) : IsOpen (hessianCone n k) := by
+  have h : hessianCone n k = ⋂ j ∈ Icc 1 k, {μ | 0 < eval μ (esymm (Fin n) ℝ j)} := by
+    ext; simp
+  rw [h]
+  exact isOpen_biInter_finset fun j _ ↦ isOpen_lt continuous_const (MvPolynomial.continuous_eval _)
+
+/-- The Hessian cones are nested: `Γ_k ⊆ Γ_j` for `j ≤ k`. -/
+theorem hessianCone_subset_hessianCone {n k j : ℕ} (hjk : j ≤ k) :
+    hessianCone n k ⊆ hessianCone n j := fun _ hμ ↦ mem_hessianCone.2 fun i hi ↦
+  mem_hessianCone.1 hμ i (mem_Icc.2 ⟨(mem_Icc.1 hi).1, (mem_Icc.1 hi).2.trans hjk⟩)
+
+/-- `Γ_1` is the half-space `σ_1 = λ_1 + ⋯ + λ_n > 0`. -/
+theorem hessianCone_one (n : ℕ) : hessianCone n 1 = {μ : Fin n → ℝ | 0 < ∑ i, μ i} := by
+  ext μ
+  simp [esymm_one]
+
+/-- `Γ_k ⊆ Γ_1` for `k ≥ 1`: every point of `Γ_k` has positive coordinate sum. -/
+theorem sum_pos_of_mem_hessianCone {n k : ℕ} (hk : 1 ≤ k) {μ : Fin n → ℝ}
+    (hμ : μ ∈ hessianCone n k) : 0 < ∑ i, μ i := by
+  have := hessianCone_subset_hessianCone hk hμ
+  rwa [hessianCone_one] at this
 
 /-- On `Γ_k`, `S_j > 0` for every `j ≤ k`, including `S_0 = 1`. -/
 theorem normalizedEsymm_pos_of_mem_hessianCone {n k j : ℕ} {μ : Fin n → ℝ}

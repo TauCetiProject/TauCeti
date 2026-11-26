@@ -39,7 +39,7 @@ The inclusion into the matrices is a smooth embedding, so a map into the special
 into the unitary group `Matrix.unitaryGroup n 𝕜`, with its native structure, is a smooth embedding.
 These are the smooth structures that the polar and Cartan coordinates of the special linear group
 take values in: the special unitary group is a factor of the targets of
-`Matrix.SpecialLinearGroup.polarHomeomorph` and `Matrix.SpecialLinearGroup.cartanHomeomorph`.
+`Matrix.SpecialLinearGroup.polarDiffeomorph` and `Matrix.SpecialLinearGroup.cartanHomeomorph`.
 
 As for the unitary group, matrices carry the `ℓ²` operator norm. To state or use the smooth
 structure, `open scoped Matrix.Norms.L2Operator` and enable

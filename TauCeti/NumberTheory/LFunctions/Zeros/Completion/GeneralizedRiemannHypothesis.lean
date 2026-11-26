@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.CriticalLine
 import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ZeroReflection
 import TauCeti.NumberTheory.LFunctions.Continued.Dirichlet
 
 /-!
@@ -24,7 +25,8 @@ The functional equation reflects orders across the critical line. Thus one can c
 right half-plane, using the uncompleted function there when its gamma factor is regular and
 nonzero. The resulting criterion applies to primitive Dirichlet characters, and for the zeta
 record it is equivalent to Mathlib's `RiemannHypothesis`, via `AllOnCriticalLine` for
-`completedRiemannZeta`. The dual has the same zero-free right half-planes by
+`completedRiemannZeta`; for the record of a primitive Dirichlet character `χ` it is
+`TauCeti.DirichletGRH χ`. The dual has the same zero-free right half-planes by
 `AnalyticLFunctionData.dual_completed` and `zeroFreeRightOf_conj_conj_iff`.
 -/
 
@@ -141,5 +143,13 @@ theorem dirichletData_generalizedRiemannHypothesis_iff {N : ℕ} [NeZero N]
     rintro _ rfl
     split <;> norm_num
   · simp [dirichletData_gammaC]
+
+/-- For a primitive Dirichlet character, the hypothesis of the completed record is
+`TauCeti.DirichletGRH χ`. -/
+theorem dirichletData_generalizedRiemannHypothesis_iff_dirichletGRH {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) :
+    (dirichletData χ hχ).GeneralizedRiemannHypothesis ↔ DirichletGRH χ := by
+  rw [dirichletData_generalizedRiemannHypothesis_iff,
+    χ.zeroFreeRightOf_one_half_LFunction_iff_forall_re_pos, χ.dirichletGRH_def]
 
 end TauCeti.LFunctions

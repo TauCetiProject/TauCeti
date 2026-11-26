@@ -41,9 +41,8 @@ theorem isUnit_decomposeLaurent_one : IsUnit (decomposeLaurent ℳ (1 : A)) := b
   classical
   let m (i : ℤ) : A := decompose ℳ (1 : A) i
   have h (i : ℤ) :
-      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i := by
-    rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
-    exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
+      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i :=
+    decomposeLaurent_decompose_one_mul ℳ 𝒜 i
   -- Shifting each identity back by its degree and summing gives an explicit inverse.
   apply isUnit_iff_exists_inv'.mpr
   refine ⟨∑ i ∈ (decompose ℳ (1 : A)).support, decomposeLaurent 𝒜 (m i) * T (-i), ?_⟩

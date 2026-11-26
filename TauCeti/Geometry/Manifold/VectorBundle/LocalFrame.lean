@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Local frames: duality with the coefficient functionals, and testing hom-bundle sections
@@ -178,11 +179,7 @@ local-frame vectors weighted by the coordinates of its reading in `e`. -/
 theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι]
     (hx : x ∈ e.baseSet) (v : V x) :
     v = ∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • e.localFrame b i x := by
-  calc
-    v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm
-    _ = e.symmL 𝕜 x (∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • b i) := by
-      rw [b.sum_repr]
-    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b hx]
+  simpa only [symmL_basis_eq_localFrame b hx] using (e.sum_repr_smul_symmL b hx v).symm
 
 /-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
 `e`. -/

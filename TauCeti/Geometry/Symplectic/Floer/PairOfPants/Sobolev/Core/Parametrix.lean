@@ -40,7 +40,8 @@ chart `φ'_q` and with a cutoff `β` (`TauCeti.Floer.endTransfer`), of an operat
   `(a, b) = dφ'_q (1, 0)` and `r` the conformal scale of the chart. Freezing `J` at a point `z₀`
   gives the end model `TauCeti.Floer.endModelCoeff` of the constant loop `J₀ = J(z₀, u z₀)`,
   which is invertible when the stationary cylinder operator `∂s + J₀ (∂t - S₀)` is
-  (`TauCeti.Floer.isInvertible_endModelSobolevOperator_iff`). Near `z₀` the two principal parts
+  (`TauCeti.Floer.isInvertible_endModelSobolevOperator_iff`); the zeroth-order part `S₀` may be
+  any continuous loop, since only the principal part is frozen. Near `z₀` the two principal parts
   differ by `r⁻¹ (b (J - J₀) ∂s + a (J - J₀) ∂t)`, which is small when `J` is continuous at
   `z₀`. Adding this difference to the frozen model over the preimage of a small neighbourhood `U`
   of `z₀` gives a small perturbation of an invertible operator, hence an invertible operator
@@ -241,11 +242,11 @@ model of a constant structure `J₀`, is `b' (J - J₀) ∂s + a' (J - J₀) ∂
 `(a', b')` of the chart, so it is at most `2 ‖J - J₀‖`. -/
 private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : SymplecticForm V)
     (q : Puncture) (ρ : ℝ × ℝ → ℝ) (J : ℝ × ℝ → V → AlmostComplexStructure V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (J₀ : AlmostComplexStructure V) (S₀ : V →L[ℝ] V)
-    (ζ : ℝ × ℝ) :
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (J₀ : AlmostComplexStructure V)
+    (S₀ : ℝ → V →L[ℝ] V) (ζ : ℝ × ℝ) :
     ‖(ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
           (positiveEndChart q ζ)).comp (endPrincipalCoeff q ζ) -
-        (endModelCoeff q (fun _ ↦ J₀) (fun _ ↦ S₀) ζ).comp principalProj‖ ≤
+        (endModelCoeff q (fun _ ↦ J₀) S₀ ζ).comp principalProj‖ ≤
       2 * ‖(J (positiveEndChart q ζ) (u (positiveEndChart q ζ))).toLinearMap.toContinuousLinearMap -
         J₀.toLinearMap.toContinuousLinearMap‖ := by
   set L := J (positiveEndChart q ζ) (u (positiveEndChart q ζ))
@@ -256,7 +257,7 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
   -- Since `L² = J₀² = -1`, the difference of the two principal parts is `c₂ Δ y + c₁ Δ z`.
   have hid : ((ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
         Ks Kt u (positiveEndChart q ζ)).comp (endPrincipalCoeff q ζ) -
-      (endModelCoeff q (fun _ ↦ J₀) (fun _ ↦ S₀) ζ).comp principalProj) v =
+      (endModelCoeff q (fun _ ↦ J₀) S₀ ζ).comp principalProj) v =
         (endUnitTangent q ζ).2 • Δ v.2.1 + (endUnitTangent q ζ).1 • Δ v.2.2 := by
     simp only [sub_apply, ContinuousLinearMap.comp_apply,
       floerConformalJetCoeff_apply, endPrincipalCoeff_apply, principalProj_apply, endModelCoeff_def,
@@ -280,8 +281,8 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
 `(J, K_s, K_t)` be Floer data on the pair of pants `S` along a map `u`, with essentially bounded
 coefficient field `M` on conformal jets, and let `z₀` be a point at which the structures
 `J(z, u z)` along `u` depend continuously on `z`. Suppose that for the frozen structure
-`J₀ = J(z₀, u z₀)` and some `S₀`, the stationary cylinder operator `∂s + J₀ (∂t - S₀)` is
-invertible on `W^{1,2}(ℝ × S¹, V)`.
+`J₀ = J(z₀, u z₀)` and some continuous loop `S₀`, the stationary cylinder operator
+`∂s + J₀ (∂t - S₀)` is invertible on `W^{1,2}(ℝ × S¹, V)`.
 
 Then for every end `q` there are a neighbourhood `U` of `z₀` and a bounded operator
 `Q : L²(ℝ × S¹, V) → W^{1,2}(ℝ × S¹, V)` such that for every cutoff `β` supported in `U` (as in
@@ -297,8 +298,8 @@ theorem
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
         (volume.restrict thricePuncturedSphereReal))
     {z₀ : ℝ × ℝ} (hJ : ContinuousAt (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap) z₀)
-    {S₀ : V →L[ℝ] V}
-    (hD : (stationarySobolevOperator (fun _ ↦ J z₀ (u z₀)) fun _ ↦ S₀).IsInvertible) :
+    {S₀ : ℝ → V →L[ℝ] V} (hS₀ : Continuous S₀)
+    (hD : (stationarySobolevOperator (fun _ ↦ J z₀ (u z₀)) S₀).IsInvertible) :
     ∃ U ∈ 𝓝 z₀, ∃ Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V,
       ∀ {β : ℝ × ℝ → ℝ} {B T₀ T₁ : ℝ}, ContDiff ℝ 1 β →
         (∀ z ∈ tsupport β, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
@@ -319,13 +320,13 @@ theorem
   set M := ω.floerConformalJetCoeff cylindricalWeight
     (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
   set J₀ := J z₀ (u z₀)
-  set G₀ := endModelCoeff q (fun _ ↦ J₀) (fun _ ↦ S₀)
-  have hG₀ : MemLp G₀ ∞ stripMeasure := memLp_endModelCoeff q continuous_const continuous_const
+  set G₀ := endModelCoeff q (fun _ ↦ J₀) S₀
+  have hG₀ : MemLp G₀ ∞ stripMeasure := memLp_endModelCoeff q continuous_const hS₀
   -- The frozen end model is invertible, and so is every operator close enough to it.
   obtain ⟨ε, hε, hinv⟩ :=
     CylinderSobolev.exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL hG₀ (by
     simpa only [endModelSobolevOperator_def] using
-      (isInvertible_endModelSobolevOperator_iff q continuous_const continuous_const).2 hD)
+      (isInvertible_endModelSobolevOperator_iff q continuous_const hS₀).2 hD)
   -- Near `z₀` the structures along `u` are within `ε / 2` of `J₀`.
   obtain ⟨r, hr, hU⟩ := Metric.continuousAt_iff.1 hJ (ε / 2) (half_pos hε)
   set U := Metric.ball z₀ r
