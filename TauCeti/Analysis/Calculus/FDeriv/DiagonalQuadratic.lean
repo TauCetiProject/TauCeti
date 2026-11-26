@@ -37,6 +37,9 @@ derivatives are `aᵢ xᵢ`; over `ℝ` its second derivative is the diagonal bi
 * `TauCeti.fderiv_fderiv_diagonalQuadratic_apply`: its second derivative is diagonal.
 * `TauCeti.fderiv_fderiv_diagonalQuadratic_apply_single_single`: its second partial derivatives
   are `aᵢ δᵢⱼ`.
+* `TauCeti.fderiv_diagonalQuadratic_comp_sub_apply_single` and
+  `TauCeti.fderiv_fderiv_diagonalQuadratic_comp_sub_apply_single`: the first and second partial
+  derivatives of the translated model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2`.
 -/
 
 public section
@@ -127,6 +130,21 @@ theorem fderiv_fderiv_diagonalQuadratic_apply_single_single [DecidableEq ι] (a 
   · subst h
     simp [Pi.single_apply]
   · simpa [Pi.single_apply, h] using fun h' ↦ absurd h'.symm h
+
+/-- The partial derivatives of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` are
+`aᵢ (xᵢ - pᵢ)`. -/
+theorem fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ) (i : ι) :
+    fderiv ℝ (fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) = a i * (x i - p i) := by
+  rw [fderiv_comp_sub, fderiv_diagonalQuadratic_apply_single, Pi.sub_apply]
+
+/-- The Hessian of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` is `diag(a)`. -/
+theorem fderiv_fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ)
+    (i j : ι) :
+    fderiv ℝ (fderiv ℝ fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) (Pi.single j 1) =
+      if i = j then a i else 0 := by
+  have h : fderiv ℝ (fun y ↦ diagonalQuadratic a (y - p)) =
+      fun y ↦ fderiv ℝ (diagonalQuadratic a) (y - p) := funext fun y ↦ fderiv_comp_sub p
+  rw [h, fderiv_comp_sub, fderiv_fderiv_diagonalQuadratic_apply_single_single]
 
 end DiagonalQuadratic
 

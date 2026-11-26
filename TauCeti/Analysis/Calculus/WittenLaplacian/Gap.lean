@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.SquarePartition
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Energy
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Localization
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The gap of the Witten Laplacian away from the ground states
@@ -21,10 +19,14 @@ Morse index of `p` (`TauCeti.morseIndex_diagonalQuadratic`). Suppose also that a
 points `|df|²` is bounded below by `c₀ > 0` and the Hessian is bounded. This file proves Witten's
 localization estimate: for every degree `m` that is not the Morse index of a critical point, the
 quadratic form of the Witten Laplacian `Δ_t` (`TauCeti.euclideanWittenLaplacian`) on compactly
-supported `C²` forms of degree `m` is at least `t c ‖φ‖²` for all large `t`
-(`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`). This is the
-linear-in-`t` gap estimate of Witten's proof of the weak Morse inequalities: in such a degree no
-form has energy below a multiple of `t`. In every degree `m` the same bound `(2 t c - K) ‖φ‖²` holds
+supported `C²` forms of degree `m` is at least `(2 t c - K) ‖φ‖²` for large `t`, where `K` depends
+only on a partition of unity adapted to `P`
+(`TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`).
+This gives the linear-in-`t` gap estimate of Witten's proof of the weak Morse inequalities: in such
+a degree no form has energy below a multiple of `t`
+(`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`, in
+`TauCeti.Analysis.Calculus.WittenLaplacian.Taylor`). In every degree `m` the same bound
+`(2 t c - K) ‖φ‖²` holds
 for the forms `φ` whose localized pieces `J p φ` at the points `p` of Morse index `m` are
 orthogonal to the translated Gaussian ground states of the quadratic models
 (`TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_orthogonal`). This is the
@@ -64,8 +66,10 @@ becomes `(2 t c - K) ‖φ‖²`
 
 The exact quadratic models are the Euclidean form of the standard metrics near critical points.
 For a general function, the Taylor remainder of the Hessian approximation has to be estimated
-instead; that is not done here. The statements concern the quadratic form on compactly supported
-forms, not the spectrum of a self-adjoint realization of `Δ_t`.
+instead; `TauCeti.Analysis.Calculus.WittenLaplacian.Taylor` does this in the degrees that are no
+Morse index, and recovers the gap for exact quadratic models as a special case. The statements
+concern the quadratic form on compactly supported forms, not the spectrum of a self-adjoint
+realization of `Δ_t`.
 
 ## Main results
 
@@ -80,8 +84,6 @@ forms, not the spectrum of a self-adjoint realization of `Δ_t`.
   orthogonal to the ground states.
 * `TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`:
   the lower bound `(2 t c - K) ‖φ‖²` in a degree that is no Morse index.
-* `TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: the gap
-  `t c ‖φ‖²` for large `t` in a degree that is no Morse index.
 
 ## References
 
@@ -203,13 +205,6 @@ private theorem add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacia
         · exact h₀
         · exact hB p (Finset.some_mem_insertNone.1 hp))
 
-omit [Fintype ι] [LinearOrder ι] in
-/-- A point where the localized form `u • φ` does not vanish is one where neither `u` nor `φ`
-vanishes. -/
-private theorem ne_zero_and_ne_zero_of_smul_apply_ne_zero {u : (ι → ℝ) → ℝ}
-    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hx : (u • φ) x ≠ 0) : u x ≠ 0 ∧ φ x ≠ 0 :=
-  smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
-
 /-- Away from the critical points, where `|df|² ≥ c₀` and `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h`, the potential
 `t² |df|² - t |Hess f|` bounds the quadratic form at the piece `J₀ φ` below by
 `(t² c₀ - t h) ‖J₀ φ‖²` for `t ≥ 0`. -/
@@ -291,15 +286,7 @@ private theorem two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_of
       two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_of_eventuallyEq_of_orthogonal
       ht hc hφ hφc hf (horth hm)
   -- In a degree other than the Morse index, the component at `{i | a i < 0}` vanishes.
-  have herase : ∀ x, ∑ s ∈ Finset.univ.erase (Finset.univ.filter fun i ↦ a i < 0), φ x s ^ 2 =
-      ∑ s, φ x s ^ 2 := by
-    intro x
-    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ (Finset.univ.filter fun i ↦ a i < 0))]
-    have : φ x (Finset.univ.filter fun i ↦ a i < 0) = 0 := by
-      by_contra h'
-      exact hm (hφm x _ h')
-    simp [this]
-  simpa only [herase] using
+  simpa only [sum_erase_sq_eq_sum_sq_of_card_ne hφm hm] using
     two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_eventuallyEq ht hc hφ
       hφc hf
 
@@ -331,40 +318,29 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_orthogonal
     (2 * t * c - K) * ∫ x, ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
   -- Away from the critical points, `t² c₀ - t h ≥ 2 t c` bounds `J₀ φ` below.
-  have h₀ : 2 * t * c * ∫ x, ∑ s, (J₀ • φ) x s ^ 2 ≤
-      ∫ x, ∑ s, euclideanWittenLaplacian f t (J₀ • φ) x s * (J₀ • φ) x s := by
-    have h₀ :=
-      mul_integral_le_integral_sum_euclideanWittenLaplacian_smul_mul hf hφ hφc hJ₀ hc₀ hh ht
-    have hN : 0 ≤ ∫ x, ∑ s, (J₀ • φ) x s ^ 2 :=
-      integral_nonneg fun x ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
-    have hcoef : 2 * t * c ≤ t ^ 2 * c₀ - t * h := by nlinarith
-    linarith [mul_le_mul_of_nonneg_right hcoef hN]
-  -- Each piece near a critical point costs at least `2 t c` times its squared norm.
-  have key := add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf hφ hφc hJ₀
-    hJ hJ1 hK h₀ fun p hp ↦
-      two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_of_degree ht (hc p hp)
-        ((hJ p hp).smul hφ) hφc.smul_left (fun x s hx ↦ hφm x s (right_ne_zero_of_mul hx))
-        (fun x hx ↦ hmodel p hp x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1) (horth p hp)
-  -- The pieces `‖J₀ φ‖²` and `‖J p φ‖²` add up to `‖φ‖²`.
-  have hsq : ∀ (u : (ι → ℝ) → ℝ) x, ∑ s, (u • φ) x s ^ 2 = u x ^ 2 * ∑ s, φ x s ^ 2 := by
-    intro u x
-    simp only [Pi.smul_apply', Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
-  have hint : ∀ u : (ι → ℝ) → ℝ, Continuous u →
-      Integrable fun x ↦ u x ^ 2 * ∑ s, φ x s ^ 2 := fun u hu ↦
-    hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl (hu.pow 2).continuousOn
-  have hN : (∫ x, J₀ x ^ 2 * ∑ s, φ x s ^ 2) + ∑ p ∈ P, ∫ x, J p x ^ 2 * ∑ s, φ x s ^ 2 =
-      ∫ x, ∑ s, φ x s ^ 2 := by
-    rw [← integral_finsetSum _ fun p hp ↦ hint _ (hJ p hp).continuous,
-      ← integral_add (hint _ hJ₀.continuous) (integrable_finsetSum _ fun p hp ↦
-        hint _ (hJ p hp).continuous)]
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    beta_reduce
-    by_cases hx : φ x = 0
-    · simp [hx]
-    rw [← Finset.sum_mul, ← add_mul, hJ1 x hx, one_mul]
-  simp only [← Finset.mul_sum, hsq] at key
-  rw [← mul_add, hN] at key
-  linarith
+  have h₀ := mul_mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul_of_add_le_mul
+    (φ := J₀ • φ) (fun x hx ↦ hf x (tsupport_smul_subset_right J₀ φ hx)) (hJ₀.smul hφ)
+    hφc.smul_left
+    (fun x hx ↦ hc₀ x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1
+      (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).2)
+    (fun x hx ↦ hh x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1
+      (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).2) ht htc
+  -- IMS localization, indexed by `Option (ι → ℝ)` with `none` for `J₀`: every piece costs at
+  -- least `2 t c` times its squared norm.
+  refine sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
+    (A := P.insertNone) (J := fun o ↦ o.elim J₀ J) (t := t) (κ := 2 * t * c) hf
+    (by
+      rintro (_ | p) hp x -
+      exacts [hJ₀.contDiffAt, (hJ p (Finset.some_mem_insertNone.1 hp)).contDiffAt]) hφ hφc
+    (fun x hx ↦ by simpa [Finset.sum_insertNone] using hJ1 x hx)
+    (fun x hx ↦ by simpa [Finset.sum_insertNone] using hK x hx) ?_
+  rintro (_ | p) hp
+  · rw [show 2 * t * c = t * (2 * c) by ring]
+    exact h₀
+  have hp' := Finset.some_mem_insertNone.1 hp
+  exact two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_of_degree ht (hc p hp')
+    ((hJ p hp').smul hφ) hφc.smul_left (fun x s hx ↦ hφm x s (right_ne_zero_of_mul hx))
+    (fun x hx ↦ hmodel p hp' x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1) (horth p hp')
 
 /-! ### The gap in degrees with no critical point -/
 
@@ -393,48 +369,5 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s :=
   mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_orthogonal hf hφ hφc hφm hJ₀ hJ
     hJ1 hK hmodel hc (fun p hp hpm ↦ absurd hpm (hm p hp)) hc₀ hh ht htc
-
-/-- **The gap of the Witten Laplacian in a degree that is no Morse index.** Let `f` be a `C²`
-function on `ℝ^ι` and `P` a finite set of points at mutual distance at least `2 r`. Suppose that
-on the ball of radius `r` around each `p ∈ P`, `f` is the quadratic model
-`y ↦ f p + ∑ᵢ a p i (yᵢ - pᵢ)² / 2` with every `|a p i| ≥ c > 0`, so that `p` is a nondegenerate
-critical point whose Morse index is the number of negative `a p i`, and that outside the balls of
-radius `ρ < r` around the points of `P`, `|df|² ≥ c₀ > 0` and `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h`. If `m` is not
-the Morse index of any `p ∈ P`, then for all large `t` the quadratic form of the Witten Laplacian
-is at least `t c ‖φ‖²` on compactly supported `C²` forms `φ` of degree `m`. -/
-theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
-    {f : (ι → ℝ) → ℝ} (hf : ContDiff ℝ 2 f) {P : Finset (ι → ℝ)} {ρ r : ℝ} (hρ : 0 < ρ)
-    (hρr : ρ < r) (hP : ∀ p ∈ P, ∀ q ∈ P, p ≠ q → 2 * r ≤ dist p q) {a : (ι → ℝ) → ι → ℝ}
-    (hfa : ∀ p ∈ P, EqOn f (fun y ↦ f p + diagonalQuadratic (a p) (y - p)) (ball p r))
-    {c : ℝ} (hc : 0 < c) (hca : ∀ p ∈ P, ∀ i, c ≤ |a p i|) {c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hdf : ∀ x, (∀ p ∈ P, ρ < dist x p) → c₀ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
-    {h : ℝ} (hh : ∀ x, (∀ p ∈ P, ρ < dist x p) →
-      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h)
-    {m : ℕ} (hm : ∀ p ∈ P, (Finset.univ.filter fun i ↦ a p i < 0).card ≠ m) :
-    ∃ T, ∀ t, T ≤ t → ∀ φ : (ι → ℝ) → Finset ι → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
-      (∀ x s, φ x s ≠ 0 → s.card = m) →
-      t * c * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  obtain ⟨J₀, J, hJ₀, hJ, hJ1, hJr, hJ₀ρ, hJ₀c, hJc⟩ := exists_sq_add_sum_sq_eq_one hρ hρr hP
-  obtain ⟨K₀, hK₀⟩ :=
-    (hJ₀.of_le (by simp)).exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv hJ₀c
-  choose K hK using fun p ↦
-    ((hJ p).of_le (by simp)).exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv
-      ((hJc p).fderiv (𝕜 := ℝ))
-  refine ⟨max ((2 * c + h) / c₀) ((K₀ + ∑ p ∈ P, K p) / c), fun t ht φ hφ hφc hφm ↦ ?_⟩
-  have ht₁ : 2 * c + h ≤ t * c₀ := (div_le_iff₀ hc₀).1 ((le_max_left _ _).trans ht)
-  have ht₂ : K₀ + ∑ p ∈ P, K p ≤ t * c := (div_le_iff₀ hc).1 ((le_max_right _ _).trans ht)
-  have ht₀ : 0 ≤ t := by
-    have : 0 ≤ K₀ := ((hK₀ 0).trans' (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
-    have : 0 ≤ ∑ p ∈ P, K p := Finset.sum_nonneg fun p _ ↦
-      (hK p 0).trans' (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
-    nlinarith
-  have key := mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one
-    (fun x _ ↦ hf.contDiffAt) hφ hφc hφm (hJ₀.of_le (by simp)) (fun p _ ↦ (hJ p).of_le (by simp))
-    (fun x _ ↦ hJ1 x) (fun x _ ↦ add_le_add (hK₀ x) (Finset.sum_le_sum fun p _ ↦ hK p x))
-    (fun p hp x hx ↦ eventuallyEq_of_mem (isOpen_ball.mem_nhds (hJr p x hx)) (hfa p hp)) hca hm
-    (fun x hx _ ↦ hdf x (hJ₀ρ x hx)) (fun x hx _ ↦ hh x (hJ₀ρ x hx)) ht₀ ht₁
-  have hN : 0 ≤ ∫ x, ∑ s, φ x s ^ 2 :=
-    integral_nonneg fun x ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
-  nlinarith
 
 end TauCeti

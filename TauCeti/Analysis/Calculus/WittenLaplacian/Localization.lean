@@ -56,6 +56,16 @@ Where `|df|² ≥ c` and `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h` on the support of `φ
 therefore at least `t² c - |t| h` times `∫ |φ|²`, which grows quadratically in `t` as soon as
 `c > 0` (`TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`).
 
+**Comparing two functions.** By the same frame formula, the Witten Laplacians of two functions `f`
+and `g` differ by the fibre endomorphism `t² (|df|² - |dg|²) + t ∑_{i,j} (∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg) ⁅εᵢ, ιⱼ⁆`.
+So wherever `|dg|² ≤ |df|²` and `∑_{i,j} |∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg| ≤ e` on the support of a form `φ`,
+
+`∫ ⟨Δ_t^g φ, φ⟩ - |t| e ‖φ‖² ≤ ∫ ⟨Δ_t^f φ, φ⟩`
+
+(`integral_sum_euclideanWittenLaplacian_mul_sub_le_integral_sum_euclideanWittenLaplacian_mul`).
+This compares `Δ_t` near a critical point with the harmonic oscillator of a quadratic model that
+agrees with `f` only up to its Taylor remainder.
+
 In the integrated statements only `φ` has to be `C²` everywhere; `f` and the `Jₐ` need only be
 `C²` at the points of the support of `φ`.
 
@@ -87,7 +97,13 @@ quasimodes at different critical points combine into a low-energy space.
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
   `TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for the
-  quadratic form of `Δ_t` by the potential `t² |df|² - |t| |Hess f|`.
+  quadratic form of `Δ_t` by the potential `t² |df|² - |t| |Hess f|`, and
+  `TauCeti.mul_mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul_of_add_le_mul`:
+  the bound `t κ ‖φ‖²` once `κ + h ≤ t c`.
+* `TauCeti.sum_euclideanWittenLaplacian_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`
+  and
+  `integral_sum_euclideanWittenLaplacian_mul_sub_le_integral_sum_euclideanWittenLaplacian_mul`:
+  comparison of the Witten Laplacians of two functions, pointwise and integrated.
 * `TauCeti.sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport`: `Δ_t` does not mix forms
   with disjoint supports.
 * `TauCeti.exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le`: an upper bound
@@ -292,6 +308,20 @@ theorem sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : 
     · simp [hx]
     exact mul_le_mul_of_nonneg_right (hK x hx) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
+omit [Fintype ι] [LinearOrder ι] in
+/-- A point where the localized form `u • φ` does not vanish is one where neither `u` nor `φ`
+vanishes. -/
+theorem ne_zero_and_ne_zero_of_smul_apply_ne_zero {u : (ι → ℝ) → ℝ}
+    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hx : (u • φ) x ≠ 0) : u x ≠ 0 ∧ φ x ≠ 0 :=
+  smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
+
+/-- A form of degree `m` has no component at a multi-index `S` of another cardinality, so omitting
+that component does not change its pointwise squared norm. -/
+theorem sum_erase_sq_eq_sum_sq_of_card_ne {φ : (ι → ℝ) → Finset ι → ℝ} {m : ℕ}
+    (hφ : ∀ x s, φ x s ≠ 0 → s.card = m) {S : Finset ι} (hS : S.card ≠ m) (x : ι → ℝ) :
+    ∑ s ∈ Finset.univ.erase S, φ x s ^ 2 = ∑ s, φ x s ^ 2 :=
+  Finset.sum_erase _ (by rw [not_imp_comm.1 (hφ x S) hS, sq, mul_zero])
+
 /-- **A uniform lower bound from IMS localization.** Under the hypotheses of
 `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`, if the quadratic form
 of `Δ_t` at every localized piece `Jₐ φ` is at least `κ` times its squared norm, then
@@ -448,6 +478,87 @@ theorem mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have := hh x hx
   gcongr
 
+/-- **The Witten Laplacian is large away from the critical points, for large `t`.** Under the
+hypotheses of `TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`, if
+`t ≥ 0` and `κ + h ≤ t c`, then `t κ ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`. -/
+theorem mul_mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul_of_add_le_mul
+    {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) {c h : ℝ}
+    (hc : ∀ x, φ x ≠ 0 → c ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
+    (hh : ∀ x, φ x ≠ 0 →
+      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h) {t κ : ℝ}
+    (ht : 0 ≤ t) (htc : κ + h ≤ t * c) :
+    t * κ * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  have h₀ := mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul hf hφ hφc hc hh t
+  rw [abs_of_nonneg ht] at h₀
+  have hcoef : t * κ ≤ t ^ 2 * c - t * h := by nlinarith
+  exact (mul_le_mul_of_nonneg_right hcoef
+    (integral_nonneg fun x ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)).trans h₀
+
+/-! ### Comparing the Witten Laplacians of two functions -/
+
+/-- **Comparison of the Witten Laplacians of two functions, pointwise.** For functions `f`, `g` and
+a form `φ` that are `C²` at `x`,
+
+`⟨Δ_t^g φ, φ⟩ + (t² (|df|² - |dg|²) - |t| ∑_{i,j} |∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg|) |φ|² ≤ ⟨Δ_t^f φ, φ⟩`
+
+at `x`: by Witten's frame formula the two pairings differ by `t² (|df|² - |dg|²) |φ|²` and `t`
+times the pairing of `φ` with `∑_{i,j} (∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg) ⁅εᵢ, ιⱼ⁆ φ`. -/
+theorem sum_euclideanWittenLaplacian_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul
+    {f g : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x)
+    (hg : ContDiffAt ℝ 2 g x) (hφ : ContDiffAt ℝ 2 φ x) (t : ℝ) :
+    ∑ s, euclideanWittenLaplacian g t φ x s * φ x s +
+        (t ^ 2 * (∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 - ∑ i, fderiv ℝ g x (Pi.single i 1) ^ 2) -
+          |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) -
+            fderiv ℝ (fderiv ℝ g) x (Pi.single i 1) (Pi.single j 1)|) * ∑ s, φ x s ^ 2 ≤
+      ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  rw [sum_euclideanWittenLaplacian_apply_mul hf hφ, sum_euclideanWittenLaplacian_apply_mul hg hφ]
+  -- The Hessian terms differ by the pairing with the commutators weighted by the difference of
+  -- the Hessians, which is bounded by `(∑_{i,j} |∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg|) |φ|²`.
+  have hb :=
+    (Pi.basisFun ℝ ι).abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
+      (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) -
+        fderiv ℝ (fderiv ℝ g) x (Pi.single i 1) (Pi.single j 1)) (φ x)
+  simp only [sub_smul, Finset.sum_sub_distrib, Pi.sub_apply, sub_mul] at hb
+  have ht := (neg_le_abs _).trans ((abs_mul t _).trans_le (mul_le_mul_of_nonneg_left hb
+    (abs_nonneg t)))
+  linarith
+
+/-- **Comparison of the Witten Laplacians of two functions.** Let `φ` be a compactly supported
+`C²` form and `f`, `g` functions that are `C²` at every point of the support of `φ`. If, wherever
+`φ` does not vanish, `|dg|² ≤ |df|²` and `∑_{i,j} |∂ᵢ∂ⱼf - ∂ᵢ∂ⱼg| ≤ e`, then
+
+`∫ ⟨Δ_t^g φ, φ⟩ - |t| e ∫ |φ|² ≤ ∫ ⟨Δ_t^f φ, φ⟩`. -/
+theorem integral_sum_euclideanWittenLaplacian_mul_sub_le_integral_sum_euclideanWittenLaplacian_mul
+    {f g : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hg : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 g x) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
+    (hdf : ∀ x, φ x ≠ 0 →
+      ∑ i, fderiv ℝ g x (Pi.single i 1) ^ 2 ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
+    {e : ℝ} (he : ∀ x, φ x ≠ 0 → ∑ i, ∑ j,
+      |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) -
+        fderiv ℝ (fderiv ℝ g) x (Pi.single i 1) (Pi.single j 1)| ≤ e) (t : ℝ) :
+    (∫ x, ∑ s, euclideanWittenLaplacian g t φ x s * φ x s) - |t| * e * ∫ x, ∑ s, φ x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  have hint : ∀ u : (ι → ℝ) → ℝ, (∀ x ∈ tsupport φ, ContDiffAt ℝ 2 u x) →
+      Integrable fun x ↦ ∑ s, euclideanWittenLaplacian u t φ x s * φ x s := fun u hu ↦
+    hφ.continuous.integrable_sum_mul_of_continuousOn hφc subset_rfl fun x hx ↦
+      (continuousAt_euclideanWittenLaplacian (hu x hx) hφ.contDiffAt t).continuousWithinAt
+  have hN : Integrable fun x ↦ |t| * e * ∑ s, φ x s ^ 2 :=
+    hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl continuousOn_const
+  calc _ = ∫ x, (∑ s, euclideanWittenLaplacian g t φ x s * φ x s -
+        |t| * e * ∑ s, φ x s ^ 2) := by
+          rw [integral_sub (hint g hg) hN, integral_const_mul]
+    _ ≤ _ := integral_mono ((hint g hg).sub hN) (hint f hf) fun x ↦ ?_
+  by_cases hx : φ x = 0
+  · simp [hx]
+  have hxs := subset_tsupport φ hx
+  have h := sum_euclideanWittenLaplacian_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul
+    (hf x hxs) (hg x hxs) hφ.contDiffAt t
+  have h₁ := mul_nonneg (sq_nonneg t) (sub_nonneg.2 (hdf x hx))
+  have h₂ := mul_le_mul_of_nonneg_left (he x hx) (abs_nonneg t)
+  have h₃ : 0 ≤ ∑ s, φ x s ^ 2 := Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  simp only
+  nlinarith
 
 /-! ### Forms with disjoint supports -/
 
