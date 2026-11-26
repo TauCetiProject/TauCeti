@@ -425,10 +425,8 @@ theorem cubicalFreeLoopTorusClassHom_map {Q' : Type u} [TopologicalSpace Q'] (g 
         NormalizedCubicalChain.ofCube Q' R (freeLoopTorusCube
           (GenLoop.map ⟨g.comp, ContinuousMap.continuous_postcomp g⟩ hγ Λ :
             SingularCube C(Circle, Q') 1)) := by
-      rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
-        ConcreteCategory.comp_apply, hz, normalizedCubicalChainComplex_map_f_apply,
-        NormalizedCubicalChain.map_ofCube, TopCat.hom_ofHom, GenLoop.coe_map,
-        freeLoopTorusCube_comp]
+      rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i]
+      simpa [φ, NormalizedCubicalChain.map_ofCube, GenLoop.coe_map] using congrArg (φ.f 2) hz
     rw [HomotopyGroup.map_mk, cubicalFreeLoopTorusClassHom_mk R _ hφz,
       cubicalFreeLoopTorusClassHom_mk R Λ hz]
     exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality φ 2) z).symm
@@ -813,7 +811,7 @@ theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace 
       GenLoop.map ⟨(toCircleMap γ).comp, ContinuousMap.continuous_postcomp _⟩
         (ContinuousMap.comp_id _) circleRotationGenLoop := by
     ext t z
-    simp [genLoopEquivOfUnique, toCircleMap_rotate]
+    simp
   have h0 := freeLoopTorusClassHom_map_comp_eq_zero_of_isZero
     (isZero_singularHomology_circle_of_two_le (ModuleCat.of ℤ ℤ) le_rfl) (toCircleMap γ)
     (ContinuousMap.comp_id _)
