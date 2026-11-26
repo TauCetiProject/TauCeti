@@ -53,80 +53,6 @@ open scoped Topology
 
 namespace TauCeti.HigherPoleTauberian
 
-/-! ### Half-line window comparisons -/
-
-/-- Lower comparison of the half-line convolution against a window where `c ≤ J t`. -/
-private theorem mul_integral_Icc_le_convolution {J : ℝ → ℝ} {ell T₀ h c : ℝ}
-    (hell : 0 ≤ ell) (hh : 0 ≤ h) (hT₀ : 0 ≤ T₀ - h)
-    (hJ0 : ∀ t ∈ Ici (0 : ℝ), 0 ≤ J t)
-    (hint : IntegrableOn (fun t : ℝ ↦ J t * squaredSinc ell (t - T₀)) (Ici 0))
-    (hlow : ∀ t ∈ Icc (T₀ - h) (T₀ + h), c ≤ J t) :
-    c * ∫ v in (-h)..h, squaredSinc ell v ≤
-      ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) := by
-  have hsub : Icc (T₀ - h) (T₀ + h) ⊆ Ici (0 : ℝ) := fun t ht ↦ le_trans hT₀ ht.1
-  have hcont : IntegrableOn (fun t : ℝ ↦ c * squaredSinc ell (t - T₀)) (Icc (T₀ - h) (T₀ + h)) :=
-    (by fun_prop : Continuous fun t : ℝ ↦ c * squaredSinc ell (t - T₀)).integrableOn_Icc
-  calc c * ∫ v in (-h)..h, squaredSinc ell v
-      = ∫ t in Icc (T₀ - h) (T₀ + h), c * squaredSinc ell (t - T₀) := by
-          rw [integral_const_mul, integral_Icc_squaredSinc_shift hh]
-    _ ≤ ∫ t in Icc (T₀ - h) (T₀ + h), J t * squaredSinc ell (t - T₀) :=
-          setIntegral_mono_on hcont (hint.mono_set hsub) measurableSet_Icc fun t ht ↦
-            mul_le_mul_of_nonneg_right (hlow t ht) (squaredSinc_nonneg hell _)
-    _ ≤ ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) :=
-          setIntegral_mono_set hint
-            (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦
-              mul_nonneg (hJ0 t ht) (squaredSinc_nonneg hell _))
-            (Eventually.of_forall hsub)
-
-/-- Upper comparison of the half-line convolution against a window where `J t ≤ U` and a global
-bound `J t ≤ M`. -/
-private theorem convolution_le_add_mul_tail {J : ℝ → ℝ} {ell T₀ h U M : ℝ}
-    (hell : 0 < ell) (hh : 0 ≤ h) (hT₀ : 0 ≤ T₀ - h) (hU : 0 ≤ U) (hM : 0 ≤ M)
-    (hJM : ∀ t ∈ Ici (0 : ℝ), J t ≤ M)
-    (hint : IntegrableOn (fun t : ℝ ↦ J t * squaredSinc ell (t - T₀)) (Ici 0))
-    (hhigh : ∀ t ∈ Icc (T₀ - h) (T₀ + h), J t ≤ U) :
-    ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) ≤
-      U + M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
-  let S : Set ℝ := Icc (T₀ - h) (T₀ + h)
-  have hsub : S ⊆ Ici (0 : ℝ) := fun t ht ↦ le_trans hT₀ ht.1
-  have hsplit := integral_add_compl (μ := volume.restrict (Ici (0 : ℝ))) (s := S)
-    measurableSet_Icc hint
-  rw [Measure.restrict_restrict measurableSet_Icc, Set.inter_eq_left.mpr hsub,
-    Measure.restrict_restrict measurableSet_Icc.compl] at hsplit
-  have hKshift : Integrable (fun t : ℝ ↦ squaredSinc ell (t - T₀)) :=
-    (integrable_squaredSinc ell).comp_sub_right T₀
-  have hwin : ∫ t in S, J t * squaredSinc ell (t - T₀) ≤ U := by
-    calc ∫ t in S, J t * squaredSinc ell (t - T₀)
-        ≤ ∫ t in S, U * squaredSinc ell (t - T₀) :=
-            setIntegral_mono_on (hint.mono_set hsub) (hKshift.const_mul U).integrableOn
-              measurableSet_Icc fun t ht ↦
-                mul_le_mul_of_nonneg_right (hhigh t ht) (squaredSinc_nonneg hell.le _)
-      _ = U * ∫ v in (-h)..h, squaredSinc ell v := by
-            rw [integral_const_mul, integral_Icc_squaredSinc_shift hh]
-      _ = U * ∫ v in Ioc (-h) h, squaredSinc ell v := by
-            rw [intervalIntegral.integral_of_le (by linarith)]
-      _ ≤ U * ∫ v : ℝ, squaredSinc ell v :=
-            mul_le_mul_of_nonneg_left (setIntegral_le_integral (integrable_squaredSinc ell)
-              (ae_of_all _ fun v ↦ squaredSinc_nonneg hell.le v)) hU
-      _ = U := by rw [squaredSinc_mass hell, mul_one]
-  have htail_sub : Sᶜ ∩ Ici (0 : ℝ) ⊆ {t : ℝ | h ≤ |t - T₀|} := fun t ht ↦
-    le_of_not_gt fun (hlt : |t - T₀| < h) ↦
-      ht.1 ⟨by linarith [(abs_lt.mp hlt).1], by linarith [(abs_lt.mp hlt).2]⟩
-  have htail : ∫ t in Sᶜ ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) ≤
-      M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
-    calc ∫ t in Sᶜ ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀)
-        ≤ ∫ t in Sᶜ ∩ Ici (0 : ℝ), M * squaredSinc ell (t - T₀) :=
-            setIntegral_mono_on (hint.mono_set Set.inter_subset_right)
-              (hKshift.const_mul M).integrableOn (measurableSet_Icc.compl.inter measurableSet_Ici)
-              fun t ht ↦ mul_le_mul_of_nonneg_right (hJM t ht.2) (squaredSinc_nonneg hell.le _)
-      _ ≤ ∫ t in {t : ℝ | h ≤ |t - T₀|}, M * squaredSinc ell (t - T₀) :=
-            setIntegral_mono_set (hKshift.const_mul M).integrableOn
-              (ae_of_all _ fun t ↦ mul_nonneg hM (squaredSinc_nonneg hell.le _))
-              (Eventually.of_forall htail_sub)
-      _ = M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
-            rw [integral_const_mul, setIntegral_abs_sub_ge_squaredSinc]
-  linarith
-
 /-! ### Abstract nonnegative unsmoothing -/
 
 /-- Eventually `J T < C + ε` under a lower window comparison and frequent eventually integrable
@@ -164,7 +90,7 @@ private theorem eventually_lt_add_of_squaredSinc_convolution {J : ℝ → ℝ} {
     eventually_ge_atTop (max 0 (h - s))] with T hT hint hconv hT0
   have hJT : 0 ≤ J T := hJ0 T (le_trans (le_max_left _ _) hT0)
   have hTs : 0 ≤ T + s - h := by linarith [le_trans (le_max_right 0 (h - s)) hT0]
-  have hle := mul_integral_Icc_le_convolution hell.le hh.le hTs hJ0 hint hT
+  have hle := mul_intervalIntegral_squaredSinc_le_setIntegral_Ici hell.le hh.le hTs hJ0 hint hT
   have h1 : (c * J T) * m ≤ (c * J T) * ∫ v in (-h)..h, squaredSinc ell v :=
     mul_le_mul_of_nonneg_left hm_le (mul_nonneg hc_pos.le hJT)
   have h2 : c * m * J T < c * m * (C + ε) := by
@@ -226,11 +152,10 @@ private theorem eventually_sub_lt_of_squaredSinc_convolution {J : ℝ → ℝ} {
     tendsto_id.atTop_add tendsto_const_nhds
   filter_upwards [hwin, hshift.eventually hint_ev,
     (hlim.comp hshift).eventually (Ioi_mem_nhds (by linarith : C - ε / 4 < C)),
-    eventually_ge_atTop (max 0 (h - s))] with T hT hint hconv hT0
+    eventually_ge_atTop (0 : ℝ)] with T hT hint hconv hT0
   dsimp only [Function.comp_apply] at hconv
-  have hJT : 0 ≤ J T := hJ0 T (le_trans (le_max_left _ _) hT0)
-  have hTs : 0 ≤ T + s - h := by linarith [le_trans (le_max_right 0 (h - s)) hT0]
-  have hle := convolution_le_add_mul_tail hell hh.le hTs (mul_nonneg (by linarith) hJT) hM
+  have hJT : 0 ≤ J T := hJ0 T hT0
+  have hle := setIntegral_Ici_mul_squaredSinc_le hell.le (mul_nonneg (by linarith) hJT) hM
     hJM hint hT
   have hcJT : c * (C - ε) < c * J T := by linarith
   exact lt_of_mul_lt_mul_left hcJT (by linarith)
@@ -521,9 +446,7 @@ private theorem integrableOn_and_tendsto_zero_max_sub {α : ℝ → ℝ} {a t₀
       Tendsto (fun T : ℝ ↦ ∫ t in Ici (0 : ℝ), D t * squaredSinc ell (t - T)) atTop (𝓝 0) := by
   intro D
   have hαmeas : AEStronglyMeasurable α (volume.restrict (Ici 0)) :=
-    (Monotone.measurable fun x y hxy ↦
-      hα (le_max_right x 0) (le_max_right y 0) (max_le_max_right 0 hxy)).aestronglyMeasurable.congr
-      (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦ by simp [max_eq_left ht])
+    (aemeasurable_restrict_of_monotoneOn measurableSet_Ici hα).aestronglyMeasurable
   have hDmeas : AEStronglyMeasurable D (volume.restrict (Ici 0)) :=
     ((continuous_delangeWeight k).mul (by fun_prop : Continuous fun t ↦ exp (-a * t)))
       |>.aestronglyMeasurable.mul ((hαmeas.sup aestronglyMeasurable_const).sub hαmeas)
@@ -584,6 +507,27 @@ private theorem tendsto_weighted_of_monotoneOn_eventually_nonneg {α : ℝ → �
   filter_upwards [eventually_ge_atTop t₀] with t ht
   simp [max_eq_left (le_trans hαt₀ (hα ht₀ (le_trans ht₀ ht) ht))]
 
+/-- Because `delangeWeight k t * t ^ k → 1` as `t → ∞`, convergence of `α t / (exp (a * t) * t ^ k)`
+to `C` is equivalent to convergence of `delangeWeight k t * exp (-a * t) * α t` to `C`. -/
+private theorem tendsto_div_exp_mul_pow_iff {α : ℝ → ℝ} {a C : ℝ} {k : ℕ} :
+    Tendsto (fun t : ℝ ↦ α t / (exp (a * t) * t ^ k)) atTop (𝓝 C) ↔
+      Tendsto (fun t : ℝ ↦ delangeWeight k t * exp (-a * t) * α t) atTop (𝓝 C) := by
+  have heq : ∀ t > (0 : ℝ),
+      α t / (exp (a * t) * t ^ k) * (delangeWeight k t * t ^ k) =
+        delangeWeight k t * exp (-a * t) * α t := fun t ht ↦ by
+    rw [neg_mul, exp_neg]
+    field_simp [(exp_pos (a * t)).ne', (pow_pos ht k).ne']
+  constructor
+  · intro h
+    simpa only [mul_one] using (h.mul (tendsto_delangeWeight_mul_pow_atTop k)).congr'
+      ((eventually_gt_atTop (0 : ℝ)).mono heq)
+  · intro h
+    have hdiv := h.div (tendsto_delangeWeight_mul_pow_atTop k) one_ne_zero
+    rw [div_one] at hdiv
+    refine hdiv.congr' ((eventually_gt_atTop (0 : ℝ)).mono fun t ht ↦ ?_)
+    exact (div_eq_iff (mul_ne_zero (delangeWeight_pos ht).ne' (pow_pos ht k).ne')).mpr
+      (heq t ht).symm
+
 /-- **Monotone removal of `squaredSinc` smoothing** (Delange 1954, §3.4, pp. 227–228): if `α` is
 nondecreasing on `[0, ∞)` and, along arbitrarily large bandwidths `ell`, the weighted integrands
 `t ↦ delangeWeight k t * exp (-a * t) * α t * squaredSinc ell (t - T)` are eventually integrable on
@@ -601,15 +545,7 @@ theorem monotoneUnsmoothing {α : ℝ → ℝ} {a C : ℝ} {k : ℕ}
         delangeWeight k t * exp (-a * t) * α t * squaredSinc ell (t - T))
         atTop (𝓝 C)) :
     Tendsto (fun t : ℝ ↦ α t / (exp (a * t) * t ^ k)) atTop (𝓝 C) := by
-  suffices hJ : Tendsto (fun t : ℝ ↦ delangeWeight k t * exp (-a * t) * α t) atTop (𝓝 C) by
-    have hdiv := hJ.div (tendsto_delangeWeight_mul_pow_atTop k) one_ne_zero
-    rw [div_one] at hdiv
-    refine hdiv.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-    have hw : delangeWeight k t ≠ 0 := (delangeWeight_pos ht).ne'
-    dsimp only [Pi.div_apply]
-    rw [neg_mul, exp_neg]
-    field_simp [hw, (exp_pos (a * t)).ne', (pow_pos ht k).ne']
+  rw [tendsto_div_exp_mul_pow_iff]
   by_cases hpos : ∃ t₀ ∈ Ici (0 : ℝ), 0 ≤ α t₀
   · obtain ⟨t₀, ht₀, hαt₀⟩ := hpos
     exact tendsto_weighted_of_monotoneOn_eventually_nonneg hα ht₀ hαt₀ hsmooth
@@ -711,6 +647,12 @@ private theorem integral_counterexample_full {C ell ε : ℝ} (hell : 0 < ell) (
     integral_cos_mul_squaredSinc_eq_zero hell.le (by rw [abs_of_pos (by positivity)]; linarith) T]
   ring
 
+/-- For `0 ≤ C` and `0 ≤ ε`, the oscillatory profile `C + ε cos x` has absolute value at most
+`C + ε`. -/
+private theorem abs_add_mul_cos_le {C ε : ℝ} (hC : 0 ≤ C) (hε : 0 ≤ ε) (x : ℝ) :
+    |C + ε * cos x| ≤ C + ε :=
+  abs_le.mpr ⟨by nlinarith [neg_one_le_cos x], by nlinarith [cos_le_one x]⟩
+
 /-- The truncated oscillatory profile `t ↦ if t < t₀ then 0 else C + ε cos (3 ell t)` has
 `squaredSinc ell` half-line convolution tending to `C` as `T → ∞`. -/
 private theorem tendsto_counterexample_convolution {C ell ε t₀ : ℝ} (hC : 0 < C) (hell : 0 < ell)
@@ -718,9 +660,7 @@ private theorem tendsto_counterexample_convolution {C ell ε t₀ : ℝ} (hC : 0
     Tendsto (fun T : ℝ ↦ ∫ t in Ici (0 : ℝ),
       (if t < t₀ then 0 else C + ε * cos (3 * ell * t)) * squaredSinc ell (t - T)) atTop (𝓝 C) := by
   let J0 : ℝ → ℝ := fun t ↦ C + ε * cos (3 * ell * t)
-  have hJ0_abs : ∀ t : ℝ, |J0 t| ≤ C + ε := fun t ↦ abs_le.mpr
-    ⟨by simp only [J0]; nlinarith [neg_one_le_cos (3 * ell * t)],
-      by simp only [J0]; nlinarith [cos_le_one (3 * ell * t)]⟩
+  have hJ0_abs : ∀ t : ℝ, |J0 t| ≤ C + ε := fun t ↦ abs_add_mul_cos_le hC.le hε.le _
   have hJ0K_int : ∀ T : ℝ, Integrable (fun t : ℝ ↦ J0 t * squaredSinc ell (t - T)) := fun T ↦
     ((integrable_squaredSinc ell).comp_sub_right T).bdd_mul
       (by fun_prop : Continuous J0).aestronglyMeasurable (Eventually.of_forall hJ0_abs)
@@ -773,8 +713,7 @@ private theorem integrableOn_counterexample_profile {C ell ε t₀ : ℝ}
       split_ifs
       · rw [abs_zero]
         positivity
-      · exact abs_le.mpr
-          ⟨by nlinarith [neg_one_le_cos (3 * ell * t)], by nlinarith [cos_le_one (3 * ell * t)]⟩)
+      · exact abs_add_mul_cos_le hC.le hε.le _)
 
 /-- If `delangeWeight k t * exp (-a * t) * α t` vanishes for `t < t₀` and equals
 `C + ε * cos (3 * ell * t)` for `t ≥ t₀` (with `0 < ell` and `0 < ε`), then the normalised ratio
@@ -784,14 +723,8 @@ private theorem not_tendsto_counterexample {α : ℝ → ℝ} {a C ell ε t₀ :
     (hJeq : ∀ t : ℝ, delangeWeight k t * exp (-a * t) * α t =
       if t < t₀ then 0 else C + ε * cos (3 * ell * t)) :
     ¬ Tendsto (fun t : ℝ ↦ α t / (exp (a * t) * t ^ k)) atTop (𝓝 C) := by
-  intro hconv
-  have hJlim : Tendsto (fun t : ℝ ↦ delangeWeight k t * exp (-a * t) * α t) atTop (𝓝 C) := by
-    have hmul := hconv.mul (tendsto_delangeWeight_mul_pow_atTop k)
-    rw [mul_one] at hmul
-    refine hmul.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-    rw [neg_mul, exp_neg]
-    field_simp [(exp_pos (a * t)).ne', (pow_pos ht k).ne']
+  rw [tendsto_div_exp_mul_pow_iff]
+  intro hJlim
   have hseq : Tendsto (fun n : ℕ ↦ (2 * π * n) / (3 * ell)) atTop atTop :=
     (tendsto_natCast_atTop_atTop.const_mul_atTop (mul_pos two_pos pi_pos)).atTop_div_const
       (by positivity)

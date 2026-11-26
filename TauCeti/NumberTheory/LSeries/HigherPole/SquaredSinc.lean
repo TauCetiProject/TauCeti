@@ -49,9 +49,10 @@ only.
   band-limit vanishing for `2λ ≤ |ξ|`.
 * `integral_squaredSinc_tail_le`, `tendsto_intervalIntegral_squaredSinc`,
   `tendsto_integral_squaredSinc_tail`, `integral_Icc_squaredSinc_shift`,
-  `setIntegral_abs_sub_ge_squaredSinc`, `setIntegral_Iio_squaredSinc_le`: the quantitative tail
-  bound `≤ 2 / (π λ h)`, concentration on `[-h, h]` as `λ → ∞`, and shifted window and tail
-  integrals.
+  `setIntegral_abs_sub_ge_squaredSinc`, `setIntegral_Iio_squaredSinc_le`,
+  `mul_intervalIntegral_squaredSinc_le_setIntegral_Ici`, `setIntegral_Ici_mul_squaredSinc_le`:
+  the quantitative tail bound `≤ 2 / (π λ h)`, concentration on `[-h, h]` as `λ → ∞`, shifted
+  window and tail integrals, and two-sided half-line window-and-tail comparisons.
 
 ## References
 
@@ -253,6 +254,81 @@ theorem setIntegral_Iio_squaredSinc_le {t₀ T : ℝ} (hell : 0 ≤ ell) :
     (ae_of_all _ fun v ↦ squaredSinc_nonneg hell v) (Eventually.of_forall fun v hv ↦ ?_)
   exact le_trans (by linarith [mem_Iio.mp hv]) (neg_le_abs v)
 
+/-- **Lower window comparison on `[0, ∞)`.** For `λ ≥ 0`, `h ≥ 0`, and `T₀ - h ≥ 0`, if `J` is
+nonnegative on `[0, ∞)` and bounded below by `c` on `[T₀ - h, T₀ + h]`, and
+`t ↦ J t * K_λ(t - T₀)` is integrable on `[0, ∞)`, then
+`c * ∫_{-h}^h K_λ(v) dv ≤ ∫_0^∞ J(t) K_λ(t - T₀) dt`. -/
+theorem mul_intervalIntegral_squaredSinc_le_setIntegral_Ici {J : ℝ → ℝ} {T₀ c : ℝ}
+    (hell : 0 ≤ ell) (hh : 0 ≤ h) (hT₀ : 0 ≤ T₀ - h)
+    (hJ0 : ∀ t ∈ Ici (0 : ℝ), 0 ≤ J t)
+    (hint : IntegrableOn (fun t : ℝ ↦ J t * squaredSinc ell (t - T₀)) (Ici 0))
+    (hlow : ∀ t ∈ Icc (T₀ - h) (T₀ + h), c ≤ J t) :
+    c * ∫ v in (-h)..h, squaredSinc ell v ≤
+      ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) := by
+  have hsub : Icc (T₀ - h) (T₀ + h) ⊆ Ici (0 : ℝ) := fun t ht ↦ le_trans hT₀ ht.1
+  have hcont : IntegrableOn (fun t : ℝ ↦ c * squaredSinc ell (t - T₀)) (Icc (T₀ - h) (T₀ + h)) :=
+    (by fun_prop : Continuous fun t : ℝ ↦ c * squaredSinc ell (t - T₀)).integrableOn_Icc
+  calc c * ∫ v in (-h)..h, squaredSinc ell v
+      = ∫ t in Icc (T₀ - h) (T₀ + h), c * squaredSinc ell (t - T₀) := by
+          rw [integral_const_mul, integral_Icc_squaredSinc_shift hh]
+    _ ≤ ∫ t in Icc (T₀ - h) (T₀ + h), J t * squaredSinc ell (t - T₀) :=
+          setIntegral_mono_on hcont (hint.mono_set hsub) measurableSet_Icc fun t ht ↦
+            mul_le_mul_of_nonneg_right (hlow t ht) (squaredSinc_nonneg hell _)
+    _ ≤ ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) :=
+          setIntegral_mono_set hint
+            (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦
+              mul_nonneg (hJ0 t ht) (squaredSinc_nonneg hell _))
+            (Eventually.of_forall hsub)
+
+/-- **Upper window-and-tail comparison on `[0, ∞)`.** For `λ ≥ 0`, `U ≥ 0`, and `M ≥ 0`, if
+`J ≤ M` on `[0, ∞)`, `J ≤ U` on `[T₀ - h, T₀ + h]`, and `t ↦ J t * K_λ(t - T₀)` is integrable on
+`[0, ∞)`, then `∫_0^∞ J(t) K_λ(t - T₀) dt ≤ U + M * ∫_{h ≤ |v|} K_λ(v) dv`. -/
+theorem setIntegral_Ici_mul_squaredSinc_le {J : ℝ → ℝ} {T₀ U M : ℝ}
+    (hell : 0 ≤ ell) (hU : 0 ≤ U) (hM : 0 ≤ M)
+    (hJM : ∀ t ∈ Ici (0 : ℝ), J t ≤ M)
+    (hint : IntegrableOn (fun t : ℝ ↦ J t * squaredSinc ell (t - T₀)) (Ici 0))
+    (hhigh : ∀ t ∈ Icc (T₀ - h) (T₀ + h), J t ≤ U) :
+    ∫ t in Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) ≤
+      U + M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
+  rcases hell.eq_or_lt with rfl | hell
+  · simp [hU]
+  let S : Set ℝ := Icc (T₀ - h) (T₀ + h)
+  have hsplit := integral_add_compl (μ := volume.restrict (Ici (0 : ℝ))) (s := S)
+    measurableSet_Icc hint
+  rw [Measure.restrict_restrict measurableSet_Icc,
+    Measure.restrict_restrict measurableSet_Icc.compl] at hsplit
+  have hKshift : Integrable (fun t : ℝ ↦ squaredSinc ell (t - T₀)) :=
+    (integrable_squaredSinc ell).comp_sub_right T₀
+  have hwin : ∫ t in S ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) ≤ U := by
+    calc ∫ t in S ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀)
+        ≤ ∫ t in S ∩ Ici (0 : ℝ), U * squaredSinc ell (t - T₀) :=
+            setIntegral_mono_on (hint.mono_set Set.inter_subset_right)
+              (hKshift.const_mul U).integrableOn (measurableSet_Icc.inter measurableSet_Ici)
+              fun t ht ↦ mul_le_mul_of_nonneg_right (hhigh t ht.1) (squaredSinc_nonneg hell.le _)
+      _ ≤ ∫ t : ℝ, U * squaredSinc ell (t - T₀) :=
+            setIntegral_le_integral (hKshift.const_mul U)
+              (ae_of_all _ fun t ↦ mul_nonneg hU (squaredSinc_nonneg hell.le _))
+      _ = U := by
+            rw [integral_const_mul, integral_sub_right_eq_self (squaredSinc ell) T₀,
+              squaredSinc_mass hell, mul_one]
+  have htail_sub : Sᶜ ∩ Ici (0 : ℝ) ⊆ {t : ℝ | h ≤ |t - T₀|} := fun t ht ↦
+    le_of_not_gt fun (hlt : |t - T₀| < h) ↦
+      ht.1 ⟨by linarith [(abs_lt.mp hlt).1], by linarith [(abs_lt.mp hlt).2]⟩
+  have htail : ∫ t in Sᶜ ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀) ≤
+      M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
+    calc ∫ t in Sᶜ ∩ Ici (0 : ℝ), J t * squaredSinc ell (t - T₀)
+        ≤ ∫ t in Sᶜ ∩ Ici (0 : ℝ), M * squaredSinc ell (t - T₀) :=
+            setIntegral_mono_on (hint.mono_set Set.inter_subset_right)
+              (hKshift.const_mul M).integrableOn (measurableSet_Icc.compl.inter measurableSet_Ici)
+              fun t ht ↦ mul_le_mul_of_nonneg_right (hJM t ht.2) (squaredSinc_nonneg hell.le _)
+      _ ≤ ∫ t in {t : ℝ | h ≤ |t - T₀|}, M * squaredSinc ell (t - T₀) :=
+            setIntegral_mono_set (hKshift.const_mul M).integrableOn
+              (ae_of_all _ fun t ↦ mul_nonneg hM (squaredSinc_nonneg hell.le _))
+              (Eventually.of_forall htail_sub)
+      _ = M * ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
+            rw [integral_const_mul, setIntegral_abs_sub_ge_squaredSinc]
+  linarith
+
 /-! ### The triangle formula -/
 
 /-- **The kernel is the inverse Fourier transform of the triangle.** For `λ ≥ 0` and every `v`,
@@ -264,35 +340,25 @@ theorem squaredSinc_fourier (hell : 0 ≤ ell) (v : ℝ) :
         ((1 - |y| / (2 * ell) : ℝ) : ℂ) * Complex.exp (Complex.I * y * v) := by
   rcases hell.eq_or_lt with rfl | hell
   · simp
-  have hfinv := (TauCeti.fourierInv_triangle (ell * v)).symm
-  rw [Real.fourierInv_eq',
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-π⁻¹) π⁻¹) fun w hw ↦ by
-      have hw' : π⁻¹ ≤ |w| := le_of_not_gt fun h ↦ hw ⟨(abs_lt.mp h).1, (abs_lt.mp h).2.le⟩
-      have h1 : 1 ≤ |π * w| := by
-        rw [abs_mul, abs_of_pos pi_pos]
-        exact (mul_inv_cancel₀ pi_pos.ne').symm.trans_le (mul_le_mul_of_nonneg_left hw' pi_pos.le)
-      rw [max_eq_right (sub_nonpos.mpr h1)]
-      simp,
-    ← intervalIntegral.integral_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹)] at hfinv
   set F : ℝ → ℂ := fun y ↦ ((1 - |y| / (2 * ell) : ℝ) : ℂ) * Complex.exp (Complex.I * y * v)
   have hcomp := intervalIntegral.integral_comp_mul_left (a := -π⁻¹) (b := π⁻¹) F
     (by positivity : (2 * π * ell : ℝ) ≠ 0)
   have hcongr : ∫ w in (-π⁻¹)..π⁻¹, F ((2 * π * ell) * w) =
-      ∫ w in (-π⁻¹)..π⁻¹, Complex.exp (↑(2 * π * inner ℝ w (ell * v)) * Complex.I) •
-        ((max (1 - |π * w|) 0 : ℝ) : ℂ) := by
+      ∫ w in (-π⁻¹)..π⁻¹,
+        Complex.exp (2 * π * Complex.I * w * ↑(ell * v)) * ((max (1 - |π * w|) 0 : ℝ) : ℂ) := by
     refine intervalIntegral.integral_congr fun w hw ↦ ?_
     rw [uIcc_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹)] at hw
     have hw1 : |π * w| ≤ 1 := by
       rw [abs_mul, abs_of_pos pi_pos]
-      nlinarith [mul_inv_cancel₀ pi_pos.ne', (abs_le.mpr hw), pi_pos]
+      nlinarith [mul_inv_cancel₀ pi_pos.ne', abs_le.mpr hw, pi_pos]
     have hdiv : |(2 * π * ell) * w| / (2 * ell) = |π * w| := by
       rw [← abs_of_pos (by positivity : (0 : ℝ) < 2 * ell), ← abs_div]
       congr 1; field_simp
-    simp only [F, hdiv, max_eq_left (sub_nonneg.mpr hw1), RCLike.inner_apply, conj_trivial,
-      smul_eq_mul]
+    simp only [F, hdiv, max_eq_left (sub_nonneg.mpr hw1)]
     push_cast; ring_nf
   rw [(by field_simp : (2 * π * ell) * (-π⁻¹) = -(2 * ell)),
-    (by field_simp : (2 * π * ell) * π⁻¹ = 2 * ell), hcongr, ← hfinv, Complex.real_smul] at hcomp
+    (by field_simp : (2 * π * ell) * π⁻¹ = 2 * ell), hcongr,
+    TauCeti.intervalIntegral_cexp_mul_max_one_sub_abs_pi_mul, Complex.real_smul] at hcomp
   calc (squaredSinc ell v : ℂ) = ell * ((π⁻¹ * sinc (ell * v) ^ 2 : ℝ) : ℂ) := by
         rw [squaredSinc_def]; push_cast; ring
     _ = ell * (((2 * π * ell)⁻¹ : ℝ) * ∫ y : ℝ in -(2 * ell)..2 * ell, F y) := by rw [hcomp]

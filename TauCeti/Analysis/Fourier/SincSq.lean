@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 import Mathlib.Analysis.Fourier.Inversion
 import TauCeti.Analysis.Fourier.Continuous
@@ -32,6 +33,11 @@ forward transform of `sinc²` is `w ↦ π * max (1 - |π * w|) 0`, supported on
 
 ## Main results
 
+* `TauCeti.support_max_one_sub_abs_pi_mul`:
+  `Function.support (fun w : ℝ ↦ max (1 - |π * w|) 0) = Set.Ioo (-π⁻¹) π⁻¹`.
+* `TauCeti.intervalIntegral_cexp_mul_max_one_sub_abs_pi_mul`:
+  `∫ w : ℝ in (-π⁻¹)..π⁻¹, Complex.exp (2 * π * Complex.I * w * x) *`
+  `((max (1 - |π * w|) 0 : ℝ) : ℂ) = ((π⁻¹ * Real.sinc x ^ 2 : ℝ) : ℂ)`.
 * `TauCeti.fourierInv_triangle`:
   `𝓕⁻ (fun w : ℝ ↦ ((max (1 - |π * w|) 0 : ℝ) : ℂ)) x = ((π⁻¹ * Real.sinc x ^ 2 : ℝ) : ℂ)`.
 * `TauCeti.fourier_sinc_sq`:
@@ -49,34 +55,61 @@ open scoped FourierTransform Real
 
 namespace TauCeti
 
-/-- Outside `(-π⁻¹, π⁻¹)`, the triangular tent `max (1 - |π w|) 0` vanishes. -/
-private theorem triangle_eq_zero_of_pi_inv_le_abs {w : ℝ} (hw : π⁻¹ ≤ |w|) :
-    max (1 - |π * w|) 0 = 0 := by
-  refine max_eq_right (sub_nonpos.mpr ?_)
-  rw [abs_mul, abs_of_pos pi_pos]
-  calc (1 : ℝ) = π * π⁻¹ := (mul_inv_cancel₀ pi_pos.ne').symm
-    _ ≤ π * |w| := mul_le_mul_of_nonneg_left hw pi_pos.le
+/-- The support of the unit triangular tent `w ↦ max (1 - |π * w|) 0` is `(-π⁻¹, π⁻¹)`. -/
+theorem support_max_one_sub_abs_pi_mul :
+    Function.support (fun w : ℝ ↦ max (1 - |π * w|) 0) = Ioo (-π⁻¹) π⁻¹ := by
+  ext w
+  simp only [Function.mem_support, ne_eq, mem_Ioo, ← abs_lt]
+  constructor
+  · intro hne
+    by_contra! hw
+    refine hne (max_eq_right (sub_nonpos.mpr ?_))
+    rw [abs_mul, abs_of_pos pi_pos]
+    exact (mul_inv_cancel₀ pi_pos.ne').symm.trans_le (mul_le_mul_of_nonneg_left hw pi_pos.le)
+  · intro hw
+    have hlt : |π * w| < 1 := by
+      rw [abs_mul, abs_of_pos pi_pos, ← mul_inv_cancel₀ pi_pos.ne']
+      exact mul_lt_mul_of_pos_left hw pi_pos
+    exact (lt_max_of_lt_left (sub_pos.mpr hlt)).ne'
 
-/-- Over `[-π⁻¹, π⁻¹]`, the cosine integral of `w ↦ max (1 - |π w|) 0` against `cos (w (2 π x))`
-equals `π⁻¹ sinc(x)²`. -/
-private theorem intervalIntegral_triangle_mul_cos (x : ℝ) :
-    ∫ w in (-π⁻¹)..π⁻¹, max (1 - |π * w|) 0 * cos (w * (2 * π * x)) = π⁻¹ * sinc x ^ 2 := by
-  have heven : Function.Even (fun w : ℝ ↦ max (1 - |π * w|) 0 * cos (w * (2 * π * x))) := by
-    intro w
-    simp [abs_neg, neg_mul, cos_neg]
-  rw [intervalIntegral.integral_eq_two_smul_of_even heven, smul_eq_mul]
+/-- Over `[-π⁻¹, π⁻¹]`, the complex exponential integral of the unit triangular tent
+`w ↦ max (1 - |π * w|) 0` against `exp (2 π i w x)` equals `π⁻¹ * sinc x ^ 2`. -/
+theorem intervalIntegral_cexp_mul_max_one_sub_abs_pi_mul (x : ℝ) :
+    ∫ w : ℝ in (-π⁻¹)..π⁻¹,
+      Complex.exp (2 * π * Complex.I * w * x) * ((max (1 - |π * w|) 0 : ℝ) : ℂ) =
+      ((π⁻¹ * sinc x ^ 2 : ℝ) : ℂ) := by
+  have hsplit : ∀ w : ℝ,
+      Complex.exp (2 * π * Complex.I * w * x) * ((max (1 - |π * w|) 0 : ℝ) : ℂ) =
+        ((max (1 - |π * w|) 0 * cos (w * (2 * π * x)) : ℝ) : ℂ) +
+          ((max (1 - |π * w|) 0 * sin (w * (2 * π * x)) : ℝ) : ℂ) * Complex.I := fun w ↦ by
+    have harg : 2 * π * Complex.I * (w : ℂ) * x = ((w * (2 * π * x) : ℝ) : ℂ) * Complex.I := by
+      push_cast
+      ring
+    rw [harg, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
+    push_cast
+    ring
+  simp_rw [hsplit]
+  rw [intervalIntegral.integral_add ((by fun_prop : Continuous _).intervalIntegrable _ _)
+    ((by fun_prop : Continuous _).intervalIntegrable _ _)]
+  have hodd : Function.Odd
+      (fun w : ℝ ↦ ((max (1 - |π * w|) 0 * sin (w * (2 * π * x)) : ℝ) : ℂ) * Complex.I) :=
+    fun w ↦ by simp [abs_neg, neg_mul, sin_neg]
+  have heven : Function.Even (fun w : ℝ ↦ max (1 - |π * w|) 0 * cos (w * (2 * π * x))) :=
+    fun w ↦ by simp [abs_neg, neg_mul, cos_neg]
+  rw [intervalIntegral.integral_eq_zero_of_odd hodd, add_zero, intervalIntegral.integral_ofReal,
+    intervalIntegral.integral_eq_two_smul_of_even heven, smul_eq_mul]
   have hcongr : ∫ w in (0 : ℝ)..π⁻¹, max (1 - |π * w|) 0 * cos (w * (2 * π * x)) =
       ∫ w in (0 : ℝ)..π⁻¹, (1 - w / π⁻¹) * cos (w * (2 * π * x)) := by
     refine intervalIntegral.integral_congr fun w hw ↦ ?_
     rw [uIcc_of_le (inv_nonneg.mpr pi_pos.le)] at hw
-    have hw_le : π * w ≤ 1 := by
-      calc π * w ≤ π * π⁻¹ := mul_le_mul_of_nonneg_left hw.2 pi_pos.le
-        _ = 1 := mul_inv_cancel₀ pi_pos.ne'
+    have hw_le : π * w ≤ 1 :=
+      (mul_le_mul_of_nonneg_left hw.2 pi_pos.le).trans_eq (mul_inv_cancel₀ pi_pos.ne')
     rw [abs_of_nonneg (mul_nonneg pi_pos.le hw.1), max_eq_left (sub_nonneg.mpr hw_le),
       div_inv_eq_mul, mul_comm w π]
   rw [hcongr, integral_one_sub_div_mul_cos_mul]
   have harg : π⁻¹ * (2 * π * x) / 2 = x := by field_simp [pi_pos.ne']
   rw [harg]
+  push_cast
   ring
 
 /-- **The inverse Fourier transform of the triangular tent.** Under Mathlib's convention
@@ -89,32 +122,19 @@ theorem fourierInv_triangle (x : ℝ) :
   have hsupp : ∀ w : ℝ, w ∉ Ioc (-π⁻¹) π⁻¹ →
       Complex.exp (↑(2 * π * inner ℝ w x) * Complex.I) • ((max (1 - |π * w|) 0 : ℝ) : ℂ) = 0 := by
     intro w hw
-    have habs : π⁻¹ ≤ |w| := le_of_not_gt fun hlt ↦
-      hw ⟨(abs_lt.mp hlt).1, (abs_lt.mp hlt).2.le⟩
-    rw [triangle_eq_zero_of_pi_inv_le_abs habs]
+    have hw0 : max (1 - |π * w|) 0 = 0 :=
+      Function.notMem_support (f := fun w : ℝ ↦ max (1 - |π * w|) 0).mp <| by
+        rw [support_max_one_sub_abs_pi_mul]
+        exact fun h ↦ hw (Ioo_subset_Ioc_self h)
+    rw [hw0]
     simp
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp,
-    ← intervalIntegral.integral_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹)]
-  have hsplit : ∀ w : ℝ,
-      Complex.exp (↑(2 * π * inner ℝ w x) * Complex.I) • ((max (1 - |π * w|) 0 : ℝ) : ℂ) =
-        ((max (1 - |π * w|) 0 * cos (w * (2 * π * x)) : ℝ) : ℂ) +
-          ((max (1 - |π * w|) 0 * sin (w * (2 * π * x)) : ℝ) : ℂ) * Complex.I := fun w ↦ by
-    have harg : (↑(2 * π * inner ℝ w x) : ℂ) = ((w * (2 * π * x) : ℝ) : ℂ) := by
-      simp only [RCLike.inner_apply, conj_trivial]
-      push_cast
-      ring
-    rw [smul_eq_mul, harg, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
-    push_cast
-    ring
-  simp_rw [hsplit]
-  rw [intervalIntegral.integral_add ((by fun_prop : Continuous _).intervalIntegrable _ _)
-    ((by fun_prop : Continuous _).intervalIntegrable _ _)]
-  have hodd : Function.Odd
-      (fun w : ℝ ↦ ((max (1 - |π * w|) 0 * sin (w * (2 * π * x)) : ℝ) : ℂ) * Complex.I) := by
-    intro w
-    simp [abs_neg, neg_mul, sin_neg]
-  rw [intervalIntegral.integral_eq_zero_of_odd hodd, add_zero, intervalIntegral.integral_ofReal,
-    intervalIntegral_triangle_mul_cos]
+    ← intervalIntegral.integral_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹),
+    ← intervalIntegral_cexp_mul_max_one_sub_abs_pi_mul x]
+  refine intervalIntegral.integral_congr fun w _ ↦ ?_
+  simp only [RCLike.inner_apply, conj_trivial, smul_eq_mul]
+  push_cast
+  ring_nf
 
 /-- **The Fourier transform of `sinc²` is a triangular tent.** Under Mathlib's convention
 `𝓕 f w = ∫ x, exp (-2 π i x w) f x`,
@@ -126,9 +146,9 @@ theorem fourier_sinc_sq (w : ℝ) :
   have hg_supp : HasCompactSupport g := by
     refine HasCompactSupport.of_support_subset_isCompact (K := Icc (-π⁻¹) π⁻¹) isCompact_Icc ?_
     intro u hu
-    by_contra hnot
-    have habs : π⁻¹ ≤ |u| := le_of_not_gt fun hlt ↦ hnot (Ioo_subset_Icc_self (abs_lt.mp hlt))
-    exact hu (by simp only [g, triangle_eq_zero_of_pi_inv_le_abs habs, Complex.ofReal_zero])
+    have hu' : u ∈ Function.support (fun w : ℝ ↦ max (1 - |π * w|) 0) :=
+      fun (h : max (1 - |π * u|) 0 = 0) ↦ hu (by simp only [g, h, Complex.ofReal_zero])
+    exact Ioo_subset_Icc_self (support_max_one_sub_abs_pi_mul ▸ hu')
   have hg_int : Integrable g := hg_cont.integrable_of_hasCompactSupport hg_supp
   have hfinv : 𝓕⁻ g = (π⁻¹ : ℂ) • fun x : ℝ ↦ ((sinc x ^ 2 : ℝ) : ℂ) := by
     ext x
