@@ -458,16 +458,6 @@ theorem gaugeFixedKernelEquivCoeff_symm_smul_I (v : Fin m → ℂ) :
     gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure,
     LinearEquiv.apply_symm_apply]
 
-/-- In divisor coordinates `J` is multiplication by `i`, pointwise: the kernel element with
-coordinates `i • v` is `J` applied pointwise to the kernel element with coordinates `v`. -/
-theorem coe_gaugeFixedKernelEquivCoeff_symm_smul_I (v : Fin m → ℂ) (z : ℂ) :
-    ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) :
-        ℂ → EuclideanSpace ℝ (Fin 4)) z =
-      variationComplexStructure
-        (((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v :
-          ℂ → EuclideanSpace ℝ (Fin 4)) z) := by
-  rw [gaugeFixedKernelEquivCoeff_symm_smul_I, coe_gaugeFixedKernelAlmostComplexStructure_apply]
-
 /-- **Covariant translations move the divisor rigidly.** At a smooth vortex with `|α|² → 1` at
 infinity and zero divisor `D ∈ Sym^m ℂ`, the isomorphism `gaugeFixedKernelEquivDegreeLT` sends the
 covariant translation `y_v = (ι_v F_a, ∇_v α)` to `v P'`, where `P = ∏_{a ∈ D} (X - a)`: the

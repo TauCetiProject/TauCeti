@@ -155,8 +155,8 @@ theorem integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling (hx : Continuous
     ring
   simp_rw [hpt]
   rw [integral_add hintL (hint₁.sub' hintI), integral_sub hint₁ hintI, hL, zero_add,
-    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hκ,
-    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hJκ]
+    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hκ.continuous,
+    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hJκ.continuous]
 
 end KernelComponent
 
@@ -204,7 +204,8 @@ theorem pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm {c : ℂ → F
     exists_hasFDerivAt_gaugeFixedKernelEquivCoeff_symm_apply hx hhol hlim hD hc z
   rw [hder.fderiv, pairedBaseCoupling_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ← hL, map_add, hL (I • _),
-    Vortex.coe_gaugeFixedKernelEquivCoeff_symm_smul_I, ← hL]
+    Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I,
+    Vortex.coe_gaugeFixedKernelAlmostComplexStructure_apply, ← hL]
 
 include hx hhol hlim hD in
 /-- The kernel-valued family with divisor coordinates `c` is differentiable wherever `c` is. -/
