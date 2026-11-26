@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.GrassmannBundle.Map
 public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 import TauCeti.Topology.FiberBundle.Separation
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The Grassmann bundle over a subset of the base
@@ -115,40 +116,14 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
   [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)] [∀ b, CompleteSpace (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E] {k : ℕ} (W : Set B)
 
-/-- A family of fibre maps `A x : E₁ x →L[ℝ] E₂ (f x)` that is the identity of `F` in the
-coordinates of the trivializations at `x₀` and `f x₀`, near `x₀`, over a base map `f` continuous at
-`x₀`, is continuous in coordinates at `x₀`. -/
-private theorem continuousAt_inCoordinates_of_trivializationAt_apply {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] {E₁ : X → Type*} {E₂ : Y → Type*}
-    [∀ x, NormedAddCommGroup (E₁ x)] [∀ x, NormedSpace ℝ (E₁ x)]
-    [∀ y, NormedAddCommGroup (E₂ y)] [∀ y, NormedSpace ℝ (E₂ y)]
-    [TopologicalSpace (TotalSpace F E₁)] [FiberBundle F E₁] [VectorBundle ℝ F E₁]
-    [TopologicalSpace (TotalSpace F E₂)] [FiberBundle F E₂] [VectorBundle ℝ F E₂]
-    {f : X → Y} {x₀ : X} (hf : ContinuousAt f x₀) {A : ∀ x, E₁ x →L[ℝ] E₂ (f x)}
-    (hA : ∀ᶠ x in 𝓝 x₀, ∀ v,
-      (trivializationAt F E₂ (f x₀) ⟨f x, A x v⟩).2 = (trivializationAt F E₁ x₀ ⟨x, v⟩).2) :
-    ContinuousAt (fun x ↦ ContinuousLinearMap.inCoordinates F E₁ F E₂ x₀ x (f x₀) (f x) (A x))
-      x₀ := by
-  refine (continuousAt_const (y := ContinuousLinearMap.id ℝ F)).congr ?_
-  filter_upwards [hA, (trivializationAt F E₁ x₀).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F E₁ x₀),
-    hf.eventually_mem ((trivializationAt F E₂ (f x₀)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F E₂ (f x₀)))] with x hAx hx hfx
-  ext v
-  rw [ContinuousLinearMap.inCoordinates_eq hx hfx]
-  simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply,
-    Trivialization.continuousLinearEquivAt_apply, hAx]
-  -- The right side is the chart at `x` applied to its own inverse.
-  exact ((trivializationAt F E₁ x₀).continuousLinearEquivAt ℝ x hx).apply_symm_apply v |>.symm
-
 /-- **The inclusion of Grassmann bundles is continuous.** -/
 theorem continuous_inclusion : Continuous (inclusion F E k W) :=
   -- The trivializations of a pullback are by definition the pullbacks of those of `E`
   -- (`FiberBundle.pullback`), which read a fibre vector through the trivialization of `E` at the
   -- image point (`Bundle.Trivialization.pullback_apply`), so the hypothesis holds by `rfl`.
   continuous_map (ContinuousMap.subtypeVal W).continuous fun _ ↦
-    continuousAt_inCoordinates_of_trivializationAt_apply continuous_subtypeVal.continuousAt
-      (.of_forall fun _ _ ↦ rfl)
+    ContinuousLinearMap.continuousAt_inCoordinates_of_trivializationAt_apply
+      continuous_subtypeVal.continuousAt (.of_forall fun _ _ ↦ rfl)
 
 section Transitivity
 
@@ -172,10 +147,10 @@ def restrictRestrictHomeomorph (W' : Set W) :
     -- All trivializations involved are pullbacks of those of `E`, so, as in
     -- `continuous_inclusion`, the identities of the fibres are the identity in coordinates by
     -- `rfl`.
-    (fun _ ↦ continuousAt_inCoordinates_of_trivializationAt_apply
+    (fun _ ↦ ContinuousLinearMap.continuousAt_inCoordinates_of_trivializationAt_apply
       ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).continuousAt
       (.of_forall fun _ _ ↦ rfl))
-    (fun _ ↦ continuousAt_inCoordinates_of_trivializationAt_apply
+    (fun _ ↦ ContinuousLinearMap.continuousAt_inCoordinates_of_trivializationAt_apply
       ((continuous_subtypeVal.subtype_mk _).subtype_mk _).continuousAt
       (.of_forall fun _ _ ↦ rfl))
 
