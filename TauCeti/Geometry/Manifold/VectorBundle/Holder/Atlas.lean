@@ -41,6 +41,11 @@ bounds combine over the compact closure of the chart image by a Lebesgue number 
 (`IsCompact.exists_holderOnWith_thickening_and_norm_le`), and the derivatives of lower order are
 continuous near the compact closure, hence bounded on it.
 
+The same local argument applies to a section vanishing off a closed subset `L` of the domain of
+a single chart `i` of `A`, whose reading in chart `i` alone is `C^{k,α}`: near a point `x` of the
+domain of chart `i` it is the argument above, and near a point outside that domain, hence outside
+`L`, the reading in chart `j` vanishes.
+
 The identity on underlying sections has closed graph, since the readings of an element at a point
 depend continuously on it, and two readings of the same point in charts of `A` and `B` differ by
 an invertible linear map. Both spaces are complete, so the closed graph theorem makes it
@@ -51,6 +56,9 @@ continuous.
 * `TauCeti.FiniteBundleAtlas.MemHolderSection.of_atlas` and
   `TauCeti.FiniteBundleAtlas.memHolderSection_iff_of_atlas`: having `C^{k,α}` readings does not
   depend on the atlas.
+* `TauCeti.FiniteBundleAtlas.memHolderSection_of_forall_notMem_eq_zero`: a section vanishing off
+  a closed subset of the domain of one chart, with `C^{k,α}` reading in that chart, has `C^{k,α}`
+  readings in the charts of every atlas.
 * `TauCeti.HolderSection.atlasLinearEquiv` and `TauCeti.HolderSection.atlasEquiv`: the identity on
   underlying sections, as a linear equivalence and as an isomorphism of Banach spaces, compatible
   with inversion and composition (`TauCeti.HolderSection.atlasEquiv_symm`,
@@ -85,17 +93,18 @@ namespace FiniteBundleAtlas
 variable {A B} {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
   {k : ℕ} {α : ℝ≥0}
 
-/-- Near every point of the closure of the image of chart `j` of `B`, the reading in chart `j` of
-a section with `C^{k,α}` readings in the charts of `A` is `C^k` on an open neighbourhood, and its
-`k`-th derivative is `α`-Hölder on a ball. -/
+/-- Near a point `x` of the closure of the domain of chart `j` of `B` lying in the domain of
+chart `i` of `A`, the reading in chart `j` of a section with `C^{k,α}` reading in chart `i` is
+`C^k` on an open neighbourhood of `B.chart j x`, and its `k`-th derivative is `α`-Hölder on a
+ball around it. -/
 private theorem exists_contDiffOn_and_holderOnWith (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
-    {s : ∀ x, V x} (hs : A.MemHolderSection k α s) (j : Fin B.n) {y : E}
-    (hy : y ∈ closure (B.image j : Set E)) :
-    ∃ N : Set E, IsOpen N ∧ y ∈ N ∧ ContDiffOn ℝ k (B.coord j s) N ∧ ∃ r > 0, ∃ L : ℝ≥0,
-      HolderOnWith L α (iteratedFDeriv ℝ k (B.coord j s)) (Metric.ball y r) := by
-  obtain ⟨x, hxcl, rfl⟩ := B.closure_image_subset_chart_image_closure_dom j hy
-  obtain ⟨i, hi⟩ := A.exists_mem_dom x
-  obtain ⟨f, hf⟩ := memHolderSection_iff.1 hs i
+    {s : ∀ x, V x} {i : Fin A.n}
+    (hs : ∃ f : CkHolderSpaceOn k α (A.image i) F, ∀ y : A.image i, f y = A.coord i s y)
+    (j : Fin B.n) {x : M} (hxcl : x ∈ closure (B.dom j)) (hi : x ∈ A.dom i) :
+    ∃ N : Set E, IsOpen N ∧ B.chart j x ∈ N ∧ ContDiffOn ℝ k (B.coord j s) N ∧
+      ∃ r > 0, ∃ L : ℝ≥0,
+        HolderOnWith L α (iteratedFDeriv ℝ k (B.coord j s)) (Metric.ball (B.chart j x) r) := by
+  obtain ⟨f, hf⟩ := hs
   have hxs : x ∈ (B.chart j).source := B.closure_dom_subset_source j hxcl
   set N : Set E := (B.chart j).target ∩ (B.chart j).symm ⁻¹' (A.dom i ∩ (B.triv j).baseSet)
   have hNo : IsOpen N := (B.chart j).isOpen_inter_preimage_symm
@@ -136,17 +145,18 @@ private theorem exists_contDiffOn_and_holderOnWith (hα : α ≤ 1) (hn : (k : W
   rw [hev a ha, hev b hb]
   exact hL a ha b hb
 
-variable (B) in
-/-- **Independence of `C^{k,α}` sections from the atlas.** For `k + 1 ≤ n` and `α ≤ 1`, a section
-of a `Cⁿ` vector bundle with `C^{k,α}` readings in the charts of one finite bundle atlas has
-`C^{k,α}` readings in the charts of every other finite bundle atlas. -/
-theorem MemHolderSection.of_atlas (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
-    {s : ∀ x, V x} (hs : A.MemHolderSection k α s) : B.MemHolderSection k α s := by
-  refine memHolderSection_iff.2 fun j ↦ ?_
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+/-- **Gluing local Hölder bounds.** If near every point of the compact closure of the image of
+chart `j` the reading of a section is `C^k` on an open neighbourhood with `k`-th derivative
+`α`-Hölder on a ball, then this reading is `C^{k,α}` on the image of chart `j`. -/
+private theorem exists_eq_coord_of_forall_mem_closure {s : ∀ x, V x} (j : Fin B.n)
+    (h : ∀ y ∈ closure (B.image j : Set E), ∃ N : Set E, IsOpen N ∧ y ∈ N ∧
+      ContDiffOn ℝ k (B.coord j s) N ∧ ∃ r > 0, ∃ L : ℝ≥0,
+        HolderOnWith L α (iteratedFDeriv ℝ k (B.coord j s)) (Metric.ball y r)) :
+    ∃ f : CkHolderSpaceOn k α (B.image j) F, ∀ y : B.image j, f y = B.coord j s y := by
   set K := closure (B.image j : Set E)
   have hK : IsCompact K := B.isCompact_closure_image j
-  choose! N hNo hyN hcd r hr L hL using
-    fun y (hy : y ∈ K) ↦ exists_contDiffOn_and_holderOnWith hα hn hs j hy
+  choose! N hNo hyN hcd r hr L hL using h
   have hU : IsOpen (⋃ y ∈ K, N y) := isOpen_biUnion fun y hy ↦ hNo y hy
   have hKU : K ⊆ ⋃ y ∈ K, N y := fun y hy ↦ mem_biUnion hy (hyN y hy)
   have hcdU : ContDiffOn ℝ k (B.coord j s) (⋃ y ∈ K, N y) :=
@@ -165,6 +175,51 @@ theorem MemHolderSection.of_atlas (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 
     ⟨L', (hL'.mono (hΩK.trans (Metric.self_subset_thickening hδ K))).holderWith⟩
   exact ⟨CkHolderSpaceOn.ofContDiffOn _ (hcdU.mono (hΩK.trans hKU)) hbdd hholder,
     CkHolderSpaceOn.ofContDiffOn_apply _ _ hbdd hholder⟩
+
+variable (B) in
+/-- **Independence of `C^{k,α}` sections from the atlas.** For `k + 1 ≤ n` and `α ≤ 1`, a section
+of a `Cⁿ` vector bundle with `C^{k,α}` readings in the charts of one finite bundle atlas has
+`C^{k,α}` readings in the charts of every other finite bundle atlas. -/
+theorem MemHolderSection.of_atlas (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
+    {s : ∀ x, V x} (hs : A.MemHolderSection k α s) : B.MemHolderSection k α s := by
+  refine memHolderSection_iff.2 fun j ↦ exists_eq_coord_of_forall_mem_closure j fun y hy ↦ ?_
+  obtain ⟨x, hxcl, rfl⟩ := B.closure_image_subset_chart_image_closure_dom j hy
+  obtain ⟨i, hi⟩ := A.exists_mem_dom x
+  exact exists_contDiffOn_and_holderOnWith hα hn (memHolderSection_iff.1 hs i) j hxcl hi
+
+variable (B) in
+/-- **Sections localized in one chart.** For `k + 1 ≤ n` and `α ≤ 1`, a section of a `Cⁿ` vector
+bundle that vanishes off a closed subset `L` of the domain of chart `i` of `A`, and whose reading in
+chart `i` is `C^{k,α}` on the image of that chart, has `C^{k,α}` readings in the charts of every
+finite bundle atlas. -/
+theorem memHolderSection_of_forall_notMem_eq_zero (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
+    {s : ∀ x, V x} {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
+    (hsL : ∀ x ∉ L, s x = 0)
+    (hs : ∃ f : CkHolderSpaceOn k α (A.image i) F, ∀ y : A.image i, f y = A.coord i s y) :
+    B.MemHolderSection k α s := by
+  refine memHolderSection_iff.2 fun j ↦ exists_eq_coord_of_forall_mem_closure j fun y hy ↦ ?_
+  obtain ⟨x, hxcl, rfl⟩ := B.closure_image_subset_chart_image_closure_dom j hy
+  by_cases hi : x ∈ A.dom i
+  · exact exists_contDiffOn_and_holderOnWith hα hn hs j hxcl hi
+  -- Off `L` the section vanishes, so near `B.chart j x` its reading in chart `j` is zero.
+  have hxs : x ∈ (B.chart j).source := B.closure_dom_subset_source j hxcl
+  set N : Set E := (B.chart j).target ∩ (B.chart j).symm ⁻¹' (Lᶜ ∩ (B.triv j).baseSet)
+  have hNo : IsOpen N :=
+    (B.chart j).isOpen_inter_preimage_symm (hL.isOpen_compl.inter (B.triv j).open_baseSet)
+  have hyN : B.chart j x ∈ N := ⟨(B.chart j).map_source hxs, by
+    rw [mem_preimage, (B.chart j).left_inv hxs]
+    exact ⟨fun h ↦ hi (hLi h), B.closure_dom_subset_baseSet j hxcl⟩⟩
+  have heq : EqOn (B.coord j s) 0 N := fun z hz ↦ by
+    rw [B.coord_def, hsL _ hz.2.1, ← (B.triv j).continuousLinearMapAt_apply_of_mem (R := ℝ) hz.2.2,
+      map_zero, Pi.zero_apply]
+  obtain ⟨r, hr, hrN⟩ := Metric.isOpen_iff.1 hNo _ hyN
+  have hev (c : E) (hc : c ∈ Metric.ball (B.chart j x) r) :
+      iteratedFDeriv ℝ k (B.coord j s) c = 0 := by
+    rw [((heq.eventuallyEq_of_mem (hNo.mem_nhds (hrN hc))).iteratedFDeriv ℝ k).eq_of_nhds,
+      iteratedFDeriv_zero, Pi.zero_apply]
+  refine ⟨N, hNo, hyN, contDiffOn_const.congr heq, r, hr, 0, fun a ha b hb ↦ ?_⟩
+  rw [hev a ha, hev b hb, edist_self]
+  exact zero_le
 
 variable (A B) in
 /-- For `k + 1 ≤ n` and `α ≤ 1`, a section of a `Cⁿ` vector bundle has `C^{k,α}` readings in the
