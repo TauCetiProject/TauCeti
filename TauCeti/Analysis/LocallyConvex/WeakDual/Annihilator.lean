@@ -202,6 +202,9 @@ theorem mem_annihilatorOrderIso_symm_iff {G : (ClosedSubmodule 𝕜 (WeakDual �
   rw [← mem_toSubmodule_iff, toSubmodule_annihilatorOrderIso_symm_apply]
   simp only [Submodule.mem_orthogonalBilin, Submodule.mem_comap, mem_toSubmodule_iff,
     topDualPairing_apply]
-  exact ⟨fun h φ hφ ↦ h (StrongDual.toWeakDual.symm φ) (by simpa using hφ), fun h n hn ↦ h _ hn⟩
+  refine ⟨fun h φ hφ ↦ ?_, fun h n hn ↦ ?_⟩
+  · obtain ⟨n, rfl⟩ := StrongDual.toWeakDual.surjective φ
+    simpa only [LinearEquiv.coe_coe, StrongDual.toWeakDual_apply] using h n hφ
+  · simpa only [LinearEquiv.coe_coe, StrongDual.toWeakDual_apply] using h _ hn
 
 end ClosedSubmodule
