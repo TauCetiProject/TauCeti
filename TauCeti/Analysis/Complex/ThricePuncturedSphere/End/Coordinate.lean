@@ -383,6 +383,13 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
 
+/-- A point of the closed disc `‖w‖ ≤ 2 exp (2πρ)` lies outside the circle `s = -L/2` of the end at
+`∞` for every `L ≥ 0` with `L ≥ 2ρ`. -/
+theorem endSign_mul_re_endCoord_inf_le {ρ L : ℝ} (hL : 0 ≤ L) (hLρ : 2 * ρ ≤ L) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * ρ)) : inf.endSign * (inf.endCoord w).re ≤ L / 2 := by
+  rw [endSign_inf, neg_one_mul]
+  exact neg_re_endCoord_inf_le (by linarith) (hw.trans (by gcongr; linarith))
+
 /-- Away from `0`, the signed longitudinal coordinate `-s` of the end at `∞` exceeds `r` exactly
 off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
 theorem lt_neg_re_endCoord_inf_iff {r : ℝ} {w : ℂ} (hw : w ≠ 0) :
