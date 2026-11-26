@@ -49,13 +49,13 @@ noncomputable def reduction (n : ℕ) :
 @[simp]
 theorem reduction_algebraMap (n : ℕ) (a : ℤ_[p]) :
     reduction p Ω n (algebraMap ℤ_[p] _ a) = PadicInt.toZMod a := by
-  rw [← RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
-  exact ((integralPowerBasis p Ω n).lift 0 _).commutes a
+  rw [reduction, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.commutes,
+    RingHom.algebraMap_toAlgebra]
 
 /-- The chosen cyclotomic difference reduces to zero. -/
 theorem reduction_integralRoot_sub_one (n : ℕ) :
     reduction p Ω n (integralRoot p Ω n - 1) = 0 := by
-  rw [reduction, ← integralPowerBasis_gen]
+  rw [reduction, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, ← integralPowerBasis_gen]
   exact PowerBasis.lift_gen _ _ _
 
 /-- The chosen integral root reduces to one. -/
@@ -71,25 +71,6 @@ theorem reduction_aeval (n : ℕ) (f : ℤ_[p][X]) :
   rw [← integralPowerBasis_gen]
   simp [reduction, -integralPowerBasis_gen, ← coeff_zero_eq_aeval_zero',
     RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
-
-/-- Scalar compatibility and the chosen root characterize cyclotomic reduction. -/
-theorem reduction_unique (n : ℕ)
-    (f : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →+* ZMod p)
-    (hscalar : ∀ a : ℤ_[p], f (algebraMap ℤ_[p] _ a) = PadicInt.toZMod a)
-    (hroot : f (integralRoot p Ω n) = 1) : f = reduction p Ω n := by
-  let g : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →ₐ[ℤ_[p]] ZMod p :=
-    { f with
-      commutes' := fun a ↦ by
-        rw [RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
-        exact hscalar a }
-  let g' : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →ₐ[ℤ_[p]] ZMod p :=
-    { reduction p Ω n with
-      commutes' := fun a ↦ by
-        rw [RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
-        exact reduction_algebraMap p Ω n a }
-  have h := (integralPowerBasis p Ω n).algHom_ext (f := g) (g := g') (by
-    simp [integralPowerBasis_gen, g, g', hroot])
-  exact congrArg AlgHom.toRingHom h
 
 /-- The kernel of reduction is the principal cyclotomic difference ideal. -/
 theorem ker_reduction (n : ℕ) :
@@ -156,10 +137,10 @@ noncomputable def residueFieldEquiv (n : ℕ) :
 theorem residueFieldEquiv_residue (n : ℕ)
     (x : integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :
     residueFieldEquiv p Ω n (residue _ x) = reduction p Ω n x := by
-  rw [residue]
-  exact (congrArg (quotientSpanEquivZMod p Ω n)
-    (Ideal.quotEquivOfEq_mk (maximalIdeal_eq_span_integralRoot_sub_one p Ω n) x)).trans
-      (quotientSpanEquivZMod_mk p Ω n x)
+  -- Use the ideal quotient carrier to match the coercion in RingEquiv.trans_apply.
+  change ((Ideal.quotEquivOfEq (maximalIdeal_eq_span_integralRoot_sub_one p Ω n)).trans
+    (quotientSpanEquivZMod p Ω n)) (Ideal.Quotient.mk _ x) = _
+  simp only [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk, quotientSpanEquivZMod_mk]
 
 /-- The inverse equivalence recovers the canonical residue class from cyclotomic reduction. -/
 @[simp]
@@ -168,14 +149,22 @@ theorem residueFieldEquiv_symm_reduction (n : ℕ)
     (residueFieldEquiv p Ω n).symm (reduction p Ω n x) = residue _ x := by
   rw [← residueFieldEquiv_residue p Ω n x, RingEquiv.symm_apply_apply]
 
-/-- Compatibility with reduction uniquely determines the residue-field map. -/
+/-- Every ring homomorphism from the residue field to `ZMod p` is the canonical equivalence. -/
 theorem residueFieldEquiv_unique (n : ℕ)
-    (f : ResidueField (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) →+* ZMod p)
-    (h : f.comp (residue _) = reduction p Ω n) :
+    (f : ResidueField (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) →+* ZMod p) :
     f = (residueFieldEquiv p Ω n).toRingHom := by
-  refine (RingHom.cancel_right residue_surjective).mp (h.trans ?_)
+  apply (RingHom.cancel_right (f := (residueFieldEquiv p Ω n).symm.toRingHom)
+    (residueFieldEquiv p Ω n).symm.surjective).mp
+  exact RingHom.ext_zmod _ _
+
+/-- Every ring homomorphism from the integral cyclotomic level to `ZMod p` is reduction. -/
+theorem reduction_unique (n : ℕ)
+    (f : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →+* ZMod p) :
+    f = reduction p Ω n := by
+  rw [← ResidueField.lift_comp_residue f,
+    residueFieldEquiv_unique p Ω n (ResidueField.lift f)]
   ext x
-  simp
+  exact residueFieldEquiv_residue p Ω n x
 
 /-- A cyclotomic integer is a unit exactly when its reduction is nonzero. -/
 theorem isUnit_iff_reduction_ne_zero (n : ℕ)
