@@ -48,29 +48,30 @@ heads depend continuously.
   nonnegative, and its real part is lower semicontinuous at every point where every head is
   continuous.
 
-This is Section 6.1 of the roadmap `RemainingAndMainTermsOfSecondMoments` (ShortGRH).
-
 ## Implementation notes
 
-The roadmap asks for products of finitely many systems on `ℂ`, with entry map `c ↦ c` on units and
-`1` at `0` and twist `c ↦ exp (c - conj c)`, and one more system on `C`. The two product results
-here cover any finite family of systems on arbitrary rings `C v` with arbitrary entry maps and
-twists; the roadmap's case is `(SieveSystem.pi hJ').prod hJ` with constant families. The forms of a
-product are evaluated on the components of the heads: `Prod.fst ∘ p` and `Prod.snd ∘ p` for
-`prod`, and `fun k ↦ p k v` for `pi`.
+The two product results cover any finite family of systems on arbitrary rings `C v`, with arbitrary
+entry maps and twists. Products of finitely many systems on `ℂ` (entry map `c ↦ c` on units and `1`
+at `0`, twist `c ↦ exp (c - conj c)`) and one more system on `C` are the special case
+`(SieveSystem.pi hJ').prod hJ` with constant families. The forms of a product are evaluated on the
+components of the heads: `Prod.fst ∘ p` and `Prod.snd ∘ p` for `prod`, and `fun k ↦ p k v` for
+`pi`.
 
-The roadmap's first condition, integrability of `c ↦ ψ (ξ c) J (i + 1)` with integral `J i` at
-`ξ = 0`, is split into the fields `integrable_mul_update` and `integral_update`; given
-`ψ 0 = 1` the two formulations agree. The ring `C` need not be commutative.
+Integrability of `c ↦ ψ (ξ c) J (i + 1)` with integral `J i` at `ξ = 0` is split into the fields
+`integrable_mul_update` and `integral_update`; given `ψ 0 = 1` the two formulations are equivalent.
+The ring `C` need not be commutative.
 
 ## References
 
 * The definition and the results are adapted from the shorter formal proof of the Riemann
-  hypothesis for Dirichlet `L`-functions (https://github.com/lsernau/grh-lean, Apache 2.0,
-  Copyright 2026 Anthropic, PBC), file `src/New/Spanning/MainTerm/SieveSystem.lean`: declarations
-  `New.SieveSystem`, `New.SieveSystem.pi`, `New.SieveSystem.integrable_and_integral_sum_update`,
-  `New.SieveSystem.sum_nonneg` and `New.SieveSystem.lowerSemicontinuousAt_sum`. There a product of
-  finitely many systems on `ℂ` and one system on `C` is treated in one step.
+  hypothesis for Dirichlet `L`-functions, grh-lean (https://github.com/lsernau/grh-lean, commit
+  `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+  `src/New/Spanning/MainTerm/SieveSystem.lean`: the structure `New.SieveSystem`, the product
+  `New.SieveSystem.pi`, and `New.SieveSystem.integrable_update`,
+  `New.SieveSystem.integrable_sum_update`, `New.SieveSystem.integral_sum_update`,
+  `New.SieveSystem.norm_integral_mul_sum_update_le`, `New.SieveSystem.sum_nonneg` and
+  `New.SieveSystem.lowerSemicontinuousAt_sum`. There a product of finitely many systems on `ℂ`
+  and one system on `C` is treated in one step; here it is split into `prod` and `pi`.
 * I. Schur, *Bemerkungen zur Theorie der beschränkten Bilinearformen mit unendlich vielen
   Veränderlichen*, J. Reine Angew. Math. 140 (1911), for the product theorem.
 -/
