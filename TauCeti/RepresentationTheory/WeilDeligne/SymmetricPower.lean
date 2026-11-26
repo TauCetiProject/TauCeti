@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.SymmetricPower.Derivation
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.SymmetricPower
+public import TauCeti.RepresentationTheory.WeilDeligne.InertialType
 public import TauCeti.RepresentationTheory.WeilDeligne.Operations
 
 /-!
@@ -27,7 +28,8 @@ The construction is functorial on morphisms and isomorphisms of parameters; in p
 carries the isomorphism `D ≅ D.transport e` to an isomorphism of symmetric powers, so the symmetric
 power of a transport is the transport of the symmetric power. The zeroth
 symmetric power has trivial Weil action and zero monodromy, the first is isomorphic to the
-parameter itself, a twist by `χ` becomes a twist by `χ ^ m`, and zero monodromy stays zero.
+parameter itself, a twist by `χ` becomes a twist by `χ ^ m`, zero monodromy stays zero, and the
+inertial type of the symmetric power is the symmetric power of the inertial type.
 
 ## Main definitions
 
@@ -45,6 +47,9 @@ parameter itself, a twist by `χ` becomes a twist by `χ ^ m`, and zero monodrom
   zeroth symmetric power is the trivial parameter.
 * `TauCeti.WeilDeligneParameter.sym_twist`: `Sym^m (D ⊗ χ) = Sym^m D ⊗ χ ^ m`.
 * `TauCeti.WeilDeligneParameter.sym_N_eq_zero`: `Sym^m ∘ (r, 0)` has zero monodromy.
+* `TauCeti.WeilDeligneParameter.inertialType_sym`,
+  `TauCeti.WeilDeligneParameter.Hom.inertialType_sym`: the inertial type commutes with symmetric
+  powers.
 
 ## References
 
@@ -60,7 +65,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Module TensorProduct
+open _root_.Module TensorProduct
 
 namespace WeilDeligneParameter
 
@@ -208,6 +213,20 @@ theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
   ext w : 1
   refine SymmetricPower.ext fun v ↦ ?_
   simp [Representation.symmetricPower_apply, MultilinearMap.map_smul_univ]
+
+/-! ### Inertial types -/
+
+/-- **The inertial type of a symmetric power** is the symmetric power of the inertial type. -/
+@[simp]
+theorem inertialType_sym : (D.sym m).inertialType = D.inertialType.symmetricPower m := by
+  ext w : 1
+  simp [Representation.symmetricPower_apply]
+
+/-- The inertial type of the symmetric power of a morphism is the symmetric power of its inertial
+type, read through `TauCeti.WeilDeligneParameter.inertialType_sym`. -/
+theorem Hom.inertialType_sym (f : Hom D₁ D₂) (x : Sym[E]^m V₁) :
+    (f.sym m).inertialType x = f.inertialType.symmetricPower m x := by
+  simp [← Representation.IntertwiningMap.toLinearMap_apply]
 
 end WeilDeligneParameter
 
