@@ -28,8 +28,9 @@ line its derivative is the diagonal matrix `(-z⁻², z⁻¹, …, z⁻¹)`
 (`Projectivization.hasFDerivAt_affineChart_castLE_symm_trans`).
 
 The chart `a` is the preferred chart at the coordinate point `[e_a]`
-(`Projectivization.coordLineCenter`, `Projectivization.chartAt_coordLineCenter`), and it contains
-the points of the line in the affine open `a` of `ℙ¹`.
+(`Projectivization.coordLineCenter`, `Projectivization.chartAt_coordLineCenter`), the image of the
+coordinate point `[e_a]` of `ℙ¹` (`Projectivization.coordLine_mk_single`), and it contains the
+points of the line in the affine open `a` of `ℙ¹`.
 
 ## Main declarations
 
@@ -215,6 +216,20 @@ variable {m}
 preferred chart is the chart `a`. -/
 def coordLineCenter (a : Fin 2) : ℙ 𝕜 (Fin (m + 2) → 𝕜) :=
   mk 𝕜 (Pi.single (Fin.castLE (Nat.le_add_left 2 m) a) 1) (by simp)
+
+/-- The coordinate point `[e_a]` of `ℙᵐ⁺¹` in homogeneous coordinates. -/
+theorem coordLineCenter_def (a : Fin 2) :
+    coordLineCenter (𝕜 := 𝕜) (m := m) a =
+      mk 𝕜 (Pi.single (Fin.castLE (Nat.le_add_left 2 m) a) 1) (by simp) :=
+  (rfl)
+
+/-- The coordinate line maps the coordinate point `[e_a]` of `ℙ¹` to the coordinate point `[e_a]`
+of `ℙᵐ⁺¹`. -/
+theorem coordLine_mk_single (a : Fin 2) :
+    coordLine m (mk 𝕜 (Pi.single a 1) (by simp)) = coordLineCenter (𝕜 := 𝕜) (m := m) a := by
+  rw [coordLine_mk, coordLineCenter_def]
+  congr 1
+  exact (Fin.castLE_injective (Nat.le_add_left 2 m)).extend_single a (1 : 𝕜)
 
 /-- The preferred chart at `[e_a]` is the chart `a` of `ℙᵐ⁺¹`. -/
 theorem chartAt_coordLineCenter (a : Fin 2) :
