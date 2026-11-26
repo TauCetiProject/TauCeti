@@ -128,8 +128,7 @@ def diagonal {n : Type*} [Fintype n] [DecidableEq n] (a : n → K) (ha : ∀ i, 
     have hj : σ (x j) * a j = 0 := by
       simpa [Matrix.toLinearMapₛₗ₂'_diagonal_apply, Pi.single_apply] using hx (Pi.single j 1)
     have := (mul_right_mem_nonZeroDivisors_eq_zero_iff (ha₀ j)).1 hj
-    rw [Pi.zero_apply, ← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := x j), this,
-      map_zero]
+    exact (map_eq_zero_iff _ (RingHomInvPair.toRingEquiv σ σ).injective).1 this
 
 /-- The form of `⟨a₁, …, aₙ⟩` is `∑ σ (x i) * a i * y i`. -/
 @[simp]

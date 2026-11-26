@@ -127,13 +127,11 @@ def hyperbolic (ι : Type*) [Fintype ι] : SignedHermitianSpace K ((ι → K) ×
     exact Finset.sum_congr rfl fun _ _ ↦ by rw [add_comm, mul_comm (σ _), mul_comm (σ _)]
   separatingLeft x hx := by
     classical
-    have hσ (c : K) (hc : σ c = 0) : c = 0 := by
-      rw [← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := c), hc, map_zero]
+    have hσ (c : K) (hc : σ c = 0) : c = 0 :=
+      (map_eq_zero_iff _ (RingHomInvPair.toRingEquiv σ σ).injective).1 hc
     refine Prod.ext (funext fun j ↦ hσ _ ?_) (funext fun j ↦ hσ _ ?_)
     · simpa [Pi.single_apply] using hx (0, Pi.single j 1)
-    · have h := hx (Pi.single j 1, 0)
-      simp [Pi.single_apply] at h
-      simpa [smul_smul] using congrArg (ε • ·) h
+    · simpa [Pi.single_apply, smul_smul] using congrArg (ε • ·) (hx (Pi.single j 1, 0))
 
 /-- The form of `H^ι` is `∑ i, (σ (a i) * d i + ε • (σ (b i) * c i))`. -/
 @[simp]
@@ -262,15 +260,21 @@ theorem isHyperbolicFrame_hyperbolic [RingHomInvPair σ σ] {ι : Type*} [Fintyp
   form_right i j := by simp
   form_left_right i j := by simp [Pi.single_apply, eq_comm]
 
+/-- If `h (x i) (y j) = δᵢⱼ`, then `h (y i) (x j) = ε δᵢⱼ`. -/
+theorem form_right_left_of_form_left_right {ι : Type*} [DecidableEq ι] {x y : ι → V}
+    (hxy : ∀ i j, H.form (x i) (y j) = if i = j then 1 else 0) (i j : ι) :
+    H.form (y i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
+  rw [H.form_swap, hxy, Int.units_smul_eq_cast_mul]
+  split_ifs with h₁ h₂ h₂ <;> simp_all [eq_comm]
+
 namespace IsHyperbolicFrame
 
 variable {ι : Type*} [DecidableEq ι] {x y : ι → V}
 
 /-- In a hyperbolic frame, `h (y i) (x j) = ε δᵢⱼ`. -/
 theorem form_right_left (hxy : H.IsHyperbolicFrame x y) (i j : ι) :
-    H.form (y i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-  rw [H.form_swap, hxy.form_left_right, Int.units_smul_eq_cast_mul]
-  split_ifs with h₁ h₂ h₂ <;> simp_all [eq_comm]
+    H.form (y i) (x j) = if i = j then ((ε : ℤ) : K) else 0 :=
+  form_right_left_of_form_left_right hxy.form_left_right i j
 
 /-- An isometric linear map carries hyperbolic frames to hyperbolic frames. -/
 theorem map {H₂ : SignedHermitianSpace K V₂ σ ε} (hxy : H.IsHyperbolicFrame x y)
@@ -305,7 +309,7 @@ theorem isIsotropic_left [RingHomInvPair σ σ] (hxy : H.IsHyperbolicFrame x y) 
   have h := congrArg (fun v ↦ H.form v (y i)) hc
   simp only [map_smulₛₗ, LinearMap.smul_apply, hxy.form_left_right, smul_eq_mul, map_zero,
     LinearMap.zero_apply, ↓reduceIte, mul_one] at h
-  rw [← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := c), h, map_zero]
+  exact (map_eq_zero_iff _ (RingHomInvPair.toRingEquiv σ σ).injective).1 h
 
 /-- A hyperbolic frame is an isometric map from the hyperbolic space. -/
 theorem form_hyperbolicFrameMap [RingHomInvPair σ σ] [Fintype ι] (hxy : H.IsHyperbolicFrame x y)
@@ -387,9 +391,7 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
   have hxe (i j : ι) : H.form (x i) (e j) = if i = j then 1 else 0 := by
     simp only [e, map_smul, smul_eq_mul, H.form_swap (u j), hu, Int.units_smul_eq_cast_mul]
     split_ifs <;> simp [*, Int.cast_units_mul_self]
-  have hex (i j : ι) : H.form (e i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-    rw [H.form_swap, hxe, Int.units_smul_eq_cast_mul]
-    split_ifs <;> simp_all [eq_comm]
+  have hex := form_right_left_of_form_left_right hxe
   -- Correct `e j` by `∑ μ i j • x i`.
   obtain ⟨μ, hμ⟩ : ∃ μ : ι → ι → K, ∀ i j, H.form (e i) (e j) + ε • μ i j + σ (μ j i) = 0 := by
     let _ : LinearOrder ι := LinearOrder.lift' _ (Fintype.equivFin ι).injective
