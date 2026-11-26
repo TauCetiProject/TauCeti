@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.SymbolAlgebra.CentralSimple
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Splitting cyclic algebras by an `n`-th root of `a`
@@ -52,6 +53,13 @@ hypothesis on `a` cannot be dropped: Hamilton's quaternions `(-1, -1)_(-1)` over
   `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_x`,
   `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_y`: the generators go to the diagonal
   matrix and to the shift matrix with wrap factor `b`.
+* `TauCeti.SymbolAlgebra.algEquivMatrixOfPowEq_basis`,
+  `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_basis`: the monomial basis goes to the
+  corresponding products of powers of these matrices.
+* `TauCeti.SymbolAlgebra.algEquivMatrixOfPowEq_symm_single`,
+  `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_symm_single`: the inverse on matrix units. The
+  diagonal matrix units are polynomials in `x`, as its eigenvalues `α ζ⁻¹ ^ i` are pairwise
+  distinct, and powers of `y` move them off the diagonal.
 * `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_eq_algEquivMatrixOfPowEq`,
   `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_map`: the splitting representation for
   the identity extension is `algEquivMatrixOfPowEq`, and it is compatible with a further
@@ -82,16 +90,12 @@ section CommRing
 
 variable {R : Type*} [CommRing R] {n : ℕ} [NeZero n] {ζ a b α : R}
 
-private theorem mkOfPowEq_pow (hζ : ζ ^ n = 1) : rootsOfUnity.mkOfPowEq ζ hζ ^ n = 1 := by
-  ext
-  simp [hζ]
-
 /-- The relation `x ^ n = a` in the representation on `R[X]/(X ^ n - b)`. -/
 private theorem toEnd_x_pow (hζ : ζ ^ n = 1) (hα : α ^ n = a) :
     (α • (standardTameCoverAut b (rootsOfUnity.mkOfPowEq ζ hζ)⁻¹).toLinearMap) ^ n =
       algebraMap R _ a := by
   refine LinearMap.ext fun q => ?_
-  simp [smul_pow, ← AlgEquiv.pow_toLinearMap, ← map_pow, mkOfPowEq_pow hζ, hα]
+  simp [smul_pow, ← AlgEquiv.pow_toLinearMap, ← map_pow, hα]
 
 omit [NeZero n] in
 /-- The relation `y ^ n = b` in the representation on `R[X]/(X ^ n - b)`. -/
@@ -225,6 +229,121 @@ theorem algEquivMatrixOfPowEq_y (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) 
     · simp [(NeZero.ne n).symm]
     · simp [hi, hi.symm, i.isLt.ne]
 
+/-- Under `algEquivMatrixOfPowEq`, the monomial basis vector `x ^ i * y ^ j` is the product of the
+`i`-th power of the diagonal matrix of `x` and the `j`-th power of the shift matrix of `y`. -/
+theorem algEquivMatrixOfPowEq_basis (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) (ha : a ≠ 0)
+    (hb : b ≠ 0) (p : Fin n × Fin n) :
+    algEquivMatrixOfPowEq hζ hα ha hb (basis hζ.pow_eq_one p) =
+      (Matrix.diagonal fun i : Fin n => α * ζ⁻¹ ^ (i : ℕ)) ^ (p.1 : ℕ) *
+        (Matrix.of fun i j : Fin n =>
+          if (i : ℕ) = j + 1 then 1 else if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = n then b else 0) ^
+          (p.2 : ℕ) := by
+  simp
+
+/-- The entries of the `m`-th power of the shift matrix, for `m ≤ n`: it sends the `j`-th basis
+vector to the `(j + m)`-th one, or to `b` times the `(j + m - n)`-th one if `n ≤ j + m`. -/
+private theorem algEquivMatrixOfPowEq_y_pow_apply (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a)
+    (ha : a ≠ 0) (hb : b ≠ 0) {m : ℕ} (hm : m ≤ n) (i j : Fin n) :
+    algEquivMatrixOfPowEq hζ hα ha hb (y ^ m) i j =
+      if (i : ℕ) = j + m then 1 else if (i : ℕ) + n = j + m then b else 0 := by
+  rw [algEquivMatrixOfPowEq_apply, map_pow (toEndAdjoinRootOfPowEq b hζ.pow_eq_one hα),
+    toEndAdjoinRootOfPowEq_y, LinearMap.pow_mulLeft,
+    LinearMap.mulLeft_apply, ← pow_add, add_comm m]
+  rcases lt_or_ge ((j : ℕ) + m) n with h | h
+  · rw [AdjoinRoot.basisXPowSubC_repr_root_pow _ _ ⟨j + m, h⟩, Finsupp.single_apply]
+    simp only [Fin.ext_iff]
+    split_ifs <;> first | rfl | (exfalso; omega)
+  · -- `X ^ (j + m) = b X ^ (j + m - n)`
+    have hk : (j : ℕ) + m - n < n := by omega
+    rw [show (j : ℕ) + m = n + ((⟨j + m - n, hk⟩ : Fin n) : ℕ) by simp; omega, pow_add,
+      AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
+      AdjoinRoot.basisXPowSubC_repr_algebraMap_mul_root_pow, Finsupp.single_apply]
+    simp only [Fin.ext_iff]
+    split_ifs <;> first | rfl | (exfalso; omega)
+
+/-- The diagonal matrix unit at `i` is a polynomial in the diagonal matrix of `x`: as its
+eigenvalues `α ζ⁻¹ ^ k` are pairwise distinct, averaging the powers of `x / (α ζ⁻¹ ^ i)` picks out
+the `i`-th one. -/
+private theorem sum_smul_diagonal_pow (hζ : IsPrimitiveRoot ζ n) (hα : α ≠ 0) (i : Fin n) :
+    ∑ l : Fin n, ((n : K)⁻¹ * (α⁻¹ * ζ ^ (i : ℕ)) ^ (l : ℕ)) •
+      (Matrix.diagonal fun k : Fin n => α * ζ⁻¹ ^ (k : ℕ)) ^ (l : ℕ) = Matrix.single i i 1 := by
+  have hn : (n : K) ≠ 0 := hζ.neZero'.out
+  have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
+  ext r c
+  simp only [Matrix.diagonal_pow, Matrix.sum_apply, Matrix.smul_apply, Matrix.diagonal_apply,
+    Matrix.single_apply, Pi.pow_apply, smul_eq_mul]
+  rcases eq_or_ne r c with rfl | hrc
+  · -- the sum is `n⁻¹ ∑ₗ (ζ ^ (i - r)) ^ l`
+    have h (l : ℕ) : (α⁻¹ * ζ ^ (i : ℕ)) ^ l * (α * ζ⁻¹ ^ (r : ℕ)) ^ l =
+        (ζ ^ ((i : ℤ) - r)) ^ l := by
+      rw [← mul_pow, zpow_sub₀ hζ0, zpow_natCast, zpow_natCast, inv_pow]
+      field_simp
+    simp only [ite_true, mul_assoc, h, ← Finset.mul_sum, hζ.sum_zpow_pow_eq]
+    have hdvd : (n : ℤ) ∣ (i : ℤ) - r ↔ i = r := by
+      refine ⟨fun hd => ?_, fun hir => by simp [hir]⟩
+      rw [Fin.ext_iff]
+      have := Int.eq_zero_of_abs_lt_dvd hd (abs_sub_lt_iff.2 ⟨by omega, by omega⟩)
+      omega
+    by_cases hir : i = r
+    · simp [hir, hn]
+    · simp [hdvd, hir]
+  · simp only [hrc, ite_false, Finset.sum_const_zero, mul_zero]
+    split_ifs with h
+    · exact absurd (h.1.symm.trans h.2) hrc
+    · rfl
+
+/-- The matrix unit `E_(i, j)` as a combination of products of powers of the diagonal matrix of
+`x` and of the shift matrix of `y`: it is the diagonal idempotent at `i` times the `(i - j)`-th
+power of the shift, with `i - j` taken modulo `n`, divided by the wrap factor `b` if `i < j`. -/
+private theorem single_eq_sum_smul (hζ : IsPrimitiveRoot ζ n) (hα : α ≠ 0) (hb : b ≠ 0)
+    (i j : Fin n) :
+    Matrix.single i j 1 = ((n : K)⁻¹ * if j ≤ i then 1 else b⁻¹) •
+      ∑ l : Fin n, (α⁻¹ * ζ ^ (i : ℕ)) ^ (l : ℕ) •
+        ((Matrix.diagonal fun k : Fin n => α * ζ⁻¹ ^ (k : ℕ)) ^ (l : ℕ) *
+          (Matrix.of fun r c : Fin n =>
+            if (r : ℕ) = c + 1 then 1 else if (r : ℕ) = 0 ∧ (c : ℕ) + 1 = n then b else 0) ^
+            ((i - j : Fin n) : ℕ)) := by
+  have hn : (n : K) ≠ 0 := hζ.neZero'.out
+  have ha : α ^ n ≠ 0 := pow_ne_zero n hα
+  -- the sum is `n` times the diagonal idempotent at `i` times the shift power
+  have hsum (M : Matrix (Fin n) (Fin n) K) : ∑ l : Fin n, (α⁻¹ * ζ ^ (i : ℕ)) ^ (l : ℕ) •
+      ((Matrix.diagonal fun k : Fin n => α * ζ⁻¹ ^ (k : ℕ)) ^ (l : ℕ) * M) =
+      (n : K) • (Matrix.single i i 1 * M) := by
+    rw [← sum_smul_diagonal_pow hζ hα i, Finset.sum_mul, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [smul_mul_assoc, smul_smul, ← mul_assoc, mul_inv_cancel₀ hn, one_mul]
+  rw [hsum, smul_smul, mul_comm (n : K)⁻¹, mul_assoc, inv_mul_cancel₀ hn, mul_one,
+    ← algEquivMatrixOfPowEq_y hζ rfl ha hb, ← map_pow]
+  ext r c
+  rw [Matrix.smul_apply, smul_eq_mul, Matrix.single_apply]
+  rcases eq_or_ne r i with rfl | hr
+  · rw [Matrix.single_mul_apply_same, one_mul,
+      algEquivMatrixOfPowEq_y_pow_apply _ _ _ _ (Fin.isLt _).le]
+    rcases le_or_gt j r with hjr | hjr
+    · rw [Fin.coe_sub_iff_le.2 hjr]
+      simp only [Fin.ext_iff, hjr, ite_true, one_mul, true_and]
+      split_ifs <;> first | (exfalso; omega) | rfl
+    · rw [Fin.coe_sub_iff_lt.2 hjr]
+      simp only [Fin.ext_iff, not_le.2 hjr, ite_false, true_and]
+      split_ifs <;> first | (exfalso; omega) | simp [hb]
+  · simp [Matrix.single_mul_apply_of_ne (h := hr), Ne.symm hr]
+
+/-- **The inverse of `algEquivMatrixOfPowEq` on matrix units.** The matrix unit `E_(i, j)` is
+the image of `n⁻¹ κ ∑ₗ (α⁻¹ ζ ^ i) ^ l x ^ l y ^ (i - j)`, with `i - j` taken modulo `n`, `κ = 1`
+for `j ≤ i` and `κ = b⁻¹` otherwise. The sum over `l` gives the diagonal idempotent at `i`, since
+the eigenvalues `α ζ⁻¹ ^ k` of `x` are pairwise distinct, and the power of `y` moves the `j`-th
+basis vector to the `i`-th. -/
+theorem algEquivMatrixOfPowEq_symm_single (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a)
+    (ha : a ≠ 0) (hb : b ≠ 0) (i j : Fin n) :
+    (algEquivMatrixOfPowEq hζ hα ha hb).symm (Matrix.single i j 1) =
+      ((n : K)⁻¹ * if j ≤ i then 1 else b⁻¹) •
+        ∑ l : Fin n, (α⁻¹ * ζ ^ (i : ℕ)) ^ (l : ℕ) • basis hζ.pow_eq_one (l, i - j) := by
+  have hα0 : α ≠ 0 := by
+    rintro rfl
+    exact ha (hα ▸ zero_pow (NeZero.ne n))
+  rw [AlgEquiv.symm_apply_eq, map_smul, map_sum, single_eq_sum_smul hζ hα0 hb]
+  simp_rw [map_smul, algEquivMatrixOfPowEq_basis]
+
 /-- **A cyclic algebra `(a, b)_ζ` with `a` an `n`-th power is split**: its Brauer class is
 trivial. -/
 theorem brauerClass_eq_one_of_pow_eq (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) (ha : a ≠ 0)
@@ -316,6 +435,39 @@ theorem baseChangeAlgEquivMatrix_one_tmul_y (hζ : IsPrimitiveRoot ζ n)
       else if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = n then algebraMap F L b else 0 := by
   rw [baseChangeAlgEquivMatrix, AlgEquiv.ofBijective_apply, baseChangeToMatrix,
     Algebra.TensorProduct.lift_tmul, map_one, one_mul, toMatrixBaseChange_y]
+
+/-- Under `baseChangeAlgEquivMatrix`, the monomial basis vector `1 ⊗ x ^ i * y ^ j` is the
+product of the `i`-th power of the diagonal matrix of `1 ⊗ x` and the `j`-th power of the shift
+matrix of `1 ⊗ y`. -/
+theorem baseChangeAlgEquivMatrix_one_tmul_basis (hζ : IsPrimitiveRoot ζ n)
+    (hα : α ^ n = algebraMap F L a) (ha : a ≠ 0) (hb : b ≠ 0) (p : Fin n × Fin n) :
+    baseChangeAlgEquivMatrix hζ hα ha hb (1 ⊗ₜ basis hζ.pow_eq_one p) =
+      (Matrix.diagonal fun i : Fin n => α * (algebraMap F L ζ)⁻¹ ^ (i : ℕ)) ^ (p.1 : ℕ) *
+        (Matrix.of fun i j : Fin n =>
+          if (i : ℕ) = j + 1 then 1
+          else if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = n then algebraMap F L b else 0) ^ (p.2 : ℕ) := by
+  have h : (1 : L) ⊗ₜ[F] ((x : SymbolAlgebra n ζ a b) ^ (p.1 : ℕ) * y ^ (p.2 : ℕ)) =
+      (1 ⊗ₜ x) ^ (p.1 : ℕ) * (1 ⊗ₜ y) ^ (p.2 : ℕ) := by
+    simp [Algebra.TensorProduct.tmul_pow]
+  rw [basis_apply, h, map_mul, map_pow, map_pow, baseChangeAlgEquivMatrix_one_tmul_x,
+    baseChangeAlgEquivMatrix_one_tmul_y]
+
+/-- **The inverse of `baseChangeAlgEquivMatrix` on matrix units.** The matrix unit `E_(i, j)` is
+the image of `n⁻¹ κ ∑ₗ (α⁻¹ ζ ^ i) ^ l (1 ⊗ x ^ l y ^ (i - j))`, with `i - j` taken modulo `n`,
+`κ = 1` for `j ≤ i` and `κ = b⁻¹` otherwise (`algEquivMatrixOfPowEq_symm_single` over `L`). -/
+theorem baseChangeAlgEquivMatrix_symm_single (hζ : IsPrimitiveRoot ζ n)
+    (hα : α ^ n = algebraMap F L a) (ha : a ≠ 0) (hb : b ≠ 0) (i j : Fin n) :
+    (baseChangeAlgEquivMatrix hζ hα ha hb).symm (Matrix.single i j 1) =
+      ((n : L)⁻¹ * if j ≤ i then 1 else (algebraMap F L b)⁻¹) •
+        ∑ l : Fin n, (α⁻¹ * algebraMap F L ζ ^ (i : ℕ)) ^ (l : ℕ) •
+          (1 ⊗ₜ[F] basis hζ.pow_eq_one (l, i - j) : L ⊗[F] SymbolAlgebra n ζ a b) := by
+  have hα0 : α ≠ 0 := by
+    rintro rfl
+    exact ha ((map_eq_zero (algebraMap F L)).1 (hα ▸ zero_pow (NeZero.ne n)))
+  rw [AlgEquiv.symm_apply_eq, map_smul, map_sum,
+    single_eq_sum_smul (hζ.map_of_injective (algebraMap F L).injective) hα0
+      ((map_ne_zero (algebraMap F L)).2 hb)]
+  simp_rw [map_smul, baseChangeAlgEquivMatrix_one_tmul_basis]
 
 /-- For the trivial extension `L = F`, the splitting representation `baseChangeAlgEquivMatrix` is
 `algEquivMatrixOfPowEq` on `1 ⊗ z`. -/
