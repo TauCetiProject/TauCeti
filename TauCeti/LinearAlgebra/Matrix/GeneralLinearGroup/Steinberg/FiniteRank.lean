@@ -322,6 +322,12 @@ theorem map_comp (g : S →+* T) (f : R →+* S) :
   ext
   simp
 
+/-- Elementwise form of `TauCeti.Steinberg.FiniteRank.map_comp`. -/
+@[simp]
+theorem map_map (g : S →+* T) (f : R →+* S) (z : FiniteRank R n) :
+    map g (map f z) = map (g.comp f) z :=
+  DFunLike.congr_fun (map_comp g f).symm z
+
 /-- The identification with `TauCeti.IndexedSteinbergGroup (Fin n)` commutes with coefficient
 homomorphisms. -/
 @[simp]
@@ -359,6 +365,12 @@ theorem mapIndex_trans {l m : ℕ} (e₁ : Fin l ↪ Fin m) (e₂ : Fin m ↪ Fi
     mapIndex (R := R) (e₁.trans e₂) = (mapIndex e₂).comp (mapIndex e₁) := by
   ext
   simp
+
+/-- Elementwise form of `TauCeti.Steinberg.FiniteRank.mapIndex_trans`. -/
+@[simp]
+theorem mapIndex_mapIndex {l m : ℕ} (e₁ : Fin l ↪ Fin m) (e₂ : Fin m ↪ Fin n)
+    (z : FiniteRank R l) : mapIndex e₂ (mapIndex e₁ z) = mapIndex (e₁.trans e₂) z :=
+  DFunLike.congr_fun (mapIndex_trans e₁ e₂).symm z
 
 /-- The identification with `TauCeti.IndexedSteinbergGroup (Fin n)` commutes with the maps
 induced by index embeddings. -/
