@@ -14,6 +14,8 @@ public import TauCeti.Analysis.SpecialFunctions.Elliptic.Weierstrass.Zeta
 public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
+import Mathlib.RingTheory.Complex
+import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.Field.Basic
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
@@ -132,6 +134,14 @@ so it is finite.
   `UpperHalfPlane.leftOrder_lattice_periodPair_smul`,
   `UpperHalfPlane.mem_leftOrder_lattice_periodPair_iff`: rescaling, homothety, and `SL(2, ℤ)`
   invariance and generator characterization of the complex scalar multiplier order `leftOrder`.
+* `PeriodPair.intCast_mul_sub_mul_eq_normSq`,
+  `PeriodPair.exists_sq_sub_intCast_mul_add_intCast_eq_zero`: the integer matrix of a
+  multiplier `α` has determinant `|α|²`, and `α² - (2 Re α) α + |α|² = 0` with
+  integer trace and norm.
+* `PeriodPair.isIntegral_of_mem_leftOrder_lattice`: every multiplier is an algebraic integer.
+* `PeriodPair.exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero`,
+  `PeriodPair.leftOrder_lattice_eq_bot_iff`: the real multipliers are the integers, and the
+  multiplier order is `ℤ` exactly when all multipliers are real.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
 * `UpperHalfPlane.lattice_I_smul_periodPair_I`, `UpperHalfPlane.lattice_ρ_smul_periodPair_ρ`: the
@@ -1200,6 +1210,115 @@ theorem leftOrder_lattice_smul (c : ℂˣ) (L : PeriodPair) :
 theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L') :
     L.lattice.leftOrder = L'.lattice.leftOrder := by
   obtain ⟨c, hc⟩ := homothetic_def.mp h; rw [hc, leftOrder_lattice_smul]
+
+section Multipliers
+
+/-! ### Multipliers are algebraic integers of degree at most two
+
+This follows J. H. Silverman, *The Arithmetic of Elliptic Curves*, 2nd ed., Graduate Texts in
+Mathematics 106, Springer, 2009, §VI.5: write `α ω₁ = a ω₁ + b ω₂` and
+`α ω₂ = e ω₁ + f ω₂` with integers `a, b, e, f`; then `α` is a root of the characteristic
+polynomial of this integer matrix, whose determinant is `|α|²`, and a real multiplier is an
+integer. -/
+
+open ComplexConjugate
+
+variable {L : PeriodPair}
+
+/-- The integer matrix `[[a, e], [b, f]]` of a multiplier `α` is the matrix of multiplication by
+`α` in the `ℝ`-basis `ω₁, ω₂` of `ℂ`. -/
+private lemma leftMulMatrix_basis {α : ℂ} {a b e f : ℤ}
+    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
+    Algebra.leftMulMatrix L.basis α = !![(a : ℝ), e; b, f] := by
+  have h₁ : α * L.basis 0 = (a : ℝ) • L.basis 0 + (b : ℝ) • L.basis 1 := by
+    simp [Complex.real_smul, hab]
+  have h₂ : α * L.basis 1 = (e : ℝ) • L.basis 0 + (f : ℝ) • L.basis 1 := by
+    simp [Complex.real_smul, hef]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [Algebra.leftMulMatrix_eq_repr_mul, Fin.zero_eta, Fin.mk_one, h₁, h₂, map_add,
+      map_smul, Module.Basis.repr_self, Finsupp.add_apply, Finsupp.smul_apply] <;> simp
+
+/-- **The determinant is the norm.** If `α ω₁ = a ω₁ + b ω₂` and `α ω₂ = e ω₁ + f ω₂`, the
+determinant `a f - b e` of the integer matrix of `α` is its norm `|α|²` over `ℝ`. -/
+theorem intCast_mul_sub_mul_eq_normSq {α : ℂ} {a b e f : ℤ}
+    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
+    ((a * f - b * e : ℤ) : ℝ) = Complex.normSq α := by
+  rw [← Algebra.norm_complex_apply, Algebra.norm_eq_matrix_det L.basis,
+    leftMulMatrix_basis hab hef, Matrix.det_fin_two_of]
+  push_cast
+  ring
+
+/-- The trace `a + f` of the integer matrix of a multiplier `α` is its trace `2 Re α` over `ℝ`. -/
+private lemma intCast_add_eq_two_mul_re {α : ℂ} {a b e f : ℤ}
+    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
+    ((a + f : ℤ) : ℝ) = 2 * α.re := by
+  rw [← Algebra.trace_complex_apply, Algebra.trace_eq_matrix_trace L.basis,
+    leftMulMatrix_basis hab hef, Matrix.trace_fin_two_of]
+  push_cast
+  rfl
+
+/-- A real multiplier is the integer `a = f`, with `b = e = 0`. -/
+private lemma eq_intCast_of_im_eq_zero {α : ℂ} (him : α.im = 0) {a b e f : ℤ}
+    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
+    α = a ∧ b = 0 ∧ e = 0 ∧ α = f := by
+  have hα : α = (α.re : ℂ) := Complex.ext rfl (by simp [him])
+  have hind := LinearIndependent.pair_iff.mp L.indep
+  obtain ⟨h₁, h₂⟩ := hind (α.re - a) (-b) (by
+    simp only [Complex.real_smul, Complex.ofReal_sub, Complex.ofReal_neg, Complex.ofReal_intCast]
+    rw [← hα]
+    linear_combination -hab)
+  obtain ⟨h₃, h₄⟩ := hind (-e) (α.re - f) (by
+    simp only [Complex.real_smul, Complex.ofReal_sub, Complex.ofReal_neg, Complex.ofReal_intCast]
+    rw [← hα]
+    linear_combination -hef)
+  refine ⟨?_, by exact_mod_cast neg_eq_zero.mp h₂, by exact_mod_cast neg_eq_zero.mp h₃, ?_⟩
+  · rw [hα, sub_eq_zero.mp h₁, Complex.ofReal_intCast]
+  · rw [hα, sub_eq_zero.mp h₄, Complex.ofReal_intCast]
+
+/-- **The characteristic equation of a multiplier.** A multiplier `α` satisfies
+`α² - t α + n = 0` with integers `t = 2 Re α` and `n = |α|²`. -/
+theorem exists_sq_sub_intCast_mul_add_intCast_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
+    ∃ t n : ℤ, α ^ 2 - t * α + n = 0 ∧ (t : ℝ) = 2 * α.re ∧ (n : ℝ) = Complex.normSq α := by
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
+  have hn := intCast_mul_sub_mul_eq_normSq hab hef
+  have ht := intCast_add_eq_two_mul_re hab hef
+  have ht' : ((a + f : ℤ) : ℂ) = α + conj α := by
+    rw [Complex.add_conj, ← ht]; norm_cast
+  have hn' : ((a * f - b * e : ℤ) : ℂ) = α * conj α := by
+    rw [Complex.mul_conj, ← hn]; norm_cast
+  exact ⟨a + f, a * f - b * e, by linear_combination hn' - α * ht', ht, hn⟩
+
+/-- Every multiplier is an algebraic integer. -/
+theorem isIntegral_of_mem_leftOrder_lattice {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
+    IsIntegral ℤ α :=
+  isIntegral_of_smul_mem_submodule L.lattice
+    (fun h ↦ L.ω₁_ne_zero ((Submodule.eq_bot_iff _).mp h _ L.ω₁_mem_lattice))
+    (Submodule.fg_span (Set.toFinite _)) α (Submodule.mem_leftOrder_iff.mp hα)
+
+/-- The real multipliers are the integers. -/
+theorem exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero {α : ℂ}
+    (hα : α ∈ L.lattice.leftOrder) (him : α.im = 0) :
+    ∃ m : ℤ, (m : ℂ) = α := by
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
+  exact ⟨a, (eq_intCast_of_im_eq_zero him hab hef).1.symm⟩
+
+variable (L) in
+/-- **No complex multiplication.** The multiplier ring is `ℤ` exactly when every multiplier is
+real. -/
+theorem leftOrder_lattice_eq_bot_iff :
+    L.lattice.leftOrder = ⊥ ↔ ∀ α ∈ L.lattice.leftOrder, α.im = 0 := by
+  refine ⟨fun h α hα ↦ ?_, fun h ↦ ?_⟩
+  · rw [h, Algebra.mem_bot] at hα
+    obtain ⟨m, rfl⟩ := hα
+    simp
+  · refine le_antisymm (fun α hα ↦ ?_) bot_le
+    obtain ⟨m, hm⟩ := exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero hα (h α hα)
+    exact Algebra.mem_bot.mpr ⟨m, by simpa using hm⟩
+
+end Multipliers
 
 end PeriodPair
 
