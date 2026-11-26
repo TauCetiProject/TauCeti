@@ -1023,12 +1023,9 @@ theorem energyFormH1_pullbackPrincipal_pullbackDensity_smul_add_const {ε : ℝ}
         energyFormH1 (fun z => a (ε • z + p)) 0 (fun z => ε ^ 2 * c (ε • z + p)) u v := by
   rw [energyFormH1_def, energyFormH1_def, ← integral_const_mul]
   refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [energyIntegrand_apply, Pi.zero_apply, driftForm_apply, inner_zero_left,
-    massForm_apply, pullbackDensity_apply, abs_det_fderiv_smul_add_const hε,
-    finrank_euclideanSpace, matrixBilinearForm_pullbackPrincipal_smul_add_const hε p a z,
-    smul_apply, smul_eq_mul]
+  simp only [pullbackDensity_apply, abs_det_fderiv_smul_add_const hε]
+  simp [matrixBilinearForm_pullbackPrincipal_smul_add_const hε p a z]
   field_simp
-  ring
 
 omit [DecidableEq ι] in
 /-- **Rescaling a supersolution.** Let `u ∈ H¹(Ω)` be a weak supersolution of

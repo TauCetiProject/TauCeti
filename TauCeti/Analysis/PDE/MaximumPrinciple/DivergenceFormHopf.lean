@@ -46,10 +46,11 @@ In particular an inward derivative of `g` at `x₀`, if it exists, is positive.
 The same conclusion holds with a zeroth-order term
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`): for a weak
 supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≥ 0` with `c` measurable and `0 ≤ c ≤ M` on `B`, provided
-`g x₀ ≤ 0`. In Rosales's sign convention this is the term `d u` with `d ≤ 0` bounded. The sign
-condition on `g x₀` is needed: on the interval `(0, 2)`, `cosh` solves `-u'' + u = 0`, and its
-minimum `cosh 0 = 1 > 0` over `[0, 2)` is attained only at the boundary point `0`, where its
-derivative vanishes.
+`g x₀ ≤ 0`. In Rosales's sign convention this is the term `d u` with `d ≤ 0` bounded. When
+`g x₀ = 0` a bounded `c` of either sign is allowed, since then `u ≥ 0` on `B` and the negative
+part of `c` may be dropped. The sign condition on `g x₀` is needed: on the interval `(0, 2)`,
+`cosh` solves `-u'' + u = 0`, and its minimum `cosh 0 = 1 > 0` over `[0, 2)` is attained only at
+the boundary point `0`, where its derivative vanishes.
 
 The Hölder continuity of `a` cannot be dropped: for measurable coefficients the lemma fails, by
 Meyers' example (`TauCeti.Analysis.PDE.MaximumPrinciple.HalfDisk`). The lemma for operators in
@@ -96,7 +97,8 @@ small by the `C^{1,β}` estimate up to the boundary.
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`: Hopf's boundary-point lemma
   for weak supersolutions of divergence-form equations with Hölder coefficients.
 * `TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`: the same with a
-  bounded nonnegative zeroth-order term, at a minimum `g x₀ ≤ 0`.
+  bounded zeroth-order term, nonnegative at a minimum `g x₀ < 0` and of either sign at a minimum
+  `g x₀ = 0`.
 
 ## References
 
@@ -590,6 +592,17 @@ private theorem gaussBarrier_le_one {κ : ℝ} (hκ : 0 ≤ κ) (z : E) : gaussB
   rw [gaussBarrier]
   linarith
 
+/-- The comparison function `θ (W + ψ) + s₀`, for a Sobolev representative `W` of the Gaussian
+barrier `Φ`, is almost everywhere `θ (Φ + ψ) + s₀`. -/
+private theorem value_smul_add_add_const_ae {κ : ℝ} {W : W1p volume (unitAnnulus (n := n)) 2}
+    (hWv : W1p.value W =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)] gaussBarrier κ)
+    (θ : ℝ) (ψ : W1p volume (unitAnnulus (n := n)) 2) (s₀ : ℝ) :
+    W1p.value (θ • (W + ψ) + W1p.const s₀) =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
+      fun z => θ * (gaussBarrier κ z + W1p.value ψ z) + s₀ := by
+  filter_upwards [W1p.value_add_const_ae (θ • (W + ψ)) s₀, W1p.value_smul_ae θ (W + ψ),
+    W1p.value_add_ae W ψ, hWv] with z e1 e2 e3 e4
+  simp only [e1, e2, Pi.smul_apply, smul_eq_mul, e3, Pi.add_apply, e4]
+
 /-- **The corrected barrier is a weak subsolution with a mass term.** For a mass coefficient
 `0 ≤ c ≤ γ` with `c s₀ ≤ 0`, a correction `|ψ| ≤ Ψ` and `γ (1 + Ψ) ≤ λ κ e^{-κ}`, the function
 `s₀ + θ (Φ + ψ)`, `θ ≥ 0`, satisfies `-div (b ∇·) + c · ≤ 0` weakly on the annulus: the strict
@@ -638,12 +651,9 @@ private theorem energyFormH1_add_mul_correction_nonpos
     rw [← integral_const_mul]
     refine integral_mono_ae (hcV.integrable_mul (Lp.memLp _))
       (((Lp.memLp _).integrable one_le_two).const_mul _) ?_
-    filter_upwards [W1p.value_add_ae (θ • (W + (ψ : W1p volume unitAnnulus 2)))
-        (W1p.const s₀), W1p.value_smul_ae θ (W + (ψ : W1p volume unitAnnulus 2)),
-      W1p.value_add_ae W (ψ : W1p volume unitAnnulus 2),
-      W1p.value_const_ae (mu := volume) (Omega := unitAnnulus (n := n)) (p := 2) s₀, hWv,
-      hψb, hw, ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z e1 e2 e3 e4 e5 e6 e7 hz
-    simp only [Vf, e1, Pi.add_apply, e2, Pi.smul_apply, smul_eq_mul, e3, e4, e5]
+    filter_upwards [value_smul_add_add_const_ae hWv θ ψ s₀, hψb, hw,
+      ae_restrict_mem unitAnnulus.isOpen.measurableSet] with z e1 e6 e7 hz
+    simp only [Vf, e1]
     have hΦ1 := gaussBarrier_le_one (zero_le_one.trans hκ) z
     have hψz := (le_abs_self _).trans e6
     have hΨ : 0 ≤ Ψ := (abs_nonneg _).trans e6
@@ -758,12 +768,8 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
         ((ae_restrict_iff' unitAnnulus.isOpen.measurableSet).2 (ae_of_all _ hc0)) _)
   have hcomp := value_le_of_energyFormH1_le hcbc hbd (C := lam / 10)
     (by have := hb.pos; positivity) hlower huv
-  filter_upwards [hcomp, W1p.value_add_ae (θ • (W + (ψ : W1p volume unitAnnulus 2)))
-      (W1p.const s₀), W1p.value_smul_ae θ (W + (ψ : W1p volume unitAnnulus 2)),
-    W1p.value_add_ae W (ψ : W1p volume unitAnnulus 2),
-    W1p.value_const_ae (mu := volume) (Omega := unitAnnulus (n := n)) (p := 2) s₀, hWv,
-    huĝ] with z h e2 e3 e4 e5 e6 e7
-  simp only [Vf, e2, Pi.add_apply, e3, Pi.smul_apply, smul_eq_mul, e4, e5, e6, e7] at h
+  filter_upwards [hcomp, value_smul_add_add_const_ae hWv θ ψ s₀, huĝ] with z h e2 e7
+  simp only [Vf, e2, e7] at h
   linarith
 
 /-- **Linear growth along the normal on the annulus.** For coefficients close to a frozen matrix
@@ -1002,6 +1008,34 @@ private theorem exists_pos_add_mul_gaussBarrier_le {g : E → ℝ} {y x₀ : E} 
   rw [hΦ, div_mul_cancel₀ _ hm₀.ne']
   linarith [isMinOn_iff.1 hmin₀ z hz]
 
+/-- **Dropping the negative part of the mass coefficient.** Let `u` be a weak supersolution of
+`-div (a ∇u) + c u ≥ 0` in `Ω`, with `a` bounded and `c` essentially bounded on an open `U ⊆ Ω`.
+If `u ≥ 0` almost everywhere on `U`, then the restriction of `u` to `U` is a weak supersolution of
+`-div (a ∇u) + c⁺ u ≥ 0` in `U`, where `c⁺ = max c 0`. -/
+private theorem energyFormH1_restrictL_max_nonneg {Ω U : Opens E} (hU : U ≤ Ω)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : E → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) ((0 : E → E) x) ((0 : E → ℝ) x)) ⊤
+      (volume.restrict (U : Set E)))
+    (hc : MemLp c ⊤ (volume.restrict (U : Set E)))
+    (hc' : MemLp (fun x => max (c x) 0) ⊤ (volume.restrict (U : Set E))) {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
+    (hu0 : ∀ᵐ x ∂volume.restrict (U : Set E), 0 ≤ W1p.value u x) (v : W1p0 volume U 2)
+    (hv : ∀ᵐ x ∂volume.restrict (U : Set E), 0 ≤ W1p.value (v : W1p volume U 2) x) :
+    0 ≤ energyFormH1 a 0 (fun x => max (c x) 0) (W1p.restrictL hU u) (v : W1p volume U 2) := by
+  have h := energyFormH1_restrictL_nonneg hU hu v hv
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral ha hc] at h
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral ha hc']
+  have hint {f : E → ℝ} (hf : MemLp f ⊤ (volume.restrict (U : Set E))) :
+      Integrable (fun x => f x * W1p.value (W1p.restrictL hU u) x *
+        W1p.value (v : W1p volume U 2) x) (volume.restrict (U : Set E)) :=
+    (show MemLp (fun x => f x * W1p.value (W1p.restrictL hU u) x) 2
+      (volume.restrict (U : Set E)) from hf.fun_mul (Lp.memLp _)).integrable_mul (Lp.memLp _)
+  refine h.trans (add_le_add_right (integral_mono_ae (hint hc) (hint hc') ?_) _)
+  filter_upwards [W1p.value_restrictL_ae hU u, hu0, hv] with x h1 h2 h3
+  rw [h1]
+  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left _ _) h2) h3
+
 /-- **Hopf's lemma with a mass term, under the sign condition `c g(x₀) ≤ 0`.** This is the common
 form of `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg` (no mass term, no sign condition on
 `g x₀`) and `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos` (`c ≥ 0` and
@@ -1120,30 +1154,62 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
 /-- **Hopf's boundary-point lemma for divergence-form equations with a mass term.** Let
 `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
 with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
-let `c` be measurable with `0 ≤ c ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
+let `c` be measurable with `|c| ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≥ 0` in `Ω`, that is `a(u, v) + ∫ c u v ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
-`g x₀ < g x` for every `x ∈ B` and `g x₀ ≤ 0`. Then, with `ν = (x₀ - y) / R` the outer unit normal
-of `B` at `x₀`, `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
+`g x₀ < g x` for every `x ∈ B` and `g x₀ ≤ 0`. Suppose moreover that `c ≥ 0` on `B` or
+`g x₀ = 0`. Then, with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
+`ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
 
-The sign condition `g x₀ ≤ 0` cannot be dropped: on the interval `(0, 2)`, `cosh` solves
-`-u'' + u = 0`, and its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary point
-`0`, where its derivative vanishes. -/
+When `g x₀ = 0`, `u ≥ 0` on `B`, so the negative part of `c` may be dropped and `c` may have
+either sign. The sign condition `g x₀ ≤ 0` cannot be dropped: on the interval `(0, 2)`, `cosh`
+solves `-u'' + u = 0`, and its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary
+point `0`, where its derivative vanishes. -/
 theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Opens E}
     {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c g : E → ℝ} {y x₀ : E}
     {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
     (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
     (hcm : AEStronglyMeasurable c (volume.restrict (ball y R)))
-    (hc0 : ∀ x ∈ ball y R, 0 ≤ c x) (hcM : ∀ x ∈ ball y R, c x ≤ M)
+    (hcM : ∀ x ∈ ball y R, |c x| ≤ M)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
       0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
-    (hmin : ∀ x ∈ ball y R, g x₀ < g x) (hg₀ : g x₀ ≤ 0) :
-    ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ :=
-  exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos hα hR hx₀ hB hell hhol hcm hc0
-    hcM hu hg hug hmin fun x hx => mul_nonpos_of_nonneg_of_nonpos (hc0 x hx) hg₀
+    (hmin : ∀ x ∈ ball y R, g x₀ < g x) (hg₀ : g x₀ ≤ 0)
+    (hsign : (∀ x ∈ ball y R, 0 ≤ c x) ∨ g x₀ = 0) :
+    ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ := by
+  rcases hsign with hc0 | hg0
+  · exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos hα hR hx₀ hB hell hhol
+      hcm hc0 (fun x hx => (le_abs_self _).trans (hcM x hx)) hu hg hug hmin
+      fun x hx => mul_nonpos_of_nonneg_of_nonpos (hc0 x hx) hg₀
+  -- When `g x₀ = 0`, `u ≥ 0` on `B`, so on `B` the mass coefficient may be replaced by `c⁺`.
+  set U : Opens E := ⟨ball y R, isOpen_ball⟩
+  have hU : U ≤ Ω := hB
+  have hcm' : AEStronglyMeasurable (fun x => max (c x) 0) (volume.restrict (ball y R)) :=
+    hcm.sup aestronglyMeasurable_const
+  have hcM' : ∀ x ∈ ball y R, ‖max (c x) 0‖ ≤ M := fun x hx => by
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
+    exact max_le ((le_abs_self _).trans (hcM x hx)) ((abs_nonneg _).trans (hcM x hx))
+  have hbd {f : E → ℝ} (hf : AEStronglyMeasurable f (volume.restrict (ball y R)))
+      (hfM : ∀ x ∈ ball y R, ‖f x‖ ≤ M) : MemLp f ⊤ (volume.restrict (ball y R)) :=
+    memLp_top_of_bound hf M ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hfM))
+  have ham : AEStronglyMeasurable a (volume.restrict (ball y R)) :=
+    ((continuousOn_of_continuousOn_matrixBilinearForm (hhol.continuousOn hα)).mono
+      ball_subset_closedBall).aestronglyMeasurable measurableSet_ball
+  have ha := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    (Omega := U) hell.upper_nonneg ham aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hu0 : ∀ᵐ x ∂volume.restrict (ball y R), 0 ≤ W1p.value u x := by
+    filter_upwards [hug, ae_restrict_mem measurableSet_ball] with x h hx
+    rw [h, ← hg0]
+    exact (hmin x hx).le
+  exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_mul_nonpos (Ω := U) hα hR hx₀
+    le_rfl hell hhol hcm' (fun _ _ => le_max_right _ _)
+    (fun x hx => (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hcM' x hx)))
+    (energyFormH1_restrictL_max_nonneg hU ha
+      (hbd hcm fun x hx => (Real.norm_eq_abs _).trans_le (hcM x hx)) (hbd hcm' hcM') hu hu0) hg
+    ((W1p.value_restrictL_ae hU u).trans hug) hmin fun x _ => by rw [hg0, mul_zero]
 
 end PDE
 
