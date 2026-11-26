@@ -20,10 +20,11 @@ regularity, or characteristic hypothesis.
 
 * `Ideal.orderAt_le_orderAt_derivativeIdeal_add_one`: over commutative rings `k` and `R`,
   `I.orderAt p ≤ (I.derivativeIdeal k).orderAt p + 1` at every prime `p`.
-* `Ideal.orderAt_derivativeIdeal_eq_sub_one`: deduces
+* `Ideal.orderAt_derivativeIdeal_eq_sub_one_of_natCast_add_two_le`: deduces
   `(I.derivativeIdeal k).orderAt p = I.orderAt p - 1` from the order-increase step
   `n + 1 ≤ (I.derivativeIdeal k).orderAt p → n + 2 ≤ I.orderAt p`.
-* `Ideal.orderAt_derivativeIdeal_iterate_eq_sub`: lifts the one-step order drop to iterates.
+* `Ideal.orderAt_derivativeIdeal_iterate_eq_sub_of_forall`: lifts the one-step order drop to
+  iterates.
 -/
 
 public section
@@ -51,8 +52,8 @@ theorem orderAt_le_orderAt_derivativeIdeal_add_one (k : Type*) [CommRing k] {R :
 
 /-- If every positive lower bound `n + 1` on `(I.derivativeIdeal k).orderAt p` improves to `n + 2`
 on `I.orderAt p`, then `(I.derivativeIdeal k).orderAt p = I.orderAt p - 1`. -/
-theorem orderAt_derivativeIdeal_eq_sub_one (k : Type*) [CommRing k] {R : Type*}
-    [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R)
+theorem orderAt_derivativeIdeal_eq_sub_one_of_natCast_add_two_le (k : Type*) [CommRing k]
+    {R : Type*} [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R)
     (h : ∀ n : ℕ, ((n + 1 : ℕ) : ℕ∞) ≤ (I.derivativeIdeal k).orderAt p →
       ((n + 2 : ℕ) : ℕ∞) ≤ I.orderAt p) :
     (I.derivativeIdeal k).orderAt p = I.orderAt p - 1 := by
@@ -65,7 +66,7 @@ theorem orderAt_derivativeIdeal_eq_sub_one (k : Type*) [CommRing k] {R : Type*}
 
 /-- If `derivativeIdeal k` lowers the order at `p` of every ideal by `1`, then its `n`-th iterate
 lowers the order of `I` at `p` by `n`. -/
-theorem orderAt_derivativeIdeal_iterate_eq_sub (k : Type*) [CommRing k] {R : Type*}
+theorem orderAt_derivativeIdeal_iterate_eq_sub_of_forall (k : Type*) [CommRing k] {R : Type*}
     [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R) (n : ℕ)
     (h : ∀ J : Ideal R, (J.derivativeIdeal k).orderAt p = J.orderAt p - 1) :
     ((derivativeIdeal k)^[n] I).orderAt p = I.orderAt p - n := by

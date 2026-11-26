@@ -28,9 +28,9 @@ produces, for each coordinate `i`, a global derivation `δ` and denominator `s �
 
 ## Main results
 
-* `Derivation.exists_derivation_residue_eq`: lifts a `κ`-linear functional on `κ ⊗[A] Ω[A⁄k]` to
+* `TauCeti.exists_derivation_residue_eq`: lifts a `κ`-linear functional on `κ ⊗[A] Ω[A⁄k]` to
   a global derivation of `R` up to a unit denominator `s ∈ S`;
-* `Derivation.exists_dual_derivation`: constructs global derivations dual modulo `𝔪_A` to a
+* `TauCeti.exists_dual_derivation`: constructs global derivations dual modulo `𝔪_A` to a
   minimal generating set of `𝔪_A`.
 -/
 
@@ -38,7 +38,7 @@ public section
 
 open IsLocalRing KaehlerDifferential TensorProduct
 
-namespace Derivation
+namespace TauCeti
 
 /-- Given a `κ`-linear functional `φ : κ ⊗[A] Ω[A⁄k] →ₗ[κ] κ` on a local localization `A` of a
 `k`-algebra `R` with finitely generated projective `Ω[R⁄k]`, there exist `s ∈ S` and a global
@@ -64,7 +64,7 @@ theorem exists_derivation_residue_eq {k R A : Type*} [CommRing k] [CommRing R] [
     exact ⟨a, by rw [Algebra.linearMap_apply, ResidueField.algebraMap_eq]⟩
   obtain ⟨fA, hfA⟩ := Module.projective_lifting_property (Algebra.linearMap A κ) ψ hsurj
   let D : Derivation k A A := fA.compDer (KaehlerDifferential.D k A)
-  obtain ⟨s, δ, hδ⟩ := exists_extendOfIsLocalization_eq_smul S D
+  obtain ⟨s, δ, hδ⟩ := Derivation.exists_extendOfIsLocalization_eq_smul S D
   refine ⟨s, δ, fun x ↦ ?_⟩
   have hdx := congrArg (fun d : Derivation k A A ↦ residue A (d x)) hδ
   have hfAx : residue A (fA (KaehlerDifferential.D k A x)) =
@@ -102,4 +102,4 @@ theorem exists_dual_derivation {k R A : Type*} [CommRing k] [CommRing R] [CommRi
   rw [hδ (t j), ← hval, hbj]
   split_ifs <;> simp
 
-end Derivation
+end TauCeti

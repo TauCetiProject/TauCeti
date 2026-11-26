@@ -172,7 +172,7 @@ by one, as truncated subtraction in `ℕ∞` (leaving `0` and `⊤` unchanged). 
 theorem orderAt_derivativeIdeal_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) :
     (I.derivativeIdeal k).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - 1 :=
-  orderAt_derivativeIdeal_eq_sub_one k I (pointToPoint a) fun _ h ↦
+  orderAt_derivativeIdeal_eq_sub_one_of_natCast_add_two_le k I (pointToPoint a) fun _ h ↦
     natCast_add_two_le_orderAt_of_le_orderAt_derivativeIdeal h
 
 /-- In characteristic zero, the `n`-th iterated derivative ideal lowers the order of an ideal at
@@ -181,7 +181,7 @@ a rational point by `n`, truncated at zero in `ℕ∞`. -/
 theorem orderAt_derivativeIdeal_iterate_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) (n : ℕ) :
     ((derivativeIdeal k)^[n] I).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - n :=
-  orderAt_derivativeIdeal_iterate_eq_sub k I (pointToPoint a) n fun J ↦
+  orderAt_derivativeIdeal_iterate_eq_sub_of_forall k I (pointToPoint a) n fun J ↦
     orderAt_derivativeIdeal_pointToPoint J a
 
 /-- In characteristic zero, at a rational point where an ideal `I` has finite positive order `d`,

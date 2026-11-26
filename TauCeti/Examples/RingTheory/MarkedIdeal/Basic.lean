@@ -77,17 +77,10 @@ example :
       (M.pow 2).cosupport = Set.univ ∧
       (M.pow 2).cosupport ≠ M.cosupport := by
   intro M
-  have hprime (p : PrimeSpectrum (DualNumber k)) :
-      p = IsLocalRing.closedPoint (DualNumber k) := by
-    have hle : maximalIdeal (DualNumber k) ≤ p.asIdeal := by
-      rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_le_iff_mem]
-      exact (nilpotent_iff_mem_prime.mp DualNumber.isNilpotent_eps) p.asIdeal p.isPrime
-    ext1
-    simpa [IsLocalRing.closedPoint] using
-      le_antisymm (IsLocalRing.le_maximalIdeal p.isPrime.ne_top) hle
   have h1 : M.cosupport = ∅ := by
     ext p
-    rw [mem_cosupport_iff, hprime p, Ideal.orderAt_closedPoint]
+    rw [mem_cosupport_iff, Subsingleton.elim p (IsLocalRing.closedPoint _),
+      Ideal.orderAt_closedPoint]
     simp [M]
   have h2 : (M.pow 2).cosupport = Set.univ :=
     cosupport_eq_univ_of_ideal_eq_bot (by rw [pow_ideal, DualNumber.maximalIdeal_sq_eq_bot])

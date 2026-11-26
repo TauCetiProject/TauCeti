@@ -25,7 +25,7 @@ positive order drops by one while `0` and `⊤` remain fixed).
 
 The proof uses formal smoothness of the residue field `κ(p)` over the characteristic-zero field `k`
 to inject `𝔪_p ⧸ 𝔪_p²` into `κ(p) ⊗[R_p] Ω[R_p⁄k]`, lifts dual `κ(p)`-linear functionals to global
-`k`-derivations of `R` up to a denominator outside `p` (`Derivation.exists_dual_derivation`), and
+`k`-derivations of `R` up to a denominator outside `p` (`TauCeti.exists_dual_derivation`), and
 applies the associated-graded criterion
 `TauCeti.IsRegularLocalRing.map_residue_eq_zero_iff_eval_mem_pow_succ` together with
 `MvPolynomial.eq_C_constantCoeff_of_forall_pderiv_eq_zero` over `κ(p)`.
@@ -39,8 +39,8 @@ Iterating `n` times gives
 Common hypotheses: `k` is a characteristic-zero field and `Ω[R⁄k]` is finitely generated and
 projective over `R`.
 
-* `Ideal.mem_maximalIdeal_pow_add_two_of_forall_derivation`: elementwise order-increase test in any
-  regular local localization `A` of `R`.
+* `TauCeti.IsRegularLocalRing.mem_maximalIdeal_pow_add_two_of_forall_derivation`: elementwise
+  order-increase test in any regular local localization `A` of `R`.
 * `Ideal.orderAt_derivativeIdeal`: at a prime `p` with `R_p` regular local,
   `(I.derivativeIdeal k).orderAt p = I.orderAt p - 1`.
 * `Ideal.orderAt_derivativeIdeal_iterate`: at a prime `p` with `R_p` regular local,
@@ -59,7 +59,7 @@ public section
 
 open IsLocalRing MvPolynomial
 
-namespace Ideal
+namespace TauCeti.IsRegularLocalRing
 
 section SmoothCharZero
 
@@ -70,7 +70,7 @@ private theorem pderiv_map_residue_eq_zero {k R A : Type*} [Field k] [PerfectFie
     [CommRing R] [CommRing A] [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
     [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (S : Submonoid R) [IsLocalization S A] [IsRegularLocalRing A]
-    {rs : List A} (hofList : ofList rs = maximalIdeal A)
+    {rs : List A} (hofList : Ideal.ofList rs = maximalIdeal A)
     (hlen : rs.length = (maximalIdeal A).spanFinrank)
     {n : ℕ} {F : MvPolynomial (Fin rs.length) A} (hF : F.IsHomogeneous (n + 1))
     (hD : ∀ δ : Derivation k R R,
@@ -79,10 +79,10 @@ private theorem pderiv_map_residue_eq_zero {k R A : Type*} [Field k] [PerfectFie
     pderiv i (F.map (residue A)) = 0 := by
   classical
   let t : Fin rs.length → A := fun j ↦ rs[j]
-  have ht : span (Set.range t) = maximalIdeal A := by
-    rw [← hofList, ofList_eq_span_range_getElem]
-  have htmem (j : Fin rs.length) : t j ∈ maximalIdeal A := ht ▸ subset_span ⟨j, rfl⟩
-  obtain ⟨s, δ, hDt⟩ := Derivation.exists_dual_derivation (k := k) S ht hlen.symm i
+  have ht : Ideal.span (Set.range t) = maximalIdeal A := by
+    rw [← hofList, Ideal.ofList_eq_span_range_getElem]
+  have htmem (j : Fin rs.length) : t j ∈ maximalIdeal A := ht ▸ Ideal.subset_span ⟨j, rfl⟩
+  obtain ⟨s, δ, hDt⟩ := TauCeti.exists_dual_derivation (k := k) S ht hlen.symm i
   let Dloc : Derivation k A A := ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S
   have hcongr := Dloc.apply_eval_sub_pderiv_mul_mem_pow_succ htmem hF hDt
   have hmul_mem : (pderiv i F).eval t * algebraMap R A s ∈ maximalIdeal A ^ (n + 1) := by
@@ -90,8 +90,7 @@ private theorem pderiv_map_residue_eq_zero {k R A : Type*} [Field k] [PerfectFie
   have hp_eval : (pderiv i F).eval t ∈ maximalIdeal A ^ (n + 1) :=
     (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp hmul_mem
   rw [pderiv_map]
-  exact (TauCeti.IsRegularLocalRing.map_residue_eq_zero_iff_eval_mem_pow_succ hofList hlen.le
-    hF.pderiv).mpr hp_eval
+  exact (map_residue_eq_zero_iff_eval_mem_pow_succ hofList hlen.le hF.pderiv).mpr hp_eval
 
 /-- In a regular local localization `A` of `R` with `Ω[R⁄k]` finite projective over a
 characteristic-zero field `k`, if `y ∈ 𝔪 ^ (n + 1)` has `D_loc y ∈ 𝔪 ^ (n + 1)` for every global
@@ -109,12 +108,12 @@ theorem mem_maximalIdeal_pow_add_two_of_forall_derivation {k R A : Type*} [Field
   obtain ⟨U, hcard, hU⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank
     (maximalIdeal A).fg_of_isNoetherianRing
   let rs : List A := U.toList
-  have hofList : ofList rs = maximalIdeal A := by
-    simpa [rs, ofList] using hU
+  have hofList : Ideal.ofList rs = maximalIdeal A := by
+    simpa [rs, Ideal.ofList] using hU
   have hlen : rs.length = (maximalIdeal A).spanFinrank := by simp [rs, hcard]
   let t : Fin rs.length → A := fun i ↦ rs[i]
-  have ht : span (Set.range t) = maximalIdeal A := by
-    rw [← hofList, ofList_eq_span_range_getElem]
+  have ht : Ideal.span (Set.range t) = maximalIdeal A := by
+    rw [← hofList, Ideal.ofList_eq_span_range_getElem]
   obtain ⟨F, hF, rfl⟩ := (Ideal.mem_span_pow_iff_exists_isHomogeneous t y).mp (ht.symm ▸ hy)
   -- Every partial derivative of `F.map (residue A)` vanishes, so it is a homogeneous constant `0`.
   have hpderiv_zero := pderiv_map_residue_eq_zero (k := k) S hofList hlen hF hD
@@ -125,8 +124,15 @@ theorem mem_maximalIdeal_pow_add_two_of_forall_derivation {k R A : Type*} [Field
     rw [MvPolynomial.eq_C_constantCoeff_of_forall_pderiv_eq_zero hpderiv_zero,
       MvPolynomial.constantCoeff_eq, (hF.map (residue A)).coeff_eq_zero (by simp), map_zero]
   -- Passing back through the associated graded criterion puts `F(t)` in `𝔪 ^ (n + 2)`.
-  simpa [t] using (TauCeti.IsRegularLocalRing.map_residue_eq_zero_iff_eval_mem_pow_succ
-    hofList hlen.le hF).mp hFmap
+  simpa [t] using (map_residue_eq_zero_iff_eval_mem_pow_succ hofList hlen.le hF).mp hFmap
+
+end SmoothCharZero
+
+end TauCeti.IsRegularLocalRing
+
+namespace Ideal
+
+section SmoothCharZero
 
 variable (k : Type*) [Field k] [CharZero k] {R : Type*} [CommRing R] [Algebra k R]
 
@@ -138,13 +144,13 @@ in `ℕ∞`, so finite positive order drops by one while `0` and `⊤` remain fi
 theorem orderAt_derivativeIdeal [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)] :
     (I.derivativeIdeal k).orderAt p = I.orderAt p - 1 := by
-  refine orderAt_derivativeIdeal_eq_sub_one k I p fun n hn ↦ ?_
+  refine orderAt_derivativeIdeal_eq_sub_one_of_natCast_add_two_le k I p fun n hn ↦ ?_
   rw [natCast_le_orderAt_iff] at hn ⊢
   rw [Ideal.map_le_iff_le_comap]
   intro f hf
   rw [mem_comap]
-  refine mem_maximalIdeal_pow_add_two_of_forall_derivation (k := k) p.asIdeal.primeCompl
-    (hn (mem_map_of_mem _ (le_derivativeIdeal k I hf))) fun δ ↦ ?_
+  refine TauCeti.IsRegularLocalRing.mem_maximalIdeal_pow_add_two_of_forall_derivation
+    (k := k) p.asIdeal.primeCompl (hn (mem_map_of_mem _ (le_derivativeIdeal k I hf))) fun δ ↦ ?_
   rw [Derivation.extendOfIsLocalization_algebraMap]
   exact hn (mem_map_of_mem _ (apply_mem_derivativeIdeal k δ hf))
 
@@ -156,7 +162,8 @@ theorem orderAt_derivativeIdeal_iterate [Module.Projective R Ω[R⁄k]] [Module.
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)]
     (n : ℕ) :
     ((derivativeIdeal k)^[n] I).orderAt p = I.orderAt p - n :=
-  orderAt_derivativeIdeal_iterate_eq_sub k I p n fun J ↦ orderAt_derivativeIdeal k J p
+  orderAt_derivativeIdeal_iterate_eq_sub_of_forall k I p n fun J ↦
+    orderAt_derivativeIdeal k J p
 
 /-- Over a characteristic-zero field, at a regular prime of an algebra with finitely generated
 projective differentials, an ideal has order at least `n + 1` precisely when its `n`-th iterated
