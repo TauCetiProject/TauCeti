@@ -46,6 +46,8 @@ matrix identity.
   with entries in `J` vanishes when `I * J = ⊥`.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `Matrix.exists_map_eq_and_apply_eq_zero`: along a surjection, a matrix lifts to one vanishing
+  at the same prescribed entries.
 * `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
   has `|ker f| ^ (n * n)` elements.
 * `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
@@ -117,6 +119,22 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
+
+/-- **Lifting a matrix along a surjection with prescribed zero entries.** If `f` is surjective,
+a matrix over `S` whose entries vanish at the positions satisfying `p` is the image of a matrix
+over `R` whose entries vanish at the same positions. -/
+theorem exists_map_eq_and_apply_eq_zero {R : Type*} [Zero R] [Zero S] {F : Type*}
+    [FunLike F R S] [ZeroHomClass F R S] {f : F} (hf : Function.Surjective f) (Y : Matrix m n S)
+    (p : m → n → Prop) (hY : ∀ i j, p i j → Y i j = 0) :
+    ∃ X : Matrix m n R, X.map f = Y ∧ ∀ i j, p i j → X i j = 0 := by
+  classical
+  choose x hx using fun i j ↦ hf (Y i j)
+  refine ⟨of fun i j ↦ if p i j then 0 else x i j, ?_, fun i j h ↦ by simp [h]⟩
+  ext i j
+  simp only [map_apply, of_apply]
+  split_ifs with h
+  · rw [map_zero, hY i j h]
+  · exact hx i j
 
 /-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
 `ker f`, so it has `|ker f| ^ (n * n)` elements. -/
