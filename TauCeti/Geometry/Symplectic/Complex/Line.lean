@@ -163,17 +163,8 @@ lemma stdComplexSymplecticForm_compatible :
 /-- Every real one-dimensional subspace of the complex plane is Lagrangian for its
 standard symplectic area form. -/
 theorem isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one {L : Submodule ℝ ℂ}
-    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L := by
-  have hne : L ≠ ⊥ := by
-    intro h
-    have hz : Module.finrank ℝ L = 0 := Submodule.finrank_eq_zero.2 h
-    omega
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hs := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
-  have hi : stdComplexSymplecticForm.IsIsotropic L := by
-    rw [hs, SymplecticForm.isIsotropic_span_iff]
-    simpa only [Set.mem_singleton_iff, forall_eq] using stdComplexSymplecticForm.isAlt v
-  exact hi.isLagrangian_of_finrank (by simp [hL])
+    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L :=
+  (SymplecticForm.isIsotropic_of_finrank_le_one hL.le).isLagrangian_of_finrank (by simp [hL])
 
 /-- The standard area form paired with the standard complex structure is the norm square. -/
 theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :

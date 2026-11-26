@@ -58,12 +58,6 @@ open ReducedTensorWords
 
 variable {ℋ : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B} {𝒜 : ℕ → AInfinityAlgebra R A}
 
-/-- The Taylor components of the limit of a sequence of `A∞` morphisms `f n`: on the words of
-length `k`, those of `f k`. -/
-private noncomputable def limitTaylor (f : ∀ n, AInfinityHom (𝒜 n) ℬ) :
-    ReducedTensorWords R A →ₗ[R] B :=
-  DirectSum.toModule R _ _ fun k ↦ (f k.val).taylor ∘ₗ of R A k
-
 section Stabilising
 
 variable {f : ∀ n, AInfinityHom (𝒜 n) ℬ}
@@ -71,49 +65,30 @@ variable {f : ∀ n, AInfinityHom (𝒜 n) ℬ}
 
 include hf
 
-/-- In a stabilising sequence, the Taylor components of `f n` agree with those of `f k` on the
-words of length at most `k`, for `k ≤ n`. -/
-private theorem taylor_apply_eq_of_le {k n : ℕ} (hkn : k ≤ n) {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A k) : (f n).taylor z = (f k).taylor z := by
-  induction n, hkn using Nat.le_induction with
-  | base => rfl
-  | succ n hkn ih => rw [hf n z (filtration_monotone R A hkn hz), ih]
-
-/-- The Taylor components of the limit agree with those of `f n` on the words of length at most
-`n`. -/
-private theorem limitTaylor_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A n) : limitTaylor f z = (f n).taylor z := by
-  have h : filtration R A n ≤ LinearMap.eqLocus (limitTaylor f) (f n).taylor := by
-    rw [filtration_le_iff]
-    rintro k hk _ ⟨x, rfl⟩
-    rw [LinearMap.mem_eqLocus, limitTaylor, toModule_of, LinearMap.comp_apply,
-      taylor_apply_eq_of_le hf hk (of_mem_filtration R A le_rfl x)]
-  exact h hz
-
 /-- The Taylor expansion of the limit Taylor components agrees with the bar map of `f n` on the
 words of length at most `n`. -/
-private theorem coalgHom_limitTaylor_apply_of_mem_filtration {n : ℕ}
+private theorem coalgHom_filtrationLimit_taylor_apply_of_mem_filtration {n : ℕ}
     {z : ReducedTensorWords R A} (hz : z ∈ filtration R A n) :
-    coalgHom R (limitTaylor f) z = (f n).barMap z :=
+    coalgHom R (filtrationLimit fun k ↦ (f k).taylor) z = (f n).barMap z :=
   (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (f n).isCoalgHom_barMap
     (fun w hw ↦ by
       rw [← LinearMap.comp_apply (letter R B), letter_comp_coalgHom,
-        limitTaylor_apply_of_mem_filtration hf hw, taylor_def, LinearMap.comp_apply]) hz
+        filtrationLimit_apply_of_mem_filtration hf hw, taylor_def, LinearMap.comp_apply]) hz
 
 variable (hG : ∀ n, (𝒜 n).grading = ℋ.grading)
 
 include hG
 
 /-- The limit Taylor components have degree zero for the suspended gradings. -/
-private theorem isHomogeneous_limitTaylor :
-    LinearMap.IsHomogeneous (limitTaylor f) (gradedPiece (ℋ.grading.shift 1))
-      (ℬ.grading.shift 1).piece 0 := by
+private theorem isHomogeneous_filtrationLimit_taylor :
+    LinearMap.IsHomogeneous (filtrationLimit fun k ↦ (f k).taylor)
+      (gradedPiece (ℋ.grading.shift 1)) (ℬ.grading.shift 1).piece 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro p z hz
   obtain ⟨n, hn⟩ := exists_mem_filtration R A z
   have h := (f n).isHomogeneous_taylor
   rw [hG n] at h
-  rw [limitTaylor_apply_of_mem_filtration hf hn]
+  rw [filtrationLimit_apply_of_mem_filtration hf hn]
   exact h.map_mem hz
 
 variable (h𝒜 : ∀ n, ∀ z ∈ filtration R A n, (𝒜 n).taylor z = ℋ.taylor z)
@@ -122,16 +97,17 @@ include h𝒜
 
 /-- The limit Taylor components satisfy the component equation of an `A∞` morphism from `ℋ`: on
 the words of length at most `n` it is the component equation of `f n`. -/
-private theorem taylor_comp_coalgHom_limitTaylor :
-    ℬ.taylor ∘ₗ coalgHom R (limitTaylor f) = limitTaylor f ∘ₗ ℋ.barDifferential := by
+private theorem taylor_comp_coalgHom_filtrationLimit_taylor :
+    ℬ.taylor ∘ₗ coalgHom R (filtrationLimit fun k ↦ (f k).taylor) =
+      (filtrationLimit fun k ↦ (f k).taylor) ∘ₗ ℋ.barDifferential := by
   refine LinearMap.ext fun z ↦ ?_
   obtain ⟨n, hn⟩ := exists_mem_filtration R A z
   have h := LinearMap.congr_fun (f n).taylor_comp_barMap z
   rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
   rw [LinearMap.comp_apply, LinearMap.comp_apply,
-    coalgHom_limitTaylor_apply_of_mem_filtration hf hn, h,
+    coalgHom_filtrationLimit_taylor_apply_of_mem_filtration hf hn, h,
     AInfinityAlgebra.barDifferential_apply_eq_of_mem_filtration (hG n) (h𝒜 n) hn,
-    limitTaylor_apply_of_mem_filtration hf (ℋ.barDifferential_mem_filtration hn)]
+    filtrationLimit_apply_of_mem_filtration hf (ℋ.barDifferential_mem_filtration hn)]
 
 end Stabilising
 
@@ -144,8 +120,8 @@ noncomputable def limit (f : ∀ n, AInfinityHom (𝒜 n) ℬ) (hG : ∀ n, (�
     (h𝒜 : ∀ n, ∀ z ∈ filtration R A n, (𝒜 n).taylor z = ℋ.taylor z)
     (hf : ∀ n, ∀ z ∈ filtration R A n, (f (n + 1)).taylor z = (f n).taylor z) :
     AInfinityHom ℋ ℬ :=
-  ofTaylor (limitTaylor f) (isHomogeneous_limitTaylor hf hG)
-    (taylor_comp_coalgHom_limitTaylor hf hG h𝒜)
+  ofTaylor (filtrationLimit fun k ↦ (f k).taylor) (isHomogeneous_filtrationLimit_taylor hf hG)
+    (taylor_comp_coalgHom_filtrationLimit_taylor hf hG h𝒜)
 
 section Limit
 
@@ -159,12 +135,12 @@ include hf hG h𝒜
 /-- On the words of length at most `n`, the Taylor components of the limit are those of `f n`. -/
 theorem taylor_limit_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A n) : (limit f hG h𝒜 hf).taylor z = (f n).taylor z := by
-  rw [limit, taylor_ofTaylor, limitTaylor_apply_of_mem_filtration hf hz]
+  rw [limit, taylor_ofTaylor, filtrationLimit_apply_of_mem_filtration hf hz]
 
 /-- On the words of length at most `n`, the bar map of the limit is that of `f n`. -/
 theorem barMap_limit_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A n) : (limit f hG h𝒜 hf).barMap z = (f n).barMap z := by
-  rw [limit, barMap_ofTaylor, coalgHom_limitTaylor_apply_of_mem_filtration hf hz]
+  rw [limit, barMap_ofTaylor, coalgHom_filtrationLimit_taylor_apply_of_mem_filtration hf hz]
 
 /-- The limit is the only `A∞` morphism whose Taylor components agree with those of `f n` on the
 words of length at most `n`, for every `n`. -/
