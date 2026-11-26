@@ -41,6 +41,9 @@ of `μ.comap (↑)`:
   back to one on every open interval.
 * For a measurable set `s`, `Prod.map id (↑)` carries `μ.prod (ν.comap (↑))` on `α × s` to the
   restriction of `μ.prod ν` to `univ ×ˢ s`.
+* On a measurable conull set `s`, `μ.comap (↑)` gives each preimage `(↑) ⁻¹' B` the mass `μ B`, so
+  a map between measurable conull sets preserving the pulled-back measures extends to a
+  measure-preserving map of the whole spaces.
 
 ## Main declarations
 
@@ -66,6 +69,10 @@ of `μ.comap (↑)`:
   a measure charging every nonempty open set charges every nonempty open set.
 * `MeasureTheory.measurePreserving_prodMap_subtype_coe`: the inclusion `α × s → α × β` is
   measure preserving from `μ.prod (ν.comap (↑))` to `(μ.prod ν).restrict (univ ×ˢ s)`.
+* `MeasureTheory.comap_subtypeVal_preimage_of_conull`: on a measurable conull set `s`,
+  `μ.comap (↑) ((↑) ⁻¹' B) = μ B`.
+* `MeasureTheory.MeasurePreserving.extend_subtypeVal`: extending a map between measurable conull
+  sets that preserves the pulled-back measures gives a measure-preserving map of the whole spaces.
 -/
 
 public section
@@ -204,5 +211,35 @@ theorem measurePreserving_prodMap_subtype_coe {α β : Type*} [MeasurableSpace �
       ((μ.prod ν).restrict (univ ×ˢ s)) := by
   have := (MeasurePreserving.id μ).prod (measurePreserving_subtypeVal (μa := ν) hs)
   rwa [← Measure.prod_restrict, Measure.restrict_univ]
+
+section Conull
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
+  {s : Set α} {t : Set β}
+
+/-- On a measurable conull set `s`, the pullback of `μ` to `s` gives the preimage of any set `B` the
+mass `μ B`. -/
+theorem comap_subtypeVal_preimage_of_conull (hs : MeasurableSet s) (hμs : μ sᶜ = 0) (B : Set α) :
+    μ.comap ((↑) : s → α) ((↑) ⁻¹' B) = μ B := by
+  rw [comap_subtypeVal_apply hs, Subtype.image_preimage_coe, inter_comm, measure_inter_conull hμs]
+
+/-- Extending a map between measurable conull sets that preserves the pulled-back measures by a
+measurable map off the source gives a measure-preserving map of the whole spaces. -/
+theorem MeasurePreserving.extend_subtypeVal {g : s → t}
+    (hg : MeasurePreserving g (μ.comap (↑)) (ν.comap (↑))) (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμs : μ sᶜ = 0) (hνt : ν tᶜ = 0) {j : α → β} (hj : Measurable j) :
+    MeasurePreserving (Function.extend (↑) (fun x ↦ (g x : β)) j) μ ν := by
+  set F : α → β := Function.extend (↑) (fun x ↦ (g x : β)) j
+  have hF : Measurable F := (MeasurableEmbedding.subtypeVal hs).measurable_extend
+    (measurable_subtypeVal.comp hg.measurable) hj
+  refine ⟨hF, Measure.ext fun B hB ↦ ?_⟩
+  have hFg : ((↑) : s → α) ⁻¹' (F ⁻¹' B) = g ⁻¹' ((↑) ⁻¹' B) := by
+    rw [← preimage_comp, Function.extend_comp Subtype.val_injective]
+    rfl
+  rw [Measure.map_apply hF hB, ← comap_subtypeVal_preimage_of_conull hs hμs, hFg,
+    hg.measure_preimage (measurable_subtypeVal hB).nullMeasurableSet,
+    comap_subtypeVal_preimage_of_conull ht hνt]
+
+end Conull
 
 end MeasureTheory
