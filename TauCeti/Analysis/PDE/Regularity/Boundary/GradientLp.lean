@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
 public import TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation
-import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.PDE.EnergyForm.Antisymmetric
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.MeasureTheory.Integral.Average
@@ -331,100 +331,53 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_reflection {p : ℝ
 
 /-! ### Shears along the boundary hyperplane
 
-For `⟪e, w⟫ = 0`, the shear `x ↦ x + ⟪e, x⟫ w` has determinant one, and its inverse is the shear
-by `-w`. When moreover `w ⊥ ν`, it maps the half-space `{c₀ < ⟪x, ν⟫}` onto itself. -/
+For `⟪e, w⟫ = 0`, the shear `TauCeti.transvectionL e w`, `x ↦ x + ⟪e, x⟫ w`, has determinant one,
+and its inverse is the shear by `-w`. When moreover `w ⊥ ν`, it maps the half-space
+`{c₀ < ⟪x, ν⟫}` onto itself. The lemmas below state once the hypotheses of `TauCeti.W1p.compL`
+for the inverse shear. -/
 
-/-- The shear `x ↦ x + ⟪e, x⟫ w`: the transvection of the linear form `⟪e, ·⟫` and the vector `w`,
-as a continuous linear map. -/
-private noncomputable def shear (e w : E) : E →L[ℝ] E :=
-  LinearMap.toContinuousLinearMap
-    (LinearMap.transvection ((innerSL ℝ e : E →L[ℝ] ℝ) : E →ₗ[ℝ] ℝ) w)
+private theorem inner_neg_right_eq_zero {x y : E} (h : ⟪x, y⟫_ℝ = 0) : ⟪x, -y⟫_ℝ = 0 := by
+  rw [inner_neg_right, h, neg_zero]
 
-private theorem shear_apply (e w x : E) : shear e w x = x + ⟪e, x⟫_ℝ • w := by
-  simp [shear, LinearMap.transvection.apply]
+private theorem injective_transvectionL_neg {e w : E} (hew : ⟪e, w⟫_ℝ = 0) :
+    Function.Injective (transvectionL e (-w)) :=
+  Function.LeftInverse.injective (transvectionL_transvectionL_neg hew)
 
-private theorem shear_shear_neg {e w : E} (h : ⟪e, w⟫_ℝ = 0) (x : E) :
-    shear e w (shear e (-w) x) = x := by
-  simp only [shear_apply, inner_add_right, inner_smul_right, inner_neg_right, h]
-  module
+private theorem norm_fderiv_transvectionL_le (e w x : E) :
+    ‖fderiv ℝ (transvectionL e w) x‖ ≤ ‖transvectionL e w‖ := by
+  rw [ContinuousLinearMap.fderiv]
 
-private theorem inner_shear_left {e w ν : E} (h : ⟪w, ν⟫_ℝ = 0) (x : E) :
-    ⟪shear e w x, ν⟫_ℝ = ⟪x, ν⟫_ℝ := by
-  simp [shear_apply, inner_add_left, inner_smul_left, h]
+private theorem abs_det_fderiv_transvectionL {e w : E} (hew : ⟪e, w⟫_ℝ = 0) (x : E) :
+    |(fderiv ℝ (transvectionL e w) x).det| = 1 := by
+  rw [ContinuousLinearMap.fderiv, det_transvectionL, hew, add_zero, abs_one]
 
-private theorem norm_shear_le {e : E} (he : ‖e‖ = 1) (w : E) : ‖shear e w‖ ≤ 1 + ‖w‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x => ?_
-  rw [shear_apply]
-  calc ‖x + ⟪e, x⟫_ℝ • w‖ ≤ ‖x‖ + |⟪e, x⟫_ℝ| * ‖w‖ := by
-        refine (norm_add_le _ _).trans ?_
-        rw [norm_smul, Real.norm_eq_abs]
-    _ ≤ ‖x‖ + ‖x‖ * ‖w‖ := by
-        gcongr
-        exact (abs_real_inner_le_norm e x).trans (by rw [he, one_mul])
-    _ = (1 + ‖w‖) * ‖x‖ := by ring
+private theorem transvectionL_mem_iff {H : Opens E} {ν e w : E} {c₀ : ℝ}
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνw : ⟪ν, w⟫_ℝ = 0) (x : E) :
+    transvectionL e w x ∈ H ↔ x ∈ H := by
+  rw [hH, hH, real_inner_comm, inner_transvectionL hνw, real_inner_comm]
 
-private theorem adjoint_shear (e w : E) : (shear e w).adjoint = shear w e := by
-  symm
-  rw [ContinuousLinearMap.eq_adjoint_iff]
-  intro x y
-  simp only [shear_apply, inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-    RCLike.conj_to_real]
-  rw [real_inner_comm x w]
-  ring
+private theorem measurePreserving_transvectionL_restrict {H : Opens E} {ν e w : E} {c₀ : ℝ}
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0) :
+    MeasurePreserving (transvectionL e w) (volume.restrict H) (volume.restrict H) := by
+  have h := (measurePreserving_transvectionL volume hew).restrict_preimage H.isOpen.measurableSet
+  rwa [show (transvectionL e w) ⁻¹' (H : Set E) = H from
+    Set.ext (transvectionL_mem_iff hH hνw)] at h
 
-private theorem det_shear {e w : E} (h : ⟪e, w⟫_ℝ = 0) :
-    (shear e w).det = 1 := by
-  rw [shear, LinearMap.det_toContinuousLinearMap, LinearMap.transvection.det]
-  simp [h]
-
-private theorem neg_inner_eq_zero {e w : E} (hew : ⟪e, w⟫_ℝ = 0) : ⟪e, -w⟫_ℝ = 0 := by
-  rw [inner_neg_right, hew, neg_zero]
-
-private theorem shear_neg_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0) (x : E) :
-    shear e (-w) (shear e w x) = x := by
-  simpa using shear_shear_neg (neg_inner_eq_zero hew) x
-
-private theorem shear_comp_shear_neg {e w : E} (hew : ⟪e, w⟫_ℝ = 0) :
-    shear e w ∘L shear e (-w) = ContinuousLinearMap.id ℝ E :=
-  ContinuousLinearMap.ext fun x => by
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, shear_shear_neg hew]
-
-private theorem shear_neg_comp_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0) :
-    shear e (-w) ∘L shear e w = ContinuousLinearMap.id ℝ E :=
-  ContinuousLinearMap.ext fun x => by
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, shear_neg_shear hew]
-
-private theorem measurePreserving_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0) :
-    MeasurePreserving (shear e w) volume volume := by
-  simpa using ContinuousAffineMap.measurePreserving_of_abs_det_eq_one volume
-    (shear e w).toContinuousAffineMap (by simp [det_shear hew])
-
-private theorem shear_mem_iff {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hwν : ⟪w, ν⟫_ℝ = 0) (x : E) :
-    shear e w x ∈ H ↔ x ∈ H := by
-  rw [hH, hH, inner_shear_left hwν]
-
-private theorem measurePreserving_shear_restrict {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0) :
-    MeasurePreserving (shear e w) (volume.restrict H) (volume.restrict H) := by
-  have h := (measurePreserving_shear hew).restrict_preimage H.isOpen.measurableSet
-  rwa [show (shear e w) ⁻¹' (H : Set E) = H from Set.ext (shear_mem_iff hH hwν)] at h
-
-private theorem mapsTo_shear {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hwν : ⟪w, ν⟫_ℝ = 0) :
-    MapsTo (shear e w) (H : Set E) (H : Set E) :=
-  fun x hx => (shear_mem_iff hH hwν x).2 hx
+private theorem mapsTo_transvectionL {H : Opens E} {ν e w : E} {c₀ : ℝ}
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνw : ⟪ν, w⟫_ℝ = 0) :
+    MapsTo (transvectionL e w) (H : Set E) (H : Set E) :=
+  fun x hx => (transvectionL_mem_iff hH hνw x).2 hx
 
 /-! ### The shear adapted to a symmetric matrix -/
 
 /-- For a symmetric bilinear form `B` with `B e e ≠ 0` and `w = e - (B e e)⁻¹ v`, where `v`
 represents `B e`, the sheared form `B (S ·) (S ·)`, `S ξ = ξ + ⟪w, ξ⟫ e`, satisfies
 `B (e, S ξ) = B e e ⟪e, ξ⟫`. -/
-private theorem apply_shear_eq {B : E →L[ℝ] E →L[ℝ] ℝ} {e w : E} (hα : B e e ≠ 0)
+private theorem apply_transvectionL_eq {B : E →L[ℝ] E →L[ℝ] ℝ} {e w : E} (hα : B e e ≠ 0)
     (hw : w = e - (B e e)⁻¹ • (toDual ℝ E).symm (B e)) (ξ : E) :
-    B e (shear w e ξ) = B e e * ⟪e, ξ⟫_ℝ := by
-  rw [shear_apply, map_add, map_smul, hw, inner_sub_left, inner_smul_left, toDual_symm_apply,
-    RCLike.conj_to_real, smul_eq_mul]
+    B e (transvectionL w e ξ) = B e e * ⟪e, ξ⟫_ℝ := by
+  rw [transvectionL_apply, map_add, map_smul, hw, inner_sub_left, inner_smul_left,
+    toDual_symm_apply, RCLike.conj_to_real, smul_eq_mul]
   field_simp
   ring
 
@@ -436,21 +389,22 @@ private theorem inner_shearVector {B : E →L[ℝ] E →L[ℝ] ℝ} {e w : E}
   field_simp
   ring
 
-/-- With `w` as in `apply_shear_eq`, the sheared form `B (S ·) (S ·)` of a symmetric form is
+/-- With `w` as in `apply_transvectionL_eq`, the sheared form `B (S ·) (S ·)` of a symmetric form is
 invariant under the reflection `x ↦ x - 2 ⟪e, x⟫ e` in the hyperplane `e^⊥`. -/
-private theorem apply_shear_reflection {B : E →L[ℝ] E →L[ℝ] ℝ} (hB : ∀ η ξ, B η ξ = B ξ η)
+private theorem apply_transvectionL_reflection {B : E →L[ℝ] E →L[ℝ] ℝ} (hB : ∀ η ξ, B η ξ = B ξ η)
     {e w : E} (he : ‖e‖ = 1) (hα : B e e ≠ 0)
     (hw : w = e - (B e e)⁻¹ • (toDual ℝ E).symm (B e)) (η ξ : E) :
-    B (shear w e (η - (2 * ⟪e, η⟫_ℝ) • e)) (shear w e (ξ - (2 * ⟪e, ξ⟫_ℝ) • e)) =
-      B (shear w e η) (shear w e ξ) := by
+    B (transvectionL w e (η - (2 * ⟪e, η⟫_ℝ) • e)) (transvectionL w e (ξ - (2 * ⟪e, ξ⟫_ℝ) • e)) =
+      B (transvectionL w e η) (transvectionL w e ξ) := by
   have hwe : ⟪w, e⟫_ℝ = 0 := by rw [real_inner_comm]; exact inner_shearVector he hα hw
-  have hS (x : E) : shear w e (x - (2 * ⟪e, x⟫_ℝ) • e) = shear w e x - (2 * ⟪e, x⟫_ℝ) • e := by
-    simp only [shear_apply, inner_sub_right, inner_smul_right, hwe]
+  have hS (x : E) :
+      transvectionL w e (x - (2 * ⟪e, x⟫_ℝ) • e) = transvectionL w e x - (2 * ⟪e, x⟫_ℝ) • e := by
+    simp only [transvectionL_apply, inner_sub_right, inner_smul_right, hwe]
     module
   rw [hS, hS]
   simp only [map_sub, map_smul, FunLike.coe_sub, Pi.sub_apply,
     FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
-  rw [hB (shear w e η) e, apply_shear_eq hα hw, apply_shear_eq hα hw]
+  rw [hB (transvectionL w e η) e, apply_transvectionL_eq hα hw, apply_transvectionL_eq hα hw]
   ring
 
 /-- **The shear adapted to a symmetric elliptic matrix.** For a symmetric matrix `A`, uniformly
@@ -460,14 +414,14 @@ invariant under the reflection in `ν^⊥`. -/
 private theorem exists_shear_of_isSymm {ν : E} (hν : ν ≠ 0)
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
     (hA : UniformlyEllipticOn univ (fun _ : E => A) lam Lam) (hAs : A.IsSymm) :
-    ∃ w : E, ⟪‖ν‖⁻¹ • ν, w⟫_ℝ = 0 ∧ ⟪w, ν⟫_ℝ = 0 ∧ ‖w‖ ≤ 1 + Lam / lam ∧
-      ∀ η ξ, matrixBilinearForm A (shear w (‖ν‖⁻¹ • ν) ((ℝ ∙ ν)ᗮ.reflection η))
-          (shear w (‖ν‖⁻¹ • ν) ((ℝ ∙ ν)ᗮ.reflection ξ)) =
-        matrixBilinearForm A (shear w (‖ν‖⁻¹ • ν) η) (shear w (‖ν‖⁻¹ • ν) ξ) := by
+    ∃ w : E, ⟪‖ν‖⁻¹ • ν, w⟫_ℝ = 0 ∧ ⟪ν, w⟫_ℝ = 0 ∧ ‖w‖ ≤ 1 + Lam / lam ∧
+      ∀ η ξ, matrixBilinearForm A (transvectionL w (‖ν‖⁻¹ • ν) ((ℝ ∙ ν)ᗮ.reflection η))
+          (transvectionL w (‖ν‖⁻¹ • ν) ((ℝ ∙ ν)ᗮ.reflection ξ)) =
+        matrixBilinearForm A (transvectionL w (‖ν‖⁻¹ • ν) η)
+          (transvectionL w (‖ν‖⁻¹ • ν) ξ) := by
   set e : E := ‖ν‖⁻¹ • ν with hedef
   set B := matrixBilinearForm A
-  have he : ‖e‖ = 1 := by
-    rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hν)]
+  have he : ‖e‖ = 1 := norm_smul_inv_norm hν
   have hB (η ξ : E) : B η ξ = B ξ η := by
     rw [← matrixBilinearForm_transpose_apply, hAs.eq]
   have hlam : lam ≤ B e e := by
@@ -477,7 +431,7 @@ private theorem exists_shear_of_isSymm {ν : E} (hν : ν ≠ 0)
   have hew : ⟪e, w⟫_ℝ = 0 := inner_shearVector he hα hw
   refine ⟨w, hew, ?_, ?_, fun η ξ => ?_⟩
   · have hν' : ν = ‖ν‖ • e := by rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hν), one_smul]
-    rw [hν', inner_smul_right, real_inner_comm, hew, mul_zero]
+    rw [hν', real_inner_smul_left, hew, mul_zero]
   · have hBe : ‖B e‖ ≤ Lam :=
       (B.le_opNorm e).trans
         (by rw [he, mul_one]; exact hA.opNorm_matrixBilinearForm_le (mem_univ 0))
@@ -495,7 +449,7 @@ private theorem exists_shear_of_isSymm {ν : E} (hν : ν ≠ 0)
         inner_smul_left, RCLike.conj_to_real, smul_smul]
       module
     rw [hR, hR]
-    exact apply_shear_reflection hB he hα hw η ξ
+    exact apply_transvectionL_reflection hB he hα hw η ξ
 
 /-! ### Transporting the problem along the shear -/
 
@@ -503,49 +457,41 @@ private theorem exists_shear_of_isSymm {ν : E} (hν : ν ≠ 0)
 `H¹(ℝ^{n+1})`. -/
 private noncomputable def shearCompL (e w : E) (hew : ⟪e, w⟫_ℝ = 0) :
     W1p volume (⊤ : Opens E) 2 →L[ℝ] W1p volume (⊤ : Opens E) 2 :=
-  W1p.compL (shear e (-w)) ENNReal.ofNat_ne_top (shear e (-w)).differentiableOn
-    (Function.LeftInverse.injective (g := shear e w) (shear_shear_neg hew)).injOn
-    (fun _ _ => trivial) (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-    (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one])
+  W1p.compL (transvectionL e (-w)) ENNReal.ofNat_ne_top (transvectionL e (-w)).differentiableOn
+    (injective_transvectionL_neg hew).injOn (fun _ _ => trivial)
+    (fun x _ => norm_fderiv_transvectionL_le e (-w) x) one_pos
+    (fun x _ => (abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew) x).ge)
 
 private theorem value_shearCompL_ae {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
     (u : W1p volume (⊤ : Opens E) 2) :
-    W1p.value (shearCompL e w hew u) =ᵐ[volume] fun x => W1p.value u (shear e (-w) x) := by
-  have h := W1p.value_compL_ae (U := ⊤) (V := ⊤) (shear e (-w)) ENNReal.ofNat_ne_top
-    (shear e (-w)).differentiableOn
-    (Function.LeftInverse.injective (g := shear e w) (shear_shear_neg hew)).injOn
-    (fun _ _ => trivial) (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-    (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one]) u
-  simp only [Opens.coe_top, Measure.restrict_univ] at h
-  exact h
+    W1p.value (shearCompL e w hew u) =ᵐ[volume]
+      fun x => W1p.value u (transvectionL e (-w) x) := by
+  have h : W1p.value (shearCompL e w hew u) =ᵐ[volume.restrict ((⊤ : Opens E) : Set E)] _ :=
+    W1p.value_compL_ae _ _ _ _ _ _ _ _ u
+  simpa only [Opens.coe_top, Measure.restrict_univ] using h
 
 private theorem gradient_shearCompL_ae {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
     (u : W1p volume (⊤ : Opens E) 2) :
     W1p.gradient (shearCompL e w hew u) =ᵐ[volume]
-      fun x => (shear e (-w)).adjoint (W1p.gradient u (shear e (-w) x)) := by
-  have h := W1p.gradient_compL_ae (U := ⊤) (V := ⊤) (shear e (-w)) ENNReal.ofNat_ne_top
-    (shear e (-w)).differentiableOn
-    (Function.LeftInverse.injective (g := shear e w) (shear_shear_neg hew)).injOn
-    (fun _ _ => trivial) (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-    (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one]) u
-  simp only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.fderiv] at h
-  exact h
+      fun x => (transvectionL e (-w)).adjoint (W1p.gradient u (transvectionL e (-w) x)) := by
+  have h : W1p.gradient (shearCompL e w hew u) =ᵐ[volume.restrict ((⊤ : Opens E) : Set E)] _ :=
+    W1p.gradient_compL_ae _ _ _ _ _ _ _ _ u
+  simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.fderiv] using h
 
 /-- On `H`, the restriction of `u ∘ Φ` is the change of variables `Φ` applied to the restriction
 of `u`, where `Φ x = x - ⟪e, x⟫ w` maps `H` onto itself. -/
 private theorem restrictL_shearCompL {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0)
     (u : W1p volume (⊤ : Opens E) 2) :
     W1p.restrictL (le_top : H ≤ ⊤) (shearCompL e w hew u) =
-      W1p.compL (U := H) (V := H) (shear e (-w)) ENNReal.ofNat_ne_top
-        (shear e (-w)).differentiableOn
-        (Function.LeftInverse.injective (g := shear e w) (shear_shear_neg hew)).injOn
-        (mapsTo_shear hH (by rw [inner_neg_left, hwν, neg_zero]))
-        (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-        (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one])
+      W1p.compL (U := H) (V := H) (transvectionL e (-w)) ENNReal.ofNat_ne_top
+        (transvectionL e (-w)).differentiableOn (injective_transvectionL_neg hew).injOn
+        (mapsTo_transvectionL hH (inner_neg_right_eq_zero hνw))
+        (fun x _ => norm_fderiv_transvectionL_le e (-w) x) one_pos
+        (fun x _ => (abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew) x).ge)
         (W1p.restrictL (le_top : H ≤ ⊤) u) := by
-  have hmp := measurePreserving_shear_restrict hH (neg_inner_eq_zero hew)
-    (by rw [inner_neg_left, hwν, neg_zero])
+  have hmp := measurePreserving_transvectionL_restrict hH (inner_neg_right_eq_zero hew)
+    (inner_neg_right_eq_zero hνw)
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_restrictL_ae (le_top : H ≤ ⊤) (shearCompL e w hew u),
     ae_restrict_of_ae (s := (H : Set E)) (value_shearCompL_ae hew u),
@@ -558,124 +504,128 @@ private theorem restrictL_shearCompL {H : Opens E} {ν e w : E} {c₀ : ℝ}
 /-- **The weak equation along the shear.** If `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `H`,
 then `u ∘ Φ`, `Φ x = x - ⟪e, x⟫ w`, solves the transformed equation in `H`. -/
 private theorem energyFormH1_shearCompL_eq {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0)
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {G : E → E} {u : W1p volume (⊤ : Opens E) 2}
     (hu : ∀ v : W1p0 volume H 2,
       energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
         ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ)
     (v : W1p0 volume H 2) :
-    energyFormH1 (pullbackPrincipal (shear e (-w)) a) 0 0
+    energyFormH1 (pullbackPrincipal (transvectionL e (-w)) a) 0 0
         (W1p.restrictL (le_top : H ≤ ⊤) (shearCompL e w hew u)) (v : W1p volume H 2) =
-      ∫ x in H, ⟪pullbackDrift (shear e (-w)) G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ := by
-  have hwν' : ⟪-w, ν⟫_ℝ = 0 := by rw [inner_neg_left, hwν, neg_zero]
+      ∫ x in H,
+        ⟪pullbackDrift (transvectionL e (-w)) G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ := by
   have key := energyFormH1_compL_eq_setIntegral_add_setIntegral_inner (U := H) (V := H)
-    (shear e (-w)).differentiableOn
-    (Function.LeftInverse.injective (g := shear e w) (shear_shear_neg hew)).injOn
-    (mapsTo_shear hH hwν')
-    (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-    (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one])
-    (Ψ := shear e w) (shear e w).differentiableOn (mapsTo_shear hH hwν)
-    (fun x _ => by rw [ContinuousLinearMap.fderiv]) one_pos
-    (fun x _ => by rw [ContinuousLinearMap.fderiv, det_shear hew, abs_one])
-    (fun x _ => shear_shear_neg hew x)
-    (fun x _ => by simpa using shear_shear_neg (neg_inner_eq_zero hew) x)
+    (transvectionL e (-w)).differentiableOn (injective_transvectionL_neg hew).injOn
+    (mapsTo_transvectionL hH (inner_neg_right_eq_zero hνw))
+    (fun x _ => norm_fderiv_transvectionL_le e (-w) x) one_pos
+    (fun x _ => (abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew) x).ge)
+    (Ψ := transvectionL e w) (transvectionL e w).differentiableOn (mapsTo_transvectionL hH hνw)
+    (fun x _ => norm_fderiv_transvectionL_le e w x) one_pos
+    (fun x _ => (abs_det_fderiv_transvectionL hew x).ge)
+    (fun x _ => transvectionL_transvectionL_neg hew x)
+    (fun x _ => DFunLike.congr_fun (transvectionL_neg_comp_transvectionL hew) x)
     (a := a) (b := 0) (c := 0) (f := 0) (G := G) (u := W1p.restrictL (le_top : H ≤ ⊤) u)
     (fun w => by rw [hu w]; simp) v
-  rw [restrictL_shearCompL hH hew hwν]
+  rw [restrictL_shearCompL hH hew hνw]
   simpa [pullbackDrift_zero, pullbackDensity_zero] using key
 
 /-- `u ∘ Φ` vanishes off `H` when `u` does, since `Φ x = x - ⟪e, x⟫ w` maps `H` onto itself. -/
 private theorem value_shearCompL_ae_eq_zero {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0)
     {u : W1p volume (⊤ : Opens E) 2} (hu0 : ∀ᵐ x, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x, x ∉ H → W1p.value (shearCompL e w hew u) x = 0 := by
   filter_upwards [value_shearCompL_ae hew u,
-    (measurePreserving_shear (neg_inner_eq_zero hew)).quasiMeasurePreserving.ae hu0] with x h1 h2 hx
+    (measurePreserving_transvectionL volume
+      (inner_neg_right_eq_zero hew)).quasiMeasurePreserving.ae hu0] with x h1 h2 hx
   rw [h1]
-  exact h2 fun h => hx ((shear_mem_iff hH (by rw [inner_neg_left, hwν, neg_zero]) x).1 h)
+  exact h2 fun h => hx ((transvectionL_mem_iff hH (inner_neg_right_eq_zero hνw) x).1 h)
 
 /-- The gradient of `u ∘ Φ` is integrable and in `Lᵖ` when that of `u` is, and controls it:
 `‖∇u‖_{Lᵖ} ≤ ‖T‖ ‖∇(u ∘ Φ)‖_{Lᵖ}` for the inverse shear `T x = x + ⟪e, x⟫ w`. -/
 private theorem gradient_shearCompL_memLp {e w : E} (hew : ⟪e, w⟫_ℝ = 0) {p : ℝ≥0∞}
     {u : W1p volume (⊤ : Opens E) 2} (hint : Integrable (W1p.gradient u : E → E))
-    (hgp : MemLp (W1p.gradient u : E → E) p volume) {κ : ℝ≥0} (hκ : ‖shear e w‖ ≤ κ) :
+    (hgp : MemLp (W1p.gradient u : E → E) p volume) {κ : ℝ≥0} (hκ : ‖transvectionL e w‖ ≤ κ) :
     Integrable (W1p.gradient (shearCompL e w hew u) : E → E) ∧
       MemLp (W1p.gradient (shearCompL e w hew u) : E → E) p volume ∧
       eLpNorm (W1p.gradient u : E → E) p volume ≤
         κ * eLpNorm (W1p.gradient (shearCompL e w hew u) : E → E) p volume := by
-  have hmp := measurePreserving_shear (neg_inner_eq_zero hew)
+  have hmp := measurePreserving_transvectionL volume (inner_neg_right_eq_zero hew)
   have hg := gradient_shearCompL_ae hew u
-  refine ⟨((shear e (-w)).adjoint.integrable_comp
+  refine ⟨((transvectionL e (-w)).adjoint.integrable_comp
       ((hmp.integrable_comp hint.aestronglyMeasurable).2 hint)).congr hg.symm,
-    ((shear e (-w)).adjoint.comp_memLp' (hgp.comp_measurePreserving hmp)).ae_eq hg.symm, ?_⟩
+    ((transvectionL e (-w)).adjoint.comp_memLp' (hgp.comp_measurePreserving hmp)).ae_eq hg.symm,
+    ?_⟩
   -- `∇u ∘ Φ = T* ∇(u ∘ Φ)`, since `T* Φ* = (Φ T)* = 1`.
-  have hTΦ : (shear e w).adjoint ∘L (shear e (-w)).adjoint = ContinuousLinearMap.id ℝ E := by
-    rw [← ContinuousLinearMap.adjoint_comp, shear_neg_comp_shear hew,
+  have hTΦ : (transvectionL e w).adjoint ∘L (transvectionL e (-w)).adjoint =
+      ContinuousLinearMap.id ℝ E := by
+    rw [← ContinuousLinearMap.adjoint_comp, transvectionL_neg_comp_transvectionL hew,
       ContinuousLinearMap.adjoint_id]
   rw [← eLpNorm_comp_measurePreserving hgp.aestronglyMeasurable hmp]
   refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
     (hgp.aestronglyMeasurable.comp_measurePreserving hmp) ?_ p
   filter_upwards [hg] with x hx
-  have h : (W1p.gradient u : E → E) (shear e (-w) x) =
-      (shear e w).adjoint ((W1p.gradient (shearCompL e w hew u) : E → E) x) := by
+  have h : (W1p.gradient u : E → E) (transvectionL e (-w) x) =
+      (transvectionL e w).adjoint ((W1p.gradient (shearCompL e w hew u) : E → E) x) := by
     rw [hx, ← ContinuousLinearMap.comp_apply, hTΦ, ContinuousLinearMap.id_apply]
   rw [Function.comp_apply, h, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
-  refine ((shear e w).adjoint.le_opNorm _).trans ?_
+  refine ((transvectionL e w).adjoint.le_opNorm _).trans ?_
   rw [LinearIsometryEquiv.norm_map]
   gcongr
 
 /-- The transformed datum `G'(x) = T G(Φ x)` of a field `G ∈ Lᵖ(H)` lies in `Lᵖ(H)`, with
 `‖G'‖_{Lᵖ(H)} ≤ ‖T‖ ‖G‖_{Lᵖ(H)}`. -/
 private theorem pullbackDrift_shear_memLp {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0) {p : ℝ≥0∞}
-    {G : E → E} (hG : MemLp G p (volume.restrict H)) {κ : ℝ≥0} (hκ : ‖shear e w‖ ≤ κ) :
-    MemLp (pullbackDrift (shear e (-w)) G) p (volume.restrict H) ∧
-      eLpNorm (pullbackDrift (shear e (-w)) G) p (volume.restrict H) ≤
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0) {p : ℝ≥0∞}
+    {G : E → E} (hG : MemLp G p (volume.restrict H)) {κ : ℝ≥0} (hκ : ‖transvectionL e w‖ ≤ κ) :
+    MemLp (pullbackDrift (transvectionL e (-w)) G) p (volume.restrict H) ∧
+      eLpNorm (pullbackDrift (transvectionL e (-w)) G) p (volume.restrict H) ≤
         κ * eLpNorm G p (volume.restrict H) := by
-  have hmp := measurePreserving_shear_restrict hH (neg_inner_eq_zero hew)
-    (by rw [inner_neg_left, hwν, neg_zero])
-  have hG' : pullbackDrift (shear e (-w)) G = fun x => shear e w (G (shear e (-w) x)) := by
+  have hmp := measurePreserving_transvectionL_restrict hH (inner_neg_right_eq_zero hew)
+    (inner_neg_right_eq_zero hνw)
+  have hG' : pullbackDrift (transvectionL e (-w)) G =
+      fun x => transvectionL e w (G (transvectionL e (-w) x)) := by
     funext x
-    rw [pullbackDrift_eq_smul_apply G (T := shear e w)
-      (by rw [ContinuousLinearMap.fderiv, shear_comp_shear_neg hew]),
-      ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one, one_smul]
+    rw [pullbackDrift_eq_smul_apply G (T := transvectionL e w)
+      (by rw [ContinuousLinearMap.fderiv, transvectionL_comp_transvectionL_neg hew]),
+      abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew), one_smul]
   have hm := (hG.comp_measurePreserving hmp)
   rw [hG']
-  refine ⟨(shear e w).comp_memLp' hm, ?_⟩
+  refine ⟨(transvectionL e w).comp_memLp' hm, ?_⟩
   rw [← eLpNorm_comp_measurePreserving hG.aestronglyMeasurable hmp]
   refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-    ((shear e w).continuous.comp_aestronglyMeasurable hm.aestronglyMeasurable)
+    ((transvectionL e w).continuous.comp_aestronglyMeasurable hm.aestronglyMeasurable)
     (Filter.Eventually.of_forall fun x => ?_) p
   rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
-  exact ((shear e w).le_opNorm _).trans (by gcongr)
+  exact ((transvectionL e w).le_opNorm _).trans (by gcongr)
 
 /-- The bilinear form of the coefficient transformed by `Φ x = x - ⟪e, x⟫ w` is the original one
 read through the adjoint `S ξ = ξ + ⟪w, ξ⟫ e` of the inverse shear. -/
 private theorem matrixBilinearForm_pullbackPrincipal_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
     (b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (x : E) :
-    matrixBilinearForm (pullbackPrincipal (shear e (-w)) b x) =
-      (matrixBilinearForm (b (shear e (-w) x))).bilinearComp (shear w e) (shear w e) := by
-  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp b (T := shear e w)
-      (by rw [ContinuousLinearMap.fderiv, shear_comp_shear_neg hew]),
-    ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one, one_smul,
-    adjoint_shear]
+    matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) b x) =
+      (matrixBilinearForm (b (transvectionL e (-w) x))).bilinearComp (transvectionL w e)
+        (transvectionL w e) := by
+  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp b (T := transvectionL e w)
+      (by rw [ContinuousLinearMap.fderiv, transvectionL_comp_transvectionL_neg hew]),
+    abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew), one_smul, adjoint_transvectionL]
 
 /-- The matrix `A` transformed by the shear `Φ x = x - ⟪e, x⟫ w`, with `‖Φ‖, ‖Φ⁻¹‖ ≤ κ`, is
 uniformly elliptic with constants `λ / κ²` and `κⁿ⁺³ Λ`. -/
 private theorem uniformlyEllipticOn_pullbackPrincipal_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam κ : ℝ}
-    (hA : UniformlyEllipticOn univ (fun _ : E => A) lam Lam) (hT : ‖shear e w‖ ≤ κ)
-    (hΦ : ‖shear e (-w)‖ ≤ κ) :
-    UniformlyEllipticOn univ (fun _ : E => pullbackPrincipal (shear e (-w)) (fun _ => A) 0)
+    (hA : UniformlyEllipticOn univ (fun _ : E => A) lam Lam) (hT : ‖transvectionL e w‖ ≤ κ)
+    (hΦ : ‖transvectionL e (-w)‖ ≤ κ) :
+    UniformlyEllipticOn univ
+      (fun _ : E => pullbackPrincipal (transvectionL e (-w)) (fun _ => A) 0)
       (lam / κ ^ 2) (κ ^ (n + 1) * κ ^ 2 * Lam) := by
-  have h := hA.pullbackPrincipal (Φ := shear e (-w)) (L := κ) (L' := κ) (c := 1) (s := univ)
-    (mapsTo_univ _ _) univ_nonempty (fun x _ => by rwa [ContinuousLinearMap.fderiv])
+  have h := hA.pullbackPrincipal (Φ := transvectionL e (-w)) (L := κ) (L' := κ) (c := 1)
+    (s := univ) (mapsTo_univ _ _) univ_nonempty (fun x _ => by rwa [ContinuousLinearMap.fderiv])
     (fun x _ v => by
       rw [ContinuousLinearMap.fderiv]
-      calc ‖v‖ = ‖shear e w (shear e (-w) v)‖ := by rw [shear_shear_neg hew]
-        _ ≤ κ * ‖shear e (-w) v‖ := ((shear e w).le_opNorm _).trans (by gcongr))
-    one_pos (fun x _ => by
-      rw [ContinuousLinearMap.fderiv, det_shear (neg_inner_eq_zero hew), abs_one])
+      calc ‖v‖ = ‖transvectionL e w (transvectionL e (-w) v)‖ := by
+            rw [transvectionL_transvectionL_neg hew]
+        _ ≤ κ * ‖transvectionL e (-w) v‖ := ((transvectionL e w).le_opNorm _).trans (by gcongr))
+    one_pos (fun x _ => (abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew) x).ge)
   simp only [one_mul, Fintype.card_fin] at h
   exact h.congr fun x _ => by simp [pullbackPrincipal_apply, ContinuousLinearMap.fderiv]
 
@@ -685,40 +635,42 @@ private theorem norm_matrixBilinearForm_pullbackPrincipal_shear_sub_le {e w : E}
     (hew : ⟪e, w⟫_ℝ = 0) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {δ : ℝ}
     (ha : ∀ x, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ) (x y : E) :
-    ‖matrixBilinearForm (pullbackPrincipal (shear e (-w)) a x) -
-        matrixBilinearForm (pullbackPrincipal (shear e (-w)) (fun _ => A) y)‖ ≤
-      δ * ‖shear e w‖ * ‖shear e w‖ := by
+    ‖matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) a x) -
+        matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) (fun _ => A) y)‖ ≤
+      δ * ‖transvectionL e w‖ * ‖transvectionL e w‖ := by
   have hδ : 0 ≤ δ := (norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A)).trans (ha x)
   rw [matrixBilinearForm_pullbackPrincipal_shear hew,
     matrixBilinearForm_pullbackPrincipal_shear hew]
   refine ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun η ξ => ?_
-  have h := (matrixBilinearForm (a (shear e (-w) x)) - matrixBilinearForm A).le_opNorm₂
-    (shear w e η) (shear w e ξ)
+  have h := (matrixBilinearForm (a (transvectionL e (-w) x)) - matrixBilinearForm A).le_opNorm₂
+    (transvectionL w e η) (transvectionL w e ξ)
   simp only [FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.bilinearComp_apply] at h ⊢
   refine h.trans ?_
-  have hS (ζ : E) : ‖shear w e ζ‖ ≤ ‖shear e w‖ * ‖ζ‖ := by
-    rw [← adjoint_shear, ← LinearIsometryEquiv.norm_map ContinuousLinearMap.adjoint (shear e w)]
-    exact (shear e w).adjoint.le_opNorm ζ
-  calc ‖matrixBilinearForm (a (shear e (-w) x)) - matrixBilinearForm A‖ * ‖shear w e η‖ *
-        ‖shear w e ξ‖ ≤ δ * (‖shear e w‖ * ‖η‖) * (‖shear e w‖ * ‖ξ‖) := by
+  have hS (ζ : E) : ‖transvectionL w e ζ‖ ≤ ‖transvectionL e w‖ * ‖ζ‖ := by
+    rw [← adjoint_transvectionL,
+      ← LinearIsometryEquiv.norm_map ContinuousLinearMap.adjoint (transvectionL e w)]
+    exact (transvectionL e w).adjoint.le_opNorm ζ
+  calc ‖matrixBilinearForm (a (transvectionL e (-w) x)) - matrixBilinearForm A‖ *
+        ‖transvectionL w e η‖ * ‖transvectionL w e ξ‖ ≤
+        δ * (‖transvectionL e w‖ * ‖η‖) * (‖transvectionL e w‖ * ‖ξ‖) := by
         gcongr
         exacts [ha _, hS η, hS ξ]
-    _ = δ * ‖shear e w‖ * ‖shear e w‖ * ‖η‖ * ‖ξ‖ := by ring
+    _ = δ * ‖transvectionL e w‖ * ‖transvectionL e w‖ * ‖η‖ * ‖ξ‖ := by ring
 
 
 /-- The transformed coefficient `a ∘ Φ`, conjugated by the shear, is measurable on `H`. -/
 private theorem aestronglyMeasurable_pullbackPrincipal_shear {H : Opens E} {ν e w : E} {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hwν : ⟪w, ν⟫_ℝ = 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hew : ⟪e, w⟫_ℝ = 0) (hνw : ⟪ν, w⟫_ℝ = 0)
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict H)) :
-    AEStronglyMeasurable (pullbackPrincipal (shear e (-w)) a) (volume.restrict H) := by
-  have h := ha.comp_measurePreserving (measurePreserving_shear_restrict hH (neg_inner_eq_zero hew)
-    (by rw [inner_neg_left, hwν, neg_zero]))
-  set M := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (shear e (-w))
+    AEStronglyMeasurable (pullbackPrincipal (transvectionL e (-w)) a) (volume.restrict H) := by
+  have h := ha.comp_measurePreserving (measurePreserving_transvectionL_restrict hH
+    (inner_neg_right_eq_zero hew) (inner_neg_right_eq_zero hνw))
+  set M := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (transvectionL e (-w))
   have hF : Continuous fun X : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ =>
-      |(shear e (-w)).det| • (M⁻¹ * X * Matrix.transpose M⁻¹) :=
+      |(transvectionL e (-w)).det| • (M⁻¹ * X * Matrix.transpose M⁻¹) :=
     (((continuous_const (y := M⁻¹)).matrix_mul continuous_id).matrix_mul
-      (continuous_const (y := Matrix.transpose M⁻¹))).const_smul |(shear e (-w)).det|
+      (continuous_const (y := Matrix.transpose M⁻¹))).const_smul |(transvectionL e (-w)).det|
   refine (hF.comp_aestronglyMeasurable h).congr (Filter.Eventually.of_forall fun x => ?_)
   simp [M, pullbackPrincipal_apply, ContinuousLinearMap.fderiv]
 
@@ -745,42 +697,44 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   -- `κ` bounds the shear and its inverse; the sheared problem has ellipticity `λ / κ², κⁿ⁺³ Λ`.
-  set κ : ℝ≥0 := ⟨2 + |Lam / lam|, by positivity⟩ with hκ'
-  have hκdef : (κ : ℝ) = 2 + |Lam / lam| := by rw [hκ']; rfl
+  set κ : ℝ≥0 := (2 + |Lam / lam|).toNNReal
+  have hκdef : (κ : ℝ) = 2 + |Lam / lam| := Real.coe_toNNReal _ (by positivity)
   have hκ : (0 : ℝ) < κ := by rw [hκdef]; positivity
   obtain ⟨C₀, δ₀, hδ₀, h₀⟩ := exists_eLpNorm_gradient_le_of_norm_sub_le_of_reflection (n := n) hp
     hp_top (lam / (κ : ℝ) ^ 2) ((κ : ℝ) ^ (n + 1) * (κ : ℝ) ^ 2 * Lam)
   refine ⟨κ * C₀ * κ, δ₀ / (κ : ℝ) ^ 2, div_pos hδ₀ (pow_pos hκ 2), ?_⟩
   intro H ν c₀ a A hν hH ham hA hAs ha u G hu0 hu hint hgp hG2 hGp
-  obtain ⟨w, hew, hwν, hw, hinv⟩ := exists_shear_of_isSymm hν hA hAs
+  obtain ⟨w, hew, hνw, hw, hinv⟩ := exists_shear_of_isSymm hν hA hAs
   set e : E := ‖ν‖⁻¹ • ν
-  have he : ‖e‖ = 1 := by
-    rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hν)]
+  have he : ‖e‖ = 1 := norm_smul_inv_norm hν
   have hκw : 1 + ‖w‖ ≤ κ := by
     rw [hκdef]
     linarith [le_abs_self (Lam / lam)]
-  have hT : ‖shear e w‖ ≤ κ := (norm_shear_le he w).trans hκw
-  have hΦ : ‖shear e (-w)‖ ≤ κ := (norm_shear_le he (-w)).trans (by rwa [norm_neg])
+  have hT : ‖transvectionL e w‖ ≤ κ := (norm_transvectionL_le e w).trans (by rwa [he, one_mul])
+  have hΦ : ‖transvectionL e (-w)‖ ≤ κ :=
+    (norm_transvectionL_le e (-w)).trans (by rwa [he, one_mul, norm_neg])
   -- The sheared problem satisfies the hypotheses of the reflection-invariant case.
   have hÃ := uniformlyEllipticOn_pullbackPrincipal_shear hew hA hT hΦ
-  have hãÃ (x : E) : ‖matrixBilinearForm (pullbackPrincipal (shear e (-w)) a x) -
-      matrixBilinearForm (pullbackPrincipal (shear e (-w)) (fun _ => A) 0)‖ ≤ δ₀ := by
+  have hãÃ (x : E) : ‖matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) a x) -
+      matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) (fun _ => A) 0)‖ ≤ δ₀ := by
     refine (norm_matrixBilinearForm_pullbackPrincipal_shear_sub_le hew ha x 0).trans ?_
-    calc δ₀ / (κ : ℝ) ^ 2 * ‖shear e w‖ * ‖shear e w‖ ≤ δ₀ / (κ : ℝ) ^ 2 * κ * κ := by gcongr
+    calc δ₀ / (κ : ℝ) ^ 2 * ‖transvectionL e w‖ * ‖transvectionL e w‖ ≤
+        δ₀ / (κ : ℝ) ^ 2 * κ * κ := by gcongr
       _ = δ₀ := by field_simp
-  have hÃinv (η ξ : E) : matrixBilinearForm (pullbackPrincipal (shear e (-w)) (fun _ => A) 0)
-      ((ℝ ∙ ν)ᗮ.reflection η) ((ℝ ∙ ν)ᗮ.reflection ξ) =
-      matrixBilinearForm (pullbackPrincipal (shear e (-w)) (fun _ => A) 0) η ξ := by
+  have hÃinv (η ξ : E) :
+      matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) (fun _ => A) 0)
+        ((ℝ ∙ ν)ᗮ.reflection η) ((ℝ ∙ ν)ᗮ.reflection ξ) =
+      matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) (fun _ => A) 0) η ξ := by
     simp only [matrixBilinearForm_pullbackPrincipal_shear hew,
       ContinuousLinearMap.bilinearComp_apply]
     exact hinv η ξ
   -- Apply the reflection-invariant estimate to `u ∘ Φ` and transform back.
   obtain ⟨hgi, hgp', hgu⟩ := gradient_shearCompL_memLp hew hint hgp hT
-  obtain ⟨hG2', -⟩ := pullbackDrift_shear_memLp hH hew hwν hG2 hT
-  obtain ⟨hGp', hGle⟩ := pullbackDrift_shear_memLp hH hew hwν hGp hT
-  have h := h₀ hν hH (aestronglyMeasurable_pullbackPrincipal_shear hH hew hwν ham) hÃ hÃinv hãÃ
-    (shearCompL e w hew u) _ (value_shearCompL_ae_eq_zero hH hew hwν hu0)
-    (energyFormH1_shearCompL_eq hH hew hwν hu) hgi hgp' hG2' hGp'
+  obtain ⟨hG2', -⟩ := pullbackDrift_shear_memLp hH hew hνw hG2 hT
+  obtain ⟨hGp', hGle⟩ := pullbackDrift_shear_memLp hH hew hνw hGp hT
+  have h := h₀ hν hH (aestronglyMeasurable_pullbackPrincipal_shear hH hew hνw ham) hÃ hÃinv hãÃ
+    (shearCompL e w hew u) _ (value_shearCompL_ae_eq_zero hH hew hνw hu0)
+    (energyFormH1_shearCompL_eq hH hew hνw hu) hgi hgp' hG2' hGp'
   calc eLpNorm (W1p.gradient u : E → E) p volume
       ≤ κ * (C₀ * (κ * eLpNorm G p (volume.restrict H))) :=
         hgu.trans (by gcongr; exact h.trans (by gcongr))
