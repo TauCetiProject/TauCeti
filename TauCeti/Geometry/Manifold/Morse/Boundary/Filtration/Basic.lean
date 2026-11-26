@@ -167,9 +167,11 @@ variable (E f) in
 coefficients `coeff p q` between the critical points of `f`, of which there are finitely many,
 that lowers the Morse index by one, strictly lowers the critical value, and squares to zero. The
 mod-two counts of trajectories of a Morse–Smale pseudo-gradient form one
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundaryCoeffs`), and so do the signed counts
-of trajectories, with coefficients in any ring in which the integral Morse boundary squares to
-zero (`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeffs`). -/
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundaryCoeffs`), and so do the integral
+boundary coefficients `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff` (the signed
+counts of trajectories when the pseudo-gradient is Morse–Smale), with coefficients in any ring in
+which the integral Morse boundary squares to zero
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeffs`). -/
 @[ext]
 structure MorseBoundaryCoeffs (R : Type*) [Ring R] where
   /-- The coefficient of the critical point `q` in the boundary of the critical point `p`. -/

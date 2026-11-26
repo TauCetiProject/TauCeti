@@ -15,9 +15,11 @@ Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo
 to `f`, and `𝔬` orientations of the unstable manifolds. Suppose that the integral Morse boundary
 `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary` with coefficients in a ring `R` squares to
 zero, so that it is the differential of the integral Morse complex
-`TauCeti.IsAdaptedPseudoGradient.signedMorseComplex`. The signed counts of trajectories between
-critical points lower the Morse index by one and strictly lower the critical value, so they form
-boundary coefficients `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeffs` in the sense of
+`TauCeti.IsAdaptedPseudoGradient.signedMorseComplex`. The integral boundary coefficients
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff` (the signed counts of trajectories
+between critical points when `X` is Morse–Smale) lower the Morse index by one and strictly lower
+the critical value, so they form boundary coefficients
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeffs` in the sense of
 `TauCeti.MorseBoundaryCoeffs`.
 
 The general construction of `TauCeti.Geometry.Manifold.Morse.Boundary.Filtration.Basic` then
@@ -27,7 +29,7 @@ integral Morse complex
 critical-value spectral sequence, whose first page is free over `R` on the critical points in each
 band when each band contains a single critical value
 (`TauCeti.MorseBoundaryCoeffs.spectralSequenceFirstPageXIsoOfSubsingleton`), converges to the
-Morse homology with coefficients in `R`
+homology of the integral Morse complex `signedMorseComplex` with coefficients in `R`
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseFiltrationAbutmentIso`). The vanishing of `∂ ∘ ∂` is
 a hypothesis here, as it is for the integral Morse complex itself.
 
@@ -35,11 +37,12 @@ a hypothesis here, as it is for the integral Morse complex itself.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `signedMorseBoundaryCoeffs`: the signed trajectory counts as boundary coefficients over `R`.
+* `signedMorseBoundaryCoeffs`: the integral boundary coefficients as boundary coefficients
+  over `R`.
 * `signedMorseBoundaryCoeffsComplexOnUnivIso`: their complex with all critical values is the
   integral Morse complex.
 * `signedMorseFiltrationAbutmentIso`: the abutment of their critical-value spectral sequence is
-  Morse homology with coefficients in `R`.
+  the homology of the integral Morse complex with coefficients in `R`.
 
 ## References
 
@@ -67,10 +70,10 @@ variable {hX : IsAdaptedPseudoGradient f X} {𝔬 : MorseOrientation f X}
   {hf : IsMorse 𝓘(ℝ, E) f} {R : Type*} [Ring R]
 
 variable (hX 𝔬 hf R) in
-/-- **The signed trajectory counts as boundary coefficients.** When the integral Morse boundary
-with coefficients in `R` squares to zero, the coefficient of `q` in the boundary of `p` is the
-signed count of trajectories from `p` to `q`
-(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff`), read in `R`. -/
+/-- **The integral boundary coefficients as boundary coefficients.** When the integral Morse
+boundary with coefficients in `R` squares to zero, the coefficient of `q` in the boundary of `p` is
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff`, read in `R`. When `X` is Morse–Smale
+this is the signed count of trajectories from `p` to `q`. -/
 def signedMorseBoundaryCoeffs
     (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
     MorseBoundaryCoeffs E f R where
@@ -128,7 +131,8 @@ theorem signedMorseBoundaryCoeffsComplexOnUnivIso_inv_f_apply (n : ℕ)
 variable {a : ℤ → ℝ} (ha : Monotone a)
 
 /-- **The abutment of the critical-value spectral sequence of the integral Morse complex** in
-degree `-n` is the Morse homology with coefficients in `R` in degree `n`. -/
+degree `-n` is the homology of the integral Morse complex `signedMorseComplex` with coefficients
+in `R` in degree `n`. -/
 def signedMorseFiltrationAbutmentIso (n : ℕ) :
     (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
         ((hX.signedMorseBoundaryCoeffs 𝔬 hf R hsq).monotone_filtration ha))).abutment (-n) ≅
