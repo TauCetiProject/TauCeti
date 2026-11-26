@@ -29,8 +29,9 @@ The data are given by a single linear map `T : T_x M → T_x' M'` carrying `D x`
 If `x` and `x'` are interior points, there is a partial diffeomorphism `φ` with `φ x = x'` whose
 differential carries `D` onto `D'` on its source, agrees with `T` on `D x`, and agrees with `T`
 modulo `D' x'`
-(`TauCeti.IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInteriorPoint`, and
-`TauCeti.IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq` on boundaryless manifolds).
+(`TauCeti.IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq_of_isInteriorPoint`,
+and `TauCeti.IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq` on boundaryless
+manifolds).
 No contact form or coorientation is chosen, and the map of contact lines may reverse any
 coorientation.
 
@@ -48,8 +49,8 @@ with `S` on `z = 0` and in the `z` coordinate. The partial diffeomorphism is `c�
 
 ## Main results
 
-* `TauCeti.IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInteriorPoint`,
-  `TauCeti.IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq`: contact charts with
+* `TauCeti.IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq_of_isInteriorPoint`,
+  `TauCeti.IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq`: contact charts with
   prescribed first-order data.
 
 ## References
@@ -126,7 +127,10 @@ private theorem stdSymplecticForm_mfderiv_eq_of_mkQ_eq
   have hlift := SmoothForm.liftQ_distributionLeviForm_kerDistribution (hα.apply_ne_zero (c x))
     ((mfderiv I _ c x).toLinearMap.restrict hfD u) ((mfderiv I _ c x).toLinearMap.restrict hfD v)
   rw [hnat, mextDeriv_innerProductContactForm_apply, ← hw] at hlift
-  simp [hcx] at hlift
+  simp only [Submodule.mkQ_apply, Submodule.mapQ_apply, ContinuousLinearMap.coe_coe,
+    Submodule.liftQ_apply, SmoothForm.degreeOneEquiv_apply_apply_vec,
+    innerProductContactForm_apply, hcx, Prod.snd_zero, Prod.fst_zero, inner_zero_left, sub_zero,
+    LinearMap.coe_restrict_apply, stdSymplecticForm_apply] at hlift
   rw [stdSymplecticForm_apply]
   exact hlift.symm
 
@@ -317,9 +321,9 @@ which is conformally symplectic for the Levi forms: `L_D' (T u, T v)` is the ima
 `L_D (u, v)` under the map of contact lines induced by `T`. Then there is a partial
 diffeomorphism `φ` from `M` to `M'`, defined near `x`, with `φ x = x'`, whose differential carries
 `D` onto `D'` at every point of its source, agrees with `T` on `D x`, and agrees with `T` modulo
-`D' x'`: `dφ_x v = T v + w` for some `w ∈ D' x'`. So `φ` induces exactly the restriction of `T` to
-`D x` and the map of contact lines induced by `T`. -/
-theorem IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInteriorPoint
+`D' x'`: `dφ_x v` and `T v` have the same image in `T_x' M' ⧸ D' x'`. So `φ` induces exactly the
+restriction of `T` to `D x` and the map of contact lines induced by `T`. -/
+theorem IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq_of_isInteriorPoint
     (hD : IsContactDistribution I ∞ D) (hD' : IsContactDistribution I' ∞ D')
     (hx : I.IsInteriorPoint x) (hx' : I'.IsInteriorPoint x')
     (hE : finrank ℝ E' = finrank ℝ E) (T : TangentSpace I x →ₗ[ℝ] TangentSpace I' x')
@@ -329,7 +333,7 @@ theorem IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInterior
     ∃ φ : PartialDiffeomorph I I' M M' ∞, x ∈ φ.source ∧ φ x = x' ∧
       (∀ y ∈ φ.source, D y = (D' (φ y)).comap (mfderiv I I' φ y).toLinearMap) ∧
       (∀ u ∈ D x, mfderiv I I' φ x u = T u) ∧
-      ∀ v, ∃ w ∈ D' x', mfderiv I I' φ x v = T v + w := by
+      ∀ v, (D' x').mkQ (mfderiv I I' φ x v) = (D' x').mkQ (T v) := by
   -- Contact charts at `x` and `x'`, centred at the origin of the standard contact space.
   obtain ⟨n, c₁, hn, hx₁, hc₁x, hc₁D⟩ := hD.exists_darbouxChart_of_isInteriorPoint hx
   obtain ⟨c₂, hx₂, hc₂x, hc₂D⟩ :=
@@ -347,16 +351,14 @@ theorem IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInterior
   refine ⟨φ, hxφ, hφx, hφD, fun u hu ↦ ?_, fun v ↦ ?_⟩
   · rw [hdφ, h₁ u hu]
     exact hP₂i.inverse_apply_self (T u)
-  · set d := fderiv ℝ (conformalContactLift (A : _ →L[ℝ] _) c) 0 (P₁ v)
-    refine ⟨P₂.inverse (d - P₂ (T v)), ?_, ?_⟩
-    · rw [hmem₂, hP₂i.self_apply_inverse, Prod.snd_sub, Prod.snd_sub, h₂, sub_self]
-    · rw [hdφ, map_sub, hP₂i.inverse_apply_self, add_sub_cancel]
+  · refine (Submodule.Quotient.eq _).2 ?_
+    rw [hmem₂, hdφ, map_sub, hP₂i.self_apply_inverse, Prod.snd_sub, Prod.snd_sub, h₂, sub_self]
 
 /-- **Contact charts with prescribed first-order data** on boundaryless manifolds, where every
 point is interior: the case of
-`TauCeti.IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq_of_isInteriorPoint` for
+`TauCeti.IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq_of_isInteriorPoint` for
 arbitrary points `x` and `x'`. -/
-theorem IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq
+theorem IsContactDistribution.exists_partialDiffeomorph_mkQ_mfderiv_eq
     [BoundarylessManifold I M] [BoundarylessManifold I' M']
     (hD : IsContactDistribution I ∞ D) (hD' : IsContactDistribution I' ∞ D')
     (hE : finrank ℝ E' = finrank ℝ E) (T : TangentSpace I x →ₗ[ℝ] TangentSpace I' x')
@@ -366,8 +368,8 @@ theorem IsContactDistribution.exists_partialDiffeomorph_mfderiv_eq
     ∃ φ : PartialDiffeomorph I I' M M' ∞, x ∈ φ.source ∧ φ x = x' ∧
       (∀ y ∈ φ.source, D y = (D' (φ y)).comap (mfderiv I I' φ y).toLinearMap) ∧
       (∀ u ∈ D x, mfderiv I I' φ x u = T u) ∧
-      ∀ v, ∃ w ∈ D' x', mfderiv I I' φ x v = T v + w :=
-  hD.exists_partialDiffeomorph_mfderiv_eq_of_isInteriorPoint hD'
+      ∀ v, (D' x').mkQ (mfderiv I I' φ x v) = (D' x').mkQ (T v) :=
+  hD.exists_partialDiffeomorph_mkQ_mfderiv_eq_of_isInteriorPoint hD'
     BoundarylessManifold.isInteriorPoint BoundarylessManifold.isInteriorPoint hE T hTD hTD' hTL
 
 end TauCeti

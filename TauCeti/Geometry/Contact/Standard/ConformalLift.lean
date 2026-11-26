@@ -17,7 +17,7 @@ derivative is the standard symplectic form `ω` of the `(q, p)` coordinates
 (`TauCeti.stdSymplecticForm`). A linear map `A` of `V × V` is *conformally symplectic with
 multiplier `c`* when `ω(A u, A w) = c ω(u, w)` for all `u` and `w`.
 
-Every such map lifts to a polynomial contactomorphism of `V × V × ℝ` fixing the origin. Writing
+Every such map lifts to a polynomial map of `V × V × ℝ` fixing the origin. Writing
 `w = (q, p)`, the **contact lift** (`TauCeti.conformalContactLift A c`) is
 
 `(q, p, z) ↦ (A w, c z + (⟪(A w).2, (A w).1⟫ - c ⟪p, q⟫) / 2)`,
@@ -209,7 +209,7 @@ theorem fderiv_conformalContactLift_zero_apply (A : V × V →L[ℝ] V × V) (c 
   rw [hL.fderiv, hLv, h₀, map_zero]
   simp
 
-/-- **The contact lift of a conformally symplectic map is a conformal contactomorphism.** If
+/-- **The contact lift of a conformally symplectic map pulls `α` back to `c α`.** If
 `ω(A u, A w) = c ω(u, w)` for the standard symplectic form `ω` of `V × V`, then the contact lift
 of `A` with multiplier `c` pulls the standard contact form `α = dz - ⟪p, dq⟫` back to `c α`. -/
 theorem mpullback_conformalContactLift_innerProductContactForm
@@ -302,12 +302,14 @@ theorem isContactomorphism_conformalContactLiftDiffeomorph (A : (V × V) ≃L[�
     mpullback_conformalContactLiftDiffeomorph_innerProductContactForm A hc hA]
   exact SmoothForm.kerDistribution_smul hc
 
-/-- A linear map of `V × V × ℝ` preserving the hyperplane `z = 0` multiplies the `z` coordinate
-by the `z` coordinate of the image of `(0, 0, 1)`. -/
-theorem _root_.LinearMap.snd_snd_apply_eq_mul (S : V × V × ℝ →ₗ[ℝ] V × V × ℝ)
-    (hS : ∀ y : V × V × ℝ, y.2.2 = 0 → (S y).2.2 = 0) (y : V × V × ℝ) :
+/-- A linear map `E × F × R → E' × F' × R` carrying the hyperplane `z = 0` into `z = 0`
+multiplies the `z` coordinate by the `z` coordinate of the image of `(0, 0, 1)`. -/
+theorem _root_.LinearMap.snd_snd_apply_eq_mul {R E F E' F' : Type*} [CommSemiring R]
+    [AddCommMonoid E] [Module R E] [AddCommMonoid F] [Module R F] [AddCommMonoid E'] [Module R E']
+    [AddCommMonoid F'] [Module R F'] (S : E × F × R →ₗ[R] E' × F' × R)
+    (hS : ∀ y : E × F × R, y.2.2 = 0 → (S y).2.2 = 0) (y : E × F × R) :
     (S y).2.2 = (S (0, 0, 1)).2.2 * y.2.2 := by
-  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : V × V × ℝ) := by
+  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : E × F × R) := by
     ext <;> simp
   rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
   simp [mul_comm]
