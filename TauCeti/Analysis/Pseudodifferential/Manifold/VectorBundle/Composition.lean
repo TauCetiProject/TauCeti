@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.PrincipalSymbol
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Smoothing
+import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Topology.Algebra.Support
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -88,13 +89,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {m : ℝ}
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
 
-/-- A real smooth function equal to `1` near `x` and supported in a given neighbourhood of `x`. -/
-private theorem exists_cutoff_of_mem_nhds {x : M} {s : Set M} (hs : s ∈ 𝓝 x) :
-    ∃ ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯, tsupport ρ ⊆ s ∧ ∀ᶠ y in 𝓝 x, ρ y = 1 := by
-  obtain ⟨f, -, hf⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, CoordinateSpace n)) x).mem_iff.1 hs
-  exact ⟨⟨f, f.contMDiff⟩, hf, f.eventuallyEq_one⟩
-
 /-! ### Multiplication by smooth functions -/
 
 /-- If every entry of `Q` has, at `ξ ∈ T*ₓM`, `c` times the principal symbol of the corresponding
@@ -113,7 +107,8 @@ private theorem sectionClassicalPrincipalSymbol_eq_smul_of_forall
     sectionClassicalPrincipalSymbol m Q x ξ = c • sectionClassicalPrincipalSymbol m P x ξ := by
   set t := trivializationAt V E x
   set t' := trivializationAt W F x
-  obtain ⟨ρ, hρ, hρx⟩ := exists_cutoff_of_mem_nhds (n := n)
+  obtain ⟨ρ, hρ, hρx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
     (inter_mem (t.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt V E x))
       (t'.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt W F x)))
   have hρ1 : ρ x = 1 := hρx.self_of_nhds
@@ -221,7 +216,8 @@ private theorem classicalPrincipalSymbol_sectionEntry_comp_one_sub_comp_eq_zero
     (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     classicalPrincipalSymbol (m' + m) (sectionEntry t ψ hψ v t'' χ hχ ℓ
       ((R ∘ₗ ((1 - ContMDiffMap.ofReal θ) • LinearMap.id)) ∘ₗ P)) x ξ = 0 := by
-  obtain ⟨θ₀, hθ₀, hθ₀x⟩ := exists_cutoff_of_mem_nhds (n := n)
+  obtain ⟨θ₀, hθ₀, hθ₀x⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
     (isOpen_setOfPred_eventually_nhds.mem_nhds hθx)
   set θc := ContMDiffMap.ofReal θ
   set θ₀c := ContMDiffMap.ofReal θ₀
@@ -266,12 +262,16 @@ theorem sectionClassicalPrincipalSymbol_comp
   have hxF : x ∈ t'.baseSet := FiberBundle.mem_baseSet_trivializationAt W F x
   -- Cutoffs at `x`: `ψ` and `χ` for the frames of `E` and `G`, `ρ` for the frame of `F`, and `θ`
   -- supported where `ρ = 1`.
-  obtain ⟨ψ, hψ, hψx⟩ := exists_cutoff_of_mem_nhds (n := n)
+  obtain ⟨ψ, hψ, hψx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
     (t.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt V E x))
-  obtain ⟨χ, hχ, hχx⟩ := exists_cutoff_of_mem_nhds (n := n)
+  obtain ⟨χ, hχ, hχx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
     (t''.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt U G x))
-  obtain ⟨ρ, hρ, hρx⟩ := exists_cutoff_of_mem_nhds (n := n) (t'.open_baseSet.mem_nhds hxF)
-  obtain ⟨θ, hθ, hθx⟩ := exists_cutoff_of_mem_nhds (n := n)
+  obtain ⟨ρ, hρ, hρx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) (t'.open_baseSet.mem_nhds hxF)
+  obtain ⟨θ, hθ, hθx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
     (inter_mem hρx (t'.open_baseSet.mem_nhds hxF))
   set b := finBasis ℂ W
   refine (sectionClassicalPrincipalSymbol_eq_iff
