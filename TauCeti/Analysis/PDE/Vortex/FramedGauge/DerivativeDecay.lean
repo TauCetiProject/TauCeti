@@ -42,9 +42,8 @@ logarithmic moduli and their gradients
 
 These are estimates for one or two smooth vortices. Their uniform version over the vortices whose
 zeros lie in a fixed disc is `TauCeti.Analysis.PDE.Vortex.FramedGauge.UniformDerivativeDecay`, and
-the decay of the first derivatives in the coefficients (symmetric coordinates) is
-`TauCeti.Analysis.PDE.Vortex.FramedGauge.CoefficientDecay`; higher and mixed derivatives in the
-coefficients are not treated.
+the decay of the derivatives of every order in the coefficients (symmetric coordinates) and the
+point is `TauCeti.Analysis.PDE.Vortex.FramedGauge.CoefficientDecay`.
 
 ## Main results
 
@@ -59,6 +58,9 @@ coefficients are not treated.
 * `TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`: every derivative of
   the end trivialization minus the vacuum, in particular the winding end trivialization, is
   `O(exp (-c |z|))` for every rate `c < 1 / 2`.
+* `TauCeti.Vortex.exists_endField_eq_add`, `TauCeti.Vortex.norm_iteratedFDeriv_endField_le`: the
+  end field `(-(∂_u ℓ) / 2, (∂_v ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` is linear in `Dℓ` and
+  `exp (ℓ / 2) - 1`, so bounds on the derivatives of `ℓ ≤ 0` bound its derivatives.
 * `TauCeti.Vortex.norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_exp`: the end
   trivializations of two vortices with moduli above `2 c` outside the disc of radius `R`, whose
   logarithmic moduli are within `M` of each other on its boundary, differ by at most
@@ -162,20 +164,65 @@ theorem gaugeTransform_inv_apply_sub_vacuumField_eq {u : ℂ → Circle} {w : �
     ring
   · simp
 
-/-- **The end field is linear in `Dℓ` and `exp (ℓ / 2) - 1`.** There are continuous linear maps
-`L₁` and `L₂`, independent of `ℓ`, such that for every function `ℓ` on the plane the end field
-`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of `ℓ` is
-`L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)`. -/
-theorem exists_endField_eq_add :
-    ∃ (L₁ : (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4)),
-      ∀ ℓ : ℂ → ℝ, (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
-        (Real.exp (ℓ w / 2) - 1) / 2, 0]) =
-        fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1) := by
-  refine ⟨(-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ I).smulRight (EuclideanSpace.single 0 1) +
-      (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ 1).smulRight (EuclideanSpace.single 1 1),
-    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2)), fun ℓ ↦ ?_⟩
-  ext w i
+/-- **The end field is linear in `Dℓ` and `exp (ℓ / 2) - 1`.** For vectors `u` and `v` of a real
+normed space `W` there are continuous linear maps `L₁` and `L₂` with
+`(-(φ u) / 2, φ v / 2, t / 2, 0) = L₁ φ + L₂ t` for every linear functional `φ` on `W` and every
+real `t`. For `(u, v) = (I, 1)`, `φ = Dℓ (w)` and `t = exp (ℓ w / 2) - 1`, this writes the end field
+`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of a function `ℓ` on the plane as
+`L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)`; other directions give the end field of a family of functions of
+`z`, differentiated along the second factor. -/
+theorem exists_endField_eq_add {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (u v : W) :
+    ∃ (L₁ : (W →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4)),
+      ∀ (φ : W →L[ℝ] ℝ) (t : ℝ), !₂[-(φ u / 2), φ v / 2, t / 2, 0] = L₁ φ + L₂ t := by
+  refine ⟨(-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ u).smulRight (EuclideanSpace.single 0 1) +
+      (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ v).smulRight (EuclideanSpace.single 1 1),
+    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2)), fun φ t ↦ ?_⟩
+  ext i
   fin_cases i <;> simp <;> ring
+
+/-- **Derivatives of an end field.** Let `ℓ` be smooth at `x` with `ℓ x ≤ 0`, and let its
+derivatives of order at most `n + 1` at `x` be at most `C ε`, with `0 ≤ ε ≤ 1`. Then for continuous
+linear maps `L₁` and `L₂` the `n`-th derivative of `L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)` at `x` is at
+most `(‖L₁‖ C + ‖L₂‖ n! max 1 C ^ (n + 1)) ε`. By `TauCeti.Vortex.exists_endField_eq_add` this
+bounds the derivatives of the end field of `ℓ`. -/
+theorem norm_iteratedFDeriv_endField_le {W F : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [NormedAddCommGroup F] [NormedSpace ℝ F] {ℓ : W → ℝ} {x : W}
+    (L₁ : (W →L[ℝ] ℝ) →L[ℝ] F) (L₂ : ℝ →L[ℝ] F) (hℓ : ContDiffAt ℝ ∞ ℓ x) (hℓ₀ : ℓ x ≤ 0)
+    {n : ℕ} {C ε : ℝ} (hε₀ : 0 ≤ ε) (hε₁ : ε ≤ 1)
+    (hD : ∀ j ≤ n + 1, ‖iteratedFDeriv ℝ j ℓ x‖ ≤ C * ε) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ L₁ (fderiv ℝ ℓ y) + L₂ (Real.exp (ℓ y / 2) - 1)) x‖ ≤
+      (‖L₁‖ * C + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1))) * ε := by
+  have hDℓ : ContDiffAt ℝ ∞ (fderiv ℝ ℓ) x := hℓ.fderiv_right (by simp)
+  have hE : ContDiffAt ℝ ∞ (fun y ↦ Real.exp (ℓ y / 2) - 1) x :=
+    ((Real.contDiff_exp.contDiffAt).comp _ (hℓ.div_const 2)).sub contDiffAt_const
+  have hL₁ : ContDiffAt ℝ ∞ (fun y ↦ L₁ (fderiv ℝ ℓ y)) x := L₁.contDiff.contDiffAt.comp x hDℓ
+  have hL₂ : ContDiffAt ℝ ∞ (fun y ↦ L₂ (Real.exp (ℓ y / 2) - 1)) x :=
+    L₂.contDiff.contDiffAt.comp x hE
+  rw [fun_iteratedFDeriv_add_apply (hL₁.of_le (by simp)) (hL₂.of_le (by simp))]
+  -- The connection part is linear in `Dℓ`.
+  have h₁ : ‖iteratedFDeriv ℝ n (fun y ↦ L₁ (fderiv ℝ ℓ y)) x‖ ≤ ‖L₁‖ * (C * ε) := by
+    refine (L₁.norm_iteratedFDeriv_comp_left hDℓ (by simp)).trans ?_
+    rw [norm_iteratedFDeriv_fderiv]
+    exact mul_le_mul_of_nonneg_left (hD (n + 1) le_rfl) (norm_nonneg _)
+  -- The section part is linear in `exp (ℓ / 2) - 1`, bounded by the Faà di Bruno formula.
+  have h₂ : ‖iteratedFDeriv ℝ n (fun y ↦ L₂ (Real.exp (ℓ y / 2) - 1)) x‖ ≤
+      ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1) * ε) := by
+    refine (L₂.norm_iteratedFDeriv_comp_left hE (by simp)).trans
+      (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+    have hhalf : (fun y ↦ ℓ y / 2) = (2⁻¹ : ℝ) • ℓ := by
+      funext y
+      simp [div_eq_inv_mul]
+    refine ((hℓ.div_const 2).of_le (by simp)).norm_iteratedFDeriv_exp_sub_one_le
+      (div_nonpos_of_nonpos_of_nonneg hℓ₀ zero_le_two) hε₀ hε₁ fun j hj ↦ ?_
+    rw [hhalf, iteratedFDeriv_const_smul_apply (hℓ.of_le (by simp))]
+    refine (ContinuousMultilinearMap.opNorm_smul_le _ _).trans ?_
+    have := hD j (by omega)
+    rw [Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
+    nlinarith [norm_nonneg (iteratedFDeriv ℝ j ℓ x)]
+  calc _ ≤ _ := norm_add_le _ _
+    _ ≤ ‖L₁‖ * (C * ε) + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1) * ε) :=
+        add_le_add h₁ h₂
+    _ = _ := by ring
 
 /-- Along a filter on which `ρ` is bounded, if every derivative of a smooth `ℓ` is `O(ρ)`, then so
 is every derivative of `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`: its connection
@@ -186,7 +233,7 @@ private theorem isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} (hℓ : ContD
     (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
       (Real.exp (ℓ w / 2) - 1) / 2, 0]) =O[l] ρ := by
-  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add I 1
   -- The derivatives of `ℓ / 2` and hence of `exp (ℓ / 2) - 1` are `O(ρ)`.
   have hexp := ((hℓ.div_const 2).of_le (by simp)).isBigO_iteratedFDeriv_exp_sub_one (n := n) hρ
     fun j _ ↦ by simpa [div_eq_inv_mul] using ((2 : ℝ)⁻¹ • ContinuousLinearMap.id ℝ ℝ
@@ -194,7 +241,7 @@ private theorem isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} (hℓ : ContD
   have hD : ContDiff ℝ ∞ (fderiv ℝ ℓ) := hℓ.fderiv_right (by norm_cast)
   have hE : ContDiff ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2) - 1) :=
     (Real.contDiff_exp.comp (hℓ.div_const 2)).sub contDiff_const
-  rw [hL ℓ]
+  simp only [hL]
   exact ((L₁.isBigO_iteratedFDeriv_comp_left hD (n := n) (by simp)
     ((isBigO_of_le _ fun z ↦ norm_iteratedFDeriv_fderiv.le).trans (hdec (n + 1)))).add
     (L₂.isBigO_iteratedFDeriv_comp_left hE (by simp) hexp)).congr_left fun z ↦

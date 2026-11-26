@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
@@ -113,48 +114,15 @@ The estimates of this file are proved for families `g : P × E → G` of functio
 indexed by a parameter `p` in a finite-dimensional real normed space `P`, with constants uniform
 over a ball of parameters. A single function is the constant family. -/
 
-/-- A bound `‖f (w + h) - f w‖ ≤ ‖h‖ K` for all `‖h‖ ≤ δ`, with `δ > 0`, bounds the derivative of
-`f` at `w` by `K`. -/
-private theorem norm_fderiv_le_of_forall_norm_sub_le {X F' : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup F'] [NormedSpace ℝ F'] {f : X → F'} {w : X} {δ K : ℝ}
-    (hδ : 0 < δ) (hK : 0 ≤ K) (hf : ∀ h : X, ‖h‖ ≤ δ → ‖f (w + h) - f w‖ ≤ ‖h‖ * K) :
-    ‖fderiv ℝ f w‖ ≤ K := by
-  refine norm_fderiv_le_of_lip' ℝ hK ?_
-  filter_upwards [ball_mem_nhds w hδ] with z hz
-  have := hf (z - w) (by rw [← dist_eq_norm]; exact (mem_ball.mp hz).le)
-  rw [add_sub_cancel] at this
-  linarith
-
 /-- A step `0 < δ ≤ 1` with `s + δ < r`, for `s < r`. -/
 private theorem exists_pos_le_one_add_lt {s r : ℝ} (hs : s < r) :
     ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ s + δ < r :=
   ⟨min 1 ((r - s) / 2), lt_min one_pos (by linarith), min_le_left _ _,
     by linarith [min_le_right 1 ((r - s) / 2)]⟩
 
-/-- A function at most `K exp (-c ‖y‖)` outside a ball, with `c > 0`, tends to zero at
-infinity. -/
-private theorem tendsto_cocompact_of_norm_le_mul_exp {F' : Type*} [NormedAddCommGroup F']
-    {f : E → F'} {R K c : ℝ} (hc : 0 < c)
-    (hf : ∀ y : E, R ≤ ‖y‖ → ‖f y‖ ≤ K * Real.exp (-(c * ‖y‖))) :
-    Tendsto f (cocompact E) (𝓝 0) :=
-  squeeze_zero_norm' ((tendsto_norm_cocompact_atTop (E := E)).eventually_ge_atTop R |>.mono hf)
-    (by simpa using (tendsto_exp_neg_mul_norm_cocompact hc).const_mul K)
-
 section Family
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ P] [FiniteDimensional ℝ P] in
-/-- A point of the closed ball of radius `ε` about `w` in `P × E` has parameter of norm at most
-`‖w.1‖ + ε` and second component of norm at least `‖w.2‖ - ε`. -/
-private theorem norm_fst_le_and_sub_le_norm_snd_of_mem_closedBall {w z : P × E} {ε : ℝ}
-    (hz : z ∈ closedBall w ε) : ‖z.1‖ ≤ ‖w.1‖ + ε ∧ ‖w.2‖ - ε ≤ ‖z.2‖ := by
-  rw [mem_closedBall, dist_eq_norm] at hz
-  have h₁ : ‖z.1 - w.1‖ ≤ ε := (norm_fst_le (z - w)).trans hz
-  have h₂ : ‖z.2 - w.2‖ ≤ ε := (norm_snd_le (z - w)).trans hz
-  constructor
-  · linarith [norm_le_norm_add_norm_sub' z.1 w.1]
-  · linarith [norm_le_norm_add_norm_sub' w.2 z.2, norm_sub_rev w.2 z.2]
 
 /-- A family that is `C¹` on the region `‖p‖ ≤ r + δ`, `‖z‖ ≥ R` is uniformly Lipschitz near a
 bounded part of it: there is `M` with `‖f (w + h) - f w‖ ≤ M ‖h‖` for `‖w.1‖ ≤ r`,
@@ -619,61 +587,13 @@ section FamilyExp
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 omit [NormedSpace ℝ P] [FiniteDimensional ℝ P] in
-/-- The weight `exp (-c ‖z‖)` tends to zero along `𝓟 (closedBall 0 s) ×ˢ cocompact E`. -/
-private theorem tendsto_exp_neg_mul_norm_snd {s c : ℝ} (hc : 0 < c) :
-    Tendsto (fun w : P × E ↦ Real.exp (-(c * ‖w.2‖)))
-      (𝓟 (closedBall (0 : P) s) ×ˢ cocompact E) (𝓝 0) :=
-  (tendsto_exp_neg_mul_norm_cocompact hc).comp tendsto_snd
-
-omit [NormedSpace ℝ P] [FiniteDimensional ℝ P] in
 /-- A family that is `O(exp (-c ‖z‖))` along `𝓟 (closedBall 0 s) ×ˢ cocompact E` tends to zero
 there, so `κ exp ℓ` tends to `κ`. -/
 private theorem tendsto_const_mul_exp_of_isBigO {ℓ : P × E → ℝ} {κ c s : ℝ} (hc : 0 < c)
     (hℓ : ℓ =O[𝓟 (closedBall (0 : P) s) ×ˢ cocompact E] fun w ↦ Real.exp (-(c * ‖w.2‖))) :
     Tendsto (fun w ↦ κ * Real.exp (ℓ w)) (𝓟 (closedBall (0 : P) s) ×ˢ cocompact E) (𝓝 κ) := by
   simpa using ((Real.continuous_exp.tendsto 0).comp
-    (hℓ.trans_tendsto (tendsto_exp_neg_mul_norm_snd hc))).const_mul κ
-
-/-- **Passing to a globally smooth family.** A family smooth on the region `‖p‖ < r₁`,
-`‖z‖ > R₀` agrees, near every point of a region `‖p‖ < r₂`, `‖z‖ > R₁` with `r < r₂` and
-`R₀ ≤ R₁`, with a globally smooth family. -/
-private theorem exists_contDiff_forall_eventuallyEq_prod {ℓ : P × E → ℝ} {r r₁ R₀ : ℝ}
-    (hr₀ : 0 ≤ r) (hr : r < r₁)
-    (hℓ : ∀ w : P × E, ‖w.1‖ < r₁ → R₀ < ‖w.2‖ → ContDiffAt ℝ ∞ ℓ w) :
-    ∃ ℓ' : P × E → ℝ, ContDiff ℝ ∞ ℓ' ∧ ∃ r₂ R₁, r < r₂ ∧ r₂ < r₁ ∧ R₀ ≤ R₁ ∧
-      ∀ w : P × E, ‖w.1‖ < r₂ → R₁ < ‖w.2‖ → ℓ' =ᶠ[𝓝 w] ℓ := by
-  obtain ⟨r₂, hr₂, hr₂₃⟩ : ∃ r₂, r < r₂ ∧ r₂ < (r + 3 * r₁) / 4 :=
-    ⟨(r + r₁) / 2, by linarith, by linarith⟩
-  obtain ⟨R, hR₀, hR⟩ : ∃ R, R₀ ≤ R ∧ 0 ≤ R := ⟨max R₀ 0, le_max_left _ _, le_max_right _ _⟩
-  -- A smooth cutoff, equal to one where `‖p‖ ≤ r₂` and `‖z‖ ≥ R + 2`, and vanishing where
-  -- `‖p‖ ≥ (r + 3 r₁) / 4` or `‖z‖ ≤ R + 1`.
-  let bP : ContDiffBump (0 : P) := ⟨r₂, (r + 3 * r₁) / 4, by linarith, hr₂₃⟩
-  let bE : ContDiffBump (0 : E) := ⟨R + 1, R + 2, by linarith, by linarith⟩
-  have hχc : ContDiff ℝ ∞ fun w : P × E ↦ bP w.1 * (1 - bE w.2) :=
-    (bP.contDiff.comp contDiff_fst).mul (contDiff_const.sub (bE.contDiff.comp contDiff_snd))
-  refine ⟨fun w ↦ bP w.1 * (1 - bE w.2) * ℓ w, contDiff_iff_contDiffAt.2 fun w ↦ ?_, r₂, R + 2,
-    hr₂, by linarith, by linarith, fun w hw₁ hw₂ ↦ ?_⟩
-  · by_cases h₁ : ‖w.1‖ < r₁
-    · by_cases h₂ : R₀ < ‖w.2‖
-      · exact hχc.contDiffAt.mul (hℓ w h₁ h₂)
-      -- Near `w` the cutoff in `z` vanishes.
-      refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      have hopen : IsOpen {v : P × E | ‖v.2‖ < R + 1} :=
-        isOpen_lt (continuous_norm.comp continuous_snd) continuous_const
-      filter_upwards [hopen.mem_nhds (show ‖w.2‖ < R + 1 by linarith [not_lt.1 h₂])] with v hv
-      rw [bE.one_of_mem_closedBall (by simpa using hv.le), sub_self, mul_zero, zero_mul]
-    -- Near `w` the cutoff in `p` vanishes.
-    refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-    have hopen : IsOpen {v : P × E | (r + 3 * r₁) / 4 < ‖v.1‖} :=
-      isOpen_lt continuous_const (continuous_norm.comp continuous_fst)
-    filter_upwards [hopen.mem_nhds (show (r + 3 * r₁) / 4 < ‖w.1‖ by linarith [not_lt.1 h₁])]
-      with v hv
-    rw [bP.zero_of_le_dist (by simpa using hv.le), zero_mul, zero_mul]
-  · -- Near `w` the cutoff is one.
-    filter_upwards [(isOpen_setOf_norm_fst_lt_and_lt_norm_snd r₂ (R + 2)).mem_nhds ⟨hw₁, hw₂⟩]
-      with v hv
-    rw [bP.one_of_mem_closedBall (by simpa using hv.1.le),
-      bE.zero_of_le_dist (by simpa using hv.2.le), sub_zero, one_mul, one_mul]
+    (hℓ.trans_tendsto ((tendsto_exp_neg_mul_norm_cocompact hc).comp tendsto_snd))).const_mul κ
 
 /-- **Translates of a family of solutions of `Δ_z ℓ = κ (exp ℓ - 1)`.** If on the region
 `‖p‖ ≤ s + δ`, `‖z‖ ≥ R ≥ 1` a smooth family solves `Δ_z ℓ = κ (exp ℓ - 1)`, is at most

@@ -284,21 +284,6 @@ section Joint
 
 variable {m : ℕ}
 
-/-- The end fields `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of a family `ℓ` of
-functions of `z`, written with the derivative of `ℓ` along the second factor, are the sum of a
-linear map of the joint derivative of `ℓ` and a linear map of `exp (ℓ / 2) - 1`. -/
-private theorem exists_endField_eq_add_prod :
-    ∃ (L₁ : ((Fin m → ℂ) × ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4))
-      (L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4)),
-      ∀ (φ : (Fin m → ℂ) × ℂ →L[ℝ] ℝ) (t : ℝ),
-        !₂[-(φ (0, I) / 2), φ (0, 1) / 2, t / 2, 0] = L₁ φ + L₂ t := by
-  refine ⟨(-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ ((0 : Fin m → ℂ), I)).smulRight
-      (EuclideanSpace.single 0 1) + (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ
-        ((0 : Fin m → ℂ), (1 : ℂ))).smulRight (EuclideanSpace.single 1 1),
-    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2)), fun φ t ↦ ?_⟩
-  ext i
-  fin_cases i <;> simp <;> ring
-
 /-- The squared modulus `|α_a(z)|²` of the normalized vortices, jointly in the coefficients and
 the point. -/
 private noncomputable def normSqFamily (q : (Fin m → ℂ) × ℂ) : ℝ :=
@@ -392,48 +377,6 @@ private theorem exists_gaugeTransform_inv_sub_vacuumField_eq_add (hm : 0 < m) (r
     (hR' q.1 (mem_ball_zero_iff.2 h₁) q.2 ((le_max_right _ _).trans_lt h₂)) EventuallyEq.rfl
   rw [h, hpart, hpart, ← hL]
 
-/-- **Derivatives of an end field.** If the derivatives of `ℓ` of order at most `n + 1` at `x`
-are at most `C ε` with `ε ≤ 1` and `ℓ x ≤ 0`, then the `n`-th derivative of
-`L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)` at `x` is at most `(‖L₁‖ C + ‖L₂‖ n! max 1 C ^ (n + 1)) ε`. -/
-private theorem norm_iteratedFDeriv_endField_le {W F : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] [NormedAddCommGroup F] [NormedSpace ℝ F] {ℓ : W → ℝ} {x : W}
-    (L₁ : (W →L[ℝ] ℝ) →L[ℝ] F) (L₂ : ℝ →L[ℝ] F) (hℓ : ContDiffAt ℝ ∞ ℓ x) (hℓ₀ : ℓ x ≤ 0)
-    {n : ℕ} {C ε : ℝ} (hε₀ : 0 ≤ ε) (hε₁ : ε ≤ 1)
-    (hD : ∀ j ≤ n + 1, ‖iteratedFDeriv ℝ j ℓ x‖ ≤ C * ε) :
-    ‖iteratedFDeriv ℝ n (fun y ↦ L₁ (fderiv ℝ ℓ y) + L₂ (Real.exp (ℓ y / 2) - 1)) x‖ ≤
-      (‖L₁‖ * C + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1))) * ε := by
-  have hDℓ : ContDiffAt ℝ ∞ (fderiv ℝ ℓ) x := hℓ.fderiv_right (by simp)
-  have hE : ContDiffAt ℝ ∞ (fun y ↦ Real.exp (ℓ y / 2) - 1) x :=
-    ((Real.contDiff_exp.contDiffAt).comp _ (hℓ.div_const 2)).sub contDiffAt_const
-  have hL₁ : ContDiffAt ℝ ∞ (fun y ↦ L₁ (fderiv ℝ ℓ y)) x := L₁.contDiff.contDiffAt.comp x hDℓ
-  have hL₂ : ContDiffAt ℝ ∞ (fun y ↦ L₂ (Real.exp (ℓ y / 2) - 1)) x :=
-    L₂.contDiff.contDiffAt.comp x hE
-  rw [fun_iteratedFDeriv_add_apply (hL₁.of_le (by simp)) (hL₂.of_le (by simp))]
-  -- The connection part is linear in `Dℓ`.
-  have h₁ : ‖iteratedFDeriv ℝ n (fun y ↦ L₁ (fderiv ℝ ℓ y)) x‖ ≤ ‖L₁‖ * (C * ε) := by
-    refine (L₁.norm_iteratedFDeriv_comp_left hDℓ (by simp)).trans ?_
-    rw [norm_iteratedFDeriv_fderiv]
-    exact mul_le_mul_of_nonneg_left (hD (n + 1) le_rfl) (norm_nonneg _)
-  -- The section part is linear in `exp (ℓ / 2) - 1`, bounded by the Faà di Bruno formula.
-  have h₂ : ‖iteratedFDeriv ℝ n (fun y ↦ L₂ (Real.exp (ℓ y / 2) - 1)) x‖ ≤
-      ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1) * ε) := by
-    refine (L₂.norm_iteratedFDeriv_comp_left hE (by simp)).trans
-      (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-    have hhalf : (fun y ↦ ℓ y / 2) = (2⁻¹ : ℝ) • ℓ := by
-      funext y
-      simp [div_eq_inv_mul]
-    refine ((hℓ.div_const 2).of_le (by simp)).norm_iteratedFDeriv_exp_sub_one_le
-      (div_nonpos_of_nonpos_of_nonneg hℓ₀ zero_le_two) hε₀ hε₁ fun j hj ↦ ?_
-    rw [hhalf, iteratedFDeriv_const_smul_apply (hℓ.of_le (by simp))]
-    refine (ContinuousMultilinearMap.opNorm_smul_le _ _).trans ?_
-    have := hD j (by omega)
-    rw [Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
-    nlinarith [norm_nonneg (iteratedFDeriv ℝ j ℓ x)]
-  calc _ ≤ _ := norm_add_le _ _
-    _ ≤ ‖L₁‖ * (C * ε) + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1) * ε) :=
-        add_le_add h₁ h₂
-    _ = _ := by ring
-
 /-- **The derivatives of every order of the normalized vortices in the coefficients and the
 point decay exponentially.** Let `m ≥ 1`, and for lower coefficients `a ∈ ℂᵐ` let `y_a` be the
 winding-`m` end trivialization of the plane vortex with zero divisor the monic polynomial `P_a`,
@@ -463,7 +406,7 @@ theorem
     (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.1) (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.2.1)
     (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.2.2) (n + 1)
   -- Outside a disc, the field is the end field of `ℓ`.
-  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add_prod (m := m)
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add ((0 : Fin m → ℂ), I) ((0 : Fin m → ℂ), (1 : ℂ))
   obtain ⟨R₁, hend⟩ := exists_gaugeTransform_inv_sub_vacuumField_eq_add hm r₀ hL
   refine ⟨‖L₁‖ * C + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1)),
     max (max R (R₀ + 1)) (R₁ + 1), fun a ha z hz ↦ ?_⟩
