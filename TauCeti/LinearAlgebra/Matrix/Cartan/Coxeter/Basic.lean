@@ -39,21 +39,19 @@ theorem reflMatrix_apply {κ : Type*} [DecidableEq κ] (A : Matrix κ κ ℤ) (i
     reflMatrix A i k j = (if k = j then 1 else 0) - (if k = i then A j i else 0) :=
   (rfl)
 
+/-- Right-multiplying `M` by `reflMatrix A i` subtracts `A q i` times column `i` of `M` from
+column `q`. -/
+theorem mul_reflMatrix_apply {ι κ : Type*} [Fintype κ] [DecidableEq κ]
+    (M : Matrix ι κ ℤ) (A : Matrix κ κ ℤ) (i : κ) (p : ι) (q : κ) :
+    (M * reflMatrix A i) p q = M p q - M p i * A q i := by
+  simp [Matrix.mul_apply, reflMatrix_apply, mul_sub, mul_ite]
+
 /-- Relabelling a Cartan matrix relabels its simple-reflection matrices. -/
 theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ)
     (e : κ ≃ Fin n) (i : κ) :
     reflMatrix (A.submatrix e e) i = (reflMatrix A (e i)).submatrix e e := by
   ext k j
   simp [reflMatrix, e.injective.eq_iff]
-
-/-- Right-multiplying `P` by `reflMatrix A i` subtracts `A j i` times column `i` from column
-`j`. -/
-theorem mul_reflMatrix_apply {κ : Type*} {n : ℕ} (P : Matrix κ (Fin n) ℤ)
-    (A : Matrix (Fin n) (Fin n) ℤ) (i : Fin n) (r : κ) (j : Fin n) :
-    (P * reflMatrix A i) r j = P r j - P r i * A j i := by
-  rw [Matrix.mul_apply]
-  simp only [reflMatrix_apply, mul_sub, mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
 /-- The Coxeter element `s₁ s₂ ⋯ sₙ` of a Cartan matrix, in the simple-root basis. -/
 @[expose] def coxeterElement {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) : Matrix (Fin n) (Fin n) ℤ :=

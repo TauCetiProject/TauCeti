@@ -52,6 +52,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
+* `TauCeti.AlmostComplexStructure.bilinForm_apply_left_symm`: an alternating form `B` preserved by
+  `J` satisfies `B (J v, w) = B (J w, v)`.
 * `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
 * `TauCeti.IsComplexLinearMap.restrict`: a complex-linear map preserving a `J`-invariant subspace
   restricts to a complex-linear map of the restricted structure.
@@ -203,6 +205,12 @@ lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
   ext v
   exact J.apply_apply v
 
+/-- `a + b J` inverts `a - b J` up to the factor `a² + b²`: `(a + b J) (a - b J) = a² + b²`. -/
+lemma smul_add_smul_apply_smul_sub_smul (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    a • (a • v - b • J v) + b • J (a • v - b • J v) = (a ^ 2 + b ^ 2) • v := by
+  rw [apply_sub, apply_smul, apply_smul, apply_apply]
+  module
+
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
   intro v w h
@@ -336,6 +344,13 @@ theorem bilinForm_apply_left_eq_neg_apply_right (J : AlmostComplexStructure V)
   have h := hgJ v (J w)
   rw [apply_apply, map_neg] at h
   rw [← h, neg_neg]
+
+/-- An alternating bilinear form preserved by `J` becomes symmetric after precomposing its first
+slot with `J`: `B (J v) w = B (J w) v`. -/
+theorem bilinForm_apply_left_symm (J : AlmostComplexStructure V) {B : LinearMap.BilinForm ℝ V}
+    (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : V) :
+    B (J v) w = B (J w) v := by
+  rw [J.bilinForm_apply_left_eq_neg_apply_right hBJ, hB.neg_eq]
 
 /-- A symmetric bilinear form preserved by `J` pairs every vector `v` trivially with `J v`. -/
 theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)

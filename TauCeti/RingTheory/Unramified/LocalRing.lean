@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.RingTheory.LocalRing.Localization
@@ -47,6 +48,9 @@ formally unramified over `A` then so is `B`. Flatness makes `C` faithfully flat 
 the separable extension `κ_C / κ_A`. Stalk maps of a flat morphism of schemes are such
 homomorphisms, so this is how unramifiedness descends along flat surjections of schemes.
 
+The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`, being a quotient of
+the localization `S_p`.
+
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
 affine schemes are such local homomorphisms, so this is how unramifiedness is read off from a stalk.
@@ -67,6 +71,8 @@ separable residue-field extension `κ(p) → κ(q)` at an unramified prime `q` o
   domain but not a field, over a local ring of dimension at most one, is a faithful algebra.
 * `Algebra.FormallyUnramified.of_flat_of_formallyUnramified`: formal unramifiedness of local
   algebras essentially of finite type descends along a flat local homomorphism.
+* `Algebra.FormallyUnramified.residueField`: the residue field `κ(p)` of a prime `p` of `S` is
+  formally unramified over `S`.
 * `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
   unramified iff `S` is unramified over `R` at `q`.
 * `TauCeti.residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt`: at an unramified prime `𝔮`
@@ -189,6 +195,13 @@ theorem of_flat_of_formallyUnramified [Module.Flat B C] [EssFiniteType A B] [Ess
   exact IsLocalRing.maximalIdeal_comap _
 
 end FlatDescent
+
+/-- The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`: it is a quotient
+of the localization `S_p`, which is formally unramified over `S`. -/
+instance residueField {S : Type*} [CommRing S] (p : Ideal S) [p.IsPrime] :
+    FormallyUnramified S p.ResidueField :=
+  have : FormallyUnramified S (Localization.AtPrime p) := .of_isLocalization p.primeCompl
+  .comp S (Localization.AtPrime p) _
 
 end Algebra.FormallyUnramified
 

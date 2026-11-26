@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Polynomial.Vieta
@@ -38,11 +39,18 @@ supremum `⨆ i < d, f aᵢ ^ (1 / (d - i))` with the largest value of `f` on th
 the second half of the proof of Mathlib's `max_norm_root_eq_spectralValue` ([BGR] §3.1.2,
 Proposition 1(2)) to ring seminorms.
 
+Without power-multiplicativity a root can have large norm, as a nilpotent element does, but its
+powers still grow at most geometrically: in an ultrametric seminormed ring, if
+`‖aᵢ‖ ≤ μ ^ (d - i)` for every `i < d`, then `‖x ^ k‖ ≤ D * μ ^ k` for some constant `D`. This is
+how an element integral over a ring of small elements is shown to have spectral radius at most `μ`.
+
 ## Main results
 
 * `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero`: over every ring,
   `f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`, for every `f : R → ℝ` as above (nonnegative,
   submultiplicative, power-multiplicative and nonarchimedean, with `f 0 = 0`).
+* `Polynomial.Monic.exists_norm_pow_le_mul_pow_of_eval_eq_zero`: `‖x ^ k‖ ≤ D * μ ^ k` for a root
+  `x` of a monic polynomial with `‖aᵢ‖ ≤ μ ^ (d - i)`, in an ultrametric seminormed ring.
 * `Multiset.apply_esymm_le_pow`: `f (s.esymm k) ≤ M ^ k` when `f a ≤ M` on `s` and `k ≤ card s`.
 * `Polynomial.Monic.apply_coeff_le_pow_of_card_roots`: `f aᵢ ≤ M ^ (d - i)` when `p` has `d` roots,
   all with `f`-value at most `M`.
@@ -76,6 +84,49 @@ theorem apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (hp : p.Monic) (hf0 : f 0
     rw [one_div, ← Nat.cast_sub hi.le, Real.le_rpow_inv_iff_of_pos (hf_nn x) (hf_nn _)
       (by exact_mod_cast Nat.sub_pos_of_lt hi), Real.rpow_natCast]
     exact hle
+
+end Polynomial.Monic
+
+namespace Polynomial.Monic
+
+/-- **Powers of a root of a monic polynomial with small coefficients.** In an ultrametric
+seminormed ring, let `x` be a root of a monic polynomial `p` of degree `d` with
+`‖p.coeff i‖ ≤ μ ^ (d - i)` for every `i < d`. Then the powers of `x` grow at most like those of
+`μ`: `‖x ^ k‖ ≤ D * μ ^ k` for some constant `D` and every `k`. The norm need not be
+power-multiplicative, so `x` itself may have norm larger than `μ`. -/
+theorem exists_norm_pow_le_mul_pow_of_eval_eq_zero {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] {p : R[X]} (hp : p.Monic) {x : R} (hx : p.eval x = 0) {μ : ℝ}
+    (hμ : 0 < μ) (hc : ∀ i < p.natDegree, ‖p.coeff i‖ ≤ μ ^ (p.natDegree - i)) :
+    ∃ D, ∀ k, ‖x ^ k‖ ≤ D * μ ^ k := by
+  set d := p.natDegree
+  -- The constant controls the powers below the degree; the equation propagates the bound.
+  set D := ∑ j ∈ Finset.range d, ‖x ^ j‖ / μ ^ j
+  -- `x ^ d = -∑_{j < d} aⱼ xʲ`.
+  have hxd : x ^ d = -∑ j ∈ Finset.range d, p.coeff j * x ^ j := by
+    rw [eq_neg_iff_add_eq_zero, ← hx, eval_eq_sum_range, Finset.sum_range_succ, hp.coeff_natDegree,
+      one_mul, add_comm]
+  refine ⟨D, fun k ↦ ?_⟩
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    rcases lt_or_ge k d with hk | hk
+    · have hle : ‖x ^ k‖ / μ ^ k ≤ D :=
+        Finset.single_le_sum (f := fun j ↦ ‖x ^ j‖ / μ ^ j) (fun j _ ↦ by positivity)
+          (Finset.mem_range.mpr hk)
+      rwa [div_le_iff₀ (by positivity)] at hle
+    · obtain ⟨m, rfl⟩ : ∃ m, k = d + m := ⟨k - d, by omega⟩
+      have hxk : x ^ (d + m) = -∑ j ∈ Finset.range d, p.coeff j * x ^ (j + m) := by
+        rw [pow_add, hxd, neg_mul, Finset.sum_mul]
+        simp_rw [mul_assoc, ← pow_add]
+      rw [hxk, norm_neg]
+      refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun j hj ↦ ?_
+      have hj : j < d := Finset.mem_range.mp hj
+      calc ‖p.coeff j * x ^ (j + m)‖ ≤ ‖p.coeff j‖ * ‖x ^ (j + m)‖ := norm_mul_le _ _
+        _ ≤ μ ^ (d - j) * (D * μ ^ (j + m)) :=
+          mul_le_mul (hc j hj) (ih _ (by omega)) (norm_nonneg _) (by positivity)
+        _ = D * μ ^ (d + m) := by
+          rw [mul_left_comm, ← pow_add]
+          congr 2
+          omega
 
 end Polynomial.Monic
 

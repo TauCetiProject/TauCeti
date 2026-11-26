@@ -5,45 +5,70 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.Data.List.OneDegenerateOrder
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
 import TauCeti.Data.Fin.Basic
-import TauCeti.GroupTheory.Perm.Fin
-import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
+import TauCeti.Data.Matrix.Mul
+import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.GroupTheory.Perm.Coxeter
+import TauCeti.LinearAlgebra.Charpoly.Permutation
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclic
-import TauCeti.LinearAlgebra.Matrix.Intertwine
 import TauCeti.LinearAlgebra.Matrix.Permutation
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
 # Coxeter elements of the classical Cartan matrices
 
-Computes the order and characteristic polynomial of the standard Coxeter element `c = s₁ ⋯ sₙ`
-(`Matrix.coxeterElement`) of `CartanMatrix.A n`, `B n`, `C n`, `D n`, and shows `List.finRange n`
-is a one-degenerate order (`List.IsOneDegenerateOrder`) of each Dynkin diagram:
+This file computes the order and the characteristic polynomial of the Coxeter element
+`c = s₁ s₂ ⋯ sₙ` (`Matrix.coxeterElement`) of each classical Cartan matrix `CartanMatrix.A n`,
+`CartanMatrix.B n`, `CartanMatrix.C n`, and `CartanMatrix.D n`, together with the one-degenerate
+order of the Bourbaki node numbering `List.finRange n`:
 
-| type | rank bound | `h` | characteristic polynomial |
+| type | rank condition | `orderOf` | `charpoly` |
 |---|---|---|---|
-| `Aₙ` | all `n` | `n + 1` | `∑_{k=0}^n X^k` |
-| `Bₙ`, `Cₙ` | `1 ≤ n` | `2 n` | `X^n + 1` |
-| `Dₙ` | `2 ≤ n` | `2 (n - 1)` | `(X^{n-1} + 1)(X + 1)` |
+| `Aₙ` | `0 < n` (`charpoly` for all `n`) | `n + 1` | `∑ k < n + 1, X ^ k` |
+| `Bₙ` | `0 < n` | `2 * n` | `X ^ n + 1` |
+| `Cₙ` | `0 < n` | `2 * n` | `X ^ n + 1` |
+| `Dₙ` | `2 ≤ n` | `2 * (n - 1)` | `(X ^ (n - 1) + 1) * (X + 1)` |
 
-Each family reduces by explicit integral intertwining to a cycle (`Aₙ`), signed cycle (`Bₙ`, and
-`Cₙ` via diagonal conjugation to `Bₙ`), or block-diagonal signed `(n - 1)`-cycle plus `-1` (`Dₙ`).
+Rather than expanding `c` entry by entry, each family is intertwined with its coordinate model:
+
+* In **type `Aₙ`**, the unit lower-triangular basis `ε₀ - ε₁, …, εₙ₋₁ - εₙ, εₙ` of `ℤⁿ⁺¹` turns
+  the adjacent transpositions into upper block-triangular matrices with `(1, 1)` block
+  `reflMatrix (CartanMatrix.A n) i` and `(2, 2)` block `1`. Their product is `finRotate (n + 1)`
+  (`TauCeti.permCoxeterSystem_wordProd_finRange`), whose characteristic polynomial `X ^ (n + 1) - 1`
+  factors as `(∑ k < n + 1, X ^ k) * (X - 1)`.
+* In **type `Bₙ`** (`n = m + 1`), the same unimodular matrix `ε₀ - ε₁, …, εₘ₋₁ - εₘ, εₘ` conjugates
+  `coxB (m + 1)` over `ℤ` to the negacyclic shift `ε₀ ↦ ε₁ ↦ ⋯ ↦ εₘ ↦ -ε₀` — the companion matrix
+  of `X ^ n + 1`, satisfying `N ^ n = -1` — giving `charpoly = X ^ n + 1` and `orderOf = 2 * n`.
+* **Type `Cₙ`** is intertwined with type `Bₙ` by `diagonal (1, …, 1, 2)`, so `coxC n` and `coxB n`
+  have the same order and characteristic polynomial for every `n`.
+* In **type `Dₙ`** (`n = m + 2`), the root columns `ε₀ - ε₁, …, εₘ - εₘ₊₁, εₘ + εₘ₊₁` have integer
+  quasi-inverse of determinant factor `2` and intertwine `coxD (m + 2)` with the block-diagonal
+  matrix `fromBlocks (negShift (m + 1)) 0 0 (-1)` for all `2 ≤ n` (including the reducible `D₂` and
+  the `A₃` coincidence `D₃`).
+
+## Main definitions
+
+* `TauCeti.Coxeter.coxA`, `coxB`, `coxC`, `coxD`: the Coxeter elements of the classical Cartan
+  matrices.
 
 ## Main results
 
-* `TauCeti.Coxeter.isOneDegenerateOrder_A` (`B`, `C`, `D`): one-degeneracy of `List.finRange n`.
-* `TauCeti.Coxeter.orderOf_coxeterElement_A` (`B`, `C`, `D`) and
-  `TauCeti.Coxeter.charpoly_coxeterElement_A` (`B`, `C`, `D`): Coxeter order and characteristic
-  polynomial for each classical family.
+* `TauCeti.Coxeter.isOneDegenerateOrder_A`, `_B`, `_C`, `_D`: `List.finRange n` is a one-degenerate
+  order of each classical diagram.
+* `TauCeti.Coxeter.orderOf_coxA`, `orderOf_coxB`, `orderOf_coxC`, `orderOf_coxD`: the orders of the
+  classical Coxeter elements.
+* `TauCeti.Coxeter.charpoly_coxA`, `charpoly_coxB`, `charpoly_coxC`, `charpoly_coxD`: their
+  characteristic polynomials over `ℤ`.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, and Plates I--IV.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge (1990), §§ 3.16--3.20.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
+  §§ 3.16–3.20.
 -/
 
 public section
@@ -52,501 +77,655 @@ open Matrix Polynomial
 
 namespace TauCeti.Coxeter
 
-private lemma permMatrixHom_mul_apply {κ₁ κ₂ R : Type*} [Fintype κ₁] [DecidableEq κ₁]
-    [NonAssocSemiring R] (σ : Equiv.Perm κ₁) (M : Matrix κ₁ κ₂ R) (r : κ₁) (j : κ₂) :
-    ((permMatrixHom σ : Matrix κ₁ κ₁ R) * M) r j = M (σ⁻¹ r) j := by
-  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
-    Matrix.submatrix_apply, id_eq]
+/-! ### Coxeter elements of the classical Cartan matrices -/
 
-private lemma permMatrixHom_swap_mul_apply {κ₁ κ₂ R : Type*} [Fintype κ₁] [DecidableEq κ₁]
-    [NonAssocSemiring R] (a b : κ₁) (M : Matrix κ₁ κ₂ R) (r : κ₁) (j : κ₂) :
-    ((permMatrixHom (Equiv.swap a b) : Matrix κ₁ κ₁ R) * M) r j =
-      M (if r = a then b else if r = b then a else r) j := by
-  rw [permMatrixHom_mul_apply, Equiv.Perm.inv_def, Equiv.symm_swap, Equiv.swap_apply_def]
+/-- The Coxeter element of `CartanMatrix.A n`. -/
+def coxA (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.A n)
+
+/-- `coxA n` unfolds to `coxeterElement (CartanMatrix.A n)`. -/
+theorem coxA_def (n : ℕ) : coxA n = coxeterElement (CartanMatrix.A n) := (rfl)
+
+/-- The Coxeter element of `CartanMatrix.B n`. -/
+def coxB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.B n)
+
+/-- `coxB n` unfolds to `coxeterElement (CartanMatrix.B n)`. -/
+theorem coxB_def (n : ℕ) : coxB n = coxeterElement (CartanMatrix.B n) := (rfl)
+
+/-- The Coxeter element of `CartanMatrix.C n`. -/
+def coxC (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.C n)
+
+/-- `coxC n` unfolds to `coxeterElement (CartanMatrix.C n)`. -/
+theorem coxC_def (n : ℕ) : coxC n = coxeterElement (CartanMatrix.C n) := (rfl)
+
+/-- The Coxeter element of `CartanMatrix.D n`. -/
+def coxD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ := coxeterElement (CartanMatrix.D n)
+
+/-- `coxD n` unfolds to `coxeterElement (CartanMatrix.D n)`. -/
+theorem coxD_def (n : ℕ) : coxD n = coxeterElement (CartanMatrix.D n) := (rfl)
 
 /-! ### One-degenerate orders of the classical diagrams -/
 
-/-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
-type `Aₙ`. -/
+/-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.A n`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.A n i j ≠ 0) (List.finRange n) :=
-  List.isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
-    simp only [CartanMatrix.A, Matrix.of_apply] at hzx hzy
-    exact Fin.ext (by split_ifs at hzx hzy <;> omega)
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.A n i j ≠ 0) (List.finRange n) := by
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  rw [Fin.lt_def] at hxz hyz
+  simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff] at h1 h2
+  split_ifs at h1 h2 <;> omega
 
-/-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
-type `Bₙ`. -/
+/-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.B n`. -/
 theorem isOneDegenerateOrder_B (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.B n i j ≠ 0) (List.finRange n) :=
-  List.isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
-    simp only [CartanMatrix.B, Matrix.of_apply] at hzx hzy
-    exact Fin.ext (by split_ifs at hzx hzy <;> omega)
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.B n i j ≠ 0) (List.finRange n) := by
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  rw [Fin.lt_def] at hxz hyz
+  simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff] at h1 h2
+  split_ifs at h1 h2 <;> omega
 
-/-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
-type `Cₙ`. -/
+/-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.C n`. -/
 theorem isOneDegenerateOrder_C (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.C n i j ≠ 0) (List.finRange n) :=
-  List.isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
-    simp only [CartanMatrix.C, Matrix.of_apply] at hzx hzy
-    exact Fin.ext (by split_ifs at hzx hzy <;> omega)
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.C n i j ≠ 0) (List.finRange n) := by
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  rw [Fin.lt_def] at hxz hyz
+  simp only [CartanMatrix.C, Matrix.of_apply, Fin.ext_iff] at h1 h2
+  split_ifs at h1 h2 <;> omega
 
-/-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
-type `Dₙ`: every node `z` is adjacent to at most one node of smaller index (`z - 1` on the stem
-and on the first prong, and the branch node `n - 3` on the second prong `n - 1`). -/
+/-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.D n`. -/
 theorem isOneDegenerateOrder_D (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.D n i j ≠ 0) (List.finRange n) :=
-  List.isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
-    simp only [CartanMatrix.D, Matrix.of_apply] at hzx hzy
-    exact Fin.ext (by split_ifs at hzx hzy <;> omega)
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.D n i j ≠ 0) (List.finRange n) := by
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  have _ := z.isLt; rw [Fin.lt_def] at hxz hyz
+  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff] at h1 h2
+  split_ifs at h1 h2 <;> omega
 
-/-! ### Type `Aₙ`: root-difference embedding into the `(n + 1)`-cycle -/
+/-! ### Shared matrix helpers: unimodular difference basis and shifts -/
 
-/-- The `(n + 1) × n` integer matrix whose `j`-th column is `eⱼ - eⱼ₊₁`. -/
-private def matPA (n : ℕ) : Matrix (Fin (n + 1)) (Fin n) ℤ :=
-  Matrix.of fun r j =>
-    (if r.val = j.val then 1 else 0) - (if r.val = j.val + 1 then 1 else 0)
+/-- Unit lower-triangular basis `ε₀ - ε₁, …, ε_{m-2} - ε_{m-1}, ε_{m-1}` of `ℤᵐ`. -/
+private def diffBasis (m : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
+  Matrix.of fun p q => if p = q then 1 else if p.val = q.val + 1 then -1 else 0
 
-private lemma matPA_mulVec_single (n : ℕ) (j : Fin n) :
-    matPA n *ᵥ Pi.single j 1 =
-      Pi.single ⟨j.val, by omega⟩ 1 - Pi.single ⟨j.val + 1, by omega⟩ 1 := by
-  ext r; simp [Matrix.mulVec_single, matPA, Pi.single_apply, Fin.ext_iff, eq_comm]
+/-- Explicit inverse of `diffBasis m`: lower-triangular matrix of ones. -/
+private def sumBasis (m : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
+  Matrix.of fun r p => if p.val ≤ r.val then 1 else 0
 
-/-- Explicit left inverse of `matPA n`: summing rows `0, …, i` recovers the `i`-th coordinate. -/
-private def leftInvPA (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
-  Matrix.of fun i r => if r.val ≤ i.val then 1 else 0
+private theorem sumBasis_mul_diffBasis (m : ℕ) : sumBasis m * diffBasis m = 1 := by
+  ext r q; rw [Matrix.mul_apply]
+  rcases lt_or_ge (q.val + 1) m with hq | hq
+  · let q' : Fin m := ⟨q.val + 1, hq⟩
+    have hqq' : q ≠ q' := fun h => by have := congrArg Fin.val h; dsimp [q'] at this; omega
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q),
+      ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hqq'.symm, Finset.mem_univ q'⟩),
+      Finset.sum_eq_zero]
+    · simp only [sumBasis, diffBasis, Matrix.of_apply, Matrix.one_apply, ↓reduceIte,
+        Fin.ext_iff, q']
+      split_ifs <;> omega
+    · intro p hp
+      have hpq : p ≠ q := (Finset.mem_erase.mp (Finset.mem_erase.mp hp).2).1
+      have hpq' : p.val ≠ q.val + 1 := fun h => (Finset.mem_erase.mp hp).1 (Fin.ext h)
+      simp [diffBasis, hpq, hpq']
+  · rw [Finset.sum_eq_single q]
+    · have _ := r.isLt
+      simp only [sumBasis, diffBasis, Matrix.of_apply, Matrix.one_apply, ↓reduceIte, Fin.ext_iff]
+      split_ifs <;> omega
+    · intro p _ hp
+      have hpq' : p.val ≠ q.val + 1 := by have := p.isLt; omega
+      simp [diffBasis, hp, hpq']
+    · exact fun h => absurd (Finset.mem_univ _) h
 
-private lemma leftInvPA_mul_matPA (n : ℕ) : leftInvPA n * matPA n = 1 := by
-  ext i j
-  have hsum : ∀ k : Fin (n + 1),
-      (∑ r : Fin (n + 1), (if r.val ≤ i.val then (1 : ℤ) else 0) *
-        (if r.val = k.val then 1 else 0)) = if k.val ≤ i.val then 1 else 0 := fun k => by
-    rw [Finset.sum_eq_single k]
-    · simp
-    · intro r _ hr; simp [Fin.val_ne_of_ne hr]
-    · intro h; exact absurd (Finset.mem_univ _) h
-  rw [Matrix.mul_apply]
-  simp only [leftInvPA, matPA, Matrix.of_apply, mul_sub, Finset.sum_sub_distrib,
-    hsum ⟨j.val, by omega⟩, hsum ⟨j.val + 1, by omega⟩, Matrix.one_apply, Fin.ext_iff]
+private theorem isLeftRegular_det_diffBasis (m : ℕ) : IsLeftRegular (diffBasis m).det :=
+  isLeftRegular_det_right_of_mul_eq_smul_one isRegular_one.left (by
+    rw [sumBasis_mul_diffBasis, one_smul])
+
+/-! ### Cyclic and negacyclic shift matrices -/
+
+private theorem permMatrixHom_finRotate_mul_eq {m k : ℕ}
+    (U : Matrix (Fin (m + 1)) (Fin k) ℤ) (g : Fin m → Matrix (Fin k) (Fin k) ℤ)
+    (h : ∀ i : Fin m, permMatrixHom (BraidGroup.transposition (n := m + 1) i) * U = U * g i) :
+    permMatrixHom (finRotate (m + 1)) * U = U * ((List.finRange m).map g).prod := by
+  have hprod := list_prod_map_mul_eq_mul_list_prod_map (List.finRange m) U
+    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 1)) g (fun i _ => h i)
+  have hrot : (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) :=
+    permCoxeterSystem_wordProd_finRange (n := m + 1)
+  rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1), hrot] at hprod
+
+/-- Negacyclic shift matrix on `Fin n`: `ε₀ ↦ ε₁ ↦ ⋯ ↦ ε_{n-1} ↦ -ε₀`. -/
+private def negShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+  Matrix.of fun p q =>
+    if q.val + 1 < n then (if p.val = q.val + 1 then 1 else 0)
+    else (if p.val = 0 then -1 else 0)
+
+private theorem negShift_mulVec_single {n : ℕ} (hn : 0 < n) (q : Fin n) :
+    negShift n *ᵥ Pi.single q 1 =
+      (if q.val + 1 < n then (1 : ℤ) else -1) •
+        Pi.single ⟨(q.val + 1) % n, Nat.mod_lt _ hn⟩ 1 := by
+  rw [Matrix.mulVec_single_one]; ext p
+  by_cases hlt : q.val + 1 < n
+  · simp [Matrix.col_apply, negShift, hlt, Nat.mod_eq_of_lt hlt, Pi.single_apply, Fin.ext_iff]
+  · have hqn : q.val + 1 = n := by have := q.isLt; omega
+    simp [Matrix.col_apply, negShift, hqn, Pi.single_apply, Fin.ext_iff]
+
+private theorem negShift_pow_mulVec_single {n : ℕ} (hn : 0 < n) {k : ℕ} (hk : k ≤ n) (q : Fin n) :
+    (negShift n ^ k) *ᵥ Pi.single q 1 =
+      (if q.val + k < n then (1 : ℤ) else -1) •
+        Pi.single ⟨(q.val + k) % n, Nat.mod_lt _ hn⟩ 1 := by
+  induction k with
+  | zero => rw [pow_zero, Matrix.one_mulVec]; ext p; simp [q.isLt, Nat.mod_eq_of_lt q.isLt]
+  | succ k ih =>
+    rw [pow_succ', ← Matrix.mulVec_mulVec, ih (by omega), Matrix.mulVec_smul,
+      negShift_mulVec_single hn]
+    have hq := q.isLt
+    have hmod : ((q.val + k) % n + 1) % n = (q.val + (k + 1)) % n := by
+      rw [← Nat.add_assoc, ← Nat.mod_add_mod (q.val + k) n 1]
+    ext p
+    simp only [Pi.smul_apply, Pi.single_apply, Fin.ext_iff, smul_eq_mul, hmod]
+    by_cases h1 : q.val + k < n
+    · simp only [Nat.mod_eq_of_lt h1]; split_ifs <;> omega
+    · have hrem : (q.val + k) % n = q.val + k - n :=
+        (Nat.mod_eq_sub_mod (by omega)).trans (Nat.mod_eq_of_lt (by omega))
+      simp only [hrem]; split_ifs <;> omega
+
+private theorem negShift_pow_self {n : ℕ} (hn : 0 < n) : negShift n ^ n = -1 := by
+  ext p q
+  have hv := congrFun (negShift_pow_mulVec_single hn le_rfl q) p
+  rw [Matrix.mulVec_single_one, Matrix.col_apply] at hv
+  simp only [hv, ite_eq_right (by omega : ¬ q.val + n < n), Pi.smul_apply, Pi.single_apply,
+    Fin.ext_iff, Nat.add_mod_right, Nat.mod_eq_of_lt q.isLt, smul_eq_mul, Matrix.neg_apply,
+    Matrix.one_apply]
   split_ifs <;> omega
 
-private lemma matPA_mul_reflMatrix (n : ℕ) (i : Fin n) :
-    matPA n * reflMatrix (CartanMatrix.A n) i =
-      permMatrixHom (Equiv.swap (⟨i.val, by omega⟩ : Fin (n + 1)) ⟨i.val + 1, by omega⟩) *
-        matPA n := by
-  ext r j
-  rw [mul_reflMatrix_apply, permMatrixHom_swap_mul_apply]
-  have := r.isLt; have := j.isLt; have := i.isLt
-  simp only [matPA, CartanMatrix.A, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
-  split_ifs <;> omega
+private theorem charpoly_negShift {n : ℕ} (hn : 0 < n) :
+    (negShift n).charpoly = X ^ n + 1 := by
+  have hdeg : (X ^ n + 1 : ℤ[X]).natDegree = n := by simp
+  have hcomp : reindex (finCongr hdeg) (finCongr hdeg) (X ^ n + 1 : ℤ[X]).companion =
+      negShift n := by
+    ext i j
+    have := i.isLt; have := j.isLt
+    simp only [reindex_apply, submatrix_apply, finCongr_symm, finCongr_apply, Fin.val_cast,
+      companion_apply, hdeg, coeff_add, coeff_X_pow, coeff_one, negShift, Matrix.of_apply]
+    split_ifs <;> omega
+  rw [← hcomp, Matrix.charpoly_reindex,
+    Polynomial.charpoly_companion (by simpa using monic_X_pow_add_C (1 : ℤ) hn.ne')]
 
-private lemma matPA_mul_coxeterElement (n : ℕ) :
-    matPA n * coxeterElement (CartanMatrix.A n) =
-      permMatrixHom (finRotate (n + 1)) * matPA n := by
-  rw [mul_coxeterElement (matPA n) (CartanMatrix.A n) _ (matPA_mul_reflMatrix n)]
-  congr 1
-  rw [← Fin.cycleRange_last n]
-  exact prod_finRange_permMatrixHom_swap_eq_permMatrixHom_cycleRange n (Nat.lt_succ_self n)
-
-private lemma coxeterElement_A_pow_mulVec_single_zero {n : ℕ} (hn : 0 < n) (m : ℕ)
-    (hm : m < n) :
-    coxeterElement (CartanMatrix.A n) ^ m *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single ⟨m, hm⟩ 1 := by
-  have hcol : (matPA n * coxeterElement (CartanMatrix.A n) ^ m) *ᵥ Pi.single ⟨0, hn⟩ 1 =
-      matPA n *ᵥ Pi.single ⟨m, hm⟩ 1 := by
-    rw [(pow_mul_eq_mul_pow (matPA_mul_coxeterElement n).symm m).symm, ← Matrix.mulVec_mulVec,
-      matPA_mulVec_single, matPA_mulVec_single, Matrix.mulVec_sub, ← map_pow,
-      permMatrixHom_mulVec_single, permMatrixHom_mulVec_single]
-    congr 1
-    · congr 1; exact Fin.ext (by
-        simp [Fin.coe_finRotate_pow, Nat.mod_eq_of_lt (by omega : m < n + 1)])
-    · congr 1; exact Fin.ext (by simp [Fin.coe_finRotate_pow, Nat.add_comm 1 m,
-        Nat.mod_eq_of_lt (by omega : m + 1 < n + 1)])
-  have h1 := congrArg (leftInvPA n *ᵥ ·) hcol
-  rwa [Matrix.mulVec_mulVec, ← Matrix.mul_assoc, leftInvPA_mul_matPA, Matrix.one_mul,
-    Matrix.mulVec_mulVec, leftInvPA_mul_matPA, Matrix.one_mulVec] at h1
-
-private lemma sum_coxeterElement_A_pow_eq_zero (n : ℕ) :
-    (∑ m ∈ Finset.range (n + 1), coxeterElement (CartanMatrix.A n) ^ m) = 0 := by
-  apply Matrix.mul_right_injective_of_inv _ _ (leftInvPA_mul_matPA n)
-  dsimp only
-  rw [Matrix.mul_zero, Matrix.mul_sum]
-  simp_rw [← (pow_mul_eq_mul_pow (matPA_mul_coxeterElement n).symm _), ← Matrix.sum_mul]
-  set C : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ := permMatrixHom (finRotate (n + 1))
-  have hrot_pow : finRotate (n + 1) ^ (n + 1) = 1 := by
-    simpa [TauCeti.orderOf_finRotate (by omega : n + 1 ≠ 0)] using
-      pow_orderOf_eq_one (finRotate (n + 1))
-  have hpow : C ^ (n + 1) = 1 := by
-    dsimp [C]
-    rw [← map_pow, hrot_pow, map_one]
-  have hgeom : (∑ m ∈ Finset.range (n + 1), C ^ m) * (1 - C) = 0 := by
-    rw [geom_sum_mul_neg, hpow, sub_self]
-  apply Matrix.ext_of_mulVec_single
-  intro j
-  have hcol : matPA n *ᵥ Pi.single j 1 = (1 - C) *ᵥ Pi.single ⟨j.val, by omega⟩ 1 := by
-    rw [matPA_mulVec_single, Matrix.sub_mulVec, Matrix.one_mulVec, permMatrixHom_mulVec_single]
-    congr 2; ext
-    simp [finRotate_apply, Fin.val_add, Nat.mod_eq_of_lt (by omega : j.val + 1 < n + 1)]
-  rw [← Matrix.mulVec_mulVec, hcol, Matrix.mulVec_mulVec, hgeom, Matrix.zero_mulVec,
-    Matrix.zero_mulVec]
-
-/-- **The characteristic polynomial of the `Aₙ` Coxeter element is `1 + X + ⋯ + X^n`.** -/
-theorem charpoly_coxeterElement_A (n : ℕ) :
-    (coxeterElement (CartanMatrix.A n)).charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  · have hmon : (∑ k ∈ Finset.range (n + 1), (X : ℤ[X]) ^ k).IsMonicOfDegree n := by
-      rw [Finset.sum_range_succ, add_comm]
-      refine (isMonicOfDegree_X_pow ℤ n).add_right ?_
-      by_cases hp0 : (∑ k ∈ Finset.range n, (X : ℤ[X]) ^ k) = 0
-      · rw [hp0, natDegree_zero]; exact hn
-      · rw [natDegree_lt_iff_degree_lt hp0]
-        refine (Polynomial.degree_sum_le (Finset.range n) _).trans_lt ?_
-        refine (Finset.sup_lt_iff (WithBot.bot_lt_coe n)).mpr fun k hk => ?_
-        rw [degree_X_pow]
-        exact WithBot.coe_lt_coe.2 (Finset.mem_range.mp hk)
-    exact charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_pow_mulVec_single hn hmon
-      (by simpa using sum_coxeterElement_A_pow_eq_zero n)
-      (coxeterElement_A_pow_mulVec_single_zero hn)
-
-/-- **The Coxeter number of `Aₙ` is `n + 1`**: the Coxeter element of type `Aₙ` has order
-`n + 1`. -/
-theorem orderOf_coxeterElement_A (n : ℕ) :
-    orderOf (coxeterElement (CartanMatrix.A n)) = n + 1 := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · exact orderOf_eq_one_iff.mpr (Subsingleton.elim _ _)
-  · have hpow : coxeterElement (CartanMatrix.A n) ^ (n + 1) = 1 := by
-      have hgeom := geom_sum_mul (coxeterElement (CartanMatrix.A n)) (n + 1)
-      rw [sum_coxeterElement_A_pow_eq_zero, zero_mul] at hgeom
-      exact sub_eq_zero.mp hgeom.symm
-    refine (orderOf_eq_iff (Nat.succ_pos n)).mpr ⟨hpow, fun m hm hpos h1 => ?_⟩
-    rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hm) with hmn | hmn
-    · have hv := congrFun (coxeterElement_A_pow_mulVec_single_zero hn m hmn) ⟨0, hn⟩
-      simp [h1, Fin.ext_iff, hpos.ne'] at hv
-    · rw [hmn] at h1
-      have hc1 : coxeterElement (CartanMatrix.A n) = 1 := by
-        simpa [pow_succ, h1] using hpow
-      have hsum := congrFun₂ (sum_coxeterElement_A_pow_eq_zero n) ⟨0, hn⟩ ⟨0, hn⟩
-      simp [hc1] at hsum
+private theorem orderOf_negShift {n : ℕ} (hn : 0 < n) : orderOf (negShift n) = 2 * n := by
+  have h0 {k : ℕ} (hk0 : 0 < k) (hk : k < n) :
+      (negShift n ^ k *ᵥ Pi.single ⟨0, hn⟩ 1) ⟨0, hn⟩ = 0 := by
+    have h := congrFun (negShift_pow_mulVec_single hn hk.le ⟨0, hn⟩) ⟨0, hn⟩
+    simp only [zero_add, ite_eq_left hk, one_smul, Pi.single_apply, Fin.ext_iff,
+      Nat.mod_eq_of_lt hk] at h
+    omega
+  refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
+  · rw [mul_comm, pow_mul, negShift_pow_self hn, neg_one_sq]
+  · have hv := congrFun (congrArg (· *ᵥ Pi.single ⟨0, hn⟩ 1) hm1) ⟨0, hn⟩
+    simp only [Matrix.one_mulVec, Pi.single_eq_same] at hv
+    rcases lt_trichotomy m n with hlt | rfl | hgt
+    · linarith [h0 hpos hlt]
+    · rw [negShift_pow_self hn] at hv; simp at hv
+    · obtain ⟨k, rfl⟩ : ∃ k, m = n + k := ⟨m - n, by omega⟩
+      rw [pow_add, negShift_pow_self hn, neg_one_mul, Matrix.neg_mulVec, Pi.neg_apply,
+        h0 (by omega) (by omega)] at hv
       omega
 
-/-! ### Type `Bₙ`: lower-unitriangular conjugation to the signed `n`-cycle -/
+/-! ### Type `A` -/
 
-/-- The `n × n` lower-unitriangular matrix with columns `e₀ - e₁, …, eₙ₋₂ - eₙ₋₁, eₙ₋₁`. -/
-private def matPB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun r j =>
-    if j.val + 1 < n then
-      (if r.val = j.val then 1 else 0) - (if r.val = j.val + 1 then 1 else 0)
-    else
-      if r = j then 1 else 0
+/-- Upper block-triangular matrix on `Fin (n + 1)` extending `reflMatrix (CartanMatrix.A n) i`. -/
+private def extReflA {n : ℕ} (i : Fin n) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+  reindex (finSumFinEquiv (m := n) (n := 1)) (finSumFinEquiv (m := n) (n := 1))
+    (fromBlocks (reflMatrix (CartanMatrix.A n) i)
+      (Matrix.of fun k _ => if k = i ∧ i.val + 1 = n then 1 else 0) 0 1)
 
-private lemma det_matPB (n : ℕ) : (matPB n).det = 1 := by
-  have htri : (matPB n).IsLowerTriangular := fun i j hij => by
-    have hlt : i.val < j.val := Fin.lt_def.mp hij
-    simp only [matPB, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
-  rw [Matrix.det_of_isLowerTriangular _ htri]
-  refine Finset.prod_eq_one fun i _ => ?_
-  simp only [matPB, Matrix.of_apply]; split_ifs <;> omega
-
-/-- Coordinate simple reflections of type `Bₙ`: adjacent swaps for `i < n - 1`, and negation of the
-last coordinate for `i = n - 1`. -/
-private def reflCoordB (n : ℕ) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
-  if hi : i.val + 1 < n then permMatrixHom (Equiv.swap i ⟨i.val + 1, hi⟩)
-  else Matrix.diagonal fun r : Fin n => if r.val + 1 = n then -1 else 1
-
-private lemma matPB_mul_reflMatrix (n : ℕ) (i : Fin n) :
-    matPB n * reflMatrix (CartanMatrix.B n) i = reflCoordB n i * matPB n := by
-  ext r j
-  rw [mul_reflMatrix_apply]
-  have := r.isLt; have := j.isLt; have := i.isLt
-  by_cases hi : i.val + 1 < n
-  · rw [reflCoordB, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_swap_mul_apply]
-    simp only [matPB, CartanMatrix.B, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
+private theorem permMatrixHom_transposition_mul_diffBasis {n : ℕ} (i : Fin n) :
+    permMatrixHom (BraidGroup.transposition (n := n + 1) i) * diffBasis (n + 1) =
+      diffBasis (n + 1) * extReflA i := by
+  ext p q
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition]
+  have hp := p.isLt; have hq := q.isLt; have hi := i.isLt
+  rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hq) with hqlt | hqlast
+  · let jq : Fin n := ⟨q.val, hqlt⟩
+    have hqe : q = finSumFinEquiv (m := n) (n := 1) (Sum.inl jq) := Fin.ext rfl
+    have hsum : (diffBasis (n + 1) * extReflA i) p q =
+        diffBasis (n + 1) p (finSumFinEquiv (Sum.inl jq)) -
+          diffBasis (n + 1) p (finSumFinEquiv (Sum.inl i)) * CartanMatrix.A n jq i := by
+      rw [Matrix.mul_apply, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
+      simp only [Fintype.sum_sum_type, Fintype.sum_unique, hqe, extReflA, reindex_apply,
+        submatrix_apply, Equiv.symm_apply_apply, fromBlocks_apply₁₁, fromBlocks_apply₂₁,
+        Matrix.zero_apply, mul_zero, add_zero, reflMatrix_apply, mul_sub, mul_ite, mul_one,
+        Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+    rw [hsum]
+    simp only [diffBasis, CartanMatrix.A, Matrix.of_apply, Fin.ext_iff, finSumFinEquiv_apply_left,
+      Fin.val_castAdd, BraidGroup.val_transposition_apply, jq]
     split_ifs <;> omega
-  · rw [reflCoordB, dite_eq_right_of_eq_false (eq_false hi), Matrix.diagonal_mul]
-    simp only [matPB, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+  · have hqe : q = finSumFinEquiv (m := n) (n := 1) (Sum.inr 0) := Fin.ext (by simpa using hqlast)
+    rw [Matrix.mul_apply, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
+    simp only [Fintype.sum_sum_type, Fintype.sum_unique, Fin.default_eq_zero, hqe, extReflA,
+      reindex_apply, submatrix_apply, Equiv.symm_apply_apply, fromBlocks_apply₁₂,
+      fromBlocks_apply₂₂, Matrix.of_apply, Matrix.one_apply, ↓reduceIte, mul_one, mul_ite,
+      mul_zero]
+    rw [Finset.sum_eq_single i (fun k _ hki => by simp [hki])
+      (fun h => absurd (Finset.mem_univ _) h), ← hqe]
+    simp only [true_and, diffBasis, Matrix.of_apply, Fin.ext_iff,
+      finSumFinEquiv_apply_left, Fin.val_castAdd, BraidGroup.val_transposition_apply, hqlast]
     split_ifs <;> omega
 
-private lemma matPB_mul_coxeterElement {n : ℕ} (hn : 1 ≤ n) :
-    matPB n * coxeterElement (CartanMatrix.B n) = negCycleMatrix n * matPB n := by
-  rw [mul_coxeterElement (matPB n) (CartanMatrix.B n) (reflCoordB n) (matPB_mul_reflMatrix n)]
-  congr 1
+private theorem list_prod_extReflA {n : ℕ} (L : List (Fin n)) :
+    ∃ B : Matrix (Fin n) (Fin 1) ℤ,
+      ((L.map extReflA).prod).submatrix (finSumFinEquiv (m := n) (n := 1))
+          (finSumFinEquiv (m := n) (n := 1)) =
+        fromBlocks ((L.map (reflMatrix (CartanMatrix.A n))).prod) B 0 1 := by
+  induction L with
+  | nil => exact ⟨0, by simp [fromBlocks_one, Matrix.submatrix_one_equiv]⟩
+  | cons a t ih =>
+    obtain ⟨B, hB⟩ := ih
+    refine ⟨reflMatrix (CartanMatrix.A n) a * B +
+        Matrix.of (fun k _ => if k = a ∧ a.val + 1 = n then 1 else 0), ?_⟩
+    rw [List.map_cons, List.prod_cons,
+      ← Matrix.submatrix_mul_equiv _ _ _ (finSumFinEquiv (m := n) (n := 1)), hB]
+    simp [extReflA, fromBlocks_multiply, List.map_cons, List.prod_cons]
+
+private theorem permMatrixHom_finRotate_mul_diffBasis (n : ℕ) :
+    permMatrixHom (finRotate (n + 1)) * diffBasis (n + 1) =
+      diffBasis (n + 1) * ((List.finRange n).map extReflA).prod :=
+  permMatrixHom_finRotate_mul_eq (diffBasis (n + 1)) extReflA
+    permMatrixHom_transposition_mul_diffBasis
+
+/-- **Characteristic polynomial of the type `A` Coxeter element**: `1 + X + ⋯ + X ^ n` for every
+rank `n` (including `n = 0`). -/
+theorem charpoly_coxA (n : ℕ) :
+    (coxA n).charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
+  obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
+  have hc := (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (n + 1)).ne_zero
+    (permMatrixHom_finRotate_mul_diffBasis n)).symm.trans
+    (Matrix.charpoly_permMatrixHom_finRotate (Nat.succ_ne_zero n))
+  rw [← charpoly_reindex (finSumFinEquiv (m := n) (n := 1)).symm, reindex_apply,
+    Equiv.symm_symm, hB, charpoly_fromBlocks_zero₂₁] at hc
+  have h1 : (1 : Matrix (Fin 1) (Fin 1) ℤ).charpoly = X - 1 := by
+    rw [Matrix.charpoly, Matrix.det_fin_one]; simp
+  rw [h1, ← geom_sum_mul X (n + 1)] at hc
+  exact mul_right_cancel₀ (by simpa using X_sub_C_ne_zero (1 : ℤ)) hc
+
+/-- The empty type `A₀` Coxeter element has order `1`. -/
+@[simp]
+theorem orderOf_coxA_zero : orderOf (coxA 0) = 1 := by
+  rw [Subsingleton.elim (coxA 0) 1, orderOf_one]
+
+/-- **The Coxeter number of `Aₙ` (`0 < n`) is `n + 1`**: the Coxeter element of `CartanMatrix.A n`
+has order `n + 1`. -/
+theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
+  have hint := permMatrixHom_finRotate_mul_diffBasis n
+  obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
+  let U : Matrix (Fin (n + 1)) (Fin n) ℤ :=
+    (diffBasis (n + 1)).submatrix id (finSumFinEquiv (m := n) (n := 1) ∘ Sum.inl)
+  have hSU : permMatrixHom (finRotate (n + 1)) * U = U * coxA n := by
+    ext p j
+    have hj := congrFun₂ hint p (finSumFinEquiv (Sum.inl j))
+    have hentry (r : Fin n ⊕ Fin 1) :
+        ((List.finRange n).map extReflA).prod (finSumFinEquiv r) (finSumFinEquiv (Sum.inl j)) =
+          fromBlocks (coxA n) B 0 1 r (Sum.inl j) := by
+      simpa [coxA, coxeterElement] using congrFun₂ hB r (Sum.inl j)
+    simp only [U, Matrix.mul_apply, submatrix_apply, id_eq, Function.comp_apply] at hj ⊢
+    rw [hj, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
+    simp_rw [hentry]; simp [Fintype.sum_sum_type]
+  refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
+  · have hch : aeval (coxA n) (X ^ (n + 1) - 1 : ℤ[X]) = 0 := by
+      rw [← geom_sum_mul, map_mul, ← charpoly_coxA, Matrix.aeval_self_charpoly, zero_mul]
+    simpa [sub_eq_zero] using hch
+  · have hpow : permMatrixHom (finRotate (n + 1)) ^ m * U = U * coxA n ^ m := by
+      simpa using Matrix.aeval_mul_eq_mul_aeval hSU (Polynomial.X ^ m : ℤ[X])
+    rw [hm1, Matrix.mul_one, ← map_pow] at hpow
+    have h0 := congrFun₂ hpow ((finRotate (n + 1) ^ m) 0) ⟨0, hn⟩
+    rw [permMatrixHom_mul_apply, Equiv.symm_apply_apply] at h0
+    have hval : ((finRotate (n + 1) ^ m) 0 : ℕ) = m := by
+      rw [Fin.coe_finRotate_pow, Fin.val_zero, zero_add, Nat.mod_eq_of_lt hm]
+    simp only [U, submatrix_apply, id_eq, Function.comp_apply, finSumFinEquiv_apply_left,
+      diffBasis, Matrix.of_apply, Fin.ext_iff, Fin.val_castAdd, Fin.val_zero, hval] at h0
+    split_ifs at h0 <;> omega
+
+/-! ### Type `B` -/
+
+/-- Sign-flip matrix negating the last coordinate `Fin.last m` of `ℤ^{m+1}`. -/
+private def lastFlip (m : ℕ) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ :=
+  diagonal fun p => if p = Fin.last m then -1 else 1
+
+private theorem permMatrixHom_transposition_mul_diffBasis_B {m : ℕ} (i : Fin m) :
+    permMatrixHom (BraidGroup.transposition (n := m + 1) i) * diffBasis (m + 1) =
+      diffBasis (m + 1) * reflMatrix (CartanMatrix.B (m + 1)) i.castSucc := by
+  ext p q
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition, mul_reflMatrix_apply]
+  have _ := i.isLt
+  simp only [diffBasis, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc,
+    BraidGroup.val_transposition_apply, Nat.add_sub_cancel]
+  split_ifs <;> omega
+
+private theorem lastFlip_mul_diffBasis (m : ℕ) :
+    lastFlip m * diffBasis (m + 1) =
+      diffBasis (m + 1) * reflMatrix (CartanMatrix.B (m + 1)) (Fin.last m) := by
+  ext p q
+  rw [lastFlip, diagonal_mul, mul_reflMatrix_apply]
+  have _ := p.isLt; have _ := q.isLt
+  simp only [diffBasis, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff, Fin.val_last,
+    Nat.add_sub_cancel]
+  split_ifs <;> omega
+
+private theorem permMatrixHom_finRotate_mul_lastFlip (m : ℕ) :
+    permMatrixHom (finRotate (m + 1)) * lastFlip m = negShift (m + 1) := by
+  ext p q
+  rw [permMatrixHom_mul_apply, lastFlip, diagonal_apply, negShift, Matrix.of_apply]
+  set s := (finRotate (m + 1)).symm p
+  have _ := s.isLt; have _ := q.isLt
+  have hrot : p.val = if s.val = m then 0 else s.val + 1 := by
+    have h := coe_finRotate s; rw [Equiv.apply_symm_apply] at h
+    simpa [Fin.ext_iff, Fin.val_last] using h
+  simp only [Fin.ext_iff, Fin.val_last] at hrot ⊢
+  split_ifs at hrot ⊢ <;> omega
+
+private theorem negShift_mul_diffBasis_eq_diffBasis_mul_coxB (m : ℕ) :
+    negShift (m + 1) * diffBasis (m + 1) = diffBasis (m + 1) * coxB (m + 1) := by
+  have h1 := permMatrixHom_finRotate_mul_eq (diffBasis (m + 1))
+    (fun i => reflMatrix (CartanMatrix.B (m + 1)) i.castSucc)
+    permMatrixHom_transposition_mul_diffBasis_B
+  rw [← permMatrixHom_finRotate_mul_lastFlip, mul_assoc, lastFlip_mul_diffBasis, ← mul_assoc, h1,
+    mul_assoc, coxB, coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append,
+    List.map_singleton, List.prod_singleton, List.map_map]
+  rfl
+
+/-- The empty type `B₀` Coxeter element has characteristic polynomial `1`. -/
+theorem charpoly_coxB_zero : (coxB 0).charpoly = 1 := by simp
+
+/-- **Characteristic polynomial of the type `B` Coxeter element** (`0 < n`): `X ^ n + 1`. -/
+theorem charpoly_coxB {n : ℕ} (hn : 0 < n) : (coxB n).charpoly = X ^ n + 1 := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [prod_finRange_succ_map_eq_permMatrixHom_finRotate_mul (reflCoordB (m + 1)) fun i =>
-    (dite_eq_left_of_eq_true (eq_true (Nat.add_lt_add_right i.isLt 1))).trans
-      (congrArg (permMatrixHom <| Equiv.swap i.castSucc ·) (Fin.ext (by simp)))]
-  ext r j
-  rw [permMatrixHom_mul_apply, Equiv.Perm.inv_def]
-  rcases eq_or_ne r 0 with rfl | hr
-  · rw [Fin.finRotate_symm_zero]
-    have := j.isLt
-    simp only [reflCoordB, Fin.val_last, lt_self_iff_false, ↓reduceDIte, Matrix.diagonal_apply,
-      negCycleMatrix_apply, Fin.ext_iff, Fin.val_zero, ↓reduceIte]
-    split_ifs <;> first | contradiction | omega
-  · have hsub := coe_finRotate_symm_of_ne_zero hr
-    have := r.isLt; have := j.isLt
-    have hr0 : r.val ≠ 0 := Fin.val_ne_zero_iff.mpr hr
-    simp only [reflCoordB, Fin.val_last, lt_self_iff_false, ↓reduceDIte, Matrix.diagonal_apply,
-      negCycleMatrix_apply, Fin.ext_iff, hsub]
-    split_ifs <;> omega
+  exact (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (m + 1)).ne_zero
+    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m)).symm.trans
+    (charpoly_negShift (Nat.succ_pos m))
 
-/-- **The characteristic polynomial of the `Bₙ` Coxeter element is `X^n + 1`** (`1 ≤ n`). -/
-theorem charpoly_coxeterElement_B {n : ℕ} (hn : 1 ≤ n) :
-    (coxeterElement (CartanMatrix.B n)).charpoly = X ^ n + 1 :=
-  (Matrix.charpoly_eq_of_mul_eq_mul (by rw [det_matPB]; norm_num)
-    (matPB_mul_coxeterElement hn).symm).symm.trans (charpoly_negCycleMatrix hn)
+/-- The empty type `B₀` Coxeter element has order `1`. -/
+@[simp]
+theorem orderOf_coxB_zero : orderOf (coxB 0) = 1 := by
+  rw [Subsingleton.elim (coxB 0) 1, orderOf_one]
 
-/-- **The Coxeter number of `Bₙ` is `2 n`** (`1 ≤ n`): the Coxeter element of type `Bₙ` has order
-`2 n`. -/
-theorem orderOf_coxeterElement_B {n : ℕ} (hn : 1 ≤ n) :
-    orderOf (coxeterElement (CartanMatrix.B n)) = 2 * n :=
-  (Matrix.orderOf_eq_of_mul_eq_mul (by rw [det_matPB]; norm_num)
-    (matPB_mul_coxeterElement hn).symm).symm.trans (orderOf_negCycleMatrix hn)
+/-- **The Coxeter number of `Bₙ` (`0 < n`) is `2 * n`**: the Coxeter element of `CartanMatrix.B n`
+has order `2 * n`. -/
+theorem orderOf_coxB {n : ℕ} (hn : 0 < n) : orderOf (coxB n) = 2 * n := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact (SemiconjBy.orderOf_eq_of_isRegular
+    (isRegular_of_isLeftRegular_det (isLeftRegular_det_diffBasis (m + 1)))
+    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m).symm).trans
+    (orderOf_negShift (Nat.succ_pos m))
 
-/-! ### Type `Cₙ`: diagonal conjugation to type `Bₙ` -/
+/-! ### Type `C` -/
 
-/-- The diagonal matrix `diag(1, …, 1, 2)` intertwining `coxeterElement (CartanMatrix.C n)` with
-`coxeterElement (CartanMatrix.B n)`. -/
+/-- Diagonal matrix `diag(1, …, 1, 2)` intertwining `CartanMatrix.C n` and `CartanMatrix.B n`. -/
 private def diagBC (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.diagonal fun k : Fin n => if k.val + 1 = n then 2 else 1
+  diagonal fun i => if i.val + 1 = n then 2 else 1
 
-private lemma det_diagBC_ne_zero (n : ℕ) : (diagBC n).det ≠ 0 := by
-  rw [diagBC, Matrix.det_diagonal]
-  exact Finset.prod_ne_zero_iff.mpr fun k _ => by split_ifs <;> norm_num
-
-private lemma diagBC_mul_reflMatrix (n : ℕ) (i : Fin n) :
-    diagBC n * reflMatrix (CartanMatrix.C n) i = reflMatrix (CartanMatrix.B n) i * diagBC n := by
-  ext r j
-  rw [diagBC, Matrix.diagonal_mul, Matrix.mul_diagonal]
-  have := r.isLt; have := j.isLt; have := i.isLt
-  simp only [reflMatrix_apply, CartanMatrix.B, CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
-
-private lemma diagBC_mul_coxeterElement (n : ℕ) :
-    diagBC n * coxeterElement (CartanMatrix.C n) =
-      coxeterElement (CartanMatrix.B n) * diagBC n :=
-  mul_coxeterElement (diagBC n) (CartanMatrix.C n) (reflMatrix (CartanMatrix.B n))
-    (diagBC_mul_reflMatrix n)
-
-/-- **The characteristic polynomial of the `Cₙ` Coxeter element is `X^n + 1`** (`1 ≤ n`). -/
-theorem charpoly_coxeterElement_C {n : ℕ} (hn : 1 ≤ n) :
-    (coxeterElement (CartanMatrix.C n)).charpoly = X ^ n + 1 :=
-  (Matrix.charpoly_eq_of_mul_eq_mul (det_diagBC_ne_zero n)
-    (diagBC_mul_coxeterElement n).symm).symm.trans (charpoly_coxeterElement_B hn)
-
-/-- **The Coxeter number of `Cₙ` is `2 n`** (`1 ≤ n`): the Coxeter element of type `Cₙ` has order
-`2 n`. -/
-theorem orderOf_coxeterElement_C {n : ℕ} (hn : 1 ≤ n) :
-    orderOf (coxeterElement (CartanMatrix.C n)) = 2 * n :=
-  (Matrix.orderOf_eq_of_mul_eq_mul (det_diagBC_ne_zero n)
-    (diagBC_mul_coxeterElement n).symm).symm.trans (orderOf_coxeterElement_B hn)
-
-/-! ### Type `Dₙ`: block-diagonal conjugation to a signed `(n - 1)`-cycle and `-1` -/
-
-/-- The `n × n` integer matrix with columns `e₀ - e₁, …, eₙ₋₂ - eₙ₋₁, eₙ₋₂ + eₙ₋₁`. -/
-private def matPD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun r j =>
-    if j.val + 1 < n then
-      (if r.val = j.val then 1 else 0) - (if r.val = j.val + 1 then 1 else 0)
-    else
-      (if r.val + 2 = n then 1 else 0) + (if r.val + 1 = n then 1 else 0)
-
-/-- Upper-triangular column operation `col_{n-1} ↦ col_{n-2} + 2 col_{n-1}` relating `matPB n` to
-`matPD n`. -/
-private def upperUD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun k j =>
-    if j.val + 1 < n then if k = j then 1 else 0
-    else (if k.val + 2 = n then 1 else 0) + (if k.val + 1 = n then 2 else 0)
-
-private lemma matPB_mul_upperUD {n : ℕ} (hn : 2 ≤ n) : matPB n * upperUD n = matPD n := by
-  ext r j
-  rw [Matrix.mul_apply]
-  by_cases hj : j.val + 1 < n
-  · rw [Finset.sum_eq_single j]
-    · simp [matPB, upperUD, matPD, hj]
-    · intro k _ hkj; simp [upperUD, hj, hkj]
-    · intro h; exact absurd (Finset.mem_univ _) h
-  · have h1 : ∀ k : Fin n, (k.val + 2 = n) ↔ k = ⟨n - 2, by omega⟩ := fun k => by
-      simp only [Fin.ext_iff]; omega
-    have h2 : ∀ k : Fin n, (k.val + 1 = n) ↔ k = ⟨n - 1, by omega⟩ := fun k => by
-      simp only [Fin.ext_iff]; omega
-    simp only [upperUD, Matrix.of_apply, hj, ↓reduceIte, mul_add, Finset.sum_add_distrib,
-      h1, h2, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ]
-    have := r.isLt; have := j.isLt
-    simp only [matPB, matPD, Matrix.of_apply, hj, ↓reduceIte, Fin.ext_iff]
+private theorem diagBC_mul_coxC (n : ℕ) : diagBC n * coxC n = coxB n * diagBC n := by
+  have hrefl (i : Fin n) :
+      reflMatrix (CartanMatrix.B n) i * diagBC n = diagBC n * reflMatrix (CartanMatrix.C n) i := by
+    ext k j; rw [diagBC, diagonal_mul, mul_diagonal]
+    have _ := k.isLt; have _ := j.isLt; have _ := i.isLt
+    simp only [reflMatrix_apply, CartanMatrix.B, CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
     split_ifs <;> omega
+  simpa [coxC, coxB, coxeterElement] using
+    (list_prod_map_mul_eq_mul_list_prod_map (List.finRange n) (diagBC n)
+      (reflMatrix (CartanMatrix.B n)) (reflMatrix (CartanMatrix.C n)) fun i _ => hrefl i).symm
 
-private lemma det_matPD {n : ℕ} (hn : 2 ≤ n) : (matPD n).det = 2 := by
-  rw [← matPB_mul_upperUD hn, Matrix.det_mul, det_matPB, one_mul]
-  have htri : (upperUD n).IsUpperTriangular := fun i j hij => by
-    have hlt : j.val < i.val := Fin.lt_def.mp hij
-    have := i.isLt
-    simp only [upperUD, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
-  rw [Matrix.det_of_isUpperTriangular htri]
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Fin.prod_univ_castSucc, Finset.prod_eq_one fun i _ => by simp [upperUD], one_mul]
-  simp only [upperUD, Matrix.of_apply, Fin.val_last]; split_ifs <;> omega
+private theorem det_diagBC_ne_zero (n : ℕ) : (diagBC n).det ≠ 0 := by
+  rw [diagBC, det_diagonal, Finset.prod_ne_zero_iff]
+  intro i _
+  split_ifs <;> norm_num
 
-private lemma cartanMatrixD_apply_of_lt {n : ℕ} {i : Fin n} (hi : i.val + 1 < n) (j : Fin n) :
-    CartanMatrix.D n j i =
-      if j = i then 2
-      else if n ≤ 2 then 0
-      else if j.val + 1 < n then
-        if j.val + 1 = i.val ∨ (i.val + 1 = j.val ∧ i.val + 2 < n) then -1 else 0
-      else
-        if i.val + 3 = n then -1 else 0 := by
-  have := j.isLt
-  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
+/-- The Coxeter elements of `CartanMatrix.C n` and `CartanMatrix.B n` have the same order for every
+`n`. -/
+theorem orderOf_coxC_eq_orderOf_coxB (n : ℕ) : orderOf (coxC n) = orderOf (coxB n) :=
+  SemiconjBy.orderOf_eq_of_isRegular
+    (isRegular_of_isLeftRegular_det (IsRegular.of_ne_zero' (det_diagBC_ne_zero n)).left)
+    (diagBC_mul_coxC n)
 
-private lemma cartanMatrixD_apply_of_not_lt {n : ℕ} {i : Fin n} (hi : ¬ i.val + 1 < n)
-    (j : Fin n) :
-    CartanMatrix.D n j i =
-      if j = i then 2 else if n ≤ 2 then 0 else if j.val + 3 = n then -1 else 0 := by
-  have := i.isLt; have := j.isLt
-  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
+/-- The Coxeter elements of `CartanMatrix.C n` and `CartanMatrix.B n` have the same characteristic
+polynomial for every `n`. -/
+theorem charpoly_coxC_eq_charpoly_coxB (n : ℕ) : (coxC n).charpoly = (coxB n).charpoly :=
+  (Matrix.charpoly_eq_of_mul_eq_mul (det_diagBC_ne_zero n) (diagBC_mul_coxC n).symm).symm
 
-/-- Diagonal sign matrix negating the last two coordinates `n - 2` and `n - 1`. -/
-private def negLastTwo (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.diagonal fun r : Fin n => if n ≤ r.val + 2 then -1 else 1
+/-- The empty type `C₀` Coxeter element has order `1`. -/
+@[simp]
+theorem orderOf_coxC_zero : orderOf (coxC 0) = 1 := by
+  rw [orderOf_coxC_eq_orderOf_coxB, orderOf_coxB_zero]
 
-/-- The last reflection of `Dₙ` in standard coordinates sends `eₙ₋₂ ↦ -eₙ₋₁`, `eₙ₋₁ ↦ -eₙ₋₂`, and
-fixes `eᵣ` for `r < n - 2`. -/
-private def lastReflD {n : ℕ} (hn : 2 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
-  negLastTwo n * permMatrixHom (Equiv.swap ⟨n - 2, by omega⟩ ⟨n - 1, by omega⟩)
+/-- **The Coxeter number of `Cₙ` (`0 < n`) is `2 * n`**: the Coxeter element of `CartanMatrix.C n`
+has order `2 * n`. -/
+theorem orderOf_coxC {n : ℕ} (hn : 0 < n) : orderOf (coxC n) = 2 * n :=
+  (orderOf_coxC_eq_orderOf_coxB n).trans (orderOf_coxB hn)
 
-private lemma lastReflD_mul_apply {n : ℕ} (hn : 2 ≤ n) {κ : Type*} (M : Matrix (Fin n) κ ℤ)
-    (r : Fin n) (j : κ) :
-    (lastReflD hn * M) r j =
-      if r.val + 1 = n then -M ⟨n - 2, by omega⟩ j
-      else if r.val + 2 = n then -M ⟨n - 1, by omega⟩ j
-      else M r j := by
-  rw [lastReflD, Matrix.mul_assoc, negLastTwo, Matrix.diagonal_mul, permMatrixHom_swap_mul_apply]
-  have := r.isLt
-  simp only [Fin.ext_iff]
-  split_ifs <;> simp <;> omega
+/-- The empty type `C₀` Coxeter element has characteristic polynomial `1`. -/
+theorem charpoly_coxC_zero : (coxC 0).charpoly = 1 := by simp
 
-private lemma lastReflD_eq_swap_mul_diag {n : ℕ} (hn : 2 ≤ n) :
-    lastReflD hn =
-      permMatrixHom (Equiv.swap ⟨n - 2, by omega⟩ ⟨n - 1, by omega⟩) * negLastTwo n := by
-  ext r j
-  rw [lastReflD, negLastTwo, Matrix.diagonal_mul]
-  nth_rw 1 [← Matrix.mul_one (permMatrixHom (Equiv.swap _ _))]
-  rw [permMatrixHom_swap_mul_apply, permMatrixHom_swap_mul_apply, Matrix.diagonal_apply,
-    Matrix.one_apply]
-  have := r.isLt; have := j.isLt
-  simp only [apply_ite Fin.val, Fin.ext_iff]
-  split_ifs <;> omega
+/-- **Characteristic polynomial of the type `C` Coxeter element** (`0 < n`): `X ^ n + 1`. -/
+theorem charpoly_coxC {n : ℕ} (hn : 0 < n) : (coxC n).charpoly = X ^ n + 1 :=
+  (charpoly_coxC_eq_charpoly_coxB n).trans (charpoly_coxB hn)
 
-/-- Coordinate simple reflections of type `Dₙ`. -/
-private def reflCoordD {n : ℕ} (hn : 2 ≤ n) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
-  if hi : i.val + 1 < n then permMatrixHom (Equiv.swap i ⟨i.val + 1, hi⟩) else lastReflD hn
+/-! ### Type `D` -/
 
-private lemma matPD_mul_reflMatrix {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
-    matPD n * reflMatrix (CartanMatrix.D n) i = reflCoordD hn i * matPD n := by
-  ext r j
-  rw [mul_reflMatrix_apply]
-  have := r.isLt; have := j.isLt; have := i.isLt
-  by_cases hi : i.val + 1 < n
-  · rw [reflCoordD, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_swap_mul_apply,
-      cartanMatrixD_apply_of_lt hi j]
-    by_cases hj : j.val + 1 < n
-    · rcases eq_or_ne j i with rfl | hji
-      · simp only [↓reduceIte, matPD, Matrix.of_apply, hi, apply_ite Fin.val, Fin.ext_iff]
-        split_ifs <;> omega
-      · simp only [hji, hj, hi, ↓reduceIte, matPD, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
-        split_ifs <;> omega
-    · have hji : j ≠ i := fun h => hj (h ▸ hi)
-      simp only [hji, hj, hi, ↓reduceIte, matPD, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
+/-- Simple-root columns `ε₀ - ε₁, …, εₘ - ε_{m+1}, εₘ + ε_{m+1}` of `D_{m+2}` in `ℤ^{m+2}`. -/
+private def basisD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
+  diffBasis (m + 2) *
+    Matrix.of fun p q =>
+      if p = q then (if q.val = m + 1 then 2 else 1)
+      else if p.val = m ∧ q.val = m + 1 then 1 else 0
+
+/-- Integer quasi-inverse of `basisD m`, satisfying `adjBasisD m * basisD m = 2 • 1`. -/
+private def adjBasisD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
+  (Matrix.of fun p q =>
+    if p = q then (if q.val = m + 1 then 1 else 2)
+    else if p.val = m ∧ q.val = m + 1 then -1 else 0) * sumBasis (m + 2)
+
+private theorem basisD_apply (m : ℕ) (p q : Fin (m + 2)) :
+    basisD m p q =
+      if q.val < m + 1 then (if p = q then 1 else if p.val = q.val + 1 then -1 else 0)
+      else (if p.val = m ∨ p.val = m + 1 then 1 else 0) := by
+  rw [basisD, Matrix.mul_apply]
+  have _ := p.isLt; have hq := q.isLt
+  rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hq) with hqlt | hqlast
+  · rw [Finset.sum_eq_single q]
+    · simp only [diffBasis, Matrix.of_apply, ↓reduceIte, hqlt]; split_ifs <;> omega
+    · intro r _ hr
+      have hrm : ¬ (r.val = m ∧ q.val = m + 1) := by omega
+      simp [hr, hrm]
+    · exact fun h => absurd (Finset.mem_univ _) h
+  · let r0 : Fin (m + 2) := ⟨m, by omega⟩
+    let r1 : Fin (m + 2) := ⟨m + 1, by omega⟩
+    have hr01 : r0 ≠ r1 := fun h => by have := congrArg Fin.val h; dsimp [r0, r1] at this; omega
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ r0),
+      ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hr01.symm, Finset.mem_univ r1⟩),
+      Finset.sum_eq_zero]
+    · clear hr01; simp [diffBasis, Fin.ext_iff, hqlast, r0, r1]; split_ifs <;> omega
+    · intro r hr
+      have hr0 : r ≠ r0 := (Finset.mem_erase.mp (Finset.mem_erase.mp hr).2).1
+      have hr1 : r ≠ r1 := (Finset.mem_erase.mp hr).1
+      have hrq : r ≠ q := fun h => hr1 (Fin.ext (h ▸ hqlast))
+      have hrm : ¬ (r.val = m ∧ q.val = m + 1) := fun h => hr0 (Fin.ext h.1)
+      simp [hrq, hrm]
+
+private theorem adjBasisD_mul_basisD (m : ℕ) : adjBasisD m * basisD m = (2 : ℤ) • 1 := by
+  rw [adjBasisD, basisD, mul_assoc, ← mul_assoc (sumBasis (m + 2)), sumBasis_mul_diffBasis, one_mul]
+  let r0 : Fin (m + 2) := ⟨m, Nat.lt_succ_of_lt (Nat.lt_succ_self m)⟩
+  let r1 : Fin (m + 2) := ⟨m + 1, Nat.lt_succ_self (m + 1)⟩
+  have hr01 : r0 ≠ r1 := fun h => by have := congrArg Fin.val h; simp [r0, r1] at this
+  ext p q; rw [Matrix.mul_apply]; have hp := p.isLt
+  by_cases hp0 : p = r0
+  · rw [hp0, ← Finset.add_sum_erase _ _ (Finset.mem_univ r0),
+      ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hr01.symm, Finset.mem_univ r1⟩),
+      Finset.sum_eq_zero]
+    · clear hr01 hp0 hp; simp [Fin.ext_iff, Matrix.one_apply, r0, r1]; split_ifs <;> omega
+    · intro r hr
+      have hr0 : r0 ≠ r := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp hr).2).1 h.symm
+      have hr1 : r.val ≠ m + 1 := fun h => (Finset.mem_erase.mp hr).1 (Fin.ext h)
+      simp [hr0, hr1]
+  · have hpm : p.val ≠ m := fun h => hp0 (Fin.ext h)
+    clear hp0 hr01
+    rw [Finset.sum_eq_single p]
+    · simp only [Matrix.of_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul, ↓reduceIte,
+        Fin.ext_iff]
       split_ifs <;> omega
-  · rw [reflCoordD, dite_eq_right_of_eq_false (eq_false hi), lastReflD_mul_apply hn,
-      cartanMatrixD_apply_of_not_lt hi j]
-    by_cases hj : j.val + 1 < n
-    · have hji : j ≠ i := fun h => hi (h ▸ hj)
-      simp only [hji, hj, hi, ↓reduceIte, matPD, Matrix.of_apply]
-      split_ifs <;> omega
-    · have hji : j = i := Fin.ext (by omega)
-      simp only [hji, hi, ↓reduceIte, matPD, Matrix.of_apply]
-      split_ifs <;> omega
+    · intro r _ hr; simp [hr.symm, hpm]
+    · exact fun h => absurd (Finset.mem_univ _) h
 
-/-- Block-diagonal model of `coxeterElement (CartanMatrix.D (m + 1))`: `negCycleMatrix m` on
-`Fin m` and `-1` on `Fin 1`. -/
-private def blockModelD (m : ℕ) : Matrix (Fin m ⊕ Fin 1) (Fin m ⊕ Fin 1) ℤ :=
-  Matrix.fromBlocks (negCycleMatrix m) 0 0 (-1)
+private theorem isLeftRegular_det_basisD (m : ℕ) : IsLeftRegular (basisD m).det :=
+  isLeftRegular_det_right_of_mul_eq_smul_one (IsRegular.of_ne_zero' two_ne_zero).left
+    (adjBasisD_mul_basisD m)
 
-/-- `blockModelD m` transported to `Fin (m + 1)` along `finSumFinEquiv`. -/
-private def modelDSucc (m : ℕ) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ :=
-  (blockModelD m).reindex (finSumFinEquiv : Fin m ⊕ Fin 1 ≃ Fin (m + 1))
-    (finSumFinEquiv : Fin m ⊕ Fin 1 ≃ Fin (m + 1))
+private theorem cartanMatrix_D_apply_succ_succ (m : ℕ) (i j : Fin (m + 2)) :
+    CartanMatrix.D (m + 2) i j =
+      if i = j then 2
+      else if m = 0 then 0
+      else if (i.val + 1 = j.val ∧ j.val < m) ∨ (j.val + 1 = i.val ∧ i.val < m) ∨
+        (i.val + 1 = m ∧ (j.val = m ∨ j.val = m + 1)) ∨
+        (j.val + 1 = m ∧ (i.val = m ∨ i.val = m + 1))
+      then -1 else 0 := by
+  have _ := i.isLt; have _ := j.isLt
+  simp only [CartanMatrix.D, Matrix.of_apply]; split_ifs <;> omega
 
-private lemma permMatrixHom_finRotate_mul_lastReflD {m : ℕ} (hm : 1 ≤ m) :
-    permMatrixHom (finRotate (m + 1)) * lastReflD (n := m + 1) (by omega) = modelDSucc m := by
-  have hrot (x : Fin (m + 1)) :
-      ((finRotate (m + 1)).symm x : ℕ) = if x = 0 then m else x.val - 1 := by
-    split_ifs with hx
-    · subst hx; rw [Fin.finRotate_symm_zero, Fin.val_last]
-    · exact coe_finRotate_symm_of_ne_zero hx
-  rw [lastReflD_eq_swap_mul_diag]
-  ext r j
-  rw [permMatrixHom_mul_apply, Equiv.Perm.inv_def, permMatrixHom_swap_mul_apply, negLastTwo,
-    Matrix.diagonal_apply]
-  refine Fin.lastCases ?_ (fun r₀ => ?_) r <;> refine Fin.lastCases ?_ (fun j₀ => ?_) j <;>
-    simp only [modelDSucc, Matrix.reindex_apply, Matrix.submatrix_apply, blockModelD,
-      finSumFinEquiv_symm_last, finSumFinEquiv_symm_apply_castSucc,
-      Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁,
-      Matrix.fromBlocks_apply₂₂, Matrix.neg_apply, Matrix.one_apply_eq, Matrix.zero_apply,
-      negCycleMatrix_apply, apply_ite Fin.val, Fin.ext_iff, Fin.val_last,
-      Fin.val_castSucc, Fin.val_zero, hrot] <;>
-    (try have := r₀.isLt) <;> (try have := j₀.isLt) <;> split_ifs <;> omega
+/-- Reflection across `(εₘ + ε_{m+1})⊥` in `ℤ^{m+2}`: fixes `εₖ` (`k < m`) and sends
+`εₘ ↦ -ε_{m+1}`, `ε_{m+1} ↦ -εₘ`. -/
+private def forkFlip (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
+  Matrix.of fun p q =>
+    if p.val < m then (if p = q then 1 else 0)
+    else if p.val = m then (if q.val = m + 1 then -1 else 0)
+    else (if q.val = m then -1 else 0)
 
-private lemma matPD_mul_coxeterElement_D_succ {m : ℕ} (hm : 1 ≤ m) :
-    matPD (m + 1) * coxeterElement (CartanMatrix.D (m + 1)) = modelDSucc m * matPD (m + 1) := by
-  rw [mul_coxeterElement (matPD (m + 1)) (CartanMatrix.D (m + 1))
-    (reflCoordD (by omega)) (matPD_mul_reflMatrix (by omega))]
-  congr 1
-  rw [prod_finRange_succ_map_eq_permMatrixHom_finRotate_mul (reflCoordD (by omega)) fun i =>
-    (dite_eq_left_of_eq_true (eq_true (Nat.add_lt_add_right i.isLt 1))).trans
-      (congrArg (permMatrixHom <| Equiv.swap i.castSucc ·) (Fin.ext (by simp)))]
-  simpa [reflCoordD] using permMatrixHom_finRotate_mul_lastReflD hm
+private theorem permMatrixHom_transposition_mul_basisD {m : ℕ} (i : Fin (m + 1)) :
+    permMatrixHom (BraidGroup.transposition (n := m + 2) i) * basisD m =
+      basisD m * reflMatrix (CartanMatrix.D (m + 2)) i.castSucc := by
+  ext p q
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition, mul_reflMatrix_apply]
+  have _ := p.isLt; have _ := q.isLt; have hi := i.isLt
+  have hicv : (i.castSucc : Fin (m + 2)).val = i.val := rfl
+  have hD : CartanMatrix.D (m + 2) q i.castSucc =
+      if q.val = i.val then 2
+      else if (q.val < m + 1 ∧ (q.val + 1 = i.val ∨ i.val + 1 = q.val)) ∨
+        (q.val = m + 1 ∧ i.val + 1 = m) then -1 else 0 := by
+    rw [cartanMatrix_D_apply_succ_succ]; simp only [Fin.ext_iff, hicv]; split_ifs <;> omega
+  set sp := BraidGroup.transposition (n := m + 2) i p
+  have hsp := BraidGroup.val_transposition_apply (n := m + 2) i p
+  rw [hD]; simp only [basisD_apply, Fin.ext_iff, hicv, hi]
+  split_ifs at hsp ⊢ <;> omega
 
-private lemma charpoly_modelDSucc {m : ℕ} (hm : 1 ≤ m) :
-    (modelDSucc m).charpoly = (X ^ m + 1) * (X + 1) := by
-  rw [modelDSucc, Matrix.charpoly_reindex, blockModelD, Matrix.charpoly_fromBlocks_zero₁₂,
-    charpoly_negCycleMatrix hm]
-  congr 1
-  rw [Matrix.charpoly, Matrix.charmatrix, Matrix.det_fin_one]
+private theorem forkFlip_mul_apply {m k : ℕ} (M : Matrix (Fin (m + 2)) (Fin k) ℤ)
+    (p : Fin (m + 2)) (q : Fin k) :
+    (forkFlip m * M) p q =
+      if p.val < m then M p q
+      else if p.val = m then -M (Fin.last (m + 1)) q
+      else -M (Fin.last m).castSucc q := by
+  rw [Matrix.mul_apply]; split_ifs with hp1 hp2
+  · rw [Finset.sum_eq_single p (fun r _ hr => by simp [forkFlip, hp1, hr.symm]) (by simp)]
+    simp [forkFlip, hp1]
+  · rw [Finset.sum_eq_single (Fin.last (m + 1))
+      (fun r _ hr => by simp [forkFlip, hp2, show r.val ≠ m + 1 from fun h => hr (Fin.ext h)])
+      (by simp)]; simp [forkFlip, hp2]
+  · rw [Finset.sum_eq_single (Fin.last m).castSucc
+      (fun r _ hr => by simp [forkFlip, hp1, hp2, show r.val ≠ m from fun h => hr (Fin.ext h)])
+      (by simp)]; simp [forkFlip, hp1, hp2]
+
+private theorem forkFlip_mul_basisD (m : ℕ) :
+    forkFlip m * basisD m =
+      basisD m * reflMatrix (CartanMatrix.D (m + 2)) (Fin.last (m + 1)) := by
+  ext p q; rw [forkFlip_mul_apply, mul_reflMatrix_apply]
+  have _ := p.isLt; have hq := q.isLt
+  have hD : CartanMatrix.D (m + 2) q (Fin.last (m + 1)) =
+      if q.val = m + 1 then 2 else if q.val + 1 = m then -1 else 0 := by
+    rw [cartanMatrix_D_apply_succ_succ]; simp [Fin.ext_iff]; split_ifs <;> omega
+  rw [hD]; rcases eq_or_ne q.val (m + 1) with hq1 | hq1
+  · simp [hq1, basisD_apply]; split_ifs <;> omega
+  · simp [hq1, show q.val < m + 1 by omega, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
+
+/-- Block-diagonal model `fromBlocks (negShift (m + 1)) 0 0 (-1)` of `coxD (m + 2)`. -/
+private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
+  reindex (finSumFinEquiv (m := m + 1) (n := 1)) (finSumFinEquiv (m := m + 1) (n := 1))
+    (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
+
+private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
+    permMatrixHom (finRotate (m + 2)) * forkFlip m = modelD m := by
+  ext p q; rw [permMatrixHom_mul_apply]
+  set s := (finRotate (m + 2)).symm p; have _ := s.isLt
+  have hrot : p.val = if s.val = m + 1 then 0 else s.val + 1 := by
+    have h := coe_finRotate s; rw [Equiv.apply_symm_apply] at h
+    simpa [Fin.ext_iff, Fin.val_last] using h
+  obtain ⟨ip | ip, rfl⟩ := (finSumFinEquiv (m := m + 1) (n := 1)).surjective p <;>
+    obtain ⟨iq | iq, rfl⟩ := (finSumFinEquiv (m := m + 1) (n := 1)).surjective q <;>
+    rw [modelD, reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
+  · have _ := ip.isLt; have _ := iq.isLt
+    simp only [fromBlocks_apply₁₁, forkFlip, negShift, Matrix.of_apply, finSumFinEquiv_apply_left,
+      Fin.val_castAdd, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+  · fin_cases iq; have _ := ip.isLt
+    simp [forkFlip, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+  · fin_cases ip; have _ := iq.isLt
+    simp [forkFlip, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+  · fin_cases ip; fin_cases iq; simp [forkFlip] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+
+private theorem modelD_mul_basisD_eq_basisD_mul_coxD (m : ℕ) :
+    modelD m * basisD m = basisD m * coxD (m + 2) := by
+  have h1 := permMatrixHom_finRotate_mul_eq (basisD m)
+    (fun i => reflMatrix (CartanMatrix.D (m + 2)) i.castSucc)
+    permMatrixHom_transposition_mul_basisD
+  rw [← permMatrixHom_finRotate_mul_forkFlip, mul_assoc, forkFlip_mul_basisD, ← mul_assoc, h1,
+    mul_assoc, coxD, coxeterElement, List.finRange_succ_last (n := m + 1), List.map_append,
+    List.prod_append, List.map_singleton, List.prod_singleton, List.map_map]
+  rfl
+
+/-- The empty type `D₀` Coxeter element has characteristic polynomial `1`. -/
+theorem charpoly_coxD_zero : (coxD 0).charpoly = 1 := by simp
+
+/-- The degenerate rank-`1` type `D₁` Coxeter element (`-1`) has characteristic polynomial
+`X + 1`. -/
+@[simp]
+theorem charpoly_coxD_one : (coxD 1).charpoly = X + 1 := by
+  have h1 : coxD 1 = -1 := by decide
+  rw [h1, Matrix.charpoly, Matrix.det_fin_one]
   simp [sub_neg_eq_add]
 
-private lemma orderOf_modelDSucc {m : ℕ} (hm : 1 ≤ m) :
-    orderOf (modelDSucc m) = 2 * m := by
-  let e : Fin m ⊕ Fin 1 ≃ Fin (m + 1) := finSumFinEquiv
-  have he : orderOf (modelDSucc m) = orderOf (blockModelD m) :=
-    (Matrix.reindexAlgEquiv ℤ ℤ e).toMulEquiv.orderOf_eq (blockModelD m)
-  rw [he]
-  refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun k hk hpos h1 => ?_⟩
-  · rw [blockModelD, Matrix.fromBlocks_diagonal_pow, pow_mul' (negCycleMatrix m),
-      negCycleMatrix_pow_self hm, neg_one_sq, pow_mul (-1 : Matrix (Fin 1) (Fin 1) ℤ),
-      neg_one_sq, one_pow, Matrix.fromBlocks_one]
-  · rw [blockModelD, Matrix.fromBlocks_diagonal_pow, ← Matrix.fromBlocks_one,
-      Matrix.fromBlocks_inj] at h1
-    exact pow_ne_one_of_lt_orderOf hpos.ne' (by rwa [orderOf_negCycleMatrix hm]) h1.1
+/-- **Characteristic polynomial of the type `D` Coxeter element** (`2 ≤ n`):
+`(X ^ (n - 1) + 1) * (X + 1)`. Holds for `D₂ = A₁ × A₁` and `D₃ = A₃` as well as `n ≥ 4`. -/
+theorem charpoly_coxD {n : ℕ} (hn : 2 ≤ n) :
+    (coxD n).charpoly = (X ^ (n - 1) + 1) * (X + 1) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  have hsub : m + 2 - 1 = m + 1 := rfl
+  rw [hsub,
+    (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_basisD m).ne_zero
+      (modelD_mul_basisD_eq_basisD_mul_coxD m)).symm,
+    modelD, charpoly_reindex, charpoly_fromBlocks_zero₂₁, charpoly_negShift (Nat.succ_pos m)]
+  congr 1
+  rw [Matrix.charpoly, Matrix.det_fin_one]; simp [sub_neg_eq_add]
 
-/-- **The characteristic polynomial of the `Dₙ` Coxeter element is `(X^{n-1} + 1)(X + 1)`**
-(`2 ≤ n`). -/
-theorem charpoly_coxeterElement_D {n : ℕ} (hn : 2 ≤ n) :
-    (coxeterElement (CartanMatrix.D n)).charpoly = (X ^ (n - 1) + 1) * (X + 1) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  have hm : 1 ≤ m := by omega
-  have h := Matrix.charpoly_eq_of_mul_eq_mul (by rw [det_matPD hn]; norm_num)
-    (matPD_mul_coxeterElement_D_succ hm).symm
-  simpa using h.symm.trans (charpoly_modelDSucc hm)
+/-- The empty type `D₀` Coxeter element has order `1`. -/
+@[simp]
+theorem orderOf_coxD_zero : orderOf (coxD 0) = 1 := by
+  rw [Subsingleton.elim (coxD 0) 1, orderOf_one]
 
-/-- **The Coxeter number of `Dₙ` is `2 (n - 1)`** (`2 ≤ n`): the Coxeter element of type `Dₙ` has
-order `2 (n - 1)`. -/
-theorem orderOf_coxeterElement_D {n : ℕ} (hn : 2 ≤ n) :
-    orderOf (coxeterElement (CartanMatrix.D n)) = 2 * (n - 1) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  have hm : 1 ≤ m := by omega
-  have h := Matrix.orderOf_eq_of_mul_eq_mul (by rw [det_matPD hn]; norm_num)
-    (matPD_mul_coxeterElement_D_succ hm).symm
-  simpa using h.symm.trans (orderOf_modelDSucc hm)
+/-- The degenerate rank-`1` type `D₁` Coxeter element (`-1`) has order `2`. -/
+@[simp]
+theorem orderOf_coxD_one : orderOf (coxD 1) = 2 :=
+  (orderOf_eq_iff (by norm_num)).mpr ⟨by decide +kernel, by decide +kernel⟩
+
+private theorem orderOf_modelD (m : ℕ) : orderOf (modelD m) = 2 * (m + 1) := by
+  let e := finSumFinEquiv (m := m + 1) (n := 1)
+  have hre : modelD m = (reindexAlgEquiv ℤ ℤ e).toRingEquiv.toMulEquiv
+      (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) := rfl
+  rw [hre, MulEquiv.orderOf_eq]
+  refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun k hk hpos hk1 => ?_⟩
+  · rw [fromBlocks_diagonal_pow, ← orderOf_negShift (Nat.succ_pos m), pow_orderOf_eq_one,
+      orderOf_negShift (Nat.succ_pos m), pow_mul, neg_one_sq, one_pow, fromBlocks_one]
+  · rw [fromBlocks_diagonal_pow] at hk1
+    have h11 : negShift (m + 1) ^ k = 1 := by
+      ext i j; simpa [Matrix.one_apply] using congrFun₂ hk1 (Sum.inl i) (Sum.inl j)
+    have hle := orderOf_le_of_pow_eq_one hpos h11
+    rw [orderOf_negShift (Nat.succ_pos m)] at hle; omega
+
+/-- **The Coxeter number of `Dₙ` (`2 ≤ n`) is `2 * (n - 1)`**: the Coxeter element of
+`CartanMatrix.D n` has order `2 * (n - 1)`. -/
+theorem orderOf_coxD {n : ℕ} (hn : 2 ≤ n) : orderOf (coxD n) = 2 * (n - 1) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  have hsub : m + 2 - 1 = m + 1 := rfl
+  rw [hsub,
+    SemiconjBy.orderOf_eq_of_isRegular
+      (isRegular_of_isLeftRegular_det (isLeftRegular_det_basisD m))
+      (modelD_mul_basisD_eq_basisD_mul_coxD m).symm, orderOf_modelD]
 
 end TauCeti.Coxeter
 

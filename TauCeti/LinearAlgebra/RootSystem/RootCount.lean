@@ -6,27 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Exponents
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
-public import TauCeti.LinearAlgebra.RootSystem.Positive
--- `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient` supplies the description
--- of the root columns of the pinned simply connected datum as the `columnReflectionGroup` orbits
--- of the coordinate columns, used only inside `HasCartanType.nonempty_equiv_fin_numRoots`.
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 
 /-!
 # Root counts and Coxeter numbers for root pairings of Cartan type
 
-Combines simple-root coefficient orbit counting (`TauCeti.HasCartanType.natCard_eq_numRoots`,
-requiring no spanning assumption) with `t.numRoots = t.rank * t.coxeterNumber` and
-`TauCeti.classifiedDynkinType` to deduce `|Φ| = r * h`, `h = |Φ| / r`, `2 * |Φ⁺| = r * h`, and
-`|Φ⁺| = ∑ mᵢ` for bases of valid Cartan type and for finite irreducible reduced crystallographic
-root systems.
+Supplements `TauCeti.LinearAlgebra.RootSystem.Coxeter.Number` with additional root-count,
+exponent-sum, and fundamental-degree formulas (`|Φ⁺| = ∑ mᵢ`, `∑ dᵢ = |Φ⁺| + r`, `|Φ| = r * h`,
+`h = |Φ| / r`, and `Nonempty (ι ≃ Fin t.numRoots)`) for bases of valid Cartan type and for
+classified finite irreducible reduced crystallographic root systems.
 
 ## Main results
 
-* `TauCeti.HasCartanType.nonempty_equiv_fin_numRoots` and
-  `TauCeti.HasCartanType.natCard_eq_numRoots`: `t.numRoots` roots without assuming spanning.
+* `TauCeti.HasCartanType.nonempty_equiv_fin_numRoots`: equivalence `ι ≃ Fin t.numRoots`.
 * `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`,
+  `card_posRootsFinset_eq_sum_exponents`, `sum_degrees_eq_ncard_posRoots_add_card_support`,
   `natCard_eq_card_support_mul_coxeterNumber`, and `coxeterNumber_eq_natCard_div_card_support`.
 * `RootPairing.Base.natCard_eq_numRoots_classifiedDynkinType` and its four siblings for classified
   finite irreducible root systems.
@@ -39,8 +32,6 @@ root systems.
 
 public section
 
-open Function Matrix Set
-
 namespace TauCeti
 
 section HasCartanType
@@ -49,51 +40,14 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsReduced]
 
-/-- Relabelling simple-root coefficient columns along a Cartan-matrix equivalence matches the
-`columnReflectionGroup` orbits of the coordinate columns to those of `t.cartanMatrix`. -/
-private lemma image_comp_symm_range_rootCoefficients {b : P.Base} {t : DynkinType} (ht : t.Valid)
-    (e : b.support ≃ Fin t.rank) (he : ∀ i j, b.cartanMatrix i j = t.cartanMatrix (e i) (e j)) :
-    Set.range (fun x : ι ↦ b.rootCoefficients x ∘ e.symm) =
-      Set.range (t.simpleRootCoefficients ht) := by
-  classical
-  have hr : Set.range b.rootCoefficients =
-      Set.range (fun k ↦ t.simpleRootCoefficients ht k ∘ e) :=
-    b.iUnion_orbit_single_eq_range_rootCoefficients.symm.trans
-      (t.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp ht e he)
-  have him := congrArg ((fun c : b.support → ℤ ↦ c ∘ e.symm) '' ·) hr
-  rw [← Set.range_comp, ← Set.range_comp] at him
-  simpa [Function.comp_def, Function.comp_assoc] using him
-
 /-- **A finite reduced crystallographic root pairing carrying a base of valid Cartan type `t` has
 root index type equivalent to `Fin t.numRoots`.** No spanning assumption on the roots is
 required. -/
 theorem HasCartanType.nonempty_equiv_fin_numRoots {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) :
     Nonempty (ι ≃ Fin t.numRoots) := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  let f : ι → (Fin t.rank → ℤ) := fun x ↦ b.rootCoefficients x ∘ e.symm
-  have hf : Injective f := fun x y hxy ↦ b.rootCoefficients_injective <| by
-    ext k
-    simpa [f] using congrFun hxy (e k)
-  have hg : Injective (t.simpleRootCoefficients ht) := t.simpleRootCoefficients_injective ht
-  have hrange := image_comp_symm_range_rootCoefficients ht e he
-  have heq : Set.range f ≃ Set.range (t.simpleRootCoefficients ht) :=
-    hrange ▸ Equiv.refl (Set.range f)
-  exact ⟨(Equiv.ofInjective f hf).trans (heq.trans (Equiv.ofInjective _ hg).symm)⟩
-
-/-- **A finite reduced crystallographic root pairing with a base of valid Cartan type `t` has
-`t.numRoots` roots.** -/
-theorem HasCartanType.natCard_eq_numRoots {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    Nat.card ι = t.numRoots := by
-  obtain ⟨e⟩ := h.nonempty_equiv_fin_numRoots ht
-  simpa using Nat.card_congr e
-
-/-- Twice the number of positive roots of a base of valid Cartan type `t` is `t.numRoots`. -/
-theorem HasCartanType.two_mul_ncard_posRoots_eq_numRoots {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    2 * (posRoots P b).ncard = t.numRoots :=
-  (two_mul_ncard_posRoots P b).trans (h.natCard_eq_numRoots ht)
+  let := Fintype.ofFinite ι
+  exact ⟨Fintype.equivFinOfCardEq (Nat.card_eq_fintype_card.symm.trans (h.natCard_eq_numRoots ht))⟩
 
 /-- **The number of positive roots of a base of valid Cartan type `t` equals the sum of the
 exponents of `t`.** -/
@@ -101,7 +55,7 @@ theorem HasCartanType.ncard_posRoots_eq_sum_exponents {b : P.Base} {t : DynkinTy
     (h : HasCartanType P b t) (ht : t.Valid) :
     (posRoots P b).ncard = t.exponents.sum := by
   have h2 := h.two_mul_ncard_posRoots_eq_numRoots ht
-  have hexp := t.two_mul_sum_exponents
+  have hexp := t.two_mul_sum_exponents_eq_numRoots
   omega
 
 /-- Finset version of `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`. -/

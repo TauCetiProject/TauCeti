@@ -21,7 +21,10 @@ inverse coset translation in `Subgroup.continuous_inv_smul_const`. A continuous 
 surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an injection into a
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
 surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
-in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
+in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`. A family of
+continuous maps indexed by a discrete space, read at a continuously varying index, is continuous
+(`TauCeti.continuous_uncurry_comp_of_discreteTopology`); this is how term realization on the
+functional coding space of a language is continuous.
 
 For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `⊥` back to `⊥`
 (`TauCeti.induced_bot_of_injective`), and the neighbourhood filter at `x` in
@@ -74,6 +77,15 @@ theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [Topol
     [TopologicalSpace B] [DiscreteTopology B] {f : A → B} (hf : Function.Injective f) {a : X → A}
     (h : Continuous fun x => f (a x)) : Continuous a :=
   (IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf).continuous
+
+/-- A family of continuous maps indexed by a discrete space, read at a continuously varying index,
+is continuous: on a discrete index space, continuity in the index is automatic. -/
+theorem continuous_uncurry_comp_of_discreteTopology {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
+    (hg : ∀ z, Continuous fun x => g x z) {a : X → Z} (ha : Continuous a) :
+    Continuous fun x => g x (a x) :=
+  ((continuous_prod_of_discrete_right (f := Function.uncurry g)).2 hg).comp
+    (continuous_id.prodMk ha)
 
 /-- An injective map pulls the discrete topology `⊥` back to `⊥`. -/
 theorem induced_bot_of_injective {X Y : Type*} {e : X → Y} (he : Function.Injective e) :

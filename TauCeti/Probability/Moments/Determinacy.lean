@@ -9,6 +9,7 @@ public import Mathlib.Probability.Moments.ComplexMGF
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Analysis.Analytic.Order
 import TauCeti.Probability.Moments.Basic
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Moment determinacy of finite measures with finite exponential moments
@@ -62,6 +63,21 @@ moment-generating function takes on an arbitrarily small neighbourhood of the or
   compactly supported measures.
 * `TauCeti.charFun_eq_of_mgf_eq` and `TauCeti.Measure.ext_of_mgf`: the same two conclusions from an
   equality of moment-generating functions near `0` instead of an equality of moments.
+* `MeasureTheory.Measure.IsMomentDeterminate`: a measure on `ℝ` with finite moments that is the
+  only measure with these moments. This is the hypothesis on the limit in the method of moments.
+  `MeasureTheory.Measure.isMomentDeterminate_iff` unfolds it, and
+  `MeasureTheory.Measure.IsMomentDeterminate.isFiniteMeasure` records that such a measure is
+  finite.
+* `MeasureTheory.Measure.IsMomentDeterminate.of_integrable_exp_mul_abs` and
+  `MeasureTheory.Measure.IsMomentDeterminate.of_isCompact_of_measure_compl_eq_zero`: a finite
+  exponential moment `∫ e^{a|x|} dμ` for some `a > 0`, in particular compact support, makes a
+  measure moment-determinate among *all* measures with finite moments, not only among those with
+  exponential moments. The exponential moment passes to every measure with the same moments by
+  `TauCeti.integrable_exp_mul_abs_of_integral_pow_le`.
+
+## References
+
+* P. Billingsley, *Probability and Measure*, 3rd ed., Wiley (1995), Theorem 30.1.
 -/
 
 public section
@@ -254,3 +270,62 @@ theorem Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp
     (zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp hν) hmom
 
 end TauCeti
+
+/-! ### Moment-determinate measures -/
+
+namespace MeasureTheory.Measure
+
+/-- A measure `μ` on `ℝ` is *moment-determinate* if all of its polynomial moments `∫ xⁿ dμ` are
+finite and `μ` is the only measure on `ℝ` with these moments: every measure `ν` with finite
+moments `∫ xⁿ dν = ∫ xⁿ dμ` is `μ`. Taking `n = 0` shows that such `ν` are finite.
+
+This is the hypothesis on the limit in the method of moments. It holds when `μ` has a finite
+exponential moment `∫ e^{a|x|} dμ` for some `a > 0`
+(`IsMomentDeterminate.of_integrable_exp_mul_abs`), in particular for compactly supported and
+Gaussian laws, and it fails for the log-normal law. -/
+structure IsMomentDeterminate (μ : Measure ℝ) : Prop where
+  /-- Every polynomial moment of `μ` is finite. -/
+  integrable_pow (n : ℕ) : Integrable (fun x : ℝ ↦ x ^ n) μ
+  /-- A measure whose polynomial moments are finite and equal to those of `μ` is `μ`. -/
+  eq_of_forall_integral_pow_eq {ν : Measure ℝ} (hν : ∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ n) ν)
+    (h : ∀ n : ℕ, ∫ x, x ^ n ∂ν = ∫ x, x ^ n ∂μ) : ν = μ
+
+/-- Moment determinacy unfolded: all moments of `μ` are finite, and every measure with finite
+moments equal to those of `μ` is `μ`. -/
+theorem isMomentDeterminate_iff {μ : Measure ℝ} :
+    μ.IsMomentDeterminate ↔ (∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ n) μ) ∧
+      ∀ ν : Measure ℝ, (∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ n) ν) →
+        (∀ n : ℕ, ∫ x, x ^ n ∂ν = ∫ x, x ^ n ∂μ) → ν = μ :=
+  ⟨fun h ↦ ⟨h.integrable_pow, fun _ ↦ h.eq_of_forall_integral_pow_eq⟩, fun h ↦ ⟨h.1, h.2 _⟩⟩
+
+namespace IsMomentDeterminate
+
+/-- A moment-determinate measure is finite: its moment of order `0` is finite. -/
+theorem isFiniteMeasure {μ : Measure ℝ} (h : μ.IsMomentDeterminate) : IsFiniteMeasure μ := by
+  simpa [integrable_const_iff] using h.integrable_pow 0
+
+/-- **A finite exponential moment gives moment determinacy** (Billingsley, *Probability and
+Measure*, Theorem 30.1). If `∫ e^{a|x|} dμ` is finite for some `a > 0`, then `μ` is determined by
+its moments among all measures with finite moments. -/
+theorem of_integrable_exp_mul_abs {μ : Measure ℝ} {a : ℝ} (ha : 0 < a)
+    (h : Integrable (fun x ↦ Real.exp (a * |x|)) μ) : μ.IsMomentDeterminate where
+  integrable_pow n := by
+    simpa using ProbabilityTheory.integrable_pow_of_mem_interior_integrableExpSet
+      (TauCeti.zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp ⟨a, ha, h⟩) n
+  eq_of_forall_integral_pow_eq hν hmom :=
+    (TauCeti.Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp ⟨a, ha, h⟩
+      ⟨a, ha, TauCeti.integrable_exp_mul_abs_of_integral_pow_le h (fun n ↦ hν (2 * n))
+        fun n ↦ (hmom (2 * n)).le⟩ fun n ↦ (hmom n).symm).symm
+
+/-- **Compactly supported finite measures are moment-determinate.** A finite measure on `ℝ`
+that is concentrated on a compact set is determined by its moments among all measures with
+finite moments. -/
+theorem of_isCompact_of_measure_compl_eq_zero {μ : Measure ℝ} [IsFiniteMeasure μ] {K : Set ℝ}
+    (hK : IsCompact K) (hμK : μ Kᶜ = 0) : μ.IsMomentDeterminate := by
+  refine of_integrable_exp_mul_abs one_pos ?_
+  rw [← restrict_eq_self_of_ae_mem (mem_ae_iff.2 hμK)]
+  exact ContinuousOn.integrableOn_compact hK (by fun_prop)
+
+end IsMomentDeterminate
+
+end MeasureTheory.Measure
