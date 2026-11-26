@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.Bundle.QuadraticTwoForm
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 public import TauCeti.Analysis.PDE.SeibergWitten.UnitaryLift
-public import TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.Basic
+public import TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.Anticanonical
+public import TauCeti.Topology.VectorBundle.SpinStructure.HalfSpinorSplitting
 
 /-!
 # The canonical spinor of the canonical `Spinᶜ` structure
@@ -22,7 +23,8 @@ complex structure `J₀`. Its positive half-spinor bundle `W⁺ = 𝔰.halfSpino
 is built from a model Hermitian Clifford module, compared with `Spinᶜ(4)` through an orthonormal
 basis `b` of the model four-space `V`. In Taubes's analysis of the Seiberg–Witten equations on a
 symplectic four-manifold, a positive spinor is written `α u₀ + β`, where `u₀` is a unit section of
-the trivial summand of `W⁺ = 1 ⊕ K⁻¹`, the `-2i`-eigenline of `c₂(ω)`. This file constructs `u₀`.
+the trivial summand of `W⁺ = 1 ⊕ K⁻¹`, the `-2i`-eigenline of `c₂(ω)`. This file constructs `u₀`
+and the splitting `W⁺ = 1 ⊕ K⁻¹`.
 
 **The model.** Let `JV` be the complex structure of `V` corresponding to `J₀` under `b`. Read on `V`
 through `b`, the lift `σ g` is the quaternionic lift `OrthonormalBasis.spinCUnitary` of the frame
@@ -50,12 +52,31 @@ every fibre the pointwise identities of the canonical line hold:
 `q(u₀) = (‖u‖² / 4) ω` (`TauCeti.OrthonormalFrameBundle.quadraticTwoForm_canonicalSpinor`), which
 is Taubes's `q(u₀) = iω/4` for a unit spinor.
 
-The complementary line bundle `K⁻¹` of `W⁺`, the canonical connection `A₀` and the identity
-`D_{A₀} u₀ = 0` on a manifold are not constructed here.
+**The splitting.** For a nonzero model spinor `u` on the canonical line, the canonical spinor
+vanishes nowhere (`TauCeti.OrthonormalFrameBundle.canonicalSpinor_ne_zero`), so it splits `W⁺`
+into the trivial line it spans and a complement isomorphic to the determinant line `L`
+(`TauCeti.SpinCStructure.halfSpinorEquivProd`), and `L` is the anticanonical line
+`K⁻¹ = Λ²_ℂ (E, J)` (`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`).
+For a nonzero alternating form `ω` on the model positive half-spinors, of complex dimension two,
+the composite is the complex linear isomorphism `W⁺_x ≃ ℂ × K⁻¹_x`,
+`ψ ↦ (⟪u₀(x), ψ⟫, ω(u₀(x), ψ))` (`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd`).
+In a unitary frame `p` it sends `[[p, 1], φ]` to `(⟪u, φ⟫, ω(u, φ) (p e₀ ∧ p e₂))`
+(`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_mk`), it sends `u₀` to `(‖u‖², 0)`
+(`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`), and its two
+components are continuous on total spaces
+(`TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
+`TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`). This is the
+decomposition `ψ = α u₀ + β` of a positive spinor with `α = ⟪u₀, ψ⟫ / ‖u‖²` and `β` in the
+summand `K⁻¹`.
+
+The canonical connection `A₀` and the identity `D_{A₀} u₀ = 0` on a manifold are not constructed
+here.
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.canonicalSpinor`: the canonical spinor `u₀ = [[p, 1], u]`.
+* `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd`: the splitting
+  `W⁺_x ≃ ℂ × K⁻¹_x`, `ψ ↦ (⟪u₀(x), ψ⟫, ω(u₀(x), ψ))`.
 
 ## Main results
 
@@ -69,6 +90,12 @@ The complementary line bundle `K⁻¹` of `W⁺`, the canonical connection `A₀
 * `TauCeti.OrthonormalFrameBundle.cliffordRestriction_kahlerForm_canonicalSpinor`,
   `TauCeti.OrthonormalFrameBundle.quadraticTwoForm_canonicalSpinor`: `C(iω) u₀ = 2 u₀` and
   `q(u₀) = (‖u‖² / 4) ω`.
+* `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_mk`,
+  `TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`: the splitting in a
+  unitary frame, and its value `(‖u‖², 0)` on `u₀`.
+* `TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
+  `TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`: continuity of its
+  components on total spaces.
 
 ## References
 
@@ -76,6 +103,8 @@ The complementary line bundle `K⁻¹` of `W⁺`, the canonical connection `A₀
   J. Amer. Math. Soc. 9 (1996), 845–918, §1(c)–(d).
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
   Appendix D.
+* C. Okonek and A. Teleman, *Seiberg–Witten invariants and the Van de Ven conjecture*, 1995, §5
+  (the splitting `W⁺ = 1 ⊕ K⁻¹` of the canonical `Spinᶜ` structure).
 -/
 
 public section
@@ -167,6 +196,12 @@ theorem norm_canonicalSpinor (x : X) :
   rw [canonicalSpinor, ← AssociatedBundle.mkLinearIsometryEquiv_apply (𝕜 := ℂ),
     LinearIsometryEquiv.norm_map]
 
+/-- **The canonical spinor vanishes nowhere** when the model spinor is nonzero. -/
+theorem canonicalSpinor_ne_zero (hu₀ : u ≠ 0) (x : X) :
+    canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x ≠ 0 := by
+  rw [← norm_ne_zero_iff, norm_canonicalSpinor]
+  exact norm_ne_zero_iff.2 hu₀
+
 include hJV hu in
 /-- **The canonical spinor is a continuous section** of the positive half-spinor bundle, when `u`
 lies on the canonical line of the model. -/
@@ -248,5 +283,136 @@ theorem quadraticTwoForm_canonicalSpinor (hω : o.hodgeStar hkl JV.kahlerForm = 
     ← LinearMap.comp_apply,
     ← exteriorPower.map_comp]
   simp
+
+end TauCeti.OrthonormalFrameBundle
+
+/-! ### The splitting `W⁺ = 1 ⊕ K⁻¹` -/
+
+namespace TauCeti.OrthonormalFrameBundle
+
+open Orientation.HalfSpinModel SeibergWitten
+open scoped InnerProductSpace
+
+local notation "SpinC" => spinCGroup (realCliffordForm 4 0) hpos
+
+variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : X → Type} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E] {J : ∀ x, E x ≃ₗᵢ[ℝ] E x}
+  {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
+  {hJ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, J v.proj v.snd⟩ : TotalSpace F E)}
+  {hJ₂ : ∀ x v, J x (J x v) = -v}
+  {hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+    ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v}
+  {hF : finrank ℝ F = 4} {e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4))}
+  {h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1}
+  {h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3}
+  {Jc : Bundle.ContinuousComplexStructure F E} (hJc : ∀ x v, Jc x v = J x v)
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [Fact (finrank ℝ F = 2 * finrank ℂ G)]
+  [FiniteDimensional ℂ G] [FiniteDimensional ℝ F]
+  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
+  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)} {hQ : ∀ v, Q v = -‖v‖ ^ 2}
+  {b : OrthonormalBasis (Fin 4) ℝ V}
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+  {hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)}
+  (hrank : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2)
+  {ω : o.HalfSpinModel hQ b ρ hρ 1 [⋀^Fin 2]→ₗ[ℂ] ℂ} (hω : ω ≠ 0)
+  {u : o.HalfSpinModel hQ b ρ hρ 1} (hu₀ : u ≠ 0)
+
+/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
+local instance finiteDimensionalCanonicalSplittingModel : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
+
+variable {JV : AlmostComplexStructure V}
+  (hJV : ∀ w, JV (b.repr.symm w) =
+    b.repr.symm ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) w))
+  (hu : cliffordProjection o ρ JV.kahlerForm (toPositiveHalfSpinors o hQ b ρ hρ u) =
+    toPositiveHalfSpinors o hQ b ρ hρ u)
+
+variable (hJ hJ₂ hJ₀ hF e h₀ h₂) in
+/-- **The splitting `W⁺ = 1 ⊕ K⁻¹` of the positive half-spinors** of the canonical `Spinᶜ`
+structure of a rank-four bundle with an orthogonal complex structure `J`: the complex linear
+isomorphism `W⁺_x ≃ ℂ × Λ²_ℂ (E x, J x)` sending `ψ` to `(⟪u₀(x), ψ⟫, ω(u₀(x), ψ))`, the
+coefficient along the canonical spinor `u₀`
+(`TauCeti.OrthonormalFrameBundle.canonicalSpinor`) and the determinant pairing with `u₀` read in
+the anticanonical line `K⁻¹ = Λ²_ℂ (E, J)` through
+`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`. It sends `u₀` to the
+generator `(‖u‖², 0)` of the trivial summand
+(`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`), so a positive
+spinor is `α u₀ + β` with `β` in the summand `K⁻¹`. When `u` lies on the canonical line, `u₀`
+does not depend on the unitary frame used to define it and the components of the splitting are
+continuous on total spaces
+(`TauCeti.OrthonormalFrameBundle.continuous_fst_canonicalHalfSpinorEquivProd`,
+`TauCeti.OrthonormalFrameBundle.continuous_snd_canonicalHalfSpinorEquivProd`); for any other `u`
+the section `u₀` is read in a chosen frame. -/
+def canonicalHalfSpinorEquivProd (x : X) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1 x ≃L[ℂ]
+      ℂ × DetBundle ℂ G Jc.Fiber x :=
+  ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorEquivProd hrank hω
+      (canonicalSpinor_ne_zero hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₀ x)).trans
+    ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr
+      (canonicalDeterminantLineEquivDetBundle hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x))
+
+/-- The splitting `W⁺ = 1 ⊕ K⁻¹` sends `ψ` to the coefficient `⟪u₀(x), ψ⟫` and the determinant
+pairing `ω(u₀(x), ψ)` read in `K⁻¹`. -/
+@[simp]
+theorem canonicalHalfSpinorEquivProd_apply {x : X}
+    (ψ : (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1 x) :
+    canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x ψ =
+      (⟪canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x, ψ⟫_ℂ,
+        canonicalDeterminantLineEquivDetBundle (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x
+          ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorDetAlternatingMap hrank ω x
+            ![canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x, ψ])) := by
+  simp [canonicalHalfSpinorEquivProd]
+
+/-- **The canonical spinor spans the trivial summand**: the splitting `W⁺ = 1 ⊕ K⁻¹` sends
+`u₀(x)` to `(‖u‖², 0)`. -/
+theorem canonicalHalfSpinorEquivProd_canonicalSpinor (x : X) :
+    canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x
+        (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x) = ((‖u‖ : ℂ) ^ 2, 0) := by
+  rw [canonicalHalfSpinorEquivProd, ContinuousLinearEquiv.trans_apply,
+    SpinCStructure.halfSpinorEquivProd_self, norm_canonicalSpinor]
+  simp
+
+include hJV hu in
+/-- **The splitting `W⁺ = 1 ⊕ K⁻¹` in a unitary frame.** When the model spinor `u` lies on the
+canonical line, the splitting sends the class `[[p, 1], φ]` of a model half-spinor `φ` in a
+unitary frame `p` to `(⟪u, φ⟫, ω(u, φ) (p e₀ ∧ p e₂))`. -/
+theorem canonicalHalfSpinorEquivProd_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
+    (φ : o.HalfSpinModel hQ b ρ hρ 1) :
+    canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x
+        (AssociatedBundle.mk SpinC (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) φ) =
+      (⟪u, φ⟫_ℂ, ω ![u, φ] • unitaryFrameWedge (G := G) h₀ h₂ hJc p) := by
+  rw [canonicalHalfSpinorEquivProd_apply,
+    canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p, AssociatedBundle.inner_mk,
+    SpinCStructure.halfSpinorDetAlternatingMap_mk_mk,
+    canonicalDeterminantLineEquivDetBundle_mk_inl, LinearIsometryEquiv.apply_symm_apply]
+
+include hJV hu in
+/-- **The trivial component of the splitting `W⁺ = 1 ⊕ K⁻¹` is continuous** on the total space of
+`W⁺`, when the model spinor lies on the canonical line. -/
+theorem continuous_fst_canonicalHalfSpinorEquivProd :
+    Continuous fun z : TotalSpace (o.HalfSpinModel hQ b ρ hρ 1)
+        ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1) ↦
+      (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ z.proj
+        z.snd).1 :=
+  SpinCStructure.continuous_fst_halfSpinorEquivProd hω
+    (canonicalSpinor_ne_zero hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₀)
+    (continuous_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu)
+
+include hJV hu in
+/-- **The anticanonical component of the splitting `W⁺ = 1 ⊕ K⁻¹` is continuous** from the total
+space of `W⁺` to that of `K⁻¹ = Λ²_ℂ (E, J)`, when the model spinor lies on the canonical line. -/
+theorem continuous_snd_canonicalHalfSpinorEquivProd :
+    Continuous fun z : TotalSpace (o.HalfSpinModel hQ b ρ hρ 1)
+        ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ 1) ↦
+      TotalSpace.mk' ℂ z.proj
+        (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ z.proj
+          z.snd).2 :=
+  (continuous_canonicalDeterminantLineEquivDetBundle (G := G) h₀ h₂ hJc).comp
+    (SpinCStructure.continuous_snd_halfSpinorEquivProd hω
+      (canonicalSpinor_ne_zero hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₀)
+      (continuous_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu))
 
 end TauCeti.OrthonormalFrameBundle

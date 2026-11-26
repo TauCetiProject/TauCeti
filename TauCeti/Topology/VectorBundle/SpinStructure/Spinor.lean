@@ -731,6 +731,21 @@ theorem halfSpinorDetAlternatingMap_mk (h₂ : finrank ℂ (eigenspace (ρ (chir
   ext i
   fin_cases i <;> simp
 
+/-- **The determinant pairing of two classes in a common frame**: `([p, v], [p, φ]) ↦ [p, ω(v, φ)]`
+for every point `p` of the principal bundle over `x`. -/
+@[simp]
+theorem halfSpinorDetAlternatingMap_mk_mk
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X} (p : s.P x)
+    (v φ : o.HalfSpinModel hQ b ρ hρ ε) :
+    s.halfSpinorDetAlternatingMap h₂ ω x
+        ![AssociatedBundle.mk SpinC p v, AssociatedBundle.mk SpinC p φ] =
+      AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm (ω ![v, φ])) := by
+  rw [← halfSpinorDetAlternatingMap_mk h₂]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
+
 /-- For a nonzero `ω` and `S^ε` of complex dimension two, the linear map `⋀² W^ε_x → L_x` induced
 by the determinant pairing is bijective: it is onto the line `L_x`, and both sides are lines. -/
 theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
