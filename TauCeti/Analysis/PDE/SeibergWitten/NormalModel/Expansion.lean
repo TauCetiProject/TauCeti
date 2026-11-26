@@ -22,11 +22,13 @@ where `D_b = ∑ₖ c(eₖ) ∇_{eₖ}` is the flat Dirac operator (`TauCeti.Sei
 the quadratic two-form (`TauCeti.SeibergWitten.quadraticTwoForm`) and `ω` the Kähler form; these
 are the equations satisfied by limits of rescaled solutions (`TauCeti.SeibergWitten.`
 `sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale`).
-The left side of the curvature equation is `flatCurvature b ψ`. The gauge-fixed normal model of
+The left side of the curvature equation is `flatCurvature b ψ`, a self-dual two-vector
+(`hodgeStar_flatCurvature`). The gauge-fixed normal model of
 `TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic` is built from the rows
 `flatDeformationCurvature` and `flatDeformationDirac`, introduced there as the linearizations of
 these two equations. This file proves that they are, and that the equations have no terms beyond
-the quadratic ones.
+the quadratic ones. The rows are linear in the variation `(b', ζ)` (`flatDeformationDirac_add`,
+`flatDeformationDirac_smul`, `flatDeformationCurvature_add`, `flatDeformationCurvature_smul`).
 
 * **Dirac row.** For fields differentiable at the point,
   `D_{b + b'} (ψ + ζ) = D_b ψ + D'_{(b, ψ)}(b', ζ) + i c(b') ζ`
@@ -103,7 +105,25 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
+/-- A quadratic polynomial `t ↦ u + t • v + t ^ 2 • w` has derivative `v` at `0`. -/
+private theorem hasDerivAt_add_smul_add_sq_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (u v w : E) : HasDerivAt (fun t : ℝ ↦ u + t • v + t ^ 2 • w) v 0 := by
+  convert ((hasDerivAt_const (0 : ℝ) u).add ((hasDerivAt_id (0 : ℝ)).smul_const v)).add
+    (((hasDerivAt_id (0 : ℝ)).pow 2).smul_const w) using 1 <;> simp [Pi.add_def]
+
 variable [Fact (finrank ℝ V = 4)] {ψ ζ : V → positiveHalfSpinors o ρ}
+
+/-- The field into `W` underlying a sum of half-spinor fields is the sum of the underlying
+fields. -/
+private theorem coe_comp_add (ψ ζ : V → positiveHalfSpinors o ρ) :
+    (fun y ↦ ((ψ + ζ) y : W)) = (fun y ↦ (ψ y : W)) + fun y ↦ (ζ y : W) :=
+  rfl
+
+/-- The field into `W` underlying a real multiple of a half-spinor field is the corresponding
+complex multiple of the underlying field. -/
+private theorem coe_comp_smul (t : ℝ) (ζ : V → positiveHalfSpinors o ρ) :
+    (fun y ↦ ((t • ζ) y : W)) = (t : ℂ) • fun y ↦ (ζ y : W) :=
+  funext fun _ ↦ (Complex.coe_smul t _).symm
 
 /-! ### The Dirac row -/
 
@@ -127,11 +147,20 @@ theorem flatDeformationDirac_eq_flatDirac_add_flatDirac (b b' : V → V [⋀^Fin
 `t` scales the row by `t`. -/
 theorem flatDeformationDirac_smul (t : ℝ) :
     flatDeformationDirac e b (t • b') ψ (t • ζ) x = t • flatDeformationDirac e b b' ψ ζ x := by
-  have hζ : (fun y ↦ ((t • ζ) y : W)) = t • fun y ↦ (ζ y : W) := by
-    ext
-    simp
-  rw [flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, hζ, flatDirac_smul,
-    flatDirac_smul_connection_const, flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, smul_add]
+  rw [flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, coe_comp_smul, flatDirac_smul,
+    Complex.coe_smul, flatDirac_smul_connection_const,
+    flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, smul_add]
+
+/-- The Dirac row of the normal model is additive in the variation `(b', ζ)`, for spinor
+variations differentiable at the point. -/
+theorem flatDeformationDirac_add {b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ζ₁ ζ₂ : V → positiveHalfSpinors o ρ} (hζ₁ : DifferentiableAt ℝ (fun y ↦ (ζ₁ y : W)) x)
+    (hζ₂ : DifferentiableAt ℝ (fun y ↦ (ζ₂ y : W)) x) :
+    flatDeformationDirac e b (b₁ + b₂) ψ (ζ₁ + ζ₂) x =
+      flatDeformationDirac e b b₁ ψ ζ₁ x + flatDeformationDirac e b b₂ ψ ζ₂ x := by
+  simp only [flatDeformationDirac_eq_flatDirac_add_flatDirac ρ]
+  rw [coe_comp_add, flatDirac_add ρ hζ₁ hζ₂, flatDirac_add_connection]
+  abel
 
 variable (e) in
 /-- **The exact expansion of the flat Dirac operator**: for spinor fields `ψ` and `ζ`
@@ -148,13 +177,10 @@ theorem flatDirac_add_eq_add_flatDeformationDirac_add
     flatDirac ρ (b + b') (fun y ↦ ((ψ + ζ) y : W)) x =
       flatDirac ρ b (fun y ↦ (ψ y : W)) x + flatDeformationDirac e b b' ψ ζ x +
         flatDirac ρ b' (fun _ ↦ (ζ x : W)) x := by
-  have hsum : (fun y ↦ ((ψ + ζ) y : W)) = (fun y ↦ (ψ y : W)) + fun y ↦ (ζ y : W) := by
-    ext
-    simp
   have hconst : flatDirac ρ b' (fun _ ↦ (ψ x : W) + (ζ x : W)) x =
       flatDirac ρ b' (fun _ ↦ (ψ x : W)) x + flatDirac ρ b' (fun _ ↦ (ζ x : W)) x :=
     flatDirac_add ρ (differentiableAt_const _) (differentiableAt_const _)
-  rw [hsum, flatDirac_add_connection, flatDirac_add ρ hψ hζ, Pi.add_apply, hconst,
+  rw [coe_comp_add, flatDirac_add_connection, flatDirac_add ρ hψ hζ, Pi.add_apply, hconst,
     flatDeformationDirac_eq_flatDirac_add_flatDirac ρ]
   abel
 
@@ -168,15 +194,13 @@ theorem flatDirac_add_smul (hψ : DifferentiableAt ℝ (fun y ↦ (ψ y : W)) x)
     flatDirac ρ (b + t • b') (fun y ↦ ((ψ + t • ζ) y : W)) x =
       flatDirac ρ b (fun y ↦ (ψ y : W)) x + t • flatDeformationDirac e b b' ψ ζ x +
         t ^ 2 • flatDirac ρ b' (fun _ ↦ (ζ x : W)) x := by
-  have htζ' : (fun y ↦ ((t • ζ) y : W)) = t • fun y ↦ (ζ y : W) := by
-    ext
-    simp
-  have htζ : DifferentiableAt ℝ (fun y ↦ ((t • ζ) y : W)) x := htζ' ▸ hζ.const_smul t
-  have hconst : (fun _ : V ↦ ((t • ζ) x : W)) = t • fun _ ↦ (ζ x : W) := by
-    ext
-    simp
+  have htζ : DifferentiableAt ℝ (fun y ↦ ((t • ζ) y : W)) x := by
+    rw [coe_comp_smul]
+    exact hζ.const_smul _
+  have hconst : (fun _ : V ↦ ((t • ζ) x : W)) = (t : ℂ) • fun _ ↦ (ζ x : W) :=
+    coe_comp_smul t fun _ ↦ ζ x
   rw [flatDirac_add_eq_add_flatDeformationDirac_add e hψ htζ, flatDeformationDirac_smul, hconst,
-    flatDirac_smul, flatDirac_smul_connection_const, smul_smul, ← sq]
+    flatDirac_smul, Complex.coe_smul, flatDirac_smul_connection_const, smul_smul, ← sq]
 
 variable (e) in
 /-- **The Dirac row of the normal model is the first variation of the flat Dirac operator**:
@@ -187,10 +211,7 @@ theorem hasDerivAt_flatDirac_add_smul (hψ : DifferentiableAt ℝ (fun y ↦ (ψ
     HasDerivAt (fun t : ℝ ↦ flatDirac ρ (b + t • b') (fun y ↦ ((ψ + t • ζ) y : W)) x)
       (flatDeformationDirac e b b' ψ ζ x) 0 := by
   simp_rw [flatDirac_add_smul e hψ hζ]
-  convert ((hasDerivAt_const (0 : ℝ) (flatDirac ρ b (fun y ↦ (ψ y : W)) x)).add
-    ((hasDerivAt_id (0 : ℝ)).smul_const (flatDeformationDirac e b b' ψ ζ x))).add
-      (((hasDerivAt_id (0 : ℝ)).pow 2).smul_const
-        (flatDirac ρ b' (fun _ ↦ (ζ x : W)) x)) using 1 <;> simp [Pi.add_def]
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
 variable (e) in
 /-- **The quadratic estimate for the nonlinear part of the flat Dirac operator**: at a pair
@@ -252,6 +273,13 @@ theorem flatCurvature_eq_iff (ω : ⋀[ℝ]^2 V) :
         (8⁻¹ : ℝ) • ω - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ψ x) : ⋀[ℝ]^2 V) := by
   rw [flatCurvature_def, eq_sub_iff_add_eq]
 
+/-- The curvature side of the flat limiting curvature equation is self-dual. -/
+theorem hodgeStar_flatCurvature (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → positiveHalfSpinors o ρ)
+    (x : V) : o.hodgeStar hkl (flatCurvature o ρ hkl b ψ x) = flatCurvature o ρ hkl b ψ x := by
+  rw [flatCurvature_def, map_add, map_add, map_smul,
+    o.hodgeStar_hodgeStar_of_even even_two hkl, o.hodgeStar_coe_of_mem_eigenspace_one hkl]
+  abel
+
 /-- The curvature row of the normal model is linear in the variation `(b', ζ)`: scaling both by
 `t` scales the row by `t`. -/
 theorem flatDeformationCurvature_smul (t : ℝ) :
@@ -259,6 +287,17 @@ theorem flatDeformationCurvature_smul (t : ℝ) :
       t • flatDeformationCurvature o ρ hkl b' ψ ζ x := by
   simp only [flatDeformationCurvature_def, extDeriv_smul, ← smul_neg, map_smul, Pi.smul_apply,
     Submodule.coe_smul, smul_add, smul_comm t (2⁻¹ : ℝ)]
+
+/-- The curvature row of the normal model is additive in the variation `(b', ζ)`, for connection
+variations differentiable at the point. -/
+theorem flatDeformationCurvature_add {b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ζ₁ ζ₂ : V → positiveHalfSpinors o ρ} (hb₁ : DifferentiableAt ℝ b₁ x)
+    (hb₂ : DifferentiableAt ℝ b₂ x) :
+    flatDeformationCurvature o ρ hkl (b₁ + b₂) ψ (ζ₁ + ζ₂) x =
+      flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ x + flatDeformationCurvature o ρ hkl b₂ ψ ζ₂ x := by
+  simp only [flatDeformationCurvature_def, extDeriv_add hb₁ hb₂, Pi.add_apply, neg_add, map_add,
+    Submodule.coe_add, smul_add]
+  abel
 
 /-- **The exact expansion of the flat curvature equation**: for connection forms `b` and `b'`
 differentiable at `x`,
@@ -299,11 +338,7 @@ theorem hasDerivAt_flatCurvature_add_smul (hb : DifferentiableAt ℝ b x)
     HasDerivAt (fun t : ℝ ↦ flatCurvature o ρ hkl (b + t • b') (ψ + t • ζ) x)
       (flatDeformationCurvature o ρ hkl b' ψ ζ x) 0 := by
   simp_rw [flatCurvature_add_smul hkl hb hb']
-  convert ((hasDerivAt_const (0 : ℝ) (flatCurvature o ρ hkl b ψ x)).add
-    ((hasDerivAt_id (0 : ℝ)).smul_const (flatDeformationCurvature o ρ hkl b' ψ ζ x))).add
-      (((hasDerivAt_id (0 : ℝ)).pow 2).smul_const
-        ((2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ζ x) : ⋀[ℝ]^2 V))) using 1 <;> simp [Pi.add_def]
-
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
 include hQ in
 /-- **The quadratic estimate for the nonlinear part of the flat curvature equation**: at a pair

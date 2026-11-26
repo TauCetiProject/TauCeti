@@ -40,10 +40,10 @@ connection is trivial. For `ψ = α u₀` with `u₀` constant it is the operato
 equations of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). The operator
 is additive in fields differentiable at the point (`flatDirac_add`) and affine in the connection,
 `D_{b + b'} ψ = D_b ψ + i c(b') ψ` (`flatDirac_add_connection`), where the Clifford multiplication
-`i c(b') φ` is the flat Dirac operator of the constant field `φ` for the connection `b'`; it has
-norm `‖b'‖ ‖φ‖` (`norm_flatDirac_const`) and is locally Lipschitz in `(b', φ)`
-(`norm_flatDirac_const_sub_flatDirac_const_le`). Since the
-`c(eₖ)` satisfy the Clifford relations and the commutator of covariant derivatives is the
+`i c(b') φ` is the flat Dirac operator of the constant field `φ` for the connection `b'`
+(`flatDirac_const_eq_smul_ι`); it has norm `‖b'‖ ‖φ‖` (`norm_flatDirac_const`) and is
+locally Lipschitz in `(b', φ)` (`norm_flatDirac_const_sub_flatDirac_const_le`). Since the `c(eₖ)`
+satisfy the Clifford relations and the commutator of covariant derivatives is the
 curvature, `∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
 
 `D (D ψ) = -∑ₖ ∇_{eₖ} ∇_{eₖ} ψ + i c₂(db) ψ`
@@ -300,13 +300,13 @@ theorem flatDirac_add {ζ : V → W} (hψ : DifferentiableAt ℝ ψ x) (hζ : Di
     Finset.sum_add_distrib]
   abel
 
-/-- The flat Dirac operator commutes with real scalars acting on the field. -/
-theorem flatDirac_smul (c : ℝ) :
+/-- The flat Dirac operator is complex-linear in the field: it commutes with complex scalars. -/
+theorem flatDirac_smul (c : ℂ) :
     flatDirac ρ b (c • ψ) x = c • flatDirac ρ b ψ x := by
   simp only [flatDirac_eq_sum ρ (stdOrthonormalBasis ℝ V), covariantDeriv_apply,
     fderiv_const_smul_field, smul_apply, Pi.smul_apply, Finset.smul_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [← LinearMap.map_smul_of_tower, smul_add, smul_comm c (b x _), smul_comm I c]
+  rw [← LinearMap.map_smul, smul_add, smul_comm c (b x _), smul_comm c I]
 
 /-- The Clifford multiplication `i c(b) φ`, the flat Dirac operator of a constant field, is
 linear in the connection form. -/
@@ -317,6 +317,24 @@ theorem flatDirac_smul_connection_const (c : ℝ) (φ : W) :
     ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_smul, Finset.smul_sum,
     LinearMap.map_smul_of_tower]
 
+/-- **The Clifford multiplication by a connection form**: the flat Dirac operator of a constant
+field `φ` for the connection `b` is `i c(v) φ`, where `v` is the vector dual to the covector
+`b x` through the inner product. -/
+theorem flatDirac_const_eq_smul_ι (φ : W) :
+    flatDirac ρ b (fun _ ↦ φ) x = I • ρ (ι Q ((InnerProductSpace.toDual ℝ V).symm
+      ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+        (0 : Fin 1)).symm (b x)))) φ := by
+  set v := (InnerProductSpace.toDual ℝ V).symm
+    ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)).symm
+      (b x))
+  have hv (w : V) : b x (fun _ ↦ w) = ⟪v, w⟫ := by
+    simp [v, InnerProductSpace.toDual_symm_apply]
+  let e := stdOrthonormalBasis ℝ V
+  rw [flatDirac_eq_sum ρ e]
+  conv_rhs => rw [← e.sum_repr' v]
+  simp [covariantDeriv_apply, hv, map_sum, Finset.smul_sum, real_inner_comm,
+    LinearMap.map_smul_of_tower, smul_comm I]
+
 variable [FiniteDimensional ℂ W]
 
 /-- **The norm of the Clifford multiplication by a connection form**: for the negative-definite
@@ -326,18 +344,7 @@ which is `i c(b) φ` with `b` read as a vector through the inner product, has no
 theorem norm_flatDirac_const (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (φ : W) :
     ‖flatDirac ρ b (fun _ ↦ φ) x‖ = ‖b x‖ * ‖φ‖ := by
-  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-    (0 : Fin 1)).symm (b x)
-  let v := (InnerProductSpace.toDual ℝ V).symm L
-  have hv (w : V) : b x (fun _ ↦ w) = ⟪v, w⟫ := by
-    simp [v, L, InnerProductSpace.toDual_symm_apply]
-  have key : flatDirac ρ b (fun _ ↦ φ) x = I • ρ (ι Q v) φ := by
-    let e := stdOrthonormalBasis ℝ V
-    rw [flatDirac_eq_sum ρ e]
-    conv_rhs => rw [← e.sum_repr' v]
-    simp [covariantDeriv_apply, hv, map_sum, Finset.smul_sum, real_inner_comm,
-      LinearMap.map_smul_of_tower, smul_comm I]
-  rw [key, norm_smul, norm_I, one_mul, CliffordAlgebra.norm_map_ι_apply hQ hρ,
+  rw [flatDirac_const_eq_smul_ι, norm_smul, norm_I, one_mul, CliffordAlgebra.norm_map_ι_apply hQ hρ,
     LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
 
 /-- **The Clifford multiplication by a connection form is locally Lipschitz**: the bilinear map
