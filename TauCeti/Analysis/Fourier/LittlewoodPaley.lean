@@ -10,20 +10,19 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Algebra.BigOperators.Finset.BoundedOverlap
-import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.Lp.SequenceValued
+import TauCeti.MeasureTheory.Function.Lp.SquareFunction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
@@ -104,7 +103,9 @@ which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_mul_le_of_ca
 finite sets `t` (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`,
 `ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`, both instances of
 `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`), and Hölder's inequality and
-the first inequality at the exponent `q` give `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+the first inequality at the exponent `q` give `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`. This duality
+argument holds for any family of operators on `L²` with these properties
+(`TauCeti.eLpNorm_le_mul_eLpNorm_tsum_enorm_sq_rpow`).
 
 ## Homogeneous blocks on `Lᵖ`
 
@@ -606,41 +607,6 @@ private theorem inner_fourierMultiplierCLM_eq_sum (hP : IsDyadic ψ σ e)
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   exact (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol hP k).isSymmetric _ _
 
-/-- The pairing bound `|⟪∑_{i ∈ t} Δᵢ f, g⟫| ≤ L ∫ S f · S g` for the partial sums of `f`, when
-every `W i` has at most `L` elements and every index lies in at most `L` of them. -/
-private theorem enorm_inner_sum_fourierMultiplierCLM_le [DecidableEq ι]
-    (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {L : ℕ} (hWL : ∀ i, (W i).card ≤ L)
-    (hWL' : ∀ (s : Finset ι) (k : ι), (s.filter (k ∈ W ·)).card ≤ L)
-    (hW : ∀ i ξ, (∑ k ∈ W i, ψ k ξ) * ψ i ξ = ψ i ξ) (t : Finset ι)
-    (f g : Lp F 2 (volume : Measure V)) :
-    ‖⟪∑ i ∈ t, Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f, g⟫_ℂ‖ₑ ≤
-      L * ∫⁻ x,
-        (∑' i, ‖Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
-          (∑' k, ‖Lp.fourierMultiplierCLM F ((σ k).toLp ∞ volume) g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) := by
-  set M : ι → Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
-    fun i ↦ Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume)
-  have hmeas : ∀ i k, AEMeasurable (fun x ↦ ‖M i f x‖ₑ * ‖M k g x‖ₑ) :=
-    fun i k ↦ (Lp.aestronglyMeasurable _).eNorm.mul (Lp.aestronglyMeasurable _).eNorm
-  calc ‖⟪∑ i ∈ t, M i f, g⟫_ℂ‖ₑ
-      = ‖∑ i ∈ t, ∑ k ∈ W i, ∫ x, ⟪M i f x, M k g x⟫_ℂ‖ₑ := by
-        rw [sum_inner]
-        refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
-        rw [inner_fourierMultiplierCLM_eq_sum hP W hW]
-        simp only [M, L2.inner_def]
-    _ ≤ ∑ i ∈ t, ∑ k ∈ W i, ∫⁻ x, ‖M i f x‖ₑ * ‖M k g x‖ₑ :=
-        (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (eNorm_sum_le _ _).trans
-          (Finset.sum_le_sum fun k _ ↦ (eNorm_integral_le_lintegral_eNorm _).trans
-            (lintegral_mono fun x ↦ eNorm_inner_le_eNorm _ _)))
-    _ = ∫⁻ x, ∑ i ∈ t, ∑ k ∈ W i, ‖M i f x‖ₑ * ‖M k g x‖ₑ := by
-        rw [lintegral_finsetSum' _ fun i _ ↦ Finset.aemeasurable_fun_sum _ fun k _ ↦ hmeas i k]
-        exact Finset.sum_congr rfl fun i _ ↦
-          (lintegral_finsetSum' _ fun k _ ↦ hmeas i k).symm
-    _ ≤ ∫⁻ x, L * ((∑' i, ‖M i f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
-          (∑' k, ‖M k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) :=
-        lintegral_mono fun x ↦ (_root_.sum_le_tsum _).trans
-          (ENNReal.tsum_sum_mul_le_of_card_le W hWL hWL' _ _)
-    _ = _ := lintegral_const_mul' _ _ (by finiteness)
-
 /-- **The reverse square function inequality for a dyadic family**:
 `‖f‖_p ≤ C ‖(∑ᵢ ‖Δᵢ f‖²)^{1/2}‖_p`, given neighbourhoods `W i` of bounded overlap (each has at
 most `L` elements and each index lies in at most `L` of them), on which the symbols sum to `1` on
@@ -668,44 +634,10 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι]
   simp_rw [hm']
   -- The labels `e` are injective, so the indices are countable and the square sums measurable.
   have : Countable ι := hP.injective.countable
-  set S : Lp F 2 (volume : Measure V) → V → ℝ≥0∞ := fun f x ↦
-    (∑' i, ‖Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)
-  have hS : ∀ f, AEMeasurable (S f) := fun f ↦
-    (AEMeasurable.tsum fun i ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
-  -- By duality, it suffices to bound the pairing of `f` with a bounded `g` of finite-measure
-  -- support, which is an element `G` of `L²`.
-  refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := q) fun g s hs hgs hg ↦ ?_
-  have hg2 : MemLp g 2 volume := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
-  set G := hg2.toLp g
-  have hGg : (G : V → F) =ᵐ[volume] g := hg2.coeFn_toLp
-  have hpair : ∫ x, ⟪f x, g x⟫_ℂ = ⟪f, G⟫_ℂ := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (hGg.mono fun x hx ↦ by simp only [hx])
-  -- Hölder's inequality and the square function inequality at the exponent `q` for `G`.
-  have hHolder : ∫⁻ x, S f x * S G x ≤ eLpNorm (S f) p volume * eLpNorm (S G) q volume := by
-    have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (μ := volume) (p := p) (q := q)
-      (r := 1) (fun a b : ℝ≥0∞ ↦ a * b) 1 (f := S f) (g := S G)
-      (fun _ _ ↦ ((hS f).mul (hS G)).aestronglyMeasurable)
-      (ae_of_all _ fun x ↦ by simp) zero_lt_one
-    rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ S f x * S G x)
-      ((hS f).mul (hS G)).aestronglyMeasurable] at h
-    simpa only [eNorm_eq_self, one_mul] using h
-  have hSG : eLpNorm (S G) q volume ≤ C * eLpNorm g q volume := by
-    rw [← eLpNorm_congr_ae hGg]
-    exact hC _ (coeFn_toLp_symbol hP) G
-  -- The pairing is the limit of the pairings of the partial sums of `f`.
-  have hlim : ‖⟪f, G⟫_ℂ‖ₑ ≤ L * ∫⁻ x, S f x * S G x :=
-    le_of_tendsto' ((continuous_eNorm.tendsto _).comp ((ht f).inner tendsto_const_nhds))
-      fun N ↦ enorm_inner_sum_fourierMultiplierCLM_le hP W hWL hWL' hW (t N) f G
-  rw [hpair]
-  calc ‖⟪f, G⟫_ℂ‖ₑ ≤ L * ∫⁻ x, S f x * S G x := hlim
-    _ ≤ L * (eLpNorm (S f) p volume * (C * eLpNorm g q volume)) := by
-        gcongr
-        exact hHolder.trans (by gcongr)
-    _ = ↑((L : ℝ≥0) * C) * eLpNorm (S f) p volume * eLpNorm g q volume := by
-        push_cast
-        ring
+  push_cast
+  exact eLpNorm_le_mul_eLpNorm_tsum_enorm_sq_rpow
+    (fun i ↦ Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume)) W hWL hWL'
+    (inner_fourierMultiplierCLM_eq_sum hP W hW) (hC _ (coeFn_toLp_symbol hP)) t (ht f)
 
 end LittlewoodPaleySquare
 

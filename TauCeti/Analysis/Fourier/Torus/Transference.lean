@@ -35,10 +35,6 @@ uses.
 
 ## Main declarations
 
-* `TauCeti.UnitAddTorus.mFourier_euclidean_apply`: the monomial `eₙ` at the image of
-  `x : EuclideanSpace ℝ d` is `𝐞 ⟪x, n⟫`.
-* `TauCeti.UnitAddTorus.continuous_euclidean_coe`: reduction modulo `ℤᵈ` from `EuclideanSpace ℝ d`
-  onto the torus is continuous.
 * `TauCeti.UnitAddTorus.euclideanLift`: the lift of a continuous function on the torus to a bounded
   continuous function on `EuclideanSpace ℝ d`, with the same supremum norm
   (`TauCeti.UnitAddTorus.norm_euclideanLift`).
@@ -66,24 +62,6 @@ namespace TauCeti.UnitAddTorus
 open _root_.UnitAddTorus
 
 variable {d : Type*} [Fintype d]
-
-/-- The value of the Fourier monomial `eₙ` at the image of `x : EuclideanSpace ℝ d` on the torus
-is `𝐞 ⟪x, n⟫`. -/
-theorem mFourier_euclidean_apply (n : d → ℤ) (x : EuclideanSpace ℝ d) :
-    mFourier n (fun i ↦ (x i : UnitAddCircle)) = 𝐞 ⟪x, latticePoint n⟫ := by
-  rw [mFourier_coe_apply (x := fun i ↦ x i), Real.fourierChar_apply]
-  congr 1
-  simp only [PiLp.inner_apply, latticePoint_apply, RCLike.inner_apply, conj_trivial]
-  push_cast
-  rw [Finset.mul_sum, Finset.mul_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  ring
-
-omit [Fintype d] in
-/-- The reduction modulo `ℤᵈ` from `EuclideanSpace ℝ d` onto the torus is continuous. -/
-theorem continuous_euclidean_coe :
-    Continuous fun x : EuclideanSpace ℝ d ↦ (fun i ↦ (x i : UnitAddCircle) : UnitAddTorus d) :=
-  isOpenQuotientMap_coe.continuous.comp (PiLp.continuous_ofLp 2 _)
 
 section Lift
 
