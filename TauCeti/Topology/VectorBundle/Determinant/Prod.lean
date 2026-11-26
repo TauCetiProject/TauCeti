@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Determinant
+public import TauCeti.Topology.VectorBundle.Determinant.Trivial
 public import TauCeti.Topology.VectorBundle.TensorProduct.Operations
 public import TauCeti.LinearAlgebra.Determinant.DirectSum
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -34,6 +35,9 @@ are allowed.
   `TauCeti.DetBundle.prodPullbackEquiv_prodEquiv` is the native pullback square.
 * `TauCeti.DetBundle.chartCoord_prodPullbackEquiv` and
   `TauCeti.DetBundle.coe_prodPullbackEquiv` characterize its arbitrary-chart and intrinsic action.
+* `TauCeti.DetBundle.trivialProdEquiv` and `TauCeti.DetBundle.trivialProdHomeomorph`: a trivial
+  summand does not change the determinant line, `det E ≃ det ((B × V) ⊕ E)`, by
+  `a ↦ ω ⊗ a ↦ ω ∧ a` for the constant section `ω` of `det (B × V) = B × K` with value `1`.
 * `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_left_eq_zero` and
   `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_right_eq_zero` give the empty-product unit
   formulas, using `TauCeti.DetBundle.zeroEquiv` from the determinant module.
@@ -672,5 +676,71 @@ theorem coe_prodEquiv_tmul_of_finrank_right_eq_zero (h : finrank K F₂ = 0) (x 
   simp only [Algebra.algebraMap_eq_smul_one, map_smul, map_one, mul_smul_comm, mul_one]
 
 end RankZero
+
+section TrivialSummand
+
+open scoped TauCeti.ModuleTopology
+
+variable (V : Type v₁) [NormedAddCommGroup V] [NormedSpace K V] [FiniteDimensional K V]
+
+omit [CompleteSpace K] in
+variable (K B F₂ E₂) in
+/-- **A trivial summand does not change the determinant line**, fibrewise: `det E ≃ det (V ⊕ E)`
+over `x` sends `a` to the Whitney product `ω ⊗ a` of `a` with the vector `ω` of the determinant
+line of `B × V` of coordinate `1` (`TauCeti.DetBundle.trivialEquiv`). -/
+def trivialProdEquiv (x : B) :
+    DetBundle K F₂ E₂ x ≃L[K] DetBundle K (V × F₂) (Trivial B V ×ᵇ E₂) x :=
+  LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
+    ((TensorProduct.lid K _).symm ≪≫ₗ
+      TensorProduct.congr (trivialEquiv K B V x).symm.toLinearEquiv (LinearEquiv.refl K _) ≪≫ₗ
+      (prodEquiv K V (Trivial B V) F₂ E₂ x).toLinearEquiv)
+
+variable {V}
+
+omit [CompleteSpace K] in
+@[simp]
+theorem trivialProdEquiv_apply (x : B) (a : DetBundle K F₂ E₂ x) :
+    trivialProdEquiv K B F₂ E₂ V x a =
+      prodEquiv K V (Trivial B V) F₂ E₂ x ((trivialEquiv K B V x).symm 1 ⊗ₜ a) := by
+  simp only [trivialProdEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
+    LinearEquiv.trans_apply, TensorProduct.lid_symm_apply, TensorProduct.congr_tmul,
+    ContinuousLinearEquiv.coe_toLinearEquiv, LinearEquiv.refl_apply]
+
+variable (K B F₂ E₂ V) in
+/-- **A trivial summand does not change the determinant line**: the fibrewise isomorphisms
+`TauCeti.DetBundle.trivialProdEquiv` form a homeomorphism `det E ≃ det ((B × V) ⊕ E)` of total
+spaces. -/
+def trivialProdHomeomorph :
+    TotalSpace K (DetBundle K F₂ E₂) ≃ₜ TotalSpace K (DetBundle K (V × F₂) (Trivial B V ×ᵇ E₂)) :=
+  bundleHomeomorph (trivialProdEquiv K B F₂ E₂ V) <| by
+    -- The constant section `ω` of `det (B × V)`, tensored with the identity of `det E`, followed
+    -- by the Whitney homeomorphism.
+    have hω : Continuous fun p : TotalSpace K (DetBundle K F₂ E₂) ↦
+        TotalSpace.mk' K p.proj ((trivialEquiv K B V p.proj).symm 1) :=
+      ((trivialHomeomorph K B V).symm.continuous.comp
+        ((Trivial.homeomorphProd B K).symm.continuous.comp
+          ((FiberBundle.continuous_proj K _).prodMk (continuous_const (y := (1 : K)))))).congr
+        fun p ↦ by
+          rw [Function.comp_apply, Function.comp_apply, trivialHomeomorph_symm_apply]
+          -- `Bundle.Trivial.homeomorphProd` is `TotalSpace.toProd`, so its inverse is `⟨b, v⟩`.
+          rfl
+    refine ((prodHomeomorph K V (Trivial B V) F₂ E₂).continuous.comp
+      (hω.tmul_section (b := TotalSpace.proj) (w := fun p ↦ p.snd) continuous_id)).congr
+        fun p ↦ ?_
+    rw [Function.comp_apply, prodHomeomorph_apply, trivialProdEquiv_apply]
+
+@[simp]
+theorem trivialProdHomeomorph_apply (p : TotalSpace K (DetBundle K F₂ E₂)) :
+    trivialProdHomeomorph K B F₂ E₂ V p = ⟨p.proj, trivialProdEquiv K B F₂ E₂ V p.proj p.snd⟩ :=
+  bundleHomeomorph_apply _ _ p
+
+@[simp]
+theorem trivialProdHomeomorph_symm_apply
+    (p : TotalSpace K (DetBundle K (V × F₂) (Trivial B V ×ᵇ E₂))) :
+    (trivialProdHomeomorph K B F₂ E₂ V).symm p =
+      ⟨p.proj, (trivialProdEquiv K B F₂ E₂ V p.proj).symm p.snd⟩ :=
+  bundleHomeomorph_symm_apply _ _ p
+
+end TrivialSummand
 
 end TauCeti.DetBundle
