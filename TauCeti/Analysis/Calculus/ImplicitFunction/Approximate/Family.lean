@@ -10,18 +10,18 @@ public import TauCeti.Analysis.Calculus.Hadamard.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
-# Smooth families of approximate solutions of every finite order
+# Parameter families of approximate solutions of every finite order
 
 Let `F : P × ℝ × E → G` be a family of equations `F (p, h, x) = 0` in a parameter `p` and a small
 variable `h`, with a solution `x₀ p` at `h = 0` for every `p`. Suppose the partial derivative of
-`x ↦ F (p, 0, x)` at `x₀ p` has a right inverse `R p` depending smoothly on `p`. Then the solution
-can be continued to every finite order `N` in `h`, smoothly in the parameter: there are
-coefficients `yᵢ : P → E` such that the polynomial profile
-`X (p, h) = x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` has residual
+`x ↦ F (p, 0, x)` at `x₀ p` has a right inverse `R p` of class `C^(k + N)` in `p`, and that `F`
+and `x₀` are of class `C^(k + N + 1)`. Then the solution can be continued to every finite order `N`
+in `h`, with `C^k` dependence on the parameter: there are `C^k` coefficients `yᵢ : P → E` such that
+the polynomial profile `X (p, h) = x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` has residual
 
 `F (p, h, X (p, h)) = h^(N+1) • Q (p, h)`
 
-for a function `Q` that is smooth jointly in `p` and `h`
+for a function `Q` that is jointly `C^k` in `p` and `h`
 (`TauCeti.exists_contDiff_forall_eq_pow_smul`). This is the parametric form of
 `TauCeti.exists_isBigO_pow_of_surjective`, which works at a single parameter and only gives
 `F (h, X h) = O(h^(N+1))`.
@@ -54,8 +54,8 @@ equations, which depend smoothly on the divisor.
 
 ## Main results
 
-* `TauCeti.exists_contDiff_forall_eq_pow_smul`: smooth profiles of every finite order whose
-  residual is `h^(N+1)` times a smooth function.
+* `TauCeti.exists_contDiff_forall_eq_pow_smul`: profiles of every finite order with `C^k`
+  coefficients whose residual is `h^(N+1)` times a jointly `C^k` function.
 * `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow`: the residual and its derivatives in the
   parameter are `O(|h|^(N+1))` uniformly on compact sets of parameters.
 * `TauCeti.exists_forall_norm_le_mul_pow`: the residual is `O(|h|^(N+1))` uniformly on compact
@@ -126,7 +126,7 @@ private theorem exists_contDiff_eq_pow_succ_smul {k : ℕ∞} {N : ℕ} {F : P �
   rw [hH0] at e₃
   linear_combination (norm := module) e₁ + h ^ (N + 1) • e₂ + h ^ (N + 1) • e₃
 
-/-- **Smooth families of approximate solutions of every finite order.** Let `F (p, 0, x₀ p) = 0`
+/-- **`C^k` families of approximate solutions of every finite order.** Let `F (p, 0, x₀ p) = 0`
 for every parameter `p`, and let `R p` be a right inverse of the partial derivative of
 `x ↦ F (p, 0, x)` at `x₀ p`. If `F` and `x₀` are `C^(k + N + 1)` and `R` is `C^(k + N)`, there are
 `C^k` coefficients `yᵢ` and a `C^k` function `Q` such that along the profile
@@ -179,7 +179,7 @@ theorem exists_contDiff_forall_eq_pow_smul {k : ℕ∞} {N : ℕ} {F : P × ℝ 
         sum_congr rfl fun i hi ↦ by rw [Function.update_of_ne (mem_range.1 hi).ne]]
       exact hFQ' p h
 
-/-- **Uniform estimates for smooth families of approximate solutions.** Under the hypotheses of
+/-- **Uniform estimates for `C^k` families of approximate solutions.** Under the hypotheses of
 `TauCeti.exists_contDiff_forall_eq_pow_smul`, there are `C^k` coefficients `yᵢ` such that, on every
 compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in `p` through order `k` of the
 residual along the profile `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` are at most `C |h|^(N+1)`, with `C`
@@ -209,7 +209,7 @@ theorem exists_forall_norm_iteratedFDeriv_le_mul_pow {k : ℕ∞} {N : ℕ} {F :
   exact (((hQ.of_le hj').contDiffAt).norm_iteratedFDeriv_prod_left_le j le_rfl).trans
     (hC (p, h) ⟨hp, abs_le.1 hh⟩)
 
-/-- **Uniform residual of a smooth family of approximate solutions.** Let `F (p, 0, x₀ p) = 0`
+/-- **Uniform residual of a continuous family of approximate solutions.** Let `F (p, 0, x₀ p) = 0`
 for every `p`, and let `R p` be a right inverse of the partial derivative of `x ↦ F (p, 0, x)` at
 `x₀ p`. If `F` and `x₀` are `C^(N+1)` and `R` is `C^N`, there are continuous coefficients `yᵢ`
 such that, on every compact set `K` of parameters and for `|h| ≤ h₀`, the residual along the
