@@ -32,7 +32,9 @@ isomorphic to the identity (`SSet.uliftFunctorTrivial`), so the four properties 
 used on ordinary diagrams `p : K ⟶ C` (`SSet.hasLimitsOfSize_iff_forall_exists_isLimit` and its
 analogues). Each property passes to smaller indexing universes (`SSet.hasLimitsOfSize_shrink` and
 its analogues), since iterated universe lifts collapse to a single lift
-(`SSet.uliftFunctorCompIso`).
+(`SSet.uliftFunctorCompIso`). For the same reason the auxiliary universe can be normalized: the
+sizes `.{w, u}` and `.{w, max w u}` give the same properties (`SSet.hasLimitsOfSize_max_iff` and
+its analogues).
 
 Having limits or colimits of size `w` is invariant under isomorphism, and isomorphisms, in
 particular identities, as well as composites of maps preserving limits or colimits of size `w`
@@ -71,6 +73,8 @@ and colimits of every size, and every map to `Δ[0]` preserves them.
   indexed by simplicial sets of the universe of `C`.
 * `SSet.hasLimitsOfSize_shrink`, `SSet.preservesLimitsOfSize_shrink`, and their duals: passing to
   smaller indexing universes.
+* `SSet.hasLimitsOfSize_max_iff`, `SSet.preservesLimitsOfSize_max_iff`, and their duals: the sizes
+  `.{w, u}` and `.{w, max w u}` agree.
 * `SSet.hasLimitsOfSize_stdSimplex_zero`, `SSet.hasColimitsOfSize_stdSimplex_zero`: `Δ[0]` has
   limits and colimits of every size.
 * `SSet.HasLimitsOfSize.exists_isTerminalVertex`, `SSet.PreservesLimitsOfSize.isTerminalVertex_map`,
@@ -474,5 +478,44 @@ theorem preservesColimitsOfSize_shrink (F : C ⟶ D) [PreservesColimitsOfSize.{m
   exact (preservesLimitsOfSize_op_iff.{w, max w' u} F).1 (preservesLimitsOfSize_shrink.{w, w', u} _)
 
 end shrink
+
+/-! ### Normalizing the auxiliary universe
+
+For `C : SSet.{max w u}`, the sizes `.{w, u}` and `.{w, max w u}` describe diagrams indexed by
+simplicial sets of the same universe `w` in the same ambient universe. The two universe lifts of
+such a simplicial set are isomorphic (through `SSet.uliftFunctorCompIso` and
+`SSet.uliftFunctorTrivial`), so the two spellings of each property agree. -/
+
+/-- Having limits of size `.{w, max w u}` is having limits of size `.{w, u}`. -/
+theorem hasLimitsOfSize_max_iff :
+    C.HasLimitsOfSize.{w, max w u} ↔ C.HasLimitsOfSize.{w, u} := by
+  refine ⟨fun _ ↦ ⟨fun K _ ↦ ?_⟩, fun _ ↦ hasLimitsOfSize_shrink.{w, w, u}⟩
+  -- Transport along the isomorphism between the two universe lifts of `K`.
+  exact (slice.exists_isLimit_iff_of_isIso ((uliftFunctorCompIso.{w, u, w}.app K).symm ≪≫
+    uliftFunctorTrivial.{u, w}.app _).hom (𝟙 C) rfl).1 (HasLimitsOfSize.exists_isLimit _)
+
+/-- Having colimits of size `.{w, max w u}` is having colimits of size `.{w, u}`. -/
+theorem hasColimitsOfSize_max_iff :
+    C.HasColimitsOfSize.{w, max w u} ↔ C.HasColimitsOfSize.{w, u} := by
+  rw [← hasLimitsOfSize_op_iff.{w, max w u}, ← hasLimitsOfSize_op_iff.{w, u},
+    hasLimitsOfSize_max_iff.{w, u}]
+
+/-- Preserving limits of size `.{w, max w u}` is preserving limits of size `.{w, u}`. -/
+theorem preservesLimitsOfSize_max_iff (F : C ⟶ D) :
+    PreservesLimitsOfSize.{w, max w u} F ↔ PreservesLimitsOfSize.{w, u} F := by
+  refine ⟨fun _ ↦ ⟨fun K p q h c hc ↦ ?_⟩, fun _ ↦ preservesLimitsOfSize_shrink.{w, w, u} F⟩
+  -- Restrict `c` along the isomorphism `i` between the two universe lifts of `K`.
+  let i : uliftFunctor.{max w u}.obj K ⟶ uliftFunctor.{u}.obj K :=
+    ((uliftFunctorCompIso.{w, u, w}.app K).symm ≪≫ uliftFunctorTrivial.{u, w}.app _).hom
+  have hp : i ≫ p ≫ 𝟙 C = i ≫ p := by simp
+  rw [← slice.isLimit_map_map_iff i F hp h (q' := i ≫ q) (by simp [← h])]
+  exact PreservesLimitsOfSize.isLimit_map _ ((slice.isLimit_iff _).2
+    ((isTerminalVertex_iff_of_iso (asIso (slice.map i (𝟙 C) hp)) c).2 ((slice.isLimit_iff _).1 hc)))
+
+/-- Preserving colimits of size `.{w, max w u}` is preserving colimits of size `.{w, u}`. -/
+theorem preservesColimitsOfSize_max_iff (F : C ⟶ D) :
+    PreservesColimitsOfSize.{w, max w u} F ↔ PreservesColimitsOfSize.{w, u} F := by
+  rw [← preservesLimitsOfSize_op_iff.{w, max w u}, ← preservesLimitsOfSize_op_iff.{w, u},
+    preservesLimitsOfSize_max_iff.{w, u}]
 
 end SSet
