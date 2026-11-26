@@ -16,7 +16,7 @@ import TauCeti.Algebra.Star.SelfAdjoint
 /-!
 # `K₀` of a direct sum of C⋆-algebras
 
-Let `e`, `e + x` and `e + y` be matrix projections over a C⋆-algebra with `x y = y x = 0`. Then
+Let `e`, `e + x` and `e + y` be matrix projections over a C⋆-algebra with `x y = 0`. Then
 `e + x + y` is a projection (`IsStarProjection.add_add_of_mul_eq_zero`), and
 `[e + x + y] + [e] = [e + x] + [e + y]` in the projection monoid
 (`TauCeti.ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero`). The proof is a rotation homotopy:
@@ -34,7 +34,7 @@ plus the scalar part, and on the `K₀`-group of the nonunital algebra `A × B` 
 ## Main statements
 
 * `TauCeti.ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero`:
-  `[e + x + y] + [e] = [e + x] + [e + y]` when `x y = y x = 0`.
+  `[e + x + y] + [e] = [e + x] + [e + y]` when `x y = 0`.
 * `TauCeti.UnitizationKZero.map_inl_comp_fst_add_map_inr_comp_snd`: the corner maps of `A × B`
   add up to the identity of `K₀(A × B)`.
 * `TauCeti.UnitizationKZero.prodFstSndEquiv`: `K₀(A × B) ≃+ K₀(A) × K₀(B)`, induced by the
@@ -59,7 +59,7 @@ variable {C : Type*} [NonUnitalCStarAlgebra C] {n : Type*} [Fintype n] {e x y : 
 /-- The rotation path at the angle with cosine `c` and sine `s` consists of projections. -/
 private theorem isStarProjection_rotation (he : IsStarProjection e)
     (hex : IsStarProjection (e + x)) (hey : IsStarProjection (e + y)) (hxy : x * y = 0)
-    (hyx : y * x = 0) {c s : ℂ} (hc : star c = c) (hs : star s = s) (hcs : c ^ 2 + s ^ 2 = 1) :
+    {c s : ℂ} (hc : star c = c) (hs : star s = s) (hcs : c ^ 2 + s ^ 2 = 1) :
     IsStarProjection (fromBlocks (e + x + c ^ 2 • y) ((c * s) • y) ((c * s) • y)
       (e + s ^ 2 • y)) := by
   have hx := he.isIdempotentElem.mul_add_mul_add_mul_eq hex.isIdempotentElem
@@ -67,6 +67,8 @@ private theorem isStarProjection_rotation (he : IsStarProjection e)
   have he' := he.isIdempotentElem.eq
   have hxs := hex.isSelfAdjoint.of_add_right he.isSelfAdjoint
   have hys := hey.isSelfAdjoint.of_add_right he.isSelfAdjoint
+  have hyx : y * x = 0 := by
+    simpa only [hys.star_eq] using hxs.star_mul_eq_zero_of_mul_eq_zero hxy
   refine ⟨?_, ?_⟩
   · rw [IsIdempotentElem, fromBlocks_multiply]
     congr 1
@@ -89,12 +91,11 @@ private theorem isStarProjection_rotation (he : IsStarProjection e)
       star_mul']
 
 /-- **Rotation of orthogonal summands.** If `e`, `e + x` and `e + y` are matrix projections over a
-C⋆-algebra and `x y = y x = 0`, then `[e + x + y] + [e] = [e + x] + [e + y]` in the projection
+C⋆-algebra and `x y = 0`, then `[e + x + y] + [e] = [e + x] + [e + y]` in the projection
 monoid. -/
 theorem ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero (he : IsStarProjection e)
-    (hex : IsStarProjection (e + x)) (hey : IsStarProjection (e + y)) (hxy : x * y = 0)
-    (hyx : y * x = 0) :
-    mk (e + x + y) (he.add_add_of_mul_eq_zero hex hey hxy hyx) + mk e he =
+    (hex : IsStarProjection (e + x)) (hey : IsStarProjection (e + y)) (hxy : x * y = 0) :
+    mk (e + x + y) (he.add_add_of_mul_eq_zero hex hey hxy) + mk e he =
       mk (e + x) hex + mk (e + y) hey := by
   classical
   rw [← mk_fromBlocks, ← mk_fromBlocks]
@@ -107,7 +108,7 @@ theorem ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero (he : IsStarProjection
     (f := fun t ↦ fromBlocks (e + x + c t ^ 2 • y) ((c t * s t) • y) ((c t * s t) • y)
       (e + s t ^ 2 • y))
     (Continuous.matrix_fromBlocks (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop))
-    (fun t ↦ isStarProjection_rotation he hex hey hxy hyx (Complex.conj_ofReal _)
+    (fun t ↦ isStarProjection_rotation he hex hey hxy (Complex.conj_ofReal _)
       (Complex.conj_ofReal _) (by
         simp only [c, s]
         exact_mod_cast Real.cos_sq_add_sin_sq t))
@@ -163,9 +164,6 @@ private theorem projectionMonoid_map_add_map (v : ProjectionMonoid (Unitization 
     have hxy : x * y = 0 := by
       refine Matrix.ext fun i j ↦ ?_
       simp [x, y, Matrix.mul_apply, ← Unitization.inr_mul, Prod.zero_eq_mk.symm]
-    have hyx : y * x = 0 := by
-      refine Matrix.ext fun i j ↦ ?_
-      simp [x, y, Matrix.mul_apply, ← Unitization.inr_mul, Prod.zero_eq_mk.symm]
     have he : IsStarProjection e := hp.matrix_map scalarPart
     have hpx : IsStarProjection (e + x) := hex ▸ hp.matrix_map _
     have hpy : IsStarProjection (e + y) := hey ▸ hp.matrix_map _
@@ -175,9 +173,9 @@ private theorem projectionMonoid_map_add_map (v : ProjectionMonoid (Unitization 
           · exact ProjectionMonoid.mk_eq_mk (by rw [hex]; exact .refl hpx)
           · exact ProjectionMonoid.mk_eq_mk (by rw [hey]; exact .refl hpy)
       _ = ProjectionMonoid.mk (e + x + y)
-            (he.add_add_of_mul_eq_zero hpx hpy hxy hyx) +
+            (he.add_add_of_mul_eq_zero hpx hpy hxy) +
           ProjectionMonoid.mk e he :=
-        (ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero he hpx hpy hxy hyx).symm
+        (ProjectionMonoid.mk_add_add_add_mk_of_mul_eq_zero he hpx hpy hxy).symm
       _ = _ := by
           congr 1
           exact ProjectionMonoid.mk_eq_mk (by rw [← hp']; exact .refl hp)
