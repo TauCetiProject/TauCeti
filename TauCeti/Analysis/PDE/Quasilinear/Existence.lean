@@ -236,11 +236,9 @@ theorem frozenSolution_congr_ae
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v v' : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hv : AEStronglyMeasurable v (volume.restrict Omega))
-    (hv' : AEStronglyMeasurable v' (volume.restrict Omega))
-    (hvv' : v =ᵐ[volume.restrict Omega] v') :
+    (hv : AEStronglyMeasurable v (volume.restrict Omega)) (hvv' : v =ᵐ[volume.restrict Omega] v') :
     frozenSolution A g ℓ v = frozenSolution A g ℓ v' :=
-  eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hA hAm hAc hΩ hv'
+  eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hA hAm hAc hΩ (hv.congr hvv')
     (frozenSolution_sub_mem_w1p0Submodule hA hAm hAc hΩ g ℓ hv) fun φ => by
       rw [← forall_energyFormH1_frozenSolution_eq hA hAm hAc hΩ g ℓ hv φ]
       exact energyFormH1_congr_ae (hvv'.mono fun x hx => by simp only [hx]) .rfl .rfl _ _

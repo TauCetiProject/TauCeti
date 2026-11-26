@@ -11,9 +11,10 @@ public import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure.UniformConvergence
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Topology.ContinuousMap.Bounded.Closure
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.MetricSpace.Equicontinuity
-import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.UniformSpace.Cauchy
 
 /-!
@@ -136,53 +137,6 @@ private theorem holderOnWith_extendClosure
     rw [extendClosure_of_mem u hx, extendClosure_of_mem u hy]
     exact hu ⟨x, hx⟩ ⟨y, hy⟩
 
-/-- Bounded continuous functions on `closure Ω` whose values stay within `c` of each other on `Ω`
-are within `c` of each other in the uniform distance. -/
-private theorem dist_le_of_forall_mem
-    {u₁ u₂ : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ} {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      dist (extendClosure u₁ x) (extendClosure u₂ x) ≤ c) :
-    dist u₁ u₂ ≤ c := by
-  refine (BoundedContinuousFunction.dist_le hc).2 fun ⟨x, hx⟩ => ?_
-  have hd : ContinuousOn (fun y => dist (extendClosure u₁ y) (extendClosure u₂ y))
-      (closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    continuous_dist.comp_continuousOn
-      ((continuousOn_extendClosure u₁).prodMk (continuousOn_extendClosure u₂))
-  have := ContinuousWithinAt.closure_le hx ((hd x hx).mono subset_closure)
-    continuousWithinAt_const h
-  rwa [extendClosure_of_mem u₁ hx, extendClosure_of_mem u₂ hx] at this
-
-/-- A bounded continuous function on `closure Ω` is determined by its values almost everywhere on
-`Ω`. -/
-private theorem eq_of_ae_eq {u₁ u₂ : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ}
-    (h : ∀ᵐ x ∂volume.restrict Omega,
-      ∀ hx : x ∈ closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-        u₁ ⟨x, hx⟩ = u₂ ⟨x, hx⟩) :
-    u₁ = u₂ := by
-  have h' : extendClosure u₁ =ᵐ[volume.restrict Omega] extendClosure u₂ := by
-    filter_upwards [h, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
-    rw [extendClosure_of_mem u₁ (subset_closure hxΩ), extendClosure_of_mem u₂ (subset_closure hxΩ),
-      hx]
-  have heq := Measure.eqOn_open_of_ae_eq h' Omega.isOpen
-    ((continuousOn_extendClosure u₁).mono subset_closure)
-    ((continuousOn_extendClosure u₂).mono subset_closure)
-  exact dist_le_zero.1 (dist_le_of_forall_mem le_rfl fun x hx => by rw [heq hx, dist_self])
-
-/-- A function `α`-Hölder on a bounded open set `Ω`, `α > 0`, has a continuous extension to
-`closure Ω`, `α`-Hölder with the same constant. -/
-private theorem exists_holderWith_of_holderOnWith
-    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {C α : ℝ≥0} (hα : 0 < α)
-    (hh : HolderOnWith C α h Omega) :
-    ∃ u : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ, HolderWith C α u ∧
-      ∀ x (hx : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
-        u ⟨x, subset_closure hx⟩ = h x := by
-  obtain ⟨heq, hcl⟩ := hh.extendFrom_closure hα
-  have : CompactSpace (closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isCompact_iff_compactSpace.1 hb.isCompact_closure
-  exact ⟨BoundedContinuousFunction.mkOfCompact ⟨_, (hcl.continuousOn hα).domRestrict⟩,
-    hcl.holderWith, fun x hx => heq hx⟩
-
 variable {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {lam Lam : ℝ}
 
@@ -272,7 +226,7 @@ private theorem exists_forall_holderWith_and_ae_eq
     hAm hAc hf hF hℓ hgG hG hG0
   refine ⟨α, C, hα, fun v => ?_⟩
   obtain ⟨h, hvh, hh⟩ := hrep _ (aestronglyMeasurable_extendClosure v)
-  obtain ⟨u, hu, hux⟩ := exists_holderWith_of_holderOnWith hb hα hh
+  obtain ⟨u, hu, hux⟩ := hh.exists_holderWith_boundedContinuousFunction hα hb
   have hspec : ∀ᵐ x ∂volume.restrict Omega,
       ∀ hx : x ∈ closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
         u ⟨x, hx⟩ = W1p.value (frozenSolution A g ℓ (extendClosure v)) x := by
@@ -284,8 +238,10 @@ private theorem exists_forall_holderWith_and_ae_eq
           u ⟨x, hx⟩ = W1p.value (frozenSolution A g ℓ (extendClosure v)) x := ⟨u, hspec⟩
   have hT : continuousFrozenSolution A g ℓ v = u := by
     rw [continuousFrozenSolution, dite_eq_left hex]
-    refine eq_of_ae_eq ?_
-    filter_upwards [hex.choose_spec, hspec] with x h₁ h₂ hx
+    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
+      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hex.choose_spec,
+      (ae_restrict_iff' Omega.isOpen.measurableSet).1 hspec] with x h₁ h₂ hx
     rw [h₁ hx, h₂ hx]
   rw [hT]
   exact ⟨hu, hspec⟩
@@ -327,15 +283,15 @@ theorem eq_continuousFrozenSolution_iff
   have hwv : extendClosure v =ᵐ[volume.restrict Omega] w := by
     filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
     rw [extendClosure_of_mem v (subset_closure hx), hw x hx]
-  have hw' : AEStronglyMeasurable w (volume.restrict Omega) :=
-    (aestronglyMeasurable_extendClosure v).congr hwv
-  rw [← frozenSolution_congr_ae hA hAm hAc hb g ℓ (aestronglyMeasurable_extendClosure v) hw' hwv]
+  rw [← frozenSolution_congr_ae hA hAm hAc hb g ℓ (aestronglyMeasurable_extendClosure v) hwv]
   constructor
   · rintro rfl
     exact (hT v).2
   · intro hu
-    refine eq_of_ae_eq ?_
-    filter_upwards [hu, (hT v).2] with x h₁ h₂ hx
+    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
+      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hu,
+      (ae_restrict_iff' Omega.isOpen.measurableSet).1 (hT v).2] with x h₁ h₂ hx
     rw [h₁ hx, h₂ hx]
 
 /-- **A uniform Hölder bound for the frozen-coefficient map.** Under the hypotheses of
@@ -412,9 +368,10 @@ theorem continuous_continuousFrozenSolution
   rw [ContinuousAt, Metric.tendsto_nhds]
   intro ε hε
   filter_upwards [Metric.tendstoUniformlyOn_iff.1 hunif (ε / 2) (half_pos hε)] with w hw
-  refine (dist_le_of_forall_mem (half_pos hε).le fun x hx => ?_).trans_lt (half_lt_self hε)
+  refine (BoundedContinuousFunction.dist_le_of_forall_mem _ _ (half_pos hε).le
+    fun x hx => ?_).trans_lt (half_lt_self hε)
   rw [dist_comm]
-  exact (hw x hx).le
+  simpa only [extendClosure_of_mem _ (subset_closure hx)] using (hw x hx).le
 
 /-- **The frozen-coefficient map is compact on `C(closure Ω)`.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, the range of `continuousFrozenSolution A g ℓ` is
@@ -448,7 +405,7 @@ theorem isCompact_closure_range_continuousFrozenSolution
     subset_closure ⟨(memLp_extendClosure hb (v k)).toLp _, by
       dsimp only
       rw [frozenSolution_congr_ae hA hAm hAc hb g ℓ (Lp.aestronglyMeasurable _)
-        (aestronglyMeasurable_extendClosure (v k)) (memLp_extendClosure hb (v k)).coeFn_toLp]⟩
+        (memLp_extendClosure hb (v k)).coeFn_toLp]⟩
   obtain ⟨a, -, φ, hφ, hlim⟩ :=
     (isCompact_closure_range_value_frozenSolution hA hAm hAc hb g ℓ).tendsto_subseq hψ
   refine ⟨φ, hφ, ?_⟩
@@ -467,8 +424,9 @@ theorem isCompact_closure_range_continuousFrozenSolution
   obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.1 hcauchy (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk => ?_⟩
   simp only [comp_apply, ← hv]
-  exact (dist_le_of_forall_mem (half_pos hε).le fun x hx => (hN k hk N le_rfl x hx).le).trans_lt
-    (half_lt_self hε)
+  refine (BoundedContinuousFunction.dist_le_of_forall_mem _ _ (half_pos hε).le
+    fun x hx => ?_).trans_lt (half_lt_self hε)
+  simpa only [extendClosure_of_mem _ (subset_closure hx)] using (hN k hk N le_rfl x hx).le
 
 /-- **The fixed points of the frozen-coefficient map are the solutions.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, `v ∈ C(closure Ω)` is a fixed point of
@@ -518,8 +476,10 @@ theorem isFixedPt_continuousFrozenSolution_iff
         fun φ => by
           rw [energyFormH1_congr_ae (hval.mono fun x hx => congrArg (A x) hx) .rfl .rfl]
           exact hu φ
-    refine eq_of_ae_eq ?_
-    filter_upwards [(hT v).2, hvu] with x h₁ h₂ hx
+    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
+      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 (hT v).2,
+      (ae_restrict_iff' Omega.isOpen.measurableSet).1 hvu] with x h₁ h₂ hx
     rw [h₁ hx, h₂ hx, ← hfrozen]
 
 /-- **Schauder's theorem for the frozen-coefficient map.** Under the hypotheses of

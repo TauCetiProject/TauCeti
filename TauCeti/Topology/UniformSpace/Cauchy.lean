@@ -11,7 +11,7 @@ public import Mathlib.Topology.UniformSpace.Cauchy
 # Totally bounded sets from Cauchy subsequences
 
 A subset `s` of a uniform space is totally bounded as soon as every sequence in `s` has a Cauchy
-subsequence (`totallyBounded_of_forall_exists_cauchySeq`). In a complete space this gives a
+subsequence (`TauCeti.totallyBounded_of_forall_exists_cauchySeq`). In a complete space this gives a
 sequential criterion for relative compactness in which the limits of the subsequences need not lie
 in `s`; compare `IsSeqCompact.totallyBounded`, which asks for subsequences converging in `s`.
 -/
@@ -19,6 +19,8 @@ in `s`; compare `IsSeqCompact.totallyBounded`, which asks for subsequences conve
 public section
 
 open Filter Set
+
+namespace TauCeti
 
 variable {α : Type*} [UniformSpace α] {s : Set α}
 
@@ -40,3 +42,5 @@ theorem totallyBounded_of_forall_exists_cauchySeq
   obtain ⟨N, hN⟩ : ∃ N, ∀ p q, p ≥ N → q ≥ N → (u (φ p), u (φ q)) ∈ V :=
     hcauchy.mem_entourage hV
   exact hu (φ (N + 1)) (φ N) (hφ (Nat.lt_add_one N)) (hN (N + 1) N N.le_succ le_rfl)
+
+end TauCeti
