@@ -204,8 +204,8 @@ weaken them for no gain.
   fundamental solution, is shown to be weakly differentiable.
 * `TauCeti.hasWeakLineDerivOn_const`: against an additive Haar measure on a finite-dimensional
   `E` with its Borel σ-algebra and for complete `F`, a constant has weak derivative `0`.
-* `TauCeti.hasWeakFDerivOn_const_of_eqOn`: under the same assumptions, a map that agrees on `Ω`
-  with a continuous linear map `A` has the constant weak derivative `A`.
+* `TauCeti.hasWeakFDerivOn_of_eqOn_continuousLinearMap`: under the same assumptions, a map that
+  agrees on `Ω` with a continuous linear map `A` has the constant weak derivative `A`.
 * `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_gradient`: in finite dimension, a weak gradient is
   locally integrable on `Ω`.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: for an additive Haar measure on a
@@ -917,7 +917,7 @@ theorem hasWeakFDerivOn_of_differentiableOn
 
 /-- A map that agrees, on `Ω`, with a continuous linear map `A` has the constant weak derivative
 `A` on `Ω`. -/
-theorem hasWeakFDerivOn_const_of_eqOn {A : E →L[ℝ] F} (hu : Set.EqOn u A Ω) :
+theorem hasWeakFDerivOn_of_eqOn_continuousLinearMap {A : E →L[ℝ] F} (hu : Set.EqOn u A Ω) :
     HasWeakFDerivOn μ Ω u (fun _ => A) := fun v =>
   hasWeakLineDerivOn_of_hasLineDerivAt
     ((A.continuous.continuousOn.congr hu).locallyIntegrableOn Ω.isOpen.measurableSet)

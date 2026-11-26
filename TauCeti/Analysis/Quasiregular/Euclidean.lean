@@ -194,8 +194,9 @@ theorem IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn (hf : IsQuasiregularOn K Ω
     ‖A‖ ^ finrank ℝ E ≤ K * LinearMap.det (A : E →ₗ[ℝ] E) := by
   obtain ⟨Du, hDu⟩ := hf.exists_hasWeakFDerivOn
   have := ae_restrict_neBot.2 (U.isOpen.measure_pos volume hUne).ne'
-  obtain ⟨x, hx, hle⟩ := (((hDu.mono hU).ae_eq (hasWeakFDerivOn_const_of_eqOn hfA)).and
-    (ae_restrict_of_ae_restrict_of_subset hU (hf.ae_norm_pow_le_mul_det hDu))).exists
+  obtain ⟨x, hx, hle⟩ :=
+    (((hDu.mono hU).ae_eq (hasWeakFDerivOn_of_eqOn_continuousLinearMap hfA)).and
+      (ae_restrict_of_ae_restrict_of_subset hU (hf.ae_norm_pow_le_mul_det hDu))).exists
   rwa [hx] at hle
 
 /-- **Degenerate or orientation-reversing linear maps exclude quasiregularity.** If `f` agrees, on
