@@ -405,6 +405,20 @@ theorem continuous_skewTorusModeOperator (ℓ σ : ℝ) (θ : AddCircle T) :
 
 variable (q : ℕ) [NeZero q]
 
+/-- **Continuous dependence of the operator on a skew cover's other modes.** The orbit-torus
+operator on the modes of nonzero frequency of a skew cover, for the loop `S` read with period
+`q T` (`AddCircle.coverPullback`), depends continuously, in operator norm, on the loop `S` of
+period `T` with its uniform norm. -/
+theorem continuous_skewTorusModeOperator_coverPullback (ℓ σ : ℝ) :
+    Continuous fun S : C(AddCircle T, F →L[ℝ] F) ↦
+      skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q S)
+        (AddCircle.coverPullback_add_coe_period q S) :=
+  (continuous_skewTorusModeOperator _ ℓ σ _).comp
+    (f := fun S : C(AddCircle T, F →L[ℝ] F) ↦
+      (⟨AddCircle.coverPullback q S, AddCircle.coverPullback_add_coe_period q S⟩ :
+        {S' : C(AddCircle ((q : ℝ) * T), F →L[ℝ] F) // ∀ t, S' (t + (T : ℝ)) = S' t}))
+    ((AddCircle.continuous_coverPullback q).subtype_mk _)
+
 /-- **The orbit-torus operator on a skew cover.** The operator `∂s + J₀ (∂t - S)` for a loop `S` of
 period `T`, on maps `u(s, t)` with the `s`-independent mode a loop of period `T` and the other
 modes loops of period `q T` invariant under the translation by `(σ, T)`. A map is a pair `(a₀, x)`
@@ -457,11 +471,7 @@ continuously, in operator norm, on the loop `S` with its uniform norm. -/
 theorem continuous_skewTorusOperator (ℓ σ : ℝ) :
     Continuous (skewTorusOperator (F := F) T q ℓ σ) :=
   ((continuous_loopOperator T).const_smul I).prod_mapL ℝ
-    ((continuous_skewTorusModeOperator _ ℓ σ _).comp
-      (f := fun S : C(AddCircle T, F →L[ℝ] F) ↦
-        (⟨AddCircle.coverPullback q S, AddCircle.coverPullback_add_coe_period q S⟩ :
-          {S' : C(AddCircle ((q : ℝ) * T), F →L[ℝ] F) // ∀ t, S' (t + (T : ℝ)) = S' t}))
-      ((AddCircle.continuous_coverPullback q).subtype_mk _))
+    (continuous_skewTorusModeOperator_coverPullback T q ℓ σ)
 
 end Operator
 
@@ -523,8 +533,10 @@ local instance instCompleteSpaceSkewCoverComparison : CompleteSpace F :=
   FiniteDimensional.completeSpace ℂ F
 
 
-/-- The modes of nonzero frequency of the operator on a skew cover form an invertible operator. -/
-private theorem isInvertible_skewTorusModeOperator_coverPullback (hℓ : ℓ ≠ 0)
+/-- **Invertibility on the other modes of a skew cover.** For `ℓ ≠ 0` and an infinitesimally
+symplectic loop `S` of period `T`, the orbit-torus operator on the modes of nonzero frequency of a
+skew cover, for `S` read with period `q T` (`AddCircle.coverPullback`), is invertible. -/
+theorem isInvertible_skewTorusModeOperator_coverPullback (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q S)
