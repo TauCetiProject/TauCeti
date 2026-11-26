@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Covering.Quotient
-public import TauCeti.Topology.FiberBundle.Pullback
-public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Thom.QuotientCovering.Basic
 
 /-!
 # The orientation double cover as a quotient by `ℤˣ`
@@ -174,12 +172,11 @@ over `p`, since both are the fibre of the original bundle over the base point of
 
 This is not a global instance: when the fibres are additive groups, the total space already
 carries the fibrewise action `Bundle.TotalSpace.instMulAction` of `ℤˣ` by `v ↦ ±v`, which keeps
-the base point instead. The statements below use this action as a local instance. -/
+the base point instead. The statements below use this action as a local instance. It is the
+action `Bundle.Pullback.totalSpaceMulAction` of the invariant projection. -/
 abbrev pullbackMulAction :
-    MulAction ℤˣ (TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) where
-  smul u z := ⟨u • z.proj, z.snd⟩
-  one_smul z := Pullback.totalSpace_ext (one_smul ℤˣ z.proj) rfl
-  mul_smul u v z := Pullback.totalSpace_ext (mul_smul u v z.proj) rfl
+    MulAction ℤˣ (TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) :=
+  Pullback.totalSpaceMulAction proj_smul
 
 attribute [local instance] pullbackMulAction
 
@@ -235,22 +232,17 @@ Like `pullbackMulAction`, it is not a global instance; the statements below use 
 instance. -/
 abbrev thomPairFstMulAction :
     MulAction ℤˣ (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst :=
-  pullbackMulAction
+  pullbackThomPairFstMulAction F E projection ℤˣ
 
 /-- The action `pullbackMulAction` of `ℤˣ` keeps the vector, so it preserves the nonzero vectors
 `E'₀` of the bundle pulled back to the orientation double cover, the subspace of its Thom pair:
-this is the restricted action.
+this is the restricted action (`TauCeti.pullbackThomPairSndMulAction`).
 
 Like `pullbackMulAction`, it is not a global instance; the statements below use it as a local
 instance. -/
 abbrev thomPairSndMulAction :
-    MulAction ℤˣ (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd
-    where
-  smul u v := ⟨u • v.val, (preimage_pullbackLift_zeroSectionCompl _).subset <| by
-    rw [Set.mem_preimage, lift_smul]
-    exact (preimage_pullbackLift_zeroSectionCompl (F := F) (E := E) projection).superset v.property⟩
-  one_smul v := Subtype.ext (one_smul ℤˣ v.val)
-  mul_smul u u' v := Subtype.ext (mul_smul u u' v.val)
+    MulAction ℤˣ (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
+  pullbackThomPairSndMulAction (E := E) lift_smul
 
 attribute [local instance] thomPairFstMulAction thomPairSndMulAction
 
@@ -260,15 +252,14 @@ to the orientation double cover is the action `pullbackMulAction` on the underly
 theorem coe_thomPairSnd_smul (u : ℤˣ)
     (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd) :
     (u • v).val = u • v.val :=
-  (rfl)
+  pullbackThomPairSndMulAction_coe_smul (E := E) lift_smul u v
 
 /-- The embedding `E'₀ → E'` of the Thom pair of the bundle pulled back to the orientation double
 cover commutes with the actions `thomPairSndMulAction` and `thomPairFstMulAction` of `ℤˣ`. -/
 theorem thomPair_map_smul (u : ℤˣ)
     (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd) :
-    (thomPair F _).map (u • v) = u • (thomPair F _).map v := by
-  rw [TopPair.ofSubset_map]
-  exact coe_thomPairSnd_smul u v
+    (thomPair F _).map (u • v) = u • (thomPair F _).map v :=
+  pullbackThomPairSndMulAction_thomPair_map_smul (E := E) lift_smul u v
 
 /-- The projection `E' → B'` of the bundle pulled back to the orientation double cover commutes
 with the action `thomPairFstMulAction` of `ℤˣ` on the total space of its Thom pair and the action
@@ -277,8 +268,7 @@ theorem thomPairProj_smul (u : ℤˣ)
     (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
     thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (u • v) =
       u • thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) v :=
-  (thomPairProj_apply F _ (u • v)).trans
-    ((proj_smul_totalSpace u v).trans (congrArg (u • ·) (thomPairProj_apply F _ v).symm))
+  pullbackThomPairFstMulAction_thomPairProj_smul (E := E) proj_smul_totalSpace u v
 
 /-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the bundle
 pulled back to the orientation double cover is continuous: it acts continuously on the cover and
@@ -292,19 +282,19 @@ theorem thomPairFstMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
     Pullback.continuous_iff.2 ⟨(continuous_const_smul u).comp (Pullback.continuous_proj F E _),
       Pullback.continuous_lift F E _⟩
 
-attribute [local instance] thomPairFstMulAction_continuousConstSMul
-
 /-- The action `thomPairSndMulAction` of `ℤˣ` on the nonzero vectors of the Thom pair of the bundle
 pulled back to the orientation double cover is continuous, as on the total space.
 
 Like `thomPairSndMulAction`, it is not a global instance; statements using the action use it as a
 local instance. -/
 theorem thomPairSndMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
-    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd where
-  continuous_const_smul u :=
-    ((continuous_const_smul u : Continuous fun v : (thomPair F
-      ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst ↦ u • v).comp
-        continuous_subtypeVal).subtype_mk _
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
+  -- The action on the total space of the pull-back is the action on the total space of its Thom
+  -- pair.
+  haveI : ContinuousConstSMul ℤˣ
+      (TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :=
+    thomPairFstMulAction_continuousConstSMul
+  pullbackThomPairSndMulAction_continuousConstSMul (E := E) lift_smul
 
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
 
@@ -316,10 +306,9 @@ cardinality the rank of the bundle, the map of total spaces underlying the map o
 covering map of the action `thomPairFstMulAction` of `ℤˣ`. -/
 theorem isQuotientCoveringMap_pullbackThomPairMap_fst :
     IsQuotientCoveringMap
-      (TopPair.Hom.fst (pullbackThomPairMap F E (projection (F := F) (E := E) (ι := ι)))) ℤˣ := by
-  rw [show ⇑(TopPair.Hom.fst (pullbackThomPairMap F E projection)) = Pullback.lift _ from
-    funext (pullbackThomPairMap_fst_apply F E _)]
-  exact isQuotientCoveringMap_lift (F := F) (E := E) hι
+      (TopPair.Hom.fst (pullbackThomPairMap F E (projection (F := F) (E := E) (ι := ι)))) ℤˣ :=
+  TauCeti.isQuotientCoveringMap_pullbackThomPairMap_fst (E := E) (isQuotientCoveringMap_proj hι)
+    proj_smul_totalSpace lift_smul
 
 /-- **The Thom pair of the pulled-back bundle covers the Thom pair: nonzero vectors.** If `ι` has
 cardinality the rank of the bundle, the map of nonzero vectors underlying the map of Thom pairs
@@ -329,22 +318,9 @@ covering map of the action `thomPairSndMulAction` of `ℤˣ`. With
 `(E, E₀)` as the quotient of the pair `(E', E'₀)` by a free action of `ℤˣ`. -/
 theorem isQuotientCoveringMap_pullbackThomPairMap_snd :
     IsQuotientCoveringMap
-      (TopPair.Hom.snd (pullbackThomPairMap F E (projection (F := F) (E := E) (ι := ι)))) ℤˣ := by
-  -- `IsQuotientCoveringMap.restrict` asks for the action on the subtype of nonzero vectors, which
-  -- `(thomPair F _).snd` unfolds to (`thomPair` is `TopPair.ofSubset` of `zeroSectionCompl`), so
-  -- `thomPairSndMulAction` and its lemma `coe_thomPairSnd_smul` are used on that subtype.
-  let : MulAction ℤˣ
-      (zeroSectionCompl F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :=
-    thomPairSndMulAction
-  -- The nonzero vectors of the pull-back are the preimage of those of `E`, so the map they
-  -- underlie is the restriction of `Pullback.lift`.
-  have h : Set.MapsTo (Pullback.lift (projection : C(VectorBundleOrientationCover F E ι, B)))
-      (zeroSectionCompl F (_ *ᵖ E)) (zeroSectionCompl F E) :=
-    Set.mapsTo_iff_subset_preimage.2 (preimage_pullbackLift_zeroSectionCompl _).superset
-  rw [show ⇑(TopPair.Hom.snd (pullbackThomPairMap F E projection)) = h.restrict _ _ _ from
-    funext fun v ↦ Subtype.ext (pullbackThomPairMap_snd_apply F E _ v)]
-  exact (isQuotientCoveringMap_lift (F := F) (E := E) hι).restrict coe_thomPairSnd_smul h
-    (preimage_pullbackLift_zeroSectionCompl _).subset
+      (TopPair.Hom.snd (pullbackThomPairMap F E (projection (F := F) (E := E) (ι := ι)))) ℤˣ :=
+  TauCeti.isQuotientCoveringMap_pullbackThomPairMap_snd (E := E) (isQuotientCoveringMap_proj hι)
+    proj_smul_totalSpace lift_smul
 
 end ThomPair
 
