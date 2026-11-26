@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.VariableCoefficientDecay
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -394,43 +393,19 @@ theorem exists_setAverage_ball_inter_norm_gradient_sub_inner_setAverage_div_smul
   have hVρ := volume.addHaar_real_setOf_lt_inner_inter_ball_eq_div_pow_mul hν hzc hρ.le hr
   simp only [hHs, finrank_euclideanSpace_fin] at hV hVρ
   set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  set μr := volume.restrict S
-  have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
-  set g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
-  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
+  have hθm : AEStronglyMeasurable θ (volume.restrict S) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
+  have hθ : ∀ᵐ x ∂volume.restrict S, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem (measurableSet_ball.inter H.isOpen.measurableSet)).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
-  -- Hölder's inequality with exponents `q'` and `q` bounds the coefficient term `∫ θ² ‖∇u‖²`.
-  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hgq
-  set Iθ := ∫ x in S, θ x
-  set Ig := ∫ x in S, ‖g x‖ ^ (2 * q)
   have key := hest hA ha haK hν hH hzc hball hu0 hu hGc hρ hρr t
-  -- Pass to averages, using `|B_ρ⁺| = (ρ / r)^(n + 1) |B_r⁺|`.
-  set V : ℝ := volume.real S
-  have havg : ∀ (s : Set (EuclideanSpace ℝ (Fin (n + 1)))) (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
-      ⨍ x in s, f x = (volume.real s)⁻¹ * ∫ x in s, f x :=
-    fun s f => by rw [setAverage_eq, smul_eq_mul]
-  rw [havg _ (fun x => ‖g x - (⟪⨍ y in ball z ρ ∩ H, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2),
-    havg S (fun x => ‖g x - t • ν‖ ^ 2), havg S (fun x => ‖G x - c‖ ^ 2), havg S θ,
-    havg S (fun x => ‖g x‖ ^ (2 * q)), hVρ]
-  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
-      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
-    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
-      hq.symm.inv_add_inv_eq_one
-  rw [hsplit]
-  have hs : 0 < ρ / r := div_pos hρ hr
-  refine (mul_le_mul_of_nonneg_left (key.trans (add_le_add le_rfl
-    (mul_le_mul_of_nonneg_left (add_le_add hΘ le_rfl) hC.le))) (by positivity)).trans_eq ?_
-  have hV0 : V ≠ 0 := hV.ne'
-  rw [← inv_div ρ r]
-  simp only [g, V] at hV0 ⊢
-  generalize ρ / r = s at hs ⊢
-  rw [inv_pow]
-  field_simp
+  rw [← one_mul (∫ x in S, θ x ^ 2 * ‖W1p.gradient u x‖ ^ 2)] at key
+  -- Pass to averages, using `|B_ρ⁺| = (ρ / r)^(n + 1) |B_r⁺|` and Hölder's inequality.
+  refine (setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq hV (div_pos hρ hr) hVρ hC.le
+    zero_le_one hq hθm hθ hgq key).trans_eq ?_
+  rw [inv_div]
   ring
 
 end PDE
