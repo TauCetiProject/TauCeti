@@ -141,8 +141,9 @@ def pullbackContractedProductSchemeIsoOfSection {T : Over S} (ξ : P.sheaf.obj.o
 change of `X` to the point of `P ×^G X` corresponding to the class `[ξ, x]`, for `x` the point of
 `X` adjoint to `y`. -/
 @[simp]
-lemma contractedProductSchemeRepresentableBy_homEquiv_pullbackIsoOfSection_inv {T : Over S}
-    (ξ : P.sheaf.obj.obj (op T)) {T' : Over T.left}
+lemma
+    contractedProductSchemeRepresentableBy_homEquiv_pullbackContractedProductSchemeIsoOfSection_inv
+    {T : Over S} (ξ : P.sheaf.obj.obj (op T)) {T' : Over T.left}
     (y : T' ⟶ (Over.pullback T.hom).obj X) :
     (P.contractedProductSchemeRepresentableBy X).homEquiv
         (((Over.mapPullbackAdj T.hom).homEquiv _ _).symm
