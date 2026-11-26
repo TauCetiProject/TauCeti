@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
 import TauCeti.LinearAlgebra.LinearPMap.Basic
@@ -67,10 +68,15 @@ resolvent of `Δ⁺` at `-t` (`TauCeti.Manifold.SobolevH1.isResolventAt_negLapla
   (`TauCeti.Manifold.SobolevH1.compMeasurePreserving_negLaplacian_eq_self`).
 
 The domain is the maximal weak domain `{J w | v ↦ D(w, v) is L²-bounded}`
-(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, interior elliptic
-regularity puts it inside `H²`: near every point, the reading in a chart of an element of the domain
-has square-integrable second weak derivatives
-(`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_mem_domain_negLaplacian`).
+(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric it is exactly `H²`:
+`f` lies in the domain if and only if `f = J w` for some `w ∈ H¹(M)` whose reading in a chart near
+every point has square-integrable second weak derivatives
+(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff_exists_wkp`). One inclusion is interior
+elliptic regularity (`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_mem_domain_negLaplacian`). For
+the other, integration by parts in a chart bounds `D(w, Φ)` by `‖Φ‖_{L²}` for smooth `Φ` supported
+near a point (`TauCeti.Manifold.SobolevH1.exists_mem_nhds_abs_dirichletForm_le_of_wkp_ae_eq`), and a
+partition of unity and the density of smooth functions in `H¹(M)` make this global
+(`TauCeti.Manifold.SobolevH1.toLp_mem_domain_negLaplacian_of_forall_exists_wkp`).
 
 ## References
 
@@ -419,6 +425,69 @@ theorem exists_wkp_ae_eq_of_mem_domain_negLaplacian {f : Lp ℝ 2 (riemannianVol
   simp only [Pi.zero_apply, zero_mul, integral_zero, add_zero]
   refine integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ ?_)
   simp only [hx, RCLike.inner_apply, conj_trivial, mul_comm]
+
+/-- **`H²` functions lie in the domain of the Laplacian.** For a smooth metric, let `w ∈ H¹(M)`
+have square-integrable second weak derivatives near every point of `M`: for every `p ∈ M` there
+are a linear identification `L` of the model space with `ℝⁿ`, an open neighbourhood `Ω` of
+`L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`, and an element of `W^{2,2}(Ω)` whose value is
+`w ∘ φ⁻¹ ∘ L⁻¹` almost everywhere on `Ω`. Then the value of `w` lies in the domain of `Δ⁺`.
+
+Near every point the Dirichlet form `D(w, ·)` is bounded in `L²` on smooth functions supported
+nearby (`TauCeti.Manifold.SobolevH1.exists_mem_nhds_abs_dirichletForm_le_of_wkp_ae_eq`). A finite
+smooth partition of unity subordinate to these neighbourhoods splits every smooth function into
+such pieces, so `D(w, ·)` is bounded in `L²` on smooth functions, hence on `H¹(M)` by density. -/
+theorem toLp_mem_domain_negLaplacian_of_forall_exists_wkp {w : SobolevH1 I M}
+    (hw : ∀ p : M, ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+      (Ω : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+      L (extChartAt I p p) ∈ Ω ∧ ∃ u : Wkp volume Ω 2 2,
+        (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+          fun y ↦ toLp w ((extChartAt I p).symm (L.symm y))) :
+    toLp w ∈ (negLaplacian I M).domain := by
+  have hloc (p : M) : ∃ N ∈ nhds p, ∃ C, 0 ≤ C ∧ ∀ Φ : C^∞⟮I, M; ℝ⟯,
+      tsupport (Φ : M → ℝ) ⊆ N → |dirichletForm w (ofSmooth Φ)| ≤ C * ‖toLp (ofSmooth Φ)‖ := by
+    obtain ⟨L, Ω, hpΩ, u, hu⟩ := hw p
+    exact exists_mem_nhds_abs_dirichletForm_le_of_wkp_ae_eq hpΩ hu
+  choose N hN C hC hCΦ using hloc
+  obtain ⟨ι, _, f, hf⟩ := isCompact_univ.exists_smoothBumpCovering_isSubordinate I fun p _ ↦ hN p
+  set ρ := f.toSmoothPartitionOfUnity
+  have hρ := hf.toSmoothPartitionOfUnity
+  refine mem_domain_negLaplacian_iff.2 ⟨w, rfl, ∑ i, C (f.c i), fun v ↦ ?_⟩
+  refine induction_on v (isClosed_le (continuous_abs.comp (dirichletForm w).continuous)
+    (continuous_const.mul (continuous_norm.comp toLp.continuous))) fun Φ ↦ ?_
+  have hΦ : Φ = ∑ i, ρ i * Φ := ContMDiffMap.ext fun x ↦ by
+    have h := congrFun (map_sum ContMDiffMap.coeFnAddMonoidHom (fun i ↦ ρ i * Φ) Finset.univ) x
+    simp only [ContMDiffMap.coeFnAddMonoidHom_apply, Finset.sum_apply, ContMDiffMap.coe_mul,
+      Pi.mul_apply] at h
+    rw [h, ← Finset.sum_mul, ← finsum_eq_sum_of_fintype, ρ.sum_eq_one (Set.mem_univ x), one_mul]
+  calc |dirichletForm w (ofSmooth Φ)| = |∑ i, dirichletForm w (ofSmooth (ρ i * Φ))| := by
+        conv_lhs => rw [hΦ, map_sum, map_sum]
+    _ ≤ ∑ i, C (f.c i) * ‖toLp (ofSmooth Φ)‖ := by
+      refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+      refine (hCΦ _ _ ((tsupport_mul_subset_left).trans (hρ i))).trans
+        (mul_le_mul_of_nonneg_left (Lp.norm_le_norm_of_ae_le ?_) (hC _))
+      filter_upwards [toLp_ofSmooth_ae_eq (ρ i * Φ), toLp_ofSmooth_ae_eq Φ] with x h₁ h₂
+      rw [h₁, h₂, ContMDiffMap.coe_mul, Pi.mul_apply, norm_mul]
+      exact mul_le_of_le_one_left (norm_nonneg _)
+        ((Real.norm_of_nonneg (ρ.nonneg i x)).trans_le (ρ.le_one i x))
+    _ = (∑ i, C (f.c i)) * ‖toLp (ofSmooth Φ)‖ := (Finset.sum_mul _ _ _).symm
+
+/-- **The domain of the Laplacian is `H²`.** For a smooth metric, `f ∈ L²(M)` lies in the domain of
+`Δ⁺` exactly when `f` is the value of some `w ∈ H¹(M)` with square-integrable second weak
+derivatives near every point of `M`: for every `p ∈ M` there are a linear identification `L` of the
+model space with `ℝⁿ`, an open neighbourhood `Ω` of `L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`,
+on which `φ⁻¹ ∘ L⁻¹` is defined, and an element of `W^{2,2}(Ω)` whose value is `w ∘ φ⁻¹ ∘ L⁻¹`
+almost everywhere on `Ω`. -/
+theorem mem_domain_negLaplacian_iff_exists_wkp {f : Lp ℝ 2 (riemannianVolume I M)} :
+    f ∈ (negLaplacian I M).domain ↔ ∃ w : SobolevH1 I M, toLp w = f ∧ ∀ p : M,
+      ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+        (Ω : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+        L (extChartAt I p p) ∈ Ω ∧ Set.MapsTo L.symm Ω (extChartAt I p).target ∧
+        ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+          fun y ↦ toLp w ((extChartAt I p).symm (L.symm y)) := by
+  refine ⟨fun hf ↦ ?_, fun ⟨w, hwf, hw⟩ ↦ hwf ▸ toLp_mem_domain_negLaplacian_of_forall_exists_wkp
+    fun p ↦ (hw p).imp fun _ ⟨Ω, hpΩ, _, hu⟩ ↦ ⟨Ω, hpΩ, hu⟩⟩
+  obtain ⟨w, rfl, -⟩ := exists_dirichletForm_eq_inner_negLaplacian ⟨f, hf⟩
+  exact ⟨w, rfl, exists_wkp_ae_eq_of_mem_domain_negLaplacian hf⟩
 
 end Smooth
 
