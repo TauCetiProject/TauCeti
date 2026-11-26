@@ -122,6 +122,14 @@ section Lattice
 variable {O : Type*} (K : Type*) {V : Type*} [CommRing O] [Field K] [Algebra O K]
   [IsFractionRing O K] [AddCommGroup V] [Module K V] [Module O V] [IsScalarTower O K V]
 
+/-- `gL` is a full lattice when `det g ≠ 0`, since `g` is then surjective
+(`Submodule.isFullLattice_map`). -/
+private theorem isFullLattice_map_of_det_ne_zero (L : Submodule O V) [L.IsFullLattice K]
+    {g : V →ₗ[K] V} (hg : LinearMap.det g ≠ 0) : (L.map (g.restrictScalars O)).IsFullLattice K :=
+  have : Module.Finite K V := Module.Finite.of_isFullLattice L
+  isFullLattice_map L g
+    ((Module.End.isUnit_iff g).1 ((LinearMap.isUnit_iff_isUnit_det g).2 hg.isUnit)).2
+
 variable [IsNoetherianRing O] [Ring.KrullDimLE 1 O]
 
 /-- For a finitely generated `A` and a full lattice `D`, the quotient `A ⧸ (A ⊓ D)` has finite

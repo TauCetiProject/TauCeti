@@ -54,8 +54,6 @@ group of `L`, hence `GL_n` of the coefficients in a basis of `L`.
   homotheties.
 * `Submodule.inf_restrictScalars_eq_map_comap`: `S ⊓ W` for a subspace `W` is the image of the
   pullback of `S` to `W`.
-* `Submodule.isFullLattice_map_of_det_ne_zero`: a `K`-linear map with nonzero determinant maps a
-  full lattice to a full lattice.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
 * `Submodule.IsFullLattice.pi`: the product of a finite family of full lattices is a full lattice.
@@ -387,23 +385,6 @@ theorem inf_restrictScalars_eq_map_comap (S : Submodule O V) (W : Submodule K V)
     S ⊓ W.restrictScalars O =
       (S.comap (W.subtype.restrictScalars O)).map (W.subtype.restrictScalars O) := by
   rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
-
-/-- A `K`-linear `g` with nonzero determinant maps a full lattice `L` to a full lattice. -/
-theorem isFullLattice_map_of_det_ne_zero (L : Submodule O V) [L.IsFullLattice K]
-    {g : V →ₗ[K] V} (hg : LinearMap.det g ≠ 0) :
-    (L.map (g.restrictScalars O)).IsFullLattice K := by
-  have : Module.Finite K V := Module.Finite.of_isFullLattice L
-  obtain ⟨hi, hs⟩ := (Module.End.isUnit_iff g).1 ((LinearMap.isUnit_iff_isUnit_det g).2 hg.isUnit)
-  refine { fg := (IsLattice.fg K L).map _, linearIndepOn := fun s hsL hli ↦ ?_, span_eq_top := ?_ }
-  · -- Write `s = g(s')` with `s' ⊆ L`; independence over `O`, then over `K`, moves along `g`.
-    rw [← Set.image_preimage_eq s hs] at hli ⊢
-    have hs' : g ⁻¹' s ⊆ L := fun x hx ↦ by
-      obtain ⟨y, hy, hyx⟩ := hsL hx
-      exact hi hyx ▸ hy
-    have h := IsLattice.linearIndepOn (A := K) (g ⁻¹' s) hs'
-      (((linearIndepOn_iff_image hi.injOn).2 hli).of_comp (g.restrictScalars O))
-    exact LinearIndepOn.id_image (h.map' g (LinearMap.ker_eq_bot_of_injective hi))
-  · simp [map_coe, span_image, IsFullLattice.span_eq_top, LinearMap.range_eq_top.mpr hs]
 
 end Homothety
 
