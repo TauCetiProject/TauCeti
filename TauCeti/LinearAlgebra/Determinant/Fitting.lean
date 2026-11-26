@@ -79,7 +79,6 @@ section Restrict
 
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {T : M →ₗ[R] M}
   {p q : Submodule R M} (hpq : IsCompl p q) (hp : ∀ x ∈ p, T x ∈ p) (hq : ∀ x ∈ q, T x ∈ q)
-  (hT : Function.Bijective (T.restrict hq))
 
 include hpq hp hq in
 /-- If `x ∈ p` is `T a + T b` with `a ∈ p` and `b ∈ q`, then `x = T a`, since `T b` lies in
@@ -90,26 +89,28 @@ private theorem eq_of_add_mem_range {a b : M} (ha : a ∈ p) (hb : b ∈ q) {x :
   rw [hpq.inf_eq_bot, Submodule.mem_bot] at hTb
   rw [h, hTb, add_zero]
 
-include hpq hp hq hT in
-/-- The kernel of `T` lies in `p`. -/
-private theorem ker_le : ker T ≤ p := by
+include hpq hp hq in
+/-- The kernel of `T` lies in `p` when `T` is injective on `q`. -/
+private theorem ker_le (hT : Function.Injective (T.restrict hq)) : ker T ≤ p := by
   intro v hv
-  obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.1 (hpq.sup_eq_top ▸ Submodule.mem_top :
-    v ∈ p ⊔ q)
+  obtain ⟨a, b, ha, hb, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 hpq.codisjoint v
   have hab : T a + T b = 0 := by simpa using hv
   have hTa : 0 = T a := eq_of_add_mem_range hpq hp hq ha hb (zero_mem p) hab.symm
   have hTb : T b = 0 := by rwa [← hTa, zero_add] at hab
-  have hb0 : (⟨b, hb⟩ : q) = 0 := hT.1 (Subtype.ext (by simpa using hTb))
+  have hb0 : (⟨b, hb⟩ : q) = 0 := hT (Subtype.ext (by simpa using hTb))
   simpa [show b = 0 from congrArg Subtype.val hb0] using ha
 
-include hT in
-/-- The summand `q` lies in the range of `T`. -/
-private theorem le_range : q ≤ range T := fun b hb ↦ by
-  obtain ⟨c, hc⟩ := hT.2 ⟨b, hb⟩
+/-- The summand `q` lies in the range of `T` when `T` is surjective on `q`. -/
+private theorem le_range (hT : Function.Surjective (T.restrict hq)) : q ≤ range T := fun b hb ↦ by
+  obtain ⟨c, hc⟩ := hT ⟨b, hb⟩
   exact ⟨c, congrArg Subtype.val hc⟩
 
+section Ker
+
+variable (hT : Function.Injective (T.restrict hq))
+
 /-- **The kernel of `T` is that of its restriction to `p`**, when `M = p ⊕ q` with both summands
-`T`-invariant and `T` bijective on `q`; the isomorphism is induced by the inclusion of `p`. -/
+`T`-invariant and `T` injective on `q`; the isomorphism is induced by the inclusion of `p`. -/
 def kerRestrictEquiv : ker (T.restrict hp) ≃ₗ[R] ker T :=
   LinearEquiv.ofBijective
     ((p.subtype.comp (ker (T.restrict hp)).subtype).codRestrict (ker T) fun x ↦
@@ -131,8 +132,14 @@ theorem coe_kerRestrictEquiv_symm_apply (v : ker T) :
     (((kerRestrictEquiv hpq hp hq hT).symm v : p) : M) = v := by
   rw [← coe_kerRestrictEquiv_apply hpq hp hq hT, LinearEquiv.apply_symm_apply]
 
+end Ker
+
+section Coker
+
+variable (hT : Function.Surjective (T.restrict hq))
+
 /-- **The cokernel of `T` is that of its restriction to `p`**, when `M = p ⊕ q` with both summands
-`T`-invariant and `T` bijective on `q`; the isomorphism is induced by the inclusion of `p`. -/
+`T`-invariant and `T` surjective on `q`; the isomorphism is induced by the inclusion of `p`. -/
 def cokerRestrictEquiv : (p ⧸ range (T.restrict hp)) ≃ₗ[R] (M ⧸ range T) :=
   LinearEquiv.ofBijective
     ((range (T.restrict hp)).mapQ (range T) p.subtype fun x ⟨y, hy⟩ ↦
@@ -143,14 +150,12 @@ def cokerRestrictEquiv : (p ⧸ range (T.restrict hp)) ≃ₗ[R] (M ⧸ range T)
       rw [Submodule.mkQ_apply, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at hx
       rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
       obtain ⟨v, hv⟩ := hx
-      obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.1 (hpq.sup_eq_top ▸ Submodule.mem_top :
-        v ∈ p ⊔ q)
+      obtain ⟨a, b, ha, hb, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 hpq.codisjoint v
       refine ⟨⟨a, ha⟩, Subtype.ext ?_⟩
       exact (eq_of_add_mem_range hpq hp hq ha hb x.property (by simpa using hv.symm)).symm, by
       intro y
       obtain ⟨v, rfl⟩ := Submodule.mkQ_surjective _ y
-      obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.1 (hpq.sup_eq_top ▸ Submodule.mem_top :
-        v ∈ p ⊔ q)
+      obtain ⟨a, b, ha, hb, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 hpq.codisjoint v
       refine ⟨Submodule.Quotient.mk ⟨a, ha⟩, ?_⟩
       rw [Submodule.mapQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
       simpa using neg_mem (le_range hq hT hb)⟩
@@ -169,6 +174,8 @@ theorem cokerRestrictEquiv_symm_mk (x : p) :
       Submodule.Quotient.mk x := by
   rw [LinearEquiv.symm_apply_eq, cokerRestrictEquiv_mk]
 
+end Coker
+
 end Restrict
 
 section DetLineRestrict
@@ -181,13 +188,13 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {T : M →ₗ[
 summands `T`-invariant and `T` bijective on `q`: the isomorphism induced by the identifications
 `LinearMap.kerRestrictEquiv` of the kernels and `LinearMap.cokerRestrictEquiv` of the cokernels. -/
 def detLineRestrictEquiv : (T.restrict hp).detLine ≃ₗ[R] T.detLine :=
-  detLineCongrKerCoker (kerRestrictEquiv hpq hp hq hT) (cokerRestrictEquiv hpq hp hq hT)
+  detLineCongrKerCoker (kerRestrictEquiv hpq hp hq hT.1) (cokerRestrictEquiv hpq hp hq hT.2)
 
 /-- `LinearMap.detLineRestrictEquiv` is the isomorphism `LinearMap.detLineCongrKerCoker` induced by
 `LinearMap.kerRestrictEquiv` and `LinearMap.cokerRestrictEquiv`. -/
 theorem detLineRestrictEquiv_def :
     detLineRestrictEquiv hpq hp hq hT =
-      detLineCongrKerCoker (kerRestrictEquiv hpq hp hq hT) (cokerRestrictEquiv hpq hp hq hT) :=
+      detLineCongrKerCoker (kerRestrictEquiv hpq hp hq hT.1) (cokerRestrictEquiv hpq hp hq hT.2) :=
   (rfl)
 
 /-- `LinearMap.detLineRestrictEquiv` on a pure tensor: the kernel factor is carried along
@@ -197,8 +204,8 @@ theorem detLineRestrictEquiv_def :
 theorem detLineRestrictEquiv_tmul (x : TauCeti.detLine R (ker (T.restrict hp)))
     (φ : Dual R (TauCeti.detLine R (p ⧸ range (T.restrict hp)))) :
     detLineRestrictEquiv hpq hp hq hT (x ⊗ₜ φ) =
-      LinearEquiv.detLineCongr (kerRestrictEquiv hpq hp hq hT) x ⊗ₜ
-        (φ ∘ₗ (LinearEquiv.detLineCongr (cokerRestrictEquiv hpq hp hq hT)).symm.toLinearMap) :=
+      LinearEquiv.detLineCongr (kerRestrictEquiv hpq hp hq hT.1) x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr (cokerRestrictEquiv hpq hp hq hT.2)).symm.toLinearMap) :=
   detLineCongrKerCoker_tmul _ _ x φ
 
 end DetLineRestrict
@@ -209,12 +216,12 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {T : V →ₗ[K] 
 section CokerDetLine
 
 variable (hpq : IsCompl p q) (hp : ∀ x ∈ p, T x ∈ p) (hq : ∀ x ∈ q, T x ∈ q)
-  (hT : Function.Bijective (T.restrict hq))
 
 /-- The inverse of the isomorphism of cokernel determinant lines induced by
 `LinearMap.cokerRestrictEquiv` sends the exterior product of the classes of vectors of `p` to the
 exterior product of their classes modulo the range of the restriction. -/
 private theorem detLineCongr_cokerRestrictEquiv_symm_ιMulti
+    (hT : Function.Surjective (T.restrict hq))
     (z₀ : Fin (finrank K (p ⧸ range (T.restrict hp))) → p)
     (hc : finrank K (V ⧸ range T) = finrank K (p ⧸ range (T.restrict hp))) :
     (LinearEquiv.detLineCongr (cokerRestrictEquiv hpq hp hq hT)).symm
@@ -225,33 +232,16 @@ private theorem detLineCongr_cokerRestrictEquiv_symm_ιMulti
   funext i
   simp
 
-include hT in
-/-- The determinant of `T` on a summand where it is bijective is nonzero. -/
-private theorem det_restrict_ne_zero [FiniteDimensional K V] :
-    LinearMap.det (T.restrict hq) ≠ 0 := fun h ↦
-  LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hT.1)
+/-- The determinant of `T` on a summand where it is injective is nonzero. -/
+private theorem det_restrict_ne_zero [FiniteDimensional K V]
+    (hT : Function.Injective (T.restrict hq)) : LinearMap.det (T.restrict hq) ≠ 0 := fun h ↦
+  LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hT)
 
 end CokerDetLine
 
 /-! ### The canonical trivialization on an invariant summand -/
 
 section DetLine
-
-/-- `LinearMap.detLineEndEquiv_tmul` as an identity in the determinant line: `β` is
-`detLineEndEquiv S (α ⊗ ξ)` times `γ`. -/
-private theorem eq_detLineEndEquiv_smul {W : Type*} [AddCommGroup W] [Module K W]
-    [FiniteDimensional K W] (S : W →ₗ[K] W) (u : Fin (finrank K (ker S)) → ker S)
-    (v : Fin (finrank K (range S)) → W) (z : Fin (finrank K (W ⧸ range S)) → W)
-    {β : TauCeti.detLine K W} (hβ : (β : ExteriorAlgebra K W) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append ((ker S).subtype ∘ u) v))
-    {γ : TauCeti.detLine K W} (hγ : (γ : ExteriorAlgebra K W) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (S ∘ v) z))
-    {ξ : Dual K (TauCeti.detLine K (W ⧸ range S))}
-    (hξ : ξ (exteriorPower.ιMulti K _ ((range S).mkQ ∘ z)) = 1) :
-    β = S.detLineEndEquiv (exteriorPower.ιMulti K _ u ⊗ₜ ξ) • γ := by
-  refine sub_eq_zero.1 ((forall_dual_apply_eq_zero_iff K _).1 fun φ ↦ ?_)
-  rw [map_sub, map_smul, smul_eq_mul, ← S.detLineEndEquiv_tmul u v z hβ hγ φ hξ, mul_comm,
-    sub_self]
 
 /-- The exterior product of a family `a` of vectors of `p`, followed by a family `v₀` of vectors
 of `p` and a family `w` of vectors of `q`, is the product of the exterior products of `a ++ v₀`
@@ -307,7 +297,7 @@ private theorem finrank_range_eq_add :
   have := T.finrank_range_add_finrank_ker
   have := (T.restrict hp).finrank_range_add_finrank_ker
   have := Submodule.finrank_add_eq_of_isCompl hpq
-  have := (kerRestrictEquiv hpq hp hq hT).finrank_eq
+  have := (kerRestrictEquiv hpq hp hq hT.1).finrank_eq
   omega
 
 /-- The comparison behind `LinearMap.detLineEndEquiv_detLineRestrictEquiv`, at the element
@@ -333,15 +323,15 @@ private theorem detLineEndEquiv_detLineRestrictEquiv_mul
   set u₀ := ⇑(Module.finBasis K (ker (T.restrict hp)))
   have hβγ₀ := eq_detLineEndEquiv_smul (T.restrict hp) u₀ v₀ z₀ hβ₀ hγ₀ hξ₀
   have hk : finrank K (ker (T.restrict hp)) = finrank K (ker T) :=
-    (kerRestrictEquiv hpq hp hq hT).finrank_eq
+    (kerRestrictEquiv hpq hp hq hT.1).finrank_eq
   have hc : finrank K (V ⧸ range T) = finrank K (p ⧸ range (T.restrict hp)) :=
-    (cokerRestrictEquiv hpq hp hq hT).finrank_eq.symm
+    (cokerRestrictEquiv hpq hp hq hT.2).finrank_eq.symm
   set w := ⇑(Module.finBasis K q)
-  set u := kerRestrictEquiv hpq hp hq hT ∘ u₀ ∘ Fin.cast hk.symm
+  set u := kerRestrictEquiv hpq hp hq hT.1 ∘ u₀ ∘ Fin.cast hk.symm
   set v := Fin.append (p.subtype ∘ v₀) (q.subtype ∘ w) ∘
     Fin.cast (finrank_range_eq_add hpq hp hq hT)
   set z := p.subtype ∘ z₀ ∘ Fin.cast hc
-  set ξ := ξ₀ ∘ₗ (LinearEquiv.detLineCongr (cokerRestrictEquiv hpq hp hq hT)).symm.toLinearMap
+  set ξ := ξ₀ ∘ₗ (LinearEquiv.detLineCongr (cokerRestrictEquiv hpq hp hq hT.2)).symm.toLinearMap
   have hξ : ξ (exteriorPower.ιMulti K _ ((range T).mkQ ∘ z)) = 1 := by
     simp only [ξ, LinearMap.comp_apply, LinearEquiv.coe_coe]
     rw [detLineCongr_cokerRestrictEquiv_symm_ιMulti, hξ₀]
@@ -366,7 +356,9 @@ private theorem detLineEndEquiv_detLineRestrictEquiv_mul
     have hind : LinearIndependent K (Fin.append ((T.restrict hp) ∘ v₀) z₀) := by
       rw [← exteriorPower.ιMulti_ne_zero_iff]
       intro h
-      exact hγ₀ne (Subtype.ext (by rw [hγ₀, ← exteriorPower.ιMulti_apply_coe, h]; rfl))
+      exact hγ₀ne (by
+        rw [← ZeroMemClass.coe_eq_zero, hγ₀, ← exteriorPower.ιMulti_apply_coe, h,
+          ZeroMemClass.coe_zero])
     simp only [X, hγ₀, ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.ιMulti_mul_ιMulti]
     rw [← exteriorPower.ιMulti_apply_coe, ne_eq, ZeroMemClass.coe_eq_zero]
     exact exteriorPower.ιMulti_append_subtype_ne_zero hpq.disjoint hind
@@ -398,11 +390,11 @@ private theorem exists_ne_zero_detLineEndEquiv_detLineRestrictEquiv :
     fun h ↦ hβ₀ne (by rw [hβγ₀, h, smul_zero])
   refine ⟨exteriorPower.ιMulti K _ u₀ ⊗ₜ ξ₀, fun h ↦ hβ₀ne ?_, ?_⟩
   · rw [hβγ₀, h, map_zero, zero_smul]
-  have hdet := det_restrict_ne_zero hq hT
+  have hdet := det_restrict_ne_zero hq hT.1
   have hck : finrank K (p ⧸ range T₀) = finrank K (ker T) := by
     have := T₀.finrank_range_add_finrank_ker
     have := (range T₀).finrank_quotient_add_finrank
-    have : finrank K (ker T₀) = finrank K (ker T) := (kerRestrictEquiv hpq hp hq hT).finrank_eq
+    have : finrank K (ker T₀) = finrank K (ker T) := (kerRestrictEquiv hpq hp hq hT.1).finrank_eq
     omega
   rw [← hDκ]
   generalize T.detLineEndEquiv _ = D
@@ -444,7 +436,7 @@ theorem detLineRestrictEquiv_detLineEndGenerator :
       (LinearMap.det (T.restrict hq))⁻¹ • T.detLineEndGenerator := by
   refine T.detLineEndEquiv.injective ?_
   rw [detLineEndEquiv_detLineRestrictEquiv, detLineEndEquiv_detLineEndGenerator, map_smul,
-    detLineEndEquiv_detLineEndGenerator, (kerRestrictEquiv hpq hp hq hT).finrank_eq,
+    detLineEndEquiv_detLineEndGenerator, (kerRestrictEquiv hpq hp hq hT.1).finrank_eq,
     ← Submodule.finrank_add_eq_of_isCompl hpq, smul_eq_mul,
     show finrank K (ker T) * (finrank K p + finrank K q + 1) =
       finrank K (ker T) * finrank K q + finrank K (ker T) * (finrank K p + 1) by ring, pow_add]
@@ -460,7 +452,7 @@ theorem sameRay_detLineRestrictEquiv_detLineEndGenerator_iff [LinearOrder K]
         T.detLineEndGenerator ↔ 0 < LinearMap.det (T.restrict hq) := by
   rw [detLineRestrictEquiv_detLineEndGenerator]
   exact (sameRay_smul_left_iff_of_ne (M := T.detLine) T.detLineEndGenerator_ne_zero
-    (inv_ne_zero (det_restrict_ne_zero hq hT))).trans inv_pos
+    (inv_ne_zero (det_restrict_ne_zero hq hT.1))).trans inv_pos
 
 end DetLine
 
