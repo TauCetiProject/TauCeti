@@ -36,12 +36,12 @@ def coordinateComplex : Geometry.SimplicialComplex ℝ (ι → ℝ) :=
     (fun _ _ => ⟨(Finsupp.linearEquivFunOnFinite ℝ ℝ ι).toLinearMap.toAffineMap,
       fun _ _ => rfl⟩)
 
-open scoped Classical in
 /-- The coordinate faces are exactly the coordinate images of the abstract faces. -/
 @[simp]
-theorem mem_coordinateComplex_faces_iff (τ : Finset (ι → ℝ)) :
+theorem mem_coordinateComplex_faces_iff [DecidableEq ι] [DecidableEq (ι → ℝ)]
+    (τ : Finset (ι → ℝ)) :
     τ ∈ K.coordinateComplex.faces ↔
-      ∃ σ ∈ K.faces, τ = σ.image (fun v => Pi.single v (1 : ℝ)) := by
+      ∃ σ ∈ K.faces, σ.image (fun v => Pi.single v (1 : ℝ)) = τ := by
   classical
   rw [coordinateComplex, Geometry.SimplicialComplex.faces_map]
   constructor
@@ -50,7 +50,7 @@ theorem mem_coordinateComplex_faces_iff (τ : Finset (ι → ℝ)) :
     exact ⟨σ, hσ, by simp [Finset.image_image, Function.comp_def]⟩
   · rintro ⟨σ, hσ, rfl⟩
     refine ⟨σ.image (fun v => Finsupp.single v (1 : ℝ)),
-      (mem_standardGeometricComplex_faces_iff K _).mpr ⟨σ, hσ, rfl⟩, ?_⟩
+      (mem_standardGeometricComplex_faces_iff K _).mpr ⟨σ, hσ, by ext; simp⟩, ?_⟩
     simp [Finset.image_image, Function.comp_def]
 
 /-- The coordinate complex occupies exactly the barycentric coordinate image of the weak
