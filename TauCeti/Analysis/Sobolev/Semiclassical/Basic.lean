@@ -215,12 +215,7 @@ theorem semiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {k : ℕ} {
 @[simp]
 theorem semiclassicalSobolevNorm_comp_sub (k : ℕ) (h : ℝ) (f : E → F) (a : E) :
     semiclassicalSobolevNorm k h (fun x ↦ f (x - a)) = semiclassicalSobolevNorm k h f := by
-  simp only [semiclassicalSobolevNorm, iteratedFDeriv_comp_sub', ← toReal_eLpNorm]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  conv_rhs => rw [← (measurePreserving_sub_right volume a).map_eq]
-  rw [(measurableEmbedding_subRight a).eLpNorm_map_measure]
-  rfl
+  simp only [semiclassicalSobolevNorm, iteratedFDeriv_comp_sub', lpNorm_comp_sub_right]
 
 /-- Multiplying the semiclassical norm by `h^(n/2)` removes the volume normalization:
 `h^(n/2) ‖f‖_{k,h} = ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂`. -/
@@ -291,7 +286,7 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f * g)) 2) ∧
         semiclassicalSobolevNorm k h (f * g) ≤
           C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) le_rfl
+  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) ENNReal.one_lt_two
     (by rw [ENNReal.toReal_ofNat, mul_comm]; exact_mod_cast hk)
   refine ⟨max C 0, le_max_right C 0, fun h hh f g hf hg hfm hgm ↦ ?_⟩
   obtain ⟨hf', hfm'⟩ := contDiff_comp_smul_and_memLp hf hfm hh.ne'
