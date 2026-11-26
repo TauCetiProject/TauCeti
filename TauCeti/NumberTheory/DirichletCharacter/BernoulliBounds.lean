@@ -29,9 +29,8 @@ Bernoulli group determinant of `(ZMod M)ˣ`.
 
 * `DirichletCharacter.norm_generalizedBernoulli_le`: `‖Bₖ,χ‖ ≤ Nᵏ · 4 k! / (2π)ᵏ`.
 * `DirichletCharacter.norm_primorial_mul_natCast_mul_generalizedBernoulli_le`:
-  `‖Pₖ₊₁ N Bₖ,χ‖ ≤ 16 Nᵏ⁺¹ k!`. For `k = e + 1` this is the bound
-  `|N P_{e+2} B_{e+1,ψ}| ≤ 16 N^{e+2} (e + 1)!` behind the estimate of
-  BernoulliBoundsForClassGroupEigenspaces §10.1 (b).
+  `‖Pₖ₊₁ N Bₖ,χ‖ ≤ 16 Nᵏ⁺¹ k!`. For `k = e + 1` this reads
+  `|N P_{e+2} B_{e+1,ψ}| ≤ 16 N^{e+2} (e + 1)!`.
 * `TauCeti.abs_primorialBernoulli_le`: the integers `Pₖ₊₁ Mᵏ Bₖ(⟨t⟩ / M)` have absolute value
   at most `16 Mᵏ k!`.
 * `TauCeti.abs_bernoulliGroupDet_le`: for `k ≥ 2`,
@@ -43,9 +42,9 @@ Bernoulli group determinant of `(ZMod M)ˣ`.
 The determinant bounds go through the eigenvalue factorization
 `TauCeti.bernoulliGroupDet_eq_prod` over `ℂ`: the `φ(M)` eigenvalues are `2 Pₖ₊₁ M Bₖ,χ` for the
 characters with `χ(-1) = (-1)ᵏ` and `±2` for the others, and above level two exactly half of the
-characters have each parity (`DirichletCharacter.two_mul_card_apply_neg_one_eq`). This is the size
-bound of the determinant `Δ` in step (3) of the route of UniformWildKernelBounds §6.5, for the full
-group `(ZMod M)ˣ`.
+characters have each parity (`DirichletCharacter.two_mul_card_apply_neg_one_eq`). Together with
+Washington's Lemma 5.26 this bounds the size of the Bernoulli group determinant of the full group
+`(ZMod M)ˣ`.
 
 ## References
 
@@ -82,6 +81,15 @@ private theorem primorial_mul_four_mul_factorial_div_le (k : ℕ) :
     _ ≤ 16 * k ! * 1 := by gcongr; exact (div_le_one hpos).2 h4
     _ = 16 * k ! := mul_one _
 
+/-- `|Bₖ(n / N)| ≤ 4 k! / (2π)ᵏ` for `n ≤ N`, with the Bernoulli polynomial evaluated over `ℚ`. -/
+private theorem abs_bernoulli_eval_natCast_div_le {n N : ℕ} (h : n ≤ N) (k : ℕ) :
+    |(((Polynomial.bernoulli k).eval ((n : ℚ) / N) : ℚ) : ℝ)| ≤ 4 * k ! / (2 * π) ^ k := by
+  have hb := TauCeti.bernoulliFun_ratCast k ((n : ℚ) / N)
+  rw [Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast] at hb
+  rw [← hb]
+  exact TauCeti.abs_bernoulliFun_le_four_mul_factorial_div k
+    ⟨by positivity, div_le_one_of_le₀ (mod_cast h) (Nat.cast_nonneg N)⟩
+
 namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N]
@@ -95,19 +103,13 @@ theorem norm_generalizedBernoulli_le (χ : DirichletCharacter ℂ N) (k : ℕ) :
   -- each term `χ(a) Bₖ(ã / N)`, with `ã ∈ [1, N]`, has norm at most `4 k! / (2π)ᵏ`
   have hterm (a : ZMod N) : ‖χ a * algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval
       (((if a = 0 then N else a.val : ℕ) : ℚ) / N))‖ ≤ 4 * k ! / (2 * π) ^ k := by
-    set n : ℕ := if a = 0 then N else a.val
-    have hn : n ≤ N := by
-      simp only [n]
+    have hn : (if a = 0 then N else a.val) ≤ N := by
       split_ifs
       exacts [le_rfl, (ZMod.val_lt a).le]
-    have hx : ((n : ℝ) / N) ∈ Set.Icc (0 : ℝ) 1 :=
-      ⟨by positivity, (div_le_one hN).2 (mod_cast hn)⟩
-    have h := TauCeti.abs_bernoulliFun_le_four_mul_factorial_div k hx
     rw [norm_mul]
     refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one a)).trans ?_
-    have hb := TauCeti.bernoulliFun_ratCast k ((n : ℚ) / N)
-    rw [Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast] at hb
-    rwa [eq_ratCast, Complex.norm_ratCast, ← hb]
+    rw [eq_ratCast, Complex.norm_ratCast]
+    exact abs_bernoulli_eval_natCast_div_le hn k
   rw [generalizedBernoulli_def, norm_mul, eq_ratCast, Complex.norm_ratCast]
   calc |(((N : ℚ) ^ ((k : ℤ) - 1) : ℚ) : ℝ)| * ‖∑ a : ZMod N, _‖
       ≤ (N : ℝ) ^ ((k : ℤ) - 1) * ∑ _a : ZMod N, 4 * k ! / (2 * π) ^ k := by
@@ -119,9 +121,8 @@ theorem norm_generalizedBernoulli_le (χ : DirichletCharacter ℂ N) (k : ℕ) :
           zpow_one, zpow_natCast, div_mul_cancel₀ _ hN.ne']
 
 /-- **The size of `Pₖ₊₁ N Bₖ,χ`.** For a complex Dirichlet character `χ` modulo `N`,
-`‖Pₖ₊₁ N Bₖ,χ‖ ≤ 16 Nᵏ⁺¹ k!`, where `Pₖ₊₁ = primorial (k + 1)`. For `k = e + 1` this is the
-bound `|N P_{e+2} B_{e+1,ψ}| ≤ 16 N^{e+2} (e + 1)!` behind BernoulliBoundsForClassGroupEigenspaces
-§10.1 (b). -/
+`‖Pₖ₊₁ N Bₖ,χ‖ ≤ 16 Nᵏ⁺¹ k!`, where `Pₖ₊₁ = primorial (k + 1)`. For `k = e + 1` this reads
+`|N P_{e+2} B_{e+1,ψ}| ≤ 16 N^{e+2} (e + 1)!`. -/
 theorem norm_primorial_mul_natCast_mul_generalizedBernoulli_le (χ : DirichletCharacter ℂ N)
     (k : ℕ) :
     ‖(primorial (k + 1) : ℂ) * N * χ.generalizedBernoulli k‖ ≤ 16 * N ^ (k + 1) * k ! := by
@@ -144,24 +145,19 @@ open _root_.DirichletCharacter
 /-- **The size of the Bernoulli entries.** `|Pₖ₊₁ Mᵏ Bₖ(⟨t⟩ / M)| ≤ 16 Mᵏ k!`. -/
 theorem abs_primorialBernoulli_le (M k : ℕ) (t : ZMod M) :
     |primorialBernoulli M k t| ≤ 16 * M ^ k * k ! := by
-  have hx : ((t.val : ℝ) / M) ∈ Set.Icc (0 : ℝ) 1 := by
-    refine ⟨by positivity, ?_⟩
+  have hcast : (primorialBernoulli M k t : ℝ) = primorial (k + 1) * M ^ k *
+      (((Polynomial.bernoulli k).eval ((t.val : ℚ) / M) : ℚ) : ℝ) := by
+    exact_mod_cast congrArg (Rat.cast : ℚ → ℝ) (intCast_primorialBernoulli M k t)
+  set b : ℝ := (((Polynomial.bernoulli k).eval ((t.val : ℚ) / M) : ℚ) : ℝ)
+  have h : |b| ≤ 4 * k ! / (2 * π) ^ k := by
     rcases eq_or_ne M 0 with rfl | hM
-    · simp
+    · simpa [b] using abs_bernoulli_eval_natCast_div_le (le_refl 0) k
     · have : NeZero M := ⟨hM⟩
-      exact div_le_one_of_le₀ (mod_cast (ZMod.val_lt t).le) (Nat.cast_nonneg M)
-  have h := abs_bernoulliFun_le_four_mul_factorial_div k hx
-  have hcast : (primorialBernoulli M k t : ℝ) =
-      primorial (k + 1) * M ^ k * bernoulliFun k ((t.val : ℝ) / M) := by
-    have := congrArg (Rat.cast : ℚ → ℝ) (intCast_primorialBernoulli M k t)
-    have hb := bernoulliFun_ratCast k ((t.val : ℚ) / M)
-    rw [Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast] at hb
-    rw [hb]
-    exact_mod_cast this
+      exact abs_bernoulli_eval_natCast_div_le (ZMod.val_lt t).le k
   have hR : (|primorialBernoulli M k t| : ℝ) ≤ 16 * M ^ k * k ! := by
     rw [hcast, abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ _),
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ (M : ℝ) ^ k)]
-    calc (primorial (k + 1) : ℝ) * M ^ k * |bernoulliFun k ((t.val : ℝ) / M)|
+    calc (primorial (k + 1) : ℝ) * M ^ k * |b|
         ≤ M ^ k * (primorial (k + 1) * (4 * k ! / (2 * π) ^ k)) := by
           rw [mul_comm (primorial (k + 1) : ℝ), mul_assoc]
           gcongr
