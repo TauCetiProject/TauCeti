@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.Cylinder.W1p
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
 # Quasilinear first-order sections on `W^{1,p}` of the cylinder
@@ -154,9 +153,10 @@ private theorem memLp_sectionFun (hp : 2 < p) (hpt : p ≠ ∞) (hA : Continuous
   have hx := Lp.aestronglyMeasurable (x : Lp (V × V × V) p stripMeasure)
   have hu : AEStronglyMeasurable (fun z ↦ w z + continuousValue p x z) stripMeasure :=
     hw.add (continuousValue p x).continuous.aestronglyMeasurable
-  have hAd := (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hA hu)
-    (hb.add hx.snd.snd)).sub
-    (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hA hw) hb)
+  have hAd := ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂ (hb.add hx.snd.snd)
+    (aestronglyMeasurable_comp_uncurry hA hu)).sub
+    ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂ hb
+      (aestronglyMeasurable_comp_uncurry hA hw))
   have hGd :=
     (aestronglyMeasurable_comp_uncurry hG hu).sub (aestronglyMeasurable_comp_uncurry hG hw)
   refine (Lp.memLp (x : Lp (V × V × V) p stripMeasure)).of_le_mul (c := 1 + C + K * B + L)
@@ -300,6 +300,29 @@ private theorem norm_linFun_le {B C K L : ℝ} (hbB : ∀ z, ‖b z‖ ≤ B) (h
     (norm_add_le _ _).trans (add_le_add_left norm_add₄_le _)
   linarith
 
+/-- The pointwise expression of the linearization at `x₀`, applied to `h`, is a.e. strongly
+measurable. -/
+private theorem aestronglyMeasurable_linFun (hAc : Continuous (Function.uncurry A))
+    (hA'c : Continuous (Function.uncurry A')) (hG'c : Continuous (Function.uncurry G'))
+    (hw : AEStronglyMeasurable w stripMeasure) (hb : AEStronglyMeasurable b stripMeasure)
+    (x₀ h : W1p V p) : AEStronglyMeasurable (linFun A A' G' w b x₀ h) stripMeasure := by
+  have hu₀ : AEStronglyMeasurable (fun z ↦ w z + continuousValue p x₀ z) stripMeasure :=
+    hw.add (continuousValue p x₀).continuous.aestronglyMeasurable
+  have hx₀ := Lp.aestronglyMeasurable (x₀ : Lp (V × V × V) p stripMeasure)
+  have hj := Lp.aestronglyMeasurable (h : Lp (V × V × V) p stripMeasure)
+  have hA'u := aestronglyMeasurable_comp_uncurry hA'c hu₀
+  -- Elaboration of `(ContinuousLinearMap.apply ℝ (V →L[ℝ] V)).aestronglyMeasurable_comp₂` cannot
+  -- unify the normed and strong topologies on `V →L[ℝ] V →L[ℝ] V`; use `Continuous.clm_apply`.
+  have hA'h := (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂ hA'u hj.fst
+  exact (((hj.snd.fst.add ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂
+    hj.snd.snd (aestronglyMeasurable_comp_uncurry hAc hu₀))).add
+    ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂ hb hA'h)).add
+    ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂ hj.fst
+      (aestronglyMeasurable_comp_uncurry hG'c hu₀))).add
+    ((ContinuousLinearMap.apply ℝ V).aestronglyMeasurable_comp₂ hx₀.snd.snd
+      ((continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂ hA'u
+        (continuousValue p h).continuous.aestronglyMeasurable))
+
 variable {B C : ℝ} {K L : ℝ≥0}
 
 /-- Under bounds on `b`, `A`, `A'` and `G'`, the pointwise expression of the linearization at `x₀`
@@ -313,23 +336,13 @@ private theorem exists_linFun (hAc : Continuous (Function.uncurry A))
       ∀ h, T h =ᵐ[stripMeasure] linFun A A' G' w b x₀ h := by
   have hB : 0 ≤ B := (norm_nonneg _).trans (hbB 0)
   have hC : 0 ≤ C := (norm_nonneg _).trans (hAC 0 0)
-  have hu₀ : AEStronglyMeasurable (fun z ↦ w z + continuousValue p x₀ z) stripMeasure :=
-    hw.add (continuousValue p x₀).continuous.aestronglyMeasurable
-  have hx₀ := Lp.aestronglyMeasurable (x₀ : Lp (V × V × V) p stripMeasure)
   have hmem (h : W1p V p) : MemLp (linFun A A' G' w b x₀ h) p stripMeasure := by
-    have hj := Lp.aestronglyMeasurable (h : Lp (V × V × V) p stripMeasure)
-    have hA'u := aestronglyMeasurable_comp_uncurry hA'c hu₀
     have hg : MemLp (fun z ↦ (1 + C + K * B + L) * ‖(h : Lp (V × V × V) p stripMeasure) z‖ +
         K * ‖continuousValue p h‖ * ‖(x₀ : Lp (V × V × V) p stripMeasure) z‖) p stripMeasure :=
       ((Lp.memLp _).norm.const_mul _).add ((Lp.memLp _).norm.const_mul _)
     refine hg.of_le ?_ (ae_of_all _ fun z ↦
       (norm_linFun_le hbB hAC hA'K hG'K x₀ h z).trans (Real.le_norm_self _))
-    exact (((hj.snd.fst.add (AEStronglyMeasurable.clm_apply
-      (aestronglyMeasurable_comp_uncurry hAc hu₀) hj.snd.snd)).add
-      (AEStronglyMeasurable.clm_apply (AEStronglyMeasurable.clm_apply hA'u hj.fst) hb)).add
-      (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hG'c hu₀) hj.fst)).add
-      (AEStronglyMeasurable.clm_apply (AEStronglyMeasurable.clm_apply hA'u
-        (continuousValue p h).continuous.aestronglyMeasurable) hx₀.snd.snd)
+    exact aestronglyMeasurable_linFun hAc hA'c hG'c hw hb x₀ h
   let T : W1p V p →ₗ[ℝ] Lp V p stripMeasure :=
     { toFun h := (hmem h).toLp _
       map_add' h₁ h₂ := by
