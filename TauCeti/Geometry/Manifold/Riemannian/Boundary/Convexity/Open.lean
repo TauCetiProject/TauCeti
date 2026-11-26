@@ -19,14 +19,17 @@ strictly convex, respectively strictly concave, form an open subset of `∂M`
 The proof reads `II` in a local frame of `T∂M`: near `q₀`, transporting `II_q` to the model fibre
 along a local trivialization of `T∂M` gives a family of bilinear forms on a fixed vector space
 which is continuous, because `II` pairs continuous tangent fields to a continuous function and
-the fibre is finite-dimensional. So `II` is a section of the bundle of bilinear forms on `T∂M`
-continuous at `q₀`, and positivity on nonzero diagonal vectors is an open condition in that
-bundle (`TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos`). Strict
-concavity is positive definiteness of `-II`, so both cases are positivity of `s • II` for a
-sign `s`, proved once.
+the fibre is finite-dimensional. So `II` is a continuous section of the bundle of bilinear forms on
+`T∂M` (`TauCeti.continuous_boundarySecondFundamentalForm`), and positivity on nonzero diagonal
+vectors is an open condition in that bundle
+(`TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos`). Strict concavity is positive
+definiteness of `-II`, so both cases are positivity of `s • II` for a sign `s`, proved once.
 
 ## Main results
 
+* `TauCeti.continuousAt_boundarySecondFundamentalForm`,
+  `TauCeti.continuous_boundarySecondFundamentalForm`: `II` is a continuous section of the bundle
+  of bilinear forms on `T∂M`.
 * `TauCeti.IsStrictlyConvexAt.eventually`, `TauCeti.isOpen_setOf_isStrictlyConvexAt`:
   strict convexity of the boundary is an open condition.
 * `TauCeti.IsStrictlyConcaveAt.eventually`, `TauCeti.isOpen_setOf_isStrictlyConcaveAt`:
@@ -80,40 +83,67 @@ private theorem continuousAt_boundarySecondFundamentalForm_symmL (q₀ : (𝓡�
   exact (contMDiffAt_boundarySecondFundamentalForm_apply (k := 0) (m := 2) (l := 1) (by norm_num)
     (by norm_num) (hsec v) (hsec w)).continuousAt
 
+/-- **Continuity of the second fundamental form**: `q ↦ II_q` is a section of the bundle of bilinear
+forms on `T∂M` that is continuous at every point. Read in the local trivialization of `T∂M` at
+`q₀`, its entries are those of `II` along `e.symmL`, which are continuous at `q₀`. -/
+theorem continuousAt_boundarySecondFundamentalForm (q₀ : (𝓡∂ (n + 1)).boundary M) :
+    ContinuousAt (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundarySecondFundamentalForm q).toContinuousBilinearMap) q₀ := by
+  set e := trivializationAt (EuclideanSpace ℝ (Fin n))
+    (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) q₀
+  have hq₀ : q₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' q₀
+  refine (continuousAt_hom_bundle _ _).2 ⟨continuousAt_id, ?_⟩
+  refine ContinuousAt.congr (f := fun q ↦ ((boundarySecondFundamentalForm q).compl₁₂
+        (e.symmL ℝ q).toLinearMap (e.symmL ℝ q).toLinearMap).toContinuousBilinearMap)
+      (continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply.2 fun w ↦ by
+        simpa only [LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
+          ContinuousLinearMap.coe_coe] using
+          continuousAt_boundarySecondFundamentalForm_symmL q₀ v w) ?_
+  filter_upwards [e.open_baseSet.mem_nhds hq₀] with q hq
+  ext v w
+  rw [inCoordinates_apply_eq₂ hq hq (by simp)]
+  simp [e, Trivialization.symmL_apply _ hq]
+
+variable (n M) in
+/-- **Continuity of the second fundamental form**: `q ↦ II_q` is a continuous section of the
+bundle of bilinear forms on `T∂M`. -/
+theorem continuous_boundarySecondFundamentalForm :
+    Continuous (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundarySecondFundamentalForm q).toContinuousBilinearMap) :=
+  continuous_iff_continuousAt.2 continuousAt_boundarySecondFundamentalForm
+
 /-- For a fixed scalar `s`, positivity of `s * II_q(u, u)` on nonzero `u ∈ T_q∂M` is an open
-condition on `q`: read in the local trivialization of `T∂M` at `q₀`, `s • II` is a family of
-bilinear forms on the model fibre with continuous entries, so it is a section of the bilinear
-bundle continuous at `q₀`. -/
+condition on `q`: `s • II` is a section of the bilinear bundle continuous at `q₀`, by
+`continuousAt_boundarySecondFundamentalForm`. -/
 private theorem eventually_forall_mul_boundarySecondFundamentalForm_pos (s : ℝ)
     {q₀ : (𝓡∂ (n + 1)).boundary M}
     (h : ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q₀, u ≠ 0 →
       0 < s * boundarySecondFundamentalForm q₀ u u) :
     ∀ᶠ q in 𝓝 q₀, ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
       0 < s * boundarySecondFundamentalForm q u u := by
-  set e := trivializationAt (EuclideanSpace ℝ (Fin n))
-    (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) q₀
-  have hq₀ : q₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' q₀
   let b : ∀ q : (𝓡∂ (n + 1)).boundary M, TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
       TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ :=
-    fun q ↦ (s • boundarySecondFundamentalForm q).toContinuousBilinearMap
+    fun q ↦ s • (boundarySecondFundamentalForm q).toContinuousBilinearMap
   have hb : ∀ q u v, b q u v = s * boundarySecondFundamentalForm q u v := fun q u v ↦ by
-    simp only [b, LinearMap.toContinuousBilinearMap_apply, LinearMap.smul_apply, smul_eq_mul]
-  -- In the trivialization at `q₀`, the coordinate entries of `b` are those of `II` along `e.symmL`.
+    simp only [b, smul_apply, LinearMap.toContinuousBilinearMap_apply,
+      smul_eq_mul]
+  -- The coordinate form of `s • II` is `s` times that of `II`, which is continuous at `q₀`.
   have hcont : ContinuousAt (fun q ↦ TotalSpace.mk'
       (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
       (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
         TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q (b q)) q₀ := by
-    refine (continuousAt_hom_bundle _ _).2 ⟨continuousAt_id, ?_⟩
-    refine ContinuousAt.congr (f := fun q ↦ (s • (boundarySecondFundamentalForm q).compl₁₂
-        (e.symmL ℝ q).toLinearMap (e.symmL ℝ q).toLinearMap).toContinuousBilinearMap)
-      (continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply.2 fun w ↦ by
-        simp only [LinearMap.toContinuousBilinearMap_apply, LinearMap.smul_apply,
-          LinearMap.compl₁₂_apply, ContinuousLinearMap.coe_coe, smul_eq_mul]
-        exact continuousAt_const.mul (continuousAt_boundarySecondFundamentalForm_symmL q₀ v w)) ?_
-    filter_upwards [e.open_baseSet.mem_nhds hq₀] with q hq
+    refine (continuousAt_hom_bundle _ _).2 ⟨continuousAt_id,
+      (((continuousAt_hom_bundle _ _).1
+        (continuousAt_boundarySecondFundamentalForm q₀)).2.const_smul s).congr
+        (Eventually.of_forall fun q ↦ ?_)⟩
     ext v w
-    rw [inCoordinates_apply_eq₂ hq hq (by simp)]
-    simp [b, e, Trivialization.symmL_apply _ hq]
+    simp [b, ContinuousLinearMap.inCoordinates]
   simpa only [hb] using hcont.eventually
     (isOpen_setOf_forall_bilinear_bundle_apply_self_pos.mem_nhds
       (by simpa only [Set.mem_ofPred_eq, hb] using h))
