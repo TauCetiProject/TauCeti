@@ -8,15 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.FieldSimp
+public import Mathlib.Algebra.GroupWithZero.Units.Basic
 import Mathlib.Tactic.Ring
 
 /-!
 # The traceless anticommutator of square matrices
 
-For a finite index type of cardinality `d`, subtracting `(2 / d) tr(XY)` times the identity
-from `XY + YX` gives a symmetric bilinear operation. If `d` is nonzero in the field, the
-result has trace zero. If `d` vanishes in the field, the operation reduces to `XY + YX`.
+For matrix size `d`, subtracting `(2 * Ring.inverse d) tr(XY)` times the identity from
+`XY + YX` gives a symmetric bilinear operation. If `d` is a unit, the result has trace zero.
+For nonunit `d`, the operation reduces to `XY + YX`.
 Conjugation by any invertible matrix preserves the operation.
 -/
 
@@ -24,28 +24,32 @@ public section
 
 namespace Matrix
 
-variable {ι K : Type*} [Fintype ι] [DecidableEq ι] [Field K]
+variable {ι K : Type*} [Fintype ι] [DecidableEq ι] [CommRing K]
 
-/-- The anticommutator with its scalar trace correction. When the matrix size vanishes in
-the field, the correction is zero. -/
-def tracelessAnticommutator (X Y : Matrix ι ι K) : Matrix ι ι K :=
-  X * Y + Y * X - ((2 / (Fintype.card ι : K)) * trace (X * Y)) • 1
+/-- The anticommutator with its scalar trace correction. The correction vanishes when the matrix
+size is a nonunit. -/
+noncomputable def tracelessAnticommutator (X Y : Matrix ι ι K) : Matrix ι ι K :=
+  X * Y + Y * X - ((2 * Ring.inverse (Fintype.card ι : K)) * trace (X * Y)) • 1
 
 /-- The traceless anticommutator is the sum of the two products minus the scalar trace
 correction. -/
 theorem tracelessAnticommutator_def (X Y : Matrix ι ι K) :
     tracelessAnticommutator X Y =
-      X * Y + Y * X - ((2 / (Fintype.card ι : K)) * trace (X * Y)) • 1 :=
-  (rfl)
+      X * Y + Y * X - ((2 * Ring.inverse (Fintype.card ι : K)) * trace (X * Y)) • 1 := by
+  unfold tracelessAnticommutator
+  rfl
 
-/-- The scalar correction removes the trace whenever the matrix size is nonzero in the field. -/
+/-- The scalar correction removes the trace whenever the matrix size is a unit. -/
 @[simp]
-theorem trace_tracelessAnticommutator [NeZero (Fintype.card ι : K)] (X Y : Matrix ι ι K) :
+theorem trace_tracelessAnticommutator [Invertible (Fintype.card ι : K)] (X Y : Matrix ι ι K) :
     trace (tracelessAnticommutator X Y) = 0 := by
   simp only [tracelessAnticommutator, trace_sub, trace_add, trace_smul, trace_one,
     trace_mul_comm Y X, smul_eq_mul]
-  field_simp [NeZero.ne (Fintype.card ι : K)]
-  ring
+  have hn := Ring.mul_inverse_cancel (Fintype.card ι : K) (isUnit_of_invertible _)
+  calc
+    _ = trace (X * Y) + trace (X * Y) -
+        2 * trace (X * Y) * ((Fintype.card ι : K) * Ring.inverse (Fintype.card ι : K)) := by ring
+    _ = 0 := by rw [hn]; ring
 
 /-- The traceless anticommutator is symmetric in its arguments. -/
 theorem tracelessAnticommutator_comm (X Y : Matrix ι ι K) :

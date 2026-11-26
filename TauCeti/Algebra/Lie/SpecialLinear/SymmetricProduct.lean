@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.TracelessAnticommutator
 # The traceless symmetric product on the special linear Lie algebra
 
 `Matrix.tracelessAnticommutator` is bilinear on all square matrices. When the size `n` is
-nonzero in the field, it maps pairs in `slₙ` into `slₙ`, giving the bilinear map
+a unit in the scalar ring, it maps pairs in `slₙ` into `slₙ`, giving the bilinear map
 `symmetricProduct`. In size three, its trace transpose gives the symmetric octet embedding.
 
 ## References
@@ -28,11 +28,11 @@ namespace LieAlgebra.SpecialLinear
 
 open Matrix
 
-variable {K ι : Type*} [Field K] [Fintype ι] [DecidableEq ι]
-  [NeZero (Fintype.card ι : K)]
+variable {K ι : Type*} [CommRing K] [Fintype ι] [DecidableEq ι]
+  [Invertible (Fintype.card ι : K)]
 
 /-- The symmetric product as a bilinear map on the trace-zero Lie algebra. -/
-def symmetricProduct :
+noncomputable def symmetricProduct :
     sl ι K →ₗ[K] sl ι K →ₗ[K] sl ι K :=
   LinearMap.mk₂ K (fun X Y => ⟨tracelessAnticommutator X.val Y.val,
     trace_tracelessAnticommutator X.val Y.val⟩)

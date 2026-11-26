@@ -127,9 +127,9 @@ variable (K : Type*) [Field K] (n : ℕ)
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
     (adjointRep K n).Equiv (adjointRep K n).dual := by
-  let _ : Invertible (Fintype.card (Fin n) : K) :=
-    invertibleOfNonzero (by simpa using NeZero.ne (n : K))
-  exact (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
+  have hcard : (Fintype.card (Fin n) : K) ≠ 0 := by simpa using NeZero.ne (n : K)
+  exact (isInvariantForm_traceForm K n).equivDual
+    (traceForm_nondegenerate K (Fin n) (IsLeftCancelMulZero.mul_left_cancel_of_ne_zero hcard))
 
 /-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
 @[simp] theorem traceDualEquiv_apply [NeZero (n : K)]

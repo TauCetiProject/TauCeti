@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Parity
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
+import TauCeti.LinearAlgebra.TensorProduct.Symmetric
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -29,21 +30,15 @@ when `2 ≠ 0`. -/
 theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 : K)] :
     Disjoint (LinearMap.range (alternatingEmbeddingMap K n).toLinearMap)
       (LinearMap.range (symmetricEmbeddingMap K n).toLinearMap) := by
-  rw [disjoint_iff_inf_le]
-  intro x hx
-  obtain ⟨hxAlt, hxSymm⟩ := Submodule.mem_inf.mp hx
-  obtain ⟨u, hu⟩ := LinearMap.mem_range.mp hxAlt
-  obtain ⟨v, hv⟩ := LinearMap.mem_range.mp hxSymm
-  have ha := comm_alternatingEmbeddingMap_eq_neg u
-  have hs := comm_symmetricEmbeddingMap v
-  rw [Representation.IntertwiningMap.toLinearMap_apply] at hu hv
-  rw [hu] at ha
-  rw [hv] at hs
-  have hneg : -x = x := ha.symm.trans hs
-  have htwo : (2 : K) • x = 0 := by
-    rw [two_smul]
-    exact (congrArg (fun z => z + x) hneg.symm).trans (neg_add_cancel x)
-  exact (smul_eq_zero.mp htwo).resolve_left (NeZero.ne (2 : K))
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
+  refine (isCompl_symmetricTensors_antisymmetricTensors K
+    (LieAlgebra.SpecialLinear.sl (Fin n) K)).disjoint.symm.mono ?_ ?_
+  · intro x hx
+    obtain ⟨u, rfl⟩ := LinearMap.mem_range.mp hx
+    exact mem_antisymmetricTensors.mpr (comm_alternatingEmbeddingMap_eq_neg u)
+  · intro x hx
+    obtain ⟨u, rfl⟩ := LinearMap.mem_range.mp hx
+    exact mem_symmetricTensors.mpr (comm_symmetricEmbeddingMap u)
 
 /-- When the size is nonzero in the field, the alternating image has dimension `n ^ 2 - 1`. -/
 theorem finrank_range_alternatingEmbeddingMap :

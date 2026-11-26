@@ -260,25 +260,30 @@ theorem ker_traceLieCharacter : (traceLieCharacter R n).ker = slIdeal R n := by
 off-diagonal matrix unit and every difference of two diagonal matrix units. -/
 theorem _root_.LinearMap.surjective_to_sl_of_matrix_units {M : Type*} [AddCommGroup M] [Module R M]
     (f : M →ₗ[R] LieAlgebra.SpecialLinear.sl n R)
-    (off : ∀ i j : n, i ≠ j → ∀ c : R, ∃ t, (f t).val = Matrix.single i j c)
-    (diag : ∀ i j : n, i ≠ j → ∀ c : R, ∃ t,
-      (f t).val = Matrix.single i i c - Matrix.single j j c) :
+    (off : ∀ (i j : n) (hij : i ≠ j),
+      LieAlgebra.SpecialLinear.single i j hij 1 ∈ LinearMap.range f)
+    (diag : ∀ i j : n, i ≠ j →
+      LieAlgebra.SpecialLinear.singleSubSingle i j 1 ∈ LinearMap.range f) :
     Function.Surjective f := by
   intro X
   let N := LinearMap.range ((LieAlgebra.SpecialLinear.sl n R).toSubmodule.subtype.comp f)
   have hx : X.val ∈ N := by
     apply mem_of_trace_eq_zero_of_single_mem (N := N)
     · intro i j hij c
-      obtain ⟨t, ht⟩ := off i j hij c
-      exact LinearMap.mem_range.mpr ⟨t, by
-        simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
+      obtain ⟨t, ht⟩ := LinearMap.mem_range.mp (off i j hij)
+      refine LinearMap.mem_range.mpr ⟨c • t, ?_⟩
+      simp only [LinearMap.comp_apply, map_smul, ht, Submodule.subtype_apply,
+        LieAlgebra.SpecialLinear.val_single, Matrix.smul_single, smul_eq_mul,
+        mul_one]
     · intro i j c
       by_cases h : i = j
       · subst j
         simpa only [sub_self] using N.zero_mem
-      · obtain ⟨t, ht⟩ := diag i j h c
-        exact LinearMap.mem_range.mpr ⟨t, by
-          simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
+      · obtain ⟨t, ht⟩ := LinearMap.mem_range.mp (diag i j h)
+        refine LinearMap.mem_range.mpr ⟨c • t, ?_⟩
+        simp only [LinearMap.comp_apply, map_smul, ht, Submodule.subtype_apply,
+          LieAlgebra.SpecialLinear.val_singleSubSingle, smul_sub, Matrix.smul_single, smul_eq_mul,
+          mul_one]
     · exact LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
   obtain ⟨t, ht⟩ := LinearMap.mem_range.mp hx
   refine ⟨t, Subtype.ext ?_⟩

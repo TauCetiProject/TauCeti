@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.SymmetricProduct
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.Data.Fintype.Fin
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
@@ -74,7 +73,7 @@ theorem alternatingProductMap_comm_eq_neg
 
 end
 
-variable (K : Type*) [Field K] (n : ℕ) [NeZero (n : K)]
+variable (K : Type*) [CommRing K] (n : ℕ) [Invertible (Fintype.card (Fin n) : K)]
 
 local notation "V" => LieAlgebra.SpecialLinear.sl (Fin n) K
 
