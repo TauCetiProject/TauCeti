@@ -61,8 +61,9 @@ compatible with products and powers of theta functions.
 `New.IsAppellHumbert.thetaShift_add_eq_smul_of_mem`, `New.IsAppellHumbert.thetaShift_mem`,
 `New.IsAppellHumbert.thetaShift_mem_of_mem_dualLattice` and `New.IsAppellHumbert.mul_riemannPhase`
 (file `src/Lib/Shimura/ComplexTheta/AppellHumbertData.lean`) in grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The phases are
-restated for the Riemann form `E = Im H`, the negative of the source's. The description of the
+(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC). The phases are restated for the Riemann form `E = Im H`,
+the negative of the source's. The description of the
 twist through the data `TauCeti.AppellHumbertData.ofAddChar` of characters and the
 characterization `TauCeti.AppellHumbertData.riemannChar_eq_one_iff` are new here.
 
@@ -128,10 +129,9 @@ theorem ofAddChar_one : ofAddChar (1 : AddChar L Circle) = 0 :=
 
 /-- The unitary character `l ↦ exp (2πi E (a, l))` of `L`, for `a ∈ V` and the Riemann form `E` of
 `D`. -/
-noncomputable def riemannChar (a : V) : AddChar L Circle where
-  toFun l := Circle.exp (2 * π * D.riemannForm a l)
-  map_zero_eq_one' := by simp
-  map_add_eq_mul' l m := by simp [mul_add, Circle.exp_add]
+noncomputable def riemannChar (a : V) : AddChar L Circle :=
+  Real.fourierChar.compAddMonoidHom
+    ((D.riemannForm a).toAddMonoidHom.comp L.subtype.toAddMonoidHom)
 
 /-- The defining formula of `TauCeti.AppellHumbertData.riemannChar`. -/
 @[simp]
@@ -165,6 +165,7 @@ noncomputable def translate (a : V) : (V → ℂ) →ₗ[ℂ] V → ℂ where
     simp [mul_left_comm]
 
 /-- The defining formula of the twisted translation. -/
+@[simp]
 theorem translate_apply (a : V) (f : V → ℂ) (z : V) :
     D.translate a f z = exp (-(D.form a z + D.form a a / 2)) * f (z + a) := (rfl)
 

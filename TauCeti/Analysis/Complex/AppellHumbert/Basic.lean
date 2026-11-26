@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import TauCeti.Analysis.Calculus.Bilinear
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Instances.RealVectorSpace
@@ -80,19 +81,20 @@ lattice `ℤ + τℤ` with `Im τ ≠ 0` and an integer `k`, the level-`k` facto
 `riemannForm_self`, `riemannForm_swap`, `form_sub_form`), `TauCeti.AppellHumbertData.thetaSpace`
 (with `mem_thetaSpace_iff`, `differentiable_of_mem_thetaSpace`, `apply_add_of_mem_thetaSpace`),
 `TauCeti.AppellHumbertData.le_dualSubmodule`, `TauCeti.AppellHumbertData.exp_mul_mem_thetaSpace`,
-`ContinuousLinearMap.differentiable_apply_self_of_symm`, the sum, negative and multiples of data,
+the sum, negative and multiples of data,
 `TauCeti.AppellHumbertData.mul_mem_thetaSpace_add` and
 `TauCeti.AppellHumbertData.pow_mem_thetaSpace_nsmul` are adapted from `New.IsAppellHumbert`,
 `New.RealComplexForm.riemannForm`, `New.riemannForm_def`, `New.riemannForm_self`,
 `New.riemannForm_swap`, `New.IsAppellHumbert.sub_eq_riemannForm`,
 `New.RealComplexForm.thetaSpace`, `New.mem_thetaSpace_iff`, `New.differentiable_of_mem_thetaSpace`,
 `New.apply_add_of_mem_thetaSpace`, `New.IsAppellHumbert.le_dualLattice`,
-`New.IsAppellHumbert.exp_mul_mem_thetaSpace`, `New.differentiable_of_symm`,
+`New.IsAppellHumbert.exp_mul_mem_thetaSpace`,
 `New.IsAppellHumbert.add`, `New.IsAppellHumbert.neg`, `New.IsAppellHumbert.nsmul`,
 `New.thetaSpace.mul` and `New.thetaSpace.pow` (file
 `src/Lib/Shimura/ComplexTheta/AppellHumbertData.lean`) in grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The Riemann
-form here is the negative of the source's, so that `E = Im H`, and the semicharacter is a map
+(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC). The Riemann form here is the negative of the source's,
+so that `E = Im H`, and the semicharacter is a map
 `L → U(1)` rather than a function on `V` of modulus one on `L`. The bundled datum and its group
 structure, the cocycle law `TauCeti.AppellHumbertData.factor_add_eq_mul`, the integrality
 statement in `(-1) ^ E` form and the Hermitian constructor
@@ -111,23 +113,6 @@ public section
 
 open Complex
 open scoped Real ComplexConjugate
-
-namespace ContinuousLinearMap
-
-variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup F]
-  [NormedSpace ℂ F]
-
-/-- A symmetric continuous form `Q (u, v)` that is real linear in `u` and complex linear in `v` is
-complex bilinear, so its diagonal `z ↦ Q (z, z)` is holomorphic. -/
-theorem differentiable_apply_self_of_symm (Q : V →L[ℝ] V →L[ℂ] F)
-    (hQ : ∀ u v, Q u v = Q v u) : Differentiable ℂ fun z ↦ Q z z := by
-  have h_smul (c : ℂ) (u : V) : Q (c • u) = c • Q u := by
-    ext v
-    rw [hQ (c • u) v, map_smul, hQ v u, _root_.smul_apply]
-  exact ({ Q with map_smul' := h_smul } : V →L[ℂ] V →L[ℂ] F).differentiable.clm_apply
-    differentiable_id
-
-end ContinuousLinearMap
 
 namespace TauCeti
 
@@ -161,15 +146,19 @@ variable (D D' : AppellHumbertData L)
 
 /-- The **Riemann form** `E (u, v) = Im (B (v, u) - B (u, v)) / (2π)` of an Appell–Humbert datum,
 an alternating real bilinear form on `V`. For a Hermitian datum `B (u, z) = π H (z, u)` it is
-`Im H` (`TauCeti.AppellHumbertData.riemannForm_ofHermitian`). -/
+`Im H` (`TauCeti.AppellHumbertData.riemannForm_ofHermitian_apply`). -/
 noncomputable def riemannForm : LinearMap.BilinForm ℝ V :=
   LinearMap.mk₂ ℝ (fun u v ↦ (D.form v u - D.form u v).im / (2 * π))
-    (fun u u' v ↦ by simp only [map_add, _root_.add_apply]; simp; ring)
+    (fun u u' v ↦ by
+      simp only [map_add, _root_.add_apply, Complex.sub_im, Complex.add_im]
+      ring)
     (fun c u v ↦ by
       simp only [map_smul, _root_.smul_apply, ContinuousLinearMap.map_smul_of_tower]
       simp only [Complex.real_smul, ← mul_sub, Complex.im_ofReal_mul]
       ring)
-    (fun u v v' ↦ by simp only [map_add, _root_.add_apply]; simp; ring)
+    (fun u v v' ↦ by
+      simp only [map_add, _root_.add_apply, Complex.sub_im, Complex.add_im]
+      ring)
     (fun c u v ↦ by
       simp only [map_smul, _root_.smul_apply, ContinuousLinearMap.map_smul_of_tower]
       simp only [Complex.real_smul, ← mul_sub, Complex.im_ofReal_mul]
@@ -232,8 +221,8 @@ theorem circleExp_two_pi_mul_riemannForm_eq_one (l m : L) :
 theorem semichar_add_eq_neg_one_zpow_mul (l m : L) {n : ℤ} (hn : D.riemannForm l m = n) :
     (D.semichar (l + m) : ℂ) = (-1) ^ n * D.semichar l * D.semichar m := by
   rw [D.semichar_add_eq_circleExp_mul, hn]
-  simp only [Circle.coe_mul, Circle.coe_exp, ofReal_mul, ofReal_intCast, mul_comm (π : ℂ)]
-  rw [mul_assoc (n : ℂ), exp_intCast_mul, exp_pi_mul_I]
+  simp only [Circle.coe_mul, mul_comm π (n : ℝ), Circle.exp_intCast_mul, Circle.coe_zpow,
+    Circle.coe_exp, exp_pi_mul_I]
 
 /-! ### The factor of automorphy -/
 
@@ -390,46 +379,109 @@ noncomputable instance : AddCommGroup (AppellHumbertData L) :=
     (fun D D' ↦ Prod.ext (form_sub D D') (congrArg Additive.ofMul (semichar_sub D D')))
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
-/-- The factor of automorphy of a sum is the product of the factors. -/
-theorem factor_add (l : L) (z : V) : (D + D').factor l z = D.factor l z * D'.factor l z := by
-  simp only [factor_def, form_add, semichar_add, Pi.mul_apply, Circle.coe_mul,
-    _root_.add_apply, add_div]
-  rw [add_add_add_comm, exp_add]
-  ring
+/-- Evaluation of the factor of automorphy is a homomorphism from addition of data to
+multiplication of nonzero complex numbers. -/
+noncomputable def factorHom (l : L) (z : V) : AppellHumbertData L →+ Additive ℂˣ where
+  toFun D := Additive.ofMul (Units.mk0 (D.factor l z) (D.factor_ne_zero l z))
+  map_zero' := by
+    apply Additive.toMul.injective
+    apply Units.ext
+    simp [factor_def]
+  map_add' D D' := by
+    apply Additive.toMul.injective
+    apply Units.ext
+    -- Reduce the unit and additive wrappers before rewriting the complex-valued formula.
+    change (D + D').factor l z = D.factor l z * D'.factor l z
+    simp only [factor_def, form_add, semichar_add, Pi.mul_apply, Circle.coe_mul,
+      _root_.add_apply, add_div]
+    rw [add_add_add_comm, exp_add]
+    ring
 
-/-- The factor of automorphy of `n • D` is the `n`-th power of the factor of `D`. -/
+/-- The value of the factor homomorphism is the factor of automorphy. -/
+@[simp]
+theorem factorHom_apply (l : L) (z : V) (D : AppellHumbertData L) :
+    ((factorHom l z D).toMul : ℂ) = D.factor l z := (rfl)
+
+/-- The factor of automorphy of the zero datum is `1`. -/
+@[simp]
+theorem factor_zero (l : L) (z : V) : (0 : AppellHumbertData L).factor l z = 1 := by
+  simpa only [toMul_zero, Units.val_one, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_zero (factorHom l z))
+
+/-- The factor of automorphy of a sum is the product of the factors. -/
+@[simp]
+theorem factor_add (l : L) (z : V) : (D + D').factor l z = D.factor l z * D'.factor l z := by
+  simpa only [toMul_add, Units.val_mul, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_add (factorHom l z) D D')
+
+/-- The factor of automorphy of a negative datum is the inverse factor. -/
+@[simp]
+theorem factor_neg (l : L) (z : V) : (-D).factor l z = (D.factor l z)⁻¹ := by
+  simpa only [toMul_neg, Units.val_inv_eq_inv_val, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_neg (factorHom l z) D)
+
+/-- The factor of automorphy of a difference is the quotient of the factors. -/
+@[simp]
+theorem factor_sub (l : L) (z : V) : (D - D').factor l z = D.factor l z / D'.factor l z := by
+  simpa only [toMul_sub, Units.val_div_eq_div_val, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_sub (factorHom l z) D D')
+
+/-- Natural multiples of a datum give natural powers of its factor of automorphy. -/
+@[simp]
 theorem factor_nsmul (n : ℕ) (l : L) (z : V) : (n • D).factor l z = D.factor l z ^ n := by
-  simp only [factor_def, form_nsmul, semichar_nsmul, Pi.pow_apply, Circle.coe_pow,
-    _root_.smul_apply, nsmul_eq_mul, mul_pow, ← exp_natCast_mul]
-  congr 2
-  ring
+  simpa only [toMul_nsmul, Units.val_pow_eq_pow_val, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_nsmul (factorHom l z) n D)
+
+/-- Integer multiples of a datum give integer powers of its factor of automorphy. -/
+@[simp]
+theorem factor_zsmul (n : ℤ) (l : L) (z : V) : (n • D).factor l z = D.factor l z ^ n := by
+  simpa only [toMul_zsmul, Units.val_zpow_eq_zpow_val, factorHom_apply] using
+    congrArg (fun u : Additive ℂˣ ↦ (u.toMul : ℂ)) (map_zsmul (factorHom l z) n D)
+
+/-- The Riemann form as an additive homomorphism in the datum. -/
+noncomputable def riemannFormHom : AppellHumbertData L →+ LinearMap.BilinForm ℝ V where
+  toFun := riemannForm
+  map_zero' := by
+    ext u v
+    simp [riemannForm_apply]
+  map_add' D D' := by
+    ext u v
+    simp only [riemannForm_apply, form_add, _root_.add_apply, LinearMap.add_apply]
+    rw [add_sub_add_comm, Complex.add_im, add_div]
+
+/-- Evaluation of the Riemann form homomorphism. -/
+@[simp]
+theorem riemannFormHom_apply (D : AppellHumbertData L) : riemannFormHom D = D.riemannForm := (rfl)
 
 /-- The Riemann form of the zero datum is `0`. -/
 @[simp]
-theorem riemannForm_zero : (0 : AppellHumbertData L).riemannForm = 0 := by
-  ext u v
-  simp [riemannForm_apply]
+theorem riemannForm_zero : (0 : AppellHumbertData L).riemannForm = 0 :=
+  map_zero riemannFormHom
 
 /-- The Riemann form is additive in the datum. -/
 @[simp]
-theorem riemannForm_add : (D + D').riemannForm = D.riemannForm + D'.riemannForm := by
-  ext u v
-  simp only [riemannForm_apply, form_add, _root_.add_apply, LinearMap.add_apply]
-  rw [add_sub_add_comm, Complex.add_im, add_div]
+theorem riemannForm_add : (D + D').riemannForm = D.riemannForm + D'.riemannForm :=
+  map_add riemannFormHom D D'
 
-/-- The Riemann form of `-D` is `-E`. -/
+/-- The Riemann form of a negative datum is the negative Riemann form. -/
 @[simp]
-theorem riemannForm_neg : (-D).riemannForm = -D.riemannForm := by
-  ext u v
-  simp only [riemannForm_apply, form_neg, _root_.neg_apply, LinearMap.neg_apply]
-  rw [neg_sub_neg, ← neg_sub, Complex.neg_im, neg_div]
+theorem riemannForm_neg : (-D).riemannForm = -D.riemannForm :=
+  map_neg riemannFormHom D
 
-/-- The Riemann form of `n • D` is `n • E`. -/
+/-- The Riemann form of a difference is the difference of the Riemann forms. -/
 @[simp]
-theorem riemannForm_nsmul (n : ℕ) : (n • D).riemannForm = n • D.riemannForm := by
-  ext u v
-  simp only [riemannForm_apply, form_nsmul, _root_.smul_apply, LinearMap.smul_apply, ← smul_sub,
-    Complex.smul_im, smul_div_assoc]
+theorem riemannForm_sub : (D - D').riemannForm = D.riemannForm - D'.riemannForm :=
+  map_sub riemannFormHom D D'
+
+/-- The Riemann form of a natural multiple is the same multiple of the Riemann form. -/
+@[simp]
+theorem riemannForm_nsmul (n : ℕ) : (n • D).riemannForm = n • D.riemannForm :=
+  map_nsmul riemannFormHom n D
+
+/-- The Riemann form of an integer multiple is the same multiple of the Riemann form. -/
+@[simp]
+theorem riemannForm_zsmul (n : ℤ) : (n • D).riemannForm = n • D.riemannForm :=
+  map_zsmul riemannFormHom n D
 
 /-! ### Theta functions -/
 
@@ -508,7 +560,7 @@ first variable and conjugate linear in the second, whose imaginary part `E = Im 
 `L`, and of a semicharacter `α : L → U(1)` with `α (l + m) = (-1) ^ E (l, m) α (l) α (m)`. The form
 is `B (u, z) = π H (z, u)`, so the factor of automorphy is `α (l) exp (π H (z, l) + π H (l, l) / 2)`
 (`TauCeti.AppellHumbertData.factor_ofHermitian`) and the Riemann form is `Im H`
-(`TauCeti.AppellHumbertData.riemannForm_ofHermitian`). -/
+(`TauCeti.AppellHumbertData.riemannForm_ofHermitian_apply`). -/
 noncomputable def ofHermitian (H : V →L[ℂ] V →L⋆[ℂ] ℂ) (hH : ∀ u v, conj (H u v) = H v u)
     (h_int : ∀ l m : L, ∃ n : ℤ, (H l m).im = n) (α : L → Circle)
     (hα : ∀ (l m : L) (n : ℤ), (H l m).im = n → (α (l + m) : ℂ) = (-1) ^ n * α l * α m) :
@@ -521,14 +573,13 @@ noncomputable def ofHermitian (H : V →L[ℂ] V →L⋆[ℂ] ℂ) (hH : ∀ u v
     obtain ⟨n, hn⟩ := h_int l m
     have h_im : ((π : ℂ) * H l m - π * H m l).im / 2 = n * π := by
       rw [← hH l m, ← hn]
-      simp
+      simp only [Complex.sub_im, Complex.im_ofReal_mul, Complex.conj_im]
       ring
     ext1
     simp only [_root_.smul_apply, AddMonoidHom.coe_toRealLinearMap, AddMonoidHom.coe_ofClass,
-      ContinuousLinearMap.flip_apply, smul_eq_mul, h_im, Circle.coe_mul, Circle.coe_exp,
+      ContinuousLinearMap.flip_apply, smul_eq_mul, h_im, Circle.coe_mul,
       hα l m n hn]
-    push_cast
-    rw [mul_assoc (n : ℂ), exp_intCast_mul, exp_pi_mul_I]
+    simp only [Circle.exp_intCast_mul, Circle.coe_zpow, Circle.coe_exp, exp_pi_mul_I]
 
 variable (H : V →L[ℂ] V →L⋆[ℂ] ℂ) (hH : ∀ u v, conj (H u v) = H v u)
   (h_int : ∀ l m : L, ∃ n : ℤ, (H l m).im = n) (α : L → Circle)
@@ -544,15 +595,17 @@ theorem form_ofHermitian_apply (u z : V) :
 theorem semichar_ofHermitian : (ofHermitian H hH h_int α hα).semichar = α := (rfl)
 
 /-- The Riemann form of the datum of a Hermitian form `H` is `Im H`. -/
-theorem riemannForm_ofHermitian (u v : V) :
+@[simp]
+theorem riemannForm_ofHermitian_apply (u v : V) :
     (ofHermitian H hH h_int α hα).riemannForm u v = (H u v).im := by
   rw [riemannForm_apply, form_ofHermitian_apply, form_ofHermitian_apply, ← hH u v]
-  simp
+  simp only [Complex.sub_im, Complex.im_ofReal_mul, Complex.conj_im]
   field_simp
   ring
 
 /-- **The factor of automorphy of a Hermitian datum** is the classical
 `α (l) exp (π H (z, l) + π H (l, l) / 2)`. -/
+@[simp]
 theorem factor_ofHermitian (l : L) (z : V) :
     (ofHermitian H hH h_int α hα).factor l z = α l * exp (π * H z l + π * H l l / 2) := by
   rw [factor_def, form_ofHermitian_apply, form_ofHermitian_apply, semichar_ofHermitian]
