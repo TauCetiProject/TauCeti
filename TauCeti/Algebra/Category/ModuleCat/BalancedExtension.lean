@@ -182,6 +182,13 @@ theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat
     (functorCongr h).inv.app P (tmul f' s p) = tmul f s p :=
   (LinearEquiv.symm_apply_eq _).2 (congrRingHom_tmul h s p).symm
 
+/-- The component of `TauCeti.BalancedExtension.functorCongr h` is
+`TauCeti.BalancedExtension.congrRingHom h` on every element, not only on pure tensors. -/
+theorem functorCongr_hom_app_apply {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (x : BalancedExtension f P) :
+    (functorCongr h).hom.app P x = congrRingHom h x :=
+  (rfl)
+
 /-- Extension of scalars along a ring homomorphism and itself: the identity. -/
 @[simp]
 theorem functorCongr_refl (f : R →+* S) :
@@ -219,6 +226,22 @@ unfolds. -/
 theorem functorComp_inv_app_tmul (P : ModuleCat.{max v u₁} R) (t : T) (s : S) (p : P) :
     (functorComp f g).inv.app P (tmul g t (tmul f s p)) = tmul (g.comp f) (t * g s) p :=
   cancelBaseChange_tmul f g t s p
+
+/-- The component of `TauCeti.BalancedExtension.functorComp` is the inverse of
+`TauCeti.BalancedExtension.cancelBaseChange` on every element, not only on pure tensors. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_hom_app_apply (P : ModuleCat.{max v u₁} R)
+    (x : BalancedExtension (g.comp f) P) :
+    (functorComp f g).hom.app P x = (cancelBaseChange f g).symm x :=
+  (rfl)
+
+/-- The inverse component of `TauCeti.BalancedExtension.functorComp` is
+`TauCeti.BalancedExtension.cancelBaseChange` on every element, not only on pure tensors. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_inv_app_apply (P : ModuleCat.{max v u₁} R)
+    (x : BalancedExtension g (BalancedExtension f P)) :
+    (functorComp f g).inv.app P x = cancelBaseChange f g x :=
+  (rfl)
 
 end Composition
 
