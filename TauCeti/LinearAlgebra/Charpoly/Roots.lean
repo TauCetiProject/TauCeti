@@ -75,6 +75,7 @@ theorem finrank_maxGenEigenspace_baseChange_eq [DecidableEq L] (μ : L) :
 /-- **Algebraic multiplicities do not change under an extension of fields.** For an endomorphism
 `g` of a finite-dimensional space over a field `K`, the maximal generalized eigenspace of `g ⊗ L`
 at the image of `μ ∈ K` has the same dimension over `L` as that of `g` at `μ` over `K`. -/
+@[simp]
 theorem finrank_maxGenEigenspace_baseChange_algebraMap {K V : Type*} [Field K] [AddCommGroup V]
     [Module K V] [FiniteDimensional K V] [Algebra K L] (g : Module.End K V) (μ : K) :
     finrank L (Module.End.maxGenEigenspace (g.baseChange L) (algebraMap K L μ)) =

@@ -94,20 +94,6 @@ private theorem det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero (B :
   · rw [zero_pow hV, mul_self_eq_zero] at hdet
     rw [hdet, zero_pow hV, mul_zero]
 
-/-- The eigenvalues of a similitude with multiplier `c ≠ 0` of a perfect form, counted with
-algebraic multiplicity, are nonzero and stable under `x ↦ c / x`. -/
-private theorem map_div_roots_charpoly_eq_and_zero_notMem (B : BilinForm K V) [B.IsPerfPair]
-    (h : B.compl₁₂ φ φ = c • B) (hc : c ≠ 0) :
-    φ.charpoly.roots.map (c / ·) = φ.charpoly.roots ∧ (0 : K) ∉ φ.charpoly.roots := by
-  refine ⟨(LinearMap.roots_charpoly_eq_map_div_of_compl₁₂_eq_smul B h hc).symm, fun h0 ↦ ?_⟩
-  -- `0` is not an eigenvalue, since `det φ * det φ = c ^ finrank K V ≠ 0`.
-  have hdet0 : LinearMap.det φ = 0 := by
-    rw [LinearMap.det_eq_sign_charpoly_coeff, coeff_zero_eq_eval_zero, (mem_roots'.1 h0).2,
-      mul_zero]
-  exact pow_ne_zero _ hc <| by
-    rw [← LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul B (IsPerfPair.bijective_right B) h, hdet0,
-      zero_mul]
-
 /-- The determinant formula when the characteristic polynomial of `φ` splits. -/
 private theorem det_eq_neg_one_pow_mul_pow_of_splits (B : BilinForm K V) [B.IsPerfPair]
     (h : B.compl₁₂ φ φ = c • B) (hs : s * s = c) (hsplit : φ.charpoly.Splits) :
@@ -116,7 +102,8 @@ private theorem det_eq_neg_one_pow_mul_pow_of_splits (B : BilinForm K V) [B.IsPe
   rcases eq_or_ne c 0 with rfl | hc
   · obtain rfl : s = 0 := mul_self_eq_zero.1 hs
     exact det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero B h (Submodule.finrank_le _)
-  obtain ⟨hmap, h0⟩ := map_div_roots_charpoly_eq_and_zero_notMem B h hc
+  have hmap := (LinearMap.roots_charpoly_eq_map_div_of_compl₁₂_eq_smul B h hc).symm
+  have h0 := LinearMap.zero_notMem_roots_charpoly_of_compl₁₂_eq_smul B h hc
   rw [det_eq_prod_roots_charpoly_of_splits hsplit, LinearMap.finrank_maxGenEigenspace_eq,
     ← count_roots, ← φ.charpoly_natDegree, hsplit.natDegree_eq_card_roots]
   exact Multiset.prod_eq_neg_one_pow_count_mul_pow_card_of_map_div_eq hs hmap h0
@@ -128,7 +115,8 @@ private theorem even_finrank_sub_of_splits (B : BilinForm K V) [B.IsPerfPair]
     Even ((finrank K V : ℤ) - finrank K (φ.maxGenEigenspace s) -
       finrank K (φ.maxGenEigenspace (-s))) := by
   classical
-  obtain ⟨hmap, h0⟩ := map_div_roots_charpoly_eq_and_zero_notMem B h hc
+  have hmap := (LinearMap.roots_charpoly_eq_map_div_of_compl₁₂_eq_smul B h hc).symm
+  have h0 := LinearMap.zero_notMem_roots_charpoly_of_compl₁₂_eq_smul B h hc
   rw [LinearMap.finrank_maxGenEigenspace_eq, LinearMap.finrank_maxGenEigenspace_eq, ← count_roots,
     ← count_roots, ← φ.charpoly_natDegree, hsplit.natDegree_eq_card_roots]
   exact Multiset.even_card_sub_count_sub_count_of_map_div_eq h2 hs hmap h0
