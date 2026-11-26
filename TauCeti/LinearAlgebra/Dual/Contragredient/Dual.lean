@@ -312,7 +312,7 @@ theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
 
 /-- `toDualLinearEquiv` transports the range of `ContragredientDual.map σ f` to the range of
 `f.dualMap`. -/
-theorem map_range_map (f : M →ₗ[R] N) :
+theorem map_toDualLinearEquiv_range_map (f : M →ₗ[R] N) :
     haveI := RingHomInvPair.of_ringEquiv σ
     haveI := RingHomInvPair.of_ringEquiv_symm σ
     (LinearMap.range (map σ f)).map (toDualLinearEquiv σ M).toLinearMap =
@@ -323,7 +323,7 @@ theorem map_range_map (f : M →ₗ[R] N) :
 
 /-- `ofDualOppositeLinearEquiv` transports the range of `f.lcomp Rᵐᵒᵖ R` to the range of
 `ContragredientDual.map σ f`. -/
-theorem map_range_lcomp (f : M →ₗ[R] N) :
+theorem map_ofDualOppositeLinearEquiv_range_lcomp (f : M →ₗ[R] N) :
     let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
     haveI := RingHomInvPair.of_ringEquiv ρ
     haveI := RingHomInvPair.of_ringEquiv_symm ρ

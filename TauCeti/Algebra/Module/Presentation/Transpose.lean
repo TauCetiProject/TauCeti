@@ -33,7 +33,7 @@ cokernel
 
 is the **transpose** attached to the presentation, using the standard quotient API (`Submodule.mkQ`,
 `Submodule.liftQ`, `Submodule.quot_hom_ext`) and identified `σ`-semilinearly with
-`TauCeti.AuslanderReitenTranspose f` via `PresentationTranspose.toAuslanderReitenTranspose`. Note
+`TauCeti.AuslanderReitenTranspose f` via `PresentationTranspose.auslanderReitenTransposeEquiv`. Note
 that Dasgupta and Kakde write the presentation with indices swapped (`P₀ → P₁ → M`).
 
 The transpose belongs to the presentation map `f`, not to the isomorphism class of `M` alone:
@@ -57,7 +57,7 @@ Dasgupta–Kakde equation (171)).
 
 * `TauCeti.PresentationTranspose σ f`: the cokernel `coker(f^* : P₀^* → P₁^*)` as the `S`-module
   quotient `ContragredientDual σ P₁ ⧸ LinearMap.range (ContragredientDual.map σ f)`.
-* `TauCeti.PresentationTranspose.toAuslanderReitenTranspose`: the `σ`-semilinear identification
+* `TauCeti.PresentationTranspose.auslanderReitenTransposeEquiv`: the `σ`-semilinear identification
   with `TauCeti.AuslanderReitenTranspose f`, constructed via
   `AuslanderReitenTranspose.quotientEquiv`.
 * `TauCeti.PresentationTranspose.congr`: functoriality of the transpose under an isomorphism of
@@ -127,7 +127,7 @@ private def arOppositeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
   (AuslanderReitenTranspose.quotientEquiv f
     (LinearMap.range (ContragredientDual.map σ f))
     (ContragredientDual.ofDualOppositeLinearEquiv σ P₁)
-    (ContragredientDual.map_range_lcomp f)).symm
+    (ContragredientDual.map_ofDualOppositeLinearEquiv_range_lcomp f)).symm
 
 private theorem arOppositeEquiv_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀)
     (φ : ContragredientDual σ P₁) :
@@ -139,7 +139,7 @@ private theorem arOppositeEquiv_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀)
 
 /-- `PresentationTranspose σ f` is `σ`-semilinearly equivalent to `AuslanderReitenTranspose f`,
 constructed from `AuslanderReitenTranspose.quotientEquiv`. -/
-def toAuslanderReitenTranspose (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
+def auslanderReitenTransposeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
     haveI := RingHomInvPair.of_ringEquiv σ
     haveI := RingHomInvPair.of_ringEquiv_symm σ
     PresentationTranspose σ f ≃ₛₗ[(σ : S →+* R)] AuslanderReitenTranspose f :=
@@ -154,32 +154,32 @@ def toAuslanderReitenTranspose (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
       simp [q, RingEquiv.symm_trans_apply, RingEquiv.toOpposite_apply,
         ← AuslanderReitenTranspose.op_algebraMap_smul (k := R)] }
 
-private theorem toAuslanderReitenTranspose_apply {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
+private theorem auslanderReitenTransposeEquiv_apply {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
     (x : PresentationTranspose σ f) :
-    toAuslanderReitenTranspose σ f x = arOppositeEquiv σ f x :=
+    auslanderReitenTransposeEquiv σ f x = arOppositeEquiv σ f x :=
   (rfl)
 
-/-- `toAuslanderReitenTranspose` sends the quotient class of `φ` to
+/-- `auslanderReitenTransposeEquiv` sends the quotient class of `φ` to
 `AuslanderReitenTranspose.mk f φ.toDual`. -/
 @[simp]
-theorem toAuslanderReitenTranspose_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
+theorem auslanderReitenTransposeEquiv_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
     (φ : ContragredientDual σ P₁) :
-    toAuslanderReitenTranspose σ f (Submodule.Quotient.mk φ) =
+    auslanderReitenTransposeEquiv σ f (Submodule.Quotient.mk φ) =
       AuslanderReitenTranspose.mk f φ.toDual := by
-  rw [toAuslanderReitenTranspose_apply, arOppositeEquiv_mk]
+  rw [auslanderReitenTransposeEquiv_apply, arOppositeEquiv_mk]
 
-/-- The inverse of `toAuslanderReitenTranspose` sends `AuslanderReitenTranspose.mk f φ` to the
+/-- The inverse of `auslanderReitenTransposeEquiv` sends `AuslanderReitenTranspose.mk f φ` to the
 quotient class of `ContragredientDual.ofDual φ`. -/
 @[simp]
-theorem toAuslanderReitenTranspose_symm_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
+theorem auslanderReitenTransposeEquiv_symm_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
     (φ : Module.Dual R P₁) :
     haveI := RingHomInvPair.of_ringEquiv σ
     haveI := RingHomInvPair.of_ringEquiv_symm σ
-    (toAuslanderReitenTranspose σ f).symm (AuslanderReitenTranspose.mk f φ) =
+    (auslanderReitenTransposeEquiv σ f).symm (AuslanderReitenTranspose.mk f φ) =
       Submodule.Quotient.mk (ContragredientDual.ofDual φ) := by
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
-  apply (toAuslanderReitenTranspose σ f).injective
+  apply (auslanderReitenTransposeEquiv σ f).injective
   simp
 
 /-- An isomorphism of presentation arrows `(e₁, e₀)` with `e₀ ∘ f = g ∘ e₁` induces an `S`-linear
@@ -190,9 +190,9 @@ def congr (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
     PresentationTranspose σ f ≃ₗ[S] PresentationTranspose σ g :=
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
-  ((toAuslanderReitenTranspose σ f).trans
+  ((auslanderReitenTransposeEquiv σ f).trans
     ((AuslanderReitenTranspose.linearEquiv e₀ e₁ hfg).restrictScalars R)).trans
-    (toAuslanderReitenTranspose σ g).symm
+    (auslanderReitenTransposeEquiv σ g).symm
 
 @[simp]
 theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
@@ -200,9 +200,9 @@ theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] 
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) (φ : ContragredientDual σ P₁) :
     congr σ e₁ e₀ hfg (Submodule.Quotient.mk φ) =
       Submodule.Quotient.mk (ContragredientDual.congr σ e₁.symm φ) := by
-  simp only [congr, LinearEquiv.trans_apply, toAuslanderReitenTranspose_mk,
+  simp only [congr, LinearEquiv.trans_apply, auslanderReitenTransposeEquiv_mk,
     LinearEquiv.restrictScalars_apply, AuslanderReitenTranspose.linearEquiv_mk,
-    toAuslanderReitenTranspose_symm_mk]
+    auslanderReitenTransposeEquiv_symm_mk]
   refine congrArg Submodule.Quotient.mk ?_
   ext x
   simp [LinearMap.lcomp_apply]
@@ -222,8 +222,8 @@ instance subsingleton_id (σ : S ≃+* R) :
     Subsingleton (PresentationTranspose σ (LinearMap.id : P₁ →ₗ[R] P₁)) :=
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
-  (toAuslanderReitenTranspose σ (LinearMap.id : P₁ →ₗ[R] P₁)).toEquiv.subsingleton_congr.2
-    (AuslanderReitenTranspose.subsingleton_of_comp_eq_id _ (LinearMap.id_comp LinearMap.id))
+  (auslanderReitenTransposeEquiv σ (LinearMap.id : P₁ →ₗ[R] P₁)).toEquiv.subsingleton_congr.2
+    inferInstance
 
 /-- The presentation `fst : R × R →ₗ[R] R`, `(a, b) ↦ a`, of the zero module has transpose
 isomorphic to `S` via `[φ] ↦ σ⁻¹(φ (0, 1))`. This exhibits the dependence of the transpose on the
@@ -231,7 +231,7 @@ chosen presentation. -/
 def fstEquiv (σ : S ≃+* R) : PresentationTranspose σ (LinearMap.fst R R R) ≃ₗ[S] S :=
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
-  ((toAuslanderReitenTranspose σ (LinearMap.fst R R R)).trans
+  ((auslanderReitenTransposeEquiv σ (LinearMap.fst R R R)).trans
     ((AuslanderReitenTranspose.fstEquiv R R).restrictScalars R)).trans
     ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)
 
@@ -261,7 +261,8 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
       ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)
   have he : (LinearMap.range (ContragredientDual.map σ (LinearMap.mulLeft R a))).map
       eval₁.toLinearMap = Ideal.span {σ.symm a} := by
-    have hdual := ContragredientDual.map_range_map (σ := σ) (LinearMap.mulLeft R a)
+    have hdual :=
+      ContragredientDual.map_toDualLinearEquiv_range_map (σ := σ) (LinearMap.mulLeft R a)
     have hspan : (LinearMap.range (LinearMap.mulLeft R a).dualMap).map
         ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm).toLinearMap =
         Ideal.span {σ.symm a} := by
@@ -399,11 +400,8 @@ theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Mat
       (LinearMap.range (ContragredientDual.map σ (Matrix.toLin' A))).mkQ :=
     LinearMap.exact_iff.2 (Submodule.ker_mkQ _)
   have hex₁ : Function.Exact (Aᵀ.map σ.symm).mulVecLin q := by
-    dsimp only [q]
-    rw [← Matrix.toLin'_apply', ← ContragredientDual.toMatrix_map_toLin' σ A,
-      ← d₀.equivFun.precomp_exact_iff_exact,
-      LinearMap.toLin'_toMatrix_comp_equivFun, LinearEquiv.conj_exact_iff_exact]
-    exact hex₀
+    rw [← ContragredientDual.toMatrix_map_toLin' σ A]
+    exact hex₀.toMatrix_mulVecLin d₀ d₁
   rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hq 0, Module.finrank_fin_fun, Nat.sub_zero,
     hex₁.linearMap_ker_eq]
 
@@ -441,11 +439,8 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
     (LinearMap.toLin'_toMatrix_comp_equivFun b₁ b₀ f).symm
   let π' : (Fin (t + s) → R) →ₗ[R] M := π ∘ₗ b₀.equivFun.symm.toLinearMap
   have hπ' : Function.Surjective π' := hπ.comp b₀.equivFun.symm.surjective
-  have hex : Function.Exact A.mulVecLin π' := by
-    dsimp only [π']
-    rw [← Matrix.toLin'_apply', ← b₁.equivFun.precomp_exact_iff_exact,
-      LinearMap.toLin'_toMatrix_comp_equivFun, LinearEquiv.conj_exact_iff_exact]
-    exact LinearMap.exact_iff.2 hf.symm
+  have hex : Function.Exact A.mulVecLin π' :=
+    (LinearMap.exact_iff.2 hf.symm).toMatrix_mulVecLin b₁ b₀
   rw [TauCeti.fittingIdeal_congr (congr σ b₁.equivFun b₀.equivFun hcomm) 0,
     fittingIdeal_toLin'_eq_map_minorsIdeal, TauCeti.fittingIdeal_eq_minorsIdeal_ker hπ' s,
     Module.finrank_fin_fun, Nat.add_sub_cancel, hex.linearMap_ker_eq]
@@ -466,7 +461,7 @@ theorem fittingIdeal_eq_of_projective (σ : S ≃+* R) {t s : ℕ}
   have : Module.Finite R (AuslanderReitenTranspose f) := Module.Finite.trans Rᵐᵒᵖ _
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
-  rw [TauCeti.fittingIdeal_eq_map_of_semilinearEquiv (toAuslanderReitenTranspose σ f).symm 0]
+  rw [TauCeti.fittingIdeal_eq_map_of_semilinearEquiv (auslanderReitenTransposeEquiv σ f).symm 0]
   refine congrArg (Ideal.map (σ.symm : R →+* S)) ?_
   -- Check equality of ideals of `R` after localizing at every maximal ideal `𝔪`, where the
   -- finitely generated projective modules `P₁` and `P₀` become free of ranks `t` and `t + s`.
@@ -489,7 +484,7 @@ theorem fittingIdeal_eq_of_projective (σ : S ≃+* R) {t s : ℕ}
   let eT : T ⊗[R] AuslanderReitenTranspose f ≃ₗ[T]
       PresentationTranspose (RingEquiv.refl T) (f.baseChange T) :=
     (AuslanderReitenTranspose.baseChangeEquiv T f).trans
-      (toAuslanderReitenTranspose (RingEquiv.refl T) (f.baseChange T)).symm
+      (auslanderReitenTransposeEquiv (RingEquiv.refl T) (f.baseChange T)).symm
   have hfree := fittingIdeal_eq_of_free (RingEquiv.refl T) (f.baseChange T) (π.baseChange T)
     hsurj hexact hrank₁ hrank₀
   rw [RingEquiv.symm_refl, ← Ideal.map_coe, RingEquiv.toRingHom_refl, Ideal.map_id] at hfree

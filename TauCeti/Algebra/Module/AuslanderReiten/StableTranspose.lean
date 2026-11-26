@@ -94,15 +94,6 @@ theorem nonempty_linearEquiv_prod_dual {f : P₁ →ₗ[A] P₀} {π : P₀ →�
     Nonempty ((AuslanderReitenTranspose f × Module.Dual A (P₀ × Q₁)) ≃ₗ[Aᵐᵒᵖ]
       (AuslanderReitenTranspose g × Module.Dual A (P₁ × Q₀))) := by
   obtain ⟨e₀, e₁, he⟩ := exists_linearEquiv_comp_prodMap_comp_fst_eq hf hπ hg hρ
-  -- The transposes of the identity arrows vanish.
-  have hTrQ₀ : Subsingleton (AuslanderReitenTranspose (LinearMap.id : Q₀ →ₗ[A] Q₀)) :=
-    subsingleton_of_comp_eq_id (LinearMap.id : Q₀ →ₗ[A] Q₀) (LinearMap.id_comp _)
-  have hTrP₀ : Subsingleton (AuslanderReitenTranspose (LinearMap.id : P₀ →ₗ[A] P₀)) :=
-    subsingleton_of_comp_eq_id (LinearMap.id : P₀ →ₗ[A] P₀) (LinearMap.id_comp _)
-  let hUniqueTrQ₀ : Unique (AuslanderReitenTranspose (LinearMap.id : Q₀ →ₗ[A] Q₀)) :=
-    uniqueOfSubsingleton 0
-  let hUniqueTrP₀ : Unique (AuslanderReitenTranspose (LinearMap.id : P₀ →ₗ[A] P₀)) :=
-    uniqueOfSubsingleton 0
   -- The enlarged first presentation `(f ⊕ id) ∘ fst` has transpose `Tr f ⊕ Hom(P₀ × Q₁, A)`.
   let eP : AuslanderReitenTranspose (f.prodMap (LinearMap.id : Q₀ →ₗ[A] Q₀) ∘ₗ
       fst A (P₁ × Q₀) (P₀ × Q₁)) ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose f × Module.Dual A (P₀ × Q₁) :=

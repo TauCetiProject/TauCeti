@@ -14,6 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
 -- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
 public import Mathlib.LinearAlgebra.Determinant
+-- `Function.Exact` occurs in `Function.Exact.toMatrix_mulVecLin`.
+public import Mathlib.Algebra.Exact.Basic
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
@@ -56,8 +58,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   matrix of `φ` applied to `x`.
 * `LinearMap.sum_toMatrix_mulVec_smul`: the vector whose coordinates are the matrix of `φ` applied
   to `x` is `φ (∑ j, x j • v j)`.
-* `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
-  the coordinate equivalences of two bases intertwine a linear map with its matrix.
+* `LinearMap.toLin'_toMatrix_comp_equivFun`, `LinearMap.equivFun_symm_comp_toLin'_toMatrix`, and
+  `Function.Exact.toMatrix_mulVecLin`: the coordinate equivalences of two bases intertwine a linear
+  map with its matrix, and transport exactness to the matrix map.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
@@ -290,6 +293,18 @@ theorem equivFun_symm_comp_toLin'_toMatrix {R V M ι κ : Type*} [CommSemiring R
   refine LinearMap.ext fun x ↦ b.equivFun.injective ?_
   have h := LinearMap.congr_fun (toLin'_toMatrix_comp_equivFun v b φ) (v.equivFun.symm x)
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h ⊢
+  exact h
+
+/-- Exactness of `f` and `g` transports along bases `b₁` and `b₀` to exactness of
+`(LinearMap.toMatrix b₁ b₀ f).mulVecLin` and `g ∘ₗ b₀.equivFun.symm.toLinearMap`. -/
+theorem _root_.Function.Exact.toMatrix_mulVecLin {R V M N ι κ : Type*} [CommSemiring R]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [Fintype κ] [DecidableEq κ] [Finite ι]
+    {f : V →ₗ[R] M} {g : M →ₗ[R] N} (b₁ : Module.Basis κ R V) (b₀ : Module.Basis ι R M)
+    (h : Function.Exact f g) :
+    Function.Exact (toMatrix b₁ b₀ f).mulVecLin (g ∘ₗ b₀.equivFun.symm.toLinearMap) := by
+  rw [← Matrix.toLin'_apply', ← b₁.equivFun.precomp_exact_iff_exact,
+    toLin'_toMatrix_comp_equivFun, LinearEquiv.conj_exact_iff_exact]
   exact h
 
 /-- **Invertibility of a representing matrix.** For bases `v` and `b` indexed by the same finite
