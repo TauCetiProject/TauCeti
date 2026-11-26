@@ -87,15 +87,14 @@ local notation "SZ" => _root_.SymmetricAlgebra K (center K L)
 
 /- The centre of `U(L)` and the centre of `U(z(L) × [L, L])`, through the splitting
 `L ≃ z(L) × [L, L]`. -/
-local notation "ZE" => Subalgebra.centerCongr (mapEquiv K (LieEquiv.symm
-  (LieIdeal.prodEquivOfIsCompl (center K L) (derivedSeries K L 1)
-    (isCompl_center_derivedSeries K L))))
+local notation "ZE" => Subalgebra.centerCongr (mapEquiv K (centerDerivedEquiv K L))
 
 /-- The centre comparison of `L` is that of `z(L) × [L, L]` through the splitting. -/
 private theorem reductiveCenterEquiv_eq_trans :
     reductiveCenterEquiv K L =
       (ZE).trans (productCenterEquiv K (center K L) (derivedSeries K L 1)) :=
-  (reductiveCenterEquiv_def K L).trans (centerEquivOfIsCompl_def _ _ _ _)
+  (reductiveCenterEquiv_def K L).trans <| by
+    rw [centerDerivedEquiv_def]; exact centerEquivOfIsCompl_def _ _ _ _
 
 /-! ### Central characters -/
 
