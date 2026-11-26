@@ -280,12 +280,15 @@ theorem twistedTeichmuller_add (hadd : ∀ x y, Q.eval (x + y) = Q.eval x + Q.ev
 
 /-- For `Q = X ^ (p ^ f)` the `Q`-Teichmüller lift is the constant series `C a`. -/
 @[simp]
-theorem twistedTeichmuller_X_pow (hf : f ≠ 0) (a : S) :
+theorem twistedTeichmuller_X_pow (a : S) :
     twistedTeichmuller p f (Polynomial.X ^ p ^ f) a = C a := by
-  have h := eq_twistedTeichmuller_of_eval (p := p) hf (Q := Polynomial.X ^ p ^ f)
-    (by rw [Polynomial.map_pow, Polynomial.map_X]) (L := C) (fun a : S ↦ constantCoeff_C a)
-    (fun a : S ↦ by rw [Polynomial.eval_pow, Polynomial.eval_X, map_pow])
-  exact congrFun h.symm a
+  have heval : ((Polynomial.X ^ p ^ f : Polynomial S⟦X⟧).eval ·) = (· ^ p ^ f) := by
+    funext x
+    rw [Polynomial.eval_pow, Polynomial.eval_X]
+  ext n
+  rw [twistedTeichmuller, coeff_mk, heval, pow_iterate]
+  dsimp only
+  rw [← map_pow, ← pow_mul, iterateFrobeniusEquiv_symm_pow]
 
 end Lift
 
