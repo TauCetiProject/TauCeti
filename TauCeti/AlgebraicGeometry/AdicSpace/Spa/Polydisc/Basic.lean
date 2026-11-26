@@ -76,7 +76,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.classicalPoint_eq_normClassicalPoint`,
   `TauCeti.ValuationSpectrum.normClassicalPoint_mem_basicOpen_iff`,
   `TauCeti.ValuationSpectrum.normClassicalPoint_mem_rationalSubset_iff`,
-  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_classicalPoints`, and
+  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_classicalPoints`,
+  `TauCeti.ValuationSpectrum.range_normClassicalPoint_eq_classicalPoints`, and
   `TauCeti.ValuationSpectrum.range_classicalPoint_eq_classicalPoints`: every `x : Spa (K, K°)`
   yields `normClassicalPoint`, its basic-open and rational-subset membership reduces to norm
   inequalities on evaluations, and it sweeps out `classicalPoints k K`.
@@ -686,6 +687,7 @@ theorem normClassicalPoint_def (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a 
   (rfl)
 
 /-- Every classical point attached to any `x : Spa (K, K°)` equals `normClassicalPoint`. -/
+@[simp]
 theorem classicalPoint_eq_normClassicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
     classicalPoint x a ha = normClassicalPoint a ha := by
@@ -751,6 +753,13 @@ theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrame
       ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
   simp only [classicalPoints_def, Set.mem_range, Subtype.exists]
 
+/-- The range of `normClassicalPoint` is `classicalPoints k K`. -/
+@[simp]
+theorem range_normClassicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K] :
+    Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+        normClassicalPoint a.val a.property) = classicalPoints k K :=
+  (rfl)
+
 /-- Every `normClassicalPoint a ha` lies in `classicalPoints k K`. -/
 @[simp]
 theorem normClassicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
@@ -759,22 +768,17 @@ theorem normClassicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
   mem_classicalPoints_iff.mpr ⟨a, ha, rfl⟩
 
 /-- Every `classicalPoint x a ha` lies in `classicalPoints k K`. -/
-@[simp]
 theorem classicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
     classicalPoint x a ha ∈ classicalPoints k K := by
-  rw [classicalPoint_eq_normClassicalPoint]
-  exact normClassicalPoint_mem_classicalPoints a ha
+  simp
 
 /-- Every `x : Spa (K, K°)` sweeps out the same locus `classicalPoints k K`. -/
-@[simp]
 theorem range_classicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) :
     Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.val a.property) = classicalPoints k K := by
-  ext v
-  simp only [Set.mem_range, Subtype.exists, classicalPoint_eq_normClassicalPoint,
-    mem_classicalPoints_iff]
+  simp
 
 end NormedField
 

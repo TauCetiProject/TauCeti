@@ -341,6 +341,12 @@ theorem powerBoundedSubringQuotientEquivResidueField_symm_residue (x : powerBoun
   (powerBoundedSubringQuotientEquivResidueField (K := K)).symm_apply_eq.mpr
     (powerBoundedSubringQuotientEquivResidueField_mk x).symm
 
+/-- The residue field `IsLocalRing.ResidueField K°` is infinite whenever `K° ⧸ K°°` is. -/
+instance infinite_residueField_powerBoundedSubring
+    [Infinite (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K)] :
+    Infinite (IsLocalRing.ResidueField (powerBoundedSubring K)) :=
+  powerBoundedSubringQuotientEquivResidueField.toEquiv.infinite_iff.mp ‹_›
+
 /-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
   maximalIdeal_powerBoundedSubring (K := K) ▸ maximalIdeal.isMaximal (powerBoundedSubring K)

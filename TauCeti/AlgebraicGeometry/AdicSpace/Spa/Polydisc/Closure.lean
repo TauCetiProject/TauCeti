@@ -235,15 +235,20 @@ theorem unitGaussPoint_mem_of_isClosed_of_classicalPoints_subset
   hZ.closure_subset_iff.mpr h unitGaussPoint_mem_closure_classicalPoints
 
 /-- **Gauss-point closure (existential form).** Over a complete ultrametric normed field `K` whose
-residue field `IsLocalRing.ResidueField K°` is infinite, the unit Gauss point exists on
-`closedPolydisc n K` and lies in the closure of `classicalPoints n K`. -/
+residue field `K° ⧸ K°°` is infinite, the unit Gauss point exists on `closedPolydisc n K` and
+lies in the closure of the evaluation points `classicalPoint x` at tuples of power-bounded
+elements of `K`. -/
 theorem gaussPoint_mem_closure_rationalPoints
     (K : Type*) [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-    [Infinite (IsLocalRing.ResidueField (powerBoundedSubring K))] (n : ℕ) :
+    [Infinite (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K)]
+    (n : ℕ) (x : spa (powerBoundedSubring K)) :
     ∃ η : closedPolydisc n K,
-      IsUnitGaussPoint K n η ∧ η ∈ closure (classicalPoints n K) :=
-  ⟨unitGaussPoint n K, isUnitGaussPoint_unitGaussPoint n K,
-    unitGaussPoint_mem_closure_classicalPoints⟩
+      IsUnitGaussPoint K n η ∧
+      η ∈ closure (Set.range fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property) :=
+  ⟨unitGaussPoint n K, isUnitGaussPoint_unitGaussPoint n K, by
+    rw [range_classicalPoint_eq_classicalPoints]
+    exact unitGaussPoint_mem_closure_classicalPoints⟩
 
 /-- **Chartwise Gauss-point closure.** If `f : closedPolydisc n K → X` is any continuous map (for
 instance a polydisc affinoid chart into a rigid space) and `Z ⊆ X` is a closed subset containing
