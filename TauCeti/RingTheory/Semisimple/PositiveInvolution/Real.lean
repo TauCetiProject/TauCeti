@@ -24,15 +24,15 @@ The involution is positive, `Trd(x x*) > 0` for every nonzero `x ∈ B`, exactly
 extension is positive on `B_ℝ`: `Trd_ℝ(v v*) > 0` for every nonzero `v ∈ B_ℝ`
 (`TauCeti.PositiveInvolution.iff_real`). Both conditions are positive definiteness of a quadratic
 form, `x ↦ Trd(x x*)` on `B` and its real extension on `B_ℝ`
-(`TauCeti.Algebra.semisimpleReducedTraceForm_baseChange_apply`), and positive definiteness of a
+(`TauCeti.Algebra.semisimpleReducedTraceStarForm_baseChange_apply`), and positive definiteness of a
 rational form is preserved and reflected by extension of scalars to `ℝ`
 (`LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`). The form need not be symmetric.
 
 ## Main declarations
 
-* `TauCeti.Algebra.semisimpleReducedTraceForm`: the `ℚ`-bilinear form `(x, y) ↦ Trd(x y*)`.
+* `TauCeti.Algebra.semisimpleReducedTraceStarForm`: the `ℚ`-bilinear form `(x, y) ↦ Trd(x y*)`.
 * `TauCeti.Algebra.semisimpleReducedTraceReal`: the real extension `Trd_ℝ : B_ℝ →ₗ[ℝ] ℝ`.
-* `TauCeti.Algebra.semisimpleReducedTraceForm_baseChange_apply`: the real extension of the form
+* `TauCeti.Algebra.semisimpleReducedTraceStarForm_baseChange_apply`: the real extension of the form
   is `(v, w) ↦ Trd_ℝ(v w*)`.
 * `TauCeti.PositiveInvolution.iff_real`: positivity of the involution is positivity of its real
   extension.
@@ -68,7 +68,7 @@ theorem semisimpleReducedTraceReal_tmul (r : ℝ) (x : B) :
 variable (B) [StarRing B]
 
 /-- The `ℚ`-bilinear trace form `(x, y) ↦ Trd(x y*)` of an involution. -/
-noncomputable def semisimpleReducedTraceForm : LinearMap.BilinForm ℚ B :=
+noncomputable def semisimpleReducedTraceStarForm : LinearMap.BilinForm ℚ B :=
   LinearMap.mk₂ ℚ (fun x y ↦ semisimpleReducedTrace ℚ B (x * star y))
     (fun x x' y ↦ by rw [add_mul, map_add])
     (fun c x y ↦ by rw [smul_mul_assoc, map_smul])
@@ -78,14 +78,15 @@ noncomputable def semisimpleReducedTraceForm : LinearMap.BilinForm ℚ B :=
 variable {B}
 
 @[simp]
-theorem semisimpleReducedTraceForm_apply (x y : B) :
-    semisimpleReducedTraceForm B x y = semisimpleReducedTrace ℚ B (x * star y) :=
+theorem semisimpleReducedTraceStarForm_apply (x y : B) :
+    semisimpleReducedTraceStarForm B x y = semisimpleReducedTrace ℚ B (x * star y) :=
   (rfl)
 
 /-- The real extension of the trace form is `(v, w) ↦ Trd_ℝ(v w*)`, for the real extension of the
 involution. -/
-theorem semisimpleReducedTraceForm_baseChange_apply (v w : ℝ ⊗[ℚ] B) :
-    (semisimpleReducedTraceForm B).baseChange ℝ v w =
+@[simp]
+theorem semisimpleReducedTraceStarForm_baseChange_apply (v w : ℝ ⊗[ℚ] B) :
+    (semisimpleReducedTraceStarForm B).baseChange ℝ v w =
       semisimpleReducedTraceReal B (v * star w) := by
   induction v using TensorProduct.inductionOn with
   | add v v' hv hv' => simp [hv, hv', add_mul]
@@ -107,10 +108,10 @@ positive on `ℝ ⊗[ℚ] B`: `Trd_ℝ(v v*) > 0` for every nonzero `v`. -/
 theorem iff_real :
     (∀ x : B, x ≠ 0 → 0 < Algebra.semisimpleReducedTrace ℚ B (x * star x)) ↔
       ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 → 0 < Algebra.semisimpleReducedTraceReal B (v * star v) := by
-  have h := (Algebra.semisimpleReducedTraceForm B).posDef_toQuadraticMap_baseChange_iff (K := ℝ)
+  have h := (Algebra.semisimpleReducedTraceStarForm B).posDef_toQuadraticMap_baseChange_iff (K := ℝ)
   simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply,
-    Algebra.semisimpleReducedTraceForm_baseChange_apply,
-    Algebra.semisimpleReducedTraceForm_apply] at h
+    Algebra.semisimpleReducedTraceStarForm_baseChange_apply,
+    Algebra.semisimpleReducedTraceStarForm_apply] at h
   exact h.symm
 
 end PositiveInvolution
