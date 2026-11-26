@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedChainComplex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedCochainComplex
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Signs
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -71,6 +72,19 @@ its homology is that of `ℝℙ²`:
   `mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real`). Modulo two all three
   homology groups are instead `ZMod 2`.
 
+The integral Morse cochain complex `TauCeti.IsAdaptedPseudoGradient.signedMorseCochainComplex`,
+`Hom_ℤ(CM_*(f; ℤ), R)`, is then defined too, and its cohomology is that of `ℝℙ²`:
+
+* `H⁰ = R` with coefficients in any ring `R`, for every adapted pseudo-gradient, since the
+  coboundary out of degree `0` is the transpose of `d₁ = 0`;
+* `H¹ = 0` and `H² = ℤ/2` over `ℤ`, for the adapted pseudo-gradients commuting with the sign
+  changes: the coboundary out of degree `1` multiplies the value at the saddle by `±2`, so it is
+  injective and its image consists of the cochains with even value at the maximum.
+
+So the torsion of `H₁` reappears in `H²`, as the universal coefficient theorem predicts, and
+`H⁰ = ℤ` differs from `H₂ = 0`: Poincaré duality with untwisted coefficients fails on the
+nonorientable `ℝℙ²`.
+
 ## Main declarations
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -99,6 +113,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real`: the integral Morse
   homology in degree `0` is `R` over any ring; over `ℤ`, for pseudo-gradients commuting with the
   sign changes, it is `ℤ/2` in degree `1` and `0` in degree `2`.
+* `mem_range_lcomp_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real`: over `ℤ`, for
+  pseudo-gradients commuting with the sign changes, an integral cochain of index two is a
+  coboundary exactly when its value at the maximum is even.
+* `nonempty_linearEquiv_homology_zero_signedMorseCochainComplex_projectiveMomentFunction_real`,
+  `isZero_homology_one_signedMorseCochainComplex_projectiveMomentFunction_real`,
+  `nonempty_linearEquiv_homology_two_signedMorseCochainComplex_projectiveMomentFunction_real`: the
+  integral Morse cohomology in degree `0` is `R` over any ring; over `ℤ`, for pseudo-gradients
+  commuting with the sign changes, it is `0` in degree `1` and `ℤ/2` in degree `2`.
 
 ## References
 
@@ -704,6 +726,175 @@ theorem isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real
     (ChainComplex.next_nat_succ 1) fun a b hab ↦ ?_
   exact injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real hX hXε hf 𝔬 <|
     (signedMorseComplex_d_apply hsq 1 a).symm.trans (hab.trans (signedMorseComplex_d_apply hsq 1 b))
+
+/-! ### The integral Morse cohomology of `ℝℙ²` -/
+
+/-- **`H⁰(ℝℙ²; R) = R`.** For every pseudo-gradient adapted to the moment function on the real
+projective plane and every choice of orientations, the Morse cohomology in degree `0` with
+coefficients in any ring `R` is `R`: the coboundary out of degree `0` vanishes, since the minimum is
+the only critical point of index `0`, and a cochain of index `0` is its value at the minimum. Over
+`ℤ`, for the pseudo-gradients commuting with the sign changes of the homogeneous coordinates, this
+differs from the homology `H₂ = 0` of the complementary degree
+(`isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real`): Poincaré duality fails on
+the nonorientable `ℝℙ²`. -/
+theorem nonempty_linearEquiv_homology_zero_signedMorseCochainComplex_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X) {R : Type*} [Ring R]
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
+    Nonempty ((hX.signedMorseCochainComplex 𝔬 hf R hsq).homology 0 ≃ₗ[R] R) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p, hp⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 0) (by norm_num)
+  let : Unique {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 0} := ⟨⟨p⟩, hp⟩
+  set K := hX.signedMorseCochainComplex 𝔬 hf R hsq
+  -- No coboundary enters degree `0`, and the coboundary out of it is the transpose of the
+  -- boundary into degree `0`, which vanishes.
+  have h₁ : K.d ((ComplexShape.up ℕ).prev 0) 0 = 0 := K.shape _ _ (by simp)
+  have h₂ : K.d 0 ((ComplexShape.up ℕ).next 0) = 0 := by
+    rw [CochainComplex.next, signedMorseCochainComplex_d,
+      IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
+        (hX.isMorseSmale_projectiveMomentFunction_real hw)
+        (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)]
+    ext a c
+    -- Both sides are zero; the zero morphism is typed between the terms of `K`.
+    simp only [ModuleCat.hom_ofHom, LinearMap.lcomp_apply', LinearMap.comp_zero]
+    rfl
+  exact ⟨(K.XIsoHomologyOfDEqZero 0 h₁ h₂).toLinearEquiv.symm.trans
+    ((Finsupp.llift R ℤ R _).symm.trans (LinearEquiv.funUnique _ R R))⟩
+
+/-- The coboundary from degree `1` to degree `2` of `ℝℙ²` sends an integral cochain `b` to the
+cochain whose value at the maximum `p` is the boundary coefficient `±2` of `p` at the saddle `q`
+times the value of `b` at `q`. -/
+private theorem signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (b : ({q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1} →₀ ℤ) →ₗ[ℤ] ℤ)
+    (p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1})
+    (q : {q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1}) :
+    (b ∘ₗ hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) (Finsupp.single p 1) =
+      hX.signedMorseBoundaryCoeff 𝔬 p q * b (Finsupp.single q 1) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨q', hq'⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+  have hq (r) : r = q := (hq' r).trans (hq' q).symm
+  rw [LinearMap.comp_apply, eq_single_of_forall_eq_projectiveMomentFunction_real hq
+    (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1 _), signedMorseBoundaryAt_single_apply, one_mul, Int.cast_id,
+    ← smul_eq_mul, ← map_zsmul, Finsupp.smul_single, smul_eq_mul, mul_one]
+
+include hX hXε in
+/-- **`H¹(ℝℙ²; ℤ) = 0`.** For an adapted pseudo-gradient of the moment function on the real
+projective plane which commutes with the sign changes of the homogeneous coordinates, and every
+choice of orientations, the integral Morse cohomology in degree `1` vanishes: the coboundary out of
+degree `1` multiplies the value at the saddle by `±2`, so it is injective. The torsion of
+`H₁ = ℤ/2` (`nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFunction_real`)
+appears in `H²` instead. -/
+theorem isZero_homology_one_signedMorseCochainComplex_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
+    CategoryTheory.Limits.IsZero ((hX.signedMorseCochainComplex 𝔬 hf ℤ hsq).homology 1) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
+  obtain ⟨q, hq⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+  refine (hX.signedMorseCochainComplex 𝔬 hf ℤ hsq).isZero_homology_of_injective_d
+    (CochainComplex.next ℕ 1) fun (a b : ({q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
+      (projectiveMomentFunction ℝ w) // manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ)
+        (projectiveMomentFunction ℝ w) q = 1} →₀ ℤ) →ₗ[ℤ] ℤ) hab ↦ ?_
+  replace hab := (signedMorseCochainComplex_d_apply hsq 1 a).symm.trans
+    (hab.trans (signedMorseCochainComplex_d_apply hsq 1 b))
+  -- The coboundaries of `a` and `b` agree at the maximum, so `a` and `b` agree at the saddle.
+  have hp := LinearMap.congr_fun hab (Finsupp.single p 1)
+  rw [signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real hX hf 𝔬 a p q,
+    signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real hX hf 𝔬 b p q] at hp
+  have hne : hX.signedMorseBoundaryCoeff 𝔬 p q ≠ 0 := by
+    rcases signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε hf
+      𝔬 p.property q.property with h | h <;> simp [h]
+  have hab' : a (Finsupp.single q 1) = b (Finsupp.single q 1) := mul_left_cancel₀ hne hp
+  exact Finsupp.lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [hq r]; exact hab')
+
+include hX hXε in
+/-- **The coboundaries in degree two of `ℝℙ²`.** For an adapted pseudo-gradient of the moment
+function on the real projective plane which commutes with the sign changes of the homogeneous
+coordinates, and every choice of orientations, an integral cochain `a` of index two is the
+coboundary `b ∘ ∂` of a cochain of index one exactly when its value at the maximum `p` is even. -/
+theorem mem_range_lcomp_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1})
+    (a : ({p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1} →₀ ℤ) →ₗ[ℤ] ℤ) :
+    a ∈ LinearMap.range (LinearMap.lcomp ℤ ℤ (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1)) ↔
+      2 ∣ a (Finsupp.single p 1) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p', hp'⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
+  obtain ⟨q, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
+  have hcoeff := signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε
+    hf 𝔬 p.property q.property
+  -- A cochain of index two is determined by its value at the maximum, the only point of index two.
+  have hext {a b : ({p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1} →₀ ℤ) →ₗ[ℤ] ℤ}
+      (h : a (Finsupp.single p 1) = b (Finsupp.single p 1)) : a = b :=
+    Finsupp.lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [(hp' r).trans (hp' p).symm]; exact h)
+  constructor
+  · -- A coboundary takes the value `±2` times the value at the saddle at the maximum.
+    rintro ⟨b, rfl⟩
+    rw [LinearMap.lcomp_apply',
+      signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real hX hf 𝔬 b p q]
+    rcases hcoeff with h | h <;> simp [h]
+  · -- A value `2k` at the maximum is the coboundary of `±k` times the value at the saddle.
+    rintro ⟨k, hk⟩
+    rcases hcoeff with h | h <;>
+      [refine ⟨k • Finsupp.lapply q, hext ?_⟩; refine ⟨(-k) • Finsupp.lapply q, hext ?_⟩] <;>
+    · rw [LinearMap.lcomp_apply',
+        signedMorseBoundaryAt_one_comp_projectiveMomentFunction_real hX hf 𝔬 _ p q, h, hk]
+      simp only [LinearMap.smul_apply, Finsupp.lapply_apply, Finsupp.single_eq_same]
+      ring
+
+include hX hXε in
+/-- **`H²(ℝℙ²; ℤ) = ℤ/2`.** For an adapted pseudo-gradient of the moment function on the real
+projective plane which commutes with the sign changes of the homogeneous coordinates, and every
+choice of orientations, the integral Morse cohomology in degree `2` is `ℤ/2`: every cochain of index
+two is a cocycle, and it is a coboundary exactly when its value at the maximum is even. So the
+integral Morse cohomology of `ℝℙ²` is `ℤ`, `0` and `ℤ/2` in degrees `0`, `1` and `2`, while its
+integral Morse homology is `ℤ`, `ℤ/2` and `0`. -/
+theorem nonempty_linearEquiv_homology_two_signedMorseCochainComplex_projectiveMomentFunction_real
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w))
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
+    Nonempty ((hX.signedMorseCochainComplex 𝔬 hf ℤ hsq).homology 2 ≃ₗ[ℤ] ZMod 2) := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  obtain ⟨p, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
+  set K := hX.signedMorseCochainComplex 𝔬 hf ℤ hsq
+  -- There are no cochains of index three, so every cochain of index two is a cocycle and the
+  -- cohomology in degree two is the quotient of the cochains by the coboundaries.
+  have hd : K.d 2 3 = 0 := (isZero_signedMorseCochainComplex_X_of_finrank_lt hsq
+    (by rw [Module.finrank_fin_fun]; norm_num)).eq_of_tgt _ _
+  -- The value at the maximum modulo two vanishes exactly on the coboundaries.
+  let ψ : (({p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1} →₀ ℤ) →ₗ[ℤ] ℤ)
+      →ₗ[ℤ] ZMod 2 :=
+    (Int.castAddHom (ZMod 2)).toIntLinearMap ∘ₗ LinearMap.applyₗ (Finsupp.single p 1)
+  have hψ_apply (a) : ψ a = (a (Finsupp.single p 1) : ZMod 2) := rfl
+  have hψ : Function.Surjective ψ := fun x ↦ ⟨(x.cast : ℤ) • Finsupp.lapply p, by
+    rw [hψ_apply, LinearMap.smul_apply, Finsupp.lapply_apply, Finsupp.single_eq_same, smul_eq_mul,
+      mul_one, ZMod.intCast_zmod_cast]⟩
+  have hexact : Function.Exact (LinearMap.lcomp ℤ ℤ (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1)) ψ :=
+    fun a ↦ by
+      rw [hψ_apply, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_ofNat,
+        ← mem_range_lcomp_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real hX hXε hf 𝔬
+          p a, LinearMap.mem_range, Set.mem_range]
+  -- The coboundary of `K` into degree two is the transpose of the graded integral Morse boundary,
+  -- and the terms of `K` are the modules of additive maps by definition
+  -- (`signedMorseCochainComplex_X`).
+  have hd' : (K.d 1 (1 + 1)).hom = LinearMap.lcomp ℤ ℤ (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) :=
+    (congrArg ModuleCat.Hom.hom (signedMorseCochainComplex_d hsq 1)).trans (ModuleCat.hom_ofHom _)
+  rw [← hd'] at hexact
+  exact ⟨(K.homologyIsoSc' 1 2 3 (by simp) (by simp) ≪≫ (K.sc' 1 2 3).asIsoHomologyι hd ≪≫
+    (K.sc' 1 2 3).moduleCatOpcyclesIso).toLinearEquiv.trans
+      (hexact.linearEquivOfSurjective hψ)⟩
 
 end Maximum
 
