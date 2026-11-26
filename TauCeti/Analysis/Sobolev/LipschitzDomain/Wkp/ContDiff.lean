@@ -33,6 +33,8 @@ these embeddings, and is the domain-independent
 
 * `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image`:
   `W^{j+1,p}(Ω) ⊆ C^{j,1-n/p}` for `n < p`, on isometric copies of bounded Lipschitz domains.
+* `TauCeti.Wkp.contDiffOn_of_value_ae_eq_of_isLipschitzDomainWith_image`: hence every
+  representative of `u ∈ W^{j+1,p}(Ω)` that is continuous on `Ω` is `Cʲ` there.
 
 ## References
 
@@ -74,6 +76,22 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_i
     (tsub_pos_of_lt ((div_lt_one (pos_of_gt hp)).2 hp))
     (fun k => exists_morreyEmbeddingL_of_isLipschitzDomainWith_image e hΩ hb k hp le_self_add
       le_rfl) j
+
+/-- **Continuous representatives are `Cʲ`.** Let `e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)` be a linear
+isometry and `Ω ⊆ F` a bounded open set of dimension `n` whose image `e '' Ω` is a Lipschitz
+domain, and let `n < p < ∞`. If the value of `u ∈ W^{j+1,p}(Ω)` agrees almost everywhere on `Ω`
+with a function `g` continuous on `Ω`, then `g` is `Cʲ` on `Ω`. -/
+theorem contDiffOn_of_value_ae_eq_of_isLipschitzDomainWith_image {L : ℝ≥0} {p : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
+    (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F))
+    (hp : (finrank ℝ F : ℝ≥0) < p) {j : ℕ} (u : Wkp volume Ω p (j + 1)) {g : F → ℝ}
+    (hg : ContinuousOn g Ω) (hug : (value (j + 1) u : F → ℝ) =ᵐ[volume.restrict Ω] g) :
+    ContDiffOn ℝ j g Ω := by
+  obtain ⟨K, hK⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image
+    e hΩ hb hp j
+  obtain ⟨g', hg', hug', -⟩ := hK u
+  exact hg'.congr (Measure.eqOn_open_of_ae_eq (hug.symm.trans hug') Ω.isOpen hg
+    hg'.continuousOn)
 
 end Wkp
 
