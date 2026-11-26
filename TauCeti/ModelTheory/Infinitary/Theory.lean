@@ -31,6 +31,7 @@ is a model of the image of a theory exactly when it is a model of the theory.
 * `FirstOrder.Language.LHom.onTheoryω`: the image of a theory under a language homomorphism.
 * `FirstOrder.Language.OmitsType`: a structure omits a partial type when no tuple realizes all of
   it.
+* `FirstOrder.Language.OmitsFOType`: the same notion for a first-order partial type.
 
 ## Main results
 
@@ -53,6 +54,8 @@ is a model of the image of a theory exactly when it is a model of the theory.
 * `Set.Countable.onTheoryω`: the image of a countable theory is countable.
 * `FirstOrder.Language.not_omitsType_of_realize`: a structure satisfying `φ.exs` and every
   `(φ.imp ψ).alls` with `ψ ∈ p` does not omit `p`.
+* `FirstOrder.Language.omitsType_image_toOmega_iff`: a structure omits a first-order partial type
+  exactly when it omits its image in `L_{ω₁ω}`.
 
 ## References
 
@@ -235,6 +238,53 @@ theorem not_omitsType_of_realize {M : Type w} [L.Structure M] {n : ℕ}
   intro hM
   obtain ⟨ψ, hψ, hψa⟩ := omitsType_iff.1 hM a
   exact hψa (hp ψ hψ a ha)
+
+/-- A structure **omits** a set `p` of first-order formulas in `n` bound variables, a first-order
+partial type, when no `n`-tuple of the structure realizes every member of `p`. -/
+def OmitsFOType (M : Type w) [L.Structure M] {n : ℕ} (p : Set (L.BoundedFormula Empty n)) :
+    Prop :=
+  ∀ a : Fin n → M, ∃ φ ∈ p, ¬ φ.Realize Empty.elim a
+
+section OmitsFOType
+
+variable {M : Type w} [L.Structure M] {n : ℕ} {p q : Set (L.BoundedFormula Empty n)}
+
+/-- Unfolding lemma for `OmitsFOType`. -/
+theorem omitsFOType_iff :
+    OmitsFOType M p ↔ ∀ a : Fin n → M, ∃ φ ∈ p, ¬ φ.Realize Empty.elim a :=
+  Iff.rfl
+
+/-- A structure omitting a partial type omits every larger one. -/
+theorem OmitsFOType.mono (h : OmitsFOType M p) (hpq : p ⊆ q) : OmitsFOType M q := fun a =>
+  let ⟨φ, hφ, hφa⟩ := h a
+  ⟨φ, hpq hφ, hφa⟩
+
+/-- A structure omits a first-order partial type exactly when it omits the image of the type in
+`L_{ω₁ω}`. -/
+@[simp]
+theorem omitsType_image_toOmega_iff :
+    OmitsType M (BoundedFormula.toOmega '' p) ↔ OmitsFOType M p := by
+  simp only [omitsType_iff, omitsFOType_iff, Set.exists_mem_image, BoundedFormula.toOmega,
+    BoundedFormula.realize_toInf]
+
+/-- A structure omits the empty partial type exactly when it has no `n`-tuple. So no nonempty
+structure omits it, and at `n = 0` no structure does. -/
+@[simp]
+theorem omitsFOType_empty_iff :
+    OmitsFOType M (∅ : Set (L.BoundedFormula Empty n)) ↔ IsEmpty (Fin n → M) := by
+  simp only [omitsFOType_iff, Set.mem_empty_iff_false, false_and, exists_false, isEmpty_iff]
+
+/-- A structure omits a single formula exactly when no tuple satisfies it. -/
+@[simp]
+theorem omitsFOType_singleton_iff {ψ : L.BoundedFormula Empty n} :
+    OmitsFOType M {ψ} ↔ ∀ a : Fin n → M, ¬ψ.Realize Empty.elim a := by
+  simp only [omitsFOType_iff, Set.mem_singleton_iff, exists_eq_left]
+
+/-- Every structure omits the partial type `{⊥}`. -/
+theorem omitsFOType_singleton_bot : OmitsFOType M ({⊥} : Set (L.BoundedFormula Empty n)) :=
+  omitsFOType_singleton_iff.2 fun _ => BoundedFormula.realize_bot.1
+
+end OmitsFOType
 
 namespace LHom
 
