@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Span
+import Mathlib.Algebra.Order.Group.Action
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
@@ -23,7 +25,9 @@ negation. A unit of a ring stabilizes an
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
 inverse both preserve it.
 
-Membership in a pointwise translate under a group action is tested by the inverse action.
+Membership in a pointwise translate under a group action is tested by the inverse action, and a
+group acts on submodules by order automorphisms. Pointwise actions of commuting monoids on
+submodules commute, and commute with multiplication by an ideal.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
 `s⁻¹ t` is a unit of `C`.
 
@@ -40,6 +44,17 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.pointwise_smul_le_pointwise_smul_iff`,
+  `Submodule.pointwise_smul_lt_pointwise_smul_iff`: a group acts on submodules by order
+  automorphisms.
+* `Submodule.pointwiseSMulCommClass`: pointwise actions of commuting monoids on submodules
+  commute.
+* `Submodule.ideal_smul_pointwise_smul`: multiplying by an ideal commutes with a linear
+  translation.
+* `Submodule.units_smul_eq_smul_of_val_eq`: a unit of an `R`-algebra coming from `c : R`
+  translates submodules as `c` does.
+* `Submodule.zpow_smul_le_zpow_smul`: translates of a submodule by powers of such a unit shrink
+  as the exponent grows.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -65,6 +80,59 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- A group acts on submodules by order automorphisms: translating two submodules by the same
+element preserves and reflects inclusion. -/
+@[simp]
+theorem pointwise_smul_le_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S ≤ g • T ↔ S ≤ T :=
+  ⟨fun h => by simpa using smul_le_smul_left g⁻¹ h, smul_le_smul_left g⟩
+
+/-- Translating two submodules by the same element of a group preserves and reflects strict
+inclusion. -/
+@[simp]
+theorem pointwise_smul_lt_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S < g • T ↔ S < T := by
+  simp only [lt_iff_le_not_ge, pointwise_smul_le_pointwise_smul_iff]
+
+/-- The pointwise actions on submodules of two monoids acting by commuting linear maps
+commute. -/
+instance pointwiseSMulCommClass {R M α β : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Monoid α] [Monoid β] [DistribMulAction α M] [DistribMulAction β M] [SMulCommClass α R M]
+    [SMulCommClass β R M] [SMulCommClass α β M] : SMulCommClass α β (Submodule R M) :=
+  ⟨fun a b S => by
+    simp only [pointwise_smul_def, ← map_comp]
+    congr 1
+    ext x
+    exact smul_comm a b x⟩
+
+/-- Multiplying by an ideal commutes with translating by an element acting linearly. -/
+theorem ideal_smul_pointwise_smul {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Monoid G] [DistribMulAction G M] [SMulCommClass G R M] (I : Ideal R) (g : G)
+    (N : Submodule R M) : I • (g • N) = g • (I • N) := by
+  simp only [pointwise_smul_def, map_smul'']
+
+/-- Translating a submodule by a unit of an `R`-algebra `A` which comes from `c : R` is
+multiplying it by `c`. -/
+theorem units_smul_eq_smul_of_val_eq {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) (N : Submodule R M) : a • N = c • N := by
+  ext x
+  simp only [mem_smul_pointwise_iff_exists, Units.smul_def, h, algebraMap_smul]
+
+/-- If `a` is the image in `Aˣ` of `c : R`, the translates `aⁿ N` of a submodule `N` shrink as the
+exponent `n` grows: `a ^ n • N ≤ a ^ m • N` for `m ≤ n`. -/
+theorem zpow_smul_le_zpow_smul {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) {m n : ℤ} (hmn : m ≤ n) (N : Submodule R M) :
+    a ^ n • N ≤ a ^ m • N := by
+  obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
+  rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
+  refine pointwise_smul_le_pointwise_smul_iff.2 ?_
+  rw [units_smul_eq_smul_of_val_eq (c := c ^ k) (by rw [Units.val_pow_eq_pow_val, h, map_pow])]
+  exact N.smul_le_self_of_tower _
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
