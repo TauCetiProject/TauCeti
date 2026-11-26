@@ -124,6 +124,28 @@ lemma ι_cechTotalComplexShiftIso_hom_f (P : Cᵒᵖ ⥤ CochainComplex A ℤ) (
   exact (_ ≫= ι_totalExtendShift₂Iso_hom_f _ _ y p q n hpq q' hq' n' hn').trans
     (Linear.comp_units_smul _ _ _)
 
+variable {U} in
+/-- The common step of the compatibilities of `cechTotalComplexShiftIso` with maps of Čech
+complexes: a map `f` of Čech complexes of shifted presheaves that corresponds to the shift of a
+map `g` under `cechComplexFunctorMapIso` induces, on total complexes, the shift of the map induced
+by `g`. -/
+private lemma total_map_extendMap_comp_cechTotalComplexShiftIso_hom
+    {P Q : Cᵒᵖ ⥤ CochainComplex A ℤ}
+    (f : (cechComplexFunctor V).obj (P ⋙ shiftFunctor (CochainComplex A ℤ) y) ⟶
+      (cechComplexFunctor U).obj (Q ⋙ shiftFunctor (CochainComplex A ℤ) y))
+    (g : (cechComplexFunctor V).obj P ⟶ (cechComplexFunctor U).obj Q)
+    (h : f ≫ (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app Q =
+      (cechComplexFunctorMapIso V (shiftFunctor _ y)).inv.app P ≫
+        ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map g) :
+    total.map (HomologicalComplex.extendMap f ComplexShape.embeddingUpNat) (ComplexShape.up ℤ) ≫
+        (cechTotalComplexShiftIso U y Q).hom =
+      (cechTotalComplexShiftIso V y P).hom ≫
+        (total.map (HomologicalComplex.extendMap g ComplexShape.embeddingUpNat)
+          (ComplexShape.up ℤ))⟦y⟧' := by
+  rw [cechTotalComplexShiftIso_hom, cechTotalComplexShiftIso_hom, ← total.map_comp_assoc,
+    ← HomologicalComplex.extendMap_comp, h, HomologicalComplex.extendMap_comp,
+    total.map_comp_assoc, totalExtendShift₂Iso_hom_naturality, Category.assoc]
+
 /-- `cechTotalComplexShiftIso` is natural in the presheaf of complexes. -/
 @[reassoc]
 lemma cechTotalComplexShiftIso_hom_naturality {P Q : Cᵒᵖ ⥤ CochainComplex A ℤ} (α : P ⟶ Q) :
@@ -136,10 +158,8 @@ lemma cechTotalComplexShiftIso_hom_naturality {P Q : Cᵒᵖ ⥤ CochainComplex 
         ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map
           ((cechComplexFunctor U).map α) :=
     (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.naturality α
-  rw [cechTotalComplexFunctor_map, cechTotalComplexFunctor_map, cechTotalComplexShiftIso_hom,
-    cechTotalComplexShiftIso_hom, ← total.map_comp_assoc, ← HomologicalComplex.extendMap_comp, h,
-    HomologicalComplex.extendMap_comp, total.map_comp_assoc, totalExtendShift₂Iso_hom_naturality,
-    Category.assoc]
+  rw [cechTotalComplexFunctor_map, cechTotalComplexFunctor_map]
+  exact total_map_extendMap_comp_cechTotalComplexShiftIso_hom y _ _ h
 
 variable {U} in
 /-- **`cechTotalComplexShiftIso` commutes with refinement maps.** For a morphism of families `φ`
@@ -158,10 +178,8 @@ theorem cechTotalComplexMap_comp_cechTotalComplexShiftIso_hom (P : Cᵒᵖ ⥤ C
           (cechComplexMap P φ) := by
     rw [← Iso.app_inv, ← Iso.app_inv, Iso.comp_inv_eq, Category.assoc, Iso.app_hom,
       cechComplexFunctorMapIso_hom_app_comp_cechComplexMap, ← Iso.app_hom, Iso.inv_hom_id_assoc]
-  rw [cechTotalComplexMap_def, cechTotalComplexMap_def, cechTotalComplexShiftIso_hom,
-    cechTotalComplexShiftIso_hom, ← total.map_comp_assoc, ← HomologicalComplex.extendMap_comp, h,
-    HomologicalComplex.extendMap_comp, total.map_comp_assoc, totalExtendShift₂Iso_hom_naturality,
-    Category.assoc]
+  rw [cechTotalComplexMap_def, cechTotalComplexMap_def]
+  exact total_map_extendMap_comp_cechTotalComplexShiftIso_hom y _ _ h
 
 variable {U} in
 /-- The inverse of `cechTotalComplexShiftIso` commutes with the maps induced by morphisms of

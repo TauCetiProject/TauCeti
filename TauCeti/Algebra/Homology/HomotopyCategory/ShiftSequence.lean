@@ -97,17 +97,4 @@ lemma homologyMap_shift_comp_homologyFunctor_shiftIso_hom_app {L : CochainComple
           K ≫ HomologicalComplex.homologyMap φ i' :=
   (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftIso_hom_naturality n i i' hi φ
 
-/-- The inverse of the identification `(K⟦n⟧).homology i ≅ K.homology i'` of the shift sequence
-of the homology functor is natural in the complex
-(`CochainComplex.homologyMap_shift_comp_homologyFunctor_shiftIso_hom_app`). -/
-@[reassoc]
-lemma homologyMap_comp_homologyFunctor_shiftIso_inv_app {L : CochainComplex C ℤ}
-    (φ : K ⟶ L) (n i i' : ℤ) (hi : n + i = i') :
-    HomologicalComplex.homologyMap φ i' ≫
-        ((HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftIso n i i' hi).inv.app
-          L =
-      ((HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftIso n i i' hi).inv.app
-          K ≫ HomologicalComplex.homologyMap (φ⟦n⟧') i :=
-  (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftIso_inv_naturality n i i' hi φ
-
 end CochainComplex
