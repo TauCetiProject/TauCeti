@@ -24,12 +24,15 @@ subgroup-valued extrema exist even if the supplied feasible starting assignment 
 subgroup-valued. Values and bounds may all be negative.
 
 The extremal assignments can also be obtained directly from any feasible starting assignment:
-add a maximum ordinary flow in its residual network to reach the maximum, or subtract a maximum
-flow in the reverse terminal direction to reach the minimum.
+apply a maximum ordinary flow in its residual network to reach the maximum, or update by a maximum
+reverse residual flow with its terminals exchanged to reach the minimum. The forward update adds
+the residual flow's value to the starting value, while the reverse update subtracts it.
 
 ## References
 
 * D. P. Bertsekas, *Linear Network Optimization*, Section 1.1.3 and Exercises 2.4–2.6.
+* J. Bang-Jensen, G. Gutin, *Digraphs: Theory, Algorithms and Applications*, second edition,
+  Theorem 3.4.2 and the proof of Theorem 3.9.1.
 * A. Schrijver, *Combinatorial Optimization: Polyhedra and Efficiency*, Volume A, Chapter 10.
 -/
 
@@ -85,70 +88,6 @@ theorem exists_val_eq (f g : BoundedFlow lo hi s t) {q : K}
     (fun _ _ _ ↦ AddSubgroup.mem_top _) (fun _ _ _ ↦ AddSubgroup.mem_top _)
     (AddSubgroup.mem_top _)
   exact ⟨h, hh⟩
-
-/-- Updating a bounded assignment by an ordinary residual flow gives a maximum assignment exactly
-when the residual flow is maximum. -/
-@[simp]
-theorem isMaximum_update_iff (f : BoundedFlow lo hi s t)
-    (r : Flow (residualCapacity lo hi f.toFun) s t) :
-    (f.update r.toBoundedFlow).IsMaximum ↔ r.IsMaximum := by
-  constructor
-  · intro h
-    rw [Flow.isMaximum_iff]
-    intro q
-    have hq := BoundedFlow.isMaximum_iff.mp h (f.update q.toBoundedFlow)
-    simpa only [val_update, add_le_add_iff_left] using hq
-  · intro hr
-    rw [BoundedFlow.isMaximum_iff]
-    intro g
-    rcases le_total g.val f.val with hgf | hfg
-    · exact hgf.trans (by
-        rw [val_update]
-        exact le_add_of_nonneg_right r.val_nonneg)
-    · obtain ⟨q, hq⟩ := f.exists_update_eq_of_le g hfg
-      rw [← hq, val_update, val_update]
-      exact add_le_add le_rfl (Flow.isMaximum_iff.mp hr q)
-
-/-- Updating a bounded assignment by a reverse ordinary residual flow gives a minimum assignment
-exactly when the reverse residual flow is maximum. -/
-@[simp]
-theorem isMinimum_update_swap_iff (f : BoundedFlow lo hi s t)
-    (r : Flow (residualCapacity lo hi f.toFun) t s) :
-    (f.update r.toBoundedFlow.swap).IsMinimum ↔ r.IsMaximum := by
-  constructor
-  · intro h
-    rw [Flow.isMaximum_iff]
-    intro q
-    have hq := BoundedFlow.isMinimum_iff.mp h (f.update q.toBoundedFlow.swap)
-    simpa only [val_update, val_swap, add_le_add_iff_left, neg_le_neg_iff] using hq
-  · intro hr
-    rw [BoundedFlow.isMinimum_iff]
-    intro g
-    rcases le_total f.val g.val with hfg | hgf
-    · calc
-        (f.update r.toBoundedFlow.swap).val = f.val - r.val := by
-          rw [val_update, val_swap, sub_eq_add_neg]
-        _ ≤ f.val := sub_le_self f.val r.val_nonneg
-        _ ≤ g.val := hfg
-    · obtain ⟨q, hq⟩ := f.exists_update_swap_eq_of_le g hgf
-      rw [← hq, val_update, val_update, val_swap, val_swap]
-      exact add_le_add le_rfl (neg_le_neg (Flow.isMaximum_iff.mp hr q))
-
-/-- A maximum ordinary flow in the residual network of a bounded assignment updates it to a
-maximum bounded assignment. -/
-theorem exists_isMaximum_update (f : BoundedFlow lo hi s t) :
-    ∃ r : Flow (residualCapacity lo hi f.toFun) s t,
-      r.IsMaximum ∧ (f.update r.toBoundedFlow).IsMaximum := by
-  obtain ⟨r, hr⟩ := Flow.exists_isMaximum (residualCapacity_nonneg f.mem_Icc)
-  exact ⟨r, hr, (isMaximum_update_iff f r).2 hr⟩
-
-/-- A maximum ordinary flow in the reverse direction of the residual network of a bounded
-assignment updates it to a minimum bounded assignment. -/
-theorem exists_isMinimum_update_swap (f : BoundedFlow lo hi s t) :
-    ∃ r : Flow (residualCapacity lo hi f.toFun) t s,
-      r.IsMaximum ∧ (f.update r.toBoundedFlow.swap).IsMinimum := by
-  obtain ⟨r, hr⟩ := Flow.exists_isMaximum (residualCapacity_nonneg f.mem_Icc)
-  exact ⟨r, hr, (isMinimum_update_swap_iff f r).2 hr⟩
 
 /-- Minimum and maximum assignments are the endpoints of the entire interval of feasible
 terminal values. -/

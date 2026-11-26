@@ -60,6 +60,9 @@ flows is assembled.
   the cut bound exactly when no residual arrow of positive capacity leaves the cut.
 * `TauCeti.BoundedFlow.val_update` and `TauCeti.BoundedFlow.exists_update_eq`: residual updates
   add values, and connect any two bounded `s`–`t` assignments.
+* `TauCeti.BoundedFlow.exists_update_eq_of_le` and
+  `TauCeti.BoundedFlow.exists_update_swap_eq_of_le`: assignments above or below a given feasible
+  assignment arise from ordinary flows in the two directions of its residual network.
 * `TauCeti.Flow.exists_augment_eq`: every flow of at least the value of `f` is an augmentation of
   `f` by a flow of its residual network.
 * `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
@@ -71,6 +74,8 @@ flows is assembled.
 
 * R. K. Ahuja, T. L. Magnanti, J. B. Orlin, *Network Flows: Theory, Algorithms, and
   Applications*, Prentice Hall, 1993.
+* J. Bang-Jensen, G. Gutin, *Digraphs: Theory, Algorithms and Applications*, second edition,
+  Theorem 3.4.2 and the proof of Theorem 3.9.1.
 * A. Schrijver, *Combinatorial Optimization: Polyhedra and Efficiency*, Springer, 2003.
 -/
 
@@ -525,25 +530,17 @@ theorem BoundedFlow.exists_update_swap_eq_of_le [Lattice K] [IsOrderedAddMonoid 
     {lo hi : Assignment Q K} {s t : V} (f g : BoundedFlow lo hi s t) (hgf : g.val ≤ f.val) :
     ∃ r : Flow (residualCapacity lo hi f.toFun) t s,
       f.update r.toBoundedFlow.swap = g := by
-  obtain ⟨r, hr⟩ := f.exists_update_eq g
-  have hrval : r.val = g.val - f.val := by
-    rw [← hr, BoundedFlow.val_update, add_sub_cancel_left]
-  have hval : 0 ≤ r.swap.val := by
-    rw [BoundedFlow.val_swap, hrval, neg_sub]
-    exact sub_nonneg.mpr hgf
-  exact ⟨⟨r.swap, hval⟩, by simpa using hr⟩
+  obtain ⟨r, hr⟩ := f.swap.exists_update_eq_of_le g.swap (by simpa using neg_le_neg hgf)
+  exact ⟨r, BoundedFlow.ext (by
+    simpa only [update_toFun, swap_toFun] using congrArg BoundedFlow.toFun hr)⟩
 
 /-- Every ordinary `s`–`t` flow `g` of value at least that of `f` is the augmentation of `f` by an
 ordinary `s`–`t` flow of the residual network of `f`, necessarily of value `g.val - f.val`. -/
 theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
     {s t : V} (f g : Flow cap s t) (hfg : f.val ≤ g.val) :
     ∃ r : Flow (residualCapacity 0 cap f.toFun) s t, f.augment r = g := by
-  obtain ⟨r, hr⟩ := f.toBoundedFlow.exists_update_eq g.toBoundedFlow
-  have hval : r.val = g.val - f.val := by
-    rw [← hr, BoundedFlow.val_update, add_sub_cancel_left]
-  refine ⟨⟨r, ?_⟩, Flow.ext (congrArg BoundedFlow.toFun hr)⟩
-  rw [← BoundedFlow.val_def, hval]
-  exact sub_nonneg.mpr hfg
+  obtain ⟨r, hr⟩ := f.toBoundedFlow.exists_update_eq_of_le g.toBoundedFlow hfg
+  exact ⟨r, Flow.ext (congrArg BoundedFlow.toFun hr)⟩
 
 /-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
 natural number `n`. -/

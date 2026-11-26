@@ -49,6 +49,9 @@ starts from it.
   value equals the cut bound of the vertices positively reachable from the source.
 * `TauCeti.BoundedFlow.tfae_isMaximum` and `TauCeti.Flow.tfae_isMaximum`: the augmenting-path
   optimality criterion for bounded `s`–`t` assignments and for ordinary flows.
+* `TauCeti.BoundedFlow.isMaximum_update_iff` and
+  `TauCeti.BoundedFlow.isMinimum_update_swap_iff`: residual updates are extremal exactly when the
+  corresponding ordinary residual flows are maximum.
 * `TauCeti.Flow.isMaximum_iff_forall_not_augmentsTo`: a flow is maximum exactly when no
   augmentation step starts from it.
 
@@ -285,6 +288,58 @@ theorem isMaximum_congr_iff {cap' : Assignment Q K} {s' t' : V} (hcap : cap = ca
   simp
 
 end Preorder
+
+end Flow
+
+namespace BoundedFlow
+
+variable [LinearOrder K] [IsOrderedAddMonoid K]
+variable {lo hi : Assignment Q K} {s t : V}
+
+/-- Updating a bounded assignment by an ordinary residual flow gives a maximum assignment exactly
+when the residual flow is maximum. -/
+@[simp]
+theorem isMaximum_update_iff (f : BoundedFlow lo hi s t)
+    (r : Flow (residualCapacity lo hi f.toFun) s t) :
+    (f.update r.toBoundedFlow).IsMaximum ↔ r.IsMaximum := by
+  constructor
+  · intro h
+    rw [Flow.isMaximum_iff]
+    intro q
+    have hq := BoundedFlow.isMaximum_iff.mp h (f.update q.toBoundedFlow)
+    simpa only [val_update, add_le_add_iff_left] using hq
+  · intro hr
+    rw [BoundedFlow.isMaximum_iff]
+    intro g
+    rcases le_total g.val f.val with hgf | hfg
+    · exact hgf.trans (by
+        rw [val_update]
+        exact le_add_of_nonneg_right r.val_nonneg)
+    · obtain ⟨q, hq⟩ := f.exists_update_eq_of_le g hfg
+      rw [← hq, val_update, val_update]
+      exact add_le_add le_rfl (Flow.isMaximum_iff.mp hr q)
+
+/-- Updating a bounded assignment by a reverse ordinary residual flow gives a minimum assignment
+exactly when the reverse residual flow is maximum. -/
+@[simp]
+theorem isMinimum_update_swap_iff (f : BoundedFlow lo hi s t)
+    (r : Flow (residualCapacity lo hi f.toFun) t s) :
+    (f.update r.toBoundedFlow.swap).IsMinimum ↔ r.IsMaximum := by
+  let hcap : residualCapacity lo hi f.toFun = residualCapacity lo hi f.swap.toFun :=
+    congrArg (residualCapacity lo hi) (swap_toFun f).symm
+  let r' := Flow.congr hcap rfl rfl r
+  have hr' : r'.toFun = r.toFun := by
+    change (Flow.congr hcap rfl rfl r).toBoundedFlow.toFun = r.toBoundedFlow.toFun
+    rw [Flow.toBoundedFlow_congr, congr_apply_toFun]
+  have hupdate : (f.update r.toBoundedFlow.swap).swap = f.swap.update r'.toBoundedFlow := by
+    apply BoundedFlow.ext
+    simp only [swap_toFun, update_toFun, hr']
+  rw [← isMaximum_swap, hupdate, isMaximum_update_iff]
+  exact Flow.isMaximum_congr_iff hcap rfl rfl r
+
+end BoundedFlow
+
+namespace Flow
 
 /-- An ordinary flow is maximum among ordinary flows exactly when it is maximum among all bounded
 assignments with zero lower bounds: a bounded assignment of larger value has positive value, so it
