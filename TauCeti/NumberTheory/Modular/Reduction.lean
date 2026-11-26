@@ -76,11 +76,11 @@ theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ
     induction n using Int.induction_on with
     | zero => simp
     | succ k ih =>
-      rw [zpow_add_one, ← mul_assoc,
+      rw [_root_.zpow_add_one, ← mul_assoc,
         h_T _ (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ), ih]
     | pred k ih =>
       have hsub : δ * T ^ (-(k : ℤ) - 1) * T = δ * T ^ (-(k : ℤ)) := by
-        rw [mul_assoc, ← zpow_add_one]
+        rw [mul_assoc, ← _root_.zpow_add_one]
         simp
       rw [← h_T (δ * T ^ (-(k : ℤ) - 1))
           (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ),
