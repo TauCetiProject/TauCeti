@@ -26,7 +26,8 @@ weak sheafification) inverse image `f.smallEtalePullback A`:
   `smallEtalePullbackCongr`, and `smallEtalePullbackConstantSheafIso`.
 * **Étale morphism case**: for étale `j : X ⟶ Y`, `j.smallEtaleMap ⊣ j.smallEtaleBaseChange`
   yields `isRightAdjoint_smallEtalePushforward_of_etale`, `smallEtalePullbackIsoMapPushforward`,
-  and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`.
+  and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`; restriction to `Over U` is
+  therefore a left adjoint (`AlgebraicGeometry.Scheme.Etale.isLeftAdjoint_overPullback`).
 * **Geometric stalks and exactness**: `smallEtalePullbackCompSheafFiberIso` identifies stalks at
   `s : Spec Ω ⟶ X` with stalks at `s ≫ f`, and `preservesFiniteLimits_smallEtalePullback` deduces
   left exactness from the conservative family of geometric points.
@@ -275,6 +276,16 @@ noncomputable abbrev smallEtalePullbackObjIsoOver (F : Sheaf (smallEtaleTopology
     ((U.hom : U.left ⟶ S).smallEtalePullback A).obj F ≅
       (U.overSheafEquiv A).functor.obj (F.over U) :=
   (U.smallEtalePullbackIsoOver A).app F
+
+/-- Restricting étale sheaves on `S` to `Over U` is a left adjoint, for every coefficient
+category `A`: up to `U.overSheafEquiv A`, it is the inverse image along the étale morphism
+`U ⟶ S`. In particular it preserves all colimits. -/
+instance isLeftAdjoint_overPullback :
+    ((smallEtaleTopology S).overPullback A U).IsLeftAdjoint :=
+  Functor.isLeftAdjoint_of_iso
+    (Functor.isoWhiskerRight (U.smallEtalePullbackIsoOver A) (U.overSheafEquiv A).inverse ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _ (U.overSheafEquiv A).unitIso.symm ≪≫ Functor.rightUnitor _)
 
 end Etale
 
