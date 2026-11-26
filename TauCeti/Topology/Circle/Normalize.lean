@@ -32,6 +32,7 @@ with an assigned value at zero.
 
 * `Circle.coe_circleValuedSphereDirection_of_ne_zero`: the phase is division by the norm
   away from zero.
+* `ContinuousMap.normalizeToCircle_apply`: evaluation of bundled normalization as a circle phase.
 * `ContinuousMap.coe_normalizeToCircle_apply`: `(f.normalizeToCircle hf x : ℂ) = f x / ‖f x‖`.
 * `ContinuousMap.norm_mul_normalizeToCircle_apply`:
   `(‖f x‖ : ℂ) * (f.normalizeToCircle hf x : ℂ) = f x`.
@@ -103,16 +104,21 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-- Radial normalization of a nowhere-zero continuous complex function `f : C(X, ℂ)` as a
 continuous map into `Circle`, sending `x` to `f x / ‖f x‖`. -/
-def normalizeToCircle (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) : C(X, Circle) :=
-  TauCeti.normalizeToSphere f f.continuous hf
+def normalizeToCircle (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) : C(X, Circle) where
+  toFun := (1 : Circle).circleValuedSphereDirection ∘ f
+  continuous_toFun := continuousOn_univ.mp <|
+    f.continuous.continuousOn.circleValuedSphereDirection 1 fun x _ ↦ hf x
+
+/-- Pointwise evaluation of the bundled normalization is the circle phase. -/
+theorem normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
+    f.normalizeToCircle hf x = (1 : Circle).circleValuedSphereDirection (f x) :=
+  (rfl)
 
 /-- The complex value of `f.normalizeToCircle hf x` is `f x / ‖f x‖`. -/
 @[simp]
 theorem coe_normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
     (f.normalizeToCircle hf x : ℂ) = f x / ‖f x‖ := by
-  have hcoe : (f.normalizeToCircle hf x : ℂ) = NormedSpace.normalize (f x) :=
-    TauCeti.coe_normalizeToSphere_apply f f.continuous hf x
-  exact hcoe.trans (f x).normalize_eq_div_norm
+  rw [normalizeToCircle_apply, Circle.coe_circleValuedSphereDirection_of_ne_zero _ (hf x)]
 
 /-- Multiplying the normalized phase `f.normalizeToCircle hf x` by `‖f x‖` recovers `f x`. -/
 theorem norm_mul_normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
@@ -125,9 +131,9 @@ theorem norm_mul_normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0)
 theorem normalizeToCircle_mul (f g : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (hg : ∀ x, g x ≠ 0)
     (hfg : ∀ x, (f * g) x ≠ 0 := fun y => mul_ne_zero (hf y) (hg y)) :
     (f * g).normalizeToCircle hfg = f.normalizeToCircle hf * g.normalizeToCircle hg := by
-  ext x
-  simp only [coe_normalizeToCircle_apply, Circle.coe_mul, ContinuousMap.mul_apply,
-    ← Complex.normalize_eq_div_norm, Complex.normalize_mul]
+  ext1 x
+  simp only [normalizeToCircle_apply, ContinuousMap.mul_apply,
+    Circle.circleValuedSphereDirection_mul_of_ne_zero 1 (hf x) (hg x)]
 
 /-- Radial normalization sends `1 : C(X, ℂ)` to `1 : C(X, Circle)`. -/
 @[simp]

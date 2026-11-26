@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import TauCeti.Analysis.Normed.Affine.Ray
+import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 
 /-!

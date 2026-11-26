@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import Mathlib.Analysis.Convex.Between
-import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Rays from a point of a seminormed affine space
@@ -21,8 +20,6 @@ separation of the seminorm or pseudometric is needed.
 
 * `TauCeti.mem_affineSegment_iff_of_dist_le`: if `0 < dist c z` and `dist y z ≤ dist c z`, then
   `y` lies on the segment from `z` to `c` iff it lies on the ray from `z` through `c`.
-* `TauCeti.norm_le_norm_lineMap_of_one_le`: extending a segment past the endpoint of larger
-  norm preserves that endpoint's lower bound.
 -/
 
 public section
@@ -48,15 +45,5 @@ theorem mem_affineSegment_iff_of_dist_le {c y z : P} (hc : 0 < dist c z)
     rw [dist_vadd_left, norm_smul, Real.norm_of_nonneg ht, dist_eq_norm_vsub V] at hy
     rw [dist_eq_norm_vsub V] at hc
     exact (mul_le_iff_le_one_left hc).1 hy
-
-/-- If the norm does not decrease from `a` to `b`, extending the segment past `b` gives a
-point of norm at least `‖b‖`. -/
-theorem norm_le_norm_lineMap_of_one_le {a b : V} {t : ℝ} (hab : ‖a‖ ≤ ‖b‖) (ht : 1 ≤ t) :
-    ‖b‖ ≤ ‖AffineMap.lineMap a b t‖ := by
-  have hc := convexOn_univ_norm.comp_affineMap (AffineMap.lineMap a b)
-  simpa only [Function.comp_apply, AffineMap.lineMap_apply_one] using
-    hc.le_right_of_left_le'' (Set.mem_univ _) (Set.mem_univ _) zero_lt_one ht
-      (by simpa only [Function.comp_apply, AffineMap.lineMap_apply_zero,
-        AffineMap.lineMap_apply_one] using hab)
 
 end TauCeti

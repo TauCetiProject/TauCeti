@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pick.Basic
 public import TauCeti.Topology.Circle.Cayley
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
+import TauCeti.Analysis.Complex.Cayley.Measurable
 import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
 import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion

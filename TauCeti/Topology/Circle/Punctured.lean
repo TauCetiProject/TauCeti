@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Basic
 

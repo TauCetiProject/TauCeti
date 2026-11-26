@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator.Chart
+import TauCeti.Topology.Algebra.GroupWithZero.Inversion
 import TauCeti.Topology.ContinuousMap.CodRestrict
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
@@ -209,11 +210,6 @@ private theorem localValue_one (w : U) : localValue (1, w) = w.val⁻¹ := by
   rw [hn, Complex.inv_def, Complex.normSq_eq_norm_sq]
   norm_num [localPhase, localDenominator, div_eq_mul_inv]
 
-private theorem coe_invHomeomorph_apply (w : U) :
-    ((Homeomorph.inv₀ ℂ : C(U, U)) w : ℂ) = w.val⁻¹ := by
-  rw [ContinuousMap.coe_ofClass, Homeomorph.inv₀]
-  rfl
-
 /-- The homotopy from the charted affine scalar to complex inversion on the punctured plane.
 Its positive real scale absorbs the factor of two in the Cayley formula. -/
 def circleIndexAffineLocalHomotopy :
@@ -225,7 +221,8 @@ def circleIndexAffineLocalHomotopy :
     simpa only [Subtype.coe_mk, coe_circleIndexAffineLocalScalar] using localValue_zero w
   map_one_left w := by
     apply Subtype.ext
-    simpa only [Subtype.coe_mk, coe_invHomeomorph_apply] using localValue_one w
+    simpa only [Subtype.coe_mk, ContinuousMap.coe_ofClass, Homeomorph.coe_inv₀_apply] using
+      localValue_one w
 
 /-- The numerator reflects across the real axis, stretches the imaginary component and rotates
 by a phase. The denominator multiplies a complex Cayley factor by the positive real radial

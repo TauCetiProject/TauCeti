@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Normalize
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Module.Cone
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.Topology.Constructions.SumProd
 
 /-!

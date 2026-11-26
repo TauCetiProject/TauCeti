@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # The direction of a chord at a point the curve passes through

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # Conformal boosts of a unit sphere

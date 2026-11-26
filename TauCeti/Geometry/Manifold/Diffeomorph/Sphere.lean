@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Reflection
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv

@@ -11,7 +11,7 @@ public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.InnerProductSpace.Compressible
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!

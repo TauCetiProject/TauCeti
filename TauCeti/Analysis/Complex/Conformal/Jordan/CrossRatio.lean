@@ -142,16 +142,18 @@ private theorem sub_I_div_add_I_eq_of_factorization {u : Circle} {c : Complex.Un
     ((y : ℂ) - I) / ((y : ℂ) + I) =
       (u : ℂ) * ((((x : ℂ) - I) / ((x : ℂ) + I) - c) /
         (1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)))) := by
+  have hcayley (r : ℝ) := continuousAt_sub_I_div_add_I
+    (add_I_ne_zero_of_im_nonneg (z := (r : ℂ)) (by simp))
   have hMc : ContinuousAt (fun z : ℂ => (u : ℂ) *
       (((z - I) / (z + I) - c) / (1 - (starRingEnd ℂ) (c : ℂ) * ((z - I) / (z + I))))) (x : ℂ) :=
-    continuousAt_const.mul (((continuousAt_sub_I_div_add_I x).sub continuousAt_const).div
-      (continuousAt_const.sub (continuousAt_const.mul (continuousAt_sub_I_div_add_I x)))
+    continuousAt_const.mul (((hcayley x).sub continuousAt_const).div
+      (continuousAt_const.sub (continuousAt_const.mul (hcayley x)))
       (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x))
   obtain ⟨hxm, hxw⟩ := mem_closedBall_and_eq_of_tendsto hGc hMc.continuousWithinAt
     (fun z hz => ball_subset_closedBall (hf' z hz).1)
     (fun z hz => (hf' z hz).2) hx
   obtain ⟨hym, hyw⟩ := mem_closedBall_and_eq_of_tendsto hGc
-    (continuousAt_sub_I_div_add_I y).continuousWithinAt
+    (hcayley y).continuousWithinAt
     (fun z hz => ball_subset_closedBall (bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz)) hg' hy
   exact hGi hym hxm (hyw.trans hxw.symm)
 
@@ -261,12 +263,14 @@ theorem eq_of_tendsto_of_bijOn_upperHalfPlaneSet {U : Set ℂ} (hUb : IsBounded 
   obtain ⟨-, -, G, hGc, hGi, hg', -⟩ := exists_disc_factorization hUb hUJ hg hg hgU hgU
   have hmaps := fun z (hz : z ∈ upperHalfPlaneSet) =>
     ball_subset_closedBall (bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz)
+  have hcayley (r : ℝ) := continuousAt_sub_I_div_add_I
+    (add_I_ne_zero_of_im_nonneg (z := (r : ℂ)) (by simp))
   obtain ⟨hxm, hxw⟩ :=
     mem_closedBall_and_eq_of_tendsto hGc
-      (continuousAt_sub_I_div_add_I x).continuousWithinAt hmaps hg' hx
+      (hcayley x).continuousWithinAt hmaps hg' hx
   obtain ⟨hym, hyw⟩ :=
     mem_closedBall_and_eq_of_tendsto hGc
-      (continuousAt_sub_I_div_add_I y).continuousWithinAt hmaps hg' hy
+      (hcayley y).continuousWithinAt hmaps hg' hy
   have hxy := injOn_sub_I_div_add_I (add_I_ne_zero_of_im_nonneg (by simp))
     (add_I_ne_zero_of_im_nonneg (by simp)) (hGi hxm hym (hxw.trans hyw.symm))
   exact_mod_cast hxy

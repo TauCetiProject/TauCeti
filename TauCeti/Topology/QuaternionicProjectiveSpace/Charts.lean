@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Basic
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # Homogeneous-coordinate charts on quaternionic projective space

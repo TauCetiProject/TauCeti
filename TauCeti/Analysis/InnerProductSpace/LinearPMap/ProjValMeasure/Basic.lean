@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.Complex.Cayley.Measurable
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Reducing
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map

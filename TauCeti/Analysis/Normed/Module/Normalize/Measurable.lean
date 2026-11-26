@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # Measurability of radial projection

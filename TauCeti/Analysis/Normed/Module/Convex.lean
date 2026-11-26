@@ -9,12 +9,13 @@ public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.Basic
 
 /-!
-# Closed convex hulls and convex sets containing a ball
+# Convexity and the norm on seminormed spaces
 
 Taking the closed convex hull of a set in a real seminormed space preserves both boundedness and
 diameter. These are the closed-hull counterparts of `isBounded_convexHull` and `convexHull_diam`.
 A norm bound `‖T x‖ ≤ r` for a continuous linear map on a set extends to its closed real convex
-hull (`ContinuousLinearMap.norm_le_of_mem_closure_convexHull`).
+hull (`ContinuousLinearMap.norm_le_of_mem_closure_convexHull`). Extrapolating from the endpoint
+with larger norm preserves its lower bound (`TauCeti.norm_le_norm_lineMap_of_one_le`).
 
 A set that is star-convex with respect to every point of `ball x r` sends every point `y` of its
 closure into its interior along the segment toward `x`: the ball of radius `(1 - t) * r` about
@@ -45,6 +46,16 @@ namespace TauCeti
 open Bornology Metric Set
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E}
+
+/-- If the norm does not decrease from `a` to `b`, extending the segment past `b` gives a
+point of norm at least `‖b‖`. -/
+theorem norm_le_norm_lineMap_of_one_le {a b : E} {t : ℝ} (hab : ‖a‖ ≤ ‖b‖) (ht : 1 ≤ t) :
+    ‖b‖ ≤ ‖AffineMap.lineMap a b t‖ := by
+  have hc := convexOn_univ_norm.comp_affineMap (AffineMap.lineMap a b)
+  simpa only [Function.comp_apply, AffineMap.lineMap_apply_one] using
+    hc.le_right_of_left_le'' (Set.mem_univ _) (Set.mem_univ _) zero_lt_one ht
+      (by simpa only [Function.comp_apply, AffineMap.lineMap_apply_zero,
+        AffineMap.lineMap_apply_one] using hab)
 
 /-- A closed convex hull is bounded exactly when the original set is. -/
 @[simp]

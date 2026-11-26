@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Module.FiniteSpan
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # Compressible and incompressible vectors

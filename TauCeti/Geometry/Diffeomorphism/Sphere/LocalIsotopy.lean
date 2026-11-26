@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.SinSqWeight
 public import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
 import TauCeti.Analysis.InnerProductSpace.Normalize
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.Geometry.Diffeomorphism.Composition
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Group
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path

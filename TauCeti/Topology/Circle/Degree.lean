@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
 
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # The degree of a loop and the angle swept by a path in the circle

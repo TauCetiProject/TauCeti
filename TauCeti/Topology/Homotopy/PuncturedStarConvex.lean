@@ -12,7 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Equiv
 
 import Mathlib.Analysis.Normed.Module.Convex
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 import TauCeti.Topology.JordanCurve.Basic
 

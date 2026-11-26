@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Ball.Action
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
@@ -68,24 +68,16 @@ private theorem sphereDirection_smul_apply (c : sphere (0 : ℂ) 1)
     simp [← mul_smul_comm]
   rw [h, sphereDirection_smul_of_pos _ (norm_pos_iff.2 hv')]
 
-/-- The direction `v_k / |v_k|` of the `k`th coordinate is continuous on the unit vectors with
-`v_k ≠ 0`. -/
-private theorem continuousOn_sphereDirection_apply :
-    ContinuousOn (fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ sphereDirection 1
-        (v.val k))
-      (mk n ⁻¹' affineOpen k) := fun v hv ↦
-  ((continuousAt_sphereDirection _ ((mk_mem_affineOpen_iff k v).1 hv)).comp
-    (f := fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ v.val k)
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
-      continuous_subtypeVal).continuousAt).continuousWithinAt
-
 /-- The **chart of the Hopf fibration** over the affine open `{X_k ≠ 0}` of `CPⁿ`, with fibre the
 unit circle. It is the orbit trivialization (`TauCeti.orbitTrivialization`) determined by the
 equivariant map `v ↦ v_k / |v_k|`, so it sends a unit vector `v` with `v_k ≠ 0` to
 `([v], v_k / |v_k|)`. -/
 def hopfTrivialization : Bundle.Trivialization (sphere (0 : ℂ) 1) (mk n) :=
   orbitTrivialization (affineOpen k) (isOpen_affineOpen k)
-    (fun v ↦ sphereDirection 1 (v.val k)) (continuousOn_sphereDirection_apply k)
+    (fun v ↦ sphereDirection 1 (v.val k))
+    (((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
+      continuous_subtypeVal).continuousOn.sphereDirection 1
+      fun v hv ↦ (mk_mem_affineOpen_iff k v).1 hv)
     (sphereDirection_smul_apply k)
 
 variable {k}

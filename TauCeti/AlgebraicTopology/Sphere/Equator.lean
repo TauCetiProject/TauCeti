@@ -11,7 +11,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
 public import TauCeti.AlgebraicTopology.Sphere.Zero
 public import TauCeti.Analysis.Normed.Module.Ball
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 public import TauCeti.Geometry.Sphere.Equator
 public import TauCeti.LinearAlgebra.Dimension.FinrankOne
 

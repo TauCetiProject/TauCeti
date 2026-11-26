@@ -65,7 +65,8 @@ theorem continuous_boundaryCayley : Continuous boundaryCayley := by
   change Continuous (fun x : ℝ ↦ (boundaryCayley x : ℂ))
   simp_rw [coe_boundaryCayley]
   exact continuous_iff_continuousAt.mpr fun x ↦
-    (continuousAt_sub_I_div_add_I x).comp continuous_ofReal.continuousAt
+    (continuousAt_sub_I_div_add_I (add_I_ne_zero_of_im_nonneg (by simp : 0 ≤ (x : ℂ).im))).comp
+      continuous_ofReal.continuousAt
 
 /-- The boundary Cayley homeomorphism from the real line onto the circle punctured at `1`. -/
 def boundaryCayleyHomeomorph : ℝ ≃ₜ {z : Circle // z ≠ 1} where

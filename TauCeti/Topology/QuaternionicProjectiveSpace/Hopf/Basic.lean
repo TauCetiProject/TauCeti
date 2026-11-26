@@ -72,21 +72,6 @@ private theorem sphereDirection_op_smul_apply (q : sphere (0 : ℍ) 1)
       Metric.unitSphere.coe_mul, ← smul_mul_assoc, norm_smul_sphereDirection]
   rw [h, sphereDirection_smul_of_pos _ (norm_pos_iff.2 hv')]
 
-/-- The direction `v_k / ‖v_k‖` of the `k`th coordinate is continuous on the unit vectors with
-`v_k ≠ 0`. -/
-private theorem continuousOn_sphereDirection_apply :
-    ContinuousOn
-      (fun v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦ sphereDirection 1 (v.val k))
-      (mk n ⁻¹' affineOpen k) := by
-  -- On the chart the direction is the radial projection of a nowhere-zero coordinate.
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine (normalizeToSphere (fun v : mk n ⁻¹' affineOpen k ↦ v.val.val k)
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
-      (continuous_subtypeVal.comp continuous_subtypeVal))
-    fun v ↦ (mk_mem_affineOpen_iff k v.val).1 v.property).continuous.congr fun v ↦ Subtype.ext ?_
-  rw [coe_normalizeToSphere_apply]
-  exact (coe_sphereDirection_of_ne_zero _ ((mk_mem_affineOpen_iff k v.val).1 v.property)).symm
-
 /-- The **chart of the quaternionic Hopf fibration** over the affine open `{X_k ≠ 0}` of `HPⁿ`,
 with fibre the unit quaternions. It sends a unit vector `v` with `v_k ≠ 0` to
 `([v], v_k / ‖v_k‖)`. It is the orbit trivialization (`TauCeti.orbitTrivialization`) determined
@@ -95,7 +80,10 @@ opposite group. -/
 def hopfTrivialization : Bundle.Trivialization (sphere (0 : ℍ) 1) (mk n) :=
   (orbitTrivialization (affineOpen k) (isOpen_affineOpen k)
     (fun v ↦ op (sphereDirection 1 (v.val k)))
-    (continuous_op.comp_continuousOn (continuousOn_sphereDirection_apply k))
+    (continuous_op.comp_continuousOn <|
+      ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
+        continuous_subtypeVal).continuousOn.sphereDirection 1
+        fun v hv ↦ (mk_mem_affineOpen_iff k v).1 hv)
     fun g v hv ↦ by
       rw [← op_unop g, sphereDirection_op_smul_apply k _ v hv, op_mul]).transFiberHomeomorph
     opHomeomorph.symm

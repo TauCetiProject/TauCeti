@@ -86,6 +86,12 @@ at `0` while releasing the first.
 public section
 
 open scoped Topology unitInterval in
+/-- A cube point is on the boundary if one of its coordinates is an endpoint. -/
+theorem Cube.mem_boundary_of_apply_eq_zero_or_eq_one {N : Type*} {x : I^N} {i : N}
+    (hi : x i = 0 ∨ x i = 1) : x ∈ Cube.boundary N :=
+  ⟨i, hi⟩
+
+open scoped Topology unitInterval in
 /-- A point of the cube `I^(Option N)` lies on its boundary exactly when its `none` coordinate is
 `0` or `1`, or its remaining coordinates lie on the boundary of `I^N`. -/
 theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :

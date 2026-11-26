@@ -126,19 +126,19 @@ private def squareLeft : Path (![0, 0] : Fin 2 → I) ![0, 1] where
 
 private theorem range_squareBottom : range squareBottom ⊆ Cube.boundary (Fin 2) := by
   rintro _ ⟨s, rfl⟩
-  exact ⟨1, Or.inl rfl⟩
+  exact Cube.mem_boundary_of_apply_eq_zero_or_eq_one (i := 1) (Or.inl rfl)
 
 private theorem range_squareRight : range squareRight ⊆ Cube.boundary (Fin 2) := by
   rintro _ ⟨t, rfl⟩
-  exact ⟨0, Or.inr rfl⟩
+  exact Cube.mem_boundary_of_apply_eq_zero_or_eq_one (i := 0) (Or.inr rfl)
 
 private theorem range_squareTop : range squareTop ⊆ Cube.boundary (Fin 2) := by
   rintro _ ⟨s, rfl⟩
-  exact ⟨1, Or.inr rfl⟩
+  exact Cube.mem_boundary_of_apply_eq_zero_or_eq_one (i := 1) (Or.inr rfl)
 
 private theorem range_squareLeft : range squareLeft ⊆ Cube.boundary (Fin 2) := by
   rintro _ ⟨t, rfl⟩
-  exact ⟨0, Or.inl rfl⟩
+  exact Cube.mem_boundary_of_apply_eq_zero_or_eq_one (i := 0) (Or.inl rfl)
 
 /-- The boundary of the square `I^(Fin 2)` as a loop based at the corner `(0, 0)`, run once
 counterclockwise: along the bottom edge, up the right edge, back along the top edge and down the
@@ -503,20 +503,26 @@ theorem squareCenterOffset_ne_zero_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.bou
 def squareCenterDirection (y : Fin 2 → I) : Circle :=
   (1 : Circle).circleValuedSphereDirection (squareCenterOffset y)
 
+/-- The square centre direction is the circle direction of the offset. -/
+theorem squareCenterDirection_eq_circleValuedSphereDirection (y : Fin 2 → I) :
+    squareCenterDirection y = (1 : Circle).circleValuedSphereDirection (squareCenterOffset y) :=
+  (rfl)
+
 /-- Away from the centre, the direction from the centre is `c / ‖c‖` for the offset `c`. -/
 theorem coe_squareCenterDirection {y : Fin 2 → I} (hy : squareCenterOffset y ≠ 0) :
     (squareCenterDirection y : ℂ) = squareCenterOffset y / ‖squareCenterOffset y‖ := by
-  simp only [squareCenterDirection, Circle.coe_circleValuedSphereDirection_of_ne_zero _ hy]
+  simp only [squareCenterDirection_eq_circleValuedSphereDirection,
+    Circle.coe_circleValuedSphereDirection_of_ne_zero _ hy]
 
 /-- The direction from the centre is continuous wherever the offset from the centre is nonzero. -/
-theorem continuousOn_squareCenterDirection_nonzeroLocus :
+theorem continuousOn_squareCenterDirection_of_offset_ne_zero :
     ContinuousOn squareCenterDirection {y | squareCenterOffset y ≠ 0} :=
   continuous_squareCenterOffset.continuousOn.circleValuedSphereDirection 1 fun _ hy ↦ hy
 
 /-- The direction from the centre is continuous on the boundary of the square. -/
 theorem continuousOn_squareCenterDirection :
     ContinuousOn squareCenterDirection (Cube.boundary (Fin 2)) :=
-  continuousOn_squareCenterDirection_nonzeroLocus.mono fun _ hy ↦
+  continuousOn_squareCenterDirection_of_offset_ne_zero.mono fun _ hy ↦
     squareCenterOffset_ne_zero_of_mem hy
 
 /-- Along an edge of the square that avoids the closed negative real axis, as seen from the
@@ -529,7 +535,7 @@ private theorem pathAngle_squareCenterDirection_eq_arg_sub {a b : Fin 2 → I} (
   rw [pathAngle_eq_sub γ (continuousOn_squareCenterDirection.mono hrange)
     (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
       (f := fun s ↦ squareCenterOffset (γ s)) (by fun_prop)) fun t ↦ by
-      simpa only [squareCenterDirection, Function.comp_apply] using
+      simpa only [squareCenterDirection_eq_circleValuedSphereDirection, Function.comp_apply] using
         (Complex.circleValuedSphereDirection_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
   simp only [comp_apply, Path.source, Path.target]
 

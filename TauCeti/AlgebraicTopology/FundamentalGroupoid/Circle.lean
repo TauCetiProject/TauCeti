@@ -16,7 +16,7 @@ import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Module.Ball.Action
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.AlgebraicTopology.Sphere.Puncture
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Homotopy.Path
 

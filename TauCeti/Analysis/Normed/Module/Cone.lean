@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.Compact
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.CoboundedImage
 

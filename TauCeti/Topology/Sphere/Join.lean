@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Constructions.Join
 
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # The join of two spheres is a sphere

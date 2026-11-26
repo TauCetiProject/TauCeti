@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 
 /-!
 # Maps into a sphere that are homotopic to their antipodes

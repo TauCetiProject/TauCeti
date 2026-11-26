@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Segment
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Basic
 public import TauCeti.Topology.Homotopy.Path
 public import Mathlib.Analysis.Normed.Group.BallSphere
 -- Private: these supply the affine homotopy and the antipode inequality used in proofs below.
