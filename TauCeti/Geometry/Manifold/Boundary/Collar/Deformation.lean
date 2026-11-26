@@ -138,16 +138,14 @@ lemma exists_disjoint_collarPart [CompactSpace N] [T2Space M] {S : Set M} (hS : 
       hmono (min_le_left _ _), hmono (min_le_right _ _)⟩
   have hcover : S ⊆ ⋃ s, U s := by
     intro x hx
-    rw [mem_iUnion]
-    by_cases hxc : x ∈ range c
-    · obtain ⟨q, rfl⟩ := hxc
-      have hq : 0 < (q.2 : ℝ) := lt_of_le_of_ne q.2.property.1 fun h ↦
-        hSf.notMem_of_mem_left hx ((hc.apply_mem_range_iff).2 h.symm)
-      refine ⟨⟨q.2 / 2, half_pos hq, by linarith [q.2.property.2]⟩, ?_⟩
-      rintro ⟨p, hp, hpq⟩
-      rw [hc.isOpenEmbedding.injective hpq] at hp
-      exact absurd hp (not_le.2 (half_lt_self hq))
-    · exact ⟨⟨1 / 2, by norm_num, by norm_num⟩, fun ⟨p, _, hp⟩ ↦ hxc ⟨p, hp⟩⟩
+    -- A point of `S` lies outside the collar of some depth `t > 0`, so outside that of depth
+    -- at most `s = min (t / 2) (1 / 2) < t`.
+    obtain ⟨t, ht, hxt⟩ := hc.exists_notMem_collarPart (hSf.notMem_of_mem_left hx)
+    have hst : min (t / 2) (1 / 2) < t := (min_le_left _ _).trans_lt (half_lt_self ht)
+    refine mem_iUnion.2 ⟨⟨min (t / 2) (1 / 2), lt_min (half_pos ht) one_half_pos,
+      (min_le_right _ _).trans_lt one_half_lt_one⟩, fun hxs ↦ hxt ?_⟩
+    obtain ⟨p, hp, rfl⟩ := hxs
+    exact ⟨p, lt_of_le_of_lt hp hst, rfl⟩
   have : Nonempty (Ioo (0 : ℝ) 1) := ⟨⟨1 / 2, by norm_num, by norm_num⟩⟩
   obtain ⟨s, hs⟩ := hS.elim_directed_cover U hU hcover hdir
   refine ⟨s, s.property.1, disjoint_left.2 fun x hx hxc ↦ ?_⟩
