@@ -96,9 +96,10 @@ private theorem ofReal_le_setLAverage_enorm_sub_of_side {w : E} (hw : ‖w‖ = 
     (δ := ENNReal.ofReal (‖y₁ - y₀‖ / 2)) (by positivity : 0 < r / 2) hsub fun y hy => by
       rw [hside y (hsub hy) (hpos y hy), ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal hfar
-  rw [← ENNReal.ofReal_mul (by positivity), show r / 2 / r = 2⁻¹ by field_simp, inv_pow,
-    ← div_eq_mul_inv, div_div, ← pow_succ'] at hlow
-  exact hlow
+  refine le_of_eq_of_le ?_ hlow
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  rw [show r / 2 / r = 2⁻¹ by field_simp, inv_pow, pow_succ]
+  field_simp
 
 variable [NormedSpace ℝ F]
 

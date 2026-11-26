@@ -209,12 +209,10 @@ theorem norm_iteratedGradient_eq_of_neg_ite_mul_iteratedGradient_eq_one (hp : p 
     rw [← ofReal_norm, ← (ContinuousLinearMap.toSpanSingletonLIE ℝ ℝ).symm.norm_map,
       ContinuousLinearMap.toSpanSingletonLIE_symm_apply, hx', norm_neg,
       Real.norm_of_nonneg (inv_nonneg.2 (hσ x).le)]
-  -- The domain `Ioo 0 1` enters the norm as an open set, whose carrier is `Ioo 0 1` by
-  -- definition; `hD` and the helper are stated for that carrier.
   have hlint : ∫⁻ x in ((⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ),
       ‖Wkp.iteratedGradient 1 u x‖ₑ ^ p.toReal =
         ENNReal.ofReal ((1 + (1 / 2) ^ p.toReal) / 2) := by
-    change ∫⁻ x in Ioo (0 : ℝ) 1, _ = _
+    simp only [Opens.coe_mk]
     exact (lintegral_congr_ae hD).trans (setLIntegral_ofReal_inv_ite_rpow hq.le)
   rw [Lp.norm_def, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable _),
     hlint, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
