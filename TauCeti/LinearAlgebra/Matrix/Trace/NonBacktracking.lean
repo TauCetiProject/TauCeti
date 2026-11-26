@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.LinearAlgebra.Matrix.NonBacktracking.Block
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 import TauCeti.Data.Fin.Basic
@@ -26,7 +27,7 @@ word, with reversals forbidden within each constituent walk and allowed at their
 
 public section
 
-open Finset
+open Finset TauCeti
 
 namespace Matrix
 
@@ -48,22 +49,23 @@ private theorem toBlocks₁₁_nonbacktrackingPow_apply_succ
           B (uv.2 t) (walkRows i j uv.1 t.succ) := by
   rw [toBlocks₁₁_nonbacktrackingPow_apply]
   symm
-  refine sum_nbij (fun uv ↦ (walkRows i j uv.1, uv.2)) (fun uv huv ↦ ?_)
-    (fun a _ b _ hab ↦ ?_) (fun uv huv ↦ ?_) (fun _ _ ↦ rfl)
-  · simpa [walkRows, Fin.forall_val_add_one_eq_iff] using huv
-  · have h₁ : walkRows i j a.1 = walkRows i j b.1 := congrArg Prod.fst hab
-    have h₂ : a.2 = b.2 := congrArg (fun q : (Fin (k + 2) → p) × (Fin (k + 1) → n) ↦ q.2) hab
-    exact Prod.ext (Fin.cons_right_injective (α := fun _ ↦ p) i
-      (Fin.snoc_left_injective (α := fun _ ↦ p) j h₁)) h₂
+  let e := Fin.fixedEndpointsEquiv (k := k) i j
+  refine sum_nbij (fun uv ↦ ((e uv.1).val, uv.2)) (fun uv huv ↦ ?_)
+    (fun a _ b _ hab ↦ ?_) (fun uv huv ↦ ?_) (fun _ _ ↦ ?_)
+  · simpa [e, walkRows, Fin.forall_val_add_one_eq_iff] using huv
+  · obtain ⟨hrows, hcols⟩ := Prod.mk.inj hab
+    exact Prod.ext (e.injective (Subtype.ext hrows)) hcols
   · have h := (mem_filter.mp huv).2
-    let u : Fin k → p := Fin.tail (Fin.init uv.1)
-    have he : walkRows i j u = uv.1 := by
-      rw [walkRows, ← h.1, ← h.2.1]
-      exact (Fin.cons_self_tail (Fin.init uv.1)).symm ▸ Fin.snoc_init_self uv.1
+    let u := e.symm ⟨uv.1, h.1, h.2.1⟩
+    have he : (e u).val = uv.1 := congrArg Subtype.val (e.apply_symm_apply _)
     refine ⟨(u, uv.2), mem_filter.mpr ⟨mem_univ _, ?_⟩, Prod.ext he rfl⟩
-    rw [he]
+    have hw : walkRows i j u = uv.1 := by
+      simpa only [e, walkRows, Fin.fixedEndpointsEquiv_apply] using he
+    rw [hw]
     exact ⟨h.2.2.1, (Fin.forall_val_add_one_eq_iff _).1 h.2.2.2⟩
+  · simp only [e, walkRows, Fin.fixedEndpointsEquiv_apply]
 
+open Classical in
 /-- The trace of the rth power of the row block of the bipartite non-backtracking walk matrix
 of length 2(k + 1) is the sum over closed bipartite words with r(k + 1) row visits.
 All consecutive row vertices must differ. Consecutive column vertices must differ within
@@ -72,9 +74,7 @@ theorem trace_pow_toBlocks₁₁_nonbacktrackingPow (A : Matrix p n R) (B : Matr
     {r : ℕ} (hr : r ≠ 0) (k : ℕ) :
     let m := r * (k + 1)
     (((nonbacktrackingPow (fromBlocks 0 A B 0) (2 * (k + 1))).toBlocks₁₁) ^ r).trace =
-      ∑ uv : (Fin m → p) × (Fin m → n) with
-          ∀ t : Fin m, uv.1 t ≠ uv.1 (finRotate m t) ∧
-            (t.modNat ≠ Fin.last k → uv.2 t ≠ uv.2 (finRotate m t)),
+      ∑ uv : (Fin m → p) × (Fin m → n) with BipartiteNonbacktracking k uv.1 uv.2,
         ∏ t : Fin m, A (uv.1 t) (uv.2 t) * B (uv.2 t) (uv.1 (finRotate m t)) := by
   classical
   dsimp only
@@ -103,6 +103,7 @@ theorem trace_pow_toBlocks₁₁_nonbacktrackingPow (A : Matrix p n R) (B : Matr
       (finProdFinEquiv (m := r) (n := k + 1)).prod_comp f
   rw [hprod]
   refine ite_congr (propext ?_) (fun _ ↦ rfl) (fun _ ↦ rfl)
+  rw [bipartiteNonbacktracking_iff]
   -- Each column except the last has a successor within the same walk.
   refine ⟨fun h t ↦ ?_, fun h a _ ↦ ?_⟩
   · obtain ⟨⟨a, b⟩, rfl⟩ := finProdFinEquiv.surjective t

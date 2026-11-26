@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
+public import TauCeti.Combinatorics.TraceWord.Bipartite.NonBacktracking
 public import TauCeti.LinearAlgebra.Matrix.Trace.NonBacktracking
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Word
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -19,8 +19,10 @@ bipartite words. Only words that read each matrix position at least twice contri
 bounded entries, the magnitude of each remaining word's contribution is controlled by its
 number of distinct positions and by the second moments of the entries.
 
-These formulas reduce bounds on the trace moments to weighted counts of bipartite words
-whose reversals can occur only at joins of the constituent walks.
+These formulas reduce bounds on the trace moments to weighted counts of the bipartite words
+`TauCeti.bipartiteNonbacktrackingWords`, whose reversals can occur only at joins of the
+constituent walks. Those weighted counts are bounded by
+`TauCeti.sum_pow_card_bipartiteEdge_mul_pow_le_of_nonbacktracking`.
 
 ## References
 
@@ -40,9 +42,10 @@ open TauCeti.Probability
 variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜] {P : Measure Ω}
   [Fintype p] [Fintype n] [DecidableEq p] [DecidableEq n] {X : Ω → Matrix p n 𝕜}
 
-/-- The expected trace of a positive power of the row block is a sum over closed bipartite
-words that are non-backtracking within each walk and that read every position at least twice.
-For trace order r and walks of length 2(k + 1), the entries need moments of order 2r(k + 1). -/
+/-- The expected trace of a positive power of the row block is a sum over the closed bipartite
+words `bipartiteNonbacktrackingWords`, which are non-backtracking within each walk and read
+every position at least twice. For trace order r and walks of length 2(k + 1), the entries need
+moments of order 2r(k + 1). -/
 theorem integral_trace_pow_toBlocks₁₁_nonbacktrackingPow
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hcenter : ∀ i j, ∫ ω, X ω i j ∂P = 0) {r : ℕ} (hr : r ≠ 0) (k : ℕ)
@@ -50,10 +53,7 @@ theorem integral_trace_pow_toBlocks₁₁_nonbacktrackingPow
     let m := r * (k + 1)
     ∫ ω, (((nonbacktrackingPow (fromBlocks 0 (X ω) (X ω)ᴴ 0) (2 * (k + 1))).toBlocks₁₁) ^ r).trace
       ∂P =
-      ∑ uv : (Fin m → p) × (Fin m → n) with
-          (∀ t : Fin m, uv.1 t ≠ uv.1 (finRotate m t) ∧
-            (t.modNat ≠ Fin.last k → uv.2 t ≠ uv.2 (finRotate m t))) ∧
-          (∀ a, ∃ b ≠ a, bipartiteEdge uv.1 uv.2 b = bipartiteEdge uv.1 uv.2 a),
+      ∑ uv ∈ bipartiteNonbacktrackingWords (α := p) (β := n) r k,
         ∫ ω, ∏ t : Fin m,
           X ω (uv.1 t) (uv.2 t) * star (X ω (uv.1 (finRotate m t)) (uv.2 t)) ∂P := by
   classical
@@ -61,17 +61,21 @@ theorem integral_trace_pow_toBlocks₁₁_nonbacktrackingPow
   simp_rw [trace_pow_toBlocks₁₁_nonbacktrackingPow _ _ hr, conjTranspose_apply]
   have hm : r * (k + 1) ≠ 0 := Nat.mul_ne_zero hr (Nat.succ_ne_zero k)
   rw [integral_finsetSum _ fun uv _ ↦ integrable_prod_apply_mul_star_apply hm hmom uv.1 uv.2]
-  rw [← Finset.filter_filter]
-  symm
-  refine Finset.sum_filter_of_ne fun uv _ hprod a ↦ ?_
-  by_contra! h
-  exact hprod (integral_prod_apply_mul_star_apply_eq_zero
+  refine (Finset.sum_subset (fun uv huv ↦ ?_) fun uv huv hW ↦ ?_).symm
+  · exact mem_filter.mpr ⟨mem_univ _, (mem_bipartiteNonbacktrackingWords.mp huv).1⟩
+  -- A nonbacktracking word with an edge read only once has vanishing expectation.
+  have hrep : ¬∀ a, ∃ b ≠ a, bipartiteEdge uv.1 uv.2 b = bipartiteEdge uv.1 uv.2 a :=
+    fun h ↦ hW (mem_bipartiteNonbacktrackingWords.mpr ⟨(mem_filter.mp huv).2, h⟩)
+  push Not at hrep
+  obtain ⟨a, ha⟩ := hrep
+  exact integral_prod_apply_mul_star_apply_eq_zero
     (fun i j ↦ (hmom i j).aemeasurable) hindep hcenter uv.1 uv.2
-    fun b hb ↦ by_contra fun hba ↦ h b hba hb)
+    fun b hb ↦ by_contra fun hba ↦ ha b hba hb
 
 /-- With entries bounded by b and second absolute moments bounded by c, the expected trace
-has norm at most the weighted number of admissible closed words. A word of half-length m
-with e distinct matrix positions receives weight min(c, b²)^e * b^(2m - 2e). -/
+has norm at most the weighted number of the closed words `bipartiteNonbacktrackingWords`.
+A word of half-length m with e distinct matrix positions receives weight
+min(c, b²)^e * b^(2m - 2e). -/
 theorem norm_integral_trace_pow_toBlocks₁₁_nonbacktrackingPow_le
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hmeas : ∀ i j, AEStronglyMeasurable (fun ω ↦ X ω i j) P)
@@ -81,10 +85,7 @@ theorem norm_integral_trace_pow_toBlocks₁₁_nonbacktrackingPow_le
     let m := r * (k + 1)
     ‖∫ ω, (((nonbacktrackingPow (fromBlocks 0 (X ω) (X ω)ᴴ 0) (2 * (k + 1))).toBlocks₁₁) ^ r).trace
       ∂P‖ ≤
-      ∑ uv : (Fin m → p) × (Fin m → n) with
-          (∀ t : Fin m, uv.1 t ≠ uv.1 (finRotate m t) ∧
-            (t.modNat ≠ Fin.last k → uv.2 t ≠ uv.2 (finRotate m t))) ∧
-          (∀ a, ∃ d ≠ a, bipartiteEdge uv.1 uv.2 d = bipartiteEdge uv.1 uv.2 a),
+      ∑ uv ∈ bipartiteNonbacktrackingWords (α := p) (β := n) r k,
         min c (b ^ 2) ^ #(univ.image (bipartiteEdge uv.1 uv.2)) *
           b ^ (2 * m - 2 * #(univ.image (bipartiteEdge uv.1 uv.2))) := by
   classical
@@ -93,7 +94,7 @@ theorem norm_integral_trace_pow_toBlocks₁₁_nonbacktrackingPow_le
   rw [hindep.integral_trace_pow_toBlocks₁₁_nonbacktrackingPow hcenter hr k
     (fun i j ↦ .of_bound (hmeas i j) b (hb i j))]
   refine (norm_sum_le _ _).trans (sum_le_sum fun uv huv ↦ ?_)
-  have hrepeat := (mem_filter.mp huv).2.2
+  have hrepeat := (mem_bipartiteNonbacktrackingWords.mp huv).2
   refine norm_integral_prod_mul_star_le_of_no_singleton_edge
     hindep (fun _ ↦ (hmeas _ _).aemeasurable) hrepeat fun a ↦ ?_
   obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le'

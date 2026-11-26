@@ -48,6 +48,8 @@ set of the earlier ones.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
   positions.
+* `Fin.fixedEndpointsEquiv`: a tuple with fixed first and last entries is determined by its
+  interior tuple.
 * `Fin.blockHeadTailEquiv`: split a tuple into equal-length nonempty blocks and collect their
   heads and tails.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
@@ -190,6 +192,30 @@ theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b 
     iff_self, and_true]
   exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
     fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- A tuple with prescribed first and last entries is equivalent to its interior tuple. -/
+def fixedEndpointsEquiv {k : ℕ} (a b : α) :
+    (Fin k → α) ≃ {u : Fin (k + 2) → α // u 0 = a ∧ u (last (k + 1)) = b} where
+  toFun u := ⟨snoc (cons a u) b, by simp⟩
+  invFun u := tail (init u.val)
+  left_inv u := by simp
+  right_inv := by
+    rintro ⟨u, ha, hb⟩
+    apply Subtype.ext
+    change snoc (cons a (tail (init u))) b = u
+    rw [← ha, ← hb]
+    exact (cons_self_tail (init u)).symm ▸ snoc_init_self u
+
+/-- The forward map inserts the prescribed endpoints. -/
+@[simp]
+theorem fixedEndpointsEquiv_apply {k : ℕ} (a b : α) (u : Fin k → α) :
+    (fixedEndpointsEquiv a b u).val = snoc (cons a u) b := (rfl)
+
+/-- The inverse map drops both endpoints. -/
+@[simp]
+theorem fixedEndpointsEquiv_symm_apply {k : ℕ} (a b : α)
+    (u : {u : Fin (k + 2) → α // u 0 = a ∧ u (last (k + 1)) = b}) :
+    (fixedEndpointsEquiv a b).symm u = tail (init u.val) := (rfl)
 
 /-- Split a tuple into `r` contiguous blocks of length `k + 1` and collect the first entry and
 the remaining entries of each block into two separate tuples. -/

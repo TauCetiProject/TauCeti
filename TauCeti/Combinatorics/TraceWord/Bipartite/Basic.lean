@@ -53,6 +53,8 @@ vertices and consecutive column vertices differ.
 * `TauCeti.bipartiteWord`: the bipartite word as a cyclic word on `α ⊕ β`, which determines
   `u` and `v` (`TauCeti.bipartiteWord_inj`).
 * `TauCeti.bipartitePath`: the open alternating word with one extra row vertex.
+* `TauCeti.BipartiteNonbacktracking`: the condition that reversals are allowed only at
+  joins of the constituent walks of a cyclic bipartite word.
 * `TauCeti.sym2_bipartiteWord`: its unordered edges are the positions read by its steps.
 * `TauCeti.card_image_bipartiteWord`: it visits `#(image u) + #(image v)` vertices.
 
@@ -113,6 +115,36 @@ theorem bipartiteWord_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteWord u v (finSumFinInterleaveEquiv k (.inr t)) = .inr (v t) := by
   simp [bipartiteWord]
 
+/-- The labels available to a bipartite trace word at time `t`: rows at even times and columns
+at odd times. -/
+def bipartiteVertexFinset [Fintype α] [Fintype β] (t : ℕ) : Finset (α ⊕ β) :=
+  if t % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr
+
+/-- The vertex finset is the row finset at an even time and the column finset at an odd time. -/
+theorem bipartiteVertexFinset_def [Fintype α] [Fintype β] (t : ℕ) :
+    bipartiteVertexFinset (α := α) (β := β) t =
+      if t % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr := (rfl)
+
+/-- Membership in the prescribed vertex finset is determined by the parity of the time. -/
+@[simp]
+theorem mem_bipartiteVertexFinset [Fintype α] [Fintype β] {t : ℕ} {x : α ⊕ β} :
+    x ∈ bipartiteVertexFinset t ↔ if t % 2 = 0 then x.isLeft else x.isRight := by
+  cases x <;> by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
+/-- The prescribed vertex finset has the cardinality of the row or column type at that time. -/
+@[simp]
+theorem card_bipartiteVertexFinset [Fintype α] [Fintype β] (t : ℕ) :
+    #(bipartiteVertexFinset (α := α) (β := β) t) =
+      if t % 2 = 0 then Fintype.card α else Fintype.card β := by
+  by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
+/-- A bipartite word visits a label on the prescribed side at each time. -/
+theorem bipartiteWord_mem_bipartiteVertexFinset [Fintype α] [Fintype β]
+    (u : Fin k → α) (v : Fin k → β) (t : Fin (2 * k)) :
+    bipartiteWord u v t ∈ bipartiteVertexFinset t.val := by
+  obtain ⟨a, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
+  cases a <;> simp
+
 /-- A cyclic bipartite word determines its row and column indices. -/
 @[simp]
 theorem bipartiteWord_inj {u u' : Fin k → α} {v v' : Fin k → β} :
@@ -132,6 +164,30 @@ theorem sym2_bipartiteWord (u : Fin k → α) (v : Fin k → β) (a : Fin k ⊕ 
       bipartiteEdge_inl]
   · simp only [finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, bipartiteWord_inr,
       bipartiteEdge_inr, Sym2.eq_swap]
+
+/-- If every entry position read by a bipartite word is read at least twice, then each unordered
+edge of its cyclic word is also traversed at least twice. -/
+theorem bipartiteWord_no_singleton_edge {u : Fin k → α} {v : Fin k → β}
+    (h : ∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a) (t : Fin (2 * k)) :
+    ∃ s ≠ t, s(bipartiteWord u v s, bipartiteWord u v (finRotate (2 * k) s)) =
+      s(bipartiteWord u v t, bipartiteWord u v (finRotate (2 * k) t)) := by
+  let e := finSumFinInterleaveEquiv k
+  obtain ⟨a, rfl⟩ := e.surjective t
+  obtain ⟨b, hba, hb⟩ := h a
+  exact ⟨e b, e.injective.ne hba, by simp only [e, sym2_bipartiteWord, hb]⟩
+
+/-- A closed bipartite word is non-backtracking in blocks of `k + 1` row visits if consecutive
+rows always differ and consecutive columns differ except at block joins. -/
+def BipartiteNonbacktracking {r : ℕ} (k : ℕ) (u : Fin (r * (k + 1)) → α)
+    (v : Fin (r * (k + 1)) → β) : Prop :=
+  ∀ t, u t ≠ u (finRotate _ t) ∧ (t.modNat ≠ Fin.last k → v t ≠ v (finRotate _ t))
+
+/-- The non-backtracking condition is expressed by inequalities at cyclic successors. -/
+theorem bipartiteNonbacktracking_iff {r k : ℕ} (u : Fin (r * (k + 1)) → α)
+    (v : Fin (r * (k + 1)) → β) :
+    BipartiteNonbacktracking k u v ↔
+      ∀ t, u t ≠ u (finRotate _ t) ∧ (t.modNat ≠ Fin.last k → v t ≠ v (finRotate _ t)) :=
+  (Iff.rfl)
 
 /-- Interleave the row and column vertices and append the final row vertex. -/
 def bipartitePath (u : Fin (k + 1) → α) (v : Fin k → β) :
@@ -154,6 +210,18 @@ theorem bipartitePath_even (u : Fin (k + 1) → α) (v : Fin k → β)
     have h : (⟨2 * (t : ℕ), by omega⟩ : Fin (2 * k + 1)) =
         (finSumFinInterleaveEquiv k (.inl t)).castSucc := by ext; simp
     simp [bipartitePath, h]
+
+/-- A bipartite path starts at its first row vertex. -/
+@[simp]
+theorem bipartitePath_zero (u : Fin (k + 1) → α) (v : Fin k → β) :
+    bipartitePath u v 0 = .inl (u 0) :=
+  bipartitePath_even u v 0
+
+/-- A bipartite path ends at its final row vertex. -/
+@[simp]
+theorem bipartitePath_last (u : Fin (k + 1) → α) (v : Fin k → β) :
+    bipartitePath u v (Fin.last (2 * k)) = .inl (u (Fin.last k)) := by
+  simp [bipartitePath]
 
 /-- The odd positions of a bipartite path are its column vertices. -/
 @[simp]

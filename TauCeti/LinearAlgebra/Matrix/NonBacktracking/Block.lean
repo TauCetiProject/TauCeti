@@ -83,12 +83,8 @@ theorem toBlocks₁₁_nonbacktrackingPow_apply (A : Matrix p n R) (B : Matrix n
         uv.1 0 = i ∧ uv.1 (Fin.last k) = j ∧
           (∀ t : Fin k, uv.1 t.castSucc ≠ uv.1 t.succ) ∧
           (∀ s t : Fin k, (s : ℕ) + 1 = t → uv.2 s ≠ uv.2 t) := by
-    have hstart : bipartitePath uv.1 uv.2 0 = .inl (uv.1 0) :=
-      bipartitePath_even _ _ 0
-    have hend : bipartitePath uv.1 uv.2 (Fin.last (2 * k)) = .inl (uv.1 (Fin.last k)) :=
-      bipartitePath_even _ _ (Fin.last k)
     have hpath : ∃ u v, bipartitePath u v = bipartitePath uv.1 uv.2 := ⟨uv.1, uv.2, rfl⟩
-    simp [W, hstart, hend, bipartitePath_nonbacktracking_iff, hpath]
+    simp [W, bipartitePath_nonbacktracking_iff, hpath]
   symm
   refine Finset.sum_nbij (fun uv ↦ bipartitePath uv.1 uv.2) (fun uv h ↦ (hmem uv).2 ?_)
     bipartitePath_injective.injOn ?_

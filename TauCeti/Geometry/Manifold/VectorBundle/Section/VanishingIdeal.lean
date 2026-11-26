@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
@@ -46,7 +47,10 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 * `TauCeti.smoothSectionFiberMap`: a `C^∞(M)`-linear map `L : Γ(V) → Γ(W)` is tensorial, and
   induces the real-linear fibre map `V_x → W_x`, `s x ↦ (L s) x`
   (`TauCeti.smoothSectionFiberMap_apply`); fibre maps are compatible with composition and with
-  multiplication by smooth functions.
+  multiplication by smooth functions, and a smooth bundle map acting on sections has its own
+  fibre maps (`TauCeti.smoothSectionFiberMap_mapFunctionLinearMap`).
+* `TauCeti.smoothSectionFiberMapEquiv`: the fibre maps of a `C^∞(M)`-linear equivalence of
+  sections of finite-rank bundles are real-linear equivalences of the fibres.
 
 ## Implementation notes
 
@@ -350,5 +354,46 @@ theorem smoothSectionFiberMap_comp [FiniteDimensional ℝ F'] [ContMDiffVectorBu
     (L' : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
     smoothSectionFiberMap x (L ∘ₗ L') = smoothSectionFiberMap x L ∘ₗ smoothSectionFiberMap x L' :=
   (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦ by simp
+
+/-- The fibre maps of a function-linear equivalence `e : Γ(V) ≃ Γ(W)` of sections of finite-rank
+bundles form a real-linear equivalence `V_x ≃ W_x`, with inverse the fibre map of `e.symm`. -/
+def smoothSectionFiberMapEquiv [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
+    (x : M) (e : Cₛ^∞⟮I; F, V⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) : V x ≃ₗ[ℝ] W x :=
+  LinearEquiv.ofLinearMap (smoothSectionFiberMap x e.toLinearMap)
+    (smoothSectionFiberMap x e.symm.toLinearMap)
+    (by rw [← smoothSectionFiberMap_comp, e.comp_symm, smoothSectionFiberMap_id])
+    (by rw [← smoothSectionFiberMap_comp, e.symm_comp, smoothSectionFiberMap_id])
+
+/-- The fibre equivalence of `e` is the fibre map of `e`. -/
+@[simp]
+theorem coe_smoothSectionFiberMapEquiv [FiniteDimensional ℝ F']
+    [ContMDiffVectorBundle ∞ F' W I] (x : M)
+    (e : Cₛ^∞⟮I; F, V⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    ⇑(smoothSectionFiberMapEquiv x e) = smoothSectionFiberMap x e.toLinearMap :=
+  (rfl)
+
+/-- The inverse of the fibre equivalence of `e` is the fibre map of `e.symm`. -/
+@[simp]
+theorem coe_smoothSectionFiberMapEquiv_symm [FiniteDimensional ℝ F']
+    [ContMDiffVectorBundle ∞ F' W I] (x : M)
+    (e : Cₛ^∞⟮I; F, V⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    ⇑(smoothSectionFiberMapEquiv x e).symm = smoothSectionFiberMap x e.symm.toLinearMap :=
+  (rfl)
+
+/-- The fibre maps of a function-linear equivalence `e : Γ(V) ≃ Γ(W)` of sections of finite-rank
+bundles are bijective. -/
+theorem smoothSectionFiberMap_bijective [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
+    (x : M) (e : Cₛ^∞⟮I; F, V⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    Function.Bijective (smoothSectionFiberMap x e.toLinearMap) :=
+  (smoothSectionFiberMapEquiv x e).bijective
+
+/-- The fibre maps of the action on sections of a smooth bundle map `ϕ` are the maps `ϕ x`. -/
+@[simp]
+theorem smoothSectionFiberMap_mapFunctionLinearMap (x : M) (ϕ : ∀ x, V x →ₗ[ℝ] W x)
+    (hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F')) ∞
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' W))) :
+    smoothSectionFiberMap x (ContMDiffSection.mapFunctionLinearMap ϕ hϕ) = ϕ x :=
+  (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦
+    (ContMDiffSection.mapFunctionLinearMap_apply ϕ hϕ s x).symm
 
 end TauCeti
