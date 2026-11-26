@@ -7,10 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Sphere
+public import TauCeti.Topology.MappingSpace.Sphere.ThreeSphere
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
-import Mathlib.Analysis.Quaternion
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Topology.MappingSpace.FreeLoop
 
 /-!
 # The homology of the free loop space of the three-sphere
@@ -30,11 +28,10 @@ So for a nontrivial ring, `H_p(𝓛S³; R) ≅ R` exactly when `p ≠ 1`
 free loop space, which is homotopy equivalent to `C(S¹, S³)`
 (`TauCeti.MooreFreeLoopSpace.homotopyEquivCircleMap`).
 
-The computation uses a group structure on `S³`. The sphere is homeomorphic to the unit quaternions,
-a topological group, and transporting their multiplication makes `S³` a topological group. The free
-loop space of a topological group `G` is the product `G × ΩG`
-(`TauCeti.circleMapGroupHomeomorphLoopSpace`), so `𝓛S³ ≃ₜ S³ × ΩS³`. The loop space `ΩS³` has
-homology `R` in every even degree and `0` in every odd degree
+The computation uses the splitting `𝓛S³ ≃ₜ S³ × ΩS³`
+(`TauCeti.circleMapThreeSphereHomeomorphProd`) given by the group structure on `S³` transported
+from the unit quaternions. The loop space `ΩS³` has homology `R` in every even degree and `0` in
+every odd degree
 (`TauCeti.singularHomologyLoopSpaceSphereIso`, `TauCeti.isZero_singularHomology_loopSpace_sphere`).
 By the Künneth formula for a sphere factor, `Hₘ(S³ × B) ≅ Hₘ(B) ⊕ H_{m-3}(B)`, of which only one
 summand is nonzero in each degree here: in even degree `m` the inclusion `B → S³ × B` is an
@@ -77,49 +74,11 @@ noncomputable section
 universe u
 
 open CategoryTheory Limits Metric Module AlgebraicTopology
-open scoped Quaternion
 
 namespace TauCeti
 
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : finrank ℝ E = 3 + 1)
   (R : Type u) [Ring R]
-
-section Group
-
-include hE in
-/-- The unit sphere of a four-dimensional real normed space is homeomorphic to the unit
-quaternions. -/
-private def threeSphereHomeomorphUnitQuaternion : sphere (0 : E) 1 ≃ₜ sphere (0 : ℍ[ℝ]) 1 :=
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  sphereHomeomorphOfFinrankEq (by rw [hE, Quaternion.finrank_eq_four])
-
-/-- The group structure on the three-sphere transported from the unit quaternions. -/
-private abbrev threeSphereGroup : Group (sphere (0 : E) 1) :=
-  (threeSphereHomeomorphUnitQuaternion hE).toEquiv.group
-
-/-- With the multiplication transported from the unit quaternions, the three-sphere is a
-topological group: the homeomorphism with the unit quaternions is then a group isomorphism. -/
-private lemma isTopologicalGroup_threeSphere :
-    @IsTopologicalGroup (sphere (0 : E) 1) _ (threeSphereGroup hE) :=
-  letI := threeSphereGroup hE
-  (threeSphereHomeomorphUnitQuaternion hE).isInducing.isTopologicalGroup
-    (threeSphereHomeomorphUnitQuaternion hE).toEquiv.mulEquiv
-
-/-- The base point of the three-sphere at which the free loop space splits off the loop space: the
-point corresponding to the unit quaternion `1`. -/
-private def threeSphereOne : sphere (0 : E) 1 :=
-  (threeSphereHomeomorphUnitQuaternion hE).symm 1
-
-/-- The free loop space of the three-sphere is the product of the sphere and its loop space,
-`C(S¹, S³) ≃ₜ S³ × ΩS³`, through the group structure transported from the unit quaternions. -/
-private def circleMapThreeSphereHomeomorphProd :
-    C(Circle, sphere (0 : E) 1) ≃ₜ
-      sphere (0 : E) 1 × Path (threeSphereOne hE) (threeSphereOne hE) :=
-  letI := threeSphereGroup hE
-  letI := isTopologicalGroup_threeSphere hE
-  (circleMapGroupHomeomorphLoopSpace (sphere (0 : E) 1)).symm
-
-end Group
 
 section Homology
 
