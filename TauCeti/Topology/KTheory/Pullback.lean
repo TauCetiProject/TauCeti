@@ -177,6 +177,14 @@ theorem addEquivIntOfContractibleSpace_of (A : FiniteRankAtlas 𝕜 X) (x : X) :
     addEquivIntOfContractibleSpace 𝕜 X (SplitK0.of A) = A.rank x := by
   rw [addEquivIntOfContractibleSpace_apply _ x, rankHom_of_apply]
 
+/-- The inverse of the isomorphism `K⁰(X) ≃+ ℤ` of a contractible space sends `n` to the class of
+the trivial bundle of rank `n`. -/
+@[simp]
+theorem addEquivIntOfContractibleSpace_symm_apply (n : ℤ) :
+    (addEquivIntOfContractibleSpace 𝕜 X).symm n = trivialHom 𝕜 X (LocallyConstant.const X n) := by
+  rw [AddEquiv.symm_apply_eq, addEquivIntOfContractibleSpace_apply _ (Classical.arbitrary X),
+    rankHom_trivialHom, LocallyConstant.coe_const, Function.const_apply]
+
 end Contractible
 
 end TauCeti.TopologicalKZero

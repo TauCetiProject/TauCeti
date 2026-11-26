@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Pullback
 public import TauCeti.Topology.VectorBundle.FiniteRank.HomotopyInvariance
+public import TauCeti.Topology.Homotopy.Homotopic.PathComponent
 
 /-!
 # Homotopy invariance of pullbacks of variable-rank bundle atlases
@@ -42,27 +43,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y]
   (A : FiniteRankAtlas 𝕜 Y) {f₀ f₁ : C(X, Y)}
 
-/-- The rank of an atlas is constant along each track of a homotopy. -/
-private theorem rank_homotopy_apply (H : f₀.Homotopy f₁) (t : I) (x : X) :
-    A.rank (H (t, x)) = A.rank (f₀ x) := by
-  rw [← H.apply_zero x]
-  exact (A.rank.isLocallyConstant.comp_continuous
-    (H.continuous.comp (Continuous.prodMk_left x))).apply_eq_of_preconnectedSpace t 0
-
-/-- On the locus where both pulled-back ranks are `n`, a homotopy from `f₀` to `f₁` is a homotopy
-of maps into the rank-`n` stratum of `Y`. -/
-private def stratumHomotopy (H : f₀.Homotopy f₁) (n : ℕ) :
-    ((f₀.restrictPreimage {y | A.rank y = n}).comp
-        (stratumPairFst (A.pullback f₀) (A.pullback f₁) n n)).Homotopy
-      ((f₁.restrictPreimage {y | A.rank y = n}).comp
-        (stratumPairSnd (A.pullback f₀) (A.pullback f₁) n n)) where
-  toFun p := ⟨H (p.1, p.2.val), (A.rank_homotopy_apply H p.1 p.2.val).trans p.2.property.1⟩
-  continuous_toFun := (H.continuous.comp
-    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
-  map_zero_left x := Subtype.ext <| (H.apply_zero x.val).trans <| congrArg Subtype.val <|
-    congrArg (f₀.restrictPreimage {y | A.rank y = n}) (stratumPairFst_apply _ _ n n x).symm
-  map_one_left x := Subtype.ext <| (H.apply_one x.val).trans <| congrArg Subtype.val <|
-    congrArg (f₁.restrictPreimage {y | A.rank y = n}) (stratumPairSnd_apply _ _ n n x).symm
+/-- The rank-`n` stratum of `Y` contains the path component of each of its points, since the rank
+of `A` is locally constant. -/
+private theorem pathComponent_subset_rank_fiber (n : ℕ) :
+    ∀ y ∈ {y | A.rank y = n}, pathComponent y ⊆ {y | A.rank y = n} := fun _ hy ↦
+  (pathComponent_subset_component _).trans
+    ((A.rank.isLocallyConstant.isClopen_fiber n).connectedComponent_subset hy)
 
 variable [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜] [R1Space X] [ParacompactSpace X]
 
@@ -80,8 +66,17 @@ private theorem nonempty_stratumIso (H : f₀.Homotopy f₁) (n : ℕ) :
     hS.isClosedEmbedding_subtypeVal.paracompactSpace
   -- The stratum cores of the two pullbacks are pullbacks of the stratum core of `A`
   -- (`stratumCore_pullback`), and a pullback of a pullback is literally the pullback along the
-  -- composite (`FiniteRankBundleCore.pullback_comp`); both hold by `rfl`.
-  exact (A.stratumCore n).nonempty_pullback_iso_pullback_of_homotopic ⟨A.stratumHomotopy H n⟩
+  -- composite (`FiniteRankBundleCore.pullback_comp`); both hold by `rfl`. On this locus, `H`
+  -- runs inside the rank-`n` stratum of `Y`, so it restricts to a homotopy into that stratum.
+  exact (A.stratumCore n).nonempty_pullback_iso_pullback_of_homotopic <|
+    .codRestrict (A.pathComponent_subset_rank_fiber n)
+      (f₀ := (f₀.restrictPreimage _).comp (stratumPairFst (A.pullback f₀) (A.pullback f₁) n n))
+      (f₁ := (f₁.restrictPreimage _).comp (stratumPairSnd (A.pullback f₀) (A.pullback f₁) n n))
+      ⟨(H.compContinuousMap ⟨Subtype.val, continuous_subtypeVal⟩).cast
+        (ContinuousMap.ext fun x ↦ congrArg (Subtype.val ∘ f₀.restrictPreimage {y | A.rank y = n})
+          (stratumPairFst_apply (A.pullback f₀) (A.pullback f₁) n n x).symm)
+        (ContinuousMap.ext fun x ↦ congrArg (Subtype.val ∘ f₁.restrictPreimage {y | A.rank y = n})
+          (stratumPairSnd_apply (A.pullback f₀) (A.pullback f₁) n n x).symm)⟩
 
 /-- The coordinate morphisms on the joint rank strata of the two pullbacks: the chosen
 isomorphism on the diagonal strata, and zero on the others, which are empty. -/
@@ -94,10 +89,9 @@ the diagonal are empty, and on the diagonal they are isomorphisms. -/
 private theorem bijective_fiberMap_stratumHom (H : f₀.Homotopy f₁) (m n : ℕ)
     (x : StratumPair (A.pullback f₀) (A.pullback f₁) m n) :
     Function.Bijective ((A.stratumHom H m n).fiberMap x) := by
-  obtain rfl : m = n := by
-    have h₁ := A.rank_homotopy_apply H 1 x.val
-    rw [H.apply_one] at h₁
-    exact x.property.1.symm.trans (h₁.symm.trans x.property.2)
+  obtain rfl : m = n :=
+    (ContinuousMap.Homotopic.apply_mem ⟨H⟩ (A.pathComponent_subset_rank_fiber m)
+      x.property.1 : A.rank (f₁ x.val) = m).symm.trans x.property.2
   simp only [stratumHom, ↓reduceDIte]
   exact (FiniteRankBundleCore.isIso_iff_bijective _).1 inferInstance x
 

@@ -48,6 +48,9 @@ theorem nonempty_pullback_iso_pullback_of_homotopic (A : FiniteRankBundleCore �
     hΦ.comp (A.pullbackHomeomorph f₀).continuous).congr fun p ↦ ?_⟩
   rw [Function.comp_apply, Function.comp_apply, pullbackHomeomorph_apply,
     pullbackHomeomorph_symm_apply]
+  -- Both sides are `⟨p.proj, Φ p.proj p.snd⟩`: the fibre `(A.pullback f).core.Fiber x` of the
+  -- pulled-back core and the fibre `((⇑f) *ᵖ A.core.Fiber) x` of Mathlib's pullback bundle both
+  -- unfold to `Fin A.rank → 𝕜`, so the two total-space points agree by definition.
   rfl
 
 /-- Pullback of rank-`n` isomorphism classes of finite-rank cores along a map out of a paracompact
