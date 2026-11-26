@@ -784,6 +784,11 @@ theorem lowerOrdersL_eqRec_eq_lowerToZeroL (w : C.sobolevSections μ p k) :
   apply C.chartValuesL_injective μ p 0
   rw [chartValuesL_lowerOrdersL, chartValuesL_eqRec, chartValuesL_lowerToZeroL]
 
+/-- Forgetting all derivatives is injective. -/
+theorem lowerToZeroL_injective : Function.Injective (C.lowerToZeroL μ p k) := fun w w' h ↦
+  C.chartValuesL_injective μ p k <| by
+    rw [← chartValuesL_lowerToZeroL, h, chartValuesL_lowerToZeroL]
+
 section ConstMap
 
 /-- Applies the constant matrix of a linear map `L` of the model fibre, in the basis
