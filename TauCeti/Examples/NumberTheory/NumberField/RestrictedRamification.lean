@@ -15,7 +15,8 @@ import TauCeti.NumberTheory.NumberField.ExistsRamified
   degree `> 1` has `|disc| > 2`, so some prime ramifies in it (Minkowski, through Mathlib's
   `NumberField.exists_not_isUnramifiedAt_int` in its relative form
   `NumberField.finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn`). A definition of `K_S` that
-  ignored ramification would give all of `Ω`.
+  ignored ramification would give the algebraic closure of `ℚ` in `Ω` (all of `Ω` when `Ω / ℚ` is
+  algebraic).
 * For `S` the set of all finite places, `K_S = Ω` for `Ω` algebraic over `K`
   (`TauCeti.RestrictedRamification.maxUnramifiedOutside_univ`).
 -/
