@@ -70,6 +70,8 @@ not belong to any particular application.
   integrable function is bounded in norm by the integral of its norm over the whole space.
 * `MeasureTheory.setIntegral_Ioc_comp_add_left`: translating a set integral over `(a, b]` to one
   over `(d + a, d + b]`.
+* `MeasureTheory.IntegrableOn.comp_add_right_Icc`: a function integrable on `[a, b]` has its
+  translate `u ↦ f (u + c)` integrable on `[a - c, b - c]`.
 * `intervalIntegral.integral_of_not_completeSpace`: in an incomplete codomain every interval
   integral is `0`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -526,6 +528,15 @@ theorem MeasureTheory.setIntegral_Ioc_comp_add_left {E : Type*} [NormedAddCommGr
       intervalIntegral.integral_comp_add_left]
   · rw [Ioc_eq_empty_of_le hab, Ioc_eq_empty_of_le (add_le_add_right hab d), setIntegral_empty,
       setIntegral_empty]
+
+/-- A function integrable on `[a, b]` has its translate by `c` integrable on `[a - c, b - c]`. -/
+theorem MeasureTheory.IntegrableOn.comp_add_right_Icc {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) (c : ℝ) :
+    IntegrableOn (fun u ↦ f (u + c)) (Icc (a - c) (b - c)) := by
+  have h := (measurePreserving_add_right volume c).integrableOn_comp_preimage
+    (measurableEmbedding_addRight c) (f := f) (s := Icc a b)
+  rw [preimage_add_const_Icc] at h
+  exact h.2 hf
 
 /-- In an incomplete codomain every interval integral is `0`, as for the Bochner integral
 (`MeasureTheory.integral_of_not_completeSpace`). -/

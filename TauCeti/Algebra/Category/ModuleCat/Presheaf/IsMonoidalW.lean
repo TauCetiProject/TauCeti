@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Localization
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.CategoryTheory.MorphismProperty.Colimits
 
+import TauCeti.CategoryTheory.Sites.Grothendieck
 import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
 /-!
@@ -100,8 +101,7 @@ theorem _root_.PresheafOfModules.isLocallyInjective_free_whiskerLeft (F : Cᵒ�
         simp only [finsuppScalarLeft_lTensor_apply, map_zero, Finsupp.coe_zero,
           Pi.zero_apply] at this
         exact this.trans (map_zero _).symm
-    refine J.superset_covering ?_ (Finset.inf_induction (J.top_mem _)
-      (fun _ h₁ _ h₂ ↦ J.intersection_covering h₁ h₂) hz)
+    refine J.superset_covering ?_ (J.finset_inf_mem hz)
     intro V g hg
     have hg' : ∀ z ∈ (e t).support, N.map g.op (e t z) = 0 := fun z hz ↦
       (Finset.inf_le (f := fun z ↦ Presheaf.equalizerSieve

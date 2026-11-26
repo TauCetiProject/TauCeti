@@ -11,12 +11,11 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.LinearAlgebra.Determinant
-import Mathlib.LinearAlgebra.Dual.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.Order.Compact
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
@@ -94,35 +93,17 @@ private lemma evalMatrix_update (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → 
 private lemma exists_evalMatrix_det_ne_zero [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
     ∃ f : Fin (Module.finrank K U) → 𝒜, (evalMatrix ℓ (Module.finBasis K U) f).det ≠ 0 := by
-  set n := Module.finrank K U
-  let b := Module.finBasis K U
-  have hspan : Submodule.span K (Set.range ℓ) = ⊤ :=
-    Submodule.span_eq_top_of_ne_zero fun v hv => by
-      by_contra! h
-      exact hv (hsep v fun a => h _ ⟨a, rfl⟩)
-  obtain ⟨s, hs_sub, hs_span, hs_li⟩ := exists_linearIndependent K (Set.range ℓ)
-  let bs : Module.Basis s K (Module.Dual K U) :=
-    Module.Basis.mk hs_li (by rw [Subtype.range_coe, hs_span, hspan])
-  have : Finite s := Module.Finite.finite_basis bs
-  let _ : Fintype s := Fintype.ofFinite s
-  have hcard : Fintype.card s = n := by
-    have hfr := Module.finrank_eq_card_basis bs
-    rw [Subspace.dual_finrank_eq] at hfr
-    exact hfr.symm
-  let e : Fin n ≃ s := (Fintype.equivFinOfCardEq hcard).symm
-  have hmem : ∀ i : Fin n, (e i : Module.Dual K U) ∈ Set.range ℓ := fun i => hs_sub (e i).property
-  choose f hf using hmem
-  have hli : LinearIndependent K (fun i : Fin n => ℓ (f i)) := by
-    have h1 := hs_li.comp e e.injective
-    simpa [Function.comp_def, hf] using h1
-  -- `ℓ ∘ f` is a basis of the dual, so its matrix in the dual basis of `b`, the transpose of the
-  -- evaluation matrix, has unit determinant.
-  have hunit := b.dualBasis.is_basis_iff_det.mp
-    ⟨hli, hli.span_eq_top_of_card_eq_finrank' (by simp [n, Subspace.dual_finrank_eq])⟩
-  rw [Module.Basis.det_apply,
-    show b.dualBasis.toMatrix (fun i => ℓ (f i)) = (evalMatrix ℓ b f).transpose
-      by ext; simp [Module.Basis.toMatrix_apply],
-    Matrix.det_transpose] at hunit
+  have hker : ⨅ a : 𝒜, LinearMap.ker (ℓ a) = ⊥ :=
+    eq_bot_iff.2 fun v hv => hsep v fun a => (Submodule.mem_iInf _).1 hv a
+  obtain ⟨f, hf⟩ := Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot ℓ hker
+  have hunit := LinearEquiv.isUnit_det (LinearEquiv.ofBijective (LinearMap.pi (ℓ ∘ f)) hf)
+    (Module.finBasis K U) (Pi.basisFun K (Fin (Module.finrank K U)))
+  have hmat : LinearMap.toMatrix (Module.finBasis K U) (Pi.basisFun K (Fin (Module.finrank K U)))
+      (LinearEquiv.ofBijective (LinearMap.pi (ℓ ∘ f)) hf) =
+      evalMatrix ℓ (Module.finBasis K U) f := by
+    ext i j
+    simp [LinearMap.toMatrix_apply]
+  rw [hmat] at hunit
   exact ⟨f, hunit.ne_zero⟩
 
 /-- If `a` maximizes `‖φ (det (evalMatrix ℓ b ·))‖`, then every `ℓ x` has image norm at most `1`

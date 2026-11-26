@@ -116,7 +116,7 @@ private theorem IsMorseSmale.unstableSet_subset_closure_unstableSet_of_nonempty
       (Eventually.of_forall fun t ↦ Flow.isInvariant_unstableSet _ p t ha.1)
   -- Otherwise `y` flows forwards to some `r ≠ q`, and the trajectory from `p` to `r` broken at `q`
   -- through `a` and `y` is a limit of unbroken trajectories from `p` to `r`.
-  obtain ⟨r, -, hr⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨r, -, hr⟩ := hX.exists_tendsto_atTop y
   have hyr : y ∈ hX.flow.stableSet r := Flow.mem_stableSet.2 hr
   have hqr : q ≠ r := fun hqr ↦
     hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hqr ▸ hyr⟩)
@@ -142,7 +142,7 @@ private theorem IsMorseSmale.stableSet_subset_closure_stableSet_of_nonempty
       (Eventually.of_forall fun t ↦ Flow.isInvariant_stableSet _ q t ha.2)
   -- Otherwise `y` flows backwards to some `x ≠ p`, and the trajectory from `x` to `q` broken at `p`
   -- through `y` and `a` is a limit of unbroken trajectories from `x` to `q`.
-  obtain ⟨x, -, hx⟩ := hX.exists_tendsto_atBot hf y
+  obtain ⟨x, -, hx⟩ := hX.exists_tendsto_atBot y
   have hyx : y ∈ hX.flow.unstableSet x := Flow.mem_unstableSet.2 hx
   have hxp : x ≠ p := fun hxp ↦
     hyp (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hxp ▸ hyx, hy⟩)
@@ -185,7 +185,7 @@ theorem closure_unstableSet_subset (hX : IsAdaptedPseudoGradient f X) (hf : IsMo
     (p : M) :
     closure (hX.flow.unstableSet p) ⊆ ⋃ (q) (_ : Relation.ReflTransGen hX.FlowsTo p q),
         hX.flow.unstableSet q := fun y hy ↦ by
-  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot y
   have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
   exact mem_iUnion₂.2 ⟨a, reflTransGen_of_mem_closure_unstableSet hf hy hya, hya⟩
 
@@ -196,7 +196,7 @@ theorem closure_stableSet_subset (hX : IsAdaptedPseudoGradient f X) (hf : IsMors
     (q : M) :
     closure (hX.flow.stableSet q) ⊆ ⋃ (p) (_ : Relation.ReflTransGen hX.FlowsTo p q),
         hX.flow.stableSet p := fun y hy ↦ by
-  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop y
   have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
   exact mem_iUnion₂.2 ⟨b, reflTransGen_of_mem_closure_stableSet hf hy hyb, hyb⟩
 
@@ -252,7 +252,7 @@ theorem IsMorseSmale.closure_unstableSet_diff_subset (h : hX.IsMorseSmale)
         (_ : manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p),
         hX.flow.unstableSet q := by
   rintro y ⟨hy, hyp⟩
-  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot y
   have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
   have hap : a ≠ p := fun hap ↦ hyp (hap ▸ hya)
   simp only [mem_iUnion]
@@ -269,7 +269,7 @@ theorem IsMorseSmale.closure_stableSet_diff_subset (h : hX.IsMorseSmale)
         (_ : manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p),
         hX.flow.stableSet p := by
   rintro y ⟨hy, hyq⟩
-  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop y
   have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
   have hbq : b ≠ q := fun hbq ↦ hyq (hbq ▸ hyb)
   simp only [mem_iUnion]
