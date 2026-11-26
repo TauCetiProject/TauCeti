@@ -219,6 +219,16 @@ theorem abs_apply_le_abs_riemannianVolumeForm
     abs_mul, abs_mul, hvolb, mul_one]
   exact mul_le_of_le_one_right (abs_nonneg _) hωb
 
+/-- The Riemannian volume form is positive on every positively oriented tangent basis. -/
+theorem riemannianVolumeForm_apply_pos
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
+    0 < riemannianVolumeForm o x c := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  exact _root_.Orientation.volumeForm_apply_pos_iff.2 hc
+
 /-- **Pointwise comass inequality** on positively oriented tangent bases: in every degree `m : ℕ`,
 if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `|ω(c)| ≤ dvol_g(c)` on every
 positively oriented basis `c` of `T_x M`. -/
@@ -228,12 +238,9 @@ theorem abs_apply_le_riemannianVolumeForm
     (hω : ∀ v : Fin m → TangentSpace I x, Orthonormal ℝ v → |ω v| ≤ 1)
     (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
     (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
-    |ω c| ≤ riemannianVolumeForm o x c := by
-  let := o.fact_finrank_tangentSpace x
-  have hpos : 0 < riemannianVolumeForm o x c := by
-    rw [riemannianVolumeForm_apply]
-    exact _root_.Orientation.volumeForm_apply_pos_iff.2 hc
-  exact (abs_apply_le_abs_riemannianVolumeForm o x ω hω c).trans_eq (abs_of_pos hpos)
+    |ω c| ≤ riemannianVolumeForm o x c :=
+  (abs_apply_le_abs_riemannianVolumeForm o x ω hω c).trans_eq
+    (abs_of_pos (riemannianVolumeForm_apply_pos o x c hc))
 
 /-- Signed pointwise comass inequality on positively oriented tangent bases: in every degree
 `m : ℕ`, if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `ω(c) ≤ dvol_g(c)` on

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
-public import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
+public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.Complex.BoundaryHolder
 import TauCeti.Analysis.Complex.Circle.Basic
@@ -28,7 +28,7 @@ import TauCeti.Topology.MetricSpace.Holder
 /-!
 # The Riemann–Hilbert problem on the disc with boundary values on a rotating line
 
-Fix an integer `k`. The file `TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary` computes the
+Fix an integer `k`. The file `TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary` computes the
 kernel of the Cauchy–Riemann operator `∂/∂(conj z)` on the closed unit disc with the boundary
 condition `u w = w ^ k * conj (u w)` on the unit circle, that is `u(e^{iθ}) ∈ e^{ikθ/2} ℝ`, whose
 loop of real lines has Maslov index `k`. This file treats the cokernel side, following the Fourier
@@ -79,9 +79,12 @@ onto, on compactly supported `C²` data
 plane and is `C²`, and `h` solves the Riemann–Hilbert problem with
 `φ w = w ^ k * conj (T f w) - T f w`, correcting the boundary values. The solution is unique up
 to the kernel `TauCeti.unitDiscCauchyRiemannKernel k`
-(`TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`). So for `k ≥ -1` the operator has no
-cokernel on this class of data, and the index `k + 1` predicted by the Riemann–Roch formula
-`n χ + μ` with `n = 1`, `χ = 1`, `μ = k` is the dimension of its kernel.
+(`TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`); for `k = 3` the kernel consists of
+the cubics `a₀ + a₁ z + conj a₁ z ^ 2 + conj a₀ z ^ 3`, so a solution is determined by its centre
+value and first jet
+(`TauCeti.eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq`). So for `k ≥ -1`
+the operator has no cokernel on this class of data, and the index `k + 1` predicted by the
+Riemann–Roch formula `n χ + μ` with `n = 1`, `χ = 1`, `μ = k` is the dimension of its kernel.
 
 ## Main definitions
 
@@ -114,6 +117,8 @@ cokernel on this class of data, and the index `k + 1` predicted by the Riemann�
   boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is onto on compactly supported `C²` data.
 * `TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`: two solutions differ by an element of
   the kernel `TauCeti.unitDiscCauchyRiemannKernel k`.
+* `TauCeti.eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq`: for `k = 3` a
+  solution is determined by its centre value and its first jet.
 
 ## References
 
@@ -622,5 +627,32 @@ theorem domRestrict_sub_mem_unitDiscCauchyRiemannKernel {u₁ u₂ : ℂ → ℂ
     ⟨u₁ - u₂, diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
       (by rwa [closure_ball 0 one_ne_zero]) (by rwa [closure_ball 0 one_ne_zero]) hd₁ hd₂ heq,
       fun w hw ↦ by simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw], rfl⟩
+
+/-- **Uniqueness for Maslov index three.** Two functions, continuous on the closed unit disc and
+real differentiable on the open disc, with the same `∂/∂(conj z)` on the open disc, boundary
+values `u w = w ^ 3 * conj (u w)` on the unit circle, the same centre value and the same first jet
+`∂ₛu(0)`, agree on the closed disc. -/
+theorem eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq {u₁ u₂ : ℂ → ℂ}
+    (hc₁ : ContinuousOn u₁ (closedBall 0 1)) (hc₂ : ContinuousOn u₂ (closedBall 0 1))
+    (hd₁ : DifferentiableOn ℝ u₁ (ball 0 1)) (hd₂ : DifferentiableOn ℝ u₂ (ball 0 1))
+    (heq : ∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1)
+    (hb₁ : ∀ w ∈ sphere (0 : ℂ) 1, u₁ w = w ^ (3 : ℤ) * conj (u₁ w))
+    (hb₂ : ∀ w ∈ sphere (0 : ℂ) 1, u₂ w = w ^ (3 : ℤ) * conj (u₂ w)) (h₀ : u₁ 0 = u₂ 0)
+    (h₁ : fderiv ℝ u₁ 0 1 = fderiv ℝ u₂ 0 1) : EqOn u₁ u₂ (closedBall 0 1) := by
+  have hv := diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
+    (by rwa [closure_ball 0 one_ne_zero]) (by rwa [closure_ball 0 one_ne_zero]) hd₁ hd₂ heq
+  have h0 : (0 : ℂ) ∈ ball (0 : ℂ) 1 := mem_ball_self one_pos
+  -- The real derivative of the holomorphic `u₁ - u₂` is multiplication by its complex derivative.
+  have hderiv : deriv (u₁ - u₂) 0 = 0 := by
+    have h := congr($((hv.differentiableAt isOpen_ball h0).hasDerivAt.complexToReal_fderiv.fderiv)
+      1)
+    rw [fderiv_sub (hd₁.differentiableAt (isOpen_ball.mem_nhds h0))
+      (hd₂.differentiableAt (isOpen_ball.mem_nhds h0)), sub_apply, h₁, sub_self] at h
+    simpa using h.symm
+  intro z hz
+  have := hv.eqOn_zero_of_eq_zpow_mul_conj_of_eq_zero_of_deriv_eq_zero
+    (fun w hw ↦ by simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw])
+    (by simp [h₀]) hderiv hz
+  exact sub_eq_zero.mp this
 
 end TauCeti
