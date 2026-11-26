@@ -294,10 +294,7 @@ include hS in
 /-- A section inside a variable base meets no deleted item. -/
 private theorem disjoint_sectionItems {μ : Fin Ω.numBases} {i j : ℕ} (hi : (Ω.left μ : ℕ) ≤ i)
     (hj : j ≤ Ω.right μ) : Disjoint (Ω.sectionItems i j) S :=
-  (hS μ).mono_left fun k hk => by
-    rw [mem_sectionItems] at hk
-    rw [mem_baseItems]
-    omega
+  (hS μ).mono_left (Ω.sectionItems_subset_baseItems hi hj)
 
 include hS in
 /-- A boundary `p` with `α(μ) ≤ p < β(μ)` is the left end-point of a remaining item. -/

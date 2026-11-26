@@ -865,6 +865,14 @@ theorem length_substituteVars_segment_add_prefixLength (s : Bool) {i j : ℕ} (h
   conv_rhs => rw [← List.take_append_drop i (List.take j (List.finRange Ω.numItems))]
   rw [List.map_append, List.sum_append, List.take_take, min_eq_left hij, add_comm]
 
+/-- The word of an item `hₖ` spans the words of a solution from boundary `k` to boundary `k + 1`:
+the prefix length grows across `hₖ` by the length of its word. -/
+theorem prefixLength_succ (k : Fin Ω.numItems) :
+    U.prefixLength (k + 1) = U.prefixLength k + (U.word k).length := by
+  have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right k 1)
+  rw [segment_succ, substituteVars_singleton_inl] at this
+  omega
+
 /-- Each item carries a nonempty word, so the prefix length grows at least by the number of items
 between two boundaries. -/
 theorem prefixLength_add_le {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
@@ -1056,14 +1064,6 @@ private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.con
   List.singleton_inj.1 ((U.word_of_mem_constBases hb).symm.trans
     (hk ▸ U.word_of_mem_constBases hb'))
 
-/-- An item carrying a one-letter word, for instance a constant item, increases the prefix length
-by one. -/
-theorem prefixLength_succ_of_length_word_eq_one {k : Fin Ω.numItems}
-    (hk : (U.word k).length = 1) : U.prefixLength (k + 1) = U.prefixLength k + 1 := by
-  have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right k 1)
-  rw [segment_succ, substituteVars_singleton_inl, hk] at this
-  omega
-
 /-- Two boundaries whose positions in the words of a solution differ by one are adjacent: every
 item carries a nonempty word. -/
 private theorem eq_add_one_of_prefixLength_eq {i j : ℕ} (hj : j ≤ Ω.numItems)
@@ -1091,7 +1091,7 @@ theorem adjacent_of_length_word_eq_one_of_prefixLength_eq {k : Fin Ω.numItems}
         U.prefixLength k.succ + U.prefixLength q' =
           U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ)) :
     (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q := by
-  have hsucc := U.prefixLength_succ_of_length_word_eq_one hk
+  have hsucc := U.prefixLength_succ k
   simp only [Fin.val_castSucc, Fin.val_succ] at e e'
   -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
   split_ifs at e e'
