@@ -59,6 +59,9 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.map_comp_map_of_comp_eq_id`,
+  `TauCeti.BalancedExtension.map_map_of_comp_eq_zero`: extension of scalars preserves retractions
+  and zero composites, in particular the identities of the inclusions and projections of a product.
 * `TauCeti.BalancedExtension.cancelBaseChange_comp_map`,
   `TauCeti.BalancedExtension.congrRingHom_comp_map`: `cancelBaseChange` and `congrRingHom` are
   natural in the module.
@@ -322,6 +325,48 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars. -/
+theorem map_comp_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) : map f r ∘ₗ map f i = LinearMap.id := by
+  rw [← map_comp, hri, map_id]
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars, applied to an
+element. -/
+theorem map_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) (x : BalancedExtension f P) : map f r (map f i x) = x :=
+  LinearMap.congr_fun (map_comp_map_of_comp_eq_id hri) x
+
+/-- A zero composite `g' ∘ g = 0` stays zero after extension of scalars. -/
+theorem map_map_of_comp_eq_zero {g : P →ₗ[R] P'} {g' : P' →ₗ[R] P''} (hg : g' ∘ₗ g = 0)
+    (x : BalancedExtension f P) : map f g' (map f g x) = 0 := by
+  rw [← LinearMap.comp_apply, ← map_comp, hg]
+  induction x using induction_on with
+  | tmul s p => simp
+  | add x y hx hy => rw [_root_.map_add, hx, hy, add_zero]
+
+/-! Extension of scalars preserves the identities `fst ∘ inl = id`, `snd ∘ inl = 0`,
+`fst ∘ inr = 0` and `snd ∘ inr = id` of a product. -/
+
+@[simp]
+theorem map_fst_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inl R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.fst_comp_inl R P P') x
+
+@[simp]
+theorem map_snd_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inl R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.snd_comp_inl R P P') x
+
+@[simp]
+theorem map_fst_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inr R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.fst_comp_inr R P P') x
+
+@[simp]
+theorem map_snd_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inr R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.snd_comp_inr R P P') x
 
 variable (f) in
 /-- The `S`-linear equivalence `S ⊗_R P ≃ S ⊗_R P'`, `s ⊗ p ↦ s ⊗ θ p`, induced by an `R`-linear

@@ -121,9 +121,12 @@ theorem map_baseChangeSnd_commSqEquiv
   | tmul t z =>
     induction z using BalancedExtension.induction_on with
     | tmul s m =>
-      rw [commSqEquiv_tmul, map_tmul, baseChangeSnd_tmul, one_smul, map_tmul, baseChangeFst_tmul,
-        tmul_smul, tmul_eq_smul_one_tmul (f := π₁), map_smul, apply_one_tmul_fst, smul_tmul,
-        mul_one]
+      -- `t ⊗ (s • m.fst) = (t * π₁ s) • (1 ⊗ m.fst)`, which `α` sends to
+      -- `(t * π₁ s) • (1 ⊗ m.snd) = t ⊗ (s • m.snd)`.
+      simp only [commSqEquiv_tmul, map_tmul, baseChangeSnd_tmul, baseChangeFst_tmul, one_smul,
+        tmul_smul]
+      rw [tmul_eq_smul_one_tmul (f := π₁), map_smul, apply_one_tmul_fst]
+      simp
     | add z z' hz hz' => simp only [tmul_add, _root_.map_add, hz, hz']
   | add x y hx hy => simp only [_root_.map_add, hx, hy]
 
@@ -196,14 +199,6 @@ private structure IsPatched (α : BalancedExtension π₁ P₁ →ₗ[Q] Balance
   bijective_fst : Function.Bijective (baseChangeFst h α)
   bijective_snd : Function.Bijective (baseChangeSnd h α)
 
-/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars. -/
-private theorem map_map_of_comp_eq_id {R S M N : Type*} [Ring R] [Ring S] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] {f : R →+* S} {i : M →ₗ[R] N} {r : N →ₗ[R] M}
-    (hri : r ∘ₗ i = LinearMap.id) (z : BalancedExtension f M) :
-    BalancedExtension.map f r (BalancedExtension.map f i z) = z := by
-  rw [← LinearMap.comp_apply, ← BalancedExtension.map_comp, hri, BalancedExtension.map_id,
-    LinearMap.id_apply]
-
 /-- The conclusions of Milnor's patching theorem pass to retracts of patching triples. -/
 private theorem IsPatched.of_retract {α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
     {E₁ E₂ : Type*} [AddCommGroup E₁] [Module A₁ E₁] [AddCommGroup E₂] [Module A₂ E₂]
@@ -261,43 +256,6 @@ makes `(P₁, P₂, α)` a retract of the patching triple of `G₁ × G₂`. -/
 
 variable {G₁ G₂ : Type*} [AddCommGroup G₁] [Module D G₁] [AddCommGroup G₂] [Module D G₂]
 
-section Product
-
-variable {S : Type*} [Ring S] (f : D →+* S)
-
-/-! Extension of scalars preserves the identities `fst ∘ inl = id`, `snd ∘ inl = 0`,
-`fst ∘ inr = 0` and `snd ∘ inr = id` of the product `G₁ × G₂`. -/
-
-private theorem map_fst_map_inl (v : BalancedExtension f G₁) :
-    BalancedExtension.map f (LinearMap.fst D G₁ G₂)
-      (BalancedExtension.map f (LinearMap.inl D G₁ G₂) v) = v := by
-  induction v using BalancedExtension.induction_on with
-  | tmul s g => simp
-  | add v w hv hw => simp only [_root_.map_add, hv, hw]
-
-private theorem map_snd_map_inl (v : BalancedExtension f G₁) :
-    BalancedExtension.map f (LinearMap.snd D G₁ G₂)
-      (BalancedExtension.map f (LinearMap.inl D G₁ G₂) v) = 0 := by
-  induction v using BalancedExtension.induction_on with
-  | tmul s g => simp
-  | add v w hv hw => simp only [_root_.map_add, hv, hw, add_zero]
-
-private theorem map_fst_map_inr (v : BalancedExtension f G₂) :
-    BalancedExtension.map f (LinearMap.fst D G₁ G₂)
-      (BalancedExtension.map f (LinearMap.inr D G₁ G₂) v) = 0 := by
-  induction v using BalancedExtension.induction_on with
-  | tmul s g => simp
-  | add v w hv hw => simp only [_root_.map_add, hv, hw, add_zero]
-
-private theorem map_snd_map_inr (v : BalancedExtension f G₂) :
-    BalancedExtension.map f (LinearMap.snd D G₁ G₂)
-      (BalancedExtension.map f (LinearMap.inr D G₁ G₂) v) = v := by
-  induction v using BalancedExtension.induction_on with
-  | tmul s g => simp
-  | add v w hv hw => simp only [_root_.map_add, hv, hw]
-
-end Product
-
 /-- The block unipotent endomorphism `(u, v) ↦ (u + x v, v)` of `A₁ ⊗_D (G₁ × G₂)`, minus the
 identity. -/
 private def upperBlock (x : BalancedExtension p₁ G₂ →ₗ[A₁] BalancedExtension p₁ G₁) :
@@ -314,11 +272,11 @@ private def lowerBlock (y : BalancedExtension p₁ G₁ →ₗ[A₁] BalancedExt
 
 private theorem upperBlock_mul_self (x : BalancedExtension p₁ G₂ →ₗ[A₁] BalancedExtension p₁ G₁) :
     upperBlock x * upperBlock x = 0 :=
-  LinearMap.ext fun w ↦ by simp [upperBlock, map_snd_map_inl]
+  LinearMap.ext fun w ↦ by simp [upperBlock]
 
 private theorem lowerBlock_mul_self (y : BalancedExtension p₁ G₁ →ₗ[A₁] BalancedExtension p₁ G₂) :
     lowerBlock y * lowerBlock y = 0 :=
-  LinearMap.ext fun w ↦ by simp [lowerBlock, map_fst_map_inr]
+  LinearMap.ext fun w ↦ by simp [lowerBlock]
 
 /-- `1 - N` is a left inverse of `1 + N` when `N * N = 0`, in the form used to cancel adjacent
 factors of a product. -/
@@ -453,9 +411,9 @@ private theorem isPatched_of_retraction
     simpa only [BalancedExtension.map_comp, LinearMap.comp_apply, LinearEquiv.coe_coe] using
       this.symm
   · ext z
-    simpa [hψφ, map_fst_map_inl] using LinearMap.congr_fun hri₁ z
+    simpa [hψφ] using LinearMap.congr_fun hri₁ z
   · ext z
-    simpa [map_snd_map_inr] using LinearMap.congr_fun hri₂ z
+    simpa using LinearMap.congr_fun hri₂ z
 
 end Whitehead
 
