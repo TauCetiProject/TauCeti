@@ -56,6 +56,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_setOf_valuation_le_uniformizer_zpow`: the fractional ideal
+  `𝓂[K] ^ m = {x | valuation K x ≤ uniformizer K ^ m}` has mass `q ^ (-m)` times that of `𝒪[K]`.
 * `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_le`,
   `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_lt` and
   `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_eq`: the ball `|x|_K ≤ |a|_K`, the
@@ -263,6 +265,29 @@ theorem addHaar_setOf_normalizedAbsoluteValue_le (a : K) :
       (normalizedAbsoluteValue K a : ℝ≥0) * μ 𝒪[K] := by
   rw [← smul_integer_eq_setOf_normalizedAbsoluteValue_le,
     addHaar_smul_eq_normalizedAbsoluteValue_mul]
+
+/-- **Haar measure of a fractional ideal.** For every additive Haar measure `μ` on `K` and every
+`m : ℤ`, the fractional ideal `𝓂[K] ^ m = {x | valuation K x ≤ uniformizer K ^ m}` has mass
+`q ^ (-m) μ(𝒪[K])`, where `q` is the cardinality of the residue field. -/
+theorem addHaar_setOf_valuation_le_uniformizer_zpow (m : ℤ) :
+    μ {x | valuation K x ≤ uniformizer K ^ m} = (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-m) * μ 𝒪[K] := by
+  -- Pick `a` of valuation `uniformizer K ^ m`, so that `v_K(a) = m` and the ideal is `|x| ≤ |a|`.
+  obtain ⟨a, ha⟩ := valuation_surjective (uniformizer K ^ m)
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact zpow_ne_zero m uniformizer_ne_zero (by simpa using ha.symm)
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  have hm : (normalizedValuation K (Units.mk0 a ha0)).toAdd = m :=
+    (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow ((isUniformizer_def π).1 hπ) m _).2
+      (by rw [Units.val_mk0, ha, hπ.valuation_eq])
+  have hset : {x | valuation K x ≤ uniformizer K ^ m} =
+      {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K a} := by
+    simp [ha]
+  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := natCard_residueField_pos.ne'
+  rw [hset, addHaar_setOf_normalizedAbsoluteValue_le, ← Units.val_mk0 ha0,
+    normalizedAbsoluteValue_coe, hm]
+  -- `push_cast` brings both sides to the same term, and `eq_self_iff_true` closes that goal.
+  push_cast [ENNReal.coe_zpow hq, eq_self_iff_true]
 
 /-- **Haar measure of an open ball.** For every additive Haar measure `μ` on `K` and every
 `a ∈ K`, the ball `|x|_K < |a|_K` has mass `q⁻¹ |a|_K μ(𝒪[K])`, where `q` is the cardinality of
