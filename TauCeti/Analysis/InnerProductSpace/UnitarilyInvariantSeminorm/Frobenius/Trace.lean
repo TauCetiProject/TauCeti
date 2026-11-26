@@ -34,10 +34,16 @@ arguments with linear maps.
   `‖pr_U Y‖_F²` as the Hilbert–Schmidt inner products `tr (pr_U† (A† A))` and `tr (pr_U† (Y Y†))`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_eq_sq_frobenius_add_sq_frobenius`: an
   orthogonal projection `p` splits `‖A‖_F² = ‖p A‖_F² + ‖(1 - p) A‖_F²`.
+* `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_one_sub_mul_comp_le`: for an orthogonal
+  projection `p` and any endomorphism `q`, `‖(1 - p q) A‖_F² ≤ ‖(1 - p) A‖_F² + ‖(1 - q) A‖_F²`.
 
 ## References
 
 * R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer, 1997, Section IV.2.
+* `sq_frobenius_one_sub_mul_comp_le` is adapted from grh-lean
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC), file
+  `src/New/Spanning/SecondMoment/FewTranslates.lean`,
+  `New.hilbertSchmidtNorm_one_sub_mul_comp_sq_le`.
 -/
 
 public section
@@ -150,5 +156,30 @@ theorem sq_frobenius_eq_sq_frobenius_add_sq_frobenius {p : F →ₗ[𝕜] F}
     frobenius 𝕜 E F A ^ 2 = frobenius 𝕜 E F (p ∘ₗ A) ^ 2 + frobenius 𝕜 E F ((1 - p) ∘ₗ A) ^ 2 := by
   simp only [sq_frobenius_apply (stdOrthonormalBasis 𝕜 E), ← Finset.sum_add_distrib, comp_apply]
   exact Finset.sum_congr rfl fun i _ ↦ hp.norm_sq_eq_add_norm_sq _
+
+omit [FiniteDimensional 𝕜 F] in
+/-- For an orthogonal projection `p` and any endomorphism `q` of the target: in squared Frobenius
+seminorm, the part `(1 - p q) A` that `p q` misses is at most the sum of the parts that `p` and `q`
+miss. -/
+theorem sq_frobenius_one_sub_mul_comp_le {p : F →ₗ[𝕜] F} (hp : p.IsSymmetricProjection)
+    (q : F →ₗ[𝕜] F) (A : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F ((1 - p * q) ∘ₗ A) ^ 2 ≤
+      frobenius 𝕜 E F ((1 - p) ∘ₗ A) ^ 2 +
+        frobenius 𝕜 E F ((1 - q) ∘ₗ A) ^ 2 := by
+  simp only [sq_frobenius_apply (stdOrthonormalBasis 𝕜 E), ← Finset.sum_add_distrib, comp_apply]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  generalize A (stdOrthonormalBasis 𝕜 E i) = y
+  -- Split `1 - p q` into the orthogonal parts `p (1 - q)` and `1 - p`.
+  have h_range : p * (1 - p * q) = p * (1 - q) := by
+    simp [mul_sub, ← mul_assoc, hp.isIdempotentElem.eq]
+  have h_ker : (1 - p) * (1 - p * q) = 1 - p := by
+    simp [mul_sub, ← mul_assoc, hp.isIdempotentElem.one_sub_mul_self]
+  have h_split : ‖(1 - p * q) y‖ ^ 2 = ‖p ((1 - q) y)‖ ^ 2 + ‖(1 - p) y‖ ^ 2 := by
+    rw [hp.norm_sq_eq_add_norm_sq, ← mul_apply_eq_comp,
+      ← mul_apply_eq_comp (1 - p), h_range, h_ker, mul_apply_eq_comp]
+  have h_contract : ‖p ((1 - q) y)‖ ^ 2 ≤ ‖(1 - q) y‖ ^ 2 := by
+    linarith [hp.norm_sq_eq_add_norm_sq ((1 - q) y),
+      sq_nonneg ‖(1 - p) ((1 - q) y)‖]
+  linarith
 
 end TauCeti.UnitarilyInvariantSeminorm

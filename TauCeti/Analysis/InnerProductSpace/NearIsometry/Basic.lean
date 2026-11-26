@@ -24,8 +24,6 @@ squared length of an orthonormal basis of each subspace, on average over the bas
   is a near isometry with error `ε`.
 * `LinearMap.IsNearIsometry.comp_of_isSymmetricProjection`: if `pr` is an orthogonal projection of
   the target with `‖(1 - pr) A‖² ≤ δ dim S`, then `pr A` is a near isometry with error `ε + δ`.
-* `LinearMap.sq_frobenius_one_sub_mul_comp_le`: for an orthogonal projection `p` and any
-  endomorphism `q`, `‖(1 - p q) A‖² ≤ ‖(1 - p) A‖² + ‖(1 - q) A‖²`.
 
 ## References
 
@@ -134,30 +132,5 @@ theorem IsNearIsometry.comp_of_isSymmetricProjection {A : S →ₗ[𝕜] T} {ε 
     pow_le_pow_left₀ (apply_nonneg _ _) (frobenius_comp_starProjection_le _ U) 2
   rw [comp_assoc] at h_cut ⊢
   linarith [hA U]
-
-omit [FiniteDimensional 𝕜 T] in
-/-- For an orthogonal projection `p` and any endomorphism `q` of the target: in squared Frobenius
-seminorm, the part `(1 - p q) A` that `p q` misses is at most the sum of the parts that `p` and `q`
-miss. -/
-theorem sq_frobenius_one_sub_mul_comp_le {p : T →ₗ[𝕜] T} (hp : p.IsSymmetricProjection)
-    (q : T →ₗ[𝕜] T) (A : S →ₗ[𝕜] T) :
-    UnitarilyInvariantSeminorm.frobenius 𝕜 S T ((1 - p * q) ∘ₗ A) ^ 2 ≤
-      UnitarilyInvariantSeminorm.frobenius 𝕜 S T ((1 - p) ∘ₗ A) ^ 2 +
-        UnitarilyInvariantSeminorm.frobenius 𝕜 S T ((1 - q) ∘ₗ A) ^ 2 := by
-  simp only [sq_frobenius_apply (stdOrthonormalBasis 𝕜 S), ← Finset.sum_add_distrib, comp_apply]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  generalize A (stdOrthonormalBasis 𝕜 S i) = y
-  -- Split `1 - p q` into the orthogonal parts `p (1 - q)` and `1 - p`.
-  have h_range : p * (1 - p * q) = p * (1 - q) := by
-    simp [mul_sub, ← mul_assoc, hp.isIdempotentElem.eq]
-  have h_ker : (1 - p) * (1 - p * q) = 1 - p := by
-    simp [mul_sub, ← mul_assoc, hp.isIdempotentElem.one_sub_mul_self]
-  have h_split : ‖(1 - p * q) y‖ ^ 2 = ‖p ((1 - q) y)‖ ^ 2 + ‖(1 - p) y‖ ^ 2 := by
-    rw [hp.norm_sq_eq_add_norm_sq, ← mul_apply_eq_comp,
-      ← mul_apply_eq_comp (1 - p), h_range, h_ker, mul_apply_eq_comp]
-  have h_contract : ‖p ((1 - q) y)‖ ^ 2 ≤ ‖(1 - q) y‖ ^ 2 := by
-    linarith [hp.norm_sq_eq_add_norm_sq ((1 - q) y),
-      sq_nonneg ‖(1 - p) ((1 - q) y)‖]
-  linarith
 
 end LinearMap
