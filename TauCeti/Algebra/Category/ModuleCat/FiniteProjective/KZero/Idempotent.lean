@@ -208,6 +208,16 @@ theorem kZeroEquiv_of_mk_one (m : ℕ) :
     (rangeMulVecBilinOneEquiv (Fin m) R).symm]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 
+-- Not `@[simp]`, for the same reason as `TauCeti.IdempotentMonoid.kZeroEquiv_of_mk_one`.
+/-- Padding an idempotent matrix `e` by an identity block of size `m` adds `m[R]` to its class:
+`[e ⊕ 1ₘ] = [e] + m[R]` in `K₀(R)`. -/
+theorem kZeroEquiv_of_mk_fromBlocks_one {e : Matrix ι ι R} (he : IsIdempotentElem e) (m : ℕ) :
+    kZeroEquiv R (GrothendieckAddGroup.of (mk (fromBlocks e 0 0 (1 : Matrix (Fin m) (Fin m) R))
+        (he.fromBlocks_zero₁₂_zero₂₁ .one))) =
+      kZeroEquiv R (GrothendieckAddGroup.of (mk e he)) +
+        m • SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
+  rw [← mk_add_mk he .one, map_add, map_add, kZeroEquiv_of_mk_one]
+
 /-- **Every class in `K₀(R)` is `[eRⁿ] - m[R]`.** Every element of `K₀(R)` is the difference of
 the class of the image of an idempotent matrix `e` acting on column vectors and the class of a
 finite free right module `Rᵐ`. -/

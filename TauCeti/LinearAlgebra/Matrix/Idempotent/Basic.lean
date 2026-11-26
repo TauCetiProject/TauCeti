@@ -58,6 +58,7 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_zero_iff`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_fromBlocks_zero`,
   `Matrix.idempotentEquivalent_self_iff`, `Matrix.idempotentEquivalent_single_one`,
   `Matrix.idempotentEquivalent_fromBlocks_one_sub`: zero matrices, zero-block padding,
   self-equivalence, diagonal matrix units, and `f ⊕ (1 - f) ∼ 1`.
@@ -330,6 +331,20 @@ theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : T
   rw [hEq]
   simpa using (he.idempotentEquivalent_fromBlocks_zero_right m).submatrix
     (Equiv.sumComm m ι) (Equiv.refl ι)
+
+/-- Padding an idempotent matrix `e` to `(0 ⊕ e) ⊕ 0`, by an upper-left and then a lower-right
+zero block, preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_fromBlocks_zero (m n : Type*)
+    [Fintype m] [Fintype n] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent
+      (fromBlocks (fromBlocks (0 : Matrix m m A) 0 0 e) 0 0 (0 : Matrix n n A)) e := by
+  let σ : (m ⊕ ι) ⊕ n ≃ ι ⊕ (m ⊕ n) :=
+    ((Equiv.sumComm m ι).sumCongr (Equiv.refl n)).trans (Equiv.sumAssoc ι m n)
+  have hEq : fromBlocks (fromBlocks (0 : Matrix m m A) 0 0 e) 0 0 (0 : Matrix n n A) =
+      (fromBlocks e 0 0 (0 : Matrix (m ⊕ n) (m ⊕ n) A)).submatrix σ σ := by
+    ext ((_ | _) | _) ((_ | _) | _) <;> simp [σ]
+  rw [hEq]
+  simpa using (he.idempotentEquivalent_fromBlocks_zero_right (m ⊕ n)).submatrix σ (Equiv.refl ι)
 
 end NonUnitalNonAssocSemiring
 
