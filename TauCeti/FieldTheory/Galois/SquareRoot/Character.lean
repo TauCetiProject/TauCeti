@@ -29,6 +29,8 @@ attached to `K(a)`, the character that describes a quadratic twist of an ellipti
   `η : Gal(L/K) →ₜ* ℤˣ` satisfies `g a = η(g) • a` for every `g`.
 * `TauCeti.continuousMonoidHom_eq_of_apply_eq_zsmul`: two such characters agree when `a ≠ 0` and
   `2 ≠ 0` in `L`.
+* `TauCeti.eq_one_of_apply_eq_zsmul_of_apply_eq_self`: the sign of an automorphism fixing `a` is
+  `1` when `a ≠ 0` and `2 ≠ 0` in `L`.
 -/
 
 public section
@@ -77,5 +79,16 @@ theorem continuousMonoidHom_eq_of_apply_eq_zsmul {a : L} (ha : a ≠ 0) (h2 : (2
   have hg := (h g).symm.trans (h' g)
   rcases Int.units_eq_one_or (η g) with h1 | h1 <;>
     rcases Int.units_eq_one_or (η' g) with h1' | h1' <;> simp_all [Ne.symm hne]
+
+/-- **An automorphism fixing a square root has sign `1`.** If `a ≠ 0` and `2 ≠ 0` in `L`, and the
+automorphism `g` fixes `a` and sends it to `s • a` for a sign `s`, then `s = 1`: otherwise
+`a = -a`, so `2 a = 0`. -/
+theorem eq_one_of_apply_eq_zsmul_of_apply_eq_self {a : L} (ha : a ≠ 0) (h2 : (2 : L) ≠ 0)
+    {g : L ≃ₐ[K] L} {s : ℤˣ} (hg : g a = (s : ℤ) • a) (hfix : g a = a) : s = 1 := by
+  rcases Int.units_eq_one_or s with h1 | h1
+  · exact h1
+  · rw [hfix, h1, Units.val_neg, Units.val_one, neg_one_smul] at hg
+    exact (ha ((mul_eq_zero.mp (by linear_combination hg : (2 : L) * a = 0)).resolve_left
+      h2)).elim
 
 end TauCeti

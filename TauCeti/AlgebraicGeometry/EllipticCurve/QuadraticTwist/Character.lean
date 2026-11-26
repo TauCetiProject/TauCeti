@@ -55,8 +55,9 @@ The trivial character gives exactly the curves isomorphic to `W` over `K`
   up to isomorphism over `K`.
 * `WeierstrassCurve.exists_isQuadraticTwistBy_iff_j_eq`: for `j(W) ∉ {0, 1728}`, an elliptic
   curve is a quadratic twist of `W` by some character exactly when it has the `j`-invariant of `W`.
-* `WeierstrassCurve.IsQuadraticTwistBy.two_ne_zero`: an elliptic curve is a twist by a character
-  only in characteristic other than `2`.
+* `WeierstrassCurve.IsQuadraticTwistBy.two_ne_zero`,
+  `WeierstrassCurve.IsQuadraticTwistBy.two_ne_zero_algebraicClosure`: an elliptic curve is a twist
+  by a character only in characteristic other than `2`.
 * `WeierstrassCurve.IsQuadraticTwistBy.unique`: for `j(W) ∉ {0, 1728}`, the twisting character of
   an elliptic curve is unique.
 * `WeierstrassCurve.existsUnique_isQuadraticTwistBy`: for `j(W) ∉ {0, 1728}`, an elliptic curve
@@ -122,6 +123,12 @@ theorem IsQuadraticTwistBy.two_ne_zero {W E : WeierstrassCurve K} [E.IsElliptic]
     (isElliptic_smul_iff C _).mp (hC ▸ inferInstance)
   have h4d := ((W.isElliptic_quadraticTwistOf_iff _ _).mp hell).1.ne_zero
   exact fun h ↦ h4d (by linear_combination 2 * (d : K) * h)
+
+/-- An elliptic curve can be a quadratic twist by a character only when `2 ≠ 0` in `Kᵃˡᵍ`. -/
+theorem IsQuadraticTwistBy.two_ne_zero_algebraicClosure {W E : WeierstrassCurve K} [E.IsElliptic]
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η) :
+    (2 : AlgebraicClosure K) ≠ 0 := by
+  simpa only [map_ofNat] using (map_ne_zero (algebraMap K (AlgebraicClosure K))).mpr h.two_ne_zero
 
 /-- **The Galois action on the isomorphism of a quadratic twist.** If `E` is the twist of `W` by
 `η`, in characteristic other than `2`, there is a change of variables `ρ` over `Kᵃˡᵍ` carrying `W`
@@ -247,6 +254,7 @@ theorem IsQuadraticTwistBy.unique (hj₀ : W.j ≠ 0) (hj₁₇₂₈ : W.j ≠ 
     [E.IsElliptic] {η η' : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η)
     (h' : W.IsQuadraticTwistBy E η') : η = η' := by
   have h2 := h.two_ne_zero
+  have h2' := h.two_ne_zero_algebraicClosure
   obtain ⟨d, a, ha, hη, C, hC⟩ := h
   obtain ⟨d', a', ha', hη', C', hC'⟩ := h'
   obtain ⟨w, hw⟩ := W.exists_eq_sq_mul_of_smul_quadraticTwistOf hj₀ hj₁₇₂₈ d.ne_zero h2
@@ -257,9 +265,6 @@ theorem IsQuadraticTwistBy.unique (hj₀ : W.j ≠ 0) (hj₁₇₂₈ : W.j ≠ 
   have ha'0 : a' ≠ 0 := by
     rintro rfl
     exact d'.ne_zero (by simpa using ha'.symm)
-  have h2' : (2 : AlgebraicClosure K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2]
-    exact (map_ne_zero _).mpr h2
   have hηa' (g : Gal(AlgebraicClosure K/K)) : g a' = (η g : ℤ) • a' := by
     rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with e | e <;>
       simp only [e, map_mul, map_neg, AlgEquiv.commutes, hη g, smul_neg, mul_smul_comm]

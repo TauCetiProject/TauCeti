@@ -16,6 +16,8 @@ import Mathlib.RingTheory.AdjoinRoot
 -- Proof-only: the multiplicative-reduction criterion on the integral model, and the transfer of
 -- split multiplicative reduction along a change of variables between minimal models.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+-- Proof-only: an integral model is determined by its base change.
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 -- Proof-only: split multiplicative reduction read on the reduced model's node polynomial.
 import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 -- Proof-only: Hensel lifting of a tangent slope, the classification of twists with given `j`, and
@@ -69,6 +71,8 @@ by its node quadratic of every curve with split multiplicative reduction and the
   reduction the monic node quadratic generates a separable quadratic extension.
 * `WeierstrassCurve.hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root_nodeQuadratic`:
   any such quadratic extension gives a twist with split multiplicative reduction.
+* `WeierstrassCurve.integralModel_quadraticTwistOf_algebraMap`: the integral model of a twist by
+  integral parameters is the twist of the integral model.
 * `WeierstrassCurve.hasMultiplicativeReduction_quadraticTwistOf_algebraMap`: a twist by integral
   parameters of unit discriminant keeps multiplicative reduction.
 * `WeierstrassCurve.hasSplitMultiplicativeReduction_quadraticTwistOf`: the explicit twist by
@@ -149,6 +153,23 @@ theorem exists_algebraMap_eq_nodePolynomial_coeff_zero_div
   conv_rhs => rw [← baseChange_integralModel_eq R E]
   rw [WeierstrassCurve.baseChange, map_nodePolynomial, coeff_map]
 
+omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
+/-- A twist by parameters `t, n ∈ R` of a curve with integral coefficients has integral
+coefficients: it is the base change of the twist of the integral model. -/
+instance isIntegral_quadraticTwistOf_algebraMap [IsIntegral R E] (t n : R) :
+    IsIntegral R (E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n)) :=
+  ⟨⟨(E.integralModel R).quadraticTwistOf t n,
+    by rw [baseChange_quadraticTwistOf, baseChange_integralModel_eq]⟩⟩
+
+omit [IsDomain R] [IsDiscreteValuationRing R] in
+variable (R) in
+/-- The integral model of a twist by parameters `t, n ∈ R` is the twist of the integral model. -/
+theorem integralModel_quadraticTwistOf_algebraMap [IsIntegral R E] (t n : R) :
+    (E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n)).integralModel R =
+      (E.integralModel R).quadraticTwistOf t n :=
+  integralModel_eq_of_baseChange_eq (by
+    rw [baseChange_quadraticTwistOf, baseChange_integralModel_eq])
+
 variable (R) in
 /-- **Unit-discriminant twists keep multiplicative reduction.** If `E` has multiplicative reduction
 and `t, n ∈ R` have `t² - 4n` a unit, the twist of `E` by `(t, n)` has multiplicative reduction:
@@ -158,15 +179,8 @@ theorem hasMultiplicativeReduction_quadraticTwistOf_algebraMap
     [hE : E.HasMultiplicativeReduction R] {t n : R} (hD : IsUnit (t ^ 2 - 4 * n)) :
     (E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n)).HasMultiplicativeReduction R := by
   have hE' := (hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄ R E).mp hE
-  set J := (E.integralModel R).quadraticTwistOf t n
-  have hJK : J.baseChange K = E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n) := by
-    rw [baseChange_quadraticTwistOf, baseChange_integralModel_eq]
-  have : IsIntegral R (E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n)) :=
-    ⟨⟨J, hJK.symm⟩⟩
-  have hint : (E.quadraticTwistOf (algebraMap R K t) (algebraMap R K n)).integralModel R = J :=
-    map_injective (IsFractionRing.injective R K) ((baseChange_integralModel_eq R _).trans hJK.symm)
-  rw [hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄, hint,
-    Δ_quadraticTwistOf, c₄_quadraticTwistOf]
+  rw [hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄,
+    integralModel_quadraticTwistOf_algebraMap, Δ_quadraticTwistOf, c₄_quadraticTwistOf]
   exact ⟨fun h ↦ hE'.1 (isUnit_of_mul_isUnit_right h), (hD.pow 2).mul hE'.2⟩
 
 variable (R) in
@@ -181,21 +195,13 @@ theorem hasSplitMultiplicativeReduction_quadraticTwistOf [hE : E.HasMultiplicati
       R := by
   obtain ⟨n₀, hn₀, hD, hn₀K⟩ := E.exists_algebraMap_eq_nodePolynomial_coeff_zero_div R
   set I := E.integralModel R
-  set J := I.quadraticTwistOf (-I.a₁) n₀
-  -- The twisted curve is the base change of `J`, so `J` is its integral model.
-  have hJK : J.baseChange K = E.quadraticTwistOf (-E.a₁) (E.nodePolynomial.coeff 0 / E.c₄) := by
-    rw [baseChange_quadraticTwistOf, baseChange_integralModel_eq, map_neg, integralModel_a₁_eq,
-      hn₀K]
-  set E' := E.quadraticTwistOf (-E.a₁) (E.nodePolynomial.coeff 0 / E.c₄)
-  have : IsIntegral R E' := ⟨⟨J, hJK.symm⟩⟩
-  have hint : E'.integralModel R = J :=
-    map_injective (IsFractionRing.injective R K) ((baseChange_integralModel_eq R E').trans hJK.symm)
-  have hmult : E'.HasMultiplicativeReduction R := by
-    have := hasMultiplicativeReduction_quadraticTwistOf_algebraMap R (E := E) (t := -I.a₁) (by
-      rwa [neg_sq])
-    rwa [map_neg, integralModel_a₁_eq, hn₀K] at this
+  -- The twisted curve is the twist by `(-I.a₁, n₀)` with parameters in `R`.
+  rw [← integralModel_a₁_eq R E, ← map_neg, ← hn₀K]
+  have hmult := hasMultiplicativeReduction_quadraticTwistOf_algebraMap R (E := E) (t := -I.a₁)
+    (n := n₀) (by rwa [neg_sq])
   refine (hmult.splits_nodePolynomial_reduction_iff R).mp ?_
-  rw [reduction, map_nodePolynomial, hint, nodePolynomial_quadraticTwistOf_neg_a₁ I n₀ hn₀]
+  rw [reduction, map_nodePolynomial, integralModel_quadraticTwistOf_algebraMap,
+    nodePolynomial_quadraticTwistOf_neg_a₁ I n₀ hn₀]
   exact (((Splits.X_sub_C _).C_mul _).mul (Splits.X_sub_C _)).map _
 
 variable (R) in
